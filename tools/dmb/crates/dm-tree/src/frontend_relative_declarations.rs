@@ -353,6 +353,11 @@ impl RelativeSyntax {
     }
     /// New input payload only; source bytes share this RelativeSyntax's existing
     /// SourceText owner. Pointer dedup is the caller's live-owner census job.
+    pub fn visit_setting_roots(&self, mut visit: impl FnMut(&dm_syntax::SettingExpression)) {
+        if let Some(headers) = &self.original_headers {
+            headers.visit_setting_roots(&mut visit);
+        }
+    }
     pub fn visit_original_header_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
         if let Some(headers) = &self.original_headers {
             headers.visit_storage(&mut visit);
@@ -506,6 +511,8 @@ pub(crate) struct OriginalSettingTokenInput<'a> {
     pub(crate) header: Span,
     pub(crate) value: Span,
     pub(crate) offset: usize,
+    pub(crate) slots: &'a dm_syntax::SettingExpressionSlots,
+    pub(crate) original_value: Span,
 }
 #[derive(Clone, Debug)]
 pub struct DeclarationSyntax {
@@ -702,6 +709,9 @@ impl DeclarationSyntax {
         let (source, tokens) = input
             .setting_value_tokens(recipe.relative.span, owner, footprint)
             .map_err(|message| fail(&message))?;
+        let slots = input
+            .setting_root_slots(recipe.relative.span, owner, footprint)
+            .map_err(|message| fail(&message))?;
         let header = Span::new(
             footprint.header.start + recipe.offset,
             footprint.header.end + recipe.offset,
@@ -718,6 +728,8 @@ impl DeclarationSyntax {
             header,
             value,
             offset: recipe.offset,
+            slots,
+            original_value: footprint.value,
         })
     }
     pub(crate) fn body_recipes(&self) -> impl Iterator<Item = CurrentBodyRecipe<'_>> {

@@ -99,6 +99,7 @@ impl ColdFrontend {
             source_export_mapping: Arc::clone(&previous.source_export_mapping),
             body_queries: previous.body_queries.clone(),
             reused_body_queries: false,
+            setting_expression_queries: previous.setting_expression_queries.clone(),
         };
         current.source_export_mapping =
             Arc::new(previous.source_export_mapping.reissue_unchanged(&current));

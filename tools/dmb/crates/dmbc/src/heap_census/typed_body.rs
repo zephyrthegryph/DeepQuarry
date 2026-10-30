@@ -34,6 +34,10 @@ impl HeapCensus {
         text: &'a dm_syntax::LiteralText,
         pending: &mut Vec<Node<'a>>,
     ) {
+        dm_syntax::visit_setting_literal_retention(text, |pointer, payload| {
+            let bytes = payload.saturating_add(2 * size_of::<usize>());
+            self.buffer(owner, pointer, bytes, bytes);
+        });
         if let Some((pointer, bytes)) = text.shared_storage() {
             if !self.buffer(owner, pointer, bytes, bytes) {
                 return;
@@ -96,6 +100,20 @@ impl HeapCensus {
         let mut pending = Vec::new();
         signature.visit_expression_roots(|expr| pending.push(Node::Expr(expr)));
         self.typed_nodes(owner, pending);
+    }
+    pub(crate) fn setting_expression(&mut self, owner: &str, value: &dm_syntax::SettingExpression) {
+        let mut fresh = false;
+        value.visit_root_storage(|p, n| {
+            let n = n.saturating_add(2 * size_of::<usize>());
+            fresh |= self.buffer(owner, p, n, n);
+        });
+        value.visit_retention_storage(|p, n| {
+            let n = n.saturating_add(2 * size_of::<usize>());
+            self.buffer(owner, p, n, n);
+        });
+        if fresh {
+            self.typed_expression(owner, value.original_expression());
+        }
     }
     pub(crate) fn typed_expression(&mut self, owner: &str, expression: &Expr) {
         // The root is inline in its containing owner; only nested allocations count.

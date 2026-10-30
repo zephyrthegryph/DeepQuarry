@@ -9,8 +9,49 @@ pub(crate) struct OriginalSettingSource<'a> {
     input: relative_declarations::OriginalSettingTokenInput<'a>,
 }
 impl<'a> OriginalSettingSource<'a> {
+    pub(super) fn frontend(&self) -> &ColdFrontend {
+        self.frontend
+    }
+    pub(super) fn require_expression(
+        &self,
+        root: &dm_syntax::SettingExpression,
+    ) -> std::io::Result<()> {
+        if root.current_offset() != self.input.offset
+            || !self.input.slots.contains_original(self.input.ordinal, root)
+        {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "settings provider returned a foreign original root or projection",
+            ));
+        }
+        Ok(())
+    }
     pub(crate) fn token_input(&self) -> &relative_declarations::OriginalSettingTokenInput<'a> {
         &self.input
+    }
+    /// Nonactivating source-local producer: the eventual native provider must
+    /// supply its genuine SAME current QueryDb body admission. Source authority
+    /// was issued before this method; slot storage never creates it.
+    pub(crate) fn expression(
+        &self,
+        admission: &dm_syntax::SettingAdmission<'_>,
+    ) -> Result<dm_syntax::SettingExpression, dm_syntax::SettingSyntaxFailure> {
+        let i = &self.input;
+        let root = i.slots.obtain(
+            i.ordinal,
+            i.original_owner.settings.len(),
+            admission,
+            || {
+                dm_syntax::prepare_setting_expression(
+                    i.source,
+                    i.tokens,
+                    i.original_value,
+                    admission,
+                )
+            },
+        )?;
+        root.project_current(i.offset, i.source.len())
+            .map_err(dm_syntax::SettingSyntaxFailure::Operational)
     }
     pub(crate) fn require_current(
         &self,

@@ -871,6 +871,7 @@ fn build_with_executor_and_semantic_state_for_policy_mode<P: SourceProvider>(
     let mut frontend = ColdFrontend {
         body_queries: None,
         reused_body_queries: false,
+        setting_expression_queries: None,
         source_export_mapping,
         callable_roster,
         abi_settings_complete,

@@ -25,6 +25,7 @@ impl HeapCensus {
             return;
         }
         relative.visit_settings_owners(|metadata| self.procedure_metadata(owner, metadata));
+        relative.visit_setting_roots(|root| self.setting_expression(owner, root));
         relative.visit_original_header_source(|source| self.source_text(owner, source));
         // Includes the original header recipe Arc + moved token/descriptor
         // backing. The global live-pointer census deduplicates shared chunks.

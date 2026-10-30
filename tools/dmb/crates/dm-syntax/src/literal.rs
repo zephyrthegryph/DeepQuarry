@@ -32,6 +32,9 @@ struct LiteralState {
     raw: String,
     origin: usize,
     parts: OnceLock<Result<Option<LiteralParts>, String>>,
+    // LAST: raw/retained syntax and their physical allocations must die before
+    // the same source-free quota anchor can release its final lease.
+    retention: OnceLock<crate::SharedSettingRetention>,
 }
 /// Clones of a string literal in one issued syntax tree share its parsed
 /// leaves. Numbers and resource paths do not allocate a parse cache.
@@ -40,7 +43,72 @@ pub struct LiteralText(Backing);
 #[derive(Clone, Debug)]
 enum Backing {
     Plain(String),
-    Text(Arc<LiteralState>),
+    Text(LiteralOwner),
+}
+/// Sealed standard-Arc owner. No Arc/Weak aliases escape; EVERY drop consumes
+/// Arc::into_inner, so the last owner frees control allocation before payload
+/// buffers and the final retained-source credit are released.
+#[derive(Debug)]
+struct LiteralOwner(Option<Arc<LiteralState>>);
+impl LiteralOwner {
+    fn new(value: LiteralState) -> Self {
+        Self(Some(Arc::new(value)))
+    }
+    fn address(&self) -> usize {
+        Arc::as_ptr(self.0.as_ref().expect("live literal owner")) as usize
+    }
+    fn into_payload(mut self) -> Option<LiteralState> {
+        Arc::into_inner(self.0.take().expect("live literal owner"))
+    }
+}
+impl Clone for LiteralOwner {
+    fn clone(&self) -> Self {
+        Self(Some(Arc::clone(
+            self.0.as_ref().expect("live literal owner"),
+        )))
+    }
+}
+impl Deref for LiteralOwner {
+    type Target = LiteralState;
+    fn deref(&self) -> &LiteralState {
+        self.0.as_deref().expect("live literal owner")
+    }
+}
+fn release_literal_payload(
+    state: LiteralState,
+) -> (Option<LiteralParts>, Option<crate::SharedSettingRetention>) {
+    let LiteralState {
+        raw,
+        origin: _,
+        parts,
+        retention,
+    } = state;
+    drop(raw);
+    let anchor = retention.into_inner();
+    let parts = match parts.into_inner() {
+        Some(Ok(parts)) => parts,
+        Some(Err(error)) => {
+            drop(error);
+            None
+        }
+        None => None,
+    };
+    (parts, anchor)
+}
+impl Drop for LiteralOwner {
+    fn drop(&mut self) {
+        let Some(owner) = self.0.take() else {
+            return;
+        };
+        if let Some(payload) = Arc::into_inner(owner) {
+            let (parts, anchor) = release_literal_payload(payload);
+            if let Some(parts) = parts {
+                crate::setting_drop::drop_literal_parts(parts, anchor);
+            } else {
+                drop(anchor);
+            }
+        }
+    }
 }
 impl LiteralText {
     pub fn at(raw: String, origin: usize) -> Self {
@@ -50,10 +118,11 @@ impl LiteralText {
             || raw.starts_with("@'")
             || raw.starts_with("@{\"")
         {
-            Self(Backing::Text(Arc::new(LiteralState {
+            Self(Backing::Text(LiteralOwner::new(LiteralState {
                 raw,
                 origin,
                 parts: OnceLock::new(),
+                retention: OnceLock::new(),
             })))
         } else {
             Self(Backing::Plain(raw))
@@ -73,7 +142,7 @@ impl LiteralText {
         match &self.0 {
             Backing::Plain(_) => None,
             Backing::Text(state) => Some((
-                Arc::as_ptr(state) as usize,
+                state.address(),
                 std::mem::size_of::<LiteralState>() + 2 * std::mem::size_of::<usize>(),
             )),
         }
@@ -104,10 +173,100 @@ impl LiteralText {
             .map(|parts| parts.as_ref())
             .map_err(String::as_str)
     }
+    /// Prepare the SAME issuing literal caches while a native root is still
+    /// unpublished and its canonical slot is serialized. Caller pre-admits the
+    /// full overlapping raw/projection/child syntax footprint; no new lease or
+    /// source authority is issued here. Syntax failures remain deferred strings.
+    pub(crate) fn prepare_parts_admitted(
+        &self,
+        admission: &crate::SettingAdmission<'_>,
+    ) -> std::io::Result<()> {
+        admission.checkpoint()?;
+        let Backing::Text(state) = &self.0 else {
+            return Ok(());
+        };
+        if let Some(cached) = state.parts.get() {
+            let _ = cached;
+            return admission.checkpoint();
+        }
+        let mut parsed = retained_string_literal_parts_using(&state.raw, Some(admission));
+        admission.checkpoint()?; // NEVER cache an operational failure as syntax.
+        if let Ok(Some(parts)) = &mut parsed {
+            for expression in &mut parts.expressions {
+                admission.checkpoint()?;
+                shift_expression(expression, state.origin);
+            }
+        }
+        admission.checkpoint()?;
+        // Native unpublished/serialized callers have no competing parts()
+        // consumer. OnceLock still preserves an already-issued compatibility
+        // value if a lower-level caller violates that synchronization contract.
+        let _ = state.parts.set(parsed);
+        // No fallible work after this internal syntax commit. The owning root
+        // producer's final checkpoint decides whether that whole unpublished
+        // root can be exposed. Its ONE worklist prepares nested literal parts.
+        Ok(())
+    }
+    /// Attach only the SAME original source-free lease anchor. A second root
+    /// cannot silently claim a literal cache already held by another lease.
+    pub(crate) fn attach_setting_retention(
+        &self,
+        anchor: &crate::SharedSettingRetention,
+    ) -> std::io::Result<()> {
+        let Backing::Text(state) = &self.0 else {
+            return Ok(());
+        };
+        if let Some(issued) = state.retention.get() {
+            return if issued.same_owner(anchor) {
+                Ok(())
+            } else {
+                Err(std::io::ErrorKind::InvalidInput.into())
+            };
+        }
+        if let Err(other) = state.retention.set(anchor.clone()) {
+            if !state
+                .retention
+                .get()
+                .is_some_and(|issued| issued.same_owner(&other))
+            {
+                return Err(std::io::ErrorKind::InvalidInput.into());
+            }
+        }
+        Ok(())
+    }
+    pub(crate) fn visit_setting_retention_storage(&self, mut visit: impl FnMut(usize, usize)) {
+        if let Backing::Text(state) = &self.0 {
+            if let Some(anchor) = state.retention.get() {
+                anchor.visit_storage(&mut visit);
+            }
+        }
+    }
+    /// Last-owner cleanup consumes ORIGINAL cached child Exprs, not clones.
+    /// Arc/control storage is already free before returning the actual parts.
+    pub(crate) fn into_drop_parts(
+        self,
+    ) -> (Option<LiteralParts>, Option<crate::SharedSettingRetention>) {
+        match self.0 {
+            Backing::Plain(raw) => {
+                drop(raw);
+                (None, None)
+            }
+            Backing::Text(owner) => owner
+                .into_payload()
+                .map_or((None, None), release_literal_payload),
+        }
+    }
     pub(crate) fn shift(&mut self, offset: usize) {
         if let Backing::Text(state) = &self.0 {
             if offset != 0 {
-                *self = Self::at(state.raw.clone(), state.origin + offset);
+                let anchor = state.retention.get().cloned();
+                let shifted = Self::at(state.raw.clone(), state.origin + offset);
+                if let Some(anchor) = anchor {
+                    shifted
+                        .attach_setting_retention(&anchor)
+                        .expect("fresh shifted literal has no other anchor");
+                }
+                *self = shifted;
             }
         }
     }
@@ -208,6 +367,7 @@ pub fn shift_expression(expression: &mut Expr, offset: usize) {
 fn string_literal_parts_clean(
     raw: &str,
     projection: RawProjection<'_>,
+    admission: Option<&crate::SettingAdmission<'_>>,
 ) -> Result<Option<LiteralParts>, String> {
     // Raw literals preserve escapes and brackets exactly, including multiline text.
     let raw_value = if raw.starts_with("@{\"") && raw.ends_with("\"}") && raw.len() >= 5 {
@@ -240,7 +400,7 @@ fn string_literal_parts_clean(
         return Ok(None);
     };
     let offset = value.as_ptr() as usize - raw.as_ptr() as usize;
-    let mut parts = parse_interpolated_string_clean(value, projection.offset(offset))?;
+    let mut parts = parse_interpolated_string_clean(value, projection.offset(offset), admission)?;
     for expression in &mut parts.expressions {
         shift_expression(expression, offset);
     }
@@ -340,6 +500,7 @@ fn observe_segment(
 fn parse_interpolated_string_clean(
     value: &str,
     projection: RawProjection<'_>,
+    admission: Option<&crate::SettingAdmission<'_>>,
 ) -> Result<LiteralParts, String> {
     let mut template = Vec::new();
     let mut expressions = Vec::new();
@@ -353,6 +514,11 @@ fn parse_interpolated_string_clean(
     let mut segment_error = None;
     let mut at = 0;
     while at < value.len() {
+        if let Some(admission) = admission {
+            admission
+                .checkpoint()
+                .map_err(|_| "interpolation operation stopped".to_owned())?;
+        }
         let ch = value[at..].chars().next().unwrap();
         if ch == '\\' {
             at += 1;
@@ -449,6 +615,10 @@ fn parse_interpolated_string_clean(
             let mut cursor = None;
             let mut depth = 1usize;
             let diagnostics = crate::visit_tokens_while(&value[start..], |token| {
+                if admission.is_some_and(|a| a.checkpoint().is_err()) {
+                    return false;
+                }
+
                 if token.kind == crate::TokenKind::Punctuation {
                     match token.text(&value[start..]) {
                         "[" => depth += 1,
@@ -464,6 +634,9 @@ fn parse_interpolated_string_clean(
                 }
                 true
             });
+            if admission.is_some_and(|a| a.is_stopped()) {
+                return Err("interpolation operation stopped".into());
+            }
             if !diagnostics.is_empty() {
                 return Err("invalid string interpolation tokens".into());
             }
@@ -479,7 +652,13 @@ fn parse_interpolated_string_clean(
             let leading = raw_expression.len() - raw_expression.trim_start().len();
             let raw_expression = raw_expression.trim();
             let (source, positions) = splice_with_positions(raw_expression);
-            let parsed = parse_expression(&source);
+            let parsed = match admission {
+                Some(a) => crate::expression_parser::parse_expression_with_admission(&source, a),
+                None => parse_expression(&source),
+            };
+            if admission.is_some_and(|a| a.is_stopped()) {
+                return Err("interpolation operation stopped".into());
+            }
             if !parsed.diagnostics.is_empty() {
                 return Err("invalid string interpolation expression".into());
             }
@@ -737,8 +916,14 @@ fn remap(expression: &mut Expr, positions: &[usize], source: &str) {
     }
 }
 fn retained_string_literal_parts(raw: &str) -> Result<Option<LiteralParts>, String> {
+    retained_string_literal_parts_using(raw, None)
+}
+fn retained_string_literal_parts_using(
+    raw: &str,
+    admission: Option<&crate::SettingAdmission<'_>>,
+) -> Result<Option<LiteralParts>, String> {
     if !raw.contains('\r') {
-        return string_literal_parts_clean(raw, RawProjection::identity(raw));
+        return string_literal_parts_clean(raw, RawProjection::identity(raw), admission);
     }
     let (cooked, positions) = without_cr(raw);
     let mut parts = string_literal_parts_clean(
@@ -748,6 +933,7 @@ fn retained_string_literal_parts(raw: &str) -> Result<Option<LiteralParts>, Stri
             positions: Some(&positions),
             base: 0,
         },
+        admission,
     )?;
     if let Some(parts) = &mut parts {
         for expr in &mut parts.expressions {
@@ -772,13 +958,14 @@ pub fn parse_interpolated_string(value: &str) -> Result<(Vec<u8>, Vec<Expr>), St
                 positions: Some(&positions),
                 base: 0,
             },
+            None,
         )?;
         for expr in &mut parts.expressions {
             remap(expr, &positions, value);
         }
         parts
     } else {
-        parse_interpolated_string_clean(value, RawProjection::identity(value))?
+        parse_interpolated_string_clean(value, RawProjection::identity(value), None)?
     };
     Ok((
         std::mem::take(&mut parts.template),
@@ -895,3 +1082,207 @@ mod tests {
 #[cfg(test)]
 #[path = "literal_lexical_shape_tests.rs"]
 mod lexical_shape_tests;
+
+#[cfg(test)]
+mod admitted_interpolation_tests {
+    use super::*;
+    use std::{
+        cell::Cell,
+        sync::{
+            atomic::{AtomicUsize, Ordering},
+            Arc,
+        },
+    };
+    #[test]
+    fn admitted_literal_parts_preserve_original_projection_anchors_and_warm_owner() {
+        for raw in [
+            "\"before [callee(2)] after\"",
+            "\"prefix\r [outer(\\\r\n    \"[inner()]\")] end\"",
+            "@\"raw [not_a_child()]\"",
+            "\"é [callee(2)] \\the [name]\"",
+        ] {
+            let native = LiteralText::at(raw.to_owned(), 123);
+            let copy = native.clone();
+            let old = LiteralText::at(raw.to_owned(), 123);
+            let counter = Arc::new(AtomicUsize::new(0));
+            let calls = Cell::new(0);
+            let checkpoint = || {
+                calls.set(calls.get() + 1);
+                Ok(())
+            };
+            let admission = crate::SettingAdmission::new(&counter, 1024 * 1024, &checkpoint);
+            // A tiny known fixture's caller owns the existing reservation until all
+            // aliases drop; the literal helper neither creates nor resets any quota.
+            let lease = admission.reserve(65536).unwrap();
+            native.prepare_parts_admitted(&admission).unwrap();
+            assert_eq!(native.parts(), old.parts());
+            assert!(std::ptr::eq(
+                native.parts().unwrap().unwrap(),
+                copy.parts().unwrap().unwrap()
+            ));
+            let before = calls.get();
+            copy.prepare_parts_admitted(&admission).unwrap();
+            assert_eq!(
+                calls.get() - before,
+                2,
+                "warm literal checks operation but does not reparse children"
+            );
+            assert!(counter.load(Ordering::Acquire) > 0);
+            drop(native);
+            drop(copy);
+            drop(old);
+            drop(lease);
+            assert_eq!(counter.load(Ordering::Acquire), 0);
+        }
+    }
+    #[test]
+    fn admitted_literal_cancellation_leaves_failed_literal_cache_unset_and_retries() {
+        let text = LiteralText::at("\"[callee(1)]\"".into(), 77);
+        let alias = text.clone();
+        let counter = Arc::new(AtomicUsize::new(37));
+        let calls = Cell::new(0);
+        let interrupted = || {
+            let n = calls.get() + 1;
+            calls.set(n);
+            if n >= 9 {
+                Err(std::io::Error::new(
+                    std::io::ErrorKind::Interrupted,
+                    "actual literal child cancellation",
+                ))
+            } else {
+                Ok(())
+            }
+        };
+        let admission = crate::SettingAdmission::new(&counter, 1024 * 1024, &interrupted);
+        let error = text.prepare_parts_admitted(&admission).unwrap_err();
+        assert_eq!(error.kind(), std::io::ErrorKind::Interrupted);
+        assert!(calls.get() >= 9);
+        assert!(text.retained_parts().is_none());
+        assert!(alias.retained_parts().is_none());
+        let original = admission.take_operational_error().unwrap();
+        assert_eq!(original.kind(), std::io::ErrorKind::Interrupted);
+        assert_eq!(original.to_string(), "actual literal child cancellation");
+        assert_eq!(
+            counter.load(Ordering::Acquire),
+            37,
+            "helper cannot reset shared root credit"
+        );
+        let healthy = || Ok(());
+        let next = crate::SettingAdmission::new(&counter, 1024 * 1024, &healthy);
+        text.prepare_parts_admitted(&next).unwrap();
+        assert_eq!(text.parts().unwrap().unwrap().expressions.len(), 1);
+        assert!(next.take_operational_error().is_none());
+    }
+    #[test]
+    fn admitted_literal_keeps_syntax_errors_deferred_and_does_not_rewalk_nested_ast() {
+        for raw in ["\"[1 +]\"", "\"\\undefined_escape\""] {
+            let native = LiteralText::at(raw.into(), 0);
+            let old = LiteralText::at(raw.into(), 0);
+            let counter = Arc::new(AtomicUsize::new(0));
+            let healthy = || Ok(());
+            let admission = crate::SettingAdmission::new(&counter, 1024 * 1024, &healthy);
+            native.prepare_parts_admitted(&admission).unwrap();
+            assert_eq!(native.parts().unwrap_err(), old.parts().unwrap_err());
+            assert!(matches!(native.retained_parts(), Some(Err(_))));
+            assert!(admission.take_operational_error().is_none());
+        }
+        let native = LiteralText::at("\"[outer(\"[inner()]\")]\"".into(), 0);
+        let counter = Arc::new(AtomicUsize::new(0));
+        let healthy = || Ok(());
+        let admission = crate::SettingAdmission::new(&counter, 1024 * 1024, &healthy);
+        native.prepare_parts_admitted(&admission).unwrap();
+        let parts = native.parts().unwrap().unwrap();
+        let ExprKind::Call { args, .. } = &parts.expressions[0].kind else {
+            panic!()
+        };
+        let ExprKind::Literal(child) = &args[0].kind else {
+            panic!()
+        };
+        assert!(
+            child.retained_parts().is_none(),
+            "owning root's single admitted worklist handles grandchildren"
+        );
+    }
+}
+
+#[cfg(test)]
+mod setting_retention_owner_tests {
+    use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    fn anchor(counter: &Arc<AtomicUsize>, bytes: usize) -> crate::SharedSettingRetention {
+        crate::SharedSettingRetention::new(
+            crate::SettingRootLease::reserve(counter, 1024 * 1024, bytes).unwrap(),
+        )
+    }
+    #[test]
+    fn cloned_literal_keeps_same_credit_after_root_anchor_drops_until_last_alias() {
+        let counter = Arc::new(AtomicUsize::new(0));
+        let held = anchor(&counter, 4096);
+        let text = LiteralText::at("\"[callee(1)]\"".into(), 0);
+        let alias = text.clone();
+        text.attach_setting_retention(&held).unwrap();
+        assert_eq!(text.parts().unwrap().unwrap().expressions.len(), 1);
+        drop(held);
+        drop(text);
+        assert_eq!(counter.load(Ordering::Acquire), 4096);
+        drop(alias);
+        assert_eq!(counter.load(Ordering::Acquire), 0);
+    }
+    #[test]
+    fn foreign_anchor_refuses_and_last_parts_move_keep_credit_until_iterative_cleanup() {
+        let counter = Arc::new(AtomicUsize::new(0));
+        let first = anchor(&counter, 2048);
+        let foreign = anchor(&counter, 1024);
+        let text = LiteralText::at("\"[callee(1)]\"".into(), 0);
+        text.attach_setting_retention(&first).unwrap();
+        text.attach_setting_retention(&first).unwrap();
+        assert_eq!(
+            text.attach_setting_retention(&foreign).unwrap_err().kind(),
+            std::io::ErrorKind::InvalidInput
+        );
+        drop(foreign);
+        let pointer = text.parts().unwrap().unwrap().expressions.as_ptr() as usize;
+        drop(first);
+        let (parts, retention) = text.into_drop_parts();
+        let parts = parts.unwrap();
+        assert_eq!(
+            parts.expressions.as_ptr() as usize,
+            pointer,
+            "move existing children without clone/reparse"
+        );
+        assert_eq!(counter.load(Ordering::Acquire), 2048);
+        crate::setting_drop::drop_literal_parts(parts, retention);
+        assert_eq!(counter.load(Ordering::Acquire), 0);
+    }
+    #[test]
+    fn shifted_surviving_literal_alias_does_not_lose_original_retention() {
+        let counter = Arc::new(AtomicUsize::new(0));
+        let held = anchor(&counter, 1024);
+        let text = LiteralText::at("\"[x]\"".into(), 0);
+        text.attach_setting_retention(&held).unwrap();
+        let mut alias = text.clone();
+        drop(text);
+        drop(held);
+        alias.shift(10);
+        assert_eq!(counter.load(Ordering::Acquire), 1024);
+        drop(alias);
+        assert_eq!(counter.load(Ordering::Acquire), 0);
+    }
+    #[test]
+    fn concurrent_literal_aliases_release_credit_exactly_once() {
+        let counter = Arc::new(AtomicUsize::new(0));
+        let held = anchor(&counter, 4096);
+        let text = LiteralText::at("\"[x]\"".into(), 0);
+        text.attach_setting_retention(&held).unwrap();
+        text.parts().unwrap();
+        let a = text.clone();
+        let b = text.clone();
+        drop(text);
+        drop(held);
+        std::thread::scope(|scope| {
+            scope.spawn(move || drop(a));
+            scope.spawn(move || drop(b));
+        });
+        assert_eq!(counter.load(Ordering::Acquire), 0);
+    }
+}

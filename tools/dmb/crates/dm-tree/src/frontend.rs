@@ -234,6 +234,7 @@ pub struct ColdFrontend {
     source_export_mapping: Arc<source_export_mapping::SourceExportMapping>,
     body_queries: Option<body_queries::BodyQueries>,
     reused_body_queries: bool,
+    setting_expression_queries: Option<std::sync::Weak<dyn SettingExpressionQueries>>,
 }
 
 impl ColdFrontend {
@@ -540,11 +541,14 @@ mod body_code;
 #[path = "frontend_relative_declarations.rs"]
 mod relative_declarations;
 pub use body_code::IssuedBodyCode;
-#[path = "frontend_setting_source.rs"]
-mod setting_source;
 #[path = "frontend_body_queries.rs"]
 mod body_queries;
+#[path = "frontend_setting_source.rs"]
+mod setting_source;
 pub use body_queries::{BodySyntax, BodySyntaxInput, BodySyntaxQueries};
+#[path = "frontend_setting_queries.rs"]
+mod setting_queries;
+pub use setting_queries::{SettingExpressionInput, SettingExpressionQueries};
 #[path = "frontend_body_failure.rs"]
 mod body_failure;
 pub use body_failure::BodySyntaxFailure;

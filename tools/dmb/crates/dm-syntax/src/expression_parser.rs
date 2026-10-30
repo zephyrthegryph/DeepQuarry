@@ -6,6 +6,23 @@ pub fn parse_expression(source: &str) -> ParsedExpr {
     let lexical = lex(source);
     finish_expression(lexical.tokens, lexical.diagnostics)
 }
+/// SAME primary parser for an original literal interpolation child. The
+/// literal producer already identified/spliced this genuine child; no consumer
+/// reconstructs a declaration expression. Caller reserves its scratch first.
+pub(crate) fn parse_expression_with_admission(
+    source: &str,
+    admission: &crate::SettingAdmission<'_>,
+) -> ParsedExpr {
+    if admission.checkpoint().is_err() {
+        return ParsedExpr {
+            expr: None,
+            diagnostics: Vec::new(),
+        };
+    }
+    let lexical = lex(source);
+    finish_expression_with_admission(lexical.tokens, lexical.diagnostics, Some(admission))
+}
+
 /// Existing primary expression parser over already-issued primary body tokens.
 /// No lexer/source scan and no second expression tree is involved.
 pub(crate) fn parse_expression_span_tokens(source: &str, tokens: &[SpanToken]) -> ParsedExpr {
@@ -24,14 +41,89 @@ pub(crate) fn parse_expression_span_tokens(source: &str, tokens: &[SpanToken]) -
 pub(crate) fn parse_expression_tokens(tokens: &[Token]) -> ParsedExpr {
     finish_expression(tokens.to_vec(), Vec::new())
 }
+/// Same primary grammar, admitted native setting entry. The original owner
+/// reserves parser/scratch storage BEFORE calling; this does not grant source
+/// authority or establish a new grammar/stack-coverage claim.
+pub(crate) fn parse_expression_span_tokens_with_admission(
+    source: &str,
+    tokens: &[SpanToken],
+    current_offset: usize,
+    admission: &crate::SettingAdmission<'_>,
+) -> ParsedExpr {
+    let mut owned = Vec::new();
+    for token in tokens {
+        if admission.checkpoint().is_err() {
+            return ParsedExpr {
+                expr: None,
+                diagnostics: Vec::new(),
+            };
+        }
+        let Some(text) = source.get(token.span.range()) else {
+            admission.record_operational_error(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "original setting token range unavailable",
+            ));
+            return ParsedExpr {
+                expr: None,
+                diagnostics: Vec::new(),
+            };
+        };
+        let Some(start) = token.span.start.checked_add(current_offset) else {
+            admission.record_operational_error(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "current setting token offset overflow",
+            ));
+            return ParsedExpr {
+                expr: None,
+                diagnostics: Vec::new(),
+            };
+        };
+        let Some(end) = token.span.end.checked_add(current_offset) else {
+            admission.record_operational_error(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "current setting token end overflow",
+            ));
+            return ParsedExpr {
+                expr: None,
+                diagnostics: Vec::new(),
+            };
+        };
+        owned.push(Token {
+            kind: token.kind,
+            span: Span::new(start, end),
+            text: text.to_owned(),
+        });
+    }
+    finish_expression_with_admission(owned, Vec::new(), Some(admission))
+}
 fn finish_expression(tokens: Vec<Token>, diagnostics: Vec<Diagnostic>) -> ParsedExpr {
+    finish_expression_with_admission(tokens, diagnostics, None)
+}
+fn finish_expression_with_admission(
+    tokens: Vec<Token>,
+    diagnostics: Vec<Diagnostic>,
+    admission: Option<&crate::SettingAdmission<'_>>,
+) -> ParsedExpr {
     let mut parser = ExprParser {
         tokens: expression_tokens(tokens),
         index: 0,
         ternary_then_depth: 0,
         diagnostics,
+        admission,
     };
     let expr = parser.expression(0);
+    if parser.admission.is_some_and(|a| a.is_stopped()) {
+        // A recoverable syntax diagnostic is not the actual operation error.
+        // Discard any partial grammar recovery; the enclosing checked producer
+        // must extract the SAME admission's original IO before publication.
+        if let Some(expression) = expr {
+            crate::setting_drop::drop_expression(expression, None);
+        }
+        return ParsedExpr {
+            expr: None,
+            diagnostics: Vec::new(),
+        };
+    }
     if let Some(token) = parser.peek() {
         parser.diagnostics.push(Diagnostic {
             span: token.span,
@@ -74,6 +166,53 @@ fn expression_tokens(tokens: Vec<Token>) -> Vec<Token> {
     output
 }
 
+// Pratt's left fold can create a deep AST WITHOUT deep parser recursion.
+// Bound its possible error-unwind destructor work against the host's explicit
+// operation stack allowance before another fold. This is never syntax meaning.
+fn admitted_drop_shape(root: &Expr, admission: &crate::SettingAdmission<'_>) -> bool {
+    let mut pending = vec![(root, 1usize)];
+    while let Some((value, depth)) = pending.pop() {
+        if admission.admit_drop_depth(depth).is_err() {
+            return false;
+        }
+        let next = depth.saturating_add(1);
+        match &value.kind {
+            ExprKind::Unary { value, .. }
+            | ExprKind::Group(value)
+            | ExprKind::TypeFilter { value, .. } => pending.push((value, next)),
+            ExprKind::Binary { lhs, rhs, .. } => {
+                pending.push((lhs, next));
+                pending.push((rhs, next));
+            }
+            ExprKind::Conditional {
+                condition,
+                then_value,
+                else_value,
+            } => {
+                pending.push((condition, next));
+                pending.push((then_value, next));
+                pending.push((else_value, next));
+            }
+            ExprKind::Call { callee, args } => {
+                pending.push((callee, next));
+                pending.extend(args.iter().map(|a| (a, next)));
+            }
+            ExprKind::Member { object, .. }
+            | ExprKind::StaticMember { object, .. }
+            | ExprKind::SafeMember { object, .. } => pending.push((object, next)),
+            ExprKind::ObjectInitializer { object, fields } => {
+                pending.push((object, next));
+                pending.extend(fields.iter().map(|(_, a)| (a, next)));
+            }
+            ExprKind::Index { object, index } | ExprKind::SafeIndex { object, index } => {
+                pending.push((object, next));
+                pending.push((index, next));
+            }
+            ExprKind::Ident(_) | ExprKind::TypePath(_) | ExprKind::Literal(_) => (),
+        }
+    }
+    true
+}
 #[derive(Clone, Copy, Eq, PartialEq)]
 enum PostfixMode {
     Expression,
@@ -81,14 +220,15 @@ enum PostfixMode {
     ConstructorMini,
 }
 
-struct ExprParser {
+struct ExprParser<'op> {
+    admission: Option<&'op crate::SettingAdmission<'op>>,
     tokens: Vec<Token>,
     index: usize,
     ternary_then_depth: usize,
     diagnostics: Vec<Diagnostic>,
 }
 
-impl ExprParser {
+impl ExprParser<'_> {
     pub(super) fn peek(&self) -> Option<&Token> {
         self.tokens.get(self.index)
     }
@@ -113,6 +253,11 @@ impl ExprParser {
     }
 
     pub(super) fn expression(&mut self, min_bp: u8) -> Option<Expr> {
+        let admission = self.admission;
+        let _frame = match admission {
+            Some(admission) => Some(admission.parser_frame().ok()?),
+            None => None,
+        };
         let lhs = self.prefix()?;
         self.expression_from(min_bp, lhs, PostfixMode::Expression)
     }
@@ -121,6 +266,12 @@ impl ExprParser {
     // after its FIRST argument list. Later follows bind to the new object.
     fn expression_from(&mut self, min_bp: u8, mut lhs: Expr, mode: PostfixMode) -> Option<Expr> {
         loop {
+            if let Some(admission) = self.admission {
+                if !admitted_drop_shape(&lhs, admission) {
+                    crate::setting_drop::drop_expression(lhs, None);
+                    return None;
+                }
+            }
             if self.ternary_then_depth > 0
                 && self.peek().is_some_and(|token| token.text == ":")
                 && !self.colon_member_before_ternary_separator(&lhs)
@@ -997,5 +1148,50 @@ mod incomplete_tests {
                 "{source}"
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod setting_admission_parser_tests {
+    use super::*;
+    #[test]
+    fn admitted_primary_grammar_keeps_compatibility_tree_and_stops_during_real_parse() {
+        let source = "call(1+2,3+4)";
+        let lexical = crate::lex_spans(source);
+        assert!(lexical.diagnostics.is_empty());
+        let counter = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let polls = std::cell::Cell::new(0);
+        let stop_at = lexical.tokens.len() + 3;
+        let stopped = || {
+            polls.set(polls.get() + 1);
+            if polls.get() == stop_at {
+                Err(std::io::Error::new(
+                    std::io::ErrorKind::Interrupted,
+                    "actual primary parser checkpoint",
+                ))
+            } else {
+                Ok(())
+            }
+        };
+        let admission = crate::SettingAdmission::new(&counter, 1024 * 1024, &stopped);
+        let interrupted =
+            parse_expression_span_tokens_with_admission(source, &lexical.tokens, 0, &admission);
+        assert!(interrupted.expr.is_none());
+        assert!(admission.is_stopped());
+        assert_eq!(
+            polls.get(),
+            stop_at,
+            "stop follows token conversion and original grammar entry"
+        );
+        let actual = admission.take_operational_error().unwrap();
+        assert_eq!(actual.kind(), std::io::ErrorKind::Interrupted);
+        assert_eq!(actual.to_string(), "actual primary parser checkpoint");
+        let healthy = || Ok(());
+        let retry = crate::SettingAdmission::new(&counter, 1024 * 1024, &healthy);
+        let retried =
+            parse_expression_span_tokens_with_admission(source, &lexical.tokens, 0, &retry);
+        assert!(retried.diagnostics.is_empty());
+        assert_eq!(retried.expr, crate::parse_expression(source).expr);
+        assert!(!retry.is_stopped());
     }
 }

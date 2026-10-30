@@ -187,3 +187,96 @@ fn archive_borrows_original_code_and_callable_roster_after_frontend_drops() {
         &identity
     ));
 }
+
+#[test]
+fn original_setting_root_survives_warm_include_offset_with_same_root_and_current_projection() {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    fn selected(
+        front: &ColdFrontend,
+    ) -> (
+        &BodyOccurrence,
+        &dm_ir::ProcedureMetadata,
+        &dm_ir::SymbolicExpression,
+    ) {
+        let body = p_body(front);
+        let metadata = front
+            .snapshot
+            .tree
+            .member(body.member)
+            .unwrap()
+            .metadata
+            .procedure
+            .as_deref()
+            .unwrap();
+        let dm_ir::ProcedureSettingNode::Setting(setting) = &metadata.settings[0] else {
+            panic!("source directive")
+        };
+        (body, metadata, &setting.value)
+    }
+    let p = "/proc/p()\n    set name = \"original\"\n    return 1\n";
+    let mut state = RetainedSemanticTree::default();
+    let before = chunks(&mut state, p, q_chunk("", 2));
+    let (body, metadata, value) = selected(&before);
+    let counter = Arc::new(AtomicUsize::new(0));
+    let checkpoint = || Ok(());
+    let a = dm_syntax::SettingAdmission::with_stack_allowance(
+        &counter,
+        8 * 1024 * 1024,
+        1024 * 1024,
+        &checkpoint,
+    );
+    let old = before
+        .original_setting_source(body, metadata, value)
+        .unwrap()
+        .expression(&a)
+        .unwrap();
+    let shifted = chunks(
+        &mut state,
+        p,
+        q_chunk("// preceding include moved\n\n", 333),
+    );
+    let (current_body, current_metadata, current_value) = selected(&shifted);
+    assert!(Arc::ptr_eq(
+        before.body_code(body).unwrap().identity(),
+        shifted.body_code(current_body).unwrap().identity()
+    ));
+    let new = shifted
+        .original_setting_source(current_body, current_metadata, current_value)
+        .unwrap()
+        .expression(&a)
+        .unwrap();
+    assert!(
+        old.same_root(&new),
+        "offset rebind must not reparse/copy the root"
+    );
+    assert_eq!(old.original_expression(), new.original_expression());
+    assert_ne!(old.current_offset(), new.current_offset());
+    assert_eq!(
+        &before.expanded.text[old.current_span().range()],
+        "\"original\""
+    );
+    assert_eq!(
+        &shifted.expanded.text[new.current_span().range()],
+        "\"original\""
+    );
+    let copied = current_body.clone();
+    assert!(shifted
+        .original_setting_source(&copied, current_metadata, current_value)
+        .is_err());
+    let other = Arc::new(AtomicUsize::new(0));
+    let foreign = dm_syntax::SettingAdmission::new(&other, 8 * 1024 * 1024, &checkpoint);
+    assert!(
+        matches!(shifted.original_setting_source(current_body,current_metadata,current_value).unwrap().expression(&foreign),
+        Err(dm_syntax::SettingSyntaxFailure::Operational(ref error)) if error.kind()==std::io::ErrorKind::InvalidInput)
+    );
+    drop(before);
+    drop(shifted);
+    drop(state);
+    assert!(
+        counter.load(Ordering::Acquire) > 0,
+        "borrowed aliases retain actual physical owner credit"
+    );
+    drop(old);
+    drop(new);
+    assert_eq!(counter.load(Ordering::Acquire), 0);
+}

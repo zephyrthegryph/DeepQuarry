@@ -18,6 +18,7 @@ pub(super) struct OriginalSettingsBody {
     body: Span,
     owner: Arc<ProcedureMetadata>,
     footprints: Arc<[SettingFootprint]>,
+    roots: dm_syntax::SettingExpressionSlots,
 }
 impl OriginalSettingsBody {
     pub(super) fn owner(&self) -> &Arc<ProcedureMetadata> {
@@ -73,6 +74,7 @@ fn checked_row(
         body,
         owner,
         footprints: rows.into(),
+        roots: Default::default(),
     })
 }
 fn push(out: &mut Vec<OriginalSettingsBody>, row: OriginalSettingsBody) -> Result<(), String> {
@@ -295,6 +297,31 @@ impl OriginalProcedureHeaders {
         }
         Ok((&self.source, tokens))
     }
+    /// The caller already owns an exact current body/code receipt. Reuse the
+    /// SAME original token/reference check before exposing its lazy root slots.
+    pub(crate) fn setting_root_slots(
+        &self,
+        body: Span,
+        owner: &Arc<ProcedureMetadata>,
+        footprint: &SettingFootprint,
+    ) -> Result<&dm_syntax::SettingExpressionSlots, String> {
+        self.setting_value_tokens(body, owner, footprint)?;
+        let rows = self
+            .settings
+            .get()
+            .ok_or("original setting rows unavailable")?;
+        let index = rows
+            .binary_search_by_key(&body.start, |row| row.body.start)
+            .map_err(|_| "original setting body unavailable")?;
+        Ok(&rows[index].roots)
+    }
+    pub(crate) fn visit_setting_roots(&self, mut visit: impl FnMut(&dm_syntax::SettingExpression)) {
+        if let Some(rows) = self.settings.get() {
+            for row in rows {
+                row.roots.visit_storage(|_, _, _| {}, &mut visit);
+            }
+        }
+    }
     pub(super) fn visit_settings_storage(&self, visit: &mut impl FnMut(usize, usize, usize)) {
         if let Some(rows) = self.settings.get() {
             if rows.capacity() > 0 {
@@ -305,6 +332,7 @@ impl OriginalProcedureHeaders {
                 );
             }
             for row in rows {
+                row.roots.visit_storage(&mut *visit, |_| {});
                 let bytes = std::mem::size_of_val(row.footprints.as_ref())
                     + 2 * std::mem::size_of::<usize>();
                 visit(row.footprints.as_ptr() as usize, bytes, bytes);

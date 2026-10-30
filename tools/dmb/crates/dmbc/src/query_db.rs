@@ -18,6 +18,7 @@ mod answer_value_owner;
 #[cfg(test)]
 mod answer_value_owner_tests;
 mod body_syntax;
+mod setting_syntax;
 mod source_answers;
 mod source_question_roster;
 mod source_question_wire;

@@ -974,3 +974,24 @@ remain byte-identical. The last production compile/DreamChecker result is the
 preceding checkpoint; a fresh combined production verification remains required
 before completion. No game client, pins, full suite or compiler publication was
 used. Full toolchain unification remains in progress.
+
+### Canonical setting storage, before caller activation
+
+Original reusable header owners now retain a lazily issued setting-expression
+root with a checked current-source projection. A real include-offset regression
+requires the same original body and root pointers across the rebase, with correct
+new spans. No AST is copied or shifted after publication. Private retention
+anchors preserve body-work charges while literal aliases survive; final cleanup
+uses an iterative worklist. Source identity, counter-domain, cancellation,
+quota and concurrent-drop controls are explicit.
+
+The additive settings-only provider borrows the existing QueryDb weakly, rejects
+foreign rebinding or returned roots, and preserves an actual late cancellation
+before returning success. A valid immutable sub-root completed before the parent
+cancels can be reused on retry. This provider is not yet attached to normal
+requests; Kind4, projected Set consumers and ABI selection remain separate work.
+
+All 46 selected foundation and existing literal regressions pass after fixing one
+incorrect private import. The source tree is merged with master a004b31592. This
+is a checked storage/ownership checkpoint, not settings activation, a fresh
+production compile result or completion of toolchain unification.

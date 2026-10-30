@@ -254,7 +254,8 @@ use declaration_parser::*;
 mod declaration_qualifiers;
 pub use declaration_parser::{
     parse, parse_declaration_skeleton, primary_header_cursors, primary_header_facts,
-    top_level_assignment_index, top_level_assignment_index_from_span_tokens, DeclarationSkeleton, PrimaryHeaderInput,
+    top_level_assignment_index, top_level_assignment_index_from_span_tokens, DeclarationSkeleton,
+    PrimaryHeaderInput,
 };
 pub use declaration_qualifiers::{
     inherit_header_qualifiers, CHECKER_VAR_FINAL, CHECKER_VAR_MASK, CHECKER_VAR_PRIVATE,
@@ -298,3 +299,14 @@ mod parameter_clauses;
 pub use parameter_clauses::{parameter_clause_spans, ParameterClauseSpans};
 mod parameter_expressions;
 pub use parameter_expressions::{ParameterExpressions, ParameterInputSyntax};
+
+mod setting_drop;
+mod setting_prepare;
+pub use setting_prepare::{prepare_setting_expression, SettingSyntaxFailure};
+mod setting_expression;
+pub use setting_expression::{
+    visit_setting_literal_retention, SettingAdmission, SettingExpression, SettingRootLease,
+    SharedSettingRetention,
+};
+mod setting_slots;
+pub use setting_slots::SettingExpressionSlots;
