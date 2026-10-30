@@ -180,7 +180,7 @@
 			declare_report("owns_many(\"[var_name]\", count = [count]): count needs one type in starts = or type =")
 	return entry_make(ENTRY_OWNS_MANY, key, list("var" = var_name, "type" = type, "starts" = starts, "starts_args" = starts_args, "on_destroy" = on_destroy, "copy_on_write" = copy_on_write, "only_if" = only_if, "otherwise" = otherwise, "successor" = successor, "successor_var" = successor_var, "starts_set" = starts_set, "on_lost" = on_lost, "starts_after" = starts_after, "early" = !!early))
 
-/// link_pair(/type::var, /type::var): the macro of code/__defines/engine/declare.dm passes each end as the text it was written as.
+/// link_pair(/type::var, /type::var): the macro of code/defines/engine/declare/declare.dm passes each end as the text it was written as.
 /// `a_many` / `b_many` say an end is a list var (DM has no way to read a var's declared type; the generator will derive it).
 /proc/entry_link(a_text, b_text, hot = FALSE, a_many = FALSE, b_many = FALSE, key = null, a_on_other_deleted = OTHER_CLEAR, b_on_other_deleted = OTHER_CLEAR, a_on_unlink = null, b_on_unlink = null, sparse = FALSE, holds_while = null, a_contributes = null, b_contributes = null, conflict = REPLACE)
 	var/list/a = link_end(a_text)
@@ -191,7 +191,7 @@
 		declare_report("links([a_text], [b_text]): conflict is REPLACE or REFUSE")
 	return entry_make(ENTRY_LINK, key, list("a_type" = a[1], "a_var" = a[2], "b_type" = b[1], "b_var" = b[2], "hot" = hot, "a_many" = a_many, "b_many" = b_many, "a_on_other_deleted" = a_on_other_deleted, "b_on_other_deleted" = b_on_other_deleted, "a_on_unlink" = a_on_unlink, "b_on_unlink" = b_on_unlink, "sparse" = sparse, "holds_while" = holds_while, "a_contributes" = a_contributes, "b_contributes" = b_contributes, "conflict" = conflict))
 
-/// The base of the CAPABILITIES(T) block header (code/__defines/engine/markers.dm): each block is an override of this on T, so a subtype's block
+/// The base of the CAPABILITIES(T) block header (code/defines/engine/declare/markers.dm): each block is an override of this on T, so a subtype's block
 /// does not clash with its parent's. Nothing calls it; the statements of a block are read by `analyze` and compiled for their names and arguments.
 /datum/proc/__capabilities()
 	return

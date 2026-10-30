@@ -1,4 +1,4 @@
-// Expiry (code/__defines/time_now.dm) and FOR_REAL_CONTENTS (code/__defines/containment.dm),
+// Expiry (code/defines/engine/time_now.dm) and FOR_REAL_CONTENTS (code/defines/engine/containment.dm),
 // doc/rewrite/systems.md sections 17 and 18.
 
 /datum/om_test_entity/var/test_until = 0

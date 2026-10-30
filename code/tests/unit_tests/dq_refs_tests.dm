@@ -1,6 +1,6 @@
 // Migration track 1c (doc/rewrite/lifecycle.md LC-refs): /datum/weakref is
 // gone. Live links are relations (code/datums/om/library.dm, read through
-// the accessor macros in code/__defines/om.dm); "remember who it was" refs
+// the accessor macros in code/defines/engine/om.dm); "remember who it was" refs
 // are OM handles (ref_token()/resolve_token()). One test per relation added, plus
 // the handle behaviour weakrefs used to provide.
 

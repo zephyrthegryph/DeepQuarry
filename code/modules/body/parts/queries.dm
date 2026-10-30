@@ -63,7 +63,7 @@
 /obj/item/organ/external/proc/held_organs()
 	return slot_contents(SLOT_ID_PART_ORGANS)
 
-// ---- Organ slots (O-slots, code/__defines/body_parts.dm) ----
+// ---- Organ slots (O-slots, code/defines/content/body_parts.dm) ----
 
 /// Whether this mob's plan hangs its parts from SLOT_ID_PART_ROOT (the root
 /// slot's declared holder, part_slots.dm). Without one, organs sit loose in

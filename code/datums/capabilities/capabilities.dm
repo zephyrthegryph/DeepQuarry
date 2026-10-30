@@ -1,7 +1,7 @@
 // cap_state, capability data and the legacy capability declarations (doc/rewrite/dx_conventions.md §2). The datum
 // interface is in _capability.dm.
 
-/// The one-line declarations of this type (CAPABILITY(T, entry), code/__defines/capabilities.dm): each line adds
+/// The one-line declarations of this type (CAPABILITY(T, entry), code/defines/engine/capabilities.dm): each line adds
 /// one entry after ..(). Collected when the type's table is built (caps_build()).
 /atom/proc/declared_capabilities(list/into)
 	SHOULD_CALL_PARENT(TRUE)

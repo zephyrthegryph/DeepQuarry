@@ -1,5 +1,5 @@
 // Registry declarations (roadmap L3). One line per registry; ids are in
-// code/__defines/registries.dm. Types join with REGISTRY_MEMBERSHIP() next to
+// code/defines/engine/registries.dm. Types join with REGISTRY_MEMBERSHIP() next to
 // their own definition.
 
 REGISTRY_DECLARE(ai_cores_deactivated, REGISTRY_AI_CORES_DEACTIVATED)

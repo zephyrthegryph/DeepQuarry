@@ -1,6 +1,6 @@
 // Kernel measurement: fixed log-spaced histograms.
 //
-// KM_HIST_BINS bins of milliseconds (KM_HIST_MIN_MS, KM_HIST_RATIO in code/__defines/kernel_measure.dm) give
+// KM_HIST_BINS bins of milliseconds (KM_HIST_MIN_MS, KM_HIST_RATIO in code/defines/engine/kernel_measure.dm) give
 // p50 / p95 / p99 with no sort and no copy, by the same rank walk Kernel.performance_window() uses over its
 // 1%-wide tick histogram. Adding a sample is one bin lookup and no allocation.
 //

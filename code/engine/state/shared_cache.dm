@@ -1,5 +1,5 @@
 // Shared keyed caches: the miss path, invalidation, interning, LRU bounds, stats and the
-// test-build mutation guard (doc/rewrite/caching.md; macros in code/__defines/shared_cache.dm).
+// test-build mutation guard (doc/rewrite/caching.md; macros in code/defines/engine/shared_cache.dm).
 //
 // Global-init order is unspecified, so nothing here has an initializer that could run after
 // a cache registered itself: the registry and the policy maps are created lazily.

@@ -36,7 +36,7 @@
 
 /// 5. LEGACY: the foundation form is `membership(joins = REGISTRY_X)` in a CAPABILITY() line
 /// (code/datums/capabilities/library/membership.dm).
-/// Registry membership (code/__defines/registries.dm). The same as REGISTRY_MEMBERSHIP() for an
+/// Registry membership (code/defines/engine/registries.dm). The same as REGISTRY_MEMBERSHIP() for an
 /// ordinary registry; for a conditional one it also joins at materialize (was an unconditional
 /// registry_join() in Initialize()). Leaving is automatic either way.
 #define DECLARE_REGISTRY(PATH, ID) REGISTRY_MEMBERSHIP(PATH, ID); _LIFECYCLE_DECL(PATH, add_registry(ID))

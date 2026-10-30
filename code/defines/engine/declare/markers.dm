@@ -7,12 +7,12 @@
 // the contracts under code/contracts/ already carry in the final form.
 //
 // Only markers whose names are free on master are defined here. TRACKED(), SYSTEM_DEF() and MSG_DEF() already exist as
-// legacy forms with other shapes (code/__defines/capabilities.dm, MC.dm, messages.dm); a final-form line that uses one of
+// legacy forms with other shapes (code/defines/engine/capabilities.dm, MC.dm, messages.dm); a final-form line that uses one of
 // those is written inside a comment until its engine replaces the legacy macro (doc/rewrite/engine_contracts.md,
 // "Name clashes").
 //
 // `analyze gen` reads these from source and writes the DM they stand for into code/engine/_generated/ (E1: ids.dm and declare.dm; E5:
-// reads.dm and system_accessors.dm). SCHEMA is a real macro (code/__defines/engine/declare.dm): a tracked var's setter is DM code.
+// reads.dm and system_accessors.dm). SCHEMA is a real macro (code/defines/engine/declare/declare.dm): a tracked var's setter is DM code.
 
 /// One composition root per type: registers T's entry list with the table builder. `analyze gen declare` writes T's declared_entries().
 /// A block: the marker line is a header (an override of /datum/proc/__capabilities() on T, which nothing calls) and the entries are its indented statements, one per line, no

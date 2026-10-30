@@ -1,5 +1,5 @@
 // Floor decals: map markers painted onto the floor under them at map time (map_resolver(),
-// code/__defines/map_resolvers.dm). They never become atoms; the turf keeps the image in its
+// code/defines/engine/map_resolvers.dm). They never become atoms; the turf keeps the image in its
 // decals list (so it re-applies them after cutting overlays). Use them rather than distinct
 // icon_states when mapping interesting floor designs. Painted at runtime by floor_decal_paint().
 GLOBAL_LIST_EMPTY(floor_decals)

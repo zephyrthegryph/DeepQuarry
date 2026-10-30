@@ -989,4 +989,4 @@
 
 /// ui_shape(operating, channels = list_of(row(...))): the declared shape of the window's data. `analyze gen ui_types` reads the declaration from source and
 /// writes the TypeScript type of the window (each field's schema range as the doc comment of its field); at runtime the entry carries no data. It is a
-/// macro (code/__defines/engine/declare.dm) so that a field can be written `name = schema`, which no proc taking `...` accepts as a named argument.
+/// macro (code/defines/engine/declare/declare.dm) so that a field can be written `name = schema`, which no proc taking `...` accepts as a named argument.

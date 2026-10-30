@@ -1,7 +1,7 @@
 // the Area Power Controller (APC), formerly Power Distribution Unit (PDU)
 // one per area, needs wire connection to power network through a terminal
 //
-// All APC #defines live in code/__defines/apc.dm.
+// All APC #defines live in code/defines/content/apc.dm.
 //
 // The distributor (channels, cell charging, load shedding) runs in Rust
 // (verdigris/domains/power/src/apc.rs) every power step. The APC never polls:

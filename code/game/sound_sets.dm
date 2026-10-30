@@ -1,7 +1,7 @@
 // Sound and effect sets (doc/rewrite/systems.md section 16).
 // A sound set is a named group of files with a default volume, vary, extrarange and falloff.
 // play_sfx() picks a file and calls the playsound() core; get_sfx() resolves a set id to a file.
-// Ids are defined in code/__defines/sfx.dm. One row per set, below.
+// Ids are defined in code/defines/host/sfx.dm. One row per set, below.
 
 /datum/sound_set
 	var/id

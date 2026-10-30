@@ -3,7 +3,7 @@
 //
 // Every fixture is declared twice. The TYPE is real DM today (plain vars and a placeholder proc or two), so the proofs can create
 // it and read what the contracts promise. The CAPABILITIES composition root is written in the final syntax, as a declaration
-// marker that expands to nothing (code/__defines/engine/markers.dm): it is the executable specification each engine builds
+// marker that expands to nothing (code/defines/engine/declare/markers.dm): it is the executable specification each engine builds
 // against, and the table builder (E1) and generators (E5) read it from here the day they exist. Nothing compiles it before then.
 // Final-form lines that use a name already taken on master (TRACKED, SYSTEM_DEF, MSG_DEF) are written as comments for the same reason.
 //

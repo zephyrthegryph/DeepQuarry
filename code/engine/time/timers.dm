@@ -7,7 +7,7 @@
 //   - weak: every datum argument is captured as a handle (handles.dm) and resolved when the timer fires. A gone argument arrives as null and
 //     the call still runs (cleanup such as vend_ready = TRUE always happens; counted in sched.timers_nulled and logged). after_if_alive()
 //     opts a pure effect out: its call is dropped instead (counted in sched.timers_dropped).
-// No datum per timer: a timer is six slots in the owner's record (OM_TIMER_STRIDE, code/__defines/engine/time.dm) and the owner has one
+// No datum per timer: a timer is six slots in the owner's record (OM_TIMER_STRIDE, code/defines/engine/declare/time.dm) and the owner has one
 // deadline on the wheel (the soonest of its timers), as tasks do. The list is sorted by id (binary search finds a timer); a per-owner
 // min-heap of (due, id) pairs, rec.timer_heap, finds the next due timer in O(log n) with lazy deletion (cancelled timers leave stale heap
 // entries that are skipped when they surface and compacted when they outnumber the live ones).

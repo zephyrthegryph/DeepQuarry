@@ -106,7 +106,7 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 		AM.loc = null // ALLOW(containment): last-resort nullspace after moveToNullspace() threw
 
 /// The destroy transaction's steps, in order: the one declared sequence (DESTROY_STEP_* in
-/// code/__defines/lifecycle.dm). destroy_transaction_phases() runs exactly this list; a step's
+/// code/defines/engine/lifecycle.dm). destroy_transaction_phases() runs exactly this list; a step's
 /// place in it is the only thing that decides when it runs (dq_destroy_sequence_tests.dm checks
 /// the invariants: phases never go backwards except the effects' second half, and the contents
 /// release check sits right after the contents steps, before links dispose of the ledger).

@@ -1,4 +1,4 @@
-// AUTOHISS_* defines promoted to code/__defines/preferences.dm so they're shared
+// AUTOHISS_* defines promoted to code/defines/host/preferences.dm so they're shared
 // with /datum/preference/text/human/autohiss.apply_to_human().
 
 /mob/living/carbon/human/Login()

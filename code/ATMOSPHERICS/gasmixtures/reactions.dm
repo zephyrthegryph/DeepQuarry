@@ -1,4 +1,4 @@
-//Most other defines used in reactions are in code/__defines/atmospherics_linda/reactions.dm
+//Most other defines used in reactions are in code/defines/content/atmospherics_linda/reactions.dm
 #define SET_REACTION_RESULTS(amount) air.reaction_results[type] = amount
 
 // Gas reactions as transformations (doc/rewrite/proposals/transformations.md, wave 2). A reaction is a type under /transformation/gas with a

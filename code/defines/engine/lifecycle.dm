@@ -51,7 +51,7 @@
 #define DESTROY_STEP_NAME(step) (list("guard", "leave registries", "mind", "unbind", "dematerialize", "contents: resolve slots", "contents: spill owned", "contents: check released", "links", "teardown", "effects", "destroy", "effects after", "scrub", "postcondition")[step])
 
 // ---- Declared references ----
-// Ownership kinds and their declarations live in code/__defines/ownership.dm
+// Ownership kinds and their declarations live in code/defines/engine/ownership.dm
 // (doc/rewrite/ownership.md).
 
 /// Declared destruction effects (phase 6): DATA is a `new /datum/destroy_effects_data(...)`

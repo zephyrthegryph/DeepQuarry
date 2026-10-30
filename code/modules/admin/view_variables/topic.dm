@@ -1,4 +1,4 @@
-// The View Variables href entry (doc/rewrite/final_api.html section 13, namespaces in code/__defines/vv.dm).
+// The View Variables href entry (doc/rewrite/final_api.html section 13, namespaces in code/defines/host/vv.dm).
 // Per-type actions are ops of the VV'd datum in the VV_TOPIC namespace (topic_in(VV_TOPIC, key)), beside the type's vv_get_dropdown(); the admin
 // client's own VV actions (here, topic_basic.dm, topic_list.dm) are ops of the admin holder in VV_ADMIN_TOPIC, whose handler is a /datum/admins proc
 // that calls the /client proc of the same name, which takes the link's values as typed parameters.
