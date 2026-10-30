@@ -117,6 +117,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_index)
 	var/has_clicks = FALSE
 	/// Topic namespace ("" for plain hrefs) -> topic key -> plan, made on first use (op_topic_table()).
 	var/list/topic_plans
+	/// How many op items (centry of kind op, built or not) the index was built over: a subtype's table that only appends numbers its own ops from here.
+	var/op_items = 0
 
 /datum/type_table
 	/// The compiled ops of the table (made on first use), and the ones each granted capability definition would bring to a holder of it, by definition key.
@@ -124,13 +126,24 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_index)
 	var/list/op_def_indexes
 
 /// Entries (centry) of an index being built, with the extend items that address them.
-/proc/op_index_build(datum/type_table/T, list/items, list/extends, report = TRUE)
+/// `base`, when given, is the index of a table whose items are a prefix of `items` (op_inherited_base()), `base_items` long: its plans are shared and only
+/// the items after the prefix are built. A plan is immutable and reads only its own centry, the extends, its owner's definition and its position.
+/proc/op_index_build(datum/type_table/T, list/items, list/extends, report = TRUE, datum/op_index/base = null, base_items = 0)
 	RETURN_TYPE(/datum/op_index)
 	var/datum/op_index/index = new
-	index.by_key = list()
-	index.ordered = list()
 	var/seq = 0
-	for(var/datum/centry/C as anything in items)
+	var/list/fresh_plans = null
+	if(base)
+		index.by_key = base.by_key.Copy()
+		index.ordered = base.ordered.Copy()
+		index.has_clicks = base.has_clicks
+		seq = base.op_items
+		fresh_plans = list()
+	else
+		index.by_key = list()
+		index.ordered = list()
+	for(var/item_index in (base_items + 1) to length(items))
+		var/datum/centry/C = items[item_index]
 		var/datum/entry/E = C.item
 		if(!istype(E) || E.kind != ENTRY_OP)
 			continue
@@ -143,7 +156,10 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_index)
 			index.ordered -= index.by_key[P.key]
 		index.by_key[P.key] = P // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
 		index.ordered += P // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
-	for(var/datum/op_plan/clicked as anything in index.ordered)
+		if(base)
+			fresh_plans += P
+	index.op_items = seq
+	for(var/datum/op_plan/clicked as anything in (base ? fresh_plans : index.ordered))
 		for(var/datum/entry/part/bind/B as anything in clicked.bindings)
 			if(B.bind_kind == BIND_CLICKS)
 				index.has_clicks = TRUE
@@ -153,7 +169,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_index)
 		if(istype(E) && E.kind == ENTRY_CLICK_ORDER)
 			chains += E
 	if(length(chains))
-		for(var/datum/op_plan/P as anything in index.ordered)
+		// The inherited plans already took these same chains (a table with a click order of its own never reuses its parent's index).
+		for(var/datum/op_plan/P as anything in (base ? fresh_plans : index.ordered))
 			op_plan_take_click_orders(P, chains)
 	return index
 
@@ -219,7 +236,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_index)
 	return FALSE
 
 /// The compiled ops of a type table.
-/proc/op_index_of_table(datum/type_table/T)
+/// `parent`, while table_compile() validates a table, is the table it was compiled from (its index is reused where op_inherited_base() allows).
+/proc/op_index_of_table(datum/type_table/T, datum/type_table/parent = null)
 	RETURN_TYPE(/datum/op_index)
 	if(T.op_index)
 		return T.op_index
@@ -228,8 +246,38 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_index)
 		var/datum/entry/E = C.item
 		if(istype(E) && E.kind == ENTRY_EXTEND)
 			extends += C
-	T.op_index = op_index_build(T, T.items, extends) // ALLOW(ownership): the compiled index belongs to its table: it is dropped with it
+	var/datum/op_index/base = parent ? op_inherited_base(T, parent) : null
+	T.op_index = op_index_build(T, T.items, extends, TRUE, base, base ? length(parent.items) : 0) // ALLOW(ownership): the compiled index belongs to its table: it is dropped with it
 	return T.op_index
+
+GLOBAL_VAR_INIT(op_plans_inherited, 0)
+GLOBAL_VAR_INIT(op_plans_built, 0)
+
+/// The parent's op index when T's index is the parent's plus ops of its own, else null (build every plan). That holds when T's items begin with
+/// exactly the parent's items (the same centry objects), the rest hold no extend() and no click_order() (they would reach the inherited ops), and every
+/// capability definition the parent held is still the same (an op's plan reads its owner's definition).
+/proc/op_inherited_base(datum/type_table/T, datum/type_table/parent)
+	var/datum/op_index/base = parent.op_index
+	if(!base)
+		return null
+	var/list/mine = T.items
+	var/list/theirs = parent.items
+	var/count = length(theirs)
+	if(length(mine) < count)
+		return null
+	for(var/i in 1 to count)
+		if(mine[i] != theirs[i])
+			return null
+	for(var/i in (count + 1) to length(mine))
+		var/datum/centry/C = mine[i]
+		var/datum/entry/E = C.item
+		if(istype(E) && (E.kind == ENTRY_EXTEND || E.kind == ENTRY_CLICK_ORDER))
+			return null
+	for(var/key in parent.caps)
+		if(T.caps[key] != parent.caps[key])
+			return null
+	GLOB.op_plans_inherited += length(base.ordered)
+	return base
 
 /// The compiled ops a capability definition brings when it is granted to a holder of table T (T's extends reach them by key, CAP_X and tag).
 /proc/op_index_of_def(datum/type_table/T, datum/capability/def)
@@ -273,6 +321,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_index)
 /// Compiles one op entry and everything addressed to it into a plan.
 /proc/op_plan_build(datum/type_table/T, datum/centry/C, datum/entry/E, list/extends, seq, report)
 	RETURN_TYPE(/datum/op_plan)
+	GLOB.op_plans_built++
 	var/datum/op_plan/P = new
 	P.key = C.eff_key || E.key
 	P.base_key = E.key
@@ -627,8 +676,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/op_index)
 
 /// Compiles every op of a table (reporting each problem at table build) and checks the one rule that spans ops: two ops of a type with the same
 /// input, the same intent and the same tier are a build error naming both lines.
-/proc/op_validate_table(datum/type_table/T)
-	var/datum/op_index/index = op_index_of_table(T)
+/proc/op_validate_table(datum/type_table/T, datum/type_table/parent = null)
+	var/datum/op_index/index = op_index_of_table(T, parent)
 	var/list/plans = index.ordered
 	for(var/pair in op_clash_candidates(plans))
 		var/datum/op_plan/A = plans[pair[1]]
