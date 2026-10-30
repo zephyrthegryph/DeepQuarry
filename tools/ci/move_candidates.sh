@@ -10,7 +10,8 @@
 #             names it (a path, or a directory that contains it)
 #   toolref   tool source (tools/analyze/src, tools/build, tools/ci scripts) names its path or a directory containing it
 #   allow     it has an ALLOW(...) annotation
-#   oldform   it uses Destroy(), spawn, sleep, do_after, INVOKE_ASYNC, Initialize, LateInitialize, Topic, a New() override, /verb/,
+#   oldform   it uses Destroy(), spawn, sleep, do_after, INVOKE_ASYNC, Initialize, LateInitialize, Topic, a New() override on an atom type (a plain datum's New() is its
+#             constructor, final_api section 6), a verb off /client (the verb set holds client, OOC and admin commands only),
 #             flow_ask or CHANGE_ (comments are ignored)
 #   systemowner  it defines procs on /datum/system/X and the file declaring SYSTEM_DEF(X) stays in the old tree (system_boundary B3
 #             wants the procs in the owner's folder; a move together is fine)
