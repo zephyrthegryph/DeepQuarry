@@ -66,7 +66,7 @@ CAPABILITIES(/obj/random/mob)
 		return
 	var/faction = MAP_VAR(P, varedits, mob_faction)
 	if(faction)
-		M.faction = faction
+		M.set_faction(faction)
 	var/ghostjoin = MAP_VAR(P, varedits, mob_ghostjoin)
 	if(ghostjoin && rng.chance(ghostjoin))
 		M.set_ghostjoin(1)
@@ -593,7 +593,7 @@ CAPABILITIES(/obj/random/outside_mob)
 	if(!isanimal(this_mob))
 		return
 	var/obj/random/outside_mob/P = path
-	this_mob.faction = MAP_VAR(P, varedits, faction)
+	this_mob.set_faction(MAP_VAR(P, varedits, faction))
 	if (this_mob.minbodytemp > 200) // Temporary hotfix. Eventually I'll add code to change all mob vars to fit the environment they are spawned in.
 		this_mob.minbodytemp = 200
 	//wander the mobs around so they aren't always in the same spots

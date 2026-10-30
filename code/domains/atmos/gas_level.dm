@@ -119,15 +119,20 @@ CAPABILITIES(/datum/cap_data/gas_level)
 
 /// Points `holder`'s level `def` at its mixture now: nothing is re-armed when it is the one already watched, and the var is settled either way.
 /proc/gas_level_arm(atom/holder, datum/capability/lib/gas_level/def)
-	var/datum/cap_data/gas_level/data = gas_level_data(holder, def)
-	if(!data)
-		return
 	if(isnull(def.into) || !hascall(holder, "set_[def.into]") || (isnull(def.above) == isnull(def.below)))
 		declare_report("gas_level on [holder.type]: it needs a tracked var `into` with a setter, and exactly one of above and below")
 		return
+	var/datum/gas_mixture/mixture = gas_air_of(holder, def.air)
+	// A level with no mixture and no record has nothing to watch or to disarm: it only settles its var (a door's five levels all start so,
+	// the air they read is pointed at after init). The record is made when a mixture first arrives.
+	if(!mixture && !gas_level_data(holder, def, FALSE))
+		def.settle(holder, null)
+		return
+	var/datum/cap_data/gas_level/data = gas_level_data(holder, def)
+	if(!data)
+		return
 	rel_set(data, nameof(data.holder), holder)
 	data.into_var = def.into
-	var/datum/gas_mixture/mixture = gas_air_of(holder, def.air)
 	var/id = mixture?.arena_id()
 	if(id == data.armed_id && (data.watch || isnull(id)))
 		def.settle(holder, mixture)

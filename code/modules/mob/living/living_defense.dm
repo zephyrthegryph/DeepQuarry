@@ -134,7 +134,7 @@
 	return react_to_entry(DAMAGE_ENTRY_EXPLOSION, severity)
 
 /mob/living/blob_act(obj/structure/blob/B)
-	if(stat == DEAD || faction == B.faction)
+	if(stat == DEAD || mob_rules_of(src).faction == B.faction)
 		return
 
 	var/damage = rand(30, 40)

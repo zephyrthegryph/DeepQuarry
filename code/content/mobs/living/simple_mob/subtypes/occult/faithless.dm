@@ -5,7 +5,6 @@
 	icon_living = "faithless"
 	icon_dead = "faithless_dead"
 
-	faction = FACTION_FAITHLESS
 
 
 	endurance = 50
@@ -41,6 +40,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/faithless)
+	configure(mob_rules(faction = FACTION_FAITHLESS))
 	configure(mob_nature(can_pain_emote = FALSE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_kind(mob_class = MOB_CLASS_DEMONIC))
@@ -67,8 +67,10 @@ CAPABILITIES(/mob/living/simple_mob/faithless)
 
 // Cult Variant
 /mob/living/simple_mob/faithless/cult
-	faction = FACTION_CULT
 	supernatural = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/faithless/cult)
+	configure(mob_rules(faction = FACTION_CULT))
 
 /mob/living/simple_mob/faithless/cult/cultify()
 	return

@@ -30,7 +30,6 @@ They're also cool, and Rykka/Nyria wrote this uwu
 	icon_dead = "yeen_dead"
 	has_eye_glow = FALSE // Change this to true for fun spooky eye glow in darkness. <3
 	minbodytemp = 175 // Make hyenas able to survive freezing cold. Someone criticize me later uwu
-	faction = "yeen" // gon fight any other mobs. grr
 	endurance = 125 // not as tanky as a spider for obvious reasons, but not a pushover.
 	pass_flags = PASSTABLE
 	movement_cooldown = 0 // Yeen go fast - nah, yeen still slower. gottagofast.
@@ -144,6 +143,7 @@ They're also cool, and Rykka/Nyria wrote this uwu
 	emote_hear = list("yawns", "cackles", "playfully yaps")
 
 CAPABILITIES(/mob/living/simple_mob/animal/hyena)
+	configure(mob_rules(faction = "yeen"))
 	configure(living_rules(vore_capacity = 3, say_list_type = /datum/say_list/hyena))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	configure(mob_kind(attack_cooldown = 2))

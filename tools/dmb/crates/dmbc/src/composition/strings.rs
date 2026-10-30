@@ -2,10 +2,20 @@
 use super::*;
 use std::sync::Arc;
 
-#[derive(Default)]
+#[derive(Default, PartialEq, Eq)]
 struct BaseIndex {
     buckets: HashMap<u128, u32>,
     collisions: HashMap<u128, Vec<u32>>,
+}
+impl BaseIndex {
+    /// Bucket selector for the shared pool: sizes plus an order-independent fold of the contents.
+    fn fingerprint(&self) -> u64 {
+        let mut fold = (self.buckets.len() as u64) ^ ((self.collisions.len() as u64) << 32);
+        for (hash, id) in &self.buckets {
+            fold ^= (*hash as u64).wrapping_add((*hash >> 64) as u64).wrapping_mul(31).wrapping_add(u64::from(*id));
+        }
+        fold
+    }
 }
 #[derive(Clone)]
 pub(super) struct StringSeed {
@@ -62,10 +72,15 @@ impl StringIndex {
         let base = self
             .base
             .get_or_insert_with(|| {
-                Arc::new(BaseIndex {
+                static POOL: std::sync::OnceLock<crate::shared_pool::Pool<BaseIndex>> = std::sync::OnceLock::new();
+                let built = BaseIndex {
                     buckets: std::mem::take(&mut self.buckets),
                     collisions: std::mem::take(&mut self.collisions),
-                })
+                };
+                // A second session of the same output builds an equal index; keep one allocation for both.
+                let fingerprint = built.fingerprint();
+                POOL.get_or_init(crate::shared_pool::Pool::new)
+                    .share("string_index", fingerprint, built)
             })
             .clone();
         StringSeed { len, base }

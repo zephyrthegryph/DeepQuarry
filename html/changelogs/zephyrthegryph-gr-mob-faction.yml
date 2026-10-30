@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Mob faction is a mob_rules() type trait; code writes it with set_faction() and reads mob_rules_of(M).faction"

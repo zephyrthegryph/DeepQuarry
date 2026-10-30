@@ -1154,6 +1154,19 @@ impl WorldBuilder {
         }
     }
 
+    /// Registers component `C` like [`add_component`](Self::add_component) and turns on its row write stamps
+    /// ([`World::row_stamp`]): for a kind whose rows other code caches results over.
+    pub fn add_stamped_component<C: Component>(&mut self) -> KindId {
+        let k = self.add_component::<C>();
+        let entry = self.kinds[usize::from(k)]
+            .as_any()
+            .downcast_ref::<KindEntry<C>>()
+            .expect("kind type");
+        let main = entry.main;
+        self.main.get_mut(main).enable_stamps();
+        k
+    }
+
     /// Registers component `C` (idempotent). Its rows live in the phase its
     /// `owner` names; every kind is watchable, and conserved fields join
     /// the conservation check of any quantity declared with
@@ -2256,6 +2269,19 @@ impl World {
             .as_any()
             .downcast_ref::<KindEntry<C>>()?;
         entry.value(&self.sim, &self.main, entity).ok()
+    }
+
+    /// The write stamp of `entity`'s `C` row (`None`: no such row, or `C` was not registered with
+    /// [`WorldBuilder::add_stamped_component`]). It moves on every change to the row, whoever writes it (DM, a bridge, a
+    /// law), and never repeats; a row that is unbound and bound again gets a fresh one.
+    #[must_use]
+    pub fn row_stamp<C: Component>(&self, entity: EntityId) -> Option<u64> {
+        let k = self.kind_of::<C>()?;
+        let entry = self.kinds[usize::from(k)]
+            .as_any()
+            .downcast_ref::<KindEntry<C>>()?;
+        let mk = self.main.get(entry.main);
+        (mk.rows.holds(entity) && mk.is_stamping()).then(|| mk.stamp(entity.index()))
     }
 
     /// Every entity currently holding component `C`, ascending by index. A

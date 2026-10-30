@@ -21,7 +21,6 @@
 	has_eye_glow = TRUE
 	pass_flags = PASSTABLE
 
-	faction = FACTION_SPACE_GHOST
 	endurance = 50
 	movement_cooldown = 0
 
@@ -68,6 +67,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_ghost)
+	configure(mob_rules(faction = FACTION_SPACE_GHOST))
 	configure(living_rules(delete_on_death = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_movement(hovering = TRUE))
@@ -94,7 +94,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_ghost)
 	if(needs_reload)
 		reload_count++
 
-	P.faction = faction
+	P.set_faction(mob_rules_of(src).faction)
 	playsound(src, projectilesound, 80, 1)
 
 /mob/living/simple_mob/vore/alienanimals/space_ghost
@@ -114,7 +114,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_ghost)
 	icon_dead = "space_ghost_dead"
 	pass_flags = PASSTABLE
 
-	faction = FACTION_SPACE_GHOST
 	endurance = 5
 	movement_cooldown = -1
 
@@ -171,6 +170,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_ghost)
 		src.injure(INJURY_BURN, 1, source = T) // Light sears it.
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/spooky_ghost)
+	configure(mob_rules(faction = FACTION_SPACE_GHOST))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(death_message = "fades away!"))

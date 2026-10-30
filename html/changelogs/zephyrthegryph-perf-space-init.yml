@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Atom init no longer enters (or times) engine init steps a type's plan has no work for"

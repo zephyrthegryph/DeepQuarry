@@ -1,0 +1,36 @@
+/mob/living/simple_mob/humanoid/clown
+	clown
+	name = "clown"
+	desc = "A denizen of clown planet"
+	tt_desc = "E Homo sapiens corydon" //this is an actual clown, as opposed to someone dressed up as one
+	icon_state = "clown"
+	icon_living = "clown"
+	icon_dead = "clown_dead"
+	icon_gib = "clown_gib"
+
+
+	loot_list = list(/obj/item/bikehorn = 100)
+
+	response_help = "pokes"
+	response_disarm = "gently pushes aside"
+	response_harm = "hits"
+
+	harm_intent_damage = 8
+	melee_damage_lower = 10
+	melee_damage_upper = 10
+	attacktext = list("attacked")
+	attack_sound = SFX_ITEMS_BIKEHORN
+
+	organ_names = /datum/decl/mob_organ_names/clown
+
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/clown)
+	configure(mob_rules(faction = FACTION_CLOWN))
+	configure(living_rules(say_list_type = /datum/say_list/clown))
+
+/datum/say_list/clown
+	speak = list("HONK", "Honk!", "Welcome to clown planet!")
+	emote_see = list("honks")
+
+/datum/decl/mob_organ_names/clown
+TYPE_TABLE(/datum/decl/mob_organ_names/clown, mob_organ_hit_zones, list("head", "torso", "pie-hole", "honker", "left funny bone", "right funny bone", "left foot", "right foot", "unmentionables"))

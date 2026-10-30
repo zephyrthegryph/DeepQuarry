@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Containment ledger serial var renamed to last_serial and two sparse_get()?[] reads moved through a local, so DreamMaker compiles them"

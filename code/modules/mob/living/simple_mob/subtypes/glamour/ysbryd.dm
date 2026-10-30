@@ -43,7 +43,6 @@
 								"I can see in your eyes you wish to be free, so step forward and become one with me."
 	)
 
-	faction = FACTION_GLAMOUR
 
 	vore_bump_chance = 25
 	vore_digest_chance = 50

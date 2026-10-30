@@ -15,7 +15,6 @@
 	icon_dead = "beedead"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/alchemistbee)
 
-	faction = "terror" //Ai seemed bugged during test, and it fighting the book bats might be niche but nice
 
 	endurance = 250
 	movement_cooldown = 0
@@ -50,6 +49,7 @@
 
 //bluenom
 CAPABILITIES(/mob/living/simple_mob/vr/alchemistbee)
+	configure(mob_rules(faction = "terror"))
 	configure(living_rules(vore_capacity = 6, use_modern_ai = TRUE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel

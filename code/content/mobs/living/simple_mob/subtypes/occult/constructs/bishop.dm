@@ -6,7 +6,6 @@
 	name = "Bishop"
 	real_name = "Bishop"
 	construct_type = "Bishop"
-	faction = "purity"
 	desc = "A medium sized construct of the purity worshippers mechanical followers, sturdy and deadly, these constructs are commanded by an archbishop, tasked with patrolling and eliminating threats to their flock."
 	icon_state = "bishop"
 	icon_living = "bishop"
@@ -24,6 +23,9 @@
 	construct_spells = list(/datum/spell/targeted/construct_advanced/crippling_beam,
 							/datum/spell/targeted/construct_advanced/banishment
 							)
+
+CAPABILITIES(/mob/living/simple_mob/construct/bishop)
+	configure(mob_rules(faction = "purity"))
 
 
 //	environment_smash = 1	// Whatever this gets renamed to, Wraiths need to break things
@@ -44,7 +46,6 @@ TYPE_TABLE(/datum/decl/mob_organ_names/wraith, mob_organ_hit_zones, list("body",
 	name = "Archbishop"
 	real_name = "Archbishop"
 	construct_type = "Archbishop"
-	faction = "purity"
 	desc = "A large sized construct of the purity worshippers mechanical followers, one of their most advanced, it is the right hand of purification, dedicated to the pursuit of eradicating those who cause harm their charge."
 	icon_state = "archbishop"
 	icon_living = "archbishop"
@@ -62,6 +63,9 @@ TYPE_TABLE(/datum/decl/mob_organ_names/wraith, mob_organ_hit_zones, list("body",
 	//	environment_smash = 1	// Whatever this gets renamed to, Harvesters need to break things
 
 	attack_sound = SFX_WEAPONS_PIERCE
+
+CAPABILITIES(/mob/living/simple_mob/construct/bishop/arch)
+	configure(mob_rules(faction = "purity"))
 
 /datum/decl/mob_organ_names/wraith
 TYPE_TABLE(/datum/decl/mob_organ_names/wraith, mob_organ_hit_zones, list("body", "eye", "crystaline spike", "left claw", "right claw"))

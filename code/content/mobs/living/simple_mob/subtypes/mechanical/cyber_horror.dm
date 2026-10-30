@@ -7,7 +7,6 @@
 	icon_dead = "cyber_horror_dead"
 	icon_gib = "cyber_horror_dead"
 
-	faction = "synthtide"
 
 	endurance = 175
 
@@ -31,6 +30,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror)
+	configure(mob_rules(faction = "synthtide"))
 	configure(living_rules(say_list_type = /datum/say_list/cyber_horror))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_movement(hovering = TRUE))

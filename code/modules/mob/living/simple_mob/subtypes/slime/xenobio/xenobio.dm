@@ -239,7 +239,7 @@
 	if(untamable_inheirit)
 		baby.untamable = untamable
 	baby.untamable_inheirit = untamable_inheirit
-	baby.faction = faction
+	baby.set_faction(mob_rules_of(src).faction)
 	for(var/mob/living/friend as anything in friends)
 		rel_add(baby, nameof(baby.friends), friend)
 

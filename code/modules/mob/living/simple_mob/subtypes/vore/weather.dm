@@ -29,7 +29,6 @@
 	vore_pounce_maxhealth = 100
 	vore_standing_too = TRUE
 	grab_resist = 100
-	faction = FACTION_ECLIPSE
 	size_multiplier = 2
 	var/regenration_rate = -15
 
@@ -38,6 +37,7 @@
 		)
 
 CAPABILITIES(/mob/living/simple_mob/vore/fossiltank)
+	configure(mob_rules(faction = FACTION_ECLIPSE))
 	configure(living_rules(vore_capacity = 1))
 	configure(movable_motion(unacidable = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE))
@@ -122,7 +122,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/fossiltank)
 	vore_standing_too = TRUE
 	grab_resist = 100
 
-	faction = FACTION_TYR_ANT
 
 	loot_list = list(/obj/item/melee/jellyfishwhip  = 100,
 		/obj/item/cell/slime/jellyfish  = 100,
@@ -138,6 +137,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/fossiltank)
 /mob/living/simple_mob/vore/boss_jellyfish/var/atom/chain_target
 
 CAPABILITIES(/mob/living/simple_mob/vore/boss_jellyfish)
+	configure(mob_rules(faction = FACTION_TYR_ANT))
 	configure(living_rules(vore_capacity = 1, delete_on_death = TRUE))
 	configure(movable_motion(unacidable = TRUE))
 	ref_one(nameof(chain_target), /atom)

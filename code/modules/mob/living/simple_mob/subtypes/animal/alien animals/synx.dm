@@ -59,7 +59,6 @@
 	)
 	var/eyes
 //TODO: Add more customization options, these are pretty scarce
-	faction = "Synx"
 
 
 	endurance = 75 //Lowered from 150. 150 is wayyy too high for a noodly stealth predator. - Lo
@@ -684,13 +683,15 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 ////////////////PET VERSION/////////////
 ////////////////////////////////////////
 /mob/living/simple_mob/animal/synx/ai/pet
-	faction = "Cargonia" //Should not share a faction with those pesky non station synxes.//This is so newspaper has a failchance
 	name = "Bob"
 	desc = "A very regular pet."
 	tt_desc = "synxus pergulus"
 	glow_range = 4
 	glow_toggle = 1
 	player_msg = "You aren't supposed to be in this. Wrong mob."
+
+CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet)
+	configure(mob_rules(faction = "Cargonia"))
 
 /mob/living/simple_mob/animal/synx/ai/pet/load_default_bellies()
 	. = ..()
@@ -725,6 +726,7 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 /mob/living/simple_mob/animal/synx/ai/pet/holo
 
 CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/holo)
+	configure(mob_rules(faction = "neutral"))
 	configure(living_rules(vore_capacity = 2, delete_on_death = TRUE))
 	configure(butchery_rules(meat_type = TRAIT_NONE, meat_amount = 0))
 
@@ -757,7 +759,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/holo)
 	icon_gib = null
 	alpha = 127
 	speak = list("SX System Online", "Who is there?", "What is that thing?!")
-	faction = "neutral"//Can be safely bapped with newspaper.
 	melee_damage_lower = 0 //Holos do no damage
 	melee_damage_upper = 0
 	//Vore Section
@@ -839,7 +840,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/greed/synth)
 	return "SYN-KinC-([R.number(100, 999)])"
 
 /mob/living/simple_mob/animal/synx/ai/pet/greed/synth/goodboy
-	faction = "neutral"
+
+CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/greed/synth/goodboy)
+	configure(mob_rules(faction = "neutral"))
 
 /mob/living/simple_mob/animal/synx/ai/pet/diablo
 	name = "diablo"
@@ -861,7 +864,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/diablo)
 	icon_state = "synx_pet_rainbow"
 	icon_living = "synx_pet_rainbow"
 	icon_gib = null
-	faction = "clown"
 	melee_damage_lower = 1
 	melee_damage_upper = 1
 	//environment_smash = 0
@@ -874,6 +876,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/diablo)
 	vore_escape_chance = 100
 
 CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/clown)
+	configure(mob_rules(faction = "clown"))
 	configure(living_rules(vore_capacity = 10))
 
 ////////////////////////////////////////
@@ -984,6 +987,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx/scp)
 	name = realname
 
 CAPABILITIES(/mob/living/simple_mob/animal/synx)
+	configure(mob_rules(faction = "Synx"))
 	configure(living_rules(vore_capacity = 2, parasitic = TRUE))
 	configure(mob_movement(bump = SIMPLE_ANIMAL))
 	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset)

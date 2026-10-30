@@ -27,7 +27,6 @@
 	icon_state = "tiger"
 	icon_living = "tiger"
 	icon_dead = "tiger-dead"
-	faction = "test_pack"
 	endurance = 90
 	melee_damage_lower = 8
 	melee_damage_upper = 14
@@ -35,12 +34,15 @@
 	has_hands = FALSE
 
 CAPABILITIES(/mob/living/simple_mob/combat_ai_pack_subject)
+	configure(mob_rules(faction = "test_pack"))
 	configure(living_rules(use_modern_ai = TRUE))
 	configure(mob_nature(can_pain_emote = FALSE))
 	configure(mob_kind(attack_cooldown = 1.2 SECONDS))
 
 /mob/living/simple_mob/combat_ai_pack_subject/focus
-	faction = "test_pack_focus"
+
+CAPABILITIES(/mob/living/simple_mob/combat_ai_pack_subject/focus)
+	configure(mob_rules(faction = "test_pack_focus"))
 
 /datum/unit_test/proc/pack_mob(dx, type = /mob/living/simple_mob/combat_ai_pack_subject)
 	var/mob/living/simple_mob/S = allocate(type, ai_floor(dx))

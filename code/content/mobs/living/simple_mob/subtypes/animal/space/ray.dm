@@ -36,7 +36,6 @@
 	icon_rest = "ray_rest"
 	icon_gib = "ray_gib"
 
-	faction = FACTION_RAY
 	endurance = 125
 	movement_cooldown = 0 // Carp go fast
 
@@ -58,6 +57,7 @@
 	var/knockdown_chance = 66
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/ray)
+	configure(mob_rules(faction = FACTION_RAY))
 	configure(living_rules(say_list_type = /datum/say_list/space_ray))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/ray, meat_amount = 5))
 	configure(mob_movement(hovering = TRUE))

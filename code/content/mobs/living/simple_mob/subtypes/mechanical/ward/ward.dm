@@ -12,7 +12,6 @@
 	response_help   = "pets"
 	response_disarm = "swats away"
 	response_harm   = "punches"
-	faction = FACTION_WARDS // Needed as most human mobs are in neutral faction. The owner is generally except from any ward hostility regardless.
 
 	organ_names = /datum/decl/mob_organ_names/ward
 
@@ -26,6 +25,7 @@
 	var/mob/living/owner = null // The mob that made the ward, if any. Used to ensure the ward does not interfere with its creator.
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/ward)
+	configure(mob_rules(faction = FACTION_WARDS))
 	configure(living_rules(delete_on_death = TRUE))
 	ref_one(nameof(owner), /mob/living)
 	configure(mob_movement(hovering = TRUE))

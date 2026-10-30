@@ -52,6 +52,15 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/stat_contrib)
 	var/stacks_spec = 1
 	var/part
 	var/serial = 0
+	/// "[serial]" and "ct:[serial]", made once by set_serial(): the keys of this entry's record rows, read on every evaluation.
+	var/serial_text
+	var/row_key
+
+/// Gives the entry its serial and the texts built from it.
+/datum/stat_contrib/proc/set_serial(number)
+	serial = number
+	serial_text = "[number]"
+	row_key = "ct:[number]"
 
 /// One dependent of an input key: a stat to recompute, or a contributes_to entry to re-evaluate.
 /datum/stat_dep
@@ -170,14 +179,14 @@ PROC_SUMMARY(/proc/stat_type_build) // vars[] / call() dispatcher: the walk cann
 			continue
 		if(entry.kind == "factors")
 			var/datum/stat_contrib/table_contrib = stat_factors_from(E, entry, C)
-			table_contrib.serial = --serial
+			table_contrib.set_serial(--serial)
 			I.ct_entries += table_contrib // ALLOW(ownership): a flyweight the declaration engine builds once per type and never mutates
 			stat_index_table_inputs(E, I, table_contrib)
 			continue
 		var/datum/stat_contrib/contrib = stat_contrib_from(E, entry, C, I, T)
 		if(!contrib)
 			continue
-		contrib.serial = --serial
+		contrib.set_serial(--serial)
 		if(entry.kind == "contributes_to")
 			I.ct_entries += contrib // ALLOW(ownership): a flyweight the declaration engine builds once per type and never mutates
 			stat_index_inputs(E, I, contrib, null)
@@ -565,6 +574,7 @@ PROC_SUMMARY(/proc/stat_collect_tree_inputs) // vars[] / call() dispatcher: the 
 			index = list()
 			GLOB.stat_hop_index[hop.remote_var] = index
 		index += list(list(E.type, hop))
+		GLOB.stat_hop_applicable = list() // the per-reader-type hop lists were built from the index as it was
 		// The relation itself changing (the reader now names another entity) recomputes the reader too.
 		stat_register_input(E, I, hop.rel_var, stat_id, contrib)
 		return

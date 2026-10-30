@@ -23,7 +23,6 @@
 	icon_living = "skeleton"
 	icon_dead = "skeleton_dead"
 
-	faction = FACTION_SPACE_SKELETON
 	endurance = 100
 	movement_cooldown = 1
 	movement_sound = SFX_EFFECTS_SKELETON_WALK //VERY IMPORTANT
@@ -72,6 +71,7 @@
 	vore_default_item_mode = IM_DIGEST
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/skeleton)
+	configure(mob_rules(faction = FACTION_SPACE_SKELETON))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/skeleton))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_kind(death_message = "falls down and stops moving..."))

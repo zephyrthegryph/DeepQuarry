@@ -308,7 +308,12 @@ snap_syntax_ok() { # <dir>: every script in it parses; prints the first failure
 }
 SELF_UPDATE_BAD=""
 SELF_UPDATE_LAST="${DQ_TRAIN_REEXEC_AT:-0}"
-SELF_SIG="${DQ_TRAIN_TEST_SELF_SIG:-$(git hash-object --no-filters "$SELF" 2>/dev/null)}" # the code this process runs (self_update notices a refreshed snapshot)
+# fhash <file>: the git blob id of a file, independent of the caller's working directory. A long-running train process inherits the cwd of
+# the lane checkout that started it; once that checkout is released, reset or its gitdir pruned, a bare `git hash-object` there fails, every
+# snapshot file then read as "changed on master", and the prechecker re-exec'd every ~85 s for 11 hours (28-29 October: 440 re-execs) and
+# never started a second precheck while one ran (self_update_pending was true forever). Run it from $STATE, a plain directory.
+fhash() { ( cd "$STATE" 2>/dev/null || cd / || exit 1; git hash-object --no-filters -- "$1" 2>/dev/null ); }
+SELF_SIG="${DQ_TRAIN_TEST_SELF_SIG:-$(fhash "$SELF")}" # the code this process runs (self_update notices a refreshed snapshot)
 # Between cycles, never in one: when a script of the snapshot differs from origin/master's copy, refresh the snapshot from origin/master
 # (git show, no checkout), check that it parses, and exec the new dq_train.sh with the same arguments. The run lock and the integrator's
 # identity are kept (DQ_TRAIN_REEXEC=1 makes the new process adopt its own lock). A new version that does not parse is never run: the
@@ -322,10 +327,11 @@ self_update_pending() {
 	local f want cur
 	for f in "${SNAP_FILES[@]}"; do
 		want="$(G rev-parse -q --verify "origin/master:tools/$f" 2>/dev/null)" || continue
-		cur="$(git hash-object --no-filters "$STATE/self/$f" 2>/dev/null)"
+		cur="$(fhash "$STATE/self/$f")"
+		[ -n "$cur" ] || continue # unreadable here (not a difference): never pend a drain on a hash failure
 		[ "$cur" = "$want" ] || return 0
 	done
-	[ -n "$SELF_SIG" ] && [ "$(git hash-object --no-filters "$SELF" 2>/dev/null)" != "$SELF_SIG" ]
+	[ -n "$SELF_SIG" ] && [ "$(fhash "$SELF")" != "$SELF_SIG" ]
 }
 self_update() {
 	[ "${DQ_TRAIN_SELF_UPDATE:-1}" = 1 ] || return 0
@@ -337,13 +343,20 @@ self_update() {
 		if [ -z "$want" ]; then continue; fi # not on master (yet): nothing to refresh to
 		sig="$sig $want"
 		cur=""
-		[ -f "$STATE/self/$f" ] && cur="$(git hash-object --no-filters "$STATE/self/$f" 2>/dev/null)"
+		if [ -f "$STATE/self/$f" ]; then
+			cur="$(fhash "$STATE/self/$f")"
+			if [ -z "$cur" ]; then
+				# cannot hash an existing file: that is a tooling fault, not a master change; never re-exec on it (log once per process)
+				[ "${SELF_HASH_WARNED:-0}" = 1 ] || tlog "WARNING: self-update: cannot hash $STATE/self/$f (cwd $(pwd 2>&1 | head -c 120)); keeping the current scripts"
+				SELF_HASH_WARNED=1; return 0
+			fi
+		fi
 		[ "$cur" = "$want" ] || changed+=("$f")
 	done
 	if [ ${#changed[@]} -eq 0 ]; then
 		# The snapshot is current, but another process of the train (the integrator or the prechecker: both run it) may have refreshed it
 		# after this one started: re-exec into it, or this process keeps running the old code until it exits.
-		if [ -n "$SELF_SIG" ] && [ "$(git hash-object --no-filters "$SELF" 2>/dev/null)" != "$SELF_SIG" ] && [ $(( $(date +%s) - SELF_UPDATE_LAST )) -ge 30 ] \
+		if [ -n "$SELF_SIG" ] && [ "$(fhash "$SELF")" != "$SELF_SIG" ] && [ $(( $(date +%s) - SELF_UPDATE_LAST )) -ge 30 ] \
 			&& d="$(snap_syntax_ok "$STATE/self")"; then
 			tlog "self-update: $SELF was refreshed by another train process; re-exec"
 			export DQ_TRAIN_REEXEC=1 DQ_TRAIN_REEXEC_AT="$(date +%s)"
@@ -384,7 +397,7 @@ precheck_ensure() { # start the prechecker when prechecks are on, lanes are queu
 	# It runs the integrator's snapshot, never a lane's checkout: installing a snapshot here would replace the code a running integrator
 	# runs (an enqueue from a lane's worktree did that once). cmd_ensure installs it before it starts both; the integrator calls this.
 	[ -f "$STATE/self/dq_train.sh" ] || return 0
-	start_detached "$STATE/self/dq_train.sh" "$LOGS/prechecker.out" precheck-run
+	( unset DQ_SLOT_PRIORITY; start_detached "$STATE/self/dq_train.sh" "$LOGS/prechecker.out" precheck-run ) # prechecks keep priority 1 (the integrator exports 0)
 	tlog "prechecker started (detached; lock $STATE/precheck.lock)"
 }
 cmd_ensure() {
@@ -1337,6 +1350,10 @@ select_batch() { # fills CHOSEN from VALID, sized to the test budget
 # test budget counts only the tests that can show an interaction (lane_areas, global_hit above): every lane proved its own tests alone,
 # so a lane that shares no area with the rest of the batch, or with master's changes since its precheck, adds no test time. SKIP_TESTS
 # names the lanes whose own tests do not run in this batch (the smoke set and gameplay set always run).
+moved_heavy() { # <from> <to>: the first heavy path (tools/dq_light_paths.sh) changed between two revisions, nothing when none
+	( . "$(repo_dir)/tools/dq_light_paths.sh" 2>/dev/null || { echo "unknown (no dq_light_paths.sh)"; exit 0; }
+	  G diff --name-only "$1" "$2" | while IFS= read -r f; do light_heavy_path "$f" && echo "$f"; done | head -n 1 )
+}
 select_prechecked() { # <lanes...> in queue order
 	local limit b tip range pm g any_global=0 union base est cand o
 	local -A areas=() inter=() isglobal=()
@@ -1356,7 +1373,14 @@ select_prechecked() { # <lanes...> in queue order
 		# master moved since the lane's precheck: what it changed counts as one more lane of the batch
 		pm="$(qget "$(pre_verdict_file "$b" "$tip")" master)"
 		if [ -n "$pm" ] && [ "$(G rev-parse -q --verify "$pm^{commit}" 2>/dev/null)" ] && [ "$(G rev-parse origin/master)" != "$(G rev-parse "$pm^{commit}")" ]; then
-			if global_hit "$pm..origin/master" || [ -n "$(comm -12 <(lane_areas "$pm..origin/master") <(printf '%s\n' "${areas[$b]}" | sort -u) | awk 'NF' | head -n 1)" ]; then mine=1; fi
+			# Only a heavy change (code, maps, icons, tgui: tools/dq_light_paths.sh) can alter a lane's game tests. Docs, tools and Rust that
+			# master gained since the precheck are not an interaction, even under a "global" path such as tools/build/ (28 October: two
+			# single-lane cycles re-ran the full tests, 914 s each, after tools-only landings). fast_land_more applies the same rule.
+			if [ -n "$(moved_heavy "$pm" origin/master)" ]; then
+				if global_hit "$pm..origin/master" || [ -n "$(comm -12 <(lane_areas "$pm..origin/master") <(printf '%s\n' "${areas[$b]}" | sort -u) | awk 'NF' | head -n 1)" ]; then mine=1; fi
+			else
+				tlog "select: $b: master changed nothing heavy since its precheck (${pm:0:10}..origin/master); no interaction"
+			fi
 		fi
 		for o in "${CHOSEN[@]+"${CHOSEN[@]}"}"; do
 			if [ "$g" = 1 ] || [ -n "$(comm -12 <(printf '%s\n' "${areas[$o]}" | sort -u) <(printf '%s\n' "${areas[$b]}" | sort -u) | awk 'NF' | head -n 1)" ]; then
@@ -1742,7 +1766,11 @@ cmd_run() {
 		lock_take || { echo "dq_train: an integrator is already running (pid $(integrator_pid))"; exit 0; }
 	fi
 	trap 'lock_release; phase "idle"' EXIT
-	tlog "integrator started (pid $$, script $SELF, state $STATE, worktree $WT)"
+	# The integrator's gates (test-build compile, test worlds, cargo) take machine slots at the front of every queue, like the merge worktree
+	# (dq_machine_slots.sh priority 0; machine_slots.ts reads the same variable). train-base is priority 1 by its path, so a landing batch
+	# queued 91-140 s behind prechecks and lane runs for slots in every cycle (28 October). Prechecks stay priority 1: they run in train-preN.
+	export DQ_SLOT_PRIORITY="${DQ_TRAIN_SLOT_PRIORITY:-0}"
+	tlog "integrator started (pid $$, script $SELF, state $STATE, worktree $WT; machine-slot priority $DQ_SLOT_PRIORITY)"
 	local idle=0 rc stalls=0
 	while :; do
 		if ! lock_owned; then LOCK_HELD=0; tlog "the run lock is held by pid $(integrator_pid), not this integrator: exiting without a cycle"; exit 0; fi

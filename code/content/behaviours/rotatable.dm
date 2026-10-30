@@ -1,9 +1,20 @@
 /// Rotation verbs (was /datum/element/rotatable). The atom grants the verbs to itself.
 /atom/movable/proc/make_rotatable(only_flip = FALSE)
+	var/list/rotate_caps = rotate_verb_defs()
 	if(!only_flip)
-		grant(src, granted_verb(/atom/movable/proc/rotate_clockwise), src)
-		grant(src, granted_verb(/atom/movable/proc/rotate_counterclockwise), src)
-	grant(src, granted_verb(/atom/movable/proc/turn_around), src)
+		grant(src, rotate_caps[1], src)
+		grant(src, rotate_caps[2], src)
+	grant(src, rotate_caps[3], src)
+
+/// The three rotation verb grants (clockwise, counterclockwise, turn around), built once: a constructor call builds and interns a
+/// definition, which a per-instance grant at map load paid for every window.
+/proc/rotate_verb_defs()
+	if(!length(GLOB.rotate_verb_defs))
+		GLOB.rotate_verb_defs = list(granted_verb(/atom/movable/proc/rotate_clockwise), granted_verb(/atom/movable/proc/rotate_counterclockwise), granted_verb(/atom/movable/proc/turn_around))
+	return GLOB.rotate_verb_defs
+
+/// Filled by the first rotate_verb_defs() call: the capability tables are not up when the globals are made.
+GLOBAL_LIST_EMPTY(rotate_verb_defs)
 
 /atom/movable/proc/unmake_rotatable()
 	revoke(src, /atom/movable/proc/rotate_clockwise, src)

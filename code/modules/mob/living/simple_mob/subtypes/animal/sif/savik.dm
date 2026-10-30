@@ -21,7 +21,6 @@
 	name = "savik"
 	tt_desc = "S Pistris tellus" //landshark
 	catalogue_data = list(/datum/category_item/catalogue/fauna/savik)
-	faction = FACTION_SAVIK
 
 	icon_state = "savik"
 	icon_living = "savik"
@@ -53,6 +52,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/savik)
+	configure(mob_rules(faction = FACTION_SAVIK))
 	configure(living_rules(say_list_type = /datum/say_list/savik))
 
 /datum/say_list/savik

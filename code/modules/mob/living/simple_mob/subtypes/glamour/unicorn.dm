@@ -23,7 +23,6 @@
 	vore_pounce_maxhealth = 200
 	vore_bump_emote	= "chomps down on"
 
-	faction = FACTION_GLAMOUR
 
 	projectiletype = /obj/item/projectile/beam/rainbow
 	projectilesound = SFX_WEAPONS_SPARKLE
@@ -31,6 +30,7 @@
 	projectile_accuracy = -20
 
 CAPABILITIES(/mob/living/simple_mob/vore/horse/unicorn)
+	configure(mob_rules(faction = FACTION_GLAMOUR))
 	configure(living_rules(vore_capacity = 2, say_list_type = /datum/say_list/horse/unicorn))
 	configure(butchery_rules(meat_amount = 10))
 

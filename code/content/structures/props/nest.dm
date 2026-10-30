@@ -64,7 +64,7 @@ CAPABILITIES(/obj/structure/prop/nest)
 		var/spawn_choice = pick(creature_types)
 		var/mob/living/L = new spawn_choice(spawnpoint)
 		if(den_faction)
-			L.faction = den_faction
+			L.set_faction(den_faction)
 		visible_message(span_warning("\The [L] crawls out of \the [src]."))
 		rel_add(src, nameof(den_mobs), L)
 		tally++

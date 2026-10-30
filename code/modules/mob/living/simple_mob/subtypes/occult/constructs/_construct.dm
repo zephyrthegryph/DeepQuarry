@@ -44,7 +44,6 @@
 
 	armor_spec = "melee=10;bullet=10;laser=10;energy=10;bomb=10;bio=100;rad=100"
 
-	faction = FACTION_CULT
 
 	supernatural = TRUE
 
@@ -89,6 +88,7 @@
 
 // Each construct is numbered.
 CAPABILITIES(/mob/living/simple_mob/construct)
+	configure(mob_rules(faction = FACTION_CULT))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_nature(can_pain_emote = FALSE))
 	setup(PROC_REF(prepare_construct_spells))

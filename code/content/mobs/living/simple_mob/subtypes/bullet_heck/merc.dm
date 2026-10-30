@@ -1,0 +1,58 @@
+/mob/living/simple_mob/mechanical/mecha/eclipse/bomb_mauler
+	name = "damaged mauler"
+	desc = "A strange robotic creature."
+	endurance = 700
+
+	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=30;bio=100;rad=100"
+
+	pilot_type = /mob/living/simple_mob/humanoid/merc/melee/sword/space
+	wreckage = /obj/structure/loot_pile/mecha/gygax/dark/adv
+
+	icon = 'icons/mecha/mecha.dmi'
+	icon_state = "mauler"
+	icon_living = "mauler"
+
+	size_multiplier = 1.5
+	movement_cooldown = 4
+
+
+	specialattackprojectile = /obj/item/projectile/energy/merc_boss
+
+	projectiletype = /obj/item/projectile/energy/merc_boss
+
+	loot_list = list(/obj/item/melee/energy/sword/dualsaber = 100,
+		/obj/item/stock_parts/scanning_module = 80,
+		/obj/item/stock_parts/micro_laser = 80,
+		/obj/item/stock_parts/capacitor = 80,
+		/obj/item/stock_parts/manipulator = 80,
+		/obj/item/stock_parts/matter_bin = 80,
+		/obj/item/prop/deconstructable/gigacell = 100,
+		)
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse/bomb_mauler)
+	configure(mob_rules(faction = FACTION_SYNDICATE))
+
+
+/obj/item/projectile/energy/merc_boss
+	name = "phoronic bolt"
+	icon_state = "arcane_barrage"
+	icon_state = "red_pellet"
+	damage = 20
+	speed = 8
+	crawl_destroy = TRUE
+
+CAPABILITIES(/obj/item/projectile/energy/merc_boss)
+	configure(item_combat(armor_penetration = 0))
+
+/mob/living/simple_mob/mechanical/mecha/eclipse/bomb_mauler/do_special_attack(atom/A, stance)
+	rng_cycle = rand(1,2)
+	switch(attackcycle)
+		if(1)
+			after(src, 0.5 SECONDS, PROC_REF(bomb_lines), with = list(A, 3))
+			attackcycle = 0
+		if(2)
+			after(src, 0.5 SECONDS, PROC_REF(bomb_chaos), with = list(A, 3, 5))
+			attackcycle = 0
+		if(3)
+			after(src, 0.5 SECONDS, PROC_REF(gattlingfire), with = list(A, rng_cycle, 9, 2))
+			attackcycle = 0

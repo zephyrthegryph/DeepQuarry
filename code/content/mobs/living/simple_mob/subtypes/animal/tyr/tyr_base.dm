@@ -8,7 +8,6 @@
 
 	icon = 'icons/mob/tyr.dmi'
 
-	faction = FACTION_TYR
 
 
 	//I know very little of this and yes, I copy and pasted from ants
@@ -25,6 +24,7 @@
 	vore_standing_too = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/animal/tyr)
+	configure(mob_rules(faction = FACTION_TYR))
 	configure(living_rules(vore_capacity = 1))
 	configure(movable_motion(unacidable = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "can_be_drop_pred" = TRUE))

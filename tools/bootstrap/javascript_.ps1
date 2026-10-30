@@ -47,7 +47,7 @@ function Get-Bun {
     $FinalDir = $BunTargetDir
     $TempDir = "$BunTargetDir.tmp-$PID"
     $script:BunTargetDir = $TempDir
-    $script:BunZip = "$TempDirun.zip"
+    $script:BunZip = "$TempDir\bun.zip"
     $BunTargetDir = $TempDir
     $BunZip = $script:BunZip
 
@@ -84,10 +84,10 @@ function Get-Bun {
     } catch {
         # Another bootstrap won the race; use theirs.
         Remove-Item $TempDir -Recurse -Force -ErrorAction SilentlyContinue
-        if (-not (Test-Path "$FinalDirun.exe" -PathType Leaf)) { throw }
+        if (-not (Test-Path "$FinalDir\bun.exe" -PathType Leaf)) { throw }
     }
     $script:BunTargetDir = $FinalDir
-    $script:BunZip = "$FinalDirun.zip"
+    $script:BunZip = "$FinalDir\bun.zip"
 }
 
 # For CPU detection (Bun needs avx2 instructions)

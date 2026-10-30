@@ -975,7 +975,7 @@ MSG_DEF_SELF(player_effects/ai_player, "This cannot be used on player mobs!")
 	if(L.ai_brain)	//Cleaning up the original ai
 		own_clear(L, nameof(/mob/living::ai_brain), OWN_DELETE)	//Only way I could make #TESTING - Unable to be GC'd to stop. del() logs show it works.
 	L.initialize_ai_brain()
-	L.faction = faction
+	L.set_faction(faction)
 	if(stance)
 		L.set_use_stance(stance)
 	if(answer_of(A, "wake"))

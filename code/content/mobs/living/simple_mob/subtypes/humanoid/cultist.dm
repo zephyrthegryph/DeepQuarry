@@ -1,0 +1,938 @@
+////////////////////////////
+//		Basic Cultist
+////////////////////////////
+
+/datum/category_item/catalogue/fauna/cultist
+	name = "Cultists"
+	desc = "The Galactic Awakening unlocked the psionic potential of many \
+	from rim to rim. The first to notice this font of power were those who \
+	were already the faithful devotees of esoteric religions. The rise of Blood \
+	Cultists in service to the Geometer quickly became an intergalactic incident. \
+	Although NanoTrasen and other entities have risen to combat these foes, a \
+	vast array of Hermetic Orders now command frightening power."
+	value = CATALOGUER_REWARD_TRIVIAL
+	unlocked_by_any = list(/datum/category_item/catalogue/fauna/cultist)
+
+// Obtained by scanning all X.
+/datum/category_item/catalogue/fauna/all_cultists
+	name = "Collection - Cultists"
+	desc = "You have scanned a large array of different types of Cultist, \
+	and therefore you have been granted a large sum of points, through this \
+	entry."
+	value = CATALOGUER_REWARD_SUPERHARD
+	unlocked_by_all = list(
+		/datum/category_item/catalogue/fauna/cultist/human,
+		/datum/category_item/catalogue/fauna/cultist/tesh,
+		/datum/category_item/catalogue/fauna/cultist/lizard,
+		/datum/category_item/catalogue/fauna/cultist/caster,
+		/datum/category_item/catalogue/fauna/cultist/initiate,
+		/datum/category_item/catalogue/fauna/cultist/castertesh,
+		/datum/category_item/catalogue/fauna/cultist/elite,
+		/datum/category_item/catalogue/fauna/cultist/magus,
+		/datum/category_item/catalogue/fauna/cultist/hunter
+		)
+
+/mob/living/simple_mob/humanoid/cultist //Do not spawn this on in directly it is simply a base for the rest namely the unique death animations.
+	name = "Cultist"
+	desc = "An awfully frail and ghastly looking individual"
+	tt_desc = "NULL"
+	icon = 'icons/mob/cultists.dmi'
+	icon_state = "initiate"
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
+	configure(mob_rules(faction = "cult"))
+	configure(mob_kind(mob_class = MOB_CLASS_DEMONIC))
+
+/datum/category_item/catalogue/fauna/cultist/human
+	name = "Cultists - Human"
+	desc = "The first wave of zealots faced by many on the Frontier were \
+	human. For a short while it was assumed that humans were somehow more \
+	susecptible to Paracausal influence. Although this belief has long since \
+	been disproven, the large Human population on the Frontier has ensured \
+	that the species is overrepresented amongst the ranks of Cult aggressors."
+	value = CATALOGUER_REWARD_EASY
+
+/mob/living/simple_mob/humanoid/cultist/human
+	name = "cultist"
+	desc = "A fanatical zealot armed with a darkly colored sword."
+	icon_state = "cultist"
+	icon_living = "cultist"
+	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/human)
+
+	status_flags = 0
+
+	response_help = "pokes"
+	response_disarm = "shoves"
+	response_harm = "hits"
+
+	harm_intent_damage = 5
+	attack_injury_kind = INJURY_CUT
+	attacktext = list("slashed", "stabbed")
+	armor_spec = "melee=60;bullet=50;laser=30;energy=80;bomb=30;bio=100;rad=100" // Same armor are cult armor, may nerf since DAMN THAT IS GOOD ARMOR
+	attack_sound = SFX_WEAPONS_BLADESLICE
+
+
+/mob/living/simple_mob/humanoid/cultist/human
+
+/mob/living/simple_mob/humanoid/cultist/human/on_death(gibbed)
+	new /obj/effect/decal/remains/human (src.loc)
+	..()
+	ghostize()
+
+/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt //Teleporting Cultists
+
+
+	var/jaunt_warning = 0.5 SECONDS	// How long the jaunt telegraphing is.
+	var/jaunt_tile_speed = 20		// How long to wait between each tile. Higher numbers result in an easier to dodge tunnel attack.
+
+// In Theory this Jury Rigged Code form Tunneler Spiders Should Allow Wraiths to Jaunt
+	special_attack_min_range = 2
+	special_attack_max_range = 6
+	special_attack_cooldown = 10 SECONDS
+
+/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/do_special_attack(atom/A, stance)
+	ai_busy_begin()
+	// Save where we're gonna go soon.
+	var/turf/destination = get_turf(A)
+	var/turf/starting_turf = get_turf(src)
+
+	// Telegraph to give a small window to dodge if really close.
+	flick("bloodout",A)
+	set_icon_state("bloodout")
+	after(src, jaunt_warning, PROC_REF(do_special_attack_1), with = list(A, destination, starting_turf), keeps_dead = TRUE) // For the telegraphing.
+
+
+/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/proc/do_special_attack_1(atom/A, turf/destination, turf/starting_turf)
+	if(!destination || !starting_turf)
+		ai_busy_end()
+		set_icon_state("bloodin")
+		return FALSE
+
+	// Do the dig!
+	act_message(src, A, null, MSG_OTHERS(span_danger("%U% sinks into a puddle of blood %T%!")))
+	new /obj/effect/decal/cleanable/blood (src.loc)
+	if(A)
+		flick("blood_out",A)
+	set_icon_state("bloodout")
+
+	if(handle_jaunt(destination) == FALSE)
+		ai_busy_end()
+		if(A)
+			flick("bloodin",A)
+		set_icon_state("bloodin")
+		return FALSE
+
+	// Did we make it?
+	if(!(src in destination))
+		ai_busy_end()
+		set_icon_state("bloodin")
+		if(A)
+			flick("bloodin",A)
+		return FALSE
+
+	var/overshoot = TRUE
+
+	// Test if something is at destination.
+	for(var/mob/living/L in turf_contents_of_type(destination, /mob/living))
+		if(L == src)
+			continue
+
+		act_message(src, L, null, MSG_OTHERS(span_danger("%U% suddenly rises from a pool of blood %T%!")))
+		new /obj/effect/decal/cleanable/blood (src.loc)
+		play_sfx(L, SFX_WEAPONS_HEAVYSMASH)
+		L.apply_body_effect(/datum/body_effect/entangled, 1 SECONDS)
+		overshoot = FALSE
+
+	if(!overshoot) // We hit the target, or something, at destination, so we're done.
+		ai_busy_end()
+		set_icon_state("bloodin")
+		if(A)
+			flick("bloodin",A)
+		return TRUE
+
+	// Otherwise we need to keep going.
+	to_chat(src, span_warning("You overshoot your target!"))
+	play_sfx(src, SFX_WEAPONS_PUNCHMISS, 3, extrarange = 0)
+	var/dir_to_go = get_dir(starting_turf, destination)
+	for(var/i = 1 to rand(2, 4))
+		destination = get_step(destination, dir_to_go)
+
+	if(handle_jaunt(destination) == FALSE)
+		ai_busy_end()
+		set_icon_state("bloodin")
+		if(A)
+			flick("bloodin",A)
+		return FALSE
+
+	ai_busy_end()
+	set_icon_state("bloodin")
+	if(A)
+		flick("bloodin",A)
+	return FALSE
+
+// Does the jaunt movement
+/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/proc/handle_jaunt(turf/destination)
+	var/turf/T = get_turf(src) // Hold our current tile.
+
+	// Regular tunnel loop.
+	for(var/i = 1 to get_dist(src, destination))
+		if(stat)
+			return FALSE // We died or got knocked out on the way.
+		if(loc == destination)
+			break // We somehow got there early.
+
+		// Update T.
+		T = get_step(src, get_dir(src, destination))
+		if(T.check_density(ignore_mobs = TRUE))
+			to_chat(src, span_critical("You hit something really solid!"))
+			play_sfx(src, SFX_PUNCH, 1.5)
+			status_at_least(STAT_WEAKENED, 5)
+			apply_body_effect(/datum/body_effect/tunneler_vulnerable, 10 SECONDS)
+			return FALSE // Hit a wall.
+
+		// Get into the tile.
+		forceMove(T)
+
+
+/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/should_special_attack(atom/A)
+	// Make sure its possible for the wraith to reach the target so it doesn't try to go through a window.
+	var/turf/destination = get_turf(A)
+	var/turf/starting_turf = get_turf(src)
+	var/turf/T = starting_turf
+	for(var/i = 1 to get_dist(starting_turf, destination))
+		if(T == destination)
+			break
+
+		T = get_step(T, get_dir(T, destination))
+		if(T.check_density(ignore_mobs = TRUE))
+			return FALSE
+	return T == destination
+
+////////////////////////////
+//		Teshari Cultist
+////////////////////////////
+
+/datum/category_item/catalogue/fauna/cultist/tesh
+	name = "Cultists - Teshari"
+	desc = "Teshari cultists project a curiously sinister air. Perhaps \
+	due to their diminutive stature, these creatures are sometimes not \
+	regarded as genuine threats when compared to their more imposing companions. \
+	To ignore a Teshari fanatic is a fool's errand. Fast, hard to hit, and \
+	tenacious, Teshari form the vanguard of many fanatical assaults."
+	value = CATALOGUER_REWARD_EASY
+
+/mob/living/simple_mob/humanoid/cultist/tesh
+	drag_buckle = FALSE
+	name = "cultist"
+	desc = "A sinister looking hooded Teshari armed with a curved knife."
+	icon_state = "culttesh"
+	icon_living = "culttesh"
+	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/tesh)
+
+
+	status_flags = 0
+
+	response_help = "pokes"
+	response_disarm = "shoves"
+	response_harm = "hits"
+
+	harm_intent_damage = 5
+	attack_armor_pen = 25
+	attack_injury_kind = INJURY_CUT
+	attacktext = list("slashed", "stabbed")
+	armor_spec = "melee=45;bullet=40;laser=30;energy=80;bomb=20;bio=100;rad=100" // Reduced Resistance to Approximate increased Tesh damage.
+	attack_sound = SFX_WEAPONS_BLADESLICE
+
+
+/mob/living/simple_mob/humanoid/cultist/tesh
+
+/mob/living/simple_mob/humanoid/cultist/tesh/on_death(gibbed)
+	new /obj/effect/decal/cleanable/ash (src.loc)
+	..()
+	ghostize()
+
+////////////////////////////
+//		Lizard Cultist
+////////////////////////////
+
+/datum/category_item/catalogue/fauna/cultist/lizard
+	name = "Cultists - Lizard"
+	desc = "The Unathi Kingdom of Moghes has stamped down heavily on the \
+	heretical activities of religious sects not approved by the State. Due \
+	to this, many Unathi seeking religious freedom have fled to the Frontier. \
+	Unfortunately, some of those who took this path have fallen prey to true \
+	evil. Possessing the zeal of the oppressed, Unathi cultists are deadly \
+	fanatics, eager to shred their enemies apart in close quarters, regardless \
+	of what damage they themselves incur."
+	value = CATALOGUER_REWARD_EASY
+
+/mob/living/simple_mob/humanoid/cultist/lizard
+	name = "cultist"
+	desc = "With a knife in each hand, this lizard looks ready to disect you."
+	icon_state = "cultliz"
+	icon_living = "cultliz"
+	endurance = 200
+	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/lizard)
+
+
+	status_flags = 0
+
+	response_help = "pokes"
+	response_disarm = "shoves"
+	response_harm = "hits"
+
+	harm_intent_damage = 5
+	melee_damage_lower = 15	//Ritual Knife
+	melee_damage_upper = 15
+	attack_injury_kind = INJURY_CUT
+	attacktext = list("slashed", "stabbed")
+	armor_spec = "melee=70;bullet=60;laser=30;energy=80;bomb=35;bio=100;rad=100" // Better Armor to match lizard brute resist
+	attack_sound = SFX_WEAPONS_RAPIDSLICE
+	movement_cooldown = 4
+
+
+/mob/living/simple_mob/humanoid/cultist/lizard
+
+/mob/living/simple_mob/humanoid/cultist/lizard/on_death(gibbed)
+	new /obj/effect/decal/remains/unathi (src.loc)
+	..()
+	ghostize()
+
+////////////////////////////
+//		Blood Mage
+////////////////////////////
+
+/datum/category_item/catalogue/fauna/cultist/caster
+	name = "Cultists - Blood Mage"
+	desc = "For those servants of a Cult who possess enough latent ability, \
+	the channelling of Paracausal power is a very real skill to be honed and \
+	exploited. Blood Mages learn to fuel paranatural assaults using their own \
+	life force. Necessarily short lived, these cultists believe that bleeding \
+	themselves dry is a statement of faith. Able to fire beams of dark energy \
+	at their foes, these fanatics should be primarily engaged by PMD response \
+	teams."
+	value = CATALOGUER_REWARD_MEDIUM
+
+/mob/living/simple_mob/humanoid/cultist/caster
+	name = "Blood Mage"
+	desc = "A Robed individual whose hands pulsate with unnatural power."
+	icon_state = "caster"
+	icon_living = "caster"
+	endurance = 150
+	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/caster)
+
+
+	status_flags = 0
+
+	response_help = "pokes"
+	response_disarm = "shoves"
+	response_harm = "hits"
+
+	harm_intent_damage = 5
+	attack_injury_kind = INJURY_CUT
+	attacktext = list("slashed", "stabbed")
+	armor_spec = "melee=50;bullet=30;laser=50;energy=80;bomb=25;bio=100;rad=100" //Armor Rebalanced for Cult Robes.
+	attack_sound = SFX_WEAPONS_RAPIDSLICE
+	projectilesound = SFX_WEAPONS_SPIDERLUNGE
+
+
+/mob/living/simple_mob/humanoid/cultist/caster
+
+/mob/living/simple_mob/humanoid/cultist/caster/on_death(gibbed)
+	new /obj/effect/decal/remains/human (src.loc)
+	new /obj/effect/decal/cleanable/blood/gibs (src.loc)
+	..()
+	ghostize()
+
+////////////////////////////
+//		Blood Initiate
+////////////////////////////
+
+/datum/category_item/catalogue/fauna/cultist/initiate
+	name = "Cultists - Initiate"
+	desc = "After the Awakening, some who thirst for power or belonging \
+	saw an opportunity to have their darker desires fulfilled. These converts \
+	are accepted into the ranks of Cults across the galaxy regardless of whether \
+	they possess psionic potential are not. Those that do ascend through the \
+	ranks, whereas those that don't may still serve as cannon fodder and sacrifices."
+	value = CATALOGUER_REWARD_EASY
+
+/mob/living/simple_mob/humanoid/cultist/initiate
+	name = "Blood Intiate"
+	desc = "A Novice Amongst his betters, he still seems determined to slice you to bits."
+	icon_state = "initiate"
+	icon_living = "initiate"
+	endurance = 150
+	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/initiate)
+
+
+	status_flags = 0
+
+	response_help = "pokes"
+	response_disarm = "shoves"
+	response_harm = "hits"
+
+	harm_intent_damage = 5
+	melee_damage_lower = 15	//Ritual Knife
+	melee_damage_upper = 15
+	attack_injury_kind = INJURY_CUT
+	attacktext = list("slashed", "stabbed")
+	armor_spec = "melee=50;bullet=30;laser=50;energy=80;bomb=25;bio=100;rad=100" //Armor Rebalanced for Cult Robes.
+	attack_sound = SFX_WEAPONS_RAPIDSLICE
+	movement_cooldown = 4
+
+
+/mob/living/simple_mob/humanoid/cultist/initiate
+
+/mob/living/simple_mob/humanoid/cultist/initiate/on_death(gibbed)
+	new /obj/effect/decal/remains/human (src.loc)
+	..()
+	ghostize()
+
+////////////////////////////
+//		Teshari Mage
+////////////////////////////
+
+/datum/category_item/catalogue/fauna/cultist/castertesh
+	name = "Cultists - Teshari Mage"
+	desc = "Similar in skill to their human counter parts, Teshari mages \
+	are regarded as more ferocious combatants. Able to cast paracausal beams \
+	at a rapid pace with ease, Teshari Mages are a priority target of any \
+	response team, and any who discount their threat are quickly shown the \
+	error of their ways."
+	value = CATALOGUER_REWARD_MEDIUM
+
+/mob/living/simple_mob/humanoid/cultist/castertesh
+	drag_buckle = FALSE
+	name = "Teshari Mage"
+	desc = "This Teshari seems to have forsoken weapons for unfanthomable power."
+	icon_state = "castertesh"
+	icon_living = "castertesh"
+	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/castertesh)
+
+
+	status_flags = 0
+
+	response_help = "pokes"
+	response_disarm = "shoves"
+	response_harm = "hits"
+
+	harm_intent_damage = 5
+	attack_injury_kind = INJURY_CUT
+	attacktext = list("slashed", "stabbed")
+	armor_spec = "melee=35;bullet=20;laser=35;energy=60;bomb=20;bio=100;rad=100" //Rebalanced for Robes and Tesh damage
+	attack_sound = SFX_WEAPONS_RAPIDSLICE
+	projectilesound = SFX_WEAPONS_SPIDERLUNGE
+
+
+/mob/living/simple_mob/humanoid/cultist/castertesh
+
+/mob/living/simple_mob/humanoid/cultist/castertesh/on_death(gibbed)
+	new /obj/effect/decal/cleanable/ash (src.loc)
+	..()
+	ghostize()
+
+////////////////////////////
+//		Elite Cultist
+////////////////////////////
+
+/datum/category_item/catalogue/fauna/cultist/elite
+	name = "Cultists - Elite"
+	desc = "Cultists who preceded the Great Awakening are often regarded \
+	with immense respect. Truly devoted, these adherents learned many rites \
+	and rituals before they ever bore true power. As such, Elite Cultists \
+	possess a working knowledge of many arcane arts, and are trusted with \
+	the rare Paracausal artifacts possessed by their orders. From mirror \
+	shields to arcane sets of armor, Elites command fear, and inspire the \
+	fanaticism of their subordinates."
+	value = CATALOGUER_REWARD_MEDIUM
+
+/mob/living/simple_mob/humanoid/cultist/elite
+	name = "Elite Cultist"
+	desc = "A heavily armed cultist with a mirror shield that hurts to look at."
+	icon_state = "cult_elite"
+	icon_living = "cult_elite"
+	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/elite)
+
+	status_flags = 0
+
+	response_help = "pokes"
+	response_disarm = "shoves"
+	response_harm = "hits"
+
+	harm_intent_damage = 5
+	attack_injury_kind = INJURY_CUT
+	attacktext = list("slashed", "stabbed")
+	armor_spec = "melee=60;bullet=50;laser=30;energy=80;bomb=30;bio=100;rad=100" // Same armor are cult armor, may nerf since DAMN THAT IS GOOD ARMOR
+	attack_sound = SFX_WEAPONS_BLADESLICE
+
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/elite)
+	configure(mob_rules(faction = "cult"))
+	configure(living_rules(delete_on_death = TRUE))
+	configure(mob_kind(death_message = "shatters into bone and blood like pieces like the now shattered mirror."))
+	op("cultist_elite_item", item(/obj/item), then(PROC_REF(cultist_elite_interaction_item)))
+	immune_to_incapacitation()
+
+/// Old attackby: shield block.
+/mob/living/simple_mob/humanoid/cultist/elite/proc/cultist_elite_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	. = OP_OK
+	if(combat_of(O).force)
+		if(prob(30))
+			act_message(src, O, null, MSG_OTHERS(span_danger("%U% blocks %T% with its shield!")))
+			if(user)
+				ai_brain.react_to_attack(user)
+			return
+		else
+			return OP_DECLINE
+	else
+		to_chat(user, span_warning("This weapon is ineffective, it does no damage."))
+		act_message(user, src, null, MSG_OTHERS(span_warning("%U% gently taps %T% with %I%.")), item = O)
+
+/mob/living/simple_mob/humanoid/cultist/elite/bullet_act(obj/item/projectile/Proj)
+	if(!Proj)	return
+	if(prob(50))
+		visible_message(span_bolddanger("[Proj] disappears into the mirror world as it hits the shield."))
+		if(Proj.firer)
+			ai_brain.react_to_attack(Proj.firer)
+		return
+	else
+		..()
+
+/mob/living/simple_mob/humanoid/cultist/elite
+
+/mob/living/simple_mob/humanoid/cultist/elite/on_death(gibbed)
+	new /obj/effect/decal/remains/human (src.loc)
+	new /obj/effect/decal/cleanable/blood/gibs (src.loc)
+	new /obj/item/material/shard (src.loc)
+	..()
+	play_sfx(src, SFX_EFFECTS_GLASSBR2)
+	ghostize()
+
+////////////////////////////
+//		Cult Magus
+////////////////////////////
+
+/datum/category_item/catalogue/fauna/cultist/magus
+	name = "Cultists - Blood Magus"
+	desc = "The Blood Magus commands their local chapter with total authority. \
+	These religious leaders possess an unparalleled knowledge of their cult's \
+	secrets, rituals, and tenets. To attain the rank of Magus, a Cultist must \
+	possess great psionic power. Their ability to channel Paracausal energy is \
+	unparalled amongst their peers. Wielding dark gifts granted by darker gods, \
+	the Magus is a priority target in any engagement."
+	value = CATALOGUER_REWARD_MEDIUM
+
+/mob/living/simple_mob/humanoid/cultist/magus
+	name = "Blood Magus"
+	desc = "A leader of the bloody cult and master of the forbidden arts, wielding powers beyond that of mortal men."
+	icon_state = "magus"
+	icon_living = "magus"
+	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/magus)
+
+
+	status_flags = 0
+
+	response_help = "pokes"
+	response_disarm = "shoves"
+	response_harm = "hits"
+
+	harm_intent_damage = 5
+	attack_injury_kind = INJURY_CUT
+	attacktext = list("slashed", "stabbed")
+	armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=100;rad=100" //Super Armor since Boss Mob
+	attack_sound = SFX_WEAPONS_BLADESLICE
+
+	projectilesound = SFX_WEAPONS_SPIDERLUNGE
+	var/obj/item/shield_projector/shields = null
+
+
+/mob/living/simple_mob/humanoid/cultist/magus
+
+/mob/living/simple_mob/humanoid/cultist/magus/on_death(gibbed)
+	new /obj/effect/decal/cleanable/blood/gibs (src.loc)
+	..()
+	ghostize()
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus)
+	configure(mob_rules(faction = "cult"))
+	configure(living_rules(delete_on_death = TRUE))
+	configure(mob_kind(attack_cooldown = 5, death_message = "let's out a dark laugh as it collapses into a puddle of blood."))
+	immune_to_incapacitation()
+	owns_one(nameof(shields), starts = /obj/item/shield_projector/rectangle/automatic/magus)
+
+////////////////////////////
+//		Blood Hunter
+////////////////////////////
+
+/datum/category_item/catalogue/fauna/cultist/hunter
+	name = "Cultists - Blood Hunter"
+	desc = "Whether the Blood Hunter may be considered human still remains \
+	a hotly contested topic. There is further debate regarding whether every \
+	instance of the Blood Hunter is the same entity, or whether this condition \
+	is some manner of Paranatural affliction or status. It is speculated that \
+	the Blood Hunter was once a mortal devotee of the Geometer, and has somehow \
+	ascended to the rank of Paracausal Being. The Blood Hunter is a killer without \
+	peer. If encountered, retreat and contact the PMD immediately."
+	value = CATALOGUER_REWARD_HARD
+
+/mob/living/simple_mob/humanoid/cultist/hunter // This Mob is not meant to be fair, he is not meant to fight regular crew he is to be pitted against heavily armed explo teams to see if he can wipe them out.
+	name = "Blood Hunter" // TO BE CLEAR: DO NOT SPAWN THIS GUY ON THE SHIP/STATION HE WILL MURDER EVERYTHING.
+	desc = "The smell of blood fills the air, how delicious it tastes. Let the hunt begin." // He is a horrifying lovechild of Caleb and a blooborne hunter.
+	icon_state = "hunterb" // He probably shouldn't even have other mobs supporting him.
+	icon_living = "hunterb"
+	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/hunter)
+
+
+	status_flags = 0
+
+	response_help = "pokes"
+	response_disarm = "shoves"
+	response_harm = "hits"
+
+	harm_intent_damage = 5
+	attack_injury_kind = INJURY_CUT
+	attacktext = list("slashed", "stabbed")
+	armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=100;rad=100" //Super Armor since Boss Mob
+	attack_sound = SFX_WEAPONS_BLADESLICE
+
+	projectiletype = /obj/item/projectile/bullet/pellet/shotgun
+
+
+	// loot_list = list(/obj/item/material/butterfly/saw = 100, /obj/item/gun/projectile/shotgun/doublebarrel/sawn/alt = 100) // Downstream
+
+	needs_reload = TRUE
+	reload_max = 2
+	projectilesound = SFX_WEAPONS_GUNSHOT_SHOTGUN
+
+
+/mob/living/simple_mob/humanoid/cultist/hunter
+
+/mob/living/simple_mob/humanoid/cultist/hunter/on_death(gibbed)
+	new /obj/effect/decal/cleanable/blood/gibs (src.loc)
+	..()
+	ghostize()
+
+
+////////////////////////////
+//		Hunter AI
+////////////////////////////
+
+////////////////////////////
+//		Ash Hunter
+////////////////////////////
+
+
+/mob/living/simple_mob/humanoid/cultist/hunter/surt // This Mob is not meant to be fair, he is not meant to fight regular crew he is to be pitted against heavily armed explo teams to see if he can wipe them out.
+	name = "Itinerant Blood Hunter"
+	desc = "This Blood Hunter is far from home. Strange energies course around him, protecting him from the environment. What eldritch influence drew him to this place?" // Blood Hunter on vacation.
+
+	heat_resist = 1 //Might make this 0.75 if 1 is too much resistance for a boss monster. This guy's just a placeholder until we get the Miner in anyways.
+
+
+// === merged from cultist_ch.dm during hard-fork de-suffix (verified no override-order change) ===
+
+/*
+/mob/living/simple_mob/humanoid/cultist
+	endurance = 75
+*/
+/mob/living/simple_mob/humanoid/cultist/human
+	movement_cooldown = 1
+	melee_damage_lower = 15
+	melee_damage_upper = 15
+
+/mob/living/simple_mob/humanoid/cultist/caster
+	movement_cooldown = 1
+	projectiletype = /obj/item/projectile/energy/inversion
+	melee_damage_lower = 15 //Old 7
+	melee_damage_upper = 15
+
+/mob/living/simple_mob/humanoid/cultist/tesh
+	movement_cooldown = -1
+	melee_damage_lower = 15 //Old 7
+	melee_damage_upper = 15
+	endurance = 37
+
+/mob/living/simple_mob/humanoid/cultist/castertesh
+	movement_cooldown = -1
+	projectiletype = /obj/item/projectile/energy/inversion
+	melee_damage_lower = 15
+	melee_damage_upper = 15
+	endurance = 50
+
+/mob/living/simple_mob/humanoid/cultist/elite
+	movement_cooldown = 1
+	melee_damage_lower = 20
+	melee_damage_upper = 20
+
+/mob/living/simple_mob/humanoid/cultist/magus
+	movement_cooldown = 1
+	projectiletype = /obj/item/projectile/energy/inversion
+	endurance = 150 //Old 100
+	melee_damage_lower = 15
+	melee_damage_upper = 15
+
+/mob/living/simple_mob/humanoid/cultist/hunter
+	endurance = 175 //Ehhh, this AI is like mini-boss at best //Old 87
+	movement_cooldown = 0
+	melee_damage_lower = 21	//Saw Cleaver Brutality
+	melee_damage_upper = 21
+
+/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball //Teleporting Cultists, now with fireballs
+	name = "Burning Mage"
+	desc = "An indiuval wrapped up in red robes, with orange highlights, their paws glowing.."
+	icon_state = "fire-fluff"
+	icon_living = "fire-fluff"
+	special_attack_min_range = 4
+	special_attack_max_range = 7
+	special_attack_cooldown = 10 SECONDS
+	movement_cooldown = 0
+
+	harm_intent_damage = 5
+	melee_damage_lower = 7
+	melee_damage_upper = 7
+	projectiletype = /obj/item/projectile/energy/fireball
+
+/mob/living/simple_mob/humanoid/cultist/noodle
+	drag_buckle = FALSE
+	name = "Converted"
+	desc = "An indiuval wrapped up in a makeshift rig, made from fallen cultist."
+	icon_state = "cobra-cultist"
+	icon_living = "cobra-cultist"
+	endurance = 150 //Old 75
+
+
+	status_flags = 0
+
+	response_help = "pokes"
+	response_disarm = "shoves"
+	response_harm = "hits"
+
+	harm_intent_damage = 5
+	melee_damage_lower = 15 //old 7
+	melee_damage_upper = 25 //old 15
+	attack_injury_kind = INJURY_CUT
+	attacktext = list("slashed", "stabbed")
+	armor_spec = "melee=60;bullet=40;laser=60;energy=80;bomb=25;bio=100;rad=100"
+	attack_sound = SFX_WEAPONS_RAPIDSLICE
+	projectiletype = /obj/item/projectile/energy/plasma/vepr
+	projectilesound = SFX_WEAPONS_SPIDERLUNGE
+	movement_cooldown = 2
+
+/obj/item/shield_projector/rectangle/automatic/magus
+	name = "cult shield stone"
+	desc = "A stone wielded by only the most powerful of cult leaders. It projects a shield around the user."
+	icon = 'icons/obj/device.dmi'
+	icon_state = "implant_melted"
+	max_integrity = 100
+	shield_regen_delay = 10 SECONDS
+	shield_regen_amount = 10
+	size_x = 1
+	size_y = 1
+	color = "#f50202"
+	high_color = "#ff0404"
+	low_color = "#690000"
+
+//Nibbler//
+/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball
+	drag_buckle = FALSE
+	vore_active = 1
+	vore_max_size = RESIZE_HUGE
+	vore_min_size = RESIZE_SMALL
+	vore_pounce_chance = 0 // Beat them into crit before eating.
+	vore_icons = null
+
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball)
+	configure(living_rules(vore_capacity = 6))
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
+
+/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball/Login()
+	. = ..()
+	if(!riding_datum)
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+	movement_cooldown = 1
+
+/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball/load_default_bellies()
+	. = ..()
+	var/obj/belly/B = vore_selected_of(src)
+	B.name = "stomach"
+	B.desc = " Through fire and smoke, you have been grappled and shoved head first into a gapping maw. Rippling powerful red flesh dragging deep into the mage's gullet, your frame causing their stomach is swell out against crimson robes. As you're forced to curl up in the stomach, the walls would ripple, flickers of orange dancing as they press and knead against your flesh. Laughter, and gutteral stomach noises would fill your ears as the cultist firmly kneads their hanging gutt, sloshing it  further about."
+
+	B.own_emote_lists()
+	B.set_emote_lists_at(DM_HOLD, list(
+		"Your useless struggling and squirming only causes the cultist to pause, firmly grasping their gut and shoving down on their belly.",
+		"As you lay within the gullet, you would be rocked about as the cultist jaunts around the physical and redspace realm.",
+		"The bloated organ around you groans and rumbles, the flesh rippling as a wave of heat washes over you.",))
+
+	B.own_emote_lists()
+	B.set_emote_lists_at(DM_DIGEST, list(
+		"Your useless struggling would seem to just cause pleasured rubblings and cackling. The taunt stomach jostling around even further, as if attempt to encourage your squirming further.",
+		"Your body would be ushered upwards, you glimpsing the outside world as it looked as if you're about to be released. The cultist then gulps down, sending you plummet back down into the gullet, their taunt belly jiggling as it's walls squish firmly against you..",
+		"Caustic juices splash over to you as the predator's stomach sways, the belly walls rumbling and rippling as they release a loud caustic belch." ,))
+
+
+/mob/living/simple_mob/humanoid/cultist/noodle
+	vore_active = 1
+	vore_max_size = RESIZE_HUGE
+	vore_min_size = RESIZE_SMALL
+	vore_pounce_chance = 0 // Beat them into crit before eating.
+	vore_icons = null
+
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/noodle)
+	configure(mob_rules(faction = "cult"))
+	configure(living_rules(vore_capacity = 6))
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	immune_to_incapacitation()
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
+
+/mob/living/simple_mob/humanoid/cultist/noodle/Login()
+	. = ..()
+	if(!riding_datum)
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+	movement_cooldown = 1
+
+/mob/living/simple_mob/humanoid/cultist/noodle/load_default_bellies()
+	. = ..()
+	var/obj/belly/B = vore_selected_of(src)
+	B.name = "stomach"
+	B.desc = " Through fire and smoke, you have been grappled and shoved head first into a gapping maw. Rippling powerful red flesh dragging deep into the mage's gullet, your frame causing their stomach is swell out against crimson robes. As you're forced to curl up in the stomach, the walls would ripple, and knead against your flesh. Laughter, and gutteral stomach noises would fill your ears as the cultist firmly kneads their hanging gut, sloshing it  further about before shoving you deeper into their system, descending deep within the serpent."
+
+	B.own_emote_lists()
+	B.set_emote_lists_at(DM_HOLD, list(
+		"As you're forced to lay down in the gullet, you can feel each swift and strong movement of their tail. the stomach walls forcing your body to shift alongside it.",
+		"As you shift around, the dark red flesh would ripple, air rushing past you as the beast lets out a thunderous belch.",
+		"As you shift about, the beast lifts their tail and slams it down, trying to encourage you to relax. Your their's.",))
+
+	B.own_emote_lists()
+	B.set_emote_lists_at(DM_DIGEST, list(
+		"Your squirming and thrasing only causes the serpent to curl their tail around your frame, squeeze down on it in sync with the muscles, pressing you further into the caustic acids.",
+		"Your body would swish and slosh in the burbling caustic acid as it nips at your armor and flesh.",
+		"The serpent cultist would let out a lazy out, streching, then remebers your exsistance pressing a claw into the you shaped bulge and grumbling." ,))
+
+
+//Thank you Ears for the teshari bellies
+/mob/living/simple_mob/humanoid/cultist/tesh
+	vore_active = 1
+	vore_max_size = RESIZE_HUGE
+	vore_min_size = RESIZE_SMALL
+	vore_pounce_chance = 0 // Beat them into crit before eating.
+	vore_icons = null
+
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/tesh)
+	configure(mob_rules(faction = "cult"))
+	configure(living_rules(vore_capacity = 6, delete_on_death = TRUE))
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	configure(mob_kind(death_message = "let's out a shrill chirp as his body turns to dust."))
+	immune_to_incapacitation()
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
+
+/mob/living/simple_mob/humanoid/cultist/tesh/Login()
+	. = ..()
+	if(!riding_datum)
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+	movement_cooldown = 1
+
+/mob/living/simple_mob/humanoid/cultist/tesh/load_default_bellies()
+	. = ..()
+	var/obj/belly/B = vore_selected_of(src)
+	B.name = "stomach"
+	B.desc = "Taking advantage of your weakened state, the %pred makes their pounce! The world going dark as the ravenous Teshari forces your battered frame down their throat. It all coming to a stop as you're packed neatly into their steaming guts. Low and content chuckling barely audible over the rising cacophony of the stomach's activity."
+
+	B.own_emote_lists()
+	B.set_emote_lists_at(DM_HOLD, list(
+		"Your body is bounced and jostled as the %pred purses their next prey.  Unimpeded by your weight and eager for more.",
+		"The already oprrssive hold of the %belly restrains you with a heavy clench and squeeze from the hands outside. The %pred securing their catch.",
+		"You're given a heavy squeeze as the stale air is forced out from the %pred giving a crass belch.  Suspending you in a claustrophobic hold until the organ relaxes with more stale air filling the space.",))
+
+	B.own_emote_lists()
+	B.set_emote_lists_at(DM_DIGEST, list(
+		"The bubbling of the carnivorous, little predator's belly cuts off the sounds outside, the greedy walls working in and giving you a fresh coat of enzymes.",
+		"The %pred traces their claws over your form and sings an incantation, and you feel your strength wane as the walls work in with renewed vigor.",
+		"The motion of the %pred's trotting sloshes and sways you from side to side, occasionally coating you in more hot fluids! Eating away your stamina with irragular flexes to allow them to keep eating you away." ,))
+
+
+/mob/living/simple_mob/humanoid/cultist/castertesh
+	vore_active = 1
+	vore_max_size = RESIZE_HUGE
+	vore_min_size = RESIZE_SMALL
+	vore_pounce_chance = 0 // Beat them into crit before eating.
+	vore_icons = null
+
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/castertesh)
+	configure(mob_rules(faction = "cult"))
+	configure(living_rules(vore_capacity = 6, delete_on_death = TRUE))
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	configure(mob_kind(attack_cooldown = 7.5, death_message = "burns away into nothing."))
+	immune_to_incapacitation()
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
+
+/mob/living/simple_mob/humanoid/cultist/castertesh/Login()
+	. = ..()
+	if(!riding_datum)
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+	movement_cooldown = 1
+
+/mob/living/simple_mob/humanoid/cultist/castertesh/load_default_bellies()
+	. = ..()
+	var/obj/belly/B = vore_selected_of(src)
+	B.name = "stomach"
+	B.desc = "Not too long after you hit the ground the caster makes their way to your fallen self.  The ground below you glows a deep red and you sink through the surface, only to find yourself folded tightly in a cramped, slick, and caustic chamber! The mage's chanting barely audible over the sounds of the stomach walls making their claim."
+
+	B.own_emote_lists()
+	B.set_emote_lists_at(DM_HOLD, list(
+		"Your body is bounced and jostled as the %pred purses their next prey.  Unimpeded by your weight and eager for more.",
+		"The already oprrssive hold of the %belly restrains you with a heavy clench and squeeze from the hands outside. The %pred securing their catch.",
+		"You're given a heavy squeeze as the stale air is forced out from the %pred giving a crass belch.  Suspending you in a claustrophobic hold until the organ relaxes with more stale air filling the space.",))
+
+	B.own_emote_lists()
+	B.set_emote_lists_at(DM_DIGEST, list(
+		"The bubbling of the carnivorous, little predator's belly cuts off the sounds outside, the greedy walls working in and giving you a fresh coat of enzymes.",
+		"The %pred traces their claws over your form and sings an incantation, and you feel your strength wane as the walls work in with renewed vigor.",
+		"The motion of the %pred's trotting sloshes and sways you from side to side, occasionally coating you in more hot fluids! Eating away your stamina with irragular flexes to allow them to keep eating you away." ,))
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/human)
+	configure(living_rules(delete_on_death = TRUE))
+	configure(mob_kind(death_message = "let's out a maddening laugh as his body crumbles away."))
+	immune_to_incapacitation()
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/lizard)
+	configure(mob_rules(faction = "cult"))
+	configure(living_rules(delete_on_death = TRUE))
+	configure(mob_kind(attack_cooldown = 7.5, death_message = "hisses as he collapses into a pile of bones."))
+	immune_to_incapacitation()
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/caster)
+	configure(mob_rules(faction = "cult"))
+	configure(living_rules(delete_on_death = TRUE))
+	configure(mob_kind(death_message = "melts into a pile of blood and bones."))
+	immune_to_incapacitation()
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/initiate)
+	configure(mob_rules(faction = "cult"))
+	configure(living_rules(delete_on_death = TRUE))
+	configure(mob_kind(death_message = "lets out a horrified scream as his body crumbles away."))
+	immune_to_incapacitation()
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/hunter)
+	configure(mob_rules(faction = "cult"))
+	configure(living_rules(delete_on_death = TRUE))
+	configure(mob_kind(attack_cooldown = 7.5, death_message = "laughs as he melts away. His laughs echo through the air even after only a dense red goo remains."))
+	immune_to_incapacitation()

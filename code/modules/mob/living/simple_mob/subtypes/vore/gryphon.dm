@@ -8,7 +8,6 @@
 	icon = 'icons/mob/vore64x64.dmi'
 	vis_height = 64
 
-	faction = FACTION_GRYPHON
 	endurance = 200 // Pretty tanky, but not a boss
 	see_in_dark = 8
 
@@ -129,6 +128,7 @@
 		L.status_at_least(STAT_WEAKENED, 2)	//get knocked down, idiot
 
 CAPABILITIES(/mob/living/simple_mob/vore/gryphon)
+	configure(mob_rules(faction = FACTION_GRYPHON))
 	configure(living_rules(vore_icon_bellies = list("stomach", "throat"), vore_capacity_ex = list("stomach" = 1, "throat" = 1), vore_capacity = 2, say_list_type = /datum/say_list/gryphon))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 15))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))

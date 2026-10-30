@@ -9,7 +9,6 @@
 	icon_living = "mouse_gray"
 	icon_dead = "mouse_gray_dead"
 	icon_rest = "mouse_gray_sleep"
-	faction = FACTION_MOUSE_ARMY
 
 	endurance = 50
 
@@ -49,6 +48,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
+	configure(mob_rules(faction = FACTION_MOUSE_ARMY))
 	configure(living_rules(species_sounds = "Mouse"))
 	configure(living_rules(say_list_type = /datum/say_list/mouse))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat))
@@ -282,7 +282,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/stealth)
 	icon = 'icons/mob/mouse_army.dmi'
 	icon_state = "whisker"
 	wreckage = /obj/structure/loot_pile/mecha/mouse_tank
-	faction = FACTION_MOUSE_ARMY
 
 	endurance = 150
 	armor_spec = "melee=25;bullet=20;laser=30;energy=15;bio=100;rad=100"
@@ -292,6 +291,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/stealth)
 	movement_cooldown = 2
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/mouse_tank)
+	configure(mob_rules(faction = FACTION_MOUSE_ARMY))
 	configure(mob_kind(attack_cooldown = 8))
 
 

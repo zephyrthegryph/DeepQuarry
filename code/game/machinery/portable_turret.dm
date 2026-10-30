@@ -724,7 +724,7 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 	if(L.invisibility >= INVISIBILITY_LEVEL_ONE) // Cannot see him. see_invisible is a mob-var
 		return TURRET_NOT_TARGET
 
-	if(faction && L.faction == faction)
+	if(faction && mob_rules_of(L).faction == faction)
 		return TURRET_NOT_TARGET
 
 	// ALLOW(silicon_entry): a target filter, not an op: a turret spares silicons unless told to shoot everything

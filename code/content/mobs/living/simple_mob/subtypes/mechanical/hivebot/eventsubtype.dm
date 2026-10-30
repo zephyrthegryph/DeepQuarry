@@ -136,7 +136,9 @@ CAPABILITIES(/obj/item/projectile/metalball)
 	icon = 'icons/mob/hivebot.dmi'
 	armor_spec = "melee=20;bullet=20;laser=20;energy=20;bomb=20;bio=100;rad=100"
 	size_multiplier = 2
-	faction = FACTION_HIVEBOT
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse/hivebot)
+	configure(mob_rules(faction = FACTION_HIVEBOT))
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/boss
 	name = "central command hivebot"

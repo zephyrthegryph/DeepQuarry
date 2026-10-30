@@ -1,7 +1,9 @@
 /mob/living/simple_mob/animal/passive/lizard/event
 	desc = "This one looks like it is growing huge!"
 	var/amount_grown = 0
-	faction = "lizard"
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/lizard/event)
+	configure(mob_rules(faction = "lizard"))
 
 /mob/living/simple_mob/animal/passive/lizard/event/life_type_post_due()
 	return TRUE

@@ -186,7 +186,8 @@
 
 /mob/living/carbon/proc/get_addiction_to_reagent(reagentid) // returns counter's value or 0
 	SHOULD_NOT_OVERRIDE(TRUE)
-	return sparse_get(src, addiction_counters)?[reagentid]
+	var/list/counters = sparse_get(src, addiction_counters)
+	return counters?[reagentid]
 
 /mob/living/carbon/proc/refresh_all_addictions()
 	SHOULD_NOT_OVERRIDE(TRUE)

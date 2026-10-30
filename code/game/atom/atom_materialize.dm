@@ -32,14 +32,20 @@
 	if(flags & ATOM_MATERIALIZED)
 		return FALSE
 	flags |= ATOM_MATERIALIZED
+	BOOT_PHASE_BEGIN(bp_on)
 	on_materialize()
+	BOOT_PHASE_END(bp_on, "materialize: on_materialize (all hooks)" + BOOT_KIND(src), src)
 	// A ledger built while sandboxed skipped the latency sweep; join it now.
+	BOOT_PHASE_BEGIN(bp_ledger)
 	if(containment_ledger() && latent_contents_enabled())
 		dq_latency_sweep_register(src)
+	BOOT_PHASE_END(bp_ledger, "materialize: latency sweep register" + BOOT_KIND(src), src)
+	BOOT_PHASE_BEGIN(bp_contents)
 	if(ismovable(src))
 		for(var/atom/movable/content as anything in contents)
 			if((content.flags & (ATOM_INITIALIZED|ATOM_MATERIALIZED)) == ATOM_INITIALIZED && !QDELING(content))
 				content.materialize()
+	BOOT_PHASE_END(bp_contents, "materialize: contents (nested)" + BOOT_KIND(src), src)
 	return TRUE
 
 /// Leave the live world. Does nothing if not materialized. A movable takes
@@ -63,21 +69,31 @@
 	SHOULD_NOT_SLEEP(TRUE)
 	// One type-table lookup (atom_type_table.dm) says which of the three this type needs.
 	var/table = atom_type_table(src)
+	BOOT_PHASE_BEGIN(bp_reg)
 	if(table & TYPE_TABLE_JOINS_REGISTRIES)
 		join_registries() // L3: code/__defines/registries.dm
+	BOOT_PHASE_END(bp_reg, "materialize: join_registries" + BOOT_KIND(src), src)
 	// Rules (code/datums/rules/): subscribe the type's rules, if it has any.
+	BOOT_PHASE_BEGIN(bp_rules)
 	if(table & TYPE_TABLE_HAS_RULES)
 		dq_rules_on_materialize(src)
+	BOOT_PHASE_END(bp_rules, "materialize: rule bindings" + BOOT_KIND(src), src)
 	// Object model: attach the type's declared behaviours (code/datums/om/entity.dm).
+	BOOT_PHASE_BEGIN(bp_ent)
 	if(table & TYPE_TABLE_HAS_OM)
 		entity_start(src)
+	BOOT_PHASE_END(bp_ent, "materialize: entity_start" + BOOT_KIND(src), src)
 	// Declared registries, service members, binds, behaviours, periodic work, timers
 	// (code/datums/lifecycle/declarations.dm), after the core joins above.
+	BOOT_PHASE_BEGIN(bp_decl)
 	if(table & TYPE_TABLE_HAS_DECLS)
 		lifecycle_decls_materialize(src, lifecycle_decls_of(src))
+	BOOT_PHASE_END(bp_decl, "materialize: lifecycle_decls_materialize" + BOOT_KIND(src), src)
 	// Keyed relation views (REL_KEYED / KEYED_TARGET, doc/rewrite/ownership.md §4.1).
+	BOOT_PHASE_BEGIN(bp_keyed)
 	if(own_table_of(src).materialize_work)
 		rel_keyed_materialize(src)
+	BOOT_PHASE_END(bp_keyed, "materialize: rel_keyed_materialize" + BOOT_KIND(src), src)
 
 /// The exact inverse of on_materialize(). See the top of this file.
 /atom/proc/on_dematerialize()

@@ -21,7 +21,6 @@
 	tt_desc = "S Carabidae glacios"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/frostfly)
 
-	faction = FACTION_DIYAAB
 
 	icon_state = "firefly"
 	icon_living = "firefly"
@@ -116,6 +115,7 @@
 TYPE_TABLE(/datum/decl/mob_organ_names/frostfly, mob_organ_hit_zones, list("head", "thorax", "abdomen", "left vestigal wing", "right vestigal wing", "left legs", "right legs"))
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/frostfly)
+	configure(mob_rules(faction = FACTION_DIYAAB))
 	configure(living_rules(say_list_type = /datum/say_list/frostfly))
 	configure(mob_kind(attack_cooldown = 1.5 SECONDS))
 	after_init(0, then(PROC_REF(frostfly_pest_ready)))

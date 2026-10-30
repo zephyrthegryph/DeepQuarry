@@ -25,7 +25,7 @@ CAPABILITIES(/mob/living/simple_mob/mechanical)
 	configure(mob_kind(mob_class = MOB_CLASS_SYNTHETIC))
 
 /mob/living/simple_mob/mechanical/speech_bubble_appearance()
-	return faction != "neutral" ? "synthetic_evil" : "machine"
+	return mob_rules_of(src).faction != "neutral" ? "synthetic_evil" : "machine"
 
 
 // === merged from mechanical_vr.dm during hard-fork de-suffix (verified no override-order change) ===

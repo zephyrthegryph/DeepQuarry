@@ -582,7 +582,7 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 	if(threatcount == SAFE_PERP)
 		return SAFE_PERP
 
-	if((ai_brain != null) && ai_brain.hostile && faction != "neutral") // Otherwise Runtime gets killed.
+	if((ai_brain != null) && ai_brain.hostile && mob_rules_of(src).faction != "neutral") // Otherwise Runtime gets killed.
 		threatcount += 4
 	return threatcount
 

@@ -60,7 +60,7 @@
 			if(!eggcount)
 				var/obj/effect/spider/eggcluster/eggs = new egg_type(O, src)
 				rel_add(O, nameof(O.implants), eggs)
-				eggs.faction = faction
+				eggs.faction = mob_rules_of(src).faction
 				to_chat(H, span_critical("\The [src] injects something into your [O.name]!") ) // Oh god its laying eggs in me!
 
 MSG_DEF(spider/webbing, null, span_notice("%U% begins to secrete a sticky substance."))
@@ -194,7 +194,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/nurse)
 	if(locate_within(T, /obj/effect/spider/eggcluster))
 		return // Spamclick protection.
 	var/obj/effect/spider/eggcluster/eggs = new egg_type(T)
-	eggs.faction = faction
+	eggs.faction = mob_rules_of(src).faction
 	fed--
 
 // Variant that 'blocks' light (by being a negative light source).

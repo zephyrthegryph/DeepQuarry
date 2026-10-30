@@ -140,11 +140,11 @@ impl MethodRequest<'_> {
     pub(super) fn finish(self) -> Arc<super::method_roster::MethodRoster> {
         let roster = match (self.previous, self.replacement) {
             (Some(previous), None) if previous.len() == self.next => previous,
-            (Some(previous), None) => Arc::new(super::method_roster::MethodRoster::produce(
-                previous.input_prefix(self.next),
-            )),
-            (_, Some(inputs)) => Arc::new(super::method_roster::MethodRoster::produce(inputs)),
-            (None, None) => Arc::new(super::method_roster::MethodRoster::produce(Vec::new())),
+            (Some(previous), None) => {
+                super::method_roster::MethodRoster::shared(previous.input_prefix(self.next))
+            }
+            (_, Some(inputs)) => super::method_roster::MethodRoster::shared(inputs),
+            (None, None) => super::method_roster::MethodRoster::shared(Vec::new()),
         };
         self.store.attempt.with_pending(|leases| {
             *leases.methods.lock().unwrap_or_else(|e| e.into_inner()) = Some(roster.clone());

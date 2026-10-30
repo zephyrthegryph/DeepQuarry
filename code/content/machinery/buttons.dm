@@ -75,7 +75,7 @@ CAPABILITIES(/obj/machinery/button/mob_spawner_button)
 	mobspawned().voremob_loaded = TRUE
 	mobspawned().init_vore()
 	if(neutral == TRUE)
-		mobspawned().faction = "neutral"
+		mobspawned().set_faction("neutral")
 	return TRUE
 
 /obj/machinery/button/mob_spawner_button/second

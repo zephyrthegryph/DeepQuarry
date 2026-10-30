@@ -90,6 +90,7 @@ GLOBAL_REAL_VAR(list/setup_pending)
 	var/datum/lifeform_plan/P = lifeform_plan_of(holder)
 	for(var/list/row as anything in (with_params ? P.setup_rows_params : P.setup_rows_plain))
 		var/handler = row[1]
+		BOOT_PHASE_BEGIN(bp_handler)
 		if(handler)
 			if(row[3])
 				var/hint = call(holder, handler)(mapload)
@@ -106,6 +107,7 @@ GLOBAL_REAL_VAR(list/setup_pending)
 			if(istext(prefix) && hascall(holder, prefix))
 				prefix = call(holder, prefix)()
 			A.name = "[prefix] [A.name]"
+		BOOT_PHASE_END(bp_handler, "setup_run: [handler || "name prefix"]", holder)
 		if(QDELETED(holder))
 			setup_pending -= holder
 			return INITIALIZE_HINT_NORMAL

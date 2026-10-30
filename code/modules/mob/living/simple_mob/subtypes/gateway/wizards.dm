@@ -15,7 +15,6 @@
 	catalogue_data = list(/datum/category_item/catalogue/fauna/vrerror)
 
 
-	faction = "vr"
 
 	endurance = 100 //Old 50
 	movement_cooldown = 1
@@ -36,6 +35,7 @@
 			)
 
 CAPABILITIES(/mob/living/simple_mob/vr)
+	configure(mob_rules(faction = "vr"))
 	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 
 /mob/living/simple_mob/vr/firewiz

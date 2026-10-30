@@ -1,0 +1,236 @@
+/datum/category_item/catalogue/fauna/pakkun
+	name = "Wildlife - Pakkun"
+	desc = "Classification: Mordens Lacerta\
+	<br><br>\
+	Their diet is primarily pescatarian, but they are known to consume other species and even their own - this activity doesn't appear to be malicious \
+	or even borne out of hunger, but more of a form of playfighting among packmates. Some colonies are known to keep domesticated specimens as a form of pest control \
+	despite the occasional accidents that can occur as a result of staff becoming overly friendly and triggering their playfighting instincts. \
+	More mature specimens are identifiable by a greener tint to their skin, and eventually the development of frills \
+	around their neck and along the backs of their heads. Other regional subspecies are known to exist, some with a more aggressive temperament than others. \
+	While they can be mildly hazardous to the unprepared explorer, they are primarily ambush predators and will rarely attack if you maintain eye contact."
+	value = CATALOGUER_REWARD_TRIVIAL
+
+/mob/living/simple_mob/vore/pakkun
+	name = "pakkun"
+	desc = "A small, blue, bipedal reptile. Its head and jaws are rather large in proportion to its body."
+	tt_desc = "Mordens Lacerta"
+	catalogue_data = list(/datum/category_item/catalogue/fauna/pakkun)
+	player_msg = "Pakkuns are bipedal lizardy things. You don't really have much in the way of grasping fingers, but you have an extremely long and powerful tongue and a frankly disproportionate \
+	stomach-to-body ratio. Pakkuns will eat just about anything, both for food and out of idle curiosity - if you encounter something you don't understand, put it in your mouth for science."
+
+	icon_dead = "pakkun-dead"
+	icon_living = "pakkun"
+	icon_state = "pakkun"
+	icon_rest = "pakkun-rest"
+	icon = 'icons/mob/vore.dmi'
+
+
+	movement_cooldown = 2
+
+
+	vore_active = 1
+	vore_icons = SA_ICON_LIVING
+
+	harm_intent_damage = 3
+	melee_damage_lower = 3
+	melee_damage_upper = 5
+
+	response_help = "pets"
+	response_disarm = "shoves"
+	response_harm = "punches"
+
+	projectiletype = /obj/item/projectile/beam/appendage
+	projectilesound = SFX_EFFECTS_SLIME_SQUISH
+
+	vore_default_mode = DM_SELECT
+
+	var/extra_possessive = FALSE					// Enable if you want their tummy hugs to be inescapable
+	var/autorest_cooldown = 100
+
+	nom_mob = TRUE
+
+	endurance = 100
+
+
+/mob/living/simple_mob/vore/pakkun/life_type_post_due()
+	return TRUE
+
+/mob/living/simple_mob/vore/pakkun/life_type_post(datum/seq_frame/life/F)
+	..()
+	if(src.client)
+		return
+	if(!src.ai_brain)
+		return
+
+	if(src.autorest_cooldown)
+		src.autorest_cooldown --
+	else if(prob(5) && (src.resting || !src.ai_brain.primary_threat))
+		src.autorest_cooldown = rand(50,200)
+		src.lay_down()
+
+/mob/living/simple_mob/vore/pakkun/lay_down()
+	. = ..()
+	if(client)
+		return
+	if(!ai_brain)
+		return
+
+	if(resting)
+		if(isbelly(vore_selected_of(src)))
+			vore_selected_of(src).digest_mode = DM_UNABSORB
+		ai_brain.go_sleep()
+
+	else
+		if(isbelly(vore_selected_of(src)))
+			vore_selected_of(src).digest_mode = vore_default_mode
+		ai_brain.go_wake()
+
+CAPABILITIES(/mob/living/simple_mob/vore/pakkun)
+	configure(mob_rules(faction = FACTION_PAKKUN))
+	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 5))
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_pred" = 1, "allow_mind_transfer" = TRUE))
+	configure(mob_kind(attack_cooldown = 5 SECONDS))
+	op("pakkun_interaction_hand", hand(), ungated(), stance(I_HELP), label("Shake awake"), then(PROC_REF(pakkun_interaction_hand)))
+	op("pakkun_interaction_item", item(/obj/item), then(PROC_REF(pakkun_interaction_item)))
+
+/// Old attack_hand: a help-touch shakes a resting pakkun awake; anything else is the normal touch.
+/mob/living/simple_mob/vore/pakkun/proc/pakkun_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
+	if(stat == DEAD)
+		return OP_DECLINE
+	if(!resting)
+		return OP_DECLINE
+	play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
+	act_message(user, src, MSG_SELF(span_notice("You shake %T% awake!")), MSG_OTHERS(span_notice("%U% shakes %T% awake.")))
+	lay_down()
+	return TRUE
+
+/mob/living/simple_mob/vore/pakkun/on_throw_vore_special(pred, mob/living/target)
+	if(pred && !extra_possessive && !(LAZYFIND(prey_excludes, target)))
+		rel_add(src, nameof(prey_excludes), target)
+		after(src, 5 MINUTES, PROC_REF(removeMobFromPreyExcludes), with = list(target))
+
+/mob/living/simple_mob/vore/pakkun/load_default_bellies()
+	. = ..()
+	var/obj/belly/B = vore_selected_of(src)
+	B.name = "stomach"
+	B.desc = "you land with a soft bump in what can only be described as a big soft slimy sack, the walls effortlessly stretching to match your every move with no sign of reaching any kind of elastic \
+	limit - and to add insult to injury, it seems the thing is... pressing on you, kneading over the lump you make in its midsection, as though rubbing in the fact that you've just been caught."
+	B.set_absorbed_desc("the endless smooshing and kneading has taken its toll, your form softening and sinking into the body of the greedy little reptile. It seems like you might be here for some time - \
+	assuming you ever get out at all. For now though, you're stuck as some extra softness padding out a cute little lizard.")
+	B.set_belly_fullscreen("a_tumby")
+	B.set_escapechance(25)
+	B.set_absorbchance(0)
+	B.set_digestchance(0)
+	B.set_digest_mode(DM_SELECT)
+
+/// Old attackby: if they're newspapered, they'll spit out any junk they've eaten for whatever reason.
+/mob/living/simple_mob/vore/pakkun/proc/pakkun_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	if(!istype(O, /obj/item/newspaper) || ckey || !isturf(user.loc))
+		return OP_DECLINE
+	act_message(user, src, null, MSG_OTHERS(span_info("%U% swats %T% with %I%!")), item = O)
+	release_vore_contents()
+	for(var/mob/living/L in living_mobs(0))
+		if(!(LAZYFIND(prey_excludes, L)))
+			rel_add(src, nameof(prey_excludes), L)
+			after(src, 5 MINUTES, PROC_REF(removeMobFromPreyExcludes), with = list(L))
+	return TRUE
+
+//a palette-swapped version that's a bit bossier, in JRPG tradition
+
+/mob/living/simple_mob/vore/pakkun/snapdragon
+	name = "snapdragon"
+	desc = "A small, green, bipedal reptile. Its head and jaws are rather large in proportion to its body."
+	icon_dead = "snapdragon-dead"
+	icon_living = "snapdragon"
+	icon_state = "snapdragon"
+	icon_rest = "snapdragon-rest"
+
+	extra_possessive = TRUE //you're gonna get KEPT, at least the first time you go in
+
+/mob/living/simple_mob/vore/pakkun/snapdragon/on_throw_vore_special(pred, mob/living/target)
+	..()
+	extra_possessive = !extra_possessive //toggle their possessiveness on and off every time they eat someone
+
+//an even greedier pallete-swap
+
+/mob/living/simple_mob/vore/pakkun/sand
+	name = "sand pakkun"
+	desc = "A small, yellow, bipedal reptile. Its head and jaws are rather large in proportion to its body."
+	icon_dead = "pakkunyellow-dead"
+	icon_living = "pakkunyellow"
+	icon_state = "pakkunyellow"
+	icon_rest = "pakkunyellow-rest"
+
+	extra_possessive = TRUE // won't let its prey go if it's awake, luckily, see below.
+
+/mob/living/simple_mob/vore/pakkun/sand/on_throw_vore_special(pred, mob/living/target)
+	..()
+	autorest_cooldown = 0 // Sand pakkuns, also known as napdragons, like to curl up for an small sleemp after eating. This is your chance to escape.
+
+//use this one sparingly because it is absolutely turbolethal to anyone who has digestion turned on.
+
+/mob/living/simple_mob/vore/pakkun/fire
+	name = "fire pakkun"
+	desc = "A small, red, bipedal reptile. Its head and jaws are rather large in proportion to its body."
+	icon_dead = "pakkunred-dead"
+	icon_living = "pakkunred"
+	icon_state = "pakkunred"
+	icon_rest = "pakkunred-rest"
+
+	extra_possessive = TRUE // yeah this one just... doesn't. It doesn't even have any fancy behaviours. Hope it gets tired or you get saved.
+
+// this one's like a standard blue pakkun in terms of eating behaviour, but wanders a lot more quickly
+
+/mob/living/simple_mob/vore/pakkun/purple
+	name = "amethyst pakkun"
+	desc = "A small, purple, bipedal reptile. Its head and jaws are rather large in proportion to its body."
+	icon_dead = "pakkunpurp-dead"
+	icon_living = "pakkunpurp"
+	icon_state = "pakkunpurp"
+	icon_rest = "pakkunpurp-rest"
+
+	movement_cooldown = -2
+
+// (mostly) friendly pet version
+
+/mob/living/simple_mob/vore/pakkun/snapdragon/snappy
+	name = "Snappy"
+	desc = "A friendly-looking lizard-thing. This one has a little row of spines running down the back of its head and a crest of frills around its neck."
+	icon_dead = "snappy-dead"
+	icon_living = "snappy"
+	icon_state = "snappy"
+	icon_rest = "snappy-rest"
+
+	vore_default_mode = DM_HOLD
+	/// The help-touchers she remembers (a relation list).
+	var/list/petters
+
+CAPABILITIES(/mob/living/simple_mob/vore/pakkun/snapdragon/snappy)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0))
+	ref_many(nameof(petters))
+	op("snappy_hand_help", hand(), ungated(), stance(I_HELP), label("Pet"), priority(OP_PRIORITY_NORMAL + 1), then(PROC_REF(snappy_interaction_hand)))
+
+/// Old attack_hand: remember help-touchers, then carry on to the pakkun touch (FALSE).
+/mob/living/simple_mob/vore/pakkun/snapdragon/snappy/proc/snappy_interaction_hand(datum/act/op/A)
+	var/mob/living/carbon/human/M = A.actor
+	if(!(M in petters))
+		to_chat(M, span_notice("\The [src] gets a mischievous glint in her eye!!"))
+		rel_add(src, nameof(petters), M) //YOU HAVE OFFERED YOURSELF TO THE LIZARD
+	return OP_DECLINE
+
+/mob/living/simple_mob/vore/pakkun/snapdragon/snappy/lay_down()
+	if(LAZYLEN(petters) && prob(50) && !resting) //50% chance she'll forgive a random person when she takes a nap
+		rel_remove(src, nameof(petters), pick(petters))
+	..()
+
+/mob/living/simple_mob/vore/pakkun/snapdragon/snappy/load_default_bellies()
+	. = ..()
+	var/obj/belly/B = vore_selected_of(src)
+	B.set_digest_mode(DM_HOLD)
+	B.desc = "the lizard gently yet insistently stuffs you down her gullet - evidently enjoying this moment of playtime as you land in a sprawled heap in the stretchy, clinging sack that makes up \
+	most of her girth. Your movements are rewarded only with squeezing from outside, the skin of the reptile easily stretching out to match your movements no matter how hard you try to push. If anything, \
+	wriggling about just seems to prompt the playful creature to mess with you more, mooshing her paws into the bulges you make, wrapping both arms around you and squeezing you tight, making it absolutely \
+	plain that she's more than happy to just keep you in there - and is more than capable of doing so if she so chooses."

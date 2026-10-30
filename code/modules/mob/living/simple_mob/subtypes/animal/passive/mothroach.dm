@@ -14,7 +14,6 @@
 	icon_dead = "mothroach_dead"
 	icon_rest = "mothroach_rest"
 
-	faction = FACTION_MOTHROACH
 	endurance = 50
 	movement_cooldown = -1
 
@@ -40,6 +39,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/mothroach)
+	configure(mob_rules(faction = FACTION_MOTHROACH))
 	configure(living_rules(say_list_type = /datum/say_list/mothroach, climbing_delay = 2.0))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 2))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))

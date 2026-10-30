@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Area demand stats sum their rows without building a row list, stat reads skip the system-key walk for vars no system reads, and contribution keys are built once; finer boot timers for relation writes, wall materials and the power chain; boot_profile_dump=1 writes the proc profile after the map load"

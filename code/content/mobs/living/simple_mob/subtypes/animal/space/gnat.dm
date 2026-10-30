@@ -26,7 +26,6 @@
 	icon_living = "gnat"
 	icon_dead = "gnat_dead"
 
-	faction = FACTION_GNAT
 	endurance = 5
 	movement_cooldown = 0
 
@@ -47,6 +46,7 @@
 	organ_names = /datum/decl/mob_organ_names/space_gnat
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/gnat)
+	configure(mob_rules(faction = FACTION_GNAT))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/gnat, meat_amount = 1))
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 10))

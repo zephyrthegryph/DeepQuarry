@@ -6,7 +6,6 @@
 	name = "Deacon"
 	real_name = "Deacon"
 	construct_type = "Deacon"
-	faction = "purity"
 	desc = "A small construct of the purity worshippers mechanical followers, hardy but mostly harmless."
 	icon_state = "deacon"
 	icon_living = "deacon"
@@ -33,6 +32,9 @@
 			/datum/spell/targeted/construct_advanced/force_beam,
 			/datum/spell/targeted/construct_advanced/soothing_sphere,
 		)
+
+CAPABILITIES(/mob/living/simple_mob/construct/deacon)
+	configure(mob_rules(faction = "purity"))
 
 /datum/decl/mob_organ_names/harvester
 TYPE_TABLE(/datum/decl/mob_organ_names/harvester, mob_organ_hit_zones, list("cephalothorax", "eye", "carapace", "energy crystal", "mandible"))

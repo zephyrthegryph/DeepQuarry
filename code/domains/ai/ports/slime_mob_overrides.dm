@@ -37,7 +37,7 @@
 	set_harmless(TRUE)
 	if(slime_state)
 		slime_state.pacify()
-	faction = FACTION_NEUTRAL
+	set_faction(FACTION_NEUTRAL)
 	set_melee_damage_upper(0)
 	set_melee_damage_lower(0)
 	update_mood()
@@ -89,7 +89,7 @@
 		pacified = FALSE
 	set_mood(new_mood)
 	if(!client)
-		if(faction != FACTION_SLIME)
+		if(mob_rules_of(src).faction != FACTION_SLIME)
 			update_allowed_vore_types(TRUE)
 		else if(mood == "angry")
 			update_allowed_vore_types(FALSE, harmless)

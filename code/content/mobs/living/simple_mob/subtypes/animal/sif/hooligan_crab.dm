@@ -35,7 +35,6 @@
 	icon_scale_x = 1.5
 	icon_scale_y = 1.5
 
-	faction = FACTION_CRABS
 
 	endurance = 200
 	movement_cooldown = 4
@@ -67,6 +66,7 @@
 	var/weaken_amount = 2 // Be careful with this number. High values will equal a permastun.
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/hooligan_crab)
+	configure(mob_rules(faction = FACTION_CRABS))
 	configure(living_rules(say_list_type = /datum/say_list/crab))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/crabmeat, meat_amount = 6))
 

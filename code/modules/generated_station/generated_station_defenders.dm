@@ -90,7 +90,7 @@ CAPABILITIES(/datum/generated_station_defense_runtime)
 	if(!isliving(arrived) || !department_id)
 		return
 	var/mob/living/entrant = arrived
-	if(entrant.faction == GENERATED_STATION_DEFENDER_FACTION)
+	if(mob_rules_of(entrant).faction == GENERATED_STATION_DEFENDER_FACTION)
 		return
 	for(var/obj/machinery/generated_station_data_relay/relay in contents_of(src))
 		if(relay.department_id == department_id && relay.report_hostile(entrant, 85))
@@ -150,7 +150,7 @@ CAPABILITIES(/datum/generated_station_defense_runtime)
 	suppress_sensor_events = TRUE
 	var/mob/living/simple_mob/humanoid/merc/ranged/poi/defender = new(spawn_turf)
 	suppress_sensor_events = FALSE
-	defender.faction = GENERATED_STATION_DEFENDER_FACTION
+	defender.set_faction(GENERATED_STATION_DEFENDER_FACTION)
 	defender.ai_attack_on_sight = FALSE
 	defender.ai_brain?.set_attack_on_sight(FALSE)
 	defender.ai_brain?.go_sleep()

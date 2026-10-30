@@ -793,10 +793,12 @@ CAPABILITIES(/mob/living/simple_mob/slime/xenobio/oil)
 	// Doing pacify() in initialize() won't actually pacify the AI due to the ai_brain not existing due to parent initialize() not being called yet.
 	// Instead lets just give them an ai_brain that does that for us.
 
+CAPABILITIES(/mob/living/simple_mob/slime/xenobio/rainbow/kendrick)
+	configure(mob_rules(faction = FACTION_NEUTRAL))
+
 /mob/living/simple_mob/slime/xenobio/rainbow/kendrick
 	// born pacified (what pacify() sets on the mob; the slime base's update_mood() at init takes its mood and vore settings from it)
 	harmless = TRUE
-	faction = FACTION_NEUTRAL
 	melee_damage_upper = 0
 	melee_damage_lower = 0
 
@@ -806,9 +808,11 @@ CAPABILITIES(/mob/living/simple_mob/slime/xenobio/oil)
 	desc = "A pink slime that seems to be oddly friendly, and doesn't seem interested in eating your face like the rest of them."
 	rainbow_core_candidate = FALSE
 
+CAPABILITIES(/mob/living/simple_mob/slime/xenobio/pink/sana)
+	configure(mob_rules(faction = FACTION_NEUTRAL))
+
 /mob/living/simple_mob/slime/xenobio/pink/sana
 	// born pacified (what pacify() sets on the mob; the slime base's update_mood() at init takes its mood and vore settings from it)
 	harmless = TRUE
-	faction = FACTION_NEUTRAL
 	melee_damage_upper = 0
 	melee_damage_lower = 0

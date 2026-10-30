@@ -25,7 +25,6 @@
 	icon_dead = "miningdrone_dead"
 	has_eye_glow = TRUE
 
-	faction = FACTION_MALF_DRONE
 
 	endurance = 50
 	movement_cooldown = 1.5
@@ -65,6 +64,7 @@
 TYPE_TABLE_DECLARE(/mob/living/simple_mob/mechanical/mining_drone, mining_drone_allowed_tools, list(/obj/item/pickaxe, /obj/item/gun/energy/kinetic_accelerator, /obj/item/gun/magnetic/matfed/phoronbore, /obj/item/kinetic_crusher, /obj/item/melee/shock_maul))
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mining_drone)
+	configure(mob_rules(faction = FACTION_MALF_DRONE))
 	configure(living_rules(say_list_type = /datum/say_list/malf_drone/mining, delete_on_death = TRUE))
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 2.5 SECONDS, death_message = "suddenly breaks apart."))

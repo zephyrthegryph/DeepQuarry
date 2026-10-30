@@ -7,7 +7,6 @@
 	icon_living = "raptorpurple"
 	icon_state = "raptorpurple"
 	icon_rest = "raptorpurple"
-	faction = FACTION_RAPTOR
 	old_x = -48
 	old_y = 0
 	vis_height = 92
@@ -58,6 +57,7 @@
 	vore_bump_emote = "tries to snap up"
 
 CAPABILITIES(/mob/living/simple_mob/vore/raptor)
+	configure(mob_rules(faction = FACTION_RAPTOR))
 	configure(living_rules(vore_capacity = 1))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 40))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))

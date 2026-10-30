@@ -60,7 +60,7 @@
 /datum/ai_brain/proc/standings_stale()
 	if(isnull(standings_aggro))
 		return TRUE
-	return holder.faction != standings_faction || standings_aggro != aggro_on_sight()
+	return mob_rules_of(holder).faction != standings_faction || standings_aggro != aggro_on_sight()
 
 /// Does the mob attack strangers on sight (a simple mob's ai_attack_on_sight): it turns a table's NEUTRAL into HOSTILE for other factions.
 /datum/ai_brain/proc/aggro_on_sight()
@@ -76,7 +76,7 @@
 	standings_keys = list()
 	disposition_memo = null
 	standings_custom = null
-	var/faction = holder.faction
+	var/faction = mob_rules_of(holder).faction
 	var/aggro = aggro_on_sight()
 	standings_faction = faction
 	standings_aggro = aggro
@@ -103,7 +103,7 @@
 		return DQ_DISPOSITION_ALLY
 	if(standings_stale())
 		place_faction_rows()
-	var/key = "[REF(other)]|[other.faction]|[other.client ? 1 : 0]"
+	var/key = "[REF(other)]|[mob_rules_of(other).faction]|[other.client ? 1 : 0]"
 	var/memo = disposition_memo?[key]
 	if(!isnull(memo))
 		return memo

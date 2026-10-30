@@ -28,7 +28,9 @@ CAPABILITY_TYPE(ai_state_test_hush, CAP_AI_STATE_TEST_HUSH, /datum/capability/ai
 		"regroup" = /datum/capability/ai_state/regroup)
 
 /mob/living/simple_mob/combat_ai_pack_subject/states
-	faction = "test_states"
+
+CAPABILITIES(/mob/living/simple_mob/combat_ai_pack_subject/states)
+	configure(mob_rules(faction = "test_states"))
 
 /// A brain moves through calm, engaged, alert, calm as its facts change; what a state allows and how soon its pack perceives are the state's.
 /datum/unit_test/dq_ai_state_transitions

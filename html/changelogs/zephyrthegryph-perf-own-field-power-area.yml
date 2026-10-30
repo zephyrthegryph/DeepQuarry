@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Faster map load: a machine joining its area's power shares one gate context across its channel draws, and releasing a pooled object skips resetting lists that are already empty"

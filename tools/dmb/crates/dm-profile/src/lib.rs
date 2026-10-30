@@ -969,11 +969,40 @@ pub fn detail_timer(label: &'static str) -> DetailTimer {
         started: enabled.then(Instant::now),
     }
 }
+/// Timers that finish within this many seconds are summed per label and printed once per request by [`detail_summary`]; a longer
+/// one is printed when it ends. Printing every call from a worker made `DMB_TIMINGS_DETAIL=1` slow the thing it measured (one
+/// stderr line per file, under the input capture lock: about 1.5 s of a 5 s edit).
+const DETAIL_PRINT_ABOVE_SECS: f64 = 0.05;
+static DETAIL_SUMS: Mutex<Vec<(&'static str, u64, u64)>> = Mutex::new(Vec::new());
 impl Drop for DetailTimer {
     fn drop(&mut self) {
         if let Some(started) = self.started {
-            eprintln!("detail {}: {:.3}s", self.label, started.elapsed().as_secs_f64());
+            let elapsed = started.elapsed();
+            if elapsed.as_secs_f64() > DETAIL_PRINT_ABOVE_SECS {
+                eprintln!("detail {}: {:.3}s", self.label, elapsed.as_secs_f64());
+                return;
+            }
+            let mut sums = DETAIL_SUMS.lock().unwrap_or_else(|e| e.into_inner());
+            match sums.iter_mut().find(|(label, _, _)| std::ptr::eq(*label, self.label) || *label == self.label) {
+                Some(entry) => {
+                    entry.1 += elapsed.as_nanos() as u64;
+                    entry.2 += 1;
+                }
+                None => sums.push((self.label, elapsed.as_nanos() as u64, 1)),
+            }
         }
+    }
+}
+/// Prints (and clears) the per-label totals of the detail timers that finished quickly, largest first: one block per request.
+pub fn detail_summary() {
+    let mut sums = std::mem::take(&mut *DETAIL_SUMS.lock().unwrap_or_else(|e| e.into_inner()));
+    if sums.is_empty() {
+        return;
+    }
+    sums.sort_by(|a, b| b.1.cmp(&a.1));
+    eprintln!("detail summary (timers of at most {DETAIL_PRINT_ABOVE_SECS} s, summed over threads):");
+    for (label, nanos, calls) in sums {
+        eprintln!("detail   {label}: {:.3}s over {calls} calls", nanos as f64 / 1e9);
     }
 }
 
@@ -1012,6 +1041,7 @@ pub fn request_marks_begin_if_idle() {
 /// Ends the request timeline after printing a final mark.
 pub fn request_marks_end(label: &'static str) {
     if detail_enabled() {
+        detail_summary();
         request_mark(label);
         *REQUEST_ORIGIN.lock().unwrap_or_else(|e| e.into_inner()) = None;
     }

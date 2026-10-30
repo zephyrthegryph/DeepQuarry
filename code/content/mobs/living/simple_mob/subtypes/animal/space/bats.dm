@@ -8,7 +8,6 @@
 	icon_dead = "bat_dead"
 	icon_gib = "bat_dead"
 
-	faction = FACTION_SCARYBAT
 
 	endurance = 20
 
@@ -35,6 +34,7 @@
 	var/scare_chance = 15
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/bats)
+	configure(mob_rules(faction = FACTION_SCARYBAT))
 	configure(living_rules(say_list_type = /datum/say_list/mouse))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 2))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
@@ -49,8 +49,10 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/bats)
 
 // Spookiest of bats
 /mob/living/simple_mob/animal/space/bats/cult
-	faction = FACTION_CULT
 	supernatural = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/bats/cult)
+	configure(mob_rules(faction = FACTION_CULT))
 
 /mob/living/simple_mob/animal/space/bats/cult/cultify()
 	return

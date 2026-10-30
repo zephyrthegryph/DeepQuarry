@@ -17,7 +17,6 @@
 	tt_desc = "S Procyon cogitae"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/sakimm)
 
-	faction = FACTION_SAKIMM
 
 	icon_state = "raccoon"
 	icon_living = "raccoon"
@@ -110,6 +109,7 @@
 	emote_hear = list("chitters", "clicks")
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/sakimm)
+	configure(mob_rules(faction = FACTION_SAKIMM))
 	configure(living_rules(species_sounds = "Raccoon"))
 	configure(living_rules(say_list_type = /datum/say_list/sakimm, use_modern_ai = TRUE))
 	configure(butchery_rules(meat_amount = 3))

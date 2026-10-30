@@ -9,7 +9,6 @@
 	icon_living = "whitewolf"
 	icon_state = "whitewolf"
 	icon_rest = "whitewolf-rest"
-	faction = FACTION_SIF
 	has_eye_glow = TRUE
 	old_x = -48
 	old_y = 0
@@ -87,6 +86,7 @@
 	movement_cooldown = -1.5 // 1.5 Downstream
 
 CAPABILITIES(/mob/living/simple_mob/vore/greatwolf)
+	configure(mob_rules(faction = FACTION_SIF))
 	configure(living_rules(species_sounds = "Canine"))
 	configure(living_rules(vore_capacity = 2))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 40))

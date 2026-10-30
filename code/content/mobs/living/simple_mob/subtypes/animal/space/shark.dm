@@ -19,7 +19,6 @@
 	icon_dead = "shark_dead"
 	icon_rest = "shark_rest"
 
-	faction = FACTION_SPACESHARK
 	endurance = 125
 	movement_cooldown = 0
 
@@ -40,6 +39,7 @@
 	var/knockdown_chance = 10	//slightly reduced their knockdown prob compared to carp given their greater power
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/shark)
+	configure(mob_rules(faction = FACTION_SPACESHARK))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/shark, meat_amount = 10))
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 22))

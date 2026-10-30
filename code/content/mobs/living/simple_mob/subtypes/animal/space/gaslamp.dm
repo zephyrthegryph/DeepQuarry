@@ -27,7 +27,6 @@ TODO: Make them light up and heat the air when exposed to oxygen.
 	icon = 'icons/mob/vore32x64.dmi'
 	vis_height = 64
 
-	faction = FACTION_VIRGO3B
 	endurance = 100
 	movement_cooldown = 4
 
@@ -56,6 +55,7 @@ TODO: Make them light up and heat the air when exposed to oxygen.
 	max_n2 = 0
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/gaslamp)
+	configure(mob_rules(faction = FACTION_VIRGO3B))
 	configure(living_rules(vore_capacity = 2, say_list_type = /datum/say_list/gaslamp))
 
 /datum/say_list/gaslamp
@@ -110,7 +110,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/gaslamp)
 	icon_living = "gaslamp_snow"
 	icon_dead = "gaslamp_snow-dead"
 
-	faction = "virgo3b"
 	endurance = 100
 	movement_cooldown = 12
 
@@ -137,4 +136,5 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/gaslamp)
 	max_n2 = 0
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/gaslamp/snow)
+	configure(mob_rules(faction = "virgo3b"))
 	configure(living_rules(say_list_type = /datum/say_list/gaslamp))

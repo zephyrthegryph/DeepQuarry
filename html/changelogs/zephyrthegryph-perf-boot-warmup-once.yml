@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "A type table built from its parent's now shares the parent's compiled op plans instead of rebuilding them; the boot log prints the shared caches that missed most and how many op plans were shared."

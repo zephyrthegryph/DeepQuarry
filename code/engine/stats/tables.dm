@@ -104,6 +104,7 @@ GLOBAL_LIST_EMPTY(stat_pass_before)
 			row[H_FLAGS] |= HF_SEEN
 			if(row[H_VALUE] == c && row[H_PRIORITY] == priority)
 				continue
+			stat_sum_dirty(E, row)
 			row[H_VALUE] = c
 			row[H_PRIORITY] = priority
 		else

@@ -99,7 +99,7 @@ CAPABILITIES(/datum/trait_state/crowd_detection)
 	var/overall_checks = M == human_parent || M.stat == DEAD || social_check || ckey_check || (ispAI(M) && !M.ckey)
 	if(invis_matters && self_invisible_check)
 		return in_range
-	if((M.faction == FACTION_NEUTRAL || M.faction == human_parent.faction) && !overall_checks)
+	if((mob_rules_of(M).faction == FACTION_NEUTRAL || mob_rules_of(M).faction == mob_rules_of(human_parent).faction) && !overall_checks)
 		in_range |= M
 	else
 		in_range |= check_contents(M)

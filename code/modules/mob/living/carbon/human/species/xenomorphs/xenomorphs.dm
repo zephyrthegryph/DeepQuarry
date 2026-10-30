@@ -11,36 +11,36 @@
 	species_at_make = SPECIES_XENO_DRONE
 
 CAPABILITIES(/mob/living/carbon/human/xdrone)
+	configure(mob_rules(faction = FACTION_XENO))
 	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Bald"))
 /mob/living/carbon/human/xdrone
 /mob/living/carbon/human/xdrone
-	faction = FACTION_XENO
 
 /mob/living/carbon/human/xsentinel
 	species_at_make = SPECIES_XENO_SENTINEL
 
 CAPABILITIES(/mob/living/carbon/human/xsentinel)
+	configure(mob_rules(faction = FACTION_XENO))
 	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Bald"))
 /mob/living/carbon/human/xsentinel
 /mob/living/carbon/human/xsentinel
-	faction = FACTION_XENO
 
 /mob/living/carbon/human/xhunter
 	species_at_make = SPECIES_XENO_HUNTER
 
 CAPABILITIES(/mob/living/carbon/human/xhunter)
+	configure(mob_rules(faction = FACTION_XENO))
 	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Bald"))
 /mob/living/carbon/human/xhunter
 /mob/living/carbon/human/xhunter
-	faction = FACTION_XENO
 
 /mob/living/carbon/human/xqueen
 	species_at_make = SPECIES_XENO_QUEEN
 
 CAPABILITIES(/mob/living/carbon/human/xqueen)
+	configure(mob_rules(faction = FACTION_XENO))
 	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Bald"))
 /mob/living/carbon/human/xqueen
 /mob/living/carbon/human/xqueen
-	faction = FACTION_XENO
 
 //Removed AddInfectionImages, no longer required.

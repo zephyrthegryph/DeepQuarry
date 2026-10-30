@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "A contributing entity makes its stat record only when an entry first holds something"
+  - code_imp: "Boot phase timers gained rows for rule bindings, floor_start, wall_take_materials and own_field_changed"

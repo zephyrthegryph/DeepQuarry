@@ -263,7 +263,7 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 	entry.blob = blob
 	entry.slot = id
 	entry.key = key
-	entry.serial = ++next_serial
+	entry.serial = ++last_serial
 	entry.unit_cost = def.entry_cost(holder, path)
 	LAZYINITLIST(latent)
 	if(!latent[id])

@@ -74,6 +74,7 @@ TYPE_TABLE(/mob/living/simple_mob/ysbryd, get_ai_behaviors, list( \
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/ysbryd)
+	configure(mob_rules(faction = FACTION_GLAMOUR))
 	configure(living_rules(vore_capacity = 1, use_modern_ai = TRUE))
 	ref_one(nameof(chosen_target), /mob/living)
 	immune_to_incapacitation()

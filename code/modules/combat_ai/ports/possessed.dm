@@ -8,6 +8,7 @@
 /mob/living/simple_mob/humanoid/possessed
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/possessed)
+	configure(mob_rules(faction = "Possessed"))
 	configure(living_rules(say_list_type = /datum/say_list/possessed, use_modern_ai = TRUE))
 	configure(mob_nature(can_pain_emote = FALSE))
 

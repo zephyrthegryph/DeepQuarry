@@ -25,7 +25,6 @@
 	tt_desc = "S Choeros shantak"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/shantak)
 
-	faction = FACTION_SHANTAK
 
 	icon_state = "shantak"
 	icon_living = "shantak"
@@ -48,6 +47,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/shantak)
+	configure(mob_rules(faction = FACTION_SHANTAK))
 	configure(living_rules(say_list_type = /datum/say_list/shantak))
 	configure(mob_kind(attack_cooldown = 1 SECOND))
 
@@ -77,7 +77,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/shantak)
 			continue
 		if(!S.ai_brain)
 			continue
-		if(S.faction != src.faction)
+		if(mob_rules_of(S).faction != mob_rules_of(src).faction)
 			continue
 		var/datum/ai_brain/AI = S.ai_brain
 		AI.set_follow(src)
@@ -98,9 +98,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/shantak/leader/autofollow)
 // ition
 /mob/living/simple_mob/animal/sif/shantak/scruffy
 	name = "Scruffy"
-	faction = FACTION_NEUTRAL
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/shantak/scruffy)
+	configure(mob_rules(faction = FACTION_NEUTRAL))
 	configure(mob_movement(makes_dirt = 0))
 
 /datum/decl/mob_organ_names/shantak

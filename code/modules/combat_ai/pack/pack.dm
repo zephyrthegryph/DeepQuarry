@@ -175,7 +175,7 @@ CAPABILITIES(/datum/ai_pack)
 /datum/ai_brain/proc/seek_pack()
 	if(QDELETED(src) || !holder || QDELETED(holder) || holder.stat >= DEAD)
 		return
-	var/faction = holder.faction
+	var/faction = mob_rules_of(holder).faction
 	var/datum/faction_data/data = dq_faction_data_for(faction)
 	if(data.pack_join_radius > 0 && !(holder.client && !autopilot))
 		var/datum/ai_pack/found = nearest_pack_within(data.pack_join_radius)
@@ -200,7 +200,7 @@ CAPABILITIES(/datum/ai_pack)
 			var/datum/ai_brain/other = L.ai_brain
 			if(!other || other == src || QDELETED(other) || !other.pack || other.pack == pack || L.stat >= DEAD)
 				continue
-			if(other.pack.faction_key != holder.faction || (L.client && !other.autopilot))
+			if(other.pack.faction_key != mob_rules_of(holder).faction || (L.client && !other.autopilot))
 				continue
 			var/datum/ai_pack/P = other.pack
 			if(seen[P])
@@ -249,7 +249,7 @@ CAPABILITIES(/datum/ai_pack)
 				GLOB.ai_pack_splits++
 				trace("split: [L] is [L.z == lead.z ? get_dist(L, lead) : "off-level"] tiles from leader [lead] (leave radius [data.pack_leave_radius])")
 				B.leave_pack("beyond the leave radius")
-				var/datum/ai_pack/solo = new /datum/ai_pack(B.get_owner().faction)
+				var/datum/ai_pack/solo = new /datum/ai_pack(mob_rules_of(B.get_owner()).faction)
 				solo.add_member(B)
 		if(QDELETED(src))
 			return

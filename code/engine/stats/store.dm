@@ -23,6 +23,9 @@
 	/// "[stat id]" -> the rows of that stat, oldest first: the same row lists `holds` keeps, so a recompute or a lookup of one stat visits only its
 	/// own rows. Kept by stat_rows_add() and stat_hold_remove() alone.
 	var/list/by_stat
+	/// "[stat id]" -> list(sum, row count) of a SUM stat whose every row is a plain non-negative whole number below STAT_SUM_LIMIT (so adding and taking away is
+	/// exact in any order, and equals the recompute's sum): kept by the row writers below, dropped by anything else that changes a row, rebuilt by stat_compute().
+	var/list/sum_cache
 	/// stat id ("[id]") -> the value of a virtual stat (a stat with no var of its own).
 	var/list/virtual
 	/// stat id ("[id]") -> TRUE while the stat waits in the marked queue.
@@ -145,6 +148,7 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 		// The same (stat, source) placed again with the other override flag: the one row is replaced outright, never a second row beside it that
 		// release() might leave behind.
 		log_world("STAT: hold on [E.type] [def.name] from [source] changed override [!!(row[H_FLAGS] & HF_OVERRIDE)] -> [!!override]: the existing row was replaced")
+		stat_sum_dirty(E, row)
 		row[H_VALUE] = value
 		row[H_EXPIRES] = expires
 		row[H_PRIORITY] = priority
@@ -167,6 +171,7 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 /// shortens), REAPPLY_EXTEND takes the new value and adds the new duration to the time remaining, REAPPLY_REPLACE takes the new value and expiry.
 /// An exact hold (hold_until) always replaces both.
 /proc/stat_hold_reapply(datum/E, datum/stat_def/def, list/row, value, expires, now, lasts, exact, priority, reason, flags)
+	stat_sum_dirty(E, row)
 	var/old_expires = row[H_EXPIRES]
 	if(exact || def.reapply == REAPPLY_REPLACE)
 		row[H_VALUE] = value
@@ -198,6 +203,50 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 			return (isnum(old_value) && isnum(new_value)) ? min(old_value, new_value) : new_value
 	return new_value
 
+/// The most a cached running total may reach: whole numbers below it add and subtract exactly in a DM number, so the running total is the recompute's sum.
+#define STAT_SUM_LIMIT 16777216
+
+/// Whether a row can sit in a running total: a plain, non-negative whole number below the limit (no override, no value computed at read time).
+/proc/stat_sum_row_ok(list/row)
+	if(row[H_SPEC] || (row[H_FLAGS] & HF_OVERRIDE))
+		return FALSE
+	var/v = row[H_VALUE]
+	return isnum(v) && v >= 0 && v < STAT_SUM_LIMIT && v == round(v)
+
+/// A row was added to the record: its stat's running total takes it, or is dropped when it cannot.
+/proc/stat_sum_added(datum/stat_record/rec, list/row)
+	if(!rec.sum_cache)
+		return
+	var/skey = "[row[H_STAT]]"
+	var/list/cache = rec.sum_cache[skey]
+	if(!cache)
+		return
+	if(!stat_sum_row_ok(row) || cache[1] + row[H_VALUE] >= STAT_SUM_LIMIT)
+		rec.sum_cache -= skey
+		return
+	cache[1] += row[H_VALUE]
+	cache[2]++
+
+/// A row is leaving the record (called before it is gone, with its last value).
+/proc/stat_sum_removed(datum/stat_record/rec, list/row)
+	if(!rec.sum_cache)
+		return
+	var/skey = "[row[H_STAT]]"
+	var/list/cache = rec.sum_cache[skey]
+	if(!cache)
+		return
+	if(!stat_sum_row_ok(row))
+		rec.sum_cache -= skey
+		return
+	cache[1] -= row[H_VALUE]
+	cache[2]--
+
+/// A row of the record is about to change in place by a writer that does not keep the running total: drop it (the next recompute rebuilds it).
+/proc/stat_sum_dirty(datum/E, list/row)
+	var/datum/stat_record/rec = E.rx?.stats
+	if(rec?.sum_cache)
+		rec.sum_cache -= "[row[H_STAT]]"
+
 /// The row of (stat, source, key) in the record, or null.
 /proc/stat_hold_find(datum/stat_record/rec, stat_id, source, key)
 	for(var/list/row as anything in rec.by_stat?["[stat_id]"])
@@ -208,6 +257,7 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 /// Adds a row to the record: the one list of every row and the index of its stat.
 /proc/stat_rows_add(datum/stat_record/rec, list/row)
 	rec.holds += list(row)
+	stat_sum_added(rec, row)
 	if(!rec.by_stat)
 		rec.by_stat = list()
 	var/skey = "[row[H_STAT]]"
@@ -323,6 +373,7 @@ GLOBAL_LIST_EMPTY(stat_release_queue) // list(entity, source) rows waiting for t
 /// Takes one row out of the record, and its source's index of where it holds.
 /proc/stat_hold_remove(datum/E, datum/stat_record/rec, list/row)
 	rec.holds -= list(row)
+	stat_sum_removed(rec, row)
 	var/skey = "[row[H_STAT]]"
 	var/list/mine = rec.by_stat?[skey]
 	if(mine)
@@ -332,6 +383,7 @@ GLOBAL_LIST_EMPTY(stat_release_queue) // list(entity, source) rows waiting for t
 	if(!length(rec.holds))
 		rec.holds = null
 		rec.by_stat = null
+		rec.sum_cache = null
 	var/source = row[H_SOURCE]
 	if(isdatum(source))
 		var/datum/src_datum = source
@@ -468,5 +520,6 @@ GLOBAL_LIST_EMPTY(stat_release_queue) // list(entity, source) rows waiting for t
 				src_rec.held_on -= D
 	rec.holds = null
 	rec.by_stat = null
+	rec.sum_cache = null
 	// The contributes_to rows this entity placed on other entities leave with it (their source is this datum, released above); forget the targets.
 	rec.ct_targets = null

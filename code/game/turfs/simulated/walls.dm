@@ -64,19 +64,31 @@ CAPABILITIES(/turf/simulated/wall)
 
 /// A wall takes its materials (the type's forced ones first), girder and radioactivity once its Initialize() chain has returned.
 /turf/simulated/wall/proc/wall_take_materials()
+	BOOT_PHASE_BEGIN(bp_keys)
 	var/list/forced_materials = TYPE_TABLE_GET(src, wall_forced_materials)
 	if(forced_materials)
 		set_wall_material_key(forced_materials[1])
 		set_reinf_material_key(length(forced_materials) >= 2 ? forced_materials[2] : null)
 		set_girder_material_key(length(forced_materials) >= 3 ? forced_materials[3] : null)
+	BOOT_PHASE_END(bp_keys, "wall_take_materials: forced keys", src)
+	BOOT_PHASE_BEGIN(bp_over)
 	if(!damage_overlays[1]) //list hasn't been populated
 		generate_overlays()
+	BOOT_PHASE_END(bp_over, "wall_take_materials: generate_overlays", src)
+	BOOT_PHASE_BEGIN(bp_mat)
+	BOOT_PHASE_BEGIN(bp_relmat)
 	rel_set(src, nameof(material), get_material_by_name(wall_material_key || DEFAULT_WALL_MATERIAL))
+	BOOT_PHASE_END(bp_relmat, "wall_take_materials: material rel_set", src)
 	girder_material = get_material_by_name(girder_material_key || DEFAULT_WALL_MATERIAL)
 	if(!isnull(reinf_material_key))
 		set_reinf_material(get_material_by_name(reinf_material_key))
+	BOOT_PHASE_END(bp_mat, "wall_take_materials: set materials", src)
+	BOOT_PHASE_BEGIN(bp_upd)
 	update_material()
+	BOOT_PHASE_END(bp_upd, "wall_take_materials: update_material", src)
+	BOOT_PHASE_BEGIN(bp_rad)
 	check_radioactive()
+	BOOT_PHASE_END(bp_rad, "wall_take_materials: check_radioactive", src)
 
 /// TRUE while one of its materials is radioactive.
 /turf/simulated/wall/var/radioactive = FALSE
@@ -664,7 +676,7 @@ CAPABILITIES(/turf/simulated/wall)
 		if("HOSTILE TO ALL")
 			turret_faction = null
 		if("HOSTILE TO ENEMIES")
-			turret_faction = user.faction
+			turret_faction = mob_rules_of(user).faction
 	mode_index = rcd_mode_index(RCD_TURRET)
 	rcd_mode_changed(user, "Turrets")
 

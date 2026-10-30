@@ -167,6 +167,9 @@ pub const PIPE_DEVICE_PERIOD: Period = Period::Frame;
 pub struct DeviceSide {
 	pub gas: PipeGas,
 	pub volume: f64,
+	/// A step changed this side's gas since staging (set by the steps; staged `false`): a job that runs while neither of
+	/// its sides is touched sees exactly the gas it was staged with ([`DeviceJob::settled`]).
+	pub touched: bool,
 }
 
 /// One pipe device edge's work for a step: its flows and valve, and which two [`DeviceJobs::sides`] it moves gas
@@ -187,6 +190,10 @@ pub struct DeviceJob {
 	pub moles: f64,
 	pub power_w: f32,
 	pub target_reached: bool,
+	/// Every step since staging ran on the staged gas of both sides (no earlier job had touched either) and left both
+	/// bit-identical, moving and drawing nothing: the job's whole result is then a function of its inputs alone, so
+	/// staging may skip it for as long as those inputs are unchanged (`ffi/src/pipes.rs`). Staged `true`; a step clears it.
+	pub settled: bool,
 }
 
 impl DeviceJob {
@@ -194,6 +201,7 @@ impl DeviceJob {
 	pub fn step(&mut self, sides: &mut [DeviceSide], dt: f32) {
 		let (mut a, mut b) = (sides[self.a].gas, sides[self.b].gas);
 		let (vol_a, vol_b) = (sides[self.a].volume, sides[self.b].volume);
+		let clean = !sides[self.a].touched && !sides[self.b].touched;
 		let mut total = StepReport::default();
 		for flow in &self.flows {
 			let r = device::step(flow, &mut a, vol_a, &mut b, vol_b, dt);
@@ -204,6 +212,12 @@ impl DeviceJob {
 		if self.valve_open {
 			total.moles += device::step_valve(true, &mut a, vol_a, &mut b, vol_b).moles;
 		}
+		let changed = a != sides[self.a].gas || b != sides[self.b].gas;
+		if changed {
+			sides[self.a].touched = true;
+			sides[self.b].touched = true;
+		}
+		self.settled &= clean && !changed && total.moles == 0.0 && total.power_w == 0.0;
 		sides[self.a].gas = a;
 		sides[self.b].gas = b;
 		self.moles += total.moles;
@@ -400,7 +414,15 @@ vg_core::law! {
 			job.step(sides, dt);
 		}
 		for budget in budgets.iter_mut() {
+			let before = budget.moles;
 			budget.step(sides);
+			if budget.moles != before {
+				// A later step of the same staging runs its jobs on what the budget left.
+				sides[budget.hub].touched = true;
+				for leg in &budget.legs {
+					sides[leg.side].touched = true;
+				}
+			}
 		}
 		Settle::Active
 	}
@@ -586,6 +608,7 @@ mod tests {
 		DeviceSide {
 			gas: PipeGas::from_amounts(&amounts, 293.15),
 			volume: 200.0,
+			touched: false,
 		}
 	}
 
@@ -605,6 +628,7 @@ mod tests {
 			moles: 0.0,
 			power_w: 0.0,
 			target_reached: false,
+			settled: true,
 		}
 	}
 
@@ -656,6 +680,27 @@ mod tests {
 	}
 
 	#[test]
+	fn a_job_is_settled_only_when_it_ran_on_its_staged_gas_and_changed_nothing() {
+		// Side 0 holds gas and feeds side 1; side 2 is empty and feeds side 3. The second pump has nothing to move and
+		// its sides are untouched: settled. The first moves gas: not settled. A third job reading side 1 runs after the
+		// first changed it, so even though it moves nothing itself it did not see the staged gas: not settled.
+		let reads = ();
+		let jobs = DeviceJobs {
+			sides: vec![device_side(200.0), device_side(0.0), device_side(0.0), device_side(0.0)],
+			jobs: vec![pump_job(0, 1), pump_job(2, 3), pump_job(3, 1)],
+			budgets: vec![],
+		};
+		let mut writes = Global(jobs);
+		let mut fx = cell_fx(0);
+		let mut ctx = LawCtx::new(&reads, &mut writes, &mut fx);
+		let _ = PipeDeviceStep::step(&mut ctx, Seconds(0.5));
+		let jobs = &writes.0.jobs;
+		assert!(!jobs[0].settled, "it moved gas");
+		assert!(jobs[1].settled, "nothing to move, untouched sides");
+		assert!(!jobs[2].settled, "it ran after side 1 was changed");
+	}
+
+	#[test]
 	fn devices_on_one_side_each_see_what_the_ones_before_them_did() {
 		// Two pumps drain one source (side 0) into two sinks: the second finds less there, and the source never goes
 		// negative or is counted twice.
@@ -693,6 +738,7 @@ mod tests {
 		DeviceSide {
 			gas: PipeGas::from_amounts(&amounts, 293.15),
 			volume,
+			touched: false,
 		}
 	}
 

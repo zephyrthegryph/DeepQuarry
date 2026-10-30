@@ -39,7 +39,9 @@
 
 // For PoIs.
 /mob/living/simple_mob/mechanical/ward/monitor/syndicate
-	faction = FACTION_SYNDICATE
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/ward/monitor/syndicate)
+	configure(mob_rules(faction = FACTION_SYNDICATE))
 
 /mob/living/simple_mob/mechanical/ward/monitor/crew
 	icon_state = "ward-nt"

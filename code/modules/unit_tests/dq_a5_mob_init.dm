@@ -69,7 +69,7 @@
 		var/mob/living/simple_mob/animal/space/space_worm/segment = current.previous
 		TEST_ASSERT_NOTNULL(segment, "Each selected body segment is linked from the preceding original segment")
 		TEST_ASSERT_EQUAL(segment.next, current, "The segment links back to the actual preceding segment")
-		TEST_ASSERT_EQUAL(segment.faction, H.faction, "The segment inherits its real head's faction")
+		TEST_ASSERT_EQUAL(mob_rules_of(segment).faction, mob_rules_of(H).faction, "The segment inherits its real head's faction")
 		current = segment
 	TEST_ASSERT_NULL(current.previous, "The third body segment is the end of the original short chain")
 	var/mob/living/simple_mob/animal/space/space_worm/head/severed/severed = allocate(/mob/living/simple_mob/animal/space/space_worm/head/severed, T)

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "A power channel change reaches the machines that read it through one lookup per reader type, not every registered type scanning every reader: a channel flip of a 555-machine area took 58-265 ms inline and takes 12-42 ms warm"
+  - admin: "Localhost powerflip probe: flips a channel of the busiest area and back, timing the write and the drain"

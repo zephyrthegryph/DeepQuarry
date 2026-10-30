@@ -26,7 +26,6 @@
 	icon_state = "viscerator_attack"
 	icon_living = "viscerator_attack"
 
-	faction = FACTION_SYNDICATE
 	endurance = 15
 	movement_cooldown = -2
 
@@ -44,6 +43,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/viscerator)
+	configure(mob_rules(faction = FACTION_SYNDICATE))
 	configure(living_rules(delete_on_death = TRUE, use_modern_ai = TRUE))
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 5, death_message = "is smashed into pieces!"))
@@ -78,13 +78,13 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/viscerator)
 	icon_state = "viscerator_b_attack"
 	icon_living = "viscerator_b_attack"
 
-	faction = FACTION_STATION
 	endurance = 20
 
 	melee_damage_lower = 2
 	melee_damage_upper = 5
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/viscerator/station)
+	configure(mob_rules(faction = FACTION_STATION))
 	configure(mob_kind(attack_cooldown = 8))
 
 /mob/living/simple_mob/mechanical/viscerator/station/IIsAlly(mob/living/L)

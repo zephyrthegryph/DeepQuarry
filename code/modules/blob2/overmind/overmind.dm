@@ -9,7 +9,6 @@
 	see_in_dark = 8
 	invisibility = INVISIBILITY_OBSERVER
 
-	faction = FACTION_BLOB
 	var/tmp/obj/structure/blob/core/blob_core	// The blob overmind's core
 	var/blob_points = 0
 	var/max_blob_points = 200
@@ -27,6 +26,7 @@
 	var/tmp/datum/language/default_language_static
 
 CAPABILITIES(/mob/observer/blob)
+	configure(mob_rules(faction = FACTION_BLOB))
 	rolls(nameof(name), PROC_REF(roll_overmind_name))
 	rolls(nameof(real_name), PROC_REF(roll_overmind_real_name), from = list(nameof(name)))
 	knows(LANGUAGE_ANIMAL, default = TRUE)
@@ -164,7 +164,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 
 	for(var/mob/M in listening)
 		if(get_dist(M, src) <= world.view || (M.stat == DEAD && !sparse_get_or(src, forbid_seeing_deadchat, FALSE)))
-			M.hear_say(message_pieces, "conveys", (M.faction == blob_type.faction), src)
+			M.hear_say(message_pieces, "conveys", (mob_rules_of(M).faction == blob_type.faction), src)
 
 	//Object message delivery
 	for(var/obj/O in listening_obj)

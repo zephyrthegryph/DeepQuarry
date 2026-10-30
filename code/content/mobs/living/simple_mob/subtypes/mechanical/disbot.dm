@@ -1,6 +1,7 @@
 /mob/living/simple_mob/mechanical/infectionbot //This literally just adds onto the base robot at /code/modules/mob/living/simple_mob/subtypes/mechanical/disbot_vr.dm
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/infectionbot)
+	configure(mob_rules(faction = FACTION_VAGRANT))
 	configure(living_rules(say_list_type = /datum/say_list/disbot))
 	configure(light_glow(color = "#8a0707"))
 
@@ -45,7 +46,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/infectionbot)
 	response_help = "pets the"
 	response_disarm = "gently pushes aside the"
 	response_harm = "hits the"
-	faction = FACTION_VAGRANT
 	harm_intent_damage = 3
 	melee_damage_lower = 6
 	melee_damage_upper = 9

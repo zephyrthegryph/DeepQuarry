@@ -7,7 +7,6 @@
 	icon_dead = "fluffball-dead"
 	icon_living = "fluffball"
 	icon_state = "fluffball"
-	faction = FACTION_SCRUBBLE
 	friendly = list("nudges", "sniffs on", "rumbles softly at", "nuzzles")
 	response_help = "bumps"
 	response_disarm = "shoves"
@@ -21,7 +20,6 @@
 	see_in_dark = 8
 	minbodytemp = 0
 
-	faction = FACTION_GLAMOUR
 
 	vore_bump_chance = 25
 	vore_digest_chance = 50
@@ -127,6 +125,7 @@
 		return //just leave them
 
 CAPABILITIES(/mob/living/simple_mob/vore/fluffball)
+	configure(mob_rules(faction = FACTION_GLAMOUR))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/fluffball))
 	op("fluffball_item", item(/obj/item), then(PROC_REF(fluffball_interaction_item)))
 

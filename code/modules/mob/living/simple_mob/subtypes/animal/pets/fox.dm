@@ -13,7 +13,6 @@
 	see_in_dark = 6
 	mob_size = MOB_SMALL //Foxes are not smaller than cats so bumping them up to small
 
-	faction = FACTION_FOX
 
 	response_help = "scritches"
 	response_disarm = "gently pushes aside"
@@ -29,6 +28,7 @@
 	var/turns_since_scan = 0
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/fox)
+	configure(mob_rules(faction = FACTION_FOX))
 	configure(living_rules(say_list_type = /datum/say_list/fox))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/fox, meat_amount = 2))
 

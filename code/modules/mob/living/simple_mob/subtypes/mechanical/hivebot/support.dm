@@ -48,7 +48,7 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot/support/commander/autofol
 	for(var/mob/living/L in hearers(7, src))
 		if(!L.ai_brain)
 			continue
-		if(L.faction != src.faction)
+		if(mob_rules_of(L).faction != mob_rules_of(src).faction)
 			continue
 		var/datum/ai_brain/AI = L.ai_brain
 		AI.set_follow(src)
@@ -91,12 +91,12 @@ TYPE_TABLE(/datum/decl/mob_organ_names/hivebotsupport, mob_organ_hit_zones, list
 	endurance = 5 // 1 health
 	melee_damage_lower = 0
 	melee_damage_upper = 0
-	faction = FACTION_STATION
 	water_resist = 1 //Harry lives under the sea!
 
 /mob/living/simple_mob/mechanical/hivebot/support/harry
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot/support/harry)
+	configure(mob_rules(faction = FACTION_STATION))
 	configure(living_rules(say_list_type = /datum/say_list/hivebot/harry, delete_on_death = TRUE))
 
 /mob/living/simple_mob/mechanical/hivebot/support/harry/on_death(gibbed)

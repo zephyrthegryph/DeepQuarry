@@ -109,7 +109,7 @@ GLOBAL_VAR_INIT(ai_pack_view_builds, 0)
 	var/list/class_reps = list()
 	for(var/datum/ai_brain/B as anything in live)
 		if(B.plain_standings())
-			var/class_key = "[B.get_owner().faction]|[B.aggro_on_sight()]"
+			var/class_key = "[mob_rules_of(B.get_owner()).faction]|[B.aggro_on_sight()]"
 			var/datum/ai_brain/rep = class_reps[class_key]
 			if(!rep)
 				rep = B

@@ -90,7 +90,6 @@ I think I covered everything.
 	vore_pounce_maxhealth = 125
 	vore_bump_emote = "tries to snap up"
 	icon_dead = "dragon-dead"
-	faction = FACTION_DRAGON
 	glow_range = 7
 	glow_intensity = 3
 	glow_color = "#ED9200"
@@ -180,7 +179,6 @@ I think I covered everything.
 
 /mob/living/simple_mob/vore/bigdragon/friendly
 	desc = "A large, intimidating creature reminiscent of the traditional idea of medieval fire breathing lizards. This one seems particularly relaxed and jovial."
-	faction = FACTION_NEUTRAL
 	player_msg = "You're a variant of the large dragon stripped of its firebreath attack (harm intent). You can still charge (disarm) and tail sweep (grab). Rest to heal slowly. Check your abilities tab for functions."
 	norange = 1
 	noenrage = 1
@@ -234,7 +232,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
 	. = ..()
 	if(!riding_datum)
 		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
-	faction = FACTION_NEUTRAL
+	set_faction(FACTION_NEUTRAL)
 
 /mob/living/simple_mob/vore/bigdragon/runechat_y_offset(width, height)
 	return (..()*size_multiplier) + 40
@@ -821,7 +819,7 @@ CAPABILITIES(/obj/item/projectile/bullet/incendiary/dragonflame)
 /mob/living/simple_mob/vore/bigdragon/do_tame(obj/O, mob/user)
 	if(!user)
 		return
-	if(faction == FACTION_NEUTRAL)
+	if(mob_rules_of(src).faction == FACTION_NEUTRAL)
 		return	//We're already friendly
 	if(enraged || notame)
 		say("NO FORGIVENESS")
@@ -831,7 +829,7 @@ CAPABILITIES(/obj/item/projectile/bullet/incendiary/dragonflame)
 
 	// Legacy ai_brain swap removed. Modern brain uses set_attack_on_sight() /
 	// personal disposition for state changes.
-	faction = FACTION_NEUTRAL
+	set_faction(FACTION_NEUTRAL)
 	norange = 1		//Don't start fires while friendly
 	set_vore_selected(src, gut2) //Just incase it eats someone right after being tamed
 	ai_brain?.set_attack_on_sight(FALSE)
@@ -845,7 +843,7 @@ CAPABILITIES(/obj/item/projectile/bullet/incendiary/dragonflame)
 /mob/living/simple_mob/vore/bigdragon/proc/enrage(atom/movable/attacker)
 	set_enraged(1)
 	norange = 0
-	faction = FACTION_DRAGON
+	set_faction(FACTION_DRAGON)
 	say("HAVE IT YOUR WAY THEN")
 	// Legacy ai_brain swap removed; brain stays put.
 	ai_brain?.set_attack_on_sight(TRUE)
@@ -928,6 +926,7 @@ CAPABILITIES(/obj/item/projectile/bullet/incendiary/dragonflame)
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/bigdragon)
+	configure(mob_rules(faction = FACTION_DRAGON))
 	configure(living_rules(vore_capacity = 2, say_list_type = /datum/say_list/bigdragon, use_modern_ai = TRUE))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 40))
 	configure(mob_rules(universal_understand = 1))

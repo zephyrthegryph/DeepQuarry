@@ -165,6 +165,33 @@ pub struct MainKind<C: Component> {
     /// Main-owned kinds: cumulative conserved change made by DM's direct
     /// writes (boundary crossings for the conservation check).
     crossings: Vec<(&'static str, f64)>,
+    /// Write stamps (see [`Self::enable_stamps`]); private, so only this type's writers can move them.
+    stamps: Stamps,
+}
+
+/// Per-row write stamps of a main-owned kind that asked for them: a row's stamp is the value of a kind-wide clock at its
+/// last change, so a stamp is never reused, and a reader that remembers a row's stamp (or the stamps of a set of rows)
+/// knows the row is unchanged while the stamp is. The fields are private and [`MainKind`]'s writers are the only code with
+/// `&mut`, so a writer cannot skip the bump: the compiler enforces it.
+#[derive(Default)]
+struct Stamps {
+    on: bool,
+    clock: u64,
+    rows: Vec<u64>,
+}
+
+impl Stamps {
+    fn touch(&mut self, index: u32) {
+        if !self.on {
+            return;
+        }
+        self.clock += 1;
+        let i = index as usize;
+        if self.rows.len() <= i {
+            self.rows.resize(i + 1, 0);
+        }
+        self.rows[i] = self.clock;
+    }
 }
 
 impl<C: Component> MainKind<C> {
@@ -177,7 +204,28 @@ impl<C: Component> MainKind<C> {
             dirty: false,
             view: None,
             crossings: Vec::new(),
+            stamps: Stamps::default(),
         }
+    }
+
+    /// Starts stamping every change to this kind's rows ([`Self::stamp`]). Off by default: a stamp table costs memory
+    /// for kinds nobody caches over.
+    pub fn enable_stamps(&mut self) {
+        self.stamps.on = true;
+    }
+
+    /// Whether this kind stamps its rows.
+    #[must_use]
+    pub const fn is_stamping(&self) -> bool {
+        self.stamps.on
+    }
+
+    /// The clock value at row `index`'s last change (0: never changed while stamping). Every write through this type
+    /// moves it: [`Self::get_mut`], [`Self::bind`] and [`Self::unbind`] always, [`Self::apply`] and [`Self::replace`]
+    /// only when the row's value actually changed, so DM re-writing a setting to what it already was wakes nothing.
+    #[must_use]
+    pub fn stamp(&self, index: u32) -> u64 {
+        self.stamps.rows.get(index as usize).copied().unwrap_or(0)
     }
 
     #[must_use]
@@ -218,6 +266,7 @@ impl<C: Component> MainKind<C> {
         }
         let store = self.store.as_mut()?;
         self.dirty = true;
+        self.stamps.touch(index);
         store.get_mut(index)
     }
 
@@ -230,12 +279,16 @@ impl<C: Component> MainKind<C> {
         let store = self.store.as_mut()?;
         let value = store.get_mut(index)?;
         self.dirty = true;
+        let before = self.stamps.on.then(|| value.clone());
         if <C::Kind as Domain>::CONSERVES {
             add_conserved::<C::Kind>(&mut self.crossings, value, -1.0);
         }
         let applied = <C::Kind as Domain>::apply(value, cmd);
         if <C::Kind as Domain>::CONSERVES {
             add_conserved::<C::Kind>(&mut self.crossings, value, 1.0);
+        }
+        if before.is_some_and(|b| b != *value) {
+            self.stamps.touch(index);
         }
         Some(applied)
     }
@@ -244,6 +297,7 @@ impl<C: Component> MainKind<C> {
     /// the caller also puts the value through the domain's port).
     pub fn bind(&mut self, entity: EntityId, value: C) {
         self.rows.insert(entity);
+        self.stamps.touch(entity.index());
         self.journal.push(RowChange::Bound(entity));
         if let Some(store) = &mut self.store {
             if <C::Kind as Domain>::CONSERVES {
@@ -270,6 +324,9 @@ impl<C: Component> MainKind<C> {
             }
             add_conserved::<C::Kind>(&mut self.crossings, &value, 1.0);
         }
+        if self.stamps.on && store.get(index).is_none_or(|old| old != value) {
+            self.stamps.touch(index);
+        }
         store.set(index, value);
         self.dirty = true;
         true
@@ -278,6 +335,7 @@ impl<C: Component> MainKind<C> {
     /// Unbinds the row at `index`, returning its last value (main-owned).
     pub fn unbind(&mut self, index: u32) -> Option<C> {
         self.rows.remove(index)?;
+        self.stamps.touch(index);
         self.journal.push(RowChange::Unbound(index));
         let store = self.store.as_mut()?;
         let old = store.get(index);

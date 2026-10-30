@@ -8,7 +8,6 @@
 	icon_living = null
 	icon_rest = null
 	icon_dead = "zorgoia-death"
-	faction = FACTION_ZORGOIA
 	endurance = 150 //chonk
 	melee_damage_lower = 5
 	melee_damage_upper = 15 //Don't break my bones bro
@@ -217,6 +216,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/zorgoia)
+	configure(mob_rules(faction = FACTION_ZORGOIA))
 	configure(living_rules(species_sounds = "None"))
 	configure(living_rules(vore_capacity = 3))
 	configure(butchery_rules(meat_amount = 5))
@@ -317,7 +317,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/zorgoia, injection_reagent_table, list(RE
 						AI.set_follow(friend)
 						if(tamed != 1)
 							tamed = 1
-							faction = M.faction
+							set_faction(mob_rules_of(M).faction)
 			return OP_OK
 
 		if(I_GRAB)

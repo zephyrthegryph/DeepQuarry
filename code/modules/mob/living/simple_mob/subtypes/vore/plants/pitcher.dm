@@ -26,7 +26,6 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 	anchored = 1 // Rooted plant. Only killing it will let you move it.
 	endurance = 200
 	// Combat mode stays off: a pitcher in combat mode would stop players swapping places with it, but interfere with vore bump.
-	faction = FACTION_PLANTS // Makes plant-b-gone deadly.
 
 	min_oxy = 0 //Immune to atmos because so are space vines. This is arbitrary and can be tweaked if desired.
 	max_oxy = 0
@@ -171,6 +170,7 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 				adjust_nutrition(-NUTRITION_PITCHER)
 
 CAPABILITIES(/mob/living/simple_mob/vore/pitcher_plant)
+	configure(mob_rules(faction = FACTION_PLANTS))
 	configure(living_rules(vore_capacity = 1))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/pitcher_fruit, meat_amount = 1))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))

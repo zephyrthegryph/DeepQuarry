@@ -116,7 +116,7 @@ SPECS = {
     ),
     "mob_rules": dict(
         base="/mob", ctor="mob_rules", reader="mob_rules_of", type_reader="mob_rules_of_type",
-        fields={"universal_understand": "universal_understand", "forced_psay": "forced_psay", "vent_crawl_time": "vent_crawl_time"},
+        fields={"universal_understand": "universal_understand", "forced_psay": "forced_psay", "vent_crawl_time": "vent_crawl_time", "faction": "faction"},
         skip={"code/modules/mob/mob_rules.dm"},
         skip_refs=r"(^|\.)species$",
     ),

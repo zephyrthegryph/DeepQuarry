@@ -44,6 +44,8 @@ fn min_age(value: Option<&str>) -> Duration {
 /// One pass; returns a log line. Never panics the daemon: every failure is reported and the next pass retries.
 pub(super) fn run_once(budget: u64, min_age: Duration, max_age: Option<Duration>) -> String {
     let started = Instant::now();
+    // A request's batch may still be publishing in the background; the budget pass must see it (and not race it).
+    crate::cache_flush::wait_all();
     let outcome = dm_cache::Cache::default_root()
         .and_then(|root| dm_cache::Cache::open(root, dm_cache::Limits::default()))
         .and_then(|cache| cache.evict_to_limits(SystemTime::now(), budget, min_age, max_age));

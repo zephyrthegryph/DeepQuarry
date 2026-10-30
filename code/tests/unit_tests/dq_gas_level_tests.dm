@@ -282,6 +282,8 @@ CAPABILITIES(/obj/test_gas_level_holder)
 /datum/unit_test/dq_gas_level_settles_at_arming
 
 /datum/unit_test/dq_gas_level_settles_at_arming/Run()
+	// The gas frames this test runs step the whole world's heat field: the telecomms plating cools on its own. Put it back so it does not leak.
+	var/list/solid = unit_test_solid_snapshot()
 	var/datum/gas_mixture/tank = allocate(/datum/gas_mixture, 70)
 	tank.adjust_gas(/datum/gas/nitrogen, 10)
 	heat_set(tank, T20C + 100, HEAT_SOURCE_OTHER)
@@ -289,4 +291,5 @@ CAPABILITIES(/obj/test_gas_level_holder)
 	TEST_ASSERT(holder.hot, "a mixture already past the level did not turn the var at arming")
 	holder.set_watched_air(null)
 	gas_level_rearm_all(holder)
+	unit_test_solid_restore(solid)
 	TEST_ASSERT(!holder.hot, "a holder with no mixture stayed hot")

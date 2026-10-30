@@ -9,7 +9,6 @@
 	icon = 'icons/mob/demon_vr.dmi'
 	vis_height = 47
 
-	faction = FACTION_DEMON
 	endurance = 200
 	movement_cooldown = 0
 
@@ -127,6 +126,7 @@
 	..()
 
 CAPABILITIES(/mob/living/simple_mob/vore/demon)
+	configure(mob_rules(faction = FACTION_DEMON))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(laugh_at_hit)))
 	on_notice(/datum/notice/hit, then(PROC_REF(laugh_at_thrown)))
 	op("demon_interaction_laugh", inputs(hand(), item(/obj/item)), ungated(), label("Demon interaction laugh"), then(PROC_REF(demon_interaction_laugh)))

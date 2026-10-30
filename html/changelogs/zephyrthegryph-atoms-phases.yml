@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - admin: "Starting the world with the boot_phase_timers=1 param prints how long each step of atom init took, summed over the map load and split by atom type"

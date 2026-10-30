@@ -62,11 +62,17 @@
 /// World registration moved out of Initialize() (L2): radiation shielding,
 /// static lighting and recursive listening reach outside the object.
 /atom/movable/on_materialize()
+	BOOT_PHASE_BEGIN(bp_base)
 	. = ..()
+	BOOT_PHASE_END(bp_base, "movable on_materialize: parent chain" + BOOT_KIND(src), src)
+	BOOT_PHASE_BEGIN(bp_rad)
 	if(rad_insulation != RAD_NO_INSULATION)
 		RAD_SHIELDING_CHANGED(loc)
+	BOOT_PHASE_END(bp_rad, "movable on_materialize: rad shielding" + BOOT_KIND(src), src)
+	BOOT_PHASE_BEGIN(bp_light)
 	if(atom_rules_of(src).light_system == STATIC_LIGHT)
 		update_light()
+	BOOT_PHASE_END(bp_light, "movable on_materialize: static light" + BOOT_KIND(src), src)
 	// Unchanged from Initialize(): set_recursive_listening() is a no-op when the var is
 	// already set, so this never registered anything. Destroy() clears it.
 	if (sparse_get_or(src, listening_recursive, NON_LISTENING_ATOM))
@@ -77,9 +83,11 @@
 	// Last, so registries and signals this atom's inputs might read (e.g.
 	// REGISTRY_MACHINES via join_registries() in the base on_materialize())
 	// are already in place.
+	BOOT_PHASE_BEGIN(bp_vg)
 	vg_bind()
 	if(vg_entity)
 		SSvg.register(src)
+	BOOT_PHASE_END(bp_vg, "movable on_materialize: vg_bind" + BOOT_KIND(src), src)
 
 /atom/movable/on_dematerialize()
 	// R10 unbind. J1's pre_destroy() is the design's intended call site

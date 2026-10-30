@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "observe() and other hook capabilities are pooled by their key instead of signed var by var on every call, which cut map-load init work"

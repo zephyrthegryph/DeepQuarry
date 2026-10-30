@@ -8,7 +8,6 @@
 	icon_gib = "syndicate_gib"
 	icon_rest = "alienh_sleep"
 
-	faction = FACTION_XENO
 
 
 	response_help = "pokes"
@@ -30,6 +29,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/alien)
+	configure(mob_rules(faction = FACTION_XENO))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/xenomeat, meat_amount = 5))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))

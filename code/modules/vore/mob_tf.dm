@@ -184,7 +184,7 @@
 				new_mob = new new_form(get_turf(src))
 
 		if(new_mob && isliving(new_mob))
-			new_mob.faction = src.faction
+			new_mob.set_faction(mob_rules_of(src).faction)
 			if(istype(new_mob, /mob/living/simple_mob))
 				var/mob/living/simple_mob/S = new_mob
 				if(!S.voremob_loaded)

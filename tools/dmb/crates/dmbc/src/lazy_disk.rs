@@ -1,6 +1,7 @@
 //! Request-local disk access. Resident acceptance does not open or scan the cache.
 #[path = "lazy_disk_batch.rs"]
 mod batch;
+pub use batch::TakenBatch;
 use std::{
     path::PathBuf,
     sync::{Arc, Mutex, OnceLock},
@@ -35,6 +36,10 @@ impl LazyDisk {
             snapshot: OnceLock::new(),
         }
     }
+    /// The cache root this handle writes (a captured snapshot has none).
+    pub fn root(&self) -> Option<&std::path::Path> {
+        self.root.as_deref()
+    }
     pub fn from_snapshot(snapshot: Arc<dm_cache::CacheSnapshot>) -> Self {
         Self {
             root: None,
@@ -50,6 +55,8 @@ impl LazyDisk {
                     .root
                     .as_ref()
                     .ok_or("captured snapshot has no independent writer")?;
+                // The previous request of this root may still be publishing its batch in the background.
+                crate::cache_flush::wait(root);
                 dm_cache::Cache::open(root.clone(), dm_cache::Limits::default())
                     .map(Arc::new)
                     .map_err(|error| error.to_string())
@@ -140,6 +147,31 @@ mod tests {
             first.get(record.key, |_, _| Ok(())).unwrap().payload,
             record.payload.as_ref()
         );
+    }
+    #[test]
+    fn opening_the_cache_waits_for_the_previous_requests_background_flush() {
+        let directory = Temporary::new();
+        let root = directory.0.clone();
+        let (release, gate) = std::sync::mpsc::channel::<()>();
+        let finished = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let flushed = Arc::clone(&finished);
+        crate::cache_flush::defer(root.clone(), "test", move || {
+            let _ = gate.recv();
+            flushed.store(true, std::sync::atomic::Ordering::SeqCst);
+            Ok("held".into())
+        });
+        // The next request of the same root opens its cache on another thread: it must not get past the flush.
+        let (opened, opened_rx) = std::sync::mpsc::channel::<bool>();
+        let seen = Arc::clone(&finished);
+        let next_root = root.clone();
+        std::thread::spawn(move || {
+            let disk = LazyDisk::new(next_root);
+            let ok = disk.writer().is_ok();
+            let _ = opened.send(ok && seen.load(std::sync::atomic::Ordering::SeqCst));
+        });
+        assert!(opened_rx.recv_timeout(std::time::Duration::from_millis(300)).is_err(), "the cache opened during the flush");
+        release.send(()).unwrap();
+        assert!(opened_rx.recv_timeout(std::time::Duration::from_secs(10)).unwrap(), "opened before the flush finished");
     }
     #[test]
     fn failed_open_is_attempted_once_and_next_request_can_retry() {

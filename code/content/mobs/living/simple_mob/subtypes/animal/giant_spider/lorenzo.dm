@@ -5,5 +5,7 @@
 	icon_living = "guardpet"
 	icon_dead = "guardpet_dead"
 	has_eye_glow = TRUE
-	faction = "neutral"
 	movement_sound = null
+
+CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/lorenzo)
+	configure(mob_rules(faction = "neutral"))

@@ -5,7 +5,6 @@
 	icon = 'icons/mob/vore_shadekin.dmi'
 	icon_state = "map_example"
 	icon_living = "map_example"
-	faction = FACTION_SHADEKIN
 	ui_icons = 'icons/mob/shadekin_hud.dmi'
 
 	endurance = 200
@@ -71,6 +70,7 @@
 	var/check_timer = 0
 
 CAPABILITIES(/mob/living/simple_mob/shadekin)
+	configure(mob_rules(faction = FACTION_SHADEKIN))
 	configure(living_rules(say_list_type = /datum/say_list/shadekin))
 	setup(PROC_REF(replace_prototype), mapload = TRUE)
 	ref_one(nameof(henlo_human), /mob/living/carbon/human)

@@ -7,7 +7,6 @@
 	icon_state = "clockM"
 	endurance = 300
 
-	faction = FACTION_GOLEM
 
 	response_help   = "brushes over"
 	response_disarm = "repulses away"
@@ -22,6 +21,9 @@
 
 
 	// Cataloguer data below - strange we can catalogue space golem wizards
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/wahlem)
+	configure(mob_rules(faction = FACTION_GOLEM))
 /datum/category_item/catalogue/technology/drone/wahlem
 	name = "Ancient Construct"
 	desc = "Some sort of ancient, mechanical warrior, built for combat.\

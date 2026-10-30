@@ -19,7 +19,6 @@
 	tt_desc = "S Choeros hirtus" //diyaab and shantak are technically reletives!
 	catalogue_data = list(/datum/category_item/catalogue/fauna/diyaab)
 
-	faction = FACTION_DIYAAB
 
 	icon_state = "diyaab"
 	icon_living = "diyaab"
@@ -53,6 +52,7 @@
 		)
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/diyaab)
+	configure(mob_rules(faction = FACTION_DIYAAB))
 	configure(living_rules(say_list_type = /datum/say_list/diyaab))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 2))
 	configure(mob_kind(attack_cooldown = 1 SECOND))

@@ -4,7 +4,6 @@
 	icon = 'icons/mob/swarmbot.dmi'
 	icon_state = "swarmer"
 	item_state = "repairbot"
-	faction = FACTION_SWARMER
 	endurance = 35
 	cell_emp_mult = 0.5
 	universal_speak = 0
@@ -49,6 +48,7 @@
 
 // It speaks the swarm's language.
 CAPABILITIES(/mob/living/silicon/robot/drone/swarm)
+	configure(mob_rules(faction = FACTION_SWARMER))
 	configure(mob_rules(universal_understand = 1))
 	setup(PROC_REF(prepare_swarm_spells))
 	configure(mob_movement(softfall = TRUE))
@@ -70,7 +70,6 @@ CAPABILITIES(/mob/living/silicon/robot/drone/swarm)
 	real_name = "drone"
 	icon = 'icons/mob/swarmbot.dmi'
 	icon_state = "swarmer_ranged"
-	faction = FACTION_SWARMER
 
 	endurance = 50
 
@@ -85,12 +84,14 @@ CAPABILITIES(/mob/living/silicon/robot/drone/swarm)
 		/datum/spell/aoe_turf/blink/swarm
 		)
 
+CAPABILITIES(/mob/living/silicon/robot/drone/swarm/gunner)
+	configure(mob_rules(faction = FACTION_SWARMER))
+
 /mob/living/silicon/robot/drone/swarm/melee
 	name = "swarm melee"
 	real_name = "drone"
 	icon = 'icons/mob/swarmbot.dmi'
 	icon_state = "swarmer_melee"
-	faction = FACTION_SWARMER
 
 	endurance = 70
 
@@ -104,3 +105,6 @@ CAPABILITIES(/mob/living/silicon/robot/drone/swarm)
 		/datum/spell/aoe_turf/conjure/forcewall/swarm,
 		/datum/spell/aoe_turf/blink/swarm
 		)
+
+CAPABILITIES(/mob/living/silicon/robot/drone/swarm/melee)
+	configure(mob_rules(faction = FACTION_SWARMER))

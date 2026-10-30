@@ -70,7 +70,6 @@
 	has_eye_glow = TRUE
 	density = FALSE
 	minbodytemp = 175
-	faction = FACTION_SPIDERS
 	endurance = 200
 	pass_flags = PASSTABLE
 	movement_cooldown = 3
@@ -117,6 +116,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/giant_spider)
+	configure(mob_rules(faction = FACTION_SPIDERS))
 	configure(living_rules(species_sounds = "Spider"))
 	configure(living_rules(say_list_type = /datum/say_list/spider))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat, meat_amount = 5, butchery_loot = list( /obj/item/stack/material/chitin = 1 )))

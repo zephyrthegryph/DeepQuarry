@@ -16,7 +16,6 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 	melee_damage_upper = 1
 
 
-	faction = FACTION_GRUBS
 
 	response_help = "pats"
 	response_disarm = "nudges"
@@ -265,6 +264,7 @@ CAPABILITIES(/obj/machinery/abstract_grub_machine)
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/solargrub_larva)
+	configure(mob_rules(faction = FACTION_GRUBS))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/grubmeat, meat_amount = 1, butchery_loot = list()))
 	configure(mob_movement(pull_size = ITEMSIZE_TINY, pull_mobs = MOB_PULL_NONE))
 	owns_one(nameof(powermachine), starts = /obj/machinery/abstract_grub_machine)

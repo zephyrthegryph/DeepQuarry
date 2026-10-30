@@ -12,7 +12,6 @@
 	var/icon_state_override = null // Used for special slime appearances like the rainbow slime.
 	gender = NEUTER
 
-	faction = "metroids"
 	endurance = 25
 	movement_cooldown = 1.7
 	pass_flags = PASSTABLE
@@ -62,6 +61,7 @@
 		play_sfx(src, arrival_sound)
 
 CAPABILITIES(/mob/living/simple_mob/metroid)
+	configure(mob_rules(faction = "metroids"))
 	configure(living_rules(species_sounds = "Metroid"))
 	configure(living_rules(say_list_type = /datum/say_list/metroid, max_nutrition = 2200))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/metroidmeat, meat_amount = 6))

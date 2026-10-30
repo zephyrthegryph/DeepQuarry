@@ -22,11 +22,13 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot/ranged_damage/siege)
 	icon = 'icons/mob/hivebot.dmi'
 	pass_flags = PASSTABLE
 	movement_cooldown = 1
-	faction = FACTION_TYR
 	melee_damage_lower = 12
 	melee_damage_upper = 12
 	icon_state = "orange"
 	icon_living = "orange"
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot/tyr)
+	configure(mob_rules(faction = FACTION_TYR))
 
 /mob/living/simple_mob/mechanical/hivebot/tyr/swarm
 	name = "replicating swarmer"
@@ -62,8 +64,10 @@ CAPABILITIES(/obj/item/projectile/energy/spikeenergy_ball/boss)
 	endurance = 1.5 LASERS_TO_KILL // 60 hp
 	icon = 'icons/mob/hivebot.dmi'
 	desc = "A repurposed hivebot."
-	faction = FACTION_ECLIPSE
 	pass_flags = PASSTABLE
 	icon_state = "janitor"
 	icon_living = "janitor"
 	projectiletype = /obj/item/projectile/beam/midlaser/shortrange
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot/eclipse)
+	configure(mob_rules(faction = FACTION_ECLIPSE))

@@ -179,9 +179,11 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	// keeps datums made during global init (before the shared caches exist) off the table.
 	if(source.vars[var_name] == target)
 		return target
+	BOOT_PHASE_BEGIN(bp_head)
 	if(target && !own_guard(source, target, "rel_set([var_name])")) // the one teardown guard (guard.dm)
 		return null
 	var/list/entry = _rel_entry(source, var_name)
+	BOOT_PHASE_END(bp_head, "rel_view_set: guard and entry [var_name]", source)
 	if(!entry)
 		source.vars[var_name] = target // ALLOW(api): an undeclared view is reported by _rel_entry() above and still written, so a live round keeps the value
 		own_field_changed(source, var_name)
@@ -200,9 +202,13 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	// Paired links and unlink callbacks keep their existing notification contract.
 	var/defer_source = entry[OWNE_ARG] == RELS_PLAIN && !entry[OWNE_ON_UNLINK]
 	if(old)
+		BOOT_PHASE_BEGIN(bp_detach)
 		_rel_detach(source, var_name, old, entry, notify_source = !defer_source)
+		BOOT_PHASE_END(bp_detach, "rel_view_set: detach [var_name]", source)
 	if(target)
+		BOOT_PHASE_BEGIN(bp_attach)
 		_rel_attach(source, var_name, target, entry)
+		BOOT_PHASE_END(bp_attach, "rel_view_set: attach [var_name]", source)
 	else if(old && defer_source)
 		own_field_changed(source, var_name)
 	return target
@@ -330,6 +336,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 
 /// Links source.var_name -> target: writes the view, indexes it, and sets the partner side.
 /proc/_rel_attach(datum/source, var_name, datum/target, list/entry)
+	BOOT_PHASE_COUNT("rel_attach: [source.type].[var_name]")
 	if(entry[OWNE_LIST])
 		var/list/L = source.vars[var_name]
 		if(!REL_LISTLIKE(L))
@@ -340,11 +347,17 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 			L[target] = TRUE
 		else
 			L += target
+		BOOT_PHASE_BEGIN(bp_src)
 		own_field_changed(source, var_name) // a member added is a write: what draws or reads the list follows
+		BOOT_PHASE_END(bp_src, "rel_attach: own_field_changed(source) [source.type]/[var_name]", null)
 	else
 		source.vars[var_name] = target // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
+		BOOT_PHASE_BEGIN(bp_src1)
 		own_field_changed(source, var_name)
+		BOOT_PHASE_END(bp_src1, "rel_attach: own_field_changed(source) [source.type]/[var_name]", null)
+	BOOT_PHASE_BEGIN(bp_idx)
 	_rel_index(target, source, var_name)
+	BOOT_PHASE_END(bp_idx, "rel_attach: _rel_index(target) [target.type]/[var_name]", null)
 	if(entry[OWNE_WATCH])
 		_rel_watch(target, source)
 	var/partner_var = entry[OWNE_PARTNER]
@@ -369,8 +382,12 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 			TL[source] = TRUE
 		else
 			TL += source // absent (checked above): a pipeline's thousands of members stay linear
+		BOOT_PHASE_BEGIN(bp_part)
 		own_field_changed(target, partner_var)
+		BOOT_PHASE_END(bp_part, "rel_attach: own_field_changed(partner) [target.type]/[partner_var]", null)
+		BOOT_PHASE_BEGIN(bp_pidx)
 		_rel_index(source, target, partner_var)
+		BOOT_PHASE_END(bp_pidx, "rel_attach: _rel_index(partner) [source.type]/[partner_var]", null)
 		if(pentry[OWNE_WATCH])
 			_rel_watch(source, target)
 		return

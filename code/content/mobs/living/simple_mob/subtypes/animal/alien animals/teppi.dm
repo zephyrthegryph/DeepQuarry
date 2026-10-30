@@ -59,7 +59,6 @@ GLOBAL_VAR_CONST(max_teppi, 50)	// How many teppi CAN we have?
 	pixel_x = -16
 	default_pixel_x = -16
 
-	faction = FACTION_TEPPI
 	endurance = 600
 	movement_cooldown = -1
 
@@ -410,6 +409,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/teppi, butchery_organ_types,
 	/////HIGHEST LAYER/////
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi)
+	configure(mob_rules(faction = FACTION_TEPPI))
 	configure(living_rules(vore_capacity = 3, say_list_type = /datum/say_list/teppi))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 12, butchery_loot = list( /obj/item/stack/animalhide = 3, /obj/item/bone/horn = 1 )))
 	ref_one(nameof(friend_zone), /obj/belly)
@@ -847,7 +847,7 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/vore/alienanimals/teppi, REGISTRY_TEP
 	if(!teppi_adult)	//Don't want baby getting killed by parents in case of hostile or growing up with P in their AI
 		return
 	if(current_affinity >= 250)	//At this point the Teppi has joined your team
-		faction = person.faction
+		set_faction(mob_rules_of(person).faction)
 	if(current_affinity <= -500 && !client)	//You're doing this on purpose or really not paying attention and I'm going to kick your ass.
 		//legacy ai_holder.target = person; .track_target_position; .set_stance(STANCE_FIGHT)
 		// became a single brain.give_target with urgent=TRUE which auto-aggros.
@@ -907,7 +907,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi/baby)
 		"dir" = teppi.dir,
 		"name" = teppi.name,
 		"real_name" = teppi.real_name,
-		"faction" = teppi.faction,
+		"faction" = mob_rules_of(teppi).faction,
 		"affinity" = teppi.affinity || list(),
 		"affection_factor" = teppi.affection_factor,
 		"nutrition_of(src)" = nutrition_of(teppi),
@@ -929,7 +929,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi/baby)
 	set_dir(teppi_data["dir"])
 	name = teppi_data["name"]
 	set_real_name(teppi_data["real_name"])
-	faction = teppi_data["faction"]
+	set_faction(teppi_data["faction"])
 	affinity = teppi_data["affinity"]
 	affection_factor = teppi_data["affection_factor"]
 	set_nutrition(teppi_data["nutrition"])
@@ -946,7 +946,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi/baby)
 //This sets all the things on baby teppi when they are bred from adult teppi
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/inherit_from_parents(mob/living/simple_mob/vore/alienanimals/teppi/mom, mob/living/simple_mob/vore/alienanimals/teppi/dad)
 	inherit_colors = TRUE
-	faction = mom.faction
+	set_faction(mob_rules_of(mom).faction)
 	set_color(pick(list(mom.color, dad.color, BlendRGB(mom.color, dad.color, 0.5))))
 	set_marking_color(pick(list(mom.marking_color, dad.marking_color, BlendRGB(mom.marking_color, dad.marking_color, 0.5))))
 	set_horn_color(pick(list(mom.horn_color, dad.horn_color, BlendRGB(mom.horn_color, dad.horn_color, 0.5))))

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Atom init replays a per-type compiled plan of its engine hooks instead of rediscovering them for every instance."

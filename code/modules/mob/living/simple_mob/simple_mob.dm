@@ -718,7 +718,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 /mob/living/simple_mob/proc/tryBumpNom(mob/tmob)
 	//returns TRUE if we actually start an attempt to bumpnom, FALSE if checks fail or the random bump nom chance fails
 	if(istype(tmob) && will_eat(tmob) && !istype(tmob, type) && prob(vore_bump_chance) && !ckey) //check if they decide to eat. Includes sanity check to prevent cannibalism.
-		if(!nature_of(src).faction_bump_vore && faction == tmob.faction)
+		if(!nature_of(src).faction_bump_vore && mob_rules_of(src).faction == mob_rules_of(tmob).faction)
 			return FALSE
 		if(tmob.canmove && prob(vore_pounce_chance)) //if they'd pounce for other noms, pounce for these too, otherwise still try and eat them if they hold still
 			tmob.status_at_least(STAT_WEAKENED, 5)

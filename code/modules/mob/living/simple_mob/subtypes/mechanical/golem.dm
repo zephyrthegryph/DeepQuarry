@@ -7,7 +7,6 @@
 	icon_state = "golem"
 	endurance = 300
 
-	faction = FACTION_GOLEM
 
 	response_help   = "pets"
 	response_disarm = "pushes away"
@@ -55,6 +54,7 @@
 		)
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/technomancer_golem)
+	configure(mob_rules(faction = FACTION_GOLEM))
 	configure(living_rules(delete_on_death = TRUE))
 	ref_one(nameof(master), /mob/living)
 	owns_one(nameof(core), starts = /obj/item/technomancer_core/golem)

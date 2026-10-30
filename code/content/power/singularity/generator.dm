@@ -46,9 +46,9 @@ CAPABILITIES(/obj/machinery/the_singularitygen)
 /obj/machinery/the_singularitygen/proc/install_done(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
-	act_message(user, src, MSG_SELF("You install %I% onto %T%."), MSG_OTHERS("%U% installs %I% onto %T%."), item = W)
 	if(!global.consume(W, user))
 		return OP_REFUSED
+	act_message(user, src, MSG_SELF("You install %I% onto %T%."), MSG_OTHERS("%U% installs %I% onto %T%."), item = W) // the coil is consumed, not yet collected: its name still reads
 	replace_with(src, /obj/machinery/particle_smasher)
 	return OP_OK
 

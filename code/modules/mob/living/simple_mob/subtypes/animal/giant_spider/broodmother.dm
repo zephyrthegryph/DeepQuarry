@@ -79,7 +79,7 @@ CAPABILITIES(/obj/item/projectile/energy/spidertoxin)
 	while(count < death_brood)
 		var/broodling_type = pick(possible_death_brood_types)
 		var/mob/living/simple_mob/animal/giant_spider/broodling = new broodling_type(src.loc)
-		broodling.faction = faction
+		broodling.set_faction(mob_rules_of(src).faction)
 		step_away(broodling, src)
 		count++
 
@@ -91,7 +91,7 @@ CAPABILITIES(/obj/item/projectile/energy/spidertoxin)
 	while(count < brood_per_spawn)
 		var/broodling_type = pick(possible_brood_types)
 		var/mob/living/simple_mob/animal/giant_spider/broodling = new broodling_type(src.loc)
-		broodling.faction = faction
+		broodling.set_faction(mob_rules_of(src).faction)
 		broodling.ai_brain?.serve(src) // sworn: it joins the mother's pack and never splits off
 		step_away(broodling, src)
 		count++
@@ -104,7 +104,7 @@ CAPABILITIES(/obj/item/projectile/energy/spidertoxin)
 	while(count < brood_per_launch)
 		var/broodling_type = pick(possible_brood_types)
 		var/mob/living/simple_mob/animal/giant_spider/broodling = new broodling_type(src.loc)
-		broodling.faction = faction
+		broodling.set_faction(mob_rules_of(src).faction)
 		broodling.ai_brain?.serve(src)
 		step_away(broodling, src)
 		broodling.throw_at(A, 10)
@@ -155,7 +155,7 @@ CAPABILITIES(/obj/item/royal_spider_egg)
 	var/turf/drop_loc = user.loc
 	if(istype(drop_loc))
 		var/obj/effect/spider/spiderling/princess/royalty = new(drop_loc)
-		royalty.faction = user.faction
+		royalty.faction = mob_rules_of(user).faction
 
 		consume(src, user)
 

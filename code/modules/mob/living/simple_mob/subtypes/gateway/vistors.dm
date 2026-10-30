@@ -63,7 +63,6 @@
 	icon_living = "drone0"
 
 
-	faction = "vistor"
 
 	endurance = 150 //Old 75
 	movement_cooldown = 0
@@ -89,13 +88,14 @@
 			)
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/vistor/vistorblue)
+	configure(mob_rules(faction = "vistor"))
 	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 
 /mob/living/simple_mob/mechanical/mecha/vistor/vistorblue/should_special_attack(atom/A)
 	var/mob_count = 0				// Are there enough mobs to consider grenading?
 	var/turf/T = get_turf(A)
 	for(var/mob/M in range(T, 2))
-		if(M.faction == faction) 	// Don't grenade our friends
+		if(mob_rules_of(M).faction == mob_rules_of(src).faction) 	// Don't grenade our friends
 			return FALSE
 		if(M in oview(src, special_attack_max_range))	// And lets check if we can actually see at least two people before we throw a grenade
 			if(!M.stat)			// Dead things don't warrant a grenade

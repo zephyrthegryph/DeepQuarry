@@ -88,7 +88,6 @@ CAPABILITIES(/obj/effect/overmap/visitable/simplemob)
 
 	see_in_dark = 10
 
-	faction = FACTION_OVERMAP
 	low_priority = FALSE
 
 	harm_intent_damage = 1
@@ -118,6 +117,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/simplemob)
 	var/shipvore = FALSE	//Enable this to allow the mob to eat spaceships by dragging them onto its sprite.
 
 CAPABILITIES(/mob/living/simple_mob/vore/overmap)
+	configure(mob_rules(faction = FACTION_OVERMAP))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE, "digestable" = FALSE))
 	owns_one(nameof(child_om_marker), /obj/effect/overmap/visitable)
 	param(nameof(child_om_marker), pos = 1, apply = PROC_REF(link_marker))

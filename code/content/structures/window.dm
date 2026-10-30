@@ -317,14 +317,15 @@ CAPABILITIES(/obj/structure/window)
 
 //Updates the availabiliy of the rotation verbs
 /obj/structure/window/proc/update_verbs()
+	var/list/rotate_caps = rotate_verb_defs()
 	if(anchored || is_fulltile())
-		revoke(src, granted_verb(/atom/movable/proc/rotate_counterclockwise), src)
-		revoke(src, granted_verb(/atom/movable/proc/rotate_clockwise), src)
-		revoke(src, granted_verb(/atom/movable/proc/turn_around), src)
+		revoke(src, rotate_caps[2], src)
+		revoke(src, rotate_caps[1], src)
+		revoke(src, rotate_caps[3], src)
 	else if(!is_fulltile())
-		grant(src, granted_verb(/atom/movable/proc/rotate_counterclockwise), src)
-		grant(src, granted_verb(/atom/movable/proc/rotate_clockwise), src)
-		grant(src, granted_verb(/atom/movable/proc/turn_around), src)
+		grant(src, rotate_caps[2], src)
+		grant(src, rotate_caps[1], src)
+		grant(src, rotate_caps[3], src)
 
 
 /// Which way the sprite of a slim window leans as it takes damage, rolled once (1 or -1).
@@ -681,8 +682,9 @@ CAPABILITIES(/obj/machinery/button/windowtint)
 	var/material_id = stack_type ? initial(stack_type.default_type) : MAT_GLASS
 	set_rad_insulation(material_rad_insulation(material_id, is_fulltile() ? RAD_FULLTILE_WINDOW_THICKNESS_MM : RAD_WINDOW_THICKNESS_MM, RAD_VERY_LIGHT_INSULATION))
 
+/// The rotation verbs follow the window's state: a loose slim pane turns, an anchored or full-tile one does not (so none is granted
+/// first to be revoked again).
 /obj/structure/window/proc/register_window_controls()
-	make_rotatable()
 	update_verbs()
 
 /obj/structure/window/proc/refresh_window_tiles()

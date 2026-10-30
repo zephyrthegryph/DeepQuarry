@@ -28,7 +28,7 @@
 	var/mob/living/simple_mob/blob/spore/S = null
 	if(overmind)
 		S = new overmind.blob_type.spore_type(src.loc, src)
-		S.faction = overmind.blob_type.faction
+		S.set_faction(overmind.blob_type.faction)
 		if(istype(S))
 			rel_set(S, nameof(S.overmind), overmind)
 			if(overmind.blob_type.ranged_spores)

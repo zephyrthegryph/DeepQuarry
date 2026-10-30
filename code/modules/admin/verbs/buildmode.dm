@@ -585,7 +585,7 @@ CAPABILITIES(/obj/effect/bmode/buildmode)
 
 					// Copy faction
 					if(pa.Find("ctrl"))
-						holder.copied_faction = L.faction
+						holder.copied_faction = mob_rules_of(L).faction
 						to_chat(user, span_notice("Copied faction '[holder.copied_faction]'."))
 						return
 
@@ -635,8 +635,8 @@ CAPABILITIES(/obj/effect/bmode/buildmode)
 						return
 					else
 						var/mob/living/L = object
-						log_admin("[key_name(user)] changed [L]'s faction from [L.faction] to [holder.copied_faction].")
-						L.faction = holder.copied_faction
+						log_admin("[key_name(user)] changed [L]'s faction from [mob_rules_of(L).faction] to [holder.copied_faction].")
+						L.set_faction(holder.copied_faction)
 						L.datum_flags |= DF_VAR_EDITED
 						to_chat(user, span_notice("Pasted faction '[holder.copied_faction]'."))
 						return

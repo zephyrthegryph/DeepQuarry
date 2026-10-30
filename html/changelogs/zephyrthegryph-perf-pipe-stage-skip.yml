@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Atmos pipe devices that changed nothing last step are skipped by the native stager until a flow or valve row, either side's gas, or the edge changes; DeviceFlow/DeviceValve rows now carry write stamps that every writer moves"

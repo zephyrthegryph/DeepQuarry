@@ -17,11 +17,11 @@ CAPABILITIES(/obj/structure/cult/pylon/swarm)
 /obj/structure/cult/pylon/swarm/CanPass(atom/movable/mover, turf/target)
 	if(isliving(mover))
 		var/mob/living/L = mover
-		if(L.faction == FACTION_SWARMER)
+		if(mob_rules_of(L).faction == FACTION_SWARMER)
 			return TRUE
 	else if(istype(mover, /obj/item/projectile))
 		var/obj/item/projectile/P = mover
-		if(istype(P.firer) && P.firer.faction == FACTION_SWARMER)
+		if(istype(P.firer) && mob_rules_of(P.firer).faction == FACTION_SWARMER)
 			return TRUE
 	return ..()
 

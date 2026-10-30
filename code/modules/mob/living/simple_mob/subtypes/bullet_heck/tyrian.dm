@@ -1,5 +1,4 @@
 /mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses
-	faction = FACTION_TYR
 	icon = 'icons/mob/tyr.dmi'
 	size_multiplier = 2
 	swallowTime = 2 SECONDS
@@ -37,6 +36,7 @@
 		)
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses)
+	configure(mob_rules(faction = FACTION_TYR))
 	configure(living_rules(vore_capacity = 5))
 	configure(movable_motion(unacidable = TRUE))
 

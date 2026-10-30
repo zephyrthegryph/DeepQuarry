@@ -6,7 +6,6 @@
 	icon_living = "goose"
 	icon_dead = "goose_dead"
 
-	faction = FACTION_GEESE
 
 	endurance = 30
 
@@ -26,6 +25,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/goose)
+	configure(mob_rules(faction = FACTION_GEESE))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken, meat_amount = 3))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
@@ -62,9 +62,9 @@ TYPE_TABLE(/datum/decl/mob_organ_names/goose, mob_organ_hit_zones, list("head", 
 /mob/living/simple_mob/animal/space/goose/domesticated
 	name = "domesticated goose"
 	desc = "It's a domesticated goose. It still looks pretty angry."
-	faction = "neutral" //Mess with this and the goose will eat anyones face, will eat other factions faces, appropiate considering its a hellbird - Jack
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/goose/domesticated)
+	configure(mob_rules(faction = "neutral"))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
 
 
@@ -76,13 +76,15 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/goose/domesticated)
 	icon_dead = "golden_goose_dead"
 	icon = 'icons/mob/animal.dmi'
 
-	faction = "neutral" //Mess with this and the goose will eat anyones face, will eat other factions faces, appropiate considering its a hellbird - Jack
 
 	endurance = 75
 
 	harm_intent_damage = 10
 	melee_damage_lower = 10
 	melee_damage_upper = 10
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/goose/domesticated/casino)
+	configure(mob_rules(faction = "neutral"))
 
 
 // === merged from goose_vr.dm during hard-fork de-suffix (verified no override-order change) ===
@@ -92,4 +94,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/goose/domesticated)
 	value = CATALOGUER_REWARD_EASY
 
 /mob/living/simple_mob/animal/space/goose/virgo3b
-	faction = FACTION_VIRGO3B
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/goose/virgo3b)
+	configure(mob_rules(faction = FACTION_VIRGO3B))

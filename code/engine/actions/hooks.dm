@@ -111,18 +111,32 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 /datum/capability/hook/entries()
 	return hook_entries
 
+/// Hook capability key -> the one shared hook capability (hook_capability_of()). A hook capability's key is the md5 of its entries'
+/// signatures, so the key alone tells two of them apart: an observe() made per instance by a map load (22 k of them at boot) finds its
+/// capability here instead of building a definition and walking its vars with datum_signature() (885 k calls, 23 s of the profiled boot).
+GLOBAL_LIST_EMPTY(hook_caps_interned)
+/// hook_capability_of() calls answered from the pool, and the ones that built a definition (the boot log prints both).
+GLOBAL_VAR_INIT(hook_caps_reused, 0)
+
 /proc/hook_capability_of(list/entries, on_listener)
 	RETURN_TYPE(/datum/capability/hook)
+	var/list/sigs = list()
+	for(var/datum/entry/E in entries)
+		sigs += E.sig
+	var/selector = md5(jointext(sigs, ";") + (on_listener ? "L" : ""))
+	var/key = "[CAP_HOOK]:[selector]"
+	var/datum/capability/hook/known = GLOB.hook_caps_interned[key]
+	if(known)
+		GLOB.hook_caps_reused++
+		return known
 	var/datum/capability/hook/def = new
 	def.cap_id = CAP_HOOK
 	def.hook_entries = entries
 	def.on_listener = on_listener
-	var/list/sigs = list()
-	for(var/datum/entry/E in entries)
-		sigs += E.sig
-	def.selector = md5(jointext(sigs, ";") + (on_listener ? "L" : ""))
-	def.key = "[CAP_HOOK]:[def.selector]"
-	return cap_intern(def)
+	def.selector = selector
+	def.key = key
+	GLOB.hook_caps_interned[key] = def
+	return def
 
 // ---- observe / unobserve ----
 

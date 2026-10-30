@@ -5,7 +5,6 @@
 /mob/living/simple_mob/blob
 	icon = 'icons/mob/blob.dmi'
 	pass_flags = PASSBLOB | PASSTABLE
-	faction = FACTION_BLOB
 
 	organ_names = /datum/decl/mob_organ_names/blob
 
@@ -42,6 +41,7 @@
 	..()
 
 CAPABILITIES(/mob/living/simple_mob/blob)
+	configure(mob_rules(faction = FACTION_BLOB))
 	configure(mob_nature(can_pain_emote = FALSE))
 	ref_one(nameof(blob_type), /datum/blob_type)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
@@ -52,9 +52,9 @@ CAPABILITIES(/mob/living/simple_mob/blob)
 /mob/living/simple_mob/blob/blob_act(obj/structure/blob/B)
 	if(!overmind && B.overmind)
 		rel_set(src, nameof(overmind), B.overmind)
-		faction = B.overmind.blob_type.faction
+		set_faction(B.overmind.blob_type.faction)
 
-	if(faction != B.faction && B.overmind)
+	if(mob_rules_of(src).faction != B.faction && B.overmind)
 		injure(INJURY_BLUNT, rand(B.overmind.blob_type.damage_lower, B.overmind.blob_type.damage_upper), source = B)
 
 	else if(stat != DEAD && is_injured())
@@ -79,7 +79,7 @@ CAPABILITIES(/mob/living/simple_mob/blob)
 		for(var/obj/item/I in items)
 			if(istype(I, /obj/item/blobcore_chunk))
 				var/obj/item/blobcore_chunk/BC = I
-				if(!overmind || (BC.blob_type && overmind.blob_type.type == BC.blob_type.type) || (BC.blob_type && BC.blob_type.faction == faction))
+				if(!overmind || (BC.blob_type && overmind.blob_type.type == BC.blob_type.type) || (BC.blob_type && BC.blob_type.faction == mob_rules_of(src).faction))
 					ally = TRUE
 				break
 

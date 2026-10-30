@@ -67,12 +67,11 @@
 	var/obj/item/reagent_containers/glass/beaker/vessel = allocate(/obj/item/reagent_containers/glass/beaker, T)
 	TEST_ASSERT(user.put_in_active_hand(vessel), "the beaker is in hand")
 	cap_key_set(vessel, REAGENT_CONTAINER_LID_OPEN, FALSE) // milking wants the lid closed
-	var/milk_key = "glass_container" + ".milk" // a capability's op is keyed capability.op; its entries are built at runtime, which the static key check cannot see
 	test_driver_begin()
-	var/datum/op_result/first = perform_op(user, spider, milk_key, vessel, ORIGIN_CLICK, user.click_authority())
+	var/datum/op_result/first = perform_op(user, spider, "glass_container.milk", vessel, ORIGIN_CLICK, user.click_authority())
 	TEST_ASSERT_EQUAL(first?.outcome, ACT_COMMITTED, "the first milking succeeds")
 	test_chat_clear()
-	var/datum/op_result/second = perform_op(user, spider, milk_key, vessel, ORIGIN_CLICK, user.click_authority())
+	var/datum/op_result/second = perform_op(user, spider, "glass_container.milk", vessel, ORIGIN_CLICK, user.click_authority())
 	TEST_ASSERT_EQUAL(second?.outcome, ACT_REFUSED, "the second milking is refused")
 	TEST_ASSERT(findtext(jointext(test_chat_of(user), " / "), "too recently"), "the milker is told why")
 	TEST_ASSERT(findtext(jointext(test_chat_of(onlooker), " / "), "attempts to express venom"), "an onlooker sees the failed attempt")

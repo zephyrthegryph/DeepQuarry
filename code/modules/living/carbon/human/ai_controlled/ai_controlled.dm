@@ -1,4 +1,5 @@
 CAPABILITIES(/mob/living/carbon/human/ai_controlled/greytide)
+	configure(mob_rules(faction = "syndicate"))
 	rolls(nameof(to_wear_r_hand), pick_weighted(list(/obj/item/storage/toolbox/electrical = 20, /obj/item/storage/toolbox/mechanical = 20, /obj/item/storage/toolbox/emergency = 20, /obj/item/melee/baton/cattleprod = 50)))
 	rolls(nameof(to_wear_mask), PROC_REF(roll_mask))
 	rolls(nameof(to_wear_helmet), PROC_REF(roll_helmet))
@@ -35,4 +36,3 @@ CAPABILITIES(/mob/living/carbon/human/ai_controlled/greytide)
 	to_wear_id_job = "Assistant"
 
 	to_wear_l_hand = null
-	faction = "syndicate"

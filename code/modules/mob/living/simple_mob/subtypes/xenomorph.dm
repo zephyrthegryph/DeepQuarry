@@ -10,7 +10,6 @@
 	vis_height = 32
 	sight = SEE_MOBS
 
-	faction = "xeno"
 	endurance = 200
 	see_in_dark = 10
 
@@ -58,6 +57,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/xeno_ch)
+	configure(mob_rules(faction = "xeno"))
 	configure(living_rules(vore_capacity = 2))
 	owns_one(nameof(build_action), /datum/action/innate/xeno_ch/xeno_build, starts = /datum/action/innate/xeno_ch/xeno_build)
 	owns_one(nameof(neurotox_action), /datum/action/innate/xeno_ch/xeno_neuro, starts = /datum/action/innate/xeno_ch/xeno_neuro)
@@ -71,7 +71,7 @@ CAPABILITIES(/mob/living/simple_mob/xeno_ch)
 
 /mob/living/simple_mob/xeno_ch/Login()
 	. = ..()
-	faction = "neutral"
+	set_faction("neutral")
 	build_action.Grant(src)
 
 // Xenomorph hunter subtype
