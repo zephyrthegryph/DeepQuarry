@@ -69,6 +69,9 @@ def non_client_verb(lines):
 # lint_scopes.toml exempts these by path (unit tests, benchmarks, the vendored TGS DMAPI: they build and wait on the old forms
 # on purpose), so a text match there is not an old form. Admin commands are verbs by design (final_api section 17).
 OLDFORM_EXEMPT = ("code/tests/", "code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/")
+# The controller base and the GLOB holder run before the kernel exists: Initialize() is their boot hook, and the holder's
+# Destroy() deliberately never runs the parent chain (admin var-edit exploit). Neither has a declared replacement.
+BOOT_HOLDERS = ("code/controllers/controller.dm", "code/controllers/globals.dm")
 VERB_EXEMPT = ("code/modules/admin/", "/admin_commands.dm", "/contract_admin.dm")
 
 ALLOW = re.compile(r"\bALLOW\(([^)]*)\)")
@@ -238,7 +241,7 @@ def main(argv):
         if migration_allow(text):
             why.append("allow")
         lines = strip_comments(text)
-        exempt = f.startswith(OLDFORM_EXEMPT)
+        exempt = f.startswith(OLDFORM_EXEMPT) or f in BOOT_HOLDERS
         for label, rx in ([] if exempt else OLD_FORMS):
             if any(rx.search(ln) for ln in lines):
                 why.append("oldform:" + label)
