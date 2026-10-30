@@ -57,6 +57,25 @@ pub fn snapshot_json() -> String {
         ] {
             metrics.gauge(name).set(v);
         }
+        // Which pool the frames ran on: the light pool (frames under LIGHT_FRAME) or the whole frame pool, and how many were skipped.
+        let sim = w.sim().metrics();
+        #[allow(clippy::cast_precision_loss)]
+        for (name, v) in [
+            ("sim.frames_dispatched", sim.frames_dispatched as f64),
+            ("sim.frames_completed", sim.frames_completed as f64),
+            ("sim.light_frames", sim.light_frames as f64),
+            ("sim.dispatches_skipped", sim.dispatches_skipped as f64),
+            ("sim.last_frame_us", sim.last_frame.as_micros() as f64),
+            ("sim.max_frame_us", sim.max_frame.as_micros() as f64),
+        ] {
+            metrics.gauge(name).set(v);
+        }
+        // What each task of the frame has cost so far (wall microseconds and runs, summed over the frame pool's threads).
+        #[allow(clippy::cast_precision_loss)]
+        for (name, micros, runs) in vg_core::frame::task_times() {
+            metrics.gauge(&format!("task.us.{name}")).set(micros as f64);
+            metrics.gauge(&format!("task.runs.{name}")).set(runs as f64);
+        }
         // Each law's awake items and the items its last run stepped: what the world step does at idle.
         for s in w.law_stats() {
             metrics
