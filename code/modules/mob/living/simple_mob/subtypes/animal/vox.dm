@@ -66,14 +66,13 @@ CAPABILITIES(/mob/living/simple_mob/vox)
 
 	after(src, 10 SECONDS, PROC_REF(regrow_quill))
 
-/mob/living/simple_mob/vox/armalis/verb/message_mob()
-	set category = VERB_CAT_ALIEN
-	set name = "Commune with creature"
-	set desc = "Send a telepathic message to an unlucky recipient."
-
+/mob/living/simple_mob/vox/armalis/proc/message_mob()
 	var/datum/armalis_commune_review/review = new
 	rel_set(review, nameof(review.actor), src)
 	review.start()
+
+/mob/living/simple_mob/vox/armalis/proc/message_mob_op(datum/act/op/A)
+	message_mob()
 
 /datum/armalis_commune_review
 	parent_type = /datum/prompt_workflow
@@ -151,12 +150,8 @@ CAPABILITIES(/datum/armalis_commune_review)
 		to_chat(H, span_warning("Your nose begins to bleed..."))
 		H.drip(1)
 
-/mob/living/simple_mob/vox/armalis/verb/shriek()
-	set category = VERB_CAT_ALIEN
-	set name = "Shriek"
-	set desc = "Give voice to a psychic shriek."
-
 CAPABILITIES(/mob/living/simple_mob/vox/armalis)
+	op("message_mob", menu(), label("Commune with creature"), needs(req_self()), then(PROC_REF(message_mob_op)))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(death_message = DEATHGASP_NO_MESSAGE))
 	op("armalis_item", item(/obj/item), then(PROC_REF(armalis_interaction_item)))

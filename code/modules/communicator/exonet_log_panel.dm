@@ -4,6 +4,7 @@
 	var/datum/exonet_log_panel/dq_exonet_log_panel_cache
 
 CAPABILITIES(/mob/observer/dead)
+	op("show_text_messages", menu(), label("Show Text Messages"), needs(req_self()), then(PROC_REF(show_text_messages_op)))
 	param(nameof(from_body), schema_ref(/mob), keep = FALSE, apply = PROC_REF(copy_from_body), early = TRUE) // phase 0: /atom/Initialize() reads the copied colour
 	setup(PROC_REF(place_ghost), with_params = TRUE)
 	setup(PROC_REF(make_exonet_address))
@@ -49,14 +50,13 @@ CAPABILITIES(/datum/exonet_log_panel)
 	return data
 
 // Show Text Messages verb now opens a structured TGUI panel.
-/mob/observer/dead/verb/show_text_messages()
-	set category = VERB_CAT_GHOST_SETTINGS
-	set name = "Show Text Messages"
-	set desc = "Allows you to see exonet text messages you've sent and received."
+/mob/observer/dead/proc/show_text_messages()
 	if(!dq_exonet_log_panel_cache)
 		rel_set(src, nameof(dq_exonet_log_panel_cache), new /datum/exonet_log_panel(src))
 	dq_exonet_log_panel_cache.tgui_interact(src)
 
+/mob/observer/dead/proc/show_text_messages_op(datum/act/op/A)
+	show_text_messages()
 
 /// The host this refers to (a relation view: null once that is deleted).
 /datum/exonet_log_panel/proc/host() as /mob/observer/dead

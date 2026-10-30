@@ -75,3 +75,15 @@
 	var/mob/living/simple_mob/animal/sif/shantak/leader/S = allocate(/mob/living/simple_mob/animal/sif/shantak/leader, test_floor())
 	var/datum/op_result/led = dq_ability_menu_op(S, "rally_pack")
 	TEST_ASSERT(test_op_committed(led), "a shantak leader's rally op commits")
+
+/// A pAI can only fold out of its card, and only fold up when it is not in it: each op's old verb guard is its requirement.
+/datum/unit_test/dq_ability_ops_pai_fold_requirements
+
+/datum/unit_test/dq_ability_ops_pai_fold_requirements/Run()
+	var/obj/item/paicard/card = allocate(/obj/item/paicard, test_floor())
+	var/mob/living/silicon/pai/P = allocate(/mob/living/silicon/pai, card)
+	var/datum/op_result/in_card_fold_up = dq_ability_menu_op(P, "fold_up")
+	TEST_ASSERT_EQUAL(in_card_fold_up?.outcome, ACT_REFUSED, "a pAI in its card cannot fold up")
+	P.forceMove(test_floor())
+	var/datum/op_result/loose_fold_out = dq_ability_menu_op(P, "fold_out")
+	TEST_ASSERT_EQUAL(loose_fold_out?.outcome, ACT_REFUSED, "a pAI outside its card cannot fold out")

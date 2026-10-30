@@ -98,11 +98,11 @@
 
 // start
 
-/mob/living/carbon/brain/verb/backup_ping()
-	set category = VERB_CAT_IC_GAME
-	set name = "Notify Transcore"
-	set desc = "Your body is gone. Notify robotics to be resleeved!"
+/mob/living/carbon/brain/proc/backup_ping()
 	backup_ping_resolve()
+
+/mob/living/carbon/brain/proc/backup_ping_op(datum/act/op/A)
+	backup_ping()
 
 /// The Notify Transcore verb's work. A brain with no mind or no backup record gets the no-backup
 /// answer instead of a runtime (audit A7). Returns TRUE when a notification was sent.
@@ -128,6 +128,7 @@
 		to_chat(src, span_notice("New notification has been sent."))
 
 CAPABILITIES(/mob/living/carbon/brain)
+	op("backup_ping", menu(), label("Notify Transcore"), needs(req_self()), then(PROC_REF(backup_ping_op)))
 	configure(mob_nature(no_vore = TRUE, can_pain_emote = FALSE))
 	ref_one(nameof(host), /datum/mind_host)
 	configure(mob_kind(use_me = 0))
