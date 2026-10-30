@@ -60,10 +60,19 @@ before code/modules/projectiles/gun.dm code/content/projectiles/targeting/target
 before code/modules/mob/holder.dm code/content/vore/resizing/holder_micro.dm   # /obj/item/holder/container_resist()
 before code/defines/obj/weapon.dm code/content/materials/material_stock_parts.dm   # /obj/item/stock_parts/get_rating()
 before code/ATMOSPHERICS/components/** code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
-before code/content/atmos/components/** code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
-before code/domains/atmos/components/** code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
-before code/content/atmos/components/** code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
-before code/domains/atmos/components/** code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
+before code/content/atmos/components/portables_connector.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
+before code/domains/atmos/components/atmos_network_mixin.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
+before code/domains/atmos/components/binary_devices/binary_atmos_base.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
+before code/domains/atmos/components/binary_devices/passive_gate.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
+before code/domains/atmos/components/binary_devices/pipeturbine.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
+before code/domains/atmos/components/omni_devices/_omni_extras.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
+before code/domains/atmos/components/omni_devices/omni_base.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
+before code/domains/atmos/components/shutoff.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
+before code/domains/atmos/components/trinary_devices/trinary_base.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
+before code/domains/atmos/components/tvalve.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
+before code/domains/atmos/components/unary/heat_exchanger.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
+before code/domains/atmos/components/unary/unary_base.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
+before code/domains/atmos/components/valve.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
 before code/modules/overmap/ships/computers/helm.dm code/modules/flight_operations/flight_console.dm   # navigation ui_redirect()
 before code/content/observation/turf_enterexit.dm code/content/turfs/simulated/outdoors/sky_effect.dm   # /turf/Entered()
 
@@ -129,17 +138,43 @@ first code/__defines/**
 first code/engine/_generated/ids.dm      # the ids the declaration markers declare (analyze gen declare_ids): before everything that names one
 first code/contracts/**                  # the contracts layer: ids (TAG_UI, RES_*), act types, accessor declarations
 first code/content/contracts/**   # the contracts layer: ids (TAG_UI, RES_*), act types, accessor declarations
-first code/content/contracts/**   # the contracts layer: ids (TAG_UI, RES_*), act types, accessor declarations
 first **/*_defines.dm                    # a module's own macro file (combat_ai, integrated_electronics, flight_operations, expedition, ...)
 first code/game/machinery/machinery_fields.dm   # declares the machine families' state vars (on, active, locked, mode) their files set
 
 # Macros defined in an ordinary file and used by others: the definer before its users.
 before code/modules/mob/living/carbon/human/species/station/traits/_traits.dm code/content/client/preferences/**   # TRAIT_TYPE_*
 before code/domains/heat/heat_bind_batch.dm code/ATMOSPHERICS/**   # HEAT_BODY_RESOLVE
-before code/domains/heat/heat_bind_batch.dm code/content/atmos/**   # HEAT_BODY_RESOLVE
-before code/domains/heat/heat_bind_batch.dm code/domains/atmos/**   # HEAT_BODY_RESOLVE
-before code/domains/heat/heat_bind_batch.dm code/content/atmos/**   # HEAT_BODY_RESOLVE
-before code/domains/heat/heat_bind_batch.dm code/domains/atmos/**   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/content/atmos/_atmospherics_helpers.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/content/atmos/components/portables_connector.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/content/atmos/pipes/pipe_base.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/content/atmos/pipes/vent.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/_atmos_setup.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/atom_flags_1.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/auxmos_init_bridge.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/components/atmos_network_mixin.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/components/binary_devices/binary_atmos_base.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/components/binary_devices/passive_gate.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/components/binary_devices/pipeturbine.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/components/omni_devices/_omni_extras.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/components/omni_devices/omni_base.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/components/shutoff.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/components/trinary_devices/trinary_base.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/components/tvalve.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/components/unary/heat_exchanger.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/components/unary/unary_base.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/components/valve.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/dq_chomp_gas_types.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/dq_linda_turf_air.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/gasmixtures/gas_types.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/gasmixtures/immutable_mixtures.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/gasmixtures/reaction_factors.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/pipes/cap.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/pipes/he_pipes.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/pipes/manifold.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/pipes/manifold4w.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/pipes/simple.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/pipes/tank.dm   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/pipes/universal.dm   # HEAT_BODY_RESOLVE
 before code/domains/heat/heat_bind_batch.dm code/datums/rules/world_adapter.dm
 before code/domains/heat/heat_bind_batch.dm code/domains/heat/**
 before code/domains/heat/heat_bind_batch.dm code/modules/heat/heat.dm

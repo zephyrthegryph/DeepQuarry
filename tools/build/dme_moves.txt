@@ -1075,6 +1075,10 @@ code/modules/holomap/holomap_datum.dm	code/content/holomap/holomap_datum.dm
 code/modules/holowarrant_panel.dm	code/content/modules/holowarrant_panel.dm
 code/modules/hydro/plants.dm	code/content/hydro/plants.dm
 code/modules/hydro/plantsstorage.dm	code/content/hydro/plantsstorage.dm
+code/modules/hydroponics/fruit_spawner.dm	code/content/hydroponics/fruit_spawner.dm
+code/modules/hydroponics/seed_packets.dm	code/content/hydroponics/seed_packets.dm
+code/modules/hydroponics/trays/tray_reagents.dm	code/content/hydroponics/trays/tray_reagents.dm
+code/modules/hydroponics/trays/tray_update_icons.dm	code/content/hydroponics/trays/tray_update_icons.dm
 code/modules/identification/item_procs.dm	code/content/identification/item_procs.dm
 code/modules/integrated_electronics/core/integrated_circuit.dm	code/content/integrated_electronics/core/integrated_circuit.dm
 code/modules/integrated_electronics/subtypes/converters.dm	code/content/integrated_electronics/subtypes/converters.dm
@@ -1188,6 +1192,11 @@ code/modules/recycling/disposal_junctions.dm	code/content/recycling/disposal_jun
 code/modules/recycling/disposal_tagger.dm	code/content/recycling/disposal_tagger.dm
 code/modules/recycling/disposal_trunk.dm	code/content/recycling/disposal_trunk.dm
 code/modules/refinery/core/industrial_reagent_machines.dm	code/content/refinery/core/industrial_reagent_machines.dm
+code/modules/research/tg/disks.dm	code/content/research/tg/disks.dm
+code/modules/research/tg/machinery/_production.dm	code/content/research/tg/machinery/_production.dm
+code/modules/research/tg/rdconsole.dm	code/content/research/tg/rdconsole.dm
+code/modules/research/tg/techwebs/__techweb_helpers.dm	code/content/research/tg/techwebs/__techweb_helpers.dm
+code/modules/research/tg/techwebs/_techweb_node.dm	code/content/research/tg/techwebs/_techweb_node.dm
 code/modules/resleeving/circuitboards.dm	code/content/resleeving/circuitboards.dm
 code/modules/resleeving/designer.dm	code/content/resleeving/designer.dm
 code/modules/resleeving/documents.dm	code/content/resleeving/documents.dm
@@ -1279,6 +1288,8 @@ code/modules/vote/vote_api.dm	code/content/vote/vote_api.dm
 code/modules/vote/vote_service.dm	code/content/vote/vote_service.dm
 code/modules/weapons/melee.dm	code/content/weapons/melee.dm
 code/modules/weapons/staves.dm	code/content/weapons/staves.dm
+code/modules/xenoarcheaology/tools/ano_device_battery.dm	code/content/xenoarcheaology/tools/ano_device_battery.dm
+code/modules/xenoarcheaology/tools/tools.dm	code/content/xenoarcheaology/tools/tools.dm
 code/modules/xenobio/machinery/monkey_processor.dm	code/content/xenobio/machinery/monkey_processor.dm
 code/ATMOSPHERICS/_atmos_setup.dm	code/domains/atmos/_atmos_setup.dm
 code/ATMOSPHERICS/_atmospherics_helpers.dm	code/content/atmos/_atmospherics_helpers.dm

@@ -391,6 +391,7 @@ legacy_forms_converted = [
   "code/_onclick/hud/",
   "code/content/_onclick/hud/",
   "code/controllers/",
+  "code/core/",
   "code/content/core/",
   "code/datums/abilities/",
   "code/datums/behaviours/",
