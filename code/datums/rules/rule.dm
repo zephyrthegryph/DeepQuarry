@@ -47,8 +47,6 @@
 	var/hold_for = 0
 	/// Fire at most once per object, then drop the subscriptions.
 	var/once = TRUE
-	/// RULE_REPLACES_* legacy paths this rule takes over on its types.
-	var/replaces = NONE
 	/// Test fixtures: skipped by the type index and boot validation.
 	var/test_only = FALSE
 	/// Concrete types the generated threshold test instantiates; default applies_to.
@@ -65,8 +63,6 @@
 	var/heat_only = FALSE
 	// Shared parents (abstract_type == type) are skipped like test_only.
 	abstract_type = /datum/rule
-	/// Damage-flavour rules: the DAMAGE_BAND_* they set.
-	var/band
 
 	// Compiled
 	/// /datum/rule_trigger list.
@@ -408,17 +404,6 @@ DECLARE_SHARED_CACHE(rules_heat_deferred, GLOBAL_PROC_REF(build_rules_heat_defer
 /datum/rule/proc/applies_to_type(path)
 	return TRUE
 
-/// RULE_REPLACES_* flags of the rules on `path`. Cached per type.
-/proc/dq_rules_replace_flags(path)
-	return CACHED(rules_replace_flags, path)
-
-DECLARE_SHARED_CACHE(rules_replace_flags, GLOBAL_PROC_REF(build_rules_replace_flags), SC_NEVER)
-
-/proc/build_rules_replace_flags(path)
-	. = NONE
-	for(var/datum/rule/rule as anything in dq_rules_for_type(path))
-		. |= rule.replaces
-
 /// Boot validation: every declared rule compiles, and every applies_to is a type.
 /proc/dq_rules_validate()
 	. = list()
@@ -445,7 +430,11 @@ GLOBAL_VAR_INIT(dq_rule_recording, FALSE)
 		GLOB.dq_rule_fire_log[key] = (GLOB.dq_rule_fire_log[key] || 0) + 1
 
 /proc/dq_rule_fire_count(datum/thing, datum/rule/rule)
-	return GLOB.dq_rule_fire_log["[ref_token(thing)]|[rule.type]"] || 0
+	return dq_rule_fire_count_of(ref_token(thing), rule)
+
+/// The fire count of the object whose ref_token() was `token` (a deleted object has no token any more).
+/proc/dq_rule_fire_count_of(token, datum/rule/rule)
+	return GLOB.dq_rule_fire_log["[token]|[rule.type]"] || 0
 
 /// The domain provider for channel-backed triggers (a relation view).
 /datum/rule_trigger/proc/provider() as /datum/property_provider/domain

@@ -12,5 +12,3 @@ sparse(/atom, tf_scale_y, type = num)
 
 // base_vars wave 3
 sparse(/atom, map_json_data)
-sparse(/atom, last_damage_flag, type = text)
-sparse(/atom, damage_band, type = num)

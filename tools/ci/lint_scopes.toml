@@ -1707,6 +1707,17 @@ banned = [
   "factors_equal = hold_tables_end() reports which stats moved",
   "factor_dep = a derived read of a stat var is nameof(stat) like any tracked var",
   "derived_factors_recomputed = a factor stat publishes like any stat var",
+  "RULE_REPLACES_INTEGRITY_BREAK = there is one damage path: take_damage() runs settle_integrity_crossings() for every atom, bound or not (code/game/atom/atom_defense.dm)",
+  "RULE_REPLACES_INTEGRITY_DESTRUCTION = there is one damage path: take_damage() runs settle_integrity_crossings() for every atom, bound or not (code/game/atom/atom_defense.dm)",
+  "RULES_REPLACE = a rule replaces no legacy path; break and destroy are the native default in take_damage() (code/game/atom/atom_defense.dm)",
+  "dq_rules_binding_replacing = the break/destroy default is native and binds nothing; take_damage() has one path (code/game/atom/atom_defense.dm)",
+  "dq_rules_replace_flags = a rule replaces no legacy path; break and destroy are the native default in take_damage() (code/game/atom/atom_defense.dm)",
+  "dq_rules_settle = no rule watches integrity: take_damage() runs settle_integrity_crossings() natively (code/game/atom/atom_defense.dm)",
+  "integrity_breaks = breaking at integrity_failure is settle_integrity_crossings() in take_damage(), not a rule",
+  "integrity_destroyed = destruction at zero is settle_integrity_crossings() in take_damage(), not a rule",
+  "damage_flavour = a damage band is derived from the integrity ratio: dq_damage_band_for() (code/game/atom/damage_flavour.dm)",
+  "rule_enter_damage_band = a damage band is derived from the integrity ratio: dq_damage_band_for() (code/game/atom/damage_flavour.dm)",
+  "rule_leave_damage_band = a damage band is derived from the integrity ratio: dq_damage_band_for() (code/game/atom/damage_flavour.dm)",
 ]
 
 # Generated scaffolding is derived build output; source dependencies remain checked.
