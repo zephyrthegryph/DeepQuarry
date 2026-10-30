@@ -215,6 +215,8 @@ impl SourceExportMapping {
         }
     }
     fn admits(&self, current: &ColdFrontend) -> bool {
+        #[cfg(test)]
+        FULL_SOURCE_ADMISSIONS.with(|count| count.set(count.get() + 1));
         self.acquisitions.len() == current.plan.occurrences.len()
             && self.acquisitions.iter().enumerate().all(|(id, old)| {
                 match (old, current.plan.source_acquisitions.get(&id)) {
@@ -660,6 +662,12 @@ impl SourceExportMapping {
         }
         Ok(flags)
     }
+    pub(super) fn initializer_declaration_cursor(
+        &self,
+        ordinal: OccurrenceId,
+    ) -> Result<usize, String> {
+        self.declaration_policy_cursor(ordinal)
+    }
     pub(super) fn primary_declaration_cursors(
         &self,
     ) -> impl Iterator<Item = (OccurrenceId, usize)> + '_ {
@@ -799,4 +807,15 @@ impl SourceExportMapping {
     ) -> Result<SourceNoteOrigin, String> {
         self.source_note_point(self.declaration_policy_cursor(ordinal)?)
     }
+}
+
+#[cfg(test)]
+thread_local! {static FULL_SOURCE_ADMISSIONS:std::cell::Cell<usize>=const{std::cell::Cell::new(0)};}
+#[cfg(test)]
+pub(super) fn reset_full_source_admissions_for_test() {
+    FULL_SOURCE_ADMISSIONS.with(|count| count.set(0));
+}
+#[cfg(test)]
+pub(super) fn full_source_admissions_for_test() -> usize {
+    FULL_SOURCE_ADMISSIONS.with(|count| count.get())
 }

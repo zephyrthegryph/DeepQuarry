@@ -543,6 +543,12 @@ mod relative_declarations;
 pub use body_code::IssuedBodyCode;
 #[path = "frontend_body_queries.rs"]
 mod body_queries;
+#[path = "frontend_initializer_source.rs"]
+mod initializer_source;
+pub use initializer_source::{
+    InitializerExpressionRecipe, OriginalInitializerContext, OriginalInitializerExpression,
+    OriginalInitializerExpressionInput,
+};
 #[path = "frontend_setting_source.rs"]
 mod setting_source;
 pub use body_queries::{BodySyntax, BodySyntaxInput, BodySyntaxQueries};

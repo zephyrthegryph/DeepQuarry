@@ -33,16 +33,16 @@ fn header_domain(
     }
     Ok(None)
 }
-fn capture(
+fn capture_with<E: From<String> + From<&'static str>>(
     write: &InitializerWrite,
     symbols: &SymbolTable,
-    evaluator: &dyn CapturedInitializerEvaluator,
+    knowledge: impl FnOnce() -> Result<Option<BindingKnowledge>, E>,
     ordinal: usize,
-) -> Result<ModifierFact, String> {
+) -> Result<ModifierFact, E> {
     if let Some(domain) = header_domain(write, symbols)? {
         return Ok(ModifierFact::Header(domain));
     }
-    let knowledge = evaluator.binding_knowledge(write)?.ok_or_else(|| {
+    let knowledge = knowledge()?.ok_or_else(|| {
         let (owner, name) = match write.target {
             InitializerTarget::Instance {
                 declaring_owner,
@@ -89,6 +89,13 @@ fn capture(
     Ok(ModifierFact::Known(flags))
 }
 
+fn capture(write: &InitializerWrite, symbols: &SymbolTable, evaluator: &dyn CapturedInitializerEvaluator, ordinal: usize) -> Result<ModifierFact, String> {
+    capture_with(write, symbols, || evaluator.binding_knowledge(write), ordinal)
+}
+fn capture_checked(write: &InitializerWrite, symbols: &SymbolTable, evaluator: &dyn CapturedInitializerEvaluator, ordinal: usize) -> Result<ModifierFact, InitializerFailure> {
+    capture_with(write, symbols, || evaluator.binding_knowledge_checked(write), ordinal)
+}
+
 pub(super) fn modifier_facts(
     writes: &[InitializerWrite],
     symbols: &SymbolTable,
@@ -106,18 +113,52 @@ pub(super) fn modifier_facts_indexed<'a>(
         capture(write, symbols, evaluator, ordinal)
     })
 }
+enum ModifierEntryFailure<E> { Semantic(String), Operational(E) }
+/// Operation-local transport. Semantic issue objects remain the existing cache
+/// domain; an actual IO failure is never inserted into one of them.
+pub(super) enum ModifierReadFailure { Semantic(ClassificationError), Operational(std::io::Error) }
+impl std::fmt::Debug for ModifierReadFailure {
+    fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result {
+        match self { Self::Semantic(error)=>f.debug_tuple("Semantic").field(error).finish(),Self::Operational(error)=>f.debug_tuple("Operational").field(error).finish() }
+    }
+}
+pub(super) fn modifier_facts_indexed_checked<'a>(
+    writes: impl ExactSizeIterator<Item=&'a InitializerWrite>, symbols:&SymbolTable,
+    evaluator:&dyn CapturedInitializerEvaluator, ordinals:Option<&[usize]>,
+)->Result<Vec<ModifierFact>,ModifierReadFailure>{
+    collect_checked(writes,ordinals,|write,ordinal|capture_checked(write,symbols,evaluator,ordinal))
+}
+fn collect_checked<'a>(writes:impl ExactSizeIterator<Item=&'a InitializerWrite>,ordinals:Option<&[usize]>,mut produce:impl FnMut(&InitializerWrite,usize)->Result<ModifierFact,InitializerFailure>)->Result<Vec<ModifierFact>,ModifierReadFailure>{
+    crate::daemon::control::checkpoint().map_err(ModifierReadFailure::Operational)?;
+    let result=collect_with(writes,ordinals,|write,ordinal|produce(write,ordinal).map_err(|failure|match failure {
+        InitializerFailure::Unsupported(reason)=>ModifierEntryFailure::Semantic(reason),
+        InitializerFailure::Operational(actual)=>ModifierEntryFailure::Operational(actual),
+    })).map_err(ModifierReadFailure::Operational)?;
+    crate::daemon::control::checkpoint().map_err(ModifierReadFailure::Operational)?;
+    result.map_err(ModifierReadFailure::Semantic)
+}
+
 fn collect<'a>(
+    writes: impl ExactSizeIterator<Item=&'a InitializerWrite>, ordinals:Option<&[usize]>,
+    mut produce:impl FnMut(&InitializerWrite,usize)->Result<ModifierFact,String>,
+)->Result<Vec<ModifierFact>,ClassificationError>{
+    match collect_with::<std::convert::Infallible>(writes,ordinals,|write,ordinal|produce(write,ordinal).map_err(ModifierEntryFailure::Semantic)) {
+        Ok(result)=>result,Err(never)=>match never{},
+    }
+}
+fn collect_with<'a, E>(
     writes: impl ExactSizeIterator<Item = &'a InitializerWrite>,
     ordinals: Option<&[usize]>,
-    mut produce: impl FnMut(&InitializerWrite, usize) -> Result<ModifierFact, String>,
-) -> Result<Vec<ModifierFact>, ClassificationError> {
+    mut produce: impl FnMut(&InitializerWrite, usize) -> Result<ModifierFact, ModifierEntryFailure<E>>,
+) -> Result<Result<Vec<ModifierFact>, ClassificationError>, E> {
     let mut facts = Vec::with_capacity(writes.len());
     let mut issues = Vec::new();
     for (local, write) in writes.enumerate() {
         let ordinal = ordinals.map_or(local, |ordinals| ordinals[local]);
         match produce(write, ordinal) {
             Ok(fact) => facts.push(fact),
-            Err(reason) => issues.push(ClassificationIssue {
+            Err(ModifierEntryFailure::Operational(actual)) => return Err(actual),
+            Err(ModifierEntryFailure::Semantic(reason)) => issues.push(ClassificationIssue {
                 kind: ClassificationIssueKind::Unsupported,
                 source_ordinal: ordinal,
                 reason,
@@ -125,9 +166,9 @@ fn collect<'a>(
         }
     }
     if issues.is_empty() {
-        Ok(facts)
+        Ok(Ok(facts))
     } else {
-        Err(ClassificationError { issues })
+        Ok(Err(ClassificationError { issues }))
     }
 }
 
@@ -331,15 +372,27 @@ pub(super) fn modifier_facts_reused_in<'a>(
     keys: &[ModifierKey],
     admission: Option<&super::current_admission::Admission<'_, '_>>,
 ) -> Result<Vec<ModifierFact>, ClassificationError> {
+    collect(writes, Some(ordinals), |write, ordinal| {
+        capture_reused_with(write,ordinal,evaluator,factory,reuse,keys,admission,||Ok(()),|worker|capture(write,symbols,worker,ordinal))
+    })
+}
+pub(super) fn modifier_facts_reused_checked_in<'a>(
+    writes:impl ExactSizeIterator<Item=&'a InitializerWrite>,symbols:&SymbolTable,evaluator:&dyn CapturedInitializerEvaluator,ordinals:&[usize],factory:ParallelEvaluator<'_>,reuse:InitializerReuse<'_>,keys:&[ModifierKey],admission:Option<&super::current_admission::Admission<'_,'_>>,
+)->Result<Vec<ModifierFact>,ModifierReadFailure>{
+    collect_checked(writes,Some(ordinals),|write,ordinal|capture_reused_with(write,ordinal,evaluator,factory,reuse,keys,admission,||crate::daemon::control::checkpoint().map_err(InitializerFailure::Operational),|worker|capture_checked(write,symbols,worker,ordinal)))
+}
+fn capture_reused_with<E:From<String>+From<&'static str>>(
+    write:&InitializerWrite,ordinal:usize,evaluator:&dyn CapturedInitializerEvaluator,factory:ParallelEvaluator<'_>,reuse:InitializerReuse<'_>,keys:&[ModifierKey],admission:Option<&super::current_admission::Admission<'_,'_>>,checkpoint:impl Fn()->Result<(),E>,mut produce:impl FnMut(&dyn CapturedInitializerEvaluator)->Result<ModifierFact,E>,
+)->Result<ModifierFact,E>{
     static ITEM: dm_profile::Accumulator = dm_profile::Accumulator::new("init.modifier.item");
     static VISIT: dm_profile::Accumulator = dm_profile::Accumulator::new("init.modifier.visit");
     static INPUT: dm_profile::Accumulator = dm_profile::Accumulator::new("init.modifier.input_eq");
+    checkpoint()?;
     let host = Host(reuse.resolver);
-    collect(writes, Some(ordinals), |write, ordinal| {
         let _item = ITEM.time();
         let input_timer = INPUT.time();
         if keys[ordinal].input.as_ref() != write {
-            return capture(write, symbols, evaluator, ordinal);
+            return produce(evaluator);
         }
         drop(input_timer);
         let visit_timer = VISIT.time();
@@ -353,6 +406,7 @@ pub(super) fn modifier_facts_reused_in<'a>(
         .0;
         drop(visit_timer);
         if let Some(value) = visited {
+            checkpoint()?;
             let _ = keys[ordinal].admitted.set(Arc::clone(&value.input));
             reuse.store.modifiers.hits.fetch_add(1, Ordering::Relaxed);
             return Ok(value.fact);
@@ -364,13 +418,14 @@ pub(super) fn modifier_facts_reused_in<'a>(
                 .factory
                 .with_recording_evaluator(factory.engine, &recording, &mut |worker| {
                     assert!(result.is_none(), "modifier recording factory invoked twice");
-                    result = Some(capture(write, symbols, worker, ordinal));
+                    result = Some(produce(worker));
                 });
         let fact = if captured {
             result.ok_or("modifier recording factory omitted operation")??
         } else {
-            capture(write, symbols, evaluator, ordinal)?
+            produce(evaluator)?
         };
+        checkpoint()?;
         reuse
             .store
             .modifiers
@@ -396,9 +451,17 @@ pub(super) fn modifier_facts_reused_in<'a>(
             }
         }
         Ok(fact)
-    })
+
 }
 
 #[cfg(test)]
 #[path = "modifier_facts_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path="modifier_checked_tests.rs"]
+mod checked_tests;
+
+#[cfg(test)]
+#[path="modifier_reuse_checked_tests.rs"]
+mod reuse_checked_tests;

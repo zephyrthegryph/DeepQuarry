@@ -141,6 +141,7 @@ fn initializer_lowering_error(
 ) -> ColdError {
     use crate::initializer_diagnostics::InitializerLoweringError as E;
     match error {
+        E::Operational(error) => ColdError::Operational(error),
         E::Diagnostics(diagnostics) => ColdError::Lowering(diagnostics),
         E::Invariant(message) => ColdError::InitializerInvariant(message),
         E::Unsupported(message) => ColdError::Initializer(message),

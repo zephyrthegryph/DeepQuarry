@@ -8,6 +8,7 @@ pub mod allow;
 #[cfg(feature = "legacy-sem")]
 pub mod base_vars_dead;
 pub mod baseline;
+pub mod policy_judge;
 #[cfg(feature = "legacy-sem")]
 pub mod cache;
 #[cfg(feature = "legacy-sem")]

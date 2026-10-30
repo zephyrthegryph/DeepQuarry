@@ -9,6 +9,9 @@ use dm_ir::{
 use std::sync::Arc;
 pub mod warnings;
 
+#[path="initializer_policy/failure.rs"]mod failure;
+pub use failure::InitializerFailure;
+
 pub enum Evaluation {
     Scalar(SemanticValue),
     Runtime,
@@ -20,18 +23,27 @@ pub enum Evaluation {
 }
 /// Request-local syntax prepared by the evaluator's existing admission path.
 /// It contains no cached resolution result or independent dependency domain.
-pub struct PreparedInitializerExpression {
-    source: String,
-    ast: dm_syntax::Expr,
+/// Existing standalone/custom compatibility name retains its owned/static API.
+pub type PreparedInitializerExpression = ScopedPreparedInitializerExpression<'static>;
+/// Native expressions borrow authenticated original source; owned compatibility
+/// expressions remain freely constructible and independently usable.
+pub struct ScopedPreparedInitializerExpression<'source> {
+    syntax: PreparedInitializerSyntax<'source>,
     authored: Option<SymbolicExpression>,
     source_features: dm_codegen_byond::SourceFeatures,
 }
-impl PreparedInitializerExpression {
+enum PreparedInitializerSyntax<'source> {
+    Compatibility {
+        source: String,
+        ast: dm_syntax::Expr,
+    },
+    Original(dm_tree::frontend::OriginalInitializerExpression<'source>),
+}
+impl<'source> ScopedPreparedInitializerExpression<'source> {
     /// Compatibility syntax supplied by an evaluator; retention verifies it.
     pub fn new(source: String, ast: dm_syntax::Expr) -> Self {
         Self {
-            source,
-            ast,
+            syntax: PreparedInitializerSyntax::Compatibility { source, ast },
             authored: None,
             source_features: Default::default(),
         }
@@ -46,17 +58,22 @@ impl PreparedInitializerExpression {
             return Err("invalid initializer expression".into());
         }
         Ok(parsed.expr.map(|ast| Self {
-            source,
-            ast,
+            syntax: PreparedInitializerSyntax::Compatibility { source, ast },
             authored: None,
             source_features: Default::default(),
         }))
     }
     pub fn source(&self) -> &str {
-        &self.source
+        match &self.syntax {
+            PreparedInitializerSyntax::Compatibility { source, .. } => source,
+            PreparedInitializerSyntax::Original(root) => root.source(),
+        }
     }
     pub fn ast(&self) -> &dm_syntax::Expr {
-        &self.ast
+        match &self.syntax {
+            PreparedInitializerSyntax::Compatibility { ast, .. } => ast,
+            PreparedInitializerSyntax::Original(root) => root.ast(),
+        }
     }
     pub(crate) fn set_source_features(&mut self, features: dm_codegen_byond::SourceFeatures) {
         self.source_features = features;
@@ -77,8 +94,52 @@ impl PreparedInitializerExpression {
         }
         Ok(prepared)
     }
-    fn into_parts(self) -> (String, dm_syntax::Expr, Option<SymbolicExpression>) {
-        (self.source, self.ast, self.authored)
+    /// Legacy owned syntax cannot consume a native original root by cloning or
+    /// shifting it. The checked classifier must select the native decomposition.
+    fn into_parts(self) -> Result<(String, dm_syntax::Expr, Option<SymbolicExpression>), String> {
+        match self.syntax {
+            PreparedInitializerSyntax::Compatibility { source, ast } => {
+                Ok((source, ast, self.authored))
+            }
+            PreparedInitializerSyntax::Original(_) => {
+                Err("original initializer root requires checked borrowed classification".into())
+            }
+        }
+    }
+    pub(crate) fn from_original(
+        root: dm_tree::frontend::OriginalInitializerExpression<'source>,
+    ) -> Self {
+        Self {
+            authored: Some(root.authored().clone()),
+            syntax: PreparedInitializerSyntax::Original(root),
+            source_features: Default::default(),
+        }
+    }
+    pub(crate) fn original(
+        &self,
+    ) -> Option<&dm_tree::frontend::OriginalInitializerExpression<'source>> {
+        match &self.syntax {
+            PreparedInitializerSyntax::Original(root) => Some(root),
+            _ => None,
+        }
+    }
+    pub(crate) fn into_original(
+        self,
+    ) -> Result<
+        (
+            dm_tree::frontend::OriginalInitializerExpression<'source>,
+            dm_codegen_byond::SourceFeatures,
+        ),
+        Self,
+    > {
+        match self.syntax {
+            PreparedInitializerSyntax::Original(root) => Ok((root, self.source_features)),
+            syntax => Err(Self {
+                syntax,
+                authored: self.authored,
+                source_features: self.source_features,
+            }),
+        }
     }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -145,6 +206,68 @@ pub struct ParallelEvaluator<'a> {
     pub engine: Option<&'a crate::engine::EngineSnapshot>,
 }
 pub trait CapturedInitializerEvaluator {
+    /// Typed prepared syntax tied to this evaluator's authenticated source
+    /// lifetime. The old owned checked hook remains the compatibility default.
+    /// No original root is selected or reconstructed by this adapter.
+    fn evaluate_scoped_write_checked(
+        &self,
+        write: &InitializerWrite,
+        value: &SymbolicExpression,
+    ) -> Result<(Evaluation, Option<ScopedPreparedInitializerExpression<'_>>), InitializerFailure> {
+        self.evaluate_prepared_write_checked(write, value)
+    }
+    /// Original declaration-wave input carries the immutable source ordinal.
+    /// Only the authenticated row supplies the RHS; adapted writes from array
+    /// recursion do not issue source authority or replace that original value.
+    /// The source lifetime is independent of a temporary worker evaluator.
+    fn evaluate_original_write_checked<'source>(
+        &self,
+        input: &dm_tree::frontend::OriginalInitializerExpressionInput<'source>,
+        adapted_write: &InitializerWrite,
+    ) -> Result<(Evaluation, Option<ScopedPreparedInitializerExpression<'source>>), InitializerFailure> {
+        let InitializerValue::Expression(value) = &input.original_write().value else {
+            return Err(InitializerFailure::Unsupported(
+                "original declaration input has no authored RHS".into(),
+            ));
+        };
+        self.evaluate_prepared_write_checked(adapted_write, value)
+    }
+    /// Additive typed native boundary. Defaults deliberately preserve the
+    /// corresponding custom compatibility hook; they never choose another
+    /// parser/evaluator. No native producer is selected by these entries alone.
+    fn evaluate_prepared_write_checked(&self,write:&InitializerWrite,value:&SymbolicExpression)
+        ->Result<(Evaluation,Option<PreparedInitializerExpression>),InitializerFailure>{
+        self.evaluate_prepared_write(write,value).map_err(InitializerFailure::Unsupported)
+    }
+    fn evaluate_ast_write_checked(&self,write:&InitializerWrite,ast:&dm_syntax::Expr,source:&str,symbols:&SymbolTable)
+        ->Result<Evaluation,InitializerFailure>{
+        self.evaluate_ast_write(write,ast,source,symbols).map_err(InitializerFailure::Unsupported)
+    }
+    fn evaluate_checked(&self,owner:SymbolId,value:&SymbolicExpression)->Result<Evaluation,InitializerFailure>{
+        self.evaluate(owner,value).map_err(InitializerFailure::Unsupported)
+    }
+    fn evaluate_write_checked(&self,write:&InitializerWrite,value:&SymbolicExpression)->Result<Evaluation,InitializerFailure>{
+        self.evaluate_write(write,value).map_err(InitializerFailure::Unsupported)
+    }
+    fn initializer_token_scalar_checked(&self,value:&SemanticValue)->Result<Vec<u8>,InitializerFailure>{
+        self.initializer_token_scalar(value).map_err(InitializerFailure::Unsupported)
+    }
+    fn initializer_intrinsic_constructor_checked(&self,write:&InitializerWrite,name:&str)->Result<bool,InitializerFailure>{
+        Ok(self.initializer_intrinsic_constructor(write,name))
+    }
+    fn initializer_constructor_type_checked(&self,write:&InitializerWrite)->Result<Option<SymbolId>,InitializerFailure>{
+        self.initializer_constructor_type(write).map_err(InitializerFailure::Unsupported)
+    }
+    fn declaration_modifiers_checked(&self,write:&InitializerWrite)->Result<Option<u32>,InitializerFailure>{
+        self.declaration_modifiers(write).map_err(InitializerFailure::Unsupported)
+    }
+    fn instance_storage_checked(&self,write:&InitializerWrite)->Result<Option<(SymbolId,SymbolId)>,InitializerFailure>{
+        self.instance_storage(write).map_err(InitializerFailure::Unsupported)
+    }
+    fn binding_knowledge_checked(&self,write:&InitializerWrite)->Result<Option<BindingKnowledge>,InitializerFailure>{
+        self.binding_knowledge(write).map_err(InitializerFailure::Unsupported)
+    }
+
     fn parallel_evaluator(&self) -> Option<ParallelEvaluator<'_>> {
         None
     }
@@ -227,6 +350,35 @@ pub struct EngineCapturedEvaluator<'a> {
     pub evaluator: &'a dyn CapturedInitializerEvaluator,
 }
 impl CapturedInitializerEvaluator for EngineCapturedEvaluator<'_> {
+    fn evaluate_scoped_write_checked(
+        &self,
+        write: &InitializerWrite,
+        value: &SymbolicExpression,
+    ) -> Result<(Evaluation, Option<ScopedPreparedInitializerExpression<'_>>), InitializerFailure> {
+        self.evaluator.evaluate_scoped_write_checked(write, value)
+    }
+    fn evaluate_original_write_checked<'source>(
+        &self,
+        input: &dm_tree::frontend::OriginalInitializerExpressionInput<'source>,
+        adapted_write: &InitializerWrite,
+    ) -> Result<(Evaluation, Option<ScopedPreparedInitializerExpression<'source>>), InitializerFailure> {
+        self.evaluator.evaluate_original_write_checked(input, adapted_write)
+    }
+    fn evaluate_prepared_write_checked(&self,write:&InitializerWrite,value:&SymbolicExpression)
+        ->Result<(Evaluation,Option<PreparedInitializerExpression>),InitializerFailure>{self.evaluator.evaluate_prepared_write_checked(write,value)}
+    fn evaluate_ast_write_checked(&self,write:&InitializerWrite,ast:&dm_syntax::Expr,source:&str,symbols:&SymbolTable)
+        ->Result<Evaluation,InitializerFailure>{self.evaluator.evaluate_ast_write_checked(write,ast,source,symbols)}
+    fn evaluate_checked(&self,owner:SymbolId,value:&SymbolicExpression)->Result<Evaluation,InitializerFailure>{self.evaluator.evaluate_checked(owner,value)}
+    fn evaluate_write_checked(&self,write:&InitializerWrite,value:&SymbolicExpression)->Result<Evaluation,InitializerFailure>{self.evaluator.evaluate_write_checked(write,value)}
+    fn initializer_token_scalar_checked(&self,value:&SemanticValue)->Result<Vec<u8>,InitializerFailure>{self.evaluator.initializer_token_scalar_checked(value)}
+    fn initializer_intrinsic_constructor_checked(&self,write:&InitializerWrite,name:&str)->Result<bool,InitializerFailure>{self.evaluator.initializer_intrinsic_constructor_checked(write,name)}
+    fn initializer_constructor_type_checked(&self,write:&InitializerWrite)->Result<Option<SymbolId>,InitializerFailure>{self.evaluator.initializer_constructor_type_checked(write)}
+    fn declaration_modifiers_checked(&self,write:&InitializerWrite)->Result<Option<u32>,InitializerFailure>{
+        engine_modifiers(self.engine,write,||self.evaluator.declaration_modifiers_checked(write))
+    }
+    fn binding_knowledge_checked(&self,write:&InitializerWrite)->Result<Option<BindingKnowledge>,InitializerFailure>{
+        engine_binding(self.engine,write,||self.declaration_modifiers_checked(write),||self.evaluator.instance_storage_checked(write))
+    }
     fn parallel_evaluator(&self) -> Option<ParallelEvaluator<'_>> {
         let mut context = self.evaluator.parallel_evaluator()?;
         context.engine = Some(self.engine);
@@ -266,33 +418,8 @@ impl CapturedInitializerEvaluator for EngineCapturedEvaluator<'_> {
     fn pure_calls(&self) -> Option<&dyn dm_tree::constants::PureCalls> {
         self.evaluator.pure_calls()
     }
-    fn binding_knowledge(
-        &self,
-        write: &InitializerWrite,
-    ) -> Result<Option<BindingKnowledge>, String> {
-        if let Some(flags) = self.declaration_modifiers(write)? {
-            return Ok(Some(BindingKnowledge::Modifiers(flags)));
-        }
-        let InitializerTarget::Instance {
-            declaring_owner,
-            name,
-            ..
-        } = write.target
-        else {
-            return Ok(None);
-        };
-        if self.engine.template_identity()
-            != crate::intrinsic_initializer_facts::template_identity()
-            || !crate::intrinsic_initializer_facts::certified(declaring_owner, name)
-            || self.evaluator.instance_storage(write)? != Some((declaring_owner, name))
-        {
-            return Ok(None);
-        }
-        Ok(Some(BindingKnowledge::MutableInstance {
-            owner: declaring_owner,
-            name,
-            receipt: crate::intrinsic_initializer_facts::identity(),
-        }))
+    fn binding_knowledge(&self,write:&InitializerWrite)->Result<Option<BindingKnowledge>,String>{
+        engine_binding(self.engine,write,||self.declaration_modifiers(write),||self.evaluator.instance_storage(write))
     }
     fn evaluate_write(
         &self,
@@ -304,8 +431,45 @@ impl CapturedInitializerEvaluator for EngineCapturedEvaluator<'_> {
     fn evaluate(&self, owner: SymbolId, value: &SymbolicExpression) -> Result<Evaluation, String> {
         self.evaluator.evaluate(owner, value)
     }
-    fn declaration_modifiers(&self, write: &InitializerWrite) -> Result<Option<u32>, String> {
-        if let Some(flags) = self.evaluator.declaration_modifiers(write)? {
+    fn declaration_modifiers(&self,write:&InitializerWrite)->Result<Option<u32>,String>{
+        engine_modifiers(self.engine,write,||self.evaluator.declaration_modifiers(write))
+    }
+
+}
+fn engine_binding<E:From<String>>(
+    engine:&crate::engine::EngineSnapshot,write:&InitializerWrite,
+    modifiers:impl FnOnce()->Result<Option<u32>,E>,
+    storage:impl FnOnce()->Result<Option<(SymbolId,SymbolId)>,E>,
+)->Result<Option<BindingKnowledge>,E>{
+        if let Some(flags) = modifiers()? {
+            return Ok(Some(BindingKnowledge::Modifiers(flags)));
+        }
+        let InitializerTarget::Instance {
+            declaring_owner,
+            name,
+            ..
+        } = write.target
+        else {
+            return Ok(None);
+        };
+        if engine.template_identity()
+            != crate::intrinsic_initializer_facts::template_identity()
+            || !crate::intrinsic_initializer_facts::certified(declaring_owner, name)
+            || storage()? != Some((declaring_owner, name))
+        {
+            return Ok(None);
+        }
+        Ok(Some(BindingKnowledge::MutableInstance {
+            owner: declaring_owner,
+            name,
+            receipt: crate::intrinsic_initializer_facts::identity(),
+        }))
+}
+fn engine_modifiers<E:From<String>>(
+    engine:&crate::engine::EngineSnapshot,write:&InitializerWrite,
+    original:impl FnOnce()->Result<Option<u32>,E>,
+)->Result<Option<u32>,E>{
+        if let Some(flags) = original()? {
             return Ok(Some(flags));
         }
         let (owner, name) = match write.target {
@@ -317,11 +481,11 @@ impl CapturedInitializerEvaluator for EngineCapturedEvaluator<'_> {
                 ..
             } => (declaring_owner, name),
         };
-        self.engine
+        engine
             .declaration_modifiers(owner, name)
-            .map_err(|error| format!("captured engine declaration modifiers: {error:?}"))
+            .map_err(|error| E::from(format!("captured engine declaration modifiers: {error:?}")))
     }
-}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DefaultValue {
     /// Certified intrinsic initial transform; ordinary matrices remain mutable.
@@ -361,8 +525,14 @@ pub struct ExplicitSizedArray {
     pub expression: Option<Arc<dm_syntax::Expr>>,
 }
 impl RuntimeValue {
-    pub fn sized_array_explicit(dimensions: Arc<[u16]>, expression: Option<Arc<dm_syntax::Expr>>) -> Self {
-        Self::SizedArrayExplicit(Arc::new(ExplicitSizedArray { dimensions, expression }))
+    pub fn sized_array_explicit(
+        dimensions: Arc<[u16]>,
+        expression: Option<Arc<dm_syntax::Expr>>,
+    ) -> Self {
+        Self::SizedArrayExplicit(Arc::new(ExplicitSizedArray {
+            dimensions,
+            expression,
+        }))
     }
 }
 #[derive(Clone, Debug)]
@@ -450,13 +620,23 @@ pub(crate) fn captured_scalar_subexpression(
         tokens: tokens.into(),
     })
 }
-fn scalar_literal(
+pub(crate) mod value_demand;
+fn scalar_literal(expr:&dm_syntax::Expr,write:&InitializerWrite,symbols:&SymbolTable,source:&str,evaluator:&dyn CapturedInitializerEvaluator)->Result<bool,String>{
+    scalar_literal_with::<value_demand::Compatibility>(expr,write,symbols,source,evaluator)
+}
+fn scalar_literal_checked(expr:&dm_syntax::Expr,write:&InitializerWrite,symbols:&SymbolTable,source:&str,evaluator:&dyn CapturedInitializerEvaluator)->Result<bool,InitializerFailure>{
+    crate::daemon::control::checkpoint().map_err(InitializerFailure::Operational)?;
+    let result=scalar_literal_with::<value_demand::Checked>(expr,write,symbols,source,evaluator);
+    if matches!(&result,Err(InitializerFailure::Operational(_))){return result;}
+    crate::daemon::control::checkpoint().map_err(InitializerFailure::Operational)?;result
+}
+fn scalar_literal_with<D: value_demand::Demand>(
     expr: &dm_syntax::Expr,
     write: &InitializerWrite,
     symbols: &SymbolTable,
     source: &str,
     evaluator: &dyn CapturedInitializerEvaluator,
-) -> Result<bool, String> {
+) -> Result<bool, D::Error> {
     use dm_syntax::ExprKind;
     Ok(match &expr.kind {
         ExprKind::TypePath(_) => true,
@@ -468,36 +648,36 @@ fn scalar_literal(
                 return Err("initializer literal spelling missing".into());
             }
             matches!(
-                evaluator.evaluate_ast_write(write, expr, source, symbols)?,
+                D::ast(evaluator, write, expr, source, symbols)?,
                 Evaluation::Scalar(_)
             )
         }
         ExprKind::Ident(name) => {
             let id = SymbolId::of(name);
             if symbols.text(id) != Some(name.as_str()) {
-                return Err(format!("initializer symbol missing: {name}"));
+                return Err(format!("initializer symbol missing: {name}").into());
             }
             matches!(
-                evaluator.evaluate_ast_write(write, expr, source, symbols)?,
+                D::ast(evaluator, write, expr, source, symbols)?,
                 Evaluation::Scalar(_)
             )
         }
-        ExprKind::Group(value) => scalar_literal(value, write, symbols, source, evaluator)?,
+        ExprKind::Group(value) => scalar_literal_with::<D>(value, write, symbols, source, evaluator)?,
         ExprKind::Unary { op, value } if matches!(op.as_str(), "!" | "+" | "-" | "~") => {
-            scalar_literal(value, write, symbols, source, evaluator)?
+            scalar_literal_with::<D>(value, write, symbols, source, evaluator)?
         }
         ExprKind::Binary { op, lhs, rhs } if op != "=" => {
-            scalar_literal(lhs, write, symbols, source, evaluator)?
-                && scalar_literal(rhs, write, symbols, source, evaluator)?
+            scalar_literal_with::<D>(lhs, write, symbols, source, evaluator)?
+                && scalar_literal_with::<D>(rhs, write, symbols, source, evaluator)?
         }
         ExprKind::Conditional {
             condition,
             then_value,
             else_value,
         } => {
-            scalar_literal(condition, write, symbols, source, evaluator)?
-                && scalar_literal(then_value, write, symbols, source, evaluator)?
-                && scalar_literal(else_value, write, symbols, source, evaluator)?
+            scalar_literal_with::<D>(condition, write, symbols, source, evaluator)?
+                && scalar_literal_with::<D>(then_value, write, symbols, source, evaluator)?
+                && scalar_literal_with::<D>(else_value, write, symbols, source, evaluator)?
         }
         ExprKind::Call { callee, args } if matches!(&callee.kind, ExprKind::Ident(name) if name == "list") =>
         {
@@ -506,13 +686,13 @@ fn scalar_literal(
                 let value = if let ExprKind::Binary { op, lhs, rhs } = &argument.kind {
                     if op == "=" {
                         (matches!(lhs.kind, ExprKind::Ident(_))
-                            || scalar_literal(lhs, write, symbols, source, evaluator)?)
-                            && scalar_literal(rhs, write, symbols, source, evaluator)?
+                            || scalar_literal_with::<D>(lhs, write, symbols, source, evaluator)?)
+                            && scalar_literal_with::<D>(rhs, write, symbols, source, evaluator)?
                     } else {
-                        scalar_literal(argument, write, symbols, source, evaluator)?
+                        scalar_literal_with::<D>(argument, write, symbols, source, evaluator)?
                     }
                 } else {
-                    scalar_literal(argument, write, symbols, source, evaluator)?
+                    scalar_literal_with::<D>(argument, write, symbols, source, evaluator)?
                 };
                 literal &= value;
             }
@@ -527,7 +707,7 @@ fn scalar_literal(
         ExprKind::Call { callee, .. } if matches!(&callee.kind, ExprKind::Ident(name) if evaluator.pure_calls().is_some_and(|calls| calls.accepts(name))) =>
         {
             matches!(
-                evaluator.evaluate_ast_write(write, expr, source, symbols)?,
+                D::ast(evaluator, write, expr, source, symbols)?,
                 Evaluation::Scalar(_)
             )
         }
@@ -681,6 +861,28 @@ pub(crate) mod modifier_facts;
 use modifier_facts::{modifier_facts, modifier_facts_indexed};
 /// Capture modifier dependencies once, exposing every missing boundary before
 /// evaluating values. Classification then consumes these immutable answers.
+/// Checked operation transport is separate from reusable semantic issues.
+/// Neither IO nor this outer wrapper is a semantic cache value or key.
+#[derive(Debug)]
+pub(crate) enum InitializerClassificationFailure {
+    Semantic(ClassificationError),
+    Operational(std::io::Error),
+}
+impl std::fmt::Display for InitializerClassificationFailure {
+    fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{match self{Self::Semantic(error)=>error.fmt(f),Self::Operational(error)=>error.fmt(f)}}
+}
+impl std::error::Error for InitializerClassificationFailure {
+    fn source(&self)->Option<&(dyn std::error::Error+'static)>{Some(match self{Self::Semantic(error)=>error,Self::Operational(error)=>error})}
+}
+pub(crate) fn classify_with_token_mode_checked(writes:&[InitializerWrite],symbols:&SymbolTable,evaluator:&dyn CapturedInitializerEvaluator,debug_defined:bool)->Result<ClassifiedInitializers,InitializerClassificationFailure>{
+    crate::daemon::control::checkpoint().map_err(InitializerClassificationFailure::Operational)?;
+    let facts=modifier_facts::modifier_facts_indexed_checked(writes.iter(),symbols,evaluator,None).map_err(|failure|match failure{
+        modifier_facts::ModifierReadFailure::Semantic(error)=>InitializerClassificationFailure::Semantic(error),
+        modifier_facts::ModifierReadFailure::Operational(actual)=>InitializerClassificationFailure::Operational(actual),
+    })?;
+    let mut source_ordinal=0;
+    classification::classify_from_facts_checked(writes,symbols,evaluator,&facts,&mut source_ordinal,debug_defined)
+}
 pub fn classify_with_diagnostics(
     writes: &[InitializerWrite],
     symbols: &SymbolTable,
@@ -784,3 +986,123 @@ impl Eq for ClassificationOwner {}
 #[cfg(test)]
 #[path = "initializer_policy/portable_policy_tests.rs"]
 mod portable_policy_tests;
+
+#[cfg(test)]
+#[path="initializer_policy/failure_tests.rs"]mod failure_tests;
+
+#[cfg(test)]
+#[path="initializer_policy/checked_engine_tests.rs"]mod checked_engine_tests;
+
+#[cfg(test)]
+mod original_root_storage_tests {
+    use super::*;
+    #[test]
+    fn native_prepared_storage_borrows_one_original_root_and_legacy_extraction_refuses() {
+        struct Source;
+        impl dm_preprocess::SourceProvider for Source {
+            fn read(&self, _: &std::path::Path) -> Result<String, String> {
+                Ok("var/static/value=1+2\n".into())
+            }
+        }
+        let db = Arc::new(crate::query_db::QueryDb::default());
+        let host = Arc::clone(&db) as Arc<dyn dm_tree::frontend::SettingExpressionQueries>;
+        let front = dm_tree::frontend::build(
+            std::path::Path::new("prepared-original-initializer.dme"),
+            &Source,
+            &Default::default(),
+            1,
+        )
+        .unwrap()
+        .with_setting_expression_queries(&host)
+        .unwrap();
+        let plan =
+            dm_tree::initializers::capture_declaration_plan(&front.snapshot, &front.emission_order)
+                .unwrap();
+        let input = front.original_initializer_input(&plan, 0).unwrap();
+        let root = input.expression().unwrap();
+        let original = root.ast() as *const dm_syntax::Expr;
+        let prepared = ScopedPreparedInitializerExpression::from_original(root);
+        assert_eq!(prepared.ast() as *const dm_syntax::Expr, original);
+        assert_eq!(&prepared.source()[prepared.ast().span.range()], "1+2");
+        assert!(prepared.original().is_some());
+        assert_eq!(
+            prepared.into_parts().err().unwrap(),
+            "original initializer root requires checked borrowed classification"
+        );
+        let prepared =
+            ScopedPreparedInitializerExpression::from_original(input.expression().unwrap());
+        let (root, _) = prepared
+            .into_original()
+            .ok()
+            .expect("native decomposition moves handle, never Expr");
+        assert_eq!(root.ast() as *const dm_syntax::Expr, original);
+        let compatibility = PreparedInitializerExpression::parse("1+2".into()).unwrap();
+        assert!(compatibility.original().is_none());
+        assert!(
+            compatibility.into_parts().is_ok(),
+            "standalone owned API remains independent"
+        );
+    }
+    #[test]
+    fn original_initializer_actual_native_checkpoint_io_stays_typed_and_same_source_recovers() {
+        struct Source;
+        impl dm_preprocess::SourceProvider for Source {
+            fn read(&self, _: &std::path::Path) -> Result<String, String> {
+                Ok("var/static/value=1+2\n".into())
+            }
+        }
+        let db = Arc::new(crate::query_db::QueryDb::default());
+        let host = Arc::clone(&db) as Arc<dyn dm_tree::frontend::SettingExpressionQueries>;
+        let front = dm_tree::frontend::build(
+            std::path::Path::new("cancel-original-initializer.dme"),
+            &Source,
+            &Default::default(),
+            1,
+        )
+        .unwrap()
+        .with_setting_expression_queries(&host)
+        .unwrap();
+        let plan =
+            dm_tree::initializers::capture_declaration_plan(&front.snapshot, &front.emission_order)
+                .unwrap();
+        let input = front.original_initializer_input(&plan, 0).unwrap();
+        let token = crate::daemon::control::Cancellation::default();
+        let binding = crate::daemon::control::bind_with_deadline(
+            token.clone(),
+            std::time::Instant::now() + std::time::Duration::from_secs(300),
+        );
+        let schedule = db.cancel_settings_after_checkpoints_for_test(0, token);
+        let error = input
+            .expression()
+            .err()
+            .expect("actual native bound cancellation");
+        let dm_tree::frontend::BodySyntaxFailure::Operational(error) = error else {
+            panic!("actual cancellation is not source syntax")
+        };
+        assert_eq!(error.kind(), std::io::ErrorKind::Interrupted);
+        drop(schedule);
+        drop(binding);
+        let root = input.expression().unwrap();
+        assert!(root.same_root(&input.expression().unwrap()));
+        assert_eq!(
+            db.db().stats(dm_query::Kind(4)).computed,
+            0,
+            "native declaration scalar never demanded a procedure body"
+        );
+    }
+}
+
+#[cfg(test)]
+#[path = "initializer_policy/scoped_checked_tests.rs"]
+mod scoped_checked_tests;
+
+#[cfg(test)]
+#[path="initializer_policy/value_helpers_checked_tests.rs"]
+mod value_helpers_checked_tests;
+
+#[cfg(test)]
+#[path="initializer_policy/classifier_checked_tests.rs"]
+mod classifier_checked_tests;
+
+pub(crate) fn classify_with_reuse_on_executor_checked(writes:&[InitializerWrite],symbols:&SymbolTable,evaluator:ParallelEvaluator<'_>,debug_defined:bool,executor:&dm_exec::BuildExecutor,reuse:InitializerReuse<'_>)->Result<ClassifiedInitializers,InitializerClassificationFailure>{classification::parallel::classify_with_reuse_checked(writes,symbols,evaluator,debug_defined,executor,Some(reuse))}
+pub(crate) fn classify_with_token_mode_on_executor_checked(writes:&[InitializerWrite],symbols:&SymbolTable,evaluator:ParallelEvaluator<'_>,debug_defined:bool,executor:&dm_exec::BuildExecutor)->Result<ClassifiedInitializers,InitializerClassificationFailure>{classification::parallel::classify_with_reuse_checked(writes,symbols,evaluator,debug_defined,executor,None)}

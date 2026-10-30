@@ -1,6 +1,8 @@
 //! Per-type independent evaluation; token issuance and output ordering remain serial.
 use super::token_roster::preparation::{Bucket, Policy, Preparation};
 use super::*;
+mod demand;
+use demand::ParallelDemand;
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Mutex,
@@ -77,6 +79,24 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
     executor: &dm_exec::BuildExecutor,
     reuse: Option<artifact::InitializerReuse<'_>>,
 ) -> Result<ClassifiedInitializers, ClassificationError> {
+    classify_with_reuse_using::<super::demand::Compatibility>(writes,symbols,evaluator,debug_defined,executor,reuse)
+}
+pub(in crate::initializer_policy) fn classify_with_reuse_checked(writes:&[InitializerWrite],symbols:&SymbolTable,evaluator:ParallelEvaluator<'_>,debug_defined:bool,executor:&dm_exec::BuildExecutor,reuse:Option<artifact::InitializerReuse<'_>>)->Result<ClassifiedInitializers,InitializerClassificationFailure>{
+    crate::daemon::control::checkpoint().map_err(InitializerClassificationFailure::Operational)?;
+    let result=classify_with_reuse_using::<super::demand::Checked>(writes,symbols,evaluator,debug_defined,executor,reuse);
+    if matches!(&result,Err(InitializerClassificationFailure::Operational(_))){return result;}
+    // Completed semantic/empty/late-factory paths also belong to this operation.
+    if let Err(actual)=crate::daemon::control::checkpoint(){if let Some(reuse)=reuse{reuse.store.roster.clear_preparation();}return Err(InitializerClassificationFailure::Operational(actual));}
+    result
+}
+pub(in crate::initializer_policy) fn classify_with_reuse_using<D:ParallelDemand>(
+    writes: &[InitializerWrite],
+    symbols: &SymbolTable,
+    evaluator: ParallelEvaluator<'_>,
+    debug_defined: bool,
+    executor: &dm_exec::BuildExecutor,
+    reuse: Option<artifact::InitializerReuse<'_>>,
+) -> Result<ClassifiedInitializers, D::ReportFailure> {
     let factory_policy = evaluator.factory.recording_policy_identity();
     if factory_policy.is_none() {
         if let Some(reuse) = reuse {
@@ -132,47 +152,26 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
     });
     drop(phase);
     let phase = dm_profile::detail_timer("init.classify.modifier_facts");
-    let facts = map_buckets(buckets, evaluator, executor, |_, bucket, worker| {
-        if let (Some(reuse), Some(keys)) = (reuse, modifier_keys.as_ref()) {
-            return crate::initializer_policy::modifier_facts::modifier_facts_reused_in(
-                bucket.ordinals.iter().map(|&ordinal| &writes[ordinal]),
-                symbols,
-                worker,
-                &bucket.ordinals,
-                evaluator,
-                reuse,
-                keys,
-                admission.as_ref(),
-            );
-        }
-        modifier_facts_indexed(
-            bucket.ordinals.iter().map(|&ordinal| &writes[ordinal]),
-            symbols,
-            worker,
-            Some(&bucket.ordinals),
-        )
-    })
-    .map_err(|error| {
-        if let Some(reuse) = reuse {
-            reuse.store.roster.clear_preparation();
-        }
-        error
-    })?;
+    let facts = map_buckets(buckets,evaluator,executor,|_,bucket,worker|{
+        D::modifiers(bucket.ordinals.iter().map(|&ordinal|&writes[ordinal]),symbols,worker,&bucket.ordinals,evaluator,reuse,modifier_keys.as_deref(),admission.as_ref())
+    }).map_err(|error|{if let Some(reuse)=reuse{reuse.store.roster.clear_preparation();}D::semantic(error)})?;
     drop(phase);
     let mut issues = Vec::new();
+    let mut operational = None;
     let mut admitted = Vec::with_capacity(facts.len());
     for facts in facts {
         match facts {
             Ok(facts) => admitted.push(facts),
-            Err(error) => issues.extend(error.issues),
+            Err(error) => match D::split(error){Ok(source)=>issues.extend(source.issues),Err(actual)=>if operational.is_none(){operational=Some(actual)}},
         }
     }
+    if let Some(actual)=operational{if let Some(reuse)=reuse{reuse.store.roster.clear_preparation();}return Err(D::operational(actual));}
     if !issues.is_empty() {
         if let Some(reuse) = reuse {
             reuse.store.roster.clear_preparation();
         }
         issues.sort_by_key(|issue| issue.source_ordinal);
-        return Err(ClassificationError { issues });
+        return Err(D::semantic(ClassificationError { issues }));
     }
     let phase = dm_profile::detail_timer("init.classify.locators");
     let locators = reuse.map(|reuse| {
@@ -247,7 +246,7 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
                 .enumerate()
                 .map(|(local, &global)| {
                     ordinal = local;
-                    artifact::classify_one_keyed_grouped_in(
+                    artifact::classify_one_keyed_grouped_with::<D>(
                         &writes[global],
                         symbols,
                         worker,
@@ -266,7 +265,7 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
                 })
                 .collect()
         } else {
-            classify_pending(
+            classify_pending_with::<D>(
                 bucket.ordinals.iter().map(|&ordinal| &writes[ordinal]),
                 symbols,
                 worker,
@@ -274,18 +273,21 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
                 &mut ordinal,
             )
         };
-        result.map_err(|failure| failure.into_issues(bucket.ordinals[ordinal]))
+        // Check while this exact worker operation/control context is still live,
+        // including genuine semantic exits, before the factory callback unwinds.
+        D::finish(result).map_err(|failure| D::failure(failure,bucket.ordinals[ordinal]))
     })
     .map_err(|error| {
         if let Some(reuse) = reuse {
             reuse.store.roster.clear_preparation();
         }
-        error
+        D::semantic(error)
     })?;
     drop(phase);
     let _phase = dm_profile::detail_timer("init.classify.finish");
     let mut ordered: Vec<Option<PendingWrite>> = (0..writes.len()).map(|_| None).collect();
     let mut errors = Vec::new();
+    let mut operational = None;
     for (bucket, result) in buckets.iter().zip(classified) {
         match result {
             Ok(pending) => {
@@ -294,9 +296,10 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
                     ordered[ordinal] = Some(pending);
                 }
             }
-            Err(error) => errors.push(error),
+            Err(error) => match D::split(error){Ok(source)=>errors.push(source.issues),Err(actual)=>if operational.is_none(){operational=Some(actual)}},
         }
     }
+    if let Some(actual)=operational{if let Some(reuse)=reuse{reuse.store.roster.clear_preparation();}return Err(D::operational(actual));}
     if let Some(issues) = errors
         .into_iter()
         .min_by_key(|issues| issues[0].source_ordinal)
@@ -304,7 +307,7 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
         if let Some(reuse) = reuse {
             reuse.store.roster.clear_preparation();
         }
-        return Err(ClassificationError { issues });
+        return Err(D::semantic(ClassificationError { issues }));
     }
     let mut source_ordinal = 0;
     let pending = ordered
@@ -323,12 +326,16 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
         if let Some(reuse) = reuse {
             reuse.store.roster.clear_preparation();
         }
-        ClassificationError {
+        D::semantic(ClassificationError {
             issues: vec![ClassificationIssue {
                 kind: ClassificationIssueKind::Unsupported,
                 source_ordinal,
                 reason,
             }],
-        }
+        })
     })
 }
+
+#[cfg(test)]
+#[path="parallel_checked_tests.rs"]
+mod checked_tests;

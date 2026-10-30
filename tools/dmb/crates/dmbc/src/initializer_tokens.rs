@@ -1,6 +1,6 @@
 //! Request-owned identities for native-proven allocation defaults. Tokens own
 //! no runtime value; executable construction remains a separate initializer.
-use crate::initializer_policy::{CapturedInitializerEvaluator, Evaluation};
+use crate::initializer_policy::{value_demand, CapturedInitializerEvaluator, Evaluation, InitializerFailure};
 use dm_ir::{InitializerWrite, SemanticValue, SymbolTable};
 use dm_syntax::{Expr, ExprKind};
 use std::{
@@ -87,55 +87,62 @@ fn framed(output: &mut Vec<u8>, bytes: &[u8]) {
     output.extend_from_slice(&(bytes.len() as u64).to_le_bytes());
     output.extend_from_slice(bytes);
 }
-enum KeyError {
-    RuntimeArgument,
-    Failure(String),
+pub fn construction_key(expression:&Expr,source:&str,write:&InitializerWrite,symbols:&SymbolTable,evaluator:&dyn CapturedInitializerEvaluator)->Result<Option<Vec<u8>>,String>{construction_key_with::<value_demand::Compatibility>(expression,source,write,symbols,evaluator)}
+pub(crate) fn construction_key_checked(expression:&Expr,source:&str,write:&InitializerWrite,symbols:&SymbolTable,evaluator:&dyn CapturedInitializerEvaluator)->Result<Option<Vec<u8>>,InitializerFailure>{
+    crate::daemon::control::checkpoint().map_err(InitializerFailure::Operational)?;
+    let result=construction_key_with::<value_demand::Checked>(expression,source,write,symbols,evaluator);
+    if matches!(&result,Err(InitializerFailure::Operational(_))){return result;}
+    crate::daemon::control::checkpoint().map_err(InitializerFailure::Operational)?;result
 }
-impl From<String> for KeyError {
+enum KeyError<E> {
+    RuntimeArgument,
+    Failure(E),
+}
+impl<E: From<String>> From<String> for KeyError<E> {
     fn from(error: String) -> Self {
-        Self::Failure(error)
+        Self::Failure(error.into())
     }
 }
-impl From<&str> for KeyError {
+impl<E: for<'a> From<&'a str>> From<&str> for KeyError<E> {
     fn from(error: &str) -> Self {
         Self::Failure(error.into())
     }
 }
-pub fn construction_key(
+fn construction_key_with<D: value_demand::Demand>(
     expression: &Expr,
     source: &str,
     write: &InitializerWrite,
     symbols: &SymbolTable,
     evaluator: &dyn CapturedInitializerEvaluator,
-) -> Result<Option<Vec<u8>>, String> {
+) -> Result<Option<Vec<u8>>, D::Error> {
     let mut output = b"dm-native-initializer-expression-v1\0".to_vec();
-    match construction(expression, source, write, symbols, evaluator, &mut output) {
+    match construction::<D>(expression, source, write, symbols, evaluator, &mut output) {
         Ok(true) => Ok(Some(output)),
         Ok(false) | Err(KeyError::RuntimeArgument) => Ok(None),
         Err(KeyError::Failure(error)) => Err(error),
     }
 }
-fn argument(
+fn argument<D: value_demand::Demand>(
     expression: &Expr,
     source: &str,
     write: &InitializerWrite,
     symbols: &SymbolTable,
     evaluator: &dyn CapturedInitializerEvaluator,
     output: &mut Vec<u8>,
-) -> Result<(), KeyError> {
-    if construction(expression, source, write, symbols, evaluator, output)? {
+) -> Result<(), KeyError<D::Error>> {
+    if construction::<D>(expression, source, write, symbols, evaluator, output)? {
         return Ok(());
     }
     let Evaluation::Scalar(value) =
-        evaluator.evaluate_ast_write(write, expression, source, symbols)?
+        D::ast(evaluator,write,expression,source,symbols).map_err(KeyError::Failure)?
     else {
         return Err(KeyError::RuntimeArgument);
     };
     output.push(0);
-    framed(output, &evaluator.initializer_token_scalar(&value)?);
+    framed(output, &D::scalar(evaluator,&value).map_err(KeyError::Failure)?);
     Ok(())
 }
-fn arguments(
+fn arguments<D: value_demand::Demand>(
     arguments: &[Expr],
     list: bool,
     source: &str,
@@ -143,7 +150,7 @@ fn arguments(
     symbols: &SymbolTable,
     evaluator: &dyn CapturedInitializerEvaluator,
     output: &mut Vec<u8>,
-) -> Result<(), KeyError> {
+) -> Result<(), KeyError<D::Error>> {
     output.extend_from_slice(&(arguments.len() as u64).to_le_bytes());
     for expression in arguments {
         if let ExprKind::Binary { op, lhs, rhs } = &expression.kind {
@@ -157,23 +164,23 @@ fn arguments(
                             &SemanticValue::Text(name.as_bytes().into()).canonical_bytes(),
                         );
                     } else {
-                        argument(lhs, source, write, symbols, evaluator, output)?;
+                        argument::<D>(lhs, source, write, symbols, evaluator, output)?;
                     }
                 } else if let ExprKind::Ident(name) = &lhs.kind {
                     framed(output, name.as_bytes());
                 } else {
                     return Err("initializer named argument lacks a captured name".into());
                 }
-                argument(rhs, source, write, symbols, evaluator, output)?;
+                argument::<D>(rhs, source, write, symbols, evaluator, output)?;
                 continue;
             }
         }
         output.push(0);
-        argument(expression, source, write, symbols, evaluator, output)?;
+        argument::<D>(expression, source, write, symbols, evaluator, output)?;
     }
     Ok(())
 }
-fn new_key(
+fn new_key<D: value_demand::Demand>(
     path: dm_ir::SymbolId,
     args: &[Expr],
     source: &str,
@@ -181,7 +188,7 @@ fn new_key(
     symbols: &SymbolTable,
     evaluator: &dyn CapturedInitializerEvaluator,
     output: &mut Vec<u8>,
-) -> Result<(), KeyError> {
+) -> Result<(), KeyError<D::Error>> {
     output.push(2);
     output.extend_from_slice(&path.bits().to_le_bytes());
     // Native builtin container constructors accept association keys as values,
@@ -189,7 +196,7 @@ fn new_key(
     // new/list(3) is a length allocation, unlike the one-item literal list(3).
     let associations =
         path == dm_ir::SymbolId::of("/list") || path == dm_ir::SymbolId::of("/alist");
-    arguments(
+    arguments::<D>(
         args,
         associations,
         source,
@@ -199,17 +206,17 @@ fn new_key(
         output,
     )
 }
-fn construction(
+fn construction<D: value_demand::Demand>(
     expression: &Expr,
     source: &str,
     write: &InitializerWrite,
     symbols: &SymbolTable,
     evaluator: &dyn CapturedInitializerEvaluator,
     output: &mut Vec<u8>,
-) -> Result<bool, KeyError> {
+) -> Result<bool, KeyError<D::Error>> {
     match &expression.kind {
         ExprKind::Group(inner) => {
-            return construction(inner, source, write, symbols, evaluator, output)
+            return construction::<D>(inner, source, write, symbols, evaluator, output)
         }
         ExprKind::Unary { op, value } if op == "new" => {
             let (path, args): (_, &[Expr]) = match &value.kind {
@@ -227,9 +234,9 @@ fn construction(
             } else {
                 value
             };
-            match evaluator.evaluate_ast_write(write, ast, source, symbols)? {
+            match D::ast(evaluator,write,ast,source,symbols).map_err(KeyError::Failure)? {
                 Evaluation::Scalar(SemanticValue::Type(path)) => {
-                    new_key(path, args, source, write, symbols, evaluator, output)?;
+                    new_key::<D>(path, args, source, write, symbols, evaluator, output)?;
                 }
                 Evaluation::Scalar(value @ SemanticValue::Procedure(_)) => {
                     // BYOND constructs from the proc reference value (tag0x26),
@@ -237,8 +244,8 @@ fn construction(
                     // in the expression identity; executable lowering already
                     // emits ProcPath followed by NEW for this captured target.
                     output.push(5);
-                    framed(output, &evaluator.initializer_token_scalar(&value)?);
-                    arguments(args, false, source, write, symbols, evaluator, output)?;
+                    framed(output, &D::scalar(evaluator,&value).map_err(KeyError::Failure)?);
+                    arguments::<D>(args, false, source, write, symbols, evaluator, output)?;
                 }
                 _ => {
                     return Err(
@@ -248,9 +255,8 @@ fn construction(
             }
         }
         ExprKind::Ident(name) if name == "new" => {
-            new_key(
-                evaluator
-                    .initializer_constructor_type(write)?
+            new_key::<D>(
+                D::constructor_type(evaluator,write).map_err(KeyError::Failure)?
                     .ok_or("inferred initializer constructor type unavailable")?,
                 &[],
                 source,
@@ -265,9 +271,8 @@ fn construction(
                 return Ok(false);
             };
             match name.as_str() {
-                "new" => new_key(
-                    evaluator
-                        .initializer_constructor_type(write)?
+                "new" => new_key::<D>(
+                    D::constructor_type(evaluator,write).map_err(KeyError::Failure)?
                         .ok_or("inferred initializer constructor type unavailable")?,
                     args,
                     source,
@@ -278,29 +283,29 @@ fn construction(
                 )?,
                 "list" => {
                     output.push(1);
-                    arguments(args, true, source, write, symbols, evaluator, output)?;
+                    arguments::<D>(args, true, source, write, symbols, evaluator, output)?;
                 }
                 "alist" => {
                     output.push(4);
-                    arguments(args, true, source, write, symbols, evaluator, output)?;
+                    arguments::<D>(args, true, source, write, symbols, evaluator, output)?;
                 }
                 "newlist" => {
                     output.push(1);
                     output.extend_from_slice(&(args.len() as u64).to_le_bytes());
                     for value in args {
                         let Evaluation::Scalar(SemanticValue::Type(path)) =
-                            evaluator.evaluate_ast_write(write, value, source, symbols)?
+                            D::ast(evaluator,write,value,source,symbols).map_err(KeyError::Failure)?
                         else {
                             return Err("newlist initializer type unavailable".into());
                         };
                         output.push(0);
-                        new_key(path, &[], source, write, symbols, evaluator, output)?;
+                        new_key::<D>(path, &[], source, write, symbols, evaluator, output)?;
                     }
                 }
-                "file" | "icon" if evaluator.initializer_intrinsic_constructor(write, name) => {
+                "file" | "icon" if D::intrinsic(evaluator,write,name).map_err(KeyError::Failure)? => {
                     output.push(3);
                     framed(output, name.as_bytes());
-                    arguments(args, false, source, write, symbols, evaluator, output)?;
+                    arguments::<D>(args, false, source, write, symbols, evaluator, output)?;
                 }
                 "generator" if !args.is_empty() => {
                     // The ordinary compiler selects this reserved constructor
@@ -308,12 +313,12 @@ fn construction(
                     // evaluation receipts; unknown runtime operands decline keys.
                     output.push(3);
                     framed(output, name.as_bytes());
-                    arguments(args, false, source, write, symbols, evaluator, output)?;
+                    arguments::<D>(args, false, source, write, symbols, evaluator, output)?;
                 }
                 "sound" | "matrix" => {
                     output.push(3);
                     framed(output, name.as_bytes());
-                    arguments(args, false, source, write, symbols, evaluator, output)?;
+                    arguments::<D>(args, false, source, write, symbols, evaluator, output)?;
                 }
                 _ => return Ok(false),
             }

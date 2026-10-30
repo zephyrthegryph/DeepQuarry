@@ -129,6 +129,15 @@ pub trait SettingExpressionQueries: std::fmt::Debug + Send + Sync {
             "existing original expression provider does not admit return annotations",
         )))
     }
+    fn initializer<'source>(
+        &self,
+        _: &OriginalInitializerExpressionInput<'source>,
+    ) -> Result<OriginalInitializerExpression<'source>, BodySyntaxFailure> {
+        Err(BodySyntaxFailure::Operational(std::io::Error::new(
+            std::io::ErrorKind::NotConnected,
+            "existing original expression provider does not admit initializers",
+        )))
+    }
     /// Custom source-root providers must opt into checked statement admission
     /// explicitly. This default is a typed refusal, never a compatibility parse.
     fn statements(

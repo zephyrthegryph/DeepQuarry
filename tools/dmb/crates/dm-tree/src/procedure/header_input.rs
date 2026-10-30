@@ -85,6 +85,51 @@ impl OriginalProcedureHeaders {
         }
         Self::from_primary(source, items, offset, parsed.tokens)
     }
+    pub(crate) fn initializer_tokens<'a>(
+        &'a self,
+        header: Span,
+        variable: bool,
+        expression: &dm_ir::SymbolicExpression,
+        symbols: &SymbolTable,
+    ) -> Result<(&'a SourceText, &'a [SpanToken], Span), String> {
+        self.source
+            .get(header.range())
+            .ok_or("initializer header outside original source")?;
+        let first = self.tokens.partition_point(|t| t.span.start < header.start);
+        let last = self.tokens.partition_point(|t| t.span.start < header.end);
+        let view = HeaderView::original(&self.source, &self.tokens[first..last], header)?;
+        let assignment = view
+            .assignment_index()
+            .ok_or("original initializer assignment unavailable")?;
+        let mut rhs = view.slice(assignment + 1, view.text().len()).trim();
+        if variable {
+            let end = rhs
+                .first_top_level("as")
+                .map_or(rhs.text().len(), |span| span.start);
+            rhs = rhs.slice(0, end).trim();
+        }
+        let mut symbolic = expression.tokens.iter();
+        for token in rhs.tokens().iter().filter(|t| {
+            !matches!(
+                t.kind,
+                TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment
+            )
+        }) {
+            let expected = symbolic
+                .next()
+                .ok_or("original initializer primary token count differs")?;
+            if expected.kind != token.kind
+                || expected.relative_span != rhs.relative_span(token)
+                || symbols.text(expected.text) != Some(rhs.spelling(token))
+            {
+                return Err("initializer differs from its original primary token geometry".into());
+            }
+        }
+        if symbolic.next().is_some() || expression.tokens.is_empty() {
+            return Err("original initializer primary token count differs".into());
+        }
+        Ok((&self.source, rhs.tokens(), rhs.span()))
+    }
     pub(crate) fn parse_body(
         &self,
         span: Span,

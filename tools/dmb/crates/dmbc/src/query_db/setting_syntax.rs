@@ -42,6 +42,13 @@ impl QueryDb {
 }
 
 impl SettingExpressionQueries for QueryDb {
+    fn initializer<'source>(
+        &self,
+        input: &dm_tree::frontend::OriginalInitializerExpressionInput<'source>,
+    ) -> Result<dm_tree::frontend::OriginalInitializerExpression<'source>, BodySyntaxFailure> {
+        self.with_setting_admission(|a| input.prepare(a))
+    }
+
     fn return_annotation(
         &self,
         input: &dm_tree::frontend::ReturnAnnotationInput<'_>,
@@ -296,5 +303,59 @@ impl QueryDb {
             *s.borrow_mut() = Some((left, token));
         });
         SettingCancelSchedule
+    }
+}
+
+#[cfg(test)]
+mod initializer_recipe_tests {
+    use super::*;
+    #[test]
+    fn original_initializer_recipe_warm_reborrow_preserves_native_cancel_and_recovers_same_root() {
+        struct Source;
+        impl dm_preprocess::SourceProvider for Source {
+            fn read(&self, _: &std::path::Path) -> Result<String, String> {
+                Ok("var/static/value=1+2\n".into())
+            }
+        }
+        let db = Arc::new(QueryDb::default());
+        let host = Arc::clone(&db) as Arc<dyn dm_tree::frontend::SettingExpressionQueries>;
+        let front = dm_tree::frontend::build(
+            std::path::Path::new("initializer-recipe-cancel.dme"),
+            &Source,
+            &Default::default(),
+            1,
+        )
+        .unwrap()
+        .with_setting_expression_queries(&host)
+        .unwrap();
+        let plan =
+            dm_tree::initializers::capture_declaration_plan(&front.snapshot, &front.emission_order)
+                .unwrap();
+        let input = front.original_initializer_input(&plan, 0).unwrap();
+        let original = input.expression().unwrap();
+        let pointer = original.ast() as *const dm_syntax::Expr;
+        let recipe = original.into_recipe();
+        let token = crate::daemon::control::Cancellation::default();
+        let binding = crate::daemon::control::bind_with_deadline(
+            token.clone(),
+            std::time::Instant::now() + std::time::Duration::from_secs(300),
+        );
+        let schedule = db.cancel_settings_after_checkpoints_for_test(0, token);
+        let error = recipe
+            .reborrow(&input)
+            .err()
+            .expect("warm current cancellation");
+        let BodySyntaxFailure::Operational(actual) = error else {
+            panic!("IO cannot be syntax/cache miss")
+        };
+        assert_eq!(actual.kind(), std::io::ErrorKind::Interrupted);
+        drop(schedule);
+        drop(binding);
+        let recovered = recipe
+            .reborrow(&input)
+            .unwrap()
+            .expect("same current source retries");
+        assert_eq!(recovered.ast() as *const dm_syntax::Expr, pointer);
+        assert_eq!(db.db().stats(dm_query::Kind(4)).computed, 0);
     }
 }

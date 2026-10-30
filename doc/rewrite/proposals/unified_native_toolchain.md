@@ -1097,3 +1097,33 @@ This remains explicit bounded capture coverage. The conservative temporary
 reservations admit these complete small fixtures; larger input needs native
 per-file facts and count-based reservation, not a raised cap. No workspace
 coverage, affected-closure performance, default client or full cutover is claimed.
+
+### Initializer operational transport and shared client report policy
+
+Initializer evaluation, modifier collection, value/key construction, classification,
+artifact reuse and parallel aggregation now have checked paths that transport the
+actual operational error outside semantic findings and caches. They share the
+existing algorithms with the compatibility entry points. Completed sibling
+operational failures take precedence over earlier source errors; worker and
+cache-admission checkpoints retain the original error before publishing results.
+
+Original initializer handles borrow authenticated primary-chunk source. Their
+AST-only runtime recipes retain no source text and require an authenticated
+current owner to reborrow it. These are additive interfaces: native initializer
+selection remains disabled until the earlier adapter constant-fold path uses the
+same original header owner and checked propagation. They do not establish whole
+compiler one-parse convergence yet.
+
+The existing report judgement is now one parser-free routine shared with the old
+Engine wrapper. It preserves notes, changed-file filtering, rule and source order,
+raw/baseline/ceiling behavior and custom/post hooks. Baseline filesystem access
+belongs to the client after query delivery, never inside native semantic queries.
+
+Verification passes 45 focused new-contract tests plus 12 existing initializer
+compatibility controls. Three incorrect fixture assumptions were repaired and
+only those failures rerun: primary preprocessing blanks comments, a runtime-name
+fixture needed its symbol interned, and Sites reports use fingerprint source text.
+Two test-module paths were also corrected after the first compile. All nine
+complete raw-policy oracle comparisons still match through the shared report
+wrapper. Logs retain failed attempts and repair evidence separately. No production
+client default, compiler publication or game window changed.

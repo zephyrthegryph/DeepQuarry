@@ -152,3 +152,21 @@ fn checked_initializer_continuation_keeps_actual_body_operation_before_source_fi
     });
     assert!(matches!(actual,ColdError::Operational(ref error) if error.raw_os_error()==Some(1450)));
 }
+
+#[test]
+fn actual_initializer_operation_cause_bypasses_source_continuation_and_string_classification(){
+    for checked in [false,true]{
+        let original=crate::initializer_policy::InitializerFailure::Operational(std::io::Error::from_raw_os_error(1450));
+        let original=InitializerLoweringError::from(original);
+        let actual=if checked{
+            collect_checked(original,||panic!("actual operational initializer failure cannot select source-error continuation"))
+        }else{
+            collect(original,||panic!("compatibility continuation cannot stringify a typed operation"))
+        };
+        let ColdError::Operational(error)=actual else{panic!("typed operation lost")};
+        assert_eq!(error.raw_os_error(),Some(1450));
+    }
+    let ordinary=InitializerLoweringError::from(crate::initializer_policy::InitializerFailure::Unsupported("unchanged incomplete semantic domain".into()));
+    let actual=collect_checked(ordinary,||panic!("Unsupported never runs source-only continuation"));
+    assert!(matches!(actual,ColdError::Initializer(ref reason) if reason=="unchanged incomplete semantic domain"));
+}

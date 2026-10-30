@@ -3,19 +3,24 @@ mod token_owner;
 #[path = "classification/transform.rs"]
 mod transform;
 use super::*;
+mod demand;
+use demand::{ClassificationReadFailure, Demand};
 pub(super) struct PendingWrite {
     pub(super) write: ClassifiedWrite,
     pub(super) key: Option<Arc<[u8]>>,
     pub(super) accepted: Option<Arc<artifact::SemanticClassification>>,
     pub(super) parsed_runtime_source: Option<String>,
 }
-fn classify_pending<'a>(
+fn classify_pending<'a>(writes:impl ExactSizeIterator<Item=&'a InitializerWrite>,symbols:&SymbolTable,evaluator:&dyn CapturedInitializerEvaluator,facts:&[ModifierFact],source_ordinal:&mut usize)->Result<Vec<PendingWrite>,ClassificationFailure>{
+    classify_pending_with::<demand::Compatibility>(writes,symbols,evaluator,facts,source_ordinal)
+}
+fn classify_pending_with<'a,D:Demand>(
     writes: impl ExactSizeIterator<Item = &'a InitializerWrite>,
     symbols: &SymbolTable,
     evaluator: &dyn CapturedInitializerEvaluator,
     facts: &[ModifierFact],
     source_ordinal: &mut usize,
-) -> Result<Vec<PendingWrite>, ClassificationFailure> {
+) -> Result<Vec<PendingWrite>, D::Failure> {
     let mut classified = Vec::with_capacity(writes.len());
     for (ordinal, original) in writes.enumerate() {
         *source_ordinal = ordinal;
@@ -41,7 +46,7 @@ fn classify_pending<'a>(
             let InitializerValue::Expression(value) = &original.value else {
                 return Err(format!("{label} header property requires an authored value").into());
             };
-            let (evaluation, prepared) = evaluator.evaluate_prepared_write(original, value)?;
+            let (evaluation, prepared) = D::prepared(evaluator,original,value)?;
             let Evaluation::Scalar(value) = evaluation.checked()? else {
                 return Err(format!("{label} header property requires a captured scalar").into());
             };
@@ -81,7 +86,7 @@ fn classify_pending<'a>(
                 for dimension in array.dimensions.iter() {
                     let dimension = dimension.as_ref().ok_or("mixed unsized array dimensions")?;
                     let Evaluation::Scalar(SemanticValue::NumberBits(bits)) =
-                        evaluator.evaluate_write(&write, dimension)?.checked()?
+                        D::write(evaluator,&write,dimension)?.checked()?
                     else {
                         return Err("array dimension must be a constant integer".into());
                     };
@@ -103,7 +108,7 @@ fn classify_pending<'a>(
                     let mut authored = original.clone();
                     authored.declared_array = None;
                     let mut local_ordinal = 0;
-                    let mut pending = classify_pending(
+                    let mut pending = classify_pending_with::<D>(
                         std::iter::once(&authored),
                         symbols,
                         evaluator,
@@ -133,8 +138,10 @@ fn classify_pending<'a>(
                     pending.write.write = original.clone();
                     pending.write.source_ordinal = ordinal;
                     pending.write.phase = Some(Phase::LiteralAllocation);
-                    pending.write.runtime_value =
-                        Some(RuntimeValue::sized_array_explicit(dimensions.into(), expression));
+                    pending.write.runtime_value = Some(RuntimeValue::sized_array_explicit(
+                        dimensions.into(),
+                        expression,
+                    ));
                     classified.push(pending);
                     continue;
                 }
@@ -167,7 +174,7 @@ fn classify_pending<'a>(
                 return Err("array allocation lacks authored shape".into());
             }
             InitializerValue::Expression(value) => {
-                let (evaluation, prepared) = evaluator.evaluate_prepared_write(&write, value)?;
+                let (evaluation, prepared) = D::prepared(evaluator,&write,value)?;
                 source_features = prepared
                     .as_ref()
                     .map_or(Default::default(), |value| value.source_features());
@@ -190,11 +197,11 @@ fn classify_pending<'a>(
                             None => PreparedInitializerExpression::parse_captured(value, symbols)?
                                 .ok_or("missing initializer expression")?,
                         };
-                        let (text, ast, authored) = prepared.into_parts();
+                        let (text, ast, authored) = prepared.into_parts()?;
                         let parser_issued = authored.as_ref() == Some(value);
                         let expr = &ast;
                         if let Some(matrix) =
-                            transform::fold(&write, expr, &text, symbols, evaluator)?
+                            D::fold(&write,expr,&text,symbols,evaluator)?
                         {
                             classified.push(PendingWrite {
                                 write: ClassifiedWrite {
@@ -212,9 +219,9 @@ fn classify_pending<'a>(
                             continue;
                         }
                         let literal =
-                            scalar_list || scalar_literal(expr, &write, symbols, &text, evaluator)?;
+                            scalar_list || D::literal(expr,&write,symbols,&text,evaluator)?;
                         let default = if let Some(key) =
-                            crate::initializer_tokens::construction_key(
+                            D::key(
                                 expr, &text, &write, symbols, evaluator,
                             )? {
                             pending_key = Some(key.into());
@@ -371,3 +378,31 @@ pub(super) mod parallel;
 
 #[path = "classification/token_roster.rs"]
 pub(in crate::initializer_policy) mod token_roster;
+
+pub(super) fn classify_from_facts_checked(writes:&[InitializerWrite],symbols:&SymbolTable,evaluator:&dyn CapturedInitializerEvaluator,facts:&[ModifierFact],source_ordinal:&mut usize,debug_defined:bool)->Result<ClassifiedInitializers,InitializerClassificationFailure>{
+    crate::daemon::control::checkpoint().map_err(InitializerClassificationFailure::Operational)?;
+    let pending=classify_pending_with::<demand::Checked>(writes.iter(),symbols,evaluator,facts,source_ordinal);
+    let pending=match pending {
+        Err(ClassificationReadFailure::Operational(actual))=>return Err(InitializerClassificationFailure::Operational(actual)),
+        result=>result,
+    };
+    #[cfg(test)]
+    AFTER_PENDING_CANCEL.with(|slot|{if let Some(token)=slot.borrow_mut().take(){token.cancel();}});
+    crate::daemon::control::checkpoint().map_err(InitializerClassificationFailure::Operational)?;
+    let pending=pending.map_err(|failure|match failure {
+        ClassificationReadFailure::Operational(actual)=>InitializerClassificationFailure::Operational(actual),
+        ClassificationReadFailure::Semantic(source)=>InitializerClassificationFailure::Semantic(ClassificationError{issues:source.into_issues(*source_ordinal)}),
+    })?;
+    let result=finish_pending(pending.into_iter(),debug_defined,source_ordinal).map_err(|reason|InitializerClassificationFailure::Semantic(ClassificationError{issues:ClassificationFailure::from(reason).into_issues(*source_ordinal)}));
+    crate::daemon::control::checkpoint().map_err(InitializerClassificationFailure::Operational)?;
+    result
+}
+
+#[cfg(test)]
+thread_local!{static AFTER_PENDING_CANCEL:std::cell::RefCell<Option<crate::daemon::control::Cancellation>>=const{std::cell::RefCell::new(None)};}
+#[cfg(test)]
+pub(super) fn cancel_after_pending_for_test(token:crate::daemon::control::Cancellation)->impl Drop{
+    struct Reset;
+    impl Drop for Reset{fn drop(&mut self){AFTER_PENDING_CANCEL.with(|slot|{slot.borrow_mut().take();});}}
+    AFTER_PENDING_CANCEL.with(|slot|{assert!(slot.borrow().is_none());*slot.borrow_mut()=Some(token);});Reset
+}

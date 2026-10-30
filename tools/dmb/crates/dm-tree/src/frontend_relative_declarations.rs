@@ -18,6 +18,7 @@ pub enum BindingError {
 #[derive(Debug)]
 pub struct RelativeSyntax {
     original_headers: Option<Arc<crate::procedure::OriginalProcedureHeaders>>,
+    initializer_roots: dm_syntax::SettingExpressionSlots,
     items: arena::Arena,
     source_len: usize,
     max_end: usize,
@@ -234,6 +235,7 @@ impl RelativeSyntax {
             let _ = primary_headers.set(Ok(headers.into()));
         }
         Ok(Self {
+            initializer_roots: Default::default(),
             original_headers,
             items: arena::Arena::capture(items, source),
             source_len,
@@ -354,11 +356,14 @@ impl RelativeSyntax {
     /// New input payload only; source bytes share this RelativeSyntax's existing
     /// SourceText owner. Pointer dedup is the caller's live-owner census job.
     pub fn visit_setting_roots(&self, mut visit: impl FnMut(&dm_syntax::SettingExpression)) {
+        self.initializer_roots
+            .visit_storage(|_, _, _| {}, &mut visit);
         if let Some(headers) = &self.original_headers {
             headers.visit_setting_roots(&mut visit);
         }
     }
     pub fn visit_original_header_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
+        self.initializer_roots.visit_storage(&mut visit, |_| {});
         if let Some(headers) = &self.original_headers {
             headers.visit_storage(&mut visit);
         }
@@ -513,6 +518,16 @@ pub(crate) struct OriginalSettingTokenInput<'a> {
     pub(crate) offset: usize,
     pub(crate) slots: &'a dm_syntax::SettingExpressionSlots,
     pub(crate) original_value: Span,
+}
+pub(crate) struct OriginalInitializerTokenInput<'a> {
+    pub(crate) owner: &'a Arc<RelativeSyntax>,
+    pub(crate) source: &'a dm_preprocess::SourceText,
+    pub(crate) tokens: &'a [dm_syntax::SpanToken],
+    pub(crate) value: Span,
+    pub(crate) ordinal: usize,
+    pub(crate) count: usize,
+    pub(crate) offset: usize,
+    pub(crate) slots: &'a dm_syntax::SettingExpressionSlots,
 }
 pub(crate) struct OriginalReturnTokenInput<'a> {
     pub(crate) source: &'a str,
@@ -784,6 +799,84 @@ impl DeclarationSyntax {
             count,
             slots,
             offset: recipe.offset,
+        })
+    }
+    pub(crate) fn initializer_token_input<'a>(
+        &'a self,
+        cursor: usize,
+        expression: &dm_ir::SymbolicExpression,
+        symbols: &dm_ir::SymbolTable,
+    ) -> Result<OriginalInitializerTokenInput<'a>, String> {
+        fn search<'a>(chunk: &'a CurrentSyntaxChunk, cursor: usize) -> Option<ItemView<'a>> {
+            // Existing immutable arena coordinates only. Deep declaration
+            // nesting consumes no recursive stack, allocation or second index.
+            let mut parent: Option<ItemView<'a>> = None;
+            loop {
+                let len = parent.map_or_else(|| chunk.len(), |node| node.children().len());
+                let get = |i| parent.map_or_else(|| chunk.item(i), |node| node.child(i));
+                let (mut low, mut high) = (0, len);
+                while low < high {
+                    let mid = low + (high - low) / 2;
+                    if get(mid)?.header_span().start <= cursor {
+                        low = mid + 1
+                    } else {
+                        high = mid
+                    }
+                }
+                let node = get(low.checked_sub(1)?)?;
+                if node.header_span().start <= cursor && cursor < node.header_span().end {
+                    return Some(node);
+                }
+                if cursor >= node.span().end
+                    || !matches!(node.kind(), ItemKind::Type | ItemKind::Var)
+                {
+                    return None;
+                }
+                parent = Some(node);
+            }
+        }
+        if !self.ordered_chunks {
+            return Err("original initializer chunks unordered".into());
+        }
+        let index = self
+            .chunks
+            .partition_point(|c| c.offset <= cursor)
+            .checked_sub(1)
+            .ok_or("original initializer chunk unavailable")?;
+        let chunk = &self.chunks[index];
+        let node = search(chunk, cursor).ok_or("original initializer declaration unavailable")?;
+        if node.declaration_cursor() != Some(cursor)
+            || !matches!(
+                node.kind(),
+                ItemKind::Var | ItemKind::Unknown | ItemKind::Statement
+            )
+        {
+            return Err("initializer has no original primary variable declaration node".into());
+        }
+        let (ordinal, count) = node
+            .item
+            .root_slot()
+            .ok_or("initializer primary arena coordinate is unissued")?;
+        let headers = chunk
+            .relative
+            .original_headers
+            .as_ref()
+            .ok_or("original initializer token owner unavailable")?;
+        let (source, tokens, value) = headers.initializer_tokens(
+            node.item.header_span(),
+            node.kind() == ItemKind::Var,
+            expression,
+            symbols,
+        )?;
+        Ok(OriginalInitializerTokenInput {
+            owner: &chunk.relative,
+            source,
+            tokens,
+            value,
+            ordinal,
+            count,
+            offset: chunk.offset,
+            slots: &chunk.relative.initializer_roots,
         })
     }
     /// Called only by the original native body parser under its SAME stack

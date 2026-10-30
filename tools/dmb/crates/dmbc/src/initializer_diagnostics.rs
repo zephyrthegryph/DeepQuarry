@@ -12,6 +12,7 @@ use std::{collections::HashMap, path::Path};
 
 #[derive(Debug)]
 pub enum InitializerLoweringError {
+    Operational(std::io::Error),
     Unsupported(String),
     Invariant(String),
     Diagnostics(Vec<LoweringDiagnostic>),
@@ -19,6 +20,7 @@ pub enum InitializerLoweringError {
 impl std::fmt::Display for InitializerLoweringError {
     fn fmt(&self, output: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::Operational(error)=>error.fmt(output),
             Self::Unsupported(message) | Self::Invariant(message) => output.write_str(message),
             Self::Diagnostics(errors) => {
                 write!(
@@ -33,7 +35,17 @@ impl std::fmt::Display for InitializerLoweringError {
         }
     }
 }
-impl std::error::Error for InitializerLoweringError {}
+impl std::error::Error for InitializerLoweringError {
+    fn source(&self)->Option<&(dyn std::error::Error+'static)>{match self{Self::Operational(error)=>Some(error),_=>None}}
+}
+impl From<crate::initializer_policy::InitializerFailure> for InitializerLoweringError {
+    fn from(error:crate::initializer_policy::InitializerFailure)->Self{
+        match error{
+            crate::initializer_policy::InitializerFailure::Unsupported(reason)=>Self::Unsupported(reason),
+            crate::initializer_policy::InitializerFailure::Operational(error)=>Self::Operational(error),
+        }
+    }
+}
 impl From<String> for InitializerLoweringError {
     fn from(message: String) -> Self {
         // Unclassified legacy strings must not be labelled invalid user code.

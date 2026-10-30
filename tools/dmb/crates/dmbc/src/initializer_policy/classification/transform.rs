@@ -2,13 +2,20 @@
 //! Ordinary matrix variables retain their mutable constructor semantics.
 use super::super::*;
 
-pub(super) fn fold(
+pub(super) fn fold(write:&InitializerWrite,expression:&dm_syntax::Expr,source:&str,symbols:&SymbolTable,evaluator:&dyn CapturedInitializerEvaluator)->Result<Option<[u32;6]>,String>{fold_with::<value_demand::Compatibility>(write,expression,source,symbols,evaluator)}
+pub(in crate::initializer_policy) fn fold_checked(write:&InitializerWrite,expression:&dm_syntax::Expr,source:&str,symbols:&SymbolTable,evaluator:&dyn CapturedInitializerEvaluator)->Result<Option<[u32;6]>,InitializerFailure>{
+    crate::daemon::control::checkpoint().map_err(InitializerFailure::Operational)?;
+    let result=fold_with::<value_demand::Checked>(write,expression,source,symbols,evaluator);
+    if matches!(&result,Err(InitializerFailure::Operational(_))){return result;}
+    crate::daemon::control::checkpoint().map_err(InitializerFailure::Operational)?;result
+}
+fn fold_with<D: value_demand::Demand>(
     write: &InitializerWrite,
     expression: &dm_syntax::Expr,
     source: &str,
     symbols: &SymbolTable,
     evaluator: &dyn CapturedInitializerEvaluator,
-) -> Result<Option<[u32; 6]>, String> {
+) -> Result<Option<[u32; 6]>, D::Error> {
     if write.declaration_flags.is_some()
         || write.lexical_procedure.is_some()
         || !matches!(write.target, InitializerTarget::Instance {declaring_owner,name,..}
@@ -31,7 +38,7 @@ pub(super) fn fold(
     let mut result = [0; 6];
     for (slot, argument) in result.iter_mut().zip(args) {
         let Evaluation::Scalar(SemanticValue::NumberBits(bits)) =
-            evaluator.evaluate_ast_write(write, argument, source, symbols)?
+            D::ast(evaluator,write,argument,source,symbols)?
         else {
             return Ok(None);
         };
@@ -122,5 +129,29 @@ mod tests {
                 .unwrap()
                 .is_none()
         );
+    }
+}
+
+#[cfg(test)]
+mod checked_transport_tests {
+    use super::*;
+    struct Numbers;
+    impl CapturedInitializerEvaluator for Numbers {
+        fn evaluate(&self,_:SymbolId,_:&SymbolicExpression)->Result<Evaluation,String>{Ok(Evaluation::Runtime)}
+        fn evaluate_ast_write(&self,_:&InitializerWrite,ast:&dm_syntax::Expr,_:&str,_:&SymbolTable)->Result<Evaluation,String>{
+            Ok(if let dm_syntax::ExprKind::Literal(text)=&ast.kind {Evaluation::Scalar(SemanticValue::NumberBits(text.parse::<f32>().unwrap().to_bits()))} else {Evaluation::Runtime})
+        }
+    }
+    struct Failed;
+    impl CapturedInitializerEvaluator for Failed {
+        fn evaluate(&self,_:SymbolId,_:&SymbolicExpression)->Result<Evaluation,String>{panic!("AST only")}
+        fn evaluate_ast_write_checked(&self,_:&InitializerWrite,_:&dm_syntax::Expr,_:&str,_:&SymbolTable)->Result<Evaluation,InitializerFailure>{Err(InitializerFailure::Operational(std::io::Error::from_raw_os_error(1450)))}
+    }
+    #[test]
+    fn checked_matrix_fold_preserves_exact_policy_and_actual_operand_failure(){
+        let write=InitializerWrite{source_site:dm_ir::InitializerSite::Declaration,target:InitializerTarget::Instance{declaring_owner:SymbolId::of("/atom"),receiver_owner:SymbolId::of("/obj/probe"),name:SymbolId::of("transform")},lexical_owner:SymbolId::of("/obj/probe"),lexical_procedure:None,value:InitializerValue::NoAuthoredValue,declared_array:None,declaration_flags:None};
+        let source="matrix(1,0,0,0,1,0)";let ast=dm_syntax::parse_expression(source).expr.unwrap();let symbols=SymbolTable::default();
+        assert_eq!(fold_checked(&write,&ast,source,&symbols,&Numbers).unwrap(),fold(&write,&ast,source,&symbols,&Numbers).unwrap());
+        let error=fold_checked(&write,&ast,source,&symbols,&Failed).err().unwrap().into_operational().unwrap();assert_eq!(error.raw_os_error(),Some(1450));
     }
 }

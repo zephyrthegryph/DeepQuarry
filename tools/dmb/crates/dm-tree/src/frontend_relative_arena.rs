@@ -170,6 +170,14 @@ pub(super) enum Ref<'a> {
     Wide(&'a Item),
 }
 impl Ref<'_> {
+    /// The existing primary arena coordinate, not a second declaration index.
+    pub(super) fn root_slot(self) -> Option<(usize, usize)> {
+        match self {
+            Self::Compact(Arena::Compact { nodes, .. }, index) => Some((index, nodes.len())),
+            _ => None,
+        }
+    }
+
     pub(super) fn same(self, other: Self) -> bool {
         match (self, other) {
             (Self::Compact(a, i), Self::Compact(b, j)) => std::ptr::eq(a, b) && i == j,

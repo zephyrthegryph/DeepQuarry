@@ -88,7 +88,7 @@ mod tests {
         )
         .unwrap()
         .unwrap();
-        let (text, ast, certified) = issued.into_parts();
+        let (text, ast, certified) = issued.into_parts().unwrap();
         assert_eq!(certified.as_ref(), Some(&captured));
         let different = crate::initializer_policy::expression("list(9)", &mut symbols).unwrap();
         assert_ne!(certified.as_ref(), Some(&different));
@@ -99,7 +99,7 @@ mod tests {
         custom.span.start += 1;
         let supplied =
             crate::initializer_policy::PreparedInitializerExpression::new(source.into(), custom);
-        let (text, ast, certified) = supplied.into_parts();
+        let (text, ast, certified) = supplied.into_parts().unwrap();
         assert!(certified.is_none());
         assert!(SharedExpression::capture(text, &Arc::new(ast)).is_none());
     }
