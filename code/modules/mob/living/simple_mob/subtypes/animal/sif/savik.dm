@@ -52,6 +52,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/savik)
+	op("berserk", menu(), label("Berserk"), needs(req_self(), req_capable()), then(PROC_REF(berserk_op)))
 	configure(mob_rules(faction = FACTION_SAVIK))
 	configure(living_rules(say_list_type = /datum/say_list/savik))
 
@@ -72,12 +73,11 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/savik)
 		berserk()
 
 // So players can use it too.
-/mob/living/simple_mob/animal/sif/savik/verb/berserk()
-	set name = "Berserk"
-	set desc = "Enrage and become vastly stronger for a period of time, however you will be weaker afterwards."
-	set category = VERB_CAT_ABILITIES_SAVIK
-
+/mob/living/simple_mob/animal/sif/savik/proc/berserk()
 	apply_body_effect(/datum/body_effect/berserk, 30 SECONDS)
+
+/mob/living/simple_mob/animal/sif/savik/proc/berserk_op(datum/act/op/A)
+	berserk()
 
 /datum/decl/mob_organ_names/savik
 TYPE_TABLE(/datum/decl/mob_organ_names/savik, mob_organ_hit_zones, list("head", "torso", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "right bone plate", "left bone plate", "tail", "left claw", "right claw"))

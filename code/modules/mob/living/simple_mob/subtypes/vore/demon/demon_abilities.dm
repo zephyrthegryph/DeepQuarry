@@ -1,8 +1,4 @@
-/mob/living/simple_mob/vore/demon/verb/blood_crawl()
-	set name = "Bloodcrawl"
-	set desc = "Shift out of reality using blood as your gateway"
-	set category = VERB_CAT_ABILITIES_DEMON
-
+/mob/living/simple_mob/vore/demon/proc/blood_crawl()
 	var/turf/T = get_turf(src)
 	if(!T.CanPass(src,T) || loc != T)
 		to_chat(src,span_warning("You can't use that here!"))
@@ -69,11 +65,10 @@
 		flick("phaseout",src)
 		after(src, 3 SECONDS, PROC_REF(demon_phased_out), with = list(original_canmove))
 
-/mob/living/simple_mob/vore/demon/verb/demonic_phase_shift()
-	set name = "Phase Shift"
-	set desc = "Shift out of reality temporarily"
-	set category = VERB_CAT_ABILITIES_DEMON
+/mob/living/simple_mob/vore/demon/proc/blood_crawl_op(datum/act/op/A)
+	blood_crawl()
 
+/mob/living/simple_mob/vore/demon/proc/demonic_phase_shift()
 
 	var/turf/T = get_turf(src)
 
@@ -115,6 +110,9 @@
 	flick("phaseout",src)
 	after(src, 3 SECONDS, PROC_REF(demon_phased_out), with = list(original_canmove))
 	after(src, 33 SECONDS, PROC_REF(demon_shift_return))
+
+/mob/living/simple_mob/vore/demon/proc/demonic_phase_shift_op(datum/act/op/A)
+	demonic_phase_shift()
 
 /// The temporary phase shift runs out: back into reality.
 /mob/living/simple_mob/vore/demon/proc/demon_shift_return()
@@ -181,11 +179,7 @@
 		STAMP(src, last_shift, CLOCK_WORLD)
 
 
-/mob/living/simple_mob/vore/demon/verb/blood_burst()
-	set name = "Blood burst"
-	set desc = "Spawn bloody remains from your past hunts."
-	set category = VERB_CAT_ABILITIES_DEMON
-
+/mob/living/simple_mob/vore/demon/proc/blood_burst()
 	var/turf/T = get_turf(src)
 
 	if(shifted_out)
@@ -205,22 +199,20 @@
 
 	return
 
-/mob/living/simple_mob/vore/demon/verb/toggle_laugh()
-	set name = "Toggle Auto Laugh"
-	set desc = "Toggles whether the demon will automatically laugh when interacted with."
-	set category = VERB_CAT_ABILITIES_DEMON
+/mob/living/simple_mob/vore/demon/proc/blood_burst_op(datum/act/op/A)
+	blood_burst()
 
+/mob/living/simple_mob/vore/demon/proc/toggle_laugh()
 	enable_autolaugh = !enable_autolaugh
 	if(enable_autolaugh)
 		to_chat(src,span_warning("Autolaugh has been toggled on"))
 	else
 		to_chat(src,span_warning("Autolaugh has been toggled off"))
 
-/mob/living/simple_mob/vore/demon/verb/manual_laugh()
-	set name = "Laugh"
-	set desc = "Plays the laugh track."
-	set category = VERB_CAT_ABILITIES_DEMON
+/mob/living/simple_mob/vore/demon/proc/toggle_laugh_op(datum/act/op/A)
+	toggle_laugh()
 
+/mob/living/simple_mob/vore/demon/proc/manual_laugh()
 	if(!enable_autolaugh) //yeah this is kinda sorta dirty but id rather use a bool over something else here to control this.
 		enable_autolaugh = !enable_autolaugh
 		laugh()
@@ -228,6 +220,9 @@
 	else
 		laugh()
 	to_chat(src,span_warning("You laugh!")) //lets add some fluff response for clicking the feel good button.
+
+/mob/living/simple_mob/vore/demon/proc/manual_laugh_op(datum/act/op/A)
+	manual_laugh()
 
 /mob/living/simple_mob/vore/demon/verb/sizespell()
 	set name = "Shrink/Grow Prey"
@@ -259,12 +254,11 @@
 /mob/living/simple_mob/vore/demon
 	var/size_amount = RESIZE_TINY //Adding a var to keep track of sizespell setting
 
-/mob/living/simple_mob/vore/demon/verb/toggle_sizespell()
-	set name = "Shrink/Grow Amount"
-	set desc = "Changes the amount you grow/shrink people."
-	set category = VERB_CAT_ABILITIES_DEMON
-
+/mob/living/simple_mob/vore/demon/proc/toggle_sizespell()
 	open_request(src, /datum/prompt/number, PROC_REF(sizespell_chosen), answerer = src, title = "Set Size", question = "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%)", default = size_amount * 100, max_value = RESIZE_MAXIMUM * 100, min_value = RESIZE_MINIMUM * 100, timeout = 0) //Stolen from sizegun code
+
+/mob/living/simple_mob/vore/demon/proc/toggle_sizespell_op(datum/act/op/A)
+	toggle_sizespell()
 
 /mob/living/simple_mob/vore/demon/proc/sizespell_chosen(datum/act/request/A)
 	if(!A.answer)

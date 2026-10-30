@@ -74,6 +74,7 @@
 	var/segment_count = 6
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/space_worm/head)
+	op("toggle_devour", menu(), label("Toggle Feeding"), needs(req_self(), req_capable()), then(PROC_REF(toggle_devour_op)))
 	setup(PROC_REF(grow_initial_segments))
 	configure(mob_movement(hovering = TRUE))
 
@@ -111,7 +112,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/space_worm/head)
 
 /// Declared setup: grow initial segments, after the complete parent chain.
 /mob/living/simple_mob/animal/space/space_worm/head/proc/grow_initial_segments()
-
 	var/mob/living/simple_mob/animal/space/space_worm/current = src
 
 	if(segment_count && !severed)
@@ -121,11 +121,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/space_worm/head)
 			current = newSegment
 			current.set_faction(mob_rules_of(src).faction)
 
-/mob/living/simple_mob/animal/space/space_worm/head/verb/toggle_devour()
-	set name = "Toggle Feeding"
-	set desc = "Extends your teeth for 30 seconds so that you can chew through mobs and structures alike."
-	set category = VERB_CAT_ABILITIES_WORM
-
+/mob/living/simple_mob/animal/space/space_worm/head/proc/toggle_devour()
 	if(!COOLDOWN_FINISHED(src, maw_cooldown_until))
 		if(open_maw)
 			to_chat(src, span_notice("You retract your teeth."))
@@ -136,6 +132,8 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/space_worm/head)
 	else
 		set_maw(!open_maw)
 
+/mob/living/simple_mob/animal/space/space_worm/head/proc/toggle_devour_op(datum/act/op/A)
+	toggle_devour()
 
 /mob/living/simple_mob/animal/space/space_worm/proc/set_maw(state = FALSE)
 	set_open_maw(state)

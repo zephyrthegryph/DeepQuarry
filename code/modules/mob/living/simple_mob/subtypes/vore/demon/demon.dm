@@ -126,6 +126,12 @@
 	..()
 
 CAPABILITIES(/mob/living/simple_mob/vore/demon)
+	op("toggle_sizespell", menu(), label("Shrink/Grow Amount"), needs(req_self(), req_capable()), then(PROC_REF(toggle_sizespell_op)))
+	op("manual_laugh", menu(), label("Laugh"), needs(req_self(), req_capable()), then(PROC_REF(manual_laugh_op)))
+	op("toggle_laugh", menu(), label("Toggle Auto Laugh"), needs(req_self(), req_capable()), then(PROC_REF(toggle_laugh_op)))
+	op("blood_burst", menu(), label("Blood burst"), needs(req_self(), req_capable()), then(PROC_REF(blood_burst_op)))
+	op("demonic_phase_shift", menu(), label("Phase Shift"), needs(req_self(), req_capable()), then(PROC_REF(demonic_phase_shift_op)))
+	op("blood_crawl", menu(), label("Bloodcrawl"), needs(req_self(), req_capable()), then(PROC_REF(blood_crawl_op)))
 	configure(mob_rules(faction = FACTION_DEMON))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(laugh_at_hit)))
 	on_notice(/datum/notice/hit, then(PROC_REF(laugh_at_thrown)))

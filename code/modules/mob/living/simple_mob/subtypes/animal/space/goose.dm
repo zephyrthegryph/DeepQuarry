@@ -25,6 +25,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/goose)
+	op("berserk", menu(), label("Berserk"), needs(req_self(), req_capable()), then(PROC_REF(berserk_op)))
 	configure(mob_rules(faction = FACTION_GEESE))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken, meat_amount = 3))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
@@ -41,12 +42,11 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/goose)
 		if(src.vitality() <= 0.5) // At half health, and fighting someone currently.
 			src.berserk()
 
-/mob/living/simple_mob/animal/space/goose/verb/berserk()
-	set name = "Berserk"
-	set desc = "Enrage and become vastly stronger for a period of time, however you will be weaker afterwards."
-	set category = VERB_CAT_ABILITIES_GOOSE
-
+/mob/living/simple_mob/animal/space/goose/proc/berserk()
 	apply_body_effect(/datum/body_effect/berserk, 30 SECONDS)
+
+/mob/living/simple_mob/animal/space/goose/proc/berserk_op(datum/act/op/A)
+	berserk()
 
 /datum/decl/mob_organ_names/goose
 TYPE_TABLE(/datum/decl/mob_organ_names/goose, mob_organ_hit_zones, list("head", "chest", "left leg", "right leg", "left wing", "right wing", "neck"))

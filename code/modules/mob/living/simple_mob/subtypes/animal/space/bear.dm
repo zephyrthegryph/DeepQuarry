@@ -22,6 +22,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/bear)
+	op("berserk", menu(), label("Berserk"), needs(req_self(), req_capable()), then(PROC_REF(berserk_op)))
 	configure(mob_rules(faction = FACTION_RUSSIAN))
 	configure(living_rules(say_list_type = /datum/say_list/bear))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/bearmeat, meat_amount = 8))
@@ -40,9 +41,8 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/bear)
 			src.berserk()
 
 // So players can use it too.
-/mob/living/simple_mob/animal/space/bear/verb/berserk()
-	set name = "Berserk"
-	set desc = "Enrage and become vastly stronger for a period of time, however you will be weaker afterwards."
-	set category = VERB_CAT_ABILITIES_BEAR
-
+/mob/living/simple_mob/animal/space/bear/proc/berserk()
 	apply_body_effect(/datum/body_effect/berserk, 30 SECONDS)
+
+/mob/living/simple_mob/animal/space/bear/proc/berserk_op(datum/act/op/A)
+	berserk()
