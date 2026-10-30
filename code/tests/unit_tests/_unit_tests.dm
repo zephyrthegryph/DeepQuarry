@@ -1295,6 +1295,7 @@
 #include "../../modules/unit_tests/round2_slime_docility_name_request.dm"
 
 #include "../../modules/unit_tests/lobby_join_op_alive_keep.dm"
+#include "../../modules/unit_tests/lobby_panel_observe_join.dm"
 #include "../../modules/unit_tests/pipe_carries_no_has_power.dm"
 #include "../../modules/unit_tests/round2_helm_limit_requests.dm"
 #include "../../modules/unit_tests/round2_helm_coordinates_clientless.dm"

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Pool release, lane reclaim and the disk budget never delete a running DreamDaemon's run directory or its worktree's round logs"
+  - code_imp: "Added a unit test that presses the lobby panel's late_join and observe buttons"

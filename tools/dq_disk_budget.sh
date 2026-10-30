@@ -140,6 +140,7 @@ LIVE_KEYS=""
 name_protected() { # <table> <unit path> -> 0 when a named protection applies
 	local base="${2##*/}" prot=",${M[$1.protect]:-}," cur=""
 	case "$EXCLUDE" in *" $base "*) return 0 ;; esac
+	case "$prot" in *,live-world,*) bash "${BASH_SOURCE[0]%/*}/dq_live_world.sh" unit "$2" && return 0 ;; esac
 	case "$prot" in *,leased-slot,*) [ -f "$LEASE_DIR/$base.lease" ] && return 0 ;; esac
 	case "$prot" in
 		*,analyze-keys,*)
@@ -462,7 +463,7 @@ worktrees() { # -> WTS array
 }
 
 enforce_once() { # <squeeze percent, 0 for the first pass>
-	local squeeze="$1" t wt base name ov
+	local squeeze="$1" t wt base name ov live
 	for name in "${CACHE_TABLES[@]}"; do   # directory-level tables first (a child over its sub cap runs a file pass of its own)
 		t="cache.$name"
 		case "${M[$t.policy]:-}" in children-lru|cargo-units) ;; *) continue ;; esac
@@ -494,8 +495,11 @@ enforce_once() { # <squeeze percent, 0 for the first pass>
 			log "  skipping $wt: git ls-files failed, so tracked files cannot be told apart"; continue
 		fi
 		TRACKED="$SCR/tracked"
+		live=0; bash "${BASH_SOURCE[0]%/*}/dq_live_world.sh" worktree "$wt" && live=1
 		for name in "${WT_TABLES[@]}"; do
 			t="worktree.$name"
+			# a running game server writes its round logs and runs here: its world directory is never trimmed from under it
+			if [ "$live" -eq 1 ]; then case "${M[$t.path]:-}" in data/logs|data/runs) log "  kept ${M[$t.path]} of $wt: a running DreamDaemon uses it as its world directory"; continue ;; esac; fi
 			if [ "${M[$t.policy]:-}" = cargo-units ]; then process_cargo_wt "$wt" "$name"; continue; fi
 			add_file_table "wt:$base:$name" "$wt/${M[$t.path]:-.}" "$t" 1 ""
 		done
