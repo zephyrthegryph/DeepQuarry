@@ -9,7 +9,7 @@
 #   baseline  a data file in tools/ci/ (baseline, snapshot, golden; not lint_scopes.toml, not scripts) or tools/dm-health/baseline.json
 #             names it (a path, or a directory that contains it)
 #   toolref   tool source (tools/analyze/src, tools/build, tools/ci scripts) names its path or a directory containing it
-#   allow     it has an ALLOW(...) annotation
+#   allow     it has an ALLOW(...) naming a migration lint (init, base_vars, stored_refs, ref_text, native_ref_write, decl); other keeps do not block
 #   oldform   it uses Destroy(), spawn, sleep, do_after, INVOKE_ASYNC, Initialize, LateInitialize, Topic, a New() override on an atom type (a plain datum's New() is its
 #             constructor, final_api section 6), a verb off /client (the verb set holds client, OOC and admin commands only),
 #             flow_ask or CHANGE_ (comments are ignored)

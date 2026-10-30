@@ -71,7 +71,18 @@ def non_client_verb(lines):
 OLDFORM_EXEMPT = ("code/tests/", "code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/")
 VERB_EXEMPT = ("code/modules/admin/", "/admin_commands.dm", "/contract_admin.dm")
 
-ALLOW = re.compile(r"\bALLOW\(")
+ALLOW = re.compile(r"\bALLOW\(([^)]*)\)")
+# doc/rewrite/migration_census.md kind M: an annotation naming one of these keeps a migration form, so the file is not done.
+# Any other lint's ALLOW (scheduler, silent_catch, ownership, api, ...) is a justified keep and does not block a move.
+MIGRATION_ALLOW = ("init", "base_vars", "stored_refs", "ref_text", "native_ref_write", "decl")
+
+
+def migration_allow(text):
+    for m in ALLOW.finditer(text):
+        for name in m.group(1).split(","):
+            if name.strip().split("/")[0] in MIGRATION_ALLOW:
+                return True
+    return False
 TYPE_DEF = re.compile(r"^(/[A-Za-z_][\w/]*)\s*(?:\(|$)")
 TYPE_REF = re.compile(r"/(?:obj|mob|turf|area|datum|atom)(?:/[A-Za-z_]\w*)+")
 DATA_EXT = (".txt", ".json", ".tsv", ".csv", ".sha256sum", ".patch", ".toml")
@@ -224,7 +235,7 @@ def main(argv):
             if f == ref or f.startswith(ref if ref.endswith("/") else ref + "/"):
                 why.append(kind + ":" + ref)
         text = read(root, f)
-        if ALLOW.search(text):
+        if migration_allow(text):
             why.append("allow")
         lines = strip_comments(text)
         exempt = f.startswith(OLDFORM_EXEMPT)

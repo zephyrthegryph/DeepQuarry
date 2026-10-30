@@ -42,6 +42,10 @@ mk code/modules/unit_tests/waits.dm '/proc/w()
 	sleep(1)'
 mk code/modules/admin/verbs/poke.dm '/mob/verb/poke()
 	set name = "Poke"'
+mk code/modules/widgets/allow_init.dm '/proc/c()
+	return 1 // ALLOW(init/INSTANCE_STATE): a reason long enough to count'
+mk code/modules/widgets/allow_mixed.dm '/proc/d()
+	return 1 // ALLOW(instance_list, base_vars): a reason long enough to count'
 mk code/modules/widgets/allowed.dm '/proc/b()
 	return 1 // ALLOW(scheduler): a reason long enough to count'
 mk code/modules/widgets/baselined.dm '/obj/item/widget/baselined'
@@ -92,7 +96,9 @@ expect code/modules/widgets/clientverb.dm clean ""
 expect code/modules/widgets/clientverb_block.dm clean ""
 expect code/modules/unit_tests/waits.dm clean ""
 expect code/modules/admin/verbs/poke.dm clean ""
-expect code/modules/widgets/allowed.dm dirty "allow"
+expect code/modules/widgets/allowed.dm clean ""
+expect code/modules/widgets/allow_init.dm dirty "allow"
+expect code/modules/widgets/allow_mixed.dm dirty "allow"
 expect code/modules/widgets/baselined.dm dirty "baseline:code/modules/widgets/baselined.dm"
 expect code/modules/widgets/tooled/rig/suit.dm dirty "toolref:code/modules/widgets/tooled/rig"
 expect code/modules/widgets/uses_content.dm clean ""
@@ -105,7 +111,7 @@ expect code/modules/power/cable.dm clean "layering:/obj/item/known"
 if [ -z "$(state code/__defines/widgets.dm)" ] || [ "$(state code/__defines/widgets.dm)" = dirty ]; then ok "defines are never clean"; else bad "defines file reported clean"; fi
 [ "$(target code/modules/widgets/clean.dm)" = code/content/widgets/clean.dm ] && ok "content target" || bad "content target: $(target code/modules/widgets/clean.dm)"
 [ "$(target code/modules/power/cable.dm)" = code/domains/power/cable.dm ] && ok "domain target" || bad "domain target: $(target code/modules/power/cable.dm)"
-if [ "$(bash "$here/tools/ci/move_candidates.sh" --root "$tmp" --clean | wc -l)" -eq 13 ]; then ok "--clean lists the clean files"; else bad "--clean count"; fi
+if [ "$(bash "$here/tools/ci/move_candidates.sh" --root "$tmp" --clean | wc -l)" -eq 14 ]; then ok "--clean lists the clean files"; else bad "--clean count"; fi
 bash "$here/tools/ci/move_candidates.sh" --root "$tmp" --summary | grep -q 'code/modules/widgets' && ok "--summary groups by directory" || bad "--summary"
 
 [ $fail -eq 0 ] && echo "move_candidates: all passed"
