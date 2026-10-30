@@ -407,6 +407,7 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 		if((!S || (!S.observed && !S.worn_watched && !S.hooks)) && !own_field_static_work(holder, var_name))
 			GLOB.own_field_memo_spared++
 			return
+	BOOT_PHASE_COUNT("ofc full path: [var_name]")
 	// A type that declares reading this var (or hopping over it) re-derives what reads it (derived.dm).
 	if(GLOB?.derived_read_vars?[var_name])
 		derived_var_touched(holder, var_name)
