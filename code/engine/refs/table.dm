@@ -408,6 +408,7 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 			GLOB.own_field_memo_spared++
 			return
 	BOOT_PHASE_COUNT("ofc full path: [var_name]")
+	BOOT_PHASE_BEGIN(bp_all)
 	// A type that declares reading this var (or hopping over it) re-derives what reads it (derived.dm).
 	if(GLOB?.derived_read_vars?[var_name])
 		BOOT_PHASE_BEGIN(bp_derived)
@@ -442,6 +443,7 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 		BOOT_PHASE_END(bp_hop, "ofc draw_hop_published: [var_name]", holder)
 	var/datum/definition_registry/R = GLOB?.om_reg
 	if(!R || !holder)
+		BOOT_PHASE_END(bp_all, "ofc full path total: [var_name]", holder)
 		return
 	var/list/fields = R.fields_by_type[holder.type] || R.fields_of(holder.type)
 	var/channel = fields[var_name]
@@ -449,6 +451,7 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 		BOOT_PHASE_BEGIN(bp_chan)
 		state_changed(holder, channel)
 		BOOT_PHASE_END(bp_chan, "ofc state_changed(channel): [var_name]", holder)
+	BOOT_PHASE_END(bp_all, "ofc full path total: [var_name]", holder)
 
 /// TRUE runs own_field_changed()'s full path for every write (the parity test, debugging).
 GLOBAL_VAR_INIT(own_field_memo_off, FALSE)

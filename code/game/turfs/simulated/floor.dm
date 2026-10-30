@@ -48,10 +48,12 @@
 		BOOT_PHASE_BEGIN(bp_lay)
 		install_flooring(get_flooring_data(floortype), TRUE) // the first draw after init shows it
 		BOOT_PHASE_END(bp_lay, "floor_start: install_flooring", src)
+	BOOT_PHASE_BEGIN(bp_dirt)
 	if(can_dirty && can_start_dirty)
 		if(prob(dirty_prob))
 			dirt += rand(50,100)
 			update_dirt() //5% chance to start with dirt on a floor tile- give the janitor something to do
+	BOOT_PHASE_END(bp_dirt, "floor_start: dirt", src)
 
 /// A floor with flooring runs the after-init pass (planet sunlight) wherever it was made.
 /turf/simulated/floor/runtime_after_init()
