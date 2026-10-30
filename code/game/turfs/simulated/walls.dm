@@ -71,12 +71,18 @@ CAPABILITIES(/turf/simulated/wall)
 		set_girder_material_key(length(forced_materials) >= 3 ? forced_materials[3] : null)
 	if(!damage_overlays[1]) //list hasn't been populated
 		generate_overlays()
+	BOOT_PHASE_BEGIN(bp_mat)
 	rel_set(src, nameof(material), get_material_by_name(wall_material_key || DEFAULT_WALL_MATERIAL))
 	girder_material = get_material_by_name(girder_material_key || DEFAULT_WALL_MATERIAL)
 	if(!isnull(reinf_material_key))
 		set_reinf_material(get_material_by_name(reinf_material_key))
+	BOOT_PHASE_END(bp_mat, "wall_take_materials: set materials", src)
+	BOOT_PHASE_BEGIN(bp_upd)
 	update_material()
+	BOOT_PHASE_END(bp_upd, "wall_take_materials: update_material", src)
+	BOOT_PHASE_BEGIN(bp_rad)
 	check_radioactive()
+	BOOT_PHASE_END(bp_rad, "wall_take_materials: check_radioactive", src)
 
 /// TRUE while one of its materials is radioactive.
 /turf/simulated/wall/var/radioactive = FALSE
