@@ -490,6 +490,7 @@
 #include "dq_draw_reagents.dm"
 #include "dq_look_forms.dm"
 #include "dq_look_glow_tests.dm"
+#include "dq_glow_batch_tests.dm"
 #include "dq_fresh_look_default.dm"
 #include "../../modules/unit_tests/dq_draw_queue_default_look.dm"
 #include "../../modules/unit_tests/dq_change_plan_parity.dm"

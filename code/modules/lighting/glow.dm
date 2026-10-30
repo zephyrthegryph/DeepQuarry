@@ -68,13 +68,40 @@ READS_AS(/proc/glow_of, LIGHT_GLOW_KEY)
 		range = MINIMUM_USEFUL_LIGHT_RANGE // just brighter than the soft light around players
 	if(isnull(on) && !isnull(range))
 		on = range > 0
+	// One trait write for the three parts: the setters (set_light_power() and the rest) each took the trait, copied it, wrote a field and published the
+	// key, so a glow of three parts did that three times. The notices keep their order and their old values; the source is reconciled once at the end.
+	var/datum/type_trait/light_glow/now = glow_of(A)
+	var/old_power = now.power
+	var/old_range = now.range
+	var/old_color = now.color
+	var/power_moves = !isnull(power) && power != old_power
+	var/range_moves = !isnull(range) && range != old_range
+	var/color_moves = !isnull(color) && color != old_color
 	var/changed = FALSE
-	if(!isnull(power) && A.set_light_power(power) != null)
+	if(power_moves || range_moves || color_moves)
+		var/datum/type_trait/light_glow/own = type_trait_own(A, ENTRY_LIGHT_GLOW)
+		if(power_moves)
+			own.power = power
+		if(range_moves)
+			own.range = range
+		if(color_moves)
+			own.color = color
+		tracked_changed(A, LIGHT_GLOW_KEY)
+		if(power_moves)
+			PUBLISH_LEGACY(A, /datum/notice/atom_update_light_power, old_power)
+			if(!isnull(old_power))
+				changed = TRUE
+		if(range_moves)
+			PUBLISH_LEGACY(A, /datum/notice/atom_update_light_range, old_range)
+			if(!isnull(old_range))
+				changed = TRUE
+		if(color_moves)
+			PUBLISH_LEGACY(A, /datum/notice/atom_update_light_color, old_color)
+			if(!isnull(old_color))
+				changed = TRUE
+	var/switched = !isnull(on) && !isnull(A.set_light_on(on)) // set_light_on() reconciles the source itself
+	if(switched)
 		changed = TRUE
-	if(!isnull(range) && A.set_light_range(range) != null)
-		changed = TRUE
-	if(!isnull(color) && A.set_light_color(color) != null)
-		changed = TRUE
-	if(!isnull(on) && A.set_light_on(on) != null)
-		changed = TRUE
-	return changed // each setter reconciled the light source (light_changed())
+	else if(power_moves || range_moves || color_moves)
+		A.light_changed()
+	return changed // the source was reconciled once (light_changed())

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "set_glow() writes a light's range, power and colour in one trait write and reconciles the light source once (faster map load)"
