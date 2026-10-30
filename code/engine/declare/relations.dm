@@ -337,8 +337,14 @@ PROC_SUMMARY(/proc/condition_holds) // vars[] / call() dispatcher: the walk cann
 	for(var/target_type in declared)
 		if(istype(D, target_type) && !decl.keyed_key)
 			decl.keyed_key = declared[target_type]
-	for(var/sig in link_decls_cache())
-		link_patch_table(T, link_decls_cache()[sig])
+	// Most links name neither end's type for a given owner: two path tests skip them before link_patch_table() builds its per-end keys.
+	var/owner_type = T.owner_type
+	var/list/links = link_decls_cache()
+	for(var/sig in links)
+		var/datum/entry/link = links[sig]
+		var/list/ends = link.args
+		if(ispath(owner_type, ends["a_type"]) || ispath(owner_type, ends["b_type"]))
+			link_patch_table(T, link)
 	for(var/target_type in keyed_targets_cache())
 		if(istype(D, target_type) && !decl.keyed_key)
 			decl.keyed_key = keyed_targets_cache()[target_type]
