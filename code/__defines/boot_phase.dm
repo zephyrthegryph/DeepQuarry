@@ -7,3 +7,5 @@
 #define BOOT_PHASE_END(v, phase, A) if(!isnull(v)) boot_phase_add(phase, rustg_time_microseconds(BOOT_PHASE_CLOCK) - v, A)
 /// " (turf)", " (mob)" or " (obj)": a phase row per kind of atom, for the steps that run on every atom.
 #define BOOT_KIND(A) (isturf(A) ? " (turf)" : (ismob(A) ? " (mob)" : " (obj)"))
+/// Counts one occurrence of `what` (a text built only while the timers run) for the report's "counted" row.
+#define BOOT_PHASE_COUNT(what) if(GLOB.boot_phase_on) GLOB.boot_phase_counts[what]++

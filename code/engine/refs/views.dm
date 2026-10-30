@@ -330,6 +330,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 
 /// Links source.var_name -> target: writes the view, indexes it, and sets the partner side.
 /proc/_rel_attach(datum/source, var_name, datum/target, list/entry)
+	BOOT_PHASE_COUNT("rel_attach: [source.type].[var_name]")
 	if(entry[OWNE_LIST])
 		var/list/L = source.vars[var_name]
 		if(!REL_LISTLIKE(L))
