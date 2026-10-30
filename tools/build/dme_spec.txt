@@ -60,19 +60,21 @@ before code/modules/projectiles/gun.dm code/content/projectiles/targeting/target
 before code/modules/mob/holder.dm code/content/vore/resizing/holder_micro.dm   # /obj/item/holder/container_resist()
 before code/defines/obj/weapon.dm code/content/materials/material_stock_parts.dm   # /obj/item/stock_parts/get_rating()
 before code/ATMOSPHERICS/components/** code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
+before code/content/atmos/components/** code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
+before code/domains/atmos/components/** code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
 before code/modules/overmap/ships/computers/helm.dm code/modules/flight_operations/flight_console.dm   # navigation ui_redirect()
-before code/datums/observation/turf_enterexit.dm code/content/turfs/simulated/outdoors/sky_effect.dm   # /turf/Entered()
+before code/content/observation/turf_enterexit.dm code/content/turfs/simulated/outdoors/sky_effect.dm   # /turf/Entered()
 
 # Declaration before use, for DreamMaker: it warns when a type's var is set, or a proc overridden, before the file that declares it
 # (var_before_def, override_before_def). The native compiler does not care and the worlds are the same; these pairs keep DreamMaker's
 # warnings at what the old order gave (tools/ci/dm_equiv.sh compiles with both).
 before code/engine/declare/lifecycle.dm code/datums/lifecycle/declarations.dm          # validate_registries()
-before code/engine/hooks/content_adapters.dm code/datums/engine_adapters.dm            # bind_native(), send(), lookup(), ...
-before code/engine/parts/input_adapter.dm code/datums/engine_adapters.dm              # compatibility_topic()
+before code/engine/hooks/content_adapters.dm code/content/datums/engine_adapters.dm   # bind_native(), send(), lookup(), ...
+before code/engine/parts/input_adapter.dm code/content/datums/engine_adapters.dm   # compatibility_topic()
 before code/engine/refs/transfer.dm code/datums/ownership/transfer.dm                 # record(), refusal()
 before code/engine/state/collapse.dm code/datums/state/collapse.dm                     # describe(), hook_blockers()
-before code/engine/state/construction.dm code/datums/state/construction_adapter.dm     # create()
-before code/engine/state/properties/providers.dm code/datums/properties/providers.dm   # validate_rules(), variant_values()
+before code/engine/state/construction.dm code/content/state/construction_adapter.dm   # create()
+before code/engine/state/properties/providers.dm code/content/properties/providers.dm   # validate_rules(), variant_values()
 before code/engine/state/schema.dm code/datums/state/latent_safe_types.dm              # register_defaults()
 before code/engine/state/serializer.dm code/datums/state/serializer.dm                 # identity(), lookup()
 before code/game/objects/items/weapons/id?cards/cards.dm code/content/items/weapons/id?cards/id_stacks.dm   # base_icon
@@ -124,23 +126,26 @@ first code/_macros.dm
 first code/__defines/**
 first code/engine/_generated/ids.dm      # the ids the declaration markers declare (analyze gen declare_ids): before everything that names one
 first code/contracts/**                  # the contracts layer: ids (TAG_UI, RES_*), act types, accessor declarations
+first code/content/contracts/**   # the contracts layer: ids (TAG_UI, RES_*), act types, accessor declarations
 first **/*_defines.dm                    # a module's own macro file (combat_ai, integrated_electronics, flight_operations, expedition, ...)
 first code/game/machinery/machinery_fields.dm   # declares the machine families' state vars (on, active, locked, mode) their files set
 
 # Macros defined in an ordinary file and used by others: the definer before its users.
 before code/modules/mob/living/carbon/human/species/station/traits/_traits.dm code/content/client/preferences/**   # TRAIT_TYPE_*
 before code/domains/heat/heat_bind_batch.dm code/ATMOSPHERICS/**   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/content/atmos/**   # HEAT_BODY_RESOLVE
+before code/domains/heat/heat_bind_batch.dm code/domains/atmos/**   # HEAT_BODY_RESOLVE
 before code/domains/heat/heat_bind_batch.dm code/datums/rules/world_adapter.dm
 before code/domains/heat/heat_bind_batch.dm code/domains/heat/**
 before code/domains/heat/heat_bind_batch.dm code/modules/heat/heat.dm
 before code/game/atom/atom_type_table.dm code/controllers/subsystems/atoms_init.dm   # TYPE_TABLE_*
-before code/game/atom/atom_type_table.dm code/game/atom/atom_materialize.dm
+before code/game/atom/atom_type_table.dm code/content/atom/atom_materialize.dm
 before code/engine/declare/entries.dm code/engine/actions/**                  # ENTRY_SLOTS, ENTRY_SLOT_LIST
 before code/engine/stats/contributes.dm code/engine/change/staleness.dm       # CV_PROC, CV_VAR
 before code/engine/stats/tables.dm code/engine/stats/recompute.dm             # TABLE_KEY
 before code/modules/overmap/overmap_shuttle.dm code/modules/flight_operations/api.dm   # waypoint_sector
 before code/library/reagents/reagent_flow.dm code/library/reagents/**          # REAGENT_FLOW_*
-before code/ATMOSPHERICS/components/omni_devices/_omni_extras.dm code/content/power/supermatter/setup_supermatter.dm   # ATM_*
+before code/domains/atmos/components/omni_devices/_omni_extras.dm code/content/power/supermatter/setup_supermatter.dm   # ATM_*
 before code/content/turfs/turf_cascade_service.dm code/content/turfs/turf_cascade_api.dm   # DEFAULT_CONVERSION_*
 before code/modules/generated_station/generated_station_types.dm code/modules/generated_station/generated_station_architecture_validation.dm   # GENERATED_STATION_TILE_*
 before code/modules/generated_station/generated_station_types.dm code/modules/generated_station/generated_station_infrastructure.dm
