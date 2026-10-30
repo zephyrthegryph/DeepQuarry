@@ -120,6 +120,12 @@ the way heat rules already defer (`dq_rules_heat_deferred`) until the object's f
 
 ### 4.2 `own_field_changed` full path on init
 
+**Done (running totals).** An area's `demand_*` stats are SUM stats of one row per machine; each machine joining re-added every row.
+`stat_record.sum_cache` now keeps the total and row count of a SUM stat whose rows are all plain non-negative whole numbers below 2^24
+(exact in any order in a DM number, so it equals the recompute). `stat_row_set`, row add and row removal move it by the one row;
+every other in-place row writer drops it and the next recompute rebuilds it; a fractional, negative, override or computed row keeps
+the full sum. Parity tests: `dq_stat_sum_running_total_parity` (600 random steps), `_engages`, `_booted_map`.
+
 `ofc stat_relation_changed: power_area` is 8.3 s over 22k writes (375 us), almost all of it `stat_ct_update` (three channel entries per
 machine, 67k updates, `gate` 2.0 s, `release` 0.5 s) on pipes, firedoors and lights. `flooring` writes cost 100 us in `own_field_changed`
 (`draw_hop_published` 0.9 s, `publish_change` 0.7 s) of 217 us for the whole `rel_set`.

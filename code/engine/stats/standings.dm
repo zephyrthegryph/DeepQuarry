@@ -105,6 +105,7 @@ GLOBAL_COUNTER(standing_cache_drops)
 	var/expires = lasts ? stat_clock_now(E, HOLD_CLOCK_WORLD) + lasts : 0
 	var/list/row = stat_hold_find(rec, HOLD_STANDING, source, key)
 	if(row)
+		stat_sum_dirty(E, row)
 		row[H_VALUE] = value
 		row[H_EXPIRES] = expires
 		row[H_PRIORITY] = priority

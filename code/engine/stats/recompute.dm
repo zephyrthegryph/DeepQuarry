@@ -120,6 +120,12 @@ PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot 
 		value = stat_compute_fast(E, def, I, rec)
 		if(def.clamps)
 			value = stat_clamp(def, value)
+	else if(def.rule == STAT_RULE_SUM && rec?.sum_cache?[def.skey])
+		// The running total of the rows (store.dm): the same number the walk below would add up.
+		var/list/running = rec.sum_cache[def.skey]
+		value = running[2] ? running[1] : def.base
+		if(def.clamps)
+			value = stat_clamp(def, value)
 	else if(def.rule == STAT_RULE_SUM)
 		// The same rows in the same order as the general path below, added as they are met: no row list and no second pass (an area's
 		// demand stat holds a row per machine in it, and every machine's write re-sums them all).
@@ -161,6 +167,17 @@ PROC_SUMMARY(/proc/stat_compute) // vars[] / call() dispatcher: the walk cannot 
 			sum += row_value
 			count++
 		value = count ? sum : def.base
+		// A stat of rows alone (a virtual total such as an area's demand), every row plain and whole: keep the running total from here on.
+		if(rec && I && !has_var_sum && !def.boolean && !override_set && rec.by_stat?[def.skey] && !length(I.contribs[def.skey]) && sum < STAT_SUM_LIMIT)
+			var/all_ok = TRUE
+			for(var/list/plain as anything in rec.by_stat[def.skey])
+				if(!stat_sum_row_ok(plain))
+					all_ok = FALSE
+					break
+			if(all_ok)
+				if(!rec.sum_cache)
+					rec.sum_cache = list()
+				rec.sum_cache[def.skey] = list(sum, count)
 		if(def.clamps)
 			value = stat_clamp(def, value)
 		if(override_set)
@@ -840,8 +857,16 @@ PROC_SUMMARY(/proc/stat_factors_arg) // vars[] / call() dispatcher: the walk can
 	if(row)
 		if(stat_values_equal(row[H_VALUE], value) && row[H_PRIORITY] == priority)
 			return
+		var/old_value = row[H_VALUE]
 		row[H_VALUE] = value
 		row[H_PRIORITY] = priority
+		// The running total follows the one row that moved (a value it cannot hold drops it).
+		var/list/cache = rec.sum_cache?["[def.id]"]
+		if(cache)
+			if(stat_sum_row_ok(row) && cache[1] - old_value + value < STAT_SUM_LIMIT)
+				cache[1] += value - old_value
+			else
+				rec.sum_cache -= "[def.id]"
 	else
 		row = list(def.id, source, value, 0, priority, 0, HOLD_CLOCK_OWN, null, ++GLOB.stat_hold_serial, key, null)
 		stat_rows_add(rec, row)
