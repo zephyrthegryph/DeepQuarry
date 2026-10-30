@@ -38,6 +38,8 @@ GLOBAL_LIST_INIT(dq_lifecycle_snapshot_ignored_globs, list(
 	// Capability signature -> the one shared capability with those settings (cap_intern()): definitions interned the first
 	// time a type declares them, keyed by text. An atom that makes random contents (an MRE's meal) meets new types after the warm-up.
 	"caps_interned",
+	// Hook capability key -> the one shared hook capability (hook_capability_of()): made the first time an observe() names its entries.
+	"hook_caps_interned",
 	// Holder uid -> its capability runtime record (capability_tables.dm): an instance's own state (materials a scrap rolled,
 	// what a belt's tools hold), made when it first has some and removed in that holder's final cleanup
 	// (dq_time_foundation_compatibility_tests proves the removal), so it grows with live instances and is no registration.
