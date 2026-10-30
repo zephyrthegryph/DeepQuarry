@@ -103,6 +103,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	canmove = 0
 
 CAPABILITIES(/mob/living/silicon/ai)
+	op("holo_nom_menu", menu(), label("Hardlight Nom"), needs(req_self(), req(PROC_REF(holo_nom_menu_ready))), then(PROC_REF(holo_nom_menu_op)))
 	op("store_core", menu(), label("Store Core"), needs(req_self(), req(PROC_REF(store_core_ready))), then(PROC_REF(store_core_op)))
 	// Local HUD questions are operations on the AI itself, independent of its wireless link.
 	op("hud_camera_list", menu(), label("Show Camera List"), authority(AUTH_REMOTE_ACCESS), by(0), ungated(), when(req(/atom/movable/screen, of = ON_HELD)), needs(req_self()),

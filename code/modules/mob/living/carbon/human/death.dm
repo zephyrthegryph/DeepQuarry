@@ -97,7 +97,7 @@
 	if(B)
 		if(!B.key && key && B.controlling)
 			move_player(src, B, "host [src] died under borer control")
-			B.controlling = 0
+			B.set_controlling(0)
 		if(B.host_brain.mind)
 			move_player_mind(B.host_brain.mind, src, "returned to own dead body from borer [B]")
 			B.host_brain.name = "host brain"
