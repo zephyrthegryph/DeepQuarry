@@ -15,7 +15,7 @@
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
-#include "../../modules/combat_ai/_defines.dm"
+#include "../../domains/ai/_defines.dm"
 
 // Test-only mob with a fixed modern-AI behavior set, so these tests don't
 // depend on any shipped creature's tuning.
