@@ -456,3 +456,23 @@
 	after = dq_materials_on(T)
 	TEST_ASSERT_EQUAL(after[/obj/item/stack/material/steel] - before[/obj/item/stack/material/steel], 5, "into its 5 sheets")
 	own_turf_contents(T)
+
+/// A window grants its rotation verbs only while it is loose and slim; an anchored or full-tile one has none (made so at init, not granted and revoked).
+/datum/unit_test/dq_window_rotation_verbs
+
+/datum/unit_test/dq_window_rotation_verbs/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/list/rotate_caps = rotate_verb_defs()
+	TEST_ASSERT_EQUAL(length(rotate_caps), 3, "the rotation verbs are three grants")
+	var/obj/structure/window/reinforced/fixed = allocate(/obj/structure/window/reinforced, T)
+	for(var/verb_def in rotate_caps)
+		TEST_ASSERT(!granted(fixed, verb_def), "an anchored window has no rotation verb")
+	var/obj/structure/window/reinforced/loose = allocate(/obj/structure/window/reinforced, T, SOUTH, TRUE)
+	TEST_ASSERT(!loose.anchored, "a player-built window starts loose")
+	if(!loose.is_fulltile())
+		for(var/verb_def in rotate_caps)
+			TEST_ASSERT(granted(loose, verb_def), "a loose slim window grants every rotation verb")
+	loose.set_anchored(TRUE)
+	loose.update_verbs()
+	for(var/verb_def in rotate_caps)
+		TEST_ASSERT(!granted(loose, verb_def), "anchoring it takes the rotation verbs away")
