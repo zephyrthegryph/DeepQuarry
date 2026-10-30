@@ -78,13 +78,8 @@ They're also cool, and Rykka/Nyria wrote this uwu
 	var/obj/item/clothing/head/hat = null // The hat the yeen is wearing when initialized, var will update with the chosen hat.
 
 // Silly stuff. HATS! Give your yeen a hat today <3
-/mob/living/simple_mob/animal/hyena/verb/remove_hat()
-	set name = "Remove Hat"
-	set desc = "Remove the yeen's hat. You monster. ;~;"
-	set category = VERB_CAT_ABILITIES_HYENA
-	set src in view(1)
-
-	drop_hat(usr)
+/mob/living/simple_mob/animal/hyena/proc/remove_hat_op(datum/act/op/A)
+	drop_hat(A.actor)
 
 /mob/living/simple_mob/animal/hyena/proc/drop_hat(mob/user)
 	if(hat)
@@ -100,13 +95,8 @@ They're also cool, and Rykka/Nyria wrote this uwu
 			return
 		to_chat(user, span_notice("\The [src] is not wearing a hat!"))
 
-/mob/living/simple_mob/animal/hyena/verb/give_hat()
-	set name = "Give Hat"
-	set desc = "Give the yeen a hat. You wonderful bean. <3"
-	set category = VERB_CAT_ABILITIES_HYENA
-	set src in view(1)
-
-	take_hat(usr)
+/mob/living/simple_mob/animal/hyena/proc/give_hat_op(datum/act/op/A)
+	take_hat(A.actor)
 
 /mob/living/simple_mob/animal/hyena/proc/take_hat(mob/user)
 	if(hat)
@@ -143,6 +133,8 @@ They're also cool, and Rykka/Nyria wrote this uwu
 	emote_hear = list("yawns", "cackles", "playfully yaps")
 
 CAPABILITIES(/mob/living/simple_mob/animal/hyena)
+	op("remove_hat", menu(), label("Remove Hat"), needs(req_adjacent()), then(PROC_REF(remove_hat_op)))
+	op("give_hat", menu(), label("Give Hat"), needs(req_adjacent()), then(PROC_REF(give_hat_op)))
 	configure(mob_rules(faction = "yeen"))
 	configure(living_rules(vore_capacity = 3, say_list_type = /datum/say_list/hyena))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
