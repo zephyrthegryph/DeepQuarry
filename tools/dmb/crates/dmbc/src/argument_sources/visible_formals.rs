@@ -94,6 +94,42 @@ pub(super) fn compile<R: Resolver>(
                 end: SYNTAX_PREFIX.len() + expression.len() + 1,
             },
         )?;
+    validate_later_formals(code, references, argument, metadata, 0)
+}
+pub(super) fn compile_original<R: Resolver>(
+    root: &dm_syntax::Expr,
+    diagnostic: &str,
+    argument: usize,
+    metadata: &ProcedureMetadata,
+    frame: &ProcedureInputs,
+    symbols: &SymbolTable,
+    host: &R,
+) -> Result<ResolverProc, Vec<LowerError>> {
+    let (code, references) =
+        dm_codegen_byond::compile_return_expression_with_resolver_and_references(
+            root,
+            diagnostic,
+            frame,
+            symbols,
+            host,
+            Some(&FixedOrigin),
+        )?;
+    if references.unbound_selections != 0 {
+        return Err(vec![LowerError {
+            reason: "original helper lexical selections are incomplete".into(),
+            kind: LowerErrorKind::UnsupportedModel,
+            ..Default::default()
+        }]);
+    }
+    validate_later_formals(code, references, argument, metadata, root.span.start)
+}
+fn validate_later_formals(
+    code: ResolverProc,
+    references: dm_ir::SelectedReferences,
+    argument: usize,
+    metadata: &ProcedureMetadata,
+    base: usize,
+) -> Result<ResolverProc, Vec<LowerError>> {
     let mut errors = Vec::new();
     for reference in references.references {
         let dm_ir::SelectedMeaning::Argument(index) = reference.meaning else {
@@ -107,9 +143,12 @@ pub(super) fn compile<R: Resolver>(
             .parameters
             .get(index as usize)
             .is_some_and(|parameter| parameter.name == reference.name);
-        let span = reference
-            .relative_span
-            .map(|(start, end)| LowerSpan { start, end });
+        let span = reference.relative_span.and_then(|(start, end)| {
+            Some(LowerSpan {
+                start: base.checked_add(start)?,
+                end: base.checked_add(end)?,
+            })
+        });
         errors.push(LowerError {
             reason: if issued && span.is_some() {
                 "invalid variable".into()

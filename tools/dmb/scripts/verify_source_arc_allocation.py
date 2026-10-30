@@ -29,6 +29,20 @@ def invoke(argv, env, seconds):
     return result
 
 
+def require_local_implementation(fields, crate):
+    if fields.get("IMPLEMENTATION_MATCHED") is not True:
+        raise RuntimeError("Cargo did not certify the exact local geometry/ownership implementations")
+    for field, name in [
+        ("GEOMETRY_IMPLEMENTATION_SHA", "native_arc_allocation.rs"),
+        ("OWNERSHIP_IMPLEMENTATION_SHA", "no_weak_arc_owner.rs"),
+    ]:
+        expected = fields.get(field)
+        if not isinstance(expected, str) or not re.fullmatch(r"[0-9a-f]{64}", expected):
+            raise RuntimeError(f"Cargo's {field} is absent or malformed")
+        if digest(crate / "src/query_db" / name) != expected:
+            raise RuntimeError(f"Actual local {name} differs from Cargo's exact receipt")
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--build-json", type=Path, required=True)
@@ -57,6 +71,7 @@ def main():
         fields[name] = json.loads(raw)
     if fields.get("CANDIDATE_MATCHED") is not True:
         raise RuntimeError("Cargo's actual compiler has no audited candidate contract")
+    require_local_implementation(fields, crate)
     rustc = Path(fields["CARGO_RUSTC_PATH"])
     if not rustc.is_absolute() or not rustc.is_file():
         raise RuntimeError("Cargo did not seal an existing absolute compiler")
@@ -97,6 +112,7 @@ def main():
     if result.get("matched") is not True or len(result.get("cases", [])) != 9:
         raise RuntimeError("The complete nine-case allocator proof did not pass")
     after = {str(f.resolve()): digest(f) for f in files}
+    require_local_implementation(fields, crate)
     if before != after:
         raise RuntimeError("Compiler/profile/probe inputs changed during the proof")
     receipt = dict(scope="actual-headless-standalone-allocator-proof", matched=True,

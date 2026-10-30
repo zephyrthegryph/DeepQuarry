@@ -292,7 +292,7 @@ pub mod native_special_forms;
 mod procedure_origin_tests;
 
 mod parameter_syntax;
-pub use parameter_syntax::{ParameterSignature, ParameterSyntax};
+pub use parameter_syntax::{HeaderTypeDeclarationSyntax, ParameterSignature, ParameterSyntax};
 
 mod parameter_clauses;
 pub use parameter_clauses::{parameter_clause_spans, ParameterClauseSpans};

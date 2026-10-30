@@ -122,31 +122,94 @@ pub(super) fn lowered(
                         .collect::<Option<Vec<_>>>()?;
                 Some((origin, related))
             };
-            match bind() {
-                Some((origin, related)) => {
-                    let (kind, message) =
-                        crate::lowering::wording::present(frontend, &origin, &error);
-                    let (origin, message, mut placed) =
-                        crate::lowering::wording::place(frontend, origin, message);
-                    placed.extend(related);
-                    LoweringDiagnostic {
-                        related: placed,
-                        identity: Some(owner),
-                        origin,
-                        kind,
-                        message,
-                    }
-                }
-                None => LoweringDiagnostic {
-                    related: Vec::new(),
-                    identity: Some(owner),
-                    origin: issued_origin.clone(),
-                    kind: DiagnosticKind::Internal,
-                    message:
-                        "argument source diagnostic mapping is not issued by the current signature"
-                            .into(),
-                },
+            present_bound(frontend, owner, issued_origin, &error, bind())
+        })
+        .collect();
+    HelperFailure::Diagnostics(diagnostics)
+}
+
+fn present_bound(
+    frontend: &ColdFrontend,
+    owner: UnitIdentity,
+    issued_origin: &dm_tree::frontend::SourceLocation,
+    error: &LowerError,
+    bound: Option<(dm_tree::frontend::SourceLocation, Vec<RelatedDiagnostic>)>,
+) -> LoweringDiagnostic {
+    match bound {
+        Some((origin, related)) => {
+            let (kind, message) = crate::lowering::wording::present(frontend, &origin, &error);
+            let (origin, message, mut placed) =
+                crate::lowering::wording::place(frontend, origin, message);
+            placed.extend(related);
+            LoweringDiagnostic {
+                related: placed,
+                identity: Some(owner),
+                origin,
+                kind,
+                message,
             }
+        }
+        None => LoweringDiagnostic {
+            related: Vec::new(),
+            identity: Some(owner),
+            origin: issued_origin.clone(),
+            kind: DiagnosticKind::Internal,
+            message: "argument source diagnostic mapping is not issued by the current signature"
+                .into(),
+        },
+    }
+}
+/// Original-root coordinates are already current expanded-source positions.
+/// No synthetic syntax offsets, lexing or token-equality origin promotion.
+pub(super) fn lowered_original(
+    frontend: &ColdFrontend,
+    owner: UnitIdentity,
+    header: dm_syntax::Span,
+    root: dm_syntax::Span,
+    errors: Vec<LowerError>,
+) -> HelperFailure {
+    let Some(issued_origin) = frontend.location(root.start) else {
+        return HelperFailure::Unsupported("original helper root origin unavailable".into());
+    };
+    let diagnostics = errors
+        .into_iter()
+        .map(|error| {
+            let in_root =
+                |offset: usize| (root.start <= offset && offset <= root.end).then_some(offset);
+            let bound = (|| {
+                let origin = match error.primary_anchor {
+                    Some(DiagnosticAnchor::AtOffset(offset)) => {
+                        frontend.location(in_root(offset)?)?
+                    }
+                    Some(DiagnosticAnchor::LexerCursorAfterOffset(offset)) => {
+                        frontend.diagnostic_cursor_location_after(in_root(offset)?)?
+                    }
+                    Some(DiagnosticAnchor::UnresolvedCursorAtOffset(_)) => return None,
+                    None => frontend.location(error.span.map_or(Some(root.start), |span| {
+                        (span.start <= span.end && span.end <= root.end)
+                            .then(|| in_root(span.start))
+                            .flatten()
+                    })?)?,
+                };
+                let related = error
+                    .related
+                    .iter()
+                    .map(|note| {
+                        if note.span.start > note.span.end
+                            || note.span.start < header.start
+                            || note.span.end > header.end
+                        {
+                            return None;
+                        }
+                        Some(RelatedDiagnostic {
+                            origin: frontend.location(note.span.start)?,
+                            message: note.message.clone(),
+                        })
+                    })
+                    .collect::<Option<Vec<_>>>()?;
+                Some((origin, related))
+            })();
+            present_bound(frontend, owner, &issued_origin, &error, bound)
         })
         .collect();
     HelperFailure::Diagnostics(diagnostics)
@@ -322,7 +385,9 @@ mod tests {
                     let message = &diagnostics[0].message;
                     assert!(
                         message.starts_with("/proc/probe(x in list(")
-                            && message.ends_with("): native compiler does not support this yet (issued failure)"),
+                            && message.ends_with(
+                                "): native compiler does not support this yet (issued failure)"
+                            ),
                         "{message}"
                     );
                 } else {

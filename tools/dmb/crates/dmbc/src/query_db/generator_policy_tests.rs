@@ -257,12 +257,28 @@ fn old_cached_artifact_plus_one_byte_headroom_denies_new_rows_and_recovers() {
         .with_generator_fixture(&c, GeneratorName::SparseSlots, |a| Ok(a.fingerprint()))
         .unwrap();
     let used = db.raw_policy.charge.load(Ordering::Relaxed);
+    let consumed = std::cell::Cell::new(false);
     let error = db
         .with_generator_fixture_limit(&c, GeneratorName::SystemAccessors, Some(used + 1), |_| {
+            consumed.set(true);
             Ok(())
         })
         .unwrap_err();
-    assert!(error.to_string().contains("captured source view allocation"), "{error}");
+    assert!(
+        !consumed.get(),
+        "denied output must never reach its consumer"
+    );
+    // The earliest admission boundary may reject before a lazy source view is
+    // requested. Both are operational quota failures, never clean artifacts.
+    assert!(
+        error
+            .to_string()
+            .contains("captured source view allocation")
+            || error
+                .to_string()
+                .contains("shared native policy result budget exhausted"),
+        "{error}"
+    );
     assert_eq!(
         db.with_generator_fixture(&c, GeneratorName::SparseSlots, |a| Ok(a.fingerprint()))
             .unwrap(),
@@ -316,12 +332,23 @@ fn preexisting_shared_file_lazy_denial_is_not_cached_and_only_poisoned_input_is_
     let config = Config::capture(Configuration::ProvenMissing).unwrap();
     let scope = config.scope("containment").unwrap();
     let lazy_error = tiny.scan(&scope).unwrap_err();
-    assert!(lazy_error.contains("captured source view allocation"), "{lazy_error}");
-    assert!(tiny.require_view_budget().is_err(), "real demanded code view must latch denial");
+    assert!(
+        lazy_error.contains("captured source view allocation"),
+        "{lazy_error}"
+    );
+    assert!(
+        tiny.require_view_budget().is_err(),
+        "real demanded code view must latch denial"
+    );
     let (valid_key, valid_owner) = {
         let _gate = db.raw_policy.gate.lock().unwrap();
         let prepared = db.raw_prepare_locked(&c, &[], Instant::now()).unwrap();
-        let key = prepared.sources.iter().find(|(key, _, _)| *key != file_key).unwrap().0;
+        let key = prepared
+            .sources
+            .iter()
+            .find(|(key, _, _)| *key != file_key)
+            .unwrap()
+            .0;
         (key, db.db.input::<FileData>(key).unwrap())
     };
     db.db.remove(file_key);
@@ -354,7 +381,13 @@ fn preexisting_shared_file_lazy_denial_is_not_cached_and_only_poisoned_input_is_
         db.db.input::<FileData>(file_key).is_none(),
         "only actually poisoned source input is removed"
     );
-    assert!(Arc::ptr_eq(&valid_owner.file, &db.db.input::<FileData>(valid_key).unwrap().file), "unpoisoned shared source owner survives rejection");
+    assert!(
+        Arc::ptr_eq(
+            &valid_owner.file,
+            &db.db.input::<FileData>(valid_key).unwrap().file
+        ),
+        "unpoisoned shared source owner survives rejection"
+    );
     drop(tiny);
     drop(full);
     drop(old);
@@ -363,4 +396,231 @@ fn preexisting_shared_file_lazy_denial_is_not_cached_and_only_poisoned_input_is_
         Ok(())
     })
     .unwrap();
+}
+
+#[test]
+fn stats_same_db_exact_warm_owner_shared_raw_inputs_and_real_capture_changes() {
+    let (db, root, reads, original) = fixture();
+    std::fs::write(root.join("code/probe.dm"), "/obj/base\n    var/existing\nSTAT(/obj/base/child, existing, ALL)\nSTAT(/obj/a, energy, SUM, base = 7)\n").unwrap();
+    std::fs::write(
+        root.join("code/extra.dm"),
+        "STAT(/obj/a, bad, SUM, broken)\n",
+    )
+    .unwrap();
+    let c = capture(&db, &root, reads.clone());
+    let before = reads.load(Ordering::Relaxed);
+    let first = db
+        .with_generator_fixture(&c, GeneratorName::Stats, |a| {
+            assert_eq!(a.name(), "stats");
+            assert_eq!(a.path(), "code/engine/_generated/stats.dm");
+            assert!(a.text().contains("/obj/a/var/energy = 7"));
+            assert!(!a.text().contains("/obj/base/child/var/existing"));
+            assert_eq!(a.diagnostics().len(), 1);
+            Ok((a.text.as_ptr() as usize, a.fingerprint()))
+        })
+        .unwrap();
+    let computed = db.db.stats(GENERATOR_RESULT).computed;
+    let second = db
+        .with_generator_fixture(&c, GeneratorName::Stats, |a| {
+            Ok((a.text.as_ptr() as usize, a.fingerprint()))
+        })
+        .unwrap();
+    assert_eq!(first, second);
+    assert_eq!(db.db.stats(GENERATOR_RESULT).computed, computed);
+    assert_eq!(
+        reads.load(Ordering::Relaxed),
+        before,
+        "warm stats cannot reacquire source"
+    );
+    let foreign = QueryDb::default();
+    assert!(foreign
+        .with_generator_fixture(&c, GeneratorName::Stats, |_| Ok(()))
+        .is_err());
+    std::fs::write(root.join("code/extra.dm"), "STAT(/obj/a, later, PRODUCT)\n").unwrap();
+    let changed = capture(&db, &root, reads.clone());
+    db.with_generator_fixture(&changed, GeneratorName::Stats, |a| {
+        assert_ne!(a.fingerprint(), first.1);
+        assert!(a.text().contains("/obj/a/var/later = 1"));
+        assert!(a.diagnostics().is_empty());
+        Ok(())
+    })
+    .unwrap();
+    std::fs::write(root.join("scopes.toml"), "[lint.init]\n").unwrap();
+    let configured = capture(&db, &root, reads.clone());
+    let count = db.db.stats(GENERATOR_RESULT).computed;
+    db.with_generator_fixture(&configured, GeneratorName::Stats, |a| {
+        assert!(a.text().contains("/obj/a/var/later = 1"));
+        Ok(())
+    })
+    .unwrap();
+    assert!(
+        db.db.stats(GENERATOR_RESULT).computed > count,
+        "exact changed configuration is a real dependency even when stats semantics ignore it"
+    );
+    std::fs::write(
+        root.join("deepquarry.dme"),
+        "#if 0\n#include \"code/extra.dm\"\n#include \"code/probe.dm\"\n#endif\n/datum\n",
+    )
+    .unwrap();
+    let reordered = capture(&db, &root, reads.clone());
+    let count = db.db.stats(GENERATOR_RESULT).computed;
+    db.with_generator_fixture(&reordered, GeneratorName::Stats, |a| {
+        assert!(a.text().contains("/obj/a/var/later = 1"));
+        Ok(())
+    })
+    .unwrap();
+    assert!(db.db.stats(GENERATOR_RESULT).computed>count,"original manifest order is also captured even when distinct sorted rows emit the same text");
+    drop(original);
+}
+#[test]
+fn stats_cancellation_and_remaining_family_headroom_never_publish_partial_output() {
+    let (db, root, reads, _) = fixture();
+    std::fs::write(root.join("code/probe.dm"), "STAT(/obj/a, value, SUM)\n").unwrap();
+    let c = capture(&db, &root, reads);
+    let called = std::cell::Cell::new(false);
+    assert!(db
+        .with_generator_fixture_limit(&c, GeneratorName::Stats, Some(1), |_| {
+            called.set(true);
+            Ok(())
+        })
+        .is_err());
+    assert!(!called.get());
+    db.with_generator_fixture(&c, GeneratorName::Stats, |a| {
+        assert!(a.text().contains("/obj/a/var/value = 0"));
+        Ok(())
+    })
+    .unwrap();
+    let cancellation = crate::daemon::control::Cancellation::default();
+    cancellation.cancel();
+    let _bound = crate::daemon::control::bind_with_deadline(
+        cancellation,
+        Instant::now() + Duration::from_secs(60),
+    );
+    assert!(db
+        .with_generator_fixture(&c, GeneratorName::Stats, |_| {
+            called.set(true);
+            Ok(())
+        })
+        .is_err());
+    assert!(
+        !called.get(),
+        "even cached stats cannot publish after cancellation"
+    );
+}
+
+#[test]
+fn actions_same_db_exact_warm_owner_raw_fields_and_source_config_manifest_dependencies() {
+    let (db, root, reads, _) = fixture();
+    std::fs::write(
+        root.join("code/probe.dm"),
+        "ACTION(fall, turf/landing)\n/datum/notice/fell\n    var/landing\n",
+    )
+    .unwrap();
+    std::fs::write(
+        root.join("code/extra.dm"),
+        "ACTION(fall, num/duplicate)\nACTION(check, QUERY, mob/wearer)\n",
+    )
+    .unwrap();
+    let c = capture(&db, &root, reads.clone());
+    let before = reads.load(Ordering::Relaxed);
+    let one = db
+        .with_generator_fixture(&c, GeneratorName::Actions, |a| {
+            assert_eq!(a.name(), "actions");
+            assert_eq!(a.path(), "code/engine/_generated/actions.dm");
+            assert!(a
+                .text()
+                .contains("/proc/act_fall(datum/holder, turf/landing, act_answer = FALSE)"));
+            assert!(a.text().contains("/proc/query_check("));
+            assert_eq!(a.diagnostics().len(), 1);
+            Ok((a.text.as_ptr() as usize, a.fingerprint()))
+        })
+        .unwrap();
+    let count = db.db.stats(GENERATOR_RESULT).computed;
+    let two = db
+        .with_generator_fixture(&c, GeneratorName::Actions, |a| {
+            Ok((a.text.as_ptr() as usize, a.fingerprint()))
+        })
+        .unwrap();
+    assert_eq!(one, two);
+    assert_eq!(db.db.stats(GENERATOR_RESULT).computed, count);
+    assert_eq!(
+        reads.load(Ordering::Relaxed),
+        before,
+        "warm actions may not reacquire original sources"
+    );
+    assert!(QueryDb::default()
+        .with_generator_fixture(&c, GeneratorName::Actions, |_| Ok(()))
+        .is_err());
+    std::fs::write(root.join("scopes.toml"), "[lint.init]\n").unwrap();
+    let configured = capture(&db, &root, reads.clone());
+    db.with_generator_fixture(&configured, GeneratorName::Actions, |a| {
+        assert_eq!(a.fingerprint(), one.1);
+        Ok(())
+    })
+    .unwrap();
+    assert!(
+        db.db.stats(GENERATOR_RESULT).computed > count,
+        "real unchanged-result configuration dependency must still compute a new frame node"
+    );
+    std::fs::write(
+        root.join("deepquarry.dme"),
+        "#if 0\n#include \"code/extra.dm\"\n#include \"code/probe.dm\"\n#endif\n/datum\n",
+    )
+    .unwrap();
+    let reordered = capture(&db, &root, reads.clone());
+    db.with_generator_fixture(&reordered, GeneratorName::Actions, |a| {
+        assert_ne!(a.fingerprint(), one.1);
+        assert!(a
+            .text()
+            .contains("/proc/act_fall(datum/holder, num/duplicate, act_answer = FALSE)"));
+        Ok(())
+    })
+    .unwrap();
+    std::fs::write(root.join("code/extra.dm"), "ACTION(speak, num/volume)\n").unwrap();
+    let changed = capture(&db, &root, reads.clone());
+    db.with_generator_fixture(&changed, GeneratorName::Actions, |a| {
+        assert!(a.text().contains("/datum/notice/spoke"));
+        assert!(a.diagnostics().is_empty());
+        Ok(())
+    })
+    .unwrap();
+}
+#[test]
+fn actions_remaining_budget_and_cancelled_cached_read_publish_no_partial_generator() {
+    let (db, root, reads, _) = fixture();
+    std::fs::write(
+        root.join("code/probe.dm"),
+        "ACTION(move, turf/origin, turf/destination)\n",
+    )
+    .unwrap();
+    let c = capture(&db, &root, reads);
+    let called = std::cell::Cell::new(false);
+    assert!(db
+        .with_generator_fixture_limit(&c, GeneratorName::Actions, Some(1), |_| {
+            called.set(true);
+            Ok(())
+        })
+        .is_err());
+    assert!(!called.get());
+    db.with_generator_fixture(&c, GeneratorName::Actions, |a| {
+        assert!(a.text().contains("origin_turf"));
+        Ok(())
+    })
+    .unwrap();
+    let cancellation = crate::daemon::control::Cancellation::default();
+    let _bound = crate::daemon::control::bind_with_deadline(
+        cancellation.clone(),
+        Instant::now() + Duration::from_secs(60),
+    );
+    cancellation.cancel();
+    assert_eq!(
+        db.with_generator_fixture(&c, GeneratorName::Actions, |_| {
+            called.set(true);
+            Ok(())
+        })
+        .unwrap_err()
+        .kind(),
+        io::ErrorKind::Interrupted
+    );
+    assert!(!called.get());
 }

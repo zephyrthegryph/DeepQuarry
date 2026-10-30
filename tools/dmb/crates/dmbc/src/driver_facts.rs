@@ -492,7 +492,10 @@ fn prepare_source_abi_mode_on_executor(
     // sequential receipt (~3.2 s on DeepQuarry, hit or miss); the per-unit
     // scheduler below admits the same retained rows in ~0.5 s. Opt in with
     // DMB_ABI_BATCH_REPLAY=1 (`AbiArtifacts::batch_replay`).
-    if let (Some(store), Some(inputs)) = (artifacts.filter(|store| store.batch_replay), batch_inputs.as_ref()) {
+    if let (Some(store), Some(inputs)) = (
+        artifacts.filter(|store| store.batch_replay),
+        batch_inputs.as_ref(),
+    ) {
         if let Some(prepared) =
             abi_artifacts::batch::replay(store, inputs, evaluator.resolver, frontend, issued_units)
         {
@@ -515,17 +518,20 @@ fn prepare_source_abi_mode_on_executor(
     let answers = artifacts
         .and_then(|store| store.query_db.as_deref())
         .map(|db| db.request_answers(&answer));
-    let semantic_answers = answers.as_ref().map(abi_artifacts::admission::SemanticAnswers);
+    let semantic_answers = answers
+        .as_ref()
+        .map(abi_artifacts::admission::SemanticAnswers);
     let shared_admission = (!evaluator.resolver.observes_reads()
         || evaluator.resolver.transparent_receipt_observer().is_some())
     .then(|| {
         dm_session::ReceiptAdmission::with_oracle(
             &semantic_host,
             semantic_answers.as_ref().map(|answers| {
-                answers as &dyn dm_session::AnswerOracle<
-                    abi_artifacts::observations::Query,
-                    abi_artifacts::observations::Answer,
-                >
+                answers
+                    as &dyn dm_session::AnswerOracle<
+                        abi_artifacts::observations::Query,
+                        abi_artifacts::observations::Answer,
+                    >
             }),
         )
     });
@@ -541,22 +547,24 @@ fn prepare_source_abi_mode_on_executor(
     let roster = frontend.callable_roster().map_err(AbiError::unsupported)?;
     let tree = &frontend.snapshot.tree;
     let scheduled = artifacts
-        .map(|store| executor.install(|| {
-            abi_scheduler::admitted(
-                store,
-                frontend,
-                engine,
-                evaluator,
-                boundaries,
-                resource_search_context,
-                lexical_statics,
-                index,
-                shared_admission.as_ref(),
-                batch_inputs.as_deref(),
-                &artifact_keys,
-                batch_capture.as_ref(),
-            )
-        }))
+        .map(|store| {
+            executor.install(|| {
+                abi_scheduler::admitted(
+                    store,
+                    frontend,
+                    engine,
+                    evaluator,
+                    boundaries,
+                    resource_search_context,
+                    lexical_statics,
+                    index,
+                    shared_admission.as_ref(),
+                    batch_inputs.as_deref(),
+                    &artifact_keys,
+                    batch_capture.as_ref(),
+                )
+            })
+        })
         .unwrap_or_default();
     let abi_scheduler::Admitted {
         accepted: scheduled,
@@ -675,7 +683,10 @@ fn prepare_source_abi_mode_on_executor(
                                                 shared_admission.as_ref(),
                                                 batch_capture.as_ref(),
                                             ),
-                                            None => policy.prepare_view(metadata, parsed, &context),
+                                            None => {
+                                                let original=crate::procedure_policy::OriginalFormalTokens::capture(frontend,body,metadata)?;
+                                                policy.prepare_view_original(metadata,parsed,&context,&original)
+                                            },
                                         }
                                     })();
                                     (*ordinal, result, false)
@@ -701,10 +712,9 @@ fn prepare_source_abi_mode_on_executor(
                 } else {
                     wave_recomputed += 1;
                     let same = match (&result, candidate_layouts.get(&member)) {
-                        (Ok(unit), Some(old)) => unit
-                            .abi
-                            .as_ref()
-                            .is_some_and(|new| Arc::ptr_eq(new, old) || new.as_ref() == old.as_ref()),
+                        (Ok(unit), Some(old)) => unit.abi.as_ref().is_some_and(|new| {
+                            Arc::ptr_eq(new, old) || new.as_ref() == old.as_ref()
+                        }),
                         _ => false,
                     };
                     if !same {
@@ -796,12 +806,7 @@ fn prepare_source_abi_mode_on_executor(
             // per-unit scheduler finds the same rows through the exact-key index. Building it costs
             // 0.5-0.8 s per edit on DeepQuarry, so only a store that reads it builds it.
             if let Some(capture) = batch_capture.as_ref().filter(|_| store.batch_recipes) {
-                abi_artifacts::batch::remember(
-                    store,
-                    inputs,
-                    capture,
-                    prepared.units_owner(),
-                );
+                abi_artifacts::batch::remember(store, inputs, capture, prepared.units_owner());
             }
         }
     }

@@ -68,7 +68,9 @@ fn primary_parameter_original_tokens_survive_unicode_comments_defaults_annotatio
 #[test]
 fn primary_parameter_receipt_refuses_unsupported_or_ambiguous_source_not_empty_clean() {
     for source in [
-        "/proc/p(/datum/D)\n    return\n",
+        "/proc/p(/datum/D=1)\n    return\n",
+        "/proc/p(/datum/D[])\n    return\n",
+        "/proc/p(/datum/var/D)\n    return\n",
         "/proc/p(x,,y)\n    return\n",
     ] {
         match crate::parse_proc_with_origins_at_span(source, Span::new(0, source.len())) {
@@ -105,4 +107,76 @@ fn type_path_receipt_does_not_claim_default_or_dimension_expression_admission() 
         entries[0].type_path(source).unwrap().as_deref(),
         Some("/list/datum")
     );
+}
+
+#[test]
+fn absolute_header_type_declarations_preserve_written_paths_and_skip_formal_ordinals() {
+    let source="/proc/Heal(mob/living/M, /datum/affliction/contagion/engineered/A, actual_power=1)\n    return 1\n";
+    let signature = signature(source);
+    let entries = signature.entries().unwrap();
+    assert_eq!(entries.len(), 2);
+    assert_eq!(
+        entries
+            .iter()
+            .map(|p| (&source[p.name().range()], p.ordinal(), p.source_modifiers()))
+            .collect::<Vec<_>>(),
+        [("M", 0, 0), ("actual_power", 1, 0)]
+    );
+    assert_eq!(
+        entries[0].type_path(source).unwrap().as_deref(),
+        Some("/mob/living")
+    );
+    assert_eq!(
+        entries[1]
+            .expressions()
+            .unwrap()
+            .unwrap()
+            .default()
+            .unwrap()
+            .span
+            .range(),
+        source.find("=1").map(|at| at + 1..at + 2).unwrap()
+    );
+    let declarations = signature.absolute_declarations().unwrap();
+    assert_eq!(declarations.len(), 1);
+    assert_eq!(
+        declarations[0].written_path(source).unwrap(),
+        "/datum/affliction/contagion/engineered/A"
+    );
+}
+#[test]
+fn absolute_type_components_are_not_parameter_modifiers_and_invalid_suffixes_stay_refused() {
+    for source in [
+        "/proc/p(/datum/static/A, var/static/datum/D)\n    return\n",
+        "/proc/p(/datum/SpacemanDMM_private/A, datum/static/D)\n    return\n",
+    ] {
+        let sig = signature(source);
+        assert_eq!(sig.absolute_declarations().unwrap().len(), 1);
+        assert_eq!(sig.entries().unwrap().len(), 1);
+        assert!(sig.absolute_declarations().unwrap()[0]
+            .written_path(source)
+            .unwrap()
+            .contains("/A"));
+    }
+    for bad in [
+        "/datum/A[]",
+        "/datum/A=1",
+        "/datum/A as text",
+        "/datum/A in world",
+        "/datum/var/A",
+        "/datum/proc/A",
+        "/datum/verb/A",
+        "/datum//A",
+        "/datum/A/",
+        "/datum /A",
+        "/datum/A/*comment*/",
+        "...,/datum/A",
+    ] {
+        let source = format!("/proc/p({bad})\n    return\n");
+        if let Ok(parsed) =
+            crate::parse_proc_with_origins_at_span(&source, Span::new(0, source.len()))
+        {
+            assert!(parsed.parameters.entries().is_err(), "{bad}");
+        }
+    }
 }

@@ -6,7 +6,14 @@ use dm_syntax::Span;
 #[derive(Clone, Copy, serde::Serialize, serde::Deserialize)]
 enum RecipeLocation {
     Body,
-    HeaderHelper { argument: u32 },
+    HeaderHelper {
+        argument: u32,
+    },
+    /// Distinct appended wire domain: offsets are relative to a current
+    /// original in-root, NEVER a compatibility synthetic syntax container.
+    OriginalHeaderRoot {
+        argument: u32,
+    },
 }
 
 #[derive(Clone)]
@@ -48,6 +55,34 @@ impl PreparedSeed {
             location: RecipeLocation::HeaderHelper { argument },
         })
     }
+    pub(crate) fn helper_source_recipe_in(
+        &self,
+        argument: u32,
+        original_root: Option<Span>,
+    ) -> Option<SourceRecipe> {
+        let Some(root) = original_root else {
+            return self.helper_source_recipe(argument);
+        };
+        if self.captured.origin != Some(0) {
+            return None;
+        }
+        let span = self.captured.source_span?;
+        if root.start > root.end
+            || span.start < root.start
+            || span.start > span.end
+            || span.end > root.end
+        {
+            return None;
+        }
+        Some(SourceRecipe {
+            descriptor: DescriptorRecipe::from_capture(self.reference, &self.captured)?,
+            relative_span: Span::new(
+                span.start.checked_sub(root.start)?,
+                span.end.checked_sub(root.start)?,
+            ),
+            location: RecipeLocation::OriginalHeaderRoot { argument },
+        })
+    }
 }
 impl SourceRecipe {
     pub(crate) fn retained_census(&self, census: &mut crate::heap_census::HeapCensus) {
@@ -61,6 +96,18 @@ impl SourceRecipe {
         symbols: &SymbolTable,
         debug: &DebugOrigins,
     ) -> Option<PreparedSeed> {
+        if let RecipeLocation::OriginalHeaderRoot { argument } = self.location {
+            let (expression, origins) = crate::argument_sources::current_original_header_modifier(
+                frontend,
+                parsed,
+                argument,
+                self.relative_span,
+            )?;
+            let captured = self
+                .descriptor
+                .capture_current(expression, resolver, symbols)?;
+            return prepare_seed(self.descriptor.reference(), &captured, &origins).ok();
+        }
         if let RecipeLocation::HeaderHelper { argument } = self.location {
             let (expression, origins) = crate::argument_sources::current_header_modifier(
                 frontend,
@@ -187,7 +234,7 @@ impl RecipeWire<'_> {
                 RecipeLocation::Body => self
                     .origin
                     .is_none_or(|i| i as usize >= debug.entries.len()),
-                RecipeLocation::HeaderHelper { .. } => self.origin != Some(0),
+                RecipeLocation::HeaderHelper { .. } | RecipeLocation::OriginalHeaderRoot { .. } => self.origin != Some(0),
             }
         {
             return None;

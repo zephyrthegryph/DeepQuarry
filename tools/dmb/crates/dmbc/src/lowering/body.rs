@@ -101,6 +101,10 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
         metadata,
         symbols,
     );
+    // Capture only a handle to the SAME original formal root owner before ABI
+    // preparation consumes ParsedBody. An optional-root refusal is demanded
+    // only by evaluated defaults/helpers, never by a body that needs neither.
+    let original_headers = parsed.share_header_expressions();
     let typed_attempted = parsed.statement_attempted();
     // The issued parser owner survives ABI hooks that return only a header.
     // It remains subject to the current startup/settings mask below.
@@ -368,10 +372,43 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
         capture,
         parameters: parameter_diagnostics,
     };
+    let has_defaults = inputs.parameter_defaults.iter().any(Option::is_some);
+    let original_context=|| -> Result<crate::argument_sources::OriginalBodyInputs<'_,'_>,Vec<dm_codegen_byond::LowerError>> {
+        let header=original_headers.as_ref().map_err(|reason| original_formal_errors(crate::argument_sources::OriginalBodyFailure::Admission(reason.clone())))?;
+        Ok(crate::argument_sources::OriginalBodyInputs {frontend,occurrence:body,header,metadata,inputs:&inputs,symbols})
+    };
     let mut selected_references = None;
     let code = {
         let _profile = dm_profile::item("lowering.fresh_codegen");
         match executable_view {
+            Some(view) if typed_ready && capture_references && has_defaults => original_context()
+                .and_then(|context| {
+                    crate::argument_sources::compile_body_original_with_references(
+                        context,
+                        view,
+                        host,
+                        Some(&debug),
+                    )
+                    .map_err(original_formal_errors)
+                })
+                .map(|(code, references)| {
+                    selected_references = Some(Arc::new(references));
+                    code
+                }),
+            Some(view) if typed_ready && has_defaults => original_context().and_then(|context| {
+                crate::argument_sources::compile_body_original(context, view, host, Some(&debug))
+                    .map_err(original_formal_errors)
+            }),
+            _ if has_defaults => original_context().and_then(|context| {
+                crate::argument_sources::compile_lossless_body_original(
+                    context,
+                    &executable_body,
+                    typed_attempted,
+                    host,
+                    Some(&debug),
+                )
+                .map_err(original_formal_errors)
+            }),
             Some(view) if typed_ready && capture_references => super::compile_selected_view(
                 view,
                 &inputs,
@@ -504,23 +541,32 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
             .collect::<Vec<_>>()
     })?;
     let source_helpers = match prepared.abi.as_ref() {
-        Some(abi) => crate::argument_sources::lower_helpers(
-            crate::argument_sources::HelperInputs {
-                frontend,
-                parsed: parsed.into(),
-                metadata,
-                owner: identity,
-                inputs: &inputs,
-                helpers: &abi.source_helpers,
-                symbols,
-            },
-            host,
-        )
-        .map_err(|failure| match failure {
-            crate::argument_sources::HelperFailure::Unsupported(message) => unsupported(message),
-            crate::argument_sources::HelperFailure::Diagnostics(diagnostics) => diagnostics,
-        })?,
-        None => Vec::new(),
+        Some(abi) if !abi.source_helpers.is_empty() => original_headers
+            .as_ref()
+            .map_err(|reason| crate::argument_sources::HelperFailure::Unsupported(reason.clone()))
+            .and_then(|header| {
+                crate::argument_sources::lower_helpers_original(
+                    crate::argument_sources::HelperInputs {
+                        frontend,
+                        parsed: parsed.into(),
+                        metadata,
+                        owner: identity,
+                        inputs: &inputs,
+                        helpers: &abi.source_helpers,
+                        symbols,
+                    },
+                    body,
+                    header,
+                    host,
+                )
+            })
+            .map_err(|failure| match failure {
+                crate::argument_sources::HelperFailure::Unsupported(message) => {
+                    unsupported(message)
+                }
+                crate::argument_sources::HelperFailure::Diagnostics(diagnostics) => diagnostics,
+            })?,
+        Some(_) | None => Vec::new(),
     };
     Ok(LoweredUnit {
         identity,
@@ -534,3 +580,24 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
         source_helpers,
     })
 }
+
+/// Optional native root domains fail explicitly; never retry the old default
+/// text parser after this admission. Existing typed source diagnostics survive.
+fn original_formal_errors(
+    failure: crate::argument_sources::OriginalBodyFailure,
+) -> Vec<dm_codegen_byond::LowerError> {
+    match failure {
+        crate::argument_sources::OriginalBodyFailure::Admission(reason) => {
+            vec![dm_codegen_byond::LowerError {
+                reason,
+                kind: dm_codegen_byond::LowerErrorKind::UnsupportedModel,
+                ..Default::default()
+            }]
+        }
+        crate::argument_sources::OriginalBodyFailure::Lowering(errors) => errors,
+    }
+}
+
+#[cfg(test)]
+#[path = "original_formals_caller_tests.rs"]
+mod original_formals_caller_tests;

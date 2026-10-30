@@ -353,6 +353,47 @@ pub fn compile_preparsed_lossless_with_resolver<R: dm_ir::Resolver>(
     )
 }
 
+/// Borrow the same formal roots while preserving the existing lossless body
+/// path. Unsupported roots never fall back to parameter-default text parsing.
+pub fn compile_preparsed_lossless_with_original_defaults<R: dm_ir::Resolver>(
+    body: &[Item],
+    parameters: &dm_syntax::ParameterSignature,
+    source: &str,
+    inputs: &crate::lower_resolver::ProcedureInputs,
+    symbols: &dm_ir::SymbolTable,
+    resolver: &R,
+    debug: Option<&dyn DebugSourceProvider>,
+) -> Result<crate::lower_resolver::ResolverProc, Vec<LowerError>> {
+    compile_resolver_body(
+        body,
+        Some(TypedInput::LosslessParameters(parameters, source)),
+        inputs,
+        symbols,
+        resolver,
+        debug,
+    )
+}
+/// Standalone/current native compatibility body selection is unchanged; only
+/// formal defaults borrow original roots rather than reparsing their strings.
+pub fn compile_simple_proc_with_original_defaults<R: dm_ir::Resolver>(
+    body: &[Item],
+    parameters: &dm_syntax::ParameterSignature,
+    source: &str,
+    inputs: &crate::lower_resolver::ProcedureInputs,
+    symbols: &dm_ir::SymbolTable,
+    resolver: &R,
+    debug: Option<&dyn DebugSourceProvider>,
+) -> Result<crate::lower_resolver::ResolverProc, Vec<LowerError>> {
+    compile_resolver_body(
+        body,
+        Some(TypedInput::UnparsedParameters(parameters, source)),
+        inputs,
+        symbols,
+        resolver,
+        debug,
+    )
+}
+
 /// Lower already parsed statements through the same opcode/operand emitter.
 /// No synthetic procedure text or alternate initializer opcode implementation.
 pub fn compile_typed_statements_with_resolver<R: dm_ir::Resolver>(
@@ -382,6 +423,28 @@ pub fn compile_statement_view_with_resolver<R: dm_ir::Resolver>(
     compile_resolver_body(
         &[],
         Some(TypedInput::Statements(view)),
+        inputs,
+        symbols,
+        resolver,
+        debug,
+    )
+}
+
+/// Low-level syntax consumer. The native host must first bind this signature
+/// and source to its exact original occurrence/selected metadata owner. This
+/// function does not issue semantic/source-current authority or parse text.
+pub fn compile_statement_view_with_original_defaults<R: dm_ir::Resolver>(
+    view: dm_syntax::StatementView<'_>,
+    parameters: &dm_syntax::ParameterSignature,
+    source: &str,
+    inputs: &crate::lower_resolver::ProcedureInputs,
+    symbols: &dm_ir::SymbolTable,
+    resolver: &R,
+    debug: Option<&dyn DebugSourceProvider>,
+) -> Result<crate::lower_resolver::ResolverProc, Vec<LowerError>> {
+    compile_resolver_body(
+        &[],
+        Some(TypedInput::ParameterStatements(view, parameters, source)),
         inputs,
         symbols,
         resolver,
@@ -481,7 +544,15 @@ use resolver_body::compile_resolver_body;
 #[derive(Clone, Copy)]
 enum TypedInput<'a> {
     Lossless,
+    LosslessParameters(&'a dm_syntax::ParameterSignature, &'a str),
+    UnparsedParameters(&'a dm_syntax::ParameterSignature, &'a str),
+    ReturnExpression(&'a Expr, &'a str),
     Statements(dm_syntax::StatementView<'a>),
+    ParameterStatements(
+        dm_syntax::StatementView<'a>,
+        &'a dm_syntax::ParameterSignature,
+        &'a str,
+    ),
     Scopes(&'a [crate::typed_scopes::PreparedScope<'a>]),
     Modified(&'a [(String, Expr)]),
 }
@@ -524,12 +595,17 @@ fn compile_with_lookup_mode(
     let mut compiler = compiler_context::compiler_context(bindings, lookup);
     compiler.reference_capture = if reference_output.is_some() {
         match typed {
-            Some(TypedInput::Statements(view)) => Some(reference_facts::ReferenceCapture::new(
-                view,
-                reference_output
-                    .as_ref()
-                    .and_then(|request| request.body_span),
-            )),
+            Some(TypedInput::ReturnExpression(expression, _)) => {
+                Some(reference_facts::ReferenceCapture::expression(expression))
+            }
+            Some(TypedInput::Statements(view) | TypedInput::ParameterStatements(view, _, _)) => {
+                Some(reference_facts::ReferenceCapture::new(
+                    view,
+                    reference_output
+                        .as_ref()
+                        .and_then(|request| request.body_span),
+                ))
+            }
             _ => None,
         }
     } else {
@@ -537,11 +613,23 @@ fn compile_with_lookup_mode(
     };
     compiler.debug = debug;
     compiler.local_variables = match typed {
-        Some(TypedInput::Statements(view)) => view.local_variables(),
+        Some(TypedInput::Statements(view) | TypedInput::ParameterStatements(view, _, _)) => {
+            view.local_variables()
+        }
+        _ => None,
+    };
+    compiler.parameter_roots = match typed {
+        Some(
+            TypedInput::ParameterStatements(_, signature, source)
+            | TypedInput::LosslessParameters(signature, source)
+            | TypedInput::UnparsedParameters(signature, source),
+        ) => Some((signature, source)),
         _ => None,
     };
     compiler.statement_mask = match typed {
-        Some(TypedInput::Statements(view)) => view.mask(),
+        Some(TypedInput::Statements(view) | TypedInput::ParameterStatements(view, _, _)) => {
+            view.mask()
+        }
         _ => None,
     };
     if let Some(provider) = debug {
@@ -590,7 +678,10 @@ fn compile_with_lookup_mode(
             }
         }
         result
-    } else if let Some(TypedInput::Statements(statements)) = typed {
+    } else if let Some(
+        TypedInput::Statements(statements) | TypedInput::ParameterStatements(statements, _, _),
+    ) = typed
+    {
         if !typed_statement_view_supported(statements) {
             return Err(vec![error(
                 "typed statements",
@@ -598,7 +689,27 @@ fn compile_with_lookup_mode(
             )]);
         }
         compiler.typed_statements(statements.statements())
-    } else if let Some(TypedInput::Lossless) = typed {
+    } else if let Some(TypedInput::ReturnExpression(expression, statement)) = typed {
+        // This is the existing Return(Some) emission contract, borrowing the
+        // real root; no Return node, callable or synthetic source is created.
+        if let Some(provider) = compiler.debug {
+            compiler.debug_current = Some(
+                provider
+                    .ordinal(expression.span.start)
+                    .map_err(|reason| vec![error(statement, &reason)])?,
+            );
+        }
+        compiler.statement_span = Some(LowerSpan {
+            start: expression.span.start,
+            end: expression.span.end,
+        });
+        let previous = std::mem::replace(&mut compiler.nameof_return_context, true);
+        let result = compiler
+            .expression(expression, statement)
+            .map_err(|error| error.at(compiler.statement_span));
+        compiler.nameof_return_context = previous;
+        result.map(|()| compiler.emit(opcode::RET, vec![]))
+    } else if let Some(TypedInput::Lossless | TypedInput::LosslessParameters(_, _)) = typed {
         compiler.statements(body)
     } else if let Some(TypedInput::Modified(fields)) = typed {
         compiler.modified_fields(fields)
@@ -902,6 +1013,7 @@ struct Compiler<'a> {
     diagnostic_expression_coordinates: bool,
     statement_mask: Option<&'a dm_syntax::StatementMask>,
     local_variables: Option<&'a dm_syntax::LocalVariableLedger>,
+    parameter_roots: Option<(&'a dm_syntax::ParameterSignature, &'a str)>,
     // Exact AST node identity, not source-span equality: synthesized expressions
     // can share spans. Only an immediate statement call may discard its result.
     discarded_call_root: Option<*const Expr>,
@@ -960,6 +1072,8 @@ mod receiver_resolution;
 mod reference_facts;
 #[path = "simple/reference_resolution.rs"]
 mod reference_resolution;
+pub use reference_facts::compile_return_expression_with_resolver_and_references;
+pub use reference_facts::compile_statement_view_with_original_defaults_and_references_at;
 pub use reference_facts::compile_statement_view_with_resolver_and_references;
 pub use reference_facts::compile_statement_view_with_resolver_and_references_at;
 #[path = "simple/calls_dispatch.rs"]
@@ -1011,3 +1125,11 @@ mod local_declaration_diagnostics;
 #[path = "simple/member_call_validation.rs"]
 mod member_call_validation;
 mod member_var_validation;
+
+#[cfg(test)]
+#[path = "simple/original_parameter_default_tests.rs"]
+mod original_parameter_default_tests;
+
+#[cfg(test)]
+#[path = "simple/original_helper_expression_tests.rs"]
+mod original_helper_expression_tests;

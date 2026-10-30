@@ -2,7 +2,7 @@
 //! A matching complete issuer domain version certifies its recorded answers;
 //! changed or uncertified domains still recheck every exact semantic answer.
 // Native formal scope rules change both successful code and diagnostics.
-pub const PROCEDURE_VERSION: u32 = 33;
+pub const PROCEDURE_VERSION: u32 = 34;
 #[cfg(test)]
 use dm_ir::ResolvedMeaning;
 use dm_ir::{ReadDomain, ResolveQuery, Resolver};
@@ -205,8 +205,12 @@ impl ProcedureMemo {
         self.dep_index
             .get_or_init(|| {
                 let disk = self.disk.as_ref()?;
-                crate::dep_index::enabled()
-                    .then(|| Arc::new(crate::dep_index::DepIndex::new(Arc::clone(disk), self.policy)))
+                crate::dep_index::enabled().then(|| {
+                    Arc::new(crate::dep_index::DepIndex::new(
+                        Arc::clone(disk),
+                        self.policy,
+                    ))
+                })
             })
             .as_ref()
     }
@@ -413,7 +417,8 @@ impl ProcedureMemo {
         host: &'host R,
         prepared: &crate::procedure_policy::PreparedUnit,
     ) -> crate::lowering_memo_wire::ProcedureLookup<'host> {
-        static LOOKUP: dm_profile::Accumulator = dm_profile::Accumulator::new("lowering.disk_lookup");
+        static LOOKUP: dm_profile::Accumulator =
+            dm_profile::Accumulator::new("lowering.disk_lookup");
         let _timer = LOOKUP.time();
         let Some(snapshot) = self.disk.as_ref().and_then(|disk| disk.snapshot()) else {
             return crate::lowering_memo_wire::ProcedureLookup {
@@ -437,7 +442,8 @@ impl ProcedureMemo {
             snapshot.get_candidate_backed(key.record_key(tail), |bytes, _symbols, backing| {
                 let candidates = {
                     let _profile = dm_profile::item("lowering.disk_lookup_decode");
-                    static DECODE: dm_profile::Accumulator = dm_profile::Accumulator::new("lowering.disk_decode");
+                    static DECODE: dm_profile::Accumulator =
+                        dm_profile::Accumulator::new("lowering.disk_decode");
                     let _timer = DECODE.time();
                     crate::lowering_memo_wire::candidates(bytes)?
                 };
@@ -445,7 +451,8 @@ impl ProcedureMemo {
                 // Only exact semantic admission makes this mapped record reachable.
                 let result = {
                     let _profile = dm_profile::item("lowering.disk_validate_replay");
-                    static VALIDATE: dm_profile::Accumulator = dm_profile::Accumulator::new("lowering.disk_validate");
+                    static VALIDATE: dm_profile::Accumulator =
+                        dm_profile::Accumulator::new("lowering.disk_validate");
                     let _timer = VALIDATE.time();
                     candidates.procedure_matching_backed(
                         &|candidate| key.matches(candidate, None, tail),
@@ -685,12 +692,7 @@ impl ProcedureMemo {
         if self.resident_retention == ResidentRetention::DiskOnly {
             return;
         }
-        self.remember_shared(
-            key.into(),
-            reads.into(),
-            unit,
-            relative_debug,
-        );
+        self.remember_shared(key.into(), reads.into(), unit, relative_debug);
     }
     pub(crate) fn remember_shared(
         &self,

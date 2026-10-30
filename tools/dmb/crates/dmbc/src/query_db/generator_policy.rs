@@ -2,7 +2,8 @@
 //! No file installation, filesystem IO, public producer or workspace claim.
 use super::*;
 use dq_analyze::{
-    captured_generator_budget::Budget, captured_sparse_slots::BorrowedSparseSlots,
+    captured_actions::BorrowedActions, captured_generator_budget::Budget,
+    captured_sparse_slots::BorrowedSparseSlots, captured_stats::BorrowedStats,
     captured_system_accessors::BorrowedSystemAccessors,
 };
 pub(super) const GENERATOR_RESULT: Kind = Kind(11);
@@ -10,18 +11,24 @@ pub(super) const GENERATOR_RESULT: Kind = Kind(11);
 pub(crate) enum GeneratorName {
     SparseSlots,
     SystemAccessors,
+    Stats,
+    Actions,
 }
 impl GeneratorName {
     pub(crate) fn name(self) -> &'static str {
         match self {
             Self::SparseSlots => "sparse_slots",
             Self::SystemAccessors => "system_accessors",
+            Self::Stats => "stats",
+            Self::Actions => "actions",
         }
     }
     pub(crate) fn path(self) -> &'static str {
         match self {
             Self::SparseSlots => "code/engine/_generated/sparse_slots.dm",
             Self::SystemAccessors => "code/engine/_generated/system_accessors.dm",
+            Self::Stats => "code/engine/_generated/stats.dm",
+            Self::Actions => "code/engine/_generated/actions.dm",
         }
     }
 }
@@ -184,6 +191,27 @@ pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admissi
                             BorrowedSparseSlots::capture(&raw, capture.policy(), budget.clone())?
                                 .generate(checkpoint)?;
                         let text = out.captured_file_text(&budget)?;
+                        Ok(Artifact {
+                            name: p.name,
+                            text,
+                            diags: out.diags,
+                        })
+                    }
+                    GeneratorName::Actions => {
+                        let out = BorrowedActions::capture(&raw, capture.policy(), budget.clone())?
+                            .generate(checkpoint)?;
+                        let text =
+                            out.captured_named_file_text("actions", "actions.dm", &budget)?;
+                        Ok(Artifact {
+                            name: p.name,
+                            text,
+                            diags: out.diags,
+                        })
+                    }
+                    GeneratorName::Stats => {
+                        let out = BorrowedStats::capture(&raw, capture.policy(), budget.clone())?
+                            .generate(checkpoint)?;
+                        let text = out.captured_named_file_text("stats", "stats.dm", &budget)?;
                         Ok(Artifact {
                             name: p.name,
                             text,

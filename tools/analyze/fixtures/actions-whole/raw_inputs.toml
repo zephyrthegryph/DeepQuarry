@@ -1,0 +1,3 @@
+sources = ["code/first.dm", "code/second.dm", "code/tests/test.dm", "code/engine/_generated/actions.dm", "code/.hidden/ignored.dm", "code/edge.dm"]
+expected_rows = 19
+expected_diagnostics = 10

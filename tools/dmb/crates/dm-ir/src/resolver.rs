@@ -318,6 +318,29 @@ impl ResolvedMeaning {
     /// Stable dependency evidence: complete semantic values, no debug formatting
     /// or transient tree arena indexes. Stage versions qualify this encoding.
     pub fn canonical_bytes(&self) -> Vec<u8> {
+        // The source hierarchy endpoint streams this SAME encoding without
+        // allocating ancestry/canonical output; other meaning families retain
+        // their existing encoding below.
+        if matches!(self, Self::Missing | Self::Symbol(_) | Self::Symbols(_)) {
+            let mut out = Vec::new();
+            let mut writer = crate::hierarchy_canonical::Writer::new(|bytes: &[u8]| {
+                out.extend_from_slice(bytes);
+                Ok(())
+            });
+            match self {
+                Self::Missing => writer.missing(),
+                Self::Symbol(symbol) => writer.symbol(*symbol),
+                Self::Symbols(symbols) => writer.symbols_start(symbols.len()).and_then(|()| {
+                    for symbol in symbols.iter() {
+                        writer.symbol_item(*symbol)?;
+                    }
+                    Ok(())
+                }),
+                _ => unreachable!(),
+            }
+            .expect("Vec canonical sink cannot return an IO error");
+            return out;
+        }
         fn frame(out: &mut Vec<u8>, bytes: &[u8]) {
             out.extend_from_slice(&(bytes.len() as u64).to_le_bytes());
             out.extend_from_slice(bytes);

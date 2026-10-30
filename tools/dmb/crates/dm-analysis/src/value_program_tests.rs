@@ -359,3 +359,10 @@ fn explicit_global_calls_use_root_value_and_parameter_equations() {
     assert!(!values["//chosen#0"]);
     assert!(!values["//unsafe_argument#0"]);
 }
+
+#[test]
+fn absolute_header_type_declaration_keeps_value_program_real_formal_roster() {
+    let values = returns("/proc/probe(datum/M,/datum/marker/A,actual_power=1)\n    return 1\n");
+    assert_eq!(values.len(), 1);
+    assert!(values["//probe#0"]);
+}

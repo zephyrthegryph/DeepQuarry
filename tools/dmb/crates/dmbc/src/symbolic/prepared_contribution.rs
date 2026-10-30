@@ -303,7 +303,7 @@ pub fn prepare_contribution(
         if let Some(recipes) = &mut modified_recipes {
             if let Some(helper_recipes) = modified_seeds[start..]
                 .iter()
-                .map(|seed| seed.helper_source_recipe(helper.argument))
+                .map(|seed| seed.helper_source_recipe_in(helper.argument, helper.original_root))
                 .collect::<Option<Vec<_>>>()
             {
                 recipes.extend(helper_recipes);
@@ -610,7 +610,10 @@ pub(crate) fn freeze_appended(
     symbols: &SymbolTable,
 ) -> Result<(FrozenUnit, Vec<(Key, dm_link::EntryContent)>), String> {
     if !prepared.modified_seeds.is_empty()
-        || prepared.modified_recipes.as_ref().is_some_and(|recipes| !recipes.is_empty())
+        || prepared
+            .modified_recipes
+            .as_ref()
+            .is_some_and(|recipes| !recipes.is_empty())
     {
         return Err("appended procedure has modified instances".into());
     }
@@ -621,9 +624,13 @@ pub(crate) fn freeze_appended(
     let mut strings = StringInventory::new(&inventory);
     let mut units = Vec::new();
     let mut helpers = Vec::new();
-    prepared
-        .contribution
-        .replay(&mut inventory, &mut strings, symbols, &mut units, &mut helpers);
+    prepared.contribution.replay(
+        &mut inventory,
+        &mut strings,
+        symbols,
+        &mut units,
+        &mut helpers,
+    );
     drop(strings);
     if !helpers.is_empty() {
         return Err("appended procedure has argument-source helpers".into());
@@ -634,7 +641,9 @@ pub(crate) fn freeze_appended(
     if inventory.string_registration.is_some() {
         return Err("appended procedure registers source strings".into());
     }
-    let unit = units.pop().ok_or("appended contribution produced no unit")?;
+    let unit = units
+        .pop()
+        .ok_or("appended contribution produced no unit")?;
     if !units.is_empty() {
         return Err("appended contribution produced several units".into());
     }

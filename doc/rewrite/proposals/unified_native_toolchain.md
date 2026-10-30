@@ -870,3 +870,65 @@ repeat. Preparation took 21.390 seconds, the first query 137.266 seconds, and
 later requests 0.125 and 0.109 seconds under shared-machine load. These remain
 correctness observations, not a benchmark or speedup claim. Production defaults
 are unchanged, and full unification is not complete.
+
+### Original header consumers and qualified source answers
+
+Native procedure lowering now consumes the existing original header expression
+owner for evaluated defaults and input-source helpers. Typed and automatic
+lowering, reference capture, source-neutral helper recipes and current diagnostic
+locations use that owner; they do not retry a default-text parser or manufacture
+a return-statement AST for a helper. Native ABI formal classification similarly
+uses original tokens through the existing single ABI policy. Independent
+compatibility entry points remain available for standalone, unissued inputs.
+Focused tests count actual formal re-lex calls and require zero on this route.
+Settings, return annotations, initializer expressions and further body/string
+grammar work remain separate convergence work.
+
+The full-project compile exposed an important existing language distinction:
+an absolute path inside a parameter header declares a type, rather than a formal
+argument. The original syntax owner now retains a separate written declaration
+receipt, checks the type against the same native tree, and excludes it from formal
+ordinals. This preserves `Heal`'s real `M` and `actual_power` slots and its existing
+type-declaration side effect. It does not edit the game signature, normalize an
+absolute path into a parameter, or loosen modifier/array guards.
+
+Internal source-answer publication now uses a final freshness transaction with
+explicit Required and NotRequested modes. Required failures preserve the prior
+published frame; an ordinary NotRequested publication retires the old source
+scope without rebinding runtime authority. Scoped reads require the exact
+original request, generation, tree, mapping, archive and answer world. They use
+the original answer table, pooled values and backing allocators, with actual
+source reservations retained until physical owners release them. The retained
+heap census includes a generation held only by the current binding. Existing
+uncapped runtime/framework baseline and allocator RSS remain separately stated.
+
+The std Arc allocation contract is now enabled only for the exact audited
+compiler, standard-library source/artifact and local geometry/ownership hashes.
+The tracked receipt records an independent headless nine-case allocator probe
+against those actual inputs, including the final-free-before-credit case. Unknown
+profiles cannot issue a source allocation permit. Sixteen real source-answer
+tests cover publication/cancellation, quota exhaustion, collisions, foreign
+owners, runtime-world changes and strong/weak lifetime order. This is not yet a
+public source-query preparation plan or a production client cutover.
+
+Stats and action generators now have borrowed original-RAW_FILE producers under
+the same existing Kind 11 graph and resource gate. They share the old producers'
+templates and intentionally preserve old lexical and inheritance quirks. Complete
+output and diagnostics match independent old implementations on the expanded
+BOM/CRLF, continuation, quoting and error fixtures. Like sparse-slot and system
+accessors, their current admission is explicitly fixture-scoped; it is not a
+full-workspace generator installation.
+
+Verification for this cohort includes 354 distinct passing focused Rust tests,
+the actual small IPC owner/diagnostic/paging checks, a native production compile
+with zero errors/warnings, DreamChecker with zero diagnostics and passing
+ratchets. All 382 compared generated files remain byte-identical. No game client,
+look pin, full test suite or compiler publication was used. These are correctness
+results; production Analyze and DreamChecker defaults remain unchanged, and full
+toolchain unification is still in progress.
+
+The optimized actual-repository IPC proof also passes on this checkpoint: the
+main DME is prepared from current acquisitions, all 27 raw policies match the
+independent old engine, and all 226 records over two pages match with an exact
+warm first-page repeat. The proof explicitly does not claim full semantic-policy
+parity, production client cutover or complete native compiler integration.

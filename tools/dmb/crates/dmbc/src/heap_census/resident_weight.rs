@@ -248,6 +248,7 @@ mod tests {
         assert!(after > before + 1000);
         unit.source_helpers
             .push(crate::argument_sources::LoweredHelper {
+                original_root: None,
                 owner: unit.identity,
                 argument: 0,
                 code: unit.code.clone(),
@@ -285,9 +286,7 @@ mod tests {
                 source_span: None,
             },
         );
-        assert!(
-            procedure(unit, &args.0, b"key", &args.1).unwrap() > before_modified + 10000
-        );
+        assert!(procedure(unit, &args.0, b"key", &args.1).unwrap() > before_modified + 10000);
 
         let value =
             ResolvedMeaning::Value(dm_ir::SemanticValue::Text(Arc::from(b"text".as_slice())));

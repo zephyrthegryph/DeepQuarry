@@ -191,3 +191,25 @@ fn original_nested_list_suffix_depth_and_explicit_args_shadowing_are_preserved()
         );
     }
 }
+
+#[test]
+fn absolute_header_declaration_does_not_enter_generic_parameter_scope() {
+    let (_, inputs) = input(
+        "/proc/probe(datum/M,/datum/marker/A,actual_power=1)\n    return actual_power\n",
+        true,
+    );
+    let body = inputs.archive().parse(0).unwrap();
+    let scope = archived_scope(&body, inputs.archive().tree(), &[]).unwrap();
+    assert_eq!(scope.locals.len(), 2);
+    assert_eq!(scope.locals.get("M").map(String::as_str), Some("/datum"));
+    assert_eq!(
+        scope.locals.get("actual_power").map(String::as_str),
+        Some("")
+    );
+    assert!(!scope.locals.contains_key("A"));
+    assert!(inputs
+        .archive()
+        .tree()
+        .lookup_type(SymbolId::of("/datum/marker/A"))
+        .is_some());
+}

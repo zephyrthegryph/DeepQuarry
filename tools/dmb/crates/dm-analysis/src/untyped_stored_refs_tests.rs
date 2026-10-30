@@ -288,3 +288,15 @@ fn stored_constants_use_original_native_declaration_flags_for_fields_and_lists()
     assert_eq!(rows[0].rule, "var");
     assert_eq!(rows[0].ident, "/datum/holder::loose");
 }
+
+#[test]
+fn absolute_header_type_declaration_preserves_stored_parameter_scope_and_original_finding() {
+    let plain = "/datum/holder\n    var/list/refs\n    proc/check(datum/D)\n        refs += D\n";
+    let absolute="/datum/holder\n    var/list/refs\n    proc/check(datum/D,/datum/marker/A)\n        refs += D\n";
+    let old = scan(plain, |_| {});
+    let current = scan(absolute, |_| {});
+    assert_eq!(old.len(), 1);
+    assert_eq!(current.len(), 1);
+    assert_eq!(old[0].rule, current[0].rule);
+    assert_eq!(old[0].message, current[0].message);
+}

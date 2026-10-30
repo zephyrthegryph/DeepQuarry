@@ -109,3 +109,11 @@ pub mod captured_stored_refs;
 pub mod stored_refs_policy;
 
 pub mod captured_generator_budget;
+
+#[cfg(feature = "native-policy")]
+pub mod captured_stats;
+pub mod stats_policy;
+
+pub mod actions_policy;
+#[cfg(feature = "native-policy")]
+pub mod captured_actions;

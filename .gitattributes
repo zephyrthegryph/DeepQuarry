@@ -61,6 +61,16 @@ tools/ci/sys_baseline/*.txt merge=dq-baseline
 # Diagnostics corpus case whose bytes are the point: a backslash before CRLF inside a string.
 tools/dmb/fixtures/diagnostics/cases/string_backslash_crlf.dm -text
 tools/dmb/fixtures/diagnostics/cases/string_backslash_crlf_block.dm -text
+
+# Independent generator encoding fixtures retain their literal BOM/CRLF bytes.
+tools/analyze/fixtures/actions-whole/code/edge.dm -text whitespace=cr-at-eol
+tools/analyze/fixtures/actions-whole/code/first.dm -text whitespace=cr-at-eol
+tools/analyze/fixtures/actions-whole/deepquarry.dme -text whitespace=cr-at-eol
+tools/analyze/fixtures/stats-whole/code/edge.dm -text whitespace=cr-at-eol
+tools/analyze/fixtures/stats-whole/code/first.dm -text whitespace=cr-at-eol
+tools/analyze/fixtures/stats-whole/deepquarry.dme -text whitespace=cr-at-eol
+# Mixed indentation is intentional input to the legacy membership matcher.
+tools/analyze/fixtures/stats-whole/code/second.dm whitespace=-indent-with-non-tab
 ## tools/ci/lint_scopes.toml: ceilings only go down, and adjacent lowered ceilings must not conflict (tools/ci/lint_scopes_merge_driver.sh,
 ## supplied by tools/dq_git_safe.sh like dq-baseline; by hand: git config merge.dq-lint-scopes.driver "bash tools/ci/lint_scopes_merge_driver.sh %O %A %B %P").
 tools/ci/lint_scopes.toml merge=dq-lint-scopes

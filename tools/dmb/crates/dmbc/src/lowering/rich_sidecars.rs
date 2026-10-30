@@ -75,7 +75,7 @@ pub(super) fn rebind<R: Resolver>(
                         &stored.debug_origins,
                     )
                     .ok()?
-                    .helper_source_recipe(stored.argument)?;
+                    .helper_source_recipe_in(stored.argument, stored.original_root)?;
                     let (issued, current) = recipe
                         .reissue(parsed, frontend, host, symbols, &debug)?
                         .into_current_capture();
@@ -94,10 +94,19 @@ pub(super) fn rebind<R: Resolver>(
                     helpers: &abi.source_helpers,
                     symbols,
                 };
-                unit.source_helpers.push(
+                let current = if stored.original_root.is_some() {
+                    crate::argument_sources::rebase_cached_helper_original(
+                        context,
+                        parsed,
+                        stored.argument,
+                        code,
+                    )
+                    .ok()?
+                } else {
                     crate::argument_sources::rebase_cached_helper(context, stored.argument, code)
-                        .ok()?,
-                );
+                        .ok()?
+                };
+                unit.source_helpers.push(current);
             }
             unit.debug_origins = debug.clone();
             Some(unit)

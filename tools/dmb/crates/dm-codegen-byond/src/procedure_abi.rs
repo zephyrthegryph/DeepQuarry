@@ -90,6 +90,8 @@ fn expression_text(value: &SymbolicExpression, symbols: &SymbolTable) -> Result<
         .ok_or_else(|| AbiError::invariant("unavailable or malformed symbolic expression spelling"))
 }
 fn compact(text: &str) -> Result<String, AbiError> {
+    #[cfg(test)]
+    FORMAL_RELEX_CALLS.with(|count| count.set(count.get() + 1));
     let lexed = dm_syntax::lex(text);
     if !lexed.diagnostics.is_empty() {
         return Err(AbiError::source("invalid ABI expression syntax"));
@@ -107,6 +109,49 @@ fn compact(text: &str) -> Result<String, AbiError> {
         })
         .map(|t| t.text)
         .collect())
+}
+#[cfg(test)]
+thread_local! { static FORMAL_RELEX_CALLS: std::cell::Cell<usize> = const {std::cell::Cell::new(0)}; }
+fn compatibility_formal_spelling(
+    value: &SymbolicExpression,
+    symbols: &SymbolTable,
+) -> Result<String, AbiError> {
+    compact(&expression_text(value, symbols)?)
+}
+/// Caller has authenticated these original primary-token facts. Unlike the
+/// standalone compatibility adapter, this never renders and re-lexes them.
+fn original_formal_spelling(
+    value: &SymbolicExpression,
+    symbols: &SymbolTable,
+) -> Result<String, AbiError> {
+    let mut text = String::new();
+    let mut previous = None;
+    for token in value.tokens.iter() {
+        let spelling = symbols.text(token.text).ok_or_else(|| {
+            AbiError::invariant("unavailable or malformed symbolic expression spelling")
+        })?;
+        if token
+            .relative_span
+            .end
+            .checked_sub(token.relative_span.start)
+            != Some(spelling.len())
+            || previous.is_some_and(|end| end > token.relative_span.start)
+        {
+            return Err(AbiError::invariant(
+                "unavailable or malformed symbolic expression spelling",
+            ));
+        }
+        previous = Some(token.relative_span.end);
+        if !matches!(
+            token.kind,
+            dm_syntax::TokenKind::Whitespace
+                | dm_syntax::TokenKind::Newline
+                | dm_syntax::TokenKind::Comment
+        ) {
+            text.push_str(spelling);
+        }
+    }
+    Ok(text)
 }
 fn restriction(name: &str) -> Option<u32> {
     Some(match name {
@@ -328,9 +373,49 @@ pub fn prepare_verified_procedure(
     metadata: &ProcedureMetadata,
     symbols: &SymbolTable,
     body: &[Item],
+    inputs: ProcedureInputs,
+    inherited: InheritedAbi<'_>,
+    evaluate: impl FnMut(&SymbolicExpression) -> Result<SemanticValue, AbiError>,
+) -> Result<PreparedProcedure, AbiError> {
+    prepare_verified_procedure_with_spelling(
+        metadata,
+        symbols,
+        body,
+        inputs,
+        inherited,
+        evaluate,
+        compatibility_formal_spelling,
+    )
+}
+/// Native hosts must bind metadata to the current original frontend occurrence
+/// before using this entry. It shares every ABI policy branch with compatibility;
+/// only formal lexical compaction consumes existing original tokens directly.
+pub fn prepare_verified_procedure_original_tokens(
+    metadata: &ProcedureMetadata,
+    symbols: &SymbolTable,
+    body: &[Item],
+    inputs: ProcedureInputs,
+    inherited: InheritedAbi<'_>,
+    evaluate: impl FnMut(&SymbolicExpression) -> Result<SemanticValue, AbiError>,
+) -> Result<PreparedProcedure, AbiError> {
+    prepare_verified_procedure_with_spelling(
+        metadata,
+        symbols,
+        body,
+        inputs,
+        inherited,
+        evaluate,
+        original_formal_spelling,
+    )
+}
+fn prepare_verified_procedure_with_spelling(
+    metadata: &ProcedureMetadata,
+    symbols: &SymbolTable,
+    body: &[Item],
     mut inputs: ProcedureInputs,
     inherited: InheritedAbi<'_>,
     mut evaluate: impl FnMut(&SymbolicExpression) -> Result<SemanticValue, AbiError>,
+    formal_spelling: fn(&SymbolicExpression, &SymbolTable) -> Result<String, AbiError>,
 ) -> Result<PreparedProcedure, AbiError> {
     fn setting_left(items: &[Item]) -> bool {
         items.iter().any(|item| {
@@ -441,7 +526,7 @@ pub fn prepare_verified_procedure(
         let mut flags = type_flags(restriction_path)?;
         if let Some(annotation) = &param.input_annotation {
             flags = 0;
-            for part in compact(&expression_text(annotation, symbols)?)?.split('|') {
+            for part in formal_spelling(annotation, symbols)?.split('|') {
                 flags |= restriction(part).ok_or_else(|| {
                     fail(format!("unsupported parameter input annotation: {part}"))
                 })?;
@@ -449,7 +534,7 @@ pub fn prepare_verified_procedure(
             // DreamMaker adds the `null` input bit when an annotated formal with an `in` source defaults to null
             // (`mob/target = null as mob in list`): the prompt then offers a null choice.
             if let (Some(default), Some(_)) = (&param.default, &param.source_expression) {
-                if compact(&expression_text(default, symbols)?)? == "null" {
+                if formal_spelling(default, symbols)? == "null" {
                     flags |= 0x80;
                 }
             }
@@ -469,9 +554,8 @@ pub fn prepare_verified_procedure(
         let source = param
             .source_expression
             .as_ref()
-            .map(|v| expression_text(v, symbols))
+            .map(|value| formal_spelling(value, symbols))
             .transpose()?;
-        let source = source.map(|s| compact(&s)).transpose()?;
         let encoded = match source.as_deref() {
             None => ArgumentSource::Builtin {
                 kind: 1,

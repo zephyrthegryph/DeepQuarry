@@ -16,6 +16,7 @@ pub(super) fn compiler_context<'a>(
         diagnostic_expression_coordinates: false,
         statement_mask: None,
         local_variables: None,
+        parameter_roots: None,
         discarded_call_root: None,
         resolver_failure: std::cell::RefCell::new(None),
         nameof_return_context: false,

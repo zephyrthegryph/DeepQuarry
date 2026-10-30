@@ -3,6 +3,11 @@
 //! captured-input freshness barrier can issue its consuming admission receipt.
 use super::*;
 use crate::input_snapshot::{InputSnapshot, SemanticSourceEvidence};
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum SourceAnswersMode {
+    NotRequested,
+    Required,
+}
 pub(crate) struct SourceFrameCapture {
     mapping: Arc<dm_tree::frontend::SourceExportMapping>,
     evidence: Arc<SemanticSourceEvidence>,
@@ -11,6 +16,43 @@ pub(crate) struct SourceFrameCapture {
     policy: Option<Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>>,
     source_revision: u128,
     facts: InputSnapshot,
+    query_request: u64,
+    mode: SourceAnswersMode,
+}
+/// One-use stack publication ticket. Only the real final SourceFrame admission
+/// transaction can construct it, after complete closure freshness/owner checks.
+/// Handles are original owners; no sibling tree, model, facts table or manager.
+pub(crate) struct SourceAnswerPublication {
+    tree: Arc<dm_tree::SemanticTree>,
+    mapping: Arc<dm_tree::frontend::SourceExportMapping>,
+    archive: Arc<dm_tree::frontend::BodyArchive>,
+    queries: Arc<crate::query_db::QueryDb>,
+    eligible: bool,
+    query_request: u64,
+    mode: SourceAnswersMode,
+}
+impl SourceAnswerPublication {
+    pub(crate) fn parts(
+        &self,
+    ) -> (
+        &Arc<dm_tree::SemanticTree>,
+        &Arc<dm_tree::frontend::SourceExportMapping>,
+        &Arc<dm_tree::frontend::BodyArchive>,
+        &Arc<crate::query_db::QueryDb>,
+        bool,
+        u64,
+        SourceAnswersMode,
+    ) {
+        (
+            &self.tree,
+            &self.mapping,
+            &self.archive,
+            &self.queries,
+            self.eligible,
+            self.query_request,
+            self.mode,
+        )
+    }
 }
 impl SourceFrameCapture {
     // Constructor intentionally private to this child of the snapshot owner.
@@ -63,6 +105,8 @@ impl SourceFrameCapture {
             policy: snapshot.native_policy_inputs.as_ref().map(Arc::clone),
             source_revision: snapshot.source_revision,
             facts,
+            query_request: queries.source_answer_request(),
+            mode: SourceAnswersMode::NotRequested,
         }))
     }
     pub(crate) fn is_recorded_in(&self, complete: &InputSnapshot) -> bool {
@@ -112,6 +156,20 @@ impl SourceFrameCapture {
     }
 }
 impl QueryAttempt {
+    /// Trusted internal question-plan selection ONLY. Once the freshness frame
+    /// is borrowed/issued this cannot mutate its mode. No RPC boolean/default.
+    pub(crate) fn require_source_answers(&mut self) -> std::io::Result<()> {
+        if self.pending_workspace.is_some() || self.pending_diagnostic.is_some() {
+            return Err(std::io::ErrorKind::Unsupported.into());
+        }
+        let (_, frame) = self
+            .pending_source
+            .as_mut()
+            .ok_or(std::io::ErrorKind::InvalidInput)?;
+        let frame = Arc::get_mut(frame).ok_or(std::io::ErrorKind::InvalidInput)?;
+        frame.mode = SourceAnswersMode::Required;
+        Ok(())
+    }
     pub(super) fn stage_source_snapshot(
         &mut self,
         snapshot: SourceSnapshot,
@@ -147,12 +205,30 @@ impl QueryAttempt {
             ));
         }
         frame.require_snapshot(snapshot)?;
-        let (snapshot, _) = self.pending_source.take().expect("validated staged source");
-        self.state
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .snapshot = Some(snapshot);
-        self.captured = true;
+        let publication = SourceAnswerPublication {
+            tree: Arc::clone(&snapshot.tree),
+            mapping: Arc::clone(&frame.mapping),
+            archive: Arc::clone(&frame.archive),
+            queries: Arc::clone(&frame.queries),
+            // Raw preparation still supports incompatible original encodings
+            // and unprofiled trees. It cannot issue a semantic source scope.
+            query_request: frame.query_request,
+            mode: frame.mode,
+            eligible: frame.mode == SourceAnswersMode::Required
+                && snapshot.require_semantic_source_encoding().is_ok()
+                && snapshot.tree.checker_builtin_profile().is_some()
+                && snapshot.tree.intrinsic_hierarchy_certified(),
+        };
+        let queries = Arc::clone(&frame.queries);
+        let mut current = self.state.lock().unwrap_or_else(|e| e.into_inner());
+        let pending = &mut self.pending_source;
+        let captured = &mut self.captured;
+        queries.commit_source_answer_publication(publication, |scope| {
+            let (mut snapshot, _) = pending.take().expect("validated staged source");
+            snapshot.source_answers = scope;
+            current.snapshot = Some(snapshot);
+            *captured = true;
+        })?;
         Ok(())
     }
     pub(super) fn with_current_source<T>(

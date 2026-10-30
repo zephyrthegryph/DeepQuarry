@@ -18,6 +18,8 @@ mod answer_value_owner;
 #[cfg(test)]
 mod answer_value_owner_tests;
 mod body_syntax;
+mod source_answers;
+pub(crate) use source_answers::{SourceAnswerScope, SourceAnswerScopeOwner};
 mod native_arc_allocation;
 mod no_weak_arc_owner;
 mod purity;
@@ -391,6 +393,8 @@ impl AnswerSlot {
 }
 struct AnswerRequest {
     request: u64,
+    /// Exact binding generation, independent of source/world hash equality.
+    source_binding: Option<no_weak_arc_owner::NoWeakArc<source_answers::SourceGeneration>>,
     tree: Option<Arc<dm_tree::SemanticTree>>,
     /// Version of every answer this request's resolvers give (the static resolver's
     /// `ReadDomain::Tree` version: declarations, procedure statics, engine configuration and
@@ -413,6 +417,7 @@ impl AnswerRequest {
         stamps.push((0, 0));
         Self {
             request: 0,
+            source_binding: None,
             tree: None,
             world: 0,
             stamp: 0,
@@ -438,6 +443,15 @@ impl AnswerRequest {
                 (self.stamps.len() - 1) as u32
             }
         };
+    }
+    fn bind_source_generation(
+        &mut self,
+        tree: Option<Arc<dm_tree::SemanticTree>>,
+        world: u128,
+        generation: no_weak_arc_owner::NoWeakArc<source_answers::SourceGeneration>,
+    ) {
+        self.bind(tree, world);
+        self.source_binding = Some(generation);
     }
 }
 struct Answers {
@@ -521,6 +535,7 @@ impl Answers {
             .write()
             .unwrap_or_else(|error| error.into_inner());
         current.request = request;
+        current.source_binding = None;
         current.bind(None, 0);
         self.resolved.store(0, Ordering::Relaxed);
         self.replaced.store(0, Ordering::Relaxed);
@@ -552,6 +567,7 @@ impl Answers {
                 .current
                 .write()
                 .unwrap_or_else(|error| error.into_inner());
+            current.source_binding = None;
             let open = current.stamps[current.stamp as usize];
             let mut stamps = AnswerStamps::new_in(current.stamps.allocator().clone());
             stamps.push((0, 0));
@@ -722,14 +738,25 @@ impl RequestAnswers<'_> {
             .current
             .read()
             .unwrap_or_else(|error| error.into_inner());
+        self.current_bound(id, query, &current)
+    }
+    /// Caller holds the SAME current binding lock from scope validation through
+    /// lookup/publication. No check-then-rebind window for source questions.
+    fn current_bound(
+        &self,
+        id: u128,
+        query: &dm_ir::ResolveQuery,
+        current: &AnswerRequest,
+    ) -> u128 {
+        let answers = &self.db.answers;
         let identity = current.identity();
         let shard = &answers.shards[(id as usize) % ANSWER_SHARDS];
         let open = slot_request(current.request);
         {
             let mut slots = shard.lock().unwrap_or_else(|error| error.into_inner());
-            if let Some(slot) = slots.get_mut(&id) {
+            if let Some(slot) = slots.get_mut(&id).filter(|slot| slot.value.query == *query) {
                 let (slot_tree, slot_world) = current.stamps[slot.stamp as usize];
-                if slot.request == open && slot_tree == identity {
+                if slot.request == open && slot_tree == identity && slot_world == current.world {
                     let hash = slot.value.hash;
                     drop(slots);
                     if verify_answers() {

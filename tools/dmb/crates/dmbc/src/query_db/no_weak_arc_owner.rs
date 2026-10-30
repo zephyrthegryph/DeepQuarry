@@ -5,10 +5,26 @@ pub(super) struct NoWeakArc<T> {
     inner: ManuallyDrop<Arc<T>>,
 }
 impl<T> NoWeakArc<T> {
+    pub(super) fn same_owner(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.inner, &other.inner)
+    }
     pub(super) fn new(value: T) -> Self {
         Self {
             inner: ManuallyDrop::new(Arc::new(value)),
         }
+    }
+    #[cfg(not(dmb_arc_probe))]
+    pub(super) fn census_identity(&self) -> usize {
+        Arc::as_ptr(&self.inner) as usize
+    }
+    #[cfg(not(dmb_arc_probe))]
+    pub(super) fn census_layout(
+        &self,
+        c: &mut crate::heap_census::HeapCensus,
+        name: &str,
+        layout: std::alloc::Layout,
+    ) {
+        c.qualified_arc(name, &self.inner, layout);
     }
     #[cfg(not(dmb_arc_probe))]
     pub(super) fn census(&self, c: &mut crate::heap_census::HeapCensus, name: &str) {

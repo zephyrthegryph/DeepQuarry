@@ -533,7 +533,7 @@ pub use body_queries::{BodySyntax, BodySyntaxInput, BodySyntaxQueries};
 mod body_archive;
 pub use body_archive::{
     AnnotationCandidateRoster, ArchivedBody, BodyArchive, CheckerVariableProperties,
-    SourceLocalView, SourceParameterView,
+    OriginalHeaderExpressionHandle, SourceHeaderExpressions, SourceLocalView, SourceParameterView,
 };
 pub use relative_declarations::BodyCodeIdentity;
 pub use relative_declarations::{CurrentSyntaxChunk, DeclarationSyntax, ItemView, RelativeSyntax};
@@ -669,6 +669,11 @@ impl ParsedBody<'_> {
             &self.parameters,
             &self.issuer.issued_arena,
         )
+    }
+    /// Borrow optional roots only after the original callable/header receipt
+    /// and selected original metadata have been bound to this exact occurrence.
+    pub fn source_header_expressions(&self) -> Result<SourceHeaderExpressions<'_>, String> {
+        self.source_parameters()?.header_expressions()
     }
     pub fn checker_parameters(
         &self,
@@ -1243,3 +1248,18 @@ mod primary_cursor_rebase_tests {
 
 #[path = "frontend_unchanged_program.rs"]
 mod unchanged_program;
+
+impl<'frontend> ParsedBody<'frontend> {
+    /// Preserve the existing original root owner before ABI preparation consumes
+    /// this wrapper. The handle retains no Item/Expr/occurrence clone or parser.
+    pub fn share_header_expressions(
+        &self,
+    ) -> Result<OriginalHeaderExpressionHandle<'frontend>, String> {
+        self.source_parameters()?;
+        body_archive::capture_header_expression_handle(
+            self.issuer,
+            self.occurrence,
+            Arc::clone(&self.parameters),
+        )
+    }
+}

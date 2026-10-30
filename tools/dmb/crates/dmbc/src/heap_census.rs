@@ -203,6 +203,57 @@ impl HeapCensus {
         }
         row.unknown.insert("collection node/bucket backing capacity unavailable; entry bytes are logical lower bounds".into());
     }
+    /// Fixed allocator-owner group, with actual callback Layout totals. The
+    /// identity is the live allocator State owner, not a pretend buffer base.
+    pub(crate) fn allocator_layout_group(
+        &mut self,
+        name: &str,
+        identity: usize,
+        payload: usize,
+        capacity: usize,
+        allocations: usize,
+        items: usize,
+    ) {
+        let first = self.collections.insert(identity);
+        let row = self.owner(name);
+        row.observed_items += items as u64;
+        if first {
+            row.unique_payload_bytes += payload as u64;
+            row.unique_known_capacity_bytes += capacity as u64;
+            row.unique_allocations += allocations as u64;
+        } else {
+            row.shared_encounters += 1;
+        }
+        row.unknown.insert("actual allocator-requested Layout group, not RSS/allocator usable bytes or an address registry".into());
+    }
+    /// Caller supplies a qualified original constructor's actual requested Arc
+    /// Layout. Data pointer is an allocation identity, not a claimed base/range.
+    pub(crate) fn qualified_arc<T>(
+        &mut self,
+        name: &str,
+        value: &Arc<T>,
+        layout: std::alloc::Layout,
+    ) -> bool {
+        debug_assert!(
+            layout.size() >= size_of::<T>() && layout.align() >= std::mem::align_of::<T>()
+        );
+        self.buffer(
+            name,
+            Arc::as_ptr(value) as usize,
+            size_of::<T>(),
+            layout.size(),
+        )
+    }
+    /// Original factory-issued Weak keeps its allocation even after T dropped;
+    /// do not dereference it. Qualified role supplies requested allocation size.
+    pub(crate) fn qualified_weak_payload<T>(
+        &mut self,
+        name: &str,
+        value: &std::sync::Weak<T>,
+        layout: std::alloc::Layout,
+    ) -> bool {
+        self.buffer(name, value.as_ptr() as usize, 0, layout.size())
+    }
     /// Vec backing contains inline element descriptors. Nested heap buffers are
     /// counted separately, without adding those descriptors again.
     pub fn vec_payload<T>(&mut self, owner: &str, values: &Vec<T>) -> bool {

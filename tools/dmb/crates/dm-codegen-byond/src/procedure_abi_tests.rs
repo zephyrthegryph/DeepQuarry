@@ -481,11 +481,190 @@ fn lexical_settings_apply_in_encounter_order_with_last_write_winning() {
 #[test]
 fn checker_metadata_has_no_runtime_abi_or_constant_evaluation() {
     let mut symbols = SymbolTable::default();
-    let metadata = metadata(&[("SpacemanDMM_should_be_pure", SettingOperation::Assign, "unknown_value")], &mut symbols);
+    let metadata = metadata(
+        &[(
+            "SpacemanDMM_should_be_pure",
+            SettingOperation::Assign,
+            "unknown_value",
+        )],
+        &mut symbols,
+    );
     let prepared = prepare_verified_procedure(
-        &metadata, &symbols, &[], ProcedureInputs::default(), InheritedAbi::Fresh,
+        &metadata,
+        &symbols,
+        &[],
+        ProcedureInputs::default(),
+        InheritedAbi::Fresh,
         |_| panic!("checker annotation must not evaluate a runtime constant"),
-    ).unwrap();
+    )
+    .unwrap();
     assert_eq!(prepared.layout, ProcLayout::default());
     assert!(prepared.executable_body.is_empty());
+}
+
+#[test]
+fn original_formal_tokens_match_compatibility_policy_without_formal_relex() {
+    for (default, annotation, source) in [
+        ("null", "mob", "world"),
+        ("(null)", "mob", "world"),
+        ("n ull", "mob", "world"),
+        ("nu/*gone*/ll", "mob", "world"),
+        ("\"null\"", "text", "usr.contents"),
+        ("null", "mob|text", "view(2)"),
+        ("null", "mob", "range(256)"),
+        ("null", "not_an_input", "world"),
+        ("null", "num", "list(arg,2)"),
+        ("null", "num", "view(arg)"),
+    ] {
+        let mut symbols = SymbolTable::default();
+        let mut data = metadata(&[], &mut symbols);
+        data.signature.parameters = vec![Parameter {
+            name: symbols.intern("arg").unwrap(),
+            declared_type: None,
+            list_element_type: None,
+            flags: 0,
+            array: None,
+            default: Some(expression(default, &mut symbols)),
+            input_annotation: Some(expression(annotation, &mut symbols)),
+            source_expression: Some(expression(source, &mut symbols)),
+            relative_span: Span::new(0, 1),
+        }]
+        .into();
+        FORMAL_RELEX_CALLS.with(|count| count.set(0));
+        let old = prepare_verified_procedure(
+            &data,
+            &symbols,
+            &[],
+            ProcedureInputs::default(),
+            InheritedAbi::Fresh,
+            |_| Err(fail("unused")),
+        );
+        assert!(FORMAL_RELEX_CALLS.with(|count| count.get()) > 0);
+        FORMAL_RELEX_CALLS.with(|count| count.set(0));
+        let native = prepare_verified_procedure_original_tokens(
+            &data,
+            &symbols,
+            &[],
+            ProcedureInputs::default(),
+            InheritedAbi::Fresh,
+            |_| Err(fail("unused")),
+        );
+        assert_eq!(
+            FORMAL_RELEX_CALLS.with(|count| count.get()),
+            0,
+            "native classification must not call the formal renderer/relexer"
+        );
+        match (old, native) {
+            (Ok(old), Ok(native)) => {
+                assert_eq!(old.layout, native.layout);
+                assert_eq!(old.argument_sources, native.argument_sources);
+                assert_eq!(old.source_helpers, native.source_helpers);
+                assert_eq!(old.inputs.parameters, native.inputs.parameters);
+                assert_eq!(old.inputs.parameter_types, native.inputs.parameter_types);
+                assert_eq!(
+                    old.inputs.parameter_defaults,
+                    native.inputs.parameter_defaults
+                );
+                assert_eq!(
+                    old.inputs.parameter_type_flags,
+                    native.inputs.parameter_type_flags
+                );
+                assert_eq!(
+                    old.inputs.parameter_value_sources,
+                    native.inputs.parameter_value_sources
+                );
+                assert_eq!(
+                    old.inputs.readonly_parameters,
+                    native.inputs.readonly_parameters
+                );
+                if matches!(default, "null" | "(null)" | "\"null\"") {
+                    struct Host;
+                    impl dm_ir::Resolver for Host {
+                        fn resolve(&self, q: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
+                            dm_ir::ResolvedMeaning::Unsupported(q)
+                        }
+                    }
+                    let syntax = dm_syntax::parse("/proc/p()\n    return arg\n");
+                    let body = dm_syntax::parse_proc_body(&syntax.items[0]);
+                    let old_words = crate::compile_statement_view_with_resolver(
+                        dm_syntax::StatementView::from_parsed(&body),
+                        &old.inputs,
+                        &symbols,
+                        &Host,
+                        None,
+                    )
+                    .unwrap();
+                    let native_words = crate::compile_statement_view_with_resolver(
+                        dm_syntax::StatementView::from_parsed(&body),
+                        &native.inputs,
+                        &symbols,
+                        &Host,
+                        None,
+                    )
+                    .unwrap();
+                    assert_eq!(old_words.procedure, native_words.procedure);
+                }
+                if annotation == "mob" && source == "world" {
+                    assert_eq!(
+                        native.inputs.parameter_type_flags[0] & 0x80,
+                        if matches!(default, "null" | "n ull" | "nu/*gone*/ll") {
+                            0x80
+                        } else {
+                            0
+                        }
+                    );
+                }
+            }
+            (Err(old), Err(native)) => assert_eq!(old, native),
+            _ => {
+                panic!("native ABI acceptance differs for {default:?} as {annotation} in {source}")
+            }
+        }
+    }
+}
+#[test]
+fn original_formal_compaction_keeps_string_spelling_and_checks_current_token_geometry() {
+    let mut symbols = SymbolTable::default();
+    for source in [
+        "\"a b\"",
+        "view ( 2 )",
+        "usr . contents",
+        "n ull",
+        "nu/*gone*/ll",
+        "(null)",
+    ] {
+        let original = expression(source, &mut symbols);
+        assert_eq!(
+            original_formal_spelling(&original, &symbols),
+            compatibility_formal_spelling(&original, &symbols)
+        );
+        let mut copied = original.tokens.to_vec();
+        copied[0].relative_span.end += 1;
+        assert!(original_formal_spelling(
+            &SymbolicExpression {
+                tokens: copied.into()
+            },
+            &symbols
+        )
+        .is_err());
+    }
+}
+#[test]
+fn standalone_compatibility_still_lexes_unissued_symbolic_token_contents() {
+    let mut symbols = SymbolTable::default();
+    let text = "null/*standalone*/";
+    let unissued = SymbolicExpression {
+        tokens: vec![ExpressionToken {
+            kind: TokenKind::Ident,
+            text: symbols.intern(text).unwrap(),
+            relative_span: Span::new(0, text.len()),
+        }]
+        .into(),
+    };
+    assert_eq!(
+        compatibility_formal_spelling(&unissued, &symbols).unwrap(),
+        "null"
+    );
+    // Such a record is not a native token receipt. The actual driver admits
+    // exact selected ORIGINAL frontend metadata, never this standalone copy.
 }

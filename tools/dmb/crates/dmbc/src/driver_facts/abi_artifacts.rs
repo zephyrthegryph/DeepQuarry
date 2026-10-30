@@ -61,7 +61,8 @@ pub struct AbiArtifacts {
 }
 impl Default for AbiArtifacts {
     fn default() -> Self {
-        let batch_replay = std::env::var_os("DMB_ABI_BATCH_REPLAY").is_some_and(|value| value == "1");
+        let batch_replay =
+            std::env::var_os("DMB_ABI_BATCH_REPLAY").is_some_and(|value| value == "1");
         let batch_recipes = batch_replay
             || std::env::var_os("DMB_ABI_BATCH_RECIPES").is_some_and(|value| value == "1");
         Self {
@@ -138,7 +139,10 @@ impl AbiArtifacts {
     ) -> Self {
         let mut store = Self::with_engine_owner(Arc::clone(&engine));
         let transport = Arc::new(disk::Transport::new(disk, policy, engine).with_index(index));
-        *store.disk.write().unwrap_or_else(|error| error.into_inner()) = Arc::downgrade(&transport);
+        *store
+            .disk
+            .write()
+            .unwrap_or_else(|error| error.into_inner()) = Arc::downgrade(&transport);
         store.pinned_disk = Some(transport);
         store
     }
@@ -232,6 +236,24 @@ pub(super) fn prepare(
     admission: Option<&admission::Admission<'_>>,
     batch_capture: Option<&batch::Capture>,
 ) -> Result<PreparedUnit, AbiError> {
+    let ordinal = inherited
+        .frontend
+        .callable_roster()
+        .map_err(AbiError::unsupported)?
+        .ordinal(
+            *inherited
+                .unit_members
+                .get(&context.identity)
+                .ok_or_else(|| AbiError::unsupported("body identity missing"))?,
+        )
+        .ok_or_else(|| AbiError::unsupported("original ABI formal member unavailable"))?;
+    let body = inherited
+        .frontend
+        .bodies
+        .get(ordinal)
+        .ok_or_else(|| AbiError::unsupported("original ABI formal occurrence unavailable"))?;
+    let original =
+        crate::procedure_policy::OriginalFormalTokens::capture(inherited.frontend, body, metadata)?;
     // Always authenticate the current issued header/settings before accepting old answers.
     let authenticated = settings.is_some_and(|proof| proof.authenticates(parsed, metadata));
     let mut symbols = dm_ir::SymbolTable::default();
@@ -364,7 +386,11 @@ pub(super) fn prepare(
     let portable_policy = evaluator
         .pure_calls
         .map_or(Some(None), |calls| calls.immutable_policy_bytes().map(Some));
-    let transport = store.disk.read().unwrap_or_else(|error| error.into_inner()).upgrade();
+    let transport = store
+        .disk
+        .read()
+        .unwrap_or_else(|error| error.into_inner())
+        .upgrade();
     let disk = transport.as_deref().filter(|_| portable_policy.is_some());
     static DISK_LOOKUP: dm_profile::Accumulator = dm_profile::Accumulator::new("abi.disk_lookup");
     static DISK_STAGE: dm_profile::Accumulator = dm_profile::Accumulator::new("abi.disk_stage");
@@ -390,7 +416,7 @@ pub(super) fn prepare(
         let _timer = RECOMPUTE.time();
         recording.record_declaration_occurrence(issued_identity);
         store.recomputed.fetch_add(1, Ordering::Relaxed);
-        policy.prepare_view(metadata, parsed, &recorded_context)?
+        policy.prepare_view_original(metadata, parsed, &recorded_context, &original)?
     };
     unit.issue_canonical();
     if let Some(current) = current {
@@ -437,18 +463,17 @@ pub(super) fn prepare(
             + std::mem::size_of::<observations::Inputs>()
             + key.len();
         let captured_reads = reads.clone();
-        if let Some(accepted) = store.store.insert_with_receipt(
-            Arc::clone(&key),
-            reads,
-            charge,
-            || {
-                Artifact::Unit(Arc::new(UnitArtifact {
-                    inputs,
-                    abi,
-                    canonical: unit.canonical.clone(),
-                }))
-            },
-        ) {
+        if let Some(accepted) =
+            store
+                .store
+                .insert_with_receipt(Arc::clone(&key), reads, charge, || {
+                    Artifact::Unit(Arc::new(UnitArtifact {
+                        inputs,
+                        abi,
+                        canonical: unit.canonical.clone(),
+                    }))
+                })
+        {
             if let Artifact::Unit(artifact) = accepted.as_ref() {
                 batch::record(batch_capture, context.identity, artifact, &captured_reads);
             }

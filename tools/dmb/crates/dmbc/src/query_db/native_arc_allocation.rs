@@ -29,6 +29,11 @@ impl NativeArcAllocationPlan {
         Ok(Self { layout })
     }
     fn qualified(value: Layout) -> Result<Self, &'static str> {
+        #[cfg(test)]
+        if test_denial::is_denied() {
+            return Err("test-only denial of native Arc allocation authority");
+        }
+
         if !profile::CANDIDATE_MATCHED {
             return Err("original compiler/std Arc allocation profile is unsupported");
         }
@@ -46,6 +51,19 @@ impl NativeArcAllocationPlan {
     #[cfg(not(dmb_arc_probe))]
     pub(super) fn retention_lease() -> Result<Self, &'static str> {
         Self::qualified(Layout::new::<super::source_allocation::SourceLease>())
+    }
+    #[cfg(not(dmb_arc_probe))]
+    pub(super) fn allocator_state() -> Result<Self, &'static str> {
+        Self::qualified(Layout::new::<super::source_allocation::State>())
+    }
+
+    #[cfg(not(dmb_arc_probe))]
+    pub(super) fn source_scope() -> Result<Self, &'static str> {
+        Self::qualified(Layout::new::<super::source_answers::SourceAnswerScope>())
+    }
+    #[cfg(not(dmb_arc_probe))]
+    pub(super) fn source_generation() -> Result<Self, &'static str> {
+        Self::qualified(Layout::new::<super::source_answers::SourceGeneration>())
     }
     pub(super) fn layout(self) -> Layout {
         self.layout
@@ -75,7 +93,42 @@ mod tests {
         if !profile::CANDIDATE_MATCHED || !profile::PROBE_APPROVED {
             assert!(NativeArcAllocationPlan::canonical_value().is_err());
             assert!(NativeArcAllocationPlan::retention_lease().is_err());
+            assert!(NativeArcAllocationPlan::allocator_state().is_err());
+            assert!(NativeArcAllocationPlan::source_scope().is_err());
+            assert!(NativeArcAllocationPlan::source_generation().is_err());
         } else {
+            let scope = NativeArcAllocationPlan::source_scope().unwrap().layout();
+            let expected_scope = Layout::new::<AuditedArcHeader>()
+                .extend(Layout::new::<super::super::source_answers::SourceAnswerScope>())
+                .unwrap()
+                .0
+                .pad_to_align();
+            assert_eq!(
+                (scope.size(), scope.align()),
+                (expected_scope.size(), expected_scope.align())
+            );
+            let generation = NativeArcAllocationPlan::source_generation()
+                .unwrap()
+                .layout();
+            let expected_generation = Layout::new::<AuditedArcHeader>()
+                .extend(Layout::new::<super::super::source_answers::SourceGeneration>())
+                .unwrap()
+                .0
+                .pad_to_align();
+            assert_eq!(
+                (generation.size(), generation.align()),
+                (expected_generation.size(), expected_generation.align())
+            );
+            let state = NativeArcAllocationPlan::allocator_state().unwrap().layout();
+            let expected_state = Layout::new::<AuditedArcHeader>()
+                .extend(Layout::new::<super::super::source_allocation::State>())
+                .unwrap()
+                .0
+                .pad_to_align();
+            assert_eq!(
+                (state.size(), state.align()),
+                (expected_state.size(), expected_state.align())
+            );
             let value = NativeArcAllocationPlan::canonical_value().unwrap().layout();
             let lease = NativeArcAllocationPlan::retention_lease().unwrap().layout();
             let expected_value = Layout::new::<AuditedArcHeader>()
@@ -150,5 +203,22 @@ mod tests {
             Layout::from_size_align(isize::MAX as usize, 1).unwrap()
         )
         .is_err());
+    }
+}
+
+#[cfg(test)]
+pub(crate) mod test_denial {
+    thread_local! {static DENIED:std::cell::Cell<bool>=const{std::cell::Cell::new(false)};}
+    pub(crate) struct Guard(bool);
+    impl Drop for Guard {
+        fn drop(&mut self) {
+            DENIED.with(|v| v.set(self.0));
+        }
+    }
+    pub(crate) fn deny() -> Guard {
+        Guard(DENIED.with(|v| v.replace(true)))
+    }
+    pub(super) fn is_denied() -> bool {
+        DENIED.with(|v| v.get())
     }
 }

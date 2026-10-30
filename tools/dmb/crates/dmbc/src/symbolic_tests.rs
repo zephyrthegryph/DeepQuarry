@@ -620,6 +620,7 @@ fn parallel_fixture() -> (ColdFrontend, Vec<LoweredUnit>) {
             .extend([payload.clone(), payload]);
         unit.source_helpers
             .push(crate::argument_sources::LoweredHelper {
+                original_root: None,
                 owner: unit.identity,
                 argument: 0,
                 code: unit.code.clone(),

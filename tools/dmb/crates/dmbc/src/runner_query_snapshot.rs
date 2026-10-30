@@ -4,7 +4,7 @@
 mod control_batch;
 #[path = "runner_query_source_admission.rs"]
 mod source_admission;
-pub(crate) use source_admission::SourceFrameCapture;
+pub(crate) use source_admission::{SourceAnswerPublication, SourceAnswersMode, SourceFrameCapture};
 #[path = "runner_query_named_policy.rs"]
 mod named_policy;
 #[path = "runner_query_native_policy.rs"]
@@ -68,6 +68,7 @@ pub(crate) struct SourceSnapshot {
     native_value_input: Option<Arc<dm_analysis::value_query::ArchiveValueInput>>,
     native_value_queries: Option<Arc<dyn dm_analysis::value_query::ArchiveValueQueries>>,
     native_raw_queries: Option<Arc<crate::query_db::QueryDb>>,
+    source_answers: Option<crate::query_db::SourceAnswerScopeOwner>,
 }
 struct ReplayProof {
     inputs: crate::input_snapshot::InputSnapshot,
@@ -99,6 +100,37 @@ impl SourceSnapshot {
             .as_ref()
             .ok_or_else(|| std::io::Error::other("current semantic source mapping unavailable"))?;
         evidence.check(mapping)
+    }
+    /// Narrow source structural family on the compiler's original Answers table.
+    /// Every request checks exact source/profile/binding before ANY cached read.
+    pub(crate) fn source_answer_hash(
+        &self,
+        tree: &dm_tree::SemanticTree,
+        question: dm_ir::ResolveQuery,
+    ) -> std::io::Result<u128> {
+        if !std::ptr::eq(tree, self.tree.as_ref()) {
+            return Err(std::io::Error::other("source Answers tree is foreign"));
+        }
+        let scope = self
+            .source_answers
+            .as_ref()
+            .ok_or(std::io::ErrorKind::Unsupported)?;
+        self.require_semantic_source_encoding()?;
+        let queries = self
+            .native_raw_queries
+            .as_ref()
+            .ok_or_else(|| std::io::Error::other("source Answers compiler Db unavailable"))?;
+        queries.source_answer_hash(
+            scope,
+            tree,
+            self.source_mapping
+                .as_deref()
+                .ok_or_else(|| std::io::Error::other("source Answers map unavailable"))?,
+            self.body_archive
+                .as_deref()
+                .ok_or_else(|| std::io::Error::other("source Answers archive unavailable"))?,
+            question,
+        )
     }
     /// Partial migration endpoint: findings only, never a model round-trip.
     pub(crate) fn write_native_checker(
@@ -211,8 +243,12 @@ impl SourceSnapshot {
         if let Some(evidence) = &self.semantic_sources {
             census.semantic_source_evidence(evidence);
         }
+        if let Some(scope) = &self.source_answers {
+            scope.census(census);
+        }
         if let Some(queries) = &self.native_raw_queries {
             queries.purity_census(census);
+            queries.answer_storage_census(census);
             let stats = queries.raw_policy_cache_stats();
             census.unknown("query_snapshot.native_raw_query_cache",&format!(
                 "{} nodes; input/params estimate {} bytes; derived estimate {} bytes; cache admission estimates only, private common source-view/config/result allocations not counted exactly",
@@ -366,6 +402,7 @@ impl SourceSnapshot {
             native_value_input,
             native_value_queries: None,
             native_raw_queries: None,
+            source_answers: None,
             occurrences: Arc::clone(&frontend.snapshot.occurrences),
             body_archive,
             native_policy_inputs: policy,
@@ -1054,6 +1091,7 @@ impl SourceSnapshot {
             native_value_input: None,
             native_value_queries: None,
             native_raw_queries: Some(queries),
+            source_answers: None,
         })
     }
     /// Only the current published diagnostic frame supplies this owner; no

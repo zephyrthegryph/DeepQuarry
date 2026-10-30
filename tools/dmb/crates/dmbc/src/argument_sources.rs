@@ -5,13 +5,18 @@ use crate::{
     lowering::UnitIdentity,
 };
 use dm_codegen_byond::{
-    ProcedureInputs, lower_resolver::ResolverProc, procedure_abi::ArgumentSourceHelper,
+    lower_resolver::ResolverProc, procedure_abi::ArgumentSourceHelper, ProcedureInputs,
 };
 use dm_ir::{ProcedureMetadata, Resolver, SymbolTable};
 use dm_syntax::{Item, TokenKind};
 use dm_tree::frontend::ColdFrontend;
+mod original;
+pub(crate) use original::{
+    compile_body_original, compile_body_original_with_references, compile_lossless_body_original,
+    lower_helpers_original, rebase_cached_helper_original, OriginalBodyFailure, OriginalBodyInputs,
+};
 mod header_recipe;
-pub(crate) use header_recipe::current_header_modifier;
+pub(crate) use header_recipe::{current_header_modifier, current_original_header_modifier};
 mod failure;
 mod visible_formals;
 pub use failure::HelperFailure;
@@ -22,6 +27,9 @@ pub struct LoweredHelper {
     pub argument: u32,
     pub code: ResolverProc,
     pub debug_origins: DebugOrigins,
+    /// Coordinate domain only; never source authority. Original recipes must
+    /// reissue against a current private header view before using this span.
+    pub original_root: Option<dm_syntax::Span>,
 }
 /// Locate the actual captured source expression in the signature. The typed
 /// parameter's relative span is checked against the real expanded header before
@@ -343,6 +351,7 @@ pub fn lower_helpers<R: Resolver>(
         code.procedure.argument_value_sources.clear();
         result.push(LoweredHelper {
             owner,
+            original_root: None,
             argument: u32::try_from(helper.argument)
                 .map_err(|_| "argument source position exceeds u32")?,
             code,
@@ -378,6 +387,7 @@ pub(crate) fn rebase_cached_helper(
     let debug_origins = current_helper_origin(&context, helper)?;
     Ok(LoweredHelper {
         owner: context.owner,
+        original_root: None,
         argument,
         code,
         debug_origins,

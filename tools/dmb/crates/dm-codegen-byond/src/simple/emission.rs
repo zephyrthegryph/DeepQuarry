@@ -1,6 +1,13 @@
 //! Emission lowering over the shared compiler context.
 use super::*;
 
+#[cfg(test)]
+std::thread_local! { static DEFAULT_TEXT_PARSES: std::cell::Cell<usize> = const { std::cell::Cell::new(0) }; }
+#[cfg(test)]
+pub(super) fn default_text_parses() -> usize {
+    DEFAULT_TEXT_PARSES.with(|n| n.get())
+}
+
 impl Compiler<'_> {
     pub(super) fn emit(&mut self, opcode: u32, operands: Vec<Word>) {
         // Branch entries must establish their own source before executing.
@@ -81,7 +88,55 @@ impl Compiler<'_> {
                 "parameter default count differs from names",
             ));
         }
+        if let Some((signature, source)) = self.parameter_roots {
+            let entries = signature
+                .entries()
+                .map_err(|reason| error("parameters", reason))?;
+            let ordinary = entries.iter().filter(|entry| !entry.variadic()).count();
+            if ordinary != self.bindings.parameters.len() {
+                return Err(error(
+                    "parameters",
+                    "original parameter root roster differs from bindings",
+                ));
+            }
+            for (index, entry) in entries.iter().filter(|entry| !entry.variadic()).enumerate() {
+                if source.get(entry.name().range())
+                    != Some(self.bindings.parameters[index].as_str())
+                {
+                    return Err(error(
+                        "parameters",
+                        "original parameter root name differs from bindings",
+                    ));
+                }
+                let default = entry
+                    .expressions()
+                    .map_err(|reason| error("parameters", reason))?
+                    .and_then(|roots| roots.default());
+                if default.is_some()
+                    != self
+                        .bindings
+                        .parameter_defaults
+                        .get(index)
+                        .is_some_and(Option::is_some)
+                {
+                    return Err(error(
+                        "parameters",
+                        "original parameter default presence differs from bindings",
+                    ));
+                }
+            }
+        }
+        let mut originals = self.parameter_roots.map(|(signature, _)| {
+            signature
+                .entries()
+                .unwrap()
+                .iter()
+                .filter(|entry| !entry.variadic())
+        });
         for (index, default) in self.bindings.parameter_defaults.iter().enumerate() {
+            let original_entry = originals
+                .as_mut()
+                .map(|entries| entries.next().expect("validated original parameter roster"));
             let Some(default) = default else {
                 continue;
             };
@@ -91,25 +146,50 @@ impl Compiler<'_> {
             self.emit(opcode::TEST, vec![]);
             let skip = self.label();
             self.emit(opcode::JZ, vec![Word::Branch(skip)]);
-            if let Some(path) = self
-                .bindings
-                .parameter_types
-                .get(&self.bindings.parameters[index])
-            {
-                let parsed = parse_expression(default);
-                if !parsed.diagnostics.is_empty() {
-                    return Err(error(default, "invalid parameter default expression"));
+            let original = original_entry.map(|entry| {
+                entry
+                    .expressions()
+                    .unwrap()
+                    .and_then(|roots| roots.default())
+                    .expect("validated original default")
+            });
+            if let Some(expr) = original {
+                if let Some(path) = self
+                    .bindings
+                    .parameter_types
+                    .get(&self.bindings.parameters[index])
+                {
+                    self.local_initializer(
+                        expr,
+                        &format!("var{path}/{}", self.bindings.parameters[index]),
+                        default,
+                    )?;
+                } else {
+                    self.expression(expr, default)?;
                 }
-                let expr = parsed
-                    .expr
-                    .ok_or_else(|| error(default, "missing parameter default expression"))?;
-                self.local_initializer(
-                    &expr,
-                    &format!("var{path}/{}", self.bindings.parameters[index]),
-                    default,
-                )?;
             } else {
-                self.expression_text(default, default)?;
+                #[cfg(test)]
+                DEFAULT_TEXT_PARSES.with(|n| n.set(n.get() + 1));
+                if let Some(path) = self
+                    .bindings
+                    .parameter_types
+                    .get(&self.bindings.parameters[index])
+                {
+                    let parsed = parse_expression(default);
+                    if !parsed.diagnostics.is_empty() {
+                        return Err(error(default, "invalid parameter default expression"));
+                    }
+                    let expr = parsed
+                        .expr
+                        .ok_or_else(|| error(default, "missing parameter default expression"))?;
+                    self.local_initializer(
+                        &expr,
+                        &format!("var{path}/{}", self.bindings.parameters[index]),
+                        default,
+                    )?;
+                } else {
+                    self.expression_text(default, default)?;
+                }
             }
             self.emit(opcode::SET_VAR, vec![slot]);
             self.result.code.items.push(CodeItem::Label(skip));

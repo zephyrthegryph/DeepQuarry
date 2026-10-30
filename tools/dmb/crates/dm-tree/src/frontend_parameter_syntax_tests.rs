@@ -92,14 +92,45 @@ fn original_parameter_receipt_is_profile_bound_and_does_not_mutate_runtime_signa
         .is_err());
 }
 #[test]
-fn original_parameter_receipt_rejects_absolute_runtime_header_declaration() {
-    let archive = archive("/datum/other\n/proc/check(/datum/marker)\n    return\n");
+fn original_parameter_receipt_issues_absolute_type_and_only_real_formals() {
+    let source="/datum/other\n/proc/check(datum/D,/datum/marker,actual_power=1)\n    return actual_power\n";
+    let archive = archive(source);
     let profile = archive.tree().checker_builtin_profile().unwrap();
     let body = archive.parse(0).unwrap();
+    let view = body.checker_parameters(profile).unwrap();
+    assert_eq!(
+        view.entries()
+            .unwrap()
+            .iter()
+            .map(|p| view.name(p).unwrap())
+            .collect::<Vec<_>>(),
+        ["D", "actual_power"]
+    );
+    assert_eq!(
+        view.absolute_declarations().unwrap()[0]
+            .written_path(archive.expanded_source())
+            .unwrap(),
+        "/datum/marker"
+    );
+    assert!(archive
+        .tree()
+        .lookup_type(dm_ir::SymbolId::of("/datum/marker"))
+        .is_some());
+    let metadata = archive
+        .tree()
+        .member(body.occurrence().member)
+        .unwrap()
+        .metadata
+        .procedure
+        .as_deref()
+        .unwrap();
+    assert_eq!(metadata.signature.parameters.len(), 2);
     assert!(body
-        .checker_parameters(profile)
-        .unwrap_err()
-        .contains("absolute parameter-header"));
+        .source_header_expressions()
+        .unwrap()
+        .default(1)
+        .unwrap()
+        .is_some());
 }
 #[test]
 fn parameter_source_view_rejects_foreign_callable_tree_and_copied_entry() {
@@ -153,4 +184,108 @@ fn same_semantic_tree_and_member_do_not_authorize_another_real_source_occurrence
     let view = a.checker_parameters(profile).unwrap();
     assert!(view.require_for(second.tree(), b.occurrence()).is_err());
     assert!(view.require_for(first.tree(), a.occurrence()).is_ok());
+}
+
+#[test]
+fn header_roots_borrow_exact_original_owner_and_selected_metadata() {
+    let current = archive("/proc/p(x=(1+2), y=3 in list(4), z)\n    return x\n");
+    let body = current.parse(0).unwrap();
+    let view = body.source_header_expressions().unwrap();
+    let entry = &body.parameter_storage().entries().unwrap()[0];
+    let canonical = entry.expressions().unwrap().unwrap().default().unwrap();
+    assert!(std::ptr::eq(view.default(0).unwrap().unwrap(), canonical));
+    assert!(view.in_source(1).unwrap().is_some());
+    assert!(view.default(2).unwrap().is_none());
+    assert!(view.default(3).is_err());
+    view.require_for(current.tree(), body.occurrence(), view.selected_metadata())
+        .unwrap();
+    let copied = view.selected_metadata().clone();
+    assert!(view
+        .require_for(current.tree(), body.occurrence(), &copied)
+        .unwrap_err()
+        .contains("metadata owner"));
+    let occurrence = body.occurrence().clone();
+    assert!(view
+        .require_for(current.tree(), &occurrence, view.selected_metadata())
+        .is_err());
+    let foreign = archive("/proc/p(x=(1+2), y=3 in list(4), z)\n    return x\n");
+    assert!(view
+        .require_for(foreign.tree(), body.occurrence(), view.selected_metadata())
+        .is_err());
+}
+#[test]
+fn optional_header_refusal_never_becomes_an_empty_root_view() {
+    let archive = archive(&format!(
+        "/proc/p(x={})\n    return 1\n",
+        "!".repeat(300) + "1"
+    ));
+    let body = archive.parse(0).unwrap();
+    assert!(body.source_parameters().is_ok());
+    assert!(body.source_header_expressions().is_err());
+}
+
+#[test]
+fn header_expression_tokens_preserve_original_leading_comments_and_unicode() {
+    let current =
+        archive("/proc/p(x=/*first*/(1+2), y=\"é漢\" in /*source*/list(4))\n    return x\n");
+    let body = current.parse(0).unwrap();
+    let view = body.source_header_expressions().unwrap();
+    assert!(view.default(0).unwrap().is_some());
+    assert!(view.default(1).unwrap().is_some());
+    assert!(view.in_source(1).unwrap().is_some());
+}
+
+#[test]
+fn original_header_handle_survives_consumed_parsed_wrapper_without_copy_or_query() {
+    let provider = Source(dm_preprocess::AcquiredSource::from_original_bytes(
+        b"/proc/p(x=1+2)\n    return x\n".to_vec(),
+        (),
+    ));
+    #[derive(Debug)]
+    struct Observe(Arc<std::sync::atomic::AtomicUsize>);
+    impl BodySyntaxQueries for Observe {
+        fn syntax(&self, input: &Arc<BodySyntaxInput>) -> Result<Arc<BodySyntax>, Diagnostic> {
+            self.0.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            input.parse().map(Arc::new)
+        }
+    }
+    let parses = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let frontend = build(
+        Path::new("header-handle.dm"),
+        &provider,
+        &Default::default(),
+        1,
+    )
+    .unwrap()
+    .with_body_queries(Arc::new(Observe(Arc::clone(&parses))));
+    let parsed = frontend.parse_body(&frontend.bodies[0]).unwrap();
+    let storage = Arc::clone(parsed.parameter_storage());
+    let root = storage.entries().unwrap()[0]
+        .expressions()
+        .unwrap()
+        .unwrap()
+        .default()
+        .unwrap() as *const dm_syntax::Expr;
+    let handle = parsed.share_header_expressions().unwrap();
+    assert!(Arc::ptr_eq(&storage, handle.storage()));
+    let (item, statements) = parsed.into_parts();
+    drop(item);
+    drop(statements);
+    assert_eq!(parses.load(std::sync::atomic::Ordering::Relaxed), 1);
+    let view = handle.view().unwrap();
+    assert_eq!(
+        view.default(0).unwrap().unwrap() as *const dm_syntax::Expr,
+        root
+    );
+    assert_eq!(parses.load(std::sync::atomic::Ordering::Relaxed), 1);
+    view.require_for(
+        &frontend.snapshot.tree,
+        &frontend.bodies[0],
+        view.selected_metadata(),
+    )
+    .unwrap();
+    let copied = frontend.bodies[0].clone();
+    assert!(view
+        .require_for(&frontend.snapshot.tree, &copied, view.selected_metadata())
+        .is_err());
 }

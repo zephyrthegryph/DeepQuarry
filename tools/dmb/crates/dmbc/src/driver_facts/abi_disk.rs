@@ -18,7 +18,7 @@ use std::{
 const SCHEMA: u32 = 0x0204_0015;
 const ENGINE_SCHEMA: u32 = 0x0204_0011;
 const LIMIT: usize = 1024 * 1024;
-const VERSION: u32 = 4;
+const VERSION: u32 = 5;
 #[derive(Serialize, Deserialize, PartialEq)]
 struct EngineProof {
     bytes: Vec<u8>,
@@ -214,8 +214,10 @@ impl Transport {
         recording: &dyn Resolver,
     ) -> Option<PreparedUnit> {
         static PROOF: dm_profile::Accumulator = dm_profile::Accumulator::new("abi.disk_proof");
-        static CANDIDATE: dm_profile::Accumulator = dm_profile::Accumulator::new("abi.disk_candidate");
-        static REPLAY: dm_profile::Accumulator = dm_profile::Accumulator::new("abi.disk_reads_replay");
+        static CANDIDATE: dm_profile::Accumulator =
+            dm_profile::Accumulator::new("abi.disk_candidate");
+        static REPLAY: dm_profile::Accumulator =
+            dm_profile::Accumulator::new("abi.disk_reads_replay");
         let proof_timer = PROOF.time();
         let proof = InputsProof::capture(&current.inputs, pure)?;
         if !self.admit_engine(&current.inputs, pure) {

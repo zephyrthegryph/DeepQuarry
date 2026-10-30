@@ -104,9 +104,17 @@ fn main() {
             }
         }
     }
+    // Hash the actual files consumed by this Cargo crate, never client input.
+    let manifest = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").expect("Cargo manifest"));
+    let geometry_sha =
+        hash(&manifest.join("src/query_db/native_arc_allocation.rs")).unwrap_or_default();
+    let ownership_sha =
+        hash(&manifest.join("src/query_db/no_weak_arc_owner.rs")).unwrap_or_default();
+    let implementation_matched = policy::implementation_matches(&geometry_sha, &ownership_sha);
     let out = PathBuf::from(env::var_os("OUT_DIR").expect("Cargo OUT_DIR"));
-    let code=format!("pub const CANDIDATE_MATCHED:bool={candidate};\npub const PROBE_APPROVED:bool={};\npub const DESCRIPTION:&str={description:?};\n",candidate&&policy::PROBE_APPROVED);
+    let code=format!("pub const CANDIDATE_MATCHED:bool={candidate};\npub const PROBE_APPROVED:bool={};\npub const DESCRIPTION:&str={description:?};\n",candidate&&implementation_matched&&policy::PROBE_APPROVED);
     let code=format!("{code}pub const CARGO_RUSTC_PATH:&str={compiler_path:?};\npub const CARGO_TARGET:&str={cargo_target:?};\npub const SYSROOT:&str={compiler_sysroot:?};\npub const TARGET_LIBDIR:&str={compiler_target_libdir:?};\npub const LIBALLOC_ARTIFACT:&str={liballoc_artifact:?};\n");
+    let code = format!("{code}pub const GEOMETRY_IMPLEMENTATION_SHA:&str={geometry_sha:?};\npub const OWNERSHIP_IMPLEMENTATION_SHA:&str={ownership_sha:?};\npub const IMPLEMENTATION_MATCHED:bool={implementation_matched};\n");
     fs::write(out.join("native_arc_profile.rs"), code)
         .expect("write crate-local Arc profile receipt");
 }

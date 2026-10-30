@@ -1,6 +1,6 @@
 //! SAME canonical std::Arc payload, private lifetime wrappers only.
-//! No production constructor issues ValueRetentionPermit: stable std::Arc does
-//! not expose allocation Layout, so the source endpoint remains unavailable.
+//! Source retention uses an independently qualified compiler/local-implementation
+//! allocation contract; unknown profiles cannot issue a retention permit.
 use super::no_weak_arc_owner::NoWeakArc;
 use super::source_allocation::SourceLease;
 pub(super) type SharedSourceLease = NoWeakArc<SourceLease>;
@@ -47,11 +47,22 @@ impl ValueOwner {
         ))
     }
     pub(super) fn census(&self, c: &mut crate::heap_census::HeapCensus) {
-        c.arc_object("answers.original_value", &self.inner);
-        if let Some(lease) = self.source_retention.get() {
-            lease.census(c, "answers.source_retention_lease");
+        if let Ok(plan) = super::native_arc_allocation::NativeArcAllocationPlan::canonical_value() {
+            c.qualified_arc("answers.original_value", &self.inner, plan.layout());
+        } else {
+            c.arc_object("answers.original_value", &self.inner);
+            c.unknown(
+                "answers.original_value",
+                "unqualified std Arc control block Layout is not exposed",
+            );
         }
-        c.unknown("answers.original_value","std Arc control blocks and allocation Layout are not exposed; no exact source allocation contract is issued");
+        if let Some(lease) = self.source_retention.get() {
+            lease.census_source_lease(c);
+        }
+        c.unknown(
+            "answers.original_value",
+            "qualified capacity is the requested Layout, not allocator rounding or RSS",
+        );
     }
 }
 impl Deref for ValueOwner {
@@ -104,16 +115,28 @@ impl PooledOwner {
         } else {
             // This does not dereference dead T. Weak retains the SAME original
             // allocation; its payload region still occupies size_of(T) bytes.
-            c.exposed_buffer(
-                "answers.weak_only_original_value",
-                self.weak.as_ptr() as usize,
-                0,
-                std::mem::size_of::<AnswerValue>(),
-            );
-            c.unknown("answers.weak_only_original_value","payload region remains allocated via original Weak; std Arc control block Layout is unavailable");
+            if let Ok(plan) =
+                super::native_arc_allocation::NativeArcAllocationPlan::canonical_value()
+            {
+                c.qualified_weak_payload(
+                    "answers.weak_only_original_value",
+                    &self.weak,
+                    plan.layout(),
+                );
+            } else {
+                c.exposed_buffer(
+                    "answers.weak_only_original_value",
+                    self.weak.as_ptr() as usize,
+                    0,
+                    std::mem::size_of::<AnswerValue>(),
+                );
+            }
+            if super::native_arc_allocation::NativeArcAllocationPlan::canonical_value().is_err() {
+                c.unknown("answers.weak_only_original_value","payload region remains allocated via original Weak; unqualified std Arc control block Layout is unavailable");
+            }
         }
         if let Some(lease) = &self.retention {
-            lease.census(c, "answers.source_retention_lease");
+            lease.census_source_lease(c);
         }
     }
 }
@@ -127,10 +150,10 @@ impl Drop for PooledOwner {
         drop(retention);
     }
 }
-/// Opaque and intentionally UNISSUED in production. A future supported factory
-/// must pre-admit both the canonical value allocation and retention-owner
-/// allocation using a real supported allocation contract, then bind this exact
-/// original ValueOwner. Installed stdlib source alone is not such authority.
+/// Exact-owner attachment authority. Only SourceValueReservation can issue this
+/// in production, after qualifying and reserving BOTH requested allocation
+/// Layouts. Unknown/unapproved profiles issue none; stdlib inspection alone is
+/// insufficient. The test-only fixture below proves lifetime ordering only.
 pub(super) struct ValueRetentionPermit<'a> {
     owner: &'a ValueOwner,
     retention: SharedSourceLease,
@@ -172,5 +195,106 @@ impl AnswerValues {
         // base survives. No pooled Weak to this value remains; live strong
         // wrappers still hold its allocation until their actual final drop.
         owner.install_retention(permit).map(|_| ())
+    }
+}
+
+/// Stack reservation; no value or retention Arc is born before admission.
+pub(super) struct SourceValueReservation {
+    lease: SourceLease,
+}
+impl SourceValueReservation {
+    pub(super) fn reserve(ledger: &Arc<SourceLedger>) -> io::Result<Self> {
+        use super::native_arc_allocation::NativeArcAllocationPlan as Plan;
+        let value = Plan::canonical_value()
+            .map_err(|_| io::ErrorKind::Unsupported)?
+            .layout();
+        let lease = Plan::retention_lease()
+            .map_err(|_| io::ErrorKind::Unsupported)?
+            .layout();
+        let bytes = value
+            .size()
+            .checked_add(lease.size())
+            .ok_or(io::ErrorKind::OutOfMemory)?;
+        Ok(Self {
+            lease: ledger
+                .reserve(bytes)
+                .map_err(|_| io::ErrorKind::OutOfMemory)?,
+        })
+    }
+    pub(super) fn existing(self, owner: &ValueOwner) -> ValueRetentionPermit<'_> {
+        ValueRetentionPermit {
+            owner,
+            retention: SharedSourceLease::new(self.lease),
+        }
+    }
+    pub(super) fn value(
+        self,
+        hash: u128,
+        positive: bool,
+        query: dm_ir::ResolveQuery,
+    ) -> ValueOwner {
+        let retention = SharedSourceLease::new(self.lease);
+        ValueOwner::from_arc(Arc::new(AnswerValue {
+            hash,
+            positive,
+            query,
+            source_retention: std::sync::OnceLock::from(retention),
+        }))
+    }
+}
+impl ValueOwner {
+    pub(super) fn source_admitted(&self) -> bool {
+        self.source_retention.get().is_some()
+    }
+}
+impl PooledOwner {
+    pub(super) fn same_value(&self, value: &ValueOwner) -> bool {
+        self.matches(value)
+    }
+    pub(super) fn attach_reserved(
+        &mut self,
+        value: &ValueOwner,
+        reservation: SourceValueReservation,
+    ) -> io::Result<()> {
+        if !self.matches(value) {
+            return Err(io::ErrorKind::InvalidInput.into());
+        }
+        self.retention = Some(value.install_retention(reservation.existing(value))?);
+        Ok(())
+    }
+}
+
+impl AnswerValues {
+    pub(super) fn retain_source_value(&self, id: u128, owner: &ValueOwner) -> io::Result<()> {
+        if owner.source_admitted() {
+            return Ok(());
+        }
+        let mut pooled = self.shards[(id as usize) % VALUE_SHARDS]
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        if owner.source_admitted() {
+            return Ok(());
+        }
+        let reservation = SourceValueReservation::reserve(&self.source_ledger)?;
+        if let Some(entry) = pooled
+            .get_mut(&(id as u64))
+            .filter(|entry| entry.same_value(owner))
+        {
+            entry.attach_reserved(owner, reservation)
+        } else {
+            owner
+                .install_retention(reservation.existing(owner))
+                .map(|_| ())
+        }
+    }
+}
+
+impl NoWeakArc<SourceLease> {
+    pub(super) fn census_source_lease(&self, c: &mut crate::heap_census::HeapCensus) {
+        if let Ok(plan) = super::native_arc_allocation::NativeArcAllocationPlan::retention_lease() {
+            self.census_layout(c, "answers.source_retention_lease", plan.layout());
+        } else {
+            self.census(c, "answers.source_retention_lease");
+        }
     }
 }

@@ -97,13 +97,37 @@ impl ParameterSyntax {
         Ok((!out.is_empty()).then_some(out))
     }
 }
+/// An absolute header entry declares a TYPE and consumes no formal slot.
+/// Its written path is retained, never normalized into a parameter name/type.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct HeaderTypeDeclarationSyntax {
+    ordinal: usize,
+    written_path: Span,
+}
+impl HeaderTypeDeclarationSyntax {
+    pub fn ordinal(&self) -> usize {
+        self.ordinal
+    }
+    pub fn span(&self) -> Span {
+        self.written_path
+    }
+    pub fn written_path<'a>(&self, source: &'a str) -> Result<&'a str, &'static str> {
+        source
+            .get(self.written_path.range())
+            .ok_or("absolute header declaration outside original source")
+    }
+}
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ParameterSignature {
     header: Span,
     entries: Box<[ParameterSyntax]>,
+    declarations: Box<[HeaderTypeDeclarationSyntax]>,
     refusal: Option<&'static str>,
 }
 impl ParameterSignature {
+    pub fn absolute_declarations(&self) -> Result<&[HeaderTypeDeclarationSyntax], &'static str> {
+        self.refusal.map_or(Ok(&self.declarations), Err)
+    }
     pub fn header(&self) -> Span {
         self.header
     }
@@ -117,6 +141,12 @@ impl ParameterSignature {
             visit(
                 self.entries.as_ptr() as usize,
                 std::mem::size_of_val(self.entries.as_ref()),
+            );
+        }
+        if !self.declarations.is_empty() {
+            visit(
+                self.declarations.as_ptr() as usize,
+                std::mem::size_of_val(self.declarations.as_ref()),
             );
         }
         for entry in &self.entries {
@@ -334,6 +364,67 @@ fn one<T: ParameterToken>(
         expressions,
     })
 }
+fn absolute<T: ParameterToken>(
+    source: &str,
+    tokens: &[T],
+    ordinal: usize,
+    base: usize,
+) -> Result<HeaderTypeDeclarationSyntax, &'static str> {
+    // The native signature declaration producer accepts an unadorned absolute
+    // identifier path only. Original adjacency is significant; comments/defaults,
+    // arrays and declaration namespaces are not silently erased here.
+    let mut tokens = tokens
+        .iter()
+        .filter(|t| !matches!(t.kind(), TokenKind::Whitespace | TokenKind::Newline));
+    let first = tokens.next().ok_or("absolute header declaration missing")?;
+    if first.text(source) != "/" {
+        return Err("absolute header declaration lacks original slash");
+    }
+    let mut end = first.span().end;
+    let mut want_identifier = true;
+    for t in tokens {
+        if t.span().start != end {
+            return Err("absolute header declaration path is not original adjacent tokens");
+        }
+        if want_identifier {
+            if t.kind() != TokenKind::Ident || matches!(t.text(source), "var" | "proc" | "verb") {
+                return Err("unsupported absolute header declaration component");
+            }
+        } else if t.text(source) != "/" {
+            return Err("absolute header declaration has unsupported suffix");
+        }
+        want_identifier = !want_identifier;
+        end = t.span().end;
+    }
+    if want_identifier {
+        return Err("absolute header declaration path is incomplete");
+    }
+    Ok(HeaderTypeDeclarationSyntax {
+        ordinal,
+        written_path: shift(Span::new(first.span().start, end), base)?,
+    })
+}
+fn append<T: ParameterToken>(
+    source: &str,
+    tokens: &[T],
+    base: usize,
+    rows: &mut Vec<ParameterSyntax>,
+    declarations: &mut Vec<HeaderTypeDeclarationSyntax>,
+) -> Result<(), &'static str> {
+    if rows.iter().any(ParameterSyntax::variadic) {
+        return Err("original header entry follows variadic marker");
+    }
+    if tokens
+        .iter()
+        .find(|t| !trivia(*t))
+        .is_some_and(|t| t.text(source) == "/")
+    {
+        declarations.push(absolute(source, tokens, declarations.len(), base)?);
+    } else {
+        rows.push(one(source, tokens, rows.len(), base)?);
+    }
+    Ok(())
+}
 fn shift(span: Span, base: usize) -> Result<Span, &'static str> {
     Ok(Span::new(
         span.start
@@ -366,7 +457,7 @@ fn issue_tokens<T: ParameterToken>(
     header: Span,
     base: usize,
 ) -> ParameterSignature {
-    let result = (|| -> Result<Box<[ParameterSyntax]>, &'static str> {
+    let result = (|| -> Result<(Box<[ParameterSyntax]>,Box<[HeaderTypeDeclarationSyntax]>), &'static str> {
         let first = tokens
             .iter()
             .position(|t| {
@@ -379,6 +470,7 @@ fn issue_tokens<T: ParameterToken>(
         let mut stack = vec![")"];
         let mut begin = first + 1;
         let mut rows = Vec::new();
+        let mut declarations=Vec::new();
         for (i, t) in tokens.iter().enumerate().skip(first + 1) {
             if t.span().end > header.end {
                 return Err("original parameter close outside header");
@@ -396,16 +488,16 @@ fn issue_tokens<T: ParameterToken>(
                     }
                     if stack.is_empty() {
                         if tokens[begin..i].iter().any(|t| !trivia(t)) {
-                            rows.push(one(source, &tokens[begin..i], rows.len(), base)?)
+                            append(source,&tokens[begin..i],base,&mut rows,&mut declarations)?
                         }
-                        return Ok(rows.into_boxed_slice());
+                        return Ok((rows.into_boxed_slice(),declarations.into_boxed_slice()));
                     }
                 }
                 "," if stack.len() == 1 => {
                     if tokens[begin..i].iter().all(trivia) {
                         return Err("empty original parameter between separators");
                     }
-                    rows.push(one(source, &tokens[begin..i], rows.len(), base)?);
+                    append(source,&tokens[begin..i],base,&mut rows,&mut declarations)?;
                     begin = i + 1;
                 }
                 _ => (),
@@ -419,19 +511,22 @@ fn issue_tokens<T: ParameterToken>(
             return ParameterSignature {
                 header,
                 entries: Box::default(),
+                declarations: Box::default(),
                 refusal: Some(refusal),
             }
         }
     };
     match result {
-        Ok(entries) => ParameterSignature {
+        Ok((entries, declarations)) => ParameterSignature {
             header,
             entries,
+            declarations,
             refusal: None,
         },
         Err(refusal) => ParameterSignature {
             header,
             entries: Box::default(),
+            declarations: Box::default(),
             refusal: Some(refusal),
         },
     }

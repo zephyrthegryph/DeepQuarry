@@ -629,3 +629,15 @@ fn original_dimension_division_cannot_change_the_local_binding_name() {
     let source="/datum/T\n    var/member\n/proc/check()\n    var/datum/T/P[6 / 2]\n    return P[1].member\n";
     assert!(observe_mode(source, true).is_ok());
 }
+
+#[test]
+fn absolute_header_type_is_not_a_checker_argument_or_implicit_local() {
+    let rows =
+        observe("/proc/probe(datum/M,/datum/marker/A,actual_power=1)\n    return A\n").unwrap();
+    assert_eq!(
+        rows.iter()
+            .map(|row| (row.0.as_str(), row.1.as_str(), row.2))
+            .collect::<Vec<_>>(),
+        [("missing_var", "A", 2)]
+    );
+}

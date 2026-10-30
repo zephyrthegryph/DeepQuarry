@@ -111,6 +111,60 @@ impl PreparedUnit {
         })
     }
 }
+/// Request-local proof of exact original metadata selection, never a copied
+/// parameter table or an optional-expression admission. No parser is invoked.
+pub(crate) struct OriginalFormalTokens<'a> {
+    metadata: &'a ProcedureMetadata,
+    symbols: &'a SymbolTable,
+}
+impl<'a> OriginalFormalTokens<'a> {
+    pub(crate) fn capture(
+        frontend: &'a dm_tree::frontend::ColdFrontend,
+        occurrence: &dm_tree::frontend::BodyOccurrence,
+        metadata: &'a ProcedureMetadata,
+    ) -> Result<Self, AbiError> {
+        let roster = frontend.callable_roster().map_err(AbiError::unsupported)?;
+        let ordinal = roster
+            .ordinal(occurrence.member)
+            .ok_or_else(|| AbiError::unsupported("original ABI formal member unavailable"))?;
+        if !frontend
+            .bodies
+            .get(ordinal)
+            .is_some_and(|current| std::ptr::eq(current, occurrence))
+        {
+            return Err(AbiError::unsupported(
+                "original ABI formal occurrence differs",
+            ));
+        }
+        let current = frontend
+            .snapshot
+            .tree
+            .member(occurrence.member)
+            .and_then(|node| node.metadata.procedure.as_deref())
+            .ok_or_else(|| AbiError::unsupported("original ABI formal metadata unavailable"))?;
+        if !std::ptr::eq(current, metadata) {
+            return Err(AbiError::unsupported(
+                "original ABI formal metadata owner differs",
+            ));
+        }
+        Ok(Self {
+            metadata,
+            symbols: frontend.snapshot.tree.symbols(),
+        })
+    }
+    fn require_for(
+        &self,
+        metadata: &ProcedureMetadata,
+        symbols: &SymbolTable,
+    ) -> Result<(), AbiError> {
+        if !std::ptr::eq(self.metadata, metadata) || !symbols.is_extension_of(self.symbols) {
+            return Err(AbiError::unsupported(
+                "original ABI formal token owner differs",
+            ));
+        }
+        Ok(())
+    }
+}
 pub struct CapturedProcedurePolicy<'a> {
     pub evaluator: &'a dyn CapturedConstantEvaluator,
     pub inherited: &'a dyn CapturedInheritedFacts,
@@ -130,6 +184,28 @@ impl CapturedProcedurePolicy<'_> {
         self.prepare_parts(
             metadata,
             context,
+            None,
+            |symbols| dm_tree::settings::extract_settings_view(parsed, symbols),
+            || {
+                parsed
+                    .children()
+                    .map(|child| child.materialize_relative())
+                    .collect()
+            },
+        )
+    }
+    pub(crate) fn prepare_view_original(
+        &self,
+        metadata: &ProcedureMetadata,
+        parsed: dm_tree::frontend::ItemView<'_>,
+        context: &AbiContext<'_>,
+        original: &OriginalFormalTokens<'_>,
+    ) -> Result<PreparedUnit, AbiError> {
+        original.require_for(metadata, context.symbols)?;
+        self.prepare_parts(
+            metadata,
+            context,
+            Some(original),
             |symbols| dm_tree::settings::extract_settings_view(parsed, symbols),
             || {
                 parsed
@@ -148,6 +224,7 @@ impl CapturedProcedurePolicy<'_> {
         self.prepare_parts(
             metadata,
             context,
+            None,
             |symbols| dm_tree::settings::extract_settings(&parsed.children, symbols),
             || parsed.children.clone(),
         )
@@ -156,6 +233,7 @@ impl CapturedProcedurePolicy<'_> {
         &self,
         metadata: &ProcedureMetadata,
         context: &AbiContext<'_>,
+        original: Option<&OriginalFormalTokens<'_>>,
         settings: impl FnOnce(&mut SymbolTable) -> Result<Arc<[dm_ir::ProcedureSettingNode]>, String>,
         body: impl FnOnce() -> Vec<Item>,
     ) -> Result<PreparedUnit, AbiError> {
@@ -175,17 +253,31 @@ impl CapturedProcedurePolicy<'_> {
             ));
         }
         let executable = dm_tree::settings::strip_setting_items(body());
-        let prepared = procedure_abi::prepare_verified_procedure(
-            metadata,
-            context.symbols,
-            &executable,
-            ProcedureInputs {
-                resource_search_context: self.resource_search_context,
-                ..ProcedureInputs::default()
-            },
-            inherited,
-            |expression| self.evaluator.evaluate(expression, context),
-        )?;
+        let mut evaluate =
+            |expression: &SymbolicExpression| self.evaluator.evaluate(expression, context);
+        let inputs = ProcedureInputs {
+            resource_search_context: self.resource_search_context,
+            ..ProcedureInputs::default()
+        };
+        let prepared = if original.is_some() {
+            procedure_abi::prepare_verified_procedure_original_tokens(
+                metadata,
+                context.symbols,
+                &executable,
+                inputs,
+                inherited,
+                &mut evaluate,
+            )
+        } else {
+            procedure_abi::prepare_verified_procedure(
+                metadata,
+                context.symbols,
+                &executable,
+                inputs,
+                inherited,
+                &mut evaluate,
+            )
+        }?;
         Ok(PreparedUnit {
             canonical: None,
             inputs: Arc::new(prepared.inputs),
@@ -302,3 +394,7 @@ mod tests {
         assert_ne!(null, abi.canonical_bytes());
     }
 }
+
+#[cfg(test)]
+#[path = "procedure_formal_tokens_tests.rs"]
+mod original_formal_tokens_tests;

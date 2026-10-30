@@ -235,3 +235,11 @@ required-features = ["unified-oracle", "native-policy"]
 [[example]]
 name = "unified_stored_refs"
 required-features = ["unified-oracle", "native-policy"]
+
+[[example]]
+name = "unified_stats"
+required-features = ["legacy-sem", "native-policy"]
+
+[[example]]
+name = "unified_actions"
+required-features = ["legacy-sem", "native-policy"]

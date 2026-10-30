@@ -6,6 +6,8 @@
 //! clone tests use ample capacity solely to verify mode inheritance/reset.
 //! Fixed allocator-state/ledger Arc metadata is not in payload Layout counters;
 //! the integration layer must admit/census that metadata separately.
+use super::answer_value_owner::SharedSourceLease;
+use super::no_weak_arc_owner::NoWeakArc;
 use allocator_api2::alloc::{AllocError, Allocator, Global};
 use std::{
     alloc::Layout,
@@ -90,8 +92,9 @@ impl Drop for SourceLease {
         debug_assert!(before >= self.bytes);
     }
 }
-struct State {
+pub(super) struct State {
     ledger: Arc<SourceLedger>,
+    retention: Option<SharedSourceLease>,
     source: AtomicBool,
     denied: AtomicBool,
     live_layout_bytes: AtomicUsize,
@@ -104,17 +107,48 @@ struct State {
 /// No original Answers container is migrated by this prerequisite.
 pub(super) struct SourceAllocator<A: Allocator + Clone = Global> {
     backend: A,
-    state: Arc<State>,
+    state: NoWeakArc<State>,
 }
 impl<A: Allocator + Clone> Clone for SourceAllocator<A> {
     fn clone(&self) -> Self {
         Self {
             backend: self.backend.clone(),
-            state: Arc::clone(&self.state),
+            state: self.state.clone(),
         }
     }
 }
 impl SourceAllocator<Global> {
+    /// Source-only scratch allocator: actual State/lease admission precedes Arc
+    /// construction. Ordinary runtime constructors remain deliberately uncapped.
+    pub(super) fn new_source(ledger: Arc<SourceLedger>) -> std::io::Result<Self> {
+        use super::native_arc_allocation::NativeArcAllocationPlan as Plan;
+        let state = Plan::allocator_state()
+            .map_err(|_| std::io::ErrorKind::Unsupported)?
+            .layout();
+        let lease = Plan::retention_lease()
+            .map_err(|_| std::io::ErrorKind::Unsupported)?
+            .layout();
+        let bytes = state
+            .size()
+            .checked_add(lease.size())
+            .ok_or(std::io::ErrorKind::OutOfMemory)?;
+        let retention = SharedSourceLease::new(
+            ledger
+                .reserve(bytes)
+                .map_err(|_| std::io::ErrorKind::OutOfMemory)?,
+        );
+        Ok(Self {
+            backend: Global,
+            state: NoWeakArc::new(State {
+                ledger,
+                retention: Some(retention),
+                source: AtomicBool::new(false),
+                denied: AtomicBool::new(false),
+                live_layout_bytes: AtomicUsize::new(0),
+                live_allocations: AtomicUsize::new(0),
+            }),
+        })
+    }
     pub(super) fn new(ledger: Arc<SourceLedger>) -> Self {
         Self::with_backend(ledger, Global)
     }
@@ -123,8 +157,9 @@ impl<A: Allocator + Clone> SourceAllocator<A> {
     fn with_backend(ledger: Arc<SourceLedger>, backend: A) -> Self {
         Self {
             backend,
-            state: Arc::new(State {
+            state: NoWeakArc::new(State {
                 ledger,
+                retention: None,
                 source: AtomicBool::new(false),
                 denied: AtomicBool::new(false),
                 live_layout_bytes: AtomicUsize::new(0),
@@ -143,6 +178,37 @@ impl<A: Allocator + Clone> SourceAllocator<A> {
     /// Actual backend Layout totals (including private headers/padding), not RSS
     /// or a deduplicated allocation-address census. Fixed counters never retain
     /// source values, pointers, maps or per-allocation registry entries.
+    pub(super) fn census_metadata(&self, c: &mut crate::heap_census::HeapCensus) {
+        if let Ok(plan) = super::native_arc_allocation::NativeArcAllocationPlan::allocator_state() {
+            self.state
+                .census_layout(c, "answers.allocator_state", plan.layout());
+        } else {
+            self.state.census(c, "answers.allocator_state");
+        }
+        c.arc_object("answers.global_source_ledger", &self.state.ledger);
+        if let Some(retention) = &self.state.retention {
+            retention.census_source_lease(c);
+        }
+        c.unknown("answers.allocator_state","fixed State/ledger payloads visited; standard Arc control blocks remain separate from backend requested Layout counters");
+    }
+    pub(super) fn census_backing(
+        &self,
+        c: &mut crate::heap_census::HeapCensus,
+        name: &str,
+        payload: usize,
+        items: usize,
+    ) {
+        self.census_metadata(c);
+        let live = self.allocation_snapshot();
+        c.allocator_layout_group(
+            name,
+            self.state.census_identity(),
+            payload,
+            live.bytes,
+            live.allocations,
+            items,
+        );
+    }
     pub(super) fn allocation_snapshot(&self) -> AllocationSnapshot {
         AllocationSnapshot {
             bytes: self.state.live_layout_bytes.load(Ordering::Acquire),
@@ -179,7 +245,7 @@ impl Drop for SourceMode<'_> {
 
 struct Header {
     layout: Layout,
-    state: Arc<State>,
+    state: NoWeakArc<State>,
     charge: Option<SourceLease>,
 }
 fn composed_layout(payload: Layout) -> Result<(Layout, usize), AllocError> {
@@ -223,7 +289,7 @@ unsafe impl<A: Allocator + Clone> Allocator for SourceAllocator<A> {
             let header = base.cast::<Header>();
             header.as_ptr().write(Header {
                 layout: whole,
-                state: Arc::clone(&self.state),
+                state: self.state.clone(),
                 charge,
             });
             let data = NonNull::new_unchecked(base.as_ptr().add(offset));
@@ -574,6 +640,62 @@ mod tests {
         assert_eq!(calls.frees.load(Ordering::Relaxed), 1);
         unsafe {
             alloc.deallocate(smaller.cast(), small);
+        }
+        assert_eq!(ledger.snapshot().live, 0);
+    }
+    #[test]
+    fn source_state_metadata_has_real_profile_gate_and_global_lifetime_charge() {
+        let ledger = SourceLedger::new(1 << 20);
+        if super::super::native_arc_allocation::NativeArcAllocationPlan::allocator_state().is_err()
+        {
+            let error = match SourceAllocator::new_source(Arc::clone(&ledger)) {
+                Ok(_) => panic!("unqualified source State constructed"),
+                Err(e) => e,
+            };
+            assert_eq!(error.kind(), std::io::ErrorKind::Unsupported);
+            assert_eq!(ledger.snapshot().live, 0);
+            assert_eq!(ledger.snapshot().reserves, 0);
+            return;
+        }
+        let allocator = SourceAllocator::new_source(Arc::clone(&ledger)).unwrap();
+        let metadata = ledger.snapshot().live;
+        assert!(metadata > 0);
+        let alias = allocator.clone();
+        assert_eq!(ledger.snapshot().live, metadata);
+        let layout = Layout::new::<[u8; 128]>();
+        let block = {
+            let _mode = allocator.source_mode().unwrap();
+            allocator.allocate(layout).unwrap()
+        };
+        assert!(ledger.snapshot().live > metadata);
+        unsafe {
+            alias.deallocate(block.cast(), layout);
+        }
+        assert_eq!(ledger.snapshot().live, metadata);
+        drop(allocator);
+        assert_eq!(ledger.snapshot().live, metadata);
+        drop(alias);
+        assert_eq!(ledger.snapshot().live, 0);
+    }
+    #[test]
+    fn source_state_quota_denial_never_allocates_unadmitted_metadata() {
+        let ledger = SourceLedger::new(0);
+        let error = match SourceAllocator::new_source(Arc::clone(&ledger)) {
+            Ok(_) => panic!("zero source quota constructed State"),
+            Err(e) => e,
+        };
+        assert!(matches!(
+            error.kind(),
+            std::io::ErrorKind::Unsupported | std::io::ErrorKind::OutOfMemory
+        ));
+        assert_eq!(ledger.snapshot().live, 0);
+        assert_eq!(ledger.snapshot().reserves, 0);
+        // Ordinary runtime State remains usable on either profile/budget path.
+        let ordinary = SourceAllocator::new(Arc::clone(&ledger));
+        let layout = Layout::new::<u8>();
+        let value = ordinary.allocate(layout).unwrap();
+        unsafe {
+            ordinary.deallocate(value.cast(), layout);
         }
         assert_eq!(ledger.snapshot().live, 0);
     }

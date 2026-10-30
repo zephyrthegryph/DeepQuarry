@@ -47,6 +47,7 @@ pub mod predefined_resolution;
 pub mod receiver_resolution;
 pub mod reference_resolution;
 pub use canonical_answer::CanonicalResolvedAnswer;
+pub mod hierarchy_canonical;
 mod resolver;
 mod selected_references;
 pub use resolver::{

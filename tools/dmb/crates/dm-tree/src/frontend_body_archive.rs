@@ -237,6 +237,13 @@ impl SourceParameterView<'_> {
         }
         Ok(())
     }
+    pub fn absolute_declarations(
+        &self,
+    ) -> Result<&[dm_syntax::HeaderTypeDeclarationSyntax], String> {
+        self.signature
+            .absolute_declarations()
+            .map_err(str::to_owned)
+    }
     pub fn entries(&self) -> Result<&[dm_syntax::ParameterSyntax], String> {
         self.signature.entries().map_err(str::to_owned)
     }
@@ -261,6 +268,215 @@ impl SourceParameterView<'_> {
         p.type_path(self.source).map_err(str::to_owned)
     }
 }
+/// Request-local handle for the SAME existing parameter root allocation.
+/// Its frontend/occurrence references keep their original issuer lifetime;
+/// cloning the Arc cannot create a copied AST or another semantic owner.
+pub struct OriginalHeaderExpressionHandle<'frontend> {
+    frontend: &'frontend ColdFrontend,
+    occurrence: &'frontend BodyOccurrence,
+    parameters: Arc<dm_syntax::ParameterSignature>,
+    metadata: &'frontend dm_ir::ProcedureMetadata,
+    source: &'frontend str,
+}
+pub(super) fn capture_header_expression_handle<'frontend>(
+    frontend: &'frontend ColdFrontend,
+    occurrence: &'frontend BodyOccurrence,
+    parameters: Arc<dm_syntax::ParameterSignature>,
+) -> Result<OriginalHeaderExpressionHandle<'frontend>, String> {
+    // The sole caller first validates its exact ParsedBody/source-parameter
+    // binding; this private constructor cannot accept a public copied receipt.
+    let metadata = frontend
+        .snapshot
+        .tree
+        .member(occurrence.member)
+        .and_then(|member| member.metadata.procedure.as_deref())
+        .ok_or("original header metadata unavailable")?;
+    Ok(OriginalHeaderExpressionHandle {
+        frontend,
+        occurrence,
+        parameters,
+        metadata,
+        source: &frontend.issued_arena,
+    })
+}
+impl OriginalHeaderExpressionHandle<'_> {
+    pub fn require_for(
+        &self,
+        frontend: &ColdFrontend,
+        occurrence: &BodyOccurrence,
+        metadata: &dm_ir::ProcedureMetadata,
+    ) -> Result<(), String> {
+        if !std::ptr::eq(self.frontend, frontend) {
+            return Err("original header handle belongs to another frontend acquisition".into());
+        }
+        self.view()?
+            .require_for(&frontend.snapshot.tree, occurrence, metadata)
+    }
+    pub fn view(&self) -> Result<SourceHeaderExpressions<'_>, String> {
+        let view = SourceParameterView {
+            tree: &self.frontend.snapshot.tree,
+            occurrence: self.occurrence,
+            signature: &self.parameters,
+            source: self.source,
+        }
+        .header_expressions()?;
+        view.require_for(&self.frontend.snapshot.tree, self.occurrence, self.metadata)?;
+        Ok(view)
+    }
+    pub fn storage(&self) -> &Arc<dm_syntax::ParameterSignature> {
+        &self.parameters
+    }
+}
+/// Stack-only original header expression view. This owns no syntax, metadata,
+/// token table or semantic cache. Optional-root refusal never changes the
+/// independent source type-path receipt or current compiler acceptance.
+#[derive(Clone, Copy, Debug)]
+pub struct SourceHeaderExpressions<'a> {
+    parameters: SourceParameterView<'a>,
+    metadata: &'a dm_ir::ProcedureMetadata,
+}
+impl<'a> SourceParameterView<'a> {
+    pub fn header_expressions(self) -> Result<SourceHeaderExpressions<'a>, String> {
+        let metadata = self
+            .tree
+            .member(self.occurrence.member)
+            .and_then(|member| member.metadata.procedure.as_deref())
+            .ok_or("original parameter metadata unavailable")?;
+        // SourceParameterView was issued against the exact original roster.
+        // Require the optional expression domain separately, without fallback.
+        for entry in self.signature.entries()? {
+            entry.expressions()?;
+        }
+        Ok(SourceHeaderExpressions {
+            parameters: self,
+            metadata,
+        })
+    }
+}
+impl<'a> SourceHeaderExpressions<'a> {
+    pub fn require_for(
+        &self,
+        tree: &SemanticTree,
+        occurrence: &BodyOccurrence,
+        metadata: &dm_ir::ProcedureMetadata,
+    ) -> Result<(), String> {
+        self.parameters.require_for(tree, occurrence)?;
+        if !std::ptr::eq(self.metadata, metadata) {
+            return Err("header expressions belong to another selected metadata owner".into());
+        }
+        Ok(())
+    }
+    pub fn len(&self) -> usize {
+        self.metadata.signature.parameters.len()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+    pub fn selected_metadata(&self) -> &'a dm_ir::ProcedureMetadata {
+        self.metadata
+    }
+    fn entry(&self, ordinal: usize) -> Result<&'a dm_syntax::ParameterSyntax, String> {
+        let entries: &'a [dm_syntax::ParameterSyntax] = self.parameters.signature.entries()?;
+        entries
+            .get(ordinal)
+            .filter(|entry| !entry.variadic())
+            .ok_or_else(|| "header expression ordinal is not an original formal".into())
+    }
+    fn check_tokens(
+        &self,
+        expression: &dm_syntax::Expr,
+        native: &dm_ir::SymbolicExpression,
+    ) -> Result<(), String> {
+        if native.tokens.is_empty() {
+            return Err("original expression token receipt is empty".into());
+        }
+        let first = native.tokens[0].relative_span.start;
+        let mut previous = first;
+        for token in native.tokens.iter() {
+            if token.relative_span.start < previous {
+                return Err("original expression token order differs".into());
+            }
+            let begin = expression
+                .span
+                .start
+                .checked_add(
+                    token
+                        .relative_span
+                        .start
+                        .checked_sub(first)
+                        .ok_or("header expression token precedes original first token")?,
+                )
+                .ok_or("header expression token coordinate overflow")?;
+            let end = expression
+                .span
+                .start
+                .checked_add(
+                    token
+                        .relative_span
+                        .end
+                        .checked_sub(first)
+                        .ok_or("header expression token precedes original first token")?,
+                )
+                .filter(|end| *end <= expression.span.end)
+                .ok_or("header expression token escapes original root")?;
+            let spelling = self
+                .parameters
+                .source
+                .get(begin..end)
+                .ok_or("header expression token outside original source")?;
+            if self.parameters.tree.symbols().text(token.text) != Some(spelling) {
+                return Err(
+                    "header expression token differs from selected original metadata".into(),
+                );
+            }
+            previous = token.relative_span.end;
+        }
+        if previous.checked_sub(first) != Some(expression.span.end - expression.span.start) {
+            return Err("header expression metadata does not cover original root".into());
+        }
+        Ok(())
+    }
+    fn expression(
+        &self,
+        ordinal: usize,
+        source: bool,
+    ) -> Result<Option<&'a dm_syntax::Expr>, String> {
+        let entry = self.entry(ordinal)?;
+        let roots = entry.expressions()?;
+        let native = self
+            .metadata
+            .signature
+            .parameters
+            .get(ordinal)
+            .ok_or("selected header expression formal unavailable")?;
+        let symbolic = if source {
+            native.source_expression.as_ref()
+        } else {
+            native.default.as_ref()
+        };
+        let root = roots.and_then(|roots| {
+            if source {
+                roots.source()
+            } else {
+                roots.default()
+            }
+        });
+        match (root, symbolic) {
+            (None, None) => Ok(None),
+            (Some(root), Some(symbolic)) => {
+                self.check_tokens(root, symbolic)?;
+                Ok(Some(root))
+            }
+            _ => Err("original header root and selected metadata presence differ".into()),
+        }
+    }
+    pub fn default(&self, ordinal: usize) -> Result<Option<&'a dm_syntax::Expr>, String> {
+        self.expression(ordinal, false)
+    }
+    pub fn in_source(&self, ordinal: usize) -> Result<Option<&'a dm_syntax::Expr>, String> {
+        self.expression(ordinal, true)
+    }
+}
 pub(super) fn checked_source_parameters<'a>(
     tree: &'a SemanticTree,
     occurrence: &'a BodyOccurrence,
@@ -279,6 +495,21 @@ pub(super) fn checked_source_parameters<'a>(
         .procedure
         .as_ref()
         .ok_or("parameter callable signature unavailable")?;
+    for (ordinal, declaration) in parameters.absolute_declarations()?.iter().enumerate() {
+        if declaration.ordinal() != ordinal {
+            return Err("absolute header declaration ordinal mismatch".into());
+        }
+        let path = declaration.written_path(source)?;
+        let id = tree
+            .lookup_type(dm_ir::SymbolId::of(path))
+            .ok_or("original absolute header type declaration was not issued by native frontend")?;
+        let actual = tree
+            .type_node(id)
+            .ok_or("original absolute header type unavailable")?;
+        if tree.symbols().text(actual.path) != Some(path) {
+            return Err("original absolute header type spelling differs".into());
+        }
+    }
     let mut native = metadata.signature.parameters.iter();
     let mut variadic = false;
     for (ordinal, entry) in parameters.entries()?.iter().enumerate() {
@@ -332,6 +563,9 @@ impl ArchivedBody<'_> {
             &self.parameters,
             self.archive.expanded_source(),
         )
+    }
+    pub fn source_header_expressions(&self) -> Result<SourceHeaderExpressions<'_>, String> {
+        self.source_parameters()?.header_expressions()
     }
     pub fn checker_parameters(
         &self,
