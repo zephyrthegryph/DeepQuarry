@@ -111,7 +111,8 @@
 	TEST_ASSERT(paper in dq_rules_for_type(/obj/item/paper/card), "paper subtypes inherit the rule")
 	TEST_ASSERT_NULL(dq_rules_for_type(/turf/simulated/floor), "a type without rules has none")
 	TEST_ASSERT(dq_rules_heat_deferred(/obj/item/paper), "paper's rules all wait for a heat body")
-	TEST_ASSERT_NULL(dq_rules_for_type(/obj/structure/grille), "a grille's breaking point is the native default, not a rule")
+	for(var/datum/rule/grille_rule as anything in dq_rules_for_type(/obj/structure/grille))
+		TEST_ASSERT(grille_rule.heat_only, "a grille's breaking point is the native default: [grille_rule.type] watches only heat")
 	TEST_ASSERT(!rules[/datum/rule/heat_behaviour], "an abstract rule base is not registered")
 
 // ---- Generated threshold tests ----
