@@ -101,7 +101,7 @@ before code/engine/state/construction.dm code/content/state/construction_adapter
 before code/engine/state/properties/providers.dm code/content/properties/providers.dm   # validate_rules(), variant_values()
 before code/engine/state/schema.dm code/datums/state/latent_safe_types.dm              # register_defaults()
 before code/engine/state/serializer.dm code/datums/state/serializer.dm                 # identity(), lookup()
-before code/content/items/weapons/id?cards/cards.dm code/content/items/weapons/id?cards/id_stacks.dm   # base_icon
+before code/game/objects/items/weapons/id?cards/cards.dm code/content/items/weapons/id?cards/id_stacks.dm   # base_icon
 before code/modules/casino/board_games/four_in_a_row.dm code/content/casino/board_games/tic_tac_toe.dm      # change_win_count()
 before code/content/mobs/living/simple_mob/subtypes/animal/passive/possum.dm code/domains/ai/ports/possum.dm  # respond_to_damage()
 before code/modules/reagents/reagents/content/food.dm code/content/reagents/reagents/content/alcohol.dm      # nutriment_factor

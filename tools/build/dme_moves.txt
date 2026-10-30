@@ -1668,8 +1668,6 @@ code/ATMOSPHERICS/components/unary/heat_source.dm	code/content/atmos/components/
 code/ATMOSPHERICS/components/unary/outlet_injector.dm	code/domains/atmos/components/unary/outlet_injector.dm
 code/ATMOSPHERICS/components/unary/vent_pump.dm	code/content/atmos/components/unary/vent_pump.dm
 code/ATMOSPHERICS/components/unary/vent_scrubber.dm	code/content/atmos/components/unary/vent_scrubber.dm
-code/_onclick/adjacent.dm	code/content/_onclick/adjacent.dm
-code/core/datum/IsAbstract.dm	code/content/core/datum/IsAbstract.dm
 code/datums/ai_laws.dm	code/content/datums/ai_laws.dm
 code/datums/gear/_gear.dm	code/content/gear/_gear.dm
 code/datums/gear/gear_tweak_recolor.dm	code/content/gear/gear_tweak_recolor.dm
@@ -1696,8 +1694,6 @@ code/game/objects/items/devices/pipe_painter.dm	code/content/items/devices/pipe_
 code/game/objects/items/devices/radio/encryptionkey.dm	code/content/items/devices/radio/encryptionkey.dm
 code/game/objects/items/devices/translator.dm	code/content/items/devices/translator.dm
 code/game/objects/items/weapons/grenades/flashbang.dm	code/content/items/weapons/grenades/flashbang.dm
-code/game/objects/items/weapons/id cards/cards.dm	code/content/items/weapons/id cards/cards.dm
-code/game/objects/items/weapons/id cards/station_ids.dm	code/content/items/weapons/id cards/station_ids.dm
 code/game/objects/items/weapons/implants/implantlanguage.dm	code/content/items/weapons/implants/implantlanguage.dm
 code/game/objects/items/weapons/implants/implantreagent.dm	code/content/items/weapons/implants/implantreagent.dm
 code/game/objects/items/weapons/storage/ore_bag.dm	code/content/items/weapons/storage/ore_bag.dm
@@ -1715,7 +1711,6 @@ code/modules/admin/admin_tools.dm	code/content/admin/admin_tools.dm
 code/modules/admin/edit_player_panel.dm	code/content/admin/edit_player_panel.dm
 code/modules/admin/fix_player_notes_listing.dm	code/content/admin/fix_player_notes_listing.dm
 code/modules/admin/forward_topic.dm	code/content/admin/forward_topic.dm
-code/modules/admin/holder2.dm	code/content/admin/holder2.dm
 code/modules/admin/misc_admin_panels.dm	code/content/admin/misc_admin_panels.dm
 code/modules/admin/permissions_panel.dm	code/content/admin/permissions_panel.dm
 code/modules/admin/player_notes.dm	code/content/admin/player_notes.dm
@@ -1724,7 +1719,6 @@ code/modules/admin/verbs/SDQL2/SDQL_2_wrappers.dm	code/content/admin/verbs/SDQL2
 code/modules/admin/verbs/custom_event.dm	code/content/admin/verbs/custom_event.dm
 code/modules/admin/verbs/map_template_loadverb.dm	code/content/admin/verbs/map_template_loadverb.dm
 code/modules/admin/verbs/pray.dm	code/content/admin/verbs/pray.dm
-code/modules/admin/view_variables_panel.dm	code/content/admin/view_variables_panel.dm
 code/modules/alarm/alarm.dm	code/content/alarm/alarm.dm
 code/modules/asset_cache/asset_cache_item.dm	code/content/asset_cache/asset_cache_item.dm
 code/modules/asset_cache/assets/spritesheets/robot_icons.dm	code/content/asset_cache/assets/spritesheets/robot_icons.dm
@@ -2205,7 +2199,6 @@ code/modules/stockmarket/stocks.dm	code/content/stockmarket/stocks.dm
 code/modules/surgery/surgery.dm	code/content/surgery/surgery.dm
 code/modules/telesci/telesci_computer.dm	code/content/telesci/telesci_computer.dm
 code/modules/tgchat/chat_verbs.dm	code/content/tgchat/chat_verbs.dm
-code/modules/tgui/external.dm	code/content/tgui/external.dm
 code/modules/tgui/modal.dm	code/content/tgui/modal.dm
 code/modules/tgui/states/admin.dm	code/content/tgui/states/admin.dm
 code/modules/tgui/states/not_incapacitated.dm	code/content/tgui/states/not_incapacitated.dm

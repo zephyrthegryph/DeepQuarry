@@ -1,4 +1,4 @@
 author: "zephyrthegryph"
 delete-after: true
 changes:
-  - refactor: "567 more files from code/modules (mob and others), game and datums moved into the code/content and code/domains tree"
+  - refactor: "560 more files from code/modules (mob and others), game and datums moved into the code/content and code/domains tree"
