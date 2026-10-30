@@ -19,6 +19,7 @@ file interface/skin.dmf
 # A module's closing file #undefs its macros: every file of the module before it.
 before code/modules/integrated_electronics/** code/content/integrated_electronics/~defines/~defines.dm   # the circuit macros (DATA_CHANNEL, IC_*)
 before code/content/integrated_electronics/** code/content/integrated_electronics/~defines/~defines.dm   # the circuit macros (DATA_CHANNEL, IC_*)
+before code/content/integrated_electronics/** code/content/integrated_electronics/~defines/~defines.dm   # the circuit macros (DATA_CHANNEL, IC_*)
 
 # Definition precedence. A type's var or proc defined in two files is the later file's (a proc's ..() calls the earlier one): these
 # pairs are the files that redefine what another file defines (mostly the former modular override files under code/content,
@@ -40,6 +41,7 @@ before code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/durand.dm co
 before code/content/mobs/living/simple_mob/subtypes/mechanical/mecha/marauder.dm code/content/mobs/living/simple_mob/subtypes/mechanical/mecha/combat.dm
 before code/content/mobs/living/simple_mob/subtypes/mechanical/mecha/hoverpod.dm code/content/mobs/living/simple_mob/subtypes/mechanical/mecha/combat.dm
 before code/modules/projectiles/guns/projectile/** code/content/projectiles/guns/projectile/automatic_serdy.dm   # automatic, pistol, shotgun guns
+before code/content/projectiles/guns/projectile/** code/content/projectiles/guns/projectile/automatic_serdy.dm   # automatic, pistol, shotgun guns
 before code/content/projectiles/guns/projectile/** code/content/projectiles/guns/projectile/automatic_serdy.dm   # automatic, pistol, shotgun guns
 before code/modules/projectiles/projectile/beams.dm code/content/projectiles/guns/beam.dm   # phasers
 before code/modules/projectiles/projectile/bullets.dm code/content/projectiles/guns/bullet.dm   # bullets
@@ -90,6 +92,7 @@ optional code/tests/engine/test_only_defs.dm                 # included directly
 optional code/modules/unit_tests/_test_build_overrides.dm    # likewise
 skip code/modules/benchmarks/**   # code/tests/unit_tests/_unit_tests.dm includes them
 skip code/modules/balance/**      # likewise
+skip code/content/balance/**   # likewise
 skip code/content/balance/**   # likewise
 
 # Generated files (gitignored, so the scan never includes them; analyze gen and the Verdigris bindings step write them before every

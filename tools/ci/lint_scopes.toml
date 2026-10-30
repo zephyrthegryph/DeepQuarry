@@ -638,7 +638,7 @@ legacy_forms_converted = [
   "code/content/media/",
   "code/modules/medical/",
   "code/content/medical/",
-  "code/modules/messages/",
+  "code/content/messages/",
   "code/modules/metric/",
   "code/content/metric/",
   "code/modules/metrics/",
