@@ -127,6 +127,8 @@
 
 CAPABILITIES(/mob/living/simple_mob/vore/demon)
 	op("alt_appearance", menu(), label("Toggle Alernate Appearance"), needs(req_self(), req(PROC_REF(alt_appearance_ready))), then(PROC_REF(alt_appearance_op)))
+	op("sizespell", menu(), label("Shrink/Grow Prey"), needs(req_self(), req(PROC_REF(grabbed_prey_ready))), then(PROC_REF(sizespell_op)))
+	op("demon_bite", menu(), label("Mindbreaker Bite"), needs(req_self(), req(PROC_REF(grabbed_prey_ready))), then(PROC_REF(demon_bite_op)))
 	op("toggle_sizespell", menu(), label("Shrink/Grow Amount"), needs(req_self()), then(PROC_REF(toggle_sizespell_op)))
 	op("manual_laugh", menu(), label("Laugh"), needs(req_self()), then(PROC_REF(manual_laugh_op)))
 	op("toggle_laugh", menu(), label("Toggle Auto Laugh"), needs(req_self()), then(PROC_REF(toggle_laugh_op)))
