@@ -360,6 +360,7 @@
 #include "dq_load_new_z_level_tests.dm"
 #include "../../modules/unit_tests/dq_materialize_batch_tests.dm"
 #include "dq_own_field_memo_tests.dm"
+#include "dq_op_index_inherit_tests.dm"
 #include "dq_map_load_job_tests.dm"
 #include "../../modules/unit_tests/dq_turf_damage_tests.dm"
 #include "../../modules/unit_tests/dq_turf_edges_tests.dm"

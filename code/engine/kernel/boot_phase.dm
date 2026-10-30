@@ -73,3 +73,4 @@ GLOBAL_LIST_EMPTY(boot_phase_counts)
 		var/datum/shared_cache/C = global.vars["_sc_[misses[i]]"]
 		line += " [misses[i]]=[C.misses]m/[C.builds]b/[C.entry_count()]e"
 	log_world("Atoms boot phase ([label]): shared cache misses/builds/entries:[line]")
+	log_world("Atoms boot phase ([label]): op plans built [GLOB.op_plans_built], shared from a parent table's index [GLOB.op_plans_inherited]")

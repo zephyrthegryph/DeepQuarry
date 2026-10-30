@@ -174,7 +174,7 @@ GLOBAL_VAR(declare_report_capture)
 				origin_now = entry_origin_text(file, L.line, L.section_name)
 			continue
 		table_apply(T, item, origin_now, null, null)
-	table_validate(T)
+	table_validate(T, parent)
 	T.rel_grant_vars = null
 	T.has_slotted = FALSE
 	T.has_cond_scoped = FALSE
@@ -494,12 +494,12 @@ GLOBAL_VAR(declare_report_capture)
 		T.caps -= key
 
 /// The checks that need the whole table: a placed state-graph stage with several paths needs via =, and so on (graph.dm).
-/proc/table_validate(datum/type_table/T)
+/proc/table_validate(datum/type_table/T, datum/type_table/parent = null)
 	for(var/datum/centry/C as anything in T.items)
 		var/datum/capability/def = C.item
 		if(istype(def))
 			def.validate_in(T, C.origin)
-	op_validate_table(T)
+	op_validate_table(T, parent)
 	modes_validate_table(T)
 
 /// Table-level checks a capability definition makes of its own params (a construction graph's start and via).
