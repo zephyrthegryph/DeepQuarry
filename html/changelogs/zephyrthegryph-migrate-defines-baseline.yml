@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Moved the define files into code/defines per module; the ending-cause snapshot no longer names file paths"

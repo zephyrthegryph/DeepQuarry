@@ -71,3 +71,37 @@ Total of the rows counted above: 320 + 326 + 270 + 205 + 13 = 1,134, plus the es
 
 - Baseline rows are the non-comment lines of `tools/ci/*_baseline.txt` (first tab column is the rule). To refresh: re-run
   `bash tools/ci/legacy_form_counts.sh`, recount the baselines, and use `tools/ci/move_candidates.sh` for moves.
+
+## Move blockers: defines, baseline, systemowner (2026-10-30, branch migrate/defines-baseline)
+
+`bash tools/ci/move_candidates.sh` before: 1,873 dirty files in the old tree. After this lane: 4,327 old-tree files, 2,656 clean, 1,671 dirty
+(reasons overlap: oldform 779, baseline 633, allow 443, toolref 263, systemowner 20, defines 3).
+
+**defines (done, 3 left).** 296 files moved from `code/__defines/` to `code/defines/{engine,library,host,base,content}/` (the old
+`__defines/engine/` is `code/defines/engine/declare/`; `README.md` is `code/defines/README.md`). The `.dme` keeps every file's compile slot
+(`tools/build/dme_moves.txt`), so `move_equiv.sh` reports the production world EQUIVALENT; the test world differs only in the one string
+`font_awesome_icons` unit test reads with `file2text` (its path moved; the test passes). The analyzer, `lint_scopes.toml`, codemods, TGS
+workflow and lane-ready lists follow (`scopes::is_defines`, and the synthesized partial-model manifest now orders macros by `.dme` slot, which
+path order no longer reproduces). Still in `code/__defines/`: `announce.dm`, `plants.dm`, `rust_g.dm` (named by `tools/dm-health/baseline.json`,
+off limits here) and the gitignored generated `verdigris/` bindings (their generator paths are in `tools/build`).
+
+**baseline (636 files still named; 627 after counting only `.dm` rows).**
+- `tools/ci/ending_causes_snapshot.txt` named 680 files: made path-independent (rows are verb, proc, statement; `ending_sites.py --check`
+  compares as a multiset). Those files are clean now.
+- `tools/dm-health/baseline.json` (off limits to this lane) still names 606 files whose only baseline reason is that file: its rows are
+  keyed by path, so a move must rewrite them in the move commit (as `file-moves-8` did). Needs the owner to make the key path-independent
+  or to allow move agents to rewrite its paths.
+- Live debt, no stale rows (`analyze baseline --update` removed nothing); needs conversion, not annotation:
+  - `base_vars` (22 rows): `controllers/subsystems/overlays.dm` (2), `datums/properties/families/temperature_thresholds.dm`, `game/atom/_atom.dm` (4),
+    `game/atom/armor.dm`, `game/atom/atom_defense.dm` (3), `game/atom/atom_type_table.dm`, `game/atoms_movable.dm` (4), `game/objects/items.dm` (2),
+    `modules/body/factors.dm`, `modules/catalogue/atoms.dm`, `modules/lighting/lighting_atom.dm`, `modules/mob/living/carbon/carbon_defines.dm`,
+    `modules/mob/living/carbon/shock.dm`, `modules/mob/living/default_language.dm`, `modules/mob/living/life/life_om.dm`, `modules/mob/mob_defines.dm` (2);
+    `list_init`: `modules/projectiles/targeting/targeting_mob.dm`, `modules/refinery/core/industrial_reagent_grinder.dm`.
+  - `sys/dx_review`: `modules/power/apc.dm` (`manual_push`), `modules/mob/living/silicon/robot/robot_ui_module.dm` (2 `output_side_effect`).
+  - `lane_ready_global.txt` names `code/modules/unit_tests/unit_test.dm`: a move needs the path updated there (a one-line change in its move commit).
+
+**systemowner (20 left, was 35).** Files defining `/datum/system/X` procs apart from the `SYSTEM_DEF(X)` file: `ATMOSPHERICS/{air_api,rust_pipenets,xgm_compat}.dm`,
+`controllers/subsystems/{garbage,job,lighting,ticker,ticker_roundend,ticker_roundstats}_api.dm`, `game/objects/items/devices/radio/radio_api.dm`,
+`modules/economy/{cargo_market,service_invoices,supply_agent_api,supply_api}.dm`, `modules/expedition/{api,expedition_debug}.dm`,
+`modules/mob/living/silicon/pai/api.dm`, `modules/resleeving/transcore_api.dm`, `modules/skybox_api.dm`, `modules/unit_tests/_test_build_overrides.dm`.
+Not moved in this lane: each owner file is itself dirty (oldform or allow), so owner and procs have to move in the same wave as the owner's conversion.
