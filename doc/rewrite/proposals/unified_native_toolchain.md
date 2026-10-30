@@ -1056,3 +1056,22 @@ remain bounded; main-workspace installation is still pending.
 The source remains on the existing production Analyze/checker defaults. No
 compiler publication, game window, full suite, pins or benchmark was used.
 Full production verification and complete client convergence remain required.
+
+### Fresh production verification of f526e572b0
+
+The private release compiler passed the official production build with zero
+errors and warnings (72.842 seconds cold, with the daemon explicitly disabled).
+The sequential DreamChecker run found zero diagnostics. The complete ratchet
+wrapper, generator checks and disk/scratch self-tests passed. This is current
+source verification, not a warm-build or unified-default performance claim.
+
+Official manifest regeneration added the guarded DOC_SNIPPETS include. A hash
+comparison against the older pre-master-merge generated-file inventory found
+378 unchanged files and four changed files (actions, declare, plans and stats).
+That inventory predates the master merge, so it does not establish regression
+or parity for those four; complete independent generator oracles remain the
+separate evidence recorded above. No generated output was hand-edited.
+
+Analyze and checker CLI defaults remain on their old production paths. Full
+client cutover, remaining generators and initializer first-owner convergence
+are still required; no compiler publication or game window was performed.
