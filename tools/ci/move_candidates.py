@@ -18,11 +18,54 @@ OLD_FORMS = [
     ("Initialize", re.compile(r"^\s*(?:[\w/]+/)?Initialize\(")),
     ("LateInitialize", re.compile(r"\bLateInitialize\b|\bINITIALIZE_HINT_LATELOAD\b")),
     ("Topic", re.compile(r"^\s*(?:[\w/]+/)?Topic\(")),
-    ("New() override", re.compile(r"^\s*(?:[\w/]+/)?New\(")),
-    ("verb", re.compile(r"/verb/|^\s*verb/")),
     ("flow_ask", re.compile(r"\bflow_ask\b")),
     ("CHANGE_", re.compile(r"\bCHANGE_\w+")),
 ]
+NEW_DEF = re.compile(r"^\s*((?:/[\w/]+?)?/?)New\(")
+TYPE_HEAD = re.compile(r"^\s*(/[A-Za-z_][\w/]*)\s*$")
+ATOM_ROOTS = ("atom", "obj", "mob", "turf", "area")
+
+
+def atom_new_override(lines):
+    """A New() override on an atom type (atoms construct through Initialize). A plain datum's New() is its constructor
+    (final_api section 6: 'a plain datum: New()'), /image and /client are not atoms, so those stay clean."""
+    cur = ""
+    for ln in lines:
+        m = NEW_DEF.match(ln)
+        if m:
+            path = m.group(1).rstrip("/") if m.group(1) else ""
+            if path.endswith("/proc"):
+                path = path[:-5]
+            owner = path if path else cur
+            if owner.split("/")[1:2] and owner.split("/")[1] in ATOM_ROOTS:
+                return True
+            continue
+        h = TYPE_HEAD.match(ln)
+        if h:
+            cur = h.group(1)
+    return False
+
+
+VERB_DEF = re.compile(r"^\s*((?:/[\w/]+?)?)/?verb/")
+
+
+def non_client_verb(lines):
+    """A verb declared on a type other than /client. final_api section 17: the verb set holds client, OOC and admin
+    commands only; a /client/verb is that final form, anything else on a mob or datum is a gameplay ability (an op)."""
+    cur = ""
+    for ln in lines:
+        m = VERB_DEF.match(ln)
+        if m:
+            owner = m.group(1) or cur
+            if owner.split("/")[1:2] != ["client"]:
+                return True
+            continue
+        h = TYPE_HEAD.match(ln)
+        if h:
+            cur = h.group(1)
+    return False
+
+
 ALLOW = re.compile(r"\bALLOW\(")
 TYPE_DEF = re.compile(r"^(/[A-Za-z_][\w/]*)\s*(?:\(|$)")
 TYPE_REF = re.compile(r"/(?:obj|mob|turf|area|datum|atom)(?:/[A-Za-z_]\w*)+")
@@ -182,6 +225,10 @@ def main(argv):
         for label, rx in OLD_FORMS:
             if any(rx.search(ln) for ln in lines):
                 why.append("oldform:" + label)
+        if non_client_verb(lines):
+            why.append("oldform:verb")
+        if atom_new_override(lines):
+            why.append("oldform:New() override")
         if "/__defines/" in f:
             why.append("defines")
         target = target_of(f)

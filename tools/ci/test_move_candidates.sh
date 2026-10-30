@@ -23,6 +23,21 @@ mk code/modules/widgets/init.dm '/obj/item/widget/Initialize(mapload)
 	. = ..()'
 mk code/modules/widgets/verby.dm '/obj/item/widget/verb/poke()
 	set name = "Poke"'
+mk code/modules/widgets/newatom.dm '/obj/item/widget/New()
+	return ..()'
+mk code/modules/widgets/newatom_block.dm '/obj/item/widget
+	New()
+		return ..()'
+mk code/modules/widgets/newdatum.dm '/datum/widget_state/New(a)
+	return ..()'
+mk code/modules/widgets/newdatum_block.dm '/datum/widget_state
+	New(a)
+		return ..()'
+mk code/modules/widgets/clientverb.dm '/client/verb/poke()
+	set name = "Poke"'
+mk code/modules/widgets/clientverb_block.dm '/client
+	verb/poke()
+		set name = "Poke"'
 mk code/modules/widgets/allowed.dm '/proc/b()
 	return 1 // ALLOW(scheduler): a reason long enough to count'
 mk code/modules/widgets/baselined.dm '/obj/item/widget/baselined'
@@ -65,6 +80,12 @@ expect code/modules/widgets/spawny.dm dirty "oldform:spawn"
 expect code/modules/widgets/spawny.dm dirty "baseline:code/modules/widgets/spawny.dm"
 expect code/modules/widgets/init.dm dirty "oldform:Initialize"
 expect code/modules/widgets/verby.dm dirty "oldform:verb"
+expect code/modules/widgets/newatom.dm dirty "oldform:New() override"
+expect code/modules/widgets/newatom_block.dm dirty "oldform:New() override"
+expect code/modules/widgets/newdatum.dm clean ""
+expect code/modules/widgets/newdatum_block.dm clean ""
+expect code/modules/widgets/clientverb.dm clean ""
+expect code/modules/widgets/clientverb_block.dm clean ""
 expect code/modules/widgets/allowed.dm dirty "allow"
 expect code/modules/widgets/baselined.dm dirty "baseline:code/modules/widgets/baselined.dm"
 expect code/modules/widgets/tooled/rig/suit.dm dirty "toolref:code/modules/widgets/tooled/rig"
@@ -78,7 +99,7 @@ expect code/modules/power/cable.dm clean "layering:/obj/item/known"
 if [ -z "$(state code/__defines/widgets.dm)" ] || [ "$(state code/__defines/widgets.dm)" = dirty ]; then ok "defines are never clean"; else bad "defines file reported clean"; fi
 [ "$(target code/modules/widgets/clean.dm)" = code/content/widgets/clean.dm ] && ok "content target" || bad "content target: $(target code/modules/widgets/clean.dm)"
 [ "$(target code/modules/power/cable.dm)" = code/domains/power/cable.dm ] && ok "domain target" || bad "domain target: $(target code/modules/power/cable.dm)"
-if [ "$(bash "$here/tools/ci/move_candidates.sh" --root "$tmp" --clean | wc -l)" -eq 7 ]; then ok "--clean lists the clean files"; else bad "--clean count"; fi
+if [ "$(bash "$here/tools/ci/move_candidates.sh" --root "$tmp" --clean | wc -l)" -eq 11 ]; then ok "--clean lists the clean files"; else bad "--clean count"; fi
 bash "$here/tools/ci/move_candidates.sh" --root "$tmp" --summary | grep -q 'code/modules/widgets' && ok "--summary groups by directory" || bad "--summary"
 
 [ $fail -eq 0 ] && echo "move_candidates: all passed"
