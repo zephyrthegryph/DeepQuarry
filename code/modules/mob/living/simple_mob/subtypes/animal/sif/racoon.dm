@@ -44,13 +44,8 @@
 	var/static/list/friend_loot_list = list(/obj/item/coin)	// What will make this animal non-hostile if held?
 	var/randomize_size = TRUE
 
-/mob/living/simple_mob/animal/sif/sakimm/verb/remove_hat()
-	set name = "Remove Hat"
-	set desc = "Remove the animal's hat. You monster."
-	set category = VERB_CAT_ABILITIES_SAKIMM
-	set src in view(1)
-
-	drop_hat(usr)
+/mob/living/simple_mob/animal/sif/sakimm/proc/remove_hat_op(datum/act/op/A)
+	drop_hat(A.actor)
 
 /mob/living/simple_mob/animal/sif/sakimm/proc/drop_hat(mob/user)
 	if(hat)
@@ -66,13 +61,8 @@
 			return
 		to_chat(user, span_notice("\The [src] is not wearing a hat!"))
 
-/mob/living/simple_mob/animal/sif/sakimm/verb/give_hat()
-	set name = "Give Hat"
-	set desc = "Give the animal a hat. You hero."
-	set category = VERB_CAT_ABILITIES_SAKIMM
-	set src in view(1)
-
-	take_hat(usr)
+/mob/living/simple_mob/animal/sif/sakimm/proc/give_hat_op(datum/act/op/A)
+	take_hat(A.actor)
 
 /mob/living/simple_mob/animal/sif/sakimm/proc/take_hat(mob/user)
 	if(hat)
@@ -109,6 +99,8 @@
 	emote_hear = list("chitters", "clicks")
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/sakimm)
+	op("remove_hat", menu(), label("Remove Hat"), needs(req_adjacent()), then(PROC_REF(remove_hat_op)))
+	op("give_hat", menu(), label("Give Hat"), needs(req_adjacent()), then(PROC_REF(give_hat_op)))
 	configure(mob_rules(faction = FACTION_SAKIMM))
 	configure(living_rules(species_sounds = "Raccoon"))
 	configure(living_rules(say_list_type = /datum/say_list/sakimm, use_modern_ai = TRUE))
