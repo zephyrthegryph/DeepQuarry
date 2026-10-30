@@ -201,15 +201,18 @@ fn the_pipe_device_law_steps_staged_jobs_when_the_world_steps() {
 		moles: 0.0,
 		power_w: 0.0,
 		target_reached: false,
+		settled: true,
 	};
 	let sides = vec![
 		DeviceSide {
 			gas: gas(500.0, 293.0),
 			volume: 1000.0,
+			touched: false,
 		},
 		DeviceSide {
 			gas: PipeGas::default(),
 			volume: 1000.0,
+			touched: false,
 		},
 	];
 	let total_before: f64 = sides.iter().map(|s| s.gas.total()).sum();
