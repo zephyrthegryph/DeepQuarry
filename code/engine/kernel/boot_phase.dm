@@ -28,6 +28,7 @@ GLOBAL_LIST_EMPTY(boot_phase_counts)
 /// Prints every phase, longest first, and the write counters the map load ran up, to the world log. Does nothing while the timers are off.
 /proc/boot_phase_report(label)
 	// `-params boot_profile_dump=1` with AUTO_PROFILE in the config: the BYOND proc profile of the boot so far is written to <log dir>/profiler/ here, without the timers.
+	boot_phase_cache_report(label)
 	if(text2num(world.params?["boot_profile_dump"] || "0") && CONFIG_GET(flag/auto_profile))
 		SSprofiler.DumpFile(allow_yield = FALSE)
 		log_world("Atoms boot phase ([label]): proc profile dumped to [GLOB.log_directory]/profiler")
@@ -59,3 +60,16 @@ GLOBAL_LIST_EMPTY(boot_phase_counts)
 		count_line += " [counted[i]]=[counted[counted[i]]]"
 	log_world("Atoms boot phase ([label]): counted:[count_line]")
 	log_world("Atoms boot phase ([label]): counters: state_changed pre-init skips [GLOB.state_changed_preinit_skipped], own_field_changed memo spared [GLOB.own_field_memo_spared], reader probes [GLOB.plan_reader_probes]")
+
+/// The shared caches that missed most so far (name, misses, builds, entries), longest first: a cache whose misses far exceed its entries has keys that never hit.
+/proc/boot_phase_cache_report(label)
+	var/list/misses = list()
+	for(var/datum/shared_cache/C as anything in shared_cache_registry)
+		if(C.misses)
+			misses[C.name] = C.misses
+	misses = sortTim(misses, GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
+	var/line = ""
+	for(var/i in 1 to min(15, length(misses)))
+		var/datum/shared_cache/C = global.vars["_sc_[misses[i]]"]
+		line += " [misses[i]]=[C.misses]m/[C.builds]b/[C.entry_count()]e"
+	log_world("Atoms boot phase ([label]): shared cache misses/builds/entries:[line]")
