@@ -36,7 +36,7 @@ PARENT_TYPE = re.compile(r"^\s+parent_type\s*=\s*(/[\w/]+)")
 CALL_ALONE = re.compile(r"^(?:(?:src|([A-Za-z_]\w*))\s*\??\.\s*)?update_icon\(\s*\)$")
 IF_CALL = re.compile(r"^if\s*\((.*)\)\s*(?:(?:src|([A-Za-z_]\w*))\s*\??\.\s*)?update_icon\(\s*\)$")
 ATOM_ROOTS = ("/atom", "/obj", "/mob", "/turf", "/area")
-NO_EDIT = ("code/modules/unit_tests/", "code/tests/", "code/engine/", "code/__defines/", "code/_generated/", "code/modules/benchmarks/")
+NO_EDIT = ("code/modules/unit_tests/", "code/tests/", "code/engine/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/_generated/", "code/modules/benchmarks/")
 PURE_CALLS = {
     "istype", "isnull", "length", "LAZYLEN", "LAZYACCESS", "ismob", "isobj", "isturf", "isarea", "isliving", "iscarbon", "ishuman",
     "isrobot", "issilicon", "isitem", "ismachinery", "isAI", "QDELETED", "QDELING", "isnum", "istext", "islist", "ispath", "isatom",

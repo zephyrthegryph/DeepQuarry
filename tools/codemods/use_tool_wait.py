@@ -33,7 +33,7 @@ import sys
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 QUALITIES = {"screwdriver": "TOOL_SCREWDRIVER", "crowbar": "TOOL_CROWBAR", "wrench": "TOOL_WRENCH", "wirecutter": "TOOL_WIRECUTTER",
              "multitool": "TOOL_MULTITOOL", "welder": "TOOL_WELDER"}
-BANNED = ("code/engine/", "code/modules/unit_tests/", "code/tests/", "code/__defines/", "code/datums/interactions/", "code/library/")
+BANNED = ("code/engine/", "code/modules/unit_tests/", "code/tests/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/datums/interactions/", "code/library/")
 ALLOWED_KW = {"delay", "quality", "amount", "volume", "start_self", "start_others", "receiver", "on_done", "done_args"}
 
 

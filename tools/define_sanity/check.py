@@ -32,6 +32,7 @@ on_github = os.getenv("GITHUB_ACTIONS") == "true"
 excluded_files = [
     #  Wildcard directories, all files are expected to be exempt.
     "code/__defines/*.dm",
+    "code/defines/*/**/*.dm",
     "code/_helpers/*.dm",
     "code/_global_vars/*.dm",
     # TGS files come from another repository so lets not worry about them.

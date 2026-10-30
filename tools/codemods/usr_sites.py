@@ -90,7 +90,7 @@ def main():
         return opened[rel]
 
     for rel in dm_files(a.paths, others=a.others):
-        if rel.startswith(("code/engine/", "code/__defines/", "code/modules/unit_tests/")):
+        if rel.startswith(("code/engine/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/modules/unit_tests/")):
             continue
         f = get(rel)
         if "usr" not in "\n".join(f.lines):

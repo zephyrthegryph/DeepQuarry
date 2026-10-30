@@ -11,7 +11,7 @@ ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
 
 # Never rewritten by a lifecycle codemod: the macro library, the engine, tests, vendored code.
 SKIP_PREFIXES = (
-    "code/__defines/",
+    "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/",
     "code/modules/unit_tests/",
     "code/modules/tgs/",
     "code/engine/",

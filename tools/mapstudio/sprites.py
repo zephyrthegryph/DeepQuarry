@@ -39,7 +39,7 @@ class SpriteIndex:
         self.sheets = {}
         self.atlases = {}
         self.atlas_lock = threading.RLock()
-        self.constants = dict(re.findall(r'^#define\s+([A-Z][A-Z_0-9]*)\s+"(#[0-9a-fA-F]{6})"', (ROOT / 'code/__defines/color.dm').read_text(encoding='utf-8'), re.MULTILINE))
+        self.constants = dict(re.findall(r'^#define\s+([A-Z][A-Z_0-9]*)\s+"(#[0-9a-fA-F]{6})"', (ROOT / 'code/defines/host/color.dm').read_text(encoding='utf-8'), re.MULTILINE))
         self._scan_types()
 
     def _scan_types(self):

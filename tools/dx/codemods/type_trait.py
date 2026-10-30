@@ -164,7 +164,7 @@ SPECS = {
     "light": dict(
         base="/atom", ctor="light_glow", reader="glow_of", type_reader="glow_of_type",
         fields={"light_range": "range", "light_power": "power", "light_color": "color"},
-        skip={"code/modules/lighting/glow.dm", "code/modules/lighting/lighting_source.dm", "code/__defines/lighting.dm"},
+        skip={"code/modules/lighting/glow.dm", "code/modules/lighting/lighting_source.dm", "code/defines/base/lighting.dm"},
         skip_refs=r"(^|\.)(lighting_source|current_weather|light)$",  # the light source datum and the weather's own light_color
     ),
     "item_combat": dict(

@@ -21,7 +21,7 @@ from dmlib import File, dm_files, strip_code  # noqa: E402
 VERB = re.compile(r"(?<![\w.])(spent|consumed|destroyed|dissolved|lapsed|replaced_by|ended_with|replace_with|consume)\s*\(")
 SNAPSHOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "ci", "ending_causes_snapshot.txt")
 PROC = re.compile(r"^(/[\w/]+?)?/?(?:proc/|verb/)?(\w+)\((.*)$")
-ENGINE = ("code/engine/", "code/library/", "code/datums/lifecycle/", "code/__defines/", "code/modules/unit_tests/")
+ENGINE = ("code/engine/", "code/library/", "code/datums/lifecycle/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/modules/unit_tests/")
 
 
 def sites(paths):

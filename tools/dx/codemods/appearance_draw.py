@@ -20,7 +20,7 @@ from collections import defaultdict
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ui_declare import File, body_range, related, split_args, strip_code, words_in  # noqa: E402
 
-SKIP = ("code/__defines/", "code/modules/unit_tests/", "code/tests/", "tools/", "code/modules/tgs/")
+SKIP = ("code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/modules/unit_tests/", "code/tests/", "tools/", "code/modules/tgs/")
 HEAD = re.compile(r"^DECLARE_APPEARANCE_PROC\((/[\w/]+),\s*TYPE_PROC_REF\(/atom,\s*appearance_overlays\),\s*list\(\)\)\s*(//.*)?$")
 LEGACY_APPEARANCE = re.compile(r"^(APPEARANCE_TEMPLATE|APPEARANCE_LEVEL|APPEARANCE_EMISSIVE|APPEARANCE_SLOT|APPEARANCE_NONE|DECLARE_APPEARANCE)\((/[\w/]+)")
 LOOK_VARS = ("color", "alpha", "layer", "plane", "dir", "icon", "transform")

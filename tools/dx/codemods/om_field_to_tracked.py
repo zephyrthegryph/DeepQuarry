@@ -13,7 +13,7 @@ import re
 import sys
 
 ROOT = os.path.join(os.path.dirname(__file__), '..', '..', '..')
-SKIP = ('code/datums/om/', 'code/datums/entity_state/', 'code/__defines/om.dm')
+SKIP = ('code/datums/om/', 'code/datums/entity_state/', 'code/defines/engine/om.dm')
 CALL = re.compile(r'^(\s*)OM_FIELD(_TYPED|_VIEW_OF|_VIEW)?\((.*)\)\s*(//.*)?$')
 SKIP_EXTRA = tuple(a[7:] for a in sys.argv if a.startswith('--skip='))
 MACHINE = '--machine' in sys.argv

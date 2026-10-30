@@ -19,7 +19,7 @@ from collections import defaultdict
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ui_declare import File, body_range, split_args  # noqa: E402
 
-SKIP = ("code/__defines/", "code/modules/unit_tests/", "code/tests/", "tools/", "code/modules/tgs/", "code/datums/om/", "code/engine/", "code/datums/reactions/")
+SKIP = ("code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/modules/unit_tests/", "code/tests/", "tools/", "code/modules/tgs/", "code/datums/om/", "code/engine/", "code/datums/reactions/")
 ATOM_ROOTS = ("/obj", "/turf", "/mob", "/area", "/atom")
 HEAD = re.compile(r"^(DECLARE_VERB_IF|DECLARE_VERB_HIDE|DECLARE_LOGIN_VERB|DECLARE_VERB)\((.*)\)\s*(//.*)?$")
 GRANT = re.compile(r"^(\s*)(om_grant|om_revoke)\((.*)\)\s*(//.*)?$")
