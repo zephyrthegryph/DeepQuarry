@@ -6,10 +6,7 @@ use crate::{
 #[cfg(test)]
 use dm_ir::Resolver;
 use dm_ir::{ReadDomain, ResolveQuery, ResolvedMeaning};
-use std::{
-    collections::BTreeMap,
-    sync::Arc,
-};
+use std::{collections::BTreeMap, sync::Arc};
 mod certified;
 #[cfg(test)]
 mod certified_tests;
@@ -17,8 +14,7 @@ pub use certified::{UnchangedCandidate, UnchangedCandidates};
 mod borrowed_lookup;
 mod storage_accounting;
 pub use storage_accounting::{
-    ArtifactStorageAccounting, ArtifactStorageCoverage,
-    ArtifactStorageExclusion,
+    ArtifactStorageAccounting, ArtifactStorageCoverage, ArtifactStorageExclusion,
 };
 mod leased;
 mod pressure;
@@ -202,10 +198,17 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
         &self,
         mut visit: impl FnMut(ObservedArtifactStorageView<'_, T, Q, A, D>),
     ) {
-        let state = self.state.write().unwrap_or_else(|error| error.into_inner());
+        let state = self
+            .state
+            .write()
+            .unwrap_or_else(|error| error.into_inner());
         visit(ObservedArtifactStorageView::Store {
             buckets: state.buckets.len(),
-            entries: state.buckets.values().map(|bucket| bucket.len()).sum::<usize>(),
+            entries: state
+                .buckets
+                .values()
+                .map(|bucket| bucket.len())
+                .sum::<usize>(),
         });
         for bucket in state.buckets.values() {
             visit(ObservedArtifactStorageView::Bucket {
@@ -234,7 +237,10 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
         keys: impl IntoIterator<Item = K>,
         mut visit: impl FnMut(ObservedArtifactStorageView<'_, T, Q, A, D>),
     ) {
-        let state = self.state.write().unwrap_or_else(|error| error.into_inner());
+        let state = self
+            .state
+            .write()
+            .unwrap_or_else(|error| error.into_inner());
         for key in keys {
             let key = key.as_ref();
             let hash = xxhash_rust::xxh3::xxh3_128(key);
@@ -285,7 +291,10 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
         if !matches!(self.retention, Retention::RetainedCurrentRevision) {
             return;
         }
-        let mut state = self.state.write().unwrap_or_else(|error| error.into_inner());
+        let mut state = self
+            .state
+            .write()
+            .unwrap_or_else(|error| error.into_inner());
         state.buckets.retain(|_, bucket| {
             bucket.retain(|entry| keep_key(entry.key.as_ref()));
             !bucket.is_empty()
@@ -365,6 +374,25 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
             accept,
         )
     }
+    pub fn try_visit_receipted<R: ObservationHost<Q, A, D>, E>(
+        &self,
+        key: &[u8],
+        resolver: &R,
+        accept: &mut dyn FnMut(&Arc<T>) -> Result<bool, E>,
+    ) -> Result<(Option<ObservedArtifact<T, Q, A, D>>, Option<Q>), E> {
+        self.try_visit_receipted_with_value(
+            key,
+            &mut |reads, _| {
+                Ok(crate::observations::first_changed_iter(
+                    reads.iter(),
+                    |query| resolver.answer(query),
+                    |current, previous| resolver.equivalent(current, previous),
+                )
+                .cloned())
+            },
+            accept,
+        )
+    }
     /// Reuse one immutable request's certificate checks across exact-key visits.
     /// Producer-local inputs remain ordinary recorded queries and must be
     /// answered by this host; consumers with per-unit adapters can instead use
@@ -391,11 +419,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         validate: &mut dyn FnMut(&Receipt<Q, A, D>) -> Option<Q>,
         accept: &mut dyn FnMut(&Arc<T>) -> bool,
     ) -> (Option<ObservedArtifact<T, Q, A, D>>, Option<Q>) {
-        self.visit_receipted_with_value(
-            key,
-            &mut |reads, _| validate(reads),
-            accept,
-        )
+        self.visit_receipted_with_value(key, &mut |reads, _| validate(reads), accept)
     }
     /// The actual immutable candidate payload may carry producer-qualified
     /// certificates. Validate every receipt observation before returning None;
@@ -415,6 +439,21 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         (accepted.map(|(_, receipt)| receipt), changed)
     }
 
+    pub fn try_visit_receipted_with_value<E>(
+        &self,
+        key: &[u8],
+        validate: &mut dyn FnMut(&Receipt<Q, A, D>, &Arc<T>) -> Result<Option<Q>, E>,
+        accept: &mut dyn FnMut(&Arc<T>) -> Result<bool, E>,
+    ) -> Result<(Option<ObservedArtifact<T, Q, A, D>>, Option<Q>), E> {
+        let (accepted, changed) = self.try_visit_borrowed_receipted_with_value(
+            xxhash_rust::xxh3::xxh3_128(key),
+            &|candidate| candidate == key,
+            validate,
+            accept,
+        )?;
+        Ok((accepted.map(|(_, receipt)| receipt), changed))
+    }
+
     pub fn insert_with(
         &self,
         key: Arc<[u8]>,
@@ -422,8 +461,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         weight: usize,
         create: impl FnOnce() -> T,
     ) -> bool {
-        self.insert_with_owned(key, reads, weight, create)
-            .is_some()
+        self.insert_with_owned(key, reads, weight, create).is_some()
     }
     /// Return the actual immutable stored owner without cloning the produced payload.
     /// Budget rejection does not invoke the producer; borrowed owners survive pruning.
@@ -455,7 +493,10 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         create: impl FnOnce() -> T,
     ) -> Option<Arc<T>> {
         let hash = xxhash_rust::xxh3::xxh3_128(&key);
-        let mut state = self.state.write().unwrap_or_else(|error| error.into_inner());
+        let mut state = self
+            .state
+            .write()
+            .unwrap_or_else(|error| error.into_inner());
         // Resident storage evicts before admitting a new value. Results are
         // independently published; an oversized value needs no resident copy.
         if let Retention::RetainedCurrentRevision = self.retention {
@@ -476,17 +517,13 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
             // first push reserves four large entries per key; hundreds of
             // thousands of owner facts would retain that unused capacity.
             // Collisions still grow normally and preserve exact-key siblings.
-            state
-                .buckets
-                .entry(hash)
-                .or_default()
-                .push(Variant {
-                    key,
-                    reads,
-                    value: Arc::clone(&value),
-                    weight,
-                    holders: Default::default(),
-                });
+            state.buckets.entry(hash).or_default().push(Variant {
+                key,
+                reads,
+                value: Arc::clone(&value),
+                weight,
+                holders: Default::default(),
+            });
             state.bytes += weight;
             return Some(value);
         }
@@ -636,12 +673,7 @@ mod tests {
         }]
         .into();
         assert!(store
-            .insert_with_shared(
-                Arc::clone(&key),
-                Arc::clone(&reads),
-                1,
-                || (),
-            )
+            .insert_with_shared(Arc::clone(&key), Arc::clone(&reads), 1, || (),)
             .is_some());
         let (accepted, _) = store.visit_receipted(&key, &Host, &mut |_| true);
         let accepted = accepted.unwrap();
@@ -723,13 +755,9 @@ mod tests {
         let drops = Arc::new(AtomicUsize::new(0));
         let store = ArtifactStore::current_revision();
         let key: Arc<[u8]> = Arc::from(b"current".as_slice());
-        store.insert_with(Arc::clone(&key), vec![], 1, || {
-            Value(Arc::clone(&drops))
-        });
+        store.insert_with(Arc::clone(&key), vec![], 1, || Value(Arc::clone(&drops)));
         let reader = store.lookup(&key, &Host).unwrap();
-        store.insert_with(Arc::clone(&key), vec![], 2, || {
-            Value(Arc::clone(&drops))
-        });
+        store.insert_with(Arc::clone(&key), vec![], 2, || Value(Arc::clone(&drops)));
         assert_eq!(store.admitted_bytes(), 2);
         assert_eq!(
             store
@@ -831,15 +859,15 @@ mod tests {
         let drops = Arc::new(AtomicUsize::new(0));
         let store = ArtifactStore::with_limit(1);
         assert!(
-            store.insert_with(Arc::from(b"a".as_slice()), vec![], 1, || Value(
-                Arc::clone(&drops)
-            ))
+            store.insert_with(Arc::from(b"a".as_slice()), vec![], 1, || Value(Arc::clone(
+                &drops
+            )))
         );
         let reader = store.lookup(b"a", &Host).unwrap();
         assert!(
-            store.insert_with(Arc::from(b"b".as_slice()), vec![], 1, || Value(
-                Arc::clone(&drops)
-            ))
+            store.insert_with(Arc::from(b"b".as_slice()), vec![], 1, || Value(Arc::clone(
+                &drops
+            )))
         );
         assert!(store.lookup(b"a", &Host).is_none());
         assert_eq!(drops.load(Ordering::SeqCst), 0);

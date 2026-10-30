@@ -729,3 +729,177 @@ fn original_array_constructor_and_dimension_effect_origins_match_complete_old_tr
         assert_eq!(reads.load(Ordering::Relaxed), io);
     }
 }
+
+#[test]
+fn typed_body_query_failure_never_becomes_effect_refusal_and_same_input_recovers() {
+    // Actual frontend/Walker/report jobs, including a source callee's prefix
+    // settings read through Observed. Only the Kind4 IO event is scheduled.
+    let source="/proc/check()\n    set SpacemanDMM_should_be_pure=1\n    helper()\n/proc/helper()\n    return 1\n";
+    for sleeping in [false, true] {
+        for completed in [0, 1] {
+            let (snapshot, reads) = fixture(source, None);
+            let input = snapshot.native_purity_input(&snapshot.tree).unwrap();
+            let queries = snapshot.native_raw_queries.as_ref().unwrap();
+            let owner = dm_ir::Resolver::source_owner(snapshot.tree.as_ref());
+            let io = reads.load(Ordering::Relaxed);
+            let original = std::io::Error::from_raw_os_error(1450);
+            let kind = original.kind();
+            let schedule = queries.fail_body_syntax_after_for_test(completed, original);
+            let result = if sleeping {
+                snapshot.native_sleep_report(&input, &env(), None, &snapshot.tree)
+            } else {
+                snapshot.native_purity_report(&input, &env(), None, &snapshot.tree)
+            };
+            let error = result.unwrap_err();
+            assert_eq!(error.kind(), kind);
+            assert_eq!(
+                error.raw_os_error(),
+                Some(1450),
+                "retain actual OS error, not a formatted graph String"
+            );
+            for k in [18, 19, 20, 22] {
+                assert_eq!(
+                    queries.effect_retained_values_for_test(dm_query::Kind(k)),
+                    0,
+                    "no plan/SCC/report semantic error Outcome"
+                );
+            }
+            assert_eq!(reads.load(Ordering::Relaxed), io);
+            drop(schedule);
+            let recovered = if sleeping {
+                snapshot.native_sleep_report(&input, &env(), None, &snapshot.tree)
+            } else {
+                snapshot.native_purity_report(&input, &env(), None, &snapshot.tree)
+            }
+            .unwrap();
+            assert!(recovered.is_empty());
+            assert_eq!(reads.load(Ordering::Relaxed), io);
+            assert_eq!(dm_ir::Resolver::source_owner(snapshot.tree.as_ref()), owner);
+        }
+    }
+}
+
+#[test]
+fn native_checked_archive_keeps_actual_operational_io_and_retries_original_input() {
+    let (snapshot, reads) = fixture("/proc/probe()\n    return 1\n", None);
+    let input = snapshot.native_purity_input(&snapshot.tree).unwrap();
+    let queries = snapshot.native_raw_queries.as_ref().unwrap();
+    let archive = input.archive();
+    let ordinal = input.order()[0].0;
+    let io = reads.load(Ordering::Relaxed);
+    let schedule = queries.fail_body_syntax_after_for_test(
+        0,
+        std::io::Error::new(
+            std::io::ErrorKind::OutOfMemory,
+            "actual native syntax admission",
+        ),
+    );
+    let error = archive
+        .parse_checked(ordinal)
+        .err()
+        .expect("scheduled native IO error");
+    match error {
+        dm_tree::frontend::BodySyntaxFailure::Operational(error) => {
+            assert_eq!(error.kind(), std::io::ErrorKind::OutOfMemory);
+            assert_eq!(error.to_string(), "actual native syntax admission");
+        }
+        dm_tree::frontend::BodySyntaxFailure::Syntax(error) => {
+            panic!("operational error became cached diagnostic: {error:?}")
+        }
+    }
+    assert_eq!(queries.db().stats(dm_query::Kind(4)).computed, 0);
+    drop(schedule);
+    let parsed = archive.parse_checked(ordinal).unwrap();
+    let again = archive.parse_checked(ordinal).unwrap();
+    assert_eq!(
+        parsed.occurrence().expanded_span,
+        again.occurrence().expanded_span
+    );
+    assert_eq!(queries.db().stats(dm_query::Kind(4)).computed, 1);
+    assert_eq!(reads.load(Ordering::Relaxed), io);
+}
+
+#[test]
+fn checked_body_outer_graph_failure_is_not_a_parser_rejection_or_cached_syntax() {
+    let (snapshot, reads) = fixture("/proc/probe()\n    return 1\n", None);
+    let input = snapshot.native_purity_input(&snapshot.tree).unwrap();
+    let queries = snapshot.native_raw_queries.as_ref().unwrap();
+    let archive = input.archive();
+    let ordinal = input.order()[0].0;
+    let io = reads.load(Ordering::Relaxed);
+    let schedule = queries.fail_body_graph_once_for_test();
+    match archive
+        .parse_checked(ordinal)
+        .err()
+        .expect("scheduled infrastructure failure")
+    {
+        dm_tree::frontend::BodySyntaxFailure::Operational(error) => {
+            assert_eq!(error.kind(), std::io::ErrorKind::Other);
+            assert!(error.get_ref().is_some(), "retain actual graph error owner");
+        }
+        dm_tree::frontend::BodySyntaxFailure::Syntax(error) => {
+            panic!("graph failure became parser meaning: {error:?}")
+        }
+    }
+    assert_eq!(queries.db().stats(dm_query::Kind(4)).computed, 0);
+    drop(schedule);
+    let schedule = queries.fail_body_graph_once_for_test();
+    let compatibility = archive
+        .parse(ordinal)
+        .err()
+        .expect("legacy graph diagnostic");
+    assert_eq!(
+        compatibility.kind,
+        dm_tree::frontend::DiagnosticKind::Internal
+    );
+    drop(schedule);
+    assert!(archive.parse_checked(ordinal).is_ok());
+    assert_eq!(queries.db().stats(dm_query::Kind(4)).computed, 1);
+    assert_eq!(reads.load(Ordering::Relaxed), io);
+}
+
+#[test]
+fn public_body_model_and_checker_keep_actual_demand_io_without_partial_output() {
+    for checker in [false, true] {
+        let (snapshot, reads) = fixture("/proc/probe()\n    return 1\n", None);
+        let input = snapshot.native_purity_input(&snapshot.tree).unwrap();
+        let queries = snapshot.native_raw_queries.as_ref().unwrap();
+        let ordinal = input.order()[0].0 as u32;
+        let io = reads.load(Ordering::Relaxed);
+        let schedule = queries.fail_body_syntax_after_for_test(
+            0,
+            std::io::Error::new(std::io::ErrorKind::OutOfMemory, "actual public body demand"),
+        );
+        let mut bytes = Vec::new();
+        let result = if checker {
+            snapshot.write_native_checker(ordinal, "warning", &snapshot.tree, &mut bytes)
+        } else {
+            snapshot.write_body_model(ordinal, &snapshot.tree, &mut bytes)
+        };
+        let error = result.unwrap_err();
+        assert_eq!(error.kind(), std::io::ErrorKind::OutOfMemory);
+        assert_eq!(error.to_string(), "actual public body demand");
+        assert!(
+            bytes.is_empty(),
+            "body failure precedes any completed public row"
+        );
+        assert_eq!(queries.db().stats(dm_query::Kind(4)).computed, 0);
+        drop(schedule);
+        if checker {
+            snapshot.write_native_checker(ordinal, "warning", &snapshot.tree, &mut bytes)
+        } else {
+            snapshot.write_body_model(ordinal, &snapshot.tree, &mut bytes)
+        }
+        .unwrap();
+        let row: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(
+            row["row"],
+            if checker {
+                "source_native_checker_fixture"
+            } else {
+                "source_body_model"
+            }
+        );
+        assert_eq!(reads.load(Ordering::Relaxed), io);
+    }
+}

@@ -88,6 +88,8 @@ pub fn run_build_with_host(
     host: &mut crate::runner_host::BuildHost,
 ) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
     crate::request::validate_timeout_seconds(request.timeout_seconds)?;
+    crate::request::validate_source_questions(&request)?;
+    if request.source_questions.is_some() && !host.retains_artifacts(){return Err(std::io::Error::other("source question preparation requires retained original owners").into());}
     crate::request::validate_diagnostic_declarations(&request)?;
     if request.diagnostic_declarations && !host.retains_artifacts(){return Err(std::io::Error::other("diagnostic preparation requires the existing retained query owner").into());}
     // Service-bound requests inherit the original admission+execution deadline;
@@ -128,6 +130,7 @@ fn run_build_attempt(
     crate::request::validate_diagnostic_declarations(&request)?;
     let BuildRequest {
         command,
+        source_questions,
         diagnostic_declarations,
         timeout_seconds: _,
         policy_inputs,
@@ -779,6 +782,7 @@ fn run_build_attempt(
     } else { None };
     query_attempt.capture_with_recorded_sources(&frontend, std::sync::Arc::clone(&source_policy_queries), raw_policy, &inputs_capture)?;
     }
+    if let Some(questions)=source_questions.as_deref(){ query_attempt.require_source_questions(questions)?; }
     dm_profile::request_mark("frontend.query_capture");
     dmbc::heap_census::emit_if_enabled("input_source_originals.current",|census|census.exceptional_source_inputs(&inputs_capture))?;
     if command == BuildCommand::Compile {
@@ -1165,6 +1169,7 @@ fn run_build_attempt(
             Err(dmbc::cold::ColdError::RuntimeTypeValues(error)) => {
                 return Err(dmbc::request_failure::RequestFailure::internal(format!("runtime type values: {error:?}")).into())
             }
+            Err(dmbc::cold::ColdError::Operational(error)) => return Err(error.into()),
             Err(dmbc::cold::ColdError::AbiPreparation(message))
                 if dmbc::diagnostics::write_carried_source_error(&mut dmbc::daemon::stderr_writer(), &message)? =>
             {
@@ -1488,10 +1493,10 @@ fn run_build_attempt(
         let owners_started=Instant::now();
         if progress_enabled { dmbc::daemon_eprintln!("native stage query_prepare.owners: started"); }
         dm_profile::request_mark("query_prepare.owners.start");
-        let outcome = runner_analysis::prepare_query_observed(
+        let outcome = if source_questions.is_some() { runner_analysis::prepare_source_questions(&frontend, retains_query_owners)? } else { runner_analysis::prepare_query_observed(
             &frontend, engine_capture.as_ref(), host_facts.as_deref(), executor,
             procedure_memo.as_ref(), memo_policy, &mut query_attempt, retains_query_owners, progress_enabled,
-        )?;
+        )? };
         if progress_enabled { dmbc::daemon_eprintln!("native stage query_prepare.owners: {:.3}s",owners_started.elapsed().as_secs_f64()); }
         dm_profile::request_mark("query_prepare.owners.done");
         let freshness_started=Instant::now();

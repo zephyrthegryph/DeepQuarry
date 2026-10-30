@@ -254,7 +254,7 @@ use declaration_parser::*;
 mod declaration_qualifiers;
 pub use declaration_parser::{
     parse, parse_declaration_skeleton, primary_header_cursors, primary_header_facts,
-    top_level_assignment_index, DeclarationSkeleton, PrimaryHeaderInput,
+    top_level_assignment_index, top_level_assignment_index_from_span_tokens, DeclarationSkeleton, PrimaryHeaderInput,
 };
 pub use declaration_qualifiers::{
     inherit_header_qualifiers, CHECKER_VAR_FINAL, CHECKER_VAR_MASK, CHECKER_VAR_PRIVATE,

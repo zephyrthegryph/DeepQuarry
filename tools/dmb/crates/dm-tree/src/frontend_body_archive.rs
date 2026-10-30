@@ -763,6 +763,16 @@ impl BodyArchive {
         self.bodies.is_empty()
     }
     pub fn parse(&self, ordinal: usize) -> Result<ArchivedBody<'_>, Diagnostic> {
+        self.parse_with(ordinal, |input, host| input.obtain(host))
+    }
+    pub fn parse_checked(&self, ordinal: usize) -> Result<ArchivedBody<'_>, BodySyntaxFailure> {
+        self.parse_with(ordinal, |input, host| input.obtain_checked(host))
+    }
+    fn parse_with<E: From<Diagnostic>>(
+        &self,
+        ordinal: usize,
+        obtain: impl FnOnce(&Arc<BodySyntaxInput>, &dyn BodySyntaxQueries) -> Result<Arc<BodySyntax>, E>,
+    ) -> Result<ArchivedBody<'_>, E> {
         let occurrence = self
             .bodies
             .get(ordinal)
@@ -773,10 +783,10 @@ impl BodyArchive {
             .saturating_sub(occurrence.expanded_span.start)
             > 1024 * 1024
         {
-            return Err(internal("body archive query exceeds 1 MiB input limit"));
+            return Err(internal("body archive query exceeds 1 MiB input limit").into());
         }
         if let Some(queries) = &self.body_queries {
-            let shared = queries.inputs[ordinal].obtain(queries.host.as_ref())?;
+            let shared = obtain(&queries.inputs[ordinal], queries.host.as_ref())?;
             let mut header = shared.item.clone();
             if shared.statements.parsed().diagnostics.is_empty() {
                 header.children = Vec::new();

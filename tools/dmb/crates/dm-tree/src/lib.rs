@@ -41,7 +41,7 @@ mod normalize;
 mod procedure;
 pub mod procedure_statics;
 mod resolver;
-pub use certified_hierarchy::{HierarchyAnswer, HierarchyView};
+pub use certified_hierarchy::{HierarchyAnswer, HierarchyAnswerKind, HierarchyView};
 pub mod settings;
 pub mod type_paths;
 mod variable_facts;

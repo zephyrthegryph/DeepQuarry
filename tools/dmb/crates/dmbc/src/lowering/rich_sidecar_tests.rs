@@ -185,3 +185,93 @@ fn resident_rich_sidecars_rebind_shifted_include_occurrence_and_match_fresh() {
     );
     same_current(&current, &run(&changed, &engine, None));
 }
+
+#[test]
+fn checked_rich_sidecar_body_operation_is_not_a_cache_miss_and_retry_preserves_current_words() {
+    let engine = crate::engine::EngineSnapshot::from_bytes(
+        include_bytes!("../../../../fixtures/native_template.bin"),
+        1,
+    )
+    .unwrap()
+    .with_bootstrap_catalog()
+    .unwrap();
+    let seed = engine.frontend_seed();
+    let queries = Arc::new(crate::query_db::QueryDb::default());
+    let front = dm_tree::frontend::build_with_config(
+        Path::new("project.dme"),
+        &Source {
+            prefix: false,
+            changed: false,
+        },
+        &Default::default(),
+        dm_tree::frontend::FrontendConfig {
+            workers: 1,
+            engine: Some(&seed),
+            observer: None,
+        },
+    )
+    .unwrap()
+    .with_body_queries(queries.clone());
+    let (host, _) = crate::request_runner::runner_facts::prepare(&front, &engine).unwrap();
+    let startup = crate::startup::capture(&front).unwrap();
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let abi =
+        crate::driver_facts::prepare_pinned_source_abi_with_startup_on_executor_with_artifacts(
+            &front, &engine, &host, &startup, None, &executor, None,
+        )
+        .unwrap();
+    assert!(abi.prepared.diagnostics.is_empty());
+    let policy = crate::driver_facts::FrozenPreparedPolicy::new(&front, &abi.prepared).unwrap();
+    let body = &front.bodies[0];
+    let capture = RefCell::new(MemoCapture::default());
+    let arena = dm_tree::frontend::BodyArena::new_typed(
+        &front,
+        dm_codegen_byond::typed_statements_supported_for_capture,
+    );
+    let previous = lower_one_captured(
+        &front,
+        body,
+        &host,
+        &policy,
+        &arena,
+        LoweringCapture {
+            startup: Some(&startup),
+            capture: Some(&capture),
+            ready: None,
+            capture_references: false,
+            current: None,
+        },
+    )
+    .unwrap();
+    assert!(!previous.code.modified_instances.is_empty());
+    assert!(!previous.source_helpers.is_empty());
+    let debug = crate::lowering_memo::rebase_debug(&front, body, &capture.borrow().debug).unwrap();
+    let prepared = &abi.prepared.units()[0].1;
+    assert!(queries.db().evict_values(&[dm_query::Kind(4)]) > 0);
+    let arena = dm_tree::frontend::BodyArena::new_typed(
+        &front,
+        dm_codegen_byond::typed_statements_supported_for_capture,
+    );
+    let schedule =
+        queries.fail_body_syntax_after_for_test(0, std::io::Error::from_raw_os_error(1450));
+    match rebind_checked(
+        &previous,
+        &front,
+        body,
+        &arena,
+        &host,
+        prepared,
+        debug.clone(),
+    )
+    .err()
+    .expect("actual original reissue demand failed")
+    {
+        LoweringFailure::Operational(error) => assert_eq!(error.raw_os_error(), Some(1450)),
+        other => panic!("cache operation became miss/diagnostic: {other:?}"),
+    }
+    drop(schedule);
+    let current = rebind_checked(&previous, &front, body, &arena, &host, prepared, debug)
+        .unwrap()
+        .expect("same current sidecar must recover");
+    same_current(&current, &previous);
+}

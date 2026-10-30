@@ -282,6 +282,8 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
         };
         let header = item.header.trim();
         let mut header_declarations = Vec::new();
+        let mut settings_footprints = Vec::new();
+        let mut original_settings_owner = None;
         let mut header_argument_offset = None;
         let mut source_argument_span = None;
         let adapted = (|| -> Result<Option<Skeleton>, String> {
@@ -475,8 +477,18 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                     if name.is_empty() || name.contains('/') {
                         return Err("invalid procedure name".into());
                     }
-                    let typed_settings =
-                        crate::settings::extract_settings(&item.children, context.symbols)?;
+                    let typed_settings = if let Some((headers, offset)) = context.headers {
+                        let (nodes, footprints) = crate::settings::extract_settings_original(
+                            &item.children,
+                            context.symbols,
+                            headers,
+                            offset,
+                        )?;
+                        settings_footprints = footprints;
+                        nodes
+                    } else {
+                        crate::settings::extract_settings(&item.children, context.symbols)?
+                    };
                     let mut display_name = None;
                     for child in &item.children {
                         let setting = child.header.trim();
@@ -546,6 +558,7 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                         signature: typed_signature,
                         settings: typed_settings,
                     }));
+                    original_settings_owner = procedure.clone();
                     let mut semantic_header = canonical(header)?.to_vec();
                     semantic_header
                         .extend_from_slice(&procedure.as_ref().unwrap().canonical_bytes());
@@ -663,6 +676,9 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                             header: item.header_span,
                             argument_offset: header_argument_offset.expect("issued signature"),
                             declarations: header_declarations,
+                            body: item.span,
+                            settings_owner: original_settings_owner,
+                            settings_footprints,
                         });
                 }
                 context.result.skeletons.push(skeleton);

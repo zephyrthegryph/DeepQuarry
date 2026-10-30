@@ -364,6 +364,11 @@ fn parse_signature_views(
         declarations,
     })
 }
+pub(crate) struct ParsedSetting {
+    pub(crate) setting: ProcedureSetting,
+    /// RHS extent relative to this exact original setting header, not an Expr.
+    pub(crate) value_span: Span,
+}
 pub(crate) fn parse_setting(
     text: &str,
     symbols: &mut SymbolTable,
@@ -400,6 +405,94 @@ pub(crate) fn parse_setting(
         && checker_name.valid()
         && matches!(checker_tokens.tokens(), [token] if token.kind == TokenKind::Ident
             && checker_tokens.spelling(token) == name);
+    construct_setting(name, checker_setting, operation, symbols, |symbols| {
+        expression(value, symbols)
+    })
+}
+
+/// Shared setting metadata partition over the SAME existing HeaderView grammar.
+/// Native callers supply original cold tokens; compatibility above retains its lexical path.
+struct SettingParts<'a> {
+    name: HeaderView<'a>,
+    operation: SettingOperation,
+    value: HeaderView<'a>,
+    value_span: Span,
+}
+fn setting_parts(view: HeaderView<'_>) -> Result<SettingParts<'_>, String> {
+    let header = view;
+    let view = view.trim();
+    let text = view.text();
+    let _rest = text
+        .strip_prefix("set ")
+        .ok_or("expected set declaration")?;
+    let rest = view.slice(4, text.len());
+    let (name, operation, value) = if let Some(index) = rest.assignment_index() {
+        (
+            rest.slice(0, index).trim(),
+            SettingOperation::Assign,
+            rest.slice(index + 1, rest.text().len()).trim(),
+        )
+    } else {
+        let span = rest
+            .top_level()
+            .into_iter()
+            .find(|(token, _)| *token == "in")
+            .map(|(_, span)| span)
+            .ok_or("set declaration missing assignment or in")?;
+        (
+            rest.slice(0, span.start).trim(),
+            SettingOperation::In,
+            rest.slice(span.end, rest.text().len()).trim(),
+        )
+    };
+
+    let value_span = Span::new(
+        value.span().start - header.span().start,
+        value.span().end - header.span().start,
+    );
+    Ok(SettingParts {
+        name,
+        operation,
+        value,
+        value_span,
+    })
+}
+#[cfg(test)]
+thread_local! {static ORIGINAL_SETTING_PARSES:std::cell::Cell<usize>=const{std::cell::Cell::new(0)};}
+#[cfg(test)]
+pub(crate) fn original_setting_metadata_parses() -> usize {
+    ORIGINAL_SETTING_PARSES.with(|n| n.get())
+}
+fn parse_setting_view(
+    view: HeaderView<'_>,
+    symbols: &mut SymbolTable,
+) -> Result<ParsedSetting, String> {
+    #[cfg(test)]
+    ORIGINAL_SETTING_PARSES.with(|n| n.set(n.get() + 1));
+    let parts = setting_parts(view)?;
+    let spelling = parts.name.text();
+    let checker_setting = spelling.starts_with("SpacemanDMM_") && parts.name.ident();
+    Ok(ParsedSetting {
+        setting: construct_setting(
+            spelling,
+            checker_setting,
+            parts.operation,
+            symbols,
+            |symbols| expression_view(parts.value, symbols),
+        )?,
+        value_span: parts.value_span,
+    })
+}
+
+/// ONE existing setting-name/metadata policy; compatibility keeps its original
+/// lexical/error-order path and native views reuse the original primary tokens.
+fn construct_setting(
+    name: &str,
+    checker_setting: bool,
+    operation: SettingOperation,
+    symbols: &mut SymbolTable,
+    value: impl FnOnce(&mut SymbolTable) -> Result<SymbolicExpression, String>,
+) -> Result<ProcedureSetting, String> {
     if !checker_setting
         && !matches!(
             name,
@@ -420,7 +513,7 @@ pub(crate) fn parse_setting(
     Ok(ProcedureSetting {
         name: intern(symbols, name)?,
         operation,
-        value: expression(value, symbols)?,
+        value: value(symbols)?,
     })
 }
 
@@ -821,4 +914,53 @@ thread_local! { static SIGNATURE_INTERPRETATIONS: std::cell::Cell<usize> = const
 #[cfg(test)]
 fn signature_interpretations() -> usize {
     SIGNATURE_INTERPRETATIONS.with(std::cell::Cell::get)
+}
+
+#[cfg(test)]
+mod original_setting_partition_tests {
+    use super::*;
+    #[test]
+    fn original_setting_partition_keeps_metadata_and_real_rhs_without_relex() {
+        for source in [
+            "set name = \"literal = in\"",
+            "set src in view(1)",
+            "set invisibility = invisibility",
+            "set desc = list(1,2)",
+            "set SpacemanDMM_should_be_pure = arbitrary",
+        ] {
+            let mut old_symbols = SymbolTable::default();
+            let old = parse_setting(source, &mut old_symbols).unwrap();
+            let tokens = dm_syntax::lex_spans(source);
+            assert!(tokens.diagnostics.is_empty());
+            let view =
+                HeaderView::original(source, &tokens.tokens, Span::new(0, source.len())).unwrap();
+            let mut native_symbols = SymbolTable::default();
+            let before = header::lexical_header_calls();
+            let parsed = parse_setting_view(view, &mut native_symbols).unwrap();
+            assert_eq!(
+                header::lexical_header_calls(),
+                before,
+                "original token partition must not lex setting/name/value text again"
+            );
+            assert_eq!(old, parsed.setting);
+            if source == "set invisibility = invisibility" {
+                assert_eq!(
+                    parsed.value_span.start,
+                    source.rfind("invisibility").unwrap()
+                );
+            }
+        }
+    }
+    #[test]
+    fn compatibility_setting_errors_keep_name_validation_before_value_lexing() {
+        let mut symbols = SymbolTable::default();
+        assert_eq!(
+            parse_setting("set unknown = \"unterminated", &mut symbols).unwrap_err(),
+            "unknown procedure setting: unknown"
+        );
+        assert_eq!(
+            parse_setting("set name = \"unterminated", &mut symbols).unwrap_err(),
+            "invalid expression tokens in procedure declaration"
+        );
+    }
 }

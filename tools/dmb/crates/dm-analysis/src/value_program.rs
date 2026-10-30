@@ -2,7 +2,7 @@
 //! compiler's source declaration queries. All equations are solved together;
 //! no member of a recursive group recursively fetches another blocking query.
 use crate::{
-    native_program::Origin,
+    native_program::{BodyDemand, CheckedBodyDemand, CompatibilityBodyDemand, Origin},
     untyped::{self, Unsupported, Walker},
     value_equations::{self, Equation, Solution},
     value_expressions::{self, ValueHost},
@@ -1100,7 +1100,13 @@ impl<'a> Values<'a> {
         resolver: &'a impl Resolver,
         exempt_types: &'a [String],
     ) -> Result<Self, Unsupported> {
-        Self::build_from(Origin::Live(frontend), Some(arena), resolver, exempt_types)
+        Self::build_from(
+            Origin::Live(frontend),
+            Some(arena),
+            resolver,
+            exempt_types,
+            CompatibilityBodyDemand,
+        )
     }
     /// Analyze the retained compiler archive after its transient frontend is gone.
     /// All semantic/body owners remain the archive's original shared handles.
@@ -1109,14 +1115,34 @@ impl<'a> Values<'a> {
         resolver: &'a impl Resolver,
         exempt_types: &'a [String],
     ) -> Result<Self, Unsupported> {
-        Self::build_from(Origin::Archive(archive), None, resolver, exempt_types)
+        Self::build_from(
+            Origin::Archive(archive),
+            None,
+            resolver,
+            exempt_types,
+            CompatibilityBodyDemand,
+        )
     }
-    fn build_from(
+    pub fn build_archive_checked(
+        archive: &'a BodyArchive,
+        resolver: &'a impl Resolver,
+        exempt_types: &'a [String],
+    ) -> Result<Self, crate::value_query::ValueQueryFailure> {
+        Self::build_from(
+            Origin::Archive(archive),
+            None,
+            resolver,
+            exempt_types,
+            CheckedBodyDemand,
+        )
+    }
+    fn build_from<D: BodyDemand>(
         origin: Origin<'a>,
         arena: Option<&BodyArena<'a>>,
         resolver: &'a impl Resolver,
         exempt_types: &'a [String],
-    ) -> Result<Self, Unsupported> {
+        demand: D,
+    ) -> Result<Self, D::Failure> {
         let tree = origin.tree();
         let mut index = Index::new(origin, resolver)?;
         // Unique policy fact, derived from the same borrowed syntax before the
@@ -1159,7 +1185,7 @@ impl<'a> Values<'a> {
             if !index.subtype(resolver, id.owner, SymbolId::of("/datum/config_entry"))? {
                 continue;
             }
-            origin.with_body(arena, ordinal, |syntax, _, _, _| {
+            demand.with_body(origin, arena, ordinal, |syntax, _, _, _| {
                 let mut writes = ConfigWrites(false);
                 crate::untyped_order::visit_value_policy(syntax.view(), &mut writes)
                     .map_err(|e| Unsupported(e.into()))?;
@@ -1234,7 +1260,8 @@ impl<'a> Values<'a> {
             }
         }
         for ordinal in 0..origin.bodies().len() {
-            origin.with_body(
+            demand.with_body(
+                origin,
                 arena,
                 ordinal,
                 |syntax, occurrence, parameters, local_source| {

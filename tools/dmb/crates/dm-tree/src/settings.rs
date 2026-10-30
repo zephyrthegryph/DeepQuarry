@@ -182,3 +182,75 @@ mod tests {
         assert!(executable.iter().all(|item| item.children.is_empty()));
     }
 }
+
+/// SAME existing encounter-order setting extraction over issued original headers.
+/// No executable body or Expr parser is entered by this metadata/footprint pass.
+pub(crate) fn extract_settings_original(
+    items: &[Item],
+    symbols: &mut SymbolTable,
+    headers: &crate::procedure::OriginalProcedureHeaders,
+    offset: usize,
+) -> Result<
+    (
+        Arc<[ProcedureSettingNode]>,
+        Vec<crate::procedure::header_input::SettingFootprint>,
+    ),
+    String,
+> {
+    fn walk(
+        items: &[Item],
+        symbols: &mut SymbolTable,
+        headers: &crate::procedure::OriginalProcedureHeaders,
+        offset: usize,
+        nodes: &mut Vec<ProcedureSettingNode>,
+        footprints: &mut Vec<crate::procedure::header_input::SettingFootprint>,
+    ) -> Result<(), String> {
+        for item in items {
+            if keyword(&item.header, "set") {
+                if !item.children.is_empty() {
+                    return Err("setting has nested children".into());
+                }
+                let parsed = headers.parse_setting_original(item.header_span, offset, symbols)?;
+                let start = item
+                    .header_span
+                    .start
+                    .checked_sub(offset)
+                    .ok_or("setting before original chunk")?;
+                let header = dm_syntax::Span::new(
+                    start,
+                    item.header_span
+                        .end
+                        .checked_sub(offset)
+                        .ok_or("setting end before original chunk")?,
+                );
+                let value = dm_syntax::Span::new(
+                    start
+                        .checked_add(parsed.value_span.start)
+                        .ok_or("setting RHS start overflow")?,
+                    start
+                        .checked_add(parsed.value_span.end)
+                        .ok_or("setting RHS end overflow")?,
+                );
+                nodes
+                    .try_reserve_exact(1)
+                    .map_err(|_| "setting metadata capacity refused")?;
+                footprints
+                    .try_reserve_exact(1)
+                    .map_err(|_| "setting footprint capacity refused")?;
+                footprints.push(crate::procedure::header_input::SettingFootprint {
+                    header,
+                    value,
+                    ordinal: nodes.len(),
+                });
+                nodes.push(ProcedureSettingNode::Setting(parsed.setting));
+            } else {
+                walk(&item.children, symbols, headers, offset, nodes, footprints)?;
+            }
+        }
+        Ok(())
+    }
+    let mut nodes = Vec::new();
+    let mut footprints = Vec::new();
+    walk(items, symbols, headers, offset, &mut nodes, &mut footprints)?;
+    Ok((nodes.into(), footprints))
+}

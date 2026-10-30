@@ -137,3 +137,76 @@ fn archive_value_input_normalizes_policy_without_retaining_archive_in_result() {
     );
     assert!(proof.input.upgrade().is_none());
 }
+
+#[derive(Debug)]
+struct CheckedOriginalSyntaxHost {
+    failures: AtomicUsize,
+}
+impl dm_tree::frontend::BodySyntaxQueries for CheckedOriginalSyntaxHost {
+    fn syntax(
+        &self,
+        input: &Arc<dm_tree::frontend::BodySyntaxInput>,
+    ) -> Result<Arc<dm_tree::frontend::BodySyntax>, dm_tree::frontend::Diagnostic> {
+        input.parse().map(Arc::new)
+    }
+    fn syntax_checked(
+        &self,
+        input: &Arc<dm_tree::frontend::BodySyntaxInput>,
+    ) -> Result<Arc<dm_tree::frontend::BodySyntax>, dm_tree::frontend::BodySyntaxFailure> {
+        if self.failures.swap(0, Ordering::Relaxed) > 0 {
+            return Err(dm_tree::frontend::BodySyntaxFailure::Operational(
+                std::io::Error::from_raw_os_error(1450),
+            ));
+        }
+        input
+            .parse()
+            .map(Arc::new)
+            .map_err(dm_tree::frontend::BodySyntaxFailure::Syntax)
+    }
+}
+#[test]
+fn checked_value_inference_preserves_actual_body_io_and_shares_original_algorithm() {
+    let host = Arc::new(CheckedOriginalSyntaxHost {
+        failures: AtomicUsize::new(1),
+    });
+    let frontend = build(
+        Path::new("checked-value.dme"),
+        &Source("/proc/scalar(x)\n    return x+1\n"),
+        &Default::default(),
+        1,
+    )
+    .unwrap()
+    .with_body_queries(host);
+    let archive = frontend.body_archive().unwrap();
+    let input = ArchiveValueInput::new(Arc::clone(&archive), &[]);
+    match input
+        .compute_checked()
+        .err()
+        .expect("actual original-body demand failure")
+    {
+        ValueQueryFailure::Operational(error) => assert_eq!(error.raw_os_error(), Some(1450)),
+        other => panic!("actual IO downgraded: {other:?}"),
+    }
+    let checked = input.compute_checked().unwrap();
+    let independent = input.compute().unwrap();
+    let first = Values::from_archive_input(&input, checked).unwrap();
+    let second = Values::from_archive_input(&input, independent).unwrap();
+    assert_eq!(first.equations, second.equations);
+    assert_eq!(first.solution, second.solution);
+    assert_eq!(
+        dm_ir::Resolver::source_owner(first.resolver()),
+        dm_ir::Resolver::source_owner(archive.tree())
+    );
+}
+#[test]
+fn checked_value_compatibility_host_still_checks_exact_proof_issuance() {
+    let input = ArchiveValueInput::new(archive(), &[]);
+    let host = OneProofHost::default();
+    let original = input.obtain_checked(&host).unwrap();
+    assert!(Arc::ptr_eq(&original, &input.obtain(&host).unwrap()));
+    let foreign = ArchiveValueInput::new(archive(), &[]);
+    assert!(matches!(
+        foreign.obtain_checked(&host),
+        Err(ValueQueryFailure::Unsupported(_))
+    ));
+}

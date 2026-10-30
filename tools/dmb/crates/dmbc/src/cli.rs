@@ -87,6 +87,7 @@ pub fn parse(arguments: &[String]) -> Result<Command, Box<dyn std::error::Error>
     };
     let mut project = None;
     let mut policy_inputs = None;
+    let mut source_questions = None;
     let mut diagnostic_declarations = false;
     let mut timeout_seconds = None;
     let mut defines = BTreeMap::new();
@@ -106,6 +107,20 @@ pub fn parse(arguments: &[String]) -> Result<Command, Box<dyn std::error::Error>
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--diagnostic-declarations" => diagnostic_declarations = true,
+            "--source-questions-json" => {
+                if source_questions.is_some() {
+                    return Err("--source-questions-json accepts one roster".into());
+                }
+                let value = args
+                    .next()
+                    .ok_or("--source-questions-json requires inline typed questions JSON")?;
+                if value.len() > 65536 {
+                    return Err("source questions exceed request bound".into());
+                }
+                let questions: Vec<crate::daemon::query::QueryItem> = serde_json::from_str(&value)?;
+                crate::request::validate_source_question_roster(&questions)?;
+                source_questions = Some(questions);
+            }
             "--request-timeout-seconds" => {
                 if timeout_seconds.is_some() {
                     return Err("--request-timeout-seconds accepts one budget".into());
@@ -216,6 +231,7 @@ pub fn parse(arguments: &[String]) -> Result<Command, Box<dyn std::error::Error>
     }
     Ok(Command::Build(Box::new(BuildRequest {
         command,
+        source_questions,
         diagnostic_declarations,
         timeout_seconds,
         policy_inputs,

@@ -23,6 +23,7 @@ fn key(destination: &str) -> RequestKey {
     RequestKey {
         command: RequestCommand::Compile,
         diagnostic_declarations: false,
+        original_source_questions: false,
         defines: BTreeMap::new(),
         engine: None,
         bootstrap: true,

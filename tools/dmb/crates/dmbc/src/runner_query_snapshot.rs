@@ -22,8 +22,18 @@ mod raw_policy;
 mod resolved;
 #[path = "runner_query_selected.rs"]
 mod selected;
+#[path = "runner_query_source_context.rs"]
+mod source_context;
 #[path = "runner_query_variable_visibility.rs"]
 mod variable_visibility;
+// Keep actual operation status out of diagnostic/string adapters. A genuine
+// parser rejection keeps its original location owner and legacy Other kind.
+fn body_syntax_io(error: dm_tree::frontend::BodySyntaxFailure) -> std::io::Error {
+    match error {
+        dm_tree::frontend::BodySyntaxFailure::Operational(error) => error,
+        error @ dm_tree::frontend::BodySyntaxFailure::Syntax(_) => std::io::Error::other(error),
+    }
+}
 use dm_tree::frontend::ColdFrontend;
 pub(crate) use purity::PurityScope;
 use std::{
@@ -69,6 +79,7 @@ pub(crate) struct SourceSnapshot {
     native_value_queries: Option<Arc<dyn dm_analysis::value_query::ArchiveValueQueries>>,
     native_raw_queries: Option<Arc<crate::query_db::QueryDb>>,
     source_answers: Option<crate::query_db::SourceAnswerScopeOwner>,
+    source_question_role: bool,
 }
 struct ReplayProof {
     inputs: crate::input_snapshot::InputSnapshot,
@@ -163,8 +174,8 @@ impl SourceSnapshot {
         let mut rows = Vec::new();
         if policy != Severity::Disabled {
             let body = archive
-                .parse(ordinal as usize)
-                .map_err(|error| io::Error::other(error.message))?;
+                .parse_checked(ordinal as usize)
+                .map_err(body_syntax_io)?;
             let diagnostics = dm_analysis::checks::archived_ambiguous_not_bitwise(&body, policy)
                 .map_err(io::Error::other)?;
             for diagnostic in diagnostics {
@@ -248,6 +259,7 @@ impl SourceSnapshot {
         }
         if let Some(queries) = &self.native_raw_queries {
             queries.purity_census(census);
+            queries.value_rejection_census(census);
             queries.answer_storage_census(census);
             let stats = queries.raw_policy_cache_stats();
             census.unknown("query_snapshot.native_raw_query_cache",&format!(
@@ -403,6 +415,7 @@ impl SourceSnapshot {
             native_value_queries: None,
             native_raw_queries: None,
             source_answers: None,
+            source_question_role: false,
             occurrences: Arc::clone(&frontend.snapshot.occurrences),
             body_archive,
             native_policy_inputs: policy,
@@ -931,7 +944,7 @@ impl SourceSnapshot {
         tree: &dm_tree::SemanticTree,
         output: &mut impl std::io::Write,
     ) -> std::io::Result<()> {
-        use std::io::{self, Write};
+        use std::io;
         crate::daemon::control::checkpoint()?;
         let archive = self
             .body_archive
@@ -941,41 +954,34 @@ impl SourceSnapshot {
                 io::Error::new(io::ErrorKind::NotFound, "current body archive unavailable")
             })?;
         let body = archive
-            .parse(ordinal as usize)
-            .map_err(|error| io::Error::other(error.message))?;
+            .parse_checked(ordinal as usize)
+            .map_err(body_syntax_io)?;
         crate::daemon::control::checkpoint()?;
-        struct Bounded(Vec<u8>);
-        impl Write for Bounded {
-            fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
-                crate::daemon::control::checkpoint()?;
-                if self.0.len().saturating_add(bytes.len()) > 192 * 1024 {
-                    return Err(io::Error::other("body model query exceeds output budget"));
-                }
-                self.0.extend_from_slice(bytes);
-                Ok(bytes.len())
-            }
-            fn flush(&mut self) -> io::Result<()> {
-                Ok(())
-            }
-        }
-        let mut syntax = Bounded(Vec::new());
-        dm_analysis::typed_body_jsonl::write_archived_jsonl(&body, &mut syntax)
-            .map_err(io::Error::other)?;
+        let mut syntax =
+            bounded_json_writer::Bounded::new(192 * 1024, "body model query exceeds output budget");
+        let exported = dm_analysis::typed_body_jsonl::write_archived_jsonl(&body, &mut syntax)
+            .map_err(io::Error::other);
+        syntax.restore(exported)?;
         let lexical = dm_analysis::typed_body::lexical::analyze_archived(&body, None)
             .map_err(io::Error::other)?;
-        let mut bindings = Bounded(Vec::new());
-        dm_analysis::typed_body::lexical::jsonl::write_jsonl(&lexical, &mut bindings)
-            .map_err(io::Error::other)?;
-        serde_json::to_writer(&mut *output, &serde_json::json!({
-            "row":"source_body_model", "schema":"dm-session-source-query-v1",
-            "source_revision":format!("{:032x}",self.source_revision), "ordinal":ordinal,
-            "member":body.occurrence().member.0,"declaration":body.occurrence().declaration.0,
-            "typed_jsonl":String::from_utf8(syntax.0).map_err(io::Error::other)?,
-            "lexical_jsonl":String::from_utf8(bindings.0).map_err(io::Error::other)?,
-            "semantic_resolution_complete":false,
-            "coverage":"current typed syntax and lexical bindings; nonlocal resolved selections require compiler host facts"
-        })).map_err(io::Error::other)?;
-        output.write_all(b"\n")
+        let mut bindings =
+            bounded_json_writer::Bounded::new(192 * 1024, "body model query exceeds output budget");
+        let exported =
+            dm_analysis::typed_body::lexical::jsonl::write_jsonl(&lexical, &mut bindings)
+                .map_err(io::Error::other);
+        bindings.restore(exported)?;
+        bounded_json_writer::write_json_line(
+            &serde_json::json!({
+                "row":"source_body_model", "schema":"dm-session-source-query-v1",
+                "source_revision":format!("{:032x}",self.source_revision), "ordinal":ordinal,
+                "member":body.occurrence().member.0,"declaration":body.occurrence().declaration.0,
+                "typed_jsonl":String::from_utf8(syntax.bytes).map_err(io::Error::other)?,
+                "lexical_jsonl":String::from_utf8(bindings.bytes).map_err(io::Error::other)?,
+                "semantic_resolution_complete":false,
+                "coverage":"current typed syntax and lexical bindings; nonlocal resolved selections require compiler host facts"
+            }),
+            output,
+        )
     }
 }
 
@@ -993,12 +999,15 @@ impl SourceSnapshot {
         tree: &dm_tree::SemanticTree,
         output: &mut impl std::io::Write,
     ) -> std::io::Result<()> {
-        use std::io::{self, Write};
+        use std::io;
         if !self.matches_tree(tree) {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 "current compiler host tree differs",
             ));
+        }
+        if self.source_question_role {
+            return self.write_source_questions(queries, tree, output);
         }
         let context = self.resolved.as_ref().ok_or_else(|| {
             io::Error::new(
@@ -1006,29 +1015,21 @@ impl SourceSnapshot {
                 "current compiler resolver unavailable or pressure-evicted",
             )
         })?;
-        struct Bounded(Vec<u8>);
-        impl Write for Bounded {
-            fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
-                crate::daemon::control::checkpoint()?;
-                if bytes.len() > (192usize * 1024).saturating_sub(self.0.len()) {
-                    return Err(io::Error::other("resolved query rows exceed output budget"));
-                }
-                self.0.extend_from_slice(bytes);
-                Ok(bytes.len())
-            }
-            fn flush(&mut self) -> io::Result<()> {
-                Ok(())
-            }
-        }
-        let mut rows = Bounded(Vec::new());
-        context.write_queries(queries, &mut rows)?;
-        serde_json::to_writer(&mut *output, &serde_json::json!({
-            "row":"source_resolved_queries", "schema":"dm-session-source-query-v1",
-            "source_revision":format!("{:032x}",self.source_revision),
-            "semantic_revision":format!("{:032x}",tree.identity()), "complete":false,
-            "query_count":queries.len(), "captured_jsonl":String::from_utf8(rows.0).map_err(io::Error::other)?
-        })).map_err(io::Error::other)?;
-        output.write_all(b"\n")
+        let mut rows = bounded_json_writer::Bounded::new(
+            192 * 1024,
+            "resolved query rows exceed output budget",
+        );
+        let exported = context.write_queries(queries, &mut rows);
+        rows.restore(exported)?;
+        bounded_json_writer::write_json_line(
+            &serde_json::json!({
+                "row":"source_resolved_queries", "schema":"dm-session-source-query-v1",
+                "source_revision":format!("{:032x}",self.source_revision),
+                "semantic_revision":format!("{:032x}",tree.identity()), "complete":false,
+                "query_count":queries.len(), "captured_jsonl":String::from_utf8(rows.bytes).map_err(io::Error::other)?
+            }),
+            output,
+        )
     }
 }
 
@@ -1092,6 +1093,7 @@ impl SourceSnapshot {
             native_value_queries: None,
             native_raw_queries: Some(queries),
             source_answers: None,
+            source_question_role: false,
         })
     }
     /// Only the current published diagnostic frame supplies this owner; no
@@ -1100,6 +1102,9 @@ impl SourceSnapshot {
     /// diagnostic-to-ordinary transfer need not rebuild RetainedSemanticTree's
     /// older executable patch-base entry merely to serve read-only queries.
     pub(crate) fn prepared_query_tree(&self) -> Option<&Arc<dm_tree::SemanticTree>> {
+        if self.source_question_role {
+            return self.source_answers.as_ref().map(|_| &self.tree);
+        }
         if let Some(tree) = self.diagnostic_tree() {
             return Some(tree);
         }
@@ -1181,3 +1186,6 @@ impl QueryAttempt {
 #[cfg(test)]
 #[path = "runner_query_diagnostic_tests.rs"]
 mod diagnostic_tests;
+
+#[path = "runner_query_bounded_json_writer.rs"]
+mod bounded_json_writer;

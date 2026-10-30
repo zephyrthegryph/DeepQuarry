@@ -137,8 +137,8 @@ impl ResolvedContext {
             .body_index(dm_tree::OccurrenceId(declaration))
             .ok_or_else(|| io::Error::other("current procedure occurrence unavailable"))?;
         let body = archive
-            .parse(index)
-            .map_err(|error| io::Error::other(error.message))?;
+            .parse_checked(index)
+            .map_err(super::body_syntax_io)?;
         crate::daemon::control::checkpoint()?;
         let occurrence = body.occurrence();
         let slot = archive

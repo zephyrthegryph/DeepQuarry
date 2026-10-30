@@ -39,6 +39,7 @@ struct RelativeBody {
     settings: Arc<[Span]>,
     stored_candidates: bool,
     settings_owner: Option<Arc<dm_ir::ProcedureMetadata>>,
+    setting_footprints: Option<Arc<[crate::procedure::header_input::SettingFootprint]>>,
 }
 fn capture_bodies(
     items: &[Item],
@@ -46,11 +47,15 @@ fn capture_bodies(
     path: &mut Vec<usize>,
     output: &mut Vec<RelativeBody>,
     owners: &std::collections::BTreeMap<usize, Arc<dm_ir::ProcedureMetadata>>,
+    headers: Option<&crate::procedure::OriginalProcedureHeaders>,
 ) {
     for (index, item) in items.iter().enumerate() {
         path.push(index);
         if matches!(item.kind, ItemKind::Proc | ItemKind::Verb) {
             let mut settings = Vec::new();
+            // Existing public setting_context_origins inventories EVERY
+            // descendant header, including zero-setting bodies. This is not
+            // another metadata extraction or expression parse.
             crate::settings::setting_spans(&item.children, &mut settings);
             output.push(RelativeBody {
                 code: Arc::new(BodyCodeIdentity { _private: 0 }),
@@ -58,18 +63,34 @@ fn capture_bodies(
                 span: item.span,
                 settings: settings.into(),
                 settings_owner: owners.get(&item.span.start).and_then(|owner| {
-                    let mut symbols = dm_ir::SymbolTable::default();
-                    crate::settings::extract_settings(&item.children, &mut symbols)
-                        .ok()
-                        .filter(|nodes| nodes.as_ref() == owner.settings.as_ref())
-                        .map(|_| Arc::clone(owner))
+                    if let Some(headers) = headers {
+                        headers
+                            .settings_footprints(item.span, owner)
+                            .ok()
+                            .map(|_| Arc::clone(owner))
+                    } else {
+                        let mut symbols = dm_ir::SymbolTable::default();
+                        crate::settings::extract_settings(&item.children, &mut symbols)
+                            .ok()
+                            .filter(|nodes| nodes.as_ref() == owner.settings.as_ref())
+                            .map(|_| Arc::clone(owner))
+                    }
+                }),
+                setting_footprints: headers.and_then(|headers| {
+                    owners.get(&item.span.start).and_then(|owner| {
+                        headers
+                            .settings_footprints(item.span, owner)
+                            .ok()
+                            .flatten()
+                            .cloned()
+                    })
                 }),
                 stored_candidates: crate::procedure_statics::may_contain_stored_declarations(
                     &source[item.span.range()],
                 ),
             });
         } else {
-            capture_bodies(&item.children, source, path, output, owners);
+            capture_bodies(&item.children, source, path, output, owners, headers);
         }
         path.pop();
     }
@@ -78,6 +99,7 @@ pub(crate) struct CurrentBodyRecipe<'a> {
     relative: &'a RelativeBody,
     offset: usize,
     root_prefix: usize,
+    headers: Option<&'a Arc<crate::procedure::OriginalProcedureHeaders>>,
 }
 impl CurrentBodyRecipe<'_> {
     pub(crate) fn code_identity(&self) -> Arc<BodyCodeIdentity> {
@@ -85,6 +107,24 @@ impl CurrentBodyRecipe<'_> {
     }
     pub(crate) fn settings_owner(&self) -> Option<Arc<dm_ir::ProcedureMetadata>> {
         self.relative.settings_owner.clone()
+    }
+    /// Relative original-chunk coordinates. Current offset and exact code/owner
+    /// binding remain on this recipe; these are not standalone frame authority.
+    pub(crate) fn setting_footprints(
+        &self,
+    ) -> Option<&Arc<[crate::procedure::header_input::SettingFootprint]>> {
+        self.relative.setting_footprints.as_ref()
+    }
+    pub(crate) fn original_body_span(&self) -> Span {
+        self.relative.span
+    }
+    pub(crate) fn setting_headers(
+        &self,
+    ) -> Option<&Arc<crate::procedure::OriginalProcedureHeaders>> {
+        self.headers
+    }
+    pub(crate) fn offset(&self) -> usize {
+        self.offset
     }
     pub(crate) fn stored_candidates(&self) -> bool {
         self.relative.stored_candidates
@@ -157,8 +197,20 @@ impl RelativeSyntax {
             }
             pending.extend(&item.children);
         }
+        if let Some(headers) = original_headers.as_ref() {
+            headers
+                .reissue_settings_if_missing(&items, owners)
+                .map_err(|_| BindingError::ForeignOriginalHeaderOwner)?;
+        }
         let mut bodies = Vec::new();
-        capture_bodies(&items, &source, &mut Vec::new(), &mut bodies, owners);
+        capture_bodies(
+            &items,
+            &source,
+            &mut Vec::new(),
+            &mut bodies,
+            owners,
+            original_headers.as_deref(),
+        );
         let source_len = source.len();
         let primary_headers = OnceLock::new();
         fn issued(items: &[Item], parent: Option<u8>, out: &mut Vec<(usize, Option<usize>, u8)>) {
@@ -257,6 +309,9 @@ impl RelativeSyntax {
         self.items.source()
     }
     pub fn visit_settings_owners(&self, mut visit: impl FnMut(&Arc<dm_ir::ProcedureMetadata>)) {
+        if let Some(headers) = self.original_headers.as_ref() {
+            headers.visit_setting_owners(&mut visit);
+        }
         for body in &self.bodies {
             if let Some(owner) = &body.settings_owner {
                 visit(owner);
@@ -441,6 +496,17 @@ impl<'a> ItemView<'a> {
         Self { offset: 0, ..self }.materialize()
     }
 }
+/// Borrowed original token input only. Construction is private to the SAME
+/// current declaration/body-code owner; this is not a copied semantic model.
+pub(crate) struct OriginalSettingTokenInput<'a> {
+    pub(crate) source: &'a str,
+    pub(crate) tokens: &'a [dm_syntax::SpanToken],
+    pub(crate) original_owner: &'a Arc<dm_ir::ProcedureMetadata>,
+    pub(crate) ordinal: usize,
+    pub(crate) header: Span,
+    pub(crate) value: Span,
+    pub(crate) offset: usize,
+}
 #[derive(Clone, Debug)]
 pub struct DeclarationSyntax {
     chunks: Arc<[CurrentSyntaxChunk]>,
@@ -547,11 +613,11 @@ impl DeclarationSyntax {
     }
     /// Native captured-body path: exact current chunk/body/code before borrowing
     /// any original token range. Matching bytes or member IDs are insufficient.
-    pub(crate) fn parse_original_procedure(
-        &self,
+    fn original_body_recipe<'a>(
+        &'a self,
         span: Span,
         code: &Arc<BodyCodeIdentity>,
-    ) -> Result<dm_syntax::ProcedureWithOrigins, dm_syntax::Diagnostic> {
+    ) -> Result<CurrentBodyRecipe<'a>, dm_syntax::Diagnostic> {
         let fail = |message: &str| dm_syntax::Diagnostic {
             span,
             kind: dm_syntax::DiagnosticKind::Unsupported,
@@ -584,12 +650,75 @@ impl DeclarationSyntax {
             .get(n)
             .filter(|b| b.span == relative && Arc::ptr_eq(&b.code, code))
             .ok_or_else(|| fail("original body token range/code owner differs"))?;
-        let input = chunk
+        Ok(CurrentBodyRecipe {
+            relative: body,
+            offset: chunk.offset,
+            root_prefix: self.prefix[index],
+            headers: chunk.relative.original_headers.as_ref(),
+        })
+    }
+    pub(crate) fn parse_original_procedure(
+        &self,
+        span: Span,
+        code: &Arc<BodyCodeIdentity>,
+    ) -> Result<dm_syntax::ProcedureWithOrigins, dm_syntax::Diagnostic> {
+        let recipe = self.original_body_recipe(span, code)?;
+        let input = recipe.headers.ok_or_else(|| dm_syntax::Diagnostic {
+            span,
+            kind: dm_syntax::DiagnosticKind::Unsupported,
+            message: "original declaration token input is unissued".into(),
+        })?;
+        input.parse_body(recipe.relative.span, recipe.offset)
+    }
+    /// Authenticate original current source inputs without demanding any body or
+    /// setting expression grammar. The native frontend still validates its
+    /// actual occurrence and selected runtime metadata before using this seam.
+    pub(crate) fn setting_token_input<'a>(
+        &'a self,
+        span: Span,
+        code: &Arc<BodyCodeIdentity>,
+        ordinal: usize,
+    ) -> Result<OriginalSettingTokenInput<'a>, dm_syntax::Diagnostic> {
+        let recipe = self.original_body_recipe(span, code)?;
+        let fail = |message: &str| dm_syntax::Diagnostic {
+            span,
+            kind: dm_syntax::DiagnosticKind::Unsupported,
+            message: message.into(),
+        };
+        let input = recipe
+            .headers
+            .ok_or_else(|| fail("original setting token owner unavailable"))?;
+        let owner = recipe
             .relative
-            .original_headers
+            .settings_owner
             .as_ref()
-            .ok_or_else(|| fail("original declaration token input is unissued"))?;
-        input.parse_body(body.span, chunk.offset)
+            .ok_or_else(|| fail("original setting metadata owner unavailable"))?;
+        let footprint = recipe
+            .relative
+            .setting_footprints
+            .as_ref()
+            .and_then(|rows| rows.get(ordinal))
+            .ok_or_else(|| fail("original setting footprint ordinal unavailable"))?;
+        let (source, tokens) = input
+            .setting_value_tokens(recipe.relative.span, owner, footprint)
+            .map_err(|message| fail(&message))?;
+        let header = Span::new(
+            footprint.header.start + recipe.offset,
+            footprint.header.end + recipe.offset,
+        );
+        let value = Span::new(
+            footprint.value.start + recipe.offset,
+            footprint.value.end + recipe.offset,
+        );
+        Ok(OriginalSettingTokenInput {
+            source,
+            tokens,
+            original_owner: owner,
+            ordinal,
+            header,
+            value,
+            offset: recipe.offset,
+        })
     }
     pub(crate) fn body_recipes(&self) -> impl Iterator<Item = CurrentBodyRecipe<'_>> {
         self.chunks
@@ -604,6 +733,7 @@ impl DeclarationSyntax {
                         relative,
                         offset: chunk.offset,
                         root_prefix,
+                        headers: chunk.relative.original_headers.as_ref(),
                     })
             })
     }
@@ -1065,5 +1195,31 @@ mod primary_qualifier_roundtrip_tests {
             std::mem::size_of_val(warm.primary_headers(true).unwrap().as_ref()),
         );
         assert!(count > 0 && bytes > 0);
+    }
+}
+
+#[cfg(test)]
+mod original_setting_context_roster_tests {
+    use super::*;
+    #[test]
+    fn original_footprints_preserve_all_context_headers_including_zero_setting_bodies() {
+        for source in [
+   "/proc/check()\n    if(1)\n        set waitfor = 0\n    else\n        return 1\n    return 2\n",
+   "/proc/check()\n    if(1)\n        return 1\n    else\n        return 2\n",
+  ]{
+   // Full structural primary input retains executable context headers;
+   // the skeleton producer intentionally compacts them. No Expr/body parser.
+   let parsed=dm_syntax::parse(source);assert!(parsed.diagnostics.is_empty());
+   let input=crate::procedure::OriginalProcedureHeaders::from_primary(source.to_owned().into(),&parsed.items,0,parsed.tokens.into_iter().map(|token| dm_syntax::SpanToken { kind: token.kind, span: token.span }).collect()).unwrap();
+   let ast=dm_syntax::AstFile{items:parsed.items,..Default::default()};
+   let (facts,_receipt)=crate::adapter::from_ast_with_source_headers(&ast,dm_ir::SymbolTable::default(),dm_ir::FileId(0),0,0,source,&input,0).unwrap();
+   let mut owners=std::collections::BTreeMap::new();
+   for (fact,origin) in facts.skeletons.iter().zip(&facts.origins){if let crate::Skeleton::Member{metadata,..}=fact{if let Some(owner)=metadata.procedure.as_ref(){owners.insert(origin.span.start as usize,owner.clone());}}}
+   let mut expected=Vec::new();crate::settings::setting_spans(&ast.items[0].children,&mut expected);
+   let relative=RelativeSyntax::capture_with_settings_headers(ast.items.clone(),{let mut value=None;input.visit_source(|source|value=Some(source.clone()));value.unwrap()},&owners,Some(input.clone())).unwrap();
+   let body=&relative.bodies[0];let recipe=CurrentBodyRecipe{relative:body,offset:0,root_prefix:0,headers:Some(&input)};
+   assert_eq!(recipe.settings().collect::<Vec<_>>(),expected);assert!(expected.len()>1);
+   if body.settings_owner.as_ref().unwrap().settings.is_empty(){assert!(recipe.setting_footprints().is_none());assert!(!recipe.settings().collect::<Vec<_>>().is_empty());}
+  }
     }
 }

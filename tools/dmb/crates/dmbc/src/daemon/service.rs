@@ -74,6 +74,7 @@ impl EngineIdentity {
 struct RequestKey {
     command: RequestCommand,
     diagnostic_declarations: bool,
+    original_source_questions: bool,
     defines: BTreeMap<String, String>,
     engine: Option<EngineIdentity>,
     bootstrap: bool,
@@ -87,6 +88,7 @@ impl RequestKey {
         Self {
             command: request.command.into(),
             diagnostic_declarations: request.diagnostic_declarations,
+            original_source_questions: request.source_questions.is_some(),
             defines: request.defines.clone(),
             engine: request.engine_template.as_deref().map(EngineIdentity::of),
             bootstrap: request.bootstrap_catalog,
@@ -737,7 +739,7 @@ struct Connection(Arc<Shared>);
 impl Drop for Connection {
     fn drop(&mut self) {
         // Completion precedes the zero-connection idle decision.
-        activity::finished(&CONNECTIONS_FINISHED,&self.0.connections);
+        activity::finished(&CONNECTIONS_FINISHED, &self.0.connections);
     }
 }
 pub(super) fn serve() -> io::Result<()> {
@@ -1422,6 +1424,7 @@ mod tests {
         let slot = shared.slot(PathBuf::from("E:/fixture/project.dme"), None);
         let key = RequestKey {
             diagnostic_declarations: false,
+            original_source_questions: false,
             command: RequestCommand::Compile,
             defines: BTreeMap::new(),
             engine: None,

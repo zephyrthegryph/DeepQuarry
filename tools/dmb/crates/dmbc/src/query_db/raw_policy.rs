@@ -290,6 +290,10 @@ impl QueryDb {
         if let Some(original) = self.raw_policy.admission.abort.take_error() {
             return original;
         }
+        let error = match error.into_operational() {
+            Ok(error) => return error.into_io(),
+            Err(error) => error,
+        };
         if self.raw_policy.admission.abort.is_aborted() {
             return io::Error::new(
                 io::ErrorKind::Interrupted,

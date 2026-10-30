@@ -30,7 +30,7 @@ pub struct Contribution {
 
 /// Missing semantic knowledge is an error, never a clean lint result. In
 /// particular, opaque builtin declarations cannot be treated as untyped fields.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Unsupported(pub String);
 impl std::fmt::Display for Unsupported {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

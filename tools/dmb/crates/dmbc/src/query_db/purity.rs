@@ -370,12 +370,36 @@ fn finish<T: Any + Send + Sync>(
     )?;
     Ok(outcome)
 }
+/// Transport errors are not native policy refusals. This operation-local
+/// sum never becomes an Outcome; split_transport removes Query before finish.
+#[derive(Debug)]
+enum ReadFailure {
+    Semantic(String),
+    Query(QueryError),
+}
+impl From<String> for ReadFailure {
+    fn from(e: String) -> Self {
+        Self::Semantic(e)
+    }
+}
+impl From<&str> for ReadFailure {
+    fn from(e: &str) -> Self {
+        Self::Semantic(e.into())
+    }
+}
+fn split_transport<T>(result: Result<T, ReadFailure>) -> Result<Result<T, String>, QueryError> {
+    match result {
+        Ok(v) => Ok(Ok(v)),
+        Err(ReadFailure::Semantic(e)) => Ok(Err(e)),
+        Err(ReadFailure::Query(e)) => Err(e),
+    }
+}
 fn get_body(
     ctx: &mut dm_query::Ctx<'_>,
     ledger: &Arc<Mutex<Ledger>>,
     parent: &Params,
     ordinal: usize,
-) -> Result<Arc<BodyEffects>, String> {
+) -> Result<Arc<BodyEffects>, ReadFailure> {
     let input = parent.input.upgrade().ok_or("purity input expired")?;
     let k = key(BODY, &input, ordinal as u128);
     let _reservation = node_admission(ledger, &input, k, std::mem::size_of::<Params>())?;
@@ -383,15 +407,16 @@ fn get_body(
     let q = params_for(parent, BODY, ordinal as u128);
     remember_params(ledger, &input, k, &q);
     ctx.get::<Result<Arc<BodyEffects>, String>>(k, q)
-        .map_err(|e| format!("purity body job: {e:?}"))?
+        .map_err(ReadFailure::Query)?
         .as_ref()
         .clone()
+        .map_err(ReadFailure::Semantic)
 }
 fn get_plan(
     ctx: &mut dm_query::Ctx<'_>,
     ledger: &Arc<Mutex<Ledger>>,
     p: &Params,
-) -> Result<Arc<EffectPlan>, String> {
+) -> Result<Arc<EffectPlan>, ReadFailure> {
     let input = p.input.upgrade().ok_or("purity input expired")?;
     let k = key(PLAN, &input, 0);
     let _reservation = node_admission(ledger, &input, k, std::mem::size_of::<Params>())?;
@@ -399,15 +424,16 @@ fn get_plan(
     let q = params_for(p, PLAN, 0);
     remember_params(ledger, &input, k, &q);
     ctx.get::<Result<Arc<EffectPlan>, String>>(k, q)
-        .map_err(|e| format!("purity plan job: {e:?}"))?
+        .map_err(ReadFailure::Query)?
         .as_ref()
         .clone()
+        .map_err(ReadFailure::Semantic)
 }
 fn get_scc(
     ctx: &mut dm_query::Ctx<'_>,
     ledger: &Arc<Mutex<Ledger>>,
     p: &Params,
-) -> Result<Arc<SccSummary>, String> {
+) -> Result<Arc<SccSummary>, ReadFailure> {
     let input = p.input.upgrade().ok_or("purity input expired")?;
     let k = key(SCC, &input, 0);
     let _reservation = node_admission(ledger, &input, k, std::mem::size_of::<Params>())?;
@@ -415,9 +441,10 @@ fn get_scc(
     let q = params_for(p, SCC, 0);
     remember_params(ledger, &input, k, &q);
     ctx.get::<Result<Arc<SccSummary>, String>>(k, q)
-        .map_err(|e| format!("purity SCC job: {e:?}"))?
+        .map_err(ReadFailure::Query)?
         .as_ref()
         .clone()
+        .map_err(ReadFailure::Semantic)
 }
 struct Observed<'a, 'b> {
     ctx: Mutex<&'a mut dm_query::Ctx<'b>>,
@@ -426,18 +453,26 @@ struct Observed<'a, 'b> {
     registry: SourceRegistry,
     ledger: Arc<Mutex<Ledger>>,
     parent: Key,
-    error: Mutex<Option<String>>,
+    error: Mutex<Option<ReadFailure>>,
 }
 impl Observed<'_, '_> {
-    fn finish(&self) -> Result<(), String> {
+    fn finish(&self) -> Result<(), ReadFailure> {
         self.error
             .lock()
             .unwrap_or_else(|e| e.into_inner())
-            .clone()
+            .take()
             .map_or(Ok(()), Err)
     }
-    fn fail(&self, e: String) {
-        *self.error.lock().unwrap_or_else(|e| e.into_inner()) = Some(e)
+    fn fail(&self, error: ReadFailure) {
+        let mut first = self.error.lock().unwrap_or_else(|e| e.into_inner());
+        if first.is_none()
+            || matches!(
+                (&*first, &error),
+                (Some(ReadFailure::Semantic(_)), ReadFailure::Query(_))
+            )
+        {
+            *first = Some(error);
+        }
     }
 }
 impl Resolver for Observed<'_, '_> {
@@ -446,15 +481,23 @@ impl Resolver for Observed<'_, '_> {
     }
     fn resolve(&self, q: ResolveQuery) -> ResolvedMeaning {
         if let Err(e) = execution_checkpoint(&self.ledger) {
-            self.fail(e);
+            self.fail(ReadFailure::Semantic(e));
             return ResolvedMeaning::Unsupported(q);
         }
         if let Err(e) = checked_sources(self.input, &self.sources, &self.registry) {
-            self.fail(e);
+            self.fail(ReadFailure::Semantic(e));
             return ResolvedMeaning::Unsupported(q);
         }
         let k = key(RESOLVER, self.input, query_id(&q));
-        let result = (|| {
+        if self
+            .error
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .is_some()
+        {
+            return ResolvedMeaning::Unsupported(q);
+        }
+        let result = (|| -> Result<ResolvedMeaning, ReadFailure> {
             let _reservation = node_admission(
                 &self.ledger,
                 self.input,
@@ -470,9 +513,7 @@ impl Resolver for Observed<'_, '_> {
             });
             remember_params(&self.ledger, self.input, k, &p);
             let mut ctx = self.ctx.lock().unwrap_or_else(|e| e.into_inner());
-            let proof = ctx
-                .get::<u128>(k, p)
-                .map_err(|e| format!("purity resolver proof failed: {e:?}"))?;
+            let proof = ctx.get::<u128>(k, p).map_err(ReadFailure::Query)?;
             let answer = Resolver::resolve(self.input.archive().tree(), q);
             if *proof != answer_hash(&answer) {
                 return Err("purity original resolver answer differs from dependency hash".into());
@@ -483,7 +524,7 @@ impl Resolver for Observed<'_, '_> {
                 value: &ResolvedMeaning,
                 ledger: &Arc<Mutex<Ledger>>,
                 parent: Key,
-            ) -> Result<(), String> {
+            ) -> Result<(), ReadFailure> {
                 match value {
                     ResolvedMeaning::Declaration { identity, .. } => {
                         if let Some(ordinal) = input.ordinal_for(*identity) {
@@ -493,8 +534,7 @@ impl Resolver for Observed<'_, '_> {
                                 .and_then(|v| v.get(ordinal))
                                 .ok_or("purity source settings input missing")?;
                             edge(ledger, parent)?;
-                            body_syntax::observe(ctx, s)
-                                .map_err(|e| format!("purity source settings dependency: {e:?}"))?
+                            body_syntax::observe(ctx, s).map_err(ReadFailure::Query)?
                         }
                     }
                     ResolvedMeaning::Members(rows) => {
@@ -560,13 +600,12 @@ pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, registry: SourceRegi
             error: Mutex::new(None),
         };
         let admission = execution_admission(&l);
-        let result = input
-            .compute_body(p.ordinal, &resolver, &admission)
-            .and_then(|v| {
-                resolver.finish()?;
-                Ok(v)
-            });
+        let computed = input.compute_body(p.ordinal, &resolver, &admission);
+        let result = resolver
+            .finish()
+            .and_then(|_| computed.map_err(ReadFailure::Semantic));
         latch_transient_denial(&l, &admission);
+        let result = split_transport(result)?;
         let bytes = size_error(&result, BodyEffects::charge);
         finish(&l, p.key, result, bytes)
     });
@@ -577,12 +616,12 @@ pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, registry: SourceRegi
         job_checkpoint(&l, p.key)?;
         let input = p.input.upgrade().ok_or(QueryError::Missing(p.key))?;
         let admission = execution_admission(&l);
-        let result = (|| {
+        let result = (|| -> Result<Arc<EffectPlan>, ReadFailure> {
             let bodies = input
                 .order()
                 .iter()
                 .map(|&(i, _)| get_body(ctx, &l, p, i))
-                .collect::<Result<Vec<_>, String>>()?;
+                .collect::<Result<Vec<_>, ReadFailure>>()?;
             let resolver = Observed {
                 ctx: Mutex::new(ctx),
                 input: &input,
@@ -592,11 +631,12 @@ pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, registry: SourceRegi
                 parent: p.key,
                 error: Mutex::new(None),
             };
-            let plan = input.plan(bodies, &resolver, &admission)?;
+            let plan = input.plan(bodies, &resolver, &admission);
             resolver.finish()?;
-            Ok(plan)
+            plan.map_err(ReadFailure::Semantic)
         })();
         latch_transient_denial(&l, &admission);
+        let result = split_transport(result)?;
         let bytes = size_error(&result, EffectPlan::charge);
         finish(&l, p.key, result, bytes)
     });
@@ -605,7 +645,9 @@ pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, registry: SourceRegi
         let p = raw.downcast_ref::<Params>().expect("effect SCC params");
         job_checkpoint(&l, p.key)?;
         let input = p.input.upgrade().ok_or(QueryError::Missing(p.key))?;
-        let result = get_plan(ctx, &l, p).and_then(|p| p.summarize(&input));
+        let result =
+            get_plan(ctx, &l, p).and_then(|p| p.summarize(&input).map_err(ReadFailure::Semantic));
+        let result = split_transport(result)?;
         let bytes = size_error(&result, SccSummary::charge);
         finish(&l, p.key, result, bytes)
     });
@@ -620,7 +662,7 @@ pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, registry: SourceRegi
             job_checkpoint(&ledger, p.key)?;
             let input = p.input.upgrade().ok_or(QueryError::Missing(p.key))?;
             let admission = execution_admission(&ledger);
-            let result = (|| {
+            let result = (|| -> Result<Arc<Vec<Produced>>, ReadFailure> {
                 let policy = p
                     .policy
                     .upgrade()
@@ -646,15 +688,16 @@ pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, registry: SourceRegi
                 };
                 let check = || execution_checkpoint(&ledger);
                 let rows = if let Some(summary) = summary {
-                    summary.report(&input, &resolver, &policy, &admission, check)?
+                    summary.report(&input, &resolver, &policy, &admission, check)
                 } else {
                     plan.ok_or("sleep shared plan unavailable")?
-                        .sleep_report(&input, &resolver, &policy, &admission, check)?
+                        .sleep_report(&input, &resolver, &policy, &admission, check)
                 };
                 resolver.finish()?;
-                Ok(Arc::new(rows))
+                Ok(Arc::new(rows.map_err(ReadFailure::Semantic)?))
             })();
             latch_transient_denial(&ledger, &admission);
+            let result = split_transport(result)?;
             let bytes = size_error(&result, dm_analysis::checker_effects::report_capacity_bound);
             finish(&ledger, p.key, result, bytes)
         });
@@ -757,7 +800,7 @@ impl QueryDb {
             l.denied = false;
             l.aborted = None;
         }
-        let result = (|| -> Result<Arc<Vec<Produced>>, String> {
+        let result = (|| -> Result<Arc<Vec<Produced>>, ReadFailure> {
             let sources = self.purity_sources(input)?;
             let k = key(report_kind, input, scope.policy_key());
             let syntax = input
@@ -800,11 +843,11 @@ impl QueryDb {
             });
             remember_params(&self.purity.ledger, input, k, &p);
             let result = self
-            .db
-            .get::<Result<Arc<Vec<Produced>>, String>>(k, p)
-            .map_err(|e| {if self.purity.ledger.lock().unwrap_or_else(|e|e.into_inner()).denied {"native purity retained metadata/result budget exhausted before cache publication".into()} else {format!("native purity graph job: {e:?}")}})?;
+                .db
+                .get::<Result<Arc<Vec<Produced>>, String>>(k, p)
+                .map_err(ReadFailure::Query)?;
             scope.validate(self, input)?;
-            result.as_ref().clone()
+            result.as_ref().clone().map_err(ReadFailure::Semantic)
         })();
         // Still under the family gate: do not race a new query resetting the
         // operational latch, and never downgrade the actual IO failure.
@@ -819,7 +862,16 @@ impl QueryDb {
         {
             return Err(error);
         }
-        result.map_err(std::io::Error::other)
+        match result {
+            Ok(value) => Ok(value),
+            Err(ReadFailure::Semantic(message)) => Err(std::io::Error::other(message)),
+            Err(ReadFailure::Query(error)) => match error.into_operational() {
+                Ok(error) => Err(error.into_io()),
+                Err(error) => Err(std::io::Error::other(format!(
+                    "native purity graph job: {error:?}"
+                ))),
+            },
+        }
     }
 }
 impl QueryDb {

@@ -1,5 +1,72 @@
 //! Consume one request-local parsed procedure through ordinary and helper lowering.
 use super::*;
+trait LowerBodyDemand {
+    type Failure: From<Vec<LoweringDiagnostic>>;
+    fn take<'f>(
+        bodies: &dm_tree::frontend::BodyArena<'f>,
+        body: &BodyOccurrence,
+        diagnostic: impl FnOnce(dm_tree::frontend::Diagnostic) -> Vec<LoweringDiagnostic>,
+    ) -> Result<dm_tree::frontend::ParsedBody<'f>, Self::Failure>;
+    fn prepare<P: AbiPolicy>(
+        policy: &P,
+        metadata: &ProcedureMetadata,
+        parsed: dm_tree::frontend::ParsedBody<'_>,
+        context: &AbiContext<'_>,
+        diagnostic: impl FnOnce(dm_codegen_byond::procedure_abi::AbiError) -> Vec<LoweringDiagnostic>,
+    ) -> Result<OwnedPreparedBody, Self::Failure>;
+}
+struct CompatibilityLowerBody;
+impl LowerBodyDemand for CompatibilityLowerBody {
+    type Failure = Vec<LoweringDiagnostic>;
+    fn take<'f>(
+        bodies: &dm_tree::frontend::BodyArena<'f>,
+        body: &BodyOccurrence,
+        diagnostic: impl FnOnce(dm_tree::frontend::Diagnostic) -> Vec<LoweringDiagnostic>,
+    ) -> Result<dm_tree::frontend::ParsedBody<'f>, Self::Failure> {
+        bodies.take_parsed(body).map_err(diagnostic)
+    }
+    fn prepare<P: AbiPolicy>(
+        policy: &P,
+        metadata: &ProcedureMetadata,
+        parsed: dm_tree::frontend::ParsedBody<'_>,
+        context: &AbiContext<'_>,
+        diagnostic: impl FnOnce(dm_codegen_byond::procedure_abi::AbiError) -> Vec<LoweringDiagnostic>,
+    ) -> Result<OwnedPreparedBody, Self::Failure> {
+        policy
+            .prepare_owned_captured(metadata, parsed, context)
+            .map_err(|e| diagnostic(dm_codegen_byond::procedure_abi::AbiError::unsupported(e)))
+    }
+}
+struct CheckedLowerBody;
+impl LowerBodyDemand for CheckedLowerBody {
+    type Failure = LoweringFailure;
+    fn take<'f>(
+        bodies: &dm_tree::frontend::BodyArena<'f>,
+        body: &BodyOccurrence,
+        diagnostic: impl FnOnce(dm_tree::frontend::Diagnostic) -> Vec<LoweringDiagnostic>,
+    ) -> Result<dm_tree::frontend::ParsedBody<'f>, Self::Failure> {
+        bodies.take_parsed_checked(body).map_err(|e| match e {
+            dm_tree::frontend::BodySyntaxFailure::Syntax(d) => {
+                LoweringFailure::Diagnostics(diagnostic(d))
+            }
+            dm_tree::frontend::BodySyntaxFailure::Operational(e) => LoweringFailure::Operational(e),
+        })
+    }
+    fn prepare<P: AbiPolicy>(
+        policy: &P,
+        metadata: &ProcedureMetadata,
+        parsed: dm_tree::frontend::ParsedBody<'_>,
+        context: &AbiContext<'_>,
+        diagnostic: impl FnOnce(dm_codegen_byond::procedure_abi::AbiError) -> Vec<LoweringDiagnostic>,
+    ) -> Result<OwnedPreparedBody, Self::Failure> {
+        policy
+            .prepare_owned_captured_checked(metadata, parsed, context)
+            .map_err(|e| match e.into_operational() {
+                Ok(e) => LoweringFailure::Operational(e),
+                Err(e) => LoweringFailure::Diagnostics(diagnostic(e)),
+            })
+    }
+}
 pub(super) struct LoweringCapture<'a, 'frontend> {
     pub startup: Option<&'a crate::startup::CapturedStartup<'frontend>>,
     pub capture: Option<&'a RefCell<MemoCapture>>,
@@ -40,6 +107,55 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
     bodies: &dm_tree::frontend::BodyArena<'_>,
     captured: LoweringCapture<'_, '_>,
 ) -> Result<LoweredUnit, Vec<LoweringDiagnostic>> {
+    lower_one_captured_with::<CompatibilityLowerBody, _, _>(
+        frontend, body, host, policy, bodies, captured,
+    )
+}
+pub(super) fn lower_one_captured_checked<R: Resolver, P: AbiPolicy>(
+    frontend: &ColdFrontend,
+    body: &BodyOccurrence,
+    host: &R,
+    policy: &P,
+    bodies: &dm_tree::frontend::BodyArena<'_>,
+    captured: LoweringCapture<'_, '_>,
+) -> Result<LoweredUnit, LoweringFailure> {
+    lower_one_captured_with::<CheckedLowerBody, _, _>(
+        frontend, body, host, policy, bodies, captured,
+    )
+}
+pub(super) fn lower_one_checked<R: Resolver, P: AbiPolicy>(
+    frontend: &ColdFrontend,
+    body: &BodyOccurrence,
+    host: &R,
+    policy: &P,
+    startup: Option<&crate::startup::CapturedStartup>,
+    bodies: &dm_tree::frontend::BodyArena<'_>,
+    capture_references: bool,
+    current: Option<SourceUnitIdentity>,
+) -> Result<LoweredUnit, LoweringFailure> {
+    lower_one_captured_checked(
+        frontend,
+        body,
+        host,
+        policy,
+        bodies,
+        LoweringCapture {
+            startup,
+            capture: None,
+            ready: None,
+            capture_references,
+            current,
+        },
+    )
+}
+fn lower_one_captured_with<D: LowerBodyDemand, R: Resolver, P: AbiPolicy>(
+    frontend: &ColdFrontend,
+    body: &BodyOccurrence,
+    host: &R,
+    policy: &P,
+    bodies: &dm_tree::frontend::BodyArena<'_>,
+    captured: LoweringCapture<'_, '_>,
+) -> Result<LoweredUnit, D::Failure> {
     let LoweringCapture {
         startup,
         capture,
@@ -86,7 +202,7 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
         .as_ref()
         .ok_or_else(|| unsupported("procedure signature metadata unsupported".into()))?;
     let symbols = startup.map_or(tree.symbols(), |captured| captured.plan().symbols.as_ref());
-    let parsed = bodies.take_parsed(body).map_err(|diagnostic| {
+    let parsed = D::take(bodies, body, |diagnostic| {
         vec![LoweringDiagnostic {
             related: Vec::new(),
             kind: diagnostic.kind,
@@ -123,9 +239,21 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
             origin: &body.source,
             resolver: host,
         };
-        policy
-            .prepare_owned_captured(metadata, parsed, &context)
-            .map_err(unsupported)?
+        D::prepare(policy, metadata, parsed, &context, |failure| {
+            use dm_codegen_byond::procedure_abi::AbiErrorKind;
+            let kind = match failure.kind {
+                AbiErrorKind::Source => DiagnosticKind::SourceError,
+                AbiErrorKind::Unsupported => DiagnosticKind::UnsupportedModel,
+                AbiErrorKind::Invariant | AbiErrorKind::Operational(_) => DiagnosticKind::Internal,
+            };
+            vec![LoweringDiagnostic {
+                related: Vec::new(),
+                kind,
+                identity: Some(identity),
+                origin: body.source.clone(),
+                message: failure.message,
+            }]
+        })?
     };
     let statements = statements.or(issued_statements);
     let parsed = &parsed;
@@ -141,9 +269,7 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
         .procedure_identity
         .is_some_and(|supplied| supplied != procedure_identity)
     {
-        return Err(unsupported(
-            "procedure ABI identity differs from current body".into(),
-        ));
+        return Err(unsupported("procedure ABI identity differs from current body".into()).into());
     }
     inputs.procedure_identity = Some(procedure_identity);
     let mut typed_removed = None;
@@ -170,7 +296,8 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
         if current.procedure != procedure_identity {
             return Err(unsupported(
                 "procedure startup inventory differs from current body".into(),
-            ));
+            )
+            .into());
         }
         if let Some(startup) = startup {
             let captured = startup
@@ -182,12 +309,14 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
             {
                 return Err(unsupported(
                     "procedure startup inventory differs from current body".into(),
-                ));
+                )
+                .into());
             }
         } else if !current.declarations.is_empty() {
             return Err(unsupported(
                 "procedure statics require verified shared-slot/default/startup admission".into(),
-            ));
+            )
+            .into());
         }
         let removed: std::collections::HashSet<_> = current
             .origins
@@ -217,7 +346,8 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
                 identity: Some(identity),
                 origin,
                 message: diagnostic.message.clone(),
-            }]);
+            }]
+            .into());
         }
         if let Some(diagnostic) = statements.parsed().diagnostics.iter().find(|diagnostic| {
             diagnostic.kind == dm_syntax::DiagnosticKind::IncompleteExpression
@@ -275,7 +405,8 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
                 identity: Some(identity),
                 origin,
                 message: diagnostic.message.clone(),
-            }]);
+            }]
+            .into());
         }
         typed_valid = statements
             .parsed()
@@ -305,7 +436,8 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
         if captured.procedure != procedure_identity {
             return Err(unsupported(
                 "procedure startup inventory differs from current body".into(),
-            ));
+            )
+            .into());
         }
         if captured.declarations.is_empty()
             && captured.origins.is_empty()
@@ -326,7 +458,8 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
             {
                 return Err(unsupported(
                     "procedure startup inventory differs from current body".into(),
-                ));
+                )
+                .into());
             }
             current.executable_body
         }
@@ -343,7 +476,8 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
                 return Err(unsupported(
                     "procedure statics require verified shared-slot/default/startup admission"
                         .into(),
-                ));
+                )
+                .into());
             }
         }
         prepared.executable_body

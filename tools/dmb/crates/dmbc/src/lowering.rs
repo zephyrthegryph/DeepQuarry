@@ -23,7 +23,9 @@ mod diagnostic_anchor_tests;
 mod error_anchor;
 #[path = "lowering/selection_kernel.rs"]
 mod selection_kernel;
-pub(crate) use selection_kernel::{compile_selected_view, compile_selected_lossless, append_selected_grammar};
+pub(crate) use selection_kernel::{
+    append_selected_grammar, compile_selected_lossless, compile_selected_view,
+};
 #[path = "lowering/grammar.rs"]
 mod grammar;
 fn replay_errors(
@@ -231,6 +233,23 @@ pub fn source_unit_roster(
 }
 pub use crate::driver_facts::LocalInputRoster;
 
+/// Request-local lowering status. Operational errors are never source
+/// diagnostics, memo values, verification mismatches or semantic cache keys.
+#[derive(Debug)]
+pub enum LoweringFailure {
+    Diagnostics(Vec<LoweringDiagnostic>),
+    Operational(std::io::Error),
+}
+impl From<Vec<LoweringDiagnostic>> for LoweringFailure {
+    fn from(d: Vec<LoweringDiagnostic>) -> Self {
+        Self::Diagnostics(d)
+    }
+}
+pub type OwnedPreparedBody = (
+    PreparedUnit,
+    dm_syntax::Item,
+    Option<Arc<dm_tree::frontend::StatementBody>>,
+);
 /// Converts signature/default/annotation semantics using one pinned compiler ABI.
 /// Reject unsupported flags/value-source/default decoding rather than guessing.
 pub trait AbiPolicy: Sync {
@@ -285,6 +304,36 @@ pub trait AbiPolicy: Sync {
         let mut header = parsed.into_item();
         header.children = Vec::new();
         Ok((prepared, header, None))
+    }
+    /// Additive checked hooks. Opaque/custom compatibility policies retain
+    /// their exact existing hook selection; native policies override where an
+    /// actual operation can fail. No failure licenses a fallback parser.
+    fn prepare_issued_checked(
+        &self,
+        metadata: &ProcedureMetadata,
+        input: &dm_tree::frontend::IssuedBodyInput<'_>,
+        context: &AbiContext<'_>,
+    ) -> Result<Option<PreparedReplay>, dm_codegen_byond::procedure_abi::AbiError> {
+        self.prepare_issued(metadata, input, context)
+            .map_err(dm_codegen_byond::procedure_abi::AbiError::unsupported)
+    }
+    fn prepare_captured_checked(
+        &self,
+        metadata: &ProcedureMetadata,
+        parsed: &dm_tree::frontend::ParsedBody<'_>,
+        context: &AbiContext<'_>,
+    ) -> Result<PreparedUnit, dm_codegen_byond::procedure_abi::AbiError> {
+        self.prepare_captured(metadata, parsed, context)
+            .map_err(dm_codegen_byond::procedure_abi::AbiError::unsupported)
+    }
+    fn prepare_owned_captured_checked(
+        &self,
+        metadata: &ProcedureMetadata,
+        parsed: dm_tree::frontend::ParsedBody<'_>,
+        context: &AbiContext<'_>,
+    ) -> Result<OwnedPreparedBody, dm_codegen_byond::procedure_abi::AbiError> {
+        self.prepare_owned_captured(metadata, parsed, context)
+            .map_err(dm_codegen_byond::procedure_abi::AbiError::unsupported)
     }
     fn inputs(
         &self,
@@ -667,7 +716,9 @@ fn compact_retained(unit: &mut LoweredUnit) {
 }
 mod body;
 mod memo;
-use body::{lower_one, lower_one_captured, LoweringCapture};
+use body::{
+    lower_one, lower_one_captured, lower_one_captured_checked, lower_one_checked, LoweringCapture,
+};
 
 /// A deterministic identity index for subsequent linking; duplicate structural
 /// identities are a driver/model error, never silently overwritten.

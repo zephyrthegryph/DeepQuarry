@@ -13,7 +13,26 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         validate: &mut dyn FnMut(&Receipt<Q, A, D>, &Arc<T>) -> Option<Q>,
         accept: &mut dyn FnMut(&Arc<T>) -> bool,
     ) -> (Option<(Arc<[u8]>, ObservedArtifact<T, Q, A, D>)>, Option<Q>) {
-        static LOOKUP: dm_profile::Accumulator = dm_profile::Accumulator::new("store.lookup_locked");
+        self.try_visit_borrowed_receipted_with_value::<std::convert::Infallible>(
+            digest,
+            matches_key,
+            &mut |reads, value| Ok(validate(reads, value)),
+            &mut |value| Ok(accept(value)),
+        )
+        .unwrap_or_else(|impossible| match impossible {})
+    }
+    /// Fallible admission over the SAME exact-key candidate loop. An operation
+    /// error exits before any candidate is admitted or claimed; no error/latch
+    /// is retained by the store. Both callbacks still run outside core locks.
+    pub fn try_visit_borrowed_receipted_with_value<E>(
+        &self,
+        digest: u128,
+        matches_key: &dyn Fn(&[u8]) -> bool,
+        validate: &mut dyn FnMut(&Receipt<Q, A, D>, &Arc<T>) -> Result<Option<Q>, E>,
+        accept: &mut dyn FnMut(&Arc<T>) -> Result<bool, E>,
+    ) -> Result<(Option<(Arc<[u8]>, ObservedArtifact<T, Q, A, D>)>, Option<Q>), E> {
+        static LOOKUP: dm_profile::Accumulator =
+            dm_profile::Accumulator::new("store.lookup_locked");
         let candidates = {
             let _lookup = LOOKUP.time();
             let state = self.state.read().unwrap_or_else(|error| error.into_inner());
@@ -37,10 +56,10 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
             if !matches_key(&key) {
                 continue;
             }
-            if let Some(query) = validate(&reads, &value) {
+            if let Some(query) = validate(&reads, &value)? {
                 changed = Some(query);
-            } else if accept(&value) {
-                return (
+            } else if accept(&value)? {
+                return Ok((
                     Some((
                         key,
                         ObservedArtifact {
@@ -50,10 +69,10 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                         },
                     )),
                     None,
-                );
+                ));
             }
         }
-        (None, changed)
+        Ok((None, changed))
     }
 }
 #[cfg(test)]

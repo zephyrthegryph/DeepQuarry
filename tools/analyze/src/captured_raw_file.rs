@@ -309,6 +309,12 @@ impl Scope {
 }
 impl Findings {
     pub fn fingerprint(&self) -> u128 {
+        Self::fingerprint_parts(&self.name, &self.run, &self.allow_used)
+    }
+    pub fn budget_charge(&self) -> usize {
+        Self::budget_charge_parts(&self.name, &self.run, &self.allow_used)
+    }
+    pub fn fingerprint_parts(name: &str, run: &Run, allow_used: &[AllowUse]) -> u128 {
         struct HashWriter(blake3::Hasher);
         impl std::io::Write for HashWriter {
             fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
@@ -320,21 +326,12 @@ impl Findings {
             }
         }
         let mut writer = HashWriter(blake3::Hasher::new());
-        serde_json::to_writer(
-            &mut writer,
-            &(
-                &self.name,
-                &self.run.sites,
-                &self.run.notes,
-                &self.allow_used,
-            ),
-        )
-        .expect("raw finding fields serialize");
+        serde_json::to_writer(&mut writer, &(name, &run.sites, &run.notes, allow_used))
+            .expect("raw finding fields serialize");
         u128::from_le_bytes(writer.0.finalize().as_bytes()[..16].try_into().unwrap())
     }
-    pub fn budget_charge(&self) -> usize {
-        let site_text = self
-            .run
+    pub fn budget_charge_parts(name: &String, run: &Run, allow_used: &Vec<AllowUse>) -> usize {
+        let site_text = run
             .sites
             .iter()
             .map(|s| {
@@ -345,18 +342,17 @@ impl Findings {
                     + s.ident.capacity()
             })
             .sum::<usize>();
-        let allow_text = self
-            .allow_used
+        let allow_text = allow_used
             .iter()
             .map(|a| a.rel.capacity() + a.name.capacity() + a.code.capacity())
             .sum::<usize>();
-        self.name.capacity()
-            + self.run.sites.capacity() * std::mem::size_of::<crate::lint::Site>()
+        name.capacity()
+            + run.sites.capacity() * std::mem::size_of::<crate::lint::Site>()
             + site_text
-            + self.allow_used.capacity() * std::mem::size_of::<AllowUse>()
+            + allow_used.capacity() * std::mem::size_of::<AllowUse>()
             + allow_text
-            + self.run.notes.capacity() * std::mem::size_of::<String>()
-            + self.run.notes.iter().map(|n| n.capacity()).sum::<usize>()
+            + run.notes.capacity() * std::mem::size_of::<String>()
+            + run.notes.iter().map(|n| n.capacity()).sum::<usize>()
             + 1024
     }
 }
@@ -468,5 +464,51 @@ mod result_headroom_tests {
         .scope("scheduler")
         .unwrap();
         assert!(file.scan_budgeted(&excluded, 10, 1).is_err());
+    }
+}
+
+#[cfg(test)]
+mod borrowed_metric_tests {
+    use super::*;
+    #[test]
+    fn borrowed_metrics_preserve_original_canonical_tuple_and_actual_capacities() {
+        let mut name = String::with_capacity(64);
+        name.push_str("pool");
+        let rows = Findings {
+            name,
+            run: Run {
+                sites: vec![crate::lint::Site {
+                    rule: "new_pooled".into(),
+                    rel: "code/é.dm".into(),
+                    line: 2,
+                    msg: "a \"message\"".into(),
+                    key: String::new(),
+                    ident: String::new(),
+                }],
+                notes: vec!["pool_lint: 1 problem(s)".into()],
+            },
+            allow_used: Vec::new(),
+        };
+        let bytes = serde_json::to_vec(&(
+            &rows.name,
+            &rows.run.sites,
+            &rows.run.notes,
+            &rows.allow_used,
+        ))
+        .unwrap();
+        let expected =
+            u128::from_le_bytes(blake3::hash(&bytes).as_bytes()[..16].try_into().unwrap());
+        assert_eq!(
+            Findings::fingerprint_parts(&rows.name, &rows.run, &rows.allow_used),
+            expected
+        );
+        assert_eq!(
+            Findings::budget_charge_parts(&rows.name, &rows.run, &rows.allow_used),
+            rows.budget_charge()
+        );
+        assert!(
+            rows.budget_charge()
+                >= 64 + rows.run.sites.capacity() * std::mem::size_of::<crate::lint::Site>()
+        );
     }
 }

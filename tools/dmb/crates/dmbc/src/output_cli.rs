@@ -117,10 +117,13 @@ pub fn finish_command(
             "row":"query_prepared", "schema":"dm-query-preparation-v1",
             "semantic_revision":semantic_revision, "source_revision":source_revision,
             "retained":retained, "complete":false,
-            "coverage":"current frontend/startup/ABI host owners; executable body facts are lazy; no output publication"
+            "coverage":"current explicitly requested source preparation role; runtime/ABI owners require ordinary preparation; no output publication"
         });
-        if let Some(policy) = policy_revision { row["policy_revision"] = policy.clone().into(); }
-        serde_json::to_writer(&mut crate::daemon::stdout_writer(), &row).map_err(io::Error::other)?;
+        if let Some(policy) = policy_revision {
+            row["policy_revision"] = policy.clone().into();
+        }
+        serde_json::to_writer(&mut crate::daemon::stdout_writer(), &row)
+            .map_err(io::Error::other)?;
         crate::daemon::stdout_writer().write_all(b"\n")?;
     }
     if let Some(path) = path {

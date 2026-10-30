@@ -10,7 +10,7 @@ use dm_analysis::{
     policy_inputs::{PolicyInputs, PolicyRole},
     untyped::Unsupported,
     value_program::Values,
-    value_query::{ArchiveValueInput, ArchiveValueProof},
+    value_query::{ArchiveValueInput, ArchiveValueProof, ValueQueryFailure},
     value_schemas::{Kind, Schemas},
 };
 use dm_ir::SymbolId;
@@ -70,6 +70,88 @@ fn reject_unproven_manifest_alias<'a>(
     }
     Ok(())
 }
+trait FindingsDemand {
+    type Failure: From<String> + From<&'static str>;
+    fn refusal(e: Unsupported) -> Self::Failure;
+    fn resource(e: String) -> Self::Failure;
+    fn findings<'a>(
+        archive: &'a dm_tree::frontend::BodyArchive,
+        values: &Values<'a>,
+        schemas: &Schemas,
+        root: &Path,
+        exempt_types: &'a [String],
+        exempt: impl Fn(&str) -> bool,
+        project: impl Fn(
+            dm_analysis::untyped_native::PolicyAnchor,
+            dm_tree::frontend::SourceLocation,
+        ) -> Result<dm_tree::frontend::SourceLocation, Unsupported>,
+    ) -> Result<Vec<dm_analysis::untyped_native::Finding>, Self::Failure>;
+}
+struct CompatibilityFindings;
+impl FindingsDemand for CompatibilityFindings {
+    type Failure = String;
+    fn refusal(e: Unsupported) -> String {
+        e.0
+    }
+    fn resource(e: String) -> String {
+        e
+    }
+    fn findings<'a>(
+        archive: &'a dm_tree::frontend::BodyArchive,
+        values: &Values<'a>,
+        schemas: &Schemas,
+        root: &Path,
+        exempt_types: &'a [String],
+        exempt: impl Fn(&str) -> bool,
+        project: impl Fn(
+            dm_analysis::untyped_native::PolicyAnchor,
+            dm_tree::frontend::SourceLocation,
+        ) -> Result<dm_tree::frontend::SourceLocation, Unsupported>,
+    ) -> Result<Vec<dm_analysis::untyped_native::Finding>, String> {
+        dm_analysis::untyped_native::archived_findings_projected(
+            archive,
+            values,
+            schemas,
+            root,
+            exempt_types,
+            exempt,
+            project,
+        )
+        .map_err(|e| e.0)
+    }
+}
+struct CheckedFindings;
+impl FindingsDemand for CheckedFindings {
+    type Failure = ValueQueryFailure;
+    fn refusal(e: Unsupported) -> ValueQueryFailure {
+        ValueQueryFailure::Unsupported(e)
+    }
+    fn resource(e: String) -> ValueQueryFailure {
+        ValueQueryFailure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory, e))
+    }
+    fn findings<'a>(
+        archive: &'a dm_tree::frontend::BodyArchive,
+        values: &Values<'a>,
+        schemas: &Schemas,
+        root: &Path,
+        exempt_types: &'a [String],
+        exempt: impl Fn(&str) -> bool,
+        project: impl Fn(
+            dm_analysis::untyped_native::PolicyAnchor,
+            dm_tree::frontend::SourceLocation,
+        ) -> Result<dm_tree::frontend::SourceLocation, Unsupported>,
+    ) -> Result<Vec<dm_analysis::untyped_native::Finding>, ValueQueryFailure> {
+        dm_analysis::untyped_native::archived_findings_projected_checked(
+            archive,
+            values,
+            schemas,
+            root,
+            exempt_types,
+            exempt,
+            project,
+        )
+    }
+}
 pub struct BorrowedUntyped<'a> {
     raw: &'a CapturedRawPolicy,
     inputs: &'a PolicyInputs,
@@ -84,8 +166,37 @@ impl<'a> BorrowedUntyped<'a> {
         input: &Arc<ArchiveValueInput>,
         proof: Arc<ArchiveValueProof>,
         manifest: ManifestRead<'_>,
-        mut checkpoint: impl FnMut() -> Result<(), String>,
+        checkpoint: impl FnMut() -> Result<(), String>,
     ) -> Result<RawRun, String> {
+        self.scan_with::<CompatibilityFindings>(input, proof, manifest, checkpoint)
+    }
+    pub fn scan_checked(
+        &self,
+        input: &Arc<ArchiveValueInput>,
+        proof: Arc<ArchiveValueProof>,
+        manifest: ManifestRead<'_>,
+        mut checkpoint: impl FnMut() -> std::io::Result<()>,
+    ) -> Result<RawRun, ValueQueryFailure> {
+        let result = self.scan_with::<CheckedFindings>(input, proof, manifest, || {
+            checkpoint().map_err(ValueQueryFailure::Operational)
+        });
+        // Preserve an already issued actual IO error. Shared view denial is
+        // still operational when the inner path only produced semantic data.
+        if matches!(&result, Err(ValueQueryFailure::Operational(_))) {
+            return result;
+        }
+        if let Some(error) = self.raw.tree.captured_violation() {
+            return Err(CheckedFindings::resource(error));
+        }
+        result
+    }
+    fn scan_with<D: FindingsDemand>(
+        &self,
+        input: &Arc<ArchiveValueInput>,
+        proof: Arc<ArchiveValueProof>,
+        manifest: ManifestRead<'_>,
+        mut checkpoint: impl FnMut() -> Result<(), D::Failure>,
+    ) -> Result<RawRun, D::Failure> {
         checkpoint()?;
         if !Arc::ptr_eq(input.archive(), self.inputs.archive()) {
             return Err("untyped value proof belongs to another archive".into());
@@ -100,9 +211,9 @@ impl<'a> BorrowedUntyped<'a> {
         let tree = self.inputs.archive().tree();
         tree.checker_builtin_profile()
             .ok_or("untyped native schemas need certified fixed builtin ancestry")?;
-        let values = Values::from_archive_input(input, proof).map_err(|e| e.0)?;
+        let values = Values::from_archive_input(input, proof).map_err(D::refusal)?;
         let schemas = self.schemas(manifest, &mut checkpoint)?;
-        let rows = dm_analysis::untyped_native::archived_findings_projected(
+        let rows = D::findings(
             self.inputs.archive(),
             &values,
             &schemas,
@@ -167,8 +278,7 @@ impl<'a> BorrowedUntyped<'a> {
                 // and to assignment locations embedded in their messages.
                 Ok(source)
             },
-        )
-        .map_err(|e| e.0)?;
+        )?;
         checkpoint()?;
         if rows.len() > MAX_FIXTURE_SITES {
             return Err("untyped exceeds fixture finding admission".into());
@@ -185,7 +295,7 @@ impl<'a> BorrowedUntyped<'a> {
             );
         }
         if let Some(error) = self.raw.tree.captured_violation() {
-            return Err(error);
+            return Err(D::resource(error));
         }
         Ok(RawRun {
             name: "untyped".into(),
@@ -196,11 +306,11 @@ impl<'a> BorrowedUntyped<'a> {
             allow_used: sink.allow_used,
         })
     }
-    fn schemas(
+    fn schemas<E: From<String> + From<&'static str>>(
         &self,
         manifest: ManifestRead<'_>,
-        checkpoint: &mut impl FnMut() -> Result<(), String>,
-    ) -> Result<Schemas, String> {
+        checkpoint: &mut impl FnMut() -> Result<(), E>,
+    ) -> Result<Schemas, E> {
         // Decls orders markers by deepquarry.dme includes; schema kind precedence
         // is all SCHEMA markers, then all TRACKED_SCHEMA markers. Raw hint-only
         // presence sets cannot substitute for this ordered kind contract.

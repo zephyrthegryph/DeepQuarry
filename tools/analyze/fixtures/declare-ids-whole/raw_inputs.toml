@@ -1,0 +1,3 @@
+sources = ["code/first.dm", "code/second.dm", "code/block.dm", "code/tests/test.dm", "code/engine/_generated/ids.dm"]
+expected_defines = 41
+expected_diagnostics = 4

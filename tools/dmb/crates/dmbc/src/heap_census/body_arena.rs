@@ -1,6 +1,26 @@
 //! Retained boxed parses and their issued immutable receipts.
 use super::HeapCensus;
 impl HeapCensus {
+    pub(crate) fn body_syntax_diagnostic(
+        &mut self,
+        owner: &str,
+        error: &dm_tree::frontend::Diagnostic,
+    ) {
+        self.string(owner, &error.message);
+        if let Some(location) = &error.location {
+            self.source_location(owner, location);
+            if self.arc_object(owner, &location.macro_expansions)
+                && self.vec_payload(owner, &location.macro_expansions)
+            {
+                for expansion in location.macro_expansions.iter() {
+                    self.macro_trace(owner, expansion);
+                    if let Some(definition) = &expansion.definition {
+                        self.arc_path(owner, &definition.path);
+                    }
+                }
+            }
+        }
+    }
     pub fn body_arena(&mut self, arena: &dm_tree::frontend::BodyArena<'_>) {
         let owner = "body_arena";
         let storage = arena.visit_retained(|_, retained| match retained {

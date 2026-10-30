@@ -243,3 +243,11 @@ required-features = ["legacy-sem", "native-policy"]
 [[example]]
 name = "unified_actions"
 required-features = ["legacy-sem", "native-policy"]
+
+[[example]]
+name = "unified_pool"
+required-features = ["legacy-sem", "native-policy"]
+
+[[example]]
+name="unified_declare_ids"
+required-features=["legacy-sem","native-policy"]

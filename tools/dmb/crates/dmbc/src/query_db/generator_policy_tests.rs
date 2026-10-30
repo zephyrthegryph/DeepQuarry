@@ -624,3 +624,126 @@ fn actions_remaining_budget_and_cancelled_cached_read_publish_no_partial_generat
     );
     assert!(!called.get());
 }
+
+#[test]
+fn declare_ids_same_db_warm_original_owner_and_exact_config_source_manifest_dependencies() {
+    let (db, root, reads, _) = fixture();
+    std::fs::write(
+        root.join("code/probe.dm"),
+        "CAPABILITY_DEF(first, CAP_ONE)\nSTAT(/datum/x, value, SUM)\n",
+    )
+    .unwrap();
+    std::fs::write(
+        root.join("code/extra.dm"),
+        "CAPABILITY_DEF(last, CAP_ONE)\ncap_keys(CAP_ONE, ON = TRUE)\n",
+    )
+    .unwrap();
+    let c = capture(&db, &root, reads.clone());
+    let before = reads.load(Ordering::Relaxed);
+    let one = db
+        .with_generator_fixture(&c, GeneratorName::DeclareIds, |a| {
+            assert_eq!(a.name(), "declare_ids");
+            assert_eq!(a.path(), "code/engine/_generated/ids.dm");
+            assert!(a.text().contains("#define STAT_VALUE 100001"));
+            assert!(a.text().contains("#define LAST_ON CAPKEY_ID(CAP_ONE, 1)"));
+            assert!(a.diagnostics().is_empty());
+            Ok((a.text.as_ptr() as usize, a.fingerprint()))
+        })
+        .unwrap();
+    let computed = db.db.stats(GENERATOR_RESULT).computed;
+    let two = db
+        .with_generator_fixture(&c, GeneratorName::DeclareIds, |a| {
+            Ok((a.text.as_ptr() as usize, a.fingerprint()))
+        })
+        .unwrap();
+    assert_eq!(one, two);
+    assert_eq!(computed, db.db.stats(GENERATOR_RESULT).computed);
+    assert_eq!(before, reads.load(Ordering::Relaxed));
+    assert!(QueryDb::default()
+        .with_generator_fixture(&c, GeneratorName::DeclareIds, |_| Ok(()))
+        .is_err());
+    std::fs::write(
+        root.join("scopes.toml"),
+        "# configuration still participates in exact query dependency\n",
+    )
+    .unwrap();
+    let configured = capture(&db, &root, reads.clone());
+    db.with_generator_fixture(&configured, GeneratorName::DeclareIds, |a| {
+        assert_eq!(a.fingerprint(), one.1);
+        Ok(())
+    })
+    .unwrap();
+    assert!(db.db.stats(GENERATOR_RESULT).computed > computed);
+    std::fs::write(
+        root.join("code/extra.dm"),
+        "#define STAT_VALUE 99\nCAPABILITY_DEF(last, CAP_ONE)\ncap_keys(CAP_ONE, ON = TRUE)\n",
+    )
+    .unwrap();
+    let changed = capture(&db, &root, reads.clone());
+    db.with_generator_fixture(&changed, GeneratorName::DeclareIds, |a| {
+        assert!(!a.text().contains("#define STAT_VALUE"));
+        assert_ne!(a.fingerprint(), one.1);
+        Ok(())
+    })
+    .unwrap();
+    // Reordering the same two source receipts changes the last-wins cap-name map
+    // only when equal sort names preserve encounter order. Equal names but distinct
+    // IDs are a separate policy branch; inspect diagnostics/bytes, not guessed AST.
+    std::fs::write(
+        root.join("deepquarry.dme"),
+        "#if 0\n#include \"code/extra.dm\"\n#include \"code/probe.dm\"\n#endif\n/datum\n",
+    )
+    .unwrap();
+    let reordered = capture(&db, &root, reads);
+    let count = db.db.stats(GENERATOR_RESULT).computed;
+    db.with_generator_fixture(&reordered, GeneratorName::DeclareIds, |a| {
+        assert!(!a.text().contains("#define STAT_VALUE"));
+        Ok(())
+    })
+    .unwrap();
+    assert!(
+        db.db.stats(GENERATOR_RESULT).computed > count,
+        "manifest changes are actual dependencies even when sorted ID bytes agree"
+    );
+}
+#[test]
+fn declare_ids_quota_and_cached_cancellation_refuse_without_callback_and_recover() {
+    let (db, root, reads, _) = fixture();
+    std::fs::write(root.join("code/probe.dm"), "STAT(/datum/x, value, SUM)\n").unwrap();
+    let c = capture(&db, &root, reads);
+    let called = std::cell::Cell::new(false);
+    assert!(db
+        .with_generator_fixture_limit(&c, GeneratorName::DeclareIds, Some(1), |_| {
+            called.set(true);
+            Ok(())
+        })
+        .is_err());
+    assert!(!called.get());
+    db.with_generator_fixture(&c, GeneratorName::DeclareIds, |a| {
+        assert!(a.text().contains("STAT_VALUE"));
+        Ok(())
+    })
+    .unwrap();
+    let cancellation = crate::daemon::control::Cancellation::default();
+    let bound = crate::daemon::control::bind_with_deadline(
+        cancellation.clone(),
+        Instant::now() + Duration::from_secs(60),
+    );
+    cancellation.cancel();
+    assert_eq!(
+        db.with_generator_fixture(&c, GeneratorName::DeclareIds, |_| {
+            called.set(true);
+            Ok(())
+        })
+        .unwrap_err()
+        .kind(),
+        io::ErrorKind::Interrupted
+    );
+    assert!(!called.get());
+    drop(bound);
+    db.with_generator_fixture(&c, GeneratorName::DeclareIds, |a| {
+        assert!(a.diagnostics().is_empty());
+        Ok(())
+    })
+    .unwrap();
+}

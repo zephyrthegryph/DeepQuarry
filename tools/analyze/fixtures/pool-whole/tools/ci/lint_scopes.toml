@@ -1,0 +1,4 @@
+[lint.pool]
+exempt_files=["code/ignored/ignore.dm"]
+[lint.pool.lists]
+exempt_prefixes=["code/exempt/"]

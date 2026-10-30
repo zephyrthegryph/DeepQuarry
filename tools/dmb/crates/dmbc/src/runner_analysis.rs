@@ -173,3 +173,24 @@ pub(crate) fn prepare_query_observed(
         retained,
     })
 }
+
+/// The typed plan selected this narrow role before freshness. No ABI, startup,
+/// constant/provider or body parsing is needed for original hierarchy questions.
+pub(crate) fn prepare_source_questions(
+    frontend: &dm_tree::frontend::FrontendRevision,
+    retained: bool,
+) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
+    crate::daemon::control::checkpoint()?;
+    if !retained {
+        return Err("source questions require retained owners".into());
+    }
+    Ok(BuildOutcome::QueryPrepared {
+        semantic_revision: format!("{:032x}", frontend.snapshot.tree.identity()),
+        source_revision: format!(
+            "{:032x}",
+            dm_analysis::tree_export::source_revision(frontend)
+        ),
+        policy_revision: None,
+        retained,
+    })
+}

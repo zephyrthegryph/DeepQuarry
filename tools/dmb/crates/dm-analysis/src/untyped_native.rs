@@ -1,5 +1,6 @@
 //! Native policy boundary under parity validation: value summaries and
 //! schemas feed classification; baseline/ALLOW admission remains with Analyze.
+use crate::native_program::{BodyDemand, CheckedBodyDemand, CompatibilityBodyDemand};
 use crate::{
     untyped::{self, Unsupported},
     value_program::Values,
@@ -412,6 +413,48 @@ pub fn archived_findings_projected<'a>(
     exempt_file: impl Fn(&str) -> bool,
     project: impl Fn(PolicyAnchor, SourceLocation) -> Result<SourceLocation, Unsupported>,
 ) -> Result<Vec<Finding>, Unsupported> {
+    archived_findings_projected_with(
+        archive,
+        values,
+        schemas,
+        root,
+        exempt_types,
+        exempt_file,
+        project,
+        CompatibilityBodyDemand,
+    )
+}
+/// Checked native demand over the same archived owner, policy and report order.
+pub fn archived_findings_projected_checked<'a>(
+    archive: &'a BodyArchive,
+    values: &Values<'a>,
+    schemas: &Schemas,
+    root: &std::path::Path,
+    exempt_types: &'a [String],
+    exempt_file: impl Fn(&str) -> bool,
+    project: impl Fn(PolicyAnchor, SourceLocation) -> Result<SourceLocation, Unsupported>,
+) -> Result<Vec<Finding>, crate::value_query::ValueQueryFailure> {
+    archived_findings_projected_with(
+        archive,
+        values,
+        schemas,
+        root,
+        exempt_types,
+        exempt_file,
+        project,
+        CheckedBodyDemand,
+    )
+}
+fn archived_findings_projected_with<'a, D: BodyDemand>(
+    archive: &'a BodyArchive,
+    values: &Values<'a>,
+    schemas: &Schemas,
+    root: &std::path::Path,
+    exempt_types: &'a [String],
+    exempt_file: impl Fn(&str) -> bool,
+    project: impl Fn(PolicyAnchor, SourceLocation) -> Result<SourceLocation, Unsupported>,
+    demand: D,
+) -> Result<Vec<Finding>, D::Failure> {
     values.validate_archive(archive)?;
     values.validate_exempt_types(exempt_types)?;
     let tree = archive.tree();
@@ -420,14 +463,16 @@ pub fn archived_findings_projected<'a>(
         if exempt_file(&relative(root, &occurrence.source.path)) {
             continue;
         }
-        let body = archive.parse(ordinal).map_err(|e| Unsupported(e.message))?;
-        for evidence in archived_body_evidence(archive, &body, values, schemas, exempt_types)? {
-            let source = archive
-                .location(evidence.at.start)
-                .ok_or_else(|| Unsupported("assignment has no native source origin".into()))?;
-            let source = project(PolicyAnchor::Assignment(evidence.at), source)?;
-            record(&mut grouped, evidence, root, source);
-        }
+        demand.with_archived(archive, ordinal, |body| {
+            for evidence in archived_body_evidence(archive, body, values, schemas, exempt_types)? {
+                let source = archive
+                    .location(evidence.at.start)
+                    .ok_or_else(|| Unsupported("assignment has no native source origin".into()))?;
+                let source = project(PolicyAnchor::Assignment(evidence.at), source)?;
+                record(&mut grouped, evidence, root, source);
+            }
+            Ok(())
+        })?;
     }
     render(tree, grouped, root, &exempt_file, |member| {
         archive
@@ -435,6 +480,7 @@ pub fn archived_findings_projected<'a>(
             .map(|source| project(PolicyAnchor::Declaration(member), source))
             .transpose()
     })
+    .map_err(Into::into)
 }
 
 fn record(

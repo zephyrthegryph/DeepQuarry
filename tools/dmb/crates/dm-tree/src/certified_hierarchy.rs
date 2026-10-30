@@ -24,6 +24,12 @@ enum AnswerSource<'a> {
 }
 /// Stack-only borrowed answer from the SAME certified native lookup/parent/cache.
 /// Private variants prevent caller-created source authority.
+#[derive(Clone, Copy)]
+pub enum HierarchyAnswerKind {
+    Missing,
+    Symbol(SymbolId),
+    Symbols,
+}
 pub struct HierarchyAnswer<'a> {
     source: AnswerSource<'a>,
     nodes: usize,
@@ -72,6 +78,57 @@ impl<'a> HierarchyView<'a> {
     }
 }
 impl HierarchyAnswer<'_> {
+    /// Discriminant only; the original borrowed answer retains all authority.
+    pub fn kind(&self) -> HierarchyAnswerKind {
+        match &self.source {
+            AnswerSource::Missing => HierarchyAnswerKind::Missing,
+            AnswerSource::Symbol(id) => HierarchyAnswerKind::Symbol(*id),
+            _ => HierarchyAnswerKind::Symbols,
+        }
+    }
+    /// Visit original ancestor IDs directly, without copying ancestry/storage.
+    pub fn visit_symbols(
+        &self,
+        remaining: &mut usize,
+        mut checkpoint: impl FnMut() -> io::Result<()>,
+        mut visit: impl FnMut(SymbolId) -> io::Result<()>,
+    ) -> io::Result<()> {
+        let mut step = || {
+            if *remaining == 0 {
+                return Err(io::Error::other("original hierarchy visit work exhausted"));
+            }
+            *remaining -= 1;
+            checkpoint()
+        };
+        match &self.source {
+            AnswerSource::Cached(paths) => {
+                if paths.len() > self.nodes {
+                    return Err(io::Error::other(
+                        "original hierarchy cache exceeds node roster",
+                    ));
+                }
+                for id in paths.iter() {
+                    step()?;
+                    visit(*id)?;
+                }
+            }
+            AnswerSource::Walk { tree, first } => {
+                let mut current = Some(*first);
+                let mut count = 0usize;
+                while let Some(id) = current {
+                    step()?;
+                    count += 1;
+                    if count > self.nodes {
+                        return Err(io::Error::other("original hierarchy parent cycle"));
+                    }
+                    visit(tree.types[id.index()].path)?;
+                    current = tree.parent(id);
+                }
+            }
+            _ => return Err(io::ErrorKind::InvalidInput.into()),
+        }
+        Ok(())
+    }
     pub fn positive(&self) -> bool {
         !matches!(&self.source, AnswerSource::Missing)
     }
@@ -124,11 +181,7 @@ impl HierarchyAnswer<'_> {
                     ));
                 }
                 out.symbols_start(paths.len())?;
-                for path in paths.iter() {
-                    step(remaining, &mut checkpoint)?;
-                    out.symbol_item(*path)?;
-                }
-                Ok(())
+                self.visit_symbols(remaining, &mut checkpoint, |path| out.symbol_item(path))
             }
             AnswerSource::Walk { tree, first } => {
                 let mut count = 0usize;
@@ -144,16 +197,7 @@ impl HierarchyAnswer<'_> {
                     current = tree.parent(id);
                 }
                 out.symbols_start(count)?;
-                current = Some(*first);
-                for _ in 0..count {
-                    step(remaining, &mut checkpoint)?;
-                    let id = current.ok_or_else(|| {
-                        io::Error::other("original hierarchy changed during immutable visit")
-                    })?;
-                    out.symbol_item(tree.types[id.index()].path)?;
-                    current = tree.parent(id);
-                }
-                Ok(())
+                self.visit_symbols(remaining, &mut checkpoint, |path| out.symbol_item(path))
             }
         }
     }

@@ -52,6 +52,7 @@ mod tests {
     }
     fn request() -> BuildRequest {
         BuildRequest {
+            source_questions: None,
             timeout_seconds: None,
             command: BuildCommand::Compile,
             diagnostic_declarations: false,

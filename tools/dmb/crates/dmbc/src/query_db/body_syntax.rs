@@ -3,7 +3,8 @@
 //! cross-revision reuse of ASTs containing absolute expanded-source positions.
 use super::*;
 use dm_tree::frontend::{
-    BodySyntax, BodySyntaxInput, BodySyntaxQueries, Diagnostic, DiagnosticKind, DiagnosticStage,
+    BodySyntax, BodySyntaxFailure, BodySyntaxInput, BodySyntaxQueries, Diagnostic, DiagnosticKind,
+    DiagnosticStage,
 };
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
@@ -28,6 +29,8 @@ pub(super) fn register(db: &Db, charged: Arc<AtomicUsize>) {
             .input
             .upgrade()
             .ok_or(QueryError::Missing(params.key))?;
+        #[cfg(test)]
+        body_failure_test_checkpoint(params.key)?;
         let result = input.parse().map(Arc::new);
         let bytes = result
             .as_ref()
@@ -68,6 +71,51 @@ impl BodySyntaxQueries for QueryDb {
         });
     }
     fn syntax(&self, input: &Arc<BodySyntaxInput>) -> Result<Arc<BodySyntax>, Diagnostic> {
+        self.body_syntax_result(input)
+            .map_err(body_query_diagnostic)?
+    }
+    fn syntax_checked(
+        &self,
+        input: &Arc<BodySyntaxInput>,
+    ) -> Result<Arc<BodySyntax>, BodySyntaxFailure> {
+        self.body_syntax_result(input)
+            .map_err(|error| match error.into_operational() {
+                Ok(actual) => BodySyntaxFailure::Operational(actual.into_io()),
+                Err(error) => BodySyntaxFailure::Operational(std::io::Error::other(
+                    BodyQueryGraphFailure(error),
+                )),
+            })?
+            .map_err(BodySyntaxFailure::Syntax)
+    }
+}
+
+// Standalone compatibility and checked native consumers share the SAME query,
+// input owner, budget/eviction policy and cached syntax value. Only transport
+// differs; an operational QueryError never becomes a syntax Diagnostic in the
+// checked path and is never an Outcome.
+// Infrastructure failure is not parser meaning. Retain the actual graph
+// exception as the IO cause instead of caching an invented syntax Diagnostic.
+#[derive(Debug)]
+struct BodyQueryGraphFailure(QueryError);
+impl std::fmt::Display for BodyQueryGraphFailure {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "native body query failed: {:?}", self.0)
+    }
+}
+impl std::error::Error for BodyQueryGraphFailure {}
+fn body_query_diagnostic(error: QueryError) -> Diagnostic {
+    Diagnostic {
+        kind: DiagnosticKind::Internal,
+        stage: DiagnosticStage::Internal,
+        location: None,
+        message: format!("native body query failed: {error:?}"),
+    }
+}
+impl QueryDb {
+    fn body_syntax_result(
+        &self,
+        input: &Arc<BodySyntaxInput>,
+    ) -> Result<Result<Arc<BodySyntax>, Diagnostic>, QueryError> {
         let key = Key::new(BODY_SYNTAX, input.key().into());
         self.body_inputs
             .lock()
@@ -84,22 +132,14 @@ impl BodySyntaxQueries for QueryDb {
                     Some(charge.saturating_sub(freed))
                 });
         }
-        let result = self
-            .db
-            .get::<Result<Arc<BodySyntax>, Diagnostic>>(
+        let result = self.db.get::<Result<Arc<BodySyntax>, Diagnostic>>(
+            key,
+            Arc::new(Params {
+                input: Arc::downgrade(input),
                 key,
-                Arc::new(Params {
-                    input: Arc::downgrade(input),
-                    key,
-                }),
-            )
-            .map_err(|error| Diagnostic {
-                kind: DiagnosticKind::Internal,
-                stage: DiagnosticStage::Internal,
-                location: None,
-                message: format!("native body query failed: {error:?}"),
-            })?;
-        result.as_ref().clone()
+            }),
+        )?;
+        Ok(result.as_ref().clone())
     }
 }
 
@@ -118,4 +158,61 @@ pub(super) fn observe(
         }),
     )?;
     Ok(())
+}
+
+// Explicit per-thread test scheduling at the genuine Kind4 compute boundary.
+// No settings admission or production error state is introduced here.
+#[cfg(test)]
+enum TestBodyFailure {
+    Operational(std::io::Error),
+    GraphMissing,
+}
+#[cfg(test)]
+thread_local! {static BODY_FAILURE:std::cell::RefCell<Option<(usize,TestBodyFailure)>>=const{std::cell::RefCell::new(None)};}
+#[cfg(test)]
+pub(crate) struct BodyFailureSchedule;
+#[cfg(test)]
+impl Drop for BodyFailureSchedule {
+    fn drop(&mut self) {
+        BODY_FAILURE.with(|s| *s.borrow_mut() = None);
+    }
+}
+#[cfg(test)]
+fn body_failure_test_checkpoint(key: Key) -> Result<(), QueryError> {
+    BODY_FAILURE.with(|s| {
+        let mut scheduled = s.borrow_mut();
+        if let Some((remaining, _)) = scheduled.as_mut() {
+            if *remaining > 0 {
+                *remaining -= 1;
+                return Ok(());
+            }
+            let (_, error) = scheduled.take().expect("scheduled failure");
+            return Err(match error {
+                TestBodyFailure::Operational(error) => QueryError::operational(key, error),
+                TestBodyFailure::GraphMissing => QueryError::Missing(key),
+            });
+        }
+        Ok(())
+    })
+}
+#[cfg(test)]
+impl QueryDb {
+    pub(crate) fn fail_body_syntax_after_for_test(
+        &self,
+        completed: usize,
+        error: std::io::Error,
+    ) -> BodyFailureSchedule {
+        BODY_FAILURE.with(|s| {
+            assert!(s.borrow().is_none());
+            *s.borrow_mut() = Some((completed, TestBodyFailure::Operational(error)));
+        });
+        BodyFailureSchedule
+    }
+    pub(crate) fn fail_body_graph_once_for_test(&self) -> BodyFailureSchedule {
+        BODY_FAILURE.with(|s| {
+            assert!(s.borrow().is_none());
+            *s.borrow_mut() = Some((0, TestBodyFailure::GraphMissing));
+        });
+        BodyFailureSchedule
+    }
 }

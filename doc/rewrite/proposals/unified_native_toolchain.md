@@ -1,6 +1,10 @@
 # Unified native compiler, Analyze and DreamChecker
 
-Status: proposed implementation plan, 2026-10-28. All new interfaces named here are proposals, not existing APIs.
+Status: implementation in progress, 2026-10-30. The shared native contracts and
+ported consumer slices are recorded in the checkpoints below. The target design
+is broader than the implemented surface: production Analyze/checker cutover and
+the remaining semantic consumers are not complete. Proposed interfaces in the
+original plan are not promises that those APIs already exist.
 
 ## Decision and endpoint
 
@@ -932,3 +936,41 @@ main DME is prepared from current acquisitions, all 27 raw policies match the
 independent old engine, and all 226 records over two pages match with an exact
 warm first-page repeat. The proof explicitly does not claim full semantic-policy
 parity, production client cutover or complete native compiler integration.
+
+### Source-query clients and operational failure boundaries
+
+The actual typed source-query preparation route now carries an ordered question
+roster, including subject presence and bytes, rather than a boolean authority
+claim. A real headless IPC check proves source-only preparation skips invalid
+ordinary ABI work, keeps the original tree/query owners on warm re-preparation,
+and rejects altered or superseded rosters. The CLI's existing two-row JSONL
+framing, v2 batch schema and explicit coverage description are preserved.
+
+Checked body demand now carries operational I/O failures separately from genuine
+syntax diagnostics through query verification, body arenas, value inference,
+effect queries, untyped reporting, ABI preparation and public body exports.
+Operational failures escape before reusable semantic results; focused tests
+exercise same-input recovery after real eviction and later report demand. The
+new checked lowering and artifact-admission APIs retain the original algorithms
+and compatibility hooks. Full memo/replay/completion integration and native
+settings-provider selection remain unfinished.
+
+Cancellation tests exposed a real retry loop: standard write_all retries an
+Interrupted writer indefinitely. Operation-local adapters now preserve the
+original error while stopping serializer retries in source-query, policy,
+body-model and resolved-query writers. Tests cover mid-stream cancellation,
+partial destination writes, unchanged successful bytes and recovery.
+
+Pool policy and declaration-ID generation use the original RAW_FILE/config
+inputs and existing Kind 10/11 graph, sharing the existing policies/templates.
+The independent old generator matches all 2,186 declaration-ID output bytes and
+four diagnostics on the seeded fixture; the independent pool IPC comparison
+also passes. These remain explicitly bounded interfaces, not whole-workspace
+generator installation or a production default switch.
+
+Selected Rust checks and the source/pool IPC checks pass after diagnosed fixture
+repairs. Ratchets passed during this cohort, and all 382 compared generated files
+remain byte-identical. The last production compile/DreamChecker result is the
+preceding checkpoint; a fresh combined production verification remains required
+before completion. No game client, pins, full suite or compiler publication was
+used. Full toolchain unification remains in progress.

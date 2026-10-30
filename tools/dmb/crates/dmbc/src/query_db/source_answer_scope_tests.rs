@@ -955,3 +955,593 @@ fn actual_source_endpoint_rejects_same_request_stamp_collision_with_different_qu
     assert_eq!(slots.get(&id).unwrap().value.query, requested);
     assert!(slots.get(&id).unwrap().value.source_admitted());
 }
+
+fn publish_question_roster(
+    f: &Fixture,
+    state: &Arc<Mutex<QueryState>>,
+    questions: &[crate::daemon::query::QueryItem],
+) {
+    let mut attempt = stage(f, state);
+    attempt.require_source_questions(questions).unwrap();
+    attempt.admit_source_frame(admission(f, &attempt)).unwrap();
+    attempt.finish_analyzed();
+}
+fn render_questions(
+    f: &Fixture,
+    state: &Arc<Mutex<QueryState>>,
+    questions: &[crate::daemon::query::QueryItem],
+) -> io::Result<Vec<u8>> {
+    let mut bytes = Vec::new();
+    state
+        .lock()
+        .unwrap()
+        .snapshot
+        .as_ref()
+        .unwrap()
+        .write_resolved_queries(questions, f.frontend.snapshot.tree.as_ref(), &mut bytes)?;
+    Ok(bytes)
+}
+#[test]
+fn real_source_question_consumer_matches_all_nine_original_meanings_without_abi_or_body_work() {
+    use crate::daemon::query::QueryItem;
+    let f = fixture(BODY, source_quota_db(1024 * 1024));
+    let state = Arc::new(Mutex::new(QueryState::default()));
+    let mut questions = Vec::new();
+    for path in ["/datum/answer_box", "/list", "/datum/not_present"] {
+        for q in [
+            type_question(dm_ir::SymbolId::of(path)),
+            parent_question(dm_ir::SymbolId::of(path)),
+            ancestry_question(dm_ir::SymbolId::of(path)),
+        ] {
+            questions.push(QueryItem {
+                subject: Some("source \"ÃƒÂ©\"".into()),
+                query: q,
+            });
+        }
+    }
+    let parsed =
+        f.db.db
+            .stats(super::super::body_syntax::BODY_SYNTAX)
+            .computed;
+    publish_question_roster(&f, &state, &questions);
+    assert!(state
+        .lock()
+        .unwrap()
+        .snapshot
+        .as_ref()
+        .unwrap()
+        .prepared_query_tree()
+        .is_some_and(|tree| Arc::ptr_eq(tree, &f.frontend.snapshot.tree)));
+    let before = f.provider.0.load(Ordering::Relaxed);
+    let first = render_questions(&f, &state, &questions).unwrap();
+    let outer: serde_json::Value = serde_json::from_slice(&first).unwrap();
+    let native: Vec<serde_json::Value> = outer["captured_jsonl"]
+        .as_str()
+        .unwrap()
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+    let mut old = Vec::new();
+    dm_analysis::tree_export::write_queries_jsonl(
+        f.frontend.snapshot.tree.symbols(),
+        f.frontend.snapshot.tree.as_ref(),
+        questions
+            .iter()
+            .map(|q| dm_analysis::tree_export::AnalysisQuery {
+                subject: q.subject.as_deref(),
+                query: q.query,
+            }),
+        &mut old,
+    )
+    .unwrap();
+    let original: Vec<serde_json::Value> = std::str::from_utf8(&old)
+        .unwrap()
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+    assert_eq!(
+        native, original,
+        "exact query/domain/hash/meaning/subject wire parity"
+    );
+    let counts = f.db.answer_counts();
+    let live = f.db.answers.values.source_ledger.snapshot().live;
+    assert_eq!(render_questions(&f, &state, &questions).unwrap(), first);
+    assert_eq!(f.db.answer_counts(), counts);
+    assert_eq!(f.db.answers.values.source_ledger.snapshot().live, live);
+    assert_eq!(f.provider.0.load(Ordering::Relaxed), before);
+    assert_eq!(
+        f.db.db
+            .stats(super::super::body_syntax::BODY_SYNTAX)
+            .computed,
+        parsed
+    );
+}
+#[test]
+fn source_question_plan_authorizes_exact_ordered_query_and_subject_not_just_class_or_hash() {
+    use crate::daemon::query::QueryItem;
+    let f = fixture(BODY, source_quota_db(1024 * 1024));
+    let state = Arc::new(Mutex::new(QueryState::default()));
+    let plan = vec![
+        QueryItem {
+            subject: Some("first".into()),
+            query: type_question(dm_ir::SymbolId::of("/list")),
+        },
+        QueryItem {
+            subject: None,
+            query: type_question(dm_ir::SymbolId::of("/datum/not_present")),
+        },
+    ];
+    publish_question_roster(&f, &state, &plan);
+    render_questions(&f, &state, &plan).unwrap();
+    for altered in [
+        vec![plan[1].clone(), plan[0].clone()],
+        vec![plan[0].clone()],
+        vec![
+            QueryItem {
+                subject: Some("different".into()),
+                query: plan[0].query,
+            },
+            plan[1].clone(),
+        ],
+    ] {
+        let mut bytes = Vec::new();
+        let error = state
+            .lock()
+            .unwrap()
+            .snapshot
+            .as_ref()
+            .unwrap()
+            .write_resolved_queries(&altered, &f.frontend.snapshot.tree, &mut bytes)
+            .unwrap_err();
+        assert_eq!(error.kind(), io::ErrorKind::InvalidInput);
+        assert!(bytes.is_empty());
+    }
+    let different = vec![QueryItem {
+        subject: None,
+        query: ancestry_question(dm_ir::SymbolId::of("/list")),
+    }];
+    let revision = state
+        .lock()
+        .unwrap()
+        .snapshot
+        .as_ref()
+        .unwrap()
+        .source_revision;
+    publish_question_roster(&f, &state, &different);
+    assert_eq!(
+        state
+            .lock()
+            .unwrap()
+            .snapshot
+            .as_ref()
+            .unwrap()
+            .source_revision,
+        revision
+    );
+    assert!(
+        render_questions(&f, &state, &plan).is_err(),
+        "equal pins do not replace exact requested roster authority"
+    );
+    render_questions(&f, &state, &different).unwrap();
+}
+#[test]
+fn source_question_wire_cancellation_quota_and_runtime_rebind_never_write_completed_rows() {
+    let f = fixture(BODY, source_quota_db(1024 * 1024));
+    let state = Arc::new(Mutex::new(QueryState::default()));
+    let questions = [crate::daemon::query::QueryItem {
+        subject: None,
+        query: ancestry_question(dm_ir::SymbolId::of("/datum/answer_box")),
+    }];
+    publish_question_roster(&f, &state, &questions);
+    let token = crate::daemon::control::Cancellation::default();
+    let binding = crate::daemon::control::bind_with_deadline(
+        token.clone(),
+        std::time::Instant::now() + std::time::Duration::from_secs(60),
+    );
+    token.cancel();
+    let mut bytes = Vec::new();
+    assert_eq!(
+        state
+            .lock()
+            .unwrap()
+            .snapshot
+            .as_ref()
+            .unwrap()
+            .write_resolved_queries(&questions, &f.frontend.snapshot.tree, &mut bytes)
+            .unwrap_err()
+            .kind(),
+        io::ErrorKind::Interrupted
+    );
+    assert!(bytes.is_empty());
+    drop(binding);
+    render_questions(&f, &state, &questions).unwrap();
+    let ledger = &f.db.answers.values.source_ledger;
+    let held = ledger
+        .reserve(1024 * 1024 - ledger.snapshot().live)
+        .unwrap();
+    let mut bytes = Vec::new();
+    assert_eq!(
+        state
+            .lock()
+            .unwrap()
+            .snapshot
+            .as_ref()
+            .unwrap()
+            .write_resolved_queries(&questions, &f.frontend.snapshot.tree, &mut bytes)
+            .unwrap_err()
+            .kind(),
+        io::ErrorKind::OutOfMemory
+    );
+    assert!(bytes.is_empty());
+    drop(held);
+    render_questions(&f, &state, &questions).unwrap();
+    let tree = &f.frontend.snapshot.tree;
+    let world = f.db.answers.current.read().unwrap().world;
+    f.db.begin_answers(tree, Some(world.wrapping_add(1)), &|q| {
+        Resolver::resolve(tree.as_ref(), *q)
+    });
+    let mut bytes = Vec::new();
+    assert_eq!(
+        state
+            .lock()
+            .unwrap()
+            .snapshot
+            .as_ref()
+            .unwrap()
+            .write_resolved_queries(&questions, tree, &mut bytes)
+            .unwrap_err()
+            .kind(),
+        io::ErrorKind::InvalidInput
+    );
+    assert!(bytes.is_empty());
+}
+
+// The real --jsonl CLI writes its query_batch prefix BEFORE source rows.
+// Keep this parser strict so extra/reordered/malformed output cannot masquerade
+// as a successful captured source-query envelope in the actual IPC proof.
+fn source_question_ipc_rows(bytes: &[u8]) -> Result<[serde_json::Value; 2], String> {
+    let text = std::str::from_utf8(bytes).map_err(|e| e.to_string())?;
+    if !text.ends_with('\n') {
+        return Err("source question IPC rows are not newline terminated".into());
+    }
+    let rows = text
+        .lines()
+        .map(serde_json::from_str::<serde_json::Value>)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| e.to_string())?;
+    let rows: [serde_json::Value; 2] = rows
+        .try_into()
+        .map_err(|_| "expected exactly query_batch and source_resolved_queries rows".to_owned())?;
+    if rows[0]["row"] != "query_batch" || rows[1]["row"] != "source_resolved_queries" {
+        return Err("unexpected source question IPC row order or kind".into());
+    }
+    Ok(rows)
+}
+
+#[test]
+fn source_question_ipc_stream_requires_exact_cli_prefix_and_source_envelope() {
+    let valid = b"{\"row\":\"query_batch\"}\n{\"row\":\"source_resolved_queries\"}\n";
+    assert!(source_question_ipc_rows(valid).is_ok());
+    for invalid in [
+        "{\"row\":\"source_resolved_queries\"}\n",
+        "{\"row\":\"source_resolved_queries\"}\n{\"row\":\"query_batch\"}\n",
+        "{\"row\":\"query_batch\"}\n{\"row\":\"query_batch\"}\n",
+        "{\"row\":\"query_batch\"}\n{\"row\":\"source_resolved_queries\"}\n{}\n",
+        "{\"row\":\"query_batch\"}\n\n{\"row\":\"source_resolved_queries\"}\n",
+        "{\"row\":\"query_batch\"} garbage\n{\"row\":\"source_resolved_queries\"}\n",
+        "{\"row\":\"query_batch\"}\n{\"row\":\"source_resolved_queries\"}",
+    ] {
+        assert!(
+            source_question_ipc_rows(invalid.as_bytes()).is_err(),
+            "{invalid}"
+        );
+    }
+}
+
+#[test]
+#[ignore = "headless actual IPC; set DMB_SOURCE_QUESTIONS_TEST_BINARY to the exact built binary"]
+fn actual_ipc_source_question_prepare_and_query_use_real_scope_without_abi_owners() {
+    use std::{
+        ffi::OsString,
+        process::{Command as Process, Stdio},
+        time::{Duration, Instant},
+    };
+    fn command(binary: &std::path::Path, namespace: &str) -> Process {
+        let mut command = Process::new(binary);
+        command
+            .env("DMB_DAEMON_NAMESPACE", namespace)
+            .env("DMB_UNIFIED_TEST_OWNER_TRACE", "1");
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            command.creation_flags(0x08004000);
+        }
+        command
+    }
+    fn run(binary: &std::path::Path, namespace: &str, args: &[OsString]) -> std::process::Output {
+        use std::io::Read;
+        let mut child = command(binary, namespace)
+            .args(args)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .unwrap();
+        let stdout = child.stdout.take().unwrap();
+        let stderr = child.stderr.take().unwrap();
+        // Drain both actual pipes while polling; no pipe-capacity deadlock can
+        // masquerade as a slow native operation on Windows.
+        let out = std::thread::spawn(move || {
+            let mut bytes = Vec::new();
+            stdout
+                .take(4 * 1024 * 1024 + 1)
+                .read_to_end(&mut bytes)
+                .unwrap();
+            bytes
+        });
+        let err = std::thread::spawn(move || {
+            let mut bytes = Vec::new();
+            stderr
+                .take(4 * 1024 * 1024 + 1)
+                .read_to_end(&mut bytes)
+                .unwrap();
+            bytes
+        });
+        let until = Instant::now() + Duration::from_secs(90);
+        let status = loop {
+            if let Some(status) = child.try_wait().unwrap() {
+                break status;
+            }
+            if Instant::now() >= until {
+                let _ = child.kill();
+                let _ = child.wait();
+                panic!("owned IPC client deadline");
+            }
+            std::thread::sleep(Duration::from_millis(20));
+        };
+        let stdout = out.join().unwrap();
+        let stderr = err.join().unwrap();
+        assert!(
+            stdout.len() <= 4 * 1024 * 1024 && stderr.len() <= 4 * 1024 * 1024,
+            "actual IPC transcript exceeded bounded fixture limit"
+        );
+        std::process::Output {
+            status,
+            stdout,
+            stderr,
+        }
+    }
+    struct Retire {
+        binary: PathBuf,
+        namespace: String,
+    }
+    impl Drop for Retire {
+        fn drop(&mut self) {
+            let _ = run(&self.binary, &self.namespace, &["--daemon-retire".into()]);
+        }
+    }
+    let binary = PathBuf::from(
+        std::env::var_os("DMB_SOURCE_QUESTIONS_TEST_BINARY")
+            .expect("exact built native binary is required for actual IPC proof"),
+    );
+    assert!(binary.is_absolute() && binary.is_file());
+    let root = crate::test_scratch::dir("actual-source-questions-ipc");
+    std::fs::create_dir_all(&root).unwrap();
+    let project = root.join("source.dme");
+    std::fs::write(
+        &project,
+        "/datum/source_scope_ipc\n/proc/no_abi(x as unsupported_input)\n    return x\n",
+    )
+    .unwrap();
+    let engine =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/native_template.bin");
+    let namespace = format!(
+        "source-questions-test-{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    );
+    let _retire = Retire {
+        binary: binary.clone(),
+        namespace: namespace.clone(),
+    };
+    let questions = vec![
+        crate::daemon::query::QueryItem {
+            subject: Some("authored".into()),
+            query: type_question(dm_ir::SymbolId::of("/datum/source_scope_ipc")),
+        },
+        crate::daemon::query::QueryItem {
+            subject: None,
+            query: ancestry_question(dm_ir::SymbolId::of("/list")),
+        },
+        crate::daemon::query::QueryItem {
+            subject: None,
+            query: type_question(dm_ir::SymbolId::of("/datum/ipc_absent")),
+        },
+    ];
+    let prepare = |questions: &[crate::daemon::query::QueryItem]| {
+        run(
+            &binary,
+            &namespace,
+            &[
+                "prepare-query".into(),
+                project.as_os_str().to_owned(),
+                "--engine-template".into(),
+                engine.as_os_str().to_owned(),
+                "--bootstrap-catalog".into(),
+                "--workers".into(),
+                "1".into(),
+                "--request-timeout-seconds".into(),
+                "90".into(),
+                "--source-questions-json".into(),
+                serde_json::to_string(questions).unwrap().into(),
+            ],
+        )
+    };
+    let first = prepare(&questions);
+    assert!(
+        first.status.success(),
+        "{}",
+        String::from_utf8_lossy(&first.stderr)
+    );
+    let prepared = String::from_utf8(first.stdout)
+        .unwrap()
+        .lines()
+        .filter_map(|line| serde_json::from_str::<serde_json::Value>(line).ok())
+        .find(|row| row["row"] == "query_prepared")
+        .unwrap();
+    let observations = |stderr: &[u8]| {
+        String::from_utf8_lossy(stderr)
+            .lines()
+            .filter_map(|line| {
+                line.split_once("native owner observation: ")
+                    .and_then(|(_, row)| serde_json::from_str::<serde_json::Value>(row).ok())
+            })
+            .filter(|row| row["phase"] == "prepared")
+            .collect::<Vec<_>>()
+    };
+    let owners = observations(&first.stderr);
+    assert_eq!(owners.len(), 1);
+    assert_eq!(owners[0]["body_parser_computed"], 0);
+    let request_path = root.join("questions.json");
+    let query = |qs: Vec<crate::daemon::query::QueryItem>| {
+        let request = crate::daemon::query::QueryRequest {
+            timeout_seconds: Some(30),
+            project: project.clone(),
+            defines: Default::default(),
+            engine_template: Some(engine.clone()),
+            bootstrap_catalog: true,
+            expected_revision: Some(prepared["semantic_revision"].as_str().unwrap().into()),
+            queries: Vec::new(),
+            expected_source_revision: Some(prepared["source_revision"].as_str().unwrap().into()),
+            expected_policy_revision: None,
+            source_queries: vec![crate::daemon::query::SourceQuery::ResolvedQueries {
+                queries: qs,
+            }],
+        };
+        std::fs::write(&request_path, serde_json::to_vec(&request).unwrap()).unwrap();
+        run(
+            &binary,
+            &namespace,
+            &[
+                "query".into(),
+                request_path.as_os_str().to_owned(),
+                "--jsonl".into(),
+            ],
+        )
+    };
+    let answer = query(questions.clone());
+    assert!(
+        answer.status.success(),
+        "{}",
+        String::from_utf8_lossy(&answer.stderr)
+    );
+    let [batch, row] = source_question_ipc_rows(&answer.stdout).unwrap();
+    assert_eq!(batch["schema"], "dm-session-query-v2");
+    assert_eq!(batch["revision"], prepared["semantic_revision"]);
+    assert_eq!(batch["source_revision"], prepared["source_revision"]);
+    assert_eq!(batch["complete"], false);
+    assert_eq!(batch["coverage"], "semantic tree and bounded revision-pinned semantic type/authored member-node/captured intrinsic roster selectors (intrinsic completeness explicit; inherited effective lookup uses parent links and Resolver, not an expanded roster) plus caller-selected issued declaration occurrences and source/definition spans; bounded lazy compiler-selected references and explicitly source-pinned current compiler-host queries; full aggregate executable coverage and implicit external host reads remain excluded");
+    assert_eq!(batch["query_count"], 0);
+    assert_eq!(batch["source_query_count"], 1);
+    assert_eq!(batch["publication_pair"], serde_json::Value::Null);
+    assert_eq!(row["schema"], "dm-session-source-query-v1");
+    assert_eq!(row["source_revision"], prepared["source_revision"]);
+    assert_eq!(row["semantic_revision"], prepared["semantic_revision"]);
+    assert_eq!(row["complete"], false);
+    assert_eq!(row["query_count"], questions.len());
+    let rows = row["captured_jsonl"]
+        .as_str()
+        .unwrap()
+        .lines()
+        .map(|line| serde_json::from_str::<serde_json::Value>(line).unwrap())
+        .collect::<Vec<_>>();
+    assert_eq!(rows.len(), 3);
+    assert_eq!(
+        rows[0]["answer"]["value"]["text"],
+        "/datum/source_scope_ipc"
+    );
+    assert_eq!(rows[1]["answer"]["kind"], "symbols");
+    assert_eq!(rows[2]["answer"]["status"], "missing");
+    assert_eq!(query(questions.clone()).stdout, answer.stdout);
+    let mut altered = questions.clone();
+    altered[0].subject = Some("not prepared".into());
+    assert!(!query(altered).status.success());
+    let mut next = questions.clone();
+    next[0].subject = Some("new exact roster".into());
+    let second = prepare(&next);
+    assert!(
+        second.status.success(),
+        "{}",
+        String::from_utf8_lossy(&second.stderr)
+    );
+    let next_owners = observations(&second.stderr);
+    assert_eq!(next_owners.len(), 1);
+    for key in ["tree", "query_db", "body_parser_computed"] {
+        assert_eq!(
+            owners[0][key], next_owners[0][key],
+            "same original owner/work {key}"
+        );
+    }
+    assert!(
+        !query(questions).status.success(),
+        "same source pins cannot authorize old ordered roster"
+    );
+    assert!(query(next).status.success());
+    // The narrow path did not silently make the invalid ABI form usable by the
+    // ordinary runtime-owner preparation role.
+    let ordinary = run(
+        &binary,
+        &namespace,
+        &[
+            "prepare-query".into(),
+            project.as_os_str().to_owned(),
+            "--engine-template".into(),
+            engine.as_os_str().to_owned(),
+            "--bootstrap-catalog".into(),
+            "--workers".into(),
+            "1".into(),
+        ],
+    );
+    assert!(!ordinary.status.success());
+    assert!(String::from_utf8_lossy(&ordinary.stderr)
+        .contains("unsupported parameter input annotation"));
+}
+
+#[test]
+fn source_question_scope_quota_uses_current_typed_layout_and_retained_roster_state() {
+    use std::alloc::Layout;
+    let f = fixture(BODY, source_quota_db(1024 * 1024));
+    let state = Arc::new(Mutex::new(QueryState::default()));
+    let questions = [crate::daemon::query::QueryItem {
+        subject: Some("actual layout".into()),
+        query: type_question(dm_ir::SymbolId::of("/list")),
+    }];
+    publish_question_roster(&f, &state, &questions);
+    // Supported-target header geometry against the CURRENT payload type:
+    // adding a roster handle cannot retain an old hardcoded Scope size.
+    let expected = Layout::new::<(usize, usize)>()
+        .extend(Layout::new::<SourceAnswerScope>())
+        .unwrap()
+        .0
+        .pad_to_align();
+    assert_eq!(Plan::source_scope().unwrap().layout(), expected);
+    let fixed = expected.size()
+        + Plan::source_generation().unwrap().layout().size()
+        + Plan::retention_lease().unwrap().layout().size();
+    let roster_state = Plan::allocator_state().unwrap().layout().size()
+        + Plan::retention_lease().unwrap().layout().size();
+    assert!(
+        f.db.answers.values.source_ledger.snapshot().live >= fixed + roster_state,
+        "current typed Scope group plus retained dynamic roster State must both remain admitted"
+    );
+    let before = f.db.answers.values.source_ledger.snapshot().live;
+    // Repeated operation-local output buffers return their charge after actual
+    // free while the published Scope/roster group stays live.
+    render_questions(&f, &state, &questions).unwrap();
+    let cached = f.db.answers.values.source_ledger.snapshot().live;
+    assert!(cached >= before);
+    render_questions(&f, &state, &questions).unwrap();
+    assert_eq!(f.db.answers.values.source_ledger.snapshot().live, cached);
+}

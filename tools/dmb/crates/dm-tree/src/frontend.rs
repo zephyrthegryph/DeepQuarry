@@ -353,11 +353,25 @@ impl ColdFrontend {
         &'a self,
         occurrence: &BodyOccurrence,
     ) -> Result<ParsedBody<'a>, Diagnostic> {
+        self.parse_body_with(occurrence, |input, host| input.obtain(host))
+    }
+    /// Native callers retain operational failure separately from source syntax.
+    pub fn parse_body_checked<'a>(
+        &'a self,
+        occurrence: &BodyOccurrence,
+    ) -> Result<ParsedBody<'a>, BodySyntaxFailure> {
+        self.parse_body_with(occurrence, |input, host| input.obtain_checked(host))
+    }
+    fn parse_body_with<'a, E: From<Diagnostic>>(
+        &'a self,
+        occurrence: &BodyOccurrence,
+        obtain: impl FnOnce(&Arc<BodySyntaxInput>, &dyn BodySyntaxQueries) -> Result<Arc<BodySyntax>, E>,
+    ) -> Result<ParsedBody<'a>, E> {
         self.compact_body(occurrence)?;
         let issued = &self.issued_bodies[self.body_by_declaration[&occurrence.declaration]];
         if let Some(queries) = &self.body_queries {
             let ordinal = self.body_by_declaration[&occurrence.declaration];
-            let shared = queries.inputs[ordinal].obtain(queries.host.as_ref())?;
+            let shared = obtain(&queries.inputs[ordinal], queries.host.as_ref())?;
             return Ok(ParsedBody {
                 statements: None,
                 statement_attempted: false,
@@ -526,9 +540,14 @@ mod body_code;
 #[path = "frontend_relative_declarations.rs"]
 mod relative_declarations;
 pub use body_code::IssuedBodyCode;
+#[path = "frontend_setting_source.rs"]
+mod setting_source;
 #[path = "frontend_body_queries.rs"]
 mod body_queries;
 pub use body_queries::{BodySyntax, BodySyntaxInput, BodySyntaxQueries};
+#[path = "frontend_body_failure.rs"]
+mod body_failure;
+pub use body_failure::BodySyntaxFailure;
 #[path = "frontend_body_archive.rs"]
 mod body_archive;
 pub use body_archive::{
@@ -710,6 +729,16 @@ impl ParsedBody<'_> {
     }
     pub fn into_parts(self) -> (Item, Option<Arc<StatementBody>>) {
         (self.item, self.statements)
+    }
+    /// Typed seam for native statement-demand migration. This prerequisite has
+    /// no admitted settings provider yet; its implementation is syntax-only.
+    /// Native settings must not be enabled until the settings-only provider
+    /// replaces the nonfallible parsing branch here with typed admission.
+    pub(super) fn admit_statements_checked(
+        self,
+        supported: fn(&[dm_syntax::Statement]) -> bool,
+    ) -> Result<Self, BodySyntaxFailure> {
+        Ok(self.admit_statements(supported))
     }
     pub(super) fn admit_statements(
         mut self,

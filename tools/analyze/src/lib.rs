@@ -117,3 +117,11 @@ pub mod stats_policy;
 pub mod actions_policy;
 #[cfg(feature = "native-policy")]
 pub mod captured_actions;
+
+#[cfg(feature = "native-policy")]
+pub mod captured_pool;
+pub mod pool_policy;
+
+pub mod declare_ids_policy;
+#[cfg(feature = "native-policy")]
+pub mod captured_declare_ids;

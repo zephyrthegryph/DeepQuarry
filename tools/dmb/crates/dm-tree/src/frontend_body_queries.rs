@@ -47,6 +47,16 @@ impl BodySyntaxInput {
         }
         Ok(syntax)
     }
+    pub(super) fn obtain_checked(
+        self: &Arc<Self>,
+        host: &dyn BodySyntaxQueries,
+    ) -> Result<Arc<BodySyntax>, BodySyntaxFailure> {
+        let syntax = host.syntax_checked(self)?;
+        if syntax.issuance != self.id {
+            return Err(internal("body query returned a foreign parser issuance").into());
+        }
+        Ok(syntax)
+    }
     pub fn parse(&self) -> Result<BodySyntax, Diagnostic> {
         let mut issued = self
             .syntax
@@ -196,6 +206,15 @@ pub trait BodySyntaxQueries: std::fmt::Debug + Send + Sync {
     /// never scan the whole graph for every body in a large program.
     fn begin_revision(&self) {}
     fn syntax(&self, input: &Arc<BodySyntaxInput>) -> Result<Arc<BodySyntax>, Diagnostic>;
+    /// Compatibility hosts have syntax failures only. Native hosts must
+    /// override this before admitted settings can produce operational errors.
+    /// No default converts quota/cancellation into a fabricated Diagnostic.
+    fn syntax_checked(
+        &self,
+        input: &Arc<BodySyntaxInput>,
+    ) -> Result<Arc<BodySyntax>, BodySyntaxFailure> {
+        self.syntax(input).map_err(BodySyntaxFailure::Syntax)
+    }
 }
 
 #[derive(Clone, Debug)]

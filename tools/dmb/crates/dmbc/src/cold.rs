@@ -117,6 +117,7 @@ pub struct ColdOutput {
 pub enum ColdError {
     EngineMismatch,
     AbiPreparation(String),
+    Operational(std::io::Error),
     Lowering(Vec<LoweringDiagnostic>),
     NonAuthoritativeAbi,
     Linking(IntegrationError),
@@ -126,6 +127,15 @@ pub enum ColdError {
     Projection(crate::class_projection::ProjectionError),
     RuntimeTypeValues(crate::class_projection::ProjectionError),
 }
+impl ColdError {
+    pub(crate) fn from_abi(error: dm_codegen_byond::procedure_abi::AbiError) -> Self {
+        match error.into_operational() {
+            Ok(actual) => Self::Operational(actual),
+            Err(error) => Self::AbiPreparation(error.to_string()),
+        }
+    }
+}
+
 fn initializer_lowering_error(
     error: crate::initializer_diagnostics::InitializerLoweringError,
 ) -> ColdError {
@@ -340,12 +350,12 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
             executor,
             memo.and_then(|memo| memo.abi.as_deref()),
         )
-        .map_err(|error| ColdError::AbiPreparation(error.to_string()))?;
+        .map_err(ColdError::from_abi)?;
     dm_profile::request_mark("cold.abi_units_prepared");
     if !prepared.prepared.diagnostics.is_empty() {
         return Err(ColdError::Lowering(
             crate::driver_facts::abi_diagnostics(frontend, &prepared.prepared)
-                .map_err(|error| ColdError::AbiPreparation(error.to_string()))?,
+                .map_err(ColdError::from_abi)?,
         ));
     }
     let policy = crate::driver_facts::FrozenPreparedPolicy::new_with_units(
@@ -353,7 +363,7 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
         &prepared.prepared,
         std::sync::Arc::clone(startup.unit_members()),
     )
-    .map_err(|error| ColdError::AbiPreparation(error.to_string()))?;
+    .map_err(ColdError::from_abi)?;
     measurement.complete();
     let abi_preparation = total.elapsed();
     dm_profile::request_mark("cold.abi_prepared");
@@ -1129,3 +1139,26 @@ mod ledger_release_tests;
 
 #[path = "cold/static_diagnostics.rs"]
 mod static_diagnostics;
+
+#[cfg(test)]
+mod abi_operational_transport_tests {
+    use super::*;
+    #[test]
+    fn cold_abi_operational_keeps_actual_cause_and_genuine_source_stays_ordinary() {
+        let typed = dm_codegen_byond::procedure_abi::AbiError::operational(
+            std::io::Error::from_raw_os_error(1450),
+        );
+        match ColdError::from_abi(typed) {
+            ColdError::Operational(error) => assert_eq!(error.raw_os_error(), Some(1450)),
+            other => panic!("operational ABI downgraded: {other:?}"),
+        }
+        let typed =
+            dm_codegen_byond::procedure_abi::AbiError::source("actual original source message");
+        match ColdError::from_abi(typed) {
+            ColdError::AbiPreparation(message) => {
+                assert_eq!(message, "actual original source message")
+            }
+            other => panic!("source classification changed: {other:?}"),
+        }
+    }
+}

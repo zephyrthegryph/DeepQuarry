@@ -148,7 +148,7 @@ pub enum SourceQuery {
         configuration: Option<PathBuf>,
     },
 }
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct QueryItem {
     pub subject: Option<String>,
     pub query: dm_ir::ResolveQuery,
@@ -753,6 +753,9 @@ pub(crate) fn evaluate_snapshot(
     state: &crate::runner_host::query_snapshot::QueryState,
 ) -> io::Result<QueryReply> {
     request.validate()?;
+    if let Some(snapshot) = state.snapshot.as_ref() {
+        snapshot.require_source_query_role(request)?;
+    }
     if state
         .snapshot
         .as_ref()

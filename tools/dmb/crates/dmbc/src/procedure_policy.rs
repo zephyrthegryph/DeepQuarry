@@ -348,6 +348,27 @@ impl PreparedAbi {
     }
 }
 impl crate::lowering::AbiPolicy for CapturedProcedurePolicy<'_> {
+    fn prepare_captured_checked(
+        &self,
+        metadata: &ProcedureMetadata,
+        parsed: &dm_tree::frontend::ParsedBody<'_>,
+        context: &AbiContext<'_>,
+    ) -> Result<PreparedUnit, AbiError> {
+        CapturedProcedurePolicy::prepare(self, metadata, parsed.item(), context)
+    }
+    fn prepare_owned_captured_checked(
+        &self,
+        metadata: &ProcedureMetadata,
+        parsed: dm_tree::frontend::ParsedBody<'_>,
+        context: &AbiContext<'_>,
+    ) -> Result<crate::lowering::OwnedPreparedBody, AbiError> {
+        let prepared = <Self as crate::lowering::AbiPolicy>::prepare_captured_checked(
+            self, metadata, &parsed, context,
+        )?;
+        let mut header = parsed.into_item();
+        header.children = Vec::new();
+        Ok((prepared, header, None))
+    }
     fn inputs(
         &self,
         _identity: UnitIdentity,

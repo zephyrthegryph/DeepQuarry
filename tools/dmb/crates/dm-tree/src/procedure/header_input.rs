@@ -4,12 +4,16 @@ use super::{header::HeaderView, ParsedSignature, SignatureError};
 use dm_ir::SymbolTable;
 use dm_preprocess::SourceText;
 use dm_syntax::{Item, ItemKind, Span, SpanToken, TokenKind};
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
+#[path = "setting_input.rs"]
+mod setting_input;
+pub(crate) use setting_input::SettingFootprint;
 #[derive(Debug)]
 pub(crate) struct OriginalProcedureHeaders {
     source: SourceText,
     headers: Vec<Span>,
     tokens: Vec<SpanToken>,
+    settings: OnceLock<Vec<setting_input::OriginalSettingsBody>>,
 }
 fn reserve<T>(v: &mut Vec<T>, n: usize) -> Result<(), String> {
     n.checked_mul(std::mem::size_of::<T>())
@@ -65,6 +69,7 @@ impl OriginalProcedureHeaders {
             source,
             headers,
             tokens,
+            settings: OnceLock::new(),
         }))
     }
     /// Portable facts never carry token authority. Reissue ONE current original
@@ -115,6 +120,17 @@ impl OriginalProcedureHeaders {
         ] {
             if c != 0 {
                 visit(p, n * size, c * size);
+            }
+        }
+        self.visit_settings_storage(&mut visit);
+    }
+    pub(crate) fn visit_setting_owners(
+        &self,
+        mut visit: impl FnMut(&Arc<dm_ir::ProcedureMetadata>),
+    ) {
+        if let Some(rows) = self.settings.get() {
+            for row in rows {
+                visit(row.owner());
             }
         }
     }
@@ -230,6 +246,9 @@ pub(crate) struct HeaderAllocationRow {
     pub(crate) header: Span,
     pub(crate) argument_offset: usize,
     pub(crate) declarations: Vec<super::HeaderTypeDeclaration>,
+    pub(crate) body: Span,
+    pub(crate) settings_owner: Option<Arc<dm_ir::ProcedureMetadata>>,
+    pub(crate) settings_footprints: Vec<SettingFootprint>,
 }
 impl<'a> HeaderAllocationReceipt<'a> {
     pub(crate) fn from_rows(
@@ -248,6 +267,7 @@ impl<'a> HeaderAllocationReceipt<'a> {
         for row in &value.rows {
             inputs.original(row.header, offset)?;
         }
+        inputs.install_settings(&mut value.rows, offset)?;
         Ok(value)
     }
     pub(crate) fn finish(&mut self) -> Result<(), String> {

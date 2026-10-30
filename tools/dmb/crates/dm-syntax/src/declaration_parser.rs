@@ -10,8 +10,15 @@ struct Line {
 
 /// Locate an assignment outside argument lists, indexing, strings, and braces.
 pub fn top_level_assignment_index(source: &str) -> Option<usize> {
+    top_level_assignment_index_from_span_tokens(source, &lex_spans(source).tokens)
+}
+/// The SAME assignment partition over already-issued primary tokens.
+pub fn top_level_assignment_index_from_span_tokens(
+    source: &str,
+    tokens: &[SpanToken],
+) -> Option<usize> {
     let mut depth = 0usize;
-    for token in lex_spans(source).tokens {
+    for token in tokens {
         if !matches!(token.kind, TokenKind::Operator | TokenKind::Punctuation) {
             continue;
         }

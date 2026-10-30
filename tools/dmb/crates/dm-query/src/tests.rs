@@ -391,3 +391,115 @@ fn retained_observation_cannot_compute_missing_or_wrong_typed_values() {
     set(&db, 1, 4);
     assert!(db.retained_value::<String>(input(1)).is_none());
 }
+
+#[test]
+fn operational_dependency_failure_is_not_an_outcome_and_same_key_retries() {
+    use std::io;
+    let db = Db::new();
+    let leaf = Key::new(Kind(62000), 1);
+    let outer = Key::new(Kind(62001), 1);
+    let stopped = Arc::new(AtomicBool::new(true));
+    let runs = Arc::new(AtomicUsize::new(0));
+    let mode = stopped.clone();
+    let count = runs.clone();
+    db.define(leaf.kind, "operational-leaf", move |_, _| {
+        count.fetch_add(1, Ordering::Relaxed);
+        if mode.load(Ordering::Acquire) {
+            return Err(QueryError::operational(
+                leaf,
+                io::Error::new(io::ErrorKind::Interrupted, "actual cancellation source"),
+            ));
+        }
+        Ok(Outcome::new(19u32, 19, 100))
+    });
+    db.define(outer.kind, "operational-dependent", move |ctx, _| {
+        let v = ctx.get::<u32>(leaf, Arc::new(()))?;
+        Ok(Outcome::new(*v, 19, 200))
+    });
+    let error = db.get::<u32>(outer, Arc::new(())).unwrap_err();
+    let owner = error.clone().into_operational().unwrap();
+    assert_eq!(owner.kind(), io::ErrorKind::Interrupted);
+    assert_eq!(owner.error().to_string(), "actual cancellation source");
+    assert_eq!(error, error.clone());
+    assert_eq!(db.value_bytes_at(leaf), 0);
+    assert_eq!(db.value_bytes_at(outer), 0);
+    assert_eq!(db.stats(leaf.kind).computed, 0);
+    assert_eq!(db.stats(outer.kind).computed, 0);
+    stopped.store(false, Ordering::Release);
+    assert_eq!(*db.get::<u32>(outer, Arc::new(())).unwrap(), 19);
+    assert_eq!(runs.load(Ordering::Relaxed), 2);
+    assert_eq!(db.stats(outer.kind).computed, 1);
+}
+#[test]
+fn operational_quota_after_value_eviction_retries_without_poisoning_metadata() {
+    use std::io;
+    let db = Db::new();
+    let key = Key::new(Kind(62002), 1);
+    let stopped = Arc::new(AtomicBool::new(false));
+    let mode = stopped.clone();
+    db.define(key.kind, "quota-refill", move |_, _| {
+        if mode.load(Ordering::Acquire) {
+            Err(QueryError::operational(
+                key,
+                io::Error::new(io::ErrorKind::OutOfMemory, "actual quota source"),
+            ))
+        } else {
+            Ok(Outcome::new(23u32, 23, 321))
+        }
+    });
+    assert_eq!(*db.get::<u32>(key, Arc::new(())).unwrap(), 23);
+    db.evict_values(&[key.kind]);
+    stopped.store(true, Ordering::Release);
+    assert_eq!(
+        db.get::<u32>(key, Arc::new(()))
+            .unwrap_err()
+            .into_operational()
+            .unwrap()
+            .kind(),
+        io::ErrorKind::OutOfMemory
+    );
+    assert_eq!(db.value_bytes_at(key), 0);
+    stopped.store(false, Ordering::Release);
+    assert_eq!(*db.get::<u32>(key, Arc::new(())).unwrap(), 23);
+    assert_eq!(db.stats(key.kind).computed, 2);
+}
+#[test]
+fn operational_green_verification_does_not_mark_revision_current_or_log_false_mismatch() {
+    use std::io;
+    let db = Db::new();
+    let key = Key::new(Kind(62003), 1);
+    let stop = Arc::new(AtomicBool::new(false));
+    let mode = stop.clone();
+    let runs = Arc::new(AtomicUsize::new(0));
+    let count = runs.clone();
+    db.define(key.kind, "verifying-operation", move |_, _| {
+        count.fetch_add(1, Ordering::Relaxed);
+        if mode.load(Ordering::Acquire) {
+            return Err(QueryError::operational(
+                key,
+                io::Error::new(io::ErrorKind::Interrupted, "verify cancellation"),
+            ));
+        }
+        Ok(Outcome::new(31u32, 31, 123))
+    });
+    db.get::<u32>(key, Arc::new(())).unwrap();
+    db.set_verify(true);
+    db.set_input(Key::new(Kind(62004), 1), 1u32, 1);
+    stop.store(true, Ordering::Release);
+    assert_eq!(
+        db.get::<u32>(key, Arc::new(()))
+            .unwrap_err()
+            .into_operational()
+            .unwrap()
+            .kind(),
+        io::ErrorKind::Interrupted
+    );
+    assert!(db.verify_failures().is_empty());
+    stop.store(false, Ordering::Release);
+    assert_eq!(*db.get::<u32>(key, Arc::new(())).unwrap(), 31);
+    assert_eq!(
+        runs.load(Ordering::Relaxed),
+        3,
+        "same-revision retry must re-run interrupted verification"
+    );
+}

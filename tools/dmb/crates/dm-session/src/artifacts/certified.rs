@@ -23,6 +23,42 @@ impl<T, Q, A: Eq, D, H> UnchangedCandidate<'_, '_, T, Q, A, D, H> {
         )
         .map(|(_, artifact)| artifact)
     }
+    pub fn try_admit<E>(
+        self,
+        key: &[u8],
+        locally_current: impl FnOnce(&Arc<T>) -> Result<bool, E>,
+        observed: impl FnMut(&Arc<[Observation<Q, A, D>]>),
+    ) -> Result<Option<ObservedArtifact<T, Q, A, D>>, E> {
+        self.try_admit_current(
+            |actual, value| {
+                if actual == key {
+                    locally_current(value)
+                } else {
+                    Ok(false)
+                }
+            },
+            observed,
+        )
+        .map(|a| a.map(|(_, artifact)| artifact))
+    }
+    pub fn try_admit_current<E>(
+        mut self,
+        locally_current: impl FnOnce(&[u8], &Arc<T>) -> Result<bool, E>,
+        mut observed: impl FnMut(&Arc<[Observation<Q, A, D>]>),
+    ) -> Result<Option<(Arc<[u8]>, ObservedArtifact<T, Q, A, D>)>, E> {
+        let Some(artifact) = self.artifact.take() else {
+            return Ok(None);
+        };
+        if !locally_current(&self.key, &artifact.value)? {
+            return Ok(None);
+        }
+        artifact.reads.visit_storage(|view| {
+            if let crate::ReceiptStorageView::Flat(leaf) = view {
+                observed(leaf);
+            }
+        });
+        Ok(Some((self.key, artifact)))
+    }
     /// The caller must license the complete current local inputs for this exact
     /// producer key; a prefix alone is never admission authority.
     pub fn admit_current(
@@ -111,7 +147,10 @@ impl<'request, 'host, T, Q, A: Eq, D, H> UnchangedCandidates<'request, 'host, T,
             let index = shard(&candidate.key) % total;
             parts[index].push(candidate);
         }
-        parts.into_iter().map(|candidates| Self { candidates }).collect()
+        parts
+            .into_iter()
+            .map(|candidates| Self { candidates })
+            .collect()
     }
     pub fn prefix_values(&self, prefix: &[u8]) -> Vec<(usize, Arc<T>)> {
         let start = self
@@ -122,7 +161,10 @@ impl<'request, 'host, T, Q, A: Eq, D, H> UnchangedCandidates<'request, 'host, T,
             .take_while(|candidate| candidate.key.starts_with(prefix))
             .enumerate()
             .filter_map(|(offset, candidate)| {
-                Some((start + offset, Arc::clone(&candidate.artifact.as_ref()?.value)))
+                Some((
+                    start + offset,
+                    Arc::clone(&candidate.artifact.as_ref()?.value),
+                ))
             })
             .collect()
     }

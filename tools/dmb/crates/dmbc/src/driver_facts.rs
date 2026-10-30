@@ -283,6 +283,9 @@ pub fn abi_diagnostics(
                     dm_codegen_byond::procedure_abi::AbiErrorKind::Invariant => {
                         dm_tree::frontend::DiagnosticKind::Internal
                     }
+                    dm_codegen_byond::procedure_abi::AbiErrorKind::Operational(_) => {
+                        return Err(message.clone());
+                    }
                 },
                 identity: identities.get(&body.member).copied(),
                 origin: body.source.clone(),
@@ -737,6 +740,9 @@ fn prepare_source_abi_mode_on_executor(
                         ready.extend(roster.dependents(ordinal).iter().copied());
                     }
                     Err(error) => {
+                        if error.operational_error().is_some() {
+                            return Err(error);
+                        }
                         failures.insert(ordinal, error);
                     }
                 }
@@ -762,12 +768,12 @@ fn prepare_source_abi_mode_on_executor(
             let mut previous = tree
                 .member(frontend.bodies[ordinal].member)
                 .and_then(|node| node.previous);
-            let mut inherited_kind = None;
+            let mut inherited_error = None;
             for _ in 0..frontend.bodies.len() {
                 let Some(member) = previous else { break };
                 if let Some(index) = roster.ordinal(member) {
                     if let Some(error) = failures.get(&index) {
-                        inherited_kind = Some(error.kind);
+                        inherited_error = Some(error.clone());
                         break;
                     }
                 }
@@ -775,11 +781,11 @@ fn prepare_source_abi_mode_on_executor(
             }
             failures.insert(
                 ordinal,
-                AbiError {
-                    kind: inherited_kind
-                        .unwrap_or(dm_codegen_byond::procedure_abi::AbiErrorKind::Unsupported),
-                    message: "predecessor ABI unavailable, failed or cyclic".into(),
-                },
+                inherited_error
+                    .unwrap_or_else(|| {
+                        AbiError::unsupported("predecessor ABI unavailable, failed or cyclic")
+                    })
+                    .with_context("predecessor ABI unavailable, failed or cyclic"),
             );
         }
     }

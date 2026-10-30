@@ -18,6 +18,7 @@ pub(crate) struct SourceFrameCapture {
     facts: InputSnapshot,
     query_request: u64,
     mode: SourceAnswersMode,
+    questions: Option<crate::query_db::SourceQuestionRoster>,
 }
 /// One-use stack publication ticket. Only the real final SourceFrame admission
 /// transaction can construct it, after complete closure freshness/owner checks.
@@ -30,8 +31,14 @@ pub(crate) struct SourceAnswerPublication {
     eligible: bool,
     query_request: u64,
     mode: SourceAnswersMode,
+    question_frame: Option<Arc<SourceFrameCapture>>,
 }
 impl SourceAnswerPublication {
+    pub(crate) fn questions(&self) -> Option<&crate::query_db::SourceQuestionRoster> {
+        self.question_frame
+            .as_ref()
+            .and_then(|f| f.questions.as_ref())
+    }
     pub(crate) fn parts(
         &self,
     ) -> (
@@ -107,6 +114,7 @@ impl SourceFrameCapture {
             facts,
             query_request: queries.source_answer_request(),
             mode: SourceAnswersMode::NotRequested,
+            questions: None,
         }))
     }
     pub(crate) fn is_recorded_in(&self, complete: &InputSnapshot) -> bool {
@@ -156,6 +164,24 @@ impl SourceFrameCapture {
     }
 }
 impl QueryAttempt {
+    pub(crate) fn require_source_questions(
+        &mut self,
+        questions: &[crate::daemon::query::QueryItem],
+    ) -> std::io::Result<()> {
+        if self.pending_workspace.is_some() || self.pending_diagnostic.is_some() {
+            return Err(std::io::ErrorKind::Unsupported.into());
+        }
+        let (_, frame) = self
+            .pending_source
+            .as_mut()
+            .ok_or(std::io::ErrorKind::InvalidInput)?;
+        let frame = Arc::get_mut(frame).ok_or(std::io::ErrorKind::InvalidInput)?;
+        let roster = crate::query_db::SourceQuestionRoster::capture(&frame.queries, questions)?;
+        // Allocation/cancellation failure above cannot promote a partial role.
+        frame.questions = Some(roster);
+        frame.mode = SourceAnswersMode::Required;
+        Ok(())
+    }
     /// Trusted internal question-plan selection ONLY. Once the freshness frame
     /// is borrowed/issued this cannot mutate its mode. No RPC boolean/default.
     pub(crate) fn require_source_answers(&mut self) -> std::io::Result<()> {
@@ -214,6 +240,7 @@ impl QueryAttempt {
             // and unprofiled trees. It cannot issue a semantic source scope.
             query_request: frame.query_request,
             mode: frame.mode,
+            question_frame: frame.questions.as_ref().map(|_| Arc::clone(frame)),
             eligible: frame.mode == SourceAnswersMode::Required
                 && snapshot.require_semantic_source_encoding().is_ok()
                 && snapshot.tree.checker_builtin_profile().is_some()
@@ -225,6 +252,8 @@ impl QueryAttempt {
         let captured = &mut self.captured;
         queries.commit_source_answer_publication(publication, |scope| {
             let (mut snapshot, _) = pending.take().expect("validated staged source");
+            snapshot.source_question_role =
+                scope.as_ref().is_some_and(|scope| scope.has_questions());
             snapshot.source_answers = scope;
             current.snapshot = Some(snapshot);
             *captured = true;

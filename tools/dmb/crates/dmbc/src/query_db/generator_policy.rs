@@ -2,9 +2,9 @@
 //! No file installation, filesystem IO, public producer or workspace claim.
 use super::*;
 use dq_analyze::{
-    captured_actions::BorrowedActions, captured_generator_budget::Budget,
-    captured_sparse_slots::BorrowedSparseSlots, captured_stats::BorrowedStats,
-    captured_system_accessors::BorrowedSystemAccessors,
+    captured_actions::BorrowedActions, captured_declare_ids::BorrowedDeclareIds,
+    captured_generator_budget::Budget, captured_sparse_slots::BorrowedSparseSlots,
+    captured_stats::BorrowedStats, captured_system_accessors::BorrowedSystemAccessors,
 };
 pub(super) const GENERATOR_RESULT: Kind = Kind(11);
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize)]
@@ -13,6 +13,7 @@ pub(crate) enum GeneratorName {
     SystemAccessors,
     Stats,
     Actions,
+    DeclareIds,
 }
 impl GeneratorName {
     pub(crate) fn name(self) -> &'static str {
@@ -21,6 +22,7 @@ impl GeneratorName {
             Self::SystemAccessors => "system_accessors",
             Self::Stats => "stats",
             Self::Actions => "actions",
+            Self::DeclareIds => "declare_ids",
         }
     }
     pub(crate) fn path(self) -> &'static str {
@@ -29,6 +31,7 @@ impl GeneratorName {
             Self::SystemAccessors => "code/engine/_generated/system_accessors.dm",
             Self::Stats => "code/engine/_generated/stats.dm",
             Self::Actions => "code/engine/_generated/actions.dm",
+            Self::DeclareIds => "code/engine/_generated/ids.dm",
         }
     }
 }
@@ -208,6 +211,18 @@ pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admissi
                             diags: out.diags,
                         })
                     }
+                    GeneratorName::DeclareIds => {
+                        let out =
+                            BorrowedDeclareIds::capture(&raw, capture.policy(), budget.clone())?
+                                .generate(checkpoint)?;
+                        let text =
+                            out.captured_named_file_text("declare_ids", "ids.dm", &budget)?;
+                        Ok(Artifact {
+                            name: p.name,
+                            text,
+                            diags: out.diags,
+                        })
+                    }
                     GeneratorName::Stats => {
                         let out = BorrowedStats::capture(&raw, capture.policy(), budget.clone())?
                             .generate(checkpoint)?;
@@ -262,7 +277,7 @@ pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admissi
     );
 }
 impl QueryDb {
-    fn discard_poisoned_generator_files_locked(&self, cohort: &Cohort) {
+    pub(super) fn discard_poisoned_generator_files_locked(&self, cohort: &Cohort) {
         let mut leases = self
             .raw_policy
             .leases

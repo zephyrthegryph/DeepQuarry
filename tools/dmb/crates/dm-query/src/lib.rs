@@ -50,6 +50,9 @@ impl Key {
     }
 }
 
+#[path = "../../../shared/operational_error.rs"]
+mod operational_error;
+pub use operational_error::OperationalError;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum QueryError {
     /// The query (transitively) read itself.
@@ -58,6 +61,22 @@ pub enum QueryError {
     Missing(Key),
     /// The kind has no registered function.
     UnknownKind(Kind),
+    /// Never an Outcome, parameter or semantic refusal. Same-key retries rerun.
+    Operational { key: Key, error: OperationalError },
+}
+impl QueryError {
+    pub fn operational(key: Key, error: std::io::Error) -> Self {
+        Self::Operational {
+            key,
+            error: OperationalError::new(error),
+        }
+    }
+    pub fn into_operational(self) -> Result<OperationalError, Self> {
+        match self {
+            Self::Operational { error, .. } => Ok(error),
+            other => Err(other),
+        }
+    }
 }
 
 /// Result of one computation: the value, its content hash and an estimate of its size.
@@ -462,6 +481,13 @@ impl Db {
                 guard.armed = false;
                 return self.run(key, &params, revision, false);
             }
+            // Verification is an operation, not a semantic failure value. Keep
+            // the node busy/unverified until it succeeds so cancellation cannot
+            // mark this revision green and bypass verification on same-key retry.
+            if self.verify.load(Ordering::Relaxed) {
+                let hash = { self.lock(key).nodes[&key].hash };
+                self.verify_green(key, &params, hash)?;
+            }
             let mut state = self.lock(key);
             let done;
             {
@@ -476,13 +502,9 @@ impl Db {
             }
             state.stats.entry(key.kind).or_default().green += 1;
             let have_value = done.value.is_some();
-            let hash = done.hash;
             drop(state);
             guard.armed = false;
             self.wake(key);
-            if self.verify.load(Ordering::Relaxed) {
-                self.verify_green(key, &params, hash);
-            }
             if need_value && !have_value {
                 let mut state = self.lock(key);
                 let node = state.nodes.get_mut(&key).expect("node stays");
@@ -497,18 +519,21 @@ impl Db {
         }
     }
 
-    fn verify_green(&self, key: Key, params: &Value, hash: Hash) {
+    fn verify_green(&self, key: Key, params: &Value, hash: Hash) -> Result<(), QueryError> {
         let Ok(def) = self.kind_def(key.kind) else {
-            return;
+            return Ok(());
         };
-        let Some(compute) = &def.compute else { return };
+        let Some(compute) = &def.compute else {
+            return Ok(());
+        };
         let mut ctx = Ctx {
             db: self,
             deps: Vec::new(),
             seen: HashSet::new(),
         };
         let message = match compute(&mut ctx, params) {
-            Ok(outcome) if outcome.hash == hash => return,
+            Ok(outcome) if outcome.hash == hash => return Ok(()),
+            Err(error @ QueryError::Operational { .. }) => return Err(error),
             Ok(_) => format!(
                 "{} {:x}: green but recomputed value differs",
                 def.name, key.id
@@ -522,6 +547,7 @@ impl Db {
             .lock()
             .unwrap_or_else(|error| error.into_inner())
             .push(message);
+        Ok(())
     }
 
     /// Run the function of a node already marked busy by this thread.

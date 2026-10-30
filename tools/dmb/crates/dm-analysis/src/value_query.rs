@@ -5,12 +5,60 @@ use crate::{
     untyped::Unsupported,
     value_program::{ValueProof, Values},
 };
-use dm_tree::frontend::BodyArchive;
+use dm_tree::frontend::{BodyArchive, BodySyntaxFailure, Diagnostic};
 use std::sync::{
     atomic::{AtomicU64, Ordering},
     Arc, Weak,
 };
 
+/// Checked native value-query transport. Genuine semantic refusals and syntax
+/// anchors stay distinct from actual operation failures; no IO is a proof.
+#[derive(Debug)]
+pub enum ValueQueryFailure {
+    Unsupported(Unsupported),
+    Syntax(Diagnostic),
+    Operational(std::io::Error),
+}
+impl From<String> for ValueQueryFailure {
+    fn from(e: String) -> Self {
+        Self::Unsupported(Unsupported(e))
+    }
+}
+impl From<&str> for ValueQueryFailure {
+    fn from(e: &str) -> Self {
+        Self::Unsupported(Unsupported(e.into()))
+    }
+}
+impl From<Unsupported> for ValueQueryFailure {
+    fn from(e: Unsupported) -> Self {
+        Self::Unsupported(e)
+    }
+}
+impl From<BodySyntaxFailure> for ValueQueryFailure {
+    fn from(e: BodySyntaxFailure) -> Self {
+        match e {
+            BodySyntaxFailure::Syntax(d) => Self::Syntax(d),
+            BodySyntaxFailure::Operational(e) => Self::Operational(e),
+        }
+    }
+}
+impl std::fmt::Display for ValueQueryFailure {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Unsupported(e) => e.0.fmt(f),
+            Self::Syntax(e) => e.message.fmt(f),
+            Self::Operational(e) => e.fmt(f),
+        }
+    }
+}
+impl std::error::Error for ValueQueryFailure {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Operational(e) => Some(e),
+            _ => None,
+        }
+    }
+}
 /// One retained archive plus canonical exemption policy. Only this constructor
 /// issues keys; equal source bytes are never a proof's authority. The resolver
 /// is always this archive's semantic tree, not a caller-supplied host.
@@ -55,6 +103,22 @@ impl ArchiveValueInput {
             input: Arc::downgrade(self),
             summary: values.into_summary(),
         }))
+    }
+    pub fn compute_checked(self: &Arc<Self>) -> Result<Arc<ArchiveValueProof>, ValueQueryFailure> {
+        let values =
+            Values::build_archive_checked(self.archive(), self.archive.tree(), &self.exempt_types)?;
+        Ok(Arc::new(ArchiveValueProof {
+            input: Arc::downgrade(self),
+            summary: values.into_summary(),
+        }))
+    }
+    pub fn obtain_checked(
+        self: &Arc<Self>,
+        host: &dyn ArchiveValueQueries,
+    ) -> Result<Arc<ArchiveValueProof>, ValueQueryFailure> {
+        let proof = host.value_proof_checked(self)?;
+        proof.validate_for(self)?;
+        Ok(proof)
     }
     pub fn obtain(
         self: &Arc<Self>,
@@ -106,6 +170,15 @@ impl std::fmt::Debug for ArchiveValueProof {
 }
 
 pub trait ArchiveValueQueries: std::fmt::Debug + Send + Sync {
+    /// Compatibility-only hosts keep their independent contract. Native hosts
+    /// override this to preserve actual operational failures from the SAME Db.
+    fn value_proof_checked(
+        &self,
+        input: &Arc<ArchiveValueInput>,
+    ) -> Result<Arc<ArchiveValueProof>, ValueQueryFailure> {
+        self.value_proof(input)
+            .map_err(ValueQueryFailure::Unsupported)
+    }
     fn value_proof(
         &self,
         input: &Arc<ArchiveValueInput>,

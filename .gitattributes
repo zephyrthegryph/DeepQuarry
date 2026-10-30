@@ -71,6 +71,9 @@ tools/analyze/fixtures/stats-whole/code/first.dm -text whitespace=cr-at-eol
 tools/analyze/fixtures/stats-whole/deepquarry.dme -text whitespace=cr-at-eol
 # Mixed indentation is intentional input to the legacy membership matcher.
 tools/analyze/fixtures/stats-whole/code/second.dm whitespace=-indent-with-non-tab
+# Frozen independent declaration-generator oracle and literal CRLF fixtures.
+tools/analyze/examples/support/declare_ids_original.rs -text whitespace=cr-at-eol
+tools/analyze/fixtures/declare-ids-whole/** -text whitespace=cr-at-eol,-indent-with-non-tab
 ## tools/ci/lint_scopes.toml: ceilings only go down, and adjacent lowered ceilings must not conflict (tools/ci/lint_scopes_merge_driver.sh,
 ## supplied by tools/dq_git_safe.sh like dq-baseline; by hand: git config merge.dq-lint-scopes.driver "bash tools/ci/lint_scopes_merge_driver.sh %O %A %B %P").
 tools/ci/lint_scopes.toml merge=dq-lint-scopes

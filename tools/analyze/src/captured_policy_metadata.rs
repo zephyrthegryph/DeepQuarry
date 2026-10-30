@@ -10,6 +10,7 @@ pub const LINTS: &[&str] = &[
     "rel_write_undeclared",
     "stored_refs",
     "untyped",
+    "pool",
 ];
 pub fn metadata(name: &str) -> Option<&'static crate::lint::Meta> {
     match name {
@@ -23,6 +24,7 @@ pub fn metadata(name: &str) -> Option<&'static crate::lint::Meta> {
         "weak_raw_read" => Some(crate::weak_relation_policy::metadata()),
         "untyped" => Some(&crate::untyped_policy_metadata::META),
         "player_link" => Some(crate::player_link_policy::metadata()),
+        "pool" => Some(&crate::pool_policy::META),
         _ => None,
     }
 }

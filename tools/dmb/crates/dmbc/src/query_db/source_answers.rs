@@ -19,6 +19,7 @@ pub(crate) struct SourceAnswerScope {
     retention: SharedSourceLease,
     world: u128,
     profile: PackedU128,
+    pub(super) questions: Option<super::SourceQuestionRoster>,
     tree: Weak<dm_tree::SemanticTree>,
     mapping: Weak<SourceExportMapping>,
     archive: Weak<BodyArchive>,
@@ -59,11 +60,17 @@ impl SourceAnswerScopeOwner {
                 .census(c, "query_snapshot.source_answers.generation");
         }
         self.inner.retention.census_source_lease(c);
+        if let Some(questions) = &self.inner.questions {
+            questions.census(c);
+        }
         c.unknown("query_snapshot.source_answers","original owners only; quota reservations are not total heap/RSS and std Arc allocator rounding is excluded");
     }
 }
 impl SourceAnswerScope {
-    fn require(
+    pub(crate) fn has_questions(&self) -> bool {
+        self.questions.is_some()
+    }
+    pub(super) fn require(
         &self,
         db: &QueryDb,
         current: &AnswerRequest,
@@ -241,6 +248,10 @@ impl QueryDb {
         );
         let world = world.digest128();
         current.reserve_source_stamp((tree.declaration_identity(), world))?;
+        let questions = publication
+            .questions()
+            .map(|q| q.duplicate(self))
+            .transpose()?;
         let retention = SharedSourceLease::new(
             ledger
                 .reserve(scope_bytes)
@@ -257,6 +268,7 @@ impl QueryDb {
                 retention,
                 world,
                 profile,
+                questions,
                 tree: Arc::downgrade(tree),
                 mapping: Arc::downgrade(mapping),
                 archive: Arc::downgrade(archive),
@@ -289,6 +301,14 @@ impl QueryDb {
             .read()
             .unwrap_or_else(|e| e.into_inner());
         scope.require(self, &current, tree, mapping, archive)?;
+        self.source_answer_hash_bound(&current, tree, question)
+    }
+    pub(super) fn source_answer_hash_bound(
+        &self,
+        current: &AnswerRequest,
+        tree: &dm_tree::SemanticTree,
+        question: Q,
+    ) -> io::Result<u128> {
         let id = query_id(&question);
         let open = slot_request(current.request);
         let identity = current.identity();

@@ -70,6 +70,13 @@ impl<'a> HeaderView<'a> {
             parts.source.map(relative),
         ))
     }
+    pub(super) fn span(self) -> Span {
+        self.range
+    }
+    pub(super) fn assignment_index(self) -> Option<usize> {
+        dm_syntax::top_level_assignment_index_from_span_tokens(self.source, self.tokens)
+            .map(|at| at - self.range.start)
+    }
     pub(super) fn text(self) -> &'a str {
         &self.source[self.range.range()]
     }
