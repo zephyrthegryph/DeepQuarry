@@ -98,3 +98,28 @@ reverse-index census (`rel_index` totals per type) is equal with the batch on an
 By measured payoff: (3.3) relations, then the per-instance setup/materialize costs of the top object types (windows, firedoors,
 vents/pipes, cabinets), then (3.1) baselines and stats for simulated turfs, then (3.2) the one-bit skip. The measuring tool lands first
 so every step is read off an unprofiled production boot.
+
+## 4. Measurements 2026-10-30 (after the space-turf step skip)
+
+Same tool, production Southern Cross, timers on (load-sensitive: compare rows).
+
+| Row | Before | After |
+|---|---|---|
+| `caps_init (turf)` | 44.9 s | 23.7 s (`engine_holder_init (turf)` 39.8 s to 18.7 s) |
+
+`/turf/space` no longer enters or times the engine steps its plan has no work for (`engine_holder_init_planned`).
+
+### 4.1 Rule bindings (13 to 16 s, 21.6k bindings, 180 us each)
+
+New rows split `materialize: rule bindings`: `owner links and table` 5.2 to 6.0 s (two `rel_set`, 240 to 275 us per binding),
+`subscribe` 7.9 s (`node_of` 2.0 s over 15k, `dq_rx_when_threshold` 4.1 to 4.3 s over 15k, 270 to 285 us each), `baseline check` 1.4 s.
+Windows are 5 s of it (6.7k, `/obj/structure/window/reinforced`), then firedoors 1.7 s and lights 1.2 s.
+No cheaper per-instance form exists without changing what a binding is: each threshold trigger creates a native node and a native watch
+per object. A design change would be one shared watch per (type, property, level) that fans out to its owners, or deferring thresholds
+the way heat rules already defer (`dq_rules_heat_deferred`) until the object's first touch. Neither is done here.
+
+### 4.2 `own_field_changed` full path on init
+
+`ofc stat_relation_changed: power_area` is 8.3 s over 22k writes (375 us), almost all of it `stat_ct_update` (three channel entries per
+machine, 67k updates, `gate` 2.0 s, `release` 0.5 s) on pipes, firedoors and lights. `flooring` writes cost 100 us in `own_field_changed`
+(`draw_hop_published` 0.9 s, `publish_change` 0.7 s) of 217 us for the whole `rel_set`.
