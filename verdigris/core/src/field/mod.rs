@@ -261,6 +261,27 @@ pub struct FieldStats {
     pub touched_chunks: u32,
     /// Live edges computed per sub-step in the last step.
     pub live_edges: u32,
+    /// Chunks woken at the start of the last step because their cells changed since the previous step (a write from outside the field).
+    pub woke_cells: u32,
+    /// Chunks woken at the start of the last step by a geometry change.
+    pub woke_geom: u32,
+    /// Chunks woken at the start of the last step by a change of the grid's blocked layer.
+    pub woke_grid: u32,
+    /// Chunks the last step kept awake because an edge was unsettled (after the quiet filter).
+    pub kept_edges: u32,
+    /// Chunks the last step kept awake because a cell's local step or a reservoir's relax asked to.
+    pub kept_local: u32,
+}
+
+/// Cumulative wall microseconds of the step's parts since the field was built: the chunk lists and stiffness, the flux of the
+/// sub-steps, writing the fluxes, the quiet filter, and local physics. Wall time, so apart from [`FieldStats`] (which is deterministic).
+#[derive(Clone, Copy, Debug, Default)]
+pub struct FieldTimes {
+    pub setup: u64,
+    pub flux: u64,
+    pub apply: u64,
+    pub quiet: u64,
+    pub local: u64,
 }
 
 /// The positive faces a chunk owns the edges of, with their opposites.
@@ -281,6 +302,7 @@ pub struct FieldState<K: FieldKind> {
     last_geom: Option<CowStore<Geom>>,
     ledger: Vec<f64>,
     stats: FieldStats,
+    times: FieldTimes,
     /// The grid layer revision as of the last step.
     grid_seen: u64,
 }
@@ -382,6 +404,7 @@ impl<K: FieldKind> FieldState<K> {
             last_geom: None,
             ledger: vec![0.0; K::QUANTITIES],
             stats: FieldStats::default(),
+            times: FieldTimes::default(),
             grid_seen: 0,
         }
     }
@@ -401,6 +424,15 @@ impl<K: FieldKind> FieldState<K> {
     }
 
     #[must_use]
+    pub const fn times(&self) -> FieldTimes {
+        self.times
+    }
+
+    /// Both at once, for the host's metrics.
+    pub const fn stats_and_times(&self) -> (FieldStats, FieldTimes) {
+        (self.stats, self.times)
+    }
+
     pub const fn stats(&self) -> FieldStats {
         self.stats
     }
@@ -511,6 +543,9 @@ impl<K: FieldKind> FieldState<K> {
     ) {
         assert_eq!(cells.layout(), self.layout, "cells layout mismatch");
         assert_eq!(geom.layout(), self.layout, "geometry layout mismatch");
+        self.stats.woke_cells = 0;
+        self.stats.woke_geom = 0;
+        self.stats.woke_grid = 0;
         if let Some(g) = grid {
             let revision = g.layer(K::BLOCK).revision();
             if revision != self.grid_seen {
@@ -521,6 +556,7 @@ impl<K: FieldKind> FieldState<K> {
                         .is_some_and(|cell| g.blocked_revision(K::BLOCK, cell) > self.grid_seen);
                     if changed {
                         self.active[chunk] = true;
+                        self.stats.woke_grid += 1;
                     }
                 }
                 self.grid_seen = revision;
@@ -530,6 +566,7 @@ impl<K: FieldKind> FieldState<K> {
             Some(last) => {
                 for chunk in cells.chunks_differing_from(last) {
                     self.active[chunk] = true;
+                    self.stats.woke_cells += 1;
                 }
             }
             // First step: every chunk that has geometry (a chunk without it
@@ -543,6 +580,7 @@ impl<K: FieldKind> FieldState<K> {
         if let Some(last) = &self.last_geom {
             for chunk in geom.chunks_differing_from(last) {
                 self.active[chunk] = true;
+                self.stats.woke_geom += 1;
             }
         }
         let geo = Geo {
@@ -558,6 +596,12 @@ impl<K: FieldKind> FieldState<K> {
     #[allow(clippy::too_many_lines)]
     fn advance(&mut self, cells: &mut CowStore<K::Value>, geom: &Geo<'_>) {
         self.stats.steps += 1;
+        let mut lap = std::time::Instant::now();
+        let take = |lap: &mut std::time::Instant| {
+            let us = u64::try_from(lap.elapsed().as_micros()).unwrap_or(u64::MAX);
+            *lap = std::time::Instant::now();
+            us
+        };
         let count = self.active.iter().filter(|&&a| a).count();
         self.stats.active_chunks = u32::try_from(count).unwrap_or(u32::MAX);
         if count == 0 {
@@ -606,13 +650,13 @@ impl<K: FieldKind> FieldState<K> {
         self.stats.touched_chunks = u32::try_from(targets.len()).unwrap_or(u32::MAX);
 
         let dt = self.config.dt;
-        let stiffness = {
+        let (stiffness, live_edges) = {
             let this = &*self;
             let cells = &*cells;
-            owners
-                .par_iter()
-                .map(|&c| this.chunk_stiffness(c, cells, geom))
-                .reduce(|| 0.0, f32::max)
+            let per_chunk: Vec<(f32, Vec<LiveEdge>)> =
+                owners.par_iter().map(|&c| this.chunk_stiffness(c, cells, geom)).collect();
+            let stiffness = per_chunk.iter().map(|(s, _)| *s).fold(0.0, f32::max);
+            (stiffness, per_chunk.into_iter().map(|(_, e)| e).collect::<Vec<_>>())
         };
         #[allow(
             clippy::cast_possible_truncation,
@@ -633,6 +677,7 @@ impl<K: FieldKind> FieldState<K> {
 
         let start = cells.snapshot();
         let mut next = vec![false; chunks];
+        self.times.setup += take(&mut lap);
         for s in 0..substeps {
             let last = s + 1 == substeps;
             // Every flux is computed from the substep's start before any
@@ -643,9 +688,11 @@ impl<K: FieldKind> FieldState<K> {
                 let old = &*cells;
                 owners
                     .par_iter()
-                    .map(|&c| this.chunk_flux(c, old, geom, sub_dt, last))
+                    .zip(live_edges.par_iter())
+                    .map(|(&c, edges)| this.chunk_flux(c, edges, old, geom, sub_dt, last))
                     .collect()
             };
+            self.times.flux += take(&mut lap);
             let mut live = 0u32;
             for f in &fluxes {
                 live = live.saturating_add(f.live);
@@ -700,6 +747,7 @@ impl<K: FieldKind> FieldState<K> {
             });
         }
 
+        self.times.apply += take(&mut lap);
         // A chunk the whole step left unchanged up to rounding has reached
         // the scheme's fixed point in f32 and sleeps (see `FieldKind::quiet`).
         for &c in &targets {
@@ -708,6 +756,7 @@ impl<K: FieldKind> FieldState<K> {
             }
         }
 
+        self.times.quiet += take(&mut lap);
         // Local physics and cached intensive values on every touched chunk.
         let awake: Vec<AtomicBool> = (0..chunks).map(|_| AtomicBool::new(false)).collect();
         let layout = self.layout;
@@ -733,9 +782,16 @@ impl<K: FieldKind> FieldState<K> {
                 K::refresh(value, g.capacity);
             }
         });
+        self.times.local += take(&mut lap);
+        self.stats.kept_edges = u32::try_from(next.iter().filter(|&&n| n).count()).unwrap_or(u32::MAX);
+        let mut kept_local = 0u32;
         for (n, a) in next.iter_mut().zip(&awake) {
-            *n |= a.load(Ordering::Relaxed);
+            if a.load(Ordering::Relaxed) {
+                kept_local += 1;
+                *n = true;
+            }
         }
+        self.stats.kept_local = kept_local;
         self.active = next;
     }
 
@@ -794,9 +850,14 @@ impl<K: FieldKind> FieldState<K> {
         }
     }
 
-    fn chunk_stiffness(&self, chunk: usize, cells: &CowStore<K::Value>, geom: &Geo<'_>) -> f32 {
+    /// The largest stiffness of the chunk's live edges, with the edges themselves: which edges are live depends on the geometry, the
+    /// active set and the grid, none of which change during a step, so the sub-steps reuse this list instead of scanning every
+    /// cell of the chunk again (16 scans of 4096 cells per chunk per step at idle).
+    fn chunk_stiffness(&self, chunk: usize, cells: &CowStore<K::Value>, geom: &Geo<'_>) -> (f32, Vec<LiveEdge>) {
         let mut max = 0.0f32;
-        self.for_live_edges(chunk, geom, |_, _, a, ga, b, gb| {
+        let mut edges = Vec::new();
+        self.for_live_edges(chunk, geom, |i, axis, a, ga, b, gb| {
+            edges.push(LiveEdge { i, axis, a, ga, b, gb });
             let s = cells
                 .with(a, |va| {
                     cells.with(b, |vb| {
@@ -809,12 +870,13 @@ impl<K: FieldKind> FieldState<K> {
                 max = max.max(s);
             }
         });
-        max
+        (max, edges)
     }
 
     fn chunk_flux(
         &self,
         chunk: usize,
+        edges: &[LiveEdge],
         old: &CowStore<K::Value>,
         geom: &Geo<'_>,
         dt: f32,
@@ -831,7 +893,7 @@ impl<K: FieldKind> FieldState<K> {
             wake: Vec::new(),
             live: 0,
         };
-        self.for_live_edges(chunk, geom, |i, axis, a, ga, b, gb| {
+        for &LiveEdge { i, axis, a, ga, b, gb } in edges {
             let located = self.layout.locate(b);
             let nc = located.map_or(chunk, |(c, _)| c);
             // An edge into a sleeping chunk only flows once it is unsettled,
@@ -847,10 +909,10 @@ impl<K: FieldKind> FieldState<K> {
                 })
                 .flatten()
             else {
-                return;
+                continue;
             };
             if boundary && settled {
-                return;
+                continue;
             }
             // `a` (here) gives the flux up, `b` receives it.
             out.net.add(len, i, -flux);
@@ -875,9 +937,20 @@ impl<K: FieldKind> FieldState<K> {
                     }
                 }
             }
-        });
+        }
         out
     }
+}
+
+/// One live edge of a chunk (see `for_live_edges`): the owner's cell index within the chunk, the axis, and both ends.
+#[derive(Clone, Copy)]
+struct LiveEdge {
+    i: usize,
+    axis: usize,
+    a: u32,
+    ga: Geom,
+    b: u32,
+    gb: Geom,
 }
 
 /// A step's view of the geometry: the per-cell store plus the grid's

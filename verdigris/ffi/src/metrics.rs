@@ -88,12 +88,12 @@ pub fn snapshot_json() -> String {
         // Each per-turf field's awake chunks and live edges after its last step (a settled map steps none).
         let gas = crate::gas::turf_key()
             .ok()
-            .and_then(|k| w.sim_mut().with_idle_world(|r| r.get_mut(k.state).stats()));
+            .and_then(|k| w.sim_mut().with_idle_world(|r| r.get_mut(k.state).stats_and_times()));
         let heat = crate::heat::field()
             .ok()
-            .and_then(|k| w.sim_mut().with_idle_world(|r| r.get_mut(k.state).stats()));
+            .and_then(|k| w.sim_mut().with_idle_world(|r| r.get_mut(k.state).stats_and_times()));
         for (name, stats) in [("turf_gas", gas), ("solid_heat", heat)] {
-            if let Some(st) = stats {
+            if let Some((st, times)) = stats {
                 metrics
                     .gauge(&format!("world.awake.field_{name}_chunks"))
                     .set(f64::from(st.active_chunks));
@@ -103,6 +103,27 @@ pub fn snapshot_json() -> String {
                 metrics
                     .gauge(&format!("world.stepped.field_{name}_touched"))
                     .set(f64::from(st.touched_chunks));
+                for (what, v) in [
+                    ("woke_cells", st.woke_cells),
+                    ("woke_geom", st.woke_geom),
+                    ("woke_grid", st.woke_grid),
+                    ("kept_edges", st.kept_edges),
+                    ("kept_local", st.kept_local),
+                    ("substeps", st.substeps),
+                ] {
+                    metrics.gauge(&format!("world.awake.field_{name}_{what}")).set(f64::from(v));
+                }
+                #[allow(clippy::cast_precision_loss)]
+                for (what, v) in [
+                    ("us_setup", times.setup),
+                    ("us_flux", times.flux),
+                    ("us_apply", times.apply),
+                    ("us_quiet", times.quiet),
+                    ("us_local", times.local),
+                    ("steps", st.steps),
+                ] {
+                    metrics.gauge(&format!("world.awake.field_{name}_{what}")).set(v as f64);
+                }
             }
         }
         Ok(())
