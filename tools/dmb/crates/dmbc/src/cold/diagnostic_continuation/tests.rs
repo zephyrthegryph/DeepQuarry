@@ -124,3 +124,31 @@ fn non_source_initializer_rejections_never_run_body_continuation() {
         let _ = collect(error, || panic!("continuation must not run"));
     }
 }
+
+#[test]
+fn checked_initializer_continuation_keeps_actual_body_operation_before_source_filter() {
+    let db=std::sync::Arc::new(crate::query_db::QueryDb::default());
+    let frontend=frontend().with_body_queries(db.clone());
+    let arena=dm_tree::frontend::BodyArena::new_typed(&frontend,
+        dm_codegen_byond::typed_statements_supported_for_capture);
+    let executor=dm_exec::BuildExecutor::new(1).unwrap();
+    let startup=crate::startup::capture_with_executor_and_bodies(&frontend,&[],&executor,&arena).unwrap();
+    let host=MissingCall(frontend.snapshot.tree.as_ref());
+    let evaluator=crate::driver_facts::DriverEvaluator{
+        pure_calls:None,resource_search_context:None,resolver:&host,symbols:startup.plan().symbols.as_ref(),
+    };
+    let original=crate::initializer_lowering::lower_captured(&frontend,&startup,&evaluator,&host,None)
+        .err().expect("actual initializer source rejection");
+    assert!(matches!(&original,InitializerLoweringError::Diagnostics(errors)
+        if !errors.is_empty()&&errors.iter().all(|error|error.kind==DiagnosticKind::SourceError)));
+    let actual=executor.install(||{
+      let _scheduled=db.fail_body_syntax_after_for_test(0,std::io::Error::from_raw_os_error(1450));
+      collect_checked(original,||{
+        crate::lowering::lower_frontend_completed_input_checked_on_execution(
+            &frontend,&host,&NoParameters,LoweringConfig::default(),Some(&startup),None,
+            LoweringExecution::new(&executor,&arena),false,&|_|Ok::<_,std::convert::Infallible>(()))
+            .map(|batch|batch.diagnostics)
+      })
+    });
+    assert!(matches!(actual,ColdError::Operational(ref error) if error.raw_os_error()==Some(1450)));
+}

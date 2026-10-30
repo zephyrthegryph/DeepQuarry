@@ -369,22 +369,21 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
         result
     }
     fn leaf_statement_inner(&mut self, statement: &'a Statement) -> Result<bool, String> {
-        match &statement.kind {
-            StatementKind::Set {
-                attribute,
-                relation,
-                value,
-            } => {
-                if let Some(effects) = &mut self.effects {
-                    if attribute == "waitfor"
-                        && relation == "="
-                        && (matches!(&value.kind,ExprKind::Literal(n) if n=="0")
-                            || matches!(&value.kind,ExprKind::Ident(n) if n=="FALSE"))
-                    {
-                        effects.waitfor_disabled = true;
-                    }
+        // Both storage variants are the SAME written non-evaluated Set.
+        if let Some(setting) = statement.setting() {
+            let value = setting.value.original();
+            if let Some(effects) = &mut self.effects {
+                if setting.attribute == "waitfor"
+                    && setting.relation == "="
+                    && (matches!(&value.kind,ExprKind::Literal(n)if n=="0")
+                        || matches!(&value.kind,ExprKind::Ident(n)if n=="FALSE"))
+                {
+                    effects.waitfor_disabled = true;
                 }
             }
+            return Ok(false);
+        }
+        match &statement.kind {
             StatementKind::Var { declaration, value } => {
                 self.declaration(declaration, value.as_ref(), statement.header_span)?
             }

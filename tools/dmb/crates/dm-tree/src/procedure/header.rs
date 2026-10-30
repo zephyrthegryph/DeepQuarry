@@ -111,19 +111,33 @@ impl<'a> HeaderView<'a> {
         let start = text.len() - text.trim_start().len();
         self.slice(start, start + text.trim().len())
     }
-    pub(super) fn top_level(self) -> Vec<(&'a str, Span)> {
+    fn top_level_items(self) -> impl Iterator<Item = (&'a str, Span)> {
         let mut depth = 0i32;
-        let mut result = Vec::new();
-        for token in self.tokens {
+        self.tokens.iter().filter_map(move |token| {
             let text = self.spelling(token);
             match text {
-                "(" | "[" | "{" => depth += 1,
-                ")" | "]" | "}" => depth -= 1,
-                _ if depth == 0 => result.push((text, self.relative_span(token))),
-                _ => {}
+                "(" | "[" | "{" => {
+                    depth += 1;
+                    None
+                }
+                ")" | "]" | "}" => {
+                    depth -= 1;
+                    None
+                }
+                _ if depth == 0 => Some((text, self.relative_span(token))),
+                _ => None,
             }
-        }
-        result
+        })
+    }
+    pub(super) fn top_level(self) -> Vec<(&'a str, Span)> {
+        self.top_level_items().collect()
+    }
+    /// Same original top-level policy, without a temporary token Vec at a native
+    /// setting leaf before its RHS parse admission. First-match order unchanged.
+    pub(super) fn first_top_level(self, wanted: &str) -> Option<Span> {
+        self.top_level_items()
+            .find(|(text, _)| *text == wanted)
+            .map(|(_, span)| span)
     }
     pub(super) fn assignment(self) -> Option<usize> {
         let mut depth = 0usize;

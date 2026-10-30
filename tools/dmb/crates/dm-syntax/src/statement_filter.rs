@@ -63,7 +63,10 @@ mod tests {
         assert!(parsed.diagnostics.is_empty());
         let header = parsed.statements[0].raw_header.as_ptr();
         let result = filter_statements(parsed.statements, &mut |statement| {
-            !matches!(statement.kind, StatementKind::Set { .. })
+            !matches!(
+                statement.kind,
+                StatementKind::Set { .. } | StatementKind::ProjectedSet { .. }
+            )
         });
         assert_eq!(result[0].raw_header.as_ptr(), header);
         let StatementKind::If {

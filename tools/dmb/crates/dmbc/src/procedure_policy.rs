@@ -27,6 +27,14 @@ pub trait CapturedConstantEvaluator: Sync {
         expression: &SymbolicExpression,
         context: &AbiContext<'_>,
     ) -> Result<SemanticValue, AbiError>;
+    fn evaluate_in_site(
+        &self,
+        _site: procedure_abi::AbiExpressionSite,
+        expression: &SymbolicExpression,
+        context: &AbiContext<'_>,
+    ) -> Result<SemanticValue, AbiError> {
+        self.evaluate(expression, context)
+    }
 }
 /// Fresh is an explicit proof that there is no inherited ABI. An unresolved engine
 /// ancestor is Unsupported, never an inferred default layout.
@@ -260,13 +268,13 @@ impl CapturedProcedurePolicy<'_> {
             ..ProcedureInputs::default()
         };
         let prepared = if original.is_some() {
-            procedure_abi::prepare_verified_procedure_original_tokens(
+            procedure_abi::prepare_verified_procedure_original_tokens_with_sites(
                 metadata,
                 context.symbols,
                 &executable,
                 inputs,
                 inherited,
-                &mut evaluate,
+                |site, expression| self.evaluator.evaluate_in_site(site, expression, context),
             )
         } else {
             procedure_abi::prepare_verified_procedure(

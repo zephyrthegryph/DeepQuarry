@@ -8,8 +8,41 @@ use dm_ir::{Resolver, SelectedMeaning, SymbolId};
 use dm_tree::frontend::{BodyOccurrence, ColdFrontend, DiagnosticKind, SourceLocation};
 #[path = "selected_query_pages.rs"]
 mod pages;
-pub use pages::{visit, VisitFailure};
+pub use pages::{visit,visit_checked,VisitFailure,CheckedVisitFailure};
 
+/// Error transport only; actual current binding/reference production is shared.
+trait SelectionDemand {
+    type Failure:From<Vec<LoweringDiagnostic>>;
+    fn batch<'f,R:Resolver,P:AbiPolicy>(frontend:&'f ColdFrontend,host:&R,policy:&P,
+        config:LoweringConfig,startup:&crate::startup::CapturedStartup<'f>,
+        memo:&crate::lowering_memo::ProcedureMemo,execution:LoweringExecution<'_,'f>)
+        ->Result<lowering::CompletedLoweringBatch<lowering::ProcedureSelections,std::convert::Infallible>,Self::Failure>;
+}
+struct CompatibilitySelection;
+struct CheckedSelection;
+impl SelectionDemand for CompatibilitySelection {
+    type Failure=Vec<LoweringDiagnostic>;
+    fn batch<'f,R:Resolver,P:AbiPolicy>(frontend:&'f ColdFrontend,host:&R,policy:&P,
+        config:LoweringConfig,startup:&crate::startup::CapturedStartup<'f>,
+        memo:&crate::lowering_memo::ProcedureMemo,execution:LoweringExecution<'_,'f>)
+        ->Result<lowering::CompletedLoweringBatch<lowering::ProcedureSelections,std::convert::Infallible>,Self::Failure>{
+        Ok(lowering::lower_frontend_completed_input_on_execution(frontend,host,policy,config,
+            Some(startup),Some(memo),execution.with_selection_query(),false,
+            &|input|Ok::<_,std::convert::Infallible>(input.into_selected())))
+    }
+}
+impl SelectionDemand for CheckedSelection {
+    type Failure=lowering::LoweringFailure;
+    fn batch<'f,R:Resolver,P:AbiPolicy>(frontend:&'f ColdFrontend,host:&R,policy:&P,
+        config:LoweringConfig,startup:&crate::startup::CapturedStartup<'f>,
+        memo:&crate::lowering_memo::ProcedureMemo,execution:LoweringExecution<'_,'f>)
+        ->Result<lowering::CompletedLoweringBatch<lowering::ProcedureSelections,std::convert::Infallible>,Self::Failure>{
+        lowering::lower_frontend_completed_input_checked_on_execution(frontend,host,policy,config,
+            Some(startup),Some(memo),execution.with_selection_query(),false,
+            &|input|Ok::<_,std::convert::Infallible>(input.into_selected()))
+            .map_err(lowering::LoweringFailure::Operational)
+    }
+}
 pub struct CurrentReference {
     pub name: SymbolId,
     pub meaning: SelectedMeaning,
@@ -102,6 +135,33 @@ pub fn query_partial<'frontend, R: Resolver, P: AbiPolicy>(
     memo: &crate::lowering_memo::ProcedureMemo,
     execution: LoweringExecution<'_, 'frontend>,
 ) -> Result<QueryBatch, Vec<LoweringDiagnostic>> {
+    query_partial_with::<CompatibilitySelection,_,_>(frontend,host,policy,config,startup,memo,execution)
+}
+#[allow(clippy::too_many_arguments)]
+pub fn query_partial_checked<'frontend, R: Resolver, P: AbiPolicy>(
+    frontend: &'frontend ColdFrontend,
+    host: &R,
+    policy: &P,
+    config: LoweringConfig,
+    startup: &crate::startup::CapturedStartup<'frontend>,
+    memo: &crate::lowering_memo::ProcedureMemo,
+    execution: LoweringExecution<'_, 'frontend>,
+) -> Result<QueryBatch,lowering::LoweringFailure> {
+    crate::daemon::control::checkpoint().map_err(lowering::LoweringFailure::Operational)?;
+    let batch=query_partial_with::<CheckedSelection,_,_>(frontend,host,policy,config,startup,memo,execution)?;
+    crate::daemon::control::checkpoint().map_err(lowering::LoweringFailure::Operational)?;
+    Ok(batch)
+}
+#[allow(clippy::too_many_arguments)]
+fn query_partial_with<'frontend,D:SelectionDemand,R: Resolver, P: AbiPolicy>(
+    frontend: &'frontend ColdFrontend,
+    host: &R,
+    policy: &P,
+    config: LoweringConfig,
+    startup: &crate::startup::CapturedStartup<'frontend>,
+    memo: &crate::lowering_memo::ProcedureMemo,
+    execution: LoweringExecution<'_, 'frontend>,
+) -> Result<QueryBatch,D::Failure> {
     let selected: Vec<_> = execution.selected_bodies.map_or_else(
         || frontend.bodies.iter().collect(),
         |bodies| bodies.to_vec(),
@@ -114,21 +174,11 @@ pub fn query_partial<'frontend, R: Resolver, P: AbiPolicy>(
                 return Err(vec![diagnostic(
                     body,
                     "query requires unique current body issuance",
-                )])
+                )].into())
             }
         }
     }
-    let batch = lowering::lower_frontend_completed_input_on_execution(
-        frontend,
-        host,
-        policy,
-        config,
-        Some(startup),
-        Some(memo),
-        execution.with_selection_query(),
-        false,
-        &|input| Ok::<_, std::convert::Infallible>(input.into_selected()),
-    );
+    let batch=D::batch(frontend,host,policy,config,startup,memo,execution)?;
     let diagnostics = batch.diagnostics;
     let mut result = Vec::with_capacity(batch.units.len());
     for unit in batch.units {
@@ -139,7 +189,7 @@ pub fn query_partial<'frontend, R: Resolver, P: AbiPolicy>(
                 identity: Some(unit.identity),
                 origin: unit.value.source().clone(),
                 message: "selected result carrier identity differs from completed procedure".into(),
-            }]);
+            }].into());
         }
         let Some(body) = current.remove(&unit.identity) else {
             return Err(vec![LoweringDiagnostic {
@@ -148,7 +198,7 @@ pub fn query_partial<'frontend, R: Resolver, P: AbiPolicy>(
                 identity: Some(unit.identity),
                 origin: unit.value.source().clone(),
                 message: "query producer returned an unissued procedure".into(),
-            }]);
+            }].into());
         };
         result.push(bind_current(
             unit.identity,
@@ -161,7 +211,7 @@ pub fn query_partial<'frontend, R: Resolver, P: AbiPolicy>(
         return Err(current
             .into_values()
             .map(|body| diagnostic(body, "query producer omitted a requested procedure"))
-            .collect());
+            .collect::<Vec<_>>().into());
     }
     Ok(QueryBatch {
         units: result,

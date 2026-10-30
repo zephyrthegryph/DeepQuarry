@@ -84,9 +84,9 @@ pub fn contributions(
 ) -> Result<Vec<Contribution>, Unsupported> {
     let view = BodyView::new(frontend, body).map_err(Unsupported)?;
     let mut walker = scope(frontend, body, resolver, exempt_types)?;
-    crate::untyped_order::assignments(view.syntax().view(), &mut |lhs, rhs, _| {
+    crate::untyped_order::assignments_current(view.syntax().view(), &mut |lhs, rhs, _, current| {
         if walker.error.is_none() {
-            if let Err(error) = walker.assignment(lhs, rhs) {
+            if let Err(error) = walker.assignment_at(lhs, rhs, current) {
                 walker.error = Some(error);
             }
         }
@@ -444,6 +444,14 @@ impl Locals<'_> {
     }
 }
 impl TypedVisitor for Locals<'_> {
+    fn projected_expression(
+        &mut self,
+        _view: dm_syntax::ProjectedExprView<'_>,
+        _path: &[dm_syntax::NodeStep],
+    ) -> dm_syntax::VisitDecision {
+        dm_syntax::VisitDecision::Descend
+    }
+
     fn statement(&mut self, st: &Statement, _: &[NodeStep]) -> VisitDecision {
         if self.error.is_some() {
             return VisitDecision::Skip;
@@ -853,6 +861,9 @@ impl<'a, R: Resolver + ?Sized> Walker<'a, R> {
             .map(|(owner, metadata)| (owner, SymbolId::of(name), metadata)))
     }
     fn assignment(&mut self, lhs: &Expr, rhs: &Expr) -> Result<(), Unsupported> {
+        self.assignment_at(lhs, rhs, lhs.span)
+    }
+    fn assignment_at(&mut self, lhs: &Expr, rhs: &Expr, current: Span) -> Result<(), Unsupported> {
         let Some((owner, name, metadata)) = self.place(lhs)? else {
             return Ok(());
         };
@@ -874,7 +885,7 @@ impl<'a, R: Resolver + ?Sized> Walker<'a, R> {
             owner,
             name,
             rule,
-            assignment: lhs.span,
+            assignment: current,
         });
         if rule == Rule::Typed {
             entry.rule = Rule::Typed;
@@ -883,6 +894,28 @@ impl<'a, R: Resolver + ?Sized> Walker<'a, R> {
     }
 }
 impl<R: Resolver + ?Sized> TypedVisitor for Walker<'_, R> {
+    fn projected_expression(
+        &mut self,
+        view: dm_syntax::ProjectedExprView<'_>,
+        path: &[dm_syntax::NodeStep],
+    ) -> dm_syntax::VisitDecision {
+        let _ = path;
+        if let ExprKind::Binary { op, lhs, rhs } = &view.original().kind {
+            if op == "=" {
+                let result = view.current_span_of(lhs)
+                    .ok_or_else(|| Unsupported("projected assignment target has no current span".into()))
+                    .and_then(|at| self.assignment_at(lhs, rhs, at));
+                if let Err(error) = result {
+                    self.error = Some(error);
+                    return VisitDecision::Stop;
+                }
+            }
+        }
+        // Type/place inference is shape/name based; only the reported target
+        // span above is coordinate-sensitive. Never clone or shift the root.
+        VisitDecision::Descend
+    }
+
     fn statement(&mut self, statement: &Statement, _: &[NodeStep]) -> VisitDecision {
         if let StatementKind::Assign { target, op, value } = &statement.kind {
             if op == "=" {
@@ -939,4 +972,4 @@ mod stored_refs_scope;
 pub(crate) use stored_refs_scope::archived_stored_scope;
 #[path = "untyped_stored_refs.rs"]
 mod stored_refs;
-pub use stored_refs::{stored_findings, StoredFinding, StoredPolicy};
+pub use stored_refs::{stored_findings, stored_findings_checked, stored_findings_with, StoredFinding, StoredPolicy};

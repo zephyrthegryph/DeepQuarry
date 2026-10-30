@@ -85,6 +85,14 @@ impl<'a> Collect<'a> {
     }
 }
 impl TypedVisitor for Collect<'_> {
+    fn projected_expression(
+        &mut self,
+        _view: dm_syntax::ProjectedExprView<'_>,
+        _path: &[dm_syntax::NodeStep],
+    ) -> dm_syntax::VisitDecision {
+        dm_syntax::VisitDecision::Descend
+    }
+
     fn statement(&mut self, st: &Statement, _: &[NodeStep]) -> VisitDecision {
         if self.error.is_some() {
             return VisitDecision::Skip;

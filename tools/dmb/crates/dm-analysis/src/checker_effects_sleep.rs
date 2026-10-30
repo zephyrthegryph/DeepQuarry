@@ -26,8 +26,33 @@ impl EffectPlan {
         resolver: &(impl Resolver + ?Sized),
         policy: &CheckerPolicy,
         admission: &ExecutionAdmission,
-        mut checkpoint: impl FnMut() -> Result<(), String>,
+        checkpoint: impl FnMut() -> Result<(), String>,
     ) -> Result<Vec<Produced>, String> {
+        self.sleep_report_with::<crate::policy_body_demand::Compatibility>(
+            input, resolver, policy, admission, checkpoint,
+        )
+        .map_err(|e| e.0)
+    }
+    pub fn sleep_report_checked(
+        &self,
+        input: &Arc<EffectInput>,
+        resolver: &(impl Resolver + ?Sized),
+        policy: &CheckerPolicy,
+        admission: &ExecutionAdmission,
+        checkpoint: impl FnMut() -> Result<(), String>,
+    ) -> Result<Vec<Produced>, crate::policy_body_demand::PolicyFailure> {
+        self.sleep_report_with::<crate::policy_body_demand::Checked>(
+            input, resolver, policy, admission, checkpoint,
+        )
+    }
+    fn sleep_report_with<D: crate::policy_body_demand::Demand>(
+        &self,
+        input: &Arc<EffectInput>,
+        resolver: &(impl Resolver + ?Sized),
+        policy: &CheckerPolicy,
+        admission: &ExecutionAdmission,
+        mut checkpoint: impl FnMut() -> Result<(), String>,
+    ) -> Result<Vec<Produced>, D::Error> {
         self.validate(input)?;
         if resolver.source_owner() != Resolver::source_owner(input.archive.tree()) {
             return Err("sleep report resolver is not the original owner".into());
@@ -66,11 +91,10 @@ impl EffectPlan {
         for (target, annotation) in targets {
             checkpoint()?;
             let body = &self.bodies[target];
-            let origin = input.archive.callable_note_origin(body.procedure)?;
-            let header = input
+            let origin = input
                 .archive
-                .parse(body.ordinal)
-                .map_err(|e| e.message)?
+                .callable_note_origin_with(body.procedure, D::parse)?;
+            let header = D::parse(&input.archive, body.ordinal)?
                 .signature_opening_parenthesis()
                 .ok_or("sleep callable point unavailable")?;
             let name = display(input, body.procedure, &budget)?;

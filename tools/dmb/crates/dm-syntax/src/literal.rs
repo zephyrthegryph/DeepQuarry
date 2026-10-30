@@ -1003,6 +1003,24 @@ mod tests {
             calls: Vec<String>,
         }
         impl TypedVisitor for Calls<'_> {
+            fn projected_expression(
+                &mut self,
+                view: crate::ProjectedExprView<'_>,
+                path: &[crate::NodeStep],
+            ) -> crate::VisitDecision {
+                let expression = view.original();
+                if let ExprKind::Call { callee, .. } = &expression.kind {
+                    let ExprKind::Ident(name) = &callee.kind else {
+                        panic!()
+                    };
+                    let span = view.current_span_of(callee).unwrap();
+                    assert_eq!(&self.source[span.range()], name);
+                    self.calls.push(name.clone());
+                }
+                let _ = path;
+                VisitDecision::Descend
+            }
+
             fn expression(&mut self, expression: &Expr, _: &[NodeStep]) -> VisitDecision {
                 if let ExprKind::Call { callee, .. } = &expression.kind {
                     let ExprKind::Ident(name) = &callee.kind else {

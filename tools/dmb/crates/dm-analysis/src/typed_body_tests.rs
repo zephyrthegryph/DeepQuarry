@@ -17,7 +17,15 @@ fn recovering_nodes_report_current_issued_diagnostics_without_another_parse() {
     arena
         .with_parsed(&frontend.bodies[0], |body| {
             struct Visitor;
-            impl TypedVisitor for Visitor {}
+            impl TypedVisitor for Visitor {
+                fn projected_expression(
+                    &mut self,
+                    _view: dm_syntax::ProjectedExprView<'_>,
+                    _path: &[dm_syntax::NodeStep],
+                ) -> dm_syntax::VisitDecision {
+                    dm_syntax::VisitDecision::Descend
+                }
+            }
             let typed = body.statement_body().unwrap();
             let expected = typed.parsed();
             assert!(!expected.diagnostics.is_empty());

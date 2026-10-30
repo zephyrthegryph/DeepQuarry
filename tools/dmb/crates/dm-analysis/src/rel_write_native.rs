@@ -183,8 +183,32 @@ pub fn findings(
     rels: &HashMap<String, Vec<String>>,
     exempt: impl Fn(&str) -> bool,
     remaining: &mut usize,
-    mut checkpoint: impl FnMut() -> Result<(), String>,
+    checkpoint: impl FnMut() -> Result<(), String>,
 ) -> Result<Vec<Finding>, Unsupported> {
+    findings_with::<crate::policy_body_demand::Compatibility>(
+        inputs, root, rels, exempt, remaining, checkpoint,
+    )
+}
+pub fn findings_checked(
+    inputs: &PolicyInputs,
+    root: &Path,
+    rels: &HashMap<String, Vec<String>>,
+    exempt: impl Fn(&str) -> bool,
+    remaining: &mut usize,
+    checkpoint: impl FnMut() -> Result<(), String>,
+) -> Result<Vec<Finding>, crate::policy_body_demand::PolicyFailure> {
+    findings_with::<crate::policy_body_demand::Checked>(
+        inputs, root, rels, exempt, remaining, checkpoint,
+    )
+}
+pub fn findings_with<D: crate::policy_body_demand::Demand>(
+    inputs: &PolicyInputs,
+    root: &Path,
+    rels: &HashMap<String, Vec<String>>,
+    exempt: impl Fn(&str) -> bool,
+    remaining: &mut usize,
+    mut checkpoint: impl FnMut() -> Result<(), String>,
+) -> Result<Vec<Finding>, D::Error> {
     checkpoint().map_err(Unsupported)?;
     let archive = inputs.archive();
     let tree = archive.tree();
@@ -201,11 +225,12 @@ pub fn findings(
         if exempt(&rel) {
             continue;
         }
-        let body = archive.parse(ordinal).map_err(|e| Unsupported(e.message))?;
+        let body = D::parse(archive, ordinal)?;
         let scope = untyped::archived_scope(&body, tree, &[])?.with_archive(archive)?;
         let mut prefixes = HashSet::new();
         let mut error = None;
-        crate::untyped_order::expressions(body.statement_body().view(), &mut |e, at: Span| {
+        crate::untyped_order::expressions_current(body.statement_body().view(), &mut |observed, at| {
+                let e = observed.original();
             if error.is_some() {
                 return;
             }
@@ -282,13 +307,14 @@ pub fn findings(
                         return Err(Unsupported(
                             "relation cross-file statement requires original old-policy projection"
                                 .into(),
-                        ));
+                        )
+                        .into());
                     }
                     let source = inputs.file(&origin.path).ok_or_else(|| {
                         Unsupported("relation statement source not captured".into())
                     })?;
                     if !source.is_compiled() || source.role() != PolicyRole::DmSource {
-                        return Err(Unsupported("relation statement not compiled DM".into()));
+                        return Err(Unsupported("relation statement not compiled DM".into()).into());
                     }
                     let line = source
                         .analyze_display_line(origin.line)
@@ -309,7 +335,9 @@ pub fn findings(
                     let key = (rel.clone(), line, var.to_owned());
                     if !found.contains_key(&key) {
                         if found.len() >= 10000 {
-                            return Err(Unsupported("relation finding admission exceeded".into()));
+                            return Err(
+                                Unsupported("relation finding admission exceeded".into()).into()
+                            );
                         }
                         let message = detail(
                             inputs,
@@ -331,7 +359,7 @@ pub fn findings(
         })
         .map_err(|e| Unsupported(e.into()))?;
         if let Some(e) = error {
-            return Err(e);
+            return Err(e.into());
         }
     }
     checkpoint().map_err(Unsupported)?;

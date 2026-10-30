@@ -21,7 +21,8 @@ impl SourceProvider for Source {
             .then(|| self.0.clone())
     }
 }
-fn input(source: &str, certified: bool) -> (PathBuf, PolicyInputs) {
+fn input(source: &str, certified: bool) -> (PathBuf, PolicyInputs) { input_with_host(source, certified, None) }
+fn input_with_host(source: &str, certified: bool, host: Option<Arc<dyn dm_tree::frontend::BodySyntaxQueries>>) -> (PathBuf, PolicyInputs) {
     let root = std::env::current_dir()
         .unwrap()
         .join("stored-reference-native-fixture");
@@ -46,6 +47,7 @@ fn input(source: &str, certified: bool) -> (PathBuf, PolicyInputs) {
         true,
     )
     .unwrap();
+    let frontend = match host { Some(host) => frontend.with_body_queries(host), None => frontend };
     let extra = frontend
         .files
         .iter()
@@ -299,4 +301,19 @@ fn absolute_header_type_declaration_preserves_stored_parameter_scope_and_origina
     assert_eq!(current.len(), 1);
     assert_eq!(old[0].rule, current[0].rule);
     assert_eq!(old[0].message, current[0].message);
+}
+
+#[test]
+fn projected_setting_stored_list_writes_keep_owned_static_declaration_and_statement_origins() {
+    for prefix in ["", "// earlier source \u{e9}\n\n"] {
+        let source=format!("{prefix}/datum/holder\n    var/list/items\n    proc/p(datum/D)\n        var/static/list/local\n        set name = items.Add(D)\n        set desc = local.Add(D)\n");
+        let relations=HashMap::new();
+        let policy=StoredPolicy{exempt_types:&[],registry:&[],transient_types:&[],work_queues:&[],relations:&relations,init_only:&[],has_schema:&|_,_|false};
+        let (root,old)=input(&source,true);let expected=stored_findings(&old,&root,&policy,|_|false,&mut(64*1024*1024),||Ok(())).unwrap();
+        assert_eq!(expected.len(),2);
+        assert!(expected.iter().any(|r|r.ident.is_empty()),"original current static-local declaration origin retained");
+        let (root,native)=input_with_host(&source,true,Some(crate::untyped_order::projected_body_host_for_test()));
+        assert!(matches!(&native.archive().parse(0).unwrap().statement_body().parsed().statements[1].kind,dm_syntax::StatementKind::ProjectedSet{..}));
+        assert_eq!(stored_findings(&native,&root,&policy,|_|false,&mut(64*1024*1024),||Ok(())).unwrap(),expected);
+    }
 }

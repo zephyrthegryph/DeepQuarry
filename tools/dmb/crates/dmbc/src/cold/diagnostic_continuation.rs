@@ -7,6 +7,20 @@ pub(super) fn collect(
     error: InitializerLoweringError,
     lower_bodies: impl FnOnce() -> Vec<LoweringDiagnostic>,
 ) -> ColdError {
+    match collect_with(error,||Ok::<_,std::convert::Infallible>(lower_bodies())){
+        Ok(value)=>value,Err(never)=>match never {},
+    }
+}
+pub(super) fn collect_checked(
+    error: InitializerLoweringError,
+    lower_bodies: impl FnOnce() -> std::io::Result<Vec<LoweringDiagnostic>>,
+) -> ColdError {
+    collect_with(error,lower_bodies).unwrap_or_else(ColdError::Operational)
+}
+fn collect_with<E>(
+    error: InitializerLoweringError,
+    lower_bodies: impl FnOnce() -> Result<Vec<LoweringDiagnostic>,E>,
+) -> Result<ColdError,E> {
     match error {
         InitializerLoweringError::Diagnostics(mut diagnostics)
             if !diagnostics.is_empty()
@@ -17,13 +31,13 @@ pub(super) fn collect(
             // Preserve initializer ordering and actual current producer origins.
             // Unsupported/internal body results do not become source diagnostics.
             diagnostics.extend(
-                lower_bodies()
+                lower_bodies()?
                     .into_iter()
                     .filter(|error| error.kind == DiagnosticKind::SourceError),
             );
-            ColdError::Lowering(diagnostics)
+            Ok(ColdError::Lowering(diagnostics))
         }
-        other => initializer_lowering_error(other),
+        other => Ok(initializer_lowering_error(other)),
     }
 }
 #[cfg(test)]

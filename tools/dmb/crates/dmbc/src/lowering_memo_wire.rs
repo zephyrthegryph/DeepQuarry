@@ -1,5 +1,52 @@
 //! Versioned disk payload for supported symbolic procedure results.
 //! Descriptors are reissued by the private factory; helpers reuse current ABI preparation.
+
+/// Only varies original body-demand transport. No additional replay authority.
+pub(crate) trait ReplayDemand {
+    type Error;
+    fn rebind(
+        payload: crate::lowering_memo_compact::Payload<'_>,
+        context: ProcedureReplayContext<'_>,
+        prepared: &crate::procedure_policy::PreparedUnit,
+        backing: Option<&dm_cache::MappedPayload>,
+    ) -> Result<
+        Result<crate::symbolic::PreparedContribution, crate::lowering_memo::ReplayDecline>,
+        Self::Error,
+    >;
+}
+pub(crate) struct CompatibilityReplay;
+pub(crate) struct CheckedReplay;
+impl ReplayDemand for CompatibilityReplay {
+    type Error = std::convert::Infallible;
+    fn rebind(
+        payload: crate::lowering_memo_compact::Payload<'_>,
+        context: ProcedureReplayContext<'_>,
+        prepared: &crate::procedure_policy::PreparedUnit,
+        backing: Option<&dm_cache::MappedPayload>,
+    ) -> Result<
+        Result<crate::symbolic::PreparedContribution, crate::lowering_memo::ReplayDecline>,
+        Self::Error,
+    > {
+        Ok(payload.rebind_with_backing(context, prepared, backing))
+    }
+}
+impl ReplayDemand for CheckedReplay {
+    type Error = std::io::Error;
+    fn rebind(
+        payload: crate::lowering_memo_compact::Payload<'_>,
+        context: ProcedureReplayContext<'_>,
+        prepared: &crate::procedure_policy::PreparedUnit,
+        backing: Option<&dm_cache::MappedPayload>,
+    ) -> std::io::Result<
+        Result<crate::symbolic::PreparedContribution, crate::lowering_memo::ReplayDecline>,
+    > {
+        match payload.rebind_with_backing_checked(context, prepared, backing) {
+            Ok(value) => Ok(Ok(value)),
+            Err(crate::lowering_memo_compact::ReissueFailure::Declined(reason)) => Ok(Err(reason)),
+            Err(crate::lowering_memo_compact::ReissueFailure::Operational(error)) => Err(error),
+        }
+    }
+}
 use crate::lowering::{LoweredUnit, Namespace, UnitIdentity};
 use crate::lowering_memo::ResolverRead;
 use dm_codegen_byond::lower_resolver::{ResolvedInstance, ResolvedSlot, ResolverProc};
@@ -772,8 +819,53 @@ impl Candidates<'_> {
         backing: Option<&dm_cache::MappedPayload>,
         answers: Option<&crate::query_db::RequestAnswers<'_>>,
     ) -> ProcedureLookup<'host> {
-        static READS: dm_profile::Accumulator = dm_profile::Accumulator::new("lowering.disk_reads_check");
-        static REBIND: dm_profile::Accumulator = dm_profile::Accumulator::new("lowering.disk_rebind");
+        match self.procedure_matching_backed_with::<CompatibilityReplay, R>(
+            matches_key,
+            identity,
+            context,
+            host,
+            prepared,
+            backing,
+            answers,
+        ) {
+            Ok(value) => value,
+            Err(never) => match never {},
+        }
+    }
+    pub(crate) fn procedure_matching_backed_checked<'host, R: Resolver>(
+        self,
+        matches_key: &dyn Fn(&[u8]) -> bool,
+        identity: ProcedureIdentity,
+        context: ProcedureReplayContext<'_>,
+        host: &'host R,
+        prepared: &crate::procedure_policy::PreparedUnit,
+        backing: Option<&dm_cache::MappedPayload>,
+        answers: Option<&crate::query_db::RequestAnswers<'_>>,
+    ) -> std::io::Result<ProcedureLookup<'host>> {
+        self.procedure_matching_backed_with::<CheckedReplay, R>(
+            matches_key,
+            identity,
+            context,
+            host,
+            prepared,
+            backing,
+            answers,
+        )
+    }
+    pub(crate) fn procedure_matching_backed_with<'host, D: ReplayDemand, R: Resolver>(
+        self,
+        matches_key: &dyn Fn(&[u8]) -> bool,
+        identity: ProcedureIdentity,
+        context: ProcedureReplayContext<'_>,
+        host: &'host R,
+        prepared: &crate::procedure_policy::PreparedUnit,
+        backing: Option<&dm_cache::MappedPayload>,
+        answers: Option<&crate::query_db::RequestAnswers<'_>>,
+    ) -> Result<ProcedureLookup<'host>, D::Error> {
+        static READS: dm_profile::Accumulator =
+            dm_profile::Accumulator::new("lowering.disk_reads_check");
+        static REBIND: dm_profile::Accumulator =
+            dm_profile::Accumulator::new("lowering.disk_rebind");
         let mut result = ProcedureLookup {
             miss: Some(crate::lowering_memo::MemoMissReason::FullKeyMismatch),
             ..Default::default()
@@ -802,11 +894,11 @@ impl Candidates<'_> {
                     prepared,
                 );
                 if let Some(facts) = rebound {
-                    return ProcedureLookup {
+                    return Ok(ProcedureLookup {
                         selections: Some(facts),
                         resident: Some(promotion),
                         ..Default::default()
-                    };
+                    });
                 }
                 continue;
             }
@@ -858,7 +950,8 @@ impl Candidates<'_> {
                 drop(reads_timer);
                 let verification_reads = context.verify.then(|| v.verification_reads());
                 let _rebind_timer = REBIND.time();
-                match v.rebind_with_backing(
+                match D::rebind(
+                    *v,
                     ProcedureReplayContext {
                         frontend: context.frontend,
                         body: context.body,
@@ -871,28 +964,25 @@ impl Candidates<'_> {
                     },
                     prepared,
                     backing,
-                ) {
+                )? {
                     Ok(value) => {
                         if let (Some(reads), Some(observer)) =
                             (pending_reads.as_ref(), host.transparent_receipt_observer())
                         {
                             for read in reads {
-                                observer.record_answer(
-                                    read.query,
-                                    &read.answer,
-                                    read.domain,
-                                );
+                                observer.record_answer(read.query, &read.answer, read.domain);
                             }
                         }
-                        promotion.current = pending_reads.and_then(|reads| match (certified_world, answered) {
-                            (Some(world), _) => CurrentReads::certified(host, reads, world),
-                            (None, Some(_)) => CurrentReads::answered(host, reads),
-                            (None, None) => CurrentReads::accepted(host, reads),
-                        });
+                        promotion.current =
+                            pending_reads.and_then(|reads| match (certified_world, answered) {
+                                (Some(world), _) => CurrentReads::certified(host, reads, world),
+                                (None, Some(_)) => CurrentReads::answered(host, reads),
+                                (None, None) => CurrentReads::accepted(host, reads),
+                            });
                         result.verification_reads = verification_reads;
                         result.prepared = Some(value);
                         result.resident = Some(promotion);
-                        return result;
+                        return Ok(result);
                     }
                     Err(reason) => {
                         result.miss = Some(
@@ -933,7 +1023,7 @@ impl Candidates<'_> {
                             .collect()
                     });
                     result.errors = Some(v.errors.into_iter().map(ErrorWire::rehydrate).collect());
-                    return result;
+                    return Ok(result);
                 }
                 Candidate::Executable(v) => {
                     let verification_reads = context.verify.then(|| v.reads.clone());
@@ -954,7 +1044,7 @@ impl Candidates<'_> {
                             result.verification_reads = verification_reads;
                             result.unit = Some(unit);
                             result.resident = Some(promotion);
-                            return result;
+                            return Ok(result);
                         }
                         Err(reason) => {
                             result.miss = Some(
@@ -965,7 +1055,7 @@ impl Candidates<'_> {
                 }
             }
         }
-        result
+        Ok(result)
     }
 }
 

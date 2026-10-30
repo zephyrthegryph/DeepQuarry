@@ -903,3 +903,98 @@ fn public_body_model_and_checker_keep_actual_demand_io_without_partial_output() 
         assert_eq!(reads.load(Ordering::Relaxed), io);
     }
 }
+
+#[test]
+fn warmed_effect_reports_redemand_original_kind4_without_caching_actual_io() {
+    for sleeping in [false, true] {
+        let source = if sleeping {
+            "/proc/check()\n    set SpacemanDMM_should_not_sleep=1\n    sleep(1)\n"
+        } else {
+            "/proc/check(value)\n    set SpacemanDMM_should_be_pure=1\n    value=1\n"
+        };
+        let (snapshot, reads) = fixture(source, None);
+        let input = snapshot.native_purity_input(&snapshot.tree).unwrap();
+        let queries = snapshot.native_raw_queries.as_ref().unwrap();
+        let report = || {
+            if sleeping {
+                snapshot.native_sleep_report(&input, &env(), None, &snapshot.tree)
+            } else {
+                snapshot.native_purity_report(&input, &env(), None, &snapshot.tree)
+            }
+        };
+        let expected = report().unwrap();
+        assert!(
+            !expected.is_empty(),
+            "actual original target demands callable note/header"
+        );
+        let original_reads = reads.load(Ordering::Relaxed);
+        let bodies = queries.db().stats(dm_query::Kind(17)).computed;
+        let plans = queries.db().stats(dm_query::Kind(18)).computed;
+        assert!(
+            queries
+                .db()
+                .evict_values(&[dm_query::Kind(4), dm_query::Kind(20), dm_query::Kind(22)])
+                > 0
+        );
+        let schedule =
+            queries.fail_body_syntax_after_for_test(0, std::io::Error::from_raw_os_error(1450));
+        let error = report()
+            .err()
+            .expect("real report-time original body demand");
+        assert_eq!(error.raw_os_error(), Some(1450));
+        assert_eq!(
+            queries.effect_retained_values_for_test(dm_query::Kind(if sleeping { 22 } else { 20 })),
+            0,
+            "no operational report rejection Outcome"
+        );
+        assert_eq!(queries.db().stats(dm_query::Kind(17)).computed, bodies);
+        assert_eq!(queries.db().stats(dm_query::Kind(18)).computed, plans);
+        drop(schedule);
+        let recovered = report().unwrap();
+        assert_eq!(render(&recovered), render(&expected));
+        assert!(Arc::ptr_eq(&recovered, &report().unwrap()));
+        assert_eq!(
+            reads.load(Ordering::Relaxed),
+            original_reads,
+            "no request filesystem re-read"
+        );
+    }
+}
+#[test]
+fn callable_note_transport_requires_exact_selected_original_occurrence() {
+    let (snapshot, _) = fixture(
+        "/proc/first()\n    return 1\n/proc/second()\n    return 2\n",
+        None,
+    );
+    let input = snapshot.native_purity_input(&snapshot.tree).unwrap();
+    assert_eq!(input.order().len(), 2);
+    let archive = input.archive();
+    let (ordinal, identity) = input.order()[0];
+    let other = input.order()[1].0;
+    assert_ne!(ordinal, other);
+    let error = archive
+        .callable_note_origin_with(identity, |archive, _| {
+            archive.parse(other).map_err(|e| e.message)
+        })
+        .err()
+        .expect("same archive but wrong original occurrence must refuse");
+    assert_eq!(error, "callable note primary source unavailable");
+    let expected = archive.callable_note_origin(identity).unwrap();
+    let actual = archive
+        .callable_note_origin_with(identity, |archive, i| {
+            archive.parse_checked(i).map_err(|e| match e {
+                dm_tree::frontend::BodySyntaxFailure::Syntax(e) => {
+                    dm_analysis::policy_body_demand::PolicyFailure::from(e.message)
+                }
+                dm_tree::frontend::BodySyntaxFailure::Operational(e) => {
+                    dm_analysis::policy_body_demand::PolicyFailure::Operational(e)
+                }
+            })
+        })
+        .unwrap();
+    assert_eq!(expected.path, actual.path);
+    assert_eq!(
+        (expected.line, expected.byte_column),
+        (actual.line, actual.byte_column)
+    );
+}

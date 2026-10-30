@@ -177,7 +177,12 @@ impl Certificate {
         if !Arc::ptr_eq(&abi, prepared.abi.as_ref().ok_or(Decline::NoPrepared)?) {
             return Err(Decline::AbiChanged);
         }
-        if record.recipe.as_ref().ok_or(Decline::NoRecipe)?.metadata.as_ref()
+        if record
+            .recipe
+            .as_ref()
+            .ok_or(Decline::NoRecipe)?
+            .metadata
+            .as_ref()
             != roster.metadata(row).ok_or(Decline::NoPrepared)?.as_ref()
         {
             return Err(Decline::MetadataChanged);
@@ -237,14 +242,47 @@ impl SessionSymbolicMemo {
         row: &PreparedBody<'_>,
         bodies: &dm_tree::frontend::BodyArena<'_>,
     ) -> Option<CompletedInput> {
+        match self.lookup_unchanged_local_with::<CompatibilitySymbolic, R>(
+            roster, candidates, policy, host, frontend, row, bodies,
+        ) {
+            Ok(value) => value,
+            Err(never) => match never {},
+        }
+    }
+    #[allow(clippy::too_many_arguments)]
+    pub(in crate::lowering) fn lookup_unchanged_local_checked<R: Resolver>(
+        &self,
+        roster: &LocalInputRoster<'_>,
+        candidates: &RequestCandidates<'_, '_, R>,
+        policy: u128,
+        host: &R,
+        frontend: &ColdFrontend,
+        row: &PreparedBody<'_>,
+        bodies: &dm_tree::frontend::BodyArena<'_>,
+    ) -> std::io::Result<Option<CompletedInput>> {
+        self.lookup_unchanged_local_with::<CheckedSymbolic, R>(
+            roster, candidates, policy, host, frontend, row, bodies,
+        )
+    }
+    #[allow(clippy::too_many_arguments)]
+    fn lookup_unchanged_local_with<D: SymbolicDemand, R: Resolver>(
+        &self,
+        roster: &LocalInputRoster<'_>,
+        candidates: &RequestCandidates<'_, '_, R>,
+        policy: u128,
+        host: &R,
+        frontend: &ColdFrontend,
+        row: &PreparedBody<'_>,
+        bodies: &dm_tree::frontend::BodyArena<'_>,
+    ) -> Result<Option<CompletedInput>, D::Error> {
         if host.observes_reads() {
-            return None;
+            return Ok(None);
         }
         static MATCH: dm_profile::Accumulator = dm_profile::Accumulator::new("local.match");
         static CLAIM: dm_profile::Accumulator = dm_profile::Accumulator::new("local.claim_rebind");
         static REBIND: dm_profile::Accumulator = dm_profile::Accumulator::new("local.rebind");
         static SHARE: dm_profile::Accumulator = dm_profile::Accumulator::new("local.share_code");
-        let attempt = self.attempt.as_ref()?;
+        let attempt = current_or_miss!(self.attempt.as_ref());
         let match_timer = MATCH.time();
         // A failed weak issuer witness cannot consume the semantic certificate
         // needed by ordinary exact-key/ABI admission later in this same request.
@@ -286,7 +324,7 @@ impl SessionSymbolicMemo {
             let claim_timer = CLAIM.time();
             let claimed = attempt
                 .with_pending(|leases| {
-                    leases.records.claim_current(
+                    leases.records.try_claim_current(
                         candidate,
                         |_, record| {
                             let Some(prepared) = record
@@ -294,12 +332,12 @@ impl SessionSymbolicMemo {
                                 .as_ref()
                                 .and_then(|local| local.matches(roster, row, policy, record))
                             else {
-                                return false;
+                                return Ok(false);
                             };
                             // Modified descriptors are reissued against the current parsed
                             // body by the same admission path as ordinary candidates.
                             let _rebind_timer = REBIND.time();
-                            completed = self.rebind_record(
+                            completed = self.rebind_record_with::<D, R>(
                                 record,
                                 host,
                                 frontend,
@@ -309,8 +347,8 @@ impl SessionSymbolicMemo {
                                 false,
                                 false,
                                 row,
-                            );
-                            completed.is_some()
+                            )?;
+                            Ok(completed.is_some())
                         },
                         // The host does not observe reads (checked above): an admitted leaf has
                         // no recorder to reach, so it is not replayed (which issued a domain
@@ -318,17 +356,18 @@ impl SessionSymbolicMemo {
                         |_| {},
                     )
                 })
+                .transpose()?
                 .flatten();
             drop(claim_timer);
             if claimed.is_some() {
-                let mut input = completed?;
+                let mut input = current_or_miss!(completed);
                 if let Input::Reused(value) = &mut input.inner {
                     let _share_timer = SHARE.time();
                     self.share_current_code(value);
                 }
-                return Some(input);
+                return Ok(Some(input));
             }
         }
-        None
+        Ok(None)
     }
 }

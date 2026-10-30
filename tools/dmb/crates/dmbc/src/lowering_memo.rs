@@ -417,14 +417,47 @@ impl ProcedureMemo {
         host: &'host R,
         prepared: &crate::procedure_policy::PreparedUnit,
     ) -> crate::lowering_memo_wire::ProcedureLookup<'host> {
+        match self.lookup_procedure_with::<crate::lowering_memo_wire::CompatibilityReplay, R>(
+            key, tail, identity, context, host, prepared,
+        ) {
+            Ok(value) => value,
+            Err(never) => match never {},
+        }
+    }
+    pub(crate) fn lookup_procedure_checked<'host, R: Resolver>(
+        &self,
+        key: &key_recipe::CurrentKey<'_>,
+        tail: &key_recipe::PreparedKey,
+        identity: dm_ir::ProcedureIdentity,
+        context: crate::lowering_memo_wire::ProcedureReplayContext<'_>,
+        host: &'host R,
+        prepared: &crate::procedure_policy::PreparedUnit,
+    ) -> std::io::Result<crate::lowering_memo_wire::ProcedureLookup<'host>> {
+        self.lookup_procedure_with::<crate::lowering_memo_wire::CheckedReplay, R>(
+            key, tail, identity, context, host, prepared,
+        )
+    }
+    pub(crate) fn lookup_procedure_with<
+        'host,
+        D: crate::lowering_memo_wire::ReplayDemand,
+        R: Resolver,
+    >(
+        &self,
+        key: &key_recipe::CurrentKey<'_>,
+        tail: &key_recipe::PreparedKey,
+        identity: dm_ir::ProcedureIdentity,
+        context: crate::lowering_memo_wire::ProcedureReplayContext<'_>,
+        host: &'host R,
+        prepared: &crate::procedure_policy::PreparedUnit,
+    ) -> Result<crate::lowering_memo_wire::ProcedureLookup<'host>, D::Error> {
         static LOOKUP: dm_profile::Accumulator =
             dm_profile::Accumulator::new("lowering.disk_lookup");
         let _timer = LOOKUP.time();
         let Some(snapshot) = self.disk.as_ref().and_then(|disk| disk.snapshot()) else {
-            return crate::lowering_memo_wire::ProcedureLookup {
+            return Ok(crate::lowering_memo_wire::ProcedureLookup {
                 miss: Some(MemoMissReason::RecordAbsent),
                 ..Default::default()
-            };
+            });
         };
         let certificates = self.dep_index().map(|index| &**index);
         // Stored reads are proven by the session's answer table when there is one (no domain version is issued).
@@ -438,14 +471,18 @@ impl ProcedureMemo {
             .filter(|_| !host.observes_reads() || host.transparent_receipt_observer().is_some())
             .map(|db| db.request_answers(&answer));
         let replay = std::cell::RefCell::new(None);
-        let view =
-            snapshot.get_candidate_backed(key.record_key(tail), |bytes, _symbols, backing| {
+        let view = snapshot.try_get_candidate_backed(
+            key.record_key(tail),
+            |bytes, _symbols, backing| {
                 let candidates = {
                     let _profile = dm_profile::item("lowering.disk_lookup_decode");
                     static DECODE: dm_profile::Accumulator =
                         dm_profile::Accumulator::new("lowering.disk_decode");
                     let _timer = DECODE.time();
-                    crate::lowering_memo_wire::candidates(bytes)?
+                    match crate::lowering_memo_wire::candidates(bytes) {
+                        Ok(value) => value,
+                        Err(error) => return Ok(Err(error)),
+                    }
                 };
                 // Validate the complete typed envelope before replaying any reads.
                 // Only exact semantic admission makes this mapped record reachable.
@@ -454,7 +491,7 @@ impl ProcedureMemo {
                     static VALIDATE: dm_profile::Accumulator =
                         dm_profile::Accumulator::new("lowering.disk_validate");
                     let _timer = VALIDATE.time();
-                    candidates.procedure_matching_backed(
+                    candidates.procedure_matching_backed_with::<D, R>(
                         &|candidate| key.matches(candidate, None, tail),
                         identity,
                         crate::lowering_memo_wire::ProcedureReplayContext {
@@ -471,7 +508,7 @@ impl ProcedureMemo {
                         prepared,
                         Some(backing),
                         answers.as_ref(),
-                    )
+                    )?
                 };
                 let admitted = result.unit.is_some()
                     || result.prepared.is_some()
@@ -481,8 +518,9 @@ impl ProcedureMemo {
                 if admitted || replay.is_none() {
                     *replay = Some(result);
                 }
-                Ok(admitted)
-            });
+                Ok(Ok(admitted))
+            },
+        )?;
         let result =
             replay
                 .into_inner()
@@ -517,7 +555,7 @@ impl ProcedureMemo {
                 );
             }
         }
-        result
+        Ok(result)
     }
     pub(crate) fn queue_selections(
         &self,

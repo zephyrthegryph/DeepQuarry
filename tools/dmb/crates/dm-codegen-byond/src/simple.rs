@@ -882,7 +882,7 @@ fn supported_statements(
                             .skip(1)
                             .any(|part| matches!(part, "static" | "const" | "global")))
             }
-            StatementKind::Set { .. } => true,
+            StatementKind::Set { .. } | StatementKind::ProjectedSet { .. } => true,
             StatementKind::While { body, .. }
             | StatementKind::DoWhile { body, .. }
             | StatementKind::Spawn { body, .. } => {

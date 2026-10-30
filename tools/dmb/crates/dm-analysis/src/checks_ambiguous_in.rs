@@ -219,6 +219,16 @@ impl Membership<'_> {
 }
 
 impl TypedVisitor for Membership<'_> {
+    fn projected_expression(
+        &mut self,
+        view: dm_syntax::ProjectedExprView<'_>,
+        path: &[dm_syntax::NodeStep],
+    ) -> dm_syntax::VisitDecision {
+        // Both written Set variants are skipped at the statement boundary.
+        let _ = (view, path);
+        dm_syntax::VisitDecision::Skip
+    }
+
     fn statement(&mut self, statement: &Statement, _: &[NodeStep]) -> VisitDecision {
         let direct = match &statement.kind {
             StatementKind::If { condition, .. } | StatementKind::DoWhile { condition, .. } => Some(
@@ -233,7 +243,10 @@ impl TypedVisitor for Membership<'_> {
             direct,
         });
         // Normal setting values are not evaluated by the reference checker.
-        if matches!(&statement.kind, StatementKind::Set { .. }) {
+        if matches!(
+            &statement.kind,
+            StatementKind::Set { .. } | StatementKind::ProjectedSet { .. }
+        ) {
             VisitDecision::Skip
         } else {
             VisitDecision::Descend

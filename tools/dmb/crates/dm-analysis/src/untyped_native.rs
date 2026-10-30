@@ -246,7 +246,7 @@ fn evidence<'a, R: Resolver + ?Sized>(
         evidence: Vec::new(),
         error: None,
     };
-    crate::untyped_order::assignments(syntax.view(), &mut |target, rhs, at| {
+    crate::untyped_order::assignments_current(syntax.view(), &mut |target, rhs, at, _| {
         if scan.error.is_none() {
             if let Err(error) = scan.assign(target, rhs, at) {
                 scan.error = Some(error);

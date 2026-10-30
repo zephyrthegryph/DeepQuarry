@@ -25,12 +25,29 @@ impl CacheSnapshot {
         validate_and_accept: impl Fn(&[u8], &[(u64, &[u8])], &Arc<Segment>) -> Result<bool, String>,
         capture: impl Fn(&Arc<Segment>, RecordView<'a>) -> T,
     ) -> Option<T> {
+        self.try_get_candidate_with::<T, std::convert::Infallible>(
+            key,
+            |bytes, symbols, segment| Ok(validate_and_accept(bytes, symbols, segment)),
+            capture,
+        )
+        .unwrap_or_else(|impossible| match impossible {})
+    }
+    pub(crate) fn try_get_candidate_with<'a, T, E>(
+        &'a self,
+        key: RecordKey,
+        validate_and_accept: impl Fn(
+            &[u8],
+            &[(u64, &[u8])],
+            &Arc<Segment>,
+        ) -> Result<Result<bool, String>, E>,
+        capture: impl Fn(&Arc<Segment>, RecordView<'a>) -> T,
+    ) -> Result<Option<T>, E> {
         loop {
             let superseded = self.current_superseded();
             let mut retry = false;
             let ordinals = self.index.get(key, &self.segments);
             if ordinals.is_empty() {
-                return None;
+                return Ok(None);
             }
             for ordinal in ordinals {
                 let (path, segment) = &self.segments[ordinal];
@@ -38,10 +55,10 @@ impl CacheSnapshot {
                     continue;
                 }
                 let accepted = Cell::new(false);
-                let candidate = segment.get(key, |payload, symbols| {
-                    accepted.set(validate_and_accept(payload, symbols, segment)?);
-                    Ok(())
-                });
+                let candidate = segment.try_get(key, |payload, symbols| {
+                    Ok(validate_and_accept(payload, symbols, segment)?
+                        .map(|current| accepted.set(current)))
+                })?;
                 match candidate {
                     Ok(Some(view)) if accepted.get() => {
                         self.used_keys
@@ -52,7 +69,7 @@ impl CacheSnapshot {
                             .lock()
                             .unwrap_or_else(|e| e.into_inner())
                             .insert(ordinal);
-                        return Some(capture(segment, view));
+                        return Ok(Some(capture(segment, view)));
                     }
                     Ok(_) => {}
                     Err(error) => {
@@ -70,7 +87,7 @@ impl CacheSnapshot {
                 }
             }
             if !retry {
-                return None;
+                return Ok(None);
             }
         }
     }

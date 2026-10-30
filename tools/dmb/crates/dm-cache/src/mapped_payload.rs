@@ -93,6 +93,28 @@ impl CacheSnapshot {
         )
     }
 
+    /// SAME mapped candidate path with distinct operation status. Outer Err
+    /// neither rejects valid bytes nor marks a key used; inner Err retains the
+    /// existing malformed-typed-bucket contract. No callback error is retained.
+    pub fn try_get_candidate_backed<'a, E>(
+        &'a self,
+        key: RecordKey,
+        validate_and_accept: impl Fn(
+            &[u8],
+            &[(u64, &[u8])],
+            &MappedPayload,
+        ) -> Result<Result<bool, String>, E>,
+    ) -> Result<Option<RecordView<'a>>, E> {
+        self.try_get_candidate_with(
+            key,
+            |bytes, symbols, segment| {
+                let backing = MappedPayload::capture_bytes(segment, key, bytes);
+                validate_and_accept(bytes, symbols, &backing)
+            },
+            |_, view| view,
+        )
+    }
+
     /// SAME checksum, whole typed-bucket validation, candidate order, rejection
     /// and used-key accounting as get_candidate; only accepted byte ownership
     /// differs. A false/invalid candidate cannot mint a mapped owner.

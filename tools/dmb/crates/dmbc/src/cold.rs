@@ -326,7 +326,7 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
         frontend,
         dm_codegen_byond::typed_statements_supported_for_capture,
     );
-    let startup = crate::startup::capture_with_prepared_bodies(
+    let startup = crate::startup::capture_with_prepared_bodies_checked(
         frontend,
         revision,
         &links.inventory.spellings,
@@ -335,7 +335,7 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
         memo.and_then(|memo| memo.startup.as_deref()),
         &roster,
     )
-    .map_err(|error| static_diagnostics::capture_error(frontend, &bodies, error))?;
+    .map_err(|error| static_diagnostics::capture_error_checked(frontend,&bodies,error))?;
     measurement.complete();
     dm_profile::request_mark("cold.startup_captured");
     begin_answers(memo, frontend, resolver, &startup);
@@ -387,7 +387,8 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
             &prepared.prepared,
         ) {
             Ok(patched) => return Ok(Prepared::Incremental(Box::new(patched))),
-            Err(reason) => {
+            Err(IncrementalFailure::Operational(error))=>return Err(ColdError::Operational(error)),
+            Err(IncrementalFailure::Declined(reason)) => {
                 crate::compile_stats::note_full(format!("incremental output declined: {reason}"));
                 crate::daemon_eprintln!("native incremental output: declined, whole program: {reason}");
                 // The attempt consumed the parsed bodies it lowered; the whole-program path needs them all.
@@ -420,6 +421,19 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
     Ok(Prepared::Full(output))
 }
 
+/// Operation-local status, never a cache rejection or semantic failure value.
+/// A real failed body/ABI operation cannot silently select the full-build path.
+enum IncrementalFailure {
+    Declined(String),
+    Operational(std::io::Error),
+}
+impl From<String> for IncrementalFailure {
+    fn from(value:String)->Self{Self::Declined(value)}
+}
+impl From<&str> for IncrementalFailure {
+    fn from(value:&str)->Self{Self::Declined(value.into())}
+}
+
 /// The output built on the retained one (`crate::retained_output`): the declaration side of the
 /// link inputs is unchanged, so only the bodies whose text or position changed are lowered (with
 /// this request's startup, ABI policy and static resolver) and relinked into the retained image.
@@ -437,7 +451,7 @@ fn incremental_output<'f, R: Resolver, P: AbiPolicy>(
     bodies: &dm_tree::frontend::BodyArena<'f>,
     roster: &crate::lowering::PreparedBodyRoster<'f>,
     prepared: &crate::driver_facts::PreparedSourceAbi,
-) -> Result<crate::retained_output::Patched, String> {
+) -> Result<crate::retained_output::Patched,IncrementalFailure> {
     let started = Instant::now();
     let db = memo.and_then(|memo| memo.query_db());
     startup.validate_for(frontend)?;
@@ -474,7 +488,7 @@ fn incremental_output<'f, R: Resolver, P: AbiPolicy>(
         .iter()
         .map(|&index| &frontend.bodies[index])
         .collect();
-    let batch = crate::lowering::lower_frontend_completed_input_on_execution(
+    let batch = crate::lowering::lower_frontend_completed_input_checked_on_execution(
         frontend,
         &static_resolver,
         policy,
@@ -486,27 +500,31 @@ fn incremental_output<'f, R: Resolver, P: AbiPolicy>(
             .with_selected_bodies(&selected),
         true,
         &complete,
-    );
+    ).map_err(IncrementalFailure::Operational)?;
     dm_profile::request_mark("incremental.lowered");
     if !batch.diagnostics.is_empty() {
-        return Err(format!(
+        return Err(IncrementalFailure::Declined(format!(
             "lowering reported {} diagnostics (first: {})",
             batch.diagnostics.len(),
             batch.diagnostics[0].message
-        ));
+        )));
     }
     if let Some((body, error)) = batch.completion_errors.into_iter().next() {
-        return Err(format!(
+        let error=match error{
+            ColdError::Operational(error)=>return Err(IncrementalFailure::Operational(error)),
+            semantic=>semantic,
+        };
+        return Err(IncrementalFailure::Declined(format!(
             "completion error at {}:{}: {error:?}",
             body.source.semantic_path, body.source.line
-        ));
+        )));
     }
     if batch.units.len() != selected.len() {
-        return Err(format!(
+        return Err(IncrementalFailure::Declined(format!(
             "lowered {} units for {} changed bodies",
             batch.units.len(),
             selected.len()
-        ));
+        )));
     }
     let contributions: Vec<_> = batch.units.into_iter().map(|unit| unit.value).collect();
     let mut admitted = admitted;
@@ -554,13 +572,13 @@ pub fn compile_captured_classified_with_stage<R: Resolver, P: AbiPolicy>(
     let executor = dm_exec::BuildExecutor::new(config.workers)
         .map_err(|error| ColdError::AbiPreparation(error.to_string()))?;
     let bodies = dm_tree::frontend::BodyArena::new(frontend);
-    let startup = crate::startup::capture_with_executor_and_bodies(
+    let startup = crate::startup::capture_with_executor_and_bodies_checked(
         frontend,
         &links.inventory.spellings,
         &executor,
         &bodies,
     )
-    .map_err(|error| static_diagnostics::capture_error(frontend, &bodies, error))?;
+    .map_err(|error| static_diagnostics::capture_error_checked(frontend,&bodies,error))?;
     compile_with_startup(
         frontend,
         resolver,
@@ -788,7 +806,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
                 Some(&startup_allocation),
             )
             .map_err(|error| {
-                diagnostic_continuation::collect(error, || {
+                diagnostic_continuation::collect_checked(error, || {
                     // This is the ordinary current body producer with no memo,
                     // contribution preparation, linker, or publication callbacks.
                     let execution = crate::lowering::LoweringExecution::new(executor, &bodies);
@@ -796,10 +814,10 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
                         Some(roster) => execution.with_prepared_roster(roster),
                         None => execution,
                     };
-                    crate::lowering::lower_frontend_with_statics_on_executor_and_bodies(
-                        frontend, resolver, policy, config, startup, execution,
-                    )
-                    .diagnostics
+                    crate::lowering::lower_frontend_completed_input_checked_on_execution(
+                        frontend,resolver,policy,config,Some(startup),None,execution,false,
+                        &|_input|Ok::<_,std::convert::Infallible>(()))
+                        .map(|batch|batch.diagnostics)
                 })
             })?;
             let detail_phase = dm_profile::detail_timer("init.class_projection");
@@ -886,8 +904,11 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
     dm_profile::request_mark("cold.initializers_done");
     let mut inventory = links.inventory;
     inventory.strip_debug_ops = !crate::debug_sources::defines_debug(frontend);
-    crate::class_inventory::contribute_source_strings(frontend, &bodies, &mut inventory)
-        .map_err(ColdError::Initializer)?;
+    crate::class_inventory::contribute_source_strings_checked(frontend,&bodies,&mut inventory)
+        .map_err(|error|match error{
+            crate::class_inventory::RegistrationFailure::Semantic(error)=>ColdError::Initializer(error),
+            crate::class_inventory::RegistrationFailure::Operational(error)=>ColdError::Operational(error),
+        })?;
     dm_profile::request_mark("cold.source_strings");
     let stage = Instant::now();
     let measurement = StageMeasurement::new(observer, ColdStage::ProcedureLowering);
@@ -915,7 +936,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
             freeze_detail,
         )
     };
-    let batch = crate::lowering::lower_frontend_completed_input_on_execution(
+    let batch = crate::lowering::lower_frontend_completed_input_checked_on_execution(
         frontend,
         resolver,
         policy,
@@ -931,7 +952,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
             }),
         true,
         &complete,
-    );
+    ).map_err(ColdError::Operational)?;
     drop(lowering_stage_timer);
     // Completion has consumed all rich units; the prepared roster owns the
     // immutable current symbolic namespace until this request finishes.

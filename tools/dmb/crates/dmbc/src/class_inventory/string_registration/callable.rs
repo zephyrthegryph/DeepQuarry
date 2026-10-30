@@ -102,6 +102,15 @@ pub(super) fn registrations(
 fn native_literal_roots_complete(body: &dm_tree::frontend::StatementBody) -> bool {
     struct Coverage(bool);
     impl dm_syntax::TypedVisitor for Coverage {
+        fn projected_expression(
+            &mut self,
+            view: dm_syntax::ProjectedExprView<'_>,
+            path: &[dm_syntax::NodeStep],
+        ) -> dm_syntax::VisitDecision {
+            // Explicitly shape/identity-only; no original span is used as current.
+            self.expression(view.original(), path)
+        }
+
         fn expression(
             &mut self,
             _: &dm_syntax::Expr,
@@ -167,11 +176,11 @@ impl LocalNames<'_> {
         }
     }
 }
-impl dm_syntax::TypedVisitor for LocalNames<'_> {
-    fn expression(
+impl LocalNames<'_> {
+    fn expression_at(
         &mut self,
         expression: &dm_syntax::Expr,
-        _: &[dm_syntax::NodeStep],
+        current_start: usize,
     ) -> dm_syntax::VisitDecision {
         if !self.literals {
             return dm_syntax::VisitDecision::Skip;
@@ -181,7 +190,7 @@ impl dm_syntax::TypedVisitor for LocalNames<'_> {
                 dm_codegen_byond::visit_native_constant_string_literals(text, |bytes| {
                     let id = SymbolId::of_bytes(bytes);
                     if self.names.contains(&id) {
-                        self.events.push((expression.span.start, id));
+                        self.events.push((current_start, id));
                     }
                 })
             {
@@ -192,6 +201,24 @@ impl dm_syntax::TypedVisitor for LocalNames<'_> {
             return dm_syntax::VisitDecision::Skip;
         }
         dm_syntax::VisitDecision::Descend
+    }
+}
+impl dm_syntax::TypedVisitor for LocalNames<'_> {
+    fn projected_expression(
+        &mut self,
+        view: dm_syntax::ProjectedExprView<'_>,
+        path: &[dm_syntax::NodeStep],
+    ) -> dm_syntax::VisitDecision {
+        let _ = path;
+        self.expression_at(view.original(), view.current_span().start)
+    }
+
+    fn expression(
+        &mut self,
+        e: &dm_syntax::Expr,
+        _: &[dm_syntax::NodeStep],
+    ) -> dm_syntax::VisitDecision {
+        self.expression_at(e, e.span.start)
     }
 
     fn statement(

@@ -8,11 +8,60 @@ use dm_tree::{allocation_ledger::AllocationKind, frontend::ColdFrontend};
 use std::{collections::HashSet, sync::Arc};
 mod callable;
 
+#[derive(Debug)]
+pub(crate) enum RegistrationFailure {
+    Semantic(String),
+    Operational(std::io::Error),
+}
+impl From<String> for RegistrationFailure{fn from(value:String)->Self{Self::Semantic(value)}}
+impl From<&str> for RegistrationFailure{fn from(value:&str)->Self{Self::Semantic(value.into())}}
+trait RegistrationDemand {
+    type Failure:From<String>+From<&'static str>;
+    fn read<'f,T>(arena:&dm_tree::frontend::BodyArena<'f>,body:&dm_tree::frontend::BodyOccurrence,
+        produce:impl FnOnce(&dm_tree::frontend::ParsedBody<'f>)->T)->Result<T,Self::Failure>;
+}
+struct CompatibilityRegistration;
+struct CheckedRegistration;
+impl RegistrationDemand for CompatibilityRegistration {
+    type Failure=String;
+    fn read<'f,T>(arena:&dm_tree::frontend::BodyArena<'f>,body:&dm_tree::frontend::BodyOccurrence,
+        produce:impl FnOnce(&dm_tree::frontend::ParsedBody<'f>)->T)->Result<T,String>{
+        arena.with_parsed(body,produce).map_err(|error|error.message)
+    }
+}
+impl RegistrationDemand for CheckedRegistration {
+    type Failure=RegistrationFailure;
+    fn read<'f,T>(arena:&dm_tree::frontend::BodyArena<'f>,body:&dm_tree::frontend::BodyOccurrence,
+        produce:impl FnOnce(&dm_tree::frontend::ParsedBody<'f>)->T)->Result<T,Self::Failure>{
+        match arena.with_parsed_checked(body,produce){
+            Ok(value)=>Ok(value),
+            Err(dm_tree::frontend::BodySyntaxFailure::Syntax(error))=>Err(RegistrationFailure::Semantic(error.message)),
+            Err(dm_tree::frontend::BodySyntaxFailure::Operational(error))=>Err(RegistrationFailure::Operational(error)),
+        }
+    }
+}
 pub(crate) fn contribute_source_strings(
     frontend: &ColdFrontend,
     bodies: &dm_tree::frontend::BodyArena<'_>,
     inventory: &mut LinkInventory,
 ) -> Result<(), String> {
+    contribute_using::<CompatibilityRegistration>(frontend,bodies,inventory)
+}
+pub(crate) fn contribute_source_strings_checked(
+    frontend: &ColdFrontend,
+    bodies: &dm_tree::frontend::BodyArena<'_>,
+    inventory: &mut LinkInventory,
+) -> Result<(),RegistrationFailure> {
+    crate::daemon::control::checkpoint().map_err(RegistrationFailure::Operational)?;
+    contribute_using::<CheckedRegistration>(frontend,bodies,inventory)?;
+    crate::daemon::control::checkpoint().map_err(RegistrationFailure::Operational)?;
+    Ok(())
+}
+fn contribute_using<D:RegistrationDemand>(
+    frontend: &ColdFrontend,
+    bodies: &dm_tree::frontend::BodyArena<'_>,
+    inventory: &mut LinkInventory,
+) -> Result<(),D::Failure> {
     if inventory.string_registration.is_some() {
         return Err("source string registrations supplied twice".into());
     }
@@ -117,11 +166,9 @@ pub(crate) fn contribute_source_strings(
                         // BodyArena's separate profile counts actual parses.
                         let _profile =
                             dm_profile::item("string_registration.first_root_body_demand");
-                        bodies
-                            .with_parsed(occurrence, |parsed| {
-                                callable::registrations(frontend, &input, parsed, &names)
-                            })
-                            .map_err(|error| error.message)??
+                        D::read(bodies,occurrence,|parsed|{
+                            callable::registrations(frontend,&input,parsed,&names)
+                        })??
                             .into()
                     },
                     source,

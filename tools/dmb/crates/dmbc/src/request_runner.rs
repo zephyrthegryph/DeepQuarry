@@ -719,6 +719,12 @@ fn run_build_attempt(
     dmbc::daemon::control::checkpoint()?;
     let frontend = dm_tree::frontend::FrontendRevision::new(match frontend_result {
         Ok(frontend) => {
+            // SETTINGS-ONLY provider for BOTH retained and one-shot frontends.
+            // It borrows the already-owned SAME host Db without demanding bodies.
+            let settings_host=std::sync::Arc::clone(&source_policy_queries)
+                as std::sync::Arc<dyn dm_tree::frontend::SettingExpressionQueries>;
+            let frontend=frontend.with_setting_expression_queries(&settings_host)
+                .map_err(|error|std::io::Error::new(std::io::ErrorKind::InvalidData,error.message))?;
             // Migration opt-in until all checker/lint parity and memory gates
             // pass. Compile-only users keep the existing lazy body path.
             if policy_inputs.as_ref().is_some_and(|request| request.workspace().is_none()) || std::env::var_os("DMB_UNIFIED_ANALYSIS").is_some() {

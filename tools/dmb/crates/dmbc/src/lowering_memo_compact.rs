@@ -272,7 +272,10 @@ pub(crate) fn encode_with_id<'a>(
         .or_else(|_| {
             // Declaration chains made the record too large: keep it with scalar answers only.
             for answer in payload.typed_answers.0.iter_mut() {
-                if answer.as_ref().is_some_and(|answer| !typed::is_scalar(answer)) {
+                if answer
+                    .as_ref()
+                    .is_some_and(|answer| !typed::is_scalar(answer))
+                {
                     *answer = None;
                 }
             }
@@ -373,7 +376,10 @@ impl Payload<'_> {
     pub(crate) fn record_id(&self) -> u128 {
         crate::dep_index::record_id(
             self.key.as_ref(),
-            self.reads.0.iter().map(|read| (&read.query, read.answer.as_ref())),
+            self.reads
+                .0
+                .iter()
+                .map(|read| (&read.query, read.answer.as_ref())),
         )
     }
     pub(crate) fn verification_reads(&self) -> Vec<(ResolveQuery, Vec<u8>)> {
@@ -447,7 +453,8 @@ impl Payload<'_> {
         };
         let mut pending = Vec::with_capacity(self.reads.0.len());
         for (index, read) in self.reads.0.iter().enumerate() {
-            let held = (self.world_certified && crate::dep_index::world_determines(read.query.domain()))
+            let held = (self.world_certified
+                && crate::dep_index::world_determines(read.query.domain()))
                 || answers.unchanged_hash(&read.query, dm_query::hash_bytes(&read.answer));
             if !held {
                 return Err(read.query);
@@ -492,13 +499,52 @@ impl Payload<'_> {
         prepared: &crate::procedure_policy::PreparedUnit,
         backing: Option<&dm_cache::MappedPayload>,
     ) -> Result<crate::symbolic::PreparedContribution, ReplayDecline> {
+        match self.rebind_with_backing_using(
+            context,
+            prepared,
+            backing,
+            |issuer, recipes, debug, prepared| {
+                Ok::<_, std::convert::Infallible>(issuer.reissue(recipes, debug, prepared))
+            },
+        ) {
+            Ok(value) => Ok(value),
+            Err(ReissueFailure::Declined(reason)) => Err(reason),
+            Err(ReissueFailure::Operational(never)) => match never {},
+        }
+    }
+    pub(crate) fn rebind_with_backing_checked(
+        self,
+        context: crate::lowering_memo_wire::ProcedureReplayContext<'_>,
+        prepared: &crate::procedure_policy::PreparedUnit,
+        backing: Option<&dm_cache::MappedPayload>,
+    ) -> Result<crate::symbolic::PreparedContribution, ReissueFailure<std::io::Error>> {
+        self.rebind_with_backing_using(
+            context,
+            prepared,
+            backing,
+            |issuer, recipes, debug, prepared| issuer.reissue_checked(recipes, debug, prepared),
+        )
+    }
+    pub(crate) fn rebind_with_backing_using<E>(
+        self,
+        context: crate::lowering_memo_wire::ProcedureReplayContext<'_>,
+        prepared: &crate::procedure_policy::PreparedUnit,
+        backing: Option<&dm_cache::MappedPayload>,
+        reissue: impl FnOnce(
+            &dyn ModifiedIssuer,
+            &[crate::modified_initializers::RecipeWire<'_>],
+            &crate::debug_sources::DebugOrigins,
+            &crate::procedure_policy::PreparedUnit,
+        )
+            -> Result<Option<Vec<crate::modified_initializers::PreparedSeed>>, E>,
+    ) -> Result<crate::symbolic::PreparedContribution, ReissueFailure<E>> {
         let bindings = context.bindings.ok_or(ReplayDecline::ExecutableIssuer)?;
         prepared
             .require_production_abi()
             .map_err(|_| ReplayDecline::PreparedAbi)?;
         let abi = prepared.abi.as_ref().ok_or(ReplayDecline::PreparedAbi)?;
         if self.abi.as_ref() != abi.canonical_bytes() {
-            return Err(ReplayDecline::PreparedAbi);
+            return Err(ReplayDecline::PreparedAbi.into());
         }
         let debug =
             crate::lowering_memo::rebase_debug(context.frontend, context.body, &self.debug.0)
@@ -506,11 +552,14 @@ impl Payload<'_> {
         let modified = if self.recipes.0.is_empty() {
             Vec::new()
         } else {
-            context
-                .modified
-                .ok_or(ReplayDecline::ExecutableIssuer)?
-                .reissue(&self.recipes.0, &debug, prepared)
-                .ok_or(ReplayDecline::ExecutableIssuer)?
+            reissue(
+                context.modified.ok_or(ReplayDecline::ExecutableIssuer)?,
+                &self.recipes.0,
+                &debug,
+                prepared,
+            )
+            .map_err(ReissueFailure::Operational)?
+            .ok_or(ReplayDecline::ExecutableIssuer)?
         };
         let instances = self.recipes.0.iter().map(|r| r.reference()).collect();
         let mut artifact = self
@@ -542,7 +591,7 @@ impl Payload<'_> {
                 .iter()
                 .any(|id| context.frontend.snapshot.tree.symbols().text(*id).is_none())
         {
-            return Err(ReplayDecline::ExecutableIssuer);
+            return Err(ReplayDecline::ExecutableIssuer.into());
         }
         crate::symbolic::PreparedContribution::rebind_with_modified(
             &artifact,
@@ -559,7 +608,18 @@ impl Payload<'_> {
                 .collect::<Option<Vec<_>>>()
                 .map(Arc::from),
         )
-        .ok_or(ReplayDecline::ExecutableIssuer)
+        .ok_or_else(|| ReplayDecline::ExecutableIssuer.into())
+    }
+}
+
+/// Stack-only replay transport; never part of a candidate/wire/cache value.
+pub(crate) enum ReissueFailure<E> {
+    Declined(ReplayDecline),
+    Operational(E),
+}
+impl<E> From<ReplayDecline> for ReissueFailure<E> {
+    fn from(value: ReplayDecline) -> Self {
+        Self::Declined(value)
     }
 }
 
@@ -570,6 +630,16 @@ pub(crate) trait ModifiedIssuer {
         debug: &crate::debug_sources::DebugOrigins,
         prepared: &crate::procedure_policy::PreparedUnit,
     ) -> Option<Vec<crate::modified_initializers::PreparedSeed>>;
+    /// Compatibility implementations retain their existing hook. The actual
+    /// native issuer overrides this before it can demand original body syntax.
+    fn reissue_checked(
+        &self,
+        recipes: &[crate::modified_initializers::RecipeWire<'_>],
+        debug: &crate::debug_sources::DebugOrigins,
+        prepared: &crate::procedure_policy::PreparedUnit,
+    ) -> std::io::Result<Option<Vec<crate::modified_initializers::PreparedSeed>>> {
+        Ok(self.reissue(recipes, debug, prepared))
+    }
 }
 pub(crate) struct CurrentModifiedIssuer<'a, 'f, 'p, R: Resolver> {
     pub frontend: &'a dm_tree::frontend::ColdFrontend,
@@ -578,17 +648,27 @@ pub(crate) struct CurrentModifiedIssuer<'a, 'f, 'p, R: Resolver> {
     pub host: &'a R,
     pub parsed: Option<&'a dm_tree::frontend::ParsedBody<'p>>,
 }
-impl<R: Resolver> ModifiedIssuer for CurrentModifiedIssuer<'_, '_, '_, R> {
-    fn reissue(
+impl<R: Resolver> CurrentModifiedIssuer<'_, '_, '_, R> {
+    fn reissue_with<E>(
         &self,
         recipes: &[crate::modified_initializers::RecipeWire<'_>],
         debug: &crate::debug_sources::DebugOrigins,
         prepared: &crate::procedure_policy::PreparedUnit,
-    ) -> Option<Vec<crate::modified_initializers::PreparedSeed>> {
-        let owner = crate::lowering::source_unit_identity(self.frontend, self.body)
-            .ok()?
-            .identity
-            .owner;
+        demand: impl FnOnce(
+            &dm_tree::frontend::BodyArena<'_>,
+            &dm_tree::frontend::BodyOccurrence,
+            &dyn Fn(
+                &dm_tree::frontend::ParsedBody<'_>,
+            ) -> Option<Vec<crate::modified_initializers::PreparedSeed>>,
+        )
+            -> Result<Option<Vec<crate::modified_initializers::PreparedSeed>>, E>,
+    ) -> Result<Option<Vec<crate::modified_initializers::PreparedSeed>>, E> {
+        let Some(owner) = crate::lowering::source_unit_identity(self.frontend, self.body)
+            .ok()
+            .map(|source| source.identity.owner)
+        else {
+            return Ok(None);
+        };
         let reissue = |parsed: &dm_tree::frontend::ParsedBody<'_>| {
             recipes
                 .iter()
@@ -606,9 +686,38 @@ impl<R: Resolver> ModifiedIssuer for CurrentModifiedIssuer<'_, '_, '_, R> {
                 .collect::<Option<Vec<_>>>()
         };
         if let Some(parsed) = self.parsed {
-            reissue(parsed)
+            Ok(reissue(parsed))
         } else {
-            self.bodies.with_parsed(self.body, reissue).ok().flatten()
+            demand(self.bodies, self.body, &reissue)
         }
+    }
+}
+impl<R: Resolver> ModifiedIssuer for CurrentModifiedIssuer<'_, '_, '_, R> {
+    fn reissue(
+        &self,
+        recipes: &[crate::modified_initializers::RecipeWire<'_>],
+        debug: &crate::debug_sources::DebugOrigins,
+        prepared: &crate::procedure_policy::PreparedUnit,
+    ) -> Option<Vec<crate::modified_initializers::PreparedSeed>> {
+        match self.reissue_with(recipes, debug, prepared, |arena, body, produce| {
+            Ok::<_, std::convert::Infallible>(arena.with_parsed(body, produce).ok().flatten())
+        }) {
+            Ok(value) => value,
+            Err(never) => match never {},
+        }
+    }
+    fn reissue_checked(
+        &self,
+        recipes: &[crate::modified_initializers::RecipeWire<'_>],
+        debug: &crate::debug_sources::DebugOrigins,
+        prepared: &crate::procedure_policy::PreparedUnit,
+    ) -> std::io::Result<Option<Vec<crate::modified_initializers::PreparedSeed>>> {
+        self.reissue_with(recipes, debug, prepared, |arena, body, produce| match arena
+            .with_parsed_checked(body, produce)
+        {
+            Ok(value) => Ok(value),
+            Err(dm_tree::frontend::BodySyntaxFailure::Syntax(_)) => Ok(None),
+            Err(dm_tree::frontend::BodySyntaxFailure::Operational(error)) => Err(error),
+        })
     }
 }

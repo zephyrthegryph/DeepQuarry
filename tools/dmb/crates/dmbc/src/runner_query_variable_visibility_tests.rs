@@ -167,3 +167,43 @@ fn visibility_rejects_uncaptured_env_and_config_before_body_queries() {
     assert!(!allowed.is_empty());
     assert!(db.db().stats(dm_query::Kind(4)).computed > before);
 }
+
+#[test]
+fn native_visibility_body_io_preserves_actual_cause_without_partial_rows_and_retries() {
+    let snapshot = fixture(MIX, None);
+    let queries = snapshot.native_raw_queries.as_ref().unwrap();
+    let environment = std::env::current_dir()
+        .unwrap()
+        .join("named-policy-provider/project.dme");
+    let schedule =
+        queries.fail_body_syntax_after_for_test(0, std::io::Error::from_raw_os_error(1450));
+    let mut output = Vec::new();
+    let error = snapshot
+        .write_native_configured_variable_visibility(
+            &environment,
+            None,
+            &snapshot.tree,
+            &mut output,
+        )
+        .unwrap_err();
+    assert_eq!(error.raw_os_error(), Some(1450));
+    assert!(output.is_empty(), "no buffered partial visibility output");
+    drop(schedule);
+    snapshot
+        .write_native_configured_variable_visibility(
+            &environment,
+            None,
+            &snapshot.tree,
+            &mut output,
+        )
+        .unwrap();
+    let recovered: serde_json::Value = serde_json::from_slice(&output).unwrap();
+    assert_eq!(recovered["diagnostics"].as_array().unwrap().len(), 3);
+    let before = queries.db().stats(dm_query::Kind(4)).computed;
+    let mut warm = Vec::new();
+    snapshot
+        .write_native_configured_variable_visibility(&environment, None, &snapshot.tree, &mut warm)
+        .unwrap();
+    assert_eq!(warm, output);
+    assert_eq!(before, queries.db().stats(dm_query::Kind(4)).computed);
+}

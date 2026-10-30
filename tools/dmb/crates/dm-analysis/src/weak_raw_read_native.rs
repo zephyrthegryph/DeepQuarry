@@ -54,6 +54,15 @@ fn compatible(
 }
 struct Mark<'a>(&'a mut HashSet<usize>);
 impl TypedVisitor for Mark<'_> {
+    fn projected_expression(
+        &mut self,
+        view: dm_syntax::ProjectedExprView<'_>,
+        path: &[dm_syntax::NodeStep],
+    ) -> dm_syntax::VisitDecision {
+        // Explicitly shape/identity-only; no original span is used as current.
+        self.expression(view.original(), path)
+    }
+
     fn expression(&mut self, e: &Expr, _: &[NodeStep]) -> VisitDecision {
         self.0.insert(e as *const Expr as usize);
         VisitDecision::Descend
@@ -72,8 +81,28 @@ pub fn findings(
     root: &Path,
     weak: &HashMap<String, Vec<String>>,
     exempt: impl Fn(&str) -> bool,
-    mut checkpoint: impl FnMut() -> Result<(), String>,
+    checkpoint: impl FnMut() -> Result<(), String>,
 ) -> Result<Vec<Finding>, Unsupported> {
+    findings_with::<crate::policy_body_demand::Compatibility>(
+        inputs, root, weak, exempt, checkpoint,
+    )
+}
+pub fn findings_checked(
+    inputs: &PolicyInputs,
+    root: &Path,
+    weak: &HashMap<String, Vec<String>>,
+    exempt: impl Fn(&str) -> bool,
+    checkpoint: impl FnMut() -> Result<(), String>,
+) -> Result<Vec<Finding>, crate::policy_body_demand::PolicyFailure> {
+    findings_with::<crate::policy_body_demand::Checked>(inputs, root, weak, exempt, checkpoint)
+}
+pub fn findings_with<D: crate::policy_body_demand::Demand>(
+    inputs: &PolicyInputs,
+    root: &Path,
+    weak: &HashMap<String, Vec<String>>,
+    exempt: impl Fn(&str) -> bool,
+    mut checkpoint: impl FnMut() -> Result<(), String>,
+) -> Result<Vec<Finding>, D::Error> {
     checkpoint().map_err(Unsupported)?;
     if weak.is_empty() {
         return Ok(Vec::new());
@@ -96,7 +125,7 @@ pub fn findings(
         if exempt(&rel) {
             continue;
         }
-        let body = archive.parse(ordinal).map_err(|e| Unsupported(e.message))?;
+        let body = D::parse(archive, ordinal)?;
         let scope = untyped::archived_scope(&body, tree, &[])?.with_archive(archive)?;
         let owner = tree
             .symbols()
@@ -105,9 +134,10 @@ pub fn findings(
         let mut named = HashSet::new();
         let mut callees = HashSet::new();
         let mut error = None;
-        crate::untyped_order::expressions(
+        crate::untyped_order::expressions_current(
             body.statement_body().view(),
-            &mut |e, at: Span| {
+            &mut |observed, at| {
+                let e = observed.original();
                 if error.is_some() {
                     return;
                 }
@@ -159,7 +189,7 @@ pub fn findings(
                         .original_policy_line(at.start)
                         .map_err(Unsupported)?;
                     if origin.path != occurrence.source.path {
-                        return Err(Unsupported("weak-relation cross-file statement requires issued old-policy origin projection".into()));
+                        return Err(Unsupported("weak-relation cross-file statement requires issued old-policy origin projection".into()).into());
                     }
                     let source = inputs.file(&origin.path).ok_or_else(|| {
                         Unsupported("weak-relation statement source missing".into())
@@ -167,7 +197,7 @@ pub fn findings(
                     if !source.is_compiled() || source.role() != PolicyRole::DmSource {
                         return Err(Unsupported(
                             "weak-relation statement is not compiled original DM".into(),
-                        ));
+                        ).into());
                     }
                     let line = source
                         .analyze_display_line(origin.line)
@@ -187,7 +217,7 @@ pub fn findings(
             },
         ).map_err(|e|Unsupported(e.into()))?;
         if let Some(error) = error {
-            return Err(error);
+            return Err(error.into());
         }
     }
     checkpoint().map_err(Unsupported)?;

@@ -57,7 +57,51 @@ impl BodySyntaxInput {
         }
         Ok(syntax)
     }
+    /// Standalone compatibility behavior remains the same explicit parser path.
     pub fn parse(&self) -> Result<BodySyntax, Diagnostic> {
+        self.parse_using(|item| {
+            Ok(body_archive::parse_statements(
+                item,
+                &self.source,
+                &self.syntax,
+                |_| false,
+            ))
+        })
+    }
+    /// Native Kind4 supplies its DIRECT stack capability; a setting leaf never
+    /// invokes another query/provider/gate or resets this operation budget.
+    pub fn parse_with_setting_admission(
+        &self,
+        admission: &dm_syntax::SettingAdmission<'_>,
+    ) -> Result<BodySyntax, BodySyntaxFailure> {
+        let result = self.parse_using(|item| {
+            body_archive::parse_statements_with_setting_admission(
+                item,
+                &self.source,
+                &self.syntax,
+                self.span,
+                self.original_code.as_ref(),
+                admission,
+                |_| false,
+            )
+        });
+        if matches!(&result, Err(BodySyntaxFailure::Operational(_))) {
+            return match admission.take_operational_error() {
+                Some(actual) => Err(BodySyntaxFailure::Operational(actual)),
+                None => result,
+            };
+        }
+        let last = admission.checkpoint();
+        if let Some(actual) = admission.take_operational_error() {
+            return Err(BodySyntaxFailure::Operational(actual));
+        }
+        last.map_err(BodySyntaxFailure::Operational)?;
+        result
+    }
+    fn parse_using<E: From<Diagnostic>>(
+        &self,
+        parse_statements: impl FnOnce(&mut Item) -> Result<Arc<StatementBody>, E>,
+    ) -> Result<BodySyntax, E> {
         let mut issued = self
             .syntax
             .parse_original_procedure(
@@ -79,13 +123,12 @@ impl BodySyntaxInput {
             .parameters
             .admit_optional_expressions(self.parameter_admission);
         if issued.parameters.retained_bytes() > self.parameter_admission {
-            return Err(internal(
-                "primary parameter receipt exceeded original header admission",
-            ));
+            return Err(
+                internal("primary parameter receipt exceeded original header admission").into(),
+            );
         }
         let mut item = issued.item;
-        let statements =
-            body_archive::parse_statements(&mut item, &self.source, &self.syntax, |_| false);
+        let statements = parse_statements(&mut item)?;
         Ok(BodySyntax {
             issuance: self.id,
             opening_parenthesis: issued.opening_parenthesis,

@@ -668,3 +668,75 @@ fn standalone_compatibility_still_lexes_unissued_symbolic_token_contents() {
     // Such a record is not a native token receipt. The actual driver admits
     // exact selected ORIGINAL frontend metadata, never this standalone copy.
 }
+
+#[test]
+fn abi_expression_site_adapter_preserves_unique_policy_order_and_skipped_token_settings() {
+    let mut symbols = SymbolTable::default();
+    let mut metadata = metadata(
+        &[
+            (
+                "SpacemanDMM_should_be_pure",
+                SettingOperation::Assign,
+                "unavailable_checker_value",
+            ),
+            ("src", SettingOperation::In, "world"),
+            ("waitfor", SettingOperation::Assign, "1"),
+        ],
+        &mut symbols,
+    );
+    metadata.signature.return_annotation = Some(expression("/datum", &mut symbols));
+    metadata.settings = vec![ProcedureSettingNode::Conditional {
+        condition: expression("1", &mut symbols),
+        then_branch: metadata.settings.clone(),
+        else_branch: Vec::new().into(),
+    }]
+    .into();
+    let scalar = |value: &SymbolicExpression| match expression_text(value, &symbols)?.as_str() {
+        "/datum" => Ok(SemanticValue::Type(dm_ir::SymbolId::of("/datum"))),
+        _ => evaluate(value, &symbols),
+    };
+    let compatibility = prepare_verified_procedure_original_tokens(
+        &metadata,
+        &symbols,
+        &[],
+        ProcedureInputs::default(),
+        InheritedAbi::Fresh,
+        scalar,
+    )
+    .unwrap();
+    let mut sites = Vec::new();
+    let tagged = prepare_verified_procedure_original_tokens_with_sites(
+        &metadata,
+        &symbols,
+        &[],
+        ProcedureInputs::default(),
+        InheritedAbi::Fresh,
+        |site, value| {
+            sites.push(site);
+            scalar(value)
+        },
+    )
+    .unwrap();
+    assert_eq!(
+        sites,
+        vec![
+            AbiExpressionSite::SettingCondition,
+            AbiExpressionSite::ReturnAnnotation,
+            AbiExpressionSite::Setting
+        ]
+    );
+    assert_eq!(tagged.layout, compatibility.layout);
+    assert_eq!(tagged.inputs.procedure_identity, compatibility.inputs.procedure_identity);
+    assert_eq!(tagged.inputs.current_proc_path, compatibility.inputs.current_proc_path);
+    assert_eq!(tagged.inputs.current_type_path, compatibility.inputs.current_type_path);
+    assert_eq!(tagged.inputs.parameters, compatibility.inputs.parameters);
+    assert_eq!(tagged.inputs.parameter_type_flags, compatibility.inputs.parameter_type_flags);
+    assert_eq!(tagged.inputs.parameter_value_sources, compatibility.inputs.parameter_value_sources);
+    assert_eq!(tagged.inputs.parameter_defaults, compatibility.inputs.parameter_defaults);
+    assert_eq!(tagged.inputs.parameter_types, compatibility.inputs.parameter_types);
+    assert_eq!(tagged.inputs.readonly_parameters, compatibility.inputs.readonly_parameters);
+    assert_eq!(tagged.inputs.resource_search_context, compatibility.inputs.resource_search_context);
+    assert_eq!(tagged.argument_sources, compatibility.argument_sources);
+    assert_eq!(tagged.source_helpers, compatibility.source_helpers);
+    assert_eq!(tagged.executable_body, compatibility.executable_body);
+}

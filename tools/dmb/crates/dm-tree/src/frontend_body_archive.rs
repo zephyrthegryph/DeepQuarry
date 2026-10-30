@@ -6,6 +6,7 @@ use crate::SemanticTree;
 /// tree/source/syntax owner; an archive cannot be rebound to a different revision.
 pub struct BodyArchive {
     body_queries: Option<body_queries::BodyQueries>,
+    setting_queries: Option<std::sync::Weak<dyn SettingExpressionQueries>>,
     source: dm_preprocess::SourceText,
     syntax: Arc<DeclarationSyntax>,
     bodies: Arc<[BodyOccurrence]>,
@@ -622,6 +623,7 @@ impl ColdFrontend {
         }
         Some(Arc::new(BodyArchive {
             body_queries: self.body_queries.clone(),
+            setting_queries: self.setting_expression_queries.clone(),
             source: self.issued_arena.clone(),
             syntax: Arc::clone(&self.issued_syntax),
             bodies: Arc::clone(&self.issued_bodies),
@@ -763,15 +765,69 @@ impl BodyArchive {
         self.bodies.is_empty()
     }
     pub fn parse(&self, ordinal: usize) -> Result<ArchivedBody<'_>, Diagnostic> {
-        self.parse_with(ordinal, |input, host| input.obtain(host))
+        self.parse_with(
+            ordinal,
+            |input, host| input.obtain(host),
+            |item, _| Ok(parse_statements(item, &self.source, &self.syntax, |_| true)),
+        )
     }
     pub fn parse_checked(&self, ordinal: usize) -> Result<ArchivedBody<'_>, BodySyntaxFailure> {
-        self.parse_with(ordinal, |input, host| input.obtain_checked(host))
+        self.parse_with(
+            ordinal,
+            |input, host| input.obtain_checked(host),
+            |item, occurrence| self.checked_statements(item, occurrence),
+        )
+    }
+    fn checked_statements(
+        &self,
+        item: &mut Item,
+        occurrence: &BodyOccurrence,
+    ) -> Result<Arc<StatementBody>, BodySyntaxFailure> {
+        let ordinal = self
+            .body_index(occurrence.declaration)
+            .ok_or_else(|| internal("archived setting occurrence unavailable"))?;
+        let owner = self
+            .settings_owners
+            .get(ordinal)
+            .and_then(Option::as_ref)
+            .ok_or_else(|| internal("archived original settings owner unavailable"))?;
+        if owner.settings.is_empty() {
+            return Ok(parse_statements(item, &self.source, &self.syntax, |_| true));
+        }
+        let code = self
+            .body_code(occurrence)
+            .map_err(BodySyntaxFailure::Syntax)?;
+        let provider = self
+            .setting_queries
+            .as_ref()
+            .and_then(std::sync::Weak::upgrade)
+            .ok_or_else(|| {
+                BodySyntaxFailure::Operational(std::io::Error::new(
+                    std::io::ErrorKind::NotConnected,
+                    "archived original settings require the existing native host provider",
+                ))
+            })?;
+        let mut input = setting_queries::SettingStatementsInput::issued(
+            &self.source,
+            &self.syntax,
+            code,
+            item,
+            |_| true,
+        );
+        let statements = provider.statements(&mut input)?;
+        if !input.accepts(&statements) {
+            return Err(BodySyntaxFailure::Operational(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "settings provider returned foreign archived statement result",
+            )));
+        }
+        Ok(statements)
     }
     fn parse_with<E: From<Diagnostic>>(
         &self,
         ordinal: usize,
         obtain: impl FnOnce(&Arc<BodySyntaxInput>, &dyn BodySyntaxQueries) -> Result<Arc<BodySyntax>, E>,
+        statements: impl FnOnce(&mut Item, &BodyOccurrence) -> Result<Arc<StatementBody>, E>,
     ) -> Result<ArchivedBody<'_>, E> {
         let occurrence = self
             .bodies
@@ -820,7 +876,7 @@ impl BodyArchive {
                 message: error.message,
             })?;
         let mut item = issued.item;
-        let statements = parse_statements(&mut item, &self.source, &self.syntax, |_| true);
+        let statements = statements(&mut item, occurrence)?;
         Ok(ArchivedBody {
             archive: self,
             occurrence,
@@ -858,6 +914,83 @@ pub(super) fn parse_statements(
     let parsed = dm_syntax::parse_body_items_with_context(&item.children, source, &|offset| {
         syntax.declaration_header_at(offset)
     });
+    finish_statements(item, parsed, supported)
+}
+/// Native parser only: exact original-source provider and SAME in-scope permit.
+pub(super) fn parse_statements_with_setting_admission(
+    item: &mut Item,
+    source: &str,
+    syntax: &DeclarationSyntax,
+    body: dm_syntax::Span,
+    code: Option<&Arc<BodyCodeIdentity>>,
+    admission: &dm_syntax::SettingAdmission<'_>,
+    supported: fn(&[dm_syntax::Statement]) -> bool,
+) -> Result<Arc<StatementBody>, BodySyntaxFailure> {
+    struct Original<'a, 'op> {
+        syntax: &'a DeclarationSyntax,
+        body: dm_syntax::Span,
+        code: &'a Arc<BodyCodeIdentity>,
+        admission: &'a dm_syntax::SettingAdmission<'op>,
+    }
+    impl dm_syntax::SettingSyntaxProvider for Original<'_, '_> {
+        fn setting(
+            &self,
+            item: &Item,
+        ) -> Result<dm_syntax::SettingStatement, dm_syntax::Diagnostic> {
+            match self.syntax.setting_statement_expression(
+                self.body,
+                self.code,
+                item,
+                self.admission,
+            ) {
+                Ok((attribute, relation, value)) => Ok(dm_syntax::SettingStatement {
+                    attribute,
+                    relation,
+                    value,
+                }),
+                Err(dm_syntax::SettingSyntaxFailure::Syntax(error)) => Err(error),
+                Err(dm_syntax::SettingSyntaxFailure::Operational(error)) => {
+                    self.admission.record_operational_error(error);
+                    // Parser recovery control only. The enclosing typed boundary
+                    // extracts ACTUAL IO and never publishes this as syntax.
+                    Err(dm_syntax::Diagnostic {
+                        span: item.header_span,
+                        kind: dm_syntax::DiagnosticKind::Unsupported,
+                        message: "native settings operation stopped".into(),
+                    })
+                }
+            }
+        }
+    }
+    let code = code.ok_or_else(|| {
+        BodySyntaxFailure::Syntax(internal("original body code input is unissued"))
+    })?;
+    let provider = Original {
+        syntax,
+        body,
+        code,
+        admission,
+    };
+    let parsed = dm_syntax::parse_body_items_with_context_and_settings(
+        &item.children,
+        source,
+        &|at| syntax.declaration_header_at(at),
+        &provider,
+        admission,
+    );
+    if let Some(actual) = admission.take_operational_error() {
+        return Err(BodySyntaxFailure::Operational(actual));
+    }
+    admission
+        .checkpoint()
+        .map_err(BodySyntaxFailure::Operational)?;
+    Ok(finish_statements(item, parsed, supported))
+}
+fn finish_statements(
+    item: &mut Item,
+    parsed: dm_syntax::ParsedBody,
+    supported: fn(&[dm_syntax::Statement]) -> bool,
+) -> Arc<StatementBody> {
     fn headers(items: &[Item], result: &mut std::collections::HashSet<(usize, usize)>) {
         for item in items {
             if item.header.trim_start().starts_with("var/") {
@@ -905,6 +1038,17 @@ impl BodyArchive {
         &self,
         identity: dm_ir::ProcedureIdentity,
     ) -> Result<SourceNoteOrigin, String> {
+        self.callable_note_origin_with(identity, |archive, ordinal| {
+            archive.parse(ordinal).map_err(|e| e.message)
+        })
+    }
+    /// Same original callable lookup, with caller-selected typed body transport.
+    /// A returned body must be the exact selected occurrence in this archive.
+    pub fn callable_note_origin_with<'a, E: From<String> + From<&'static str>>(
+        &'a self,
+        identity: dm_ir::ProcedureIdentity,
+        parse: impl FnOnce(&'a Self, usize) -> Result<ArchivedBody<'a>, E>,
+    ) -> Result<SourceNoteOrigin, E> {
         if self.body_query_host().is_none() {
             return Err("callable note needs original retained BodySyntax owner".into());
         }
@@ -931,16 +1075,18 @@ impl BodyArchive {
                 return Err("callable note identity ambiguous".into());
             }
         }
-        let body = self
-            .parse(selected.ok_or("callable note has no issued primary body")?)
-            .map_err(|e| e.message)?;
-        if !body.belongs_to(self) || !body.statement_body().syntax_complete() {
+        let ordinal = selected.ok_or("callable note has no issued primary body")?;
+        let body = parse(self, ordinal)?;
+        if !body.belongs_to(self)
+            || !std::ptr::eq(body.occurrence(), &self.occurrences()[ordinal])
+            || !body.statement_body().syntax_complete()
+        {
             return Err("callable note primary source unavailable".into());
         }
         let opening = body
             .signature_opening_parenthesis()
             .ok_or("primary callable opening token unavailable")?;
-        self.source_note_point(opening.start)
+        self.source_note_point(opening.start).map_err(E::from)
     }
 }
 

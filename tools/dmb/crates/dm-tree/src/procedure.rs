@@ -434,10 +434,7 @@ fn setting_parts(view: HeaderView<'_>) -> Result<SettingParts<'_>, String> {
         )
     } else {
         let span = rest
-            .top_level()
-            .into_iter()
-            .find(|(token, _)| *token == "in")
-            .map(|(_, span)| span)
+            .first_top_level("in")
             .ok_or("set declaration missing assignment or in")?;
         (
             rest.slice(0, span.start).trim(),

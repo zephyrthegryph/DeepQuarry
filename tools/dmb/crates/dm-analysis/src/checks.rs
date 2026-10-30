@@ -124,6 +124,16 @@ struct NegatedBitwise<'a> {
 }
 
 impl TypedVisitor for NegatedBitwise<'_> {
+    fn projected_expression(
+        &mut self,
+        view: dm_syntax::ProjectedExprView<'_>,
+        path: &[dm_syntax::NodeStep],
+    ) -> dm_syntax::VisitDecision {
+        // Both written Set variants are skipped at the statement boundary.
+        let _ = (view, path);
+        dm_syntax::VisitDecision::Skip
+    }
+
     fn statement(&mut self, statement: &Statement, _: &[NodeStep]) -> VisitDecision {
         let anchor = match &statement.kind {
             StatementKind::If { condition, .. } | StatementKind::DoWhile { condition, .. } => self
@@ -133,7 +143,10 @@ impl TypedVisitor for NegatedBitwise<'_> {
             _ => statement.span,
         };
         self.statements.push(anchor);
-        if matches!(&statement.kind, StatementKind::Set { .. }) {
+        if matches!(
+            &statement.kind,
+            StatementKind::Set { .. } | StatementKind::ProjectedSet { .. }
+        ) {
             VisitDecision::Skip
         } else {
             VisitDecision::Descend

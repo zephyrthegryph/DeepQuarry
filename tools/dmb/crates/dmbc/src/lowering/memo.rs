@@ -8,8 +8,19 @@ use super::*;
 pub(super) use admission::lower_one_input;
 pub(super) use admission::map_stage;
 pub(super) use admission::Admission;
+#[path = "memo_demand.rs"]
+mod demand;
 #[path = "rich_sidecars.rs"]
 mod rich_sidecars;
+use demand::*;
+macro_rules! key_or_miss {
+    ($value:expr) => {
+        match $value {
+            Some(value) => value,
+            None => return Ok(None),
+        }
+    };
+}
 #[allow(clippy::too_many_arguments)]
 pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
     frontend: &'frontend ColdFrontend,
@@ -28,6 +39,78 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
     disk_replay_bindings: Option<DiskReplayBindings<'a>>,
     prepared_body: Option<&'a PreparedBody<'frontend>>,
 ) -> Result<Admission<'a>, Vec<LoweringDiagnostic>> {
+    admit_one_input_with::<CompatibilityMemo, _, _>(
+        frontend,
+        body,
+        host,
+        request_admission,
+        candidates,
+        local_inputs,
+        policy,
+        startup,
+        memo,
+        bodies,
+        symbolic,
+        capture_references,
+        selections_only,
+        disk_replay_bindings,
+        prepared_body,
+    )
+}
+#[allow(clippy::too_many_arguments)]
+pub(super) fn admit_one_input_checked<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
+    frontend: &'frontend ColdFrontend,
+    body: &'a BodyOccurrence,
+    host: &'a R,
+    request_admission: Option<&'a symbolic_input::RequestAdmission<'_, R>>,
+    candidates: Option<&symbolic_input::RequestCandidates<'_, '_, R>>,
+    local_inputs: Option<&LocalInputRoster<'_>>,
+    policy: &'a P,
+    startup: Option<&'a crate::startup::CapturedStartup<'frontend>>,
+    memo: Option<&'a crate::lowering_memo::ProcedureMemo>,
+    bodies: &'a dm_tree::frontend::BodyArena<'frontend>,
+    symbolic: bool,
+    capture_references: bool,
+    selections_only: bool,
+    disk_replay_bindings: Option<DiskReplayBindings<'a>>,
+    prepared_body: Option<&'a PreparedBody<'frontend>>,
+) -> Result<Admission<'a, LoweringFailure>, LoweringFailure> {
+    admit_one_input_with::<CheckedMemo, _, _>(
+        frontend,
+        body,
+        host,
+        request_admission,
+        candidates,
+        local_inputs,
+        policy,
+        startup,
+        memo,
+        bodies,
+        symbolic,
+        capture_references,
+        selections_only,
+        disk_replay_bindings,
+        prepared_body,
+    )
+}
+#[allow(clippy::too_many_arguments)]
+fn admit_one_input_with<'a, 'frontend: 'a, D: MemoDemand, R: Resolver, P: AbiPolicy>(
+    frontend: &'frontend ColdFrontend,
+    body: &'a BodyOccurrence,
+    host: &'a R,
+    request_admission: Option<&'a symbolic_input::RequestAdmission<'_, R>>,
+    candidates: Option<&symbolic_input::RequestCandidates<'_, '_, R>>,
+    local_inputs: Option<&LocalInputRoster<'_>>,
+    policy: &'a P,
+    startup: Option<&'a crate::startup::CapturedStartup<'frontend>>,
+    memo: Option<&'a crate::lowering_memo::ProcedureMemo>,
+    bodies: &'a dm_tree::frontend::BodyArena<'frontend>,
+    symbolic: bool,
+    capture_references: bool,
+    selections_only: bool,
+    disk_replay_bindings: Option<DiskReplayBindings<'a>>,
+    prepared_body: Option<&'a PreparedBody<'frontend>>,
+) -> Result<Admission<'a, D::Failure>, D::Failure> {
     // Symbolic completion cannot discard an explicitly requested analysis sidecar.
     if symbolic && capture_references {
         if let Some(store) = memo.and_then(|memo| memo.symbolic.as_ref()) {
@@ -37,7 +120,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
     let symbolic = symbolic && !capture_references;
     let Some(memo) = memo else {
         return Ok(Admission::NeedsLowering(Box::new(move || {
-            lower_one(
+            D::lower(
                 frontend,
                 body,
                 host,
@@ -53,7 +136,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
     let key_start = std::time::Instant::now();
     if startup.is_some_and(|capture| capture.validate_for(frontend).is_err()) {
         return Ok(Admission::NeedsLowering(Box::new(move || {
-            lower_one(
+            D::lower(
                 frontend,
                 body,
                 host,
@@ -82,7 +165,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
         )
     }) else {
         return Ok(Admission::NeedsLowering(Box::new(move || {
-            lower_one(
+            D::lower(
                 frontend,
                 body,
                 host,
@@ -105,7 +188,11 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
             .with_local(
                 (!capture_references && !selections_only)
                     .then(|| {
-                        symbolic_input::local_certificate(local_inputs?, current_body, memo.facts_policy)
+                        symbolic_input::local_certificate(
+                            local_inputs?,
+                            current_body,
+                            memo.facts_policy,
+                        )
                     })
                     .flatten(),
             )
@@ -114,8 +201,9 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
     // outputs must enter the key because no resolver call happens on replay.
     let tree = &frontend.snapshot.tree;
     let recording = crate::lowering_memo::RecordingResolver::new(host);
-    static KEY_PREPARE: dm_profile::Accumulator = dm_profile::Accumulator::new("lowering.key_prepare");
-    let ready = (|| {
+    static KEY_PREPARE: dm_profile::Accumulator =
+        dm_profile::Accumulator::new("lowering.key_prepare");
+    let ready = (|| -> Result<Option<_>, D::Failure> {
         let _profile = dm_profile::item("lowering.abi_key_prepare");
         let _timer = KEY_PREPARE.time();
         let identity = current_body.source().identity;
@@ -132,10 +220,12 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
                 (Some(unit), true)
             } else {
                 (
-                    policy
-                        .prepare_issued(metadata, issued, &context)
-                        .ok()?
-                        .map(|replay| replay.into_view()),
+                    key_or_miss!(D::choose(
+                        (),
+                        |_| policy.prepare_issued(metadata, issued, &context).ok(),
+                        |_| checked_abi(policy.prepare_issued_checked(metadata, issued, &context))
+                    )?)
+                    .map(|replay| replay.into_view()),
                     false,
                 )
             };
@@ -150,21 +240,37 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
                     &memo.counts.policy_issued_preparations
                 };
                 source_count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                let tail = crate::lowering_memo::key_recipe::PreparedKey::issued(&prepared)?;
+                let tail = key_or_miss!(crate::lowering_memo::key_recipe::PreparedKey::issued(
+                    &prepared
+                ));
                 (false, prepared, tail)
             }
             None => {
                 memo.counts
                     .parsed_preparations
                     .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                let prepared = bodies
-                    .with_parsed(body, |parsed| {
-                        policy.prepare_captured(metadata, parsed, &context)
-                    })
-                    .ok()?
-                    .ok()?;
+                let prepared = key_or_miss!(D::choose(
+                    (),
+                    |_| bodies
+                        .with_parsed(body, |parsed| policy
+                            .prepare_captured(metadata, parsed, &context))
+                        .ok()
+                        .and_then(Result::ok),
+                    |_| match bodies.with_parsed_checked(body, |parsed| policy
+                        .prepare_captured_checked(metadata, parsed, &context))
+                    {
+                        Ok(value) => checked_abi(value),
+                        Err(dm_tree::frontend::BodySyntaxFailure::Syntax(_)) => Ok(None),
+                        Err(dm_tree::frontend::BodySyntaxFailure::Operational(error)) =>
+                            Err(LoweringFailure::Operational(error)),
+                    }
+                )?);
                 let mut tail = Vec::new();
-                crate::lowering_memo::prepared_key(&mut tail, &prepared, body.expanded_span.start)?;
+                key_or_miss!(crate::lowering_memo::prepared_key(
+                    &mut tail,
+                    &prepared,
+                    body.expanded_span.start
+                ));
                 (
                     true,
                     prepared,
@@ -172,7 +278,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
                 )
             }
         };
-        Some((
+        Ok(Some((
             needs_parsed,
             prepared,
             prepared_tail,
@@ -182,12 +288,12 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
                 verb: identity.namespace == Namespace::Verb,
                 occurrence: identity.occurrence,
             },
-        ))
-    })();
+        )))
+    })()?;
     let Some((needs_parsed, prepared, prepared_tail, identity)) = ready else {
         let current_source = current_body.source();
         return Ok(Admission::NeedsLowering(Box::new(move || {
-            lower_one(
+            D::lower(
                 frontend,
                 body,
                 host,
@@ -221,22 +327,45 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
     use crate::lowering_memo::{MemoMissReason, MemoOutcome};
     if symbolic || selections_only {
         if let Some(store) = &memo.symbolic {
-            if let Some(mut input) = store.lookup(
-                &current_key,
-                &prepared_tail,
-                request_admission,
-                candidates,
-                &recording,
-                frontend,
-                body,
-                &prepared,
-                bodies,
-                selections_only,
-                verify_hit,
-                current_body,
-            ) {
+            if let Some(mut input) = D::choose(
+                (),
+                |_| {
+                    store.lookup(
+                        &current_key,
+                        &prepared_tail,
+                        request_admission,
+                        candidates,
+                        &recording,
+                        frontend,
+                        body,
+                        &prepared,
+                        bodies,
+                        selections_only,
+                        verify_hit,
+                        current_body,
+                    )
+                },
+                |_| {
+                    store
+                        .lookup_checked(
+                            &current_key,
+                            &prepared_tail,
+                            request_admission,
+                            candidates,
+                            &recording,
+                            frontend,
+                            body,
+                            &prepared,
+                            bodies,
+                            selections_only,
+                            verify_hit,
+                            current_body,
+                        )
+                        .map_err(LoweringFailure::Operational)
+                },
+            )? {
                 if verify_hit {
-                    verify::verify(
+                    D::verify(
                         memo,
                         verify::Expected::Input(&input),
                         input.verification_reads(),
@@ -256,7 +385,11 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
                     input.refresh_local_admission(
                         store,
                         local_inputs.and_then(|roster| {
-                            symbolic_input::local_certificate(roster, current_body, memo.facts_policy)
+                            symbolic_input::local_certificate(
+                                roster,
+                                current_body,
+                                memo.facts_policy,
+                            )
                         }),
                     );
                 }
@@ -279,20 +412,31 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
         if memo.values.is_empty() {
             (None, None)
         } else {
-            memo.visit_resident(current_bytes(), host, &mut |value| {
+            memo.try_visit_resident::<_, D::Failure>(current_bytes(), host, &mut |value| {
                 let previous = &value.unit;
                 if capture_references && previous.selected_references.is_none() {
-                    return false;
+                    return Ok(false);
                 }
                 let rebased =
                     crate::lowering_memo::rebase_debug(frontend, body, &value.relative_debug);
-                rebound_current = rebased.and_then(|origins| {
-                    rich_sidecars::rebind(
-                        previous, frontend, body, bodies, &recording, &prepared, origins,
-                    )
-                });
-                rebound_current.is_some()
-            })
+                rebound_current = match rebased {
+                    Some(origins) => D::choose(
+                        origins,
+                        |origins| {
+                            rich_sidecars::rebind(
+                                previous, frontend, body, bodies, &recording, &prepared, origins,
+                            )
+                        },
+                        |origins| {
+                            rich_sidecars::rebind_checked(
+                                previous, frontend, body, bodies, &recording, &prepared, origins,
+                            )
+                        },
+                    )?,
+                    None => None,
+                };
+                Ok(rebound_current.is_some())
+            })?
         }
     };
     let mut miss = changed_query.map_or(MemoMissReason::NoExactVariant, |_| {
@@ -329,7 +473,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
                     .iter()
                     .map(|r| (r.query, r.answer.canonical_bytes()))
                     .collect();
-                verify::verify(
+                D::verify(
                     memo,
                     verify::Expected::Unit(&unit),
                     Some(&reads),
@@ -364,44 +508,78 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
             host,
             parsed: active,
         };
-        memo.lookup_procedure(
-            &current_key,
-            &prepared_tail,
-            identity,
-            crate::lowering_memo_wire::ProcedureReplayContext {
-                frontend,
-                body,
-                parsed,
-                bindings: symbolic.then_some(disk_replay_bindings).flatten(),
-                selections_only,
-                verify: verify_hit,
-                modified: Some(&modified_issuer),
-                certificates: None,
+        D::choose(
+            (),
+            |_| {
+                memo.lookup_procedure(
+                    &current_key,
+                    &prepared_tail,
+                    identity,
+                    crate::lowering_memo_wire::ProcedureReplayContext {
+                        frontend,
+                        body,
+                        parsed,
+                        bindings: symbolic.then_some(disk_replay_bindings).flatten(),
+                        selections_only,
+                        verify: verify_hit,
+                        modified: Some(&modified_issuer),
+                        certificates: None,
+                    },
+                    host,
+                    &prepared,
+                )
             },
-            host,
-            &prepared,
+            |_| {
+                memo.lookup_procedure_checked(
+                    &current_key,
+                    &prepared_tail,
+                    identity,
+                    crate::lowering_memo_wire::ProcedureReplayContext {
+                        frontend,
+                        body,
+                        parsed,
+                        bindings: symbolic.then_some(disk_replay_bindings).flatten(),
+                        selections_only,
+                        verify: verify_hit,
+                        modified: Some(&modified_issuer),
+                        certificates: None,
+                    },
+                    host,
+                    &prepared,
+                )
+                .map_err(LoweringFailure::Operational)
+            },
         )
     };
     let disk = if needs_parsed {
-        bodies
-            .with_parsed(body, |parsed| {
-                lookup_disk(Some(parsed.item().into()), Some(parsed))
-            })
-            .map_err(|diagnostic| body_diagnostic(body, diagnostic))?
+        D::choose(
+            (),
+            |_| {
+                bodies.with_parsed(body, |parsed| {
+                    lookup_disk(Some(parsed.item().into()), Some(parsed))
+                })
+            },
+            |_| {
+                checked_body(bodies.with_parsed_checked(body, |parsed| {
+                    lookup_disk(Some(parsed.item().into()), Some(parsed))
+                }))
+            },
+        )?
+        .map_err(|diagnostic| body_diagnostic(body, diagnostic))??
     } else {
         let header = (!prepared
             .abi
             .as_ref()
             .is_none_or(|abi| abi.source_helpers.is_empty()))
         .then(|| current_body.input().compact());
-        lookup_disk(header.map(Into::into), None)
+        lookup_disk(header.map(Into::into), None)?
     };
     if let Some(errors) = disk
         .errors
         .and_then(|errors| replay_errors(frontend, body, identity, errors))
     {
         if verify_hit {
-            verify::verify(
+            D::verify(
                 memo,
                 verify::Expected::Errors(&errors),
                 disk.verification_reads.as_deref(),
@@ -424,7 +602,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
             .discard_parsed(body)
             .map_err(|diagnostic| body_diagnostic(body, diagnostic))?;
         note(MemoOutcome::DiskHit, None, None);
-        return Err(errors);
+        return Err(errors.into());
     }
     if let Some(facts) = disk.selections {
         memo.counts
@@ -469,7 +647,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
             .map_err(|diagnostic| body_diagnostic(body, diagnostic))?;
         let input = CompletedInput::reused(value);
         if verify_hit {
-            verify::verify(
+            D::verify(
                 memo,
                 verify::Expected::Input(&input),
                 disk.verification_reads.as_deref(),
@@ -496,7 +674,9 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
         // certificate a recompute would carry so the next resident request can
         // admit this body by its unchanged local inputs (warm disk, new daemon).
         let local = (!capture_references && !selections_only)
-            .then(|| symbolic_input::local_certificate(local_inputs?, current_body, memo.facts_policy))
+            .then(|| {
+                symbolic_input::local_certificate(local_inputs?, current_body, memo.facts_policy)
+            })
             .flatten();
         return Ok(Admission::Admitted(input.with_admission(
             admission.map(|admission| promote_admission(admission.with_local(local))),
@@ -517,7 +697,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
             .discard_parsed(body)
             .map_err(|diagnostic| body_diagnostic(body, diagnostic))?;
         if verify_hit {
-            verify::verify(
+            D::verify(
                 memo,
                 verify::Expected::Unit(&unit),
                 disk.verification_reads.as_deref(),
@@ -538,11 +718,15 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         note(MemoOutcome::DiskHit, None, None);
         let local = (!capture_references && !selections_only)
-            .then(|| symbolic_input::local_certificate(local_inputs?, current_body, memo.facts_policy))
+            .then(|| {
+                symbolic_input::local_certificate(local_inputs?, current_body, memo.facts_policy)
+            })
             .flatten();
-        return Ok(Admission::Admitted(CompletedInput::lowered(unit).with_admission(
-            admission.map(|admission| promote_admission(admission.with_local(local))),
-        )));
+        return Ok(Admission::Admitted(
+            CompletedInput::lowered(unit).with_admission(
+                admission.map(|admission| promote_admission(admission.with_local(local))),
+            ),
+        ));
     }
     if let Some(reason) = disk.miss {
         miss = reason;
@@ -575,7 +759,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
             std::sync::atomic::Ordering::Relaxed,
         );
         let capture = RefCell::new(MemoCapture::default());
-        let result = lower_one_captured(
+        let result = D::captured(
             frontend,
             body,
             &recording,
@@ -641,13 +825,10 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
                     memo.remember_shared(retained_key, reads, unit, relative_debug);
                 }
             }
-        } else if let Some(errors) = &capture.borrow().errors {
-            memo.remember_failure(
-                &key,
-                Some(identity),
-                &recording.reads(),
-                errors,
-            );
+        } else if result.as_ref().err().is_some_and(D::semantic_failure) {
+            if let Some(errors) = &capture.borrow().errors {
+                memo.remember_failure(&key, Some(identity), &recording.reads(), errors);
+            }
         }
         result.map(|unit| {
             CompletedInput::lowered(unit).with_admission(admission.map(|a| {
@@ -670,3 +851,7 @@ fn body_diagnostic(
         message: diagnostic.message,
     }]
 }
+
+#[cfg(test)]
+#[path = "memo_checked_tests.rs"]
+mod checked_tests;

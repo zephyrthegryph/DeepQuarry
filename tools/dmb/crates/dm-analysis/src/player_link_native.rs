@@ -41,8 +41,24 @@ pub fn findings(
     inputs: &PolicyInputs,
     root: &Path,
     exempt: impl Fn(&str) -> bool,
-    mut checkpoint: impl FnMut() -> Result<(), String>,
+    checkpoint: impl FnMut() -> Result<(), String>,
 ) -> Result<Vec<Finding>, Unsupported> {
+    findings_with::<crate::policy_body_demand::Compatibility>(inputs,root,exempt,checkpoint)
+}
+pub fn findings_checked(
+    inputs: &PolicyInputs,
+    root: &Path,
+    exempt: impl Fn(&str) -> bool,
+    checkpoint: impl FnMut() -> Result<(), String>,
+) -> Result<Vec<Finding>,crate::policy_body_demand::PolicyFailure> {
+    findings_with::<crate::policy_body_demand::Checked>(inputs,root,exempt,checkpoint)
+}
+pub fn findings_with<D:crate::policy_body_demand::Demand>(
+    inputs: &PolicyInputs,
+    root: &Path,
+    exempt: impl Fn(&str) -> bool,
+    mut checkpoint: impl FnMut() -> Result<(), String>,
+) -> Result<Vec<Finding>,D::Error> {
     let archive = inputs.archive();
     let tree = archive.tree();
     tree.checker_builtin_profile()
@@ -58,7 +74,7 @@ pub fn findings(
         if exempt(&rel) {
             continue;
         }
-        let body = archive.parse(ordinal).map_err(|e| Unsupported(e.message))?;
+        let body = D::parse(archive,ordinal)?;
         let scope = untyped::archived_scope(&body, tree, &[])?.with_archive(archive)?;
         let owner = tree
             .symbols()
@@ -66,9 +82,9 @@ pub fn findings(
             .ok_or_else(|| Unsupported("player-link owner spelling unavailable".into()))?;
         let owner_is_mob = is_mob(tree, owner)?;
         let mut error = None;
-        crate::untyped_order::statement_assignments(
+        crate::untyped_order::statement_assignments_current(
             body.statement_body().view(),
-            &mut |target, _, at: Span| {
+            &mut |target, _, at: Span, _current_target| {
                 if error.is_some() {
                     return;
                 }
@@ -125,7 +141,7 @@ pub fn findings(
             },
         ).map_err(|e|Unsupported(e.into()))?;
         if let Some(error) = error {
-            return Err(error);
+            return Err(error.into());
         }
     }
     Ok(found

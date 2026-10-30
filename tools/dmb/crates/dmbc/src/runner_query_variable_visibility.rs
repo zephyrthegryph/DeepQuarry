@@ -60,10 +60,16 @@ impl SourceSnapshot {
         )
         .map_err(io::Error::other)?;
         let found = context
-            .variable_visibility_archived(&loaded.policy, || {
-                crate::daemon::control::checkpoint().map_err(|e| e.to_string())
-            })
-            .map_err(io::Error::other)?;
+            .variable_visibility_archived_checked(
+                &loaded.policy,
+                crate::daemon::control::checkpoint,
+            )
+            .map_err(|error| match error {
+                dm_analysis::policy_body_demand::PolicyFailure::Unsupported(error) => {
+                    io::Error::other(error)
+                }
+                dm_analysis::policy_body_demand::PolicyFailure::Operational(error) => error,
+            })?;
         let coverage = dm_analysis::checks_variable_visibility::COVERAGE;
         let diagnostics=found.into_iter().map(|finding|{
             let d=finding.finding.diagnostic();

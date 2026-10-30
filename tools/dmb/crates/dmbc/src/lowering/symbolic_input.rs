@@ -19,6 +19,50 @@ mod partial_admission;
 mod symbolic_publication;
 pub(super) use candidates::RequestCandidates;
 
+/// Transport strategy only; original record/key/source admission stays shared.
+trait SymbolicDemand {
+    type Error;
+    fn parse<'f, T>(
+        arena: &dm_tree::frontend::BodyArena<'f>,
+        body: &BodyOccurrence,
+        produce: impl FnOnce(&dm_tree::frontend::ParsedBody<'f>) -> T,
+    ) -> Result<Option<T>, Self::Error>;
+}
+struct CompatibilitySymbolic;
+struct CheckedSymbolic;
+impl SymbolicDemand for CompatibilitySymbolic {
+    type Error = std::convert::Infallible;
+    fn parse<'f, T>(
+        arena: &dm_tree::frontend::BodyArena<'f>,
+        body: &BodyOccurrence,
+        produce: impl FnOnce(&dm_tree::frontend::ParsedBody<'f>) -> T,
+    ) -> Result<Option<T>, Self::Error> {
+        Ok(arena.with_parsed(body, produce).ok())
+    }
+}
+impl SymbolicDemand for CheckedSymbolic {
+    type Error = std::io::Error;
+    fn parse<'f, T>(
+        arena: &dm_tree::frontend::BodyArena<'f>,
+        body: &BodyOccurrence,
+        produce: impl FnOnce(&dm_tree::frontend::ParsedBody<'f>) -> T,
+    ) -> std::io::Result<Option<T>> {
+        match arena.with_parsed_checked(body, produce) {
+            Ok(value) => Ok(Some(value)),
+            Err(dm_tree::frontend::BodySyntaxFailure::Syntax(_)) => Ok(None),
+            Err(dm_tree::frontend::BodySyntaxFailure::Operational(error)) => Err(error),
+        }
+    }
+}
+macro_rules! current_or_miss {
+    ($value:expr) => {
+        match $value {
+            Some(value) => value,
+            None => return Ok(None),
+        }
+    };
+}
+
 #[derive(Default)]
 pub(crate) struct SessionSymbolicMemo {
     records: Mutex<BTreeMap<UnitIdentity, Arc<Record>>>,
@@ -421,6 +465,71 @@ impl SessionSymbolicMemo {
         verify: bool,
         current: &PreparedBody<'_>,
     ) -> Option<CompletedInput> {
+        match self.lookup_with::<CompatibilitySymbolic, R>(
+            key,
+            prepared_tail,
+            request_admission,
+            candidates,
+            observer,
+            frontend,
+            body,
+            prepared,
+            bodies,
+            selections_only,
+            verify,
+            current,
+        ) {
+            Ok(value) => value,
+            Err(never) => match never {},
+        }
+    }
+    #[allow(clippy::too_many_arguments)]
+    pub(super) fn lookup_checked<R: Resolver>(
+        &self,
+        key: &crate::lowering_memo::key_recipe::CurrentKey<'_>,
+        prepared_tail: &crate::lowering_memo::key_recipe::PreparedKey,
+        request_admission: Option<&RequestAdmission<'_, R>>,
+        candidates: Option<&RequestCandidates<'_, '_, R>>,
+        observer: &crate::lowering_memo::RecordingResolver<'_, R>,
+        frontend: &ColdFrontend,
+        body: &BodyOccurrence,
+        prepared: &PreparedUnit,
+        bodies: &dm_tree::frontend::BodyArena<'_>,
+        selections_only: bool,
+        verify: bool,
+        current: &PreparedBody<'_>,
+    ) -> std::io::Result<Option<CompletedInput>> {
+        self.lookup_with::<CheckedSymbolic, R>(
+            key,
+            prepared_tail,
+            request_admission,
+            candidates,
+            observer,
+            frontend,
+            body,
+            prepared,
+            bodies,
+            selections_only,
+            verify,
+            current,
+        )
+    }
+    #[allow(clippy::too_many_arguments)]
+    fn lookup_with<D: SymbolicDemand, R: Resolver>(
+        &self,
+        key: &crate::lowering_memo::key_recipe::CurrentKey<'_>,
+        prepared_tail: &crate::lowering_memo::key_recipe::PreparedKey,
+        request_admission: Option<&RequestAdmission<'_, R>>,
+        candidates: Option<&RequestCandidates<'_, '_, R>>,
+        observer: &crate::lowering_memo::RecordingResolver<'_, R>,
+        frontend: &ColdFrontend,
+        body: &BodyOccurrence,
+        prepared: &PreparedUnit,
+        bodies: &dm_tree::frontend::BodyArena<'_>,
+        selections_only: bool,
+        verify: bool,
+        current: &PreparedBody<'_>,
+    ) -> Result<Option<CompletedInput>, D::Error> {
         let identity = current.source().identity;
         if let Some(attempt) = &self.attempt {
             let mut completed = None;
@@ -430,10 +539,10 @@ impl SessionSymbolicMemo {
                 for candidate in candidates.take_identity(identity) {
                     let accepted = attempt
                         .with_pending(|leases| {
-                            leases.records.claim_current(
+                            leases.records.try_claim_current(
                                 candidate,
                                 |_, record| {
-                                    completed = self.lookup_record(
+                                    completed = self.lookup_record_with::<D, R>(
                                         record,
                                         key,
                                         prepared_tail,
@@ -447,25 +556,26 @@ impl SessionSymbolicMemo {
                                         verify,
                                         current,
                                         true,
-                                    );
-                                    completed.is_some()
+                                    )?;
+                                    Ok(completed.is_some())
                                 },
                                 |leaf| observer.record_admitted(leaf),
                             )
                         })
+                        .transpose()?
                         .flatten();
                     if accepted.is_some() {
-                        let mut input = completed.take()?;
+                        let mut input = current_or_miss!(completed.take());
                         if let Input::Reused(value) = &mut input.inner {
                             self.share_current_code(value);
                         }
-                        return Some(input);
+                        return Ok(Some(input));
                     }
                     completed = None;
                 }
             }
             let mut accept = |record: &Arc<Record>| {
-                completed = self.lookup_record(
+                completed = self.lookup_record_with::<D, R>(
                     record,
                     key,
                     prepared_tail,
@@ -479,8 +589,8 @@ impl SessionSymbolicMemo {
                     verify,
                     current,
                     true,
-                );
-                completed.is_some()
+                )?;
+                Ok(completed.is_some())
             };
             let locator = symbolic_publication::BorrowedLocator::new(identity, key, prepared_tail);
             let digest = locator.digest();
@@ -488,7 +598,7 @@ impl SessionSymbolicMemo {
                 .with_pending(|leases| {
                     leases
                         .records
-                        .visit_borrowed_receipted_with_value(
+                        .try_visit_borrowed_receipted_with_value(
                             digest,
                             &|candidate| locator.matches(candidate),
                             &mut |reads, _| {
@@ -496,24 +606,25 @@ impl SessionSymbolicMemo {
                                 // of this SAME record.reads owner and qualified
                                 // record.versions owner. Ordinary cross-host
                                 // lease lookup still requires exact replay.
-                                validate_published_record(
+                                Ok(validate_published_record(
                                     reads,
                                     request_admission,
                                     observer,
-                                )
+                                ))
                             },
                             &mut accept,
                         )
-                        .0
+                        .map(|value| value.0)
                 })
+                .transpose()?
                 .flatten();
-            let mut completed = accepted.and(completed)?;
+            let mut completed = current_or_miss!(accepted.and(completed));
             if let Input::Reused(value) = &mut completed.inner {
                 self.share_current_code(value);
             }
-            return Some(completed);
+            return Ok(Some(completed));
         }
-        let record = self
+        let record = current_or_miss!(self
             .records
             .lock()
             .unwrap_or_else(|e| e.into_inner())
@@ -522,8 +633,8 @@ impl SessionSymbolicMemo {
             .or_else(|| {
                 self.declines.record_absent.fetch_add(1, Ordering::Relaxed);
                 None
-            })?;
-        self.lookup_record(
+            }));
+        self.lookup_record_with::<D, R>(
             &record,
             key,
             prepared_tail,
@@ -540,7 +651,7 @@ impl SessionSymbolicMemo {
         )
     }
     #[allow(clippy::too_many_arguments)]
-    fn lookup_record<R: Resolver>(
+    fn lookup_record_with<D: SymbolicDemand, R: Resolver>(
         &self,
         record: &Arc<Record>,
         key: &crate::lowering_memo::key_recipe::CurrentKey<'_>,
@@ -555,10 +666,10 @@ impl SessionSymbolicMemo {
         verify: bool,
         current: &PreparedBody<'_>,
         reads_validated: bool,
-    ) -> Option<CompletedInput> {
+    ) -> Result<Option<CompletedInput>, D::Error> {
         if !key.matches(&record.key, record.recipe.as_ref(), prepared_tail) {
             self.declines.key_changed.fetch_add(1, Ordering::Relaxed);
-            return None;
+            return Ok(None);
         }
         let changed = if reads_validated {
             false
@@ -573,7 +684,7 @@ impl SessionSymbolicMemo {
         };
         if changed {
             self.declines.read_changed.fetch_add(1, Ordering::Relaxed);
-            return None;
+            return Ok(None);
         }
         if reads_validated {
             // The core claim callback runs after the current-input predicate.
@@ -584,7 +695,7 @@ impl SessionSymbolicMemo {
                 }
             });
         }
-        let mut input = self.rebind_record(
+        let mut input = current_or_miss!(self.rebind_record_with::<D, _>(
             record,
             observer,
             frontend,
@@ -594,7 +705,7 @@ impl SessionSymbolicMemo {
             selections_only,
             verify,
             current,
-        )?;
+        )?);
         if !selections_only {
             // Exact key/ABI/reads and current source reissue have all succeeded.
             // Publish only through completion's existing pending lease; the old
@@ -610,7 +721,8 @@ impl SessionSymbolicMemo {
                     // A body that re-admits exactly its predecessor's reads (the common case: another session's
                     // identical tree) keeps the predecessor's receipt, not a regrouped copy per session.
                     let current = observer.reads();
-                    if record.reads.len() == current.len() && record.reads.iter().eq(current.iter()) {
+                    if record.reads.len() == current.len() && record.reads.iter().eq(current.iter())
+                    {
                         record.reads.clone()
                     } else {
                         receipt_groups::grouped(&self.receipt_groups, current)
@@ -620,7 +732,7 @@ impl SessionSymbolicMemo {
                 world: None,
             });
         }
-        Some(input)
+        Ok(Some(input))
     }
     #[allow(clippy::too_many_arguments)]
     fn rebind_record<R: Resolver>(
@@ -635,79 +747,138 @@ impl SessionSymbolicMemo {
         verify: bool,
         current: &PreparedBody<'_>,
     ) -> Option<CompletedInput> {
+        match self.rebind_record_with::<CompatibilitySymbolic, R>(
+            record,
+            host,
+            frontend,
+            body,
+            prepared,
+            bodies,
+            selections_only,
+            verify,
+            current,
+        ) {
+            Ok(value) => value,
+            Err(never) => match never {},
+        }
+    }
+    #[allow(clippy::too_many_arguments)]
+    fn rebind_record_checked<R: Resolver>(
+        &self,
+        record: &Arc<Record>,
+        host: &R,
+        frontend: &ColdFrontend,
+        body: &BodyOccurrence,
+        prepared: &PreparedUnit,
+        bodies: &dm_tree::frontend::BodyArena<'_>,
+        selections_only: bool,
+        verify: bool,
+        current: &PreparedBody<'_>,
+    ) -> std::io::Result<Option<CompletedInput>> {
+        self.rebind_record_with::<CheckedSymbolic, R>(
+            record,
+            host,
+            frontend,
+            body,
+            prepared,
+            bodies,
+            selections_only,
+            verify,
+            current,
+        )
+    }
+    #[allow(clippy::too_many_arguments)]
+    fn rebind_record_with<D: SymbolicDemand, R: Resolver>(
+        &self,
+        record: &Arc<Record>,
+        host: &R,
+        frontend: &ColdFrontend,
+        body: &BodyOccurrence,
+        prepared: &PreparedUnit,
+        bodies: &dm_tree::frontend::BodyArena<'_>,
+        selections_only: bool,
+        verify: bool,
+        current: &PreparedBody<'_>,
+    ) -> Result<Option<CompletedInput>, D::Error> {
         let artifact = match &record.value {
             RecordValue::Selections { facts, abi } => {
                 if !selections_only
                     || prepared.require_production_abi().is_err()
-                    || prepared.abi.as_ref()?.canonical_bytes().as_slice() != abi.as_slice()
+                    || prepared.abi.as_ref().is_none_or(|current| {
+                        current.canonical_bytes().as_slice() != abi.as_slice()
+                    })
                 {
-                    return None;
+                    return Ok(None);
                 }
                 self.reused.fetch_add(1, Ordering::Relaxed);
-                return Some(CompletedInput::selections(
+                return Ok(Some(CompletedInput::selections(
                     current.source().identity,
                     current.source().effective,
                     body.clone(),
                     Arc::clone(facts),
-                ));
+                )));
             }
             RecordValue::Executable(artifact) if !selections_only => artifact,
-            RecordValue::Executable(_) => return None,
+            RecordValue::Executable(_) => return Ok(None),
         };
-        let debug = crate::lowering_memo::rebase_debug(frontend, body, &record.relative_debug)
-            .or_else(|| {
-                self.declines.debug_rebase.fetch_add(1, Ordering::Relaxed);
-                None
-            })?;
+        let debug = current_or_miss!(crate::lowering_memo::rebase_debug(
+            frontend,
+            body,
+            &record.relative_debug
+        )
+        .or_else(|| {
+            self.declines.debug_rebase.fetch_add(1, Ordering::Relaxed);
+            None
+        }));
         let modified_seeds = if record.modified_recipes.is_empty() {
             Vec::new()
         } else {
-            bodies
-                .with_parsed(body, |parsed| {
-                    record
-                        .modified_recipes
-                        .iter()
-                        .map(|recipe| {
-                            recipe.reissue(
-                                parsed,
-                                frontend,
-                                host,
-                                frontend.snapshot.tree.symbols(),
-                                &debug,
-                            )
-                        })
-                        .collect::<Option<Vec<_>>>()
-                })
-                .ok()
-                .flatten()
-                .or_else(|| {
-                    self.declines
-                        .modified_reissue
-                        .fetch_add(1, Ordering::Relaxed);
-                    None
-                })?
+            current_or_miss!(D::parse(bodies, body, |parsed| {
+                record
+                    .modified_recipes
+                    .iter()
+                    .map(|recipe| {
+                        recipe.reissue(
+                            parsed,
+                            frontend,
+                            host,
+                            frontend.snapshot.tree.symbols(),
+                            &debug,
+                        )
+                    })
+                    .collect::<Option<Vec<_>>>()
+            })?
+            .flatten()
+            .or_else(|| {
+                self.declines
+                    .modified_reissue
+                    .fetch_add(1, Ordering::Relaxed);
+                None
+            }))
         };
-        let contribution = crate::symbolic::PreparedContribution::rebind_with_modified_current(
-            artifact,
-            frontend,
-            body,
-            prepared,
-            debug,
-            Arc::clone(&record.required_types),
-            modified_seeds,
-            Some(Arc::clone(&record.modified_recipes)),
-            Some(current),
-        )
-        .or_else(|| {
-            // Includes ABI/identity, current helper-origin and source-binding
-            // refusal; do not misleadingly attribute every None to ABI alone.
-            self.declines
-                .contribution_rebind
-                .fetch_add(1, Ordering::Relaxed);
-            None
-        })?;
+        let contribution = current_or_miss!(
+            crate::symbolic::PreparedContribution::rebind_with_modified_current(
+                artifact,
+                frontend,
+                body,
+                prepared,
+                debug,
+                Arc::clone(&record.required_types),
+                modified_seeds,
+                Some(Arc::clone(&record.modified_recipes)),
+                Some(current),
+            )
+            .or_else(|| {
+                // Includes ABI/identity, current helper-origin and source-binding
+                // refusal; do not misleadingly attribute every None to ABI alone.
+                self.declines
+                    .contribution_rebind
+                    .fetch_add(1, Ordering::Relaxed);
+                None
+            })
+        );
         self.reused.fetch_add(1, Ordering::Relaxed);
-        Some(CompletedInput {
+        Ok(Some(CompletedInput {
             inner: Input::Reused(contribution),
             admission: None,
             verification_reads: verify.then(|| {
@@ -717,7 +888,7 @@ impl SessionSymbolicMemo {
                     .map(|r| (r.query, r.answer.canonical_bytes()))
                     .collect()
             }),
-        })
+        }))
     }
 }
 
@@ -727,9 +898,7 @@ fn validate_published_record<R: Resolver>(
     observer: &crate::lowering_memo::RecordingResolver<'_, R>,
 ) -> Option<dm_ir::ResolveQuery> {
     if let Some(admission) = admission {
-        admission.first_changed_receipted(reads, |leaf| {
-            observer.record_admitted(leaf)
-        })
+        admission.first_changed_receipted(reads, |leaf| observer.record_admitted(leaf))
     } else {
         reads.iter().find_map(|read| {
             (!same_meaning(&observer.resolve(read.query), &read.answer)).then_some(read.query)

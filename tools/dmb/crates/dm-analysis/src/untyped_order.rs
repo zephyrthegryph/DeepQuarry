@@ -12,6 +12,10 @@ use dm_syntax::{
 };
 
 trait Observer {
+    fn projected_expression(&mut self, _: dm_syntax::ProjectedExprView<'_>, _: Span, _: bool) -> Result<(), &'static str> {
+        Err("projected setting RHS requires an explicit current-coordinate observer")
+    }
+    fn leave_projected_expression(&mut self, _: dm_syntax::ProjectedExprView<'_>) {}
     fn list_write_assignment(&mut self, _: &Expr, _: &str, _: &Expr, _: Span) {}
     fn statement(&mut self, _: &Statement) -> bool {
         true
@@ -28,10 +32,59 @@ trait Observer {
     fn statement_assignment(&mut self, _: &Expr, _: &Expr, _: Span) {}
 }
 struct Assignments<'a, F>(&'a mut F);
+struct CurrentAssignments<'a, F>(&'a mut F);
+impl<F: FnMut(&Expr, &Expr, Span, Span)> Observer for CurrentAssignments<'_, F> {
+    fn assignment(&mut self, lhs: &Expr, rhs: &Expr, at: Span) {
+        self.0(lhs, rhs, at, lhs.span);
+    }
+    fn projected_expression(&mut self, view: dm_syntax::ProjectedExprView<'_>, at: Span, _: bool) -> Result<(), &'static str> {
+        if let ExprKind::Binary { op, lhs, rhs } = &view.original().kind {
+            if op == "=" {
+                let target = view.current_span_of(lhs).ok_or("projected assignment target has no current span")?;
+                self.0(lhs, rhs, at, target);
+            }
+        }
+        Ok(())
+    }
+}
+pub(crate) fn assignments_current(
+    view: dm_syntax::StatementView<'_>,
+    emit: &mut impl FnMut(&Expr, &Expr, Span, Span),
+) -> Result<(), &'static str> {
+    observe(view, &mut CurrentAssignments(emit))
+}
 impl<F: FnMut(&Expr, &Expr, Span)> Observer for Assignments<'_, F> {
     fn assignment(&mut self, a: &Expr, b: &Expr, at: Span) {
         self.0(a, b, at);
     }
+}
+/// Explicit coordinate domain at policy leaf callbacks. `original()` borrows
+/// shape/pointer identity only; source locations use current_span
+/// or the separate current legacy statement anchor. This view does not mint
+/// source authority; its caller is the already-issued native body observer.
+#[derive(Clone, Copy)]
+pub(crate) enum ExpressionObservation<'a> {
+    Owned(&'a Expr),
+    Projected(dm_syntax::ProjectedExprView<'a>),
+}
+impl<'a> ExpressionObservation<'a> {
+    pub(crate) fn original(self) -> &'a Expr {
+        match self { Self::Owned(e) => e, Self::Projected(v) => v.original() }
+    }
+    pub(crate) fn current_span(self) -> Span {
+        match self { Self::Owned(e) => e.span, Self::Projected(v) => v.current_span() }
+    }
+}
+struct CurrentExpressions<'a, F>(&'a mut F);
+impl<F: FnMut(ExpressionObservation<'_>, Span)> Observer for CurrentExpressions<'_, F> {
+    fn expression(&mut self, e: &Expr, at: Span) { self.0(ExpressionObservation::Owned(e), at); }
+    fn projected_expression(&mut self, v: dm_syntax::ProjectedExprView<'_>, at: Span, _: bool) -> Result<(), &'static str> {
+        self.0(ExpressionObservation::Projected(v), at);
+        Ok(())
+    }
+}
+pub(crate) fn expressions_current(view: dm_syntax::StatementView<'_>, emit: &mut impl FnMut(ExpressionObservation<'_>, Span)) -> Result<(), &'static str> {
+    observe(view, &mut CurrentExpressions(emit))
 }
 struct Expressions<'a, F>(&'a mut F);
 impl<F: FnMut(&Expr, Span)> Observer for Expressions<'_, F> {
@@ -39,6 +92,27 @@ impl<F: FnMut(&Expr, Span)> Observer for Expressions<'_, F> {
         self.0(node, at);
     }
 }
+struct CurrentStatementAssignments<'a, F>(&'a mut F);
+impl<F: FnMut(&Expr, &Expr, Span, Span)> Observer for CurrentStatementAssignments<'_, F> {
+    fn statement_assignment(&mut self, lhs: &Expr, rhs: &Expr, at: Span) { self.0(lhs, rhs, at, lhs.span); }
+    fn projected_expression(&mut self, view: dm_syntax::ProjectedExprView<'_>, at: Span, is_root: bool) -> Result<(), &'static str> {
+        // Same old statement-root condition as expression(), not every nested
+        // assignment seen by the all-assignment observer.
+        if is_root {
+            if let ExprKind::Binary { op, lhs, rhs } = &view.original().kind {
+                if op == "=" {
+                    let target = view.current_span_of(lhs).ok_or("projected statement target has no current span")?;
+                    self.0(lhs, rhs, at, target);
+                }
+            }
+        }
+        Ok(())
+    }
+}
+pub(crate) fn statement_assignments_current(
+    view: dm_syntax::StatementView<'_>,
+    emit: &mut impl FnMut(&Expr, &Expr, Span, Span),
+) -> Result<(), &'static str> { observe(view, &mut CurrentStatementAssignments(emit)) }
 struct StatementAssignments<'a, F>(&'a mut F);
 impl<F: FnMut(&Expr, &Expr, Span)> Observer for StatementAssignments<'_, F> {
     fn statement_assignment(&mut self, a: &Expr, b: &Expr, at: Span) {
@@ -77,6 +151,26 @@ impl<E: FnMut(&Expr, Span), A: FnMut(&Expr, &str, &Expr, Span)> Observer
         (self.assignment)(a, op, b, at)
     }
 }
+struct CurrentStoredEvents<'a, E, A> { expression: &'a mut E, assignment: &'a mut A }
+impl<E: FnMut(ExpressionObservation<'_>, Span), A: FnMut(&Expr, &str, &Expr, Span)> Observer for CurrentStoredEvents<'_, E, A> {
+    fn expression(&mut self, e: &Expr, at: Span) { (self.expression)(ExpressionObservation::Owned(e), at); }
+    fn list_write_assignment(&mut self, lhs: &Expr, op: &str, rhs: &Expr, at: Span) { (self.assignment)(lhs, op, rhs, at); }
+    fn projected_expression(&mut self, v: dm_syntax::ProjectedExprView<'_>, at: Span, _: bool) -> Result<(), &'static str> {
+        (self.expression)(ExpressionObservation::Projected(v), at);
+        // Same original event order: expression callback, then supported list
+        // write callback, then children. Assignment nodes remain original shape;
+        // the separate `at` is the actual current legacy statement coordinate.
+        if let ExprKind::Binary { op, lhs, rhs } = &v.original().kind {
+            if matches!(op.as_str(), "=" | "+=" | "|=" | "||=") { (self.assignment)(lhs, op, rhs, at); }
+        }
+        Ok(())
+    }
+}
+pub(crate) fn stored_events_current(
+    view: dm_syntax::StatementView<'_>,
+    expression: &mut impl FnMut(ExpressionObservation<'_>, Span),
+    assignment: &mut impl FnMut(&Expr, &str, &Expr, Span),
+) -> Result<(), &'static str> { observe(view, &mut CurrentStoredEvents { expression, assignment }) }
 pub(crate) fn stored_events(
     view: dm_syntax::StatementView<'_>,
     expression: &mut impl FnMut(&Expr, Span),
@@ -104,6 +198,15 @@ pub(crate) fn visit_value_policy(
         descend: bool,
     }
     impl<V: dm_syntax::TypedVisitor> Observer for Adapter<'_, V> {
+        fn projected_expression(&mut self, view: dm_syntax::ProjectedExprView<'_>, _: Span, _: bool) -> Result<(), &'static str> {
+            let decision = self.visitor.projected_expression(view, &[]);
+            self.stopped |= decision == dm_syntax::VisitDecision::Stop;
+            self.descend = decision == dm_syntax::VisitDecision::Descend;
+            Ok(())
+        }
+        fn leave_projected_expression(&mut self, view: dm_syntax::ProjectedExprView<'_>) {
+            self.visitor.leave_projected_expression(view, &[]);
+        }
         fn statement(&mut self, s: &Statement) -> bool {
             let decision = self.visitor.statement(s, &[]);
             self.stopped |= decision == dm_syntax::VisitDecision::Stop;
@@ -150,6 +253,11 @@ struct PolicyWalk<'a> {
     error: Option<&'static str>,
 }
 impl PolicyWalk<'_> {
+    fn projected(&mut self, root: &dm_syntax::SettingExpression, at: Span, emit: &mut impl Observer) {
+        let mut projected = ProjectedPolicy { emit, at, frames: Vec::new(), error: None };
+        dm_syntax::visit_projected_expression(root, &mut projected);
+        if let Some(error) = projected.error { self.error = Some(error); }
+    }
     fn walk(&mut self, statements: &[Statement], emit: &mut impl Observer) {
         for statement in statements {
             if self.error.is_some() || emit.stopped() {
@@ -180,6 +288,59 @@ impl PolicyWalk<'_> {
                 expression_tree(dimension, at, emit);
             }
         }
+    }
+}
+
+// Keep the OLD policy's expression order, not the executable visitor order.
+// In particular proc-reference calls discard arguments, and new visits only
+// arguments (not its target or its intermediate call node). All callbacks
+// still receive genuine views issued by the one canonical syntax walker.
+#[derive(Clone, Copy)]
+enum ProjectedChildren { Ordinary, ProcReference, New, NewCall }
+struct ProjectedPolicy<'a, O> {
+    emit: &'a mut O,
+    at: Span,
+    frames: Vec<(ProjectedChildren, bool)>,
+    error: Option<&'static str>,
+}
+impl<O: Observer> dm_syntax::TypedVisitor for ProjectedPolicy<'_, O> {
+    fn projected_expression(&mut self, view: dm_syntax::ProjectedExprView<'_>, path: &[dm_syntax::NodeStep]) -> dm_syntax::VisitDecision {
+        use dm_syntax::{NodeStep, VisitDecision};
+        let child = path.last().and_then(|step| match step { NodeStep::Child(i) => Some(*i), _ => None });
+        let parent = self.frames.last().map(|frame| frame.0);
+        let mut emitted = true;
+        let mut force = None;
+        let skip = match (parent, child) {
+            (Some(ProjectedChildren::ProcReference), Some(i)) => i != 0,
+            (Some(ProjectedChildren::New), Some(0)) => {
+                if matches!(&view.original().kind, ExprKind::Call { .. }) {
+                    emitted = false;
+                    force = Some(ProjectedChildren::NewCall);
+                    false
+                } else { true }
+            }
+            (Some(ProjectedChildren::NewCall), Some(i)) => i == 0,
+            _ => false,
+        };
+        let mode = force.unwrap_or_else(|| match &view.original().kind {
+            ExprKind::Unary { op, .. } if op == "new" => ProjectedChildren::New,
+            ExprKind::Call { callee, .. } if matches!(&callee.kind, ExprKind::StaticMember { .. }) => ProjectedChildren::ProcReference,
+            _ => ProjectedChildren::Ordinary,
+        });
+        self.frames.push((mode, emitted && !skip));
+        if skip { return VisitDecision::Skip; }
+        if emitted {
+            if let Err(error) = self.emit.projected_expression(view, self.at, self.frames.len() == 1) {
+                self.error = Some(error);
+                return VisitDecision::Stop;
+            }
+            if self.emit.stopped() { return VisitDecision::Stop; }
+            if !self.emit.descend_expression() { return VisitDecision::Skip; }
+        }
+        VisitDecision::Descend
+    }
+    fn leave_projected_expression(&mut self, view: dm_syntax::ProjectedExprView<'_>, _: &[dm_syntax::NodeStep]) {
+        if let Some((_, true)) = self.frames.pop() { self.emit.leave_projected_expression(view); }
     }
 }
 
@@ -297,6 +458,9 @@ impl PolicyWalk<'_> {
                 self.walk(body, emit);
             }
             StatementKind::Set { value, .. } => expression(value, at, emit),
+            StatementKind::ProjectedSet { value, .. } => {
+                self.projected(value, at, emit);
+            }
             StatementKind::For { control, body } => {
                 match control {
                     ForControl::All { .. } => {}
@@ -544,5 +708,222 @@ mod statement_root_tests {
         )
         .unwrap();
         assert_eq!(found, ["outer", "condition", "body"]);
+    }
+}
+
+
+#[cfg(test)]
+mod projected_policy_tests {
+    use super::*;
+    use std::sync::{atomic::AtomicUsize, Arc};
+    struct Provider(dm_syntax::SettingExpression);
+    impl dm_syntax::SettingSyntaxProvider for Provider {
+        fn setting(&self, _: &dm_syntax::Item) -> Result<dm_syntax::SettingStatement, dm_syntax::Diagnostic> {
+            Ok(dm_syntax::SettingStatement { attribute: "name".into(), relation: "=".into(), value: self.0.clone() })
+        }
+    }
+    fn prepare(rhs: &str, a: &dm_syntax::SettingAdmission<'_>) -> dm_syntax::SettingExpression {
+        let tokens = dm_syntax::lex_spans(rhs);
+        assert!(tokens.diagnostics.is_empty());
+        dm_syntax::prepare_setting_expression(rhs, &tokens.tokens, Span::new(0, rhs.len()), a).unwrap()
+    }
+    fn bodies(rhs: &str, prefix: &str, root: &dm_syntax::SettingExpression, a: &dm_syntax::SettingAdmission<'_>)
+        -> (String, dm_syntax::ParsedBody, dm_syntax::ParsedBody) {
+        let source = format!("{prefix}/proc/p()\n    set name = {rhs}\n");
+        let ast = dm_syntax::parse(&source);
+        assert!(ast.diagnostics.is_empty(), "{:?}", ast.diagnostics);
+        let owned = dm_syntax::parse_body_items(&ast.items[0].children);
+        let provider = Provider(root.clone().project_current(source.find(rhs).unwrap(), rhs.len()).unwrap());
+        let projected = dm_syntax::parse_body_items_with_context_and_settings(
+            &ast.items[0].children, &source, &|_| None, &provider, a);
+        assert!(owned.diagnostics.is_empty(), "{:?}", owned.diagnostics);
+        assert!(projected.diagnostics.is_empty(), "{:?}", projected.diagnostics);
+        (source, owned, projected)
+    }
+    struct Trace<'a> {
+        source: &'a str,
+        rows: Vec<(String, Span, Span)>,
+        original: Vec<*const Expr>,
+        entered: usize,
+        left: usize,
+    }
+    impl Observer for Trace<'_> {
+        fn expression(&mut self, e: &Expr, at: Span) {
+            self.rows.push((self.source[e.span.range()].into(), e.span, at));
+        }
+        fn projected_expression(&mut self, v: dm_syntax::ProjectedExprView<'_>, at: Span, _: bool) -> Result<(), &'static str> {
+            let span = v.current_span();
+            self.rows.push((self.source[span.range()].into(), span, at));
+            self.original.push(v.original() as *const Expr);
+            self.entered += 1;
+            Ok(())
+        }
+        fn leave_projected_expression(&mut self, _: dm_syntax::ProjectedExprView<'_>) { self.left += 1; }
+    }
+    fn pointers(root: &Expr, out: &mut std::collections::HashSet<*const Expr>) {
+        out.insert(root as *const Expr);
+        dm_syntax::for_each_expression_child(root, |_, child| pointers(child, out));
+    }
+    #[test]
+    fn projected_policy_matches_owned_proc_reference_and_new_observation_without_cloning_nodes() {
+        let counter = Arc::new(AtomicUsize::new(0));
+        let checkpoint = || Ok(());
+        let a = dm_syntax::SettingAdmission::new(&counter, 16 * 1024 * 1024, &checkpoint);
+        for rhs in ["target::handler(hidden = 1)", "new /datum/example(shown = 2)",
+            "call(first = 1, nested(second = 2))", "(outer = (inner = 3))"] {
+            let root = prepare(rhs, &a);
+            let mut issued = std::collections::HashSet::new();
+            pointers(root.original_expression(), &mut issued);
+            for prefix in ["", "// current UTF8: é\n\n"] {
+                let (source, owned, projected) = bodies(rhs, prefix, &root, &a);
+                let mut old = Trace { source: &source, rows: vec![], original: vec![], entered: 0, left: 0 };
+                let mut current = Trace { source: &source, rows: vec![], original: vec![], entered: 0, left: 0 };
+                observe(dm_syntax::StatementView::from_parsed(&owned), &mut old).unwrap();
+                observe(dm_syntax::StatementView::from_parsed(&projected), &mut current).unwrap();
+                assert_eq!(old.rows, current.rows, "exact old preorder and current spans for {rhs}");
+                assert_eq!(current.entered, current.left, "balanced even suppressed intermediate new-call nodes");
+                assert!(!current.original.is_empty());
+                assert_eq!(current.original[0], root.original_expression() as *const Expr);
+                assert!(current.original.iter().all(|p| issued.contains(p)), "all observed nodes borrow SAME canonical root");
+                let mut assignments = Vec::new();
+                assignments_current(dm_syntax::StatementView::from_parsed(&projected), &mut |lhs, _, at, current| {
+                    if let ExprKind::Ident(name) = &lhs.kind { assignments.push((name.clone(), at, current)); }
+                }).unwrap();
+                let names: Vec<_> = assignments.iter().map(|r| r.0.as_str()).collect();
+                match rhs {
+                    "target::handler(hidden = 1)" => assert!(names.is_empty(), "old ProcReference excludes ALL arguments"),
+                    "new /datum/example(shown = 2)" => {
+                        assert_eq!(names, ["shown"]);
+                        assert!(!current.rows.iter().any(|r| r.0 == "/datum/example" || r.0 == "/datum/example(shown = 2)"),
+                            "old new walks arguments only, not target/intermediate call");
+                    }
+                    _ => (),
+                }
+            }
+        }
+    }
+    #[test]
+    fn projected_assignment_reports_current_lhs_separately_from_old_statement_anchor_after_rebase() {
+        let counter = Arc::new(AtomicUsize::new(0));
+        let checkpoint = || Ok(());
+        let a = dm_syntax::SettingAdmission::new(&counter, 16 * 1024 * 1024, &checkpoint);
+        let rhs = "(outer = (inner = 3))";
+        let root = prepare(rhs, &a);
+        let original_ptr = root.original_expression() as *const Expr;
+        let mut first = None;
+        for prefix in ["", "// earlier include shifts coordinates\n\n"] {
+            let (source, owned, projected) = bodies(rhs, prefix, &root, &a);
+            let collect = |body: &dm_syntax::ParsedBody| {
+                let mut rows = Vec::new();
+                assignments_current(dm_syntax::StatementView::from_parsed(body), &mut |lhs, _, at, current| {
+                    let ExprKind::Ident(name) = &lhs.kind else { panic!("fixture identifier") };
+                    rows.push((name.clone(), at, current));
+                }).unwrap();
+                rows
+            };
+            let rows = collect(&projected);
+            assert_eq!(rows, collect(&owned));
+            assert_eq!(rows.iter().map(|r| r.0.as_str()).collect::<Vec<_>>(), ["outer", "inner"]);
+            for (name, statement, target) in &rows {
+                assert_eq!(&source[target.range()], name);
+                assert_ne!(statement, target, "statement report anchor is not assignment lhs");
+                assert_eq!(*statement, projected.statements[0].span);
+            }
+            if let Some((statement, target)) = first {
+                assert_eq!(rows[0].1.start - statement, prefix.len());
+                assert_eq!(rows[0].2.start - target, prefix.len());
+            } else { first = Some((rows[0].1.start, rows[0].2.start)); }
+            let StatementKind::ProjectedSet { value, .. } = &projected.statements[0].kind else { panic!("projected") };
+            assert!(root.same_root(value));
+            assert_eq!(original_ptr, value.original_expression() as *const Expr);
+        }
+    }
+    #[test]
+    fn projected_statement_assignment_boundary_matches_owned_and_excludes_nested_writes() {
+        let counter = Arc::new(AtomicUsize::new(0));
+        let checkpoint = || Ok(());
+        let a = dm_syntax::SettingAdmission::new(&counter, 16 * 1024 * 1024, &checkpoint);
+        for (rhs, expected) in [("key = (ckey = 1)", vec!["key"]),
+            ("call(key = 2)", vec![]), ("(key = 3)", vec![])] {
+            let root = prepare(rhs, &a);
+            for prefix in ["", "// moved é\n\n"] {
+                let (source, owned, projected) = bodies(rhs, prefix, &root, &a);
+                let collect = |body: &dm_syntax::ParsedBody| {
+                    let mut rows = Vec::new();
+                    statement_assignments_current(dm_syntax::StatementView::from_parsed(body), &mut |lhs, _, at, target| {
+                        let ExprKind::Ident(name) = &lhs.kind else { panic!("identifier target") };
+                        rows.push((name.clone(), at, target));
+                    }).unwrap();
+                    rows
+                };
+                let rows = collect(&projected);
+                assert_eq!(rows, collect(&owned));
+                assert_eq!(rows.iter().map(|r| r.0.as_str()).collect::<Vec<_>>(), expected);
+                for (name, at, target) in rows { assert_eq!(&source[target.range()], name); assert_eq!(at, projected.statements[0].span); }
+            }
+        }
+    }
+
+}
+
+
+#[cfg(test)]
+pub(crate) fn projected_body_host_for_test() -> std::sync::Arc<dyn dm_tree::frontend::BodySyntaxQueries> {
+    #[derive(Debug)]
+    struct Host(std::sync::Arc<std::sync::atomic::AtomicUsize>);
+    impl dm_tree::frontend::BodySyntaxQueries for Host {
+        fn syntax(&self, input: &std::sync::Arc<dm_tree::frontend::BodySyntaxInput>) -> Result<std::sync::Arc<dm_tree::frontend::BodySyntax>, dm_tree::frontend::Diagnostic> {
+            let checkpoint = || Ok(());
+            let admission = dm_syntax::SettingAdmission::new(&self.0, 16 * 1024 * 1024, &checkpoint);
+            match input.parse_with_setting_admission(&admission) {
+                Ok(value) => Ok(std::sync::Arc::new(value)),
+                Err(dm_tree::frontend::BodySyntaxFailure::Syntax(error)) => Err(error),
+                Err(dm_tree::frontend::BodySyntaxFailure::Operational(error)) => panic!("unexpected actual fixture operation: {error}"),
+            }
+        }
+    }
+    std::sync::Arc::new(Host(std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0))))
+}
+#[cfg(test)]
+mod projected_event_parity_tests {
+    use super::*;
+    use std::{cell::RefCell, sync::{Arc, atomic::AtomicUsize}};
+    struct Provider(dm_syntax::SettingExpression);
+    impl dm_syntax::SettingSyntaxProvider for Provider {
+        fn setting(&self, _: &dm_syntax::Item) -> Result<dm_syntax::SettingStatement, dm_syntax::Diagnostic> {
+            Ok(dm_syntax::SettingStatement { attribute: "name".into(), relation: "=".into(), value: self.0.clone() })
+        }
+    }
+    #[test]
+    fn projected_expression_and_stored_write_streams_match_old_order_and_current_statement_anchors() {
+        let counter = Arc::new(AtomicUsize::new(0)); let checkpoint = || Ok(());
+        let admission = dm_syntax::SettingAdmission::new(&counter, 16 * 1024 * 1024, &checkpoint);
+        for rhs in ["items += new /datum", "items = list(D = null)", "items.Add(D)",
+            "target::handler(ignored = 1)", "new /datum/probe(visible = 2)", "nameof(holder.target)"] {
+            let lexed = dm_syntax::lex_spans(rhs);
+            let root = dm_syntax::prepare_setting_expression(rhs, &lexed.tokens, Span::new(0, rhs.len()), &admission).unwrap();
+            for prefix in ["", "// shifted \u{e9}\n\n"] {
+                let source = format!("{prefix}/proc/p()\n    set name = {rhs}\n");
+                let ast = dm_syntax::parse(&source); assert!(ast.diagnostics.is_empty());
+                let owned = dm_syntax::parse_body_items(&ast.items[0].children);
+                let current = root.clone().project_current(source.find(rhs).unwrap(), rhs.len()).unwrap();
+                let projected = dm_syntax::parse_body_items_with_context_and_settings(&ast.items[0].children, &source, &|_|None, &Provider(current), &admission);
+                assert!(owned.diagnostics.is_empty()); assert!(projected.diagnostics.is_empty());
+                let mut old = Vec::new(); let mut actual = Vec::new();
+                expressions(dm_syntax::StatementView::from_parsed(&owned), &mut |e,at| old.push((source[e.span.range()].to_owned(),e.span,at))).unwrap();
+                expressions_current(dm_syntax::StatementView::from_parsed(&projected), &mut |v,at| actual.push((source[v.current_span().range()].to_owned(),v.current_span(),at))).unwrap();
+                assert_eq!(old,actual,"exact old expression stream for {rhs}");
+                let old = RefCell::new(Vec::new()); let actual = RefCell::new(Vec::new());
+                stored_events(dm_syntax::StatementView::from_parsed(&owned),
+                    &mut |e,at|old.borrow_mut().push((format!("E:{}",source[e.span.range()].to_owned()),at)),
+                    &mut |_,op,_,at|old.borrow_mut().push((format!("A:{op}"),at))).unwrap();
+                stored_events_current(dm_syntax::StatementView::from_parsed(&projected),
+                    &mut |v,at|actual.borrow_mut().push((format!("E:{}",source[v.current_span().range()].to_owned()),at)),
+                    &mut |_,op,_,at|actual.borrow_mut().push((format!("A:{op}"),at))).unwrap();
+                assert_eq!(old.into_inner(),actual.into_inner(),"root-first expression/list-write ordering for {rhs}");
+                let StatementKind::ProjectedSet{value,..}=&projected.statements[0].kind else {panic!("projected")};
+                assert!(root.same_root(value));
+            }
+        }
     }
 }

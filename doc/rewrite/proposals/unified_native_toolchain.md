@@ -995,3 +995,35 @@ All 46 selected foundation and existing literal regressions pass after fixing on
 incorrect private import. The source tree is merged with master a004b31592. This
 is a checked storage/ownership checkpoint, not settings activation, a fresh
 production compile result or completion of toolchain unification.
+
+### Checked native body consumers and shared setting selection
+
+Native body demand now preserves operational I/O through startup, incremental
+selection, memo replay, completion, Analyze policies, effect reports and variable
+visibility. A completed worker's I/O failure takes precedence over an earlier
+semantic refusal from another completed worker; the semantic-only ordering stays
+unchanged. Recovery tests require the original OS error, no reusable failure
+outcome and a successful retry on the same source and query owner.
+
+Canonical setting roots are now selected by native Kind4 and the native ABI
+setting evaluator. The source-free opaque projected view separates original
+expression shape from current source coordinates. Old policy traversal quirks,
+statement anchors, assignment boundaries, return equations and generated JSON
+shapes remain explicit. Actual ABI-first/body-first, include-offset, one-shot,
+cancellation and executable-modifier tests pass. Return annotations still use
+the separately inventoried compatibility scalar path at this checkpoint.
+
+The complete declaration and UI generator policies share the original RAW_FILE
+inputs and existing Kind11 graph. Independent frozen implementations match all
+4,921 declaration bytes with three diagnostics, and the ordered UI file set
+(Bundle 444 bytes, Panel 592 bytes) with five diagnostics. These remain bounded
+seeded interfaces; whole-workspace installation is not claimed.
+
+The latest core and native-consumer batches passed 35 and 18 selected tests
+respectively; one newly affected policy recovery test is in both batches. Five
+additional UI policy tests also pass. Compiler/type integration errors and a
+zero-match test selector were diagnosed and repaired rather than counted as
+passes. The last full production compile and DreamChecker results remain the
+previous checkpoint; a fresh combined verification is still required. Analyze
+and checker production defaults have not switched, no compiler was published,
+and full toolchain convergence remains in progress.

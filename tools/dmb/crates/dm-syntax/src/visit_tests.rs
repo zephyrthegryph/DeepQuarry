@@ -21,6 +21,15 @@ fn expression_children_use_the_original_nodes_in_canonical_order() {
     );
     struct Record(Vec<Vec<NodeStep>>);
     impl TypedVisitor for Record {
+        fn projected_expression(
+            &mut self,
+            view: crate::ProjectedExprView<'_>,
+            path: &[crate::NodeStep],
+        ) -> crate::VisitDecision {
+            // Syntax shape/identity only, no current source lookup.
+            self.expression(view.original(), path)
+        }
+
         fn expression(&mut self, _: &Expr, path: &[NodeStep]) -> VisitDecision {
             self.0.push(path.to_vec());
             VisitDecision::Descend
@@ -54,6 +63,14 @@ fn skip_and_stop_preserve_statement_order_and_do_not_visit_hidden_children() {
     ];
     struct Filter(Vec<Vec<NodeStep>>);
     impl TypedVisitor for Filter {
+        fn projected_expression(
+            &mut self,
+            _view: crate::ProjectedExprView<'_>,
+            _path: &[crate::NodeStep],
+        ) -> crate::VisitDecision {
+            crate::VisitDecision::Descend
+        }
+
         fn statement(&mut self, _: &Statement, path: &[NodeStep]) -> VisitDecision {
             self.0.push(path.to_vec());
             if path == [NodeStep::Statement(0)] {
@@ -109,6 +126,21 @@ fn masked_authored_paths_and_scope_callbacks_remain_balanced_on_stop() {
         seen: Vec<Vec<NodeStep>>,
     }
     impl TypedVisitor for Balanced {
+        fn projected_expression(
+            &mut self,
+            view: crate::ProjectedExprView<'_>,
+            path: &[crate::NodeStep],
+        ) -> crate::VisitDecision {
+            self.expression(view.original(), path)
+        }
+        fn leave_projected_expression(
+            &mut self,
+            view: crate::ProjectedExprView<'_>,
+            path: &[crate::NodeStep],
+        ) {
+            self.leave_expression(view.original(), path);
+        }
+
         fn statement(&mut self, _: &Statement, path: &[NodeStep]) -> VisitDecision {
             self.statements += 1;
             self.seen.push(path.to_vec());
@@ -152,4 +184,138 @@ fn masked_authored_paths_and_scope_callbacks_remain_balanced_on_stop() {
         ]
     );
     assert_eq!(report.unsupported_statements, 0);
+}
+
+#[test]
+fn projected_settings_use_same_original_root_and_current_spans_with_balanced_callbacks() {
+    use std::sync::{atomic::AtomicUsize, Arc};
+    struct Provider {
+        root: crate::SettingExpression,
+    }
+    impl crate::SettingSyntaxProvider for Provider {
+        fn setting(&self, _: &crate::Item) -> Result<crate::SettingStatement, crate::Diagnostic> {
+            Ok(crate::SettingStatement {
+                attribute: "name".into(),
+                relation: "=".into(),
+                value: self.root.clone(),
+            })
+        }
+    }
+    #[derive(Default)]
+    struct Coordinates {
+        rows: Vec<(Vec<NodeStep>, Span, std::mem::Discriminant<ExprKind>)>,
+        depth: usize,
+    }
+    impl TypedVisitor for Coordinates {
+        fn expression(&mut self, e: &Expr, p: &[NodeStep]) -> VisitDecision {
+            self.depth += 1;
+            self.rows
+                .push((p.to_vec(), e.span, std::mem::discriminant(&e.kind)));
+            VisitDecision::Descend
+        }
+        fn leave_expression(&mut self, _: &Expr, _: &[NodeStep]) {
+            self.depth -= 1;
+        }
+        fn projected_expression(
+            &mut self,
+            v: crate::ProjectedExprView<'_>,
+            p: &[NodeStep],
+        ) -> VisitDecision {
+            self.depth += 1;
+            self.rows.push((
+                p.to_vec(),
+                v.current_span(),
+                std::mem::discriminant(&v.original().kind),
+            ));
+            VisitDecision::Descend
+        }
+        fn leave_projected_expression(&mut self, _: crate::ProjectedExprView<'_>, _: &[NodeStep]) {
+            self.depth -= 1;
+        }
+    }
+    let rhs = "\"[call()]\"";
+    let lexical = crate::lex_spans(rhs);
+    let counter = Arc::new(AtomicUsize::new(0));
+    let checkpoint = || Ok(());
+    let admission = crate::SettingAdmission::new(&counter, 8 * 1024 * 1024, &checkpoint);
+    let canonical = crate::prepare_setting_expression(
+        rhs,
+        &lexical.tokens,
+        Span::new(0, rhs.len()),
+        &admission,
+    )
+    .unwrap();
+    let ptr = canonical.original_expression() as *const Expr;
+    for padding in ["", "\n\n", "// é\n"] {
+        let source = format!("{padding}/proc/p()\n    set name = {rhs}\n    return 1\n");
+        let full = crate::parse(&source);
+        let proc = &full.items[0];
+        let at = source.find(rhs).unwrap();
+        let projected = canonical.clone().project_current(at, rhs.len()).unwrap();
+        let provider = Provider { root: projected };
+        let owned = crate::parse_body_items_with_source(&proc.children, &source);
+        let current = crate::parse_body_items_with_context_and_settings(
+            &proc.children,
+            &source,
+            &|_| None,
+            &provider,
+            &admission,
+        );
+        assert!(owned.diagnostics.is_empty() && current.diagnostics.is_empty());
+        assert!(matches!(
+            owned.statements[0].kind,
+            StatementKind::Set { .. }
+        ));
+        let StatementKind::ProjectedSet { value, .. } = &current.statements[0].kind else {
+            panic!("native storage variant")
+        };
+        assert!(value.same_root(&canonical));
+        assert_eq!(value.original_expression() as *const Expr, ptr);
+        let mut left = Coordinates::default();
+        let mut right = Coordinates::default();
+        let a = visit_statements(&owned.statements, &mut left);
+        let b = visit_statements(&current.statements, &mut right);
+        assert_eq!(left.rows, right.rows);
+        assert_eq!(a, b);
+        assert_eq!((left.depth, right.depth), (0, 0));
+    }
+}
+#[test]
+fn native_setting_provider_refusal_never_retries_ordinary_set_text() {
+    struct Refuse;
+    impl crate::SettingSyntaxProvider for Refuse {
+        fn setting(
+            &self,
+            item: &crate::Item,
+        ) -> Result<crate::SettingStatement, crate::Diagnostic> {
+            Err(crate::Diagnostic {
+                span: item.header_span,
+                kind: crate::DiagnosticKind::Statement,
+                message: "actual original provider refusal".into(),
+            })
+        }
+    }
+    let source = "/proc/p()\n    set name = 7\n    return 1\n";
+    let full = crate::parse(source);
+    let counter = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let checkpoint = || Ok(());
+    let a = crate::SettingAdmission::new(&counter, 8 * 1024 * 1024, &checkpoint);
+    let native = crate::parse_body_items_with_context_and_settings(
+        &full.items[0].children,
+        source,
+        &|_| None,
+        &Refuse,
+        &a,
+    );
+    assert!(native
+        .diagnostics
+        .iter()
+        .any(|d| d.message == "actual original provider refusal"));
+    assert!(!native.statements.iter().any(|s| s.setting().is_some()));
+    let owned = crate::parse_body_items(&full.items[0].children);
+    assert!(owned.diagnostics.is_empty());
+    assert!(matches!(
+        owned.statements[0].kind,
+        StatementKind::Set { .. }
+    ));
 }

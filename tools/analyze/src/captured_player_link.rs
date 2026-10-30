@@ -35,14 +35,19 @@ impl<'a> BorrowedPlayerLink<'a> {
         Ok(Self { raw, inputs })
     }
     pub fn scan(&self, checkpoint: impl FnMut() -> Result<(), String>) -> Result<RawRun, String> {
+        self.scan_with::<dm_analysis::policy_body_demand::Compatibility>(checkpoint).map_err(|e|e.0)
+    }
+    pub fn scan_checked(&self, checkpoint: impl FnMut() -> Result<(), String>) -> Result<RawRun,dm_analysis::policy_body_demand::PolicyFailure> {
+        self.scan_with::<dm_analysis::policy_body_demand::Checked>(checkpoint)
+    }
+    fn scan_with<D:dm_analysis::policy_body_demand::Demand>(&self, checkpoint: impl FnMut() -> Result<(), String>) -> Result<RawRun,D::Error> {
         let scope = self.raw.scopes.for_lint("player_link", "");
-        let rows = dm_analysis::player_link_native::findings(
+        let rows = dm_analysis::player_link_native::findings_with::<D>(
             self.inputs,
             &self.raw.tree.root,
             |f| scope.exempt(f),
             checkpoint,
-        )
-        .map_err(|e| e.0)?;
+        )?;
         if rows.len() > MAX_FIXTURE_SITES {
             return Err("player_link exceeds fixture finding admission".into());
         }

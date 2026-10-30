@@ -125,6 +125,25 @@ impl EffectInput {
         resolver: &(impl Resolver + ?Sized),
         admission: &ExecutionAdmission,
     ) -> Result<Arc<BodyEffects>, String> {
+        self.compute_body_with::<crate::policy_body_demand::Compatibility>(
+            ordinal, resolver, admission,
+        )
+        .map_err(|e| e.0)
+    }
+    pub fn compute_body_checked(
+        self: &Arc<Self>,
+        ordinal: usize,
+        resolver: &(impl Resolver + ?Sized),
+        admission: &ExecutionAdmission,
+    ) -> Result<Arc<BodyEffects>, crate::policy_body_demand::PolicyFailure> {
+        self.compute_body_with::<crate::policy_body_demand::Checked>(ordinal, resolver, admission)
+    }
+    fn compute_body_with<D: crate::policy_body_demand::Demand>(
+        self: &Arc<Self>,
+        ordinal: usize,
+        resolver: &(impl Resolver + ?Sized),
+        admission: &ExecutionAdmission,
+    ) -> Result<Arc<BodyEffects>, D::Error> {
         let procedure = identity(&self.archive, ordinal)?;
         if !self
             .order
@@ -142,7 +161,7 @@ impl EffectInput {
             procedure,
         )?;
         let pure = settings.own_pure();
-        let body = self.archive.parse(ordinal).map_err(|e| e.message)?;
+        let body = D::parse(&self.archive, ordinal)?;
         let draft = crate::checker_expression_visit::effects_archived(
             &self.archive,
             &body,
@@ -400,8 +419,33 @@ impl SccSummary {
         resolver: &(impl Resolver + ?Sized),
         policy: &CheckerPolicy,
         admission: &ExecutionAdmission,
-        mut checkpoint: impl FnMut() -> Result<(), String>,
+        checkpoint: impl FnMut() -> Result<(), String>,
     ) -> Result<Vec<Produced>, String> {
+        self.report_with::<crate::policy_body_demand::Compatibility>(
+            input, resolver, policy, admission, checkpoint,
+        )
+        .map_err(|e| e.0)
+    }
+    pub fn report_checked(
+        &self,
+        input: &Arc<EffectInput>,
+        resolver: &(impl Resolver + ?Sized),
+        policy: &CheckerPolicy,
+        admission: &ExecutionAdmission,
+        checkpoint: impl FnMut() -> Result<(), String>,
+    ) -> Result<Vec<Produced>, crate::policy_body_demand::PolicyFailure> {
+        self.report_with::<crate::policy_body_demand::Checked>(
+            input, resolver, policy, admission, checkpoint,
+        )
+    }
+    fn report_with<D: crate::policy_body_demand::Demand>(
+        &self,
+        input: &Arc<EffectInput>,
+        resolver: &(impl Resolver + ?Sized),
+        policy: &CheckerPolicy,
+        admission: &ExecutionAdmission,
+        mut checkpoint: impl FnMut() -> Result<(), String>,
+    ) -> Result<Vec<Produced>, D::Error> {
         self.validate(input)?;
         if resolver.source_owner() != Resolver::source_owner(input.archive.tree()) {
             return Err("purity report original resolver mismatch".into());
@@ -453,11 +497,10 @@ impl SccSummary {
         for (target, annotation) in targets {
             checkpoint()?;
             let body = &p.bodies[target];
-            let origin = input.archive.callable_note_origin(body.procedure)?;
-            let header = input
+            let origin = input
                 .archive
-                .parse(body.ordinal)
-                .map_err(|e| e.message)?
+                .callable_note_origin_with(body.procedure, D::parse)?;
+            let header = D::parse(&input.archive, body.ordinal)?
                 .signature_opening_parenthesis()
                 .ok_or("purity primary callable point absent")?;
             let target_display = display(input, body.procedure, &budget)?;

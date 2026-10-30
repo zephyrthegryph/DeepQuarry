@@ -548,7 +548,9 @@ mod setting_source;
 pub use body_queries::{BodySyntax, BodySyntaxInput, BodySyntaxQueries};
 #[path = "frontend_setting_queries.rs"]
 mod setting_queries;
-pub use setting_queries::{SettingExpressionInput, SettingExpressionQueries};
+pub use setting_queries::{
+    SettingExpressionInput, SettingExpressionQueries, SettingStatementsInput,
+};
 #[path = "frontend_body_failure.rs"]
 mod body_failure;
 pub use body_failure::BodySyntaxFailure;
@@ -608,6 +610,15 @@ impl StatementBody {
                 parsed: &'a dm_syntax::ParsedBody,
             }
             impl dm_syntax::TypedVisitor for Coverage<'_> {
+                fn projected_expression(
+                    &mut self,
+                    view: dm_syntax::ProjectedExprView<'_>,
+                    path: &[dm_syntax::NodeStep],
+                ) -> dm_syntax::VisitDecision {
+                    // Explicitly shape/identity-only; no original span is used as current.
+                    self.expression(view.original(), path)
+                }
+
                 fn statement(
                     &mut self,
                     node: &dm_syntax::Statement,
@@ -734,15 +745,33 @@ impl ParsedBody<'_> {
     pub fn into_parts(self) -> (Item, Option<Arc<StatementBody>>) {
         (self.item, self.statements)
     }
-    /// Typed seam for native statement-demand migration. This prerequisite has
-    /// no admitted settings provider yet; its implementation is syntax-only.
-    /// Native settings must not be enabled until the settings-only provider
-    /// replaces the nonfallible parsing branch here with typed admission.
+    /// Kind4 already carries its checked shared model. One-shot native demand
+    /// uses ONLY the attached settings provider/direct permit, never a new Db or
+    /// a full-body query attachment. A proved empty settings roster needs no root
+    /// admission and keeps the existing ordinary statement parser fast path.
     pub(super) fn admit_statements_checked(
-        self,
+        mut self,
         supported: fn(&[dm_syntax::Statement]) -> bool,
     ) -> Result<Self, BodySyntaxFailure> {
-        Ok(self.admit_statements(supported))
+        if self.shared_syntax.is_some() {
+            return Ok(self.admit_statements(supported));
+        }
+        let proof = self
+            .issuer
+            .procedure_settings(self.occurrence)
+            .map_err(BodySyntaxFailure::Syntax)?;
+        let proof = proof.ok_or_else(|| {
+            BodySyntaxFailure::Syntax(internal("original statement settings receipt unavailable"))
+        })?;
+        if proof.owner.settings.is_empty() {
+            return Ok(self.admit_statements(supported));
+        }
+        let statements =
+            self.issuer
+                .setting_statements(self.occurrence, &mut self.item, supported)?;
+        self.statement_attempted = true;
+        self.statements = Some(statements);
+        Ok(self)
     }
     pub(super) fn admit_statements(
         mut self,

@@ -198,3 +198,30 @@ fn string_allocation_uses_the_same_parsed_slot_consumed_by_lowering() {
     );
     assert!(bodies.take_parsed(body).is_err());
 }
+
+#[test]
+fn checked_first_root_string_demand_io_publishes_no_registration_and_retry_matches_old() {
+    let source="/proc/first()\n    return \"candidate\"\n/datum/holder/var/candidate=1\n";
+    let db=Arc::new(crate::query_db::QueryDb::default());
+    let frontend=dm_tree::frontend::build(Path::new("strings-operation.dme"),&Source(source),&Default::default(),1)
+        .unwrap().with_body_queries(db.clone());
+    let arena=dm_tree::frontend::BodyArena::new_typed(&frontend,
+        dm_codegen_byond::typed_statements_supported_for_capture);
+    let mut refused=LinkInventory::default();
+    let scheduled=db.fail_body_syntax_after_for_test(0,std::io::Error::from_raw_os_error(1450));
+    let error=contribute_source_strings_checked(&frontend,&arena,&mut refused)
+        .err().expect("actual original first-root body failure");
+    assert!(matches!(error,RegistrationFailure::Operational(ref error) if error.raw_os_error()==Some(1450)));
+    assert!(refused.string_registration.is_none());
+    // Existing spelling insertion precedes body demand; the native owning
+    // caller discards its local inventory on error. No rollback is invented.
+    drop(refused);
+    drop(scheduled);
+    let mut actual=LinkInventory::default();
+    contribute_source_strings_checked(&frontend,&arena,&mut actual).unwrap();
+    let mut old=LinkInventory::default();
+    contribute_source_strings(&frontend,&arena,&mut old).unwrap();
+    assert_eq!(actual.string_registration,old.string_registration);
+    assert_eq!(actual.spellings,old.spellings);
+    assert_eq!(db.db().stats(dm_query::Kind(4)).computed,1);
+}

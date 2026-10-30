@@ -297,6 +297,37 @@ impl OriginalProcedureHeaders {
         }
         Ok((&self.source, tokens))
     }
+    /// Borrow original setting syntax partition without re-extracting metadata
+    /// or parsing any expression. This is the SAME producer policy used when
+    /// the footprint and its immutable original metadata were issued.
+    pub(crate) fn setting_statement_parts<'a>(
+        &'a self,
+        body: Span,
+        owner: &Arc<ProcedureMetadata>,
+        footprint: &SettingFootprint,
+    ) -> Result<(&'a str, &'static str), String> {
+        self.setting_value_tokens(body, owner, footprint)?;
+        let first = self
+            .tokens
+            .partition_point(|t| t.span.start < footprint.header.start);
+        let last = self
+            .tokens
+            .partition_point(|t| t.span.start < footprint.header.end);
+        let view = HeaderView::original(&self.source, &self.tokens[first..last], footprint.header)?;
+        let parts = crate::procedure::setting_parts(view)?;
+        let value = Span::new(
+            footprint.header.start + parts.value_span.start,
+            footprint.header.start + parts.value_span.end,
+        );
+        if value != footprint.value {
+            return Err("setting statement RHS partition differs from original issuer".into());
+        }
+        let relation = match parts.operation {
+            dm_ir::SettingOperation::Assign => "=",
+            dm_ir::SettingOperation::In => "in",
+        };
+        Ok((parts.name.text(), relation))
+    }
     /// The caller already owns an exact current body/code receipt. Reuse the
     /// SAME original token/reference check before exposing its lazy root slots.
     pub(crate) fn setting_root_slots(

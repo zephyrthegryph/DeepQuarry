@@ -39,10 +39,20 @@ impl<'a> BorrowedRelWrite<'a> {
             None => Ok(()),
         }
     }
-    pub fn scan(
+    pub fn scan(&self, checkpoint: impl FnMut() -> Result<(), String>) -> Result<RawRun, String> {
+        self.scan_with::<dm_analysis::policy_body_demand::Compatibility>(checkpoint)
+            .map_err(|e| e.0)
+    }
+    pub fn scan_checked(
+        &self,
+        checkpoint: impl FnMut() -> Result<(), String>,
+    ) -> Result<RawRun, dm_analysis::policy_body_demand::PolicyFailure> {
+        self.scan_with::<dm_analysis::policy_body_demand::Checked>(checkpoint)
+    }
+    fn scan_with<D: dm_analysis::policy_body_demand::Demand>(
         &self,
         mut checkpoint: impl FnMut() -> Result<(), String>,
-    ) -> Result<RawRun, String> {
+    ) -> Result<RawRun, D::Error> {
         checkpoint()?;
         self.intact()?;
         let scope = self.raw.scopes.for_lint("rel_write_undeclared", "");
@@ -53,15 +63,14 @@ impl<'a> BorrowedRelWrite<'a> {
             .checked_sub(index.retained_admission)
             .ok_or("relation index admission overflow")?;
         self.intact()?;
-        let native = dm_analysis::rel_write_native::findings(
+        let native = dm_analysis::rel_write_native::findings_with::<D>(
             self.inputs,
             &self.raw.tree.root,
             rels,
             |f| scope.exempt(f),
             &mut remaining,
             &mut checkpoint,
-        )
-        .map_err(|e| e.0)?;
+        )?;
         let mut found = BTreeMap::new();
         for row in native {
             found.insert((row.rel, row.line, row.var), row.message);

@@ -55,14 +55,34 @@ impl ProcedureMemo {
         Option<dm_session::AcceptedArtifact<CachedProcedure>>,
         Option<ResolveQuery>,
     ) {
+        match self.try_visit_resident(key, host, &mut |value| {
+            Ok::<_, std::convert::Infallible>(accept(value))
+        }) {
+            Ok(value) => value,
+            Err(never) => match never {},
+        }
+    }
+    pub(crate) fn try_visit_resident<R: Resolver, E>(
+        &self,
+        key: &[u8],
+        host: &R,
+        accept: &mut dyn FnMut(&Arc<CachedProcedure>) -> Result<bool, E>,
+    ) -> Result<
+        (
+            Option<dm_session::AcceptedArtifact<CachedProcedure>>,
+            Option<ResolveQuery>,
+        ),
+        E,
+    > {
         if let Some(attempt) = &self.rich_attempt {
             // Exact host/caller callbacks run outside the generic core lock.
             // The core atomically budgets a new/reattached physical claim.
             attempt
-                .with_pending(|lease| lease.visit_explained_accepted(key, host, accept))
-                .unwrap_or((None, None))
+                .with_pending(|lease| lease.try_visit_explained_accepted(key, host, accept))
+                .transpose()
+                .map(|result| result.unwrap_or((None, None)))
         } else {
-            self.values.visit_receipted(key, host, accept)
+            self.values.try_visit_receipted(key, host, accept)
         }
     }
     /// Called only after successful complete compilation/output admission.

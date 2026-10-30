@@ -25,17 +25,22 @@ fn check_syntax(syntax: &StatementBody, severity: Severity) -> Result<Vec<Diagno
     if severity == Severity::Disabled {
         return Ok(Vec::new());
     }
+    check_prefix(&syntax.parsed().statements, severity)
+}
+fn check_prefix(
+    statements: &[dm_syntax::Statement],
+    severity: Severity,
+) -> Result<Vec<Diagnostic>, String> {
     let mut diagnostics = Vec::new();
     // The reference checks only the initial contiguous top-level settings,
     // including `set ... in ...`. Later/nested settings belong to other policy.
-    for statement in &syntax.parsed().statements {
-        let StatementKind::Set {
-            attribute, value, ..
-        } = &statement.kind
-        else {
+    for statement in statements {
+        let Some(setting) = statement.setting() else {
             break;
         };
-        let message = match attribute.as_str() {
+        let attribute = setting.attribute;
+        let value = setting.value.original();
+        let message = match attribute {
             "background" | "waitfor" | "hidden" | "instant" | "popup_menu" => {
                 let allowed = match &value.kind {
                     ExprKind::Ident(name) => matches!(name.as_str(), "TRUE" | "FALSE"),
@@ -74,7 +79,7 @@ fn check_syntax(syntax: &StatementBody, severity: Severity) -> Result<Vec<Diagno
                 family: "invalid_set_value",
                 severity,
                 span: statement.header_span,
-                expression_span: value.span,
+                expression_span: setting.value.current_span(),
                 message,
                 notes: Vec::new(),
             });
@@ -129,3 +134,62 @@ fn is_reference_term(value: &Expr) -> Result<bool, String> {
 #[cfg(test)]
 #[path = "checks_invalid_set_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+mod projected_tests {
+    use super::*;
+    use std::sync::{atomic::AtomicUsize, Arc};
+    struct Provider {
+        root: dm_syntax::SettingExpression,
+    }
+    impl dm_syntax::SettingSyntaxProvider for Provider {
+        fn setting(
+            &self,
+            _: &dm_syntax::Item,
+        ) -> Result<dm_syntax::SettingStatement, dm_syntax::Diagnostic> {
+            Ok(dm_syntax::SettingStatement {
+                attribute: "waitfor".into(),
+                relation: "=".into(),
+                value: self.root.clone(),
+            })
+        }
+    }
+    #[test]
+    fn invalid_setting_diagnostics_keep_current_header_and_expression_spans_after_warm_padding() {
+        let rhs = "9";
+        let input = dm_syntax::lex_spans(rhs);
+        let counter = Arc::new(AtomicUsize::new(0));
+        let checkpoint = || Ok(());
+        let a = dm_syntax::SettingAdmission::new(&counter, 8 * 1024 * 1024, &checkpoint);
+        let original = dm_syntax::prepare_setting_expression(
+            rhs,
+            &input.tokens,
+            dm_syntax::Span::new(0, 1),
+            &a,
+        )
+        .unwrap();
+        for padding in ["", "\n\n"] {
+            let source = format!("{padding}/proc/p()\n    set waitfor = 9\n    return 1\n");
+            let full = dm_syntax::parse(&source);
+            let provider = Provider {
+                root: original
+                    .clone()
+                    .project_current(source.find('9').unwrap(), 1)
+                    .unwrap(),
+            };
+            let owned = dm_syntax::parse_body_items(&full.items[0].children);
+            let projected = dm_syntax::parse_body_items_with_context_and_settings(
+                &full.items[0].children,
+                &source,
+                &|_| None,
+                &provider,
+                &a,
+            );
+            let expected = check_prefix(&owned.statements, Severity::Warning).unwrap();
+            let current = check_prefix(&projected.statements, Severity::Warning).unwrap();
+            assert_eq!(expected, current);
+            assert_eq!(current.len(), 1);
+            assert_eq!(&source[current[0].expression_span.range()], rhs);
+        }
+    }
+}

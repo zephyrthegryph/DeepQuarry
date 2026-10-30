@@ -55,16 +55,7 @@ pub const CAP_ENTRIES: &str = "CAP_ENTRIES";
 pub const RUNTIME_OBSERVE: &str = "RUNTIME_OBSERVE";
 
 /// Calls that make a returned list a list of declaration entries.
-const ENTRY_CALLS: &[&str] = &[
-    "op(",
-    "extend(",
-    "interface(",
-    "ui_shape(",
-    "on_notice(",
-    "on_change(",
-    "without(",
-    "configure(",
-];
+use crate::raw_entry_proc_policy::ENTRY_CALLS;
 
 /// The end offset (exclusive, trailing blanks trimmed) of the indented block that follows the marker whose `)` is at `close`,
 /// or None when no indented line follows it (the legacy single-macro form, or a header with no entries).
@@ -442,35 +433,19 @@ fn entry_proc(
     rel: &str,
     out: &mut Vec<Marker>,
 ) {
-    let Some(rest) = t.strip_prefix("return") else {
-        return;
-    };
-    let rest = rest.trim_start();
-    let Some(after) = rest.strip_prefix("list") else {
-        return;
-    };
-    if !after.trim_start().starts_with('(') {
-        return;
+    if let Some(projected) = crate::raw_entry_proc_policy::project_first_return(
+        stripped, starts, ln0, line, t, name, head_line,
+    ) {
+        out.push(Marker {
+            name: ENTRY_PROC.to_string(),
+            rel: rel.to_string(),
+            line: projected.line,
+            args: projected.args,
+            body: projected.body,
+            body_offset: projected.body_offset,
+            line_starts: starts.clone(),
+        });
     }
-    let open = starts[ln0] as usize + (line.len() - rest.len()) + rest.find('(').unwrap();
-    let Some(close) = matching_paren(stripped, open) else {
-        return;
-    };
-    let body = stripped[open + 1..close].to_string();
-    if !ENTRY_CALLS.iter().any(|c| body.contains(c)) {
-        return;
-    }
-    let mut args = vec![name];
-    args.extend(split_args(&body));
-    out.push(Marker {
-        name: ENTRY_PROC.to_string(),
-        rel: rel.to_string(),
-        line: head_line,
-        args,
-        body,
-        body_offset: open + 1,
-        line_starts: starts.clone(),
-    });
 }
 
 /// The CAP_ENTRIES marker of a capability datum's `entries()` whose first statement is `return list(...)`.
@@ -536,16 +511,14 @@ fn scan_file(f: &SourceFile) -> FileDecls {
     // The datum whose `entries()` body the scan is inside (the proc is declared at column 0 as `/datum/x/entries()`).
     let mut entries_of: Option<String> = None;
     // A global proc (name, header line) whose first statement has not been seen yet: an entry proc when it is `return list(entries)`.
-    let mut proc_head: Option<(String, u32)> = None;
+    let mut proc_head = crate::raw_entry_proc_policy::Head::default();
     // A capability datum's entries() (type, header line) whose first statement has not been seen yet.
     let mut cap_head: Option<(String, u32)> = None;
     for (ln0, line) in stripped.split('\n').enumerate() {
         let ln = ln0 as u32 + 1;
         let t = line.trim_start();
         if !line.is_empty() && !line.starts_with(|c: char| c.is_whitespace()) {
-            proc_head = pat_match!(r"^/proc/(\w+)\([^)]*\)\s*$")
-                .captures(line)
-                .map(|m| (m.s(1).to_string(), ln));
+            proc_head.begin(line, ln);
             cap_head = pat_match!(r"^(/datum/capability/[\w/]+?)/(?:proc/)?entries\(\)\s*$")
                 .captures(line)
                 .map(|m| (m.s(1).to_string(), ln));

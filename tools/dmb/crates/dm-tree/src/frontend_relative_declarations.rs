@@ -732,6 +732,99 @@ impl DeclarationSyntax {
             original_value: footprint.value,
         })
     }
+    /// Called only by the original native body parser under its SAME stack
+    /// admission. No host/query/gate/revision call occurs at this leaf.
+    pub(crate) fn setting_statement_expression(
+        &self,
+        body: Span,
+        code: &Arc<BodyCodeIdentity>,
+        statement: &Item,
+        admission: &dm_syntax::SettingAdmission<'_>,
+    ) -> Result<(String, String, dm_syntax::SettingExpression), dm_syntax::SettingSyntaxFailure>
+    {
+        let syntax = |message: &str| {
+            dm_syntax::SettingSyntaxFailure::Syntax(dm_syntax::Diagnostic {
+                span: statement.header_span,
+                kind: dm_syntax::DiagnosticKind::Unsupported,
+                message: message.into(),
+            })
+        };
+        let recipe = self
+            .original_body_recipe(body, code)
+            .map_err(dm_syntax::SettingSyntaxFailure::Syntax)?;
+        let headers = recipe
+            .setting_headers()
+            .ok_or_else(|| syntax("original setting header owner unavailable"))?;
+        let owner = recipe
+            .relative
+            .settings_owner
+            .as_ref()
+            .ok_or_else(|| syntax("original setting metadata owner unavailable"))?;
+        let footprints = recipe
+            .setting_footprints()
+            .ok_or_else(|| syntax("original setting footprint roster unavailable"))?;
+        let offset = recipe.offset();
+        let start = statement
+            .header_span
+            .start
+            .checked_sub(offset)
+            .ok_or_else(|| syntax("setting statement precedes original chunk"))?;
+        let end = statement
+            .header_span
+            .end
+            .checked_sub(offset)
+            .ok_or_else(|| syntax("setting statement ends before original chunk"))?;
+        let footprint = footprints
+            .binary_search_by_key(&start, |row| row.header.start)
+            .ok()
+            .and_then(|i| footprints.get(i))
+            .filter(|row| row.header == Span::new(start, end))
+            .ok_or_else(|| syntax("setting statement has no exact original directive footprint"))?;
+        let (source, tokens) = headers
+            .setting_value_tokens(recipe.original_body_span(), owner, footprint)
+            .map_err(|e| syntax(&e))?;
+        if source.get(footprint.header.range()) != Some(statement.header.as_str()) {
+            return Err(syntax(
+                "setting statement text differs from its original token owner",
+            ));
+        }
+        let (attribute, relation) = headers
+            .setting_statement_parts(recipe.original_body_span(), owner, footprint)
+            .map_err(|e| syntax(&e))?;
+        let slots = headers
+            .setting_root_slots(recipe.original_body_span(), owner, footprint)
+            .map_err(|e| syntax(&e))?;
+        let original = slots
+            .obtain(footprint.ordinal, owner.settings.len(), admission, || {
+                dm_syntax::prepare_setting_expression(source, tokens, footprint.value, admission)
+            })
+            .map_err(|failure| match failure {
+                dm_syntax::SettingSyntaxFailure::Syntax(mut error) => {
+                    let projected = error
+                        .span
+                        .start
+                        .checked_add(offset)
+                        .zip(error.span.end.checked_add(offset));
+                    if let Some((start, end)) = projected {
+                        error.span = Span::new(start, end);
+                        dm_syntax::SettingSyntaxFailure::Syntax(error)
+                    } else {
+                        admission.record_operational_error(std::io::Error::new(
+                            std::io::ErrorKind::InvalidInput,
+                            "setting syntax error projection overflow",
+                        ));
+                        dm_syntax::SettingSyntaxFailure::Operational(
+                            std::io::ErrorKind::InvalidInput.into(),
+                        )
+                    }
+                }
+                other => other,
+            })?;
+        let current = original
+            .project_current(offset, source.len())
+            .map_err(dm_syntax::SettingSyntaxFailure::Operational)?;
+        Ok((attribute.to_owned(), relation.to_owned(), current))
+    }
     pub(crate) fn body_recipes(&self) -> impl Iterator<Item = CurrentBodyRecipe<'_>> {
         self.chunks
             .iter()

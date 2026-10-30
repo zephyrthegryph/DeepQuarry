@@ -88,6 +88,13 @@ pub enum StatementKind {
         relation: String,
         value: Expr,
     },
+    /// SAME written setting; RHS borrows canonical ORIGINAL syntax with a
+    /// checked scalar current-source projection. Never an executable Expr copy.
+    ProjectedSet {
+        attribute: String,
+        relation: String,
+        value: crate::SettingExpression,
+    },
     For {
         control: ForControl,
         body: Vec<Statement>,
@@ -175,10 +182,31 @@ pub fn parse_proc_body(proc: &Item) -> ParsedBody {
 
 /// Parse a procedure body when its owning declaration is already known.
 pub fn parse_body_items(items: &[Item]) -> ParsedBody {
+    parse_body_items_using_settings(items, None, None)
+}
+
+/// Storage supplied by an ORIGINAL owner; this interface itself grants no source
+/// authority. Native callers validate their exact current declaration receipt.
+pub struct SettingStatement {
+    pub attribute: String,
+    pub relation: String,
+    pub value: crate::SettingExpression,
+}
+pub trait SettingSyntaxProvider {
+    fn setting(&self, item: &Item) -> Result<SettingStatement, Diagnostic>;
+}
+
+fn parse_body_items_using_settings(
+    items: &[Item],
+    settings: Option<&dyn SettingSyntaxProvider>,
+    admission: Option<&crate::SettingAdmission<'_>>,
+) -> ParsedBody {
     let mut result = ParsedBody::default();
     let mut origins = BodyOrigins {
         controls: &mut result.control_origins,
         locals: &mut result.local_variables,
+        settings,
+        admission,
     };
     result.statements = parse_sequence(items, &mut result.diagnostics, &mut origins);
     result.local_variables.finish_source_order();
@@ -201,10 +229,31 @@ pub fn parse_body_items_with_context(
     parsed
 }
 
+/// Native entry shares setting roots with the original declaration owner. A
+/// provider refusal is final: there is deliberately no compatibility text retry.
+/// Operational failure is extracted by the admitted caller before publication.
+pub fn parse_body_items_with_context_and_settings(
+    items: &[Item],
+    source: &str,
+    context: &dyn Fn(usize) -> Option<ItemKind>,
+    settings: &dyn SettingSyntaxProvider,
+    admission: &crate::SettingAdmission<'_>,
+) -> ParsedBody {
+    let mut parsed = parse_body_items_using_settings(items, Some(settings), Some(admission));
+    if admission.is_stopped() {
+        return parsed;
+    }
+    parsed.pending_bodies =
+        crate::pending_body::pending_bodies(&parsed.statements, source, context);
+    parsed
+}
+
 /// One existing native parser pass owns control AND local declaration origins.
 struct BodyOrigins<'a> {
     controls: &'a mut Vec<ControlOrigin>,
     locals: &'a mut crate::LocalVariableLedger,
+    settings: Option<&'a dyn SettingSyntaxProvider>,
+    admission: Option<&'a crate::SettingAdmission<'a>>,
 }
 impl BodyOrigins<'_> {
     fn push(&mut self, origin: ControlOrigin) {
@@ -291,6 +340,12 @@ fn parse_sequence(
     let mut statements = Vec::new();
     let mut index = 0;
     while index < items.len() {
+        if origins
+            .admission
+            .is_some_and(|admission| admission.checkpoint().is_err())
+        {
+            break;
+        }
         let item = &items[index];
         let header = item.header.trim();
         if !item.children.is_empty()
@@ -564,7 +619,20 @@ fn parse_one(
     } else if starts_keyword(header, "spawn") {
         parse_spawn(item, diagnostics, origins)
     } else if starts_keyword(header, "set") {
-        parse_set(item, diagnostics)
+        match origins.settings {
+            Some(provider) => match provider.setting(item) {
+                Ok(setting) => Some(StatementKind::ProjectedSet {
+                    attribute: setting.attribute,
+                    relation: setting.relation,
+                    value: setting.value,
+                }),
+                Err(error) => {
+                    diagnostics.push(error);
+                    None
+                }
+            },
+            None => parse_set(item, diagnostics),
+        }
     } else if header == "return" {
         Some(StatementKind::Return(None))
     } else if starts_keyword(header, "return") || header.starts_with("return..(") {

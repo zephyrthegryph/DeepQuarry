@@ -2,39 +2,53 @@
 //! query, revision, family gate or counter reset is introduced here.
 use super::*;
 use dm_tree::frontend::{BodySyntaxFailure, SettingExpressionInput, SettingExpressionQueries};
+pub(super) fn with_setting_admission<T>(
+    charged: &Arc<std::sync::atomic::AtomicUsize>,
+    operation: impl FnOnce(&dm_syntax::SettingAdmission<'_>) -> Result<T, BodySyntaxFailure>,
+) -> Result<T, BodySyntaxFailure> {
+    let checkpoint = || setting_checkpoint();
+    // Explicit worker-work allowance; not syntax meaning or a qualified
+    // SourceScope allocation role. BodySyntax postparse charge stays SOFT.
+    let admission = dm_syntax::SettingAdmission::with_stack_allowance(
+        charged,
+        body_syntax::BUDGET,
+        dm_exec::COMPILER_STACK_BYTES / 16,
+        &checkpoint,
+    );
+    let result = operation(&admission);
+    // A prior actual operational failure wins over any later checkpoint.
+    // The input may already have extracted that first actual IO for its
+    // public typed boundary; do not replace it with a sticky status proxy.
+    if matches!(&result, Err(BodySyntaxFailure::Operational(_))) {
+        return match admission.take_operational_error() {
+            Some(actual) => Err(BodySyntaxFailure::Operational(actual)),
+            None => result,
+        };
+    }
+    let final_status = admission.checkpoint();
+    if let Some(actual) = admission.take_operational_error() {
+        return Err(BodySyntaxFailure::Operational(actual));
+    }
+    final_status.map_err(BodySyntaxFailure::Operational)?;
+    result
+}
 impl QueryDb {
     pub(super) fn with_setting_admission<T>(
         &self,
         operation: impl FnOnce(&dm_syntax::SettingAdmission<'_>) -> Result<T, BodySyntaxFailure>,
     ) -> Result<T, BodySyntaxFailure> {
-        let checkpoint = || crate::daemon::control::checkpoint();
-        // Explicit worker-work allowance; not syntax meaning or a qualified
-        // SourceScope allocation role. BodySyntax postparse charge stays SOFT.
-        let admission = dm_syntax::SettingAdmission::with_stack_allowance(
-            &self.body_charge,
-            body_syntax::BUDGET,
-            dm_exec::COMPILER_STACK_BYTES / 16,
-            &checkpoint,
-        );
-        let result = operation(&admission);
-        // A prior actual operational failure wins over any later checkpoint.
-        // The input may already have extracted that first actual IO for its
-        // public typed boundary; do not replace it with a sticky status proxy.
-        if matches!(&result, Err(BodySyntaxFailure::Operational(_))) {
-            return match admission.take_operational_error() {
-                Some(actual) => Err(BodySyntaxFailure::Operational(actual)),
-                None => result,
-            };
-        }
-        let final_status = admission.checkpoint();
-        if let Some(actual) = admission.take_operational_error() {
-            return Err(BodySyntaxFailure::Operational(actual));
-        }
-        final_status.map_err(BodySyntaxFailure::Operational)?;
-        result
+        with_setting_admission(&self.body_charge, operation)
     }
 }
+
 impl SettingExpressionQueries for QueryDb {
+    fn statements(
+        &self,
+        input: &mut dm_tree::frontend::SettingStatementsInput<'_, '_>,
+    ) -> Result<Arc<dm_tree::frontend::StatementBody>, BodySyntaxFailure> {
+        self.with_setting_admission(|a| input.prepare(a))
+    }
+
     fn expression(
         &self,
         input: &SettingExpressionInput<'_>,
@@ -236,5 +250,44 @@ mod tests {
         );
         assert!(front.setting_expression(body, metadata, value).is_ok());
         drop(fresh);
+    }
+}
+
+fn setting_checkpoint() -> std::io::Result<()> {
+    #[cfg(test)]
+    SETTING_CANCEL.with(|pending| {
+        let mut pending = pending.borrow_mut();
+        if let Some((left, token)) = pending.as_mut() {
+            if *left == 0 {
+                token.cancel();
+            } else {
+                *left -= 1;
+            }
+        }
+    });
+    crate::daemon::control::checkpoint()
+}
+#[cfg(test)]
+thread_local! {static SETTING_CANCEL:std::cell::RefCell<Option<(usize,crate::daemon::control::Cancellation)>>=const{std::cell::RefCell::new(None)};}
+#[cfg(test)]
+pub(crate) struct SettingCancelSchedule;
+#[cfg(test)]
+impl Drop for SettingCancelSchedule {
+    fn drop(&mut self) {
+        SETTING_CANCEL.with(|s| *s.borrow_mut() = None);
+    }
+}
+#[cfg(test)]
+impl QueryDb {
+    pub(crate) fn cancel_settings_after_checkpoints_for_test(
+        &self,
+        left: usize,
+        token: crate::daemon::control::Cancellation,
+    ) -> SettingCancelSchedule {
+        SETTING_CANCEL.with(|s| {
+            assert!(s.borrow().is_none());
+            *s.borrow_mut() = Some((left, token));
+        });
+        SettingCancelSchedule
     }
 }

@@ -178,3 +178,31 @@ fn selected_reference_capture_reuses_admitted_facts_and_preserves_normal_words()
             .all(|diagnostic| diagnostic.message.contains("unique current body issuance")));
     }
 }
+
+#[test]
+fn checked_selected_page_actual_body_io_emits_no_visitor_and_same_source_recovers() {
+    use std::sync::atomic::{AtomicUsize,Ordering};
+    let db=Arc::new(crate::query_db::QueryDb::default());
+    let frontend=frontend("/proc/probe()\n    return 7\n").with_body_queries(db.clone());
+    let startup=crate::startup::capture(&frontend).unwrap();
+    let executor=dm_exec::BuildExecutor::new(1).unwrap();
+    let bodies=dm_tree::frontend::BodyArena::new(&frontend);
+    let memo=crate::lowering_memo::ProcedureMemo::new(99);
+    let visited=AtomicUsize::new(0);
+    let error=executor.install(||{
+      let _scheduled=db.fail_body_syntax_after_for_test(0,std::io::Error::from_raw_os_error(1450));
+      crate::selected_query::visit_checked(&frontend,&Host,&NoParameters,
+        LoweringConfig::default(),&startup,&memo,LoweringExecution::new(&executor,&bodies),1,
+        |_|{visited.fetch_add(1,Ordering::Relaxed);Ok::<_,String>(())})
+        .err().expect("actual current body failure")
+    });
+    assert!(matches!(error,crate::selected_query::CheckedVisitFailure::Operational(ref error)
+        if error.raw_os_error()==Some(1450)));
+    assert_eq!(visited.load(Ordering::Relaxed),0);
+    let diagnostics=crate::selected_query::visit_checked(&frontend,&Host,&NoParameters,
+        LoweringConfig::default(),&startup,&memo,LoweringExecution::new(&executor,&bodies),1,
+        |_|{visited.fetch_add(1,Ordering::Relaxed);Ok::<_,String>(())})
+        .unwrap_or_else(|_|panic!("same original source should retry"));
+    assert!(diagnostics.is_empty());
+    assert_eq!(visited.load(Ordering::Relaxed),1);
+}

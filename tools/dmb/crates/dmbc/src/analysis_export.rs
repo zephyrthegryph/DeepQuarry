@@ -89,6 +89,9 @@ pub(crate) fn write_resolved_selected<R: dm_ir::Resolver>(
     )
 }
 /// SAME startup/ABI preparation used by ordinary selected analysis; no body lowering.
+fn actual_abi_error(error:dm_codegen_byond::procedure_abi::AbiError)->Box<dyn std::error::Error>{
+    match error.into_operational(){Ok(error)=>Box::new(error),Err(error)=>Box::new(error)}
+}
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn prepare_query_owners<'a, R: dm_ir::Resolver>(
     frontend: &'a dm_tree::frontend::FrontendRevision,
@@ -126,13 +129,16 @@ pub(crate) fn prepare_query_owners_observed<'a, R: dm_ir::Resolver>(
     Box<dyn std::error::Error>,
 > {
     let startup = observe_prepare_stage("query_prepare.startup", observer, || {
-        crate::startup::capture_revision_facts_with_executor_and_bodies_and_artifacts(
+        crate::startup::capture_revision_facts_with_executor_and_bodies_and_artifacts_checked(
             frontend,
             spellings,
             executor,
             bodies,
             memo.startup.as_deref(),
-        )
+        ).map_err(|error|->Box<dyn std::error::Error>{match error{
+            crate::startup::StartupFailure::Semantic(error)=>error.into(),
+            crate::startup::StartupFailure::Operational(error)=>Box::new(error),
+        }})
     })?;
     let startup = startup.view_revision(frontend)?;
     crate::daemon::control::checkpoint()?;
@@ -145,7 +151,7 @@ pub(crate) fn prepare_query_owners_observed<'a, R: dm_ir::Resolver>(
             None,
             executor,
             memo.abi.as_deref(),
-        )
+        ).map_err(actual_abi_error)
     })?;
     Ok((startup, prepared))
 }
@@ -199,7 +205,7 @@ pub(crate) fn write_resolved_selected_with_owners<R: dm_ir::Resolver>(
     )?;
     crate::daemon::control::checkpoint()?;
     if !prepared.prepared.diagnostics.is_empty() {
-        let diagnostics = crate::driver_facts::abi_diagnostics(frontend, &prepared.prepared)?;
+        let diagnostics = crate::driver_facts::abi_diagnostics(frontend, &prepared.prepared).map_err(actual_abi_error)?;
         write_diagnostics(&diagnostics, writer)?;
         coverage(
             writer,
@@ -214,11 +220,11 @@ pub(crate) fn write_resolved_selected_with_owners<R: dm_ir::Resolver>(
         frontend,
         &prepared.prepared,
         std::sync::Arc::clone(startup.unit_members()),
-    )?;
+    ).map_err(actual_abi_error)?;
     // ABI preparation already installs this overlay internally. Executable
     // selection must use the SAME current startup-issued static namespace.
     let static_resolver = startup.resolver(frontend, resolver)?;
-    let diagnostics = match crate::selected_query::visit(
+    let diagnostics = match crate::selected_query::visit_checked(
         frontend,
         &static_resolver,
         &policy,
@@ -246,8 +252,9 @@ pub(crate) fn write_resolved_selected_with_owners<R: dm_ir::Resolver>(
         },
     ) {
         Ok(diagnostics) => diagnostics,
-        Err(crate::selected_query::VisitFailure::Visitor(error)) => return Err(error),
-        Err(crate::selected_query::VisitFailure::Admission(diagnostics)) => {
+        Err(crate::selected_query::CheckedVisitFailure::Visitor(error)) => return Err(error),
+        Err(crate::selected_query::CheckedVisitFailure::Operational(error))=>return Err(Box::new(error)),
+        Err(crate::selected_query::CheckedVisitFailure::Admission(diagnostics)) => {
             crate::daemon::control::checkpoint()?;
             write_diagnostics(&diagnostics, writer)?;
             writer.flush()?;
@@ -353,8 +360,11 @@ pub(crate) fn write_bodies(
     for occurrence in frontend.bodies.iter() {
         crate::daemon::control::checkpoint()?;
         let body = arena
-            .take_parsed(occurrence)
-            .map_err(|error| error.message)?;
+            .take_parsed_checked(occurrence)
+            .map_err(|error|->Box<dyn std::error::Error>{match error{
+                dm_tree::frontend::BodySyntaxFailure::Syntax(error)=>error.message.into(),
+                dm_tree::frontend::BodySyntaxFailure::Operational(error)=>Box::new(error),
+            }})?;
         match dm_analysis::typed_body_jsonl::write_jsonl(&body, writer) {
             Ok(_) => (),
             Err(dm_analysis::typed_body_jsonl::ExportError::NoTypedModel(error)) => {

@@ -89,7 +89,7 @@ impl Compiler<'_> {
                 _ => None,
             };
             match &statement.kind {
-                StatementKind::Set { .. } => {
+                StatementKind::Set { .. } | StatementKind::ProjectedSet { .. } => {
                     return Err(error(
                         &statement.raw_header,
                         "procedure setting was not normalized",

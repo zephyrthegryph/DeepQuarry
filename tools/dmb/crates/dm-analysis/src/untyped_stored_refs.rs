@@ -284,6 +284,8 @@ fn place_of(
     inputs: &PolicyInputs,
 ) -> Result<Option<Place>, Unsupported> {
     let w = &sc.walker;
+    // Shape-only expression lookup. Static-list origins below come from SAME
+    // current SourceLocalView declaration facts, not this Expr's coordinates.
     match &node(e).kind {
         ExprKind::Ident(n) => {
             if w.locals.contains_key(n) {
@@ -380,6 +382,30 @@ pub fn stored_findings(
     remaining: &mut usize,
     checkpoint: impl FnMut() -> Result<(), String>,
 ) -> Result<Vec<StoredFinding>, Unsupported> {
+    stored_findings_with::<crate::policy_body_demand::Compatibility>(
+        inputs, root, p, exempt, remaining, checkpoint,
+    )
+}
+pub fn stored_findings_checked(
+    inputs: &PolicyInputs,
+    root: &Path,
+    p: &StoredPolicy<'_>,
+    exempt: impl Fn(&str) -> bool,
+    remaining: &mut usize,
+    checkpoint: impl FnMut() -> Result<(), String>,
+) -> Result<Vec<StoredFinding>, crate::policy_body_demand::PolicyFailure> {
+    stored_findings_with::<crate::policy_body_demand::Checked>(
+        inputs, root, p, exempt, remaining, checkpoint,
+    )
+}
+pub fn stored_findings_with<D: crate::policy_body_demand::Demand>(
+    inputs: &PolicyInputs,
+    root: &Path,
+    p: &StoredPolicy<'_>,
+    exempt: impl Fn(&str) -> bool,
+    remaining: &mut usize,
+    checkpoint: impl FnMut() -> Result<(), String>,
+) -> Result<Vec<StoredFinding>, D::Error> {
     let checkpoint = std::cell::RefCell::new(checkpoint);
     (checkpoint.borrow_mut())().map_err(Unsupported)?;
     let archive = inputs.archive();
@@ -501,7 +527,7 @@ pub fn stored_findings(
         }
         strings_charge(&[&owner, &name, &declared, &rel], remaining)?;
         if rows.len() >= 10000 {
-            return Err(Unsupported("stored finding limit exceeded".into()));
+            return Err(Unsupported("stored finding limit exceeded".into()).into());
         }
         rows.push(StoredFinding {
             rule: "var",
@@ -527,7 +553,7 @@ pub fn stored_findings(
         if exempt(&rel) {
             continue;
         }
-        let body = archive.parse(ordinal).map_err(|e| Unsupported(e.message))?;
+        let body = D::parse(archive, ordinal)?;
         // Primary local scope allocations get conservative pre-admission, and
         // expire with this body; findings remain charged independently below.
         let transient = body
@@ -575,14 +601,15 @@ pub fn stored_findings(
             };
             strings_charge(&[&rel, owner, name], remaining)?;
             if writes.borrow().len() >= 10000 {
-                return Err(Unsupported("stored write-coordinate limit exceeded".into()));
+                return Err(Unsupported("stored write-coordinate limit exceeded".into()).into());
             }
             writes.borrow_mut().push((place, at));
             Ok(())
         });
-        crate::untyped_order::stored_events(
+        crate::untyped_order::stored_events_current(
             body.statement_body().view(),
-            &mut |e, at| {
+            &mut |observed, at| {
+                let e = observed.original();
                 if error.borrow().is_some() {
                     return;
                 }
@@ -666,7 +693,7 @@ pub fn stored_findings(
         .map_err(|e| Unsupported(e.into()))?;
         drop(retain);
         if let Some(e) = error.into_inner() {
-            return Err(e);
+            return Err(e.into());
         }
         for (place, at) in writes.into_inner() {
             (checkpoint.borrow_mut())().map_err(Unsupported)?;
@@ -679,12 +706,13 @@ pub fn stored_findings(
             if origin.path != occurrence.source.path {
                 return Err(Unsupported(
                     "stored cross-file statement policy projection unavailable".into(),
-                ));
+                )
+                .into());
             }
             let (wrel, line) = point(inputs, root, &origin.path, origin.line)?;
             strings_charge(&[&wrel], remaining)?;
             if found.len() >= 10000 {
-                return Err(Unsupported("stored list-place limit exceeded".into()));
+                return Err(Unsupported("stored list-place limit exceeded".into()).into());
             }
             found.insert(place, (wrel, line));
         }
@@ -695,7 +723,7 @@ pub fn stored_findings(
     for (place, rel, line) in seeds {
         (checkpoint.borrow_mut())().map_err(Unsupported)?;
         if !found.contains_key(&place) && found.len() >= 10000 {
-            return Err(Unsupported("stored list-place limit exceeded".into()));
+            return Err(Unsupported("stored list-place limit exceeded".into()).into());
         }
         found.entry(place).or_insert((rel, line));
     }
@@ -769,7 +797,7 @@ pub fn stored_findings(
     for (rel, line, message, ident) in lists {
         (checkpoint.borrow_mut())().map_err(Unsupported)?;
         if rows.len() >= 10000 {
-            return Err(Unsupported("stored finding limit exceeded".into()));
+            return Err(Unsupported("stored finding limit exceeded".into()).into());
         }
         rows.push(StoredFinding {
             rule: "list",

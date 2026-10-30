@@ -17,6 +17,36 @@ impl ParsedBody<'_> {
         if !body.syntax_complete() {
             return Ok(None);
         }
+        // This legacy private modifier factory returns an ORIGINAL Expr. It
+        // cannot claim a projected setting node is a current executable Expr.
+        struct ProjectedModifier {
+            wanted: Span,
+            found: bool,
+        }
+        impl dm_syntax::TypedVisitor for ProjectedModifier {
+            fn projected_expression(
+                &mut self,
+                v: dm_syntax::ProjectedExprView<'_>,
+                _: &[dm_syntax::NodeStep],
+            ) -> dm_syntax::VisitDecision {
+                if v.current_span() == self.wanted
+                    && matches!(v.original().kind, ExprKind::ObjectInitializer { .. })
+                {
+                    self.found = true;
+                }
+                dm_syntax::VisitDecision::Descend
+            }
+        }
+        let mut projected = ProjectedModifier {
+            wanted: span,
+            found: false,
+        };
+        dm_syntax::visit_statements(&body.parsed().statements, &mut projected);
+        if projected.found {
+            return Err(
+                "projected setting modifier needs its original setting-source recipe".into(),
+            );
+        }
         let mut found = None;
         let mut duplicate = false;
         statements(&body.parsed().statements, &mut |expr| {
@@ -80,6 +110,7 @@ fn statements<'a>(body: &'a [Statement], visit: &mut impl FnMut(&'a Expr)) {
                 optional(delay, visit);
                 statements(body, visit);
             }
+            S::ProjectedSet { .. } => (), // exact requested projected modifier was refused above
             S::Set { value, .. } | S::Throw(value) | S::Call(value) | S::Expression(value) => {
                 expression(value, visit)
             }

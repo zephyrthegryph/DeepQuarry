@@ -30,10 +30,16 @@ fn immutable_mask_matches_owned_filter_for_labels_and_empty_else() {
     let body = dm_syntax::parse_body_items(&source.items[0].children);
     assert!(body.diagnostics.is_empty(), "{:?}", body.diagnostics);
     let mask = dm_syntax::StatementMask::from_predicate(&body.statements, |statement| {
-        matches!(statement.kind, StatementKind::Set { .. })
+        matches!(
+            statement.kind,
+            StatementKind::Set { .. } | StatementKind::ProjectedSet { .. }
+        )
     });
     let filtered = dm_syntax::filter_statements(body.statements.clone(), &mut |statement| {
-        !matches!(statement.kind, StatementKind::Set { .. })
+        !matches!(
+            statement.kind,
+            StatementKind::Set { .. } | StatementKind::ProjectedSet { .. }
+        )
     });
     let inputs = crate::ProcedureInputs::default();
     let symbols = dm_ir::SymbolTable::default();
@@ -55,7 +61,10 @@ fn immutable_mask_matches_owned_filter_for_labels_and_empty_else() {
     let StatementKind::Label { body: retained, .. } = &body.statements[0].kind else {
         unreachable!()
     };
-    assert!(matches!(retained[0].kind, StatementKind::Set { .. }));
+    assert!(matches!(
+        retained[0].kind,
+        StatementKind::Set { .. } | StatementKind::ProjectedSet { .. }
+    ));
 }
 
 #[test]

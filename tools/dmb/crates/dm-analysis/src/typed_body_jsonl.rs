@@ -105,6 +105,16 @@ impl<W: Write> Rows<'_, W> {
     }
 }
 impl<W: Write> TypedVisitor for Rows<'_, W> {
+    fn projected_expression(
+        &mut self,
+        view: dm_syntax::ProjectedExprView<'_>,
+        path: &[dm_syntax::NodeStep],
+    ) -> dm_syntax::VisitDecision {
+        let node = view.original();
+        let span = view.current_span();
+        self.emit(json!({"schema":SCHEMA,"row":"expression","member":self.member,"declaration":self.declaration,"path":Self::path(path),"syntax":expression_syntax(&node.kind),"span":[span.start,span.end]}))
+    }
+
     fn statement(&mut self, node: &Statement, path: &[NodeStep]) -> VisitDecision {
         self.emit(
             json!({"schema":SCHEMA,"row":"statement","member":self.member,

@@ -4,10 +4,7 @@ use crate::{
     captured_raw_policy::{CapturedRawPolicy, Configuration, RawRun, MAX_FIXTURE_SITES},
     lint::{Run, Sink},
 };
-use dm_analysis::{
-    policy_inputs::PolicyInputs,
-    untyped::{stored_findings, StoredPolicy},
-};
+use dm_analysis::{policy_inputs::PolicyInputs, untyped::StoredPolicy};
 use std::{collections::HashSet, path::Path};
 pub struct CapturedStoredRefs<'a> {
     raw: CapturedRawPolicy,
@@ -43,10 +40,20 @@ impl<'a> BorrowedStoredRefs<'a> {
             None => Ok(()),
         }
     }
-    pub fn scan(
+    pub fn scan(&self, checkpoint: impl FnMut() -> Result<(), String>) -> Result<RawRun, String> {
+        self.scan_with::<dm_analysis::policy_body_demand::Compatibility>(checkpoint)
+            .map_err(|e| e.0)
+    }
+    pub fn scan_checked(
+        &self,
+        checkpoint: impl FnMut() -> Result<(), String>,
+    ) -> Result<RawRun, dm_analysis::policy_body_demand::PolicyFailure> {
+        self.scan_with::<dm_analysis::policy_body_demand::Checked>(checkpoint)
+    }
+    fn scan_with<D: dm_analysis::policy_body_demand::Demand>(
         &self,
         mut checkpoint: impl FnMut() -> Result<(), String>,
-    ) -> Result<RawRun, String> {
+    ) -> Result<RawRun, D::Error> {
         checkpoint()?;
         self.intact()?;
         let facts = crate::stored_refs_policy::SourceFacts::capture(self.raw, &mut checkpoint)?;
@@ -62,15 +69,14 @@ impl<'a> BorrowedStoredRefs<'a> {
             has_schema: &|t, v| facts.schemas.has(t, v),
         };
         let mut remaining = facts.remaining;
-        let rows = stored_findings(
+        let rows = dm_analysis::untyped::stored_findings_with::<D>(
             self.inputs,
             &self.raw.tree.root,
             &policy,
             |f| scope.exempt(f),
             &mut remaining,
             &mut checkpoint,
-        )
-        .map_err(|e| e.0)?;
+        )?;
         let key_budget = rows
             .iter()
             .try_fold(0usize, |total, row| {
@@ -106,13 +112,13 @@ impl<'a> BorrowedStoredRefs<'a> {
             }
             sink.site_decl(row.rule, &row.rel, row.line, row.message, row.ident);
             if let Some(e) = sink.admission_error() {
-                return Err(e);
+                return Err(e.into());
             }
         }
         checkpoint()?;
         self.intact()?;
         if let Some(e) = sink.admission_error() {
-            return Err(e);
+            return Err(e.into());
         }
         Ok(RawRun {
             name: "stored_refs".into(),

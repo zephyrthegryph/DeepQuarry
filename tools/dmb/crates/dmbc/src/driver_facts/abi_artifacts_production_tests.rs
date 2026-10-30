@@ -7,9 +7,38 @@ impl dm_preprocess::SourceProvider for Text<'_> {
         Ok(self.0.into())
     }
 }
-pub(super) fn frontend(source: &str, engine: &EngineSnapshot) -> ColdFrontend {
+
+/// Explicit test fixture keeps the EXISTING host alive beside its source. The
+/// production frontend/provider itself remains Weak and retains no manager.
+#[derive(Clone)]
+pub(super) struct NativeSettingsFixture {
+    front: ColdFrontend,
+    _queries: Arc<crate::query_db::QueryDb>,
+}
+impl std::ops::Deref for NativeSettingsFixture {
+    type Target = ColdFrontend;
+    fn deref(&self) -> &ColdFrontend {
+        &self.front
+    }
+}
+impl std::ops::DerefMut for NativeSettingsFixture {
+    fn deref_mut(&mut self) -> &mut ColdFrontend {
+        &mut self.front
+    }
+}
+impl NativeSettingsFixture {
+    fn bind(front: ColdFrontend, queries: Arc<crate::query_db::QueryDb>) -> Self {
+        let host = Arc::clone(&queries) as Arc<dyn dm_tree::frontend::SettingExpressionQueries>;
+        Self {
+            front: front.with_setting_expression_queries(&host).unwrap(),
+            _queries: queries,
+        }
+    }
+}
+
+pub(super) fn frontend(source: &str, engine: &EngineSnapshot) -> NativeSettingsFixture {
     let seed = engine.frontend_seed();
-    dm_tree::frontend::build_with_config(
+    let front = dm_tree::frontend::build_with_config(
         Path::new("abi-retained.dme"),
         &Text(source),
         &Default::default(),
@@ -19,16 +48,18 @@ pub(super) fn frontend(source: &str, engine: &EngineSnapshot) -> ColdFrontend {
             observer: None,
         },
     )
-    .unwrap()
+    .unwrap();
+    NativeSettingsFixture::bind(front, Arc::new(crate::query_db::QueryDb::default()))
 }
 fn retained_frontend(
     source: &str,
     engine: &EngineSnapshot,
     state: &mut dm_tree::frontend::RetainedSemanticTree,
-) -> ColdFrontend {
+    queries: &Arc<crate::query_db::QueryDb>,
+) -> NativeSettingsFixture {
     let seed = engine.frontend_seed();
     let executor = dm_exec::BuildExecutor::new(1).unwrap();
-    dm_tree::frontend::build_with_executor_and_semantic_state(
+    let front = dm_tree::frontend::build_with_executor_and_semantic_state(
         Path::new("abi-retained.dme"),
         &Text(source),
         &Default::default(),
@@ -41,7 +72,8 @@ fn retained_frontend(
         &executor,
         Some(state),
     )
-    .unwrap()
+    .unwrap();
+    NativeSettingsFixture::bind(front, Arc::clone(queries))
 }
 pub(super) fn prepared(
     front: &ColdFrontend,
@@ -121,11 +153,12 @@ fn structural_abi_scheduler_reuses_unrelated_owner_and_rebinds_formal_wave() {
     let engine = &owner.snapshot;
     let store = AbiArtifacts::with_engine_owner(owner.clone()).with_retained_shortcuts();
     let mut state = dm_tree::frontend::RetainedSemanticTree::new();
+    let queries = Arc::new(crate::query_db::QueryDb::default());
     // Certificates are process-local issuer proofs: exercise the actual retained frontend.
-    let first=retained_frontend("/datum/a/proc/p(x=1)\n    set invisibility = 7\n    return x\n/datum/a/mid/p(x=2)\n    return ..()\n/datum/a/mid/leaf/p(x=3)\n    return ..()\n/datum/independent/proc/q(x=4)\n    return x\n",engine, &mut state);
+    let first=retained_frontend("/datum/a/proc/p(x=1)\n    set invisibility = 7\n    return x\n/datum/a/mid/p(x=2)\n    return ..()\n/datum/a/mid/leaf/p(x=3)\n    return ..()\n/datum/independent/proc/q(x=4)\n    return x\n",engine, &mut state,&queries);
     let before = prepared(&first, engine, Some(&store));
     assert_eq!(store.scheduled_reused(), 0);
-    let changed=retained_frontend("// current origin moved\n/datum/a/proc/p(x=1)\n    set invisibility = 9\n    return x\n/datum/a/mid/p(x=2)\n    return ..()\n/datum/a/mid/leaf/p(x=3)\n    return ..()\n/datum/independent/proc/q(x=4)\n    return x+1\n",engine, &mut state);
+    let changed=retained_frontend("// current origin moved\n/datum/a/proc/p(x=1)\n    set invisibility = 9\n    return x\n/datum/a/mid/p(x=2)\n    return ..()\n/datum/a/mid/leaf/p(x=3)\n    return ..()\n/datum/independent/proc/q(x=4)\n    return x+1\n",engine, &mut state,&queries);
     let retained = prepared(&changed, engine, Some(&store));
     same(&retained, &prepared(&changed, engine, None));
     assert_eq!(
@@ -176,7 +209,8 @@ fn real_abi_artifact_rebinds_body_edits_and_invalidates_constant_and_parent_sign
     )
     .unwrap();
     let engine = &engine_owner.snapshot;
-    let store = AbiArtifacts::with_engine_owner(Arc::clone(&engine_owner)).with_retained_shortcuts();
+    let store =
+        AbiArtifacts::with_engine_owner(Arc::clone(&engine_owner)).with_retained_shortcuts();
     let original=frontend("/var/const/C = 7\n/datum/base/proc/p(x=C)\n    set invisibility = C\n    return x\n/datum/base/child/p(x=C)\n    return ..()\n",&engine);
     for body in original.bodies.iter() {
         let proof = original
@@ -440,7 +474,10 @@ fn engine_parent_structural_chain_uses_current_source_and_exact_boundary() {
             for read in reads {
                 if let observations::Answer::Inputs(current) = &read.answer {
                     assert!(!matches!(current.boundary, observations::Boundary::Absent));
-    assert!(Arc::ptr_eq(&current.engine.upgrade().unwrap(), &engine_owner));
+                    assert!(Arc::ptr_eq(
+                        &current.engine.upgrade().unwrap(),
+                        &engine_owner
+                    ));
                     inputs += 1;
                 }
             }

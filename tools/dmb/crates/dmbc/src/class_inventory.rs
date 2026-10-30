@@ -8,7 +8,7 @@ use std::{
     sync::Arc,
 };
 mod string_registration;
-pub(crate) use string_registration::contribute_source_strings;
+pub(crate) use string_registration::{contribute_source_strings,contribute_source_strings_checked,RegistrationFailure};
 pub(crate) mod dreammaker_type_order;
 
 /// `touches`: every path a declaration block names, first encounter first

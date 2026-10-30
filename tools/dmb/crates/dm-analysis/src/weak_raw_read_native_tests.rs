@@ -24,7 +24,8 @@ impl SourceProvider for Source {
 fn input(source: &str, certified: bool) -> (PathBuf, PolicyInputs) {
     input_at(source, certified, "code/probe.dm")
 }
-fn input_at(source: &str, certified: bool, relative: &str) -> (PathBuf, PolicyInputs) {
+fn input_at(source: &str, certified: bool, relative: &str) -> (PathBuf, PolicyInputs) { input_at_host(source, certified, relative, None) }
+fn input_at_host(source: &str, certified: bool, relative: &str, host: Option<Arc<dyn dm_tree::frontend::BodySyntaxQueries>>) -> (PathBuf, PolicyInputs) {
     let root = std::env::current_dir()
         .unwrap()
         .join("weak-raw-native-fixture");
@@ -49,6 +50,7 @@ fn input_at(source: &str, certified: bool, relative: &str) -> (PathBuf, PolicyIn
         true,
     )
     .unwrap();
+    let frontend = match host { Some(host) => frontend.with_body_queries(host), None => frontend };
     let extra = frontend
         .files
         .iter()
@@ -158,4 +160,16 @@ fn stored_reference_receiver_shares_proven_global_method_fallback_without_steali
     let (root, inputs) = input(source, true);
     let rows = findings(&inputs, &root, &weak(), |_| false, || Ok(())).unwrap();
     assert_eq!(rows.iter().map(|r| r.line).collect::<Vec<_>>(), [10, 12]);
+}
+
+#[test]
+fn projected_setting_weak_reads_preserve_nameof_callee_skips_and_current_source_lines() {
+    for prefix in ["", "// earlier source \u{e9}\n\n"] {
+        let source=format!("{prefix}/datum/owner\n    var/datum/target\n    proc/p(datum/owner/H)\n        set name = H.target\n        set desc = nameof(H.target)\n        target\n");
+        let (root,old)=input(&source,true); let expected=findings(&old,&root,&weak(),|_|false,||Ok(())).unwrap();
+        assert_eq!(expected.len(),2);
+        let (root,native)=input_at_host(&source,true,"code/probe.dm",Some(crate::untyped_order::projected_body_host_for_test()));
+        assert!(matches!(&native.archive().parse(0).unwrap().statement_body().parsed().statements[0].kind,dm_syntax::StatementKind::ProjectedSet{..}));
+        assert_eq!(findings(&native,&root,&weak(),|_|false,||Ok(())).unwrap(),expected);
+    }
 }

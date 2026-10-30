@@ -361,6 +361,14 @@ fn lower_one_captured_with<D: LowerBodyDemand, R: Resolver, P: AbiPolicy>(
                 end: Option<usize>,
             }
             impl dm_syntax::TypedVisitor for HeaderEnd {
+                fn projected_expression(
+                    &mut self,
+                    _view: dm_syntax::ProjectedExprView<'_>,
+                    _path: &[dm_syntax::NodeStep],
+                ) -> dm_syntax::VisitDecision {
+                    dm_syntax::VisitDecision::Descend
+                }
+
                 fn statement(
                     &mut self,
                     statement: &dm_syntax::Statement,

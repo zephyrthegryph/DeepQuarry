@@ -13,6 +13,45 @@ pub use artifacts::StartupArtifacts;
 #[path = "startup_artifacts_tests.rs"]
 mod artifact_tests;
 
+/// Stack-only failure status, never a startup artifact or cached semantic key.
+#[derive(Debug)]
+pub enum StartupFailure {
+    Semantic(String),
+    Operational(std::io::Error),
+}
+impl From<String> for StartupFailure {fn from(value:String)->Self{Self::Semantic(value)}}
+impl From<&str> for StartupFailure {fn from(value:&str)->Self{Self::Semantic(value.into())}}
+trait StartupDemand {
+    type Failure:From<String>+From<&'static str>+Send;
+    fn semantic(error:Self::Failure)->Result<String,Self::Failure>;
+    fn body<'f,T>(arena:&dm_tree::frontend::BodyArena<'f>,body:&dm_tree::frontend::BodyOccurrence,
+        produce:impl FnOnce(&dm_tree::frontend::ParsedBody<'f>)->T)->Result<T,Self::Failure>;
+}
+struct CompatibilityStartup;
+struct CheckedStartup;
+impl StartupDemand for CompatibilityStartup {
+    type Failure=String;
+    fn semantic(error:String)->Result<String,String>{Ok(error)}
+    fn body<'f,T>(arena:&dm_tree::frontend::BodyArena<'f>,body:&dm_tree::frontend::BodyOccurrence,
+        produce:impl FnOnce(&dm_tree::frontend::ParsedBody<'f>)->T)->Result<T,String>{
+        arena.with_parsed(body,produce).map_err(|error|format!("startup body: {error:?}"))
+    }
+}
+impl StartupDemand for CheckedStartup {
+    type Failure=StartupFailure;
+    fn semantic(error:StartupFailure)->Result<String,StartupFailure>{
+        match error { StartupFailure::Semantic(reason)=>Ok(reason), operation=>Err(operation) }
+    }
+    fn body<'f,T>(arena:&dm_tree::frontend::BodyArena<'f>,body:&dm_tree::frontend::BodyOccurrence,
+        produce:impl FnOnce(&dm_tree::frontend::ParsedBody<'f>)->T)->Result<T,StartupFailure>{
+        match arena.with_parsed_checked(body,produce){
+            Ok(value)=>Ok(value),
+            Err(dm_tree::frontend::BodySyntaxFailure::Syntax(error))=>Err(StartupFailure::Semantic(format!("startup body: {error:?}"))),
+            Err(dm_tree::frontend::BodySyntaxFailure::Operational(error))=>Err(StartupFailure::Operational(error)),
+        }
+    }
+}
+
 pub struct CapturedStartup<'a> {
     frontend: &'a ColdFrontend,
     revision: Option<&'a dm_tree::frontend::FrontendRevision>,
@@ -155,6 +194,16 @@ fn capture_impl_with_bodies_and_artifacts(
     artifacts: Option<&StartupArtifacts>,
     prepared: Option<&crate::lowering::PreparedBodyRoster<'_>>,
 ) -> Result<StartupFacts, String> {
+    capture_impl_with_bodies_and_artifacts_using::<CompatibilityStartup>(frontend,executor,bodies,prefilter,artifacts,prepared)
+}
+fn capture_impl_with_bodies_and_artifacts_using<D:StartupDemand>(
+    frontend: &ColdFrontend,
+    executor: &dm_exec::BuildExecutor,
+    bodies: &dm_tree::frontend::BodyArena<'_>,
+    prefilter: bool,
+    artifacts: Option<&StartupArtifacts>,
+    prepared: Option<&crate::lowering::PreparedBodyRoster<'_>>,
+) -> Result<StartupFacts,D::Failure> {
     let prepared = prepared.filter(|roster| roster.authenticates(frontend));
     let units = match artifacts {
         Some(artifacts) => artifacts.unit_members(frontend)?,
@@ -255,13 +304,11 @@ fn capture_impl_with_bodies_and_artifacts(
                 return Ok((body.declaration, ProcedureCapture::Issued(plan)));
             }
         }
-        let plan = bodies
-            .with_parsed(body, |parsed| parsed.capture_stored_declarations(identity))
-            .map_err(|e| format!("startup body: {e:?}"))??;
+        let plan=D::body(bodies,body,|parsed|parsed.capture_stored_declarations(identity))??;
         if let (Some(artifacts), Some(key)) = (artifacts, candidate_key) {
             artifacts.remember(key.to_vec(), &plan);
         }
-        Ok::<_, String>((body.declaration, ProcedureCapture::Issued(plan)))
+        Ok::<_,D::Failure>((body.declaration,ProcedureCapture::Issued(plan)))
     };
     let workers = executor.workers().min(frontend.bodies.len().max(1));
     let chunk = frontend.bodies.len().div_ceil(workers).max(1);
@@ -280,7 +327,7 @@ fn capture_impl_with_bodies_and_artifacts(
                         bodies
                             .iter()
                             .map(capture_body)
-                            .collect::<Result<Vec<_>, String>>()
+                            .collect::<Result<Vec<_>,D::Failure>>()
                     }))
                     .unwrap_or_else(|_| Err("startup capture worker panicked".into()));
                     *slot.lock().unwrap_or_else(|error| error.into_inner()) = Some(result);
@@ -295,10 +342,19 @@ fn capture_impl_with_bodies_and_artifacts(
             .unwrap_or_else(|| Err("startup capture job did not complete".into()))
     });
     let mut procedures = Vec::with_capacity(frontend.bodies.len());
-    // Chunk order is source order, including deterministic first-error selection.
+    // All workers have joined. Preserve actual operational failure from any
+    // completed chunk before selecting the first source-ordered semantic error.
+    let mut first_semantic=None;
     for result in chunks {
-        procedures.extend(result?);
+        match result {
+            Ok(rows)=>procedures.extend(rows),
+            Err(error)=>match D::semantic(error) {
+                Err(operation)=>return Err(operation),
+                Ok(reason)=>if first_semantic.is_none(){first_semantic=Some(reason)},
+            },
+        }
     }
+    if let Some(reason)=first_semantic{return Err(reason.into());}
     dm_profile::request_mark("startup.procs_collected");
     let draft_timer = dm_profile::detail_timer("startup.declaration_draft");
     let base = dm_tree::initializers::capture_declaration_draft(
@@ -393,6 +449,21 @@ pub fn capture_with_executor_and_bodies<'a>(
         facts: capture_facts_with_executor_and_bodies(frontend, spellings, executor, bodies)?,
     })
 }
+pub fn capture_with_executor_and_bodies_checked<'a>(
+    frontend: &'a ColdFrontend,
+    spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
+    executor: &dm_exec::BuildExecutor,
+    bodies: &dm_tree::frontend::BodyArena<'_>,
+) -> Result<CapturedStartup<'a>,StartupFailure> {
+    crate::daemon::control::checkpoint().map_err(StartupFailure::Operational)?;
+    let captured=CapturedStartup {
+        frontend,
+        revision: None,
+        facts: capture_facts_with_executor_and_bodies_and_artifacts_using::<CheckedStartup>(frontend,spellings,executor,bodies,None,None)?,
+    };
+    crate::daemon::control::checkpoint().map_err(StartupFailure::Operational)?;
+    Ok(captured)
+}
 /// Production capture borrows the same current body admissions as lowering.
 pub(crate) fn capture_with_prepared_bodies<'a>(
     frontend: &'a ColdFrontend,
@@ -425,6 +496,40 @@ pub(crate) fn capture_with_prepared_bodies<'a>(
         facts,
     })
 }
+pub(crate) fn capture_with_prepared_bodies_checked<'a>(
+    frontend: &'a ColdFrontend,
+    revision: Option<&'a dm_tree::frontend::FrontendRevision>,
+    spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
+    executor: &dm_exec::BuildExecutor,
+    bodies: &dm_tree::frontend::BodyArena<'_>,
+    artifacts: Option<&StartupArtifacts>,
+    prepared: &crate::lowering::PreparedBodyRoster<'_>,
+) -> Result<CapturedStartup<'a>,StartupFailure> {
+    crate::daemon::control::checkpoint().map_err(StartupFailure::Operational)?;
+    if revision.is_some_and(|revision| !std::ptr::eq::<ColdFrontend>(&**revision, frontend)) {
+        return Err("startup revision belongs to another current frontend".into());
+    }
+    let mut facts = capture_facts_with_executor_and_bodies_and_artifacts_using::<CheckedStartup>(
+        frontend,
+        spellings,
+        executor,
+        bodies,
+        artifacts,
+        Some(prepared),
+    )?;
+    if let Some(revision) = revision {
+        std::sync::Arc::get_mut(&mut facts)
+            .expect("new startup facts are exclusively owned")
+            .issuance = Some(revision.issuance());
+    }
+    let captured=CapturedStartup {
+        frontend,
+        revision,
+        facts,
+    };
+    crate::daemon::control::checkpoint().map_err(StartupFailure::Operational)?;
+    Ok(captured)
+}
 pub fn capture_revision_facts_with_executor_and_bodies(
     revision: &dm_tree::frontend::FrontendRevision,
     spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
@@ -448,6 +553,23 @@ pub fn capture_revision_facts_with_executor_and_bodies_and_artifacts(
     std::sync::Arc::get_mut(&mut facts)
         .expect("new startup facts are exclusively owned")
         .issuance = Some(revision.issuance());
+    Ok(facts)
+}
+pub fn capture_revision_facts_with_executor_and_bodies_and_artifacts_checked(
+    revision: &dm_tree::frontend::FrontendRevision,
+    spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
+    executor: &dm_exec::BuildExecutor,
+    bodies: &dm_tree::frontend::BodyArena<'_>,
+    artifacts: Option<&StartupArtifacts>,
+) -> Result<std::sync::Arc<StartupFacts>,StartupFailure> {
+    crate::daemon::control::checkpoint().map_err(StartupFailure::Operational)?;
+    let mut facts=capture_facts_with_executor_and_bodies_and_artifacts_using::<CheckedStartup>(
+        revision, spellings, executor, bodies, artifacts, None,
+    )?;
+    std::sync::Arc::get_mut(&mut facts)
+        .expect("new startup facts are exclusively owned")
+        .issuance = Some(revision.issuance());
+    crate::daemon::control::checkpoint().map_err(StartupFailure::Operational)?;
     Ok(facts)
 }
 pub fn capture_revision_facts_with_executor(
@@ -506,7 +628,17 @@ fn capture_facts_with_executor_and_bodies_and_artifacts(
     artifacts: Option<&StartupArtifacts>,
     prepared: Option<&crate::lowering::PreparedBodyRoster<'_>>,
 ) -> Result<std::sync::Arc<StartupFacts>, String> {
-    let mut startup = capture_impl_with_bodies_and_artifacts(
+    capture_facts_with_executor_and_bodies_and_artifacts_using::<CompatibilityStartup>(frontend,spellings,executor,bodies,artifacts,prepared)
+}
+fn capture_facts_with_executor_and_bodies_and_artifacts_using<D:StartupDemand>(
+    frontend: &ColdFrontend,
+    spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
+    executor: &dm_exec::BuildExecutor,
+    bodies: &dm_tree::frontend::BodyArena<'_>,
+    artifacts: Option<&StartupArtifacts>,
+    prepared: Option<&crate::lowering::PreparedBodyRoster<'_>>,
+) -> Result<std::sync::Arc<StartupFacts>,D::Failure> {
+    let mut startup = capture_impl_with_bodies_and_artifacts_using::<D>(
         frontend, executor, bodies, true, artifacts, prepared,
     )?;
     dm_profile::request_mark("startup.impl_done");
@@ -881,3 +1013,133 @@ mod static_certificate_tests;
 #[cfg(test)]
 #[path = "startup_prepared_roster_tests.rs"]
 mod prepared_roster_tests;
+
+#[cfg(test)]
+mod checked_capture_tests {
+    use super::*;
+    use std::{path::Path,sync::Arc};
+    struct Source;
+    impl dm_preprocess::SourceProvider for Source {
+        fn read(&self,_:&Path)->Result<String,String>{
+            Ok("/proc/probe()\n    var/static/value = 1\n    return value\n".into())
+        }
+    }
+    #[test]
+    fn checked_startup_actual_body_operation_is_not_artifact_or_semantic_failure() {
+        let db=Arc::new(crate::query_db::QueryDb::default());
+        let frontend=dm_tree::frontend::build(Path::new("startup-operation.dme"),&Source,&Default::default(),1)
+            .unwrap().with_body_queries(db.clone());
+        let executor=dm_exec::BuildExecutor::new(1).unwrap();
+        let arena=dm_tree::frontend::BodyArena::new(&frontend);
+        let error=executor.install(||{
+            let _scheduled=db.fail_body_syntax_after_for_test(0,std::io::Error::from_raw_os_error(1450));
+            capture_with_executor_and_bodies_checked(&frontend,&[],&executor,&arena)
+                .err().expect("real current body failure")
+        });
+        assert!(matches!(error,StartupFailure::Operational(ref error) if error.raw_os_error()==Some(1450)));
+        let actual=capture_with_executor_and_bodies_checked(&frontend,&[],&executor,&arena).unwrap();
+        let old=capture_with_executor_and_bodies(&frontend,&[],&executor,&arena).unwrap();
+        assert_eq!(actual.plan.writes,old.plan.writes);
+        assert_eq!(actual.plan.origins,old.plan.origins);
+        assert_eq!(actual.procedures.len(),old.procedures.len());
+        assert_eq!(db.db().stats(dm_query::Kind(4)).computed,1);
+    }
+    #[test]
+    fn checked_startup_completed_sibling_operation_precedes_first_source_rejection() {
+        use std::sync::atomic::{AtomicBool,AtomicUsize,AtomicU64,Ordering};
+        struct Two;
+        impl dm_preprocess::SourceProvider for Two {
+            fn read(&self,_:&Path)->Result<String,String>{Ok(
+                "/proc/first()\n    var/static/value = 1\n    var/static/value = 2\n/proc/second()\n    var/static/other = 3\n".into())}
+        }
+        struct FailSecond {db:Arc<crate::query_db::QueryDb>,target:AtomicU64,once:AtomicBool,calls:AtomicUsize}
+        impl std::fmt::Debug for FailSecond {
+            fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.write_str("FailSecond")}
+        }
+        impl dm_tree::frontend::BodySyntaxQueries for FailSecond {
+            fn syntax(&self,input:&Arc<dm_tree::frontend::BodySyntaxInput>)
+                ->Result<Arc<dm_tree::frontend::BodySyntax>,dm_tree::frontend::Diagnostic>{
+                dm_tree::frontend::BodySyntaxQueries::syntax(self.db.as_ref(),input)
+            }
+            fn syntax_checked(&self,input:&Arc<dm_tree::frontend::BodySyntaxInput>)
+                ->Result<Arc<dm_tree::frontend::BodySyntax>,dm_tree::frontend::BodySyntaxFailure>{
+                self.calls.fetch_add(1,Ordering::SeqCst);
+                let _schedule=(input.key()==self.target.load(Ordering::SeqCst) && self.once.swap(false,Ordering::SeqCst))
+                    .then(||self.db.fail_body_syntax_after_for_test(0,std::io::Error::from_raw_os_error(1450)));
+                dm_tree::frontend::BodySyntaxQueries::syntax_checked(self.db.as_ref(),input)
+            }
+        }
+        let db=Arc::new(crate::query_db::QueryDb::default());
+        let frontend=dm_tree::frontend::build(Path::new("startup-joined-operation.dme"),&Two,&Default::default(),1).unwrap();
+        assert_eq!(frontend.bodies.len(),2);
+        let provider=Arc::new(FailSecond{db:db.clone(),target:AtomicU64::new(0),once:AtomicBool::new(true),calls:AtomicUsize::new(0)});
+        let frontend=frontend.with_body_queries(provider.clone());
+        provider.target.store(frontend.body_archive().unwrap().syntax_inputs().unwrap()[1].key(),Ordering::SeqCst);
+        let executor=dm_exec::BuildExecutor::new(2).unwrap();
+        let arena=dm_tree::frontend::BodyArena::new(&frontend);
+        let error=capture_with_executor_and_bodies_checked(&frontend,&[],&executor,&arena).err().expect("joined sibling IO");
+        assert!(matches!(error,StartupFailure::Operational(ref error) if error.raw_os_error()==Some(1450)));
+        assert_eq!(provider.calls.load(Ordering::SeqCst),2,"both original chunks completed");
+        let retry=capture_with_executor_and_bodies_checked(&frontend,&[],&executor,&arena).err().expect("original duplicate remains");
+        assert!(matches!(retry,StartupFailure::Semantic(ref reason) if reason=="same-name scoped procedure statics require a certified lexical slot policy"),"{retry:?}");
+        assert_eq!(db.db().stats(dm_query::Kind(4)).computed,2);
+    }
+    #[test]
+    fn checked_startup_cancelled_empty_capture_returns_no_facts_then_recovers() {
+        struct Empty;
+        impl dm_preprocess::SourceProvider for Empty {
+            fn read(&self,_:&Path)->Result<String,String>{Ok(String::new())}
+        }
+        let frontend=dm_tree::frontend::build(Path::new("startup-empty.dme"),&Empty,&Default::default(),1).unwrap();
+        let executor=dm_exec::BuildExecutor::new(1).unwrap();
+        let arena=dm_tree::frontend::BodyArena::new(&frontend);
+        let token=crate::daemon::control::Cancellation::default();
+        let binding=crate::daemon::control::bind_with_deadline(token.clone(),
+            std::time::Instant::now()+std::time::Duration::from_secs(300));
+        token.cancel();
+        let error=capture_with_executor_and_bodies_checked(&frontend,&[],&executor,&arena)
+            .err().expect("empty checked capture still observes current cancellation");
+        assert!(matches!(error,StartupFailure::Operational(ref error) if error.kind()==std::io::ErrorKind::Interrupted));
+        drop(binding);
+        assert!(capture_with_executor_and_bodies_checked(&frontend,&[],&executor,&arena).is_ok());
+    }
+    #[test]
+    fn checked_startup_last_original_body_read_cancel_precedes_returning_facts() {
+        struct CancelAfterDb {db:Arc<crate::query_db::QueryDb>,token:crate::daemon::control::Cancellation}
+        impl std::fmt::Debug for CancelAfterDb {
+            fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{
+                f.debug_struct("CancelAfterDb").finish_non_exhaustive()
+            }
+        }
+        impl dm_tree::frontend::BodySyntaxQueries for CancelAfterDb {
+            fn syntax(&self,input:&Arc<dm_tree::frontend::BodySyntaxInput>)
+                ->Result<Arc<dm_tree::frontend::BodySyntax>,dm_tree::frontend::Diagnostic>{
+                dm_tree::frontend::BodySyntaxQueries::syntax(self.db.as_ref(),input)
+            }
+            fn syntax_checked(&self,input:&Arc<dm_tree::frontend::BodySyntaxInput>)
+                ->Result<Arc<dm_tree::frontend::BodySyntax>,dm_tree::frontend::BodySyntaxFailure>{
+                let result=dm_tree::frontend::BodySyntaxQueries::syntax_checked(self.db.as_ref(),input);
+                self.token.cancel();result
+            }
+        }
+        let token=crate::daemon::control::Cancellation::default();
+        let db=Arc::new(crate::query_db::QueryDb::default());
+        let frontend=dm_tree::frontend::build(Path::new("startup-late-cancel.dme"),&Source,&Default::default(),1)
+            .unwrap().with_body_queries(Arc::new(CancelAfterDb{db:db.clone(),token:token.clone()}));
+        let executor=dm_exec::BuildExecutor::new(1).unwrap();
+        let arena=dm_tree::frontend::BodyArena::new(&frontend);
+        let binding=crate::daemon::control::bind_with_deadline(token.clone(),
+            std::time::Instant::now()+std::time::Duration::from_secs(300));
+        let error=capture_with_executor_and_bodies_checked(&frontend,&[],&executor,&arena)
+            .err().expect("last actual native read cancelled request");
+        assert!(matches!(error,StartupFailure::Operational(ref error) if error.kind()==std::io::ErrorKind::Interrupted));
+        assert_eq!(db.db().stats(dm_query::Kind(4)).computed,1);
+        drop(binding);
+        let retry_token=crate::daemon::control::Cancellation::default();
+        let retry_binding=crate::daemon::control::bind_with_deadline(retry_token,
+            std::time::Instant::now()+std::time::Duration::from_secs(300));
+        assert!(capture_with_executor_and_bodies_checked(&frontend,&[],&executor,&arena).is_ok());
+        assert_eq!(db.db().stats(dm_query::Kind(4)).computed,1);
+        drop(retry_binding);
+    }
+}

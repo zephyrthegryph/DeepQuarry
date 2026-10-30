@@ -163,8 +163,13 @@ struct NodeIndex<'a> {
     // never serialized or retained outside this walk.
     call_callee: Option<usize>,
 }
-impl TypedVisitor for NodeIndex<'_> {
-    fn expression(&mut self, node: &Expr, path: &[NodeStep]) -> VisitDecision {
+impl NodeIndex<'_> {
+    fn expression_at(
+        &mut self,
+        node: &Expr,
+        path: &[NodeStep],
+        current_span: dm_syntax::Span,
+    ) -> VisitDecision {
         if let ExprKind::Call { callee, .. } = &node.kind {
             self.call_callee = Some(callee.as_ref() as *const Expr as usize);
         }
@@ -206,13 +211,26 @@ impl TypedVisitor for NodeIndex<'_> {
                     path.to_vec(),
                     NodeLocation {
                         name: name.to_owned(),
-                        span: node.span,
+                        span: current_span,
                         role,
                     },
                 );
             }
         }
         VisitDecision::Descend
+    }
+}
+impl TypedVisitor for NodeIndex<'_> {
+    fn projected_expression(
+        &mut self,
+        view: dm_syntax::ProjectedExprView<'_>,
+        path: &[dm_syntax::NodeStep],
+    ) -> dm_syntax::VisitDecision {
+        self.expression_at(view.original(), path, view.current_span())
+    }
+
+    fn expression(&mut self, node: &Expr, path: &[NodeStep]) -> VisitDecision {
+        self.expression_at(node, path, node.span)
     }
 }
 fn meaning_json(meaning: &SelectedMeaning) -> serde_json::Value {

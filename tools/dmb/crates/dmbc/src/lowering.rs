@@ -691,6 +691,7 @@ fn lower_frontend_impl_on_execution<'frontend, R: Resolver, P: AbiPolicy>(
 mod completion;
 pub(crate) mod symbolic_input;
 pub use completion::{
+    lower_frontend_completed_input_checked_on_execution,
     lower_frontend_completed_input_on_execution, lower_frontend_completed_on_execution,
     CompletedLoweringBatch, CompletedUnit,
 };

@@ -31,7 +31,18 @@ pub(super) fn register(db: &Db, charged: Arc<AtomicUsize>) {
             .ok_or(QueryError::Missing(params.key))?;
         #[cfg(test)]
         body_failure_test_checkpoint(params.key)?;
-        let result = input.parse().map(Arc::new);
+        // Existing Kind4 owns the in-scope permit. Setting leaves never call
+        // host.syntax/Db.get or reacquire/reset any family admission here.
+        let parsed = setting_syntax::with_setting_admission(&charged, |admission| {
+            input.parse_with_setting_admission(admission)
+        });
+        let result = match parsed {
+            Ok(syntax) => Ok(Arc::new(syntax)),
+            Err(BodySyntaxFailure::Syntax(error)) => Err(error),
+            Err(BodySyntaxFailure::Operational(error)) => {
+                return Err(QueryError::operational(params.key, error))
+            }
+        };
         let bytes = result
             .as_ref()
             .map_or(1024, |syntax| syntax.budget_charge());

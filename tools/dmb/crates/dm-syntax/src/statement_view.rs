@@ -148,7 +148,10 @@ mod tests {
         let body = crate::parse_body_items(&source.items[0].children);
         assert!(body.diagnostics.is_empty());
         let mask = StatementMask::from_predicate(&body.statements, |statement| {
-            matches!(statement.kind, StatementKind::Set { .. })
+            matches!(
+                statement.kind,
+                StatementKind::Set { .. } | StatementKind::ProjectedSet { .. }
+            )
         });
         let view = StatementView::masked(&body.statements, &mask);
         assert!(std::ptr::eq(view.first().unwrap(), &body.statements[0]));

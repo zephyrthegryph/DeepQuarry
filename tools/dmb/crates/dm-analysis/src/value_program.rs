@@ -1010,6 +1010,17 @@ impl<R: Resolver + ?Sized> BodyScan<'_, '_, '_, '_, R> {
     }
 }
 impl<R: Resolver + ?Sized> TypedVisitor for BodyScan<'_, '_, '_, '_, R> {
+    fn projected_expression(
+        &mut self,
+        view: dm_syntax::ProjectedExprView<'_>,
+        path: &[dm_syntax::NodeStep],
+    ) -> dm_syntax::VisitDecision {
+        // These equation/call/escape helpers inspect syntax shape and names;
+        // they do not read expression spans or slice current source text.
+        // Declaration-local source receipts remain the statement's own ledger.
+        self.expression(view.original(), path)
+    }
+
     fn statement(&mut self, statement: &Statement, _: &[NodeStep]) -> VisitDecision {
         let result = match &statement.kind {
             StatementKind::Var { value, .. } => self.local(statement.header_span, value.as_ref()),
@@ -1149,6 +1160,15 @@ impl<'a> Values<'a> {
         // equations: config subtype effects may not replace the value payload.
         struct ConfigWrites(bool);
         impl TypedVisitor for ConfigWrites {
+            fn projected_expression(
+                &mut self,
+                view: dm_syntax::ProjectedExprView<'_>,
+                path: &[dm_syntax::NodeStep],
+            ) -> dm_syntax::VisitDecision {
+                // Syntax shape/identity only, no current source lookup.
+                self.expression(view.original(), path)
+            }
+
             fn statement(&mut self, st: &Statement, _: &[NodeStep]) -> VisitDecision {
                 if let StatementKind::Assign { target, .. } = &st.kind {
                     self.target(target);

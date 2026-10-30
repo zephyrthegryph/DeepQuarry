@@ -302,7 +302,7 @@ pub(crate) fn check_issued_statement_body(
             Ok(())
         };
         match &statement.kind {
-            StatementKind::Set { .. } => (), // settings are not evaluated
+            StatementKind::Set { .. } | StatementKind::ProjectedSet { .. } => (), // settings are not evaluated
             StatementKind::Var { value, .. } => {
                 if let Some(value) = value {
                     expression(value)?;

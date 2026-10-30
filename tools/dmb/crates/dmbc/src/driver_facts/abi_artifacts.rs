@@ -366,12 +366,16 @@ pub(super) fn prepare(
         resolver: &recording,
         symbols: evaluator.symbols,
     };
-    let lexical_evaluator = LexicalAbiEvaluator(&evaluated);
-    let selected: &dyn CapturedConstantEvaluator = if lexical {
-        &lexical_evaluator
-    } else {
-        &evaluated
+    // SAME recording resolver observes every original scalar dependency. Root
+    // syntax authority comes from current frontend; no second evaluator/model.
+    let borrowed = OriginalSettingEvaluator {
+        frontend: inherited.frontend,
+        body,
+        metadata,
+        evaluator: &evaluated,
+        lexical,
     };
+    let selected: &dyn CapturedConstantEvaluator = &borrowed;
     let policy = crate::procedure_policy::CapturedProcedurePolicy {
         evaluator: selected,
         inherited,

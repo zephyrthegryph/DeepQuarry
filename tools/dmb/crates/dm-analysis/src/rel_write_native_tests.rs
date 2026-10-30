@@ -21,7 +21,8 @@ impl SourceProvider for Source {
             .then(|| self.0.clone())
     }
 }
-fn input(source: &str, certified: bool) -> (PathBuf, PolicyInputs) {
+fn input(source: &str, certified: bool) -> (PathBuf, PolicyInputs) { input_with_host(source, certified, None) }
+fn input_with_host(source: &str, certified: bool, host: Option<Arc<dyn dm_tree::frontend::BodySyntaxQueries>>) -> (PathBuf, PolicyInputs) {
     let root = std::env::current_dir()
         .unwrap()
         .join("rel-write-native-fixture");
@@ -46,6 +47,7 @@ fn input(source: &str, certified: bool) -> (PathBuf, PolicyInputs) {
         true,
     )
     .unwrap();
+    let frontend = match host { Some(host) => frontend.with_body_queries(host), None => frontend };
     let extra = frontend
         .files
         .iter()
@@ -166,4 +168,17 @@ fn unknown_declared_type_remains_a_static_spelling_without_borrowing_native_runt
     );
     assert_eq!(rows.len(), 1);
     assert_eq!(rows[0].message,"rel_clear writes `v` of /datum/no_such_holder, which no relation declares [decl ::v many=0 keyed=0 at=]");
+}
+
+#[test]
+fn projected_setting_relation_calls_keep_exact_owned_findings_after_current_offset_change() {
+    for prefix in ["", "// earlier source \u{e9}\n\n"] {
+        let source=format!("{prefix}/datum/holder\n    var/datum/ref\n    proc/p(datum/holder/H)\n        set name = rel_set(H, nameof(ref), null)\n        rel_clear(H, nameof(ref))\n");
+        let rels=HashMap::new();
+        let (root,old)=input(&source,true); let expected=findings(&old,&root,&rels,|_|false,&mut(64*1024*1024),||Ok(())).unwrap();
+        assert_eq!(expected.len(),2);
+        let (root,native)=input_with_host(&source,true,Some(crate::untyped_order::projected_body_host_for_test()));
+        assert!(matches!(&native.archive().parse(0).unwrap().statement_body().parsed().statements[0].kind,dm_syntax::StatementKind::ProjectedSet{..}));
+        assert_eq!(findings(&native,&root,&rels,|_|false,&mut(64*1024*1024),||Ok(())).unwrap(),expected);
+    }
 }

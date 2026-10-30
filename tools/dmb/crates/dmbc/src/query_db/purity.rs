@@ -387,6 +387,19 @@ impl From<&str> for ReadFailure {
         Self::Semantic(e.into())
     }
 }
+fn policy_read_failure(
+    key: Key,
+    error: dm_analysis::policy_body_demand::PolicyFailure,
+) -> ReadFailure {
+    match error {
+        dm_analysis::policy_body_demand::PolicyFailure::Unsupported(error) => {
+            ReadFailure::Semantic(error.0)
+        }
+        dm_analysis::policy_body_demand::PolicyFailure::Operational(error) => {
+            ReadFailure::Query(QueryError::operational(key, error))
+        }
+    }
+}
 fn split_transport<T>(result: Result<T, ReadFailure>) -> Result<Result<T, String>, QueryError> {
     match result {
         Ok(v) => Ok(Ok(v)),
@@ -600,10 +613,10 @@ pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, registry: SourceRegi
             error: Mutex::new(None),
         };
         let admission = execution_admission(&l);
-        let computed = input.compute_body(p.ordinal, &resolver, &admission);
+        let computed = input.compute_body_checked(p.ordinal, &resolver, &admission);
         let result = resolver
             .finish()
-            .and_then(|_| computed.map_err(ReadFailure::Semantic));
+            .and_then(|_| computed.map_err(|e| policy_read_failure(p.key, e)));
         latch_transient_denial(&l, &admission);
         let result = split_transport(result)?;
         let bytes = size_error(&result, BodyEffects::charge);
@@ -688,13 +701,13 @@ pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, registry: SourceRegi
                 };
                 let check = || execution_checkpoint(&ledger);
                 let rows = if let Some(summary) = summary {
-                    summary.report(&input, &resolver, &policy, &admission, check)
+                    summary.report_checked(&input, &resolver, &policy, &admission, check)
                 } else {
                     plan.ok_or("sleep shared plan unavailable")?
-                        .sleep_report(&input, &resolver, &policy, &admission, check)
+                        .sleep_report_checked(&input, &resolver, &policy, &admission, check)
                 };
                 resolver.finish()?;
-                Ok(Arc::new(rows.map_err(ReadFailure::Semantic)?))
+                Ok(Arc::new(rows.map_err(|e| policy_read_failure(p.key, e))?))
             })();
             latch_transient_denial(&ledger, &admission);
             let result = split_transport(result)?;

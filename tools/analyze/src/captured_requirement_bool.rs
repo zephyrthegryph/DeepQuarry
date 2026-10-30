@@ -40,18 +40,27 @@ impl<'a> BorrowedRequirementBool<'a> {
         crate::captured_base_var_hot_policy::NativeBaseVarFacts::capture(raw, inputs)?;
         Ok(Self { raw, inputs })
     }
-    pub fn scan(
+    pub fn scan(&self, checkpoint: impl FnMut() -> Result<(), String>) -> Result<RawRun, String> {
+        self.scan_with::<dm_analysis::policy_body_demand::Compatibility>(checkpoint)
+            .map_err(|e| e.0)
+    }
+    pub fn scan_checked(
+        &self,
+        checkpoint: impl FnMut() -> Result<(), String>,
+    ) -> Result<RawRun, dm_analysis::policy_body_demand::PolicyFailure> {
+        self.scan_with::<dm_analysis::policy_body_demand::Checked>(checkpoint)
+    }
+    fn scan_with<D: dm_analysis::policy_body_demand::Demand>(
         &self,
         mut checkpoint: impl FnMut() -> Result<(), String>,
-    ) -> Result<RawRun, String> {
+    ) -> Result<RawRun, D::Error> {
         checkpoint()?;
-        let typed = dm_analysis::analyze_call_sites::named(
+        let typed = dm_analysis::analyze_call_sites::named_with::<D>(
             self.inputs,
             &self.raw.tree.root,
             &["req_bool"],
             &mut checkpoint,
-        )
-        .map_err(|e| e.0)?;
+        )?;
         let meta = crate::lints::requirement_bool::captured_metadata();
         let scope = self.raw.scopes.for_lint(meta.name, meta.group);
         let cx = Cx {
@@ -70,7 +79,7 @@ impl<'a> BorrowedRequirementBool<'a> {
             return Err("requirement_bool policy panicked; findings discarded".into());
         }
         if let Some(error) = self.raw.tree.captured_violation() {
-            return Err(error);
+            return Err(error.into());
         }
         checkpoint()?;
         if sink.sites.len() > MAX_FIXTURE_SITES {

@@ -85,3 +85,37 @@ fn rich_published_and_pending_charge_once_and_failed_attempt_keeps_success() {
     assert!(weak.upgrade().is_none());
     assert_eq!(owner.values.available_bytes(), RESIDENT_LIMIT);
 }
+
+#[test]
+fn rich_fallible_current_rebind_error_keeps_original_publication_and_retry() {
+    let owner = Arc::new(RetainedProcedures::default());
+    let key: Arc<[u8]> = Arc::from(b"typed-rich-rebind".as_slice());
+    let first = owner.begin(true);
+    let original = first
+        .with_pending(|lease| {
+            lease.insert_with_receipt(Arc::clone(&key), Vec::new().into(), 1, cached)
+        })
+        .flatten()
+        .unwrap();
+    assert!(first.publish_successful());
+    drop(first);
+    let memo = ProcedureMemo::with_resident_for_request(17, Arc::clone(&owner), None, true);
+    let error = memo
+        .try_visit_resident(&key, &Host, &mut |_| {
+            Err::<bool, _>(std::io::Error::from_raw_os_error(1450))
+        })
+        .err()
+        .expect("actual current rebind IO");
+    assert_eq!(error.raw_os_error(), Some(1450));
+    drop(memo);
+    assert!(
+        Arc::strong_count(&original) > 1,
+        "failed request did not drop original publication"
+    );
+    let retry = ProcedureMemo::with_resident_for_request(17, Arc::clone(&owner), None, true);
+    let (accepted, changed) = retry
+        .try_visit_resident(&key, &Host, &mut |_| Ok::<_, std::io::Error>(true))
+        .unwrap();
+    assert!(changed.is_none());
+    assert!(Arc::ptr_eq(&accepted.unwrap().value, &original));
+}

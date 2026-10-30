@@ -33,6 +33,19 @@ pub trait TypedVisitor {
     fn statement(&mut self, _node: &Statement, _path: &[NodeStep]) -> VisitDecision {
         VisitDecision::Descend
     }
+    /// REQUIRED: projected setting syntax must not enter the owned-coordinate
+    /// callback by accident. Consumers use current_span or explicitly decline.
+    fn projected_expression(
+        &mut self,
+        node: crate::ProjectedExprView<'_>,
+        path: &[NodeStep],
+    ) -> VisitDecision;
+    fn leave_projected_expression(
+        &mut self,
+        _node: crate::ProjectedExprView<'_>,
+        _path: &[NodeStep],
+    ) {
+    }
     fn expression(&mut self, _node: &Expr, _path: &[NodeStep]) -> VisitDecision {
         VisitDecision::Descend
     }
@@ -69,6 +82,13 @@ pub fn visit_expression(expression: &Expr, visitor: &mut impl TypedVisitor) -> V
     };
     walk.expression(expression);
     walk.report
+}
+/// Visit only the SAME canonical setting RHS in current source coordinates.
+/// Paths use the ordinary child convention; no source/semantic authority is
+/// minted and no child-view constructor or AST copy is exposed.
+pub fn visit_projected_expression(root:&crate::SettingExpression,visitor:&mut impl TypedVisitor)->VisitReport{
+ let mut walk=Walk{visitor,mask:None,locals:None,path:Vec::new(),report:VisitReport::default()};
+ walk.projected_expression(root,root.original_expression());walk.report
 }
 /// One authoritative child-index convention for visitors and typed-node recipes.
 pub fn for_each_expression_child<'a>(node: &'a Expr, mut visit: impl FnMut(usize, &'a Expr)) {
@@ -178,6 +198,31 @@ impl<V: TypedVisitor> Walk<'_, V> {
         });
         self.visitor.leave_expression(expression, &self.path);
     }
+    fn projected_expression(&mut self, root: &crate::SettingExpression, expression: &Expr) {
+        if self.report.stopped {
+            return;
+        }
+        self.report.expressions += 1;
+        let view = crate::ProjectedExprView::new(root, expression);
+        match self.visitor.projected_expression(view, &self.path) {
+            VisitDecision::Stop => {
+                self.report.stopped = true;
+                self.visitor.leave_projected_expression(view, &self.path);
+                return;
+            }
+            VisitDecision::Skip => {
+                self.visitor.leave_projected_expression(view, &self.path);
+                return;
+            }
+            VisitDecision::Descend => {}
+        }
+        for_each_expression_child(expression, |index, child| {
+            self.path.push(NodeStep::Child(index));
+            self.projected_expression(root, child);
+            self.path.pop();
+        });
+        self.visitor.leave_projected_expression(view, &self.path);
+    }
     fn statement(&mut self, statement: &Statement) {
         if self.report.stopped {
             return;
@@ -239,6 +284,11 @@ impl<V: TypedVisitor> Walk<'_, V> {
                 self.branch(0, body, statement);
             }
             StatementKind::Set { value, .. } => self.root_expression(0, value),
+            StatementKind::ProjectedSet { value, .. } => {
+                self.path.push(NodeStep::Expression(0));
+                self.projected_expression(value, value.original_expression());
+                self.path.pop();
+            }
             StatementKind::For { control, body } => {
                 match control {
                     ForControl::All { .. } => {}

@@ -34,14 +34,26 @@ impl<'a> BorrowedUntypedMember<'a> {
         Ok(Self { raw, inputs })
     }
     pub fn scan(&self, checkpoint: impl FnMut() -> Result<(), String>) -> Result<RawRun, String> {
+        self.scan_with::<dm_analysis::policy_body_demand::Compatibility>(checkpoint)
+            .map_err(|e| e.0)
+    }
+    pub fn scan_checked(
+        &self,
+        checkpoint: impl FnMut() -> Result<(), String>,
+    ) -> Result<RawRun, dm_analysis::policy_body_demand::PolicyFailure> {
+        self.scan_with::<dm_analysis::policy_body_demand::Checked>(checkpoint)
+    }
+    fn scan_with<D: dm_analysis::policy_body_demand::Demand>(
+        &self,
+        checkpoint: impl FnMut() -> Result<(), String>,
+    ) -> Result<RawRun, D::Error> {
         let scope = self.raw.scopes.for_lint("untyped_member", "");
-        let rows = dm_analysis::untyped_member_native::findings(
+        let rows = dm_analysis::untyped_member_native::findings_with::<D>(
             self.inputs,
             &self.raw.tree.root,
             |file| scope.exempt(file),
             checkpoint,
-        )
-        .map_err(|e| e.0)?;
+        )?;
         if rows.len() > MAX_FIXTURE_SITES {
             return Err("untyped_member exceeds fixture admission".into());
         }

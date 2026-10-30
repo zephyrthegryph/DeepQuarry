@@ -49,6 +49,18 @@ pub fn write_jsonl<I: IntoIterator<Item = ResolveQuery>>(
             F: FnMut(&Expr, &[NodeStep]) -> I,
         > TypedVisitor for Questions<'_, R, W, F>
     {
+        fn projected_expression(
+            &mut self,
+            view: dm_syntax::ProjectedExprView<'_>,
+            path: &[dm_syntax::NodeStep],
+        ) -> dm_syntax::VisitDecision {
+            let _ = (view, path);
+            self.error = Some(ExportError::InvalidModel(
+                "projected setting semantic questions require an explicit current-source callback",
+            ));
+            dm_syntax::VisitDecision::Stop
+        }
+
         fn expression(&mut self, node: &Expr, path: &[NodeStep]) -> VisitDecision {
             let subject = format!("body-occurrence:{}:node:{path:?}", self.declaration);
             let questions = (self.queries)(node, path);

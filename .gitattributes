@@ -78,3 +78,11 @@ tools/analyze/fixtures/declare-ids-whole/** -text whitespace=cr-at-eol,-indent-w
 ## supplied by tools/dq_git_safe.sh like dq-baseline; by hand: git config merge.dq-lint-scopes.driver "bash tools/ci/lint_scopes_merge_driver.sh %O %A %B %P").
 tools/ci/lint_scopes.toml merge=dq-lint-scopes
 tools/build/dme_moves.txt merge=union
+
+# Independent original declare oracle and intentional byte-encoding fixtures.
+tools/analyze/examples/support/declare_original.rs -text whitespace=cr-at-eol
+tools/analyze/fixtures/declare-whole/** -text whitespace=cr-at-eol
+
+# Original ui_types oracle/encoding probes retain their exact bytes.
+tools/analyze/examples/support/ui_types_original.rs -text whitespace=cr-at-eol
+tools/analyze/fixtures/ui-types-whole/** -text whitespace=cr-at-eol

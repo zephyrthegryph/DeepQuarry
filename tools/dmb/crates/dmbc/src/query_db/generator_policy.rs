@@ -2,9 +2,10 @@
 //! No file installation, filesystem IO, public producer or workspace claim.
 use super::*;
 use dq_analyze::{
-    captured_actions::BorrowedActions, captured_declare_ids::BorrowedDeclareIds,
-    captured_generator_budget::Budget, captured_sparse_slots::BorrowedSparseSlots,
-    captured_stats::BorrowedStats, captured_system_accessors::BorrowedSystemAccessors,
+    captured_actions::BorrowedActions, captured_declare::BorrowedDeclare,
+    captured_declare_ids::BorrowedDeclareIds, captured_generator_budget::Budget,
+    captured_sparse_slots::BorrowedSparseSlots, captured_stats::BorrowedStats,
+    captured_system_accessors::BorrowedSystemAccessors, captured_ui_types::BorrowedUiTypes,
 };
 pub(super) const GENERATOR_RESULT: Kind = Kind(11);
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize)]
@@ -14,6 +15,8 @@ pub(crate) enum GeneratorName {
     Stats,
     Actions,
     DeclareIds,
+    Declare,
+    UiTypes,
 }
 impl GeneratorName {
     pub(crate) fn name(self) -> &'static str {
@@ -23,6 +26,8 @@ impl GeneratorName {
             Self::Stats => "stats",
             Self::Actions => "actions",
             Self::DeclareIds => "declare_ids",
+            Self::Declare => "declare",
+            Self::UiTypes => "ui_types",
         }
     }
     pub(crate) fn path(self) -> &'static str {
@@ -32,23 +37,38 @@ impl GeneratorName {
             Self::Stats => "code/engine/_generated/stats.dm",
             Self::Actions => "code/engine/_generated/actions.dm",
             Self::DeclareIds => "code/engine/_generated/ids.dm",
+            Self::Declare => "code/engine/_generated/declare.dm",
+            Self::UiTypes => panic!("multifile generator has no single path"),
         }
     }
 }
 pub(crate) struct Artifact {
     name: GeneratorName,
     text: String,
+    files: Vec<(String, String)>,
     diags: Vec<dq_analyze::sparse_slots_policy::Diagnostic>,
 }
 impl Artifact {
     pub(crate) fn name(&self) -> &'static str {
         self.name.name()
     }
+    pub(crate) fn single(&self) -> io::Result<(&'static str, &str)> {
+        if self.name == GeneratorName::UiTypes || !self.files.is_empty() {
+            return Err(invalid(
+                "ui_types is a multifile artifact, not a single output",
+            ));
+        }
+        Ok((self.name.path(), &self.text))
+    }
     pub(crate) fn path(&self) -> &'static str {
-        self.name.path()
+        self.single()
+            .expect("single generator consumer admission")
+            .0
     }
     pub(crate) fn text(&self) -> &str {
-        &self.text
+        self.single()
+            .expect("single generator consumer admission")
+            .1
     }
     pub(crate) fn diagnostics(&self) -> &[dq_analyze::sparse_slots_policy::Diagnostic] {
         &self.diags
@@ -57,6 +77,14 @@ impl Artifact {
         std::mem::size_of::<Result<Self, String>>()
             .saturating_add(2 * std::mem::size_of::<usize>())
             .saturating_add(self.text.capacity())
+            .saturating_add(
+                self.files
+                    .capacity()
+                    .saturating_mul(std::mem::size_of::<(String, String)>()),
+            )
+            .saturating_add(self.files.iter().fold(0usize, |n, (p, t)| {
+                n.saturating_add(p.capacity()).saturating_add(t.capacity())
+            }))
             .saturating_add(self.diags.capacity().saturating_mul(std::mem::size_of::<
                 dq_analyze::sparse_slots_policy::Diagnostic,
             >()))
@@ -67,7 +95,18 @@ impl Artifact {
     }
     fn fingerprint(&self) -> u128 {
         let mut h = xxhash_rust::xxh3::Xxh3::new();
-        h.update(b"native-source-generator-v1\0");
+        if self.name == GeneratorName::UiTypes {
+            h.update(b"native-source-generator-files-v1\0");
+            h.update(&(self.files.len() as u64).to_le_bytes());
+            for (p, t) in &self.files {
+                h.update(&(p.len() as u64).to_le_bytes());
+                h.update(p.as_bytes());
+                h.update(&(t.len() as u64).to_le_bytes());
+                h.update(t.as_bytes());
+            }
+        } else {
+            h.update(b"native-source-generator-v1\0");
+        }
         h.update(&(self.name().len() as u64).to_le_bytes());
         h.update(self.name().as_bytes());
         h.update(&(self.text.len() as u64).to_le_bytes());
@@ -82,6 +121,39 @@ impl Artifact {
         }
         h.digest128()
     }
+}
+pub(crate) struct GeneratorFiles<'a> {
+    artifact: &'a Artifact,
+}
+impl GeneratorFiles<'_> {
+    pub(crate) fn name(&self) -> &'static str {
+        self.artifact.name()
+    }
+    pub(crate) fn files(&self) -> &[(String, String)] {
+        &self.artifact.files
+    }
+    pub(crate) fn diagnostics(&self) -> &[dq_analyze::sparse_slots_policy::Diagnostic] {
+        &self.artifact.diags
+    }
+    pub(crate) fn fingerprint(&self) -> u128 {
+        self.artifact.fingerprint()
+    }
+    pub(crate) fn retained_charge(&self) -> usize {
+        self.artifact.charge()
+    }
+}
+fn validate_ui_output_path(root: &Path, rel: &str) -> Result<(), String> {
+    let path = Path::new(rel);
+    let absolute = root.join(path);
+    let normalized = dm_preprocess::regions::relative_filesystem_path(&absolute, root)
+        .ok_or("ui output path is outside admitted root")?;
+    if normalized != path
+        || path.parent() != Some(Path::new(dq_analyze::ui_types_policy::UI_TYPES_OUT))
+        || !rel.ends_with(".d.ts")
+    {
+        return Err("ui output path is outside declared UI file family".into());
+    }
+    Ok(())
 }
 #[derive(Clone)]
 struct Params {
@@ -197,6 +269,7 @@ pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admissi
                         Ok(Artifact {
                             name: p.name,
                             text,
+                            files: Vec::new(),
                             diags: out.diags,
                         })
                     }
@@ -208,6 +281,7 @@ pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admissi
                         Ok(Artifact {
                             name: p.name,
                             text,
+                            files: Vec::new(),
                             diags: out.diags,
                         })
                     }
@@ -220,6 +294,19 @@ pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admissi
                         Ok(Artifact {
                             name: p.name,
                             text,
+                            files: Vec::new(),
+                            diags: out.diags,
+                        })
+                    }
+                    GeneratorName::Declare => {
+                        let out = BorrowedDeclare::capture(&raw, capture.policy(), budget.clone())?
+                            .generate(checkpoint)?;
+                        let text =
+                            out.captured_named_file_text("declare", "declare.dm", &budget)?;
+                        Ok(Artifact {
+                            name: p.name,
+                            text,
+                            files: Vec::new(),
                             diags: out.diags,
                         })
                     }
@@ -230,6 +317,27 @@ pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admissi
                         Ok(Artifact {
                             name: p.name,
                             text,
+                            files: Vec::new(),
+                            diags: out.diags,
+                        })
+                    }
+                    GeneratorName::UiTypes => {
+                        let out = BorrowedUiTypes::capture(&raw, capture.policy(), budget.clone())?
+                            .generate(checkpoint)?;
+                        for (path, _) in &out.files {
+                            budget.charge(
+                                path.len()
+                                    .checked_add(p.root.as_os_str().len())
+                                    .and_then(|n| n.checked_mul(16))
+                                    .and_then(|n| n.checked_add(4096))
+                                    .ok_or("ui output path admission overflow")?,
+                            )?;
+                            validate_ui_output_path(&p.root, path)?;
+                        }
+                        Ok(Artifact {
+                            name: p.name,
+                            text: String::new(),
+                            files: out.files,
                             diags: out.diags,
                         })
                     }
@@ -244,6 +352,7 @@ pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admissi
                         Ok(Artifact {
                             name: p.name,
                             text,
+                            files: Vec::new(),
                             diags: out.diags,
                         })
                     }
@@ -303,7 +412,28 @@ impl QueryDb {
         name: GeneratorName,
         consume: impl FnOnce(&Artifact) -> io::Result<T>,
     ) -> io::Result<T> {
+        if name == GeneratorName::UiTypes {
+            return Err(invalid(
+                "multifile generator requires checked file-set consumer",
+            ));
+        }
         self.with_generator_fixture_limit(cohort, name, None, consume)
+    }
+    pub(crate) fn with_generator_files_fixture<T>(
+        &self,
+        cohort: &Arc<Cohort>,
+        name: GeneratorName,
+        consume: impl FnOnce(&GeneratorFiles<'_>) -> io::Result<T>,
+    ) -> io::Result<T> {
+        if name != GeneratorName::UiTypes {
+            return Err(invalid("single generator requires single-output consumer"));
+        }
+        self.with_generator_fixture_limit(cohort, name, None, |a| {
+            if a.name != GeneratorName::UiTypes || !a.text.is_empty() {
+                return Err(invalid("invalid multifile generator payload mode"));
+            }
+            consume(&GeneratorFiles { artifact: a })
+        })
     }
     fn with_generator_fixture_limit<T>(
         &self,

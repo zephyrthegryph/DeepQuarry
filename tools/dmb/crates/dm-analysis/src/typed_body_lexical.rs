@@ -259,6 +259,19 @@ impl Binder {
     }
 }
 impl TypedVisitor for Binder {
+    fn projected_expression(
+        &mut self,
+        view: dm_syntax::ProjectedExprView<'_>,
+        path: &[dm_syntax::NodeStep],
+    ) -> dm_syntax::VisitDecision {
+        self.gap(
+            path,
+            view.current_span(),
+            "setting must be normalized before executable binding",
+        );
+        dm_syntax::VisitDecision::Skip
+    }
+
     fn statement(&mut self, node: &Statement, path: &[NodeStep]) -> VisitDecision {
         let scoped = matches!(
             &node.kind,
@@ -316,7 +329,7 @@ impl TypedVisitor for Binder {
                 } => self.declaration(declaration, node, path),
                 ForControl::CStyle { .. } => {}
             },
-            StatementKind::Set { .. } => {
+            StatementKind::Set { .. } | StatementKind::ProjectedSet { .. } => {
                 self.gap(
                     path,
                     node.header_span,

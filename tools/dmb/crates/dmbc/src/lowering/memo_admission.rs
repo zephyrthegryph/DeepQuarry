@@ -3,12 +3,12 @@ use super::*;
 #[cfg(test)]
 #[path = "memo_admission_tests.rs"]
 mod tests;
-pub(in crate::lowering) enum Admission<'a> {
+pub(in crate::lowering) enum Admission<'a, E = Vec<LoweringDiagnostic>> {
     Admitted(CompletedInput),
-    NeedsLowering(Box<dyn FnOnce() -> Result<CompletedInput, Vec<LoweringDiagnostic>> + Send + 'a>),
+    NeedsLowering(Box<dyn FnOnce() -> Result<CompletedInput, E> + Send + 'a>),
 }
-impl Admission<'_> {
-    pub(in crate::lowering) fn finish(self) -> Result<CompletedInput, Vec<LoweringDiagnostic>> {
+impl<E> Admission<'_, E> {
+    pub(in crate::lowering) fn finish(self) -> Result<CompletedInput, E> {
         match self {
             Self::Admitted(input) => Ok(input),
             Self::NeedsLowering(produce) => produce(),

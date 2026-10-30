@@ -21,7 +21,8 @@ impl SourceProvider for Source {
             .then(|| self.0.clone())
     }
 }
-fn input(source: &str, certified: bool) -> (PathBuf, PolicyInputs) {
+fn input(source: &str, certified: bool) -> (PathBuf, PolicyInputs) { input_with_host(source, certified, None) }
+fn input_with_host(source: &str, certified: bool, host: Option<Arc<dyn dm_tree::frontend::BodySyntaxQueries>>) -> (PathBuf, PolicyInputs) {
     let root = std::env::current_dir()
         .unwrap()
         .join("player-link-native-fixture");
@@ -46,6 +47,7 @@ fn input(source: &str, certified: bool) -> (PathBuf, PolicyInputs) {
         true,
     )
     .unwrap();
+    let frontend = match host { Some(host) => frontend.with_body_queries(host), None => frontend };
     let extra = frontend
         .files
         .iter()
@@ -129,4 +131,32 @@ fn untyped_locals_use_original_root_proc_lookup_but_not_root_field_lookup() {
     let (root, inputs) = input(source, true);
     let rows = findings(&inputs, &root, |_| false, || Ok(())).unwrap();
     assert_eq!(rows.iter().map(|r| r.line).collect::<Vec<_>>(), [5, 6]);
+}
+
+#[derive(Debug)]
+struct ProjectedBodyHost(Arc<std::sync::atomic::AtomicUsize>);
+impl dm_tree::frontend::BodySyntaxQueries for ProjectedBodyHost {
+    fn syntax(&self, input: &Arc<dm_tree::frontend::BodySyntaxInput>) -> Result<Arc<dm_tree::frontend::BodySyntax>, dm_tree::frontend::Diagnostic> {
+        let checkpoint = || Ok(());
+        let a = dm_syntax::SettingAdmission::new(&self.0, 16 * 1024 * 1024, &checkpoint);
+        match input.parse_with_setting_admission(&a) {
+            Ok(value) => Ok(Arc::new(value)),
+            Err(dm_tree::frontend::BodySyntaxFailure::Syntax(error)) => Err(error),
+            Err(dm_tree::frontend::BodySyntaxFailure::Operational(error)) => panic!("unexpected actual fixture operation: {error}"),
+        }
+    }
+}
+#[test]
+fn player_link_projected_setting_keeps_owned_root_assignment_policy_and_current_lines() {
+    for prefix in ["", "// shifted original source é\n\n"] {
+        let source = format!("{prefix}/mob/proc/check(mob/P)\n    set name = P.key = 1\n    set desc = call(P.ckey = 2)\n    set category = (P.key = 3)\n    P.ckey = 4\n");
+        let (root, old) = input(&source, true);
+        let expected = findings(&old, &root, |_| false, || Ok(())).unwrap();
+        assert_eq!(expected.iter().map(|r|r.line).collect::<Vec<_>>(), [2 + prefix.bytes().filter(|b|*b==b'\n').count(), 5 + prefix.bytes().filter(|b|*b==b'\n').count()]);
+        let host = Arc::new(ProjectedBodyHost(Arc::new(std::sync::atomic::AtomicUsize::new(0))));
+        let (root, native) = input_with_host(&source, true, Some(host));
+        let body = native.archive().parse(0).unwrap();
+        assert!(matches!(&body.statement_body().parsed().statements[0].kind, dm_syntax::StatementKind::ProjectedSet { .. }));
+        assert_eq!(findings(&native, &root, |_| false, || Ok(())).unwrap(), expected);
+    }
 }

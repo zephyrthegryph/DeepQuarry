@@ -23,14 +23,11 @@ impl dm_preprocess::SourceProvider for Source {
             .then(|| self.0.clone())
     }
 }
-fn input(source: &'static str, certified: bool) -> (std::path::PathBuf, PolicyInputs) {
+fn input(source: &str, certified: bool) -> (std::path::PathBuf, PolicyInputs) {
     input_with_primary(source, certified, false)
 }
-fn input_with_primary(
-    source: &'static str,
-    certified: bool,
-    primary: bool,
-) -> (std::path::PathBuf, PolicyInputs) {
+fn input_with_primary(source: &str, certified: bool, primary: bool) -> (std::path::PathBuf, PolicyInputs) { input_with_primary_host(source, certified, primary, None) }
+fn input_with_primary_host(source: &str, certified: bool, primary: bool, host: Option<Arc<dyn dm_tree::frontend::BodySyntaxQueries>>) -> (std::path::PathBuf, PolicyInputs) {
     use crate::policy_inputs::{HostCapture, PolicyRole};
     let root = std::env::current_dir()
         .unwrap()
@@ -56,6 +53,7 @@ fn input_with_primary(
         primary,
     )
     .unwrap();
+    let frontend = match host { Some(host) => frontend.with_body_queries(host), None => frontend };
     let raw = frontend
         .files
         .iter()
@@ -314,5 +312,17 @@ fn public_property_view_preserves_list_container_when_qualifier_is_the_only_elem
             .text(view.metadata.list_element_type.unwrap())
             .unwrap()
             .contains("SpacemanDMM_private"));
+    }
+}
+
+#[test]
+fn projected_setting_untyped_members_keep_exact_owned_findings_after_current_offset_change() {
+    for prefix in ["", "// earlier source \u{e9}\n\n"] {
+        let source=format!("{prefix}/datum/static_owner\n    var/static/danger\n/proc/p(holder)\n    set name = holder.danger\n    holder.danger\n");
+        let (root,old)=input_with_primary(&source,true,true); let expected=findings(&old,&root,|_|false,||Ok(())).unwrap();
+        assert_eq!(expected.len(),2);
+        let (root,native)=input_with_primary_host(&source,true,true,Some(crate::untyped_order::projected_body_host_for_test()));
+        assert!(matches!(&native.archive().parse(0).unwrap().statement_body().parsed().statements[0].kind,dm_syntax::StatementKind::ProjectedSet{..}));
+        assert_eq!(findings(&native,&root,|_|false,||Ok(())).unwrap(),expected);
     }
 }

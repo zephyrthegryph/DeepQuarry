@@ -149,7 +149,7 @@ fn modified_local_candidate_reissues_current_nested_recipes_and_matches_fresh() 
     assert!(first.insert_record(row.source().identity, record));
     assert!(first.publish_successful());
     for text in [SOURCE.to_string(), format!("\n\n{SOURCE}")] {
-        let current = build(&mut state, &text, &engine, &executor);
+        let current = build(&mut state, &text, &engine, &executor).with_body_queries(db.clone());
         let (host, _) = crate::request_runner::runner_facts::prepare_retained(
             &current,
             &engine,
@@ -194,6 +194,100 @@ fn modified_local_candidate_reissues_current_nested_recipes_and_matches_fresh() 
         let arena = dm_tree::frontend::BodyArena::new_typed(
             &current,
             dm_codegen_byond::typed_statements_supported_for_capture,
+        );
+        // Exercise the actual published record loop, not only a transport
+        // adapter. A failed original body read must not claim or discard the
+        // unchanged record, and retry uses the SAME request/current source.
+        let ready = licensed.prepared(row).unwrap();
+        let key = crate::lowering_memo::key_recipe::CurrentKey::from_prepared(
+            &current, row, 7, false, false,
+        )
+        .unwrap();
+        let tail = crate::lowering_memo::key_recipe::PreparedKey::issued(&ready).unwrap();
+        let recorder = crate::lowering_memo::RecordingResolver::new(&host);
+        let checked_arena = dm_tree::frontend::BodyArena::new_typed(
+            &current,
+            dm_codegen_byond::typed_statements_supported_for_capture,
+        );
+        db.db().evict_values(&[dm_query::Kind(4)]);
+        let scheduled =
+            db.fail_body_syntax_after_for_test(0, std::io::Error::from_raw_os_error(1450));
+        let error = request
+            .lookup_checked(
+                &key,
+                &tail,
+                None,
+                None,
+                &recorder,
+                &current,
+                row.body(),
+                &ready,
+                &checked_arena,
+                false,
+                false,
+                row,
+            )
+            .err()
+            .expect("actual published modified candidate body failure");
+        assert_eq!(error.raw_os_error(), Some(1450));
+        drop(scheduled);
+        assert!(
+            request
+                .lookup_checked(
+                    &key,
+                    &tail,
+                    None,
+                    None,
+                    &recorder,
+                    &current,
+                    row.body(),
+                    &ready,
+                    &checked_arena,
+                    false,
+                    false,
+                    row
+                )
+                .unwrap()
+                .is_some(),
+            "same original publication remains usable after actual operational failure"
+        );
+        db.db().evict_values(&[dm_query::Kind(4)]);
+        let local_arena = dm_tree::frontend::BodyArena::new_typed(
+            &current,
+            dm_codegen_byond::typed_statements_supported_for_capture,
+        );
+        let scheduled =
+            db.fail_body_syntax_after_for_test(0, std::io::Error::from_raw_os_error(1450));
+        let local_candidates = request.candidate_roster(&admission).unwrap();
+        let error = request
+            .lookup_unchanged_local_checked(
+                &licensed,
+                &local_candidates,
+                7,
+                &host,
+                &current,
+                row,
+                &local_arena,
+            )
+            .err()
+            .expect("actual unchanged-local rebind IO");
+        assert_eq!(error.raw_os_error(), Some(1450));
+        drop(scheduled);
+        let retried_candidates = request.candidate_roster(&admission).unwrap();
+        assert!(
+            request
+                .lookup_unchanged_local_checked(
+                    &licensed,
+                    &retried_candidates,
+                    7,
+                    &host,
+                    &current,
+                    row,
+                    &local_arena
+                )
+                .unwrap()
+                .is_some(),
+            "failed current rebind cannot discard original local publication"
         );
         owner.visit_records(|record| {
             let debug =

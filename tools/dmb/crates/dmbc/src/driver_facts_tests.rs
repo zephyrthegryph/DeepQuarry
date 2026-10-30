@@ -100,8 +100,37 @@ impl dm_preprocess::SourceProvider for Source {
         Ok("/child\n    parent_type = /base\n/child/p()\n    return 2\n/base\n/base/proc/p()\n    set name = \"base display\"\n    return 1\n".into())
     }
 }
-fn frontend() -> ColdFrontend {
-    dm_tree::frontend::build_with_config(
+
+/// Explicit test fixture keeps the EXISTING host alive beside its source. The
+/// production frontend/provider itself remains Weak and retains no manager.
+#[derive(Clone)]
+pub(super) struct NativeSettingsFixture {
+    front: ColdFrontend,
+    _queries: Arc<crate::query_db::QueryDb>,
+}
+impl std::ops::Deref for NativeSettingsFixture {
+    type Target = ColdFrontend;
+    fn deref(&self) -> &ColdFrontend {
+        &self.front
+    }
+}
+impl std::ops::DerefMut for NativeSettingsFixture {
+    fn deref_mut(&mut self) -> &mut ColdFrontend {
+        &mut self.front
+    }
+}
+impl NativeSettingsFixture {
+    fn bind(front: ColdFrontend, queries: Arc<crate::query_db::QueryDb>) -> Self {
+        let host = Arc::clone(&queries) as Arc<dyn dm_tree::frontend::SettingExpressionQueries>;
+        Self {
+            front: front.with_setting_expression_queries(&host).unwrap(),
+            _queries: queries,
+        }
+    }
+}
+
+fn frontend() -> NativeSettingsFixture {
+    let front = dm_tree::frontend::build_with_config(
         Path::new("project.dme"),
         &Source,
         &Default::default(),
@@ -111,7 +140,8 @@ fn frontend() -> ColdFrontend {
             observer: None,
         },
     )
-    .unwrap()
+    .unwrap();
+    NativeSettingsFixture::bind(front, Arc::new(crate::query_db::QueryDb::default()))
 }
 #[test]
 fn lexical_abi_constants_support_long_acyclic_chains_and_reject_exact_cycles() {
@@ -256,7 +286,10 @@ fn captured_resource_literal_and_static_alias_keep_symbolic_path() {
                     path,
                     search_context,
                 } if search_context == 17 && path == SymbolId::of("asset.txt") => {
-                    ResolvedMeaning::Resource { path, content: 123.into() }
+                    ResolvedMeaning::Resource {
+                        path,
+                        content: 123.into(),
+                    }
                 }
                 _ => ResolvedMeaning::Unsupported(query),
             }
@@ -952,7 +985,9 @@ fn actual_stored_nameof_uses_current_parameters_and_captured_prior_locals() {
         let dm_ir::InitializerValue::Expression(expression) = &write.value else {
             panic!("stored nameof fixture must retain its captured expression");
         };
-        let (value, _) = evaluator.evaluate_prepared_write(&write, expression).unwrap();
+        let (value, _) = evaluator
+            .evaluate_prepared_write(&write, expression)
+            .unwrap();
         let expected = if declaration.identity.name == SymbolId::of("parameter_name") {
             "argument"
         } else {

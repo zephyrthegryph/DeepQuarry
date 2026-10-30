@@ -152,6 +152,26 @@ impl HeapCensus {
                             self.string(owner, relation);
                             pending.push(Node::Expr(value));
                         }
+                        StatementKind::ProjectedSet {
+                            attribute,
+                            relation,
+                            value,
+                        } => {
+                            self.string(owner, attribute);
+                            self.string(owner, relation);
+                            value.visit_retention_storage(|p, n| {
+                                let n = n.saturating_add(2 * size_of::<usize>());
+                                self.buffer(owner, p, n, n);
+                            });
+                            let mut fresh = false;
+                            value.visit_root_storage(|p, n| {
+                                let n = n.saturating_add(2 * size_of::<usize>());
+                                fresh |= self.buffer(owner, p, n, n);
+                            });
+                            if fresh {
+                                pending.push(Node::Expr(value.original_expression()));
+                            }
+                        }
                         StatementKind::For { control, body } => {
                             statements(self, owner, body, &mut pending);
                             match control {

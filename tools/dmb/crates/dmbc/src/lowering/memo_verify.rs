@@ -28,6 +28,73 @@ pub(super) enum Expected<'a> {
     Unit(&'a LoweredUnit),
     Errors(&'a [LoweringDiagnostic]),
 }
+trait VerificationDemand {
+    type Failure: From<Vec<LoweringDiagnostic>>;
+    fn produce<R: Resolver, P: AbiPolicy>(
+        frontend: &ColdFrontend,
+        body: &BodyOccurrence,
+        host: &R,
+        policy: &P,
+        startup: Option<&crate::startup::CapturedStartup>,
+        bodies: &dm_tree::frontend::BodyArena<'_>,
+        capture_references: bool,
+        current: Option<SourceUnitIdentity>,
+    ) -> Result<Result<LoweredUnit, Vec<LoweringDiagnostic>>, Self::Failure>;
+}
+struct CompatibilityVerification;
+struct CheckedVerification;
+impl VerificationDemand for CompatibilityVerification {
+    type Failure = Vec<LoweringDiagnostic>;
+    fn produce<R: Resolver, P: AbiPolicy>(
+        frontend: &ColdFrontend,
+        body: &BodyOccurrence,
+        host: &R,
+        policy: &P,
+        startup: Option<&crate::startup::CapturedStartup>,
+        bodies: &dm_tree::frontend::BodyArena<'_>,
+        capture_references: bool,
+        current: Option<SourceUnitIdentity>,
+    ) -> Result<Result<LoweredUnit, Vec<LoweringDiagnostic>>, Self::Failure> {
+        Ok(lower_one(
+            frontend,
+            body,
+            host,
+            policy,
+            startup,
+            bodies,
+            capture_references,
+            current,
+        ))
+    }
+}
+impl VerificationDemand for CheckedVerification {
+    type Failure = LoweringFailure;
+    fn produce<R: Resolver, P: AbiPolicy>(
+        frontend: &ColdFrontend,
+        body: &BodyOccurrence,
+        host: &R,
+        policy: &P,
+        startup: Option<&crate::startup::CapturedStartup>,
+        bodies: &dm_tree::frontend::BodyArena<'_>,
+        capture_references: bool,
+        current: Option<SourceUnitIdentity>,
+    ) -> Result<Result<LoweredUnit, Vec<LoweringDiagnostic>>, Self::Failure> {
+        match lower_one_checked(
+            frontend,
+            body,
+            host,
+            policy,
+            startup,
+            bodies,
+            capture_references,
+            current,
+        ) {
+            Ok(unit) => Ok(Ok(unit)),
+            Err(LoweringFailure::Diagnostics(errors)) => Ok(Err(errors)),
+            Err(LoweringFailure::Operational(error)) => Err(LoweringFailure::Operational(error)),
+        }
+    }
+}
 #[allow(clippy::too_many_arguments)]
 pub(super) fn verify<R: Resolver, P: AbiPolicy>(
     memo: &crate::lowering_memo::ProcedureMemo,
@@ -44,6 +111,70 @@ pub(super) fn verify<R: Resolver, P: AbiPolicy>(
     bindings: Option<DiskReplayBindings<'_>>,
     hit: &'static str,
 ) -> Result<(), Vec<LoweringDiagnostic>> {
+    verify_with::<CompatibilityVerification, _, _>(
+        memo,
+        expected,
+        old_reads,
+        frontend,
+        body,
+        host,
+        policy,
+        startup,
+        bodies,
+        capture_references,
+        current,
+        bindings,
+        hit,
+    )
+}
+#[allow(clippy::too_many_arguments)]
+pub(super) fn verify_checked<R: Resolver, P: AbiPolicy>(
+    memo: &crate::lowering_memo::ProcedureMemo,
+    expected: Expected<'_>,
+    old_reads: Option<&Reads>,
+    frontend: &ColdFrontend,
+    body: &BodyOccurrence,
+    host: &R,
+    policy: &P,
+    startup: Option<&crate::startup::CapturedStartup>,
+    bodies: &dm_tree::frontend::BodyArena<'_>,
+    capture_references: bool,
+    current: &PreparedBody<'_>,
+    bindings: Option<DiskReplayBindings<'_>>,
+    hit: &'static str,
+) -> Result<(), LoweringFailure> {
+    verify_with::<CheckedVerification, _, _>(
+        memo,
+        expected,
+        old_reads,
+        frontend,
+        body,
+        host,
+        policy,
+        startup,
+        bodies,
+        capture_references,
+        current,
+        bindings,
+        hit,
+    )
+}
+#[allow(clippy::too_many_arguments)]
+pub(super) fn verify_with<D: VerificationDemand, R: Resolver, P: AbiPolicy>(
+    memo: &crate::lowering_memo::ProcedureMemo,
+    expected: Expected<'_>,
+    old_reads: Option<&Reads>,
+    frontend: &ColdFrontend,
+    body: &BodyOccurrence,
+    host: &R,
+    policy: &P,
+    startup: Option<&crate::startup::CapturedStartup>,
+    bodies: &dm_tree::frontend::BodyArena<'_>,
+    capture_references: bool,
+    current: &PreparedBody<'_>,
+    bindings: Option<DiskReplayBindings<'_>>,
+    hit: &'static str,
+) -> Result<(), D::Failure> {
     memo.verification.checked.fetch_add(1, Ordering::Relaxed);
     let recording = crate::lowering_memo::RecordingResolver::new(host);
     let identity = current.source().identity;
@@ -67,7 +198,7 @@ pub(super) fn verify<R: Resolver, P: AbiPolicy>(
             ),
         }]
     })?;
-    let fresh = lower_one(
+    let fresh = D::produce(
         frontend,
         body,
         &recording,
@@ -76,7 +207,7 @@ pub(super) fn verify<R: Resolver, P: AbiPolicy>(
         &independent,
         capture_references,
         Some(current.source()),
-    );
+    )?;
     let reads: Vec<_> = recording
         .reads()
         .iter()
@@ -150,7 +281,7 @@ pub(super) fn verify<R: Resolver, P: AbiPolicy>(
             origin: body.source.clone(),
             related: Vec::new(),
             message: format!("procedure memo verification mismatch ({hit}): {category}; first_query={first_query:?}"),
-        }]);
+        }].into());
     }
     Ok(())
 }
@@ -376,5 +507,135 @@ mod tests {
         )];
         assert!(read_difference(&missing, &changed).is_some());
         assert!(read_difference(&missing, &[missing[0].clone(), missing[0].clone()]).is_none());
+    }
+
+    #[test]
+    fn checked_verification_operation_is_not_a_mismatch_and_same_source_retries() {
+        use std::sync::atomic::{AtomicBool, Ordering};
+        struct Once(AtomicBool);
+        impl AbiPolicy for Once {
+            fn inputs(
+                &self,
+                identity: UnitIdentity,
+                metadata: &ProcedureMetadata,
+                symbols: &SymbolTable,
+                origin: &SourceLocation,
+            ) -> Result<ProcedureInputs, String> {
+                Local.inputs(identity, metadata, symbols, origin)
+            }
+            fn prepare_owned_captured_checked(
+                &self,
+                metadata: &ProcedureMetadata,
+                parsed: dm_tree::frontend::ParsedBody<'_>,
+                context: &AbiContext<'_>,
+            ) -> Result<OwnedPreparedBody, dm_codegen_byond::procedure_abi::AbiError> {
+                if self.0.swap(false, Ordering::Relaxed) {
+                    return Err(dm_codegen_byond::procedure_abi::AbiError::operational(
+                        std::io::Error::from_raw_os_error(1450),
+                    ));
+                }
+                Local.prepare_owned_captured_checked(metadata, parsed, context)
+            }
+        }
+        let frontend = dm_tree::frontend::build(
+            std::path::Path::new("verify-operation.dme"),
+            &Source("/proc/probe()\n    return 7\n"),
+            &Default::default(),
+            1,
+        )
+        .unwrap();
+        let body = &frontend.bodies[0];
+        let current = PreparedBody::issue(&frontend, body).unwrap();
+        let arena = dm_tree::frontend::BodyArena::new_typed(
+            &frontend,
+            dm_codegen_byond::typed_statements_supported,
+        );
+        let recording =
+            crate::lowering_memo::RecordingResolver::new(frontend.snapshot.tree.as_ref());
+        let id = current.source().identity;
+        recording.record_declaration_occurrence(dm_ir::ProcedureIdentity {
+            owner: id.owner,
+            name: id.name,
+            verb: false,
+            occurrence: id.occurrence,
+        });
+        let unit = lower_one(
+            &frontend,
+            body,
+            &recording,
+            &Local,
+            None,
+            &arena,
+            false,
+            Some(current.source()),
+        )
+        .unwrap();
+        let reads: Vec<_> = recording
+            .reads()
+            .iter()
+            .map(|r| (r.query, r.answer.canonical_bytes()))
+            .collect();
+        let memo = crate::lowering_memo::ProcedureMemo::new(17);
+        let policy = Once(AtomicBool::new(true));
+        let failure = verify_checked(
+            &memo,
+            Expected::Unit(&unit),
+            Some(&reads),
+            &frontend,
+            body,
+            frontend.snapshot.tree.as_ref(),
+            &policy,
+            None,
+            &arena,
+            false,
+            &current,
+            None,
+            "operational-fixture",
+        )
+        .err()
+        .expect("actual ABI failure");
+        match failure {
+            LoweringFailure::Operational(error) => assert_eq!(error.raw_os_error(), Some(1450)),
+            other => panic!("actual operation became memo mismatch: {other:?}"),
+        }
+        assert_eq!(memo.procedure_verification_counts(), (1, 0));
+        verify_checked(
+            &memo,
+            Expected::Unit(&unit),
+            Some(&reads),
+            &frontend,
+            body,
+            frontend.snapshot.tree.as_ref(),
+            &policy,
+            None,
+            &arena,
+            false,
+            &current,
+            None,
+            "operational-fixture",
+        )
+        .unwrap();
+        assert_eq!(memo.procedure_verification_counts(), (2, 0));
+        let mut changed = unit;
+        changed.code.procedure.local_count += 1;
+        assert!(matches!(
+            verify_checked(
+                &memo,
+                Expected::Unit(&changed),
+                Some(&reads),
+                &frontend,
+                body,
+                frontend.snapshot.tree.as_ref(),
+                &policy,
+                None,
+                &arena,
+                false,
+                &current,
+                None,
+                "genuine-mismatch"
+            ),
+            Err(LoweringFailure::Diagnostics(_))
+        ));
+        assert_eq!(memo.procedure_verification_counts(), (3, 1));
     }
 }

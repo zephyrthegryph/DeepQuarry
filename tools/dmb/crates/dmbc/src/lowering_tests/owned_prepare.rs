@@ -139,7 +139,7 @@ fn production_statement_model_matches_lossless_settings_statics_and_debug() {
     );
     assert!(matches!(
         authored.parsed().statements[0].kind,
-        dm_syntax::StatementKind::Set { .. }
+        dm_syntax::StatementKind::Set { .. } | dm_syntax::StatementKind::ProjectedSet { .. }
     ));
     assert!(matches!(
         authored.parsed().statements[1].kind,

@@ -292,3 +292,24 @@ fn untyped_checked_report_body_redemand_failure_after_warm_proof_is_not_cached()
     ));
     assert_eq!(db.db.stats(Kind(10)).computed, 1);
 }
+
+#[test]
+fn actual_player_link_kind10_body_operation_is_not_semantic_outcome_and_same_input_recovers() {
+    let db=Arc::new(QueryDb::default());
+    let cohort=cohort(&db);
+    let names=["player_link".into()];
+    let schedule=db.fail_body_syntax_after_for_test(0,
+        io::Error::new(io::ErrorKind::OutOfMemory,"actual player-link Kind4 source budget"));
+    let error=db.analyze_fixture_findings(&cohort,&names).err().expect("original current body operation");
+    assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);
+    assert_eq!(error.to_string(),"actual player-link Kind4 source budget");
+    for kind in [Kind(4),Kind(10)]{assert_eq!(db.db.stats(kind).computed,0,"no operational Outcome");}
+    drop(schedule);
+    let actual=db.analyze_fixture_findings(&cohort,&names).unwrap();
+    assert_eq!(actual.runs.len(),1);
+    assert_eq!(actual.runs[0].name,"player_link");
+    assert!(actual.runs[0].run.sites.is_empty(),"same original datum receiver is not a mob");
+    let warm=db.analyze_fixture_findings(&cohort,&names).unwrap();
+    assert_eq!(actual.runs[0].run.sites,warm.runs[0].run.sites);
+    for kind in [Kind(4),Kind(10)]{assert_eq!(db.db.stats(kind).computed,1,"same-input successful retry/warm reuse");}
+}

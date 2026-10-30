@@ -257,12 +257,12 @@ fn parser_locals(
     check_count(&out)?;
     Ok(out)
 }
-fn declarations(
+fn declarations<E: From<String> + for<'a> From<&'a str>>(
     archive: &BodyArchive,
     profile: PackedU128,
     policy: &CheckerPolicy,
-    checkpoint: &mut impl FnMut() -> Result<(), String>,
-) -> Result<Vec<Produced>, String> {
+    checkpoint: &mut impl FnMut() -> Result<(), E>,
+) -> Result<Vec<Produced>, E> {
     let tree = archive.tree();
     tree.validate_checker_builtin_profile(profile)
         .map_err(|e| format!("visibility profile: {e:?}"))?;
@@ -496,6 +496,33 @@ pub fn scan_with_checkpoint(
     policy: &CheckerPolicy,
     mut checkpoint: impl FnMut() -> Result<(), String>,
 ) -> Result<Vec<Configured>, String> {
+    scan_with::<crate::policy_body_demand::Compatibility>(
+        archive,
+        resolver,
+        profile,
+        policy,
+        || checkpoint().map_err(crate::untyped::Unsupported),
+    )
+    .map_err(|e| e.0)
+}
+pub fn scan_checked(
+    archive: &BodyArchive,
+    resolver: &(impl Resolver + ?Sized),
+    profile: PackedU128,
+    policy: &CheckerPolicy,
+    mut checkpoint: impl FnMut() -> std::io::Result<()>,
+) -> Result<Vec<Configured>, crate::policy_body_demand::PolicyFailure> {
+    scan_with::<crate::policy_body_demand::Checked>(archive, resolver, profile, policy, || {
+        checkpoint().map_err(crate::policy_body_demand::PolicyFailure::Operational)
+    })
+}
+fn scan_with<D: crate::policy_body_demand::Demand>(
+    archive: &BodyArchive,
+    resolver: &(impl Resolver + ?Sized),
+    profile: PackedU128,
+    policy: &CheckerPolicy,
+    mut checkpoint: impl FnMut() -> Result<(), D::Error>,
+) -> Result<Vec<Configured>, D::Error> {
     checkpoint()?;
     if resolver.source_owner() != Resolver::source_owner(archive.tree()) {
         return Err("visibility resolver is not the original native owner".into());
@@ -522,7 +549,7 @@ pub fn scan_with_checkpoint(
         enabled(policy, Site::LocalPrivate) || enabled(policy, Site::LocalProtected);
     for (_, _, ordinal) in source_order.into_iter().filter(|_| locals_enabled) {
         checkpoint()?;
-        let body = archive.parse(ordinal).map_err(|e| e.message)?;
+        let body = D::parse(archive, ordinal)?;
         append(&mut raw, parser_locals(archive, &body, policy)?)?;
     }
     append(
@@ -536,7 +563,7 @@ pub fn scan_with_checkpoint(
         .filter(|_| fields_enabled)
     {
         checkpoint()?;
-        let body = archive.parse(ordinal).map_err(|e| e.message)?;
+        let body = D::parse(archive, ordinal)?;
         let walk = crate::checker_expression_visit::archived(archive, &body, resolver, profile)?;
         append(&mut raw, fields(archive, &body, profile, walk, policy)?)?;
     }

@@ -125,3 +125,13 @@ pub mod pool_policy;
 pub mod declare_ids_policy;
 #[cfg(feature = "native-policy")]
 pub mod captured_declare_ids;
+
+pub mod declare_policy;
+#[cfg(feature = "native-policy")]
+pub mod captured_declare;
+
+pub mod ui_types_policy;
+pub mod raw_entry_proc_policy;
+#[cfg(feature="native-policy")]pub mod captured_ui_types;
+
+#[cfg(feature="native-policy")]mod captured_marker_rows;

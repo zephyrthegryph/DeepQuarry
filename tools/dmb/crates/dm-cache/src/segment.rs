@@ -226,7 +226,9 @@ impl Segment {
     fn find(&self, key: RecordKey) -> Option<Entry> {
         let at = self
             .order
-            .binary_search_by_key(&key, |slot| descriptor_key(&self.map, self.descriptors, *slot))
+            .binary_search_by_key(&key, |slot| {
+                descriptor_key(&self.map, self.descriptors, *slot)
+            })
             .ok()?;
         Some(self.entry_at(self.order[at]))
     }
@@ -262,6 +264,29 @@ impl Segment {
         key: RecordKey,
         validate: impl FnOnce(&[u8], &[(u64, &[u8])]) -> Result<(), String>,
     ) -> Result<Option<RecordView<'a>>, CacheError> {
+        self.try_get::<std::convert::Infallible>(key, |bytes, symbols| Ok(validate(bytes, symbols)))
+            .unwrap_or_else(|impossible| match impossible {})
+    }
+    /// Outer failures are caller operations, never evidence of corrupt bytes.
+    /// Only container/inner typed-byte failures reject the immutable segment.
+    pub(crate) fn try_get<'a, E>(
+        &'a self,
+        key: RecordKey,
+        validate: impl FnOnce(&[u8], &[(u64, &[u8])]) -> Result<Result<(), String>, E>,
+    ) -> Result<Result<Option<RecordView<'a>>, CacheError>, E> {
+        let result = match self.get_container(key) {
+            Ok(Some(view)) => match validate(view.payload, &view.symbols)? {
+                Ok(()) => Ok(Some(view)),
+                Err(message) => Err(CacheError::Payload(message)),
+            },
+            other => other,
+        };
+        if result.is_err() {
+            self.rejected.store(true, Ordering::Release);
+        }
+        Ok(result)
+    }
+    fn get_container<'a>(&'a self, key: RecordKey) -> Result<Option<RecordView<'a>>, CacheError> {
         if self.is_rejected() {
             return Ok(None);
         }
@@ -300,16 +325,12 @@ impl Segment {
             if cursor.at != bytes.len() {
                 return Err(invalid("record trailing bytes"));
             }
-            validate(payload, &symbols).map_err(CacheError::Payload)?;
             Ok(RecordView {
                 key,
                 symbols,
                 payload,
             })
         })();
-        if result.is_err() {
-            self.rejected.store(true, Ordering::Release);
-        }
         result.map(Some)
     }
 }

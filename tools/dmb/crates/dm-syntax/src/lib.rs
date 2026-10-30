@@ -46,7 +46,7 @@ pub use statements::{
 #[cfg(test)]
 mod control_origin_tests;
 pub use visit::{
-    for_each_expression_child, visit_expression, visit_statement_view, visit_statements, NodeStep,
+    for_each_expression_child, visit_expression, visit_projected_expression, visit_statement_view, visit_statements, NodeStep,
     TypedVisitor, VisitDecision, VisitReport,
 };
 
@@ -310,3 +310,9 @@ pub use setting_expression::{
 };
 mod setting_slots;
 pub use setting_slots::SettingExpressionSlots;
+
+mod setting_projection;
+pub use setting_projection::{ProjectedExprView, SettingValueView, SettingView};
+pub use statements::{
+    parse_body_items_with_context_and_settings, SettingStatement, SettingSyntaxProvider,
+};

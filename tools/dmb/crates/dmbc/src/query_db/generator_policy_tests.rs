@@ -747,3 +747,327 @@ fn declare_ids_quota_and_cached_cancellation_refuse_without_callback_and_recover
     })
     .unwrap();
 }
+
+#[test]
+fn declare_same_db_warm_original_owner_and_exact_config_source_manifest_dependencies() {
+    let (db, root, reads, _) = fixture();
+    std::fs::write(
+        root.join("code/probe.dm"),
+        "CAPABILITY_DEF(first, CAP_ONE)\nSTAT(/datum/x, value, SUM)\n",
+    )
+    .unwrap();
+    std::fs::write(
+        root.join("code/extra.dm"),
+        "CAPABILITY_DEF(last, CAP_ONE)\ncap_keys(CAP_ONE, ON = TRUE)\n",
+    )
+    .unwrap();
+    let c = capture(&db, &root, reads.clone());
+    let before = reads.load(Ordering::Relaxed);
+    let one = db
+        .with_generator_fixture(&c, GeneratorName::Declare, |a| {
+            assert_eq!(a.name(), "declare");
+            assert_eq!(a.path(), "code/engine/_generated/declare.dm");
+            assert!(a.text().contains("/proc/first("));
+            assert!(a.text().contains("/proc/last("));
+            assert!(a.diagnostics().is_empty());
+            Ok((a.text.as_ptr() as usize, a.fingerprint()))
+        })
+        .unwrap();
+    let computed = db.db.stats(GENERATOR_RESULT).computed;
+    let two = db
+        .with_generator_fixture(&c, GeneratorName::Declare, |a| {
+            Ok((a.text.as_ptr() as usize, a.fingerprint()))
+        })
+        .unwrap();
+    assert_eq!(one, two);
+    assert_eq!(computed, db.db.stats(GENERATOR_RESULT).computed);
+    assert_eq!(before, reads.load(Ordering::Relaxed));
+    assert!(QueryDb::default()
+        .with_generator_fixture(&c, GeneratorName::Declare, |_| Ok(()))
+        .is_err());
+    std::fs::write(
+        root.join("scopes.toml"),
+        "# configuration still participates in exact query dependency\n",
+    )
+    .unwrap();
+    let configured = capture(&db, &root, reads.clone());
+    db.with_generator_fixture(&configured, GeneratorName::Declare, |a| {
+        assert_eq!(a.fingerprint(), one.1);
+        Ok(())
+    })
+    .unwrap();
+    assert!(db.db.stats(GENERATOR_RESULT).computed > computed);
+    std::fs::write(
+        root.join("code/extra.dm"),
+        "CAPABILITY_DEF(changed, CAP_ONE)\ncap_keys(CAP_ONE, ON = TRUE)\n",
+    )
+    .unwrap();
+    let changed = capture(&db, &root, reads.clone());
+    db.with_generator_fixture(&changed, GeneratorName::Declare, |a| {
+        assert!(a.text().contains("/proc/changed("));
+        assert_ne!(a.fingerprint(), one.1);
+        Ok(())
+    })
+    .unwrap();
+    // Reordering the same two source receipts changes the last-wins cap-name map
+    // only when equal sort names preserve encounter order. Equal names but distinct
+    // IDs are a separate policy branch; inspect diagnostics/bytes, not guessed AST.
+    std::fs::write(
+        root.join("deepquarry.dme"),
+        "#if 0\n#include \"code/extra.dm\"\n#include \"code/probe.dm\"\n#endif\n/datum\n",
+    )
+    .unwrap();
+    let reordered = capture(&db, &root, reads);
+    let count = db.db.stats(GENERATOR_RESULT).computed;
+    db.with_generator_fixture(&reordered, GeneratorName::Declare, |a| {
+        assert!(a.text().contains("/proc/changed("));
+        Ok(())
+    })
+    .unwrap();
+    assert!(
+        db.db.stats(GENERATOR_RESULT).computed > count,
+        "manifest changes are actual dependencies even when sorted ID bytes agree"
+    );
+}
+#[test]
+fn declare_quota_and_cached_cancellation_refuse_without_callback_and_recover() {
+    let (db, root, reads, _) = fixture();
+    std::fs::write(
+        root.join("code/probe.dm"),
+        "CAPABILITY_DEF(quota, CAP_QUOTA)\n",
+    )
+    .unwrap();
+    let c = capture(&db, &root, reads);
+    let called = std::cell::Cell::new(false);
+    assert!(db
+        .with_generator_fixture_limit(&c, GeneratorName::Declare, Some(1), |_| {
+            called.set(true);
+            Ok(())
+        })
+        .is_err());
+    assert!(!called.get());
+    db.with_generator_fixture(&c, GeneratorName::Declare, |a| {
+        assert!(a.text().contains("/proc/quota("));
+        Ok(())
+    })
+    .unwrap();
+    let cancellation = crate::daemon::control::Cancellation::default();
+    let bound = crate::daemon::control::bind_with_deadline(
+        cancellation.clone(),
+        Instant::now() + Duration::from_secs(60),
+    );
+    cancellation.cancel();
+    assert_eq!(
+        db.with_generator_fixture(&c, GeneratorName::Declare, |_| {
+            called.set(true);
+            Ok(())
+        })
+        .unwrap_err()
+        .kind(),
+        io::ErrorKind::Interrupted
+    );
+    assert!(!called.get());
+    drop(bound);
+    db.with_generator_fixture(&c, GeneratorName::Declare, |a| {
+        assert!(a.diagnostics().is_empty());
+        Ok(())
+    })
+    .unwrap();
+}
+
+#[test]
+fn ui_types_multifile_same_db_warm_owner_and_config_source_manifest_dependencies() {
+    let (db, root, reads, _) = fixture();
+    std::fs::write(root.join("code/probe.dm"),"SCHEMA(/datum/x, value, int(0,3))\nCAPABILITIES(/datum/x, interface(\"One\"), ui_shape(value))\n").unwrap();
+    std::fs::write(
+        root.join("code/extra.dm"),
+        "CAPABILITIES(/datum/y, interface(\"Two\"), ui_shape(label = schema_text(8)))\n",
+    )
+    .unwrap();
+    let c = capture(&db, &root, reads.clone());
+    let before = reads.load(Ordering::Relaxed);
+    let one = db
+        .with_generator_files_fixture(&c, GeneratorName::UiTypes, |a| {
+            assert_eq!(a.name(), "ui_types");
+            assert_eq!(a.files().len(), 2);
+            assert!(a.files()[0].0.ends_with("One.d.ts"));
+            assert!(a.files()[1].0.ends_with("Two.d.ts"));
+            assert!(a.files()[0].1.contains("value: number"));
+            assert!(a.diagnostics().is_empty());
+            assert!(
+                a.retained_charge()
+                    >= a.files()
+                        .iter()
+                        .map(|(p, t)| p.capacity() + t.capacity())
+                        .sum::<usize>()
+            );
+            Ok((
+                a.files().as_ptr() as usize,
+                a.files()[0].1.as_ptr() as usize,
+                a.fingerprint(),
+            ))
+        })
+        .unwrap();
+    let computed = db.db.stats(GENERATOR_RESULT).computed;
+    let two = db
+        .with_generator_files_fixture(&c, GeneratorName::UiTypes, |a| {
+            Ok((
+                a.files().as_ptr() as usize,
+                a.files()[0].1.as_ptr() as usize,
+                a.fingerprint(),
+            ))
+        })
+        .unwrap();
+    assert_eq!(one, two);
+    assert_eq!(computed, db.db.stats(GENERATOR_RESULT).computed);
+    assert_eq!(before, reads.load(Ordering::Relaxed));
+    assert!(db
+        .with_generator_fixture::<()>(&c, GeneratorName::UiTypes, |_| panic!(
+            "multifile payload cannot enter single API"
+        ))
+        .is_err());
+    assert!(db
+        .with_generator_files_fixture::<()>(&c, GeneratorName::SparseSlots, |_| panic!(
+            "single payload cannot enter multi API"
+        ))
+        .is_err());
+    assert!(QueryDb::default()
+        .with_generator_files_fixture(&c, GeneratorName::UiTypes, |_| Ok(()))
+        .is_err());
+    std::fs::write(
+        root.join("scopes.toml"),
+        "# exact config still invalidates\n",
+    )
+    .unwrap();
+    let configured = capture(&db, &root, reads.clone());
+    db.with_generator_files_fixture(&configured, GeneratorName::UiTypes, |a| {
+        assert_eq!(a.fingerprint(), one.2);
+        Ok(())
+    })
+    .unwrap();
+    assert!(db.db.stats(GENERATOR_RESULT).computed > computed);
+    std::fs::write(
+        root.join("code/extra.dm"),
+        "CAPABILITIES(/datum/y, interface(\"Three\"), ui_shape(label = bool()))\n",
+    )
+    .unwrap();
+    let changed = capture(&db, &root, reads.clone());
+    db.with_generator_files_fixture(&changed, GeneratorName::UiTypes, |a| {
+        assert_ne!(a.fingerprint(), one.2);
+        assert!(a
+            .files()
+            .iter()
+            .any(|(p, t)| p.ends_with("Three.d.ts") && t.contains("label: boolean")));
+        Ok(())
+    })
+    .unwrap();
+    std::fs::write(
+        root.join("deepquarry.dme"),
+        "#if 0\n#include \"code/extra.dm\"\n#include \"code/probe.dm\"\n#endif\n/datum\n",
+    )
+    .unwrap();
+    let reordered = capture(&db, &root, reads);
+    let prior = db.db.stats(GENERATOR_RESULT).computed;
+    db.with_generator_files_fixture(&reordered, GeneratorName::UiTypes, |a| {
+        assert_eq!(a.files().len(), 2);
+        Ok(())
+    })
+    .unwrap();
+    assert!(db.db.stats(GENERATOR_RESULT).computed > prior);
+}
+#[test]
+fn ui_types_allocation_cancel_path_refusal_never_publish_and_same_input_recovers() {
+    let (db, root, reads, _) = fixture();
+    std::fs::write(
+        root.join("code/probe.dm"),
+        "CAPABILITIES(/datum/x, interface(\"Probe\"), ui_shape(value = bool()))\n",
+    )
+    .unwrap();
+    let c = capture(&db, &root, reads.clone());
+    let called = std::cell::Cell::new(false);
+    assert!(db
+        .with_generator_fixture_limit(&c, GeneratorName::UiTypes, Some(1), |_| {
+            called.set(true);
+            Ok(())
+        })
+        .is_err());
+    assert!(!called.get());
+    db.with_generator_files_fixture(&c, GeneratorName::UiTypes, |a| {
+        assert_eq!(a.files().len(), 1);
+        Ok(())
+    })
+    .unwrap();
+    let token = crate::daemon::control::Cancellation::default();
+    let bound = crate::daemon::control::bind_with_deadline(
+        token.clone(),
+        Instant::now() + Duration::from_secs(60),
+    );
+    token.cancel();
+    assert_eq!(
+        db.with_generator_files_fixture(&c, GeneratorName::UiTypes, |_| {
+            called.set(true);
+            Ok(())
+        })
+        .unwrap_err()
+        .kind(),
+        io::ErrorKind::Interrupted
+    );
+    assert!(!called.get());
+    drop(bound);
+    db.with_generator_files_fixture(&c, GeneratorName::UiTypes, |a| {
+        assert_eq!(a.files().len(), 1);
+        Ok(())
+    })
+    .unwrap();
+    assert!(validate_ui_output_path(
+        &root,
+        "tgui/packages/tgui/interfaces/generated/../escape.d.ts"
+    )
+    .is_err());
+    assert!(validate_ui_output_path(&root, "code/escape.d.ts").is_err());
+    std::fs::write(
+        root.join("code/probe.dm"),
+        "CAPABILITIES(/datum/x, interface(\"../Escape\"), ui_shape(value = bool()))\n",
+    )
+    .unwrap();
+    let unsafe_c = capture(&db, &root, reads);
+    assert!(db
+        .with_generator_files_fixture::<()>(&unsafe_c, GeneratorName::UiTypes, |_| panic!(
+            "invalid declared output must not publish"
+        ))
+        .is_err());
+}
+#[test]
+fn multifile_artifact_counts_actual_capacity_and_checked_single_mode_refuses() {
+    let mut files = Vec::with_capacity(7);
+    let mut path = String::with_capacity(99);
+    path.push_str("tgui/packages/tgui/interfaces/generated/X.d.ts");
+    let mut text = String::with_capacity(333);
+    text.push_str("original bytes");
+    files.push((path, text));
+    let a = Artifact {
+        name: GeneratorName::UiTypes,
+        text: String::new(),
+        files,
+        diags: Vec::new(),
+    };
+    assert!(a.single().is_err());
+    assert!(a.charge() >= 7 * std::mem::size_of::<(String, String)>() + 99 + 333);
+    let first = a.fingerprint();
+    let mut b = Artifact {
+        name: GeneratorName::UiTypes,
+        text: String::new(),
+        files: vec![(a.files[0].0.clone(), a.files[0].1.clone())],
+        diags: Vec::new(),
+    };
+    assert_eq!(first, b.fingerprint());
+    b.files[0].0.push('x');
+    assert_ne!(first, b.fingerprint());
+    let bad = Artifact {
+        name: GeneratorName::SparseSlots,
+        text: String::new(),
+        files: vec![("bad".into(), "bad".into())],
+        diags: Vec::new(),
+    };
+    assert!(bad.single().is_err());
+}

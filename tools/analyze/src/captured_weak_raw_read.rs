@@ -35,6 +35,19 @@ impl<'a> BorrowedWeakRawRead<'a> {
         Ok(Self { raw, inputs })
     }
     pub fn scan(&self, checkpoint: impl FnMut() -> Result<(), String>) -> Result<RawRun, String> {
+        self.scan_with::<dm_analysis::policy_body_demand::Compatibility>(checkpoint)
+            .map_err(|e| e.0)
+    }
+    pub fn scan_checked(
+        &self,
+        checkpoint: impl FnMut() -> Result<(), String>,
+    ) -> Result<RawRun, dm_analysis::policy_body_demand::PolicyFailure> {
+        self.scan_with::<dm_analysis::policy_body_demand::Checked>(checkpoint)
+    }
+    fn scan_with<D: dm_analysis::policy_body_demand::Demand>(
+        &self,
+        checkpoint: impl FnMut() -> Result<(), String>,
+    ) -> Result<RawRun, D::Error> {
         let scope = self.raw.scopes.for_lint("weak_raw_read", "");
         let meta = crate::weak_relation_policy::metadata();
         let cx = crate::lint::Cx {
@@ -43,14 +56,13 @@ impl<'a> BorrowedWeakRawRead<'a> {
             scope: &scope,
         };
         let weak = crate::weak_relation_policy::declarations(cx.files());
-        let rows = dm_analysis::weak_raw_read_native::findings(
+        let rows = dm_analysis::weak_raw_read_native::findings_with::<D>(
             self.inputs,
             &self.raw.tree.root,
             &weak,
             |f| scope.exempt(f),
             checkpoint,
-        )
-        .map_err(|e| e.0)?;
+        )?;
         if rows.len() > MAX_FIXTURE_SITES {
             return Err("weak_raw_read exceeds fixture finding admission".into());
         }

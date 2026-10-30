@@ -49,6 +49,18 @@ impl From<dm_analysis::value_query::ValueQueryFailure> for AnalyzeReadFailure {
         }
     }
 }
+impl From<dm_analysis::policy_body_demand::PolicyFailure> for AnalyzeReadFailure {
+    fn from(error: dm_analysis::policy_body_demand::PolicyFailure) -> Self {
+        match error {
+            dm_analysis::policy_body_demand::PolicyFailure::Unsupported(error) => {
+                Self::Semantic(error.0)
+            }
+            dm_analysis::policy_body_demand::PolicyFailure::Operational(error) => {
+                Self::Operational(error)
+            }
+        }
+    }
+}
 struct Runs {
     runs: Vec<RawRun>,
 }
@@ -162,18 +174,18 @@ pub(super) fn register_analyze(db: &Db, charge: Arc<AtomicUsize>, admission: Arc
                             .scan(checkpoint)?,
                         "requirement_bool" => {
                             BorrowedRequirementBool::capture(&raw, capture.policy())?
-                                .scan(checkpoint)?
+                                .scan_checked(checkpoint)?
                         }
                         "untyped_member" => BorrowedUntypedMember::capture(&raw, capture.policy())?
-                            .scan(checkpoint)?,
-                        "stored_refs" => {
-                            BorrowedStoredRefs::capture(&raw, capture.policy())?.scan(checkpoint)?
-                        }
+                            .scan_checked(checkpoint)?,
+                        "stored_refs" => BorrowedStoredRefs::capture(&raw, capture.policy())?
+                            .scan_checked(checkpoint)?,
                         "rel_write_undeclared" => {
-                            BorrowedRelWrite::capture(&raw, capture.policy())?.scan(checkpoint)?
+                            BorrowedRelWrite::capture(&raw, capture.policy())?
+                                .scan_checked(checkpoint)?
                         }
                         "weak_raw_read" => BorrowedWeakRawRead::capture(&raw, capture.policy())?
-                            .scan(checkpoint)?,
+                            .scan_checked(checkpoint)?,
                         "untyped" => {
                             let input = p
                                 .value_input
@@ -198,7 +210,11 @@ pub(super) fn register_analyze(db: &Db, charge: Arc<AtomicUsize>, admission: Arc
                                 .map_err(AnalyzeReadFailure::from)?
                         }
                         "player_link" => {
-                            BorrowedPlayerLink::capture(&raw, capture.policy())?.scan(checkpoint)?
+                            BorrowedPlayerLink::capture(&raw, capture.policy())?.scan_checked(checkpoint)
+                                .map_err(|error|match error {
+                                    dm_analysis::policy_body_demand::PolicyFailure::Unsupported(error)=>AnalyzeReadFailure::Semantic(error.0),
+                                    dm_analysis::policy_body_demand::PolicyFailure::Operational(error)=>AnalyzeReadFailure::Operational(error),
+                                })?
                         }
                         _ => return Err("typed policy whitelist differs".into()),
                     };
@@ -538,6 +554,10 @@ mod extended_roster_tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "analyze_policy_operation_tests.rs"]
+mod operation_tests;
 
 #[cfg(test)]
 #[path = "analyze_policy_untyped_tests.rs"]

@@ -124,3 +124,49 @@ fn callback_backing_only_preserves_bytes_and_does_not_admit_declined_candidate()
     drop(snapshot);
     assert_eq!(bytes.borrow().as_ref().unwrap().bytes(), b"typed");
 }
+
+#[test]
+fn mapped_candidate_operation_failure_neither_poison_bytes_nor_marks_used_and_retry_recovers() {
+    let root = Temp::new();
+    let cache = Cache::open(&root.0, Limits::default()).unwrap();
+    let value = record(b"typed-current-source");
+    cache.publish(std::slice::from_ref(&value)).unwrap();
+    let snapshot = cache.snapshot().unwrap();
+    let error = snapshot
+        .try_get_candidate_backed(value.key, |payload, _, backing| {
+            assert_eq!(payload.as_ptr(), backing.bytes().as_ptr());
+            Err(std::io::Error::from_raw_os_error(1450))
+        })
+        .err()
+        .expect("actual current source operation failed");
+    assert_eq!(error.raw_os_error(), Some(1450));
+    assert!(snapshot.record_used_keys().is_empty());
+    assert!(snapshot.rejected().is_empty());
+    let accepted = snapshot
+        .try_get_candidate_backed::<std::io::Error>(value.key, |payload, _, backing| {
+            assert_eq!(payload.as_ptr(), backing.bytes().as_ptr());
+            Ok(Ok(true))
+        })
+        .unwrap()
+        .unwrap();
+    assert_eq!(accepted.payload, b"typed-current-source");
+    assert_eq!(snapshot.record_used_keys().len(), 1);
+    assert!(snapshot.record_used_keys().contains(&value.key));
+    assert!(snapshot.rejected().is_empty());
+}
+#[test]
+fn mapped_fallible_callback_preserves_inner_malformed_bucket_rejection() {
+    let root = Temp::new();
+    let cache = Cache::open(&root.0, Limits::default()).unwrap();
+    let value = record(b"typed");
+    cache.publish(std::slice::from_ref(&value)).unwrap();
+    let snapshot = cache.snapshot().unwrap();
+    let rejected = snapshot
+        .try_get_candidate_backed::<std::io::Error>(value.key, |_, _, _| {
+            Ok(Err("malformed typed bucket".into()))
+        })
+        .unwrap();
+    assert!(rejected.is_none());
+    assert_eq!(snapshot.rejected().len(), 1);
+    assert!(snapshot.record_used_keys().is_empty());
+}

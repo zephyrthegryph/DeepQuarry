@@ -36,6 +36,14 @@ pub fn pending_bodies(
         receipts: Vec<PendingBody>,
     }
     impl TypedVisitor for Issuer<'_> {
+        fn projected_expression(
+            &mut self,
+            _view: crate::ProjectedExprView<'_>,
+            _path: &[crate::NodeStep],
+        ) -> crate::VisitDecision {
+            crate::VisitDecision::Descend
+        }
+
         fn statement(&mut self, node: &Statement, _: &[NodeStep]) -> VisitDecision {
             if !matches!(&node.kind, StatementKind::For { body, .. } if body.is_empty()) {
                 return VisitDecision::Descend;

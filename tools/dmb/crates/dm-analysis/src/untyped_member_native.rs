@@ -172,8 +172,24 @@ pub fn findings(
     inputs: &PolicyInputs,
     root: &std::path::Path,
     exempt: impl Fn(&str) -> bool,
-    mut checkpoint: impl FnMut() -> Result<(), String>,
+    checkpoint: impl FnMut() -> Result<(), String>,
 ) -> Result<Vec<Finding>, Unsupported> {
+    findings_with::<crate::policy_body_demand::Compatibility>(inputs, root, exempt, checkpoint)
+}
+pub fn findings_checked(
+    inputs: &PolicyInputs,
+    root: &std::path::Path,
+    exempt: impl Fn(&str) -> bool,
+    checkpoint: impl FnMut() -> Result<(), String>,
+) -> Result<Vec<Finding>, crate::policy_body_demand::PolicyFailure> {
+    findings_with::<crate::policy_body_demand::Checked>(inputs, root, exempt, checkpoint)
+}
+pub fn findings_with<D: crate::policy_body_demand::Demand>(
+    inputs: &PolicyInputs,
+    root: &std::path::Path,
+    exempt: impl Fn(&str) -> bool,
+    mut checkpoint: impl FnMut() -> Result<(), String>,
+) -> Result<Vec<Finding>, D::Error> {
     let archive = inputs.archive();
     let tree = archive.tree();
     let profile = tree.checker_builtin_profile().ok_or_else(|| {
@@ -192,7 +208,7 @@ pub fn findings(
         if !rel.starts_with("code/") || exempt(&rel) {
             continue;
         }
-        let body = archive.parse(ordinal).map_err(|e| Unsupported(e.message))?;
+        let body = D::parse(archive, ordinal)?;
         let scope = untyped::archived_scope(&body, tree, &[])?;
         let receiver = Receiver {
             archive,
@@ -202,7 +218,8 @@ pub fn findings(
             locals: &scope.locals,
         };
         let mut error = None;
-        crate::untyped_order::expressions(body.statement_body().view(), &mut |expr, at| {
+        crate::untyped_order::expressions_current(body.statement_body().view(), &mut |observed, at| {
+                let expr = observed.original();
             if error.is_some() {
                 return;
             }
@@ -231,9 +248,9 @@ pub fn findings(
                     if !captured.is_compiled()
                         || captured.role() != crate::policy_inputs::PolicyRole::DmSource
                     {
-                        return Err(Unsupported(
-                            "member origin is not compiled DM source".into(),
-                        ));
+                        return Err(
+                            Unsupported("member origin is not compiled DM source".into()).into(),
+                        );
                     }
                     let line = captured
                         .analyze_display_line(source.line)
@@ -258,7 +275,7 @@ pub fn findings(
         })
         .map_err(|e| Unsupported(e.into()))?;
         if let Some(error) = error {
-            return Err(error);
+            return Err(error.into());
         }
     }
     Ok(rows

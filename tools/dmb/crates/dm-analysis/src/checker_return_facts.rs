@@ -251,19 +251,16 @@ impl<'a> PuritySettingsPermit<'a> {
                 let mut no_sleep = None;
                 let mut exempt = None;
                 for statement in prefix.settings() {
-                    let dm_syntax::StatementKind::Set {
-                        attribute, value, ..
-                    } = &statement.kind
-                    else {
-                        unreachable!()
-                    };
+                    let setting = statement.setting().expect("issued initial setting prefix");
+                    let attribute = setting.attribute;
+                    let value = setting.value.original();
                     if !attribute.starts_with("SpacemanDMM_")
                         || attribute == "SpacemanDMM_return_type"
                     {
                         continue;
                     }
                     if !matches!(
-                        attribute.as_str(),
+                        attribute,
                         "SpacemanDMM_should_be_pure"
                             | "SpacemanDMM_should_not_sleep"
                             | "SpacemanDMM_allowed_to_sleep"
@@ -272,7 +269,7 @@ impl<'a> PuritySettingsPermit<'a> {
                             "effect mode has no exact policy for this source directive".into()
                         );
                     }
-                    let entry = match attribute.as_str() {
+                    let entry = match attribute {
                         "SpacemanDMM_should_be_pure" => &mut pure,
                         "SpacemanDMM_should_not_sleep" => &mut no_sleep,
                         _ => &mut exempt,
@@ -427,13 +424,12 @@ fn validate_source_directives_mode(
         identity,
         |prefix| -> Result<(), String> {
             for statement in prefix.settings() {
-                let dm_syntax::StatementKind::Set { attribute, .. } = &statement.kind else {
-                    unreachable!();
-                };
+                let setting = statement.setting().expect("issued initial setting prefix");
+                let attribute = setting.attribute;
                 if attribute.starts_with("SpacemanDMM_")
                     && attribute != "SpacemanDMM_return_type"
                     && !(matches!(
-                        attribute.as_str(),
+                        attribute,
                         "SpacemanDMM_should_be_pure"
                             | "SpacemanDMM_should_not_sleep"
                             | "SpacemanDMM_allowed_to_sleep"
@@ -464,16 +460,13 @@ fn prefix_return_override_mode(
         |prefix| -> Result<Option<ReturnHint>, String> {
             let mut result = None;
             for statement in prefix.settings() {
-                let dm_syntax::StatementKind::Set {
-                    attribute, value, ..
-                } = &statement.kind
-                else {
-                    unreachable!();
-                };
+                let setting = statement.setting().expect("issued initial setting prefix");
+                let attribute = setting.attribute;
+                let value = setting.value.original();
                 if attribute.starts_with("SpacemanDMM_")
                     && attribute != "SpacemanDMM_return_type"
                     && !(matches!(
-                        attribute.as_str(),
+                        attribute,
                         "SpacemanDMM_should_be_pure"
                             | "SpacemanDMM_should_not_sleep"
                             | "SpacemanDMM_allowed_to_sleep"

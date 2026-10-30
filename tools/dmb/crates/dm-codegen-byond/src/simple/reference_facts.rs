@@ -169,6 +169,15 @@ impl ReferenceCapture {
     }
 }
 impl dm_syntax::TypedVisitor for ReferenceCapture {
+    fn projected_expression(
+        &mut self,
+        view: dm_syntax::ProjectedExprView<'_>,
+        path: &[dm_syntax::NodeStep],
+    ) -> dm_syntax::VisitDecision {
+        // Explicitly shape/identity-only; no original span is used as current.
+        self.expression(view.original(), path)
+    }
+
     fn expression(
         &mut self,
         expr: &Expr,

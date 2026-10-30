@@ -11,7 +11,11 @@ impl dm_preprocess::SourceProvider for Source {
 }
 #[test]
 fn compact_typed_sidecars_check_duplicate_answers_current_tokens_and_rebind_before_observing() {
-    check_replay("/proc/compact_probe()\n    return \"hello\"\n", false, false);
+    check_replay(
+        "/proc/compact_probe()\n    return \"hello\"\n",
+        false,
+        false,
+    );
 }
 
 #[test]
@@ -527,6 +531,81 @@ fn check_replay_features(
         modified: Some(&issuer),
         certificates: None,
     };
+    if modifiers {
+        struct FailedCurrent<'a>(&'a dyn ModifiedIssuer);
+        impl ModifiedIssuer for FailedCurrent<'_> {
+            fn reissue(
+                &self,
+                _: &[crate::modified_initializers::RecipeWire<'_>],
+                _: &crate::debug_sources::DebugOrigins,
+                _: &crate::procedure_policy::PreparedUnit,
+            ) -> Option<Vec<crate::modified_initializers::PreparedSeed>> {
+                panic!("checked compact replay must not fall back to compatibility issuer")
+            }
+            fn reissue_checked(
+                &self,
+                _: &[crate::modified_initializers::RecipeWire<'_>],
+                _: &crate::debug_sources::DebugOrigins,
+                _: &crate::procedure_policy::PreparedUnit,
+            ) -> std::io::Result<Option<Vec<crate::modified_initializers::PreparedSeed>>>
+            {
+                let _same_current_issuer = self.0;
+                Err(std::io::Error::from_raw_os_error(1450))
+            }
+        }
+        let failed = FailedCurrent(&issuer);
+        let mut failed_context = context();
+        failed_context.modified = Some(&failed);
+        let failure = decode(&bytes)
+            .unwrap()
+            .rebind_with_backing_checked(failed_context, ready, None)
+            .err()
+            .expect("actual current issuer operation");
+        assert!(matches!(failure, ReissueFailure::Operational(ref error)
+            if error.raw_os_error()==Some(1450)));
+        let mut failed_wire_context = context();
+        failed_wire_context.modified = Some(&failed);
+        // SAME production variant framing around the actual compact payload;
+        // raw compact bytes alone are intentionally not a cache bucket.
+        let wire_bytes = dm_cache::encode_variants(&[bytes.clone()]).unwrap();
+        let wire_failure = crate::lowering_memo_wire::candidates(&wire_bytes)
+            .unwrap()
+            .procedure_matching_backed_checked(
+                &|key| key == b"exact-source-and-policy",
+                decode(&bytes).unwrap().identity,
+                failed_wire_context,
+                &host,
+                ready,
+                None,
+                None,
+            )
+            .err()
+            .expect("wire must return actual issuer operation");
+        assert_eq!(wire_failure.raw_os_error(), Some(1450));
+        let wire = crate::lowering_memo_wire::candidates(&wire_bytes)
+            .unwrap()
+            .procedure_matching_backed_checked(
+                &|key| key == b"exact-source-and-policy",
+                decode(&bytes).unwrap().identity,
+                context(),
+                &host,
+                ready,
+                None,
+                None,
+            )
+            .unwrap();
+        assert!(
+            wire.prepared.is_some(),
+            "same typed bucket must remain replayable"
+        );
+        assert!(
+            decode(&bytes)
+                .unwrap()
+                .rebind_with_backing_checked(context(), ready, None)
+                .is_ok(),
+            "same original modified recipe must remain replayable after operation failure"
+        );
+    }
     if !modifiers && !helpers {
         use std::sync::atomic::{AtomicUsize, Ordering};
         struct Versioned<'a> {
@@ -984,7 +1063,10 @@ fn check_replay_features(
     } else if plain {
         bad.required_types.0.clear();
     } else {
-        assert!(bad.executable.corrupt_string(), "fixture requires a string row");
+        assert!(
+            bad.executable.corrupt_string(),
+            "fixture requires a string row"
+        );
     }
     assert!(bad.rebind(context(), ready).is_err());
     let mut tampered = bytes;
@@ -1021,4 +1103,48 @@ impl Drop for MappedTemp {
     fn drop(&mut self) {
         let _ = std::fs::remove_dir_all(&self.0);
     }
+}
+
+#[test]
+fn checked_modified_issuer_actual_body_io_preserves_arena_and_same_source_retry() {
+    let queries = Arc::new(crate::query_db::QueryDb::default());
+    let front = dm_tree::frontend::build(
+        Path::new("modified-body-operation.dme"),
+        &Source("/proc/probe()\n    return 7\n"),
+        &Default::default(),
+        1,
+    )
+    .unwrap()
+    .with_body_queries(queries.clone());
+    let body = &front.bodies[0];
+    let bodies = dm_tree::frontend::BodyArena::new(&front);
+    let issuer = CurrentModifiedIssuer {
+        frontend: &front,
+        body,
+        bodies: &bodies,
+        host: front.snapshot.tree.as_ref(),
+        parsed: None,
+    };
+    // This fixture exercises current body demand only; no local-only ABI is
+    // offered to the production compact replay acceptance path.
+    let prepared = crate::procedure_policy::PreparedUnit {
+        canonical: None,
+        inputs: Arc::new(Default::default()),
+        executable_body: Vec::new(),
+        abi: None,
+    };
+    let schedule =
+        queries.fail_body_syntax_after_for_test(0, std::io::Error::from_raw_os_error(1450));
+    let error = issuer
+        .reissue_checked(&[], &Default::default(), &prepared)
+        .err()
+        .expect("real original body producer failure");
+    assert_eq!(error.raw_os_error(), Some(1450));
+    drop(schedule);
+    assert!(issuer
+        .reissue_checked(&[], &Default::default(), &prepared)
+        .unwrap()
+        .unwrap()
+        .is_empty());
+    assert_eq!(queries.db().stats(dm_query::Kind(4)).computed, 1);
 }

@@ -375,7 +375,7 @@ pub fn prepare_verified_procedure(
     body: &[Item],
     inputs: ProcedureInputs,
     inherited: InheritedAbi<'_>,
-    evaluate: impl FnMut(&SymbolicExpression) -> Result<SemanticValue, AbiError>,
+    mut evaluate: impl FnMut(&SymbolicExpression) -> Result<SemanticValue, AbiError>,
 ) -> Result<PreparedProcedure, AbiError> {
     prepare_verified_procedure_with_spelling(
         metadata,
@@ -383,7 +383,7 @@ pub fn prepare_verified_procedure(
         body,
         inputs,
         inherited,
-        evaluate,
+        |_, expression| evaluate(expression),
         compatibility_formal_spelling,
     )
 }
@@ -396,7 +396,35 @@ pub fn prepare_verified_procedure_original_tokens(
     body: &[Item],
     inputs: ProcedureInputs,
     inherited: InheritedAbi<'_>,
-    evaluate: impl FnMut(&SymbolicExpression) -> Result<SemanticValue, AbiError>,
+    mut evaluate: impl FnMut(&SymbolicExpression) -> Result<SemanticValue, AbiError>,
+) -> Result<PreparedProcedure, AbiError> {
+    prepare_verified_procedure_with_spelling(
+        metadata,
+        symbols,
+        body,
+        inputs,
+        inherited,
+        |_, expression| evaluate(expression),
+        original_formal_spelling,
+    )
+}
+/// Ephemeral callback domain from this ONE ABI policy walk. This scalar tag
+/// carries no AST/model/source authority and is never serialized into ABI data.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum AbiExpressionSite {
+    Setting,
+    SettingCondition,
+    ReturnAnnotation,
+}
+/// Native original-owner adapter may demand roots only for evaluated settings.
+/// Standalone compatibility entry points above retain their exact callback API.
+pub fn prepare_verified_procedure_original_tokens_with_sites(
+    metadata: &ProcedureMetadata,
+    symbols: &SymbolTable,
+    body: &[Item],
+    inputs: ProcedureInputs,
+    inherited: InheritedAbi<'_>,
+    evaluate: impl FnMut(AbiExpressionSite, &SymbolicExpression) -> Result<SemanticValue, AbiError>,
 ) -> Result<PreparedProcedure, AbiError> {
     prepare_verified_procedure_with_spelling(
         metadata,
@@ -414,7 +442,7 @@ fn prepare_verified_procedure_with_spelling(
     body: &[Item],
     mut inputs: ProcedureInputs,
     inherited: InheritedAbi<'_>,
-    mut evaluate: impl FnMut(&SymbolicExpression) -> Result<SemanticValue, AbiError>,
+    mut evaluate: impl FnMut(AbiExpressionSite, &SymbolicExpression) -> Result<SemanticValue, AbiError>,
     formal_spelling: fn(&SymbolicExpression, &SymbolTable) -> Result<String, AbiError>,
 ) -> Result<PreparedProcedure, AbiError> {
     fn setting_left(items: &[Item]) -> bool {
@@ -430,7 +458,10 @@ fn prepare_verified_procedure_with_spelling(
     fn select<'a>(
         nodes: &'a [ProcedureSettingNode],
         output: &mut Vec<&'a ProcedureSetting>,
-        evaluate: &mut impl FnMut(&SymbolicExpression) -> Result<SemanticValue, AbiError>,
+        evaluate: &mut impl FnMut(
+            AbiExpressionSite,
+            &SymbolicExpression,
+        ) -> Result<SemanticValue, AbiError>,
     ) -> Result<(), AbiError> {
         for node in nodes {
             match node {
@@ -440,7 +471,7 @@ fn prepare_verified_procedure_with_spelling(
                     then_branch,
                     else_branch,
                 } => {
-                    let truth = match evaluate(condition)? {
+                    let truth = match evaluate(AbiExpressionSite::SettingCondition, condition)? {
                         SemanticValue::Null => false,
                         SemanticValue::NumberBits(bits) if f32::from_bits(bits).is_finite() => {
                             f32::from_bits(bits) != 0.0
@@ -467,7 +498,9 @@ fn prepare_verified_procedure_with_spelling(
     let mut selected = Vec::new();
     select(&metadata.settings, &mut selected, &mut evaluate)?;
     if let Some(annotation) = &metadata.signature.return_annotation {
-        validate_return_annotation(annotation, symbols, &mut evaluate)?;
+        validate_return_annotation(annotation, symbols, &mut |expression| {
+            evaluate(AbiExpressionSite::ReturnAnnotation, expression)
+        })?;
     }
     let mut layout = match inherited {
         InheritedAbi::Fresh => ProcLayout::default(),
@@ -611,26 +644,28 @@ fn prepare_verified_procedure_with_spelling(
             return Err(AbiError::source("only src supports an in setting"));
         }
         match name {
-            "name" | "desc" | "category" => match evaluate(&setting.value)? {
-                SemanticValue::Text(value) => {
-                    let value = value.to_vec();
-                    match name {
-                        "name" => layout.display_name = Some(value),
-                        "desc" => layout.description = Some(value),
-                        _ => {
-                            layout.category = Category::Text(value);
-                            layout.flags &= !0x20;
+            "name" | "desc" | "category" => {
+                match evaluate(AbiExpressionSite::Setting, &setting.value)? {
+                    SemanticValue::Text(value) => {
+                        let value = value.to_vec();
+                        match name {
+                            "name" => layout.display_name = Some(value),
+                            "desc" => layout.description = Some(value),
+                            _ => {
+                                layout.category = Category::Text(value);
+                                layout.flags &= !0x20;
+                            }
                         }
                     }
+                    SemanticValue::Null if name == "category" => {
+                        layout.category = Category::Null;
+                        layout.flags |= 0x20;
+                    }
+                    _ => return Err(fail("unsupported textual procedure setting")),
                 }
-                SemanticValue::Null if name == "category" => {
-                    layout.category = Category::Null;
-                    layout.flags |= 0x20;
-                }
-                _ => return Err(fail("unsupported textual procedure setting")),
-            },
+            }
             "waitfor" | "hidden" | "background" | "instant" | "popup_menu" => {
-                let enabled = match number(evaluate(&setting.value)?)? {
+                let enabled = match number(evaluate(AbiExpressionSite::Setting, &setting.value)?)? {
                     0 => false,
                     1 => true,
                     _ => return Err(AbiError::source("boolean setting must be zero or one")),
@@ -649,7 +684,7 @@ fn prepare_verified_procedure_with_spelling(
                 }
             }
             "invisibility" => {
-                let value = number(evaluate(&setting.value)?)?;
+                let value = number(evaluate(AbiExpressionSite::Setting, &setting.value)?)?;
                 if value > 127 {
                     return Err(AbiError::source("invisibility exceeds 127"));
                 }

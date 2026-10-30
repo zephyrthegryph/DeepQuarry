@@ -44,7 +44,9 @@ impl DriverFacts<'_> {
 #[path = "driver_facts_evaluator.rs"]
 mod evaluator;
 pub use evaluator::DriverEvaluator;
+#[cfg(test)]
 use evaluator::LexicalAbiEvaluator;
+use evaluator::OriginalSettingEvaluator;
 #[path = "driver_facts/abi_artifacts.rs"]
 pub(crate) mod abi_artifacts;
 mod abi_scheduler;
@@ -600,14 +602,6 @@ fn prepare_source_abi_mode_on_executor(
                 boundaries,
                 unit_members: index,
             };
-            let lexical = LexicalAbiEvaluator(evaluator);
-            let selected_evaluator: &dyn CapturedConstantEvaluator =
-                if lexical_statics { &lexical } else { evaluator };
-            let policy = crate::procedure_policy::CapturedProcedurePolicy {
-                evaluator: selected_evaluator,
-                inherited: &inherited,
-                resource_search_context,
-            };
             // Indexed collection preserves ready encounter order. install returns
             // only after the wave and all sibling jobs finish, including unwinding.
             let mut wave = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
@@ -688,6 +682,9 @@ fn prepare_source_abi_mode_on_executor(
                                             ),
                                             None => {
                                                 let original=crate::procedure_policy::OriginalFormalTokens::capture(frontend,body,metadata)?;
+                                                let borrowed=OriginalSettingEvaluator{frontend,body,metadata,evaluator,lexical:lexical_statics};
+                                                let policy=crate::procedure_policy::CapturedProcedurePolicy{
+                                                    evaluator:&borrowed,inherited:&inherited,resource_search_context};
                                                 policy.prepare_view_original(metadata,parsed,&context,&original)
                                             },
                                         }

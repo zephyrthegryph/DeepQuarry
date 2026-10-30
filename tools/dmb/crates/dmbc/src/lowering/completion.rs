@@ -1,6 +1,9 @@
 //! Bounded admission and consuming cold completion before source-ordered aggregation.
 use super::*;
 
+#[path = "completion_demand.rs"]
+mod demand;
+use demand::*;
 pub struct CompletedUnit<T> {
     pub identity: UnitIdentity,
     pub effective: bool,
@@ -114,6 +117,50 @@ pub fn lower_frontend_completed_input_on_execution<
     symbolic: bool,
     complete: &(impl Fn(CompletedInput) -> Result<T, E> + Sync),
 ) -> CompletedLoweringBatch<T, E> {
+    match completed_with::<CompatibilityCompletion, _, _, _, _>(
+        frontend, host, policy, config, startup, memo, execution, symbolic, complete,
+    ) {
+        Ok(value) => value,
+        Err(never) => match never {},
+    }
+}
+#[allow(clippy::too_many_arguments)]
+pub fn lower_frontend_completed_input_checked_on_execution<
+    'frontend,
+    R: Resolver,
+    P: AbiPolicy,
+    T: Send,
+    E: Send,
+>(
+    frontend: &'frontend ColdFrontend,
+    host: &R,
+    policy: &P,
+    config: LoweringConfig,
+    startup: Option<&crate::startup::CapturedStartup<'frontend>>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+    execution: LoweringExecution<'_, 'frontend>,
+    symbolic: bool,
+    complete: &(impl Fn(CompletedInput) -> Result<T, E> + Sync),
+) -> std::io::Result<CompletedLoweringBatch<T, E>> {
+    crate::daemon::control::checkpoint()?;
+    let batch = completed_with::<CheckedCompletion, _, _, _, _>(
+        frontend, host, policy, config, startup, memo, execution, symbolic, complete,
+    )?;
+    crate::daemon::control::checkpoint()?;
+    Ok(batch)
+}
+#[allow(clippy::too_many_arguments)]
+fn completed_with<'frontend, D: CompletionDemand, R: Resolver, P: AbiPolicy, T: Send, E: Send>(
+    frontend: &'frontend ColdFrontend,
+    host: &R,
+    policy: &P,
+    config: LoweringConfig,
+    startup: Option<&crate::startup::CapturedStartup<'frontend>>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+    execution: LoweringExecution<'_, 'frontend>,
+    symbolic: bool,
+    complete: &(impl Fn(CompletedInput) -> Result<T, E> + Sync),
+) -> Result<CompletedLoweringBatch<T, E>, D::Abort> {
     let executor = execution.executor;
     let prepared = execution
         .prepared_roster
@@ -143,7 +190,10 @@ pub fn lower_frontend_completed_input_on_execution<
                 host,
                 answers.as_ref().map(|answers| {
                     answers
-                        as &dyn dm_session::AnswerOracle<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning>
+                        as &dyn dm_session::AnswerOracle<
+                            dm_ir::ResolveQuery,
+                            dm_ir::ResolvedMeaning,
+                        >
                 }),
             )
         });
@@ -228,10 +278,10 @@ pub fn lower_frontend_completed_input_on_execution<
             }
         }
         if !invalid.is_empty() {
-            return CompletedLoweringBatch {
+            return Ok(CompletedLoweringBatch {
                 diagnostics: invalid,
                 ..Default::default()
-            };
+            });
         }
     }
     let internal = |body: &BodyOccurrence, message: String| {
@@ -251,7 +301,7 @@ pub fn lower_frontend_completed_input_on_execution<
             std::sync::atomic::AtomicU64::new(0),
         )
     });
-    let consume = |position: usize, input: Result<CompletedInput, Vec<LoweringDiagnostic>>| {
+    let consume = |position: usize, input: Result<CompletedInput, D::Failure>| {
         std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             input.map(|unit| {
                 let identity = unit.identity();
@@ -277,7 +327,8 @@ pub fn lower_frontend_completed_input_on_execution<
             Err(internal(
                 bodies.at(position).0,
                 "procedure lowering worker panicked".into(),
-            ))
+            )
+            .into())
         })
     };
     drop(bodies_timer);
@@ -302,8 +353,7 @@ pub fn lower_frontend_completed_input_on_execution<
             local_position,
             (body, prepared_body),
         )| {
-            crate::daemon::control::checkpoint()
-                .map_err(|error| internal(body, error.to_string()))?;
+            D::checkpoint(|error| internal(body, error.to_string()))?;
             // Fully qualified unchanged rows bypass key/ABI preparation. Current
             // origins/helpers are still rebound through the same contribution core.
             if symbolic && !execution.capture_references && !execution.selections_only {
@@ -319,7 +369,8 @@ pub fn lower_frontend_completed_input_on_execution<
                             .local_attempts
                             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                         let local_started = std::time::Instant::now();
-                        let local = store.lookup_unchanged_local(
+                        let local = D::local(
+                            store,
                             roster,
                             candidates,
                             memo.facts_policy,
@@ -327,7 +378,7 @@ pub fn lower_frontend_completed_input_on_execution<
                             frontend,
                             row,
                             execution.bodies,
-                        );
+                        )?;
                         memo.counts.local_ns.fetch_add(
                             local_started.elapsed().as_nanos().min(u64::MAX as u128) as u64,
                             std::sync::atomic::Ordering::Relaxed,
@@ -345,7 +396,7 @@ pub fn lower_frontend_completed_input_on_execution<
                 }
             }
             let keyed_started = std::time::Instant::now();
-            let keyed = memo::admit_one_input(
+            let keyed = D::admit(
                 frontend,
                 body,
                 host,
@@ -386,12 +437,19 @@ pub fn lower_frontend_completed_input_on_execution<
                 Some(Ok((None, Some(attempt)))) => {
                     pending.push((position, std::sync::Mutex::new(Some(attempt))))
                 }
-                Some(Err(errors)) => outcomes[position] = Some(Err(errors)),
+                Some(Err(error)) => {
+                    // Abort before starting this window's deferred producers.
+                    // Successful sibling computations remain operation-local;
+                    // no completed batch or publication is returned on failure.
+                    let diagnostics = D::split(error)?;
+                    outcomes[position] = Some(Err(diagnostics.into()));
+                }
                 None | Some(Ok(_)) => {
                     outcomes[position] = Some(Err(internal(
                         bodies.at(position).0,
                         "procedure admission worker panicked".into(),
-                    )))
+                    )
+                    .into()))
                 }
             }
         }
@@ -403,8 +461,7 @@ pub fn lower_frontend_completed_input_on_execution<
                 .unwrap_or_else(|error| error.into_inner())
                 .take()
                 .expect("each pending producer runs once");
-            let input = crate::daemon::control::checkpoint()
-                .map_err(|error| internal(bodies.at(*position).0, error.to_string()))
+            let input = D::checkpoint(|error| internal(bodies.at(*position).0, error.to_string()))
                 .and_then(|_| {
                     let started = worker_elapsed.as_ref().map(|_| std::time::Instant::now());
                     let produced = attempt.finish();
@@ -419,12 +476,17 @@ pub fn lower_frontend_completed_input_on_execution<
             consume(*position, input)
         });
         for ((position, _), result) in pending.into_iter().zip(produced) {
-            outcomes[position] = Some(result.unwrap_or_else(|| {
+            let result = result.unwrap_or_else(|| {
                 Err(internal(
                     bodies.at(position).0,
                     "procedure lowering worker panicked".into(),
-                ))
-            }));
+                )
+                .into())
+            });
+            outcomes[position] = Some(match result {
+                Err(error) => Err(D::split(error)?.into()),
+                value => value,
+            });
         }
         if let Some(started) = lowering_started {
             lowering_elapsed += started.elapsed();
@@ -459,12 +521,13 @@ pub fn lower_frontend_completed_input_on_execution<
             Err(internal(
                 bodies.at(position).0,
                 "procedure lowering job did not complete".into(),
-            ))
+            )
+            .into())
         }) {
             Ok(Ok(unit)) => batch.units.push(unit),
             Ok(Err(error)) => batch.completion_errors.push(*error),
-            Err(errors) => batch.diagnostics.extend(errors),
+            Err(error) => batch.diagnostics.extend(D::split(error)?),
         }
     }
-    batch
+    Ok(batch)
 }

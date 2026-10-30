@@ -53,6 +53,7 @@ pub mod checks_undefined_variable;
 pub mod checker_return_facts;
 
 pub mod analyze_call_sites;
+pub mod policy_body_demand;
 
 pub mod checks_field_static;
 

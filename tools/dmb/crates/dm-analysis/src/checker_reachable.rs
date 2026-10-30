@@ -243,7 +243,8 @@ impl<'a> Walker<'a, '_> {
                 })?;
                 break;
             }
-            if let StatementKind::Set { attribute, .. } = &statement.kind {
+            if let Some(setting) = statement.setting() {
+                let attribute = setting.attribute;
                 if !setting_allowed && attribute.starts_with("SpacemanDMM_") {
                     self.event(Event::SettingOutsidePrefix {
                         statement,
@@ -319,6 +320,7 @@ impl<'a> Walker<'a, '_> {
                 | StatementKind::Call(_)
                 | StatementKind::Expression(_)
                 | StatementKind::Set { .. }
+                | StatementKind::ProjectedSet { .. }
                 | StatementKind::Goto(_)
                 | StatementKind::Break
                 | StatementKind::BreakLabel(_)
@@ -515,6 +517,7 @@ impl<'a> Walker<'a, '_> {
             StatementKind::Throw(_)
             | StatementKind::Goto(_)
             | StatementKind::Set { .. }
+            | StatementKind::ProjectedSet { .. }
             | StatementKind::Var { .. }
             | StatementKind::Assign { .. } => Ok(ControlFlow::default()),
         }

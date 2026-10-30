@@ -19,6 +19,14 @@ pub(super) fn protected_entry_label(view: StatementView<'_>, target: &str) -> bo
         found: bool,
     }
     impl TypedVisitor for Find<'_> {
+        fn projected_expression(
+            &mut self,
+            _view: dm_syntax::ProjectedExprView<'_>,
+            _path: &[dm_syntax::NodeStep],
+        ) -> dm_syntax::VisitDecision {
+            dm_syntax::VisitDecision::Descend
+        }
+
         fn statement(&mut self, node: &Statement, _: &[NodeStep]) -> VisitDecision {
             if self.depth > 0
                 && matches!(&node.kind, StatementKind::Label { name, .. } if name == self.target)
