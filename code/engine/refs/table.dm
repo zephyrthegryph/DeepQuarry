@@ -287,12 +287,17 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 	T.owner_type = D.type
 	var/datum/own_decls/decl = new
 	// Capabilities contribute first (a slot owns its var); the type's own lists come after.
+	BOOT_PHASE_BEGIN(bp_caps)
 	if(isatom(D))
 		for(var/datum/capability/C as anything in caps_of(D))
 			for(var/datum/own_entry/E as anything in C.owned())
 				decl.add(E)
+	BOOT_PHASE_END(bp_caps, "own_table build: caps_of and owned()", D)
 	// The engine's declarations: the relation entries of the type's CAPABILITIES lists (code/engine/declare/relations.dm).
-	for(var/datum/own_entry/E as anything in table_own_entries(table_of(D)))
+	BOOT_PHASE_BEGIN(bp_tbl)
+	var/datum/type_table/own_source = table_of(D)
+	BOOT_PHASE_END(bp_tbl, "own_table build: table_of", D)
+	for(var/datum/own_entry/E as anything in table_own_entries(own_source))
 		decl.add(E)
 	for(var/line in decl.conflicts)
 		OWN_REPORT("[D.type]: one kind per var: [line]")
@@ -318,7 +323,9 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 				LAZYADD(T.proto_vars, var_name)
 			if(OWNK_SHARED)
 				LAZYADD(T.shared_vars, var_name)
+	BOOT_PHASE_BEGIN(bp_links)
 	link_entries_for(decl, D, T)
+	BOOT_PHASE_END(bp_links, "own_table build: link_entries_for", D)
 	T.engine_hooks = table_hook_flags_cached(table_of(D))
 	T.keep_vars = decl.keep
 	T.pool_reset_vars = decl.pool_reset
@@ -356,7 +363,9 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 		OWN_REPORT("[D.type] is a keyed target through var '[T.keyed_key]', which it doesn't have")
 	T.empty = !(T.own_vars || T.ref_vars || T.proto_vars)
 	T.materialize_work = !!(T.keyed_vars || T.keyed_key)
+	BOOT_PHASE_BEGIN(bp_validate)
 	own_validate_table(D, T)
+	BOOT_PHASE_END(bp_validate, "own_table build: own_validate_table", D)
 	return T
 
 /// The kind x value matrix, per built table (boot and first use): the checks that need an

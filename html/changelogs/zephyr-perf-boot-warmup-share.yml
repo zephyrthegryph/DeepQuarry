@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Boot phase timers split the once-per-type table warm-up (own table, table build, table compile, shared cache builds)"

@@ -95,7 +95,9 @@ PROC_SUMMARY(/datum/shared_cache/proc/miss) // vars[] / call() dispatcher: the w
 			return aged
 	if(!active)
 		activate()
+	BOOT_PHASE_BEGIN(bp_build)
 	var/value = (length(args) > 1) ? call(builder)(arglist(args.Copy(2))) : call(builder)(key)
+	BOOT_PHASE_END(bp_build, "shared_cache build: [name]", null)
 	builds++
 	if(!value)
 		LAZYSET(falsy, key, list(value))
