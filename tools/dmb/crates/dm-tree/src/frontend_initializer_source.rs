@@ -263,6 +263,12 @@ pub struct OriginalDeclarationExpressionContext<'source>{
 }
 impl std::fmt::Debug for OriginalDeclarationExpressionContext<'_>{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.write_str("OriginalDeclarationExpressionContext")}}
 impl<'source> OriginalDeclarationExpressionContext<'source>{
+    /// One existing-host admission for a whole scalar traversal, including
+    /// transitive selected roots. The permit never becomes source authority.
+    pub fn with_admission(&self,operation:&mut dyn FnMut(&dm_syntax::SettingAdmission<'_>)->Result<(),BodySyntaxFailure>)->Result<(),BodySyntaxFailure>{
+        original_declaration_admission(self.frontend,|a|operation(a))
+    }
+
     /// Couple a top RHS with this SAME immutable original frontend frame before
     /// any transitive declaration read. No repeated whole-source validation.
     pub fn require_initializer(&self,input:&OriginalInitializerExpressionInput<'_>)->Result<(),BodySyntaxFailure>{
@@ -967,6 +973,14 @@ mod tests {
         let ai=a.original_initializer_input(&pa,0).unwrap();let bi=b.original_initializer_input(&pb,0).unwrap();
         let context=a.original_declaration_expression_context().unwrap();
         context.require_initializer(&ai).unwrap();assert!(context.require_initializer(&bi).is_err(),"equal source/semantic meaning is not original frame authority");
+    }
+    #[test]
+    fn transitive_context_shared_admission_reuses_original_root_without_new_body_demand() {
+        let host=Arc::new(OriginalHost(Arc::new(AtomicUsize::new(0)))) as Arc<dyn SettingExpressionQueries>;
+        let front=front("var/const/value=unknown+1\n",&host);let context=front.original_declaration_expression_context().unwrap();
+        let tree=&front.snapshot.tree;let owner=dm_ir::SymbolId::of("/");let name=dm_ir::SymbolId::of("value");let id=tree.resolve(tree.lookup_type(owner).unwrap(),name,crate::MemberKind::Var).unwrap();let metadata=&tree.member(id).unwrap().metadata;
+        let mut root=None;context.with_admission(&mut|a|{let _frame=a.evaluation_frame().map_err(BodySyntaxFailure::Operational)?;root=Some(context.selected_admitted(owner,name,metadata,a)?.prepare(a)?);Ok(())}).unwrap();
+        let warm=context.selected(owner,name,metadata).unwrap().expression().unwrap();assert!(root.unwrap().same_root(&warm));
     }
 
 }

@@ -58,3 +58,30 @@ fn checked_classifier_pending_semantic_failure_still_checks_actual_final_cancell
     let InitializerClassificationFailure::Operational(actual)=classify_with_token_mode_checked(&writes,&symbols,&Source,false).err().unwrap()else{panic!("pending semantic result cannot bypass final operation guard")};assert_eq!(actual.kind(),std::io::ErrorKind::Interrupted);drop(schedule);drop(binding);
     let InitializerClassificationFailure::Semantic(source)=classify_with_token_mode_checked(&writes,&symbols,&Source,false).err().unwrap()else{panic!("same genuine source classification after recovery")};assert_eq!(source.issues[0].reason,"genuine semantic failure before final boundary");
 }
+
+#[test]
+fn checked_classifier_consumes_scoped_original_scalar_without_owned_hook_and_retries_actual_root_io(){
+ use std::{path::Path,sync::Arc};
+ struct Source;
+ impl dm_preprocess::SourceProvider for Source{fn read(&self,_:&Path)->Result<String,String>{Ok("var/static/value=1+2\n".into())}}
+ let db=Arc::new(crate::query_db::QueryDb::default());let host=db.clone() as Arc<dyn dm_tree::frontend::SettingExpressionQueries>;
+ let frontend=dm_tree::frontend::build(Path::new("scoped-classifier.dme"),&Source,&Default::default(),1).unwrap().with_setting_expression_queries(&host).unwrap();
+ let plan=dm_tree::initializers::capture_declaration_plan(&frontend.snapshot,&frontend.emission_order).unwrap();
+ let input=frontend.original_initializer_input(&plan,0).unwrap();
+ struct Scoped<'input,'source>{input:&'input dm_tree::frontend::OriginalInitializerExpressionInput<'source>}
+ impl CapturedInitializerEvaluator for Scoped<'_,'_>{
+  fn evaluate(&self,_:SymbolId,_:&SymbolicExpression)->Result<Evaluation,String>{panic!("scoped checked path must preserve its hook")}
+  fn evaluate_scoped_write_checked(&self,_:&InitializerWrite,_:&SymbolicExpression)->Result<(Evaluation,Option<ScopedPreparedInitializerExpression<'_>>),InitializerFailure>{
+   let root=self.input.expression().map_err(|failure|match failure{dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>InitializerFailure::Operational(actual),dm_tree::frontend::BodySyntaxFailure::Syntax(source)=>InitializerFailure::Unsupported(source.message)})?;
+   Ok((Evaluation::Scalar(SemanticValue::NumberBits(3.0f32.to_bits())),Some(ScopedPreparedInitializerExpression::from_original(root))))
+  }
+ }
+ let evaluator=Scoped{input:&input};
+ let token=crate::daemon::control::Cancellation::default();let binding=crate::daemon::control::bind_with_deadline(token.clone(),std::time::Instant::now()+std::time::Duration::from_secs(300));
+ let schedule=db.cancel_settings_after_checkpoints_for_test(0,token);
+ let failure=classify_with_token_mode_checked(&plan.plan().writes,&plan.plan().symbols,&evaluator,false).err().expect("actual source root failure");
+ assert!(matches!(failure,InitializerClassificationFailure::Operational(ref actual)if actual.kind()==std::io::ErrorKind::Interrupted));drop(schedule);drop(binding);
+ let classified=classify_with_token_mode_checked(&plan.plan().writes,&plan.plan().symbols,&evaluator,false).unwrap();
+ assert_eq!(classified.writes[0].default,DefaultValue::Scalar(SemanticValue::NumberBits(3.0f32.to_bits())));
+ assert!(classified.writes[0].runtime_value.is_none());assert_eq!(db.db().stats(dm_query::Kind(4)).computed,0);
+}

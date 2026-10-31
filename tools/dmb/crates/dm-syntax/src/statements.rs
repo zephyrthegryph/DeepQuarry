@@ -182,7 +182,7 @@ pub fn parse_proc_body(proc: &Item) -> ParsedBody {
 
 /// Parse a procedure body when its owning declaration is already known.
 pub fn parse_body_items(items: &[Item]) -> ParsedBody {
-    parse_body_items_using_settings(items, None, None)
+    parse_body_items_using_settings(items, None, None,false)
 }
 
 /// Storage supplied by an ORIGINAL owner; this interface itself grants no source
@@ -200,6 +200,7 @@ fn parse_body_items_using_settings(
     items: &[Item],
     settings: Option<&dyn SettingSyntaxProvider>,
     admission: Option<&crate::SettingAdmission<'_>>,
+    deferred_literal_purity:bool,
 ) -> ParsedBody {
     let mut result = ParsedBody::default();
     let mut origins = BodyOrigins {
@@ -207,6 +208,7 @@ fn parse_body_items_using_settings(
         locals: &mut result.local_variables,
         settings,
         admission,
+        deferred_literal_purity,
     };
     result.statements = parse_sequence(items, &mut result.diagnostics, &mut origins);
     result.local_variables.finish_source_order();
@@ -239,7 +241,7 @@ pub fn parse_body_items_with_context_and_settings(
     settings: &dyn SettingSyntaxProvider,
     admission: &crate::SettingAdmission<'_>,
 ) -> ParsedBody {
-    let mut parsed = parse_body_items_using_settings(items, Some(settings), Some(admission));
+    let mut parsed = parse_body_items_using_settings(items, Some(settings), Some(admission),false);
     if admission.is_stopped() {
         return parsed;
     }
@@ -254,6 +256,7 @@ struct BodyOrigins<'a> {
     locals: &'a mut crate::LocalVariableLedger,
     settings: Option<&'a dyn SettingSyntaxProvider>,
     admission: Option<&'a crate::SettingAdmission<'a>>,
+    deferred_literal_purity:bool,
 }
 impl BodyOrigins<'_> {
     fn push(&mut self, origin: ControlOrigin) {
@@ -359,6 +362,7 @@ fn parse_sequence(
                 &format!("{}/", header.trim_end_matches('/')),
                 diagnostics,
                 &mut statements,
+                origins.deferred_literal_purity,
             );
             index += 1;
             continue;
@@ -376,7 +380,7 @@ fn parse_sequence(
                 crate::LocalSourceKind::Statement,
             );
             if parts.len() > 1 {
-                parse_var_parts(item, "", diagnostics, &mut statements);
+                parse_var_parts(item, "", diagnostics, &mut statements,origins.deferred_literal_purity);
                 index += 1;
                 continue;
             }
@@ -667,7 +671,7 @@ fn parse_one(
     } else if let Some(label) = header.strip_prefix("continue ") {
         Some(StatementKind::ContinueLabel(label.trim().into()))
     } else if header.starts_with("var/") || starts_keyword(header, "var") {
-        parse_var(item, diagnostics)
+        parse_var(item, diagnostics,origins.deferred_literal_purity)
     } else if !item.children.is_empty() {
         diagnostics.push(Diagnostic {
             span: item.header_span,
@@ -814,6 +818,7 @@ fn parse_var_block(
     prefix: &str,
     diagnostics: &mut Vec<Diagnostic>,
     statements: &mut Vec<Statement>,
+    deferred_literal_purity:bool,
 ) {
     for item in items {
         let header = item.header.trim();
@@ -831,6 +836,7 @@ fn parse_var_block(
                     &format!("{prefix}{header}/"),
                     diagnostics,
                     statements,
+                    deferred_literal_purity,
                 );
             } else {
                 diagnostics.push(Diagnostic {
@@ -853,7 +859,7 @@ fn parse_var_block(
                     message: ",: expected }".into(),
                 });
             } else {
-                parse_var_parts(item, prefix, diagnostics, statements);
+                parse_var_parts(item, prefix, diagnostics, statements,deferred_literal_purity);
             }
         }
     }
@@ -864,6 +870,7 @@ fn parse_var_parts(
     prefix: &str,
     diagnostics: &mut Vec<Diagnostic>,
     statements: &mut Vec<Statement>,
+    deferred_literal_purity:bool,
 ) {
     let header = item.header.trim();
     let parts = split_case_alternatives(header);
@@ -894,7 +901,7 @@ fn parse_var_parts(
         );
         leaf.span = leaf.header_span;
         let prefix = if index == 0 { prefix } else { &inherited };
-        if let Some(kind) = parse_var_header(&leaf, prefix, diagnostics) {
+        if let Some(kind) = parse_var_header(&leaf, prefix, diagnostics,deferred_literal_purity) {
             statements.push(Statement {
                 kind,
                 span: leaf.span,
@@ -905,7 +912,7 @@ fn parse_var_parts(
     }
 }
 
-fn parse_var(item: &Item, diagnostics: &mut Vec<Diagnostic>) -> Option<StatementKind> {
+fn parse_var(item: &Item, diagnostics: &mut Vec<Diagnostic>,deferred_literal_purity:bool) -> Option<StatementKind> {
     if let Some(child) = item.children.first() {
         // A block indented under an initialized `var/name = value` is never
         // DM; the statement lowerer reports DreamMaker's error.
@@ -916,12 +923,13 @@ fn parse_var(item: &Item, diagnostics: &mut Vec<Diagnostic>) -> Option<Statement
         });
         return None;
     }
-    parse_var_header(item, "", diagnostics)
+    parse_var_header(item, "", diagnostics,deferred_literal_purity)
 }
 fn parse_var_header(
     item: &Item,
     prefix: &str,
     diagnostics: &mut Vec<Diagnostic>,
+    deferred_literal_purity:bool,
 ) -> Option<StatementKind> {
     let header = item.header.trim();
     let assignment = crate::local_variable_syntax::top_level_local_assignment(header);
@@ -949,16 +957,9 @@ fn parse_var_header(
         let parsed = parse_expr(source, offset, diagnostics)?;
         // `in` binds looser than `=` in DreamMaker, so `var/x = a in L` is `(var/x = a) in L`: the local gets `a`, and a
         // membership test whose result nobody reads (and that has no effect) is dropped.
-        match parsed.kind {
-            ExprKind::Binary { op, lhs, rhs }
-                if op == "in"
-                    && matches!(&rhs.kind, ExprKind::Call { callee, .. } if matches!(&callee.kind, ExprKind::Ident(name) if name == "list"))
-                    && is_effect_free(&rhs) =>
-            {
-                Some(*lhs)
-            }
-            kind => Some(Expr { kind, ..parsed }),
-        }
+        if !deferred_literal_purity && pure_local_membership(&parsed,None){
+            let ExprKind::Binary{lhs,..}=parsed.kind else{unreachable!()};Some(*lhs)
+        }else{Some(parsed)}
     } else {
         None
     };
@@ -1053,20 +1054,22 @@ mod tests {
 }
 
 /// An expression that only names and builds values: evaluating it changes nothing.
-fn is_effect_free(expr: &Expr) -> bool {
+fn is_effect_free(expr:&Expr)->bool{is_effect_free_using(expr,None)}
+fn is_effect_free_using(expr: &Expr,admission:Option<&crate::SettingAdmission<'_>>) -> bool {
+    let _frame=match admission.map(|a|a.parser_frame()).transpose(){Ok(frame)=>frame,Err(_)=>return false};
     match &expr.kind {
         ExprKind::Literal(text) => text.parts().is_ok_and(|parts| {
-            parts.is_none_or(|parts| parts.expressions.iter().all(is_effect_free))
+            parts.is_none_or(|parts| parts.expressions.iter().all(|e|is_effect_free_using(e,admission)))
         }),
         ExprKind::Ident(_) | ExprKind::TypePath(_) => true,
-        ExprKind::Group(inner) => is_effect_free(inner),
+        ExprKind::Group(inner) => is_effect_free_using(inner,admission),
         ExprKind::Member {
             object,
             via_colon: false,
             ..
-        } => is_effect_free(object),
+        } => is_effect_free_using(object,admission),
         ExprKind::Unary { op, value } => {
-            matches!(op.as_str(), "-" | "!" | "~") && is_effect_free(value)
+            matches!(op.as_str(), "-" | "!" | "~") && is_effect_free_using(value,admission)
         }
         ExprKind::Binary { op, lhs, rhs } => {
             matches!(
@@ -1084,13 +1087,51 @@ fn is_effect_free(expr: &Expr) -> bool {
                     | ">"
                     | "<="
                     | ">="
-            ) && is_effect_free(lhs)
-                && is_effect_free(rhs)
+            ) && is_effect_free_using(lhs,admission)
+                && is_effect_free_using(rhs,admission)
         }
         ExprKind::Call { callee, args } => {
             matches!(&callee.kind, ExprKind::Ident(name) if name == "list")
-                && args.iter().all(is_effect_free)
+                && args.iter().all(|e|is_effect_free_using(e,admission))
         }
         _ => false,
     }
+}
+
+fn pure_local_membership(expr:&Expr,a:Option<&crate::SettingAdmission<'_>>)->bool{
+ let ExprKind::Binary{op,rhs,..}=&expr.kind else{return false};
+ op=="in"&&matches!(&rhs.kind,ExprKind::Call{callee,..}if matches!(&callee.kind,ExprKind::Ident(name)if name=="list"))&&match a{Some(a)=>is_effect_free_using(rhs,Some(a)),None=>is_effect_free(rhs)}
+}
+/// Same local-declaration normalization, delayed ONLY in the admitted body mode
+/// so the classifier borrows canonical literal children instead of parsing early.
+pub(crate) fn complete_body_literal_normalization(parsed:&mut ParsedBody,a:&crate::SettingAdmission<'_>)->std::io::Result<()>{
+ let mut pending=crate::admitted_worklist::Worklist::new(a)?;pending.extend(parsed.statements.iter_mut())?;
+ while let Some(st)=pending.pop(){
+  a.checkpoint()?;
+  match &mut st.kind{
+   StatementKind::Var{value,..}=>{
+    if value.as_ref().is_some_and(|e|pure_local_membership(e,Some(a))){
+     let Expr{kind:ExprKind::Binary{lhs,rhs,..},..}=value.take().unwrap() else{unreachable!()};
+     *value=Some(*lhs);crate::setting_drop::drop_expression(*rhs,None);
+    }
+    a.checkpoint()?;
+   }
+   StatementKind::If{then_branch,else_branch,..}=>{pending.extend(then_branch.iter_mut())?;pending.extend(else_branch.iter_mut())?;},
+   StatementKind::While{body,..}|StatementKind::DoWhile{body,..}|StatementKind::Spawn{body,..}|StatementKind::For{body,..}|StatementKind::Label{body,..}=>pending.extend(body.iter_mut())?,
+   StatementKind::Try{body,catch_body,..}=>{pending.extend(body.iter_mut())?;pending.extend(catch_body.iter_mut())?;},
+   StatementKind::Switch{cases,else_branch,..}=>{for case in cases{pending.extend(case.body.iter_mut())?;}pending.extend(else_branch.iter_mut())?;},
+   _=>(),
+  }
+ }
+ Ok(())
+}
+/// Whole native body request only: the opaque return exposes no intermediate
+/// unnormalized ParsedBody. Source/code authority remains the caller's receipt.
+pub fn parse_body_items_with_admitted_literals(
+ items:&[Item],source:&str,context:&dyn Fn(usize)->Option<ItemKind>,settings:&dyn SettingSyntaxProvider,
+ admission:&crate::SettingAdmission<'_>,cleanup:crate::SettingRootLease,
+)->std::io::Result<crate::PreparedBodyLiteralSyntax>{
+ let mut parsed=parse_body_items_using_settings(items,Some(settings),Some(admission),true);
+ if !admission.is_stopped(){parsed.pending_bodies=crate::pending_body::pending_bodies(&parsed.statements,source,context);}
+ crate::prepare_body_literal_syntax(parsed,cleanup,admission)
 }

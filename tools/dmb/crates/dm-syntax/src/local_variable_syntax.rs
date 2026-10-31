@@ -20,6 +20,10 @@ pub struct LocalVariableLedger {
     source_ordered: bool,
 }
 impl LocalVariableLedger {
+    pub(crate) fn drop_dimension_expressions(self,mut drop:impl FnMut(Expr)){
+        for mut entry in self.entries{if let Some(array)=entry.array_syntax.take(){for expression in array.root.dimensions.into_vec(){drop(expression);}}}
+    }
+
     pub fn entries(&self) -> Result<&[LocalVariableSyntax], &'static str> {
         if let Some(reason) = self.refusal {
             Err(reason)

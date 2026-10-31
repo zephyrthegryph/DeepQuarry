@@ -914,7 +914,7 @@ pub(super) fn parse_statements(
     let parsed = dm_syntax::parse_body_items_with_context(&item.children, source, &|offset| {
         syntax.declaration_header_at(offset)
     });
-    finish_statements(item, parsed, supported)
+    finish_statements(item, parsed, supported, None)
 }
 /// Native parser only: exact original-source provider and SAME in-scope permit.
 pub(super) fn parse_statements_with_setting_admission(
@@ -926,6 +926,20 @@ pub(super) fn parse_statements_with_setting_admission(
     admission: &dm_syntax::SettingAdmission<'_>,
     supported: fn(&[dm_syntax::Statement]) -> bool,
 ) -> Result<Arc<StatementBody>, BodySyntaxFailure> {
+    parse_statements_admitted(item,source,syntax,body,code,admission,supported,false)
+}
+pub(super) fn parse_statements_with_body_literal_admission(
+    item:&mut Item,source:&str,syntax:&DeclarationSyntax,body:dm_syntax::Span,
+    code:Option<&Arc<BodyCodeIdentity>>,admission:&dm_syntax::SettingAdmission<'_>,
+    supported:fn(&[dm_syntax::Statement])->bool,
+)->Result<Arc<StatementBody>,BodySyntaxFailure>{
+    parse_statements_admitted(item,source,syntax,body,code,admission,supported,true)
+}
+fn parse_statements_admitted(
+    item:&mut Item,source:&str,syntax:&DeclarationSyntax,body:dm_syntax::Span,
+    code:Option<&Arc<BodyCodeIdentity>>,admission:&dm_syntax::SettingAdmission<'_>,
+    supported:fn(&[dm_syntax::Statement])->bool,complete_literals:bool,
+)->Result<Arc<StatementBody>,BodySyntaxFailure>{
     struct Original<'a, 'op> {
         syntax: &'a DeclarationSyntax,
         body: dm_syntax::Span,
@@ -971,25 +985,36 @@ pub(super) fn parse_statements_with_setting_admission(
         code,
         admission,
     };
-    let parsed = dm_syntax::parse_body_items_with_context_and_settings(
-        &item.children,
-        source,
-        &|at| syntax.declaration_header_at(at),
-        &provider,
-        admission,
-    );
-    if let Some(actual) = admission.take_operational_error() {
-        return Err(BodySyntaxFailure::Operational(actual));
+    // Failure cleanup is admitted BEFORE the ordinary body AST is built.
+    // It is coordination headroom only, not a global native-input/AST cap.
+    let cleanup=if complete_literals{
+        let bytes=body.end.checked_sub(body.start).and_then(|n|n.checked_mul(512)).and_then(|n|n.checked_add(8192)).ok_or_else(||BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"body literal cleanup source envelope overflow")))?;
+        Some(admission.reserve(bytes).map_err(BodySyntaxFailure::Operational)?)
+    }else{None};
+    if let Some(cleanup)=cleanup{
+        let prepared=dm_syntax::parse_body_items_with_admitted_literals(
+            &item.children,source,&|at|syntax.declaration_header_at(at),&provider,admission,cleanup,
+        ).map_err(BodySyntaxFailure::Operational)?;
+        let (parsed,literals)=prepared.into_parts();
+        if let Some(actual)=admission.take_operational_error(){
+            dm_syntax::drop_body_literal_syntax(parsed,Some(literals));
+            return Err(BodySyntaxFailure::Operational(actual));
+        }
+        Ok(finish_statements(item,parsed,supported,Some(literals)))
+    }else{
+        let parsed=dm_syntax::parse_body_items_with_context_and_settings(
+            &item.children,source,&|at|syntax.declaration_header_at(at),&provider,admission,
+        );
+        if let Some(actual)=admission.take_operational_error(){return Err(BodySyntaxFailure::Operational(actual));}
+        admission.checkpoint().map_err(BodySyntaxFailure::Operational)?;
+        Ok(finish_statements(item,parsed,supported,None))
     }
-    admission
-        .checkpoint()
-        .map_err(BodySyntaxFailure::Operational)?;
-    Ok(finish_statements(item, parsed, supported))
 }
 fn finish_statements(
     item: &mut Item,
     parsed: dm_syntax::ParsedBody,
     supported: fn(&[dm_syntax::Statement]) -> bool,
+    literal_admission:Option<dm_syntax::BodyLiteralAdmission>,
 ) -> Arc<StatementBody> {
     fn headers(items: &[Item], result: &mut std::collections::HashSet<(usize, usize)>) {
         for item in items {
@@ -1016,6 +1041,7 @@ fn finish_statements(
         syntax_complete: std::sync::OnceLock::new(),
         declaration_headers,
         stored_candidates,
+        literal_admission,
     })
 }
 

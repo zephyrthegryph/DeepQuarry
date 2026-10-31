@@ -85,14 +85,19 @@ impl Drop for Unpublished<'_, '_> {
 fn vec_bytes<T>(v: &Vec<T>) -> usize {
     v.capacity().saturating_mul(size_of::<T>())
 }
-struct Measured {
-    bytes: usize,
-    nodes: usize,
+pub(crate) struct Measured {
+    pub(crate) bytes: usize,
+    pub(crate) nodes: usize,
 }
 // ONE original-AST worklist prepares every genuinely issued literal's children
 // and counts exposed retained capacities. It never parses a second root/model.
 fn prepare_measure(root: &Expr, a: &SettingAdmission<'_>) -> io::Result<Measured> {
-    let mut pending = vec![root];
+    prepare_measure_using(root,a,false)
+}
+pub(crate) fn prepare_body_measure(root:&Expr,a:&SettingAdmission<'_>)->io::Result<Measured>{prepare_measure_using(root,a,true)}
+fn prepare_measure_using(root:&Expr,a:&SettingAdmission<'_>,body_fresh:bool)->io::Result<Measured>{
+    let mut pending = crate::admitted_worklist::Worklist::new(a)?;
+    pending.push(root)?;
     let mut bytes = 0usize;
     let mut nodes = 0usize;
     while let Some(e) = pending.pop() {
@@ -103,10 +108,11 @@ fn prepare_measure(root: &Expr, a: &SettingAdmission<'_>) -> io::Result<Measured
                 bytes = add(a, bytes, $n)?;
             }};
         }
-        macro_rules! boxed{($e:expr)=>{{charge!(size_of::<Expr>());pending.push($e);}}}
+        macro_rules! boxed{($e:expr)=>{{charge!(size_of::<Expr>());pending.push($e)?;}}}
         match &e.kind {
             ExprKind::Ident(s) | ExprKind::TypePath(s) => charge!(s.capacity()),
             ExprKind::Literal(l) => {
+                if body_fresh {l.require_fresh_body_owner(a)?;}
                 l.prepare_parts_admitted(a)?;
                 charge!(l.raw_storage().capacity());
                 if let Some((_, n)) = l.shared_storage() {
@@ -116,7 +122,7 @@ fn prepare_measure(root: &Expr, a: &SettingAdmission<'_>) -> io::Result<Measured
                     Some(Ok(Some(p))) => {
                         charge!(vec_bytes(&p.template));
                         charge!(vec_bytes(&p.expressions));
-                        pending.extend(p.expressions.iter());
+                        pending.extend(p.expressions.iter())?;
                     }
                     Some(Err(e)) => charge!(e.capacity()),
                     _ => (),
@@ -143,7 +149,7 @@ fn prepare_measure(root: &Expr, a: &SettingAdmission<'_>) -> io::Result<Measured
             ExprKind::Call { callee, args } => {
                 boxed!(callee);
                 charge!(vec_bytes(args));
-                pending.extend(args.iter());
+                pending.extend(args.iter())?;
             }
             ExprKind::Member {
                 object, selector, ..
@@ -167,7 +173,7 @@ fn prepare_measure(root: &Expr, a: &SettingAdmission<'_>) -> io::Result<Measured
                 charge!(vec_bytes(fields));
                 for (n, v) in fields {
                     charge!(n.capacity());
-                    pending.push(v);
+                    pending.push(v)?;
                 }
             }
             ExprKind::Index { object, index } | ExprKind::SafeIndex { object, index } => {
@@ -179,12 +185,13 @@ fn prepare_measure(root: &Expr, a: &SettingAdmission<'_>) -> io::Result<Measured
     }
     Ok(Measured { bytes, nodes })
 }
-fn attach(
+pub(crate) fn attach(
     root: &Expr,
     anchor: &SharedSettingRetention,
     a: &SettingAdmission<'_>,
 ) -> io::Result<()> {
-    let mut pending = vec![root];
+    let mut pending = crate::admitted_worklist::Worklist::new(a)?;
+    pending.push(root)?;
     while let Some(e) = pending.pop() {
         a.checkpoint()?;
         match &e.kind {
@@ -195,39 +202,39 @@ fn attach(
                     io::Error::from(kind)
                 })?;
                 if let Some(Ok(Some(p))) = l.retained_parts() {
-                    pending.extend(p.expressions.iter());
+                    pending.extend(p.expressions.iter())?;
                 }
             }
             ExprKind::Unary { value, .. }
             | ExprKind::Group(value)
-            | ExprKind::TypeFilter { value, .. } => pending.push(value),
+            | ExprKind::TypeFilter { value, .. } => pending.push(value)?,
             ExprKind::Binary { lhs, rhs, .. } => {
-                pending.push(lhs);
-                pending.push(rhs);
+                pending.push(lhs)?;
+                pending.push(rhs)?;
             }
             ExprKind::Conditional {
                 condition,
                 then_value,
                 else_value,
             } => {
-                pending.push(condition);
-                pending.push(then_value);
-                pending.push(else_value);
+                pending.push(condition)?;
+                pending.push(then_value)?;
+                pending.push(else_value)?;
             }
             ExprKind::Call { callee, args } => {
-                pending.push(callee);
-                pending.extend(args.iter());
+                pending.push(callee)?;
+                pending.extend(args.iter())?;
             }
             ExprKind::Member { object, .. }
             | ExprKind::StaticMember { object, .. }
-            | ExprKind::SafeMember { object, .. } => pending.push(object),
+            | ExprKind::SafeMember { object, .. } => pending.push(object)?,
             ExprKind::ObjectInitializer { object, fields } => {
-                pending.push(object);
-                pending.extend(fields.iter().map(|(_, e)| e));
+                pending.push(object)?;
+                pending.extend(fields.iter().map(|(_, e)| e))?;
             }
             ExprKind::Index { object, index } | ExprKind::SafeIndex { object, index } => {
-                pending.push(object);
-                pending.push(index);
+                pending.push(object)?;
+                pending.push(index)?;
             }
             ExprKind::Ident(_) | ExprKind::TypePath(_) => (),
         }
@@ -416,4 +423,13 @@ mod tests {
         drop(root);
         assert_eq!(counter.load(Ordering::Acquire), 0);
     }
+}
+
+/// Conservative parser/projection overlap for ONE already-issued literal.
+/// Counts raw '[' even when escaped; this is resource refusal, never grammar.
+pub(crate) fn literal_parser_peak(raw:&str,a:&SettingAdmission<'_>)->io::Result<usize>{
+ let overlap=mul(a,raw.len(),raw.bytes().filter(|b|*b==b'[').count())?;
+ let token_work=add(a,1,overlap)?;let text_work=add(a,mul(a,raw.len(),2)?,overlap)?;
+ let node=size_of::<crate::Token>()*12+size_of::<Expr>()*16+size_of::<String>()*8+size_of::<usize>()*16+128;
+ add(a,add(a,mul(a,token_work,node)?,mul(a,text_work,64)?)?,8192)
 }

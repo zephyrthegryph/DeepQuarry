@@ -59,7 +59,11 @@ fn main()->Result<(),Box<dyn std::error::Error>>{
         if !expected.0.contains(needle){return Err(format!("independent original fixture did not exercise {needle:?}").into());}
     }
     println!("plans original/shared complete body exact: {} bytes, {} diagnostics",expected.0.len(),expected.1.len());
-    unavailable_model_oracle(&root,old[0].as_ref(),actual.as_ref())?;
+    let previous_temp:Vec<_>=["TEMP","TMP","TMPDIR"].into_iter().map(|key|(key,std::env::var_os(key))).collect();
+    let negative=unavailable_model_oracle(&root,old[0].as_ref(),actual.as_ref());
+    if previous_temp.iter().any(|(key,value)|std::env::var_os(key)!=*value){return Err("negative oracle failed to restore process temp environment".into());}
+    negative?;
+    if generate(old[0].as_ref(),&cx)!=expected{return Err("original positive producer changed after unavailable-model oracle".into());}
     Ok(())
 }
 

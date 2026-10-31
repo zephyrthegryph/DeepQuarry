@@ -8,6 +8,9 @@ use dm_ir::{
 };
 use std::sync::Arc;
 pub mod warnings;
+#[path="initializer_policy/original_runtime.rs"]
+mod original_runtime;
+pub(crate) use original_runtime::{OriginalRuntimeExpression,CurrentRuntimeExpression};
 
 #[path="initializer_policy/failure.rs"]mod failure;
 pub use failure::InitializerFailure;

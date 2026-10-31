@@ -41,8 +41,10 @@ pub fn pending_bodies(
             _view: crate::ProjectedExprView<'_>,
             _path: &[crate::NodeStep],
         ) -> crate::VisitDecision {
-            crate::VisitDecision::Descend
+            crate::VisitDecision::Skip
         }
+
+        fn expression(&mut self,_:&crate::Expr,_:&[NodeStep])->VisitDecision{VisitDecision::Skip}
 
         fn statement(&mut self, node: &Statement, _: &[NodeStep]) -> VisitDecision {
             if !matches!(&node.kind, StatementKind::For { body, .. } if body.is_empty()) {

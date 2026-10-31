@@ -91,53 +91,59 @@ pub fn visit_projected_expression(root:&crate::SettingExpression,visitor:&mut im
  walk.projected_expression(root,root.original_expression());walk.report
 }
 /// One authoritative child-index convention for visitors and typed-node recipes.
-pub fn for_each_expression_child<'a>(node: &'a Expr, mut visit: impl FnMut(usize, &'a Expr)) {
+pub fn for_each_expression_child<'a>(node:&'a Expr,mut visit:impl FnMut(usize,&'a Expr)) {
+    match try_for_each_expression_child(node,|index,child|{visit(index,child);Ok::<(),std::convert::Infallible>(())}){Ok(())=>(),Err(never)=>match never{}}
+}
+/// Same original child order; actual callback refusal exits before later children.
+pub fn try_for_each_expression_child<'a,E>(node:&'a Expr,mut visit:impl FnMut(usize,&'a Expr)->Result<(),E>)->Result<(),E>{
     match &node.kind {
         ExprKind::Literal(text) => {
             if let Ok(Some(parts)) = text.parts() {
                 for (index, expression) in parts.expressions.iter().enumerate() {
-                    visit(index, expression);
+                    visit(index, expression)?;
                 }
             }
         }
         ExprKind::Ident(_) | ExprKind::TypePath(_) => {}
         ExprKind::Unary { value, .. }
         | ExprKind::TypeFilter { value, .. }
-        | ExprKind::Group(value) => visit(0, value),
+        | ExprKind::Group(value) => visit(0, value)?,
         ExprKind::Member { object, .. }
         | ExprKind::StaticMember { object, .. }
-        | ExprKind::SafeMember { object, .. } => visit(0, object),
+        | ExprKind::SafeMember { object, .. } => visit(0, object)?,
         ExprKind::Binary { lhs, rhs, .. } => {
-            visit(0, lhs);
-            visit(1, rhs);
+            visit(0, lhs)?;
+            visit(1, rhs)?;
         }
         ExprKind::Index { object, index } | ExprKind::SafeIndex { object, index } => {
-            visit(0, object);
-            visit(1, index);
+            visit(0, object)?;
+            visit(1, index)?;
         }
         ExprKind::Conditional {
             condition,
             then_value,
             else_value,
         } => {
-            visit(0, condition);
-            visit(1, then_value);
-            visit(2, else_value);
+            visit(0, condition)?;
+            visit(1, then_value)?;
+            visit(2, else_value)?;
         }
         ExprKind::Call { callee, args } => {
-            visit(0, callee);
+            visit(0, callee)?;
             for (index, arg) in args.iter().enumerate() {
-                visit(index + 1, arg);
+                visit(index + 1, arg)?;
             }
         }
         ExprKind::ObjectInitializer { object, fields } => {
-            visit(0, object);
+            visit(0, object)?;
             for (index, (_, value)) in fields.iter().enumerate() {
-                visit(index + 1, value);
+                visit(index + 1, value)?;
             }
         }
     }
+    Ok(())
 }
+
 struct Walk<'a, V> {
     visitor: &'a mut V,
     mask: Option<&'a StatementMask>,

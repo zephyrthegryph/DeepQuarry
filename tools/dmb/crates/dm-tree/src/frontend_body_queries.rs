@@ -75,7 +75,7 @@ impl BodySyntaxInput {
         admission: &dm_syntax::SettingAdmission<'_>,
     ) -> Result<BodySyntax, BodySyntaxFailure> {
         let result = self.parse_using(|item| {
-            body_archive::parse_statements_with_setting_admission(
+            body_archive::parse_statements_with_body_literal_admission(
                 item,
                 &self.source,
                 &self.syntax,

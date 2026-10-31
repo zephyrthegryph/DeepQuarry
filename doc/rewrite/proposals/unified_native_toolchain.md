@@ -1189,3 +1189,24 @@ report recovery also accounts for the sink's existing 64-slot allocation. No
 production client default, compiler publication or game window changed. The last
 full production native/DreamChecker/ratchet gate remains the separately recorded
 f526 gate; this cohort has focused Rust and independent policy evidence.
+
+
+### Admitted body literals and original scalar evaluation
+
+The body demand now prepares literal children from the original parsed body under
+its existing admission and physical owner. Header and raw queries do not demand
+body syntax. Scalar evaluation shares the original interpreter and carries the
+same held admission through transitive roots, including observer-only descents.
+The new private scoped scalar consumer and AST-only runtime recipe remain
+additive: production runner selection and complete static/dimension/runtime
+integration are not enabled yet.
+
+This cohort passed 48 distinct focused tests, native-only Analyze checking, and
+the independent plans positive/failure/restoration comparison. Coverage includes
+actual cancellation and OS error propagation, same-source recovery, physical
+aliases, original constant behavior and model-free report judgement. A fresh
+healthy left-deep control confirms the existing cleanup-depth refusal is not a
+leaked cancellation. Resource limits were not raised. The body cleanup reservation
+is conservative; main-workspace availability and performance remain unproven.
+No production client default or shared compiler binary changed. These focused
+checks do not replace the final production compile, DreamChecker and ratchet gate.

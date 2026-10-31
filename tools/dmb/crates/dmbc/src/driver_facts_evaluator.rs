@@ -3,6 +3,9 @@ use super::*;
 mod constructor_diagnostics;
 #[path = "driver_folded_features.rs"]
 mod folded_features;
+#[path="driver_scalar_demand.rs"]
+mod scalar_demand;
+use scalar_demand::Demand as ScalarDemand;
 
 /// One immutable resolver must include the selected scalar constant overlay,
 /// engine constants and captured resources. No filesystem access occurs here.
@@ -90,6 +93,17 @@ impl DriverEvaluator<'_> {
         active: &RefCell<std::collections::HashSet<ActiveConstant>>,
         qualified_initial: bool,
     ) -> Result<Option<SemanticValue>, String> {
+        self.declaration_scalar_using(owner,name,data,active,qualified_initial,&scalar_demand::Compatibility)
+    }
+    fn declaration_scalar_using<D:ScalarDemand>(
+        &self,
+        owner: SymbolId,
+        name: SymbolId,
+        data: &dm_ir::DeclarationMeaning,
+        active: &RefCell<std::collections::HashSet<ActiveConstant>>,
+        qualified_initial: bool,
+        demand:&D,
+    ) -> Result<Option<SemanticValue>, D::Error> {
         if data.inherited_opaque.is_some() || (!qualified_initial && data.flags & 2 == 0) {
             return Err("declaration constant metadata is not certified".into());
         }
@@ -102,9 +116,9 @@ impl DriverEvaluator<'_> {
             .ok_or("constant declaration has no captured initializer")?;
         let key = ActiveConstant::Declaration { owner, name };
         if !active.borrow_mut().insert(key) {
-            return Err(format!("declaration constant cycle at {owner:?}/{name:?}"));
+            return Err(format!("declaration constant cycle at {owner:?}/{name:?}").into());
         }
-        let result = self.scalar_in(owner, expression, None, active);
+        let result=self.scalar_in_using(owner,expression,None,active,scalar_demand::Input::Declaration{owner,name,data},demand);
         active.borrow_mut().remove(&key);
         result
     }
@@ -127,19 +141,18 @@ impl DriverEvaluator<'_> {
         procedure: Option<dm_ir::ProcedureIdentity>,
         active: &RefCell<std::collections::HashSet<ActiveConstant>>,
     ) -> Result<Option<SemanticValue>, String> {
-        let text = expression
-            .source_text(self.symbols)
-            .ok_or("expression spelling is not captured")?;
-        #[cfg(test)]
-        SCALAR_TEXT_PARSES.with(|n| n.set(n.get() + 1));
-        let parsed = dm_syntax::parse_expression(&text);
-        if !parsed.diagnostics.is_empty() {
-            return Err("captured scalar expression failed parsing".into());
-        }
-        let Some(ast) = parsed.expr.as_ref() else {
-            return Ok(None);
-        };
-        self.scalar_ast_in(owner, ast, procedure, active)
+        self.scalar_in_using(owner,expression,procedure,active,scalar_demand::Input::Detached,&scalar_demand::Compatibility)
+    }
+    fn scalar_in_using<D:ScalarDemand>(
+        &self,
+        owner: SymbolId,
+        expression: &SymbolicExpression,
+        procedure: Option<dm_ir::ProcedureIdentity>,
+        active: &RefCell<std::collections::HashSet<ActiveConstant>>,
+        input:scalar_demand::Input<'_>,
+        demand:&D,
+    ) -> Result<Option<SemanticValue>, D::Error> {
+        demand.expression(self,expression,input,|ast|self.scalar_ast_in_with_features_using(owner,ast,procedure,active,None,None,None,demand)).map(Option::flatten)
     }
     fn scalar_ast_in(
         &self,
@@ -160,6 +173,35 @@ impl DriverEvaluator<'_> {
         lexical_static: Option<dm_ir::ProcedureStaticIdentity>,
         typed_failure: Option<&RefCell<Option<folded_features::FoldedReferenceFailure>>>,
     ) -> Result<Option<SemanticValue>, String> {
+        self.scalar_ast_in_with_features_using(owner,ast,procedure,active,source_features,lexical_static,typed_failure,&scalar_demand::Compatibility)
+    }
+    fn scalar_ast_in_with_features_using<D:ScalarDemand>(
+        &self,
+        owner: SymbolId,
+        ast: &dm_syntax::Expr,
+        procedure: Option<dm_ir::ProcedureIdentity>,
+        active: &RefCell<std::collections::HashSet<ActiveConstant>>,
+        source_features: Option<&RefCell<dm_codegen_byond::SourceFeatures>>,
+        lexical_static: Option<dm_ir::ProcedureStaticIdentity>,
+        typed_failure: Option<&RefCell<Option<folded_features::FoldedReferenceFailure>>>,
+        demand:&D,
+    ) -> Result<Option<SemanticValue>, D::Error> {
+        let frame=demand.frame()?;
+        self.scalar_ast_in_with_features_admitted(owner,ast,procedure,active,source_features,lexical_static,typed_failure,demand,frame)
+    }
+    fn scalar_ast_in_with_features_admitted<'work,D:ScalarDemand>(
+        &self,
+        owner: SymbolId,
+        ast: &dm_syntax::Expr,
+        procedure: Option<dm_ir::ProcedureIdentity>,
+        active: &RefCell<std::collections::HashSet<ActiveConstant>>,
+        source_features: Option<&RefCell<dm_codegen_byond::SourceFeatures>>,
+        lexical_static: Option<dm_ir::ProcedureStaticIdentity>,
+        typed_failure: Option<&RefCell<Option<folded_features::FoldedReferenceFailure>>>,
+        demand:&'work D,
+        _frame:D::Frame<'work>,
+    ) -> Result<Option<SemanticValue>, D::Error> {
+        let result=(||{
         if let dm_syntax::ExprKind::ObjectInitializer { object, fields } = &ast.kind {
             let dm_syntax::ExprKind::TypePath(path) = &object.kind else {
                 return Err("modified default requires an explicit type path".into());
@@ -236,7 +278,7 @@ impl DriverEvaluator<'_> {
             // while opaque resource/policy failures keep their original class.
             let descriptor = descriptor?;
             if let Some(error) = feature_failure.into_inner() {
-                return Err(error);
+                return Err(error.into());
             }
             return Ok(Some(SemanticValue::ModifiedInstance(Arc::new(descriptor))));
         }
@@ -256,9 +298,9 @@ impl DriverEvaluator<'_> {
             }
         };
         let observer = source_features.map(|_| &observe_nameof as &dyn Fn(&dm_syntax::Expr));
-        let result = dm_tree::constants::evaluate_expr_with_resources_and_calls_and_nameof_observer(
+        let result = dm_tree::constants::try_evaluate_expr_with_resources_and_calls_and_nameof_observer_controlled(
             ast,
-            |name| {
+            |name| -> Result<Option<Constant>,D::Error> {
                 let unqualified = !name.contains("::");
                 let (scope, name) = name
                     .rsplit_once("::")
@@ -278,17 +320,17 @@ impl DriverEvaluator<'_> {
                                 *failure.borrow_mut() = Some(
                                     "static constant answer belongs to another lexical slot".into(),
                                 );
-                                return None;
+                                return Ok(None);
                             }
                             if declaration.modifiers & 2 == 0 {
-                                return None;
+                                return Ok(None);
                             }
                             let dm_ir::InitializerValue::Expression(value) =
                                 &declaration.initializer
                             else {
                                 *failure.borrow_mut() =
                                     Some("static constant has no scalar expression".into());
-                                return None;
+                                return Ok(None);
                             };
                             let inserted = active
                                 .borrow_mut()
@@ -298,13 +340,13 @@ impl DriverEvaluator<'_> {
                                     "procedure static constant cycle at {:?}",
                                     declaration.identity
                                 ));
-                                return None;
+                                return Ok(None);
                             }
-                            let result = self.scalar_in(owner, value, Some(procedure), active);
+                            let result=self.scalar_in_using(owner,value,Some(procedure),active,scalar_demand::Input::ProcedureStatic{identity:declaration.identity},demand);
                             active
                                 .borrow_mut()
                                 .remove(&ActiveConstant::ProcedureStatic(declaration.identity));
-                            return match result {
+                            return Ok(match result {
                                 Ok(Some(SemanticValue::Null)) => Some(Constant::Null),
                                 Ok(Some(SemanticValue::Resource(path))) => {
                                     Some(Constant::Resource(path))
@@ -331,16 +373,16 @@ impl DriverEvaluator<'_> {
                                     None
                                 }
                                 Err(error) => {
-                                    *failure.borrow_mut() = Some(error);
+                                    *failure.borrow_mut() = Some(demand.semantic(error)?);
                                     None
                                 }
-                            };
+                            });
                         }
                         ResolvedMeaning::Missing => {}
                         other => {
                             *failure.borrow_mut() =
                                 Some(format!("static lexical inventory unavailable: {other:?}"));
-                            return None;
+                            return Ok(None);
                         }
                     }
                 }
@@ -369,14 +411,15 @@ impl DriverEvaluator<'_> {
                                     && data.inherited_opaque.is_none()
                                     && data.flags & 2 == 0
                                 {
-                                    return None;
+                                    return Ok(None);
                                 }
-                                return match self.declaration_scalar(
+                                return Ok(match self.declaration_scalar_using(
                                     owner,
                                     name,
                                     &data,
                                     active,
                                     !unqualified,
+                                    demand,
                                 ) {
                                     Ok(Some(value)) => scalar_constant(value, self.symbols),
                                     Ok(None) => {
@@ -385,10 +428,10 @@ impl DriverEvaluator<'_> {
                                         None
                                     }
                                     Err(error) => {
-                                        *failure.borrow_mut() = Some(error);
+                                        *failure.borrow_mut() = Some(demand.semantic(error)?);
                                         None
                                     }
-                                };
+                                });
                             }
                             ResolvedMeaning::Missing if unqualified => self
                                 .resolver
@@ -398,7 +441,7 @@ impl DriverEvaluator<'_> {
                                 *failure.borrow_mut() = Some(format!(
                                     "lexical constant {name} is unavailable: {lexical:?}"
                                 ));
-                                return None;
+                                return Ok(None);
                             }
                         };
                         match fallback {
@@ -406,10 +449,10 @@ impl DriverEvaluator<'_> {
                                 owner, name, data, ..
                             } => {
                                 if data.inherited_opaque.is_none() && data.flags & 2 == 0 {
-                                    return None;
+                                    return Ok(None);
                                 }
-                                return match self
-                                    .declaration_scalar(owner, name, &data, active, false)
+                                return Ok(match self
+                                    .declaration_scalar_using(owner, name, &data, active, false,demand)
                                 {
                                     Ok(Some(value)) => scalar_constant(value, self.symbols),
                                     Ok(None) => {
@@ -419,10 +462,10 @@ impl DriverEvaluator<'_> {
                                         None
                                     }
                                     Err(error) => {
-                                        *failure.borrow_mut() = Some(error);
+                                        *failure.borrow_mut() = Some(demand.semantic(error)?);
                                         None
                                     }
-                                };
+                                });
                             }
                             ResolvedMeaning::Value(value) => value,
                             ResolvedMeaning::Missing if unqualified && name == "__TYPE__" => {
@@ -430,9 +473,9 @@ impl DriverEvaluator<'_> {
                                 // namespaces permits the lexical intrinsic fallback.
                                 // Final TypePath admission records a positive Type query.
                                 if owner == SymbolId::of("/") {
-                                    return Some(Constant::Null);
+                                    return Ok(Some(Constant::Null));
                                 }
-                                return match self.symbols.text(owner) {
+                                return Ok(match self.symbols.text(owner) {
                                     Some(path) => Some(Constant::TypePath(path.into())),
                                     None => {
                                         *failure.borrow_mut() = Some(
@@ -441,7 +484,7 @@ impl DriverEvaluator<'_> {
                                         );
                                         None
                                     }
-                                };
+                                });
                             }
                             ResolvedMeaning::Missing if unqualified => match self
                                 .resolver
@@ -451,24 +494,24 @@ impl DriverEvaluator<'_> {
                                 _ => {
                                     *failure.borrow_mut() =
                                         Some(format!("constant {name} is not captured: {other:?}"));
-                                    return None;
+                                    return Ok(None);
                                 }
                             },
                             fallback => {
                                 *failure.borrow_mut() = Some(format!(
                                     "constant {name} fallback is unavailable: {fallback:?}"
                                 ));
-                                return None;
+                                return Ok(None);
                             }
                         }
                     }
                     other => {
                         *failure.borrow_mut() =
                             Some(format!("constant query is unsupported: {other:?}"));
-                        return None;
+                        return Ok(None);
                     }
                 };
-                match value {
+                Ok(match value {
                     SemanticValue::Null => Some(Constant::Null),
                     SemanticValue::Resource(path) => Some(Constant::Resource(path)),
                     SemanticValue::NumberBits(bits) => Some(Constant::Number(f32::from_bits(bits))),
@@ -485,17 +528,17 @@ impl DriverEvaluator<'_> {
                         *failure.borrow_mut() = Some("constant value is not scalar".into());
                         None
                     }
-                }
+                })
             },
-            |raw| match dm_codegen_byond::decode_native_constant_string_literal(raw) {
+            |raw| Ok(match dm_codegen_byond::decode_native_constant_string_literal(raw) {
                 Ok(value) => value,
                 Err(error) => {
                     *failure.borrow_mut() = Some(error);
                     None
                 }
-            },
-            |expr| dm_codegen_byond::nameof_reference(expr).map(str::to_owned),
-            |raw| {
+            }),
+            |expr| Ok(dm_codegen_byond::nameof_reference(expr).map(str::to_owned)),
+            |raw| Ok((||{
                 let path = raw
                     .strip_prefix('\'')
                     .and_then(|path| path.strip_suffix('\''))?;
@@ -522,15 +565,18 @@ impl DriverEvaluator<'_> {
                         None
                     }
                 }
-            },
+            })()),
             self.pure_calls,
             observer,
+            ||demand.frame(),
         );
-        if let Some(error) = failure.into_inner() {
-            return Err(error);
-        }
-        let value = result
-            .map_err(|error| format!("pure call {} rejected: {}", error.name, error.reason))?;
+        let result=match result{
+            Err(dm_tree::constants::ConstantEvaluationFailure::Callback(actual))=>return Err(actual),
+            Err(dm_tree::constants::ConstantEvaluationFailure::PureCall(error))=>Err(format!("pure call {} rejected: {}",error.name,error.reason)),
+            Ok(value)=>Ok(value),
+        };
+        if let Some(error)=failure.into_inner(){return Err(error.into());}
+        let value=result?;
         Ok(match value {
             None => None,
             Some(Constant::Null) => Some(SemanticValue::Null),
@@ -550,18 +596,71 @@ impl DriverEvaluator<'_> {
                         }
                         answer => Err(format!(
                             "procedure literal {path} is not positively captured: {answer:?}"
-                        )),
+                        ).into()),
                     };
                 }
                 let id = SymbolId::of(&path);
                 if self.symbols.text(id) != Some(path.as_str())
                     || !matches!(self.resolver.resolve(ResolveQuery::Type(id)), ResolvedMeaning::Symbol(found) if found == id)
                 {
-                    return Err(format!("type constant {path} is not positively captured"));
+                    return Err(format!("type constant {path} is not positively captured").into());
                 }
                 Some(SemanticValue::Type(id))
             }
         })
+        })();
+        demand.finish(result)
+    }
+}
+
+/// Native preparation borrows the exact original plan input. Array recursion
+/// may remove authored shape, but cannot substitute lexical/target/value facts.
+impl DriverEvaluator<'_> {
+    pub(super) fn evaluate_original_write_in<'source>(
+        &self,
+        input:&dm_tree::frontend::OriginalInitializerExpressionInput<'source>,
+        write:&dm_ir::InitializerWrite,
+        context:&dm_tree::frontend::OriginalDeclarationExpressionContext<'source>,
+    )->Result<(Evaluation,Option<crate::initializer_policy::ScopedPreparedInitializerExpression<'source>>),crate::initializer_policy::InitializerFailure>{
+        scalar_demand::with_admission(context,|admission|self.evaluate_original_write_admitted(input,write,context,admission))
+    }
+    pub(super) fn evaluate_original_write_admitted<'source>(
+        &self,
+        input:&dm_tree::frontend::OriginalInitializerExpressionInput<'source>,
+        write:&dm_ir::InitializerWrite,
+        context:&dm_tree::frontend::OriginalDeclarationExpressionContext<'source>,
+        admission:&dm_syntax::SettingAdmission<'_>,
+    )->Result<(Evaluation,Option<crate::initializer_policy::ScopedPreparedInitializerExpression<'source>>),crate::initializer_policy::InitializerFailure>{
+        let operation=(||{
+        use crate::initializer_policy::{InitializerFailure,ScopedPreparedInitializerExpression};
+        context.require_initializer(input).map_err(scalar_demand::source_domain_failure)?;
+        let original=input.original_write();
+        let same_value=matches!((&original.value,&write.value),(dm_ir::InitializerValue::Expression(a),dm_ir::InitializerValue::Expression(b))if Arc::ptr_eq(&a.tokens,&b.tokens));
+        let same_array=match(&original.declared_array,&write.declared_array){(_,None)=>true,(Some(a),Some(b))=>Arc::ptr_eq(a,b),_=>false};
+        if original.source_site!=write.source_site || original.target!=write.target || original.lexical_owner!=write.lexical_owner || original.lexical_procedure!=write.lexical_procedure || original.declaration_flags!=write.declaration_flags || !same_value || !same_array {
+            return Err(InitializerFailure::Unsupported("adapted initializer write differs from original source input".into()));
+        }
+        crate::daemon::control::checkpoint().map_err(InitializerFailure::Operational)?;
+        let root=input.prepare(admission).map_err(scalar_demand::source_failure)?;
+        let mut prepared=ScopedPreparedInitializerExpression::from_original(root);
+        let ast=prepared.ast();
+        if let Some(reason)=self.instance_call_error(write,ast){return Ok((Evaluation::SourceError(reason),Some(prepared)))}
+        if let Some(reason)=self.constructor_reference_error(write,ast){return Ok((Evaluation::SourceError(reason),Some(prepared)))}
+        let features=RefCell::new(dm_codegen_byond::SourceFeatures::default());
+        let typed_failure=RefCell::new(None);
+        let result=self.scalar_ast_in_with_features_using(write.lexical_owner,ast,write.lexical_procedure,&RefCell::new(std::collections::HashSet::new()),Some(&features),match write.target{dm_ir::InitializerTarget::ProcedureStatic(identity)=>Some(identity),_=>None},Some(&typed_failure),&scalar_demand::Original{context,admission});
+        // An actual operation failure cannot be hidden by an earlier recovered
+        // nameof/source feature diagnostic from the same evaluation traversal.
+        let result=match result{Err(actual@InitializerFailure::Operational(_))=>return Err(actual),result=>result};
+        let evaluation=match typed_failure.into_inner(){
+            Some(failure) if failure.error.kind==dm_codegen_byond::LowerErrorKind::SourceError=>match failure.recovery{Some(recovery)=>Evaluation::InvalidNameof(failure.error.reason,recovery),None=>Evaluation::SourceError(failure.error.reason)},
+            _=>result?.map_or(Evaluation::Runtime,Evaluation::Scalar),
+        };
+        prepared.set_source_features(features.into_inner());
+        crate::daemon::control::checkpoint().map_err(InitializerFailure::Operational)?;
+        Ok((evaluation,Some(prepared)))
+        })();
+        scalar_demand::Original{context,admission}.finish(operation)
     }
 }
 /// Native original setting/return adapter over the SAME scalar evaluator and
@@ -1810,3 +1909,7 @@ mod original_setting_tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path="driver_scalar_original_tests.rs"]
+mod scalar_original_tests;

@@ -46,7 +46,7 @@ pub use statements::{
 #[cfg(test)]
 mod control_origin_tests;
 pub use visit::{
-    for_each_expression_child, visit_expression, visit_projected_expression, visit_statement_view, visit_statements, NodeStep,
+    for_each_expression_child, try_for_each_expression_child, visit_expression, visit_projected_expression, visit_statement_view, visit_statements, NodeStep,
     TypedVisitor, VisitDecision, VisitReport,
 };
 
@@ -302,10 +302,13 @@ pub use parameter_expressions::{ParameterExpressions, ParameterInputSyntax};
 
 mod setting_drop;
 mod setting_prepare;
+mod admitted_worklist;
+mod body_literal_syntax;
+pub use body_literal_syntax::{prepare_body_literal_syntax,PreparedBodyLiteralSyntax,BodyLiteralAdmission,drop_body_literal_syntax};
 pub use setting_prepare::{prepare_setting_expression, SettingSyntaxFailure};
 mod setting_expression;
 pub use setting_expression::{
-    visit_setting_literal_retention, SettingAdmission, SettingExpression, SettingRootLease,
+    visit_setting_literal_retention, SettingAdmission, SettingEvaluationFrame, SettingExpression, SettingRootLease,
     SharedSettingRetention,
 };
 mod setting_slots;
@@ -314,5 +317,5 @@ pub use setting_slots::SettingExpressionSlots;
 mod setting_projection;
 pub use setting_projection::{ProjectedExprView, SettingValueView, SettingView};
 pub use statements::{
-    parse_body_items_with_context_and_settings, SettingStatement, SettingSyntaxProvider,
+    parse_body_items_with_context_and_settings, parse_body_items_with_admitted_literals, SettingStatement, SettingSyntaxProvider,
 };

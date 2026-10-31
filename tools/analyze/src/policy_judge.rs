@@ -18,7 +18,20 @@ pub fn judge(
     changed: &Option<HashSet<String>>,
     raw: bool,
 ) -> (bool, String) {
-    let meta = lint.meta();
+    judge_report(lint.meta(),cx.scope,cx.tree,run,root,changed,raw,
+        |run,text,raw| lint.finish_raw(cx,run,text,raw),
+        |run,text| lint.post_judge(cx,run,text))
+}
+
+/// Client report policy over delivered source evidence and as-of scope.
+/// Custom/post hooks are explicit; callers must port them rather than omit them.
+/// No Tree is constructed and no mutable source is read by this routine.
+pub fn judge_report<S:baseline::SiteText+?Sized>(
+    meta:&crate::lint::Meta,scope:&crate::scopes::LintScope,source:&S,
+    run:&Run,root:&Path,changed:&Option<HashSet<String>>,raw:bool,
+    mut custom:impl FnMut(&Run,&mut String,bool)->bool,
+    mut post:impl FnMut(&Run,&mut String)->bool,
+)->(bool,String){
     let mut text = String::new();
     for n in &run.notes {
         let _ = writeln!(text, "{}", n);
@@ -50,14 +63,14 @@ pub fn judge(
     let mut ceiling_failed = false;
     if !raw
         && matches!(meta.policy, Policy::Sites { .. } | Policy::Hard)
-        && !cx.scope.ceilings.is_empty()
+        && !scope.ceilings.is_empty()
     {
         let (with, without): (Vec<_>, Vec<_>) = by_rule
             .into_iter()
-            .partition(|(r, _)| cx.scope.ceilings.contains_key(*r));
+            .partition(|(r, _)| scope.ceilings.contains_key(*r));
         by_rule = without;
         for (rule, found) in &with {
-            let ceiling = cx.scope.ceilings[*rule];
+            let ceiling = scope.ceilings[*rule];
             let count = found.len() as i64;
             let status = if count > ceiling {
                 ceiling_failed = true;
@@ -84,7 +97,7 @@ pub fn judge(
                 };
                 for s in found.iter().take(60) {
                     let body = if s.msg.is_empty() {
-                        cx.tree.site_text(&s.rel, s.line as usize)
+                        source.site_text(&s.rel, s.line as usize)
                     } else {
                         s.msg.clone()
                     };
@@ -111,7 +124,7 @@ pub fn judge(
                     root.join(baseline)
                 };
                 baseline::check_sites(
-                    meta.label, cx.tree, &by_rule, &hints, &path, banned, &mut text,
+                    meta.label, source, &by_rule, &hints, &path, banned, &mut text,
                 )
             }
             Policy::Ceilings { baseline, .. } => {
@@ -138,7 +151,7 @@ pub fn judge(
                     for s in found {
                         failed = true;
                         let body = if s.msg.is_empty() {
-                            cx.tree.site_text(&s.rel, s.line as usize)
+                            source.site_text(&s.rel, s.line as usize)
                         } else {
                             s.msg.clone()
                         };
@@ -156,12 +169,12 @@ pub fn judge(
                 }
                 failed
             }
-            Policy::Custom => lint.finish_raw(cx, run, &mut text, raw),
+            Policy::Custom => custom(run, &mut text, raw),
         };
     let failed = if matches!(meta.policy, Policy::Custom) {
         failed
     } else {
-        lint.post_judge(cx, run, &mut text) | failed
+        post(run, &mut text) | failed
     };
     (failed, text)
 }

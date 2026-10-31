@@ -596,8 +596,15 @@ pub struct StatementBody {
     syntax_complete: std::sync::OnceLock<bool>,
     declaration_headers: std::collections::HashSet<(usize, usize)>,
     stored_candidates: bool,
+    // LAST: source-free literal credit survives every original payload buffer.
+    literal_admission:Option<dm_syntax::BodyLiteralAdmission>,
 }
+impl Drop for StatementBody{fn drop(&mut self){let parsed=std::mem::take(&mut self.parsed);drop(std::mem::take(&mut self.declaration_headers));dm_syntax::drop_body_literal_syntax(parsed,self.literal_admission.take());}}
 impl StatementBody {
+    /// Storage completion of this exact native parse, not source/semantic authority.
+    pub fn has_native_literal_syntax(&self)->bool{self.literal_admission.is_some()}
+    pub fn visit_literal_admission_storage(&self,visit:impl FnMut(usize,usize)){if let Some(a)=&self.literal_admission{a.visit_storage(visit);}}
+
     /// Recovering syntax can contain Unsupported nodes without a parser
     /// diagnostic (some semantic diagnostics are deferred). Analysis consumers
     /// must reject both, not turn an omitted node into a successful proof.

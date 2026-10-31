@@ -86,6 +86,13 @@ impl<'op> SettingAdmission<'op> {
             stack_allowance,
         }
     }
+    /// One evaluator recursion frame on the SAME operation stack/counter.
+    /// This is a resource capability only; it grants no source or scalar meaning.
+    pub fn evaluation_frame(&self) -> std::io::Result<SettingEvaluationFrame<'_, 'op>> {
+        let pending=self.parser_frame().map(|frame|SettingEvaluationFrame{_frame:frame});
+        if let Some(actual)=self.take_operational_error(){return Err(actual)}
+        pending
+    }
     pub(crate) fn parser_frame(&self) -> std::io::Result<SettingParserFrame<'_, 'op>> {
         self.checkpoint()?;
         // Conservative coordination envelope for one primary recursive frame;
@@ -195,6 +202,9 @@ impl<'op> SettingAdmission<'op> {
         Arc::ptr_eq(self.counter, &lease.counter)
     }
 }
+/// Opaque evaluator work guard. Dropping it restores only this held frame's
+/// stack and body-work reservation; no allowance resets across scalar roots.
+pub struct SettingEvaluationFrame<'a,'op> { _frame: SettingParserFrame<'a,'op> }
 pub(crate) struct SettingParserFrame<'a, 'op> {
     admission: &'a SettingAdmission<'op>,
     bytes: usize,
@@ -551,4 +561,24 @@ mod tests {
 /// expose a raw Arc; a surviving literal alias retains its original lease.
 pub fn visit_setting_literal_retention(text: &crate::LiteralText, visit: impl FnMut(usize, usize)) {
     text.visit_setting_retention_storage(visit);
+}
+
+#[cfg(test)]
+mod evaluation_frame_tests {
+    use super::*;
+    #[test]
+    fn evaluation_frames_share_operation_stack_and_physical_counter_release_without_reset() {
+        let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());
+        let a=SettingAdmission::with_stack_allowance(&counter,1024*1024,32*1024,&poll);
+        let first=a.evaluation_frame().unwrap();let second=a.evaluation_frame().unwrap();
+        assert_eq!(counter.load(Ordering::Acquire),32*1024);
+        let actual=a.evaluation_frame().err().expect("no fresh allowance for a transitive root");assert_eq!(actual.kind(),std::io::ErrorKind::OutOfMemory);
+        drop(first);assert_eq!(counter.load(Ordering::Acquire),16*1024);drop(second);assert_eq!(counter.load(Ordering::Acquire),0);
+        let fresh=SettingAdmission::with_stack_allowance(&counter,1024*1024,32*1024,&poll);let frame=fresh.evaluation_frame().unwrap();drop(frame);assert_eq!(counter.load(Ordering::Acquire),0);
+    }
+    #[test]
+    fn evaluation_frame_restores_actual_operational_cause_before_any_work() {
+        let counter=Arc::new(AtomicUsize::new(0));let poll=||Err(std::io::Error::from_raw_os_error(1450));
+        let a=SettingAdmission::new(&counter,1024*1024,&poll);let actual=a.evaluation_frame().err().unwrap();assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(counter.load(Ordering::Acquire),0);
+    }
 }

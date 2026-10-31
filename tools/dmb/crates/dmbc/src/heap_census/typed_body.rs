@@ -57,6 +57,7 @@ impl HeapCensus {
     }
 
     pub(crate) fn typed_body(&mut self, owner: &str, body: &dm_tree::frontend::StatementBody) {
+        body.visit_literal_admission_storage(|pointer,payload|{let bytes=payload.saturating_add(2*size_of::<usize>());self.buffer(owner,pointer,bytes,bytes);});
         // HashSet buckets and controls are private; report logical entries as lower bounds.
         let (headers, capacity) = body.declaration_header_storage();
         if capacity != 0 {

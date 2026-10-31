@@ -735,4 +735,21 @@ mod early_initializer_actual_caller_tests {
         assert_eq!(db.db().stats(dm_query::Kind(4)).computed,0,"transitive scalar source cannot demand procedure bodies");
     }
 
+    #[test]
+    fn actual_healthy_left_deep_initializer_refusal_is_cleanup_shape_not_cancellation_leak() {
+        let rhs=std::iter::repeat("1").take(128).collect::<Vec<_>>().join("+");
+        let src=source(&format!("var/const/value={rhs}\n/proc/p()\n    return 1\n"));
+        let db=Arc::new(QueryDb::default());let host=Arc::clone(&db) as Arc<dyn SettingExpressionQueries>;
+        let mut executor=dm_exec::BuildExecutor::new(2).unwrap();let mut state=RetainedSemanticTree::default();
+        let token=crate::daemon::control::Cancellation::default();
+        let binding=crate::daemon::control::bind_with_deadline(token.clone(),std::time::Instant::now()+std::time::Duration::from_secs(300));
+        let context=crate::daemon::control::WorkerContext::capture().unwrap();
+        let result=executor.with_request_context(None,||Ok::<_,String>(context.enter()),|worker|build(&src,&mut state,worker,&host)).unwrap();
+        let FrontendBuildFailure::Operational(actual)=result.err().expect("fresh healthy left fold still reaches the existing cleanup resource boundary")else{panic!("cleanup resource denial is not source syntax")};
+        assert_eq!(actual.kind(),std::io::ErrorKind::OutOfMemory);
+        assert_eq!(actual.to_string(),"setting AST cleanup stack-work allowance exhausted");
+        assert!(!token.is_cancelled(),"fresh token and fresh Db exclude leaked cancellation state");
+        assert_eq!(db.db().stats(dm_query::Kind(4)).computed,0);drop(binding);
+    }
+
 }

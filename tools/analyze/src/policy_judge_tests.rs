@@ -1,4 +1,5 @@
 use super::*;
+#[path="policy_judge_original.rs"]mod original_policy;
 use crate::{
     lint::{Meta, RuleMeta, ScanKind, Sink},
     scopes::LintScope,
@@ -153,4 +154,43 @@ fn shared_judge_sites_uses_existing_fingerprint_and_raw_ignores_it() {
     // Sites reports use fingerprint source text; Hard reports use Site.msg.
     assert!(text.contains("native_a()"));
     assert!(!text.contains("authored reason"));
+}
+
+struct DeliveredSource;
+impl crate::baseline::SiteText for DeliveredSource {
+    fn site_text(&self,rel:&str,line:usize)->String {
+        match (rel,line) { ("code/a.dm",1)=>"native_a()".into(),("code/b.dm",1)=>"native_b()".into(),_=>String::new() }
+    }
+}
+#[test]
+fn delivered_source_report_matches_entire_legacy_judgement_for_all_standard_policies(){
+    let (tree,run)=tree_run();let root=test_scratch::dir("delivered-report-policies");
+    std::fs::write(root.join("sites.txt"),"first\tcode/gone.dm\told()\n").unwrap();
+    std::fs::write(root.join("counts.txt"),"first 1\nsecond 0\n").unwrap();
+    for policy in [Policy::Hard,Policy::Sites{baseline:"sites.txt",header:&[],banned:&["second"]},Policy::Ceilings{baseline:"counts.txt",header:&[]}] {
+        let probe=Probe::new(policy);
+        for ceiling in [false,true] {
+            let mut scope=LintScope::default();if ceiling{scope.ceilings.insert("first".into(),1);}
+            let cx=Cx{tree:&tree,meta:probe.meta(),scope:&scope};
+            for raw in [false,true] {for changed in [None,Some(HashSet::from(["code/a.dm".into()])),Some(HashSet::new())] {
+                let expected=original_policy::judge(&probe,&cx,&run,&root,&changed,raw);
+                let actual=judge_report(probe.meta(),&scope,&DeliveredSource,&run,&root,&changed,raw,
+                    |_,_,_|panic!("standard policies never use custom callback"),
+                    |_,text|{text.push_str("post\n");false});
+                assert_eq!(actual,expected,"complete report/failure bit/notes/order/ceilings/raw/changed policy must match");
+            }}
+        }
+    }
+}
+#[test]
+fn delivered_source_custom_and_post_protocols_remain_explicit_and_distinct(){
+    let (tree,run)=tree_run();let scope=LintScope::default();let probe=Probe::new(Policy::Custom);
+    let cx=Cx{tree:&tree,meta:probe.meta(),scope:&scope};
+    for changed in [None,Some(HashSet::new())] {
+        let expected=original_policy::judge(&probe,&cx,&run,Path::new(""),&changed,true);
+        let actual=judge_report(probe.meta(),&scope,&DeliveredSource,&run,Path::new(""),&changed,true,
+            |filtered,text,raw|{writeln!(text,"custom {} {}",filtered.sites.len(),raw).unwrap();!filtered.sites.is_empty()},
+            |_,_|panic!("custom already owns finish protocol"));
+        assert_eq!(actual,expected);
+    }
 }

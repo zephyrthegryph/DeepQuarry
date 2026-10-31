@@ -227,3 +227,6 @@ impl QueryDb {
         BodyFailureSchedule
     }
 }
+
+#[cfg(test)]
+#[path="body_literal_tests.rs"]mod body_literal_tests;

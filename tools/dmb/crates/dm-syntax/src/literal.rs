@@ -173,6 +173,14 @@ impl LiteralText {
             .map(|parts| parts.as_ref())
             .map_err(String::as_str)
     }
+    pub(crate) fn require_fresh_body_owner(&self,a:&crate::SettingAdmission<'_>)->std::io::Result<()>{
+        let Backing::Text(state)=&self.0 else{return a.checkpoint()};
+        if Arc::strong_count(state.0.as_ref().expect("live literal owner"))!=1||state.parts.get().is_some()||state.retention.get().is_some(){
+            a.record_operational_error(std::io::Error::new(std::io::ErrorKind::InvalidInput,"native body literal requires its fresh unpublished original owner"));
+            return Err(std::io::ErrorKind::InvalidInput.into());
+        }
+        a.checkpoint()
+    }
     /// Prepare the SAME issuing literal caches while a native root is still
     /// unpublished and its canonical slot is serialized. Caller pre-admits the
     /// full overlapping raw/projection/child syntax footprint; no new lease or
@@ -652,6 +660,7 @@ fn parse_interpolated_string_clean(
             let leading = raw_expression.len() - raw_expression.trim_start().len();
             let raw_expression = raw_expression.trim();
             let (source, positions) = splice_with_positions(raw_expression);
+            #[cfg(test)] LITERAL_CHILD_PARSES.with(|n|n.set(n.get()+1));
             let parsed = match admission {
                 Some(a) => crate::expression_parser::parse_expression_with_admission(&source, a),
                 None => parse_expression(&source),
@@ -1304,3 +1313,8 @@ mod setting_retention_owner_tests {
         assert_eq!(counter.load(Ordering::Acquire), 0);
     }
 }
+
+#[cfg(test)]
+thread_local!{static LITERAL_CHILD_PARSES:std::cell::Cell<usize>=const{std::cell::Cell::new(0)};}
+#[cfg(test)]
+pub(crate) fn literal_child_parses_for_test()->usize{LITERAL_CHILD_PARSES.with(|n|n.get())}
