@@ -52,11 +52,9 @@
 	// entire React tree on every pref edit, which caused interactable
 	// elements under the pointer to briefly unmount and the cursor to
 	// flicker between pointer / default. Catalogs stay in static_data;
-	// preview lives here. The bytes round-trip every poll tick (~50 KB
-	// when populated) but only re-render PreviewPane in React.
-	// Shipped to a window only when its copy is older (dq_preview_version): the base64
-	// frames are ~50 KB and every tab switch and edit sends an update. React keeps the last
-	// copy it received.
+	// preview lives here. The frames are shipped to a window only when its copy is older
+	// (dq_preview_version), not on every update: React keeps the last copy it received and
+	// only PreviewPane re-renders when a new one arrives.
 	var/datum/tgui/open_ui = SStgui.get_open_ui(user, src) // the window the data is for (a pooled window keeps its own versions)
 	var/preview_window_id = open_ui?.window()?.id || "unpooled"
 	data["character_preview_version"] = dq_preview_version

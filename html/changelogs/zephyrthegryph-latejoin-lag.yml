@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "Joining the round no longer builds the manifest record and speaks the arrival in the same frame as the body (they follow a tick later); the character preview waits for its render with four polls a second instead of forty"
+  - code_imp: "A docked door-only port stops stepping every two seconds; the round log names the parts of a join (JOIN_TIMING, LATEJOIN_REGISTER)"
