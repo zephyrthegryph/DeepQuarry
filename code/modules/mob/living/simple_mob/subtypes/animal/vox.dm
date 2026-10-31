@@ -151,7 +151,7 @@ CAPABILITIES(/datum/armalis_commune_review)
 		H.drip(1)
 
 CAPABILITIES(/mob/living/simple_mob/vox/armalis)
-	op("message_mob", menu(), label("Commune with creature"), needs(req_self()), then(PROC_REF(message_mob_op)))
+	op("message_mob", menu(desc = "Send a telepathic message to an unlucky recipient."), label("Commune with creature"), needs(req_self()), then(PROC_REF(message_mob_op)))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(death_message = DEATHGASP_NO_MESSAGE))
 	op("armalis_item", item(/obj/item), then(PROC_REF(armalis_interaction_item)))

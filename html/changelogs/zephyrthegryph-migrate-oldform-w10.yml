@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "Menu abilities show their description on hover again (menu(desc =))"

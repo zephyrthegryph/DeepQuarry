@@ -52,7 +52,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/savik)
-	op("berserk", menu(), label("Berserk"), needs(req_self()), then(PROC_REF(berserk_op)))
+	op("berserk", menu(desc = "Enrage and become vastly stronger for a period of time, however you will be weaker afterwards."), label("Berserk"), needs(req_self()), then(PROC_REF(berserk_op)))
 	configure(mob_rules(faction = FACTION_SAVIK))
 	configure(living_rules(say_list_type = /datum/say_list/savik))
 
