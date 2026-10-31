@@ -133,8 +133,8 @@ They're also cool, and Rykka/Nyria wrote this uwu
 	emote_hear = list("yawns", "cackles", "playfully yaps")
 
 CAPABILITIES(/mob/living/simple_mob/animal/hyena)
-	op("remove_hat", menu(), label("Remove Hat"), needs(req_adjacent()), then(PROC_REF(remove_hat_op)))
-	op("give_hat", menu(), label("Give Hat"), needs(req_adjacent()), then(PROC_REF(give_hat_op)))
+	op("remove_hat", menu(desc = "Remove the yeen's hat. You monster. ;~;"), label("Remove Hat"), needs(req_adjacent()), then(PROC_REF(remove_hat_op)))
+	op("give_hat", menu(desc = "Give the yeen a hat. You wonderful bean. <3"), label("Give Hat"), needs(req_adjacent()), then(PROC_REF(give_hat_op)))
 	configure(mob_rules(faction = "yeen"))
 	configure(living_rules(vore_capacity = 3, say_list_type = /datum/say_list/hyena))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))

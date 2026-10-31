@@ -4,7 +4,7 @@
 	var/datum/exonet_log_panel/dq_exonet_log_panel_cache
 
 CAPABILITIES(/mob/observer/dead)
-	op("show_text_messages", menu(), label("Show Text Messages"), needs(req_self()), then(PROC_REF(show_text_messages_op)))
+	op("show_text_messages", menu(desc = "Allows you to see exonet text messages you've sent and received."), label("Show Text Messages"), needs(req_self()), then(PROC_REF(show_text_messages_op)))
 	param(nameof(from_body), schema_ref(/mob), keep = FALSE, apply = PROC_REF(copy_from_body), early = TRUE) // phase 0: /atom/Initialize() reads the copied colour
 	setup(PROC_REF(place_ghost), with_params = TRUE)
 	setup(PROC_REF(make_exonet_address))

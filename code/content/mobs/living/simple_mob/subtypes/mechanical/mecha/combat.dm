@@ -2,7 +2,7 @@
 	projectiletype = /obj/item/projectile/energy/mob/heavylaser
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/durand)
-	op("toggle_defense_mode", menu(), label("Toggle Defense Mode"), needs(req_self()), then(PROC_REF(toggle_defense_mode_op)))
+	op("toggle_defense_mode", menu(desc = "Toggles a special mode which makes you immobile and much more resilient."), label("Toggle Defense Mode"), needs(req_self()), then(PROC_REF(toggle_defense_mode_op)))
 	configure(mob_kind(attack_cooldown = 2 SECONDS))
 
 /mob/living/simple_mob/mechanical/mecha/combat/marauder

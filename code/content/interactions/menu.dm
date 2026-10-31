@@ -115,6 +115,7 @@ CAPABILITIES(/datum/interaction_menu)
 			available += list(list(
 				"id" = row["key"],
 				"name" = row["label"],
+				"desc" = row["desc"],
 				"category" = null,
 				"keys" = list(),
 			))
@@ -122,6 +123,7 @@ CAPABILITIES(/datum/interaction_menu)
 			blocked += list(list(
 				"id" = row["key"],
 				"name" = row["label"],
+				"desc" = row["desc"],
 				"category" = null,
 				"reason" = row["reason"],
 			))

@@ -128,7 +128,7 @@
 		to_chat(src, span_notice("New notification has been sent."))
 
 CAPABILITIES(/mob/living/carbon/brain)
-	op("backup_ping", menu(), label("Notify Transcore"), needs(req_self()), then(PROC_REF(backup_ping_op)))
+	op("backup_ping", menu(desc = "Your body is gone. Notify robotics to be resleeved!"), label("Notify Transcore"), needs(req_self()), then(PROC_REF(backup_ping_op)))
 	configure(mob_nature(no_vore = TRUE, can_pain_emote = FALSE))
 	ref_one(nameof(host), /datum/mind_host)
 	configure(mob_kind(use_me = 0))

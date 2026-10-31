@@ -105,3 +105,30 @@
 	TEST_ASSERT_EQUAL(hosted?.outcome, ACT_REFUSED, "a borer that already has a host cannot infest")
 	var/datum/op_result/knock = dq_ability_menu_op(B, "knockout_victim")
 	TEST_ASSERT_EQUAL(knock?.outcome, ACT_REFUSED, "a borer inside a host cannot knock anyone out")
+
+/// menu(desc =) is the hover text a verb's `set desc` used to be: op_menu() carries it as the row's "desc" and the Menu's data passes it on.
+/datum/unit_test/dq_ability_ops_menu_desc_reaches_the_menu
+
+/datum/unit_test/dq_ability_ops_menu_desc_reaches_the_menu/Run()
+	var/mob/living/simple_mob/animal/space/bear/B = allocate(/mob/living/simple_mob/animal/space/bear, test_floor())
+	var/found = FALSE
+	for(var/list/row as anything in op_menu(B, B, null))
+		if(row["key"] == "berserk")
+			found = TRUE
+			TEST_ASSERT(istext(row["desc"]) && length(row["desc"]), "the berserk row carries its description")
+			TEST_ASSERT_EQUAL(row["desc"], "Enrage and become vastly stronger for a period of time, however you will be weaker afterwards.", "the description is the old verb's text")
+	TEST_ASSERT(found, "berserk is on the bear's own menu")
+	var/menu_has_desc = FALSE
+	var/list/data = interaction_menu_data(B, B)
+	for(var/list/entry as anything in data["available"] + data["blocked"])
+		if(entry["id"] == "berserk" && istext(entry["desc"]))
+			menu_has_desc = TRUE
+	TEST_ASSERT(menu_has_desc, "the Menu's data passes the description on")
+
+/// The AI's hardlight nom is refused while it has no hologram out, and the refusal says why.
+/datum/unit_test/dq_ability_ops_holo_nom_requires_hologram
+
+/datum/unit_test/dq_ability_ops_holo_nom_requires_hologram/Run()
+	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, test_floor(), null, null, null, TRUE)
+	var/datum/op_result/R = dq_ability_menu_op(AI, "holo_nom_menu")
+	TEST_ASSERT_EQUAL(R?.outcome, ACT_REFUSED, "holo_nom_menu is refused with no holopad hologram")

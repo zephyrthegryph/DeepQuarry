@@ -18,7 +18,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/clowns/big/c_shift/honkelemental)
-	op("spawn_egg", menu(), label("Spawn Clown Egg"), needs(req_self(), req(PROC_REF(spawn_egg_ready))), then(PROC_REF(spawn_egg_op)))
+	op("spawn_egg", menu(desc = "Spawns an egg that a player can touch, which will call on ghosts to spawn as clowns."), label("Spawn Clown Egg"), needs(req_self(), req(PROC_REF(spawn_egg_ready))), then(PROC_REF(spawn_egg_op)))
 	configure(mob_rules(faction = FACTION_CLOWN))
 	configure(living_rules(say_list_type = /datum/say_list/clown))
 
