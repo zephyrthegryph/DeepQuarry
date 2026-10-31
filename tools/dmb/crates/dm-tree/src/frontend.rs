@@ -429,7 +429,7 @@ impl ColdFrontend {
     pub fn location(&self, expanded_offset: usize) -> Option<SourceLocation> {
         Mapping {
             projection: Default::default(),
-            plan: &self.plan,
+            plan: self.plan.source_geometry(),
             expanded: &self.expanded,
             files: &self.files,
             by_path: &self.source_by_path,
@@ -443,7 +443,7 @@ impl ColdFrontend {
     pub fn debug_site(&self, expanded_offset: usize) -> Option<(Arc<str>, usize)> {
         Mapping {
             projection: Default::default(),
-            plan: &self.plan,
+            plan: self.plan.source_geometry(),
             expanded: &self.expanded,
             files: &self.files,
             by_path: &self.source_by_path,
@@ -567,7 +567,7 @@ pub use body_failure::BodySyntaxFailure;
 #[path = "frontend_body_archive.rs"]
 mod body_archive;
 pub use body_archive::{OriginalArchiveOwner,
-    AnnotationCandidateRoster, ArchivedBody, BodyArchive, CheckerVariableProperties,
+    AnnotationCandidateRoster, ArchivedBody, BodyArchive, CheckerVariableProperties, CallableHeaderSource,
     OriginalHeaderExpressionHandle, SourceHeaderExpressions, SourceLocalView, SourceParameterView,
 };
 pub use relative_declarations::BodyCodeIdentity;
@@ -606,6 +606,8 @@ impl Drop for StatementBody{fn drop(&mut self){let parsed=std::mem::take(&mut se
 impl StatementBody {
     /// Storage completion of this exact native parse, not source/semantic authority.
     pub fn has_native_literal_syntax(&self)->bool{self.literal_admission.is_some()}
+    /// Resource-domain readiness only; exact source/occurrence joins remain with the archive.
+    pub fn is_native_literal_syntax_admitted_by(&self,a:&dm_syntax::SettingAdmission<'_>)->bool{self.literal_admission.as_ref().is_some_and(|actual|actual.is_admitted_by(a))}
     pub fn visit_literal_admission_storage(&self,visit:impl FnMut(usize,usize)){if let Some(a)=&self.literal_admission{a.visit_storage(visit);}}
 
     /// Recovering syntax can contain Unsupported nodes without a parser
@@ -613,7 +615,13 @@ impl StatementBody {
     /// must reject both, not turn an omitted node into a successful proof.
     /// Shared once per issued syntax owner; compile-only callers stay lazy.
     pub fn syntax_complete(&self) -> bool {
-        *self.syntax_complete.get_or_init(|| {
+        *self.syntax_complete.get_or_init(||self.syntax_complete_using(false))
+    }
+    /// Original primary syntax readiness only. Runtime text decoding remains
+    /// separately refused by syntax_complete()/LiteralText::parts(). No parse
+    /// or cache is created here for unprepared source literals.
+    pub fn original_literal_syntax_complete(&self)->bool{self.syntax_complete_using(true)}
+    fn syntax_complete_using(&self,original_literals:bool)->bool{
             if !self.parsed.diagnostics.is_empty()
                 || self.parsed.pending_bodies.iter().any(|pending| {
                     pending.missing_body()
@@ -625,6 +633,7 @@ impl StatementBody {
             struct Coverage<'a> {
                 valid: bool,
                 parsed: &'a dm_syntax::ParsedBody,
+                original_literals:bool,
             }
             impl dm_syntax::TypedVisitor for Coverage<'_> {
                 fn projected_expression(
@@ -657,7 +666,8 @@ impl StatementBody {
                     _: &[dm_syntax::NodeStep],
                 ) -> dm_syntax::VisitDecision {
                     if let dm_syntax::ExprKind::Literal(text) = &node.kind {
-                        if text.parts().is_err() {
+                        let valid=if self.original_literals{match text.prepared_syntax_parts(){Some(Ok(_))=>true,Some(Err(_))=>false,None=>text.shared_storage().is_none()}}else{text.parts().is_ok()};
+                        if !valid {
                             self.valid = false;
                             return dm_syntax::VisitDecision::Stop;
                         }
@@ -668,10 +678,10 @@ impl StatementBody {
             let mut coverage = Coverage {
                 valid: true,
                 parsed: &self.parsed,
+                original_literals,
             };
             let report = dm_syntax::visit_statements(&self.parsed.statements, &mut coverage);
             coverage.valid && report.unsupported_statements == 0
-        })
     }
     pub fn parsed(&self) -> &dm_syntax::ParsedBody {
         &self.parsed
@@ -910,7 +920,7 @@ mod declaration_demand;
 pub use declaration_demand::FrontendBuildFailure;
 #[path="frontend_generation.rs"]
 mod generation;
-pub use generation::{GenerationDeclarationFrame, GenerationPreparationFailure, prepare_generation_declarations};
+pub use generation::{GenerationDeclarationFrame, GenerationPreparationFailure, prepare_generation_declarations, prepare_generation_question_declarations,GenerationNativeQuestions,GenerationBodyLoan,GenerationDefinitionPoint,GenerationSourcePoint};
 #[path = "frontend_parse.rs"]
 mod declaration_parse;
 #[cfg(test)]
@@ -981,13 +991,13 @@ fn source_span(file: FileId, span: dm_syntax::Span) -> Result<Span, Vec<Diagnost
 #[path = "frontend_source_export_mapping.rs"]
 mod source_export_mapping;
 pub use source_export_mapping::{
-    SourceDeclarationPolicyCursor, SourceExportMapping, SourceNoteOrigin, SourcePolicyLineOrigin, BorrowedSourceNoteOrigin,
+    OriginalCheckerSourceRegistry, OriginalCheckerLocation, SourceDeclarationPolicyCursor, SourceExportMapping, SourceNoteOrigin, SourcePolicyLineOrigin, BorrowedSourceNoteOrigin,
 };
 #[path = "frontend_source_projection.rs"]
 mod source_projection;
 struct Mapping<'a> {
     projection: source_projection::CurrentSourceProjection,
-    plan: &'a DirectivePlan,
+    plan: dm_preprocess::regions::SourcePlanGeometry<'a>,
     expanded: &'a ExpandedRegions,
     files: &'a [SourceFile],
     by_path: &'a HashMap<PathBuf, FileId>,
@@ -1359,3 +1369,6 @@ impl<'frontend> ParsedBody<'frontend> {
 mod declaration_checked_tests;
 
 pub use body_archive::BorrowedCallableOriginError;
+
+/// Original primary-token DATA borrowed only through an issued archived body.
+pub use crate::procedure::header_input::OriginalBodyTokens;

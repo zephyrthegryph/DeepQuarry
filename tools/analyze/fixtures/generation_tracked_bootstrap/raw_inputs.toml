@@ -1,0 +1,3 @@
+sources=["code/probe.dm","code/tests/tracked.dm","code/extra.dm"]
+expected_rows=6
+expected_diagnostics=3

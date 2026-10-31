@@ -182,7 +182,8 @@ fn options(args: &Args, root: &Path) -> Options {
 fn main() -> ExitCode {
     let native_args=std::env::args().collect::<Vec<_>>();
     if native_args.get(1).is_some_and(|arg|arg=="native-query"){return dq_analyze::native_cli_client::cli(&native_args[2..]);}
-    if native_args.get(1).is_some_and(|arg|arg=="gen")&&native_args.iter().skip(2).any(|arg|arg.starts_with("--native")){return dq_analyze::native_cli_client::generation_unavailable();}
+    if native_args.get(1).is_some_and(|arg|arg=="native-gen"){return dq_analyze::native_cli_client::generation_cli(&native_args[2..]);}
+    if native_args.get(1).is_some_and(|arg|arg=="gen")&&native_args.iter().skip(2).any(|arg|arg.starts_with("--native")){eprintln!("use analyze native-gen --dmbc ABSOLUTE_EXE REQUEST.json; refusing legacy fallback");return ExitCode::from(2);}
     let code = real_main();
     // Hand the cache files this run rewrote to the other worktrees (src/shared.rs).
     dq_analyze::shared::publish();

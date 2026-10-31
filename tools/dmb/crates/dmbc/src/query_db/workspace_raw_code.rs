@@ -23,7 +23,7 @@ pub(crate) struct WorkspaceCodeWitness{capture:Weak<WorkspaceCapture>}
 pub(crate) enum WorkspaceGeneratorTestTraversal<'reader,'capture,'scope>{Stopped,Completed(WorkspaceGeneratorTestCompletion<'reader,'capture,'scope>)}
 pub(crate) struct WorkspaceGeneratorTestCompletion<'reader,'capture,'scope>{reader:&'reader WorkspaceCodeReader<'capture,'scope>,inputs:&'reader dm_analysis::policy_inputs::PolicyInputs}
 pub(crate) struct WorkspaceGeneratorTestWitness{capture:Weak<WorkspaceCapture>}
-#[derive(Clone,Copy)]enum FileDomain{Code,GeneratorTests}
+#[derive(Clone,Copy)]enum FileDomain<'a>{Code,GeneratorTests,Hygiene(&'a Config,&'static str,&'static str)}
 fn matches_capture_witness(owner:&Weak<WorkspaceCapture>,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,inputs:&dm_analysis::policy_inputs::PolicyInputs)->Result<bool,Failure>{
  crate::daemon::control::checkpoint()?;capture.require_scope(scope)?;
  if !capture.matches_source(inputs.mapping(),inputs.revision().compiler_source){return Err(Failure::Operational(invalid("workspace witness/current semantic source frame differs")))}
@@ -110,13 +110,13 @@ impl<'capture,'scope> WorkspaceCodeReader<'capture,'scope>{
  pub(crate) fn for_each_code_file(&self,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{
   self.for_each_file(FileDomain::Code,visit)
  }
- fn for_each_file(&self,domain:FileDomain,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{
+ fn for_each_file(&self,domain:FileDomain<'_>,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{
   self.checkpoint()?;let mut start=0;
   while start<self.capture.file_count(){
    self.checkpoint()?;
    let fixed=self.fixed.checked_add(self.budget.used()).ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"workspace code fold accounting overflow")))?;
    let available=self.db.workspace_input_headroom_locked(fixed)?;
-   let(files,end)=match domain{FileDomain::Code=>self.capture.code_page(self.scope,start,PAGE_FILES,available)?,FileDomain::GeneratorTests=>self.capture.generator_test_page(self.scope,start,PAGE_FILES,available)?};
+   let(files,end)=match domain{FileDomain::Code=>self.capture.code_page(self.scope,start,PAGE_FILES,available)?,FileDomain::GeneratorTests=>self.capture.generator_test_page(self.scope,start,PAGE_FILES,available)?,FileDomain::Hygiene(config,policy,group)=>self.capture.hygiene_page(self.scope,start,PAGE_FILES,available,config,policy,group)?};
    if end<=start{return Err(Failure::Operational(invalid("original code page made no progress")))}
    // Sum is deliberately conservative for aliased sources; the existing page
    // constructor independently admits its exact union before normalization.
@@ -169,5 +169,65 @@ budget}};
   let pending=visit(&reader);
   if matches!(&pending,Err(Failure::Operational(_))){return pending}
   reader.checkpoint()?;pending
+ }
+}
+
+/// Only this actual selected-domain loop can issue an exhausted Hygiene proof.
+pub(crate) struct SysSelectionCompletion<'reader,'capture,'scope>{reader:&'reader WorkspaceCodeReader<'capture,'scope>}
+impl SysSelectionCompletion<'_,'_,'_>{fn require(self)->Result<(),Failure>{self.reader.require_sys_discovery()?;self.reader.checkpoint()}}
+impl<'capture,'scope> WorkspaceCodeReader<'capture,'scope>{
+ fn require_sys_discovery(&self)->Result<(),Failure>{self.checkpoint()?;let mut admit=|bytes|self.budget.charge(bytes).map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message));if !self.capture.covers_hygiene(&mut admit)?{return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"Hygiene requires actual complete Meta.Select code/maps discovery")))}Ok(())}
+ fn for_each_sys_selection<'reader>(&'reader self,configuration:&'reader Config,policy:&'static str,group:&'static str,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<Option<SysSelectionCompletion<'reader,'capture,'scope>>,Failure>{self.require_sys_discovery()?;if !self.for_each_file(FileDomain::Hygiene(configuration,policy,group),visit)?{return Ok(None)}self.require_sys_discovery()?;Ok(Some(SysSelectionCompletion{reader:self}))}
+}
+struct SysPages<'a,'capture,'scope>{reader:&'a WorkspaceCodeReader<'capture,'scope>,configuration:&'a Config,policy:&'static str,group:&'static str,completions:std::cell::RefCell<[Option<SysSelectionCompletion<'a,'capture,'scope>>;2]>,passes:std::cell::Cell<usize>,expected:usize}
+impl<'a,'capture,'scope> SysPages<'a,'capture,'scope>{
+ fn new(reader:&'a WorkspaceCodeReader<'capture,'scope>,configuration:&'a Config,policy:&'static str,expected:usize)->Self{Self{reader,configuration,policy,group:"sys",completions:std::cell::RefCell::new([None,None]),passes:std::cell::Cell::new(0),expected}}
+ fn finish(self)->Result<(),Failure>{if self.passes.get()!=self.expected{return Err(Failure::Operational(invalid("Sys actual source pass count differs")))}for(index,completion)in self.completions.into_inner().into_iter().enumerate(){if index<self.expected{completion.ok_or_else(||Failure::Operational(invalid("Sys actual selected EOF token absent")))?.require()?}}Ok(())}
+}
+impl<'a,'capture,'scope> dq_analyze::reactive_raw_policy_pages::RawPolicyPages for SysPages<'a,'capture,'scope>{
+ fn for_each(&self,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{let index=self.passes.get();if index>=self.expected||index>=2{return Err(Failure::Operational(invalid("Sys original provider exceeded its actual policy passes")))}let reader:&'a WorkspaceCodeReader<'capture,'scope>=self.reader;let completion=reader.for_each_sys_selection(self.configuration,self.policy,self.group,visit)?;let complete=completion.is_some();self.completions.borrow_mut()[index]=completion;self.passes.set(index+1);Ok(complete)}
+}
+impl QueryDb{
+ /// Actual scope/current-Db dispatch. Borrowed output cannot escape the funded
+ /// operation. Unsealed Analyze DATA alone cannot invoke this publication loan.
+ pub(crate) fn with_workspace_hygiene<R>(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,consume:impl FnOnce(&dq_analyze::captured_sys_hygiene_pages::HygieneData)->io::Result<R>)->io::Result<R>{
+  let result=self.with_workspace_code_pages(capture,scope,|reader|{
+   reader.require_sys_discovery()?;let(_,bytes)=reader.configuration();let bound=bytes.map_or(Some(1024),|bytes|bytes.len().checked_mul(64).and_then(|n|n.checked_add(1024))).ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"Hygiene existing configuration bound overflow")))?;reader.budget.charge(bound).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;
+   let config=Config::capture(bytes.map_or(Configuration::ProvenMissing,Configuration::Captured))?;
+   let pages=SysPages::new(reader,&config,"sys/hygiene",1);
+   let output=dq_analyze::captured_sys_hygiene_pages::collect(&pages,&config,reader.budget(),&||{crate::daemon::control::checkpoint()})?;
+   pages.finish()?;reader.checkpoint()?;
+   let pending=consume(&output).map_err(Failure::Operational);if matches!(&pending,Err(Failure::Operational(_))){return pending}reader.checkpoint()?;pending
+  });match result{Ok(value)=>Ok(value),Err(Failure::Operational(actual))=>Err(actual),Err(Failure::Unsupported(message))=>Err(invalid(message))}
+ }
+ pub(crate) fn with_workspace_resolvers<R>(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,consume:impl FnOnce(&dq_analyze::captured_sys_resolvers_pages::ResolverData)->io::Result<R>)->io::Result<R>{
+  let result=self.with_workspace_code_pages(capture,scope,|reader|{
+   reader.require_sys_discovery()?;let(_,bytes)=reader.configuration();let bound=bytes.map_or(Some(1024),|bytes|bytes.len().checked_mul(64).and_then(|n|n.checked_add(1024))).ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"Resolver existing configuration bound overflow")))?;reader.budget.charge(bound).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;
+   let config=Config::capture(bytes.map_or(Configuration::ProvenMissing,Configuration::Captured))?;
+   let pages=SysPages::new(reader,&config,"sys/resolvers",2);
+   let output=dq_analyze::captured_sys_resolvers_pages::collect(&pages,&config,reader.budget(),&||{crate::daemon::control::checkpoint()})?;
+   pages.finish()?;reader.checkpoint()?;
+   let pending=consume(&output).map_err(Failure::Operational);if matches!(&pending,Err(Failure::Operational(_))){return pending}reader.checkpoint()?;pending
+  });match result{Ok(value)=>Ok(value),Err(Failure::Operational(actual))=>Err(actual),Err(Failure::Unsupported(message))=>Err(invalid(message))}
+ }
+ pub(crate) fn with_workspace_tables<R>(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,consume:impl FnOnce(&dq_analyze::captured_sys_tables_pages::TablesData)->io::Result<R>)->io::Result<R>{
+  let result=self.with_workspace_code_pages(capture,scope,|reader|{
+   reader.require_sys_discovery()?;let(_,bytes)=reader.configuration();let bound=bytes.map_or(Some(1024),|bytes|bytes.len().checked_mul(64).and_then(|n|n.checked_add(1024))).ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"Tables existing configuration bound overflow")))?;reader.budget.charge(bound).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;
+   let config=Config::capture(bytes.map_or(Configuration::ProvenMissing,Configuration::Captured))?;
+   let pages=SysPages::new(reader,&config,"sys/tables",2);
+   let output=dq_analyze::captured_sys_tables_pages::collect(&pages,&config,reader.budget(),&||{crate::daemon::control::checkpoint()})?;
+   pages.finish()?;reader.checkpoint()?;
+   let pending=consume(&output).map_err(Failure::Operational);if matches!(&pending,Err(Failure::Operational(_))){return pending}reader.checkpoint()?;pending
+  });match result{Ok(value)=>Ok(value),Err(Failure::Operational(actual))=>Err(actual),Err(Failure::Unsupported(message))=>Err(invalid(message))}
+ }
+ pub(crate) fn with_workspace_boundary<R>(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,consume:impl FnOnce(&dq_analyze::captured_system_boundary_pages::BoundaryData)->io::Result<R>)->io::Result<R>{
+  let result=self.with_workspace_code_pages(capture,scope,|reader|{
+   reader.require_sys_discovery()?;let(_,bytes)=reader.configuration();let bound=bytes.map_or(Some(1024),|bytes|bytes.len().checked_mul(64).and_then(|n|n.checked_add(1024))).ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"Boundary existing configuration bound overflow")))?;reader.budget.charge(bound).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;
+   let config=Config::capture(bytes.map_or(Configuration::ProvenMissing,Configuration::Captured))?;
+   let mut pages=SysPages::new(reader,&config,"system_boundary",2);pages.group="";
+   let output=dq_analyze::captured_system_boundary_pages::collect(&pages,&config,reader.budget(),&||{crate::daemon::control::checkpoint()})?;
+   pages.finish()?;reader.checkpoint()?;
+   let pending=consume(&output).map_err(Failure::Operational);if matches!(&pending,Err(Failure::Operational(_))){return pending}reader.checkpoint()?;pending
+  });match result{Ok(value)=>Ok(value),Err(Failure::Operational(actual))=>Err(actual),Err(Failure::Unsupported(message))=>Err(invalid(message))}
  }
 }

@@ -25,7 +25,7 @@ default = ["legacy-sem"]
 legacy-sem = ["dep:dreammaker"]
 native-policy = ["dep:dm-analysis", "dep:dm-tree", "dep:dm-ir", "dep:dm-syntax"]
 # Explicit independent migration oracle; never enabled by production defaults.
-unified-oracle = ["legacy-sem"]
+unified-oracle = ["legacy-sem", "dreammaker/generation-oracle"]
 
 [[example]]
 name = "unified_legacy_base_vars"
@@ -317,3 +317,7 @@ required-features=["legacy-sem"]
 [[example]]
 name="unified_auto_generator_whole"
 required-features=["legacy-sem"]
+
+[[example]]
+name = "unified_generation_tracked_original"
+required-features = ["unified-oracle"]

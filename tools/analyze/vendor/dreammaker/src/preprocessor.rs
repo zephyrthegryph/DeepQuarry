@@ -165,6 +165,8 @@ impl DefineHistory {
             docs_in: Default::default(),
             in_interp_string: 0,
             annotations: None,
+            #[cfg(feature="generation-oracle")]
+            generation_omissions: Vec::new(),
         }
     }
 
@@ -190,6 +192,8 @@ impl DefineHistory {
             docs_in: Default::default(),
             in_interp_string: 0,
             annotations: None,
+            #[cfg(feature="generation-oracle")]
+            generation_omissions: Vec::new(),
         }
     }
 }
@@ -439,6 +443,8 @@ pub struct Preprocessor<'ctx> {
     ifdef_stack: Vec<Ifdef>,
     ifdef_history: IntervalTree<Location, bool>,
     annotations: Option<AnnotationTree>,
+    #[cfg(feature="generation-oracle")]
+    generation_omissions: Vec<PathBuf>,
 
     history: InnerDefineHistory,
     defines: DefineMap,
@@ -464,6 +470,13 @@ impl<'ctx> HasLocation for Preprocessor<'ctx> {
 }
 
 impl<'ctx> Preprocessor<'ctx> {
+    /// Independent oracle preparation only. Callers supply privately probed
+    /// registered NotFound outputs; each negative is rechecked before omission.
+    /// Ordinary parsing keeps an empty vector and its exact original behavior.
+    #[cfg(feature="generation-oracle")]
+    #[doc(hidden)]
+    pub fn with_observed_generation_omissions(mut self,paths:Vec<PathBuf>)->Self{self.generation_omissions=paths;self}
+
     /// Create a new preprocessor from the given Context and environment file.
     pub fn new(context: &'ctx Context, env_file: PathBuf) -> Result<Self, DMError> {
         // Buffer the entire environment file. Large environments take a while
@@ -490,6 +503,8 @@ impl<'ctx> Preprocessor<'ctx> {
             docs_in: Default::default(),
             in_interp_string: 0,
             annotations: None,
+            #[cfg(feature="generation-oracle")]
+            generation_omissions: Vec::new(),
         })
     }
 
@@ -519,6 +534,8 @@ impl<'ctx> Preprocessor<'ctx> {
             docs_in: Default::default(),
             in_interp_string: 0,
             annotations: None,
+            #[cfg(feature="generation-oracle")]
+            generation_omissions: Vec::new(),
         }
     }
 
@@ -823,12 +840,22 @@ impl<'ctx> Preprocessor<'ctx> {
                         expect_token!(() = Token::Punct(Punctuation::Newline));
                         let path = PathBuf::from(path_str.replace('\\', "/"));
 
+                        #[cfg(feature="generation-oracle")]
+                        let mut observed_generation_omission=false;
                         for candidate in [
                             // 1. relative to file in which `#include` appears.
                             self.include_stack.top_file_path().parent().unwrap().join(&path),
                             // 2. relative to root `.dme` file.
                             self.env_file.parent().unwrap().join(&path)
                         ] {
+                            #[cfg(feature="generation-oracle")]
+                            if self.generation_omissions.contains(&candidate){
+                                match std::fs::symlink_metadata(&candidate){
+                                    Err(actual)if actual.kind()==io::ErrorKind::NotFound=>{observed_generation_omission=true;continue},
+                                    Ok(_)=>return Err(self.error("observed generated output appeared; reissue partial old preparation")),
+                                    Err(actual)=>return Err(self.error(format!("generation omission probe {}: {actual}",candidate.display()))),
+                                }
+                            }
                             if !candidate.exists() {
                                 continue;
                             }
@@ -886,6 +913,15 @@ impl<'ctx> Preprocessor<'ctx> {
                             return Ok(());
                         }
 
+                        #[cfg(feature="generation-oracle")]
+                        if observed_generation_omission{
+                            // No alternative include may be hidden by a failed
+                            // exists() probe. Preserve every non-NotFound IO.
+                            for candidate in [self.include_stack.top_file_path().parent().unwrap().join(&path),self.env_file.parent().unwrap().join(&path)]{
+                                match std::fs::symlink_metadata(&candidate){Err(actual)if actual.kind()==io::ErrorKind::NotFound=>(),Ok(_)=>return Err(self.error("generation include candidate appeared; reissue partial old preparation")),Err(actual)=>return Err(self.error(format!("generation include probe {}: {actual}",candidate.display()))),}
+                            }
+                            return Ok(());
+                        }
                         self.context.register_error(DMError::new(self.last_input_loc, format!("failed to find #include {path:?}")));
                         return Ok(());
                     }

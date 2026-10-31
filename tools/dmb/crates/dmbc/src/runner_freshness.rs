@@ -424,16 +424,21 @@ pub(crate) fn admit_source_captured_with_provider_for_test<P: SnapshotProvider>(
 // admission path remains unchanged and retains no additional closure.
 pub(crate) struct GenerationInputClosure {
     inputs: InputSnapshot,
+    // Issued exact workspace root metadata, never inferred by the installer.
+    root: std::path::PathBuf,
     names: [Option<crate::GeneratorName>; 13],
 }
 impl GenerationInputClosure {
+    pub(crate) fn root(&self)->&std::path::Path{&self.root}
+    pub(crate) fn names(&self)->impl Iterator<Item=crate::GeneratorName>+'_ {self.names.iter().flatten().copied()}
     pub(crate) fn matches_names(&self, names: &[Option<crate::GeneratorName>; 13]) -> bool {
         self.names == *names
     }
     /// Complete captured-input freshness only. This is not a source-read scope
     /// or permission to install paths; the serialized generation host owns that.
     pub(crate) fn require_current(&self, provider: &impl SnapshotProvider) -> Result<(), Box<dyn Error>> {
-        admit(&self.inputs, provider)
+        let current = crate::input_snapshot::GeneratedOutputInputs::borrowed(provider, self.inputs.generated_outputs());
+        admit(&self.inputs, &current)
     }
 }
 
@@ -460,8 +465,9 @@ pub(crate) fn admit_generator_workspace_captured<P: SnapshotProvider>(
     }
     let mut names = [None; 13];
     for (slot, name) in names.iter_mut().zip(intent.workspace_generators()) { *slot = Some(*name); }
+    let root = workspace.root().to_owned();
     Ok(WorkspacePolicyAdmission {
         capture: workspace,
-        generation_inputs: Some(GenerationInputClosure { inputs, names }),
+        generation_inputs: Some(GenerationInputClosure { inputs, root, names }),
     })
 }

@@ -52,7 +52,7 @@ fn plan_incremental_impl<P: SourceProvider>(
     omitted: Option<&BTreeSet<PathBuf>>,
     generation_source: Option<&dyn Fn(&Path)->std::io::Result<Option<Arc<prepared_source::PreparedSource>>>>,
 ) -> std::io::Result<(DirectivePlan, PlanReuse)> {
-    let previous = previous.filter(|previous| previous.trace.is_some());
+    let previous = previous.filter(|previous| previous.trace.is_some() && previous.occurrences.first().and_then(IncludeOccurrence::original_entry_path).is_some_and(|entry|entry.as_os_str()==project.as_os_str()));
     // Only the include subtrees whose files changed run again, when the provider can say which (same defines only).
     if let Some(previous) = previous.filter(|previous| &previous.defines == defines) {
         if let Some(patched) = patch::patch(provider, memo, previous) {
@@ -660,10 +660,12 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         self.plan.occurrences.push(IncludeOccurrence {
             path: Arc::new(canonical_path(path)),
             semantic_path: Arc::from(semantic_path.to_string_lossy().replace('\\', "/")),
+            original_entry: parent.is_none().then(||Arc::new(path.to_path_buf())),
             parent,
             directive_span,
             directive_line,
             suppressed: false,
+            non_text_kind:None,
             eof_cursor_line: None,
             eof_cursor_encounter: None,
             return_cursor: parent.and_then(|parent_occurrence| {
@@ -1564,6 +1566,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             }
         };
         if let Some(kind) = kind {
+            self.plan.occurrences[occurrence].non_text_kind=Some(kind);
             let path = self.plan.occurrences[occurrence].path.as_ref().clone();
             self.depend(&path);
             self.plan

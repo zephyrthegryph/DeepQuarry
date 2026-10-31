@@ -1,7 +1,7 @@
 //! One parser-free roster shared by build module admission and policy dispatch.
 //! The policies themselves remain their existing modules; no scanner is copied.
-pub const RAW_FILE_COUNT: usize = 41;
-pub const MODULES: [(&str, &str); 50] = [
+pub const RAW_FILE_COUNT: usize = 42;
+pub const MODULES: [(&str, &str); 51] = [
     ("actor_forwarding", "actor_forwarding"),
     ("breakpoint", "breakpoint"),
     ("containment", "containment"),
@@ -43,6 +43,7 @@ pub const MODULES: [(&str, &str); 50] = [
     ("sys_presentation", "sys/presentation"),
     ("sys_topic", "sys/topic"),
     ("sys_usr_use", "sys/usr_use"),
+    ("deadline_polling", "deadline_polling"),
     ("cooldown", "cooldown"),
     ("declaration_block", "declaration_block"),
     ("duplicate_input_key", "duplicate_input_key"),
@@ -53,8 +54,8 @@ pub const MODULES: [(&str, &str); 50] = [
     ("read_back", "read_back"),
     ("cap_bits", "cap_bits"),
 ];
-pub const LINT_NAMES: [&str; 50] = {
-    let mut names = [""; 50];
+pub const LINT_NAMES: [&str; 51] = {
+    let mut names = [""; 51];
     let mut index = 0;
     while index < MODULES.len() {
         names[index] = MODULES[index].1;
@@ -87,7 +88,7 @@ mod tests {
                 .map(|(module, _)| *module)
                 .collect::<BTreeSet<_>>()
                 .len(),
-            50
+            51
         );
         assert_eq!(
             super::LINT_NAMES
@@ -98,8 +99,8 @@ mod tests {
             super::MODULES.len()
         );
         assert_eq!(super::LINT_NAMES[26], "sys/sync_sql");
-        assert_eq!(super::RAW_FILE_LINT_NAMES.as_slice(), &super::LINT_NAMES[..41]);
-        assert_eq!(super::RAW_COHORT_LINT_NAMES.as_slice(), &super::LINT_NAMES[41..]);
+        assert_eq!(super::RAW_FILE_LINT_NAMES.as_slice(), &super::LINT_NAMES[..42]);
+        assert_eq!(super::RAW_COHORT_LINT_NAMES.as_slice(), &super::LINT_NAMES[42..]);
         assert_eq!(super::RAW_COHORT_LINT_NAMES[0], "cooldown");
         assert_eq!(super::RAW_COHORT_LINT_NAMES[8], "cap_bits");
     }

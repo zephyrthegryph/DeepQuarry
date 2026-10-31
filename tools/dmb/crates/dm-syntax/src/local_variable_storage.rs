@@ -21,8 +21,10 @@ pub(crate) fn expression(e: &Expr, depth: usize) -> usize {
                 .shared_storage()
                 .map_or(0, |(_, n)| n.saturating_add(2 * size_of::<usize>()));
             let mut n = shared.saturating_add(l.raw_storage().capacity());
-            match l.retained_parts() {
+            match l.prepared_syntax_parts() {
                 Some(Ok(Some(p))) => {
+                    n=n.saturating_add(p.runtime_error_storage().map_or(0,String::capacity));
+                    l.visit_pinned_fragment_storage(|_,_,capacity|{n=n.saturating_add(capacity);});
                     n = n
                         .saturating_add(vec_bytes(&p.template))
                         .saturating_add(vec_bytes(&p.expressions));

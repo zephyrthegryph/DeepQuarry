@@ -396,6 +396,7 @@ pub struct DeclarationMeaning {
     /// Formal authored list/T hint. Inherited opaque metadata leaves it unknown.
     pub list_element_type: Option<SymbolId>,
     pub display_name: Option<SymbolId>,
+    /// Variable masks for fields; PROC_FLAG_FINAL for procedure/verb declarations.
     pub flags: u32,
     pub procedure: Option<Arc<ProcedureMetadata>>,
     pub array: Option<Arc<ArrayDeclaration>>,

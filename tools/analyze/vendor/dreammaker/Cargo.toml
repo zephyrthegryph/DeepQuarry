@@ -4,6 +4,10 @@ version = "0.1.0"
 authors = ["Tad Hardesty <tad@platymuus.com>"]
 edition = "2021"
 
+[features]
+# Independent generation preparation oracle only; absent from production defaults.
+generation-oracle = []
+
 [dependencies]
 interval-tree = { path = "../interval-tree" }
 builtins-proc-macro = { path = "../builtins-proc-macro" }

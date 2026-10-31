@@ -1,0 +1,3 @@
+/datum/flags/proc/probe()
+#include "first.dm"
+#include "second.dm"

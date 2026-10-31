@@ -69,6 +69,8 @@ impl<'a> BodyView<'a> {
         })
     }
 
+    pub(crate) fn frontend(&self) -> &'a ColdFrontend {self.frontend}
+
     pub fn syntax(&self) -> &'a StatementBody {
         self.syntax
     }

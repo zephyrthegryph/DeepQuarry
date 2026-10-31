@@ -438,7 +438,7 @@ fn build_with_executor_and_semantic_state_for_policy_demand<P:SourceProvider,D:s
     ));
     let mapping = Mapping {
         projection: Default::default(),
-        plan: &plan,
+        plan: plan.source_geometry(),
         expanded: &expanded,
         files: &files,
         by_path: &by_path,
@@ -541,7 +541,7 @@ fn build_with_executor_and_semantic_state_for_policy_demand<P:SourceProvider,D:s
     };
     let mapping = Mapping {
         projection: Default::default(),
-        plan: &plan,
+        plan: plan.source_geometry(),
         expanded: &expanded,
         files: &files,
         by_path: &by_path,
@@ -638,48 +638,9 @@ fn build_with_executor_and_semantic_state_for_policy_demand<P:SourceProvider,D:s
     );
     let profile_stage = dm_profile::stage("frontend.declaration_origins");
     let provenance_start = Instant::now();
-    let expanded_spans: Vec<_> = adapted.origins.iter().map(|origin| origin.span).collect();
-    // Hash each original region once, not once for every declaration in it.
-    let region_hashes: Vec<_> = plan
-        .regions
-        .iter()
-        .map(|region| {
-            let path = plan.occurrences[region.occurrence].path.as_ref();
-            let file = by_path
-                .get(path)
-                .and_then(|id| files.get(id.index()))
-                .ok_or_else(|| vec![internal("include region has no captured source")])?;
-            file.text
-                .span_fingerprint(region.source_span.range())
-                .ok_or_else(|| vec![internal("include region lies outside captured source")])
-        })
-        .collect::<Result<Vec<_>, Vec<Diagnostic>>>()?;
-    let mut declaration_regions = Vec::with_capacity(adapted.origins.len());
-    let mut current_origins = Vec::with_capacity(adapted.origins.len());
-    for origin in adapted.origins.iter() {
-        let expanded_origin = mapping
-            .origin(origin.span.start as usize)
-            .ok_or_else(|| vec![internal("declaration has no current expansion origin")])?;
-        // Declaration provenance needs the source span and occurrence, not a
-        // complete diagnostic location (which also allocates an include chain).
-        // Reuse the expansion lookup above instead of building that temporary.
-        let file = mapping
-            .file_of(expanded_origin.origin.path)
-            .ok_or_else(|| vec![internal("declaration has no captured source file")])?;
-        declaration_regions.push(expanded_origin.region);
-        let span = source_span(file, expanded_origin.source_span)?;
-        let include_occurrence = u32::try_from(plan.regions[expanded_origin.region].occurrence)
-            .map_err(|_| vec![internal("too many include occurrences")])?;
-        let region = region_hashes[expanded_origin.region];
-        let expansion_stack = mapping.expansion_stack(expanded_origin.macro_expansions)?;
-        current_origins.push(crate::Provenance {
-            span,
-            include_occurrence,
-            region,
-            expansion_stack,
-        });
-    }
-    adapted.origins = current_origins.into();
+    let (expanded_spans, declaration_regions, current_origins) =
+        project_declaration_origins(&mapping, &adapted.origins)?;
+    adapted.origins = current_origins;
     timings.provenance_and_body_indexing += provenance_start.elapsed();
     observe(
         config,
@@ -765,21 +726,7 @@ fn build_with_executor_and_semantic_state_for_policy_demand<P:SourceProvider,D:s
     );
     let profile_stage = dm_profile::stage("frontend.body_indexing");
     let provenance_start = Instant::now();
-    let declarations_by_start: HashMap<_, _> = expanded_spans
-        .iter()
-        .enumerate()
-        .filter_map(|(index, span)| match snapshot.tree.declarations()[index] {
-            Target::Member(member)
-                if matches!(
-                    snapshot.tree.member(member)?.kind,
-                    MemberKind::Proc | MemberKind::Verb
-                ) =>
-            {
-                Some((span.start as usize, (OccurrenceId(index as u32), member)))
-            }
-            _ => None,
-        })
-        .collect();
+    let declarations_by_start=resolved_callable_declarations(&expanded_spans,&snapshot.tree);
     let mut bodies = Vec::new();
     let mut issued_settings = Vec::new();
     let mut body_codes = Vec::new();
@@ -942,15 +889,96 @@ fn build_with_executor_and_semantic_state_for_policy_demand<P:SourceProvider,D:s
     Ok(frontend)
 }
 
+
+
+pub(super) fn resolved_callable_declarations(spans:&[Span],tree:&crate::SemanticTree)->HashMap<usize,(OccurrenceId,MemberId)>{
+    let declarations_by_start: HashMap<_, _> = spans
+        .iter()
+        .enumerate()
+        .filter_map(|(index, span)| match tree.declarations()[index] {
+            Target::Member(member)
+                if matches!(
+                    tree.member(member)?.kind,
+                    MemberKind::Proc | MemberKind::Verb
+                ) =>
+            {
+                Some((span.start as usize, (OccurrenceId(index as u32), member)))
+            }
+            _ => None,
+        })
+        .collect();
+    declarations_by_start
+}
+
+/// SAME original provenance projector for complete and generation-only native
+/// assembly. The borrowed mapping carries no compiler-completeness receipt.
+pub(super) fn project_declaration_origins(
+    mapping:&Mapping<'_>, origins:&crate::relative_origins::OriginRoster,
+)->Result<(Vec<Span>,Vec<usize>,crate::relative_origins::OriginRoster),Vec<Diagnostic>> {
+    let expanded_spans: Vec<_> = origins.iter().map(|origin| origin.span).collect();
+    // Hash each original region once, not once for every declaration in it.
+    let region_hashes: Vec<_> = mapping.plan
+        .regions
+        .iter()
+        .map(|region| {
+            let path = mapping.plan.occurrences[region.occurrence].path.as_ref();
+            let file = mapping.by_path
+                .get(path)
+                .and_then(|id| mapping.files.get(id.index()))
+                .ok_or_else(|| vec![internal("include region has no captured source")])?;
+            file.text
+                .span_fingerprint(region.source_span.range())
+                .ok_or_else(|| vec![internal("include region lies outside captured source")])
+        })
+        .collect::<Result<Vec<_>, Vec<Diagnostic>>>()?;
+    let mut declaration_regions = Vec::with_capacity(origins.len());
+    let mut current_origins = Vec::with_capacity(origins.len());
+    for origin in origins.iter() {
+        let expanded_origin = mapping
+            .origin(origin.span.start as usize)
+            .ok_or_else(|| vec![internal("declaration has no current expansion origin")])?;
+        // Declaration provenance needs the source span and occurrence, not a
+        // complete diagnostic location (which also allocates an include chain).
+        // Reuse the expansion lookup above instead of building that temporary.
+        let file = mapping
+            .file_of(expanded_origin.origin.path)
+            .ok_or_else(|| vec![internal("declaration has no captured source file")])?;
+        declaration_regions.push(expanded_origin.region);
+        let span = source_span(file, expanded_origin.source_span)?;
+        let include_occurrence = u32::try_from(mapping.plan.regions[expanded_origin.region].occurrence)
+            .map_err(|_| vec![internal("too many include occurrences")])?;
+        let region = region_hashes[expanded_origin.region];
+        let expansion_stack = mapping.expansion_stack(expanded_origin.macro_expansions)?;
+        current_origins.push(crate::Provenance {
+            span,
+            include_occurrence,
+            region,
+            expansion_stack,
+        });
+    }
+    Ok((expanded_spans, declaration_regions, current_origins.into()))
+
+}
+
 /// Every distinct file of the plan, in the order its first occurrence appears, with the text the
 /// provider served for it.
 fn build_source_index(
     plan: &DirectivePlan,
     sources: &BTreeMap<PathBuf, dm_preprocess::SourceText>,
 ) -> Result<(Vec<SourceFile>, Arc<HashMap<PathBuf, FileId>>), Vec<Diagnostic>> {
+    build_source_index_geometry(plan.source_geometry(),sources,false)
+}
+pub(super) fn build_source_index_geometry(
+    plan:dm_preprocess::regions::SourcePlanGeometry<'_>,
+    sources:&BTreeMap<PathBuf,dm_preprocess::SourceText>,
+    captured_only:bool,
+)->Result<(Vec<SourceFile>,Arc<HashMap<PathBuf,FileId>>),Vec<Diagnostic>> {
     let mut files = Vec::new();
     let mut by_path = HashMap::new();
-    for occurrence in &plan.occurrences {
+    for occurrence in plan.occurrences {
+        // Generation has explicit negative occurrences, never empty files.
+        // The ordinary path retains its existing non-text coordinate rows.
+        if captured_only && !sources.contains_key(occurrence.path.as_ref()){continue}
         if by_path.contains_key(occurrence.path.as_ref()) {
             continue;
         }

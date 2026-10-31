@@ -547,6 +547,10 @@ pub(super) fn checked_source_parameters<'a>(
     })
 }
 impl ArchivedBody<'_> {
+    /// Current original token coordinates, borrowed from the SAME parser-owned
+    /// chunk. No source scan, new token array, expression parse or owner clone.
+    pub fn original_body_tokens(&self)->Result<crate::procedure::header_input::OriginalBodyTokens<'_>,String>{let index=*self.archive.body_indices.get(&self.occurrence.declaration).ok_or("original body token declaration absent")?;if !self.archive.bodies.get(index).is_some_and(|row|std::ptr::eq(row,self.occurrence)){return Err("original body token occurrence differs".into())}let code=self.archive.body_codes.get(index).ok_or("original body token code absent")?;self.archive.syntax.original_body_tokens(self.occurrence.expanded_span,&code.identity)}
+
     pub fn source_locals(&self) -> Result<SourceLocalView<'_>, String> {
         checked_source_locals(
             self.tree(),
@@ -1079,17 +1083,9 @@ impl BodyArchive {
     }
     /// Original callable opening-token origin without demanding executable body
     /// grammar. Uses the SAME private current code/header recipe as BodySyntax.
-    pub fn callable_header_policy_origin(&self,member:crate::MemberId)->Result<SourceNoteOrigin,String>{
-        if !matches!(self.tree.member(member).ok_or("callable header member unavailable")?.kind,crate::MemberKind::Proc|crate::MemberKind::Verb){
-            return Err("callable header requires source procedure/verb".into());
-        }
-        let ordinal=self.callables.ordinal(member).ok_or("callable header member not in original roster")?;
-        let occurrence=self.bodies.get(ordinal).ok_or("callable header original occurrence absent")?;
-        if occurrence.member!=member{return Err("callable header roster occurrence differs".into());}
-        let code=self.body_codes.get(ordinal).ok_or("callable header original code absent")?;
-        let opening=self.syntax.original_callable_opening(occurrence.expanded_span,&code.identity)?;
-        self.source_note_point(opening)
-    }
+    pub fn callable_header_policy_origin(&self,member:crate::MemberId)->Result<SourceNoteOrigin,String>{self.callable_header_source().reported_point(member).map(super::BorrowedSourceNoteOrigin::into_owned)}
+    /// Borrow the SAME immutable current header owners. No body is demanded.
+    pub fn callable_header_source(&self)->CallableHeaderSource<'_>{CallableHeaderSource{tree:&self.tree,callables:&self.callables,bodies:&self.bodies,codes:&self.body_codes,syntax:&self.syntax,mapping:&self.mapping}}
     pub fn callable_note_origin(
         &self,
         identity: dm_ir::ProcedureIdentity,
@@ -1187,6 +1183,7 @@ impl BodyArchive {
 #[path = "frontend_checker_variable_properties.rs"]
 mod checker_variable_properties;
 pub use checker_variable_properties::CheckerVariableProperties;
+pub(super) use checker_variable_properties::properties_for_issued_original;
 
 impl BodyArchive {
     pub fn member_source_note_point(
@@ -1216,4 +1213,41 @@ impl BodyArchive{
     }
     /// No new body demand or roster scan; owned projection stays compatible.
     pub fn callable_note_origin_from_parsed<E:From<String>+From<&'static str>>(&self,identity:dm_ir::ProcedureIdentity,ordinal:usize,body:&ArchivedBody<'_>)->Result<SourceNoteOrigin,E>{self.callable_note_origin_borrowed_from_parsed(identity,ordinal,body).map(super::BorrowedSourceNoteOrigin::into_owned).map_err(BorrowedCallableOriginError::into_error::<E>)}
+}
+
+/// Stack-only loan over existing original procedure header/source owners.
+/// Constructor is private; it never owns syntax, copies source or carries policy.
+pub struct CallableHeaderSource<'a>{tree:&'a SemanticTree,callables:&'a CallableRoster,bodies:&'a[BodyOccurrence],codes:&'a[body_code::BodyCodeOwner],syntax:&'a DeclarationSyntax,mapping:&'a SourceExportMapping}
+impl<'a> CallableHeaderSource<'a>{
+ /// Statement points use this SAME privately issued current mapping; this
+ /// borrowed data never rebinds an AST or registers a reported file.
+ pub fn reported_source_point(&self,offset:usize)->Result<super::BorrowedSourceNoteOrigin<'a>,String>{self.mapping.borrowed_source_note_point(offset).map_err(str::to_owned)}
+
+ fn cursor(&self,member:crate::MemberId)->Result<usize,String>{
+  if !self.callables.authenticates_borrowed_tree(self.tree){return Err("callable header roster belongs to another original tree".into())}
+  if !matches!(self.tree.member(member).ok_or("callable header member unavailable")?.kind,crate::MemberKind::Proc|crate::MemberKind::Verb){return Err("callable header requires source procedure/verb".into())}
+  let ordinal=self.callables.ordinal(member).ok_or("callable header member not in original roster")?;let occurrence=self.bodies.get(ordinal).ok_or("callable header original occurrence absent")?;
+  if occurrence.member!=member{return Err("callable header roster occurrence differs".into())}
+  let code=self.codes.get(ordinal).ok_or("callable header original code absent")?;self.syntax.original_callable_opening(occurrence.expanded_span,&code.identity)
+ }
+ pub fn reported_point(&self,member:crate::MemberId)->Result<super::BorrowedSourceNoteOrigin<'a>,String>{self.mapping.borrowed_source_note_point(self.cursor(member)?).map_err(str::to_owned)}
+ pub fn reported_span(&self,member:crate::MemberId)->Result<dm_syntax::Span,String>{let at=self.cursor(member)?;Ok(dm_syntax::Span::new(at,at.checked_add(1).ok_or("callable header point extent overflow")?))}
+}
+impl ColdFrontend{
+ /// Validate this exact current mapping once, then lend immutable header views.
+ /// The shared borrow prevents public compatibility mutation during the loan.
+ pub fn callable_header_source(&self)->Result<CallableHeaderSource<'_>,String>{
+  let callables=self.callable_roster()?;
+  if !Arc::ptr_eq(&self.syntax,&self.issued_syntax)||!self.expanded.text.same_view(&self.issued_arena){return Err("callable header source differs from current frontend issuance".into())}
+  let mapping=self.source_export_mapping().ok_or("callable header current source mapping unavailable")?;
+  Ok(CallableHeaderSource{tree:&self.snapshot.tree,callables,bodies:&self.bodies,codes:&self.issued_body_codes,syntax:&self.syntax,mapping})
+ }
+}
+
+impl ArchivedBody<'_>{
+ /// Resource admission only, over the SAME original expression provider kept
+ /// weakly by this archive. No gate/reset/Db, source recipe, or parse is minted.
+ pub fn with_original_syntax_admission<T>(&self,operation:impl FnOnce(&dm_syntax::SettingAdmission<'_>)->Result<T,BodySyntaxFailure>)->Result<T,BodySyntaxFailure>{
+  super::initializer_source::original_admission_using(self.archive.setting_queries.as_ref(),operation)
+ }
 }

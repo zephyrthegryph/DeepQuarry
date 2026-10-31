@@ -782,10 +782,10 @@ pub(crate) fn evaluate_snapshot(
         && (!request.queries.is_empty()
             || request.source_queries.iter().any(|question| {
                 !matches!(question,SourceQuery::NativeConfiguredVariableVisibility{..})
-                    && !matches!(question,SourceQuery::NativeConfiguredChecker{family,..}if matches!(family.as_str(),"unknown_linter_setting"|"unknown_setting"))
+                    && !matches!(question,SourceQuery::NativeConfiguredChecker{family,..}if matches!(family.as_str(),"unknown_linter_setting"|"unknown_setting"|"invalid_lint_directive_value"))
             }))
     {
-        return Err(io::Error::other("diagnostic declaration frame admits only variable-visibility or unknown-setting syntax questions; no ordinary ABI/model query"));
+        return Err(io::Error::other("diagnostic declaration frame admits only variable-visibility, unknown-setting, or invalid-directive syntax questions; no ordinary ABI/model query"));
     }
     let revision = format!("{:032x}", tree.identity());
     if request

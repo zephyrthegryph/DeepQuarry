@@ -70,6 +70,8 @@ fn leak<T: ?Sized>(b: Box<T>) -> &'static T {
     Box::leak(b)
 }
 
+pub fn policy_selection()->crate::tree::Select{CODE_MAPS_DM}
+
 pub fn register_module(reg: &mut Registry, module: SysModule) {
     let name: &'static str = leak(format!("sys/{}", module.name).into_boxed_str());
     let baseline: &'static str = leak(format!("tools/ci/sys_baseline/{}.txt", module.name).into_boxed_str());
@@ -97,7 +99,7 @@ pub fn register_module(reg: &mut Registry, module: SysModule) {
         group: "sys",
         label: name,
         legacy: "tools/ci/sys_lint.py",
-        select: CODE_MAPS_DM,
+        select: policy_selection(),
         scan,
         policy: Policy::Sites { baseline, header, banned: &[] },
         rules: module.rules,
@@ -152,7 +154,7 @@ pub fn replay_recorded(v: Vec<crate::lint::AllowUse>) {
     });
 }
 
-fn drain_extra(out: &mut Sink) {
+pub(crate) fn drain_extra(out: &mut Sink) {
     EXTRA_USED.with(|e| {
         for u in e.borrow_mut().drain(..) {
             out.replay_allow(u);

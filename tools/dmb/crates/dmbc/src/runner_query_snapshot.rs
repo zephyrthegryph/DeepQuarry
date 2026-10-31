@@ -1311,3 +1311,5 @@ impl SourceSnapshot {
 }
 
 #[path="runner_query_generation_stage.rs"]mod generation_stage;
+
+pub(crate) use generation_stage::ClosedGeneration;

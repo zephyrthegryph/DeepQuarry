@@ -66,6 +66,8 @@ pub fn ordered_names(names: &[String]) -> Result<Vec<&'static str>, String> {
 pub struct RawPolicyViews<'a>{file:&'a SourceFile,allocation:Option<&'a crate::captured_generator_budget::Budget>}
 #[cfg(feature="native-policy")]
 impl<'a> RawPolicyViews<'a>{
+ /// Private policy-only view; grants no original AST/occurrence authority.
+ pub(crate) fn source_file(&self)->Result<&'a SourceFile,crate::reactive_reads_native::Failure>{self.require()?;Ok(self.file)}
  pub(crate) fn from_source(file:&'a SourceFile)->Self{Self{file,allocation:None}}
 
  pub(crate) fn allocation_budget<'b>(&'b self,fallback:&'b crate::captured_generator_budget::Budget)->&'b crate::captured_generator_budget::Budget{self.allocation.unwrap_or(fallback)}
@@ -288,6 +290,9 @@ impl File {
     }
 }
 impl Config {
+ /// Interpreted path data only; this does not grant a source or completion role.
+ pub fn policy_path_exempt(&self,name:&str,group:&str,relative:&str)->bool{self.scopes.borrowed_for_lint(name,group).is_some_and(|scope|scope.exempt(relative))}
+ pub(crate) fn borrowed_policy_scope(&self,name:&str,group:&str)->Option<&crate::scopes::LintScope>{self.scopes.borrowed_for_lint(name,group)}
     /// Borrow the unchanged Auto lists from this actual interpreted owner.
     #[cfg(feature="native-policy")]
     pub fn with_auto_tracked_lists<T>(&self,consume:impl FnOnce(&[String],&[&[String]])->T)->T{let scope=self.scopes.borrowed_for_lint("auto_tracked","");let list=|name:&str|scope.map_or(&[][..],|scope|scope.list(name));consume(list("include"),&[list("exclude"),list("exclude_fixtures"),list("exclude_heat"),list("exclude_memo")])}

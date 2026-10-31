@@ -401,4 +401,13 @@ mod tests {
         assert_eq!(wire.restore(), Some(opaque.clone()));
         assert!(wire.matches_canonical(&opaque.canonical_bytes()));
     }
+    #[test]fn procedure_final_declaration_flag_survives_existing_portable_answer_and_changes_canonical(){
+        let identity=ProcedureIdentity{owner:SymbolId::of("/obj"),name:SymbolId::of("probe"),verb:false,occurrence:0};
+        let mut final_data=meaning();final_data.flags=crate::PROC_FLAG_FINAL;
+        let mut plain=final_data.clone();plain.flags=0;
+        assert_ne!(final_data.canonical_bytes(),plain.canonical_bytes());
+        let answer=ResolvedMeaning::Declaration{identity,definition:ProcedureDefinition::Declare,previous:None,data:Arc::new(final_data)};
+        let wire=PortableResolvedAnswer::capture_declared(&answer).unwrap();let encoded=serde_json::to_vec(&wire).unwrap();let restored:PortableResolvedAnswer=serde_json::from_slice(&encoded).unwrap();assert_eq!(restored.restore(),Some(answer.clone()));assert!(restored.matches_canonical(&answer.canonical_bytes()));
+    }
+
 }

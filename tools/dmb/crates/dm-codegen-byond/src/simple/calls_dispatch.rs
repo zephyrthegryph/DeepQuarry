@@ -9,6 +9,12 @@ impl Compiler<'_> {
         args: &[Expr],
         statement: &str,
     ) -> Result<(), LowerError> {
+        // The original parser reserves bare as(...) as Term::As(InputType).
+        // It is not a user procedure lookup. Frontend admission must not emit
+        // a fabricated dynamic call while this intrinsic has no native lowering.
+        if matches!(&callee.kind,ExprKind::Ident(name)if name=="as"){
+            return Err(error(statement,"as input-type intrinsic lowering is not implemented"));
+        }
         let named_arguments = args
             .iter()
             .any(|arg| dm_syntax::named_argument(arg).is_some());

@@ -658,11 +658,8 @@ impl ExprParser<'_> {
                 }
                 // The scope operator is retained by PRIMARY syntax. It is not
                 // a member receiver, unscoped identifier or text-side analysis.
-                // Global variable references remain outside this bounded form.
-                if !self.peek().is_some_and(|next| next.text == "(") {
-                    self.error(name.span, "global :: reference requires call syntax");
-                    return None;
-                }
+                // The primary scope marker also represents the original bare
+                // GlobalIdent term. Call dispatch remains decided by postfix ().
                 Some(Expr {
                     span: Span::new(span.start, name.span.end),
                     kind: ExprKind::Unary {
@@ -673,6 +670,21 @@ impl ExprParser<'_> {
                         }),
                     },
                 })
+            }
+            // Pinned input_type accepts the exact empty type tuple in
+            // as(()) as well as an absent type in as(). Keep this ONLY in
+            // the contextual as primitive; ordinary empty groups stay invalid.
+            TokenKind::Ident if token.text == "as"
+                && self.tokens.get(self.index).is_some_and(|t|t.text=="(")
+                && self.tokens.get(self.index+1).is_some_and(|t|t.text=="(")
+                && self.tokens.get(self.index+2).is_some_and(|t|t.text==")")
+                && self.tokens.get(self.index+3).is_some_and(|t|t.text==")") =>
+            {
+                let end=self.tokens[self.index+3].span.end;
+                self.index+=4;
+                Some(Expr{span:Span::new(span.start,end),kind:ExprKind::Call{
+                    callee:Box::new(Expr{span,kind:ExprKind::Ident(token.text)}),args:Vec::new(),
+                }})
             }
             TokenKind::Ident if token.text == "new" => {
                 if self.peek().is_none() {
@@ -788,7 +800,7 @@ impl ExprParser<'_> {
                 span,
                 kind: ExprKind::Literal(crate::LiteralText::at(token.text, span.start)),
             }),
-            TokenKind::Operator if matches!(token.text.as_str(), "-" | "+" | "!" | "~" | "*") => {
+            TokenKind::Operator if matches!(token.text.as_str(), "-" | "+" | "!" | "~" | "*" | "&") => {
                 if matches!(token.text.as_str(), "-" | "+")
                     && self.peek().is_some_and(|next| {
                         next.text == token.text && next.span.start == token.span.end
@@ -903,13 +915,7 @@ impl ExprParser<'_> {
                         span: Span::new(span.start, second.span.end),
                         kind: ExprKind::Ident("..".into()),
                     })
-                } else if self
-                    .peek()
-                    .is_some_and(|next| matches!(next.text.as_str(), "proc" | "verb" | "var"))
-                    && self
-                        .tokens
-                        .get(self.index + 1)
-                        .is_some_and(|next| next.text == "/")
+                } else if self.peek().is_some_and(|next| next.kind==TokenKind::Ident)
                 {
                     let mut path = String::from(".");
                     let mut end = span.end;
@@ -977,6 +983,7 @@ impl ExprParser<'_> {
             ("to", 14, 15),
             ("<<", 15, 16),
             (">>", 15, 16),
+            ("<=>", 17, 18),
             ("<=", 17, 18),
             (">=", 17, 18),
             ("<", 17, 18),
@@ -1194,4 +1201,40 @@ mod setting_admission_parser_tests {
         assert_eq!(retried.expr, crate::parse_expression(source).expr);
         assert!(!retry.is_stopped());
     }
+}
+
+#[cfg(test)]mod pinned_debug_grammar_gap_tests{
+ use super::*;
+ fn expression(text:&str)->Expr{let parsed=parse_expression(text);assert!(parsed.diagnostics.is_empty(),"{text}: {:?}",parsed.diagnostics);parsed.expr.unwrap()}
+ #[test]fn primary_spaceship_uses_original_relational_precedence_and_exact_adjacent_tokens(){
+  for(text,outer)in[("a <=> b","<=>"),("a <=> b << c","<<"),("a <=> b == c","=="),("a <=> b < c","<")]{let expr=expression(text);let ExprKind::Binary{op,lhs,..}=&expr.kind else{panic!("binary")};assert_eq!(op,outer);if outer!="<=>"{assert!(matches!(&lhs.kind,ExprKind::Binary{op,..}if op=="<=>"))}}
+  for text in["a < = > b","a <= > b","a < => b"]{assert!(!parse_expression(text).diagnostics.is_empty(),"nonadjacent spelling accepted: {text}")}
+ }
+ #[test]fn primary_empty_input_type_tuple_is_contextual_and_preserves_complete_original_span(){
+  for text in["as(())","as( ( ) )","as(/*a*/ ( /*b*/ ) /*c*/) "]{let expr=expression(text);let ExprKind::Call{callee,args}=&expr.kind else{panic!("as primitive")};assert!(matches!(&callee.kind,ExprKind::Ident(name)if name=="as"));assert!(args.is_empty());assert_eq!(expr.span.start,0);assert_eq!(expr.span.end,text.trim_end().len());}
+  for text in["()","f(())","as((()))"]{assert!(!parse_expression(text).diagnostics.is_empty(),"general empty/parenthesized type was admitted: {text}")}
+ }
+}
+
+#[cfg(test)]mod original_reference_and_prefab_term_tests{
+ use super::*;
+ #[test]fn primary_original_relative_prefab_reference_and_bare_global_are_distinct_nodes(){
+  for text in[".child/type",".proc/run"]{let parsed=parse_expression(text);assert!(parsed.diagnostics.is_empty(),"{text}: {:?}",parsed.diagnostics);assert!(matches!(parsed.expr.unwrap().kind,ExprKind::TypePath(ref path)if path==text));}
+  let reference=parse_expression("&value");assert!(reference.diagnostics.is_empty());assert!(matches!(reference.expr.unwrap().kind,ExprKind::Unary{op,value}if op=="&"&&matches!(value.kind,ExprKind::Ident(ref name)if name=="value")));
+  let global=parse_expression("::value");assert!(global.diagnostics.is_empty());assert!(matches!(global.expr.unwrap().kind,ExprKind::Unary{op,value}if op=="::"&&matches!(value.kind,ExprKind::Ident(ref name)if name=="value")));
+  assert!(matches!(parse_expression("::value()").expr.unwrap().kind,ExprKind::Call{callee,..}if matches!(callee.kind,ExprKind::Unary{ref op,..}if op=="::")));
+  assert!(matches!(parse_expression(".()").expr.unwrap().kind,ExprKind::Call{callee,..}if matches!(callee.kind,ExprKind::Ident(ref name)if name==".")));
+  assert!(!parse_expression("::").diagnostics.is_empty());assert!(!parse_expression("&").diagnostics.is_empty());
+ }
+}
+
+/// SAME primary child lexer/parser, retaining ONLY its span/kind geometry for
+/// later source diagnostics. No child reparse or owned token spelling survives.
+pub(crate) fn parse_expression_with_primary_tokens(source:&str,admission:Option<&crate::SettingAdmission<'_>>)->Result<(ParsedExpr,Vec<SpanToken>),String>{
+ if let Some(a)=admission{a.checkpoint().map_err(|_|"interpolation operation stopped".to_owned())?;}
+ let lexical=lex(source);let mut spans=Vec::new();let count=lexical.tokens.len();
+ spans.try_reserve_exact(count).map_err(|_|{if let Some(a)=admission{a.record_operational_error(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"primary interpolation token geometry allocation refused"));}"primary interpolation token geometry allocation refused".to_owned()})?;
+ if spans.capacity()>count.saturating_mul(4){if let Some(a)=admission{a.record_operational_error(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"primary interpolation token geometry exposed excess"));}return Err("primary interpolation token geometry exposed excess".into())}
+ for token in &lexical.tokens{if let Some(a)=admission{a.checkpoint().map_err(|_|"interpolation operation stopped".to_owned())?;}spans.push(SpanToken{kind:token.kind,span:token.span});}
+ Ok((finish_expression_with_admission(lexical.tokens,lexical.diagnostics,admission),spans))
 }

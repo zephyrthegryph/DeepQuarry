@@ -18,6 +18,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             | "invalid_set_value"
             | "unknown_linter_setting"
             | "unknown_setting"
+            | "incompatible_directive"
+            | "disabled_directive"
+            | "sets_directive_twice"
             | "control_condition_static"
             | "unreachable_code"
             | "loop_condition_determinate"
@@ -58,6 +61,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "ambiguous_in_lhs" => view.ambiguous_in_lhs(Severity::Warning)?,
                 "unknown_linter_setting" => dm_analysis::checks_unknown_linter_setting::check(&view,Severity::Warning)?,
                 "unknown_setting" => dm_analysis::checks_unknown_linter_setting::check_ordinary(&view,Severity::Warning)?,
+                "incompatible_directive" | "disabled_directive" | "sets_directive_twice" => {let selected=match family.as_str(){"incompatible_directive"=>dm_analysis::checks_directive_binding::Family::Incompatible,"disabled_directive"=>dm_analysis::checks_directive_binding::Family::Disabled,_=>dm_analysis::checks_directive_binding::Family::Duplicate};dm_analysis::checks_directive_binding::check(&view,selected,if selected.name()=="incompatible_directive"{Severity::Error}else{Severity::Warning})?},
                 "invalid_set_value" => dm_analysis::checks_invalid_set::check(&view, Severity::Warning)?,
                 "control_condition_static" => dm_analysis::checks_control_static::check(&view, Severity::Error)?,
                 "unreachable_code" => dm_analysis::checks_flow::check(&view, dm_analysis::checks_flow::Family::Unreachable, Severity::Error)?,

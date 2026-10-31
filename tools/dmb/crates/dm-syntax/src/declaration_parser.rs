@@ -75,13 +75,24 @@ pub(super) fn classify(header: &str, has_children: bool) -> ItemKind {
         || definition_prefix.starts_with("/proc/")
         || definition_prefix.contains("/proc/")
     {
-        return ItemKind::Proc;
+        // A proc-prefixed group without an opening delimiter is a
+        // declaration namespace, not an executable body. Keep descendants
+        // in declaration mode so skeleton compaction retains the real leaf.
+        return if has_children && boundary == h.len() {
+            ItemKind::Type
+        } else {
+            ItemKind::Proc
+        };
     }
     if definition_prefix.starts_with("verb/")
         || definition_prefix.starts_with("/verb/")
         || definition_prefix.contains("/verb/")
     {
-        return ItemKind::Verb;
+        return if has_children && boundary == h.len() {
+            ItemKind::Type
+        } else {
+            ItemKind::Verb
+        };
     }
     if h.find('(')
         .is_some_and(|open| h.find('{').is_none_or(|brace| open < brace))
@@ -915,5 +926,35 @@ mod shared_original_body_tests {
         assert_eq!(current, old);
         let wrong = Span::new(span.start + 1, span.end);
         assert!(crate::parse_proc_with_origins_from_spans(source, wrong, &cold.tokens, 0).is_err());
+    }
+}
+
+#[cfg(test)]
+mod callable_namespace_classification_tests {
+    use super::*;
+    #[test]
+    fn callable_namespace_groups_do_not_enter_executable_body_or_drop_leaf_settings() {
+        for source in [
+            "/datum/flags\n    proc/final\n        probe()\n            set SpacemanDMM_should_not_override = 1\n            return 0\n",
+            "/datum/flags\n    proc\n        final\n            probe()\n                set SpacemanDMM_should_not_override = 1\n                return 0\n",
+            "/datum/flags\n    verb\n        present()\n            set name = \"Present\"\n            return 0\n",
+            "/datum/flags\n    verb/hidden\n        present()\n            set name = \"Present\"\n            return 0\n",
+        ] {
+            for skeleton in [false, true] {
+                let parsed = parse_with_body_mode(source, skeleton);
+                assert!(parsed.diagnostics.is_empty(), "{source:?}: {:?}", parsed.diagnostics);
+                let mut item = &parsed.items[0];
+                while item.kind == ItemKind::Type {
+                    assert_eq!(item.children.len(), 1, "{source:?}");
+                    item = &item.children[0];
+                }
+                assert!(matches!(item.kind, ItemKind::Proc | ItemKind::Verb), "{source:?}");
+                assert!(item.header.ends_with("()"), "{source:?}");
+                assert_eq!(item.span.start, source.find(&item.header).unwrap());
+                assert_eq!(item.children[0].kind, ItemKind::Statement);
+                assert!(item.children[0].header.starts_with("set "));
+                assert_eq!(item.children.len(), if skeleton { 1 } else { 2 });
+            }
+        }
     }
 }

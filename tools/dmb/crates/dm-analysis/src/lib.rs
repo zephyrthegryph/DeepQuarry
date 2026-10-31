@@ -77,3 +77,8 @@ pub mod policy_body_observation;
 mod checker_prefix_demand;
 
 pub mod checks_unknown_linter_setting;
+
+mod checker_callable_display;
+pub mod checks_directive_binding;
+
+pub mod checker_original_expression_debug;

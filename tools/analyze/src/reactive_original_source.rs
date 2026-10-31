@@ -411,18 +411,7 @@ impl<'a> ReadSource<'a>{
     /// missing cache is not absence; no ancestry table or guessed prefix rule.
     pub(crate) fn is_subtype(&self,child:&str,parent:&str)->Result<bool,String>{
         self.require()?;let tree=self.inputs.archive().tree();
-        let Some(mut ty)=tree.lookup_type(SymbolId::of(child))else{
-            let profile=tree.checker_builtin_profile().ok_or("reactive subtype profile absent")?;
-            if tree.checker_source_type_presence(profile,child).map_err(|e|format!("{e:?}"))?{return Err("reactive positive checker type has no borrowed original hierarchy node".into());}
-            return Ok(false)
-        };
-        let parent=SymbolId::of(parent);
-        for _ in 0..=tree.types().len(){
-            let node=tree.type_node(ty).ok_or("reactive original hierarchy node absent")?;
-            if node.path==parent{return Ok(true)};
-            match tree.parent(ty){Some(next)=>ty=next,None=>return Ok(false)}
-        }
-        Err("reactive original hierarchy contains a cycle".into())
+        subtype_original(tree,child,parent,&mut||Ok(()),&mut|child|{let profile=tree.checker_builtin_profile().ok_or("reactive subtype profile absent")?;tree.checker_source_type_presence(profile,child).map_err(|e|format!("{e:?}"))})
     }
 
     /// SAME original definition proximity used by the unique annotation policy.
@@ -672,4 +661,20 @@ mod native_source_test_profile;
   let mut refused=0;let failure=source.visit_definition_points(&mut||Err::<(),crate::reactive_reads_native::Failure>(crate::reactive_reads_native::Failure::Operational(std::io::Error::from_raw_os_error(1450))),&mut|_|{refused+=1;Ok(())});assert!(matches!(failure,Err(crate::reactive_reads_native::Failure::Operational(ref e))if e.raw_os_error()==Some(1450)));assert_eq!(refused,0);
   assert_eq!(provider.reads.get(),before,"constructor/metadata queries cannot acquire source again");assert!(source.parse_body(0).is_err(),"no original active-context body borrower is fabricated");
  }
+}
+
+/// SAME native ancestry algorithm for original full and generation-only data.
+/// Presence/control callbacks preserve each caller's actual source/error role.
+pub(crate) fn subtype_original<E:From<&'static str>>(tree:&dm_tree::SemanticTree,child:&str,parent:&str,checkpoint:&mut impl FnMut()->Result<(),E>,presence:&mut impl FnMut(&str)->Result<bool,E>)->Result<bool,E>{
+        let Some(mut ty)=tree.lookup_type(SymbolId::of(child))else{
+            if presence(child)?{return Err("reactive positive checker type has no borrowed original hierarchy node".into());}
+            return Ok(false)
+        };
+        let parent=SymbolId::of(parent);
+        for _ in 0..=tree.types().len(){
+            checkpoint()?;let node=tree.type_node(ty).ok_or("reactive original hierarchy node absent")?;
+            if node.path==parent{return Ok(true)};
+            match tree.parent(ty){Some(next)=>ty=next,None=>return Ok(false)}
+        }
+        Err("reactive original hierarchy contains a cycle".into())
 }

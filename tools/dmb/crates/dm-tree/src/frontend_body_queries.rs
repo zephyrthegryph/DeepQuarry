@@ -11,10 +11,22 @@ pub struct BodySyntaxInput {
     syntax: Arc<DeclarationSyntax>,
     span: dm_syntax::Span,
     location: SourceLocation,
-    mapping: Arc<SourceExportMapping>,
+    mapping: BodyDiagnosticProjection,
     parameter_admission: usize,
     original_code: Option<Arc<BodyCodeIdentity>>,
 }
+
+#[derive(Debug)]
+enum BodyDiagnosticProjection {
+    Complete(Arc<SourceExportMapping>),
+    Generation(Arc<super::generation::GenerationQuestionGeometry>),
+}
+impl BodyDiagnosticProjection {
+    fn output(&self,offset:usize)->Option<SourceLocation>{match self{Self::Complete(mapping)=>mapping.output(offset),Self::Generation(mapping)=>mapping.output(offset)}}
+}
+// Existing issuance counter is shared by complete and generation-only inputs.
+// Query key equality never substitutes for the actual private input issuer.
+static NEXT_BODY_INPUT:std::sync::atomic::AtomicU64=std::sync::atomic::AtomicU64::new(1);
 
 /// One immutable parse, borrowed by lowering, lint policies and checker passes.
 /// Lossless children remain available for unsupported lowering constructs.
@@ -28,6 +40,7 @@ pub struct BodySyntax {
 }
 
 impl BodySyntaxInput {
+    pub(super) fn original_opening(&self)->Result<usize,String>{self.syntax.original_callable_opening(self.span,self.original_code.as_ref().ok_or("generation callable original code unissued")?)}
     pub fn key(&self) -> u64 {
         self.id
     }
@@ -292,14 +305,13 @@ impl ColdFrontend {
         }
         self.reused_body_queries = false;
         host.begin_revision();
-        static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
         let inputs = self
             .issued_bodies
             .iter()
             .enumerate()
             .map(|(ordinal, body)| {
                 Arc::new(BodySyntaxInput {
-                    id: NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
+                    id: NEXT_BODY_INPUT.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
                     original_code: self
                         .issued_body_codes
                         .get(ordinal)
@@ -308,7 +320,7 @@ impl ColdFrontend {
                     syntax: self.issued_syntax.clone(),
                     span: body.expanded_span,
                     location: body.source.clone(),
-                    mapping: Arc::clone(&self.source_export_mapping),
+                    mapping: BodyDiagnosticProjection::Complete(Arc::clone(&self.source_export_mapping)),
                     parameter_admission: self
                         .issued_syntax
                         .item_path(&body.ast_path)
@@ -327,6 +339,21 @@ impl ColdFrontend {
         self.body_queries = Some(BodyQueries { host, inputs });
         self
     }
+}
+
+
+pub(super) fn issue_generation_body(
+    geometry:&Arc<super::generation::GenerationQuestionGeometry>,
+    syntax:&Arc<DeclarationSyntax>, body:&BodyOccurrence, code:Arc<BodyCodeIdentity>,
+)->Arc<BodySyntaxInput>{
+    Arc::new(BodySyntaxInput{
+        id:NEXT_BODY_INPUT.fetch_add(1,std::sync::atomic::Ordering::Relaxed),
+        source:geometry.expanded.text.clone(),syntax:Arc::clone(syntax),
+        span:body.expanded_span,location:body.source.clone(),
+        mapping:BodyDiagnosticProjection::Generation(Arc::clone(geometry)),
+        parameter_admission:syntax.item_path(&body.ast_path).map(|item|item.header_span().end.saturating_sub(item.header_span().start).saturating_mul(128).saturating_add(1024)).unwrap_or(usize::MAX),
+        original_code:Some(code),
+    })
 }
 
 #[cfg(test)]

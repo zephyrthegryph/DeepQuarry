@@ -150,7 +150,7 @@ pub struct FileSystemInputs;
 mod generated;
 #[path="input_generation.rs"]
 mod generation;
-pub(crate) use generation::{GenerationBootstrap,GenerationBootstrapFailure,GenerationBootstrapPreparation,GenerationSourceReader};
+pub(crate) use generation::{GenerationBootstrap,GenerationBootstrapFailure,GenerationBootstrapPreparation,GenerationSourceReader,GenerationSourceFrame,GenerationQuestionBootstrap};
 pub use generated::GeneratedOutputInputs;
 #[path = "input_snapshot_open.rs"]
 mod source_open;
@@ -561,12 +561,12 @@ impl PartialEq for WatchMark {
 }
 impl Eq for WatchMark {}
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize)]
 pub struct InputSnapshot {
     pub scanned_ns: u128,
     files: BTreeMap<PathBuf, FileInput>,
     folders: BTreeMap<PathBuf, FolderListing>,
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    #[serde(default)]
     policy_directories: BTreeMap<PathBuf, PolicyDirectoryObservation>,
     // Resource bookkeeping only; never part of facts, wire identity or authority.
     #[serde(skip)]
@@ -577,6 +577,66 @@ pub struct InputSnapshot {
     structure_proof: StructureProof,
     #[serde(skip)]
     watch: WatchMark,
+}
+
+// Human-readable snapshots retain the established optional empty field. Binary
+// codecs are positional: every serialized snapshot must include this map slot,
+// even when it is empty, or negative/generated fields shift during decoding.
+impl Serialize for InputSnapshot {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        use serde::ser::SerializeStruct;
+        let include_directories = !serializer.is_human_readable() || !self.policy_directories.is_empty();
+        let mut fields = serializer.serialize_struct("InputSnapshot", 5 + usize::from(include_directories))?;
+        fields.serialize_field("scanned_ns", &self.scanned_ns)?;
+        fields.serialize_field("files", &self.files)?;
+        fields.serialize_field("folders", &self.folders)?;
+        if include_directories {
+            fields.serialize_field("policy_directories", &self.policy_directories)?;
+        }
+        fields.serialize_field("negative_files", &self.negative_files)?;
+        fields.serialize_field("generated_outputs", &self.generated_outputs)?;
+        fields.end()
+    }
+}
+
+#[cfg(test)]
+mod snapshot_codec_tests {
+    use super::*;
+    fn roundtrip(snapshot: &InputSnapshot) {
+        let wire = dm_wire::encode(0x5350_0002, snapshot).unwrap();
+        let restored: InputSnapshot = dm_wire::decode(0x5350_0002, &wire, dm_wire::MAX_BYTES).unwrap();
+        assert_eq!(&restored, snapshot);
+        assert_eq!(serde_json::from_slice::<InputSnapshot>(&serde_json::to_vec(snapshot).unwrap()).unwrap(), *snapshot);
+    }
+    #[test]
+    fn snapshot_binary_empty_directory_slot_preserves_negative_and_generated_fields_and_legacy_json() {
+        let mut snapshot = InputSnapshot::new(17);
+        snapshot.record_negative(Path::new("snapshot-codec/absent.dm")).unwrap();
+        snapshot.generated_outputs.insert(canonical_path(Path::new("snapshot-codec/generated.dm")));
+        roundtrip(&snapshot);
+        let json = serde_json::to_value(&snapshot).unwrap();
+        assert!(json.get("policy_directories").is_none(), "legacy empty JSON shape is unchanged");
+        let restored: InputSnapshot = serde_json::from_value(json).unwrap();
+        assert_eq!(restored, snapshot);
+    }
+    #[test]
+    fn snapshot_binary_and_json_preserve_actual_typed_directory_observations() {
+        let root = crate::test_scratch::dir("snapshot-codec-real-directory");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(root.join("actual.dm"), b"/datum/actual\n").unwrap();
+        let inputs = RecordingInputs::new(FileSystemInputs, 19);
+        let listing = inputs.capture_policy_directory(&root, false).unwrap();
+        assert!(matches!(listing, PolicyDirectoryListing::Present(ref entries) if entries.len() == 1 && entries[0].name == "actual.dm" && entries[0].kind == PolicyEntryKind::File));
+        let snapshot = inputs.into_snapshot().unwrap();
+        roundtrip(&snapshot);
+        let json = serde_json::to_value(&snapshot).unwrap();
+        assert_eq!(json["policy_directories"].as_object().unwrap().len(), 1);
+        let wire = dm_wire::encode(0x5350_0002, &snapshot).unwrap();
+        let restored: InputSnapshot = dm_wire::decode(0x5350_0002, &wire, dm_wire::MAX_BYTES).unwrap();
+        assert!(restored.restat(&FileSystemInputs).unwrap().unchanged());
+        std::fs::remove_file(root.join("actual.dm")).unwrap();
+        assert!(!restored.restat(&FileSystemInputs).unwrap().unchanged());
+    }
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]

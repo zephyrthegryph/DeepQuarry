@@ -506,6 +506,12 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                         .or_else(|| raw.rsplit_once(&format!("/{marker}")))
                         .or_else(|| raw.rsplit_once('/'))
                         .unwrap_or(("", raw));
+                    // SAME normalized declaration namespace used by both original
+                    // header receipts and the compatibility adapter. Only the
+                    // original proc/verb modifier is consumed; type-owner parts
+                    // and implicit implementation paths remain untouched.
+                    let mut procedure_flags=0u32;
+                    let name=if explicit{let mut name=name;while let Some(tail)=name.strip_prefix("final/"){procedure_flags|=dm_ir::PROC_FLAG_FINAL;name=tail;}name}else{name};
                     let owner = if prefix == "/" || (prefix.is_empty() && raw.starts_with('/')) {
                         "/".into()
                     } else if prefix.is_empty() {
@@ -606,7 +612,7 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                         declared_type: None,
                         list_element_type: None,
                         display_name,
-                        flags: 0,
+                        flags: procedure_flags,
                         procedure,
                         array: None,
                         initializer: None,

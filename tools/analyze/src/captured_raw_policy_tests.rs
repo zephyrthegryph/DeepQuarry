@@ -149,7 +149,7 @@ fn nonwhitelisted_semantic_lints_and_interrupted_scans_discard_all_results() {
     assert!(captured
         .scan(&selected("scheduler"), || Err("cancelled".into()))
         .is_err());
-    assert_eq!(RAW_FILE_LINTS.len(), 41);
+    assert_eq!(RAW_FILE_LINTS.len(), 42);
     for &name in RAW_FILE_LINTS {
         let lint = registry().find(name).expect("every raw-file policy is registered");
         assert!(lint.meta().scan == ScanKind::File, "{name} must remain file-only");

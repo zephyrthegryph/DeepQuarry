@@ -79,6 +79,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Options {
             root: root.clone(),
             scopes_from: Some(root.clone()),
+            lints:vec!["sem/keys".into()],
             raw: true,
             no_cache: true,
             ..Default::default()
@@ -96,6 +97,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .into_iter()
         .map(|d| (d.rel, d.line, d.msg))
         .collect::<Vec<_>>();
+    if std::env::args().any(|arg|arg=="--original-only") {
+        println!("OLD_GENERATION_TRACKED_FULL={}",serde_json::json!({"generator":"tracked_lists","files":[["code/engine/_generated/tracked_lists.dm",expected_text]],"diagnostics":expected_diags.iter().map(|(rel,line,msg)|serde_json::json!({"rel":rel,"line":line,"msg":msg})).collect::<Vec<_>>() }));
+        return Ok(());
+    }
     let provider = Files::default();
     let seed=reference_hierarchy::seed();
     let executor=dm_exec::BuildExecutor::new(1)?;

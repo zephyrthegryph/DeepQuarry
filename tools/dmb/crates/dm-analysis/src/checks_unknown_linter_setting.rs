@@ -3,7 +3,7 @@
 //! dreamchecker lib.rs602..617,789..852 (GPL-3.0). No RHS interpretation.
 use crate::{checks::{BodyView,Diagnostic,Severity},policy_body_demand::PolicyFailure};
 use dm_tree::frontend::{ArchivedBody,StatementBody};
-const KNOWN:&[&str]=&["SpacemanDMM_should_not_override","SpacemanDMM_should_call_parent","SpacemanDMM_private_proc","SpacemanDMM_protected_proc","SpacemanDMM_should_not_sleep","SpacemanDMM_allowed_to_sleep","SpacemanDMM_should_be_pure","SpacemanDMM_can_be_redefined"];
+pub(crate) const KNOWN:&[&str]=&["SpacemanDMM_should_not_override","SpacemanDMM_should_call_parent","SpacemanDMM_private_proc","SpacemanDMM_protected_proc","SpacemanDMM_should_not_sleep","SpacemanDMM_allowed_to_sleep","SpacemanDMM_should_be_pure","SpacemanDMM_can_be_redefined"];
 const KNOWN_ORDINARY:&[&str]=&["name","desc","category","hidden","popup_menu","instant","invisibility","src","background","waitfor"];
 #[derive(Clone,Copy)]enum Family{Linter,Ordinary}
 pub fn check_ordinary(view:&BodyView<'_>,severity:Severity)->Result<Vec<Diagnostic>,String>{syntax_family_using(view.syntax(),severity,Family::Ordinary,&mut||Ok(()))}

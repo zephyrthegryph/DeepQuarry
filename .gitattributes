@@ -143,3 +143,18 @@ tools/analyze/src/system_accessors_frozen_original.rs -text whitespace=cr-at-eol
 /tools/analyze/src/support/declare_before_ids.rs -text whitespace=-blank-at-eof
 /tools/analyze/src/support/declare_before_policy.frozen -text whitespace=-blank-at-eof
 /tools/analyze/src/support/declare_before_policy.rs -text whitespace=-blank-at-eof
+
+/tools/dmb/crates/dm-analysis/src/checks_directive_binding_original.reference -text
+
+tools/analyze/src/deadline_policy_frozen_original.rs -text
+
+/tools/analyze/src/sys_hygiene_frozen_original.rs -text
+
+/tools/analyze/src/sys_resolvers_frozen_original.rs -text
+
+/tools/analyze/src/sys_tables_frozen_original.rs -text
+
+/tools/analyze/src/system_boundary_report_frozen_original.rs -text
+
+# Whole original/native fixture comparisons preserve authored DM indentation.
+/tools/analyze/fixtures/generation_tracked_bootstrap/code/probe.dm whitespace=-indent-with-non-tab

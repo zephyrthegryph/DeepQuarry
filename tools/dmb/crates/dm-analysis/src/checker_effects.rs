@@ -679,57 +679,7 @@ pub(crate) fn source_parent(
     }
 }
 
-fn display<E:From<String>+From<&'static str>>(
-    input: &report_core::ReportSource<'_>,
-    id: ProcedureIdentity,
-    budget: &output::ReportBudgetWith<'_,E>,
-) -> Result<String, E> {
-    let tree = input.archive.tree();
-    let owner = tree
-        .symbols()
-        .text(id.owner)
-        .ok_or("purity owner spelling absent")?;
-    let name = tree
-        .symbols()
-        .text(id.name)
-        .ok_or("purity callable spelling absent")?;
-    // Borrow the original owner-local declaration roster. The native builder
-    // publishes each member into this roster and declaration_targets together;
-    // unlike a previous-chain walk, it retains every proc/verb implementation.
-    let owner_id = tree
-        .lookup_type(id.owner)
-        .ok_or("effect display owner index absent")?;
-    let roster = &tree
-        .type_node(owner_id)
-        .ok_or("effect display owner absent")?
-        .members;
-    budget.charge(roster.len())?; // bound the actual local scan, not all project rows
-    let mut count = 0usize;
-    for member in roster.iter() {
-        let member = tree
-            .member(*member)
-            .ok_or("effect display indexed member absent")?;
-        if member.owner != owner_id {
-            return Err("effect display original owner roster mismatch".into());
-        }
-        if member.name == id.name && matches!(member.kind, MemberKind::Proc | MemberKind::Verb) {
-            count += 1
-        }
-    }
-    if count > 1 {
-        budget.format(format_args!(
-            "{}/proc/{name}[{}/{}]",
-            if owner == "/" { "" } else { owner },
-            id.occurrence,
-            count
-        ))
-    } else {
-        budget.format(format_args!(
-            "{}/proc/{name}",
-            if owner == "/" { "" } else { owner }
-        ))
-    }
-}
+fn display<E:From<String>+From<&'static str>>(input:&report_core::ReportSource<'_>,id:ProcedureIdentity,budget:&output::ReportBudgetWith<'_,E>)->Result<String,E>{let text=crate::checker_callable_display::original(input.archive.tree(),id,|count|budget.charge(count),||Ok::<(),E>(()))?;budget.format(format_args!("{text}"))}
 /// Iterative Kosaraju over the unique effect graph. No Rust recursion or Db
 /// callee recursion, even for deep or mutually recursive source programs.
 fn scc(edges: &[Vec<usize>]) -> Result<Vec<usize>, String> {

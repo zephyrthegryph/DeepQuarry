@@ -1488,8 +1488,10 @@ budget. Real filesystem, quota, cancellation, ownership and failure-recovery tes
 cover this boundary. The seven source-only bootstrap generators also run from
 actual recorded originals with missing registered outputs, preserving negative
 input observations. This is not yet the transactional installer or native gen CLI.
-A remaining typed map/skin occurrence issue in the bootstrap source iterator is
-being corrected; main-project bootstrap availability is not established.
+The typed map/skin occurrence issue is fixed: those genuine non-text inputs
+remain dependencies but are not fabricated into DM source loans. Both the real
+bootstrap fixture and the unacquired-source negative control pass. Main-project
+bootstrap availability is not established.
 
 Fourteen additional unchanged raw scanners use the native workspace path,
 expanding it from 27 to 41 policies. Independent complete old-policy comparisons
@@ -1508,3 +1510,79 @@ roles. Another 39 need native dispatch. Those limits, remaining checker families
 genuine typed bootstrap consumers, transactional generation, complete CLI and
 custom reporting/baseline hooks, removal of duplicate models, and fresh combined
 production and performance verification still block the default cutover.
+
+### Missing-output native question frame (2026-10-31)
+
+Generation can now prepare native inherited declarations from actual recorded
+original inputs without constructing the legacy semantic model. Its body questions
+use the existing Kind4 body path, with distinct private issuance and the same
+query graph. Six focused runtime checks pass: inherited declarations and shared
+body demand, dynamic edges and foreign-owner refusal, IO/cancellation/quota
+recovery, unsupported selection and all-present decline, and the two source-domain
+controls above. An ordinary transient symbol-table clone inherited from the native
+frontend remains; this checkpoint does not claim zero allocation.
+
+This frame is not a replacement for the unfinished Auto/Tracked bootstrap
+consumers, transactional installer, native command cutover, full checker policy
+coverage, or combined production/performance qualification. Those remain explicit
+work, rather than falling back to the old parser under a native label.
+
+### Shared policies, diagnostic projection and generation repair (2026-10-31)
+
+DeadlinePolling now shares its original scanner and custom report over recorded
+native files, bringing the workspace file-policy roster to 42. The public audit
+therefore has 63 policies with some dispatch (42 file policies and 21 bounded
+fixture roles); 38 still lack public native dispatch. Hygiene, Resolvers, Tables
+and SystemBoundary also have complete internal source-page folds with actual
+CODE/MAPS completion checks. Internal callbacks are not public CLI coverage.
+SystemBoundary's original cross-file policy, phase order, annotation usage and
+source text pass the complete independent original comparison; its custom report
+also passes its separate original comparison.
+
+The missing-output Tracked consumer now uses the actual native question frame.
+An explicit independent legacy preparation runs genuine source-seven generation,
+then a byte-frozen original Tracked producer over the real partial original model.
+The whole paths, output text and ordered diagnostics agree with native generation;
+unrelated missing includes and changed negative observations remain refusals.
+The independent original preparation is feature-only and never native authority.
+
+Three directive families and the new invalid-value producer use original header,
+file registry and token coordinates. All nine current whole-checker fixtures agree
+with the pinned executable, including the ten invalid-value messages. The broader
+original-Debug unit inventory still exposes NaN tokenization and accepted legacy
+escape-spelling gaps; these remain active failures, not omitted cases. The current
+42-test component batch has 31 passing observations and 11 failures being repaired.
+Its 13 independent whole-output comparisons pass. These are component results,
+not a whole-project proof or a claim that every original checker family is ported.
+
+A source-free rollback-capable installer, same-host fixed-point coordinator and
+explicit native generation client are implemented but still under repair. Windows
+runtime checks found that a strict directory guard blocks child renames, and that
+freshness checks must retain the exact recorded generated-output membership
+policy. The dedicated publication guard and membership repairs await runtime
+verification. Server transport and genuine Auto bootstrap remain separate pending
+cohorts. No default native command cutover, removal of all duplicate models,
+full-project capacity result or combined performance qualification is claimed.
+
+
+### Component repair checkpoint, 2026-10-31 13:36 CDT
+
+The failure-only repair sequence is now green. Native publication uses a
+separate directory guard that permits its own atomic child replacement while
+preventing deletion and reparse replacement; Windows runtime controls exercise
+that behavior and release/recovery. Freshness retains the exact generated-output
+membership exclusions. Snapshot binary encoding now always writes its positional
+directory field, including an empty field, while preserving the existing JSON
+omission contract. Both empty and nonempty actual observations round-trip.
+
+The checker retains primary literal spellings even when the native runtime
+correctly refuses their decoded value. Complete original literal and Debug-word
+inventories pass. The compact ternary fixture was corrected using the pinned
+original checker: `a?b:c` is rejected, `a ? b : c` is accepted, and bare `new`
+remains accepted and covered. The explicit compact negative control passes.
+
+Fresh native and analyzer type checks passed. The final six focused repair
+checks all passed; preceding successful observations and the thirteen independent
+whole-output comparisons are preserved in their separate receipts rather than
+presented as a new whole-project run. No default cutover, main-project clean gate,
+complete checker/policy coverage, or performance qualification is claimed here.

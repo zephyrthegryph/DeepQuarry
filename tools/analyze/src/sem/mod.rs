@@ -108,6 +108,21 @@ pub struct Sem {
     writes: std::sync::OnceLock<reads::WriteIndex>,
 }
 
+// Explicit independent legacy oracle preparation. This never becomes a full
+// semantic cache/walk-store owner or a native source capability.
+enum OriginalPreparation{Ordinary,#[cfg(feature="unified-oracle")]Generation(ObservedGenerationOmissions)}
+impl OriginalPreparation{fn is_generation(&self)->bool{match self{Self::Ordinary=>false,#[cfg(feature="unified-oracle")]Self::Generation(_)=>true}}}
+#[cfg(feature="unified-oracle")]
+pub struct ObservedGenerationOmissions{root:PathBuf,paths:Vec<PathBuf>}
+#[cfg(feature="unified-oracle")]
+impl ObservedGenerationOmissions{
+ pub fn probe(root:&Path)->std::io::Result<Self>{
+  if !root.is_absolute(){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"generation oracle root must be absolute"))}let root=dm_preprocess::regions::canonical_path(root);let mut paths=Vec::new();
+  for generator in gen::registry(){let relative=if !generator.output().is_empty(){format!("{}/{}",gen::OUT_DIR,generator.output())}else if generator.name()=="derived_reads"{crate::reactive_reaction_policy::GENERATED_REL.to_owned()}else{continue};let path=root.join(relative);match std::fs::symlink_metadata(&path){Ok(_)=>(),Err(actual)if actual.kind()==std::io::ErrorKind::NotFound=>paths.push(path),Err(actual)=>return Err(actual)}}paths.sort();paths.dedup();Ok(Self{root,paths})
+ }
+ pub fn paths(&self)->impl Iterator<Item=&Path>{self.paths.iter().map(PathBuf::as_path)}
+}
+
 impl Sem {
     /// Parses the environment. A tree with a non-empty `deepquarry.dme` uses it (include order
     /// matters for define visibility); anything else (a fixture) gets a synthesized `.dme` that
@@ -123,7 +138,11 @@ impl Sem {
         Sem::build_with(root, tree, Some(files))
     }
 
-    fn build_with(root: &Path, tree: &Tree, only: Option<&[String]>) -> Result<Sem, String> {
+    fn build_with(root:&Path,tree:&Tree,only:Option<&[String]>)->Result<Sem,String>{Self::build_original(root,tree,only,OriginalPreparation::Ordinary)}
+    #[cfg(feature="unified-oracle")]
+    pub fn build_generation_original(root:&Path,tree:&Tree,observed:ObservedGenerationOmissions)->Result<Sem,String>{if dm_preprocess::regions::canonical_path(root)!=observed.root||dm_preprocess::regions::canonical_path(&tree.root)!=observed.root{return Err("old generation omissions belong to another root/tree".into())}if observed.paths.is_empty(){return Err("old generation preparation requires actual registered negatives; use the ordinary full path".into())}Self::build_original(root,tree,None,OriginalPreparation::Generation(observed))}
+    fn build_original(root: &Path, tree: &Tree, only: Option<&[String]>, preparation:OriginalPreparation) -> Result<Sem, String> {
+        let generation=preparation.is_generation();
         tree.require_legacy_semantics("legacy semantic model construction")?;
         // The synthesized .dme lives in a temp dir, so every path it names must be absolute.
         let abs_root: PathBuf = if root.is_absolute() { root.to_path_buf() } else { std::env::current_dir().map_err(|e| e.to_string())?.join(root) };
@@ -156,9 +175,13 @@ impl Sem {
             (p, Some(dir))
         };
         let t_build = std::time::Instant::now();
-        let parsed = if real { model_store::obtain(root, tree, &dme_path)? } else { parse_dme(&dme_path, &[], None)? };
+        let parsed=match preparation{
+            OriginalPreparation::Ordinary=>if real{model_store::obtain(root,tree,&dme_path)?}else{parse_dme(&dme_path,&[],None)?},
+            #[cfg(feature="unified-oracle")]
+            OriginalPreparation::Generation(observed)=>{if !real||only.is_some(){return Err("old generation oracle requires its actual DME".into())}parse_source(&dme_path,&[],Source::Generation(observed.paths),false)?},
+        };
         let model_store::Parsed { objtree, files: file_list, errors, env, structure, .. } = parsed;
-        let env_key = if real { env.unwrap_or_else(|| model_store::environment(tree, root, &dme_path, &file_list)) } else { 0 };
+        let env_key = if real && !generation { env.unwrap_or_else(|| model_store::environment(tree, root, &dme_path, &file_list)) } else { 0 };
         let t_parsed = t_build.elapsed();
         let mut files: HashMap<dreammaker::FileId, String> = HashMap::new();
         let mut def_index: HashMap<String, Vec<(u32, String, String)>> = HashMap::new();
@@ -268,7 +291,7 @@ impl Sem {
             eprintln!("analyze: sem build: parse {:.1?}, index {:.1?}, layering {:.1?}", t_parsed, t_indexed - t_parsed, t_build.elapsed() - t_indexed);
         }
         let file_keys: HashMap<dreammaker::FileId, u128> = files.iter().filter_map(|(id, rel)| tree.get(rel).map(|f| (*id, f.hash))).collect();
-        Ok(Sem { objtree, files, layering_type_defs, layering_owner_defs, root: root.to_path_buf(), errors, def_index, type_loc, touched: Default::default(), touched_rel: Default::default(), full: real, env_key, file_keys, structure: structure.map(std::sync::OnceLock::from).unwrap_or_default(), globals: Default::default(), writes: Default::default() })
+        Ok(Sem { objtree, files, layering_type_defs, layering_owner_defs, root: root.to_path_buf(), errors, def_index, type_loc, touched: Default::default(), touched_rel: Default::default(), full: real && !generation, env_key, file_keys, structure: structure.map(std::sync::OnceLock::from).unwrap_or_default(), globals: Default::default(), writes: Default::default() })
     }
 
     pub fn rel(&self, loc: Location) -> &str {
@@ -497,6 +520,8 @@ pub(crate) fn parse_dme(dme_path: &Path, preregister: &[PathBuf], text: Option<S
 pub(crate) enum Source {
     /// The `.dme` (or text standing in for it: includes resolve against the real `.dme`'s directory).
     Dme(Option<String>),
+    #[cfg(feature="unified-oracle")]
+    Generation(Vec<PathBuf>),
     /// Files read one after the other, starting with the macro state the stored history had at the start of the first: (registered path,
     /// path on disk). See `model_store`.
     Alone(std::sync::Arc<dreammaker::preprocessor::StoredDefineHistory>, Vec<(PathBuf, PathBuf)>),
@@ -527,6 +552,8 @@ pub(crate) fn parse_source(dme_path: &Path, preregister: &[PathBuf], source: Sou
             }
             let stored = {
                 let mut pp = match source {
+                    #[cfg(feature="unified-oracle")]
+                    Source::Generation(paths)=>dreammaker::preprocessor::Preprocessor::new(&ctx,dme_for_pp.clone()).map_err(|e|format!("{}: {}",dme_for_pp.display(),e))?.with_observed_generation_omissions(paths),
                     Source::Dme(Some(t)) => dreammaker::preprocessor::Preprocessor::from_buffer(&ctx, dme_for_pp.clone(), t),
                     Source::Dme(None) => dreammaker::preprocessor::Preprocessor::new(&ctx, dme_for_pp.clone()).map_err(|e| format!("{}: {}", dme_for_pp.display(), e))?,
                     Source::Alone(hist, files) => {

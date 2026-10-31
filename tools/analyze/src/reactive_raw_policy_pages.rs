@@ -4,6 +4,14 @@ use std::{collections::HashMap,sync::Arc};
 /// A provider may stop a requested search. This bool is DATA and cannot seal a
 /// complete dependency answer; only the actual host traversal receipt can.
 pub trait RawPolicyPages{
+ /// Purpose-specific native generation owner DATA, never a complete source role.
+ #[cfg(feature="native-policy")]
+ fn generation_questions(&self)->Option<&dm_tree::frontend::GenerationNativeQuestions>{None}
+ /// Existing file id after the concrete reader's actual native acquisition
+ /// join. Generic providers cannot silently treat missing support as uncompiled.
+ #[cfg(feature="native-policy")]
+ fn generation_compiled_file(&self,_relative:&str)->Result<Option<dm_ir::FileId>,Failure>{Err(Failure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"generation compiled-file identity is unavailable")))}
+
  /// Requested original callable file DATA only. Ordinary page providers do not
  /// implicitly grant an arbitrary-path or compiled-source loan.
  fn with_callable_file(&self,_ordinal:usize,_name:&str,_visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<(),Failure>)->Result<(),Failure>{Err(Failure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"Plans requires the genuine original raw file of every issued reader definition")))}

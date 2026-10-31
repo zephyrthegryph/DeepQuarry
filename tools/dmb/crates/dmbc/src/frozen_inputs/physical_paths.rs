@@ -19,13 +19,23 @@ pub(super) struct Guard {
 }
 impl Guard {
     pub(super) fn proof(&self) -> Proof { self.proof.clone() }
+    pub(super) fn borrowed_proof(&self) -> &Proof { &self.proof }
 }
 #[cfg(not(windows))]
 pub(super) fn capture(_: &Path) -> io::Result<Guard> {
     Err(io::Error::new(io::ErrorKind::Unsupported, "physical journal issuer requires Windows held path handles"))
 }
 #[cfg(windows)]
-pub(super) fn capture(path: &Path) -> io::Result<Guard> {
+pub(super) fn capture(path: &Path) -> io::Result<Guard> { capture_with_sharing(path, 1) }
+
+// Generation holds an undeletable child anchor for every terminal directory.
+// This permits child rename while excluding ancestor rename/delete. The ordinary
+// original-source guard above remains FILE_SHARE_READ only.
+#[cfg(windows)]
+pub(super) fn capture_publication(path: &Path) -> io::Result<Guard> { capture_with_sharing(path, 3) }
+
+#[cfg(windows)]
+fn capture_with_sharing(path: &Path, sharing:u32) -> io::Result<Guard> {
     use std::os::windows::{fs::OpenOptionsExt, io::AsRawHandle};
     #[repr(C)]
     struct Information {
@@ -47,8 +57,8 @@ pub(super) fn capture(path: &Path) -> io::Result<Guard> {
         // READ_ATTRIBUTES alone does not participate in Win32 sharing checks.
         // GENERIC_READ binds the no-write/no-delete sharing restriction.
         let file = match fs::OpenOptions::new().access_mode(0x80000000)
-            // FILE_SHARE_READ only: exclude rename/delete and reparse writes.
-            .share_mode(1).custom_flags(0x02000000 | 0x00200000).open(ancestor) {
+            // Source capture uses READ only; publication is separately anchored.
+            .share_mode(sharing).custom_flags(0x02000000 | 0x00200000).open(ancestor) {
             Ok(file) => file,
             Err(error) if error.kind() == io::ErrorKind::NotFound => {
                 guard.proof.missing_from = Some(ancestor.to_owned()); break;
@@ -105,6 +115,7 @@ impl Proof {
             .map(|node| node.identity)
             .ok_or_else(|| io::Error::new(io::ErrorKind::Unsupported, "physical journal root was not observed as an existing directory"))
     }
+    pub(super) fn terminal_identity(&self) -> Option<u128> { self.missing_from.is_none().then(|| self.nodes.last().map(|node| node.identity)).flatten() }
     pub(super) fn present(&self) -> bool { self.missing_from.is_none() }
     pub(super) fn terminal_directory(&self) -> bool { self.nodes.last().is_some_and(|node| node.directory) }
 }
@@ -127,4 +138,17 @@ mod tests {
         fs::rename(&directory, root.join("moved")).unwrap();
         fs::remove_dir_all(root).unwrap();
     }
+}
+
+// No-allocation preflight for the TWO simultaneous capture owners created by
+// publication (local strict plus replacement), their actual ancestor PathBufs,
+// growing Node/File/reference Vec replacements and canonical/Win32 path work.
+// Each capture admits eight live/replacement vector slots per actual ancestor;
+// two captures need sixteen. Sixteen bytes per summed native path byte covers
+// both owned path copies and their UTF-16 conversion/canonical work overlap.
+#[cfg(windows)]
+pub(super) fn publication_charge(path:&Path,root:&Path)->Option<usize>{
+ let mut count=0usize;let mut width=0usize;for ancestor in path.ancestors(){count=count.checked_add(1)?;if count>256{return None}width=width.checked_add(ancestor.as_os_str().len())?;}
+ let node=std::mem::size_of::<Node>().checked_add(std::mem::size_of::<std::fs::File>())?.checked_add(2*std::mem::size_of::<&Path>())?;
+ count.checked_mul(16)?.checked_mul(node)?.checked_add(width.checked_mul(16)?)?.checked_add(path.as_os_str().len().checked_add(root.as_os_str().len())?.checked_add(128)?.checked_mul(16)?)?.checked_add(4096)
 }

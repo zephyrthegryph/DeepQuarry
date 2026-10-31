@@ -41,8 +41,12 @@ struct DeadlinePolling;
 
 /// `load_allowlist`: `{entry: line number}`, or the line that has no reason.
 fn load_allowlist(path: &std::path::Path) -> Result<BTreeMap<String, usize>, (usize, String)> {
-    let mut entries = BTreeMap::new();
-    let Ok(text) = std::fs::read_to_string(path) else { return Ok(entries) };
+    let Ok(text) = std::fs::read_to_string(path) else { return Ok(BTreeMap::new()) };
+    parse_allowlist_text(text)
+}
+
+pub(crate) fn parse_allowlist_text(text:String)->Result<BTreeMap<String,usize>,(usize,String)>{
+    let mut entries=BTreeMap::new();
     let text = crate::util::universal_newlines(text);
     // `for number, raw in enumerate(f, 1)`: the lines of a file (a final empty piece is not a line).
     let mut lines: Vec<&str> = text.split('\n').collect();
@@ -79,9 +83,30 @@ impl Lint for DeadlinePolling {
     }
 
     fn finish(&self, cx: &Cx, run: &Run, text: &mut String) -> bool {
-        let path = cx.tree.root.join(ALLOWLIST);
-        let shown = path.to_string_lossy().to_string();
-        let allow = match load_allowlist(&path) {
+        let path=cx.tree.root.join(ALLOWLIST);
+        judge_observed_allowlist(run,&path.to_string_lossy(),load_allowlist(&path),text)
+    }
+
+    fn update_baseline(&self, _cx: &Cx, _run: &Run, _mode: Mode) -> std::io::Result<String> {
+        Ok("deadline_polling: the allowlist is hand-maintained (no --update)".to_string())
+    }
+
+    fn parity(&self) -> Option<Parity> {
+        Some(Parity {
+            old: &["tools/ci/check_deadline_polling.py"],
+            old_raw: &[],
+            blank: &[ALLOWLIST],
+            parse: ParseKind::FileLineAny,
+            update: None,
+            seed: None,
+            files: &[],
+            selftest: None,
+        })
+    }
+}
+
+pub(crate) fn judge_observed_allowlist(run:&Run,shown:&str,observed:Result<BTreeMap<String,usize>,(usize,String)>,text:&mut String)->bool {
+        let allow = match observed {
             Ok(a) => a,
             Err((number, line)) => {
                 let _ = writeln!(text, "{}:{}: entry has no reason: {}", shown, number, line);
@@ -124,23 +149,7 @@ impl Lint for DeadlinePolling {
         false
     }
 
-    fn update_baseline(&self, _cx: &Cx, _run: &Run, _mode: Mode) -> std::io::Result<String> {
-        Ok("deadline_polling: the allowlist is hand-maintained (no --update)".to_string())
-    }
-
-    fn parity(&self) -> Option<Parity> {
-        Some(Parity {
-            old: &["tools/ci/check_deadline_polling.py"],
-            old_raw: &[],
-            blank: &[ALLOWLIST],
-            parse: ParseKind::FileLineAny,
-            update: None,
-            seed: None,
-            files: &[],
-            selftest: None,
-        })
-    }
-}
+pub(crate) fn captured_metadata()->&'static Meta{&META}
 
 pub fn register(reg: &mut Registry) {
     reg.add(DeadlinePolling);

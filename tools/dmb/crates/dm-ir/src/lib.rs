@@ -21,6 +21,9 @@ pub use symbols::{SymbolCollision, SymbolId, SymbolTable, SymbolTableStorage};
 mod string_roster;
 pub use string_roster::{StringPayload, StringRoster, StringRosterError};
 
+/// Native proc/verb declaration modifier in the existing DeclarationMeaning.flags slot.
+/// Other member kinds retain their existing contextual flag masks.
+pub const PROC_FLAG_FINAL:u32=1<<16;
 mod declarations;
 pub use declarations::{
     ArrayDeclaration, DeclarationMeaning, DeclaredTypeKnowledge, ExpressionToken, OpaqueFieldBase,

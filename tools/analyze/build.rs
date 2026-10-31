@@ -85,6 +85,7 @@ fn main() {
                     "sys".to_string(),
                     "pylines".to_string(),
                     "walk".to_string(),
+                    "deadline".to_string(),
                 ],
                 _ => continue,
             }

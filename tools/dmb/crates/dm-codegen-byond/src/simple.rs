@@ -1133,3 +1133,22 @@ mod original_parameter_default_tests;
 #[cfg(test)]
 #[path = "simple/original_helper_expression_tests.rs"]
 mod original_helper_expression_tests;
+
+#[cfg(test)]mod pinned_frontend_gap_backend_tests{
+ use super::*;
+ fn lower(text:&str)->Result<SimpleProc,Vec<LowerError>>{let source=format!("/proc/probe()\n    return {text}\n");let syntax=dm_syntax::parse(&source);assert!(syntax.diagnostics.is_empty(),"{:?}",syntax.diagnostics);compile_simple_proc(&syntax.items[0].children)}
+ #[test]fn primary_spaceship_admission_preserves_explicit_typed_backend_refusal_without_an_opcode_guess(){let errors=lower("1 <=> 2").err().expect("backend remains explicitly unsupported");assert_eq!(errors.len(),1);assert_eq!(errors[0].kind,LowerErrorKind::UnsupportedModel);assert_eq!(errors[0].reason,"unsupported binary operator");}
+ #[test]fn primary_empty_as_tuple_preserves_existing_empty_as_backend_result_without_intrinsic_guess(){let old=lower("as()").err().expect("existing as intrinsic backend gap");let new=lower("as(())").err().expect("same existing intrinsic gap");assert_eq!(old.len(),1);assert_eq!(old[0].kind,LowerErrorKind::UnsupportedModel);assert_eq!(old[0].reason,"as input-type intrinsic lowering is not implemented");assert_eq!(old.len(),new.len());for(old,new)in old.iter().zip(&new){assert_eq!(old.kind,new.kind);assert_eq!(old.reason,new.reason);assert_ne!(new.kind,LowerErrorKind::Internal);}}
+}
+
+#[cfg(test)]mod original_reference_frontend_backend_boundaries{
+ use super::*;
+ #[test]fn newly_admitted_original_terms_preserve_explicit_backend_refusals_without_guessing_code(){
+  for(text,reason)in[("&1","unsupported unary operator"),("::src","unsupported unary operator"),(".child/type","unsupported type path literal")]{let source=format!("/proc/probe()\n    return {text}\n");let syntax=dm_syntax::parse(&source);assert!(syntax.diagnostics.is_empty(),"{text}: {:?}",syntax.diagnostics);let failures=compile_simple_proc(&syntax.items[0].children).err().expect("explicit backend gap");assert_eq!(failures.len(),1,"{text}");assert_eq!(failures[0].kind,LowerErrorKind::UnsupportedModel,"{text}");assert_eq!(failures[0].reason,reason,"{text}");}
+ }
+}
+
+#[cfg(test)]mod ind_frontend_backend_boundary{
+ use super::*;
+ #[test]fn original_nan_token_admission_keeps_explicit_backend_refusal_without_an_opcode_guess(){let syntax=dm_syntax::parse("/proc/probe()\n    return 1.#IND\n");assert!(syntax.diagnostics.is_empty(),"{:?}",syntax.diagnostics);let errors=compile_simple_proc(&syntax.items[0].children).err().expect("existing NaN literal backend gap");assert_eq!(errors.len(),1);assert_eq!(errors[0].kind,LowerErrorKind::UnsupportedModel);assert_eq!(errors[0].reason,"unsupported literal");}
+}

@@ -190,7 +190,7 @@ pub fn visit_tokens_while(
                     break;
                 }
             }
-            if rest[..n].ends_with('.') && rest[n..].starts_with("#INF") {
+            if rest[..n].ends_with('.') && (rest[n..].starts_with("#INF") || rest[n..].starts_with("#IND")) {
                 n += "#INF".len();
             }
             (TokenKind::Number, pos + n, false)
@@ -551,4 +551,9 @@ mod raw_carriage_return_tests {
             assert!(!lex_spans(source).diagnostics.is_empty(), "{source:?}");
         }
     }
+}
+
+#[cfg(test)]mod pinned_ind_literal_tests{
+ use super::*;
+ #[test]fn primary_nonfinite_ind_is_one_actual_number_token_like_inf(){for text in["1.#IND","1.#INF"]{let parsed=crate::lex_spans(text);assert!(parsed.diagnostics.is_empty());assert_eq!(parsed.tokens.len(),1);assert_eq!(parsed.tokens[0].kind,TokenKind::Number);assert_eq!(parsed.tokens[0].text(text),text);let expression=crate::parse_expression(text);assert!(expression.diagnostics.is_empty(),"{text}: {:?}",expression.diagnostics);}}
 }

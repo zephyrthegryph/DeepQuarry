@@ -13,7 +13,7 @@ use std::sync::Arc;
 mod directive_memo;
 mod directives;
 mod generation;
-pub use generation::{GenerationDirectivePlan, GenerationOmissions};
+pub use generation::{GenerationDirectivePlan, GenerationOmissions, GenerationOriginalSources};
 mod intern_wire;
 mod plan_trace;
 mod segment_lines;
@@ -54,10 +54,15 @@ pub struct IncludeOccurrence {
     pub path: Arc<PathBuf>,
     /// Include spelling emitted by __FILE__, distinct from the access identity.
     pub semantic_path: Arc<str>,
+    // Exact original entry argument only on the real root. Source-coordinate
+    // data; not source content, policy or an alternate registration index.
+    original_entry: Option<Arc<PathBuf>>,
     pub parent: Option<usize>,
     pub directive_span: Span,
     pub directive_line: usize,
     pub suppressed: bool,
+    // Issued only by the planner's actual typed NonText dispatch; no suffix inference.
+    non_text_kind:Option<NonTextKind>,
     return_cursor: Option<IncludeReturnCursor>,
     eof_cursor_line: Option<usize>,
     eof_cursor_encounter: Option<usize>,
@@ -102,6 +107,9 @@ impl LogicalEofCursor {
     }
 }
 impl IncludeOccurrence {
+    pub fn original_entry_path(&self)->Option<&Arc<PathBuf>>{self.original_entry.as_ref()}
+
+    pub fn non_text_kind(&self)->Option<NonTextKind>{self.non_text_kind}
     pub fn logical_eof_cursor(&self) -> Option<LogicalEofCursor> {
         Some(LogicalEofCursor {
             line: self.eof_cursor_line?,
@@ -223,6 +231,24 @@ pub struct DirectivePlan {
     /// The caller's defines the plan was made with. A plan of other defines is a base for the ordered pass (it adopts
     /// the subtrees that read none of the differing macros), never for the changed-files patch.
     pub defines: BTreeMap<String, String>,
+}
+
+
+/// Borrowed original-source geometry. This is data, with no compiler-input
+/// completeness, directive interpretation or expansion capability.
+#[derive(Clone, Copy)]
+pub struct SourcePlanGeometry<'a> {
+    pub source_acquisitions:&'a BTreeMap<usize,crate::SourceAcquisitionLease>,
+    pub source_texts: &'a BTreeMap<PathBuf, crate::SourceText>,
+    pub occurrences: &'a [IncludeOccurrence],
+    pub regions: &'a [IncludeRegion],
+    pub source_line_starts: &'a BTreeMap<PathBuf, Arc<[usize]>>,
+    pub project_dir: &'a Path,
+}
+impl DirectivePlan {
+    pub fn source_geometry(&self) -> SourcePlanGeometry<'_> {
+        SourcePlanGeometry {source_acquisitions:&self.source_acquisitions,source_texts:&self.source_texts, occurrences:&self.occurrences, regions:&self.regions, source_line_starts:&self.source_line_starts, project_dir:&self.project_dir}
+    }
 }
 
 /// Sequentially interpret directives. Actual text expansion is a separate,

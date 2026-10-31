@@ -116,8 +116,25 @@ impl BodyArchive {
     }
     pub fn checker_variable_properties_original_at(&self,formal:MemberId,ordinal:crate::OccurrenceId,profile:PackedU128,proof:&crate::checker_builtins::ValidatedCheckerProfile<'_>)->Result<CheckerVariableProperties<'_>,String>{self.require_original_variable_occurrence(formal,ordinal,profile,proof)?;self.checker_variable_properties_at(formal,ordinal)}
     fn checker_variable_properties_at(&self,formal:MemberId,ordinal:crate::OccurrenceId)->Result<CheckerVariableProperties<'_>,String>{
-        let node=self.tree().member(formal).ok_or("checker formal variable member unavailable")?;if node.kind!=MemberKind::Var||node.definition!=DefinitionMode::Declare||node.metadata.inherited_opaque.is_some(){return Err("checker variable needs an exact authored formal declaration".into())}
-        let flags = self.mapping.declaration_checker_qualifiers(ordinal)?;
+        properties_for_issued_original(self.tree(),formal,||self.mapping.declaration_checker_qualifiers(ordinal))
+    }
+    pub fn checker_variable_definition_point(
+        &self,
+        formal: MemberId,
+        profile: PackedU128,
+    ) -> Result<SourceNoteOrigin, String> {
+        let _ = self.checker_variable_properties(formal, profile)?;
+        self.member_policy_point(formal)
+    }
+}
+
+
+/// The unique source-qualified type projector, using only an actually issued
+/// original qualifier callback; it cannot infer flags from matching spelling.
+pub(in crate::frontend) fn properties_for_issued_original<'a>(tree:&'a crate::SemanticTree,formal:MemberId,flags:impl FnOnce()->Result<u8,String>)->Result<CheckerVariableProperties<'a>,String>{
+
+        let node=tree.member(formal).ok_or("checker formal variable member unavailable")?;if node.kind!=MemberKind::Var||node.definition!=DefinitionMode::Declare||node.metadata.inherited_opaque.is_some(){return Err("checker variable needs an exact authored formal declaration".into())}
+        let flags = flags()?;
         let data = node.metadata.as_ref();
         let declared_hint = if let Some(array) = &data.array {
             if array.dimensions.len() != 1 {
@@ -125,7 +142,7 @@ impl BodyArchive {
             }
             let element = array
                 .element_type
-                .map(|path| cleaned_type(self.tree(), path, flags))
+                .map(|path| cleaned_type(tree, path, flags))
                 .transpose()?
                 .flatten();
             if element
@@ -138,14 +155,14 @@ impl BodyArchive {
         } else if data.declared_type == Some(SymbolId::of("/list")) {
             match data.list_element_type {
                 Some(element) => Some(
-                    cleaned_type(self.tree(), element, flags)?
+                    cleaned_type(tree, element, flags)?
                         .map_or_else(|| "/list".to_owned(), |path| format!("/list{path}")),
                 ),
                 None => Some("/list".to_owned()),
             }
         } else {
             data.declared_type
-                .map(|path| cleaned_type(self.tree(), path, flags))
+                .map(|path| cleaned_type(tree, path, flags))
                 .transpose()?
                 .flatten()
         };
@@ -163,8 +180,7 @@ impl BodyArchive {
         };
         Ok(CheckerVariableProperties {
             formal,
-            owner: self
-                .tree()
+            owner: tree
                 .type_node(node.owner)
                 .ok_or("checker variable owner unavailable")?
                 .path,
@@ -175,15 +191,7 @@ impl BodyArchive {
             list_element_type,
             declared_hint,
         })
-    }
-    pub fn checker_variable_definition_point(
-        &self,
-        formal: MemberId,
-        profile: PackedU128,
-    ) -> Result<SourceNoteOrigin, String> {
-        let _ = self.checker_variable_properties(formal, profile)?;
-        self.member_policy_point(formal)
-    }
+
 }
 
 #[cfg(test)]

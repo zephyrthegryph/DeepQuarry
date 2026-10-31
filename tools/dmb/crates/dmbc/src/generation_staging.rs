@@ -1,6 +1,7 @@
 //! Live output scratch, never a reusable file cache or a source input.
 //! Unix unlinks immediately; Windows deletes on the last handle close, including
-//! process exit. All bytes remain outside the searched source tree.
+//! process exit. Payload scratch stays outside the source tree; publication-only
+//! empty anchor handles temporarily keep destination directories nonempty.
 use std::{
     fs::{File, OpenOptions},
     io,
@@ -8,7 +9,14 @@ use std::{
     sync::atomic::{AtomicU64, Ordering},
 };
 static NEXT: AtomicU64 = AtomicU64::new(1);
-pub(crate) fn temporary_output(cache_root: &Path) -> io::Result<File> {
+pub(crate) fn temporary_output(cache_root: &Path) -> io::Result<File> { temporary_with_sharing(cache_root, false) }
+
+// A publication anchor has the SAME owned delete-on-close lifetime, with no
+// FILE_SHARE_DELETE so its directory cannot become empty before guard release.
+#[cfg(windows)]
+pub(crate) fn publication_anchor(parent: &Path) -> io::Result<File> { temporary_with_sharing(parent, true) }
+
+fn temporary_with_sharing(cache_root: &Path, anchor:bool) -> io::Result<File> {
     if !cache_root.is_absolute() {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -38,7 +46,7 @@ pub(crate) fn temporary_output(cache_root: &Path) -> io::Result<File> {
             const FILE_FLAG_DELETE_ON_CLOSE: u32 = 0x04000000;
             options
                 .access_mode(GENERIC_READ | GENERIC_WRITE | DELETE_ACCESS)
-                .share_mode(FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE)
+                .share_mode(FILE_SHARE_READ | FILE_SHARE_WRITE | if anchor { 0 } else { FILE_SHARE_DELETE })
                 .custom_flags(FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE);
         }
         match options.open(&path) {

@@ -21,8 +21,13 @@ pub enum LiteralLexicalError {
     InterpolationBoundaryNormalization,
 }
 
+#[derive(Clone,Debug,Eq,PartialEq)]
+pub(crate) struct LiteralFragment{pub(crate) range:Span,pub(crate) expression:Option<usize>,pub(crate) tokens:Vec<crate::SpanToken>}
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct LiteralParts {
+    // Native runtime refusal is distinct from primary lexical/child syntax.
+    pub(crate) runtime_error: Option<String>,
+    pub(crate) fragments: Vec<LiteralFragment>,
     pub template: Vec<u8>,
     pub expressions: Vec<Expr>,
     pub lexical: Result<LiteralLexicalShape, LiteralLexicalError>,
@@ -114,6 +119,10 @@ impl Drop for LiteralOwner {
 /// may leave a prefix in a generic fmt sink; callers discard failed buffers.
 #[derive(Debug)]
 pub enum PinnedStaticTextError{Unprepared,DeferredSyntax,UnsupportedDelimiter,Lexical(LiteralLexicalError),Output(fmt::Error)}
+impl LiteralParts{
+    /// Borrowed storage accounting only; not a runtime decoding result.
+    pub fn runtime_error_storage(&self)->Option<&String>{self.runtime_error.as_ref()}
+}
 impl LiteralText {
     /// Emit the pinned lexer's STATIC String token spelling from already-issued
     /// original parts. Escapes remain lexical bytes; only the existing pinned
@@ -122,7 +131,7 @@ impl LiteralText {
         let Some((is_raw,value))=literal_content(self.as_str())else{
             return if self.as_str().starts_with('@'){Err(PinnedStaticTextError::UnsupportedDelimiter)}else{Ok(false)}
         };
-        let parts=match self.retained_parts(){Some(Ok(Some(parts)))=>parts,Some(Err(_))=>return Err(PinnedStaticTextError::DeferredSyntax),_=>return Err(PinnedStaticTextError::Unprepared)};
+        let parts=match self.prepared_syntax_parts(){Some(Ok(Some(parts)))=>parts,Some(Err(_))=>return Err(PinnedStaticTextError::DeferredSyntax),_=>return Err(PinnedStaticTextError::Unprepared)};
         let shape=parts.lexical.map_err(PinnedStaticTextError::Lexical)?;
         if shape.interpolated{return Ok(false)}
         if is_raw{out.write_str(value).map_err(PinnedStaticTextError::Output)?;return Ok(true)}
@@ -130,6 +139,17 @@ impl LiteralText {
         visit_pinned_segment(value.as_bytes(),&mut observed,&mut error,|bytes|out.write_str(std::str::from_utf8(bytes).expect("literal ranges end at original ASCII splice boundaries"))).map_err(PinnedStaticTextError::Output)?;
         if let Some(error)=error{return Err(PinnedStaticTextError::Lexical(error))}
         Ok(true)
+    }
+
+
+    /// Pinned read_resource lexical spelling of an already-issued resource
+    /// token. No resource loading, runtime path interpretation, lexer or parse.
+    /// Backslash quotes exactly the next character; it is not a string escape.
+    /// This data writer does not issue source authority.
+    pub fn write_pinned_resource_text(&self,out:&mut impl fmt::Write)->Result<bool,PinnedStaticTextError>{
+        let raw=self.as_str();if !raw.starts_with('\''){return Ok(false)}
+        let body=raw.strip_prefix('\'').and_then(|raw|raw.strip_suffix('\'')).ok_or(PinnedStaticTextError::UnsupportedDelimiter)?;
+        let mut chars=body.chars();while let Some(ch)=chars.next(){let ch=match ch{'\\'=>chars.next().ok_or(PinnedStaticTextError::UnsupportedDelimiter)?,'\''=>return Err(PinnedStaticTextError::UnsupportedDelimiter),other=>other};out.write_char(ch).map_err(PinnedStaticTextError::Output)?;}Ok(true)
     }
 
     pub fn at(raw: String, origin: usize) -> Self {
@@ -169,12 +189,25 @@ impl LiteralText {
         }
     }
     pub fn retained_parts(&self) -> Option<Result<Option<&LiteralParts>, &String>> {
+        self.prepared_syntax_parts().map(|parsed|parsed.and_then(|parts|match parts{Some(parts)if parts.runtime_error.is_some()=>Err(parts.runtime_error.as_ref().unwrap()),other=>Ok(other)}))
+    }
+    /// Already-prepared primary syntax DATA, even when native runtime text
+    /// decoding explicitly refuses. Never decodes, lexes or parses on demand.
+    /// Runtime consumers must keep using parts()/retained_parts().
+    pub fn prepared_syntax_parts(&self) -> Option<Result<Option<&LiteralParts>, &String>> {
         match &self.0 {
             Backing::Plain(_) => None,
             Backing::Text(state) => state.parts.get().map(|p| p.as_ref().map(Option::as_ref)),
         }
     }
-    pub fn parts(&self) -> Result<Option<&LiteralParts>, &str> {
+    /// Runtime decoding keeps its original explicit refusal. Syntax consumers
+    /// use the SAME cache through syntax_parts/prepared_syntax_parts.
+    pub fn parts(&self)->Result<Option<&LiteralParts>,&str>{
+        self.syntax_parts().and_then(|parts|match parts{Some(parts)if parts.runtime_error.is_some()=>Err(parts.runtime_error.as_ref().unwrap().as_str()),other=>Ok(other)})
+    }
+    /// The one original literal parser's child syntax, independent of runtime
+    /// text-template support. This compatibility demand computes only this cache.
+    pub fn syntax_parts(&self) -> Result<Option<&LiteralParts>, &str> {
         let Backing::Text(state) = &self.0 else {
             return Ok(None);
         };
@@ -191,7 +224,7 @@ impl LiteralText {
                 })
             })
             .as_ref()
-            .map(|parts| parts.as_ref())
+            .map(|parts|parts.as_ref())
             .map_err(String::as_str)
     }
     pub(crate) fn require_fresh_body_owner(&self,a:&crate::SettingAdmission<'_>)->std::io::Result<()>{
@@ -408,7 +441,7 @@ fn string_literal_parts_clean(
 ) -> Result<Option<LiteralParts>, String> {
     let Some((is_raw,value))=literal_content(raw) else{return Ok(None)};
     if is_raw{
-     return Ok(Some(LiteralParts{template:value.as_bytes().to_vec(),expressions:Vec::new(),lexical:Ok(LiteralLexicalShape{interpolated:false,pinned_segment_nonempty:!projection.segment(value.as_ptr() as usize-raw.as_ptr() as usize,value.len()).is_empty()})}));
+     return Ok(Some(LiteralParts{runtime_error:None,fragments:Vec::new(),template:value.as_bytes().to_vec(),expressions:Vec::new(),lexical:Ok(LiteralLexicalShape{interpolated:false,pinned_segment_nonempty:!projection.segment(value.as_ptr() as usize-raw.as_ptr() as usize,value.len()).is_empty()})}));
     }
     let offset = value.as_ptr() as usize - raw.as_ptr() as usize;
     let mut parts = parse_interpolated_string_clean(value, projection.offset(offset), admission)?;
@@ -441,7 +474,7 @@ impl<'a> RawProjection<'a> {
             ..self
         }
     }
-    fn segment(self, start: usize, len: usize) -> &'a [u8] {
+    fn segment_span(self, start: usize, len: usize) -> Span {
         let start = self.base + start;
         let end = start + len;
         let (start, end) = match self.positions {
@@ -455,8 +488,10 @@ impl<'a> RawProjection<'a> {
             ),
             None => (start, end),
         };
-        &self.original.as_bytes()[start..end]
+        Span::new(start,end)
     }
+    fn segment(self,start:usize,len:usize)->&'a[u8]{&self.original.as_bytes()[self.segment_span(start,len).range()]}
+    fn token_span(self,start:usize,len:usize)->Span{let span=Span::new(self.base+start,self.base+start+len);match self.positions{Some(positions)=>remapped_span(span,positions,self.original.len()),None=>span}}
 }
 /// This scan never recognizes interpolation grammar. It observes only literal
 /// segment ranges already issued by the one primary parser. Pinned read_string
@@ -522,6 +557,10 @@ fn parse_interpolated_string_clean(
     admission: Option<&crate::SettingAdmission<'_>>,
 ) -> Result<LiteralParts, String> {
     let mut template = Vec::new();
+    let mut runtime_error=None;
+    let mut fragments=Vec::new();
+    let mut preceding_expression=None;
+    let mut preceding_tokens=Vec::new();
     let mut expressions = Vec::new();
     let mut next_marker = None;
     let mut substituted = false;
@@ -532,6 +571,7 @@ fn parse_interpolated_string_clean(
     let mut segment_start = 0;
     let mut segment_error = None;
     let mut at = 0;
+    let parsed=(||->Result<LiteralParts,String>{
     while at < value.len() {
         if let Some(admission) = admission {
             admission
@@ -555,6 +595,7 @@ fn parse_interpolated_string_clean(
                 at += 1;
                 continue;
             }
+            if runtime_error.is_some(){let escape=rest.chars().next().ok_or("trailing string escape")?;at+=escape.len_utf8();continue;}
             if let Some(consumed) = numeric_escape(rest, &mut template) {
                 at += consumed;
                 continue;
@@ -572,7 +613,8 @@ fn parse_interpolated_string_clean(
             if word_len != 0 {
                 let word = &rest[..word_len];
                 let after = &rest[word_len..];
-                if let Some(effect) = text_macro(word, after, &template, substituted)? {
+                let effect=match text_macro(word, after, &template, substituted){Ok(effect)=>effect,Err(error)=>{runtime_error=Some(error);template.clear();at+=word_len;continue;}};
+                if let Some(effect) = effect {
                     at += word_len;
                     match effect {
                         TextMacro::Emit(marker, consume_space) => {
@@ -612,18 +654,21 @@ fn parse_interpolated_string_clean(
                 '>' => "&gt;",
                 '&' => "&amp;",
                 _ if word_len != 0 => {
-                    return Err(format!(
-                        "undefined text macro or escape sequence: \\{}",
-                        &rest[..word_len]
-                    ))
+                    runtime_error=Some(format!("undefined text macro or escape sequence: \\{}",&rest[..word_len]));template.clear();at+=word_len;continue;
                 }
-                _ => return Err(format!("unsupported string escape: \\{escape}")),
+                _ => {runtime_error=Some(format!("unsupported string escape: \\{escape}"));template.clear();at+=escape.len_utf8();continue;},
             };
             template.extend_from_slice(escaped.as_bytes());
             at += escape.len_utf8();
             continue;
         }
         if ch == '[' {
+            if fragments.capacity()==0{
+                let count=value.bytes().filter(|b|*b==b'[').count().checked_add(1).ok_or_else(||{if let Some(a)=admission{a.record_operational_error(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"literal fragment count overflow"));}"literal fragment count overflow".to_owned()})?;
+                fragments.try_reserve_exact(count).map_err(|_|{if let Some(a)=admission{a.record_operational_error(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"literal fragment allocation refused"));}"literal fragment allocation refused".to_owned()})?;
+                if fragments.capacity()>count.saturating_mul(4){if let Some(a)=admission{a.record_operational_error(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"literal fragment allocation exposed excess"));}return Err("literal fragment allocation exposed excess".into())}
+            }
+            fragments.push(LiteralFragment{range:projection.segment_span(segment_start,at-segment_start),expression:preceding_expression,tokens:std::mem::take(&mut preceding_tokens)});
             observe_segment(
                 projection.segment(segment_start, at - segment_start),
                 &mut lexical,
@@ -662,6 +707,7 @@ fn parse_interpolated_string_clean(
             let cursor = cursor.ok_or("unclosed string interpolation")?;
             substituted = true;
             if value[start..cursor].trim().is_empty() {
+                preceding_expression=None;
                 template.extend([0xff, next_marker.take().unwrap_or(1)]);
                 at = cursor + 1;
                 segment_start = at;
@@ -672,19 +718,26 @@ fn parse_interpolated_string_clean(
             let raw_expression = raw_expression.trim();
             let (source, positions) = splice_with_positions(raw_expression);
             #[cfg(test)] LITERAL_CHILD_PARSES.with(|n|n.set(n.get()+1));
-            let parsed = match admission {
-                Some(a) => crate::expression_parser::parse_expression_with_admission(&source, a),
-                None => parse_expression(&source),
-            };
+            let(parsed,mut primary_tokens)=crate::expression_parser::parse_expression_with_primary_tokens(&source,admission)?;
             if admission.is_some_and(|a| a.is_stopped()) {
                 return Err("interpolation operation stopped".into());
             }
             if !parsed.diagnostics.is_empty() {
                 return Err("invalid string interpolation expression".into());
             }
-            let mut expression = parsed.expr.ok_or("empty string interpolation")?;
+            let Some(mut expression)=parsed.expr else{
+                if primary_tokens.iter().any(|token|!matches!(token.kind,crate::TokenKind::Whitespace|crate::TokenKind::Newline|crate::TokenKind::Comment)){return Err("empty string interpolation".into())}
+                // The SAME primary lexer proved a trivia-only empty child.
+                // Pinned interpolation expressions are optional, like [ ].
+                for token in &mut primary_tokens{let span=remapped_span(token.span,&positions,raw_expression.len());token.span=projection.token_span(start+leading+span.start,span.end-span.start);}
+                preceding_expression=None;preceding_tokens=primary_tokens;
+                template.extend([0xff,next_marker.take().unwrap_or(1)]);at=cursor+1;segment_start=at;continue;
+            };
             remap(&mut expression, &positions, raw_expression);
             shift_expression(&mut expression, start + leading);
+            for token in &mut primary_tokens{let span=remapped_span(token.span,&positions,raw_expression.len());token.span=projection.token_span(start+leading+span.start,span.end-span.start);}
+            preceding_tokens=primary_tokens;
+            preceding_expression=Some(expressions.len());
             expressions.push(expression);
             let marker = next_marker.take().unwrap_or_else(|| {
                 if interpolation_starts_sentence(&template) {
@@ -699,7 +752,7 @@ fn parse_interpolated_string_clean(
             continue;
         }
         let mut bytes = [0; 4];
-        template.extend_from_slice(ch.encode_utf8(&mut bytes).as_bytes());
+        if runtime_error.is_none(){template.extend_from_slice(ch.encode_utf8(&mut bytes).as_bytes());}
         at += ch.len_utf8();
     }
     observe_segment(
@@ -707,11 +760,18 @@ fn parse_interpolated_string_clean(
         &mut lexical,
         &mut segment_error,
     );
+    if lexical.interpolated{fragments.push(LiteralFragment{range:projection.segment_span(segment_start,value.len()-segment_start),expression:preceding_expression,tokens:std::mem::take(&mut preceding_tokens)});}
     Ok(LiteralParts {
+        runtime_error:runtime_error.take(),
+        fragments,
         template,
         expressions,
         lexical: segment_error.map_or(Ok(lexical), Err),
     })
+    })();
+    // An earlier native decoding refusal remains the runtime failure even if
+    // later lexical children also fail; no partial primary syntax is exposed.
+    parsed.map_err(|error|runtime_error.take().unwrap_or(error))
 }
 
 enum TextMacro {
@@ -884,17 +944,19 @@ fn splice_with_positions(source: &str) -> (String, Vec<usize>) {
         positions,
     )
 }
-fn remap(expression: &mut Expr, positions: &[usize], source: &str) {
-    let span = expression.span;
-    let start = positions.get(span.start).copied().unwrap_or(source.len());
+fn remapped_span(span:Span,positions:&[usize],source_len:usize)->Span{
+    let start = positions.get(span.start).copied().unwrap_or(source_len);
     let end = if span.end == span.start {
         start
     } else {
         positions
             .get(span.end - 1)
-            .map_or(source.len(), |at| at + 1)
+            .map_or(source_len, |at| at + 1)
     };
-    expression.span = Span::new(start, end);
+    Span::new(start,end)
+}
+fn remap(expression:&mut Expr,positions:&[usize],source:&str){
+    let span=remapped_span(expression.span,positions,source.len());let(start,end)=(span.start,span.end);expression.span=span;
     match &mut expression.kind {
         ExprKind::Literal(text) => *text = LiteralText::at(source[start..end].to_owned(), start),
         ExprKind::Ident(_) | ExprKind::TypePath(_) => (),
@@ -965,8 +1027,9 @@ fn retained_string_literal_parts_using(
 /// Compatibility tuple projection; the single retained parser also issues
 /// lexical policy facts, which runtime-only tuple callers need not retain.
 pub fn string_literal_parts(raw: &str) -> Result<Option<(Vec<u8>, Vec<Expr>)>, String> {
-    retained_string_literal_parts(raw)
-        .map(|parts| parts.map(|parts| (parts.template, parts.expressions)))
+    let Some(mut parts)=retained_string_literal_parts(raw)? else{return Ok(None)};
+    if let Some(error)=parts.runtime_error.take(){crate::setting_drop::drop_literal_parts(parts,None);return Err(error)}
+    Ok(Some((parts.template,parts.expressions)))
 }
 pub fn parse_interpolated_string(value: &str) -> Result<(Vec<u8>, Vec<Expr>), String> {
     let mut parts = if value.contains('\r') {
@@ -987,6 +1050,7 @@ pub fn parse_interpolated_string(value: &str) -> Result<(Vec<u8>, Vec<Expr>), St
     } else {
         parse_interpolated_string_clean(value, RawProjection::identity(value), None)?
     };
+    if let Some(error)=parts.runtime_error.take(){crate::setting_drop::drop_literal_parts(parts,None);return Err(error)}
     Ok((
         std::mem::take(&mut parts.template),
         std::mem::take(&mut parts.expressions),
@@ -1353,4 +1417,83 @@ mod pinned_writer_tests{
   struct Refuse;impl fmt::Write for Refuse{fn write_str(&mut self,_:&str)->fmt::Result{Err(fmt::Error)}}
   let value=literal("\"key\"");value.parts().unwrap();assert!(matches!(value.write_pinned_static_text(&mut Refuse),Err(PinnedStaticTextError::Output(_))));
  }
+}
+
+/// One lexical segment and the optional actual interpolation child BEFORE it.
+/// The first segment has no child; later empty [] segments also carry None.
+/// No AST/source ownership or constructor is exposed.
+pub struct PinnedLiteralFragment<'a>{raw:&'a[u8],expression:Option<&'a Expr>,tokens:&'a[crate::SpanToken],origin:usize,literal:&'a str}
+impl<'a> PinnedLiteralFragment<'a>{
+ pub fn expression(&self)->Option<&'a Expr>{self.expression}
+ /// Exact borrowed physical token spelling. Primary splices may lie inside
+ /// this raw range; consumers use the SAME primary splice projection only.
+ pub fn token_text(&self,canonical:Span)->Result<&'a str,PinnedStaticTextError>{let start=canonical.start.checked_sub(self.origin).ok_or(PinnedStaticTextError::DeferredSyntax)?;let end=canonical.end.checked_sub(self.origin).ok_or(PinnedStaticTextError::DeferredSyntax)?;let index=self.tokens.binary_search_by_key(&start,|token|token.span.start).map_err(|_|PinnedStaticTextError::DeferredSyntax)?;if self.tokens[index].span.end!=end{return Err(PinnedStaticTextError::DeferredSyntax)}self.literal.get(start..end).ok_or(PinnedStaticTextError::DeferredSyntax)}
+ /// Canonical coordinates, like the same original child Expr. A current
+ /// setting reborrow must apply its existing current offset before source use.
+ pub fn tokens(&self)->impl Iterator<Item=Result<(crate::TokenKind,Span),PinnedStaticTextError>>+'_ {self.tokens.iter().map(move|token|{let start=token.span.start.checked_add(self.origin).ok_or(PinnedStaticTextError::DeferredSyntax)?;let end=token.span.end.checked_add(self.origin).ok_or(PinnedStaticTextError::DeferredSyntax)?;Ok((token.kind,Span::new(start,end)))})}
+ pub fn tokens_between(&self,span:Span)->Result<impl Iterator<Item=Result<(crate::TokenKind,Span),PinnedStaticTextError>>+'_,PinnedStaticTextError>{
+  let expression=self.expression.ok_or(PinnedStaticTextError::DeferredSyntax)?;if span.start>span.end||span.start<expression.span.start||span.end>expression.span.end{return Err(PinnedStaticTextError::DeferredSyntax)}
+  let start=span.start.checked_sub(self.origin).ok_or(PinnedStaticTextError::DeferredSyntax)?;let end=span.end.checked_sub(self.origin).ok_or(PinnedStaticTextError::DeferredSyntax)?;let first=self.tokens.partition_point(|token|token.span.end<=start);let last=self.tokens.partition_point(|token|token.span.start<end);if first>last{return Err(PinnedStaticTextError::DeferredSyntax)}let tokens=&self.tokens[first..last];if tokens.first().is_some_and(|token|token.span.start<start)||tokens.last().is_some_and(|token|token.span.end>end){return Err(PinnedStaticTextError::DeferredSyntax)}
+  Ok(tokens.iter().map(move|token|{let start=token.span.start.checked_add(self.origin).ok_or(PinnedStaticTextError::DeferredSyntax)?;let end=token.span.end.checked_add(self.origin).ok_or(PinnedStaticTextError::DeferredSyntax)?;Ok((token.kind,Span::new(start,end)))}))
+ }
+ pub fn write_text(&self,out:&mut impl fmt::Write)->Result<(),PinnedStaticTextError>{let mut shape=LiteralLexicalShape{interpolated:false,pinned_segment_nonempty:false};let mut error=None;visit_pinned_segment(self.raw,&mut shape,&mut error,|bytes|out.write_str(std::str::from_utf8(bytes).expect("issued literal fragment ends at primary UTF8 boundary"))).map_err(PinnedStaticTextError::Output)?;if let Some(error)=error{return Err(PinnedStaticTextError::Lexical(error))}Ok(())}
+}
+impl LiteralText{
+ /// Existing PRIMARY literal partition only. Never scans interpolation syntax,
+ /// invokes the lexer, or parses a child; a missing prepared owner stays Err.
+ pub fn pinned_fragments(&self)->Result<Option<impl Iterator<Item=Result<PinnedLiteralFragment<'_>,PinnedStaticTextError>>+'_>,PinnedStaticTextError>{
+  let parts=match self.prepared_syntax_parts(){Some(Ok(Some(parts)))=>parts,Some(Err(_))=>return Err(PinnedStaticTextError::DeferredSyntax),_=>return Err(PinnedStaticTextError::Unprepared)};
+  let shape=parts.lexical.map_err(PinnedStaticTextError::Lexical)?;if !shape.interpolated{return Ok(None)}if parts.fragments.len()<2{return Err(PinnedStaticTextError::DeferredSyntax)}
+  let origin=match &self.0{Backing::Text(state)=>state.origin,Backing::Plain(_)=>0};
+  Ok(Some(parts.fragments.iter().map(move|row|{let raw=self.as_str().get(row.range.range()).ok_or(PinnedStaticTextError::DeferredSyntax)?;let expression=match row.expression{Some(index)=>Some(parts.expressions.get(index).ok_or(PinnedStaticTextError::DeferredSyntax)?),None=>None};Ok(PinnedLiteralFragment{raw:raw.as_bytes(),expression,tokens:&row.tokens,origin,literal:self.as_str()})})))
+ }
+ pub fn visit_pinned_fragment_storage(&self,mut visit:impl FnMut(usize,usize,usize)){if let Some(Ok(Some(parts)))=self.prepared_syntax_parts(){visit(parts.fragments.as_ptr()as usize,parts.fragments.len()*std::mem::size_of::<LiteralFragment>(),parts.fragments.capacity()*std::mem::size_of::<LiteralFragment>());for row in &parts.fragments{visit(row.tokens.as_ptr()as usize,row.tokens.len()*std::mem::size_of::<crate::SpanToken>(),row.tokens.capacity()*std::mem::size_of::<crate::SpanToken>());}}}
+}
+
+#[cfg(test)]mod pinned_fragment_tests{
+ use super::*;
+ fn literal(text:&str)->LiteralText{match crate::parse_expression(text).expr.unwrap().kind{ExprKind::Literal(value)=>value,_=>panic!("literal fixture")}}
+ #[test]fn primary_literal_fragments_keep_empty_children_comments_and_exact_pinned_text_without_reparse(){
+  let source="\"before[ ]middle[x /* ] */]tail[f(1)]end\"";let text=literal(source);let before=literal_child_parses_for_test();assert!(matches!(text.pinned_fragments(),Err(PinnedStaticTextError::Unprepared)));assert_eq!(literal_child_parses_for_test(),before);
+  let parts=text.parts().unwrap().unwrap();assert_eq!(parts.expressions.len(),2);let before=literal_child_parses_for_test();
+  let mut observed=Vec::new();for fragment in text.pinned_fragments().unwrap().unwrap(){let fragment=fragment.unwrap();let mut value=String::new();fragment.write_text(&mut value).unwrap();observed.push((value,fragment.expression().map(|e|e as *const Expr as usize)));}
+  assert_eq!(observed.iter().map(|row|row.0.as_str()).collect::<Vec<_>>(),["before","middle","tail","end"]);assert_eq!(observed[0].1,None);assert_eq!(observed[1].1,None);assert_eq!(observed[2].1,Some(&parts.expressions[0]as *const Expr as usize));assert_eq!(observed[3].1,Some(&parts.expressions[1]as *const Expr as usize));assert_eq!(literal_child_parses_for_test(),before);
+  let text=literal("\"a\\\r\n  b[x]c\"");text.parts().unwrap();let mut fragments=text.pinned_fragments().unwrap().unwrap();let mut first=String::new();fragments.next().unwrap().unwrap().write_text(&mut first).unwrap();assert_eq!(first,"ab");
+  let plain=literal("\"plain\"");plain.parts().unwrap();assert!(plain.pinned_fragments().unwrap().is_none());let mut bytes=0;plain.visit_pinned_fragment_storage(|_,_,capacity|bytes+=capacity);assert_eq!(bytes,0);
+ }
+ #[test]fn native_fragment_rows_share_original_literal_lease_until_last_alias_and_survive_output_failure(){
+  use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=crate::SettingAdmission::new(&counter,8*1024*1024,&poll);let source="\"a[][x]b\"";let tokens=crate::lex_spans(source);let root=crate::prepare_setting_expression(source,&tokens.tokens,Span::new(0,source.len()),&a).unwrap();let ExprKind::Literal(text)=&root.kind else{panic!("original literal")};let alias=text.clone();let retained=counter.load(Ordering::Acquire);assert!(retained>0);let mut bytes=0;alias.visit_pinned_fragment_storage(|_,_,capacity|bytes+=capacity);assert!(bytes>=3*std::mem::size_of::<LiteralFragment>());
+  struct Refused;impl fmt::Write for Refused{fn write_str(&mut self,_:&str)->fmt::Result{Err(fmt::Error)}}let fragment=alias.pinned_fragments().unwrap().unwrap().next().unwrap().unwrap();assert!(matches!(fragment.write_text(&mut Refused),Err(PinnedStaticTextError::Output(_))));drop(fragment);drop(root);assert_eq!(counter.load(Ordering::Acquire),retained);assert_eq!(alias.pinned_fragments().unwrap().unwrap().count(),3);drop(alias);assert_eq!(counter.load(Ordering::Acquire),0);
+  let tiny=crate::SettingAdmission::new(&counter,1,&poll);assert!(matches!(crate::prepare_setting_expression(source,&tokens.tokens,Span::new(0,source.len()),&tiny),Err(crate::SettingSyntaxFailure::Operational(ref error))if error.kind()==std::io::ErrorKind::OutOfMemory));assert_eq!(counter.load(Ordering::Acquire),0);
+ }
+}
+
+#[cfg(test)]mod pinned_child_token_tests{
+ use super::*;
+ #[test]fn primary_interpolation_tokens_keep_operator_points_through_comments_and_splices_without_relex(){
+  let source="\"a[value /* fake.dot */ . /* fake.dot */ field]b\"";let expression=crate::parse_expression(source).expr.unwrap();let ExprKind::Literal(literal)=&expression.kind else{panic!("literal")};literal.parts().unwrap();let before=literal_child_parses_for_test();let fragments=literal.pinned_fragments().unwrap().unwrap().map(Result::unwrap).collect::<Vec<_>>();let child=fragments[1].expression().unwrap();assert!(matches!(child.kind,ExprKind::Member{..}));let tokens=fragments[1].tokens().map(Result::unwrap).filter(|(kind,_)|!matches!(kind,crate::TokenKind::Whitespace|crate::TokenKind::Newline|crate::TokenKind::Comment)).collect::<Vec<_>>();let dot=tokens.iter().find(|(_,span)|&source[span.range()]==".").unwrap();let ExprKind::Member{object,selector,..}=&child.kind else{unreachable!()};let range=Span::new(object.span.end,child.span.end-selector.len());assert!(fragments[1].tokens_between(range).unwrap().map(Result::unwrap).any(|(_,span)|span==dot.1));assert!(fragments[1].tokens_between(Span::new(child.span.start+1,child.span.start+2)).is_err());assert_eq!(dot.1.start,source.find(". /* fake.dot").unwrap());assert_eq!(literal_child_parses_for_test(),before);
+  let source="\"a[value \\\n . field]b\"";let expression=crate::parse_expression(source).expr.unwrap();let ExprKind::Literal(literal)=&expression.kind else{panic!("literal")};literal.parts().unwrap();let fragment=literal.pinned_fragments().unwrap().unwrap().nth(1).unwrap().unwrap();let before=literal_child_parses_for_test();assert!(fragment.tokens().map(Result::unwrap).any(|(_,span)|span.start==source.find(". field").unwrap()));assert_eq!(literal_child_parses_for_test(),before);
+ }
+ #[test]fn nested_literal_children_keep_their_own_primary_geometry_under_same_native_root_lease(){
+  use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};let source="\"a[\"b[x . field]\"]c\"";let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=crate::SettingAdmission::new(&counter,8*1024*1024,&poll);let lexical=crate::lex_spans(source);let root=crate::prepare_setting_expression(source,&lexical.tokens,Span::new(0,source.len()),&a).unwrap();let ExprKind::Literal(outer)=&root.kind else{panic!("outer")};let first=outer.pinned_fragments().unwrap().unwrap().nth(1).unwrap().unwrap();let ExprKind::Literal(inner)=&first.expression().unwrap().kind else{panic!("inner")};let last=inner.pinned_fragments().unwrap().unwrap().nth(1).unwrap().unwrap();let before=literal_child_parses_for_test();let point=source.find(". field").unwrap();assert!(last.tokens().map(Result::unwrap).any(|(_,span)|span.start==point));assert_eq!(literal_child_parses_for_test(),before);drop(last);drop(first);drop(root);assert_eq!(counter.load(Ordering::Acquire),0);
+ }
+}
+
+#[cfg(test)]mod pinned_empty_comment_child_tests{
+ use super::*;
+ #[test]fn primary_comment_only_interpolation_is_an_actual_optional_empty_child(){
+  let source="\"a[/* ] in a genuine comment */]b\"";let expr=crate::parse_expression(source).expr.unwrap();let ExprKind::Literal(literal)=&expr.kind else{panic!("literal")};let parts=literal.parts().unwrap().unwrap();assert!(parts.expressions.is_empty());assert_eq!(parts.template,b"a\xff\x01b");let before=literal_child_parses_for_test();let rows=literal.pinned_fragments().unwrap().unwrap().map(Result::unwrap).collect::<Vec<_>>();assert_eq!(rows.len(),2);assert!(rows.iter().all(|row|row.expression().is_none()));let mut texts=Vec::new();for row in &rows{let mut text=String::new();row.write_text(&mut text).unwrap();texts.push(text)}assert_eq!(texts,["a","b"]);assert!(rows[1].tokens().map(Result::unwrap).all(|(kind,_)|matches!(kind,crate::TokenKind::Comment|crate::TokenKind::Whitespace|crate::TokenKind::Newline)));assert_eq!(literal_child_parses_for_test(),before);
+ }
+}
+
+#[cfg(test)]mod lexical_runtime_separation_tests{
+ use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ #[test]fn runtime_escape_refusal_keeps_same_primary_fragment_children_and_no_display_reparse(){
+  for raw in [r#""a\q""#,r#""a\q[value + 1]tail""#]{
+   let counter=Arc::new(AtomicUsize::new(0));let checkpoint=||Ok(());let a=crate::SettingAdmission::new(&counter,8*1024*1024,&checkpoint);let lexical=crate::lex_spans(raw);let root=crate::prepare_setting_expression(raw,&lexical.tokens,Span::new(0,raw.len()),&a).unwrap();let ExprKind::Literal(value)=&root.original_expression().kind else{panic!("primary literal")};let cached=value.prepared_syntax_parts().unwrap().unwrap().unwrap();assert!(cached.runtime_error_storage().is_some());let before=literal_child_parses_for_test();let refusal=value.parts().err().unwrap().to_owned();assert!(refusal.contains("undefined text macro or escape sequence"));assert!(matches!(value.retained_parts(),Some(Err(_))));
+   if raw.contains('['){let mut observed=Vec::new();for fragment in value.pinned_fragments().unwrap().unwrap(){let fragment=fragment.unwrap();let mut text=String::new();fragment.write_text(&mut text).unwrap();observed.push((text,fragment.expression().map(|node|node as*const Expr)));}assert_eq!(cached.expressions.len(),1);assert_eq!(observed[0],(r#"a\q"#.to_owned(),None));assert_eq!(observed[1],("tail".to_owned(),Some(&cached.expressions[0]as*const Expr)));}else{let mut text=String::new();assert!(value.write_pinned_static_text(&mut text).unwrap());assert_eq!(text,r#"a\q"#);}
+   assert_eq!(literal_child_parses_for_test(),before,"pinned projection borrows existing child nodes");let alias=value.clone();drop(root);assert!(counter.load(Ordering::Acquire)>0);drop(alias);assert_eq!(counter.load(Ordering::Acquire),0,"all new syntax/error backing drops before same retained credit");assert_eq!(string_literal_parts(raw).unwrap_err(),refusal);
+  }
+ }
+ #[test]fn runtime_tuple_decoder_stays_refused_and_later_valid_literal_recovers(){assert!(parse_interpolated_string(r#"a\q[value]tail"#).unwrap_err().contains("undefined text macro or escape sequence"));let valid=string_literal_parts(r#""hello\n[value]""#).unwrap().unwrap();assert_eq!(valid.1.len(),1);let early=string_literal_parts(r#""a\q""#).unwrap_err();assert_eq!(string_literal_parts(r#""a\q[1 +]""#).unwrap_err(),early,"later malformed lexical child cannot replace the original runtime refusal");}
 }

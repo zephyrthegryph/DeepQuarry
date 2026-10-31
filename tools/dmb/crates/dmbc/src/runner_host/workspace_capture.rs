@@ -173,6 +173,8 @@ impl WorkspaceCapture {
     pub(crate) fn generator_test_page(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,start:usize,count:usize,budget:usize)->io::Result<(Vec<crate::query_db::CurrentWorkspaceRawFile>,usize)>{
         self.page_needed(scope,start,count,budget,|relative|Ok(dq_analyze::captured_raw_file::is_generator_cli_test_source(relative)))
     }
+    pub(crate) fn covers_hygiene(&self,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{self.discovery.covers_dm_roots(dq_analyze::captured_sys_hygiene_pages::selected_roots(),true,admit)}
+    pub(crate) fn hygiene_page(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,start:usize,count:usize,budget:usize,configuration:&dq_analyze::captured_raw_file::Config,policy:&'static str,group:&'static str)->io::Result<(Vec<crate::query_db::CurrentWorkspaceRawFile>,usize)>{self.page_needed(scope,start,count,budget,|relative|Ok(dq_analyze::captured_sys_hygiene_pages::selects_path(relative)&&!configuration.policy_path_exempt(policy,group,relative)))}
     fn page_needed(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,start:usize,count:usize,budget:usize,mut needed:impl FnMut(&str)->io::Result<bool>)->io::Result<(Vec<crate::query_db::CurrentWorkspaceRawFile>,usize)>{
         self.require_scope(scope)?;
         if count == 0 || count > 128 {

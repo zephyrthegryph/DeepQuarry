@@ -714,6 +714,7 @@ impl DeclarationSyntax {
             headers: chunk.relative.original_headers.as_ref(),
         })
     }
+    pub(crate) fn original_body_tokens(&self,span:Span,code:&Arc<BodyCodeIdentity>)->Result<crate::procedure::header_input::OriginalBodyTokens<'_>,String>{let recipe=self.original_body_recipe(span,code).map_err(|error|error.message)?;recipe.headers.ok_or("original body primary token owner unissued")?.body_tokens(recipe.relative.span,recipe.offset).map_err(str::to_owned)}
     pub(crate) fn original_callable_opening(&self,span:Span,code:&Arc<BodyCodeIdentity>)->Result<usize,String>{
         let recipe=self.original_body_recipe(span,code).map_err(|e|e.message)?;
         let input=recipe.headers.ok_or("callable header original token input unissued")?;
@@ -1537,5 +1538,47 @@ mod original_setting_context_roster_tests {
    assert_eq!(recipe.settings().collect::<Vec<_>>(),expected);assert!(expected.len()>1);
    if body.settings_owner.as_ref().unwrap().settings.is_empty(){assert!(recipe.setting_footprints().is_none());assert!(!recipe.settings().collect::<Vec<_>>().is_empty());}
   }
+    }
+}
+
+#[cfg(test)]
+mod callable_namespace_recipe_tests {
+    use super::*;
+    #[test]
+    fn relative_callable_recipe_binds_real_leaf_below_final_namespace() {
+        for source in [
+            "/datum/flags\n    proc/final\n        probe()\n            set SpacemanDMM_should_not_override = 1\n",
+            "/datum/flags\n    proc\n        final\n            probe()\n                set SpacemanDMM_should_not_override = 1\n",
+            "/datum/flags\n    verb\n        present()\n            set name = \"Present\"\n",
+        ] {
+            let parsed = dm_syntax::parse_declaration_skeleton(source);
+            assert!(parsed.diagnostics.is_empty(), "{source:?}");
+            let text: dm_preprocess::SourceText = Arc::<str>::from(source).into();
+            let headers = crate::procedure::OriginalProcedureHeaders::from_primary(
+                text.clone(), &parsed.items, 0, parsed.tokens,
+            ).unwrap();
+            // Exercise the same adapter that issues the actual metadata owner.
+            // The original-header recipe deliberately rejects an empty owners map.
+            let ast=dm_syntax::AstFile{items:parsed.items,..Default::default()};
+            let (facts,_receipt)=crate::adapter::from_ast_with_source_headers(
+                &ast,dm_ir::SymbolTable::default(),dm_ir::FileId(0),0,0,source,&headers,0,
+            ).unwrap();
+            let mut owners=std::collections::BTreeMap::new();
+            for(fact,origin)in facts.skeletons.iter().zip(&facts.origins){
+                if let crate::Skeleton::Member{metadata,..}=fact{
+                    if let Some(owner)=metadata.procedure.as_ref(){owners.insert(origin.span.start as usize,owner.clone());}
+                }
+            }
+            let relative = Arc::new(RelativeSyntax::capture_with_settings_headers(
+                ast.items, text, &owners, Some(headers),
+            ).unwrap());
+            assert_eq!(relative.bodies.len(), 1, "{source:?}");
+            let body = &relative.bodies[0];
+            let expected = source.find("probe()").or_else(|| source.find("present()")).unwrap();
+            assert_eq!(body.span.start, expected, "{source:?}");
+            assert_eq!(body.settings.len(), 1, "{source:?}");
+            assert!(source[body.settings[0].range()].starts_with("set "));
+            assert!(relative.bind(source.len(), 0).is_ok());
+        }
     }
 }

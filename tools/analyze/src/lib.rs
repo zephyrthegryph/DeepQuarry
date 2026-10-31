@@ -244,3 +244,28 @@ mod lifeform_source_policy;
 
 #[cfg(all(test,feature="legacy-sem",feature="native-policy"))]
 mod raw_policy_next_tests;
+
+#[cfg(all(test,feature="legacy-sem",feature="native-policy"))]
+mod deadline_policy_native_tests;
+
+mod sys_hygiene_policy;
+#[cfg(feature="native-policy")] pub mod captured_sys_hygiene_pages;
+
+mod sys_resolvers_policy;
+#[cfg(feature="native-policy")] pub mod captured_sys_resolvers_pages;
+
+mod sys_tables_policy;
+#[cfg(feature="native-policy")] pub mod captured_sys_tables_pages;
+
+#[cfg(all(test,feature="legacy-sem",feature="native-policy"))]
+mod native_pinned_expression_gap_tests;
+
+pub mod system_boundary_report;
+#[cfg(all(test,feature="legacy-sem"))]
+mod system_boundary_report_tests;
+
+#[cfg(all(test,feature="legacy-sem",feature="native-policy"))]
+mod native_original_expression_debug_oracle;
+
+mod system_boundary_policy;
+#[cfg(feature="native-policy")]pub mod captured_system_boundary_pages;

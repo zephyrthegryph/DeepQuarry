@@ -91,7 +91,7 @@ mod tests {
         let second_paths = HashMap::from([(path.as_ref().clone(), FileId(2))]);
         let mapping = Mapping {
             projection: Default::default(),
-            plan: &frontend.plan,
+            plan: frontend.plan.source_geometry(),
             expanded: &frontend.expanded,
             files: &frontend.files,
             by_path: &first_paths,
@@ -115,7 +115,7 @@ mod tests {
         ));
         let current = Mapping {
             projection: Default::default(),
-            plan: &frontend.plan,
+            plan: frontend.plan.source_geometry(),
             expanded: &frontend.expanded,
             files: &frontend.files,
             by_path: &second_paths,
@@ -132,7 +132,7 @@ mod tests {
         let paths = HashMap::from([(path.as_ref().clone(), FileId(0))]);
         let mapping = Mapping {
             projection: Default::default(),
-            plan: &frontend.plan,
+            plan: frontend.plan.source_geometry(),
             expanded: &frontend.expanded,
             files: &frontend.files,
             by_path: &paths,

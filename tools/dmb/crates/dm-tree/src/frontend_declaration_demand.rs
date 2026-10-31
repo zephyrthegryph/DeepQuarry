@@ -26,6 +26,7 @@ pub(super) type Chunk = (usize, usize, Vec<dm_syntax::Diagnostic>, Option<(usize
 pub(super) trait Permit {
     type Failure: From<Vec<Diagnostic>> + Send;
     fn checkpoint(&self)->Result<(),Self::Failure>;
+    fn retain_generation_metadata(&self,bytes:usize)->Result<dm_syntax::SettingRootLease,Self::Failure>;
     fn get(&self,state:&RetainedDeclarations,key:&[u8],text:&str,offset:usize)->Result<Option<CurrentContribution>,Self::Failure>;
     fn headers(&self,source:dm_preprocess::SourceText,items:&[Item],offset:usize,tokens:Option<Vec<dm_syntax::SpanToken>>,checker_settings:bool)->Result<Result<Arc<OriginalProcedureHeaders>,String>,Self::Failure>;
     fn cached_facts(&self,bytes:Option<&[u8]>,text:&str,offset:usize)->Option<(crate::AdaptedDeclarations,crate::allocation_ledger::AllocationLedger)>;
@@ -52,6 +53,7 @@ impl Demand for Compatibility {
 impl Permit for Compatibility {
     type Failure=Vec<Diagnostic>;
     fn checkpoint(&self)->Result<(),Self::Failure>{Ok(())}
+    fn retain_generation_metadata(&self,_:usize)->Result<dm_syntax::SettingRootLease,Self::Failure>{Err(vec![internal("generation metadata requires checked native admission")])}
     fn get(&self,state:&RetainedDeclarations,key:&[u8],text:&str,offset:usize)->Result<Option<CurrentContribution>,Self::Failure>{Ok(state.get_shared(key,text,offset))}
     fn headers(&self,source:dm_preprocess::SourceText,items:&[Item],offset:usize,tokens:Option<Vec<dm_syntax::SpanToken>>,checker_settings:bool)->Result<Result<Arc<OriginalProcedureHeaders>,String>,Self::Failure>{Ok(if checker_settings{OriginalProcedureHeaders::for_declaration_profile(source,items,offset,tokens,None,true).map_err(|failure|match failure{crate::procedure::header_input::OriginalHeaderFailure::Source(message)=>message,crate::procedure::header_input::OriginalHeaderFailure::Operational(actual)=>actual.to_string()})}else{match tokens{Some(tokens)=>OriginalProcedureHeaders::from_primary(source,items,offset,tokens),None=>OriginalProcedureHeaders::reissue(source,items,offset)}})}
     fn cached_facts(&self,bytes:Option<&[u8]>,text:&str,offset:usize)->Option<(crate::AdaptedDeclarations,crate::allocation_ledger::AllocationLedger)>{bytes.and_then(|bytes|chunkfacts::decode(bytes,text,offset))}
@@ -105,6 +107,11 @@ impl Demand for Checked<'_>{
 impl Permit for CheckedPermit<'_,'_>{
     type Failure=FrontendBuildFailure;
     fn checkpoint(&self)->Result<(),Self::Failure>{actual_checkpoint(self.admission).map_err(FrontendBuildFailure::Operational)}
+    fn retain_generation_metadata(&self,bytes:usize)->Result<dm_syntax::SettingRootLease,Self::Failure>{
+        let result=self.admission.reserve(bytes);
+        if let Some(actual)=self.admission.take_operational_error(){return Err(FrontendBuildFailure::Operational(actual))}
+        result.map_err(FrontendBuildFailure::Operational)
+    }
     fn get(&self,state:&RetainedDeclarations,key:&[u8],text:&str,offset:usize)->Result<Option<CurrentContribution>,Self::Failure>{state.get_shared_checked(key,text,offset,self.admission).map_err(FrontendBuildFailure::Operational)}
     fn headers(&self,source:dm_preprocess::SourceText,items:&[Item],offset:usize,tokens:Option<Vec<dm_syntax::SpanToken>>,checker_settings:bool)->Result<Result<Arc<OriginalProcedureHeaders>,String>,Self::Failure>{
         use crate::procedure::header_input::OriginalHeaderFailure;

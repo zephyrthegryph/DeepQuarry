@@ -1,0 +1,3 @@
+/datum/flags/proc/probe()
+    set SpacemanDMM_should_not_sleep = 0
+    return 0

@@ -304,17 +304,26 @@ impl<'source> OriginalDeclarationExpressionInput<'source>{
 /// result. The stack capability never escapes; the returned source borrow is
 /// tied to the original frontend rather than this temporary provider Arc.
 fn original_declaration_admission<T>(front:&ColdFrontend,operation:impl FnOnce(&dm_syntax::SettingAdmission<'_>)->Result<T,BodySyntaxFailure>)->Result<T,BodySyntaxFailure>{
-    let provider=front.setting_expression_queries.as_ref().and_then(std::sync::Weak::upgrade).ok_or_else(||BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"original declaration requires existing native expression host")))?;
-    let mut operation=Some(operation);let mut completed=None;
-    let outer=provider.with_declaration_admission(&mut |a|{
-        let operation=operation.take().ok_or_else(||BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"original declaration admission callback repeated")))?;
-        let result=operation(a);
-        if matches!(&result,Err(BodySyntaxFailure::Operational(_))){return result.map(|_|())}
-        let status=a.checkpoint();if let Some(actual)=a.take_operational_error(){return Err(BodySyntaxFailure::Operational(actual))}status.map_err(BodySyntaxFailure::Operational)?;
-        completed=Some(result);Ok(())
-    });
-    outer?;
-    completed.ok_or_else(||BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"original declaration admission callback omitted")))?
+ original_admission_using(front.setting_expression_queries.as_ref(),operation)
+}
+/// One existing-provider FnMut-to-FnOnce adapter shared by declaration and
+/// archived-syntax work. Completion is the typed callback result itself; actual
+/// callback IO wins even if a provider proxies, swallows, or later fails.
+pub(super) fn original_admission_using<T>(provider:Option<&std::sync::Weak<dyn SettingExpressionQueries>>,operation:impl FnOnce(&dm_syntax::SettingAdmission<'_>)->Result<T,BodySyntaxFailure>)->Result<T,BodySyntaxFailure>{
+ let provider=provider.and_then(std::sync::Weak::upgrade).ok_or_else(||BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"original declaration requires existing native expression host")))?;
+ let mut operation=Some(operation);let mut completed=None;
+ let outer=provider.with_declaration_admission(&mut|a|{
+  let Some(operation)=operation.take()else{
+   if !matches!(&completed,Some(Err(BodySyntaxFailure::Operational(_)))){completed=Some(Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"original declaration admission callback repeated"))))}
+   return Err(BodySyntaxFailure::Operational(std::io::ErrorKind::InvalidData.into()))
+  };
+  let result=operation(a);
+  if let Err(BodySyntaxFailure::Operational(actual))=&result{let kind=actual.kind();completed=Some(result);return Err(BodySyntaxFailure::Operational(kind.into()))}
+  let status=a.checkpoint();if let Some(actual)=a.take_operational_error(){completed=Some(Err(BodySyntaxFailure::Operational(actual)));return Err(BodySyntaxFailure::Operational(std::io::ErrorKind::Other.into()))}
+  if let Err(actual)=status{let kind=actual.kind();completed=Some(Err(BodySyntaxFailure::Operational(actual)));return Err(BodySyntaxFailure::Operational(kind.into()))}
+  completed=Some(result);Ok(())
+ });
+ match completed{Some(Err(BodySyntaxFailure::Operational(actual)))=>Err(BodySyntaxFailure::Operational(actual)),other=>{outer?;other.ok_or_else(||BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"original declaration admission callback omitted")))?}}
 }
 /// Once-per-wave current source join. The existing target index is admitted
 /// lazily once on the SAME owner/counter; no member-to-source sibling map.
@@ -1390,4 +1399,29 @@ mod tests {
             if authored{let original=frontend.original_initializer_input(&plan,authored_rows[0]).unwrap().expression().unwrap();assert!(!original.same_root(&expected),"equal authored RHS versions retain distinct original source slots");}
         }
     }
+}
+
+#[cfg(test)]mod original_admission_completion_tests{
+ use super::*;use std::sync::{Arc,atomic::{AtomicUsize,AtomicBool,Ordering}};
+ #[derive(Debug,Clone,Copy)]enum Mode{Once,Omit,Repeat,Swallow,LaterIo}
+ #[derive(Debug)]struct Provider{mode:Mode,counter:Arc<AtomicUsize>,cancel:AtomicBool}
+ impl SettingExpressionQueries for Provider{
+  fn expression(&self,_:&super::super::SettingExpressionInput<'_>)->Result<dm_syntax::SettingExpression,BodySyntaxFailure>{panic!("resource loan must never demand a new expression")}
+  fn with_declaration_admission(&self,callback:&mut dyn FnMut(&dm_syntax::SettingAdmission<'_>)->Result<(),BodySyntaxFailure>)->Result<(),BodySyntaxFailure>{
+   let checkpoint=||if self.cancel.load(Ordering::Acquire){Err(std::io::ErrorKind::Interrupted.into())}else{Ok(())};let admission=dm_syntax::SettingAdmission::new(&self.counter,1<<20,&checkpoint);
+   match self.mode{Mode::Omit=>Ok(()),Mode::Once=>callback(&admission),Mode::Swallow=>{let _=callback(&admission);Ok(())},Mode::Repeat=>{let _=callback(&admission);let _=callback(&admission);Ok(())},Mode::LaterIo=>{let _=callback(&admission);Err(BodySyntaxFailure::Operational(std::io::Error::from_raw_os_error(1450)))}}
+  }
+ }
+ fn provider(mode:Mode)->(Arc<Provider>,std::sync::Weak<dyn SettingExpressionQueries>){let actual=Arc::new(Provider{mode,counter:Arc::new(AtomicUsize::new(0)),cancel:AtomicBool::new(false)});let erased:Arc<dyn SettingExpressionQueries>=actual.clone();(actual,Arc::downgrade(&erased))}
+ #[test]fn original_admission_callback_completes_exactly_once_and_does_not_invent_missing_success(){
+  for mode in[Mode::Omit,Mode::Repeat]{let(_owner,weak)=provider(mode);let result=original_admission_using(Some(&weak),|_|Ok(17));assert!(matches!(result,Err(BodySyntaxFailure::Operational(ref actual))if actual.kind()==std::io::ErrorKind::InvalidData));}
+  let(owner,weak)=provider(Mode::Once);assert_eq!(original_admission_using(Some(&weak),|_|Ok(17)).unwrap(),17);drop(owner);let result:Result<(),BodySyntaxFailure>=original_admission_using(Some(&weak),|_|panic!("expired provider must not run"));assert!(matches!(result,Err(BodySyntaxFailure::Operational(ref actual))if actual.kind()==std::io::ErrorKind::NotConnected));
+ }
+ #[test]fn original_admission_first_actual_io_survives_swallow_repeat_and_later_provider_io(){
+  for mode in[Mode::Swallow,Mode::Repeat,Mode::LaterIo]{let(_owner,weak)=provider(mode);let result:Result<(),_>=original_admission_using(Some(&weak),|_|Err(BodySyntaxFailure::Operational(std::io::Error::from_raw_os_error(112))));assert!(matches!(result,Err(BodySyntaxFailure::Operational(ref actual))if actual.raw_os_error()==Some(112)));}
+  let(_owner,weak)=provider(Mode::LaterIo);let result=original_admission_using(Some(&weak),|_|Ok(17));assert!(matches!(result,Err(BodySyntaxFailure::Operational(ref actual))if actual.raw_os_error()==Some(1450)));
+ }
+ #[test]fn original_admission_final_poll_preserves_actual_cancel_and_drops_returned_storage(){
+  let(owner,weak)=provider(Mode::Once);let result=original_admission_using(Some(&weak),|a|{let lease=a.reserve(256).map_err(BodySyntaxFailure::Operational)?;owner.cancel.store(true,Ordering::Release);Ok(lease)});assert!(matches!(result,Err(BodySyntaxFailure::Operational(ref actual))if actual.kind()==std::io::ErrorKind::Interrupted));assert_eq!(owner.counter.load(Ordering::Acquire),0);owner.cancel.store(false,Ordering::Release);assert_eq!(original_admission_using(Some(&weak),|_|Ok(17)).unwrap(),17);
+ }
 }

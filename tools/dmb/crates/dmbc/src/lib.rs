@@ -154,3 +154,9 @@ mod policy_request_integration_tests;
 
 mod generation_staging;
 mod generation_journal;
+
+mod generation_transaction;
+
+mod generation_coordinator;
+
+#[cfg(test)]mod generation_test_fixture;

@@ -167,10 +167,11 @@ impl SealedJournal {
     /// `admit` belongs to the source-free transaction, not a cached source Budget.
     /// The copied path is freed before the next record, and payload bytes stream
     /// from the anonymous journal without allocating a generated-text copy.
-    pub(crate) fn visit(
+    pub(crate) fn visit(&mut self,admit:&mut impl FnMut(usize)->io::Result<()>,consume:&mut impl FnMut(u8,u32,&str,u64,&mut dyn Read)->io::Result<()>)->io::Result<()>{self.visit_indexed(admit,&mut|kind,line,path,length,body,_|consume(kind,line,path,length,body))}
+    pub(crate) fn visit_indexed(
         &mut self,
         admit: &mut impl FnMut(usize) -> io::Result<()>,
-        consume: &mut impl FnMut(u8, u32, &str, u64, &mut dyn Read) -> io::Result<()>,
+        consume: &mut impl FnMut(u8, u32, &str, u64, &mut dyn Read,JournalPayload) -> io::Result<()>,
     ) -> io::Result<()> {
         self.verify()?;
         let mut position = HEADER;
@@ -231,7 +232,7 @@ impl SealedJournal {
                 )
             })?;
             let mut payload = Read::take(&mut self.file, text);
-            consume(kind, line, path, text, &mut payload)?;
+            consume(kind,line,path,text,&mut payload,JournalPayload{offset:position+17+u64::try_from(bytes.len()).map_err(|_|io::Error::other("journal offset overflow"))?,length:text})?;
             if payload.limit() != 0 {
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidData,
@@ -378,5 +379,14 @@ mod tests {
   let root=crate::test_scratch::dir("generation-journal-live-path-peak");let mut journal=StagedJournal::new(crate::generation_staging::temporary_output(&root).unwrap()).unwrap();let mut longest=0usize;
   for index in 0..200{let path=if index%3==0{"code/engine/_generated/short.dm"}else{"tgui/packages/tgui/interfaces/generated/a_much_longer_original_type_name.d.ts"};longest=longest.max(path.len());journal.append_file(path,"actual output").unwrap();}
   let mut journal=journal.seal().unwrap();let mut charged=0;let mut records=0;journal.visit(&mut|bytes|{charged+=bytes;Ok(())},&mut|kind,line,_,length,body|{assert_eq!((kind,line,length),(1,0,13));let copied=io::copy(body,&mut io::sink())?;assert_eq!(copied,length);records+=1;Ok(())}).unwrap();assert_eq!(records,200);assert_eq!(charged,4*longest+std::mem::size_of::<Vec<u8>>(),"only simultaneous path storage is funded, never 200 already-freed paths");
+ }
+}
+
+/// Source-free journal coordinates, minted only by the validated record walk.
+#[derive(Clone,Copy)]pub(crate) struct JournalPayload{offset:u64,length:u64}
+impl SealedJournal{
+ pub(crate) fn copy_payload(&mut self,payload:JournalPayload,out:&mut impl Write)->io::Result<()>{
+  if payload.offset<HEADER||payload.offset.checked_add(payload.length).is_none_or(|end|end>self.length){return Err(io::Error::new(io::ErrorKind::InvalidData,"journal payload outside sealed range"))}
+  self.file.seek(SeekFrom::Start(payload.offset))?;let mut source=Read::take(&mut self.file,payload.length);let mut block=[0u8;8192];while source.limit()!=0{crate::daemon::control::checkpoint()?;let count=source.read(&mut block)?;if count==0{return Err(io::ErrorKind::UnexpectedEof.into())}out.write_all(&block[..count])?;}Ok(())
  }
 }

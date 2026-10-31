@@ -47,11 +47,12 @@ impl GenerationDirectivePlan {
     /// Borrowed source data only; this does not expose a compiler DirectivePlan.
     /// Explicitly omitted NotFound outputs remain directive occurrences and
     /// negative dependencies, but have no source/acquisition to loan. Exclude
-    /// ONLY those private issued omissions; all other missing leases stay None.
-    pub fn original_sources(&self)->impl Iterator<Item=(&Path,Option<&crate::SourceAcquisitionLease>)>{
-        self.plan.occurrences.iter().enumerate().filter(|(_,occurrence)|!self.omissions.paths.contains(occurrence.path.as_ref())).map(|(index,occurrence)|(occurrence.path.as_path(),self.plan.source_acquisitions.get(&index)))
-    }
+    /// ONLY those private issued omissions and actual typed NonText rows; all
+    /// other missing leases stay None. NonText items/dependencies remain intact.
+    pub fn original_sources(&self)->GenerationOriginalSources<'_>{GenerationOriginalSources{occurrences:self.plan.occurrences.iter().enumerate(),acquisitions:&self.plan.source_acquisitions,omitted:&self.omissions.paths}}
     pub fn root_source(&self)->Option<&Path>{self.plan.occurrences.first().map(|occurrence|occurrence.path.as_path())}
+    /// Borrowed source geometry of this explicitly incomplete traversal.
+    pub fn source_geometry(&self)->SourcePlanGeometry<'_>{self.plan.source_geometry()}
     pub fn diagnostics(&self)->&[Diagnostic] { &self.plan.diagnostics }
     pub fn omissions(&self)->impl Iterator<Item=&Path> { self.omissions.paths() }
     /// Text is only for generation-declaration parsing. It carries no complete
@@ -70,14 +71,17 @@ impl GenerationDirectivePlan {
     #[test] fn generation_omits_only_explicit_negative_outputs_without_fabricating_sources(){
         let root=std::env::current_dir().unwrap().join("generation-only-fixture");
         let project=root.join("main.dme");let generated=root.join("generated.dm");
-        let files=Files(BTreeMap::from([(project.clone(),"#include \"generated.dm\"\n/datum/probe\n    var/value=7\n".into())]));
+        let files=Files(BTreeMap::from([(project.clone(),"#include \"generated.dm\"\n#include \"map.dmm\"\n#include \"skin.dmf\"\n#include \"actual.dm\"\n/datum/probe\n    var/value=7\n".into()),(root.join("actual.dm"),"/datum/actual\n".into())]));
         let omissions=GenerationOmissions::probe([generated.clone()],&mut |p|Ok(!files.0.contains_key(p)),&mut |_|Ok(())).unwrap();
         let read=|p:&Path|Ok(files.0.get(p).map(|s|prepared_source::shared_prepared(s.clone().into())));
         let plan=GenerationDirectivePlan::prepare(&project,&files,&BTreeMap::new(),omissions,&read).unwrap();
         assert!(plan.diagnostics().is_empty());assert_eq!(plan.omissions().collect::<Vec<_>>(),[generated.as_path()]);
         assert!(!plan.plan.source_texts.contains_key(&generated));assert!(!plan.plan.source_acquisitions.contains_key(&1));
-        assert_eq!(plan.original_sources().map(|(path,_)|path).collect::<Vec<_>>(),[project.as_path()]);
+        assert_eq!(plan.original_sources().map(|(path,_)|path).collect::<Vec<_>>(),[project.as_path(),root.join("actual.dm").as_path()]);
         assert!(plan.original_sources().all(|(_,lease)|lease.is_none()),"an unacquired non-omitted source is NOT filtered or fabricated");
+        assert_eq!(plan.plan.items.iter().filter(|item|matches!(item,OrderedItem::NonText{..})).count(),2);
+        assert_eq!(plan.plan.occurrences.iter().filter_map(IncludeOccurrence::non_text_kind).collect::<Vec<_>>(),[NonTextKind::Map,NonTextKind::Skin]);
+        assert!(plan.plan.dependencies.contains(&root.join("map.dmm"))&&plan.plan.dependencies.contains(&root.join("skin.dmf")));
         assert!(!plan_regions(&project,&files,&BTreeMap::new()).diagnostics.is_empty());
         let denied=GenerationOmissions::probe([root.join("other.dm")],&mut |_|Ok(true),&mut |_|Ok(())).unwrap();
         assert!(!GenerationDirectivePlan::prepare(&project,&files,&BTreeMap::new(),denied,&read).unwrap().diagnostics().is_empty());
@@ -90,3 +94,8 @@ impl GenerationDirectivePlan {
         assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);
     }
 }
+
+/// Borrowed iterator over the actual issued code-source domain. No allocation,
+/// source owner or compiler-completeness receipt is created by this adapter.
+pub struct GenerationOriginalSources<'a>{occurrences:std::iter::Enumerate<std::slice::Iter<'a,IncludeOccurrence>>,acquisitions:&'a BTreeMap<usize,crate::SourceAcquisitionLease>,omitted:&'a BTreeSet<PathBuf>}
+impl<'a> Iterator for GenerationOriginalSources<'a>{type Item=(&'a Path,Option<&'a crate::SourceAcquisitionLease>);fn next(&mut self)->Option<Self::Item>{for(index,occurrence)in self.occurrences.by_ref(){if occurrence.non_text_kind().is_some()||self.omitted.contains(occurrence.path.as_ref()){continue}return Some((occurrence.path.as_path(),self.acquisitions.get(&index)))}None}}

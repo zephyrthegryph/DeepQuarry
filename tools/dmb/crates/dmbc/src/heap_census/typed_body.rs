@@ -44,8 +44,10 @@ impl HeapCensus {
             }
         }
         self.string(owner, text.raw_storage());
-        match text.retained_parts() {
+        text.visit_pinned_fragment_storage(|pointer,payload,capacity|{self.buffer(owner,pointer,payload,capacity);});
+        match text.prepared_syntax_parts() {
             Some(Ok(Some(parts))) => {
+                if let Some(error)=parts.runtime_error_storage(){self.string(owner,error);}
                 self.vec_payload(owner, &parts.template);
                 if self.vec_payload(owner, &parts.expressions) {
                     pending.extend(parts.expressions.iter().map(Node::Expr));

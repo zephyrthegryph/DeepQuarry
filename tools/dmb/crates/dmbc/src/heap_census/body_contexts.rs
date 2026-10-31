@@ -201,6 +201,7 @@ impl HeapCensus {
         let (regions, region_bytes, includes, include_bytes) = mapping.coordinate_storage();
         self.buffer(owner, regions, region_bytes, region_bytes);
         self.buffer(owner, includes, include_bytes, include_bytes);
+        mapping.original_checker_entry_storage(|address,bytes|{self.buffer(owner,address,bytes,bytes);});
         mapping.origin_storage(|address, _, bytes| {
             self.buffer(owner, address, bytes, bytes);
         });

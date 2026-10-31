@@ -679,3 +679,12 @@ fn definition_sites_are_reported_relative_to_the_project_directory() {
     assert_eq!(origin.path.as_path(), Path::new("code/defs.dm"));
     assert_eq!(plan.project_dir.join(origin.path.as_ref()), *plan.occurrences[1].path);
 }
+
+#[test]fn original_checker_entry_registration_keeps_actual_argument_through_incremental_reissue(){
+ let provider=Memory(BTreeMap::from([(PathBuf::from("project.dme"),"/proc/probe()\n    return 0\n".to_owned())]));let defines=BTreeMap::new();
+ let (first,_)=plan_regions_incremental(Path::new("project.dme"),&provider,&defines,None,None);
+ assert_eq!(first.occurrences[0].original_entry_path().unwrap().as_os_str(),Path::new("project.dme").as_os_str());
+ let (next,_)=plan_regions_incremental(Path::new("./project.dme"),&provider,&defines,None,Some(&first));
+ assert_eq!(next.occurrences[0].original_entry_path().unwrap().as_os_str(),Path::new("./project.dme").as_os_str());
+ assert_eq!(first.occurrences[0].path,next.occurrences[0].path);assert!(next.diagnostics.is_empty());
+}

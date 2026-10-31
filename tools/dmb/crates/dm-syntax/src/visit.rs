@@ -98,7 +98,7 @@ pub fn for_each_expression_child<'a>(node:&'a Expr,mut visit:impl FnMut(usize,&'
 pub fn try_for_each_expression_child<'a,E>(node:&'a Expr,mut visit:impl FnMut(usize,&'a Expr)->Result<(),E>)->Result<(),E>{
     match &node.kind {
         ExprKind::Literal(text) => {
-            if let Ok(Some(parts)) = text.parts() {
+            if let Ok(Some(parts)) = text.syntax_parts() {
                 for (index, expression) in parts.expressions.iter().enumerate() {
                     visit(index, expression)?;
                 }

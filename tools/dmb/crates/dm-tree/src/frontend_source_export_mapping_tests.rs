@@ -451,3 +451,56 @@ fn declaration_policy_cursor_uses_issued_include_eof_without_fabricating_byte_po
         );
     }
 }
+
+#[test]fn original_checker_registered_paths_keep_entry_argument_and_strip_only_actual_environment_prefix(){
+ struct Inputs{project:dm_preprocess::AcquiredSource,child:dm_preprocess::AcquiredSource}
+ impl SourceProvider for Inputs{
+  fn read(&self,_:&Path)->Result<String,String>{Err("requires original acquired bytes".into())}
+  fn acquired_source(&self,path:&Path)->Result<Option<dm_preprocess::AcquiredSource>,String>{Ok(Some(if path.file_name().unwrap()=="project.dme"{self.project.clone()}else{self.child.clone()}))}
+  fn source_acquisition(&self,path:&Path,text:&dm_preprocess::SourceText)->Option<dm_preprocess::AcquiredSource>{let source=if path.file_name().unwrap()=="project.dme"{&self.project}else{&self.child};source.lease().source_text().same_view(text).then(||source.clone())}
+ }
+ let root=std::env::current_dir().unwrap().join("checker-registration-coordinate");let project=root.join("project.dme");let child=root.join("part.dm");let source=format!("#include \"{}\"\n",child.to_string_lossy().replace('\\',"/"));
+ let input=Inputs{project:dm_preprocess::AcquiredSource::from_original_bytes(source.as_bytes().to_vec(),()),child:dm_preprocess::AcquiredSource::from_original_bytes(b"/datum/point/proc/probe()\n    return 0\n".to_vec(),())};
+ let absolute=build_with_config(&project,&input,&Default::default(),FrontendConfig{workers:1,engine:None,observer:None}).unwrap();let map=absolute.source_export_mapping().unwrap();assert_eq!(map.registered_checker_path(0).unwrap(),project.as_path());assert_eq!(map.registered_checker_path(1).unwrap(),Path::new("part.dm"));
+ let relative=Path::new("checker-registration-coordinate/project.dme");let mut front=build_with_config(relative,&input,&Default::default(),FrontendConfig{workers:1,engine:None,observer:None}).unwrap();let map=front.source_export_mapping().unwrap();assert_eq!(map.registered_checker_path(0).unwrap(),relative);assert_eq!(map.registered_checker_path(1).unwrap(),child.as_path());
+ let mut storage=Vec::new();map.original_checker_entry_storage(|p,n|storage.push((p,n)));assert_eq!(storage.len(),2);assert!(storage.iter().all(|(p,_)|*p!=0));
+ front.plan.occurrences[0]=absolute.plan.occurrences[0].clone();assert!(front.source_export_mapping().is_none(),"same physical root/acquisition cannot relabel original FileList registration");
+}
+
+#[test]fn original_checker_registry_numbers_only_actual_dm_lexer_files_and_keeps_environment_registration_keys(){
+ struct Files(std::collections::BTreeMap<PathBuf,dm_preprocess::AcquiredSource>);
+ impl Files{fn key(path:&Path)->PathBuf{dm_preprocess::regions::canonical_path(&if path.is_absolute(){path.to_path_buf()}else{std::env::current_dir().unwrap().join(path)})}}
+ impl SourceProvider for Files{
+  fn read(&self,_:&Path)->Result<String,String>{Err("original acquisition required".into())}
+  fn acquired_source(&self,path:&Path)->Result<Option<dm_preprocess::AcquiredSource>,String>{Ok(self.0.get(&Self::key(path)).cloned())}
+  fn source_acquisition(&self,path:&Path,text:&dm_preprocess::SourceText)->Option<dm_preprocess::AcquiredSource>{self.0.get(&Self::key(path)).filter(|source|source.lease().source_text().same_view(text)).cloned()}
+ }
+ let root=std::env::current_dir().unwrap().join("original-file-numbering");let project=root.join("project.dme");let absolute=root.join("second.dm");
+ let manifest=format!("#include \"skin.dmf\"\n#include \"world.dmm\"\n#include \"first.dm\"\n#include \"{}\"\n#include \"nested.dme\"\n",absolute.to_string_lossy().replace('\\',"/"));
+ let entries=[("project.dme",manifest.as_str()),("skin.dmf",""),("world.dmm",""),("first.dm","/proc/first_registry()\n    return 0\n"),("second.dm","/proc/second_registry()\n    return 0\n"),("nested.dme","#include \"third.dm\"\n"),("third.dm","/proc/third_registry()\n    return 0\n")];
+ let inputs=Files(entries.into_iter().map(|(path,text)|(dm_preprocess::regions::canonical_path(&root.join(path)),dm_preprocess::AcquiredSource::from_original_bytes(text.as_bytes().to_vec(),()))).collect());
+ let make=|entry:&Path|build_with_config(entry,&inputs,&Default::default(),FrontendConfig{workers:1,engine:None,observer:None}).unwrap();
+ let first=make(&project);let mapping=first.source_export_mapping().unwrap();let counter=Arc::new(std::sync::atomic::AtomicUsize::new(0));let poll=||Ok(());let admission=dm_syntax::SettingAdmission::new(&counter,4*1024*1024,&poll);
+ let registry=mapping.original_checker_source_registry(&admission).unwrap();
+ assert!(registry.matches_mapping(mapping));assert!(counter.load(std::sync::atomic::Ordering::Acquire)>0);
+ assert_eq!(registry.files[0],1);
+ for (name,id) in [("first.dm",2),("second.dm",3),("nested.dme",4),("third.dm",5)]{let ordinal=mapping.includes.iter().position(|row|row.path.file_name().unwrap()==name).unwrap();assert_eq!(registry.files[ordinal],id,"non-DM includes must not consume original FileId slots");}
+ for origin in mapping.origins.iter(){let point=mapping.borrowed_source_note_point(origin.output_span.start).unwrap();let located=registry.location(origin.output_span.start).unwrap();assert_eq!((located.line as usize,located.byte_column as usize),(point.line,point.byte_column));}
+ let same_bytes=make(&project);assert!(!registry.matches_mapping(same_bytes.source_export_mapping().unwrap()));
+ drop(registry);assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),0);
+ let tiny=dm_syntax::SettingAdmission::new(&counter,1,&poll);assert_eq!(mapping.original_checker_source_registry(&tiny).err().unwrap().kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),0);
+ let stopped=||Err(std::io::Error::from_raw_os_error(1450));let admission=dm_syntax::SettingAdmission::new(&counter,4*1024*1024,&stopped);assert_eq!(mapping.original_checker_source_registry(&admission).err().unwrap().raw_os_error(),Some(1450));assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),0);
+ let relative=PathBuf::from("original-file-numbering/project.dme");let other=make(&relative);let map=other.source_export_mapping().unwrap();assert_eq!(map.registered_checker_path(0).unwrap(),relative);let absolute_row=map.includes.iter().position(|row|row.path.file_name().unwrap()=="second.dm").unwrap();assert_eq!(map.registered_checker_path(absolute_row).unwrap(),absolute);
+}
+
+#[test]fn original_checker_relative_dot_registration_matches_actual_prepare_include_strip_boundary(){
+ struct Files(std::collections::BTreeMap<PathBuf,dm_preprocess::AcquiredSource>);
+ impl Files{fn key(path:&Path)->PathBuf{dm_preprocess::regions::canonical_path(&if path.is_absolute(){path.to_owned()}else{std::env::current_dir().unwrap().join(path)})}}
+ impl SourceProvider for Files{fn read(&self,_:&Path)->Result<String,String>{Err("original acquisitions only".into())}fn acquired_source(&self,path:&Path)->Result<Option<dm_preprocess::AcquiredSource>,String>{Ok(self.0.get(&Self::key(path)).cloned())}fn source_acquisition(&self,path:&Path,text:&dm_preprocess::SourceText)->Option<dm_preprocess::AcquiredSource>{self.0.get(&Self::key(path)).filter(|source|source.lease().source_text().same_view(text)).cloned()}}
+ let cwd=std::env::current_dir().unwrap();
+ for entry in[cwd.join("checker-dot-registration/project.dme"),PathBuf::from("checker-dot-registration/project.dme"),PathBuf::from("./checker-dot-registration/project.dme"),PathBuf::from("checker-dot-entry.dme")]{
+  let environment=entry.parent().unwrap();let operand=Path::new("./second.dm");let joined=environment.join(operand);let original=joined.strip_prefix(environment).unwrap_or(&joined);
+  let inputs=Files([(Files::key(&entry),dm_preprocess::AcquiredSource::from_original_bytes(b"#include \"./second.dm\"\n".to_vec(),())),(Files::key(&joined),dm_preprocess::AcquiredSource::from_original_bytes(b"/proc/registry_dot_probe()\n    return 0\n".to_vec(),()))].into_iter().collect());
+  let front=build_with_config(&entry,&inputs,&Default::default(),FrontendConfig{workers:1,engine:None,observer:None}).unwrap();let mapping=front.source_export_mapping().unwrap();assert_eq!(mapping.registered_checker_path(0).unwrap(),entry);assert_eq!(mapping.registered_checker_path(1).unwrap().as_os_str(),original.as_os_str(),"exact original registration spelling for {entry:?}");
+ }
+}

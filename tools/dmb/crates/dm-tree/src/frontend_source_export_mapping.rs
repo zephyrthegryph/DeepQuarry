@@ -6,6 +6,7 @@ use std::sync::{OnceLock, Weak};
 struct IncludeCoordinates {
     path: Arc<PathBuf>,
     semantic_path: Arc<str>,
+    original_entry: Option<Arc<PathBuf>>,
     parent: Option<usize>,
 }
 #[derive(Clone, Copy)]
@@ -163,6 +164,7 @@ impl SourceExportMapping {
             .map(|include| IncludeCoordinates {
                 path: Arc::clone(&include.path),
                 semantic_path: Arc::clone(&include.semantic_path),
+                original_entry: include.original_entry_path().cloned(),
                 parent: include.parent,
             })
             .collect();
@@ -177,6 +179,7 @@ impl SourceExportMapping {
             hash.update(&(encounter as u64).to_le_bytes());
         }
         for include in includes.iter() {
+            if let Some(entry)=&include.original_entry{let text=entry.to_string_lossy();hash.update(&(text.len() as u64).to_le_bytes());hash.update(text.as_bytes());}else{hash.update(&u64::MAX.to_le_bytes());}
             let path = include.path.to_string_lossy();
             for value in [path.as_bytes(), include.semantic_path.as_bytes()] {
                 hash.update(&(value.len() as u64).to_le_bytes());
@@ -249,6 +252,7 @@ impl SourceExportMapping {
                     old.path == new.path
                         && old.semantic_path == new.semantic_path
                         && old.parent == new.parent
+                        && old.original_entry.as_ref() == new.original_entry_path()
                 })
     }
     /// Borrow only this authenticated mapping's per-occurrence binding. Missing
@@ -561,33 +565,12 @@ impl SourceExportMapping {
     /// Genuine checker token provenance, including native-issued macro invocation points.
     pub fn source_note_point(&self,offset:usize)->Result<SourceNoteOrigin,String>{self.borrowed_source_note_point(offset).map(BorrowedSourceNoteOrigin::into_owned).map_err(str::to_owned)}
     pub fn borrowed_source_note_point(&self,offset:usize)->Result<BorrowedSourceNoteOrigin<'_>,&'static str>{
-        let index = self
-            .origins
-            .partition_point(|origin| origin.output_span.end <= offset);
-        let origin = self
-            .origins
-            .get(index)
-            .ok_or("note has no native expanded origin")?;
-        let (include, _) = *self
-            .regions
-            .get(origin.region)
-            .ok_or("note region unavailable")?;
-        let acquired = self
-            .source_acquisition(include)
-            .ok_or("note original acquisition unavailable")?;
-        let cursor = self
-            .origins
-            .source_note_cursor(index, include, acquired, offset)
-            ?;
-        let coordinates = self
-            .includes
-            .get(include)
-            .ok_or("note include coordinates unavailable")?;
-        Ok(BorrowedSourceNoteOrigin {
-            path: &coordinates.path,
-            line: cursor.line,
-            byte_column: cursor.byte_column,
-        })
+        let point=original_note_point_in(&self.origins,offset,|region|{
+            let(include,_)=*self.regions.get(region).ok_or("note region unavailable")?;
+            let acquired=self.source_acquisition(include).ok_or("note original acquisition unavailable")?;
+            Ok((include,acquired))
+        },|include|Ok(&self.includes.get(include).ok_or("note include coordinates unavailable")?.path))?;
+        Ok(BorrowedSourceNoteOrigin{path:point.path,registration:self.registered_checker_path(point.include)?,line:point.line,byte_column:point.byte_column})
     }
 }
 
@@ -823,8 +806,100 @@ pub(super) fn full_source_admissions_for_test() -> usize {
 
 /// Same source-note projection borrowed before any path-owner clone. This is
 /// coordinate data, not a source/cache admission capability.
-#[derive(Clone,Copy)]pub struct BorrowedSourceNoteOrigin<'a>{path:&'a Arc<PathBuf>,line:usize,byte_column:usize}
+#[derive(Clone,Copy)]pub struct BorrowedSourceNoteOrigin<'a>{path:&'a Arc<PathBuf>,registration:&'a Path,line:usize,byte_column:usize}
 impl BorrowedSourceNoteOrigin<'_>{
+ /// Exact original FileList registration key plus its reported source point.
+ /// Physical acquisition identity alone is not reported-file identity.
+ pub fn same_reported_point(&self,other:&BorrowedSourceNoteOrigin<'_>)->bool{self.registration==other.registration&&self.line==other.line&&self.byte_column==other.byte_column}
+
+ /// Borrowed original reported-file key and byte point; no registration is minted.
+ pub fn reported_coordinates(&self)->(&Path,usize,usize){(self.registration,self.line,self.byte_column)}
  pub fn retained_charge(&self)->Option<usize>{std::mem::size_of::<SourceNoteOrigin>().checked_add(std::mem::size_of::<PathBuf>())?.checked_add(self.path.capacity())?.checked_add(2*std::mem::size_of::<usize>())}
  pub fn into_owned(self)->SourceNoteOrigin{SourceNoteOrigin{path:Arc::clone(self.path),line:self.line,byte_column:self.byte_column}}
+}
+
+impl SourceExportMapping{
+ fn registered_checker_path(&self,include:usize)->Result<&Path,&'static str>{
+  let row=self.includes.get(include).ok_or("checker registered include absent")?;
+  if row.parent.is_none(){return row.original_entry.as_deref().map(PathBuf::as_path).ok_or("original checker entry argument unissued")}
+  let root=self.includes.first().and_then(|row|row.original_entry.as_deref()).ok_or("original checker entry argument unissued")?;
+  let semantic=Path::new(row.semantic_path.as_ref());
+  let environment=root.parent().unwrap_or(Path::new(""));
+  Ok(if semantic.is_absolute(){semantic.strip_prefix(environment).unwrap_or(semantic)}else if environment.components().next().is_some(){
+   // Original prepare_include_file joins under this nonempty environment,
+   // then strip_prefix consumes that parent. std::Path's remaining component
+   // view drops leading CurDir components at that boundary. Borrow that same
+   // view; never canonicalize ParentDir or clone a reported registry key.
+   semantic.strip_prefix(Path::new(".")).unwrap_or(semantic)
+  }else{semantic})
+ }
+ pub fn original_checker_entry_storage(&self,mut visit:impl FnMut(usize,usize)){for row in self.includes.iter(){if let Some(entry)=&row.original_entry{visit(Arc::as_ptr(entry)as usize,std::mem::size_of::<PathBuf>());visit(entry.as_os_str().as_encoded_bytes().as_ptr()as usize,entry.capacity());}}}
+}
+
+/// Operation-local legacy FileList numbering over the SAME issued include
+/// coordinates. This is diagnostic location DATA, never parser/runtime proof.
+/// Borrowing prevents rebinding the map; no source text or AST is retained.
+pub struct OriginalCheckerSourceRegistry<'source>{
+ mapping:&'source SourceExportMapping,
+ files:Vec<u16>,
+ // LAST: physical row allocation is freed before its syntax-family credit.
+ _lease:dm_syntax::SettingRootLease,
+}
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]
+pub struct OriginalCheckerLocation{pub file:u16,pub line:u32,pub byte_column:u16}
+impl SourceExportMapping{
+ pub fn original_checker_source_registry<'source>(&'source self,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<OriginalCheckerSourceRegistry<'source>>{
+  fn denied(a:&dm_syntax::SettingAdmission<'_>,kind:std::io::ErrorKind,message:&'static str)->std::io::Error{a.record_operational_error(std::io::Error::new(kind,message));kind.into()}
+  let pending=(||{
+   a.checkpoint()?;
+   // A BTree first node can contain unused entry slots. Reserve a complete
+   // conservative node envelope per borrowed key BEFORE its first insertion.
+   let count=self.includes.len();let rows=count.checked_mul(4).and_then(|n|n.checked_mul(std::mem::size_of::<u16>()));
+   let bytes=rows.and_then(|n|n.checked_add(count.checked_mul(1024+std::mem::size_of::<(&Path,u16)>())?)).and_then(|n|n.checked_add(std::mem::size_of::<OriginalCheckerSourceRegistry<'_>>()+std::mem::size_of::<std::collections::BTreeMap<&Path,u16>>()));
+   let lease=a.reserve(bytes.ok_or_else(||denied(a,std::io::ErrorKind::OutOfMemory,"original checker file registry size overflow"))?)?;
+   let mut files=Vec::new();files.try_reserve_exact(count).map_err(|_|denied(a,std::io::ErrorKind::OutOfMemory,"original checker file registry allocation refused"))?;
+   if files.capacity()>count.saturating_mul(4){return Err(denied(a,std::io::ErrorKind::OutOfMemory,"original checker file registry exposed excess capacity"))}
+   let mut registered=std::collections::BTreeMap::<&Path,u16>::new();
+   for (ordinal,row) in self.includes.iter().enumerate(){
+    a.checkpoint()?;
+    // Old preprocessor records maps/skins/scripts separately; it registers
+    // ONLY actual DM/DME lexer files. Root entry is registered unconditionally.
+    if row.parent.is_some()&&!matches!(Path::new(row.semantic_path.as_ref()).extension().and_then(|s|s.to_str()),Some("dm"|"dme")){files.push(0);continue}
+    let key=self.registered_checker_path(ordinal).map_err(|message|denied(a,std::io::ErrorKind::InvalidInput,message))?;
+    let id=if let Some(id)=registered.get(key){*id}else{let next=registered.len().checked_add(1).and_then(|n|u16::try_from(n).ok()).filter(|id|*id!=0).ok_or_else(||denied(a,std::io::ErrorKind::InvalidInput,"original checker FileId space exhausted"))?;registered.insert(key,next);next};files.push(id);
+   }
+   drop(registered);a.checkpoint()?;
+   Ok(OriginalCheckerSourceRegistry{mapping:self,files,_lease:lease})
+  })();
+  if let Some(actual)=a.take_operational_error(){return Err(actual)}pending
+ }
+}
+impl OriginalCheckerSourceRegistry<'_>{
+ pub fn registrations(&self)->impl Iterator<Item=(usize,&Path,u16)>+'_ {self.files.iter().enumerate().filter_map(|(ordinal,&id)|{if id==0{None}else{self.mapping.registered_checker_path(ordinal).ok().map(|key|(ordinal,key,id))}})}
+ pub fn matches_mapping(&self,mapping:&SourceExportMapping)->bool{std::ptr::eq(self.mapping,mapping)}
+ pub fn location(&self,offset:usize)->Result<OriginalCheckerLocation,&'static str>{
+  let index=self.mapping.origins.partition_point(|origin|origin.output_span.end<=offset);
+  let origin=self.mapping.origins.get(index).or_else(||self.mapping.origins.last()).ok_or("original checker source origin absent")?;
+  let(include,_)=*self.mapping.regions.get(origin.region).ok_or("original checker include coordinate absent")?;
+  let file=*self.files.get(include).filter(|id|**id!=0).ok_or("original checker source is not a registered DM file")?;
+  let point=self.mapping.borrowed_source_note_point(offset)?;
+  Ok(OriginalCheckerLocation{file,line:u32::try_from(point.line).map_err(|_|"original checker source line overflow")?,byte_column:u16::try_from(point.byte_column).map_err(|_|"original checker source column overflow")?})
+ }
+ pub fn visit_storage(&self,mut visit:impl FnMut(usize,usize)){visit(self.files.as_ptr()as usize,self.files.capacity()*std::mem::size_of::<u16>());self._lease.visit_counter_storage(visit);}
+}
+
+/// SAME original token/macro source-note projection, parameterized only by the
+/// actual owner's borrowed include/acquisition coordinates. No receipt minted.
+pub(super) struct OriginalNotePoint<'a>{pub include:usize,pub path:&'a Arc<PathBuf>,pub line:usize,pub byte_column:usize}
+pub(super) fn original_note_point_in<'a>(
+    origins:&dm_preprocess::regions::ExpandedOriginArena,offset:usize,
+    acquisition:impl FnOnce(usize)->Result<(usize,&'a dm_preprocess::SourceAcquisitionLease),&'static str>,
+    path:impl FnOnce(usize)->Result<&'a Arc<PathBuf>,&'static str>,
+)->Result<OriginalNotePoint<'a>,&'static str>{
+    let index=origins.partition_point(|origin|origin.output_span.end<=offset);
+    let origin=origins.get(index).ok_or("note has no native expanded origin")?;
+    let(include,acquired)=acquisition(origin.region)?;
+    let cursor=origins.source_note_cursor(index,include,acquired,offset)?;
+    let path=path(include)?;
+    Ok(OriginalNotePoint{include,path,line:cursor.line,byte_column:cursor.byte_column})
 }

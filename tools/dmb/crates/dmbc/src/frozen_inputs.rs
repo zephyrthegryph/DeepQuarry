@@ -773,3 +773,71 @@ impl SnapshotProvider for ProofStampedInputs<'_> {
         self.inner.digest_many(paths)
     }
 }
+
+/// Source-free directory-identity guard reused by generated output installation.
+/// No parser, input snapshot or semantic authority is issued here.
+pub(crate) struct GenerationAncestorGuard{
+ // Close the exact owned anchor while its directory identities are still held.
+ #[cfg(windows)] _anchor:Option<std::fs::File>,
+ #[cfg(windows)] _physical:physical_paths::Guard,
+ #[cfg(not(windows))] _directory:std::fs::File,
+}
+pub(crate) fn generation_ancestor_guard(parent:&Path,root:&Path)->io::Result<GenerationAncestorGuard>{
+ #[cfg(windows)]{let guard=physical_paths::capture(parent)?;guard.borrowed_proof().contained_root_identity(parent,root)?;Ok(GenerationAncestorGuard{_anchor:None,_physical:guard})}
+ #[cfg(not(windows))]{let root=std::fs::canonicalize(root)?;let actual=std::fs::canonicalize(parent)?;if !actual.starts_with(&root){return Err(io::Error::new(io::ErrorKind::InvalidInput,"generated directory escapes issued root"))}let metadata=std::fs::symlink_metadata(parent)?;if metadata.file_type().is_symlink()||!metadata.is_dir(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"generated parent is not an ordinary directory"))}Ok(GenerationAncestorGuard{_directory:std::fs::File::open(parent)?})}
+}
+
+pub(crate) fn generation_directory_identity(path:&Path,root:&Path)->io::Result<u128>{
+ #[cfg(windows)]{let guard=physical_paths::capture(path)?;let proof=guard.borrowed_proof();proof.contained_root_identity(path,root)?;if !proof.terminal_directory(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"generated directory changed kind"))}proof.terminal_identity().ok_or_else(||io::Error::new(io::ErrorKind::NotFound,"generated directory disappeared"))}
+ #[cfg(unix)]{use std::os::unix::fs::MetadataExt;let m=std::fs::symlink_metadata(path)?;if m.file_type().is_symlink()||!m.is_dir()||!std::fs::canonicalize(path)?.starts_with(std::fs::canonicalize(root)?){return Err(io::Error::new(io::ErrorKind::InvalidInput,"generated directory changed identity domain"))}Ok((u128::from(m.dev())<<64)|u128::from(m.ino()))}
+ #[cfg(not(any(windows,unix)))]{let _=(path,root);Err(io::ErrorKind::Unsupported.into())}
+}
+
+/// Publication-only directory guard. Ordinary source capture remains strict.
+/// Under the strict identity/reparse guard, create one kernel-owned child which
+/// cannot be deleted/renamed externally. Every ancestor has a held child directory;
+/// the terminal directory has this held file, so all remain nonempty. Windows
+/// rejects setting reparse points on nonempty directories (STATUS_DIRECTORY_NOT_EMPTY):
+/// https://learn.microsoft.com/en-us/windows-hardware/drivers/ifs/fsctl-set-reparse-point
+/// No source input, parser role, or receipt is issued by this source-free guard.
+pub(crate) fn generation_publication_guard(parent:&Path,root:&Path)->io::Result<GenerationAncestorGuard>{
+ #[cfg(windows)]{
+  let strict=generation_ancestor_guard(parent,root)?;
+  let anchor=crate::generation_staging::publication_anchor(parent)?;
+  let physical=physical_paths::capture_publication(parent)?;
+  physical.borrowed_proof().contained_root_identity(parent,root)?;
+  if !physical.borrowed_proof().terminal_directory(){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"publication anchor parent changed kind"))}
+  let guarded=GenerationAncestorGuard{_anchor:Some(anchor),_physical:physical};
+  drop(strict);Ok(guarded)
+ }
+ #[cfg(not(windows))]{generation_ancestor_guard(parent,root)}
+}
+
+#[cfg(all(test,windows))]
+mod generation_publication_tests{
+ use super::*;use std::os::windows::{fs::OpenOptionsExt,io::AsRawHandle,ffi::OsStrExt};
+ fn mount_point(parent:&Path,target:&Path)->io::Result<()>{
+  let ordinary=target.to_str().unwrap().strip_prefix(r"\\?\").unwrap_or(target.to_str().unwrap());
+  let substitute=format!(r"\??\{ordinary}");let sub:Vec<u16>=std::ffi::OsStr::new(&substitute).encode_wide().collect();let print:Vec<u16>=std::ffi::OsStr::new(ordinary).encode_wide().collect();
+  let mut data=Vec::new();data.extend_from_slice(&0xa0000003u32.to_le_bytes());data.extend_from_slice(&u16::try_from(8+(sub.len()+print.len()+2)*2).unwrap().to_le_bytes());data.extend_from_slice(&0u16.to_le_bytes());
+  for value in[0u16,u16::try_from(sub.len()*2).unwrap(),u16::try_from((sub.len()+1)*2).unwrap(),u16::try_from(print.len()*2).unwrap()]{data.extend_from_slice(&value.to_le_bytes())}for value in sub.into_iter().chain([0]).chain(print).chain([0]){data.extend_from_slice(&value.to_le_bytes())}
+  let file=std::fs::OpenOptions::new().access_mode(0x40000000).share_mode(7).custom_flags(0x02000000|0x00200000).open(parent)?;
+  #[link(name="kernel32")]extern "system"{fn DeviceIoControl(handle:*mut std::ffi::c_void,code:u32,input:*const u8,input_length:u32,output:*mut u8,output_length:u32,returned:*mut u32,overlapped:*mut std::ffi::c_void)->i32;}
+  let mut returned=0;let ok=unsafe{DeviceIoControl(file.as_raw_handle(),0x000900a4,data.as_ptr(),u32::try_from(data.len()).unwrap(),std::ptr::null_mut(),0,&mut returned,std::ptr::null_mut())};if ok==0{Err(io::Error::last_os_error())}else{Ok(())}
+ }
+ #[test]fn generation_publication_anchor_allows_child_rename_but_blocks_parent_anchor_delete_and_nonempty_reparse(){
+  let root=crate::test_scratch::dir("generation-publication-identity");let parent=root.join("outputs");let external=crate::test_scratch::dir("generation-publication-external");std::fs::create_dir(&parent).unwrap();std::fs::write(external.join("untouched"),b"outside").unwrap();
+  let guard=generation_publication_guard(&parent,&root).unwrap();let anchors=std::fs::read_dir(&parent).unwrap().map(|row|row.unwrap().path()).collect::<Vec<_>>();assert_eq!(anchors.len(),1,"the actual owned anchor keeps an otherwise empty directory nonempty");assert_eq!(std::fs::remove_file(&anchors[0]).unwrap_err().raw_os_error(),Some(32));assert_eq!(std::fs::rename(&parent,root.join("moved")).unwrap_err().raw_os_error(),Some(32));
+  // Exercise the actual NTFS control, not a guessed symlink-create failure.
+  // https://learn.microsoft.com/en-us/windows-hardware/drivers/ifs/fsctl-set-reparse-point
+  assert_eq!(mount_point(&parent,&external).unwrap_err().raw_os_error(),Some(145),"nonempty anchored directories cannot become reparse points");
+  std::fs::write(parent.join("new"),b"generated").unwrap();crate::publish::atomic_replace(&parent.join("new"),&parent.join("final")).unwrap();assert_eq!(std::fs::read(parent.join("final")).unwrap(),b"generated");std::fs::remove_file(parent.join("final")).unwrap();drop(guard);assert_eq!(std::fs::read_dir(&parent).unwrap().count(),0,"kernel closes only the actual owned anchor");
+  mount_point(&parent,&external).expect("the exact same valid mount-point request succeeds only after the anchor is gone");std::fs::remove_dir(&parent).unwrap();assert_eq!(std::fs::read(external.join("untouched")).unwrap(),b"outside");
+ }
+}
+
+/// Checked actual ancestor backing before publication creates any new guard.
+pub(crate) fn generation_publication_guard_charge(parent:&Path,root:&Path)->io::Result<usize>{
+ #[cfg(windows)]{physical_paths::publication_charge(parent,root).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"publication ancestor backing exceeds existing depth/admission"))}
+ #[cfg(not(windows))]{parent.as_os_str().len().checked_add(root.as_os_str().len()).and_then(|n|n.checked_mul(16)).and_then(|n|n.checked_add(4096)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"publication ancestor backing overflow"))}
+}

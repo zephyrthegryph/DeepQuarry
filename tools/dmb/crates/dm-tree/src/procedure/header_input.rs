@@ -171,13 +171,15 @@ fn spans(
     items: &[Item],
     offset: usize,
     source: &str,
+    tokens: &[SpanToken],
+    procedure_namespace: bool,
     out: &mut Vec<Span>,
     coordinates: &mut Option<OriginalInitializerCoordinates>,
     admission: Option<&dm_syntax::SettingAdmission<'_>>,
 ) -> Result<(), OriginalHeaderFailure> {
     for item in items {
         let wants_header =
-            coordinates.is_some() || matches!(item.kind, ItemKind::Proc | ItemKind::Verb);
+            coordinates.is_some() || procedure_namespace || matches!(item.kind, ItemKind::Proc | ItemKind::Verb);
         let span = if wants_header {
             let span = Span::new(
                 item.header_span
@@ -201,14 +203,25 @@ fn spans(
         } else {
             Span::new(0, 0)
         };
-        if matches!(item.kind, ItemKind::Proc | ItemKind::Verb) {
+        // Proc/verb namespaces themselves have no parameter opening. The
+        // normalizer promotes their actual child callable, so the original
+        // recipe inventory must continue to that SAME child's primary tokens.
+        let procedure_context=procedure_namespace||matches!(item.kind,ItemKind::Proc|ItemKind::Verb);
+        let callable=if procedure_context{
+            if span.start>span.end{return Err("original procedure header bounds differ".into())}
+            let first=tokens.partition_point(|token|token.span.start<span.start);
+            let last=tokens.partition_point(|token|token.span.start<span.end);
+            let view=HeaderView::original(source,&tokens[first..last],span)?;
+            view.tokens().iter().any(|token|token.kind==TokenKind::Punctuation&&view.spelling(token)=="(")
+        }else{false};
+        if callable {
             if source.get(span.range()) != Some(item.header.as_str()) {
                 return Err("original procedure header differs from its declaration source".into());
             }
             reserve(out, 1)?;
             out.push(span);
         } else {
-            spans(&item.children, offset, source, out, coordinates, admission)?;
+            spans(&item.children, offset, source, tokens, procedure_context, out, coordinates, admission)?;
         }
     }
     Ok(())
@@ -314,6 +327,11 @@ impl OriginalProcedureHeaders {
         admission: Option<&dm_syntax::SettingAdmission<'_>>,
         checker_diagnostic_settings: bool,
     ) -> Result<Arc<Self>, OriginalHeaderFailure> {
+        if tokens.iter().any(|t| source.get(t.span.range()).is_none())
+            || tokens.windows(2).any(|p| p[0].span.end > p[1].span.start)
+        {
+            return Err("original declaration token ranges differ".into());
+        }
         let mut headers = Vec::new();
         let mut coordinates = admission
             .map(OriginalInitializerCoordinates::new)
@@ -322,6 +340,8 @@ impl OriginalProcedureHeaders {
             items,
             offset,
             &source,
+            &tokens,
+            false,
             &mut headers,
             &mut coordinates,
             admission,
@@ -335,11 +355,6 @@ impl OriginalProcedureHeaders {
             if coordinates.spans.windows(2).any(|p| p[0].end > p[1].start) {
                 return Err("original declaration header coordinates overlap".into());
             }
-        }
-        if tokens.iter().any(|t| source.get(t.span.range()).is_none())
-            || tokens.windows(2).any(|p| p[0].span.end > p[1].span.start)
-        {
-            return Err("original declaration token ranges differ".into());
         }
         if let Some(a) = admission {
             a.checkpoint()?;
@@ -1244,5 +1259,38 @@ mod initializer_first_root_tests {
 impl OriginalProcedureHeaders{
  pub(crate) fn for_declaration_profile(source:SourceText,items:&[Item],offset:usize,tokens:Option<Vec<SpanToken>>,admission:Option<&dm_syntax::SettingAdmission<'_>>,checker:bool)->Result<Arc<Self>,OriginalHeaderFailure>{
   let result=(||{if let Some(a)=admission{original_checkpoint(a)?;}let tokens=if let Some(tokens)=tokens{tokens}else{let parsed=dm_syntax::lex_spans(&source);if let Some(a)=admission{original_checkpoint(a)?;}if !parsed.diagnostics.is_empty(){return Err("original cached declaration token reissue failed".into())}parsed.tokens};Self::from_primary_inner(source,items,offset,tokens,admission,checker)})();if let Some(a)=admission{finish_original_admission(result,a)}else{result}
+ }
+}
+
+/// Borrowed original primary tokens for ONE authenticated current body. This
+/// is diagnostic text/location DATA; it issues no parser or semantic receipt.
+pub struct OriginalBodyTokens<'source>{owner:&'source OriginalProcedureHeaders,body:Span,offset:usize}
+impl OriginalProcedureHeaders{
+ pub(crate) fn body_tokens(&self,body:Span,offset:usize)->Result<OriginalBodyTokens<'_>,&'static str>{
+  if self.headers.binary_search_by_key(&body.start,|span|span.start).is_err()||body.start>body.end||body.end>self.source.len()||body.end.checked_add(offset).is_none(){return Err("original body primary token bounds differ")}
+  Ok(OriginalBodyTokens{owner:self,body,offset})
+ }
+}
+impl<'source> OriginalBodyTokens<'source>{
+ pub fn current_span(&self)->Span{Span::new(self.body.start+self.offset,self.body.end+self.offset)}
+ pub fn tokens(&self,current:Span)->Result<impl Iterator<Item=(TokenKind,Span,&'source str)>+'source,&'static str>{
+  let body=self.current_span();if current.start>current.end||current.start<body.start||current.end>body.end{return Err("requested primary tokens escape original body")}
+  let relative=Span::new(current.start-self.offset,current.end-self.offset);let owner=self.owner;
+  let first=owner.tokens.partition_point(|token|token.span.end<=relative.start);let last=owner.tokens.partition_point(|token|token.span.start<relative.end);
+  if first>last{return Err("requested primary token boundary splits a token")}
+  let tokens:&'source[SpanToken]=&owner.tokens[first..last];
+  if tokens.first().is_some_and(|token|token.span.start<relative.start)||tokens.last().is_some_and(|token|token.span.end>relative.end){return Err("requested primary token boundary splits a token")}
+  let source:&'source str=&owner.source;let offset=self.offset;
+  Ok(tokens.iter().map(move|token|(token.kind,Span::new(token.span.start+offset,token.span.end+offset),token.text(source))))
+ }
+}
+
+#[cfg(test)]mod callable_namespace_original_headers_tests{
+ use super::*;
+ #[test]fn original_callable_recipe_descends_proc_and_verb_namespaces_without_recording_them_as_bodies(){
+  for source in["/datum/flags\n    proc/final\n        probe()\n            return 0\n","/datum/flags\n    proc\n        final\n            probe()\n                return 0\n","/datum/flags\n    verb\n        present()\n            return 0\n"]{
+   let ast=dm_syntax::parse_declaration_skeleton(source);assert!(ast.diagnostics.is_empty(),"{:?}",ast.diagnostics);
+   let owner=OriginalProcedureHeaders::from_primary(source.into(),&ast.items,0,ast.tokens).unwrap();assert_eq!(owner.headers.len(),1,"namespace is not a callable header");let span=owner.headers[0];assert!(source[span.range()].ends_with("()"));assert!(owner.original(span,0).is_ok());assert!(owner.headers.iter().all(|span|source[span.range()].contains('(')));
+  }
  }
 }

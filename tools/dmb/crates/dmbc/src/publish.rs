@@ -779,12 +779,12 @@ fn replace_copy_receipt(
 }
 
 #[cfg(not(windows))]
-fn atomic_replace(source: &Path, destination: &Path) -> io::Result<()> {
+pub(crate) fn atomic_replace(source: &Path, destination: &Path) -> io::Result<()> {
     fs::rename(source, destination)
 }
 
 #[cfg(windows)]
-fn atomic_replace(source: &Path, destination: &Path) -> io::Result<()> {
+pub(crate) fn atomic_replace(source: &Path, destination: &Path) -> io::Result<()> {
     use std::os::windows::ffi::OsStrExt;
     #[link(name = "kernel32")]
     extern "system" {
@@ -878,3 +878,9 @@ fn validate_directory(path: &Path, id: u128) -> io::Result<OutputPair> {
 #[cfg(test)]
 #[path = "publish_tests.rs"]
 mod tests;
+
+/// Reuse the existing cooperative publication lease; no new lock registry.
+pub(crate) fn generation_destination_lease()->std::io::Result<std::fs::File>{destination_leases::acquire()}
+
+pub(crate) fn generation_paths_alias(left:&Path,right:&Path)->io::Result<bool>{let left=destinations::absolute_identity(left)?;let right=destinations::absolute_identity(right)?;destinations::same_path(&left,&right)}
+pub(crate) fn generation_finish_owned(file:File,path:&Path)->io::Result<crate::input_snapshot::Stamp>{publication_io::finish_owned(file,path)}

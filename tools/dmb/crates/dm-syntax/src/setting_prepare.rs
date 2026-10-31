@@ -38,6 +38,7 @@ fn mul(a: &SettingAdmission<'_>, x: usize, y: usize) -> io::Result<usize> {
 fn parser_peak(source: &str, tokens: &[SpanToken], a: &SettingAdmission<'_>) -> io::Result<usize> {
     let mut token_work = tokens.len();
     let mut text_work = 0usize;
+    let mut fragment_work=0usize;
     for token in tokens {
         a.checkpoint()?;
         let text = source.get(token.span.range()).ok_or_else(|| {
@@ -51,6 +52,7 @@ fn parser_peak(source: &str, tokens: &[SpanToken], a: &SettingAdmission<'_>) -> 
         if token.kind == TokenKind::String {
             let brackets = text.bytes().filter(|b| *b == b'[').count();
             let overlap = mul(a, text.len(), brackets)?;
+            if brackets!=0{fragment_work=add(a,fragment_work,add(a,text.len(),overlap)?)?;}
             token_work = add(a, token_work, overlap)?;
             text_work = add(a, text_work, add(a, overlap, text.len())?)?;
         }
@@ -60,11 +62,13 @@ fn parser_peak(source: &str, tokens: &[SpanToken], a: &SettingAdmission<'_>) -> 
     let node = size_of::<crate::Token>() * 12
         + size_of::<Expr>() * 16
         + size_of::<String>() * 8
+        + size_of::<Vec<crate::literal::LiteralFragment>>()
+        + 4*size_of::<crate::SpanToken>()
         + size_of::<usize>() * 16
         + 128;
     add(
         a,
-        add(a, mul(a, token_work, node)?, mul(a, text_work, 64)?)?,
+        add(a,add(a,mul(a,token_work,node)?,mul(a,text_work,64)?)?,mul(a,fragment_work,4*(size_of::<crate::literal::LiteralFragment>()+size_of::<crate::SpanToken>()))?)?,
         8192,
     )
 }
@@ -118,9 +122,12 @@ fn prepare_measure_using(root:&Expr,a:&SettingAdmission<'_>,body_fresh:bool)->io
                 if let Some((_, n)) = l.shared_storage() {
                     charge!(n);
                 }
-                match l.retained_parts() {
+                match l.prepared_syntax_parts() {
                     Some(Ok(Some(p))) => {
+                        charge!(p.runtime_error_storage().map_or(0,String::capacity));
                         charge!(vec_bytes(&p.template));
+                        charge!(vec_bytes(&p.fragments));
+                        for row in &p.fragments{charge!(vec_bytes(&row.tokens));}
                         charge!(vec_bytes(&p.expressions));
                         pending.extend(p.expressions.iter())?;
                     }
@@ -201,7 +208,7 @@ pub(crate) fn attach(
                     a.record_operational_error(e);
                     io::Error::from(kind)
                 })?;
-                if let Some(Ok(Some(p))) = l.retained_parts() {
+                if let Some(Ok(Some(p))) = l.prepared_syntax_parts() {
                     pending.extend(p.expressions.iter())?;
                 }
             }
@@ -431,5 +438,6 @@ pub(crate) fn literal_parser_peak(raw:&str,a:&SettingAdmission<'_>)->io::Result<
  let overlap=mul(a,raw.len(),raw.bytes().filter(|b|*b==b'[').count())?;
  let token_work=add(a,1,overlap)?;let text_work=add(a,mul(a,raw.len(),2)?,overlap)?;
  let node=size_of::<crate::Token>()*12+size_of::<Expr>()*16+size_of::<String>()*8+size_of::<usize>()*16+128;
- add(a,add(a,mul(a,token_work,node)?,mul(a,text_work,64)?)?,8192)
+ let fragments=if raw.as_bytes().contains(&b'['){add(a,raw.len(),overlap)?}else{0};let fragment_bytes=add(a,mul(a,fragments,4*(size_of::<crate::literal::LiteralFragment>()+size_of::<crate::SpanToken>()))?,size_of::<Vec<crate::literal::LiteralFragment>>())?;
+ add(a,add(a,add(a,mul(a,token_work,node)?,mul(a,text_work,64)?)?,fragment_bytes)?,8192)
 }

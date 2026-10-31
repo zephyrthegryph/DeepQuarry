@@ -42,7 +42,7 @@ impl DiscoveryReceipt {
     pub(crate) fn covers_generator_cli_tests(&self,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{
         self.covers_dm_roots(dq_analyze::captured_raw_file::generator_cli_test_roots(),true,admit)
     }
-    fn covers_dm_roots(&self,roots:&[(&str,&str)],missing_is_empty:bool,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{
+    pub(crate) fn covers_dm_roots(&self,roots:&[(&str,&str)],missing_is_empty:bool,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{
         match self.selection{DiscoverySelection::RecursiveDmNoChildLinksV1=>{}}
         for &(directory,extension) in roots{
             crate::daemon::control::checkpoint()?;

@@ -2,7 +2,7 @@
 //! Staging only: no filesystem writer, SourceSnapshot, compiled-source receipt,
 //! sibling semantic model/cache or default request route is introduced here.
 use super::*;
-use crate::input_snapshot::{GenerationBootstrap,GenerationSourceReader,RecordingInputs,SnapshotProvider};
+use crate::input_snapshot::{GenerationBootstrap,GenerationQuestionBootstrap,GenerationSourceFrame,GenerationSourceReader,RecordingInputs,SnapshotProvider};
 use crate::runner_host::workspace_discovery::DiscoveryReceipt;
 use super::super::generator_policy::{Artifact,GeneratorName};
 use dq_analyze::{captured_generator_budget::Budget,captured_reactive_reads::Failure,generator_test_scope::TestTypeCollector,key_policy_control::Control};
@@ -29,40 +29,58 @@ impl QueryDb{
   &self,frame:&GenerationBootstrap,inputs:&RecordingInputs<P>,discovery:&Arc<DiscoveryReceipt>,intent:&crate::policy_request::AdmittedPolicyRequest,names:&[GeneratorName],limit:Option<usize>,
   consume:&mut dyn FnMut(&Artifact,&Arc<Budget>,&std::collections::BTreeSet<String>)->io::Result<()>,
  )->io::Result<()>{
-  if names.is_empty()||names.len()>13||names.iter().any(|name|!source_only(*name)||!intent.workspace_generators().contains(name)){return Err(io::Error::new(io::ErrorKind::Unsupported,"generation requires requested source-only output roles"))}
+  self.with_generation_phase(GenerationSourceFrame::Declarations(frame),inputs,discovery,intent,names,limit,|reader,budget,_order,tests|{
+   for name in names{reader.checkpoint()?;
+    let artifact=match name{
+     GeneratorName::SparseSlots|GeneratorName::DeclareIds=>{let role=if *name==GeneratorName::SparseSlots{dq_analyze::captured_declaration_pages::Generator::SparseSlots}else{dq_analyze::captured_declaration_pages::Generator::DeclareIds};named(*name,dq_analyze::captured_declaration_pages::generate_from_pages(role,reader,_order,budget,&||crate::daemon::control::checkpoint())?,budget)?},
+     GeneratorName::Declare=>named(*name,dq_analyze::captured_declare_pages::generate_from_pages(reader,_order,budget,&||crate::daemon::control::checkpoint())?,budget)?,
+     GeneratorName::Stats=>named(*name,dq_analyze::captured_stats_pages::generate_from_pages(reader,_order,budget,&||crate::daemon::control::checkpoint())?,budget)?,
+     GeneratorName::Actions=>named(*name,dq_analyze::captured_actions_pages::generate_from_pages(reader,_order,budget,&||crate::daemon::control::checkpoint())?,budget)?,
+     GeneratorName::SystemAccessors=>{let mut output=dq_analyze::captured_system_accessors_pages::generate_from_pages(reader,_order,budget,&||crate::daemon::control::checkpoint())?;let text=output.captured_file_text(budget).map_err(|message|if budget.denied(){oom(budget,message)}else{Failure::Unsupported(message)})?;let diags=std::mem::take(&mut output.diags);drop(output);budget.charge(std::mem::size_of::<Artifact>()).map_err(|message|oom(budget,message))?;Artifact{name:*name,text,files:Vec::new(),diags}},
+     GeneratorName::UiTypes=>{let generated=dq_analyze::captured_ui_pages::generate_from_pages(reader,_order,budget,&||crate::daemon::control::checkpoint())?;budget.charge(std::mem::size_of::<Artifact>()).map_err(|message|oom(budget,message))?;Artifact{name:*name,text:String::new(),files:generated.files,diags:generated.diags}},
+     _=>unreachable!("source-only roles validated before capture"),
+    };
+    reader.require_completed()?;consume(&artifact,budget,tests)?;reader.checkpoint()?;
+   }
+   Ok(())
+  })
+ }
+
+ fn with_generation_phase<P:SnapshotProvider>(
+  &self,frame:GenerationSourceFrame<'_>,inputs:&RecordingInputs<P>,discovery:&Arc<DiscoveryReceipt>,intent:&crate::policy_request::AdmittedPolicyRequest,names:&[GeneratorName],limit:Option<usize>,
+  operation:impl for<'phase>FnOnce(&GenerationSourceReader<'phase,P>,&Arc<Budget>,&std::collections::HashMap<String,usize>,&std::collections::BTreeSet<String>)->Result<(),Failure>,
+ )->io::Result<()>{
+  if names.is_empty()||names.len()>13||names.iter().any(|name|!(if frame.questions().is_some(){*name==GeneratorName::TrackedLists}else{source_only(*name)})||!intent.workspace_generators().contains(name)){return Err(io::Error::new(io::ErrorKind::Unsupported,"generation requires requested supported phase output roles"))}
   for(index,name)in names.iter().enumerate(){if names[..index].contains(name){return Err(io::Error::new(io::ErrorKind::InvalidInput,"generation output role repeats"))}}
   let request=intent.workspace().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"generation needs actual admitted workspace intent"))?;
   if request.root!=discovery.contract().root||request.recursive_roots!=discovery.contract().recursive_roots{return Err(io::Error::new(io::ErrorKind::InvalidData,"generation discovery differs from admitted workspace request"))}
   crate::daemon::control::checkpoint()?;frame.require_recording(inputs)?;discovery.validate_recording(inputs)?;
   let _gate=self.raw_policy.gate.lock().unwrap_or_else(|error|error.into_inner());self.raw_prune_locked(std::time::Instant::now());self.begin_result_admission_locked()?;
   let inventory=self.workspace_resource_inventory_locked()?;
-  let fixed=inventory.coordination_charge(0)?.checked_add(8192).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"generation coordination overflow"))?;
-  let available=self.workspace_input_headroom_locked(fixed)?.min(RESULT_BOUND.checked_sub(self.raw_policy.charge.load(Ordering::Relaxed)).and_then(|n|n.checked_sub(inventory.bytes())).and_then(|n|n.checked_sub(aggregate::REPORT_RESERVE)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"generation result-family headroom exhausted"))?).min(limit.unwrap_or(usize::MAX));
+  // These NEW retained generation spans are already charged to the native
+  // declaration counter. They still overlap this distinct phase envelope:
+  // subtract their live reservation before minting ONE operation Budget.
+  let generation_metadata=if let Some(questions)=frame.questions(){
+   let mut actual=Some(0usize);questions.visit_generation_metadata(|_,bytes|{actual=actual.and_then(|n|n.checked_add(bytes))});
+   let actual=actual.ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"generation metadata census overflow"))?;
+   let reserved=questions.generation_metadata_charge();if actual>reserved{return Err(io::Error::new(io::ErrorKind::OutOfMemory,"generation metadata exceeds native reservation"))}reserved
+  }else{0};
+  let fixed=inventory.coordination_charge(0)?.checked_add(8192).and_then(|n|n.checked_add(generation_metadata)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"generation coordination overflow"))?;
+  let available=self.workspace_input_headroom_locked(fixed)?.min(RESULT_BOUND.checked_sub(self.raw_policy.charge.load(Ordering::Relaxed)).and_then(|n|n.checked_sub(inventory.bytes())).and_then(|n|n.checked_sub(aggregate::REPORT_RESERVE)).and_then(|n|n.checked_sub(generation_metadata)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"generation result-family headroom exhausted"))?).min(limit.unwrap_or(usize::MAX));
   let budget=Budget::new(available).map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message))?;
   let run=(||{
    // Exactly ONE original-source reader owns all acquired bytes for this phase.
    // Every selected generator below reuses it; do not invoke this API per name.
-   let reader=GenerationSourceReader::capture(frame,inputs,discovery,&budget)?;
-   let manifest=frame.declarations().root_source().ok_or("generation root source absent")?;
-   let lease=frame.declarations().original_sources().find_map(|(path,lease)|(path==manifest).then_some(lease).flatten()).ok_or("generation manifest acquisition absent")?;
+   let reader=GenerationSourceReader::capture_frame(frame,inputs,discovery,&budget)?;
+   let manifest=frame.root_source().ok_or("generation root source absent")?;
+   let lease=frame.originals().find_map(|(path,lease)|(path==manifest).then_some(lease).flatten()).ok_or("generation manifest acquisition absent")?;
    let bom=match lease.encoding(){dm_preprocess::SourceEncoding::Utf8=>false,dm_preprocess::SourceEncoding::Utf8Bom=>true,_=>return Err(Failure::from("generation manifest requires original strict UTF8"))};
    budget.charge(lease.source_text().len().checked_mul(64).and_then(|n|n.checked_add(4096)).ok_or_else(||oom(&budget,"generation manifest metadata overflow"))?).map_err(|message|oom(&budget,message))?;
    let order=dq_analyze::raw_marker_policy::dme_include_order_view(lease.source_text().as_str(),bom);
    let mut collector=TestTypeCollector::default();let mut control=Check{budget:&budget};
    if !reader.for_each_tests(&mut|relative,views|{collector.observe(relative,views.raw()?,&mut control)?;Ok(true)})?{return Err("generation CLI test-source traversal stopped".into())}
    let tests=collector.finish();
-   for name in names{reader.checkpoint()?;
-    let artifact=match name{
-     GeneratorName::SparseSlots|GeneratorName::DeclareIds=>{let role=if *name==GeneratorName::SparseSlots{dq_analyze::captured_declaration_pages::Generator::SparseSlots}else{dq_analyze::captured_declaration_pages::Generator::DeclareIds};named(*name,dq_analyze::captured_declaration_pages::generate_from_pages(role,&reader,&order,&budget,&||crate::daemon::control::checkpoint())?,&budget)?},
-     GeneratorName::Declare=>named(*name,dq_analyze::captured_declare_pages::generate_from_pages(&reader,&order,&budget,&||crate::daemon::control::checkpoint())?,&budget)?,
-     GeneratorName::Stats=>named(*name,dq_analyze::captured_stats_pages::generate_from_pages(&reader,&order,&budget,&||crate::daemon::control::checkpoint())?,&budget)?,
-     GeneratorName::Actions=>named(*name,dq_analyze::captured_actions_pages::generate_from_pages(&reader,&order,&budget,&||crate::daemon::control::checkpoint())?,&budget)?,
-     GeneratorName::SystemAccessors=>{let mut output=dq_analyze::captured_system_accessors_pages::generate_from_pages(&reader,&order,&budget,&||crate::daemon::control::checkpoint())?;let text=output.captured_file_text(&budget).map_err(|message|if budget.denied(){oom(&budget,message)}else{Failure::Unsupported(message)})?;let diags=std::mem::take(&mut output.diags);drop(output);budget.charge(std::mem::size_of::<Artifact>()).map_err(|message|oom(&budget,message))?;Artifact{name:*name,text,files:Vec::new(),diags}},
-     GeneratorName::UiTypes=>{let generated=dq_analyze::captured_ui_pages::generate_from_pages(&reader,&order,&budget,&||crate::daemon::control::checkpoint())?;budget.charge(std::mem::size_of::<Artifact>()).map_err(|message|oom(&budget,message))?;Artifact{name:*name,text:String::new(),files:generated.files,diags:generated.diags}},
-     _=>unreachable!("source-only roles validated before capture"),
-    };
-    reader.require_completed()?;consume(&artifact,&budget,&tests)?;reader.checkpoint()?;
-   }
+   operation(&reader,&budget,&order,&tests)?;
    reader.require_completed()?;Ok::<_,Failure>(())
   })();
   match run{Err(Failure::Operational(actual))=>Err(actual),other=>{
@@ -70,7 +88,31 @@ impl QueryDb{
    other.map_err(|failure|match failure{Failure::Operational(actual)=>actual,Failure::Unsupported(message)=>io::Error::new(io::ErrorKind::Unsupported,message)})
   }}
  }
+
+ /// Purpose-specific generation questions. No compiled source snapshot or
+ /// ordinary FullArtifact is minted; outputs are borrowed only for staging.
+ pub(crate) fn with_generation_question_generators<P:SnapshotProvider>(
+  &self,frame:&GenerationQuestionBootstrap,inputs:&RecordingInputs<P>,discovery:&Arc<DiscoveryReceipt>,intent:&crate::policy_request::AdmittedPolicyRequest,names:&[GeneratorName],
+  mut consume:impl FnMut(&Artifact,&Arc<Budget>,&std::collections::BTreeSet<String>)->io::Result<()>,
+ )->io::Result<()>{self.with_generation_question_generators_limit(frame,inputs,discovery,intent,names,None,&mut consume)}
+ fn with_generation_question_generators_limit<P:SnapshotProvider>(
+  &self,frame:&GenerationQuestionBootstrap,inputs:&RecordingInputs<P>,discovery:&Arc<DiscoveryReceipt>,intent:&crate::policy_request::AdmittedPolicyRequest,names:&[GeneratorName],limit:Option<usize>,consume:&mut dyn FnMut(&Artifact,&Arc<Budget>,&std::collections::BTreeSet<String>)->io::Result<()>,
+ )->io::Result<()>{
+  frame.with_questions(inputs,|questions|{
+   if !questions.body_host_is(self){return Err(io::Error::new(io::ErrorKind::InvalidInput,"generation question host belongs to another actual QueryDb"))}
+   self.with_generation_phase(GenerationSourceFrame::Questions(frame),inputs,discovery,intent,names,limit,|reader,budget,_order,tests|{
+    for name in names{reader.checkpoint()?;let artifact=match name{
+     GeneratorName::TrackedLists=>{let mut output=dq_analyze::captured_tracked_lists_pages::generate_from_generation(questions,reader.root(),reader,tests,budget,&||crate::daemon::control::checkpoint())?;let text=output.captured_named_file_text("tracked_lists","tracked_lists.dm",budget).map_err(|m|oom(budget,m))?;let diags=std::mem::take(&mut output.diags);drop(output);budget.charge(std::mem::size_of::<Artifact>()).map_err(|m|oom(budget,m))?;Artifact{name:*name,text,files:Vec::new(),diags}},
+     _=>return Err("generation native question consumer is unsupported".into()),
+    };reader.require_completed()?;consume(&artifact,budget,tests)?;reader.checkpoint()?;}Ok(())
+   })?;Ok(Ok::<_,()>(()))
+  })?.map_err(|_|io::Error::other("generation question phase declined"))
+ }
+
 }
+
+#[cfg(test)]
+#[path="../../../dm-analysis/examples/support/reference_hierarchy.rs"]mod generation_reference_hierarchy;
 
 #[cfg(test)]mod tests{
  use super::*;use crate::input_snapshot::{FileSystemInputs,GenerationBootstrapPreparation,GenerationBootstrapFailure,Stamp,FolderListing,CapturedInputRead,PolicyDirectoryListing,SourceAliasChallenge,SourceAliasProof};
@@ -95,8 +137,9 @@ impl QueryDb{
  }
  fn fixture()->Fixture{
   let root=crate::test_scratch::dir("generation-original-source-pages");std::fs::create_dir_all(root.join("code/engine")).unwrap();std::fs::create_dir_all(root.join("code/tests")).unwrap();
-  let project=root.join("deepquarry.dme");let mut manifest=String::new();for relative in QueryDb::generation_dm_outputs(){manifest.push_str(&format!("#include \"{relative}\"\n"));}manifest.push_str("#include \"code/compiled.dm\"\n");std::fs::write(&project,manifest).unwrap();
+  let project=root.join("deepquarry.dme");let mut manifest=String::new();for relative in QueryDb::generation_dm_outputs(){manifest.push_str(&format!("#include \"{relative}\"\n"));}manifest.push_str("#include \"code/compiled.dm\"\n#include \"fixture_map.dmm\"\n#include \"fixture_skin.dmf\"\n");std::fs::write(&project,manifest).unwrap();
   std::fs::write(root.join("code/compiled.dm"),"/datum/probe\n    var/value=7\n/proc/wall(a,b)\n    return null\n").unwrap();
+  std::fs::write(root.join("fixture_map.dmm"),"\"a\" = (/turf)\n(1,1,1) = {\"\na\n\"}\n").unwrap();std::fs::write(root.join("fixture_skin.dmf"),"window \"probe\"\n").unwrap();
   let raw=root.join("code/markers.dm");std::fs::write(&raw,"sparse(/datum/probe, stash, type = /datum)\nCAPABILITY_TYPE(probe, CAP_PROBE, /datum/probe)\nCAPABILITIES(/datum/probe)\n    wall(1, 2)\nSTAT(/datum/probe, charge, SUM)\nACTION(hit, num/power)\nSYSTEM_DEF(clock)\nSYSTEM_ACCESSOR(clock, get_value, nameof(value))\n/datum/system/clock\n    var/value\n").unwrap();std::fs::write(root.join("code/tests/only.dm"),"/datum/generation_test_only\n").unwrap();
   let backend=Physical{fail:Arc::new(AtomicBool::new(false)),raw,reads:Arc::new(Mutex::new(BTreeMap::new()))};let inputs=RecordingInputs::new(backend.clone(),0);let queries=Arc::new(QueryDb::default());let frame=prepare(&inputs,&project,&queries);
   let discovery=Arc::new(workspace_discovery::discover(&inputs,DiscoveryContract{root:root.clone(),recursive_roots:vec![root.join("code")]}).unwrap());
@@ -104,7 +147,7 @@ impl QueryDb{
  }
  #[test]fn real_missing_output_bootstrap_runs_all_seven_source_generators_from_original_loans_without_cold_or_body_role(){
   let f=fixture();
-  let originals=f.frame.declarations().original_sources().collect::<Vec<_>>();assert_eq!(originals.len(),2,"only actual manifest and compiled DM are original source loans");assert!(originals.iter().all(|(_,lease)|lease.is_some()),"every actual source has its real acquisition");assert!(originals.iter().any(|(path,_)|*path==f.project));assert!(originals.iter().any(|(path,_)|*path==f.root.join("code/compiled.dm")));f.frame.require_recording(&f.inputs).unwrap();
+  let originals=f.frame.declarations().original_sources().collect::<Vec<_>>();assert_eq!(originals.len(),2,"only actual manifest and compiled DM are original source loans");assert!(originals.iter().all(|(_,lease)|lease.is_some()),"every actual source has its real acquisition");assert!(originals.iter().any(|(path,_)|*path==f.project));assert!(originals.iter().any(|(path,_)|*path==f.root.join("code/compiled.dm")));f.frame.require_recording(&f.inputs).unwrap();assert_eq!(f.backend.count(&f.root.join("fixture_map.dmm")),0,"typed map dependency is not a code-source acquisition");assert_eq!(f.backend.count(&f.root.join("fixture_skin.dmf")),0,"typed skin dependency is not a code-source acquisition");
   let compiled=f.root.join("code/compiled.dm");let compiled_reads=f.backend.count(&compiled);let raw_reads=f.backend.count(&f.backend.raw);let mut observed=Vec::new();
   f.queries.with_generation_source_generators(&f.frame,&f.inputs,&f.discovery,&f.intent,&ROLES,|artifact,_,tests|{
    observed.push(artifact.name);assert!(tests.contains("/datum/generation_test_only"));
@@ -134,4 +177,47 @@ impl QueryDb{
   let current=RecordingInputs::new(f.backend.clone(),0);let before_parses=parses.load(Ordering::Relaxed);
   let config=dm_tree::frontend::FrontendConfig{workers:1,engine:None,observer:Some(&observe)};assert!(matches!(current.prepare_generation_bootstrap(&f.project,&BTreeMap::new(),config,&executor,&host,&mut |_|Ok(())).unwrap(),GenerationBootstrapPreparation::NotNeeded));assert_eq!(parses.load(Ordering::Relaxed),before_parses,"normal retained full-frontend path must be selected before generation declaration parsing");
  }
+ // Same original hierarchy fixture used by the independent whole legacy oracle;
+ // hierarchy only, never a production default or an invented complete engine.
+ fn tracked_fixture()->(PathBuf,Physical,RecordingInputs<Physical>,GenerationBootstrap,Arc<DiscoveryReceipt>,crate::policy_request::AdmittedPolicyRequest,Arc<QueryDb>){
+  let root=crate::test_scratch::dir("generation-tracked-purpose");std::fs::create_dir_all(root.join("code/tests")).unwrap();std::fs::create_dir_all(root.join("code/sub")).unwrap();
+  for(relative,text)in [
+   ("deepquarry.dme",include_str!("../../../../../analyze/fixtures/generation_tracked_bootstrap/deepquarry.dme")),
+   ("code/probe.dm",include_str!("../../../../../analyze/fixtures/generation_tracked_bootstrap/code/probe.dm")),
+   ("code/tests/tracked.dm",include_str!("../../../../../analyze/fixtures/generation_tracked_bootstrap/code/tests/tracked.dm")),
+   ("code/extra.dm",include_str!("../../../../../analyze/fixtures/generation_tracked_bootstrap/code/extra.dm")),
+  ]{std::fs::write(root.join(relative),text).unwrap();}
+  let backend=Physical{fail:Arc::new(AtomicBool::new(false)),raw:root.join("code/extra.dm"),reads:Arc::new(Mutex::new(BTreeMap::new()))};let inputs=RecordingInputs::new(backend.clone(),0);let queries=Arc::new(QueryDb::default());let frame=prepare(&inputs,&root.join("deepquarry.dme"),&queries);
+  let discovery=Arc::new(workspace_discovery::discover(&inputs,DiscoveryContract{root:root.clone(),recursive_roots:vec![root.join("code")]}).unwrap());let mut intent=crate::policy_request::PolicyInputRequest::default();intent.workspace=Some(crate::policy_request::WorkspacePolicyRequest{root:root.clone(),recursive_roots:vec![root.join("code")],configuration:root.join("missing.toml")});intent.workspace_generators=ROLES.into_iter().chain([GeneratorName::TrackedLists]).collect();let intent=intent.admit().unwrap();(root,backend,inputs,frame,discovery,intent,queries)
+ }
+ fn question_after_source_seven()->(PathBuf,Physical,RecordingInputs<Physical>,GenerationQuestionBootstrap,Arc<DiscoveryReceipt>,crate::policy_request::AdmittedPolicyRequest,Arc<QueryDb>){
+  use std::io::Write;
+  let(root,backend,inputs,frame,discovery,intent,queries)=tracked_fixture();
+  assert!(QueryDb::generation_dm_outputs().all(|relative|!root.join(relative).exists()));
+  let scratch=crate::test_scratch::dir("generation-purpose-journal");let mut staged=crate::generation_journal::StagedJournal::new(crate::generation_staging::temporary_output(&scratch).unwrap()).unwrap();let mut ordinal=0;
+  queries.with_generation_source_generators(&frame,&inputs,&discovery,&intent,&ROLES,|artifact,budget,_|{let bound=artifact.charge().checked_mul(8).and_then(|n|n.checked_add(8192)).unwrap();budget.charge(bound).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;let observed=serde_json::to_string(&artifact.output_wire()).unwrap();assert!(observed.capacity()<=bound);println!("NATIVE_GENERATION_SOURCE_FILE={observed}");staged.append_generator(ordinal,artifact.name.name())?;ordinal+=1;assert!(artifact.diags.is_empty());if artifact.name==GeneratorName::UiTypes{for(path,text)in&artifact.files{QueryDb::validate_generation_output(&root,artifact.name,path).map_err(|m|io::Error::new(io::ErrorKind::InvalidData,m))?;staged.append_file(path,text)?;}}else{let(path,text)=artifact.single()?;QueryDb::validate_generation_output(&root,artifact.name,path).map_err(|m|io::Error::new(io::ErrorKind::InvalidData,m))?;staged.append_file(path,text)?;}Ok(())}).unwrap();
+  let mut staged=staged.seal().unwrap();drop(frame);drop(discovery);let closure=inputs.into_snapshot().unwrap();assert!(closure.restat(&backend).unwrap().unchanged());
+  staged.visit(&mut |_|Ok(()),&mut|kind,_,relative,_,bytes|{if kind==1{let target=root.join(relative);std::fs::create_dir_all(target.parent().unwrap())?;let mut file=std::fs::File::create(target)?;std::io::copy(bytes,&mut file)?;file.flush()?;}else{std::io::copy(bytes,&mut std::io::sink())?;}Ok(())}).unwrap();
+  assert!(!closure.restat(&backend).unwrap().unchanged(),"real phase writes retire the old issued negative closure");
+  let inputs=RecordingInputs::new(backend.clone(),0);let host=queries.clone()as Arc<dyn dm_tree::frontend::SettingExpressionQueries>;let executor=dm_exec::BuildExecutor::new(1).unwrap();let seed=super::generation_reference_hierarchy::seed();let config=dm_tree::frontend::FrontendConfig{workers:1,engine:Some(&seed),observer:None};
+  let raw=match inputs.prepare_generation_question_bootstrap(&root.join("deepquarry.dme"),&Default::default(),config,&executor,&host,&mut |_|Ok(())).unwrap(){GenerationBootstrapPreparation::MissingOutputs(frame)=>frame,_=>panic!("actual stage1 outputs remain absent")};let frame=raw.into_native_questions(&inputs,config,&executor,&queries).unwrap();
+  let discovery=Arc::new(workspace_discovery::discover(&inputs,DiscoveryContract{root:root.clone(),recursive_roots:vec![root.join("code")]}).unwrap());(root,backend,inputs,frame,discovery,intent,queries)
+ }
+ #[test]fn actual_all_missing_source_seven_then_native_question_tracked_preserves_original_whole_output_and_no_body_demand(){
+  let(root,backend,inputs,frame,discovery,intent,queries)=question_after_source_seven();let compiled=backend.count(&root.join("code/probe.dm"));let mut visits=0;
+  queries.with_generation_question_generators(&frame,&inputs,&discovery,&intent,&[GeneratorName::TrackedLists],|artifact,budget,tests|{visits+=1;assert!(tests.contains("/datum/test_box"));assert_eq!(artifact.text.matches("/// TRACKED(").count(),6);assert_eq!(artifact.diags.len(),3);assert!(artifact.text.contains("#if defined(UNIT_TESTS)"));
+   // Observation is test-only, but its exposed serialization backing is still
+   // funded while the actual phase Budget and artifact loan are live.
+   let bound=artifact.charge().checked_mul(8).and_then(|n|n.checked_add(8192)).unwrap();budget.charge(bound).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;let json=serde_json::to_string(&artifact.output_wire()).unwrap();assert!(json.capacity()<=bound);println!("NATIVE_GENERATION_TRACKED_FULL={json}");Ok(())
+  }).unwrap();assert_eq!(visits,1);assert_eq!(backend.count(&root.join("code/probe.dm")),compiled);assert_eq!(queries.db.stats(crate::query_db::body_syntax::BODY_SYNTAX).computed,0);assert!(!root.join(GeneratorName::TrackedLists.path()).exists(),"phase consumer only stages data; ordered errors prevent installation");
+ }
+ #[test]fn generation_tracked_actual_io_quota_cancel_foreign_db_and_callback_unwind_refuse_then_same_frame_recovers(){
+  let(root,backend,inputs,frame,discovery,intent,queries)=question_after_source_seven();let names=[GeneratorName::TrackedLists];let mut visits=0;backend.fail.store(true,Ordering::Relaxed);let error=queries.with_generation_question_generators(&frame,&inputs,&discovery,&intent,&names,|_,_,_|{visits+=1;Ok(())}).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(visits,0);backend.fail.store(false,Ordering::Relaxed);
+  let error=queries.with_generation_question_generators_limit(&frame,&inputs,&discovery,&intent,&names,Some(1),&mut|_,_,_|{visits+=1;Ok(())}).unwrap_err();assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);assert_eq!(visits,0);
+  let foreign=QueryDb::default();assert_eq!(foreign.with_generation_question_generators(&frame,&inputs,&discovery,&intent,&names,|_,_,_|{visits+=1;Ok(())}).unwrap_err().kind(),io::ErrorKind::InvalidInput);assert_eq!(visits,0);
+  let token=crate::daemon::control::Cancellation::default();let binding=crate::daemon::control::bind_with_deadline(token.clone(),std::time::Instant::now()+std::time::Duration::from_secs(30));token.cancel();assert_eq!(queries.with_generation_question_generators(&frame,&inputs,&discovery,&intent,&names,|_,_,_|{visits+=1;Ok(())}).unwrap_err().kind(),io::ErrorKind::Interrupted);drop(binding);assert_eq!(visits,0);
+  let failure=queries.with_generation_question_generators(&frame,&inputs,&discovery,&intent,&names,|_,_,_|Err(io::Error::from_raw_os_error(1450))).unwrap_err();assert_eq!(failure.raw_os_error(),Some(1450));
+  let panic=std::panic::catch_unwind(std::panic::AssertUnwindSafe(||{let _=queries.with_generation_question_generators(&frame,&inputs,&discovery,&intent,&names,|_,_,_|->io::Result<()>{panic!("actual generation staged callback")});}));assert!(panic.is_err());queries.with_generation_question_generators(&frame,&inputs,&discovery,&intent,&names,|_,_,_|{visits+=1;Ok(())}).unwrap();assert_eq!(visits,1);assert_eq!(queries.db.stats(crate::query_db::body_syntax::BODY_SYNTAX).computed,0);assert!(!root.join(GeneratorName::TrackedLists.path()).exists());
+ }
+
 }

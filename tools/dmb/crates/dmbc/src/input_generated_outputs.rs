@@ -1,8 +1,8 @@
 //! Caller-owned output names affect membership proofs, never source reads.
 use super::*;
-pub struct GeneratedOutputInputs<P> {
+pub struct GeneratedOutputInputs<P, Paths = BTreeSet<PathBuf>> {
     provider: P,
-    paths: BTreeSet<PathBuf>,
+    paths: Paths,
 }
 impl<P> GeneratedOutputInputs<P> {
     pub fn new(provider: P, paths: impl IntoIterator<Item = PathBuf>) -> Self {
@@ -12,7 +12,12 @@ impl<P> GeneratedOutputInputs<P> {
         }
     }
 }
-impl<P: SnapshotProvider> SnapshotProvider for GeneratedOutputInputs<P> {
+// Borrow only an already-issued canonical membership policy; no path cloning,
+// source reads, negative-probe filtering or new authority is introduced.
+impl<'a, P> GeneratedOutputInputs<P, &'a BTreeSet<PathBuf>> {
+    pub(crate) fn borrowed(provider: P, paths: &'a BTreeSet<PathBuf>) -> Self { Self { provider, paths } }
+}
+impl<P: SnapshotProvider, Paths: std::borrow::Borrow<BTreeSet<PathBuf>>> SnapshotProvider for GeneratedOutputInputs<P, Paths> {
     fn read_policy_bounded(
         &self,
         path: &Path,
@@ -36,7 +41,7 @@ impl<P: SnapshotProvider> SnapshotProvider for GeneratedOutputInputs<P> {
         self.provider.source_alias(path, proof)
     }
     fn generated_outputs(&self) -> Option<&BTreeSet<PathBuf>> {
-        Some(&self.paths)
+        Some(self.paths.borrow())
     }
     fn stamp(&self, path: &Path) -> io::Result<Stamp> {
         self.provider.stamp(path)
@@ -96,6 +101,9 @@ mod tests {
         let snapshot = capture.into_snapshot().unwrap();
         files.0.borrow_mut().push("output.rsc".into());
         assert!(snapshot.restat(&generated).unwrap().unchanged());
+        let borrowed = GeneratedOutputInputs::borrowed(&files, snapshot.generated_outputs());
+        assert!(std::ptr::eq(borrowed.generated_outputs().unwrap(), snapshot.generated_outputs()));
+        assert!(snapshot.restat(&borrowed).unwrap().unchanged());
         assert!(!snapshot.restat(&files).unwrap().unchanged());
         files.0.borrow_mut().push("new-resource.png".into());
         assert!(!snapshot.restat(&generated).unwrap().unchanged());
@@ -106,6 +114,7 @@ mod tests {
             .unwrap();
         *files.1.borrow_mut() = true;
         assert!(!negative.restat(&generated).unwrap().unchanged());
+        assert!(!negative.restat(&borrowed).unwrap().unchanged());
         let wire = dm_wire::encode(0x5350_0002, &snapshot).unwrap();
         let restored: InputSnapshot =
             dm_wire::decode(0x5350_0002, &wire, dm_wire::MAX_BYTES).unwrap();

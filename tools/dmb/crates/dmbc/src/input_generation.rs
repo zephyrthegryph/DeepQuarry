@@ -32,6 +32,23 @@ impl<P:SnapshotProvider> RecordingInputs<P> {
         host:&std::sync::Arc<dyn dm_tree::frontend::SettingExpressionQueries>,
         admit:&mut dyn FnMut(usize)->io::Result<()>,
     )->Result<GenerationBootstrapPreparation,GenerationBootstrapFailure>{
+        self.prepare_generation_bootstrap_inner(project,defines,config,executor,host,admit,false)
+    }
+    pub(crate) fn prepare_generation_question_bootstrap(
+        &self, project:&Path, defines:&BTreeMap<String,String>,
+        config:dm_tree::frontend::FrontendConfig<'_>, executor:&dm_exec::BuildExecutor,
+        host:&std::sync::Arc<dyn dm_tree::frontend::SettingExpressionQueries>,
+        admit:&mut dyn FnMut(usize)->io::Result<()>,
+    )->Result<GenerationBootstrapPreparation,GenerationBootstrapFailure>{
+        self.prepare_generation_bootstrap_inner(project,defines,config,executor,host,admit,true)
+    }
+    pub(crate) fn prepare_generation_bootstrap_inner(
+        &self, project:&Path, defines:&BTreeMap<String,String>,
+        config:dm_tree::frontend::FrontendConfig<'_>, executor:&dm_exec::BuildExecutor,
+        host:&std::sync::Arc<dyn dm_tree::frontend::SettingExpressionQueries>,
+        admit:&mut dyn FnMut(usize)->io::Result<()>,
+        questions:bool,
+    )->Result<GenerationBootstrapPreparation,GenerationBootstrapFailure>{
         let mut run=||->Result<GenerationBootstrapPreparation,GenerationBootstrapFailure>{
             crate::daemon::control::checkpoint().map_err(GenerationBootstrapFailure::Operational)?;
             if !project.is_absolute(){return Err(GenerationBootstrapFailure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"generation manifest must be caller absolute")));}
@@ -50,7 +67,7 @@ impl<P:SnapshotProvider> RecordingInputs<P> {
                 self.read_candidate(path).map(|value|value.is_none())
             },admit).map_err(GenerationBootstrapFailure::Operational)?;
             if omissions.paths().next().is_none(){return Ok(GenerationBootstrapPreparation::NotNeeded)}
-            let declarations=dm_tree::frontend::prepare_generation_declarations(project,self,defines,omissions,config,executor,host,&|path|{
+            let read=|path:&Path|{
                 crate::daemon::control::checkpoint()?;
                 let parent=path.parent().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"generation source has no parent"))?;
                 self.record_search_folder(parent)?;
@@ -59,7 +76,8 @@ impl<P:SnapshotProvider> RecordingInputs<P> {
                     Err(actual) if actual.kind()==io::ErrorKind::NotFound=>{self.snapshot.lock().map_err(|_|invalid("input capture mutex poisoned"))?.record_negative(path)?;Ok(None)},
                     Err(actual)=>Err(actual),
                 }
-            }).map_err(|failure|match failure {dm_tree::frontend::GenerationPreparationFailure::Frontend(dm_tree::frontend::FrontendBuildFailure::Operational(actual))=>GenerationBootstrapFailure::Operational(actual),other=>GenerationBootstrapFailure::Declarations(other)})?;
+            };
+            let declarations=if questions{dm_tree::frontend::prepare_generation_question_declarations(project,self,defines,omissions,config,executor,host,&read)}else{dm_tree::frontend::prepare_generation_declarations(project,self,defines,omissions,config,executor,host,&read)}.map_err(|failure|match failure {dm_tree::frontend::GenerationPreparationFailure::Frontend(dm_tree::frontend::FrontendBuildFailure::Operational(actual))=>GenerationBootstrapFailure::Operational(actual),other=>GenerationBootstrapFailure::Declarations(other)})?;
             let inputs=self.snapshot().map_err(GenerationBootstrapFailure::Operational)?;
             let result=GenerationBootstrap{declarations,inputs};
             result.require_current(&self.provider).map_err(GenerationBootstrapFailure::Operational)?;
@@ -69,6 +87,38 @@ impl<P:SnapshotProvider> RecordingInputs<P> {
         if matches!(&result,Err(GenerationBootstrapFailure::Operational(_))){return result}
         crate::daemon::control::checkpoint().map_err(GenerationBootstrapFailure::Operational)?;
         result
+    }
+}
+
+
+/// Purpose-specific actual native questions; metadata InputSnapshot remains the
+/// same recorded closure. It has no SourceSnapshot/PolicyInputs conversion.
+pub(crate) struct GenerationQuestionBootstrap {
+    questions:dm_tree::frontend::GenerationNativeQuestions,
+    inputs:InputSnapshot,
+}
+impl GenerationBootstrap {
+    pub(crate) fn into_native_questions<P:SnapshotProvider>(self,recording:&RecordingInputs<P>,config:dm_tree::frontend::FrontendConfig<'_>,executor:&dm_exec::BuildExecutor,db:&std::sync::Arc<crate::query_db::QueryDb>)->Result<GenerationQuestionBootstrap,GenerationBootstrapFailure>{
+        self.require_recording(recording).map_err(GenerationBootstrapFailure::Operational)?;
+        let control:std::sync::Arc<dyn dm_tree::frontend::SettingExpressionQueries>=db.clone();
+        let bodies:std::sync::Arc<dyn dm_tree::frontend::BodySyntaxQueries>=db.clone();
+        let Self{declarations,inputs}=self;
+        let questions=declarations.into_native_questions(config,executor,bodies,&control).map_err(|failure|match failure{dm_tree::frontend::GenerationPreparationFailure::Frontend(dm_tree::frontend::FrontendBuildFailure::Operational(actual))=>GenerationBootstrapFailure::Operational(actual),other=>GenerationBootstrapFailure::Declarations(other)})?;
+        let frame=GenerationQuestionBootstrap{questions,inputs};frame.require_recording(recording).map_err(GenerationBootstrapFailure::Operational)?;Ok(frame)
+    }
+}
+impl GenerationQuestionBootstrap {
+    fn require_recording<P:SnapshotProvider>(&self,recording:&RecordingInputs<P>)->io::Result<()>{
+        crate::daemon::control::checkpoint()?;
+        for(path,lease)in self.questions.original_sources(){let lease=lease.ok_or_else(||invalid("generation question original acquisition absent"))?;if !recording.validate_source_lease(path,lease){return Err(io::Error::new(io::ErrorKind::InvalidData,"generation question frame belongs to another original recorder"))}}
+        if !self.inputs.restat(&recording.provider)?.unchanged(){return Err(io::Error::new(io::ErrorKind::InvalidData,"generation question inputs changed; reissue actual generation frame"))}
+        crate::daemon::control::checkpoint()
+    }
+    pub(crate) fn with_questions<P:SnapshotProvider,R,S>(&self,recording:&RecordingInputs<P>,consume:impl for<'frame>FnOnce(&'frame dm_tree::frontend::GenerationNativeQuestions)->io::Result<Result<R,S>>)->io::Result<Result<R,S>>{
+        self.require_recording(recording)?;
+        let result=consume(&self.questions)?; // actual first IO remains unchanged
+        self.require_recording(recording)?; // semantic/success both final-check
+        Ok(result)
     }
 }
 
@@ -139,7 +189,7 @@ impl<P:SnapshotProvider> RecordingInputs<P> {
 }
 
 #[path="input_generation_sources.rs"]mod sources;
-pub(crate) use sources::GenerationSourceReader;
+pub(crate) use sources::{GenerationSourceReader,GenerationSourceFrame};
 impl GenerationBootstrap{
  pub(crate) fn require_recording<P:SnapshotProvider>(&self,inputs:&RecordingInputs<P>)->io::Result<()>{
   crate::daemon::control::checkpoint()?;

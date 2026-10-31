@@ -130,11 +130,15 @@ impl SourceSnapshot {
     ) -> io::Result<()> {
         crate::daemon::control::checkpoint()?;
         let producer = match family {
+            "incompatible_directive" => DiagnosticSeverity::Error,
             "ambiguous_not_bitwise"
             | "ambiguous_in_lhs"
             | "invalid_set_value"
+            | "invalid_lint_directive_value"
             | "unknown_linter_setting"
             | "unknown_setting"
+            | "disabled_directive"
+            | "sets_directive_twice"
             | "field_access_static_type"
             | "proc_call_static_type" => DiagnosticSeverity::Warning,
             "control_condition_static"
@@ -158,6 +162,7 @@ impl SourceSnapshot {
         if ordinal as usize >= archive.len() {
             return Err(io::Error::other("body ordinal unavailable"));
         }
+        if family=="invalid_lint_directive_value"{return self.write_original_invalid_directive_using(ordinal,environment,tree,capture,&loaded,output)}
         let mut rows = Vec::new();
         // These original producers are UNTAGGED: arbitrary observation-name
         // map keys must not disable or re-severity their diagnostics.
@@ -202,6 +207,7 @@ impl SourceSnapshot {
                 }
                 "unknown_linter_setting" => match dm_analysis::checks_unknown_linter_setting::archived_checked(&body,Severity::Warning,&mut crate::daemon::control::checkpoint){Ok(rows)=>Ok(rows),Err(dm_analysis::policy_body_demand::PolicyFailure::Operational(actual))=>return Err(actual),Err(dm_analysis::policy_body_demand::PolicyFailure::Unsupported(message))=>Err(message.0)},
                 "unknown_setting" => match dm_analysis::checks_unknown_linter_setting::archived_ordinary_checked(&body,Severity::Warning,&mut crate::daemon::control::checkpoint){Ok(rows)=>Ok(rows),Err(dm_analysis::policy_body_demand::PolicyFailure::Operational(actual))=>return Err(actual),Err(dm_analysis::policy_body_demand::PolicyFailure::Unsupported(message))=>Err(message.0)},
+                "incompatible_directive" | "disabled_directive" | "sets_directive_twice" => {let family=match family{"incompatible_directive"=>dm_analysis::checks_directive_binding::Family::Incompatible,"disabled_directive"=>dm_analysis::checks_directive_binding::Family::Disabled,_=>dm_analysis::checks_directive_binding::Family::Duplicate};match dm_analysis::checks_directive_binding::archived_checked(&body,family,if family.name()=="incompatible_directive"{Severity::Error}else{Severity::Warning},&mut crate::daemon::control::checkpoint){Ok(rows)=>Ok(rows),Err(dm_analysis::policy_body_demand::PolicyFailure::Operational(actual))=>return Err(actual),Err(dm_analysis::policy_body_demand::PolicyFailure::Unsupported(message))=>Err(message.0)}},
                 "invalid_set_value" => {
                     dm_analysis::checks_invalid_set::archived(&body, Severity::Error)
                 }
@@ -261,4 +267,26 @@ pub(super) fn visibility_test_fixture_result(
     checker: Option<&[u8]>,
 ) -> Result<SourceSnapshot, Vec<dm_tree::frontend::Diagnostic>> {
     tests::semantic_snapshot_primary_result(source, checker, true)
+}
+
+// Original invalid-value messages are serialized by borrow.
+// This avoids copying a potentially large Debug String into serde_json::Value.
+struct OriginalInvalidRows<'a>{rows:Option<&'a dm_analysis::checker_original_expression_debug::OriginalDiagnosticRows>,archive:&'a dm_tree::frontend::BodyArchive,level:Option<DiagnosticSeverity>}
+impl serde::Serialize for OriginalInvalidRows<'_>{fn serialize<S:serde::Serializer>(&self,serializer:S)->Result<S::Ok,S::Error>{use serde::ser::SerializeSeq;let count=self.rows.map_or(0,|rows|rows.iter().len());let mut seq=serializer.serialize_seq(Some(count))?;if let Some(rows)=self.rows{for row in rows.iter(){seq.serialize_element(&OriginalInvalidRow{row,archive:self.archive,level:self.level.ok_or_else(||serde::ser::Error::custom("invalid-value row has no configured severity"))?})?;}}seq.end()}}
+struct OriginalInvalidRow<'a>{row:&'a dm_analysis::checks::Diagnostic,archive:&'a dm_tree::frontend::BodyArchive,level:DiagnosticSeverity}
+impl serde::Serialize for OriginalInvalidRow<'_>{fn serialize<S:serde::Serializer>(&self,serializer:S)->Result<S::Ok,S::Error>{use serde::ser::SerializeStruct;let row=self.row;let origin=self.archive.source_note_point(row.span.start).map_err(serde::ser::Error::custom)?;let mut state=serializer.serialize_struct("ConfiguredDiagnostic",8)?;state.serialize_field("expanded_span",&[row.span.start,row.span.end])?;state.serialize_field("expression_span",&[row.expression_span.start,row.expression_span.end])?;state.serialize_field("family",row.family)?;state.serialize_field("file",&origin.path)?;state.serialize_field("line",&origin.line)?;state.serialize_field("message",&row.message)?;state.serialize_field("notes",&[]as&[&str])?;state.serialize_field("severity",severity(self.level))?;state.end()}}
+#[derive(serde::Serialize)]
+struct OriginalInvalidEnvelope<'a>{configuration:&'a Path,configuration_explicit:bool,configuration_present:bool,configuration_schema:&'static str,diagnostics:OriginalInvalidRows<'a>,environment:&'a Path,family:&'static str,full_checker_parity:bool,ordinal:u32,policy_revision:String,row:&'static str,schema:&'static str,semantic_revision:String,source_revision:String}
+impl SourceSnapshot{
+ // Source-bound configured family. This grants no complete-checker parity.
+ fn write_original_invalid_directive_using(&self,ordinal:u32,environment:&Path,tree:&dm_tree::SemanticTree,capture:&CapturedPolicyInputs,loaded:&config::Loaded,output:&mut impl io::Write)->io::Result<()>{
+  let archive=capture.policy().archive();let level=loaded.policy.register(Some("invalid_lint_directive_value"),DiagnosticSeverity::Warning);
+  let rows=if let Some(_)=level{let body=archive.parse_checked(ordinal as usize).map_err(|error|match error{dm_tree::frontend::BodySyntaxFailure::Syntax(error)=>io::Error::other(error.message),dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>actual})?;
+   let rows=dm_analysis::checks_directive_binding::archived_value_checked(&body,Severity::Warning,&mut crate::daemon::control::checkpoint).map_err(|error|match error{dm_analysis::policy_body_demand::PolicyFailure::Operational(actual)=>actual,dm_analysis::policy_body_demand::PolicyFailure::Unsupported(message)=>io::Error::other(message.0)})?;
+   for row in rows.iter(){crate::daemon::control::checkpoint()?;archive.source_note_point(row.span.start).map_err(io::Error::other)?;if !row.notes.is_empty(){return Err(io::Error::other("invalid-value projection unexpectedly acquired notes"))}}Some(rows)
+  }else{None};
+  crate::daemon::control::checkpoint()?;
+  let envelope=OriginalInvalidEnvelope{configuration:&loaded.selected.path,configuration_explicit:loaded.selected.explicit,configuration_present:loaded.present,configuration_schema:"complete_pinned_checker_schema",diagnostics:OriginalInvalidRows{rows:rows.as_ref(),archive,level},environment,family:"invalid_lint_directive_value",full_checker_parity:false,ordinal,policy_revision:format!("{:032x}",self.policy_revision.ok_or_else(||io::Error::other("invalid-value policy revision unavailable"))?),row:"source_native_configured_checker",schema:"dm-session-source-query-v1",semantic_revision:format!("{:032x}",tree.identity()),source_revision:format!("{:032x}",self.source_revision)};
+  serde_json::to_writer(&mut *output,&envelope).map_err(io::Error::other)?;output.write_all(b"\n")?;crate::daemon::control::checkpoint()
+ }
 }

@@ -1913,3 +1913,7 @@ pub(crate) use purity::pages::NativeEffectPage;
 pub(crate) use purity::global_report::NativeEffectReport;
 
 pub(crate) use purity::report_wire::EffectRequestInputLease;
+
+#[cfg(test)]
+#[path="query_db/generation_question_tests.rs"]
+mod generation_question_tests;

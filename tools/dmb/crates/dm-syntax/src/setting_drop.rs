@@ -11,10 +11,14 @@ pub(crate) fn drop_expression(expression: Expr, anchor: Option<SharedSettingRete
 pub(crate) fn drop_literal_parts(parts: LiteralParts, anchor: Option<SharedSettingRetention>) {
     let LiteralParts {
         template,
+        fragments,
         expressions,
         lexical: _,
+        runtime_error,
     } = parts;
     drop(template);
+    drop(fragments);
+    drop(runtime_error);
     release(expressions, anchor);
 }
 fn release(mut pending: Vec<Expr>, anchor: Option<SharedSettingRetention>) {
@@ -31,6 +35,8 @@ fn release(mut pending: Vec<Expr>, anchor: Option<SharedSettingRetention>) {
                 }
                 if let Some(mut parts) = parts {
                     drop(parts.template);
+                    drop(parts.fragments);
+                    drop(parts.runtime_error);
                     pending.append(&mut parts.expressions);
                     drop(parts.expressions);
                 }
