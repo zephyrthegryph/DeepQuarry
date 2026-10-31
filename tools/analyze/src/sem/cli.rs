@@ -135,7 +135,17 @@ fn gen_input_key(tree: &crate::tree::Tree, root: &Path) -> u128 {
         h.update(&f.hash.to_le_bytes());
     }
     h.update(&std::fs::read(root.join("deepquarry.dme")).unwrap_or_default());
+    hash_scope_inputs(&mut h, root);
     u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap())
+}
+
+/// The part of `tools/ci/lint_scopes.toml` a generator reads (`auto_tracked`'s lists). It is not a `.dm` file, so the tree walk does not
+/// see it; without it in the key, a run after an edit of those lists restored or skipped as if nothing had changed.
+fn hash_scope_inputs(h: &mut blake3::Hasher, root: &Path) {
+    for item in crate::gens::auto_tracked::scope_inputs(root) {
+        h.update(&(item.len() as u64).to_le_bytes());
+        h.update(item.as_bytes());
+    }
 }
 
 /// Like [`gen_input_key`] but blind to the generated files themselves, so it is the same before and after they are written: the key of
@@ -151,6 +161,7 @@ fn gen_store_key(tree: &crate::tree::Tree, root: &Path) -> u128 {
         h.update(&f.hash.to_le_bytes());
     }
     h.update(&std::fs::read(root.join("deepquarry.dme")).unwrap_or_default());
+    hash_scope_inputs(&mut h, root);
     u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap())
 }
 
@@ -328,6 +339,10 @@ pub fn gen(args: &[String], root: &Path) -> ExitCode {
     let mut written: Vec<std::path::PathBuf> = Vec::new();
     let mut results = Vec::new();
     let mut last_tree: Option<Engine> = None;
+    // The store key of the inputs the first pass saw. What the generators produce is only valid for those inputs, so a run stores its
+    // outputs only when the inputs are still the same after it (a build target that rewrites `_bindings.dm` beside it would
+    // otherwise store reads made from the old bindings under the key of the new ones).
+    let mut first_key: Option<u128> = None;
     let stages: std::collections::HashMap<&'static str, u8> = super::gen::registry().iter().map(|g| (g.name(), g.stage())).collect();
     let order: Vec<&'static str> = super::gen::registry().iter().map(|g| g.name()).collect();
     // The stage 1 results of the pass that ran it: its files were written, and the next pass only proves stage 0 is still fresh.
@@ -342,6 +357,7 @@ pub fn gen(args: &[String], root: &Path) -> ExitCode {
             }
         };
         if pass == 0 && names.is_empty() {
+            first_key = Some(gen_store_key(&engine.tree, root));
             if let Some(paths) = gen_memo_hit(&engine.tree, root) {
                 if trace {
                     eprintln!("analyze: gen: inputs and outputs unchanged since the last run; nothing to do");
@@ -438,16 +454,28 @@ pub fn gen(args: &[String], root: &Path) -> ExitCode {
         }
     }
     let clean = super::gen::report(&results);
+    let mut unstable = false;
     if clean && !check && names.is_empty() {
         if let Some(e) = &last_tree {
-            gen_memo_store(&e.tree, root, &results);
-            gen_store_put(gen_store_key(&e.tree, root), root, &results);
+            // Judge the inputs as they are now, not as the last pass loaded them: something else may have written one during the run.
+            let o = Options { root: root.to_path_buf(), lints: vec!["sem/keys".to_string()], ..Default::default() };
+            let settled = Engine::new(crate::run::registry(), o).ok().map(|e2| gen_store_key(&e2.tree, root));
+            let stable = first_key.is_some() && settled == first_key && gen_store_key(&e.tree, root) == first_key.unwrap_or(0);
+            if stable {
+                gen_memo_store(&e.tree, root, &results);
+                gen_store_put(first_key.unwrap_or(0), root, &results);
+            } else {
+                unstable = true;
+                eprintln!("analyze: gen: an input changed while the generators ran (a build step rewriting a gitignored .dm such as _bindings.dm?); the outputs are not remembered or shared. The files on disk may not match the tree: run it again.");
+            }
         }
     }
     // The process ends right after this: freeing the model and every memo of the tree one allocation at a time takes seconds. The OS
     // reclaims it at once.
     std::mem::forget(last_tree);
-    if clean {
+    if unstable {
+        ExitCode::from(3)
+    } else if clean {
         ExitCode::SUCCESS
     } else {
         ExitCode::FAILURE

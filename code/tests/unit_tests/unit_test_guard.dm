@@ -39,12 +39,22 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 	guard.air["session"] = TRUE
 	guard.solids = unit_test_solid_snapshot()
 	guard.solids["session"] = TRUE
+	unit_test_settle_alarms()
 	guard.machine_state = unit_test_machine_snapshot()
 	guard.machines_by_area = list()
 	for(var/obj/machinery/M as anything in guard.machine_state)
 		LAZYADD(guard.machines_by_area[get_area(M)], M)
 	GLOB.unit_test_guard = guard
 	return guard
+
+/// Every air alarm takes the scan it would otherwise take at some moment of the run (its first one clamps a server room's 90 K target to the legal minimum and
+/// sets its danger level from the room), so the baseline holds settled alarms: before this, whichever test happened to run when a gas watch woke an alarm was
+/// named for "leaving" the alarm's target_temperature and danger_level changed (two runs of five failed the end-of-run compare on exactly those two settings).
+/proc/unit_test_settle_alarms()
+	for(var/obj/machinery/alarm/A as anything in unit_test_machines_tracked())
+		if(QDELETED(A) || !istype(A))
+			continue
+		A.scan_room()
 
 /// Adds the tick usage since `mark` (a TICK_USAGE reading) to the section's total and returns the present reading, so sections chain: mark = guard.spend("air", mark).
 /datum/unit_test_guard/proc/spend(section, mark)
@@ -88,7 +98,7 @@ GLOBAL_DATUM(unit_test_guard, /datum/unit_test_guard)
 	if(!drifted_areas[get_area(M)])
 		return FALSE
 	if(istype(M, /obj/machinery/alarm))
-		return name == "use_power" || name == "regulating_temperature"
+		return name == "use_power" || name == "regulating_temperature" || name == "danger_level"
 	if(istype(M, /obj/machinery/atmospherics/unary/freezer) || istype(M, /obj/machinery/atmospherics/unary/heater))
 		return name == "use_power" || name == "pumping"
 	return FALSE

@@ -60,5 +60,20 @@ fn gen_returns_at_once_when_nothing_changed_and_restores_from_the_shared_store()
     let _ = dq_analyze::sem::cli::gen(&[], &tree);
     let entries: Vec<_> = std::fs::read_dir(&store).unwrap().filter_map(|e| e.ok()).collect();
     assert_eq!(entries.len(), 2, "changed inputs should be stored apart");
+
+    // 6. An edit of what a generator reads from tools/ci/lint_scopes.toml (auto_tracked's lists) is a different input although no .dm
+    // changed: it must neither hit the memo nor restore the earlier entry's files.
+    let scopes_path = tree.join("tools/ci/lint_scopes.toml");
+    let scopes = std::fs::read_to_string(&scopes_path).unwrap();
+    assert!(scopes.contains("exclude = [\"gc_destroyed\""), "the lint_scopes fixture changed shape; update this test");
+    std::fs::write(&scopes_path, scopes.replacen("exclude = [\"gc_destroyed\"", "exclude = [\"zz_probe_var\", \"gc_destroyed\"", 1)).unwrap();
+    let _ = dq_analyze::sem::cli::gen(&[], &tree);
+    let entries: Vec<_> = std::fs::read_dir(&store).unwrap().filter_map(|e| e.ok()).collect();
+    assert_eq!(entries.len(), 3, "an edited auto_tracked list must be stored apart, not served from the unedited entry");
+    // An edit elsewhere in the file is not a generator input: same entry.
+    std::fs::write(&scopes_path, format!("{}\n# unrelated comment\n", std::fs::read_to_string(&scopes_path).unwrap())).unwrap();
+    let _ = dq_analyze::sem::cli::gen(&[], &tree);
+    let entries: Vec<_> = std::fs::read_dir(&store).unwrap().filter_map(|e| e.ok()).collect();
+    assert_eq!(entries.len(), 3, "a comment in lint_scopes.toml must not change the key");
     let _ = std::fs::remove_dir_all(&base);
 }

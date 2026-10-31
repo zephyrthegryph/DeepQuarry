@@ -423,6 +423,24 @@ pub fn decide(tree: &Tree, sem: &crate::sem::Sem, candidates: &BTreeSet<(String,
     out
 }
 
+/// The `[lint.auto_tracked.lists]` keys that name vars the inference never tracks.
+const EXCLUDE_LISTS: &[&str] = &["exclude", "exclude_fixtures", "exclude_heat", "exclude_memo"];
+/// The `[lint.auto_tracked.lists]` key that names vars it tracks by hand.
+const INCLUDE_LIST: &str = "include";
+
+/// Everything the inference reads from `tools/ci/lint_scopes.toml`, in a fixed order. The generated files depend on it, and no `.dm` in
+/// the tree changes when it does, so the keys of the gen memo and the shared store (`sem::cli`) take it in.
+pub fn scope_inputs(root: &std::path::Path) -> Vec<String> {
+    let scopes = crate::scopes::Scopes::load(&root.join("tools/ci/lint_scopes.toml")).unwrap_or_default();
+    let scope = scopes.for_lint("auto_tracked", "");
+    let mut out = Vec::new();
+    for k in EXCLUDE_LISTS.iter().chain(std::iter::once(&INCLUDE_LIST)) {
+        out.push(format!("{}=", k));
+        out.extend(scope.list(k).iter().cloned());
+    }
+    out
+}
+
 /// The inference for a tree (memoized: the generator, the lints and `analyze fix` share it).
 pub fn inferred(tree: &Tree) -> Arc<Option<AutoSet>> {
     tree.memo("gen/auto-tracked", || {
@@ -431,10 +449,10 @@ pub fn inferred(tree: &Tree) -> Arc<Option<AutoSet>> {
         let sem = crate::sem::sem_for(tree)?;
         let scopes = crate::scopes::Scopes::load(&tree.root.join("tools/ci/lint_scopes.toml")).unwrap_or_default();
         let scope = scopes.for_lint("auto_tracked", "");
-        let exclude: Vec<String> = scope.list("exclude").iter().chain(scope.list("exclude_fixtures")).chain(scope.list("exclude_heat")).chain(scope.list("exclude_memo")).cloned().collect();
+        let exclude: Vec<String> = EXCLUDE_LISTS.iter().flat_map(|k| scope.list(k)).cloned().collect();
         // Vars whose setter calls reach them through an accessor the call scan cannot type (`connected().set_locked(...)`): named by hand.
         let mut candidates = an.candidates.clone();
-        for entry in scope.list("include") {
+        for entry in scope.list(INCLUDE_LIST) {
             if let Some((ty, var)) = entry.split_once("::") {
                 candidates.insert((ty.to_string(), var.to_string()));
             }

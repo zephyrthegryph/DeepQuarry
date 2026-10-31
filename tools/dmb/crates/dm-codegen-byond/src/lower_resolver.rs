@@ -697,6 +697,7 @@ fn query_subject(query: Q) -> &'static str {
         Q::PredefinedConstant(_) => "predefined constant",
         Q::Proc { .. } | Q::GlobalProc(_) => "procedure",
         Q::HasMemberProc { .. } => "procedure presence",
+        Q::HasNamespaceMembers { .. } => "procedure namespace presence",
         Q::ProcedureValue { .. } | Q::MethodProcedureValue { .. } => "procedure reference",
         Q::OverrideChain { .. } | Q::DeclarationChain { .. } => "procedure override chain",
         Q::MemberCallableName(_) | Q::MemberCallableVerbName(_) => "dynamic member call",

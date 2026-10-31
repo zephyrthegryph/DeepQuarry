@@ -346,6 +346,9 @@ impl Compiler<'_> {
                 if path.ends_with("/proc") || path.ends_with("/verb") {
                     // A procedure namespace is a native string path used by
                     // typesof(), not a runtime class or a single procedure.
+                    // `/T/proc` and `/T/verb` name a type only when `T` itself declares something
+                    // there: DreamMaker rejects `typesof(/mob/living/carbon/verb)` otherwise.
+                    self.require_declared_namespace(path, statement)?;
                     self.intern_string(path);
                     self.emit(
                         opcode::PUSH_VAL,

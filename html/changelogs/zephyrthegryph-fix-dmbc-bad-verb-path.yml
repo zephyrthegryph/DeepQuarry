@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The native compiler rejects typesof(/T/proc) and typesof(/T/verb) when T declares nothing there, as DreamMaker does; the one site in mob.dm that relied on the gap is fixed"
