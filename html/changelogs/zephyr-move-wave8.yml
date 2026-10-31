@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "198 more files (silicon robot, rigs, bots, tgui modules and others) moved into the code/content tree"
