@@ -278,3 +278,39 @@
 	TEST_ASSERT(islist(N.slow_frame_prev), "a report keeps the phase counters for the next one to diff")
 	N.slow_frame_prev = saved
 	N.slow_frames = before
+
+/// The slow-frame log is rate limited per minute, not capped for the round: past the limit a short slow frame is held back (and counted), a stall of
+/// NATIVE_STALL_FRAME_MS or more is always logged, and the next line says how many were held back.
+/datum/unit_test/dq_native_slow_frame_log_is_rate_limited
+
+/datum/unit_test/dq_native_slow_frame_log_is_rate_limited/Run()
+	var/datum/system/native/N = native_system()
+	var/saved_frames = N.slow_frames
+	var/saved_start = N.slow_log_minute_start
+	var/saved_lines = N.slow_log_lines
+	var/saved_held = N.slow_log_held_back
+	var/saved_ms = N.last_frame_ms
+	var/list/saved_prev = N.slow_frame_prev
+	N.slow_log_minute_start = REALTIMEOFDAY
+	N.slow_log_lines = NATIVE_SLOW_FRAME_LOG_PER_MINUTE
+	N.slow_log_held_back = 0
+	N.last_frame_ms = NATIVE_SLOW_FRAME_MS + 1
+	N.report_slow_frame()
+	N.report_slow_frame()
+	TEST_ASSERT_EQUAL(N.slow_log_held_back, 2, "past the minute's limit a short slow frame is held back, and counted")
+	TEST_ASSERT_EQUAL(N.slow_log_lines, NATIVE_SLOW_FRAME_LOG_PER_MINUTE, "a held-back report logs no line")
+	N.last_frame_ms = NATIVE_STALL_FRAME_MS
+	N.report_slow_frame()
+	TEST_ASSERT_EQUAL(N.slow_log_held_back, 0, "a stall is logged whatever the limit, and reports the ones held back before it")
+	TEST_ASSERT_EQUAL(N.slow_log_lines, NATIVE_SLOW_FRAME_LOG_PER_MINUTE + 1, "the stall's line counts")
+	N.slow_log_minute_start = REALTIMEOFDAY - 1 MINUTES
+	N.last_frame_ms = NATIVE_SLOW_FRAME_MS + 1
+	N.report_slow_frame()
+	TEST_ASSERT_EQUAL(N.slow_log_lines, 1, "a new minute starts the count again")
+	TEST_ASSERT_EQUAL(N.slow_frames, saved_frames + 4, "every report counts itself, logged or not")
+	N.slow_frames = saved_frames
+	N.slow_log_minute_start = saved_start
+	N.slow_log_lines = saved_lines
+	N.slow_log_held_back = saved_held
+	N.last_frame_ms = saved_ms
+	N.slow_frame_prev = saved_prev

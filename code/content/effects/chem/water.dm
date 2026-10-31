@@ -77,7 +77,7 @@ CAPABILITIES(/obj/effect/effect/water)
 	expire(1 SECOND)
 	stop_spray()
 
-/obj/effect/effect/water/Move(turf/newloc)
+/obj/effect/effect/water/Move(turf/newloc, direct = 0, movetime)
 	if(newloc.density)
 		return 0
 	. = ..()

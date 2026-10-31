@@ -62,7 +62,7 @@ export function AlertModal(props) {
   const windowHeight =
     120 +
     (isVerbose ? largeSpacing * buttons.length : 0) +
-    (message.length > 30 ? Math.ceil(message.length / 4) : 0) +
+    (message.length > 30 ? Math.ceil(message.length / 2.7) : 0) +
     (message.length && large_buttons ? 5 : 0);
 
   /** Changes button selection, etc */
@@ -97,15 +97,13 @@ export function AlertModal(props) {
   }
 
   return (
-    <Window height={windowHeight} title={title} width={windowWidth}>
+    <Window fitContent height={windowHeight} title={title} width={windowWidth}>
       {!!timeout && <Loader value={timeout} />}
       <Window.Content onKeyDown={keyDownHandler}>
         <Section fill>
           <Stack fill vertical>
             <Stack.Item m={1} grow>
-              <Box color="label" overflow="hidden">
-                {message}
-              </Box>
+              <Box color="label">{message}</Box>
             </Stack.Item>
             <Stack.Item grow>
               {!!autofocus && <Autofocus />}

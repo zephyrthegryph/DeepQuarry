@@ -34,7 +34,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/debugging, REGISTRY_DEBUGGING_EFFECTS)
 	icon = 'icons/turf/areas.dmi'
 	icon_state = "yellow"
 
-/obj/effect/debugging/marker/Move()
+/obj/effect/debugging/marker/Move(atom/newloc, direct = 0, movetime)
 	return 0
 
 ADMIN_VERB_VISIBILITY(camera_view, ADMIN_VERB_VISIBLITY_FLAG_LOCALHOST)

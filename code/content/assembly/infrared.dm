@@ -74,7 +74,7 @@ CAPABILITIES(/obj/item/assembly/infra)
 	QDEL_LIST_NULL(i_beams)
 	return OP_DECLINE
 
-/obj/item/assembly/infra/Move()
+/obj/item/assembly/infra/Move(atom/newloc, direct = 0, movetime)
 	var/t = dir
 	. = ..()
 	set_dir(t)

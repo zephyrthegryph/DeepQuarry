@@ -53,7 +53,7 @@
 		M.update_music()
 	master_area = null
 
-/obj/machinery/media/Move()
+/obj/machinery/media/Move(atom/newloc, direct = 0, movetime)
 	disconnect_media_source()
 	. = ..()
 	if(anchored)
