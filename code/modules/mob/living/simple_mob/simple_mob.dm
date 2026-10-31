@@ -162,6 +162,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob)
+	op("toggle_vore_icons", menu(desc = "Toggle visibility of changed mob sprite when you have eaten other things."), label("Toggle Vore Sprite"), needs(req_self()), then(PROC_REF(toggle_vore_icons_op)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(simple_mob_blast))))
 	configure(living_rules(vore_capacity = 1, use_modern_ai = TRUE, has_huds = TRUE))
 	configure(footstep_rules(footstep_type = FOOTSTEP_MOB_SHOE, footstep_volume = 1, footstep_e_range = -6))
@@ -449,12 +450,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 /mob/living/simple_mob/proc/character_directory_species()
 	return "simplemob"
 
-/mob/living/simple_mob/verb/toggle_vore_icons()
-
-	set name = "Toggle Vore Sprite"
-	set desc = "Toggle visibility of changed mob sprite when you have eaten other things."
-	set category = VERB_CAT_ABILITIES_VORE
-
+/mob/living/simple_mob/proc/toggle_vore_icons()
 	if(!vore_icons && !vore_icons_cache)
 		to_chat(src,span_warning("This simplemob has no vore sprite."))
 	else if(isnull(vore_icons_cache))
@@ -465,6 +461,9 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 		set_vore_icons(vore_icons_cache)
 		vore_icons_cache = null
 		to_chat(src,span_warning("Vore sprite enabled."))
+
+/mob/living/simple_mob/proc/toggle_vore_icons_op(datum/act/op/A)
+	toggle_vore_icons()
 
 /// Simple mob slip logic, should be overriden if you want the simple mob to slip under certain conditions
 /mob/living/simple_mob/proc/animal_slip(wet_level, dirtslip)

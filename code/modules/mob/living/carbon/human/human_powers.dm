@@ -487,85 +487,48 @@ CAPABILITIES(/datum/prompt/choice/monitor_state)
 
 //////////// Hand games that can be played by people next to each other, or over a small table.
 
-/mob/living/carbon/human/verb/hand_games()
-	set name = "Play Hand Games"
-	set desc = "Choose from a variety of hand games to play with someone next to you or across a small table."
-	set category = VERB_CAT_IC_GAME
-
-	if(stat)
-		return
-
+/// Whether a human has a hand to play with: some hand that is not a stump.
+/mob/living/carbon/human/proc/has_playing_hand()
 	var/obj/item/organ/external/l_hand = get_organ(BP_L_HAND)
 	var/obj/item/organ/external/r_hand = get_organ(BP_R_HAND)
-	if((!l_hand || l_hand.is_stump()) && (!r_hand || r_hand.is_stump()))
-		to_chat(src, span_warning("You have no hands to play games with!"))
-		return
+	return !((!l_hand || l_hand.is_stump()) && (!r_hand || r_hand.is_stump()))
 
+/// Who could play a hand game with this human: standing humans with a hand within one tile, or within one tile of a table next to it.
+/mob/living/carbon/human/proc/hand_game_partners()
 	var/list/nearby = list()
 	for(var/mob/living/carbon/human/H in range(src,1))
-		if(H.stat)
-			continue
-		if(H == src)
-			continue
-		var/obj/item/organ/external/l_hand2 = H.get_organ(BP_L_HAND)
-		var/obj/item/organ/external/r_hand2 = H.get_organ(BP_R_HAND)
-		if((!l_hand2 || l_hand2.is_stump()) && (!r_hand2 || r_hand2.is_stump()))
+		if(H.stat || H == src || !H.has_playing_hand())
 			continue
 		nearby |= H
 	for(var/obj/structure/table/T in range(src, 1))
 		for(var/mob/living/carbon/human/H in range(T,1))
-			if(H.stat)
-				continue
-			if(H == src)
-				continue
-			var/obj/item/organ/external/l_hand2 = H.get_organ(BP_L_HAND)
-			var/obj/item/organ/external/r_hand2 = H.get_organ(BP_R_HAND)
-			if((!l_hand2 || l_hand2.is_stump()) && (!r_hand2 || r_hand2.is_stump()))
+			if(H.stat || H == src || !H.has_playing_hand())
 				continue
 			nearby |= H
+	return nearby
 
-	if(!nearby.len)
-		to_chat(src, span_warning("There is nobody nearby to play games with!"))
+/mob/living/carbon/human/proc/hand_games_ready(datum/act/op/A)
+	if(stat)
+		return MSG(req_silent)
+	if(!has_playing_hand())
+		return span_warning("You have no hands to play games with!")
+	if(!length(hand_game_partners()))
+		return span_warning("There is nobody nearby to play games with!")
+	return null
 
-	open_request(src, /datum/prompt/choice, PROC_REF(hand_games_partner_chosen), answerer = src, title = "Hand games", question = "Choose a game partner:", choices = nearby, ask_flags = ASK_CONSCIOUS, timeout = 0)
+/mob/living/carbon/human/proc/hand_games_partner_choices(datum/act/op/A)
+	var/list/partners = list()
+	for(var/mob/living/carbon/human/H in hand_game_partners())
+		partners[H.name] = H
+	return partners
 
-/// Which game to play; carries the partner without retaining either participant.
-/datum/prompt/choice/hand_game
-	title = "Hand games"
-	choices = list("Rock, Paper, Scissors", "Arm Wrestling", "Slap Hands", "Thumb Wars", "Cancel")
-	buttons = TRUE
-	ask_flags = ASK_CONSCIOUS
-	timeout = 0
-	var/mob/living/carbon/human/partner
-
-CAPABILITIES(/datum/prompt/choice/hand_game)
-	ref_one(nameof(partner), /mob/living/carbon/human)
-
-/datum/prompt/choice/hand_game/prepare(datum/act/A)
-	..()
-	var/mob/living/carbon/human/captured_partner = partner
-	rel_clear(src, nameof(partner))
-	rel_set(src, nameof(partner), captured_partner)
-	question = "Choose a game to play with [partner]?"
-
-/datum/prompt/choice/hand_game/recheck_extra()
-	return QDELETED(partner) ? "gone" : null
-
-/mob/living/carbon/human/proc/hand_games_partner_chosen(datum/act/request/A)
-	if(!A.answer)
+/// The partner and the game are chosen; the partner is then asked whether they want to play.
+/mob/living/carbon/human/proc/hand_games_op(datum/act/op/A)
+	var/mob/living/carbon/human/partner = hand_games_partner_choices(A)[A.step_value("partner")]
+	var/game = A.step_value("game")
+	if(!istype(partner) || QDELETED(partner) || game == "Cancel")
 		return
-	var/mob/living/carbon/human/partner = A.answer.value
-	if(!istype(partner) || QDELETED(partner))
-		return
-	open_request(src, /datum/prompt/choice/hand_game, PROC_REF(hand_games_chosen), answerer = src, partner = partner)
-
-/mob/living/carbon/human/proc/hand_games_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/choice/hand_game/ask = A.answer
-	if(ask.value == "Cancel" || QDELETED(ask.partner))
-		return
-	hand_game_invite(ask.partner, ask.value)
+	hand_game_invite(partner, game)
 
 // Checks to make sure everything is fine to continue playing.
 /mob/living/carbon/human/proc/hand_games_check(mob/living/carbon/human/player1, mob/living/carbon/human/player2)

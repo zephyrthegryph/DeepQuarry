@@ -253,9 +253,6 @@ CAPABILITIES(/datum/prompt/yes_no/vv_edit)
 		if(NAMEOF(src, light_on))
 			set_light_on(var_value)
 			. =  TRUE
-		if(NAMEOF(src, light_flags))
-			set_light_flags(var_value)
-			. =  TRUE
 		if(NAMEOF(src, opacity))
 			set_opacity(var_value)
 			. =  TRUE

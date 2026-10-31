@@ -49,7 +49,7 @@ CAPABILITIES(/mob/living/simple_mob/vox)
 
 /mob/living/simple_mob/vox/armalis/proc/fire_quill_targets(datum/act/op/A)
 	var/list/targets = list()
-	for(var/mob/candidate in oview())
+	for(var/mob/candidate in oview(world.view, src))
 		targets[candidate.name] = candidate
 	return targets
 

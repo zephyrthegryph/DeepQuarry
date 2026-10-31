@@ -145,14 +145,14 @@ CAPABILITIES(/obj/item/clothing/suit/space/void)
 
 	if(!move_into(src, nameof(src.hood), helm))
 		return
-	helm.set_light_flags(helm.light_flags | LIGHT_ATTACHED)
+	helm.set_light_flags(sparse_get_or(helm, light_flags, NONE) | LIGHT_ATTACHED)
 
 /obj/item/clothing/suit/space/void/proc/remove_helmet()
 	if(!hood)
 		return
 
 	hood.forceMove(get_turf(src))
-	hood.set_light_flags(hood.light_flags & ~LIGHT_ATTACHED)
+	hood.set_light_flags(sparse_get_or(hood, light_flags, NONE) & ~LIGHT_ATTACHED)
 	rel_take(src, nameof(hood))
 
 /obj/item/clothing/suit/space/void/ui_action_click(mob/living/user, action_name)

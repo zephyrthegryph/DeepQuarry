@@ -574,13 +574,13 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 	for (var/mob/M in view(user))
 		M.show_message(span_filter_notice("[user] holds up [src]. <a HREF='byond://?src=[REF(M)];lookitem=[REF(src)]'>Take a closer look.</a>"),1)
 
-/mob/living/carbon/verb/showoff()
-	set name = "Show Held Item"
-	set category = VERB_CAT_OBJECT
-
+/mob/living/carbon/proc/showoff()
 	var/obj/item/I = get_active_hand()
 	if(I && !item_rules_of(I).abstract)
 		I.showoff(src)
+
+/mob/living/carbon/proc/showoff_op(datum/act/op/A)
+	showoff()
 
 /// The shared remote-view gate for optical device interactions.
 /obj/item/proc/zoom_view_allowed(mob/user, atom/target, obj/item/held)

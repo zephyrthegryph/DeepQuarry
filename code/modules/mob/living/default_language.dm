@@ -43,11 +43,11 @@
 	default_language = language
 
 // C
-/mob/living/verb/check_default_language()
-	set name = "Check Default Language"
-	set category = VERB_CAT_IC_GAME
-
+/mob/living/proc/check_default_language()
 	if(default_language)
 		to_chat(src, span_notice("You are currently speaking [default_language] by default."))
 	else
 		to_chat(src, span_notice("Your current default language is your species or mob type default."))
+
+/mob/living/proc/check_default_language_op(datum/act/op/A)
+	check_default_language()

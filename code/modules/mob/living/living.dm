@@ -61,14 +61,26 @@
 	..()
 
 //mob verbs are faster than object verbs. See mob/verb/examine.
-/mob/living/verb/pulled(atom/movable/AM as mob|obj in oview(1))
+/mob/living/verb/pulled()
 	set name = "Pull"
 	set category = VERB_CAT_OBJECT
 
+	var/list/pullable = list()
+	for(var/atom/movable/candidate in oview(1, src))
+		if(ismob(candidate) || isobj(candidate))
+			pullable[candidate.name] = candidate
+	if(!length(pullable))
+		return
+	open_request(src, /datum/prompt/choice, PROC_REF(pull_target_chosen), answerer = src, title = "Pull", question = "Pull what?", choices = pullable, timeout = 0)
+
+/// The mob or object the puller picked, if it is still within reach.
+/mob/living/proc/pull_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/prompt = A.answer
+	var/atom/movable/AM = prompt.choices[A.answer.value]
 	if(istype(AM) && AM.Adjacent(src))
 		src.start_pulling(AM)
-
-	return
 
 //mob verbs are faster than object verbs. See above.
 /mob/living/pointed(atom/A as mob|obj|turf in view(client.view, src))

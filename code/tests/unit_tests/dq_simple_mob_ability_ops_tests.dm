@@ -218,3 +218,58 @@
 	TEST_ASSERT_EQUAL(cat.friend, first, "the cat's friend is that person")
 	var/datum/op_result/other = perform_op(second, cat, "become_friends", null, ORIGIN_MENU)
 	TEST_ASSERT_EQUAL(other?.outcome, ACT_REFUSED, "a second person is ignored")
+
+/// The human menu ops that were verbs: pulling punches toggles the trait, the icon toggles flip, and the ones with a guard refuse when it fails.
+/datum/unit_test/dq_ability_ops_human_toggles_and_guards
+
+/datum/unit_test/dq_ability_ops_human_toggles_and_guards/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/datum/op_result/pulled = dq_ability_menu_op(H, "pull_punches")
+	TEST_ASSERT(test_op_committed(pulled), "pull_punches commits")
+	TEST_ASSERT(has_trait_from(H, TRAIT_NONLETHAL_BLOWS, ACTION_TRAIT), "the punches are pulled")
+	dq_ability_menu_op(H, "pull_punches")
+	TEST_ASSERT(!has_trait_from(H, TRAIT_NONLETHAL_BLOWS, ACTION_TRAIT), "the second use stops pulling punches")
+	var/was_hidden = H.hide_headset
+	dq_ability_menu_op(H, "hide_headset")
+	TEST_ASSERT_NOTEQUAL(H.hide_headset, was_hidden, "the headset's visibility flips")
+	var/datum/op_result/alone = dq_ability_menu_op(H, "hand_games")
+	TEST_ASSERT_EQUAL(alone?.outcome, ACT_REFUSED, "hand games are refused with nobody close")
+	H.status_set(STAT_STUNNED, 5)
+	var/datum/op_result/stunned = dq_ability_menu_op(H, "flip_lying")
+	TEST_ASSERT_EQUAL(stunned?.outcome, ACT_REFUSED, "a stunned human cannot flip their resting direction")
+
+/// The information verbs of living mobs are on their own menu and commit.
+/datum/unit_test/dq_ability_ops_living_info_ops_commit
+
+/datum/unit_test/dq_ability_ops_living_info_ops_commit/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	for(var/key in list("vore_check_nutrition", "check_default_language", "showoff"))
+		var/datum/op_result/R = dq_ability_menu_op(H, key)
+		TEST_ASSERT(test_op_committed(R), "[key] commits on a human's own menu")
+
+/// Pull asks what to pull from the things within reach, and pulls the one picked.
+/datum/unit_test/dq_ability_ops_pull_asks_what
+
+/datum/unit_test/dq_ability_ops_pull_asks_what/Run()
+	test_driver_begin()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/puller = allocate(/mob/living/carbon/human, T)
+	var/obj/structure/closet/crate/crate = allocate(/obj/structure/closet/crate, T)
+	crate.forceMove(get_step(T, NORTH))
+	puller.pulled()
+	TEST_ASSERT_NOTNULL(SSrequests.open_for(puller), "the puller is asked what to pull")
+	test_answer(puller, crate.name)
+	TEST_ASSERT_EQUAL(puller.pulling_target(), crate, "the picked crate is being pulled")
+
+/// light_flags is a sparse slot: an ordinary atom has no var and no slot list, setting it stores it, and clearing it frees the list again.
+/datum/unit_test/dq_sparse_light_flags_slot
+
+/datum/unit_test/dq_sparse_light_flags_slot/Run()
+	var/obj/item/pen/P = allocate(/obj/item/pen, test_floor())
+	TEST_ASSERT(!("light_flags" in P.vars), "light_flags is not a var of every atom any more")
+	TEST_ASSERT_NULL(P.sparse_slots, "an ordinary atom carries no slot list")
+	TEST_ASSERT_EQUAL(sparse_get_or(P, light_flags, NONE), NONE, "an unset slot reads as no flags")
+	P.set_light_flags(LIGHT_ATTACHED)
+	TEST_ASSERT_EQUAL(sparse_get_or(P, light_flags, NONE), LIGHT_ATTACHED, "the flag is stored")
+	P.set_light_flags(NONE)
+	TEST_ASSERT_NULL(P.sparse_slots, "clearing the last flag frees the slot list")

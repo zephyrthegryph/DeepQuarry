@@ -107,6 +107,7 @@ KEYBIND_VERBS = {
     "code/modules/mob/living/living.dm": {"pulled", "succumb", "toggle_afk", "resist", "lay_down", "open_private_notes"},
     "code/modules/mob/say.dm": {"me_verb_subtle_custom", "psay", "pme", "player_narrate"},
     "code/modules/multiz/movement.dm": {"up", "down", "climb_down"},
+    "code/modules/nifsoft/software/13_soulcatcher.dm": {"nsay_brain", "nme_brain"},
 }
 VERB_EXEMPT = ("code/modules/admin/", "/admin_commands.dm", "/contract_admin.dm")
 
