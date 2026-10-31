@@ -39,7 +39,7 @@ exempt_files = [
 [lint."sys/usr_use"]
 # usr_use.py SKIP_PREFIXES: a `#define` in the macro library is read in the caller's context. code/engine/ is the engine's one reader and
 # writer of usr: the generated native input overrides and with_actor() (code/engine/lifeforms/input.dm).
-exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/content/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/engine/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/engine/"]
 
 [lint.ui_actions]
 # ui_actions_lint.py EXEMPT: tests and benchmarks build act_ procs without a TSX client on purpose.
@@ -231,7 +231,7 @@ exempt_contains = ["/unit_tests/"]
 # lifecycle_counts_lint.py: a path listed here has its qdel( sites uncounted but is still checked for
 # Destroy() overrides (banned everywhere), so these are lists, not exempt_* keys. exempt_path() (unit tests,
 # benchmarks, the vendored TGS DMAPI), the lifecycle engine itself, and the macro definitions.
-exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/content/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/"]
 exempt_files = [
     "code/defines/host/tgs.dm",
     "code/controllers/subsystems/garbage.dm",
@@ -249,7 +249,7 @@ exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/t
 [lint.qdel_src]
 # qdel_src_lint.py: exempt_path() (unit tests, benchmarks, the vendored TGS DMAPI), the lifecycle engine
 # (it calls qdel(src) as its mechanism) and the macro definitions.
-exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/content/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/"]
 exempt_files = [
     "code/defines/host/tgs.dm",
     "code/controllers/subsystems/garbage.dm",
@@ -274,7 +274,7 @@ api_files = ["code/defines/engine/containment.dm"]
 # pollers_lint.py EXEMPT_PREFIXES / EXEMPT_FILES: the MC and subsystem framework, the object-model core, the
 # defines, the unit tests, and the external-I/O datums whose process() is not gameplay polling (tgui, dbcore).
 # This script does not call exempt_path(): benchmarks and the TGS DMAPI are counted.
-exempt_prefixes = ["code/controllers/", "code/datums/om/", "code/content/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/modules/unit_tests/", "code/tests/unit_tests/"]
+exempt_prefixes = ["code/controllers/", "code/datums/om/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/modules/unit_tests/", "code/tests/unit_tests/"]
 exempt_files = ["code/modules/tgui/tgui.dm", "code/controllers/subsystems/dbcore.dm", "code/engine/kernel/cadences.dm"]
 [lint.pollers.lists]
 # check_step_coverage(): unit-test probes join the machine pipeline lazily through MACHINE_WAKE(); every other
@@ -297,7 +297,7 @@ exempt_files = ["code/defines/host/tgs.dm", "code/defines/engine/shared_cache.dm
 
 [lint.registry]
 # registry_lint.py: the boilerplate macro's own definition.
-exempt_prefixes = ["code/content/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/"]
+exempt_prefixes = ["code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/"]
 
 [lint.deadline_polling]
 # check_deadline_polling.py: unit tests poll on purpose.
@@ -869,7 +869,7 @@ legacy_forms_converted = [
 ]
 call_ext_allow = [
   "code/__defines/verdigris/_bindings.dm",
-  "code/content/__defines/rust_g.dm",
+  "code/defines/host/rust_g.dm",
   "code/defines/host/vchatlog.dm",
   "code/__byond_version_compat.dm",
   "code/content/debugging/tracy.dm",

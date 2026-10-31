@@ -3074,9 +3074,9 @@ code/modules/xenobio/items/slime_objects.dm	code/content/xenobio/items/slime_obj
 code/modules/xenobio/items/slimepotions.dm	code/content/xenobio/items/slimepotions.dm
 code/modules/xenobio/items/weapons.dm	code/content/xenobio/items/weapons.dm
 code/modules/xenobio/machinery/processor.dm	code/content/xenobio/machinery/processor.dm
-code/__defines/announce.dm	code/content/__defines/announce.dm
-code/__defines/plants.dm	code/content/__defines/plants.dm
-code/__defines/rust_g.dm	code/content/__defines/rust_g.dm
+code/__defines/announce.dm	code/defines/content/announce.dm
+code/__defines/plants.dm	code/defines/content/plants.dm
+code/__defines/rust_g.dm	code/defines/host/rust_g.dm
 code/_global_vars/typecache.dm	code/content/_global_vars/typecache.dm
 code/_onclick/hud/ai.dm	code/content/_onclick/hud/ai.dm
 code/_onclick/hud/movable_screen_objects.dm	code/content/_onclick/hud/movable_screen_objects.dm
