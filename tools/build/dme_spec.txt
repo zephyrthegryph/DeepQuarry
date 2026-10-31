@@ -62,17 +62,6 @@ before code/modules/projectiles/gun.dm code/content/projectiles/targeting/target
 before code/modules/mob/holder.dm code/content/vore/resizing/holder_micro.dm   # /obj/item/holder/container_resist()
 before code/defines/obj/weapon.dm code/content/materials/material_stock_parts.dm   # /obj/item/stock_parts/get_rating()
 before code/ATMOSPHERICS/components/** code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
-before code/content/atmos/components/binary_devices/algae_generator.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
-before code/content/atmos/components/binary_devices/dp_vent_pump.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
-before code/content/atmos/components/unary/cold_sink.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
-before code/content/atmos/components/unary/heat_source.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
-before code/content/atmos/components/unary/vent_pump.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
-before code/content/atmos/components/unary/vent_scrubber.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
-before code/domains/atmos/components/omni_devices/filter.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
-before code/domains/atmos/components/omni_devices/mixer.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
-before code/domains/atmos/components/trinary_devices/filter.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
-before code/domains/atmos/components/trinary_devices/mixer.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
-before code/domains/atmos/components/unary/outlet_injector.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
 before code/content/atmos/components/portables_connector.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
 before code/domains/atmos/components/atmos_network_mixin.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
 before code/domains/atmos/components/binary_devices/binary_atmos_base.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
@@ -157,18 +146,6 @@ first code/game/machinery/machinery_fields.dm   # declares the machine families'
 # Macros defined in an ordinary file and used by others: the definer before its users.
 before code/content/mob/living/carbon/human/species/station/traits/_traits.dm code/content/client/preferences/**   # TRAIT_TYPE_*
 before code/domains/heat/heat_bind_batch.dm code/ATMOSPHERICS/**   # HEAT_BODY_RESOLVE
-before code/domains/heat/heat_bind_batch.dm code/content/atmos/atmospherics.dm   # HEAT_BODY_RESOLVE
-before code/domains/heat/heat_bind_batch.dm code/content/atmos/components/binary_devices/algae_generator.dm   # HEAT_BODY_RESOLVE
-before code/domains/heat/heat_bind_batch.dm code/content/atmos/components/binary_devices/dp_vent_pump.dm   # HEAT_BODY_RESOLVE
-before code/domains/heat/heat_bind_batch.dm code/content/atmos/components/unary/cold_sink.dm   # HEAT_BODY_RESOLVE
-before code/domains/heat/heat_bind_batch.dm code/content/atmos/components/unary/heat_source.dm   # HEAT_BODY_RESOLVE
-before code/domains/heat/heat_bind_batch.dm code/content/atmos/components/unary/vent_pump.dm   # HEAT_BODY_RESOLVE
-before code/domains/heat/heat_bind_batch.dm code/content/atmos/components/unary/vent_scrubber.dm   # HEAT_BODY_RESOLVE
-before code/domains/heat/heat_bind_batch.dm code/domains/atmos/components/omni_devices/filter.dm   # HEAT_BODY_RESOLVE
-before code/domains/heat/heat_bind_batch.dm code/domains/atmos/components/omni_devices/mixer.dm   # HEAT_BODY_RESOLVE
-before code/domains/heat/heat_bind_batch.dm code/domains/atmos/components/trinary_devices/filter.dm   # HEAT_BODY_RESOLVE
-before code/domains/heat/heat_bind_batch.dm code/domains/atmos/components/trinary_devices/mixer.dm   # HEAT_BODY_RESOLVE
-before code/domains/heat/heat_bind_batch.dm code/domains/atmos/components/unary/outlet_injector.dm   # HEAT_BODY_RESOLVE
 before code/domains/heat/heat_bind_batch.dm code/content/atmos/_atmospherics_helpers.dm   # HEAT_BODY_RESOLVE
 before code/domains/heat/heat_bind_batch.dm code/content/atmos/components/portables_connector.dm   # HEAT_BODY_RESOLVE
 before code/domains/heat/heat_bind_batch.dm code/content/atmos/pipes/pipe_base.dm   # HEAT_BODY_RESOLVE
