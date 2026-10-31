@@ -28,10 +28,10 @@
 
 DECLARE_SHARED_CACHE(emissive_blocker_generic, GLOBAL_PROC_REF(emissive_blocker_generic_build), SC_NEVER)
 
+/// `dir` only keys the cache: a dir assigned to an appearance after it is built is dropped on an overlay, so the blocker takes its holder's dir.
 /proc/emissive_blocker_generic_build(icon, icon_state, alpha, dir, appearance_flags)
 	var/mutable_appearance/gen_emissive_blocker = mutable_appearance(icon, icon_state, plane = PLANE_EMISSIVE, alpha = alpha)
 	gen_emissive_blocker.color = GLOB.em_block_color
-	gen_emissive_blocker.dir = dir
 	gen_emissive_blocker.appearance_flags |= appearance_flags
 	return gen_emissive_blocker.appearance
 

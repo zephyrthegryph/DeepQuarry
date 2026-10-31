@@ -107,28 +107,23 @@ CAPABILITIES(/obj/item/target)
 		if(QDELETED(src))
 			return
 
-		// Create a temporary object to represent the damage
-		var/image/bmark = image('icons/effects/effects.dmi', icon_state = "scorch")
-		bmark.pixel_x = p_x
-		bmark.pixel_y = p_y
-
+		// Create a temporary object to represent the damage. Its dir is part of its construction: a dir set afterwards is lost on an overlay.
+		var/mark_state = "dent" // Bullets are hard. They make dents!
+		var/mark_dir = SOUTH
 		if(decaltype == 1)
 			// Energy weapons are hot. they scorch!
-
+			if(Proj.damage >= 20 || istype(Proj, /obj/item/projectile/beam/practice))
+				mark_state = "scorch"
+				mark_dir = pick(NORTH,SOUTH,EAST,WEST) // random scorch design
+			else
+				mark_state = "light_scorch"
+		var/image/bmark = image('icons/effects/effects.dmi', icon_state = mark_state, dir = mark_dir)
+		bmark.pixel_x = p_x
+		bmark.pixel_y = p_y
+		if(decaltype == 1)
 			// offset correction
 			bmark.pixel_x -= 1
 			bmark.pixel_y -= 1
-
-			if(Proj.damage >= 20 || istype(Proj, /obj/item/projectile/beam/practice))
-				bmark.icon_state = "scorch"
-				bmark.dir = pick(NORTH,SOUTH,EAST,WEST) // random scorch design
-
-			else
-				bmark.icon_state = "light_scorch"
-		else
-
-			// Bullets are hard. They make dents!
-			bmark.icon_state = "dent"
 
 		if(Proj.damage >= 10 && length(bulletholes) <= 35) // maximum of 35 bullet holes
 			if(decaltype == 2) // bullet
