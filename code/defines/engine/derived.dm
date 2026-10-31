@@ -62,3 +62,9 @@
 /// A lifecycle form (registry key, radio frequency, derives, lives_while, adjacency) of some type may follow the key.
 #define PLAN_READ_LIFEFORM (1<<2)
 #define PLAN_READ_ALL (PLAN_READ_REACT | PLAN_READ_HOOK | PLAN_READ_LIFEFORM)
+
+/// The look-drift audit (refresh_sweep_step(), refresh_check_drift()) exists only in debug and test builds: those that define DEBUG or CITESTING (BYOND ignores
+/// -DDEBUG on the command line, so the build passes both) or UNIT_TESTS. A production build compiles none of it. A benchmark build compiles the procs (the test files it carries call them) but never steps the audit, so it measures production.
+#if defined(UNIT_TESTS) || defined(DEBUG) || defined(CITESTING)
+#define DQ_LOOK_AUDIT
+#endif

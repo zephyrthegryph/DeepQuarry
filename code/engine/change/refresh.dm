@@ -10,9 +10,10 @@
 // everything, a tracked write on a type that declares its dependencies (derived.dm) marks only the
 // outputs that read the var. The drain runs each marked output at most once per entity per frame.
 //
-// A background sweep re-checks entities with derived procs on a per-tick budget: production corrects
-// a missed mark within seconds, test builds fail the run and name the type and, when it can, the
-// likely undeclared read (REFRESH DRIFT). In a test build the audit is always on: the strict staleness
+// A background sweep re-checks entities with derived procs on a per-tick budget, in debug and test builds only (DQ_LOOK_AUDIT): a debug build
+// corrects a missed mark within seconds and logs it, test builds fail the run and name the type and, when it can, the
+// likely undeclared read (REFRESH DRIFT). A production build runs no audit and repairs nothing, so a missed mark or first draw stays visible
+// as a stale look instead of being masked. In a test build the audit is always on: the strict staleness
 // checker (staleness.dm) runs it on every entity it checks (everything that appeared during a test, every
 // served draw and a rotating slice of the rest), so a test that makes a thing whose hidden verbs, granted
 // verbs, periodic gate or derive() values follow state nothing published fails at its end.
@@ -711,6 +712,13 @@ GLOBAL_VAR_INIT(refresh_sweep_skipped, 0)
 GLOBAL_LIST_EMPTY(refresh_look_stats)
 GLOBAL_VAR_INIT(refresh_look_log_next, 0)
 
+/// Logs the applied-look counters every five minutes (REFRESH LOOKS). Every build does: it is the record of first draws, changed looks and wasted redraws.
+/proc/refresh_look_log_step()
+	if(COOLDOWN_FINISHED(GLOB, refresh_look_log_next))
+		COOLDOWN_START(GLOB, refresh_look_log_next, 5 MINUTES)
+		log_world("REFRESH LOOKS: [refresh_look_stats_text()]")
+
+#ifdef DQ_LOOK_AUDIT
 /// TRUE when the audit may take a step now (and starts the wait for the next one).
 /proc/refresh_sweep_due()
 	if(!COOLDOWN_FINISHED(GLOB, refresh_sweep_next))
@@ -718,10 +726,9 @@ GLOBAL_VAR_INIT(refresh_look_log_next, 0)
 		return FALSE
 	COOLDOWN_START(GLOB, refresh_sweep_next, REFRESH_SWEEP_INTERVAL)
 	GLOB.refresh_sweep_ran++
-	if(COOLDOWN_FINISHED(GLOB, refresh_look_log_next))
-		COOLDOWN_START(GLOB, refresh_look_log_next, 5 MINUTES)
-		log_world("REFRESH LOOKS: [refresh_look_stats_text()]")
+	refresh_look_log_step()
 	return TRUE
+#endif
 
 /// Counts one applied look: by kind, and by kind and type.
 /proc/refresh_look_count(atom/A, kind)
@@ -766,13 +773,13 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 	staleness_track(A)
 
 /// Re-checks up to `budget` swept atoms: a derived result that differs from what is applied means a
-/// change was never marked. Production applies it; test builds report REFRESH DRIFT and fail.
+/// change was never marked. A debug build repairs it and logs REFRESH DRIFT; test builds report it and fail. Production has no audit.
 /proc/refresh_sweep_step(budget = 50)
+#if defined(DQ_LOOK_AUDIT) && !defined(BENCHMARK)
 	// H3 / review 2 M3: test builds sweep everything strictly (drift fails the run). Production checks
 	// only atoms a player can see or has open, at a small budget; skipping a far atom costs a scan,
-	// not a check, so a full cycle over the near atoms takes seconds. A benchmark build (which also
-	// defines UNIT_TESTS) measures the production audit, not the test sweep.
-#if defined(UNIT_TESTS) && !defined(BENCHMARK)
+	// not a check, so a full cycle over the near atoms takes seconds (a debug build outside the tests).
+#if defined(UNIT_TESTS)
 	var/scan_budget = budget
 	var/list/L = GLOB.refresh_sweep_list
 	var/checked = 0
@@ -817,7 +824,12 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 	if(GLOB.refresh_sweep_index > length(near))
 		GLOB.refresh_sweep_near = null // the cycle is over: the next step collects again, and no atom is held between cycles
 #endif
+#else
+	// Production (and a benchmark build) audits nothing and repairs nothing; only the look counters are logged.
+	refresh_look_log_step()
+#endif
 
+#ifdef DQ_LOOK_AUDIT
 /// The swept atoms within a screen of any client (one audit cycle's worth), found by walking the range of the clients' tiles.
 /proc/refresh_sweep_collect(list/client_turfs)
 	var/list/seen = list()
@@ -826,6 +838,7 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 			if(A.rx?.refresh_swept)
 				seen[A] = TRUE
 	return seen // indexed by number it answers its keys, in discovery order
+#endif
 
 /// The turfs of every client's mob, once per sweep step.
 /proc/refresh_client_turfs()
@@ -835,6 +848,7 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 		if(where)
 			. += where
 
+#ifdef DQ_LOOK_AUDIT
 /// Whether A's applied outputs still match what its derived procs give now. `check_draw` FALSE leaves the look to the caller (the strict staleness
 /// checker draws it dry and compares it itself, with the culprit var named).
 /proc/refresh_check_drift(atom/A, check_draw = TRUE)
@@ -889,7 +903,7 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 		return FALSE
 	var/msg = "REFRESH DRIFT: [A.type] [jointext(drift, ", ")] changed with no state_changed() mark[derived_drift_hint(A)]"
 	GLOB.refresh_drift += msg
-	// Production keeps the report too (a look the audit had to repair is a mark somebody forgot): the first few per type, with the running total.
+	// A debug build logs the report too (a look the audit had to repair is a mark somebody forgot): the first few per type, with the running total.
 	var/static/list/drift_logged = list()
 	drift_logged["[A.type]"]++
 	if(drift_logged["[A.type]"] <= 3)
@@ -900,6 +914,7 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 #endif
 	refresh_one(A, 0)
 	return TRUE
+#endif
 
 GLOBAL_VAR_INIT(refresh_drift_expected, FALSE)
 
