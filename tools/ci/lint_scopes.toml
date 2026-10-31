@@ -355,17 +355,17 @@ ui_push_converted = [
   "code/content/admin/edit_memory_panel.dm",
   "code/content/admin/traffic_control_panel.dm",
   "code/content/machinery/CableLayer.dm",
-  "code/game/machinery/atm_ret_field.dm",
-  "code/game/machinery/biogenerator.dm",
-  "code/game/machinery/bioprinter.dm",
-  "code/game/machinery/camera/camera.dm",
+  "code/content/machinery/atm_ret_field.dm",
+  "code/content/machinery/biogenerator.dm",
+  "code/content/machinery/bioprinter.dm",
+  "code/content/machinery/camera/camera.dm",
   "code/content/machinery/computer/atmos_alert.dm",
-  "code/game/machinery/doors/airlock_angled_bay.dm",
+  "code/content/machinery/doors/airlock_angled_bay.dm",
   "code/content/machinery/doors/airlock_electronics.dm",
-  "code/game/machinery/doors/firedoor.dm",
+  "code/content/machinery/doors/firedoor.dm",
   "code/content/machinery/floodlight.dm",
-  "code/game/machinery/food_replicator.dm",
-  "code/game/machinery/suit_storage/suit_storage.dm",
+  "code/content/machinery/food_replicator.dm",
+  "code/content/machinery/suit_storage/suit_storage.dm",
   "code/content/mecha/equipment/tools/cable_layer.dm",
   "code/game/objects/structures/crates_lockers/closets/statue.dm",
   "code/content/mining/mineral_effect.dm",
@@ -408,7 +408,7 @@ legacy_forms_converted = [
   "code/content/gear/",
   "code/datums/helper_datums/",
   "code/content/helper_datums/",
-  "code/datums/interfaces/",
+  "code/content/interfaces/",
   "code/datums/lifecycle/",
   "code/datums/locations/",
   "code/content/locations/",
@@ -430,7 +430,7 @@ legacy_forms_converted = [
   "code/content/prompts/",
   "code/datums/properties/",
   "code/content/properties/",
-  "code/datums/proximity_monitor/",
+  "code/content/proximity_monitor/",
   "code/datums/reactions/",
   "code/datums/repositories/",
   "code/content/repositories/",
@@ -441,7 +441,7 @@ legacy_forms_converted = [
   "code/content/sparse_vars/",
   "code/datums/state/",
   "code/content/state/",
-  "code/datums/status_effects/",
+  "code/content/status_effects/",
   "code/datums/supplypacks/",
   "code/content/supplypacks/",
   "code/content/topic/",
@@ -512,7 +512,7 @@ legacy_forms_converted = [
   "code/content/effects/",
   "code/game/objects/items/",
   "code/content/items/",
-  "code/game/objects/random/",
+  "code/content/random/",
   "code/game/objects/structures/",
   "code/content/structures/",
   "code/game/turfs/flooring/",
@@ -530,8 +530,9 @@ legacy_forms_converted = [
   "code/game/turfs/unsimulated/",
   "code/content/turfs/unsimulated/",
   "code/js/",
+  "code/content/js/",
   "code/library/",
-  "code/matrices/",
+  "code/content/matrices/",
   "code/modules/admin/",
   "code/content/admin/",
   "code/modules/alarm/",
@@ -868,7 +869,7 @@ legacy_forms_converted = [
 ]
 call_ext_allow = [
   "code/__defines/verdigris/_bindings.dm",
-  "code/__defines/rust_g.dm",
+  "code/defines/host/rust_g.dm",
   "code/defines/host/vchatlog.dm",
   "code/__byond_version_compat.dm",
   "code/content/debugging/tracy.dm",
@@ -907,13 +908,13 @@ space_indent_allow = ["code/tests/unit_tests/dq_e1_declare_tests.dm"]
 tool_istype_allow = [
   "code/datums/wires/wires.dm",
   "code/content/behaviours/omen.dm",
-  "code/game/machinery/recharger.dm",
+  "code/content/machinery/recharger.dm",
   "code/game/mecha/mecha.dm",
   "code/game/mecha/space/shuttle.dm",
   "code/game/mecha/combat/fighter.dm",
-  "code/game/machinery/adv_med.dm",
+  "code/content/machinery/adv_med.dm",
   "code/content/machinery/cloning.dm",
-  "code/game/machinery/computer/cloning.dm",
+  "code/content/machinery/computer/cloning.dm",
 ]
 # verbs that are really a mob's own abilities, run through an item they carry
 i7_verb_allow = [
@@ -981,7 +982,7 @@ exempt_prefixes = ["code/engine/", "code/datums/ownership/"]
 [lint.legacy_forms.lists]
 # Names that are gone except under the listed path prefixes (the folders still calling them): `name @ prefix;prefix = hint`.
 banned_outside = [
-  "acceptance @ code/engine/;code/datums/properties/constraints.dm;code/content/properties/equip_slots.dm;code/content/vore/eating/vore_consent.dm;code/engine/refs/containment/;code/modules/unit_tests/;code/tests/unit_tests/;code/tests/ = content declares what it means: fits_as(FIT_X)/fits_anyone(), suit_storage(list(...))/no_suit_storage(), holder_takes(reqs...), extend(/datum/act/equip, needs(...)); acceptance() is the engine's channel form (doc/rewrite/proposals/admission.md wave 8)",
+  "acceptance @ code/engine/;code/content/properties/constraints.dm;code/content/properties/equip_slots.dm;code/content/vore/eating/vore_consent.dm;code/engine/refs/containment/;code/modules/unit_tests/;code/tests/unit_tests/;code/tests/ = content declares what it means: fits_as(FIT_X)/fits_anyone(), suit_storage(list(...))/no_suit_storage(), holder_takes(reqs...), extend(/datum/act/equip, needs(...)); acceptance() is the engine's channel form (doc/rewrite/proposals/admission.md wave 8)",
   "TRACKED @ code/engine/_generated/;code/__defines/;code/defines/engine/;code/defines/library/;code/defines/host/;code/defines/base/;code/defines/content/ = tracking is automatic: a var that reactive code reads (or that is written through set_<v>()) gets its setter from `analyze gen auto_tracked`. Declare nothing; write the var through set_<v>() (`analyze fix` rewrites a raw write). A setter with side effects is a hand-written set_<v>() plus SETTER(T, v) (doc/rewrite/read_driven_tracking.md)",
   "topic_allowed = the clicker's right to use a holder's links is a requirement: use topic_usable() or req_topic_ok() on the operation",
   "state_changed @ code/engine/;code/datums/capabilities/;code/game/machinery/machinery_fields.dm;code/modules/unit_tests/;code/tests/unit_tests/;code/modules/benchmarks/;code/__defines/;code/defines/engine/;code/defines/library/;code/defines/host/;code/defines/base/;code/defines/content/ = the engine's own mark. A write publishes through its tracked var, a relation, a stat or a hold; a key that is not one var is PUBLISH_CHANGE(E, key) (doc/rewrite/final_api.html section 7)",
@@ -1960,7 +1961,7 @@ retired_macros = [
 # controllers (world singletons), and registries/flyweights (the ownership index adds REGISTRY_TYPE()s itself).
 [lint.stored_refs]
 exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/refs/", "code/engine/time/", "code/datums/ownership/", "code/datums/om/", "code/datums/lifecycle/", "code/controllers/subsystems/garbage.dm", "code/modules/admin/view_variables/reference_tracking.dm", "code/engine/_generated/", "code/engine/change/", "code/engine/lifeforms/", "code/engine/stats/", "code/controllers/kernel/", "code/controllers/measure/"] # (and the kernel loop and its meter) # change delivery, lifeform and stat machinery: engine tables (relations proposal section 4)
-exempt_files = ["code/defines/host/tgs.dm", "code/datums/registries.dm", "code/controllers/kernel/membership.dm", "code/datums/native/entities.dm", "code/engine/declare/link_state.dm", "code/engine/actions/change.dm", "code/engine/actions/every.dm", "code/engine/actions/notices.dm", "code/engine/actions/reactions.dm", "code/engine/kernel/jobs.dm", "code/engine/io/jobs.dm", "code/engine/state/pool.dm", "code/engine/state/serializer.dm", "code/engine/present/type_verbs.dm", "code/engine/declare/capability_tables.dm", "code/engine/present/native_ends.dm", "code/engine/kernel/requests.dm", "code/engine/kernel/inbox.dm", "code/engine/kernel/sequence.dm", "code/engine/parts/run.dm", "code/engine/parts/resource.dm", "code/engine/declare/activation.dm", "code/engine/actions/hooks.dm", "code/engine/hooks/native_watch.dm"] # (run-state records the kernel sweeps: requests, input events, pending ops, reservations, activations, hooks, native watches; relations proposal section 7) the registry/membership/relation storage, and the kernel's own queues and tables (relations proposal section 4: engine tables are exempt by path and covered by dq_gc_sweep and the hard-delete counter)
+exempt_files = ["code/defines/host/tgs.dm", "code/content/datums/registries.dm", "code/controllers/kernel/membership.dm", "code/datums/native/entities.dm", "code/engine/declare/link_state.dm", "code/engine/actions/change.dm", "code/engine/actions/every.dm", "code/engine/actions/notices.dm", "code/engine/actions/reactions.dm", "code/engine/kernel/jobs.dm", "code/engine/io/jobs.dm", "code/engine/state/pool.dm", "code/engine/state/serializer.dm", "code/engine/present/type_verbs.dm", "code/engine/declare/capability_tables.dm", "code/engine/present/native_ends.dm", "code/engine/kernel/requests.dm", "code/engine/kernel/inbox.dm", "code/engine/kernel/sequence.dm", "code/engine/parts/run.dm", "code/engine/parts/resource.dm", "code/engine/declare/activation.dm", "code/engine/actions/hooks.dm", "code/engine/hooks/native_watch.dm"] # (run-state records the kernel sweeps: requests, input events, pending ops, reservations, activations, hooks, native watches; relations proposal section 7) the registry/membership/relation storage, and the kernel's own queues and tables (relations proposal section 4: engine tables are exempt by path and covered by dq_gc_sweep and the hard-delete counter)
 [lint.stored_refs.lists]
 # /datum/gear_tweak: a loadout tweak is a stateless flyweight (a colour, a name prompt): a reference to one names behaviour, not a world entity.
 exempt_types = ["/datum/system", "/datum/shared_cache", "/datum/controller", "/datum/world_service", "/datum/capability", "/datum/reaction", "/datum/xform_group", "/datum/entry", "/datum/xform", "/transformation", "/datum/own_entry", "/datum/derived_entry", "/datum/op_def", "/datum/gear_tweak", "/datum/gas_mixture", "/datum/debugger", "/datum/tracy", "/datum/admins", "/datum/persistent_client", "/datum/player_tips", "/datum/announcement", "/mob/dview", "/mob/proccall_handler", "/datum/look", "/datum/dispatch_context", "/datum/materialize_batch", "/datum/counter"]
