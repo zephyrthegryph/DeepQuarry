@@ -16,6 +16,10 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
  * `key`: names the timer; a pending timer of the same key on the same owner is replaced.
  */
 /proc/rx_after(datum/owner, delay, handler, key, clock = CLOCK_OWN, list/handler_args, keeps_dead = FALSE)
+	if(!isnull(owner) && !isdatum(owner))
+		// DM does not check a typed parameter at runtime: a call written after(delay, handler, ...) lands its delay here as the owner.
+		stack_trace("after(): the owner must be a datum or null, got [owner] ([handler]); arguments are after(owner, delay, handler, ...)")
+		return 0
 	if(isnull(key) && clock == CLOCK_OWN)
 		return timer_schedule_list(owner, delay, handler, handler_args, keeps_dead)
 	var/datum/holder = owner || timer_global_owner()
