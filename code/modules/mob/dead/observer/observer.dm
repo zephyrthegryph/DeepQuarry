@@ -394,7 +394,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 
 	return mobs
 
-/mob/observer/dead/verb/dead_tele(areaname as anything in jumpable_areas())
+/mob/observer/dead/verb/dead_tele()
 	set name = "Teleport"
 	set category = VERB_CAT_GHOST_GAME
 	set desc = "Teleport to a location."
@@ -403,14 +403,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		to_chat(src, span_filter_notice("Not when you're not dead!"))
 		return
 
-	var/area/A
-
-	if(areaname)
-		A = return_sorted_areas()[areaname]
-	else
-		open_request(src, /datum/prompt/choice, PROC_REF(dead_tele_chosen), answerer = src, title = "Ghost Teleport", question = "Select an area:", choices = jumpable_areas(), timeout = 0)
-		return
-	dead_tele_to(A)
+	open_request(src, /datum/prompt/choice, PROC_REF(dead_tele_chosen), answerer = src, title = "Ghost Teleport", question = "Select an area:", choices = jumpable_areas(), timeout = 0)
 
 /mob/observer/dead/proc/dead_tele_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -428,7 +421,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	src.forceMove(pick(get_area_turfs(A)))
 	src.on_mob_jump()
 
-/mob/observer/dead/verb/follow(mobname as anything in jumpable_mobs())
+/mob/observer/dead/verb/follow()
 	set name = "Follow"
 	set category = VERB_CAT_GHOST_GAME
 	set desc = "Follow and haunt a mob."
@@ -437,11 +430,8 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		to_chat(src, "Not when you're not dead!")
 		return
 
-	if(!mobname)
-		var/list/possible_mobs = jumpable_mobs()
-		open_request(src, /datum/prompt/choice, PROC_REF(follow_target_chosen), answerer = src, title = "Ghost Follow", question = "Select a mob:", choices = possible_mobs, timeout = 0)
-		return
-	follow_mob(jumpable_mobs()[mobname])
+	var/list/possible_mobs = jumpable_mobs()
+	open_request(src, /datum/prompt/choice, PROC_REF(follow_target_chosen), answerer = src, title = "Ghost Follow", question = "Select a mob:", choices = possible_mobs, timeout = 0)
 
 /mob/observer/dead/proc/follow_target_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -880,7 +870,7 @@ CAPABILITIES(/datum/ghost_doodle_review)
 	act_message(src, pointed_at, others = span_deadsay(span_bold("%U%") + " points to %T%."))
 
 /mob/observer/dead/proc/manifest(mob/user)
-	is_manifest = TRUE
+	set_is_manifest(TRUE)
 	// Allows them to use the 'toggle_visibility' verb
 	// Allows them to use the 'ghost  whisper' verb
 	to_chat(src, span_filter_notice(span_purple("As you are now in the realm of the living, you can whisper to the living with the " + span_bold("Spectral Whisper") + " verb, inside the IC tab.")))
@@ -1032,86 +1022,25 @@ CAPABILITIES(/datum/ghost_doodle_review)
 
 //Culted Ghosts
 
-/mob/observer/dead/verb/ghost_whisper()
-	set name = "Spectral Whisper"
-	set category = VERB_CAT_IC_SUBTLE
+/// Only a ghost that has been pulled past the veil (hit with a tome) can whisper to the living.
+/mob/observer/dead/proc/ghost_whisper_ready(datum/act/op/A)
+	return is_manifest ? null : span_danger("You have not been pulled past the veil! You can not whisper to the living.")
 
-	if(is_manifest)  //Only able to whisper if it's hit with a tome.
-		var/list/options = list()
-		for(var/mob/living/Ms in view(src))
-			options += Ms
-		open_request(src, /datum/prompt/choice/spectral_whisper_target, PROC_REF(spectral_whisper_target_chosen), answerer = src, choices = options)
-		return 1
-	else
-		to_chat(src, span_danger("You have not been pulled past the veil! You can not whisper to the living."))
+/// Who a ghost can whisper to: the living it can see, by name.
+/mob/observer/dead/proc/ghost_whisper_targets(datum/act/op/A)
+	var/list/options = list()
+	for(var/mob/living/Ms in view(src))
+		options[Ms.name] = Ms
+	return options
 
-/// Only a manifested ghost can whisper: re-checked when each answer arrives.
-/datum/prompt/choice/spectral_whisper_target
-	title = "Whisper to?"
-	question = "Select who to whisper to:"
-	timeout = 0
-
-/datum/prompt/choice/spectral_whisper_target/recheck_extra()
-	if(isnull(value))
+/mob/observer/dead/proc/ghost_whisper_op(datum/act/op/A)
+	var/mob/living/M = ghost_whisper_targets(A)[A.step_value("target")]
+	var/msg = A.step_value("message")
+	if(!istype(M) || QDELETED(M) || !msg)
 		return
-	var/mob/living/selected = value
-	if(!istype(selected) || QDELETED(selected))
-		return "gone"
-	var/mob/observer/dead/ghost = answerer
-	return (istype(ghost) && ghost.is_manifest) ? null : "not manifest"
-
-/datum/prompt/text/spectral_whisper
-	title = "Spectral Whisper"
-	question = "Message:"
-	default = ""
-	max_len = MAX_MESSAGE_LEN
-	timeout = 0
-	var/mob/living/recipient
-	var/recipient_expected = FALSE
-
-CAPABILITIES(/datum/prompt/text/spectral_whisper)
-	ref_one(nameof(recipient), /mob/living)
-
-/datum/prompt/text/spectral_whisper/prepare(datum/act/A)
-	. = ..()
-	var/mob/living/captured_recipient = recipient
-	recipient_expected = !isnull(captured_recipient)
-	rel_clear(src, nameof(recipient))
-	if(captured_recipient && !QDELETED(captured_recipient))
-		rel_set(src, nameof(recipient), captured_recipient)
-
-/datum/prompt/text/spectral_whisper/recheck_extra()
-	if(recipient_expected && QDELETED(recipient))
-		return "gone"
-	if(isnull(value))
-		return
-	var/mob/observer/dead/ghost = answerer
-	return (istype(ghost) && ghost.is_manifest) ? null : "not manifest"
-
-/mob/observer/dead/proc/spectral_whisper_target_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	return spectral_whisper_target_apply(A)
-
-/mob/observer/dead/proc/spectral_whisper_target_apply(datum/act/request/A)
-	open_request(src, /datum/prompt/text/spectral_whisper, PROC_REF(spectral_whisper_written), answerer = src, recipient = A.answer.value)
-
-/mob/observer/dead/proc/spectral_whisper_written(datum/act/request/A)
-	if(!A.answer)
-		return
-	return spectral_whisper_apply(A)
-
-/mob/observer/dead/proc/spectral_whisper_apply(datum/act/request/A)
-	var/datum/prompt/text/spectral_whisper/ask = A.answer
-	var/mob/living/M = ask.recipient
-	var/msg = ask.value
-	if(msg)
-		log_talk("(SPECWHISP to [key_name(M)]): [msg]", LOG_WHISPER)
-		to_chat(M, span_warning(" You hear a strange, unidentifiable voice in your head... [span_purple("[msg]")]"))
-		to_chat(src, span_warning(" You said: '[msg]' to [M]."))
-	else
-		return
-	return 1
+	log_talk("(SPECWHISP to [key_name(M)]): [msg]", LOG_WHISPER)
+	to_chat(M, span_warning(" You hear a strange, unidentifiable voice in your head... [span_purple("[msg]")]"))
+	to_chat(src, span_warning(" You said: '[msg]' to [M]."))
 
 /mob/observer/dead/verb/choose_ghost_sprite()
 	set category = VERB_CAT_GHOST_SETTINGS

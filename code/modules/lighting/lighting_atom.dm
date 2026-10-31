@@ -5,8 +5,6 @@
 	/// without any write at init; every writer of the switch or the glow goes through a setter below, and each setter reconciles the
 	/// light source (light_changed()), so no caller can leave the source out of step with what the atom casts.
 	var/light_on = TRUE
-	///Bitflags to determine lighting-related atom properties.
-	var/light_flags = NONE
 	///Our light source. Don't fuck with this directly unless you have a good reason!
 	var/tmp/datum/light_source/light
 	///Any light sources that are "inside" of us, for example, if src here was a mob that's carrying a flashlight, that flashlight's light source would be part of this list.
@@ -185,12 +183,16 @@ SETTER(/atom, opacity)
 	light_changed()
 SETTER(/atom, light_on)
 
+/// Bitflags of lighting-related atom properties (LIGHT_ATTACHED, ...): a sparse slot, since almost no atom has any. Read with sparse_get_or(A, light_flags, NONE).
+sparse(/atom, light_flags, type = num)
+
 /// Setter for the light flags of this atom.
 /atom/proc/set_light_flags(new_value)
-	if(new_value == light_flags)
+	var/old_value = sparse_get_or(src, light_flags, NONE)
+	if(new_value == old_value)
 		return
-	. = light_flags
-	light_flags = new_value
+	. = old_value
+	sparse_set(src, light_flags, new_value || null)
 	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_flags, .)
 
 ///Keeps track of the sources of dynamic luminosity and updates our visibility with the highest.

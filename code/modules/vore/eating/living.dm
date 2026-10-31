@@ -1886,11 +1886,11 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 		clear_fullscreen(ATOM_BELLY_FULLSCREEN)
 		stop_sound_channel(CHANNEL_PREYLOOP)
 
-/mob/living/verb/vore_check_nutrition()
-	set name = "Check Nutrition"
-	set category = VERB_CAT_ABILITIES_VORE
-	set desc = "Check your current nutrition level."
+/mob/living/proc/vore_check_nutrition()
 	to_chat(src, span_vnotice("Current nutrition_of(src) level: [nutrition_of(src)]."))
+
+/mob/living/proc/vore_check_nutrition_op(datum/act/op/A)
+	vore_check_nutrition()
 
 // This proc will either return the first belly the mob is in or return null if they're not in one
 /mob/living/proc/surrounding_belly()

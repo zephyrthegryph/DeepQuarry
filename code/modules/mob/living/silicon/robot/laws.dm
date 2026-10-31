@@ -1,7 +1,8 @@
-/mob/living/silicon/robot/verb/cmd_show_laws()
-	set category = VERB_CAT_ABILITIES_SILICON
-	set name = "Show Laws"
+/mob/living/silicon/robot/proc/cmd_show_laws()
 	show_laws()
+
+/mob/living/silicon/robot/proc/cmd_show_laws_op(datum/act/op/A)
+	cmd_show_laws()
 
 /mob/living/silicon/robot/show_laws(everyone = 0)
 	laws_sanity_check()

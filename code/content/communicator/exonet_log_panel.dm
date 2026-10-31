@@ -4,6 +4,7 @@
 	var/datum/exonet_log_panel/dq_exonet_log_panel_cache
 
 CAPABILITIES(/mob/observer/dead)
+	op("ghost_whisper", menu(), label("Spectral Whisper"), needs(req_self(), req(PROC_REF(ghost_whisper_ready))), asks(/datum/prompt/choice, fields = list("title" = "Whisper to?", "question" = "Select who to whisper to:", "choices" = computed(PROC_REF(ghost_whisper_targets)), "timeout" = 0), step = "target"), asks(/datum/prompt/text, fields = list("title" = "Spectral Whisper", "question" = "Message:", "default" = "", "max_len" = MAX_MESSAGE_LEN, "timeout" = 0), step = "message"), then(PROC_REF(ghost_whisper_op)))
 	op("show_text_messages", menu(desc = "Allows you to see exonet text messages you've sent and received."), label("Show Text Messages"), needs(req_self()), then(PROC_REF(show_text_messages_op)))
 	param(nameof(from_body), schema_ref(/mob), keep = FALSE, apply = PROC_REF(copy_from_body), early = TRUE) // phase 0: /atom/Initialize() reads the copied colour
 	setup(PROC_REF(place_ghost), with_params = TRUE)

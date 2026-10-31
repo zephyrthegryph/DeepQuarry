@@ -79,14 +79,12 @@ CAPABILITIES(/datum/tgui_module/robot_ui_module)
 	if(selected_module)
 		data["selected_module"]  = selected_module
 		if(!SSrobot_sprites)
-			to_chat(R, span_warning("Robot Sprites have not been initialized yet. How are you choosing a sprite? Harass a coder."))
-			set_selected_module(null)
+			log_world("robot_ui_module: robot sprites are not initialized yet, but [R] has a module selected")
 			return
 
 		var/list/module_sprites = SSrobot_sprites.get_module_sprites(selected_module, R)
 		if(!module_sprites || !module_sprites.len)
-			to_chat(R, span_warning("Your module appears to have no sprite options. Harass a coder."))
-			set_selected_module(null)
+			log_world("robot_ui_module: module [selected_module] has no sprite options for [R]")
 			return
 		var/list/available_sprites = list()
 		for(var/datum/robot_sprite/S in module_sprites)
@@ -116,6 +114,14 @@ CAPABILITIES(/datum/tgui_module/robot_ui_module)
 	if(!(new_module in GLOB.robot_modules))
 		return FALSE
 	if(!is_borg_whitelisted(R, new_module))
+		return FALSE
+	// What ui_data() used to say when it found a module it could not draw, said when the module is picked.
+	if(!SSrobot_sprites)
+		to_chat(R, span_warning("Robot Sprites have not been initialized yet. How are you choosing a sprite? Harass a coder."))
+		return FALSE
+	var/list/pickable_sprites = SSrobot_sprites.get_module_sprites(new_module, R)
+	if(!length(pickable_sprites))
+		to_chat(R, span_warning("Your module appears to have no sprite options. Harass a coder."))
 		return FALSE
 	set_selected_module(new_module)
 	if(sprite_datum)

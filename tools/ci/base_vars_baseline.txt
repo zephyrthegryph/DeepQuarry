@@ -22,12 +22,9 @@ base_var	code/game/objects/items.dm	@/obj/item::identity_type
 base_var	code/game/objects/items.dm	@/obj/item::init_hide_identity
 base_var	code/modules/body/factors.dm	@/obj/item::worn_factors
 base_var	code/modules/catalogue/atoms.dm	@/atom::catalogue_data
-base_var	code/modules/lighting/lighting_atom.dm	@/atom::light_flags
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	@/mob/living/carbon::life_tick
 base_var	code/modules/mob/living/carbon/shock.dm	@/mob/living/carbon::shock_stage
 base_var	code/modules/mob/living/default_language.dm	@/mob/living::default_language
 base_var	code/modules/mob/living/life/life_om.dm	@/mob/living::life_set
 base_var	code/modules/mob/mob_defines.dm	@/mob::bodytemperature
 base_var	code/modules/mob/mob_defines.dm	@/mob::faction
-list_init	code/modules/projectiles/targeting/targeting_mob.dm	@/mob/living::aimed
-list_init	code/modules/refinery/core/industrial_reagent_grinder.dm	@/obj/machinery/reagent_refinery/grinder::holdingitems

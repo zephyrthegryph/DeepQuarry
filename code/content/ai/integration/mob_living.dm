@@ -16,6 +16,9 @@
 
 
 CAPABILITIES(/mob/living)
+	op("vore_check_nutrition", menu(desc = "Check your current nutrition level."), label("Check Nutrition"), needs(req_self()), then(PROC_REF(vore_check_nutrition_op)))
+	op("mob_sleep", menu(), label("Sleep"), needs(req_self()), then(PROC_REF(mob_sleep_op)))
+	op("check_default_language", menu(), label("Check Default Language"), needs(req_self()), then(PROC_REF(check_default_language_op)))
 	op("give", menu(), label("Give"), needs(req_self()), asks(/datum/prompt/choice, fields = list("question" = "Give to whom?", "title" = "Give", "choices" = computed(PROC_REF(give_recipients)), "timeout" = 0), step = "recipient"), then(PROC_REF(give_op)))
 	op("look_up", menu(desc = "Look above you, and hope there's no ceiling spiders."), label("Look Up"), needs(req_self()), then(PROC_REF(look_up_op)))
 	op("print_healthbars", menu(), label("Print Prey Healthbars"), needs(req_self()), then(PROC_REF(print_healthbars_op)))
