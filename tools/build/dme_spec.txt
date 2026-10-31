@@ -17,7 +17,15 @@ scan maps/~turfpacks
 file interface/skin.dmf
 
 # A module's closing file #undefs its macros: every file of the module before it.
-before code/modules/integrated_electronics/** code/content/integrated_electronics/~defines/~defines.dm   # the circuit macros (DATA_CHANNEL, IC_*)
+before code/content/integrated_electronics/core/assemblies.dm code/content/integrated_electronics/~defines/~defines.dm   # the circuit macros (DATA_CHANNEL, IC_*)
+before code/content/integrated_electronics/core/circuit_serialization.dm code/content/integrated_electronics/~defines/~defines.dm   # the circuit macros (DATA_CHANNEL, IC_*)
+before code/content/integrated_electronics/core/pins.dm code/content/integrated_electronics/~defines/~defines.dm   # the circuit macros (DATA_CHANNEL, IC_*)
+before code/content/integrated_electronics/core/printer.dm code/content/integrated_electronics/~defines/~defines.dm   # the circuit macros (DATA_CHANNEL, IC_*)
+before code/content/integrated_electronics/core/tools.dm code/content/integrated_electronics/~defines/~defines.dm   # the circuit macros (DATA_CHANNEL, IC_*)
+before code/content/integrated_electronics/subtypes/arithmetic.dm code/content/integrated_electronics/~defines/~defines.dm   # the circuit macros (DATA_CHANNEL, IC_*)
+before code/content/integrated_electronics/subtypes/input.dm code/content/integrated_electronics/~defines/~defines.dm   # the circuit macros (DATA_CHANNEL, IC_*)
+before code/content/integrated_electronics/subtypes/output.dm code/content/integrated_electronics/~defines/~defines.dm   # the circuit macros (DATA_CHANNEL, IC_*)
+before code/content/integrated_electronics/subtypes/z_mixed.dm code/content/integrated_electronics/~defines/~defines.dm   # the circuit macros (DATA_CHANNEL, IC_*)
 before code/content/integrated_electronics/_defines.dm code/content/integrated_electronics/~defines/~defines.dm   # the circuit macros (DATA_CHANNEL, IC_*)
 before code/content/integrated_electronics/subtypes/camera.dm code/content/integrated_electronics/~defines/~defines.dm   # the circuit macros (DATA_CHANNEL, IC_*)
 before code/content/integrated_electronics/** code/content/integrated_electronics/~defines/~defines.dm   # the circuit macros (DATA_CHANNEL, IC_*)
@@ -42,24 +50,27 @@ before code/content/mobs/living/simple_mob/subtypes/mechanical/hivebot/ranged_da
 before code/content/mob/living/simple_mob/subtypes/mechanical/mecha/durand.dm code/content/mobs/living/simple_mob/subtypes/mechanical/mecha/combat.dm   # mecha mobs
 before code/content/mobs/living/simple_mob/subtypes/mechanical/mecha/marauder.dm code/content/mobs/living/simple_mob/subtypes/mechanical/mecha/combat.dm
 before code/content/mobs/living/simple_mob/subtypes/mechanical/mecha/hoverpod.dm code/content/mobs/living/simple_mob/subtypes/mechanical/mecha/combat.dm
-before code/modules/projectiles/guns/projectile/** code/content/projectiles/guns/projectile/automatic_serdy.dm   # automatic, pistol, shotgun guns
+before code/content/projectiles/guns/projectile/automatic.dm code/content/projectiles/guns/projectile/automatic_serdy.dm   # automatic, pistol, shotgun guns
+before code/content/projectiles/guns/projectile/revolver.dm code/content/projectiles/guns/projectile/automatic_serdy.dm   # automatic, pistol, shotgun guns
+before code/content/projectiles/guns/projectile/shotgun.dm code/content/projectiles/guns/projectile/automatic_serdy.dm   # automatic, pistol, shotgun guns
+before code/content/projectiles/guns/projectile/sniper/collapsible_sniper.dm code/content/projectiles/guns/projectile/automatic_serdy.dm   # automatic, pistol, shotgun guns
 before code/content/projectiles/guns/projectile/** code/content/projectiles/guns/projectile/automatic_serdy.dm   # automatic, pistol, shotgun guns
 before code/content/projectiles/guns/projectile/** code/content/projectiles/guns/projectile/automatic_serdy.dm   # automatic, pistol, shotgun guns
 before code/content/projectiles/projectile/beams.dm code/content/projectiles/guns/beam.dm   # phasers
-before code/modules/projectiles/projectile/bullets.dm code/content/projectiles/guns/bullet.dm   # bullets
+before code/content/projectiles/projectile/bullets.dm code/content/projectiles/guns/bullet.dm   # bullets
 before code/content/projectiles/projectile/magnetic.dm code/content/projectiles/guns/magnetic.dm   # hunting flechette
-before code/modules/projectiles/guns/projectile/shotgun.dm code/content/projectiles/projectile/scatter.dm   # shotgun scatter
-before code/modules/food/food/snacks.dm code/content/exploration/tyr_tribal_gear.dm   # honey ant snack
-before code/modules/pda/pda.dm code/content/pda/pda_subtypes.dm   # /obj/item/storage/box/PDAs
+before code/content/projectiles/guns/projectile/shotgun.dm code/content/projectiles/projectile/scatter.dm   # shotgun scatter
+before code/content/food/food/snacks.dm code/content/exploration/tyr_tribal_gear.dm   # honey ant snack
+before code/content/pda/pda.dm code/content/pda/pda_subtypes.dm   # /obj/item/storage/box/PDAs
 before code/content/items/weapons/storage/boxes.dm code/content/casino/boxes_casino.dm   # casino boxes
 before code/content/hydroponics/seed_storage.dm code/content/hydro/plantsstorage.dm   # seed storage machines
 before code/game/objects/structures/flora/flora.dm code/content/structures/flora.dm   # /obj/structure/flora/bush
 before code/content/area/Away?Mission?areas.dm code/content/turfs/initialization/init.dm   # /area/area_after_init()
-before code/modules/mob/living/living_movement.dm code/content/vore/eating/stumblevore.dm   # /mob/living/Bump(), Crossed()
+before code/content/mob/living/living_movement.dm code/content/vore/eating/stumblevore.dm   # /mob/living/Bump(), Crossed()
 before code/content/mob/living/simple_mob/defense.dm code/content/vore/eating/simple_animal.dm   # /mob/living/simple_mob/hit_with_item()
 before code/modules/mob/living/simple_mob/subtypes/slime/xenobio/xenobio.dm code/domains/ai/ports/slime_mob_overrides.dm   # xenobio slime examine(), update_mood()
-before code/modules/projectiles/gun.dm code/content/projectiles/targeting/targeting_gun.dm   # /obj/item/gun/dropped(), equipped()
-before code/modules/mob/holder.dm code/content/vore/resizing/holder_micro.dm   # /obj/item/holder/container_resist()
+before code/content/projectiles/gun.dm code/content/projectiles/targeting/targeting_gun.dm   # /obj/item/gun/dropped(), equipped()
+before code/content/mob/holder.dm code/content/vore/resizing/holder_micro.dm   # /obj/item/holder/container_resist()
 before code/defines/obj/weapon.dm code/content/materials/material_stock_parts.dm   # /obj/item/stock_parts/get_rating()
 before code/ATMOSPHERICS/components/** code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
 before code/content/atmos/components/portables_connector.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
@@ -75,7 +86,7 @@ before code/domains/atmos/components/tvalve.dm code/ATMOSPHERICS/rust_pipenets.d
 before code/domains/atmos/components/unary/heat_exchanger.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
 before code/domains/atmos/components/unary/unary_base.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
 before code/domains/atmos/components/valve.dm code/ATMOSPHERICS/rust_pipenets.dm   # rust_bind_pipe_port() of the omni and unary devices
-before code/modules/overmap/ships/computers/helm.dm code/modules/flight_operations/flight_console.dm   # navigation ui_redirect()
+before code/content/overmap/ships/computers/helm.dm code/content/flight_operations/flight_console.dm   # navigation ui_redirect()
 before code/content/observation/turf_enterexit.dm code/content/turfs/simulated/outdoors/sky_effect.dm   # /turf/Entered()
 
 # Declaration before use, for DreamMaker: it warns when a type's var is set, or a proc overridden, before the file that declares it
@@ -91,11 +102,11 @@ before code/engine/state/properties/providers.dm code/content/properties/provide
 before code/engine/state/schema.dm code/datums/state/latent_safe_types.dm              # register_defaults()
 before code/engine/state/serializer.dm code/datums/state/serializer.dm                 # identity(), lookup()
 before code/game/objects/items/weapons/id?cards/cards.dm code/content/items/weapons/id?cards/id_stacks.dm   # base_icon
-before code/modules/casino/board_games/four_in_a_row.dm code/content/casino/board_games/tic_tac_toe.dm      # change_win_count()
+before code/content/casino/board_games/four_in_a_row.dm code/content/casino/board_games/tic_tac_toe.dm   # change_win_count()
 before code/content/mobs/living/simple_mob/subtypes/animal/passive/possum.dm code/domains/ai/ports/possum.dm  # respond_to_damage()
-before code/modules/reagents/reagents/content/food.dm code/content/reagents/reagents/content/alcohol.dm      # nutriment_factor
+before code/content/reagents/reagents/content/food.dm code/content/reagents/reagents/content/alcohol.dm   # nutriment_factor
 before code/content/refinery/core/industrial_reagent_machines.dm code/content/refinery/core/industrial_reagent_pump.dm   # minimum_reagents_for_transfer
-before code/content/stockmarket/stocks.dm code/modules/admin/admin_report_panel.dm   # displayValues()
+before code/content/stockmarket/stocks.dm code/content/admin/admin_report_panel.dm   # displayValues()
 before code/content/integrated_electronics/core/special_pins/list_pin.dm code/content/integrated_electronics/list_pin_panel.dm   # interact()
 
 # The test trees are compiled through their aggregators (their own include lists, under UNIT_TESTS).
@@ -106,7 +117,7 @@ file code/tests/_tests.dm
 optional code/tests/engine/test_only_defs.dm                 # included directly, after the game (see the `last` rules)
 optional code/modules/unit_tests/_test_build_overrides.dm    # likewise
 skip code/modules/benchmarks/**   # code/tests/unit_tests/_unit_tests.dm includes them
-skip code/modules/balance/**      # likewise
+skip code/content/balance/**   # likewise
 skip code/content/balance/**   # likewise
 skip code/content/balance/**   # likewise
 
@@ -190,15 +201,15 @@ before code/game/atom/atom_type_table.dm code/content/atom/atom_materialize.dm
 before code/engine/declare/entries.dm code/engine/actions/**                  # ENTRY_SLOTS, ENTRY_SLOT_LIST
 before code/engine/stats/contributes.dm code/engine/change/staleness.dm       # CV_PROC, CV_VAR
 before code/engine/stats/tables.dm code/engine/stats/recompute.dm             # TABLE_KEY
-before code/content/overmap/overmap_shuttle.dm code/modules/flight_operations/api.dm   # waypoint_sector
+before code/content/overmap/overmap_shuttle.dm code/content/flight_operations/api.dm   # waypoint_sector
 before code/library/reagents/reagent_flow.dm code/library/reagents/**          # REAGENT_FLOW_*
 before code/domains/atmos/components/omni_devices/_omni_extras.dm code/content/power/supermatter/setup_supermatter.dm   # ATM_*
 before code/content/turfs/turf_cascade_service.dm code/content/turfs/turf_cascade_api.dm   # DEFAULT_CONVERSION_*
-before code/modules/generated_station/generated_station_types.dm code/modules/generated_station/generated_station_architecture_validation.dm   # GENERATED_STATION_TILE_*
-before code/modules/generated_station/generated_station_types.dm code/modules/generated_station/generated_station_infrastructure.dm
-before code/modules/generated_station/generated_station_types.dm code/modules/generated_station/generated_station_materializer.dm
-before code/modules/generated_station/generated_station_types.dm code/content/generated_station/generated_station_tile_plan.dm
-before code/content/generated_station/generated_station_tile_plan.dm code/modules/generated_station/generated_station_materializer.dm   # GENERATED_STATION_UTILITY_*
+before code/content/generated_station/generated_station_types.dm code/content/generated_station/generated_station_architecture_validation.dm   # GENERATED_STATION_TILE_*
+before code/content/generated_station/generated_station_types.dm code/content/generated_station/generated_station_infrastructure.dm
+before code/content/generated_station/generated_station_types.dm code/content/generated_station/generated_station_materializer.dm
+before code/content/generated_station/generated_station_types.dm code/content/generated_station/generated_station_tile_plan.dm
+before code/content/generated_station/generated_station_tile_plan.dm code/content/generated_station/generated_station_materializer.dm   # GENERATED_STATION_UTILITY_*
 
 # The test trees (compiled only under UNIT_TESTS) after the game, the cross-cutting test code (fixtures, driver: macros the unit tests
 # use) before the unit tests.
