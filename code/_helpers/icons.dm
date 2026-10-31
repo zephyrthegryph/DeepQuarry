@@ -164,11 +164,7 @@
 	//Try to remove/optimize this section ASAP, CPU hog.
 	//Determines if there's directionals.
 	if(render_icon && curdir != SOUTH)
-		if (
-			!length(icon_states_fast(icon(curicon, curstate, NORTH))) \
-			&& !length(icon_states_fast(icon(curicon, curstate, EAST))) \
-			&& !length(icon_states_fast(icon(curicon, curstate, WEST))) \
-		)
+		if(!icon_state_has_directions(curicon, curstate))
 			base_icon_dir = SOUTH
 
 	if(!base_icon_dir)
@@ -758,6 +754,7 @@ DECLARE_SHARED_CACHE(icon_resolved_path, GLOBAL_PROC_REF(build_resolved_icon_pat
 DECLARE_SHARED_CACHE(icon_dmi_metadata, GLOBAL_PROC_REF(build_icon_metadata), SC_NEVER)
 DECLARE_SHARED_CACHE(icon_state_names, GLOBAL_PROC_REF(build_icon_state_names), SC_NEVER)
 DECLARE_SHARED_CACHE(icon_state_set, GLOBAL_PROC_REF(build_icon_state_set), SC_NEVER)
+DECLARE_SHARED_CACHE(icon_state_dir_counts, GLOBAL_PROC_REF(build_icon_state_dir_counts), SC_NEVER)
 DECLARE_SHARED_CACHE(icon_size, GLOBAL_PROC_REF(build_icon_size), SC_NEVER)
 DECLARE_SHARED_CACHE(icon_size_pure, GLOBAL_PROC_REF(build_icon_size_pure), SC_NEVER)
 
@@ -825,6 +822,25 @@ DECLARE_SHARED_CACHE(icon_size_pure, GLOBAL_PROC_REF(build_icon_size_pure), SC_N
 		// A runtime /icon or dynamic rsc file has no stable identity to key a cache by.
 		return icon_states(file)
 	return CACHED_KEY(icon_state_names, "[file]", file)
+
+/// Whether the state `state` of `file` has more than its south frame (north, east or west). A file's DMI metadata says how many directions
+/// each state has; a runtime icon has none, so it is asked the slow way: whether the state exists when read for each of those directions.
+/proc/icon_state_has_directions(file, state)
+	if(icon_has_stable_key(file))
+		var/list/dir_counts = CACHED_KEY(icon_state_dir_counts, "[file]", file)
+		var/dirs = dir_counts?[state]
+		if(!isnull(dirs))
+			return dirs != 1
+	return length(icon_states_fast(icon(file, state, NORTH))) || length(icon_states_fast(icon(file, state, EAST))) || length(icon_states_fast(icon(file, state, WEST)))
+
+/// A file's states and their direction counts (state name -> dirs), from its DMI metadata. Null when it has none.
+/proc/build_icon_state_dir_counts(file)
+	var/list/metadata = icon_metadata(file)
+	if(!islist(metadata) || !islist(metadata["states"]))
+		return null
+	. = list()
+	for(var/list/state_data as anything in metadata["states"])
+		.[state_data["name"]] = state_data["dirs"]
 
 /// Whether an icon argument names a file on disk, so its text form identifies it. A runtime /icon and a dynamic rsc
 /// file (a generated body icon) stringify to nothing or to something shared, so keying a cache by that text would hand

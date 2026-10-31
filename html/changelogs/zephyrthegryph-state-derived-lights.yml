@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Flashlights, helmet lamps, recon skimmers and event headsets derive their light from state through their look"

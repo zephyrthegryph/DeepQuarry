@@ -1,0 +1,47 @@
+// after(owner, delay, handler, ...): a call written with its owner missing used to return silently (the delay landed in the owner slot).
+
+/datum/after_owner_probe
+	var/fired = 0
+
+/datum/after_owner_probe/proc/fire()
+	fired++
+
+/// A non-datum owner is a programmer error: the call reports a runtime and schedules nothing, on both clocks.
+/datum/unit_test/dq_after_owner_misordered_is_loud
+
+/datum/unit_test/dq_after_owner_misordered_is_loud/Run()
+	test_driver_begin()
+	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
+	var/datum/after_owner_probe/probe = allocate(/datum/after_owner_probe)
+	var/reported = 0
+	var/own_id = 0
+	var/world_id = 0
+	// stack_trace() raises the runtime; the test catches it (a production call logs it and goes on).
+	try
+		own_id = after(1 SECONDS, TYPE_PROC_REF(/datum/after_owner_probe, fire), with = list(probe))
+	catch(var/exception/own_fault)
+		reported++
+		TEST_ASSERT(findtext(own_fault.name, "owner must be a datum"), "the report names the mistake: [own_fault.name]")
+	try
+		world_id = after(1 SECONDS, TYPE_PROC_REF(/datum/after_owner_probe, fire), with = list(probe), clock = CLOCK_WORLD)
+	catch(var/exception/world_fault)
+		reported++
+		TEST_ASSERT(findtext(world_fault.name, "owner must be a datum"), "the report names the mistake: [world_fault.name]")
+	TEST_ASSERT_EQUAL(reported, 2, "each misordered after() reports a runtime instead of returning silently")
+	TEST_ASSERT(!own_id && !world_id, "a misordered after() schedules nothing")
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(probe.fired, 0, "a misordered after() never fires")
+
+/// The correct form still schedules and fires, with a datum owner and with the global owner.
+/datum/unit_test/dq_after_owner_correct_forms_fire
+
+/datum/unit_test/dq_after_owner_correct_forms_fire/Run()
+	test_driver_begin()
+	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
+	var/datum/after_owner_probe/probe = allocate(/datum/after_owner_probe)
+	var/runtimes_at_start = GLOB.total_runtimes
+	TEST_ASSERT(after(probe, 1 SECONDS, TYPE_PROC_REF(/datum/after_owner_probe, fire)), "an owned timer is scheduled")
+	TEST_ASSERT(after(probe, 1 SECONDS, TYPE_PROC_REF(/datum/after_owner_probe, fire), clock = CLOCK_WORLD), "an owned world timer is scheduled")
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(probe.fired, 2, "both timers fire")
+	TEST_ASSERT_EQUAL(GLOB.total_runtimes, runtimes_at_start, "the correct form reports nothing")

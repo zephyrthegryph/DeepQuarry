@@ -66,6 +66,9 @@ GLOBAL_VAR_INIT(om_resolve_nulled, 0)
 /proc/timer_schedule_list(datum/E, delay, proc_ref, list/call_args, nulls_for_gone = FALSE, owner_first = FALSE)
 	if(isnull(E))
 		E = timer_global_owner()
+	else if(!isdatum(E))
+		stack_trace("a timer ([proc_ref]) needs a datum owner or null, got [E]")
+		return 0
 	if(!own_guard(E, null, "a timer ([proc_ref])")) // the one teardown guard (guard.dm)
 		return 0
 	var/datum/scheduler_record/rec = scheduler_record_of(E)

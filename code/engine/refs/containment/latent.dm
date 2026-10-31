@@ -280,14 +280,12 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 	while(LAZYLEN(entry.handles) > max(0, n))
 		entity_handle_release_parked(entry.handles[length(entry.handles)])
 		entry.handles.len--
-	remove_snapshot(entry.snapshot)
 	used[entry.slot] -= entry.unit_cost * entry.count
 	latent_total -= entry.count
 	entry.count = max(0, n)
 	entry.generation++
 	if(entry.count)
 		entry.snapshot = dq_latent_scale_snapshot(dq_latent_type_snapshot(entry.path), entry.count)
-		add_snapshot(entry.snapshot)
 		used[entry.slot] += entry.unit_cost * entry.count
 		latent_total += entry.count
 	else
@@ -297,7 +295,6 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 			latent -= entry.slot
 		UNSETEMPTY(latent)
 		spent(entry)
-	propagate()
 	PUBLISH_CHANGE(holder, SLOT_OCCUPANCY_KEY)
 
 /// Whether `entry` is still one of ours.
