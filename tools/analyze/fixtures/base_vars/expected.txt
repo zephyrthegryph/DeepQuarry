@@ -1,5 +1,5 @@
 base_var	code/__defines/tgs.dm	2
-base_var	code/modules/benchmarks/b.dm	2
+base_var	code/tests/benchmarks/b.dm	2
 base_var	code/modules/bv/base.dm	3
 base_var	code/modules/bv/base.dm	7
 base_var	code/modules/bv/base.dm	8

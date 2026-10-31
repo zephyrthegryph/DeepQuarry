@@ -7,7 +7,7 @@ destroy	code/datums/lifecycle/links.dm	2
 destroy	code/datums/lifecycle/other.dm	2
 destroy	code/datums/lifecycle/transaction.dm	2
 destroy	code/datums/lifecycle/verbs.dm	2
-destroy	code/modules/benchmarks/b.dm	2
+destroy	code/tests/benchmarks/b.dm	2
 destroy	code/modules/foo/a.dm	2
 destroy	code/modules/foo/destroys.dm	9
 destroy	code/modules/foo/destroys.dm	11

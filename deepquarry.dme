@@ -5912,5 +5912,5 @@
 #include "code\engine\_generated\tracked_lists.dm"
 #include "code\_generated\reads.dm"
 #include "code\tests\engine\test_only_defs.dm"
-#include "code\modules\unit_tests\_test_build_overrides.dm"
+#include "code\tests\unit_tests\_test_build_overrides.dm"
 // END_INCLUDE

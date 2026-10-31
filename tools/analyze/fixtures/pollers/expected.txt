@@ -1,5 +1,5 @@
 process	code/datums/om_other/x.dm	2
-process	code/modules/benchmarks/b.dm	2
+process	code/tests/benchmarks/b.dm	2
 process	code/modules/foo/a.dm	2
 process	code/modules/foo/a.dm	3
 process	code/modules/foo/a.dm	7
@@ -23,7 +23,7 @@ process	code/modules/tgs/t.dm	2
 process	code/modules/tgui/other.dm	2
 process	maps/m.dm	3
 start	code/datums/om_other/x.dm	3
-start	code/modules/benchmarks/b.dm	3
+start	code/tests/benchmarks/b.dm	3
 start	code/modules/foo/a.dm	44
 start	code/modules/foo/a.dm	45
 start	code/modules/foo/a.dm	48
