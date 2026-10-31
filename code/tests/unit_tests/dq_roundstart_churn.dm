@@ -287,3 +287,62 @@
 	mine.data = list("tag" = "mine", "command" = "update")
 	door.receive_signal(mine)
 	TEST_ASSERT(isnull(door.cur_command) || door.cur_command == "update", "a packet for this door is taken (when it has power) or refused (when it has none), never mistaken for another command: [door.cur_command]")
+
+/// The part of a join that follows a tick after the body: it makes the manifest record and speaks the arrival (a joiner whose body was deleted in between is skipped).
+/datum/unit_test/dq_latejoin_register_makes_the_record
+
+/datum/unit_test/dq_latejoin_register_makes_the_record/Run()
+	var/list/join = SSjob.late_spawn(null, JOB_INTERN)
+	var/turf/T = join?["turf"]
+	TEST_ASSERT(isturf(T), "the job system gives a late joiner an arrivals turf")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	H.mind_initialize()
+	defer_cleanup(null, GLOBAL_PROC_REF(dq_gameplay_forget_mind), H.mind)
+	SSjob.equip_rank(H, JOB_INTERN, TRUE, FALSE)
+	refresh_flush()
+	var/before = length(GLOB.data_core.general)
+	latejoin_register(H, JOB_INTERN, "has arrived", "Common", H.z)
+	TEST_ASSERT_EQUAL(length(GLOB.data_core.general), before + 1, "the manifest has the new record")
+	var/gone = allocate(/mob/living/carbon/human, T)
+	qdel(gone)
+	latejoin_register(gone, JOB_INTERN, "has arrived", "Common", T.z)
+	TEST_ASSERT_EQUAL(length(GLOB.data_core.general), before + 1, "a joiner deleted before the registration adds none")
+
+/// A character preview render is polled four times a second, not every tick: a poll with nothing to wait for finishes at its first step, a quarter second on.
+/datum/unit_test/dq_preview_poll_cadence
+
+/datum/unit_test/dq_preview_poll_cadence/Run()
+	test_driver_begin()
+	set_global(nameof(GLOB.om_rec), GLOB.om_rec) // the first every() of a round makes the scheduler's record: restored with the rest
+	var/datum/dq_preview_poll/poll = new
+	poll.state = list(1, list(), list(), 1, 1, FALSE, list())
+	COOLDOWN_START(poll, timeout_at, 10 SECONDS)
+	poll.set_polling(TRUE)
+	test_time(0.1 SECONDS)
+	TEST_ASSERT(poll.polling, "a tenth of a second on it has not polled yet")
+	test_time(0.5 SECONDS)
+	TEST_ASSERT(!poll.polling, "half a second on it has polled and finished")
+	test_driver_end()
+	qdel(poll)
+
+/// A door-only docking port steps while a handshake is in flight and rests once docked; a docked port in an invalid state, or with a message waiting, keeps stepping.
+/datum/unit_test/dq_docked_simple_port_rests
+
+/datum/unit_test/dq_docked_simple_port_rests/Run()
+	var/obj/machinery/embedded_controller/radio/simple_docking_controller/port = allocate(/obj/machinery/embedded_controller/radio/simple_docking_controller, test_floor())
+	var/datum/embedded_program/docking/simple/program = port.program
+	TEST_ASSERT_NOTNULL(program, "the port has its program")
+	TEST_ASSERT(!program.needs_processing(), "an undocked port has nothing to step")
+	program.set_dock_state(1) // STATE_DOCKING (the program's defines end with its file)
+	TEST_ASSERT(program.needs_processing(), "a port that is docking steps")
+	program.control_mode = 2 // MODE_CLIENT
+	program.set_dock_state(3) // STATE_DOCKED
+	TEST_ASSERT(!program.needs_processing(), "a docked client port rests")
+	program.resend_counter = 2
+	TEST_ASSERT(program.needs_processing(), "a docked port with a message waiting steps")
+	program.resend_counter = 0
+	program.control_mode = 0 // MODE_NONE
+	TEST_ASSERT(program.needs_processing(), "a docked port in an invalid state steps (it resets itself)")
+	program.control_mode = 2
+	program.set_dock_state(2) // STATE_UNDOCKING
+	TEST_ASSERT(program.needs_processing(), "a port that is undocking steps")
