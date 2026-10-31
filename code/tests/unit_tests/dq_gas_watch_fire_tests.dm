@@ -196,3 +196,29 @@
 	dq_gas_watch_test_deliver()
 	TEST_ASSERT(length(ear.masks), "a watch armed before the turf registered heard nothing after it did")
 	qdel(W)
+
+/// A turf read before its own Initialize() has run, by something that is not initializing on it (a firedoor reading its neighbour's air), gets that turf's
+/// real air, made then, and the turf's own setup keeps that one mixture.
+/datum/unit_test/dq_reading_an_uninitialized_neighbour_turf_reads_its_air
+
+/datum/unit_test/dq_reading_an_uninitialized_neighbour_turf_reads_its_air/Run()
+	var/turf/open/T
+	for(var/turf/simulated/floor/candidate in world)
+		if(!candidate.blocks_air && !candidate.immutable_atmos && !candidate.planetary_atmos && candidate.air && candidate.z <= 3)
+			T = candidate
+			break
+	TEST_ASSERT_NOTNULL(T, "no mapped open floor with its own air")
+	dq_atmos_test_snapshot_air(T)
+	T.update_air_ref(-1)
+	rel_clear(T, nameof(T.air))
+	T.flags &= ~ATOM_INITIALIZED
+	TEST_ASSERT_NULL(T.air, "the turf is back before its own Initialize()")
+	var/datum/gas_mixture/read = T.return_air()
+	var/pressure = read.return_pressure()
+	var/datum/gas_mixture/made = T.air
+	T.flags |= ATOM_INITIALIZED
+	T.setup_open_air() // the turf's own Initialize() setup, which finds the air made
+	TEST_ASSERT(pressure > 50, "a read of a turf not yet initialized is its real air, not vacuum ([pressure])")
+	TEST_ASSERT(made == read, "the read made the turf's own air, not a copy")
+	TEST_ASSERT(T.air == made, "the turf's own setup kept the one mixture")
+	T.update_air_ref(0, T.air_block_mask())
