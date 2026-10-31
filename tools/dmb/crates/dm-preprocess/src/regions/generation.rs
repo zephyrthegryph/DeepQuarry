@@ -55,6 +55,8 @@ impl GenerationDirectivePlan {
     pub fn source_geometry(&self)->SourcePlanGeometry<'_>{self.plan.source_geometry()}
     pub fn diagnostics(&self)->&[Diagnostic] { &self.plan.diagnostics }
     pub fn omissions(&self)->impl Iterator<Item=&Path> { self.omissions.paths() }
+    /// Actual skipped include occurrences, not unused permitted negatives. DATA only.
+    pub fn encountered_omissions(&self)->impl Iterator<Item=&Path>{self.plan.occurrences.iter().filter(|row|self.omissions.paths.contains(row.path.as_path())).map(|row|row.path.as_path())}
     /// Text is only for generation-declaration parsing. It carries no complete
     /// original-input receipt, even when preprocessing has no diagnostics.
     pub fn expand(&self,executor:&dm_exec::BuildExecutor)->ExpandedRegions {

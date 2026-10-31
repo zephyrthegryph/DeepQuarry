@@ -1,19 +1,20 @@
 //! Unique reactive policy facts over authenticated original inputs, not a DM model.
 //! WORKING DATA; no native result registration until complete producer parity.
-use crate::{reactive_original_source::{ReadSource,SelectedCallable},reactive_annotations_policy::Annotations,reactive_reads_native::Failure};
+use crate::{reactive_original_source::ReadSource,reactive_global_source::{Source as OriginalSource,SelectedCallable},reactive_annotations_policy::Annotations,reactive_reads_native::Failure};
 use std::{collections::{BTreeMap,BTreeSet},io};
 use crate::reactive_policy_storage::{Map,Set,Storage};
 pub(crate) struct PolicyFacts{pub annotations:PolicyAnnotations,tracked:Map<String,Map<String,bool>>,relations:Map<String,Set<String>>,stats:Vec<(String,String)>}
 struct Builder{annotations:Annotations,tracked:BTreeMap<String,BTreeMap<String,bool>>,relations:BTreeMap<String,BTreeSet<String>>,stats:Vec<(String,String)>}
 pub(crate) struct PolicyAnnotations{pub reads_as:Map<(String,String),(String,Option<String>)>,pub reads_from:Map<String,Vec<String>>,pub lookups:Map<String,crate::reactive_annotations_policy::LookupDeclaration>,pub relations:Map<String,Set<String>>,pub accessors:Map<String,(String,String)>,pub capkey_accessors:Map<String,String>,pub summaries:Map<(String,String),crate::reactive_annotations_policy::ProcSummary>}
 impl PolicyFacts{
- pub(crate) fn capture(source:&ReadSource<'_>,checkpoint:&mut dyn FnMut()->io::Result<()>)->Result<Self,Failure>{
+ pub(crate) fn capture(source:&ReadSource<'_>,checkpoint:&mut dyn FnMut()->io::Result<()>)->Result<Self,Failure>{Self::capture_from(source,checkpoint)}
+ pub(crate) fn capture_from(source:&dyn OriginalSource,checkpoint:&mut dyn FnMut()->io::Result<()>)->Result<Self,Failure>{
   // Reuse the one captured raw-marker producer. This is policy-only output,
   // never another declaration/parser roster or a source acquisition.
-  let rows=source.marker_rows_checked(checkpoint)?;
+  let rows=source.marker_rows(checkpoint)?;
   let annotations=crate::reactive_annotations_native::original_annotations_from_rows(source,&rows,checkpoint)?;
   let mut out=Builder{annotations,tracked:BTreeMap::new(),relations:BTreeMap::new(),stats:Vec::new()};
-  source.raw_metadata_checked(checkpoint,&mut|relative,event|{
+  source.raw_metadata(checkpoint,&mut|relative,event|{
    use crate::raw_reactive_metadata_policy::Event;
    let(owner,name,relation)=match event{Event::Tracked{owner,name}=>(owner,name,false),Event::Relation{owner,name}=>(owner,name,true)};
    source.reserve(owner.len().checked_add(name.len()).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(2048)))?;
@@ -29,11 +30,11 @@ impl PolicyFacts{
     out.stats.push((owner.clone(),name.clone()));
    }
   }
-  checkpoint()?;source.require()?;let frozen=Self::freeze(out,source.budget(),checkpoint);if matches!(&frozen,Err(Failure::Operational(_))){return frozen}checkpoint()?;source.require().map_err(|message|if source.budget().denied(){Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message))}else{Failure::Unsupported(message)})?;frozen
+  checkpoint()?;source.require()?;let frozen=Self::freeze(out,source.budget(),checkpoint);if matches!(&frozen,Err(Failure::Operational(_))){return frozen}checkpoint()?;source.require()?;frozen
  }
- fn chain(&self,source:&ReadSource<'_>,owner:&str,name:&str,contains:impl Fn(&str)->bool,limit:Option<usize>,setter:bool)->Result<bool,Failure>{
+ fn chain(&self,source:&dyn OriginalSource,owner:&str,name:&str,contains:impl Fn(&str)->bool,limit:Option<usize>,setter:bool)->Result<bool,Failure>{
   // Borrow SAME parent graph, no copied type table/ancestor strings/cache.
-  let mut current=Some(owner);let mut guard=0usize;let total=source.inputs().archive().tree().types().len();
+  let mut current=Some(owner);let mut guard=0usize;let total=source.tree().types().len();
   while let Some(t)=current{
    source.require()?;
    if contains(t){return Ok(true)}
@@ -47,7 +48,7 @@ impl PolicyFacts{
   }
   Ok(false)
  }
- pub(crate) fn reads_as<'f>(&'f self,source:&ReadSource<'_>,owner:&str,name:&str)->Result<Option<&'f (String,Option<String>)>,Failure>{
+ pub(crate) fn reads_as<'f>(&'f self,source:&dyn OriginalSource,owner:&str,name:&str)->Result<Option<&'f (String,Option<String>)>,Failure>{
   let mut current=Some(owner);let mut guard=0;
   while let Some(t)=current{
    source.require()?;
@@ -56,18 +57,18 @@ impl PolicyFacts{
   }
   Ok(None)
  }
- pub(crate) fn is_relation(&self,source:&ReadSource<'_>,owner:&str,name:&str)->Result<bool,Failure>{
+ pub(crate) fn is_relation(&self,source:&dyn OriginalSource,owner:&str,name:&str)->Result<bool,Failure>{
   if self.chain(source,owner,name,|t|self.relations.get(t).is_some_and(|names|names.contains(name)),Some(64),false)?{return Ok(true)}
   self.chain(source,owner,name,|t|self.annotations.relations.get(t).is_some_and(|names|names.contains(name)),Some(64),false)
  }
  /// Auto inference ignores its own generated declarations. The explicit bit
  /// is a union at the existing name, not a second copied tracked-name table.
- pub(crate) fn auto_declared_reactive(&self,source:&ReadSource<'_>,owner:&str,name:&str)->Result<bool,Failure>{
+ pub(crate) fn auto_declared_reactive(&self,source:&dyn OriginalSource,owner:&str,name:&str)->Result<bool,Failure>{
   Ok(self.chain(source,owner,name,|t|self.tracked.get(t).and_then(|names|names.get(name)).copied().unwrap_or(false),Some(64),false)?||self.is_relation(source,owner,name)?||self.is_stat(source,owner,name)?||self.is_derived(source,owner,name)?)
  }
- pub(crate) fn is_tracked(&self,source:&ReadSource<'_>,owner:&str,name:&str)->Result<bool,Failure>{self.chain(source,owner,name,|t|self.tracked.get(t).is_some_and(|names|names.contains_key(name)),None,true)}
- pub(crate) fn is_stat(&self,source:&ReadSource<'_>,owner:&str,name:&str)->Result<bool,Failure>{for(t,v)in &self.stats{if v==name&&source.is_subtype(owner,t)?{return Ok(true)}}Ok(false)}
- pub(crate) fn is_derived(&self,source:&ReadSource<'_>,owner:&str,name:&str)->Result<bool,Failure>{
+ pub(crate) fn is_tracked(&self,source:&dyn OriginalSource,owner:&str,name:&str)->Result<bool,Failure>{self.chain(source,owner,name,|t|self.tracked.get(t).is_some_and(|names|names.contains_key(name)),None,true)}
+ pub(crate) fn is_stat(&self,source:&dyn OriginalSource,owner:&str,name:&str)->Result<bool,Failure>{for(t,v)in &self.stats{if v==name&&source.is_subtype(owner,t)?{return Ok(true)}}Ok(false)}
+ pub(crate) fn is_derived(&self,source:&dyn OriginalSource,owner:&str,name:&str)->Result<bool,Failure>{
   source.reserve(name.len().checked_add(64).and_then(|n|n.checked_mul(4)))?;
   Ok(!matches!(source.callable(owner,&format!("derive_{name}"))?,SelectedCallable::Missing))
  }

@@ -158,3 +158,7 @@ tools/analyze/src/deadline_policy_frozen_original.rs -text
 
 # Whole original/native fixture comparisons preserve authored DM indentation.
 /tools/analyze/fixtures/generation_tracked_bootstrap/code/probe.dm whitespace=-indent-with-non-tab
+
+tools/analyze/src/policy_finish_original.reference -text
+tools/analyze/src/policy_finish_allow_original.reference -text
+tools/analyze/src/policy_finish_original.rs -text

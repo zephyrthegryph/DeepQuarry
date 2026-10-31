@@ -4,8 +4,8 @@ use crate::{checks::{BodyView,Diagnostic,Note,Severity},policy_body_demand::Poli
 use dm_tree::frontend::{ArchivedBody,StatementBody,CallableHeaderSource,CallableRoster};
 use dm_ir::{ProcedureIdentity,ProcedureDefinition,Resolver,ResolveQuery as Q,ResolvedMeaning as M};
 use dm_syntax::{Expr,ExprKind,Span,numeric_form::{numeric_form,NumericForm}};
-#[derive(Clone,Copy)]pub enum Family{Incompatible,Disabled,Duplicate,InvalidValue}
-impl Family{pub fn name(self)->&'static str{match self{Self::Incompatible=>"incompatible_directive",Self::Disabled=>"disabled_directive",Self::Duplicate=>"sets_directive_twice",Self::InvalidValue=>"invalid_lint_directive_value"}}}
+#[derive(Clone,Copy)]pub enum Family{Incompatible,Disabled,Duplicate,InvalidValue,AtDefinition}
+impl Family{pub fn name(self)->&'static str{match self{Self::Incompatible=>"incompatible_directive",Self::Disabled=>"disabled_directive",Self::Duplicate=>"sets_directive_twice",Self::InvalidValue=>"invalid_lint_directive_value",Self::AtDefinition=>"directive_at_definition"}}}
 const FLAGS:[(bool,bool,bool);8]=[(false,false,false),(true,false,false),(false,true,false),(false,true,false),(false,true,true),(false,true,true),(false,true,true),(false,false,false)];
 struct OriginalHeaders<'a>{roster:&'a CallableRoster,current:dm_tree::MemberId,source:CallableHeaderSource<'a>}
 pub fn check(view:&BodyView<'_>,family:Family,severity:Severity)->Result<Vec<Diagnostic>,String>{let front=view.frontend();let roster=front.callable_roster()?;let current=view.body().occurrence().member;let identity=roster.identity_for_member(current).ok_or("directive callable issuance absent")?;syntax_using(view.syntax(),&front.snapshot.tree,identity,&OriginalHeaders{roster,current,source:front.callable_header_source()?},family,severity,&mut||Ok(()),&mut|_|Err("original Debug rendering requires checked archived source admission".into()))}
@@ -25,7 +25,7 @@ fn syntax_using<E:From<String>+From<&'static str>>(syntax:&StatementBody,tree:&d
   }else{first[0]=Some(FirstOrigin::Header(headers.current));}
  }
  for (ordinal,statement) in syntax.parsed().statements.iter().enumerate(){checkpoint()?;let Some(setting)=statement.setting()else{break};let name=setting.attribute;let Some(index)=crate::checks_unknown_linter_setting::KNOWN.iter().position(|known|*known==name)else{continue};let(can_disable,at_definition,can_global)=FLAGS[index];
-  if at_definition{let own=match initial{Some(own)=>own,None=>{let own=if let Some((decl,_))=declaration{let formal=source_member(tree,headers,decl,checkpoint)?;headers.source.reported_point(formal)?.same_reported_point(&headers.source.reported_point(headers.current)?)}else{true};initial=Some(own);own}};if !own{continue}}
+  if at_definition{let own=match initial{Some(own)=>own,None=>{let own=if let Some((decl,_))=declaration{let formal=source_member(tree,headers,decl,checkpoint)?;headers.source.reported_point(formal)?.same_reported_point(&headers.source.reported_point(headers.current)?)}else{true};initial=Some(own);own}};if !own{if matches!(family,Family::AtDefinition){rows.push(Diagnostic{family:family.name(),severity:Severity::Warning,span:statement.header_span,expression_span:setting.value.current_span(),message:format!("Can't define procs {name} outside their initial definition"),notes:Vec::new()});}continue}}
   let Some(enabled)=truth(setting.value.original())?else{
    if matches!(family,Family::InvalidValue){
     invalid(ordinal)?;

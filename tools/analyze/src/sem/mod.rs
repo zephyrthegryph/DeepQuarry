@@ -700,6 +700,20 @@ impl crate::lint::Cx<'_> {
     }
 }
 
+/// Explicit oracle-only partial original owner installed in this exact private
+/// Tree memo so unchanged frozen Auto/Deps/read producers share ONE old Sem.
+/// Real registered negatives are reprobed by build_generation_original; this
+/// never produces ordinary full semantics or seeds model_store/incremental.
+#[cfg(feature="unified-oracle")]
+pub fn generation_original_for(tree:&Tree,observed:ObservedGenerationOmissions)->Result<SemHandle,String>{
+ let sem=Sem::build_generation_original(&tree.root,tree,observed)?;
+ if !sem.errors.is_empty(){return Err(format!("partial original parser errors: {:?}",sem.errors))}
+ if sem.full{return Err("partial generation oracle unexpectedly produced a full model".into())}
+ let mut inserted=false;let owner=tree.memo("sem/model",||{inserted=true;SemBox{sem:Some(sem)}});
+ if !inserted{return Err("partial generation oracle requires a fresh exact Tree memo".into())}
+ Ok(SemHandle(owner))
+}
+
 /// The memoized semantic model of `tree`.
 pub fn sem_for(tree: &Tree) -> Option<SemHandle> {
     if tree.require_legacy_semantics("legacy semantic model access").is_err(){return None}
@@ -716,6 +730,8 @@ pub fn sem_for(tree: &Tree) -> Option<SemHandle> {
         },
     });
     if b.sem.is_some() {
+        #[cfg(feature="unified-oracle")]
+        if b.sem.as_ref().is_some_and(|sem|!sem.full){return Some(SemHandle(b))}
         model_store::save_later(b.clone());
         if b.sem.as_ref().map(|s| s.full).unwrap_or(false) {
             walk_cache::set_model(b.clone());

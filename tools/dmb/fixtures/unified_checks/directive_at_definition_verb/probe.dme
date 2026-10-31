@@ -1,0 +1,6 @@
+/datum/verb_gate/verb/present()
+    set SpacemanDMM_can_be_redefined = TRUE
+    return 0
+/datum/verb_gate/present()
+    set SpacemanDMM_private_proc = 2
+    return 0

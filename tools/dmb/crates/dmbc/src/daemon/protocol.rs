@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::io::{self, Read, Write};
-const MAX_FRAME: usize = 4 * 1024 * 1024;
+pub(super) const MAX_FRAME: usize = 4 * 1024 * 1024;
 pub(super) const VERSION: u32 = 5;
 #[derive(Serialize, Deserialize)]
 pub(super) enum Request {
@@ -8,6 +8,7 @@ pub(super) enum Request {
     Retire,
     Query(super::query::QueryRequest),
     Build(crate::request::BuildRequest),
+    Generate(super::generation::GenerationRequest),
 }
 #[derive(Serialize, Deserialize)]
 pub(super) enum Reply {
@@ -25,6 +26,9 @@ pub(super) enum Reply {
     Rejected(crate::request_failure::RequestFailure),
     Retiring,
     Query(super::query::QueryReply),
+    GenerationFragment { sequence:u32, offset:u64, bytes:Vec<u8> },
+    GenerationFinished(super::generation::GenerationTerminal),
+    GenerationAborted(super::generation::GenerationAbort),
 }
 pub(super) fn send(stream: &mut impl Write, value: &impl Serialize) -> io::Result<()> {
     let bytes = serde_json::to_vec(value)?;

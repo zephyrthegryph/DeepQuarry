@@ -77,7 +77,12 @@ impl<P:SnapshotProvider> RecordingInputs<P> {
                     Err(actual)=>Err(actual),
                 }
             };
-            let declarations=if questions{dm_tree::frontend::prepare_generation_question_declarations(project,self,defines,omissions,config,executor,host,&read)}else{dm_tree::frontend::prepare_generation_declarations(project,self,defines,omissions,config,executor,host,&read)}.map_err(|failure|match failure {dm_tree::frontend::GenerationPreparationFailure::Frontend(dm_tree::frontend::FrontendBuildFailure::Operational(actual))=>GenerationBootstrapFailure::Operational(actual),other=>GenerationBootstrapFailure::Declarations(other)})?;
+            let plan=dm_tree::frontend::prepare_generation_declaration_plan(project,self,defines,omissions,host,&read).map_err(|failure|match failure {dm_tree::frontend::GenerationPreparationFailure::Frontend(dm_tree::frontend::FrontendBuildFailure::Operational(actual))=>GenerationBootstrapFailure::Operational(actual),other=>GenerationBootstrapFailure::Declarations(other)})?;
+            // A missing unused registry output is not a missing source include.
+            // Decide BEFORE any declaration expansion/parse, preserving the
+            // ordinary retained frontend path without a second declaration parse.
+            if plan.encountered_omissions().next().is_none(){return Ok(GenerationBootstrapPreparation::NotNeeded)}
+            let declarations=dm_tree::frontend::prepare_generation_declarations_from_plan(plan,config,executor,host,questions).map_err(|failure|match failure {dm_tree::frontend::GenerationPreparationFailure::Frontend(dm_tree::frontend::FrontendBuildFailure::Operational(actual))=>GenerationBootstrapFailure::Operational(actual),other=>GenerationBootstrapFailure::Declarations(other)})?;
             let inputs=self.snapshot().map_err(GenerationBootstrapFailure::Operational)?;
             let result=GenerationBootstrap{declarations,inputs};
             result.require_current(&self.provider).map_err(GenerationBootstrapFailure::Operational)?;
@@ -198,5 +203,19 @@ impl GenerationBootstrap{
    if !inputs.validate_source_lease(path,lease){return Err(io::Error::new(io::ErrorKind::InvalidData,"generation frame belongs to another original recorder"))}
   }
   self.require_current(&inputs.provider)?;crate::daemon::control::checkpoint()
+ }
+}
+
+#[cfg(test)]mod generation_encountered_selection_tests{
+ use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ #[test]fn unused_missing_registered_outputs_select_ordinary_before_declaration_parse(){
+  let root=crate::test_scratch::dir("generation-unused-registered");let project=root.join("main.dme");std::fs::write(&project,"/datum/probe\n    var/value=7\n").unwrap();let recording=RecordingInputs::new(FileSystemInputs,0);let queries=Arc::new(crate::query_db::QueryDb::default());let host=queries.clone()as Arc<dyn dm_tree::frontend::SettingExpressionQueries>;let executor=dm_exec::BuildExecutor::new(1).unwrap();let parsed=AtomicUsize::new(0);let observer=|progress:dm_tree::frontend::FrontendProgress|{if progress.stage==dm_tree::frontend::FrontendStage::DeclarationParsing{parsed.fetch_add(1,Ordering::Relaxed);}};let config=dm_tree::frontend::FrontendConfig{workers:1,engine:None,observer:Some(&observer)};
+  assert!(crate::query_db::QueryDb::generation_dm_outputs().all(|relative|!root.join(relative).exists()));
+  assert!(matches!(recording.prepare_generation_bootstrap(&project,&Default::default(),config,&executor,&host,&mut |_|Ok(())).unwrap(),GenerationBootstrapPreparation::NotNeeded));
+  assert!(matches!(recording.prepare_generation_question_bootstrap(&project,&Default::default(),config,&executor,&host,&mut |_|Ok(())).unwrap(),GenerationBootstrapPreparation::NotNeeded));assert_eq!(parsed.load(Ordering::Relaxed),0,"unused registry negatives never start a second declaration parse");
+  std::fs::write(&project,"#include \"code/engine/_generated/deps.dm\"\n/datum/probe\n    var/value=7\n").unwrap();let current=RecordingInputs::new(FileSystemInputs,0);let GenerationBootstrapPreparation::MissingOutputs(frame)=current.prepare_generation_question_bootstrap(&project,&Default::default(),config,&executor,&host,&mut |_|Ok(())).unwrap()else{panic!("actual omitted include selects restricted preparation")};let expected=root.join("code/engine/_generated/deps.dm");assert_eq!(frame.declarations().encountered_omissions().collect::<Vec<_>>(),vec![expected.as_path()]);assert!(frame.declarations().omissions().count()>1,"permitted unused negatives stay distinct from encountered includes");assert!(parsed.load(Ordering::Relaxed)>0);
+ }
+ #[test]fn unrelated_missing_include_never_becomes_notneeded_or_omitted_generation_source(){
+  let root=crate::test_scratch::dir("generation-unrelated-source");let project=root.join("main.dme");std::fs::write(&project,"#include \"code/unregistered_missing.dm\"\n/datum/probe\n").unwrap();let recording=RecordingInputs::new(FileSystemInputs,0);let queries=Arc::new(crate::query_db::QueryDb::default())as Arc<dyn dm_tree::frontend::SettingExpressionQueries>;let executor=dm_exec::BuildExecutor::new(1).unwrap();let result=recording.prepare_generation_bootstrap(&project,&Default::default(),dm_tree::frontend::FrontendConfig{workers:1,engine:None,observer:None},&executor,&queries,&mut |_|Ok(()));assert!(matches!(result,Err(GenerationBootstrapFailure::Declarations(dm_tree::frontend::GenerationPreparationFailure::Preprocess(ref errors)))if !errors.is_empty()),"actual unrelated source refusal must remain visible");
  }
 }

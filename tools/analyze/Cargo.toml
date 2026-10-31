@@ -321,3 +321,7 @@ required-features=["legacy-sem"]
 [[example]]
 name = "unified_generation_tracked_original"
 required-features = ["unified-oracle"]
+
+[[example]]
+name = "unified_generation_auto_original"
+required-features = ["unified-oracle"]

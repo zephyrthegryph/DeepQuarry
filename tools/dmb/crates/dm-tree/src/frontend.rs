@@ -920,7 +920,7 @@ mod declaration_demand;
 pub use declaration_demand::FrontendBuildFailure;
 #[path="frontend_generation.rs"]
 mod generation;
-pub use generation::{GenerationDeclarationFrame, GenerationPreparationFailure, prepare_generation_declarations, prepare_generation_question_declarations,GenerationNativeQuestions,GenerationBodyLoan,GenerationDefinitionPoint,GenerationSourcePoint};
+pub use generation::{GenerationDeclarationFrame, GenerationPreparationFailure, prepare_generation_declarations, prepare_generation_question_declarations,prepare_generation_declaration_plan,prepare_generation_declarations_from_plan,GenerationNativeQuestions,GenerationBodyLoan,GenerationDefinitionPoint,GenerationSourcePoint};
 #[path = "frontend_parse.rs"]
 mod declaration_parse;
 #[cfg(test)]

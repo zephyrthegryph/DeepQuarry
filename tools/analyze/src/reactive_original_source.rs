@@ -82,7 +82,7 @@ impl<'a> ReadSource<'a>{
     /// Policy-only page provider. This does NOT prove full raw coverage; the
     /// actual host must consume its exhausted traversal receipt before sealing.
     pub(crate) fn with_raw_policy_pages(mut self,pages:&'a dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&'a HashMap<String,usize>)->Self{self.raw_pages=Some(pages);self.order=ReadOrder::Borrowed(order);self}
-    fn with_policy_files(&self,visit:&mut dyn FnMut(&str,crate::captured_raw_file::RawPolicyViews<'_>)->Result<bool,crate::reactive_reads_native::Failure>)->Result<bool,crate::reactive_reads_native::Failure>{
+    pub(crate) fn with_policy_files(&self,visit:&mut dyn FnMut(&str,crate::captured_raw_file::RawPolicyViews<'_>)->Result<bool,crate::reactive_reads_native::Failure>)->Result<bool,crate::reactive_reads_native::Failure>{
         use crate::reactive_reads_native::Failure;
         self.checkpoint()?;self.require()?;
         let pending=(||{
@@ -189,13 +189,7 @@ impl<'a> ReadSource<'a>{
 
     /// Original Decls define roster through the SAME marker-text header policy.
     /// Entries are not retained here; this is policy data, never source authority.
-    pub(crate) fn dependency_defines(&self)->Result<std::collections::BTreeSet<String>,crate::reactive_reads_native::Failure>{
-        use crate::reactive_reads_native::Failure;let mut defines=std::collections::BTreeSet::new();
-        let completed=self.with_policy_files(&mut|_,views|{
-            crate::raw_key_calls_policy::visit_headers_admitted(views.marker()?,|_,_|{},|name|{defines.insert(name.to_owned());},|bytes|{self.checkpoint()?;self.budget.charge(bytes).map_err(|message|Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))},||{self.budget.deny();Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"dependency define capacity overflow"))})?;Ok(true)
-        })?;
-        if !completed{return Err("original define traversal incomplete".into())}self.checkpoint()?;self.require()?;Ok(defines)
-    }
+    pub(crate) fn dependency_defines(&self)->Result<std::collections::BTreeSet<String>,crate::reactive_reads_native::Failure>{crate::reactive_global_source::Source::dependency_defines(self)}
 
     /// Full dependency declarations use the SAME first-statement projectors as
     /// legacy Decls; no body syntax demand or source acquisition occurs here.
@@ -285,14 +279,8 @@ impl<'a> ReadSource<'a>{
     pub(crate) fn variable_declaring_owner(&self,receiver:&str,name:&str)->Result<Option<&'a str>,crate::reactive_reads_native::Failure>{
         use crate::reactive_reads_native::Failure;
         let attempt:Result<Option<&'a str>,Failure>=(||{
-            let mut current=Some(receiver);let bound=self.inputs.archive().tree().types().len().checked_add(1).ok_or_else(||{self.budget.deny();Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"original owner ancestry bound overflow"))})?;
-            for _ in 0..bound{
-                self.checkpoint().map_err(Failure::Operational)?;self.require()?;
-                let Some(ty)=current else{return Ok(None)};
-                if let Some(declaring)=self.declaring_owner(ty,name)?{if declaring==ty{return Ok(Some(declaring))}}
-                current=self.parent_type(ty)?;
-            }
-            if current.is_some(){return Err("source ancestry exceeds actual original type roster".into())}Ok(None)
+            let bound=self.inputs.archive().tree().types().len().checked_add(1).ok_or_else(||{self.budget.deny();Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"original owner ancestry bound overflow"))})?;
+            variable_declaring_owner_original(receiver,name,bound,&mut||{self.checkpoint().map_err(Failure::Operational)?;self.require()?;Ok(())},&mut|ty,name|self.declaring_owner(ty,name),&mut|ty|self.parent_type(ty).map_err(Failure::from))
         })();
         if matches!(&attempt,Err(Failure::Operational(_))){return attempt}
         if self.budget.denied(){return Err(Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"original owner ancestry admission refused")))}attempt
@@ -472,128 +460,12 @@ impl<'a> ReadSource<'a>{
         checkpoint()?;self.require().map_err(E::from)
     }
 
-pub(crate) fn visit_setter_definitions(
-    &self,
-    mut emit: impl FnMut(&str, &str) -> Result<(), crate::reactive_reads_native::Failure>,
-) -> Result<(), crate::reactive_reads_native::Failure> {
-    use crate::reactive_reads_native::Failure;
-    self.checkpoint()?;
-    self.require()?;
-    let archive = self.inputs.archive();
-    let tree = archive.tree();
-    for ty in tree.types() {
-        self.checkpoint()?;
-        let owner = tree.symbols().text(ty.path).ok_or("setter definition owner absent")?;
-        for (i, &member) in ty.members.iter().enumerate() {
-            self.checkpoint()?;
-            let node = tree.member(member).ok_or("setter definition member absent")?;
-            if !matches!(node.kind, MemberKind::Proc | MemberKind::Verb) { continue; }
-            let name = tree.symbols().text(node.name).ok_or("setter definition spelling absent")?;
-            if !crate::auto_setter_calls_policy::PREFIXES.iter().any(|p| name.starts_with(p)) { continue; }
-            // No allocation to deduplicate the group's versions; a type's
-            // original member slice is the authority throughout this scan.
-            let mut repeated = false;
-            for &earlier in &ty.members[..i] {
-                self.checkpoint()?;
-                let earlier = tree.member(earlier).ok_or("setter predecessor absent")?;
-                if earlier.name == node.name && matches!(earlier.kind, MemberKind::Proc | MemberKind::Verb) { repeated = true; break; }
-            }
-            if repeated { continue; }
-            let mut declared = false;
-            for &version in ty.members.iter() {
-                self.checkpoint()?;
-                let version = tree.member(version).ok_or("setter declaration version absent")?;
-                if version.name == node.name && matches!(version.kind, MemberKind::Proc | MemberKind::Verb) {
-                    declared |= version.definition == dm_tree::DefinitionMode::Declare;
-                }
-            }
-            if !declared { continue; }
-            let mut qualified = false;
-            for &version in ty.members.iter() {
-                self.checkpoint()?;
-                self.require()?;
-                let version_node = tree.member(version).ok_or("setter version absent")?;
-                if version_node.name != node.name || !matches!(version_node.kind, MemberKind::Proc | MemberKind::Verb) { continue; }
-                if archive.member_location(version).is_none() {
-                    // Absence of source is never enough. The existing catalog
-                    // issuer checks exact original metadata pointer and owner.
-                    let profile = tree.checker_builtin_profile().ok_or("setter builtin profile absent")?;
-                    tree.checker_builtin_procedure_identity(profile, ty.path, node.name,
-                        version_node.kind == MemberKind::Verb, &version_node.metadata)
-                        .map_err(|e| Failure::Unsupported(format!("setter builtin version: {e:?}")))?;
-                    qualified = true;
-                    continue;
-                }
-                let point = archive.callable_header_policy_origin(version)?;
-                let relative = self.relative_file(&point.path)?;
-                if relative == crate::auto_setter_calls_policy::AUTO_REL || relative == "code/engine/_generated/tracked_lists.dm" { continue; }
-                let file=self.file(&point.path)?;
-                let display=file.analyze_display_line(point.line).map_err(|e|e.to_string())?;
-                // Macro-origin exclusion is RAW policy, not a reconstructed
-                // compiler string. BOM/legacy decoding can differ, so demand
-                // the genuine host's Analyze view rather than promoting one.
-                let raw=file.view(dm_analysis::policy_inputs::TextView::AnalyzeRaw).map_err(|e|e.to_string())?;
-                let line=raw.as_str().lines().nth(display.saturating_sub(1)).ok_or("setter raw source line absent")?.trim_start();
-                if !line.starts_with("TRACKED(") && !line.starts_with("TRACKED_BRIDGED(") { qualified = true; }
-            }
-            if declared && qualified { emit(name, owner)?; }
-        }
-    }
-    self.checkpoint()?;
-    self.require()?;
-    Ok(())
-}
+pub(crate) fn visit_setter_definitions(&self,mut emit:impl FnMut(&str,&str)->Result<(),crate::reactive_reads_native::Failure>)->Result<(),crate::reactive_reads_native::Failure>{crate::reactive_global_source::Source::visit_setter_definitions(self,&mut emit)}
+pub(crate) fn visit_own_declared_variables(&self,mut emit:impl FnMut(&str,&str)->Result<(),crate::reactive_reads_native::Failure>)->Result<(),crate::reactive_reads_native::Failure>{crate::reactive_global_source::Source::visit_own_declared_variables(self,&mut emit)}
 
-pub(crate) fn visit_own_declared_variables(
-    &self,
-    mut emit: impl FnMut(&str, &str) -> Result<(), crate::reactive_reads_native::Failure>,
-) -> Result<(), crate::reactive_reads_native::Failure> {
-    use dm_tree::DefinitionMode;
-    self.checkpoint()?;
-    self.require()?;
-    let archive = self.inputs.archive();
-    let tree = archive.tree();
-    let profile = tree.checker_builtin_profile().ok_or("auto variable profile absent")?;
-    let catalog = dm_tree::checker_builtins::pinned_catalog().map_err(|e| format!("auto variable catalog: {e:?}"))?;
-    if catalog.profile != profile { return Err("auto variable catalog differs from original source profile".into()); }
-    for ty in tree.types() {
-        self.checkpoint()?;
-        self.require()?;
-        let owner = tree.symbols().text(ty.path).ok_or("auto variable owner spelling absent")?;
-        if !tree.checker_source_type_presence(profile, owner).map_err(|e| format!("auto variable source type: {e:?}"))? { continue; }
-        for &member in ty.members.iter() {
-            self.checkpoint()?;
-            let node = tree.member(member).ok_or("auto variable original member absent")?;
-            if node.kind != MemberKind::Var || node.definition != DefinitionMode::Declare || archive.member_location(member).is_none() { continue; }
-            let name = tree.symbols().text(node.name).ok_or("auto variable spelling absent")?;
-            // This is a declaration roster, not receiver fallback. The existing
-            // source formal issuer must identify this exact own member.
-            if tree.source_formal_variable_member(ty.path, node.name).map_err(str::to_owned)? != Some(member) { return Err("auto variable declaration does not match original formal issuer".into()); }
-            emit(owner, name)?;
-        }
-        for row in catalog.declarations.iter() {
-            self.checkpoint()?;
-            if row.owner != ty.path || row.kind != MemberKind::Var || row.definition != DefinitionMode::Declare { continue; }
-            // Only an OWN authored declaration replaces this builtin name.
-            // The general formal resolver can select an ancestor and correctly
-            // refuses a builtin without authored source; neither is absence.
-            let mut own_source = false;
-            for &member in ty.members.iter() {
-                self.checkpoint()?;
-                let member_node = tree.member(member).ok_or("auto own-source member absent")?;
-                if member_node.name == row.name && member_node.kind == MemberKind::Var
-                    && member_node.definition == DefinitionMode::Declare
-                    && archive.member_location(member).is_some() { own_source = true; break; }
-            }
-            if own_source { continue; }
-            let name = tree.checker_builtin_spelling(profile, row.name).ok_or("auto builtin variable spelling absent")?;
-            emit(owner, name)?;
-        }
+    pub(crate) fn with_original_header_line(&self,member:dm_tree::MemberId,consume:&mut dyn FnMut(&str,usize,&str)->Result<(),crate::reactive_reads_native::Failure>)->Result<(),crate::reactive_reads_native::Failure>{
+        let archive=self.inputs.archive();let point=archive.callable_header_policy_origin(member)?;let relative=self.relative_file(&point.path)?;let file=self.file(&point.path)?;let display=file.analyze_display_line(point.line).map_err(|e|e.to_string())?;let raw=file.view(dm_analysis::policy_inputs::TextView::AnalyzeRaw).map_err(|e|e.to_string())?;let line=raw.as_str().lines().nth(display.saturating_sub(1)).ok_or("setter raw source line absent")?;consume(&relative,display,line)
     }
-    self.checkpoint()?;
-    self.require()?;
-    Ok(())
-}
 
 }
 
@@ -677,4 +549,11 @@ pub(crate) fn subtype_original<E:From<&'static str>>(tree:&dm_tree::SemanticTree
             match tree.parent(ty){Some(next)=>ty=next,None=>return Ok(false)}
         }
         Err("reactive original hierarchy contains a cycle".into())
+}
+
+/// Exact bounded old declared-owner walk, including the actual root ancestor.
+/// The candidate issuer may observe implicit global fallback; exact equality
+/// prevents accepting it until the real parent chain reaches that owner.
+pub(crate) fn variable_declaring_owner_original<'a,E:From<&'static str>>(receiver:&str,name:&str,bound:usize,checkpoint:&mut impl FnMut()->Result<(),E>,candidate:&mut impl FnMut(&str,&str)->Result<Option<&'a str>,E>,parent:&mut impl FnMut(&str)->Result<Option<&'a str>,E>)->Result<Option<&'a str>,E>{
+ let mut current=Some(receiver);for _ in 0..bound{checkpoint()?;let Some(owner)=current else{return Ok(None)};if let Some(declaring)=candidate(owner,name)?{if declaring==owner{return Ok(Some(declaring))}}current=parent(owner)?;}if current.is_some(){return Err("source ancestry exceeds actual original type roster".into())}Ok(None)
 }

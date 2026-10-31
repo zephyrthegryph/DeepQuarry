@@ -145,6 +145,14 @@ impl OccurrenceTable {
         Arc::clone(&self.index)
     }
     /// Actual shared allocations only; private HashMap bucket backing excluded.
+    /// Same native grouping owner already held by this occurrence table.
+    /// Resource overlap only; it grants no original source/declaration role.
+    pub(crate) fn first_native_target(&self,target:Target)->Result<Option<OccurrenceId>,&'static str>{
+        if self.index.targets.is_empty(){return Ok(None)}
+        let owner=self.index.native_admission.lock().unwrap_or_else(|e|e.into_inner());if owner.is_none(){return Err("original target grouping has not been admitted on the native owner")}
+        Ok(self.index.groups.get().ok_or("admitted original target grouping is absent")?.get(&target).and_then(|ids|ids.first()).copied())
+    }
+    pub(crate) fn native_target_index_charge(&self)->usize{self.index.native_admission.lock().unwrap_or_else(|e|e.into_inner()).as_ref().map_or(0,dm_syntax::SettingRootLease::bytes)}
     pub fn visit_target_index_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
         TargetOccurrenceIndex::visit_storage(&self.index, &mut visit);
     }

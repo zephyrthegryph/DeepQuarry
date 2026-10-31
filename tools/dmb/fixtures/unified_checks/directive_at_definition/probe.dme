@@ -1,0 +1,7 @@
+/datum/definition_gate/proc/probe()
+    set SpacemanDMM_can_be_redefined = TRUE
+    return 0
+/datum/definition_gate/probe()
+    set SpacemanDMM_private_proc = 2
+    set SpacemanDMM_should_be_pure = FALSE
+    return 0

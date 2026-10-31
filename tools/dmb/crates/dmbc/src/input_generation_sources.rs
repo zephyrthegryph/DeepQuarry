@@ -14,13 +14,14 @@ impl<'a> GenerationSourceFrame<'a>{
  pub(crate) fn require_recording<P:SnapshotProvider>(self,inputs:&RecordingInputs<P>)->io::Result<()>{match self{Self::Declarations(frame)=>frame.require_recording(inputs),Self::Questions(frame)=>frame.require_recording(inputs)}}
  pub(crate) fn questions(self)->Option<&'a dm_tree::frontend::GenerationNativeQuestions>{match self{Self::Questions(frame)=>Some(&frame.questions),_=>None}}
 }
-struct ActiveFile<'a>{slot:&'a std::cell::Cell<Option<usize>>,before:Option<usize>}impl Drop for ActiveFile<'_>{fn drop(&mut self){self.slot.set(self.before)}}
+#[derive(Clone,Copy)]enum ActiveFileKind{Discovered(usize),Callable}
+struct ActiveFile<'a>{slot:&'a std::cell::Cell<Option<ActiveFileKind>>,before:Option<ActiveFileKind>}impl Drop for ActiveFile<'_>{fn drop(&mut self){self.slot.set(self.before)}}
 
 enum Original<'a>{Native{primary:&'a Path,lease:&'a dm_preprocess::SourceAcquisitionLease},Owned(dm_resources::SharedBytes)}
 struct File<'a>{path:&'a Path,relative:String,original:Original<'a>}
 pub(crate) struct GenerationSourceReader<'a,P:SnapshotProvider>{
  frame:GenerationSourceFrame<'a>,inputs:&'a RecordingInputs<P>,discovery:&'a Arc<DiscoveryReceipt>,
- files:Vec<File<'a>>,active_file:std::cell::Cell<Option<usize>>,budget:&'a Arc<Budget>,code_completed:std::cell::Cell<bool>,tests_completed:std::cell::Cell<bool>,
+ files:Vec<File<'a>>,native:Vec<(&'a Path,&'a dm_preprocess::SourceAcquisitionLease)>,active_file:std::cell::Cell<Option<ActiveFileKind>>,budget:&'a Arc<Budget>,code_completed:std::cell::Cell<bool>,tests_completed:std::cell::Cell<bool>,
 }
 impl<P:SnapshotProvider> RecordingInputs<P>{
  fn require_generation_capture_current(&self)->io::Result<()>{
@@ -72,8 +73,8 @@ impl<'a,P:SnapshotProvider> GenerationSourceReader<'a,P>{
    let original=match primary{Some((primary,lease))=>{if !inputs.validate_source_lease(primary,lease){return Err("generation native lease changed during capture".into())}crate::input_snapshot::recorded_source_original(lease)?;Original::Native{primary,lease}},None=>Original::Owned(inputs.generation_owned_original(path,budget)?)};
    files.push(File{path,relative,original});
   }
-  drop(aliases);drop(native);
-  let reader=Self{frame,inputs,discovery,files,active_file:std::cell::Cell::new(None),budget,code_completed:std::cell::Cell::new(false),tests_completed:std::cell::Cell::new(false)};reader.require_current()?;Ok(reader)
+  drop(aliases);
+  let reader=Self{frame,inputs,discovery,files,native,active_file:std::cell::Cell::new(None),budget,code_completed:std::cell::Cell::new(false),tests_completed:std::cell::Cell::new(false)};reader.require_current()?;Ok(reader)
  }
  pub(crate) fn root(&self)->&Path{&self.discovery.contract().root}
  pub(crate) fn budget(&self)->&Arc<Budget>{self.budget}
@@ -82,6 +83,14 @@ impl<'a,P:SnapshotProvider> GenerationSourceReader<'a,P>{
   self.checkpoint()?;self.frame.require_recording(self.inputs)?;self.discovery.validate_recording(self.inputs)?;
   self.inputs.require_generation_capture_current()?;self.checkpoint()
  }
+ fn with_original(&self,path:&Path,original:&crate::input_snapshot::RecordedSourceOriginal<'_>,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{
+  dq_analyze::captured_raw_file::with_original_policy_file_prepared(self.root(),path,0,self.budget,|scratch|{
+    self.checkpoint()?;
+    let mut backing=Some(0usize);let raw=match &original{crate::input_snapshot::RecordedSourceOriginal::Utf8(text)=>{dq_analyze::captured_raw_file::visit_source_storage(text,|_,bytes|backing=backing.and_then(|n|n.checked_add(bytes)));text.as_bytes()},crate::input_snapshot::RecordedSourceOriginal::Bytes(bytes)=>{backing=bytes.capacity().checked_add(128);bytes.as_slice()}};
+    let transform=if matches!(&original,crate::input_snapshot::RecordedSourceOriginal::Utf8(text)if !text.as_bytes().contains(&b'\r')){Some(0)}else{dq_analyze::captured_raw_file::analyze_raw_len(raw)?.checked_mul(4).and_then(|n|n.checked_add(8192))};
+    charge(scratch,backing.and_then(|n|n.checked_add(transform?)))?;Ok(crate::input_snapshot::normalize_recorded_policy_original(&original))
+   },visit)
+ }
  fn for_each_domain(&self,tests:bool,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{
   self.checkpoint()?;
   for(index,file)in self.files.iter().enumerate(){
@@ -89,17 +98,19 @@ impl<'a,P:SnapshotProvider> GenerationSourceReader<'a,P>{
    self.checkpoint()?;
    let original=match &file.original{Original::Native{primary,lease}=>{if !self.inputs.validate_source_lease(primary,lease){return Err("generation source acquisition became foreign".into())}crate::input_snapshot::recorded_source_original(lease)?},Original::Owned(bytes)=>crate::input_snapshot::RecordedSourceOriginal::Bytes(bytes)};
    if self.active_file.get().is_some(){return Err("generation original file loans cannot reenter".into())}
-   let before=self.active_file.replace(Some(index));let active=ActiveFile{slot:&self.active_file,before};
-   let pending=dq_analyze::captured_raw_file::with_original_policy_file_prepared(self.root(),file.path,0,self.budget,|scratch|{
-    self.checkpoint()?;
-    let mut backing=Some(0usize);let raw=match &original{crate::input_snapshot::RecordedSourceOriginal::Utf8(text)=>{dq_analyze::captured_raw_file::visit_source_storage(text,|_,bytes|backing=backing.and_then(|n|n.checked_add(bytes)));text.as_bytes()},crate::input_snapshot::RecordedSourceOriginal::Bytes(bytes)=>{backing=bytes.capacity().checked_add(128);bytes.as_slice()}};
-    let transform=if matches!(&original,crate::input_snapshot::RecordedSourceOriginal::Utf8(text)if !text.as_bytes().contains(&b'\r')){Some(0)}else{dq_analyze::captured_raw_file::analyze_raw_len(raw)?.checked_mul(4).and_then(|n|n.checked_add(8192))};
-    charge(scratch,backing.and_then(|n|n.checked_add(transform?)))?;Ok(crate::input_snapshot::normalize_recorded_policy_original(&original))
-   },visit);
+   let before=self.active_file.replace(Some(ActiveFileKind::Discovered(index)));let active=ActiveFile{slot:&self.active_file,before};
+   let pending=self.with_original(file.path,&original,visit);
    drop(active);
    if matches!(&pending,Err(Failure::Operational(_))){return pending}self.checkpoint()?;if !pending?{return Ok(false)}
   }
   self.checkpoint()?;if tests{self.tests_completed.set(true)}else{self.code_completed.set(true)}Ok(true)
+ }
+ pub(crate) fn with_auto_configuration<T>(&self,path:&Path,consume:impl FnOnce(&dq_analyze::captured_raw_file::Config)->Result<T,Failure>)->Result<T,Failure>{
+  self.checkpoint()?;charge(self.budget,self.root().as_os_str().len().checked_mul(32).and_then(|n|n.checked_add(4096)))?;let expected=dm_preprocess::regions::canonical_path(&self.root().join("tools/ci/lint_scopes.toml"));if path!=expected{return Err("generation Auto requires the actual fixed lint_scopes configuration request".into())}
+  let scratch=Budget::scoped_temporaries(self.budget).map_err(|m|oom(self.budget,m))?;struct Held<'a>{budget:&'a Budget,complete:bool}impl Drop for Held<'_>{fn drop(&mut self){if !self.complete{self.budget.keep_failed_scratch()}}}let mut held=Held{budget:&scratch,complete:false};
+  let produced=(||{let read_limit=match self.inputs.provider.stamp(path){Ok(stamp)=>{let size=usize::try_from(stamp.size).map_err(|_|oom(&scratch,"generation Auto configuration size overflow"))?;if size>dq_analyze::captured_raw_policy::MAX_FIXTURE_FILE_BYTES{return Err("generation Auto configuration exceeds existing configuration admission".into())}size.checked_mul(4).and_then(|n|n.checked_add(8192)).ok_or_else(||oom(&scratch,"generation Auto configuration read bound overflow"))?},Err(actual)if actual.kind()==io::ErrorKind::NotFound=>0,Err(actual)=>return Err(Failure::Operational(actual))};
+   charge(&scratch,Some(read_limit))?;let original=self.inputs.read_policy_candidate(path,read_limit)?;let parse=original.as_ref().map_or(Some(1024),|bytes|bytes.len().checked_mul(64).and_then(|n|n.checked_add(1024)));charge(&scratch,parse)?;let config=dq_analyze::captured_raw_file::Config::capture(match original.as_ref(){Some(bytes)=>dq_analyze::captured_raw_policy::Configuration::Captured(bytes.as_slice()),None=>dq_analyze::captured_raw_policy::Configuration::ProvenMissing})?;let value=consume(&config);drop(config);drop(original);value})();
+  if matches!(&produced,Err(Failure::Operational(_))){return produced}self.checkpoint()?;scratch.require().map_err(|m|oom(&scratch,m))?;if produced.is_ok(){held.complete=true}drop(held);drop(scratch);produced
  }
  pub(crate) fn for_each_tests(&self,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{self.for_each_domain(true,visit)}
  pub(crate) fn require_completed(&self)->Result<(),Failure>{self.require_current()?;if !self.code_completed.get()||!self.tests_completed.get(){return Err("generation source domains have not completed".into())}Ok(())}
@@ -107,8 +118,13 @@ impl<'a,P:SnapshotProvider> GenerationSourceReader<'a,P>{
 impl<P:SnapshotProvider> dq_analyze::reactive_raw_policy_pages::RawPolicyPages for GenerationSourceReader<'_,P>{
  fn generation_questions(&self)->Option<&dm_tree::frontend::GenerationNativeQuestions>{self.frame.questions()}
  fn generation_compiled_file(&self,relative:&str)->Result<Option<dm_ir::FileId>,Failure>{
-  self.checkpoint()?;let index=self.active_file.get().ok_or("generation compiled identity requires the active original file loan")?;let file=self.files.get(index).ok_or("generation active original file absent")?;if file.relative!=relative{return Err("generation compiled identity belongs to another current file".into())}
+  self.checkpoint()?;let Some(ActiveFileKind::Discovered(index))=self.active_file.get()else{return Err("generation compiled identity requires the active discovered original file loan".into())};let file=self.files.get(index).ok_or("generation active original file absent")?;if file.relative!=relative{return Err("generation compiled identity belongs to another current file".into())}
   let q=self.frame.questions().ok_or("generation declaration questions were not selected")?;match &file.original{Original::Native{primary,lease}=>{if !self.inputs.validate_source_lease(primary,lease){return Err("generation compiled identity acquisition is foreign".into())}Ok(Some(q.file_id_for_path(primary).ok_or("generation native acquisition file id absent")?))},Original::Owned(_)=>Ok(None)}
+ }
+ fn with_callable_file(&self,ordinal:usize,name:&str,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<(),Failure>)->Result<(),Failure>{
+  self.checkpoint()?;let questions=self.frame.questions().ok_or("generation callable source role was not selected")?;let body=questions.bodies().get(ordinal).ok_or("generation callable original ordinal unavailable")?;let node=questions.tree().member(body.member).ok_or("generation callable original member unavailable")?;if questions.tree().symbols().text(node.name)!=Some(name){return Err("generation callable file request differs from issued original name".into())}let(issued,point)=questions.callable_original_header(body.member)?;if issued!=ordinal{return Err("generation callable original ordinal differs".into())}
+  let index=self.native.binary_search_by(|row|row.0.cmp(point.path)).map_err(|_|Failure::from("generation callable original acquisition absent"))?;let(primary,lease)=self.native[index];if !self.inputs.validate_source_lease(primary,lease){return Err("generation callable acquisition belongs to another current recorder".into())}let original=crate::input_snapshot::recorded_source_original(lease)?;if self.active_file.get().is_some(){return Err("generation callable raw loan cannot reenter a live file".into())}let before=self.active_file.replace(Some(ActiveFileKind::Callable));let active=ActiveFile{slot:&self.active_file,before};
+  let mut called=false;let pending=self.with_original(primary,&original,&mut|relative,views|{if called{return Err("generation callable raw loan repeated".into())}called=true;visit(relative,views)?;Ok(true)});drop(active);if matches!(&pending,Err(Failure::Operational(_))){return pending.map(|_|())}self.checkpoint()?;if !pending?||!called{return Err("generation callable original file loan incomplete".into())}Ok(())
  }
  fn for_each(&self,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{self.for_each_domain(false,visit)}
 }

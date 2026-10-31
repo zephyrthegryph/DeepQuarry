@@ -20,6 +20,7 @@ pub(crate) mod prepare_deadline;
 mod windows_spawn;
 mod protocol;
 pub mod query;
+pub mod generation;
 pub mod resident;
 mod service;
 mod transport;
@@ -156,7 +157,6 @@ pub fn route(
         return crate::request_runner::run_build(request);
     }
     // Supervisors may require an already-owned server and prohibit lifecycle changes.
-    let allow_lifecycle = std::env::var_os("DMB_DAEMON_AUTOSTART").is_none_or(|value| value != "0");
     let cwd = std::env::current_dir()?;
     if !request.project.is_absolute() {
         request.project = cwd.join(&request.project);
@@ -174,6 +174,30 @@ pub fn route(
             }
         }
     }
+    let mut stream=connect_generation()?;
+                    transport::set_timeout(&mut stream, transport::BUILD_DEADLINE)?;
+                    protocol::send(&mut stream, &protocol::Request::Build(request))?;
+                    loop {
+                        match protocol::receive::<protocol::Reply>(&mut stream)? {
+                            protocol::Reply::Accepted => {}
+                            protocol::Reply::Diagnostic { stdout, bytes } => {
+                                use std::io::Write;
+                                if stdout {
+                                    io::stdout().lock().write_all(&bytes)?;
+                                } else {
+                                    io::stderr().lock().write_all(&bytes)?;
+                                }
+                            }
+                            protocol::Reply::Completed(outcome) => return Ok(outcome),
+                            protocol::Reply::Rejected(error) => return Err(error.into()),
+                            _ => return Err("unexpected daemon reply".into()),
+                        }
+                    }
+}
+/// SAME generation endpoint startup/handshake/lifecycle policy for builds and
+/// explicit generation. This performs no source preparation or file install.
+fn connect_generation()->Result<transport::Stream,Box<dyn std::error::Error>>{
+    let allow_lifecycle = std::env::var_os("DMB_DAEMON_AUTOSTART").is_none_or(|value| value != "0");
     let identity = compiler_identity()?;
     let endpoint = transport::Endpoint::generation(identity)?;
     let mut started = false;
@@ -196,24 +220,7 @@ pub fn route(
                     compiler,
                     retiring,
                 } if version == protocol::VERSION && compiler == identity && !retiring => {
-                    transport::set_timeout(&mut stream, transport::BUILD_DEADLINE)?;
-                    protocol::send(&mut stream, &protocol::Request::Build(request))?;
-                    loop {
-                        match protocol::receive::<protocol::Reply>(&mut stream)? {
-                            protocol::Reply::Accepted => {}
-                            protocol::Reply::Diagnostic { stdout, bytes } => {
-                                use std::io::Write;
-                                if stdout {
-                                    io::stdout().lock().write_all(&bytes)?;
-                                } else {
-                                    io::stderr().lock().write_all(&bytes)?;
-                                }
-                            }
-                            protocol::Reply::Completed(outcome) => return Ok(outcome),
-                            protocol::Reply::Rejected(error) => return Err(error.into()),
-                            _ => return Err("unexpected daemon reply".into()),
-                        }
-                    }
+                    return Ok(stream);
                 }
                 protocol::Reply::Hello { .. } if !allow_lifecycle => {
                     return Err(

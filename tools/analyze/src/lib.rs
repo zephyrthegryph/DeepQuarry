@@ -269,3 +269,13 @@ mod native_original_expression_debug_oracle;
 
 mod system_boundary_policy;
 #[cfg(feature="native-policy")]pub mod captured_system_boundary_pages;
+
+#[cfg(feature="native-policy")]
+mod reactive_global_source;
+#[cfg(feature="native-policy")]
+mod generation_reactive_source;
+
+#[cfg(feature="native-policy")]
+pub mod captured_generation_auto;
+
+pub mod policy_finish;

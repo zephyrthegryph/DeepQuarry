@@ -1,7 +1,7 @@
 //! Read-flow interpreter over the ORIGINAL native body graph.
 //! WORKING DATA ONLY: callers may not install/publish this partial producer.
 //! Unclosed semantics return Unsupported atomically rather than an empty set.
-use crate::reactive_original_source::{ReadSource,ReadCallable,SelectedCallable};
+use crate::reactive_global_source::{Source as OriginalSource,Body as OriginalBody,Callable as ReadCallable,SelectedCallable};
 use crate::reactive_read_facts::{Read,ReadKind,ReadSet,LookupArgument,LookupBound,LookupRead};
 use dm_syntax::{Expr,ExprKind,Span,Statement,StatementKind,ForControl,ForInitializer};
 use std::{collections::{BTreeMap,BTreeSet,HashMap},io};
@@ -29,16 +29,17 @@ pub(crate) type Reads=ReadSet;
 pub(crate) trait GlobalFacts{
  fn constant_after_init(&self,name:&str)->Result<bool,Failure>;
  fn field_constant_after_init(&self,name:&str)->Result<bool,Failure>;
- fn is_written_on(&self,source:&ReadSource<'_>,owner:&str,name:&str)->Result<bool,Failure>;
+ fn is_written_on(&self,source:&dyn OriginalSource,owner:&str,name:&str)->Result<bool,Failure>;
+ fn outside_written_on(&self,source:&dyn OriginalSource,owner:&str,name:&str)->Result<bool,Failure>;
 }
 pub(crate) struct Directives<'a>{pub facts:&'a crate::reactive_policy_facts_native::PolicyFacts,pub globals:Option<&'a dyn GlobalFacts>}
 type MemoKey=(String,String,Root,Option<String>,Vec<(Root,Option<String>)>,bool);
 struct MemoNode{own:Reads,children:Vec<(MemoKey,bool)>,trivial:bool}
 type VisitKey=(String,String,Root,Vec<String>,Vec<(Root,Vec<String>)>);
-struct Frame<'a,'body>{ordinal:usize,name:&'a str,rel:String,body:&'body dm_tree::frontend::ArchivedBody<'a>,this:Value,locals:BTreeMap<String,Value>,narrow:HashMap<String,Vec<String>>,ret:Option<Value>}
-impl Frame<'_,'_>{fn note_return(&mut self,value:Value){if self.ret.is_none()&&value.tracked(){self.ret=Some(value);}}}
-struct Walk<'a,'source,'op>{source:&'source ReadSource<'a>,directives:Directives<'source>,out:Reads,checkpoint:&'op mut dyn FnMut()->io::Result<()>,depth:usize,mute:usize,offset:usize,line:u32,block_depth:usize,call_depth:usize,closed:bool,visited:BTreeSet<VisitKey>,context_override:Option<String>,active_rel:String,override_depth:usize,engine_depth:usize,diag_ix:BTreeMap<(&'static str,String,u32,String),usize>,memo:BTreeMap<MemoKey,MemoNode>,children:Vec<(MemoKey,bool)>,computing:BTreeSet<MemoKey>,merged:BTreeSet<MemoKey>}
-impl<'a,'source,'op> Walk<'a,'source,'op>{
+struct Frame<'body>{ordinal:usize,name:&'body str,rel:String,body:&'body dyn OriginalBody,this:Value,locals:BTreeMap<String,Value>,narrow:HashMap<String,Vec<String>>,ret:Option<Value>}
+impl Frame<'_>{fn note_return(&mut self,value:Value){if self.ret.is_none()&&value.tracked(){self.ret=Some(value);}}}
+struct Walk<'source,'op>{source:&'source dyn OriginalSource,directives:Directives<'source>,out:Reads,checkpoint:&'op mut dyn FnMut()->io::Result<()>,depth:usize,mute:usize,offset:usize,line:u32,block_depth:usize,call_depth:usize,closed:bool,visited:BTreeSet<VisitKey>,context_override:Option<String>,active_rel:String,override_depth:usize,engine_depth:usize,diag_ix:BTreeMap<(&'static str,String,u32,String),usize>,memo:BTreeMap<MemoKey,MemoNode>,children:Vec<(MemoKey,bool)>,computing:BTreeSet<MemoKey>,merged:BTreeSet<MemoKey>}
+impl<'source,'op> Walk<'source,'op>{
 
  fn analyze_request(&mut self,receiver:&str,name:&str,context_override:Option<&str>)->Result<Reads,Failure>{
   self.tick()?;self.out=Reads::default();self.visited.clear();self.children.clear();self.computing.clear();self.merged.clear();self.diag_ix.clear();self.line=0;self.active_rel.clear();self.override_depth=0;self.engine_depth=0;
@@ -49,8 +50,8 @@ impl<'a,'source,'op> Walk<'a,'source,'op>{
  }
  fn run_proc(&mut self,ordinal:usize,this:Value,bind:&[Value],first_is_context:bool,no_act:bool)->Result<Option<Value>,Failure>{
   self.tick()?;if self.call_depth>MAX_CALL_DEPTH{return Ok(None);}
-  let archive=self.source.inputs().archive();let tree=archive.tree();
-  let occurrence=archive.occurrences().get(ordinal).ok_or("reactive callee original occurrence absent")?;
+  let source=self.source;let tree=source.tree();
+  let occurrence=self.source.occurrences().get(ordinal).ok_or("reactive callee original occurrence absent")?;
   let node=tree.member(occurrence.member).ok_or("reactive callee original member absent")?;
   let owner=tree.type_node(node.owner).and_then(|t|tree.symbols().text(t.path)).ok_or("reactive callee original owner absent")?;
   let name=tree.symbols().text(node.name).ok_or("reactive callee original name absent")?;
@@ -85,8 +86,8 @@ impl<'a,'source,'op> Walk<'a,'source,'op>{
   }
   self.enter_proc(ordinal,owner,name,this,bind,first_is_context,no_act)
  }
- fn enter_proc(&mut self,ordinal:usize,owner:&'a str,name:&'a str,this:Value,bind:&[Value],first_is_context:bool,no_act:bool)->Result<Option<Value>,Failure>{
-  let archive=self.source.inputs().archive();
+ fn enter_proc(&mut self,ordinal:usize,owner:&str,name:&str,this:Value,bind:&[Value],first_is_context:bool,no_act:bool)->Result<Option<Value>,Failure>{
+  let source=self.source;
   if let Some((_,summary))=self.directives.facts.annotations.summaries.iter().find(|((ty,proc),_)|ty==owner&&proc==name){self.apply_summary(owner,name,summary,&this,bind)?;return Ok(None)}
   if !self.closed{
    let rel=self.source.site_line(ordinal,1)?.0;
@@ -98,13 +99,13 @@ impl<'a,'source,'op> Walk<'a,'source,'op>{
     return Ok(None)
    }
   }
-  let body=self.source.parse_body(ordinal).map_err(|error|match error{dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>Failure::Operational(actual),dm_tree::frontend::BodySyntaxFailure::Syntax(error)=>Failure::Unsupported(error.message)})?;
+  let mut returned=None;let mut incoming=Some(this);source.with_body(ordinal,&mut|body|{
   if !body.statement_body().has_native_literal_syntax(){return Err("reactive callee requires actual admitted original Kind4 syntax".into());}
   if !body.statement_body().syntax_complete(){return Err("reactive callee grammar is not completely issued".into());}
   let parameters=body.source_parameters()?;let entries=parameters.entries()?;
   self.reserve(entries.iter().try_fold(0usize,|n,p|n.checked_add(parameter_bytes(p)?)).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(entries.len().checked_mul(1024)?)))?;
   let rel=self.source.site_line(ordinal,1)?.0;let in_engine=self.closed&&crate::reactive_read_facts::ENGINE_DIRS.iter().any(|prefix|rel.starts_with(prefix));
-  let mut frame=Frame{ordinal,name,rel,body:&body,this,locals:BTreeMap::new(),narrow:HashMap::new(),ret:None};
+  let mut frame=Frame{ordinal,name,rel,body,this:incoming.take().ok_or("original source body callback repeated")?,locals:BTreeMap::new(),narrow:HashMap::new(),ret:None};
   for(i,parameter)in entries.iter().enumerate(){
    let name=parameters.name(parameter)?;let declared=parameters.type_path(parameter)?;
    let mut value=if let Some(value)=bind.get(i){self.value_copy(value)?}else{Value::local(declared.clone())};
@@ -120,19 +121,20 @@ impl<'a,'source,'op> Walk<'a,'source,'op>{
   // body spelling, never source/meaning authority or another lexer. An actual
   // primary istype identifier must spell those ASCII bytes; comments/strings
   // can only cause harmless extra traversal. The original AST remains final.
-  let occurrence=archive.occurrences().get(ordinal).ok_or("reactive narrowing occurrence absent")?;
-  let code=archive.expanded_source().get(occurrence.expanded_span.range()).ok_or("reactive narrowing body source outside original arena")?;
+  let occurrence=self.source.occurrences().get(ordinal).ok_or("reactive narrowing occurrence absent")?;
+  let code=self.source.raw_body_text(ordinal)?;
   if code.contains("istype"){self.collect_narrowing(&mut frame)?;}
   let prior_rel=std::mem::replace(&mut self.active_rel,frame.rel.clone());
   let previous_offset=std::mem::replace(&mut self.offset,0);self.call_depth+=1;self.engine_depth+=usize::from(in_engine);
   let result=self.statements(&mut frame,&body.statement_body().parsed().statements);
-  self.call_depth-=1;self.engine_depth-=usize::from(in_engine);self.offset=previous_offset;self.active_rel=prior_rel;result?;Ok(frame.ret)
+  self.call_depth-=1;self.engine_depth-=usize::from(in_engine);self.offset=previous_offset;self.active_rel=prior_rel;result?;returned=Some(frame.ret);Ok(())
+  })?;returned.ok_or_else(||Failure::from("original source body callback omitted"))
  }
  fn tick(&mut self)->Result<(),Failure>{(self.checkpoint)()?;self.source.require()?;Ok(())}
- fn reserve(&self,n:Option<usize>)->Result<(),Failure>{self.source.reserve(n).map_err(|actual|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,actual)))}
+ fn reserve(&self,n:Option<usize>)->Result<(),Failure>{self.source.reserve(n)}
  fn value_copy(&self,v:&Value)->Result<Value,Failure>{self.reserve(v.hops.iter().try_fold(v.ty.as_ref().map_or(0,String::len),|n,s|n.checked_add(s.len()).and_then(|n|n.checked_add(std::mem::size_of::<String>()))).and_then(|n|n.checked_add(v.root_width()?)).and_then(|n|n.checked_mul(4)).and_then(|n|n.checked_add(1024)))?;Ok(v.clone())}
- fn bind(&mut self,fr:&mut Frame<'a,'_>,name:&str,value:Value)->Result<(),Failure>{self.reserve(name.len().checked_mul(4).and_then(|n|n.checked_add(1024)))?;fr.locals.insert(name.to_owned(),value);Ok(())}
- fn diag(&mut self,fr:&Frame<'a,'_>,rule:&'static str,args:std::fmt::Arguments<'_>)->Result<(),Failure>{self.diag_at(&fr.rel,rule,args)}
+ fn bind(&mut self,fr:&mut Frame<'_>,name:&str,value:Value)->Result<(),Failure>{self.reserve(name.len().checked_mul(4).and_then(|n|n.checked_add(1024)))?;fr.locals.insert(name.to_owned(),value);Ok(())}
+ fn diag(&mut self,fr:&Frame<'_>,rule:&'static str,args:std::fmt::Arguments<'_>)->Result<(),Failure>{self.diag_at(&fr.rel,rule,args)}
  fn diag_at(&mut self,rel:&str,rule:&'static str,args:std::fmt::Arguments<'_>)->Result<(),Failure>{self.diag_at_line(rel,self.line,rule,args)}
  fn diag_at_line(&mut self,rel:&str,line:u32,rule:&'static str,args:std::fmt::Arguments<'_>)->Result<(),Failure>{
   let mut message=String::new();if !self.source.budget().append_fmt(&mut message,args){return Err(Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"reactive diagnostic text admission refused")))}
@@ -174,7 +176,7 @@ impl<'a,'source,'op> Walk<'a,'source,'op>{
    self.tick()
   })();self.memo=memo;result
  }
- fn lookup_diag(&mut self,fr:&Frame<'a,'_>,rule:&'static str,args:std::fmt::Arguments<'_>)->Result<(),Failure>{self.lookup_diag_at(&fr.rel,rule,args)}
+ fn lookup_diag(&mut self,fr:&Frame<'_>,rule:&'static str,args:std::fmt::Arguments<'_>)->Result<(),Failure>{self.lookup_diag_at(&fr.rel,rule,args)}
  fn lookup_diag_at(&mut self,rel:&str,rule:&'static str,args:std::fmt::Arguments<'_>)->Result<(),Failure>{
   let mut message=String::new();if !self.source.budget().append_fmt(&mut message,args){return Err(Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"lookup diagnostic text admission refused")))}
   self.reserve(message.len().checked_add(rel.len()).and_then(|n|n.checked_mul(4)).and_then(|n|n.checked_add(1024)))?;
@@ -221,12 +223,12 @@ impl<'a,'source,'op> Walk<'a,'source,'op>{
   }
   Ok(())
  }
- fn add(&mut self,fr:&Frame<'a,'_>,v:&Value,owner:&str,name:&str,at:usize)->Result<(),Failure>{
+ fn add(&mut self,fr:&Frame<'_>,v:&Value,owner:&str,name:&str,at:usize)->Result<(),Failure>{
   self.reserve(owner.len().checked_add(name.len()).and_then(|n|n.checked_add(v.hops.iter().map(String::len).sum())).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(4096)))?;
   let mut read=Read{root:v.root_name().to_owned(),hops:v.hops.clone(),var:name.to_owned(),owner:owner.to_owned(),kind:ReadKind::Var,hop_ok:v.hop_ok};
   self.record_read(&fr.rel,&v.root,read)
  }
- fn pseudo_hop(&mut self,fr:&Frame<'a,'_>,mut value:Value,kind:&str)->Result<Value,Failure>{
+ fn pseudo_hop(&mut self,fr:&Frame<'_>,mut value:Value,kind:&str)->Result<Value,Failure>{
   let base=if kind=="area"{"/area"}else{"/turf"};
   if let Some(ty)=&value.ty{if self.source.is_subtype(ty,base)?{return Ok(value)}}
   self.reserve(value.hops.iter().try_fold(base.len()+kind.len(),|n,s|n.checked_add(s.len())).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(4096)))?;
@@ -234,7 +236,7 @@ impl<'a,'source,'op> Walk<'a,'source,'op>{
   self.add(fr,&value,"/atom",kind,0)?;
   value.hops.push(kind.to_owned());value.ty=Some(base.to_owned());value.list=false;value.blame=None;Ok(value)
  }
- fn collect_narrowing(&mut self,frame:&mut Frame<'a,'_>)->Result<(),Failure>{
+ fn collect_narrowing(&mut self,frame:&mut Frame<'_>)->Result<(),Failure>{
   let source=self.source;let operation=&mut self.checkpoint;let visits=std::cell::Cell::new(0usize);let narrow=&mut frame.narrow;
   let result=dm_analysis::untyped::try_policy_expressions(frame.body.statement_body().view(),&mut ||{
    (operation)()?;source.require()?;let count=visits.get()+1;visits.set(count);
@@ -248,12 +250,12 @@ impl<'a,'source,'op> Walk<'a,'source,'op>{
   });
   match result{Ok(())=>Ok(()),Err(dm_analysis::untyped::PolicyVisitFailure::Callback(e))=>Err(e),Err(dm_analysis::untyped::PolicyVisitFailure::Unsupported(e))=>Err(e.into())}
  }
- fn narrow_receiver(&mut self,frame:&Frame<'a,'_>,value:&Value)->Result<Option<Vec<String>>,Failure>{
+ fn narrow_receiver(&mut self,frame:&Frame<'_>,value:&Value)->Result<Option<Vec<String>>,Failure>{
   let Some(ty)=value.ty.as_deref()else{return Ok(None)};let source=self.source;let operation=&mut self.checkpoint;
   let mut admit=|out:&mut Vec<String>,candidate:&str|{source.reserve(candidate.len().checked_mul(4).and_then(|n|n.checked_add(256)))?;if !source.budget().row(out){return Err(Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"reactive narrowing candidate admission refused")))}Ok(())};
   crate::reactive_read_facts::try_narrow_candidates(&frame.narrow,ty,|a,b|{(operation)()?;source.require()?;source.is_subtype(a,b).map_err(Failure::from)},Some(&mut admit))
  }
- fn global_internal(&self,fr:&Frame<'a,'_>,var:&str,ty:&str,decl_file:Option<&str>)->Result<bool,Failure>{
+ fn global_internal(&self,fr:&Frame<'_>,var:&str,ty:&str,decl_file:Option<&str>)->Result<bool,Failure>{
   if self.source.is_subtype(ty,"/datum/shared_cache")?{return Ok(true)}
   for prefix in ["_scs_","_sch_"]{if let Some(cache)=var.strip_prefix(prefix){
    self.reserve(cache.len().checked_mul(4).and_then(|n|n.checked_add(256)))?;
@@ -262,7 +264,7 @@ impl<'a,'source,'op> Walk<'a,'source,'op>{
   if fr.rel=="code/engine/time/handles.dm"{return Ok(true)}
   Ok(crate::reactive_read_facts::framework_file(&fr.rel)&&decl_file.is_some_and(crate::reactive_read_facts::framework_file))
  }
- fn global_ident(&mut self,fr:&Frame<'a,'_>,name:&str)->Result<Option<Value>,Failure>{
+ fn global_ident(&mut self,fr:&Frame<'_>,name:&str)->Result<Option<Value>,Failure>{
   if !self.closed||matches!(name,"world"|"usr"|"src"|"args"|"vars"|"global"|"null"|"client"|"."|".."){return Ok(None)}
   if let Some(ty)=&fr.this.ty{if self.source.variable(ty,name)?.is_some_and(|v|v.owner!="/"){return Ok(None)}}
   let Some(variable)=self.source.variable("/",name)?else{return Ok(None)};if variable.owner!="/"{return Ok(None)}
@@ -271,7 +273,7 @@ impl<'a,'source,'op> Walk<'a,'source,'op>{
   let object=is_object(&variable.declared);let ty=(!variable.declared.is_empty()).then_some(variable.declared);
   if object{self.reserve(name.len().checked_mul(4).and_then(|n|n.checked_add(256)))?;Ok(Some(Value{ty,root:Root::Global(name.to_owned()),hops:Vec::new(),hop_ok:true,list:false,blame:None}))}else{Ok(Some(Value::local(ty)))}
  }
- fn global_field(&mut self,fr:&Frame<'a,'_>,value:Value,path:&str,name:&str)->Result<Value,Failure>{
+ fn global_field(&mut self,fr:&Frame<'_>,value:Value,path:&str,name:&str)->Result<Value,Failure>{
   let Some(ty)=value.ty.as_deref()else{return Ok(Value::local(None))};let Some(variable)=self.source.variable(ty,name)?else{return Ok(Value::local(None))};
   let globals=self.directives.globals.ok_or("native global write/boot classifier is not yet issued")?;
   self.reserve(path.len().checked_add(name.len()).and_then(|n|n.checked_add(ty.len())).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(2048)))?;let child=format!("{path}.{name}");let is_glob=path=="GLOB";
@@ -285,7 +287,7 @@ impl<'a,'source,'op> Walk<'a,'source,'op>{
   let object=is_object(&variable.declared);let declared=(!variable.declared.is_empty()).then_some(variable.declared);
   if object&&child.matches('.').count()<MAX_HOPS{Ok(Value{ty:declared,root:Root::Global(child),hops:Vec::new(),hop_ok:true,list:false,blame:None})}else{Ok(Value::local(declared))}
  }
- fn field(&mut self,fr:&mut Frame<'a,'_>,value:Value,name:&str,at:usize)->Result<Value,Failure>{
+ fn field(&mut self,fr:&mut Frame<'_>,value:Value,name:&str,at:usize)->Result<Value,Failure>{
   self.tick()?;
   if let Root::Global(path)=&value.root{self.reserve(path.len().checked_mul(4).and_then(|n|n.checked_add(128)))?;let path=path.clone();return self.global_field(fr,value,&path,name)}
   if name=="vars"&&value.tracked(){self.diag(fr,"dynamic_read",format_args!("vars[] reads are not allowed in a handler"))?;return Ok(Value::local(None));}
@@ -343,7 +345,7 @@ impl<'a,'source,'op> Walk<'a,'source,'op>{
   }
   Ok(Value::local(Some(declared)))
  }
- fn ident(&mut self,fr:&mut Frame<'a,'_>,name:&str,at:usize)->Result<Value,Failure>{
+ fn ident(&mut self,fr:&mut Frame<'_>,name:&str,at:usize)->Result<Value,Failure>{
   if name=="src"{return self.value_copy(&fr.this);}
   if name=="global"{return Ok(Value::local(None))}
   if let Some(v)=fr.locals.get(name){return self.value_copy(v);}
@@ -368,13 +370,13 @@ impl<'a,'source,'op> Walk<'a,'source,'op>{
   };
   Ok(Some(LookupArgument::Literal(literal)))
  }
- fn eval(&mut self,fr:&mut Frame<'a,'_>,e:&Expr)->Result<Value,Failure>{
+ fn eval(&mut self,fr:&mut Frame<'_>,e:&Expr)->Result<Value,Failure>{
   self.tick()?;
   if self.depth>=MAX_EXPRESSION_DEPTH{return Err(Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"reactive expression work stack exceeds admitted operation")));}
   self.depth+=1;let result=self.eval_inner(fr,e);self.depth-=1;result
  }
  fn at(&self,span:Span)->Result<usize,Failure>{span.start.checked_add(self.offset).ok_or_else(||Failure::Unsupported("reactive projected source span overflow".into()))}
- fn eval_inner(&mut self,fr:&mut Frame<'a,'_>,e:&Expr)->Result<Value,Failure>{
+ fn eval_inner(&mut self,fr:&mut Frame<'_>,e:&Expr)->Result<Value,Failure>{
   match &e.kind{
    ExprKind::Ident(name)=>{self.line=self.source.line_at(self.at(e.span)?)?;self.ident(fr,name,self.at(e.span)?)},
    ExprKind::Group(value)=>self.eval(fr,value),
@@ -410,17 +412,17 @@ impl<'a,'source,'op> Walk<'a,'source,'op>{
 
   }
  }
- fn effect(&mut self,fr:&Frame<'a,'_>,kind:&'static str,name:&str,owner:&str,line:u32)->Result<(),Failure>{
+ fn effect(&mut self,fr:&Frame<'_>,kind:&'static str,name:&str,owner:&str,line:u32)->Result<(),Failure>{
   self.reserve(name.len().checked_add(owner.len()).and_then(|n|n.checked_add(fr.name.len())).and_then(|n|n.checked_add(fr.rel.len())).and_then(|n|n.checked_mul(4)).and_then(|n|n.checked_add(1024)))?;
   if !self.source.budget().row(&mut self.out.effects){return Err(Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"reactive effect row refused")))}
   self.out.effects.push(crate::reactive_read_facts::Effect{kind,name:name.to_owned(),owner:owner.to_owned(),proc:fr.name.to_owned(),rel:fr.rel.clone(),line});Ok(())
  }
- fn note_call(&mut self,fr:&Frame<'a,'_>,name:&str,receiver:&Value)->Result<(),Failure>{
+ fn note_call(&mut self,fr:&Frame<'_>,name:&str,receiver:&Value)->Result<(),Failure>{
   if !self.closed&&(crate::reactive_read_facts::IMPURE_CALLS.contains(&name)||crate::reactive_read_facts::MESSAGE_CALLS.contains(&name)||name.starts_with("rel_")||name.starts_with("set_")){
    self.effect(fr,"call",name,receiver.ty.as_deref().unwrap_or(""),self.line)?;
   }Ok(())
  }
- fn assign(&mut self,fr:&mut Frame<'a,'_>,lhs:&Expr,op:&str,rv:&Value)->Result<(),Failure>{
+ fn assign(&mut self,fr:&mut Frame<'_>,lhs:&Expr,op:&str,rv:&Value)->Result<(),Failure>{
   if let ExprKind::Ident(name)=&lhs.kind{
    if name=="."&&op=="="{let returned=self.value_copy(rv)?;fr.note_return(returned);let value=self.value_copy(rv)?;return self.bind(fr,name,value);}
    if let Some(previous)=fr.locals.get(name){
@@ -434,18 +436,18 @@ impl<'a,'source,'op> Walk<'a,'source,'op>{
   }
   self.eval(fr,lhs)?;Ok(())
  }
- fn accessor(&mut self,fr:&Frame<'a,'_>,value:&Value,key:&str,via:Option<&str>)->Result<(),Failure>{
+ fn accessor(&mut self,fr:&Frame<'_>,value:&Value,key:&str,via:Option<&str>)->Result<(),Failure>{
   self.reserve(value.root_width().and_then(|n|n.checked_add(key.len())).and_then(|n|n.checked_add(via.map_or(0,str::len))).and_then(|n|n.checked_add(value.hops.iter().map(String::len).sum())).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(4096)))?;
   let mut hops=value.hops.clone();if let Some(via)=via{hops.push(via.to_owned())}
   let mut read=Read{root:value.root_name().to_owned(),hops,var:key.to_owned(),owner:String::new(),kind:ReadKind::Accessor,hop_ok:value.hop_ok};
   self.record_read(&fr.rel,&value.root,read)
  }
- fn run_virtual(&mut self,callee:ReadCallable<'a>,receiver:&str,name:&str,this:Value,args:&[Value])->Result<Option<Value>,Failure>{
+ fn run_virtual(&mut self,callee:ReadCallable<'_>,receiver:&str,name:&str,this:Value,args:&[Value])->Result<Option<Value>,Failure>{
   let source=self.source;let declaring=callee.owner;
   let primary=self.value_copy(&this)?;let result=self.run_proc(callee.ordinal,primary,args,false,false)?;
   if !self.closed||!this.tracked(){return Ok(result)}
   let shared=std::cell::RefCell::new(self);
-  source.visit_overrides(receiver,name,||shared.borrow_mut().tick(),|overridden|{
+  source.visit_overrides(receiver,name,&mut||shared.borrow_mut().tick(),&mut|overridden|{
    if overridden.owner==declaring{return Ok(())}
    let mut walk=shared.borrow_mut();let mut value=walk.value_copy(&this)?;
    walk.reserve(overridden.owner.len().checked_mul(4).and_then(|n|n.checked_add(512)))?;value.ty=Some(overridden.owner.to_owned());
@@ -455,7 +457,7 @@ impl<'a,'source,'op> Walk<'a,'source,'op>{
   })?;
   Ok(result)
  }
- fn method(&mut self,fr:&mut Frame<'a,'_>,value:Value,name:&str,args:&[Expr])->Result<Value,Failure>{
+ fn method(&mut self,fr:&mut Frame<'_>,value:Value,name:&str,args:&[Expr])->Result<Value,Failure>{
   self.reserve(args.len().checked_mul(std::mem::size_of::<Value>()*4).and_then(|n|n.checked_add(1024)))?;
   let mut argv=Vec::new();argv.try_reserve_exact(args.len()).map_err(|e|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,e)))?;
   for arg in args{argv.push(self.eval(fr,arg)?)}
@@ -489,8 +491,8 @@ impl<'a,'source,'op> Walk<'a,'source,'op>{
   Ok(self.run_virtual(callee,&receiver,name,value,&argv)?.unwrap_or_else(||Value::local(None)))
  }
  fn reporting<T>(&mut self,line:u32,operation:impl FnOnce(&mut Self)->Result<T,Failure>)->Result<T,Failure>{let previous=self.line;self.line=line;let result=operation(self);self.line=previous;result}
- fn lookup_diag_at_line(&mut self,fr:&Frame<'a,'_>,line:u32,rule:&'static str,args:std::fmt::Arguments<'_>)->Result<(),Failure>{self.reporting(line,|walk|walk.lookup_diag(fr,rule,args))}
- fn call(&mut self,fr:&mut Frame<'a,'_>,callee:&Expr,args:&[Expr],at:Span)->Result<Value,Failure>{
+ fn lookup_diag_at_line(&mut self,fr:&Frame<'_>,line:u32,rule:&'static str,args:std::fmt::Arguments<'_>)->Result<(),Failure>{self.reporting(line,|walk|walk.lookup_diag(fr,rule,args))}
+ fn call(&mut self,fr:&mut Frame<'_>,callee:&Expr,args:&[Expr],at:Span)->Result<Value,Failure>{
   if let ExprKind::Ident(name)=&callee.kind{
    let call_line=self.source.line_at(self.at(callee.span)?)?;self.line=call_line;
    if matches!(name.as_str(),"nameof"|"PROC_REF"|"TYPE_PROC_REF"|"GLOBAL_PROC_REF"|"initial"){return Ok(Value::local(None));}
@@ -586,7 +588,7 @@ impl<'a,'source,'op> Walk<'a,'source,'op>{
    // contracts need only selected current metadata names and remain header-only.
    if let Some(params)=facts.annotations.reads_from.get(name){
     if let Some((_,(key,via)))=facts.annotations.reads_as.iter().find(|((owner,proc),_)|owner=="/"&&proc==name){
-     let tree=self.source.inputs().archive().tree();let metadata=tree.member(global.member).and_then(|m|m.metadata.procedure.as_ref()).ok_or("native global original signature unavailable")?;
+     let tree=self.source.tree();let metadata=tree.member(global.member).and_then(|m|m.metadata.procedure.as_ref()).ok_or("native global original signature unavailable")?;
      for(i,parameter)in metadata.signature.parameters.iter().enumerate(){
       let parameter=tree.symbols().text(parameter.name).ok_or("native global original formal spelling absent")?;
       if !params.iter().any(|p|p==parameter){continue}
@@ -594,7 +596,7 @@ impl<'a,'source,'op> Walk<'a,'source,'op>{
      }
      return Ok(Value::local(None))
     }
-    let body=self.source.parse_body(global.ordinal).map_err(|e|match e{dm_tree::frontend::BodySyntaxFailure::Operational(e)=>Failure::Operational(e),dm_tree::frontend::BodySyntaxFailure::Syntax(e)=>Failure::Unsupported(e.message)})?;
+    let source=self.source;let mut returned=None;source.with_body(global.ordinal,&mut|body|{
     let formals=body.source_parameters()?;self.reserve(formals.entries()?.iter().try_fold(0usize,|n,p|n.checked_add(parameter_bytes(p)?)).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(1024)))?;
     self.reserve(formals.entries()?.len().checked_mul(std::mem::size_of::<Value>()*4).and_then(|n|n.checked_add(1024)))?;
     let mut bind=Vec::new();bind.try_reserve_exact(formals.entries()?.len()).map_err(|e|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,e)))?;
@@ -603,7 +605,8 @@ impl<'a,'source,'op> Walk<'a,'source,'op>{
      let value=if params.iter().any(|p|p==parameter_name){match argv.get(i){Some(value)=>self.value_copy(value)?,None=>Value::local(None)}}else{Value::local(formals.type_path(parameter)?)};
      bind.push(value);
     }
-    return Ok(self.run_proc(global.ordinal,Value::local(None),&bind,false,false)?.unwrap_or_else(||Value::local(None)))
+    returned=Some(self.run_proc(global.ordinal,Value::local(None),&bind,false,false)?.unwrap_or_else(||Value::local(None)));Ok(())
+    })?;return returned.ok_or_else(||Failure::from("original source body callback omitted"))
    }
    if !self.closed{self.diag_at_line(&fr.rel,call_line,"unannotated_global",format_args!("global proc \x60{}\x60 is called without READS_FROM",name))?;return Ok(Value::local(None))}
    // Closed ordinary global calls keep tracked arguments but never propagate
@@ -626,7 +629,7 @@ impl<'a,'source,'op> Walk<'a,'source,'op>{
   Err("original native call shape has no pinned named/method/dynamic-call counterpart".into())
  }
 
- fn local_binding(&mut self,fr:&mut Frame<'a,'_>,header:Span,binding:&str)->Result<(String,Option<String>),Failure>{
+ fn local_binding(&mut self,fr:&mut Frame<'_>,header:Span,binding:&str)->Result<(String,Option<String>),Failure>{
   let locals=fr.body.source_locals()?;let rows=locals.in_span(header)?;
   if let [entry]=rows{
    let name=locals.name(entry)?;self.reserve(name.len().checked_add(locals.type_path_width(entry)?).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(1024)))?;
@@ -635,7 +638,7 @@ impl<'a,'source,'op> Walk<'a,'source,'op>{
   if rows.is_empty()&&plain_name(binding){self.reserve(binding.len().checked_mul(4).and_then(|n|n.checked_add(512)))?;return Ok((binding.to_owned(),None));}
   Err("reactive loop binding lacks one exact original declaration or plain source name".into())
  }
- fn iteration(&mut self,fr:&mut Frame<'a,'_>,st:&Statement,control:&ForControl,body:&[Statement])->Result<(),Failure>{
+ fn iteration(&mut self,fr:&mut Frame<'_>,st:&Statement,control:&ForControl,body:&[Statement])->Result<(),Failure>{
   match control{
    ForControl::Each{binding,iterable}=>{
     let mut value=self.eval(fr,iterable)?;let(name,declared)=self.local_binding(fr,st.header_span,binding)?;
@@ -686,12 +689,12 @@ impl<'a,'source,'op> Walk<'a,'source,'op>{
   }
   self.statements(fr,body)
  }
- fn statements(&mut self,fr:&mut Frame<'a,'_>,statements:&[Statement])->Result<(),Failure>{
+ fn statements(&mut self,fr:&mut Frame<'_>,statements:&[Statement])->Result<(),Failure>{
   self.tick()?;
   if self.block_depth>=MAX_EXPRESSION_DEPTH{return Err(Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"reactive statement work stack exceeds admitted operation")));}
   self.block_depth+=1;let result=self.statements_inner(fr,statements);self.block_depth-=1;result
  }
- fn statements_inner(&mut self,fr:&mut Frame<'a,'_>,statements:&[Statement])->Result<(),Failure>{
+ fn statements_inner(&mut self,fr:&mut Frame<'_>,statements:&[Statement])->Result<(),Failure>{
   for st in statements{
    self.tick()?;self.line=self.source.line_at(st.header_span.start)?;
    match &st.kind{
@@ -768,12 +771,12 @@ fn next_arm(else_branch:&[Statement])->Option<&Statement>{
 }
 /// Actual original-output body entry, not yet registered as a generator/query.
 /// Every unsupported flow exits the whole operation before any artifact exists.
-pub(crate) fn original_output_reads<'a>(source:&ReadSource<'a>,ordinal:usize,directives:Directives<'_>,checkpoint:&mut dyn FnMut()->io::Result<()>)->Result<Reads,Failure>{original_reads(source,ordinal,directives,true,None,checkpoint)}
+pub(crate) fn original_output_reads<'a>(source:&dyn OriginalSource,ordinal:usize,directives:Directives<'_>,checkpoint:&mut dyn FnMut()->io::Result<()>)->Result<Reads,Failure>{original_reads(source,ordinal,directives,true,None,checkpoint)}
 /// Same interpreter/policy, targeted mode retained for declared lookup purity.
-pub(crate) fn original_reads<'a>(source:&ReadSource<'a>,ordinal:usize,directives:Directives<'_>,closed:bool,context_override:Option<&str>,checkpoint:&mut dyn FnMut()->io::Result<()>)->Result<Reads,Failure>{
+pub(crate) fn original_reads<'a>(source:&dyn OriginalSource,ordinal:usize,directives:Directives<'_>,closed:bool,context_override:Option<&str>,checkpoint:&mut dyn FnMut()->io::Result<()>)->Result<Reads,Failure>{
  checkpoint()?;source.require()?;source.reserve(context_override.map_or(Some(0),|s|s.len().checked_mul(4).and_then(|n|n.checked_add(128))))?;
- let archive=source.inputs().archive();let tree=archive.tree();
- let occurrence=archive.occurrences().get(ordinal).ok_or("reactive original body ordinal absent")?;
+ let tree=source.tree();
+ let occurrence=source.occurrences().get(ordinal).ok_or("reactive original body ordinal absent")?;
  let node=tree.member(occurrence.member).ok_or("reactive original body member absent")?;
  let owner=tree.type_node(node.owner).and_then(|n|tree.symbols().text(n.path)).ok_or("reactive original body owner absent")?;
  let this=Value{ty:Some(owner.to_owned()),root:Root::Holder,hops:Vec::new(),hop_ok:true,list:false,blame:None};
@@ -785,14 +788,14 @@ pub(crate) fn original_reads<'a>(source:&ReadSource<'a>,ordinal:usize,directives
 /// One native query computation lends the SAME original source and unique memo
 /// graph across all requested outputs. This is not another persistent cache.
 /// An outer failure discards every partial artifact/result before publication.
-pub(crate) fn original_closed_wave<'a,'r>(source:&ReadSource<'a>,directives:Directives<'_>,requests:impl IntoIterator<Item=(&'r str,&'r str,Option<&'r str>)>,checkpoint:&mut dyn FnMut()->io::Result<()>,mut emit:impl FnMut(&str,&str,Option<&str>,Reads)->Result<(),Failure>)->Result<(),Failure>{
+pub(crate) fn original_closed_wave<'a,'r>(source:&dyn OriginalSource,directives:Directives<'_>,requests:impl IntoIterator<Item=(&'r str,&'r str,Option<&'r str>)>,checkpoint:&mut dyn FnMut()->io::Result<()>,mut emit:impl FnMut(&str,&str,Option<&str>,Reads)->Result<(),Failure>)->Result<(),Failure>{
  let mut walk=Walk{source,directives,out:Reads::default(),checkpoint,depth:0,mute:0,offset:0,line:0,block_depth:0,call_depth:0,closed:true,visited:BTreeSet::new(),context_override:None,active_rel:String::new(),override_depth:0,engine_depth:0,diag_ix:BTreeMap::new(),memo:BTreeMap::new(),children:Vec::new(),computing:BTreeSet::new(),merged:BTreeSet::new()};
  for(receiver,name,context)in requests{let result=walk.analyze_request(receiver,name,context)?;emit(receiver,name,context,result)?;}
  walk.tick()
 }
 
 /// Exact requested receiver entry (including inherited methods).
-pub(crate) fn original_request(source:&ReadSource<'_>,directives:Directives<'_>,receiver:&str,procedure:&str,context:Option<&str>,closed:bool,checkpoint:&mut dyn FnMut()->io::Result<()>)->Result<Reads,Failure>{
+pub(crate) fn original_request(source:&dyn OriginalSource,directives:Directives<'_>,receiver:&str,procedure:&str,context:Option<&str>,closed:bool,checkpoint:&mut dyn FnMut()->io::Result<()>)->Result<Reads,Failure>{
  let mut walk=Walk{source,directives,out:Reads::default(),checkpoint,depth:0,mute:0,offset:0,line:0,block_depth:0,call_depth:0,closed,visited:BTreeSet::new(),context_override:None,active_rel:String::new(),override_depth:0,engine_depth:0,diag_ix:BTreeMap::new(),memo:BTreeMap::new(),children:Vec::new(),computing:BTreeSet::new(),merged:BTreeSet::new()};
  walk.analyze_request(receiver,procedure,context)
 }

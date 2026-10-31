@@ -65,6 +65,12 @@ pub enum SourceTextStorage<'a> {
     Transformed(&'a String),
 }
 impl SourceText {
+    /// SAME historical Analyze display-line projection of compiler-decoded
+    /// original text. Bare CR adds display rows; CRLF adds only its LF row.
+    pub fn analyze_display_line(&self,native_line:usize)->Option<usize>{
+        let text=self.as_str().as_bytes();let mut line=1usize;let mut extra=0usize;for(offset,byte)in text.iter().enumerate(){if *byte==b'\n'{line+=1;}else if *byte==b'\r'&&text.get(offset+1)!=Some(&b'\n')&&line<native_line{extra+=1;}}
+        if native_line==0||native_line>line{None}else{Some(native_line+extra)}
+    }
     pub fn downgrade(&self) -> WeakSourceText {
         WeakSourceText {
             backing: Arc::downgrade(&self.backing),

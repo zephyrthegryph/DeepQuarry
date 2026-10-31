@@ -139,6 +139,7 @@ impl SourceSnapshot {
             | "unknown_setting"
             | "disabled_directive"
             | "sets_directive_twice"
+            | "directive_at_definition"
             | "field_access_static_type"
             | "proc_call_static_type" => DiagnosticSeverity::Warning,
             "control_condition_static"
@@ -166,7 +167,7 @@ impl SourceSnapshot {
         let mut rows = Vec::new();
         // These original producers are UNTAGGED: arbitrary observation-name
         // map keys must not disable or re-severity their diagnostics.
-        let tag = if matches!(family, "undefined_proc" | "undefined_variable" | "unknown_setting") {
+        let tag = if matches!(family, "undefined_proc" | "undefined_variable" | "unknown_setting" | "directive_at_definition") {
             None
         } else {
             Some(family)
@@ -207,7 +208,7 @@ impl SourceSnapshot {
                 }
                 "unknown_linter_setting" => match dm_analysis::checks_unknown_linter_setting::archived_checked(&body,Severity::Warning,&mut crate::daemon::control::checkpoint){Ok(rows)=>Ok(rows),Err(dm_analysis::policy_body_demand::PolicyFailure::Operational(actual))=>return Err(actual),Err(dm_analysis::policy_body_demand::PolicyFailure::Unsupported(message))=>Err(message.0)},
                 "unknown_setting" => match dm_analysis::checks_unknown_linter_setting::archived_ordinary_checked(&body,Severity::Warning,&mut crate::daemon::control::checkpoint){Ok(rows)=>Ok(rows),Err(dm_analysis::policy_body_demand::PolicyFailure::Operational(actual))=>return Err(actual),Err(dm_analysis::policy_body_demand::PolicyFailure::Unsupported(message))=>Err(message.0)},
-                "incompatible_directive" | "disabled_directive" | "sets_directive_twice" => {let family=match family{"incompatible_directive"=>dm_analysis::checks_directive_binding::Family::Incompatible,"disabled_directive"=>dm_analysis::checks_directive_binding::Family::Disabled,_=>dm_analysis::checks_directive_binding::Family::Duplicate};match dm_analysis::checks_directive_binding::archived_checked(&body,family,if family.name()=="incompatible_directive"{Severity::Error}else{Severity::Warning},&mut crate::daemon::control::checkpoint){Ok(rows)=>Ok(rows),Err(dm_analysis::policy_body_demand::PolicyFailure::Operational(actual))=>return Err(actual),Err(dm_analysis::policy_body_demand::PolicyFailure::Unsupported(message))=>Err(message.0)}},
+                "incompatible_directive" | "disabled_directive" | "sets_directive_twice" | "directive_at_definition" => {let family=match family{"incompatible_directive"=>dm_analysis::checks_directive_binding::Family::Incompatible,"disabled_directive"=>dm_analysis::checks_directive_binding::Family::Disabled,"directive_at_definition"=>dm_analysis::checks_directive_binding::Family::AtDefinition,_=>dm_analysis::checks_directive_binding::Family::Duplicate};match dm_analysis::checks_directive_binding::archived_checked(&body,family,if family.name()=="incompatible_directive"{Severity::Error}else{Severity::Warning},&mut crate::daemon::control::checkpoint){Ok(rows)=>Ok(rows),Err(dm_analysis::policy_body_demand::PolicyFailure::Operational(actual))=>return Err(actual),Err(dm_analysis::policy_body_demand::PolicyFailure::Unsupported(message))=>Err(message.0)}},
                 "invalid_set_value" => {
                     dm_analysis::checks_invalid_set::archived(&body, Severity::Error)
                 }

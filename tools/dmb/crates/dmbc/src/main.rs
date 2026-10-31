@@ -119,6 +119,10 @@ fn main_inner() {
         }
         return;
     }
+    if arguments.first().map(String::as_str) == Some("generate") {
+        let result=if compile_result.is_none()&&arguments.len()==3&&arguments[2]=="--jsonl"{dmbc::daemon::generation::run_file(std::path::Path::new(&arguments[1]))}else{Err("usage: dmbc generate REQUEST.json --jsonl".into())};
+        match result{Ok(true)=>return,Ok(false)=>std::process::exit(1),Err(error)=>{eprintln!("{error}");std::process::exit(2)}}
+    }
     if arguments.first().map(String::as_str) == Some("query") {
         let result = dmbc::cli::parse(&arguments).and_then(|command| match command {
             dmbc::request::Command::Query { request, jsonl } => {

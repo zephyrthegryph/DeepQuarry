@@ -2,13 +2,12 @@
 //! lint's ratchet policy and assembles the report.
 
 use std::collections::{HashMap, HashSet};
-use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
 use rayon::prelude::*;
 
-use crate::baseline::{self, Mode};
+use crate::baseline::Mode;
 use crate::cache::Cache;
 use crate::lint::{AllowUse, Cx, Lint, Meta, Policy, Registry, Run, ScanKind, Sink};
 use crate::scopes::Scopes;
@@ -37,23 +36,7 @@ static SPAN_ORIGIN: std::sync::OnceLock<Instant> = std::sync::OnceLock::new();
 /// Total time spent reading lint caches (`DQ_ANALYZE_TRACE`).
 pub static LOAD_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 
-#[derive(Clone, Debug, Default)]
-pub struct Timing {
-    pub total: Duration,
-    pub files: usize,
-    pub rescanned: usize,
-    pub tree_memo_hit: bool,
-}
-
-pub struct Outcome {
-    pub name: String,
-    pub failed: bool,
-    pub text: String,
-    pub run: Run,
-    pub allow_used: Vec<AllowUse>,
-    pub timing: Timing,
-    pub internal_error: Option<String>,
-}
+pub use crate::policy_finish::{Timing, Outcome};
 
 pub struct Engine {
     pub reg: Registry,
@@ -152,10 +135,6 @@ impl Engine {
             }
         }
         problems
-    }
-
-    fn baseline_path(&self, rel: &str) -> PathBuf {
-        self.opts.root.join(rel)
     }
 
     /// Scans one lint (cached) and returns its raw sites.
@@ -292,13 +271,13 @@ impl Engine {
     fn run_one_inner(&self, lint: &dyn Lint, name: String) -> Outcome {
         let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             let (run, allow_used, timing) = self.scan(lint);
-            let (failed, text) = self.judge(lint, &run);
-            (run, allow_used, timing, failed, text)
+            let meta=lint.meta();
+            let scope=self.scopes.for_lint(meta.name,meta.group);
+            let cx=Cx{tree:&self.tree,meta,scope:&scope};
+            crate::policy_finish::finish_report(meta,&scope,&self.tree,run,allow_used,timing,&self.opts.root,&self.changed,self.opts.raw,|run,text,raw|lint.finish_raw(&cx,run,text,raw),|run,text|lint.post_judge(&cx,run,text))
         }));
         match res {
-            Ok((run, allow_used, timing, failed, text)) => {
-                Outcome { name, failed, text, run, allow_used, timing, internal_error: None }
-            }
+            Ok(outcome) => outcome,
             Err(e) => {
                 let msg = e
                     .downcast_ref::<String>()
@@ -365,57 +344,8 @@ impl Engine {
         let (run, _, _) = self.scan(lint);
         let scope = self.scopes.for_lint(meta.name, meta.group);
         let cx = Cx { tree: &self.tree, meta, scope: &scope };
-        let by_rule = run.by_rule(meta);
-        // Per-rule ceilings live in lint_scopes.toml: lower them (--update) or set them (--seed).
-        let mut ceiling_note = String::new();
-        if matches!(meta.policy, Policy::Sites { .. } | Policy::Hard) {
-            let scopes_root = self.opts.scopes_from.clone().unwrap_or_else(|| self.opts.root.clone());
-            let scopes_path = scopes_root.join("tools").join("ci").join("lint_scopes.toml");
-            for (rule, found) in &by_rule {
-                let Some(&ceiling) = scope.ceilings.get(*rule) else { continue };
-                let count = found.len() as i64;
-                let new = match mode {
-                    Mode::Update => ceiling.min(count),
-                    Mode::Seed => count,
-                    Mode::Migrate => ceiling,
-                };
-                if new != ceiling {
-                    crate::scopes::write_ceiling(&scopes_path, meta.name, rule, new)?;
-                    ceiling_note.push_str(&format!(" ceiling {} {} -> {};", rule, ceiling, new));
-                }
-            }
-        }
-        let by_rule_for_baseline: Vec<(&str, Vec<&crate::lint::Site>)> =
-            by_rule.iter().filter(|(r, _)| !scope.ceilings.contains_key(*r)).map(|(r, s)| (*r, s.clone())).collect();
-        let by_rule = if matches!(meta.policy, Policy::Sites { .. }) { by_rule_for_baseline } else { by_rule };
-        match meta.policy {
-            Policy::Sites { baseline, header, banned } => {
-                let rules: Vec<&str> = meta
-                    .rules
-                    .iter()
-                    .map(|r| r.name)
-                    .filter(|r| !banned.contains(r) && !scope.ceilings.contains_key(*r))
-                    .collect();
-                let n = baseline::write_sites(&self.baseline_path(baseline), header, &self.tree, &by_rule, &rules, mode)?;
-                let counts: Vec<String> = by_rule.iter().map(|(r, s)| format!("{} {}", r, s.len())).collect();
-                Ok(format!("{}: baseline {} ({} rows; {});{}", meta.name, baseline, n, counts.join(", "), ceiling_note))
-            }
-            Policy::Ceilings { baseline, header } => {
-                let path = self.baseline_path(baseline);
-                let n = match mode {
-                    Mode::Update => baseline::update_ceilings(&path, header, &run.sites)?,
-                    Mode::Migrate => baseline::read_ceilings(&path).len(),
-                    Mode::Seed => {
-                        let counts = baseline::key_counts(&run.sites);
-                        baseline::write_ceilings(&path, header, &counts)?;
-                        counts.len()
-                    }
-                };
-                Ok(format!("{}: baseline {} ({} entries)", meta.name, baseline, n))
-            }
-            Policy::Hard => Ok(format!("{}: no baseline (hard ban);{}", meta.name, ceiling_note)),
-            Policy::Custom => lint.update_baseline(&cx, &run, mode),
-        }
+        let scopes_root = self.opts.scopes_from.as_deref().unwrap_or(&self.opts.root);
+        crate::policy_finish::update_baseline_report(meta, &scope, &self.tree, &run, &self.opts.root, scopes_root, mode, |run,mode|lint.update_baseline(&cx,run,mode))
     }
 }
 
@@ -445,24 +375,7 @@ pub fn changed_files(root: &Path) -> HashSet<String> {
     out
 }
 
-/// Prints outcomes the way `check_ratchets.sh` did. Returns the names of failed lints.
-pub fn render(outcomes: &[Outcome], ci: bool) -> (String, Vec<String>) {
-    let mut s = String::new();
-    let mut failed = Vec::new();
-    for o in outcomes {
-        if ci {
-            let _ = writeln!(s, "::group::{}", o.name);
-        }
-        s.push_str(&o.text);
-        if ci {
-            let _ = writeln!(s, "::endgroup::");
-        }
-        if o.failed {
-            failed.push(o.name.clone());
-        }
-    }
-    (s, failed)
-}
+pub use crate::policy_finish::render;
 
 pub fn meta_of<'a>(reg: &'a Registry, name: &str) -> Option<&'a Meta> {
     reg.find(name).map(|l| l.meta())

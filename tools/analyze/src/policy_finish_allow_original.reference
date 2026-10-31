@@ -1,0 +1,28 @@
+fn write_allow_usage(engine: &Engine, outcomes: &[run::Outcome]) {
+    use sha1::{Digest, Sha1};
+    use std::io::Write;
+    let Ok(path) = std::env::var("DQ_ALLOW_USAGE") else { return };
+    if path.is_empty() {
+        return;
+    }
+    let mut rows: std::collections::BTreeSet<(String, String, u32)> = std::collections::BTreeSet::new();
+    let mut digests: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+    for o in outcomes {
+        for u in &o.allow_used {
+            let digest = digests.entry(u.rel.clone()).or_insert_with(|| match engine.tree.get(&u.rel) {
+                Some(f) => {
+                    let mut h = Sha1::new();
+                    h.update(f.text().trim_end_matches('\n').as_bytes());
+                    h.finalize().iter().map(|b| format!("{:02x}", b)).collect()
+                }
+                None => String::new(),
+            });
+            rows.insert((u.name.clone(), digest.clone(), u.line));
+        }
+    }
+    if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(&path) {
+        for (name, digest, line) in rows {
+            let _ = writeln!(f, "{}\t{}\t{}", name, digest, line);
+        }
+    }
+}

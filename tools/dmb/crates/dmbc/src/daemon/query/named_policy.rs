@@ -56,6 +56,7 @@ pub(super) fn validate_request(request: &QueryRequest) -> io::Result<()> {
                             | "incompatible_directive"
                             | "disabled_directive"
                             | "sets_directive_twice"
+                            | "directive_at_definition"
                             | "control_condition_static"
                             | "set_has_no_effect"
                             | "unreachable_code"

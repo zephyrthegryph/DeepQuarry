@@ -1586,3 +1586,35 @@ checks all passed; preceding successful observations and the thirteen independen
 whole-output comparisons are preserved in their separate receipts rather than
 presented as a new whole-project run. No default cutover, main-project clean gate,
 complete checker/policy coverage, or performance qualification is claimed here.
+
+
+### Auto generation and resident transport checkpoint, 2026-10-31
+
+Missing-output Auto generation now consumes genuine native generation questions
+and the original source acquisitions, with shared canonical facts, dependency
+reads and typed setter selection. It preserves required callable sources outside
+`code/`, uses the existing body query graph and denies quota, cancellation,
+foreign-owner and IO failures without publishing partial findings. Four actual
+host controls pass, including warm body-query reuse and existing target grouping.
+The independent original Auto producer matches both complete generated artifacts
+(727 and 725 bytes) and ordered diagnostics. That artifact comparison does not
+claim parity of every decision/debug presentation field.
+
+The explicit daemon generation request now uses the existing resident service,
+serialized host and request lifecycle. Nine controls pass for actual check/write/
+warm behavior, bounded fragments, final seals, real IO failures, stale or malformed
+responses, and check-mode replies that falsely claim writes. The standalone
+Analyze generation client remains explicit; this is not a default cutover.
+
+The original definition-directive warning gate is also integrated. Its five
+native controls and three complete original-checker fixture comparisons pass.
+Unused absent generated registry paths decline restricted generation before a
+second declaration parse; unrelated missing includes remain failures.
+
+The shared report/baseline finisher passes five independent original-policy
+comparisons. Source discovery, all selected custom/post-policy evidence and the
+public full-report route remain separate obligations. This checkpoint has 25
+focused component passes and six independent oracle observations, with fresh
+native/analyzer type checks and no whole-project/default/performance claim.
+The full cold-start fixed-point coordinator and remaining question consumers
+remain under integration; no complete-convergence claim is made.

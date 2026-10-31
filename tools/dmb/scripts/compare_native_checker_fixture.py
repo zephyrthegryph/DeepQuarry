@@ -52,7 +52,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--reference", type=Path, required=True)
     parser.add_argument("--native", type=Path, required=True)
-    parser.add_argument("--family", choices=("ambiguous_not_bitwise", "ambiguous_in_lhs", "invalid_set_value", "invalid_lint_directive_value", "unknown_linter_setting", "unknown_setting", "incompatible_directive", "disabled_directive", "sets_directive_twice", "control_condition_static", "unreachable_code", "loop_condition_determinate", "if_condition_determinate", "set_has_no_effect", "control_policies", "proc_has_no_parent", "undefined_proc", "undefined_variable", "field_access_static_type", "no_typehint_implicit_new", "proc_call_static_type"), default="ambiguous_not_bitwise")
+    parser.add_argument("--family", choices=("ambiguous_not_bitwise", "ambiguous_in_lhs", "invalid_set_value", "invalid_lint_directive_value", "directive_at_definition", "unknown_linter_setting", "unknown_setting", "incompatible_directive", "disabled_directive", "sets_directive_twice", "control_condition_static", "unreachable_code", "loop_condition_determinate", "if_condition_determinate", "set_has_no_effect", "control_policies", "proc_has_no_parent", "undefined_proc", "undefined_variable", "field_access_static_type", "no_typehint_implicit_new", "proc_call_static_type"), default="ambiguous_not_bitwise")
     parser.add_argument("fixture", type=Path)
     args = parser.parse_args()
     if hashlib.sha256(args.reference.read_bytes()).hexdigest() != PINNED_CHECKER_SHA256:
