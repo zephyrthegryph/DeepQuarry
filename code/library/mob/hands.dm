@@ -5,6 +5,7 @@
 // refuses a target out of arm's reach.
 
 CAPABILITIES(/mob/living/carbon/human)
+	op("check_attacks", menu(), label("Check Attacks"), needs(req_self()), then(PROC_REF(check_attacks_op)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(human_blast))))
 	configure(living_rules(vore_icon_bellies = list("stomach", "taur belly"), vore_capacity_ex = list("stomach" = 3, "taur belly" = 3), vore_capacity = 3, has_huds = TRUE, vore_shred_time = 10 SECONDS))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))

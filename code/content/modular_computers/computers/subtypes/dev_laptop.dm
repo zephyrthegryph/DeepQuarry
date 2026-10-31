@@ -44,11 +44,11 @@ CAPABILITIES(/obj/item/modular_computer/laptop)
 	screen_on = anchored
 	return TRUE
 
-/obj/item/modular_computer/laptop/draw(datum/look/look)
-	if(!anchored)
-		look.state(icon_state_closed) // closed: no glow, no screen
-		return
-	..()
+/// A closed laptop (not on a surface) shows its closed state: no glow, no screen. The draw itself stays in /obj/item/modular_computer/draw(), which
+/// always reaches the base draw (a draw() override that returned before ..() made the engine's type probe conclude the type draws nothing, and no
+/// laptop of it was ever drawn).
+/obj/item/modular_computer/laptop/draw_covered_state()
+	return anchored ? null : icon_state_closed
 
 /obj/item/modular_computer/laptop/preset
 	anchored = FALSE

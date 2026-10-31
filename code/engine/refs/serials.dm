@@ -15,8 +15,16 @@ GLOBAL_LIST_EMPTY(serial_counters)
 	/// Numbers issued since the world started, for the log and the debug view.
 	var/issued = 0
 
+/// Declaration lines made inside an output, logged by the next serial_for() outside one.
+GLOBAL_LIST_EMPTY(serial_unlogged)
+
 /// The counter of kind `kind` (a /datum/serial path), made on first use.
 /proc/serial_for(kind)
+	if(length(GLOB.serial_unlogged) && !OP_PURE_ACTIVE)
+		var/list/pending_lines = GLOB.serial_unlogged
+		GLOB.serial_unlogged = list() // emptied first: writing a log line may itself issue a serial and come back here
+		for(var/pending in pending_lines)
+			log_world(pending)
 	var/datum/serial/S = GLOB.serial_counters[kind]
 	if(S)
 		return S
@@ -25,7 +33,12 @@ GLOBAL_LIST_EMPTY(serial_counters)
 		return null
 	S = new kind()
 	GLOB.serial_counters[kind] = S
-	log_world("serial: [kind] declared, first [S.first][S.persisted ? ", persisted (waiting for its seed)" : ""]")
+	var/line = "serial: [kind] declared, first [S.first][S.persisted ? ", persisted (waiting for its seed)" : ""]"
+	if(OP_PURE_ACTIVE)
+		// Declared from inside an output (a push to Rust numbering its first group): a log write there is a purity violation, so the line waits for the next call outside one.
+		GLOB.serial_unlogged += line
+	else
+		log_world(line)
 	return S
 
 /// The next number of `kind`, or of its run for `key` when a key is given. Null (reported) from a persisted kind nobody has seeded.

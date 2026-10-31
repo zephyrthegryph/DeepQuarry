@@ -73,10 +73,7 @@ CAPABILITIES(/datum/attacks_panel)
 	return host.species?.unarmed_attacks
 
 // Check Attacks verb now opens a structured TGUI panel.
-/mob/living/carbon/human/verb/check_attacks()
-	set name = "Check Attacks"
-	set category = VERB_CAT_IC_GAME
-	set src = usr
+/mob/living/carbon/human/proc/check_attacks()
 	var/key = ref_token(src)
 	var/datum/attacks_panel/panel = resolve_token(LAZYACCESS(GLOB.dq_attacks_panels, key))
 	if(!panel)
@@ -84,3 +81,5 @@ CAPABILITIES(/datum/attacks_panel)
 		GLOB.dq_attacks_panels[key] = ref_token(panel)
 	panel.tgui_interact(src)
 
+/mob/living/carbon/human/proc/check_attacks_op(datum/act/op/A)
+	check_attacks()
