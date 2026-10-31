@@ -179,9 +179,9 @@ record_accessor_prefixes = ["set_", "get_"]
 # (not a `base_var` site). Criteria: declared on a base type, read on a per-tick, per-move or per-turf-update path by most
 # instances, not per-type constant data (that is a trait block), not rare (that is a sparse slot). The justification is at
 # least 40 characters and names the hot reader (a .dm file and the proc); a row whose var no longer exists fails (`hot_home`).
-"/atom/flags_1" = "read per turf activation: SSair.add_to_active tests flags_1 & INITIALIZED_1 (code/ATMOSPHERICS/SSair.dm:343); set on every atom at init"
-"/atom/can_atmos_pass" = "read per turf update for each object on the turf: air_block_mask folds it (code/ATMOSPHERICS/environmental/LINDA_system.dm:58)"
-"/atom/movable/pressure_resistance" = "read per spacewind move: experience_pressure_difference move_prob (code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm:338)"
+"/atom/flags_1" = "read per turf activation: SSair.add_to_active tests flags_1 & INITIALIZED_1 (code/domains/atmos/SSair.dm:343); set on every atom at init"
+"/atom/can_atmos_pass" = "read per turf update for each object on the turf: air_block_mask folds it (code/domains/atmos/environmental/LINDA_system.dm:58)"
+"/atom/movable/pressure_resistance" = "read per spacewind move: experience_pressure_difference move_prob (code/domains/atmos/environmental/LINDA_turf_tile.dm:338)"
 "/atom/flags" = "read on every move and bump scan: ON_BORDER tests in /turf/Enter and contains_dense_objects (code/game/turfs/turf.dm:349), held by all atoms"
 "/atom/pass_flags" = "read on every CanPass test of every move and projectile pass: pass_flags & passflag (code/game/atom/_atom.dm:439), held by all atoms"
 "/atom/movable/movement_type" = "read per entering mover: CHECK_BITFIELD(mover.movement_type, UNSTOPPABLE) in /turf/Enter (code/game/turfs/turf.dm:335)"
@@ -1018,7 +1018,7 @@ banned = [
   "definition_event = the om events (code/datums/om_events/) are deleted: an occurrence is a /datum/notice published with PUBLISH_LEGACY(E, /datum/notice/x, fields...) or an ACTION() notice, heard with on_notice(/datum/notice/x, ...) in CAPABILITIES or observe(source, /datum/notice/x, listener, then(...)); a veto is before_op(GUARD_X, ...) asked with guard() (doc/rewrite/reactions.md section 3)",
   "entity_handle = ref_token(D) (code/engine/time/handles.dm): the final name of a token (doc/rewrite/proposals/relations.md D21)",
   "resolve_handle = resolve_token(token) (code/engine/time/handles.dm): the final name (doc/rewrite/proposals/relations.md D21)",
-  "datum/gas_reaction = a gas reaction is a transformation: a type under /transformation/gas with a transformation(medium = MEDIUM_GAS, takes = list(gas(type, moles)), holds = temperature_in(lo, hi)) entry (code/ATMOSPHERICS/gasmixtures/reactions.dm)",
+  "datum/gas_reaction = a gas reaction is a transformation: a type under /transformation/gas with a transformation(medium = MEDIUM_GAS, takes = list(gas(type, moles)), holds = temperature_in(lo, hi)) entry (code/domains/atmos/gasmixtures/reactions.dm)",
   "init_reqs = takes = list(gas(type, moles), ...) and holds = temperature_in(lo, hi) in the transformation() entry",
   "build_min_requirements = the compiled rule reads gas_takes, min_temp and max_temp (code/library/transformations/transformation_entry.dm)",
   "init_gas_reactions = SSair.gas_rules is xform_rules_in(MEDIUM_GAS, REGIME_GAS)",
