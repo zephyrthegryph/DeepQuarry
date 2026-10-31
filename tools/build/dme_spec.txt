@@ -128,7 +128,7 @@ file code/tests/unit_tests/_unit_tests.dm
 skip code/tests/**
 file code/tests/_tests.dm
 optional code/tests/engine/test_only_defs.dm                 # included directly, after the game (see the `last` rules)
-optional code/modules/unit_tests/_test_build_overrides.dm    # likewise
+optional code/tests/unit_tests/_test_build_overrides.dm   # likewise
 skip code/modules/benchmarks/**   # code/tests/unit_tests/_unit_tests.dm includes them
 skip code/content/balance/**   # likewise
 skip code/content/balance/**   # likewise
@@ -274,4 +274,4 @@ last code/_generated/reads.dm
 # the definition it overrides (the later definition of a type's proc runs, its ..() calls the earlier), so they go after everything.
 # The files say why; they are compiled only under UNIT_TESTS.
 last code/tests/engine/test_only_defs.dm
-last code/modules/unit_tests/_test_build_overrides.dm
+last code/tests/unit_tests/_test_build_overrides.dm
