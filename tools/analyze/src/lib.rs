@@ -10,6 +10,11 @@ pub mod base_vars_dead;
 pub mod baseline;
 pub mod policy_judge;
 pub mod keys_policy;
+pub mod key_policy_control;
+#[cfg(feature="native-policy")]
+pub mod captured_keys;
+#[cfg(feature="native-policy")]
+mod captured_keys_source;
 pub mod raw_key_calls_policy;
 #[cfg(feature = "legacy-sem")]
 pub mod cache;

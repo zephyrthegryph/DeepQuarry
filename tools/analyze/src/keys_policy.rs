@@ -20,7 +20,7 @@
 
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
-use crate::{raw_marker_policy::{split_args,matching_paren,stages_op_args,ENTRY_PROC},declare_policy::Marker};
+use crate::{raw_marker_policy::{split_args,matching_paren,ENTRY_PROC},declare_policy::Marker};
 /// Only original raw declaration-marker policy rows; never a DM semantic model.
 pub struct Input<'a>{pub markers:&'a [Marker<'a>],pub entry_ops:&'a [(String,String)]}
 impl Input<'_>{fn markers_named<'a>(&'a self,name:&'a str)->impl Iterator<Item=&'a Marker<'a>>{self.markers.iter().filter(move|m|m.name==name)}}
@@ -42,6 +42,9 @@ pub struct KeyIndex {
 }
 
 /// The id prefixes the build resolves. A token with one of these prefixes inside a marker must be declared.
+/// Exact source marker union needed by this policy; synthetic ENTRY_PROC rows
+/// are supplied by the original first-return issuer, not a new parser.
+pub const MARKERS:&[&str]=&["CAPABILITIES","CAPABILITY_DEF","CAPABILITY_TYPE","cap_keys","ACTION","STAT","SCHEMA","SYSTEM_ACCESSOR","STAGE_DEF","STATE_GRAPH","RESOURCE_DEF","SOURCE_DEF"];
 pub const ID_PREFIXES: &[&str] = &["STAT_", "SRC_", "STAGE_", "CAP_"];
 
 fn up(s: &str) -> String {
@@ -50,92 +53,65 @@ fn up(s: &str) -> String {
 
 impl KeyIndex {
     pub fn from_markers(decls: &Input<'_>) -> KeyIndex {
-        let mut k = KeyIndex::default();
-        let mut seen: BTreeMap<(String, String), (String, u32)> = BTreeMap::new();
-        let mut note = |k: &mut KeyIndex, kind: &str, name: &str, m: &Marker<'_>| {
-            let key = (kind.to_string(), name.to_string());
-            match seen.get(&key) {
-                Some(first) => k.duplicates.push((kind.to_string(), name.to_string(), first.clone(), (m.rel.to_string(), m.line))),
-                None => {
-                    seen.insert(key, (m.rel.to_string(), m.line));
-                }
-            }
-        };
+        match Self::from_markers_controlled(decls,&mut crate::key_policy_control::Compatibility){Ok(k)=>k,Err(never)=>match never{}}
+    }
+    pub fn from_markers_controlled<C:crate::key_policy_control::Control>(decls:&Input<'_>,c:&mut C)->Result<Self,C::Error>{
+        use crate::key_policy_control as kc;
+        c.checkpoint()?;
+        // Coordination envelope for the fixed set of B-tree roots and split
+        // overlap. It is not a platform allocator/RSS measurement.
+        kc::reserve(c,||Some(8192))?;
+        let mut k=Self::default();
+        let mut seen:BTreeMap<(String,String),(String,u32)>=BTreeMap::new();
         for m in decls.markers {
+            c.checkpoint()?;
             match m.name {
-                "STAT" => {
-                    if let (Some(t), Some(n)) = (m.args.first(), m.args.get(1)) {
-                        note(&mut k, "stat", &format!("{}::{}", t, n), m);
-                        k.stats.insert(format!("STAT_{}", up(n)), (t.clone(), n.clone()));
-                    }
-                }
-                "SOURCE_DEF" => {
-                    if let Some(n) = m.args.first() {
-                        note(&mut k, "source", n, m);
-                        k.sources.insert(format!("SRC_{}", up(n)));
-                    }
-                }
-                "STAGE_DEF" => {
-                    if let (Some(g), Some(n)) = (m.args.first(), m.args.get(1)) {
-                        note(&mut k, "stage", &format!("{}/{}", g, n), m);
-                        k.stages.insert(format!("STAGE_{}_{}", up(g), up(n)));
-                    }
-                }
-                "CAPABILITY_DEF" | "CAPABILITY_TYPE" => {
-                    if let (Some(n), Some(id)) = (m.args.first(), m.args.get(1)) {
-                        note(&mut k, "capability", n, m);
-                        k.caps.insert(n.clone(), id.clone());
-                        k.cap_ids.insert(id.clone());
-                        // prefix = "name" keeps the op keys of the final constructor name while the working one differs.
-                        let prefix = marker_option(m, "prefix").map(|p| p.trim_matches('"').to_string()).unwrap_or_else(|| n.clone());
-                        collect_ops(&m.body, Some(&prefix), &mut k.ops);
-                        // A CAPABILITY_TYPE's ops are written in the `entries()` of its datum.
-                        // A CAPABILITY_DEF's are written in the entries() of /datum/capability/def/<name>.
-                        let entries_type = match m.name {
-                            "CAPABILITY_TYPE" => m.args.get(2).cloned(),
-                            _ => Some(format!("/datum/capability/def/{}", n)),
-                        };
-                        {
-                            let selected = marker_option(m, "key").map(|v| v != "NONE").unwrap_or(false);
-                            if let Some(ty) = entries_type.as_ref() {
-                                for (t, op) in decls.entry_ops.iter().filter(|(t, _)| t == ty) {
-                                    let _ = t;
-                                    k.ops.insert(format!("{}.{}", prefix, op));
-                                    if selected {
-                                        k.sel_ops.insert(format!("{}|{}", prefix, op));
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                "CAPABILITIES" => collect_ops(&m.body, None, &mut k.ops),
-                ENTRY_PROC => collect_ops(&m.body, None, &mut k.ops),
-                _ => {}
+                "STAT"=>if let(Some(t),Some(n))=(m.args.first(),m.args.get(1)){
+                    let label=kc::format(c,format_args!("{t}::{n}"))?;note_controlled(&mut k,&mut seen,"stat",&label,m,c)?;
+                    let upper=kc::upper(c,n)?;let id=kc::format(c,format_args!("STAT_{upper}"))?;
+                    let ty=kc::own(c,t)?;let name=kc::own(c,n)?;key_node(c)?;k.stats.insert(id,(ty,name));
+                },
+                "SOURCE_DEF"=>if let Some(n)=m.args.first(){
+                    note_controlled(&mut k,&mut seen,"source",n,m,c)?;
+                    let upper=kc::upper(c,n)?;let id=kc::format(c,format_args!("SRC_{upper}"))?;key_node(c)?;k.sources.insert(id);
+                },
+                "STAGE_DEF"=>if let(Some(g),Some(n))=(m.args.first(),m.args.get(1)){
+                    let label=kc::format(c,format_args!("{g}/{n}"))?;note_controlled(&mut k,&mut seen,"stage",&label,m,c)?;
+                    let group=kc::upper(c,g)?;let name=kc::upper(c,n)?;let id=kc::format(c,format_args!("STAGE_{group}_{name}"))?;key_node(c)?;k.stages.insert(id);
+                },
+                "CAPABILITY_DEF"|"CAPABILITY_TYPE"=>if let(Some(n),Some(id))=(m.args.first(),m.args.get(1)){
+                    note_controlled(&mut k,&mut seen,"capability",n,m,c)?;
+                    let name=kc::own(c,n)?;let cap_id=kc::own(c,id)?;key_node(c)?;k.caps.insert(name,cap_id);
+                    let cap_id=kc::own(c,id)?;key_node(c)?;k.cap_ids.insert(cap_id);
+                    let prefix=match marker_option_controlled(m,"prefix",c)?{Some(p)=>kc::own(c,p.trim_matches('"'))?,None=>kc::own(c,n)?};
+                    collect_ops_controlled(&m.body,Some(&prefix),&mut k.ops,c)?;
+                    let entries_type=if m.name=="CAPABILITY_TYPE"{match m.args.get(2){Some(ty)=>Some(kc::own(c,ty)?),None=>None}}else{Some(kc::format(c,format_args!("/datum/capability/def/{n}"))?)};
+                    let selected=marker_option_controlled(m,"key",c)?.map(|v|v!="NONE").unwrap_or(false);
+                    if let Some(ty)=entries_type.as_ref(){for(t,op)in decls.entry_ops.iter().filter(|(t,_)|t==ty){
+                        let _=t;c.checkpoint()?;
+                        let key=kc::format(c,format_args!("{prefix}.{op}"))?;key_node(c)?;k.ops.insert(key);
+                        if selected{let key=kc::format(c,format_args!("{prefix}|{op}"))?;key_node(c)?;k.sel_ops.insert(key);}
+                    }}
+                },
+                "CAPABILITIES"|ENTRY_PROC=>collect_ops_controlled(&m.body,None,&mut k.ops,c)?,
+                _=>{}
             }
         }
-        // cap_keys(CAP_X, KEY = ..., ...) -> <CAPNAME>_<KEY> for the capability whose id is CAP_X.
-        let by_id: BTreeMap<&String, &String> = k.caps.iter().map(|(n, id)| (id, n)).collect();
-        let mut state = BTreeSet::new();
-        for m in decls.markers_named("cap_keys") {
-            let Some(id) = m.args.first() else { continue };
-            let name = by_id.get(id).map(|n| up(n)).unwrap_or_else(|| id.trim_start_matches("CAP_").to_string());
-            for a in m.args.iter().skip(1) {
-                if let Some((key, _)) = a.split_once('=') {
-                    state.insert(format!("{}_{}", name, up(key.trim())));
-                }
-            }
+        let mut by_id:BTreeMap<&String,&String>=BTreeMap::new();
+        for(n,id)in &k.caps{c.checkpoint()?;key_node(c)?;by_id.insert(id,n);}
+        let mut state=BTreeSet::new();
+        for m in decls.markers_named("cap_keys"){
+            c.checkpoint()?;let Some(id)=m.args.first()else{continue};
+            let name=match by_id.get(id){Some(n)=>kc::upper(c,n)?,None=>kc::own(c,id.trim_start_matches("CAP_"))?};
+            for a in m.args.iter().skip(1){c.checkpoint()?;if let Some((key,_))=a.split_once('='){
+                let upper=kc::upper(c,key.trim())?;let value=kc::format(c,format_args!("{name}_{upper}"))?;key_node(c)?;state.insert(value);
+            }}
         }
-        k.cap_state_ids = state;
-        // Ops the engine itself makes: the state graph's build/undo/dismantle (stage-suffixed: `construction.build:door_wired`) and the window opener of interface() (and its ghost view, ui_observe, with observe = TRUE).
-        for engine_op in ["construction.build", "construction.undo", "construction.dismantle", "ui_open", "ui_observe"] {
-            k.ops.insert(engine_op.to_string());
+        k.cap_state_ids=state;
+        for op in ["construction.build","construction.undo","construction.dismantle","ui_open","ui_observe","silicon_hand","silicon_ui"]{
+            c.checkpoint()?;let name=kc::own(c,op)?;key_node(c)?;k.ops.insert(name);
         }
-        // Ops a library proc makes (code/library/mob/silicon.dm): a silicon's plain click, which every machine and turf declares and a type takes away with without().
-        for library_op in ["silicon_hand", "silicon_ui"] {
-            k.ops.insert(library_op.to_string());
-        }
-        k
+        c.checkpoint()?;Ok(k)
     }
 
     /// Whether `token` (a `STAT_X`/`SRC_X`/`STAGE_G_N`/`CAP_X` or a cap-state id) is declared by a
@@ -150,52 +126,38 @@ impl KeyIndex {
     }
 
     /// `COVER_` for a declared capability named `cover`: ids with it are capability-state ids.
-    pub fn cap_state_prefixes(&self) -> Vec<String> {
-        self.caps.keys().map(|n| format!("{}_", up(n))).collect()
+    pub fn cap_state_prefixes(&self)->Vec<String>{match self.cap_state_prefixes_controlled(&mut crate::key_policy_control::Compatibility){Ok(v)=>v,Err(never)=>match never{}}}
+    pub fn cap_state_prefixes_controlled<C:crate::key_policy_control::Control>(&self,c:&mut C)->Result<Vec<String>,C::Error>{
+        use crate::key_policy_control as kc;
+        let mut out=Vec::new();for name in self.caps.keys(){c.checkpoint()?;let name=kc::upper(c,name)?;let prefix=kc::format(c,format_args!("{name}_"))?;kc::row(c,&mut out)?;out.push(prefix);}Ok(out)
+    }
+    pub fn suggest(&self,token:&str,defines:&HashSet<String>)->Option<String>{match self.suggest_controlled(token,defines,&mut crate::key_policy_control::Compatibility){Ok(v)=>v,Err(never)=>match never{}}}
+    pub fn suggest_controlled<C:crate::key_policy_control::Control>(&self,token:&str,defines:&HashSet<String>,c:&mut C)->Result<Option<String>,C::Error>{
+        let mut best:Option<(usize,String)>=None;
+        for candidate in self.stats.keys().chain(self.sources.iter()).chain(self.stages.iter()).chain(self.cap_ids.iter()).chain(defines.iter()){
+            c.checkpoint()?;if !ID_PREFIXES.iter().any(|p|candidate.starts_with(p)){continue}
+            let d=edit_distance_controlled(token,candidate,c)?;
+            if d<=3&&best.as_ref().map(|(old,_)|d<*old).unwrap_or(true){best=Some((d,crate::key_policy_control::own(c,candidate)?));}
+        }
+        Ok(best.map(|(_,s)|s))
+    }
+    pub fn op_resolves(&self,key:&str)->bool{match self.op_resolves_controlled(key,&mut crate::key_policy_control::Compatibility){Ok(v)=>v,Err(never)=>match never{}}}
+    pub fn op_resolves_controlled<C:crate::key_policy_control::Control>(&self,key:&str,c:&mut C)->Result<bool,C::Error>{
+        c.checkpoint()?;let base=key.split(':').next().unwrap_or(key);
+        if self.ops.contains(key)||self.ops.contains(base){return Ok(true)}
+        // Same exact three-segment test without allocating a temporary Vec.
+        let mut parts=base.split('.');let first=parts.next();let second=parts.next();let third=parts.next();
+        let(Some(a),Some(_),Some(b))=(first,second,third)else{return Ok(false)};
+        if parts.next().is_some(){return Ok(false)}
+        let key=crate::key_policy_control::format(c,format_args!("{a}|{b}"))?;Ok(self.sel_ops.contains(&key))
+    }
+    pub fn suggest_op(&self,key:&str)->Option<String>{match self.suggest_op_controlled(key,&mut crate::key_policy_control::Compatibility){Ok(v)=>v,Err(never)=>match never{}}}
+    pub fn suggest_op_controlled<C:crate::key_policy_control::Control>(&self,key:&str,c:&mut C)->Result<Option<String>,C::Error>{
+        let mut best:Option<(usize,&String)>=None;
+        for candidate in &self.ops{c.checkpoint()?;let d=edit_distance_controlled(key,candidate,c)?;if d<=3&&best.map(|(old,_)|d<old).unwrap_or(true){best=Some((d,candidate));}}
+        match best{Some((_,value))=>Ok(Some(crate::key_policy_control::own(c,value)?)),None=>Ok(None)}
     }
 
-    /// The closest declared id (for a "did you mean" hint), if any is within a small edit distance.
-    pub fn suggest(&self, token: &str, defines: &HashSet<String>) -> Option<String> {
-        let mut best: Option<(usize, String)> = None;
-        let mut consider = |c: &str| {
-            if !ID_PREFIXES.iter().any(|p| c.starts_with(p)) {
-                return;
-            }
-            let d = edit_distance(token, c);
-            if d <= 3 && best.as_ref().map(|(b, _)| d < *b).unwrap_or(true) {
-                best = Some((d, c.to_string()));
-            }
-        };
-        for c in self.stats.keys().chain(self.sources.iter()).chain(self.stages.iter()).chain(self.cap_ids.iter()) {
-            consider(c);
-        }
-        for c in defines {
-            consider(c);
-        }
-        best.map(|(_, s)| s)
-    }
-
-    /// An op key resolves exactly, or by the part before a `:` stage chain (`construction.build:door_wired`).
-    pub fn op_resolves(&self, key: &str) -> bool {
-        let base = key.split(':').next().unwrap_or(key);
-        if self.ops.contains(key) || self.ops.contains(base) {
-            return true;
-        }
-        // "prefix.selector.op" of a capability with a selector ("cell_bay.cell.insert").
-        let parts: Vec<&str> = base.split('.').collect();
-        parts.len() == 3 && self.sel_ops.contains(&format!("{}|{}", parts[0], parts[2]))
-    }
-
-    pub fn suggest_op(&self, key: &str) -> Option<String> {
-        let mut best: Option<(usize, &String)> = None;
-        for o in &self.ops {
-            let d = edit_distance(key, o);
-            if d <= 3 && best.map(|(b, _)| d < b).unwrap_or(true) {
-                best = Some((d, o));
-            }
-        }
-        best.map(|(_, s)| s.clone())
-    }
 }
 
 /// The value of `name = value` among a marker's arguments, or None.
@@ -207,87 +169,90 @@ fn marker_option(m: &Marker<'_>, name: &str) -> Option<String> {
 }
 
 /// Every `op("name", ...)` in a marker body: `cap.name` inside a capability marker, `name` otherwise.
-fn collect_ops(body: &str, cap: Option<&String>, out: &mut BTreeSet<String>) {
-    // stages(VAR, stage_step(...), ...) declares one op per step (code/library/structures/stages.dm)
-    let mut j = 0;
-    while let Some(p) = body[j..].find("stages(") {
-        let at = j + p;
-        j = at + 7;
-        if at > 0 && (body.as_bytes()[at - 1].is_ascii_alphanumeric() || body.as_bytes()[at - 1] == b'_') {
-            continue;
-        }
-        let Some(close) = matching_paren(body, at + 6) else { continue };
-        for op_args in stages_op_args(&body[at + 7..close]) {
-            collect_ops(&format!("op({})", op_args), cap, out);
-        }
-    }
-    let b = body.as_bytes();
-    let mut i = 0;
-    while let Some(p) = body[i..].find("op(") {
-        let at = i + p;
-        i = at + 3;
-        // word boundary before `op`
-        if at > 0 && (b[at - 1].is_ascii_alphanumeric() || b[at - 1] == b'_' || b[at - 1] == b'.') {
-            continue;
-        }
-        let Some(close) = matching_paren(body, at + 2) else { continue };
-        let args = split_args(&body[at + 3..close]);
-        if let Some(name) = args.first().and_then(|a| a.strip_prefix('"')).and_then(|a| a.strip_suffix('"')) {
-            match cap {
-                Some(c) => {
-                    out.insert(format!("{}.{}", c, name));
-                }
-                None => {
-                    out.insert(name.to_string());
-                }
-            }
+fn collect_ops_controlled<C:crate::key_policy_control::Control>(body:&str,cap:Option<&String>,out:&mut BTreeSet<String>,c:&mut C)->Result<(),C::Error>{
+    if C::CHECKED { return collect_ops_iterative(body,cap,out,c); }
+    use crate::key_policy_control as kc;
+    c.checkpoint()?;let mut j=0;
+    while let Some(p)=body[j..].find("stages("){
+        c.checkpoint()?;let at=j+p;j=at+7;
+        if at>0&&(body.as_bytes()[at-1].is_ascii_alphanumeric()||body.as_bytes()[at-1]==b'_'){continue}
+        let Some(close)=matching_paren(body,at+6)else{continue};
+        for op_args in crate::raw_marker_policy::stages_op_args_controlled(&body[at+7..close],c)?{
+            let nested=kc::format(c,format_args!("op({op_args})"))?;
+            collect_ops_controlled(&nested,cap,out,c)?;
         }
     }
+    collect_literal_ops(body,cap,out,c)
+}
+fn collect_literal_ops<C:crate::key_policy_control::Control>(body:&str,cap:Option<&String>,out:&mut BTreeSet<String>,c:&mut C)->Result<(),C::Error>{
+    use crate::key_policy_control as kc;
+    let b=body.as_bytes();let mut i=0;
+    while let Some(p)=body[i..].find("op("){
+        c.checkpoint()?;let at=i+p;i=at+3;
+        if at>0&&(b[at-1].is_ascii_alphanumeric()||b[at-1]==b'_'||b[at-1]==b'.'){continue}
+        let Some(close)=matching_paren(body,at+2)else{continue};
+        kc::split(c,close-at-3)?;let args=split_args(&body[at+3..close]);
+        if let Some(name)=args.first().and_then(|a|a.strip_prefix('"')).and_then(|a|a.strip_suffix('"')){
+            let key=match cap{Some(prefix)=>kc::format(c,format_args!("{prefix}.{name}"))?,None=>kc::own(c,name)?};
+            key_node(c)?;out.insert(key);
+        }
+    }
+    Ok(())
+}
+
+/// Checked traversal owns an admitted flat DFS worklist, never Rust recursion.
+/// Resume each parent's stages iterator before its literal-op phase, exactly as
+/// the original recursive stages-first walk. Compatibility keeps its old path.
+fn collect_ops_iterative<C:crate::key_policy_control::Control>(body:&str,cap:Option<&String>,out:&mut BTreeSet<String>,c:&mut C)->Result<(),C::Error>{
+ use crate::key_policy_control as kc;
+ struct Frame<'a>{body:std::borrow::Cow<'a,str>,from:usize,expanded:std::vec::IntoIter<String>}
+ fn next<C:kc::Control>(f:&mut Frame<'_>,c:&mut C)->Result<Option<String>,C::Error>{
+  loop{
+   c.checkpoint()?;
+   if let Some(args)=f.expanded.next(){return Ok(Some(kc::format(c,format_args!("op({args})"))?))}
+   let Some(p)=f.body[f.from..].find("stages(") else{return Ok(None)};
+   let at=f.from+p;f.from=at+7;
+   if at>0&&(f.body.as_bytes()[at-1].is_ascii_alphanumeric()||f.body.as_bytes()[at-1]==b'_'){continue}
+   let Some(close)=matching_paren(&f.body,at+6)else{continue};
+   f.expanded=crate::raw_marker_policy::stages_op_args_controlled(&f.body[at+7..close],c)?.into_iter();
+  }
+ }
+ let mut frames=Vec::new();kc::row(c,&mut frames)?;
+ frames.push(Frame{body:std::borrow::Cow::Borrowed(body),from:0,expanded:Vec::new().into_iter()});
+ while let Some(frame)=frames.last_mut(){
+  c.checkpoint()?;
+  match next(frame,c)?{
+   Some(body)=>{kc::row(c,&mut frames)?;frames.push(Frame{body:std::borrow::Cow::Owned(body),from:0,expanded:Vec::new().into_iter()});}
+   None=>{collect_literal_ops(&frame.body,cap,out,c)?;frames.pop();}
+  }
+ }
+ Ok(())
 }
 
 /// Every identifier-like token in `text` with one of the resolved prefixes, with its byte offset.
-pub fn id_tokens(text: &str, extra_prefixes: &[String]) -> Vec<(usize, String)> {
-    let mut out = Vec::new();
-    let b = text.as_bytes();
-    let mut i = 0;
-    let mut in_str = false;
-    while i < b.len() {
-        let c = b[i];
-        if c == b'"' {
-            in_str = !in_str;
-            i += 1;
-            continue;
-        }
-        if in_str || !(c.is_ascii_alphabetic() || c == b'_') {
-            i += 1;
-            continue;
-        }
-        let start = i;
-        while i < b.len() && (b[i].is_ascii_alphanumeric() || b[i] == b'_') {
-            i += 1;
-        }
-        let tok = &text[start..i];
-        let prev_ok = start == 0 || !(b[start - 1] == b'.' || b[start - 1] == b'/');
-        if prev_ok && (ID_PREFIXES.iter().any(|p| tok.starts_with(p)) || extra_prefixes.iter().any(|p| tok.starts_with(p.as_str()))) && tok.len() > 4 && tok.chars().all(|ch| ch.is_ascii_uppercase() || ch.is_ascii_digit() || ch == '_') {
-            out.push((start, tok.to_string()));
+pub fn id_tokens(text:&str,extra_prefixes:&[String])->Vec<(usize,String)>{match id_tokens_controlled(text,extra_prefixes,&mut crate::key_policy_control::Compatibility){Ok(v)=>v,Err(never)=>match never{}}}
+pub fn id_tokens_controlled<C:crate::key_policy_control::Control>(text:&str,extra_prefixes:&[String],c:&mut C)->Result<Vec<(usize,String)>,C::Error>{
+    use crate::key_policy_control as kc;
+    let mut out=Vec::new();let b=text.as_bytes();let mut i=0;let mut in_str=false;
+    while i<b.len(){
+        if i&1023==0{c.checkpoint()?;}
+        let ch=b[i];if ch==b'"'{in_str=!in_str;i+=1;continue}
+        if in_str||!(ch.is_ascii_alphabetic()||ch==b'_'){i+=1;continue}
+        let start=i;while i<b.len()&&(b[i].is_ascii_alphanumeric()||b[i]==b'_'){i+=1;if i&1023==0{c.checkpoint()?;}}
+        let tok=&text[start..i];let prev_ok=start==0||!(b[start-1]==b'.'||b[start-1]==b'/');
+        if prev_ok&&(ID_PREFIXES.iter().any(|p|tok.starts_with(p))||extra_prefixes.iter().any(|p|tok.starts_with(p.as_str())))&&tok.len()>4&&tok.chars().all(|ch|ch.is_ascii_uppercase()||ch.is_ascii_digit()||ch=='_'){
+            kc::row(c,&mut out)?;out.push((start,kc::own(c,tok)?));
         }
     }
-    out
+    c.checkpoint()?;Ok(out)
 }
-
-fn edit_distance(a: &str, b: &str) -> usize {
-    let a: Vec<char> = a.chars().collect();
-    let b: Vec<char> = b.chars().collect();
-    let mut prev: Vec<usize> = (0..=b.len()).collect();
-    for i in 1..=a.len() {
-        let mut cur = vec![i; b.len() + 1];
-        for j in 1..=b.len() {
-            let cost = if a[i - 1] == b[j - 1] { 0 } else { 1 };
-            cur[j] = (prev[j] + 1).min(cur[j - 1] + 1).min(prev[j - 1] + cost);
-        }
-        prev = cur;
-    }
-    prev[b.len()]
+fn edit_distance(a:&str,b:&str)->usize{match edit_distance_controlled(a,b,&mut crate::key_policy_control::Compatibility){Ok(v)=>v,Err(never)=>match never{}}}
+fn edit_distance_controlled<C:crate::key_policy_control::Control>(a:&str,b:&str,c:&mut C)->Result<usize,C::Error>{
+    c.checkpoint()?;
+    crate::key_policy_control::reserve(c,||a.len().checked_add(b.len())?.checked_mul(8)?.checked_add(b.len().checked_add(1)?.checked_mul(2*std::mem::size_of::<usize>())?)?.checked_add(512))?;
+    let a:Vec<char>=a.chars().collect();let b:Vec<char>=b.chars().collect();let mut prev:Vec<usize>=(0..=b.len()).collect();
+    for i in 1..=a.len(){c.checkpoint()?;let mut cur=vec![i;b.len()+1];for j in 1..=b.len(){if j&1023==0{c.checkpoint()?;}let cost=usize::from(a[i-1]!=b[j-1]);cur[j]=(prev[j]+1).min(cur[j-1]+1).min(prev[j-1]+cost);}prev=cur;}
+    Ok(prev[b.len()])
 }
 
 #[cfg(test)]
@@ -316,85 +281,175 @@ pub struct ScanInput<'a>{
 }
 pub fn scan_keys(cx:&crate::lint::Cx<'_>,decls:&ScanInput<'_>,out:&mut crate::lint::Sink,
  mut system_vars:impl FnMut(&str)->(bool,HashSet<String>),system_types:impl Fn(&str)->Vec<String>){
+    let result=scan_keys_controlled(cx,decls,out,&mut crate::key_policy_control::Compatibility,
+        |system,var,_|{let(known,vars)=system_vars(system);Ok((known,vars.contains(var)))},
+        |system,_|Ok(system_types(system)));
+    match result{Ok(())=>{},Err(never)=>match never{}}
+}
+pub fn scan_keys_controlled<C:crate::key_policy_control::Control>(cx:&crate::lint::Cx<'_>,decls:&ScanInput<'_>,out:&mut crate::lint::Sink,c:&mut C,
+ mut system_var:impl FnMut(&str,&str,&mut C)->Result<(bool,bool),C::Error>,mut system_types:impl FnMut(&str,&mut C)->Result<Vec<String>,C::Error>)->Result<(),C::Error>{
+ macro_rules! key_format{($control:expr,$($args:tt)*)=>{crate::key_policy_control::format($control,format_args!($($args)*))?}}
  use crate::raw_key_calls_policy::KeyKind;
  const CHECKED_MARKERS:&[&str]=&["CAPABILITIES","CAPABILITY_DEF","CAPABILITY_TYPE","cap_keys",crate::raw_entry_proc_policy::ENTRY_PROC,"STATE_GRAPH","RESOURCE_DEF","SCHEMA","ACTION"];
-        let idx = KeyIndex::from_markers(&decls.keys);
-        let allowed = |out: &mut crate::lint::Sink, rel: &str, line: u32| -> bool {
-            match cx.tree.get(rel) {
-                Some(f) => out.allowed(f, line as usize, "keys"),
-                None => false,
-            }
-        };
+        let idx = KeyIndex::from_markers_controlled(&decls.keys,c)?;
 
-        let cap_prefixes = idx.cap_state_prefixes();
+
+        let cap_prefixes = idx.cap_state_prefixes_controlled(c)?;
         for m in decls.keys.markers {
+            c.checkpoint()?;
             if !CHECKED_MARKERS.contains(&m.name) || cx.exempt(&m.rel) {
                 continue;
             }
-            for (off, tok) in id_tokens(&m.body, &cap_prefixes) {
+            for (off, tok) in id_tokens_controlled(&m.body, &cap_prefixes,c)? {
                 if idx.id_resolves(&tok, &decls.defines) {
                     continue;
                 }
                 let line = m.line_at(off);
-                if allowed(out, &m.rel, line) {
+                if allowed_controlled(cx,out,&m.rel,line,c)? {
                     continue;
                 }
-                let msg = match idx.suggest(&tok, &decls.defines) {
-                    Some(s) => format!("`{}` is not declared; did you mean `{}`?", tok, s),
-                    None => format!("`{}` is not declared", tok),
+                let msg = match idx.suggest_controlled(&tok, &decls.defines,c)? {
+                    Some(s) => key_format!(c,"`{}` is not declared; did you mean `{}`?", tok, s),
+                    None => key_format!(c,"`{}` is not declared", tok),
                 };
                 out.site_in_msg("unresolved_id", &m.rel, line as usize, msg);
             }
         }
 
         for r in decls.key_refs.iter().filter(|r| !cx.exempt(&r.rel)) {
+            c.checkpoint()?;
             match r.kind {
-                KeyKind::Op if !idx.op_resolves(&r.key) => {
-                    if allowed(out, &r.rel, r.line) {
+                KeyKind::Op if !idx.op_resolves_controlled(&r.key,c)? => {
+                    if allowed_controlled(cx,out,&r.rel,r.line,c)? {
                         continue;
                     }
-                    let msg = match idx.suggest_op(&r.key) {
-                        Some(s) => format!("op key \"{}\" in {}() is not declared; did you mean \"{}\"?", r.key, r.call, s),
-                        None => format!("op key \"{}\" in {}() is not declared", r.key, r.call),
+                    let msg = match idx.suggest_op_controlled(&r.key,c)? {
+                        Some(s) => key_format!(c,"op key \"{}\" in {}() is not declared; did you mean \"{}\"?", r.key, r.call, s),
+                        None => key_format!(c,"op key \"{}\" in {}() is not declared", r.key, r.call),
                     };
                     out.site_in_msg("unresolved_op", &r.rel, r.line as usize, msg);
                 }
                 KeyKind::Capability if !idx.caps.contains_key(&r.key) => {
-                    if allowed(out, &r.rel, r.line) {
+                    if allowed_controlled(cx,out,&r.rel,r.line,c)? {
                         continue;
                     }
-                    out.site_in_msg("unresolved_capability", &r.rel, r.line as usize, format!("capability key \"{}\" in {}() is not declared", r.key, r.call));
+                    out.site_in_msg("unresolved_capability", &r.rel, r.line as usize, key_format!(c,"capability key \"{}\" in {}() is not declared", r.key, r.call));
                 }
                 _ => {}
             }
         }
 
         for (rel, line, v) in decls.bad_sources.iter().filter(|(rel, _, _)| !cx.exempt(rel)) {
-            if allowed(out, rel, *line) {
+            c.checkpoint()?;
+            if allowed_controlled(cx,out,rel,*line,c)? {
                 continue;
             }
-            out.site_in_msg("text_source", rel, *line as usize, format!("source = {} is not a datum or a SRC_*", v));
+            out.site_in_msg("text_source", rel, *line as usize, key_format!(c,"source = {} is not a datum or a SRC_*", v));
         }
 
         for (kind, name, first, second) in &idx.duplicates {
-            if allowed(out, &second.0, second.1) {
+            c.checkpoint()?;
+            if allowed_controlled(cx,out,&second.0,second.1,c)? {
                 continue;
             }
-            out.site_in_msg("duplicate_declaration", &second.0, second.1 as usize, format!("{} `{}` is already declared at {}:{}", kind, name, first.0, first.1));
+            out.site_in_msg("duplicate_declaration", &second.0, second.1 as usize, key_format!(c,"{} `{}` is already declared at {}:{}", kind, name, first.0, first.1));
         }
 
         // SYSTEM_ACCESSOR(system, name, nameof(var)): the var must be on the system.
         for m in decls.keys.markers_named("SYSTEM_ACCESSOR") {
+            c.checkpoint()?;
             let (Some(system), Some(name), Some(key)) = (m.args.first(), m.args.get(1), m.args.get(2)) else { continue };
-            let Some(var) = key.trim().strip_prefix("nameof(").and_then(|s| s.strip_suffix(')')).map(|s| s.trim().to_string()) else { continue };
-            let (known, vars) = system_vars(system);
-            if !vars.contains(&var) && !allowed(out, &m.rel, m.line) {
+            let Some(var) = key.trim().strip_prefix("nameof(").and_then(|s| s.strip_suffix(')')).map(str::trim) else { continue };
+            let (known, contains) = system_var(system,var,c)?;
+            if !contains && !allowed_controlled(cx,out,&m.rel,m.line,c)? {
                 let msg = if known {
-                    format!("accessor `{}`: system `{}` has no var `{}`", name, system, var)
+                    key_format!(c,"accessor `{}`: system `{}` has no var `{}`", name, system, var)
                 } else {
-                    format!("accessor `{}`: no system type for `{}` (looked for {})", name, system, system_types(system).join(", "))
+                    {let types=system_types(system,c)?;let joined=types_joined_controlled(types,c)?;key_format!(c,"accessor `{}`: no system type for `{}` (looked for {})", name, system, joined)}
                 };
                 out.site_in_msg("accessor_var", &m.rel, m.line as usize, msg);
             }
         }
+
+    c.checkpoint()?;Ok(())
+}
+
+fn key_node<C:crate::key_policy_control::Control>(c:&mut C)->Result<(),C::Error>{crate::key_policy_control::reserve(c,||Some(256))}
+fn note_controlled<C:crate::key_policy_control::Control>(k:&mut KeyIndex,seen:&mut BTreeMap<(String,String),(String,u32)>,kind:&str,name:&str,m:&Marker<'_>,c:&mut C)->Result<(),C::Error>{
+    use crate::key_policy_control as kc;
+    c.checkpoint()?;let key=(kc::own(c,kind)?,kc::own(c,name)?);
+    if let Some(first)=seen.get(&key){
+        kc::row(c,&mut k.duplicates)?;
+        let kind=kc::own(c,kind)?;let name=kc::own(c,name)?;let first=(kc::own(c,&first.0)?,first.1);let second=(kc::own(c,m.rel)?,m.line);
+        k.duplicates.push((kind,name,first,second));
+    }else{let site=(kc::own(c,m.rel)?,m.line);key_node(c)?;seen.insert(key,site);}
+    Ok(())
+}
+fn marker_option_controlled<C:crate::key_policy_control::Control>(m:&Marker<'_>,name:&str,c:&mut C)->Result<Option<String>,C::Error>{
+    for a in m.args{c.checkpoint()?;if let Some((k,v))=a.split_once('='){if k.trim()==name{return Ok(Some(crate::key_policy_control::own(c,v.trim())?))}}}Ok(None)
+}
+
+fn allowed_controlled<C:crate::key_policy_control::Control>(cx:&crate::lint::Cx<'_>,out:&mut crate::lint::Sink,rel:&str,line:u32,c:&mut C)->Result<bool,C::Error>{
+    c.checkpoint()?;let Some(file)=cx.tree.get(rel)else{return Ok(false)};
+    if C::CHECKED{
+        let raw=file.raw();let number=line as usize;
+        for text in [raw.line(number),if number>=2&&crate::util::py_lstrip(raw.line(number-1)).starts_with("//"){raw.line(number-1)}else{""}]{
+            if text.contains("ALLOW("){crate::key_policy_control::reserve(c,||text.len().checked_mul(512)?.checked_add(1024))?;}
+        }
+    }
+    Ok(out.allowed(file,line as usize,"keys"))
+}
+fn types_joined_controlled<C:crate::key_policy_control::Control>(types:Vec<String>,c:&mut C)->Result<String,C::Error>{
+    crate::key_policy_control::reserve(c,||types.iter().try_fold(0usize,|n,t|n.checked_add(t.len()))?.checked_add(types.len().saturating_sub(1).checked_mul(2)?)?.checked_mul(2)?.checked_add(128))?;
+    Ok(types.join(", "))
+}
+
+use crate::lint::{Meta,Policy,RuleMeta,ScanKind};
+use crate::tree::CODE_DM;
+const H_ID: &str = "declare it with STAT/SOURCE_DEF/STAGE_DEF/CAPABILITY_DEF (or #define it), or fix the spelling";
+const H_OP: &str = "declare the op (op(\"name\", ...) in its capability) or fix the key; perform_op with an unknown key is an error, not a no-op";
+const H_CAP: &str = "declare the capability (CAPABILITY_DEF/CAPABILITY_TYPE name) or fix the key";
+const H_SRC: &str = "a source is a datum or a SOURCE_DEF flyweight (SRC_X): text and null are errors";
+const H_DUP: &str = "declare each stat, source, stage and capability once";
+const H_ACC: &str = "name a var the system declares: SYSTEM_ACCESSOR(system, accessor, nameof(var))";
+
+static META: Meta = Meta {
+    name: "sem/keys",
+    group: "sem",
+    label: "keys",
+    legacy: "",
+    select: CODE_DM,
+    scan: ScanKind::Tree,
+    policy: Policy::Hard,
+    rules: &[
+        RuleMeta { name: "unresolved_id", hint: H_ID },
+        RuleMeta { name: "unresolved_op", hint: H_OP },
+        RuleMeta { name: "unresolved_capability", hint: H_CAP },
+        RuleMeta { name: "text_source", hint: H_SRC },
+        RuleMeta { name: "duplicate_declaration", hint: H_DUP },
+        RuleMeta { name: "accessor_var", hint: H_ACC },
+    ],
+    allow: &["keys"],
+    lists: &[],
+};
+pub fn metadata()->&'static Meta{&META}
+
+#[cfg(test)]mod controlled_stage_tests{
+ use super::*;
+ struct Limited{left:usize,polls:usize,cancel:usize}
+ impl crate::key_policy_control::Control for Limited{
+  type Error=std::io::Error;const CHECKED:bool=true;
+  fn checkpoint(&mut self)->Result<(),Self::Error>{self.polls+=1;if self.polls==self.cancel{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(())}}
+  fn reserve(&mut self,n:usize)->Result<(),Self::Error>{self.left=self.left.checked_sub(n).ok_or_else(||std::io::Error::from(std::io::ErrorKind::OutOfMemory))?;Ok(())}
+  fn overflow(&mut self)->Self::Error{std::io::ErrorKind::OutOfMemory.into()}
+  fn allocation_failed(&mut self)->Self::Error{std::io::ErrorKind::OutOfMemory.into()}
+ }
+ fn nested(depth:usize)->String{let mut s="op(\"leaf\")".to_owned();for i in 0..depth{s=format!("stages(nameof(state{i}), stage_step(A, B, {s}))")}s}
+ #[test]fn iterative_checked_stages_preserve_original_recursive_keys_and_refuse_deep_work_without_stack(){
+  let source=nested(5);let mut old=BTreeSet::new();collect_ops_controlled(&source,None,&mut old,&mut crate::key_policy_control::Compatibility).unwrap();
+  let mut actual=BTreeSet::new();collect_ops_controlled(&source,None,&mut actual,&mut Limited{left:32*1024*1024,polls:0,cancel:usize::MAX}).unwrap();assert_eq!(actual,old);assert!(actual.contains("leaf"));assert!(actual.contains("state0_A_B"));
+  let deep=nested(3000);let e=collect_ops_controlled(&deep,None,&mut BTreeSet::new(),&mut Limited{left:1024,polls:0,cancel:usize::MAX}).unwrap_err();assert_eq!(e.kind(),std::io::ErrorKind::OutOfMemory);
+  let e=collect_ops_controlled(&source,None,&mut BTreeSet::new(),&mut Limited{left:32*1024*1024,polls:0,cancel:5}).unwrap_err();assert_eq!(e.raw_os_error(),Some(1450));
+  let mut recovered=BTreeSet::new();collect_ops_controlled(&source,None,&mut recovered,&mut Limited{left:32*1024*1024,polls:0,cancel:usize::MAX}).unwrap();assert_eq!(recovered,old);
+ }
 }

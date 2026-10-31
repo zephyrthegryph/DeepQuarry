@@ -117,25 +117,27 @@ pub fn system_defs(raw: &str) -> Vec<String> {
 /// Exact file selection of sem::gen::system_vars, including prefix matches.
 pub fn file_mentions_system(code: &str, system: &str) -> bool {
     let plain = !system.is_empty() && system.chars().all(|c| c.is_alphanumeric() || c == '_');
-    if !plain {
-        return system_types(system).iter().any(|t| code.contains(t));
-    }
+    if plain { file_mentions_system_with_types(code, system, &[]) }
+    else { file_mentions_system_with_types(code, system, &system_types(system)) }
+}
+/// Same original candidate policy; callers may reuse the two original type names.
+pub fn file_mentions_system_with_types(code:&str, system:&str, types:&[String])->bool {
+    let plain = !system.is_empty() && system.chars().all(|c| c.is_alphanumeric() || c == '_');
+    if !plain { return types.iter().any(|ty|code.contains(ty)); }
     for prefix in ["/datum/world_service/", "/datum/system/"] {
         let mut from = 0;
         while let Some(i) = code[from..].find(prefix) {
             let start = from + i + prefix.len();
-            let run: String = code[start..]
-                .chars()
-                .take_while(|c| c.is_alphanumeric() || *c == '_')
-                .collect();
-            if run.starts_with(system) {
-                return true;
-            }
+            let end = code[start..].char_indices()
+                .find(|(_,c)| !c.is_alphanumeric() && *c != '_')
+                .map_or(code.len(), |(i,_)|start+i);
+            if code[start..end].starts_with(system) { return true; }
             from = start;
         }
     }
     false
 }
+
 pub struct Builder {
     sys_defs: HashSet<String>,
     rows: Vec<(String, String, String, String, u32, Option<String>)>,

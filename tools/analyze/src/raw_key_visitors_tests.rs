@@ -16,8 +16,8 @@ use super::*;
 }
 
 #[test]fn checked_call_rows_charge_repeated_long_paths_and_compatibility_skips_bound_arithmetic(){
- assert!(work(&mut None,||panic!("legacy mode must not evaluate native bound arithmetic")));
- let mut yes=|_:usize|true;assert!(!work(&mut Some(&mut yes),||usize::MAX.checked_mul(128)));
+ assert!(work::<()>(&mut None,||panic!("legacy mode must not evaluate native bound arithmetic"),&||()).is_ok());
+ let mut yes=|_:usize|Ok::<(),u8>(());assert_eq!(work(&mut Some(&mut yes),||usize::MAX.checked_mul(128),&||7),Err(7));
  let rel="r".repeat(4096);let source=format!("perform_op({})",vec!["\"a\"";256].join(","));
  let bytes=std::cell::Cell::new(0usize);let rows=std::cell::Cell::new(0usize);
  assert!(visit_calls_checked(&rel,&source,&[0],|_|rows.set(rows.get()+1),|_|panic!("not source call"),|n|{bytes.set(bytes.get().checked_add(n).unwrap());true}));

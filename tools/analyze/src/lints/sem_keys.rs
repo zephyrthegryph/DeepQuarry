@@ -14,43 +14,14 @@
 //!
 //! Text only: it reads the declarations and calls, not the AST, so it costs a scan, not a parse.
 
-use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
+use crate::lint::{Cx, Lint, Meta, Registry, Sink};
 use crate::sem::decls::Decls;
-use crate::tree::CODE_DM;
-
-const H_ID: &str = "declare it with STAT/SOURCE_DEF/STAGE_DEF/CAPABILITY_DEF (or #define it), or fix the spelling";
-const H_OP: &str = "declare the op (op(\"name\", ...) in its capability) or fix the key; perform_op with an unknown key is an error, not a no-op";
-const H_CAP: &str = "declare the capability (CAPABILITY_DEF/CAPABILITY_TYPE name) or fix the key";
-const H_SRC: &str = "a source is a datum or a SOURCE_DEF flyweight (SRC_X): text and null are errors";
-const H_DUP: &str = "declare each stat, source, stage and capability once";
-const H_ACC: &str = "name a var the system declares: SYSTEM_ACCESSOR(system, accessor, nameof(var))";
-
-static META: Meta = Meta {
-    name: "sem/keys",
-    group: "sem",
-    label: "keys",
-    legacy: "",
-    select: CODE_DM,
-    scan: ScanKind::Tree,
-    policy: Policy::Hard,
-    rules: &[
-        RuleMeta { name: "unresolved_id", hint: H_ID },
-        RuleMeta { name: "unresolved_op", hint: H_OP },
-        RuleMeta { name: "unresolved_capability", hint: H_CAP },
-        RuleMeta { name: "text_source", hint: H_SRC },
-        RuleMeta { name: "duplicate_declaration", hint: H_DUP },
-        RuleMeta { name: "accessor_var", hint: H_ACC },
-    ],
-    allow: &["keys"],
-    lists: &[],
-};
-
 
 struct SemKeys;
 
 impl Lint for SemKeys {
     fn meta(&self) -> &Meta {
-        &META
+        crate::keys_policy::metadata()
     }
 
     fn scan_tree(&self,cx:&Cx,out:&mut Sink){

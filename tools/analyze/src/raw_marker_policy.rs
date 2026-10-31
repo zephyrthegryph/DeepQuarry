@@ -269,62 +269,36 @@ pub fn block_body(text: &str, from: usize, close: usize, end: usize) -> String {
 /// Original unique declaration DSL marker, not a compiler type/procedure model.
 pub const ENTRY_PROC:&str="ENTRY_PROC";
 
-pub fn stages_op_args(stages_args: &str) -> Vec<String> {
-    let args = split_args(stages_args);
-    let Some(var) = args.first() else {
-        return Vec::new();
-    };
-    let var = var.trim();
-    let var_name = var
-        .strip_prefix("nameof(")
-        .and_then(|v| v.strip_suffix(')'))
-        .unwrap_or(var)
-        .trim()
-        .trim_matches('"');
-    let var_name = var_name
-        .rsplit(|c| c == ':' || c == '.' || c == '/')
-        .next()
-        .unwrap_or(var_name)
-        .to_string();
-    let mut out = Vec::new();
-    for step in &args[1..] {
-        let step = step.trim();
-        let Some(inner) = step
-            .strip_prefix("stage_step(")
-            .and_then(|s| s.strip_suffix(')'))
-        else {
-            continue;
-        };
-        let parts = split_args(inner);
-        if parts.len() < 2 {
-            continue;
-        }
-        let (from, to) = (parts[0].trim(), parts[1].trim());
-        let mut key = format!(
-            "\"{}_{}_{}\"",
-            var_name,
-            from.trim_matches('"'),
-            to.trim_matches('"')
-        );
-        let mut rest = Vec::new();
-        for p in &parts[2..] {
-            let p = p.trim();
-            match p.split_once('=') {
-                Some((name, value)) if name.trim() == "key" && !p.contains('(') => {
-                    key = value.trim().to_string()
-                }
-                _ => rest.push(p.to_string()),
+pub fn stages_op_args(body:&str)->Vec<String>{
+    match stages_op_args_controlled(body,&mut crate::key_policy_control::Compatibility){Ok(rows)=>rows,Err(never)=>match never{}}
+}
+pub fn stages_op_args_controlled<C:crate::key_policy_control::Control>(body:&str,c:&mut C)->Result<Vec<String>,C::Error>{
+    use crate::key_policy_control as kc;
+    c.checkpoint()?;kc::split(c,body.len())?;
+    let args=split_args(body);if args.len()<2{return Ok(Vec::new())}
+    let var=args[0].trim();let var_name=var.strip_prefix("nameof(").and_then(|s|s.strip_suffix(')')).unwrap_or(var).trim().trim_matches('"');
+    let var_name=var_name.rsplit(|c|c==':'||c=='.'||c=='/').next().unwrap_or(var_name);
+    let var_name=kc::own(c,var_name)?;let mut out=Vec::new();
+    for step in &args[1..]{
+        c.checkpoint()?;let step=step.trim();let Some(inner)=step.strip_prefix("stage_step(").and_then(|s|s.strip_suffix(')'))else{continue};
+        kc::split(c,inner.len())?;let parts=split_args(inner);if parts.len()<2{continue}
+        let(from,to)=(parts[0].trim(),parts[1].trim());
+        let mut key=kc::format(c,format_args!("\"{}_{}_{}\"",var_name,from.trim_matches('"'),to.trim_matches('"')))?;
+        let mut rest=Vec::new();
+        for p in &parts[2..]{
+            c.checkpoint()?;let p=p.trim();match p.split_once('='){
+                Some((name,value))if name.trim()=="key"&&!p.contains('(')=>key=kc::own(c,value.trim())?,
+                _=>{kc::row(c,&mut rest)?;rest.push(kc::own(c,p)?);}
             }
         }
-        let mut op = vec![
-            key,
-            format!("when(req_stage({}, {}))", var, from),
-            format!("sets({}, {})", var, to),
-        ];
-        op.extend(rest);
-        out.push(op.join(", "));
+        let mut op=Vec::new();kc::row(c,&mut op)?;op.push(key);
+        kc::row(c,&mut op)?;op.push(kc::format(c,format_args!("when(req_stage({}, {}))",var,from))?);
+        kc::row(c,&mut op)?;op.push(kc::format(c,format_args!("sets({}, {})",var,to))?);
+        for value in rest{kc::row(c,&mut op)?;op.push(value);}
+        kc::reserve(c,||op.iter().try_fold(0usize,|n,v|n.checked_add(v.len()))?.checked_add(op.len().saturating_sub(1).checked_mul(2)?)?.checked_mul(2)?.checked_add(128))?;
+        let joined=op.join(", ");kc::row(c,&mut out)?;out.push(joined);
     }
-    out
+    c.checkpoint()?;Ok(out)
 }
 
 fn marker_word(b:u8)->bool { b.is_ascii_alphanumeric() || b == b'_' }

@@ -39,32 +39,43 @@ pub fn project_first_return(
     name: String,
     head_line: u32,
 ) -> Option<Projection> {
+    let result = project_first_return_admitted(stripped, starts, ln0, line, t, name, head_line,
+        |_| Ok::<(), std::convert::Infallible>(()));
+    match result { Ok(value) => value, Err(never) => match never {} }
+}
+/// The original first-statement projector, with admission before its actual
+/// recognized body and argument allocations. Non-entry first statements reserve nothing.
+pub fn project_first_return_admitted<E>(
+    stripped: &str, starts: &[u32], ln0: usize, line: &str, t: &str,
+    name: String, head_line: u32, mut admit: impl FnMut(usize)->Result<(), E>,
+) -> Result<Option<Projection>, E> {
     let Some(rest) = t.strip_prefix("return") else {
-        return None;
+        return Ok(None);
     };
     let rest = rest.trim_start();
     let Some(after) = rest.strip_prefix("list") else {
-        return None;
+        return Ok(None);
     };
     if !after.trim_start().starts_with('(') {
-        return None;
+        return Ok(None);
     }
     let open = starts[ln0] as usize + (line.len() - rest.len()) + rest.find('(').unwrap();
     let Some(close) = matching_paren(stripped, open) else {
-        return None;
+        return Ok(None);
     };
-    let body = stripped[open + 1..close].to_string();
+    let body = &stripped[open + 1..close];
     if !ENTRY_CALLS.iter().any(|c| body.contains(c)) {
-        return None;
+        return Ok(None);
     }
+    admit(body.len())?;
     let mut args = vec![name];
-    args.extend(split_args(&body));
-    Some(Projection {
+    args.extend(split_args(body));
+    Ok(Some(Projection {
         line: head_line,
         args,
-        body,
+        body: body.to_owned(),
         body_offset: open + 1,
-    })
+    }))
 }
 
 #[cfg(test)]
@@ -106,4 +117,15 @@ mod tests {
                 .is_none()
         );
     }
+    #[test]
+    fn admitted_projector_only_reserves_recognized_actual_body_and_keeps_io() {
+        for body in ["value = 1", "return list(1)"] {
+            let source=format!("/proc/p()\n    {body}\n");let line=source.lines().nth(1).unwrap();
+            let out=project_first_return_admitted(&source,&[0,10],1,line,line.trim_start(),"p".into(),1,|_|->Result<(),()> {panic!("non-entry must not reserve")}).unwrap();assert!(out.is_none());
+        }
+        let source="/proc/p()\n    return list(op(\"x\"))\n";let line=source.lines().nth(1).unwrap();let mut width=0;
+        let error=project_first_return_admitted(source,&[0,10],1,line,line.trim_start(),"p".into(),1,|n|{width=n;Err::<(),_>(std::io::Error::from_raw_os_error(1450))}).err().unwrap();
+        assert_eq!(width,"op(\"x\")".len());assert_eq!(error.raw_os_error(),Some(1450));
+    }
+
 }

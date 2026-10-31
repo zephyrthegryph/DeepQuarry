@@ -1229,3 +1229,24 @@ owned-API test needed type corrections; their failed build logs are preserved.
 The production runner, dimension consumers and runtime lowering are still not
 switched to this complete source factory. This is a verified source-identity
 checkpoint, not completed one-frontend client convergence.
+
+
+### Whole key policy over captured source
+
+The borrowed native key adapter now runs the original complete key policy over
+captured marker, call, define and requested system-field rows. Only marker rows
+follow manifest order; other facts preserve original file order. It constructs
+neither a legacy semantic model nor a replacement type index. The existing raw
+first-return projector reserves only recognized entry bodies, and the system
+candidate matcher borrows its original Unicode run slices. Operational failures
+remain typed and partial findings are discarded.
+
+Checked stages expansion uses an admitted iterative DFS, preserving the original
+stages-first order without depending on Rust recursion. Compatibility keeps the
+original traversal. Fifteen focused tests pass, including actual OS failure,
+quota refusal, same-source recovery, deep nesting and all six rule families. The
+native fixture matches all 16 findings, one annotation use and full report text;
+the frozen independent original separately matches complete key tables and the
+same report. Native-only Analyze checking also passes. This remains bounded
+explicit-file coverage: query registration, production workspace admission and
+client defaults are separate pending work, with no admission-limit increases.

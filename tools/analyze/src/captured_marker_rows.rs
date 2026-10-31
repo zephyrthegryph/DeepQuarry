@@ -22,6 +22,16 @@ pub(crate) fn collect<'a>(
     include_entries: bool,
     checkpoint: &mut impl FnMut() -> Result<(), String>,
 ) -> Result<Rows<'a>, String> {
+    collect_admitted(raw,order,budget,names,include_entries,checkpoint)
+}
+pub(crate) fn collect_admitted<'a,E>(
+    raw: &'a CapturedRawPolicy,
+    order: &HashMap<String, usize>,
+    budget: &Arc<Budget>,
+    names: &[&str],
+    include_entries: bool,
+    checkpoint: &mut impl FnMut() -> Result<(), E>,
+) -> Result<Rows<'a>, E> where E:From<String>+for<'error>From<&'error str> {
     budget.charge(
         raw.tree
             .files
@@ -58,10 +68,10 @@ pub(crate) fn collect<'a>(
         }
         let marker = file.marker();
         raw.tree.captured_violation().map_or(Ok(()), Err)?;
+        if let Some(error)=file.captured_budget_error(){budget.deny();return Err(error.into())}
+        let line_count = marker.as_str().bytes().filter(|b| *b == b'\n').count();
         budget.charge(
-            marker
-                .as_str()
-                .len()
+            line_count
                 .checked_add(1)
                 .and_then(|n| n.checked_mul(4))
                 .and_then(|n| n.checked_add(128))
@@ -72,7 +82,7 @@ pub(crate) fn collect<'a>(
         )?;
         let mut line_starts = Vec::new();
         line_starts
-            .try_reserve_exact(marker.as_str().bytes().filter(|b| *b == b'\n').count() + 1)
+            .try_reserve_exact(line_count + 1)
             .map_err(|_| {
                 budget.deny();
                 "declare line roster allocation"
@@ -104,21 +114,7 @@ pub(crate) fn collect<'a>(
                     head.begin(text, u32::try_from(line + 1).map_err(|_| "entry line")?);
                 } else if !t.is_empty() && !t.starts_with('#') {
                     if let Some((name, head_line)) = head.take() {
-                        // Existing first-return projector may span the remaining file.
-                        // Pre-admit body+splitter+row BEFORE invoking that same producer.
-                        budget.split_args(marker.as_str().len())?;
-                        budget.charge(
-                            marker
-                                .as_str()
-                                .len()
-                                .checked_mul(8)
-                                .and_then(|n| n.checked_add(file.rel.len() + 1024))
-                                .ok_or_else(|| {
-                                    budget.deny();
-                                    "entry projection overflow"
-                                })?,
-                        )?;
-                        if let Some(m) = crate::raw_entry_proc_policy::project_first_return(
+                        if let Some(m) = crate::raw_entry_proc_policy::project_first_return_admitted(
                             marker.as_str(),
                             &line_starts,
                             line,
@@ -126,7 +122,15 @@ pub(crate) fn collect<'a>(
                             t,
                             name,
                             head_line,
-                        ) {
+                            |width| -> Result<(), E> {
+                                checkpoint()?;
+                                budget.split_args(width)?;
+                                budget.charge(width.checked_mul(8)
+                                    .and_then(|n|n.checked_add(file.rel.len()+1024))
+                                    .ok_or("entry projection overflow")?)?;
+                                Ok(())
+                            },
+                        )? {
                             count += 1;
                             if count > crate::captured_raw_policy::MAX_FIXTURE_SITES {
                                 return Err(
