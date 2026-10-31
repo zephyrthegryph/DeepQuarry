@@ -285,7 +285,7 @@ fn thread_cpu_us() -> u64 {
 
 /// A frame at least this long (microseconds) adds its own per-phase times to the `frame.slow_us.<phase>` counters, so the
 /// slow frame is named by its phase and not hidden in the cumulative `frame.us.*` totals of the quick ones.
-const SLOW_FRAME_US: u64 = 100_000;
+const SLOW_FRAME_US: u64 = 20_000;
 
 thread_local! {
     /// Every lap of the frame in progress (the nested `pace_*` ones too): `(phase, microseconds)`.
@@ -295,6 +295,12 @@ thread_local! {
 /// Adds one lap to the cumulative counter and to the trace of the frame in progress.
 pub(crate) fn trace_lap(phase: &str, us: u64) {
     crate::metrics::registry().counter(&format!("frame.us.{phase}")).add(us);
+    // The worst single lap of each phase (`frame.max_us.*`): a spike every few seconds hides in the cumulative counters.
+    let worst = crate::metrics::registry().gauge(&format!("frame.max_us.{phase}"));
+    #[allow(clippy::cast_precision_loss)]
+    if us as f64 > worst.get() {
+        worst.set(us as f64);
+    }
     TRACE.with_borrow_mut(|t| t.push((phase.to_owned(), us)));
 }
 

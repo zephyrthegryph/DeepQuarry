@@ -1,3 +1,5 @@
+/// A brain run at least this long (ms) is logged with what it was doing (ai_slow_tick_log()).
+#define DQ_AI_SLOW_TICK_MS 5
 // AI brain scheduling (doc/rewrite/final_api.html section 14: the brain's loops are keyed every() entries of a capability on
 // the mob's own clock). This replaces SSai (strategic, 2 s), SSaifast (tactical, 0.25 s), the init-only SSdq_combat_ai and
 // the OM behaviours that ran them.
@@ -85,8 +87,13 @@ CAPABILITY_TYPE(ai_tactical, CAP_AI_TACTICAL, /datum/capability/ai_loop/tactical
 		return
 	var/started = TICK_USAGE
 	strategic_tick() // the slow work, gated by its own cadence (strategic_wait)
+	var/strategic_ms = TICK_USAGE_TO_MS(started)
+	var/tactics_started = TICK_USAGE
 	handle_tactics()
+	var/tactics_ms = TICK_USAGE_TO_MS(tactics_started)
 	GLOB.ai_brain_cost_ms += TICK_USAGE_TO_MS(started)
+	if(strategic_ms + tactics_ms >= DQ_AI_SLOW_TICK_MS)
+		ai_slow_tick_log(src, strategic_ms, tactics_ms)
 
 /// The capability serving the loop flag (the action loop; DQAI_PROCESSING is only the "awake" bit and has none).
 /proc/dq_ai_loop_capability(flag)
@@ -179,3 +186,25 @@ GLOBAL_VAR_INIT(ai_navigation_revision, 1)
 	var/started = TICK_USAGE
 	handle_strategicals()
 	GLOB.ai_brain_cost_ms += TICK_USAGE_TO_MS(started)
+
+/// Slow brain runs logged so far (the log keeps the first 60), and per brain type how many there were.
+GLOBAL_VAR_INIT(ai_slow_ticks_logged, 0)
+GLOBAL_LIST_EMPTY(ai_slow_ticks_by_type)
+
+/// One slow brain run: how the time split between the slow strategic work and the tactical selection, the behaviour it ran, whether it had a target, and
+/// whether a client was near (relevance only wakes the loop for a mob a player can see), so a 10 ms handler on a live round names its cause.
+/proc/ai_slow_tick_log(datum/ai_brain/brain, strategic_ms, tactics_ms)
+	var/mob/living/holder = brain.holder
+	var/type_key = "[holder?.type]"
+	GLOB.ai_slow_ticks_by_type[type_key] = (GLOB.ai_slow_ticks_by_type[type_key] || 0) + 1
+	if(GLOB.ai_slow_ticks_logged >= 60)
+		return
+	GLOB.ai_slow_ticks_logged++
+	var/near = 0
+	var/turf/where = get_turf(holder)
+	if(where)
+		for(var/client/C as anything in GLOB.clients)
+			var/turf/theirs = get_turf(C.mob)
+			if(theirs && theirs.z == where.z && get_dist(theirs, where) <= 2 * world.view)
+				near++
+	log_world("AI SLOW: [round(strategic_ms + tactics_ms, 0.1)] ms ([round(strategic_ms, 0.1)] strategic, [round(tactics_ms, 0.1)] tactics) [type_key] [holder] at ([where?.x],[where?.y],[where?.z]); behaviour [brain.active_behavior_type || "none"]; threat [brain.primary_threat || "none"]; model [brain.model ? "yes" : "no"]; clients near [near] (#[GLOB.ai_slow_ticks_by_type[type_key]] of this type)")

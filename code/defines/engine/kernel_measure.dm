@@ -27,6 +27,8 @@
 /// The running-total accumulators flush this many ms into their high part (BYOND numbers are single precision:
 /// a total above ~1e6 ms can no longer take a 0.05 ms increment).
 #define KM_FLUSH_MS 1000
+/// A single callback this long (ms) is logged by name with its holder and where it was (km_slow_call()), beyond the totals the settle table keeps.
+#define KM_SLOW_CALL_MS 100
 /// A tick over this percentage of a tick is an overrun (the same definition as Kernel.record_performance_tick).
 #define KM_OVERRUN_USAGE 100
 /// Overrun log lines: every overrun of a streak up to this long is logged, then at most one per KM_LOG_MIN_GAP.
