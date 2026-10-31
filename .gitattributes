@@ -114,3 +114,17 @@ tools/analyze/examples/support/auto_generator_original/producer.rs -text
 tools/analyze/fixtures/native-auto-generator/** whitespace=-indent-with-non-tab
 
 /tools/analyze/src/reactive_hooks_frozen_original.rs -text
+
+/tools/analyze/src/plans_policy_frozen_original.rs -text
+
+# Immutable declaration-policy oracle references.
+tools/analyze/src/declare_ids_original_define_visit.rs -text
+tools/analyze/src/sparse_slots_original_finish.rs -text
+tools/analyze/src/sparse_slots_original_finish.reference -text
+
+tools/analyze/src/ui_types_policy_frozen_original.rs -text
+
+tools/analyze/src/raw_type_vars_frozen_original.rs -text
+tools/analyze/src/stats_policy_frozen_original.rs -text
+tools/analyze/src/actions_policy_frozen_original.rs -text
+tools/analyze/src/system_accessors_frozen_original.rs -text

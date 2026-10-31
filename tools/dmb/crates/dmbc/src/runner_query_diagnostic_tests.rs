@@ -44,7 +44,7 @@ fn staged(
     .unwrap()
     .with_body_queries(db.clone())
     .unwrap();
-    let intent = crate::policy_request::PolicyInputRequest {
+    let intent = crate::policy_request::PolicyInputRequest {workspace_generators:Vec::new(),
         workspace: None,
         files: vec![crate::policy_request::PolicyInputFile {
             path: root.join("SpacemanDMM.toml"),

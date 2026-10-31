@@ -522,6 +522,7 @@ pub(crate) fn capture<P: SnapshotProvider>(
         inputs,
         requested,
         search_folders,
+        CompiledViews::AllRaw,
     )
 }
 pub(crate) fn capture_diagnostic<P: SnapshotProvider>(
@@ -540,8 +541,31 @@ pub(crate) fn capture_diagnostic<P: SnapshotProvider>(
         inputs,
         requested,
         search_folders,
+        CompiledViews::AllRaw,
     )
 }
+/// Configuration-only child for the genuine workspace generator endpoint.
+/// Compiled declarations stay the original CompilerDecoded PolicyFiles; raw
+/// policy is borrowed from completed workspace pages, except the original DME
+/// whose AnalyzeRaw view is required by the existing generator manifest gate.
+pub(crate) fn capture_workspace_generator<P: SnapshotProvider>(
+    frontend: &ColdFrontend, inputs: &RecordingInputs<P>, configuration: &Path,
+) -> io::Result<CapturedPolicyInputs> {
+    let intent = crate::policy_request::PolicyInputRequest {workspace_generators:Vec::new(),
+        workspace: None,
+        files: vec![crate::policy_request::PolicyInputFile {
+            path: configuration.to_owned(),
+            role: crate::policy_request::PolicyInputRole::Configuration,
+            required: false,
+        }],
+        search_folders: Vec::new(),
+    }.admit()?;
+    capture_source(CaptureSource::Compiled(frontend), inputs,
+        &intent.capture_files(), &[], CompiledViews::GeneratorManifest)?
+        .bind_request(&intent)
+}
+#[derive(Clone, Copy)]
+enum CompiledViews { AllRaw, GeneratorManifest }
 // Only original issued handles are dispatched; the capture loop remains ONE.
 enum CaptureSource<'a, 'b> {
     Compiled(&'a ColdFrontend),
@@ -578,6 +602,7 @@ fn capture_source<P: SnapshotProvider>(
     inputs: &RecordingInputs<P>,
     requested: &[RequestedPolicyFile],
     search_folders: &[PathBuf],
+    compiled_views: CompiledViews,
 ) -> io::Result<CapturedPolicyInputs> {
     let initial = inputs.snapshot()?;
     let raw_digests: BTreeMap<_, _> = initial
@@ -659,6 +684,14 @@ fn capture_source<P: SnapshotProvider>(
             }
         }
         if let Some((compiled, raw_content)) = sources.get(&primary) {
+            // PolicyInputs::capture already installs the exact original
+            // CompilerDecoded file. The workspace generator never uses raw
+            // compiled DM text: its raw questions require separate page proof.
+            if matches!(compiled_views, CompiledViews::GeneratorManifest)
+                && !primary.file_name().is_some_and(|name| name == "deepquarry.dme")
+            {
+                continue;
+            }
             let raw = if compiled.span_fingerprint(0..compiled.len()) == Some(*raw_content) {
                 if compiled.as_bytes().contains(&b'\r') {
                     analyze_raw(compiled.as_bytes())

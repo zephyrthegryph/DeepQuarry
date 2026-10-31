@@ -4,6 +4,7 @@
 //! implementation ([`allow`]), one baseline implementation ([`baseline`]), one on-disk cache
 //! ([`cache`]); every lint is a [`lint::Lint`] in `src/lints/`.
 
+pub mod native_cli_client;
 pub mod allow;
 #[cfg(feature = "legacy-sem")]
 pub mod base_vars_dead;
@@ -175,6 +176,7 @@ pub mod reactive_annotations_policy;
 #[cfg(feature="native-policy")]mod reactive_annotations_native;
 
 #[cfg(feature="native-policy")]mod reactive_policy_facts_native;
+#[cfg(feature="native-policy")]mod reactive_policy_storage;
 
 #[cfg(feature="native-policy")]mod reactive_reads_native;
 
@@ -213,6 +215,21 @@ pub(crate) mod derived_reads_policy;
 pub(crate) mod reactive_rank_policy;
 
 #[cfg(feature="native-policy")]mod reactive_reads_generator_native;
+#[cfg(feature="native-policy")]mod reactive_plans_generator_native;
 
 pub(crate) mod derived_reads_collect_policy;
 #[cfg(feature="native-policy")]mod reactive_derived_generator_native;
+
+#[cfg(feature="native-policy")]pub mod captured_declaration_pages;
+
+#[cfg(feature = "native-policy")]
+pub mod captured_ui_pages;
+
+#[cfg(feature="native-policy")]
+pub mod captured_stats_pages;
+
+#[cfg(feature="native-policy")]
+pub mod captured_actions_pages;
+
+#[cfg(feature="native-policy")]
+pub mod captured_system_accessors_pages;

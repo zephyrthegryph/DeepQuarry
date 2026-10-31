@@ -1205,6 +1205,7 @@ mod parameter_syntax_tests;
 #[derive(Clone,Copy,Debug)]pub enum BorrowedCallableOriginError{Body(&'static str),Projection(&'static str)}
 impl BorrowedCallableOriginError{pub fn message(self)->&'static str{match self{Self::Body(message)|Self::Projection(message)=>message}}fn into_error<E:From<String>+From<&'static str>>(self)->E{match self{Self::Body(message)=>E::from(message),Self::Projection(message)=>E::from(message.to_owned())}}}
 impl BodyArchive{
+    pub fn borrowed_source_note_point(&self,offset:usize)->Result<super::BorrowedSourceNoteOrigin<'_>,&'static str>{self.mapping.borrowed_source_note_point(offset)}
     pub fn callable_note_origin_borrowed_from_parsed(&self,identity:dm_ir::ProcedureIdentity,ordinal:usize,body:&ArchivedBody<'_>)->Result<super::BorrowedSourceNoteOrigin<'_>,BorrowedCallableOriginError>{
         use BorrowedCallableOriginError::Body;
         if self.body_query_host().is_none(){return Err(Body("callable note needs original retained BodySyntax owner"))}

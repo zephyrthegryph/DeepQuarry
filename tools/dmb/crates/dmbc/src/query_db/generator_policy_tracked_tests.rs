@@ -37,7 +37,7 @@ fn cohort_with_collision(db:&Arc<QueryDb>,reads:Arc<AtomicUsize>,list:bool,confi
  let front=dm_tree::frontend::build_with_executor_and_semantic_state_for_policy(
  &root.join("deepquarry.dme"),&inputs,&Default::default(),dm_tree::frontend::FrontendConfig{workers:1,engine:Some(&seed),observer:None},None,&executor,None,true)
  .unwrap().with_body_queries(db.clone());
- let intent=PolicyInputRequest{workspace:None,files:vec![PolicyInputFile{path:root.join("scopes.toml"),role:PolicyInputRole::Configuration,required:false}],search_folders:vec![]}.admit().unwrap();
+ let intent=PolicyInputRequest{workspace_generators:Vec::new(),workspace:None,files:vec![PolicyInputFile{path:root.join("scopes.toml"),role:PolicyInputRole::Configuration,required:false}],search_folders:vec![]}.admit().unwrap();
  let captured=Arc::new(crate::runner_host::policy_capture::capture(&front,&inputs,&intent.capture_files(),&[]).unwrap().bind_request(&intent).unwrap());
  db.raw_cohort(captured,&root,&root.join("scopes.toml")).unwrap()
 }

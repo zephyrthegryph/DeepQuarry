@@ -22,6 +22,7 @@ pub mod input_snapshot;
 pub(crate) mod local_warnings;
 mod procedure_warnings;
 pub mod query_db;
+pub use query_db::GeneratorName;
 pub mod source_checks;
 pub(crate) mod stage_reuse;
 #[cfg(test)]

@@ -40,3 +40,9 @@ impl RawDependencyMarkers{
   crate::captured_marker_rows::collect_file_admitted("code/a.dm","STAT(/datum/a,value)\n",&budget,&["STAT"],true,true,true,&mut rows,&mut count,&mut||Ok::<_,Failure>(())).unwrap();assert_eq!(rows.len(),1);
  }
 }
+
+/// One source-neutral completed data fold. The provider bool is not a source
+/// receipt; actual selected hosts must still consume their own exhausted proof.
+pub(crate) fn collect_marker_rows(walk:impl FnOnce(&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>,order:&HashMap<String,usize>,budget:&Arc<Budget>,names:&[&str],entries:bool,capabilities:bool,runtime:bool,checkpoint:&mut dyn FnMut()->std::io::Result<()>,check:&dyn Fn()->Result<(),Failure>)->Result<crate::captured_marker_rows::Rows<'static>,Failure>{
+ let mut rows=Vec::new();let mut count=0;let completed=walk(&mut|relative,views|{let pending=(||{checkpoint()?;check()?;crate::captured_marker_rows::collect_file_admitted(relative,views.marker()?,budget,names,entries,capabilities,runtime,&mut rows,&mut count,&mut||{checkpoint()?;check()?;Ok::<_,Failure>(())})?;Ok(true)})();if matches!(&pending,Err(Failure::Operational(_))){return pending}if budget.denied(){let message=match pending{Err(Failure::Unsupported(message))=>message,Ok(_)=>"raw marker quota was denied".to_owned(),Err(Failure::Operational(_))=>unreachable!()};return Err(Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))}pending})?;if !completed{return Err("original marker traversal incomplete".into())}check()?;RawDependencyMarkers::from_rows(rows,count).finish(order,budget,checkpoint)
+}

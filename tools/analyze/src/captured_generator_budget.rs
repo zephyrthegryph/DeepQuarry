@@ -29,10 +29,10 @@ impl Budget {
             denied: AtomicBool::new(false),
         }))
     }
-    /// Internal scratch only. The caller must drop all scratch-owned values
+    /// Operation-local source scratch for shared policies and the native host. The caller must drop all scratch-owned values
     /// before the final Arc goes away; escaping graph facts are independently
     /// charged to the parent BEFORE copying. This grants no source authority.
-    pub(crate) fn scoped_temporaries(parent: &Arc<Self>) -> Result<Arc<Self>, String> {
+    pub fn scoped_temporaries(parent: &Arc<Self>) -> Result<Arc<Self>, String> {
         if parent.temporary_parent.is_some() {
             return Err("nested source scratch scopes are not supported".into());
         }
@@ -49,7 +49,7 @@ impl Budget {
     }
     /// An Err/panic may carry scratch-owned data beyond the source callback.
     /// Keep the conservative reservation for the rest of that failed operation.
-    pub(crate) fn keep_failed_scratch(&self) {
+    pub fn keep_failed_scratch(&self) {
         self.refund_temporaries.store(false, Ordering::Release);
     }
     pub fn charge(&self, bytes: usize) -> Result<(), String> {

@@ -35,18 +35,7 @@ fn order<'a>(
     let mut first_name = BTreeMap::new();
     // Include bodyless declarations: an earlier declaration can establish a
     // group's position even when its first executable override comes later.
-    for (index, target) in tree.declarations().iter().enumerate() {
-        if let Target::Member(id) = target {
-            let member = tree
-                .member(*id)
-                .ok_or("checker declaration member absent")?;
-            if matches!(member.kind, MemberKind::Proc | MemberKind::Verb) {
-                first_name
-                    .entry((member.owner, member.name))
-                    .or_insert(index);
-            }
-        }
-    }
+    visit_callable_declarations::<String>(tree,||Ok(()),|owner,name,index|{first_name.entry((owner,name)).or_insert(index);Ok(())})?;
     let mut ordered = Vec::with_capacity(bodies.len());
     for (ordinal, body) in bodies.iter().enumerate() {
         let member = tree
@@ -82,8 +71,16 @@ fn order<'a>(
         .into_iter()
         .map(|(key, body)| (key.4, body))
         .collect())
+
 }
 
 #[cfg(test)]
 #[path = "checker_order_tests.rs"]
 mod tests;
+
+/// One existing original declaration traversal shared by both checked and old
+/// report order. Bodyless declarations establish group rank identically.
+pub(crate) fn visit_callable_declarations<E:From<String>>(tree:&SemanticTree,mut checkpoint:impl FnMut()->Result<(),E>,mut visit:impl FnMut(dm_ir::TypeId,dm_ir::SymbolId,usize)->Result<(),E>)->Result<(),E>{for(index,target)in tree.declarations().iter().enumerate(){checkpoint()?;if let Target::Member(id)=target{let member=tree.member(*id).ok_or_else(||E::from("checker declaration member absent".to_owned()))?;if matches!(member.kind,MemberKind::Proc|MemberKind::Verb){visit(member.owner,member.name,index)?;}}}Ok(())}
+
+#[path="checker_order_checked.rs"]mod checked;
+pub(crate) use checked::{ArchivedOrder,sort_report_projection};

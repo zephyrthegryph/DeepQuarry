@@ -34,6 +34,9 @@ impl WorkspaceCodeWitness{
  pub(crate) fn matches(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,inputs:&dm_analysis::policy_inputs::PolicyInputs)->Result<bool,Failure>{
   matches_capture_witness(&self.capture,capture,scope,inputs)
  }
+ /// Reissue only this actual completed immutable capture proof after current
+ /// scope/input checks; a bool/hash/address cannot mint this private witness.
+ pub(crate) fn reissue(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,inputs:&dm_analysis::policy_inputs::PolicyInputs,admit:&mut dyn FnMut(usize)->io::Result<()>)->Result<Self,Failure>{if !self.matches(capture,scope,inputs)?{return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidData,"completed code proof belongs to another current capture")))}admit(std::mem::size_of::<Self>()+std::mem::size_of::<WorkspaceCapture>()+2*std::mem::size_of::<usize>())?;Ok(Self{capture:Arc::downgrade(capture)})}
  pub(crate) fn visit_storage(&self,mut visit:impl FnMut(usize,usize)){if !self.capture.as_ptr().is_null(){visit(self.capture.as_ptr()as usize,std::mem::size_of::<WorkspaceCapture>()+2*std::mem::size_of::<usize>())}}
 }
 impl WorkspaceGeneratorTestWitness{

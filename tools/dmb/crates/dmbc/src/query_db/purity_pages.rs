@@ -23,22 +23,22 @@ impl NativeEffectPage{
 impl graph_work::RetainedHandle for NativeEffectPage{fn fingerprint(&self,_:Key)->u128{self.payload().facts.report_fingerprint()}type Data=EffectPageFacts;fn coordination_charge()->usize{Self::coordination_charge()}fn issue(facts:EffectPageFacts,ledger:Arc<Mutex<Ledger>>,completion:Arc<std::sync::atomic::AtomicBool>)->Arc<Self>{Arc::new(Self{payload:Some(Arc::new(PagePayload{facts,lease:graph_work::GraphLease{ledger,completion},#[cfg(test)]drop_pause:Mutex::new(None)}))})}fn retained_charge(&self)->Option<usize>{Self::retained_charge(self)}}
 
 struct PageParams{base:Params,start:usize,width:usize,old_edges:usize,dependencies:std::sync::atomic::AtomicUsize}
-fn page_key(input:&EffectInput,start:usize,width:usize)->Key{key(PAGE,input,((start as u128)<<64)|(width as u128))}
+pub(super) fn page_key(input:&EffectInput,start:usize,width:usize)->Key{key(PAGE,input,((start as u128)<<64)|(width as u128))}
 /// Begin with its own window +project/program; callee prefix reads extend
 /// this actual read-set reservation before ctx.note.
 /// Reserve old/new dynamic-edge overlap before ctx.note can allocate. After
 /// Db::get returns/unwinds, the old/new temporary Ctx has physically gone and
 /// only one bounded immutable dependency set remains. No cumulative retry leak.
-struct PageDependencyPeak{ledger:Arc<Mutex<Ledger>>,key:Key,old:usize,actual:usize,committed:bool}
-impl PageDependencyPeak{fn commit(&mut self,actual:usize){self.actual=actual;self.committed=true}}
+pub(super) struct PageDependencyPeak{ledger:Arc<Mutex<Ledger>>,key:Key,pub(super) old:usize,actual:usize,committed:bool}
+impl PageDependencyPeak{pub(super) fn commit(&mut self,actual:usize){self.actual=actual;self.committed=true}}
 impl Drop for PageDependencyPeak{fn drop(&mut self){let actual=self.actual;if let Some(node)=self.ledger.lock().unwrap_or_else(|e|e.into_inner()).nodes.get_mut(&self.key){node.observed_edges=if self.committed&&actual!=0{actual}else{self.old};}}}
-fn reserve_dependencies(ledger:&Arc<Mutex<Ledger>>,key:Key,count:usize)->Result<PageDependencyPeak,String>{
+pub(super) fn reserve_dependencies(ledger:&Arc<Mutex<Ledger>>,key:Key,count:usize)->Result<PageDependencyPeak,String>{
  let minimum=count.checked_add(2).ok_or("effect page dependency count overflow")?;let mut l=ledger.lock().unwrap_or_else(|e|e.into_inner());let old=l.nodes.get(&key).ok_or("effect page node was not reserved")?.observed_edges;let peak=old.checked_add(minimum.checked_mul(2).ok_or("effect page dependency peak overflow")?).ok_or("effect page dependency overlap overflow")?;
  l.admit(peak.saturating_sub(old).checked_mul(EDGE_BOUND).ok_or("effect page dependency admission overflow")?)?;l.nodes.get_mut(&key).unwrap().observed_edges=peak;Ok(PageDependencyPeak{ledger:Arc::clone(ledger),key,old,actual:0,committed:false})
 }
 /// Callee settings/return proofs can demand additional ORIGINAL Kind4 inputs.
 /// Reserve actual old/new Ctx overlap BEFORE the next unique dynamic read.
-fn reserve_actual_dependency(ledger:&Arc<Mutex<Ledger>>,key:Key,old:usize,next:usize,live:&ExecutionAdmission,initial:usize)->std::io::Result<()>{
+pub(super) fn reserve_actual_dependency(ledger:&Arc<Mutex<Ledger>>,key:Key,old:usize,next:usize,live:&ExecutionAdmission,initial:usize)->std::io::Result<()>{
  #[cfg(not(test))]let _=initial;
  crate::daemon::control::checkpoint()?;let mut l=ledger.lock().unwrap_or_else(|e|e.into_inner());let requested=old.checked_add(next.checked_mul(2).ok_or_else(||std::io::Error::new(std::io::ErrorKind::OutOfMemory,"effect page dynamic dependency overflow"))?).ok_or_else(||std::io::Error::new(std::io::ErrorKind::OutOfMemory,"effect page dynamic dependency overlap overflow"))?;let current=l.nodes.get(&key).ok_or_else(||std::io::Error::other("effect page dynamic node unavailable"))?.observed_edges;
  let delta=requested.saturating_sub(current).checked_mul(EDGE_BOUND).ok_or_else(||std::io::Error::new(std::io::ErrorKind::OutOfMemory,"effect page dynamic edge admission overflow"))?;
@@ -100,18 +100,47 @@ impl QueryDb{
 
 /// Same actual child getter, used under an already-held outer purity gate.
 /// No nested public host/get/gate/reset or independent source read occurs.
-pub(super) fn obtain(ctx:&mut dm_query::Ctx<'_>,ledger:&Arc<Mutex<Ledger>>,input:&Arc<EffectInput>,sources:&Arc<Vec<Key>>,start:usize,width:usize)->Result<Arc<NativeEffectPage>,ReadFailure>{
+pub(super) fn obtain(ctx:&mut dm_query::Ctx<'_>,ledger:&Arc<Mutex<Ledger>>,input:&Arc<EffectInput>,sources:&Arc<Vec<Key>>,start:usize,width:usize)->Result<Arc<NativeEffectPage>,ReadFailure>{obtain_using(ctx,ledger,input,sources,start,width,true)}
+/// Report readers reuse the SAME detached Kind23 metadata while it fits. The
+/// graph consumer still explicitly retires each consumed page as before.
+pub(super) fn obtain_retained(ctx:&mut dm_query::Ctx<'_>,ledger:&Arc<Mutex<Ledger>>,input:&Arc<EffectInput>,sources:&Arc<Vec<Key>>,start:usize,width:usize)->Result<Arc<NativeEffectPage>,ReadFailure>{obtain_using(ctx,ledger,input,sources,start,width,false)}
+fn obtain_using(ctx:&mut dm_query::Ctx<'_>,ledger:&Arc<Mutex<Ledger>>,input:&Arc<EffectInput>,sources:&Arc<Vec<Key>>,start:usize,width:usize,retire:bool)->Result<Arc<NativeEffectPage>,ReadFailure>{
  let source=EffectSource::new(input.archive(),input.profile()).map_err(|error|policy_read_failure(page_key(input,start,width),error))?;
  if width==0||width>dm_analysis::checker_effects::MAX_EVENTS||start>=source.len(){return Err("nested effect page range outside original source".into())}
- let key=page_key(input,start,width);let count=width.min(source.len()-start);let _node=node_admission(ledger,input,key,std::mem::size_of::<PageParams>())?;let mut peak=reserve_dependencies(ledger,key,count)?;
+ let key=page_key(input,start,width);if !retire{retire_report_pages_under_pressure(ctx,ledger,key).map_err(|actual|ReadFailure::Query(QueryError::operational(key,actual)))?;}let count=width.min(source.len()-start);let _node=node_admission(ledger,input,key,std::mem::size_of::<PageParams>())?;let mut peak=reserve_dependencies(ledger,key,count)?;
  let params=Arc::new(PageParams{base:Params{input:Arc::downgrade(input),key,ordinal:0,sources:sources.clone(),policy:Weak::new()},start,width,old_edges:peak.old,dependencies:std::sync::atomic::AtomicUsize::new(0)});remember_params(ledger,input,key,&params);
  let retained=ctx.get::<Result<Arc<NativeEffectPage>,String>>(key,params.clone()).map_err(ReadFailure::Query)?;peak.commit(params.dependencies.load(std::sync::atomic::Ordering::Acquire));let value=retained.as_ref().clone().map_err(ReadFailure::Semantic)?;
  crate::daemon::control::checkpoint().map_err(|actual|ReadFailure::Query(QueryError::operational(key,actual)))?;value.validate(&source).map_err(|error|policy_read_failure(key,error))?;
  if value.start()!=start||value.len()==0||value.len()>count{return Err("nested effect page returned another original range".into())}
  // Evict only the actual successfully validated retained child. Its Arc loan
  // keeps the physical page payload/lease funded until this consumer drops it.
- ctx.evict_value_if_current(key,&retained);Ok(value)
+ if retire{ctx.evict_value_if_current(key,&retained);}Ok(value)
 }
 pub(super) fn restore_graph_error(ledger:&Arc<Mutex<Ledger>>,error:QueryError)->std::io::Error{match error.into_operational(){Ok(actual)=>actual.into_io(),Err(error)=>{if let Err(actual)=crate::daemon::control::checkpoint(){return actual}if ledger.lock().unwrap_or_else(|e|e.into_inner()).denied{return std::io::Error::new(std::io::ErrorKind::OutOfMemory,"native effect graph family admission exhausted")}std::io::Error::other(PageGraphFailure(error))}}}
 
 #[cfg(test)]impl QueryDb{pub(crate) fn effect_page_outcome_hash_for_test(&self,input:&EffectInput,start:usize,width:usize)->u128{let key=page_key(input,start,width);let params=self.purity.ledger.lock().unwrap_or_else(|e|e.into_inner()).nodes.get(&key).and_then(|node|node.params.as_ref()).and_then(Weak::upgrade).expect("actual previously issued PAGE params remain in same Db");self.db.hash(key,params).expect("actual current PAGE outcome")}}
+
+/// A soft cache watermark, not an admission limit or promised page capacity.
+/// Actual page/scratch/output allocations still use the unchanged SAME64MiB
+/// ledger. Retiring a cached value never credits escaped physical page loans.
+fn retire_report_pages_under_pressure(ctx:&dm_query::Ctx<'_>,ledger:&Arc<Mutex<Ledger>>,current:Key)->std::io::Result<()>{
+ const HEADROOM:usize=BUDGET/16;
+ let mut first=None;
+ loop{
+  crate::daemon::control::checkpoint()?;
+  let candidate={let mut l=ledger.lock().unwrap_or_else(|e|e.into_inner());let occupied=l.live_bytes().saturating_add(l.metadata());if occupied.saturating_add(HEADROOM)<=BUDGET{return Ok(())}
+   use std::ops::Bound::{Excluded,Included};let low=Key::new(PAGE,0);let high=Key::new(PAGE,u128::MAX);let after=l.page_retirement_cursor.filter(|key|key.kind==PAGE);let next=match after{Some(after)=>l.nodes.range((Excluded(after),Included(high))).next(),None=>l.nodes.range(low..=high).next()}.or_else(||l.nodes.range(low..=high).next()).map(|(&key,_)|key);let Some(next)=next else{return Ok(())};if first==Some(next){return Ok(())}if first.is_none(){first=Some(next)}l.page_retirement_cursor=Some(next);next};
+  if candidate==current{continue}
+  let Some(retained)=ctx.retained_value::<Result<Arc<NativeEffectPage>,String>>(candidate)else{continue};
+  // Alias counts are sampled cache pressure eligibility, never a hard physical
+  // no-alias guarantee. Real retained leases survive all concurrent Arc loans.
+  let consumed=Arc::strong_count(&retained)==2&&retained.as_ref().as_ref().map_or(true,|page|Arc::strong_count(page)==1);
+  if consumed{ctx.evict_value_if_current(candidate,&retained);}
+  // NativeEffectPage frees the actual metadata before setting completion. Only
+  // the next live_bytes pass may then credit its existing ledger row.
+  drop(retained);
+ }
+}
+
+#[cfg(test)]pub(crate) struct PageCachePressureForTest{_work:graph_work::GraphWork}
+#[cfg(test)]impl QueryDb{pub(crate) fn hold_effect_page_cache_pressure_for_test(&self)->std::io::Result<PageCachePressureForTest>{let _gate=self.purity.gate.lock().unwrap_or_else(|e|e.into_inner());let available={let mut l=self.purity.ledger.lock().unwrap_or_else(|e|e.into_inner());BUDGET.saturating_sub(l.live_bytes().saturating_add(l.metadata()))};let mut work=graph_work::GraphWork::new(self.purity.ledger.clone(),Key::new(PAGE,u128::MAX));work.reserve(available.saturating_sub(BUDGET/32))?;Ok(PageCachePressureForTest{_work:work})}}

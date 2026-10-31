@@ -168,10 +168,11 @@ impl Builder {
             .expect("legacy generator has no operational cancellation")
     }
     pub fn finish_checked(
-        mut self,
-        mut membership: impl FnMut(&str, &str) -> bool,
-        mut checkpoint: impl FnMut() -> Result<(), String>,
-    ) -> Result<Output, String> {
+        self,
+        membership: impl FnMut(&str, &str) -> bool,
+        checkpoint: impl FnMut() -> Result<(), String>,
+    ) -> Result<Output, String> {self.finish_with(membership,checkpoint)}
+    pub fn finish_with<E:From<String>>(mut self,mut membership:impl FnMut(&str,&str)->bool,mut checkpoint:impl FnMut()->Result<(),E>)->Result<Output,E>{
         checkpoint()?;
         if let Some(b) = &self.budget {
             // Stable sort's temporary element storage is covered before sorting.

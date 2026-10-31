@@ -31,20 +31,26 @@ impl ExecutionAdmission{
   if self.is_denied(){return Err(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"effect shared operation already denied"))}Ok(())
  }
 }
-pub(crate) struct ReportBudget {
+pub(crate) struct ReportBudgetWith<'op,E>{
+    observer:Option<&'op dyn Fn(usize)->Result<(),E>>,
+    retained_rows:Cell<usize>,
     used: Cell<usize>,
     limit: usize,
     denied: Cell<bool>,
     admission: ExecutionAdmission,
 }
+pub(crate) type ReportBudget=ReportBudgetWith<'static,String>;
 impl Default for ReportBudget {
     fn default() -> Self {
         Self::new(RESULT_BUDGET)
     }
 }
-impl ReportBudget {
+impl<'op,E:From<String>+From<&'static str>> ReportBudgetWith<'op,E>{
+    pub(crate) fn observed(admission:&ExecutionAdmission,observer:&'op dyn Fn(usize)->Result<(),E>)->Self{let mut budget=Self::for_operation(admission);budget.observer=Some(observer);budget}
+
     pub(crate) fn for_operation(admission: &ExecutionAdmission) -> Self {
         Self {
+            observer:None,retained_rows:Cell::new(0),
             used: Cell::new(0),
             limit: admission.limit,
             denied: Cell::new(admission.is_denied()),
@@ -61,13 +67,17 @@ impl ReportBudget {
 
     fn new(limit: usize) -> Self {
         Self {
+            observer:None,retained_rows:Cell::new(0),
             used: Cell::new(0),
             limit,
             denied: Cell::new(false),
             admission: ExecutionAdmission::default(),
         }
     }
-    pub(crate) fn charge(&self, bytes: usize) -> Result<(), String> {
+    pub(crate) fn observes_allocations(&self)->bool{self.observer.is_some()}
+    fn capacity_bound(&self,requested:usize)->Result<usize,E>{if self.observer.is_some(){requested.checked_mul(4).ok_or_else(||E::from("effect observed allocation capacity overflow"))}else{Ok(requested)}}
+    fn check_capacity(&self,exposed:usize,bound:usize)->Result<(),E>{if self.observer.is_some()&&exposed>bound{self.deny();return Err("effect observed allocation exposed excess capacity".into())}Ok(())}
+    pub(crate) fn charge(&self, bytes: usize) -> Result<(), E> {
         if self.denied.get() || self.admission.is_denied() {
             return Err("effect transient execution admission exhausted".into());
         }
@@ -77,6 +87,7 @@ impl ReportBudget {
             .checked_add(bytes)
             .filter(|n| n.checked_add(self.admission.external_delta()).is_some_and(|total|total<=self.limit));
         if let Some(n) = n {
+            if let Some(observe)=self.observer{observe(bytes)?;}
             self.used.set(n);
             Ok(())
         } else {
@@ -84,7 +95,7 @@ impl ReportBudget {
             Err("effect transient execution admission exhausted".into())
         }
     }
-    pub(crate) fn format(&self, args: fmt::Arguments<'_>) -> Result<String, String> {
+    pub(crate) fn format(&self, args: fmt::Arguments<'_>) -> Result<String, E> {
         struct Count {
             len: usize,
             limit: usize,
@@ -111,12 +122,13 @@ impl ReportBudget {
             self.deny();
             return Err("effect transient formatting admission exhausted".into());
         }
-        self.charge(count.len.saturating_add(64))?;
+        let admitted=self.capacity_bound(count.len)?;self.charge(admitted.checked_add(64).ok_or("effect text reservation overflow")?)?;
         let mut s = String::new();
         s.try_reserve_exact(count.len).map_err(|_| {
             self.deny();
             "effect transient text allocation refused"
         })?;
+        self.check_capacity(s.capacity(),admitted)?;
         fmt::write(&mut s, args).map_err(|_| {
             self.deny();
             "effect transient text formatting failed"
@@ -127,11 +139,12 @@ impl ReportBudget {
         }
         Ok(s)
     }
-    pub(crate) fn reserve_slot<T>(&self, v: &mut Vec<T>) -> Result<(), String> {
+    pub(crate) fn reserve_slot<T>(&self, v: &mut Vec<T>) -> Result<(), E> {
         if v.len() == v.capacity() {
             let cap = v.capacity().checked_mul(2).unwrap_or(usize::MAX).max(4);
+            let admitted=self.capacity_bound(cap)?;
             self.charge(
-                cap.checked_mul(std::mem::size_of::<T>())
+                admitted.checked_mul(std::mem::size_of::<T>())
                     .and_then(|n| n.checked_add(64))
                     .ok_or("effect vector size overflow")?,
             )?;
@@ -140,19 +153,21 @@ impl ReportBudget {
                     self.deny();
                     "effect transient vector allocation refused"
                 })?;
+            self.check_capacity(v.capacity(),admitted)?;
         }
         Ok(())
     }
-    pub(crate) fn push<T>(&self, v: &mut Vec<T>, value: T) -> Result<(), String> {
+    pub(crate) fn push<T>(&self, v: &mut Vec<T>, value: T) -> Result<(), E> {
         self.reserve_slot(v)?;
         v.push(value);
         Ok(())
     }
-    pub(crate) fn queue<T>(&self, v: &mut VecDeque<T>, value: T) -> Result<(), String> {
+    pub(crate) fn queue<T>(&self, v: &mut VecDeque<T>, value: T) -> Result<(), E> {
         if v.len() == v.capacity() {
             let cap = v.capacity().checked_mul(2).unwrap_or(usize::MAX).max(4);
+            let admitted=self.capacity_bound(cap)?;
             self.charge(
-                cap.checked_mul(std::mem::size_of::<T>())
+                admitted.checked_mul(std::mem::size_of::<T>())
                     .and_then(|n| n.checked_add(64))
                     .ok_or("effect queue size overflow")?,
             )?;
@@ -161,24 +176,26 @@ impl ReportBudget {
                     self.deny();
                     "effect transient queue allocation refused"
                 })?;
+            self.check_capacity(v.capacity(),admitted)?;
         }
         v.push_back(value);
         Ok(())
     }
-    pub(crate) fn insert<T: Ord>(&self, set: &mut BTreeSet<T>, value: T) -> Result<bool, String> {
+    pub(crate) fn insert<T: Ord>(&self, set: &mut BTreeSet<T>, value: T) -> Result<bool, E> {
         // Current Rust BTree node layout is private. This conservative bound
         // covers the fixed scalar EffectTarget/usize tuples admitted here.
         self.charge(1024usize.saturating_add(std::mem::size_of::<T>()))?;
         Ok(set.insert(value))
     }
-    pub(crate) fn path(&self, path: &[CallEdge], edge: &CallEdge) -> Result<Vec<CallEdge>, String> {
+    pub(crate) fn path(&self, path: &[CallEdge], edge: &CallEdge) -> Result<Vec<CallEdge>, E> {
         let len = path
             .len()
             .checked_add(1)
             .filter(|n| *n <= MAX_EVENTS)
             .ok_or("effect call path exceeds admission")?;
+        let admitted=self.capacity_bound(len)?;
         self.charge(
-            len.checked_mul(std::mem::size_of::<CallEdge>())
+            admitted.checked_mul(std::mem::size_of::<CallEdge>())
                 .and_then(|n| n.checked_add(64))
                 .ok_or("effect path size overflow")?,
         )?;
@@ -187,23 +204,31 @@ impl ReportBudget {
             self.deny();
             "effect path allocation refused"
         })?;
+        self.check_capacity(next.capacity(),admitted)?;
         next.extend_from_slice(path);
         next.push(edge.clone());
         Ok(next)
     }
-    pub(crate) fn annotation(&self, note: &Note) -> Result<Vec<Note>, String> {
+
+
+    pub(crate) fn record_output(&self,row:&Produced)->Result<(),E>{if self.observes_allocations(){let next=self.retained_rows.get().checked_add(storage::produced_capacity_bound(row)).ok_or("effect report output row retention overflow")?;self.retained_rows.set(next);}Ok(())}
+    pub(crate) fn output_bound(&self,rows:&Vec<Produced>)->Result<usize,E>{if !self.observes_allocations(){return Ok(0)}self.retained_rows.get().checked_add(rows.capacity().checked_mul(std::mem::size_of::<Produced>()).ok_or("effect report output buffer overflow")?).and_then(|n|n.checked_add(std::mem::size_of::<Vec<Produced>>()+128)).ok_or_else(||E::from("effect report output retention overflow"))}
+    pub(crate) fn retire_scope(&self,marked_used:usize,retained_delta:usize)->Result<(),E>{if !self.observes_allocations(){return Ok(())}let kept=marked_used.checked_add(retained_delta).filter(|kept|*kept<=self.used.get()).ok_or_else(||{self.deny();E::from("effect report retained scope exceeds original reservation")})?;self.used.set(kept);Ok(())}
+    pub(crate) fn point(&self,point:&SourceNoteOrigin)->Result<SourceNoteOrigin,E>{if self.observes_allocations(){let bytes=std::mem::size_of::<SourceNoteOrigin>().checked_add(std::mem::size_of::<std::path::PathBuf>()).and_then(|n|n.checked_add(point.path.capacity())).and_then(|n|n.checked_add(128+2*std::mem::size_of::<usize>())).ok_or("effect report path retention overflow")?;self.charge(bytes)?;}Ok(point.clone())}
+    fn optional_point(&self,point:&Option<SourceNoteOrigin>)->Result<Option<SourceNoteOrigin>,E>{point.as_ref().map(|point|self.point(point)).transpose()}
+    pub(crate) fn annotation(&self, note: &Note) -> Result<Vec<Note>, E> {
         let message = self.format(format_args!("{}", note.message))?;
         let mut notes = Vec::new();
         self.push(
             &mut notes,
             Note {
                 message,
-                source: note.source.clone(),
+                source: self.optional_point(&note.source)?,
             },
         )?;
         Ok(notes)
     }
-    pub(crate) fn diagnostic(&self, row: &Diagnostic) -> Result<Diagnostic, String> {
+    pub(crate) fn diagnostic(&self, row: &Diagnostic) -> Result<Diagnostic, E> {
         let message = self.format(format_args!("{}", row.message))?;
         let mut notes = Vec::new();
         for n in &row.notes {
@@ -211,7 +236,7 @@ impl ReportBudget {
                 &mut notes,
                 Note {
                     message: self.format(format_args!("{}", n.message))?,
-                    source: n.source.clone(),
+                    source: self.optional_point(&n.source)?,
                 },
             )?
         }
@@ -225,10 +250,10 @@ impl ReportBudget {
         })
     }
 }
-pub(crate) fn initial_queue(
+pub(crate) fn initial_queue<E:From<String>+From<&'static str>>(
     calls: &[CallEdge],
-    budget: &ReportBudget,
-) -> Result<VecDeque<(EffectTarget, Vec<CallEdge>)>, String> {
+    budget: &ReportBudgetWith<'_,E>,
+) -> Result<VecDeque<(EffectTarget, Vec<CallEdge>)>, E> {
     let mut queue = VecDeque::new();
     for edge in calls {
         budget.queue(&mut queue, (edge.callee, budget.path(&[], edge)?))?
@@ -321,4 +346,9 @@ mod tests {
   let admission=ExecutionAdmission::with_limit(1024);let page=ReportBudget::for_operation(&admission);page.charge(700).unwrap();let child=page.admission_view();let body=ReportBudget::for_operation(&child);body.charge(250).unwrap();let live=body.admission_view();assert_eq!(live.available(),74);assert!(live.reserve_external(75).is_err());assert!(admission.is_denied());
   let fresh=ExecutionAdmission::with_limit(1024);let page=ReportBudget::for_operation(&fresh);page.charge(700).unwrap();let child=page.admission_view();let body=ReportBudget::for_operation(&child);body.charge(250).unwrap();body.admission_view().reserve_external(64).unwrap();assert_eq!(body.remaining(),10);assert_eq!(page.remaining(),260);drop(body);let nested=page.admission_view();let next=ReportBudget::for_operation(&nested);next.charge(260).unwrap();assert_eq!(next.remaining(),0,"already excluded metadata must not be charged twice");
  }
+}
+
+#[cfg(test)]mod observed_report_tests{use super::*;use crate::policy_body_demand::PolicyFailure;use std::{cell::Cell,io};
+ #[test]fn typed_report_observer_failure_precedes_real_vector_and_text_allocation_without_string_transport(){let calls=Cell::new(0);let fail=|_:usize|{calls.set(calls.get()+1);Err(PolicyFailure::Operational(io::Error::from_raw_os_error(1450)))};let a=ExecutionAdmission::default();let budget=ReportBudgetWith::observed(&a,&fail);let mut rows=Vec::<usize>::new();let error=budget.push(&mut rows,7).unwrap_err();assert!(matches!(error,PolicyFailure::Operational(ref e)if e.raw_os_error()==Some(1450)));assert_eq!(rows.capacity(),0);assert_eq!(budget.used(),0);let text=budget.format(format_args!("whole original diagnostic {}",7)).unwrap_err();assert!(matches!(text,PolicyFailure::Operational(ref e)if e.raw_os_error()==Some(1450)));assert_eq!(budget.used(),0);assert_eq!(calls.get(),2);let healthy=|_:usize|Ok::<(),PolicyFailure>(());let retry=ReportBudgetWith::observed(&a,&healthy);retry.push(&mut rows,7).unwrap();assert_eq!(rows,[7]);assert_eq!(retry.format(format_args!("whole original diagnostic {}",7)).unwrap(),"whole original diagnostic 7");}
+ #[test]fn typed_report_local_refusal_precedes_external_reservation_and_remains_sticky(){let admission=ExecutionAdmission::with_limit(1);let no=|_:usize|->Result<(),PolicyFailure>{panic!("local headroom must refuse before family observer")};let budget=ReportBudgetWith::observed(&admission,&no);let mut rows=Vec::<usize>::new();assert!(matches!(budget.push(&mut rows,1),Err(PolicyFailure::Unsupported(_))));assert!(admission.is_denied());assert_eq!(rows.capacity(),0);}
 }

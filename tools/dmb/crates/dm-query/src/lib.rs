@@ -771,6 +771,9 @@ impl Ctx<'_> {
 
     /// Release derived child payloads; hashes and already recorded dynamic
     /// dependency edges remain. Caller-held Arc loans retain their payload.
+    /// Resource-only inspection of the exact cached physical owner. This does
+    /// not record a semantic read; an actual query still uses get/hash.
+    pub fn retained_value<T:Any+Send+Sync>(&self,key:Key)->Option<Arc<T>>{self.db.retained_value(key)}
     pub fn evict_values(&self,kinds:&[Kind])->usize{self.db.evict_values(kinds)}
     pub fn evict_value_if_current<T:Any+Send+Sync>(&self,key:Key,expected:&Arc<T>)->usize{self.db.evict_value_if_current(key,expected)}
 

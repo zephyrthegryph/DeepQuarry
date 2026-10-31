@@ -178,10 +178,13 @@ impl Builder {
             .unwrap_or_default();
         self.rows.push((owner, name, kind, rel.to_string(), line));
     }
-    pub fn finish(self) -> Output {
-        let Self { mut rows, mut out } = self;
+    pub fn finish(self)->Output{self.finish_with(&mut||Ok::<(),std::convert::Infallible>(())).unwrap_or_else(|never|match never{})}
+    /// Same output policy; checkpoint failures never use String transport.
+    pub fn finish_with<E>(self,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<Output,E>{
+        checkpoint()?;let Self { mut rows, mut out } = self;
         rows.sort();
         for w in rows.windows(2) {
+            checkpoint()?;
             if w[0].0 == w[1].0 && w[0].1 == w[1].1 {
                 out.diag_fmt(
                     &w[1].3,
@@ -199,6 +202,7 @@ impl Builder {
         out.line("	var/static/list/rows = list(");
         let last = rows.len().saturating_sub(1);
         for (i, (owner, name, kind, _, _)) in rows.iter().enumerate() {
+            checkpoint()?;
             let comma = if i == last { "" } else { "," };
             out.line_fmt(format_args!(
                 "		list({}, \"{}\", \"{}\"){}",
@@ -207,7 +211,7 @@ impl Builder {
         }
         out.line("	)");
         out.line("	return rows");
-        out
+        checkpoint()?;Ok(out)
     }
 }
 
@@ -256,4 +260,10 @@ mod captured_format_tests {
         assert!(b.denied());
         assert!(out.diags.is_empty());
     }
+}
+
+#[cfg(test)]mod typed_finish_tests{use super::*;mod original{include!("sparse_slots_original_finish.rs");}
+ fn fixture()->Builder{let mut out=Builder::default();for(rel,line,args)in[("code/z.dm",7,vec!["/datum/probe","slot","type = /datum"]),("code/a.dm",3,vec!["/datum/probe","slot","type = /list"]),("code/b.dm",4,vec!["/datum/probe","next","type = /datum"]),("code/c.dm",2,vec!["wrong","bad-name"])]{out.push(rel,line,&args.into_iter().map(str::to_owned).collect::<Vec<_>>());}out}
+ #[test]fn typed_sparse_finish_preserves_entire_original_output_diagnostic_order_and_actual_io(){let expected=original::finish(fixture());let current=fixture().finish_with(&mut||Ok::<(),std::io::Error>(())).unwrap();assert_eq!(current,expected);assert!(!current.diags.is_empty());let mut polls=0;let error=fixture().finish_with(&mut||{polls+=1;if polls==2{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(())}}).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(fixture().finish_with(&mut||Ok::<(),std::io::Error>(())).unwrap(),expected);}
+ #[test]fn typed_sparse_original_projection_is_exact(){let original=include_str!("sparse_slots_original_finish.reference");let projected=original.replace("pub fn finish(self) -> Output","pub fn finish(builder:Builder) -> Output").replace("let Self { mut rows, mut out } = self;","let Builder { mut rows, mut out } = builder;");assert_eq!(include_str!("sparse_slots_original_finish.rs"),format!("use super::*;\n{projected}"));}
 }

@@ -42,12 +42,12 @@ pub(crate) fn defined_type(line: &str) -> Option<&str> {
 
 /// Source-free exact test-minus-production fold. File coverage remains the
 /// caller's discovery obligation; CODE_DM completion alone is not all-DM proof.
-#[derive(Default)]pub(crate) struct TestTypeCollector{test:std::collections::BTreeSet<String>,production:std::collections::HashSet<String>}
+#[derive(Default)]pub struct TestTypeCollector{test:std::collections::BTreeSet<String>,production:std::collections::HashSet<String>}
 impl TestTypeCollector{
  pub(crate) fn eligible(relative:&str)->bool{relative.ends_with(".dm")&&!relative.starts_with("code/engine/_generated")&&!relative.starts_with("code/_generated/")}
  pub(crate) fn insert_owned(&mut self,is_test:bool,name:String){if is_test{self.test.insert(name);}else{self.production.insert(name);}}
- pub(crate) fn observe<C:crate::key_policy_control::Control>(&mut self,relative:&str,text:&str,control:&mut C)->Result<(),C::Error>{control.checkpoint()?;if !Self::eligible(relative){return Ok(())}let is_test=test_only(relative);for line in text.lines(){control.checkpoint()?;if let Some(name)=defined_type(line){if (is_test&&self.test.contains(name))||(!is_test&&self.production.contains(name)){continue}crate::key_policy_control::reserve(control,||name.len().checked_mul(4).and_then(|n|n.checked_add(1024)))?;self.insert_owned(is_test,crate::key_policy_control::own(control,name)?);}}control.checkpoint()}
- pub(crate) fn finish(mut self)->std::collections::BTreeSet<String>{self.test.retain(|name|!self.production.contains(name));self.test}
+ pub fn observe<C:crate::key_policy_control::Control>(&mut self,relative:&str,text:&str,control:&mut C)->Result<(),C::Error>{control.checkpoint()?;if !Self::eligible(relative){return Ok(())}let is_test=test_only(relative);for line in text.lines(){control.checkpoint()?;if let Some(name)=defined_type(line){if (is_test&&self.test.contains(name))||(!is_test&&self.production.contains(name)){continue}crate::key_policy_control::reserve(control,||name.len().checked_mul(4).and_then(|n|n.checked_add(1024)))?;self.insert_owned(is_test,crate::key_policy_control::own(control,name)?);}}control.checkpoint()}
+ pub fn finish(mut self)->std::collections::BTreeSet<String>{self.test.retain(|name|!self.production.contains(name));self.test}
 }
 
 #[cfg(all(test,feature="legacy-sem"))]

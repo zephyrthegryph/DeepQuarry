@@ -69,32 +69,9 @@ impl<'a> BorrowedUiTypes<'a> {
                 line_starts: &m.line_starts,
             });
         }
-        let stopped = std::cell::RefCell::new(None);
-        let callback = std::cell::RefCell::new(&mut checkpoint);
-        let poll = || {
-            if stopped.borrow().is_some() {
-                return false;
-            }
-            match (callback.borrow_mut())() {
-                Ok(()) => true,
-                Err(e) => {
-                    *stopped.borrow_mut() = Some(e);
-                    false
-                }
-            }
-        };
-        let input = Input {
-            markers: &views,
-            budget: Some(self.budget.clone()),
-            poll: Some(&poll),
-        };
-        let generated = crate::ui_types_policy::generate(&input);
-        if let Some(error) = stopped.borrow_mut().take() {
-            return Err(error);
-        }
-        let out = generated?;
+        let input=Input{markers:&views,budget:Some(self.budget.clone()),poll:None};
+        let out=crate::ui_types_policy::generate_with(&input,&mut checkpoint)?;
         drop(input);
-        drop(callback);
         self.budget.require()?;
         intact(self.raw)?;
         checkpoint()?;

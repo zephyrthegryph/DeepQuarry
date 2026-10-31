@@ -365,6 +365,7 @@ impl SourceFile {
     /// Peak for only the existing raw/marker/code views. The source backing
     /// itself is counted by the host's live-original census, not this amount.
     #[cfg(feature="native-policy")]
+    pub(crate) fn raw_policy_clean_bound(text:&str)->Option<usize>{captured_budget::transform_bound(text,6)}
     pub(crate) fn raw_policy_view_extra_bound(rel:&str,abs:&Path,text:&str)->Option<usize>{
         let lines=text.bytes().filter(|b|*b==b'\n').count().checked_add(1)?;
         std::mem::size_of::<SourceFile>().checked_add(std::mem::size_of::<Data>())?

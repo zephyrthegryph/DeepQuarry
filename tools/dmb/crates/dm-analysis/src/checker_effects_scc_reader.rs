@@ -2,7 +2,7 @@
 //! No page SCC, reverse-edge copy, procedure model or parser is stored here.
 //! A source producer still owns current archive/profile/edge proof; these scalar
 //! component numbers alone never admit a source query or executable cache hit.
-use super::{ExecutionAdmission,ReportBudget};
+use super::{fingerprint,ExecutionAdmission,ReportBudget};
 use crate::policy_body_demand::PolicyFailure;
 use std::{io,mem::size_of};
 const NONE:u32=u32::MAX;
@@ -109,6 +109,8 @@ impl CompactEffectSummary<'_>{
 /// graph/current witness alongside this moved result before exposing reports.
 pub struct OwnedCompactEffectSummary{component:Vec<u32>,effect:Vec<bool>}
 impl OwnedCompactEffectSummary{
+ pub fn content_fingerprint(&self)->u128{let mut hash=fingerprint::Fingerprint::new(b"original-effect-global-summary-fields-v1");hash.usize(self.component.len());for value in &self.component{hash.u32(*value)}hash.usize(self.effect.len());for value in &self.effect{hash.byte(u8::from(*value))}hash.finish()}
+
  pub fn node_has_effect(&self,node:usize)->Option<bool>{self.effect.get(*self.component.get(node)? as usize).copied()}
  pub fn len(&self)->usize{self.component.len()}
  pub fn retained_charge(&self)->Option<usize>{size_of::<Self>().checked_add(self.component.capacity().checked_mul(size_of::<u32>())?)?.checked_add(self.effect.capacity())}

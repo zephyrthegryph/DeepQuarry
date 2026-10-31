@@ -75,6 +75,7 @@ struct RequestKey {
     command: RequestCommand,
     diagnostic_declarations: bool,
     original_source_questions: bool,
+    workspace_generators: Vec<crate::GeneratorName>,
     defines: BTreeMap<String, String>,
     engine: Option<EngineIdentity>,
     bootstrap: bool,
@@ -84,11 +85,12 @@ struct RequestKey {
     record_inputs: Option<PathBuf>,
 }
 impl RequestKey {
-    fn of(request: &crate::request::BuildRequest, manifest: &std::path::Path) -> Self {
+    fn of(request: &crate::request::BuildRequest, manifest: &std::path::Path, generators:&[crate::GeneratorName]) -> Self {
         Self {
             command: request.command.into(),
             diagnostic_declarations: request.diagnostic_declarations,
             original_source_questions: request.source_questions.is_some(),
+            workspace_generators: generators.to_vec(),
             defines: request.defines.clone(),
             engine: request.engine_template.as_deref().map(EngineIdentity::of),
             bootstrap: request.bootstrap_catalog,
@@ -1014,6 +1016,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                             | super::query::SourceQuery::NativeAnalyzePolicyFixture { .. }
                             | super::query::SourceQuery::NativeNamedRule { .. }
                             | super::query::SourceQuery::NativeConfiguredChecker { .. }
+                            | super::query::SourceQuery::NativeEffectReports { .. } | super::query::SourceQuery::NativeEffectReportBytes { .. } | super::query::SourceQuery::NativeGeneratorBytes { .. }
                             | super::query::SourceQuery::NativeConfiguredControlBatch { .. }
                             | super::query::SourceQuery::NativeConfiguredVariableVisibility { .. }
                     )
@@ -1091,9 +1094,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                     )),
                 );
             }
-            if let Err(error) = super::build_admission::validate(&request) {
-                return protocol::send(&mut stream, &Reply::Rejected(error));
-            }
+            let admitted_policy=match super::build_admission::validate(&request){Ok(policy)=>policy,Err(error)=>return protocol::send(&mut stream,&Reply::Rejected(error))};
             if request.trace_path.is_some() {
                 return protocol::send(
                     &mut stream,
@@ -1130,7 +1131,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                     );
                 }
             };
-            let key = RequestKey::of(&request, &path);
+            let key = RequestKey::of(&request, &path,admitted_policy.as_ref().map_or(&[],|intent|intent.workspace_generators()));
             let session_key = SessionKey::of(path.clone(), Some(&request));
             let session_state = shared.probe(&session_key);
             let session_state_hot = session_state.hot;
@@ -1427,6 +1428,7 @@ mod tests {
         let key = RequestKey {
             diagnostic_declarations: false,
             original_source_questions: false,
+        workspace_generators: Vec::new(),
             command: RequestCommand::Compile,
             defines: BTreeMap::new(),
             engine: None,
@@ -1459,6 +1461,13 @@ mod tests {
         assert!(slot.newest.lock().unwrap().is_empty());
     }
     #[test]
+    fn admitted_generator_questions_distinguish_requests_without_splitting_the_session_host(){
+        let args=vec!["prepare-query".into(),"E:/fixture/project.dme".into()];let crate::request::Command::Build(request)=crate::cli::parse(&args).unwrap()else{panic!("actual prepare request")};
+        let root=std::path::PathBuf::from("E:/fixture");let policy=crate::policy_request::PolicyInputRequest{files:Vec::new(),search_folders:Vec::new(),workspace:Some(crate::policy_request::WorkspacePolicyRequest{root:root.clone(),recursive_roots:vec![root.join("code")],configuration:root.join("scopes.toml")}),workspace_generators:vec![crate::GeneratorName::Reads]}.admit().unwrap();
+        let path=std::path::Path::new("E:/fixture/project.dme");let raw=RequestKey::of(&request,path,&[]);let generated=RequestKey::of(&request,path,policy.workspace_generators());assert_ne!(raw,generated);assert_ne!(generated,RequestKey::of(&request,path,&[crate::GeneratorName::Deps]));
+        let mut selected=(*request).clone();selected.policy_inputs=Some(policy.into());assert_eq!(SessionKey::of(path.to_path_buf(),Some(&request)),SessionKey::of(path.to_path_buf(),Some(&selected)),"same project/engine must retain the same native host");
+    }
+    #[test]
     fn logical_key_ignores_execution_flags_but_preserves_destinations() {
         let args = vec!["compile".into(), "E:/fixture/project.dme".into()];
         let crate::request::Command::Build(request) = crate::cli::parse(&args).unwrap() else {
@@ -1466,21 +1475,21 @@ mod tests {
         };
         let mut changed = (*request).clone();
         let manifest = std::path::Path::new("E:/fixture/project.dme");
-        let key = RequestKey::of(&request, manifest);
+        let key = RequestKey::of(&request, manifest,&[]);
         changed.workers = 8;
         changed.progress_enabled = true;
         changed.no_cache = true;
         changed.exact_inputs = true;
         changed.trace_path = Some("trace.json".into());
-        assert_eq!(key, RequestKey::of(&changed, manifest));
+        assert_eq!(key, RequestKey::of(&changed, manifest,&[]));
         changed.record_inputs = Some("E:/fixture/records".into());
-        assert_ne!(key, RequestKey::of(&changed, manifest));
+        assert_ne!(key, RequestKey::of(&changed, manifest,&[]));
         changed.record_inputs = None;
         changed.artifact_directory = Some("E:/fixture/other".into());
-        assert_ne!(key, RequestKey::of(&changed, manifest));
+        assert_ne!(key, RequestKey::of(&changed, manifest,&[]));
         changed.artifact_directory = None;
         changed.output_store = Some("E:/fixture/store".into());
-        assert_ne!(key, RequestKey::of(&changed, manifest));
+        assert_ne!(key, RequestKey::of(&changed, manifest,&[]));
     }
     #[test]
     fn executable_and_declaration_exports_do_not_supersede_each_other() {
@@ -1489,10 +1498,10 @@ mod tests {
             panic!("build expected")
         };
         let manifest = std::path::Path::new("E:/fixture/project.dme");
-        let key = RequestKey::of(&request, manifest);
+        let key = RequestKey::of(&request, manifest,&[]);
         let mut executable = *request;
         executable.command = crate::request::BuildCommand::AnalyzeBodies;
-        assert_ne!(key, RequestKey::of(&executable, manifest));
+        assert_ne!(key, RequestKey::of(&executable, manifest,&[]));
     }
     #[test]
     fn captured_input_destinations_preserve_independent_requests() {
@@ -1506,15 +1515,15 @@ mod tests {
         request.record_inputs = Some("E:/fixture/capture-a".into());
         let first = control::Cancellation::default();
         let old =
-            LatestRequest::register(&slot, RequestKey::of(&request, &manifest), first.clone());
+            LatestRequest::register(&slot, RequestKey::of(&request, &manifest,&[]), first.clone());
         request.record_inputs = Some("E:/fixture/capture-b".into());
         let second = control::Cancellation::default();
         let independent =
-            LatestRequest::register(&slot, RequestKey::of(&request, &manifest), second.clone());
+            LatestRequest::register(&slot, RequestKey::of(&request, &manifest,&[]), second.clone());
         assert!(!first.is_cancelled());
         let replacement = LatestRequest::register(
             &slot,
-            RequestKey::of(&request, &manifest),
+            RequestKey::of(&request, &manifest,&[]),
             control::Cancellation::default(),
         );
         assert!(second.is_cancelled());
@@ -1601,14 +1610,14 @@ mod tests {
             panic!("build expected")
         };
         let baseline_session = SessionKey::of(request.project.clone(), Some(&request));
-        let baseline_request = RequestKey::of(&request, &request.project);
+        let baseline_request = RequestKey::of(&request, &request.project,&[]);
         for seconds in [1, 300] {
             request.timeout_seconds = Some(seconds);
             assert_eq!(
                 SessionKey::of(request.project.clone(), Some(&request)),
                 baseline_session
             );
-            assert_eq!(RequestKey::of(&request, &request.project), baseline_request);
+            assert_eq!(RequestKey::of(&request, &request.project,&[]), baseline_request);
         }
     }
     #[test]
@@ -1623,10 +1632,10 @@ mod tests {
         let crate::request::Command::Build(request) = crate::cli::parse(&args).unwrap() else {
             panic!("expected request")
         };
-        let strict = RequestKey::of(&request, &manifest);
+        let strict = RequestKey::of(&request, &manifest,&[]);
         let mut diagnostic = (*request).clone();
         diagnostic.diagnostic_declarations = true;
-        assert_ne!(strict, RequestKey::of(&diagnostic, &manifest));
+        assert_ne!(strict, RequestKey::of(&diagnostic, &manifest,&[]));
         assert_eq!(
             SessionKey::of(manifest.clone(), Some(&request)),
             SessionKey::of(manifest.clone(), Some(&diagnostic)),

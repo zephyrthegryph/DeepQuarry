@@ -14,6 +14,8 @@ pub(crate) struct SourceFrameCapture {
     archive: Arc<dm_tree::frontend::BodyArchive>,
     queries: Arc<crate::query_db::QueryDb>,
     policy: Option<Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>>,
+    policy_role: SnapshotPolicyRole,
+    workspace_generator_selection: Option<WorkspaceGeneratorSelection>,
     source_revision: u128,
     facts: InputSnapshot,
     query_request: u64,
@@ -62,6 +64,17 @@ impl SourceAnswerPublication {
     }
 }
 impl SourceFrameCapture {
+    // The private constructor records an explicit source role. A workspace
+    // child has its own bound subset revision while the staged published
+    // workspace revision remains None until actual WorkspacePolicyAdmission.
+    fn policy_matches(snapshot:&SourceSnapshot)->bool{
+        match (&snapshot.native_policy_inputs,snapshot.policy_role){
+            (Some(policy),SnapshotPolicyRole::ExplicitSubset)=>snapshot.workspace_generator_selection.is_none()&&policy.policy_revision().is_some()&&snapshot.policy_revision==policy.policy_revision(),
+            (Some(policy),SnapshotPolicyRole::WorkspaceGeneratorChild)=>snapshot.workspace_generator_selection.is_some()&&policy.policy_revision().is_some()&&snapshot.policy_revision.is_none(),
+            (None,SnapshotPolicyRole::ExplicitSubset)=>snapshot.workspace_generator_selection.is_none()&&snapshot.policy_revision.is_none(),
+            (None,SnapshotPolicyRole::WorkspaceGeneratorChild)=>false,
+        }
+    }
     // Constructor intentionally private to this child of the snapshot owner.
     fn issue(snapshot: &SourceSnapshot, facts: InputSnapshot) -> std::io::Result<Arc<Self>> {
         let mapping = snapshot
@@ -93,7 +106,7 @@ impl SourceFrameCapture {
                 "staged source archive/map/compiler query owner differs",
             ));
         }
-        if snapshot
+        if !Self::policy_matches(snapshot) || snapshot
             .native_policy_inputs
             .as_ref()
             .is_some_and(|policy| {
@@ -110,6 +123,8 @@ impl SourceFrameCapture {
             archive: Arc::clone(archive),
             queries: Arc::clone(queries),
             policy: snapshot.native_policy_inputs.as_ref().map(Arc::clone),
+            policy_role: snapshot.policy_role,
+            workspace_generator_selection: snapshot.workspace_generator_selection,
             source_revision: snapshot.source_revision,
             facts,
             query_request: queries.source_answer_request(),
@@ -139,11 +154,14 @@ impl SourceFrameCapture {
                 .as_ref()
                 .is_none_or(|db| !Arc::ptr_eq(db, &self.queries))
             || snapshot.source_revision != self.source_revision
+            || snapshot.policy_role != self.policy_role
+            || snapshot.workspace_generator_selection != self.workspace_generator_selection
+            || !Self::policy_matches(snapshot)
             || !match (&self.policy, &snapshot.native_policy_inputs) {
                 (Some(a), Some(b)) => {
-                    Arc::ptr_eq(a, b) && snapshot.policy_revision == a.policy_revision()
+                    Arc::ptr_eq(a, b)
                 }
-                (None, None) => snapshot.policy_revision.is_none(),
+                (None, None) => true,
                 _ => false,
             }
         {

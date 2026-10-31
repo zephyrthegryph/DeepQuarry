@@ -908,6 +908,9 @@ pub use declaration_state::{
 #[path="frontend_declaration_demand.rs"]
 mod declaration_demand;
 pub use declaration_demand::FrontendBuildFailure;
+#[path="frontend_generation.rs"]
+mod generation;
+pub use generation::{GenerationDeclarationFrame, GenerationPreparationFailure, prepare_generation_declarations};
 #[path = "frontend_parse.rs"]
 mod declaration_parse;
 #[cfg(test)]

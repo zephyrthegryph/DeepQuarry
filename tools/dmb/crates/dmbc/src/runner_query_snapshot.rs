@@ -55,6 +55,19 @@ impl Default for QueryState {
         }
     }
 }
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum SnapshotPolicyRole { ExplicitSubset, WorkspaceGeneratorChild }
+#[derive(Clone, Copy)]
+enum WorkspaceSnapshotRole<'a> { RawPolicy, Generator(&'a crate::policy_request::AdmittedPolicyRequest) }
+#[derive(Clone, Copy, PartialEq, Eq)]
+struct WorkspaceGeneratorSelection{names:[Option<crate::GeneratorName>;13]}
+impl WorkspaceGeneratorSelection{
+ fn from_admitted(intent:&crate::policy_request::AdmittedPolicyRequest,workspace:&crate::runner_host::workspace_capture::WorkspaceCapture)->std::io::Result<Self>{
+  if intent.workspace().is_none_or(|request|!workspace.matches_request(request))||intent.workspace_generators().is_empty()||intent.workspace_generators().len()>13{return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"generator intent differs from actual workspace request"))}
+  let mut selected=Self{names:[None;13]};for(slot,name)in selected.names.iter_mut().zip(intent.workspace_generators()){*slot=Some(*name);}Ok(selected)
+ }
+ fn permits(&self,name:crate::GeneratorName)->bool{self.names.iter().flatten().any(|candidate|*candidate==name)}
+}
 pub(crate) struct SourceSnapshot {
     diagnostic_declarations:
         Option<Arc<dm_tree::diagnostic_declarations::DiagnosticDeclarationReceipt>>,
@@ -68,6 +81,8 @@ pub(crate) struct SourceSnapshot {
     bodies: Option<Arc<[dm_tree::frontend::BodyOccurrence]>>,
     body_archive: Option<Arc<dm_tree::frontend::BodyArchive>>,
     native_policy_inputs: Option<Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>>,
+    policy_role: SnapshotPolicyRole,
+    workspace_generator_selection: Option<WorkspaceGeneratorSelection>,
     native_workspace: Option<Arc<crate::runner_host::workspace_capture::WorkspaceCapture>>,
     source_mapping: Option<Arc<dm_tree::frontend::SourceExportMapping>>,
     paths: BTreeMap<dm_ir::FileId, Arc<PathBuf>>,
@@ -78,6 +93,7 @@ pub(crate) struct SourceSnapshot {
     native_value_input: Option<Arc<dm_analysis::value_query::ArchiveValueInput>>,
     native_value_queries: Option<Arc<dyn dm_analysis::value_query::ArchiveValueQueries>>,
     native_raw_queries: Option<Arc<crate::query_db::QueryDb>>,
+    native_effect_request_input: std::sync::OnceLock<purity::EffectRequestInput>,
     source_answers: Option<crate::query_db::SourceAnswerScopeOwner>,
     source_question_role: bool,
 }
@@ -215,6 +231,7 @@ impl SourceSnapshot {
     /// Detach optional heavy source/selection owners under idle pressure.
     /// Existing request handles remain immutable; pinned lightweight rows survive.
     pub(crate) fn release_body_queries(&mut self) {
+        drop(self.native_effect_request_input.take());
         if let Some(queries) = self.native_raw_queries.take() {
             queries.release_raw_policy_cache();
         }
@@ -257,6 +274,7 @@ impl SourceSnapshot {
         if let Some(scope) = &self.source_answers {
             scope.census(census);
         }
+        if let Some(input)=self.native_effect_request_input.get(){input.census(census);}
         if let Some(queries) = &self.native_raw_queries {
             queries.purity_census(census);
             queries.value_rejection_census(census);
@@ -377,6 +395,13 @@ impl SourceSnapshot {
         frontend: &ColdFrontend,
         policy: Option<Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>>,
     ) -> Self {
+        Self::capture_policy_role(frontend, policy, SnapshotPolicyRole::ExplicitSubset)
+    }
+    fn capture_policy_role(
+        frontend: &ColdFrontend,
+        policy: Option<Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>>,
+        role: SnapshotPolicyRole,
+    ) -> Self {
         let revision_timer = dm_profile::detail_timer("query_capture.source_revision");
         let source_revision = dm_analysis::tree_export::source_revision(frontend);
         drop(revision_timer);
@@ -389,7 +414,8 @@ impl SourceSnapshot {
             None => frontend.body_archive(),
         };
         let native_schema_markers = match &policy {
-            Some(policy) => native_policy::capture_policy_schemas(policy.policy()),
+            Some(policy) if matches!(role, SnapshotPolicyRole::ExplicitSubset) => native_policy::capture_policy_schemas(policy.policy()),
+            Some(_) => native_policy::capture_schemas(frontend),
             None => native_policy::capture_schemas(frontend),
         };
         let native_value_input = body_archive.as_ref().map(|archive| {
@@ -402,9 +428,12 @@ impl SourceSnapshot {
                 .map(|policy| Arc::clone(policy.semantic_source_evidence())),
             tree: Arc::clone(&frontend.snapshot.tree),
             source_revision,
-            policy_revision: policy
-                .as_ref()
-                .and_then(|capture| capture.policy_revision()),
+            policy_revision: match role {
+                SnapshotPolicyRole::ExplicitSubset => policy.as_ref().and_then(|capture| capture.policy_revision()),
+                // Only admit_workspace_policy may install the published full
+                // workspace revision. The child keeps its own subset intent.
+                SnapshotPolicyRole::WorkspaceGeneratorChild => None,
+            },
             outcome: "frontend_analyzed",
             source_mapping: frontend.source_export_mapping().cloned(),
             selected: Default::default(),
@@ -414,11 +443,14 @@ impl SourceSnapshot {
             native_value_input,
             native_value_queries: None,
             native_raw_queries: None,
+            native_effect_request_input: Default::default(),
             source_answers: None,
             source_question_role: false,
             occurrences: Arc::clone(&frontend.snapshot.occurrences),
             body_archive,
             native_policy_inputs: policy,
+            policy_role: role,
+            workspace_generator_selection: None,
             native_workspace: None,
             bodies: frontend
                 .callable_roster()
@@ -430,6 +462,21 @@ impl SourceSnapshot {
                 .map(|file| (file.id, Arc::clone(&file.path)))
                 .collect(),
         }
+    }
+    /// Borrow the genuine generator subset retained by this published workspace.
+    /// This is not full policy authority: callers still need the actual current
+    /// workspace scope and both completed traversal witnesses in QueryDb.
+    pub(crate) fn workspace_generator_inputs(&self,name:crate::GeneratorName) -> std::io::Result<&Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>> {
+        if self.workspace_generator_selection.as_ref().is_none_or(|selection|!selection.permits(name)){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"generator was not selected by snapshot preparation"))}
+        let guard = self.workspace_native_read()?;
+        self.native_workspace.as_ref().ok_or_else(|| std::io::Error::other("workspace capture unavailable"))?.require_scope(&guard)?;
+        let child = self.native_policy_inputs.as_ref().ok_or_else(|| std::io::Error::other("workspace generator child unavailable"))?;
+        if child.policy_revision().is_none()
+            || !self.body_archive.as_ref().is_some_and(|archive| Arc::ptr_eq(archive, child.policy().archive()))
+            || !self.source_mapping.as_ref().is_some_and(|mapping| Arc::ptr_eq(mapping, child.policy().mapping()))
+        { return Err(std::io::Error::other("workspace generator child belongs to another original frame")); }
+        child.semantic_source_evidence().require_mapping(child.policy().mapping())?;
+        Ok(child)
     }
     pub(crate) fn write_selected(
         &self,
@@ -612,6 +659,32 @@ impl QueryAttempt {
         request: &crate::policy_request::WorkspacePolicyRequest,
         inputs: &crate::input_snapshot::RecordingInputs<P>,
     ) -> std::io::Result<()> {
+        self.capture_workspace_snapshot(frontend,queries,workspace,request,inputs,WorkspaceSnapshotRole::RawPolicy)
+    }
+    pub(crate) fn capture_with_workspace_generator_recorded_sources<
+        P: crate::input_snapshot::SnapshotProvider,
+    >(
+        &mut self,
+        frontend: &ColdFrontend,
+        queries: Arc<crate::query_db::QueryDb>,
+        workspace: Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,
+        request: &crate::policy_request::WorkspacePolicyRequest,
+        inputs: &crate::input_snapshot::RecordingInputs<P>,
+        intent: &crate::policy_request::AdmittedPolicyRequest,
+    ) -> std::io::Result<()> {
+        self.capture_workspace_snapshot(frontend,queries,workspace,request,inputs,WorkspaceSnapshotRole::Generator(intent))
+    }
+    fn capture_workspace_snapshot<
+        P: crate::input_snapshot::SnapshotProvider,
+    >(
+        &mut self,
+        frontend: &ColdFrontend,
+        queries: Arc<crate::query_db::QueryDb>,
+        workspace: Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,
+        request: &crate::policy_request::WorkspacePolicyRequest,
+        inputs: &crate::input_snapshot::RecordingInputs<P>,
+        role: WorkspaceSnapshotRole<'_>,
+    ) -> std::io::Result<()> {
         if !workspace.matches_frontend(frontend)
             || !workspace.matches_request(request)
             || !workspace.is_recorded_in(&inputs.snapshot()?)
@@ -623,8 +696,20 @@ impl QueryAttempt {
         if !self.enabled {
             return Ok(());
         }
-        let evidence = inputs.semantic_source_evidence(frontend)?;
-        let mut snapshot = SourceSnapshot::capture(frontend);
+        let (mut snapshot, evidence) = match role {
+            // Preserve the raw-only workspace path: no generator capture or
+            // semantic-encoding admission is introduced for unrelated queries.
+            WorkspaceSnapshotRole::RawPolicy => {
+                let evidence = inputs.semantic_source_evidence(frontend)?;
+                (SourceSnapshot::capture(frontend), evidence)
+            },
+            WorkspaceSnapshotRole::Generator(intent) => {
+                let selected=WorkspaceGeneratorSelection::from_admitted(intent,&workspace)?;
+                let child = Arc::new(crate::runner_host::policy_capture::capture_workspace_generator(frontend, inputs, workspace.configuration().0)?);
+                let evidence = Arc::clone(child.semantic_source_evidence());
+                {let mut snapshot=SourceSnapshot::capture_policy_role(frontend,Some(child),SnapshotPolicyRole::WorkspaceGeneratorChild);snapshot.workspace_generator_selection=Some(selected);(snapshot,evidence)}
+            }
+        };
         let mapping = snapshot
             .source_mapping
             .as_ref()
@@ -1076,6 +1161,8 @@ impl SourceSnapshot {
             bodies: Some(Arc::clone(frontend.bodies())),
             body_archive: Some(Arc::clone(archive)),
             native_policy_inputs: Some(policy),
+            policy_role: SnapshotPolicyRole::ExplicitSubset,
+            workspace_generator_selection: None,
             native_workspace: None,
             source_mapping: Some(Arc::clone(frontend.mapping())),
             paths: frontend
@@ -1092,6 +1179,7 @@ impl SourceSnapshot {
             native_value_input: None,
             native_value_queries: None,
             native_raw_queries: Some(queries),
+            native_effect_request_input: Default::default(),
             source_answers: None,
             source_question_role: false,
         })
@@ -1189,3 +1277,5 @@ mod diagnostic_tests;
 
 #[path = "runner_query_bounded_json_writer.rs"]
 mod bounded_json_writer;
+
+#[path="runner_query_generator_bytes.rs"]mod generator_bytes;

@@ -300,10 +300,8 @@ impl Builder {
         }
         Ok(())
     }
-    pub fn prepare(
-        mut self,
-        mut checkpoint: impl FnMut() -> Result<(), String>,
-    ) -> Result<Prepared, String> {
+    pub fn prepare(self,checkpoint:impl FnMut()->Result<(),String>)->Result<Prepared,String>{self.prepare_with(checkpoint)}
+    pub fn prepare_with<E:From<String>+for<'e>From<&'e str>>(mut self,mut checkpoint:impl FnMut()->Result<(),E>)->Result<Prepared,E>{
         checkpoint()?;
         let names_bytes = self
             .acts
@@ -423,11 +421,8 @@ impl Prepared {
                 .map(move |(_, name)| (a.notice.as_str(), name.as_str()))
         })
     }
-    pub fn finish(
-        mut self,
-        mut membership: impl FnMut(&str, &str) -> bool,
-        mut checkpoint: impl FnMut() -> Result<(), String>,
-    ) -> Result<Output, String> {
+    pub fn finish(self,membership:impl FnMut(&str,&str)->bool,checkpoint:impl FnMut()->Result<(),String>)->Result<Output,String>{self.finish_with(membership,checkpoint)}
+    pub fn finish_with<E:From<String>>(mut self,mut membership:impl FnMut(&str,&str)->bool,mut checkpoint:impl FnMut()->Result<(),E>)->Result<Output,E>{
         emit(
             &mut self.out,
             &self.acts,
@@ -521,15 +516,15 @@ fn var_line(out: &mut Output, ty: &str, name: &str) {
     out.line_fmt(format_args!("\tvar/{}", Field { ty, name }));
 }
 
-fn emit(
+fn emit<E:From<String>>(
     out: &mut Output,
     all: &BTreeMap<String, Action>,
     test_only: bool,
     registry_name: &str,
     membership: &mut impl FnMut(&str, &str) -> bool,
-    checkpoint: &mut impl FnMut() -> Result<(), String>,
+    checkpoint: &mut impl FnMut() -> Result<(), E>,
     budget: Option<&Budget>,
-) -> Result<(), String> {
+) -> Result<(), E> {
     let selected = || {
         all.values()
             .filter(|a| crate::generator_test_scope::test_only(&a.rel) == test_only)
@@ -663,12 +658,12 @@ fn emit(
     }
     Ok(())
 }
-fn emit_query(
+fn emit_query<E:From<String>>(
     out: &mut Output,
     a: &Action,
-    checkpoint: &mut impl FnMut() -> Result<(), String>,
+    checkpoint: &mut impl FnMut() -> Result<(), E>,
     budget: Option<&Budget>,
-) -> Result<(), String> {
+) -> Result<(), E> {
     out.line_fmt(format_args!(
         "/proc/query_{}({})",
         ProcName(&a.name),

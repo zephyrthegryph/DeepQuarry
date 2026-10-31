@@ -28,7 +28,7 @@ fn staged(
         .unwrap()
         .with_body_queries(db.clone());
     let capture = policy.then(|| {
-        let intent = PolicyInputRequest {
+        let intent = PolicyInputRequest {workspace_generators:Vec::new(),
             workspace: None,
             files: vec![PolicyInputFile {
                 path: root.join("scopes.toml"),

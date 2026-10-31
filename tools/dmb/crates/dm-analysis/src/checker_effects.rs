@@ -506,172 +506,8 @@ impl SccSummary {
         admission: &ExecutionAdmission,
         mut checkpoint: impl FnMut() -> Result<(), String>,
     ) -> Result<Vec<Produced>, D::Error> {
-        self.validate(input)?;
-        if resolver.source_owner() != Resolver::source_owner(input.archive.tree()) {
-            return Err("purity report original resolver mismatch".into());
-        }
-        let budget = ReportBudget::for_operation(admission);
-        let p = &self.plan;
-        let mut output = Vec::new();
-        let mut targets = Vec::new();
-        for (i, body) in p.bodies.iter().enumerate() {
-            checkpoint()?;
-            for row in body.immediate.iter() {
-                emit(
-                    &mut output,
-                    input,
-                    None,
-                    budget.diagnostic(row)?,
-                    input.archive.source_note_point(row.span.start)?,
-                    policy,
-                    &budget,
-                )?;
-            }
-            let mut at = Some(EffectTarget::Source(body.procedure));
-            let mut visited = BTreeSet::new();
-            while let Some(target) = at {
-                if !budget.insert(&mut visited, target)? {
-                    return Err("purity directive predecessor cycle".into());
-                }
-                if let EffectTarget::Source(id) = target {
-                    let j = *p
-                        .index
-                        .get(&id)
-                        .ok_or("purity annotation source contribution absent")?;
-                    if let Some(annotation) = p.bodies[j].pure {
-                        budget.push(&mut targets, (i, annotation))?;
-                        break;
-                    }
-                }
-                at = target_parent_parts(input, resolver, target, &p.bodies, &p.index)?;
-            }
-        }
-        // The pinned checker iterates HashMap directive groups and prints
-        // immediately: only inter-target permutations are unspecified. Keep
-        // deterministic authored target order here, never sort rows or notes.
-        for (target, annotation) in targets {
-            checkpoint()?;
-            let body = &p.bodies[target];
-            let origin = input
-                .archive
-                .callable_note_origin_with(body.procedure, D::parse)?;
-            let header = D::parse(&input.archive, body.ordinal)?
-                .signature_opening_parenthesis()
-                .ok_or("purity primary callable point absent")?;
-            let target_display = display(input, body.procedure, &budget)?;
-            let annotation_note = Note {
-                message: budget.format(format_args!("SpacemanDMM_should_be_pure set here"))?,
-                source: Some(input.archive.source_note_point(annotation.start)?),
-            };
-            if !body.direct.is_empty() {
-                let mut notes = budget.annotation(&annotation_note)?;
-                effect_notes(input, &body.direct, false, &mut notes, &budget)?;
-                emit(
-                    &mut output,
-                    input,
-                    Some("must_be_pure"),
-                    diagnostic(
-                        header,
-                        budget.format(format_args!("{target_display} does impure operations"))?,
-                        notes,
-                    ),
-                    origin.clone(),
-                    policy,
-                    &budget,
-                )?;
-            }
-            if !self
-                .has_effect
-                .get(p.components[target])
-                .copied()
-                .unwrap_or(false)
-            {
-                continue;
-            }
-            let mut queue = output::initial_queue(&body.calls, &budget)?;
-            let mut queued_edges = body.calls.len();
-            let mut visited = BTreeSet::new();
-            while let Some((id, path)) = queue.pop_front() {
-                queued_edges = queued_edges.saturating_sub(path.len());
-                checkpoint()?;
-                if !budget.insert(&mut visited, id)? {
-                    continue;
-                }
-                let target = id;
-                if let EffectTarget::Builtin(_) = target {
-                    let called = display_target(input, target, &budget)?;
-                    let owner = target_owner(input, target)?;
-                    for child in p.bodies.iter() {
-                        checkpoint()?;
-                        if child.direct.is_empty()
-                            || child.procedure.name == SymbolId::of("New")
-                            || !source_child_overrides_target(
-                                p, input, resolver, child, target, &budget,
-                            )?
-                        {
-                            continue;
-                        }
-                        if is_subtype(resolver, body.procedure.owner, owner)?
-                            && !is_subtype(resolver, child.procedure.owner, body.procedure.owner)?
-                        {
-                            continue;
-                        }
-                        let mut notes = budget.annotation(&Note {
-                            message: budget
-                                .format(format_args!("SpacemanDMM_should_not_pure set here"))?,
-                            source: annotation_note.source.clone(),
-                        })?;
-                        call_notes(input, &path, &mut notes, &budget)?;
-                        effect_notes(input, &child.direct, true, &mut notes, &budget)?;
-                        emit(&mut output,input,Some("must_be_pure"),diagnostic(header,budget.format(format_args!("{target_display} calls {called} which has override child proc that does impure operations {}",display(input,child.procedure, &budget)?))?,notes),origin.clone(),policy, &budget)?;
-                    }
-                    continue;
-                }
-                let EffectTarget::Source(id) = target else {
-                    unreachable!()
-                };
-                let index = *p.index.get(&id).ok_or("purity edge target absent")?;
-                let callee = &p.bodies[index];
-                let called = display(input, id, &budget)?;
-                if !callee.direct.is_empty() {
-                    let mut notes = budget.annotation(&annotation_note)?;
-                    call_notes(input, &path, &mut notes, &budget)?;
-                    effect_notes(input, &callee.direct, false, &mut notes, &budget)?;
-                    emit(&mut output,input,Some("must_be_pure"),diagnostic(header,budget.format(format_args!("{target_display} sets SpacemanDMM_should_be_pure but calls a {called} that does impure operations"))?,notes),origin.clone(),policy, &budget)?;
-                } else {
-                    for &child in &p.overrides[index] {
-                        let child = &p.bodies[child];
-                        if is_subtype(resolver, body.procedure.owner, id.owner)?
-                            && !is_subtype(resolver, child.procedure.owner, body.procedure.owner)?
-                        {
-                            continue;
-                        }
-                        let mut notes = budget.annotation(&Note {
-                            message: budget
-                                .format(format_args!("SpacemanDMM_should_not_pure set here"))?,
-                            source: annotation_note.source.clone(),
-                        })?;
-                        call_notes(input, &path, &mut notes, &budget)?;
-                        effect_notes(input, &child.direct, true, &mut notes, &budget)?;
-                        emit(&mut output,input,Some("must_be_pure"),diagnostic(header,budget.format(format_args!("{target_display} calls {called} which has override child proc that does impure operations {}",display(input,child.procedure, &budget)?))?,notes),origin.clone(),policy, &budget)?;
-                    }
-                }
-                for edge in callee.calls.iter() {
-                    let next_len = path
-                        .len()
-                        .checked_add(1)
-                        .ok_or("purity callstack admission overflow")?;
-                    queued_edges = queued_edges
-                        .checked_add(next_len)
-                        .filter(|n| *n <= MAX_EVENTS)
-                        .ok_or("purity BFS retained paths exceed bounded admission")?;
-                    let next = budget.path(&path, edge)?;
-                    budget.queue(&mut queue, (edge.callee, next))?;
-                }
-            }
-        }
-        Ok(output)
-    }
+ self.validate(input)?;report_core::purity(&report_core::LegacyReportAccess::<D>{input,plan:&self.plan,summary:Some(self),demand:std::marker::PhantomData},resolver,policy,admission,||checkpoint().map_err(D::Error::from))
+}
 }
 #[derive(Clone, Debug)]
 pub struct Produced {
@@ -690,15 +526,15 @@ fn diagnostic(at: Span, message: String, notes: Vec<Note>) -> Diagnostic {
         notes,
     }
 }
-fn emit(
+fn emit<E:From<String>+From<&'static str>>(
     out: &mut Vec<Produced>,
-    _input: &EffectInput,
+    _input: &report_core::ReportSource<'_>,
     tag: Option<&'static str>,
     diagnostic: Diagnostic,
     origin: SourceNoteOrigin,
     policy: &CheckerPolicy,
-    budget: &ReportBudget,
-) -> Result<(), String> {
+    budget: &output::ReportBudgetWith<'_,E>,
+) -> Result<(), E> {
     let default = match diagnostic.severity {
         Severity::Error => DiagnosticSeverity::Error,
         Severity::Warning => DiagnosticSeverity::Warning,
@@ -708,15 +544,12 @@ fn emit(
         if out.len() >= MAX_EVENTS {
             return Err("purity report exceeds existing finding admission".into());
         }
-        budget.push(
-            out,
-            Produced {
+        let produced=Produced {
                 registration_tag: tag,
                 severity,
                 diagnostic,
                 origin,
-            },
-        )?
+            };budget.record_output(&produced)?;budget.push(out,produced)?
     }
     Ok(())
 }
@@ -729,13 +562,13 @@ impl CallOrigin {
             }
         }
     }
-    fn note_point(
+    fn note_point<E:From<String>+From<&'static str>>(
         self,
-        input: &EffectInput,
-        budget: &ReportBudget,
-    ) -> Result<SourceNoteOrigin, String> {
+        input: &report_core::ReportSource<'_>,
+        budget: &output::ReportBudgetWith<'_,E>,
+    ) -> Result<SourceNoteOrigin, E> {
         match self {
-            Self::Source(at) => input.archive.source_note_point(at.start),
+            Self::Source(at) => report_source_note(input,at.start,budget),
             Self::ImplicitList(dm_syntax::ImplicitListOrigin::ParserSynthetic) => {
                 // A small independent virtual point allocation, not a source
                 // cursor fallback. Admit before allocating its PathBuf/Arc.
@@ -749,13 +582,13 @@ impl CallOrigin {
         }
     }
 }
-fn effect_notes(
-    input: &EffectInput,
+fn effect_notes<E:From<String>+From<&'static str>>(
+    input: &report_core::ReportSource<'_>,
     effects: &[DirectEffect],
     blocking: bool,
     out: &mut Vec<Note>,
-    budget: &ReportBudget,
-) -> Result<(), String> {
+    budget: &output::ReportBudgetWith<'_,E>,
+) -> Result<(), E> {
     for e in effects {
         budget.push(
             out,
@@ -771,12 +604,12 @@ fn effect_notes(
     }
     Ok(())
 }
-fn call_notes(
-    input: &EffectInput,
+fn call_notes<E:From<String>+From<&'static str>>(
+    input: &report_core::ReportSource<'_>,
     path: &[CallEdge],
     out: &mut Vec<Note>,
-    budget: &ReportBudget,
-) -> Result<(), String> {
+    budget: &output::ReportBudgetWith<'_,E>,
+) -> Result<(), E> {
     for edge in path {
         budget.push(
             out,
@@ -846,11 +679,11 @@ pub(crate) fn source_parent(
     }
 }
 
-fn display(
-    input: &EffectInput,
+fn display<E:From<String>+From<&'static str>>(
+    input: &report_core::ReportSource<'_>,
     id: ProcedureIdentity,
-    budget: &ReportBudget,
-) -> Result<String, String> {
+    budget: &output::ReportBudgetWith<'_,E>,
+) -> Result<String, E> {
     let tree = input.archive.tree();
     let owner = tree
         .symbols()
@@ -965,7 +798,7 @@ use sleep::SleepSettings;
 mod targets;
 pub(crate) use targets::{
     builtin_parent_after_sources, callable_target, display_target, original_target_parent,
-    source_child_overrides_target, target_owner, target_parent_parts, EffectTarget,
+    target_owner, target_parent_parts, EffectTarget,
 };
 
 fn next_input_key()->Result<u64,String>{
@@ -985,6 +818,14 @@ pub use compact_source::{CompactEffectGraph,RetainedEffectGraph,CurrentEffectGra
 #[path="checker_effects_page_facts.rs"]
 mod page_facts;
 pub use page_facts::{EffectPageFacts,EffectPageRead};
+
+#[path="checker_effects_report.rs"]mod report_core;
+
+#[path="checker_effects_report_pages.rs"]mod report_pages;
+
+fn report_source_note<E:From<String>+From<&'static str>>(input:&report_core::ReportSource<'_>,offset:usize,budget:&output::ReportBudgetWith<'_,E>)->Result<SourceNoteOrigin,E>{let borrowed=input.archive.borrowed_source_note_point(offset)?;let bytes=borrowed.retained_charge().and_then(|n|n.checked_add(128)).ok_or("effect report note capacity overflow")?;budget.charge(bytes)?;Ok(borrowed.into_owned())}
+
+pub use report_pages::{EffectReportPhase,EffectReportWork};
 
 #[path="checker_effects_fingerprint.rs"]mod fingerprint;
 pub use fingerprint::report_fingerprint;

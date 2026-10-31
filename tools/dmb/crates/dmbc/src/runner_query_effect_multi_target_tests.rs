@@ -20,11 +20,11 @@ fn fixture_filename(text: &str) -> String {
     out
 }
 #[derive(Debug, Eq, PartialEq)]
-struct TargetGroups(Vec<(usize, BTreeMap<String, String>)>);
+pub(super) struct TargetGroups(Vec<(usize, BTreeMap<String, String>)>);
 /// This comparator never sorts individual rows/notes. It preserves every byte
 /// INSIDE each contiguous target group, and rejects split/repeated groups or
 /// reversed family phases. BTreeMap compares only the whole-group permutation.
-fn target_groups(text: &str) -> TargetGroups {
+pub(super) fn target_groups(text: &str) -> TargetGroups {
     let text = fixture_filename(text);
     let mut phases: Vec<(usize, BTreeMap<String, String>)> = Vec::new();
     let mut active: Option<(usize, String, String)> = None;

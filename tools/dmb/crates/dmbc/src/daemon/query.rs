@@ -2,6 +2,10 @@
 use serde::{Deserialize, Serialize};
 mod analyze_policy;
 mod control_batch;
+mod effect_reports;
+pub mod encoded_bytes;
+mod effect_report_bytes;
+mod generator_bytes;
 mod named_policy;
 #[cfg(test)]
 #[path = "query/native_outer_tests.rs"]
@@ -142,6 +146,12 @@ pub enum SourceQuery {
         environment: PathBuf,
         configuration: Option<PathBuf>,
     },
+    /// Exhaust both effect judgements over all original targets with the exact
+    /// captured config. Other checker endpoints retain their existing roles.
+    NativeEffectReports { environment:PathBuf, configuration:Option<PathBuf>, page_width:u32, target_window:u32 },
+    NativeEffectReportBytes { environment:PathBuf, configuration:Option<PathBuf>, page_width:u32, target_window:u32, cursor:Option<encoded_bytes::ByteCursor>, limit:u32 },
+    /// Full final generator artifact, only for a question admitted at preparation.
+    NativeGeneratorBytes { #[serde(with="generator_bytes::name")] generator:crate::GeneratorName, cursor:Option<encoded_bytes::ByteCursor>, limit:u32 },
     /// All variable-visibility producer categories, not a per-body tag subset.
     NativeConfiguredVariableVisibility {
         environment: PathBuf,
@@ -240,6 +250,9 @@ pub fn execute(mut request: QueryRequest) -> Result<QueryReply, Box<dyn std::err
                     matches!(query, SourceQuery::NativeUntypedFixture { .. })
                         || named_policy::reads_policy(query)
                         || control_batch::reads_policy(query)
+                        || effect_reports::reads_policy(query)
+                        || effect_report_bytes::reads_policy(query)
+                        || generator_bytes::reads_policy(query)
                         || variable_visibility::reads_policy(query)
                         || raw_policy::reads_policy(query)
                         || workspace_policy::reads_policy(query)
@@ -252,6 +265,7 @@ pub fn execute(mut request: QueryRequest) -> Result<QueryReply, Box<dyn std::err
             native_policy::validate_requested(&reply, &source_questions)?;
             named_policy::validate_requested(&reply, &source_questions)?;
             control_batch::validate_requested(&reply, &source_questions)?;
+            effect_reports::validate_requested(&reply,&source_questions)?;effect_report_bytes::validate_requested(&reply,&source_questions)?;generator_bytes::validate_requested(&reply,&source_questions)?;
             variable_visibility::validate_requested(&reply, &source_questions)?;
             raw_policy::validate_requested(&reply, &source_questions)?;
             workspace_policy::validate_requested(&reply, &source_questions)?;
@@ -404,6 +418,9 @@ fn native_row_descriptor(row: &serde_json::Value) -> io::Result<Option<SourceQue
                 configuration: configuration()?,
             }
         }
+        Some("source_native_effect_report_bytes") => SourceQuery::NativeEffectReportBytes{environment:path("environment")?,configuration:configuration()?,page_width:effect_reports::row_u32(row,"page_width")?,target_window:effect_reports::row_u32(row,"target_window")?,cursor:effect_report_bytes::cursor(row,"requested_cursor")?,limit:effect_reports::row_u32(row,"limit")?},
+        Some("source_native_generator_bytes") => SourceQuery::NativeGeneratorBytes{generator:serde_json::from_value(row["generator"].clone()).map_err(io::Error::other)?,cursor:effect_report_bytes::cursor(row,"requested_cursor")?,limit:effect_reports::row_u32(row,"limit")?},
+        Some("source_native_effect_reports") => SourceQuery::NativeEffectReports { environment:path("environment")?,configuration:configuration()?,page_width:effect_reports::row_u32(row,"page_width")?,target_window:effect_reports::row_u32(row,"target_window")? },
         Some("source_native_configured_checker") => SourceQuery::NativeConfiguredChecker {
             ordinal: ordinal()?,
             family: text("family")?,
@@ -469,6 +486,7 @@ fn validate_native_outer_row(
     native_policy::validate_requested(&single, &shape.source_queries)?;
     named_policy::validate_requested(&single, &shape.source_queries)?;
     control_batch::validate_requested(&single, &shape.source_queries)?;
+    effect_reports::validate_requested(&single,&shape.source_queries)?;effect_report_bytes::validate_requested(&single,&shape.source_queries)?;generator_bytes::validate_requested(&single,&shape.source_queries)?;
     variable_visibility::validate_requested(&single, &shape.source_queries)?;
     raw_policy::validate_requested(&single, &shape.source_queries)?;
     workspace_policy::validate_requested(&single, &shape.source_queries)?;
@@ -657,6 +675,7 @@ impl QueryRequest {
         self.timeout()?;
         named_policy::validate_request(self)?;
         control_batch::validate_request(self)?;
+        effect_reports::validate_request(self)?;effect_report_bytes::validate_request(self)?;generator_bytes::validate_request(self)?;
         variable_visibility::validate_request(self)?;
         raw_policy::validate_request(self)?;
         workspace_policy::validate_request(self)?;
@@ -809,6 +828,9 @@ pub(crate) fn evaluate_snapshot(
             matches!(query, SourceQuery::NativeUntypedFixture { .. })
                 || named_policy::reads_policy(query)
                 || control_batch::reads_policy(query)
+                        || effect_reports::reads_policy(query)
+                        || effect_report_bytes::reads_policy(query)
+                        || generator_bytes::reads_policy(query)
                 || variable_visibility::reads_policy(query)
                 || raw_policy::reads_policy(query)
                 || workspace_policy::reads_policy(query)
@@ -969,6 +991,11 @@ pub(crate) fn evaluate_snapshot(
             snapshot.write_native_named_rule(root, lint, rule, configuration, tree, &mut output)?;
             continue;
         }
+        if let SourceQuery::NativeGeneratorBytes{generator,cursor,limit}=question{snapshot.write_native_generator_bytes(*generator,*cursor,*limit as usize,tree,&mut output)?;continue;}
+        if let SourceQuery::NativeEffectReportBytes{environment,configuration,page_width,target_window,cursor,limit}=question{snapshot.write_native_effect_byte_request(*page_width as usize,*target_window as usize,*cursor,*limit as usize,environment,configuration.as_deref(),tree,&mut output)?;continue;}
+        if let SourceQuery::NativeEffectReports{environment,configuration,page_width,target_window}=question{
+            snapshot.write_native_effect_request(*page_width as usize,*target_window as usize,environment,configuration.as_deref(),tree,&mut output)?;continue;
+        }
         if let SourceQuery::NativeConfiguredChecker {
             ordinal,
             family,
@@ -1002,6 +1029,9 @@ pub(crate) fn evaluate_snapshot(
             | SourceQuery::NativeAnalyzePolicyFixture { .. }
             | SourceQuery::NativeNamedRule { .. }
             | SourceQuery::NativeConfiguredChecker { .. }
+            | SourceQuery::NativeEffectReports { .. }
+            | SourceQuery::NativeEffectReportBytes { .. }
+            | SourceQuery::NativeGeneratorBytes { .. }
             | SourceQuery::NativeConfiguredControlBatch { .. }
             | SourceQuery::NativeConfiguredVariableVisibility { .. }
             | SourceQuery::SelectedReferences { .. }
@@ -1302,3 +1332,5 @@ mod occurrence_pages_tests;
 #[cfg(test)]
 #[path = "query/deadline_tests.rs"]
 mod deadline_tests;
+
+#[cfg(test)]pub(crate) fn validate_effect_batch_for_test(request:&QueryRequest,reply:&QueryReply)->io::Result<()>{validate_reply(reply,request.queries.len(),request.source_queries.len(),request.expected_revision.as_deref(),request.expected_source_revision.as_deref())?;effect_reports::validate_requested(reply,&request.source_queries)?;effect_report_bytes::validate_requested(reply,&request.source_queries)?;control_batch::validate_requested(reply,&request.source_queries)?;generator_bytes::validate_requested(reply,&request.source_queries)?;named_policy::validate_requested(reply,&request.source_queries)}

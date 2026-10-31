@@ -3,7 +3,7 @@
 use crate::{request::BuildRequest, request_failure::RequestFailure};
 use std::path::Path;
 
-pub(super) fn validate(request: &BuildRequest) -> Result<(), RequestFailure> {
+pub(super) fn validate(request: &BuildRequest) -> Result<Option<crate::policy_request::AdmittedPolicyRequest>, RequestFailure> {
     fn absolute(name: &str, path: &Path) -> Result<(), RequestFailure> {
         if path.is_absolute() {
             return Ok(());
@@ -17,12 +17,7 @@ pub(super) fn validate(request: &BuildRequest) -> Result<(), RequestFailure> {
     crate::request::validate_diagnostic_declarations(request)
         .map_err(|error| RequestFailure::invalid_request(error.to_string()))?;
     absolute("project", &request.project)?;
-    if let Some(policy) = &request.policy_inputs {
-        policy
-            .clone()
-            .admit()
-            .map_err(|error| RequestFailure::invalid_request(error.to_string()))?;
-    }
+    let admitted_policy=request.policy_inputs.as_ref().map(|policy|policy.clone().admit()).transpose().map_err(|error|RequestFailure::invalid_request(error.to_string()))?;
     for (name, path) in [
         ("engine_template", &request.engine_template),
         ("output_store", &request.output_store),
@@ -36,7 +31,7 @@ pub(super) fn validate(request: &BuildRequest) -> Result<(), RequestFailure> {
             absolute(name, path)?;
         }
     }
-    Ok(())
+    Ok(admitted_policy)
 }
 
 #[cfg(test)]

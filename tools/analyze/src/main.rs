@@ -32,7 +32,7 @@ USAGE
   analyze selftest [--lint NAME...]     Run each lint's fixture tests.
   analyze list                          The registered lints.
   analyze frontend-diff                 Compare the text scanner with the dreammaker parser.
-  analyze gen [--check] [NAME...]       Write (or check) the generated DM under code/engine/_generated/.
+  analyze native-query --dmbc ABSOLUTE_EXE REQUEST.json [--jsonl]\n      Delegate a pinned source request to the existing native daemon client.\n  analyze gen [--check] [NAME...]       Write (or check) the generated DM under code/engine/_generated/.
   analyze codemod list | NAME [--check|--apply|--revert] [--path PREFIX...] [--write-residue]
       AST-aware rewriters (phase 2.5); `analyze codemod help`.
   analyze base-vars-dead [--tsv] [--few]
@@ -180,6 +180,9 @@ fn options(args: &Args, root: &Path) -> Options {
 }
 
 fn main() -> ExitCode {
+    let native_args=std::env::args().collect::<Vec<_>>();
+    if native_args.get(1).is_some_and(|arg|arg=="native-query"){return dq_analyze::native_cli_client::cli(&native_args[2..]);}
+    if native_args.get(1).is_some_and(|arg|arg=="gen")&&native_args.iter().skip(2).any(|arg|arg.starts_with("--native")){return dq_analyze::native_cli_client::generation_unavailable();}
     let code = real_main();
     // Hand the cache files this run rewrote to the other worktrees (src/shared.rs).
     dq_analyze::shared::publish();

@@ -117,11 +117,13 @@ pub(crate) fn parse_capability(
 }
 
 /// The exact old whole-file prefilter and raw line policy. Not evaluated defines.
-pub fn visit_defines(text: &str, mut take: impl FnMut(&str)) {
+pub fn visit_defines(text:&str,mut take:impl FnMut(&str)){try_visit_defines(text,|name|{take(name);Ok::<(),std::convert::Infallible>(())},||Ok(())).unwrap_or_else(|never|match never{})}
+pub fn try_visit_defines<E>(text:&str,mut take:impl FnMut(&str)->Result<(),E>,mut checkpoint:impl FnMut()->Result<(),E>)->Result<(),E>{
     if !text.contains("#define") {
-        return;
+        return Ok(());
     }
     for line in text.lines() {
+        checkpoint()?;
         let t = line.trim_start();
         if let Some(rest) = t.strip_prefix('#') {
             let rest = rest.trim_start();
@@ -134,11 +136,12 @@ pub fn visit_defines(text: &str, mut take: impl FnMut(&str)) {
                     .last()
                     .unwrap_or(0);
                 if end > 0 {
-                    take(&rest[..end]);
+                    take(&rest[..end])?;
                 }
             }
         }
     }
+    Ok(())
 }
 struct Marker {
     name: String,
@@ -225,10 +228,12 @@ impl Builder {
         self.finish_checked(&mut || Ok(()))
             .expect("legacy ids have no resource or cancellation guard")
     }
-    pub fn finish_checked(
+    pub fn finish_checked(self,checkpoint:&mut impl FnMut()->Result<(),String>)->Result<Output,String>{self.finish_with(checkpoint)}
+    /// Same exact judgement with a direct fallible caller checkpoint.
+    pub fn finish_with<E:From<String>+for<'error>From<&'error str>>(
         mut self,
-        checkpoint: &mut impl FnMut() -> Result<(), String>,
-    ) -> Result<Output, String> {
+        checkpoint:&mut impl FnMut()->Result<(),E>,
+    )->Result<Output,E>{
         checkpoint()?;
         if let Some(b) = &self.budget {
             b.require()?;
@@ -450,4 +455,10 @@ mod tests {
         let out = okay.finish_checked(&mut || Ok(())).unwrap();
         assert!(out.body.contains("#define STAT_VALUE 100001"));
     }
+}
+
+#[cfg(test)]mod typed_definition_visit_tests{use super::*;use std::cell::Cell;mod original{include!("declare_ids_original_define_visit.rs");}
+ #[test]fn typed_define_walk_keeps_complete_original_word_quirks_and_stops_before_callback(){let source="#define FIRST 1\n  # define SECOND(x) 2\n#defineTHIRD 3\n#define λambda 4\n#define 99 5\n// #define NOPE\n";let mut old=Vec::new();original::visit_defines(source,|name|old.push(name.to_owned()));let mut current=Vec::new();try_visit_defines(source,|name|{current.push(name.to_owned());Ok::<(),std::io::Error>(())},||Ok(())).unwrap();assert_eq!(current,old);let visits=Cell::new(0);let error=try_visit_defines(source,|_|{visits.set(visits.get()+1);Ok(())},||Err(std::io::Error::from_raw_os_error(1450))).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(visits.get(),0);}
+ #[cfg(feature="native-policy")]#[test]fn typed_ids_finish_preserves_actual_checkpoint_cause_and_same_policy_retry(){fn fixture()->Builder{let mut rows=Builder::captured(Budget::new(1024*1024).unwrap());rows.push("STAT","code/a.dm",1,&["/datum/probe".into(),"charge".into(),"SUM".into()]).unwrap();rows}let expected=fixture().finish_checked(&mut||Ok(())).unwrap();let error=fixture().finish_with(&mut||Err::<(),_>(crate::captured_reactive_reads::Failure::Operational(std::io::Error::from_raw_os_error(1450)))).unwrap_err();assert!(matches!(error,crate::captured_reactive_reads::Failure::Operational(ref actual)if actual.raw_os_error()==Some(1450)));let current=fixture().finish_with(&mut||Ok::<(),crate::captured_reactive_reads::Failure>(())).unwrap();assert_eq!(current,expected);}
+
 }

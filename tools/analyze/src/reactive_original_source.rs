@@ -140,10 +140,10 @@ impl<'a> ReadSource<'a>{
     }
     pub(crate) fn marker_rows_checked(&self,checkpoint:&mut dyn FnMut()->std::io::Result<()>)->Result<crate::captured_marker_rows::Rows<'a>,crate::reactive_reads_native::Failure>{self.policy_marker_rows(false,false,false,checkpoint)}
     fn policy_marker_rows(&self,entries:bool,capabilities:bool,runtime:bool,checkpoint:&mut dyn FnMut()->std::io::Result<()>)->Result<crate::captured_marker_rows::Rows<'a>,crate::reactive_reads_native::Failure>{
-        use crate::reactive_reads_native::Failure;let mut rows=Vec::new();let mut count=0;
-        let completed=self.with_policy_files(&mut|relative,views|{checkpoint()?;crate::captured_marker_rows::collect_file_admitted(relative,views.marker()?,self.budget,&["READS_AS","PROC_SUMMARY","READ_LOOKUP","CAPABILITY_TYPE","CAPABILITY_DEF","cap_keys","SYSTEM_ACCESSOR","READS_FROM","CAPABILITIES","STAT"],entries,capabilities,runtime,&mut rows,&mut count,&mut||{checkpoint()?;self.require()?;Ok::<_,Failure>(())})?;Ok(true)})?;
-        if !completed{return Err("original marker traversal incomplete".into())}
-        crate::reactive_raw_policy_pages::RawDependencyMarkers::from_rows(rows,count).finish(&self.order,self.budget,checkpoint)
+        self.policy_marker_rows_named(&["READS_AS","PROC_SUMMARY","READ_LOOKUP","CAPABILITY_TYPE","CAPABILITY_DEF","cap_keys","SYSTEM_ACCESSOR","READS_FROM","CAPABILITIES","STAT"],entries,capabilities,runtime,checkpoint)
+    }
+    fn policy_marker_rows_named(&self,names:&[&str],entries:bool,capabilities:bool,runtime:bool,checkpoint:&mut dyn FnMut()->std::io::Result<()>)->Result<crate::captured_marker_rows::Rows<'a>,crate::reactive_reads_native::Failure>{
+        crate::reactive_raw_policy_pages::collect_marker_rows(|visit|self.with_policy_files(visit),&self.order,self.budget,names,entries,capabilities,runtime,checkpoint,&||self.require().map_err(crate::reactive_reads_native::Failure::from))
     }
     pub(crate) fn raw_metadata_checked(&self,checkpoint:&mut dyn FnMut()->std::io::Result<()>,emit:&mut dyn FnMut(&str,crate::raw_reactive_metadata_policy::Event<'_>)->Result<(),crate::reactive_reads_native::Failure>)->Result<(),crate::reactive_reads_native::Failure>{
         let completed=self.with_policy_files(&mut|relative,views|{for line in views.marker()?.split('\n'){checkpoint()?;self.require()?;crate::raw_reactive_metadata_policy::visit_line(line,|event|emit(relative,event))?;}Ok(true)})?;
@@ -158,6 +158,16 @@ impl<'a> ReadSource<'a>{
         crate::captured_marker_rows::collect(self.raw()?,&self.order,self.budget,&[
             "READS_AS","PROC_SUMMARY","READ_LOOKUP","CAPABILITY_TYPE","CAPABILITY_DEF","cap_keys","SYSTEM_ACCESSOR","READS_FROM","CAPABILITIES","STAT",
         ],false,checkpoint)
+    }
+
+    /// DATA-only original file loans for Plans metadata. Finite capture may
+    /// contain compiled reader definitions outside CODE_DM; code eligibility is
+    /// computed by the SAME existing selector, never supplied by the caller.
+    /// Page providers remain CODE-only; an absent required reader is refused by
+    /// the collector rather than converted into a clean reader-key absence.
+    pub(crate) fn with_plan_metadata_files(&self,visit:&mut dyn FnMut(&str,crate::captured_raw_file::RawPolicyViews<'_>,bool)->Result<bool,crate::reactive_reads_native::Failure>)->Result<bool,crate::reactive_reads_native::Failure>{
+      if self.raw_pages.is_some(){return self.with_policy_files(&mut|relative,views|visit(relative,views,true))}
+      use crate::reactive_reads_native::Failure;self.checkpoint()?;self.require()?;let pending=(||{for file in &self.raw()?.tree.files{self.checkpoint()?;self.require()?;let next=visit(&file.rel,crate::captured_raw_file::RawPolicyViews::from_source(file),crate::tree::CODE_DM.matches(file))?;file.require_view_budget().map_err(|message|Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))?;if !next{return Ok(false)}}Ok(true)})();if matches!(&pending,Err(Failure::Operational(_))){return pending}self.checkpoint()?;self.require()?;pending
     }
 
     /// Borrow authenticated RAW-policy code views only. These include inactive
@@ -184,6 +194,9 @@ impl<'a> ReadSource<'a>{
     /// Full dependency declarations use the SAME first-statement projectors as
     /// legacy Decls; no body syntax demand or source acquisition occurs here.
     pub(crate) fn dependency_marker_rows(&self)->Result<crate::captured_marker_rows::Rows<'a>,crate::reactive_reads_native::Failure>{self.policy_marker_rows(true,true,true,&mut||self.checkpoint())}
+    /// Exact Plans declaration families, including STATE_GRAPH reader keys.
+    /// The dependency producer keeps its existing family selection unchanged.
+    pub(crate) fn plans_marker_rows(&self)->Result<crate::captured_marker_rows::Rows<'a>,crate::reactive_reads_native::Failure>{self.policy_marker_rows_named(&["CAPABILITIES","CAPABILITY_DEF","CAPABILITY_TYPE","STATE_GRAPH","STAT"],true,true,true,&mut||self.checkpoint())}
 
     pub(crate) fn raw_metadata<E:From<String>>(&self,checkpoint:impl FnMut()->Result<(),E>,mut emit:impl FnMut(crate::raw_reactive_metadata_policy::Event<'_>)->Result<(),E>)->Result<(),E>{
         self.raw_metadata_with_file(checkpoint,|_,event|emit(event))

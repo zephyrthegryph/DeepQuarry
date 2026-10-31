@@ -72,6 +72,7 @@ impl Output {
         }
         Ok(())
     }
+    pub(crate) fn move_owned_data(&mut self)->Self{let mut data=Self::default();data.body=std::mem::take(&mut self.body);data.diags=std::mem::take(&mut self.diags);data}
     pub fn file_text(&self) -> String {
         let mut text = String::new();
         self.write_file_text(&mut text)
@@ -94,16 +95,10 @@ pub fn system_types(system: &str) -> Vec<String> {
         format!("/datum/system/{}", system),
     ]
 }
-pub fn visit_system_defs(
-    raw: &str,
-    mut visit: impl FnMut(&str) -> Result<(), String>,
-) -> Result<(), String> {
-    if raw.contains("SYSTEM_DEF(") {
-        for c in crate::pat!(r"(?m)^\s*SYSTEM_DEF\((\w+)\)").captures_iter(raw) {
-            visit(c.s(1))?;
-        }
-    }
-    Ok(())
+pub fn visit_system_defs(raw:&str,mut visit:impl FnMut(&str)->Result<(),String>)->Result<(),String>{visit_system_defs_using(raw,&mut||Ok(()),&mut|_|Ok(()),&mut visit)}
+/// SAME original raw spelling matcher, with exposed group backing admitted once.
+pub fn visit_system_defs_using<E>(raw:&str,checkpoint:&mut impl FnMut()->Result<(),E>,admit:&mut impl FnMut(usize)->Result<(),E>,visit:&mut impl FnMut(&str)->Result<(),E>)->Result<(),E>{
+ checkpoint()?;if raw.contains("SYSTEM_DEF("){let pattern=crate::pat!(r"(?m)^\s*SYSTEM_DEF\((\w+)\)");admit(pattern.capture_group_count())?;pattern.try_for_each_capture(raw,&mut(checkpoint,visit),|state,_|(state.0)(),|state,matched|(state.1)(matched.s(1)))?;}Ok(())
 }
 pub fn system_defs(raw: &str) -> Vec<String> {
     let mut defs = Vec::new();
@@ -159,6 +154,10 @@ impl Builder {
             rows: Vec::new(),
             out: Output::default(),
         }
+    }
+    /// Same row policy, with bounded original temporary/row work BEFORE push.
+    pub fn push_checked<E:From<String>>(&mut self,rel:&str,line:u32,args:&[String],has_var:impl Fn(&str,&str)->bool,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<(),E>{
+        checkpoint()?;if let Some(budget)=&self.out.budget{let bytes=args.iter().try_fold(0usize,|n,s|n.checked_add(s.len())).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(rel.len().checked_mul(2)?)).and_then(|n|n.checked_add(2048)).ok_or_else(||{budget.deny();"system row admission overflow".to_owned()})?;budget.charge(bytes)?;if !budget.row(&mut self.rows){budget.require()?;}}self.push(rel,line,args,has_var);checkpoint()?;Ok(())
     }
     pub fn push(
         &mut self,
@@ -236,14 +235,20 @@ impl Builder {
             typed,
         ));
     }
-    pub fn finish(self) -> Output {
+    pub fn finish(self)->Output{self.finish_using(&mut||Ok::<(),std::convert::Infallible>(()),&mut|_,_|Ok(())).unwrap_or_else(|never|match never{})}
+    pub fn finish_with<E:From<String>>(self,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<Output,E>{self.finish_using(checkpoint,&mut|budget,bytes|budget.charge(bytes).map_err(E::from))}
+    fn finish_using<E>(self,checkpoint:&mut impl FnMut()->Result<(),E>,admit:&mut impl FnMut(&crate::captured_generator_budget::Budget,usize)->Result<(),E>)->Result<Output,E>{
+        checkpoint()?;
         let Self {
             sys_defs,
             mut rows,
             mut out,
         } = self;
+        let budget=out.budget.clone();
+        if let Some(budget)=&budget{admit(budget,rows.len().saturating_mul(std::mem::size_of::<(String,String,String,String,u32,Option<String>)>()).saturating_add(256))?;}
         rows.sort();
         for w in rows.windows(2) {
+            checkpoint()?;
             if w[0].0 == w[1].0 {
                 out.diag_fmt(
                     &w[1].3,
@@ -257,12 +262,14 @@ impl Builder {
         }
         rows.dedup_by(|a, b| a.0 == b.0);
         // An accessor declared in a test-only file (`test_only`) exists only in a test build.
+        if let Some(budget)=&budget{admit(budget,rows.len().saturating_mul(8*std::mem::size_of::<(String,String,String,String,u32,Option<String>)>()).saturating_add(2048))?;}
         let (tests, content): (Vec<_>, Vec<_>) = rows
             .into_iter()
             .partition(|r| crate::generator_test_scope::test_only(&r.3));
         let emit =
-            |out: &mut Output, rows: Vec<(String, String, String, String, u32, Option<String>)>| {
+            |out: &mut Output, rows: Vec<(String, String, String, String, u32, Option<String>)>,checkpoint:&mut dyn FnMut()->Result<(),E>|->Result<(),E> {
                 for (name, system, var, rel, line, typed) in rows {
+                    checkpoint()?;
                     match &typed {
                         Some(t) => {
                             out.doc_fmt(format_args!("SYSTEM_ACCESSOR({}, {}, nameof({}), {}) at {}:{}: the {} system's `{}`, read as a typed var.", system, name, var, t, rel, line, system, var));
@@ -284,16 +291,16 @@ impl Builder {
                         prefix, system, suffix, var
                     ));
                     out.blank();
-                }
+                }Ok(())
             };
-        emit(&mut out, content);
+        emit(&mut out,content,checkpoint)?;
         if !tests.is_empty() {
             out.line(crate::generator_test_scope::TEST_GUARD);
             out.blank();
-            emit(&mut out, tests);
+            emit(&mut out,tests,checkpoint)?;
             out.line("#endif");
         }
-        out
+        checkpoint()?;Ok(out)
     }
 }
 

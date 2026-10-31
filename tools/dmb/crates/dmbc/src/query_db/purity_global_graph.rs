@@ -11,6 +11,8 @@ struct GraphPayload{graph:RetainedEffectGraph,lease:graph_work::GraphLease,#[cfg
 impl Drop for NativeEffectGraph{fn drop(&mut self){if let Some(payload)=self.payload.take().and_then(Arc::into_inner){#[cfg(test)]if let Some((entered,release))=payload.drop_pause.lock().unwrap_or_else(|e|e.into_inner()).take(){entered.wait();release.wait();}
 let GraphPayload{graph,lease,..}=payload;drop(graph);drop(lease);}}}
 impl NativeEffectGraph{
+ pub(super) fn original_report_graph(&self)->&RetainedEffectGraph{&self.payload().graph}
+
  #[cfg(test)]pub(crate) fn pause_drop_for_test(&self,entered:Arc<std::sync::Barrier>,release:Arc<std::sync::Barrier>){*self.payload().drop_pause.lock().unwrap_or_else(|e|e.into_inner())=Some((entered,release));}
  fn payload(&self)->&GraphPayload{self.payload.as_deref().expect("sealed native effect graph payload")}
  pub(super) fn issue(graph:RetainedEffectGraph,ledger:Arc<Mutex<Ledger>>,completion:Arc<std::sync::atomic::AtomicBool>)->Arc<Self>{Arc::new(Self{payload:Some(Arc::new(GraphPayload{graph,lease:graph_work::GraphLease{ledger,completion},#[cfg(test)]drop_pause:Mutex::new(None)}))})}
@@ -73,6 +75,6 @@ impl QueryDb{
  }
 }
 
-impl graph_work::RetainedHandle for NativeEffectGraph{type Data=RetainedEffectGraph;fn coordination_charge()->usize{Self::coordination_charge()}fn issue(data:RetainedEffectGraph,ledger:Arc<Mutex<Ledger>>,completion:Arc<std::sync::atomic::AtomicBool>)->Arc<Self>{Self::issue(data,ledger,completion)}fn retained_charge(&self)->Option<usize>{Self::retained_charge(self)}}
+impl graph_work::RetainedHandle for NativeEffectGraph{fn fingerprint(&self,_:Key)->u128{self.payload().graph.report_fingerprint()}type Data=RetainedEffectGraph;fn coordination_charge()->usize{Self::coordination_charge()}fn issue(data:RetainedEffectGraph,ledger:Arc<Mutex<Ledger>>,completion:Arc<std::sync::atomic::AtomicBool>)->Arc<Self>{Self::issue(data,ledger,completion)}fn retained_charge(&self)->Option<usize>{Self::retained_charge(self)}}
 /// Nested SAME Db child loan, while the actual outer gate remains held.
 pub(super) fn obtain(ctx:&mut dm_query::Ctx<'_>,ledger:&Arc<Mutex<Ledger>>,input:&Arc<EffectInput>,sources:&Arc<Vec<Key>>,width:usize)->Result<Arc<NativeEffectGraph>,ReadFailure>{let key=graph_key(input,width);let _node=node_admission(ledger,input,key,std::mem::size_of::<GraphParams>())?;dependency_peak(ledger,key)?;let params=Arc::new(GraphParams{base:Params{input:Arc::downgrade(input),key,ordinal:0,sources:sources.clone(),policy:Weak::new()},width});remember_params(ledger,input,key,&params);let value=ctx.get::<Result<Arc<NativeEffectGraph>,String>>(key,params).map_err(ReadFailure::Query)?.as_ref().clone().map_err(ReadFailure::Semantic)?;let source=EffectSource::new(input.archive(),input.profile()).map_err(|error|policy_read_failure(key,error))?;value.current(&source).map_err(|error|policy_read_failure(key,error))?;Ok(value)}

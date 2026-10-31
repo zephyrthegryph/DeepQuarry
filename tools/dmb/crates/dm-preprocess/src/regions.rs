@@ -12,6 +12,8 @@ use std::sync::Arc;
 
 mod directive_memo;
 mod directives;
+mod generation;
+pub use generation::{GenerationDirectivePlan, GenerationOmissions};
 mod intern_wire;
 mod plan_trace;
 mod segment_lines;

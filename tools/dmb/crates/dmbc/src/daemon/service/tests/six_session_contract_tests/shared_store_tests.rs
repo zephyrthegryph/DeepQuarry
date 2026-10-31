@@ -27,7 +27,7 @@ fn retained_output(shared: &Arc<Shared>, roots: &Roots, index: usize) -> Triple 
     let retained = request(roots, index, false);
     let slot = shared.slot(retained.project.clone(), Some(&retained));
     let token = control::Cancellation::default();
-    let _latest = LatestRequest::register(&slot, RequestKey::of(&retained, &retained.project), token.clone());
+    let _latest = LatestRequest::register(&slot, RequestKey::of(&retained, &retained.project,&[]), token.clone());
     let _binding = control::bind(token);
     let _serial = slot
         .lock_request_until(&admission_deadline::AdmissionDeadline::new(Instant::now()))

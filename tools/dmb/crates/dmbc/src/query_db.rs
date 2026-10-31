@@ -28,6 +28,7 @@ mod native_arc_allocation;
 mod no_weak_arc_owner;
 mod purity;
 mod raw_policy;
+pub use raw_policy::GeneratorName;
 mod source_allocation;
 use answer_value_owner::{PooledOwner, ValueOwner};
 use source_allocation::{SourceAllocator, SourceLedger};
@@ -83,6 +84,8 @@ pub struct QueryDb {
     value_inputs:
         Mutex<BTreeMap<Key, std::sync::Weak<dm_analysis::value_query::ArchiveValueInput>>>,
     body_inputs: Mutex<BTreeMap<Key, std::sync::Weak<dm_tree::frontend::BodySyntaxInput>>>,
+    // Cache retirement cursor only; no additional input/syntax collection.
+    body_eviction_cursor: Mutex<Option<Key>>,
     /// Current answers of every query a stored unit read (see `answer` below).
     answers: Answers,
     /// Read lists of the stored lowering units, rebuilt only for new stored values.
@@ -141,6 +144,7 @@ impl Default for QueryDb {
             purity,
             value_inputs: Mutex::new(BTreeMap::new()),
             body_inputs: Mutex::new(BTreeMap::new()),
+            body_eviction_cursor: Mutex::new(None),
             id: NEXT_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             db,
             answers: Answers::default(),
@@ -1905,3 +1909,7 @@ pub(crate) use purity::global_graph::NativeEffectGraph;
 pub(crate) use purity::global_summary::NativeEffectSummary;
 
 pub(crate) use purity::pages::NativeEffectPage;
+
+pub(crate) use purity::global_report::NativeEffectReport;
+
+pub(crate) use purity::report_wire::EffectRequestInputLease;

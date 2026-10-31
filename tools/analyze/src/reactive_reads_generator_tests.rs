@@ -47,3 +47,5 @@ fn assert_original_output(actual:&crate::sparse_slots_policy::Output,expected:&c
 
 struct ActualPages<'a>{raw:&'a crate::captured_raw_policy::CapturedRawPolicy,busy:std::cell::Cell<bool>}
 impl crate::reactive_raw_policy_pages::RawPolicyPages for ActualPages<'_>{fn for_each(&self,visit:&mut dyn FnMut(&str,crate::captured_raw_file::RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{if self.busy.replace(true){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"nested original page loan")))}struct Reset<'a>(&'a std::cell::Cell<bool>);impl Drop for Reset<'_>{fn drop(&mut self){self.0.set(false)}}let _reset=Reset(&self.busy);for file in self.raw.tree.files.iter().filter(|file|crate::tree::CODE_DM.matches(file)){if !visit(&file.rel,crate::captured_raw_file::RawPolicyViews::from_source(file))?{return Ok(false)}}Ok(true)}}
+
+#[path="reactive_plans_generator_tests.rs"]mod plans_tests;

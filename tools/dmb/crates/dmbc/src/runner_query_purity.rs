@@ -12,6 +12,7 @@ pub(crate) struct PurityScope<'a> {
     tree: &'a dm_tree::SemanticTree,
     policy: &'a CheckerPolicy,
     policy_key: u128,
+    configuration: &'a dm_analysis::check_configuration::Loaded,
 }
 impl PurityScope<'_> {
     pub(crate) fn validate(
@@ -46,6 +47,7 @@ impl PurityScope<'_> {
     pub(crate) fn policy(&self) -> &CheckerPolicy {
         self.policy
     }
+    pub(crate) fn configuration(&self)->&dm_analysis::check_configuration::Loaded{self.configuration}
     pub(crate) fn policy_key(&self) -> u128 {
         self.policy_key
     }
@@ -116,6 +118,9 @@ impl SourceSnapshot {
     }
     pub(crate) fn native_effect_source_graph(&self,input:&Arc<EffectInput>,width:usize,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree)->std::io::Result<Arc<crate::query_db::NativeEffectGraph>>{self.with_effect_scope(input,environment,explicit,tree,|db,scope|db.native_effect_source_graph(input,scope,width))}
     pub(crate) fn native_effect_source_summary(&self,input:&Arc<EffectInput>,width:usize,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree)->std::io::Result<Arc<crate::query_db::NativeEffectSummary>>{self.with_effect_scope(input,environment,explicit,tree,|db,scope|db.native_effect_source_summary(input,scope,width))}
+    pub(crate) fn native_effect_source_report(&self,input:&Arc<EffectInput>,width:usize,phase:dm_analysis::checker_effects::EffectReportPhase,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree)->std::io::Result<Arc<crate::query_db::NativeEffectReport>>{self.with_effect_scope(input,environment,explicit,tree,|db,scope|db.native_effect_source_report(input,scope,width,phase))}
+    /// Exact bounded target-order window over the SAME complete global summary.
+    pub(crate) fn native_effect_source_report_window(&self,input:&Arc<EffectInput>,width:usize,phase:dm_analysis::checker_effects::EffectReportPhase,start:usize,count:usize,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree)->std::io::Result<Arc<crate::query_db::NativeEffectReport>>{self.with_effect_scope(input,environment,explicit,tree,|db,scope|db.native_effect_source_report_window(input,scope,width,phase,start,count))}
     fn with_effect_scope<T>(
         &self,
         input: &Arc<EffectInput>,
@@ -143,6 +148,7 @@ impl SourceSnapshot {
             snapshot: self,
             tree,
             policy: &loaded.policy,
+            configuration: &loaded,
             policy_key: hash_policy(&loaded.policy, frame, &loaded.selected.path),
         };
         let db = self.native_raw_queries.as_ref().ok_or_else(|| {
@@ -156,3 +162,22 @@ impl SourceSnapshot {
 #[cfg(test)]
 #[path = "runner_query_purity_tests.rs"]
 mod tests;
+
+#[path="runner_query_effect_wire.rs"]mod effect_wire;
+
+/// One private request-only issued input. No raw Arc escapes this retained slot.
+/// EffectInput owns the existing archive; its body provider points weakly to Db.
+pub(super) struct EffectRequestInput{input:Option<Arc<EffectInput>>,_lease:crate::query_db::EffectRequestInputLease}
+impl Drop for EffectRequestInput{fn drop(&mut self){drop(self.input.take());}}
+impl EffectRequestInput{pub(super) fn census(&self,census:&mut crate::heap_census::HeapCensus){if let Some(input)=&self.input{census.arc_object("query_snapshot.effect_request_input",input);}}}
+impl SourceSnapshot{
+ fn effect_request_input(&self,tree:&dm_tree::SemanticTree)->std::io::Result<&EffectRequestInput>{
+  crate::daemon::control::checkpoint()?;let capture=self.named_policy_capture(tree)?;let db=self.native_raw_queries.as_ref().ok_or_else(||std::io::Error::new(std::io::ErrorKind::NotConnected,"effect request current query database unavailable"))?;let profile=tree.checker_builtin_profile().ok_or_else(||std::io::Error::other("effect request builtin profile unavailable"))?;
+  if self.native_effect_request_input.get().is_none(){let bytes=std::mem::size_of::<std::sync::OnceLock<EffectRequestInput>>().checked_add(std::mem::size_of::<EffectInput>()).and_then(|n|n.checked_add(2*std::mem::size_of::<usize>()+128)).ok_or_else(||std::io::Error::new(std::io::ErrorKind::OutOfMemory,"effect request fixed input capacity overflow"))?;let lease=db.reserve_effect_request_input(bytes)?;let input=EffectInput::source_pages(Arc::clone(capture.policy().archive()),profile).map_err(std::io::Error::other)?;input.validate_current(capture.policy().archive(),db.as_ref()).map_err(std::io::Error::other)?;let owner=EffectRequestInput{input:Some(input),_lease:lease};let _=self.native_effect_request_input.set(owner);}
+  let owner=self.native_effect_request_input.get().expect("actual retained request input initialized");let input=owner.input.as_ref().expect("sealed request input remains owned");if input.profile()!=profile{return Err(std::io::Error::other("effect request cached profile differs"))}input.validate_current(capture.policy().archive(),db.as_ref()).map_err(std::io::Error::other)?;
+  Ok(owner)
+ }
+ pub(crate) fn write_native_effect_request(&self,width:usize,target_window:usize,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree,output:&mut impl std::io::Write)->std::io::Result<()>{let owner=self.effect_request_input(tree)?;let input=owner.input.as_ref().expect("sealed actual input");
+  self.write_native_effect_reports_exhausted(input,width,target_window,environment,explicit,tree,output)
+ }
+}

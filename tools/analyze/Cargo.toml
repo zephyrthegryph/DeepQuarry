@@ -11,6 +11,11 @@ name = "analyze"
 path = "src/main.rs"
 required-features = ["legacy-sem"]
 
+[[bin]]
+name = "analyze-native"
+path = "src/native_main.rs"
+required-features = ["native-policy"]
+
 [lib]
 name = "dq_analyze"
 path = "src/lib.rs"

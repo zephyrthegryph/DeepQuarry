@@ -148,6 +148,9 @@ pub use policy_directories::{
 pub struct FileSystemInputs;
 #[path = "input_generated_outputs.rs"]
 mod generated;
+#[path="input_generation.rs"]
+mod generation;
+pub(crate) use generation::{GenerationBootstrap,GenerationBootstrapFailure,GenerationBootstrapPreparation};
 pub use generated::GeneratedOutputInputs;
 #[path = "input_snapshot_open.rs"]
 mod source_open;

@@ -10,7 +10,7 @@ fn build(shared: &Arc<Shared>, roots: &Roots) -> (crate::publish::OutputPair, Ve
     retained.no_cache = false;
     let slot = shared.slot(retained.project.clone(), Some(&retained));
     let token = control::Cancellation::default();
-    let _latest = LatestRequest::register(&slot, RequestKey::of(&retained, &retained.project), token.clone());
+    let _latest = LatestRequest::register(&slot, RequestKey::of(&retained, &retained.project,&[]), token.clone());
     let _binding = control::bind(token);
     let _serial = slot
         .lock_request_until(&admission_deadline::AdmissionDeadline::new(Instant::now()))

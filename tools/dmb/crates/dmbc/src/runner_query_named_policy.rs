@@ -37,7 +37,7 @@ pub(super) fn configuration(
     )
     .map_err(io::Error::other)
 }
-fn severity(value: DiagnosticSeverity) -> &'static str {
+pub(super) fn severity(value: DiagnosticSeverity) -> &'static str {
     match value {
         DiagnosticSeverity::Error => "error",
         DiagnosticSeverity::Warning => "warning",

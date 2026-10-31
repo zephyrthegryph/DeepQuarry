@@ -779,7 +779,11 @@ fn run_build_attempt(
         dm_profile::request_mark("workspace.capture.done");
         let frame_started=Instant::now();
         if progress_enabled { dmbc::daemon_eprintln!("native stage workspace.frame_staging: started"); }
+        if policy_inputs.as_ref().is_some_and(|intent|!intent.workspace_generators().is_empty()){
+            query_attempt.capture_with_workspace_generator_recorded_sources(&frontend,std::sync::Arc::clone(&source_policy_queries),captured,workspace,&inputs_capture,policy_inputs.as_ref().expect("actual generator intent"))?;
+        }else{
         query_attempt.capture_with_workspace_recorded_sources(&frontend, std::sync::Arc::clone(&source_policy_queries), captured, workspace, &inputs_capture)?;
+        }
         if progress_enabled { dmbc::daemon_eprintln!("native stage workspace.frame_staging: {:.3}s",frame_started.elapsed().as_secs_f64()); }
         dm_profile::request_mark("workspace.frame_staged");
     } else {

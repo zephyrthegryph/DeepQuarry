@@ -5,7 +5,8 @@ use super::*;
 mod analyze_policy;
 #[path = "generator_policy.rs"]
 mod generator_policy;
-pub(crate) use generator_policy::{Artifact as GeneratorArtifact, GeneratorName};
+pub(crate) use generator_policy::Artifact as GeneratorArtifact;
+pub use generator_policy::GeneratorName;
 #[path = "workspace_raw.rs"]
 pub(super) mod workspace;
 use crate::runner_host::policy_capture::CapturedPolicyInputs;

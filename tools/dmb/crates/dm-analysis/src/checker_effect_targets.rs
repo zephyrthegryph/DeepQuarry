@@ -35,7 +35,7 @@ pub(crate) fn callable_target(
         CallableFact::Missing => Err("missing callable cannot issue an effect target".into()),
     }
 }
-pub(crate) fn target_owner(input: &EffectInput, target: EffectTarget) -> Result<SymbolId, String> {
+pub(crate) fn target_owner(input: &report_core::ReportSource<'_>, target: EffectTarget) -> Result<SymbolId, String> {
     match target {
         EffectTarget::Source(p) => Ok(p.owner),
         EffectTarget::Builtin(p) => input
@@ -45,14 +45,14 @@ pub(crate) fn target_owner(input: &EffectInput, target: EffectTarget) -> Result<
             .map_err(|e| format!("{e:?}")),
     }
 }
-pub(crate) fn display_target(
-    input: &EffectInput,
+pub(crate) fn display_target<E:From<String>+From<&'static str>>(
+    input: &report_core::ReportSource<'_>,
     target: EffectTarget,
-    budget: &ReportBudget,
-) -> Result<String, String> {
+    budget: &output::ReportBudgetWith<'_,E>,
+) -> Result<String, E> {
     match target {
         EffectTarget::Source(p) => display(input, p, &budget),
-        EffectTarget::Builtin(p) => input
+        EffectTarget::Builtin(p) => {let result=input
             .archive
             .tree()
             .with_checker_builtin_procedure(p, |row| {
@@ -70,12 +70,7 @@ pub(crate) fn display_target(
                     "{}/proc/{name}",
                     if owner == "/" { "" } else { owner }
                 ))
-            })
-            .map_err(|e| {
-                budget
-                    .format(format_args!("{e:?}"))
-                    .unwrap_or_else(|budget_error| budget_error)
-            })?,
+            });match result{Ok(value)=>value,Err(error)=>Err(E::from(budget.format(format_args!("{error:?}"))?))}},
     }
 }
 /// Called ONLY after the exact original source-parent projection has exhausted
@@ -219,25 +214,4 @@ pub(crate) fn target_parent_parts(
             original_target_parent(&input.archive, input.profile, resolver, target)
         }
     }
-}
-pub(crate) fn source_child_overrides_target(
-    plan: &EffectPlan,
-    input: &EffectInput,
-    resolver: &(impl Resolver + ?Sized),
-    child: &BodyEffects,
-    target: EffectTarget,
-    budget: &ReportBudget,
-) -> Result<bool, String> {
-    let mut at = child.parent;
-    let mut seen = BTreeSet::new();
-    while let Some(parent) = at {
-        if !budget.insert(&mut seen, parent)? {
-            return Err("effect target predecessor cycle".into());
-        }
-        if parent == target {
-            return Ok(true);
-        }
-        at = target_parent_parts(input, resolver, parent, &plan.bodies, &plan.index)?;
-    }
-    Ok(false)
 }

@@ -1,7 +1,7 @@
 //! Exact plans emitter/unique reader-key policy shared by original producers.
 //! Borrowed rows are projections, NOT native source or evaluation authority.
 use std::collections::{BTreeMap,BTreeSet,HashMap,HashSet};
-use crate::{reactive_facts::DepsAnalysis,tree::SourceFile};
+use crate::{reactive_facts::DepsAnalysis,tree::SourceFile,key_policy_control as kc};
 pub use crate::sparse_slots_policy::Output;
 const CAP_ENTRIES:&str="CAP_ENTRIES";
 pub struct MarkerRow<'a>{pub name:&'a str,pub args:&'a [String],pub body:&'a str}
@@ -53,6 +53,9 @@ pub fn generate(input:&PlansInput<'_>,out:&mut Output){
  generate_with_analysis(&metadata,crate::reactive_dependency_view::Analysis::Owned(input.analysis),out)
 }
 pub(crate) fn generate_with_analysis(input:&MetadataInput<'_>,an:crate::reactive_dependency_view::Analysis<'_>,out:&mut Output){
+ let metadata=match collect_metadata(input,&mut kc::Compatibility){Ok(v)=>v,Err(e)=>match e{}};generate_prepared(an,&metadata,out)
+}
+pub(crate) fn generate_prepared(an:crate::reactive_dependency_view::Analysis<'_>,metadata:&PreparedMetadata,out:&mut Output){
         // Per type: var -> PLAN bits as DM text.
         let mut plans: BTreeMap<&str, BTreeMap<String, BTreeSet<&str>>> = BTreeMap::new();
         let mut names: BTreeSet<String> = BTreeSet::new();
@@ -152,8 +155,8 @@ pub(crate) fn generate_with_analysis(input:&MetadataInput<'_>,an:crate::reactive
         out.doc("\"<capability type>\" -> TRUE: a capability that overrides the legacy draw(holder, look) or hidden_verbs(holder): its reads of the holder");
         out.doc("are not in any plan, so a holder carrying one keeps redrawing on every write (plan_spares_build(), code/engine/change/plan.dm).");
         let mut legacy: BTreeSet<String> = BTreeSet::new();
-        for &owner in input.output_defining_owners {
-            if owner.starts_with("/datum/capability/") { legacy.insert(owner.to_owned()); }
+        for owner in &metadata.legacy_outputs {
+            if owner.starts_with("/datum/capability/") { legacy.insert(owner.clone()); }
         }
         let rows: Vec<(String, String)> = legacy.iter().map(|t| (quote(t), "TRUE".to_string())).collect();
         emit_table(out, "generated_capability_legacy_outputs", &rows);
@@ -162,24 +165,7 @@ pub(crate) fn generate_with_analysis(input:&MetadataInput<'_>,an:crate::reactive
         // arguments, which no static rule can follow), so all of them are inputs; the runtime adds the holder reads of the generated handler
         // rows (stat_input_names_build(), code/engine/change/plan.dm). dq_stat_index_oracle proves this covers every key the stat builder
         // registers.
-        let mut inputs: BTreeSet<String> = BTreeSet::new();
-        for name in ["CAPABILITIES", CAP_ENTRIES, "STAT"] {
-            for m in input.markers.iter().filter(|m|m.name == name) {
-                for v in crate::raw_marker_policy::marker_named_vars(m.body) {
-                    inputs.insert(quote(&v));
-                }
-                for c in crate::pat!(r"\breads\s*=\s*list\(([^)]*)\)").captures_iter(&m.body) {
-                    for item in c.s(1).split(',') {
-                        let item = item.trim();
-                        if item.len() > 2 && item.starts_with('"') && item.ends_with('"') && !item[1..item.len() - 1].contains('[') {
-                            inputs.insert(item.to_string());
-                        } else if input.defines.contains(item) {
-                            inputs.insert(item.to_string());
-                        }
-                    }
-                }
-            }
-        }
+        let mut inputs = metadata.stat_inputs.clone();
         for v in an.stat_reads() {
             if key_ident(v) {
                 inputs.insert(quote(v));
@@ -194,7 +180,7 @@ pub(crate) fn generate_with_analysis(input:&MetadataInput<'_>,an:crate::reactive
             out.line_fmt(format_args!("	. += {}", i));
         }
         out.line("GLOBAL_LIST_INIT(generated_stat_input_reads, generated_stat_input_reads_build())");
-        emit_reader_keys(input, out);
+        emit_prepared_reader_keys(metadata, out);
 }
 /// Reader keys by owner: ("" for every type, or a type path whose subtypes inherit the row, name) -> PLAN_READ_* bits.
 pub(crate) type ReaderKeys = BTreeMap<(String, String), u8>;
@@ -202,29 +188,40 @@ pub(crate) type ReaderKeys = BTreeMap<(String, String), u8>;
 /// The names a declaration text can make a reader of: every nameof(), every quoted identifier and every key define it names (a stat id: the
 /// runtime resolves it to the stat's name). Over-inclusive by design (see `emit_reader_keys`). The names go on `owner` ("" = every type), except
 /// the segments after the first of a dotted path ("terminal.charge"): those are read on the far end of a hop, whatever its type, so they go on "".
-pub(crate) fn reader_names(body: &str, defines: &std::collections::HashSet<String>, owner: &str, into: &mut ReaderKeys, bits: u8) {
-    let add = |o: &str, s: String, into: &mut ReaderKeys| *into.entry((o.to_string(), s)).or_default() |= bits;
-    for c in crate::pat!(r"\bnameof\(\s*(?:[\w/]+::)?(\w+)\s*\)").captures_iter(body) {
-        add(owner, quote(c.s(1)), into);
+
+/// Membership only; no owned table conversion is needed by native callers.
+pub(crate) trait Defines{fn contains(&self,name:&str)->bool;}
+impl Defines for HashSet<String>{fn contains(&self,name:&str)->bool{HashSet::contains(self,name)}}
+impl Defines for BTreeSet<String>{fn contains(&self,name:&str)->bool{BTreeSet::contains(self,name)}}
+#[derive(Default)]pub(crate) struct PreparedMetadata{pub(crate) stat_inputs:BTreeSet<String>,pub(crate) reader_keys:ReaderKeys,pub(crate) tracked_names:BTreeSet<String>,pub(crate) legacy_outputs:BTreeSet<String>}
+fn quoted<C:kc::Control>(c:&mut C,text:&str)->Result<String,C::Error>{kc::reserve(c,||text.len().checked_mul(8)?.checked_add(128))?;Ok(quote(text))}
+fn set_name<C:kc::Control>(c:&mut C,set:&mut BTreeSet<String>,name:String)->Result<(),C::Error>{if !set.contains(&name){kc::reserve(c,||1024usize.checked_add(std::mem::size_of::<String>()))?;set.insert(name);}Ok(())}
+fn add_key<C:kc::Control>(c:&mut C,keys:&mut ReaderKeys,owner:&str,name:String,bits:u8)->Result<(),C::Error>{c.checkpoint()?;let owner=kc::own(c,owner)?;kc::reserve(c,||1024usize.checked_add(std::mem::size_of::<((String,String),u8)>()))?;*keys.entry((owner,name)).or_default()|=bits;Ok(())}
+pub(crate) fn reader_names(body:&str,defines:&HashSet<String>,owner:&str,into:&mut ReaderKeys,bits:u8){match reader_names_with(body,defines,owner,into,bits,&mut kc::Compatibility){Ok(())=>{},Err(e)=>match e{}}}
+pub(crate) fn reader_names_with<C:kc::Control>(body:&str,defines:&impl Defines,owner:&str,into:&mut ReaderKeys,bits:u8,c:&mut C)->Result<(),C::Error>{
+
+    for capture in crate::pat!(r"\bnameof\(\s*(?:[\w/]+::)?(\w+)\s*\)").captures_iter(body) {
+        let name=quoted(c,capture.s(1))?;add_key(c,into,owner,name,bits)?;
     }
-    for c in crate::pat!(r#""([A-Za-z_][A-Za-z0-9_.]*)""#).captures_iter(body) {
-        for (i, seg) in c.s(1).split('.').enumerate() {
+    for capture in crate::pat!(r#""([A-Za-z_][A-Za-z0-9_.]*)""#).captures_iter(body) {
+        for (i, seg) in capture.s(1).split('.').enumerate() {
             if key_ident(seg) {
-                add(if i == 0 { owner } else { "" }, quote(seg), into);
+                let name=quoted(c,seg)?;add_key(c,into,if i==0{owner}else{""},name,bits)?;
             }
         }
     }
     // A handler gate or a key handed as a proc name (every(when = PROC_REF(work_ready))): the table registers the proc's name.
-    for c in crate::pat!(r"\b(?:TYPE_|GLOBAL_)?PROC_REF\(\s*(?:[\w/]+\s*,\s*)?(\w+)\s*\)").captures_iter(body) {
-        add(owner, quote(c.s(1)), into);
+    for capture in crate::pat!(r"\b(?:TYPE_|GLOBAL_)?PROC_REF\(\s*(?:[\w/]+\s*,\s*)?(\w+)\s*\)").captures_iter(body) {
+        let name=quoted(c,capture.s(1))?;add_key(c,into,owner,name,bits)?;
     }
     // A key define: a stat id (STAT_*), a hop (HOP_*) or a named key (*_KEY_*, *_KEY): the runtime evaluates it (a text key, or a stat id it
     // resolves to the stat's name). Function-like macros are not keys.
-    for c in crate::pat!(r"\b((?:STAT|HOP)_[A-Z0-9_]+|[A-Z][A-Z0-9]*_KEY(?:_[A-Z0-9_]+)?)\b(\s*\()?").captures_iter(body) {
-        if c.get(2).is_none() && defines.contains(c.s(1)) {
-            add(owner, c.s(1).to_string(), into);
+    for capture in crate::pat!(r"\b((?:STAT|HOP)_[A-Z0-9_]+|[A-Z][A-Z0-9]*_KEY(?:_[A-Z0-9_]+)?)\b(\s*\()?").captures_iter(body) {
+        if capture.get(2).is_none() && defines.contains(capture.s(1)) {
+            let name=kc::own(c,capture.s(1))?;add_key(c,into,owner,name,bits)?;
         }
     }
+ c.checkpoint()?;Ok(())
 }
 
 /// The owner a declaration's names belong to: its type, or "" (every type) for a capability (its entries and reactions fold into whichever
@@ -239,77 +236,20 @@ pub(crate) fn reader_owner(t: &str) -> &str {
 }
 
 /// The body lines of the proc whose header is at `header` (1-based) in `text`: the indented lines that follow it.
-pub(crate) fn proc_body(text: &str, header: u32) -> String {
-    let mut out = String::new();
-    for line in text.lines().skip(header as usize) {
-        if !line.trim().is_empty() && !line.starts_with('\t') && !line.starts_with(' ') {
-            break;
-        }
-        out.push_str(line);
-        out.push('\n');
-    }
-    out
-}
+pub(crate) fn proc_body(text:&str,header:u32)->String{match proc_body_with(text,header,&mut kc::Compatibility){Ok(v)=>v,Err(e)=>match e{}}}
 
 /// The reader keys of the change graph's plan (step 3d, change_graph.md section 11): which names a static reader of each class may read, so that
 /// a tracked write consults the reaction tables, the on_change() hook index and the lifecycle forms only for a name one of them can read.
 /// Over-inclusive like the stat inputs: every name a declaration block (hooks, forms, sequences, stats) can name is PLAN_READ_ALL, every name a
 /// reactions() or derived() body names is PLAN_READ_REACT, and the runtime adds the names of the generated handler reads (plan_reader_keys_build(),
 /// code/engine/change/plan.dm). dq_change_reader_plan_oracle proves it covers every key the runtime tables register.
-fn emit_reader_keys(input: &MetadataInput<'_>, out: &mut Output) {
-    let mut keys: ReaderKeys = BTreeMap::new();
-    const ALL: u8 = 7;
-    const REACT: u8 = 1;
-    const HOOK: u8 = 2;
-    for m in input.markers {
-        if m.name == "STAT" {
-            if let Some(n) = m.args.get(1) {
-                let n = n.trim();
-                if key_ident(n) {
-                    *keys.entry((String::new(), quote(n))).or_default() |= ALL;
-                }
-            }
-            continue;
-        }
-        let owner = if m.name == "CAPABILITIES" { reader_owner(m.args.first().map(|a| a.as_str()).unwrap_or("")) } else { "" };
-        if matches!(m.name, "CAPABILITIES" | "CAPABILITY_DEF" | "CAPABILITY_TYPE" | "STATE_GRAPH" | "ENTRY_PROC" | "RUNTIME_OBSERVE") || m.name == CAP_ENTRIES {
-            reader_names(&m.body, input.defines, owner, &mut keys, ALL);
-            for a in m.args.iter().skip(if m.name == "CAPABILITIES" { 1 } else { 0 }) {
-                reader_names(a, input.defines, owner, &mut keys, ALL);
-            }
-        }
-    }
-    for d in input.reader_procs {
-        let body = proc_body(d.source, d.header);
-        let bits = if d.name == "generated_reads" { REACT | HOOK } else { REACT };
-        reader_names(&body, input.defines, reader_owner(d.owner), &mut keys, bits);
-    }
-    // Sequence steps (seq_step(..., reads = ...)) are declared in plain procs, and their read lists are often defines (LIFE_CONDITION_READS): every
-    // seq_step() line and every define that names a var are mined too, for every type.
-    // A plain global proc that returns declaration entries without being an entry proc (`return adjacency(...)`, a helper building on_change()
-    // or registry() entries) hands them to whichever type names it: its entry lines are mined for every type.
-    for f in input.files {
-        let mut in_global_proc = false;
-        for line in f.text().lines() {
-            if !line.starts_with('\t') && !line.starts_with(' ') && !line.trim().is_empty() {
-                in_global_proc = line.starts_with("/proc/");
-            }
-            let t = line.trim_start();
-            if t.contains("seq_step(") || (t.starts_with("#define") && t.contains("nameof(")) {
-                reader_names(t, input.defines, "", &mut keys, REACT);
-            } else if in_global_proc
-                && ["on_change(", "on_cross(", "adjacency(", "registry(", "radio_listen(", "derives(", "lives_while("].iter().any(|c| t.contains(c))
-            {
-                reader_names(t, input.defines, "", &mut keys, ALL);
-            }
-        }
-    }
+fn emit_prepared_reader_keys(metadata:&PreparedMetadata,out:&mut Output){
     out.blank();
     out.doc("The change graph's reader keys (step 3d/3e): list(name, PLAN_READ_* bits, owner) rows; owner null = every type, else a type path whose");
     out.doc("subtypes inherit the row (a define is a stat id the runtime resolves to its name). Over-inclusive: a name absent from E's type chain and");
     out.doc("the null rows is read by no reaction, on_change() hook or lifecycle form of E's type.");
     // Chunked: one proc body holds at most 300 rows (the native compiler caps a proc's constant list sizes).
-    let rows: Vec<(&(String, String), &u8)> = keys.iter().collect();
+    let rows: Vec<(&(String, String), &u8)> = metadata.reader_keys.iter().collect();
     for (n, chunk) in rows.chunks(300).enumerate() {
         out.line_fmt(format_args!("/proc/generated_reader_keys_chunk_{}()", n));
         out.line("\t. = list()");
@@ -325,8 +265,7 @@ fn emit_reader_keys(input: &MetadataInput<'_>, out: &mut Output) {
     }
     // The names the plan answers for: the tracked vars (declared or inferred). Only their writes are narrowed; any other key (an engine key a
     // producer publishes, a hand-written setter's var) keeps every class.
-    let tracked: BTreeSet<&String> = input.tracked.values().flatten().filter(|v| key_ident(v)).collect();
-    let rows: Vec<&String> = tracked.into_iter().collect();
+    let rows: Vec<&String> = metadata.tracked_names.iter().collect();
     out.blank();
     out.doc("The tracked var names (declared and inferred): the keys the reader plan narrows (plan_reader_bits(), code/engine/change/plan.dm).");
     for (n, chunk) in rows.chunks(300).enumerate() {
@@ -341,4 +280,44 @@ fn emit_reader_keys(input: &MetadataInput<'_>, out: &mut Output) {
     for n in 0..rows.chunks(300).count() {
         out.line_fmt(format_args!("\t. |= generated_tracked_names_chunk_{}()", n));
     }
+}
+
+impl PreparedMetadata{
+ pub(crate) fn legacy_output<C:kc::Control>(&mut self,owner:&str,c:&mut C)->Result<(),C::Error>{if owner.starts_with("/datum/capability/"){let name=kc::own(c,owner)?;set_name(c,&mut self.legacy_outputs,name)?;}Ok(())}
+ pub(crate) fn tracked<C:kc::Control>(&mut self,name:&str,c:&mut C)->Result<(),C::Error>{if key_ident(name){let name=kc::own(c,name)?;set_name(c,&mut self.tracked_names,name)?;}Ok(())}
+ pub(crate) fn marker<C:kc::Control>(&mut self,m:&MarkerRow<'_>,defines:&impl Defines,c:&mut C)->Result<(),C::Error>{c.checkpoint()?;
+ if matches!(m.name,"CAPABILITIES"|CAP_ENTRIES|"STAT"){
+ for value in crate::raw_marker_policy::marker_named_vars_admitted(m.body,c)?{let name=quoted(c,&value)?;set_name(c,&mut self.stat_inputs,name)?;}
+ for capture in crate::pat!(r"\breads\s*=\s*list\(([^)]*)\)").captures_iter(m.body){for item in capture.s(1).split(','){c.checkpoint()?;let item=item.trim();if item.len()>2&&item.starts_with('"')&&item.ends_with('"')&&!item[1..item.len()-1].contains('[')||defines.contains(item){let name=kc::own(c,item)?;set_name(c,&mut self.stat_inputs,name)?;}}}
+ }
+ if m.name=="STAT"{if let Some(n)=m.args.get(1){let n=n.trim();if key_ident(n){let name=quoted(c,n)?;add_key(c,&mut self.reader_keys,"",name,7)?;}}return Ok(())}
+ let owner=if m.name=="CAPABILITIES"{reader_owner(m.args.first().map(String::as_str).unwrap_or(""))}else{""};
+ if matches!(m.name,"CAPABILITIES"|"CAPABILITY_DEF"|"CAPABILITY_TYPE"|"STATE_GRAPH"|"ENTRY_PROC"|"RUNTIME_OBSERVE")||m.name==CAP_ENTRIES{reader_names_with(m.body,defines,owner,&mut self.reader_keys,7,c)?;for arg in m.args.iter().skip(if m.name=="CAPABILITIES"{1}else{0}){reader_names_with(arg,defines,owner,&mut self.reader_keys,7,c)?;}}c.checkpoint()?;Ok(())}
+ pub(crate) fn reader<C:kc::Control>(&mut self,text:&str,header:u32,owner:&str,name:&str,defines:&impl Defines,c:&mut C)->Result<(),C::Error>{let body=proc_body_slice(text,header);reader_names_with(body,defines,reader_owner(owner),&mut self.reader_keys,if name=="generated_reads"{3}else{1},c)}
+ pub(crate) fn file<C:kc::Control>(&mut self,text:&str,defines:&impl Defines,c:&mut C)->Result<(),C::Error>{let mut in_global_proc=false;for line in text.lines(){c.checkpoint()?;if !line.starts_with('\t')&&!line.starts_with(' ')&&!line.trim().is_empty(){in_global_proc=line.starts_with("/proc/");}let t=line.trim_start();if t.contains("seq_step(")||t.starts_with("#define")&&t.contains("nameof("){reader_names_with(t,defines,"",&mut self.reader_keys,1,c)?;}else if in_global_proc&&["on_change(","on_cross(","adjacency(","registry(","radio_listen(","derives(","lives_while("].iter().any(|needle|t.contains(needle)){reader_names_with(t,defines,"",&mut self.reader_keys,7,c)?;}}c.checkpoint()?;Ok(())}
+}
+fn collect_metadata<C:kc::Control>(input:&MetadataInput<'_>,c:&mut C)->Result<PreparedMetadata,C::Error>{let mut out=PreparedMetadata::default();for owner in input.output_defining_owners{out.legacy_output(owner,c)?;}for marker in input.markers{out.marker(marker,input.defines,c)?;}for row in input.reader_procs{out.reader(row.source,row.header,row.owner,row.name,input.defines,c)?;}for file in input.files{out.file(file.text(),input.defines,c)?;}for names in input.tracked.values(){for name in names{out.tracked(name,c)?;}}c.checkpoint()?;Ok(out)}
+/// SAME line bounds as the original owned body. Canonical raw file loans use
+/// universal newlines; the old synthesized final newline adds no token to any
+/// of the unanchored reader-name patterns. No body text escapes the loan.
+fn proc_body_slice(text:&str,header:u32)->&str{let mut chunks=text.split_inclusive('\n');let mut start=0;for _ in 0..header{let Some(chunk)=chunks.next()else{return &text[text.len()..]};start+=chunk.len();}let mut end=start;for chunk in chunks{let line=if let Some(line)=chunk.strip_suffix('\n'){line.strip_suffix('\r').unwrap_or(line)}else{chunk};if !line.trim().is_empty()&&!line.starts_with('\t')&&!line.starts_with(' '){break}end+=chunk.len();}&text[start..end]}
+fn proc_body_with<C:kc::Control>(text:&str,header:u32,c:&mut C)->Result<String,C::Error>{struct Body<'a>(&'a str);impl std::fmt::Display for Body<'_>{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{for line in self.0.lines(){f.write_str(line)?;f.write_str("\n")?;}Ok(())}}kc::format(c,format_args!("{}",Body(proc_body_slice(text,header))))}
+
+#[cfg(feature="native-policy")]
+pub(crate) fn generate_prepared_admitted(an:crate::reactive_dependency_view::Analysis<'_>,metadata:&PreparedMetadata,budget:&std::sync::Arc<crate::captured_generator_budget::Budget>,checkpoint:&dyn Fn()->std::io::Result<()>)->std::io::Result<Output>{checkpoint()?;let mut width=0usize;let mut units=64usize;let overflow=||{budget.deny();std::io::Error::new(std::io::ErrorKind::OutOfMemory,"Plans emitter capacity overflow")};let mut add=|s:&str|->std::io::Result<()>{width=width.checked_add(s.len()).ok_or_else(&overflow)?;units=units.checked_add(1).ok_or_else(&overflow)?;Ok(())};
+ for rows in [an.draw_reads(),an.draw_hops(),an.draw_links()]{for(owner,names)in rows{checkpoint()?;add(owner)?;for name in names{add(name)?;}}}
+ for(id,(names,_))in an.verb_reads(){checkpoint()?;add(id)?;for name in names{add(name)?;}}
+ for id in an.draws(){add(id)?;}for name in an.stat_reads(){add(name)?;}for(owner,name)in an.reads(){add(owner)?;add(name)?;}
+ for name in metadata.stat_inputs.iter().chain(&metadata.tracked_names).chain(&metadata.legacy_outputs){checkpoint()?;add(name)?;}
+ for((owner,name),_)in &metadata.reader_keys{checkpoint()?;add(owner)?;add(name)?;}
+ let bytes=width.checked_mul(32).and_then(|n|units.checked_mul(1024).and_then(|u|n.checked_add(u))).ok_or_else(overflow)?;budget.charge(bytes).map_err(|e|std::io::Error::new(std::io::ErrorKind::OutOfMemory,e))?;let mut out=Output::captured(budget.clone());generate_prepared(an,metadata,&mut out);checkpoint()?;budget.require().map_err(|e|std::io::Error::new(std::io::ErrorKind::OutOfMemory,e))?;Ok(out)
+}
+
+#[cfg(test)]#[path="plans_policy_frozen_original.rs"]mod plans_original_policy;
+#[cfg(test)]mod native_policy_tests{use super::*;use std::io;
+ struct Probe{left:usize,fail:bool}impl kc::Control for Probe{type Error=io::Error;const CHECKED:bool=true;fn checkpoint(&mut self)->io::Result<()>{if self.fail{Err(io::Error::from_raw_os_error(1450))}else{Ok(())}}fn reserve(&mut self,n:usize)->io::Result<()>{self.left=self.left.checked_sub(n).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?;Ok(())}fn overflow(&mut self)->io::Error{io::ErrorKind::OutOfMemory.into()}fn allocation_failed(&mut self)->io::Error{self.overflow()}}
+ #[test]fn original_plans_borrowed_reader_projection_matches_exact_owned_body_policy_and_errors(){let defines=HashSet::from(["STAT_POWER".to_owned(),"MOB_KEY_READER".to_owned()]);for source in ["/obj/probe/reactions()\n\treturn on_change(\"terminal.power\", then(PROC_REF(refresh)))\n/obj/next\n", "/obj/probe\r\n    reactions()\r\n        return nameof(charge)\r\n    proc/next()\r\n        return MOB_KEY_READER\r\n", "/obj/probe/generated_reads()\n\treturn list(nameof(\n\tcharge), STAT_POWER)","/obj/probe/reactions()\n\treturn \"quoted space\"\n"]{let mut old=ReaderKeys::new();let owned=plans_original_policy::proc_body(source,1);plans_original_policy::reader_names(&owned,&defines,"/obj/probe",&mut old,3);let mut metadata=PreparedMetadata::default();metadata.reader(source,1,"/obj/probe","generated_reads",&defines,&mut Probe{left:65536,fail:false}).unwrap();assert_eq!(metadata.reader_keys,old);let mut exact=ReaderKeys::new();reader_names_with(&owned,&defines,"/obj/probe",&mut exact,3,&mut Probe{left:65536,fail:false}).unwrap();assert_eq!(exact,old);}let mut metadata=PreparedMetadata::default();assert_eq!(metadata.reader("/x()\n\treturn nameof(value)",1,"/obj/probe","reactions",&defines,&mut Probe{left:0,fail:false}).unwrap_err().kind(),io::ErrorKind::OutOfMemory);assert_eq!(metadata.file("seq_step(reads = list(nameof(value)))",&defines,&mut Probe{left:65536,fail:true}).unwrap_err().raw_os_error(),Some(1450));}
+ #[cfg(feature="native-policy")]
+ #[test]fn admitted_plans_emitter_matches_entire_original_rows_chunks_and_quota_io_recovery(){let mut analysis=crate::reactive_dependency_fold::Fold::default().analysis;for i in 0..601{let owner=format!("/obj/owner_{i}");let value=format!("value_{i}");analysis.draw_reads.entry(owner.clone()).or_default().insert(value.clone());analysis.draw_hops.entry(owner.clone()).or_default().insert(format!("loc.{value}"));analysis.draw_links.entry(owner.clone()).or_default().insert("cell".to_owned());analysis.verb_reads.insert(format!("{owner}::hidden_verbs"),(BTreeSet::from([value.clone()]),i%2==0));analysis.reads.insert((owner,value));}analysis.draws.insert("/obj/unknown::draw".into());analysis.consumers.insert("/obj/unknown::draw".into(),vec![crate::reactive_facts::Untracked{what:"?unknown".into(),owner:String::new(),rel:"code/probe.dm".into(),line:3}]);
+ let args=vec!["/obj/probe".to_owned(),"on_change(nameof(charge), PROC_REF(refresh))".to_owned()];let markers=[MarkerRow{name:"CAPABILITIES",args:&args,body:"on_change(nameof(charge), PROC_REF(refresh))"}];let old_markers=[plans_original_policy::MarkerRow{name:"CAPABILITIES",args:&args,body:markers[0].body}];let defines=HashSet::new();let tracked=HashMap::from([("/obj/probe".to_owned(),HashSet::from(["charge".to_owned()]))]);let file=crate::tree::SourceFile::from_text("code/probe.dm","#define HELPER_READS nameof(leaf)\n/proc/helper()\n\treturn adjacency(nameof(other))\n");let files=[&file];let input=MetadataInput{markers:&markers,defines:&defines,tracked:&tracked,output_defining_owners:&["/datum/capability/powered"],reader_procs:&[],files:&files};let old_input=plans_original_policy::PlansInput{analysis:&analysis,markers:&old_markers,defines:&defines,tracked:&tracked,output_defining_owners:&["/datum/capability/powered"],reader_procs:&[],files:&files};let mut expected=Output::default();plans_original_policy::generate(&old_input,&mut expected);let metadata=collect_metadata(&input,&mut Probe{left:4*1024*1024,fail:false}).unwrap();let view=crate::reactive_dependency_view::Analysis::Owned(&analysis);let budget=crate::captured_generator_budget::Budget::new(64*1024*1024).unwrap();assert_eq!(generate_prepared_admitted(view,&metadata,&budget,&||Ok(())).unwrap(),expected);let tiny=crate::captured_generator_budget::Budget::new(1024).unwrap();assert_eq!(generate_prepared_admitted(view,&metadata,&tiny,&||Ok(())).unwrap_err().kind(),io::ErrorKind::OutOfMemory);let healthy=crate::captured_generator_budget::Budget::new(64*1024*1024).unwrap();assert_eq!(generate_prepared_admitted(view,&metadata,&healthy,&||Err(io::Error::from_raw_os_error(1450))).unwrap_err().raw_os_error(),Some(1450));assert_eq!(generate_prepared_admitted(view,&metadata,&healthy,&||Ok(())).unwrap(),expected);}
 }

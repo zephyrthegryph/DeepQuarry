@@ -8,8 +8,8 @@ use dq_analyze::{
     captured_system_accessors::BorrowedSystemAccessors, captured_ui_types::BorrowedUiTypes,
 };
 pub(super) const GENERATOR_RESULT: Kind = Kind(11);
-#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize)]
-pub(crate) enum GeneratorName {
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, serde::Serialize)]
+pub enum GeneratorName {
     SparseSlots,
     SystemAccessors,
     Stats,
@@ -22,11 +22,13 @@ pub(crate) enum GeneratorName {
     AutoTracked,
     Reads,
     DerivedReads,
+    Plans,
 }
 impl GeneratorName {
     pub(crate) fn name(self) -> &'static str {
         match self {
             Self::Deps => "deps",
+            Self::Plans => "plans",
             Self::AutoTracked => "auto_tracked",
             Self::Reads => "reads",
             Self::DerivedReads => "derived_reads",
@@ -43,6 +45,7 @@ impl GeneratorName {
     pub(crate) fn path(self) -> &'static str {
         match self {
             Self::Deps => "code/engine/_generated/deps.dm",
+            Self::Plans => "code/engine/_generated/plans.dm",
             Self::AutoTracked => "code/engine/_generated/auto_tracked.dm",
             Self::Reads => "code/engine/_generated/reads.dm",
             Self::TrackedLists => "code/engine/_generated/tracked_lists.dm",
@@ -57,10 +60,10 @@ impl GeneratorName {
     }
 }
 pub(crate) struct Artifact {
-    name: GeneratorName,
-    text: String,
-    files: Vec<(String, String)>,
-    diags: Vec<dq_analyze::sparse_slots_policy::Diagnostic>,
+    pub(super) name: GeneratorName,
+    pub(super) text: String,
+    pub(super) files: Vec<(String, String)>,
+    pub(super) diags: Vec<dq_analyze::sparse_slots_policy::Diagnostic>,
 }
 impl Artifact {
     pub(crate) fn name(&self) -> &'static str {
@@ -88,7 +91,7 @@ impl Artifact {
     pub(crate) fn diagnostics(&self) -> &[dq_analyze::sparse_slots_policy::Diagnostic] {
         &self.diags
     }
-    fn charge(&self) -> usize {
+    pub(super) fn charge(&self) -> usize {
         std::mem::size_of::<Result<Self, String>>()
             .saturating_add(2 * std::mem::size_of::<usize>())
             .saturating_add(self.text.capacity())
@@ -108,7 +111,7 @@ impl Artifact {
                     .saturating_add(d.msg.capacity())
             }))
     }
-    fn fingerprint(&self) -> u128 {
+    pub(super) fn fingerprint(&self) -> u128 {
         let mut h = xxhash_rust::xxh3::Xxh3::new();
         if matches!(self.name,GeneratorName::UiTypes|GeneratorName::DerivedReads) {
             h.update(b"native-source-generator-files-v1\0");
@@ -157,7 +160,7 @@ impl GeneratorFiles<'_> {
         self.artifact.charge()
     }
 }
-fn validate_ui_output_path(root: &Path, rel: &str) -> Result<(), String> {
+pub(in crate::query_db) fn validate_ui_output_path(root: &Path, rel: &str) -> Result<(), String> {
     let path = Path::new(rel);
     let absolute = root.join(path);
     let normalized = dm_preprocess::regions::relative_filesystem_path(&absolute, root)
@@ -203,6 +206,7 @@ pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admissi
         GENERATOR_RESULT,
         "native-source-generator",
         move |ctx, params| {
+            if let Some(full)=params.downcast_ref::<super::reactive_workspace_policy::Params>(){return super::reactive_workspace_policy::compute(ctx,full,&charge,&admission)}
             let p = params.downcast_ref::<Params>().expect("generator params");
             admission.abort.before_outcome(p.result)?;
             let capture = p.capture.upgrade().ok_or(QueryError::Missing(p.result))?;
@@ -211,21 +215,20 @@ pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admissi
                 .limit
                 .load(Ordering::Relaxed)
                 .saturating_sub(charge.load(Ordering::Relaxed));
-            let budget = Budget::new(available).map_err(|_| {
+            let budget = Budget::new(available).map_err(|message| {
                 admission.denied.store(true, Ordering::Relaxed);
-                QueryError::Missing(p.result)
+                if p.name==GeneratorName::Plans{QueryError::operational(p.result,io::Error::new(io::ErrorKind::OutOfMemory,message))}else{QueryError::Missing(p.result)}
             })?;
-            if budget
+            if let Err(message) = budget
                 .charge(
                     p.files
                         .len()
                         .saturating_mul(std::mem::size_of::<Arc<FileData>>())
                         .saturating_add(4096),
                 )
-                .is_err()
             {
                 admission.denied.store(true, Ordering::Relaxed);
-                return Err(QueryError::Missing(p.result));
+                return Err(if p.name==GeneratorName::Plans{QueryError::operational(p.result,io::Error::new(io::ErrorKind::OutOfMemory,message))}else{QueryError::Missing(p.result)});
             }
             let sources = p
                 .files
@@ -235,15 +238,15 @@ pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admissi
             // Dependency generation is a real Kind11→Kind12 edge under this
             // caller's current context and parent-funded nested admission.
             // Actual child IO exits before any Artifact/Outcome publication.
-            let dependency = if matches!(p.name,GeneratorName::Deps|GeneratorName::AutoTracked) {
+            let dependency = if matches!(p.name,GeneratorName::Deps|GeneratorName::AutoTracked|GeneratorName::Plans) {
                 let produced=super::reactive_read_policy::with_dependencies(ctx,&capture,p.configuration,&p.configuration_path,&p.root,&p.files,&budget,&charge,&admission,|value|{
                     let out=if p.name==GeneratorName::Deps{value.render_deps(capture.policy(),&budget,&crate::daemon::control::checkpoint)?}else{
                         let bytes=sources.len().checked_mul(4*std::mem::size_of::<Arc<File>>()).and_then(|n|n.checked_add(4096)).ok_or_else(||{budget.deny();dq_analyze::captured_reactive_reads::Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"AutoTracked source coordination overflow"))})?;budget.charge(bytes)?;
                         let mut files=Vec::new();files.try_reserve_exact(sources.len()).map_err(|actual|{budget.deny();dq_analyze::captured_reactive_reads::Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,actual))})?;if files.capacity().checked_mul(std::mem::size_of::<Arc<File>>()).is_none_or(|n|n>bytes){budget.deny();return Err(dq_analyze::captured_reactive_reads::Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"AutoTracked source allocator exceeds admission")))}for source in &sources{files.push(Arc::clone(&source.file));}
                         let raw=dq_analyze::captured_raw_policy::CapturedRawPolicy::from_shared_files(&p.root,capture.policy(),&config.config,&files)?;
-                        value.render_auto_tracked(&raw,capture.policy(),&p.configuration_path,&budget,&crate::daemon::control::checkpoint)?
+                        if p.name==GeneratorName::Plans{value.render_plans(&raw,capture.policy(),&budget,&crate::daemon::control::checkpoint)?}else{value.render_auto_tracked(&raw,capture.policy(),&p.configuration_path,&budget,&crate::daemon::control::checkpoint)?}
                     };
-                    let output=if p.name==GeneratorName::Deps{"deps.dm"}else{"auto_tracked.dm"};let text=out.captured_named_file_text(p.name.name(),output,&budget)?;
+                    let output=match p.name{GeneratorName::Deps=>"deps.dm",GeneratorName::Plans=>"plans.dm",_=>"auto_tracked.dm"};let text=out.captured_named_file_text(p.name.name(),output,&budget)?;
                     Ok(Artifact{name:p.name,text,files:Vec::new(),diags:out.diags})
                 });
                 Some(match produced{Ok(value)=>value,Err(dq_analyze::captured_reactive_reads::Failure::Operational(actual))=>return Err(QueryError::operational(p.result,actual)),Err(dq_analyze::captured_reactive_reads::Failure::Unsupported(message))=>return Err(QueryError::operational(p.result,io::Error::new(io::ErrorKind::Unsupported,message)))})
@@ -292,7 +295,7 @@ pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admissi
                 )?;
                 let checkpoint = || admission.abort.scan_checkpoint();
                 match p.name {
-                    GeneratorName::Deps | GeneratorName::AutoTracked | GeneratorName::Reads | GeneratorName::DerivedReads => unreachable!("typed reactive generator branch handled above"),
+                    GeneratorName::Deps | GeneratorName::AutoTracked | GeneratorName::Plans | GeneratorName::Reads | GeneratorName::DerivedReads => unreachable!("typed reactive generator branch handled above"),
                     GeneratorName::SparseSlots => {
                         let out =
                             BorrowedSparseSlots::capture(&raw, capture.policy(), budget.clone())?
@@ -472,6 +475,8 @@ impl QueryDb {
             consume(&GeneratorFiles { artifact: a })
         })
     }
+    #[cfg(test)]
+    pub(crate) fn with_generator_limit_for_test<T>(&self,cohort:&Arc<Cohort>,name:GeneratorName,limit:usize,consume:impl FnOnce(&Artifact)->io::Result<T>)->io::Result<T>{self.with_generator_fixture_limit(cohort,name,Some(limit),consume)}
     fn with_generator_fixture_limit<T>(
         &self,
         cohort: &Arc<Cohort>,
@@ -598,3 +603,16 @@ mod tests;
 #[path="generator_policy_tracked_tests.rs"]mod tracked_tests;
 
 #[path="generator_reactive_reads.rs"]mod reactive_reads;
+
+// Bootstrap path membership is the SAME actual generator registry, never a
+// directory-prefix exception for arbitrary missing source. Multifile UI has no
+// DM include; DerivedReads owns its one historical generated DM path.
+impl QueryDb {
+    pub(crate) fn generation_dm_outputs()->impl Iterator<Item=&'static str>{
+        [GeneratorName::SparseSlots,GeneratorName::SystemAccessors,GeneratorName::Stats,GeneratorName::Actions,GeneratorName::DeclareIds,GeneratorName::Declare,GeneratorName::TrackedLists,GeneratorName::Deps,GeneratorName::AutoTracked,GeneratorName::Reads,GeneratorName::Plans].into_iter().map(GeneratorName::path).chain(["code/_generated/reads.dm"])
+    }
+}
+
+#[path="generator_policy_wire.rs"]mod wire;
+
+impl<'de> serde::Deserialize<'de> for GeneratorName{fn deserialize<D:serde::Deserializer<'de>>(decoder:D)->Result<Self,D::Error>{let name=<String as serde::Deserialize>::deserialize(decoder)?;match name.as_str(){"sparse_slots"=>Ok(Self::SparseSlots),"system_accessors"=>Ok(Self::SystemAccessors),"stats"=>Ok(Self::Stats),"actions"=>Ok(Self::Actions),"declare_ids"=>Ok(Self::DeclareIds),"declare"=>Ok(Self::Declare),"ui_types"=>Ok(Self::UiTypes),"tracked_lists"=>Ok(Self::TrackedLists),"deps"=>Ok(Self::Deps),"auto_tracked"=>Ok(Self::AutoTracked),"reads"=>Ok(Self::Reads),"derived_reads"=>Ok(Self::DerivedReads),"plans"=>Ok(Self::Plans),_=>Err(serde::de::Error::custom("unknown canonical generator name"))}}}

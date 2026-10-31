@@ -54,6 +54,9 @@ pub(super) struct Ledger {
     live: Vec<Live>,
     active_policy: usize,
     active_graph_work: usize,
+    fixed_request_inputs: usize,
+    // Resource-only cache pressure cursor over the existing Kind23 nodes.
+    page_retirement_cursor: Option<Key>,
     denied: bool,
     // Actual operational error, never a memoized semantic refusal String.
     aborted: Option<std::io::Error>,
@@ -87,6 +90,7 @@ impl Ledger {
             )
             .saturating_add(self.active_policy)
             .saturating_add(self.active_graph_work)
+            .saturating_add(self.fixed_request_inputs)
             .saturating_add(self.live.iter().filter(|entry|entry.completion.is_some()).count().saturating_mul(std::mem::size_of::<std::sync::atomic::AtomicBool>()))
     }
     fn admit(&mut self, extra: usize) -> Result<(), String> {
@@ -591,6 +595,7 @@ pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, registry: SourceRegi
     pages::register(db,Arc::clone(&ledger),Arc::clone(&registry));
     global_graph::register(db,Arc::clone(&ledger),Arc::clone(&registry));
     global_summary::register(db,Arc::clone(&ledger),Arc::clone(&registry));
+    global_report::register(db,Arc::clone(&ledger),Arc::clone(&registry));
     let l = Arc::clone(&ledger);
     let sources = Arc::clone(&registry);
     db.define(RESOLVER, "native-effect-resolver-hash", move |ctx, raw| {
@@ -948,7 +953,9 @@ impl QueryDb {
                 continue;
             };
             if live.error {
-                let error = if live.kind == global_summary::SUMMARY {
+                let error = if live.kind == global_report::PURE||live.kind == global_report::SLEEP {
+                    value.downcast_ref::<Result<Arc<global_report::NativeEffectReport>,String>>().and_then(|result|result.as_ref().err())
+                }else if live.kind == global_summary::SUMMARY {
                     value.downcast_ref::<Result<Arc<global_summary::NativeEffectSummary>,String>>().and_then(|result|result.as_ref().err())
                 } else if live.kind == global_graph::GLOBAL_GRAPH {
                     value.downcast_ref::<Result<Arc<global_graph::NativeEffectGraph>,String>>().and_then(|result|result.as_ref().err())
@@ -981,6 +988,8 @@ impl QueryDb {
                         capacity: s.capacity(),
                     });
                 }
+            } else if live.kind == global_report::PURE||live.kind == global_report::SLEEP {
+                if let Some(value)=value.downcast_ref::<global_report::NativeEffectReport>(){value.visit_storage(&mut visit)}
             } else if live.kind == global_summary::SUMMARY {
                 if let Some(value)=value.downcast_ref::<global_summary::NativeEffectSummary>(){value.visit_storage(&mut visit)}
             } else if live.kind == global_graph::GLOBAL_GRAPH {
@@ -1223,3 +1232,7 @@ pub(super) mod pages;
 #[cfg(test)]impl QueryDb{pub(crate) fn effect_graph_ledger_liveness_for_test(&self)->impl Fn()->bool+Send+'static{let weak=Arc::downgrade(&self.purity.ledger);move||weak.strong_count()!=0}}
 
 #[path="purity_global_summary.rs"]pub(super) mod global_summary;
+
+#[path="purity_global_report.rs"]pub(super) mod global_report;
+
+#[path="purity_report_wire.rs"]pub(super) mod report_wire;

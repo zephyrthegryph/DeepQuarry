@@ -46,7 +46,7 @@ fn snapshot() -> SourceSnapshot {
     let frontend = dm_tree::frontend::build(&root().join("p.dme"), &inputs, &Default::default(), 1)
         .unwrap()
         .with_body_queries(db.clone());
-    let intent = PolicyInputRequest {
+    let intent = PolicyInputRequest {workspace_generators:Vec::new(),
         workspace: None,
         files: vec![PolicyInputFile {
             path: root().join("SpacemanDMM.toml"),

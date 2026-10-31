@@ -60,7 +60,7 @@ fn snapshot_with_scopes(checker: Option<&[u8]>, scopes: &[u8]) -> SourceSnapshot
         dm_tree::frontend::build(&root.join("project.dme"), &inputs, &Default::default(), 1)
             .unwrap()
             .with_body_queries(db.clone());
-    let intent = PolicyInputRequest {
+    let intent = PolicyInputRequest {workspace_generators:Vec::new(),
         workspace: None,
         files: vec![
             PolicyInputFile {

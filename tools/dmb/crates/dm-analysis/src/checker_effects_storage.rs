@@ -124,10 +124,7 @@ impl SccSummary {
 pub fn visit_report(rows: &Vec<Produced>, v: &mut impl FnMut(Storage)) {
     object("purity.report", rows, v);
     buf("purity.report_rows", rows, rows.capacity(), v);
-    for r in rows {
-        diagnostic(&r.diagnostic, v);
-        point(&r.origin, v)
-    }
+    for r in rows {produced(r,v)}
 }
 
 // Conservative cache admission, NOT a full allocator/RSS measurement. Sum
@@ -200,3 +197,6 @@ mod capacity_tests {
         assert_eq!(rows[0].origin.path.as_os_str(), "fixture.dm");
     }
 }
+
+fn produced(row:&Produced,visit:&mut impl FnMut(Storage)){diagnostic(&row.diagnostic,visit);point(&row.origin,visit)}
+pub(super) fn produced_capacity_bound(row:&Produced)->usize{retained_bound(|visit|produced(row,&mut|allocation|visit(allocation)))}

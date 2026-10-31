@@ -16,6 +16,8 @@ pub struct PolicyInputRequest {
     pub search_folders: Vec<PathBuf>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace: Option<WorkspacePolicyRequest>,
+    #[serde(default,skip_serializing_if="Vec::is_empty",with="generator_names")]
+    pub workspace_generators: Vec<crate::GeneratorName>,
 }
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -44,6 +46,7 @@ pub struct AdmittedPolicyRequest {
     files: Vec<PolicyInputFile>,
     search_folders: Vec<PathBuf>,
     workspace: Option<WorkspacePolicyRequest>,
+    workspace_generators: Vec<crate::GeneratorName>,
 }
 impl PolicyInputRequest {
     pub fn admit(self) -> io::Result<AdmittedPolicyRequest> {
@@ -62,6 +65,10 @@ impl PolicyInputRequest {
                 "workspace policy intent cannot mix explicit files or search_folders",
             ));
         }
+        if !self.workspace_generators.is_empty() && self.workspace.is_none(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"generator questions require an actual workspace intent"));}
+        if self.workspace_generators.len()>13{return Err(io::Error::new(io::ErrorKind::InvalidInput,"generator questions exceed the registered set"));}
+        let mut workspace_generators=self.workspace_generators;workspace_generators.sort_unstable();
+        if workspace_generators.windows(2).any(|pair|pair[0]==pair[1]){return Err(io::Error::new(io::ErrorKind::InvalidInput,"duplicate generator question"));}
         let workspace = self
             .workspace
             .map(|wanted| -> io::Result<WorkspacePolicyRequest> {
@@ -113,6 +120,7 @@ impl PolicyInputRequest {
             files: files.into_values().collect(),
             search_folders: folders.into_iter().collect(),
             workspace,
+            workspace_generators,
         })
     }
 }
@@ -128,10 +136,12 @@ impl From<AdmittedPolicyRequest> for PolicyInputRequest {
             files: value.files,
             search_folders: value.search_folders,
             workspace: value.workspace,
+            workspace_generators: value.workspace_generators,
         }
     }
 }
 impl AdmittedPolicyRequest {
+    pub fn workspace_generators(&self)->&[crate::GeneratorName]{&self.workspace_generators}
     pub fn workspace(&self) -> Option<&WorkspacePolicyRequest> {
         self.workspace.as_ref()
     }
@@ -247,4 +257,10 @@ pub(crate) fn workspace_revision(
     });
     encoded?;
     Ok(hash.0.digest128())
+}
+
+mod generator_names{
+ use super::*;
+ pub fn serialize<S:serde::Serializer>(names:&[crate::GeneratorName],serializer:S)->Result<S::Ok,S::Error>{use serde::ser::SerializeSeq;let mut seq=serializer.serialize_seq(Some(names.len()))?;for name in names{seq.serialize_element(name.name())?;}seq.end()}
+ pub fn deserialize<'de,D:serde::Deserializer<'de>>(decoder:D)->Result<Vec<crate::GeneratorName>,D::Error>{struct Names;impl<'de>serde::de::Visitor<'de>for Names{type Value=Vec<crate::GeneratorName>;fn expecting(&self,out:&mut std::fmt::Formatter)->std::fmt::Result{out.write_str("at most thirteen canonical generator questions")}fn visit_seq<A:serde::de::SeqAccess<'de>>(self,mut sequence:A)->Result<Self::Value,A::Error>{if sequence.size_hint().is_some_and(|n|n>13){return Err(serde::de::Error::custom("generator question list exceeds registered set"))}let mut names=Vec::new();names.try_reserve_exact(13).map_err(serde::de::Error::custom)?;while let Some(name)=sequence.next_element::<crate::GeneratorName>()?{if names.len()==13{return Err(serde::de::Error::custom("generator question list exceeds registered set"))}names.push(name);}Ok(names)}}decoder.deserialize_seq(Names)}
 }

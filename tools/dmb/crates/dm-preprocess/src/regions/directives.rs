@@ -27,7 +27,7 @@ pub(super) fn plan_incremental<P: SourceProvider>(
     memo: Option<&dyn ExpansionMemo>,
     previous: Option<&DirectivePlan>,
 ) -> (DirectivePlan, PlanReuse) {
-    let (mut plan, reuse) = plan_incremental_impl(project, provider, defines, memo, previous);
+    let (mut plan, reuse) = plan_incremental_impl(project, provider, defines, memo, previous, None, None).expect("ordinary directive pass has no operational generation reader");
     plan.source_acquisitions.clear();
     for (occurrence, include) in plan.occurrences.iter().enumerate() {
         if let Some(text) = plan.source_texts.get(include.path.as_ref()) {
@@ -49,12 +49,14 @@ fn plan_incremental_impl<P: SourceProvider>(
     defines: &BTreeMap<String, String>,
     memo: Option<&dyn ExpansionMemo>,
     previous: Option<&DirectivePlan>,
-) -> (DirectivePlan, PlanReuse) {
+    omitted: Option<&BTreeSet<PathBuf>>,
+    generation_source: Option<&dyn Fn(&Path)->std::io::Result<Option<Arc<prepared_source::PreparedSource>>>>,
+) -> std::io::Result<(DirectivePlan, PlanReuse)> {
     let previous = previous.filter(|previous| previous.trace.is_some());
     // Only the include subtrees whose files changed run again, when the provider can say which (same defines only).
     if let Some(previous) = previous.filter(|previous| &previous.defines == defines) {
         if let Some(patched) = patch::patch(provider, memo, previous) {
-            return patched;
+            return Ok(patched);
         }
     }
     let mut pass = DirectivePass::new(
@@ -63,6 +65,8 @@ fn plan_incremental_impl<P: SourceProvider>(
         previous,
         canonical_path(project.parent().unwrap_or(Path::new(""))),
     );
+    pass.omitted = omitted;
+    pass.generation_source = generation_source;
     pass.plan.defines = defines.clone();
     for (name, replacement) in [
         ("EXCEPTION", "new /exception(message, __FILE__, __LINE__)"),
@@ -259,7 +263,7 @@ fn plan_incremental_impl<P: SourceProvider>(
     }
     let occurrence = pass.occurrence(project, None, None, Span::default(), 1);
     let started = std::time::Instant::now();
-    pass.visit(occurrence);
+    pass.visit(occurrence)?;
     if let Some(previous) = pass.previous {
         let started = std::time::Instant::now();
         pass.match_fresh_regions(previous);
@@ -302,7 +306,7 @@ fn plan_incremental_impl<P: SourceProvider>(
     pass.reuse.regions = std::mem::take(&mut pass.region_map);
     pass.plan.trace = Some(Arc::new(PlanTrace::new(std::mem::take(&mut pass.trace))));
     pass.plan.input_revision = provider.revision();
-    (pass.plan, pass.reuse)
+    Ok((pass.plan, pass.reuse))
 }
 
 /// Whether two regions hold the same span, effects, lines and macro environments: what an
@@ -344,6 +348,8 @@ struct PassDetail {
 mod patch;
 
 struct DirectivePass<'a, P> {
+    omitted: Option<&'a BTreeSet<PathBuf>>,
+    generation_source: Option<&'a dyn Fn(&Path)->std::io::Result<Option<Arc<prepared_source::PreparedSource>>>>,
     provider: &'a P,
     memo: Option<&'a dyn ExpansionMemo>,
     /// The plan this pass may adopt subtrees from (it carries a trace).
@@ -388,6 +394,8 @@ impl<'a, P: SourceProvider> DirectivePass<'a, P> {
         project_dir: PathBuf,
     ) -> Self {
         DirectivePass {
+            omitted: None,
+            generation_source: None,
             provider,
             memo,
             previous,
@@ -832,7 +840,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
     }
 
     /// Visit an include subtree and leave a record of it, unless it reported anything.
-    fn visit_recording(&mut self, occurrence: usize) {
+    fn visit_recording(&mut self, occurrence: usize ) -> std::io::Result<()> {
         let region = self.plan.regions.len();
         let item = self.plan.items.len();
         let journal = self.journal.len();
@@ -841,14 +849,14 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         let diagnostics = self.plan.diagnostics.len();
         let warnings = self.plan.warnings.len();
         let state_in = self.snapshot();
-        self.visit(occurrence);
+        self.visit(occurrence)?;
         let entry = &self.plan.occurrences[occurrence];
         if entry.suppressed
             || self.plan.diagnostics.len() != diagnostics
             || self.plan.warnings.len() != warnings
             || entry.eof_cursor_line.is_none()
         {
-            return;
+            return Ok(());
         }
         let visits = self.journal[journal..].to_vec();
         let reads = visits
@@ -880,6 +888,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             item,
             record: Arc::new(record),
         });
+        Ok(())
     }
 
     /// Whether the current environment is the previous pass's `before` plus the carried delta, updating the delta when
@@ -1133,7 +1142,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         true
     }
 
-    fn visit(&mut self, occurrence: usize) {
+    fn visit(&mut self, occurrence: usize ) -> std::io::Result<()> {
         let path = self.plan.occurrences[occurrence].path.clone();
         // Ordinary files are included once; an active #pragma multiple opts
         // this exact file path into subsequent inclusion under current macros.
@@ -1146,7 +1155,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         });
         if !proceeded {
             self.plan.occurrences[occurrence].suppressed = true;
-            return;
+            return Ok(());
         }
         // Repeatable includes can recurse under macro guards. Bound only the
         // active chain, allowing finite same-file recursion without risking a
@@ -1164,14 +1173,23 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                     DiagnosticKind::Unsupported,
                     "repeatable include recursion exceeds 64 occurrences".into(),
                 );
-                return;
+                return Ok(());
             }
             ancestor = self.plan.occurrences[parent].parent;
         }
         self.depend(path.as_ref());
+        // Generation-only plans never manufacture an empty file or an original
+        // acquisition for a permitted absent output. This include has no text,
+        // directives or macros; the restricted wrapper records its omission.
+        if self.omitted.is_some_and(|paths| paths.contains(path.as_ref())) {
+            return Ok(());
+        }
         let source_started = std::time::Instant::now();
+        let prepared_result = if let Some(read) = self.generation_source {
+            match read(&path)? {Some(prepared)=>Ok(prepared),None=>Err("missing generation source".into())}
+        }else{
         let issued = self.provider.acquired_source(&path);
-        let prepared_result = issued.and_then(|acquired| match acquired {
+        issued.and_then(|acquired| match acquired {
             Some(acquired) => Ok(Arc::clone(acquired.prepared())),
             None => match self.provider.prepared_source(&path) {
                 Some(prepared) => Ok(prepared),
@@ -1180,7 +1198,8 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                     .read(&path)
                     .map(|source| prepared_source::shared_prepared(source.into())),
             },
-        });
+        })
+        };
         let prepared = match prepared_result {
             Ok(prepared) => prepared,
             Err(error) => {
@@ -1216,7 +1235,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                     }
                     None => self.error(occurrence, 1, DiagnosticKind::Io, error),
                 }
-                return;
+                return Ok(());
             }
         };
         self.detail.provider += source_started.elapsed();
@@ -1350,7 +1369,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                 self.plan.regions[region].source_span.end = start;
                 if active {
                     let child = self.plan.occurrences.len();
-                    self.include(occurrence, span, source_line, rest);
+                    self.include(occurrence, span, source_line, rest)?;
                     if self
                         .plan
                         .occurrences
@@ -1504,9 +1523,10 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             self.plan.occurrences[occurrence].eof_cursor_line = line_number.checked_add(1);
             self.plan.occurrences[occurrence].eof_cursor_encounter = Some(self.plan.items.len());
         }
+        Ok(())
     }
 
-    fn include(&mut self, parent: usize, span: Span, line: usize, rest: &str) {
+    fn include(&mut self, parent: usize, span: Span, line: usize, rest: &str ) -> std::io::Result<()> {
         let Some(relative) = parse_include(rest) else {
             self.error(
                 parent,
@@ -1514,7 +1534,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                 DiagnosticKind::Include,
                 "expected quoted #include path".into(),
             );
-            return;
+            return Ok(());
         };
         let child = self.plan.occurrences[parent]
             .path
@@ -1540,7 +1560,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                     DiagnosticKind::Unsupported,
                     "unverified include extension".into(),
                 );
-                return;
+                return Ok(());
             }
         };
         if let Some(kind) = kind {
@@ -1551,9 +1571,10 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                 .push(OrderedItem::NonText { occurrence, kind });
         } else if !self.adopt_previous(occurrence) {
             let started = std::time::Instant::now();
-            self.visit_recording(occurrence);
+            self.visit_recording(occurrence)?;
             self.reuse.timings.visit += started.elapsed();
         }
+        Ok(())
     }
 
     fn conditional(&mut self, occurrence: usize, line: usize, word: &str, rest: &str) {
@@ -1650,4 +1671,13 @@ fn evaluate(word: &str, expression: &str, macros: &dyn crate::MacroLookup) -> Re
             .map(|name| macro_defined(name, macros) == (word == "ifdef")),
         _ => eval_condition(expression, macros),
     }
+}
+
+/// Cold generation-only pass; ordinary incremental/memoized plans cannot adopt
+/// an omitted-output subtree. The private caller never exports this as a normal
+/// compiler plan.
+pub(super) fn plan_generation<P: SourceProvider>(project:&Path, provider:&P, defines:&BTreeMap<String,String>, omitted:&BTreeSet<PathBuf>,read:&dyn Fn(&Path)->std::io::Result<Option<Arc<prepared_source::PreparedSource>>>)->std::io::Result<DirectivePlan> {
+    let (mut plan,_)=plan_incremental_impl(project,provider,defines,None,None,Some(omitted),Some(read))?;
+    for (ordinal,include) in plan.occurrences.iter().enumerate(){if let Some(text)=plan.source_texts.get(include.path.as_ref()){if let Some(acquired)=provider.source_acquisition(include.path.as_ref(),text){if acquired.prepared().original().same_view(text){plan.source_acquisitions.insert(ordinal,acquired.lease().clone());}}}}
+    Ok(plan)
 }

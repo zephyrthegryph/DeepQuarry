@@ -4,11 +4,11 @@ use super::*;
 use crate::policy_body_demand::PolicyFailure;
 use dm_tree::frontend::{BodySyntax,BodySyntaxInput,BodySyntaxFailure};
 use std::{io,mem::size_of};
-#[derive(Clone,Copy)]struct Row{parent:Option<EffectTarget>,direct:bool,builtin:bool}
+#[derive(Clone,Copy)]struct Row{parent:Option<EffectTarget>,direct:bool,builtin:bool,page_start:u32}
 /// Borrowed source identity plus flat global source-call/override adjacency.
 /// Internal edge order is irrelevant to SCC; checker report/BFS order must still
 /// come from original contributions and the existing checker_order policy.
-pub struct CompactEffectGraph<'view,'source>{source:&'view EffectSource<'source>,index:Vec<(ProcedureIdentity,u32)>,offsets:Vec<usize>,edges:Vec<u32>,seed:Vec<bool>}
+pub struct CompactEffectGraph<'view,'source>{source:&'view EffectSource<'source>,index:Vec<(ProcedureIdentity,u32)>,rows:Vec<Row>,width:usize,offsets:Vec<usize>,edges:Vec<u32>,seed:Vec<bool>}
 impl<'view,'source> CompactEffectGraph<'view,'source>{
  pub fn len(&self)->usize{self.seed.len()}
  pub fn original_ordinal(&self,node:usize)->Option<usize>{self.source.original_ordinal(node)}
@@ -17,7 +17,7 @@ impl<'view,'source> CompactEffectGraph<'view,'source>{
   let start=*self.offsets.get(node).ok_or("effect graph node outside original roster")?;let end=*self.offsets.get(node+1).ok_or("effect graph row incomplete")?;
   Ok(start.checked_add(next).filter(|at|*at<end).and_then(|at|self.edges.get(at)).map(|to|*to as usize))
  }
- pub fn retained_charge(&self)->Option<usize>{size_of::<Self>().checked_add(self.index.capacity().checked_mul(size_of::<(ProcedureIdentity,u32)>())?)?.checked_add(self.offsets.capacity().checked_mul(size_of::<usize>())?)?.checked_add(self.edges.capacity().checked_mul(size_of::<u32>())?)?.checked_add(self.seed.capacity())}
+ pub fn retained_charge(&self)->Option<usize>{size_of::<Self>().checked_add(self.rows.capacity().checked_mul(size_of::<Row>())?)?.checked_add(self.index.capacity().checked_mul(size_of::<(ProcedureIdentity,u32)>())?)?.checked_add(self.offsets.capacity().checked_mul(size_of::<usize>())?)?.checked_add(self.edges.capacity().checked_mul(size_of::<u32>())?)?.checked_add(self.seed.capacity())}
  pub fn compute_scc_checked(&self,admission:&ExecutionAdmission,checkpoint:&mut impl FnMut()->io::Result<()>)->Result<CompactEffectScc,PolicyFailure>{
   checkpoint().map_err(PolicyFailure::Operational)?;
   let budget=ReportBudget::for_operation(admission);budget.charge(self.retained_charge().ok_or_else(||resource(&budget,"effect graph retained capacity overflow"))?).map_err(|_|resource(&budget,"effect graph retained overlap refused"))?;
@@ -37,7 +37,7 @@ impl<'view,'source> CompactEffectGraph<'view,'source>{
   checkpoint().map_err(PolicyFailure::Operational)?;
   let owner=self.source.archive.original_owner_witness();let fixed=owner.fixed_retention_capacity().and_then(|n|n.checked_add(size_of::<RetainedEffectGraph>())).ok_or_else(||PolicyFailure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"effect retained graph witness overflow")))?;
   work(fixed).map_err(PolicyFailure::Operational)?;
-  Ok(RetainedEffectGraph{owner,profile:self.source.profile,index:self.index,offsets:self.offsets,edges:self.edges,seed:self.seed})
+  Ok(RetainedEffectGraph{owner,profile:self.source.profile,index:self.index,rows:self.rows,width:self.width,offsets:self.offsets,edges:self.edges,seed:self.seed})
  }
 pub fn build_original_checked(source:&'view EffectSource<'source>,width:usize,admission:&ExecutionAdmission,checkpoint:&mut impl FnMut()->io::Result<()>,body:&dyn Fn(&Arc<BodySyntaxInput>,&ExecutionAdmission)->Result<Arc<BodySyntax>,BodySyntaxFailure>)->Result<Self,PolicyFailure>{let validated=source.archive.tree().validated_checker_profile(source.profile).map_err(|e|PolicyFailure::from(format!("effect original profile: {e:?}")))?;Self::build_checked(source,width,&validated,admission,checkpoint,body)}
  pub fn build_checked(source:&'view EffectSource<'source>,width:usize,resolver:&(impl Resolver+?Sized),admission:&ExecutionAdmission,checkpoint:&mut impl FnMut()->io::Result<()>,body:&dyn Fn(&Arc<BodySyntaxInput>,&ExecutionAdmission)->Result<Arc<BodySyntax>,BodySyntaxFailure>)->Result<Self,PolicyFailure>{
@@ -58,7 +58,7 @@ pub fn build_original_checked(source:&'view EffectSource<'source>,width:usize,ad
    if width==0||width>MAX_EVENTS{return Err("effect graph source page width outside event allowance".into())}
    if resolver.source_owner()!=Resolver::source_owner(source.archive.tree()){return Err("effect graph resolver foreign".into())}
    let mut index=allocate::<(ProcedureIdentity,u32)>(n,&budget,0,work)?;let mut rows=allocate::<Row>(n,&budget,0,work)?;
-   for node in 0..n{checkpoint().map_err(PolicyFailure::Operational)?;index.push((identity(source.archive,source.original_ordinal(node).ok_or("effect source row missing")?)?,node as u32));rows.push(Row{parent:None,direct:false,builtin:false});}
+   for node in 0..n{checkpoint().map_err(PolicyFailure::Operational)?;index.push((identity(source.archive,source.original_ordinal(node).ok_or("effect source row missing")?)?,node as u32));rows.push(Row{parent:None,direct:false,builtin:false,page_start:u32::MAX});}
    index.sort_unstable_by_key(|row|row.0);if index.windows(2).any(|pair|pair[0].0==pair[1].0){return Err("effect source identity has multiple original body occurrences".into())}
    let find=|id:ProcedureIdentity|->Result<u32,PolicyFailure>{index.binary_search_by_key(&id,|row|row.0).map(|at|index[at].1).map_err(|_|"effect graph target has no original source contribution".into())};
    // Count first, then allocate adjacency exactly once. This removes geometric
@@ -71,7 +71,7 @@ pub fn build_original_checked(source:&'view EffectSource<'source>,width:usize,ad
     page.validate(source)?;require_window(&page,start,width,n)?;
     for local in 0..page.len(){let node=start+local;let id=page.procedure(local).ok_or("effect source page identity missing")?;
      if source.original_ordinal(node)!=page.ordinal(local)||find(id)? as usize!=node{return Err("effect source page order changed".into())}
-     rows[node]=Row{parent:page.parent(local).ok_or("effect source parent missing")?,direct:page.has_direct_effect(local).ok_or("effect source direct row missing")?,builtin:page.has_builtin_effect_call(local).ok_or("effect source builtin row missing")?};
+     rows[node]=Row{page_start:u32::try_from(page.start()).map_err(|_|resource(&budget,"effect original window coordinate overflow"))?,parent:page.parent(local).ok_or("effect source parent missing")?,direct:page.has_direct_effect(local).ok_or("effect source direct row missing")?,builtin:page.has_builtin_effect_call(local).ok_or("effect source builtin row missing")?};
      for &id in page.source_calls(local).ok_or("effect source calls missing")?{find(id)?;degree[node]=degree[node].checked_add(1).ok_or_else(||resource(&budget,"effect source row degree overflow"))?;}
     }
     start=start.checked_add(page.len()).ok_or_else(||resource(&budget,"effect page source cursor overflow"))?;
@@ -89,7 +89,7 @@ pub fn build_original_checked(source:&'view EffectSource<'source>,width:usize,ad
     let child=admission.restricted(budget.remaining());let page_owner=read(start,width,&child,checkpoint)?;let page=page_owner.effect_page();
     page.validate(source)?;require_window(&page,start,width,n)?;
     for local in 0..page.len(){let node=start+local;let old=&rows[node];let id=page.procedure(local).ok_or("effect source second-pass identity missing")?;
-     if source.original_ordinal(node)!=page.ordinal(local)||find(id)? as usize!=node||Some(old.parent)!=page.parent(local)||Some(old.direct)!=page.has_direct_effect(local)||Some(old.builtin)!=page.has_builtin_effect_call(local){return Err("effect source changed between adjacency passes".into())}
+     if source.original_ordinal(node)!=page.ordinal(local)||find(id)? as usize!=node||old.page_start as usize!=page.start()||Some(old.parent)!=page.parent(local)||Some(old.direct)!=page.has_direct_effect(local)||Some(old.builtin)!=page.has_builtin_effect_call(local){return Err("effect source changed between adjacency passes".into())}
      for &id in page.source_calls(local).ok_or("effect source second-pass calls missing")?{insert_edge(node,find(id)?,&mut offsets,&mut degree,&mut edges)?;}
     }
     start=start.checked_add(page.len()).ok_or_else(||resource(&budget,"effect page second-pass cursor overflow"))?;
@@ -98,10 +98,11 @@ pub fn build_original_checked(source:&'view EffectSource<'source>,width:usize,ad
    if degree.iter().any(|remaining|*remaining!=0){return Err("effect source second-pass degree incomplete".into())}
    for node in (1..=n).rev(){offsets[node]=offsets[node-1];}offsets[0]=0;
    for node in 0..n{checkpoint().map_err(PolicyFailure::Operational)?;edges[offsets[node]..offsets[node+1]].sort_unstable();}
-   // Parents/degrees drop at exit. Move the SAME funded sorted ID array
+   // Degrees drop at exit. Move the SAME funded original parent/direct rows
+   // and sorted ID array
    // into the result for original encounter-order report/BFS lookups; no
    // second name/index allocation or per-edge roster scan is introduced.
-   Ok(Self{source,index,offsets,edges,seed})
+   Ok(Self{source,index,rows,width,offsets,edges,seed})
   })();
   if matches!(&pending,Err(PolicyFailure::Operational(_))){return pending}checkpoint().map_err(PolicyFailure::Operational)?;if admission.is_denied(){return Err(PolicyFailure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"effect graph operation denied")))}pending
  }
@@ -134,12 +135,15 @@ fn require_window(page:&EffectPageFacts,start:usize,width:usize,total:usize)->Re
 }
 
 /// Source-free retained scalar adjacency; this is not a current-source lease.
-pub struct RetainedEffectGraph{owner:dm_tree::frontend::OriginalArchiveOwner,profile:PackedU128,index:Vec<(ProcedureIdentity,u32)>,offsets:Vec<usize>,edges:Vec<u32>,seed:Vec<bool>}
+pub struct RetainedEffectGraph{owner:dm_tree::frontend::OriginalArchiveOwner,profile:PackedU128,index:Vec<(ProcedureIdentity,u32)>,rows:Vec<Row>,width:usize,offsets:Vec<usize>,edges:Vec<u32>,seed:Vec<bool>}
 pub struct CurrentEffectGraph<'view,'source>{graph:&'view RetainedEffectGraph,source:&'view EffectSource<'source>}
 impl RetainedEffectGraph{
- pub fn retained_charge(&self)->Option<usize>{size_of::<Self>().checked_add(self.index.capacity().checked_mul(size_of::<(ProcedureIdentity,u32)>())?)?.checked_add(self.offsets.capacity().checked_mul(size_of::<usize>())?)?.checked_add(self.edges.capacity().checked_mul(size_of::<u32>())?)?.checked_add(self.seed.capacity())?.checked_add(self.owner.fixed_retention_capacity()?)}
- pub fn current<'view,'source>(&'view self,source:&'view EffectSource<'source>)->Result<CurrentEffectGraph<'view,'source>,PolicyFailure>{if !self.owner.matches(source.archive)||self.profile!=source.profile||self.seed.len()!=source.len(){return Err("effect retained graph has another original source/profile".into())}Ok(CurrentEffectGraph{graph:self,source})}
+ pub fn report_fingerprint(&self)->u128{let mut hash=fingerprint::Fingerprint::new(b"original-effect-global-graph-report-fields-v1");hash.u128(self.profile.get());hash.usize(self.width);hash.usize(self.index.len());for(id,node)in &self.index{hash.id(*id);hash.u32(*node)}hash.usize(self.rows.len());for row in &self.rows{hash.parent(row.parent);hash.byte(u8::from(row.direct));hash.byte(u8::from(row.builtin));hash.u32(row.page_start)}hash.usize(self.offsets.len());for value in &self.offsets{hash.usize(*value)}hash.usize(self.edges.len());for value in &self.edges{hash.u32(*value)}hash.usize(self.seed.len());for value in &self.seed{hash.byte(u8::from(*value))}hash.finish()}
+
+ pub fn retained_charge(&self)->Option<usize>{size_of::<Self>().checked_add(self.rows.capacity().checked_mul(size_of::<Row>())?)?.checked_add(self.index.capacity().checked_mul(size_of::<(ProcedureIdentity,u32)>())?)?.checked_add(self.offsets.capacity().checked_mul(size_of::<usize>())?)?.checked_add(self.edges.capacity().checked_mul(size_of::<u32>())?)?.checked_add(self.seed.capacity())?.checked_add(self.owner.fixed_retention_capacity()?)}
+ pub fn current<'view,'source>(&'view self,source:&'view EffectSource<'source>)->Result<CurrentEffectGraph<'view,'source>,PolicyFailure>{if !self.owner.matches(source.archive)||self.profile!=source.profile||self.seed.len()!=source.len()||self.rows.len()!=source.len(){return Err("effect retained graph has another original source/profile".into())}Ok(CurrentEffectGraph{graph:self,source})}
  pub fn visit_storage(&self,mut visit:impl FnMut(Storage)){
+  visit(Storage::Buffer{owner:"purity.global_original_parent_rows",address:self.rows.as_ptr() as usize,logical:self.rows.len()*size_of::<Row>(),capacity:self.rows.capacity()*size_of::<Row>()});
   visit(Storage::Buffer{owner:"purity.global_original_ids",address:self.index.as_ptr() as usize,logical:self.index.len()*size_of::<(ProcedureIdentity,u32)>(),capacity:self.index.capacity()*size_of::<(ProcedureIdentity,u32)>()});
   visit(Storage::Buffer{owner:"purity.global_offsets",address:self.offsets.as_ptr() as usize,logical:self.offsets.len()*size_of::<usize>(),capacity:self.offsets.capacity()*size_of::<usize>()});
   visit(Storage::Buffer{owner:"purity.global_edges",address:self.edges.as_ptr() as usize,logical:self.edges.len()*size_of::<u32>(),capacity:self.edges.capacity()*size_of::<u32>()});
@@ -148,6 +152,13 @@ impl RetainedEffectGraph{
  }
 }
 impl CurrentEffectGraph<'_,'_>{
+ pub(crate) fn page_start(&self,node:usize)->Option<usize>{self.graph.rows.get(node).map(|row|row.page_start as usize)}
+ pub(crate) fn page_width(&self)->usize{self.graph.width}
+
+ pub(crate) fn parent(&self,node:usize)->Option<Option<EffectTarget>>{self.graph.rows.get(node).map(|row|row.parent)}
+ pub(crate) fn own_direct(&self,node:usize)->Option<bool>{self.graph.rows.get(node).map(|row|row.direct)}
+ pub(crate) fn identity(&self,node:usize)->Option<ProcedureIdentity>{self.source.archive.callables().identity(self.source.original_ordinal(node)?)}
+
  pub fn node_for(&self,id:ProcedureIdentity)->Option<usize>{self.graph.index.binary_search_by_key(&id,|row|row.0).ok().map(|at|self.graph.index[at].1 as usize)}
  pub fn len(&self)->usize{self.graph.seed.len()}
  pub fn original_ordinal(&self,node:usize)->Option<usize>{self.source.original_ordinal(node)}
