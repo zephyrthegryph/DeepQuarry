@@ -658,6 +658,7 @@
 #include "dq_p2_apc_behaviour.dm"
 #include "dq_wall_frame_behaviour.dm"
 #include "dq_emp_disable_behaviour.dm"
+#include "dq_join_cost.dm"
 #include "dq_roundstart_churn.dm"
 #include "dq_p2_chargers_behaviour.dm"
 #include "dq_p2_smes_behaviour.dm"
