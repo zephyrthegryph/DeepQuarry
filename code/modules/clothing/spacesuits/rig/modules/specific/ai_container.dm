@@ -1,21 +1,18 @@
-/obj/item/ai_verbs
-	name = "AI verb holder"
-
-/obj/item/ai_verbs/verb/hardsuit_interface()
+/// The AI inside a hardsuit module opens the suit's interface from its own verb panel (granted while the module holds it: see update_verb_holder()).
+/mob/living/proc/open_hardsuit_interface()
 	set category = VERB_CAT_HARDSUIT
 	set name = "Open Hardsuit Interface"
-	set src in usr
 
-	if(!usr.loc || !usr.loc.loc || !istype(usr.loc.loc, /obj/item/rig_module))
-		to_chat(usr, "You are not loaded into a hardsuit.")
+	if(!loc || !loc.loc || !istype(loc.loc, /obj/item/rig_module))
+		to_chat(src, "You are not loaded into a hardsuit.")
 		return
 
-	var/obj/item/rig_module/module = usr.loc.loc
+	var/obj/item/rig_module/module = loc.loc
 	if(!module.holder)
-		to_chat(usr, "Your module is not installed in a hardsuit.")
+		to_chat(src, "Your module is not installed in a hardsuit.")
 		return
 
-	module.holder.tgui_interact(usr, custom_state = GLOB.tgui_contained_state)
+	module.holder.tgui_interact(src, custom_state = GLOB.tgui_contained_state)
 
 /obj/item/rig_module/ai_container
 
@@ -36,11 +33,9 @@
 
 	var/tmp/mob/integrated_ai	// Direct reference to the actual mob held in the suit.
 	var/obj/item/aicard/ai_card  // Reference to the MMI, posibrain, intellicard or pAI card previously holding the AI.
-	var/obj/item/ai_verbs/verb_holder
 
 CAPABILITIES(/obj/item/rig_module/ai_container)
-	ref_one(nameof(integrated_ai), /mob)
-	owns_one(nameof(verb_holder), /obj/item/ai_verbs)
+	ref_one(nameof(integrated_ai), /mob, on_unlink = PROC_REF(integrated_ai_lost))
 	owns_one(nameof(ai_card), on_destroy = ON_DESTROY_CONTAINED)
 
 /obj/item/rig_module/ai_container/periodic_step()
@@ -51,13 +46,15 @@ CAPABILITIES(/obj/item/rig_module/ai_container)
 		else
 			sparse_set(integrated_ai(), get_rig_stats, 0)
 
+/// The AI the module holds has its Open Hardsuit Interface verb; one that left (or was deleted) loses it.
 /obj/item/rig_module/ai_container/proc/update_verb_holder()
-	if(!verb_holder)
-		rel_set(src, nameof(verb_holder), new /obj/item/ai_verbs(src))
-	if(integrated_ai())
-		verb_holder.forceMove(integrated_ai())
-	else
-		verb_holder.forceMove(src)
+	var/mob/living/held_ai = integrated_ai()
+	if(istype(held_ai))
+		grant(held_ai, granted_verb(/mob/living/proc/open_hardsuit_interface), src)
+
+/obj/item/rig_module/ai_container/proc/integrated_ai_lost(mob/old_ai)
+	if(isliving(old_ai))
+		revoke(old_ai, granted_verb(/mob/living/proc/open_hardsuit_interface), src)
 
 /obj/item/rig_module/ai_container/accepts_item(obj/item/input_device, mob/living/user)
 

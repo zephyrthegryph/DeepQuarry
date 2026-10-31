@@ -127,6 +127,7 @@ CAPABILITIES(/mob/living/carbon/human)
 	op("joint_dislocate", ai(), begins(PROC_REF(joint_dislocate_text)), wait(10 SECONDS), then(PROC_REF(grab_joint_human_done)))
 
 CAPABILITIES(/mob/living/silicon/robot)
+	op("set_eye_colour", menu(desc = "Select an eye colour to use."), label("Set Eye Colour"), when(PROC_REF(has_platform_module)), needs(req_self()), asks(/datum/prompt/color, fields = list("title" = "Pupil Colour Selection", "question" = "Select a pupil colour.", "ask_flags" = ASK_CAPABLE, "timeout" = 0), step = "colour", optional = TRUE, default = ""), then(PROC_REF(set_eye_colour_op)))
 	op("alt_mode", menu(), label("Robot Activate Held Object"), needs(req_self()), then(PROC_REF(alt_mode_op)))
 	op("cmd_show_laws", menu(), label("Show Laws"), needs(req_self()), then(PROC_REF(cmd_show_laws_op)))
 	configure(living_rules(vore_icon_bellies = list(), vore_capacity_ex = list(), fire_reaction = FIRE_REACTION_IGNITE))

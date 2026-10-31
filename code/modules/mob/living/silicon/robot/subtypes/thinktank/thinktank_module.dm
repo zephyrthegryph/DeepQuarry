@@ -24,24 +24,16 @@
 		return !R.key
 	return ..()
 
-/obj/item/robot_module/robot/platform/verb/set_eye_colour()
-	set name = "Set Eye Colour"
-	set desc = "Select an eye colour to use."
-	set category = VERB_CAT_ABILITIES_SILICON
-	set src in usr
+/// A platform's own robot is the one that sets its eye colour: the robot carries the module.
+/mob/living/silicon/robot/proc/has_platform_module(datum/act/op/A)
+	return istype(module, /obj/item/robot_module/robot/platform)
 
-	// A cancel answers "": the default colour.
-	open_request(src, /datum/prompt/color, PROC_REF(pupil_color_chosen), answerer = usr, ask_flags = ASK_CAPABLE, valid = PROC_REF(pupil_color_askable), title = "Pupil Colour Selection", question = "Select a pupil colour.", timeout = 0)
-
-/// Re-checked on the answer: the module is still in the platform.
-/obj/item/robot_module/robot/platform/proc/pupil_color_askable(datum/request/R)
-	return loc == R.answerer
-
-/obj/item/robot_module/robot/platform/proc/pupil_color_chosen(datum/act/request/A)
-	var/mob/user = A.request.answerer
-	if(QDELETED(user))
+/// A cancel (or an empty answer) is the default colour.
+/mob/living/silicon/robot/proc/set_eye_colour_op(datum/act/op/A)
+	var/obj/item/robot_module/robot/platform/platform = module
+	if(!istype(platform))
 		return
-	set_pupil_color((A.answer ? A.answer.value : null) || initial(pupil_color))
+	platform.set_pupil_color(A.step_value("colour") || initial(platform.pupil_color))
 
 /obj/item/robot_module/robot/platform/explorer
 	armor_color = "#528052"
