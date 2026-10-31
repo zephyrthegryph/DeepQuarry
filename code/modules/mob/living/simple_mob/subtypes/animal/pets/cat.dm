@@ -87,35 +87,28 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 		if(has_trait(L, TRAIT_AMBIENT_PEST_MOB))
 			return FALSE // Cats and mice can never get along.
 
-/mob/living/simple_mob/animal/passive/cat/verb/become_friends()
-	set name = "Become Friends"
-	set category = VERB_CAT_IC_GAME
-	set src in view(1)
-
-	var/mob/living/L = usr
-	if(!istype(L))
-		return // Fuck off ghosts.
-
+/// A cat has one friend: the same person is told so, anyone else is ignored, and a cat named for somebody ignores everyone else.
+/mob/living/simple_mob/animal/passive/cat/proc/become_friends_ready(datum/act/op/A)
+	var/mob/living/L = A.actor
 	if(friend)
 		if(friend == L)
-			to_chat(L, span_notice("\The [src] is already your friend! Meow!"))
-			return
-		else
-			to_chat(L, span_warning("\The [src] ignores you."))
-			return
-
+			return span_notice("\The [src] is already your friend! Meow!")
+		return span_warning("\The [src] ignores you.")
 	// Adds friend_name var checks
-	if(!friend_name || L.real_name == friend_name)
-		rel_set(src, nameof(friend), L)
-		face_atom(L)
-		to_chat(L, span_notice("\The [src] is now your friend! Meow."))
-		visible_emote(pick("nuzzles [friend].", "brushes against [friend].", "rubs against [friend].", "purrs."))
+	if(friend_name && L.real_name != friend_name)
+		return span_notice("[src] ignores you.")
+	return null
 
-		if((ai_brain != null))
-			var/datum/ai_brain/AI = ai_brain
-			AI.set_follow(friend)
-	else
-		to_chat(L, span_notice("[src] ignores you."))
+/mob/living/simple_mob/animal/passive/cat/proc/become_friends_op(datum/act/op/A)
+	var/mob/living/L = A.actor
+	rel_set(src, nameof(friend), L)
+	face_atom(L)
+	to_chat(L, span_notice("\The [src] is now your friend! Meow."))
+	visible_emote(pick("nuzzles [friend].", "brushes against [friend].", "rubs against [friend].", "purrs."))
+
+	if((ai_brain != null))
+		var/datum/ai_brain/AI = ai_brain
+		AI.set_follow(friend)
 
 
 //RUNTIME IS ALIVE! SQUEEEEEEEE~
@@ -257,6 +250,7 @@ MSG_DEF_SELF(cat/named, "%T% already has a name!")
 
 /// Naming with a pen: asked, then written by cat_name_entered(). The one question is an asks() step of each op (a pen and a penlight).
 CAPABILITIES(/mob/living/simple_mob/animal/passive/cat)
+	op("become_friends", menu(), label("Become Friends"), when(req_actor_kind(/mob/living)), needs(req_adjacent(), req(PROC_REF(become_friends_ready))), then(PROC_REF(become_friends_op)))
 	configure(butchery_rules(meat_amount = 1))
 	ref_one(nameof(friend), /mob/living)
 	op("name_with_pen", item(/obj/item/pen), label("Use"), needs(req_is(nameof(named), FALSE, because = MSG(cat/named))), asks(/datum/prompt/text, fields = list("title" = "Name", "question" = computed(PROC_REF(name_question)), "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "name"), then(PROC_REF(cat_name_entered)))

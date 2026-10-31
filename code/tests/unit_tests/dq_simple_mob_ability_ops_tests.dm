@@ -204,3 +204,17 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
 	var/datum/op_result/R = dq_ability_menu_op(H, "look_up")
 	TEST_ASSERT(test_op_committed(R), "look_up commits on a human's own menu")
+
+/// A cat named for somebody ignores everyone else, and an unnamed one befriends the first person who asks.
+/datum/unit_test/dq_ability_ops_cat_befriends
+
+/datum/unit_test/dq_ability_ops_cat_befriends/Run()
+	var/turf/T = test_floor()
+	var/mob/living/simple_mob/animal/passive/cat/cat = allocate(/mob/living/simple_mob/animal/passive/cat, T)
+	var/mob/living/carbon/human/first = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/second = allocate(/mob/living/carbon/human, T)
+	var/datum/op_result/befriended = perform_op(first, cat, "become_friends", null, ORIGIN_MENU)
+	TEST_ASSERT(test_op_committed(befriended), "the first person befriends an unnamed cat")
+	TEST_ASSERT_EQUAL(cat.friend, first, "the cat's friend is that person")
+	var/datum/op_result/other = perform_op(second, cat, "become_friends", null, ORIGIN_MENU)
+	TEST_ASSERT_EQUAL(other?.outcome, ACT_REFUSED, "a second person is ignored")
