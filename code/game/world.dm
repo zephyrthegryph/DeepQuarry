@@ -584,7 +584,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 		var/list/rust = verdigris_metrics_list()
 		var/list/out = list("slow_frames" = native_system().slow_frames, "frames" = native_system().frames)
 		for(var/name in rust)
-			if(findtext(name, "frame.us.") == 1 || findtext(name, "frame.slow") == 1 || findtext(name, "world.awake.") == 1)
+			if(findtext(name, "frame.us.") == 1 || findtext(name, "frame.slow") == 1 || findtext(name, "world.awake.") == 1 || findtext(name, "world.stepped.") == 1 || findtext(name, "task.") == 1 || findtext(name, "sim.") == 1)
 				out[name] = rust[name]
 		return json_encode(out)
 
