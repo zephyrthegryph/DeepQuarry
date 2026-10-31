@@ -116,7 +116,8 @@ mk code/modules/widgets/gizmos_api.dm '/datum/system/gizmos/proc/poke()
 mk code/modules/widgets/sprockets_api.dm '/datum/system/sprockets/proc/poke()
 	return'
 mk tools/ci/thing_baseline.txt 'rule	code/modules/widgets/baselined.dm	some text'
-mk tools/dm-health/baseline.json '["large-proc:code/modules/widgets/spawny.dm:182 lines"]'
+mk code/modules/widgets/dmh_only.dm '/obj/item/widget/dmh_only'
+mk tools/dm-health/baseline.json '["large-proc:code/modules/widgets/spawny.dm:182 lines", "maybe-null-deref:code/modules/widgets/dmh_only.dm:x may still be null"]'
 mk tools/analyze/src/lints/x.rs 'Files::Under(&["code/modules/widgets/tooled/rig"])'
 mk tools/ci/lint_scopes.toml 'x = ["code/modules/widgets/clean.dm"]'
 
@@ -135,7 +136,7 @@ expect code/modules/widgets/clean.dm clean ""
 expect code/modules/widgets/comment_only.dm clean ""
 expect code/modules/widgets/destroy.dm dirty "oldform:Destroy()"
 expect code/modules/widgets/spawny.dm dirty "oldform:spawn"
-expect code/modules/widgets/spawny.dm dirty "baseline:code/modules/widgets/spawny.dm"
+expect code/modules/widgets/spawny.dm dirty "dmhealth:code/modules/widgets/spawny.dm"
 expect code/modules/widgets/init.dm dirty "oldform:Initialize"
 expect code/modules/widgets/verby.dm dirty "oldform:verb"
 expect code/modules/widgets/newatom.dm dirty "oldform:New() override"
@@ -167,7 +168,8 @@ expect code/modules/widgets/allowed.dm clean ""
 expect code/modules/widgets/allow_init.dm dirty "allow"
 expect code/modules/widgets/allow_mixed.dm dirty "allow"
 expect code/modules/widgets/baselined.dm dirty "baseline:code/modules/widgets/baselined.dm"
-expect code/modules/widgets/tooled/rig/suit.dm dirty "toolref:code/modules/widgets/tooled/rig"
+expect code/modules/widgets/tooled/rig/suit.dm clean "toolref:code/modules/widgets/tooled/rig"
+expect code/modules/widgets/dmh_only.dm clean "dmhealth:code/modules/widgets/dmh_only.dm"
 expect code/modules/widgets/uses_content.dm clean ""
 expect code/modules/widgets/clean.dm clean "relinc:code/modules/widgets/inc/user.dm:1"
 expect code/modules/widgets/inc/user.dm clean "relinc:code/modules/widgets/inc/user.dm:1"
@@ -178,7 +180,7 @@ expect code/modules/power/cable.dm clean "layering:/obj/item/known"
 if [ -z "$(state code/__defines/widgets.dm)" ] || [ "$(state code/__defines/widgets.dm)" = dirty ]; then ok "defines are never clean"; else bad "defines file reported clean"; fi
 [ "$(target code/modules/widgets/clean.dm)" = code/content/widgets/clean.dm ] && ok "content target" || bad "content target: $(target code/modules/widgets/clean.dm)"
 [ "$(target code/modules/power/cable.dm)" = code/domains/power/cable.dm ] && ok "domain target" || bad "domain target: $(target code/modules/power/cable.dm)"
-if [ "$(bash "$here/tools/ci/move_candidates.sh" --root "$tmpn" --clean | wc -l)" -eq 24 ]; then ok "--clean lists the clean files"; else bad "--clean count"; fi
+if [ "$(bash "$here/tools/ci/move_candidates.sh" --root "$tmpn" --clean | wc -l)" -eq 26 ]; then ok "--clean lists the clean files"; else bad "--clean count"; fi
 bash "$here/tools/ci/move_candidates.sh" --root "$tmpn" --summary | grep -q 'code/modules/widgets' && ok "--summary groups by directory" || bad "--summary"
 
 [ $fail -eq 0 ] && echo "move_candidates: all passed"

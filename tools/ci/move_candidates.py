@@ -234,7 +234,7 @@ def references(root, files):
     for rel in files:
         kind = None
         if rel == "tools/dm-health/baseline.json":
-            kind = "baseline"
+            kind = "dmhealth"
         elif rel.startswith("tools/ci/") and rel != "tools/ci/lint_scopes.toml":
             if rel.endswith(SCRIPT_EXT):
                 kind = "toolref"
@@ -303,9 +303,12 @@ def main(argv):
     rows = []
     for f in sorted(old):
         why = []
+        pathnotes = []
         for kind, ref in refs:
             if f == ref or f.startswith(ref if ref.endswith("/") else ref + "/"):
-                why.append(kind + ":" + ref)
+                # A dm-health quality row or a tool source naming the path does not hold the file back: the move's follow-up commit
+                # rewrites the path there (mechanically, nothing else in the row or the tool). Only data baselines still block.
+                (pathnotes if kind in ("dmhealth", "toolref") else why).append(kind + ":" + ref)
         text = read(root, f)
         if migration_allow(text):
             why.append("allow")
@@ -328,6 +331,8 @@ def main(argv):
             hit = sorted({t for ln in lines for t in TYPE_REF.findall(ln) if t in content_types})
             if hit:
                 note = "layering:" + ",".join(hit[:3])
+        if pathnotes:
+            note = (note + " " + ",".join(dict.fromkeys(pathnotes))).strip()
         if f in relinc:
             note = (note + " " + ",".join(dict.fromkeys(relinc[f]))).strip()
         reason = ";".join(dict.fromkeys(why))
