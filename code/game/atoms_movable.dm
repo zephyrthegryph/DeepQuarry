@@ -561,7 +561,9 @@ SETTER(/atom/movable, anchored)
 /atom/movable/proc/glide_for(movetime)
 	if(movetime)
 		glide_size = WORLD_ICON_SIZE/max(DS2TICKS(movetime), 1)
-		after(src, movetime, PROC_REF(reset_glide_size))
+		// Keyed: a step that begins as the last one's delay runs out replaces its pending reset, which would otherwise fire during the new step and snap its glide to the
+		// default (a held key steps at the previous deadline, with input before timers, so a crawl step jumped).
+		after(src, movetime, PROC_REF(reset_glide_size), key = "reset_glide")
 	else
 		glide_size = initial(glide_size)
 
