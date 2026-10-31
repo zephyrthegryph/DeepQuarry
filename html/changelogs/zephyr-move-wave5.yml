@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "284 more code/game, datums and _onclick files moved into the code/content tree"
