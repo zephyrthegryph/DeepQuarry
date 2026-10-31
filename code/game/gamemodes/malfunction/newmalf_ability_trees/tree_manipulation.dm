@@ -60,24 +60,28 @@ CAPABILITIES(/datum/malf_research_ability/manipulation/emergency_forcefield)
 			AP.atom_break()
 
 
-/datum/game_mode/malfunction/verb/hack_camera(obj/machinery/camera/target in REGISTRY_MEMBERS(REGISTRY_CAMERAS))
+/datum/game_mode/malfunction/verb/hack_camera()
 	set name = "Hack Camera"
 	set desc = "100 CPU - Hacks existing camera, allowing you to add upgrade of your choice to it. Alternatively it lets you reactivate broken camera."
 	set category = VERB_CAT_SOFTWARE
 	var/price = 100
 	var/mob/living/silicon/ai/user = usr
 
-	if(target && !istype(target))
-		to_chat(user, "This is not a camera.")
-		return
-
-	if(!target)
-		return
-
 	if(!ability_prechecks(user, price))
 		return
 
-	open_request(user, /datum/prompt/choice, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hack_camera_chosen), answerer = user, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), title = "Hack Camera", question = "Select required action:", choices = list("Reset", "Add X-Ray", "Add Motion Sensor", "Add EMP Shielding"), subject = target, costs = list("[RES_CPU]" = price), ask_flags = ASK_CONSCIOUS, timeout = 0)
+	user.malf_pick_target(REGISTRY_MEMBERS(REGISTRY_CAMERAS), "Hack Camera", "Select the camera to hack:", TYPE_PROC_REF(/mob/living/silicon/ai, malf_camera_picked))
+
+/mob/living/silicon/ai/proc/malf_camera_picked(datum/act/request/A)
+	var/price = 100
+	if(!A.answer)
+		return
+	var/obj/machinery/camera/target = malf_picked(REGISTRY_MEMBERS(REGISTRY_CAMERAS), A.answer.value)
+	if(!target)
+		return
+	if(!ability_prechecks(src, price))
+		return
+	open_request(src, /datum/prompt/choice, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hack_camera_chosen), answerer = src, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), title = "Hack Camera", question = "Select required action:", choices = list("Reset", "Add X-Ray", "Add Motion Sensor", "Add EMP Shielding"), subject = target, costs = list("[RES_CPU]" = price), ask_flags = ASK_CONSCIOUS, timeout = 0)
 
 /// The pick is paid for only when it changed the camera (OP_REFUSED releases the CPU set aside).
 /mob/living/silicon/ai/proc/malf_hack_camera_chosen(datum/act/request/A)
@@ -119,12 +123,19 @@ CAPABILITIES(/datum/malf_research_ability/manipulation/emergency_forcefield)
 			return OP_REFUSED
 	return OP_OK
 
-/datum/game_mode/malfunction/verb/emergency_forcefield(turf/T as turf in world)
+/datum/game_mode/malfunction/verb/emergency_forcefield()
 	set name = "Emergency Forcefield"
 	set desc = "275 CPU - Uses station's emergency shielding system to create temporary barrier which lasts for few minutes, but won't resist gunfire."
 	set category = VERB_CAT_SOFTWARE
-	var/price = 275
 	var/mob/living/silicon/ai/user = usr
+	user.malf_pick_target(user.malf_visible(/turf), "Emergency Forcefield", "Select where to project the forcefield:", TYPE_PROC_REF(/mob/living/silicon/ai, malf_forcefield_picked))
+
+/mob/living/silicon/ai/proc/malf_forcefield_picked(datum/act/request/A)
+	var/price = 275
+	if(!A.answer)
+		return
+	var/turf/T = malf_picked(malf_visible(/turf), A.answer.value)
+	var/mob/living/silicon/ai/user = src
 	if(!T || !istype(T))
 		return
 	if(!ability_prechecks(user, price) || !res_spend(user, RES_CPU, price, actor = user))
@@ -136,13 +147,26 @@ CAPABILITIES(/datum/malf_research_ability/manipulation/emergency_forcefield)
 	after(user, 2 SECONDS, TYPE_PROC_REF(/mob/living/silicon/ai, hacking_done))
 
 
-/datum/game_mode/malfunction/verb/machine_overload(obj/machinery/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
+/datum/game_mode/malfunction/verb/machine_overload()
 	set name = "Machine Overload"
 	set desc = "400 CPU - Causes cyclic short-circuit in machine, resulting in weak explosion after some time."
 	set category = VERB_CAT_SOFTWARE
 	var/price = 400
 	var/mob/living/silicon/ai/user = usr
 
+	if(!ability_prechecks(user, price))
+		return
+
+	user.malf_pick_target(user.malf_visible(/obj/machinery), "Machine Overload", "Select the machine to overload:", TYPE_PROC_REF(/mob/living/silicon/ai, malf_overload_picked))
+
+/mob/living/silicon/ai/proc/malf_overload_picked(datum/act/request/A)
+	var/price = 400
+	if(!A.answer)
+		return
+	var/obj/machinery/M = malf_picked(malf_visible(/obj/machinery), A.answer.value)
+	var/mob/living/silicon/ai/user = src
+	if(!M)
+		return
 	if(!ability_prechecks(user, price))
 		return
 

@@ -151,8 +151,8 @@
 	var/mob/living/carbon/human/second = allocate(/mob/living/carbon/human, test_floor())
 	first.name = "Alpha Unit"
 	second.name = "Beta Unit"
-	TEST_ASSERT_EQUAL(malf_picked(list(first, second), "Beta Unit"), second, "the second candidate is found by its name")
-	TEST_ASSERT_EQUAL(malf_picked(list(first, second), "Alpha Unit"), first, "the first candidate is found by its name")
+	TEST_ASSERT_EQUAL(malf_picked(list(first, second), malf_target_label(second)), second, "the second candidate is found by its name")
+	TEST_ASSERT_EQUAL(malf_picked(list(first, second), malf_target_label(first)), first, "the first candidate is found by its name")
 	TEST_ASSERT_NULL(malf_picked(list(first, second), "Gamma Unit"), "an unknown name finds nobody")
 
 /// Renault befriends the first person who asks; the same person is told so, and anyone else is ignored.

@@ -214,15 +214,29 @@ MSG_DEF_SELF(malf/cpu_storage, "Your CPU storage is not large enough to use this
 /mob/living/silicon/ai/proc/malf_pick_target(list/candidates, title, question, picked_proc)
 	var/list/names = list()
 	for(var/atom/candidate as anything in candidates)
-		names += candidate.name
+		names += malf_target_label(candidate)
 	open_request(src, /datum/prompt/choice, picked_proc, answerer = src, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), title = title, question = question, choices = names, ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/// The candidate whose name is `picked`, or null.
+/// How a candidate is listed: its name and where it is, so identical machines can be told apart.
+/proc/malf_target_label(atom/candidate)
+	var/turf/where = get_turf(candidate)
+	return where ? "[candidate.name] ([where.x],[where.y],[where.z])" : candidate.name
+
+/// The candidate listed as `picked`, or null.
 /proc/malf_picked(list/candidates, picked)
 	for(var/atom/candidate as anything in candidates)
-		if(candidate.name == picked)
+		if(malf_target_label(candidate) == picked)
 			return candidate
 	return null
+
+/// What the AI's camera eye sees nearby: the things of `type` within `range` of it (the old pickers listed the whole world).
+/mob/living/silicon/ai/proc/malf_visible(type, range = 7)
+	var/atom/eye = active_eye() || src
+	var/list/found = list()
+	for(var/atom/candidate in view(range, eye))
+		if(istype(candidate, type))
+			found += candidate
+	return found
 
 // Helper procs which return lists of relevant mobs.
 /proc/get_unlinked_cyborgs(mob/living/silicon/ai/A)
