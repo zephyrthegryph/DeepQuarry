@@ -168,6 +168,7 @@ MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
 	if(!client)
 		return 0
 
+	var/join_started = TICK_USAGE_REAL
 	//Find our spawning point.
 	var/list/join_props = SSjob.late_spawn(client, rank, src, answers, consent)
 
@@ -206,10 +207,15 @@ MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
 			spent(src)
 			return
 
+	var/spawn_point_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - join_started)
 	SSjob.assign_role(src, rank, 1)
 
+	var/phase_started = TICK_USAGE_REAL
 	var/mob/living/character = create_character(T)	//creates the human and transfers vars and mind
+	var/create_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - phase_started)
+	phase_started = TICK_USAGE_REAL
 	character = SSjob.equip_rank(character, rank, 1)					//equips the human
+	var/equip_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - phase_started)
 	UpdateFactionList(character)
 
 	var/datum/job/J = SSjob.get_job(rank)
@@ -256,8 +262,9 @@ MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
 	else if(J.mob_type & JOB_SILICON)
 		AnnounceCyborg(character, rank, join_message, announce_channel, character.z)
 	else
-		AnnounceArrival(character, rank, join_message, announce_channel, character.z)
-		GLOB.data_core.manifest_inject(character)
+		// The arrival announcement and the manifest record (its photos are two composited icons: 50-380 ms) follow a tick later: they ride the join's
+		// frame otherwise, and nothing the joiner does in that tick reads either.
+		after(character, 1 TICKS, GLOBAL_PROC_REF(latejoin_register), with = list(character, rank, join_message, announce_channel, character.z))
 		SSticker.remember_mind(character.mind) //Cyborgs and AIs handle this in the transform proc.	//TODO!!!!! ~Carn
 	if(ishuman(character))
 		if(character.client.prefs.read_preference(/datum/preference/toggle/human/auto_backup_implant)) // migrated pref
@@ -297,7 +304,18 @@ MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
 			character.forceMove(gut)
 
 	character.client.init_verbs()
+	log_world("JOIN_TIMING: [key_name(character)] as [rank]: spawn point [round(spawn_point_ms, 0.1)] ms, body [round(create_ms, 0.1)] ms, equip [round(equip_ms, 0.1)] ms, whole join [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - join_started), 0.1)] ms (the announcement and manifest record follow a tick later: LATEJOIN_REGISTER)")
 	spent(src) // Delete new_player mob
+
+/// The part of a join that follows a tick after the body is placed: the arrival announcement and the manifest record, timed (LATEJOIN_REGISTER).
+/proc/latejoin_register(mob/living/carbon/human/character, rank, join_message, channel, zlevel)
+	if(QDELETED(character) || !character.mind)
+		return
+	var/started = TICK_USAGE_REAL
+	AnnounceArrival(character, rank, join_message, channel, zlevel)
+	var/announced_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - started)
+	GLOB.data_core.manifest_inject(character)
+	log_world("LATEJOIN_REGISTER: [character.real_name]: announcement [round(announced_ms, 0.1)] ms, manifest record [round(TICK_DELTA_TO_MS(TICK_USAGE_REAL - started) - announced_ms, 0.1)] ms")
 
 /// The pred, prey or carrier answered (or, with its no-warning pref, let the question lapse): the join goes on with that answer.
 /mob/new_player/proc/late_spawn_consented(datum/act/request/A)
