@@ -76,13 +76,29 @@ CAPABILITIES(/obj/item/cell)
 	ref_one(nameof(gradual_user))
 	setup(PROC_REF(start_up))
 
+/// Whether a fresh cell has anything for a material service to do: a custom assembly, an exothermic stock, or a temperature that differs from its
+/// surroundings'. A plain cell at ambient would take its first sample, find nothing to track and retire (creating, sampling and destroying
+/// about five milliseconds of service for each of the map's cells); it gets its service later, from the event that gives it a reason
+/// (heavy use, heat, a monitoring tool), like any other assembly.
+/obj/item/cell/proc/material_service_needed_at_start()
+	var/datum/material_assembly/state = material_assembly_view(src)
+	if(state.custom)
+		return TRUE
+	var/datum/material/thermal = material_for_role(MATERIAL_ROLE_THERMAL) || primary_construction_material()
+	if(thermal?.exothermic_heat_rate > 0)
+		return TRUE
+	var/turf/location = get_turf(src)
+	var/datum/gas_mixture/ambient = location?.return_air()
+	return abs(T20C - (ambient?.return_temperature() || T20C)) >= MATERIAL_THERMAL_RESOLUTION
+
 /// Takes its blueprint's effects, starts its material service and gets its id.
 /obj/item/cell/proc/start_up()
 	// A cell's temperature and electrical phase are functional state even for
 	// the standard construction. Unlike idle machine housings, cells therefore
 	// always need a service datum; it sleeps dependency-driven when stable.
 	apply_blueprint_effects()
-	enable_material_service()
+	if(material_service_needed_at_start())
+		enable_material_service()
 	c_uid = next_serial(power_cell)
 
 /obj/item/cell/get_cell()
