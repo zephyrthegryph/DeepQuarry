@@ -142,6 +142,35 @@ impl Compiler<'_> {
                 .ok_or_else(|| error(name, "global procedure has no captured identity")),
         }
     }
+    /// The owner of a `/T/proc` or `/T/verb` type path must declare a procedure (verb) of its own in source, else
+    /// DreamMaker reports "undefined type path". Bindings without a resolver (legacy fixtures) issue no proof and are not judged.
+    pub(super) fn require_declared_namespace(
+        &self,
+        path: &str,
+        statement: &str,
+    ) -> Result<(), LowerError> {
+        let Some(lookup) = self.lookup else {
+            return Ok(());
+        };
+        let (owner, verb) = if let Some(owner) = path.strip_suffix("/verb") {
+            (owner, true)
+        } else if let Some(owner) = path.strip_suffix("/proc") {
+            (owner, false)
+        } else {
+            return Ok(());
+        };
+        if owner.is_empty() {
+            return Ok(());
+        }
+        let query = dm_ir::ResolveQuery::HasNamespaceMembers {
+            owner: SymbolId::of(owner),
+            verb,
+        };
+        if self.semantic(lookup.presence(query))? {
+            return Ok(());
+        }
+        Err(source_error(statement, &format!("{path}: undefined type path")))
+    }
     pub(super) fn procedure_literal(&self, path: &str) -> Result<SymRef, LowerError> {
         if let Some(lookup) = self.lookup {
             return self.semantic(lookup.procedure_literal(path));
