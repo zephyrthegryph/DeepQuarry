@@ -1313,3 +1313,30 @@ fixture assumption was corrected to the observed old behavior, without changing
 the frozen producer. This remains component proof: the real cold/incremental
 source selection, remaining generators, full-project checker admission and final
 client cutover are still pending. No budget or baseline was raised.
+
+### Auto-tracking facts and defensive child-read binding
+
+The existing compact global scan now also produces the exact outside-setter
+write facts used by auto-tracking, sharing interned names and the original body
+loans. Generated setter files, constructor writes and setters' own fields keep
+the old exclusions. The query dependency fingerprint includes these additional
+facts even though the historical public Globals JSON remains unchanged; a real
+query regression verifies that an outside-only change cannot be cut off.
+
+Auto-tracking's collision/refusal/inheritance decision is shared with the old
+consumer. The independent frozen old decision matches the complete ordered
+result on the fixture, including refusal text. Explicit authored tracking is
+kept as a bit on the existing tracked-name rows, separate from generated-origin
+tracking, without building another name table. Native consumer completion and
+generated-vs-authored origin integration tests remain pending.
+
+Child read loans now prove the exact receiver, procedure, optional context and
+flavor as well as original source ownership. The provider contract rejects
+omitted, repeated and wrong-root answers and preserves real IO/cancellation
+over semantic failures, including wrapped callback-stop errors. Thirteen
+focused native query tests pass. Complete frozen old/native outside-write and
+read-result comparisons pass. Oracle-only private file access is projected
+through the existing public accessor without widening the production API.
+A capture-roster allocation in the shared setter-call helper still needs its
+admitted streaming replacement before native auto consumer selection; this
+checkpoint does not claim complete resource admission or default cutover.

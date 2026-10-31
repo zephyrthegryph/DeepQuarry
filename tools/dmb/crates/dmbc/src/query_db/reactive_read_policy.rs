@@ -19,7 +19,7 @@ impl Value{
   struct HashWriter<'a>{hash:xxhash_rust::xxh3::Xxh3,poll:&'a dyn Fn()->io::Result<()>,first:Option<io::Error>}
   impl io::Write for HashWriter<'_>{fn write(&mut self,s:&[u8])->io::Result<usize>{if self.first.is_some(){return Err(io::Error::other("reactive hash stopped"))}if let Err(actual)=(self.poll)(){self.first=Some(actual);return Err(io::Error::other("reactive hash stopped"))}self.hash.update(s);Ok(s.len())}fn flush(&mut self)->io::Result<()>{Ok(())}}
   let mut writer=HashWriter{hash:xxhash_rust::xxh3::Xxh3::new(),poll,first:None};writer.hash.update(b"native-reactive-result-v1\0");
-  let result=match self{Self::Globals(v)=>{writer.hash.update(b"globals");let mut serializer=serde_json::Serializer::new(&mut writer);v.serialize_facts(&mut serializer)},Self::Reads(v)=>{writer.hash.update(b"reads");serde_json::to_writer(&mut writer,v.facts())}};
+  let result=match self{Self::Globals(v)=>{writer.hash.update(b"globals");let mut serializer=serde_json::Serializer::new(&mut writer);v.serialize_dependency_facts(&mut serializer)},Self::Reads(v)=>{writer.hash.update(b"reads");serde_json::to_writer(&mut writer,v.facts())}};
   if let Some(actual)=writer.first.take(){return Err(actual)}result.map_err(io::Error::other)?;poll()?;Ok(writer.hash.digest128())
  }
 }
@@ -52,17 +52,17 @@ fn param_charge(p:&Params)->Option<usize>{
  for path in [&p.root,&p.configuration_path]{bytes=bytes.checked_add(path.as_os_str().len().checked_mul(4)?)?;}
  if let Request::Read{receiver,procedure,context,..}=&p.request{bytes=bytes.checked_add(receiver.capacity())?.checked_add(procedure.capacity())?.checked_add(context.as_ref().map_or(0,String::capacity))?;}Some(bytes)
 }
-fn matches_current(value:&Result<Value,String>,capture:&CapturedPolicyInputs)->bool{match value{Ok(Value::Globals(v))=>v.matches(capture.policy()),Ok(Value::Reads(v))=>v.matches(capture.policy()),Err(_)=>false}}
+fn matches_current(value:&Result<Value,String>,capture:&CapturedPolicyInputs,request:&Request)->bool{match(value,request){(Ok(Value::Globals(v)),Request::Globals)=>v.matches(capture.policy()),(Ok(Value::Reads(v)),Request::Read{receiver,procedure,context,flavor})=>v.matches(capture.policy())&&v.matches_request(receiver,procedure,context.as_deref(),*flavor),_=>false}}
 fn child_current(ctx:&mut dm_query::Ctx<'_>,capture:&Arc<CapturedPolicyInputs>,params:Params,parent:&Budget,charge:&AtomicUsize,admission:&Admission,metadata:usize)->Result<Arc<Result<Value,String>>,Failure>{
  let key=params.result;admission.admit_child(Arc::downgrade(capture),key,metadata).map_err(graph_failure)?;
  let fresh=params.clone();let value=admission.with_child(parent,charge,key,||ctx.get::<Result<Value,String>>(key,Arc::new(params))).map_err(graph_failure)?;
- if matches_current(value.as_ref(),capture){return Ok(value)}
+ if matches_current(value.as_ref(),capture,&fresh.request){return Ok(value)}
  // Same-code current mappings may legitimately reissue around old parser input
  // keys. They are source-foreign until freshly computed under ACTUAL evidence.
  let mut fresh=fresh;let key=metadata_key(&("current-evidence-recompute",key.id,capture.semantic_source_evidence().key()))?;fresh.result=key;
  admission.admit_child(Arc::downgrade(capture),key,metadata).map_err(graph_failure)?;
- let value=admission.with_child(parent,charge,key,||ctx.get::<Result<Value,String>>(key,Arc::new(fresh))).map_err(graph_failure)?;
- if !matches_current(value.as_ref(),capture){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidData,"fresh reactive result failed actual original source witness")))}Ok(value)
+ let fresh=Arc::new(fresh);let value=admission.with_child(parent,charge,key,||ctx.get::<Result<Value,String>>(key,Arc::<Params>::clone(&fresh))).map_err(graph_failure)?;
+ if !matches_current(value.as_ref(),capture,&fresh.request){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidData,"fresh reactive result failed actual original source witness")))}Ok(value)
 }
 pub(super) fn register(db:&Db,charge:Arc<AtomicUsize>,admission:Arc<Admission>){
  db.define(REACTIVE_RESULT,"native-reactive-unique-policy",move|ctx,params|{
@@ -108,6 +108,7 @@ pub(super) fn register(db:&Db,charge:Arc<AtomicUsize>,admission:Arc<Admission>){
   })();
   let view_denied=sources.iter().any(|s|s.file.require_view_budget().is_err());if view_denied{admission.view_denied.store(true,Ordering::Release);admission.denied.store(true,Ordering::Release);}
   let result:Result<Value,String>=match produced{Err(Failure::Operational(actual))=>return Err(QueryError::operational(p.result,actual)),Err(Failure::Unsupported(message))=>{if view_denied||budget.denied(){admission.denied.store(true,Ordering::Release);return Err(QueryError::Missing(p.result))}return Err(QueryError::operational(p.result,io::Error::new(io::ErrorKind::Unsupported,message)))},Ok(value)=>Ok(value)};
+  if !matches_current(&result,&capture,&p.request){return Err(QueryError::operational(p.result,io::Error::new(io::ErrorKind::InvalidData,"fresh reactive result does not match its actual requested root")))}
   admission.abort.before_outcome(p.result)?;if view_denied||budget.denied(){admission.denied.store(true,Ordering::Release);return Err(QueryError::Missing(p.result))}
   let(hash,bytes)=match &result{Ok(value)=>{let bytes=value.charge().ok_or_else(||{admission.denied.store(true,Ordering::Release);QueryError::Missing(p.result)})?;budget.charge(bytes).map_err(|_|{admission.denied.store(true,Ordering::Release);QueryError::Missing(p.result)})?;let hash=value.fingerprint(&poll).map_err(|actual|QueryError::operational(p.result,actual))?;(hash,bytes)},Err(error)=>(error_hash(error),result_error_charge::<Value>(error))};
   retain_derived(&charge,bytes,&admission,p.result)?;admission.abort.before_outcome(p.result)?;Ok(Outcome::new(result,hash,bytes))
@@ -128,7 +129,7 @@ pub(super) fn with_read<T>(ctx:&mut dm_query::Ctx<'_>,capture:&Arc<CapturedPolic
  let params=Params{locator,capture:Arc::downgrade(capture),evidence,configuration,configuration_path:configuration_path.to_owned(),files:files.to_vec(),root:root.to_owned(),result,request};
  let read=child_current(ctx,capture,params,parent,charge,admission,metadata)?;
  let value=read.as_ref().as_ref().map_err(|error|Failure::Unsupported(error.clone()))?;let Value::Reads(value)=value else{return Err("reactive read query returned wrong payload role".into())};
- if !value.matches(capture.policy()){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"cached reactive read belongs to another original source owner tuple")))}
+ if !value.matches(capture.policy())||!value.matches_request(receiver,procedure,binding,flavor){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"cached reactive read belongs to another original source owner tuple")))}
  consume(value.facts())
 }
 
@@ -150,22 +151,22 @@ impl QueryDb{
   let result=metadata_key(&(locator,cohort.capture.policy_revision(),&cohort.root,&cohort.configuration,KeyRows(prepared.sources.iter().map(|(key,_,_)|key)),&request))?;
   self.begin_result_admission_locked()?;self.raw_policy.admission.admit_child(Arc::downgrade(&cohort.capture),result,metadata).map_err(|error|self.derived_query_error("reactive input metadata admission",error))?;
   let files=prepared.sources.iter().map(|(key,_,_)|*key).collect::<Vec<_>>();if let Some(limit)=limit{self.raw_policy.admission.limit.fetch_min(limit,Ordering::AcqRel);}
-  let params=Params{locator,capture:Arc::downgrade(&cohort.capture),evidence:evidence.key(),configuration:prepared.configuration,configuration_path:cohort.configuration.clone(),files,root:cohort.root.clone(),result,request};
-  let computed=self.db.get::<Result<Value,String>>(result,Arc::new(params.clone()));
+  let params=Arc::new(Params{locator,capture:Arc::downgrade(&cohort.capture),evidence:evidence.key(),configuration:prepared.configuration,configuration_path:cohort.configuration.clone(),files,root:cohort.root.clone(),result,request});
+  let computed=self.db.get::<Result<Value,String>>(result,Arc::<Params>::clone(&params));
   let mut value=match computed{Ok(value)=>value,Err(error)=>{
    if self.raw_policy.admission.view_denied.load(Ordering::Acquire){self.discard_poisoned_generator_files_locked(cohort);}
    return Err(self.derived_query_error("native reactive query",error));
   }};
-  if !matches_current(value.as_ref(),&cohort.capture){
-   let mut fresh=params;let fresh_key=metadata_key(&("current-evidence-recompute",result.id,evidence.key()))?;fresh.result=fresh_key;
+  if !matches_current(value.as_ref(),&cohort.capture,&params.request){
+   let mut fresh=(*params).clone();let fresh_key=metadata_key(&("current-evidence-recompute",result.id,evidence.key()))?;fresh.result=fresh_key;
    self.raw_policy.admission.admit_child(Arc::downgrade(&cohort.capture),fresh_key,metadata).map_err(|error|self.derived_query_error("reactive fallback metadata admission",error))?;
    value=self.db.get::<Result<Value,String>>(fresh_key,Arc::new(fresh)).map_err(|error|self.derived_query_error("native reactive current-source recomputation",error))?;
-   if !matches_current(value.as_ref(),&cohort.capture){return Err(invalid("fresh reactive result failed actual source witness"))}
+   if !matches_current(value.as_ref(),&cohort.capture,&params.request){return Err(invalid("fresh reactive result failed actual source witness"))}
   }
   if self.raw_retained_view_bytes_locked()?>INPUT_BUDGET||self.raw_policy.charge.load(Ordering::Acquire)>RESULT_BUDGET{return Err(invalid("native reactive retained budget exhausted"))}
   if self.raw_policy.charge.load(Ordering::Acquire)>self.raw_policy.admission.limit.load(Ordering::Acquire){return Err(io::Error::new(io::ErrorKind::OutOfMemory,"reactive cached result exceeds current operation headroom"))}
   let value=value.as_ref().as_ref().map_err(|message|invalid(message.clone()))?;
-  let matches=match value{Value::Globals(v)=>v.matches(cohort.capture.policy()),Value::Reads(v)=>v.matches(cohort.capture.policy())};
+  let matches=match(value,&params.request){(Value::Globals(v),Request::Globals)=>v.matches(cohort.capture.policy()),(Value::Reads(v),Request::Read{receiver,procedure,context,flavor})=>v.matches(cohort.capture.policy())&&v.matches_request(receiver,procedure,context.as_deref(),*flavor),_=>false};
   if !matches{return Err(invalid("reactive result original source owner differs"))}
   crate::daemon::control::checkpoint()?;let output=consume(value)?;crate::daemon::control::checkpoint()?;Ok(output)
  }

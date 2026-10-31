@@ -104,13 +104,14 @@ pub(crate) struct Builder {
     edges: [Vec<Id>; 4],
     pending: Option<Pending>,
     typed_writes: Vec<(Id, Id)>,
+    outside_writes: Vec<(Id, Id)>,
 }
 
 impl Builder {
     pub(crate) fn new<C: kc::Control>(c: &mut C, original_row_bound: usize) -> Result<Self, C::Error> {
         let mut rows = Vec::new();
         vector(c, &mut rows, original_row_bound)?;
-        Ok(Self { names: Names::default(), rows, edges: Default::default(), pending: None, typed_writes: Vec::new() })
+        Ok(Self { names: Names::default(), rows, edges: Default::default(), pending: None, typed_writes: Vec::new(), outside_writes: Vec::new() })
     }
     pub(crate) fn begin<C: kc::Control>(&mut self, c: &mut C, name: &str, root: bool) -> Result<(), C::Error> {
         assert!(self.pending.is_none(), "one actual body contribution at a time");
@@ -149,14 +150,18 @@ impl Builder {
         let variable = self.names.intern(c, variable)?;
         push(c, &mut self.typed_writes, (owner, variable))
     }
-    pub(crate) fn write_rows<C: kc::Control>(&mut self, c: &mut C) -> Result<crate::write_policy::WriteRows, C::Error> {
-        c.checkpoint()?;
-        let names = &self.names;
-        self.typed_writes.sort_unstable_by(|a,b| names.get(a.1).cmp(names.get(b.1)).then_with(||names.get(a.0).cmp(names.get(b.0))));
-        self.typed_writes.dedup();
-        c.checkpoint()?;
-        crate::write_policy::WriteRows::from_sorted_pairs(self.typed_writes.iter().map(|(owner,var)|(names.get(*owner),names.get(*var))), c)
+    pub(crate) fn outside_write<C: kc::Control>(&mut self,c:&mut C,owner:&str,variable:&str)->Result<(),C::Error>{
+        let owner=self.names.intern(c,owner)?;let variable=self.names.intern(c,variable)?;
+        push(c,&mut self.outside_writes,(owner,variable))
     }
+    fn selected_writes<C:kc::Control>(names:&Names,pairs:&mut Vec<(Id,Id)>,c:&mut C)->Result<crate::write_policy::WriteRows,C::Error>{
+        c.checkpoint()?;
+        pairs.sort_unstable_by(|a,b|names.get(a.1).cmp(names.get(b.1)).then_with(||names.get(a.0).cmp(names.get(b.0))));pairs.dedup();
+        c.checkpoint()?;
+        crate::write_policy::WriteRows::from_sorted_pairs(pairs.iter().map(|(owner,var)|(names.get(*owner),names.get(*var))),c)
+    }
+    pub(crate) fn write_rows<C:kc::Control>(&mut self,c:&mut C)->Result<crate::write_policy::WriteRows,C::Error>{Self::selected_writes(&self.names,&mut self.typed_writes,c)}
+    pub(crate) fn outside_write_rows<C:kc::Control>(&mut self,c:&mut C)->Result<crate::write_policy::WriteRows,C::Error>{Self::selected_writes(&self.names,&mut self.outside_writes,c)}
     fn values(&self, row: usize, kind: Kind) -> &[Id] {
         let range = &self.rows[row].ranges[kind as usize];
         &self.edges[kind as usize][range.start as usize..range.end as usize]

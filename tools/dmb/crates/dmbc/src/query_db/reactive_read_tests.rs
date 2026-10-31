@@ -184,3 +184,80 @@ fn actual_native_only_globals_over_large_original_roster_uses_context_body_edges
  let warm=db.db.get::<GlobalResult>(result_key,Arc::new(())).unwrap();assert!(Arc::ptr_eq(&value,&warm));assert_eq!(db.db.stats(GLOBALS).computed,1);assert_eq!(reads.load(Ordering::Relaxed),before,"native source/Globals/serialization do not reacquire original inputs");assert_eq!(db.db.stats(RAW_FILE).computed,0,"no raw-file policy node was manufactured");assert!(db.raw_policy.admission.leases.lock().unwrap().is_empty(),"producer test does not manufacture raw-family inputs or result leases");
  let actual_body=policy.archive().syntax_inputs().unwrap().first().unwrap();let body_key=Key::new(crate::query_db::body_syntax::BODY_SYNTAX,actual_body.key().into());assert!(db.db.dependants(&[body_key]).contains(&result_key),"actual original Kind4 dynamic edge under parent context");
 }
+
+#[test]
+fn actual_full_original_auto_globals_fixture_emits_complete_admitted_comparison_payload(){
+ #[derive(Clone)]struct Files(Arc<AtomicUsize>);
+ impl SnapshotProvider for Files{
+  fn stamp(&self,p:&Path)->io::Result<Stamp>{self.0.fetch_add(1,Ordering::Relaxed);crate::input_snapshot::FileSystemInputs.stamp(p)}
+  fn read(&self,p:&Path)->io::Result<(Stamp,Vec<u8>)>{self.0.fetch_add(1,Ordering::Relaxed);crate::input_snapshot::FileSystemInputs.read(p)}
+  fn list(&self,p:&Path)->io::Result<FolderListing>{self.0.fetch_add(1,Ordering::Relaxed);crate::input_snapshot::FileSystemInputs.list(p)}
+ }
+ let root=Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../analyze/fixtures/native-auto-tracked");let reads=Arc::new(AtomicUsize::new(0));let inputs=RecordingInputs::new(Files(Arc::clone(&reads)),1);let db=Arc::new(QueryDb::default());let seed=reference_hierarchy::seed();let executor=dm_exec::BuildExecutor::new(1).unwrap();
+ let front=dm_tree::frontend::build_with_executor_and_semantic_state_for_policy(&root.join("deepquarry.dme"),&inputs,&Default::default(),dm_tree::frontend::FrontendConfig{workers:1,engine:Some(&seed),observer:None},None,&executor,None,true).unwrap().with_body_queries(db.clone());
+ let intent=PolicyInputRequest{workspace:None,files:vec![PolicyInputFile{path:root.join("scopes.toml"),role:PolicyInputRole::Configuration,required:false}],search_folders:vec![]}.admit().unwrap();let capture=Arc::new(crate::runner_host::policy_capture::capture(&front,&inputs,&intent.capture_files(),&[]).unwrap().bind_request(&intent).unwrap());
+ for relative in ["code/globals.dm","code/types.dm","code/calls.dm","code/tests/ignored.dm"]{assert!(capture.policy().file(&root.join(relative)).is_some(),"entire original fixture must be captured: {relative}");}
+ let cohort=db.raw_cohort(capture,&root,&root.join("scopes.toml")).unwrap();assert_eq!(db.db.stats(crate::query_db::body_syntax::BODY_SYNTAX).computed,0);let before=reads.load(Ordering::Relaxed);
+ db.with_reactive_fixture(&cohort,Request::Globals,|value|{
+  let Value::Globals(value)=value else{panic!("actual complete global result")};
+  struct Output{bytes:Vec<u8>,budget:Arc<Budget>,first:Option<io::Error>}
+  impl io::Write for Output{
+   fn write(&mut self,bytes:&[u8])->io::Result<usize>{
+    if self.first.is_some(){return Err(io::Error::other("test admitted output stopped"))}
+    let operation=(||{crate::daemon::control::checkpoint()?;let need=self.bytes.len().checked_add(bytes.len()).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"test output size overflow"))?;
+     if need>self.bytes.capacity(){let requested=need.max(self.bytes.capacity().saturating_mul(2)).max(256);let reservation=requested.checked_mul(4).and_then(|n|n.checked_add(64)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"test output capacity overflow"))?;self.budget.charge(reservation).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;self.bytes.try_reserve_exact(requested-self.bytes.len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;if self.bytes.capacity().checked_mul(1).is_none_or(|n|n>reservation){return Err(io::Error::new(io::ErrorKind::OutOfMemory,"test output exposed capacity exceeds reservation"))}}
+     self.bytes.extend_from_slice(bytes);Ok(bytes.len())})();
+    match operation{Ok(n)=>Ok(n),Err(actual)=>{self.first=Some(actual);Err(io::Error::other("test admitted output stopped"))}}
+   }
+   fn flush(&mut self)->io::Result<()>{Ok(())}
+  }
+  let available=RESULT_BUDGET.checked_sub(db.raw_policy.charge.load(Ordering::Acquire)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"global comparison output headroom"))?;let budget=Budget::new(available).map_err(io::Error::other)?;
+  let mut output=Output{bytes:Vec::new(),budget,first:None};let serialized=value.serialize_dependency_facts(&mut serde_json::Serializer::new(&mut output));if let Some(actual)=output.first.take(){return Err(actual)}serialized.map_err(io::Error::other)?;crate::daemon::control::checkpoint()?;
+  let json=String::from_utf8(output.bytes).map_err(io::Error::other)?;println!("NATIVE_AUTO_GLOBAL_FULL={json}");Ok(())
+ }).unwrap();assert_eq!(reads.load(Ordering::Relaxed),before,"native query/output must not reread fixture source");
+}
+
+
+#[test]
+fn only_outside_setter_fact_change_participates_in_actual_global_query_cutoff(){
+ const A:&str="/datum/probe\n    var/v\n    proc/set_v(x)\n        v=x\n    proc/runtime()\n        return\n";
+ const B:&str="/datum/probe\n    var/v\n    proc/set_v(x)\n        v=x\n    proc/runtime()\n        v=1\n";
+ let db=Arc::new(QueryDb::default());let mut values=Vec::new();
+ for body in [A,B]{let fixture=Fixture::new_with_db(db.clone(),body,false);let capture=fixture.capture();values.push(db.with_reactive_fixture(&capture,Request::Globals,|value|{let Value::Globals(globals)=value else{panic!("global role")};let mut bytes=[0u8;4096];let mut out=io::Cursor::new(&mut bytes[..]);globals.serialize_facts(&mut serde_json::Serializer::new(&mut out)).map_err(io::Error::other)?;let n=out.position() as usize;drop(out);Ok((bytes[..n].to_vec(),value.fingerprint(&crate::daemon::control::checkpoint)?))}).unwrap());}
+ assert_eq!(values[0].0,values[1].0,"complete old public global policy result is unchanged");assert_ne!(values[0].1,values[1].1,"new outside-only fact must not early-cutoff a native auto-tracked consumer");
+}
+
+#[test]
+fn actual_same_source_read_result_cannot_answer_a_different_request_or_forge_provider_completion(){
+ use dq_analyze::captured_reactive_reads::{ReadProvider,with_read_facts};
+ struct Loan<'a>{value:&'a ReadResult,mode:u8}
+ impl ReadProvider for Loan<'_>{fn with_read(&self,_:&str,_:&str,_:Option<&str>,_:Flavor,consume:&mut dyn FnMut(&ReadResult)->Result<(),Failure>)->Result<(),Failure>{match self.mode{1=>Ok(()),2=>{let _=consume(self.value);let _=consume(self.value);Ok(())},3=>{let _=consume(self.value);Ok(())},_=>consume(self.value)}}}
+
+ struct After<'a>{value:&'a ReadResult,cancel:Option<&'a crate::daemon::control::Cancellation>,os:bool}
+ impl ReadProvider for After<'_>{fn with_read(&self,_:&str,_:&str,_:Option<&str>,_:Flavor,consume:&mut dyn FnMut(&ReadResult)->Result<(),Failure>)->Result<(),Failure>{let _=consume(self.value);if let Some(token)=self.cancel{token.cancel();}if self.os{Err(Failure::Operational(io::Error::from_raw_os_error(1450)))}else{Ok(())}}}
+
+ struct Wrapped<'a>(&'a ReadResult);
+ impl ReadProvider for Wrapped<'_>{fn with_read(&self,_:&str,_:&str,_:Option<&str>,_:Flavor,consume:&mut dyn FnMut(&ReadResult)->Result<(),Failure>)->Result<(),Failure>{match consume(self.0){Err(Failure::Operational(actual))=>Err(Failure::Operational(io::Error::other(actual))),result=>result}}}
+ fn kind(error:Failure)->io::Error{match error{Failure::Operational(actual)=>actual,Failure::Unsupported(message)=>panic!("actual IO expected: {message}")}}
+ let fixture=Fixture::new(BODY,false);let cohort=fixture.capture();let before=fixture.reads.load(Ordering::Relaxed);
+ fixture.db.with_reactive_fixture(&cohort,request("leaf"),|value|{
+  let Value::Reads(value)=value else{panic!("read role")};let inputs=cohort.capture.policy();let loan=Loan{value,mode:0};let poll=||Ok(());let delivered=std::cell::Cell::new(0);
+  assert!(value.matches(inputs));assert!(value.matches_request("/datum/probe","leaf",None,Flavor::Closed));
+  assert!(!value.matches_request("/datum/probe","leaf",Some(""),Flavor::Closed));assert!(!value.matches_request("/datum/probe","leaf",None,Flavor::Targeted));
+  let error=with_read_facts(&loan,inputs,"/datum/probe","unrelated",None,Flavor::Closed,&poll,|_|{delivered.set(delivered.get()+1);Ok(())}).unwrap_err();assert_eq!(kind(error).kind(),io::ErrorKind::InvalidInput);assert_eq!(delivered.get(),0,"same source does not authorize another root");
+  for mode in [1,2]{delivered.set(0);let error=with_read_facts(&Loan{value,mode},inputs,"/datum/probe","leaf",None,Flavor::Closed,&poll,|_|{delivered.set(delivered.get()+1);Ok(())}).unwrap_err();assert_eq!(kind(error).kind(),io::ErrorKind::InvalidInput);assert_eq!(delivered.get(),usize::from(mode==2));}
+  let error=with_read_facts(&Loan{value,mode:3},inputs,"/datum/probe","leaf",None,Flavor::Closed,&poll,|_|Err::<(),_>(Failure::Operational(io::Error::from_raw_os_error(1450)))).unwrap_err();assert_eq!(kind(error).raw_os_error(),Some(1450),"first real callback error survives provider swallowing proxy");
+
+  let semantic=||Err::<(),_>(Failure::Unsupported("actual semantic refusal".into()));
+  let error=with_read_facts(&loan,inputs,"/datum/probe","leaf",None,Flavor::Closed,&poll,|_|semantic()).unwrap_err();assert!(matches!(error,Failure::Unsupported(ref text)if text=="actual semantic refusal"),"typed callback proxy must not fabricate IO");
+  let wrapped=with_read_facts(&Wrapped(value),inputs,"/datum/probe","leaf",None,Flavor::Closed,&poll,|_|semantic()).unwrap_err();assert!(matches!(wrapped,Failure::Unsupported(ref text)if text=="actual semantic refusal"),"wrapped IO sentinel must remain a semantic callback failure");
+  let error=with_read_facts(&After{value,cancel:None,os:true},inputs,"/datum/probe","leaf",None,Flavor::Closed,&poll,|_|semantic()).unwrap_err();assert_eq!(kind(error).raw_os_error(),Some(1450),"actual provider IO outranks a prior semantic refusal");
+  let error=with_read_facts(&After{value,cancel:None,os:true},inputs,"/datum/probe","leaf",None,Flavor::Closed,&poll,|_|Err::<(),_>(Failure::Operational(io::Error::from_raw_os_error(112)))).unwrap_err();assert_eq!(kind(error).raw_os_error(),Some(112),"first actual callback IO outranks later provider IO");
+  let late=crate::daemon::control::Cancellation::default();let late_binding=crate::daemon::control::bind_with_deadline(late.clone(),Instant::now()+Duration::from_secs(30));
+  let error=with_read_facts(&After{value,cancel:Some(&late),os:false},inputs,"/datum/probe","leaf",None,Flavor::Closed,&crate::daemon::control::checkpoint,|_|semantic()).unwrap_err();assert_eq!(kind(error).kind(),io::ErrorKind::Interrupted,"late actual cancellation outranks semantic callback refusal");drop(late_binding);
+  let token=crate::daemon::control::Cancellation::default();let binding=crate::daemon::control::bind_with_deadline(token.clone(),Instant::now()+Duration::from_secs(30));
+  let error=with_read_facts(&loan,inputs,"/datum/probe","leaf",None,Flavor::Closed,&crate::daemon::control::checkpoint,|_|{token.cancel();Ok(())}).unwrap_err();assert_eq!(kind(error).kind(),io::ErrorKind::Interrupted);drop(binding);
+  let count=with_read_facts(&loan,inputs,"/datum/probe","leaf",None,Flavor::Closed,&crate::daemon::control::checkpoint,|facts|Ok(facts.reads().len())).unwrap();assert_eq!(count,1,"same immutable result recovers under fresh actual operation");Ok(())
+ }).unwrap();assert_eq!(fixture.reads.load(Ordering::Relaxed),before);let computed=fixture.db.db.stats(REACTIVE_RESULT).computed;
+ fixture.db.with_reactive_fixture(&cohort,request("leaf"),|_|Ok(())).unwrap();assert_eq!(fixture.db.db.stats(REACTIVE_RESULT).computed,computed);
+}

@@ -124,12 +124,15 @@ impl<'a> ReadSource<'a>{
         ],false,checkpoint)
     }
 
-    pub(crate) fn raw_metadata<E:From<String>>(&self,mut checkpoint:impl FnMut()->Result<(),E>,mut emit:impl FnMut(crate::raw_reactive_metadata_policy::Event<'_>)->Result<(),E>)->Result<(),E>{
+    pub(crate) fn raw_metadata<E:From<String>>(&self,checkpoint:impl FnMut()->Result<(),E>,mut emit:impl FnMut(crate::raw_reactive_metadata_policy::Event<'_>)->Result<(),E>)->Result<(),E>{
+        self.raw_metadata_with_file(checkpoint,|_,event|emit(event))
+    }
+    pub(crate) fn raw_metadata_with_file<E:From<String>>(&self,mut checkpoint:impl FnMut()->Result<(),E>,mut emit:impl FnMut(&str,crate::raw_reactive_metadata_policy::Event<'_>)->Result<(),E>)->Result<(),E>{
         self.require()?;
         for file in self.raw()?.tree.files.iter().filter(|file|crate::tree::CODE_DM.matches(file)){
             checkpoint()?;let marker=file.marker();self.require()?;
             for line in marker.as_str().split('\n'){
-                checkpoint()?;crate::raw_reactive_metadata_policy::visit_line(line,&mut emit)?;
+                checkpoint()?;crate::raw_reactive_metadata_policy::visit_line(line,|event|emit(&file.rel,event))?;
             }
         }
         checkpoint()?;self.require().map_err(E::from)

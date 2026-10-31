@@ -1,0 +1,2 @@
+# Frozen and transport-projected source preserve the original bytes.
+*.rs -text -whitespace

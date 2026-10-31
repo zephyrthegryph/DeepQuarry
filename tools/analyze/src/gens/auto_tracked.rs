@@ -275,21 +275,7 @@ pub fn called_here(tree: &Tree, sem: &crate::sem::Sem, defs: &HashMap<String, Ve
     names.iter().all(|n| defs.get(n).is_none_or(|types| types.iter().all(related)))
 }
 
-/// One var the generator tracks.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Auto {
-    pub ty: String,
-    pub var: String,
-    pub list: bool,
-}
-
-/// What the inference decided.
-#[derive(Default)]
-pub struct AutoSet {
-    pub tracked: Vec<Auto>,
-    /// `(type, var, why)` candidates left alone.
-    pub blocked: Vec<(String, String, String)>,
-}
+pub use crate::auto_tracking_policy::{Auto,AutoSet};
 
 /// Whether a proc definition at `loc` is the expansion of a `TRACKED(T, v)` line (the macro writes `set_v` at the line of its invocation): that is
 /// the declaration the generator replaces, not a hand-written proc it would clash with.
@@ -320,87 +306,15 @@ pub fn setter_defs(tree: &Tree, sem: &crate::sem::Sem) -> HashMap<String, Vec<St
 }
 
 /// The vars of `candidates` the generator can give a setter, and the ones it cannot (with why).
-pub fn decide(tree: &Tree, sem: &crate::sem::Sem, candidates: &BTreeSet<(String, String)>, exclude: &[String]) -> AutoSet {
-    let defs = setter_defs(tree, sem);
-    let mut out = AutoSet::default();
-    let mut kept: Vec<Auto> = Vec::new();
-    for (owner, var) in candidates {
-        let why = |s: &str| Some(s.to_string());
-        let blocked = (|| {
-            if RESERVED.contains(&var.as_str()) {
-                return why("a reserved name");
-            }
-            if exclude.iter().any(|e| e == var || e.strip_prefix(owner.as_str()).and_then(|r| r.strip_prefix("::")) == Some(var.as_str())) {
-                return why("excluded in tools/ci/lint_scopes.toml [lint.auto_tracked.lists] exclude");
-            }
-            let Some(sig) = sem.var_decl(owner, var) else { return why("no declaration") };
-            if sig.file.is_empty() {
-                return why("a built-in var");
-            }
-            if sig.file == AUTO_REL {
-                return why("declared in the generated file");
-            }
-            // code/modules/tgui/modules/ holds window hosts (content); the rest of code/modules/tgui/ is the engine's own.
-            if crate::sem::reads::ENGINE_DIRS.iter().any(|d| sig.file.starts_with(d)) && !sig.file.starts_with("code/modules/tgui/modules/") {
-                return why("engine-internal state: the framework's own bookkeeping publishes itself");
-            }
-            if sig.file.contains("benchmarks/") {
-                return why("declared in a benchmark file, which only the bench build compiles");
-            }
-            if sig.is_static || sig.is_const {
-                return why("static or const");
-            }
-            if !sem.is_subtype(owner, "/datum") {
-                return why("not a /datum type");
-            }
-            if sem.is_subtype(owner, "/datum/record") {
-                return why("a profile record: its fields are TRACKED_DATA, and a record holds data only");
-            }
-            // The declaring type: a read through a subtype of it names the same var.
-            if sem.var_owner(owner, var).as_deref() != Some(owner.as_str()) {
-                return why("declared on another type");
-            }
-            let name = format!("set_{}", var);
-            if let Some(types) = defs.get(&name) {
-                if let Some(t) = types.iter().find(|t| sem.is_subtype(owner, t) || sem.is_subtype(t, owner)) {
-                    return Some(format!("{} already defines {}()", t, name));
-                }
-            }
-            if sig.is_list() {
-                for gen in [format!("add_{var}"), format!("include_{var}"), format!("remove_{var}"), format!("set_{var}_at"), format!("clear_{var}"), format!("insert_{var}"), format!("swap_{var}"), format!("cut_{var}")] {
-                    if let Some(t) = defs.get(&gen).and_then(|types| types.iter().find(|t| sem.is_subtype(owner, t) || sem.is_subtype(t, owner))) {
-                        return Some(format!("{} already defines {}(), a list mutator the generator would write", t, gen));
-                    }
-                }
-            }
-            if sig.is_list() && sem.var_decl(owner, &format!("{}_version", var)).is_some_and(|v| v.file != TRACKED_LISTS_REL) {
-                return why("the list's _version var is taken");
-            }
-            None
-        })();
-        match blocked {
-            Some(w) => out.blocked.push((owner.clone(), var.clone(), w)),
-            None => kept.push(Auto { ty: owner.clone(), var: var.clone(), list: sem.var_decl(owner, var).map(|s| s.is_list()).unwrap_or(false) }),
-        }
-    }
-    // A `proc/set_v` declared on the type, an ancestor or a subtype is a clash (the compiler rejects the second declaration). An override
-    // written without `proc/` (`/mob/living/set_stat(x)`, calling `..()`) is not a declaration and is ignored by `setter_defs`.
-    // A var tracked on a type and again on one of its subtypes needs one setter: the ancestor's.
-    let by_var: BTreeMap<&str, Vec<&Auto>> = kept.iter().fold(BTreeMap::new(), |mut m, a| {
-        m.entry(a.var.as_str()).or_default().push(a);
-        m
-    });
-    for a in &kept {
-        let shadowed = by_var[a.var.as_str()].iter().any(|b| b.ty != a.ty && sem.is_subtype(&a.ty, &b.ty));
-        if shadowed {
-            out.blocked.push((a.ty.clone(), a.var.clone(), "an ancestor tracks it".to_string()));
-        } else {
-            out.tracked.push(a.clone());
-        }
-    }
-    out.tracked.sort();
-    out.blocked.sort();
-    out
+struct LegacyDecision<'a>{sem:&'a crate::sem::Sem}
+impl crate::key_policy_control::Control for LegacyDecision<'_>{type Error=std::convert::Infallible;const CHECKED:bool=false;fn checkpoint(&mut self)->Result<(),Self::Error>{Ok(())}fn reserve(&mut self,_:usize)->Result<(),Self::Error>{Ok(())}fn overflow(&mut self)->Self::Error{unreachable!("legacy allocation path")}fn allocation_failed(&mut self)->Self::Error{unreachable!("legacy allocation path")}}
+impl crate::auto_tracking_policy::Source for LegacyDecision<'_>{
+ fn variable(&mut self,owner:&str,var:&str)->Result<Option<crate::auto_tracking_policy::Variable>,Self::Error>{Ok(self.sem.var_decl(owner,var).map(|v|{let is_list=v.is_list();crate::auto_tracking_policy::Variable{file:v.file,is_static:v.is_static,is_const:v.is_const,is_list}}))}
+ fn subtype(&mut self,child:&str,parent:&str)->Result<bool,Self::Error>{Ok(self.sem.is_subtype(child,parent))}
+ fn var_owner(&mut self,owner:&str,var:&str)->Result<Option<String>,Self::Error>{Ok(self.sem.var_owner(owner,var))}
+}
+pub fn decide(tree:&Tree,sem:&crate::sem::Sem,candidates:&BTreeSet<(String,String)>,exclude:&[String])->AutoSet{
+ let defs=setter_defs(tree,sem);crate::auto_tracking_policy::decide(&mut LegacyDecision{sem},&defs,candidates,exclude).unwrap()
 }
 
 /// The inference for a tree (memoized: the generator, the lints and `analyze fix` share it).

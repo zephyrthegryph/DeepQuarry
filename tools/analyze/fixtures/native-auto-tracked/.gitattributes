@@ -1,0 +1,2 @@
+# Preserve exact indentation in the old-parser policy fixture.
+code/**/*.dm whitespace=-indent-with-non-tab

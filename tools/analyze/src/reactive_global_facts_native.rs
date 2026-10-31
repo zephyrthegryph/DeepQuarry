@@ -4,7 +4,7 @@ use crate::{reactive_original_source::{ReadSource,ReadCallable},reactive_reads_n
 use dm_syntax::{Expr,ExprKind,Statement,StatementKind,ForControl,TypedVisitor,VisitDecision,NodeStep};
 use std::{collections::{HashMap,HashSet},io,cell::RefCell};
 #[derive(serde::Serialize)]
-pub(crate) struct NativeGlobals{globals:crate::global_policy::GlobalRows,writes:crate::write_policy::WriteRows}
+pub(crate) struct NativeGlobals{globals:crate::global_policy::GlobalRows,writes:crate::write_policy::WriteRows,#[serde(skip)]outside_writes:crate::write_policy::WriteRows}
 fn denial()->Failure{Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"native global policy admission refused"))}
 fn require(source:&ReadSource<'_>)->Result<(),Failure>{source.require().map_err(|e|if source.budget().denied(){denial()}else{e.into()})}
 fn reserve(source:&ReadSource<'_>,bytes:Option<usize>)->Result<(),Failure>{source.reserve(bytes).map_err(|_|denial())}
@@ -104,13 +104,13 @@ fn write_target(source:&ReadSource<'_>,owner:&str,locals:&HashMap<String,Option<
  let declaring=match recv{Some(ty)=>variable_owner(source,&ty,name)?,None=>None};
  Ok(Some((match declaring{Some(ty)=>ty,None=>own(source,crate::write_policy::UNTYPED_WRITE)?},own(source,name)?)))
 }
-struct Scan<'a,'s,'g,C:kc::Control<Error=Failure>>{source:&'a ReadSource<'s>,owner:&'a str,locals:&'a Locals,global_names:&'a HashSet<String>,glob_names:&'a HashSet<String>,graph:&'g mut CompactGlobalBuilder,control:&'g mut C,capture_global:bool,constructor:bool,poll:&'a dyn Fn()->io::Result<()>,error:Option<Failure>}
+struct Scan<'a,'s,'g,C:kc::Control<Error=Failure>>{source:&'a ReadSource<'s>,owner:&'a str,locals:&'a Locals,global_names:&'a HashSet<String>,glob_names:&'a HashSet<String>,graph:&'g mut CompactGlobalBuilder,control:&'g mut C,capture_global:bool,outside:bool,own_setter:Option<&'a str>,constructor:bool,poll:&'a dyn Fn()->io::Result<()>,error:Option<Failure>}
 impl<C:kc::Control<Error=Failure>> Scan<'_,'_,'_,C>{
  fn put(&mut self,kind:global_policy::CompactGlobalKind,name:&str)->Result<(),Failure>{if self.capture_global{self.graph.edge(self.control,kind,name)?;}Ok(())}
  fn note(&mut self,e:&Expr,typed:bool)->Result<(),Failure>{
   if let Some(name)=field_name(e){if !is_bare_field(e)||!self.locals.globals.contains(name){self.put(global_policy::CompactGlobalKind::FieldWrite,name)?;}}
   if let Some(name)=global_name(e,self.global_names,self.glob_names,&self.locals.globals){self.put(global_policy::CompactGlobalKind::Write,name)?;}
-  if typed&&!self.constructor{if let Some(pair)=write_target(self.source,self.owner,&self.locals.typed,e,self.poll)?{self.graph.typed_write(self.control,&pair.0,&pair.1)?;}}
+  if typed&&!self.constructor{if let Some(pair)=write_target(self.source,self.owner,&self.locals.typed,e,self.poll)?{self.graph.typed_write(self.control,&pair.0,&pair.1)?;if self.outside&&self.own_setter!=Some(pair.1.as_str()){self.graph.outside_write(self.control,&pair.0,&pair.1)?;}}}
   Ok(())
  }
  fn expr(&mut self,e:&Expr)->Result<(),Failure>{
@@ -174,7 +174,7 @@ impl NativeGlobals{
      let mut locals=LocalCollector{source:page,body:&body,locals:Locals{globals:HashSet::new(),typed:HashMap::new()},error:None,poll:&poll};
      let params=body.source_parameters()?;for p in params.entries()?{poll()?;let name=params.name(p)?;reserve(page,p.type_components().iter().try_fold(0usize,|n,s|n.checked_add(s.end.checked_sub(s.start)?)).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(1024)))?;locals.add(name,params.type_path(p)?,true)?;}
      dm_analysis::policy_body_observation::observe(body.statement_body().view(),&mut locals)?;if let Some(error)=locals.error.take(){return Err(error)}
-     let mut scan=Scan{source:page,owner:call.owner,locals:&locals.locals,global_names:&globals,glob_names:&glob,graph:&mut graph,control:&mut control,capture_global,constructor:matches!(call.name,"New"|"Initialize"|"initialize"|"Init"),poll:&poll,error:None};
+     let mut scan=Scan{source:page,owner:call.owner,locals:&locals.locals,global_names:&globals,glob_names:&glob,graph:&mut graph,control:&mut control,capture_global,outside:rel!=crate::auto_setter_calls_policy::AUTO_REL&&rel!="code/engine/_generated/tracked_lists.dm",own_setter:call.name.strip_prefix("set_"),constructor:matches!(call.name,"New"|"Initialize"|"initialize"|"Init"),poll:&poll,error:None};
      dm_analysis::policy_body_observation::observe(body.statement_body().view(),&mut scan)?;if let Some(error)=scan.error.take(){return Err(error)}
      drop(scan);drop(locals);drop(body);
      if capture_global{graph.finish(&mut control)?;}
@@ -187,16 +187,26 @@ impl NativeGlobals{
     drop(scratch);result
    })?;
    let globals=graph.classify(&mut control)?.into_rows(&mut control)?;
-   let writes=graph.write_rows(&mut control)?;
-   poll()?;require(source)?;Ok(Self{globals,writes})
+   let writes=graph.write_rows(&mut control)?;let outside_writes=graph.outside_write_rows(&mut control)?;
+   poll()?;require(source)?;Ok(Self{globals,writes,outside_writes})
   })();
   if matches!(&pending,Err(Failure::Operational(_))){return pending}
   if source.budget().denied(){return Err(denial())}pending
  }
 }
 
-impl NativeGlobals{pub(crate) fn visit_storage(&self,mut visit:impl FnMut(usize,usize)){self.globals.visit_storage(&mut visit);self.writes.visit_storage(visit);}}
+impl NativeGlobals{pub(crate) fn visit_storage(&self,mut visit:impl FnMut(usize,usize)){self.globals.visit_storage(&mut visit);self.writes.visit_storage(&mut visit);self.outside_writes.visit_storage(visit);}}
 
 impl NativeGlobals{
  pub(crate) fn retained_charge(&self)->Option<usize>{let mut bytes=Some(std::mem::size_of::<Self>());self.visit_storage(|_,n|bytes=bytes.and_then(|old|old.checked_add(n)));bytes}
+}
+
+impl NativeGlobals{
+ pub(crate) fn outside_setters(&self)->&crate::write_policy::WriteRows{&self.outside_writes}
+ /// Dependency fingerprint includes every unique fact, including auto-tracking
+ /// writes deliberately omitted from the historical public Globals JSON schema.
+ pub(crate) fn serialize_dependencies<S:serde::Serializer>(&self,serializer:S)->Result<S::Ok,S::Error>{
+  use serde::ser::SerializeStruct;let mut fields=serializer.serialize_struct("NativeGlobalDependencies",3)?;
+  fields.serialize_field("globals",&self.globals)?;fields.serialize_field("writes",&self.writes)?;fields.serialize_field("outside_setters",&self.outside_writes)?;fields.end()
+ }
 }
