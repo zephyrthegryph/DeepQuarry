@@ -47,7 +47,7 @@ def atom_new_override(lines):
 
 
 VERB_DEF = re.compile(r"^\s*((?:/[\w/]+?)?)/?verb/(\w+)")
-GRANTED_VERB = re.compile(r"\b(?:granted_verb|verb_entry)\(\s*(/[\w/]+)")
+GRANTED_VERB = re.compile(r"\b(?:granted_verb|verb_entry)\(\s*(/[\w/]+)|\b(?:ability|driver)\s*=\s*(/[\w/]+/verb/\w+)")
 
 
 def non_client_verb(lines, granted=()):
@@ -267,9 +267,10 @@ def main(argv):
     granted = set()
     for f in dm:
         text = read(root, f)
-        if "granted_verb" in text or "verb_entry" in text:
+        if "granted_verb" in text or "verb_entry" in text or "ability" in text or "driver" in text:
             for ln in strip_comments(text):
-                granted.update(GRANTED_VERB.findall(ln))
+                for a, b in GRANTED_VERB.findall(ln):
+                    granted.add(a or b)
     rows = []
     for f in sorted(old):
         why = []
