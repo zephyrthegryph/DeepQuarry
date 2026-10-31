@@ -13,7 +13,7 @@ static D3: &[(&str, &[&str])] = &[
         r"^[[:space:]]+var/(damage|max_damage|broken_damage|damage_failure)\b|\b(max_damage|broken_damage|damage_failure)\b",
         &["code/modules/modular_computers", "code/content/modular_computers"],
     ),
-    (r"\b(maxintegrity|integrity[[:space:]]*([-+*/]?=[^=]|\+\+|--))|^[[:space:]]+var/integrity\b", &["code/game/objects/items/weapons/tanks"]),
+    (r"\b(maxintegrity|integrity[[:space:]]*([-+*/]?=[^=]|\+\+|--))|^[[:space:]]+var/integrity\b", &["code/game/objects/items/weapons/tanks", "code/content/items/weapons/tanks"]),
     (r"\bshield_health\b", &["code"]),
     (r"^[[:space:]]+var/hp\b|\bhp[[:space:]]*[-+]?=[^=]", &["code/game/objects/items/shooting_range.dm"]),
     (
@@ -348,6 +348,7 @@ pub fn parts() -> Vec<Part> {
             Files::Under(
                 &[
                     "code/modules/mob/living/bot",
+                    "code/content/mob/living/bot",
                     "code/game/mecha",
                     "code/game/objects/items/weapons/medigun",
                     "code/content/items/weapons/medigun",

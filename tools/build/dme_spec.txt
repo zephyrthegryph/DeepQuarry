@@ -40,7 +40,7 @@ before code/content/food/drinkingglass/metaglass.dm code/content/food/drinkgglas
 before code/content/hydroponics/seedtypes/flowers.dm code/content/hydro/plants.dm   # /datum/seed/flower/sunflower
 before code/content/mob/new_player/sprite_accessories_ear.dm code/content/vore/appearance/sprite_accessories.dm   # ear sprite accessories
 before code/content/materials/engineering/material_machines.dm code/content/research/tg/techwebs/nodes/mining_nodes.dm   # techweb material_processing
-before code/modules/mob/living/silicon/robot/drone/drone.dm code/content/mob/living/silicon/drone/unify_drone.dm   # /mob/living/silicon/robot/drone
+before code/content/mob/living/silicon/robot/drone/drone.dm code/content/mob/living/silicon/drone/unify_drone.dm   # /mob/living/silicon/robot/drone
 before code/content/mobs/living/simple_mob/subtypes/animal/giant_spider/** code/content/mobs/living/simple_mob/subtypes/animal/spider.dm   # giant spiders
 before code/content/mob/living/simple_mob/donteatbossmonsters.dm code/content/mobs/living/simple_mob/subtypes/animal/spider.dm   # broodmother
 before code/content/mobs/living/simple_mob/subtypes/animal/spider.dm code/domains/ai/ports/broodmother.dm   # broodmother
