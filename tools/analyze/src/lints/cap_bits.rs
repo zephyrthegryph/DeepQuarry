@@ -1,5 +1,5 @@
 //! Port of `tools/ci/cap_bits_lint.py`: the cap_state bit registry check
-//! (code/__defines/cap_bits.dm; dx_conventions.md section 2).
+//! (code/defines/engine/cap_bits.dm; dx_conventions.md section 2).
 //!
 //! Fails when a `CAP_*` bit is defined outside the registry file, two bits share a value, or a bit
 //! reaches `1<<24` (DM's safe bitwise range); also rejects raw writes to `cap_state` outside the
@@ -30,7 +30,7 @@ static META: Meta = Meta {
     scan: ScanKind::Tree,
     policy: Policy::Hard,
     rules: &[
-        RuleMeta { name: "outside_registry", hint: "allocate the bit in code/__defines/cap_bits.dm" },
+        RuleMeta { name: "outside_registry", hint: "allocate the bit in code/defines/engine/cap_bits.dm" },
         RuleMeta { name: "bit_range", hint: "a cap bit must stay below 1<<24" },
         RuleMeta { name: "bit_shared", hint: "every CAP_* bit needs its own value" },
         RuleMeta { name: "raw_write", hint: "write cap_state through cap_set()" },
@@ -131,7 +131,7 @@ impl Lint for CapBits {
     }
 
     fn selftest(&self) -> Result<String, String> {
-        const REG: &str = "code/__defines/cap_bits.dm";
+        const REG: &str = "code/defines/engine/cap_bits.dm";
         let files = vec![
             SourceFile::from_text(REG, "#define CAP_A (1<<0)\n#define CAP_B (1<<1)\n"),
             SourceFile::from_text(

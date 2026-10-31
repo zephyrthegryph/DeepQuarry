@@ -2,6 +2,11 @@
 # with, changed one of these, the combination can behave differently with no file overlap, so the lane is proved again.
 # One path prefix per line; # comments. Checked on both sides, in addition to tools/ci/lane_ready_global.txt (dq_lane_check.js, master side).
 code/__defines/
+code/defines/engine/
+code/defines/library/
+code/defines/host/
+code/defines/base/
+code/defines/content/
 code/__odlint.dm
 code/__pragmas.dm
 SpacemanDMM.toml

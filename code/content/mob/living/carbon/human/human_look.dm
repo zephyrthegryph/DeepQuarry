@@ -2,7 +2,7 @@
 // body's own states. Nothing calls a redraw: equipping, a limb's damage, a style or colour change, a tail starting to wag all publish
 // what they wrote, and the engine runs the draw again.
 //
-// Layer order is the order of the *_LAYER defines (code/__defines/update_icons.dm): every layer is an image at BODY_LAYER + its index,
+// Layer order is the order of the *_LAYER defines (code/defines/base/update_icons.dm): every layer is an image at BODY_LAYER + its index,
 // so the body sits under the uniform, the tail as seen from the south sits under the uniform and over it from the north
 // (get_tail_layer()), and the hands sit over everything worn.
 //

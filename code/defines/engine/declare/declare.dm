@@ -77,7 +77,7 @@
 /**
  * A tracked var with a schema (section 4): declares the setter set_<V>() that validates the write against `schema`, normalises it
  * and publishes the change. The doc's `TRACKED(T, v, schema = ..., default = ...)`; the legacy TRACKED(T, V) of
- * code/__defines/capabilities.dm stays as it is until the migration retires it, so a var with a schema uses this name. `V` must be
+ * code/defines/engine/capabilities.dm stays as it is until the migration retires it, so a var with a schema uses this name. `V` must be
  * declared on the type (the var line carries the default). A rejected write leaves the var as it was and returns FALSE.
  */
 #define TRACKED_SCHEMA(T, V, SCHEMA_EXPR, opts...) ##T/proc/set_##V(value) { value = schema_write(src, #V, value); if(value == SCHEMA_REJECT) { return FALSE }; if(TRACKED_UNCHANGED(V, value)) { return FALSE }; V = value; tracked_changed(src, #V); return TRUE };SCHEMA(T, V, SCHEMA_EXPR, opts)

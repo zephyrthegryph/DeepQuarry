@@ -90,6 +90,8 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 			log_qdel("OM: timer [handler] dropped: argument [position] no longer exists")
 			return
 	var/census_start = GLOB.census_on ? TICK_USAGE_REAL : null
+	GLOB.km_attr_a = holder.type // attribution: the handler this keyed timer carries, not this dispatcher
+	GLOB.km_attr_b = handler
 	if(deferred_proc_is_global(handler))
 		call(handler)(arglist(handler_args || list()))
 	else

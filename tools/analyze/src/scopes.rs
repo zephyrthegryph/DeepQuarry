@@ -255,3 +255,18 @@ core = ["a", "b"]
         assert_eq!(s.for_lint("scheduler", "").reason_codes, vec!["BLOCKING_IO", "MC"]);
     }
 }
+
+/// The macro library: `code/__defines/` (generated Verdigris bindings and the files not yet moved) and the five module folders of
+/// `code/defines/` (doc section 22). `code/defines/` itself also holds old type-definition files, which are not macros.
+pub const DEFINES_ROOTS: [&str; 6] = [
+    "code/__defines/",
+    "code/defines/engine/",
+    "code/defines/library/",
+    "code/defines/host/",
+    "code/defines/base/",
+    "code/defines/content/",
+];
+
+pub fn is_defines(rel: &str) -> bool {
+    DEFINES_ROOTS.iter().any(|p| rel.starts_with(p))
+}

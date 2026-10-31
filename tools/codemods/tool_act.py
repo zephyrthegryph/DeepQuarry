@@ -50,7 +50,7 @@ QUALITIES = {
 }
 BANNED = (
     "code/modules/organs/", "code/modules/body/", "code/modules/medical/", "code/datums/om/",
-    "code/modules/atmospherics/", "code/ATMOSPHERICS/", "code/__defines/", "code/modules/unit_tests/", "code/tests/",
+    "code/modules/atmospherics/", "code/ATMOSPHERICS/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/modules/unit_tests/", "code/tests/",
     "code/engine/", "code/_onclick/",
 )
 DEF_RE = re.compile(r"^(/[\w/]+?)/(" + "|".join(QUALITIES) + r")_act\((.*)\)\s*(//.*)?$")

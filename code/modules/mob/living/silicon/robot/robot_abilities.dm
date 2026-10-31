@@ -1,6 +1,6 @@
 // Borg abilities. Player-facing robot self-actions - as opposed to admin/law-management verbs, which stay plain verbs - are ops with a
 // menu(button =, bind =) binding that a capability brings to the robot; the robot (or an upgrade, or an admin) is the source that grants it.
-// The op keys are the ABILITY_ID_* defines (code/__defines/abilities.dm).
+// The op keys are the ABILITY_ID_* defines (code/defines/content/abilities.dm).
 
 MSG_DEF_SELF(robot_ability/no_light_power, "there isn't enough power to run your integrated light")
 MSG_DEF_SELF(robot_ability/name_taken, "you can't pick another custom name; ask for a name change")

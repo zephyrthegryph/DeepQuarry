@@ -1,7 +1,7 @@
 // Phase 4 of the destroy transaction: relations and ownership (doc/rewrite/ownership.md).
 //
 // Every object-typed var is exactly one of own / shared / proto / relation, declared next to its
-// type (code/__defines/ownership.dm). The ownership framework (code/datums/ownership/) does the
+// type (code/defines/engine/ownership.dm). The ownership framework (code/datums/ownership/) does the
 // work; this file is the transaction's entry point and the lifecycle report channel.
 
 /// Runs in the destroy transaction just before phase 4 (links) nulls, deletes and

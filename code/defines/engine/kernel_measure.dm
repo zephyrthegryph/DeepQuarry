@@ -66,3 +66,37 @@
 /// Kinds of player input the latency record separates.
 #define KM_INPUT_CLICK 1
 #define KM_INPUT_VERB 2
+
+// Attribution inside om_core and om_appearance (code/controllers/measure/attribution.dm).
+/// Rows the attribution table holds; a key past it lands on a per-kind overflow row and the cheaper half is dropped at the end of the tick.
+#define KA_MAX_ROWS 4096
+/// What a row is: a timer callback and a change reaction (both reported as callbacks), or a redraw of an atom type.
+#define KA_KIND_CALLBACK 1
+#define KA_KIND_REACTION 2
+#define KA_KIND_DRAW 3
+#define KA_CALLBACK_KINDS ((1 << KA_KIND_CALLBACK) | (1 << KA_KIND_REACTION))
+/// How select_top() ranks: this tick's ms, all ms, ms since "Initializations complete".
+#define KA_BY_TICK 1
+#define KA_BY_TOTAL 2
+#define KA_BY_POST 3
+// A row's fields (a fixed-length list). Totals are lo + hi (see KM_FLUSH_MS).
+#define KA_KIND 1
+#define KA_SYS 2
+#define KA_A 3
+#define KA_B 4
+#define KA_COUNT 5
+#define KA_MS 6
+#define KA_MS_HI 7
+#define KA_MAX 8
+#define KA_TMS 9
+#define KA_TSER 10
+#define KA_POST_COUNT 11
+#define KA_POST_MS 12
+#define KA_POST_MS_HI 13
+#define KA_LAST 14
+#define KA_LATE_COUNT 15
+#define KA_LATE_MS 16
+#define KA_LATE_MS_HI 17
+/// SETTLE: summaries are logged this long and KA_SETTLE_SECOND after init complete (deciseconds); work past the first counts as "late".
+#define KA_SETTLE_FIRST (2 MINUTES)
+#define KA_SETTLE_SECOND (10 MINUTES)

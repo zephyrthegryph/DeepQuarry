@@ -1,4 +1,4 @@
-// Per-type lists (doc/rewrite/dx_conventions.md §2). Defines: code/__defines/type_list.dm.
+// Per-type lists (doc/rewrite/dx_conventions.md §2). Defines: code/defines/engine/type_list.dm.
 
 /**
  * The list D's type returns from the well-known proc `proc_ref` (PROC_REF(interactions), ...),

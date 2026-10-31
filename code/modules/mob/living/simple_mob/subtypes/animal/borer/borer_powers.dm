@@ -1,22 +1,14 @@
 /**
  * Put a nearby target to sleep to allow for infestation.
  */
-/mob/living/simple_mob/animal/borer/verb/knockout_victim()
-	var/mob/living/carbon/human/host = src?.borer_host()
-	set category = VERB_CAT_ABILITIES_BORER
-	set name = "Knockout Victim"
-	set desc = "Use your psychic influence to put a target into a temporary catatonic state."
-
+/mob/living/simple_mob/animal/borer/proc/knockout_victim_ready(datum/act/op/A)
 	if(ELAPSED(src, used_dominate, CLOCK_WORLD) < 150)
-		to_chat(src, span_warning("You cannot use that ability again so soon."))
-		return
-	if(host)
-		to_chat(src, span_warning("You cannot do that from within a host body."))
-		return
-	if(stat)
-		to_chat(src, span_warning("You cannot do that in your current state."))
-		return
+		return span_warning("You cannot use that ability again so soon.")
+	if(src?.borer_host())
+		return span_warning("You cannot do that from within a host body.")
+	return stat ? span_warning("You cannot do that in your current state.") : null
 
+/mob/living/simple_mob/animal/borer/proc/knockout_victim()
 	var/attack_range = 5
 	var/list/choices = list()
 	for(var/mob/living/carbon/human/attackable in view(attack_range,src))
@@ -33,6 +25,9 @@
 		open_request(src, /datum/prompt/choice, PROC_REF(knockout_target_chosen), answerer = src, title = "Target Choice", question = "Who do you wish to dominate?", choices = choices, ask_flags = ASK_CONSCIOUS, timeout = 0)
 		return
 	psychic_knockout(choices[1])
+
+/mob/living/simple_mob/animal/borer/proc/knockout_victim_op(datum/act/op/A)
+	knockout_victim()
 
 /mob/living/simple_mob/animal/borer/proc/knockout_target_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -59,19 +54,12 @@
 /**
  * Crawls inside of a target mob, and adds the borer as an implant to the mob's brain. If no brain exists the body will become a borer husk zombie.
  */
-/mob/living/simple_mob/animal/borer/verb/infest()
-	var/mob/living/carbon/human/host = src?.borer_host()
-	set category = VERB_CAT_ABILITIES_BORER
-	set name = "Infest"
-	set desc = "Infest a suitable humanoid host."
+/mob/living/simple_mob/animal/borer/proc/infest_host_ready(datum/act/op/A)
+	if(src?.borer_host())
+		return span_warning("You are already within a host.")
+	return stat ? span_warning("You cannot infest a target in your current state.") : null
 
-	if(host)
-		to_chat(src, span_warning("You are already within a host."))
-		return
-	if(stat)
-		to_chat(src, span_warning("You cannot infest a target in your current state."))
-		return
-
+/mob/living/simple_mob/animal/borer/proc/infest()
 	var/list/choices = list()
 	for(var/mob/living/carbon/human/check_target in view(1,src))
 		if(Adjacent(check_target) && !check_target.has_brain_worms())
@@ -84,6 +72,9 @@
 		open_request(src, /datum/prompt/choice/borer_infest, PROC_REF(infest_target_chosen), answerer = src, choices = choices)
 		return
 	infest_target(choices[1])
+
+/mob/living/simple_mob/animal/borer/proc/infest_host_op(datum/act/op/A)
+	infest()
 
 /// Re-checked on the answer: still conscious and hostless, and next to the one picked.
 /datum/prompt/choice/borer_infest
@@ -187,20 +178,17 @@
 /**
  * Releases chemicals from the borer into their host. Can be used as a standalone chemist in your head for an antag cooperating with their borer.
  */
-/mob/living/simple_mob/animal/borer/verb/secrete_chemicals()
-	set category = VERB_CAT_ABILITIES_BORER
-	set name = "Secrete Chemicals"
-	set desc = "Drain some chemicals into your host's bloodstream."
+/mob/living/simple_mob/animal/borer/proc/secrete_chemicals_ready(datum/act/op/A)
+	var/refusal = power_in_host_refusal() || power_docile_refusal()
+	if(refusal)
+		return refusal
+	return controlling ? span_warning("You cannot do that while in full control of a host.") : null
 
-	if(!can_use_power_in_host())
-		return
-	if(!can_use_power_docile())
-		return
-	if(controlling)
-		to_chat(src, span_warning("You cannot do that while in full control of a host."))
-		return
-
+/mob/living/simple_mob/animal/borer/proc/secrete_chemicals()
 	open_request(src, /datum/prompt/choice, PROC_REF(secrete_chemical_chosen), answerer = src, title = "Chemicals", question = "Select a chemical to secrete.", choices = borer_chem_list, timeout = 0)
+
+/mob/living/simple_mob/animal/borer/proc/secrete_chemicals_op(datum/act/op/A)
+	secrete_chemicals()
 
 /mob/living/simple_mob/animal/borer/proc/secrete_chemical_chosen(datum/act/request/A)
 	if(!A.answer)

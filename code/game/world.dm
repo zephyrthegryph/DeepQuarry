@@ -584,7 +584,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 		var/list/rust = verdigris_metrics_list()
 		var/list/out = list("slow_frames" = native_system().slow_frames, "frames" = native_system().frames)
 		for(var/name in rust)
-			if(findtext(name, "frame.us.") == 1 || findtext(name, "frame.slow") == 1 || findtext(name, "world.awake.") == 1)
+			if(findtext(name, "frame.us.") == 1 || findtext(name, "frame.slow") == 1 || findtext(name, "world.awake.") == 1 || findtext(name, "world.stepped.") == 1 || findtext(name, "task.") == 1 || findtext(name, "sim.") == 1)
 				out[name] = rust[name]
 		return json_encode(out)
 
@@ -809,6 +809,7 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 /// world.Reboot() as `actor` (code/engine/kernel/entry.dm: the input event says who asked; null when the server did). Closes the round down and
 /// answers TRUE when the native reboot goes on.
 /world/input_reboot(mob/actor, reason = 0, fast_track = FALSE)
+	log_world("EXIT: input_reboot by [actor ? key_name(actor) : "the server"] (reason [reason ? "[reason]" : "none"], fast_track [fast_track ? "yes" : "no"])")
 	if (reason || fast_track) //special reboot, do none of the normal stuff
 		if (actor)
 			log_admin("[key_name(actor)] Has requested an immediate world restart via client side debugging tools")
@@ -846,6 +847,7 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 	#endif
 
 /world/Del()
+	log_world("EXIT: world.Del() at [time_stamp()]")
 	// Joins verdigris' frame and job threads before BYOND unloads the DLL.
 	vg_world_shutdown()
 	QDEL_NULL(Tracy)

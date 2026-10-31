@@ -137,6 +137,11 @@ first code/__spaceman_dmm.dm
 first code/_compile_options.dm
 first code/_macros.dm
 first code/__defines/**
+first code/defines/engine/**
+first code/defines/library/**
+first code/defines/host/**
+first code/defines/base/**
+first code/defines/content/**
 first code/engine/_generated/ids.dm      # the ids the declaration markers declare (analyze gen declare_ids): before everything that names one
 first code/contracts/**                  # the contracts layer: ids (TAG_UI, RES_*), act types, accessor declarations
 first code/content/contracts/**   # the contracts layer: ids (TAG_UI, RES_*), act types, accessor declarations

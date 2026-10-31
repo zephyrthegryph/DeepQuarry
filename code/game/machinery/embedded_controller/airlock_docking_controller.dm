@@ -81,6 +81,9 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock/docking_port)
 /datum/embedded_program/docking/airlock/signal_requires_processing(datum/signal/signal, receive_method, receive_param)
 	return airlock_program.signal_requires_processing(signal, receive_method, receive_param) || ..()
 
+/datum/embedded_program/docking/airlock/needs_processing()
+	return ..() || airlock_program.needs_processing()
+
 /datum/embedded_program/docking/airlock/periodic_step()
 	airlock_program.periodic_step()
 	..()

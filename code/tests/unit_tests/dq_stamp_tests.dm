@@ -1,4 +1,4 @@
-// STAMP: "how long since" on a base type, stored in the instance's lazy table (code/__defines/engine/sparse_slots.dm).
+// STAMP: "how long since" on a base type, stored in the instance's lazy table (code/defines/engine/declare/sparse_slots.dm).
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 

@@ -684,7 +684,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 
 /// MOVE_HOOK_CLOCK, MOVE_HOOK_LATENCY and/or MOVE_HOOK_SUBTREE (the last
 /// maintained by the ledger, not set by hand). doMove() gates on this with
-/// one var test; see code/__defines/containment.dm's file header.
+/// one var test; see code/defines/engine/containment.dm's file header.
 
 /// Called on `src` right before `loc =` (doMove()), if MOVE_HOOK_CLOCK or
 /// MOVE_HOOK_LATENCY is set. Must not move, qdel or sleep -- a debug assert

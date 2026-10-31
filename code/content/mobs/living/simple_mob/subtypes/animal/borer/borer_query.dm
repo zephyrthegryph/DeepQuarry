@@ -7,6 +7,11 @@
 	var/mob/living/carbon/human/borer_host_mob
 
 CAPABILITIES(/mob/living/simple_mob/animal/borer)
+	op("bond_brain", menu(), label("Assume Control"), needs(req_self(), req(PROC_REF(bond_brain_ready))), then(PROC_REF(bond_brain_op)))
+	op("release_host", menu(desc = "Slither out of your host."), label("Release Host"), needs(req_self(), req(PROC_REF(release_host_ready))), then(PROC_REF(release_host_op)))
+	op("knockout_victim", menu(desc = "Use your psychic influence to put a target into a temporary catatonic state."), label("Knockout Victim"), needs(req_self(), req(PROC_REF(knockout_victim_ready))), then(PROC_REF(knockout_victim_op)))
+	op("infest_host", menu(desc = "Infest a suitable humanoid host."), label("Infest"), needs(req_self(), req(PROC_REF(infest_host_ready))), then(PROC_REF(infest_host_op)))
+	op("secrete_chemicals", menu(desc = "Drain some chemicals into your host's bloodstream."), label("Secrete Chemicals"), needs(req_self(), req(PROC_REF(secrete_chemicals_ready))), then(PROC_REF(secrete_chemicals_op)))
 	configure(mob_rules(universal_understand = TRUE, vent_crawl_time = 30))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_kind(can_be_antagged = TRUE))

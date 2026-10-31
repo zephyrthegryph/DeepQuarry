@@ -96,4 +96,4 @@
 /// (a READS_AS accessor in its generated reads) recomputes first (publish_key_changed(), code/engine/stats/recompute.dm).
 #define PUBLISH_CHANGE(E, KEY) publish_key_changed(E, KEY)
 
-/// WANTS(E, TYPE) and PUBLISH(E, token, ...) are the engine's (code/__defines/engine/actions.dm); the legacy PUBLISH is PUBLISH_LEGACY.
+/// WANTS(E, TYPE) and PUBLISH(E, token, ...) are the engine's (code/defines/engine/declare/actions.dm); the legacy PUBLISH is PUBLISH_LEGACY.

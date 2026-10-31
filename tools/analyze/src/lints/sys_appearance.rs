@@ -109,7 +109,7 @@ type RegFact = (String, String, String, bool);
 /// The setter registrations of one file, in line order (one entry per generated setter name).
 fn registrations_of(f: &SourceFile) -> Vec<RegFact> {
     let mut out = Vec::new();
-    if f.rel == "code/__defines/om.dm" {
+    if f.rel == "code/defines/engine/om.dm" {
         return out;
     }
     for line in f.raw().lines() {

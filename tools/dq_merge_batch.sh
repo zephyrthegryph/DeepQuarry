@@ -74,7 +74,7 @@ for l in "${lanes[@]}"; do
 done
 mkdir -p data/merge-batch
 stamp="$(date +%Y%m%dT%H%M%S)"
-declare -A tried_rc
+declare -A tried_rc=()
 declare -A attempt_log
 DEADLINE="${DQ_BATCH_DEADLINE:-}"
 bounced=()

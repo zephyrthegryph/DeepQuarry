@@ -5,11 +5,12 @@ r"""Lists the caused-ending sites in content (spent/consumed/destroyed/dissolved
     python tools/codemods/ending_sites.py --update | --check
 
 Prints verb<TAB>file:line<TAB>proc<TAB>statement<TAB>the two lines before, one site per line, grouped by proc name.
---update writes the cause snapshot tools/ci/ending_causes_snapshot.txt (verb, file, proc, statement; no line numbers), the reviewed
-record of which ending every content site uses; --check diffs the tree against it (a review aid, not a CI gate: other branches convert
-qdel() sites by hand and re-run --update).
+--update writes the cause snapshot tools/ci/ending_causes_snapshot.txt (verb, proc, statement; no line numbers and no file path, so a
+file move never changes it), the reviewed record of which ending every content site uses; --check diffs the tree against it as a
+multiset (a review aid, not a CI gate: other branches convert qdel() sites by hand and re-run --update).
 """
 import argparse
+import collections
 import os
 import re
 import sys
@@ -20,7 +21,7 @@ from dmlib import File, dm_files, strip_code  # noqa: E402
 VERB = re.compile(r"(?<![\w.])(spent|consumed|destroyed|dissolved|lapsed|replaced_by|ended_with|replace_with|consume)\s*\(")
 SNAPSHOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "ci", "ending_causes_snapshot.txt")
 PROC = re.compile(r"^(/[\w/]+?)?/?(?:proc/|verb/)?(\w+)\((.*)$")
-ENGINE = ("code/engine/", "code/library/", "code/datums/lifecycle/", "code/__defines/", "code/modules/unit_tests/")
+ENGINE = ("code/engine/", "code/library/", "code/datums/lifecycle/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/modules/unit_tests/")
 
 
 def sites(paths):
@@ -49,18 +50,18 @@ def main():
     ap.add_argument("--check", action="store_true")
     a = ap.parse_args()
     if a.update or a.check:
-        rows = sorted("\t".join((r[0], r[1].rsplit(":", 1)[0], r[2], r[3])) for r in sites(None))
-        header = "# Caused endings in content: verb<TAB>file<TAB>proc<TAB>statement. Regenerate: python tools/codemods/ending_sites.py --update\n"
+        rows = sorted("\t".join((r[0], r[2], r[3])) for r in sites(None))
+        header = "# Caused endings in content: verb<TAB>proc<TAB>statement (no path: a file move leaves it alone). Regenerate: python tools/codemods/ending_sites.py --update\n"
         text = header + "\n".join(rows) + "\n"
         if a.update:
             open(SNAPSHOT, "w", encoding="utf-8", newline="\n").write(text)
             print(f"{len(rows)} sites")
             return
-        old = set(open(SNAPSHOT, encoding="utf-8").read().splitlines()[1:])
-        new = set(rows)
-        for r in sorted(old - new):
+        old = collections.Counter(open(SNAPSHOT, encoding="utf-8").read().splitlines()[1:])
+        new = collections.Counter(rows)
+        for r in sorted((old - new).elements()):
             print("- " + r)
-        for r in sorted(new - old):
+        for r in sorted((new - old).elements()):
             print("+ " + r)
         sys.exit(1 if old != new else 0)
     rows = [r for r in sites(a.paths) if not a.verb or r[0] == a.verb]

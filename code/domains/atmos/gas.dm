@@ -10,7 +10,7 @@
 //   gas_fill(air, fractions, kpa, temperature)     a vessel filled to a pressure with a mix (a canister preset).
 //   heat                                           flows belong to the heat domain (code/domains/heat/): heat_link()/heat_pump() entries, heat_move().
 //   gas_touched(air)                               a mixture changed in place: the pipe network that owns it (if any) re-settles.
-//   GAS_OBSERVED(observation, index, GAS_OBS_x)    a named field of a dirty-gas observation record (code/__defines/atmospherics_linda/atmos_gasses.dm).
+//   GAS_OBSERVED(observation, index, GAS_OBS_x)    a named field of a dirty-gas observation record (code/defines/content/atmospherics_linda/atmos_gasses.dm).
 //
 // Example (a canister's valve, once per interval):
 //

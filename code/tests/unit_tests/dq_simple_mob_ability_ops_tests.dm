@@ -87,3 +87,48 @@
 	P.forceMove(test_floor())
 	var/datum/op_result/loose_fold_out = dq_ability_menu_op(P, "fold_out")
 	TEST_ASSERT_EQUAL(loose_fold_out?.outcome, ACT_REFUSED, "a pAI outside its card cannot fold out")
+
+/// A borer outside a host can only infest or knock out; every power that needs a host is refused with the host-less reason, and infest is
+/// refused once it has one.
+/datum/unit_test/dq_ability_ops_borer_requirements
+
+/datum/unit_test/dq_ability_ops_borer_requirements/Run()
+	var/mob/living/simple_mob/animal/borer/B = allocate(/mob/living/simple_mob/animal/borer, test_floor())
+	for(var/key in list("bond_brain", "release_host", "secrete_chemicals"))
+		var/datum/op_result/R = dq_ability_menu_op(B, key)
+		TEST_ASSERT_EQUAL(R?.outcome, ACT_REFUSED, "[key] is refused with no host")
+	var/datum/op_result/loose = dq_ability_menu_op(B, "infest_host")
+	TEST_ASSERT(test_op_committed(loose), "a hostless borer may start to infest")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	TEST_ASSERT(B.take_host(H), "the borer takes a host")
+	var/datum/op_result/hosted = dq_ability_menu_op(B, "infest_host")
+	TEST_ASSERT_EQUAL(hosted?.outcome, ACT_REFUSED, "a borer that already has a host cannot infest")
+	var/datum/op_result/knock = dq_ability_menu_op(B, "knockout_victim")
+	TEST_ASSERT_EQUAL(knock?.outcome, ACT_REFUSED, "a borer inside a host cannot knock anyone out")
+
+/// menu(desc =) is the hover text a verb's `set desc` used to be: op_menu() carries it as the row's "desc" and the Menu's data passes it on.
+/datum/unit_test/dq_ability_ops_menu_desc_reaches_the_menu
+
+/datum/unit_test/dq_ability_ops_menu_desc_reaches_the_menu/Run()
+	var/mob/living/simple_mob/animal/space/bear/B = allocate(/mob/living/simple_mob/animal/space/bear, test_floor())
+	var/found = FALSE
+	for(var/list/row as anything in op_menu(B, B, null))
+		if(row["key"] == "berserk")
+			found = TRUE
+			TEST_ASSERT(istext(row["desc"]) && length(row["desc"]), "the berserk row carries its description")
+			TEST_ASSERT_EQUAL(row["desc"], "Enrage and become vastly stronger for a period of time, however you will be weaker afterwards.", "the description is the old verb's text")
+	TEST_ASSERT(found, "berserk is on the bear's own menu")
+	var/menu_has_desc = FALSE
+	var/list/data = interaction_menu_data(B, B)
+	for(var/list/entry as anything in data["available"] + data["blocked"])
+		if(entry["id"] == "berserk" && istext(entry["desc"]))
+			menu_has_desc = TRUE
+	TEST_ASSERT(menu_has_desc, "the Menu's data passes the description on")
+
+/// The AI's hardlight nom is refused while it has no hologram out, and the refusal says why.
+/datum/unit_test/dq_ability_ops_holo_nom_requires_hologram
+
+/datum/unit_test/dq_ability_ops_holo_nom_requires_hologram/Run()
+	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, test_floor(), null, null, null, TRUE)
+	var/datum/op_result/R = dq_ability_menu_op(AI, "holo_nom_menu")
+	TEST_ASSERT_EQUAL(R?.outcome, ACT_REFUSED, "holo_nom_menu is refused with no holopad hologram")

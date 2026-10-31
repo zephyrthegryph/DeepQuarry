@@ -292,6 +292,10 @@
 	target_state = TARGET_INOPEN
 	set_memory_at("purge", cycle_to_external_air)
 
+/// A cycle is in flight (its step hasn't caught up with state yet) or the last step still reported processing.
+/datum/embedded_program/airlock/needs_processing()
+	return ..() || state != target_state
+
 /datum/embedded_program/airlock/proc/begin_dock_cycle()
 	state = STATE_IDLE
 	target_state = TARGET_INOPEN

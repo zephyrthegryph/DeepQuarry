@@ -57,7 +57,7 @@ from dmlib import File, split_args, strip_code  # noqa: F401
 
 DECL_KINDS = ("APPEARANCE_TEMPLATE", "APPEARANCE_LEVEL", "APPEARANCE_EMISSIVE", "APPEARANCE_SLOT", "APPEARANCE_NONE", "DECLARE_APPEARANCE_PROC", "DECLARE_APPEARANCE")
 DECL_START = re.compile(r"^(" + "|".join(DECL_KINDS) + r")\((/[\w/]+)")
-NO_EDIT = ("code/modules/unit_tests/", "code/tests/", "code/engine/", "code/__defines/", "code/_generated/", "code/modules/benchmarks/")
+NO_EDIT = ("code/modules/unit_tests/", "code/tests/", "code/engine/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/_generated/", "code/modules/benchmarks/")
 LOOK_SETTERS = {"color": "set_color", "alpha": "set_alpha", "layer": "set_layer", "plane": "set_plane", "dir": "set_dir", "icon": "set_icon", "transform": "set_transform"}
 COVERED_BUILTINS = {"density", "opacity", "anchored", "dir"}  # dir: /atom/set_dir() publishes it (a tracked read of every drawn atom)
 KEYWORDS = {

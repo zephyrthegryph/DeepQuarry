@@ -38,7 +38,7 @@ const RULES: &[RuleMeta] = &[
     RuleMeta { name: "undef_then_used", hint: "#undef a file-local define after its last use, or define it in __defines" },
 ];
 
-const EXEMPT_PREFIXES: &[&str] = &["code/modules/unit_tests/", "code/tests/", "code/engine/", "code/__defines/"];
+const EXEMPT_PREFIXES: &[&str] = &["code/modules/unit_tests/", "code/tests/", "code/engine/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/"];
 
 /// The proc a line belongs to: its type path, its name, whether it is an op effect, and whether it is an output.
 struct ProcCtx {

@@ -24,6 +24,10 @@
 /datum/embedded_program/proc/signal_requires_processing(datum/signal/signal, receive_method, receive_param)
 	return TRUE
 
+/// Whether the program still has work for the controller's step; the step keeps running until this is FALSE, and any wake (work_start) restarts it.
+/datum/embedded_program/proc/needs_processing()
+	return !!memory["processing"]
+
 /datum/embedded_program/proc/post_signal(datum/signal/signal, comm_line)
 	if(master)
 		master.post_signal(signal, comm_line)

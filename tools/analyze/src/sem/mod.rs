@@ -144,7 +144,18 @@ impl Sem {
             match only {
                 None => list.extend(tree.select(&CODE_DM).iter().map(|f| f.rel.clone())),
                 Some(files) => {
-                    list.extend(tree.select(&CODE_DM).iter().filter(|f| f.rel.starts_with("code/__defines/")).map(|f| f.rel.clone()));
+                    list.extend(tree.select(&CODE_DM).iter().filter(|f| crate::scopes::is_defines(&f.rel)).map(|f| f.rel.clone()));
+                    // Macros are order sensitive: the defines compile in deepquarry.dme's order (their folders no longer sort the same
+                    // way), not path order. A file the manifest does not name keeps its place after the named ones.
+                    if let Ok(text) = std::fs::read_to_string(&dme) {
+                        let slot: HashMap<String, usize> = text
+                            .lines()
+                            .filter_map(|l| l.trim().strip_prefix("#include \"").and_then(|r| r.strip_suffix('"')).map(|r| r.replace('\\', "/")))
+                            .enumerate()
+                            .map(|(i, r)| (r, i))
+                            .collect();
+                        list.sort_by_key(|r| slot.get(r).copied().unwrap_or(usize::MAX));
+                    }
                     for f in files {
                         if !list.contains(f) {
                             list.push(f.clone());

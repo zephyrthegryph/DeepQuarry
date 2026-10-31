@@ -1108,7 +1108,7 @@ lane_areas() { # <rev range>: the areas of the files it changes, one per line
 global_hit() { # <rev range>: 0 when it touches a global path
 	local g f p
 	g="$(read_list "$(repo_dir)/tools/ci/train_interact_global.txt")"
-	[ -n "$g" ] || g="code/__defines/ code/__odlint.dm code/__pragmas.dm code/engine/ code/controllers/ maps/ tools/build/ tools/dmb/ verdigris/ SpacemanDMM.toml"
+	[ -n "$g" ] || g="code/__defines/ code/defines/engine/ code/defines/library/ code/defines/host/ code/defines/base/ code/defines/content/ code/__odlint.dm code/__pragmas.dm code/engine/ code/controllers/ maps/ tools/build/ tools/dmb/ verdigris/ SpacemanDMM.toml"
 	while IFS= read -r f; do
 		for p in $g; do case "$f" in "$p"*) return 0 ;; esac; done
 	done < <(G diff --name-only "$1" 2>/dev/null)

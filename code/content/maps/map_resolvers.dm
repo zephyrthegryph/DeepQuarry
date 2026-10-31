@@ -1,4 +1,4 @@
-// Map-time resolvers (doc/rewrite/systems.md §9). Macro and contract: code/__defines/map_resolvers.dm.
+// Map-time resolvers (doc/rewrite/systems.md §9). Macro and contract: code/defines/engine/map_resolvers.dm.
 
 /// type => its /datum/map_resolver_info, for every type under one that declares map_resolver(...): built at world setup, never after.
 GLOBAL_LIST_EMPTY(map_resolvers)

@@ -1,7 +1,7 @@
 // Capabilities, tracked state and the refresh engine (doc/rewrite/dx_conventions.md).
 // Runtime: code/datums/capabilities/.
 
-// ---- cap_state bits: ALL allocated in code/__defines/cap_bits.dm (tools/ci/cap_bits_lint.py) ----
+// ---- cap_state bits: ALL allocated in code/defines/engine/cap_bits.dm (tools/ci/cap_bits_lint.py) ----
 // ---- gating keywords: behind = COVER|PANEL, locked_by = LOCK ----
 /// The entry is only reachable with the cover open.
 #define COVER CAP_COVER_OPEN

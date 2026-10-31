@@ -4,7 +4,7 @@
 // (timer_clock(): bio for living mobs, machine for machinery), which slows with the domain's rate and stops in stasis/suspension, exactly like
 // after() timers on that datum. Payload and list-slot sites that record "now" call it directly: TIME_NOW(CLOCK_WORLD).
 //
-// An END time ("until": a stun, a lease, a guest pass) is a COOLDOWN (code/__defines/cooldowns.dm), defined on TIME_NOW. A START time
+// An END time ("until": a stun, a lease, a guest pass) is a COOLDOWN (code/defines/engine/cooldowns.dm), defined on TIME_NOW. A START time
 // ("how long since": a time of death, the last hit) is STAMP/ELAPSED here:
 //
 //   STAMP(src, started_at, CLOCK_WORLD)          // record "now"

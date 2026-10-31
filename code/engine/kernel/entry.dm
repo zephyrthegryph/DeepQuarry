@@ -88,6 +88,7 @@
 /// world.Reboot(): the input event says who asked (server-side, nobody); the world's hook logs and closes the round down, and the native reboot
 /// goes on when it says so. A world not yet booted has no inbox, and the hook runs as a server-side request.
 /world/Reboot(reason = 0, fast_track = FALSE)
+	log_world("EXIT: world.Reboot() called (reason [reason ? "[reason]" : "none"], fast_track [fast_track ? "yes" : "no"], by [usr ? key_name(usr) : "the server"])")
 	var/datum/input_event/reboot/E = new(usr, reason, fast_track)
 	if(SSinput)
 		input_submit(E)

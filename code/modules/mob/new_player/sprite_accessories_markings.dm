@@ -30,7 +30,7 @@ includes scars and tattoos
 	//Reminder: BP_L_FOOT,BP_R_FOOT,BP_L_LEG,BP_R_LEG,BP_L_ARM,BP_R_ARM,BP_L_HAND,BP_R_HAND,BP_TORSO,BP_GROIN,BP_HEAD
 
 /// Editing a marking retains its per-instance mutable zone table.
-/datum/sprite_accessory/marking/proc/body_parts_for_edit()
+/datum/sprite_accessory/marking/proc/body_parts_for_edit() as /list
 	LAZYINITLIST(body_parts)
 	return body_parts
 

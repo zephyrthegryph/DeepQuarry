@@ -26,8 +26,25 @@
 /// Somebody got in or out of the compartment: the chassis recounts its passengers (a requirement reads the tracked count).
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/on_slot_changed(slot_id, atom/movable/thing, inserted)
 	. = ..()
+	if(slot_id == OCCUPANT_SLOT_MECHA_PASSENGER && ismob(thing))
+		// The occupant's Eject verb is in their panel only while they are inside (the compartment is the verb's source, so it goes with them).
+		if(inserted)
+			grant(thing, granted_verb(/mob/living/carbon/proc/leave_passenger_compartment), src)
+		else
+			revoke(thing, granted_verb(/mob/living/carbon/proc/leave_passenger_compartment), src)
 	if(slot_id == OCCUPANT_SLOT_MECHA_PASSENGER && chassis)
 		chassis.mecha_passenger_changed()
+
+/// The passenger's own Eject verb (granted while they are in a passenger compartment, see on_slot_changed()).
+/mob/living/carbon/proc/leave_passenger_compartment()
+	set name = "Eject"
+	set category = VERB_CAT_EXOSUIT_INTERFACE
+	set popup_menu = 0
+
+	var/obj/item/mecha_parts/mecha_equipment/tool/passenger/compartment = loc
+	if(!istype(compartment) || compartment.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER) != src)
+		return
+	compartment.eject()
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/Exit(atom/movable/O)
 	return 0
@@ -63,14 +80,10 @@
 	if(occupant == living)
 		eject()
 
-/obj/item/mecha_parts/mecha_equipment/tool/passenger/verb/eject()
+/// The occupant gets out: at once when the hatch is unlocked, else after the emergency release.
+/obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/eject()
 	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)
-	set name = "Eject"
-	set category = VERB_CAT_EXOSUIT_INTERFACE
-	set src = usr.loc
-	set popup_menu = 0
-
-	if(usr != occupant)
+	if(!occupant)
 		return
 	if(door_locked)
 		to_chat(occupant, span_notice("\The [src] is locked! You begin operating the emergency unlock mechanism. This will take one minute."))

@@ -33,13 +33,13 @@ exempt_files = [
   "code/engine/present/appearance_builder.dm",
   "code/content/lighting/emissive_blocker_overlays.dm",
   "code/controllers/subsystems/overlays.dm",
-  "code/__defines/overlay.dm",
+  "code/defines/base/overlay.dm",
 ]
 
 [lint."sys/usr_use"]
 # usr_use.py SKIP_PREFIXES: a `#define` in the macro library is read in the caller's context. code/engine/ is the engine's one reader and
 # writer of usr: the generated native input overrides and with_actor() (code/engine/lifeforms/input.dm).
-exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/__defines/", "code/engine/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/engine/"]
 
 [lint.ui_actions]
 # ui_actions_lint.py EXEMPT: tests and benchmarks build act_ procs without a TSX client on purpose.
@@ -47,7 +47,7 @@ exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/m
 [lint.cap_bits.lists]
 # cap_bits_lint.py: REGISTRY, WRITERS and the unit-test prefix. These files are still scanned for bit
 # definitions; the lists only decide where a cap_state write is legal.
-registry = ["code/__defines/cap_bits.dm"]
+registry = ["code/defines/engine/cap_bits.dm"]
 writers = ["code/datums/capabilities/capabilities.dm", "code/engine/declare/capability_tables.dm"]
 write_exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/"]
 
@@ -58,7 +58,7 @@ exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/e
 
 [lint.om_internal]
 # om_internal_lint.py SKIP: the scheduler core and the macros that map the public API onto it.
-exempt_prefixes = ["code/datums/om/", "code/__defines/om.dm"]
+exempt_prefixes = ["code/datums/om/", "code/defines/engine/om.dm"]
 
 [lint.stance_examine.lists]
 # stance_examine_lint.py INPUT_STANCE_READERS: the input layer, the only readers of a mob's stance
@@ -94,7 +94,7 @@ radial_impl_prefixes = ["code/_onclick/hud/radial"]
 # files; string_name, removed, callback, handle and raw_write skip them.
 # tracked_lists.dm is build output: the tracked-list mutators it writes (add_<v>, set_<v>_at, ...) are judged where the list is declared.
 exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
-exempt_files = ["code/__defines/tgs.dm", "code/engine/_generated/tracked_lists.dm"]
+exempt_files = ["code/defines/host/tgs.dm", "code/engine/_generated/tracked_lists.dm"]
 
 # E5 semantic lints (tools/analyze/src/lints/sem_*.rs; tools/analyze/README.md, "Semantic layer").
 # try_calls: extra calls that survive macro expansion as a world-action start (ACT_TRY pairing), besides ACT_TRY, act_try, e0_act_try and the
@@ -113,14 +113,14 @@ try_calls = []
 [lint.scheduler]
 # scheduler_lints.py exempt_path()
 exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
-exempt_files = ["code/__defines/tgs.dm"]
+exempt_files = ["code/defines/host/tgs.dm"]
 
 [lint.tracked]
 # tracked_lint.py exempt_path(): the TRACKED/SETTER/derive() index still reads these files; writes in them
 # are not counted. code/engine/_generated/ is build output: its source lines are judged where they are declared (a
 # ui_shape(registered_name = ...) row is a named argument there, not a write).
 exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/engine/_generated/"]
-exempt_files = ["code/__defines/tgs.dm"]
+exempt_files = ["code/defines/host/tgs.dm"]
 
 [lint.auto_tracked.lists]
 # Vars the read-driven inference (tools/analyze/src/gens/auto_tracked.rs) never gives a generated setter: `var` for any type, `/type::var` for
@@ -160,7 +160,7 @@ exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/_
 # tests and benchmarks build the forbidden things on purpose, the vendored tgstation-server DMAPI is kept
 # verbatim). `base_var` counts every path, so these are lists the rule reads, not whole-lint exemptions.
 list_init_exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
-list_init_exempt_files = ["code/__defines/tgs.dm"]
+list_init_exempt_files = ["code/defines/host/tgs.dm"]
 # Homes for base-type vars (doc/rewrite/proposals/base_vars.md). A var a home macro names on its own type
 # (`TRACKED(/mob, stat)`), or whose declared type is under a home type path (the HUD datum, the profile records,
 # the sparse and cooldown stores), is not a `base_var` site. A lane that lands a new home adds it here.
@@ -221,7 +221,7 @@ init_roots = [
 # benchmarks build the forbidden things on purpose, the vendored tgstation-server DMAPI is kept verbatim.
 # The GLOBAL_DATUM_INIT singleton scan still reads these files (cx.all_files()).
 exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
-exempt_files = ["code/__defines/tgs.dm"]
+exempt_files = ["code/defines/host/tgs.dm"]
 
 [lint.latent]
 # latent_lint.py SKIP_DIRS: os.walk prunes any directory named unit_tests.
@@ -231,9 +231,9 @@ exempt_contains = ["/unit_tests/"]
 # lifecycle_counts_lint.py: a path listed here has its qdel( sites uncounted but is still checked for
 # Destroy() overrides (banned everywhere), so these are lists, not exempt_* keys. exempt_path() (unit tests,
 # benchmarks, the vendored TGS DMAPI), the lifecycle engine itself, and the macro definitions.
-exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/__defines/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/"]
 exempt_files = [
-    "code/__defines/tgs.dm",
+    "code/defines/host/tgs.dm",
     "code/controllers/subsystems/garbage.dm",
     "code/datums/lifecycle/transaction.dm",
     "code/datums/lifecycle/links.dm",
@@ -249,9 +249,9 @@ exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/t
 [lint.qdel_src]
 # qdel_src_lint.py: exempt_path() (unit tests, benchmarks, the vendored TGS DMAPI), the lifecycle engine
 # (it calls qdel(src) as its mechanism) and the macro definitions.
-exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/__defines/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/"]
 exempt_files = [
-    "code/__defines/tgs.dm",
+    "code/defines/host/tgs.dm",
     "code/controllers/subsystems/garbage.dm",
     "code/datums/lifecycle/transaction.dm",
     "code/datums/lifecycle/links.dm",
@@ -263,18 +263,18 @@ exempt_files = [
 [lint.spatial]
 # spatial_lint.py: exempt_path() (unit tests, benchmarks, the vendored TGS DMAPI) is skipped before the scan.
 exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
-exempt_files = ["code/__defines/tgs.dm"]
+exempt_files = ["code/defines/host/tgs.dm"]
 [lint.spatial.lists]
 # spatial_lint.py API_DIRS / API_FILES: the files that implement the ledger and spatial API. They are scanned
 # (an ALLOW there still records as used) but their sites are not counted.
 api_prefixes = ["code/datums/containment/", "code/engine/refs/containment/"]
-api_files = ["code/__defines/containment.dm"]
+api_files = ["code/defines/engine/containment.dm"]
 
 [lint.pollers]
 # pollers_lint.py EXEMPT_PREFIXES / EXEMPT_FILES: the MC and subsystem framework, the object-model core, the
 # defines, the unit tests, and the external-I/O datums whose process() is not gameplay polling (tgui, dbcore).
 # This script does not call exempt_path(): benchmarks and the TGS DMAPI are counted.
-exempt_prefixes = ["code/controllers/", "code/datums/om/", "code/__defines/", "code/modules/unit_tests/", "code/tests/unit_tests/"]
+exempt_prefixes = ["code/controllers/", "code/datums/om/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/modules/unit_tests/", "code/tests/unit_tests/"]
 exempt_files = ["code/modules/tgui/tgui.dm", "code/controllers/subsystems/dbcore.dm", "code/engine/kernel/cadences.dm"]
 [lint.pollers.lists]
 # check_step_coverage(): unit-test probes join the machine pipeline lazily through MACHINE_WAKE(); every other
@@ -284,7 +284,7 @@ step_exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/"]
 [lint.silent_catch]
 # silent_catch_lint.py: exempt_path() (unit tests catch on purpose; benchmarks; the vendored TGS DMAPI).
 exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
-exempt_files = ["code/__defines/tgs.dm"]
+exempt_files = ["code/defines/host/tgs.dm"]
 [lint.silent_catch.lists]
 # silent_catch_lint.py STRICT_DIRS: the object-model core, lifecycle, the controllers and the error handler (everything
 # that wraps other code's callbacks): a plain log is not enough there, the block must report, rethrow or trace.
@@ -293,11 +293,11 @@ strict_dirs = ["code/datums/om/", "code/datums/lifecycle/", "code/controllers/",
 [lint.cache]
 # cache_lint.py: exempt_path() (unit tests, benchmarks, the vendored TGS DMAPI) and the framework itself.
 exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
-exempt_files = ["code/__defines/tgs.dm", "code/__defines/shared_cache.dm", "code/datums/shared_cache/shared_cache.dm"]
+exempt_files = ["code/defines/host/tgs.dm", "code/defines/engine/shared_cache.dm", "code/datums/shared_cache/shared_cache.dm"]
 
 [lint.registry]
 # registry_lint.py: the boilerplate macro's own definition.
-exempt_prefixes = ["code/__defines/"]
+exempt_prefixes = ["code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/"]
 
 [lint.deadline_polling]
 # check_deadline_polling.py: unit tests poll on purpose.
@@ -868,7 +868,7 @@ legacy_forms_converted = [
 call_ext_allow = [
   "code/__defines/verdigris/_bindings.dm",
   "code/__defines/rust_g.dm",
-  "code/__defines/vchatlog.dm",
+  "code/defines/host/vchatlog.dm",
   "code/__byond_version_compat.dm",
   "code/content/debugging/tracy.dm",
   "code/content/debugging/debugger.dm",
@@ -981,37 +981,37 @@ exempt_prefixes = ["code/engine/", "code/datums/ownership/"]
 # Names that are gone except under the listed path prefixes (the folders still calling them): `name @ prefix;prefix = hint`.
 banned_outside = [
   "acceptance @ code/engine/;code/datums/properties/constraints.dm;code/content/properties/equip_slots.dm;code/content/vore/eating/vore_consent.dm;code/engine/refs/containment/;code/modules/unit_tests/;code/tests/unit_tests/;code/tests/ = content declares what it means: fits_as(FIT_X)/fits_anyone(), suit_storage(list(...))/no_suit_storage(), holder_takes(reqs...), extend(/datum/act/equip, needs(...)); acceptance() is the engine's channel form (doc/rewrite/proposals/admission.md wave 8)",
-  "TRACKED @ code/engine/_generated/;code/__defines/ = tracking is automatic: a var that reactive code reads (or that is written through set_<v>()) gets its setter from `analyze gen auto_tracked`. Declare nothing; write the var through set_<v>() (`analyze fix` rewrites a raw write). A setter with side effects is a hand-written set_<v>() plus SETTER(T, v) (doc/rewrite/read_driven_tracking.md)",
+  "TRACKED @ code/engine/_generated/;code/__defines/;code/defines/engine/;code/defines/library/;code/defines/host/;code/defines/base/;code/defines/content/ = tracking is automatic: a var that reactive code reads (or that is written through set_<v>()) gets its setter from `analyze gen auto_tracked`. Declare nothing; write the var through set_<v>() (`analyze fix` rewrites a raw write). A setter with side effects is a hand-written set_<v>() plus SETTER(T, v) (doc/rewrite/read_driven_tracking.md)",
   "topic_allowed = the clicker's right to use a holder's links is a requirement: use topic_usable() or req_topic_ok() on the operation",
-  "state_changed @ code/engine/;code/datums/capabilities/;code/game/machinery/machinery_fields.dm;code/modules/unit_tests/;code/tests/unit_tests/;code/modules/benchmarks/;code/__defines/ = the engine's own mark. A write publishes through its tracked var, a relation, a stat or a hold; a key that is not one var is PUBLISH_CHANGE(E, key) (doc/rewrite/final_api.html section 7)",
-  "CHANGE_EXPLICIT @ code/engine/;code/__defines/;code/modules/unit_tests/ = the engine's own channel of a plain mark: a write publishes through its tracked var, relation, stat or hold, and a key that is not one var is PUBLISH_CHANGE(E, key)",
-  "CHANGE_RELATED @ code/engine/;code/__defines/;code/modules/unit_tests/ = the engine's own channel of a forwarded change: watch the key of the thing that changed",
-  "CHANGE_RELATION_ADDED @ code/engine/;code/__defines/;code/modules/unit_tests/ = the engine's own channel of a relation edge: a slot or a relation write publishes its key",
-  "CHANGE_RELATION_REMOVED @ code/engine/;code/__defines/;code/modules/unit_tests/ = the engine's own channel of a relation edge: a slot or a relation write publishes its key",
-  "OM_DERIVE_FIELD @ code/datums/om/;code/__defines/om.dm;code/modules/unit_tests/;code/tests/unit_tests/;code/tests/;code/modules/benchmarks/;code/controllers/measure/ = a tracked read; only the sys periodic gate tests still derive a field",
+  "state_changed @ code/engine/;code/datums/capabilities/;code/game/machinery/machinery_fields.dm;code/modules/unit_tests/;code/tests/unit_tests/;code/modules/benchmarks/;code/__defines/;code/defines/engine/;code/defines/library/;code/defines/host/;code/defines/base/;code/defines/content/ = the engine's own mark. A write publishes through its tracked var, a relation, a stat or a hold; a key that is not one var is PUBLISH_CHANGE(E, key) (doc/rewrite/final_api.html section 7)",
+  "CHANGE_EXPLICIT @ code/engine/;code/__defines/;code/defines/engine/;code/defines/library/;code/defines/host/;code/defines/base/;code/defines/content/;code/modules/unit_tests/ = the engine's own channel of a plain mark: a write publishes through its tracked var, relation, stat or hold, and a key that is not one var is PUBLISH_CHANGE(E, key)",
+  "CHANGE_RELATED @ code/engine/;code/__defines/;code/defines/engine/;code/defines/library/;code/defines/host/;code/defines/base/;code/defines/content/;code/modules/unit_tests/ = the engine's own channel of a forwarded change: watch the key of the thing that changed",
+  "CHANGE_RELATION_ADDED @ code/engine/;code/__defines/;code/defines/engine/;code/defines/library/;code/defines/host/;code/defines/base/;code/defines/content/;code/modules/unit_tests/ = the engine's own channel of a relation edge: a slot or a relation write publishes its key",
+  "CHANGE_RELATION_REMOVED @ code/engine/;code/__defines/;code/defines/engine/;code/defines/library/;code/defines/host/;code/defines/base/;code/defines/content/;code/modules/unit_tests/ = the engine's own channel of a relation edge: a slot or a relation write publishes its key",
+  "OM_DERIVE_FIELD @ code/datums/om/;code/defines/engine/om.dm;code/modules/unit_tests/;code/tests/unit_tests/;code/tests/;code/modules/benchmarks/;code/controllers/measure/ = a tracked read; only the sys periodic gate tests still derive a field",
 ]
 # Names of forms that no longer exist (a hard ban, no baseline): `name = hint`.
 banned = [
-  "ELAPSED_SINCE = ELAPSED(D, var, clock) on a declared var; a time kept per row is a small /datum record the holder owns (owns_many/owns_one) whose var is STAMPed (code/__defines/time_now.dm)",
-  "BEFORE = ELAPSED(D, var, clock) < duration: keep the start with STAMP and the length beside it, or use COOLDOWN_* for a rate limit (code/__defines/time_now.dm)",
-  "LEFT_UNTIL = COOLDOWN_TIMELEFT(D, var) reads the time left on a deadline var (COOLDOWN_TIMELEFT_OWN on the datum's own clock; code/__defines/cooldowns.dm)",
-  "EXPIRY_STAMP = STAMP(D, var, clock) records now in a var (code/__defines/time_now.dm); a base type stamps with stamp_now(D, name, clock)",
-  "EXPIRY_DECLARE = COOLDOWN_DECLARE(var) for an end time; a start time (a STAMP var) is a plain var, and a base type uses cooldowns()/stamps() names (code/__defines/cooldowns.dm)",
-  "EXPIRY_TMP_DECLARE = a plain var/tmp for a stamp; a base type uses stamps() (code/__defines/engine/sparse_slots.dm)",
-  "STATIC_EXPIRY_DECLARE = STATIC_COOLDOWN_DECLARE(var) (code/__defines/cooldowns.dm)",
-  "EXPIRY_SET = COOLDOWN_START(D, var, delay), or COOLDOWN_START_OWN on the datum's own clock (code/__defines/cooldowns.dm)",
-  "EXPIRY_EXTEND = COOLDOWN_EXTEND(D, var, delay), or COOLDOWN_EXTEND_OWN (code/__defines/cooldowns.dm)",
-  "EXPIRY_CLEAR = COOLDOWN_RESET(D, var) (code/__defines/cooldowns.dm)",
-  "EXPIRY_ACTIVE = COOLDOWN_RUNNING(D, var), or COOLDOWN_RUNNING_OWN (code/__defines/cooldowns.dm)",
-  "EXPIRY_EXPIRED = COOLDOWN_LAPSED(D, var), or COOLDOWN_LAPSED_OWN (code/__defines/cooldowns.dm)",
+  "ELAPSED_SINCE = ELAPSED(D, var, clock) on a declared var; a time kept per row is a small /datum record the holder owns (owns_many/owns_one) whose var is STAMPed (code/defines/engine/time_now.dm)",
+  "BEFORE = ELAPSED(D, var, clock) < duration: keep the start with STAMP and the length beside it, or use COOLDOWN_* for a rate limit (code/defines/engine/time_now.dm)",
+  "LEFT_UNTIL = COOLDOWN_TIMELEFT(D, var) reads the time left on a deadline var (COOLDOWN_TIMELEFT_OWN on the datum's own clock; code/defines/engine/cooldowns.dm)",
+  "EXPIRY_STAMP = STAMP(D, var, clock) records now in a var (code/defines/engine/time_now.dm); a base type stamps with stamp_now(D, name, clock)",
+  "EXPIRY_DECLARE = COOLDOWN_DECLARE(var) for an end time; a start time (a STAMP var) is a plain var, and a base type uses cooldowns()/stamps() names (code/defines/engine/cooldowns.dm)",
+  "EXPIRY_TMP_DECLARE = a plain var/tmp for a stamp; a base type uses stamps() (code/defines/engine/declare/sparse_slots.dm)",
+  "STATIC_EXPIRY_DECLARE = STATIC_COOLDOWN_DECLARE(var) (code/defines/engine/cooldowns.dm)",
+  "EXPIRY_SET = COOLDOWN_START(D, var, delay), or COOLDOWN_START_OWN on the datum's own clock (code/defines/engine/cooldowns.dm)",
+  "EXPIRY_EXTEND = COOLDOWN_EXTEND(D, var, delay), or COOLDOWN_EXTEND_OWN (code/defines/engine/cooldowns.dm)",
+  "EXPIRY_CLEAR = COOLDOWN_RESET(D, var) (code/defines/engine/cooldowns.dm)",
+  "EXPIRY_ACTIVE = COOLDOWN_RUNNING(D, var), or COOLDOWN_RUNNING_OWN (code/defines/engine/cooldowns.dm)",
+  "EXPIRY_EXPIRED = COOLDOWN_LAPSED(D, var), or COOLDOWN_LAPSED_OWN (code/defines/engine/cooldowns.dm)",
   "EXPIRY_ON_LAPSE = after(owner, delay, PROC_REF(x), key =) armed where the deadline starts, or hold(lasts =) when a stat holds the state (code/engine/time/)",
-  "EXPIRY_AT = TIME_NOW(CLOCK_WORLD) for a world-clock \"now\" (add the delay yourself); TIME_NOW(CLOCK_OWN, owner) on a datum's own clock (code/__defines/time_now.dm)",
-  "EXPIRY_NOW = TIME_NOW(clock, owner), the one clock read (code/__defines/time_now.dm)",
-  "STAMP_ELAPSED = ELAPSED(D, var, clock) reads a var stamp; a base type's table stamp is stamp_elapsed(D, name, clock) (code/__defines/engine/sparse_slots.dm)",
-  "STAMP_AT = stamp_set(D, name, point) (code/__defines/engine/sparse_slots.dm)",
-  "STAMP_POINT = stamp_point(D, name) (code/__defines/engine/sparse_slots.dm)",
-  "STAMPED = stamp_has(D, name) (code/__defines/engine/sparse_slots.dm)",
-  "STAMP_CLEAR = stamp_clear(D, name) (code/__defines/engine/sparse_slots.dm)",
+  "EXPIRY_AT = TIME_NOW(CLOCK_WORLD) for a world-clock \"now\" (add the delay yourself); TIME_NOW(CLOCK_OWN, owner) on a datum's own clock (code/defines/engine/time_now.dm)",
+  "EXPIRY_NOW = TIME_NOW(clock, owner), the one clock read (code/defines/engine/time_now.dm)",
+  "STAMP_ELAPSED = ELAPSED(D, var, clock) reads a var stamp; a base type's table stamp is stamp_elapsed(D, name, clock) (code/defines/engine/declare/sparse_slots.dm)",
+  "STAMP_AT = stamp_set(D, name, point) (code/defines/engine/declare/sparse_slots.dm)",
+  "STAMP_POINT = stamp_point(D, name) (code/defines/engine/declare/sparse_slots.dm)",
+  "STAMPED = stamp_has(D, name) (code/defines/engine/declare/sparse_slots.dm)",
+  "STAMP_CLEAR = stamp_clear(D, name) (code/defines/engine/declare/sparse_slots.dm)",
   "definition_event = the om events (code/datums/om_events/) are deleted: an occurrence is a /datum/notice published with PUBLISH_LEGACY(E, /datum/notice/x, fields...) or an ACTION() notice, heard with on_notice(/datum/notice/x, ...) in CAPABILITIES or observe(source, /datum/notice/x, listener, then(...)); a veto is before_op(GUARD_X, ...) asked with guard() (doc/rewrite/reactions.md section 3)",
   "entity_handle = ref_token(D) (code/engine/time/handles.dm): the final name of a token (doc/rewrite/proposals/relations.md D21)",
   "resolve_handle = resolve_token(token) (code/engine/time/handles.dm): the final name (doc/rewrite/proposals/relations.md D21)",
@@ -1376,7 +1376,7 @@ banned = [
   "DECLARE_VERB_IF = verb_entry(path, when = nameof(field)); write the tracked field through its setter",
   "DECLARE_VERB_HIDE = verb_entry(path, hidden = TRUE) in the type CAPABILITIES block",
   "world_service = a system: SYSTEM_DEF(x) with /datum/system/x (code/controllers/kernel/)",
-  "OM_EMIT = ACTION()/PUBLISH(E, token, args) for a typed event (code/__defines/engine/actions.dm)",
+  "OM_EMIT = ACTION()/PUBLISH(E, token, args) for a typed event (code/defines/engine/declare/actions.dm)",
   "OM_EMIT_WORLD = PUBLISH(world_owner(), token, args)",
   "om_ask = asks(/datum/prompt/kind, fields = list(...)) on an op",
   "topic_ask = asks(/datum/prompt/kind, fields = list(...), step = \"name\") on the topic op; read the answer with A.step_value(\"name\")",
@@ -1959,7 +1959,7 @@ retired_macros = [
 # controllers (world singletons), and registries/flyweights (the ownership index adds REGISTRY_TYPE()s itself).
 [lint.stored_refs]
 exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/refs/", "code/engine/time/", "code/datums/ownership/", "code/datums/om/", "code/datums/lifecycle/", "code/controllers/subsystems/garbage.dm", "code/modules/admin/view_variables/reference_tracking.dm", "code/engine/_generated/", "code/engine/change/", "code/engine/lifeforms/", "code/engine/stats/", "code/controllers/kernel/", "code/controllers/measure/"] # (and the kernel loop and its meter) # change delivery, lifeform and stat machinery: engine tables (relations proposal section 4)
-exempt_files = ["code/__defines/tgs.dm", "code/datums/registries.dm", "code/controllers/kernel/membership.dm", "code/datums/native/entities.dm", "code/engine/declare/link_state.dm", "code/engine/actions/change.dm", "code/engine/actions/every.dm", "code/engine/actions/notices.dm", "code/engine/actions/reactions.dm", "code/engine/kernel/jobs.dm", "code/engine/io/jobs.dm", "code/engine/state/pool.dm", "code/engine/state/serializer.dm", "code/engine/present/type_verbs.dm", "code/engine/declare/capability_tables.dm", "code/engine/present/native_ends.dm", "code/engine/kernel/requests.dm", "code/engine/kernel/inbox.dm", "code/engine/kernel/sequence.dm", "code/engine/parts/run.dm", "code/engine/parts/resource.dm", "code/engine/declare/activation.dm", "code/engine/actions/hooks.dm", "code/engine/hooks/native_watch.dm"] # (run-state records the kernel sweeps: requests, input events, pending ops, reservations, activations, hooks, native watches; relations proposal section 7) the registry/membership/relation storage, and the kernel's own queues and tables (relations proposal section 4: engine tables are exempt by path and covered by dq_gc_sweep and the hard-delete counter)
+exempt_files = ["code/defines/host/tgs.dm", "code/datums/registries.dm", "code/controllers/kernel/membership.dm", "code/datums/native/entities.dm", "code/engine/declare/link_state.dm", "code/engine/actions/change.dm", "code/engine/actions/every.dm", "code/engine/actions/notices.dm", "code/engine/actions/reactions.dm", "code/engine/kernel/jobs.dm", "code/engine/io/jobs.dm", "code/engine/state/pool.dm", "code/engine/state/serializer.dm", "code/engine/present/type_verbs.dm", "code/engine/declare/capability_tables.dm", "code/engine/present/native_ends.dm", "code/engine/kernel/requests.dm", "code/engine/kernel/inbox.dm", "code/engine/kernel/sequence.dm", "code/engine/parts/run.dm", "code/engine/parts/resource.dm", "code/engine/declare/activation.dm", "code/engine/actions/hooks.dm", "code/engine/hooks/native_watch.dm"] # (run-state records the kernel sweeps: requests, input events, pending ops, reservations, activations, hooks, native watches; relations proposal section 7) the registry/membership/relation storage, and the kernel's own queues and tables (relations proposal section 4: engine tables are exempt by path and covered by dq_gc_sweep and the hard-delete counter)
 [lint.stored_refs.lists]
 # /datum/gear_tweak: a loadout tweak is a stateless flyweight (a colour, a name prompt): a reference to one names behaviour, not a world entity.
 exempt_types = ["/datum/system", "/datum/shared_cache", "/datum/controller", "/datum/world_service", "/datum/capability", "/datum/reaction", "/datum/xform_group", "/datum/entry", "/datum/xform", "/transformation", "/datum/own_entry", "/datum/derived_entry", "/datum/op_def", "/datum/gear_tweak", "/datum/gas_mixture", "/datum/debugger", "/datum/tracy", "/datum/admins", "/datum/persistent_client", "/datum/player_tips", "/datum/announcement", "/mob/dview", "/mob/proccall_handler", "/datum/look", "/datum/dispatch_context", "/datum/materialize_batch", "/datum/counter"]

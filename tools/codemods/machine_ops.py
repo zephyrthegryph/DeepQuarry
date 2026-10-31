@@ -184,7 +184,7 @@ def main(argv):
         while k < len(argv) and not argv[k].startswith("--"):
             want_files.append(argv[k].replace("\\", "/"))
             k += 1
-    skip_dirs = ("code/game/objects/", "code/modules/unit_tests/", "code/tests/", "code/__defines/", "code/engine/", "code/datums/interactions/")
+    skip_dirs = ("code/game/objects/", "code/modules/unit_tests/", "code/tests/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/engine/", "code/datums/interactions/")
 
     files = {}
     for p in dm_files():

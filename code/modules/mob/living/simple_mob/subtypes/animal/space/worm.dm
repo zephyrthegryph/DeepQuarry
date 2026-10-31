@@ -74,7 +74,7 @@
 	var/segment_count = 6
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/space_worm/head)
-	op("toggle_devour", menu(), label("Toggle Feeding"), needs(req_self()), then(PROC_REF(toggle_devour_op)))
+	op("toggle_devour", menu(desc = "Extends your teeth for 30 seconds so that you can chew through mobs and structures alike."), label("Toggle Feeding"), needs(req_self()), then(PROC_REF(toggle_devour_op)))
 	setup(PROC_REF(grow_initial_segments))
 	configure(mob_movement(hovering = TRUE))
 

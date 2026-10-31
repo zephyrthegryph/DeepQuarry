@@ -1,5 +1,5 @@
 // gas_store(): a gas mixture the holder owns and starts with (doc/rewrite/lifecycle.md "Starting state").
-// Replaces DECLARE_GAS (code/__defines/lifecycle_decl.dm), which stays until the codemod has moved its sites.
+// Replaces DECLARE_GAS (code/defines/engine/lifecycle_decl.dm), which stays until the codemod has moved its sites.
 //
 //	CAPABILITY(/obj/structure/transit_tube_pod, gas_store(nameof(air_contents), CELL_VOLUME, T20C, list(GAS_O2 = O2STANDARD * ONE_ATMOSPHERE * 2, GAS_N2 = N2STANDARD * ONE_ATMOSPHERE)))
 //

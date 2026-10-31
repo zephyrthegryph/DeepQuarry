@@ -523,7 +523,7 @@ GLOBAL_VAR(dq_test_select_names)
 	/// Set by an E0 proof's gate when it failed because an engine piece (E1-E6) does not exist yet: the run reports it as pending,
 	/// separately from a proof that failed for any other reason (doc/testing.md "The E0 proofs").
 	var/pending_engine = FALSE
-	/// The BOOT_NEED_* boot work this test relies on (code/__defines/_boot_needs.dm). Null = all of it (the safe default); a focused
+	/// The BOOT_NEED_* boot work this test relies on (code/defines/engine/_boot_needs.dm). Null = all of it (the safe default); a focused
 	/// world skips a piece of boot work only when every selected test lists boot_needs without it. list() = needs none.
 	var/list/boot_needs = null
 	/// Curated entries sweep_types() actually found (see curated_types()).

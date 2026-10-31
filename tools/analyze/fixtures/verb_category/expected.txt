@@ -1,6 +1,6 @@
-duplicate_define	code/__defines/verb_categories.dm	3
-duplicate_define	code/__defines/verb_categories.dm	5
-duplicate_define	code/__defines/verb_categories.dm	7
+duplicate_define	code/defines/host/verb_categories.dm	3
+duplicate_define	code/defines/host/verb_categories.dm	5
+duplicate_define	code/defines/host/verb_categories.dm	7
 raw_category	code/modules/a/a.dm	4
 raw_category	code/modules/a/a.dm	6
 raw_category	code/modules/a/a.dm	16

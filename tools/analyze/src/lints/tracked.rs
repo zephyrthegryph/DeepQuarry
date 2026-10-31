@@ -1,7 +1,7 @@
 //! Port of `tools/ci/tracked_lint.py`: the tracked-var write lint (doc/rewrite/dx_conventions.md sec 1,
 //! final_design.md sec 1).
 //!
-//! `TRACKED(T, var)` (code/__defines/capabilities.dm; two arguments, the channel argument is gone) declares that `var` on type T (and its
+//! `TRACKED(T, var)` (code/defines/engine/capabilities.dm; two arguments, the channel argument is gone) declares that `var` on type T (and its
 //! subtypes) is written only through its generated setter `T/proc/set_<var>(value)`, which compares with `TRACKED_UNCHANGED` (null differs from 0)
 //! and publishes through `tracked_changed()`. `SETTER(T, var)` registers a hand-written `T/proc/set_<var>(value)` as var's setter and makes var tracked the
 //! same way. A hand-written `/T/proc/set_<var>(` (or a subtype override of it) is the setter body. Reads are unrestricted. A `derive()` value
@@ -1108,7 +1108,7 @@ fn drop_declared(engine: &crate::run::Engine, root: &std::path::Path, apply: boo
     // Pass 1: every plain TRACKED line, and the ones the generator would be asked to cover.
     let mut lines: Vec<(String, String, String)> = Vec::new();
     for f in tree.select(&CODE_DM) {
-        if f.rel == crate::gens::auto_tracked::AUTO_REL || f.rel == "code/__defines/capabilities.dm" || (!prefixes.is_empty() && !prefixes.iter().any(|p| f.rel.starts_with(p.as_str()))) || !f.text().contains("TRACKED(") {
+        if f.rel == crate::gens::auto_tracked::AUTO_REL || f.rel == "code/defines/engine/capabilities.dm" || (!prefixes.is_empty() && !prefixes.iter().any(|p| f.rel.starts_with(p.as_str()))) || !f.text().contains("TRACKED(") {
             continue;
         }
         for line in f.raw().text.split('\n') {

@@ -34,7 +34,7 @@ use crate::util::{before_slashes, py_lstrip, py_strip};
 const RULES: &[RuleMeta] = &[
     RuleMeta {
         name: "world_time_expiry",
-        hint: "COOLDOWN_DECLARE/COOLDOWN_START/COOLDOWN_RUNNING/COOLDOWN_TIMELEFT for an end time, STAMP/ELAPSED for a start (code/__defines/cooldowns.dm, code/__defines/sys_expiry.dm)",
+        hint: "COOLDOWN_DECLARE/COOLDOWN_START/COOLDOWN_RUNNING/COOLDOWN_TIMELEFT for an end time, STAMP/ELAPSED for a start (code/defines/engine/cooldowns.dm, code/__defines/sys_expiry.dm)",
     },
     RuleMeta {
         name: "world_time_write",

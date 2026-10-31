@@ -17,13 +17,13 @@ for line in open("interface/skin.dmf", encoding="utf-8", errors="ignore"):
         controls.add(m.group(1))
 
 bad = []
-for number, line in enumerate(open("code/__defines/skin.dm", encoding="utf-8"), 1):
+for number, line in enumerate(open("code/defines/host/skin.dm", encoding="utf-8"), 1):
     m = re.match(r'^#define (SKIN_\w+) "([^"]+)"', line)
     if not m:
         continue
     value = m.group(2)
     if value not in windows and value not in controls:
-        bad.append(f"code/__defines/skin.dm:{number}: {m.group(1)} = \"{value}\" is not in interface/skin.dmf")
+        bad.append(f"code/defines/host/skin.dm:{number}: {m.group(1)} = \"{value}\" is not in interface/skin.dmf")
 
 for b in bad:
     print(b)

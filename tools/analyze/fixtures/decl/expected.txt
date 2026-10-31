@@ -52,7 +52,7 @@ init_new_child	code/modules/decl/init.dm	34
 init_new_child	code/modules/decl/init.dm	35
 init_new_child	code/modules/decl/rel.dm	2
 init_new_child	code/modules/decl/rel.dm	3
-init_reagents	code/__defines/tgs.dm	2
+init_reagents	code/defines/host/tgs.dm	2
 init_reagents	code/modules/decl/.dot.dm	4
 init_reagents	code/modules/decl/.hid/h.dm	4
 init_reagents	code/modules/decl/crlf.dm	2

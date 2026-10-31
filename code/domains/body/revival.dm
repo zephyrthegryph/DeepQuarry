@@ -99,7 +99,7 @@
 
 /// The only way a dead mob becomes alive. Returns TRUE on success, or the refusal reason (a
 /// string) from can_return_from_death(). `reason` is logged; `source` is what did it (defib,
-/// spell, admin, reagent). `flags` are REVIVE_* (code/__defines/vital_state.dm).
+/// spell, admin, reagent). `flags` are REVIVE_* (code/defines/content/vital_state.dm).
 /mob/living/proc/return_from_death(reason, datum/source, flags = NONE)
 	// 1. Rebuild and heal first when asked.
 	if((flags & REVIVE_RESTORE) && stat == DEAD && !QDELETED(src))

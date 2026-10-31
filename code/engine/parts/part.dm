@@ -193,9 +193,10 @@
 /proc/remote()
 	return part_make(/datum/entry/part/bind/remote)
 
-/// menu(button =, bind =): chosen by key: an ability's button and keybind, or a target's menu entry.
-/proc/menu(button = null, bind = null)
-	return part_make(/datum/entry/part/bind/menu, list("button" = button, "bind" = bind))
+/// menu(button =, bind =, desc =): chosen by key: an ability's button and keybind, or a target's menu entry. `desc` is the hover text the Menu shows beside
+/// the label (what a verb's `set desc` was); op_menu() carries it as the row's "desc".
+/proc/menu(button = null, bind = null, desc = null)
+	return part_make(/datum/entry/part/bind/menu, list("button" = button, "bind" = bind, "desc" = desc))
 
 /// ai(): an AI controller or a script calls the op by key.
 /proc/ai()
@@ -989,4 +990,4 @@
 
 /// ui_shape(operating, channels = list_of(row(...))): the declared shape of the window's data. `analyze gen ui_types` reads the declaration from source and
 /// writes the TypeScript type of the window (each field's schema range as the doc comment of its field); at runtime the entry carries no data. It is a
-/// macro (code/__defines/engine/declare.dm) so that a field can be written `name = schema`, which no proc taking `...` accepts as a named argument.
+/// macro (code/defines/engine/declare/declare.dm) so that a field can be written `name = schema`, which no proc taking `...` accepts as a named argument.

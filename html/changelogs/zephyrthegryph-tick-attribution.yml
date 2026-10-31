@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - server: "TICK overrun lines now name the top callbacks behind om_core and the top redrawn types/reactions behind om_appearance"
+  - server: "PERF_PROFILE gains an attribution section: top 20 callbacks, top 20 redrawn types and the post-init settle table; SETTLE: summaries are logged about 2 and 10 minutes after init"
+  - server: "Every world exit path (world.Del, Reboot, input_reboot) now logs an EXIT: line"
+  - code_imp: "Added always-on per-callback and per-type attribution inside the kernel tick meter (code/controllers/measure/attribution.dm)"

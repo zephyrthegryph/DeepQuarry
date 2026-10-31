@@ -124,7 +124,7 @@ them can hide a failure in the full suite, which still does all of them:
 
 ### Boot work a focused run defers (`boot_needs`)
 
-A test sets `boot_needs = list(BOOT_NEED_...)` (`code/__defines/_boot_needs.dm`) to name the boot work it reads. The default,
+A test sets `boot_needs = list(BOOT_NEED_...)` (`code/defines/engine/_boot_needs.dm`) to name the boot work it reads. The default,
 null, means "needs all of it". A focused world skips a piece of work only when **every** selected test declared a list that
 leaves it out (`unit_test_boot_skips()`), and logs `BOOT DEFERRED: ...` to `runtime.log` and `tests.log` for each skip. The
 full suite, the merge gates and production never skip any of it. A test that starts needing one of these adds it to its list.

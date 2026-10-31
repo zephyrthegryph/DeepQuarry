@@ -1,4 +1,4 @@
-// State and change (code/__defines/reactions.dm).
+// State and change (code/defines/library/reactions.dm).
 //
 // publish_change(E, key) announces that E's `key` changed. It is demand-gated: TRACKED setters (through
 // state_changed()), timed_set and the ownership accessors call it only when READERS(E, key) says someone reads

@@ -218,7 +218,7 @@ pub(crate) fn environment(tree: &Tree) -> Option<(Hash, BTreeMap<String, Hash>)>
         };
         files.insert(rel, h);
     }
-    let defines: Vec<(&str, Hash)> = tree.select(&CODE_DM).iter().filter(|f| f.rel.starts_with("code/__defines/")).map(|f| (f.rel.as_str(), f.hash)).collect();
+    let defines: Vec<(&str, Hash)> = tree.select(&CODE_DM).iter().filter(|f| crate::scopes::is_defines(&f.rel)).map(|f| (f.rel.as_str(), f.hash)).collect();
     if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
         eprintln!("analyze: sem env parts: dme {:x} decls {:x} defines {:x}", dme, decls.key, crate::incr::ctx_key(&defines));
     }
@@ -331,7 +331,7 @@ fn validate(tree: &Tree) -> Option<Record> {
     }
     let footprint: std::collections::HashSet<&str> = rec.footprint.iter().map(|s| s.as_str()).collect();
     for rel in &changed {
-        if footprint.contains(rel.as_str()) || rel.starts_with("code/__defines/") || rec.files[rel].directive {
+        if footprint.contains(rel.as_str()) || crate::scopes::is_defines(&rel) || rec.files[rel].directive {
             return miss(3);
         }
     }

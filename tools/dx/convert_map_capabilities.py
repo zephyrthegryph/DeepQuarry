@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """One-time migration: rewrite map varedits of removed base state vars into cap_state.
 
-Driven by tools/dx/capability_varmap.json; bit values come from code/__defines/cap_bits.dm.
+Driven by tools/dx/capability_varmap.json; bit values come from code/defines/engine/cap_bits.dm.
 Works textually on the .dmm dictionary (TGM multi-line and classic single-line), so the rest of
 the file is byte-identical. Idempotent: a converted map converts to itself.
 
@@ -20,7 +20,7 @@ import re
 import sys
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-BITS_FILE = os.path.join(REPO, "code", "__defines", "cap_bits.dm")
+BITS_FILE = os.path.join(REPO, "code", "defines", "engine", "cap_bits.dm")
 VARMAP_FILE = os.path.join(REPO, "tools", "dx", "capability_varmap.json")
 
 FALSY = {"0", "null", "FALSE", '""', "0.0"}
