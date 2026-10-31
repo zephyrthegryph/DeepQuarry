@@ -54,6 +54,7 @@
 		)
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/technomancer_golem)
+	op("test_giving_spells", menu(), label("Test giving spells"), needs(req(PROC_REF(test_giving_spells_ready))), asks(/datum/prompt/choice, fields = list("question" = "What spell?", "title" = "Give spell", "choices" = computed(PROC_REF(test_giving_spells_choices)), "timeout" = 0), step = "spell"), then(PROC_REF(test_giving_spells_op)))
 	configure(mob_rules(faction = FACTION_GOLEM))
 	configure(living_rules(delete_on_death = TRUE))
 	ref_one(nameof(master), /mob/living)
@@ -76,20 +77,15 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/technomancer_golem)
 
 	rel_set(src, nameof(active_spell), new path(src))
 
-/mob/living/simple_mob/mechanical/technomancer_golem/verb/test_giving_spells()
-	// An empty legacy list opened no question and never cleared the current spell.
-	if(length(known_spells))
-		open_request(src, /datum/prompt/choice, PROC_REF(test_spell_chosen), answerer = usr, choices = known_spells, title = "Give spell", question = "What spell?", timeout = 0)
+/// An empty spell list opened no question and never cleared the current spell, so the op is not offered without spells.
+/mob/living/simple_mob/mechanical/technomancer_golem/proc/test_giving_spells_ready(datum/act/op/A)
+	return length(known_spells) ? null : MSG(req_silent)
 
-/mob/living/simple_mob/mechanical/technomancer_golem/proc/test_spell_chosen(datum/act/request/A)
-	var/datum/request/R = A.request
-	if(QDELETED(R.answerer))
-		return
-	if(!A.answer)
-		if(R.outcome == REQ_CANCELLED && isnull(R.value))
-			rel_clear(src, nameof(active_spell), OWN_DELETE)
-		return
-	place_spell_in_hand(known_spells[A.answer.value])
+/mob/living/simple_mob/mechanical/technomancer_golem/proc/test_giving_spells_choices(datum/act/op/A)
+	return known_spells
+
+/mob/living/simple_mob/mechanical/technomancer_golem/proc/test_giving_spells_op(datum/act/op/A)
+	place_spell_in_hand(known_spells[A.step_value("spell")])
 
 /mob/living/simple_mob/mechanical/technomancer_golem/get_technomancer_core()
 	return core

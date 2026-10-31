@@ -255,6 +255,8 @@
 	return FALSE
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie)
+	op("borrow_vac", menu(desc = "Allows adjacent user to borrow Swoopie's Vac-Pack"), label("Borrow Vac-Pack"), needs(req_adjacent(), req(PROC_REF(borrow_vac_ready))), then(PROC_REF(borrow_vac_op)))
+	op("borrow_vac_self", menu(desc = "Allows adjacent user to borrow Swoopie's Vac-Pack"), label("Borrow Vac-Pack"), needs(req_self(), req(PROC_REF(borrow_vac_self_ready))), asks(/datum/prompt/choice, fields = list("title" = "Swoopie", "question" = "Borrow Vac-Pack for", "choices" = computed(PROC_REF(borrow_vac_choices)), "timeout" = 0), step = "borrower"), then(PROC_REF(borrow_vac_self_op)))
 	configure(mob_rules(faction = "neutral"))
 	configure(living_rules(vore_icon_bellies = list("stomach", "neck1", "neck2", "neck3", "neck4"), vore_capacity_ex = list("stomach" = 1, "neck1" = 1, "neck2" = 1, "neck3" = 1, "neck4" = 1), say_list_type = /datum/say_list/swoopie, adminbus_trash = TRUE))
 	configure(mob_movement(bump = 0))
@@ -287,21 +289,21 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie)
 				return OP_OK
 	return OP_DECLINE
 
-/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/verb/borrow_vac()
-	set name = "Borrow Vac-Pack"
-	set desc = "Allows adjacent user to borrow Swoopie's Vac-Pack"
-	set category = VERB_CAT_OBJECT
-	set src in oview(1)
-	if(istype(Vac))
-		if(usr != src)
-			usr.put_in_active_hand(Vac)
-		else
-			open_request(src, /datum/prompt/choice, PROC_REF(vac_borrower_chosen), answerer = src, title = "Swoopie", question = "Borrow Vac-Pack for", choices = mobs_in_view(1, src), timeout = 0)
+/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/borrow_vac_ready(datum/act/op/A)
+	return (istype(Vac) && A.actor != src) ? null : MSG(req_silent)
 
-/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/vac_borrower_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/living/L = A.answer.value
+/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/borrow_vac_self_ready(datum/act/op/A)
+	return (istype(Vac) && A.actor == src) ? null : MSG(req_silent)
+
+/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/borrow_vac_op(datum/act/op/A)
+	var/mob/user = A.actor
+	user.put_in_active_hand(Vac)
+
+/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/borrow_vac_choices(datum/act/op/A)
+	return mobs_in_view(1, src)
+
+/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/borrow_vac_self_op(datum/act/op/A)
+	var/mob/living/L = A.step_value("borrower")
 	if(L == src || !istype(Vac) || !Adjacent(L))
 		return
 	L.put_in_active_hand(Vac)
