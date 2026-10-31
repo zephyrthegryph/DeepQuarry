@@ -182,9 +182,9 @@ record_accessor_prefixes = ["set_", "get_"]
 "/atom/flags_1" = "read per turf activation: SSair.add_to_active tests flags_1 & INITIALIZED_1 (code/domains/atmos/SSair.dm:343); set on every atom at init"
 "/atom/can_atmos_pass" = "read per turf update for each object on the turf: air_block_mask folds it (code/domains/atmos/environmental/LINDA_system.dm:58)"
 "/atom/movable/pressure_resistance" = "read per spacewind move: experience_pressure_difference move_prob (code/domains/atmos/environmental/LINDA_turf_tile.dm:338)"
-"/atom/flags" = "read on every move and bump scan: ON_BORDER tests in /turf/Enter and contains_dense_objects (code/game/turfs/turf.dm:349), held by all atoms"
+"/atom/flags" = "read on every move and bump scan: ON_BORDER tests in /turf/Enter and contains_dense_objects (code/content/turfs/turf.dm:349), held by all atoms"
 "/atom/pass_flags" = "read on every CanPass test of every move and projectile pass: pass_flags & passflag (code/game/atom/_atom.dm:439), held by all atoms"
-"/atom/movable/movement_type" = "read per entering mover: CHECK_BITFIELD(mover.movement_type, UNSTOPPABLE) in /turf/Enter (code/game/turfs/turf.dm:335)"
+"/atom/movable/movement_type" = "read per entering mover: CHECK_BITFIELD(mover.movement_type, UNSTOPPABLE) in /turf/Enter (code/content/turfs/turf.dm:335)"
 "/atom/movable/moving_diagonally" = "read and written on every diagonal step: the state machine in Move() (code/game/atoms_movable.dm:232-250), held by all movables"
 "/atom/movable/l_move_time" = "read on every Move(): move_speed = world.time - l_move_time (code/game/atoms_movable.dm:294), held by all movables"
 "/mob/m_intent" = "read on every step: walk-versus-run delay in living_movement.dm (code/content/mob/living/living_movement.dm:20) and mob_movement.dm:21"
@@ -499,14 +499,14 @@ legacy_forms_converted = [
   "code/game/jobs/",
   "code/content/jobs/",
   "code/content/magic/",
-  "code/game/mecha/combat/",
-  "code/game/mecha/components/",
-  "code/game/mecha/equipment/",
+  "code/content/mecha/combat/",
+  "code/content/mecha/components/",
+  "code/content/mecha/equipment/",
   "code/game/mecha/medical/",
   "code/game/mecha/micro/",
   "code/game/mecha/secert/",
-  "code/game/mecha/space/",
-  "code/game/mecha/working/",
+  "code/content/mecha/space/",
+  "code/content/mecha/working/",
   "code/content/mecha/",
   "code/game/objects/effects/",
   "code/content/effects/",
@@ -910,9 +910,9 @@ tool_istype_allow = [
   "code/datums/wires/wires.dm",
   "code/content/behaviours/omen.dm",
   "code/content/machinery/recharger.dm",
-  "code/game/mecha/mecha.dm",
-  "code/game/mecha/space/shuttle.dm",
-  "code/game/mecha/combat/fighter.dm",
+  "code/content/mecha/mecha.dm",
+  "code/content/mecha/space/shuttle.dm",
+  "code/content/mecha/combat/fighter.dm",
   "code/content/machinery/adv_med.dm",
   "code/content/machinery/cloning.dm",
   "code/content/machinery/computer/cloning.dm",
@@ -921,8 +921,8 @@ tool_istype_allow = [
 i7_verb_allow = [
   "code/modules/unit_tests/",
   "code/tests/unit_tests/",
-  "code/game/mecha/equipment/tools/passenger.dm",
-  "code/game/mecha/equipment/tools/sleeper.dm",
+  "code/content/mecha/equipment/tools/passenger.dm",
+  "code/content/mecha/equipment/tools/sleeper.dm",
   "code/content/items/devices/communicator/integrated.dm",
   "code/content/assembly/holder.dm",
   "code/content/clothing/spacesuits/rig/modules/specific/ai_container.dm",
@@ -932,7 +932,7 @@ i7_verb_allow = [
 bodytemp_allow = ["code/content/heat/heat_mobs.dm"]
 # the heat and gas domains own every temperature and energy write
 heat_writes_allow = ["code/domains/", "code/__defines/verdigris/_bindings.dm"]
-weapon_damage_type_allow = ["code/modules/medical/conditions/wounds.dm"]
+weapon_damage_type_allow = ["code/content/medical/conditions/wounds.dm"]
 organ_damage_allow = ["code/modules/body/", "code/content/body/"]
 rust_state_allow = ["code/__defines/verdigris/_bindings.dm"]
 slot_flags_allow = ["code/datums/properties/", "code/content/properties/"]
@@ -1144,7 +1144,7 @@ banned = [
   "SPECIES_UNATHI_CAN_WEAR = refit species lists are fit categories: restrict_fit_category(FIT_REFIT_X), listed once in code/library/items/fit_categories.dm (doc/rewrite/proposals/admission.md wave 3)",
   "SPECIES_VOX_CAN_WEAR = refit species lists are fit categories: restrict_fit_category(FIT_REFIT_X), listed once in code/library/items/fit_categories.dm (doc/rewrite/proposals/admission.md wave 3)",
   "SPECIES_VULPKANIN_CAN_WEAR = refit species lists are fit categories: restrict_fit_category(FIT_REFIT_X), listed once in code/library/items/fit_categories.dm (doc/rewrite/proposals/admission.md wave 3)",
-  "hold_stasis_factors = a stasis hold's own factors() entry (/datum/stasis_hold, code/modules/medical/stabilisation/stasis.dm): the stat layer holds its table on the mob",
+  "hold_stasis_factors = a stasis hold's own factors() entry (/datum/stasis_hold, code/content/medical/stabilisation/stasis.dm): the stat layer holds its table on the mob",
   "hold_effect_factors = a body effect application's own factors() entry (/datum/body_effect_origin, code/modules/body/body_effects.dm): the stat layer holds its table on the mob",
   "hold_reagent_factors = a reagent's dose record (/datum/reagent_dose, code/modules/body/factors.dm): its factors() entries read the volume from the body and the stat layer holds the tables on the mob",
   "hold_reagent_table = a reagent's dose record (/datum/reagent_dose): the humanoid plan's analgesic sensitivity is its strength_table()",
