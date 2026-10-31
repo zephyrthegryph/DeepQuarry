@@ -35,14 +35,12 @@
 	else if(harmless)
 		. += "It appears to have been pacified."
 
-/mob/living/simple_mob/metroid/juvenile/verb/evolve()
-	set category = VERB_CAT_SLIME
-	set desc = "This will let you advance to next form."
-
+/mob/living/simple_mob/metroid/juvenile/proc/evolve_ready(datum/act/op/A)
 	if(stat)
-		to_chat(src, span_warning("I must be conscious to do this..."))
-		return
+		return span_warning("I must be conscious to do this...")
+	return null
 
+/mob/living/simple_mob/metroid/juvenile/proc/evolve()
 	if(is_queen)
 		status_set(STAT_PARALYZED, 7998)
 		play_sfx(src, SFX_METROID_METROIDGROW)
@@ -65,6 +63,9 @@
 
 	else
 		to_chat(src, span_warning("I am not ready to evolve yet..."))
+
+/mob/living/simple_mob/metroid/juvenile/proc/evolve_op(datum/act/op/A)
+	evolve()
 
 /mob/living/simple_mob/metroid/juvenile/proc/expand_troid()
 	if(loc?.release_refusal(src))
@@ -141,6 +142,7 @@
 
 //Code to remove metroid from someone
 CAPABILITIES(/mob/living/simple_mob/metroid/juvenile)
+	op("evolve", menu(desc = "This will let you advance to next form."), label("Evolve"), needs(req_self(), req(PROC_REF(evolve_ready))), then(PROC_REF(evolve_op)))
 	configure(living_rules(use_modern_ai = TRUE, max_nutrition = 1000))
 	ref_one(nameof(victim), /mob/living)
 	op("metroid_juvenile_hand", hand(), ungated(), then(PROC_REF(metroid_juvenile_interaction_hand)))

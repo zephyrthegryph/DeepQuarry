@@ -132,3 +132,13 @@
 	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, test_floor(), null, null, null, TRUE)
 	var/datum/op_result/R = dq_ability_menu_op(AI, "holo_nom_menu")
 	TEST_ASSERT_EQUAL(R?.outcome, ACT_REFUSED, "holo_nom_menu is refused with no holopad hologram")
+
+/// A pacified slime ("harmless") cannot evolve or reproduce; an ordinary one is offered both.
+/datum/unit_test/dq_ability_ops_slime_pacified_refuses
+
+/datum/unit_test/dq_ability_ops_slime_pacified_refuses/Run()
+	var/mob/living/simple_mob/slime/xenobio/S = allocate(/mob/living/simple_mob/slime/xenobio, test_floor())
+	S.set_harmless(TRUE)
+	for(var/key in list("evolve", "reproduce"))
+		var/datum/op_result/R = dq_ability_menu_op(S, key)
+		TEST_ASSERT_EQUAL(R?.outcome, ACT_REFUSED, "[key] is refused while pacified")

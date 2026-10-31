@@ -10,6 +10,8 @@
 /mob/living/simple_mob/slime
 
 CAPABILITIES(/mob/living/simple_mob/slime/xenobio)
+	op("reproduce", menu(), label("Reproduce"), needs(req_self(), req(PROC_REF(reproduce_ready))), then(PROC_REF(reproduce_op)))
+	op("evolve", menu(), label("Evolve"), needs(req_self(), req(PROC_REF(evolve_ready))), then(PROC_REF(evolve_op)))
 	configure(living_rules(max_nutrition = 1000))
 	ref_one(nameof(victim), /mob/living)
 	ref_one(nameof(predecessor), /mob/living/simple_mob/slime/xenobio)

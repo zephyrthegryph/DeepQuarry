@@ -149,18 +149,14 @@
 	return
 
 // These are verbs so that player slimes can evolve/split.
-/mob/living/simple_mob/slime/xenobio/verb/evolve()
-	set category = VERB_CAT_SLIME
-	set desc = "This will let you evolve from baby to adult slime."
-
+/mob/living/simple_mob/slime/xenobio/proc/evolve_ready(datum/act/op/A)
 	if(stat)
-		to_chat(src, span_warning("I must be conscious to do this..."))
-		return
-
+		return span_warning("I must be conscious to do this...")
 	if(harmless)
-		to_chat(src, span_warning("I have been pacified. I cannot evolve..."))
-		return
+		return span_warning("I have been pacified. I cannot evolve...")
+	return null
 
+/mob/living/simple_mob/slime/xenobio/proc/evolve()
 	if(!is_adult)
 		if(amount_grown >= 10)
 			make_adult()
@@ -169,18 +165,17 @@
 	else
 		to_chat(src, span_warning("I have already evolved..."))
 
-/mob/living/simple_mob/slime/xenobio/verb/reproduce()
-	set category = VERB_CAT_SLIME
-	set desc = "This will make you split into four new slimes."
+/mob/living/simple_mob/slime/xenobio/proc/evolve_op(datum/act/op/A)
+	evolve()
 
+/mob/living/simple_mob/slime/xenobio/proc/reproduce_ready(datum/act/op/A)
 	if(stat)
-		to_chat(src, span_warning("I must be conscious to do this..."))
-		return
-
+		return span_warning("I must be conscious to do this...")
 	if(harmless)
-		to_chat(src, span_warning("I have been pacified. I cannot reproduce..."))
-		return
+		return span_warning("I have been pacified. I cannot reproduce...")
+	return null
 
+/mob/living/simple_mob/slime/xenobio/proc/reproduce()
 	if(is_adult)
 		if(amount_grown >= 10)
 			// Check if there's enough 'room' to split.
@@ -218,6 +213,9 @@
 			to_chat(src, span_warning("I am not ready to reproduce yet..."))
 	else
 		to_chat(src, span_warning("I have not evolved enough to reproduce yet..."))
+
+/mob/living/simple_mob/slime/xenobio/proc/reproduce_op(datum/act/op/A)
+	reproduce()
 
 // Used when reproducing or dying.
 /mob/living/simple_mob/slime/xenobio/proc/make_new_slime(desired_type, no_step)
