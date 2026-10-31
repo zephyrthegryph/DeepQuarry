@@ -7,6 +7,9 @@
 /// 2 s on Southern Cross. Past the budget the frame stops and the next frame resumes at the same
 /// holder (refused atoms are on cooldown and collapsed ones are gone, so nothing repeats).
 #define LATENCY_SWEEP_MS_BUDGET 4
+/// A single eligibility check this long (ms) is logged by name (LATENCY_SWEEP_SLOW), the first 40 of a round.
+#define LATENCY_SWEEP_SLOW_MS 25
+GLOBAL_VAR_INIT(latency_slow_logged, 0)
 /// References the sweep frame itself holds to the atom it checks (see sweep_step()).
 #define LATENCY_SWEEP_FRAME_REFS 2
 /// Shortest wait before the sweep re-offers an atom latent_collapse() refused.
@@ -84,6 +87,7 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 			// References this frame holds to A (dq_latent_pinned()'s caller_refs), measured by
 			// dq_latency_sweep_collapses/dq_latency_sweep_outside_ref_blocks: the loop variable and
 			// one more inside the try block.
+			var/check_start = TICK_USAGE_REAL
 			try
 				eligible = can_be_latent(A, LATENCY_SWEEP_FRAME_REFS)
 			catch(var/exception/e)
@@ -92,6 +96,10 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 				cooldown_start(A, latent_refused_until, max(holder?.latent_idle_delay_value(), LATENCY_REFUSAL_BACKOFF_MIN))
 				stack_trace("LATENCY_SWEEP: can_be_latent([A.type] in [holder.type]) runtimed: [e.name] at [e.file]:[e.line] -- [e.desc]")
 				continue
+			var/check_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - check_start)
+			if(check_ms >= LATENCY_SWEEP_SLOW_MS && GLOB.latency_slow_logged < 40)
+				GLOB.latency_slow_logged++
+				log_world("LATENCY_SWEEP_SLOW: can_be_latent([A.type] in [holder.type]) took [round(check_ms, 0.1)] ms (eligible [eligible]; [length(A.contents)] thing(s) inside it, [length(holder.contents)] in the holder, pin scans so far [GLOB.latency_pin_scans])")
 			if(!eligible)
 				continue
 			// Through dq_latent_attempt_collapse(): its frame is part of the calibrated held_refs.
@@ -109,6 +117,7 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 #undef LATENCY_SWEEP_MS_BUDGET
 #undef LATENCY_REFUSAL_BACKOFF_MIN
 #undef LATENCY_SWEEP_FRAME_REFS
+#undef LATENCY_SWEEP_SLOW_MS
 
 // ---- Admin toggle (containment.md Â§4.7 "Safety") ----
 
