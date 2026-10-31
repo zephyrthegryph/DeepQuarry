@@ -138,6 +138,13 @@ pub enum ResolveQuery {
     MemberCallableName(SymbolId),
     /// Dynamic selector namespace: procedures take priority over verbs by name.
     MemberCallableVerbName(SymbolId),
+    /// Whether the type itself declares (or overrides) at least one procedure, or verb when `verb`, in source. `/T/proc` and `/T/verb`
+    /// are type paths only then: DreamMaker rejects `typesof(/mob/living/carbon/verb)` as an undefined type path when nothing
+    /// is declared under it, whatever the ancestors or subtypes declare.
+    HasNamespaceMembers {
+        owner: SymbolId,
+        verb: bool,
+    },
 }
 
 /// Source declaration form is independent of its executable implementation.
@@ -168,6 +175,7 @@ impl ResolveQuery {
             Self::GlobalProc(_)
             | Self::Signature(_)
             | Self::HasMemberProc { .. }
+            | Self::HasNamespaceMembers { .. }
             | Self::Proc { .. }
             | Self::ProcedureValue { .. }
             | Self::MethodProcedureValue { .. }

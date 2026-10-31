@@ -335,6 +335,23 @@ impl dm_ir::Resolver for SemanticTree {
                 // even while unrelated intrinsic member names remain unknown.
                 return self.resolve_inventory(query);
             }
+            Q::HasNamespaceMembers { owner, verb } => {
+                // Source declarations only: the engine's own members (`/mob/verb` and the like) do not make `/T/verb` a path, and neither do
+                // the declarations of an ancestor or a subtype (DreamMaker: "/mob/living/carbon/verb: undefined type path").
+                let kind = if verb {
+                    MemberKind::Verb
+                } else {
+                    MemberKind::Proc
+                };
+                match self.lookup_type(owner) {
+                    None => M::Missing,
+                    Some(id) => M::Presence(
+                        self.direct
+                            .keys()
+                            .any(|(declaring, _, member)| *declaring == id && *member == kind),
+                    ),
+                }
+            }
             Q::Resource(_)
             | Q::ResourceIn { .. }
             | Q::ProcedureStatic { .. }
