@@ -127,6 +127,7 @@ CAPABILITIES(/mob/living/carbon/human)
 	op("joint_dislocate", ai(), begins(PROC_REF(joint_dislocate_text)), wait(10 SECONDS), then(PROC_REF(grab_joint_human_done)))
 
 CAPABILITIES(/mob/living/silicon/robot)
+	op("cmd_show_laws", menu(), label("Show Laws"), needs(req_self()), then(PROC_REF(cmd_show_laws_op)))
 	configure(living_rules(vore_icon_bellies = list(), vore_capacity_ex = list(), fire_reaction = FIRE_REACTION_IGNITE))
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_UNIQUE, does_spin = FALSE))
 	rolls(nameof(ident), range_of(1, 999))

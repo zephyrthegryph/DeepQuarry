@@ -237,3 +237,12 @@
 	H.status_set(STAT_STUNNED, 5)
 	var/datum/op_result/stunned = dq_ability_menu_op(H, "flip_lying")
 	TEST_ASSERT_EQUAL(stunned?.outcome, ACT_REFUSED, "a stunned human cannot flip their resting direction")
+
+/// The information verbs of living mobs are on their own menu and commit.
+/datum/unit_test/dq_ability_ops_living_info_ops_commit
+
+/datum/unit_test/dq_ability_ops_living_info_ops_commit/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	for(var/key in list("vore_check_nutrition", "check_default_language", "showoff"))
+		var/datum/op_result/R = dq_ability_menu_op(H, key)
+		TEST_ASSERT(test_op_committed(R), "[key] commits on a human's own menu")

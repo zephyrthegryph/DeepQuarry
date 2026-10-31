@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Show Held Item, Eject pAI, Check Default Language, Sleep, Show Laws, the vore sprite toggle and Check Nutrition are menu ops"

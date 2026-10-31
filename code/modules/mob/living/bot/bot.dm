@@ -666,12 +666,11 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 		return
 	return feed_grabbed_to_self(src,T)
 
-/mob/living/bot/verb/ejectself()
-	set name = "Eject pAI"
-	set category = VERB_CAT_BOT_COMMANDS
-	set desc = "Eject your card, return to smole."
-
+/mob/living/bot/proc/ejectself()
 	return ejectpai()
+
+/mob/living/bot/proc/ejectself_op(datum/act/op/A)
+	ejectself()
 
 /mob/living/bot/Login()
 	set_no_vore(FALSE)// ROBOT VORE
@@ -692,6 +691,7 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 // === merged from bot_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 
 CAPABILITIES(/mob/living/bot)
+	op("ejectself", menu(desc = "Eject your card, return to smole."), label("Eject pAI"), needs(req_self()), then(PROC_REF(ejectself_op)))
 	configure(mob_nature(can_pain_emote = FALSE, no_vore = TRUE))
 	ref_one(nameof(target), /atom)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "devourable" = FALSE, "feeding" = FALSE, "can_be_drop_pred" = FALSE))
