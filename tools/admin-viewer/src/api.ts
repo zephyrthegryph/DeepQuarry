@@ -521,7 +521,7 @@ export async function runtimes(q: URLSearchParams) {
   };
 }
 
-/** The game's name for time before the MC's iteration (PERF_OUTSIDE_MC in code/__defines/metrics.dm). */
+/** The game's name for time before the MC's iteration (PERF_OUTSIDE_MC in code/defines/engine/metrics.dm). */
 const OUTSIDE_MC = 'Outside MC';
 /** Before the cause was recorded, the breakdown named everything outside the MC's subsystems this. */
 const LEGACY_EXTERNAL = 'BYOND / pre-MC / external';

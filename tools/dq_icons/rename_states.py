@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rename icon states to the look naming convention (code/__defines/look_names.dm).
+"""Rename icon states to the look naming convention (code/defines/engine/look_names.dm).
 
 Renames a state in an icon's `.dmi.toml` (the editable source; the PNG sheet needs no change because
 states are addressed by order) and rewrites the exact quoted string references to it in code and maps.

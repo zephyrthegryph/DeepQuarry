@@ -129,7 +129,7 @@ mod tests {
     fn scan(rel: &str, text: &str) -> Sink {
         let mut scope = LintScope::default();
         scope.lists.insert("api_prefixes".to_string(), vec!["code/datums/containment/".to_string()]);
-        scope.lists.insert("api_files".to_string(), vec!["code/__defines/containment.dm".to_string()]);
+        scope.lists.insert("api_files".to_string(), vec!["code/defines/engine/containment.dm".to_string()]);
         let tree = Tree::from_files(vec![]);
         let cx = Cx { tree: &tree, meta: &META, scope: &scope };
         let f = SourceFile::from_text(rel, text);
@@ -143,7 +143,7 @@ mod tests {
 
     #[test]
     fn api_files_drop_their_sites_but_record_the_allow() {
-        for rel in ["code/datums/containment/api.dm", "code/__defines/containment.dm"] {
+        for rel in ["code/datums/containment/api.dm", "code/defines/engine/containment.dm"] {
             let out = scan(rel, TEXT);
             assert!(out.sites.is_empty(), "{}: {:?}", rel, out.sites);
             assert_eq!(out.allow_used.len(), 1, "{}: {:?}", rel, out.allow_used);

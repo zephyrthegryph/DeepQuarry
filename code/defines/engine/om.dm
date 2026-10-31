@@ -238,6 +238,6 @@
 
 
 
-// The ASK_* re-check flags moved to code/__defines/kernel.dm (a request re-checks them when its answer arrives).
+// The ASK_* re-check flags moved to code/defines/engine/kernel.dm (a request re-checks them when its answer arrives).
 
 

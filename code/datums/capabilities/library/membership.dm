@@ -1,11 +1,11 @@
 // membership(joins =): what the holder is a member of while it exists (doc/rewrite/lifecycle.md "Starting state").
-// Replaces DECLARE_REGISTRY (code/__defines/lifecycle_decl.dm) and REGISTRY_MEMBERSHIP for a type that is always
+// Replaces DECLARE_REGISTRY (code/defines/engine/lifecycle_decl.dm) and REGISTRY_MEMBERSHIP for a type that is always
 // a member; both stay until the codemod has moved their sites.
 //
 //	CAPABILITY(/obj/item/taperecorder, membership(joins = REGISTRY_LISTENING_OBJECTS))
 //
 // `joins` is one id or a list; each entry is either
-//   - a registry id (REGISTRY_*, code/__defines/registries.dm): the holder is in that registry while materialized
+//   - a registry id (REGISTRY_*, code/defines/engine/registries.dm): the holder is in that registry while materialized
 //     (/atom/on_materialize() joins, on_dematerialize() leaves). A conditional registry is joined at materialize
 //     too (DECLARE_REGISTRY did that); code may still registry_leave() / registry_join() it later;
 //   - a /datum/system type: the holder is a MEMBER of that system while it exists (capability `joins`, the kernel's

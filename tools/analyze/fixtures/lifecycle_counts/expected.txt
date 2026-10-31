@@ -1,5 +1,5 @@
 destroy	code/__defines/macros.dm	3
-destroy	code/__defines/tgs.dm	2
+destroy	code/defines/host/tgs.dm	2
 destroy	code/controllers/subsystems/garbage.dm	3
 destroy	code/controllers/subsystems/other.dm	3
 destroy	code/datums/containment/lifecycle.dm	2

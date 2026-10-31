@@ -182,7 +182,7 @@ CAPABILITIES(/datum/system/requests)
 
 // ---------------------------------------------------------------- opening and ending
 
-/// Opens a request of `request_type` for `owner` (the open_request() macro, code/__defines/kernel.dm). `fields` are the named
+/// Opens a request of `request_type` for `owner` (the open_request() macro, code/defines/engine/kernel.dm). `fields` are the named
 /// arguments, each a var of the request type (`answerer = M`, `timeout = 30 SECONDS`, `role = R`) or `valid`, a PROC_REF on
 /// `owner`; an unknown name is a CRASH. `handler` is a PROC_REF on `owner`. Returns the open request, or null when it could not
 /// open (the owner is already gone).

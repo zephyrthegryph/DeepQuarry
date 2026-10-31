@@ -18,7 +18,7 @@ from collections import defaultdict
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ui_declare import File, body_range, related, split_args, strip_code, words_in  # noqa: E402
 
-SKIP = ("code/__defines/", "code/modules/unit_tests/", "code/tests/", "tools/", "code/modules/tgs/", "code/datums/sys/")
+SKIP = ("code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/modules/unit_tests/", "code/tests/", "tools/", "code/modules/tgs/", "code/datums/sys/")
 CADENCES = {"PERIODIC_SLOW": "2 SECONDS", "PERIODIC_SECOND": "1 SECOND", "PERIODIC_FAST": "0.2 SECONDS"}
 ATOM_ROOTS = ("/obj", "/turf", "/mob", "/area", "/atom")
 HEAD = re.compile(r"^(DECLARE_PERIODIC_WHILE_ALL|DECLARE_PERIODIC_WHILE|DECLARE_PERIODIC|DECLARE_REPEAT)\((.*)\)\s*(//.*)?$")

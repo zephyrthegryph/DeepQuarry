@@ -21,7 +21,7 @@
 // lifted brings back exactly what the rule says (no mixed-source desync).
 //
 // What a type has by what it is costs no per-instance store entry: DECLARE_VERB and friends
-// (code/__defines/lifecycle_decl.dm) live in the type's declaration table and are applied at init
+// (code/defines/engine/lifecycle_decl.dm) live in the type's declaration table and are applied at init
 // (Login for DECLARE_LOGIN_VERB). A per-instance grant is for what can change.
 //
 // Clients are not datums: a grant to a client goes to the client's /datum/client_verbs holder

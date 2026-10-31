@@ -130,7 +130,7 @@ pub fn report(tree: &Tree) -> Option<String> {
     // The engine's own unresolved constructs: the procs that genuinely cannot be walked and want a PROC_SUMMARY.
     let _ = writeln!(out, "\n## Constructs the walk cannot resolve inside the engine (want a `PROC_SUMMARY`)\n");
     let _ = writeln!(out, "`vars[]`/`call()`, a global proc without `READS_FROM`, a Verdigris FFI call, or a hop through a var that is not a declared relation, found in an engine-internal body.");
-    let _ = writeln!(out, "`PROC_SUMMARY(path, reads = list(...), writes = list(...))` (`code/__defines/engine/markers.dm`) declares what such a proc touches; the walk then takes the summary in place of the body.\n");
+    let _ = writeln!(out, "`PROC_SUMMARY(path, reads = list(...), writes = list(...))` (`code/defines/engine/declare/markers.dm`) declares what such a proc touches; the walk then takes the summary in place of the body.\n");
     let mut unwalkable: BTreeMap<(String, &'static str), BTreeSet<u32>> = BTreeMap::new();
     for s in new_keys().filter(|s| in_engine(&s.1)) {
         let c = category(&s.3);

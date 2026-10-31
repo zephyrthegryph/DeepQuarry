@@ -45,7 +45,7 @@ from collections import defaultdict
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ui_declare import File, body_range, split_args  # noqa: E402
 
-SKIP = ("code/__defines/", "code/modules/unit_tests/", "code/tests/", "tools/", "code/modules/tgs/", "code/datums/om/", "code/engine/", "code/game/machinery/", "code/modules/power/")
+SKIP = ("code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/modules/unit_tests/", "code/tests/", "tools/", "code/modules/tgs/", "code/datums/om/", "code/engine/", "code/game/machinery/", "code/modules/power/")
 CALL = re.compile(r"^\s*(task_timed|task_start)\((.*)\)\s*(//.*)?$")
 DUR = re.compile(r"^[\d.]+(\s*(SECONDS?|MINUTES?|DECISECONDS?|TICKS?))?$|^\d+\s*\*\s*[\d.]+\s*(SECONDS?|MINUTES?)$")
 ALIAS = re.compile(r"^\s*var/(?:[\w/]+/)?(\w+)\s*=\s*(A\.(?:actor|held|target))\s*$")

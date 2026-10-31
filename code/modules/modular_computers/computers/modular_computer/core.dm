@@ -3,7 +3,7 @@
 // single atomic pass.  Callers never need to know the active/idle split.
 //
 // event_type: one of COMPUTER_EVENT_POWERFAILURE, COMPUTER_EVENT_NETWORKFAILURE,
-//             COMPUTER_EVENT_IDREMOVED (defined in code/__defines/misc.dm).
+//             COMPUTER_EVENT_IDREMOVED (defined in code/defines/content/misc.dm).
 // context:    optional extra datum passed through to the event handler; currently
 //             unused but available for future expansion.
 /obj/item/modular_computer/proc/broadcast_event(event_type, context = null)

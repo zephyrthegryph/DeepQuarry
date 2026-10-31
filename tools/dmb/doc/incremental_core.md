@@ -959,7 +959,7 @@ reads (the expansion memo). Tests: `manifest_changes_renumber_adopted_subtrees_o
 now adopts the three subtrees that do not read it) and `a_define_edit_reruns_only_the_subtrees_whose_directives_read_it`,
 both comparing every plan and expansion with a full pass.
 
-Measured, production tree, `BAD_INIT_SLEPT` (defined in `code/__defines/_atoms.dm`, read only in two bodies) edited twice
+Measured, production tree, `BAD_INIT_SLEPT` (defined in `code/defines/base/_atoms.dm`, read only in two bodies) edited twice
 per round, interleaved against the published compiler: subtrees adopted 10 -> 5872 (state declines 5944 -> 0); the
 request was already a body-level patch on both (4.6-7.9 s against 5.3-6.3 s, frontend 0.9-1.5 s on both): 5917 regions
 are still expanded again (memo-verified), which is where the frontend time of such an edit goes. `dmb-equiv` of the

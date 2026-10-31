@@ -1239,7 +1239,7 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 
 // Checks if user can use this object. Set use_flags to customize what checks are done.
 // Returns 0 if they can use it, a value representing why they can't if not.
-// Flags are in `code/__defines/misc.dm`
+// Flags are in `code/defines/content/misc.dm`
 /atom/proc/use_check(mob/user, use_flags = 0, show_messages = FALSE)
 	. = 0
 	if (NOT_FLAG(USE_ALLOW_NONLIVING) && !isliving(user))

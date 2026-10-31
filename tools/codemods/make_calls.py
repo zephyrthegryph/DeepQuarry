@@ -67,7 +67,7 @@ def main():
     table = positions()
     counts = collections.Counter()
     for rel in dm_files(a.paths, others=a.others):
-        if rel.startswith(("code/engine/", "code/__defines/")):
+        if rel.startswith(("code/engine/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/")):
             continue
         f = File(rel)
         if "new" not in "\n".join(f.lines):

@@ -1,4 +1,4 @@
-// Serial numbers (code/__defines/engine/serials.dm, doc/rewrite/proposals/relations.md D9a). One counter per declared kind.
+// Serial numbers (code/defines/engine/declare/serials.dm, doc/rewrite/proposals/relations.md D9a). One counter per declared kind.
 
 GLOBAL_LIST_EMPTY(serial_counters)
 

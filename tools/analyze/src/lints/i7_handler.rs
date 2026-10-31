@@ -13,7 +13,7 @@ use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::tree::{Select, SourceFile};
 
-const HINT: &str = "declare interactions instead (DECLARE_INTERACTIONS / EXTEND_INTERACTIONS, code/__defines/interactions.dm)";
+const HINT: &str = "declare interactions instead (DECLARE_INTERACTIONS / EXTEND_INTERACTIONS, code/defines/engine/interactions.dm)";
 
 static META: Meta = Meta {
     name: "i7_handler",

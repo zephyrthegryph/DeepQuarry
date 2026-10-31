@@ -2,7 +2,7 @@
 //
 // Verifies the helper proc that bridges XGM's `mix.total_moles` (var) and
 // LINDA's `mix.total_moles()` (proc) for CHOMP callers that need to compile
-// in both atmos engines. See code/__defines/atmospherics.dm.
+// in both atmos engines. See code/defines/content/atmospherics.dm.
 //
 // Run with: bin/test.cmd (or whatever invokes dm.exe with -DUNIT_TESTS).
 //

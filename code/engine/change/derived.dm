@@ -1,5 +1,5 @@
 // Declared dependencies (doc/rewrite/dx_conventions.md, "Declared dependencies"; defines in
-// code/__defines/derived.dm).
+// code/defines/engine/derived.dm).
 //
 // should_run(), draw() (with hidden_verbs()), tgui_data() and push_to_rust() are derived from state.
 // A type lists what each reads in derived(), a per-type block built once, like capabilities():

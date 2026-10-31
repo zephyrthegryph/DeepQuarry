@@ -1,5 +1,5 @@
 // Treatment tags — mechanism-based treatment matching.
-// (Tags are defined in code/__defines/body.dm.)
+// (Tags are defined in code/defines/content/body.dm.)
 //
 // A condition never names the chems that treat it. It names the
 // MECHANISMS that help it (`treated_by`, tag -> severity drop per tick at

@@ -121,7 +121,7 @@ impl Lint for SemHandlers {
             // The sites of the structural pass, keyed by everything the partial parse reads: the
             // candidates, the defines (macros), the call names. Unchanged inputs skip the parse.
             let cand_keys: Vec<(&str, u128)> = all_files.iter().zip(&cand_flags).filter(|(_, c)| **c).map(|(f, _)| (f.rel.as_str(), f.fkey)).collect();
-            let defines: Vec<(&str, u128)> = cx.tree.select(&crate::tree::CODE_DM).iter().filter(|f| f.rel.starts_with("code/__defines/")).map(|f| (f.rel.as_str(), f.fkey)).collect();
+            let defines: Vec<(&str, u128)> = cx.tree.select(&crate::tree::CODE_DM).iter().filter(|f| crate::scopes::is_defines(&f.rel)).map(|f| (f.rel.as_str(), f.fkey)).collect();
             let key = crate::incr::ctx_key(&(&cand_keys, &defines, &try_calls));
             let found_all: Vec<(String, String, u32, String)> = crate::incr::cached("sem-handlers-structural", key, || {
                 let mut found_all: Vec<(String, String, u32, String)> = Vec::new();

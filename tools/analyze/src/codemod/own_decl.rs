@@ -135,7 +135,7 @@ pub fn rewrite(cx: &Ctx, new: &str, many: bool) -> Outcome {
         return Outcome::Residue("unknown_var", format!("{} has no declared var {}", owner, var));
     };
     // The vendored TGS API and the defines are not ours to add declarations to.
-    if sig.file.starts_with("code/__defines/") || sig.file.starts_with("code/modules/tgs/") {
+    if crate::scopes::is_defines(&sig.file) || sig.file.starts_with("code/modules/tgs/") {
         return Outcome::Residue("untyped_var", format!("{} is declared in {}, which takes no declarations", var, sig.file));
     }
     let (is_list, vtype) = split_type(&sig.declared);

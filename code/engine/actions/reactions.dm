@@ -1,4 +1,4 @@
-// reactions(): what a /datum/system reacts to (code/__defines/reactions.dm). Only a system declares one (the reactions_table_proc lint bans it on every
+// reactions(): what a /datum/system reacts to (code/defines/library/reactions.dm). Only a system declares one (the reactions_table_proc lint bans it on every
 // other type: an entity's every(), on_change() and extend() entries are its CAPABILITIES block's).
 //
 //	/datum/system/pump/reactions()

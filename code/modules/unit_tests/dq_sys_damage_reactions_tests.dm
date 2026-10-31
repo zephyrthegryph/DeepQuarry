@@ -1,4 +1,4 @@
-// Declared damage reactions (code/__defines/sys_damage_reactions.dm), doc/rewrite/systems.md section 12.
+// Declared damage reactions (code/defines/engine/sys_damage_reactions.dm), doc/rewrite/systems.md section 12.
 
 /// A machine that declares one of each reaction shape and counts what ran.
 /obj/machinery/dq_reaction_probe

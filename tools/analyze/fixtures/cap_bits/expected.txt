@@ -1,4 +1,4 @@
-bit_range	code/__defines/cap_bits.dm	7
+bit_range	code/defines/engine/cap_bits.dm	7
 bit_range	code/a.dm	4
 bit_shared	code/a.dm	3
 bit_shared	code/b.dm	1

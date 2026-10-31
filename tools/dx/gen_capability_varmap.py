@@ -13,7 +13,7 @@ What it reads
   * the global bundle procs of code/datums/capabilities/ (`machine_basics`, `wall_machine`, `maintenance_hatch`,
     `door`, `console`, ...), resolved recursively down to library constructors (`cap_panel`, `cap_bolts`, ...);
   * `cap_state = CAP_A|CAP_B` type defaults;
-  * code/__defines/cap_bits.dm for the bit names.
+  * code/defines/engine/cap_bits.dm for the bit names.
 
 How a type's carried bits are found
   * `. = ..()` inherits the nearest ancestor (by type path prefix) that declares capabilities; a body without it
@@ -37,7 +37,7 @@ import sys
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 OUT = os.path.join(ROOT, "tools", "dx", "capability_varmap.json")
-BITS_FILE = os.path.join(ROOT, "code", "__defines", "cap_bits.dm")
+BITS_FILE = os.path.join(ROOT, "code", "defines", "engine", "cap_bits.dm")
 LIB_DIR = os.path.join("code", "datums", "capabilities")
 SKIP_DIRS = ("code/modules/unit_tests/", "code/modules/benchmarks/")
 
@@ -483,7 +483,7 @@ def build(root=ROOT, scan=None):
                 continue
             with open(path, encoding="utf-8", errors="replace") as f:
                 scan_text(scan, rel, f.read())
-        with open(os.path.join(root, "code", "__defines", "cap_bits.dm"), encoding="utf-8") as f:
+        with open(os.path.join(root, "code", "defines", "engine", "cap_bits.dm"), encoding="utf-8") as f:
             scan.bits = parse_bits(f.read())
     return generate(scan), scan
 

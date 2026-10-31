@@ -166,7 +166,7 @@ fn scan_file(f: &SourceFile, fed: &HashSet<String>, named: &HashSet<String>, out
 }
 
 /// One file's contribution to the shared context: the names it feeds to a sound call, and (for
-/// `code/__defines/sfx.dm` only) the named-set ids.
+/// `code/defines/host/sfx.dm` only) the named-set ids.
 #[derive(Serialize, Deserialize, Default, PartialEq)]
 struct Facts {
     fed: Vec<String>,
@@ -192,7 +192,7 @@ fn facts_of(f: &SourceFile) -> Facts {
     let mut fed: Vec<String> = set.into_iter().collect();
     fed.sort();
     let mut named: Vec<String> = Vec::new();
-    if f.rel == "code/__defines/sfx.dm" {
+    if f.rel == "code/defines/host/sfx.dm" {
         let text = f.raw().text.as_str();
         let section = py_slice(text, char_find(text, "// Named sets"), char_find(text, "// File sets."));
         named = pat!(r#"#define SFX_\w+ "(\w+)""#).captures_iter(&section).iter().map(|c| c.s(1).to_string()).collect();
@@ -218,7 +218,7 @@ fn scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize
             let mut named: HashSet<String> = HashSet::new();
             for (f, facts) in pairs {
                 fed.extend(facts.fed.iter().cloned());
-                if f.rel == "code/__defines/sfx.dm" {
+                if f.rel == "code/defines/host/sfx.dm" {
                     named = facts.named.iter().cloned().collect();
                 }
             }

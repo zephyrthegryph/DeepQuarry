@@ -12,7 +12,7 @@ import subprocess
 import sys
 from collections import defaultdict
 
-SKIP = ("code/engine/_generated/", "code/__defines/", "code/modules/unit_tests/", "code/tests/", "tools/", "code/modules/tgs/")
+SKIP = ("code/engine/_generated/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/modules/unit_tests/", "code/tests/", "tools/", "code/modules/tgs/")
 ROW = re.compile(r"^(DECLARE_UI|DECLARE_UI_STATE|UI_[A-Z_]+)\((/[\w/]+)(.*)$")
 OVERRIDES = ("ui_act_allowed", "tgui_data", "tgui_act", "ui_status", "tgui_interact", "ui_data", "ui_interact")
 RESERVED = {"in", "as", "to", "step", "if", "else", "for", "while", "do", "set", "var", "new", "del", "null", "return", "src", "usr", "args", "list", "text", "num", "user", "A", "ui", "state", "action", "params"}

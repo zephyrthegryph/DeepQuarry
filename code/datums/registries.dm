@@ -1,5 +1,5 @@
 // Registries (roadmap L3, doc/rewrite/state.md section 7). The API and how to
-// use it is at the top of code/__defines/registries.dm.
+// use it is at the top of code/defines/engine/registries.dm.
 
 /// Every registry, as id -> /datum/registry. Built once from the declarations
 /// in code/datums/registry_declarations.dm.
@@ -53,7 +53,7 @@ GLOBAL_LIST_INIT(registries_by_type, registries_by_type_early || (registries_by_
 	var/datum/registry/registry = get_registry(id)
 	return registry.members_by_key?[key]
 
-/// A set of live instances. See code/__defines/registries.dm.
+/// A set of live instances. See code/defines/engine/registries.dm.
 /datum/registry
 	/// Unique id, one of the REGISTRY_* defines.
 	var/id

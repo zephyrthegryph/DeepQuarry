@@ -4,7 +4,7 @@
 // turfs around it: about 1300 hooks per scanner, rebuilt on every step it took. A watcher is instead one entry in a grid of 8x8-turf buckets, kept per
 // z-level: a range-10 watcher is in at most nine buckets and moving it is a handful of list writes. A turf that something enters, leaves or is created on
 // reads its own bucket and asks each watcher in it whether the turf is in range (a square: the same rule RANGE_TURFS() had). The watcher's listener
-// is called as x(turf, thing, other) (RANGE_ENTERED, RANGE_EXITED, RANGE_INITIALIZED in code/__defines/range_watch.dm).
+// is called as x(turf, thing, other) (RANGE_ENTERED, RANGE_EXITED, RANGE_INITIALIZED in code/defines/engine/range_watch.dm).
 //
 // Nothing here ends by itself: the /datum/connect_range that registers a watcher ends it when it is deleted (lifecycle_prerelease) or when what it
 // tracks is, and a world with no watchers pays one read of GLOB.range_watch_count per movement.

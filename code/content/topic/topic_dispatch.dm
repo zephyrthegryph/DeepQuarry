@@ -1,5 +1,5 @@
 // The core Topic() dispatcher: every href on a datum is an op (topic(...) / topic_in(...), code/engine/parts/inputs.dm). The sources an op's
-// among = names are in code/__defines/topic.dm.
+// among = names are in code/defines/engine/topic.dm.
 
 /// Answers an href on `target` for `user`: the op that names it (the inbox tried first for a player's link; this reaches the admin holder's own,
 /// a re-run answer and a forward), else the datum's topic_forward(). Returns TRUE when an op took it, or null when nothing did.

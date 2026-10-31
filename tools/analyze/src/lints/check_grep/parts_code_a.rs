@@ -216,7 +216,7 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "interactions_no_legacy_handlers_or_object_verbs_i7",
             "interactions: no legacy handlers or object verbs (I7)",
-            "object verbs are interactions now. Declare an INTERACT_VERB (code/__defines/interactions.dm) instead.",
+            "object verbs are interactions now. Declare an INTERACT_VERB (code/defines/engine/interactions.dm) instead.",
             Files::Code,
             line(r"^/(obj|turf)(/[A-Za-z0-9_]+)*/verb/[A-Za-z0-9_]+\("),
         )

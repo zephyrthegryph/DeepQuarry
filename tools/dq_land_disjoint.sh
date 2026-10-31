@@ -94,7 +94,7 @@ for side in m l; do
 	done <"$file"
 done
 if grep -qx 'deepquarry.dme' "$fm" && grep -qx 'deepquarry.dme' "$fl"; then
-	if { git diff -U0 "$base" origin/master -- deepquarry.dme; git diff -U0 "$base" "$tip" -- deepquarry.dme; } | grep -E '^[+-]#include' | grep -qi '__defines'; then
+	if { git diff -U0 "$base" origin/master -- deepquarry.dme; git diff -U0 "$base" "$tip" -- deepquarry.dme; } | grep -E '^[+-]#include' | grep -qiE '__defines|code.defines.(engine|library|host|base|content)'; then
 		no "both sides edited deepquarry.dme and one touched a code\\__defines include (load order)"
 	fi
 	say "both sides edited deepquarry.dme, none of it a __defines include; the merge decides if the hunks collide"

@@ -2,6 +2,11 @@
 # or whose batch or master's changes since its precheck touch one, runs its own tests in the batch (and makes every lane of the batch run
 # its own). Other prechecked lanes run their tests in the batch only when they share an area with another lane of it. Prefixes, one per line.
 code/__defines/
+code/defines/engine/
+code/defines/library/
+code/defines/host/
+code/defines/base/
+code/defines/content/
 code/__odlint.dm
 code/__pragmas.dm
 code/_helpers/

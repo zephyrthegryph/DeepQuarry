@@ -28,7 +28,7 @@ ASKS_DEFAULT = True
 LA = None
 
 TEST_DIRS = ("code/modules/unit_tests/", "code/tests/")
-SKIP = ("code/__defines/", "code/modules/unit_tests/", "code/tests/", "tools/", "code/modules/tgs/", "code/datums/interactions/")
+SKIP = ("code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/modules/unit_tests/", "code/tests/", "tools/", "code/modules/tgs/", "code/datums/interactions/")
 # The base shape of each compact spec, as the engine reads it (code/datums/interactions/compact.dm): the binding and the parts the op needs beside it.
 #   in_hand() / hand() / item(T) / menu() as before; ALT is a hand() pinned to the alt-click gesture and never behind the hand gate (the old click_alt ran
 #   no hand_gate()), DRAG an item() of the dragged thing's type pinned to the drag gesture (the dragged atom is A.held), TK a tk() binding.

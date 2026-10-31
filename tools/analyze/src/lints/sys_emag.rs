@@ -12,7 +12,7 @@ use crate::util::before_slashes;
 
 const RULES: &[RuleMeta] = &[RuleMeta {
     name: "emag_act",
-    hint: "DECLARE_EMAG(type, PROC_REF(on_emag), msg) + emag_target() (code/__defines/sys_emag.dm, doc/rewrite/systems.md section 13)",
+    hint: "DECLARE_EMAG(type, PROC_REF(on_emag), msg) + emag_target() (code/defines/engine/sys_emag.dm, doc/rewrite/systems.md section 13)",
 }];
 
 const CARD: &str = "code/game/objects/items/weapons/id cards/cards.dm";

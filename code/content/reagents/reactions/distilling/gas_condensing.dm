@@ -1,6 +1,6 @@
 // Condensing atmo gasses into reagents
 // If there is ever work done converting atmogas back and forth from reagent to gas then this should be tuned to avoid creating something from nothing!
-// The condensing constants are in code/__defines/transformations.dm: the generated declarations are read before this file.
+// The condensing constants are in code/defines/content/transformations.dm: the generated declarations are read before this file.
 
 /transformation/chem/distilling/condense_oxygen
 

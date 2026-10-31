@@ -4,7 +4,7 @@
 // instead of the all-zeros stub the migration originally left behind.
 //
 // Additional /tg/ flags_1 bits can be #defined alongside INITIALIZED_1 in
-// code/__defines/atmospherics.dm as need arises.
+// code/defines/content/atmospherics.dm as need arises.
 
 /atom
 	var/tmp/flags_1 = 0

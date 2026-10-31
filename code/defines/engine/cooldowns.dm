@@ -40,7 +40,7 @@
 #define COOLDOWN_LAPSED(cd_source, cd_index) (cd_source.cd_index <= TIME_NOW(CLOCK_WORLD))
 
 // The _OWN family counts on the owner's own clock (timer_clock(): bio for a living mob, machine for machinery), which slows with the domain's
-// rate and stops in stasis, exactly like after() timers on that datum (CLOCK_OWN, code/__defines/capabilities.dm). A var is read with the family
+// rate and stops in stasis, exactly like after() timers on that datum (CLOCK_OWN, code/defines/engine/capabilities.dm). A var is read with the family
 // it was started with.
 #define COOLDOWN_START_OWN(cd_source, cd_index, cd_time) (cd_source.cd_index = TIME_NOW(CLOCK_OWN, cd_source) + (cd_time))
 #define COOLDOWN_EXTEND_OWN(cd_source, cd_index, cd_time) (cd_source.cd_index = max(cd_source.cd_index, TIME_NOW(CLOCK_OWN, cd_source) + (cd_time)))
@@ -49,7 +49,7 @@
 #define COOLDOWN_LAPSED_OWN(cd_source, cd_index) (cd_source.cd_index <= TIME_NOW(CLOCK_OWN, cd_source))
 #define COOLDOWN_TIMELEFT_OWN(cd_source, cd_index) (max(0, cd_source.cd_index - TIME_NOW(CLOCK_OWN, cd_source)))
 
-// A time kept as a start ("how long since": a last hit, a time of death, a start) is STAMP/ELAPSED (code/__defines/time_now.dm).
+// A time kept as a start ("how long since": a last hit, a time of death, a start) is STAMP/ELAPSED (code/defines/engine/time_now.dm).
 
 // Keyed cooldowns: for keys that are data (an ability id), where a var per key would be dozens. One lazy table (key -> end time) on the
 // holder that prunes its lapsed entries each time one starts; the key is the only place a cooldown name is a value (doc/rewrite/final_api.html section 3).
