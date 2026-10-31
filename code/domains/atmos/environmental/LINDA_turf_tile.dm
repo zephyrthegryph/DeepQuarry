@@ -189,10 +189,9 @@ CAPABILITIES(/turf/open)
 	if(!SSair.initialized)
 		GLOB.early_air_reads++
 	if(!air && !blocks_air && !(flags & ATOM_INITIALIZED))
-		// Asked before this turf's own Initialize() has run (a machine placed on it by the map initialises first): the air is made now, by the same
-		// setup hook Initialize() runs, which leaves air that exists alone. Without this the read is vacuum and a gas watch has nothing to arm on.
-		GLOB.early_air_made++
-		setup_open_air()
+		// Asked before this turf's own Initialize() ran, by something that did not initialize on it (/datum/system/atoms/InitAtom() settles the air under
+		// what initializes): a vacuum answer a caller may keep. Loud, so the boot gate names the reader; the air is not made here, a read stays a read.
+		WARNING("return_air() of a turf whose air does not exist yet ([type] at [x],[y],[z]): the reader gets vacuum")
 	return air || ..()
 
 /turf/open/return_analyzable_air()
