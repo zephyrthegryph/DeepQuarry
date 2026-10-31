@@ -154,6 +154,21 @@
 		return TRUE
 	return dock_state != STATE_UNDOCKED || response_sent || resend_counter > 0
 
+/// A docking handshake in flight (or a message awaiting its resend window) keeps the controller stepping.
+/datum/embedded_program/docking/needs_processing()
+	return dock_state != STATE_UNDOCKED || response_sent || resend_counter > 0
+
+/datum/embedded_program/docking/proc/set_dock_state(value)
+	if(TRACKED_UNCHANGED(dock_state, value))
+		return FALSE
+	log_game("Docking [id_tag] ([get_docking_status()] -> state [value], mode [control_mode], target [tag_target || "none"])")
+	dock_state = value
+	tracked_changed(src, nameof(dock_state))
+	if(master)
+		work_start(master) // the handshake's waits (ready_for_docking, resend) run in the controller's step
+	return TRUE
+SETTER(/datum/embedded_program/docking, dock_state)
+
 /datum/embedded_program/docking/periodic_step()
 	switch(dock_state)
 		if (STATE_DOCKING)	//waiting for our docking port to be ready for docking
@@ -208,6 +223,9 @@
 
 	tag_target = target
 	control_mode = MODE_CLIENT
+	log_game("Docking [id_tag] requests docking with [tag_target]")
+	if(master)
+		work_start(master)
 
 	send_docking_command(tag_target, "request_dock")
 

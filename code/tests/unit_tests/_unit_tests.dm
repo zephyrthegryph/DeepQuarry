@@ -417,6 +417,7 @@
 #include "dq_profile_records.dm"
 #include "../../modules/unit_tests/dq_ui_capture.dm"
 #include "../../modules/unit_tests/dq_shuttle_tests.dm"
+#include "dq_docking_controller_work.dm"
 #include "../../modules/unit_tests/dq_roundstart_regression_tests.dm"
 #include "../../modules/unit_tests/dq_state_tests.dm"
 #include "../../modules/unit_tests/dq_sys_loot_tests.dm"

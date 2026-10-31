@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Docking port airlocks no longer stay stuck on docking: the controller keeps stepping through a docking or undocking handshake"
+  - bugfix: "Clicking a bag's storage bar with an item in hand puts the item in the bag instead of using it on the stored item; stored icons are centered on their segments"
+  - bugfix: "Closing a TGUI window hides it immediately instead of waiting for the server"

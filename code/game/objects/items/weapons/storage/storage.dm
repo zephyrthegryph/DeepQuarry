@@ -754,7 +754,8 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 		stored_continue.transform = M_continue
 		stored_end.transform = M_end
 
-		I.screen_loc = "4:[round((startpoint+endpoint)/2)+2],2:16"
+		// The icon is 32 wide and anchored at its left edge, the bars hang off bar_start (at 4:16) by startpoint..endpoint: centre it on the segment.
+		I.screen_loc = "4:[round((startpoint+endpoint)/2)],2:16"
 		I.maptext = ""
 		I.hud_layerise()
 		var/atom/movable/storage_slot/SS = add_catcher(I)
@@ -809,8 +810,15 @@ CAPABILITIES(/atom/movable/storage_slot)
 /atom/movable/storage_slot/proc/slot_click(datum/act/input/A)
 	var/obj/item/I = held_item
 	if(I)
-		input_submit(new /datum/input_event/click(A.actor, I))
+		input_submit(new /datum/input_event/click(A.actor, slot_click_target(A.actor, I)))
 	return TRUE
+
+/// What a click on this slot lands on: with another item in hand, the bag (the hand's item goes into it); with an empty hand, the stored item.
+/atom/movable/storage_slot/proc/slot_click_target(mob/actor, obj/item/stored)
+	var/obj/item/in_hand = actor?.get_active_hand()
+	if(in_hand && in_hand != stored && istype(stored.loc, /obj/item/storage))
+		return stored.loc
+	return stored
 
 // ---- Sizes ----
 

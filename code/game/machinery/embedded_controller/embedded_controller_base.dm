@@ -52,8 +52,9 @@ CAPABILITIES(/obj/machinery/embedded_controller)
 	if(program)
 		program.periodic_step()
 
-	set_processing_shown(!!program?.memory["processing"])
-	if(!program || !program.memory["processing"])
+	var/working = !!program?.needs_processing()
+	set_processing_shown(working)
+	if(!working)
 		return PROCESS_KILL
 
 /obj/machinery/embedded_controller/power_change()
