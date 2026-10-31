@@ -386,7 +386,7 @@
 	// I hate /area
 	var/atom/movable/lies_to_children = src
 	vis_add(lies_to_children, visual)
-	after(duration, GLOBAL_PROC_REF(qdel), visual, clock = CLOCK_WORLD)
+	after(null, duration, GLOBAL_PROC_REF(qdel), clock = CLOCK_WORLD, with = list(visual))
 	return visual
 
 /area/flick_overlay_view_atom(mutable_appearance/display, duration)
