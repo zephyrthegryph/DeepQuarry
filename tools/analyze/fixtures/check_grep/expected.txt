@@ -107,6 +107,7 @@ input_modifier_ladders	code/modules/fx/input_fx.dm	2
 input_modifier_ladders	code/modules/fx/input_fx.dm	3
 input_modifier_ladders	code/modules/fx/input_fx.dm	4
 input_modifier_ladders	code/modules/fx/input_fx.dm	7
+interactions_no_legacy_handlers_or_object_verbs_i7	code/modules/pda/ai.dm	1
 interactions_no_legacy_handlers_or_object_verbs_i7	code/modules/tools/verb_fx.dm	1
 interactions_no_legacy_handlers_or_object_verbs_i7	code/modules/tools/verb_fx.dm	2
 interactions_no_legacy_handlers_or_object_verbs_i7	code/modules/tools/verb_fx.dm	5
@@ -141,6 +142,9 @@ legacy_machinery_common_tool_dispatch	code/modules/fx/machinery_fx.dm	19
 legacy_machinery_common_tool_dispatch	code/modules/fx/machinery_fx.dm	22
 legacy_machinery_common_tool_dispatch	code/modules/fx/machinery_fx.dm	23
 legacy_machinery_common_tool_dispatch	code/modules/fx/machinery_fx.dm	24
+legacy_machinery_common_tool_dispatch	code/modules/power/port_gen.dm	1
+legacy_machinery_common_tool_dispatch	code/modules/power/port_gen.dm	2
+legacy_machinery_common_tool_dispatch	code/modules/power/port_gen.dm	3
 legacy_machinery_structural_damage_overrides	code/modules/fx/machinery_fx.dm	1
 legacy_machinery_structural_damage_overrides	code/modules/fx/machinery_fx.dm	2
 life_no_life_procs	code/modules/mob/life_fx.dm	1
@@ -235,6 +239,7 @@ robot_cell_writes_outside_the_power_ledger	code/modules/mob/living/silicon/robot
 separate_object_health_pools	(file)	2
 separate_object_health_pools	(file)	3
 separate_object_health_pools	(file)	4
+separate_object_health_pools	code/content/items/weapons/traps.dm	2
 separate_object_health_pools	code/game/mecha/mech.dm	2
 separate_object_health_pools	code/game/mecha/mech.dm	3
 separate_object_health_pools	code/game/mecha/mech.dm	5
@@ -243,7 +248,6 @@ separate_object_health_pools	code/game/objects/items/weapons/tanks/tank.dm	2
 separate_object_health_pools	code/game/objects/items/weapons/tanks/tank.dm	3
 separate_object_health_pools	code/game/objects/items/weapons/tanks/tank.dm	4
 separate_object_health_pools	code/game/objects/items/weapons/tanks/tank.dm	5
-separate_object_health_pools	code/content/items/weapons/traps.dm	2
 separate_object_health_pools	code/game/turfs/simulated/wall_x.dm	1
 separate_object_health_pools	code/game/turfs/simulated/wall_x.dm	2
 separate_object_health_pools	code/modules/blob/b1.dm	2
