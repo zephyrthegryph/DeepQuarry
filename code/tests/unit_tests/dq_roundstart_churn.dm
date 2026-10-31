@@ -180,3 +180,76 @@
 			if(A.vars[name] != was[name] && !guard.is_thermostat_answer(A, name))
 				moved += "[A] ([A.type]) at ([A.x],[A.y],[A.z]) [name] [was[name]] -> [A.vars[name]]"
 	TEST_ASSERT_EQUAL(length(moved), 0, "a scan changed what the guard baselined: [jointext(moved, "; ")]")
+
+/// A burst of cosmetic APC reports (charge and lamp only) writes the first few cells at once and the rest a few a tick, each cell ends with the charge its last report carried,
+/// and a report that moves more than the charge writes at once and cancels a waiting one.
+/datum/unit_test/dq_apc_charge_reports_spread
+
+/datum/unit_test/dq_apc_charge_reports_spread/Run()
+	var/obj/machinery/power/apc/apc = dq_power_test_apc()
+	TEST_ASSERT_NOTNULL(apc, "the test map has a working APC")
+	if(!apc)
+		return
+	test_driver_begin()
+	set_global(nameof(GLOB.apc_charge_budget), 2)
+	set_global(nameof(GLOB.apc_charge_tick), -1)
+	set_global(nameof(GLOB.apc_charge_taken), 0)
+	set_global(nameof(GLOB.apc_charge_deferred), GLOB.apc_charge_deferred)
+	var/max = apc.cell.maxcharge
+	var/charge_before = apc.cell.charge
+	var/deferred_before = GLOB.apc_charge_deferred
+	for(var/i in 1 to 5)
+		apc.on_apc_report(apc.equipment, apc.lighting, apc.environ, apc.charging, apc.power_alarm_raised, apc.main_status, max * i / 10)
+	TEST_ASSERT_EQUAL(GLOB.apc_charge_deferred - deferred_before, 3, "two reports wrote at once, three waited")
+	TEST_ASSERT_EQUAL(apc.cell.charge, max * 2 / 10, "the cell holds the last charge that was written at once")
+	TEST_ASSERT_EQUAL(apc.pending_report_charge, max * 5 / 10, "the waiting charge is the newest report's")
+	for(var/frame in 1 to 10)
+		native_system().drain() // a native frame applies what waited, a few a tick
+	TEST_ASSERT_EQUAL(apc.cell.charge, max * 5 / 10, "the drain wrote the newest reported charge")
+	TEST_ASSERT_NULL(apc.pending_report_charge, "nothing is left waiting")
+	TEST_ASSERT_EQUAL(length(GLOB.apc_charge_backlog), 0, "the backlog is empty")
+	// A report that moves more than the charge writes at once and cancels a waiting charge.
+	set_global(nameof(GLOB.apc_charge_tick), world.time)
+	set_global(nameof(GLOB.apc_charge_taken), 2)
+	apc.on_apc_report(apc.equipment, apc.lighting, apc.environ, apc.charging, apc.power_alarm_raised, apc.main_status, max * 6 / 10)
+	TEST_ASSERT_EQUAL(apc.pending_report_charge, max * 6 / 10, "over the budget it waits")
+	var/other_status = apc.main_status == APC_EXTERNAL_POWER_GOOD ? APC_EXTERNAL_POWER_NOENERGY : APC_EXTERNAL_POWER_GOOD
+	apc.on_apc_report(apc.equipment, apc.lighting, apc.environ, apc.charging, apc.power_alarm_raised, other_status, max * 7 / 10)
+	TEST_ASSERT_NULL(apc.pending_report_charge, "a report that moves more than the charge cancels the waiting one")
+	TEST_ASSERT_EQUAL(apc.cell.charge, max * 7 / 10, "and writes its own charge at once")
+	for(var/frame in 1 to 10)
+		native_system().drain()
+	TEST_ASSERT_EQUAL(apc.cell.charge, max * 7 / 10, "nothing older overwrites it afterwards")
+	apc.cell.set_charge(charge_before)
+	test_driver_end()
+
+/// A burst of lamp flips: the lamp and the folded log line are applied late, each APC ends with the lamp its last report carried.
+/datum/unit_test/dq_apc_lamp_reports_spread
+
+/datum/unit_test/dq_apc_lamp_reports_spread/Run()
+	var/obj/machinery/power/apc/apc = dq_power_test_apc()
+	TEST_ASSERT_NOTNULL(apc, "the test map has a working APC")
+	if(!apc)
+		return
+	test_driver_begin()
+	set_global(nameof(GLOB.apc_charge_budget), 1)
+	set_global(nameof(GLOB.apc_charge_tick), -1)
+	set_global(nameof(GLOB.apc_charge_taken), 0)
+	set_global(nameof(GLOB.apc_charge_deferred), GLOB.apc_charge_deferred)
+	var/was_charging = apc.charging
+	var/lamp_a = was_charging == 2 ? 1 : 2
+	var/lamp_b = was_charging == 0 ? 1 : 0
+	var/charge = apc.cell.maxcharge * 3 / 10
+	var/charge_before = apc.cell.charge
+	apc.on_apc_report(apc.equipment, apc.lighting, apc.environ, lamp_a, apc.power_alarm_raised, apc.main_status, charge)
+	TEST_ASSERT_EQUAL(apc.charging, lamp_a, "the first report of a tick applies at once")
+	apc.on_apc_report(apc.equipment, apc.lighting, apc.environ, lamp_b, apc.power_alarm_raised, apc.main_status, charge)
+	TEST_ASSERT_EQUAL(apc.charging, lamp_a, "the second waits")
+	TEST_ASSERT_EQUAL(apc.pending_report_charging, lamp_b, "with the lamp it carried")
+	for(var/frame in 1 to 10)
+		native_system().drain()
+	TEST_ASSERT_EQUAL(apc.charging, lamp_b, "the drain applied the lamp")
+	TEST_ASSERT_NULL(apc.pending_report_charging, "nothing is left waiting")
+	apc.set_charging(was_charging)
+	apc.cell.set_charge(charge_before)
+	test_driver_end()
