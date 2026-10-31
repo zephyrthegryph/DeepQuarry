@@ -36,9 +36,10 @@ CAPABILITIES(/obj/item/flashlight)
 	configure(atom_rules(light_system = MOVABLE_LIGHT_DIRECTIONAL))
 	configure(movable_motion(cone_y = -7))
 	configure(light_glow(range = 4, power = 0.8, color = "#FFFFFF"))
+	// Lit while it is switched on: the light is part of its look, so a worn, carried or dropped light follows `on` whatever last changed it.
+	look_glow(PROC_REF(flashlight_glow), when = nameof(on))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
-	after_init(0, then(PROC_REF(flashlight_after_init)))
 	// Battery drain runs while a powered light is on.
 	every(2 SECONDS, then(PROC_REF(flashlight_step)), when = all_of(nameof(on), nameof(power_use)))
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type))
@@ -49,8 +50,9 @@ CAPABILITIES(/obj/item/flashlight)
 	op("insert_cell", item(/obj/item/cell), label("Install cell"), when(nameof(power_use)), then(PROC_REF(interaction_item)))
 
 
-/obj/item/flashlight/proc/flashlight_after_init(datum/act/timer/A)
-	update_brightness()
+/// The light it casts while on: its type's range (a look that goes dark zeroes the instance's range), its own power and colour (a flicker changes the colour).
+/obj/item/flashlight/proc/flashlight_glow(datum/act/A)
+	return GLOW(glow_of_type(type).range, glow_of(src).power, glow_of(src).color)
 
 /obj/item/flashlight/var/on = 0
 /obj/item/flashlight/var/power_use = 1
@@ -67,15 +69,11 @@ CAPABILITIES(/obj/item/flashlight)
 			visible_message(span_warning("\The [src] flickers before going dull."))
 			play_sfx(src, SFX_EFFECTS_SPARKS3) // Small cue that your light went dull in your pocket. //
 			set_on(0)
-			update_brightness()
 
 /obj/item/flashlight/draw(datum/look/look)
 	..()
 	if(on)
 		look.state("[initial(icon_state)]-on")
-
-/obj/item/flashlight/proc/update_brightness()
-	set_light_on(on) // the setter reconciles the light source
 
 /obj/item/flashlight/examine(mob/user)
 	. = ..()
@@ -120,7 +118,6 @@ CAPABILITIES(/obj/item/flashlight)
 		return FALSE
 	set_on(!on)
 	play_sfx(src, SFX_WEAPONS_EMPTY, 0.3, extrarange = -3)
-	update_brightness()
 	user.update_mob_action_buttons()
 	return CAN_USE
 
@@ -187,7 +184,6 @@ CAPABILITIES(/obj/item/flashlight)
 		to_chat(user, span_notice("You remove the cell from the [src]."))
 		play_sfx(src, SFX_MACHINES_BUTTON)
 		set_on(0)
-		update_brightness()
 		return OP_OK
 	return OP_DECLINE
 
@@ -240,7 +236,6 @@ CAPABILITIES(/obj/item/flashlight)
 					return OP_DECLINE
 				to_chat(user, span_notice("You install a cell in \the [src]."))
 				play_sfx(src, SFX_MACHINES_BUTTON)
-				update_brightness()
 			else
 				to_chat(user, span_notice("\The [src] already has a cell."))
 		else
@@ -286,7 +281,6 @@ CAPABILITIES(/obj/item/flashlight)
 		finish_flicker(original_color, original_on, OL)
 		return
 	set_on(!on)
-	update_brightness()
 	if(!on) // Only play when the light turns off.
 		play_sfx(src, SFX_EFFECTS_LIGHT_FLICKER)
 	after(src, rand(0.5 SECONDS, 1.5 SECONDS), PROC_REF(do_flicker), with = list(amount, flicker_color, original_color, original_on, OL, ++ticker))
@@ -296,7 +290,6 @@ CAPABILITIES(/obj/item/flashlight)
 	OL.directional_atom?.color = original_color
 	set_on(original_on)
 	set_flickering(FALSE)
-	update_brightness()
 
 /obj/item/flashlight/pen
 	name = "penlight"
@@ -452,7 +445,6 @@ CAPABILITIES(/obj/item/flashlight/flare)
 	set_on(0)
 	src.set_force(combat_of_type(src.type).force)
 	src.set_injury_kind(combat_of_type(src.type).injury_kind)
-	update_brightness()
 
 /obj/item/flashlight/flare/switch_light(mob/user)
 	. = ..()
@@ -470,7 +462,6 @@ CAPABILITIES(/obj/item/flashlight/flare)
 
 /obj/item/flashlight/flare/proc/ignite() //Used for flare launchers.
 	set_on(!on)
-	update_brightness()
 	set_force(on_damage)
 	set_injury_kind(INJURY_BURN)
 	return 1
@@ -513,7 +504,6 @@ CAPABILITIES(/obj/item/flashlight/glowstick)
 
 /obj/item/flashlight/glowstick/proc/turn_off()
 	set_on(FALSE)
-	update_brightness()
 
 /obj/item/flashlight/glowstick/switch_light(mob/user)
 	. = ..()

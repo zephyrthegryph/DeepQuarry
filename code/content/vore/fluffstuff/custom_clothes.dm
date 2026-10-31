@@ -925,7 +925,7 @@ CAPABILITIES(/obj/item/clothing/head/fluff/pompom)
 /obj/item/clothing/head/fluff/pompom/proc/pompom_light_self(datum/act/op/A)
 	var/mob/user = A.actor
 
-	if(light_on)
+	if(lamp_lit)
 		to_chat(user, "You dim your pom-pom.")
 		set_icon_state("pom")
 	else
