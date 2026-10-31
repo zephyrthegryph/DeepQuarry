@@ -253,3 +253,37 @@
 	apc.set_charging(was_charging)
 	apc.cell.set_charge(charge_before)
 	test_driver_end()
+
+/// An APC's look follows its lamp: three lamp states draw three different looks and the same state draws the same one (the draw asks the APC's capability
+/// data once per fact, not once per use).
+/datum/unit_test/dq_apc_look_follows_the_lamp
+
+/datum/unit_test/dq_apc_look_follows_the_lamp/Run()
+	var/obj/machinery/power/apc/apc = dq_power_test_apc()
+	TEST_ASSERT_NOTNULL(apc, "the test map has a working APC")
+	if(!apc)
+		return
+	var/was = apc.charging
+	var/list/keys = list()
+	for(var/lamp in list(0, 1, 2, 1))
+		apc.set_charging(lamp)
+		keys += "[refresh_look(apc, FALSE)]"
+	apc.set_charging(was)
+	TEST_ASSERT(keys[1] != keys[2] && keys[2] != keys[3] && keys[1] != keys[3], "three lamp states draw three looks: [jointext(keys, " | ")]")
+	TEST_ASSERT_EQUAL(keys[2], keys[4], "the same lamp draws the same look")
+
+/// A radio packet addressed to another door leaves an airlock alone, powered or not (the addressing is tested before the power).
+/datum/unit_test/dq_airlock_ignores_a_packet_for_another_door
+
+/datum/unit_test/dq_airlock_ignores_a_packet_for_another_door/Run()
+	var/turf/T = test_floor()
+	var/obj/machinery/door/airlock/door = allocate(/obj/machinery/door/airlock, T)
+	door.set_id_tag("mine")
+	var/datum/signal/other = new
+	other.data = list("tag" = "theirs", "command" = "open")
+	door.receive_signal(other)
+	TEST_ASSERT_NULL(door.cur_command, "a packet for another tag set no command")
+	var/datum/signal/mine = new
+	mine.data = list("tag" = "mine", "command" = "update")
+	door.receive_signal(mine)
+	TEST_ASSERT(isnull(door.cur_command) || door.cur_command == "update", "a packet for this door is taken (when it has power) or refused (when it has none), never mistaken for another command: [door.cur_command]")

@@ -764,19 +764,23 @@ READS_AS(/obj/machinery/power/apc/proc/power_failing, "supplying")
 // cover; the APC adds the bluescreen under everything (a hack or failure, which the emag part does not know), the coverless
 // frame, the channel glows, the charge lamp and its light.
 /obj/machinery/power/apc/draw(datum/look/look)
-	look.part("emagged", apc_bluescreen()) // hacked, failed or emagged: the bluescreen, under the rest
+	// Each of these reads the capability data of the APC (a lookup of about 20 microseconds apiece): asked once, not once per use. A draw took 1.3 ms.
+	var/bluescreen = apc_bluescreen()
+	look.part("emagged", bluescreen) // hacked, failed or emagged: the bluescreen, under the rest
 	..()
-	look.variant("cover-removed", when = cover_removed(src))
-	look.variant("cell", when = cover_removed(src) && cell)
-	look.part("maintenance", cover_open(src) && !cover_removed(src) && out_of_order())
-	if(screen_lit() && operating)
+	var/cover_gone = cover_removed(src)
+	look.variant("cover-removed", when = cover_gone)
+	look.variant("cell", when = cover_gone && cell)
+	look.part("maintenance", cover_open(src) && !cover_gone && out_of_order())
+	var/lit = screen_lit()
+	if(lit && operating)
 		for(var/channel in POWER_CHANNEL_EQUIPMENT to POWER_CHANNEL_ENVIRON)
 			var/mode = channel_mode(channel)
 			look.part("channel-[channel]", "[mode]") // a text value: mode 0 is a state too
 			look.glow("channel-[channel]", "[mode]")
-	if(apc_bluescreen())
+	if(bluescreen)
 		look.glow(2, 0.25, "#0000FF")
-	else if(screen_lit())
+	else if(lit)
 		look.glow("charge", "[charging]")
 		var/static/list/charge_colors = list("#F86060", "#A8B0F8", "#82FF4C")
 		look.glow(2, 0.25, charge_colors[clamp(charging, 0, 2) + 1])
