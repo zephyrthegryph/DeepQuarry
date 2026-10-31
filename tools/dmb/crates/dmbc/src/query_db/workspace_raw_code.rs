@@ -90,6 +90,14 @@ impl QueryDb{
   crate::daemon::control::checkpoint()?;capture.require_scope(scope)?;
   if !scope.uses_queries(self){return Err(Failure::Operational(invalid("original code pages need the current compiler QueryDb")))}
   let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());
+  self.with_workspace_code_pages_locked(capture,scope,visit)
+ }
+ /// Registered queries enter through an endpoint already holding this SAME
+ /// raw-family gate. Reuse its one reader budget rather than relocking the
+ /// non-reentrant gate or creating a second operation-budget domain.
+ pub(in crate::query_db) fn with_workspace_code_pages_locked<R>(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,visit:impl FnOnce(&WorkspaceCodeReader<'_,'_>)->Result<R,Failure>)->Result<R,Failure>{
+  crate::daemon::control::checkpoint()?;capture.require_scope(scope)?;
+  if !scope.uses_queries(self){return Err(Failure::Operational(invalid("original code pages need the current compiler QueryDb")))}
   self.raw_prune_locked(std::time::Instant::now());
   let inventory=self.workspace_resource_inventory_locked()?;
   let fixed=capture.retained_charge()?.checked_add(inventory.coordination_charge(0)?).and_then(|n|n.checked_add(std::mem::size_of::<WorkspaceCodeReader<'_,'_>>()+PAGE_FILES*std::mem::size_of::<CurrentFile>()+4096)).ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"workspace code fixed accounting overflow")))?;

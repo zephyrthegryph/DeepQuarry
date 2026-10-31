@@ -3,6 +3,84 @@ use super::*;
 use dq_analyze::captured_reactive_reads::Failure;
 
 #[test]
+fn actual_workspace_query_scope_preserves_issued_frame_and_refuses_foreign_owners() {
+ let root=fixture("workspace-query-scope",2);
+ let db=Arc::new(crate::query_db::QueryDb::default());
+ let physical=Physical{reads:Mutex::new(BTreeMap::new())};
+ let inputs=RecordingInputs::new(&physical,4_000_000_000);
+ let front=frontend(&root,&inputs,&db);
+ let capture=workspace_capture::capture(&front,&inputs,discover(&root,&inputs),&root.join("missing.toml")).unwrap();
+ let snap=snapshot(&front,&db,&inputs,&capture);
+ let guard=snap.workspace_native_read().unwrap();
+ let policy=dm_analysis::policy_inputs::PolicyInputs::capture(&front,[]).unwrap();
+ let counts=|| (Arc::weak_count(snap.source_mapping.as_ref().unwrap()),Arc::weak_count(&db),Arc::weak_count(&capture));
+ let before=counts();
+ let denied=guard.query_receipt(&mut |_|Err(io::Error::from_raw_os_error(1450))).err().unwrap();
+ assert_eq!(denied.raw_os_error(),Some(1450));
+ assert_eq!(counts(),before,"failed admission cannot create weak backing");
+ let mut admitted=0;
+ let receipt=guard.query_receipt(&mut |bytes|{admitted+=bytes;Ok(())}).unwrap();
+ assert_eq!(admitted,super::super::workspace_native_guard::WorkspaceQueryScope::retained_charge().unwrap());
+ assert!(admitted>std::mem::size_of_val(&receipt));
+ let mut storage=Vec::new();receipt.visit_storage(|owner,address,bytes|storage.push((owner,address,bytes)));
+ assert_eq!(storage.len(),3);assert!(storage.iter().all(|(_,address,bytes)|*address!=0&&*bytes>0));
+ let reads=physical.reads();
+ let actual:io::Result<Result<usize,String>>=receipt.with_guard(&db,&capture,&policy,|loan|{assert!(loan.uses_queries(&db));capture.require_scope(loan)?;Ok(Ok(17))});
+ assert_eq!(actual.unwrap().unwrap(),17);assert_eq!(physical.reads(),reads,"receipt reborrow cannot acquire sources");
+ let mut entered=0;
+ let wrong=crate::query_db::QueryDb::default();
+ let result:io::Result<Result<(),String>>=receipt.with_guard(&wrong,&capture,&policy,|_|{entered+=1;Ok(Ok(()))});
+ assert!(result.is_err());assert_eq!(entered,0);
+ let foreign_recording=RecordingInputs::new(&physical,4_000_000_000);
+ let foreign_front=frontend(&root,&foreign_recording,&db);
+ let foreign=dm_analysis::policy_inputs::PolicyInputs::capture(&foreign_front,[]).unwrap();
+ let result:io::Result<Result<(),String>>=receipt.with_guard(&db,&capture,&foreign,|_|{entered+=1;Ok(Ok(()))});
+ assert!(result.is_err());assert_eq!(entered,0,"equal text cannot promote a foreign original mapping");
+ let other=workspace_capture::capture(&front,&inputs,discover(&root,&inputs),&root.join("other.toml")).unwrap();
+ let result:io::Result<Result<(),String>>=receipt.with_guard(&db,&other,&policy,|_|{entered+=1;Ok(Ok(()))});
+ assert!(result.is_err());assert_eq!(entered,0);
+ let actual:io::Result<Result<(),String>>=receipt.with_guard(&db,&capture,&policy,|_|Err(io::Error::from_raw_os_error(1450)));
+ assert_eq!(actual.unwrap_err().raw_os_error(),Some(1450));
+ let token=crate::daemon::control::Cancellation::default();
+ let binding=crate::daemon::control::bind_with_deadline(token.clone(),std::time::Instant::now()+std::time::Duration::from_secs(30));
+ token.cancel();
+ let cancelled:io::Result<Result<(),String>>=receipt.with_guard(&db,&capture,&policy,|_|{entered+=1;Ok(Ok(()))});
+ assert_eq!(cancelled.unwrap_err().kind(),io::ErrorKind::Interrupted);assert_eq!(entered,0);drop(binding);
+ let healthy:io::Result<Result<(),String>>=receipt.with_guard(&db,&capture,&policy,|_|Ok(Ok(())));assert!(healthy.unwrap().is_ok());
+ let semantic:io::Result<Result<(),String>>=receipt.with_guard(&db,&capture,&policy,|_|Ok(Err("source refusal".into())));
+ assert_eq!(semantic.unwrap().unwrap_err(),"source refusal");
+ let token=crate::daemon::control::Cancellation::default();
+ let binding=crate::daemon::control::bind_with_deadline(token.clone(),std::time::Instant::now()+std::time::Duration::from_secs(30));
+ let semantic:io::Result<Result<(),String>>=receipt.with_guard(&db,&capture,&policy,|_|{token.cancel();Ok(Err("late semantic refusal".into()))});
+ assert_eq!(semantic.unwrap_err().kind(),io::ErrorKind::Interrupted);drop(binding);
+ let token=crate::daemon::control::Cancellation::default();
+ let binding=crate::daemon::control::bind_with_deadline(token.clone(),std::time::Instant::now()+std::time::Duration::from_secs(30));
+ let actual:io::Result<Result<(),String>>=receipt.with_guard(&db,&capture,&policy,|_|{token.cancel();Err(io::Error::from_raw_os_error(1450))});
+ assert_eq!(actual.unwrap_err().raw_os_error(),Some(1450));drop(binding);
+}
+
+#[test]
+fn actual_workspace_query_scope_cannot_keep_expired_source_owners_alive() {
+ fn expired()->super::super::workspace_native_guard::WorkspaceQueryScope {
+  let root=fixture("workspace-query-scope-expired",1);
+  let db=Arc::new(crate::query_db::QueryDb::default());
+  let inputs=RecordingInputs::new(FileSystemInputs,4_000_000_000);
+  let front=frontend(&root,&inputs,&db);
+  let capture=workspace_capture::capture(&front,&inputs,discover(&root,&inputs),&root.join("missing.toml")).unwrap();
+  let snap=snapshot(&front,&db,&inputs,&capture);
+  snap.workspace_native_read().unwrap().query_receipt(&mut |_|Ok(())).unwrap()
+ }
+ let receipt=expired();
+ let root=fixture("workspace-query-scope-current",1);
+ let db=Arc::new(crate::query_db::QueryDb::default());
+ let inputs=RecordingInputs::new(FileSystemInputs,4_000_000_000);let front=frontend(&root,&inputs,&db);
+ let capture=workspace_capture::capture(&front,&inputs,discover(&root,&inputs),&root.join("missing.toml")).unwrap();
+ let policy=dm_analysis::policy_inputs::PolicyInputs::capture(&front,[]).unwrap();let mut entered=false;
+ let result:io::Result<Result<(),String>>=receipt.with_guard(&db,&capture,&policy,|_|{entered=true;Ok(Ok(()))});
+ assert_eq!(result.unwrap_err().kind(),io::ErrorKind::NotFound);assert!(!entered);
+}
+
+#[test]
 fn original_workspace_code_pages_cover_uncompiled_normalized_sources_without_reread_or_body_demand(){
  let root=fixture("workspace-code-original-257",257);
  std::fs::write(root.join("code/0140.dm"),b"\xef\xbb\xbf// original comment\r\nTRACKED(/datum/ghost,state)\rset_state(\"quoted\")\r\n// \xff\r\n").unwrap();

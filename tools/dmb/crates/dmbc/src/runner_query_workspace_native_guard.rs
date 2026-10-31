@@ -12,6 +12,16 @@ pub(crate) struct NativeReadGuard<'a> {
     workspace: Option<&'a Arc<crate::runner_host::workspace_capture::WorkspaceCapture>>,
     policy_revision: Option<u128>,
 }
+/// Transport for a query registered after its issuing endpoint returns.
+/// This carries only weak identities, never a SourceSnapshot, tree or text.
+/// It is not a completed workspace-read witness or an independent issuer.
+pub(crate) struct WorkspaceQueryScope {
+    mapping: Weak<SourceExportMapping>,
+    queries: Weak<crate::query_db::QueryDb>,
+    workspace: Weak<crate::runner_host::workspace_capture::WorkspaceCapture>,
+    revision: u128,
+    policy_revision: u128,
+}
 impl SourceSnapshot {
     pub(crate) fn workspace_native_read(&self) -> io::Result<NativeReadGuard<'_>> {
         if self
@@ -39,6 +49,32 @@ impl SourceSnapshot {
     }
 }
 impl NativeReadGuard<'_> {
+    pub(crate) fn query_receipt(
+        &self,
+        admit: &mut dyn FnMut(usize) -> io::Result<()>,
+    ) -> io::Result<WorkspaceQueryScope> {
+        crate::daemon::control::checkpoint()?;
+        let workspace = self.workspace.ok_or_else(|| {
+            io::Error::other("workspace query scope needs the actual registered capture")
+        })?;
+        workspace.require_scope(self)?;
+        let policy_revision = self.policy_revision.ok_or_else(|| {
+            io::Error::other("workspace query scope has no published policy revision")
+        })?;
+        // Weak references keep their allocation headers/inline object storage
+        // alive after the last strong owner. Fund that backing BEFORE downgrade.
+        admit(WorkspaceQueryScope::retained_charge().ok_or_else(|| {
+            io::Error::new(io::ErrorKind::OutOfMemory, "workspace query scope charge overflow")
+        })?)?;
+        crate::daemon::control::checkpoint()?;
+        Ok(WorkspaceQueryScope {
+            mapping: Arc::downgrade(self.mapping),
+            queries: Arc::downgrade(self.queries),
+            workspace: Arc::downgrade(workspace),
+            revision: self.revision,
+            policy_revision,
+        })
+    }
     pub(crate) fn matches_capture(
         &self,
         capture: &crate::runner_host::workspace_capture::WorkspaceCapture,
@@ -81,5 +117,66 @@ impl NativeReadGuard<'_> {
             .filter(|lease| identity.matches(lease))
             .ok_or_else(|| io::Error::other("stale or foreign native workspace acquisition"))?;
         crate::input_snapshot::recorded_source_original(lease)
+    }
+}
+
+impl WorkspaceQueryScope {
+    pub(crate) fn retained_charge() -> Option<usize> {
+        std::mem::size_of::<Self>()
+            .checked_add(std::mem::size_of::<SourceExportMapping>())?
+            .checked_add(std::mem::size_of::<crate::query_db::QueryDb>())?
+            .checked_add(std::mem::size_of::<crate::runner_host::workspace_capture::WorkspaceCapture>())?
+            .checked_add(6 * std::mem::size_of::<usize>())
+    }
+
+    pub(crate) fn visit_storage(&self, mut visit: impl FnMut(&'static str, usize, usize)) {
+        let header = 2 * std::mem::size_of::<usize>();
+        visit("workspace.query_scope.mapping", self.mapping.as_ptr() as usize,
+            std::mem::size_of::<SourceExportMapping>() + header);
+        visit("workspace.query_scope.queries", self.queries.as_ptr() as usize,
+            std::mem::size_of::<crate::query_db::QueryDb>() + header);
+        visit("workspace.query_scope.capture", self.workspace.as_ptr() as usize,
+            std::mem::size_of::<crate::runner_host::workspace_capture::WorkspaceCapture>() + header);
+    }
+
+    /// Reborrow only the SAME live owners under a caller's actual Db, capture
+    /// and compiler input frame. No strong owner or guard loan can escape.
+    pub(crate) fn with_guard<R, S>(
+        &self,
+        expected: &crate::query_db::QueryDb,
+        capture: &Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,
+        inputs: &dm_analysis::policy_inputs::PolicyInputs,
+        consume: impl for<'loan> FnOnce(&NativeReadGuard<'loan>) -> io::Result<Result<R, S>>,
+    ) -> io::Result<Result<R, S>> {
+        crate::daemon::control::checkpoint()?;
+        let missing = || io::Error::new(io::ErrorKind::NotFound, "workspace query scope owner expired");
+        let mapping = self.mapping.upgrade().ok_or_else(missing)?;
+        let queries = self.queries.upgrade().ok_or_else(missing)?;
+        let workspace = self.workspace.upgrade().ok_or_else(missing)?;
+        if !std::ptr::eq(queries.as_ref(), expected) || !Arc::ptr_eq(&workspace, capture) {
+            return Err(io::Error::other("workspace query scope belongs to another graph/capture"));
+        }
+        let guard = NativeReadGuard {
+            mapping: &mapping,
+            queries: &queries,
+            workspace: Some(&workspace),
+            revision: self.revision,
+            policy_revision: Some(self.policy_revision),
+        };
+        let require = || -> io::Result<()> {
+            crate::daemon::control::checkpoint()?;
+            capture.require_scope(&guard)?;
+            if !capture.matches_source(inputs.mapping(), inputs.revision().compiler_source) {
+                return Err(io::Error::other("workspace query scope/compiler input frame differs"));
+            }
+            Ok(())
+        };
+        require()?;
+        // Operational errors keep first-error precedence. A semantic refusal
+        // remains an inner result and MUST pass the same final current/cancel
+        // checks as a successful value.
+        let value = consume(&guard)?;
+        require()?;
+        Ok(value)
     }
 }

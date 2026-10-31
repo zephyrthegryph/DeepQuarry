@@ -1408,3 +1408,14 @@ This remains component verification: the remaining read/automatic-tracking
 generators, complete dependency fold over workspace loans, ordered checker
 reporting, full-project admission, fresh production/DC/ratchet checks and final
 client cutover are not yet claimed.
+
+The full-workspace query transport now carries only pre-admitted weak identities
+for the actual mapping, query database and workspace capture. It reconstructs a
+borrowed guard only after exact owner/revision checks against the current input
+frame. A typed operational/semantic split preserves real IO first, while both
+successful values and semantic refusals pass final cancellation/current checks.
+Five focused tests pass for admission-before-downgrade, foreign and expired
+owners, no rereads, cancellation/error precedence and the affected workspace
+page paths. The registered-query helper reuses the caller's existing raw-family
+gate and creates only one reader budget; this transport alone cannot certify a
+completed raw-workspace dependency fold.
