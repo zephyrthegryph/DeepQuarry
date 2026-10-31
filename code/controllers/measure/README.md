@@ -40,3 +40,11 @@ overrun tick builds a string.
 A behaviour joins a folder's system by adding its type to that folder's row in `km_system_rows()`, or by setting
 `system_key`. A new folder gets a new row. `dq_km_every_behaviour_has_a_system` fails on a row naming a type no
 behaviour has.
+
+## Attribution inside om_core and om_appearance
+
+`attribution.dm` keeps one bounded table of rows (owner type, proc / declared entry / redraw reason) for timer callbacks,
+change reactions and redraws, noted around the existing dispatch points with two `TICK_USAGE` reads and no allocation or
+string building once a key exists. An overrun's TICK line ends with the top three rows behind `om_core` and
+`om_appearance`; `PERF_PROFILE` carries `attribution` (top 20 callbacks, top 20 redrawn types, the post-init settle table);
+`SETTLE:` summaries are logged about 2 and 10 minutes after "Initializations complete".

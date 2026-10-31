@@ -390,6 +390,7 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 /proc/refresh_drain(datum/time_scheduler/sched)
 	rx_drain() // change reactions (on_change / on_cross / observe) run before the outputs
 	var/list/Q = GLOB.refresh_queue
+	var/datum/km_attr/attr = (sched?.meter || km_meter()).attr
 	// review 2 M4: each entity refreshes at most once per drain; one re-queued by its own refresh (or
 	// by a chain that comes back to it) waits for the next frame instead of spinning here. The pass stamp (refresh_pass) replaces a per-drain
 	// list of the entities already run: a nested drain takes its own pass number, as it had its own list.
@@ -428,6 +429,7 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 		var/bits = D.refresh_bits
 		D.refresh_bits = 0
 		GLOB.refresh_bench_drained++
+		var/attr_start = TICK_USAGE
 		try
 			refresh_one(D, bits, pending)
 			if(fresh)
@@ -437,6 +439,7 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 				sched.report_caught(e, "refresh of [D.type]: [e] ([e.file]:[e.line])")
 			else
 				stack_trace("refresh of [D.type]: [e] ([e.file]:[e.line])")
+		attr.note(KA_KIND_DRAW, KM_SYS_OM_APPEARANCE, D.type, km_attr_reason(pending | fresh), TICK_USAGE_TO_MS(attr_start))
 		if(sched?.out_of_budget() && i < length(Q))
 			Q.Cut(1, i + 1)
 			if(deferred)

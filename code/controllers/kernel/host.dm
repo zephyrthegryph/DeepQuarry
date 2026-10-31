@@ -300,6 +300,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	var/msg = "Initializations complete within [time] second[time == 1 ? "" : "s"]!"
 	to_chat(world, span_boldannounce("[msg]"), MESSAGE_TYPE_DEBUG)
 	log_world(msg)
+	km_meter().attr.init_complete()
 
 	// Opt-in only: under DreamDaemon -safe, shelleo() raises a modal "Safe Mode" permission dialog that
 	// blocks the VM thread until someone answers it (invisible with -invisible = silent hang after init).

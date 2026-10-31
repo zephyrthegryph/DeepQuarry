@@ -64,6 +64,10 @@
 	if(!op_whens_hold(holder, C.whens))
 		return
 	var/datum/entry/E = C.item
+	GLOB.km_attr_a = holder.type // attribution: the declared after_init(), not the timer that carried it
+	GLOB.km_attr_entry = E
+	// A fire made at once (delay 0, the close of the map load) is not inside a timer: it charges itself, as the settle record needs it.
+	var/attr_start = GLOB.km_attr_depth ? null : TICK_USAGE
 	var/datum/act/timer/T = every_context(holder, null, holder, 0)
 	T.mapload = !!mapload
 	if(!isnull(C.owner))
@@ -75,3 +79,7 @@
 		stack_trace("after_init() on [holder.type]: [fault] ([fault.file]:[fault.line])")
 	GLOB.act_depth = depth
 	T.release()
+	if(!isnull(attr_start))
+		km_meter().attr.note(KA_KIND_CALLBACK, KM_SYS_OM_CORE, holder.type, E, TICK_USAGE_TO_MS(attr_start))
+		GLOB.km_attr_a = null
+		GLOB.km_attr_entry = null

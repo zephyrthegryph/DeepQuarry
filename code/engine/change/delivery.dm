@@ -140,6 +140,7 @@ GLOBAL_VAR_INIT(rx_draining, FALSE)
 	if(GLOB.rx_draining || !(length(GLOB.rx_pending) || length(GLOB.rx_cross_jobs)))
 		return
 	GLOB.rx_draining = TRUE
+	var/datum/km_attr/attr = km_meter().attr
 	while(length(GLOB.rx_cross_jobs))
 		var/list/job = GLOB.rx_cross_jobs[1]
 		GLOB.rx_cross_jobs.Cut(1, 2)
@@ -177,11 +178,15 @@ GLOBAL_VAR_INIT(rx_draining, FALSE)
 						// at_most: inside its window the keys are held for one delivery when it ends.
 						if(R.at_most && !rx_at_most_admit(E, R, keys))
 							continue
+						var/attr_start = TICK_USAGE
 						rx_call_reaction(E, R, keys)
+						attr.note(KA_KIND_REACTION, KM_SYS_OM_APPEARANCE, E.type, R.handler, TICK_USAGE_TO_MS(attr_start))
 					else
 						var/datum/rx_listener/L = target
 						if(L.source && L.listener && !QDELETED(L.listener))
+							var/attr_start = TICK_USAGE
 							rx_call(L.listener, L.handler, E, keys)
+							attr.note(KA_KIND_REACTION, KM_SYS_OM_APPEARANCE, L.listener.type, L.handler, TICK_USAGE_TO_MS(attr_start))
 				catch(var/exception/e)
 					stack_trace("rx_drain: [E.type]: [e] ([e.file]:[e.line])")
 	GLOB.rx_draining = FALSE

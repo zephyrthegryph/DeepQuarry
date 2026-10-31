@@ -144,6 +144,8 @@ CAPABILITIES(/datum/input_stats)
 	/// Active stats sets; sets[1] is the live one.
 	var/list/datum/km_stats_set/sets
 	var/datum/km_stats_set/live
+	/// What is inside om_core and om_appearance: per callback, reaction and redrawn type, and the post-init settle record (attribution.dm).
+	var/datum/km_attr/attr
 
 	// The flight recorder: flat fixed lists of ring_len entries (top systems: KM_TOP_N per entry).
 	var/ring_len = KM_RING_LEN
@@ -181,6 +183,7 @@ CAPABILITIES(/datum/input_stats)
 	var/last_overrun_usage = 0
 
 CAPABILITIES(/datum/tick_meter)
+	owns_one(nameof(attr), /datum/km_attr)
 	ref_one(nameof(live))
 	ref_many(nameof(sets), /datum/km_stats_set)
 
@@ -202,6 +205,7 @@ CAPABILITIES(/datum/tick_meter)
 	fr_top_ms = new /list(ring_len * KM_TOP_N)
 	rel_set(src, nameof(live), new /datum/km_stats_set)
 	rel_add(src, nameof(sets), live)
+	rel_set(src, nameof(attr), new /datum/km_attr)
 
 /datum/tick_meter/on_destroy(force)
 	for(var/datum/km_stats_set/S as anything in sets)
@@ -383,7 +387,9 @@ CAPABILITIES(/datum/tick_meter)
 	map_peak = max(maptick, map_peak * KM_MAP_PEAK_DECAY)
 
 	if(overrun)
-		attribute_overrun(usage, maptick, top1, ms1, top2, ms2, top3, ms3)
+		attribute_overrun(usage, maptick, top1, ms1, top2, ms2, top3, ms3, attr.end_tick(TRUE))
+	else
+		attr.end_tick(FALSE)
 
 	for(var/i in 1 to n_touched)
 		var/idx = touched[i]
@@ -395,7 +401,7 @@ CAPABILITIES(/datum/tick_meter)
 
 /// An overrun tick: builds the record of what caused it (allocating is fine here, it is the exception) and, when
 /// enabled and not flooding, writes the admin-log line.
-/datum/tick_meter/proc/attribute_overrun(usage, maptick, top1, ms1, top2, ms2, top3, ms3)
+/datum/tick_meter/proc/attribute_overrun(usage, maptick, top1, ms1, top2, ms2, top3, ms3, attr_text)
 	var/datum/km_systems/registry = km_systems()
 	var/list/top = list()
 	var/list/parts = list()
@@ -411,6 +417,8 @@ CAPABILITIES(/datum/tick_meter)
 	var/queue = km_verb_queue_length()
 	var/line = "TICK [round(usage)]% (#[fr_tick[ring_pos]]): [length(parts) ? jointext(parts, ", ") : "no system charged"]"
 	line += " | BYOND maptick [round(TICK_DELTA_TO_MS(maptick), 0.1)]ms | input [round(input_ms, 0.1)]ms, queue [queue] | streak [streak]"
+	if(attr_text)
+		line += attr_text // the top callbacks / redrawn types behind om_core and om_appearance
 	last_overrun_line = line
 	last_overrun_top = top
 	last_overrun_usage = usage

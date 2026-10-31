@@ -2169,6 +2169,7 @@
 #include "code\controllers\kernel\watchdog.dm"
 #include "code\controllers\kernel\work_engine.dm"
 #include "code\controllers\kernel\work_item.dm"
+#include "code\controllers\measure\attribution.dm"
 #include "code\controllers\measure\histogram.dm"
 #include "code\controllers\measure\meter.dm"
 #include "code\controllers\measure\report.dm"

@@ -112,6 +112,8 @@ GLOBAL_VAR_INIT(every_gate_faulted, FALSE)
 	var/datum/holder = A.holder
 	if(!holder || QDELETED(holder))
 		return
+	GLOB.km_attr_a = holder.type // attribution: the declared every(), not the dispatcher
+	GLOB.km_attr_entry = E
 	if(!dispatched && every_dispatch_needed(E))
 		every_dispatch_queue(E, GLOBAL_PROC_REF(activation_every_fire), list(A, E, TRUE))
 		GLOB.timer_fire_quiet = TRUE // only queued: the run redraws through what it writes
@@ -358,6 +360,8 @@ GLOBAL_COUNTER(every_activation_parks)
 	if(!holder || QDELETED(holder) || !C)
 		return
 	var/datum/entry/E = C.item
+	GLOB.km_attr_a = holder.type // attribution: the declared every(), not the dispatcher
+	GLOB.km_attr_entry = E
 	if(!dispatched && every_dispatch_needed(E))
 		every_dispatch_queue(E, GLOBAL_PROC_REF(type_every_fire), list(holder, C, index, TRUE))
 		GLOB.timer_fire_quiet = TRUE // only queued: the run redraws through what it writes

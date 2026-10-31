@@ -468,10 +468,21 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 			captured = captured ? list(E) + captured : list(E)
 		CHURN_COUNT(timers, "[E.type] [timer_census_name(proc_ref, captured)]")
 		GLOB.timer_fire_quiet = FALSE
+		// Attribution (controllers/measure/attribution.dm): a dispatcher inside the call may name the real handler (km_attr_a / km_attr_b).
+		var/attr_start = TICK_USAGE
+		GLOB.km_attr_a = null
+		GLOB.km_attr_b = null
+		GLOB.km_attr_entry = null
+		GLOB.km_attr_depth++
 		try
 			deferred_guarded_call(E, proc_ref, captured, is_global)
 		catch(var/exception/e)
 			dq_report_caught(e, "om timer [proc_ref] on [E]")
+		GLOB.km_attr_depth--
+		rec.sched.meter.attr.note(KA_KIND_CALLBACK, KM_SYS_OM_CORE, GLOB.km_attr_a || E.type, GLOB.km_attr_entry || GLOB.km_attr_b || proc_ref, TICK_USAGE_TO_MS(attr_start))
+		GLOB.km_attr_a = null
+		GLOB.km_attr_b = null
+		GLOB.km_attr_entry = null
 		// A timer is a dispatched call: its owner may have state_changed (dx_conventions.md §1). Its derived procs
 		// re-run; no channel is raised (refresh_dispatched()). A fire that ran nothing of the owner's (an every() whose gate
 		// skipped the run, or that only queued it: timer_fire_quiet) changed nothing to redraw: a polling every() on an idle or
