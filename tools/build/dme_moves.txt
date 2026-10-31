@@ -2184,10 +2184,6 @@ code/modules/stockmarket/stocks.dm	code/content/stockmarket/stocks.dm
 code/modules/surgery/surgery.dm	code/content/surgery/surgery.dm
 code/modules/telesci/telesci_computer.dm	code/content/telesci/telesci_computer.dm
 code/modules/tgchat/chat_verbs.dm	code/content/tgchat/chat_verbs.dm
-code/modules/tgui/modal.dm	code/content/tgui/modal.dm
-code/modules/tgui/states/admin.dm	code/content/tgui/states/admin.dm
-code/modules/tgui/states/not_incapacitated.dm	code/content/tgui/states/not_incapacitated.dm
-code/modules/tgui/tgui_window.dm	code/content/tgui/tgui_window.dm
 code/modules/tgui_input/bitfield.dm	code/content/tgui_input/bitfield.dm
 code/modules/tgui_input/checkboxes.dm	code/content/tgui_input/checkboxes.dm
 code/modules/tgui_input/keycombo.dm	code/content/tgui_input/keycombo.dm
