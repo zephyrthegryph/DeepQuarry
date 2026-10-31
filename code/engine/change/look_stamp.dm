@@ -80,3 +80,38 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 	Q += kept
 	GLOB.type_look_stamp_skipped += skipped
 	log_world("refresh settle: [before] queued at boot, [length(sampled)] type(s) sampled, [skipped] fresh atom(s) dropped (empty default look), [length(Q)] left, [(REALTIMEOFDAY - start) * 100] ms")
+
+/// The queued refreshes within a screen of a client, run now and ahead of the rest of the backlog: a player who joins while the map's first draws
+/// are still draining sees what is around them drawn at once. `turfs` defaults to every client's turf. Returns how many it ran. The entry the
+/// atom leaves in the queue is a stale duplicate the drain skips.
+/proc/refresh_drain_near(list/turfs = refresh_client_turfs())
+	. = 0
+	if(!length(GLOB.refresh_queue) || !length(turfs))
+		return
+	for(var/turf/where as anything in turfs)
+		for(var/atom/A as anything in range(world.view + 2, where))
+			var/pending = A.refresh_queued
+			if(!pending || QDELETED(A))
+				continue
+			var/fresh = pending & DEP_CREATED
+			pending &= ~DEP_CREATED
+			var/bits = A.refresh_bits
+			A.refresh_queued = 0
+			A.refresh_bits = 0
+			if(fresh && type_look_stamped(A))
+				GLOB.type_look_stamp_skipped++
+				continue
+			if(!refresh_wanted_queued(A))
+				continue
+			try
+				refresh_one(A, bits, pending)
+				if(fresh)
+					type_look_stamp_record(A)
+			catch(var/exception/e)
+				stack_trace("near refresh of [A.type]: [e] ([e.file]:[e.line])")
+			.++
+	if(.)
+		GLOB.refresh_near_drawn += .
+
+/// Queued first draws that ran ahead of the backlog because a client was near (logged with the periodic look stats).
+GLOBAL_VAR_INIT(refresh_near_drawn, 0)
