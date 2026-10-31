@@ -593,17 +593,23 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	set_equipment(new_equipment)
 	set_lighting(new_lighting)
 	set_environ(new_environ)
+	var/charging_start = TICK_USAGE
 	set_charging(new_charging)
+	var/charging_ms = TICK_USAGE_TO_MS(charging_start)
+	var/status_start = TICK_USAGE
 	set_main_status(new_status)
+	var/status_ms = TICK_USAGE_TO_MS(status_start)
 	apc_report_cost_note(shown_changed, cell_ms, TICK_USAGE_TO_MS(setters_start))
 	power_event_count++ // reports heard (tests: a settled APC hears nothing)
 	alarm = !!alarm
+	var/alarm_start = TICK_USAGE
 	if(alarm != power_alarm_raised)
 		power_alarm_raised = alarm
 		if(alarm)
 			GLOB.power_alarm.triggerAlarm(loc, src, hidden = alarms_hidden)
 		else
 			GLOB.power_alarm.clearAlarm(loc, src)
+	var/alarm_ms = TICK_USAGE_TO_MS(alarm_start)
 	if(shown_changed)
 		// A channel, status or alarm change is always logged. The charging lamp flips back and forth on a settled station (about 18 reports a second over
 		// 310 APCs), so a charging-only report is logged once per APC_REPORT_LOG_INTERVAL and the line says how many it stands for.
@@ -613,8 +619,13 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 			COOLDOWN_START(src, report_log_cooldown, APC_REPORT_LOG_INTERVAL)
 		else
 			report_log_skipped++
+	var/apply_start = TICK_USAGE
 	if(channels_changed)
 		apply_area_power()
+	var/apply_ms = TICK_USAGE_TO_MS(apply_start)
+	var/report_ms = TICK_USAGE_TO_MS(cost_start)
+	if(report_ms >= 50)
+		log_world("APC_REPORT_SLOW: [src] ([area]) took [round(report_ms, 0.1)] ms: charge write [round(cell_ms, 0.1)], charging setter [round(charging_ms, 0.1)], status setter [round(status_ms, 0.1)], alarm [round(alarm_ms, 0.1)], channel apply [round(apply_ms, 0.1)] (channels changed [channels_changed], structural [structural_changed], alarm raised [power_alarm_raised]) at charge [charge]")
 
 /// The exact charge Rust holds now, into the seated cell (the report carries it only at whole-percent crossings): for a reader that needs it
 /// exact, such as a cell about to leave the APC.
@@ -804,6 +815,9 @@ READS_AS(/obj/machinery/power/apc/proc/power_failing, "supplying")
 
 /// Pushes the channel state to the area; fires area.power_change() (the machinery power signals) only when a channel changed. The push to
 /// Rust is push_to_rust()'s (generated: it follows the state it reads).
+/// How long the last channel write took (ms), for apc_flip_note().
+/obj/machinery/power/apc/var/tmp/flip_channels_ms = 0
+
 /obj/machinery/power/apc/proc/apply_area_power()
 	if(!area)
 		return
@@ -814,8 +828,11 @@ READS_AS(/obj/machinery/power/apc/proc/power_failing, "supplying")
 		new_power_light = (lighting >= POWERCHAN_ON)
 		new_power_equip = (equipment >= POWERCHAN_ON)
 		new_power_environ = (environ >= POWERCHAN_ON)
+	var/flip_start = TICK_USAGE
 	if(!area.set_channels(new_power_equip, new_power_light, new_power_environ))
 		return
+	var/channels_ms = TICK_USAGE_TO_MS(flip_start)
+	apc_flip_note(src, channels_ms, flip_start)
 	contract_power_revision++
 	var/powered_channels = new_power_light + new_power_equip + new_power_environ
 	if(SScontracts)
@@ -832,6 +849,7 @@ READS_AS(/obj/machinery/power/apc/proc/power_failing, "supplying")
 			),
 			"detail" = "[area] electrical service reports [powered_channels]/3 powered channels.",
 		), "power-service:[ref_token(src)]:[contract_power_revision]", src)
+	apc_flip_note(src, channels_ms, flip_start, TRUE)
 
 /obj/machinery/power/apc/surplus()
 	if(terminal)
@@ -1029,3 +1047,14 @@ GLOBAL_VAR_INIT(apc_report_setter_ms, 0)
 	if(GLOB.apc_report_count % 1000)
 		return
 	log_world("APC_REPORT_COST: [GLOB.apc_report_count] reports heard, [GLOB.apc_report_shown] changed what the APC shows; cell charge write [round(GLOB.apc_report_cell_ms, 0.1)] ms, setters [round(GLOB.apc_report_setter_ms, 0.1)] ms in total")
+
+/// An APC channel flip's cost, by step, for the flips of 25 ms or more (APC_FLIP lines): the channel write (what the area's machines hear synchronously) and the
+/// contract report that follows it, with how many machines the area holds.
+/proc/apc_flip_note(obj/machinery/power/apc/A, channels_ms, started, finished = FALSE)
+	if(!finished)
+		A.flip_channels_ms = channels_ms
+		return
+	var/total_ms = TICK_USAGE_TO_MS(started)
+	if(total_ms < 25)
+		return
+	log_world("APC_FLIP: [A] ([A.area]) took [round(total_ms, 0.1)] ms: channel write [round(A.flip_channels_ms, 0.1)] ms, contract report [round(total_ms - A.flip_channels_ms, 0.1)] ms; the area holds [length(A.area?.power_machines)] machine(s)")

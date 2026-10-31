@@ -18,6 +18,8 @@
 	/// Region wrapper retained by the Rust topology owner. Legacy component code
 	/// may request deletion, but only the Rust commit may actually retire it.
 	var/rust_authoritative = FALSE
+	/// The port handles of the Rust region this wrapper stands for, as the last commit gave them: what rust_update_pipe_region() compares the next commit with.
+	var/list/rust_ports
 
 CAPABILITIES(/datum/pipe_network)
 	links(/datum/pipe_network::normal_members, /obj/machinery/atmospherics::network_memberships, a_many = TRUE, b_many = TRUE)

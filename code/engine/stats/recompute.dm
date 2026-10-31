@@ -662,12 +662,33 @@ GLOBAL_LIST_EMPTY(stat_hop_applicable)
 		GLOB.stat_hop_applicable[index_key] = by_type
 	return by_type
 
+/// The fast hops of relation `rel_var` that a reader of `reader_type` is reached through: the hops registered for the type or any supertype of it. The entries
+/// are indexed by their reader type once per list (under "entry_index"), and a reader type walks its own ancestry (parent_type) instead of testing every
+/// entry with ispath(): a channel flip of an area met each of its ~27 reader types for the first time at 0.36 ms apiece, three keys over, and the first
+/// flip after boot took 70 ms for it.
 /proc/stat_hops_of_type(list/by_type, reader_type, list/entries, rel_var)
+	var/list/index = by_type["entry_index"]
+	if(!index)
+		index = list()
+		for(var/list/entry as anything in entries)
+			var/datum/stat_hop/hop = entry[2]
+			if(hop.fast && hop.rel_var == rel_var)
+				var/list/at = index[entry[1]]
+				if(!at)
+					at = list()
+					index[entry[1]] = at
+				at += hop
+		by_type["entry_index"] = index
 	var/list/hops = list()
-	for(var/list/entry as anything in entries)
-		var/datum/stat_hop/hop = entry[2]
-		if(hop.fast && hop.rel_var == rel_var && ispath(reader_type, entry[1]))
-			hops += hop
+	var/ancestor = reader_type
+	while(ancestor)
+		var/list/at = index[ancestor]
+		if(at)
+			hops += at
+		if(ancestor == /datum)
+			break
+		var/datum/ancestor_instance = ancestor
+		ancestor = initial(ancestor_instance.parent_type)
 	by_type[reader_type] = hops
 	return hops
 
