@@ -174,70 +174,31 @@ MSG_BALLOON(tourniquet/limb_taken, "that limb already has a tourniquet!")
 		add_attack_logs(user, owner, "Removed a tourniquet from [name] after [minutes] minutes")
 	return T
 
-/// Loosen a tourniquet on someone within reach.
-/mob/living/carbon/human/verb/loosen_tourniquet()
-	set name = "Loosen Tourniquet"
-	set category = VERB_CAT_IC
-	set src in view(1)
-
-	var/mob/living/user = usr
-	if(!istype(user) || user.incapacitated() || !user.Adjacent(src))
-		return
-	var/list/cinched = list()
-	for(var/obj/item/organ/external/E as anything in organs)
-		if(E.tourniquet)
-			cinched[E.name] = E
-	if(!length(cinched))
-		to_chat(user, span_warning("[src == user ? "You have" : "[src] has"] no tourniquet on."))
-		return
-	open_request(src, /datum/prompt/choice/loosen_tourniquet, PROC_REF(loosen_tourniquet_chosen), answerer = user, choices = cinched)
-
-/datum/prompt/choice/loosen_tourniquet
-	question = "Loosen which tourniquet?"
-	title = "Tourniquet"
-	timeout = 0
-	recheck_on_open = TRUE
-
-/datum/prompt/choice/loosen_tourniquet/recheck_extra()
-	. = ..()
-	if(.)
-		return
-	var/mob/living/user = answerer
-	var/mob/living/carbon/human/patient = owner
-	if(!istype(user) || user.incapacitated() || !user.Adjacent(patient))
-		return "cannot reach the tourniquet"
-	if(!isnull(value))
-		var/list/cinched = list()
-		for(var/obj/item/organ/external/limb as anything in patient.organs)
-			if(limb.tourniquet)
-				cinched[limb.name] = limb
-		if(length(cinched) > 1 && !(value in cinched))
-			return "the selected tourniquet is no longer there"
-	return null
-
-/mob/living/carbon/human/proc/loosen_tourniquet_chosen(datum/act/request/A)
-	if(!A.answer)
-		if(!isnull(A.request.value) && !QDELETED(A.request.answerer))
-			SStgui.update_uis(src)
-		return
-	apply_tourniquet_choice(A)
-	SStgui.update_uis(src)
-
-/mob/living/carbon/human/proc/apply_tourniquet_choice(datum/act/request/A)
-	var/mob/living/user = A.request.answerer
+/// The tourniquets on this person, limb name -> limb.
+/mob/living/carbon/human/proc/cinched_limbs() as /list
 	var/list/cinched = list()
 	for(var/obj/item/organ/external/limb as anything in organs)
 		if(limb.tourniquet)
 			cinched[limb.name] = limb
-	if(!length(cinched))
-		to_chat(user, span_warning("[src == user ? "You have" : "[src] has"] no tourniquet on."))
+	return cinched
+
+/// The Loosen Tourniquet menu op is offered while somebody has a tourniquet on; the refusal says so.
+/mob/living/carbon/human/proc/loosen_tourniquet_pick_ready(datum/act/op/A)
+	for(var/obj/item/organ/external/limb as anything in organs)
+		if(limb.tourniquet)
+			return null
+	return span_warning("[src == A.actor ? "You have" : "[src] has"] no tourniquet on.")
+
+/mob/living/carbon/human/proc/loosen_tourniquet_choices(datum/act/op/A)
+	return cinched_limbs()
+
+/// The picked tourniquet is loosened by the timed op below, which keeps the actor next to the wearer.
+/mob/living/carbon/human/proc/loosen_tourniquet_picked(datum/act/op/A)
+	var/list/cinched = cinched_limbs()
+	var/obj/item/organ/external/E = cinched[A.step_value("limb")]
+	if(!E)
 		return
-	var/_answer_k142 = A.request.value
-	var/choice = length(cinched) == 1 ? cinched[1] : _answer_k142
-	if(!choice)
-		return
-	var/obj/item/organ/external/E = cinched[choice]
-	perform_op(user, src, "loosen_tourniquet", null, ORIGIN_SYSTEM, with = list("limb" = E))
+	perform_op(A.actor, src, "loosen_tourniquet", null, ORIGIN_SYSTEM, with = list("limb" = E))
 
 /// The line said when the loosening starts.
 /mob/living/carbon/human/proc/loosen_tourniquet_begins(datum/act/op/A)
