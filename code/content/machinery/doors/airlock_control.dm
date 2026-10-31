@@ -184,6 +184,7 @@ CAPABILITIES(/obj/machinery/airlock_sensor)
 	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	configure(uses_power(channel = ENVIRON))
 	gas_watch(mask = GAS_DEPENDENCY_PRESSURE, changed = PROC_REF(pressure_heard))
+	after_init(0, then(PROC_REF(first_reading)))
 	multitool_settings(list(
 		list("Master Tag", "master_tag", "text", 30),
 		list("ID Tag", "id_tag", "text", 30),
@@ -229,9 +230,13 @@ CAPABILITIES(/obj/machinery/airlock_sensor)
 	unregister_gas_dependencies()
 	sample_pressure()
 
-/// A sensor on the map reads once when the world is up and then waits.
-/obj/machinery/airlock_sensor/on_materialize()
-	. = ..()
+/// A sensor reads once when the air exists and then waits. A mapped sensor's init is over before SSair registers the turfs' air in the arena (SSair runs after
+/// the map load): read then, its turf reads 0 and no watch can arm on a mixture with no arena id, so it would report vacuum for the whole round. It tries
+/// again each second until the air is up (only during boot; a sensor built later reads at once).
+/obj/machinery/airlock_sensor/proc/first_reading(datum/act/timer/A)
+	if(!SSair.initialized)
+		after(src, 1 SECONDS, PROC_REF(first_reading))
+		return
 	sample_pressure()
 
 /// Reads the pressure here: a reading that differs from the last (to a tenth of a kilopascal) is sent to the controller, and below 80% of an
