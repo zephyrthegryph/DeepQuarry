@@ -158,3 +158,41 @@
 	var/band = C.gauge_band
 	test_driver_end()
 	TEST_ASSERT_EQUAL(band, 1, "the test clock did not deliver the canister's gas watch")
+
+/// A turf's air read, and watched, before SSair registers the turfs (the point a mapped sensor's init reads at) is the turf's real air, and the watch
+/// is still the turf's after they register: ordering stops mattering. The turf is put back in the state map load leaves it in (its air a main-owned
+/// mixture, not yet in the field), then registered the way SSair.setup_allturfs() registers it.
+/datum/unit_test/dq_early_air_reads_and_watches_survive_registration
+
+/datum/unit_test/dq_early_air_reads_and_watches_survive_registration/Run()
+	var/turf/open/T
+	for(var/turf/simulated/floor/candidate in world)
+		if(!candidate.blocks_air && !candidate.immutable_atmos && !candidate.planetary_atmos && candidate.air && candidate.z <= 3)
+			T = candidate
+			break
+	TEST_ASSERT_NOTNULL(T, "no mapped open floor with its own air")
+	dq_atmos_test_snapshot_air(T)
+	var/was_initialized = SSair.initialized
+	T.update_air_ref(-1)
+	rel_set(T, nameof(T.air), T.create_gas_mixture())
+	TEST_ASSERT(T.air.arena_id() < GAS_HANDLE_PIPE_BASE, "the turf's air is a main-owned mixture before it registers ([T.air.arena_id()])")
+	SSair.initialized = FALSE
+	var/reads_before = GLOB.early_air_reads
+	var/datum/gas_mixture/early_air = T.return_air()
+	var/early_pressure = early_air.return_pressure()
+	var/early_arena_id = early_air.arena_id()
+	SSair.initialized = was_initialized
+	TEST_ASSERT_EQUAL(GLOB.early_air_reads, reads_before + 1, "an early read is counted")
+	TEST_ASSERT(early_pressure > 50, "an early read of a mapped floor's air reads its real pressure, not vacuum ([early_pressure])")
+	dq_gas_watch_test_deliver()
+	var/datum/gas_watch_test_ear/ear = allocate(/datum/gas_watch_test_ear)
+	var/datum/native_watch/gas/W = gas_dependency_watch(ear, early_arena_id, GAS_DEPENDENCY_PRESSURE, TYPE_PROC_REF(/datum/gas_watch_test_ear, heard))
+	T.update_air_ref(0, T.air_block_mask())
+	TEST_ASSERT(T.air.arena_id() >= GAS_HANDLE_TURF_BASE, "registration moved the turf's air into its field cell ([T.air.arena_id()])")
+	TEST_ASSERT_EQUAL(round(T.return_air().return_pressure(), 0.1), round(early_pressure, 0.1), "the reading is the same either side of registration")
+	dq_gas_watch_test_deliver()
+	ear.masks.Cut()
+	T.air.adjust_gas(/datum/gas/oxygen, 50)
+	dq_gas_watch_test_deliver()
+	TEST_ASSERT(length(ear.masks), "a watch armed before the turf registered heard nothing after it did")
+	qdel(W)

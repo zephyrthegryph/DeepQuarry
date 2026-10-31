@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Gas watches armed on a turf's air before the atmos system starts (mapped air and gas sensors, air alarms, meters) now follow that air when it registers, so they no longer report map-load air for the round"
+  - code_imp: "Early turf air reads and watches are counted and logged at boot (AIR_EARLY_READS)"
