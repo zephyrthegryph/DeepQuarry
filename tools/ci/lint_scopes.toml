@@ -344,8 +344,8 @@ factors_converted = []
 # The files (a directory ends in `/`, else an exact file) with no SStgui.update_uis() and no hand changed() mark left: a window there updates because its
 # ui_data(A) re-runs when something it reads changes. A hard ban there. Files are only ever added.
 ui_push_converted = [
-  "code/content/tgui/modules/agentcard.dm",
-  "code/content/tgui/modules/appearance_changer.dm",
+  "code/modules/tgui/modules/agentcard.dm",
+  "code/modules/tgui/modules/appearance_changer.dm",
   "code/content/vore/eating/panel_databackend/vorepanel_set_attribute.dm",
   "code/content/mob/living/notes_panels.dm",
   "code/content/admin/admin_newscaster_panel.dm",
