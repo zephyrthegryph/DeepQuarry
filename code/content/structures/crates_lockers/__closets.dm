@@ -1,3 +1,11 @@
+/// Per closet, how its capacity was sized at init (boot diagnostics for "no room" refusals): "type @x,y,z" -> text.
+GLOBAL_LIST_EMPTY(closet_fit_log)
+
+/// What a random-item spawner inside a closet is reserved as: the most any item it turns into can take (the largest item class, ITEMSIZE_HUGE). The
+/// closet sizes itself for what it holds when it initializes, and a spawner there becomes its item afterwards: counted as one unit, a locker
+/// that starts with a riot shield or a boxed set of gloves was a few units short and refused its own contents (the full-map boot gate).
+#define CLOSET_SPAWNER_COST CEILING(ITEMSIZE_HUGE / 2, 1)
+
 // Someone should really merge secure closets and crates into this, which Bay has done already.
 /obj/structure/closet
 	name = "closet"
@@ -109,15 +117,26 @@ CAPABILITIES(/obj/structure/closet)
 			if(I.density || I.anchored) continue
 			loose += I
 		// adjust locker size to hold everything with 5 units of free store room.
-		// Summed without the ledger, so an untouched closet never builds one.
+		// A closet whose ledger is already built (something asked about its contents before this ran) holds its starts as ledger entries, not as
+		// things in contents, so what it holds is the ledger's own count; summed without the ledger otherwise, so an untouched closet never builds one.
 		var/content_size = 0
-		for(var/atom/movable/AM as anything in contents + loose) // ALLOW(latent): the generator's latent entries are summed below
-			content_size += storage_cost_of(AM)
-		var/list/generator = latent_is_declared() ? starts_with : null
-		for(var/path in generator)
-			if(dq_latent_eligible(path))
-				content_size += storage_cost_of_type(path) * dq_latent_spawn_count(generator[path])
-		if(content_size > storage_capacity-5)
+		var/list/generator
+		if(containment_ledger())
+			content_size = slot_used(CONTAINER_SLOT_INTERIOR)
+		else
+			for(var/atom/movable/AM as anything in contents) // ALLOW(latent): the generator's latent entries are summed below
+				content_size += storage_cost_of(AM)
+			generator = latent_is_declared() ? starts_with : null
+			for(var/path in generator)
+				if(dq_latent_eligible(path))
+					content_size += storage_cost_of_type(path) * dq_latent_spawn_count(generator[path])
+		for(var/obj/item/I as anything in loose)
+			content_size += storage_cost_of(I)
+		var/raised = content_size > storage_capacity-5
+		if(length(GLOB.closet_fit_log) < 400 && (raised || length(loose)))
+			// The sizing estimate, kept for the refusal line and the locker test: what it counted and what it chose.
+			GLOB.closet_fit_log["[type] @[x],[y],[z]"] = "counted [content_size] units (real [length(contents)] things, loose [length(loose)], latent starts [length(generator)] lines), capacity [storage_capacity][raised ? " raised to [content_size + 5]" : " kept"]"
+		if(raised)
 			set_storage_capacity(content_size + 5)
 		for(var/obj/item/I as anything in loose)
 			move_into(src, null, I)
@@ -162,7 +181,13 @@ CAPABILITIES(/obj/structure/closet)
 	if(ispath(path, /obj/structure/closet))
 		var/obj/structure/closet/typed_closet = path
 		return initial(typed_closet.storage_cost)
+	if(ispath(path, /obj/random))
+		return CLOSET_SPAWNER_COST
 	return 1
+
+/obj/structure/closet/move_refusal_detail(datum/item)
+	var/atom/movable/thing = item
+	return " (holds [LAZYLEN(contents)] thing(s), [slot_used(CONTAINER_SLOT_INTERIOR)] of [storage_capacity] units; it takes [istype(thing) ? storage_cost_of(thing) : "?"]; sizing: [GLOB.closet_fit_log["[type] @[x],[y],[z]"] || "never sized"])"
 
 /// What `thing` takes up inside this closet, in storage_capacity units.
 /obj/structure/closet/proc/storage_cost_of(atom/movable/thing)
@@ -175,6 +200,8 @@ CAPABILITIES(/obj/structure/closet)
 	if(istype(thing, /obj/structure/closet))
 		var/obj/structure/closet/C = thing
 		return C.storage_cost
+	if(istype(thing, /obj/random))
+		return CLOSET_SPAWNER_COST
 	return 1
 
 /// Slot acceptance (P2 proc clause): whether this can be put away loose.

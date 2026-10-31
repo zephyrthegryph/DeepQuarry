@@ -290,6 +290,9 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	// The map load queued every fresh atom's first refresh before any type's verdict was in: sample each type once, drop the fresh
 	// atoms of types whose default look is empty (code/engine/change/look_stamp.dm).
 	refresh_settle_created()
+	// What the settle kept is every first draw the map still owes: they finish now, before "Initializations complete" (code/engine/change/look_stamp.dm).
+	refresh_boot_drain()
+	cells_ambient_checked() // the air is set up now: cells that sit in air of another temperature start their material service
 
 	var/time = (REALTIMEOFDAY - start_timeofday) / 10
 	initializations_seconds = time
