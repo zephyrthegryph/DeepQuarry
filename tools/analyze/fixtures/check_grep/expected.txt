@@ -260,7 +260,7 @@ separate_object_health_pools	code/modules/shieldgen/energy_field.dm	3
 separate_object_health_pools	code/modules/shieldgen/energy_field.dm	4
 separate_object_health_pools	code/modules/shieldgen/shield_gen.dm	2
 separate_object_health_pools	code/modules/vore/smoleworld/smole.dm	2
-separate_object_health_pools	code/modules/xenoarcheaology/effects/forcefield.dm	2
+separate_object_health_pools	code/content/xenoarcheaology/effects/forcefield.dm	2
 space_indentation	code/modules/fx/indent_fx.dm	2
 space_indentation	code/modules/fx/indent_fx.dm	3
 space_indentation	code/modules/fx/indent_fx.dm	5

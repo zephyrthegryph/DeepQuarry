@@ -18,7 +18,7 @@ static D3: &[(&str, &[&str])] = &[
     (r"^[[:space:]]+var/hp\b|\bhp[[:space:]]*[-+]?=[^=]", &["code/game/objects/items/shooting_range.dm"]),
     (
         r"^[[:space:]]+var/(strength|max_strength)\b|\.(strength|max_strength)\b",
-        &["code/modules/shieldgen/energy_field.dm", "code/modules/shieldgen/shield_gen.dm", "code/modules/xenoarcheaology/effects/forcefield.dm"],
+        &["code/modules/shieldgen/energy_field.dm", "code/modules/shieldgen/shield_gen.dm", "code/content/xenoarcheaology/effects/forcefield.dm"],
     ),
     (
         r"\bhealth\b",
