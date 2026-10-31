@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Loosening a tourniquet is a menu op that asks which limb (a lone tourniquet is asked too)"

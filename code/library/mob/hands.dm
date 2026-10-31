@@ -37,6 +37,7 @@ CAPABILITIES(/mob/living/carbon/human)
 	// Licking wounds clean: a lap per wound, as long as the wound is bad (lick_wounds.dm); standing still is the only thing it keeps.
 	op("lick_wounds", ai(), takes("patient", "limb"), wait(PROC_REF(lick_time), repeats = PROC_REF(lick_more), after_step = PROC_REF(lick_done)), on_interrupt(PROC_REF(lick_interrupted)))
 	// Loosening a cinched tourniquet (tourniquet.dm): the actor stays next to the wearer for the two seconds it takes.
+	op("loosen_tourniquet_pick", menu(), label("Loosen Tourniquet"), when(req_actor_kind(/mob/living)), needs(req_capable(), req_adjacent(), req(PROC_REF(loosen_tourniquet_pick_ready))), asks(/datum/prompt/choice, fields = list("question" = "Loosen which tourniquet?", "title" = "Tourniquet", "choices" = computed(PROC_REF(loosen_tourniquet_choices)), "timeout" = 0), step = "limb"), then(PROC_REF(loosen_tourniquet_picked)))
 	op("loosen_tourniquet", ai(), reach(REACH_ADJACENT), takes("limb"), begins(PROC_REF(loosen_tourniquet_begins)), wait(TOURNIQUET_REMOVE_TIME), then(PROC_REF(loosen_tourniquet_done)))
 	// Devouring from the water: the victim is picked, then kept for the five seconds it takes to drag them under; if they get away it fails.
 	op("underwater_devour", ai(), asks(/datum/prompt/choice/victim/underwater, fields = list("choices" = computed(PROC_REF(underwater_devour_choices))), step = "victim", keeps_answer = TRUE),

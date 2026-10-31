@@ -46,10 +46,11 @@ def atom_new_override(lines):
     return False
 
 
-VERB_DEF = re.compile(r"^\s*((?:/[\w/]+?)?)/?verb/")
+VERB_DEF = re.compile(r"^\s*((?:/[\w/]+?)?)/?verb/(\w+)")
+GRANTED_VERB = re.compile(r"\b(?:granted_verb|verb_entry)\(\s*(/[\w/]+)")
 
 
-def non_client_verb(lines):
+def non_client_verb(lines, granted=()):
     """A verb declared on a type other than /client. final_api section 17: the verb set holds client, OOC and admin
     commands only; a /client/verb is that final form, anything else on a mob or datum is a gameplay ability (an op)."""
     cur = ""
@@ -57,6 +58,8 @@ def non_client_verb(lines):
         m = VERB_DEF.match(ln)
         if m:
             owner = m.group(1) or cur
+            if owner + "/verb/" + m.group(2) in granted:
+                continue  # granted_verb()/verb_entry() is the final form of a verb a type or a source hands out
             if owner.split("/")[1:2] != ["client"]:
                 return True
             continue
@@ -261,6 +264,12 @@ def main(argv):
                 m = TYPE_DEF.match(ln)
                 if m:
                     content_types.add(m.group(1))
+    granted = set()
+    for f in dm:
+        text = read(root, f)
+        if "granted_verb" in text or "verb_entry" in text:
+            for ln in strip_comments(text):
+                granted.update(GRANTED_VERB.findall(ln))
     rows = []
     for f in sorted(old):
         why = []
@@ -275,7 +284,7 @@ def main(argv):
         for label, rx in ([] if exempt else OLD_FORMS):
             if any(rx.search(ln) for ln in lines):
                 why.append("oldform:" + label)
-        if not exempt and f not in OOC_VERB_FILES and not any(v in f for v in VERB_EXEMPT) and non_client_verb(lines):
+        if not exempt and f not in OOC_VERB_FILES and not any(v in f for v in VERB_EXEMPT) and non_client_verb(lines, granted):
             why.append("oldform:verb")
         if not exempt and atom_new_override(lines):
             why.append("oldform:New() override")
