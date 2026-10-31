@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Cats befriend through a menu op; robot module picking checks sprites when the module is picked; two base-type list vars are lazy lists"
