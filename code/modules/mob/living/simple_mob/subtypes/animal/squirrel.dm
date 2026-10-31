@@ -146,7 +146,7 @@
 // A wild squirrel follows the season: plumped up for winter (always in winter, half the time in autumn, rarely in spring) and, in autumn,
 // keener to pounce.
 CAPABILITIES(/mob/living/simple_mob/vore/squirrel)
-	op("squirrel_color", menu(), label("Pick Color"), needs(req_self(), req(PROC_REF(squirrel_color_ready))), then(PROC_REF(squirrel_color_op)))
+	op("squirrel_color", menu(desc = "You can set your color!"), label("Pick Color"), needs(req_self(), req(PROC_REF(squirrel_color_ready))), then(PROC_REF(squirrel_color_op)))
 	configure(mob_rules(faction = FACTION_ANIMAL))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/squirrel))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 1))

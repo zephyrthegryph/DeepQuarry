@@ -68,7 +68,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/shantak)
 	player_msg = "You have the ability to <b>command other shantaks to follow you</b>."
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/shantak/leader)
-	op("rally_pack", menu(), label("Rally Pack"), needs(req_self()), then(PROC_REF(rally_pack_op)))
+	op("rally_pack", menu(desc = "Commands your fellow packmembers to follow you, the leader."), label("Rally Pack"), needs(req_self()), then(PROC_REF(rally_pack_op)))
 
 /// Commands the packmembers within earshot to follow the leader.
 /mob/living/simple_mob/animal/sif/shantak/leader/proc/rally_pack()

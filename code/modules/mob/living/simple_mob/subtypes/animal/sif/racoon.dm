@@ -99,8 +99,8 @@
 	emote_hear = list("chitters", "clicks")
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/sakimm)
-	op("remove_hat", menu(), label("Remove Hat"), needs(req_adjacent()), then(PROC_REF(remove_hat_op)))
-	op("give_hat", menu(), label("Give Hat"), needs(req_adjacent()), then(PROC_REF(give_hat_op)))
+	op("remove_hat", menu(desc = "Remove the animal's hat. You monster."), label("Remove Hat"), needs(req_adjacent()), then(PROC_REF(remove_hat_op)))
+	op("give_hat", menu(desc = "Give the animal a hat. You hero."), label("Give Hat"), needs(req_adjacent()), then(PROC_REF(give_hat_op)))
 	configure(mob_rules(faction = FACTION_SAKIMM))
 	configure(living_rules(species_sounds = "Raccoon"))
 	configure(living_rules(say_list_type = /datum/say_list/sakimm, use_modern_ai = TRUE))

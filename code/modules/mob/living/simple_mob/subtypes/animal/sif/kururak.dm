@@ -88,9 +88,9 @@
 	instinct = 50
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
-	op("do_strike", menu(), label("Rending Strike"), needs(req_self(), req(PROC_REF(do_strike_ready))), then(PROC_REF(do_strike_op)))
-	op("rally_pack", menu(), label("Rally Pack"), needs(req_self(), req(PROC_REF(rally_pack_ready))), then(PROC_REF(rally_pack_op)))
-	op("do_flash", menu(), label("Tail Blind"), needs(req_self(), req(PROC_REF(do_flash_ready))), then(PROC_REF(do_flash_op)))
+	op("do_strike", menu(desc = "Strike viciously at an entity within range."), label("Rending Strike"), needs(req_self(), req(PROC_REF(do_strike_ready))), then(PROC_REF(do_strike_op)))
+	op("rally_pack", menu(desc = "Tries to command your fellow pack members to follow you."), label("Rally Pack"), needs(req_self(), req(PROC_REF(rally_pack_ready))), then(PROC_REF(rally_pack_op)))
+	op("do_flash", menu(desc = "Disorient a creature within range."), label("Tail Blind"), needs(req_self(), req(PROC_REF(do_flash_ready))), then(PROC_REF(do_flash_op)))
 	configure(mob_rules(faction = FACTION_KURUAK))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/kururak, use_modern_ai = TRUE))
 	configure(butchery_rules(meat_amount = 5))

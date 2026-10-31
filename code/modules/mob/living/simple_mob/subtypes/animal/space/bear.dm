@@ -22,7 +22,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/bear)
-	op("berserk", menu(), label("Berserk"), needs(req_self()), then(PROC_REF(berserk_op)))
+	op("berserk", menu(desc = "Enrage and become vastly stronger for a period of time, however you will be weaker afterwards."), label("Berserk"), needs(req_self()), then(PROC_REF(berserk_op)))
 	configure(mob_rules(faction = FACTION_RUSSIAN))
 	configure(living_rules(say_list_type = /datum/say_list/bear))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/bearmeat, meat_amount = 8))
