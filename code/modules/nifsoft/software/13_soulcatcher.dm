@@ -311,6 +311,9 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 	var/identifying_gender
 
 CAPABILITIES(/mob/living/carbon/brain/caught_soul)
+	op("ar_project", menu(desc = "Project your form into Augmented Reality for those around your predator with the appearance of your loaded character."), label("AR/SR Project"), needs(req_self()), then(PROC_REF(ar_project_op)))
+	op("jump_to_owner", menu(desc = "Jump your projection back to the owner of the soulcatcher you're inside."), label("Jump to Owner"), needs(req_self()), then(PROC_REF(jump_to_owner_op)))
+	op("reenter_soulcatcher", menu(desc = "Leave AR projection and drop back into the soulcatcher."), label("Re-enter Soulcatcher"), needs(req_self()), then(PROC_REF(reenter_soulcatcher_op)))
 	configure(mob_rules(universal_understand = TRUE))
 	configure(mob_kind(use_me = 1))
 	ref_one(nameof(nif))
@@ -627,12 +630,8 @@ CAPABILITIES(/mob/observer/eye/ar_soul)
 
 ///////////////////
 //Verbs for soulbrains
-/mob/living/carbon/brain/caught_soul/verb/ar_project()
+/mob/living/carbon/brain/caught_soul/proc/ar_project()
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-	set name = "AR/SR Project"
-	set desc = "Project your form into Augmented Reality for those around your predator with the appearance of your loaded character."
-	set category = VERB_CAT_SOULCATCHER
-
 	if(eyeobj)
 		to_chat(src,span_warning("You're already projecting in AR!"))
 		return
@@ -647,24 +646,22 @@ CAPABILITIES(/mob/observer/eye/ar_soul)
 	new /mob/observer/eye/ar_soul(src, nif().human) // takes itself as our eye
 	soulcatcher().notify_into("[src] now AR projecting.")
 
-/mob/living/carbon/brain/caught_soul/verb/jump_to_owner()
-	var/mob/observer/eye/eyeobj = src?.active_eye()
-	set name = "Jump to Owner"
-	set desc = "Jump your projection back to the owner of the soulcatcher you're inside."
-	set category = VERB_CAT_SOULCATCHER
+/mob/living/carbon/brain/caught_soul/proc/ar_project_op(datum/act/op/A)
+	ar_project()
 
+/mob/living/carbon/brain/caught_soul/proc/jump_to_owner()
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(!eyeobj)
 		to_chat(src,span_warning("You're not projecting into AR!"))
 		return
 
 	eyeobj.forceMove(get_turf(nif()))
 
-/mob/living/carbon/brain/caught_soul/verb/reenter_soulcatcher()
-	var/mob/observer/eye/eyeobj = src?.active_eye()
-	set name = "Re-enter Soulcatcher"
-	set desc = "Leave AR projection and drop back into the soulcatcher."
-	set category = VERB_CAT_SOULCATCHER
+/mob/living/carbon/brain/caught_soul/proc/jump_to_owner_op(datum/act/op/A)
+	jump_to_owner()
 
+/mob/living/carbon/brain/caught_soul/proc/reenter_soulcatcher()
+	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(!eyeobj)
 		to_chat(src,span_warning("You're not projecting into AR!"))
 		return
@@ -672,6 +669,8 @@ CAPABILITIES(/mob/observer/eye/ar_soul)
 	QDEL_NULL(eyeobj)
 	soulcatcher().notify_into("[src] ended AR projection.")
 
+/mob/living/carbon/brain/caught_soul/proc/reenter_soulcatcher_op(datum/act/op/A)
+	reenter_soulcatcher()
 /mob/living/carbon/brain/caught_soul/verb/nsay_brain(message as text)
 	set name = "NSay"
 	set desc = "Speak into the NIF's Soulcatcher (circumventing AR speaking)."

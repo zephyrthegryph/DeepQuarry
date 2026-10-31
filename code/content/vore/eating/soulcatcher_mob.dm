@@ -168,9 +168,6 @@ CAPABILITIES(/mob/living/carbon/brain/caught_soul/vore)
 // SR project as captured soul
 /mob/living/carbon/brain/caught_soul/vore/ar_project()
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-	set name = "AR/SR Project"
-	set desc = "Project your form into Augmented Reality for those around your predator with the appearance of your loaded character."
-	set category = VERB_CAT_SOULCATCHER
 
 	if(eyeobj)
 		to_chat(src, span_warning("You're already projecting in SR!"))
@@ -190,9 +187,6 @@ CAPABILITIES(/mob/living/carbon/brain/caught_soul/vore)
 // Jump to the owner as SR projection
 /mob/living/carbon/brain/caught_soul/vore/jump_to_owner()
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-	set name = "Jump to Owner"
-	set desc = "Jump your projection back to the owner of the soulcatcher you're inside."
-	set category = VERB_CAT_SOULCATCHER
 
 	if(!eyeobj)
 		to_chat(src, span_warning("You're not projecting into SR!"))
@@ -203,9 +197,6 @@ CAPABILITIES(/mob/living/carbon/brain/caught_soul/vore)
 // End SR projecting and return to the soulcatcher containing the soul
 /mob/living/carbon/brain/caught_soul/vore/reenter_soulcatcher()
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-	set name = "Re-enter Soulcatcher"
-	set desc = "Leave SR projection and drop back into the soulcatcher."
-	set category = VERB_CAT_SOULCATCHER
 
 	if(!eyeobj)
 		to_chat(src, span_warning("You're not projecting into SR!"))
