@@ -636,6 +636,7 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 		if(L.watched || L.watched_looks || capability_data(A)?[/datum/cap_engine_state])
 			look_watch_sync(A, L.watched, L.neighbour_types, L.watched_looks, L.watched_worn)
 		if(key != A.rx?.look_key)
+			refresh_look_count(A, isnull(A.rx?.look_key) ? "first" : "changed")
 			var/atom/outer = GLOB.refresh_applying
 			GLOB.refresh_applying = A
 			L.apply_to(A)
@@ -647,6 +648,8 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 			// The atoms whose draw composes this one's look hear that it changed (look.watch_look()).
 			if(engine?.look_watchers)
 				look_published(A, engine)
+		else
+			refresh_look_count(A, "same")
 	return key
 
 /// Brings A's derived verb hides in line with hidden_verbs(). The verb store stays the only writer of a
@@ -695,6 +698,50 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 /// atom); a ref that no longer names a swept atom is dropped when the sweep reaches it.
 GLOBAL_LIST_EMPTY(refresh_sweep_list)
 GLOBAL_VAR_INIT(refresh_sweep_index, 1)
+/// The audit runs one step per this much world time: a step is up to ten dry draws, and one per presentation drain (every tick) was a third of an idle server's kernel time.
+#define REFRESH_SWEEP_INTERVAL (0.5 SECONDS)
+GLOBAL_VAR_INIT(refresh_sweep_next, 0)
+/// Audit steps that ran, and the ones the interval skipped (a periodic log line and the idle-tolerance test read them).
+GLOBAL_VAR_INIT(refresh_sweep_ran, 0)
+GLOBAL_VAR_INIT(refresh_sweep_skipped, 0)
+/// Applied looks by what they did: "first" (the atom's first draw), "changed" (a new key), "same" (drawn again to the same key: wasted work). Keyed "kind" and "kind [type]".
+GLOBAL_LIST_EMPTY(refresh_look_stats)
+GLOBAL_VAR_INIT(refresh_look_log_next, 0)
+
+/// TRUE when the audit may take a step now (and starts the wait for the next one).
+/proc/refresh_sweep_due()
+	if(!COOLDOWN_FINISHED(GLOB, refresh_sweep_next))
+		GLOB.refresh_sweep_skipped++
+		return FALSE
+	COOLDOWN_START(GLOB, refresh_sweep_next, REFRESH_SWEEP_INTERVAL)
+	GLOB.refresh_sweep_ran++
+	if(COOLDOWN_FINISHED(GLOB, refresh_look_log_next))
+		COOLDOWN_START(GLOB, refresh_look_log_next, 5 MINUTES)
+		log_world("REFRESH LOOKS: [refresh_look_stats_text()]")
+	return TRUE
+
+/// Counts one applied look: by kind, and by kind and type.
+/proc/refresh_look_count(atom/A, kind)
+	var/list/stats = GLOB.refresh_look_stats
+	stats[kind] = (stats[kind] || 0) + 1
+	var/typed = "[kind] [A.type]"
+	stats[typed] = (stats[typed] || 0) + 1
+
+/// The look counters as text: the totals and the `top` busiest kind-and-type rows.
+/proc/refresh_look_stats_text(top = 8)
+	var/list/stats = GLOB.refresh_look_stats
+	var/list/rows = list()
+	for(var/key in stats)
+		if(findtext(key, " "))
+			rows += key
+	rows = sortTim(rows, GLOBAL_PROC_REF(cmp_refresh_look_rows), FALSE)
+	var/text = "first [stats["first"] || 0], changed [stats["changed"] || 0], same [stats["same"] || 0]; audit steps [GLOB.refresh_sweep_ran] ran, [GLOB.refresh_sweep_skipped] skipped"
+	for(var/i in 1 to min(top, length(rows)))
+		text += "; [rows[i]] x[stats[rows[i]]]"
+	return text
+
+/proc/cmp_refresh_look_rows(a, b)
+	return GLOB.refresh_look_stats[b] - GLOB.refresh_look_stats[a]
 /// Production's current audit cycle: the swept atoms near a client, collected when the last cycle ended (null between cycles).
 GLOBAL_LIST_EMPTY(refresh_sweep_near)
 /// Drift reports this round (the drift test reads them).
@@ -742,6 +789,8 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 		checked++
 		refresh_check_drift(A)
 #else
+	if(!refresh_sweep_due())
+		return
 	budget = min(budget, 10)
 	var/list/client_turfs = refresh_client_turfs()
 	if(!length(client_turfs))

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "The server's look-drift audit now steps twice a second instead of every tick, cutting idle server load"
+  - code_imp: "Applied looks are counted by first draw, changed key and same-key redraw, logged every five minutes"
