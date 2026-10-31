@@ -1853,18 +1853,13 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		return 1
 	return 0
 
-/mob/living/carbon/human/verb/toggle_underwear()
-	set name = "Toggle Underwear"
-	set desc = "Shows/hides selected parts of your underwear."
-	set category = VERB_CAT_OBJECT
+/mob/living/carbon/human/proc/toggle_underwear_choices(datum/act/op/A)
+	return GLOB.global_underwear.categories
 
-	if(stat) return
-	open_request(src, /datum/prompt/choice, PROC_REF(toggle_underwear_chosen), answerer = src, title = "Show/hide underwear", question = "Choose underwear:", choices = GLOB.global_underwear.categories, ask_flags = ASK_CONSCIOUS, timeout = 0)
-
-/mob/living/carbon/human/proc/toggle_underwear_chosen(datum/act/request/A)
-	if(!A.answer)
+/mob/living/carbon/human/proc/toggle_underwear_op(datum/act/op/A)
+	var/datum/category_group/underwear/UWC = A.step_value("category")
+	if(!UWC)
 		return
-	var/datum/category_group/underwear/UWC = A.answer.value
 	var/datum/category_item/underwear/UWI = LAZYACCESS(all_underwear, UWC.name)
 	if(!UWI || UWI.name == "None")
 		to_chat(src, span_notice("You do not have [UWC.gender==PLURAL ? "[UWC.display_name]" : "a [UWC.display_name]"]."))
@@ -1873,12 +1868,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	underwear_edited()
 	to_chat(src, span_notice("You [hide_underwear[UWC.name] ? "take off" : "put on"] your [UWC.display_name]."))
 
-/mob/living/carbon/human/verb/pull_punches()
-	set name = "Pull Punches"
-	set desc = "Try not to hurt them."
-	set category = VERB_CAT_IC_GAME
-
-	if(stat) return
+/mob/living/carbon/human/proc/pull_punches_op(datum/act/op/A)
 	var/pulling = FALSE
 	if(has_trait_from(src, TRAIT_NONLETHAL_BLOWS, ACTION_TRAIT))
 		remove_trait(src, TRAIT_NONLETHAL_BLOWS, ACTION_TRAIT)
@@ -1886,7 +1876,6 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		add_trait(src, TRAIT_NONLETHAL_BLOWS, ACTION_TRAIT)
 		pulling = TRUE
 	to_chat(src, span_notice("You are now [pulling ? "pulling your punches" : "not pulling your punches"]."))
-	return
 
 /mob/living/carbon/human/should_have_organ(organ_check)
 
@@ -2085,15 +2074,17 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 /mob/living/carbon/human/get_mob_riding_slots()
 	return list(get_equipped_item(SLOT_ID_BACK), get_equipped_item(SLOT_ID_HEAD), get_equipped_item(SLOT_ID_SUIT))
 
-/mob/living/carbon/human/verb/flip_lying()
-	set name = "Flip Resting Direction"
-	set category = VERB_CAT_ABILITIES_GENERAL
-	set desc = "Switch your horizontal direction while prone."
+/// Flipping the resting direction needs a body that is conscious and not stunned, paralysed or weakened.
+/mob/living/carbon/human/proc/flip_lying_ready(datum/act/op/A)
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED))
+		return span_warning("You can't do that in your current state.")
+	return null
 
-	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !cooldown_ready(src, last_special))
+/mob/living/carbon/human/proc/flip_lying_op(datum/act/op/A)
+	// The special-ability cooldown is a clock read no requirement may track, so it stays the effect's own check.
+	if(!cooldown_ready(src, last_special))
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
-
 	if(isnull(rest_dir))
 		set_rest_dir(FALSE)
 	set_rest_dir(!rest_dir)
@@ -2105,16 +2096,10 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 /mob/living/carbon/human/get_digestion_efficiency_modifier()
 	return species.digestion_efficiency
 
-/mob/living/carbon/human/verb/hide_headset()
-	set name = "Show/Hide Headset"
-	set category = VERB_CAT_IC_SETTINGS
-	set desc = "Toggle headset worn icon visibility."
+/mob/living/carbon/human/proc/hide_headset_op(datum/act/op/A)
 	set_hide_headset(!hide_headset)
 
-/mob/living/carbon/human/verb/hide_glasses()
-	set name = "Show/Hide Glasses"
-	set category = VERB_CAT_IC_SETTINGS
-	set desc = "Toggle glasses worn icon visibility."
+/mob/living/carbon/human/proc/hide_glasses_op(datum/act/op/A)
 	set_hide_glasses(!hide_glasses)
 
 /mob/living/carbon/human/vv_get_dropdown()
@@ -2207,18 +2192,16 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	sparse_set(src, synth_reag_processing, !sparse_get_or(src, synth_reag_processing, TRUE))
 
 //Formally used from a paper, gave this to everyone.
-/mob/living/carbon/human/verb/create_area()
-	set name = "Create Area"
-	set desc = "Create an area in a enclosed space, making it able to be powered by an APC."
-	set category = VERB_CAT_IC_GAME
+/mob/living/carbon/human/proc/create_area_ready(datum/act/op/A)
+	return stat ? span_warning("You recently tried to create an area. Wait a while before using it again.") : null
 
-	if(stat || !cooldown_ready(src, last_special))
-		to_chat(usr, span_warning("You recently tried to create an area. Wait a while before using it again."))
+/mob/living/carbon/human/proc/create_area_op(datum/act/op/A)
+	// The special-ability cooldown is a clock read no requirement may track, so it stays the effect's own check.
+	if(!cooldown_ready(src, last_special))
+		to_chat(src, span_warning("You recently tried to create an area. Wait a while before using it again."))
 		return
-
 	cooldown_start(src, last_special, 2 SECONDS) // Antispam.
-	create_new_area(usr)
-	return
+	create_new_area(src)
 
 // Each side effect is created for this human and kept only here and by its finish() timer.
 

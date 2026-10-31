@@ -124,14 +124,15 @@
 /mob/living/proc/sleeping_voluntarily()
 	return held_by_source(src, STAT_SLEEPING, SRC_VOLUNTARY_SLEEP)
 
-/mob/living/verb/mob_sleep()
-	set name = "Sleep"
-	set category = VERB_CAT_IC_GAME
+/mob/living/proc/mob_sleep()
 	var/asleep = sleeping_voluntarily()
 	if(!asleep)
 		open_request(src, /datum/prompt/choice/voluntary_sleep, PROC_REF(sleep_confirmed), answerer = src)
 		return
 	toggle_voluntary_sleep()
+
+/mob/living/proc/mob_sleep_op(datum/act/op/A)
+	mob_sleep()
 
 /// Re-checked on the answer: not already sleeping by choice.
 /datum/prompt/choice/voluntary_sleep
