@@ -809,6 +809,7 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 /// world.Reboot() as `actor` (code/engine/kernel/entry.dm: the input event says who asked; null when the server did). Closes the round down and
 /// answers TRUE when the native reboot goes on.
 /world/input_reboot(mob/actor, reason = 0, fast_track = FALSE)
+	log_world("EXIT: input_reboot by [actor ? key_name(actor) : "the server"] (reason [reason ? "[reason]" : "none"], fast_track [fast_track ? "yes" : "no"])")
 	if (reason || fast_track) //special reboot, do none of the normal stuff
 		if (actor)
 			log_admin("[key_name(actor)] Has requested an immediate world restart via client side debugging tools")
@@ -846,6 +847,7 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 	#endif
 
 /world/Del()
+	log_world("EXIT: world.Del() at [time_stamp()]")
 	// Joins verdigris' frame and job threads before BYOND unloads the DLL.
 	vg_world_shutdown()
 	QDEL_NULL(Tracy)
