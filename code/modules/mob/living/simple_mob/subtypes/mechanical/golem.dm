@@ -54,7 +54,7 @@
 		)
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/technomancer_golem)
-	op("test_giving_spells", menu(), label("Test giving spells"), needs(req(PROC_REF(test_giving_spells_ready))), asks(/datum/prompt/choice, fields = list("question" = "What spell?", "title" = "Give spell", "choices" = computed(PROC_REF(test_giving_spells_choices)), "timeout" = 0), step = "spell"), then(PROC_REF(test_giving_spells_op)))
+	op("test_giving_spells", menu(), label("Test giving spells"), asks(/datum/prompt/choice, fields = list("question" = "What spell?", "title" = "Give spell", "choices" = computed(PROC_REF(test_giving_spells_choices)), "timeout" = 0), step = "spell"), then(PROC_REF(test_giving_spells_op)))
 	configure(mob_rules(faction = FACTION_GOLEM))
 	configure(living_rules(delete_on_death = TRUE))
 	ref_one(nameof(master), /mob/living)
@@ -76,10 +76,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/technomancer_golem)
 	rel_clear(src, nameof(active_spell), OWN_DELETE)
 
 	rel_set(src, nameof(active_spell), new path(src))
-
-/// An empty spell list opened no question and never cleared the current spell, so the op is not offered without spells.
-/mob/living/simple_mob/mechanical/technomancer_golem/proc/test_giving_spells_ready(datum/act/op/A)
-	return length(known_spells) ? null : MSG(req_silent)
 
 /mob/living/simple_mob/mechanical/technomancer_golem/proc/test_giving_spells_choices(datum/act/op/A)
 	return known_spells

@@ -132,14 +132,3 @@
 	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, test_floor(), null, null, null, TRUE)
 	var/datum/op_result/R = dq_ability_menu_op(AI, "holo_nom_menu")
 	TEST_ASSERT_EQUAL(R?.outcome, ACT_REFUSED, "holo_nom_menu is refused with no holopad hologram")
-
-/// The golem's spell test op is only offered while it knows a spell.
-/datum/unit_test/dq_ability_ops_golem_spells_need_spells
-
-/datum/unit_test/dq_ability_ops_golem_spells_need_spells/Run()
-	var/mob/living/simple_mob/mechanical/technomancer_golem/G = allocate(/mob/living/simple_mob/mechanical/technomancer_golem, test_floor())
-	var/list/saved = G.known_spells
-	G.known_spells = null
-	var/datum/op_result/none = dq_ability_menu_op(G, "test_giving_spells")
-	TEST_ASSERT_EQUAL(none?.outcome, ACT_REFUSED, "no spells, no op")
-	G.known_spells = saved
