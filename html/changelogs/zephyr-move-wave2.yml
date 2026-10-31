@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "365 more files from code/game, datums, ATMOSPHERICS and friends moved into the code/content and code/domains tree"

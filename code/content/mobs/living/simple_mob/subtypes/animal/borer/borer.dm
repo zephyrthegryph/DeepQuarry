@@ -130,7 +130,7 @@
 			var/message = "You feel the soporific flow of sugar in your host's blood, lulling you into docility."
 			var/target = controlling ? host : src
 			to_chat(target, span_danger( message))
-			docile = TRUE
+			set_docile(TRUE)
 
 	// Drop control if docile
 	if(controlling && docile)
@@ -146,7 +146,7 @@
 	// End docile
 	if(docile)
 		to_chat(controlling ? host : src, span_notice("You shake off your lethargy as the sugar leaves your host's blood."))
-		docile = FALSE
+		set_docile(FALSE)
 		docile_counter = 0
 
 /mob/living/simple_mob/animal/borer/proc/handle_braindamage()
@@ -158,17 +158,26 @@
 	if(prob(host.injury_load(INJURY_CATEGORY_NEURAL)/20))
 		host.say("*[pick(list("blink","blink_r","choke","aflap","drool","twitch","twitch_v","gasp"))]")
 
-/mob/living/simple_mob/animal/borer/proc/can_use_power_in_host()
+/// Why this borer cannot use a power from inside a host right now, or null. The one place the reason is written; the menu ops require it
+/// and can_use_power_in_host() tells the borer (or the host it controls) the same text.
+/mob/living/simple_mob/animal/borer/proc/power_in_host_refusal()
 	var/mob/living/carbon/human/host = src?.borer_host()
 	if(QDELETED(src))
-		return FALSE
+		return MSG(req_silent)
 	if(!host || QDELETED(host))
-		to_chat(src, span_warning("You are not inside a host body."))
-		return FALSE
+		return span_warning("You are not inside a host body.")
 	if(stat)
-		to_chat(controlling ? host : src, span_warning("You cannot that that in your current state."))
-		return FALSE
-	return TRUE
+		return span_warning("You cannot that that in your current state.")
+	return null
+
+/mob/living/simple_mob/animal/borer/proc/can_use_power_in_host()
+	var/mob/living/carbon/human/host = src?.borer_host()
+	var/refusal = power_in_host_refusal()
+	if(isnull(refusal))
+		return TRUE
+	if(!QDELETED(src))
+		to_chat(controlling && host ? host : src, refusal)
+	return FALSE
 
 /mob/living/simple_mob/animal/borer/proc/can_use_power_controlling_host()
 	var/mob/living/carbon/human/host = src?.borer_host()
@@ -182,10 +191,14 @@
 		return FALSE
 	return TRUE
 
+/mob/living/simple_mob/animal/borer/proc/power_docile_refusal()
+	return docile ? span_info("You are feeling far too docile to do that.") : null
+
 /mob/living/simple_mob/animal/borer/proc/can_use_power_docile()
 	var/mob/living/carbon/human/host = src?.borer_host()
-	if(docile)
-		to_chat(controlling ? host : src, span_info("You are feeling far too docile to do that."))
+	var/refusal = power_docile_refusal()
+	if(refusal)
+		to_chat(controlling ? host : src, refusal)
 	return !docile
 
 /mob/living/simple_mob/animal/borer/proc/use_chems(amount)
@@ -233,7 +246,7 @@
 	if(!host || !controlling)
 		return
 
-	controlling = FALSE
+	set_controlling(FALSE)
 
 	host.remove_language("Cortical Link")
 	revoke(host, granted_verb(/mob/living/carbon/proc/release_control), src)
