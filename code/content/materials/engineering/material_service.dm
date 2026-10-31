@@ -71,6 +71,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	var/datum/material_assembly/assembly = material_assembly(src)
 	if(!assembly.service)
 		rel_set(assembly, nameof(assembly.service), new /datum/material_service(src))
+		material_admission_note(src, event)
 		// Services admitted while the world initializes (every power cell, pipes seeing their
 		// first pressure) take their baseline sample spread over the first seconds after boot
 		// rather than all on the first tick.
@@ -714,3 +715,25 @@ SCHEMA(/datum/material_service, electrical_reference_temperature, num())
 /proc/material_service_buffer(datum/material_service/service)
 	return service.buffer_energy()
 SCHEMA(/datum/material_service, last_environment_temperature, num())
+
+/// Services admitted so far, by "event type" (which events and owners make a material service, for the boot log), and the total.
+GLOBAL_LIST_EMPTY(material_admissions)
+GLOBAL_VAR_INIT(material_admitted_total, 0)
+
+/// Counts one admission and, every 500th, logs the busiest rows: a service that retires on its first sample was admitted for nothing.
+/proc/material_admission_note(obj/owner, event)
+	var/key = "[event] [owner.type]"
+	GLOB.material_admissions[key] = (GLOB.material_admissions[key] || 0) + 1
+	if(++GLOB.material_admitted_total % 500)
+		return
+	var/list/rows = list()
+	for(var/row in GLOB.material_admissions)
+		rows += row
+	rows = sortTim(rows, GLOBAL_PROC_REF(cmp_material_admission_rows), FALSE)
+	var/text = "MATERIAL ADMISSIONS: [GLOB.material_admitted_total] so far"
+	for(var/i in 1 to min(8, length(rows)))
+		text += "; [rows[i]] x[GLOB.material_admissions[rows[i]]]"
+	log_world(text)
+
+/proc/cmp_material_admission_rows(a, b)
+	return GLOB.material_admissions[b] - GLOB.material_admissions[a]

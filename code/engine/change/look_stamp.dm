@@ -115,3 +115,19 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 
 /// Queued first draws that ran ahead of the backlog because a client was near (logged with the periodic look stats).
 GLOBAL_VAR_INIT(refresh_near_drawn, 0)
+
+/// Boot: draws every first refresh the settle left queued, with no budget (nobody is connected to wait on it, and the same draws would otherwise
+/// run in the presentation lane for a minute after "Initializations complete", costing the first players their frame time). One line per pass
+/// (queued, left, milliseconds) so a slow or stuck boot shows where it is.
+/proc/refresh_boot_drain()
+	var/start = REALTIMEOFDAY
+	var/before = length(GLOB.refresh_queue)
+	var/passes = 0
+	while(length(GLOB.refresh_queue) && passes < 20)
+		passes++
+		var/queued = length(GLOB.refresh_queue)
+		var/pass_start = REALTIMEOFDAY
+		refresh_drain(null)
+		log_world("refresh boot drain pass [passes]: [queued] queued, [length(GLOB.refresh_queue)] left, [(REALTIMEOFDAY - pass_start) * 100] ms")
+	world.presentation_flush()
+	log_world("refresh boot drain: [before] queued, [length(GLOB.refresh_queue)] left after [passes] pass(es), [(REALTIMEOFDAY - start) * 100] ms")

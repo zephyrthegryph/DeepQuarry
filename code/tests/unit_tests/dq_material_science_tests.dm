@@ -503,7 +503,7 @@
 	var/turf/destination = get_step(start, EAST) || get_step(start, WEST)
 	TEST_ASSERT(start && destination && start != destination, "Movement coverage requires two real map turfs")
 	var/obj/item/cell/cell = new(start)
-	var/datum/material_service/service = material_service_of(cell)
+	var/datum/material_service/service = material_service_of(cell) || cell.enable_material_service() // a cell at its air's temperature starts without one
 	service.rebind()
 	TEST_ASSERT(length(service.mixture_ids), "The test must actually subscribe to a real atmosphere")
 	TEST_ASSERT_EQUAL(length(service.gas_watches), length(service.mixture_ids), "Material subscriptions must be one native gas watch per watched mixture")
@@ -561,7 +561,7 @@
 	// Exposure work is one core deadline per service (after()): scheduling again only ever moves
 	// it earlier, and deleting the assembly cancels it.
 	var/obj/item/cell/a = new(run_loc_floor_bottom_left)
-	var/datum/material_service/a_service = material_service_of(a)
+	var/datum/material_service/a_service = material_service_of(a) || a.enable_material_service() // a cell at its air's temperature starts without one
 	cancel_after(a_service, "material_service")
 	a_service.timer = FALSE
 	a_service.schedule(10 SECONDS)
