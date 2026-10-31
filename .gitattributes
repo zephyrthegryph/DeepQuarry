@@ -51,7 +51,7 @@
 deepquarry.dme merge=dq-dme
 ## The unit-test include list is still kept by hand: parallel branches each append #include lines at the same spot, and a union merge
 ## keeps both sides' lines instead of conflicting (a duplicate #include is harmless).
-code/modules/unit_tests/_unit_tests.dm merge=union
+code/tests/unit_tests/_unit_tests.dm merge=union
 
 ## Shrink-only ratchet baselines (tools/ci/*_baseline.txt and tools/ci/sys_baseline/*.txt): both sides only drop rows / lower ceilings, so merge to the intersection (tools/ci/baseline_merge_driver.sh;
 ## the driver is supplied by tools/dq_git_safe.sh, which every merge tool sources; `git merge` by hand: git config merge.dq-baseline.driver "bash tools/ci/baseline_merge_driver.sh %O %A %B %P").
