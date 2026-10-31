@@ -610,13 +610,12 @@
 		sparse_set(src, custom_link, text_or_null(client.prefs.read_preference(/datum/preference/text/human/custom_link))) // migrated pref
 
 ///Essentially, a Activate Held Object mode for borgs that acts just like pressing Z in hotkey mode but also works well with multibelts.
-/mob/living/silicon/robot/verb/alt_mode()
-	set name = "Robot Activate Held Object"
-	set category = VERB_CAT_OBJECT
-	set src = usr
-
+/mob/living/silicon/robot/proc/alt_mode()
 	if(!checkClickCooldown())
 		return
+
+/mob/living/silicon/robot/proc/alt_mode_op(datum/act/op/A)
+	alt_mode()
 
 	setClickCooldown(1)
 
