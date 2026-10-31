@@ -546,6 +546,7 @@ mod body_queries;
 #[path = "frontend_initializer_source.rs"]
 mod initializer_source;
 pub use initializer_source::{
+    OriginalDeclarationExpressionContext, OriginalDeclarationExpressionInput,
     InitializerExpressionRecipe, OriginalInitializerContext, OriginalInitializerExpression,
     OriginalInitializerExpressionInput,
 };
@@ -871,6 +872,8 @@ pub use pipeline::{
     build, build_for_checker_diagnostics, build_for_checker_diagnostics_with_state,
     build_with_config, build_with_executor, build_with_executor_and_semantic_state,
     build_with_executor_and_semantic_state_for_policy, build_with_expansion_memo,
+    build_with_executor_and_semantic_state_for_policy_checked,
+    build_for_checker_diagnostics_with_state_checked,
 };
 #[path = "frontend_semantic_state.rs"]
 mod semantic_state;
@@ -889,6 +892,9 @@ pub use declaration_state::{
     ChunkSourceAnswer, DeclarationContributionView, DeclarationRequest, DeclarationRetentionStats,
     DeclarationStorageView,
 };
+#[path="frontend_declaration_demand.rs"]
+mod declaration_demand;
+pub use declaration_demand::FrontendBuildFailure;
 #[path = "frontend_parse.rs"]
 mod declaration_parse;
 #[cfg(test)]
@@ -1331,3 +1337,7 @@ impl<'frontend> ParsedBody<'frontend> {
         )
     }
 }
+
+#[cfg(test)]
+#[path="frontend_declaration_checked_tests.rs"]
+mod declaration_checked_tests;

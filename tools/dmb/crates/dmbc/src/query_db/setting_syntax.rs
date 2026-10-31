@@ -42,6 +42,20 @@ impl QueryDb {
 }
 
 impl SettingExpressionQueries for QueryDb {
+    fn with_declaration_admission(
+        &self,
+        operation: &mut dyn FnMut(
+            &dm_syntax::SettingAdmission<'_>,
+        ) -> Result<(), BodySyntaxFailure>,
+    ) -> Result<(), BodySyntaxFailure> {
+        self.with_setting_admission(|admission| {
+            admission
+                .checkpoint()
+                .map_err(BodySyntaxFailure::Operational)?;
+            operation(admission)
+        })
+    }
+
     fn initializer<'source>(
         &self,
         input: &dm_tree::frontend::OriginalInitializerExpressionInput<'source>,
@@ -358,4 +372,367 @@ mod initializer_recipe_tests {
         assert_eq!(recovered.ast() as *const dm_syntax::Expr, pointer);
         assert_eq!(db.db().stats(dm_query::Kind(4)).computed, 0);
     }
+}
+
+#[cfg(test)]
+mod declaration_admission_tests {
+    use super::*;
+    #[test]
+    fn early_declaration_callback_uses_exact_existing_counter_and_checks_cancelled_empty_and_late_work(
+    ) {
+        let db = QueryDb::default();
+        let mut lease = None;
+        SettingExpressionQueries::with_declaration_admission(&db, &mut |a| {
+            lease = Some(a.reserve(1024).map_err(BodySyntaxFailure::Operational)?);
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(
+            db.body_charge.load(std::sync::atomic::Ordering::Acquire),
+            1024
+        );
+        drop(lease.take());
+        assert_eq!(db.body_charge.load(std::sync::atomic::Ordering::Acquire), 0);
+        let token = crate::daemon::control::Cancellation::default();
+        let binding = crate::daemon::control::bind_with_deadline(
+            token.clone(),
+            std::time::Instant::now() + std::time::Duration::from_secs(300),
+        );
+        token.cancel();
+        let mut called = false;
+        let error = SettingExpressionQueries::with_declaration_admission(&db, &mut |_| {
+            called = true;
+            Ok(())
+        })
+        .err()
+        .expect("cancelled early admission does not call original producer");
+        assert!(
+            matches!(error,BodySyntaxFailure::Operational(ref actual)if actual.kind()==std::io::ErrorKind::Interrupted)
+        );
+        assert!(!called);
+        drop(binding);
+        let token = crate::daemon::control::Cancellation::default();
+        let binding = crate::daemon::control::bind_with_deadline(
+            token.clone(),
+            std::time::Instant::now() + std::time::Duration::from_secs(300),
+        );
+        let error = SettingExpressionQueries::with_declaration_admission(&db, &mut |_| {
+            token.cancel();
+            Ok(())
+        })
+        .err()
+        .expect("late cancel cannot return completed declaration work");
+        assert!(
+            matches!(error,BodySyntaxFailure::Operational(ref actual)if actual.kind()==std::io::ErrorKind::Interrupted)
+        );
+        drop(binding);
+        SettingExpressionQueries::with_declaration_admission(&db, &mut |_| Ok(())).unwrap();
+        assert_eq!(db.db().stats(dm_query::Kind(4)).computed, 0);
+    }
+    #[test]
+    fn early_declaration_callback_preserves_first_real_io_cause_without_body_or_semantic_cache() {
+        let db = QueryDb::default();
+        let error = SettingExpressionQueries::with_declaration_admission(&db, &mut |_| {
+            Err(BodySyntaxFailure::Operational(
+                std::io::Error::from_raw_os_error(1450),
+            ))
+        })
+        .err()
+        .unwrap();
+        assert!(
+            matches!(error,BodySyntaxFailure::Operational(ref actual)if actual.raw_os_error()==Some(1450))
+        );
+        SettingExpressionQueries::with_declaration_admission(&db, &mut |_| Ok(())).unwrap();
+        assert_eq!(db.db().stats(dm_query::Kind(4)).computed, 0);
+    }
+}
+
+#[cfg(test)]
+mod early_initializer_actual_caller_tests {
+    use super::*;
+    use dm_tree::frontend::{
+        ColdFrontend, FrontendBuildFailure, FrontendConfig, RetainedSemanticTree,
+    };
+    struct Source(dm_preprocess::AcquiredSource);
+    impl dm_preprocess::SourceProvider for Source {
+        fn read(&self, _: &std::path::Path) -> Result<String, String> {
+            Err("original byte acquisition required".into())
+        }
+        fn acquired_source(
+            &self,
+            _: &std::path::Path,
+        ) -> Result<Option<dm_preprocess::AcquiredSource>, String> {
+            Ok(Some(self.0.clone()))
+        }
+        fn source_acquisition(
+            &self,
+            _: &std::path::Path,
+            text: &dm_preprocess::SourceText,
+        ) -> Option<dm_preprocess::AcquiredSource> {
+            self.0
+                .lease()
+                .source_text()
+                .same_view(text)
+                .then(|| self.0.clone())
+        }
+    }
+    fn source(text: &str) -> Source {
+        Source(dm_preprocess::AcquiredSource::from_original_bytes(
+            text.as_bytes().to_vec(),
+            (),
+        ))
+    }
+    fn build(
+        src: &Source,
+        state: &mut RetainedSemanticTree,
+        executor: &dm_exec::BuildExecutor,
+        host: &Arc<dyn SettingExpressionQueries>,
+    ) -> Result<ColdFrontend, FrontendBuildFailure> {
+        dm_tree::frontend::build_with_executor_and_semantic_state_for_policy_checked(
+            std::path::Path::new("actual-early-initializer.dme"),
+            src,
+            &Default::default(),
+            FrontendConfig {
+                workers: executor.workers(),
+                engine: None,
+                observer: None,
+            },
+            None,
+            executor,
+            Some(state),
+            true,
+            host,
+        )
+    }
+    fn roots(front: &ColdFrontend) -> Vec<*const dm_syntax::Expr> {
+        let archive = front.body_archive().expect("actual original archive");
+        let mut roots = Vec::new();
+        archive.visit_storage(|_, syntax, _| {
+            for chunk in syntax.chunks().iter() {
+                chunk.shared_relative().visit_setting_roots(|root| {
+                    roots.push(root.original_expression() as *const dm_syntax::Expr)
+                });
+            }
+        });
+        roots
+    }
+    #[test]
+    fn actual_querydb_early_builder_publishes_original_const_roots_before_later_input_and_preserves_old_metadata_and_lazy_nonconst(
+    ) {
+        let src=source("var/const/first=1+2\nvar/const/unfurled=list(1)\nvar/static/runtime=list(2)\n/proc/p()\n    return 1\n");
+        let executor = dm_exec::BuildExecutor::new(2).unwrap();
+        let db = Arc::new(QueryDb::default());
+        let host = Arc::clone(&db) as Arc<dyn SettingExpressionQueries>;
+        let mut state = RetainedSemanticTree::default();
+        let old = dm_tree::frontend::build_with_executor_and_semantic_state_for_policy(
+            std::path::Path::new("actual-early-initializer.dme"),
+            &src,
+            &Default::default(),
+            FrontendConfig {
+                workers: 2,
+                engine: None,
+                observer: None,
+            },
+            None,
+            &executor,
+            Some(&mut state),
+            true,
+        )
+        .unwrap();
+        let current = build(&src, &mut state, &executor, &host).unwrap();
+        let early = roots(&current);
+        assert_eq!(
+            early.len(),
+            2,
+            "only old eager const parsing demands roots; nonconst stays lazy"
+        );
+        let old_plan =
+            dm_tree::initializers::capture_declaration_plan(&old.snapshot, &old.emission_order)
+                .unwrap();
+        let plan = dm_tree::initializers::capture_declaration_plan(
+            &current.snapshot,
+            &current.emission_order,
+        )
+        .unwrap();
+        assert_eq!(old_plan.plan().writes.as_ref(), plan.plan().writes.as_ref());
+        assert_eq!(
+            old.snapshot.tree.identity(),
+            current.snapshot.tree.identity(),
+            "source originalization changes no semantic metadata"
+        );
+        for ordinal in [0, 1] {
+            let root = current
+                .original_initializer_input(&plan, ordinal)
+                .unwrap()
+                .expression()
+                .unwrap();
+            assert!(
+                early.contains(&(root.ast() as *const dm_syntax::Expr)),
+                "later input borrows already issued original const AST"
+            );
+        }
+        let lazy = current
+            .original_initializer_input(&plan, 2)
+            .unwrap()
+            .expression()
+            .unwrap();
+        assert!(!early.contains(&(lazy.ast() as *const dm_syntax::Expr)));
+        assert_eq!(roots(&current).len(), 3);
+        let warm = build(&src, &mut state, &executor, &host).unwrap();
+        let warm_plan =
+            dm_tree::initializers::capture_declaration_plan(&warm.snapshot, &warm.emission_order)
+                .unwrap();
+        let warm_root = warm
+            .original_initializer_input(&warm_plan, 2)
+            .unwrap()
+            .expression()
+            .unwrap();
+        assert!(lazy.same_root(&warm_root));
+        assert_eq!(db.db().stats(dm_query::Kind(4)).computed, 0);
+    }
+    struct MidWorker {
+        db: Arc<QueryDb>,
+        token: crate::daemon::control::Cancellation,
+        coordinator: std::thread::ThreadId,
+        armed: std::sync::atomic::AtomicBool,
+    }
+    impl std::fmt::Debug for MidWorker {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.write_str("MidWorker")
+        }
+    }
+    impl SettingExpressionQueries for MidWorker {
+        fn expression(
+            &self,
+            input: &SettingExpressionInput<'_>,
+        ) -> Result<dm_syntax::SettingExpression, BodySyntaxFailure> {
+            SettingExpressionQueries::expression(&*self.db, input)
+        }
+        fn initializer<'source>(
+            &self,
+            input: &dm_tree::frontend::OriginalInitializerExpressionInput<'source>,
+        ) -> Result<dm_tree::frontend::OriginalInitializerExpression<'source>, BodySyntaxFailure>
+        {
+            SettingExpressionQueries::initializer(&*self.db, input)
+        }
+        fn with_declaration_admission(
+            &self,
+            operation: &mut dyn FnMut(
+                &dm_syntax::SettingAdmission<'_>,
+            ) -> Result<(), BodySyntaxFailure>,
+        ) -> Result<(), BodySyntaxFailure> {
+            SettingExpressionQueries::with_declaration_admission(&*self.db, &mut |a| {
+                // Schedule the REAL native checkpoint on the worker running the
+                // real checked producer, never at coordinator entry alone.
+                let schedule = (std::thread::current().id() != self.coordinator
+                    && !self.armed.swap(true, std::sync::atomic::Ordering::AcqRel))
+                .then(|| {
+                    self.db
+                        .cancel_settings_after_checkpoints_for_test(500, self.token.clone())
+                });
+                let result = operation(a);
+                drop(schedule);
+                result
+            })
+        }
+    }
+    #[test]
+    fn actual_querydb_early_builder_worker_context_midparse_cancellation_returns_no_frontend_and_same_source_recovers(
+    ) {
+        fn balanced(leaves: usize) -> String {
+            if leaves == 1 { "1".to_owned() } else {
+                format!("({}+{})", balanced(leaves / 2), balanced(leaves - leaves / 2))
+            }
+        }
+        let rhs = balanced(128);
+        let src = source(&format!("var/const/value={rhs}\n/proc/p()\n    return 1\n"));
+        let db = Arc::new(QueryDb::default());
+        let token = crate::daemon::control::Cancellation::default();
+        let actual = Arc::new(MidWorker {
+            db: Arc::clone(&db),
+            token: token.clone(),
+            coordinator: std::thread::current().id(),
+            armed: std::sync::atomic::AtomicBool::new(false),
+        });
+        let host = actual.clone() as Arc<dyn SettingExpressionQueries>;
+        let mut executor = dm_exec::BuildExecutor::new(2).unwrap();
+        let mut state = RetainedSemanticTree::default();
+        let binding = crate::daemon::control::bind_with_deadline(
+            token.clone(),
+            std::time::Instant::now() + std::time::Duration::from_secs(300),
+        );
+        let context = crate::daemon::control::WorkerContext::capture().unwrap();
+        let result = executor
+            .with_request_context(
+                None,
+                || Ok::<_, String>(context.enter()),
+                |worker| build(&src, &mut state, worker, &host),
+            )
+            .unwrap();
+        let FrontendBuildFailure::Operational(actual_io) = result
+            .err()
+            .expect("actual worker control returns no completed frontend")
+        else {
+            panic!("worker cancellation is not source syntax")
+        };
+        assert_eq!(actual_io.kind(), std::io::ErrorKind::Interrupted);
+        assert!(actual.armed.load(std::sync::atomic::Ordering::Acquire));
+        assert!(token.is_cancelled());
+        drop(binding);
+        let fresh = crate::daemon::control::bind_with_deadline(
+            crate::daemon::control::Cancellation::default(),
+            std::time::Instant::now() + std::time::Duration::from_secs(300),
+        );
+        let context = crate::daemon::control::WorkerContext::capture().unwrap();
+        let recovered = executor
+            .with_request_context(
+                None,
+                || Ok::<_, String>(context.enter()),
+                |worker| build(&src, &mut state, worker, &host),
+            )
+            .unwrap()
+            .unwrap();
+        drop(fresh);
+        let tree = &recovered.snapshot.tree;
+        let member = tree.resolve(tree.lookup_type(dm_ir::SymbolId::of("/")).unwrap(), dm_ir::SymbolId::of("value"), dm_tree::MemberKind::Var).unwrap();
+        assert_eq!(tree.member(member).unwrap().metadata.resolved_constant, Some(dm_ir::SemanticValue::NumberBits(128.0_f32.to_bits())), "balanced fixture preserves all 128 literal operands and actual eager-fold sum");
+        let early = roots(&recovered);
+        assert_eq!(early.len(), 1);
+        let plan = dm_tree::initializers::capture_declaration_plan(
+            &recovered.snapshot,
+            &recovered.emission_order,
+        )
+        .unwrap();
+        let root = recovered
+            .original_initializer_input(&plan, 0)
+            .unwrap()
+            .expression()
+            .unwrap();
+        assert_eq!(root.ast() as *const dm_syntax::Expr, early[0]);
+        assert_eq!(db.db().stats(dm_query::Kind(4)).computed, 0);
+    }
+    #[test]
+    fn actual_querydb_selected_constant_uses_early_root_and_admitted_original_index_then_cancels_and_recovers_warm() {
+        let src=source("var/const/value=unknown+1\n/proc/p()\n    return 1\n");
+        let executor=dm_exec::BuildExecutor::new(2).unwrap();
+        let db=Arc::new(QueryDb::default());let host=Arc::clone(&db) as Arc<dyn SettingExpressionQueries>;
+        let mut state=RetainedSemanticTree::default();let front=build(&src,&mut state,&executor,&host).unwrap();
+        let early=roots(&front);assert_eq!(early.len(),1);
+        let tree=&front.snapshot.tree;let owner=dm_ir::SymbolId::of("/");let name=dm_ir::SymbolId::of("value");
+        let member=tree.resolve(tree.lookup_type(owner).unwrap(),name,dm_tree::MemberKind::Var).unwrap();
+        let metadata=&tree.member(member).unwrap().metadata;
+        let context=front.original_declaration_expression_context().unwrap();
+        let input=context.selected(owner,name,metadata).unwrap();let root=input.expression().unwrap();
+        assert_eq!(root.ast() as *const dm_syntax::Expr,early[0],"selected constant never reparses early adapter syntax");
+        let recipe=root.into_recipe();let warm=recipe.reborrow_declaration(&input).unwrap().unwrap();assert!(std::ptr::eq(recipe.ast(),warm.ast()));
+        let token=crate::daemon::control::Cancellation::default();
+        let binding=crate::daemon::control::bind_with_deadline(token.clone(),std::time::Instant::now()+std::time::Duration::from_secs(300));
+        let schedule=db.cancel_settings_after_checkpoints_for_test(0,token);
+        let failure=context.selected(owner,name,metadata).err().expect("warm index cannot bypass actual cancellation");
+        let BodySyntaxFailure::Operational(actual)=failure else{panic!("cancellation is not captured syntax")};
+        assert_eq!(actual.kind(),std::io::ErrorKind::Interrupted);drop(schedule);drop(binding);
+        let recovered=context.selected(owner,name,metadata).unwrap().expression().unwrap();assert!(warm.same_root(&recovered));
+        assert_eq!(db.db().stats(dm_query::Kind(4)).computed,0,"transitive scalar source cannot demand procedure bodies");
+    }
+
 }

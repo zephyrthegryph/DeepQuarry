@@ -46,6 +46,10 @@ pub(super) fn parse_declarations_with_state(
     executor: &dm_exec::BuildExecutor,
     retained: Option<&super::declaration_state::RetainedDeclarations>,
 ) -> Result<ParsedDeclarations, Vec<Diagnostic>> {
+    parse_declarations_with_demand(expanded,config,memo,executor,retained,&super::declaration_demand::Compatibility)
+}
+pub(super) fn parse_declarations_with_demand<D:super::declaration_demand::Demand>(expanded:&ExpandedRegions,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,retained:Option<&super::declaration_state::RetainedDeclarations>,demand:&D)->Result<ParsedDeclarations,D::Failure>{
+    demand.run(|permit|permit.checkpoint())?;
     let source = expanded.text.as_ref();
     let parse_start = Instant::now();
     let profile_scan = dm_profile::stage("frontend.grammar_scan");
@@ -62,7 +66,7 @@ pub(super) fn parse_declarations_with_state(
             |text, offset| fresh_chunks.push((offset, text.len())),
         );
         if report.skipped_declarations != 0 {
-            return Err(vec![internal("grammar chunker omitted a declaration")]);
+            return Err(vec![internal("grammar chunker omitted a declaration")].into());
         }
     }
     let chunks = retained_descriptors
@@ -133,24 +137,22 @@ pub(super) fn parse_declarations_with_state(
                         let Some(&(offset, len)) = chunks.get(index) else {
                             break;
                         };
+                        let result=demand.run(|permit| {
+                        permit.checkpoint()?;
                         let text = &source[offset..offset + len];
                         let shared_started = Instant::now();
-                        let shared = retained
-                            .zip(retained_keys.as_ref())
-                            .and_then(|(state, keys)| state.get_shared(&keys[index], text, offset));
+                        let shared = match retained.zip(retained_keys.as_ref()) {
+                            Some((state,keys))=>permit.get(state,&keys[index],text,offset)?,
+                            None=>None,
+                        };
                         shared_ns.fetch_add(
                             shared_started.elapsed().as_nanos().min(u64::MAX as u128) as u64,
                             std::sync::atomic::Ordering::Relaxed,
                         );
                         if let Some(current) = shared {
                             facts_hits.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                            if sender
-                                .send((index, offset, Vec::new(), None, Ok(current)))
-                                .is_err()
-                            {
-                                break;
-                            }
-                            continue;
+                            permit.checkpoint()?;
+                            return Ok((index,offset,Vec::new(),None,Ok(current)));
                         }
                         let lookup_start = Instant::now();
                         let profile_lookup =
@@ -250,24 +252,8 @@ pub(super) fn parse_declarations_with_state(
                         // Native current input owns ONE contained source + original
                         // header token recipe. No extra read or normalized model.
                         let source_owner = source_owner.unwrap_or_else(|| text.into());
-                        let original_headers = match primary_tokens {
-                            Some(tokens) => {
-                                crate::procedure::OriginalProcedureHeaders::from_primary(
-                                    source_owner.clone(),
-                                    &ast.items,
-                                    offset,
-                                    tokens,
-                                )
-                            }
-                            None => crate::procedure::OriginalProcedureHeaders::reissue(
-                                source_owner.clone(),
-                                &ast.items,
-                                offset,
-                            ),
-                        };
-                        let admitted_facts = cached_facts
-                            .as_deref()
-                            .and_then(|bytes| chunkfacts::decode(bytes, text, offset));
+                        let original_headers=permit.headers(source_owner.clone(),&ast.items,offset,primary_tokens)?;
+                        let admitted_facts=permit.cached_facts(cached_facts.as_deref(),text,offset);
                         let has_cached_facts = admitted_facts.is_some();
                         drop(profile_lookup);
                         lookup_ns.fetch_add(
@@ -292,18 +278,7 @@ pub(super) fn parse_declarations_with_state(
                         } else if let Some(facts) = admitted_facts {
                             Ok(facts)
                         } else if errors.is_empty() {
-                            crate::adapter::from_ast_with_source_headers(
-                                &ast,
-                                SymbolTable::default(),
-                                FileId(0),
-                                0,
-                                0,
-                                source,
-                                original_headers
-                                    .as_ref()
-                                    .expect("validated original headers"),
-                                offset,
-                            )
+                            permit.adapt(&ast,source,original_headers.as_ref().expect("validated original headers"),offset)?
                             .and_then(
                                 |(mut adapted, header_receipt)| {
                                     crate::allocation_ledger::capture_with_header_receipt(
@@ -379,7 +354,7 @@ pub(super) fn parse_declarations_with_state(
                                     .map(|bytes| (receipt_index, span, Arc::clone(bytes)))
                             })
                         };
-                        let current = facts.and_then(|(facts, ledger)| {
+                        let current = match facts {Err(errors)=>Err(errors),Ok((facts,ledger))=>{
                             let headers = Some(Arc::clone(
                                 original_headers
                                     .as_ref()
@@ -388,15 +363,7 @@ pub(super) fn parse_declarations_with_state(
                             let current = if let (Some(state), Some(keys)) =
                                 (retained, retained_keys.as_ref())
                             {
-                                state.capture_source_headers(
-                                    &keys[index],
-                                    source_owner.clone(),
-                                    offset,
-                                    parsed,
-                                    facts,
-                                    ledger,
-                                    headers,
-                                )
+                                permit.capture(state,&keys[index],source_owner.clone(),offset,parsed,facts,ledger,Arc::clone(headers.as_ref().expect("fresh original headers")))?
                             } else {
                                 super::declaration_state::CurrentContribution::fresh_source_headers(
                                     source_owner.clone(),
@@ -418,7 +385,7 @@ pub(super) fn parse_declarations_with_state(
                                     message: "relative declaration binding failed".into(),
                                 }]
                             })
-                        });
+                        }};
                         if !cached_fragment_hit {
                             if let Some(memo) = memo {
                                 if let Some(bytes) = &produced_payload {
@@ -437,12 +404,10 @@ pub(super) fn parse_declarations_with_state(
                                 }
                             }
                         }
-                        if sender
-                            .send((index, offset, errors, fragment, current))
-                            .is_err()
-                        {
-                            break;
-                        }
+                        permit.checkpoint()?;
+                        Ok((index,offset,errors,fragment,current))
+                        });
+                        if sender.send((index,result)).is_err(){break;}
                     }
                 });
             }
@@ -471,20 +436,22 @@ pub(super) fn parse_declarations_with_state(
     };
     let mut ordered = std::panic::catch_unwind(std::panic::AssertUnwindSafe(parse))
         .map_err(|_| vec![internal("declaration parsing worker panicked")])?;
-    ordered.sort_by_key(|(index, _, _, _, _)| *index);
+    ordered.sort_by_key(|(index,_)|*index);
+    // Every worker is already joined/drained. Do not let source diagnostics in
+    // one chunk discard another completed chunk's actual operational failure.
+    let mut ready=Vec::with_capacity(ordered.len());
+    let mut first_failure=None;
+    for (_,result) in ordered {match result{Ok(chunk)=>ready.push(chunk),Err(actual)=>demand.merge_failure(&mut first_failure,actual)}}
+    if let Some(actual)=first_failure{return Err(actual)}
+    let mut ordered=ready;
     drop(workers_timer);
     let workers_elapsed = workers_started.elapsed();
     let adopt_started = Instant::now();
     let adopt_timer = dm_profile::detail_timer("decl.adopt_authored");
     if let Some(state) = retained {
         if ordered.iter().all(|(_, _, _, _, current)| current.is_ok()) {
-            state
-                .adopt_authored(
-                    ordered
-                        .iter_mut()
-                        .filter_map(|(_, _, _, _, current)| current.as_mut().ok()),
-                )
-                .ok_or_else(|| vec![internal("exact authored declaration adoption failed")])?;
+            demand.run(|permit|permit.adopt(state,&mut ordered))?
+                .ok_or_else(||vec![internal("exact authored declaration adoption failed")])?;
         }
     }
     drop(adopt_timer);
@@ -550,6 +517,7 @@ pub(super) fn parse_declarations_with_state(
     }
     let catalog_elapsed = catalog_started.elapsed();
     let publish_started = Instant::now();
+    demand.run(|permit|permit.checkpoint())?;
     if let Some(memo) = memo {
         for record in updated.into_values() {
             memo.insert(Arc::new(record));

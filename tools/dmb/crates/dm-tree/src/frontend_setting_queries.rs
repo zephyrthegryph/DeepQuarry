@@ -116,6 +116,21 @@ impl<'issuer, 'item> SettingStatementsInput<'issuer, 'item> {
     }
 }
 pub trait SettingExpressionQueries: std::fmt::Debug + Send + Sync {
+    /// Early declaration work on the already-owned native host's SAME counter.
+    /// This grants resource admission only, not any source/declaration proof.
+    /// Checked builder owns the original input and keeps the full semantic
+    /// AdapterError vector separate; actual IO travels this callback directly.
+    /// No whole BodySyntax query, new Db, revision, gate or budget reset occurs.
+    fn with_declaration_admission(
+        &self,
+        _: &mut dyn FnMut(&dm_syntax::SettingAdmission<'_>) -> Result<(), BodySyntaxFailure>,
+    ) -> Result<(), BodySyntaxFailure> {
+        Err(BodySyntaxFailure::Operational(std::io::Error::new(
+            std::io::ErrorKind::NotConnected,
+            "existing expression provider does not admit original declaration work",
+        )))
+    }
+
     fn expression(
         &self,
         input: &SettingExpressionInput<'_>,

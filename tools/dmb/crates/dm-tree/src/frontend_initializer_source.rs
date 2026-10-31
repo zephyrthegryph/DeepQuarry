@@ -51,7 +51,7 @@ impl OriginalInitializerExpression<'_> {
 /// No source, token buffer, metadata Arc or semantic result is retained here.
 #[derive(Clone)]
 struct OriginalInitializerRecipe {
-    owner: std::sync::Weak<RelativeSyntax>,
+    owner: std::sync::Weak<crate::procedure::OriginalProcedureHeaders>,
     value: dm_syntax::Span,
     ordinal: usize,
     count: usize,
@@ -90,7 +90,7 @@ impl InitializerExpressionRecipe {
     pub fn visit_storage(&self, mut visit: impl FnMut(usize, usize)) {
         visit(
             self.recipe.owner.as_ptr() as usize,
-            std::mem::size_of::<RelativeSyntax>(),
+            std::mem::size_of::<crate::procedure::OriginalProcedureHeaders>(),
         );
         self.root.visit_root_storage(&mut visit);
         self.root.visit_retention_storage(visit);
@@ -99,6 +99,13 @@ impl InitializerExpressionRecipe {
     /// Actual operational refusal is Err and must never become cache miss.
     /// Exact input authenticates the current plan/origin and source first;
     /// obtaining the same warm slot then checks current host/counter/control.
+    pub fn reborrow_declaration<'source>(&self,input:&OriginalDeclarationExpressionInput<'source>)->Result<Option<OriginalInitializerExpression<'source>>,BodySyntaxFailure>{
+        let i=&input.input;
+        if !std::sync::Weak::ptr_eq(&self.recipe.owner,&Arc::downgrade(i.owner)) || self.recipe.value!=i.value || self.recipe.ordinal!=i.ordinal || self.recipe.count!=i.count{return Ok(None)}
+        let current=input.expression()?;
+        if !self.root.same_root(&current.root){return Ok(None)}
+        Ok(Some(current))
+    }
     pub fn reborrow<'source>(
         &self,
         input: &OriginalInitializerExpressionInput<'source>,
@@ -169,11 +176,11 @@ impl<'source> OriginalInitializerExpressionInput<'source> {
         }
         Ok(result)
     }
-    pub fn prepare(
-        &self,
-        a: &dm_syntax::SettingAdmission<'_>,
-    ) -> Result<OriginalInitializerExpression<'source>, BodySyntaxFailure> {
-        let i = &self.input;
+    pub fn prepare(&self,a:&dm_syntax::SettingAdmission<'_>)->Result<OriginalInitializerExpression<'source>,BodySyntaxFailure>{
+        prepare_original_expression(self.frontend,self.expression,&self.input,a)
+    }
+}
+fn prepare_original_expression<'source>(frontend:&'source ColdFrontend,expression:&'source SymbolicExpression,i:&relative_declarations::OriginalInitializerTokenInput<'source>,a:&dm_syntax::SettingAdmission<'_>)->Result<OriginalInitializerExpression<'source>,BodySyntaxFailure>{
         let result = i
             .slots
             .obtain(i.ordinal, i.count, a, || {
@@ -198,7 +205,7 @@ impl<'source> OriginalInitializerExpressionInput<'source> {
                         .span
                         .start
                         .checked_add(i.offset)
-                        .and_then(|at| self.frontend.location(at)),
+                        .and_then(|at| frontend.location(at)),
                     message: error.message,
                 })
             }
@@ -206,7 +213,7 @@ impl<'source> OriginalInitializerExpressionInput<'source> {
         Ok(OriginalInitializerExpression {
             root,
             source: i.source,
-            authored: self.expression,
+            authored: expression,
             recipe: OriginalInitializerRecipe {
                 owner: Arc::downgrade(i.owner),
                 value: i.value,
@@ -214,6 +221,93 @@ impl<'source> OriginalInitializerExpressionInput<'source> {
                 count: i.count,
             },
         })
+}
+/// SAME original token/root base as declaration-plan inputs, issued from an
+/// actual selected variable instead of an adapted initializer write. No plan
+/// scan or copied meaning/source can create this private receipt.
+pub struct OriginalDeclarationExpressionInput<'source> {
+    frontend:&'source ColdFrontend,
+    expression:&'source SymbolicExpression,
+    input:relative_declarations::OriginalInitializerTokenInput<'source>,
+}
+impl std::fmt::Debug for OriginalDeclarationExpressionInput<'_>{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.write_str("OriginalDeclarationExpressionInput")}}
+impl<'source> OriginalDeclarationExpressionInput<'source>{
+    pub fn prepare(&self,a:&dm_syntax::SettingAdmission<'_>)->Result<OriginalInitializerExpression<'source>,BodySyntaxFailure>{
+        prepare_original_expression(self.frontend,self.expression,&self.input,a)
+    }
+    pub fn expression(&self)->Result<OriginalInitializerExpression<'source>,BodySyntaxFailure>{
+        original_declaration_admission(self.frontend,|a|self.prepare(a))
+    }
+}
+/// Private callback shape prevents omitted/repeated host calls from issuing a
+/// result. The stack capability never escapes; the returned source borrow is
+/// tied to the original frontend rather than this temporary provider Arc.
+fn original_declaration_admission<T>(front:&ColdFrontend,operation:impl FnOnce(&dm_syntax::SettingAdmission<'_>)->Result<T,BodySyntaxFailure>)->Result<T,BodySyntaxFailure>{
+    let provider=front.setting_expression_queries.as_ref().and_then(std::sync::Weak::upgrade).ok_or_else(||BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"original declaration requires existing native expression host")))?;
+    let mut operation=Some(operation);let mut completed=None;
+    let outer=provider.with_declaration_admission(&mut |a|{
+        let operation=operation.take().ok_or_else(||BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"original declaration admission callback repeated")))?;
+        let result=operation(a);
+        if matches!(&result,Err(BodySyntaxFailure::Operational(_))){return result.map(|_|())}
+        let status=a.checkpoint();if let Some(actual)=a.take_operational_error(){return Err(BodySyntaxFailure::Operational(actual))}status.map_err(BodySyntaxFailure::Operational)?;
+        completed=Some(result);Ok(())
+    });
+    outer?;
+    completed.ok_or_else(||BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"original declaration admission callback omitted")))?
+}
+/// Once-per-wave current source join. The existing target index is admitted
+/// lazily once on the SAME owner/counter; no member-to-source sibling map.
+pub struct OriginalDeclarationExpressionContext<'source>{
+    frontend:&'source ColdFrontend,
+    mapping:&'source source_export_mapping::SourceExportMapping,
+}
+impl std::fmt::Debug for OriginalDeclarationExpressionContext<'_>{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.write_str("OriginalDeclarationExpressionContext")}}
+impl<'source> OriginalDeclarationExpressionContext<'source>{
+    /// Couple a top RHS with this SAME immutable original frontend frame before
+    /// any transitive declaration read. No repeated whole-source validation.
+    pub fn require_initializer(&self,input:&OriginalInitializerExpressionInput<'_>)->Result<(),BodySyntaxFailure>{
+        if !std::ptr::eq(self.frontend,input.frontend)
+            || !std::ptr::eq(input.plan.source(),&self.frontend.snapshot)
+            || !std::ptr::eq(self.mapping,self.frontend.source_export_mapping.as_ref()){
+            return Err(BodySyntaxFailure::Syntax(internal("initializer and transitive declaration context use different original frames")));
+        }
+        Ok(())
+    }
+
+    pub fn selected(&self,owner:dm_ir::SymbolId,name:dm_ir::SymbolId,data:&dm_ir::DeclarationMeaning)->Result<OriginalDeclarationExpressionInput<'source>,BodySyntaxFailure>{
+        original_declaration_admission(self.frontend,|a|self.selected_admitted(owner,name,data,a))
+    }
+    pub fn selected_admitted(&self,owner:dm_ir::SymbolId,name:dm_ir::SymbolId,data:&dm_ir::DeclarationMeaning,a:&dm_syntax::SettingAdmission<'_>)->Result<OriginalDeclarationExpressionInput<'source>,BodySyntaxFailure>{
+        let pending=(||{
+            a.checkpoint().map_err(BodySyntaxFailure::Operational)?;
+            let reject=|text:&str|BodySyntaxFailure::Syntax(internal(text));
+            let frontend=self.frontend;let tree=&frontend.snapshot.tree;
+            let owner_id=tree.lookup_type(owner).ok_or_else(||reject("selected declaration owner unavailable"))?;
+            let member_id=tree.resolve(owner_id,name,crate::MemberKind::Var).ok_or_else(||reject("selected declaration variable unavailable"))?;
+            let member=tree.member(member_id).ok_or_else(||reject("selected declaration member unavailable"))?;
+            if tree.type_node(member.owner).map(|node|node.path)!=Some(owner) || member.name!=name || !std::ptr::eq(data,member.metadata.as_ref()){
+                return Err(reject("selected declaration is not original current metadata owner"));
+            }
+            let expression=member.metadata.initializer.as_ref().ok_or_else(||reject("selected declaration has no authored RHS"))?;
+            let ids=self.frontend.snapshot.occurrences.for_target_admitted(crate::Target::Member(member_id),a).map_err(BodySyntaxFailure::Operational)?;
+            let [occurrence_id]=ids else{return Err(reject("selected declaration requires one exact original occurrence"))};
+            let occurrence=self.frontend.snapshot.occurrences.get(*occurrence_id).ok_or_else(||reject("selected original occurrence unavailable"))?;
+            if occurrence.target!=crate::Target::Member(member_id){return Err(reject("selected original occurrence target mismatch"))}
+            let cursor=self.mapping.initializer_declaration_cursor(*occurrence_id).map_err(|e|reject(&e))?;
+            let input=self.frontend.issued_syntax.initializer_token_input(cursor,expression,tree.symbols()).map_err(|e|reject(&e))?;
+            a.checkpoint().map_err(BodySyntaxFailure::Operational)?;
+            Ok(OriginalDeclarationExpressionInput{frontend:self.frontend,expression,input})
+        })();
+        if let Some(actual)=a.take_operational_error(){return Err(BodySyntaxFailure::Operational(actual))}
+        pending
+    }
+}
+impl ColdFrontend{
+    pub fn original_declaration_expression_context(&self)->Result<OriginalDeclarationExpressionContext<'_>,BodySyntaxFailure>{
+        let reject=|text:&str|BodySyntaxFailure::Syntax(internal(text));
+        if !Arc::ptr_eq(&self.syntax,&self.issued_syntax)||!self.expanded.text.same_view(&self.issued_arena){return Err(reject("declaration context is not original current frontend source"))}
+        let mapping=self.source_export_mapping().ok_or_else(||reject("declaration current source mapping is unissued"))?;
+        Ok(OriginalDeclarationExpressionContext{frontend:self,mapping})
     }
 }
 /// One stack-only admission of the immutable current declaration wave. Full
@@ -365,6 +459,12 @@ mod tests {
     #[derive(Debug)]
     struct OriginalHost(Arc<AtomicUsize>);
     impl SettingExpressionQueries for OriginalHost {
+        fn with_declaration_admission(&self,operation:&mut dyn FnMut(&dm_syntax::SettingAdmission<'_>)->Result<(),BodySyntaxFailure>)->Result<(),BodySyntaxFailure>{
+            let checkpoint=||Ok(());let a=dm_syntax::SettingAdmission::new(&self.0,128*1024*1024,&checkpoint);
+            let result=operation(&a);
+            if matches!(&result,Err(BodySyntaxFailure::Operational(_))){return result}
+            let status=a.checkpoint();if let Some(actual)=a.take_operational_error(){return Err(BodySyntaxFailure::Operational(actual))}status.map_err(BodySyntaxFailure::Operational)?;result
+        }
         fn expression(
             &self,
             input: &SettingExpressionInput<'_>,
@@ -831,4 +931,42 @@ mod tests {
         );
         assert!(recipe.reborrow(&input).unwrap().is_some());
     }
+    #[test]
+    fn selected_declaration_source_requires_exact_current_metadata_and_reuses_original_plan_root_without_body_demand(){
+        let host=Arc::new(OriginalHost(Arc::new(AtomicUsize::new(0)))) as Arc<dyn SettingExpressionQueries>;
+        let front=front("/datum/probe\n    var/const/value=unknown+1\n/datum/child\n    parent_type=/datum/probe\n/proc/no_body()\n    return 1\n",&host);
+        let tree=&front.snapshot.tree;let owner=dm_ir::SymbolId::of("/datum/probe");let name=dm_ir::SymbolId::of("value");let member=tree.resolve(tree.lookup_type(owner).unwrap(),name,crate::MemberKind::Var).unwrap();let metadata=&tree.member(member).unwrap().metadata;
+        let context=front.original_declaration_expression_context().unwrap();
+        let input=context.selected(owner,name,metadata).unwrap();let first=input.expression().unwrap();
+        assert_eq!(&first.source()[first.ast().span.range()],"unknown+1");
+        let warm=context.selected(owner,name,metadata).unwrap().expression().unwrap();assert!(first.same_root(&warm));
+        let recipe=first.into_recipe();let rebound=recipe.reborrow_declaration(&input).unwrap().unwrap();assert!(std::ptr::eq(recipe.ast(),rebound.ast()));
+        let copied=metadata.as_ref().clone();assert!(context.selected(owner,name,&copied).is_err(),"copied semantic meaning is not original source authority");
+        assert!(context.selected(dm_ir::SymbolId::of("/datum/child"),name,metadata).is_err(),"inherited lookup must keep actual declaring owner");
+        let plan=crate::initializers::capture_declaration_plan(&front.snapshot,&front.emission_order).unwrap();
+        let ordinal=plan.plan().origins.iter().position(|origin|matches!(origin.kind,crate::initializers::InitializerOriginKind::Declaration(id)if id==member)).unwrap();
+        let original=front.original_initializer_input(&plan,ordinal).unwrap().expression().unwrap();assert!(original.same_root(&rebound),"both exact issuers borrow one original header slot");
+    }
+    #[test]
+    fn selected_source_foreign_frontend_cannot_reborrow_equal_text_recipe(){
+        let host=Arc::new(OriginalHost(Arc::new(AtomicUsize::new(0)))) as Arc<dyn SettingExpressionQueries>;
+        let a=front("var/const/value=unknown+1\n",&host);let b=front("var/const/value=unknown+1\n",&host);
+        let select=|front:&ColdFrontend|{let tree=&front.snapshot.tree;tree.resolve(tree.lookup_type(dm_ir::SymbolId::of("/")).unwrap(),dm_ir::SymbolId::of("value"),crate::MemberKind::Var).unwrap()};
+        let ai=select(&a);let bi=select(&b);
+        let ac=a.original_declaration_expression_context().unwrap();let bc=b.original_declaration_expression_context().unwrap();
+        let input=ac.selected(dm_ir::SymbolId::of("/"),dm_ir::SymbolId::of("value"),&a.snapshot.tree.member(ai).unwrap().metadata).unwrap();let recipe=input.expression().unwrap().into_recipe();
+        let input=bc.selected(dm_ir::SymbolId::of("/"),dm_ir::SymbolId::of("value"),&b.snapshot.tree.member(bi).unwrap().metadata).unwrap();
+        assert!(recipe.reborrow_declaration(&input).unwrap().is_none(),"equal authored bytes cannot substitute fixed original owner");
+    }
+
+    #[test]
+    fn transitive_context_requires_same_top_initializer_frontend_even_for_equal_source(){
+        let host=Arc::new(OriginalHost(Arc::new(AtomicUsize::new(0)))) as Arc<dyn SettingExpressionQueries>;
+        let a=front("var/const/value=unknown+1\n",&host);let b=front("var/const/value=unknown+1\n",&host);
+        let pa=crate::initializers::capture_declaration_plan(&a.snapshot,&a.emission_order).unwrap();let pb=crate::initializers::capture_declaration_plan(&b.snapshot,&b.emission_order).unwrap();
+        let ai=a.original_initializer_input(&pa,0).unwrap();let bi=b.original_initializer_input(&pb,0).unwrap();
+        let context=a.original_declaration_expression_context().unwrap();
+        context.require_initializer(&ai).unwrap();assert!(context.require_initializer(&bi).is_err(),"equal source/semantic meaning is not original frame authority");
+    }
+
 }

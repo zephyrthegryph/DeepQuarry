@@ -165,6 +165,12 @@ impl RetainedDeclarations {
             .with_pending(|claims| claims.get_shared(key, text, offset))
             .flatten()
     }
+    pub(in crate::frontend) fn get_shared_checked(&self,key:&[u8],text:&str,offset:usize,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<CurrentContribution>>{
+        self.access.with_pending(|claims|claims.get_shared_checked(key,text,offset,a)).unwrap_or_else(||Err(std::io::Error::new(std::io::ErrorKind::NotConnected,"checked declaration lookup has no pending request")))
+    }
+    pub(in crate::frontend) fn capture_source_headers_checked(&self,key:&[u8],source:dm_preprocess::SourceText,offset:usize,items:Vec<Item>,facts:crate::AdaptedDeclarations,ledger:AllocationLedger,headers:Arc<crate::procedure::OriginalProcedureHeaders>,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<CurrentContribution>>{
+        self.access.with_pending(|claims|claims.capture_source_headers_checked(key,source,offset,items,facts,ledger,headers,a)).unwrap_or_else(||Err(std::io::Error::new(std::io::ErrorKind::NotConnected,"checked declaration capture has no pending request")))
+    }
     pub(in crate::frontend) fn capture(
         &self,
         key: &[u8],
@@ -233,6 +239,9 @@ impl RetainedDeclarations {
         self.access
             .with_pending(|claims| claims.adopt_authored(currents))
             .flatten()
+    }
+    pub(crate) fn adopt_authored_checked<'a>(&self,currents:impl IntoIterator<Item=&'a mut CurrentContribution>,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<()>>{
+        self.access.with_pending(|claims|claims.adopt_authored_checked(currents,a)).unwrap_or_else(||Err(std::io::Error::new(std::io::ErrorKind::NotConnected,"checked authored adoption has no pending declaration request")))
     }
     pub(in crate::frontend) fn stats(&self) -> DeclarationRetentionStats {
         self.access

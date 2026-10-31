@@ -18,7 +18,6 @@ pub enum BindingError {
 #[derive(Debug)]
 pub struct RelativeSyntax {
     original_headers: Option<Arc<crate::procedure::OriginalProcedureHeaders>>,
-    initializer_roots: dm_syntax::SettingExpressionSlots,
     items: arena::Arena,
     source_len: usize,
     max_end: usize,
@@ -235,7 +234,6 @@ impl RelativeSyntax {
             let _ = primary_headers.set(Ok(headers.into()));
         }
         Ok(Self {
-            initializer_roots: Default::default(),
             original_headers,
             items: arena::Arena::capture(items, source),
             source_len,
@@ -355,15 +353,28 @@ impl RelativeSyntax {
     }
     /// New input payload only; source bytes share this RelativeSyntax's existing
     /// SourceText owner. Pointer dedup is the caller's live-owner census job.
+    /// Checked producer reuse requires this SAME original header completion and
+    /// resource domain. This test alone never admits a current source/frame.
+    pub(crate) fn initializer_admission_matches(
+        &self,
+        a: &dm_syntax::SettingAdmission<'_>,
+    ) -> std::io::Result<bool> {
+        match &self.original_headers {
+            Some(headers) => headers.initializer_admission_matches(a),
+            None => {
+                a.checkpoint()
+                    .map_err(|proxy| a.take_operational_error().unwrap_or(proxy))?;
+                Ok(false)
+            }
+        }
+    }
     pub fn visit_setting_roots(&self, mut visit: impl FnMut(&dm_syntax::SettingExpression)) {
-        self.initializer_roots
-            .visit_storage(|_, _, _| {}, &mut visit);
         if let Some(headers) = &self.original_headers {
+            headers.visit_initializer_roots(&mut visit);
             headers.visit_setting_roots(&mut visit);
         }
     }
     pub fn visit_original_header_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
-        self.initializer_roots.visit_storage(&mut visit, |_| {});
         if let Some(headers) = &self.original_headers {
             headers.visit_storage(&mut visit);
         }
@@ -520,7 +531,7 @@ pub(crate) struct OriginalSettingTokenInput<'a> {
     pub(crate) original_value: Span,
 }
 pub(crate) struct OriginalInitializerTokenInput<'a> {
-    pub(crate) owner: &'a Arc<RelativeSyntax>,
+    pub(crate) owner: &'a Arc<crate::procedure::OriginalProcedureHeaders>,
     pub(crate) source: &'a dm_preprocess::SourceText,
     pub(crate) tokens: &'a [dm_syntax::SpanToken],
     pub(crate) value: Span,
@@ -862,6 +873,8 @@ impl DeclarationSyntax {
             .original_headers
             .as_ref()
             .ok_or("original initializer token owner unavailable")?;
+        let (ordinal, count) =
+            headers.initializer_slot_coordinate(node.item.header_span(), (ordinal, count))?;
         let (source, tokens, value) = headers.initializer_tokens(
             node.item.header_span(),
             node.kind() == ItemKind::Var,
@@ -869,14 +882,14 @@ impl DeclarationSyntax {
             symbols,
         )?;
         Ok(OriginalInitializerTokenInput {
-            owner: &chunk.relative,
+            owner: headers,
             source,
             tokens,
             value,
             ordinal,
             count,
             offset: chunk.offset,
-            slots: &chunk.relative.initializer_roots,
+            slots: headers.initializer_slots(),
         })
     }
     /// Called only by the original native body parser under its SAME stack

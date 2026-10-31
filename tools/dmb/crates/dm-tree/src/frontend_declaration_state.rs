@@ -172,6 +172,16 @@ impl DeclarationClaims {
         self.hits.fetch_add(1, Ordering::Relaxed);
         Some(bound)
     }
+    pub(super) fn get_shared_checked(&self,key:&[u8],text:&str,offset:usize,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<CurrentContribution>>{
+        let bound=self.values.get_checked(key,text,offset,a)?;
+        if bound.is_some(){self.hits.fetch_add(1,Ordering::Relaxed);}Ok(bound)
+    }
+    pub(super) fn capture_source_headers_checked(&self,key:&[u8],source:dm_preprocess::SourceText,offset:usize,items:Vec<Item>,facts:crate::AdaptedDeclarations,ledger:AllocationLedger,headers:Arc<crate::procedure::OriginalProcedureHeaders>,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<CurrentContribution>>{
+        let Some(mut current)=CurrentContribution::fresh_source_headers(source,offset,items,facts,ledger,Some(headers))else{return Ok(None)};
+        if !current.value.syntax.initializer_admission_matches(a)?{return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"fresh checked contribution lacks original producer admission"));}
+        if !self.values.is_shared() && self.values.publish_checked(key,&mut current,a)?.is_none(){return Ok(None);}
+        Ok(Some(current))
+    }
     pub(super) fn capture(
         &self,
         key: &[u8],
@@ -988,3 +998,7 @@ impl ActiveSymbols {
         Ok(self.symbols.clone())
     }
 }
+
+#[cfg(test)]
+#[path="frontend_declaration_state/initializer_checked_tests.rs"]
+mod initializer_checked_tests;

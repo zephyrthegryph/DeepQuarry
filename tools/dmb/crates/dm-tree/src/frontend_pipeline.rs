@@ -173,6 +173,24 @@ pub fn build_for_checker_diagnostics_with_state<P: SourceProvider>(
         })?,
     )
 }
+/// Checked original declaration producer; caller supplies its existing host.
+/// No source-root feature or request routing is enabled by this additive API.
+pub fn build_with_executor_and_semantic_state_for_policy_checked<P:SourceProvider>(project:&Path,provider:&P,defines:&BTreeMap<String,String>,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,state:Option<&mut RetainedSemanticTree>,require_primary_headers:bool,host:&Arc<dyn SettingExpressionQueries>)->Result<ColdFrontend,FrontendBuildFailure>{
+    use super::declaration_demand::Demand;
+    let demand=super::declaration_demand::Checked{host};
+    let result=build_with_executor_and_semantic_state_for_policy_demand(project,provider,defines,config,memo,executor,state,require_primary_headers,None,&demand);
+    demand.finish(result)
+}
+pub fn build_for_checker_diagnostics_with_state_checked<P:SourceProvider>(project:&Path,provider:&P,defines:&BTreeMap<String,String>,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,state:Option<&mut RetainedSemanticTree>,host:&Arc<dyn SettingExpressionQueries>)->Result<DiagnosticFrontend,FrontendBuildFailure>{
+    use super::declaration_demand::Demand;
+    let demand=super::declaration_demand::Checked{host};
+    let mut receipt=None;
+    let result=(||{
+        let frontend=build_with_executor_and_semantic_state_for_policy_demand(project,provider,defines,config,memo,executor,state,true,Some(&mut receipt),&demand)?;
+        DiagnosticFrontend::bind(frontend,receipt.ok_or_else(||vec![internal("diagnostic builder did not issue its original graph receipt")])?).map_err(FrontendBuildFailure::Diagnostics)
+    })();
+    demand.finish(result)
+}
 fn build_with_executor_and_semantic_state_for_policy_mode<P: SourceProvider>(
     project: &Path,
     provider: &P,
@@ -184,6 +202,10 @@ fn build_with_executor_and_semantic_state_for_policy_mode<P: SourceProvider>(
     require_primary_headers: bool,
     diagnostic: Option<&mut Option<crate::diagnostic_declarations::DiagnosticDeclarationReceipt>>,
 ) -> Result<ColdFrontend, Vec<Diagnostic>> {
+    build_with_executor_and_semantic_state_for_policy_demand(project,provider,defines,config,memo,executor,semantic_state,require_primary_headers,diagnostic,&super::declaration_demand::Compatibility)
+}
+fn build_with_executor_and_semantic_state_for_policy_demand<P:SourceProvider,D:super::declaration_demand::Demand>(project:&Path,provider:&P,defines:&BTreeMap<String,String>,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,mut semantic_state:Option<&mut RetainedSemanticTree>,require_primary_headers:bool,diagnostic:Option<&mut Option<crate::diagnostic_declarations::DiagnosticDeclarationReceipt>>,demand:&D)->Result<ColdFrontend,D::Failure>{
+    demand.run(|permit|permit.checkpoint())?;
     let declaration_request = semantic_state
         .as_ref()
         .and_then(|state| state.declarations.compatibility_request());
@@ -475,7 +497,8 @@ fn build_with_executor_and_semantic_state_for_policy_mode<P: SourceProvider>(
     // Current native preparation/planning/expansion has issued ALL new input
     // facts and acquisition leases. Reuse no program merely from a hash.
     drop(mapping);
-    let (plan, expanded, files, by_path, mut timings) = if diagnostics.is_empty()
+    let admitted_previous=match previous.as_ref(){Some(old)=>demand.run(|permit|permit.syntax(&old.syntax))?,None=>false};
+    let (plan, expanded, files, by_path, mut timings) = if diagnostics.is_empty() && admitted_previous
         && previous
             .as_ref()
             .zip(semantic_state.as_ref())
@@ -495,6 +518,8 @@ fn build_with_executor_and_semantic_state_for_policy_mode<P: SourceProvider>(
         ) {
             Ok(mut frontend) => {
                 frontend.timings.total = total_start.elapsed();
+                let frontend=demand.attach(frontend)?;
+                demand.run(|permit|permit.checkpoint())?;
                 if let Some(state) = semantic_state.as_deref_mut() {
                     state.record_original_program_reuse();
                 }
@@ -538,12 +563,13 @@ fn build_with_executor_and_semantic_state_for_policy_mode<P: SourceProvider>(
         allocation_ledger,
         declaration_errors,
         reuse_stats,
-    } = declaration_parse::parse_declarations_with_state(
+    } = declaration_parse::parse_declarations_with_demand(
         &expanded,
         config,
         memo,
         executor,
         semantic_state.as_deref().map(|state| &state.declarations),
+        demand,
     )?;
     timings.declaration_reuse = reuse_stats;
     diagnostics.extend(
@@ -575,9 +601,11 @@ fn build_with_executor_and_semantic_state_for_policy_mode<P: SourceProvider>(
             })
     });
     if !diagnostics.is_empty() {
-        return Err(diagnostics);
+        demand.run(|permit|permit.checkpoint())?;
+        return Err(diagnostics.into());
     }
     if !declaration_errors.is_empty() {
+        demand.run(|permit|permit.checkpoint())?;
         return Err(declaration_errors
             .into_iter()
             .map(|error| Diagnostic {
@@ -586,7 +614,7 @@ fn build_with_executor_and_semantic_state_for_policy_mode<P: SourceProvider>(
                 message: error.message,
                 location: mapping.output(error.span.start as usize),
             })
-            .collect());
+            .collect::<Vec<_>>().into());
     }
     timings.declaration_parsing = parse_start.elapsed();
     observe(
@@ -797,9 +825,6 @@ fn build_with_executor_and_semantic_state_for_policy_mode<P: SourceProvider>(
     drop(profile_stage);
     timings.total = total_start.elapsed();
     let bodies: Arc<[BodyOccurrence]> = bodies.into();
-    if let Some(request) = &declaration_request {
-        request.publish_successful();
-    }
     let issued_body_codes = bodies
         .iter()
         .zip(body_codes)
@@ -909,6 +934,9 @@ fn build_with_executor_and_semantic_state_for_policy_mode<P: SourceProvider>(
     if require_primary_headers {
         frontend.issue_declaration_compatibility();
     }
+    let frontend=demand.attach(frontend)?;
+    demand.run(|permit|permit.checkpoint())?;
+    if let Some(request)=&declaration_request{request.publish_successful();}
     Ok(frontend)
 }
 

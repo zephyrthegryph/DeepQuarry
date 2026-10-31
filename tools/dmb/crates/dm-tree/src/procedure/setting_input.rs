@@ -80,15 +80,57 @@ fn checked_row(
     })
 }
 fn push(out: &mut Vec<OriginalSettingsBody>, row: OriginalSettingsBody) -> Result<(), String> {
+    push_using(
+        out,
+        row,
+        |_| "original setting row allocation refused".to_owned(),
+        || "original setting row capacity overflow".to_owned(),
+    )
+}
+fn push_using<E>(
+    out: &mut Vec<OriginalSettingsBody>,
+    row: OriginalSettingsBody,
+    allocation: impl FnOnce(std::collections::TryReserveError) -> E,
+    capacity: impl FnOnce() -> E,
+) -> Result<(), E> {
     out.len()
         .checked_add(1)
         .and_then(|n| n.checked_mul(std::mem::size_of::<OriginalSettingsBody>()))
-        .ok_or("original setting row capacity overflow")?;
-    out.try_reserve_exact(1)
-        .map_err(|_| "original setting row allocation refused")?;
+        .ok_or_else(capacity)?;
+    out.try_reserve_exact(1).map_err(allocation)?;
     out.push(row);
     Ok(())
 }
+#[derive(Debug)]
+struct OriginalSettingAllocationFailure(std::collections::TryReserveError);
+impl std::fmt::Display for OriginalSettingAllocationFailure {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("original setting row allocation refused")
+    }
+}
+impl std::error::Error for OriginalSettingAllocationFailure {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        Some(&self.0)
+    }
+}
+fn setting_allocation(actual: std::collections::TryReserveError) -> super::OriginalHeaderFailure {
+    super::OriginalHeaderFailure::Operational(std::io::Error::new(
+        std::io::ErrorKind::OutOfMemory,
+        OriginalSettingAllocationFailure(actual),
+    ))
+}
+fn push_checked(
+    out: &mut Vec<OriginalSettingsBody>,
+    row: OriginalSettingsBody,
+) -> Result<(), super::OriginalHeaderFailure> {
+    push_using(out, row, setting_allocation, || {
+        super::OriginalHeaderFailure::Operational(std::io::Error::new(
+            std::io::ErrorKind::OutOfMemory,
+            "original setting row capacity overflow",
+        ))
+    })
+}
+
 impl OriginalProcedureHeaders {
     pub(crate) fn parse_setting_original(
         &self,
@@ -110,6 +152,21 @@ impl OriginalProcedureHeaders {
         rows: &mut [HeaderAllocationRow],
         offset: usize,
     ) -> Result<(), String> {
+        self.install_settings_using(rows, offset, push)
+    }
+    pub(super) fn install_settings_checked(
+        &self,
+        rows: &mut [HeaderAllocationRow],
+        offset: usize,
+    ) -> Result<(), super::OriginalHeaderFailure> {
+        self.install_settings_using(rows, offset, push_checked)
+    }
+    fn install_settings_using<E: From<String> + From<&'static str>>(
+        &self,
+        rows: &mut [HeaderAllocationRow],
+        offset: usize,
+        mut push_row: impl FnMut(&mut Vec<OriginalSettingsBody>, OriginalSettingsBody) -> Result<(), E>,
+    ) -> Result<(), E> {
         let mut settings = Vec::new();
         for row in rows {
             let owner = row
@@ -122,7 +179,7 @@ impl OriginalProcedureHeaders {
                 }
                 continue;
             }
-            push(
+            push_row(
                 &mut settings,
                 checked_row(
                     relative(row.body, offset)?,
@@ -132,7 +189,7 @@ impl OriginalProcedureHeaders {
                 )?,
             )?;
         }
-        self.finish_settings(settings)
+        self.finish_settings(settings).map_err(Into::into)
     }
     fn finish_settings(&self, mut settings: Vec<OriginalSettingsBody>) -> Result<(), String> {
         settings.sort_unstable_by_key(|r| r.body.start);
@@ -682,5 +739,27 @@ mod tests {
                 ),
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod checked_metadata_allocation_tests {
+    #[test]
+    fn actual_setting_metadata_tryreserve_error_keeps_io_kind_cause_and_legacy_text() {
+        let actual = Vec::<u8>::new()
+            .try_reserve_exact(usize::MAX)
+            .err()
+            .expect("actual standard capacity refusal");
+        let super::super::OriginalHeaderFailure::Operational(error) =
+            super::setting_allocation(actual)
+        else {
+            panic!("allocator error is not declaration syntax")
+        };
+        assert_eq!(error.kind(), std::io::ErrorKind::OutOfMemory);
+        assert_eq!(error.to_string(), "original setting row allocation refused");
+        assert!(
+            std::error::Error::source(error.get_ref().unwrap()).is_some(),
+            "original TryReserveError cause retained"
+        );
     }
 }

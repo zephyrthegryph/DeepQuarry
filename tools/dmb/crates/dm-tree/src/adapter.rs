@@ -4,6 +4,9 @@ use crate::{DefinitionMode, MemberKind, MemberMetadata, Provenance, Skeleton};
 use dm_ir::{FileId, Span, SymbolId, SymbolTable, TypePath};
 use dm_syntax::{AstFile, Item, ItemKind, TokenKind};
 use std::sync::Arc;
+#[path="adapter_initializer_demand.rs"]
+mod initializer_demand;
+use initializer_demand::{AdapterDemand,WalkFailure};
 
 #[derive(Clone, Debug)]
 pub struct AdapterError {
@@ -123,6 +126,37 @@ pub(crate) fn from_ast_with_source_headers<'a>(
             })?;
     Ok((facts, receipt))
 }
+
+/// Opaque completed checked adapter operation. No fact/model owner is copied;
+/// the header consumes this stack token before the facts move into the result.
+pub(crate) struct CompletedInitializerAdapter<'facts,'ast>{facts:&'facts AdaptedDeclarations,header:&'ast crate::procedure::OriginalProcedureHeaders}
+impl<'facts,'ast> CompletedInitializerAdapter<'facts,'ast>{
+    pub(crate) fn header_owner(&self)->&'ast crate::procedure::OriginalProcedureHeaders{self.header}
+    pub(crate) fn facts(&self)->&AdaptedDeclarations{self.facts}
+}
+pub(crate) fn from_ast_with_source_headers_checked<'a>(ast:&'a AstFile,symbols:SymbolTable,file:FileId,include_occurrence:u32,region:u128,source:&str,headers:&'a crate::procedure::OriginalProcedureHeaders,offset:usize,admission:&dm_syntax::SettingAdmission<'_>)->Result<Result<(AdaptedDeclarations,crate::procedure::HeaderAllocationReceipt<'a>),Vec<AdapterError>>,std::io::Error>{
+    let demand=initializer_demand::Checked{admission};
+    demand.checkpoint()?;
+    let result=from_ast_with_cursor_issued_using(ast,symbols,file,include_occurrence,region,"/",Some(source),Some((headers,offset)),&demand)?;
+    let result=match result {
+        Err(errors)=>Err(errors),
+        Ok((facts,rows))=>match crate::procedure::HeaderAllocationReceipt::from_rows_checked(&ast.items,headers,offset,rows){
+            Ok(receipt)=>Ok((facts,receipt)),
+            Err(crate::procedure::header_input::OriginalHeaderFailure::Operational(actual))=>return Err(actual),
+            Err(crate::procedure::header_input::OriginalHeaderFailure::Source(message))=>Err(vec![AdapterError{kind:dm_syntax::DiagnosticKind::Unsupported,span:Span{file,start:offset as u32,end:offset as u32},message}]),
+        },
+    };
+    demand.checkpoint()?;
+    if let Ok((facts,receipt))=&result{
+        let completed=CompletedInitializerAdapter{facts,header:receipt.inputs};
+        match headers.complete_initializer_admission(completed,admission){
+            Ok(())=>(),
+            Err(crate::procedure::header_input::OriginalHeaderFailure::Operational(actual))=>return Err(actual),
+            Err(crate::procedure::header_input::OriginalHeaderFailure::Source(message))=>return Ok(Err(vec![AdapterError{kind:dm_syntax::DiagnosticKind::Unsupported,span:Span{file,start:offset as u32,end:offset as u32},message}])),
+        }
+    }
+    Ok(result)
+}
 fn from_ast_with_cursor(
     ast: &AstFile,
     symbols: SymbolTable,
@@ -160,6 +194,25 @@ fn from_ast_with_cursor_issued(
     ),
     Vec<AdapterError>,
 > {
+    match from_ast_with_cursor_issued_using(ast,symbols,file,include_occurrence,region,owner,source,headers,&initializer_demand::Compatibility){Ok(result)=>result,Err(never)=>match never{}}
+}
+fn from_ast_with_cursor_issued_using<D:AdapterDemand>(
+    ast: &AstFile,
+    mut symbols: SymbolTable,
+    file: FileId,
+    include_occurrence: u32,
+    region: u128,
+    owner: &str,
+    source: Option<&str>,
+    headers: Option<(&crate::procedure::OriginalProcedureHeaders, usize)>,
+    demand:&D,
+) -> Result<Result<
+    (
+        AdaptedDeclarations,
+        Vec<crate::procedure::header_input::HeaderAllocationRow>,
+    ),
+    Vec<AdapterError>,
+>,D::Operational> {
     let mut header_rows = Vec::new();
     let mut result = AdaptedDeclarations {
         symbols: SymbolTable::default(),
@@ -182,6 +235,7 @@ fn from_ast_with_cursor_issued(
     let mut context = AdapterContext {
         source,
         headers,
+        demand,
         header_rows: &mut header_rows,
         file,
         include_occurrence,
@@ -191,15 +245,15 @@ fn from_ast_with_cursor_issued(
         errors: &mut errors,
         no_expansion: Arc::from([]),
     };
-    walk(&normalized, owner, &mut context);
+    walk(&normalized, owner, &mut context)?;
     // The walk grows both vectors by doubling; the result is retained per region, so release the slack.
     result.skeletons.shrink_to_fit();
     result.origins.shrink_to_fit();
     result.symbols = symbols;
     if errors.is_empty() {
-        Ok((result, header_rows))
+        Ok(Ok((result, header_rows)))
     } else {
-        Err(errors)
+        Ok(Err(errors))
     }
 }
 fn symbol(table: &mut SymbolTable, text: &str) -> Result<SymbolId, String> {
@@ -255,7 +309,8 @@ fn canonical(text: &str) -> Result<Arc<[u8]>, String> {
     }
     Ok(bytes.into())
 }
-struct AdapterContext<'a> {
+struct AdapterContext<'a,'op,D:AdapterDemand> {
+    demand:&'op D,
     /// The one empty expansion stack every origin of this walk shares.
     no_expansion: Arc<[Span]>,
     source: Option<&'a str>,
@@ -268,12 +323,13 @@ struct AdapterContext<'a> {
     result: &'a mut AdaptedDeclarations,
     errors: &'a mut Vec<AdapterError>,
 }
-fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
+fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterContext<'_,'_,D>)->Result<(),D::Operational> {
     let file = context.file;
     let include_occurrence = context.include_occurrence;
     let region = context.region;
     let mut containing_owner = owner.to_owned();
     for item in items {
+        context.demand.checkpoint()?;
         let owner = containing_owner.as_str();
         let span = Span {
             file,
@@ -286,7 +342,7 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
         let mut original_settings_owner = None;
         let mut header_argument_offset = None;
         let mut source_argument_span = None;
-        let adapted = (|| -> Result<Option<Skeleton>, String> {
+        let adapted = (|| -> Result<Option<Skeleton>, WalkFailure<D::Operational>> {
             match item.kind {
                 ItemKind::Type => {
                     let path = absolute(owner, header)?;
@@ -313,13 +369,8 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                     }))
                 }
                 ItemKind::Var => {
-                    let (declaration, initializer) = dm_syntax::top_level_assignment_index(header)
-                        .map_or((header, None), |index| {
-                            (header[..index].trim(), Some(header[index + 1..].trim()))
-                        });
-                    let initializer = initializer
-                        .map(crate::procedure::variable_initializer)
-                        .transpose()?;
+                    let variable=context.demand.variable(item.header_span,header,context.headers)?;
+                    let declaration=variable.declaration();
                     let separator = declaration
                         .match_indices("var/")
                         .find(|(index, _)| *index == 0 || declaration.as_bytes()[index - 1] == b'/')
@@ -384,20 +435,8 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                             .runtime_path,
                         )?)
                     };
-                    let symbolic_initializer = initializer
-                        .map(|text| crate::procedure::expression(text, context.symbols))
-                        .transpose()?;
-                    let resolved_constant = if flags & 2 != 0 {
-                        initializer
-                            .and_then(|text| {
-                                crate::constants::evaluate_with(text, |_| None, |_| None, |_| None)
-                            })
-                            .map(|value| value.to_semantic(context.symbols))
-                            .transpose()
-                            .map_err(|error| error.to_string())?
-                    } else {
-                        None
-                    };
+                    let symbolic_initializer=variable.symbolic(context.symbols)?;
+                    let resolved_constant=if flags&2!=0{context.demand.constant(&variable,symbolic_initializer.as_ref(),context.symbols)?}else{None};
                     let element_type = if type_parts.is_empty() {
                         None
                     } else {
@@ -613,14 +652,11 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                         None => (owner.to_owned(), target),
                     };
                     if name.is_empty() || name.contains('[') {
-                        return Err(format!("unsupported field assignment: {header}"));
+                        return Err(format!("unsupported field assignment: {header}").into());
                     }
                     let metadata = MemberMetadata {
                         inherited_opaque: None,
-                        initializer: Some(crate::procedure::expression(
-                            header[index + 1..].trim(),
-                            context.symbols,
-                        )?),
+                        initializer: Some(context.demand.assignment(item.header_span,header,index,context.headers,context.symbols)?),
                         canonical: canonical(&header[index + 1..])?,
                         ..MemberMetadata::default()
                     };
@@ -662,7 +698,8 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                 }
                 if context.headers.is_some() && matches!(item.kind, ItemKind::Proc | ItemKind::Verb)
                 {
-                    if context.header_rows.try_reserve_exact(1).is_err() {
+                    if let Err(actual)=context.header_rows.try_reserve_exact(1) {
+                        context.demand.allocation_failure(actual)?;
                         context.errors.push(AdapterError {
                             kind: dm_syntax::DiagnosticKind::Unsupported,
                             span,
@@ -691,12 +728,13 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                 if item.kind == ItemKind::Type {
                     if let Ok(path) = absolute(owner, header) {
                         containing_owner = path.clone();
-                        walk(&item.children, &path, context)
+                        walk(&item.children, &path, context)?;
                     }
                 }
             }
             Ok(None) => {}
-            Err(message) => context.errors.push(AdapterError {
+            Err(WalkFailure::Operational(actual))=>return Err(actual),
+            Err(WalkFailure::Source(message)) => context.errors.push(AdapterError {
                 kind: if source_argument_span.is_some() {
                     dm_syntax::DiagnosticKind::Expression
                 } else {
@@ -707,6 +745,8 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
             }),
         }
     }
+    context.demand.checkpoint()?;
+    Ok(())
 }
 
 #[cfg(test)]
@@ -1091,3 +1131,7 @@ thread_local! { static SIGNATURE_PART_LEXES: std::cell::Cell<usize> = const {std
 pub(crate) fn signature_part_lexes() -> usize {
     SIGNATURE_PART_LEXES.with(std::cell::Cell::get)
 }
+
+#[cfg(test)]
+#[path="adapter_checked_tests.rs"]
+mod checked_tests;
