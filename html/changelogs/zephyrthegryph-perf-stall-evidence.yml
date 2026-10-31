@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - admin: "NATIVE_SLOW_FRAME lines now say what the machine did during the slow frames (whole-machine CPU busy against capacity, the server's own CPU, page faults, I/O operations) and the server's priority class, so a stall can be told from slow work"
+  - admin: "The native slow-frame log is limited to 20 lines a minute instead of 60 for the whole round, and frames of half a second or more are always logged"

@@ -276,7 +276,7 @@ CAPABILITIES(/obj/machinery/teleport/station)
 	range--
 	return
 
-/obj/effect/laser/Move()
+/obj/effect/laser/Move(atom/newloc, direct = 0, movetime)
 	range--
 	return
 

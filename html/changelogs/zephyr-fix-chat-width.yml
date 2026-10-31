@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The chat pane no longer grows past the window on long unbroken text, and Fit Viewport can no longer give the whole window to the chat."

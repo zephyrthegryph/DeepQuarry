@@ -299,7 +299,7 @@ CAPABILITIES(/obj/structure/window)
 	update_nearby_tiles()
 	..()
 
-/obj/structure/window/Move()
+/obj/structure/window/Move(atom/newloc, direct = 0, movetime)
 	var/ini_dir = dir
 	update_nearby_tiles(need_rebuild=1)
 	. = ..()
