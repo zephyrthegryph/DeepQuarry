@@ -480,6 +480,17 @@ impl FieldKind for TurfGas {
 		!settled
 	}
 
+	// Idle stride: up to 4 steps per advance while every awake chunk changes by under 5e-4 of its moles and energy per advance.
+	const MAX_STRIDE: u32 = 4;
+	const STRIDE_TOLERANCE: f32 = 5.0e-4;
+
+	fn relative_change(before: &GasCell, after: &GasCell) -> f32 {
+		let size: f32 = before.moles.iter().sum::<f32>().max(1.0e-3);
+		let moved: f32 = before.moles.iter().zip(&after.moles).map(|(&x, &y)| (x - y).abs()).sum();
+		let energy = (before.energy - after.energy).abs() / before.energy.abs().max(after.energy.abs()).max(1.0);
+		(moved / size).max(energy)
+	}
+
 	fn quiet(before: &GasCell, after: &GasCell) -> bool {
 		close(before.energy, after.energy)
 			&& before
