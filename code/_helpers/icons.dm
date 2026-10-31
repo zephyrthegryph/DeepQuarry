@@ -512,10 +512,17 @@ GLOBAL_LIST_EMPTY(icon_state_lists)
 	return list(rsc_ref, hash, "asset.[hash]")
 
 /// Gets a dummy savefile for usage in icon generation.
-/// Savefiles generated from this proc will be empty.
+/// The ten scratch files are made once and kept open: a caller writes its own entry, which replaces what the last caller left there, so
+/// nothing is deleted or created per call (a join makes three icon2base64() calls, and a delete and create on disk cost several ms each).
 /proc/get_dummy_savefile(from_failure = FALSE)
 	var/static/slot = 0 // one of ten rotating scratch files, not an entity id
-	slot = (slot + 1) % 10
+	var/static/list/scratch_files // built on first use: the first caller can run before static initialisers
+	if(!scratch_files)
+		scratch_files = new /list(10)
+	slot = (slot % 10) + 1
+	var/savefile/scratch = scratch_files[slot]
+	if(scratch)
+		return scratch
 	// dq_scratch_tag makes this path unique per DreamDaemon process: two
 	// worlds that happen to share a working directory (a sharded dm-test run
 	// boots N worlds in the same worktree) would otherwise round-robin
@@ -525,7 +532,9 @@ GLOBAL_LIST_EMPTY(icon_state_lists)
 	try
 		if(fexists(savefile_path))
 			fdel(savefile_path)
-		return new /savefile(savefile_path)
+		scratch = new /savefile(savefile_path)
+		scratch_files[slot] = scratch
+		return scratch
 	catch(var/exception/error)
 		// if we failed to create a dummy once, try again; maybe someone slept somewhere they shouldnt have
 		if(from_failure) // this *is* the retry, something fucked up

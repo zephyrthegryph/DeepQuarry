@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "icon2base64 reuses its ten scratch savefiles instead of deleting and recreating one per call (about 19 ms to 0.3 ms a call), which every join's manifest and ID photos pay"
