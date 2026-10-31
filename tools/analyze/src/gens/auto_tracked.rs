@@ -92,24 +92,19 @@ pub fn writes_outside_setters_of(tree: &Tree, sem: &crate::sem::Sem) -> Arc<crat
 }
 
 /// A var named in a CAPABILITIES block: tracked unless a declaration already makes it reactive, or it is constant.
-pub fn named_candidate(eng: &ReadsEngine, owner: &str, var: &str) -> bool {
-    !declared_reactive(eng, owner, var) && !eng.sem.var_decl(owner, var).map(|v| v.is_const).unwrap_or(false)
+struct LegacyCandidate<'a,'s>{eng:&'a ReadsEngine<'s>,written:Option<&'a crate::sem::reads::WriteIndex>}
+impl crate::key_policy_control::Control for LegacyCandidate<'_,'_>{type Error=std::convert::Infallible;const CHECKED:bool=false;fn checkpoint(&mut self)->Result<(),Self::Error>{Ok(())}fn reserve(&mut self,_:usize)->Result<(),Self::Error>{Ok(())}fn overflow(&mut self)->Self::Error{unreachable!("legacy allocation path")}fn allocation_failed(&mut self)->Self::Error{unreachable!("legacy allocation path")}}
+impl crate::auto_tracking_policy::Source for LegacyCandidate<'_,'_>{
+ fn variable(&mut self,owner:&str,var:&str)->Result<Option<crate::auto_tracking_policy::Variable>,Self::Error>{Ok(self.eng.sem.var_decl(owner,var).map(|v|{let is_list=v.is_list();crate::auto_tracking_policy::Variable{file:v.file,is_static:v.is_static,is_const:v.is_const,is_list}}))}
+ fn subtype(&mut self,a:&str,b:&str)->Result<bool,Self::Error>{Ok(self.eng.sem.is_subtype(a,b))}
+ fn var_owner(&mut self,o:&str,v:&str)->Result<Option<String>,Self::Error>{Ok(self.eng.sem.var_owner(o,v))}
 }
-
-/// A read the inference tracks: no declaration makes it reactive, it is not constant, and something writes it.
-pub fn candidate(eng: &ReadsEngine, written: &crate::sem::reads::WriteIndex, calls: &BTreeSet<String>, owner: &str, var: &str) -> bool {
-    if declared_reactive(eng, owner, var) {
-        return false;
-    }
-    if eng.sem.var_decl(owner, var).map(|v| v.is_const).unwrap_or(false) {
-        return false;
-    }
-    if written.is_written_on(eng.sem, owner, var) || calls.contains(var) {
-        return true;
-    }
-    // A list is written through its generated mutators once `analyze fix` has rewritten the raw edits.
-    calls.contains(&format!("{}{}", var, LIST_CALL)) && eng.sem.var_decl(owner, var).map(|v| v.is_list()).unwrap_or(false)
+impl crate::auto_tracking_policy::ReactiveSource for LegacyCandidate<'_,'_>{fn declared_reactive(&mut self,o:&str,v:&str)->Result<bool,Self::Error>{Ok(declared_reactive(self.eng,o,v))}}
+impl crate::auto_tracking_policy::CandidateSource for LegacyCandidate<'_,'_>{
+ fn outside_written_on(&mut self,o:&str,v:&str)->Result<bool,Self::Error>{Ok(self.written.expect("candidate requires actual outside-setter writes").is_written_on(self.eng.sem,o,v))}
 }
+pub fn named_candidate(eng:&ReadsEngine,owner:&str,var:&str)->bool{crate::auto_tracking_policy::named_candidate(&mut LegacyCandidate{eng,written:None},owner,var).unwrap()}
+pub fn candidate(eng:&ReadsEngine,written:&crate::sem::reads::WriteIndex,calls:&BTreeSet<String>,owner:&str,var:&str)->bool{crate::auto_tracking_policy::candidate(&mut LegacyCandidate{eng,written:Some(written)},calls,owner,var).unwrap()}
 
 /// The `(declaring type, var)` pairs a `set_v(` / `add_v(` call in the tree names, whether or not reactive code reads them: the transition set.
 /// A var is tracked when something reads it (`candidate` over the read set) or when it is written through its setter. The second kind is what the
@@ -152,7 +147,9 @@ fn setter_names(var: &str) -> [String; 9] {
     [format!("set_{var}"), format!("add_{var}"), format!("include_{var}"), format!("remove_{var}"), format!("set_{var}_at"), format!("clear_{var}"), format!("insert_{var}"), format!("swap_{var}"), format!("cut_{var}")]
 }
 
-const SETTER_PREFIXES: &[&str] = &["set_", "add_", "include_", "remove_", "clear_", "insert_", "swap_", "cut_"];
+struct LegacyTypedCalls<'a,'h>{sem:&'a crate::sem::Sem,hits:&'h mut Vec<(String,String)>}
+impl crate::key_policy_control::Control for LegacyTypedCalls<'_,'_>{type Error=std::convert::Infallible;const CHECKED:bool=false;fn checkpoint(&mut self)->Result<(),Self::Error>{Ok(())}fn reserve(&mut self,_:usize)->Result<(),Self::Error>{Ok(())}fn overflow(&mut self)->Self::Error{unreachable!("legacy allocation")}fn allocation_failed(&mut self)->Self::Error{unreachable!("legacy allocation")}}
+impl crate::typed_set_calls_policy::Source for LegacyTypedCalls<'_,'_>{fn variable_type(&mut self,owner:&str,name:&str)->Result<Option<String>,Self::Error>{Ok(self.sem.var_decl(owner,name).map(|v|v.declared))}fn record(&mut self,name:&str,receiver:&str)->Result<(),Self::Error>{self.hits.push((name.to_owned(),receiver.to_owned()));Ok(())}}
 
 /// The static type of each receiver of a setter-shaped call (`set_*`, `add_*`, ... ) in the tree, by call name: an unqualified call and `src.` are the
 /// proc's own type, `X.set_v()` is the declared type of the proc's parameter or local `X`, or of the var `X` of the proc's type, followed through
@@ -189,33 +186,19 @@ pub fn typed_set_calls(tree: &Tree) -> Arc<HashMap<String, BTreeSet<String>>> {
                 }
             }
             collect_local_types(code, &mut locals);
-            let is_call = |n: &str| SETTER_PREFIXES.iter().any(|p| n.starts_with(p));
-            crate::sem::ast::walk_block(code, &mut |e, _| {
-                let Expression::Base { term, follow } = e else { return };
-                let mut cur: Option<String> = match &term.elem {
-                    Term::Ident(n) if n.as_str() == "src" => Some(owner.clone()),
-                    Term::Ident(n) => locals.get(n).cloned().or_else(|| sem.var_decl(owner, n).map(|v| v.declared).filter(|d| !d.is_empty())),
-                    Term::Call(n, _) => {
-                        if is_call(n) {
-                            hits.push((n.as_str().to_string(), owner.clone()));
-                        }
-                        None
-                    }
-                    _ => None,
-                };
-                for fo in follow.iter() {
-                    match &fo.elem {
-                        Follow::Field(_, n) => cur = cur.and_then(|c| sem.var_decl(&c, n.as_str())).map(|v| v.declared).filter(|d| !d.is_empty()),
-                        Follow::Call(_, n, _) => {
-                            if is_call(n.as_str()) {
-                                hits.push((n.as_str().to_string(), cur.clone().unwrap_or_else(|| UNTYPED.to_string())));
-                            }
-                            cur = None;
-                        }
-                        _ => cur = None,
-                    }
-                }
+            let mut source=LegacyTypedCalls{sem:&sem,hits:&mut hits};
+            crate::sem::ast::walk_block(code,&mut|e,_|{
+                use crate::typed_set_calls_policy as policy;
+                let Expression::Base{term,follow}=e else{return};
+                let base=match &term.elem{Term::Ident(name)=>policy::Base::Ident(name),Term::Call(name,_)=>policy::Base::Call(name.as_str()),_=>policy::Base::Unknown};
+                let mut current=policy::begin(&mut source,owner,&locals,base).unwrap();
+                for item in follow.iter(){match &item.elem{
+                    Follow::Field(_,name)=>current=policy::field(&mut source,current,name.as_str()).unwrap(),
+                    Follow::Call(_,name,_)=>{policy::call(&mut source,&current,name.as_str(),None).unwrap();current=None},
+                    _=>current=None,
+                }}
             });
+            drop(source);
             hits
         };
         crate::sem::body_facts::indexed(&sem, "typed-set-calls", sem.structure_digest(), &refs, fact, |found: Vec<Vec<(String, String)>>| {
@@ -256,23 +239,8 @@ fn collect_local_types(b: &dreammaker::ast::Block, out: &mut HashMap<String, Str
 /// hand-written setter for (`set_active`, `set_id`) says nothing about this var by itself. Calls with a typed receiver decide it when there are any
 /// (`typed_set_calls`: a type related to `owner` receives one); when none is typed, the name is enough if every non-generated definition of `set_v` /
 /// its list mutators is on a type related to `owner`.
-pub fn called_here(tree: &Tree, sem: &crate::sem::Sem, defs: &HashMap<String, Vec<String>>, calls: &BTreeSet<String>, owner: &str, var: &str) -> bool {
-    let plain = calls.contains(var);
-    let list = calls.contains(&format!("{}{}", var, LIST_CALL));
-    if !plain && !list {
-        return false;
-    }
-    let names = setter_names(var);
-    let related = |t: &String| sem.is_subtype(t, owner) || sem.is_subtype(owner, t);
-    // A call whose receiver has a static type speaks for that type only: `locked` is declared on forty types, and a typed
-    // `door.set_locked()` says nothing about the other thirty-nine.
-    let typed = typed_set_calls(tree);
-    let typed_for: Vec<&BTreeSet<String>> = names.iter().filter_map(|n| typed.get(n)).collect();
-    if !typed_for.is_empty() {
-        return typed_for.iter().any(|types| types.iter().any(related));
-    }
-    // Only calls whose receiver could not be typed name it: the name is enough when no unrelated type owns a hand-written proc of it.
-    names.iter().all(|n| defs.get(n).is_none_or(|types| types.iter().all(related)))
+pub fn called_here(tree:&Tree,sem:&crate::sem::Sem,defs:&HashMap<String,Vec<String>>,calls:&BTreeSet<String>,owner:&str,var:&str)->bool{
+ crate::auto_tracking_policy::called_here(&mut LegacyDecision{sem},defs,||Ok(typed_set_calls(tree)),calls,owner,var).unwrap()
 }
 
 pub use crate::auto_tracking_policy::{Auto,AutoSet};

@@ -20,6 +20,9 @@ impl Head {
             .captures(line)
             .map(|m| (m.s(1).to_string(), ln));
     }
+    pub fn begin_capability(&mut self,line:&str,ln:u32){
+        self.0=crate::pat_match!(r"^(/datum/capability/[\w/]+?)/(?:proc/)?entries\(\)\s*$").captures(line).map(|m|(m.s(1).to_owned(),ln));
+    }
     pub fn take(&mut self) -> Option<(String, u32)> {
         self.0.take()
     }
@@ -49,6 +52,14 @@ pub fn project_first_return_admitted<E>(
     stripped: &str, starts: &[u32], ln0: usize, line: &str, t: &str,
     name: String, head_line: u32, mut admit: impl FnMut(usize)->Result<(), E>,
 ) -> Result<Option<Projection>, E> {
+    project_list_return(stripped,starts,ln0,line,t,name,head_line,true,&mut admit)
+}
+/// Exact capability entries policy: unlike global bundles, any first return
+/// list is retained, including empty/non-entry lists.
+pub fn project_capability_return_admitted<E>(stripped:&str,starts:&[u32],ln0:usize,line:&str,t:&str,owner:String,head_line:u32,mut admit:impl FnMut(usize)->Result<(),E>)->Result<Option<Projection>,E>{
+    project_list_return(stripped,starts,ln0,line,t,owner,head_line,false,&mut admit)
+}
+fn project_list_return<E>(stripped:&str,starts:&[u32],ln0:usize,line:&str,t:&str,name:String,head_line:u32,entry_only:bool,admit:&mut impl FnMut(usize)->Result<(),E>)->Result<Option<Projection>,E>{
     let Some(rest) = t.strip_prefix("return") else {
         return Ok(None);
     };
@@ -64,7 +75,7 @@ pub fn project_first_return_admitted<E>(
         return Ok(None);
     };
     let body = &stripped[open + 1..close];
-    if !ENTRY_CALLS.iter().any(|c| body.contains(c)) {
+    if entry_only && !ENTRY_CALLS.iter().any(|c| body.contains(c)) {
         return Ok(None);
     }
     admit(body.len())?;
@@ -128,4 +139,10 @@ mod tests {
         assert_eq!(width,"op(\"x\")".len());assert_eq!(error.raw_os_error(),Some(1450));
     }
 
+}
+
+#[cfg(test)]mod capability_tests{
+ use super::*;
+ #[test]fn capability_first_list_keeps_empty_and_nonentry_lists_unlike_global_bundle(){for tail in ["return list()","return list(1, 2)","return list(TYPE_PROC_REF(/datum/probe, f))"]{let source=format!("/datum/capability/def/probe/entries()\n    {tail}\n");let first=source.lines().next().unwrap();let line=source.lines().nth(1).unwrap();let starts=[0,(first.len()+1)as u32];let mut head=Head::default();head.begin_capability(first,1);let(owner,ln)=head.take().unwrap();let mut width=0;let got=project_capability_return_admitted(&source,&starts,1,line,line.trim_start(),owner,ln,|n|{width=n;Ok::<(),()>(())}).unwrap().unwrap();assert_eq!(got.args[0],"/datum/capability/def/probe");assert_eq!(&source[got.body_offset..got.body_offset+got.body.len()],got.body);assert_eq!(width,got.body.len());assert_eq!(got.line,1);}}
+ #[test]fn capability_nonreturn_never_reserves_and_actual_refusal_keeps_cause(){let source="/datum/capability/def/probe/entries()\n    return list()\n";let first=source.lines().next().unwrap();let line=source.lines().nth(1).unwrap();let starts=[0,(first.len()+1)as u32];assert!(project_capability_return_admitted(source,&starts,1,"    x=1","x=1","/datum/capability/def/probe".into(),1,|_|->Result<(),()>{panic!("nonreturn")}).unwrap().is_none());let error=project_capability_return_admitted(source,&starts,1,line,line.trim_start(),"/datum/capability/def/probe".into(),1,|_|Err::<(),_>(std::io::Error::from_raw_os_error(1450))).err().unwrap();assert_eq!(error.raw_os_error(),Some(1450));}
 }

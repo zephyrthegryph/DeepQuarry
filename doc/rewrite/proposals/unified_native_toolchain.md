@@ -1340,3 +1340,38 @@ through the existing public accessor without widening the production API.
 A capture-roster allocation in the shared setter-call helper still needs its
 admitted streaming replacement before native auto consumer selection; this
 checkpoint does not claim complete resource admission or default cutover.
+
+### Original compiler and auto-inference checkpoint (2026-10-31)
+
+The actual native request runner now selects the original-source scalar,
+retained ABI, runtime/classification and cold initializer paths together.
+The cold/warm regression compares complete DMB bytes, verifies initializer-stage
+and retained-output reuse, and checks that neither coordinator nor worker enters
+the old scalar text parser. An adjacent no-RHS array exposed a real source search
+bug: ancestor-end equality previously prevented reaching its exact issued leaf
+cursor. The repair permits descent at equality while preserving the leaf's
+original cursor, kind and declaration-slot checks.
+
+Auto-inference now has shared lexical/candidate/receiver policies and native
+producers for actual outside-setter writes, typed receivers, own declarations,
+setter definition groups and called candidates. The actual original-source
+fixture matches the independent old complete receiver, variable and setter
+rosters, owner-vector order and all candidate decisions. It also checks genuine
+provider IO, foreign-source rejection, recovery and lazy constant/explicit-state
+short circuits. Raw macro-origin checks require the real Analyze raw view;
+compiler-decoded text is not promoted to that role.
+
+The combined evidence records 36 distinct focused passes. Complete frozen read
+results match six requests across all ten fields, including array and diagnostic
+order. Global/write/outside-setter results match the complete old fixture, and
+the old/shared decision results match 15 tracked and 450 blocked rows with exact
+refusal text and order. Both Analyze feature configurations and the three native
+crates' libraries/tests pass metadata checks.
+
+The new 12,000-edge checker-window regression hit its unchanged 300-second cap.
+Its process was terminated by the test runner. Inspection identified repeated
+full validation of the same immutable builtin profile; a narrowly authenticated
+borrowed validation capability is being implemented separately. This checkpoint
+does not claim that stress case passed, full-project checker admission, fresh
+production/DC/ratchet verification or a client-default cutover. The full
+dependency generators and complete raw-workspace scope remain follow-up work.

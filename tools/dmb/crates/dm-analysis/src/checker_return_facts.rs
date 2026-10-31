@@ -7,6 +7,7 @@ use dm_ir::{
     PackedU128, ProcedureDefinition, ResolveQuery as Q, ResolvedMeaning as M, Resolver, SymbolId,
 };
 use dm_tree::SemanticTree;
+use crate::checker_prefix_demand::Demand as PrefixDemand;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ReturnHint {
     pub declared_type: Option<SymbolId>,
@@ -80,6 +81,17 @@ fn return_hint_mode(
     archive: Option<&dm_tree::frontend::BodyArchive>,
     permit: Option<&PuritySettingsPermit<'_>>,
 ) -> Result<ReturnHint, String> {
+    return_hint_mode_using(tree,resolver,profile,receiver,name,archive,permit, &crate::checker_prefix_demand::Compatibility::<String>::new())
+}
+fn return_hint_mode_using<D:PrefixDemand>(
+    tree: &SemanticTree,
+    resolver: &(impl Resolver + ?Sized),
+    profile: PackedU128,
+    receiver: SymbolId,
+    name: SymbolId,
+    archive: Option<&dm_tree::frontend::BodyArchive>,
+    permit: Option<&PuritySettingsPermit<'_>> , demand:&D
+) -> Result<ReturnHint , D::Error> {
     if resolver.source_owner() != Resolver::source_owner(tree) {
         return Err("return context lacks original compiled owner provenance".into());
     }
@@ -147,8 +159,8 @@ fn return_hint_mode(
             {
                 None
             } else {
-                validate_source_directives_mode(tree, archive, identity, permit)?;
-                prefix_return_override_mode(tree, archive, identity, permit)?
+                validate_source_directives_mode_using(tree, archive, identity, permit, demand)?;
+                prefix_return_override_mode_using(tree, archive, identity, permit, demand)?
             };
             let query = Q::SourceDeclarationChain {
                 owner: identity.owner,
@@ -241,12 +253,17 @@ impl<'a> PuritySettingsPermit<'a> {
         archive: &'a dm_tree::frontend::BodyArchive,
         profile: PackedU128,
         identity: dm_ir::ProcedureIdentity,
-    ) -> Result<Self, String> {
+    ) -> Result<Self, String> {Self::issue_using(archive,profile,identity,&crate::checker_prefix_demand::Compatibility::<String>::new())}
+pub(crate) fn issue_using<D:PrefixDemand>(
+        archive: &'a dm_tree::frontend::BodyArchive,
+        profile: PackedU128,
+        identity: dm_ir::ProcedureIdentity , demand:&D
+) -> Result<Self , D::Error> {
         let tree = archive.tree();
         tree.validate_checker_builtin_profile(profile)
             .map_err(|e| format!("purity settings profile unavailable: {e:?}"))?;
         let (own_pure, own_no_sleep, own_sleep_exempt) =
-            archive.with_initial_setting_prefix(identity, |prefix| -> Result<_, String> {
+            demand.prefix(archive,identity, |prefix| -> Result<_, String> {
                 let mut pure = None;
                 let mut no_sleep = None;
                 let mut exempt = None;
@@ -351,7 +368,7 @@ impl<'a> PuritySettingsPermit<'a> {
         };
         // Reuse the existing return-setting evaluator; allowing purity must not
         // hide an unsupported return directive in the same prefix.
-        prefix_return_override_mode(tree, Some(archive), identity, Some(&permit))?;
+        prefix_return_override_mode_using(tree, Some(archive), identity, Some(&permit), demand)?;
         Ok(permit)
     }
     pub fn own_pure(&self) -> Option<dm_syntax::Span> {
@@ -420,7 +437,15 @@ fn validate_source_directives_mode(
     identity: dm_ir::ProcedureIdentity,
     permit: Option<&PuritySettingsPermit<'_>>,
 ) -> Result<(), String> {
-    require_prefix(tree, archive)?.with_initial_setting_prefix(
+    validate_source_directives_mode_using(tree,archive,identity,permit, &crate::checker_prefix_demand::Compatibility::<String>::new())
+}
+fn validate_source_directives_mode_using<D:PrefixDemand>(
+    tree: &SemanticTree,
+    archive: Option<&dm_tree::frontend::BodyArchive>,
+    identity: dm_ir::ProcedureIdentity,
+    permit: Option<&PuritySettingsPermit<'_>> , demand:&D
+) -> Result<() , D::Error> {
+    demand.prefix(require_prefix(tree, archive)?,
         identity,
         |prefix| -> Result<(), String> {
             for statement in prefix.settings() {
@@ -443,7 +468,7 @@ fn validate_source_directives_mode(
             }
             Ok(())
         },
-    )?
+    )?.map_err(D::Error::from)
 }
 fn prefix_return_override_mode(
     tree: &SemanticTree,
@@ -451,11 +476,19 @@ fn prefix_return_override_mode(
     identity: dm_ir::ProcedureIdentity,
     permit: Option<&PuritySettingsPermit<'_>>,
 ) -> Result<Option<ReturnHint>, String> {
+    prefix_return_override_mode_using(tree,archive,identity,permit, &crate::checker_prefix_demand::Compatibility::<String>::new())
+}
+fn prefix_return_override_mode_using<D:PrefixDemand>(
+    tree: &SemanticTree,
+    archive: Option<&dm_tree::frontend::BodyArchive>,
+    identity: dm_ir::ProcedureIdentity,
+    permit: Option<&PuritySettingsPermit<'_>> , demand:&D
+) -> Result<Option<ReturnHint> , D::Error> {
     if let Some(permit) = permit {
         permit.require(tree, archive, permit.profile, identity)?;
     }
     let archive = require_prefix(tree, archive)?;
-    archive.with_initial_setting_prefix(
+    demand.prefix(archive,
         identity,
         |prefix| -> Result<Option<ReturnHint>, String> {
             let mut result = None;
@@ -505,7 +538,7 @@ fn prefix_return_override_mode(
             }
             Ok(result)
         },
-    )?
+    )?.map_err(D::Error::from)
 }
 
 /// Pinned fix-hint provenance, not a second inference/model. Absolute body
@@ -556,7 +589,18 @@ fn return_fix_hint_mode(
     archive: Option<&dm_tree::frontend::BodyArchive>,
     permit: Option<&PuritySettingsPermit<'_>>,
 ) -> Result<ReturnFixHint, String> {
-    let hint = return_hint_mode(tree, resolver, profile, receiver, name, archive, permit)?;
+    return_fix_hint_mode_using(tree,resolver,profile,receiver,name,archive,permit, &crate::checker_prefix_demand::Compatibility::<String>::new())
+}
+fn return_fix_hint_mode_using<D:PrefixDemand>(
+    tree: &SemanticTree,
+    resolver: &(impl Resolver + ?Sized),
+    profile: PackedU128,
+    receiver: SymbolId,
+    name: SymbolId,
+    archive: Option<&dm_tree::frontend::BodyArchive>,
+    permit: Option<&PuritySettingsPermit<'_>> , demand:&D
+) -> Result<ReturnFixHint , D::Error> {
+    let hint = return_hint_mode_using(tree, resolver, profile, receiver, name, archive, permit, demand)?;
     if hint.declared_type.is_some() {
         return Ok(ReturnFixHint::None);
     }
@@ -568,7 +612,7 @@ fn return_fix_hint_mode(
                 .ok_or("return hint source signature unavailable")?
                 .settings
                 .is_empty()
-                && prefix_return_override_mode(tree, archive, identity, permit)?.is_some()
+                && prefix_return_override_mode_using(tree, archive, identity, permit, demand)?.is_some()
             {
                 return Ok(ReturnFixHint::EvaluatedNone);
             }
@@ -590,3 +634,84 @@ fn return_fix_hint_mode(
 #[cfg(test)]
 #[path = "checker_purity_settings_tests.rs"]
 mod purity_settings_tests;
+
+
+pub(crate) fn return_hint_with_prefix_using<D:PrefixDemand>(
+    tree: &SemanticTree,
+    resolver: &(impl Resolver + ?Sized),
+    profile: PackedU128,
+    receiver: SymbolId,
+    name: SymbolId,
+    archive: Option<&dm_tree::frontend::BodyArchive> , demand:&D
+) -> Result<ReturnHint , D::Error> {
+    return_hint_mode_using(tree, resolver, profile, receiver, name, archive, None, demand)
+}
+
+pub(crate) fn return_hint_with_prefix_for_purity_using<D:PrefixDemand>(
+    tree: &SemanticTree,
+    resolver: &(impl Resolver + ?Sized),
+    profile: PackedU128,
+    receiver: SymbolId,
+    name: SymbolId,
+    archive: Option<&dm_tree::frontend::BodyArchive>,
+    permit: &PuritySettingsPermit<'_> , demand:&D
+) -> Result<ReturnHint , D::Error> {
+    permit.require(tree, archive, profile, permit.identity)?;
+    return_hint_mode_using(
+        tree,
+        resolver,
+        profile,
+        receiver,
+        name,
+        archive,
+        Some(permit), demand)
+}
+
+pub(crate) fn validate_source_directives_using<D:PrefixDemand>(
+    tree: &SemanticTree,
+    archive: Option<&dm_tree::frontend::BodyArchive>,
+    identity: dm_ir::ProcedureIdentity , demand:&D
+) -> Result<() , D::Error> {
+    validate_source_directives_mode_using(tree, archive, identity, None, demand)
+}
+
+pub(crate) fn validate_source_directives_for_purity_using<D:PrefixDemand>(
+    tree: &SemanticTree,
+    archive: Option<&dm_tree::frontend::BodyArchive>,
+    identity: dm_ir::ProcedureIdentity,
+    permit: &PuritySettingsPermit<'_> , demand:&D
+) -> Result<() , D::Error> {
+    permit.require(tree, archive, permit.profile, identity)?;
+    validate_source_directives_mode_using(tree, archive, identity, Some(permit), demand)
+}
+
+pub(crate) fn return_fix_hint_using<D:PrefixDemand>(
+    tree: &SemanticTree,
+    resolver: &(impl Resolver + ?Sized),
+    profile: PackedU128,
+    receiver: SymbolId,
+    name: SymbolId,
+    archive: Option<&dm_tree::frontend::BodyArchive> , demand:&D
+) -> Result<ReturnFixHint , D::Error> {
+    return_fix_hint_mode_using(tree, resolver, profile, receiver, name, archive, None, demand)
+}
+
+pub(crate) fn return_fix_hint_for_purity_using<D:PrefixDemand>(
+    tree: &SemanticTree,
+    resolver: &(impl Resolver + ?Sized),
+    profile: PackedU128,
+    receiver: SymbolId,
+    name: SymbolId,
+    archive: Option<&dm_tree::frontend::BodyArchive>,
+    permit: &PuritySettingsPermit<'_> , demand:&D
+) -> Result<ReturnFixHint , D::Error> {
+    permit.require(tree, archive, profile, permit.identity)?;
+    return_fix_hint_mode_using(
+        tree,
+        resolver,
+        profile,
+        receiver,
+        name,
+        archive,
+        Some(permit), demand)
+}

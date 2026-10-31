@@ -66,6 +66,9 @@ pub trait ScalarArtifacts {
         answer: &dyn Fn(&ScalarReadQuery) -> ScalarReadAnswer,
     ) -> Option<Arc<ScalarArtifact>>;
     /// Compatibility providers do not issue replay authority implicitly.
+    /// Native source replay is fallible; opaque compatibility providers cannot
+    /// hide actual IO inside an answer callback or mint checked admission.
+    fn lookup_checked(&self,_query:ScalarQuery,_answer:&dyn Fn(&ScalarReadQuery)->Result<ScalarReadAnswer,crate::frontend::BodySyntaxFailure>)->Result<Option<Arc<ScalarArtifact>>,crate::frontend::BodySyntaxFailure>{Err(crate::frontend::BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"scalar artifact provider lacks typed original-source replay")))}
     fn remember_certified(
         &self,
         query: ScalarQuery,

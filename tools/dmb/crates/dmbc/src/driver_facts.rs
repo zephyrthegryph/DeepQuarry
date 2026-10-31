@@ -45,6 +45,8 @@ impl DriverFacts<'_> {
 mod evaluator;
 pub use evaluator::DriverEvaluator;
 #[cfg(test)]
+pub(crate) fn original_scalar_text_parse_count_for_test()->usize{evaluator::scalar_text_parse_count_for_test()}
+#[cfg(test)]
 use evaluator::LexicalAbiEvaluator;
 use evaluator::OriginalSettingEvaluator;
 /// Stack-only source role for one synchronous ABI wave. The actual startup

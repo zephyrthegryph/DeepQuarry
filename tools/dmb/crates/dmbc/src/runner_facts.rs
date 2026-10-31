@@ -3,6 +3,14 @@ use crate::{compile_driver, engine::EngineSnapshot, engine_host::*};
 use dm_tree::{constant_resolution::ScalarSnapshot, frontend::ColdFrontend};
 use std::sync::Arc;
 
+
+#[derive(Debug)]
+pub(crate) enum HostPreparationFailure{Policy(String),Source(dm_tree::frontend::BodySyntaxFailure),Operational(std::io::Error)}
+impl From<String> for HostPreparationFailure{fn from(message:String)->Self{Self::Policy(message)}}
+impl From<dm_tree::frontend::BodySyntaxFailure> for HostPreparationFailure{fn from(error:dm_tree::frontend::BodySyntaxFailure)->Self{match error{dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>Self::Operational(actual),source=>Self::Source(source)}}}
+#[derive(Clone,Copy)]enum HostSourceMode{Ordinary,Original}
+fn compatibility_failure(error:HostPreparationFailure)->String{match error{HostPreparationFailure::Policy(message)=>message,_=>unreachable!("ordinary host preparation has no native source operational path")}}
+
 pub(crate) type PreparedHost = (EngineResolverHost<ScalarSnapshot>, Arc<ScalarSnapshot>);
 #[cfg(test)]
 #[path = "analysis_export_resolved_tests.rs"]
@@ -70,7 +78,18 @@ fn prepare_from_catalogs_with_artifacts(
     providers: Option<&crate::engine_host::PinnedEngineProviders>,
     callable_coverage: Option<&Arc<std::collections::HashSet<dm_ir::SymbolId>>>,
     variable_coverage: Option<&Arc<crate::engine_host::VariableCoverage>>,
-) -> Result<Components, String> {
+) -> Result<Components, String> {prepare_from_catalogs_in_source_mode(frontend,engine,constants,runtime,artifacts,providers,callable_coverage,variable_coverage,HostSourceMode::Ordinary).map_err(compatibility_failure)}
+fn prepare_from_catalogs_in_source_mode(
+    frontend: &ColdFrontend,
+    engine: &EngineSnapshot,
+    constants: ConstantCatalog,
+    runtime: RuntimeAliasCatalog,
+    artifacts: Option<&dyn dm_tree::constant_resolution::ScalarArtifacts>,
+    providers: Option<&crate::engine_host::PinnedEngineProviders>,
+    callable_coverage: Option<&Arc<std::collections::HashSet<dm_ir::SymbolId>>>,
+    variable_coverage: Option<&Arc<crate::engine_host::VariableCoverage>>,
+    mode:HostSourceMode,
+) -> Result<Components, HostPreparationFailure> {
     let pinned = if let Some(providers) = providers {
         PinnedHostFacts::capture_with_callable_coverage(
             engine,
@@ -90,13 +109,7 @@ fn prepare_from_catalogs_with_artifacts(
         runtime.clone(),
     )
     .with_pinned_facts(engine, frontend, Arc::clone(&pinned))?;
-    let scalar = Arc::new(compile_driver::scalars_with_artifacts(
-        frontend,
-        engine,
-        &source,
-        source.configuration_identity(),
-        artifacts,
-    ));
+    let scalar=Arc::new(match mode{HostSourceMode::Ordinary=>compile_driver::scalars_with_artifacts(frontend,engine,&source,source.configuration_identity(),artifacts),HostSourceMode::Original=>compile_driver::scalars_original_with_artifacts(frontend,engine,&source,source.configuration_identity(),artifacts)?});
     Ok(Components {
         constants,
         runtime,
@@ -118,4 +131,11 @@ pub(crate) fn prepare_retained(
         Some(retained) => retained.prepare(frontend, engine),
         None => prepare(frontend, &engine.snapshot),
     }
+}
+
+/// Explicit source-required host role. Existing ordinary callers stay independent.
+pub(crate) fn prepare_retained_original(frontend:&ColdFrontend,engine:&Arc<crate::runner_host::RetainedEngine>,retained:Option<&RetainedHostFacts>)->Result<PreparedHost,HostPreparationFailure>{
+ crate::daemon::control::checkpoint().map_err(HostPreparationFailure::Operational)?;
+ let result=(||match retained{Some(retained)=>retained.prepare_original(frontend,engine),None=>{let mut symbols=dm_ir::SymbolTable::overlay(frontend.snapshot.tree.shared_symbols());let constants=ConstantCatalog::native_516_1687(&mut symbols).map_err(|e|HostPreparationFailure::Policy(format!("engine constants: {e:?}")))?;let ordinary=frontend.snapshot.tree.types().iter().map(|node|node.path).collect();let runtime=RuntimeAliasCatalog::new(engine.snapshot.identity(),&symbols,Vec::new(),ordinary,Completeness::Partial).map_err(|e|HostPreparationFailure::Policy(format!("runtime type catalog: {e:?}")))?;let components=prepare_from_catalogs_in_source_mode(frontend,&engine.snapshot,constants,runtime,None,None,None,None,HostSourceMode::Original)?;let host=EngineResolverHost::new(Arc::clone(&components.scalar),components.constants,components.runtime).with_pinned_facts(&engine.snapshot,frontend,components.pinned)?;Ok((host,components.scalar))}})();
+ if matches!(&result,Err(HostPreparationFailure::Operational(_))){return result}crate::daemon::control::checkpoint().map_err(HostPreparationFailure::Operational)?;result
 }

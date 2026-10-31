@@ -225,3 +225,16 @@ fn callable_source_recipe_reuses_exact_bindings_and_order_across_body_shifts() {
     assert!(!Arc::ptr_eq(&current.index, &replacement.index));
     assert_ne!(current.source_bindings(), replacement.source_bindings());
 }
+
+#[test]
+fn callable_roster_borrowed_auth_requires_the_actual_tree_not_an_equal_facade(){
+    let mut state=RetainedSemanticTree::default();
+    let current=build(&mut state,"/datum/test/proc/p()\n    return 1\n");
+    let roster=current.callable_roster().unwrap();
+    assert!(roster.authenticates_tree(&current.snapshot.tree));
+    assert!(roster.authenticates_borrowed_tree(current.snapshot.tree.as_ref()));
+    let equal=current.snapshot.tree.as_ref().clone();
+    assert!(!roster.authenticates_borrowed_tree(&equal));
+    assert!(!roster.authenticates_tree(&Arc::new(equal)));
+    assert!(roster.authenticates_borrowed_tree(current.snapshot.tree.as_ref()));
+}

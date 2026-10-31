@@ -2,6 +2,8 @@
 //! classification until typed initializer operational transport is complete.
 use super::*;
 use dm_ir::{InitializerValue, SymbolicExpression};
+#[path="frontend_initializer_scalar_source.rs"]
+mod scalar_source;
 #[path="frontend_initializer_provenance.rs"]
 mod provenance;
 pub use provenance::OriginalInitializerRootProvenance;
@@ -1299,6 +1301,17 @@ mod tests {
       let rows=context.dimensions(0).unwrap().collect::<Result<Vec<_>,_>>().unwrap();assert_eq!(rows.len(),1);let root=rows[0].1.as_ref().unwrap().expression().unwrap();assert_eq!(root.source_text(root.ast().span),Some("1+2"));
     }
 
+    #[test]
+    fn implicit_array_terminator_at_ancestor_end_keeps_original_dimension_owner(){
+      let host=Arc::new(OriginalHost(Arc::new(AtomicUsize::new(0)))) as Arc<dyn SettingExpressionQueries>;
+      let source="/datum/source_probe\n    var/value=7\n    var/list/items[2+1]\n/datum/source_probe/proc/read_value()\n    return 1\n";
+      let current=front(source,&host);let plan=crate::initializers::capture_declaration_plan(&current.snapshot,&current.emission_order).unwrap();
+      let ordinal=plan.plan().writes.iter().position(|write|matches!(write.value,InitializerValue::ArrayAllocation(_))).unwrap();
+      let context=current.original_initializer_context(&plan).unwrap();let rows=context.dimensions(ordinal).unwrap().collect::<Result<Vec<_>,_>>().unwrap();assert_eq!(rows.len(),1);
+      let input=rows[0].1.as_ref().unwrap();let first=input.expression().unwrap();assert_eq!(first.source_text(first.ast().span),Some("2+1"));let warm=input.expression().unwrap();assert!(first.same_root(&warm));
+      assert!(context.input(ordinal).is_err(),"genuine no-RHS allocation remains distinct from an authored initializer");
+    }
+
     fn provenance_selected(front:&ColdFrontend)->OriginalDeclarationExpressionInput<'_>{
       let owner=dm_ir::SymbolId::of("/");let name=dm_ir::SymbolId::of("value");let tree=&front.snapshot.tree;let member=tree.resolve(tree.lookup_type(owner).unwrap(),name,crate::MemberKind::Var).unwrap();front.original_declaration_expression_context().unwrap().selected(owner,name,&tree.member(member).unwrap().metadata).unwrap()
     }
@@ -1324,4 +1337,57 @@ mod tests {
       let rhs_root=rhs.prepare(&a).unwrap().provenance();let dimension_root=dimension.prepare(&a).unwrap().provenance();assert!(rhs_root.matches_initializer(&rhs,&a).unwrap());assert!(dimension_root.matches_dimension(&dimension,&a).unwrap());let before=counter.load(std::sync::atomic::Ordering::Acquire);assert!(!rhs_root.matches_dimension(&dimension,&a).unwrap());assert!(!dimension_root.matches_initializer(&rhs,&a).unwrap());assert!(!dimension_root.matches_dimension(&other,&a).unwrap());assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),before,"wrong role/suffix declines before preparing a different original root");
     }
 
+
+    #[test]
+    fn original_scalar_selector_reuses_authored_versions_and_preserves_declared_effective_outcomes(){
+        use crate::constant_resolution::{self as scalar,ScalarQuery};
+        let counter=Arc::new(AtomicUsize::new(0));
+        let host=Arc::new(OriginalHost(Arc::clone(&counter))) as Arc<dyn SettingExpressionQueries>;
+        let text="/datum/scalar_base\n    var/const/value=1+2\n/datum/scalar_child\n    parent_type=/datum/scalar_base\n    value=4+5\n/datum/scalar_leaf\n    parent_type=/datum/scalar_child\n/proc/no_body()\n    return 0\n";
+        let provider=Source(dm_preprocess::AcquiredSource::from_original_bytes(text.as_bytes().to_vec(),()));
+        let executor=dm_exec::BuildExecutor::new(1).unwrap();
+        let frontend=build_with_executor_and_semantic_state_for_policy_checked(Path::new("original-scalar-source.dme"),&provider,&Default::default(),FrontendConfig{workers:1,engine:None,observer:None},None,&executor,None,true,&host).unwrap().with_body_queries(Arc::new(NoBody));
+        let requests=[
+            ScalarQuery::Const{owner:dm_ir::SymbolId::of("/datum/scalar_base"),name:dm_ir::SymbolId::of("value")},
+            ScalarQuery::DeclaredDefault{owner:dm_ir::SymbolId::of("/datum/scalar_child"),name:dm_ir::SymbolId::of("value")},
+            ScalarQuery::EffectiveDefault{owner:dm_ir::SymbolId::of("/datum/scalar_child"),name:dm_ir::SymbolId::of("value")},
+            ScalarQuery::EffectiveDefault{owner:dm_ir::SymbolId::of("/datum/scalar_leaf"),name:dm_ir::SymbolId::of("value")},
+        ];
+        let decode=|_:&dm_syntax::LiteralText|None;let nameof=|_:&dm_syntax::Expr|None;
+        let old=scalar::resolve_with_predefined_and_calls(&frontend.snapshot,&requests,&scalar::ScalarBackend{identity:711,decode_string:&decode,nameof:&nameof},None,None);
+        let current=scalar::resolve_original_pinned_with_artifacts(&frontend,&requests,711,decode,nameof,None,None,None).unwrap();
+        assert_eq!(old.outcomes,current.outcomes);assert_eq!(old.dependencies,current.dependencies);
+        assert!(matches!(current.outcome(requests[0]),Some(scalar::ScalarOutcome::Value(_))));
+        assert_eq!(current.outcome(requests[0]),current.outcome(requests[1]));
+        assert_eq!(current.outcome(requests[2]),current.outcome(requests[3]));
+        assert_ne!(current.outcome(requests[1]),current.outcome(requests[2]));
+        let plan=crate::initializers::capture_declaration_plan(&frontend.snapshot,&frontend.emission_order).unwrap();
+        let before=plan.plan().writes.iter().enumerate().filter_map(|(ordinal,write)|matches!(write.value,dm_ir::InitializerValue::Expression(_)).then_some(ordinal)).map(|ordinal|frontend.original_initializer_input(&plan,ordinal).unwrap().expression().unwrap()).collect::<Vec<_>>();
+        let used=counter.load(std::sync::atomic::Ordering::Acquire);
+        let warm=scalar::resolve_original_pinned_with_artifacts(&frontend,&requests,711,decode,nameof,None,None,None).unwrap();
+        assert_eq!(warm.outcomes,current.outcomes);assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),used,"same original slots and target grouping remain warm");
+        for (ordinal,write) in plan.plan().writes.iter().enumerate(){if matches!(write.value,dm_ir::InitializerValue::Expression(_)){let root=frontend.original_initializer_input(&plan,ordinal).unwrap().expression().unwrap();assert!(before.iter().any(|old|old.same_root(&root)));}}
+    }
+
+    #[test]
+    fn original_scalar_source_prefers_equal_authored_override_and_only_follows_genuine_no_rhs(){
+        use crate::constant_resolution::{self as scalar,ScalarQuery};
+        for authored in [true,false]{
+            let counter=Arc::new(AtomicUsize::new(0));let host=Arc::new(OriginalHost(counter)) as Arc<dyn SettingExpressionQueries>;
+            let text=if authored{"/datum/scalar_origin\n    var/static/value=1+2\n/datum/scalar_origin\n    value=1+2\n/proc/no_body()\n    return 0\n"}else{"/datum/scalar_origin\n    value=1+2\n/datum/scalar_origin\n    var/static/value\n/proc/no_body()\n    return 0\n"};
+            let provider=Source(dm_preprocess::AcquiredSource::from_original_bytes(text.as_bytes().to_vec(),()));let executor=dm_exec::BuildExecutor::new(1).unwrap();
+            let frontend=build_with_executor_and_semantic_state_for_policy_checked(Path::new("scalar-authored-origin.dme"),&provider,&Default::default(),FrontendConfig{workers:1,engine:None,observer:None},None,&executor,None,true,&host).unwrap().with_body_queries(Arc::new(NoBody));
+            let plan=crate::initializers::capture_declaration_plan(&frontend.snapshot,&frontend.emission_order).unwrap();
+            let authored_rows=plan.plan().writes.iter().enumerate().filter_map(|(i,w)|matches!(w.value,dm_ir::InitializerValue::Expression(_)).then_some(i)).collect::<Vec<_>>();
+            assert!(!authored_rows.is_empty());if authored{assert_eq!(authored_rows.len(),2)}
+            let expected=frontend.original_initializer_input(&plan,*authored_rows.last().unwrap()).unwrap().expression().unwrap();
+            let roots=||{let mut roots=Vec::new();for chunk in frontend.issued_syntax.chunks().iter(){chunk.shared_relative().visit_setting_roots(|root|roots.push(root.original_expression() as *const dm_syntax::Expr as usize));}roots.sort_unstable();roots.dedup();roots};
+            let before=roots();assert_eq!(before.len(),1,"only the expected non-const original RHS is prepared before selection");assert!(before.contains(&(expected.ast() as *const dm_syntax::Expr as usize)));
+            let request=ScalarQuery::EffectiveDefault{owner:dm_ir::SymbolId::of("/datum/scalar_origin"),name:dm_ir::SymbolId::of("value")};let decode=|_:&dm_syntax::LiteralText|None;let nameof=|_:&dm_syntax::Expr|None;
+            let old=scalar::resolve_with_predefined_and_calls(&frontend.snapshot,&[request],&scalar::ScalarBackend{identity:712,decode_string:&decode,nameof:&nameof},None,None);
+            assert!(matches!(old.outcome(request),Some(scalar::ScalarOutcome::Value(_))),"actual old policy supplies inherited/equal-authored scalar");
+            let native=scalar::resolve_original_pinned_with_artifacts(&frontend,&[request],712,decode,nameof,None,None,None).unwrap();assert_eq!(old.outcomes,native.outcomes);assert_eq!(before,roots(),"actual selected physical original root was already warmed; equal token text cannot select another slot");
+            if authored{let original=frontend.original_initializer_input(&plan,authored_rows[0]).unwrap().expression().unwrap();assert!(!original.same_root(&expected),"equal authored RHS versions retain distinct original source slots");}
+        }
+    }
 }

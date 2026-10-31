@@ -25,6 +25,8 @@ enum Kind {
     Fancy(Fancy, Option<Regex>),
 }
 
+#[cfg(test)]std::thread_local!{static CAPTURE_CALLS:std::cell::Cell<usize>=const{std::cell::Cell::new(0)};}
+
 #[derive(Debug)]
 pub struct Pat {
     src: String,
@@ -338,6 +340,7 @@ impl Pat {
 
     /// Captures of the first match at or after `pos`.
     pub fn captures_at<'h>(&self, hay: &'h str, pos: usize) -> Option<Caps<'h>> {
+        #[cfg(test)]CAPTURE_CALLS.with(|calls|calls.set(calls.get()+1));
         match &self.kind {
             Kind::Plain(re) => re.captures_at(hay, pos).map(|c| Caps {
                 hay,
@@ -367,16 +370,31 @@ impl Pat {
         self.captures_at(hay, 0)
     }
 
-    pub fn captures_iter<'h>(&self, hay: &'h str) -> Vec<Caps<'h>> {
-        let mut out = Vec::new();
-        let mut pos = 0;
-        while pos <= hay.len() {
-            let Some(c) = self.captures_at(hay, pos) else { break };
-            let (s, e) = c.groups[0].unwrap();
-            pos = if e == s { e + hay[e..].chars().next().map(|ch| ch.len_utf8()).unwrap_or(1) } else { e };
-            out.push(c);
+    /// Number of stored capture groups, including whole-match group0. Both
+    /// engines expose this compiled metadata without allocating capture rows.
+    pub fn capture_group_count(&self)->usize{match &self.kind{Kind::Plain(regex)|Kind::Behind{re:regex,..}=>regex.captures_len(),Kind::Fancy(regex,_)=>regex.captures_len()}}
+
+    /// SAME nonoverlapping capture progression, with admission BEFORE each
+    /// actual captures_at call (including a possible final no-match attempt).
+    /// The caller admits exposed group storage from the exact fixed count;
+    /// private regex engine scratch/allocator overhead is not qualified here.
+    /// Earlier callbacks may have run on Err; callers discard incomplete work.
+    pub fn try_for_each_capture<'h,State,E>(&self,hay:&'h str,state:&mut State,mut admit:impl FnMut(&mut State,usize)->Result<(),E>,mut visit:impl FnMut(&mut State,Caps<'h>)->Result<(),E>)->Result<(),E>{
+        let groups=self.capture_group_count();let mut pos=0;
+        while pos<=hay.len(){
+            admit(state,groups)?;
+            let Some(c)=self.captures_at(hay,pos)else{break};
+            let(s,e)=c.groups[0].unwrap();
+            pos=if e==s{e+hay[e..].chars().next().map(|ch|ch.len_utf8()).unwrap_or(1)}else{e};
+            visit(state,c)?;
         }
-        out
+        Ok(())
+    }
+
+    pub fn captures_iter<'h>(&self,hay:&'h str)->Vec<Caps<'h>>{
+        let mut out=Vec::new();
+        let result=self.try_for_each_capture(hay,&mut out,|_,_|Ok::<(),std::convert::Infallible>(()),|out,capture|{out.push(capture);Ok(())});
+        match result{Ok(())=>out,Err(never)=>match never{}}
     }
 
     /// `re.sub(pattern, repl, hay)` with a literal replacement (no group references).
@@ -475,4 +493,35 @@ mod tests {
         assert_eq!(c.s(1), "/obj/item");
         assert!(p.captures(" /obj/item").is_none());
     }
+}
+
+#[cfg(test)]mod checked_capture_tests{
+ use super::*;use std::io;
+ fn original<'h>(pattern:&Pat,hay:&'h str) -> Vec<Caps<'h>> {
+        let mut out = Vec::new();
+        let mut pos = 0;
+        while pos <= hay.len() {
+            let Some(c) = pattern.captures_at(hay, pos) else { break };
+            let (s, e) = c.groups[0].unwrap();
+            pos = if e == s { e + hay[e..].chars().next().map(|ch| ch.len_utf8()).unwrap_or(1) } else { e };
+            out.push(c);
+        }
+        out
+    }
+ fn groups(rows:Vec<Caps<'_>>)->Vec<Vec<Option<(usize,usize)>>>{rows.into_iter().map(|row|row.groups).collect()}
+ #[test]fn fixed_engine_group_counts_match_actual_rows_and_complete_frozen_old_progression(){
+  for(pattern,text,count)in [(r"(a)(b)?","ab a",3),(r"(?<![\w])set_(\w+)","set_a(x) xset_b(x) set_c(x)",2),(r"([a-z])\1(?=x)","aax bbx cx",2),(r"","",1),(r"(?=.)","é😀",1)]{
+   let pattern=Pat::new(pattern);assert_eq!(pattern.capture_group_count(),count);let expected=groups(original(&pattern,text));let mut out=Vec::new();
+   pattern.try_for_each_capture(text,&mut out,|_,actual|{assert_eq!(actual,count);Ok::<(),io::Error>(())},|out,row|{assert_eq!(row.groups.len(),count);out.push(row);Ok(())}).unwrap();assert_eq!(groups(out),expected);assert_eq!(groups(pattern.captures_iter(text)),expected);
+  }
+ }
+ #[test]fn empty_and_zero_width_unicode_advance_at_exact_original_character_boundaries(){let pattern=Pat::new("");let mut rows=Vec::new();pattern.try_for_each_capture("é😀",&mut rows,|_,count|{assert_eq!(count,1);Ok::<(),io::Error>(())},|rows,row|{rows.push(row.start(0));Ok(())}).unwrap();assert_eq!(rows,vec![0,2,6]);assert_eq!(original(&pattern,"é😀").iter().map(|m|m.start(0)).collect::<Vec<_>>(),rows);let mut visits=0;Pat::new("a").try_for_each_capture("",&mut visits,|_,_|Ok::<(),io::Error>(()),|visits,_|{*visits+=1;Ok(())}).unwrap();assert_eq!(visits,0);}
+ #[test]fn actual_admission_denial_precedes_captures_at_and_callback(){let pattern=Pat::new(r"(a)");CAPTURE_CALLS.with(|calls|calls.set(0));let mut visits=0;let error=pattern.try_for_each_capture("a",&mut visits,|_,groups|{assert_eq!(groups,2);Err::<(),_>(io::Error::from_raw_os_error(1450))},|visits,_|{*visits+=1;Ok(())}).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(visits,0);CAPTURE_CALLS.with(|calls|assert_eq!(calls.get(),0));}
+ #[test]fn actual_mid_admission_and_visitor_errors_stop_without_completion_and_same_pattern_recovers(){
+  struct State{attempts:usize,rows:Vec<Vec<Option<(usize,usize)>>>}
+  let pattern=Pat::new(r"(a)");let text="a a a";let mut state=State{attempts:0,rows:Vec::new()};CAPTURE_CALLS.with(|calls|calls.set(0));
+  let error=pattern.try_for_each_capture(text,&mut state,|state,_|{state.attempts+=1;if state.attempts==2{Err(io::Error::from_raw_os_error(1450))}else{Ok(())}},|state,row|{state.rows.push(row.groups);Ok(())}).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(state.rows.len(),1);CAPTURE_CALLS.with(|calls|assert_eq!(calls.get(),1));
+  let mut attempts=0;CAPTURE_CALLS.with(|calls|calls.set(0));let error=pattern.try_for_each_capture(text,&mut attempts,|attempts,_|{*attempts+=1;Ok(())},|_,_|Err::<(),_>(io::Error::from_raw_os_error(112))).unwrap_err();assert_eq!(error.raw_os_error(),Some(112));assert_eq!(attempts,1);CAPTURE_CALLS.with(|calls|assert_eq!(calls.get(),1));
+  let mut recovered=Vec::new();pattern.try_for_each_capture(text,&mut recovered,|_,_|Ok::<(),io::Error>(()),|out,row|{out.push(row.groups);Ok(())}).unwrap();assert_eq!(recovered,groups(original(&pattern,text)));
+ }
 }

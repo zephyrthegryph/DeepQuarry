@@ -758,6 +758,10 @@ pub struct Ctx<'a> {
     seen: HashSet<Key>,
 }
 impl Ctx<'_> {
+    /// Read-only admission observations of the SAME dynamic dependency set.
+    pub fn has_dependency(&self,key:Key)->bool{self.seen.contains(&key)}
+    pub fn dependency_count(&self)->usize{self.deps.len()}
+
     fn note(&mut self, key: Key) {
         if self.seen.insert(key) {
             self.deps.push(key);

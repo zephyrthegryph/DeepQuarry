@@ -210,6 +210,11 @@ impl CallableRoster {
     pub fn authenticates_tree(&self, tree: &Arc<SemanticTree>) -> bool {
         Arc::ptr_eq(&self.tree, tree)
     }
+    /// Same exact payload identity when the existing archive lends &SemanticTree.
+    /// No structural equality, new owner, source receipt or Arc clone is involved.
+    pub fn authenticates_borrowed_tree(&self, tree: &SemanticTree) -> bool {
+        std::ptr::eq(self.tree.as_ref(), tree)
+    }
     /// Source-neutral ordering, admitted against current occurrence order below.
     pub fn source_order(&self) -> &[usize] {
         &self.index.source_order

@@ -4,18 +4,29 @@ use crate::key_policy_control::{self as kc,Control};
 pub const LIST_CALL:&str="[]";
 pub const PREFIXES:&[&str]=&["set_","add_","include_","remove_","clear_","insert_","swap_","cut_"];
 pub const AUTO_REL:&str="code/engine/_generated/auto_tracked.dm";
+pub fn wants_file(relative:&str,text:&str)->bool{relative!=AUTO_REL&&PREFIXES.iter().any(|prefix|text.contains(prefix))}
+fn append<C:Control>(control:&mut C,out:&mut Vec<String>,pattern:&crate::pat::Pat,line:&str,list:bool)->Result<(),C::Error>{
+ let mut state=(control,out);
+ pattern.try_for_each_capture(line,&mut state,|state,groups|{
+  kc::reserve(state.0,||groups.checked_mul(4)?.checked_mul(std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(std::mem::size_of::<crate::pat::Caps<'_>>()+64))
+ },|state,m|{
+  state.0.checkpoint()?;
+  let name=if list{let v=if m.s(1).is_empty(){m.s(2)}else{m.s(1)};kc::format(state.0,format_args!("{}{}",v,LIST_CALL))?}else{kc::own(state.0,m.s(1))?};
+  kc::row(state.0,state.1)?;state.1.push(name);Ok(())
+ })
+}
 pub fn collect_file<'a,C:Control>(control:&mut C,relative:&str,text:&str,code:impl FnOnce()->&'a str)->Result<Vec<String>,C::Error>{
  control.checkpoint()?;
  let mut out=Vec::new();
- if relative==AUTO_REL||!PREFIXES.iter().any(|prefix|text.contains(prefix)){return Ok(out)}
+ if !wants_file(relative,text){return Ok(out)}
  let code=code();
  let call=crate::pat!(r"(?:^|[^\w/])set_(\w+)\s*\(");
  let list_call=crate::pat!(r"(?:^|[^\w/])(?:(?:add|include|remove|clear|insert|swap|cut)_(\w+)|set_(\w+)_at)\s*\(");
  for line in code.lines(){
   control.checkpoint()?;
   if !line.starts_with(char::is_whitespace)||line.contains("proc/set_")||line.trim_start().starts_with('#'){continue}
-  for m in call.captures_iter(line){control.checkpoint()?;let name=kc::own(control,m.s(1))?;kc::row(control,&mut out)?;out.push(name)}
-  for m in list_call.captures_iter(line){control.checkpoint()?;let v=if m.s(1).is_empty(){m.s(2)}else{m.s(1)};let name=kc::format(control,format_args!("{}{}",v,LIST_CALL))?;kc::row(control,&mut out)?;out.push(name)}
+  if line.contains("set_"){append(control,&mut out,&call,line,false)?;}
+  if ["add_","include_","remove_","clear_","insert_","swap_","cut_"].iter().any(|prefix|line.contains(prefix))||(line.contains("set_")&&line.contains("_at")){append(control,&mut out,&list_call,line,true)?;}
  }
  control.checkpoint()?;out.sort();out.dedup();control.checkpoint()?;Ok(out)
 }

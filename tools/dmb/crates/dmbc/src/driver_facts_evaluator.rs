@@ -1980,3 +1980,6 @@ mod original_abi_scalar_tests;
 #[cfg(test)]
 #[path="driver_original_precheck_tests.rs"]
 mod original_precheck_tests;
+
+#[cfg(test)]
+pub(crate) fn scalar_text_parse_count_for_test()->usize{SCALAR_TEXT_PARSES.with(|n|n.get())}

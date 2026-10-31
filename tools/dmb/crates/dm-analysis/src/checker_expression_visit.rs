@@ -17,6 +17,7 @@ use dm_tree::{
     MemberId, SemanticTree,
 };
 use std::collections::BTreeMap;
+use crate::checker_prefix_demand::{Demand as PrefixDemand,Compatibility as PrefixCompatibility};
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum TypeFact {
     Known(SymbolId),
@@ -215,7 +216,8 @@ impl LocalFact {
         }
     }
 }
-struct Walker<'a, 'r, R: ?Sized> {
+struct Walker<'a, 'r, R: ?Sized,D=PrefixCompatibility> {
+    prefix_demand:D,
     tree: &'a SemanticTree,
     prefix_archive: Option<&'a BodyArchive>,
     local_syntax: &'a dm_syntax::LocalVariableLedger,
@@ -235,8 +237,8 @@ struct Walker<'a, 'r, R: ?Sized> {
     statement_root: Option<&'a Expr>,
     scope_denied_depth: usize,
 }
-impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
-    fn new(
+impl<'a,'r,R:Resolver+?Sized> Walker<'a,'r,R,PrefixCompatibility>{
+fn new(
         tree: &'a SemanticTree,
         prefix_archive: Option<&'a BodyArchive>,
         local_syntax: &'a dm_syntax::LocalVariableLedger,
@@ -246,7 +248,20 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
         resolver: &'r R,
         profile: PackedU128,
         budget: Option<&crate::checker_effects::output::ReportBudget>,
-    ) -> Result<Self, String> {
+    ) -> Result<Self, String> {Self::new_using(tree,prefix_archive,local_syntax,source,occurrence,parameters,resolver,profile,budget,PrefixCompatibility::new())}
+}
+impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
+    fn new_using(
+        tree: &'a SemanticTree,
+        prefix_archive: Option<&'a BodyArchive>,
+        local_syntax: &'a dm_syntax::LocalVariableLedger,
+        source: &'a str,
+        occurrence: &dm_tree::frontend::BodyOccurrence,
+        parameters: dm_tree::frontend::SourceParameterView<'_>,
+        resolver: &'r R,
+        profile: PackedU128,
+        budget: Option<&crate::checker_effects::output::ReportBudget>, prefix_demand:D
+) -> Result<Self, D::Error> {
         parameters.require_for(tree, occurrence)?;
         let entries = parameters.entries()?;
         let member = occurrence.member;
@@ -307,6 +322,7 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
             locals.insert(SymbolId::of(parameters.name(parameter)?), fact);
         }
         Ok(Walker {
+            prefix_demand,
             tree,
             prefix_archive,
             local_syntax,
@@ -336,20 +352,20 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
             .saturating_add(std::mem::size_of::<BTreeMap<SymbolId, LocalFact>>())
             .saturating_add(64)
     }
-    fn check_effect_admission(&self) -> Result<(), String> {
+    fn check_effect_admission(&self) -> Result<(), D::Error> {
         if let Some(effects) = &self.effects {
             effects.transient.charge(0)?
         }
         Ok(())
     }
-    fn insert_local(&mut self, name: SymbolId, fact: LocalFact) -> Result<(), String> {
+    fn insert_local(&mut self, name: SymbolId, fact: LocalFact) -> Result<(), D::Error> {
         if let Some(effects) = &self.effects {
             effects.transient.charge(Self::local_entry_bound())?
         }
         self.locals.insert(name, fact);
         Ok(())
     }
-    fn event(&mut self, event: Event<'a>) -> Result<(), String> {
+    fn event(&mut self, event: Event<'a>) -> Result<(), D::Error> {
         if let Some(effects) = &self.effects {
             effects.transient.push(&mut self.events, event)?
         } else {
@@ -357,7 +373,7 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
         }
         Ok(())
     }
-    fn leaf_statement(&mut self, statement: &'a Statement) -> Result<bool, String> {
+    fn leaf_statement(&mut self, statement: &'a Statement) -> Result<bool, D::Error> {
         self.check_effect_admission()?;
         let previous = self
             .evaluation_anchor
@@ -368,7 +384,7 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
         self.evaluation_anchor = previous;
         result
     }
-    fn leaf_statement_inner(&mut self, statement: &'a Statement) -> Result<bool, String> {
+    fn leaf_statement_inner(&mut self, statement: &'a Statement) -> Result<bool, D::Error> {
         // Both storage variants are the SAME written non-evaluated Set.
         if let Some(setting) = statement.setting() {
             let value = setting.value.original();
@@ -440,7 +456,7 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
         declaration: &'a str,
         value: Option<&'a Expr>,
         at: Span,
-    ) -> Result<(), String> {
+    ) -> Result<(), D::Error> {
         let matches = self.local_syntax.in_span(at).map_err(str::to_owned)?;
         let fact = match matches {
             [fact] => fact,
@@ -500,7 +516,7 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
     fn variable_type(
         &self,
         fact: &crate::checker_variable_facts::VariableFact,
-    ) -> Result<TypeFact, String> {
+    ) -> Result<TypeFact, D::Error> {
         if let (Some(archive), Some(formal)) = (self.prefix_archive, fact.formal) {
             let qualified = fact
                 .metadata
@@ -520,7 +536,7 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                     self.resolver,
                     properties.declared_type,
                     properties.list_element_type,
-                );
+                ).map_err(D::Error::from);
             }
         }
         if fact.metadata.flags & !15 != 0 || fact.metadata.array.is_some() {
@@ -531,9 +547,9 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
             self.resolver,
             fact.metadata.declared_type,
             fact.metadata.list_element_type,
-        )
+        ).map_err(D::Error::from)
     }
-    fn arguments(&mut self, args: &'a [Expr]) -> Result<(), String> {
+    fn arguments(&mut self, args: &'a [Expr]) -> Result<(), D::Error> {
         for argument in args {
             let value = match &argument.kind {
                 ExprKind::Binary { op, lhs, rhs } if op == "=" && kwarg_key(lhs)? => rhs.as_ref(),
@@ -576,7 +592,7 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
             _ => (),
         }
     }
-    fn direct_effect(&mut self, reason: &'static str, at: Option<Span>) -> Result<(), String> {
+    fn direct_effect(&mut self, reason: &'static str, at: Option<Span>) -> Result<(), D::Error> {
         if self.effects.is_none() {
             return Ok(());
         }
@@ -601,7 +617,7 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
         at: Span,
         message: std::fmt::Arguments<'_>,
         notes: Vec<crate::checks::Note>,
-    ) -> Result<(), String> {
+    ) -> Result<(), D::Error> {
         if let Some(effects) = &mut self.effects {
             if effects.immediate.len() >= crate::checker_effects::MAX_EVENTS {
                 return Err("native immediate effects exceed bounded admission".into());
@@ -632,7 +648,7 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
         }
         Ok(())
     }
-    fn arguments_at(&mut self, args: &'a [Expr], at: Span) -> Result<(), String> {
+    fn arguments_at(&mut self, args: &'a [Expr], at: Span) -> Result<(), D::Error> {
         let previous = self
             .evaluation_anchor
             .replace(crate::checker_effects::CallOrigin::Source(at));
@@ -648,7 +664,7 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
         receiver: SymbolId,
         args: &'a [Expr],
         member_follow: bool,
-    ) -> Result<TypeFact, String> {
+    ) -> Result<TypeFact, D::Error> {
         self.ordinary_call_with_dispatch(expression, at, name, receiver, args, member_follow, false)
     }
     fn ordinary_call_with_dispatch(
@@ -660,7 +676,7 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
         args: &'a [Expr],
         member_follow: bool,
         exact: bool,
-    ) -> Result<TypeFact, String> {
+    ) -> Result<TypeFact, D::Error> {
         self.call_with_origin(
             EvaluationCallSite::Written(expression),
             at,
@@ -680,7 +696,7 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
         args: &'a [Expr],
         member_follow: bool,
         exact: bool,
-    ) -> Result<TypeFact, String> {
+    ) -> Result<TypeFact, D::Error> {
         let fact = checker_call_facts::callable_any(
             self.tree,
             self.resolver,
@@ -732,18 +748,16 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                                         .prefix_archive
                                         .ok_or("purity needs original archive")?;
                                     let permit =
-                                        crate::checker_return_facts::PuritySettingsPermit::issue(
+                                        crate::checker_return_facts::PuritySettingsPermit::issue_using(
                                             archive,
                                             self.profile,
-                                            *identity,
-                                        )?;
-                                    crate::checker_return_facts::validate_source_directives_for_purity(self.tree,self.prefix_archive,*identity,&permit)?;
+                                            *identity, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|&effects.transient)))?;
+                                    crate::checker_return_facts::validate_source_directives_for_purity_using(self.tree,self.prefix_archive,*identity,&permit, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|&effects.transient)))?;
                                 } else {
-                                    crate::checker_return_facts::validate_source_directives(
+                                    crate::checker_return_facts::validate_source_directives_using(
                                         self.tree,
                                         self.prefix_archive,
-                                        *identity,
-                                    )?;
+                                        *identity, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|&effects.transient)))?;
                                 }
                             }
                         }
@@ -764,23 +778,20 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                 };
                 if self.effects.is_some() {
                     let archive = self.prefix_archive.ok_or("purity needs original archive")?;
-                    let permit = crate::checker_return_facts::PuritySettingsPermit::issue(
+                    let permit = crate::checker_return_facts::PuritySettingsPermit::issue_using(
                         archive,
                         self.profile,
-                        *identity,
-                    )?;
-                    crate::checker_return_facts::validate_source_directives_for_purity(
+                        *identity, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|&effects.transient)))?;
+                    crate::checker_return_facts::validate_source_directives_for_purity_using(
                         self.tree,
                         self.prefix_archive,
                         *identity,
-                        &permit,
-                    )?;
+                        &permit, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|&effects.transient)))?;
                 } else {
-                    crate::checker_return_facts::validate_source_directives(
+                    crate::checker_return_facts::validate_source_directives_using(
                         self.tree,
                         self.prefix_archive,
-                        *identity,
-                    )?;
+                        *identity, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|&effects.transient)))?;
                 }
             }
         }
@@ -790,12 +801,11 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                 (self.statement_root, site)
             {
                 if pure_discard_term(root, expression) {
-                    let annotation = purity_annotation(
+                    let annotation = purity_annotation_using(
                         self.prefix_archive.ok_or("purity source archive absent")?,
                         self.resolver,
                         self.profile,
-                        target,
-                    )?;
+                        target, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|&effects.transient)))?;
                     if let Some(annotation) = annotation {
                         let statement_at = self.evaluation_anchor.ok_or(
                             "discarded pure return needs original statement evaluation anchor",
@@ -899,33 +909,30 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                 let CallableFact::Source { identity, .. } = &fact else {
                     unreachable!()
                 };
-                Some(crate::checker_return_facts::PuritySettingsPermit::issue(
+                Some(crate::checker_return_facts::PuritySettingsPermit::issue_using(
                     self.prefix_archive.unwrap(),
                     self.profile,
-                    *identity,
-                )?)
+                    *identity, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|&effects.transient)))?)
             } else {
                 None
             };
         let returned = if let Some(permit) = &purity_permit {
-            crate::checker_return_facts::return_hint_with_prefix_for_purity(
+            crate::checker_return_facts::return_hint_with_prefix_for_purity_using(
                 self.tree,
                 self.resolver,
                 self.profile,
                 receiver,
                 SymbolId::of(name),
                 self.prefix_archive,
-                permit,
-            )?
+                permit, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|&effects.transient)))?
         } else {
-            crate::checker_return_facts::return_hint_with_prefix(
+            crate::checker_return_facts::return_hint_with_prefix_using(
                 self.tree,
                 self.resolver,
                 self.profile,
                 receiver,
                 SymbolId::of(name),
-                self.prefix_archive,
-            )?
+                self.prefix_archive, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|&effects.transient)))?
         };
         let ty = checked_type(
             self.tree,
@@ -937,24 +944,22 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
             return Ok(ty);
         }
         let hint = if let Some(permit) = &purity_permit {
-            crate::checker_return_facts::return_fix_hint_for_purity(
+            crate::checker_return_facts::return_fix_hint_for_purity_using(
                 self.tree,
                 self.resolver,
                 self.profile,
                 receiver,
                 SymbolId::of(name),
                 self.prefix_archive,
-                permit,
-            )?
+                permit, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|&effects.transient)))?
         } else {
-            crate::checker_return_facts::return_fix_hint(
+            crate::checker_return_facts::return_fix_hint_using(
                 self.tree,
                 self.resolver,
                 self.profile,
                 receiver,
                 SymbolId::of(name),
-                self.prefix_archive,
-            )?
+                self.prefix_archive, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|&effects.transient)))?
         };
         Ok(match hint {
             crate::checker_return_facts::ReturnFixHint::None => TypeFact::Unhinted,
@@ -965,7 +970,7 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
     fn implicit_list_constructor(
         &mut self,
         initializer: &'a dm_syntax::ImplicitListInitializer,
-    ) -> Result<TypeFact, String> {
+    ) -> Result<TypeFact, D::Error> {
         let owner = SymbolId::of("/list");
         let _ = checked_type(self.tree, self.resolver, Some(owner), None)?;
         let fact = checker_call_facts::callable_any(
@@ -994,7 +999,7 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
         expression: &'a Expr,
         form: dm_syntax::native_special_forms::Constructor<'a>,
         hint: Option<SymbolId>,
-    ) -> Result<TypeFact, String> {
+    ) -> Result<TypeFact, D::Error> {
         use dm_syntax::native_special_forms::Constructor;
         let (owner, args) = match form {
             Constructor::Dynamic => return Ok(TypeFact::Unknown), // old NewMiniExpr TODO skips target/args
@@ -1047,7 +1052,7 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
         &mut self,
         expression: &'a Expr,
         hint: Option<SymbolId>,
-    ) -> Result<TypeFact, String> {
+    ) -> Result<TypeFact, D::Error> {
         self.check_effect_admission()?;
         self.last_impurity = None;
         let result = self.expression_inner(expression, hint)?;
@@ -1062,7 +1067,7 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
         &mut self,
         expression: &'a Expr,
         hint: Option<SymbolId>,
-    ) -> Result<TypeFact, String> {
+    ) -> Result<TypeFact, D::Error> {
         if let Some(form) =
             dm_syntax::native_special_forms::constructor(expression).map_err(str::to_owned)?
         {
@@ -1473,7 +1478,7 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
                 };
                 match base {
                     TypeFact::List(element) => {
-                        checked_type(self.tree, self.resolver, element, None)
+                        checked_type(self.tree, self.resolver, element, None).map_err(D::Error::from)
                     }
                     other => Ok(other),
                 }
@@ -1589,8 +1594,8 @@ impl<'a, 'r, R: Resolver + ?Sized> Walker<'a, 'r, R> {
         }
     }
 }
-impl<'a, R: Resolver + ?Sized> EvaluatedObserver<'a> for Walker<'a, '_, R> {
-    fn admit_storage(&mut self, bytes: usize) -> Result<bool, String> {
+impl<'a,R:Resolver+?Sized,D:PrefixDemand> EvaluatedObserver<'a,D::Error> for Walker<'a,'_,R,D> {
+    fn admit_storage(&mut self, bytes: usize) -> Result<bool, D::Error> {
         if let Some(effects) = &self.effects {
             effects.transient.charge(bytes)?;
             Ok(true)
@@ -1644,13 +1649,13 @@ impl<'a, R: Resolver + ?Sized> EvaluatedObserver<'a> for Walker<'a, '_, R> {
         }
         self.locals = previous;
     }
-    fn leaf(&mut self, statement: &'a Statement) -> Result<(), String> {
+    fn leaf(&mut self, statement: &'a Statement) -> Result<(), D::Error> {
         self.leaf_statement(statement).map(|_| ())
     }
-    fn expression(&mut self, expression: &'a Expr) -> Result<(), String> {
+    fn expression(&mut self, expression: &'a Expr) -> Result<(), D::Error> {
         Walker::expression(self, expression, None).map(|_| ())
     }
-    fn statement_expression(&mut self, expression: &'a Expr) -> Result<(), String> {
+    fn statement_expression(&mut self, expression: &'a Expr) -> Result<(), D::Error> {
         let old_root = self.statement_root.replace(expression);
         let old_anchor = self.evaluation_anchor;
         if self.evaluation_anchor.is_none() && self.effects.is_none() {
@@ -1672,7 +1677,7 @@ impl<'a, R: Resolver + ?Sized> EvaluatedObserver<'a> for Walker<'a, '_, R> {
         self.evaluation_anchor = old_anchor;
         result
     }
-    fn initializer(&mut self, initializer: &'a ForInitializer, at: Span) -> Result<(), String> {
+    fn initializer(&mut self, initializer: &'a ForInitializer, at: Span) -> Result<(), D::Error> {
         match initializer {
             ForInitializer::Declare { declaration, value } => {
                 self.binding(declaration, value.as_ref(), false, at)
@@ -1693,7 +1698,7 @@ impl<'a, R: Resolver + ?Sized> EvaluatedObserver<'a> for Walker<'a, '_, R> {
         value: Option<&'a Expr>,
         always_untyped: bool,
         at: Span,
-    ) -> Result<(), String> {
+    ) -> Result<(), D::Error> {
         if dm_syntax::local_name(binding).is_some() {
             return self.declaration(binding, value, at);
         }
@@ -1712,7 +1717,7 @@ impl<'a, R: Resolver + ?Sized> EvaluatedObserver<'a> for Walker<'a, '_, R> {
         // Existing (nondeclared) range bindings deliberately skip their start.
         Ok(())
     }
-    fn catch_binding(&mut self, binding: Option<&'a str>, at: Span) -> Result<(), String> {
+    fn catch_binding(&mut self, binding: Option<&'a str>, at: Span) -> Result<(), D::Error> {
         if let Some(binding) = binding {
             if binding.trim().is_empty() {
                 return Ok(());
@@ -1872,12 +1877,12 @@ fn pure_discard_term(mut root: &Expr, call: &Expr) -> bool {
         };
     }
 }
-fn purity_annotation(
+fn purity_annotation_using<D:PrefixDemand>(
     archive: &BodyArchive,
     resolver: &(impl Resolver + ?Sized),
     profile: PackedU128,
-    target: crate::checker_effects::EffectTarget,
-) -> Result<Option<Span>, String> {
+    target: crate::checker_effects::EffectTarget, demand:&D
+) -> Result<Option<Span>, D::Error> {
     let mut at = Some(target);
     let mut seen = std::collections::BTreeSet::new();
     while let Some(target) = at {
@@ -1886,7 +1891,7 @@ fn purity_annotation(
         }
         if let crate::checker_effects::EffectTarget::Source(id) = target {
             let permit =
-                crate::checker_return_facts::PuritySettingsPermit::issue(archive, profile, id)?;
+                crate::checker_return_facts::PuritySettingsPermit::issue_using(archive, profile, id, demand)?;
             if let Some(at) = permit.own_pure() {
                 return Ok(Some(at));
             }
@@ -1903,7 +1908,14 @@ pub(crate) fn effects_archived<'a>(
     resolver: &(impl Resolver + ?Sized),
     profile: PackedU128,
     admission: &crate::checker_effects::ExecutionAdmission,
-) -> Result<crate::checker_effects::Draft, String> {
+) -> Result<crate::checker_effects::Draft, String> {effects_archived_using(archive,body,resolver,profile,admission,PrefixCompatibility::<String>::new())}
+pub(crate) fn effects_archived_using<'a,D:PrefixDemand>(
+    archive: &'a BodyArchive,
+    body: &'a ArchivedBody<'_>,
+    resolver: &(impl Resolver + ?Sized),
+    profile: PackedU128,
+    admission: &crate::checker_effects::ExecutionAdmission, prefix_demand:D
+) -> Result<crate::checker_effects::Draft, D::Error> {
     if !body.belongs_to(archive) {
         return Err("effect body belongs to another archive".into());
     }
@@ -1911,7 +1923,7 @@ pub(crate) fn effects_archived<'a>(
         transient: crate::checker_effects::output::ReportBudget::for_operation(admission),
         ..Default::default()
     };
-    let mut walker = Walker::new(
+    let mut walker = Walker::new_using(
         archive.tree(),
         Some(archive),
         &body.statement_body().parsed().local_variables,
@@ -1921,9 +1933,10 @@ pub(crate) fn effects_archived<'a>(
         resolver,
         profile,
         Some(&draft.transient),
+        prefix_demand,
     )?;
     walker.effects = Some(draft);
-    crate::checker_reachable::archived_with_observer(body, &mut walker)?;
+    crate::checker_reachable::archived_with_observer_using(body, &mut walker)?;
     walker.check_effect_admission()?;
     Ok(walker.effects.take().unwrap())
 }

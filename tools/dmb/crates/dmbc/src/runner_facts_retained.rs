@@ -135,16 +135,33 @@ impl RetainedHostFacts {
         &self,
         frontend: &ColdFrontend,
         engine: &Arc<crate::runner_host::RetainedEngine>,
-    ) -> Result<PreparedHost, String> {
+    ) -> Result<PreparedHost, String> {self.prepare_in_source_mode(frontend,engine,HostSourceMode::Ordinary).map_err(compatibility_failure)}
+    pub(super) fn prepare_original(
+        &self,
+        frontend: &ColdFrontend,
+        engine: &Arc<crate::runner_host::RetainedEngine>,
+    ) -> Result<PreparedHost, HostPreparationFailure> {crate::daemon::control::checkpoint().map_err(HostPreparationFailure::Operational)?;let result=self.prepare_in_source_mode(frontend,engine,HostSourceMode::Original);if matches!(&result,Err(HostPreparationFailure::Operational(_))){return result}crate::daemon::control::checkpoint().map_err(HostPreparationFailure::Operational)?;result}
+    fn prepare_in_source_mode(
+        &self,
+        frontend: &ColdFrontend,
+        engine: &Arc<crate::runner_host::RetainedEngine>,
+        mode:HostSourceMode,
+    ) -> Result<PreparedHost, HostPreparationFailure> {
         let current = Current {
             frontend,
             engine,
             paths: Default::default(),
         };
-        if let Some(previous) = self.values.lookup(KEY, &current) {
+        let mut original_bound=None;
+        let previous=match mode{
+          HostSourceMode::Ordinary=>self.values.lookup(KEY,&current),
+          HostSourceMode::Original=>self.values.try_visit_receipted::<_,HostPreparationFailure>(KEY,&current,&mut|value|{let Artifact::Prepared(entry)=value.as_ref()else{return Ok(false)};let bound=dm_tree::constant_resolution::bind_original_facts(frontend,&entry.scalar)?;if let Some(bound)=bound{original_bound=Some(bound);Ok(true)}else{Ok(false)}})?.0.map(|receipt|receipt.value),
+        };
+        if let Some(previous)=previous {
             if let Artifact::Prepared(previous) = previous.as_ref() {
                 self.admit_constant_spellings(&current)?;
-                if let Some(scalar) = previous.scalar.bind_current(&frontend.snapshot) {
+                let bound=match mode{HostSourceMode::Ordinary=>previous.scalar.bind_current(&frontend.snapshot),HostSourceMode::Original=>original_bound.take()};
+                if let Some(scalar)=bound {
                     let scalar = Arc::new(scalar);
                     let host = EngineResolverHost::new(
                         Arc::clone(&scalar),
@@ -156,6 +173,7 @@ impl RetainedHostFacts {
                         frontend,
                         Arc::clone(&previous.pinned),
                     )?;
+                    if matches!(mode,HostSourceMode::Original){crate::daemon::control::checkpoint().map_err(HostPreparationFailure::Operational)?;}
                     self.hits.fetch_add(1, Ordering::Relaxed);
                     self.engine_providers(&current)?;
                     return Ok((host, scalar));
@@ -163,6 +181,7 @@ impl RetainedHostFacts {
             }
         }
         // A failed preparation must not preserve an inapplicable latest owner.
+        if matches!(mode,HostSourceMode::Original){crate::daemon::control::checkpoint().map_err(HostPreparationFailure::Operational)?;}
         self.retain_catalog_stages();
         let (constants, runtime) = self.catalogs(&current)?;
         let engine_providers = self.engine_providers(&current)?;
@@ -174,7 +193,7 @@ impl RetainedHostFacts {
             pinned,
             source,
             scalar,
-        } = prepare_from_catalogs_with_artifacts(
+        } = prepare_from_catalogs_in_source_mode(
             frontend,
             &engine.snapshot,
             constants,
@@ -186,9 +205,11 @@ impl RetainedHostFacts {
             Some(&engine_providers),
             Some(&callable_coverage),
             Some(&variable_coverage),
+            mode,
         )?;
         let host = EngineResolverHost::new(Arc::clone(&scalar), constants.clone(), runtime.clone())
             .with_pinned_facts(&engine.snapshot, frontend, Arc::clone(&pinned))?;
+        if matches!(mode,HostSourceMode::Original){crate::daemon::control::checkpoint().map_err(HostPreparationFailure::Operational)?;}
         if let Some(facts) = scalar.retain_facts() {
             let entry = Entry {
                 constants,
@@ -450,6 +471,27 @@ mod tests {
             .host_facts()
             .is_none());
     }
+    #[test]
+    fn original_scalar_host_replays_current_roots_before_warm_claim_and_preserves_cancel_retry() {
+        use dm_tree::frontend::{FrontendConfig,RetainedSemanticTree,SettingExpressionQueries};
+        let mut build_host=crate::runner_host::BuildHost::default();
+        let engine=build_host.engine(std::path::PathBuf::from("E:/fixture/original-scalar-host.dme"),Default::default(),true,include_bytes!("../../../fixtures/native_template.bin").to_vec()).unwrap();
+        let retained=build_host.host_facts().unwrap();let db=Arc::new(crate::query_db::QueryDb::default());let syntax=Arc::clone(&db) as Arc<dyn SettingExpressionQueries>;
+        let executor=dm_exec::BuildExecutor::new(1).unwrap();let mut state=RetainedSemanticTree::default();
+        let build=|text, state:&mut RetainedSemanticTree|dm_tree::frontend::build_with_executor_and_semantic_state_for_policy_checked(std::path::Path::new("original-scalar-host.dme"),&Source(text),&Default::default(),FrontendConfig{workers:1,engine:Some(engine.frontend_seed()),observer:None},None,&executor,Some(state),true,&syntax).unwrap();
+        let first=build("var/const/base=1+2\n/datum/probe\n    var/const/value=base+4\n    proc/read_value()\n        return value\n",&mut state);
+        let (_,legacy)=prepare(&first,&engine.snapshot).unwrap();
+        let (_,original)=prepare_retained_original(&first,&engine,Some(&retained)).unwrap();
+        assert_eq!(legacy.outcomes,original.outcomes);assert_eq!(legacy.dependencies,original.dependencies);assert_eq!(legacy.identity,original.identity);
+        let second=build("\nvar/const/base=1+2\n/datum/probe\n    var/const/value=base+4\n    proc/read_value()\n        return value+1\n",&mut state);
+        assert!(Arc::ptr_eq(&first.snapshot.tree,&second.snapshot.tree));
+        let (_,warm)=prepare_retained_original(&second,&engine,Some(&retained)).unwrap();assert!(Arc::ptr_eq(&original.outcomes,&warm.outcomes));assert!(Arc::ptr_eq(&warm.source.occurrences,&second.snapshot.occurrences));assert_eq!(retained.hits.load(Ordering::Relaxed),1);
+        let token=crate::daemon::control::Cancellation::default();let binding=crate::daemon::control::bind_with_deadline(token.clone(),std::time::Instant::now()+std::time::Duration::from_secs(300));let schedule=db.cancel_settings_after_checkpoints_for_test(0,token);
+        let failure=prepare_retained_original(&second,&engine,Some(&retained)).err().expect("actual warm host source admission cannot hide cancellation");
+        let HostPreparationFailure::Operational(actual)=failure else{panic!("operational source cancellation is not a scalar outcome")};assert_eq!(actual.kind(),std::io::ErrorKind::Interrupted);assert_eq!(retained.hits.load(Ordering::Relaxed),1);drop(schedule);drop(binding);
+        let (_,recovered)=prepare_retained_original(&second,&engine,Some(&retained)).unwrap();assert!(Arc::ptr_eq(&warm.outcomes,&recovered.outcomes));assert_eq!(retained.hits.load(Ordering::Relaxed),2);assert_eq!(db.db().stats(dm_query::Kind(4)).computed,0);
+    }
+
 }
 
 #[cfg(test)]

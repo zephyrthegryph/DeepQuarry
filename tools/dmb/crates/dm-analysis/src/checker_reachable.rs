@@ -152,7 +152,11 @@ pub fn analyze_with_observer<'a>(
 pub fn archived_with_observer<'a>(
     body: &'a ArchivedBody<'_>,
     observer: &mut impl EvaluatedObserver<'a>,
-) -> Result<Walk<'a>, String> {
+) -> Result<Walk<'a>, String> {archived_with_observer_using(body,observer)}
+pub(crate) fn archived_with_observer_using<'a,E:From<String>+for<'e>From<&'e str>>(
+    body: &'a ArchivedBody<'_>,
+    observer: &mut impl EvaluatedObserver<'a,E>,
+) -> Result<Walk<'a>, E> {
     let syntax = body.statement_body();
     if !syntax.syntax_complete() {
         return Err("checker traversal has incomplete native syntax".into());
@@ -172,7 +176,7 @@ fn walk(syntax: &StatementBody) -> Result<Walk<'_>, String> {
     if !syntax.syntax_complete() {
         return Err("checker traversal has incomplete native syntax".into());
     }
-    let mut walker = Walker {
+    let mut walker:Walker<'_, '_, String> = Walker {
         syntax,
         events: Vec::new(),
         observer: None,
@@ -183,19 +187,19 @@ fn walk(syntax: &StatementBody) -> Result<Walk<'_>, String> {
         events: walker.events,
     })
 }
-struct Walker<'a, 'o> {
+struct Walker<'a, 'o,E=String> {
     syntax: &'a StatementBody,
     events: Vec<Event<'a>>,
-    observer: Option<&'o mut dyn EvaluatedObserver<'a>>,
+    observer: Option<&'o mut dyn EvaluatedObserver<'a,E>>,
 }
-impl<'a> Walker<'a, '_> {
-    fn check_observer_admission(&mut self) -> Result<(), String> {
+impl<'a,E:From<String>+for<'e>From<&'e str>> Walker<'a, '_,E> {
+    fn check_observer_admission(&mut self) -> Result<(), E> {
         if let Some(observer) = self.observer.as_deref_mut() {
             observer.admit_storage(0)?;
         }
         Ok(())
     }
-    fn event(&mut self, event: Event<'a>) -> Result<(), String> {
+    fn event(&mut self, event: Event<'a>) -> Result<(), E> {
         self.check_observer_admission()?;
         if self.events.len() == self.events.capacity() {
             let cap = self
@@ -231,7 +235,7 @@ impl<'a> Walker<'a, '_> {
         &mut self,
         statements: &'a [Statement],
         mut setting_allowed: bool,
-    ) -> Result<ControlFlow, String> {
+    ) -> Result<ControlFlow, E> {
         self.check_observer_admission()?;
         let mut flow = ControlFlow::default();
         for statement in statements {
@@ -264,7 +268,7 @@ impl<'a> Walker<'a, '_> {
         kind: ConditionKind,
         expression: &'a Expr,
         at: Span,
-    ) -> Result<(), String> {
+    ) -> Result<(), E> {
         self.event(Event::ControlCondition {
             kind,
             expression,
@@ -275,8 +279,8 @@ impl<'a> Walker<'a, '_> {
     fn scoped<T>(
         &mut self,
         kind: ScopeKind,
-        run: impl FnOnce(&mut Self) -> Result<T, String>,
-    ) -> Result<T, String> {
+        run: impl FnOnce(&mut Self) -> Result<T, E>,
+    ) -> Result<T, E> {
         let entered = if let Some(observer) = self.observer.as_deref_mut() {
             observer.enter_scope(kind);
             observer.admit_storage(0).map(|_| ())
@@ -292,7 +296,7 @@ impl<'a> Walker<'a, '_> {
         };
         result.and_then(|value| exited.map(|_| value))
     }
-    fn evaluated(&mut self, expression: &'a Expr) -> Result<(), String> {
+    fn evaluated(&mut self, expression: &'a Expr) -> Result<(), E> {
         if let Some(observer) = self.observer.as_deref_mut() {
             observer.expression(expression)?;
         }
@@ -304,13 +308,13 @@ impl<'a> Walker<'a, '_> {
         value: Option<&'a Expr>,
         always_untyped: bool,
         at: Span,
-    ) -> Result<(), String> {
+    ) -> Result<(), E> {
         if let Some(observer) = self.observer.as_deref_mut() {
             observer.binding(binding, value, always_untyped, at)?;
         }
         Ok(())
     }
-    fn statement(&mut self, statement: &'a Statement) -> Result<ControlFlow, String> {
+    fn statement(&mut self, statement: &'a Statement) -> Result<ControlFlow, E> {
         if matches!(
             &statement.kind,
             StatementKind::Return(_)
@@ -522,7 +526,7 @@ impl<'a> Walker<'a, '_> {
             | StatementKind::Assign { .. } => Ok(ControlFlow::default()),
         }
     }
-    fn if_chain(&mut self, mut arm: &'a Statement) -> Result<ControlFlow, String> {
+    fn if_chain(&mut self, mut arm: &'a Statement) -> Result<ControlFlow, E> {
         let mut all = ControlFlow::all_true();
         let mut always_true = false;
         loop {

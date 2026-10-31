@@ -368,32 +368,9 @@ fn cap_entries(
     rel: &str,
     out: &mut Vec<Marker>,
 ) {
-    let Some(rest) = t.strip_prefix("return") else {
-        return;
-    };
-    let rest = rest.trim_start();
-    let Some(after) = rest.strip_prefix("list") else {
-        return;
-    };
-    if !after.trim_start().starts_with('(') {
-        return;
-    }
-    let open = starts[ln0] as usize + (line.len() - rest.len()) + rest.find('(').unwrap();
-    let Some(close) = matching_paren(stripped, open) else {
-        return;
-    };
-    let body = stripped[open + 1..close].to_string();
-    let mut args = vec![ty];
-    args.extend(split_args(&body));
-    out.push(Marker {
-        name: CAP_ENTRIES.to_string(),
-        rel: rel.to_string(),
-        line: head_line,
-        args,
-        body,
-        body_offset: open + 1,
-        line_starts: starts.clone(),
-    });
+    let result=crate::raw_entry_proc_policy::project_capability_return_admitted(stripped,starts,ln0,line,t,ty,head_line,|_|Ok::<(),std::convert::Infallible>(()));
+    let projected=match result{Ok(value)=>value,Err(never)=>match never{}};
+    if let Some(projected)=projected{out.push(Marker{name:CAP_ENTRIES.to_owned(),rel:rel.to_owned(),line:projected.line,args:projected.args,body:projected.body,body_offset:projected.body_offset,line_starts:starts.clone()});}
 }
 
 fn scan_file(f: &SourceFile) -> FileDecls {
@@ -424,15 +401,13 @@ fn scan_file(f: &SourceFile) -> FileDecls {
         let defines=&mut fd.defines;
         crate::raw_key_calls_policy::visit_headers(&stripped,|ty,op|entries.push((ty.to_string(),op.to_string())),|name|defines.push(name.to_string()));
     }
-    let mut cap_head: Option<(String, u32)> = None;
+    let mut cap_head=crate::raw_entry_proc_policy::Head::default();
     for (ln0, line) in stripped.split('\n').enumerate() {
         let ln = ln0 as u32 + 1;
         let t = line.trim_start();
         if !line.is_empty() && !line.starts_with(|c: char| c.is_whitespace()) {
             proc_head.begin(line, ln);
-            cap_head = pat_match!(r"^(/datum/capability/[\w/]+?)/(?:proc/)?entries\(\)\s*$")
-                .captures(line)
-                .map(|m| (m.s(1).to_string(), ln));
+            cap_head.begin_capability(line,ln);
         } else if !t.is_empty() && !t.starts_with('#') {
             if let Some((name, head_line)) = proc_head.take() {
                 entry_proc(
@@ -518,69 +493,8 @@ fn scan_file(f: &SourceFile) -> FileDecls {
 
 /// Records runtime observation parts without guessing the listener's type. Typed proc
 /// references in those parts are genuine callback roots for generated read metadata.
-fn scan_runtime_observers(f: &SourceFile, text: &str, starts: &Arc<Vec<u32>>, fd: &mut FileDecls) {
-    let bytes = text.as_bytes();
-    let mut i = 0;
-    while i < bytes.len() {
-        if bytes[i] == b'"' {
-            i += 1;
-            while i < bytes.len() {
-                if bytes[i] == b'\\' {
-                    i += 2;
-                    continue;
-                }
-                if bytes[i] == b'"' {
-                    i += 1;
-                    break;
-                }
-                i += 1;
-            }
-            continue;
-        }
-        let start = i;
-        if !bytes[i].is_ascii_alphabetic() && bytes[i] != b'_' {
-            i += 1;
-            continue;
-        }
-        while i < bytes.len() && (bytes[i].is_ascii_alphanumeric() || bytes[i] == b'_') {
-            i += 1;
-        }
-        if &text[start..i] != "observe"
-            || (start > 0
-                && (bytes[start - 1].is_ascii_alphanumeric()
-                    || matches!(bytes[start - 1], b'_' | b'.' | b'/' | b':')))
-        {
-            continue;
-        }
-        let mut open = i;
-        while open < bytes.len() && bytes[open].is_ascii_whitespace() {
-            open += 1;
-        }
-        if bytes.get(open) != Some(&b'(') {
-            continue;
-        }
-        let Some(close) = matching_paren(text, open) else {
-            continue;
-        };
-        let body = text[open + 1..close].to_string();
-        let args = split_args(&body);
-        if args.len() < 4 {
-            continue;
-        }
-        let line = match starts.binary_search(&(start as u32)) {
-            Ok(n) => n as u32 + 1,
-            Err(n) => n as u32,
-        };
-        fd.markers.push(Marker {
-            name: RUNTIME_OBSERVE.to_string(),
-            rel: f.rel.clone(),
-            line,
-            args,
-            body,
-            body_offset: open + 1,
-            line_starts: starts.clone(),
-        });
-    }
+fn scan_runtime_observers(f:&SourceFile,text:&str,starts:&Arc<Vec<u32>>,fd:&mut FileDecls){
+ let result=crate::raw_runtime_observer_policy::visit(text,starts,&mut crate::key_policy_control::Compatibility,&mut|_,p|{fd.markers.push(Marker{name:RUNTIME_OBSERVE.to_owned(),rel:f.rel.clone(),line:p.line,args:p.args,body:p.body,body_offset:p.body_offset,line_starts:starts.clone()});Ok(())});match result{Ok(())=>{},Err(never)=>match never{}}
 }
 
 /// Finds `name(...)` calls of the key/source families in comment-stripped text.

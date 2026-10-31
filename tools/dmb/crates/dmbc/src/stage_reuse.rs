@@ -16,6 +16,7 @@ use std::sync::{Arc, Mutex};
 /// warnings and modified-instance default seeds).
 pub(crate) struct InitializerProducts {
     pub key: u128,
+    pub(crate) source:Option<crate::cold::original_stage::SourceStageWitness>,
     pub units: Vec<crate::initializer_lowering::LoweredInitializerUnit>,
     pub projection: crate::class_projection::ClassProjection,
     /// Initializer and callable warnings (local warnings are per body and always recomputed).
@@ -92,6 +93,11 @@ impl StageAttempt {
             .filter(|products| products.key == key)
             .cloned()
     }
+    /// Fallible source admission runs outside locks and BEFORE current publication.
+    /// The semantic key/answer check is still the unique ordinary stage rule.
+    pub(crate) fn try_initializers<E>(&self,key:u128,answers:Option<u128>,accept:impl FnOnce(&Arc<InitializerProducts>)->Result<bool,E>)->Result<Option<Arc<InitializerProducts>>,E>{let Some(products)=self.initializers(key,answers)else{return Ok(None)};if accept(&products)?{Ok(Some(products))}else{Ok(None)}}
+    pub(crate) fn previous_initializers(&self)->Option<&Arc<InitializerProducts>>{self.previous.initializers.as_ref()}
+    pub(crate) fn visit_source_storage(&self,mut visit:impl FnMut(usize,usize)){let mut inspect=|products:&Arc<InitializerProducts>|{if let Some(source)=&products.source{visit(Arc::as_ptr(products) as usize,std::mem::size_of::<InitializerProducts>());source.visit_storage(&mut visit)}};if let Some(previous)=&self.previous.initializers{inspect(previous)}let current=self.current.lock().unwrap_or_else(|e|e.into_inner()).initializers.clone();if let Some(current)=&current{inspect(current)}}
     pub(crate) fn keep_initializers(&self, products: Arc<InitializerProducts>) {
         self.current
             .lock()

@@ -862,7 +862,10 @@ impl DeclarationSyntax {
                 {
                     return Some(node);
                 }
-                if cursor >= node.span().end
+                // The last child's genuine terminator may equal its ancestor's
+                // textual extent. Descend at equality; only the leaf's exact
+                // issued declaration_cursor can authorize that boundary.
+                if cursor > node.span().end
                     || !matches!(node.kind(), ItemKind::Type | ItemKind::Var)
                 {
                     return None;
@@ -904,6 +907,13 @@ impl DeclarationSyntax {
     pub(crate) fn initializer_dimension_cursor(&self,cursor:usize)->Result<OriginalInitializerDimensionTokens<'_>,String>{
         let (owner,header,_,ordinal,count,offset)=self.initializer_token_source(cursor)?;
         Ok(OriginalInitializerDimensionTokens{owner,views:owner.initializer_dimension_views(header)?,ordinal,count,offset,next:0,finished:false})
+    }
+    /// None proves an actual original primary header with no authored RHS.
+    /// Source/token/metadata failures remain Err and cannot trigger inheritance.
+    pub(crate) fn initializer_token_input_if_authored<'a>(&'a self,cursor:usize,expression:&dm_ir::SymbolicExpression,symbols:&dm_ir::SymbolTable)->Result<Option<OriginalInitializerTokenInput<'a>>,String>{
+        let(headers,header,kind,_,_,_)=self.initializer_token_source(cursor)?;
+        if !headers.has_authored_initializer(header,kind==ItemKind::Var)?{return Ok(None)}
+        self.initializer_token_input(cursor,expression,symbols).map(Some)
     }
     pub(crate) fn initializer_token_input<'a>(&'a self,cursor:usize,expression:&dm_ir::SymbolicExpression,symbols:&dm_ir::SymbolTable)->Result<OriginalInitializerTokenInput<'a>,String>{self.initializer_token_input_inner(cursor,expression,symbols,None)}
     pub(crate) fn initializer_dimension_token_input<'a>(&'a self,cursor:usize,index:usize,count:usize,expression:&dm_ir::SymbolicExpression,symbols:&dm_ir::SymbolTable)->Result<OriginalInitializerTokenInput<'a>,String>{self.initializer_token_input_inner(cursor,expression,symbols,Some((index,count)))}

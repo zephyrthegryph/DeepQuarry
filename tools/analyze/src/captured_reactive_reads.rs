@@ -51,19 +51,24 @@ impl reactive_reads_native::GlobalFacts for GlobalAdapter<'_,'_>{
  fn field_constant_after_init(&self,name:&str)->Result<bool,Failure>{self.question(&mut|result|{self.check(result)?;reactive_reads_native::GlobalFacts::field_constant_after_init(&result.value,name)})}
  fn is_written_on(&self,source:&ReadSource<'_>,owner:&str,name:&str)->Result<bool,Failure>{self.question(&mut|result|{self.check(result)?;reactive_reads_native::GlobalFacts::is_written_on(&result.value,source,owner,name)})}
 }
-/// First actual callback error is retained locally; a malicious provider cannot
-/// swallow IO, omit/repeat the real loan, or replace the checked answer.
-fn checked_question(provider:&dyn GlobalProvider,action:&mut dyn FnMut(&GlobalResult)->Result<bool,Failure>)->Result<bool,Failure>{
- let mut answer=None;let mut first=None;let mut called=false;
+/// One lazy current-source question from the existing query graph. A provider
+/// cannot mint an answer without exactly one authenticated borrowed result.
+/// Actual callback/provider IO stays operational even after a semantic refusal.
+pub fn with_global_question(provider:&dyn GlobalProvider,inputs:&PolicyInputs,checkpoint:&dyn Fn()->io::Result<()>,action:&mut dyn FnMut(&GlobalResult)->Result<bool,Failure>)->Result<bool,Failure>{
+ checkpoint()?;let mut answer=None;let mut first=None;let mut called=false;
  let returned=provider.with_globals(&mut|value|{
-  if called{if first.is_none(){first=Some(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"global provider repeated original result callback")));}return Err(Failure::Operational(io::Error::other("global callback stopped")))}called=true;
-  match action(value){Ok(actual)=>{answer=Some(actual);Ok(actual)},Err(actual)=>{first=Some(actual);Err(Failure::Operational(io::Error::other("global callback stopped")))}}
+  let attempt=(||{checkpoint()?;if called{return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"global provider repeated original result callback")))}called=true;
+   if !value.matches(inputs){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"global provider supplied another original source owner tuple")))}
+   let actual=action(value)?;answer=Some(actual);checkpoint()?;Ok(actual)})();
+  match attempt{Ok(actual)=>Ok(actual),Err(actual)=>{if first.is_none()||(!matches!(&first,Some(Failure::Operational(_)))&&matches!(&actual,Failure::Operational(_))){first=Some(actual)}Err(Failure::Operational(io::Error::other(ReadCallbackStopped)))}}
  });
- if let Some(actual)=first{return Err(actual)}let returned=returned?;
+ if matches!(&first,Some(Failure::Operational(_))){return Err(first.take().unwrap())}
+ let returned=match returned{Err(Failure::Operational(actual))if !read_callback_proxy(&actual)=>return Err(Failure::Operational(actual)),result=>result};
+ checkpoint()?;if let Some(actual)=first{return Err(actual)}let returned=returned?;
  match answer{Some(actual)if actual==returned=>Ok(actual),_=>Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"global provider omitted or replaced original checked answer")))}
 }
 impl GlobalAdapter<'_,'_>{
- fn question(&self,action:&mut dyn FnMut(&GlobalResult)->Result<bool,Failure>)->Result<bool,Failure>{checked_question(self.provider,action)}
+ fn question(&self,action:&mut dyn FnMut(&GlobalResult)->Result<bool,Failure>)->Result<bool,Failure>{with_global_question(self.provider,self.source.inputs(),&||self.source.checkpoint(),action)}
  fn check(&self,result:&GlobalResult)->Result<(),Failure>{if !result.matches(self.source.inputs()){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"reactive globals belong to another original source owner tuple")))}self.source.checkpoint()?;Ok(())}}
 
 /// Exact query subject, privately minted by the successful original factory.
@@ -92,9 +97,6 @@ pub fn reads(raw:&CapturedRawPolicy,inputs:&PolicyInputs,budget:&Arc<Budget>,pro
  let frozen=FrozenReadSet::freeze(result,budget,&mut poll)?;checkpoint()?;source.require()?;Ok(ReadResult{owner:inputs.archive().original_owner_witness(),request,facts:frozen})
 }
 
-#[cfg(test)]mod provider_contract_tests{use super::*;
- #[test]fn omitted_actual_global_result_cannot_mint_a_boolean_answer(){for value in [true,false]{let called=std::cell::Cell::new(false);let provider=|_:&mut dyn FnMut(&GlobalResult)->Result<bool,Failure>|Ok(value);let error=checked_question(&provider,&mut|_|{called.set(true);Ok(!value)}).unwrap_err();assert!(!called.get());assert!(matches!(error,Failure::Operational(ref e)if e.kind()==io::ErrorKind::InvalidInput));}}
-}
 
 /// A borrowed child from the SAME active query graph. Current evidence/config
 /// admission belongs to the endpoint, and the result must prove this exact root.

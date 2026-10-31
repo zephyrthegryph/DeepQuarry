@@ -1,6 +1,9 @@
 //! Common captured orchestration over current semantic inputs and shared artifacts.
 //! Admission is deliberately bounded by the production composer. A successful
 //! return means every declaration was admitted, rather than a partial artifact.
+#[path="cold_original_stage.rs"]
+pub(crate) mod original_stage;
+
 use crate::{
     composition::CompositionError,
     lowering::{AbiPolicy, LoweringConfig, LoweringDiagnostic},
@@ -304,6 +307,11 @@ pub(crate) fn compile_captured_classified_with_pinned_abi_memo_revision<R: Resol
     .compose_borrowed(engine_bytes, frontend, types, non_text, executor, observer)
 }
 
+#[derive(Clone,Copy)]enum SourcePreparation{Ordinary,Original}
+enum StartupChoice<'a>{Ordinary(crate::startup::CapturedStartup<'a>),Original(crate::startup::OriginalStartup<'a>)}
+impl<'a> std::ops::Deref for StartupChoice<'a>{type Target=crate::startup::CapturedStartup<'a>;fn deref(&self)->&Self::Target{match self{Self::Ordinary(value)=>value,Self::Original(value)=>value}}}
+impl<'a> StartupChoice<'a>{fn original(&self)->Option<&crate::startup::OriginalStartup<'a>>{match self{Self::Original(value)=>Some(value),Self::Ordinary(_)=>None}}}
+fn original_stage_failure(error:dm_tree::frontend::BodySyntaxFailure)->ColdError{match error{dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>ColdError::Operational(actual),dm_tree::frontend::BodySyntaxFailure::Syntax(source)=>ColdError::InitializerInvariant(source.message)}}
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resolver>(
     frontend: &ColdFrontend,
@@ -318,6 +326,37 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
     revision: Option<&dm_tree::frontend::FrontendRevision>,
     executor: &dm_exec::BuildExecutor,
     retained: Option<crate::retained_output::RetainedOutput<'_>>,
+) -> Result<Prepared, ColdError> {prepare_captured_in_source_role(frontend,resolver,links,declarations,config,map_initializers,non_text,observer,memo,revision,executor,retained,SourcePreparation::Ordinary)}
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn prepare_original_captured_classified_with_pinned_abi_memo_revision<R: Resolver>(
+    frontend: &ColdFrontend,
+    resolver: &R,
+    links: CapturedLinkInputs<'_>,
+    declarations: CapturedDeclarationInputs<'_>,
+    config: LoweringConfig,
+    map_initializers: Vec<crate::initialization_artifact::InitializationArtifact>,
+    non_text: Option<&dyn crate::composition::NonTextOutputStage>,
+    observer: Option<&ColdObserver<'_>>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+    revision: Option<&dm_tree::frontend::FrontendRevision>,
+    executor: &dm_exec::BuildExecutor,
+    retained: Option<crate::retained_output::RetainedOutput<'_>>,
+) -> Result<Prepared, ColdError> {prepare_captured_in_source_role(frontend,resolver,links,declarations,config,map_initializers,non_text,observer,memo,revision,executor,retained,SourcePreparation::Original)}
+#[allow(clippy::too_many_arguments)]
+fn prepare_captured_in_source_role<R: Resolver>(
+    frontend: &ColdFrontend,
+    resolver: &R,
+    links: CapturedLinkInputs<'_>,
+    declarations: CapturedDeclarationInputs<'_>,
+    config: LoweringConfig,
+    map_initializers: Vec<crate::initialization_artifact::InitializationArtifact>,
+    non_text: Option<&dyn crate::composition::NonTextOutputStage>,
+    observer: Option<&ColdObserver<'_>>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+    revision: Option<&dm_tree::frontend::FrontendRevision>,
+    executor: &dm_exec::BuildExecutor,
+    retained: Option<crate::retained_output::RetainedOutput<'_>>,
+    source_role:SourcePreparation,
 ) -> Result<Prepared, ColdError> {
     let total = Instant::now();
     let measurement = StageMeasurement::new(observer, ColdStage::StartupCapture);
@@ -327,31 +366,18 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
         frontend,
         dm_codegen_byond::typed_statements_supported_for_capture,
     );
-    let startup = crate::startup::capture_with_prepared_bodies_checked(
-        frontend,
-        revision,
-        &links.inventory.spellings,
-        executor,
-        &bodies,
-        memo.and_then(|memo| memo.startup.as_deref()),
-        &roster,
-    )
-    .map_err(|error| static_diagnostics::capture_error_checked(frontend,&bodies,error))?;
+    let startup=match source_role{
+      SourcePreparation::Ordinary=>StartupChoice::Ordinary(crate::startup::capture_with_prepared_bodies_checked(frontend,revision,&links.inventory.spellings,executor,&bodies,memo.and_then(|memo|memo.startup.as_deref()),&roster).map_err(|error|static_diagnostics::capture_error_checked(frontend,&bodies,error))?),
+      SourcePreparation::Original=>StartupChoice::Original(crate::startup::capture_original_with_prepared_bodies_checked(frontend,revision,&links.inventory.spellings,executor,&bodies,memo.and_then(|memo|memo.startup.as_deref()),&roster).map_err(|error|static_diagnostics::capture_error_checked(frontend,&bodies,error))?),
+    };
     measurement.complete();
     dm_profile::request_mark("cold.startup_captured");
     begin_answers(memo, frontend, resolver, &startup);
     let measurement = StageMeasurement::new(observer, ColdStage::AbiPreparation);
-    let prepared =
-        crate::driver_facts::prepare_pinned_source_abi_with_startup_on_executor_with_artifacts(
-            frontend,
-            links.engine,
-            resolver,
-            &startup,
-            declarations.resource_search_context,
-            executor,
-            memo.and_then(|memo| memo.abi.as_deref()),
-        )
-        .map_err(ColdError::from_abi)?;
+    let prepared=match startup.original(){
+      Some(original)=>crate::driver_facts::prepare_original_source_abi_with_startup_on_executor_with_artifacts(frontend,links.engine,resolver,original,declarations.resource_search_context,executor,memo.and_then(|memo|memo.abi.as_deref())),
+      None=>crate::driver_facts::prepare_pinned_source_abi_with_startup_on_executor_with_artifacts(frontend,links.engine,resolver,&startup,declarations.resource_search_context,executor,memo.and_then(|memo|memo.abi.as_deref())),
+    }.map_err(ColdError::from_abi)?;
     dm_profile::request_mark("cold.abi_units_prepared");
     if !prepared.prepared.diagnostics.is_empty() {
         return Err(ColdError::Lowering(
@@ -368,7 +394,9 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
     measurement.complete();
     let abi_preparation = total.elapsed();
     dm_profile::request_mark("cold.abi_prepared");
-    if let Some(retained) = retained {
+    let source_incremental=match startup.original(){None=>true,Some(original)=>match memo.and_then(|memo|memo.stages.as_deref()).and_then(|stages|stages.previous_initializers()){Some(products)=>match &products.source{Some(source)=>source.accepts(frontend,original).map_err(original_stage_failure)?,None=>false},None=>false}};
+    if !source_incremental && retained.is_some(){crate::compile_stats::note_full("incremental output declined: no current original initializer source proof");}
+    if let Some(retained) = retained.filter(|_|source_incremental) {
         crate::daemon_eprintln!(
             "native incremental output: before admit {:.3}s (startup + ABI preparation)",
             abi_preparation.as_secs_f64()
@@ -387,7 +415,7 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
             &roster,
             &prepared.prepared,
         ) {
-            Ok(patched) => return Ok(Prepared::Incremental(Box::new(patched))),
+            Ok(patched) => {if startup.original().is_some(){if let Some(memo)=memo{if let Some(stages)=memo.stages.as_deref(){if let Some(products)=stages.previous_initializers(){memo.carry_initializer_stage();stages.keep_initializers(std::sync::Arc::clone(products));}}}}return Ok(Prepared::Incremental(Box::new(patched)))},
             Err(IncrementalFailure::Operational(error))=>return Err(ColdError::Operational(error)),
             Err(IncrementalFailure::Declined(reason)) => {
                 crate::compile_stats::note_full(format!("incremental output declined: {reason}"));
@@ -414,6 +442,7 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
         bodies,
         Some(&prepared.prepared),
         Some(&roster),
+        startup.original(),
     )?;
     output.query_abi = Some(std::sync::Arc::clone(prepared.prepared.units_owner()));
     output.timings.abi_preparation = abi_preparation;
@@ -631,6 +660,7 @@ fn compile_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
         bodies,
         None,
         None,
+        None,
     )?
     .compose_borrowed(engine_bytes, frontend, types, non_text, executor, observer)
 }
@@ -652,7 +682,9 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
     bodies: dm_tree::frontend::BodyArena<'frontend>,
     prepared_abi: Option<&crate::driver_facts::PreparedSourceAbi>,
     prepared_roster: Option<&crate::lowering::PreparedBodyRoster<'frontend>>,
+    original:Option<&crate::startup::OriginalStartup<'frontend>>,
 ) -> Result<PreparedCold, ColdError> {
+    if let Some(original)=original{original.validate_for(frontend).map_err(ColdError::InitializerInvariant)?;if !std::ptr::eq(startup,&**original){return Err(ColdError::InitializerInvariant("initializer source startup differs from captured owner".into()))}}
     startup
         .validate_for(frontend)
         .map_err(ColdError::Initializer)?;
@@ -684,6 +716,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
         census.frontend(frontend);
         census.startup(startup);
         census.body_arena(&bodies);
+        if let Some(stages)=memo.and_then(|memo|memo.stages.as_deref()){stages.visit_source_storage(|address,bytes|{census.exposed_buffer("initializers.source_stage",address,bytes,bytes);});}
     })
     .map_err(|error| ColdError::InitializerInvariant(format!("heap census: {error}")))?;
     let startup_evaluator = crate::startup::StartupEvaluator {
@@ -745,9 +778,12 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
             key.update(&crate::stage_reuse::declaration_inputs(frontend, executor).to_le_bytes());
             (stages, key.digest128())
         });
-    let reused = initializer_stage.and_then(|(stages, key)| {
-        stages.initializers(key, memo.and_then(|memo| memo.query_db()?.answers_version()))
-    });
+    let reused=match initializer_stage{
+      Some((stages,key))=>match original{
+       Some(original)=>stages.try_initializers(key,memo.and_then(|memo|memo.query_db()?.answers_version()),|products|match &products.source{Some(source)=>source.accepts(frontend,original),None=>Ok(false)}).map_err(original_stage_failure)?,
+       None=>stages.initializers(key,memo.and_then(|memo|memo.query_db()?.answers_version())),
+      },None=>None,
+    };
     let (initializer_units, mut projection, mut warnings, pending_modified_defaults) = match reused
     {
         Some(products) => {
@@ -775,13 +811,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
                 )
                 .map_err(ColdError::InitializerInvariant)?;
             drop(detail_phase);
-            let initialization = crate::initializer_lowering::lower_captured_on_executor_with_allocation(
-                frontend,
-                startup,
-                &evaluator,
-                resolver,
-                declarations.resource_search_context,
-                crate::initializer_lowering::InitializerExecution {
+            let execution=crate::initializer_lowering::InitializerExecution {
                     executor,
                     evaluator: parallel_factory.as_ref().map(|factory| {
                         crate::initializer_policy::ParallelEvaluator {
@@ -803,9 +833,11 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
                             }
                         })
                     }),
-                },
-                Some(&startup_allocation),
-            )
+                };
+            let initialization=match original{
+             Some(original)=>crate::initializer_lowering::lower_original_startup_on_executor_with_allocation(frontend,original,&evaluator,resolver,declarations.resource_search_context,execution,Some(&startup_allocation)),
+             None=>crate::initializer_lowering::lower_captured_on_executor_with_allocation(frontend,startup,&evaluator,resolver,declarations.resource_search_context,execution,Some(&startup_allocation)),
+            }
             .map_err(|error| {
                 diagnostic_continuation::collect_checked(error, || {
                     // This is the ordinary current body producer with no memo,
@@ -885,6 +917,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
             drop(detail_phase);
             if let (Some((stages, key)), Ok(defaults)) = (initializer_stage, &pending_modified_defaults) {
                 stages.keep_initializers(std::sync::Arc::new(crate::stage_reuse::InitializerProducts {
+                    source:original.map(|original|original_stage::SourceStageWitness::capture(frontend,original)).transpose().map_err(original_stage_failure)?,
                     key,
                     units: initialization.units.clone(),
                     projection: projection.clone(),
@@ -1184,3 +1217,7 @@ mod abi_operational_transport_tests {
         }
     }
 }
+
+#[cfg(test)]
+#[path="cold/original_stage_tests.rs"]
+mod original_stage_tests;

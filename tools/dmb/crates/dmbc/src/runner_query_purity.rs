@@ -106,14 +106,22 @@ impl SourceSnapshot {
     ) -> std::io::Result<Arc<Vec<Produced>>> {
         self.native_effect_report(input, environment, explicit, tree, true)
     }
-    fn native_effect_report(
+    fn native_effect_report(&self,input:&Arc<EffectInput>,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree,sleeping:bool)->std::io::Result<Arc<Vec<Produced>>>{
+        self.with_effect_scope(input,environment,explicit,tree,|db,scope|if sleeping{db.native_sleep_report(input,scope)}else{db.native_purity_report(input,scope)})
+    }
+    /// Additive original page input; ordinary bounded whole-report input stays.
+    pub(crate) fn native_effect_source_input(&self,tree:&dm_tree::SemanticTree)->Result<Arc<EffectInput>,String>{let capture=self.named_policy_capture(tree).map_err(|e|e.to_string())?;EffectInput::source_pages(Arc::clone(capture.policy().archive()),tree.checker_builtin_profile().ok_or("effect source builtin profile unavailable")?)}
+    pub(crate) fn native_effect_source_page(&self,input:&Arc<EffectInput>,start:usize,width:usize,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree)->std::io::Result<Arc<dm_analysis::checker_effects::EffectPageFacts>>{
+        self.with_effect_scope(input,environment,explicit,tree,|db,scope|db.native_effect_source_page(input,scope,start,width))
+    }
+    fn with_effect_scope<T>(
         &self,
         input: &Arc<EffectInput>,
         environment: &Path,
         explicit: Option<&Path>,
         tree: &dm_tree::SemanticTree,
-        sleeping: bool,
-    ) -> std::io::Result<Arc<Vec<Produced>>> {
+        operation: impl FnOnce(&crate::query_db::QueryDb,&PurityScope<'_>)->std::io::Result<T>,
+    ) -> std::io::Result<T> {
         crate::daemon::control::checkpoint()?;
         let capture = self.named_policy_capture(tree)?;
         if !environment.is_absolute()
@@ -139,11 +147,7 @@ impl SourceSnapshot {
             std::io::Error::other("purity current compiler query database unavailable")
         })?;
         scope.validate(db, input).map_err(std::io::Error::other)?;
-        if sleeping {
-            db.native_sleep_report(input, &scope)
-        } else {
-            db.native_purity_report(input, &scope)
-        }
+        operation(db,&scope)
     }
 }
 

@@ -66,6 +66,15 @@ impl ScalarArtifacts for CurrentScalars<'_> {
             _ => None,
         }
     }
+    fn lookup_checked(&self,query:ScalarQuery,answer:&dyn Fn(&ScalarReadQuery)->Result<ScalarReadAnswer,dm_tree::frontend::BodySyntaxFailure>)->Result<Option<Arc<ScalarArtifact>>,dm_tree::frontend::BodySyntaxFailure>{
+        let(value,_)=self.owner.values.try_visit_receipted_with_value::<dm_tree::frontend::BodySyntaxFailure>(
+            &key(query),
+            &mut|reads,_|{for read in reads.iter(){let current=match &read.query{Query::Engine=>Answer::Engine(Arc::clone(self.engine)),Query::Scalar(query)=>Answer::Scalar(answer(query)?),_=>return Ok(Some(read.query.clone()))};if current!=read.answer{return Ok(Some(read.query.clone()))}}Ok(None)},
+            &mut|value|Ok(matches!(value.as_ref(),Artifact::Scalar(_))),
+        )?;
+        let Some(value)=value else{return Ok(None)};
+        match value.value.as_ref(){Artifact::Scalar(value)=>{self.owner.scalar_hits.fetch_add(1,Ordering::Relaxed);Ok(Some(Arc::clone(value)))},_=>Ok(None)}
+    }
     fn remember(
         &self,
         query: ScalarQuery,

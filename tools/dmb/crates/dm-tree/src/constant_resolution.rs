@@ -110,6 +110,9 @@ impl ScalarSnapshot {
     }
 }
 
+#[path = "constant_resolution_source.rs"]
+mod original_source;
+pub(crate) use original_source::SelectedScalarExpression;
 #[path = "constant_resolution_pass.rs"]
 mod pass;
 use pass::{Memo, Pass};
@@ -176,16 +179,34 @@ pub fn resolve_pinned_with_artifacts(
     )
 }
 
+
+/// The same scalar policy over privately issued ORIGINAL source roots. IO/quota
+/// never enters ScalarOutcome or a retained semantic artifact.
+#[allow(clippy::too_many_arguments)]
+pub fn resolve_original_pinned_with_artifacts(frontend:&crate::frontend::ColdFrontend,requests:&[ScalarQuery],identity:u128,decode:fn(&dm_syntax::LiteralText)->Option<Vec<u8>>,nameof:fn(&Expr)->Option<String>,predefined:Option<&dyn Resolver>,calls:Option<&dyn PureCalls>,artifacts:Option<&dyn ScalarArtifacts>)->Result<ScalarSnapshot,crate::frontend::BodySyntaxFailure>{
+ let context=frontend.original_declaration_expression_context()?;let backend=ScalarBackend{identity,decode_string:&decode,nameof:&nameof};let artifacts=artifacts.filter(|owner|owner.accept_policy(decode,nameof));let mut completed=None;
+ context.with_admission(&mut|admission|{let source=original_source::OriginalScalarPass{context:&context,admission};let snapshot=resolve_with_artifacts_in_source_mode(&frontend.snapshot,requests,&backend,predefined,calls,artifacts,Some(source))?;source.checkpoint()?;completed=Some(snapshot);Ok(())})?;
+ completed.ok_or_else(||crate::frontend::BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"original scalar operation omitted completion")))
+}
+
+
+/// Bind the EXISTING sealed scalar facts and admit every original source query
+/// that actually contributed to that snapshot. No dense source roster or second
+/// evaluation/model is made; unsupported/no-initializer queries need no AST.
+pub fn bind_original_facts(frontend:&crate::frontend::ColdFrontend,facts:&ScalarFacts)->Result<Option<ScalarSnapshot>,crate::frontend::BodySyntaxFailure>{
+ let Some(snapshot)=facts.bind_current(&frontend.snapshot)else{return Ok(None)};let context=frontend.original_declaration_expression_context()?;let mut admitted=false;
+ let decode=|_:&dm_syntax::LiteralText|None;let nameof=|_:&Expr|None;let backend=ScalarBackend{identity:snapshot.backend_identity,decode_string:&decode,nameof:&nameof};
+ context.with_admission(&mut|admission|{
+  let source=original_source::OriginalScalarPass{context:&context,admission};let pass=Pass{tree:&frontend.snapshot.tree,backend:&backend,memo:RefCell::new(Memo::default()),predefined:None,calls:None,artifacts:None,original:Some(source)};
+  for(query,outcome)in snapshot.outcomes.iter(){pass.checkpoint()?;if matches!(pass.original_operand(*query)?,original_source::OriginalOperand::RejectedSyntax)&&!matches!(outcome,ScalarOutcome::Unsupported(UnsupportedReason::RuntimeOrUnsupportedExpression)){return Ok(())}}
+  source.checkpoint()?;admitted=true;Ok(())
+ })?;Ok(admitted.then_some(snapshot))
+}
+
 /// Explicit retained evaluator boundary. The artifact provider must bind the exact
 /// decoder, nameof and engine owners; ordinary/custom backend APIs never opt in.
-fn resolve_with_artifacts(
-    snapshot: &TreeSnapshot,
-    requests: &[ScalarQuery],
-    backend: &ScalarBackend<'_>,
-    predefined: Option<&dyn Resolver>,
-    calls: Option<&dyn PureCalls>,
-    artifacts: Option<&dyn ScalarArtifacts>,
-) -> ScalarSnapshot {
+fn resolve_with_artifacts(snapshot:&TreeSnapshot,requests:&[ScalarQuery],backend:&ScalarBackend<'_>,predefined:Option<&dyn Resolver>,calls:Option<&dyn PureCalls>,artifacts:Option<&dyn ScalarArtifacts>)->ScalarSnapshot{resolve_with_artifacts_in_source_mode(snapshot,requests,backend,predefined,calls,artifacts,None).unwrap_or_else(|_|unreachable!("ordinary scalar resolution has no operational source provider"))}
+fn resolve_with_artifacts_in_source_mode<'a>(snapshot:&'a TreeSnapshot,requests:&[ScalarQuery],backend:&'a ScalarBackend<'a>,predefined:Option<&'a dyn Resolver>,calls:Option<&'a dyn PureCalls>,artifacts:Option<&'a dyn ScalarArtifacts>,original:Option<original_source::OriginalScalarPass<'a>>)->Result<ScalarSnapshot,crate::frontend::BodySyntaxFailure>{
     let artifacts =
         artifacts.filter(|_| calls.is_none_or(|calls| calls.immutable_policy_identity().is_some()));
     let mut policy = backend.identity.to_le_bytes().to_vec();
@@ -202,10 +223,12 @@ fn resolve_with_artifacts(
         predefined,
         calls,
         artifacts,
+        original,
     };
     for query in &requested {
-        pass.query(*query);
+        pass.query_checked(*query)?;
     }
+    pass.checkpoint()?;
     let memo = pass.memo.into_inner();
     if let Some(artifacts) = artifacts {
         artifacts.finish(
@@ -293,7 +316,7 @@ fn resolve_with_artifacts(
     let requested: Arc<[ScalarQuery]> = requested.into_iter().collect::<Vec<_>>().into();
     let dependencies = Arc::new(dependencies);
     let predefined_reads = Arc::new(memo.predefined);
-    ScalarSnapshot {
+    let result=ScalarSnapshot {
         issued_domain: ScalarDomain {
             source: Arc::clone(&snapshot.tree),
             outcomes: Arc::clone(&outcomes),
@@ -311,7 +334,9 @@ fn resolve_with_artifacts(
         outcomes,
         dependencies,
         predefined_reads,
-    }
+    };
+    if let Some(source)=original{source.checkpoint()?;}
+    Ok(result)
 }
 
 impl ScalarSnapshot {

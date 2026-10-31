@@ -517,16 +517,16 @@ impl OriginalProcedureHeaders {
             initializer,
         })
     }
-    fn initializer_rhs(&self, header: Span, variable: bool) -> Result<HeaderView<'_>, String> {
+    fn initializer_rhs(&self,header:Span,variable:bool)->Result<HeaderView<'_>,String>{self.initializer_rhs_optional(header,variable)?.ok_or_else(||"original initializer assignment unavailable".into())}
+    pub(crate) fn has_authored_initializer(&self,header:Span,variable:bool)->Result<bool,String>{Ok(self.initializer_rhs_optional(header,variable)?.is_some())}
+    fn initializer_rhs_optional(&self, header: Span, variable: bool) -> Result<Option<HeaderView<'_>>, String> {
         self.source
             .get(header.range())
             .ok_or("initializer header outside original source")?;
         let first = self.tokens.partition_point(|t| t.span.start < header.start);
         let last = self.tokens.partition_point(|t| t.span.start < header.end);
         let view = HeaderView::original(&self.source, &self.tokens[first..last], header)?;
-        let assignment = view
-            .assignment_index()
-            .ok_or("original initializer assignment unavailable")?;
+        let Some(assignment)=view.assignment_index() else{return Ok(None)};
         let mut rhs = view.slice(assignment + 1, view.text().len()).trim();
         if variable {
             let end = rhs
@@ -534,7 +534,7 @@ impl OriginalProcedureHeaders {
                 .map_or(rhs.text().len(), |span| span.start);
             rhs = rhs.slice(0, end).trim();
         }
-        Ok(rhs)
+        Ok(Some(rhs))
     }
     /// Same unique symbolic token projection as all other original headers;
     /// native adapter supplies its actual variable namespace/context separately.

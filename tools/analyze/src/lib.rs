@@ -13,6 +13,10 @@ pub mod keys_policy;
 pub mod key_policy_control;
 pub mod auto_setter_calls_policy;
 pub mod auto_tracking_policy;
+pub mod typed_set_calls_policy;
+#[cfg(feature="native-policy")]mod auto_typed_set_calls_native;
+#[cfg(feature="native-policy")]
+mod auto_tracking_native;
 #[cfg(feature="native-policy")]
 pub mod captured_keys;
 #[cfg(feature="native-policy")]
@@ -148,6 +152,7 @@ pub mod captured_declare;
 
 pub mod ui_types_policy;
 pub mod raw_entry_proc_policy;
+pub mod raw_runtime_observer_policy;
 #[cfg(feature="native-policy")]pub mod captured_ui_types;
 
 #[cfg(feature="native-policy")]mod captured_marker_rows;

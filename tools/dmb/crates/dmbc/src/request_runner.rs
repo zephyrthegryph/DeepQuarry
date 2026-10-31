@@ -593,6 +593,9 @@ fn run_build_attempt(
     let declaration_request = semantic_state.begin_declaration_request(publishable_artifacts);
     let execution_result = execution.run(|executor| -> Result<BuildOutcome, Box<dyn std::error::Error>> {
     dmbc::daemon::control::checkpoint()?;
+    // Existing host/executor admits declarations BEFORE adapter constant folding.
+    let settings_host=std::sync::Arc::clone(&source_policy_queries)
+        as std::sync::Arc<dyn dm_tree::frontend::SettingExpressionQueries>;
     let input_preparation_seconds;
     let frontend_result = {
         let preparation_start = Instant::now();
@@ -665,9 +668,11 @@ fn run_build_attempt(
         if diagnostic_declarations {
             // Select the original builder's diagnostic mode BEFORE construction.
             // Valid graphs transfer the SAME owner; no strict-failure retry.
-            let prepared=match dm_tree::frontend::build_for_checker_diagnostics_with_state(&project,&provider,&defines,
+            let prepared=match dm_tree::frontend::build_for_checker_diagnostics_with_state_checked(&project,&provider,&defines,
                 dm_tree::frontend::FrontendConfig{workers,engine:seed,observer:progress_enabled.then_some(&progress)},
-                frontend_memo.as_ref().map(|memo|memo as &dyn dm_preprocess::regions::ExpansionMemo),executor,Some(&mut *semantic_state)){Ok(frontend)=>frontend,Err(mut diagnostics)=>{
+                frontend_memo.as_ref().map(|memo|memo as &dyn dm_preprocess::regions::ExpansionMemo),executor,Some(&mut *semantic_state),&settings_host){Ok(frontend)=>frontend,
+                Err(dm_tree::frontend::FrontendBuildFailure::Operational(actual))=>return Err(actual.into()),
+                Err(dm_tree::frontend::FrontendBuildFailure::Diagnostics(mut diagnostics))=>{
                 dmbc::diagnostics::refine(&mut diagnostics);
                 dmbc::diagnostics::write_diagnostics(&mut dmbc::daemon::stderr_writer(),&diagnostics)?;
                 let kind=dmbc::diagnostics::failure_kind(diagnostics.iter().map(|diagnostic|diagnostic.kind));
@@ -696,7 +701,7 @@ fn run_build_attempt(
                 }
             }
         }else{
-        dm_tree::frontend::build_with_executor_and_semantic_state_for_policy(
+        dm_tree::frontend::build_with_executor_and_semantic_state_for_policy_checked(
             &project,
             &provider,
             &defines,
@@ -711,6 +716,7 @@ fn run_build_attempt(
             executor,
             Some(&mut *semantic_state),
             policy_inputs.as_ref().is_some_and(|request| request.workspace().is_none()) || std::env::var_os("DMB_UNIFIED_ANALYSIS").is_some(),
+            &settings_host,
         )
         }
     };
@@ -719,12 +725,6 @@ fn run_build_attempt(
     dmbc::daemon::control::checkpoint()?;
     let frontend = dm_tree::frontend::FrontendRevision::new(match frontend_result {
         Ok(frontend) => {
-            // SETTINGS-ONLY provider for BOTH retained and one-shot frontends.
-            // It borrows the already-owned SAME host Db without demanding bodies.
-            let settings_host=std::sync::Arc::clone(&source_policy_queries)
-                as std::sync::Arc<dyn dm_tree::frontend::SettingExpressionQueries>;
-            let frontend=frontend.with_setting_expression_queries(&settings_host)
-                .map_err(|error|std::io::Error::new(std::io::ErrorKind::InvalidData,error.message))?;
             // Migration opt-in until all checker/lint parity and memory gates
             // pass. Compile-only users keep the existing lazy body path.
             if policy_inputs.as_ref().is_some_and(|request| request.workspace().is_none()) || std::env::var_os("DMB_UNIFIED_ANALYSIS").is_some() {
@@ -734,7 +734,8 @@ fn run_build_attempt(
                 }
             } else { frontend }
         },
-        Err(mut diagnostics) => {
+        Err(dm_tree::frontend::FrontendBuildFailure::Operational(actual)) => return Err(actual.into()),
+        Err(dm_tree::frontend::FrontendBuildFailure::Diagnostics(mut diagnostics)) => {
             dmbc::diagnostics::refine(&mut diagnostics);
             dmbc::diagnostics::write_diagnostics(&mut dmbc::daemon::stderr_writer(), &diagnostics)?;
             let kind = dmbc::diagnostics::failure_kind(diagnostics.iter().map(|diagnostic| diagnostic.kind));
@@ -835,7 +836,12 @@ fn run_build_attempt(
         drop(frontend_handoff_profile);
         dm_profile::detail_mark("frontend_handoff", total);
         let facts_profile = dm_profile::stage("captured_facts");
-        let (host, scalar) = runner_facts::prepare_retained(&frontend, retained_engine, host_facts.as_deref())?;
+        let (host, scalar) = match runner_facts::prepare_retained_original(&frontend, retained_engine, host_facts.as_deref()) {
+            Ok(prepared)=>prepared,
+            Err(runner_facts::HostPreparationFailure::Operational(actual))=>return Err(actual.into()),
+            Err(runner_facts::HostPreparationFailure::Source(source))=>return Err(source.into()),
+            Err(runner_facts::HostPreparationFailure::Policy(message))=>return Err(message.into()),
+        };
         let defaults = dmbc::compile_driver::map_defaults(&scalar)?;
         drop(scalar);
         dmbc::heap_census::emit_if_enabled("captured_facts.ready", |census| {
@@ -1062,7 +1068,7 @@ fn run_build_attempt(
                     }),
                 _ => None,
             };
-            let prepared = dmbc::compile_driver::prepare_revision_observed_with_memo_on_executor(
+            let prepared = dmbc::compile_driver::prepare_original_revision_observed_with_memo_on_executor(
                 &frontend,
                 &compilation_resolver,
                 engine,

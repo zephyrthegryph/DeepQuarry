@@ -73,8 +73,16 @@ pub struct EffectInput {
     archive: Arc<BodyArchive>,
     profile: PackedU128,
     order: Box<[(usize, ProcedureIdentity)]>,
+    whole_roster: bool,
 }
 impl EffectInput {
+    /// Source-query coordination only; the bounded whole-plan constructor and
+    /// policy remain unchanged. Actual page/body work is admitted on demand.
+    pub fn source_pages(archive:Arc<BodyArchive>,profile:PackedU128)->Result<Arc<Self>,String>{
+        EffectSource::new(&archive,profile).map_err(|failure|failure.to_string())?;
+        Ok(Arc::new(Self{key:next_input_key()?,archive,profile,order:Box::new([]),whole_roster:false}))
+    }
+    pub fn is_source_page_context(&self)->bool{!self.whole_roster&&self.order.is_empty()}
     pub fn new(archive: Arc<BodyArchive>, profile: PackedU128) -> Result<Arc<Self>, String> {
         archive
             .tree()
@@ -90,15 +98,13 @@ impl EffectInput {
             .into_iter()
             .map(|(i, _)| Ok((i, identity(&archive, i)?)))
             .collect::<Result<Vec<_>, String>>()?;
-        static NEXT: AtomicU64 = AtomicU64::new(1);
-        let key = NEXT
-            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |v| v.checked_add(1))
-            .map_err(|_| "purity issuance exhausted")?;
+        let key = next_input_key()?;
         Ok(Arc::new(Self {
             key,
             archive,
             profile,
             order: order.into(),
+            whole_roster: true,
         }))
     }
     pub fn key(&self) -> u64 {
@@ -149,7 +155,8 @@ impl EffectInput {
         resolver: &(impl Resolver + ?Sized),
         admission: &ExecutionAdmission,
     ) -> Result<Arc<BodyEffects>, crate::policy_body_demand::PolicyFailure> {
-        self.compute_body_with::<crate::policy_body_demand::Checked>(ordinal, resolver, admission)
+        let host=self.archive.body_query_host().ok_or("effect checked body requires original body-query host")?;
+        self.compute_body_checked_using(ordinal,resolver,admission,&|input|host.syntax_checked(input))
     }
     fn compute_body_with<D: crate::policy_body_demand::Demand>(
         self: &Arc<Self>,
@@ -157,6 +164,28 @@ impl EffectInput {
         resolver: &(impl Resolver + ?Sized),
         admission: &ExecutionAdmission,
     ) -> Result<Arc<BodyEffects>, D::Error> {
+        self.compute_body_using(ordinal,resolver,admission,D::parse,crate::checker_prefix_demand::Compatibility::<D::Error>::new())
+    }
+    /// Direct original-graph body loan. The archive authenticates the returned
+    /// syntax after this callback, just as its ordinary checked parse does.
+    pub fn compute_body_checked_using(
+        self:&Arc<Self>,ordinal:usize,resolver:&(impl Resolver+?Sized),admission:&ExecutionAdmission,
+        body:&dyn Fn(&Arc<dm_tree::frontend::BodySyntaxInput>)->Result<Arc<dm_tree::frontend::BodySyntax>,dm_tree::frontend::BodySyntaxFailure>,
+    )->Result<Arc<BodyEffects>,crate::policy_body_demand::PolicyFailure>{self.compute_body_checked_using_admitted(ordinal,resolver,admission,&|input,_|body(input))}
+pub fn compute_body_checked_using_admitted(
+        self:&Arc<Self>,ordinal:usize,resolver:&(impl Resolver+?Sized),admission:&ExecutionAdmission,
+        body:&dyn Fn(&Arc<dm_tree::frontend::BodySyntaxInput>,&ExecutionAdmission)->Result<Arc<dm_tree::frontend::BodySyntax>,dm_tree::frontend::BodySyntaxFailure>,
+    )->Result<Arc<BodyEffects>,crate::policy_body_demand::PolicyFailure>{
+        self.compute_body_using(ordinal,resolver,admission,|archive,ordinal|archive.parse_checked_using(ordinal,&|input:&std::sync::Arc<dm_tree::frontend::BodySyntaxInput>|body(input,&admission.current_view())).map_err(|failure|match failure{
+            dm_tree::frontend::BodySyntaxFailure::Syntax(source)=>crate::policy_body_demand::PolicyFailure::from(source.message),
+            dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>crate::policy_body_demand::PolicyFailure::Operational(actual),
+        }),crate::checker_prefix_demand::Checked{body,admission})
+    }
+    fn compute_body_using<'a,E:From<String>+for<'b>From<&'b str>,D:crate::checker_prefix_demand::Demand<Error=E>>(
+        self:&'a Arc<Self>,ordinal:usize,resolver:&(impl Resolver+?Sized),admission:&ExecutionAdmission,
+        parse:impl FnOnce(&'a BodyArchive,usize)->Result<dm_tree::frontend::ArchivedBody<'a>,E>,
+        prefix_demand:D,
+    )->Result<Arc<BodyEffects>,E>{
         let procedure = identity(&self.archive, ordinal)?;
         if !self
             .order
@@ -168,20 +197,18 @@ impl EffectInput {
         if resolver.source_owner() != Resolver::source_owner(self.archive.tree()) {
             return Err("purity resolver is not the original graph".into());
         }
-        let settings = crate::checker_return_facts::PuritySettingsPermit::issue(
+        let settings = crate::checker_return_facts::PuritySettingsPermit::issue_using(
             &self.archive,
             self.profile,
-            procedure,
-        )?;
+            procedure, &&prefix_demand)?;
         let pure = settings.own_pure();
-        let body = D::parse(&self.archive, ordinal)?;
-        let draft = crate::checker_expression_visit::effects_archived(
+        let body = parse(&self.archive, ordinal)?;
+        let draft = crate::checker_expression_visit::effects_archived_using(
             &self.archive,
             &body,
             resolver,
             self.profile,
-            admission,
-        )?;
+            admission, &prefix_demand)?;
         if draft
             .direct
             .len()
@@ -190,7 +217,8 @@ impl EffectInput {
             .and_then(|n| n.checked_add(draft.immediate.len()))
             .is_none_or(|n| n > MAX_EVENTS)
         {
-            return Err("purity body exceeds bounded event admission".into());
+            ReportBudget::for_operation(admission).deny();
+            return Err(prefix_demand.resource("purity body exceeds bounded event admission"));
         }
         let parent = source_parent(
             &self.archive,
@@ -226,6 +254,7 @@ impl EffectInput {
         resolver: &(impl Resolver + ?Sized),
         admission: &ExecutionAdmission,
     ) -> Result<Arc<EffectPlan>, String> {
+        if !self.whole_roster{return Err("effect contribution windows require the global source graph; independent page SCC is forbidden".into())}
         if resolver.source_owner() != Resolver::source_owner(self.archive.tree()) {
             return Err("effect plan resolver foreign".into());
         }
@@ -417,6 +446,8 @@ pub struct SccSummary {
     has_effect: Box<[bool]>,
 }
 impl SccSummary {
+    /// Scalar observation of this existing original summary; not source authority.
+    pub fn source_has_effect(&self,procedure:ProcedureIdentity)->Option<bool>{let row=*self.plan.index.get(&procedure)?;self.has_effect.get(*self.plan.components.get(row)?).copied()}
     pub fn validate(&self, input: &Arc<EffectInput>) -> Result<(), String> {
         if !self.input.ptr_eq(&Arc::downgrade(input)) {
             return Err("purity SCC belongs to another current source input".into());
@@ -920,3 +951,21 @@ pub(crate) use targets::{
     builtin_parent_after_sources, callable_target, display_target, original_target_parent,
     source_child_overrides_target, target_owner, target_parent_parts, EffectTarget,
 };
+
+fn next_input_key()->Result<u64,String>{
+    static NEXT:AtomicU64=AtomicU64::new(1);
+    NEXT.fetch_update(Ordering::Relaxed,Ordering::Relaxed,|v|v.checked_add(1)).map_err(|_|"purity issuance exhausted".into())
+}
+#[path="checker_effects_source.rs"]mod source_pages;
+pub use source_pages::{EffectSource,EffectSourcePage,EffectContribution};
+
+#[path="checker_effects_scc_reader.rs"]mod scc_reader;
+pub use scc_reader::{CompactEffectScc,CompactEffectSummary};
+
+#[path="checker_effects_compact_source.rs"]
+mod compact_source;
+pub use compact_source::CompactEffectGraph;
+
+#[path="checker_effects_page_facts.rs"]
+mod page_facts;
+pub use page_facts::EffectPageFacts;

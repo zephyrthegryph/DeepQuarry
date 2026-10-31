@@ -218,11 +218,13 @@ fn edge(ledger: &Arc<Mutex<Ledger>>, from: Key) -> Result<(), String> {
         .ok_or("purity edge metadata overflow")?;
     Ok(())
 }
-fn checked_sources(
+fn checked_sources(input:&EffectInput,keys:&[Key],sources:&SourceRegistry)->Result<(),String>{checked_sources_using(input,keys,sources,||crate::daemon::control::checkpoint().map_err(|error|error.to_string()))}
+fn checked_sources_using<E:From<String>+for<'a>From<&'a str>>(
     input: &EffectInput,
     keys: &[Key],
     sources: &SourceRegistry,
-) -> Result<(), String> {
+    mut checkpoint:impl FnMut()->Result<(),E>,
+) -> Result<(), E> {
     let current = sources.lock().unwrap_or_else(|e| e.into_inner());
     if current.len() != keys.len() || !current.values().map(|x| x.0).eq(keys.iter().copied()) {
         return Err("purity dependency roster is not the current compiler roster".into());
@@ -234,7 +236,7 @@ fn checked_sources(
         .enumerate()
     {
         if index % 128 == 0 {
-            crate::daemon::control::checkpoint().map_err(|e| e.to_string())?;
+            checkpoint()?;
         }
         let lease = lease.ok_or("purity source acquisition is unissued")?;
         let canonical = dm_preprocess::regions::canonical_path(path);
@@ -317,14 +319,17 @@ fn publication_checkpoint(ledger: &Arc<Mutex<Ledger>>, key: Key) -> Result<(), Q
     cancellation_test_checkpoint(key.kind);
     job_checkpoint(ledger, key)
 }
-fn keep(
+fn keep(ledger:&Arc<Mutex<Ledger>>,key:Key,owner:Value,bytes:usize,error:bool)->Result<(),QueryError>{keep_using(ledger,key,owner,bytes,error,publication_checkpoint,|key,_|QueryError::Missing(key))}
+fn keep_using(
     ledger: &Arc<Mutex<Ledger>>,
     key: Key,
     owner: Value,
     bytes: usize,
     error: bool,
+    check:fn(&Arc<Mutex<Ledger>>,Key)->Result<(),QueryError>,
+    allocation:fn(Key,std::collections::TryReserveError)->QueryError,
 ) -> Result<(), QueryError> {
-    publication_checkpoint(ledger, key)?;
+    check(ledger, key)?;
     let mut l = ledger.lock().unwrap_or_else(|e| e.into_inner());
     if l.denied || l.aborted.is_some() {
         return Err(QueryError::Missing(key));
@@ -336,9 +341,9 @@ fn keep(
     };
     l.admit(bytes.saturating_add(growth))
         .map_err(|_| QueryError::Missing(key))?;
-    if l.live.try_reserve_exact(1).is_err() {
+    if let Err(actual)=l.live.try_reserve_exact(1) {
         l.denied = true;
-        return Err(QueryError::Missing(key));
+        return Err(allocation(key,actual));
     }
     l.live.push(Live {
         owner: Arc::downgrade(&owner),
@@ -348,25 +353,30 @@ fn keep(
     });
     Ok(())
 }
-fn finish<T: Any + Send + Sync>(
+fn finish<T:Any+Send+Sync>(ledger:&Arc<Mutex<Ledger>>,key:Key,value:Result<Arc<T>,String>,bytes:usize)->Result<Outcome,QueryError>{finish_using(ledger,key,value,bytes,publication_checkpoint,|key,_|QueryError::Missing(key))}
+fn finish_using<T: Any + Send + Sync>(
     ledger: &Arc<Mutex<Ledger>>,
     key: Key,
     value: Result<Arc<T>, String>,
     bytes: usize,
+    check:fn(&Arc<Mutex<Ledger>>,Key)->Result<(),QueryError>,
+    allocation:fn(Key,std::collections::TryReserveError)->QueryError,
 ) -> Result<Outcome, QueryError> {
-    publication_checkpoint(ledger, key)?;
+    check(ledger, key)?;
     let success = value.as_ref().ok().map(|v| {
         let erased: Value = v.clone();
         erased
     });
     let error = value.is_err();
     let outcome = Outcome::new(value, key.id, bytes);
-    keep(
+    keep_using(
         ledger,
         key,
         success.unwrap_or_else(|| Arc::clone(&outcome.value)),
         bytes,
         error,
+        check,
+        allocation,
     )?;
     Ok(outcome)
 }
@@ -572,6 +582,7 @@ impl Resolver for Observed<'_, '_> {
     }
 }
 pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, registry: SourceRegistry) {
+    pages::register(db,Arc::clone(&ledger),Arc::clone(&registry));
     let l = Arc::clone(&ledger);
     let sources = Arc::clone(&registry);
     db.define(RESOLVER, "native-effect-resolver-hash", move |ctx, raw| {
@@ -749,7 +760,8 @@ impl QueryDb {
         l.contexts.retain(|_, c| c.input.strong_count() > 0);
         l.live_bytes();
     }
-    fn purity_sources(&self, input: &Arc<EffectInput>) -> Result<Arc<Vec<Key>>, String> {
+    fn purity_sources(&self,input:&Arc<EffectInput>)->Result<Arc<Vec<Key>>,String>{self.purity_sources_using(input,|keys|checked_sources(input,keys,&self.sources),|_|"purity source key allocation refused".to_string())}
+    fn purity_sources_using<E:From<String>+for<'a>From<&'a str>>(&self,input:&Arc<EffectInput>,mut check:impl FnMut(&[Key])->Result<(),E>,allocation:impl FnOnce(std::collections::TryReserveError)->E)->Result<Arc<Vec<Key>>,E>{
         let mut l = self.purity.ledger.lock().unwrap_or_else(|e| e.into_inner());
         if let Some(c) = l.contexts.get(&input.key()) {
             let keys = Arc::clone(&c.keys);
@@ -757,7 +769,7 @@ impl QueryDb {
                 return Err("purity source context issuance differs".into());
             }
             drop(l);
-            checked_sources(input, &keys, &self.sources)?;
+            check(&keys)?;
             return Ok(keys);
         }
         let current = self.sources.lock().unwrap_or_else(|e| e.into_inner());
@@ -769,11 +781,11 @@ impl QueryDb {
         )?;
         let mut keys = Vec::new();
         keys.try_reserve_exact(n)
-            .map_err(|_| "purity source key allocation refused")?;
+            .map_err(allocation)?;
         keys.extend(current.values().map(|x| x.0));
         drop(current);
         let keys = Arc::new(keys);
-        checked_sources(input, &keys, &self.sources)?;
+        check(&keys)?;
         l.contexts.insert(
             input.key(),
             SourceContext {
@@ -928,7 +940,9 @@ impl QueryDb {
                 continue;
             };
             if live.error {
-                let error = if live.kind == BODY {
+                let error = if live.kind == pages::PAGE {
+                    value.downcast_ref::<Result<Arc<dm_analysis::checker_effects::EffectPageFacts>,String>>().and_then(|x|x.as_ref().err())
+                } else if live.kind == BODY {
                     value
                         .downcast_ref::<Result<Arc<BodyEffects>, String>>()
                         .and_then(|x| x.as_ref().err())
@@ -955,6 +969,8 @@ impl QueryDb {
                         capacity: s.capacity(),
                     });
                 }
+            } else if live.kind == pages::PAGE {
+                if let Some(value)=value.downcast_ref::<dm_analysis::checker_effects::EffectPageFacts>(){value.visit_storage(&mut visit)}
             } else if live.kind == BODY {
                 if let Some(v) = value.downcast_ref::<BodyEffects>() {
                     v.visit_storage(&mut visit)
@@ -1109,6 +1125,8 @@ impl QueryDb {
         });
         EffectCancellationSchedule
     }
+    #[cfg(test)]
+    pub(crate) fn effect_dependency_count_for_test(&self,kind:Kind)->usize{let _gate=self.purity.gate.lock().unwrap_or_else(|e|e.into_inner());self.purity.ledger.lock().unwrap_or_else(|e|e.into_inner()).nodes.iter().filter(|(key,_)|key.kind==kind).map(|(_,node)|node.observed_edges).sum()}
     pub(crate) fn effect_retained_values_for_test(&self, kind: Kind) -> usize {
         let _gate = self.purity.gate.lock().unwrap_or_else(|e| e.into_inner());
         let l = self.purity.ledger.lock().unwrap_or_else(|e| e.into_inner());
@@ -1178,3 +1196,6 @@ impl QueryDb {
         }
     }
 }
+
+#[path="purity_pages.rs"]
+mod pages;

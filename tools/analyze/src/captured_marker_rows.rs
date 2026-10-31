@@ -32,6 +32,9 @@ pub(crate) fn collect_admitted<'a,E>(
     include_entries: bool,
     checkpoint: &mut impl FnMut() -> Result<(), E>,
 ) -> Result<Rows<'a>, E> where E:From<String>+for<'error>From<&'error str> {
+    collect_full_admitted(raw,order,budget,names,include_entries,false,false,checkpoint)
+}
+pub(crate) fn collect_full_admitted<'a,E>(raw:&'a CapturedRawPolicy,order:&HashMap<String,usize>,budget:&Arc<Budget>,names:&[&str],include_entries:bool,include_capabilities:bool,include_runtime:bool,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<Rows<'a>,E>where E:From<String>+for<'error>From<&'error str>{
     budget.charge(
         raw.tree
             .files
@@ -95,11 +98,12 @@ pub(crate) fn collect_admitted<'a,E>(
         }
         let line_starts = Arc::new(line_starts);
         let mut head = crate::raw_entry_proc_policy::Head::default();
+        let mut capability=crate::raw_entry_proc_policy::Head::default();
         let mut offset = 0usize;
         for (line, text) in marker.as_str().split('\n').enumerate() {
             checkpoint()?;
             budget.require()?;
-            if include_entries {
+            if include_entries||include_capabilities {
                 budget.charge(
                     text.len()
                         .checked_add(128)
@@ -111,7 +115,8 @@ pub(crate) fn collect_admitted<'a,E>(
                 )?;
                 let t = text.trim_start();
                 if !text.is_empty() && !text.starts_with(char::is_whitespace) {
-                    head.begin(text, u32::try_from(line + 1).map_err(|_| "entry line")?);
+                    if include_entries{head.begin(text, u32::try_from(line + 1).map_err(|_| "entry line")?);}
+                    if include_capabilities{capability.begin_capability(text,u32::try_from(line+1).map_err(|_|"capability entry line")?);}
                 } else if !t.is_empty() && !t.starts_with('#') {
                     if let Some((name, head_line)) = head.take() {
                         if let Some(m) = crate::raw_entry_proc_policy::project_first_return_admitted(
@@ -151,6 +156,14 @@ pub(crate) fn collect_admitted<'a,E>(
                             });
                         }
                     }
+                    if let Some((owner,head_line))=capability.take(){
+                        if let Some(m)=crate::raw_entry_proc_policy::project_capability_return_admitted(marker.as_str(),&line_starts,line,text,t,owner,head_line,|width|->Result<(),E>{checkpoint()?;budget.split_args(width)?;budget.charge(width.checked_mul(8).and_then(|n|n.checked_add(file.rel.len())).and_then(|n|n.checked_add(1024)).ok_or_else(||{budget.deny();"capability entry projection overflow"})?)?;Ok(())})?{
+                            count+=1;if count>crate::captured_raw_policy::MAX_FIXTURE_SITES{return Err("capability entry marker count exceeds captured scope".into())}
+                            if !budget.row(&mut rows){return Err("capability entry row allocation denied".into())}
+                            rows.push(OwnedMarker{name:"CAP_ENTRIES".to_owned(),rel:file.rel.clone(),line:m.line,body:m.body,args:m.args,body_offset:m.body_offset,line_starts:line_starts.clone()});
+                        }
+                    }
+
                 }
             }
             if let Some(m) =
@@ -234,6 +247,24 @@ pub(crate) fn collect_admitted<'a,E>(
             offset = offset.checked_add(text.len() + 1).ok_or_else(|| {
                 budget.deny();
                 "declare marker offset overflow"
+            })?;
+        }
+
+        if include_runtime{
+            struct RuntimeControl<'b,E,F>{budget:&'b Arc<Budget>,poll:&'b mut F,_error:std::marker::PhantomData<E>}
+            impl<E,F> crate::key_policy_control::Control for RuntimeControl<'_,E,F> where E:From<String>+for<'e>From<&'e str>,F:FnMut()->Result<(),E>{
+                type Error=E;const CHECKED:bool=true;
+                fn checkpoint(&mut self)->Result<(),E>{(self.poll)()?;self.budget.require().map_err(E::from)}
+                fn reserve(&mut self,n:usize)->Result<(),E>{self.budget.charge(n).map_err(E::from)}
+                fn overflow(&mut self)->E{self.budget.deny();"runtime observer allocation overflow".into()}
+                fn allocation_failed(&mut self)->E{self.budget.deny();"runtime observer allocation refused".into()}
+            }
+            let mut control=RuntimeControl{budget,poll:checkpoint,_error:std::marker::PhantomData};
+            crate::raw_runtime_observer_policy::visit(marker.as_str(),&line_starts,&mut control,&mut|control,p|{
+                count+=1;if count>crate::captured_raw_policy::MAX_FIXTURE_SITES{return Err("runtime observer marker count exceeds captured scope".into())}
+                crate::key_policy_control::reserve(control,||file.rel.len().checked_add(512))?;
+                if !budget.row(&mut rows){return Err("runtime observer row allocation denied".into())}
+                rows.push(OwnedMarker{name:crate::raw_runtime_observer_policy::RUNTIME_OBSERVE.to_owned(),rel:file.rel.clone(),line:p.line,args:p.args,body:p.body,body_offset:p.body_offset,line_starts:line_starts.clone()});Ok(())
             })?;
         }
         raw.tree.captured_violation().map_or(Ok(()), Err)?;

@@ -73,3 +73,5 @@ pub mod checker_effects;
 pub mod rel_write_native;
 
 pub mod policy_body_observation;
+
+mod checker_prefix_demand;

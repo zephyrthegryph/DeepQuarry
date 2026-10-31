@@ -5,31 +5,31 @@ use std::{
     cell::Cell,
     fmt::{self, Write},
 };
+struct AdmissionControl{denied:std::sync::atomic::AtomicBool,external:std::sync::atomic::AtomicUsize}
 #[derive(Clone)]
-pub struct ExecutionAdmission {
-    denied: Arc<std::sync::atomic::AtomicBool>,
-    limit: usize,
-}
-impl Default for ExecutionAdmission {
-    fn default() -> Self {
-        Self::with_limit(RESULT_BUDGET)
-    }
-}
-impl ExecutionAdmission {
-    /// Operation-only resource limit; lower limits never change cached semantics.
-    /// A refusal is relayed through the typed denial latch, never a semantic value.
-    pub fn with_limit(bytes: usize) -> Self {
-        Self {
-            denied: Arc::new(std::sync::atomic::AtomicBool::new(false)),
-            limit: bytes.min(RESULT_BUDGET),
-        }
-    }
-    pub fn is_denied(&self) -> bool {
-        self.denied.load(Ordering::Relaxed)
-    }
-    fn deny(&self) {
-        self.denied.store(true, Ordering::Relaxed)
-    }
+pub struct ExecutionAdmission{control:Arc<AdmissionControl>,limit:usize,external_base:usize}
+impl Default for ExecutionAdmission{fn default()->Self{Self::with_limit(RESULT_BUDGET)}}
+impl ExecutionAdmission{
+ pub fn with_limit(bytes:usize)->Self{Self{control:Arc::new(AdmissionControl{denied:std::sync::atomic::AtomicBool::new(false),external:std::sync::atomic::AtomicUsize::new(0)}),limit:bytes.min(RESULT_BUDGET),external_base:0}}
+ pub fn is_denied(&self)->bool{self.control.denied.load(Ordering::Relaxed)}
+ fn deny(&self){self.control.denied.store(true,Ordering::Relaxed)}
+ fn external_delta(&self)->usize{self.control.external.load(Ordering::Acquire).saturating_sub(self.external_base)}
+ /// This view's remaining external allowance. Actual body loans receive a
+ /// view ALREADY restricted by their live parent/visitor scratch budget.
+ pub fn available(&self)->usize{self.limit.saturating_sub(self.external_delta())}
+ pub(crate) fn current_view(&self)->Self{self.view_with_usage(self.limit,0)}
+ fn view_with_usage(&self,limit:usize,used:usize)->Self{let external=self.control.external.load(Ordering::Acquire);Self{control:Arc::clone(&self.control),limit:limit.saturating_sub(used).saturating_sub(external.saturating_sub(self.external_base)),external_base:external}}
+ pub(super) fn restricted(&self,bytes:usize)->Self{let mut view=self.current_view();view.limit=view.limit.min(bytes);view}
+ pub(crate) fn same_control(&self,other:&Self)->bool{Arc::ptr_eq(&self.control,&other.control)}
+ /// Monotone metadata reservation in this SAME operation admission. It never
+ /// credits moved/freed payloads or creates another budget/cap/counter domain.
+ /// Call before growing external ledger metadata, with a CURRENT scratch view.
+ pub fn reserve_external(&self,bytes:usize)->std::io::Result<()>{
+  if self.is_denied(){return Err(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"effect shared operation already denied"))}
+  let result=self.control.external.fetch_update(Ordering::AcqRel,Ordering::Acquire,|old|old.checked_add(bytes).filter(|next|next.saturating_sub(self.external_base)<=self.limit));
+  if result.is_err(){self.deny();return Err(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"effect external metadata and live scratch admission exhausted"))}
+  if self.is_denied(){return Err(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"effect shared operation already denied"))}Ok(())
+ }
 }
 pub(crate) struct ReportBudget {
     used: Cell<usize>,
@@ -47,10 +47,13 @@ impl ReportBudget {
         Self {
             used: Cell::new(0),
             limit: admission.limit,
-            denied: Cell::new(false),
+            denied: Cell::new(admission.is_denied()),
             admission: admission.clone(),
         }
     }
+    pub(super) fn used(&self)->usize{self.used.get()}
+    pub(super) fn remaining(&self)->usize{self.limit.saturating_sub(self.used.get()).saturating_sub(self.admission.external_delta())}
+    pub(crate) fn admission_view(&self)->ExecutionAdmission{self.admission.view_with_usage(self.limit,self.used.get())}
     pub(crate) fn deny(&self) {
         self.denied.set(true);
         self.admission.deny()
@@ -65,14 +68,14 @@ impl ReportBudget {
         }
     }
     pub(crate) fn charge(&self, bytes: usize) -> Result<(), String> {
-        if self.denied.get() {
+        if self.denied.get() || self.admission.is_denied() {
             return Err("effect transient execution admission exhausted".into());
         }
         let n = self
             .used
             .get()
             .checked_add(bytes)
-            .filter(|n| *n <= self.limit);
+            .filter(|n| n.checked_add(self.admission.external_delta()).is_some_and(|total|total<=self.limit));
         if let Some(n) = n {
             self.used.set(n);
             Ok(())
@@ -311,4 +314,11 @@ mod tests {
         }
         assert_eq!(rows, ["message 0", "message 1", "message 2"]);
     }
+}
+
+#[cfg(test)]mod external_metadata_tests{use super::*;
+ #[test]fn metadata_delta_uses_current_nested_scratch_and_is_not_double_counted_in_children(){
+  let admission=ExecutionAdmission::with_limit(1024);let page=ReportBudget::for_operation(&admission);page.charge(700).unwrap();let child=page.admission_view();let body=ReportBudget::for_operation(&child);body.charge(250).unwrap();let live=body.admission_view();assert_eq!(live.available(),74);assert!(live.reserve_external(75).is_err());assert!(admission.is_denied());
+  let fresh=ExecutionAdmission::with_limit(1024);let page=ReportBudget::for_operation(&fresh);page.charge(700).unwrap();let child=page.admission_view();let body=ReportBudget::for_operation(&child);body.charge(250).unwrap();body.admission_view().reserve_external(64).unwrap();assert_eq!(body.remaining(),10);assert_eq!(page.remaining(),260);drop(body);let nested=page.admission_view();let next=ReportBudget::for_operation(&nested);next.charge(260).unwrap();assert_eq!(next.remaining(),0,"already excluded metadata must not be charged twice");
+ }
 }

@@ -41,7 +41,16 @@ pub(crate) fn scalars_with_artifacts(
     predefined: &dyn Resolver,
     predefined_identity: u128,
     artifacts: Option<&dyn dm_tree::constant_resolution::ScalarArtifacts>,
-) -> dm_tree::constant_resolution::ScalarSnapshot {
+) -> dm_tree::constant_resolution::ScalarSnapshot {scalars_in_source_mode(frontend,engine,predefined,predefined_identity,artifacts,ScalarSourceMode::Ordinary).unwrap_or_else(|_|unreachable!("ordinary scalar driver has no source operational path"))}
+pub(crate) fn scalars_original_with_artifacts(
+    frontend: &ColdFrontend,
+    engine: &EngineSnapshot,
+    predefined: &dyn Resolver,
+    predefined_identity: u128,
+    artifacts: Option<&dyn dm_tree::constant_resolution::ScalarArtifacts>,
+) -> Result<dm_tree::constant_resolution::ScalarSnapshot,dm_tree::frontend::BodySyntaxFailure> {scalars_in_source_mode(frontend,engine,predefined,predefined_identity,artifacts,ScalarSourceMode::Original)}
+#[derive(Clone,Copy)]enum ScalarSourceMode{Ordinary,Original}
+fn scalars_in_source_mode(frontend:&ColdFrontend,engine:&EngineSnapshot,predefined:&dyn Resolver,predefined_identity:u128,artifacts:Option<&dyn dm_tree::constant_resolution::ScalarArtifacts>,mode:ScalarSourceMode)->Result<dm_tree::constant_resolution::ScalarSnapshot,dm_tree::frontend::BodySyntaxFailure>{
     use dm_tree::constant_resolution::ScalarQuery;
     let tree = &frontend.snapshot.tree;
     let mut requests = tree
@@ -58,8 +67,9 @@ pub(crate) fn scalars_with_artifacts(
     identity.extend_from_slice(&engine.identity().to_le_bytes());
     identity.extend_from_slice(&predefined_identity.to_le_bytes());
     let calls = crate::pure_calls::PinnedPureCalls::new(engine).ok();
-    dm_tree::constant_resolution::resolve_pinned_with_artifacts(
-        &frontend.snapshot,
+
+    match mode{
+      ScalarSourceMode::Ordinary=>Ok(dm_tree::constant_resolution::resolve_pinned_with_artifacts(&frontend.snapshot,
         &requests,
         xxhash_rust::xxh3::xxh3_128(&identity),
         scalar_decode,
@@ -69,7 +79,19 @@ pub(crate) fn scalars_with_artifacts(
             .as_ref()
             .map(|calls| calls as &dyn dm_tree::constants::PureCalls),
         artifacts,
-    )
+)),
+      ScalarSourceMode::Original=>dm_tree::constant_resolution::resolve_original_pinned_with_artifacts(frontend,
+        &requests,
+        xxhash_rust::xxh3::xxh3_128(&identity),
+        scalar_decode,
+        scalar_nameof,
+        Some(predefined),
+        calls
+            .as_ref()
+            .map(|calls| calls as &dyn dm_tree::constants::PureCalls),
+        artifacts,
+),
+    }
 }
 
 pub(crate) fn scalar_decode(raw: &dm_syntax::LiteralText) -> Option<Vec<u8>> {
@@ -326,6 +348,42 @@ pub fn prepare_revision_observed_with_memo_on_executor<R: Resolver>(
 }
 
 #[allow(clippy::too_many_arguments)]
+pub(crate) fn prepare_original_revision_observed_with_memo_on_executor<R: Resolver>(
+    frontend: &dm_tree::frontend::FrontendRevision,
+    resolver: &R,
+    engine: &EngineSnapshot,
+    engine_bytes: &[u8],
+    links: crate::engine_link::EngineLinkFacts,
+    values: &dyn crate::class_projection::TypeValuePolicy,
+    resource_context: Option<u128>,
+    maps: Vec<crate::initialization_artifact::InitializationArtifact>,
+    stage: Option<&dyn crate::composition::NonTextOutputStage>,
+    executor: &dm_exec::BuildExecutor,
+    observer: Option<&cold::ColdObserver<'_>>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+    retained: Option<crate::retained_output::RetainedOutput<'_>>,
+) -> Result<cold::Prepared, cold::ColdError> {
+    prepare_observed_input_in_source_mode(
+        frontend,
+        resolver,
+        engine,
+        engine_bytes,
+        links,
+        values,
+        resource_context,
+        maps,
+        stage,
+        executor.workers(),
+        observer,
+        memo,
+        Some(frontend),
+        Some(executor),
+        retained,
+        PreparationSourceMode::Original,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
 fn compile_observed_input<R: Resolver>(
     frontend: &ColdFrontend,
     resolver: &R,
@@ -390,6 +448,28 @@ fn prepare_observed_input<R: Resolver>(
     executor: Option<&dm_exec::BuildExecutor>,
     retained: Option<crate::retained_output::RetainedOutput<'_>>,
 ) -> Result<cold::Prepared, cold::ColdError> {
+    prepare_observed_input_in_source_mode(frontend,resolver,engine,engine_bytes,links,values,resource_context,maps,stage,workers,observer,memo,revision,executor,retained,PreparationSourceMode::Ordinary)
+}
+#[derive(Clone,Copy)]enum PreparationSourceMode{Ordinary,Original}
+#[allow(clippy::too_many_arguments)]
+fn prepare_observed_input_in_source_mode<R: Resolver>(
+    frontend: &ColdFrontend,
+    resolver: &R,
+    engine: &EngineSnapshot,
+    engine_bytes: &[u8],
+    links: crate::engine_link::EngineLinkFacts,
+    values: &dyn crate::class_projection::TypeValuePolicy,
+    resource_context: Option<u128>,
+    maps: Vec<crate::initialization_artifact::InitializationArtifact>,
+    stage: Option<&dyn crate::composition::NonTextOutputStage>,
+    workers: usize,
+    observer: Option<&cold::ColdObserver<'_>>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+    revision: Option<&dm_tree::frontend::FrontendRevision>,
+    executor: Option<&dm_exec::BuildExecutor>,
+    retained: Option<crate::retained_output::RetainedOutput<'_>>,
+    source_mode:PreparationSourceMode,
+) -> Result<cold::Prepared, cold::ColdError> {
     let owned_executor;
     let executor = match executor {
         Some(executor) => executor,
@@ -416,7 +496,8 @@ fn prepare_observed_input<R: Resolver>(
         symbols: frontend.snapshot.tree.symbols(),
         resource_search_context: resource_context,
     };
-    cold::prepare_captured_classified_with_pinned_abi_memo_revision(
+    match source_mode {
+        PreparationSourceMode::Ordinary=>cold::prepare_captured_classified_with_pinned_abi_memo_revision(
         frontend,
         resolver,
         cold::CapturedLinkInputs {
@@ -443,5 +524,34 @@ fn prepare_observed_input<R: Resolver>(
         revision,
         executor,
         retained,
-    )
+    ),
+        PreparationSourceMode::Original=>cold::prepare_original_captured_classified_with_pinned_abi_memo_revision(
+        frontend,
+        resolver,
+        cold::CapturedLinkInputs {
+            engine_bytes,
+            engine,
+            references: &links.references,
+            inventory: links.inventory,
+        },
+        cold::CapturedDeclarationInputs {
+            initializers: &evaluator,
+            type_values: values,
+            resource_search_context: resource_context,
+            source_type_order: order.order(),
+            source_allocation_roster: Some(&order),
+        },
+        LoweringConfig {
+            workers,
+            ..Default::default()
+        },
+        maps,
+        stage,
+        observer,
+        memo,
+        revision,
+        executor,
+        retained,
+    ),
+    }
 }

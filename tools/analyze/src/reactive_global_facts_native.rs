@@ -20,17 +20,7 @@ fn row<T>(source:&ReadSource<'_>,rows:&mut Vec<T>)->Result<(),Failure>{if source
 fn own(source:&ReadSource<'_>,text:&str)->Result<String,Failure>{reserve(source,text.len().checked_mul(4).and_then(|n|n.checked_add(256)))?;Ok(text.to_owned())}
 fn test_code(rel:&str)->bool{rel.starts_with("code/tests/")||rel.starts_with("code/modules/unit_tests/")}
 fn plain(name:&str)->bool{let mut chars=name.chars();chars.next().is_some_and(|c|c=='_'||c.is_alphabetic())&&chars.all(|c|c=='_'||c.is_alphanumeric())}
-fn variable_owner(source:&ReadSource<'_>,owner:&str,name:&str)->Result<Option<String>,Failure>{
- // Preserve var_owner's ancestry-only search; no implicit global fallback.
- let mut current=Some(owner);let bound=source.inputs().archive().tree().types().len().checked_add(1).ok_or_else(denial)?;
- for _ in 0..bound{
-  source.checkpoint().map_err(Failure::Operational)?;require(source)?;
-  let Some(ty)=current else{return Ok(None)};
-  if let Some(declaring)=source.declaring_owner(ty,name)?{if declaring==ty{return Ok(Some(own(source,declaring)?))}}
-  current=source.parent_type(ty)?;
- }
- if current.is_some(){return Err("global source ancestry exceeds actual original type roster".into())}Ok(None)
-}
+fn variable_owner(source:&ReadSource<'_>,owner:&str,name:&str)->Result<Option<String>,Failure>{source.variable_declaring_owner(owner,name)?.map(|owner|own(source,owner)).transpose()}
 
 impl GlobalFacts for NativeGlobals{
  fn constant_after_init(&self,name:&str)->Result<bool,Failure>{Ok(self.globals.constant_after_init(name))}

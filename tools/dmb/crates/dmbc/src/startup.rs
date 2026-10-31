@@ -617,6 +617,41 @@ pub(crate) fn capture_with_prepared_bodies_checked<'a>(
     crate::daemon::control::checkpoint().map_err(StartupFailure::Operational)?;
     Ok(captured)
 }
+/// Source-required prepared-body capture uses the SAME original producer and revision guards.
+pub(crate) fn capture_original_with_prepared_bodies_checked<'a>(
+    frontend: &'a ColdFrontend,
+    revision: Option<&'a dm_tree::frontend::FrontendRevision>,
+    spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
+    executor: &dm_exec::BuildExecutor,
+    bodies: &dm_tree::frontend::BodyArena<'_>,
+    artifacts: Option<&StartupArtifacts>,
+    prepared: &crate::lowering::PreparedBodyRoster<'_>,
+) -> Result<OriginalStartup<'a>,StartupFailure> {
+    crate::daemon::control::checkpoint().map_err(StartupFailure::Operational)?;
+    if revision.is_some_and(|revision| !std::ptr::eq::<ColdFrontend>(&**revision, frontend)) {
+        return Err("startup revision belongs to another current frontend".into());
+    }
+    let mut facts = capture_facts_with_executor_and_bodies_and_artifacts_using::<OriginalStartupDemand>(
+        frontend,
+        spellings,
+        executor,
+        bodies,
+        artifacts,
+        Some(prepared),
+    )?;
+    if let Some(revision) = revision {
+        std::sync::Arc::get_mut(&mut facts)
+            .expect("new startup facts are exclusively owned")
+            .issuance = Some(revision.issuance());
+    }
+    let captured=CapturedStartup {
+        frontend,
+        revision,
+        facts,
+    };
+    crate::daemon::control::checkpoint().map_err(StartupFailure::Operational)?;
+    Ok(OriginalStartup{captured})
+}
 pub fn capture_revision_facts_with_executor_and_bodies(
     revision: &dm_tree::frontend::FrontendRevision,
     spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
@@ -766,6 +801,16 @@ pub struct StartupEvaluator<'a> {
     pub symbols: &'a dm_ir::SymbolTable,
 }
 impl crate::initializer_policy::CapturedInitializerEvaluator for StartupEvaluator<'_> {
+    fn evaluate_original_write_checked<'source>(&self,input:&dm_tree::frontend::OriginalInitializerExpressionInput<'source>,write:&dm_ir::InitializerWrite)->Result<(crate::initializer_policy::Evaluation,Option<crate::initializer_policy::ScopedPreparedInitializerExpression<'source>>),crate::initializer_policy::InitializerFailure>{
+        if write.lexical_procedure.is_some(){crate::initializer_policy::CapturedInitializerEvaluator::evaluate_original_write_checked(&crate::driver_facts::DriverEvaluator{pure_calls:self.ordinary.pure_calls(),resource_search_context:self.resource_search_context,resolver:self.resolver,symbols:self.symbols},input,write)}else{self.ordinary.evaluate_original_write_checked(input,write)}
+    }
+    fn evaluate_original_dimension_checked(&self,input:&dm_tree::frontend::OriginalInitializerDimensionInput<'_>,write:&dm_ir::InitializerWrite)->Result<crate::initializer_policy::Evaluation,crate::initializer_policy::InitializerFailure>{
+        if write.lexical_procedure.is_some(){crate::initializer_policy::CapturedInitializerEvaluator::evaluate_original_dimension_checked(&crate::driver_facts::DriverEvaluator{pure_calls:self.ordinary.pure_calls(),resource_search_context:self.resource_search_context,resolver:self.resolver,symbols:self.symbols},input,write)}else{self.ordinary.evaluate_original_dimension_checked(input,write)}
+    }
+    fn evaluate_original_ast_write_checked<'source>(&self,input:&dm_tree::frontend::OriginalInitializerExpressionInput<'source>,write:&dm_ir::InitializerWrite,root:&dm_tree::frontend::OriginalInitializerExpression<'source>,ast:&dm_syntax::Expr,symbols:&dm_ir::SymbolTable)->Result<crate::initializer_policy::Evaluation,crate::initializer_policy::InitializerFailure>{
+        if write.lexical_procedure.is_some(){crate::initializer_policy::CapturedInitializerEvaluator::evaluate_original_ast_write_checked(&crate::driver_facts::DriverEvaluator{pure_calls:self.ordinary.pure_calls(),resource_search_context:self.resource_search_context,resolver:self.resolver,symbols:self.symbols},input,write,root,ast,symbols)}else{self.ordinary.evaluate_original_ast_write_checked(input,write,root,ast,symbols)}
+    }
+
     fn evaluate_prepared_write(
         &self,
         write: &dm_ir::InitializerWrite,

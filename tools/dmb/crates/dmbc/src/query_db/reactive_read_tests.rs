@@ -261,3 +261,28 @@ fn actual_same_source_read_result_cannot_answer_a_different_request_or_forge_pro
  }).unwrap();assert_eq!(fixture.reads.load(Ordering::Relaxed),before);let computed=fixture.db.db.stats(REACTIVE_RESULT).computed;
  fixture.db.with_reactive_fixture(&cohort,request("leaf"),|_|Ok(())).unwrap();assert_eq!(fixture.db.db.stats(REACTIVE_RESULT).computed,computed);
 }
+
+#[test]
+fn actual_lazy_global_question_rejects_forged_loans_and_preserves_operational_priority(){
+ use dq_analyze::captured_reactive_reads::{GlobalProvider,with_global_question};
+ struct Loan<'a>{value:&'a GlobalResult,mode:u8,cancel:Option<&'a crate::daemon::control::Cancellation>}
+ impl GlobalProvider for Loan<'_>{fn with_globals(&self,consume:&mut dyn FnMut(&GlobalResult)->Result<bool,Failure>)->Result<bool,Failure>{
+  if self.mode==1{return Ok(true)}let first=consume(self.value);
+  match self.mode{2=>{let _=first;let _=consume(self.value);Ok(true)},3=>{let _=first;Ok(false)},4=>{let _=first;Err(Failure::Operational(io::Error::from_raw_os_error(1450)))},5=>match first{Err(Failure::Operational(actual))=>Err(Failure::Operational(io::Error::other(actual))),result=>result},6=>{let _=first;if let Some(token)=self.cancel{token.cancel()}Ok(true)},7=>{let _=first;Ok(true)},_=>first}
+ }}
+ fn actual(error:Failure)->io::Error{match error{Failure::Operational(actual)=>actual,Failure::Unsupported(text)=>panic!("expected actual IO: {text}")}}
+ let fixture=Fixture::new(BODY,false);let cohort=fixture.capture();let foreign=Fixture::new(BODY,false);let foreign_cohort=foreign.capture();let before=fixture.reads.load(Ordering::Relaxed);
+ fixture.db.with_reactive_fixture(&cohort,Request::Globals,|value|{
+  let Value::Globals(value)=value else{panic!("global role")};let inputs=cohort.capture.policy();let poll=||Ok(());let delivered=std::cell::Cell::new(0);let loan=|mode|Loan{value,mode,cancel:None};
+  let error=with_global_question(&loan(0),foreign_cohort.capture.policy(),&poll,&mut|_|{delivered.set(1);Ok(true)}).unwrap_err();assert_eq!(actual(error).kind(),io::ErrorKind::InvalidInput);assert_eq!(delivered.get(),0,"foreign original source never reaches policy");
+  for mode in [1,2,3]{delivered.set(0);let error=with_global_question(&loan(mode),inputs,&poll,&mut|_|{delivered.set(delivered.get()+1);Ok(true)}).unwrap_err();assert_eq!(actual(error).kind(),io::ErrorKind::InvalidInput);assert_eq!(delivered.get(),usize::from(mode!=1));}
+  let semantic=||Err(Failure::Unsupported("actual semantic global refusal".into()));
+  for mode in [0,5,7]{let error=with_global_question(&loan(mode),inputs,&poll,&mut|_|semantic()).unwrap_err();assert!(matches!(error,Failure::Unsupported(ref text)if text=="actual semantic global refusal"));}
+  let error=with_global_question(&loan(4),inputs,&poll,&mut|_|semantic()).unwrap_err();assert_eq!(actual(error).raw_os_error(),Some(1450));
+  let error=with_global_question(&loan(4),inputs,&poll,&mut|_|Err(Failure::Operational(io::Error::from_raw_os_error(112)))).unwrap_err();assert_eq!(actual(error).raw_os_error(),Some(112),"first actual callback cause survives later provider IO");
+  let token=crate::daemon::control::Cancellation::default();let binding=crate::daemon::control::bind_with_deadline(token.clone(),Instant::now()+Duration::from_secs(30));let late=Loan{value,mode:6,cancel:Some(&token)};
+  let error=with_global_question(&late,inputs,&crate::daemon::control::checkpoint,&mut|_|semantic()).unwrap_err();assert_eq!(actual(error).kind(),io::ErrorKind::Interrupted);drop(binding);
+  let error=with_global_question(&loan(7),inputs,&poll,&mut|_|Err(Failure::Operational(io::Error::from_raw_os_error(1450)))).unwrap_err();assert_eq!(actual(error).raw_os_error(),Some(1450),"swallowed callback IO remains actual");
+  assert!(with_global_question(&loan(0),inputs,&crate::daemon::control::checkpoint,&mut|_|Ok(true)).unwrap(),"same immutable result recovers without rebuilding facts");Ok(())
+ }).unwrap();assert_eq!(fixture.reads.load(Ordering::Relaxed),before);
+}

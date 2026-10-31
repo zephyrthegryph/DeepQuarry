@@ -45,43 +45,27 @@ impl BodyArchive {
     /// `consume` cannot return borrows of its temporary prefix/body guard.
     /// Callee lookup reads only BodySyntax; it never asks for semantic-body
     /// findings, inferred returns, caller state, or another QueryDb.
-    pub fn with_initial_setting_prefix<T>(
-        &self,
-        identity: ProcedureIdentity,
-        consume: impl FnOnce(InitialSettingPrefix<'_>) -> T,
-    ) -> Result<T, String> {
-        if self.body_query_host().is_none() {
-            return Err(
-                "setting prefix needs the original retained compiler BodySyntax query owner".into(),
-            );
+    pub fn with_initial_setting_prefix<T>(&self,identity:ProcedureIdentity,consume:impl FnOnce(InitialSettingPrefix<'_>)->T)->Result<T,String>{
+        self.with_initial_setting_prefix_using(identity,|archive,ordinal|archive.parse(ordinal).map_err(|error|error.message),consume)
+    }
+    pub fn with_initial_setting_prefix_using<'source,T,E:From<String>+From<&'static str>>(
+        &'source self,identity:ProcedureIdentity,
+        parse:impl FnOnce(&'source BodyArchive,usize)->Result<super::ArchivedBody<'source>,E>,
+        consume:impl FnOnce(InitialSettingPrefix<'_>)->T,
+    )->Result<T,E>{
+        if self.body_query_host().is_none(){return Err("setting prefix needs the original retained compiler BodySyntax query owner".into())}
+        let tree=self.tree();let kind=if identity.verb{MemberKind::Verb}else{MemberKind::Proc};
+        let owner=tree.lookup_type(identity.owner).ok_or("prefix source owner unavailable")?;
+        let mut member=tree.resolve(owner,identity.name,kind);let mut selected=None;let mut steps=0usize;
+        while let Some(id)=member{
+            steps=steps.checked_add(1).filter(|n|*n<=tree.members().len()).ok_or("prefix source member history is cyclic")?;
+            let node=tree.member(id).ok_or("prefix source member unavailable")?;
+            if self.callables().identity_for_member(id)==Some(identity){selected=self.callables().ordinal(id);break}
+            member=node.previous;
         }
-        let tree = self.tree();
-        let mut selected = None;
-        for (ordinal, occurrence) in self.occurrences().iter().enumerate() {
-            let member = tree
-                .member(occurrence.member)
-                .ok_or("prefix body member unavailable")?;
-            if !matches!(member.kind, MemberKind::Proc | MemberKind::Verb) {
-                continue;
-            }
-            let issued = ProcedureIdentity {
-                owner: tree
-                    .type_node(member.owner)
-                    .ok_or("prefix member owner unavailable")?
-                    .path,
-                name: member.name,
-                verb: member.kind == MemberKind::Verb,
-                occurrence: tree
-                    .member_occurrence(occurrence.member)
-                    .ok_or("prefix source occurrence unavailable")?,
-            };
-            if issued == identity && selected.replace(ordinal).is_some() {
-                return Err("prefix callable identity is ambiguous in issued roster".into());
-            }
-        }
-        let body = self
-            .parse(selected.ok_or("source callable has no issued primary body for prefix proof")?)
-            .map_err(|error| error.message)?;
+        let ordinal=selected.ok_or("source callable has no issued primary body for prefix proof")?;
+        let body=parse(self,ordinal)?;
+        if !std::ptr::eq(body.occurrence(),self.occurrences().get(ordinal).ok_or("prefix original occurrence unavailable")?){return Err("prefix parser returned another original callable occurrence".into())}
         if !body.belongs_to(self) || !body.statement_body().syntax_complete() {
             return Err("prefix body is foreign or has incomplete primary syntax".into());
         }

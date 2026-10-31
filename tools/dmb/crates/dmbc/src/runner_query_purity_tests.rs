@@ -1013,3 +1013,144 @@ fn callable_note_transport_requires_exact_selected_original_occurrence() {
 
 #[path = "runner_query_effect_multi_target_tests.rs"]
 mod multi_target_tests;
+
+
+type EffectPageRow=(bool,Option<dm_ir::ProcedureIdentity>,Vec<(dm_ir::ProcedureIdentity,bool,bool)>);
+fn effect_page_row(row:dm_analysis::checker_effects::EffectContribution<'_>)->(dm_ir::ProcedureIdentity,EffectPageRow){
+    let mut calls=Vec::new();row.visit_source_calls(|id,exact,new_context|calls.push((id,exact,new_context)));(row.procedure(),(row.has_direct_effect(),row.source_parent(),calls))
+}
+fn collect_effect_pages(snapshot:&SourceSnapshot,width:usize)->BTreeMap<dm_ir::ProcedureIdentity,EffectPageRow>{
+    use dm_analysis::checker_effects::{EffectSource,ExecutionAdmission};
+    let archive=snapshot.body_archive.as_ref().unwrap();let host=archive.body_query_host().unwrap();let profile=archive.tree().checker_builtin_profile().unwrap();let source=EffectSource::new(archive,profile).unwrap();source.validate_current(archive,host).unwrap();
+    let body=|input:&Arc<dm_tree::frontend::BodySyntaxInput>,_:&dm_analysis::checker_effects::ExecutionAdmission|host.syntax_checked(input);let mut rows=BTreeMap::new();let mut offset=0;
+    source.for_each_page_checked(width,archive.tree(),&ExecutionAdmission::default(),&mut crate::daemon::control::checkpoint,&body,|page|{
+        assert_eq!(page.start(),offset);assert_eq!(page.total(),source.len());assert!(page.len()<=width);assert!(page.events()<=dm_analysis::checker_effects::MAX_EVENTS);
+        for i in 0..page.len(){let row=page.contribution(i)?.unwrap();assert_eq!(source.original_ordinal(offset+i),Some(row.ordinal()));let(id,facts)=effect_page_row(row);assert!(rows.insert(id,facts).is_none());}offset+=page.len();Ok(())
+    }).unwrap();assert_eq!(offset,source.len());rows
+}
+#[test]
+fn effect_source_pages_preserve_cross_page_cycle_and_override_facts_from_same_original_bodies(){
+    for source in [include_str!("../../../fixtures/unified_checks/purity/cycle/probe.dme"),include_str!("../../../fixtures/unified_checks/purity/override/probe.dme")]{
+        let(snapshot,_)=fixture(source,None);let archive=snapshot.body_archive.as_ref().unwrap();let db=snapshot.native_raw_queries.as_ref().unwrap();let reads_before=db.db().stats(dm_query::Kind(4)).computed;
+        let profile=archive.tree().checker_builtin_profile().unwrap();let input=EffectInput::new(Arc::clone(archive),profile).unwrap();let mut expected=BTreeMap::new();
+        for &(ordinal,_) in input.order(){let body=input.compute_body_checked(ordinal,archive.tree(),&dm_analysis::checker_effects::ExecutionAdmission::default()).unwrap();let(id,row)=effect_page_row(body.source_contribution());expected.insert(id,row);}
+        let computed=db.db().stats(dm_query::Kind(4)).computed;assert!(computed>reads_before);
+        assert_eq!(collect_effect_pages(&snapshot,1),expected,"global IDs must not be restricted to an independent page graph");assert_eq!(collect_effect_pages(&snapshot,2),expected);assert_eq!(db.db().stats(dm_query::Kind(4)).computed,computed,"actual canonical body queries stay warm across source windows");
+        let named=|name:&str|expected.keys().copied().find(|id|id.name==dm_ir::SymbolId::of(name)).unwrap();
+        if source.contains("global_value") {let a=named("a");let b=named("b");assert!(expected[&a].2.iter().any(|call|call.0==b));assert!(expected[&b].2.iter().any(|call|call.0==a));assert!(expected[&b].0,"actual direct effect in another page");}
+        else{assert!(expected.iter().any(|(id,row)|id.owner==dm_ir::SymbolId::of("/datum/base/child")&&row.0&&row.1.is_some_and(|parent|parent.owner==dm_ir::SymbolId::of("/datum/base"))),"actual direct override links to original predecessor outside its page");}
+    }
+}
+#[test]
+fn effect_source_pages_retract_on_body_edit_and_refuse_foreign_current_frame(){
+    use dm_analysis::checker_effects::EffectSource;
+    let source=include_str!("../../../fixtures/unified_checks/purity/cycle/probe.dme");let(first,_)=fixture(source,None);let edited=source.replace("global_value=1","global_value");let(current,_)=fixture(&edited,None);
+    let old=collect_effect_pages(&first,1);let new=collect_effect_pages(&current,1);let b=old.keys().copied().find(|id|id.name==dm_ir::SymbolId::of("b")).unwrap();assert!(old[&b].0);assert!(!new[&b].0,"source-global effect disappears after actual RHS/write removal");assert_eq!(old[&b].2,new[&b].2,"cross-page recursion remains intact");
+    let old_archive=first.body_archive.as_ref().unwrap();let fresh=current.body_archive.as_ref().unwrap();let view=EffectSource::new(old_archive,old_archive.tree().checker_builtin_profile().unwrap()).unwrap();assert!(view.validate_current(fresh,fresh.body_query_host().unwrap()).is_err());
+}
+#[test]
+fn effect_source_page_actual_kind4_stop_retains_completed_pure_work_and_retries_without_output_claim(){
+    use dm_analysis::checker_effects::{EffectSource,ExecutionAdmission};
+    use dm_analysis::policy_body_demand::PolicyFailure;
+    let(snapshot,_)=fixture(&format!("/proc/completed_leaf()\n    return 1\n{}",include_str!("../../../fixtures/unified_checks/purity/cycle/probe.dme")),None);let archive=snapshot.body_archive.as_ref().unwrap();let host=archive.body_query_host().unwrap();let db=snapshot.native_raw_queries.as_ref().unwrap();let source=EffectSource::new(archive,archive.tree().checker_builtin_profile().unwrap()).unwrap();let body=|input:&Arc<dm_tree::frontend::BodySyntaxInput>,_:&dm_analysis::checker_effects::ExecutionAdmission|host.syntax_checked(input);
+    let schedule=db.fail_body_syntax_after_for_test(1,std::io::Error::from_raw_os_error(1450));let mut completed=0;let result=source.for_each_page_checked(1,archive.tree(),&ExecutionAdmission::default(),&mut crate::daemon::control::checkpoint,&body,|_|{completed+=1;Ok(())});assert!(matches!(&result,Err(PolicyFailure::Operational(error))if error.raw_os_error()==Some(1450)),"actual original Kind4 failure: {result:?}; completed={completed}");assert_eq!(completed,1,"a valid earlier contribution may complete, but not the aggregate request");drop(schedule);
+    let before=db.db().stats(dm_query::Kind(4)).computed;let rows=collect_effect_pages(&snapshot,1);assert_eq!(rows.len(),source.len());assert_eq!(db.db().stats(dm_query::Kind(4)).computed-before,(source.len()-1) as u64);
+    let denied=ExecutionAdmission::with_limit(1);assert!(matches!(source.for_each_page_checked(1,archive.tree(),&denied,&mut crate::daemon::control::checkpoint,&body,|_|Ok(())),Err(PolicyFailure::Operational(ref e))if e.kind()==std::io::ErrorKind::OutOfMemory));assert!(denied.is_denied());assert_eq!(collect_effect_pages(&snapshot,1),rows);
+}
+
+#[test]
+fn actual_effect_source_pages_join_one_global_scc_and_retract_effects_without_losing_cross_page_cycles(){
+    use dm_analysis::checker_effects::{CompactEffectScc,ExecutionAdmission};
+    let source=include_str!("../../../fixtures/unified_checks/purity/cycle/probe.dme");let(first,_)=fixture(source,None);let(after,_)=fixture(&source.replace("global_value=1","global_value"),None);
+    for(snapshot,expect_effect)in[(&first,true),(&after,false)]{
+        let facts=collect_effect_pages(snapshot,1);let ids=facts.keys().copied().collect::<Vec<_>>();let index=ids.iter().copied().enumerate().map(|(i,id)|(id,i)).collect::<BTreeMap<_,_>>();
+        let edges=ids.iter().map(|id|facts[id].2.iter().map(|(to,_,_)|index[to]).collect::<Vec<_>>()).collect::<Vec<_>>();let scc=CompactEffectScc::compute_checked(ids.len(),&ExecutionAdmission::default(),|node,next,_|Ok(edges[node].get(next).copied()),&mut||Ok(())).unwrap();let summary=scc.summarize_checked(&ExecutionAdmission::default(),|node,_|Ok(facts[&ids[node]].0),|node,next,_|Ok(edges[node].get(next).copied()),&mut||Ok(())).unwrap();
+        let named=|name:&str|ids.iter().position(|id|id.name==dm_ir::SymbolId::of(name)).unwrap();assert_eq!(scc.same_component(named("a"),named("b")),Some(true),"cycle spans source windows but remains ONE component");for name in["a","b","probe"]{assert_eq!(summary.node_has_effect(named(name)),Some(expect_effect),"original graph propagation/retraction for {name}");}
+    }
+}
+
+#[test]
+fn effect_source_page_final_nested_denial_and_empty_failed_operation_cannot_return_success(){
+    use dm_analysis::checker_effects::{CompactEffectScc,EffectSource,ExecutionAdmission};
+    use dm_analysis::policy_body_demand::PolicyFailure;
+    let(snapshot,_)=fixture("/proc/probe()\n    return 1\n",None);let archive=snapshot.body_archive.as_ref().unwrap();let host=archive.body_query_host().unwrap();let source=EffectSource::new(archive,archive.tree().checker_builtin_profile().unwrap()).unwrap();let body=|input:&Arc<dm_tree::frontend::BodySyntaxInput>,_:&dm_analysis::checker_effects::ExecutionAdmission|host.syntax_checked(input);let admission=ExecutionAdmission::default();let mut callbacks=0;
+    let failed=source.for_each_page_checked(1,archive.tree(),&admission,&mut||Ok(()),&body,|_|{
+        callbacks+=1;let denied=CompactEffectScc::compute_checked(1_000_000,&admission,|_,_,_|panic!("shared quota refuses before reading any edge"),&mut||Ok(()));assert!(matches!(denied,Err(PolicyFailure::Operational(ref e))if e.kind()==std::io::ErrorKind::OutOfMemory));Ok(())
+    });assert_eq!(callbacks,1);assert!(admission.is_denied());assert!(matches!(failed,Err(PolicyFailure::Operational(ref e))if e.kind()==std::io::ErrorKind::OutOfMemory),"nested quota failure cannot be swallowed by final page callback");
+    let(empty,_)=fixture("/datum/probe\n    var/value=1\n",None);let empty_archive=empty.body_archive.as_ref().unwrap();let empty_source=EffectSource::new(empty_archive,empty_archive.tree().checker_builtin_profile().unwrap()).unwrap();assert!(empty_source.is_empty());let empty_host=empty_archive.body_query_host().unwrap();let empty_body=|input:&Arc<dm_tree::frontend::BodySyntaxInput>,_:&dm_analysis::checker_effects::ExecutionAdmission|empty_host.syntax_checked(input);
+    assert!(matches!(empty_source.for_each_page_checked(1,empty_archive.tree(),&admission,&mut||Ok(()),&empty_body,|_|panic!("no original callable")),Err(PolicyFailure::Operational(ref e))if e.kind()==std::io::ErrorKind::OutOfMemory));
+    source.for_each_page_checked(1,archive.tree(),&ExecutionAdmission::default(),&mut||Ok(()),&body,|_|Ok(())).unwrap();
+}
+
+#[test]
+fn compact_effect_global_source_graph_matches_original_calls_overrides_and_retraction_across_pages(){
+    use dm_analysis::checker_effects::{CompactEffectGraph,EffectSource,ExecutionAdmission};
+    let duplicate_calls=format!("var/global_value\n/proc/fanout()\n{}/proc/leaf()\n    global_value=1\n","    leaf()\n".repeat(512));
+    let reversed_calls="/proc/reversed()\n    zed()\n    alpha()\n/proc/alpha()\n    return 0\n/proc/zed()\n    return 0\n".to_owned();
+    for text in[duplicate_calls,reversed_calls,include_str!("../../../fixtures/unified_checks/purity/cycle/probe.dme").to_owned(),include_str!("../../../fixtures/unified_checks/purity/override/probe.dme").to_owned(),include_str!("../../../fixtures/unified_checks/purity/cycle/probe.dme").replace("global_value=1","global_value")]{
+        let(snapshot,_)=fixture(&text,None);let archive=snapshot.body_archive.as_ref().unwrap();let profile=archive.tree().checker_builtin_profile().unwrap();let host=archive.body_query_host().unwrap();let body=|input:&Arc<dm_tree::frontend::BodySyntaxInput>,_:&dm_analysis::checker_effects::ExecutionAdmission|host.syntax_checked(input);let source=EffectSource::new(archive,profile).unwrap();let input=EffectInput::new(Arc::clone(archive),profile).unwrap();let admission=ExecutionAdmission::default();
+        let old_bodies=input.order().iter().map(|&(ordinal,_)|input.compute_body_checked(ordinal,archive.tree(),&admission).unwrap()).collect();let old_plan=input.plan(old_bodies,archive.tree(),&admission).unwrap();let old=old_plan.summarize(&input).unwrap();let before=snapshot.native_raw_queries.as_ref().unwrap().db().stats(dm_query::Kind(4)).computed;
+        for width in[1,2]{let graph=CompactEffectGraph::build_checked(&source,width,archive.tree(),&ExecutionAdmission::default(),&mut||Ok(()),&body).unwrap();let scc=graph.compute_scc_checked(&ExecutionAdmission::default(),&mut||Ok(())).unwrap();let summary=graph.summarize_checked(&scc,&ExecutionAdmission::default(),&mut||Ok(())).unwrap();
+            for node in 0..graph.len(){let mut successors=Vec::new();while let Some(to)=graph.successor(node,successors.len()).unwrap(){successors.push(to);}assert!(successors.windows(2).all(|pair|pair[0]<=pair[1]),"prior sorted successor order, including distinct reversed authored calls, is preserved");let ordinal=graph.original_ordinal(node).unwrap();let id=input.order().iter().find(|(actual,_)|*actual==ordinal).unwrap().1;if id.name==dm_ir::SymbolId::of("fanout"){let mut count=0;while graph.successor(node,count).unwrap().is_some(){count+=1;}assert_eq!(count,512,"count/fill preserves every original repeated call without growing pair storage");}assert_eq!(summary.node_has_effect(node),old.source_has_effect(id),"actual original global calls/override effect meaning at page width {width}");}
+        }assert_eq!(snapshot.native_raw_queries.as_ref().unwrap().db().stats(dm_query::Kind(4)).computed,before,"global scalar graph retains no body owners and reuses actual warm Kind4");
+    }
+}
+#[test]
+fn compact_effect_global_source_graph_actual_body_io_and_quota_are_uncached_and_retryable(){
+    use dm_analysis::checker_effects::{CompactEffectGraph,EffectSource,ExecutionAdmission};use dm_analysis::policy_body_demand::PolicyFailure;
+    let(snapshot,_)=fixture(include_str!("../../../fixtures/unified_checks/purity/cycle/probe.dme"),None);let archive=snapshot.body_archive.as_ref().unwrap();let source=EffectSource::new(archive,archive.tree().checker_builtin_profile().unwrap()).unwrap();let host=archive.body_query_host().unwrap();let body=|input:&Arc<dm_tree::frontend::BodySyntaxInput>,_:&dm_analysis::checker_effects::ExecutionAdmission|host.syntax_checked(input);let db=snapshot.native_raw_queries.as_ref().unwrap();let schedule=db.fail_body_syntax_after_for_test(1,std::io::Error::from_raw_os_error(1450));
+    let failed=CompactEffectGraph::build_checked(&source,1,archive.tree(),&ExecutionAdmission::default(),&mut||Ok(()),&body).err().unwrap();assert!(matches!(&failed,PolicyFailure::Operational(actual)if actual.raw_os_error()==Some(1450)),"actual original graph body/prefix failure: {failed:?}");drop(schedule);
+    let recovered=CompactEffectGraph::build_checked(&source,1,archive.tree(),&ExecutionAdmission::default(),&mut||Ok(()),&body).unwrap();assert_eq!(recovered.len(),source.len());let tiny=ExecutionAdmission::with_limit(1);assert!(matches!(CompactEffectGraph::build_checked(&source,1,archive.tree(),&tiny,&mut||Ok(()),&body),Err(PolicyFailure::Operational(ref actual))if actual.kind()==std::io::ErrorKind::OutOfMemory));assert!(tiny.is_denied());assert_eq!(CompactEffectGraph::build_checked(&source,1,archive.tree(),&ExecutionAdmission::default(),&mut||Ok(()),&body).unwrap().len(),source.len());
+}
+
+#[test]
+fn actual_effect_page_query_records_only_its_kind4_children_and_warm_source_frame(){
+    use dm_analysis::checker_effects::EffectSource;
+    let(snapshot,reads)=fixture(include_str!("../../../fixtures/unified_checks/purity/cycle/probe.dme"),None);let input=snapshot.native_effect_source_input(&snapshot.tree).unwrap();let archive=input.archive();let source=EffectSource::new(archive,input.profile()).unwrap();assert_eq!((0..source.len()).map(|i|archive.callables().identity(source.original_ordinal(i).unwrap()).unwrap().name).collect::<Vec<_>>(),["a","b","probe"].map(dm_ir::SymbolId::of),"original authored contribution order, independent of checker report order");let db=snapshot.native_raw_queries.as_ref().unwrap();let before=reads.load(Ordering::Relaxed);assert_eq!(db.db().stats(dm_query::Kind(4)).computed,0);
+    let page=snapshot.native_effect_source_page(&input,0,1,&env(),None,&snapshot.tree).unwrap();assert_eq!(page.start(),0);assert_eq!(page.len(),1);assert_eq!(page.total(),source.len());page.validate(&source).unwrap();assert_eq!(page.ordinal(0),source.original_ordinal(0));assert_eq!(page.procedure(0).unwrap().name,dm_ir::SymbolId::of("a"));assert_eq!(page.source_calls(0).unwrap().len(),1);assert_eq!(page.source_calls(0).unwrap()[0].name,dm_ir::SymbolId::of("b"));assert_eq!(db.db().stats(dm_query::Kind(4)).computed,2,"original a body plus its real b-prefix/return syntax demand");assert_eq!(db.db().stats(dm_query::Kind(23)).computed,1);
+    let callee=page.source_calls(0).unwrap()[0];let callee_ordinal=(0..source.len()).filter_map(|i|source.original_ordinal(i)).find(|ordinal|archive.callables().identity(*ordinal)==Some(callee)).unwrap();
+    let ordinal=source.original_ordinal(0).unwrap();let syntax=&archive.syntax_inputs().unwrap()[ordinal];let body_key=dm_query::Key::new(dm_query::Kind(4),syntax.key().into());assert!(db.db().dependants(&[body_key]).iter().any(|key|key.kind==dm_query::Kind(23)),"actual pageÃ¢â€ â€™Kind4 dynamic edge");
+    let callee_syntax=&archive.syntax_inputs().unwrap()[callee_ordinal];let callee_key=dm_query::Key::new(dm_query::Kind(4),callee_syntax.key().into());assert!(db.db().dependants(&[callee_key]).iter().any(|key|key.kind==dm_query::Kind(23)),"callee prefix demand is an actual PAGE to Kind4 dependency");assert_eq!(db.effect_dependency_count_for_test(dm_query::Kind(23)),4,"own body plus callee prefix plus project/program actual read set");
+    for i in 0..source.len(){let other=source.original_ordinal(i).unwrap();if other!=ordinal&&other!=callee_ordinal{let syntax=&archive.syntax_inputs().unwrap()[other];assert_eq!(db.db().value_bytes_at(dm_query::Key::new(dm_query::Kind(4),syntax.key().into())),0,"unrelated original body stays unparsed");}}
+    let warm=snapshot.native_effect_source_page(&input,0,1,&env(),None,&snapshot.tree).unwrap();assert!(Arc::ptr_eq(&page,&warm));assert_eq!(db.db().stats(dm_query::Kind(23)).computed,1);assert_eq!(db.db().stats(dm_query::Kind(4)).computed,2);assert_eq!(reads.load(Ordering::Relaxed),before,"no source rereads on compute or warm claim");
+    let expected=collect_effect_pages(&snapshot,1);let id=page.procedure(0).unwrap();assert_eq!(page.has_direct_effect(0),Some(expected[&id].0));assert_eq!(page.source_parent(0),expected[&id].1);assert_eq!(page.source_calls(0).unwrap(),expected[&id].2.iter().map(|row|row.0).collect::<Vec<_>>());
+    let(foreign,_)=fixture(include_str!("../../../fixtures/unified_checks/purity/cycle/probe.dme"),None);assert!(foreign.native_effect_source_page(&input,0,1,&env(),None,&foreign.tree).is_err(),"equal source text is not current scope authority");
+}
+#[test]
+fn actual_effect_page_query_io_quota_cancel_and_escaped_owner_are_not_cached_refusals(){
+    let(snapshot,_)=fixture(include_str!("../../../fixtures/unified_checks/purity/cycle/probe.dme"),None);let input=snapshot.native_effect_source_input(&snapshot.tree).unwrap();let db=snapshot.native_raw_queries.as_ref().unwrap();let schedule=db.fail_body_syntax_after_for_test(1,std::io::Error::from_raw_os_error(1450));
+    let error=snapshot.native_effect_source_page(&input,0,2,&env(),None,&snapshot.tree).err().unwrap();assert_eq!(error.raw_os_error(),Some(1450),"actual PAGE/Kind4 source failure: {error:?}");assert_eq!(db.db().stats(dm_query::Kind(23)).computed,0);assert_eq!(db.effect_retained_values_for_test(dm_query::Kind(23)),0);drop(schedule);
+    let value=snapshot.native_effect_source_page(&input,0,2,&env(),None,&snapshot.tree).unwrap();let expected=value.retained_charge().unwrap();let bodies=db.db().stats(dm_query::Kind(4)).computed;let dependencies=db.effect_dependency_count_for_test(dm_query::Kind(23));
+    assert!(db.db().evict_values(&[dm_query::Kind(23)])>0);let quota=db.effect_storage_limit_for_test(1);let refused=snapshot.native_effect_source_page(&input,0,2,&env(),None,&snapshot.tree).err().unwrap();assert_eq!(refused.kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(db.effect_retained_values_for_test(dm_query::Kind(23)),0);drop(quota);let recovered=snapshot.native_effect_source_page(&input,0,2,&env(),None,&snapshot.tree).unwrap();assert_eq!(recovered.procedure(0),value.procedure(0));assert_eq!(db.db().stats(dm_query::Kind(4)).computed,bodies);assert_eq!(db.effect_dependency_count_for_test(dm_query::Kind(23)),dependencies,"immutable dependency admission settles after failed and successful recomputation without retry growth");
+    let cancellation=crate::daemon::control::Cancellation::default();let guard=crate::daemon::control::bind_with_deadline(cancellation.clone(),std::time::Instant::now()+std::time::Duration::from_secs(30));cancellation.cancel();let stopped=snapshot.native_effect_source_page(&input,0,2,&env(),None,&snapshot.tree).err().unwrap();assert_eq!(stopped.kind(),std::io::ErrorKind::Interrupted);drop(guard);assert!(Arc::ptr_eq(&recovered,&snapshot.native_effect_source_page(&input,0,2,&env(),None,&snapshot.tree).unwrap()));
+    drop(recovered);drop(input);dm_tree::frontend::BodySyntaxQueries::begin_revision(db.as_ref());assert_eq!(db.purity_cache_probe().0,0);assert!(db.purity_cache_probe().2>=expected,"escaped actual page remains charged after graph node retirement");drop(value);assert_eq!(db.purity_cache_probe().2,0);
+}
+
+#[test]
+fn checked_effect_prefix_loan_refuses_another_actual_body_from_same_archive(){
+ let(snapshot,_)=fixture(include_str!("../../../fixtures/unified_checks/purity/cycle/probe.dme"),None);let archive=snapshot.body_archive.as_ref().unwrap();let source=dm_analysis::checker_effects::EffectSource::new(archive,archive.tree().checker_builtin_profile().unwrap()).unwrap();let first=source.original_ordinal(0).unwrap();let other=source.original_ordinal(1).unwrap();let identity=archive.callables().identity(first).unwrap();
+ let failed=archive.with_initial_setting_prefix_using(identity,|same,_|same.parse(other).map_err(|error|error.message),|prefix|prefix.settings().len());assert!(matches!(failed,Err(ref message)if message=="prefix parser returned another original callable occurrence"),"actual foreign original body loan cannot mint another prefix identity: {failed:?}");
+ let actual=archive.with_initial_setting_prefix_using(identity,|same,ordinal|same.parse_checked(ordinal).map_err(|error|match error{dm_tree::frontend::BodySyntaxFailure::Syntax(error)=>dm_analysis::policy_body_demand::PolicyFailure::from(error.message),dm_tree::frontend::BodySyntaxFailure::Operational(error)=>dm_analysis::policy_body_demand::PolicyFailure::Operational(error)}),|prefix|prefix.identity()).unwrap();assert_eq!(actual,identity);
+}
+
+#[test]
+fn actual_page_callee_edge_delta_refuses_combined_live_scratch_before_metadata_growth(){
+ let(snapshot,_)=fixture(include_str!("../../../fixtures/unified_checks/purity/cycle/probe.dme"),None);let input=snapshot.native_effect_source_input(&snapshot.tree).unwrap();let db=snapshot.native_raw_queries.as_ref().unwrap();db.take_effect_edge_headroom_for_test();
+ let first=snapshot.native_effect_source_page(&input,0,1,&env(),None,&snapshot.tree).unwrap();let(initial,remaining,delta)=db.take_effect_edge_headroom_for_test().expect("actual extra callee prefix edge after own body");assert!(delta>0);assert!(initial>remaining);
+ let limited=initial.checked_sub(remaining).unwrap().checked_add(delta-1).unwrap();drop(first);assert!(db.db().evict_values(&[dm_query::Kind(23)])>0);let before=db.effect_dependency_count_for_test(dm_query::Kind(23));let computed=db.db().stats(dm_query::Kind(23)).computed;let body_count=db.db().stats(dm_query::Kind(4)).computed;
+ let pressure=db.effect_storage_limit_for_test(limited);let error=snapshot.native_effect_source_page(&input,0,1,&env(),None,&snapshot.tree).err().expect("actual live scratch plus new edge delta exceeds same admission");assert_eq!(error.kind(),std::io::ErrorKind::OutOfMemory,"{error:?}");let(_,observed,requested)=db.take_effect_edge_headroom_for_test().expect("reaches actual same callee-prefix growth boundary");assert_eq!(requested,delta);assert_eq!(observed,delta-1);assert_eq!(db.effect_dependency_count_for_test(dm_query::Kind(23)),before,"metadata must not grow on refused delta and failed Ctx must settle old bound");assert_eq!(db.db().stats(dm_query::Kind(23)).computed,computed);assert_eq!(db.db().stats(dm_query::Kind(4)).computed,body_count,"refusal precedes actual new callee get");drop(pressure);
+ let recovered=snapshot.native_effect_source_page(&input,0,1,&env(),None,&snapshot.tree).unwrap();assert_eq!(recovered.procedure(0).unwrap().name,dm_ir::SymbolId::of("probe"));assert!(Arc::ptr_eq(&recovered,&snapshot.native_effect_source_page(&input,0,1,&env(),None,&snapshot.tree).unwrap()));
+}
+
+#[test]
+fn actual_effect_query_event_windows_preserve_all_original_bodies_and_cross_window_calls(){
+ use dm_analysis::checker_effects::EffectSource;
+ let calls="    leaf()\n".repeat(6000);let text=format!("/proc/first()\n{calls}/proc/second()\n{calls}/proc/leaf()\n    return 0\n");
+ let(snapshot,reads)=fixture(&text,None);let input=snapshot.native_effect_source_input(&snapshot.tree).unwrap();let archive=input.archive();let source=EffectSource::new(archive,input.profile()).unwrap();assert_eq!(source.len(),3);let before=reads.load(Ordering::Relaxed);
+ let first=snapshot.native_effect_source_page(&input,0,3,&env(),None,&snapshot.tree).unwrap();assert_eq!(first.len(),1);assert_eq!(first.source_calls(0).unwrap().len(),6000);
+ let next=snapshot.native_effect_source_page(&input,first.len(),3,&env(),None,&snapshot.tree).unwrap();assert_eq!(next.len(),2);assert_eq!(next.source_calls(0).unwrap().len(),6000);assert_eq!(next.source_calls(1).unwrap().len(),0);
+ let ordinals=(0..first.len()).map(|i|first.ordinal(i).unwrap()).chain((0..next.len()).map(|i|next.ordinal(i).unwrap())).collect::<Vec<_>>();assert_eq!(ordinals,(0..source.len()).map(|i|source.original_ordinal(i).unwrap()).collect::<Vec<_>>());
+ assert_eq!(first.source_calls(0).unwrap()[0],next.procedure(1).unwrap());assert_eq!(next.source_calls(0).unwrap()[0],next.procedure(1).unwrap());
+ let host=archive.body_query_host().unwrap();let body=|syntax:&Arc<dm_tree::frontend::BodySyntaxInput>,_:&dm_analysis::checker_effects::ExecutionAdmission|host.syntax_checked(syntax);let graph=dm_analysis::checker_effects::CompactEffectGraph::build_checked(&source,3,archive.tree(),&dm_analysis::checker_effects::ExecutionAdmission::default(),&mut||Ok(()),&body).unwrap();assert_eq!(graph.len(),3);for node in 0..2{let mut count=0;while let Some(target)=graph.successor(node,count).unwrap(){assert_eq!(target,2);count+=1;}assert_eq!(count,6000,"global CSR keeps every cross-window original edge");}
+ assert!(Arc::ptr_eq(&first,&snapshot.native_effect_source_page(&input,0,3,&env(),None,&snapshot.tree).unwrap()));assert_eq!(snapshot.native_raw_queries.as_ref().unwrap().db().stats(dm_query::Kind(4)).computed,3);assert_eq!(reads.load(Ordering::Relaxed),before);
+}
