@@ -15,4 +15,6 @@
 /// Wheel ticks one late frame may carry (skipped ticks are given to the pacer up to this).
 #define NATIVE_MAX_CATCHUP 8
 /// A native frame at least this long (ms) is logged with the Rust phases that grew (NATIVE_SLOW_FRAME in system.dm).
-#define NATIVE_SLOW_FRAME_MS 150
+#define NATIVE_SLOW_FRAME_MS 30
+/// The slow-frame log keeps this many lines per round (a periodic 50 ms frame would otherwise log every ten seconds); slow_frames counts them all.
+#define NATIVE_SLOW_FRAME_LOG_MAX 60

@@ -479,7 +479,10 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 		catch(var/exception/e)
 			dq_report_caught(e, "om timer [proc_ref] on [E]")
 		GLOB.km_attr_depth--
-		rec.sched.meter.attr.note(KA_KIND_CALLBACK, KM_SYS_OM_CORE, GLOB.km_attr_a || E.type, GLOB.km_attr_entry || GLOB.km_attr_b || proc_ref, TICK_USAGE_TO_MS(attr_start))
+		var/call_ms = TICK_USAGE_TO_MS(attr_start)
+		rec.sched.meter.attr.note(KA_KIND_CALLBACK, KM_SYS_OM_CORE, GLOB.km_attr_a || E.type, GLOB.km_attr_entry || GLOB.km_attr_b || proc_ref, call_ms)
+		if(call_ms >= KM_SLOW_CALL_MS)
+			km_slow_call(E, GLOB.km_attr_entry || GLOB.km_attr_b || proc_ref, call_ms)
 		GLOB.km_attr_a = null
 		GLOB.km_attr_b = null
 		GLOB.km_attr_entry = null

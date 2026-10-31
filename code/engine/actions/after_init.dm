@@ -80,6 +80,9 @@
 	GLOB.act_depth = depth
 	T.release()
 	if(!isnull(attr_start))
-		km_meter().attr.note(KA_KIND_CALLBACK, KM_SYS_OM_CORE, holder.type, E, TICK_USAGE_TO_MS(attr_start))
+		var/call_ms = TICK_USAGE_TO_MS(attr_start)
+		km_meter().attr.note(KA_KIND_CALLBACK, KM_SYS_OM_CORE, holder.type, E, call_ms)
+		if(call_ms >= KM_SLOW_CALL_MS)
+			km_slow_call(holder, E, call_ms)
 		GLOB.km_attr_a = null
 		GLOB.km_attr_entry = null
