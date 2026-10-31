@@ -1419,3 +1419,10 @@ owners, no rereads, cancellation/error precedence and the affected workspace
 page paths. The registered-query helper reuses the caller's existing raw-family
 gate and creates only one reader budget; this transport alone cannot certify a
 completed raw-workspace dependency fold.
+
+Registered computations can now reborrow that scope through their actual query
+context. The context's database identity check adds no reads or dependencies;
+the callback receives the same mutable context for child queries. Two focused
+tests pass for exact database identity, real dynamic child edges, warm reuse and
+refusal of a foreign executing context without a published result. The registered
+function retains only weak source owners, avoiding a database ownership cycle.

@@ -3,6 +3,42 @@ use super::*;
 use dq_analyze::captured_reactive_reads::Failure;
 
 #[test]
+fn actual_workspace_query_scope_registered_context_records_real_child_dependencies() {
+ let root=fixture("workspace-query-scope-context",1);
+ let db=Arc::new(crate::query_db::QueryDb::default());
+ let inputs=RecordingInputs::new(FileSystemInputs,4_000_000_000);let front=frontend(&root,&inputs,&db);
+ let capture=workspace_capture::capture(&front,&inputs,discover(&root,&inputs),&root.join("missing.toml")).unwrap();
+ let snap=snapshot(&front,&db,&inputs,&capture);
+ let scope=Arc::new(snap.workspace_native_read().unwrap().query_receipt(&mut |_|Ok(())).unwrap());
+ let policy=Arc::new(dm_analysis::policy_inputs::PolicyInputs::capture(&front,[]).unwrap());
+ let other=Arc::new(crate::query_db::QueryDb::default());let calls=Arc::new(AtomicUsize::new(0));
+ let input=dm_query::Key::new(dm_query::Kind(800),1);let derived=dm_query::Key::new(dm_query::Kind(801),1);
+ for graph in [&db,&other] {
+  graph.db().define_input(input.kind,"scope-context-input");graph.db().set_input(input,9u64,9);
+  let receipt=scope.clone();let capture=Arc::downgrade(&capture);let policy=Arc::downgrade(&policy);let calls=calls.clone();
+  graph.db().define(derived.kind,"actual-workspace-scope-context",move |context,_| {
+   let capture=capture.upgrade().ok_or(dm_query::QueryError::Missing(derived))?;
+   let policy=policy.upgrade().ok_or(dm_query::QueryError::Missing(derived))?;
+   let value:io::Result<Result<u64,String>>=receipt.with_context(context,&capture,&policy,|queries,guard,context| {
+    assert!(guard.uses_queries(queries));calls.fetch_add(1,Ordering::Relaxed);
+    let value=context.input::<u64>(input).map_err(|error|io::Error::other(format!("fixture child: {error:?}")))?;
+    Ok(Ok(*value+1))
+   });
+   let value=value.map_err(|actual|dm_query::QueryError::operational(derived,actual))?
+    .map_err(|reason|dm_query::QueryError::operational(derived,io::Error::other(reason)))?;
+   Ok(dm_query::Outcome::new(value,value as u128,8))
+  });
+ }
+ assert_eq!(*db.db().get::<u64>(derived,Arc::new(())).unwrap(),10);
+ assert_eq!(calls.load(Ordering::Relaxed),1);
+ assert!(db.db().dependants(&[input]).contains(&derived),"the SAME actual context records the child read");
+ assert_eq!(*db.db().get::<u64>(derived,Arc::new(())).unwrap(),10);assert_eq!(calls.load(Ordering::Relaxed),1);
+ let error=other.db().get::<u64>(derived,Arc::new(())).unwrap_err().into_operational().unwrap();
+ assert!(error.to_string().contains("executing context differs"));assert_eq!(calls.load(Ordering::Relaxed),1);
+ assert_eq!(other.db().stats(derived.kind).computed,0,"foreign context cannot publish a result");
+}
+
+#[test]
 fn actual_workspace_query_scope_preserves_issued_frame_and_refuses_foreign_owners() {
  let root=fixture("workspace-query-scope",2);
  let db=Arc::new(crate::query_db::QueryDb::default());

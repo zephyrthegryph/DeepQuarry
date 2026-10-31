@@ -9,6 +9,29 @@ const CYCLE: Kind = Kind(5);
 const NOISE: Kind = Kind(6);
 const BASE: u128 = 10_000;
 
+#[test]
+fn executing_context_database_identity_is_exact_and_adds_no_dependencies() {
+    let first = Arc::new(Db::new());
+    let second = Arc::new(Db::new());
+    for db in [&first, &second] {
+        db.define_input(INPUT, "same-input");
+        db.set_input(input(1), 7u64, 7);
+    }
+    let actual = Arc::downgrade(&first);
+    let other = Arc::downgrade(&second);
+    let derived = key(TOTAL, 1);
+    first.define(TOTAL, "context-identity", move |ctx, _| {
+        assert!(ctx.is_database(&actual.upgrade().unwrap()));
+        assert!(!ctx.is_database(&other.upgrade().unwrap()));
+        assert_eq!(ctx.dependency_count(), 0);
+        let value = *ctx.input::<u64>(input(1))?;
+        assert_eq!(ctx.dependency_count(), 1);
+        outcome(value)
+    });
+    assert_eq!(*first.get::<u64>(derived, Arc::new(())).unwrap(), 7);
+    assert!(first.dependants(&[input(1)]).contains(&derived));
+}
+
 fn input(n: u128) -> Key {
     Key::new(INPUT, n)
 }

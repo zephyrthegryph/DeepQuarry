@@ -121,6 +121,30 @@ impl NativeReadGuard<'_> {
 }
 
 impl WorkspaceQueryScope {
+    /// Registered computations have the actual Ctx, not an independently owned
+    /// QueryDb. Recover its existing weak owner only for this stack callback.
+    pub(crate) fn with_context<'db, R, S>(
+        &self,
+        context: &mut dm_query::Ctx<'db>,
+        capture: &Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,
+        inputs: &dm_analysis::policy_inputs::PolicyInputs,
+        consume: impl for<'loan> FnOnce(
+            &crate::query_db::QueryDb,
+            &NativeReadGuard<'loan>,
+            &mut dm_query::Ctx<'db>,
+        ) -> io::Result<Result<R, S>>,
+    ) -> io::Result<Result<R, S>> {
+        crate::daemon::control::checkpoint()?;
+        let queries = self.queries.upgrade().ok_or_else(|| {
+            io::Error::new(io::ErrorKind::NotFound, "workspace query scope graph expired")
+        })?;
+        if !context.is_database(queries.db()) {
+            return Err(io::Error::other("workspace query scope/executing context differs"));
+        }
+        self.with_guard(queries.as_ref(), capture, inputs,
+            |guard| consume(queries.as_ref(), guard, context))
+    }
+
     pub(crate) fn retained_charge() -> Option<usize> {
         std::mem::size_of::<Self>()
             .checked_add(std::mem::size_of::<SourceExportMapping>())?

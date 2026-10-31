@@ -758,6 +758,11 @@ pub struct Ctx<'a> {
     seen: HashSet<Key>,
 }
 impl Ctx<'_> {
+    /// Compare the actual executing database without adding a dependency or
+    /// exposing another query endpoint. Equal keys/values are not this identity.
+    pub fn is_database(&self, database: &Db) -> bool {
+        std::ptr::eq(self.db, database)
+    }
     /// Release derived child payloads; hashes and already recorded dynamic
     /// dependency edges remain. Caller-held Arc loans retain their payload.
     pub fn evict_values(&self,kinds:&[Kind])->usize{self.db.evict_values(kinds)}
