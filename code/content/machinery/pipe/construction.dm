@@ -118,7 +118,7 @@ Buildable meters
 		fixdir()
 
 // Don't let pulling a pipe straighten it out.
-/obj/item/pipe/binary/bendable/Move()
+/obj/item/pipe/binary/bendable/Move(atom/newloc, direct = 0, movetime)
 	var/old_bent = !IS_CARDINAL(dir)
 	. = ..()
 	if(old_bent && IS_CARDINAL(dir))

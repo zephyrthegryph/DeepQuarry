@@ -16,6 +16,24 @@ pub fn parts() -> Vec<Part> {
         .allow(Allow::Strict)
         .needle(" as anything in "),
         Part::new(
+            "after_argument_order",
+            "after() argument order",
+            "after(owner, delay, handler, ...): a time or define in the owner slot, or a proc ref where the delay goes, means the owner is missing (the timer never runs).",
+            Files::Code,
+            line(r"^(?:(?!//).)*(?<![\w.])after\((?:[\d(]|[A-Z][A-Z0-9_]{3,},|[^,()]+, *(?:TYPE_|GLOBAL_)?(?:PROC|VERB)_REF\()"),
+        )
+        .allow(Allow::Strict)
+        .needle("after("),
+        Part::new(
+            "move_override_direct_arg",
+            "Move override without a direct argument",
+            "A Move() override must take (atom/newloc, direct = 0, movetime): callers pass `direct =` by name (handle_fall), and an override without it runtimes with a bad arg name.",
+            Files::Code,
+            line(r"^/(?!client/)[\w/]+/Move\((?![^,)]*, *direct\b)"),
+        )
+        .allow(Allow::Strict)
+        .needle("/Move("),
+        Part::new(
             "to_chat_sanity",
             "to_chat sanity",
             "to_chat() missing arguments.",

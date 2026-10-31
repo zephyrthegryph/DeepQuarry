@@ -447,7 +447,7 @@ GLOBAL_VAR_INIT(login_seq, 0)
 	login_pending = TRUE
 	login_serial = ++GLOB.login_seq
 	log_access("Login gate: holding [key_name(src)] for its login checks (connection #[login_serial])")
-	after(LOGIN_GATE_TIMEOUT, GLOBAL_PROC_REF(login_gate_timeout), ckey, clock = CLOCK_WORLD, with = list(computer_id, login_serial))
+	after(null, LOGIN_GATE_TIMEOUT, GLOBAL_PROC_REF(login_gate_timeout), clock = CLOCK_WORLD, with = list(ckey, computer_id, login_serial))
 	log_client_to_db()
 
 /// A gate still closed after LOGIN_GATE_TIMEOUT fails open. The timer belongs to one connection (its serial): a reconnect's new gate is

@@ -31,7 +31,7 @@ TYPE_TABLE(/obj/mecha/working/ripley, mecha_starting_components, list( \
 		/obj/item/mecha_parts/component/electrical \
 		))
 
-/obj/mecha/working/ripley/Move()
+/obj/mecha/working/ripley/Move(atom/newloc, direct = 0, movetime)
 	. = ..()
 	if(.)
 		collect_ore()

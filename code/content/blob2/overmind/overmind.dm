@@ -102,7 +102,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 	. += "Power Stored: [blob_points]/[max_blob_points]"
 	. += "Total Blobs: [REGISTRY_COUNT(REGISTRY_BLOBS)]"
 
-/mob/observer/blob/Move(atom/NewLoc, Dir = 0)
+/mob/observer/blob/Move(atom/NewLoc, direct = 0, movetime)
 	if(placed)
 		var/obj/structure/blob/B = (locate_in_list(view("5x5", NewLoc), /obj/structure/blob))
 		if(B)
