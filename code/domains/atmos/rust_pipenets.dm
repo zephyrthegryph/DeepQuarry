@@ -518,11 +518,14 @@ CAPABILITIES(/obj/machinery/atmospherics)
 /// changed. Gas never passes through DM: the network pools, splits and
 /// releases it, and each region's air datum is bound to the region's gas handle.
 /datum/system/air/proc/rust_apply_pipe_commit()
+	var/commit_start = TICK_USAGE
 	var/list/result = vg_pipe_commit()
+	var/native_ms = TICK_USAGE_TO_MS(commit_start)
 	if(!islist(result))
 		CRASH("Rust pipenet topology did not return a region list")
 	var/list/transitions = list()
 	var/alist/retired_regions = alist()
+	var/alist/explicit_retired = alist()
 	var/cursor = 1
 	while(cursor <= length(result))
 		if(length(result) - cursor + 1 < 4)
@@ -539,27 +542,128 @@ CAPABILITIES(/obj/machinery/atmospherics)
 			retired_regions[prior_region] = TRUE
 		if(volume < 0)
 			retired_regions[region] = TRUE
+			explicit_retired[region] = TRUE
 			continue
 		transitions += list(list("region" = region, "ports" = ports, "volume" = volume))
 
+	// A region Rust kept under its own handle (the larger half of a split, the region a merge pooled into) keeps its wrapper, its mixture and its pipeline:
+	// only the ports that left or joined it are touched (rust_update_pipe_region()), so a valve closing in a pipenet of thousands of ports no longer
+	// rebuilds every port of it.
+	var/alist/in_place = alist()
+	for(var/list/transition as anything in transitions)
+		var/kept_slot = transition["region"]
+		if(explicit_retired[kept_slot])
+			continue
+		var/datum/pipe_network/existing = rust_pipe_region_networks[kept_slot]
+		if(existing && !QDELETED(existing) && existing.rust_authoritative && islist(existing.rust_ports))
+			in_place[kept_slot] = existing
+
+	var/retire_start = TICK_USAGE
+	var/parse_ms = TICK_USAGE_TO_MS(commit_start) - native_ms
 	for(var/prior_region in retired_regions)
+		if(in_place[prior_region])
+			continue
 		var/datum/pipe_network/old_network = rust_pipe_region_networks[prior_region]
 		rel_add(src, nameof(rust_pipe_region_networks), null, prior_region)
 		rust_retire_pipe_network(old_network)
 	// A region Rust kept (membership changed, or the surviving half of a split) comes back
 	// under its own handle with no prior: its old wrapper is replaced here, or it would be
 	// dropped from the table still owning its mixture and hard-delete with the gas stamped.
+	var/kept_count = 0
+	var/kept_ports = 0
 	for(var/list/transition as anything in transitions)
 		var/kept_region = transition["region"]
+		if(in_place[kept_region])
+			continue
 		var/datum/pipe_network/kept_network = rust_pipe_region_networks[kept_region]
 		if(kept_network)
+			kept_count++
+			kept_ports += length(transition["ports"])
 			rel_add(src, nameof(rust_pipe_region_networks), null, kept_region)
 			rust_retire_pipe_network(kept_network)
+	var/retire_ms = TICK_USAGE_TO_MS(retire_start)
+	var/materialize_start = TICK_USAGE
+	var/ports_total = 0
+	var/updated_in_place = 0
+	var/updated_ports = 0
 	for(var/list/transition as anything in transitions)
+		if(in_place[transition["region"]])
+			updated_ports += rust_update_pipe_region(transition, in_place[transition["region"]])
+			updated_in_place++
+			continue
 		var/datum/gas_mixture/region_air = new(max(transition["volume"], 1))
 		vg_bind_handle(region_air, transition["region"])
 		transition["air"] = region_air
+		ports_total += length(transition["ports"])
 		rust_materialize_pipe_region(transition)
+	var/total_ms = TICK_USAGE_TO_MS(commit_start)
+	if(total_ms >= 25)
+		log_world("PIPE_COMMIT: [round(total_ms, 0.1)] ms: Rust commit [round(native_ms, 0.1)] ms, parse [round(parse_ms, 0.1)] ms, retire [length(retired_regions)] region(s) [round(retire_ms, 0.1)] ms, materialize [length(transitions) - updated_in_place] region(s) with [ports_total] port(s) ([kept_count] of them replaced a wrapper under the same handle, [kept_ports] port(s)); [updated_in_place] region(s) updated in place for [updated_ports] port(s) that left or joined [round(TICK_USAGE_TO_MS(materialize_start), 0.1)] ms")
+
+/// A region that kept its handle across a commit (a split's remainder, a merge's target), updated where it stands: the machines of the ports that left it
+/// are taken off its rosters (the region they went to binds them again), the machines of the ports that joined are bound to it as a fresh region would
+/// bind them, and its shutoff valves look for leaks again (its leaks may have gone with the split half). Returns how many ports left or joined.
+/datum/system/air/proc/rust_update_pipe_region(list/transition, datum/pipe_network/network)
+	var/list/new_ports = transition["ports"]
+	var/list/old_ports = network.rust_ports
+	var/alist/old_set = alist()
+	for(var/port_handle in old_ports)
+		old_set[port_handle] = TRUE
+	var/alist/new_set = alist()
+	var/alist/staying_machines = alist()
+	for(var/port_handle in new_ports)
+		new_set[port_handle] = TRUE
+		var/datum/pipe_port/staying_port = rust_pipe_port_of(port_handle)
+		if(staying_port?.machine)
+			staying_machines[staying_port.machine] = TRUE
+	var/datum/gas_mixture/region_air = network.air
+	var/datum/pipeline/pipeline = network.line_members?[1]
+	var/changed = 0
+	for(var/port_handle in old_ports)
+		if(new_set[port_handle])
+			continue
+		changed++
+		var/datum/pipe_port/left_port = rust_pipe_port_of(port_handle)
+		var/obj/machinery/atmospherics/left = left_port?.machine
+		if(!left || staying_machines[left])
+			continue
+		if(istype(left, /obj/machinery/atmospherics/pipe))
+			rel_remove(network, nameof(network.leaks), left)
+			if(pipeline)
+				rel_remove(pipeline, nameof(pipeline.leaks), left)
+		else
+			rel_remove(network, nameof(network.normal_members), left)
+	var/list/joined_pipes = list()
+	for(var/port_handle in new_ports)
+		if(old_set[port_handle])
+			continue
+		changed++
+		var/datum/pipe_port/joined_port = rust_pipe_port_of(port_handle)
+		var/obj/machinery/atmospherics/joined = joined_port?.machine
+		if(!joined)
+			continue
+		if(istype(joined, /obj/machinery/atmospherics/pipe))
+			joined_pipes += joined
+		else
+			network.add_normal_member(joined)
+		joined.rust_bind_pipe_port(joined_port.index, network, region_air)
+		material_service_of(joined)?.environment_changed()
+	if(length(joined_pipes))
+		if(!pipeline)
+			pipeline = new
+			atmos_air_set(pipeline, "air", region_air)
+			rel_clear(pipeline, nameof(pipeline.leaks))
+			rel_set(pipeline, nameof(pipeline.network), network)
+			network.add_line_member(pipeline)
+		for(var/obj/machinery/atmospherics/pipe/pipe as anything in joined_pipes)
+			rel_set(pipe, nameof(pipe.parent), pipeline)
+			if(pipe.leaking)
+				rel_add(pipeline, nameof(pipeline.leaks), pipe)
+				rel_add(network, nameof(network.leaks), pipe)
+	network.rust_ports = new_ports
+	if(changed)
+		wake_automatic_shutoff_valves(network)
+	return changed
 
 /datum/system/air/proc/rust_retire_pipe_network(datum/pipe_network/network)
 	if(!network)
@@ -593,6 +697,7 @@ CAPABILITIES(/obj/machinery/atmospherics)
 	var/datum/gas_mixture/region_air = transition["air"]
 	var/datum/pipe_network/network = new
 	network.rust_authoritative = TRUE
+	network.rust_ports = ports
 	rel_set(network, nameof(network.air), region_air)
 	network.update = FALSE
 	rel_add(src, nameof(rust_pipe_region_networks), network, region)
@@ -828,5 +933,3 @@ CAPABILITIES(/obj/machinery/atmospherics)
 		atmos_air_set(src, nameof(air_out), network_air)
 		rel_set(src, nameof(network2), new_network)
 	return TRUE
-
-

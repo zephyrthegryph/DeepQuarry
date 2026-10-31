@@ -3190,20 +3190,23 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		"3-pipe straight run didn't form one pipeline: PA=[PA.parent] PB=[PB.parent] PC=[PC.parent]")
 	var/datum/pipeline/initial_pipeline = PA.parent
 
-	// Kill the middle pipe. Rust must retire the old wrapper once and publish
-	// two replacement regions immediately.
+	// Kill the middle pipe. Rust keeps the larger half under the old handle and carves the other half into a new region: the surviving half keeps its
+	// pipeline (updated in place, only the pipe that left is taken off it), the other half gets a pipeline of its own.
 	qdel(PB)
 	TEST_ASSERT_NOTNULL(PA.parent, "PA did not receive a replacement pipeline after split")
 	TEST_ASSERT_NOTNULL(PC.parent, "PC did not receive a replacement pipeline after split")
 	TEST_ASSERT(PA.parent != PC.parent, "split Rust region left PA and PC in one pipeline")
 	TEST_ASSERT_NULL(PB.parent, "destroyed pipe retained its pipeline back-reference")
-	TEST_ASSERT_NULL(initial_pipeline.members, "destroyed pipeline retained its member roster")
-	TEST_ASSERT_NULL(initial_pipeline.edges, "destroyed pipeline retained its edge roster")
-	TEST_ASSERT_NULL(initial_pipeline.leaks, "destroyed pipeline retained its leak roster")
-	TEST_ASSERT_NULL(initial_pipeline.network, "destroyed pipeline retained its network")
-	TEST_ASSERT_NULL(initial_pipeline.air, "destroyed pipeline retained its gas mixture")
-
-	TEST_ASSERT(PA.parent != initial_pipeline, "PA's rebuilt pipeline is the old (destroyed) one — stale reference")
+	var/survivors = (PA.parent == initial_pipeline ? 1 : 0) + (PC.parent == initial_pipeline ? 1 : 0)
+	TEST_ASSERT_EQUAL(survivors, 1, "exactly one half keeps the original pipeline: PA=[PA.parent] PC=[PC.parent] original=[initial_pipeline]")
+	var/obj/machinery/atmospherics/pipe/simple/survivor = PA.parent == initial_pipeline ? PA : PC
+	var/obj/machinery/atmospherics/pipe/simple/moved = survivor == PA ? PC : PA
+	TEST_ASSERT_EQUAL(length(initial_pipeline.members), 1, "the surviving pipeline holds only the pipe that stayed: [length(initial_pipeline.members)]")
+	TEST_ASSERT(survivor in initial_pipeline.members, "the surviving pipeline lists the pipe that stayed")
+	TEST_ASSERT(!(moved in initial_pipeline.members), "the pipe that moved is off the surviving pipeline")
+	TEST_ASSERT_NOTNULL(initial_pipeline.network, "the surviving pipeline keeps its network")
+	TEST_ASSERT(initial_pipeline.network != moved.parent.network, "the halves are two networks")
+	TEST_ASSERT_NOTNULL(initial_pipeline.air, "the surviving pipeline keeps its gas mixture")
 
 	// Insert a fresh bridging pipe at B's slot.
 	var/obj/machinery/atmospherics/pipe/simple/PB2 = new(B)
