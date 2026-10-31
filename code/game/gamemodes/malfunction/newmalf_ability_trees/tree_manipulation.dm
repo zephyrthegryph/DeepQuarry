@@ -159,11 +159,11 @@ CAPABILITIES(/datum/malf_research_ability/manipulation/emergency_forcefield)
 
 	user.malf_pick_target(user.malf_visible(/obj/machinery), "Machine Overload", "Select the machine to overload:", TYPE_PROC_REF(/mob/living/silicon/ai, malf_overload_picked))
 
-/mob/living/silicon/ai/proc/malf_overload_picked(datum/act/request/A)
+/mob/living/silicon/ai/proc/malf_overload_picked(datum/act/request/pick)
 	var/price = 400
-	if(!A.answer)
+	if(!pick.answer)
 		return
-	var/obj/machinery/M = malf_picked(malf_visible(/obj/machinery), A.answer.value)
+	var/obj/machinery/M = malf_picked(malf_visible(/obj/machinery), pick.answer.value)
 	var/mob/living/silicon/ai/user = src
 	if(!M)
 		return
