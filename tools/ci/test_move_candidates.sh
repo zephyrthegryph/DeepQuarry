@@ -75,6 +75,25 @@ mk code/modules/widgets/ability_verb.dm '/datum/gm/verb/zap()
 	ability = /datum/gm/verb/zap'
 mk code/modules/widgets/adminverb.dm '/datum/admin_verb/poke/proc/stage(client/user)
 	return'
+mk code/modules/widgets/rawprompt.dm '/proc/ask()
+	return input("Name?")'
+mk code/modules/widgets/pickerverb.dm '/datum/gm/verb/zap_target(mob/M as mob in view())
+	set name = "Zap"
+CAPABILITIES(/datum/gm)
+	verb_entry(/datum/gm/verb/zap_target)'
+mk code/modules/mob/mob.dm '/mob/verb/resist()
+	set name = "Resist"
+/mob/verb/eastface()
+	set hidden = 1
+/mob/verb/toggle_thing()
+	set category = VERB_CAT_IC_SETTINGS'
+mk code/modules/multiz/movement.dm '/mob/living/verb/up()
+	set name = "Move Upwards"
+/mob/living/verb/fly_away()
+	set name = "Fly Away"
+	set category = VERB_CAT_IC_GAME'
+mk code/modules/widgets/ghostverb.dm '/mob/dead/verb/spook()
+	set category = VERB_CAT_GHOST_GAME'
 mk code/modules/widgets/allowed.dm '/proc/b()
 	return 1 // ALLOW(scheduler): a reason long enough to count'
 mk code/modules/widgets/baselined.dm '/obj/item/widget/baselined'
@@ -139,6 +158,11 @@ expect code/modules/widgets/granted_verb.dm clean ""
 expect code/modules/widgets/ungranted_verb.dm dirty "oldform:verb"
 expect code/modules/widgets/ability_verb.dm clean ""
 expect code/modules/widgets/adminverb.dm clean ""
+expect code/modules/widgets/rawprompt.dm dirty "oldform:raw_prompt"
+expect code/modules/widgets/pickerverb.dm dirty "oldform:raw_prompt"
+expect code/modules/mob/mob.dm clean ""
+expect code/modules/multiz/movement.dm dirty "oldform:verb"
+expect code/modules/widgets/ghostverb.dm clean ""
 expect code/modules/widgets/allowed.dm clean ""
 expect code/modules/widgets/allow_init.dm dirty "allow"
 expect code/modules/widgets/allow_mixed.dm dirty "allow"
@@ -154,7 +178,7 @@ expect code/modules/power/cable.dm clean "layering:/obj/item/known"
 if [ -z "$(state code/__defines/widgets.dm)" ] || [ "$(state code/__defines/widgets.dm)" = dirty ]; then ok "defines are never clean"; else bad "defines file reported clean"; fi
 [ "$(target code/modules/widgets/clean.dm)" = code/content/widgets/clean.dm ] && ok "content target" || bad "content target: $(target code/modules/widgets/clean.dm)"
 [ "$(target code/modules/power/cable.dm)" = code/domains/power/cable.dm ] && ok "domain target" || bad "domain target: $(target code/modules/power/cable.dm)"
-if [ "$(bash "$here/tools/ci/move_candidates.sh" --root "$tmpn" --clean | wc -l)" -eq 22 ]; then ok "--clean lists the clean files"; else bad "--clean count"; fi
+if [ "$(bash "$here/tools/ci/move_candidates.sh" --root "$tmpn" --clean | wc -l)" -eq 24 ]; then ok "--clean lists the clean files"; else bad "--clean count"; fi
 bash "$here/tools/ci/move_candidates.sh" --root "$tmpn" --summary | grep -q 'code/modules/widgets' && ok "--summary groups by directory" || bad "--summary"
 
 [ $fail -eq 0 ] && echo "move_candidates: all passed"

@@ -1,15 +1,11 @@
 // Implements a verb to make your character look upward, mostly intended for the surface.
 
-/mob/living/verb/look_up()
-	set name = "Look Up"
-	set category = VERB_CAT_IC_GAME
-	set desc = "Look above you, and hope there's no ceiling spiders."
+/mob/living/proc/look_up()
+	to_chat(src, "You look upwards...")
 
-	to_chat(usr, "You look upwards...")
-
-	var/turf/T = get_turf(usr)
+	var/turf/T = get_turf(src)
 	if(!T) // In null space.
-		to_chat(usr, span_warning("You appear to be in a place without any sort of concept of direction. You have bigger problems to worry about."))
+		to_chat(src, span_warning("You appear to be in a place without any sort of concept of direction. You have bigger problems to worry about."))
 		return
 
 	var/show_nothing = TRUE
@@ -23,12 +19,12 @@
 
 	if(!T.is_outdoors()) // They're inside.
 		if(show_nothing)
-			to_chat(usr, "You see nothing interesting.")
+			to_chat(src, "You see nothing interesting.")
 		return
 
 	else // They're outside and hopefully on a planet.
 		if(!SSplanets.planet_at_z(T.z))
-			to_chat(usr, span_warning("You appear to be outside, but not on a planet... Something is wrong."))
+			to_chat(src, span_warning("You appear to be outside, but not on a planet... Something is wrong."))
 			return
 		var/datum/planet/P = SSplanets.planet_at_z(T.z)
 
@@ -36,16 +32,16 @@
 
 		// Describe the current weather.
 		if(WH.current_weather.observed_message)
-			to_chat(usr, WH.current_weather.observed_message)
+			to_chat(src, WH.current_weather.observed_message)
 
 		// Describe the current weather.
 		if(WH.imminent_weather)
 			var/datum/weather/coming_weather = LAZYACCESS(WH.allowed_weather_types, WH.imminent_weather)
-			to_chat(usr, coming_weather.imminent_transition_message)
+			to_chat(src, coming_weather.imminent_transition_message)
 
 		// If we can see the sky, we'll see things like sun position, phase of the moon, etc.
 		if(!WH.current_weather.sky_visible)
-			to_chat(usr, "You can't see the sky clearly due to the [WH.current_weather.name].")
+			to_chat(src, "You can't see the sky clearly due to the [WH.current_weather.name].")
 		else
 			// Sun-related output.
 			if(P.sun_name)
@@ -64,11 +60,14 @@
 					if(0.9 to 1.0) // Noon
 						sun_message = "It's high noon. [P.sun_name] hangs directly above you."
 
-				to_chat(usr, sun_message)
+				to_chat(src, sun_message)
 
 			// Now for the moon.
 			if(P.moon_name)
 				if(P.moon_phase == MOON_PHASE_NEW_MOON)
-					to_chat(usr, "[P.moon_name] is not visible. It must be a new moon.")
+					to_chat(src, "[P.moon_name] is not visible. It must be a new moon.")
 				else
-					to_chat(usr, "[P.moon_name] appears to currently be a [P.moon_phase].")
+					to_chat(src, "[P.moon_name] appears to currently be a [P.moon_phase].")
+
+/mob/living/proc/look_up_op(datum/act/op/A)
+	look_up()

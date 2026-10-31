@@ -76,26 +76,16 @@
 /mob/living/silicon/pai/proc/pai_hide_op(datum/act/op/A)
 	pai_hide()
 
-/mob/living/silicon/pai/verb/screen_message(message as text|null)
-	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
-	set name = "Screen Message"
-	set desc = "Allows you to display a message on your screen. This will show up in the chat of anyone who is holding your card."
-
-	if (src.client)
-		if(client.prefs.muted & MUTE_IC)
-			to_chat(src, span_warning("You cannot speak in IC (muted)."))
-			return
+/mob/living/silicon/pai/proc/screen_message_op(datum/act/op/A)
+	if(src.client && (client.prefs.muted & MUTE_IC))
+		to_chat(src, span_warning("You cannot speak in IC (muted)."))
+		return
 	if(loc != card)
 		to_chat(src, span_warning("Your message won't be visible while unfolded!"))
-	if (!message)
-		open_request(src, /datum/prompt/text, PROC_REF(screen_message_entered), answerer = src, title = "Screen Message", question = "Enter text you would like to show on your screen.", encode = FALSE, timeout = 0)
+	var/message = A.step_value("message")
+	if(!message)
 		return
 	show_screen_message(message)
-
-/mob/living/silicon/pai/proc/screen_message_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	show_screen_message(A.answer.value)
 
 /mob/living/silicon/pai/proc/show_screen_message(message)
 	message = sanitize_or_reflect(message,src)

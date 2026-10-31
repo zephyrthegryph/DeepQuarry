@@ -44,16 +44,19 @@ CAPABILITIES(/mob/living/simple_mob/vox)
 	gib()
 	explosion(gloc, -1, -1, 3, 5)
 
-/mob/living/simple_mob/vox/armalis/verb/fire_quill(mob/target as mob in oview())
+/mob/living/simple_mob/vox/armalis/proc/fire_quill_ready(datum/act/op/A)
+	return quills > 0 ? null : MSG(req_silent)
 
+/mob/living/simple_mob/vox/armalis/proc/fire_quill_targets(datum/act/op/A)
+	var/list/targets = list()
+	for(var/mob/candidate in oview())
+		targets[candidate.name] = candidate
+	return targets
 
-	set name = "Fire quill"
-	set desc = "Fires a viciously pointed quill at a high speed."
-	set category = VERB_CAT_ALIEN
-
-	if(quills<=0)
+/mob/living/simple_mob/vox/armalis/proc/fire_quill_op(datum/act/op/A)
+	var/mob/target = fire_quill_targets(A)[A.step_value("target")]
+	if(!target)
 		return
-
 	to_chat(src, span_warning("You launch a razor-sharp quill at [target]!"))
 	for(var/mob/O in oviewers())
 		if ((O.client && !( O.blinded )))
@@ -62,7 +65,7 @@ CAPABILITIES(/mob/living/simple_mob/vox)
 	var/obj/item/arrow/quill/Q = new(loc)
 	Q.add_fingerprint(ckey)
 	Q.throw_at(target,10,30)
-	quills--
+	set_quills(quills - 1)
 
 	after(src, 10 SECONDS, PROC_REF(regrow_quill))
 
@@ -151,6 +154,7 @@ CAPABILITIES(/datum/armalis_commune_review)
 		H.drip(1)
 
 CAPABILITIES(/mob/living/simple_mob/vox/armalis)
+	op("fire_quill", menu(desc = "Fires a viciously pointed quill at a high speed."), label("Fire quill"), needs(req_self(), req(PROC_REF(fire_quill_ready))), asks(/datum/prompt/choice, fields = list("question" = "Fire at whom?", "title" = "Fire quill", "choices" = computed(PROC_REF(fire_quill_targets)), "timeout" = 0), step = "target"), then(PROC_REF(fire_quill_op)))
 	op("message_mob", menu(desc = "Send a telepathic message to an unlucky recipient."), label("Commune with creature"), needs(req_self()), then(PROC_REF(message_mob_op)))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(death_message = DEATHGASP_NO_MESSAGE))
@@ -219,6 +223,6 @@ CAPABILITIES(/mob/living/simple_mob/vox/armalis)
 
 /mob/living/simple_mob/vox/armalis/proc/regrow_quill()
 	to_chat(src, span_warning("You feel a fresh quill slide into place."))
-	quills++
+	set_quills(quills + 1)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).

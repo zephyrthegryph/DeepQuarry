@@ -50,14 +50,25 @@ VERB_DEF = re.compile(r"^\s*(?:(/[\w/]+?)/verb/|verb/)(\w+)")
 GRANTED_VERB = re.compile(r"\b(?:granted_verb|verb_entry)\(\s*(/[\w/]+)|\b(?:ability|driver)\s*=\s*(/[\w/]+/verb/\w+)")
 
 
-def non_client_verb(lines, granted=()):
+def non_client_verb(lines, granted=(), path=""):
     """A verb declared on a type other than /client. final_api section 17: the verb set holds client, OOC and admin
     commands only; a /client/verb is that final form, anything else on a mob or datum is a gameplay ability (an op)."""
     cur = ""
-    for ln in lines:
+    for i, ln in enumerate(lines):
         m = VERB_DEF.match(ln)
         if m:
             owner = m.group(1) or cur  # `verb/x` indented under a type block belongs to that block's type
+            if m.group(2) in KEYBIND_VERBS.get(path, ()):
+                continue
+            category, hidden = "", False
+            for nxt in lines[i + 1:i + 10]:
+                c = re.search(r"set category\s*=\s*(\w+)", nxt)
+                if c:
+                    category = c.group(1)
+                if re.search(r"set hidden\s*=\s*(?:1|TRUE)\b", nxt):
+                    hidden = True
+            if hidden or (category and FINAL_VERB_CATEGORY.search(category)):
+                continue
             if owner + "/verb/" + m.group(2) in granted:
                 continue  # granted_verb()/verb_entry() is the final form of a verb a type or a source hands out
             if owner.split("/")[1:2] != ["client"]:
@@ -77,7 +88,9 @@ OLDFORM_EXEMPT = ("code/tests/", "code/modules/unit_tests/", "code/modules/bench
 BOOT_HOLDERS = ("code/controllers/controller.dm", "code/controllers/globals.dm",
                 # BYOND's own entry points, which have no replacement: /client/Topic and /client/Destroy are the href and logout hooks, the metrics
                 # wrapper brackets /client/Topic, and /area/New() is where the maploader registers an area before any init chain exists.
-                "code/modules/client/client procs.dm", "code/modules/metrics/metrics_capture.dm", "code/game/area/areas.dm")
+                "code/modules/client/client procs.dm", "code/modules/metrics/metrics_capture.dm", "code/game/area/areas.dm",
+                # the root of every datum's Destroy() chain, and the /world href hook
+                "code/datums/datum.dm", "code/game/world.dm")
 # Chat, OOC and input verbs a player types by name or binds to a key are the final form (final_api section 17, "client, OOC and
 # admin commands"). An explicit list of files, never a pattern: a new verb file has to be added here on purpose.
 OOC_VERB_FILES = (
@@ -85,12 +98,16 @@ OOC_VERB_FILES = (
     "code/modules/point/point.dm", "code/modules/mob/language/language_panel.dm", "code/modules/client/verbs/suicide.dm",
     "code/modules/mob/combat_mode.dm", "code/modules/mob/autowhisper.dm", "code/game/skincmd.dm",
     "code/modules/player_tips/player_tips_controller.dm",
-    # ghost, OOC and settings verbs (their categories are VERB_CAT_GHOST_*, OOC_* and *_SETTINGS / PREFERENCES_*)
-    "code/_onclick/observer.dm", "code/modules/mob/dead/observer/free.dm", "code/modules/env_message/env_message.dm",
-    "code/game/objects/items/devices/communicator/messaging.dm", "code/game/objects/items/devices/communicator/phone.dm",
-    "code/modules/mob/living/simple_mob/subtypes/animal/animal.dm",
-    "code/modules/mob/living/carbon/human/species/station/traits/states/waddle.dm",
 )
+# A verb is also final by what it is, never by the file it sits in: its category says it is an OOC, ghost or settings command, it is hidden (a
+# keybind wrapper the client calls by name), or it is one of these named typed-command and keybind verbs of the core mobs.
+FINAL_VERB_CATEGORY = re.compile(r"^(?:VERB_CAT_)?(?:OOC|GHOST|PREFERENCES)|_SETTINGS$")
+KEYBIND_VERBS = {
+    "code/modules/mob/mob.dm": {"mode", "memory", "add_memory", "stop_pulling", "face_direction"},
+    "code/modules/mob/living/living.dm": {"pulled", "succumb", "toggle_afk", "resist", "lay_down", "open_private_notes"},
+    "code/modules/mob/say.dm": {"me_verb_subtle_custom", "psay", "pme", "player_narrate"},
+    "code/modules/multiz/movement.dm": {"up", "down", "climb_down"},
+}
 VERB_EXEMPT = ("code/modules/admin/", "/admin_commands.dm", "/contract_admin.dm")
 
 # A spawn/sleep/INVOKE_ASYNC/do_after line that carries an ALLOW(scheduler): <reason> annotation is a justified keep (the scheduler lint
@@ -110,6 +127,12 @@ def blank_scheduler_keeps(text):
         elif i + 1 < len(raw):
             raw[i + 1] = ""
     return "\n".join(raw)
+
+
+# A raw input()/alert() call, or a verb whose arguments are BYOND's own pickers (`target as mob in view()`), is not a final form even when the verb is
+# granted: a question is an asks() step or an open_request(). (Typed chat and OOC verbs are exempt by name, above.)
+RAW_PROMPT = re.compile(r"(?<![\w.])(?:input|alert)\(")
+VERB_PICKER_ARG = re.compile(r"^\s*(?:/[\w/]+?/verb/|verb/)\w+\([^)]*\bas\b[^)]*\bin\b")
 
 
 ALLOW = re.compile(r"\bALLOW\(([^)]*)\)")
@@ -290,8 +313,10 @@ def main(argv):
         for label, rx in ([] if exempt else OLD_FORMS):
             if any(rx.search(ln) for ln in lines):
                 why.append("oldform:" + label)
-        if not exempt and f not in OOC_VERB_FILES and not any(v in f for v in VERB_EXEMPT) and non_client_verb(lines, granted):
+        if not exempt and f not in OOC_VERB_FILES and not any(v in f for v in VERB_EXEMPT) and non_client_verb(lines, granted, f):
             why.append("oldform:verb")
+        if not exempt and f not in OOC_VERB_FILES and not any(v in f for v in VERB_EXEMPT) and any(RAW_PROMPT.search(ln) or VERB_PICKER_ARG.match(ln) for ln in lines):
+            why.append("oldform:raw_prompt")
         if not exempt and atom_new_override(lines):
             why.append("oldform:New() override")
         if "/__defines/" in f:

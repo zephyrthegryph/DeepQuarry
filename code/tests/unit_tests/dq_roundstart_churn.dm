@@ -62,3 +62,68 @@
 		var/kind = copytext(key, 1, space)
 		if(ispath(text2path(copytext(key, space + 1)), /turf))
 			.[kind] = (.[kind] || 0) + GLOB.refresh_look_stats[key]
+
+/// A step starts the wait for the next one a full interval ahead, so the audit runs REFRESH_SWEEP_INTERVAL apart (about two steps a second),
+/// and a step that is not yet due changes nothing. (The cooldown reads world.time, which the kernel's test clock does not move.)
+/datum/unit_test/dq_refresh_sweep_pacing_clock
+
+/datum/unit_test/dq_refresh_sweep_pacing_clock/Run()
+	set_global(nameof(GLOB.refresh_sweep_next), 0)
+	set_global(nameof(GLOB.refresh_sweep_ran), GLOB.refresh_sweep_ran)
+	set_global(nameof(GLOB.refresh_sweep_skipped), GLOB.refresh_sweep_skipped)
+	set_global(nameof(GLOB.refresh_look_log_next), GLOB.refresh_look_log_next)
+	TEST_ASSERT(refresh_sweep_due(), "the first step is due")
+	var/due_at = GLOB.refresh_sweep_next
+	TEST_ASSERT_EQUAL(due_at, world.time + REFRESH_SWEEP_INTERVAL, "the next step waits one interval")
+	TEST_ASSERT(!refresh_sweep_due(), "not due again at once")
+	TEST_ASSERT_EQUAL(GLOB.refresh_sweep_next, due_at, "a refused step leaves the deadline alone")
+	TEST_ASSERT_EQUAL(REFRESH_SWEEP_INTERVAL, 5, "an interval is half a second: about ten steps in five seconds")
+
+/// After the boot drain nothing waits for a first draw, and no atom's look differs from what its draw gives now: an atom whose look only
+/// the audit would apply is a missing mark (meaningful with --full-map). Samples up to 25 atoms per type; failures name the types.
+/datum/unit_test/dq_initial_render_complete
+
+/datum/unit_test/dq_initial_render_complete/Run()
+	refresh_flush()
+	TEST_ASSERT_EQUAL(length(GLOB.refresh_queue), 0, "a first draw is still queued after the flush")
+	var/list/seen = list()
+	var/list/unrendered = list()
+	for(var/turf/T in world)
+		check_atom(T, seen, unrendered)
+		for(var/atom/movable/M as anything in T)
+			if(!ismob(M))
+				check_atom(M, seen, unrendered)
+	var/list/rows = list()
+	for(var/type in unrendered)
+		rows += "[type] x[unrendered[type]]"
+	if(length(rows))
+		log_world("REFRESH DRIFT (initial render): [jointext(rows, "; ")]")
+	TEST_ASSERT_EQUAL(length(rows), 0, "atoms whose look was never applied: [jointext(rows, "; ")]")
+
+/datum/unit_test/dq_initial_render_complete/proc/check_atom(atom/A, list/seen, list/unrendered)
+	if(QDELETED(A) || A.refresh_queued)
+		return
+	if((seen[A.type] || 0) >= 25)
+		return
+	seen[A.type] = (seen[A.type] || 0) + 1
+	var/key = refresh_look(A, FALSE)
+	if(key != A.rx?.look_key)
+		unrendered["[A.type]"] = (unrendered["[A.type]"] || 0) + 1
+
+/// A queued first draw within a screen of a client runs ahead of the backlog.
+/datum/unit_test/dq_refresh_near_client_first
+
+/datum/unit_test/dq_refresh_near_client_first/Run()
+	set_global(nameof(GLOB.refresh_near_drawn), GLOB.refresh_near_drawn)
+	var/turf/T = test_floor()
+	var/obj/structure/table/O = new(T)
+	refresh_flush()
+	refresh_mark(O, DEP_ALL)
+	TEST_ASSERT(O.refresh_queued, "the mark queued a refresh")
+	var/far = locate(clamp(T.x + 40, 1, world.maxx), T.y, T.z)
+	refresh_drain_near(list(far)) // a client far away draws nothing here
+	TEST_ASSERT(O.refresh_queued, "a client far away does not pull it forward")
+	refresh_drain_near(list(T))
+	TEST_ASSERT(!O.refresh_queued, "a client near it draws it ahead of the backlog")
+	qdel(O)
+	refresh_flush()

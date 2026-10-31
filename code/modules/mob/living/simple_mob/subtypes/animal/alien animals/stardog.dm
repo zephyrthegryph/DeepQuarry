@@ -54,6 +54,7 @@
 	var/list/weather_areas = list()	//We'll call a proc on these areas when we eat, don't worry!
 
 CAPABILITIES(/mob/living/simple_mob/vore/overmap/stardog)
+	op("transition", menu(desc = "Attempt to go to the location you have arrived at, or return to space!"), label("Transition"), needs(req_self(), req(PROC_REF(transition_ready))), asks(/datum/prompt/choice/stardog_transition, fields = list("choices" = computed(PROC_REF(transition_destinations))), step = "destination", when = PROC_REF(transition_on_map)), then(PROC_REF(transition_op)))
 	op("eat_space_weather", menu(desc = "Eat carp or rocks!"), label("Eat Space Weather"), needs(req_self()), then(PROC_REF(eat_space_weather_op)))
 	op("eject", menu(desc = "Stop controlling the dog and return to your own body."), label("Eject"), needs(req_self()), then(PROC_REF(eject_op)))
 	configure(living_rules(say_list_type = /datum/say_list/softdog))
@@ -333,40 +334,54 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 	adjust_nutrition(-1000)
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% steps into the area as if from nowhere!")))
 
-/mob/living/simple_mob/vore/overmap/stardog/verb/transition()	//Don't ask how it works. I don't know. I didn't think about it. I just thought it would be cool.
-	set name = "Transition"
-	set desc = "Attempt to go to the location you have arrived at, or return to space!"
-	set category = VERB_CAT_ABILITIES_STARDOG
+/// The landmarks the stardog can land on from where it floats: those of the other sites in the overmap square. Empty off the map or with none near.
+/mob/living/simple_mob/vore/overmap/stardog/proc/transition_destinations(datum/act/op/A)
+	var/list/destinations = list()
+	var/list/our_maps = list()
+	for(var/obj/effect/overmap/visitable/v in contents_of(loc))
+		if(v == child_om_marker)
+			continue
+		if(!v.map_z.len)
+			continue
+		for(var/our_z in v.map_z)
+			our_maps |= our_z
+	for(var/obj/effect/landmark/l in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
+		if(l.z in our_maps)
+			if(istype(l,/obj/effect/landmark/stardog))
+				destinations |= l
+	return destinations
+
+/// Condition: the stardog is out on the overmap (it picks a destination), not down on a site (it goes back up).
+/mob/living/simple_mob/vore/overmap/stardog/proc/transition_on_map(datum/act/op/A)
+	return istype(loc, /turf/unsimulated/map)
+
+/// Transition refuses when the stardog is hungry, and out on the map when there is nowhere near to go.
+/mob/living/simple_mob/vore/overmap/stardog/proc/transition_ready(datum/act/op/A)
 	if(nutrition_of(src) <= 500)
-		to_chat(src, span_warning("You're too hungry..."))
-		return
-	if(istype(loc, /turf/unsimulated/map))
-		var/list/destinations = list()
-		var/list/our_maps = list()
-		for(var/obj/effect/overmap/visitable/v in contents_of(loc))
-			if(v == child_om_marker)
-				continue
-			if(!v.map_z.len)
-				continue
-			for(var/our_z in v.map_z)
-				our_maps |= our_z
-		if(!our_maps.len)
-			to_chat(src, span_warning("There is nowhere nearby to go to! You need to get closer to somewhere you can transition to before you can transition."))
-			return
-		for(var/obj/effect/landmark/l in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
-			if(l.z in our_maps)
-				if(istype(l,/obj/effect/landmark/stardog))
-					destinations |= l
+		return span_warning("You're too hungry...")
+	if(!transition_on_map(A))
+		return null
+	var/has_site = FALSE
+	for(var/obj/effect/overmap/visitable/v in contents_of(loc))
+		if(v != child_om_marker && v.map_z.len)
+			has_site = TRUE
+			break
+	if(!has_site)
+		return span_warning("There is nowhere nearby to go to! You need to get closer to somewhere you can transition to before you can transition.")
+	if(!length(transition_destinations(A)))
+		return span_warning("There is nowhere nearby to land! You need to get closer to somewhere else that you can transition to before you can transition.")
+	return null
 
-		if(!destinations.len)
-			to_chat(src, span_warning("There is nowhere nearby to land! You need to get closer to somewhere else that you can transition to before you can transition."))
+/mob/living/simple_mob/vore/overmap/stardog/proc/transition_op(datum/act/op/A)
+	if(transition_on_map(A))
+		var/obj/effect/overmap/visitable/our_dest = A.step_value("destination")
+		if(QDELETED(our_dest))
 			return
-		open_request(src, /datum/prompt/choice/stardog_transition, PROC_REF(transition_destination_chosen), answerer = src, choices = destinations)
-
+		to_chat(src, span_notice("You begin to transition down to \the [our_dest], stay still..."))
+		perform_op(src, src, "transition_down", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("destination" = our_dest))
 	else
 		to_chat(src, span_notice("You begin to transition back to space, stay still..."))
 		perform_op(src, src, "transition_up", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
-		return
 
 /// Where to land. A cancel (or the timeout) decides not to.
 /datum/prompt/choice/stardog_transition
@@ -374,18 +389,6 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 	question = "Where would you like to try to go?"
 	timeout = 15 SECONDS
 	ask_flags = ASK_CONSCIOUS
-
-/mob/living/simple_mob/vore/overmap/stardog/proc/transition_destination_chosen(datum/act/request/A)
-	if(!A.answer)
-		var/datum/request/R = A.request
-		if((R.outcome == REQ_CANCELLED || R.outcome == REQ_TIMED_OUT) && isnull(R.value))
-			to_chat(src, span_warning("You decide not to transition."))
-		return
-	var/obj/effect/overmap/visitable/our_dest = A.answer.value
-	if(QDELETED(our_dest))
-		return
-	to_chat(src, span_notice("You begin to transition down to \the [our_dest], stay still..."))
-	perform_op(src, src, "transition_down", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("destination" = our_dest))
 
 /mob/living/simple_mob/vore/overmap/stardog/proc/transition_stardog_done(datum/act/op/A)
 
