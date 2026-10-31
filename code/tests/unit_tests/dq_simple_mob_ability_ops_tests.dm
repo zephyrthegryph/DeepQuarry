@@ -154,3 +154,53 @@
 	TEST_ASSERT_EQUAL(malf_picked(list(first, second), "Beta Unit"), second, "the second candidate is found by its name")
 	TEST_ASSERT_EQUAL(malf_picked(list(first, second), "Alpha Unit"), first, "the first candidate is found by its name")
 	TEST_ASSERT_NULL(malf_picked(list(first, second), "Gamma Unit"), "an unknown name finds nobody")
+
+/// Renault befriends the first person who asks; the same person is told so, and anyone else is ignored.
+/datum/unit_test/dq_ability_ops_fox_befriends_one_person
+
+/datum/unit_test/dq_ability_ops_fox_befriends_one_person/Run()
+	var/turf/T = test_floor()
+	var/mob/living/simple_mob/animal/passive/fox/renault/fox = allocate(/mob/living/simple_mob/animal/passive/fox/renault, T)
+	var/mob/living/carbon/human/first = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/second = allocate(/mob/living/carbon/human, T)
+	var/datum/op_result/befriended = perform_op(first, fox, "become_friends", null, ORIGIN_MENU)
+	TEST_ASSERT(test_op_committed(befriended), "the first person befriends the fox")
+	TEST_ASSERT_EQUAL(fox.friend, first, "the fox's friend is the first person")
+	var/datum/op_result/again = perform_op(first, fox, "become_friends", null, ORIGIN_MENU)
+	TEST_ASSERT_EQUAL(again?.outcome, ACT_REFUSED, "the same person is told the fox is already their friend")
+	var/datum/op_result/other = perform_op(second, fox, "become_friends", null, ORIGIN_MENU)
+	TEST_ASSERT_EQUAL(other?.outcome, ACT_REFUSED, "a second person is ignored")
+	TEST_ASSERT_EQUAL(fox.friend, first, "the friend does not change")
+
+/// The Armalis cannot fire a quill with none left.
+/datum/unit_test/dq_ability_ops_armalis_quills_needed
+
+/datum/unit_test/dq_ability_ops_armalis_quills_needed/Run()
+	var/mob/living/simple_mob/vox/armalis/A = allocate(/mob/living/simple_mob/vox/armalis, test_floor())
+	A.set_quills(0)
+	var/datum/op_result/R = dq_ability_menu_op(A, "fire_quill")
+	TEST_ASSERT_EQUAL(R?.outcome, ACT_REFUSED, "fire_quill is refused with no quills")
+
+/// Give asks the giver who to offer to; the offer then goes to that mob (do_give() only offers to a mob with a client, which a test world has none of,
+/// so this checks the giver's question is asked and answered).
+/datum/unit_test/dq_ability_ops_give_asks_the_recipient
+
+/datum/unit_test/dq_ability_ops_give_asks_the_recipient/Run()
+	test_driver_begin()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/giver = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/recipient = allocate(/mob/living/carbon/human, T)
+	var/obj/item/pen/offered = allocate(/obj/item/pen, T)
+	giver.put_in_active_hand(offered)
+	test_menu(giver, giver, "give")
+	TEST_ASSERT_NOTNULL(SSrequests.open_for(giver), "the giver is asked who to give to")
+	test_answer(giver, recipient.name)
+	TEST_ASSERT_NULL(SSrequests.open_for(giver), "the giver's question is answered")
+
+/// Look Up is on every living mob's own menu and commits.
+/datum/unit_test/dq_ability_ops_look_up_commits
+
+/datum/unit_test/dq_ability_ops_look_up_commits/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/datum/op_result/R = dq_ability_menu_op(H, "look_up")
+	TEST_ASSERT(test_op_committed(R), "look_up commits on a human's own menu")

@@ -90,6 +90,8 @@ OOC_VERB_FILES = (
     "code/game/objects/items/devices/communicator/messaging.dm", "code/game/objects/items/devices/communicator/phone.dm",
     "code/modules/mob/living/simple_mob/subtypes/animal/animal.dm",
     "code/modules/mob/living/carbon/human/species/station/traits/states/waddle.dm",
+    # a hidden verb the quick-equip keybind calls by name
+    "code/modules/mob/living/carbon/human/inventory.dm",
 )
 VERB_EXEMPT = ("code/modules/admin/", "/admin_commands.dm", "/contract_admin.dm")
 

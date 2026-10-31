@@ -1,8 +1,17 @@
-/mob/living/verb/give(mob/living/target in living_mobs_in_view(1))
-	set category = VERB_CAT_IC_GAME
-	set name = "Give"
+/// Who is close enough to be offered something: the living mobs within one tile, not the giver.
+/mob/living/proc/give_recipients(datum/act/op/A)
+	var/list/nearby = list()
+	for(var/mob/living/candidate in living_mobs_in_view(1))
+		if(candidate != src)
+			nearby[candidate.name] = candidate
+	return nearby
 
-	do_give(target)
+/// The giver picked who to offer the item to (the offer itself is asked of that mob by do_give()).
+/mob/living/proc/give_op(datum/act/op/A)
+	var/mob/living/recipient = give_recipients(A)[A.step_value("recipient")]
+	if(!recipient)
+		return
+	do_give(recipient)
 
 /mob/living/proc/do_give(mob/living/carbon/human/target)
 

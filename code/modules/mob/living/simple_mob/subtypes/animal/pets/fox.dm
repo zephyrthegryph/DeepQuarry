@@ -98,23 +98,16 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/fox)
 		if(has_trait(L, TRAIT_AMBIENT_PEST_MOB))
 			return FALSE // Cats and mice can never get along.
 
-/mob/living/simple_mob/animal/passive/fox/renault/verb/become_friends()
-	set name = "Become Friends"
-	set category = VERB_CAT_IC_GAME
-	set src in view(1)
-
-	var/mob/living/L = usr
-	if(!istype(L))
-		return // Fuck off ghosts.
-
+/// Renault only befriends one person: anyone else is ignored, and the same person is told they already are.
+/mob/living/simple_mob/animal/passive/fox/renault/proc/become_friends_ready(datum/act/op/A)
 	if(friend)
-		if(friend == L)
-			to_chat(L, span_notice("\The [src] is already your friend!"))
-			return
-		else
-			to_chat(L, span_warning("\The [src] ignores you."))
-			return
+		if(friend == A.actor)
+			return span_notice("\The [src] is already your friend!")
+		return span_warning("\The [src] ignores you.")
+	return null
 
+/mob/living/simple_mob/animal/passive/fox/renault/proc/become_friends_op(datum/act/op/A)
+	var/mob/living/L = A.actor
 	rel_set(src, nameof(friend), L)
 	face_atom(L)
 	to_chat(L, span_notice("\The [src] is now your friend!"))
@@ -190,6 +183,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/fox)
 	var/mob/living/friend = null // Our best pal, who we'll follow. awoo.
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/fox/renault)
+	op("become_friends", menu(), label("Become Friends"), when(req_actor_kind(/mob/living)), needs(req_adjacent(), req(PROC_REF(become_friends_ready))), then(PROC_REF(become_friends_op)))
 	ref_one(nameof(friend), /mob/living)
 	configure(mob_movement(makes_dirt = FALSE))
 
