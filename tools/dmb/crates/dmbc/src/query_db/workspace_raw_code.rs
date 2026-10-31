@@ -91,6 +91,18 @@ impl<'capture,'scope> WorkspaceCodeReader<'capture,'scope>{
  pub(crate) fn require_policy_inputs(&self,inputs:&dm_analysis::policy_inputs::PolicyInputs)->Result<(),Failure>{
   self.checkpoint()?;if !self.capture.matches_source(inputs.mapping(),inputs.revision().compiler_source){return Err(Failure::Operational(invalid("workspace raw/semantic inputs have different original source frames")))}Ok(())
  }
+
+ /// Loan ONLY the original file of this actual callable. This is not CODE
+ /// discovery or an arbitrary-path request and cannot mint completion.
+ pub(crate) fn with_callable_file(&self,inputs:&dm_analysis::policy_inputs::PolicyInputs,ordinal:usize,name:&str,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<(),Failure>)->Result<(),Failure>{
+  self.require_policy_inputs(inputs)?;if !matches!(name,"reactions"|"derived"|"generated_reads"|"derived_reads"){return Err(Failure::Operational(invalid("requested callable is not an original Plans reader")))}
+  let archive=inputs.archive();let occurrence=archive.occurrences().get(ordinal).ok_or_else(||Failure::Operational(invalid("required reader ordinal unavailable")))?;if archive.callables().ordinal(occurrence.member)!=Some(ordinal){return Err(Failure::Operational(invalid("required reader original roster differs")))}let tree=archive.tree();let member=tree.member(occurrence.member).ok_or_else(||Failure::Operational(invalid("required reader member unavailable")))?;if tree.symbols().text(member.name)!=Some(name)||!matches!(member.kind,dm_tree::MemberKind::Proc|dm_tree::MemberKind::Verb){return Err(Failure::Operational(invalid("required reader name differs from original callable")))}let origin=archive.callable_header_policy_origin(occurrence.member)?;
+  let mapping=inputs.mapping();let(index,lease)=mapping.source_acquisitions().enumerate().find_map(|(index,(path,lease))|(path==origin.path.as_path()).then_some((index,lease))).ok_or_else(||Failure::Operational(invalid("required reader source acquisition unavailable")))?;let lease=lease.ok_or_else(||Failure::Operational(invalid("required reader has no original acquisition")))?;let original=self.scope.original(index,&lease.identity())?;
+  let pending=dq_analyze::captured_raw_file::with_original_policy_file_prepared(self.capture.root(),&origin.path,0,&self.budget,|scratch|{
+   self.checkpoint()?;let mut backing=Some(0usize);let raw=match &original{crate::input_snapshot::RecordedSourceOriginal::Utf8(text)=>{dq_analyze::captured_raw_file::visit_source_storage(text,|_,bytes|backing=backing.and_then(|n|n.checked_add(bytes)));text.as_bytes()},crate::input_snapshot::RecordedSourceOriginal::Bytes(bytes)=>{backing=bytes.capacity().checked_add(128);bytes.as_slice()}};let transform=if matches!(&original,crate::input_snapshot::RecordedSourceOriginal::Utf8(text)if !text.as_bytes().contains(&b'\r')){Some(0)}else{dq_analyze::captured_raw_file::analyze_raw_len(raw)?.checked_mul(4).and_then(|n|n.checked_add(8192))};let peak=backing.and_then(|n|n.checked_add(transform?)).ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"required original normalization overflow")))?;scratch.charge(peak).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;Ok(crate::input_snapshot::normalize_recorded_policy_original(&original))
+  },&mut|relative,views|{visit(relative,views)?;Ok(true)});
+  if matches!(&pending,Err(Failure::Operational(_))){return pending.map(|_|())}self.require_policy_inputs(inputs)?;pending.map(|_|())
+ }
  pub(crate) fn budget(&self)->&Arc<Budget>{&self.budget}
  pub(crate) fn root(&self)->&std::path::Path{self.capture.root()}
  pub(crate) fn configuration(&self)->(&std::path::Path,Option<&[u8]>){self.capture.configuration()}

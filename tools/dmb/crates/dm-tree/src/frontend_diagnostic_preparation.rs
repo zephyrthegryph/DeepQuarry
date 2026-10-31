@@ -27,6 +27,8 @@ impl DiagnosticFrontend {
         let archive = inner
             .body_archive()
             .ok_or_else(|| vec![internal("diagnostic original archive unavailable")])?;
+        receipt.settings_compilable=inner.issued_settings.iter().flatten().all(|owner|crate::procedure::settings_compilable(&owner.settings,inner.snapshot.tree.symbols()));
+        if !receipt.settings_compilable{receipt.retained_records=None;}
         let retained_records = receipt.retained_records.take();
         Ok(Self {
             retained_records,
@@ -71,7 +73,7 @@ impl DiagnosticFrontend {
         mut self,
         state: &mut RetainedSemanticTree,
     ) -> Result<ColdFrontend, Self> {
-        if self.receipt.errors().is_empty()
+        if self.receipt.settings_compilable() && self.receipt.errors().is_empty()
             && state
                 .snapshot_tree()
                 .is_some_and(|tree| Arc::ptr_eq(tree, &self.inner.snapshot.tree))
@@ -79,7 +81,7 @@ impl DiagnosticFrontend {
             // Existing complete native entry already owns this exact graph.
             return Ok(self.inner);
         }
-        if !self.receipt.errors().is_empty() || self.retained_records.is_none() {
+        if !self.receipt.settings_compilable() || !self.receipt.errors().is_empty() || self.retained_records.is_none() {
             return Err(self);
         }
         let records = self
@@ -92,7 +94,7 @@ impl DiagnosticFrontend {
         Ok(self.inner)
     }
     pub fn try_into_compilable(self) -> Result<ColdFrontend, Self> {
-        if self.receipt.errors().is_empty() {
+        if self.receipt.settings_compilable() && self.receipt.errors().is_empty() {
             Ok(self.inner)
         } else {
             Err(self)

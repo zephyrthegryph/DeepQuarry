@@ -1,0 +1,12 @@
+pub const KNOWN_SETTING_NAMES: &[&str] = &[
+    "name",
+    "desc",
+    "category",
+    "hidden",
+    "popup_menu",
+    "instant",
+    "invisibility",
+    "src",
+    "background",
+    "waitfor",
+];

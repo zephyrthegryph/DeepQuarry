@@ -1,7 +1,7 @@
 //! One parser-free roster shared by build module admission and policy dispatch.
 //! The policies themselves remain their existing modules; no scanner is copied.
-pub const RAW_FILE_COUNT: usize = 27;
-pub const MODULES: [(&str, &str); 36] = [
+pub const RAW_FILE_COUNT: usize = 41;
+pub const MODULES: [(&str, &str); 50] = [
     ("actor_forwarding", "actor_forwarding"),
     ("breakpoint", "breakpoint"),
     ("containment", "containment"),
@@ -29,6 +29,20 @@ pub const MODULES: [(&str, &str); 36] = [
     ("subsystem_fire", "subsystem_fire"),
     ("verb_category", "verb_category"),
     ("sys_sync_sql", "sys/sync_sql"),
+    ("lifeform_allows", "lifeform_allows"),
+    ("escape_hatches", "escape_hatches"),
+    ("sys_contents", "sys/contents"),
+    ("sys_damage_reactions", "sys/damage_reactions"),
+    ("sys_dx_manual_transfer", "sys/dx_manual_transfer"),
+    ("sys_dx_raw_delay", "sys/dx_raw_delay"),
+    ("sys_dx_raw_overlays", "sys/dx_raw_overlays"),
+    ("sys_dx_review", "sys/dx_review"),
+    ("sys_emag", "sys/emag"),
+    ("sys_grants", "sys/grants"),
+    ("sys_messages", "sys/messages"),
+    ("sys_presentation", "sys/presentation"),
+    ("sys_topic", "sys/topic"),
+    ("sys_usr_use", "sys/usr_use"),
     ("cooldown", "cooldown"),
     ("declaration_block", "declaration_block"),
     ("duplicate_input_key", "duplicate_input_key"),
@@ -39,8 +53,8 @@ pub const MODULES: [(&str, &str); 36] = [
     ("read_back", "read_back"),
     ("cap_bits", "cap_bits"),
 ];
-pub const LINT_NAMES: [&str; 36] = {
-    let mut names = [""; 36];
+pub const LINT_NAMES: [&str; 50] = {
+    let mut names = [""; 50];
     let mut index = 0;
     while index < MODULES.len() {
         names[index] = MODULES[index].1;
@@ -48,7 +62,7 @@ pub const LINT_NAMES: [&str; 36] = {
     }
     names
 };
-/// Per-file/workspace admission remains exactly the original 27 policies.
+/// Per-file/workspace admission remains the audited per-file policies.
 pub const RAW_FILE_LINT_NAMES: [&str; RAW_FILE_COUNT] = {
     let mut names = [""; RAW_FILE_COUNT];
     let mut index = 0;
@@ -73,7 +87,7 @@ mod tests {
                 .map(|(module, _)| *module)
                 .collect::<BTreeSet<_>>()
                 .len(),
-            36
+            50
         );
         assert_eq!(
             super::LINT_NAMES
@@ -81,11 +95,11 @@ mod tests {
                 .copied()
                 .collect::<BTreeSet<_>>()
                 .len(),
-            36
+            super::MODULES.len()
         );
         assert_eq!(super::LINT_NAMES[26], "sys/sync_sql");
-        assert_eq!(super::RAW_FILE_LINT_NAMES.as_slice(), &super::LINT_NAMES[..27]);
-        assert_eq!(super::RAW_COHORT_LINT_NAMES.as_slice(), &super::LINT_NAMES[27..]);
+        assert_eq!(super::RAW_FILE_LINT_NAMES.as_slice(), &super::LINT_NAMES[..41]);
+        assert_eq!(super::RAW_COHORT_LINT_NAMES.as_slice(), &super::LINT_NAMES[41..]);
         assert_eq!(super::RAW_COHORT_LINT_NAMES[0], "cooldown");
         assert_eq!(super::RAW_COHORT_LINT_NAMES[8], "cap_bits");
     }

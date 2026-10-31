@@ -14,6 +14,7 @@ pub(crate) struct OriginalProcedureHeaders {
     headers: Vec<Span>,
     tokens: Vec<SpanToken>,
     settings: OnceLock<Vec<setting_input::OriginalSettingsBody>>,
+    checker_diagnostic_settings: bool,
     initializer_coordinates: Option<OriginalInitializerCoordinates>,
     initializer_roots: dm_syntax::SettingExpressionSlots,
     initializer_facts: OnceLock<OriginalInitializerFactsAdmission>,
@@ -284,7 +285,7 @@ impl OriginalProcedureHeaders {
         offset: usize,
         tokens: Vec<SpanToken>,
     ) -> Result<Arc<Self>, String> {
-        Self::from_primary_inner(source, items, offset, tokens, None).map_err(|failure| {
+        Self::from_primary_inner(source, items, offset, tokens, None, false).map_err(|failure| {
             match failure {
                 OriginalHeaderFailure::Source(message) => message,
                 OriginalHeaderFailure::Operational(actual) => actual.to_string(),
@@ -302,7 +303,7 @@ impl OriginalProcedureHeaders {
         tokens: Vec<SpanToken>,
         admission: &dm_syntax::SettingAdmission<'_>,
     ) -> Result<Arc<Self>, OriginalHeaderFailure> {
-        let result = Self::from_primary_inner(source, items, offset, tokens, Some(admission));
+        let result = Self::from_primary_inner(source, items, offset, tokens, Some(admission), false);
         finish_original_admission(result, admission)
     }
     fn from_primary_inner(
@@ -311,6 +312,7 @@ impl OriginalProcedureHeaders {
         offset: usize,
         tokens: Vec<SpanToken>,
         admission: Option<&dm_syntax::SettingAdmission<'_>>,
+        checker_diagnostic_settings: bool,
     ) -> Result<Arc<Self>, OriginalHeaderFailure> {
         let mut headers = Vec::new();
         let mut coordinates = admission
@@ -347,6 +349,7 @@ impl OriginalProcedureHeaders {
             headers,
             tokens,
             settings: OnceLock::new(),
+            checker_diagnostic_settings,
             initializer_coordinates: coordinates,
             initializer_roots: Default::default(),
             initializer_facts: OnceLock::new(),
@@ -1236,4 +1239,10 @@ mod initializer_first_root_tests {
             assert!(first.same_root(&second));
         }
     }
+}
+
+impl OriginalProcedureHeaders{
+ pub(crate) fn for_declaration_profile(source:SourceText,items:&[Item],offset:usize,tokens:Option<Vec<SpanToken>>,admission:Option<&dm_syntax::SettingAdmission<'_>>,checker:bool)->Result<Arc<Self>,OriginalHeaderFailure>{
+  let result=(||{if let Some(a)=admission{original_checkpoint(a)?;}let tokens=if let Some(tokens)=tokens{tokens}else{let parsed=dm_syntax::lex_spans(&source);if let Some(a)=admission{original_checkpoint(a)?;}if !parsed.diagnostics.is_empty(){return Err("original cached declaration token reissue failed".into())}parsed.tokens};Self::from_primary_inner(source,items,offset,tokens,admission,checker)})();if let Some(a)=admission{finish_original_admission(result,a)}else{result}
+ }
 }

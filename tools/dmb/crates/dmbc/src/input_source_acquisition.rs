@@ -185,3 +185,12 @@ pub(crate) fn recorded_source_receipt_original(
         .original_bytes
         .as_ref()
 }
+
+/// SAME raw normalization for actual recorded originals. Caller preadmits the
+/// exposed transform peak; this source-neutral projection grants no source role.
+pub(crate) fn normalize_recorded_policy_original(original:&RecordedSourceOriginal<'_>)->dm_preprocess::SourceText{
+ match original{
+  RecordedSourceOriginal::Utf8(text)if !text.as_bytes().contains(&b'\r')=>(*text).clone(),
+  _=>{let raw=match original{RecordedSourceOriginal::Utf8(text)=>text.as_bytes(),RecordedSourceOriginal::Bytes(bytes)=>bytes.as_slice()};String::from_utf8_lossy(raw).replace("\r\n","\n").replace('\r',"\n").into()}
+ }
+}

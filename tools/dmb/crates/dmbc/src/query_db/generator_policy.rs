@@ -616,3 +616,15 @@ impl QueryDb {
 #[path="generator_policy_wire.rs"]mod wire;
 
 impl<'de> serde::Deserialize<'de> for GeneratorName{fn deserialize<D:serde::Deserializer<'de>>(decoder:D)->Result<Self,D::Error>{let name=<String as serde::Deserialize>::deserialize(decoder)?;match name.as_str(){"sparse_slots"=>Ok(Self::SparseSlots),"system_accessors"=>Ok(Self::SystemAccessors),"stats"=>Ok(Self::Stats),"actions"=>Ok(Self::Actions),"declare_ids"=>Ok(Self::DeclareIds),"declare"=>Ok(Self::Declare),"ui_types"=>Ok(Self::UiTypes),"tracked_lists"=>Ok(Self::TrackedLists),"deps"=>Ok(Self::Deps),"auto_tracked"=>Ok(Self::AutoTracked),"reads"=>Ok(Self::Reads),"derived_reads"=>Ok(Self::DerivedReads),"plans"=>Ok(Self::Plans),_=>Err(serde::de::Error::custom("unknown canonical generator name"))}}}
+
+#[path="generator_files.rs"]mod generated_files;
+impl super::QueryDb {
+ /// Generation staging uses the same exact output family as the native host.
+ /// A file path/encoded hash never grants permission to read source inputs.
+ pub(crate) fn validate_generation_output(root:&std::path::Path,name:GeneratorName,path:&str)->Result<(),String>{
+  if name==GeneratorName::UiTypes{return validate_ui_output_path(root,path)}
+  let expected=if name==GeneratorName::DerivedReads{"code/_generated/reads.dm"}else{name.path()};
+  if path!=expected{return Err("generator output path differs from its declared family".into())}
+  Ok(())
+ }
+}

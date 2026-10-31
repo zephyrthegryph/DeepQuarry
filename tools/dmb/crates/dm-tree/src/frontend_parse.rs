@@ -48,8 +48,10 @@ pub(super) fn parse_declarations_with_state(
 ) -> Result<ParsedDeclarations, Vec<Diagnostic>> {
     parse_declarations_with_demand(expanded,config,memo,executor,retained,&super::declaration_demand::Compatibility)
 }
-pub(super) fn parse_declarations_with_demand<D:super::declaration_demand::Demand>(expanded:&ExpandedRegions,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,retained:Option<&super::declaration_state::RetainedDeclarations>,demand:&D)->Result<ParsedDeclarations,D::Failure>{
+pub(super) fn parse_declarations_with_demand<D:super::declaration_demand::Demand>(expanded:&ExpandedRegions,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,retained:Option<&super::declaration_state::RetainedDeclarations>,demand:&D)->Result<ParsedDeclarations,D::Failure>{parse_declarations_with_demand_profile(expanded,config,memo,executor,retained,demand,false)}
+pub(super) fn parse_declarations_with_demand_profile<D:super::declaration_demand::Demand>(expanded:&ExpandedRegions,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,retained:Option<&super::declaration_state::RetainedDeclarations>,demand:&D,checker_settings:bool)->Result<ParsedDeclarations,D::Failure>{
     demand.run(|permit|permit.checkpoint())?;
+    let parser_version=if checker_settings{parserwire::VERSION|0x8000_0000}else{parserwire::VERSION};
     let source = expanded.text.as_ref();
     let parse_start = Instant::now();
     let profile_scan = dm_profile::stage("frontend.grammar_scan");
@@ -80,9 +82,7 @@ pub(super) fn parse_declarations_with_demand<D:super::declaration_demand::Demand
         let keys: Vec<_> = chunks
             .iter()
             .map(|&(offset, len)| {
-                super::declaration_state::RetainedDeclarations::original_header_key(
-                    &source[offset..offset + len],
-                )
+                {let mut key=super::declaration_state::RetainedDeclarations::original_header_key(&source[offset..offset+len]);if checker_settings{key.extend_from_slice(b"\0checker-diagnostic-settings-v1");}key}
             })
             .collect();
         state.retain(&keys);
@@ -183,7 +183,7 @@ pub(super) fn parse_declarations_with_demand<D:super::declaration_demand::Demand
                         let cached = receipt
                             .zip(relative)
                             .and_then(|(receipt, span)| {
-                                receipt.record().fragment(parserwire::VERSION, span)
+                                receipt.record().fragment(parser_version, span)
                             })
                             .and_then(|bytes| parserwire::decode_with_facts(bytes, text));
                         if cached.is_some() {
@@ -192,12 +192,12 @@ pub(super) fn parse_declarations_with_demand<D:super::declaration_demand::Demand
                         let independent = if cached.is_none() {
                             memo.and_then(|memo| {
                                 let key = dm_preprocess::regions::FragmentRecord::lookup_key(
-                                    parserwire::VERSION,
+                                    parser_version,
                                     text,
                                 );
                                 let mut accepted = None;
                                 memo.visit_fragment_candidates(key, &mut |record| {
-                                    if !record.matches(parserwire::VERSION, text) {
+                                    if !record.matches(parser_version, text) {
                                         return false;
                                     }
                                     accepted =
@@ -252,8 +252,8 @@ pub(super) fn parse_declarations_with_demand<D:super::declaration_demand::Demand
                         // Native current input owns ONE contained source + original
                         // header token recipe. No extra read or normalized model.
                         let source_owner = source_owner.unwrap_or_else(|| text.into());
-                        let original_headers=permit.headers(source_owner.clone(),&ast.items,offset,primary_tokens)?;
-                        let admitted_facts=permit.cached_facts(cached_facts.as_deref(),text,offset);
+                        let original_headers=permit.headers(source_owner.clone(),&ast.items,offset,primary_tokens,checker_settings)?;
+                        let admitted_facts=if checker_settings{None}else{permit.cached_facts(cached_facts.as_deref(),text,offset)};
                         let has_cached_facts = admitted_facts.is_some();
                         drop(profile_lookup);
                         lookup_ns.fetch_add(
@@ -315,7 +315,7 @@ pub(super) fn parse_declarations_with_demand<D:super::declaration_demand::Demand
                                 let payload = facts
                                     .as_ref()
                                     .map_or(Ok(None), |(facts, ledger)| {
-                                        chunkfacts::encode(facts, ledger, offset).map(Some)
+                                        if checker_settings{Ok(None)}else{chunkfacts::encode(facts, ledger, offset).map(Some)}
                                     })
                                     .and_then(|facts_bytes| {
                                         parserwire::encode_with_facts(
@@ -391,7 +391,7 @@ pub(super) fn parse_declarations_with_demand<D:super::declaration_demand::Demand
                                 if let Some(bytes) = &produced_payload {
                                     if let Some(record) =
                                         dm_preprocess::regions::FragmentRecord::new_shared_source(
-                                            parserwire::VERSION,
+                                            parser_version,
                                             current.as_ref().map_or_else(
                                                 |_| Arc::from(text),
                                                 |bound| bound.shared_source(),
@@ -498,7 +498,7 @@ pub(super) fn parse_declarations_with_demand<D:super::declaration_demand::Demand
             let record = updated
                 .entry(index)
                 .or_insert_with(|| expanded.receipts[index].record().as_ref().clone());
-            record.append_fragment(parserwire::VERSION, span, bytes);
+            record.append_fragment(parser_version, span, bytes);
         }
         diagnostics.extend(errors.into_iter().map(|error| (offset, error)));
     }

@@ -150,7 +150,7 @@ pub struct FileSystemInputs;
 mod generated;
 #[path="input_generation.rs"]
 mod generation;
-pub(crate) use generation::{GenerationBootstrap,GenerationBootstrapFailure,GenerationBootstrapPreparation};
+pub(crate) use generation::{GenerationBootstrap,GenerationBootstrapFailure,GenerationBootstrapPreparation,GenerationSourceReader};
 pub use generated::GeneratedOutputInputs;
 #[path = "input_snapshot_open.rs"]
 mod source_open;
@@ -312,7 +312,7 @@ mod source_original;
 pub(crate) use source_acquisition::recorded_source_receipt_storage;
 pub(crate) use source_acquisition::SemanticSourceEvidence;
 pub(crate) use source_acquisition::{
-    recorded_source_original, recorded_source_receipt_original, RecordedSourceOriginal,
+    recorded_source_original, recorded_source_receipt_original, RecordedSourceOriginal, normalize_recorded_policy_original,
 };
 pub struct RecordingInputs<P = FileSystemInputs> {
     source_issuer: std::sync::Arc<()>,

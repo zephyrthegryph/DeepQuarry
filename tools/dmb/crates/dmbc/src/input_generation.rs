@@ -137,3 +137,16 @@ impl<P:SnapshotProvider> RecordingInputs<P> {
         match RecordingInputs::new(FileSystemInputs,0).prepare_generation_bootstrap(&project,&BTreeMap::new(),config,&executor,&host,&mut |_|Err(io::ErrorKind::OutOfMemory.into())){Err(GenerationBootstrapFailure::Operational(actual))=>assert_eq!(actual.kind(),io::ErrorKind::OutOfMemory),_=>panic!("quota must not issue a generation frame")}
     }
 }
+
+#[path="input_generation_sources.rs"]mod sources;
+pub(crate) use sources::GenerationSourceReader;
+impl GenerationBootstrap{
+ pub(crate) fn require_recording<P:SnapshotProvider>(&self,inputs:&RecordingInputs<P>)->io::Result<()>{
+  crate::daemon::control::checkpoint()?;
+  for(path,lease)in self.declarations.original_sources(){
+   let lease=lease.ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"generation original acquisition is absent"))?;
+   if !inputs.validate_source_lease(path,lease){return Err(io::Error::new(io::ErrorKind::InvalidData,"generation frame belongs to another original recorder"))}
+  }
+  self.require_current(&inputs.provider)?;crate::daemon::control::checkpoint()
+ }
+}

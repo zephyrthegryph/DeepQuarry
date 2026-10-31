@@ -188,6 +188,31 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "borrowed shared-file generator differs from independent original Engine oracle".into(),
         );
     }
+    // Source-neutral file loans exercise the actual-growth Declare producer.
+    // This fixture intentionally grants no workspace/domain completion witness.
+    struct Pages(Vec<dq_analyze::captured_raw_file::File>);
+    impl dq_analyze::reactive_raw_policy_pages::RawPolicyPages for Pages {
+        fn for_each(&self, visit:&mut dyn FnMut(&str,dq_analyze::captured_raw_file::RawPolicyViews<'_>)->Result<bool,dq_analyze::captured_reactive_reads::Failure>)->Result<bool,dq_analyze::captured_reactive_reads::Failure>{
+            for file in &self.0{if !file.with_policy_views(visit)?{return Ok(false)}}Ok(true)
+        }
+    }
+    let mut page_files=Vec::new();
+    let selected_names=old.tree.select(&dq_analyze::tree::CODE_DM).iter().map(|file|file.rel.clone()).collect::<std::collections::BTreeSet<_>>();
+    let mut page_names=std::collections::BTreeSet::new();
+    for file in inputs.files().filter(|file|file.role()==PolicyRole::DmSource){
+        let relative=dm_preprocess::regions::relative_filesystem_path(file.path(),&root).ok_or("page fixture source outside root")?.to_string_lossy().replace('\\',"/");
+        if !selected_names.contains(relative.as_str())||!page_names.insert(relative){continue}
+        let source=file.view(dm_analysis::policy_inputs::TextView::AnalyzeRaw).map_err(|_|"page fixture needs original AnalyzeRaw")?;
+        page_files.push(dq_analyze::captured_raw_file::File::capture(&root,file.path(),source.clone())?);
+    }
+    let manifest=provider.bytes(&root.join("deepquarry.dme"))?;
+    let manifest_text=String::from_utf8_lossy(&manifest).replace("\r\n","\n").replace('\r',"\n");
+    let order=dq_analyze::raw_marker_policy::dme_include_order_view(&manifest_text,manifest.starts_with(&[0xef,0xbb,0xbf]));
+    let page_budget=dq_analyze::captured_generator_budget::Budget::new(64*1024*1024)?;
+    let pages=dq_analyze::captured_declare_pages::generate_from_pages(&Pages(page_files),&order,&page_budget,&||Ok(())).map_err(|failure|->Box<dyn std::error::Error>{match failure{dq_analyze::captured_reactive_reads::Failure::Operational(actual)=>Box::new(actual),dq_analyze::captured_reactive_reads::Failure::Unsupported(reason)=>reason.into()}})?;
+    let page_text=pages.captured_named_file_text("declare","declare.dm",&page_budget)?;
+    let page_diags=pages.diags.iter().map(|row|(row.rel.clone(),row.line,row.msg.clone())).collect::<Vec<_>>();
+    if page_text!=expected_text||page_diags!=expected_diags{return Err("actual-growth original-loan Declare differs from complete frozen Engine oracle".into())}
     println!(
         "{}",
         serde_json::json!({"generator":"declare","scope":"explicit_seeded_captured_files","matched":true,"output_bytes":expected_text.len(),"diagnostics":borrowed_diags.len(),"full_workspace_coverage":false})

@@ -75,3 +75,5 @@ pub mod rel_write_native;
 pub mod policy_body_observation;
 
 mod checker_prefix_demand;
+
+pub mod checks_unknown_linter_setting;

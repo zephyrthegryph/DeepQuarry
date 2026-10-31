@@ -145,7 +145,7 @@ impl OriginalProcedureHeaders {
         let first = self.tokens.partition_point(|t| t.span.start < range.start);
         let last = self.tokens.partition_point(|t| t.span.start < range.end);
         let view = HeaderView::original(&self.source, &self.tokens[first..last], range)?;
-        crate::procedure::parse_setting_view(view, symbols)
+        crate::procedure::parse_setting_view_profile(view, symbols,self.checker_diagnostic_settings)
     }
     pub(super) fn install_settings(
         &self,

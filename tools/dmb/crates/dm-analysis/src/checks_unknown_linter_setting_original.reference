@@ -1,0 +1,139 @@
+fn add_directive_or_error(&mut self, proc: ProcRef<'o>, directive: &str, expr: &Expression, location: Location) {
+        let procdirective = match directive {
+            "SpacemanDMM_should_not_override" => &mut self.must_not_override,
+            "SpacemanDMM_should_call_parent" => &mut self.must_call_parent,
+            "SpacemanDMM_private_proc" => &mut self.private,
+            "SpacemanDMM_protected_proc" => &mut self.protected,
+            "SpacemanDMM_should_not_sleep" => &mut self.must_not_sleep,
+            "SpacemanDMM_allowed_to_sleep" => &mut self.sleep_exempt,
+            "SpacemanDMM_should_be_pure" => &mut self.must_be_pure,
+            "SpacemanDMM_can_be_redefined" => &mut self.can_be_redefined,
+            other => {
+                error(location, format!("unknown linter setting {directive:?}"))
+                    .with_errortype("unknown_linter_setting")
+                    .set_severity(Severity::Warning)
+                    .register(self.context);
+                return
+            }
+        };
+
+        if procdirective.set_at_definition {
+            if let Some(procdef) = &mut proc.get_declaration() {
+                if procdef.location != proc.get().location {
+                    error(location, format!("Can't define procs {directive} outside their initial definition"))
+                        .set_severity(Severity::Warning)
+                        .register(self.context);
+                    return
+                }
+            }
+        }
+
+        match directive_value_to_truthy(expr, location) {
+            Ok(truthy) => {
+                if let Err(error) = procdirective.insert(proc, truthy, location) {
+                    self.context.register_error(error);
+                }
+            },
+            Err(error) => self.context.register_error(error.with_errortype("invalid_lint_directive_value")),
+        }
+    }
+
+pub fn gather_settings(&mut self, proc: ProcRef<'o>, code: &'o [Spanned<Statement>]) {
+        let proc_location = proc.get().location;
+
+        // Need to extract OUR declaration, and not our parent's. so we do the stupid
+        if let Some(proc_type) = proc.ty().get().procs.get(proc.name()) {
+            if let Some(declaration) = &proc_type.declaration {
+                let proc_flags = declaration.flags;
+                if proc_flags.is_final() {
+                    // lemon todo: this should run, but it doesn't appear to trigger an error like I'd want. needs looking into imo
+                    if let Err(error) = self.must_not_override.insert(proc, true, proc_location) {
+                        self.context.register_error(error);
+                    }
+                }
+            }
+        }
+
+        if let Some(decl) = proc.get_declaration() {
+            match &decl.return_type {
+                ProcReturnType::InputType(input_type) => {
+                    if let Some(path) = input_type.to_typepath() {
+                        if let Some(ty) = self.objtree.find(path) {
+                            self.return_type.insert(proc, TypeExpr::from(StaticType::Type(ty)));
+                        }
+                    }
+                }
+                ProcReturnType::TypePath(bits) => {
+                    if let Ok(ty) = crate::static_type(self.objtree, proc_location, bits) {
+                        self.return_type.insert(proc, TypeExpr::from(ty));
+                    }
+                }
+            }
+        }
+
+        for statement in code.iter() {
+            if let Statement::Setting { ref name, ref value, .. } = statement.elem {
+                if name == "SpacemanDMM_return_type" {
+                    if let Some(Term::Prefab(fab)) = value.as_term() {
+                        let bits: Vec<_> = fab.path.iter().map(|(_, name)| name.to_owned()).collect();
+                        let ty = self.static_type(statement.location, &bits);
+                        self.return_type.insert(proc, TypeExpr::from(ty));
+                    } else {
+                        match TypeExpr::compile(proc, statement.location, value) {
+                            Ok(expr) => { self.return_type.insert(proc, expr); },
+                            Err(error) => error
+                                .with_component(dm::Component::DreamChecker)
+                                .register(self.context),
+                        }
+                    }
+                } else if name.starts_with("SpacemanDMM_") {
+                    self.add_directive_or_error(proc, name.as_str(), value, statement.location);
+                } else if !KNOWN_SETTING_NAMES.contains(&name.as_str()) {
+                    error(statement.location, format!("unknown setting {name:?}"))
+                        .set_severity(Severity::Warning)
+                        .register(self.context);
+                } else {
+                    match name.as_str() {
+                        "background" | "waitfor" | "hidden" | "instant" | "popup_menu" => {
+                            if directive_value_to_truthy(value, statement.location).is_err() {
+                                error(statement.location, format!("set {} must be 0/1/TRUE/FALSE", name.as_str()))
+                                    .set_severity(Severity::Warning)
+                                    .with_errortype("invalid_set_value")
+                                    .register(self.context);
+                            }
+                        },
+                        "name" | "category" | "desc" => {
+                            if let Some(term) = value.as_term() {
+                                match term {
+                                    // TODO: detect procs-as-verbs here
+                                    Term::String(_) | Term::InterpString(_, _) => {},
+                                    // category can be set null to hide it
+                                    Term::Null if name.as_str() == "category" => {},
+                                    other => {
+                                        error(statement.location, format!("set {} must have a string value", name.as_str()))
+                                            .set_severity(Severity::Warning)
+                                            .with_errortype("invalid_set_value")
+                                            .register(self.context);
+                                    },
+                                }
+                            }
+                        },
+                        "invisibility" => {
+                            if let Some(Term::Int(i)) = value.as_term() {
+                                if *i >= 0 && *i <= 100 {
+                                    continue;
+                                }
+                            }
+                            error(statement.location, "set invisibility must be 0-100")
+                                .set_severity(Severity::Warning)
+                                .with_errortype("invalid_set_value")
+                                .register(self.context);
+                        },
+                        _ => {},
+                    }
+                }
+            } else {
+                break;
+            }
+        }
+    }

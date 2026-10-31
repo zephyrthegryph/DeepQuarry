@@ -1562,7 +1562,7 @@ fn run_build_attempt(
         // Preparation is not output publication, but its pins still require the
         // ordinary captured-input freshness barrier before becoming current.
         let (workspace_admission, source_admission) = if let Some(workspace) = query_attempt.pending_workspace() {
-            (Some(runner_freshness::admit_workspace_captured(&inputs_capture, None, &input_provider, generated_paths, workspace)?.1), None)
+            (Some(if let Some(intent)=policy_inputs.as_ref().filter(|intent|!intent.workspace_generators().is_empty()){runner_freshness::admit_generator_workspace_captured(&inputs_capture,None,&input_provider,generated_paths,workspace,intent)?}else{runner_freshness::admit_workspace_captured(&inputs_capture,None,&input_provider,generated_paths,workspace)?.1}),None)
         } else if let Some(frame) = query_attempt.pending_source() {
             (None, Some(runner_freshness::admit_source_captured(&inputs_capture, None, &input_provider, generated_paths, frame)?.1))
         } else { runner_freshness::admit_captured(&inputs_capture, None, &input_provider, generated_paths)?; (None, None) };

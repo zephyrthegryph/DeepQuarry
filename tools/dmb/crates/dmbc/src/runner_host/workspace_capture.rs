@@ -20,6 +20,7 @@ use std::{
 const EXTRA_BUDGET: usize = 64 * 1024 * 1024;
 #[path = "workspace_alias_index.rs"]
 mod alias_index;
+pub(crate) use alias_index::AliasIndex as WorkspaceAliasIndex;
 struct Native {
     occurrence: usize,
     identity: SourceAcquisitionIdentity,
@@ -239,15 +240,7 @@ impl WorkspaceCapture {
                     }
                     break;
                 }
-                let text = match &original {
-                    RecordedSourceOriginal::Utf8(text) if !text.as_bytes().contains(&b'\r') => {
-                        (*text).clone()
-                    }
-                    _ => String::from_utf8_lossy(raw)
-                        .replace("\r\n", "\n")
-                        .replace('\r', "\n")
-                        .into(),
-                };
+                let text = crate::input_snapshot::normalize_recorded_policy_original(&original);
                 own.clear();
                 dq_analyze::captured_raw_file::visit_source_storage(&text, |key, bytes| {
                     own.entry(key)

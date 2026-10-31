@@ -27,7 +27,7 @@ pub(super) trait Permit {
     type Failure: From<Vec<Diagnostic>> + Send;
     fn checkpoint(&self)->Result<(),Self::Failure>;
     fn get(&self,state:&RetainedDeclarations,key:&[u8],text:&str,offset:usize)->Result<Option<CurrentContribution>,Self::Failure>;
-    fn headers(&self,source:dm_preprocess::SourceText,items:&[Item],offset:usize,tokens:Option<Vec<dm_syntax::SpanToken>>)->Result<Result<Arc<OriginalProcedureHeaders>,String>,Self::Failure>;
+    fn headers(&self,source:dm_preprocess::SourceText,items:&[Item],offset:usize,tokens:Option<Vec<dm_syntax::SpanToken>>,checker_settings:bool)->Result<Result<Arc<OriginalProcedureHeaders>,String>,Self::Failure>;
     fn cached_facts(&self,bytes:Option<&[u8]>,text:&str,offset:usize)->Option<(crate::AdaptedDeclarations,crate::allocation_ledger::AllocationLedger)>;
     fn adapt<'a>(&self,ast:&'a AstFile,source:&str,headers:&'a OriginalProcedureHeaders,offset:usize)->Result<Result<(crate::AdaptedDeclarations,HeaderAllocationReceipt<'a>),Vec<crate::AdapterError>>,Self::Failure>;
     fn capture(&self,state:&RetainedDeclarations,key:&[u8],source:dm_preprocess::SourceText,offset:usize,items:Vec<Item>,facts:crate::AdaptedDeclarations,ledger:crate::allocation_ledger::AllocationLedger,headers:Arc<OriginalProcedureHeaders>)->Result<Option<CurrentContribution>,Self::Failure>;
@@ -53,7 +53,7 @@ impl Permit for Compatibility {
     type Failure=Vec<Diagnostic>;
     fn checkpoint(&self)->Result<(),Self::Failure>{Ok(())}
     fn get(&self,state:&RetainedDeclarations,key:&[u8],text:&str,offset:usize)->Result<Option<CurrentContribution>,Self::Failure>{Ok(state.get_shared(key,text,offset))}
-    fn headers(&self,source:dm_preprocess::SourceText,items:&[Item],offset:usize,tokens:Option<Vec<dm_syntax::SpanToken>>)->Result<Result<Arc<OriginalProcedureHeaders>,String>,Self::Failure>{Ok(match tokens{Some(tokens)=>OriginalProcedureHeaders::from_primary(source,items,offset,tokens),None=>OriginalProcedureHeaders::reissue(source,items,offset)})}
+    fn headers(&self,source:dm_preprocess::SourceText,items:&[Item],offset:usize,tokens:Option<Vec<dm_syntax::SpanToken>>,checker_settings:bool)->Result<Result<Arc<OriginalProcedureHeaders>,String>,Self::Failure>{Ok(if checker_settings{OriginalProcedureHeaders::for_declaration_profile(source,items,offset,tokens,None,true).map_err(|failure|match failure{crate::procedure::header_input::OriginalHeaderFailure::Source(message)=>message,crate::procedure::header_input::OriginalHeaderFailure::Operational(actual)=>actual.to_string()})}else{match tokens{Some(tokens)=>OriginalProcedureHeaders::from_primary(source,items,offset,tokens),None=>OriginalProcedureHeaders::reissue(source,items,offset)}})}
     fn cached_facts(&self,bytes:Option<&[u8]>,text:&str,offset:usize)->Option<(crate::AdaptedDeclarations,crate::allocation_ledger::AllocationLedger)>{bytes.and_then(|bytes|chunkfacts::decode(bytes,text,offset))}
     fn adapt<'a>(&self,ast:&'a AstFile,source:&str,headers:&'a OriginalProcedureHeaders,offset:usize)->Result<Result<(crate::AdaptedDeclarations,HeaderAllocationReceipt<'a>),Vec<crate::AdapterError>>,Self::Failure>{Ok(crate::adapter::from_ast_with_source_headers(ast,SymbolTable::default(),FileId(0),0,0,source,headers,offset))}
     fn capture(&self,state:&RetainedDeclarations,key:&[u8],source:dm_preprocess::SourceText,offset:usize,items:Vec<Item>,facts:crate::AdaptedDeclarations,ledger:crate::allocation_ledger::AllocationLedger,headers:Arc<OriginalProcedureHeaders>)->Result<Option<CurrentContribution>,Self::Failure>{Ok(state.capture_source_headers(key,source,offset,items,facts,ledger,Some(headers)))}
@@ -106,9 +106,9 @@ impl Permit for CheckedPermit<'_,'_>{
     type Failure=FrontendBuildFailure;
     fn checkpoint(&self)->Result<(),Self::Failure>{actual_checkpoint(self.admission).map_err(FrontendBuildFailure::Operational)}
     fn get(&self,state:&RetainedDeclarations,key:&[u8],text:&str,offset:usize)->Result<Option<CurrentContribution>,Self::Failure>{state.get_shared_checked(key,text,offset,self.admission).map_err(FrontendBuildFailure::Operational)}
-    fn headers(&self,source:dm_preprocess::SourceText,items:&[Item],offset:usize,tokens:Option<Vec<dm_syntax::SpanToken>>)->Result<Result<Arc<OriginalProcedureHeaders>,String>,Self::Failure>{
+    fn headers(&self,source:dm_preprocess::SourceText,items:&[Item],offset:usize,tokens:Option<Vec<dm_syntax::SpanToken>>,checker_settings:bool)->Result<Result<Arc<OriginalProcedureHeaders>,String>,Self::Failure>{
         use crate::procedure::header_input::OriginalHeaderFailure;
-        match match tokens{Some(tokens)=>OriginalProcedureHeaders::from_primary_admitted(source,items,offset,tokens,self.admission),None=>OriginalProcedureHeaders::reissue_admitted(source,items,offset,self.admission)}{
+        match OriginalProcedureHeaders::for_declaration_profile(source,items,offset,tokens,Some(self.admission),checker_settings){
             Ok(headers)=>Ok(Ok(headers)),Err(OriginalHeaderFailure::Source(message))=>Ok(Err(message)),Err(OriginalHeaderFailure::Operational(actual))=>Err(FrontendBuildFailure::Operational(actual)),
         }
     }

@@ -698,6 +698,8 @@ impl BodyArchive {
         }
         Ok(AnnotationCandidateRoster { archive: self })
     }
+    /// SAME original ordered occurrence ledger; no grouping/index is built.
+    pub fn original_declaration_occurrences(&self)->&crate::OccurrenceTable{&self.declarations}
     pub fn source_mapping(&self) -> &Arc<SourceExportMapping> {
         &self.mapping
     }

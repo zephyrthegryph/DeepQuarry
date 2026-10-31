@@ -9,6 +9,7 @@ pub struct DiagnosticDeclarations {
 pub struct DiagnosticDeclarationReceipt {
     pub(crate) retained_records: Option<crate::frontend::DiagnosticRetainedRecords>,
     errors: Vec<TreeError>,
+    pub(crate) settings_compilable: bool,
     owner: Weak<SemanticTree>,
 }
 impl DiagnosticDeclarationReceipt {
@@ -18,6 +19,7 @@ impl DiagnosticDeclarationReceipt {
         receipt
     }
 
+    pub fn settings_compilable(&self)->bool{self.settings_compilable}
     pub fn errors(&self) -> &[TreeError] {
         &self.errors
     }
@@ -38,6 +40,7 @@ impl DiagnosticDeclarationReceipt {
     pub(crate) fn new() -> Self {
         Self {
             errors: Vec::new(),
+            settings_compilable: true,
             retained_records: None,
             owner: Weak::new(),
         }

@@ -84,6 +84,7 @@ pub(crate) struct SourceSnapshot {
     policy_role: SnapshotPolicyRole,
     workspace_generator_selection: Option<WorkspaceGeneratorSelection>,
     native_workspace: Option<Arc<crate::runner_host::workspace_capture::WorkspaceCapture>>,
+    generation_inputs: Option<crate::request_runner::runner_freshness::GenerationInputClosure>,
     source_mapping: Option<Arc<dm_tree::frontend::SourceExportMapping>>,
     paths: BTreeMap<dm_ir::FileId, Arc<PathBuf>>,
     selected: selected::SelectedRows,
@@ -452,6 +453,7 @@ impl SourceSnapshot {
             policy_role: role,
             workspace_generator_selection: None,
             native_workspace: None,
+            generation_inputs: None,
             bodies: frontend
                 .callable_roster()
                 .ok()
@@ -635,6 +637,9 @@ impl QueryAttempt {
                 "workspace admission source/Db frame differs",
             ));
         }
+        let generation_inputs=admission.take_generation_inputs();
+        if generation_inputs.as_ref().is_some_and(|inputs|snapshot.workspace_generator_selection.as_ref().is_none_or(|selection|!inputs.matches_names(&selection.names))){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"generation admission questions differ from this exact staged frame"));}
+        snapshot.generation_inputs=generation_inputs;
         snapshot.policy_revision = Some(capture.policy_revision());
         snapshot.native_workspace = Some(Arc::clone(capture));
         let (snapshot, _) = self
@@ -1164,6 +1169,7 @@ impl SourceSnapshot {
             policy_role: SnapshotPolicyRole::ExplicitSubset,
             workspace_generator_selection: None,
             native_workspace: None,
+            generation_inputs: None,
             source_mapping: Some(Arc::clone(frontend.mapping())),
             paths: frontend
                 .files()
@@ -1279,3 +1285,29 @@ mod diagnostic_tests;
 mod bounded_json_writer;
 
 #[path="runner_query_generator_bytes.rs"]mod generator_bytes;
+
+impl SourceSnapshot {
+    pub(crate) fn retire_for_generation(mut self)
+        -> std::io::Result<crate::request_runner::runner_freshness::GenerationInputClosure>
+    {
+        {
+            let guard = self.workspace_native_read()?;
+            self.native_workspace.as_ref().ok_or_else(|| std::io::Error::other("generation workspace unavailable"))?.require_scope(&guard)?;
+            if self.policy_role != SnapshotPolicyRole::WorkspaceGeneratorChild
+                || self.workspace_generator_selection.as_ref().is_none_or(|selection|
+                    self.generation_inputs.as_ref().is_none_or(|inputs| !inputs.matches_names(&selection.names)))
+            {
+                return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,
+                    "prepared frame has no actual complete generation closure"));
+            }
+        }
+        let inputs = self.generation_inputs.take().ok_or_else(|| std::io::Error::other("generation closure unavailable"))?;
+        // The real source guard above has ended. No snapshot or its scope can
+        // be used by the serialized host while these owned inputs authorize the
+        // final freshness barrier. Source-output mutation happens only later.
+        drop(self);
+        Ok(inputs)
+    }
+}
+
+#[path="runner_query_generation_stage.rs"]mod generation_stage;

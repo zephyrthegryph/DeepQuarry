@@ -128,3 +128,18 @@ tools/analyze/src/raw_type_vars_frozen_original.rs -text
 tools/analyze/src/stats_policy_frozen_original.rs -text
 tools/analyze/src/actions_policy_frozen_original.rs -text
 tools/analyze/src/system_accessors_frozen_original.rs -text whitespace=cr-at-eol,-blank-at-eof
+
+/tools/dmb/crates/dm-analysis/src/checks_unknown_linter_setting_original.reference -text
+
+/tools/dmb/crates/dm-analysis/src/checks_unknown_setting_names_original.reference -text
+
+/tools/analyze/src/support/declare_before_policy.frozen -text
+
+/tools/analyze/src/support/declare_before_policy.rs -text
+
+/tools/analyze/src/support/declare_before_ids.rs -text
+/tools/analyze/src/tracked_lists_frozen_original.rs -text
+/tools/analyze/src/raw_policy_next_frozen/*.rs -text
+/tools/analyze/src/support/declare_before_ids.rs -text whitespace=-blank-at-eof
+/tools/analyze/src/support/declare_before_policy.frozen -text whitespace=-blank-at-eof
+/tools/analyze/src/support/declare_before_policy.rs -text whitespace=-blank-at-eof

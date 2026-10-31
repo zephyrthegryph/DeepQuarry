@@ -1,0 +1,4 @@
+/proc/probe()
+    set SpacemanDMM_typo = 1
+    set SpacemanDMM_typo in 1
+    return 0

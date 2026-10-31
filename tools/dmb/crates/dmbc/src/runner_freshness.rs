@@ -321,8 +321,11 @@ mod tests {
 /// captured-input freshness barrier succeeds for this exact workspace owner.
 pub(crate) struct WorkspacePolicyAdmission {
     capture: std::sync::Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,
+    generation_inputs: Option<GenerationInputClosure>,
 }
 impl WorkspacePolicyAdmission {
+    pub(crate) fn take_generation_inputs(self)->Option<GenerationInputClosure>{self.generation_inputs}
+
     pub(crate) fn capture(
         &self,
     ) -> &std::sync::Arc<crate::runner_host::workspace_capture::WorkspaceCapture> {
@@ -340,7 +343,7 @@ pub(crate) fn admit_workspace_captured<P: SnapshotProvider>(
     if !workspace.is_recorded_in(&inputs) {
         return Err(std::io::Error::other("admitted input closure omits workspace facts").into());
     }
-    Ok((inputs, WorkspacePolicyAdmission { capture: workspace }))
+    Ok((inputs, WorkspacePolicyAdmission { capture: workspace, generation_inputs: None }))
 }
 
 /// Issued only by the existing complete original input-freshness barrier.
@@ -415,4 +418,50 @@ pub(crate) fn admit_source_captured_with_provider_for_test<P: SnapshotProvider>(
     let inputs = capture.snapshot()?;
     admit(&inputs, provider)?;
     seal_source_admission(inputs, frame)
+}
+
+// Add beside WorkspacePolicyAdmission in runner_freshness.rs. The ordinary
+// admission path remains unchanged and retains no additional closure.
+pub(crate) struct GenerationInputClosure {
+    inputs: InputSnapshot,
+    names: [Option<crate::GeneratorName>; 13],
+}
+impl GenerationInputClosure {
+    pub(crate) fn matches_names(&self, names: &[Option<crate::GeneratorName>; 13]) -> bool {
+        self.names == *names
+    }
+    /// Complete captured-input freshness only. This is not a source-read scope
+    /// or permission to install paths; the serialized generation host owns that.
+    pub(crate) fn require_current(&self, provider: &impl SnapshotProvider) -> Result<(), Box<dyn Error>> {
+        admit(&self.inputs, provider)
+    }
+}
+
+/// Issue the same actual freshness receipt while MOVING its complete closure
+/// into generation ownership. No cloned snapshot, parser or semantic model.
+pub(crate) fn admit_generator_workspace_captured<P: SnapshotProvider>(
+    capture: &crate::input_snapshot::RecordingInputs<P>,
+    retained: Option<&InputSnapshot>,
+    provider: &crate::frozen_inputs::Inputs,
+    generated_outputs: &std::collections::BTreeSet<std::path::PathBuf>,
+    workspace: std::sync::Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,
+    intent: &crate::policy_request::AdmittedPolicyRequest,
+) -> Result<WorkspacePolicyAdmission, Box<dyn Error>> {
+    if intent.workspace().is_none_or(|request| !workspace.matches_request(request))
+        || intent.workspace_generators().is_empty()
+        || intent.workspace_generators().len() > 13
+    {
+        return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,
+            "generation closure requires the actual admitted workspace questions").into());
+    }
+    let inputs = admit_captured(capture, retained, provider, generated_outputs)?;
+    if !workspace.is_recorded_in(&inputs) {
+        return Err(std::io::Error::other("admitted generation closure omits workspace facts").into());
+    }
+    let mut names = [None; 13];
+    for (slot, name) in names.iter_mut().zip(intent.workspace_generators()) { *slot = Some(*name); }
+    Ok(WorkspacePolicyAdmission {
+        capture: workspace,
+        generation_inputs: Some(GenerationInputClosure { inputs, names }),
+    })
 }

@@ -1470,3 +1470,41 @@ native focused harness. This is a component checkpoint, not a default cutover.
 Canonical shared policy metadata, Plans, complete ordered checker reporting,
 full-project capacity checks, fresh production/DC/ratchets, and the real CLI and
 generation-stage lifecycle still require completion.
+
+### Generator, staging and raw-policy component checkpoint (2026-10-31)
+
+All thirteen original generator roles now have explicit native workspace paths.
+Declare and TrackedLists match complete independent original outputs and ordered
+diagnostics; Plans shares the original renderer and authenticates required
+callable source loans outside CODE without broadening discovery. The two newly
+ported unknown-setting checker families match the pinned original checker.
+Unknown settings use a separate diagnostic preparation profile: strict native
+compilation still rejects them, and that diagnostic frame cannot be promoted.
+
+Generation can now consume a genuine prepared snapshot into anonymous staged
+output and a complete input-freshness closure. Ordered files and diagnostics are
+streamed without copying generated text or retaining a source guard or operation
+budget. Real filesystem, quota, cancellation, ownership and failure-recovery tests
+cover this boundary. The seven source-only bootstrap generators also run from
+actual recorded originals with missing registered outputs, preserving negative
+input observations. This is not yet the transactional installer or native gen CLI.
+A remaining typed map/skin occurrence issue in the bootstrap source iterator is
+being corrected; main-project bootstrap availability is not established.
+
+Fourteen additional unchanged raw scanners use the native workspace path,
+expanding it from 27 to 41 policies. Independent complete old-policy comparisons
+preserve findings, annotation usage, configuration and ordering. Registry tests
+keep those file policies separate from the nine bounded cohort policies. The
+latest component evidence contains 112 distinct passing observations and four
+whole-original comparisons, retaining failures and failure-only repair receipts.
+That count is not a fresh whole-tree test run, lane stamp, current large-case
+availability proof or production/performance qualification. Existing scanner
+internal allocation baselines and strict/diagnostic preparation reuse remain
+explicitly unqualified.
+
+The actual cutover audit counts 101 Analyze policies. With this cohort, 62 have
+some native dispatch: 41 workspace file policies and 21 still bounded to fixture
+roles. Another 39 need native dispatch. Those limits, remaining checker families,
+genuine typed bootstrap consumers, transactional generation, complete CLI and
+custom reporting/baseline hooks, removal of duplicate models, and fresh combined
+production and performance verification still block the default cutover.

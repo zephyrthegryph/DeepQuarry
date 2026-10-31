@@ -104,6 +104,19 @@ impl BodyArchive {
             .for_target(crate::Target::Member(formal))
             .first()
             .ok_or("checker variable formal has no native source occurrence")?;
+        self.checker_variable_properties_at(formal,ordinal)
+    }
+    fn require_original_variable_occurrence(&self,formal:MemberId,ordinal:crate::OccurrenceId,profile:PackedU128,proof:&crate::checker_builtins::ValidatedCheckerProfile<'_>)->Result<(),String>{
+        proof.require(self.tree(),profile).map_err(|e|format!("checker variable profile unavailable: {e:?}"))?;
+        if self.declarations.get(ordinal).is_none_or(|row|row.target!=crate::Target::Member(formal)){return Err("checker variable occurrence belongs to another original member".into())}Ok(())
+    }
+    /// Original current ordinal avoids constructing the legacy target grouping.
+    pub fn checker_variable_qualifiers_original_at(&self,formal:MemberId,ordinal:crate::OccurrenceId,profile:PackedU128,proof:&crate::checker_builtins::ValidatedCheckerProfile<'_>)->Result<u8,String>{
+        self.require_original_variable_occurrence(formal,ordinal,profile,proof)?;let node=self.tree().member(formal).ok_or("checker qualifier formal unavailable")?;if node.kind!=MemberKind::Var||node.definition!=DefinitionMode::Declare||node.metadata.inherited_opaque.is_some(){return Err("checker qualifier needs exact authored formal".into())}self.mapping.declaration_checker_qualifiers(ordinal)
+    }
+    pub fn checker_variable_properties_original_at(&self,formal:MemberId,ordinal:crate::OccurrenceId,profile:PackedU128,proof:&crate::checker_builtins::ValidatedCheckerProfile<'_>)->Result<CheckerVariableProperties<'_>,String>{self.require_original_variable_occurrence(formal,ordinal,profile,proof)?;self.checker_variable_properties_at(formal,ordinal)}
+    fn checker_variable_properties_at(&self,formal:MemberId,ordinal:crate::OccurrenceId)->Result<CheckerVariableProperties<'_>,String>{
+        let node=self.tree().member(formal).ok_or("checker formal variable member unavailable")?;if node.kind!=MemberKind::Var||node.definition!=DefinitionMode::Declare||node.metadata.inherited_opaque.is_some(){return Err("checker variable needs an exact authored formal declaration".into())}
         let flags = self.mapping.declaration_checker_qualifiers(ordinal)?;
         let data = node.metadata.as_ref();
         let declared_hint = if let Some(array) = &data.array {

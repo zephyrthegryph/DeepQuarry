@@ -44,10 +44,11 @@ fn snapshot(checker: Option<&[u8]>) -> SourceSnapshot {
         b"[lint.base_vars.lists]\nrecord_accessor_prefixes=['get_']\n",
     )
 }
-fn snapshot_with_scopes(checker: Option<&[u8]>, scopes: &[u8]) -> SourceSnapshot {
+fn snapshot_with_scopes(checker:Option<&[u8]>,scopes:&[u8])->SourceSnapshot{snapshot_with_source(checker,scopes,b"/datum/record\n    proc/rebuild(x,y)\n        return !x & y\n    proc/get_value()\n        return 1\n")}
+fn snapshot_with_source(checker: Option<&[u8]>, scopes: &[u8],source:&[u8]) -> SourceSnapshot {
     let root = root();
     let mut files=BTreeMap::from([
-        (root.join("project.dme"),b"/datum/record\n    proc/rebuild(x,y)\n        return !x & y\n    proc/get_value()\n        return 1\n".to_vec()),
+        (root.join("project.dme"),source.to_vec()),
         (root.join("scopes.toml"), scopes.to_vec()),
     ]);
     if let Some(checker) = checker {
@@ -948,4 +949,52 @@ fn configured_checker_actual_cancellation_has_no_output_and_preserves_warm_synta
     let token=crate::daemon::control::Cancellation::default();let binding=crate::daemon::control::bind_with_deadline(token.clone(),std::time::Instant::now()+std::time::Duration::from_secs(300));token.cancel();
     let mut bytes=Vec::new();let error=snapshot.write_native_configured_checker(0,"ambiguous_not_bitwise",&root().join("project.dme"),None,&snapshot.tree,&mut bytes).unwrap_err();assert_eq!(error.kind(),io::ErrorKind::Interrupted);assert!(bytes.is_empty());assert_eq!(db.db().stats(dm_query::Kind(4)).computed,computed);drop(binding);
     snapshot.write_native_configured_checker(0,"ambiguous_not_bitwise",&root().join("project.dme"),None,&snapshot.tree,&mut bytes).unwrap();assert_eq!(bytes,expected);assert_eq!(db.db().stats(dm_query::Kind(4)).computed,computed);
+}
+
+#[test]fn configured_unknown_linter_setting_uses_real_tag_original_statement_order_and_same_warm_body(){let snapshot=snapshot_with_checker_source(Some(b"[diagnostics]\nunknown_linter_setting='hint'\n"),b"",include_bytes!("../../../fixtures/unified_checks/unknown_linter_setting/probe.dme"));let db=snapshot.native_raw_queries.as_ref().unwrap();let mut bytes=Vec::new();snapshot.write_native_configured_checker(0,"unknown_linter_setting",&root().join("project.dme"),None,&snapshot.tree,&mut bytes).unwrap();let row:serde_json::Value=serde_json::from_slice(&bytes).unwrap();let found=row["diagnostics"].as_array().unwrap();assert_eq!(found.len(),2);assert!(found.iter().all(|d|d["severity"]=="hint"&&d["family"]=="unknown_linter_setting"&&d["message"]=="unknown linter setting \"SpacemanDMM_typo\""));assert_eq!(found[0]["line"],2);assert_eq!(found[1]["line"],3);let computed=db.db().stats(dm_query::Kind(4)).computed;let mut warm=Vec::new();snapshot.write_native_configured_checker(0,"unknown_linter_setting",&root().join("project.dme"),None,&snapshot.tree,&mut warm).unwrap();assert_eq!(warm,bytes);assert_eq!(db.db().stats(dm_query::Kind(4)).computed,computed);let disabled=snapshot_with_checker_source(Some(b"[diagnostics]\nunknown_linter_setting='off'\n"),b"",include_bytes!("../../../fixtures/unified_checks/unknown_linter_setting/probe.dme"));let mut no_rows=Vec::new();disabled.write_native_configured_checker(0,"unknown_linter_setting",&root().join("project.dme"),None,&disabled.tree,&mut no_rows).unwrap();assert!(serde_json::from_slice::<serde_json::Value>(&no_rows).unwrap()["diagnostics"].as_array().unwrap().is_empty());assert_eq!(disabled.native_raw_queries.as_ref().unwrap().db().stats(dm_query::Kind(4)).computed,0);}
+#[test]fn configured_unknown_linter_setting_actual_kind4_io_cancel_and_dispatch_validation_never_return_partial_reply(){use crate::daemon::query::{self,SourceQuery};let snapshot=snapshot_with_checker_source(None,b"",include_bytes!("../../../fixtures/unified_checks/unknown_linter_setting/probe.dme"));let db=snapshot.native_raw_queries.as_ref().unwrap().clone();let tree=snapshot.tree.clone();let request=query::QueryRequest{timeout_seconds:Some(300),project:root().join("project.dme"),defines:Default::default(),engine_template:None,bootstrap_catalog:false,expected_revision:Some(format!("{:032x}",tree.identity())),expected_source_revision:Some(format!("{:032x}",snapshot.source_revision)),expected_policy_revision:Some(format!("{:032x}",snapshot.policy_revision.unwrap())),queries:vec![],source_queries:vec![SourceQuery::NativeConfiguredChecker{ordinal:0,family:"unknown_linter_setting".into(),environment:root().join("project.dme"),configuration:None}]};request.validate().unwrap();let state=crate::runner_host::query_snapshot::QueryState{snapshot:Some(snapshot),last_request_outcome:"analyzed",publication_pair:None};let failure=db.fail_body_syntax_after_for_test(0,io::Error::from_raw_os_error(1450));assert_eq!(query::evaluate_snapshot(&request,&tree,&state).err().unwrap().raw_os_error(),Some(1450));drop(failure);let healthy=query::evaluate_snapshot(&request,&tree,&state).unwrap();query::validate_effect_batch_for_test(&request,&healthy).unwrap();let token=crate::daemon::control::Cancellation::default();let guard=crate::daemon::control::bind_with_deadline(token.clone(),std::time::Instant::now()+std::time::Duration::from_secs(30));token.cancel();assert_eq!(query::evaluate_snapshot(&request,&tree,&state).err().unwrap().kind(),io::ErrorKind::Interrupted);drop(guard);assert_eq!(query::evaluate_snapshot(&request,&tree,&state).unwrap().jsonl,healthy.jsonl);}
+
+#[test]fn configured_unknown_setting_is_untagged_warning_even_when_observation_key_is_disabled_or_hint(){for config in [b"[diagnostics]\nunknown_setting='off'\n".as_slice(),b"[diagnostics]\nunknown_setting='hint'\n".as_slice()]{let snapshot=snapshot_with_checker_source(Some(config),b"",include_bytes!("../../../fixtures/unified_checks/unknown_setting/probe.dme"));let db=snapshot.native_raw_queries.as_ref().unwrap();let mut bytes=Vec::new();snapshot.write_native_configured_checker(0,"unknown_setting",&root().join("project.dme"),None,&snapshot.tree,&mut bytes).unwrap();let row:serde_json::Value=serde_json::from_slice(&bytes).unwrap();let found=row["diagnostics"].as_array().unwrap();assert_eq!(found.len(),2);assert!(found.iter().all(|d|d["severity"]=="warning"&&d["family"]=="unknown_setting"&&d["message"]=="unknown setting \"ordinary_unknown\""));assert_eq!(found[0]["line"],2);assert_eq!(found[1]["line"],3);let computed=db.db().stats(dm_query::Kind(4)).computed;assert!(computed>0);let mut warm=Vec::new();snapshot.write_native_configured_checker(0,"unknown_setting",&root().join("project.dme"),None,&snapshot.tree,&mut warm).unwrap();assert_eq!(warm,bytes);assert_eq!(db.db().stats(dm_query::Kind(4)).computed,computed);}}
+#[test]fn configured_unknown_setting_actual_kind4_io_cancel_and_dispatch_validation_never_return_partial_reply(){use crate::daemon::query::{self,SourceQuery};let snapshot=snapshot_with_checker_source(None,b"",include_bytes!("../../../fixtures/unified_checks/unknown_setting/probe.dme"));let db=snapshot.native_raw_queries.as_ref().unwrap().clone();let tree=snapshot.tree.clone();let request=query::QueryRequest{timeout_seconds:Some(300),project:root().join("project.dme"),defines:Default::default(),engine_template:None,bootstrap_catalog:false,expected_revision:Some(format!("{:032x}",tree.identity())),expected_source_revision:Some(format!("{:032x}",snapshot.source_revision)),expected_policy_revision:Some(format!("{:032x}",snapshot.policy_revision.unwrap())),queries:vec![],source_queries:vec![SourceQuery::NativeConfiguredChecker{ordinal:0,family:"unknown_setting".into(),environment:root().join("project.dme"),configuration:None}]};request.validate().unwrap();let state=crate::runner_host::query_snapshot::QueryState{snapshot:Some(snapshot),last_request_outcome:"analyzed",publication_pair:None};let failure=db.fail_body_syntax_after_for_test(0,io::Error::from_raw_os_error(1450));assert_eq!(query::evaluate_snapshot(&request,&tree,&state).err().unwrap().raw_os_error(),Some(1450));drop(failure);let healthy=query::evaluate_snapshot(&request,&tree,&state).unwrap();query::validate_effect_batch_for_test(&request,&healthy).unwrap();let token=crate::daemon::control::Cancellation::default();let guard=crate::daemon::control::bind_with_deadline(token.clone(),std::time::Instant::now()+std::time::Duration::from_secs(30));token.cancel();assert_eq!(query::evaluate_snapshot(&request,&tree,&state).err().unwrap().kind(),io::ErrorKind::Interrupted);drop(guard);assert_eq!(query::evaluate_snapshot(&request,&tree,&state).unwrap().jsonl,healthy.jsonl);}
+
+fn snapshot_with_checker_source(checker: Option<&[u8]>, scopes: &[u8],source:&[u8]) -> SourceSnapshot {
+    let root = root();
+    let mut files=BTreeMap::from([
+        (root.join("project.dme"),source.to_vec()),
+        (root.join("scopes.toml"), scopes.to_vec()),
+    ]);
+    if let Some(checker) = checker {
+        files.insert(root.join("SpacemanDMM.toml"), checker.to_vec());
+    }
+    let inputs = RecordingInputs::new(Memory(files), 1);
+    let db = Arc::new(crate::query_db::QueryDb::default());
+    let executor=dm_exec::BuildExecutor::new(1).unwrap();
+    let setting_host:Arc<dyn dm_tree::frontend::SettingExpressionQueries>=db.clone();
+    let diagnostic=dm_tree::frontend::build_for_checker_diagnostics_with_state_checked(&root.join("project.dme"),&inputs,&Default::default(),dm_tree::frontend::FrontendConfig{workers:1,engine:None,observer:None},None,&executor,None,&setting_host).unwrap().with_body_queries(db.clone()).unwrap();
+    let view=diagnostic.source_view().unwrap();
+    let intent = PolicyInputRequest {workspace_generators:Vec::new(),
+        workspace: None,
+        files: vec![
+            PolicyInputFile {
+                path: root.join("scopes.toml"),
+                role: PolicyInputRole::Configuration,
+                required: true,
+            },
+            PolicyInputFile {
+                path: root.join("SpacemanDMM.toml"),
+                role: PolicyInputRole::Configuration,
+                required: false,
+            },
+        ],
+        search_folders: vec![],
+    }
+    .admit()
+    .unwrap();
+    let captured = Arc::new(
+        policy_capture::capture_diagnostic(&view, &inputs, &intent.capture_files(), &[])
+            .unwrap()
+            .bind_request(&intent)
+            .unwrap(),
+    );
+    SourceSnapshot::capture_diagnostic(&view,db,captured).unwrap()
 }

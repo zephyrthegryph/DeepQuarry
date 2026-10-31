@@ -11,22 +11,14 @@ pub struct Decl {
 }
 
 /// The `TRACKED(T, v)` declaration lines of one file.
-pub fn declarations_in(f: &SourceFile) -> Vec<Decl> {
-    let mut out = Vec::new();
-    let text = f.text();
-    if !text.contains("TRACKED") {
-        return out;
-    }
-    for (i, line) in f.raw().lines().enumerate() {
-        let t = line.trim_start();
-        if t.starts_with('#') || t.starts_with("//") {
-            continue;
-        }
-        if let Some(m) = pat_match!(r"TRACKED\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\)").captures(t) {
-            out.push(Decl { ty: m.s(1).trim_end_matches('/').to_string(), var: m.s(2).to_string(), rel: f.rel.clone(), line: i as u32 + 1 });
-        }
-    }
-    out
+pub fn declarations_in(f:&SourceFile)->Vec<Decl>{let mut out=Vec::new();visit_declarations(f.text(),&f.rel,&mut crate::key_policy_control::Compatibility,&mut|_,ty,var,line|{out.push(Decl{ty:ty.to_owned(),var:var.to_owned(),rel:f.rel.clone(),line});Ok(())}).unwrap_or_else(|never|match never{});out}
+fn declaration_pattern()->&'static crate::pat::Pat{pat_match!(r"TRACKED\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\)")}
+/// SAME literal line selector; callbacks retain identifiers only after admission.
+pub fn visit_declarations<C:crate::key_policy_control::Control>(raw:&str,_relative:&str,c:&mut C,emit:&mut impl FnMut(&mut C,&str,&str,u32)->Result<(),C::Error>)->Result<(),C::Error>{
+ if !raw.contains("TRACKED"){return c.checkpoint()}
+ crate::key_policy_control::reserve(c,||declaration_pattern().capture_group_count().checked_mul(4)?.checked_mul(std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(std::mem::size_of::<crate::pat::Caps<'_>>()+128))?;
+ for(i,line)in raw.lines().enumerate(){c.checkpoint()?;let text=line.trim_start();if text.starts_with('#')||text.starts_with("//"){continue}if let Some(m)=declaration_pattern().captures(text){let line=if C::CHECKED{u32::try_from(i).ok().and_then(|n|n.checked_add(1)).ok_or_else(||c.overflow())?}else{i as u32+1};emit(c,m.s(1).trim_end_matches('/'),m.s(2),line)?;}}
+ c.checkpoint()
 }
 
 /// The procs and the version var for one list var.
@@ -98,19 +90,11 @@ pub fn emit(out: &mut Output, d: &Decl) {
 }
 
 /// A proc definition whose name looks generated (`add_x`, `set_x_at`, ...), by file: `(line, type if written on the line, name)`.
-pub fn lookalikes(f: &SourceFile) -> Vec<(u32, String, String)> {
-    let mut out = Vec::new();
-    if f.rel == "code/engine/_generated/tracked_lists.dm" || !f.text().contains("proc/") && !f.text().contains("_at(") {
-        return out;
-    }
-    let top = crate::pat!(r"^(/[\w/]*?)/(?:proc/)?((?:add|include|remove|clear|insert|swap|cut)_\w+|set_\w+_at)\s*\(");
-    let nested = crate::pat!(r"^\s+(?:proc/)((?:add|include|remove|clear|insert|swap|cut)_\w+|set_\w+_at)\s*\(");
-    for (i, line) in f.code().text.lines().enumerate() {
-        if let Some(m) = top.captures(line) {
-            out.push((i as u32 + 1, m.s(1).to_string(), m.s(2).to_string()));
-        } else if let Some(m) = nested.captures(line) {
-            out.push((i as u32 + 1, String::new(), m.s(1).to_string()));
-        }
-    }
-    out
+pub fn lookalike_candidates(relative:&str,raw:&str)->bool{relative!="code/engine/_generated/tracked_lists.dm"&&(raw.contains("proc/")||raw.contains("_at("))}
+pub fn lookalikes(f:&SourceFile)->Vec<(u32,String,String)>{if !lookalike_candidates(&f.rel,f.text()){return Vec::new()}let mut out=Vec::new();visit_lookalikes(&f.code().text,&mut crate::key_policy_control::Compatibility,&mut|_,line,owner,name|{out.push((line,owner.to_owned(),name.to_owned()));Ok(())}).unwrap_or_else(|never|match never{});out}
+/// SAME top/nested generated-name matcher over the original code view.
+pub fn visit_lookalikes<C:crate::key_policy_control::Control>(code:&str,c:&mut C,emit:&mut impl FnMut(&mut C,u32,&str,&str)->Result<(),C::Error>)->Result<(),C::Error>{
+ let top=crate::pat!(r"^(/[\w/]*?)/(?:proc/)?((?:add|include|remove|clear|insert|swap|cut)_\w+|set_\w+_at)\s*\(");let nested=crate::pat!(r"^\s+(?:proc/)((?:add|include|remove|clear|insert|swap|cut)_\w+|set_\w+_at)\s*\(");
+ crate::key_policy_control::reserve(c,||top.capture_group_count().max(nested.capture_group_count()).checked_mul(4)?.checked_mul(std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(std::mem::size_of::<crate::pat::Caps<'_>>()+128))?;
+ for(i,line)in code.lines().enumerate(){c.checkpoint()?;let point=if C::CHECKED{u32::try_from(i).ok().and_then(|n|n.checked_add(1)).ok_or_else(||c.overflow())?}else{i as u32+1};if let Some(m)=top.captures(line){emit(c,point,m.s(1),m.s(2))?}else if let Some(m)=nested.captures(line){emit(c,point,"",m.s(1))?}}c.checkpoint()
 }

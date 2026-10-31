@@ -133,6 +133,8 @@ impl SourceSnapshot {
             "ambiguous_not_bitwise"
             | "ambiguous_in_lhs"
             | "invalid_set_value"
+            | "unknown_linter_setting"
+            | "unknown_setting"
             | "field_access_static_type"
             | "proc_call_static_type" => DiagnosticSeverity::Warning,
             "control_condition_static"
@@ -157,9 +159,9 @@ impl SourceSnapshot {
             return Err(io::Error::other("body ordinal unavailable"));
         }
         let mut rows = Vec::new();
-        // The old undefined-proc producer is UNTAGGED: arbitrary diagnostic
-        // map keys named undefined_proc must not disable or re-severity it.
-        let tag = if matches!(family, "undefined_proc" | "undefined_variable") {
+        // These original producers are UNTAGGED: arbitrary observation-name
+        // map keys must not disable or re-severity their diagnostics.
+        let tag = if matches!(family, "undefined_proc" | "undefined_variable" | "unknown_setting") {
             None
         } else {
             Some(family)
@@ -198,6 +200,8 @@ impl SourceSnapshot {
                 "ambiguous_in_lhs" => {
                     dm_analysis::checks_ambiguous_in::archived(&body, Severity::Error)
                 }
+                "unknown_linter_setting" => match dm_analysis::checks_unknown_linter_setting::archived_checked(&body,Severity::Warning,&mut crate::daemon::control::checkpoint){Ok(rows)=>Ok(rows),Err(dm_analysis::policy_body_demand::PolicyFailure::Operational(actual))=>return Err(actual),Err(dm_analysis::policy_body_demand::PolicyFailure::Unsupported(message))=>Err(message.0)},
+                "unknown_setting" => match dm_analysis::checks_unknown_linter_setting::archived_ordinary_checked(&body,Severity::Warning,&mut crate::daemon::control::checkpoint){Ok(rows)=>Ok(rows),Err(dm_analysis::policy_body_demand::PolicyFailure::Operational(actual))=>return Err(actual),Err(dm_analysis::policy_body_demand::PolicyFailure::Unsupported(message))=>Err(message.0)},
                 "invalid_set_value" => {
                     dm_analysis::checks_invalid_set::archived(&body, Severity::Error)
                 }
@@ -230,6 +234,7 @@ impl SourceSnapshot {
                     "message":diagnostic.message,"notes":diagnostic.notes.iter().map(|note|note.legacy_text()).collect::<Vec<_>>() }));
             }
         }
+        crate::daemon::control::checkpoint()?;
         serde_json::to_writer(&mut *output,&serde_json::json!({
             "row":"source_native_configured_checker","schema":"dm-session-source-query-v1",
             "semantic_revision":format!("{:032x}",tree.identity()),"source_revision":format!("{:032x}",self.source_revision),
@@ -238,7 +243,7 @@ impl SourceSnapshot {
             "configuration_present":loaded.present,"configuration_schema":"complete_pinned_checker_schema",
             "full_checker_parity":false,"diagnostics":rows,
         })).map_err(io::Error::other)?;
-        output.write_all(b"\n")
+        output.write_all(b"\n")?;crate::daemon::control::checkpoint()
     }
 }
 #[cfg(test)]

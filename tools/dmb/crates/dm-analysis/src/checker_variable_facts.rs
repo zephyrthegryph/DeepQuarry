@@ -127,7 +127,12 @@ fn select(
 /// This is not a replacement for resolver dependency recording in other jobs.
 pub fn variable_original(tree:&SemanticTree,profile:PackedU128,owner:SymbolId,name:SymbolId)
     ->Result<Option<VariableFact>,String>{
-    tree.validate_checker_builtin_profile(profile).map_err(|e|format!("checker variable profile: {e:?}"))?;
+    variable_original_using(tree,profile,owner,name,||tree.validate_checker_builtin_profile(profile).map_err(|e|format!("checker variable profile: {e:?}")))
+}
+/// SAME original selector with the actual immutable tree/profile proof.
+pub fn variable_original_validated(tree:&SemanticTree,proof:&dm_tree::checker_builtins::ValidatedCheckerProfile<'_>,profile:PackedU128,owner:SymbolId,name:SymbolId)->Result<Option<VariableFact>,String>{variable_original_using(tree,profile,owner,name,||proof.require(tree,profile).map_err(|e|format!("checker variable profile: {e:?}")))}
+fn variable_original_using(tree:&SemanticTree,_profile:PackedU128,owner:SymbolId,name:SymbolId,validate:impl FnOnce()->Result<(),String>)->Result<Option<VariableFact>,String>{
+    validate()?;
     tree.lookup_type(owner).ok_or("checker variable original owner unavailable")?;
     let catalog=dm_tree::checker_builtins::pinned_catalog().map_err(|e|format!("checker catalog: {e:?}"))?;
     select(owner,|target|original_ancestor_depth(tree,owner,target),|receiver|{

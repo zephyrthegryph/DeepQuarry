@@ -2,7 +2,7 @@
 use super::*;
 use dm_preprocess::regions::filesystem_comparison_key;
 const COORD: usize = 128 + std::mem::size_of::<(PathBuf, Vec<&Path>)>();
-pub(super) struct AliasIndex<'a> {
+pub(crate) struct AliasIndex<'a> {
     rows: BTreeMap<PathBuf, Vec<&'a Path>>,
     charged: usize,
     #[cfg(test)]
@@ -11,7 +11,7 @@ pub(super) struct AliasIndex<'a> {
     comparisons: std::cell::Cell<usize>,
 }
 impl<'a> AliasIndex<'a> {
-    pub(super) fn reserve_charge(mut paths: impl Iterator<Item = &'a Path>) -> io::Result<usize> {
+    pub(crate) fn reserve_charge(mut paths: impl Iterator<Item = &'a Path>) -> io::Result<usize> {
         paths.try_fold(std::mem::size_of::<Self>(), |n, path| {
             n.checked_add(512)
                 .and_then(|n| {
@@ -20,7 +20,7 @@ impl<'a> AliasIndex<'a> {
                 .ok_or_else(|| io::Error::other("workspace alias index reserve overflow"))
         })
     }
-    pub(super) fn new(paths: impl Iterator<Item = &'a Path>, budget: usize) -> io::Result<Self> {
+    pub(crate) fn new(paths: impl Iterator<Item = &'a Path>, budget: usize) -> io::Result<Self> {
         let mut result = Self {
             rows: BTreeMap::new(),
             charged: std::mem::size_of::<Self>(),
@@ -80,7 +80,7 @@ impl<'a> AliasIndex<'a> {
         }
         Ok(result)
     }
-    pub(super) fn candidate(&self, path: &Path) -> io::Result<Option<&'a Path>> {
+    pub(crate) fn candidate(&self, path: &Path) -> io::Result<Option<&'a Path>> {
         let key = filesystem_comparison_key(path);
         #[cfg(test)]
         self.normalized.set(self.normalized.get() + 1);

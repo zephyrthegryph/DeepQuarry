@@ -17,6 +17,9 @@ pub struct GenerationDeclarationFrame {
 }
 impl GenerationDeclarationFrame {
     pub fn omissions(&self)->impl Iterator<Item=&Path>{self.plan.omissions()}
+    /// Original file-local generation data; no ordinary compiler completeness.
+    pub fn original_sources(&self)->impl Iterator<Item=(&Path,Option<&dm_preprocess::SourceAcquisitionLease>)>{self.plan.original_sources()}
+    pub fn root_source(&self)->Option<&Path>{self.plan.root_source()}
     /// Narrow authored declaration data only. No semantic resolution, callable
     /// lookup, body parser or source-export mapping is issued by this accessor.
     pub fn declarations(&self)->impl Iterator<Item=&crate::Skeleton>{self.parsed.adapted.skeletons.iter()}
@@ -36,7 +39,10 @@ pub fn prepare_generation_declarations<P:SourceProvider>(
         if !plan.diagnostics().is_empty(){return Err(GenerationPreparationFailure::Preprocess(plan.diagnostics().to_vec()))}
         let expanded=plan.expand(executor);
         if !expanded.diagnostics.is_empty(){return Err(GenerationPreparationFailure::Preprocess(expanded.diagnostics.clone()))}
+        let parsing_started=std::time::Instant::now();
+        observe(config,FrontendStage::DeclarationParsing,ProgressKind::Started,std::time::Duration::ZERO,0,0);
         let mut parsed=super::declaration_parse::parse_declarations_with_demand(&expanded,config,None,executor,None,&demand).map_err(GenerationPreparationFailure::Frontend)?;
+        observe(config,FrontendStage::DeclarationParsing,ProgressKind::Completed,parsing_started.elapsed(),parsed.adapted.skeletons.len(),parsed.adapted.skeletons.len());
         if !parsed.diagnostics.is_empty(){return Err(GenerationPreparationFailure::Syntax(std::mem::take(&mut parsed.diagnostics)))}
         if !parsed.declaration_errors.is_empty(){return Err(GenerationPreparationFailure::Declarations(std::mem::take(&mut parsed.declaration_errors)))}
         Ok(GenerationDeclarationFrame{plan,parsed})

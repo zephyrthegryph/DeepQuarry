@@ -252,8 +252,11 @@ impl PolicyInputs {
     pub fn files(&self) -> impl Iterator<Item = &PolicyFile> {
         self.files.values()
     }
+    /// Borrow an already-issued exact canonical key without path scratch.
+    /// This only selects existing data; it grants no source or scope receipt.
+    pub fn file_exact(&self,path:&Path)->Option<&PolicyFile>{self.files.get(path)}
     pub fn file(&self, path: &Path) -> Option<&PolicyFile> {
-        self.files.get(&canonical_path(path))
+        self.file_exact(path).or_else(||self.files.get(&canonical_path(path)))
     }
     pub fn matches_revisions(&self, source: u128, policy: u128) -> bool {
         self.revision.compiler_source == source && self.revision.policy_inputs == policy

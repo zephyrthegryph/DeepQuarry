@@ -373,6 +373,20 @@ impl UnsealedDependencyData{
  }
 }
 
+fn render_plans_pages_using(facts:&crate::reactive_dependency_result::FrozenDeps,inputs:&PolicyInputs,root:&std::path::Path,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,budget:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>)->Result<crate::sparse_slots_policy::Output,Failure>{
+  let scratch=Budget::scoped_temporaries(budget).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;
+  let produced=(||{let source=ReadSource::native(inputs,root,&scratch)?.with_raw_policy_pages(pages,order).with_checkpoint(poll);let mut rendered=crate::reactive_plans_generator_native::generate(&source,crate::reactive_dependency_view::Analysis::Frozen(facts))?;let mut out=crate::sparse_slots_policy::Output::default();out.body=std::mem::take(&mut rendered.body);out.diags=std::mem::take(&mut rendered.diags);drop(rendered);let bytes=out.diags.capacity().checked_mul(std::mem::size_of::<crate::sparse_slots_policy::Diagnostic>()).and_then(|n|n.checked_add(out.body.capacity())).and_then(|n|out.diags.iter().try_fold(n,|n,d|n.checked_add(d.rel.capacity())?.checked_add(d.msg.capacity()))).ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"Plans retained output overflow")))?;budget.charge(bytes).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;Ok(out)})();if produced.is_err(){scratch.keep_failed_scratch()}drop(scratch);finish_page_data(produced,budget,poll)
+}
+impl UnsealedDependencyData{
+ /// Output DATA only; the real host separately validates current full scopes.
+ pub fn render_plans_data_from_pages(&self,inputs:&PolicyInputs,root:&std::path::Path,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,budget:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>)->Result<crate::sparse_slots_policy::Output,Failure>{poll()?;if !self.matches_compiled(inputs){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"Plans data belongs to another compiled source")))}render_plans_pages_using(&self.value.facts,inputs,root,pages,order,budget,poll)}
+}
+impl DependencyResult{
+ /// Finite dependency DATA may exercise the same renderer without receiving
+ /// any full-scope Artifact or completion authority.
+ pub fn render_plans_data_from_pages(&self,inputs:&PolicyInputs,root:&std::path::Path,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,budget:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>)->Result<crate::sparse_slots_policy::Output,Failure>{poll()?;if !self.matches(inputs){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"Plans dependency source differs")))}render_plans_pages_using(&self.facts,inputs,root,pages,order,budget,poll)}
+}
+
 impl DependencyResult{
  /// Finite original Plans generation over the SAME completed dependency rows.
  /// Raw metadata loans grant no whole-workspace or default CLI coverage.

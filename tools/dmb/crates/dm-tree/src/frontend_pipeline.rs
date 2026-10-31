@@ -113,7 +113,8 @@ pub fn build_with_executor_and_semantic_state_for_policy<P: SourceProvider>(
 }
 /// Select this mode UP FRONT. Never retry a failed strict build as a checker
 /// graph. It uses the exact same parser/adapter/builder and refuses all errors
-/// outside the explicitly recorded inherited-VAR declaration domain.
+/// outside the explicitly recorded inherited-VAR declaration domain. Original
+/// unknown setting syntax is retained for checking and prevents compiler promotion.
 pub fn build_for_checker_diagnostics<P: SourceProvider>(
     project: &Path,
     provider: &P,
@@ -563,13 +564,14 @@ fn build_with_executor_and_semantic_state_for_policy_demand<P:SourceProvider,D:s
         allocation_ledger,
         declaration_errors,
         reuse_stats,
-    } = declaration_parse::parse_declarations_with_demand(
+    } = declaration_parse::parse_declarations_with_demand_profile(
         &expanded,
         config,
         memo,
         executor,
         semantic_state.as_deref().map(|state| &state.declarations),
         demand,
+        diagnostic.is_some(),
     )?;
     timings.declaration_reuse = reuse_stats;
     diagnostics.extend(

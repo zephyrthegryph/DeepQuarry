@@ -4,6 +4,10 @@ use std::{collections::HashMap,sync::Arc};
 /// A provider may stop a requested search. This bool is DATA and cannot seal a
 /// complete dependency answer; only the actual host traversal receipt can.
 pub trait RawPolicyPages{
+ /// Requested original callable file DATA only. Ordinary page providers do not
+ /// implicitly grant an arbitrary-path or compiled-source loan.
+ fn with_callable_file(&self,_ordinal:usize,_name:&str,_visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<(),Failure>)->Result<(),Failure>{Err(Failure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"Plans requires the genuine original raw file of every issued reader definition")))}
+
  fn for_each(&self,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>;
 }
 /// Unique declaration-policy rows, not a DM declaration/procedure model.

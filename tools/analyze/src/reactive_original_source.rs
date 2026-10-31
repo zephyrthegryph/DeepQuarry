@@ -21,6 +21,7 @@ pub(crate) struct ReadCallable<'a>{
     pub member:dm_tree::MemberId,pub file:&'a dm_analysis::policy_inputs::PolicyFile,
     pub header:usize,
 }
+pub(crate) struct OriginalDefinitionPoint<'a>{pub member:dm_tree::MemberId,pub ordinal:dm_tree::OccurrenceId,pub line:usize,pub owner:&'a str,pub name:&'a str,pub path:Arc<std::path::PathBuf>}
 pub(crate) enum SelectedCallable<'a>{Source(ReadCallable<'a>),Builtin,Missing}
 pub(crate) struct ReadVariable<'a>{
     pub owner:&'a str,pub declared:String,pub file:Option<Cow<'a,str>>,
@@ -71,9 +72,10 @@ impl<'a> ReadSource<'a>{
     /// only. Fresh evidence/config/current-owner checks remain the endpoint's
     /// responsibility. No raw roster, marker table, path map or body is built.
     pub(crate) fn native(inputs:&'a PolicyInputs,root:&'a Path,budget:&'a Arc<Budget>)->Result<Self,String>{
-        budget.require()?;if !root.is_absolute(){return Err("native reactive diagnostic root must be absolute".into())}
-        let tree=inputs.archive().tree();let profile=tree.checker_builtin_profile().ok_or("reactive original source lacks exact builtin profile")?;
-        tree.validate_checker_builtin_profile(profile).map_err(|e|format!("reactive source profile: {e:?}"))?;
+        budget.require()?;if !root.is_absolute(){return Err("native reactive diagnostic root must be absolute".into())}let tree=inputs.archive().tree();let profile=tree.checker_builtin_profile().ok_or("reactive original source lacks exact builtin profile")?;let proof=tree.validated_checker_profile(profile).map_err(|e|format!("reactive source profile: {e:?}"))?;Self::native_validated(inputs,root,budget,&proof,profile)
+    }
+    pub(crate) fn native_validated(inputs:&'a PolicyInputs,root:&'a Path,budget:&'a Arc<Budget>,proof:&dm_tree::checker_builtins::ValidatedCheckerProfile<'_>,profile:dm_ir::PackedU128)->Result<Self,String>{
+        budget.require()?;if !root.is_absolute(){return Err("native reactive diagnostic root must be absolute".into())}proof.require(inputs.archive().tree(),profile).map_err(|e|format!("reactive source profile: {e:?}"))?;
         Ok(Self{raw:None,raw_pages:None,native_root:Some(root),inputs,budget,order:ReadOrder::Owned(HashMap::new()),checkpoint:None,body_borrower:None})
     }
 
@@ -164,12 +166,16 @@ impl<'a> ReadSource<'a>{
     /// contain compiled reader definitions outside CODE_DM; code eligibility is
     /// computed by the SAME existing selector, never supplied by the caller.
     /// Page providers remain CODE-only; an absent required reader is refused by
-    /// the collector rather than converted into a clean reader-key absence.
+    /// the collector then requires an exact original callable-file loan.
     pub(crate) fn with_plan_metadata_files(&self,visit:&mut dyn FnMut(&str,crate::captured_raw_file::RawPolicyViews<'_>,bool)->Result<bool,crate::reactive_reads_native::Failure>)->Result<bool,crate::reactive_reads_native::Failure>{
       if self.raw_pages.is_some(){return self.with_policy_files(&mut|relative,views|visit(relative,views,true))}
       use crate::reactive_reads_native::Failure;self.checkpoint()?;self.require()?;let pending=(||{for file in &self.raw()?.tree.files{self.checkpoint()?;self.require()?;let next=visit(&file.rel,crate::captured_raw_file::RawPolicyViews::from_source(file),crate::tree::CODE_DM.matches(file))?;file.require_view_budget().map_err(|message|Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))?;if !next{return Ok(false)}}Ok(true)})();if matches!(&pending,Err(Failure::Operational(_))){return pending}self.checkpoint()?;self.require()?;pending
     }
 
+    /// Required callable-source DATA remains distinct from CODE coverage.
+    pub(crate) fn with_plan_reader_file(&self,ordinal:usize,name:&str,visit:&mut dyn FnMut(&str,crate::captured_raw_file::RawPolicyViews<'_>)->Result<(),crate::reactive_reads_native::Failure>)->Result<(),crate::reactive_reads_native::Failure>{
+      use crate::reactive_reads_native::Failure;self.checkpoint()?;self.require()?;let pages=self.raw_pages.ok_or_else(||Failure::Unsupported("required original Plans reader file unavailable".into()))?;let pending=pages.with_callable_file(ordinal,name,visit);if matches!(&pending,Err(Failure::Operational(_))){return pending}self.budget.require().map_err(|message|Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))?;self.checkpoint()?;self.require()?;pending
+    }
     /// Borrow authenticated RAW-policy code views only. These include inactive
     /// text and cannot issue compiled BodySyntax/declaration/source receipts.
     pub(crate) fn with_reaction_code(&self,hint:&str,mut visit:impl FnMut(&str,&crate::tree::View)->Result<bool,crate::reactive_reads_native::Failure>)->Result<(),crate::reactive_reads_native::Failure>{
@@ -245,6 +251,7 @@ impl<'a> ReadSource<'a>{
         Ok(())
     }
     fn file(&self,path:&Path)->Result<&'a dm_analysis::policy_inputs::PolicyFile,String>{
+        if let Some(file)=self.inputs.file_exact(path){return if file.is_compiled()&&file.role()==PolicyRole::DmSource{Ok(file)}else{Err("reactive original cursor has no captured compiled source".into())}}
         // EXACT existing canonical PolicyInputs lookup, not reconstructed raw
         // spelling. Canonical path scratch is admitted before entering lookup.
         charge(self.budget,path.as_os_str().len().checked_mul(8).and_then(|n|n.checked_add(512)))?;
@@ -421,7 +428,7 @@ impl<'a> ReadSource<'a>{
     /// SAME original definition proximity used by the unique annotation policy.
     /// Only two scalar tuples survive the scan; no def_index/model is rebuilt.
     pub(crate) fn definition_neighbors<E:From<String>+From<&'static str>>(&self,rel:&str,line:u32,mut checkpoint:impl FnMut()->Result<(),E>)->Result<(Option<(usize,&'a str,&'a str)>,Option<(usize,&'a str,&'a str)>),E>{
-        self.require()?;let archive=self.inputs.archive();let tree=archive.tree();
+        self.require()?;if self.raw.is_none()&&self.raw_pages.is_none(){return Err("reactive annotation source requires genuine raw policy loans".into())}let archive=self.inputs.archive();
         let current=if let Some(raw)=self.raw{
             let raw=raw.tree.get(rel).ok_or("reactive annotation source is not in current raw roster")?;
             charge(self.budget,raw.abs.as_os_str().len().checked_mul(8).and_then(|n|n.checked_add(512)))?;
@@ -435,28 +442,19 @@ impl<'a> ReadSource<'a>{
             let path=root.join(rel);let Some(file)=self.inputs.file(&path).filter(|file|file.is_compiled()&&file.role()==PolicyRole::DmSource)else{checkpoint()?;return Ok((None,None))};file
         };
         let mut before=None;let mut after=None;
-        for target in tree.declarations(){
-            checkpoint()?;self.require()?;let Target::Member(member)=target else{continue};
-            let node=tree.member(*member).ok_or("reactive definition member missing")?;
-            if archive.member_location(*member).is_none(){continue;}
-            let owner=tree.type_node(node.owner).and_then(|n|tree.symbols().text(n.path)).ok_or("reactive definition owner missing")?;
-            let name=tree.symbols().text(node.name).ok_or("reactive definition name missing")?;
-            let(path,at)=match node.kind{
-                MemberKind::Var=>{
-                    if node.definition!=dm_tree::DefinitionMode::Declare{continue;}
-                    let profile=tree.checker_builtin_profile().ok_or("reactive source profile missing")?;
-                    let Some(fact)=checker_variable_facts::variable_original(tree,profile,SymbolId::of(owner),node.name)?else{return Err("reactive original declared variable missing".into())};
-                    if fact.formal!=Some(*member){continue;}
-                    let cursor=archive.member_policy_compatibility_cursor(*member)?;(cursor.path,cursor.line)
-                }
-                MemberKind::Proc|MemberKind::Verb=>{let point=archive.callable_header_policy_origin(*member)?;(point.path,point.line)}
-            };
-            if !std::ptr::eq(self.file(&path)?,current){continue;}
-            let point=(at,owner,name);
-            if at<=line as usize{if before.is_none_or(|p|p<point){before=Some(point);}}
-            else if after.is_none_or(|p|point<p){after=Some(point);}
-        }
+        self.visit_definition_points(&mut checkpoint,&mut|point|{if !std::ptr::eq(self.file(&point.path)?,current){return Ok(())}let item=(point.line,point.owner,point.name);if item.0<=line as usize{if before.is_none_or(|p|p<item){before=Some(item);}}else if after.is_none_or(|p|item<p){after=Some(item);}Ok(())})?;
         checkpoint()?;Ok((before,after))
+    }
+    /// Borrow actual ordered source definition points, without a second
+    /// declaration index. Each authored skeleton owns its MemberId; the exact
+    /// current occurrence ordinal selects the original compatibility cursor.
+    pub(crate) fn visit_definition_points<E:From<String>+From<&'static str>>(&self,checkpoint:&mut impl FnMut()->Result<(),E>,emit:&mut impl FnMut(OriginalDefinitionPoint<'a>)->Result<(),E>)->Result<(),E>{
+        self.require()?;let archive=self.inputs.archive();let tree=archive.tree();
+        for(ordinal,occurrence)in archive.original_declaration_occurrences().source_order().iter().enumerate(){checkpoint()?;self.require()?;let Target::Member(member)=occurrence.target else{continue};let node=tree.member(member).ok_or("reactive definition member missing")?;let ordinal=dm_tree::OccurrenceId(u32::try_from(ordinal).map_err(|_|"reactive definition ordinal overflow")?);if archive.source_mapping().location_of(ordinal).is_none(){continue}
+            let owner=tree.type_node(node.owner).and_then(|n|tree.symbols().text(n.path)).ok_or("reactive definition owner missing")?;let name=tree.symbols().text(node.name).ok_or("reactive definition name missing")?;
+            let(path,line)=match node.kind{MemberKind::Var=>{if node.definition!=dm_tree::DefinitionMode::Declare{continue}let formal=tree.source_formal_variable_member(tree.type_node(node.owner).ok_or("reactive source owner missing")?.path,node.name).map_err(str::to_owned)?;if formal!=Some(member){continue}if node.metadata.inherited_opaque.is_some()||node.metadata.procedure.is_some(){return Err("checker original variable metadata opaque".into())}let cursor=archive.source_mapping().declaration_policy_compatibility_cursor(ordinal)?;(cursor.path,cursor.line)},MemberKind::Proc|MemberKind::Verb=>{let origin=archive.callable_header_policy_origin(member)?;(origin.path,origin.line)}};
+            emit(OriginalDefinitionPoint{member,ordinal,line,owner,name,path})?;
+        }checkpoint()?;Ok(())
     }
     /// Unique proc_defs selection, without body demand or a copied index. The
     /// original opening token supplies the exact old raw-policy header line.
@@ -661,6 +659,17 @@ mod native_source_test_profile;
   assert_eq!(crate::auto_tracking_native::decide(&source,&HashMap::new(),&candidates,&[]).unwrap().tracked,decision.tracked,"same original source recovers after actual IO");
   let tiny=Budget::new(std::mem::size_of::<Budget>()+2*std::mem::size_of::<usize>()).unwrap();let limited=ReadSource::native(&inputs,&root,&tiny).unwrap().with_checkpoint(&checkpoint);
   let refused=crate::auto_tracking_native::decide(&limited,&HashMap::new(),&candidates,&[]).err().expect("cold metadata allocation must refuse");assert!(matches!(refused,crate::reactive_reads_native::Failure::Operational(ref e)if e.kind()==std::io::ErrorKind::OutOfMemory));assert!(tiny.denied(),"actual metadata reservation must deny the same tiny budget; missing checkpoint is not quota evidence");
+  // Pure original source coordinates grant no raw annotation/body role.
+  let mut points=Vec::new();source.visit_definition_points(&mut||Ok::<_,String>(()),&mut|point|{points.push(point);Ok(())}).unwrap();
+  assert!(points.iter().any(|p|p.owner=="/datum/probe"&&p.name=="value"));assert!(!points.iter().any(|p|p.owner=="/datum/probe/child"&&p.name=="value"));
+  let tree=inputs.archive().tree();let profile=tree.checker_builtin_profile().unwrap();let proof=tree.validated_checker_profile(profile).unwrap();
+  assert!(tree.checker_source_type_presence_validated(profile,"/datum/probe",&proof).unwrap());
+  assert!(tree.checker_source_type_presence_validated(dm_ir::PackedU128::default(),"/datum/probe",&proof).is_err());
+  let fact=dm_analysis::checker_variable_facts::variable_original_validated(tree,&proof,profile,dm_ir::SymbolId::of("/datum/probe"),dm_ir::SymbolId::of("value")).unwrap().unwrap();
+  let formal=fact.formal.unwrap();let point=points.iter().find(|p|p.member==formal).unwrap();let archive=inputs.archive();
+  let old=archive.checker_variable_properties(formal,profile).unwrap();let current=archive.checker_variable_properties_original_at(formal,point.ordinal,profile,&proof).unwrap();assert_eq!(current.declared_hint(),old.declared_hint());assert_eq!(archive.checker_variable_qualifiers_original_at(formal,point.ordinal,profile,&proof).unwrap(),archive.checker_variable_qualifiers(formal,profile).unwrap());
+  let other=points.iter().find(|p|p.member!=formal).unwrap();assert!(archive.checker_variable_properties_original_at(formal,other.ordinal,profile,&proof).is_err());
+  let mut refused=0;let failure=source.visit_definition_points(&mut||Err::<(),crate::reactive_reads_native::Failure>(crate::reactive_reads_native::Failure::Operational(std::io::Error::from_raw_os_error(1450))),&mut|_|{refused+=1;Ok(())});assert!(matches!(failure,Err(crate::reactive_reads_native::Failure::Operational(ref e))if e.raw_os_error()==Some(1450)));assert_eq!(refused,0);
   assert_eq!(provider.reads.get(),before,"constructor/metadata queries cannot acquire source again");assert!(source.parse_body(0).is_err(),"no original active-context body borrower is fabricated");
  }
 }

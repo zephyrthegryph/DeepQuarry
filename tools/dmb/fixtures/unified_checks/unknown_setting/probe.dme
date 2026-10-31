@@ -1,0 +1,4 @@
+/proc/probe()
+    set ordinary_unknown = 1
+    set ordinary_unknown in 1
+    return 0

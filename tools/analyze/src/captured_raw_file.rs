@@ -671,7 +671,11 @@ mod report_evidence_tests {
 /// One host-funded, operation-local code loan. The host already authenticated
 /// raw bytes and normalized them before calling; no source receipt is minted.
 #[cfg(feature="native-policy")]
-pub fn with_original_policy_file(root:&Path,path:&Path,text:dm_preprocess::SourceText,live_page_bytes:usize,budget:&Arc<crate::captured_generator_budget::Budget>,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,crate::reactive_reads_native::Failure>)->Result<bool,crate::reactive_reads_native::Failure>{
+pub fn with_original_policy_file(root:&Path,path:&Path,text:dm_preprocess::SourceText,live_page_bytes:usize,budget:&Arc<crate::captured_generator_budget::Budget>,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,crate::reactive_reads_native::Failure>)->Result<bool,crate::reactive_reads_native::Failure>{with_original_policy_file_prepared(root,path,live_page_bytes,budget,|_|Ok(text),visit)}
+/// Prepare original DATA inside this SAME file scratch. The producer must
+/// preadmit its real normalization before allocating; no source role is minted.
+#[cfg(feature="native-policy")]
+pub fn with_original_policy_file_prepared(root:&Path,path:&Path,live_page_bytes:usize,budget:&Arc<crate::captured_generator_budget::Budget>,prepare:impl FnOnce(&crate::captured_generator_budget::Budget)->Result<dm_preprocess::SourceText,crate::reactive_reads_native::Failure>,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,crate::reactive_reads_native::Failure>)->Result<bool,crate::reactive_reads_native::Failure>{
  use crate::reactive_reads_native::Failure;
  fn refused(budget:&crate::captured_generator_budget::Budget,message:impl Into<String>)->Failure{budget.deny();Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message.into()))}
  let scratch=crate::captured_generator_budget::Budget::scoped_temporaries(budget).map_err(|message|refused(budget,message))?;
@@ -682,6 +686,7 @@ pub fn with_original_policy_file(root:&Path,path:&Path,text:dm_preprocess::Sourc
  scratch.charge(path_peak).map_err(|message|refused(budget,message))?;
  let relative=dm_preprocess::regions::relative_filesystem_path(path,root).ok_or_else(||Failure::from("original code file escapes captured root"))?;
  let rel=relative.to_string_lossy().replace('\\',"/");
+ let text=prepare(&scratch)?;
  let extra=SourceFile::raw_policy_view_extra_bound(&rel,path,&text)
     .and_then(|n|n.checked_add(std::mem::size_of::<Tree>()+std::mem::size_of::<File>()+std::mem::size_of::<SourceFile>()+256))
     .and_then(|n|n.checked_add(root.as_os_str().len().checked_mul(4)?))
@@ -699,4 +704,13 @@ pub fn with_original_policy_file(root:&Path,path:&Path,text:dm_preprocess::Sourc
  if matches!(&pending,Err(Failure::Operational(_))){return pending}
  budget.require().map_err(|message|refused(budget,message))?;
  guard.ok=pending.is_ok();pending
+}
+
+#[cfg(all(test,feature="native-policy"))]mod required_file_scope_tests{
+ use super::*;use crate::{captured_generator_budget::Budget,captured_reactive_reads::Failure};
+ #[test]fn prepared_original_file_normalization_is_funded_before_allocation_and_released_after_physical_file(){
+  let root=std::env::current_dir().unwrap();let path=root.join("code/required-reader.dm");let budget=Budget::new(4*1024*1024).unwrap();let before=budget.used();let fixed=std::mem::size_of::<Budget>()+2*std::mem::size_of::<usize>();
+  for page in 0..80{let raw=with_original_policy_file_prepared(&root,&path,0,&budget,|scratch|{scratch.charge(4096).map_err(|message|Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))?;Ok(dm_preprocess::SourceText::from("/datum/probe/proc/reactions()\n    return \"required\"\n"))},&mut|relative,views|{assert_eq!(relative,"code/required-reader.dm");assert!(views.raw()?.contains("required"));Ok(true)}).unwrap();assert!(raw);assert_eq!(budget.used(),before+(page+1)*fixed,"only the known fixed scratch metadata survives each local File");}
+  let tiny=Budget::new(fixed).unwrap();let prepared=std::cell::Cell::new(false);let actual=with_original_policy_file_prepared(&root,&path,0,&tiny,|_|{prepared.set(true);Ok(dm_preprocess::SourceText::from(""))},&mut|_,_|panic!("quota must refuse before file loan"));assert!(matches!(actual,Err(Failure::Operational(ref error))if error.kind()==std::io::ErrorKind::OutOfMemory));assert!(!prepared.get());
+ }
 }

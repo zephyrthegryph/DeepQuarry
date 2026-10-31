@@ -16,6 +16,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "ambiguous_not_bitwise"
             | "ambiguous_in_lhs"
             | "invalid_set_value"
+            | "unknown_linter_setting"
+            | "unknown_setting"
             | "control_condition_static"
             | "unreachable_code"
             | "loop_condition_determinate"
@@ -26,6 +28,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err("unknown native checker family".into());
     }
     let files = AcquiredFiles::default();
+    if matches!(family.as_str(),"unknown_linter_setting"|"unknown_setting") {
+        let executor=dm_exec::BuildExecutor::new(1)?;
+        let diagnostic=dm_tree::frontend::build_for_checker_diagnostics(Path::new(&project),&files,&Default::default(),dm_tree::frontend::FrontendConfig{workers:1,engine:None,observer:None},None,&executor).map_err(|errors|format!("native diagnostic frontend failed: {errors:?}"))?;
+        let source=diagnostic.source_view()?;
+        for (ordinal,_) in dm_analysis::checker_order::archived_bodies(source.archive())? {
+            let body=source.archive().parse(ordinal).map_err(|error|error.message)?;
+            let rows=if family=="unknown_setting" {dm_analysis::checks_unknown_linter_setting::archived_ordinary_checked(&body,Severity::Warning,&mut||Ok(()))?}else{dm_analysis::checks_unknown_linter_setting::archived(&body,Severity::Warning)?};
+            for row in rows {let point=source.mapping().source_note_point(row.span.start)?;println!("{}",serde_json::json!({"family":row.family,"severity":"warning","file":point.path,"line":point.line,"expanded_column":point.byte_column,"message":row.message,"notes":row.notes.iter().map(|note|note.legacy_text()).collect::<Vec<_>>()}));}
+        }
+        return Ok(());
+    }
     let frontend = build(Path::new(&project), &files, &Default::default(), 1)
         .map_err(|errors| format!("native frontend failed: {errors:?}"))?;
     let bodies = BodyArena::new_typed(&frontend, |_| true);
@@ -43,6 +56,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ])?,
                 "ambiguous_not_bitwise" => view.ambiguous_not_bitwise(Severity::Warning),
                 "ambiguous_in_lhs" => view.ambiguous_in_lhs(Severity::Warning)?,
+                "unknown_linter_setting" => dm_analysis::checks_unknown_linter_setting::check(&view,Severity::Warning)?,
+                "unknown_setting" => dm_analysis::checks_unknown_linter_setting::check_ordinary(&view,Severity::Warning)?,
                 "invalid_set_value" => dm_analysis::checks_invalid_set::check(&view, Severity::Warning)?,
                 "control_condition_static" => dm_analysis::checks_control_static::check(&view, Severity::Error)?,
                 "unreachable_code" => dm_analysis::checks_flow::check(&view, dm_analysis::checks_flow::Family::Unreachable, Severity::Error)?,

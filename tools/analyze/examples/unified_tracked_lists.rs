@@ -176,6 +176,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "borrowed shared-file generator differs from independent original Engine oracle".into(),
         );
     }
+    struct Pages(Vec<dq_analyze::captured_raw_file::File>);
+    impl dq_analyze::reactive_raw_policy_pages::RawPolicyPages for Pages {
+        fn for_each(&self,visit:&mut dyn FnMut(&str,dq_analyze::captured_raw_file::RawPolicyViews<'_>)->Result<bool,dq_analyze::captured_reactive_reads::Failure>)->Result<bool,dq_analyze::captured_reactive_reads::Failure>{for file in &self.0{if !file.with_policy_views(visit)?{return Ok(false)}}Ok(true)}
+    }
+    let selected=old.tree.select(&dq_analyze::tree::CODE_DM).iter().map(|file|file.rel.clone()).collect::<std::collections::BTreeSet<_>>();
+    let mut page_files=Vec::new();let mut seen=std::collections::BTreeSet::new();
+    let mut test_collector=dq_analyze::generator_test_scope::TestTypeCollector::default();
+    for file in &old.tree.files{test_collector.observe(&file.rel,file.text(),&mut dq_analyze::key_policy_control::Compatibility).unwrap();}
+    for file in inputs.files().filter(|file|file.role()==PolicyRole::DmSource){let relative=dm_preprocess::regions::relative_filesystem_path(file.path(),&root).ok_or("page source outside root")?.to_string_lossy().replace('\\',"/");if !selected.contains(relative.as_str())||!seen.insert(relative){continue}let raw=file.view(dm_analysis::policy_inputs::TextView::AnalyzeRaw).map_err(|_|"original raw page unavailable")?;page_files.push(dq_analyze::captured_raw_file::File::capture(&root,file.path(),raw.clone())?);}
+    let page_budget=dq_analyze::captured_generator_budget::Budget::new(64*1024*1024)?;
+    let pages=match dq_analyze::captured_tracked_lists_pages::generate_from_pages(&inputs,&root,&Pages(page_files),&test_collector.finish(),&page_budget,&||Ok(())){Ok(value)=>value,Err(dq_analyze::captured_reactive_reads::Failure::Operational(actual))=>return Err(Box::new(actual)),Err(dq_analyze::captured_reactive_reads::Failure::Unsupported(message))=>return Err(message.into())};
+    let page_text=pages.captured_named_file_text("tracked_lists","tracked_lists.dm",&page_budget)?;
+    let page_diags=pages.diags.iter().map(|d|(d.rel.clone(),d.line,d.msg.clone())).collect::<Vec<_>>();
+    if page_text!=expected_text||page_diags!=expected_diags{return Err("original-loan full tracked-list output or ordered diagnostics differ from frozen whole Engine".into())}
     println!(
         "{}",
         serde_json::json!({"generator":"tracked_lists","scope":"explicit_seeded_captured_files","matched":true,"output_bytes":expected_text.len(),"diagnostics":borrowed_diags.len(),"full_workspace_coverage":false})

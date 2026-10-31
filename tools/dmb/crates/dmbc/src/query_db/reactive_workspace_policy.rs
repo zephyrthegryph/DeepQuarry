@@ -19,7 +19,7 @@ fn actual(value:&Value,p:&Params,loan:&super::reactive_workspace_operation::Loan
  (Value::RawReads(value),Request::Read{receiver,procedure,context,flavor})=>Ok(value.data.matches_compiled(loan.capture.policy())&&value.data.matches_request(receiver,procedure,context.as_deref(),*flavor)&&value.witness.matches(&loan.workspace,scope,loan.capture.policy())?),
  (Value::RawDependencies(value),Request::Dependencies)=>Ok(value.data.matches_compiled(loan.capture.policy())&&value.witness.matches(&loan.workspace,scope,loan.capture.policy())?),_=>Ok(false)}}
 struct Pages<'reader,'capture,'scope>{reader:&'reader WorkspaceCodeReader<'capture,'scope>,inputs:&'reader dm_analysis::policy_inputs::PolicyInputs,witness:RefCell<Option<WorkspaceCodeWitness>>}
-impl dq_analyze::reactive_raw_policy_pages::RawPolicyPages for Pages<'_,'_,'_>{fn for_each(&self,visit:&mut dyn FnMut(&str,dq_analyze::captured_raw_file::RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{
+impl dq_analyze::reactive_raw_policy_pages::RawPolicyPages for Pages<'_,'_,'_>{fn with_callable_file(&self,ordinal:usize,name:&str,visit:&mut dyn FnMut(&str,dq_analyze::captured_raw_file::RawPolicyViews<'_>)->Result<(),Failure>)->Result<(),Failure>{self.reader.with_callable_file(self.inputs,ordinal,name,visit)}fn for_each(&self,visit:&mut dyn FnMut(&str,dq_analyze::captured_raw_file::RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{
  let complete=self.reader.for_each_code_file_completed(self.inputs,visit)?;match complete{super::workspace::WorkspaceCodeTraversal::Stopped=>Ok(false),completed=>{if self.witness.borrow().is_none(){let witness=completed.into_witness()?.ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::InvalidData,"completed raw traversal lost receipt")))?;*self.witness.borrow_mut()=Some(witness);}Ok(true)}}
 }}
 fn key_for(p:&Params,request:&Request)->io::Result<Key>{let metadata=finite::metadata_key(&("full-original-code-policy-v1",p.issuance,p.evidence,p.locator,p.policy,p.generator,p.configuration.kind.0,p.configuration.id,&p.root,&p.configuration_path,request))?;Ok(Key::new(if p.generator.is_some(){generator_policy::GENERATOR_RESULT}else{finite::REACTIVE_RESULT},metadata.id))}
@@ -120,7 +120,7 @@ impl QueryDb{
  }
  fn with_workspace_generator_guard_limit_budget<T>(&self,workspace:&Arc<WorkspaceCapture>,guard:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,capture:&Arc<CapturedPolicyInputs>,name:generator_policy::GeneratorName,limit:Option<usize>,consume:impl FnOnce(&generator_policy::Artifact,&Arc<Budget>)->io::Result<T>)->io::Result<T>{
   use generator_policy::GeneratorName as G;
-  if !matches!(name,G::Reads|G::DerivedReads|G::AutoTracked|G::Deps|G::SparseSlots|G::DeclareIds|G::UiTypes|G::Stats|G::Actions|G::SystemAccessors){return Err(io::Error::new(io::ErrorKind::Unsupported,"full original generator is not selected"))}
+  if !matches!(name,G::Reads|G::DerivedReads|G::AutoTracked|G::Deps|G::SparseSlots|G::DeclareIds|G::Declare|G::UiTypes|G::Stats|G::Actions|G::SystemAccessors|G::TrackedLists|G::Plans){return Err(io::Error::new(io::ErrorKind::Unsupported,"full original generator is not selected"))}
   crate::daemon::control::checkpoint()?;workspace.require_scope(guard)?;
   if !guard.uses_queries(self){return Err(io::Error::new(io::ErrorKind::InvalidData,"generator guard belongs to another QueryDb"))}
   let _gate=self.raw_policy.gate.lock().unwrap_or_else(|e|e.into_inner());

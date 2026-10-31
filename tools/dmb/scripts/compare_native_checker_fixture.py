@@ -7,6 +7,7 @@ families, macro columns, pragma/config behavior or whole-project parity.
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -51,15 +52,16 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--reference", type=Path, required=True)
     parser.add_argument("--native", type=Path, required=True)
-    parser.add_argument("--family", choices=("ambiguous_not_bitwise", "ambiguous_in_lhs", "invalid_set_value", "control_condition_static", "unreachable_code", "loop_condition_determinate", "if_condition_determinate", "set_has_no_effect", "control_policies", "proc_has_no_parent", "undefined_proc", "undefined_variable", "field_access_static_type", "no_typehint_implicit_new", "proc_call_static_type"), default="ambiguous_not_bitwise")
+    parser.add_argument("--family", choices=("ambiguous_not_bitwise", "ambiguous_in_lhs", "invalid_set_value", "unknown_linter_setting", "unknown_setting", "control_condition_static", "unreachable_code", "loop_condition_determinate", "if_condition_determinate", "set_has_no_effect", "control_policies", "proc_has_no_parent", "undefined_proc", "undefined_variable", "field_access_static_type", "no_typehint_implicit_new", "proc_call_static_type"), default="ambiguous_not_bitwise")
     parser.add_argument("fixture", type=Path)
     args = parser.parse_args()
     if hashlib.sha256(args.reference.read_bytes()).hexdigest() != PINNED_CHECKER_SHA256:
         parser.error("reference executable does not match pinned suite-1.11")
     inputs = fixture_inputs(args.fixture.resolve().parent)
     native_before = hashlib.sha256(args.native.read_bytes()).hexdigest()
-    reference = subprocess.run([str(args.reference), "-e", str(args.fixture)], capture_output=True, text=True, timeout=60)
-    native = subprocess.run([str(args.native), str(args.fixture), args.family], capture_output=True, text=True, timeout=60)
+    flags = (subprocess.BELOW_NORMAL_PRIORITY_CLASS | subprocess.CREATE_NO_WINDOW) if os.name == "nt" else 0
+    reference = subprocess.run([str(args.reference), "-e", str(args.fixture)], capture_output=True, text=True, timeout=60, creationflags=flags)
+    native = subprocess.run([str(args.native), str(args.fixture), args.family], capture_output=True, text=True, timeout=60, creationflags=flags)
     if reference.returncode not in (0, 1) or native.returncode:
         raise RuntimeError(f"oracle execution failed: reference={reference.returncode}, native={native.returncode}\n{reference.stderr}\n{native.stderr}")
     require_unchanged(inputs, fixture_inputs(args.fixture.resolve().parent))

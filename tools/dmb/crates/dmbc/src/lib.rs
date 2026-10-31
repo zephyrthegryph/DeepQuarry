@@ -151,3 +151,6 @@ mod string_continuation_receipts;
 
 #[cfg(test)]
 mod policy_request_integration_tests;
+
+mod generation_staging;
+mod generation_journal;

@@ -12,6 +12,7 @@ use std::{
     sync::atomic::{AtomicUsize, Ordering},
 };
 struct Physical {
+    fail_policy: Mutex<Option<PathBuf>>,
     reads: Mutex<BTreeMap<PathBuf, usize>>,
 }
 impl Physical {
@@ -40,6 +41,7 @@ impl SnapshotProvider for Physical {
         FileSystemInputs.read_verified(p)
     }
     fn read_policy_bounded(&self, p: &Path, n: usize) -> io::Result<Option<CapturedInputRead>> {
+        if self.fail_policy.lock().unwrap().as_ref().is_some_and(|failed|failed==p){return Err(io::Error::from_raw_os_error(1450));}
         self.bump(p);
         FileSystemInputs.read_policy_bounded(p, n)
     }
@@ -140,6 +142,7 @@ fn workspace_257_sources_use_same_graph_and_borrow_native_original_without_rerea
     let root = fixture("workspace-raw-257", 257);
     let db = Arc::new(crate::query_db::QueryDb::default());
     let physical = Physical {
+        fail_policy: Mutex::new(None),
         reads: Mutex::new(BTreeMap::new()),
     };
     let inputs = RecordingInputs::new(&physical, 4_000_000_000);
@@ -371,6 +374,7 @@ fn policy_frames_share_actual_original_compiler_owners_and_query_without_io() {
     let root = fixture("workspace-policy-original-owner", 1);
     let db = Arc::new(crate::query_db::QueryDb::default());
     let physical = Physical {
+        fail_policy: Mutex::new(None),
         reads: Mutex::new(BTreeMap::new()),
     };
     let inputs = RecordingInputs::new(&physical, 4_000_000_000);
@@ -473,3 +477,14 @@ fn cancelled_empty_workspace_is_not_a_clean_result() {
 
 #[path="runner_query_workspace_code_tests.rs"]
 mod original_code_tests;
+
+#[test]
+fn actual_raw_next_cohort_spans_original_workspace_pages_and_cancellation_without_reread(){
+ let root=fixture("workspace-raw-next-129",129);
+ for index in 0..129{std::fs::write(root.join(format!("code/{index:04}.dm")),format!("/proc/p{index}()\n    emag_act()\n    qdel(src)\n    usr.visible_message(\"raw fixture\")\n    verbs += /proc/p0 // ALLOW(sys_verb_write): this is deliberately ineffective annotation\n    add_overlay(\"fixture\")\n")).unwrap();}
+ let db=Arc::new(crate::query_db::QueryDb::default());let physical=Physical{reads:Mutex::new(BTreeMap::new()),fail_policy:Mutex::new(None)};let inputs=RecordingInputs::new(&physical,4_000_000_000);let front=frontend(&root,&inputs,&db);let capture=workspace_capture::capture(&front,&inputs,discover(&root,&inputs),&root.join("missing.toml")).unwrap();let snapshot=snapshot(&front,&db,&inputs,&capture);let scope=snapshot.workspace_native_read().unwrap();let names:Vec<String>=["lifeform_allows","escape_hatches","sys/contents","sys/damage_reactions","sys/emag","sys/grants","sys/dx_manual_transfer","sys/dx_raw_delay","sys/dx_raw_overlays","sys/dx_review","sys/messages","sys/presentation","sys/topic","sys/usr_use"].iter().map(|name|(*name).into()).collect();let before=physical.reads();let scans=Arc::new(AtomicUsize::new(0));let cold=db.workspace_raw_findings(&capture,&scope,&names,scans.clone()).unwrap();assert_eq!(cold.len(),14);for name in ["sys/emag","sys/grants","sys/dx_raw_overlays"]{let run=&cold.iter().find(|row|row.name==name).unwrap().run;assert_eq!(run.sites.len(),129,"{name} must cover uncompiled second page");assert!(run.sites.windows(2).all(|w|w[0].rel<w[1].rel));}
+ let warm=db.workspace_raw_findings(&capture,&scope,&names,scans.clone()).unwrap();for(a,b)in cold.iter().zip(&warm){assert_eq!(a.run.sites,b.run.sites);assert_eq!(a.allow_used,b.allow_used);}assert_eq!(physical.reads(),before);
+ let token=crate::daemon::control::Cancellation::default();let binding=crate::daemon::control::bind_with_deadline(token.clone(),std::time::Instant::now()+std::time::Duration::from_secs(60));token.cancel();let error=db.workspace_raw_findings(&capture,&scope,&names,scans.clone()).err().expect("cancelled warm source must refuse");assert_eq!(error.kind(),io::ErrorKind::Interrupted);drop(binding);assert_eq!(db.workspace_raw_findings(&capture,&scope,&names,scans).unwrap().len(),14);assert_eq!(physical.reads(),before);
+}
+#[test]
+fn actual_raw_next_late_original_provider_io_preserves_os_error_and_retry(){let root=fixture("workspace-raw-next-provider",129);let db=Arc::new(crate::query_db::QueryDb::default());let physical=Physical{reads:Mutex::new(BTreeMap::new()),fail_policy:Mutex::new(Some(root.join("code/0128.dm")))};let inputs=RecordingInputs::new(&physical,4_000_000_000);let front=frontend(&root,&inputs,&db);let discovery=discover(&root,&inputs);let error=workspace_capture::capture(&front,&inputs,discovery.clone(),&root.join("missing.toml")).err().expect("late original IO is not source absence");assert_eq!(error.raw_os_error(),Some(1450));*physical.fail_policy.lock().unwrap()=None;let capture=workspace_capture::capture(&front,&inputs,discovery,&root.join("missing.toml")).unwrap();let snapshot=snapshot(&front,&db,&inputs,&capture);let names=vec!["escape_hatches".into(),"sys/emag".into()];assert_eq!(db.workspace_raw_findings(&capture,&snapshot.workspace_native_read().unwrap(),&names,Arc::new(AtomicUsize::new(0))).unwrap().len(),2);}

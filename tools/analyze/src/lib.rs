@@ -233,3 +233,14 @@ pub mod captured_actions_pages;
 
 #[cfg(feature="native-policy")]
 pub mod captured_system_accessors_pages;
+
+#[cfg(feature="native-policy")]
+pub mod captured_declare_pages;
+
+#[cfg(feature="native-policy")]
+pub mod captured_tracked_lists_pages;
+
+mod lifeform_source_policy;
+
+#[cfg(all(test,feature="legacy-sem",feature="native-policy"))]
+mod raw_policy_next_tests;

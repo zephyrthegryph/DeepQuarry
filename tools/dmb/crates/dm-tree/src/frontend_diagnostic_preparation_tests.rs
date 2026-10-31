@@ -117,3 +117,23 @@ fn diagnostic_frontend_does_not_collect_unproved_error_domains() {
         assert!(prepare(source).is_err());
     }
 }
+
+#[test]
+fn diagnostic_unknown_settings_preserve_raw_prefix_but_never_admit_compilation() {
+    let text="/proc/unknown_setting_probe()\n    set ordinary_unknown = 1\n    set spacemanDMM_typo in list(1)\n    return 0\n";
+    let source=Source{bytes:text.as_bytes().to_vec(),owners:Default::default()};
+    let executor=dm_exec::BuildExecutor::new(1).unwrap();
+    assert!(super::super::build(Path::new("diagnostic_native.dme"),&source,&Default::default(),1).is_err(),"strict compilation still rejects raw unknown settings");
+    let prepared=prepare(text).unwrap();
+    let view=prepared.source_view().unwrap();
+    assert!(view.receipt().errors().is_empty());
+    assert!(!view.receipt().settings_compilable());
+    let body=view.archive().parse(0).unwrap();
+    assert!(body.statement_body().parsed().statements.len()>=2,"original Set statements survive for diagnostic checking");
+    drop(body);
+    assert!(prepared.try_into_compilable().is_err());
+    let mut state=RetainedSemanticTree::one_shot();
+    let prepared=super::super::build_for_checker_diagnostics_with_state(Path::new("diagnostic_native.dme"),&source,&Default::default(),FrontendConfig{workers:1,engine:None,observer:None},None,&executor,Some(&mut state)).unwrap();
+    assert!(prepared.try_into_compilable_retained(&mut state).is_err(),"checker-only header facts cannot be adopted by ordinary compilation");
+    assert!(super::super::build_with_executor_and_semantic_state(Path::new("diagnostic_native.dme"),&source,&Default::default(),FrontendConfig{workers:1,engine:None,observer:None},None,&executor,Some(&mut state)).is_err(),"diagnostic retained header facts never satisfy strict compiler cache lookup");
+}

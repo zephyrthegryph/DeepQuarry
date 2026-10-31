@@ -7,7 +7,7 @@ fn actual_generator_cli_test_domain_reads_hidden_code_without_promoting_code_onl
  let root=fixture("workspace-generator-cli-test-domain",1);
  for folder in ["code/tests","code/.hidden","code/engine/_generated","maps"] {std::fs::create_dir_all(root.join(folder)).unwrap();}
  for(path,text)in[("code/tests/only.dm","/datum/test_only\n/datum/shared_with_hidden\n"),("code/.hidden/production.dm","/datum/shared_with_hidden\n"),("code/engine/_generated/ignored.dm","/datum/test_only\n"),("maps/production.dm","/datum/test_only\n")]{std::fs::write(root.join(path),text).unwrap();}
- let db=Arc::new(crate::query_db::QueryDb::default());let physical=Physical{reads:Mutex::new(BTreeMap::new())};let inputs=RecordingInputs::new(&physical,4_000_000_000);let front=frontend(&root,&inputs,&db);
+ let db=Arc::new(crate::query_db::QueryDb::default());let physical=Physical{reads:Mutex::new(BTreeMap::new()),fail_policy:Mutex::new(None)};let inputs=RecordingInputs::new(&physical,4_000_000_000);let front=frontend(&root,&inputs,&db);
  let discovery=Arc::new(workspace_discovery::discover(&inputs,DiscoveryContract{root:root.clone(),recursive_roots:vec![root.clone()]}).unwrap());
  let capture=workspace_capture::capture(&front,&inputs,discovery,&root.join("missing.toml")).unwrap();let snap=snapshot(&front,&db,&inputs,&capture);let scope=snap.workspace_native_read().unwrap();let policy=dm_analysis::policy_inputs::PolicyInputs::capture(&front,[]).unwrap();let reads=physical.reads();
  let(paths,witness)=db.with_workspace_code_pages(&capture,&scope,|reader| {
@@ -74,7 +74,7 @@ fn actual_workspace_query_scope_registered_context_records_real_child_dependenci
 fn actual_workspace_query_scope_preserves_issued_frame_and_refuses_foreign_owners() {
  let root=fixture("workspace-query-scope",2);
  let db=Arc::new(crate::query_db::QueryDb::default());
- let physical=Physical{reads:Mutex::new(BTreeMap::new())};
+ let physical=Physical{reads:Mutex::new(BTreeMap::new()),fail_policy:Mutex::new(None)};
  let inputs=RecordingInputs::new(&physical,4_000_000_000);
  let front=frontend(&root,&inputs,&db);
  let capture=workspace_capture::capture(&front,&inputs,discover(&root,&inputs),&root.join("missing.toml")).unwrap();
@@ -153,7 +153,7 @@ fn original_workspace_code_pages_cover_uncompiled_normalized_sources_without_rer
  let root=fixture("workspace-code-original-257",257);
  std::fs::write(root.join("code/0140.dm"),b"\xef\xbb\xbf// original comment\r\nTRACKED(/datum/ghost,state)\rset_state(\"quoted\")\r\n// \xff\r\n").unwrap();
  std::fs::create_dir(root.join("code/.hidden")).unwrap();std::fs::write(root.join("code/.hidden/skip.dm"),b"set_hidden(1)\n").unwrap();
- let db=Arc::new(crate::query_db::QueryDb::default());let physical=Physical{reads:Mutex::new(BTreeMap::new())};let inputs=RecordingInputs::new(&physical,4_000_000_000);let front=frontend(&root,&inputs,&db);
+ let db=Arc::new(crate::query_db::QueryDb::default());let physical=Physical{reads:Mutex::new(BTreeMap::new()),fail_policy:Mutex::new(None)};let inputs=RecordingInputs::new(&physical,4_000_000_000);let front=frontend(&root,&inputs,&db);
  let capture=workspace_capture::capture(&front,&inputs,discover(&root,&inputs),&root.join("missing.toml")).unwrap();let snap=snapshot(&front,&db,&inputs,&capture);let scope=snap.workspace_native_read().unwrap();let before=physical.reads();
  let policy_inputs=dm_analysis::policy_inputs::PolicyInputs::capture(&front,[]).unwrap();
  let(rows,witness)=db.with_workspace_code_pages(&capture,&scope,|reader|{
@@ -176,7 +176,7 @@ fn original_workspace_code_pages_cover_uncompiled_normalized_sources_without_rer
 
 #[test]
 fn original_workspace_late_code_io_and_quota_return_no_completed_fold_and_same_source_recovers(){
- let root=fixture("workspace-code-late-operation",257);let db=Arc::new(crate::query_db::QueryDb::default());let physical=Physical{reads:Mutex::new(BTreeMap::new())};let inputs=RecordingInputs::new(&physical,4_000_000_000);let front=frontend(&root,&inputs,&db);let capture=workspace_capture::capture(&front,&inputs,discover(&root,&inputs),&root.join("missing.toml")).unwrap();let snap=snapshot(&front,&db,&inputs,&capture);let scope=snap.workspace_native_read().unwrap();let before=physical.reads();let policy_inputs=dm_analysis::policy_inputs::PolicyInputs::capture(&front,[]).unwrap();
+ let root=fixture("workspace-code-late-operation",257);let db=Arc::new(crate::query_db::QueryDb::default());let physical=Physical{reads:Mutex::new(BTreeMap::new()),fail_policy:Mutex::new(None)};let inputs=RecordingInputs::new(&physical,4_000_000_000);let front=frontend(&root,&inputs,&db);let capture=workspace_capture::capture(&front,&inputs,discover(&root,&inputs),&root.join("missing.toml")).unwrap();let snap=snapshot(&front,&db,&inputs,&capture);let scope=snap.workspace_native_read().unwrap();let before=physical.reads();let policy_inputs=dm_analysis::policy_inputs::PolicyInputs::capture(&front,[]).unwrap();
  for actual_io in[false,true]{let mut visited=0;let result=db.with_workspace_code_pages(&capture,&scope,|reader|{reader.for_each_code_file_completed(&policy_inputs,&mut|_,views|{visited+=1;let _=views.code()?;if visited==141{reader.budget().deny();if actual_io{return Err(Failure::Operational(io::Error::from_raw_os_error(1450)))}}Ok(true)})?.into_witness()});assert_eq!(visited,141,"failure is inside the second real original-source page");let failure=result.err().expect("no completed fold after actual later-page operation failure");if actual_io{assert!(matches!(failure,Failure::Operational(ref error)if error.raw_os_error()==Some(1450)),"first actual IO precedes final quota checks")}else{assert!(matches!(failure,Failure::Operational(ref error)if error.kind()==io::ErrorKind::OutOfMemory))}}
  let count=db.with_workspace_code_pages(&capture,&scope,|reader|{let mut count=0;assert!(reader.for_each_code_file(&mut|_,views|{let _=views.code()?;count+=1;Ok(true)})?);Ok(count)}).unwrap();assert_eq!(count,257);assert_eq!(physical.reads(),before);assert_eq!(db.db().stats(dm_query::Kind(4)).computed,0);
 }

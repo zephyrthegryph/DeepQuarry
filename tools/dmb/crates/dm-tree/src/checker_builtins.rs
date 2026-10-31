@@ -408,8 +408,10 @@ impl SemanticTree {
         &self,
         profile: PackedU128,
         path: &str,
-    ) -> Result<bool, CheckerBuiltinError> {
-        self.validate_checker_builtin_profile(profile)?;
+    ) -> Result<bool, CheckerBuiltinError> {self.checker_source_type_presence_using(path,||self.validate_checker_builtin_profile(profile))}
+    pub fn checker_source_type_presence_validated(&self,profile:PackedU128,path:&str,proof:&ValidatedCheckerProfile<'_>)->Result<bool,CheckerBuiltinError>{self.checker_source_type_presence_using(path,||proof.require(self,profile))}
+    fn checker_source_type_presence_using(&self,path:&str,validate:impl FnOnce()->Result<(),CheckerBuiltinError>)->Result<bool,CheckerBuiltinError>{
+        validate()?;
         let symbol = SymbolId::of(path);
         if self
             .symbols

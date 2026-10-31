@@ -198,12 +198,21 @@ fn quoted<C:kc::Control>(c:&mut C,text:&str)->Result<String,C::Error>{kc::reserv
 fn set_name<C:kc::Control>(c:&mut C,set:&mut BTreeSet<String>,name:String)->Result<(),C::Error>{if !set.contains(&name){kc::reserve(c,||1024usize.checked_add(std::mem::size_of::<String>()))?;set.insert(name);}Ok(())}
 fn add_key<C:kc::Control>(c:&mut C,keys:&mut ReaderKeys,owner:&str,name:String,bits:u8)->Result<(),C::Error>{c.checkpoint()?;let owner=kc::own(c,owner)?;kc::reserve(c,||1024usize.checked_add(std::mem::size_of::<((String,String),u8)>()))?;*keys.entry((owner,name)).or_default()|=bits;Ok(())}
 pub(crate) fn reader_names(body:&str,defines:&HashSet<String>,owner:&str,into:&mut ReaderKeys,bits:u8){match reader_names_with(body,defines,owner,into,bits,&mut kc::Compatibility){Ok(())=>{},Err(e)=>match e{}}}
+fn reader_name_pattern()->&'static crate::pat::Pat{crate::pat!(r"\bnameof\(\s*(?:[\w/]+::)?(\w+)\s*\)")}
+fn reader_string_pattern()->&'static crate::pat::Pat{crate::pat!(r#""([A-Za-z_][A-Za-z0-9_.]*)""#)}
+fn reader_proc_pattern()->&'static crate::pat::Pat{crate::pat!(r"\b(?:TYPE_|GLOBAL_)?PROC_REF\(\s*(?:[\w/]+\s*,\s*)?(\w+)\s*\)")}
+fn reader_define_pattern()->&'static crate::pat::Pat{crate::pat!(r"\b((?:STAT|HOP)_[A-Z0-9_]+|[A-Z][A-Z0-9]*_KEY(?:_[A-Z0-9_]+)?)\b(\s*\()?")}
+fn reader_reads_pattern()->&'static crate::pat::Pat{crate::pat!(r"\breads\s*=\s*list\(([^)]*)\)")}
+/// Maximum exposed capture vector backing; sequential scans reuse this
+/// reservation within the selecting file/owned-marker lifetime. Opaque regex
+/// internals are outside this existing logical envelope.
+pub(crate) fn metadata_capture_backing()->Option<usize>{let groups=[reader_name_pattern(),reader_string_pattern(),reader_proc_pattern(),reader_define_pattern(),reader_reads_pattern()].into_iter().map(|p|p.capture_group_count()).max().unwrap_or(0);groups.checked_mul(4)?.checked_mul(std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(std::mem::size_of::<crate::pat::Caps<'_>>()+128)}
 pub(crate) fn reader_names_with<C:kc::Control>(body:&str,defines:&impl Defines,owner:&str,into:&mut ReaderKeys,bits:u8,c:&mut C)->Result<(),C::Error>{
 
-    for capture in crate::pat!(r"\bnameof\(\s*(?:[\w/]+::)?(\w+)\s*\)").captures_iter(body) {
+    for capture in reader_name_pattern().captures_iter(body) {
         let name=quoted(c,capture.s(1))?;add_key(c,into,owner,name,bits)?;
     }
-    for capture in crate::pat!(r#""([A-Za-z_][A-Za-z0-9_.]*)""#).captures_iter(body) {
+    for capture in reader_string_pattern().captures_iter(body) {
         for (i, seg) in capture.s(1).split('.').enumerate() {
             if key_ident(seg) {
                 let name=quoted(c,seg)?;add_key(c,into,if i==0{owner}else{""},name,bits)?;
@@ -211,12 +220,12 @@ pub(crate) fn reader_names_with<C:kc::Control>(body:&str,defines:&impl Defines,o
         }
     }
     // A handler gate or a key handed as a proc name (every(when = PROC_REF(work_ready))): the table registers the proc's name.
-    for capture in crate::pat!(r"\b(?:TYPE_|GLOBAL_)?PROC_REF\(\s*(?:[\w/]+\s*,\s*)?(\w+)\s*\)").captures_iter(body) {
+    for capture in reader_proc_pattern().captures_iter(body) {
         let name=quoted(c,capture.s(1))?;add_key(c,into,owner,name,bits)?;
     }
     // A key define: a stat id (STAT_*), a hop (HOP_*) or a named key (*_KEY_*, *_KEY): the runtime evaluates it (a text key, or a stat id it
     // resolves to the stat's name). Function-like macros are not keys.
-    for capture in crate::pat!(r"\b((?:STAT|HOP)_[A-Z0-9_]+|[A-Z][A-Z0-9]*_KEY(?:_[A-Z0-9_]+)?)\b(\s*\()?").captures_iter(body) {
+    for capture in reader_define_pattern().captures_iter(body) {
         if capture.get(2).is_none() && defines.contains(capture.s(1)) {
             let name=kc::own(c,capture.s(1))?;add_key(c,into,owner,name,bits)?;
         }
@@ -288,7 +297,7 @@ impl PreparedMetadata{
  pub(crate) fn marker<C:kc::Control>(&mut self,m:&MarkerRow<'_>,defines:&impl Defines,c:&mut C)->Result<(),C::Error>{c.checkpoint()?;
  if matches!(m.name,"CAPABILITIES"|CAP_ENTRIES|"STAT"){
  for value in crate::raw_marker_policy::marker_named_vars_admitted(m.body,c)?{let name=quoted(c,&value)?;set_name(c,&mut self.stat_inputs,name)?;}
- for capture in crate::pat!(r"\breads\s*=\s*list\(([^)]*)\)").captures_iter(m.body){for item in capture.s(1).split(','){c.checkpoint()?;let item=item.trim();if item.len()>2&&item.starts_with('"')&&item.ends_with('"')&&!item[1..item.len()-1].contains('[')||defines.contains(item){let name=kc::own(c,item)?;set_name(c,&mut self.stat_inputs,name)?;}}}
+ for capture in reader_reads_pattern().captures_iter(m.body){for item in capture.s(1).split(','){c.checkpoint()?;let item=item.trim();if item.len()>2&&item.starts_with('"')&&item.ends_with('"')&&!item[1..item.len()-1].contains('[')||defines.contains(item){let name=kc::own(c,item)?;set_name(c,&mut self.stat_inputs,name)?;}}}
  }
  if m.name=="STAT"{if let Some(n)=m.args.get(1){let n=n.trim();if key_ident(n){let name=quoted(c,n)?;add_key(c,&mut self.reader_keys,"",name,7)?;}}return Ok(())}
  let owner=if m.name=="CAPABILITIES"{reader_owner(m.args.first().map(String::as_str).unwrap_or(""))}else{""};

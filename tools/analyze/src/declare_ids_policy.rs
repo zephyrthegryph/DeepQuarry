@@ -18,7 +18,8 @@ pub const MARKERS: &[&str] = &[
 fn up(s: &str) -> String {
     s.to_uppercase()
 }
-pub(crate) fn split_opt(arg: &str) -> Option<(String, String)> {
+pub(crate) fn split_opt(arg:&str)->Option<(String,String)>{split_opt_borrowed(arg).map(|(key,value)|(key.to_owned(),value.to_owned()))}
+pub(crate) fn split_opt_borrowed(arg:&str)->Option<(&str,&str)>{
     let b = arg.as_bytes();
     let mut i = 0;
     while i < b.len() && (b[i].is_ascii_alphanumeric() || b[i] == b'_') {
@@ -32,7 +33,7 @@ pub(crate) fn split_opt(arg: &str) -> Option<(String, String)> {
     if rest.starts_with('=') {
         return None;
     }
-    Some((arg[..i].to_string(), rest.trim().to_string()))
+    Some((&arg[..i],rest.trim()))
 }
 
 pub(crate) struct Cap {
@@ -49,71 +50,26 @@ pub(crate) struct Cap {
     pub(crate) is_def: bool,
 }
 
-pub(crate) fn parse_capability(
-    marker: &str,
-    rel: &str,
-    line: u32,
-    args: &[String],
-    out: &mut Output,
-) -> Option<Cap> {
-    let is_def = marker == "CAPABILITY_DEF";
-    let need = if is_def { 2 } else { 3 };
-    if args.len() < need {
-        out.diag_fmt(
-            rel,
-            line,
-            format_args!(
-                "{} needs (name, CAP_X{}, ...)",
-                marker,
-                if is_def { "" } else { ", /datum/capability/x" }
-            ),
-        );
-        return None;
-    }
-    let name = args[0].clone();
-    let id = args[1].clone();
-    let ty = if is_def {
-        format!("/datum/capability/def/{}", name)
-    } else {
-        args[2].clone()
-    };
-    let mut cap = Cap {
-        name,
-        id,
-        ty,
-        key: None,
-        stacks: None,
-        params: Vec::new(),
-        prefix: None,
-        rel: rel.to_owned(),
-        line: line,
-        is_def,
-    };
-    for a in &args[need..] {
-        match split_opt(a) {
-            Some((k, v)) if k == "key" => cap.key = Some(v),
-            Some((k, v)) if k == "stacks" => cap.stacks = Some(v),
-            Some((k, v)) if k == "prefix" => {
-                cap.prefix = Some(v.trim().trim_matches('"').to_string())
-            }
-            Some((k, v)) => cap.params.push((k, Some(v))),
-            None => {
-                if a.chars().all(|c| c.is_alphanumeric() || c == '_') && !a.is_empty() {
-                    cap.params.push((a.clone(), None));
-                } else {
-                    out.diag_fmt(
-                        rel,
-                        line,
-                        format_args!(
-                            "capability {}: `{}` is neither key =, stacks = nor param = default",
-                            cap.name, a
-                        ),
-                    );
-                }
-            }
-        }
-    }
-    Some(cap)
+pub(crate) fn parse_capability(marker:&str,rel:&str,line:u32,args:&[String],out:&mut Output)->Option<Cap>{
+    match parse_capability_controlled(&mut crate::key_policy_control::Compatibility,marker,rel,line,args,out){Ok(value)=>value,Err(never)=>match never{}}
+}
+/// Native callers pass the SAME admitted Output sink; only Cap/string/param
+/// work is charged here. Legacy uses the unchecked no-op control.
+pub(crate) fn parse_capability_controlled<C:crate::key_policy_control::Control>(control:&mut C,marker:&str,rel:&str,line:u32,args:&[String],out:&mut Output)->Result<Option<Cap>,C::Error>{
+    use crate::key_policy_control as kc;control.checkpoint()?;
+    let is_def=marker=="CAPABILITY_DEF";let need=if is_def{2}else{3};
+    if args.len()<need{out.diag_fmt(rel,line,format_args!("{} needs (name, CAP_X{}, ...)",marker,if is_def{""}else{", /datum/capability/x"}));return Ok(None)}
+    let name=kc::own(control,&args[0])?;let id=kc::own(control,&args[1])?;
+    let ty=if is_def{kc::format(control,format_args!("/datum/capability/def/{}",name))?}else{kc::own(control,&args[2])?};
+    let mut cap=Cap{name,id,ty,key:None,stacks:None,params:Vec::new(),prefix:None,rel:kc::own(control,rel)?,line,is_def};
+    for arg in &args[need..]{control.checkpoint()?;match split_opt_borrowed(arg){
+        Some(("key",value))=>cap.key=Some(kc::own(control,value)?),
+        Some(("stacks",value))=>cap.stacks=Some(kc::own(control,value)?),
+        Some(("prefix",value))=>cap.prefix=Some(kc::own(control,value.trim().trim_matches('"'))?),
+        Some((key,value))=>{kc::row(control,&mut cap.params)?;let key=kc::own(control,key)?;let value=kc::own(control,value)?;cap.params.push((key,Some(value)));},
+        None=>if arg.chars().all(|ch|ch.is_alphanumeric()||ch=='_')&&!arg.is_empty(){kc::row(control,&mut cap.params)?;cap.params.push((kc::own(control,arg)?,None));}else{out.diag_fmt(rel,line,format_args!("capability {}: `{}` is neither key =, stacks = nor param = default",cap.name,arg));},
+    }}
+    control.checkpoint()?;Ok(Some(cap))
 }
 
 /// The exact old whole-file prefilter and raw line policy. Not evaluated defines.

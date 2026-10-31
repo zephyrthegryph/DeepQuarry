@@ -460,15 +460,17 @@ thread_local! {static ORIGINAL_SETTING_PARSES:std::cell::Cell<usize>=const{std::
 pub(crate) fn original_setting_metadata_parses() -> usize {
     ORIGINAL_SETTING_PARSES.with(|n| n.get())
 }
-fn parse_setting_view(
+fn parse_setting_view(view:HeaderView<'_>,symbols:&mut SymbolTable)->Result<ParsedSetting,String>{parse_setting_view_profile(view,symbols,false)}
+fn parse_setting_view_profile(
     view: HeaderView<'_>,
     symbols: &mut SymbolTable,
+    checker_diagnostics: bool,
 ) -> Result<ParsedSetting, String> {
     #[cfg(test)]
     ORIGINAL_SETTING_PARSES.with(|n| n.set(n.get() + 1));
     let parts = setting_parts(view)?;
     let spelling = parts.name.text();
-    let checker_setting = spelling.starts_with("SpacemanDMM_") && parts.name.ident();
+    let checker_setting = (spelling.starts_with("SpacemanDMM_") || checker_diagnostics) && parts.name.ident();
     Ok(ParsedSetting {
         setting: construct_setting(
             spelling,
@@ -490,20 +492,7 @@ fn construct_setting(
     symbols: &mut SymbolTable,
     value: impl FnOnce(&mut SymbolTable) -> Result<SymbolicExpression, String>,
 ) -> Result<ProcedureSetting, String> {
-    if !checker_setting
-        && !matches!(
-            name,
-            "name"
-                | "desc"
-                | "category"
-                | "src"
-                | "invisibility"
-                | "waitfor"
-                | "hidden"
-                | "background"
-                | "instant"
-                | "popup_menu"
-        )
+    if !checker_setting && !ordinary_compiler_setting_name(name)
     {
         return Err(format!("unknown procedure setting: {name}"));
     }
@@ -935,4 +924,10 @@ mod original_setting_partition_tests {
             "invalid expression tokens in procedure declaration"
         );
     }
+}
+
+fn ordinary_compiler_setting_name(name:&str)->bool{matches!(name,"name"|"desc"|"category"|"src"|"invisibility"|"waitfor"|"hidden"|"background"|"instant"|"popup_menu")}
+pub(crate) fn compiler_setting_name(name:&str)->bool{name.starts_with("SpacemanDMM_")||ordinary_compiler_setting_name(name)}
+pub(crate) fn settings_compilable(nodes:&[dm_ir::ProcedureSettingNode],symbols:&SymbolTable)->bool{
+ fn walk(nodes:&[dm_ir::ProcedureSettingNode],symbols:&SymbolTable,depth:usize)->bool{if depth>256{return false}nodes.iter().all(|node|match node{dm_ir::ProcedureSettingNode::Setting(setting)=>symbols.text(setting.name).is_some_and(compiler_setting_name),dm_ir::ProcedureSettingNode::Conditional{then_branch,else_branch,..}=>walk(then_branch,symbols,depth+1)&&walk(else_branch,symbols,depth+1),dm_ir::ProcedureSettingNode::UnsupportedContext{children,..}=>walk(children,symbols,depth+1)})}walk(nodes,symbols,0)
 }

@@ -102,6 +102,8 @@ fn main() {
         if with_register {
             let _ = writeln!(gen, "pub fn register(reg: &mut {}) {{", reg_ty);
             for m in &mods {
+                // These two adapters retain their original legacy Lifeforms registration position.
+                if legacy && sub == "lints" && matches!(m.as_str(), "lifeform_allows" | "escape_hatches") { continue; }
                 let _ = writeln!(gen, "    {}::register(reg);", m);
             }
             let _ = writeln!(gen, "}}");
