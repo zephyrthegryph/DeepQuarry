@@ -483,9 +483,11 @@ GLOBAL_VAR_INIT(staleness_late_parked_total, 0)
 		return // a derived proc is running: the shared builders are in use
 	if(ismovable(A) && !(A.flags & ATOM_MATERIALIZED))
 		return
+#ifdef DQ_LOOK_AUDIT
 	GLOB.staleness_depth++
 	refresh_check_drift(A, check_draw = FALSE)
 	GLOB.staleness_depth--
+#endif
 
 // ---------------------------------------------------------------- keyed images
 
