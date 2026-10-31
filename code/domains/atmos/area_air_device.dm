@@ -116,10 +116,12 @@ CAPABILITY_TYPE(area_air_device, CAP_AREA_AIR_DEVICE, /datum/capability/lib/area
 /// A radio packet reached `holder`: a command addressed to its tag runs the holder's handlers, in the table's order, then the device reports.
 /proc/area_air_receive(obj/machinery/holder, datum/signal/signal)
 	var/datum/capability/lib/area_air_device/def = cap_of(holder, CAP_AREA_AIR_DEVICE)
-	if(!def || !signal || !holder.operable())
+	if(!def || !signal)
 		return
 	var/list/data = signal.data
 	if(!data["tag"] || data["tag"] != holder.vars[def.tag_var] || data["sigtype"] != "command")
+		return
+	if(!holder.operable()) // after the addressing test: most packets on the frequency are for another device
 		return
 	for(var/key in def.commands)
 		var/value = data[key]

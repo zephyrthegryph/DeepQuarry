@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "A radio packet addressed to another door or device is turned away before the power test, so a vent's status report costs a tenth of what it did; an APC's draw asks its capability data once per fact"
