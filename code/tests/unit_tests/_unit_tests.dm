@@ -576,7 +576,7 @@
 #include "dq_harm_time_invariance_tests.dm"
 #include "../../modules/unit_tests/dq_w5_loose_tests.dm"
 #include "../../modules/unit_tests/dq_vital_lifecycle_tests.dm"
-#include "../../modules/balance/_balance_harness.dm"
+#include "../../content/balance/_balance_harness.dm"
 #include "dq_balance_scenario_declaration.dm"
 #include "../../content/balance/balance_scenarios.dm"
 #include "dq_balance_harness_tests.dm"

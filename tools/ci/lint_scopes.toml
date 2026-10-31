@@ -72,7 +72,7 @@ input_stance_readers = [
     "code/engine/parts/",
     "code/modules/keybindings/",
     "code/content/keybindings/",
-    "code/modules/mob/living/living_movement.dm",
+    "code/content/mob/living/living_movement.dm",
     "code/content/vore/eating/belly_obj_resist.dm",
     "code/modules/combat_ai/",
     "code/content/ai/",
@@ -187,8 +187,8 @@ record_accessor_prefixes = ["set_", "get_"]
 "/atom/movable/movement_type" = "read per entering mover: CHECK_BITFIELD(mover.movement_type, UNSTOPPABLE) in /turf/Enter (code/game/turfs/turf.dm:335)"
 "/atom/movable/moving_diagonally" = "read and written on every diagonal step: the state machine in Move() (code/game/atoms_movable.dm:232-250), held by all movables"
 "/atom/movable/l_move_time" = "read on every Move(): move_speed = world.time - l_move_time (code/game/atoms_movable.dm:294), held by all movables"
-"/mob/m_intent" = "read on every step: walk-versus-run delay in living_movement.dm (code/modules/mob/living/living_movement.dm:20) and mob_movement.dm:21"
-"/mob/living/now_pushing" = "read on every bump into a movable: the push guard in living_movement.dm (code/modules/mob/living/living_movement.dm:51) and carbon.dm:382"
+"/mob/m_intent" = "read on every step: walk-versus-run delay in living_movement.dm (code/content/mob/living/living_movement.dm:20) and mob_movement.dm:21"
+"/mob/living/now_pushing" = "read on every bump into a movable: the push guard in living_movement.dm (code/content/mob/living/living_movement.dm:51) and carbon.dm:382"
 "/mob/track_blood" = "read on every human footstep: blood tracking in /turf/simulated/Entered (code/content/turfs/simulated.dm:108-116), held by all mobs"
 
 [lint.decl]
@@ -346,13 +346,13 @@ factors_converted = []
 ui_push_converted = [
   "code/modules/tgui/modules/agentcard.dm",
   "code/modules/tgui/modules/appearance_changer.dm",
-  "code/modules/vore/eating/panel_databackend/vorepanel_set_attribute.dm",
+  "code/content/vore/eating/panel_databackend/vorepanel_set_attribute.dm",
   "code/content/mob/living/notes_panels.dm",
   "code/content/admin/admin_newscaster_panel.dm",
   "code/content/admin/edit_player_panel.dm",
   "code/content/admin/misc_admin_panels.dm",
   "code/content/admin/magnetic_console_panel.dm",
-  "code/modules/admin/edit_memory_panel.dm",
+  "code/content/admin/edit_memory_panel.dm",
   "code/content/admin/traffic_control_panel.dm",
   "code/content/machinery/CableLayer.dm",
   "code/game/machinery/atm_ret_field.dm",
@@ -371,10 +371,10 @@ ui_push_converted = [
   "code/content/mining/mineral_effect.dm",
   "code/content/power/fusion/fuel_assembly/fuel_assembly.dm",
   "code/content/power/fusion_coil.dm",
-  "code/modules/power/port_gen.dm",
-  "code/modules/power/solar.dm",
+  "code/content/power/port_gen.dm",
+  "code/content/power/solar.dm",
   "code/content/power/supermatter/setup_supermatter.dm",
-  "code/modules/telesci/quantum_pad.dm",
+  "code/content/telesci/quantum_pad.dm",
 ]
 legacy_forms_converted = [
   "code/game/machinery/",
@@ -536,7 +536,7 @@ legacy_forms_converted = [
   "code/content/admin/",
   "code/modules/alarm/",
   "code/content/alarm/",
-  "code/modules/anomalies/",
+  "code/content/anomalies/",
   "code/modules/artifice/",
   "code/content/artifice/",
   "code/modules/assembly/",
@@ -563,6 +563,7 @@ legacy_forms_converted = [
   "code/modules/casino/",
   "code/content/casino/",
   "code/modules/catalogue/",
+  "code/content/catalogue/",
   "code/modules/client/",
   "code/content/client/",
   "code/modules/clothing/",
@@ -709,7 +710,7 @@ legacy_forms_converted = [
   "code/modules/mob/living/silicon/robot/robot_modules/",
   "code/modules/mob/living/silicon/robot/sprites/",
   "code/modules/mob/living/silicon/robot/subtypes/exploration/",
-  "code/modules/mob/living/simple_mob/subtypes/animal/borer/",
+  "code/content/mob/living/simple_mob/subtypes/animal/borer/",
   "code/content/mobs/living/simple_mob/subtypes/animal/borer/",
   "code/modules/mob/living/simple_mob/subtypes/animal/farm animals/",
   "code/content/mobs/living/simple_mob/subtypes/animal/farm animals/",
@@ -727,11 +728,11 @@ legacy_forms_converted = [
   "code/modules/mob/living/simple_mob/subtypes/animal/space/",
   "code/content/mob/living/simple_mob/subtypes/animal/space/",
   "code/content/mobs/living/simple_mob/subtypes/animal/space/",
-  "code/modules/mob/living/simple_mob/subtypes/animal/tyr/",
+  "code/content/mob/living/simple_mob/subtypes/animal/tyr/",
   "code/content/mobs/living/simple_mob/subtypes/animal/tyr/",
   "code/modules/mob/living/simple_mob/subtypes/blob/",
   "code/content/mob/living/simple_mob/subtypes/blob/",
-  "code/modules/mob/living/simple_mob/subtypes/bullet_heck/",
+  "code/content/mob/living/simple_mob/subtypes/bullet_heck/",
   "code/content/mobs/living/simple_mob/subtypes/bullet_heck/",
   "code/modules/mob/living/simple_mob/subtypes/gateway/",
   "code/content/mob/living/simple_mob/subtypes/gateway/",
@@ -739,7 +740,7 @@ legacy_forms_converted = [
   "code/content/mob/living/simple_mob/subtypes/glamour/",
   "code/modules/mob/living/simple_mob/subtypes/horror/",
   "code/content/mobs/living/simple_mob/subtypes/horror/",
-  "code/modules/mob/living/simple_mob/subtypes/humanoid/",
+  "code/content/mob/living/simple_mob/subtypes/humanoid/",
   "code/content/mobs/living/simple_mob/subtypes/humanoid/",
   "code/content/mob/living/simple_mob/subtypes/illusion/",
   "code/modules/mob/living/simple_mob/subtypes/mechanical/",
@@ -747,7 +748,7 @@ legacy_forms_converted = [
   "code/content/mobs/living/simple_mob/subtypes/mechanical/",
   "code/modules/mob/living/simple_mob/subtypes/metroid/",
   "code/content/mob/living/simple_mob/subtypes/metroid/",
-  "code/modules/mob/living/simple_mob/subtypes/occult/",
+  "code/content/mob/living/simple_mob/subtypes/occult/",
   "code/content/mobs/living/simple_mob/subtypes/occult/",
   "code/content/mob/living/simple_mob/subtypes/plant/",
   "code/content/mob/living/simple_mob/subtypes/slime/feral/",
@@ -779,7 +780,7 @@ legacy_forms_converted = [
   "code/modules/player_tips/",
   "code/content/player_tips/",
   "code/modules/point/",
-  "code/modules/polls/",
+  "code/content/polls/",
   "code/modules/projectiles/",
   "code/content/projectiles/",
   "code/content/radiation/",
@@ -828,7 +829,7 @@ legacy_forms_converted = [
   "code/content/tables/",
   "code/modules/telesci/",
   "code/content/telesci/",
-  "code/modules/tension/",
+  "code/content/tension/",
   "code/modules/tgchat/",
   "code/content/tgchat/",
   "code/modules/tgs_commands/",
@@ -891,7 +892,7 @@ revive_allow = [
   "code/modules/mob/mob.dm",
   "code/_helpers/unsorted.dm",
   "code/content/mob/living/carbon/human/human_species.dm",
-  "code/modules/mob/living/silicon/ai/ai.dm",
+  "code/content/mob/living/silicon/ai/ai.dm",
   "code/content/items/weapons/autopsy.dm",
 ]
 thermal_allow = ["code/__defines/verdigris/_bindings.dm"]
@@ -934,7 +935,7 @@ organ_damage_allow = ["code/modules/body/", "code/content/body/"]
 rust_state_allow = ["code/__defines/verdigris/_bindings.dm"]
 slot_flags_allow = ["code/datums/properties/", "code/content/properties/"]
 # the volatile abductor RTG's asplod lifecycle; the generic machinery explosion damage itself
-machinery_qdel_allow = ["code/modules/power/port_gen.dm"]
+machinery_qdel_allow = ["code/content/power/port_gen.dm"]
 machinery_ex_act_allow = ["code/game/machinery/machinery.dm"]
 
 # The count ratchets of check_grep.sh: a rule over its ceiling fails (`analyze baseline --update`
