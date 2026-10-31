@@ -204,4 +204,12 @@ mh_run() { # <from> <to>
 mh_docs="$(mh_run origin/master origin/lane/d)"; mh_code="$(mh_run origin/master origin/lane/a)"
 check "master changes that touch no heavy path are not an interaction (moved_heavy is empty for docs, names code)" '[ -z "$mh_docs" ] && [ "$mh_code" = "code/a.dm" ]'
 
+# disk_budget_bg: the all-light cycle's housekeeping returns at once (a synchronous enforce held the train 17+ minutes on 31 October)
+db_t0=$SECONDS
+( set +u; export DQ_TRAIN_STATE="$dd/state" DQ_TRAIN_WT="$dd/no-wt" DQ_TRAIN_ORIGIN_REPO="$here" DQ_TRAIN_NO_START=1
+  . "$here/tools/dq_train.sh" __lib; disk_budget() { sleep 6; echo done >"$dd/db.ran"; }; disk_budget_bg enforce --quiet ) 2>/dev/null
+db_dt=$(( SECONDS - db_t0 ))
+check "disk_budget_bg returns before the budget run finishes" '[ "$db_dt" -lt 5 ] && [ ! -e "$dd/db.ran" ]'
+check "the all-light cycle's enforce is the detached form" '! grep -n "^[[:space:]]*disk_budget enforce" "$here/tools/dq_train.sh" && grep -q "disk_budget_bg enforce --quiet --throttle 10" "$here/tools/dq_train.sh"'
+
 [ "$fail" -eq 0 ] && echo "ALL PASSED" || { echo "SOME FAILED"; exit 1; }
