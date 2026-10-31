@@ -938,8 +938,10 @@ export const DmeTarget = new Juke.Target({
   },
 });
 
+// `analyze gen` reads the gitignored `_bindings.dm` (the reads generator follows calls into the vg_* binds: without it
+// `rust_push(nameof(vg_entity))` is missing from three generated reads), so it runs after the bindings are current, never beside them.
 export const GenTarget = new Juke.Target({
-  dependsOn: [AnalyzeBuildTarget, DmeTarget],
+  dependsOn: [AnalyzeBuildTarget, DmeTarget, VerdigrisBindingsCheckTarget],
   executes: async () => {
     if (process.env.DQ_SKIP_GEN === '1') {
       Juke.logger.warn('gen: DQ_SKIP_GEN=1, not regenerating code/engine/_generated');
