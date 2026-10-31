@@ -326,7 +326,7 @@ SERIAL_DEF(preview_sheet, 1, FALSE)
 	return generation
 
 /// Waits for a render's iconforge jobs, then applies them unless the render went stale.
-/// Polls once a tick on its declared every() (S10b: was a stoplag() loop). The character setup
+/// Polls four times a second on its declared every() (S10b: was a stoplag() loop). The character setup
 /// service owns each poll and the poll names the preferences through a relation view, so the
 /// job PNGs are still cleaned up when the preferences are deleted mid-render.
 /datum/preferences/proc/dq_poll_preview_jobs(generation, list/jobs, list/ready, scale_x, scale_y, had_client)
@@ -353,7 +353,7 @@ SERIAL_DEF(preview_sheet, 1, FALSE)
 /datum/dq_preview_poll/var/polling = FALSE
 
 CAPABILITIES(/datum/dq_preview_poll)
-	every(1 TICK, then(PROC_REF(poll_step)), when = nameof(polling))
+	every(0.25 SECONDS, then(PROC_REF(poll_step)), when = nameof(polling)) // a render takes tens of ms: a poll each tick (40 a second) cost 12-97 ms a tick while one ran
 	ref_one(nameof(prefs))
 
 /datum/dq_preview_poll/New()
