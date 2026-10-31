@@ -111,7 +111,7 @@ impl SourceSnapshot {
     }
     /// Additive original page input; ordinary bounded whole-report input stays.
     pub(crate) fn native_effect_source_input(&self,tree:&dm_tree::SemanticTree)->Result<Arc<EffectInput>,String>{let capture=self.named_policy_capture(tree).map_err(|e|e.to_string())?;EffectInput::source_pages(Arc::clone(capture.policy().archive()),tree.checker_builtin_profile().ok_or("effect source builtin profile unavailable")?)}
-    pub(crate) fn native_effect_source_page(&self,input:&Arc<EffectInput>,start:usize,width:usize,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree)->std::io::Result<Arc<dm_analysis::checker_effects::EffectPageFacts>>{
+    pub(crate) fn native_effect_source_page(&self,input:&Arc<EffectInput>,start:usize,width:usize,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree)->std::io::Result<Arc<crate::query_db::NativeEffectPage>>{
         self.with_effect_scope(input,environment,explicit,tree,|db,scope|db.native_effect_source_page(input,scope,start,width))
     }
     pub(crate) fn native_effect_source_graph(&self,input:&Arc<EffectInput>,width:usize,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree)->std::io::Result<Arc<crate::query_db::NativeEffectGraph>>{self.with_effect_scope(input,environment,explicit,tree,|db,scope|db.native_effect_source_graph(input,scope,width))}

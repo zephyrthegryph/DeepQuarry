@@ -12,21 +12,21 @@ pub(super) struct Params{
  pub(super) configuration_path:PathBuf,pub(super) files:Vec<Key>,pub(super) root:PathBuf,
  pub(super) result:Key,pub(super) request:Request,
 }
-pub(crate) enum Value{Globals(GlobalResult),Reads(ReadResult),Dependencies(DependencyResult)}
+pub(crate) enum Value{Globals(GlobalResult),Reads(ReadResult),Dependencies(DependencyResult),RawReads(super::reactive_workspace_policy::Read),RawDependencies(super::reactive_workspace_policy::Dependencies)}
 impl Value{
- fn charge(&self)->Option<usize>{let payload=match self{Self::Globals(v)=>v.retained_charge()?,Self::Reads(v)=>v.retained_charge()?,Self::Dependencies(v)=>v.retained_charge()?};payload.checked_add(std::mem::size_of::<Result<Self,String>>()+2*std::mem::size_of::<usize>())}
- fn fingerprint(&self,poll:&dyn Fn()->io::Result<()>)->io::Result<u128>{
+ pub(super) fn charge(&self)->Option<usize>{let payload=match self{Self::Globals(v)=>v.retained_charge()?,Self::Reads(v)=>v.retained_charge()?,Self::Dependencies(v)=>v.retained_charge()?,Self::RawReads(v)=>v.retained_charge()?,Self::RawDependencies(v)=>v.retained_charge()?};payload.checked_add(std::mem::size_of::<Result<Self,String>>()+2*std::mem::size_of::<usize>())}
+ pub(super) fn fingerprint(&self,poll:&dyn Fn()->io::Result<()>)->io::Result<u128>{
   struct HashWriter<'a>{hash:xxhash_rust::xxh3::Xxh3,poll:&'a dyn Fn()->io::Result<()>,first:Option<io::Error>}
   impl io::Write for HashWriter<'_>{fn write(&mut self,s:&[u8])->io::Result<usize>{if self.first.is_some(){return Err(io::Error::other("reactive hash stopped"))}if let Err(actual)=(self.poll)(){self.first=Some(actual);return Err(io::Error::other("reactive hash stopped"))}self.hash.update(s);Ok(s.len())}fn flush(&mut self)->io::Result<()>{Ok(())}}
   let mut writer=HashWriter{hash:xxhash_rust::xxh3::Xxh3::new(),poll,first:None};writer.hash.update(b"native-reactive-result-v1\0");
-  let result=match self{Self::Globals(v)=>{writer.hash.update(b"globals");let mut serializer=serde_json::Serializer::new(&mut writer);v.serialize_dependency_facts(&mut serializer)},Self::Reads(v)=>{writer.hash.update(b"reads");serde_json::to_writer(&mut writer,v.facts())},Self::Dependencies(v)=>{writer.hash.update(b"dependencies");v.serialize_facts(&mut serde_json::Serializer::new(&mut writer))}};
+  let result=match self{Self::Globals(v)=>{writer.hash.update(b"globals");let mut serializer=serde_json::Serializer::new(&mut writer);v.serialize_dependency_facts(&mut serializer)},Self::Reads(v)=>{writer.hash.update(b"reads");serde_json::to_writer(&mut writer,v.facts())},Self::Dependencies(v)=>{writer.hash.update(b"dependencies");v.serialize_facts(&mut serde_json::Serializer::new(&mut writer))},Self::RawReads(v)=>{writer.hash.update(b"full-code-reads");serde_json::to_writer(&mut writer,v.facts())},Self::RawDependencies(v)=>{writer.hash.update(b"full-code-dependencies");v.serialize_facts(&mut serde_json::Serializer::new(&mut writer))}};
   if let Some(actual)=writer.first.take(){return Err(actual)}result.map_err(io::Error::other)?;poll()?;Ok(writer.hash.digest128())
  }
 }
 #[derive(Debug)]struct ReactiveGraphFailure(QueryError);
 impl std::fmt::Display for ReactiveGraphFailure{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{write!(f,"reactive dependency failed: {:?}",self.0)}}
 impl std::error::Error for ReactiveGraphFailure{}
-fn graph_failure(error:QueryError)->Failure{Failure::Operational(match error.into_operational(){Ok(actual)=>actual.into_io(),Err(error)=>io::Error::other(ReactiveGraphFailure(error))})}
+pub(super) fn graph_failure(error:QueryError)->Failure{Failure::Operational(match error.into_operational(){Ok(actual)=>actual.into_io(),Err(error)=>io::Error::other(ReactiveGraphFailure(error))})}
 /// Existing parser-input issuance keys are LOCATORS only. Hash the whole
 /// original roster without copying it; every answer still needs the upgraded
 /// original owner witness and current semantic acquisition evidence.
@@ -36,7 +36,7 @@ pub(super) fn source_locator(capture:&CapturedPolicyInputs)->io::Result<(bool,u1
 }
 /// SAME canonical metadata bytes as key(), streamed without an intermediate
 /// JSON Vec. Actual first IO is restored outside serde's retrying Write adapter.
-fn metadata_key(value:&impl serde::Serialize)->io::Result<Key>{
+pub(super) fn metadata_key(value:&impl serde::Serialize)->io::Result<Key>{
  struct Sink{hash:xxhash_rust::xxh3::Xxh3,first:Option<io::Error>}
  impl io::Write for Sink{fn write(&mut self,bytes:&[u8])->io::Result<usize>{if self.first.is_some(){return Err(io::Error::other("reactive metadata hash stopped"))}if let Err(actual)=crate::daemon::control::checkpoint(){self.first=Some(actual);return Err(io::Error::other("reactive metadata hash stopped"))}self.hash.update(bytes);Ok(bytes.len())}fn flush(&mut self)->io::Result<()>{Ok(())}}
  let mut sink=Sink{hash:xxhash_rust::xxh3::Xxh3::new(),first:None};let result=serde_json::to_writer(&mut sink,value);if let Some(actual)=sink.first.take(){return Err(actual)}result.map_err(io::Error::other)?;Ok(Key::new(REACTIVE_RESULT,sink.hash.digest128()))
@@ -66,6 +66,7 @@ fn child_current(ctx:&mut dm_query::Ctx<'_>,capture:&Arc<CapturedPolicyInputs>,p
 }
 pub(super) fn register(db:&Db,charge:Arc<AtomicUsize>,admission:Arc<Admission>){
  db.define(REACTIVE_RESULT,"native-reactive-unique-policy",move|ctx,params|{
+  if let Some(p)=params.downcast_ref::<super::reactive_workspace_policy::Params>(){return super::reactive_workspace_policy::compute(ctx,p,&charge,&admission)}
   let p=params.downcast_ref::<Params>().expect("reactive params");admission.abort.before_outcome(p.result)?;
   let capture=p.capture.upgrade().ok_or(QueryError::Missing(p.result))?;let config=ctx.input::<ConfigData>(p.configuration)?;
   let available=admission.limit.load(Ordering::Acquire).saturating_sub(charge.load(Ordering::Acquire));

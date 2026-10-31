@@ -308,3 +308,7 @@ required-features=["legacy-sem","native-policy"]
 [[example]]
 name="unified_deps_whole"
 required-features=["legacy-sem"]
+
+[[example]]
+name="unified_auto_generator_whole"
+required-features=["legacy-sem"]

@@ -953,7 +953,7 @@ impl QueryDb {
                 } else if live.kind == global_graph::GLOBAL_GRAPH {
                     value.downcast_ref::<Result<Arc<global_graph::NativeEffectGraph>,String>>().and_then(|result|result.as_ref().err())
                 } else if live.kind == pages::PAGE {
-                    value.downcast_ref::<Result<Arc<dm_analysis::checker_effects::EffectPageFacts>,String>>().and_then(|x|x.as_ref().err())
+                    value.downcast_ref::<Result<Arc<pages::NativeEffectPage>,String>>().and_then(|x|x.as_ref().err())
                 } else if live.kind == BODY {
                     value
                         .downcast_ref::<Result<Arc<BodyEffects>, String>>()
@@ -986,7 +986,7 @@ impl QueryDb {
             } else if live.kind == global_graph::GLOBAL_GRAPH {
                 if let Some(value)=value.downcast_ref::<global_graph::NativeEffectGraph>(){value.visit_storage(&mut visit)}
             } else if live.kind == pages::PAGE {
-                if let Some(value)=value.downcast_ref::<dm_analysis::checker_effects::EffectPageFacts>(){value.visit_storage(&mut visit)}
+                if let Some(value)=value.downcast_ref::<pages::NativeEffectPage>(){value.visit_storage(&mut visit)}
             } else if live.kind == BODY {
                 if let Some(v) = value.downcast_ref::<BodyEffects>() {
                     v.visit_storage(&mut visit)
@@ -1214,7 +1214,7 @@ impl QueryDb {
 }
 
 #[path="purity_pages.rs"]
-mod pages;
+pub(super) mod pages;
 
 #[path="purity_graph_work.rs"]mod graph_work;
 #[path="purity_global_graph.rs"]pub(super) mod global_graph;

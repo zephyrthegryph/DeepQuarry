@@ -1131,16 +1131,7 @@ impl BodyArchive {
         }
         let ordinal = selected.ok_or("callable note has no issued primary body")?;
         let body = parse(self, ordinal)?;
-        if !body.belongs_to(self)
-            || !std::ptr::eq(body.occurrence(), &self.occurrences()[ordinal])
-            || !body.statement_body().syntax_complete()
-        {
-            return Err("callable note primary source unavailable".into());
-        }
-        let opening = body
-            .signature_opening_parenthesis()
-            .ok_or("primary callable opening token unavailable")?;
-        self.source_note_point(opening.start).map_err(E::from)
+        self.callable_note_origin_from_parsed::<E>(identity,ordinal,&body)
     }
 }
 
@@ -1208,3 +1199,18 @@ impl BodyArchive {
 #[cfg(test)]
 #[path = "frontend_parameter_syntax_tests.rs"]
 mod parameter_syntax_tests;
+
+/// Static projection failure classification preserves the original generic
+/// error conversion: body guards used &str, mapping projection used String.
+#[derive(Clone,Copy,Debug)]pub enum BorrowedCallableOriginError{Body(&'static str),Projection(&'static str)}
+impl BorrowedCallableOriginError{pub fn message(self)->&'static str{match self{Self::Body(message)|Self::Projection(message)=>message}}fn into_error<E:From<String>+From<&'static str>>(self)->E{match self{Self::Body(message)=>E::from(message),Self::Projection(message)=>E::from(message.to_owned())}}}
+impl BodyArchive{
+    pub fn callable_note_origin_borrowed_from_parsed(&self,identity:dm_ir::ProcedureIdentity,ordinal:usize,body:&ArchivedBody<'_>)->Result<super::BorrowedSourceNoteOrigin<'_>,BorrowedCallableOriginError>{
+        use BorrowedCallableOriginError::Body;
+        if self.body_query_host().is_none(){return Err(Body("callable note needs original retained BodySyntax owner"))}
+        if self.callables().identity(ordinal)!=Some(identity)||!body.belongs_to(self)||self.occurrences().get(ordinal).is_none_or(|expected|!std::ptr::eq(body.occurrence(),expected))||!body.statement_body().syntax_complete(){return Err(Body("callable note primary source unavailable"))}
+        let opening=body.signature_opening_parenthesis().ok_or(Body("primary callable opening token unavailable"))?;self.mapping.borrowed_source_note_point(opening.start).map_err(BorrowedCallableOriginError::Projection)
+    }
+    /// No new body demand or roster scan; owned projection stays compatible.
+    pub fn callable_note_origin_from_parsed<E:From<String>+From<&'static str>>(&self,identity:dm_ir::ProcedureIdentity,ordinal:usize,body:&ArchivedBody<'_>)->Result<SourceNoteOrigin,E>{self.callable_note_origin_borrowed_from_parsed(identity,ordinal,body).map(super::BorrowedSourceNoteOrigin::into_owned).map_err(BorrowedCallableOriginError::into_error::<E>)}
+}

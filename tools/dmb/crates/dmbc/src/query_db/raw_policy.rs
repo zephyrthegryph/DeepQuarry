@@ -43,7 +43,12 @@ mod reactive_nested_admission;
 #[path="reactive_read_policy.rs"]
 mod reactive_read_policy;
 pub(crate) use reactive_read_policy::{Request as ReactiveRequest,Value as ReactiveValue};
+#[path="reactive_workspace_operation.rs"]
+mod reactive_workspace_operation;
+#[path="reactive_workspace_policy.rs"]
+mod reactive_workspace_policy;
 pub(super) struct Admission {
+    workspace_operation:Mutex<Option<reactive_workspace_operation::Frame>>,
     abort: OperationalAbort,
     leases: Mutex<BTreeMap<Key, Lease>>,
     workspace_nodes: AtomicUsize,
@@ -54,6 +59,7 @@ pub(super) struct Admission {
 impl Default for Admission {
     fn default() -> Self {
         Self {
+            workspace_operation:Mutex::new(None),
             abort: OperationalAbort::default(),
             leases: Mutex::new(BTreeMap::new()),
             workspace_nodes: AtomicUsize::new(0),

@@ -3,6 +3,38 @@ use super::*;
 use dq_analyze::captured_reactive_reads::Failure;
 
 #[test]
+fn actual_generator_cli_test_domain_reads_hidden_code_without_promoting_code_only_coverage() {
+ let root=fixture("workspace-generator-cli-test-domain",1);
+ for folder in ["code/tests","code/.hidden","code/engine/_generated","maps"] {std::fs::create_dir_all(root.join(folder)).unwrap();}
+ for(path,text)in[("code/tests/only.dm","/datum/test_only\n/datum/shared_with_hidden\n"),("code/.hidden/production.dm","/datum/shared_with_hidden\n"),("code/engine/_generated/ignored.dm","/datum/test_only\n"),("maps/production.dm","/datum/test_only\n")]{std::fs::write(root.join(path),text).unwrap();}
+ let db=Arc::new(crate::query_db::QueryDb::default());let physical=Physical{reads:Mutex::new(BTreeMap::new())};let inputs=RecordingInputs::new(&physical,4_000_000_000);let front=frontend(&root,&inputs,&db);
+ let discovery=Arc::new(workspace_discovery::discover(&inputs,DiscoveryContract{root:root.clone(),recursive_roots:vec![root.clone()]}).unwrap());
+ let capture=workspace_capture::capture(&front,&inputs,discovery,&root.join("missing.toml")).unwrap();let snap=snapshot(&front,&db,&inputs,&capture);let scope=snap.workspace_native_read().unwrap();let policy=dm_analysis::policy_inputs::PolicyInputs::capture(&front,[]).unwrap();let reads=physical.reads();
+ let(paths,witness)=db.with_workspace_code_pages(&capture,&scope,|reader| {
+  let mut paths=Vec::new();let traversal=reader.for_each_generator_test_file_completed(&policy,&mut|relative,views| {
+   let text=views.raw()?;reader.budget().charge(relative.len()+text.len()+1024).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;
+   paths.push(relative.to_owned());Ok(true)
+  })?;Ok((paths,traversal.into_witness()?.expect("completed actual generator test domain")))
+ }).unwrap();
+ assert!(paths.iter().any(|path|path=="code/.hidden/production.dm"));assert!(paths.iter().any(|path|path=="code/tests/only.dm"));
+ assert!(!paths.iter().any(|path|path.starts_with("maps/")||path.starts_with("code/engine/_generated/")));
+ assert!(witness.matches(&capture,&scope,&policy).unwrap());let mut backing=0;witness.visit_storage(|_,bytes|backing+=bytes);assert!(backing>0);
+ let code=db.with_workspace_code_pages(&capture,&scope,|reader| {let mut paths=Vec::new();reader.for_each_code_file_completed(&policy,&mut|relative,_|{paths.push(relative.to_owned());Ok(true)})?.into_witness()?.expect("actual CODE_DM completion");Ok(paths)}).unwrap();
+ assert!(!code.iter().any(|path|path=="code/.hidden/production.dm"));assert!(code.iter().any(|path|path=="code/engine/_generated/ignored.dm"));
+ db.with_workspace_code_pages(&capture,&scope,|reader| {assert!(reader.for_each_generator_test_file_completed(&policy,&mut|_,_|Ok(false))?.into_witness()?.is_none());Ok(())}).unwrap();
+ assert_eq!(physical.reads(),reads,"both domains loan the same already recorded source acquisitions");assert_eq!(db.db().stats(dm_query::Kind(4)).computed,0);
+ // A separate recorded acquisition is needed for a different discovery-root
+ // contract; reusing the full walk would ask the same folder to change whether
+ // it follows its root, which the recorder correctly rejects.
+ let db=Arc::new(crate::query_db::QueryDb::default());let inputs=RecordingInputs::new(FileSystemInputs,4_000_000_000);let front=frontend(&root,&inputs,&db);
+ let subset=Arc::new(workspace_discovery::discover(&inputs,DiscoveryContract{root:root.clone(),recursive_roots:vec![root.join("code/tests")]}).unwrap());
+ let partial=workspace_capture::capture(&front,&inputs,subset,&root.join("missing.toml")).unwrap();let partial_snap=snapshot(&front,&db,&inputs,&partial);let partial_scope=partial_snap.workspace_native_read().unwrap();let mut entered=0;
+ let policy=dm_analysis::policy_inputs::PolicyInputs::capture(&front,[]).unwrap();
+ let result=db.with_workspace_code_pages(&partial,&partial_scope,|reader|reader.for_each_generator_test_file_completed(&policy,&mut|_,_|{entered+=1;Ok(true)})?.into_witness());
+ assert!(result.is_err());assert_eq!(entered,0,"a genuine subtree cannot certify hidden production absence");
+}
+
+#[test]
 fn actual_workspace_query_scope_registered_context_records_real_child_dependencies() {
  let root=fixture("workspace-query-scope-context",1);
  let db=Arc::new(crate::query_db::QueryDb::default());

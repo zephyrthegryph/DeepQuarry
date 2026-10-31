@@ -701,6 +701,11 @@ impl Db {
         freed
     }
 
+pub fn evict_value_if_current<T:Any+Send+Sync>(&self,key:Key,expected:&Arc<T>)->usize{
+        let (retired,bytes)={let mut state=self.shards[shard_of(key)].state.lock().unwrap_or_else(|e|e.into_inner());let Some(node)=state.nodes.get_mut(&key)else{return 0};if node.input||node.busy.is_some()||!node.value.as_ref().and_then(|value|value.downcast_ref::<T>()).is_some_and(|value|std::ptr::eq(value,expected.as_ref())){return 0}
+        let retired=node.value.take();let bytes=std::mem::take(&mut node.bytes);state.stats.entry(key.kind).or_default().evicted+=1;(retired,bytes)};drop(retired);bytes
+    }
+
     /// Estimated bytes held by derived values.
     pub fn value_bytes(&self) -> usize {
         self.all_shards()
@@ -763,9 +768,11 @@ impl Ctx<'_> {
     pub fn is_database(&self, database: &Db) -> bool {
         std::ptr::eq(self.db, database)
     }
+
     /// Release derived child payloads; hashes and already recorded dynamic
     /// dependency edges remain. Caller-held Arc loans retain their payload.
     pub fn evict_values(&self,kinds:&[Kind])->usize{self.db.evict_values(kinds)}
+    pub fn evict_value_if_current<T:Any+Send+Sync>(&self,key:Key,expected:&Arc<T>)->usize{self.db.evict_value_if_current(key,expected)}
 
     /// Read-only admission observations of the SAME dynamic dependency set.
     pub fn has_dependency(&self,key:Key)->bool{self.seen.contains(&key)}
@@ -808,3 +815,7 @@ impl Ctx<'_> {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]mod retained_eviction_tests{use super::*;
+ #[test]fn exact_retained_child_witness_never_evicts_equal_replacement_and_keeps_parent_hash_dependencies(){let db=Db::default();let child=Key::new(Kind(241),1);let parent=Key::new(Kind(242),2);db.define(child.kind,"retained child",move|_,_|Ok(Outcome::new(vec![1u8,2,3],17,3)));db.define(parent.kind,"retained parent",move|ctx,_|{let value=ctx.get::<Vec<u8>>(child,Arc::new(()))?;Ok(Outcome::new(value.len(),23,std::mem::size_of::<usize>()))});let first=db.get::<usize>(parent,Arc::new(())).unwrap();let old=db.get::<Vec<u8>>(child,Arc::new(())).unwrap();assert_eq!(db.evict_value_if_current(child,&Arc::new(vec![1u8,2,3])),0);assert_eq!(db.value_bytes_at(child),3);assert_eq!(db.evict_value_if_current(child,&old),3);assert_eq!(db.value_bytes_at(child),0);assert_eq!(old.as_slice(),[1,2,3]);assert!(db.dependants(&[child]).contains(&parent));assert!(Arc::ptr_eq(&first,&db.get::<usize>(parent,Arc::new(())).unwrap()));let fresh=db.get::<Vec<u8>>(child,Arc::new(())).unwrap();assert!(!Arc::ptr_eq(&old,&fresh));assert_eq!(db.evict_value_if_current(child,&old),0);assert_eq!(db.value_bytes_at(child),3);assert_eq!(db.evict_value_if_current(child,&fresh),3);}
+}

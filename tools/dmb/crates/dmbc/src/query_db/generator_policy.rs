@@ -19,11 +19,17 @@ pub(crate) enum GeneratorName {
     UiTypes,
     TrackedLists,
     Deps,
+    AutoTracked,
+    Reads,
+    DerivedReads,
 }
 impl GeneratorName {
     pub(crate) fn name(self) -> &'static str {
         match self {
             Self::Deps => "deps",
+            Self::AutoTracked => "auto_tracked",
+            Self::Reads => "reads",
+            Self::DerivedReads => "derived_reads",
             Self::TrackedLists => "tracked_lists",
             Self::SparseSlots => "sparse_slots",
             Self::SystemAccessors => "system_accessors",
@@ -37,6 +43,8 @@ impl GeneratorName {
     pub(crate) fn path(self) -> &'static str {
         match self {
             Self::Deps => "code/engine/_generated/deps.dm",
+            Self::AutoTracked => "code/engine/_generated/auto_tracked.dm",
+            Self::Reads => "code/engine/_generated/reads.dm",
             Self::TrackedLists => "code/engine/_generated/tracked_lists.dm",
             Self::SparseSlots => "code/engine/_generated/sparse_slots.dm",
             Self::SystemAccessors => "code/engine/_generated/system_accessors.dm",
@@ -44,7 +52,7 @@ impl GeneratorName {
             Self::Actions => "code/engine/_generated/actions.dm",
             Self::DeclareIds => "code/engine/_generated/ids.dm",
             Self::Declare => "code/engine/_generated/declare.dm",
-            Self::UiTypes => panic!("multifile generator has no single path"),
+            Self::UiTypes | Self::DerivedReads => panic!("multifile generator has no single path"),
         }
     }
 }
@@ -59,6 +67,7 @@ impl Artifact {
         self.name.name()
     }
     pub(crate) fn single(&self) -> io::Result<(&'static str, &str)> {
+        if self.name == GeneratorName::DerivedReads {return Err(invalid("derived_reads is a multifile artifact, not a single output"));}
         if self.name == GeneratorName::UiTypes || !self.files.is_empty() {
             return Err(invalid(
                 "ui_types is a multifile artifact, not a single output",
@@ -101,7 +110,7 @@ impl Artifact {
     }
     fn fingerprint(&self) -> u128 {
         let mut h = xxhash_rust::xxh3::Xxh3::new();
-        if self.name == GeneratorName::UiTypes {
+        if matches!(self.name,GeneratorName::UiTypes|GeneratorName::DerivedReads) {
             h.update(b"native-source-generator-files-v1\0");
             h.update(&(self.files.len() as u64).to_le_bytes());
             for (p, t) in &self.files {
@@ -226,14 +235,19 @@ pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admissi
             // Dependency generation is a real Kind11→Kind12 edge under this
             // caller's current context and parent-funded nested admission.
             // Actual child IO exits before any Artifact/Outcome publication.
-            let dependency = if p.name == GeneratorName::Deps {
+            let dependency = if matches!(p.name,GeneratorName::Deps|GeneratorName::AutoTracked) {
                 let produced=super::reactive_read_policy::with_dependencies(ctx,&capture,p.configuration,&p.configuration_path,&p.root,&p.files,&budget,&charge,&admission,|value|{
-                    let out=value.render_deps(capture.policy(),&budget,&crate::daemon::control::checkpoint)?;
-                    let text=out.captured_named_file_text("deps","deps.dm",&budget)?;
+                    let out=if p.name==GeneratorName::Deps{value.render_deps(capture.policy(),&budget,&crate::daemon::control::checkpoint)?}else{
+                        let bytes=sources.len().checked_mul(4*std::mem::size_of::<Arc<File>>()).and_then(|n|n.checked_add(4096)).ok_or_else(||{budget.deny();dq_analyze::captured_reactive_reads::Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"AutoTracked source coordination overflow"))})?;budget.charge(bytes)?;
+                        let mut files=Vec::new();files.try_reserve_exact(sources.len()).map_err(|actual|{budget.deny();dq_analyze::captured_reactive_reads::Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,actual))})?;if files.capacity().checked_mul(std::mem::size_of::<Arc<File>>()).is_none_or(|n|n>bytes){budget.deny();return Err(dq_analyze::captured_reactive_reads::Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"AutoTracked source allocator exceeds admission")))}for source in &sources{files.push(Arc::clone(&source.file));}
+                        let raw=dq_analyze::captured_raw_policy::CapturedRawPolicy::from_shared_files(&p.root,capture.policy(),&config.config,&files)?;
+                        value.render_auto_tracked(&raw,capture.policy(),&p.configuration_path,&budget,&crate::daemon::control::checkpoint)?
+                    };
+                    let output=if p.name==GeneratorName::Deps{"deps.dm"}else{"auto_tracked.dm"};let text=out.captured_named_file_text(p.name.name(),output,&budget)?;
                     Ok(Artifact{name:p.name,text,files:Vec::new(),diags:out.diags})
                 });
                 Some(match produced{Ok(value)=>value,Err(dq_analyze::captured_reactive_reads::Failure::Operational(actual))=>return Err(QueryError::operational(p.result,actual)),Err(dq_analyze::captured_reactive_reads::Failure::Unsupported(message))=>return Err(QueryError::operational(p.result,io::Error::new(io::ErrorKind::Unsupported,message)))})
-            } else {None};
+            } else if matches!(p.name,GeneratorName::Reads|GeneratorName::DerivedReads) {Some(match reactive_reads::produce(ctx,p,&capture,&config,&sources,&budget,&charge,&admission){Ok(value)=>value,Err(dq_analyze::captured_reactive_reads::Failure::Operational(actual))=>return Err(QueryError::operational(p.result,actual)),Err(dq_analyze::captured_reactive_reads::Failure::Unsupported(message))=>return Err(QueryError::operational(p.result,io::Error::new(io::ErrorKind::Unsupported,message)))})} else {None};
             let result = if let Some(value)=dependency {Ok(value)} else {(|| -> Result<Artifact, String> {
                 if capture.semantic_source_evidence().key() != p.evidence {
                     return Err("generator semantic evidence issuance differs".into());
@@ -278,7 +292,7 @@ pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admissi
                 )?;
                 let checkpoint = || admission.abort.scan_checkpoint();
                 match p.name {
-                    GeneratorName::Deps => unreachable!("typed dependency branch handled above"),
+                    GeneratorName::Deps | GeneratorName::AutoTracked | GeneratorName::Reads | GeneratorName::DerivedReads => unreachable!("typed reactive generator branch handled above"),
                     GeneratorName::SparseSlots => {
                         let out =
                             BorrowedSparseSlots::capture(&raw, capture.policy(), budget.clone())?
@@ -435,7 +449,7 @@ impl QueryDb {
         name: GeneratorName,
         consume: impl FnOnce(&Artifact) -> io::Result<T>,
     ) -> io::Result<T> {
-        if name == GeneratorName::UiTypes {
+        if matches!(name,GeneratorName::UiTypes|GeneratorName::DerivedReads) {
             return Err(invalid(
                 "multifile generator requires checked file-set consumer",
             ));
@@ -448,11 +462,11 @@ impl QueryDb {
         name: GeneratorName,
         consume: impl FnOnce(&GeneratorFiles<'_>) -> io::Result<T>,
     ) -> io::Result<T> {
-        if name != GeneratorName::UiTypes {
+        if !matches!(name,GeneratorName::UiTypes|GeneratorName::DerivedReads) {
             return Err(invalid("single generator requires single-output consumer"));
         }
         self.with_generator_fixture_limit(cohort, name, None, |a| {
-            if a.name != GeneratorName::UiTypes || !a.text.is_empty() {
+            if a.name != name || !a.text.is_empty() {
                 return Err(invalid("invalid multifile generator payload mode"));
             }
             consume(&GeneratorFiles { artifact: a })
@@ -582,3 +596,5 @@ mod tests;
 
 #[cfg(test)]
 #[path="generator_policy_tracked_tests.rs"]mod tracked_tests;
+
+#[path="generator_reactive_reads.rs"]mod reactive_reads;

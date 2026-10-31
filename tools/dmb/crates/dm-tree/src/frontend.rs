@@ -978,7 +978,7 @@ fn source_span(file: FileId, span: dm_syntax::Span) -> Result<Span, Vec<Diagnost
 #[path = "frontend_source_export_mapping.rs"]
 mod source_export_mapping;
 pub use source_export_mapping::{
-    SourceDeclarationPolicyCursor, SourceExportMapping, SourceNoteOrigin, SourcePolicyLineOrigin,
+    SourceDeclarationPolicyCursor, SourceExportMapping, SourceNoteOrigin, SourcePolicyLineOrigin, BorrowedSourceNoteOrigin,
 };
 #[path = "frontend_source_projection.rs"]
 mod source_projection;
@@ -1354,3 +1354,5 @@ impl<'frontend> ParsedBody<'frontend> {
 #[cfg(test)]
 #[path="frontend_declaration_checked_tests.rs"]
 mod declaration_checked_tests;
+
+pub use body_archive::BorrowedCallableOriginError;

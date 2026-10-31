@@ -357,3 +357,44 @@ fn actual_dependency_whole_fixtures_emit_all_ordered_facts_and_complete_artifact
   println!("NATIVE_DEPS_FULL_{}={}",label,serde_json::to_string(&complete).unwrap());assert_eq!(fixture.reads.load(Ordering::Relaxed),before,"actual dependency+artifact questions cannot reread fixture source");
  }
 }
+
+#[test]
+fn actual_auto_tracked_generator_uses_fixed_config_original_candidates_and_same_kind12_children(){
+ use super::super::generator_policy::GeneratorName;
+ const AUTO_BODY:&str="/datum/probe\n    var/charge\n    proc/draw()\n        return charge\n    proc/write_charge()\n        charge=2\n";
+ let fixture=Fixture::new(AUTO_BODY,false);
+ let capture=||{let configuration=fixture.root.join("tools/ci/lint_scopes.toml");let intent=PolicyInputRequest{workspace:None,files:vec![PolicyInputFile{path:configuration.clone(),role:PolicyInputRole::Configuration,required:false}],search_folders:vec![]}.admit().unwrap();let issued=Arc::new(crate::runner_host::policy_capture::capture(&fixture.front,&fixture.inputs,&intent.capture_files(),&[]).unwrap().bind_request(&intent).unwrap());fixture.db.raw_cohort(issued,&fixture.root,&configuration).unwrap()};
+ let first=capture();let before=fixture.reads.load(Ordering::Relaxed);let failure=fixture.db.fail_body_syntax_after_for_test(0,io::Error::from_raw_os_error(1450));let error=fixture.db.with_generator_fixture(&first,GeneratorName::AutoTracked,|_|->io::Result<()>{panic!("actual IO cannot complete AutoTracked artifact")}).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(fixture.db.db.stats(dm_query::Kind(11)).computed,0);drop(failure);
+ let text=fixture.db.with_generator_fixture(&first,GeneratorName::AutoTracked,|artifact|{assert_eq!(artifact.path(),"code/engine/_generated/auto_tracked.dm");assert!(artifact.diagnostics().is_empty());assert!(artifact.text().contains("TRACKED(/datum/probe, charge)"));Ok(artifact.text().to_owned())}).unwrap();assert_eq!(fixture.reads.load(Ordering::Relaxed),before);
+ // A finite artifact is bound to its actual capture evidence. It can be
+ // reused within that cohort; a newly issued cohort must render a new artifact,
+ // while the original-owner-checked semantic children remain shared.
+ let computed=fixture.db.db.stats(dm_query::Kind(11)).computed;
+ let children=fixture.db.db.stats(REACTIVE_RESULT).computed;
+ let bodies=fixture.db.db.stats(crate::query_db::body_syntax::BODY_SYNTAX).computed;
+ fixture.db.with_generator_fixture(&first,GeneratorName::AutoTracked,|artifact|{assert_eq!(artifact.text(),text);Ok(())}).unwrap();
+ assert_eq!(fixture.db.db.stats(dm_query::Kind(11)).computed,computed,"same issued cohort reuses its artifact");
+ let next=capture();assert_ne!(first.capture.semantic_source_evidence().key(),next.capture.semantic_source_evidence().key());
+ assert_eq!(source_locator(&first.capture).unwrap(),source_locator(&next.capture).unwrap());
+ let before=fixture.reads.load(Ordering::Relaxed);
+ fixture.db.with_generator_fixture(&next,GeneratorName::AutoTracked,|artifact|{assert_eq!(artifact.text(),text);Ok(())}).unwrap();
+ assert_eq!(fixture.db.db.stats(dm_query::Kind(11)).computed,computed+1,"a fresh finite capture does not inherit another artifact's evidence");
+ assert_eq!(fixture.db.db.stats(REACTIVE_RESULT).computed,children,"fresh artifact shares the original dependency/read/global answers");
+ assert_eq!(fixture.db.db.stats(crate::query_db::body_syntax::BODY_SYNTAX).computed,bodies);
+ assert_eq!(fixture.reads.load(Ordering::Relaxed),before);
+ let wrong=fixture.capture();let error=fixture.db.with_generator_fixture(&wrong,GeneratorName::AutoTracked,|_|->io::Result<()>{panic!("arbitrary configuration path cannot become old fixed AutoTracked policy")}).unwrap_err();assert_eq!(error.kind(),io::ErrorKind::Unsupported);
+}
+
+#[test]
+fn actual_whole_auto_generator_fixtures_emit_complete_ordered_artifacts(){
+ use super::super::generator_policy::GeneratorName;
+ #[derive(Clone)]struct Files(Arc<AtomicUsize>);impl SnapshotProvider for Files{fn stamp(&self,p:&Path)->io::Result<Stamp>{self.0.fetch_add(1,Ordering::Relaxed);crate::input_snapshot::FileSystemInputs.stamp(p)}fn read(&self,p:&Path)->io::Result<(Stamp,Vec<u8>)>{self.0.fetch_add(1,Ordering::Relaxed);crate::input_snapshot::FileSystemInputs.read(p)}fn list(&self,p:&Path)->io::Result<FolderListing>{self.0.fetch_add(1,Ordering::Relaxed);crate::input_snapshot::FileSystemInputs.list(p)}}
+ for case in ["basic","configured"]{let root=Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../analyze/fixtures/native-auto-generator").join(case);let reads=Arc::new(AtomicUsize::new(0));let inputs=RecordingInputs::new(Files(reads.clone()),1);let db=Arc::new(QueryDb::default());let seed=reference_hierarchy::seed();let executor=dm_exec::BuildExecutor::new(1).unwrap();let front=dm_tree::frontend::build_with_executor_and_semantic_state_for_policy(&root.join("deepquarry.dme"),&inputs,&Default::default(),dm_tree::frontend::FrontendConfig{workers:1,engine:Some(&seed),observer:None},None,&executor,None,true).unwrap().with_body_queries(db.clone());let configuration=root.join("tools/ci/lint_scopes.toml");let intent=PolicyInputRequest{workspace:None,files:vec![PolicyInputFile{path:configuration.clone(),role:PolicyInputRole::Configuration,required:false}],search_folders:vec![]}.admit().unwrap();let capture=Arc::new(crate::runner_host::policy_capture::capture(&front,&inputs,&intent.capture_files(),&[]).unwrap().bind_request(&intent).unwrap());let cohort=db.raw_cohort(capture,&root,&configuration).unwrap();let before=reads.load(Ordering::Relaxed);
+ db.with_generator_fixture(&cohort,GeneratorName::AutoTracked,|artifact|{
+  struct Diags<'a>(&'a[dq_analyze::sparse_slots_policy::Diagnostic]);impl serde::Serialize for Diags<'_>{fn serialize<S:serde::Serializer>(&self,serializer:S)->Result<S::Ok,S::Error>{use serde::ser::SerializeSeq;let mut seq=serializer.serialize_seq(Some(self.0.len()))?;for row in self.0{seq.serialize_element(&(&row.rel,row.line,&row.msg))?;}seq.end()}}#[derive(serde::Serialize)]struct Whole<'a>{path:&'a str,text:&'a str,diagnostics:Diags<'a>}
+  struct Buffer{bytes:Vec<u8>,budget:Arc<Budget>,first:Option<io::Error>}impl io::Write for Buffer{fn write(&mut self,bytes:&[u8])->io::Result<usize>{if self.first.is_some(){return Err(io::Error::other("Auto test serialization stopped"))}let produced=(||{crate::daemon::control::checkpoint()?;let needed=self.bytes.len().checked_add(bytes.len()).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"Auto test output overflow"))?;if needed>self.bytes.capacity(){let cap=needed.max(self.bytes.capacity().saturating_mul(2)).max(256);self.budget.charge(cap.checked_mul(2).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"Auto test output reserve overflow"))?).map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message))?;self.bytes.try_reserve_exact(cap-self.bytes.len()).map_err(io::Error::other)?;if self.bytes.capacity()>cap.saturating_mul(2){return Err(io::Error::new(io::ErrorKind::OutOfMemory,"Auto test allocation exceeds envelope"))}}self.bytes.extend_from_slice(bytes);Ok(bytes.len())})();match produced{Ok(count)=>Ok(count),Err(actual)=>{self.first=Some(actual);Err(io::Error::other("Auto test serialization stopped"))}}}fn flush(&mut self)->io::Result<()>{Ok(())}}
+  let budget=Budget::new(RESULT_BUDGET.checked_sub(db.raw_policy.charge.load(Ordering::Acquire)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"Auto test output headroom"))?).map_err(io::Error::other)?;let mut output=Buffer{bytes:Vec::new(),budget,first:None};let rendered=serde_json::to_writer(&mut output,&Whole{path:artifact.path(),text:artifact.text(),diagnostics:Diags(artifact.diagnostics())});if let Some(actual)=output.first.take(){return Err(actual)}rendered.map_err(io::Error::other)?;let json=String::from_utf8(output.bytes).map_err(io::Error::other)?;println!("NATIVE_AUTO_FULL_{case}={json}");assert!(artifact.text().contains("TRACKED(/datum/probe, charge)"));assert!(artifact.text().contains("#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)"));if case=="configured"{assert!(artifact.text().contains("TRACKED(/datum/manual, spare)"));assert!(!artifact.text().contains("TRACKED(/datum/probe, excluded)"));assert!(!artifact.text().contains("TRACKED(/datum/manual, value)"));}Ok(())
+ }).unwrap();assert_eq!(reads.load(Ordering::Relaxed),before,"actual generation and full output cannot reread source");}
+}
+
+#[path="generator_policy_reads_tests.rs"]mod read_generators;

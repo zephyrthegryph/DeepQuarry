@@ -39,6 +39,9 @@ pub(crate) fn decide(source:&ReadSource<'_>,defs:&HashMap<String,Vec<String>>,ca
  policy::decide(&mut Native{source},defs,candidates,exclude)
 }
 
+/// Borrow actual frozen dependency candidate rows; same native metadata/control.
+pub(crate) fn decide_rows<'a>(source:&ReadSource<'_>,defs:&HashMap<String,Vec<String>>,candidates:impl IntoIterator<Item=(&'a str,&'a str)>,exclude:&[&[String]])->Result<AutoSet,Failure>{policy::decide_rows(&mut Native{source},defs,candidates,exclude)}
+
 struct Reactions<'a,'s,'f>{base:Native<'a,'s>,facts:&'f crate::reactive_policy_facts_native::PolicyFacts}
 impl Control for Reactions<'_,'_,'_>{type Error=Failure;const CHECKED:bool=true;fn checkpoint(&mut self)->Result<(),Failure>{self.base.checkpoint()}fn reserve(&mut self,n:usize)->Result<(),Failure>{self.base.reserve(n)}fn overflow(&mut self)->Failure{self.base.overflow()}fn allocation_failed(&mut self)->Failure{self.base.allocation_failed()}}
 impl Source for Reactions<'_,'_,'_>{fn variable(&mut self,o:&str,v:&str)->Result<Option<Variable>,Failure>{self.base.variable(o,v)}fn subtype(&mut self,a:&str,b:&str)->Result<bool,Failure>{self.base.subtype(a,b)}fn var_owner(&mut self,o:&str,v:&str)->Result<Option<String>,Failure>{self.base.var_owner(o,v)}}

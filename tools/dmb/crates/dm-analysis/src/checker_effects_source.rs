@@ -115,6 +115,7 @@ impl EffectSourcePage<'_>{
     pub fn events(&self)->usize{self.events}
     /// Conservative currently live page reservation, for overlapping parent work.
     pub fn live_charge(&self)->usize{self.live_charge}
+    pub(super) fn retain_contribution(&self,index:usize)->Result<Option<Arc<BodyEffects>>,PolicyFailure>{match self.bodies.get(index){Some(body)=>{body.validate(self.input)?;Ok(Some(Arc::clone(body)))},None=>Ok(None)}}
     pub fn contribution(&self,index:usize)->Result<Option<EffectContribution<'_>>,PolicyFailure>{match self.bodies.get(index){Some(body)=>{body.validate(self.input)?;Ok(Some(EffectContribution{body}))},None=>Ok(None)}}
 }
 pub struct EffectContribution<'body>{body:&'body BodyEffects}

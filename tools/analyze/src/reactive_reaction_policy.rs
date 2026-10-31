@@ -3,9 +3,9 @@
 use std::collections::{HashSet,BTreeSet};
 use crate::{tree::View,key_policy_control as kc,util::{py_strip,py_lstrip},pat};
 #[derive(Clone,Copy)]pub enum Lines<'a>{Owned(&'a[(usize,String)]),Code{view:&'a View,first:usize,last:usize},IndentedCode{view:&'a View,first:usize}}
-pub enum LineIter<'a>{Owned(std::slice::Iter<'a,(usize,String)>),Code{view:&'a View,next:usize,last:usize,done:bool},IndentedCode{view:&'a View,next:usize,done:bool}}
+pub(crate) enum LineIter<'a>{Owned(std::slice::Iter<'a,(usize,String)>),Code{view:&'a View,next:usize,last:usize,done:bool},IndentedCode{view:&'a View,next:usize,done:bool}}
 impl<'a> Iterator for LineIter<'a>{type Item=(usize,&'a str);fn next(&mut self)->Option<Self::Item>{match self{Self::Owned(rows)=>rows.next().map(|(n,line)|(*n,line.as_str())),Self::Code{view,next,last,done}=>{if *done||*next>*last{return None}let line=*next;if line==*last{*done=true}else{*next+=1}Some((line,view.line(line)))},Self::IndentedCode{view,next,done}=>{if *done||*next>view.num_lines(){return None}let number=*next;let text=view.line(number);if text.chars().next().is_some_and(|ch|!crate::util::is_py_space(ch)){*done=true;return None}*next+=1;Some((number,text))}}}}
-impl<'a> Lines<'a>{fn iter(self)->LineIter<'a>{match self{Self::Owned(rows)=>LineIter::Owned(rows.iter()),Self::Code{view,first,last}=>LineIter::Code{view,next:first,last,done:false},Self::IndentedCode{view,first}=>LineIter::IndentedCode{view,next:first,done:false}}}}
+impl<'a> Lines<'a>{pub(crate) fn iter(self)->LineIter<'a>{match self{Self::Owned(rows)=>LineIter::Owned(rows.iter()),Self::Code{view,first,last}=>LineIter::Code{view,next:first,last,done:false},Self::IndentedCode{view,first}=>LineIter::IndentedCode{view,next:first,done:false}}}}
 #[derive(Clone,Copy,Debug,PartialEq,Eq)]pub enum ProcedureKey<'a>{Legacy(usize),Raw{relative:&'a str,header:usize}}
 pub struct Procedure<'a>{pub owner:&'a str,pub name:&'a str,pub relative:&'a str,pub args:&'a str,pub lines:Lines<'a>}
 
@@ -25,7 +25,7 @@ pub trait Source{
  type Error;type Known<'a>:Membership<Error=Self::Error> where Self:'a;
  /// Stream only requested raw-policy names. False stops this lookup; it does
  /// not mint a compiled procedure/source receipt.
- fn for_each_named<'a>(&'a self,name:&str,visit:&mut dyn FnMut(ProcedureKey<'a>,Procedure<'a>)->Result<bool,Self::Error>)->Result<(),Self::Error>;
+ fn for_each_named(&self,name:&str,visit:&mut dyn FnMut(ProcedureKey<'_>,Procedure<'_>)->Result<bool,Self::Error>)->Result<(),Self::Error>;
  fn known<'a>(&'a self,owner:&'a str)->Result<Self::Known<'a>,Self::Error>;
 }
 pub(crate) const GENERATED_SKIP_DIRS:&[&str]=&["code/modules/unit_tests/","code/tests/unit_tests/","code/modules/benchmarks/"];
@@ -95,30 +95,52 @@ pub fn body_reads<C:kc::Control,K:Membership<Error=C::Error>>(proc:&Procedure<'_
     control.checkpoint()?;Ok(reads)
 }
 
-pub struct ReactionRead<'source>{pub owner:&'source str,pub kind:&'static str,pub handler:&'static str,pub procedure:ProcedureKey<'source>,pub reads:Vec<(String,usize)>}
+/// Owned UNIQUE reaction summary only; never a procedure/body/source model.
+pub enum OwnedProcedureKey{Legacy(usize),Raw{relative:String,header:usize}}
+pub struct ReactionRead{pub owner:String,pub kind:&'static str,pub handler:&'static str,pub procedure:OwnedProcedureKey,pub reads:Vec<(String,usize)>}
+fn own_key<C:kc::Control>(key:ProcedureKey<'_>,control:&mut C)->Result<OwnedProcedureKey,C::Error>{Ok(match key{ProcedureKey::Legacy(index)=>OwnedProcedureKey::Legacy(index),ProcedureKey::Raw{relative,header}=>OwnedProcedureKey::Raw{relative:kc::own(control,relative)?,header}})}
+struct EveryName<E>(std::marker::PhantomData<E>);impl<E> Membership for EveryName<E>{type Error=E;fn contains(&self,_:&str)->Result<bool,E>{Ok(true)}}
 fn eligible(proc:&Procedure<'_>)->bool{proc.owner.starts_with("/mob")&&!GENERATED_SKIP_DIRS.iter().any(|prefix|proc.relative.starts_with(prefix))&&proc.relative!=GENERATED_REL}
 fn has_name<S:Source,C:kc::Control<Error=S::Error>>(source:&S,name:&str,control:&mut C)->Result<bool,C::Error>{let mut found=false;source.for_each_named(name,&mut|_key,proc|{control.checkpoint()?;if eligible(&proc)&&proc.name==name{found=true;Ok(false)}else{Ok(true)}})?;Ok(found)}
 /// Exact historical helper closure over streaming raw-policy procedure loans.
 /// No by-name/procedure index or owned body lines are rebuilt.
-pub fn reaction_reads<'source,S:Source,C:kc::Control<Error=S::Error>>(source:&'source S,control:&mut C)->Result<Vec<ReactionRead<'source>>,C::Error>{
+pub fn reaction_reads<S:Source,C:kc::Control<Error=S::Error>>(source:&S,control:&mut C)->Result<Vec<ReactionRead>,C::Error>{
  let mut out=Vec::new();
  for(kind,handler,roots,skip)in REACTION_OUTPUTS{
   let mut names=HashSet::new();let mut todo=Vec::new();
   for root in *roots{kc::reserve(control,||Some(256))?;names.insert(kc::own(control,root)?);crate::reactive_dependency_fold::row(control,&mut todo)?;todo.push(kc::own(control,root)?);}
-  while let Some(name)=todo.pop(){source.for_each_named(&name,&mut|_key,proc|{
-   control.checkpoint()?;if !eligible(&proc)||proc.name!=name.as_str(){return Ok(true)}
-   for(_,text)in proc.lines.iter(){control.checkpoint()?;if py_strip(text).is_empty(){continue}crate::reactive_dependency_policy::captures(pat!(r"(?<![\w.])(?:src\.)?([A-Za-z_]\w*)\s*\("),text,control,|control,matched|{control.checkpoint()?;let name=matched.s(1);
-    if !names.contains(name)&&has_name(source,name,control)?&&helper_name(name){kc::reserve(control,||Some(256))?;names.insert(kc::own(control,name)?);crate::reactive_dependency_fold::row(control,&mut todo)?;todo.push(kc::own(control,name)?);}Ok(())
-   })?;}Ok(true)
-  })?;}
+  while let Some(name)=todo.pop(){
+   // A page loan cannot recursively acquire another page while its source
+   // views/scratch are live. Keep only ordered candidate identifiers, then
+   // release the body loan before the exact original name-membership question.
+   let mut called=Vec::new();source.for_each_named(&name,&mut|_key,proc|{
+    control.checkpoint()?;if !eligible(&proc)||proc.name!=name.as_str(){return Ok(true)}
+    for(_,text)in proc.lines.iter(){control.checkpoint()?;if py_strip(text).is_empty(){continue}crate::reactive_dependency_policy::captures(pat!(r"(?<![\w.])(?:src\.)?([A-Za-z_]\w*)\s*\("),text,control,|control,matched|{
+     let callee=matched.s(1);if !names.contains(callee){crate::reactive_dependency_fold::row(control,&mut called)?;called.push(kc::own(control,callee)?);}Ok(())
+    })?;}Ok(true)
+   })?;
+   for callee in called{control.checkpoint()?;if !names.contains(callee.as_str())&&has_name(source,&callee,control)?&&helper_name(&callee){kc::reserve(control,||Some(256))?;names.insert(kc::own(control,&callee)?);crate::reactive_dependency_fold::row(control,&mut todo)?;todo.push(callee);}}
+  }
   kc::reserve(control,||names.len().checked_mul(std::mem::size_of::<&String>())?.checked_mul(4)?.checked_add(64))?;let mut sorted:Vec<&String>=names.iter().collect();if C::CHECKED&&sorted.capacity()>names.len().saturating_mul(4).saturating_add(8){return Err(control.allocation_failed())}sorted.sort();
-  for name in sorted{source.for_each_named(name,&mut|key,proc|{
-   control.checkpoint()?;if !eligible(&proc)||proc.name!=name.as_str(){return Ok(true)}let known=source.known(proc.owner)?;let mut reads=body_reads(&proc,&known,control)?;reads.retain(|(var,_)|!skip.contains(&var.as_str()));crate::reactive_dependency_fold::row(control,&mut out)?;out.push(ReactionRead{owner:proc.owner,kind,handler,procedure:key,reads});Ok(true)
-  })?;}
+  for name in sorted{
+   let mut pending=Vec::new();source.for_each_named(name,&mut|key,proc|{
+    control.checkpoint()?;if !eligible(&proc)||proc.name!=name.as_str(){return Ok(true)}
+    let reads=body_reads(&proc,&EveryName(std::marker::PhantomData),control)?;let owner=kc::own(control,proc.owner)?;let key=own_key(key,control)?;crate::reactive_dependency_fold::row(control,&mut pending)?;pending.push((owner,key,reads));Ok(true)
+   })?;
+   for(owner,procedure,mut reads)in pending{
+    // Same first-occurrence lexical reads, now filter actual immutable
+    // membership after the file dies. In-place compaction preserves order and
+    // moves original Strings; no second result/body roster is constructed.
+    let known=source.known(&owner)?;let mut write=0;
+    for read in 0..reads.len(){control.checkpoint()?;if known.contains(&reads[read].0)?&&!skip.contains(&reads[read].0.as_str()){if write!=read{reads.swap(write,read)}write+=1;}}
+    reads.truncate(write);drop(known);crate::reactive_dependency_fold::row(control,&mut out)?;out.push(ReactionRead{owner,kind,handler,procedure,reads});
+   }
+  }
  }
  control.checkpoint()?;Ok(out)
 }
-pub fn reaction_pairs<S:Source,C:kc::Control<Error=S::Error>>(source:&S,control:&mut C)->Result<BTreeSet<(String,String)>,C::Error>{let mut out=BTreeSet::new();for read in reaction_reads(source,control)?{let owner=read.owner;for(name,_)in read.reads{control.checkpoint()?;kc::reserve(control,||Some(256))?;out.insert((kc::own(control,owner)?,name));}}control.checkpoint()?;Ok(out)}
+
+pub fn reaction_pairs<S:Source,C:kc::Control<Error=S::Error>>(source:&S,control:&mut C)->Result<BTreeSet<(String,String)>,C::Error>{let mut out=BTreeSet::new();for read in reaction_reads(source,control)?{let owner=read.owner;for(name,_)in read.reads{control.checkpoint()?;kc::reserve(control,||Some(256))?;out.insert((kc::own(control,&owner)?,name));}}control.checkpoint()?;Ok(out)}
 
 /// One old lexical declaration-pattern match. Raw policy data only: these
 /// spans include inactive text and cannot issue compiled declaration receipts.
@@ -264,13 +286,13 @@ pub fn owner_in_chain(candidate_without_leading_slash:&str,receiver:&str)->bool{
 }
  struct Borrowed<'a>(&'a Model);
  impl Source for Borrowed<'_>{type Error=std::convert::Infallible;type Known<'a>=HashSet<String>where Self:'a;
- fn for_each_named<'a>(&'a self,name:&str,visit:&mut dyn FnMut(ProcedureKey<'a>,Procedure<'a>)->Result<bool,Self::Error>)->Result<(),Self::Error>{for(index,p)in self.0.procs.iter().enumerate(){if p.name==name&&!visit(ProcedureKey::Legacy(index),Procedure{owner:&p.owner,name:&p.name,relative:&p.rel,args:&p.args,lines:Lines::Owned(&p.body)})?{break}}Ok(())}
+ fn for_each_named(&self,name:&str,visit:&mut dyn FnMut(ProcedureKey<'_>,Procedure<'_>)->Result<bool,Self::Error>)->Result<(),Self::Error>{for(index,p)in self.0.procs.iter().enumerate(){if p.name==name&&!visit(ProcedureKey::Legacy(index),Procedure{owner:&p.owner,name:&p.name,relative:&p.rel,args:&p.args,lines:Lines::Owned(&p.body)})?{break}}Ok(())}
  fn known<'a>(&'a self,owner:&'a str)->Result<Self::Known<'a>,Self::Error>{Ok(self.0.union(&self.0.vars,owner))}}
 
  fn proc(owner:&str,name:&str,body:&str)->Proc{Proc{rel:"code/probe.dm".into(),owner:owner.into(),name:name.into(),args:"value, datum/box/local=initial(seed))".into(),body:body.lines().enumerate().map(|(n,l)|(n+10,l.to_owned())).collect()}}
  #[test]fn independent_original_helper_closure_and_each_ordered_read_row_match_borrowed_policy(){
   let mut procs=vec![proc("/mob/a","life_hud","life_hud_health_icons()\nprocess_glasses()\nunrelated()\nenergy += 1\nhud_list"),proc("/mob/a","life_hud_health_icons","src.energy + local + value + initial(hidden) + nameof(ignored)\nvar/other = 1\nother + pressure"),proc("/mob/b","process_glasses","life_vision()\ncharge"),proc("/mob/a","life_vision","process_glasses()\nsight + plane_holder"),proc("/mob/a","life_canmove","update_canmove()\ncanmove + speed"),proc("/mob/a","update_canmove","speed + cap_state + cap_data"),proc("/mobile","life_hud","odd_prefix"),proc("/datum/not_mob","life_hud","not_read")];let mut skipped=proc("/mob/a","process_glasses","ignored");skipped.rel="code/tests/unit_tests/ignored.dm".into();procs.push(skipped);
-  let names:HashSet<String>=["energy","local","value","hidden","ignored","pressure","charge","sight","plane_holder","canmove","speed","cap_state","cap_data","odd_prefix","not_read","hud_list"].into_iter().map(str::to_owned).collect();let vars=["/mob/a","/mob/b","/mobile","/datum/not_mob"].into_iter().map(|owner|(owner.to_owned(),names.clone())).collect();let model=Model{procs,vars};let expected=original_reaction_reads(&model).into_iter().map(|r|(r.kind,r.handler,r.proc,r.reads)).collect::<Vec<_>>();let source=Borrowed(&model);let got=super::reaction_reads(&source,&mut kc::Compatibility).unwrap().into_iter().map(|r|(r.kind,r.handler,match r.procedure{ProcedureKey::Legacy(index)=>index,ProcedureKey::Raw{..}=>panic!("legacy source emitted raw locator")},r.reads)).collect::<Vec<_>>();assert_eq!(got,expected);assert!(!got.is_empty());assert!(got.iter().any(|(_,_,index,_)|*index==6),"old /mob prefix rule is retained");
+  let names:HashSet<String>=["energy","local","value","hidden","ignored","pressure","charge","sight","plane_holder","canmove","speed","cap_state","cap_data","odd_prefix","not_read","hud_list"].into_iter().map(str::to_owned).collect();let vars=["/mob/a","/mob/b","/mobile","/datum/not_mob"].into_iter().map(|owner|(owner.to_owned(),names.clone())).collect();let model=Model{procs,vars};let expected=original_reaction_reads(&model).into_iter().map(|r|(r.kind,r.handler,r.proc,r.reads)).collect::<Vec<_>>();let source=Borrowed(&model);let got=super::reaction_reads(&source,&mut kc::Compatibility).unwrap().into_iter().map(|r|(r.kind,r.handler,match r.procedure{OwnedProcedureKey::Legacy(index)=>index,OwnedProcedureKey::Raw{..}=>panic!("legacy source emitted raw locator")},r.reads)).collect::<Vec<_>>();assert_eq!(got,expected);assert!(!got.is_empty());assert!(got.iter().any(|(_,_,index,_)|*index==6),"old /mob prefix rule is retained");
  }
  #[test]fn code_line_loan_filters_blank_work_without_changing_lexical_reads(){let view=View::new("energy + value\n\n    pressure + initial(hidden)\n".into());let owned=Proc{rel:"code/probe.dm".into(),owner:"/mob/a".into(),name:"life_hud".into(),args:"value)".into(),body:vec![(1,"energy + value".into()),(3,"    pressure + initial(hidden)".into())]};let known:HashSet<String>=["energy","value","pressure","hidden"].into_iter().map(str::to_owned).collect();let expected=body_reads(&owned,&known);let borrowed=Procedure{owner:&owned.owner,name:&owned.name,relative:&owned.rel,args:&owned.args,lines:Lines::Code{view:&view,first:1,last:view.num_lines()}};assert_eq!(super::body_reads(&borrowed,&known,&mut kc::Compatibility).unwrap(),expected);}
 
@@ -404,4 +426,14 @@ fn parse_vars(lines: &[&str], typed: &mut VarTable) -> VarTable {
   }
  }
 
+}
+
+#[cfg(test)]mod page_loan_tests{
+ use super::*;use std::{cell::Cell,convert::Infallible};
+ struct LoanSource{active:Cell<bool>,root:Vec<(usize,String)>,helper:Vec<(usize,String)>}
+ struct Known<'a>(&'a LoanSource);impl Membership for Known<'_>{type Error=Infallible;fn contains(&self,name:&str)->Result<bool,Infallible>{assert!(!self.0.active.get(),"membership lookup nested inside original file loan");Ok(name=="charge")}}
+ impl Source for LoanSource{type Error=Infallible;type Known<'a>=Known<'a> where Self:'a;
+ fn for_each_named(&self,name:&str,visit:&mut dyn FnMut(ProcedureKey<'_>,Procedure<'_>)->Result<bool,Infallible>)->Result<(),Infallible>{assert!(!self.active.replace(true),"name lookup nested inside original file loan");let rows=match name{"life_hud"=>Some((0,&self.root)),"life_hud_helper"=>Some((1,&self.helper)),_=>None};if let Some((index,rows))=rows{let answer=visit(ProcedureKey::Legacy(index),Procedure{owner:"/mob/unit",name,relative:"code/unit.dm",args:"",lines:Lines::Owned(rows)});self.active.set(false);answer?;}else{self.active.set(false)}Ok(())}
+ fn known<'a>(&'a self,_:&'a str)->Result<Known<'a>,Infallible>{assert!(!self.active.get());Ok(Known(self))}}
+ #[test]fn reaction_name_and_variable_questions_wait_until_actual_local_body_loan_ends(){let source=LoanSource{active:Cell::new(false),root:vec![(2,"\tcharge + unknown".into()),(3,"\tlife_hud_helper()".into())],helper:vec![(7,"\tcharge + charge".into())]};let rows=reaction_reads(&source,&mut kc::Compatibility).unwrap();let hud:Vec<_>=rows.iter().filter(|row|row.kind=="hud").map(|row|(row.owner.as_str(),row.reads.as_slice())).collect();assert_eq!(hud,vec![("/mob/unit",[("charge".to_owned(),2)].as_slice()),("/mob/unit",[("charge".to_owned(),7)].as_slice())]);assert!(!source.active.get());}
 }

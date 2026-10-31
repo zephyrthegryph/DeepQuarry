@@ -333,7 +333,7 @@ pub fn gen(args: &[String], root: &Path) -> ExitCode {
     // The stage 1 results of the pass that ran it: its files were written, and the next pass only proves stage 0 is still fresh.
     let mut stage1_results: Option<Vec<super::gen::GenResult>> = None;
     for pass in 0..5 {
-        let o = Options { root: root.to_path_buf(), lints: vec!["sem/keys".to_string()], ..Default::default() };
+        let o = Options { root: root.to_path_buf(), lints: vec![crate::generator_test_scope::cli_source_lint().to_owned()], ..Default::default() };
         let engine = match Engine::new(crate::run::registry(), o) {
             Ok(e) => e,
             Err(e) => {
@@ -355,7 +355,7 @@ pub fn gen(args: &[String], root: &Path) -> ExitCode {
             if !check {
                 if let Some(paths) = gen_store_restore(gen_store_key(&engine.tree, root), root) {
                     // The restored files are part of the tree now; reload it and record the memo against the full state.
-                    let o2 = Options { root: root.to_path_buf(), lints: vec!["sem/keys".to_string()], ..Default::default() };
+                    let o2 = Options { root: root.to_path_buf(), lints: vec![crate::generator_test_scope::cli_source_lint().to_owned()], ..Default::default() };
                     if let Ok(e2) = Engine::new(crate::run::registry(), o2) {
                         let mut outputs = Vec::new();
                         for p in &paths {

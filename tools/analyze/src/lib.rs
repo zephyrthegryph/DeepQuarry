@@ -13,6 +13,7 @@ pub mod keys_policy;
 pub mod key_policy_control;
 pub mod auto_setter_calls_policy;
 pub mod auto_tracking_policy;
+mod auto_tracking_emitter;
 pub mod typed_set_calls_policy;
 #[cfg(feature="native-policy")]mod auto_typed_set_calls_native;
 #[cfg(feature="native-policy")]
@@ -182,6 +183,7 @@ pub mod reactive_annotations_policy;
 #[cfg(feature="native-policy")]mod reactive_global_facts_native;
 
 #[cfg(feature="native-policy")]pub mod captured_reactive_reads;
+#[cfg(feature="native-policy")]pub mod reactive_raw_policy_pages;
 
 pub mod reactive_variable_policy;
 
@@ -204,3 +206,13 @@ pub(crate) mod deps_policy;
 pub(crate) mod reactive_dependency_view;
 
 #[cfg(feature="native-policy")]pub(crate) mod reactive_dependency_result;
+
+pub(crate) mod reads_policy;
+pub(crate) mod derived_reads_policy;
+
+pub(crate) mod reactive_rank_policy;
+
+#[cfg(feature="native-policy")]mod reactive_reads_generator_native;
+
+pub(crate) mod derived_reads_collect_policy;
+#[cfg(feature="native-policy")]mod reactive_derived_generator_native;

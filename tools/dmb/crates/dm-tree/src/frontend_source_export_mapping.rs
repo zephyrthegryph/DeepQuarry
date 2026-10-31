@@ -559,7 +559,8 @@ impl SourceExportMapping {
         })
     }
     /// Genuine checker token provenance, including native-issued macro invocation points.
-    pub fn source_note_point(&self, offset: usize) -> Result<SourceNoteOrigin, String> {
+    pub fn source_note_point(&self,offset:usize)->Result<SourceNoteOrigin,String>{self.borrowed_source_note_point(offset).map(BorrowedSourceNoteOrigin::into_owned).map_err(str::to_owned)}
+    pub fn borrowed_source_note_point(&self,offset:usize)->Result<BorrowedSourceNoteOrigin<'_>,&'static str>{
         let index = self
             .origins
             .partition_point(|origin| origin.output_span.end <= offset);
@@ -577,13 +578,13 @@ impl SourceExportMapping {
         let cursor = self
             .origins
             .source_note_cursor(index, include, acquired, offset)
-            .map_err(str::to_owned)?;
+            ?;
         let coordinates = self
             .includes
             .get(include)
             .ok_or("note include coordinates unavailable")?;
-        Ok(SourceNoteOrigin {
-            path: Arc::clone(&coordinates.path),
+        Ok(BorrowedSourceNoteOrigin {
+            path: &coordinates.path,
             line: cursor.line,
             byte_column: cursor.byte_column,
         })
@@ -818,4 +819,12 @@ pub(super) fn reset_full_source_admissions_for_test() {
 #[cfg(test)]
 pub(super) fn full_source_admissions_for_test() -> usize {
     FULL_SOURCE_ADMISSIONS.with(|count| count.get())
+}
+
+/// Same source-note projection borrowed before any path-owner clone. This is
+/// coordinate data, not a source/cache admission capability.
+#[derive(Clone,Copy)]pub struct BorrowedSourceNoteOrigin<'a>{path:&'a Arc<PathBuf>,line:usize,byte_column:usize}
+impl BorrowedSourceNoteOrigin<'_>{
+ pub fn retained_charge(&self)->Option<usize>{std::mem::size_of::<SourceNoteOrigin>().checked_add(std::mem::size_of::<PathBuf>())?.checked_add(self.path.capacity())?.checked_add(2*std::mem::size_of::<usize>())}
+ pub fn into_owned(self)->SourceNoteOrigin{SourceNoteOrigin{path:Arc::clone(self.path),line:self.line,byte_column:self.byte_column}}
 }

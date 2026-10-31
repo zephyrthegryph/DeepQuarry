@@ -38,6 +38,7 @@ fn invalid(s: impl std::fmt::Display) -> io::Error {
 mod aggregate;
 #[path = "workspace_raw_code.rs"]
 mod code;
+pub(crate) use code::{WorkspaceCodeReader,WorkspaceCodeWitness,WorkspaceCodeTraversal,WorkspaceGeneratorTestWitness};
 #[path = "workspace_resource_inventory.rs"]
 mod resource_inventory;
 pub use aggregate::{WorkspaceCursor, WorkspacePageReader, WorkspacePageView};

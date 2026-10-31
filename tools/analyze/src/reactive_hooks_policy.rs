@@ -8,7 +8,7 @@
 //! `PROC_REF(x)`, `TYPE_PROC_REF(/type, x)` or `CAP_PROC(x)`. The hook form decides which context
 //! type the handler is called with, and so which fields it may read (section 8, "Contexts").
 
-use crate::{raw_marker_policy::{matching_paren,split_args},declare_policy::Marker};
+use crate::{raw_marker_policy::{matching_paren,argument_slices},declare_policy::Marker,key_policy_control as kc};
 pub const OPAQUE_DIRS: &[&str] = &["code/datums/sys/", "code/datums/om/", "code/modules/tgui/", "code/datums/capabilities/", "code/datums/reactions/", "code/datums/ownership/", "code/engine/", "code/__defines/verdigris/"];
 const RUNTIME_OBSERVE:&str="RUNTIME_OBSERVE";
 
@@ -146,19 +146,20 @@ fn is_word(b: u8) -> bool {
 }
 
 /// `(kw index, start of args, end of args)` for each hook-form call in `body`.
-fn hook_ranges(body: &str) -> Vec<(usize, usize, usize)> {
+fn hook_ranges<C:kc::Control>(body: &str,c:&mut C) -> Result<Vec<(usize, usize, usize)>,C::Error> {
     let b = body.as_bytes();
     let mut out = Vec::new();
     let mut i = 0;
     let mut in_str = false;
     while i < b.len() {
-        let c = b[i];
-        if c == b'"' {
+        if i%256==0{c.checkpoint()?;}
+        let byte = b[i];
+        if byte == b'"' {
             in_str = !in_str;
             i += 1;
             continue;
         }
-        if in_str || !(c.is_ascii_alphabetic() || c == b'_') {
+        if in_str || !(byte.is_ascii_alphabetic() || byte == b'_') {
             i += 1;
             continue;
         }
@@ -173,7 +174,7 @@ fn hook_ranges(body: &str) -> Vec<(usize, usize, usize)> {
             if matches!(word, "because" | "when" | "repeats" | "answerer" | "remote" | "remote_because" | "until" | "after_step") {
                 let rest = body[i..].trim_start();
                 if rest.starts_with('=') && !rest.starts_with("==") {
-                    out.push((HOOK_FORMS.iter().position(|f| f.kw == word).unwrap(), i, i));
+                    crate::reactive_dependency_fold::row(c,&mut out)?;out.push((HOOK_FORMS.iter().position(|f| f.kw == word).unwrap(), i, i));
                     continue;
                 }
             }
@@ -183,43 +184,27 @@ fn hook_ranges(body: &str) -> Vec<(usize, usize, usize)> {
                 if rest.trim_start().starts_with('(') {
                     let open = i + skip;
                     if let Some(close) = matching_paren(body, open) {
-                        out.push((idx, open + 1, close));
+                        crate::reactive_dependency_fold::row(c,&mut out)?;out.push((idx, open + 1, close));
                     }
                 }
             }
         }
     }
-    out
+    Ok(out)
 }
 
 /// Every handler a declaration marker names.
-pub fn discover(markers: &[Marker<'_>]) -> Vec<HandlerRef> {
-    let mut out = Vec::new();
-    for m in markers {
-        if !matches!(m.name, "CAPABILITIES" | "CAPABILITY_DEF" | "CAPABILITY_TYPE" | "STAT" | crate::raw_entry_proc_policy::ENTRY_PROC | RUNTIME_OBSERVE) {
-            continue;
-        }
-        marker_handlers(m, &mut out);
-    }
-    out
-}
+pub fn discover(markers:&[Marker<'_>])->Vec<HandlerRef>{match discover_admitted(markers,&mut kc::Compatibility){Ok(v)=>v,Err(e)=>match e{}}}
+pub fn discover_in(markers:&[Marker<'_>],names:&[&str])->Vec<HandlerRef>{match discover_in_admitted(markers,names,&mut kc::Compatibility){Ok(v)=>v,Err(e)=>match e{}}}
+pub fn discover_admitted<C:kc::Control>(markers:&[Marker<'_>],c:&mut C)->Result<Vec<HandlerRef>,C::Error>{let mut out=Vec::new();for m in markers{c.checkpoint()?;if matches!(m.name,"CAPABILITIES"|"CAPABILITY_DEF"|"CAPABILITY_TYPE"|"STAT"|crate::raw_entry_proc_policy::ENTRY_PROC|RUNTIME_OBSERVE){marker_handlers(m,&mut out,c)?;}}c.checkpoint()?;Ok(out)}
+pub fn discover_in_admitted<C:kc::Control>(markers:&[Marker<'_>],names:&[&str],c:&mut C)->Result<Vec<HandlerRef>,C::Error>{let mut out=Vec::new();for m in markers{c.checkpoint()?;if names.contains(&m.name){marker_handlers(m,&mut out,c)?;}}c.checkpoint()?;Ok(out)}
+fn arg_owned<C:kc::Control>(arg:Option<&String>,c:&mut C)->Result<String,C::Error>{match arg{Some(s)=>kc::own(c,s),None=>Ok(String::new())}}
 
-/// The handlers the markers named `names` name (a family [`discover`] leaves out, such as `CAP_ENTRIES` for `gen deps`).
-pub fn discover_in(markers: &[Marker<'_>], names: &[&str]) -> Vec<HandlerRef> {
-    let mut out = Vec::new();
-    for m in markers {
-        if names.contains(&m.name) {
-            marker_handlers(m, &mut out);
-        }
-    }
-    out
-}
-
-fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
+fn marker_handlers<C:kc::Control>(m: &Marker, out: &mut Vec<HandlerRef>,c:&mut C)->Result<(),C::Error> {
     // The non-path observe overload is a legacy key subscription, not an act handler.
     // Its callback receives a key list; only path triggers use native action parts.
     let runtime_trigger = if m.name == RUNTIME_OBSERVE {
-        let Some(trigger) = m.args.get(1).filter(|arg| arg.starts_with("/datum/")) else { return };
+        let Some(trigger) = m.args.get(1).filter(|arg| arg.starts_with("/datum/")) else { return Ok(()) };
         Some(trigger.as_str())
     } else { None };
     let mut runtime_parts_start = 0;
@@ -227,22 +212,23 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
         // Only arguments four onward are parts. Source/trigger/listener expressions
         // may themselves contain forms, but are not this observer's callbacks.
         for arg in m.args.iter().take(3) {
-            let Some(offset) = m.body[runtime_parts_start..].find(arg) else { return };
+            let Some(offset) = m.body[runtime_parts_start..].find(arg) else { return Ok(()) };
             runtime_parts_start += offset + arg.len();
         }
     }
     let (owner, cap_type) = match m.name {
-        "CAPABILITIES" => (m.args.first().cloned().unwrap_or_default(), String::new()),
-        "STAT" => (m.args.first().cloned().unwrap_or_default(), String::new()),
-        "CAPABILITY_TYPE" => (holder_arg(m), m.args.get(2).cloned().unwrap_or_default()),
-        "CAPABILITY_DEF" => (holder_arg(m), String::new()),
+        "CAPABILITIES" => (arg_owned(m.args.first(),c)?, String::new()),
+        "STAT" => (arg_owned(m.args.first(),c)?, String::new()),
+        "CAPABILITY_TYPE" => (holder_arg(m,c)?, arg_owned(m.args.get(2),c)?),
+        "CAPABILITY_DEF" => (holder_arg(m,c)?, String::new()),
         _ => (String::new(), String::new()),
     };
     let body = &m.body;
-    let ranges = hook_ranges(body);
+    let ranges = hook_ranges(body,c)?;
     let b = body.as_bytes();
     let mut i = 0;
     while i < b.len() {
+        if i%256==0{c.checkpoint()?;}
         if !(b[i].is_ascii_alphabetic() || b[i] == b'_') {
             i += 1;
             continue;
@@ -269,11 +255,12 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
         }
         let open = i + skip;
         let Some(close) = matching_paren(body, open) else { continue };
-        let args = split_args(&body[open + 1..close]);
+        let mut args = argument_slices(&body[open + 1..close]);
+        let first=args.next().unwrap_or_default();let second=args.next().unwrap_or_default();
         let (ty, proc) = if typed {
-            (args.first().cloned().unwrap_or_default(), args.get(1).cloned().unwrap_or_default())
+            (kc::own(c,first)?,kc::own(c,second)?)
         } else {
-            (owner.clone(), args.first().cloned().unwrap_or_default())
+            (kc::own(c,&owner)?,kc::own(c,first)?)
         };
         if proc.is_empty() || !proc.chars().all(|c| c.is_alphanumeric() || c == '_') {
             continue;
@@ -326,8 +313,8 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
                     role = Role::Reaction;
                 }
                 match HOOK_FORMS[oidx].kw {
-                    "on_notice" => notice = split_args(&body[s..e]).first().cloned().unwrap_or_default(),
-                    "on_op" => notice = "/datum/notice/op_done".to_string(),
+                    "on_notice" => notice = kc::own(c,argument_slices(&body[s..e]).next().unwrap_or_default())?,
+                    "on_op" => notice = kc::own(c,"/datum/notice/op_done")?,
                     _ => {}
                 }
             }
@@ -337,18 +324,20 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
         if let Some(trigger) = runtime_trigger {
             if matches!(f.kw, "then" | "when" | "instead" | "adjusts" | "adjusts_with") {
                 ctx = if trigger.starts_with("/datum/act/") { Ctx::Action } else { Ctx::Notice };
-                notice = trigger.to_string();
+                notice = kc::own(c,trigger)?;
                 if f.kw == "then" { role = Role::Reaction; }
             }
         }
-        let condition_value = f.kw == "on_change" && split_args(&body[bs..be]).first().is_some_and(|argument| {
+        let condition_value = f.kw == "on_change" && argument_slices(&body[bs..be]).next().is_some_and(|argument| {
             body[bs..be].find(argument).is_some_and(|offset| start >= bs + offset && start < bs + offset + argument.len())
         });
         if condition_value { ctx = Ctx::Eval; }
         if condition_value { role = Role::Output; }
-        let ui_args = if f.kw == "then" && ctx == Ctx::Op { op_ui_args(body, start) } else { None };
-        out.push(HandlerRef { owner: ty, cap_proc, cap_type: cap_type.clone(), proc, form: f.kw, ctx, role, rel: m.rel.to_owned(), line: m.line_at(start), notice, ui_args });
+        let ui_args = if f.kw == "then" && ctx == Ctx::Op { op_ui_args(body, start,c)? } else { None };
+        crate::reactive_dependency_fold::row(c,out)?;
+        out.push(HandlerRef { owner: ty, cap_proc, cap_type: kc::own(c,&cap_type)?, proc, form: f.kw, ctx, role, rel: kc::own(c,m.rel)?, line: m.line_at(start), notice, ui_args });
     }
+    c.checkpoint()?;Ok(())
 }
 
 /// The innermost operation containing this reference; ordinary op when() is evaluated by op_cond with the full operation context.
@@ -386,11 +375,12 @@ fn enclosing_call_start(body: &str, pos: usize, name: &str) -> Option<usize> {
 
 /// The `arg("name", ...)` names of the `ui_act(...)` / `topic(...)` bindings of the innermost `op(...)` call around `pos` of `body`; `None` when
 /// that op has neither binding (or no op surrounds `pos`).
-fn op_ui_args(body: &str, pos: usize) -> Option<Vec<String>> {
+fn op_ui_args<C:kc::Control>(body: &str, pos: usize,c:&mut C) -> Result<Option<Vec<String>>,C::Error> {
     let b = body.as_bytes();
     let mut innermost: Option<(usize, usize)> = None;
     let mut i = 0;
     while i < b.len() {
+        if i%256==0{c.checkpoint()?;}
         if !(b[i].is_ascii_alphabetic() || b[i] == b'_') {
             i += 1;
             continue;
@@ -414,13 +404,14 @@ fn op_ui_args(body: &str, pos: usize) -> Option<Vec<String>> {
             }
         }
     }
-    let (open, close) = innermost?;
+    let Some((open, close)) = innermost else{return Ok(None)};
     let text = &body[open + 1..close];
     let tb = text.as_bytes();
     let mut names = Vec::new();
     let mut bound = false;
     let mut j = 0;
     while j < tb.len() {
+        if j%256==0{c.checkpoint()?;}
         if !(tb[j].is_ascii_alphabetic() || tb[j] == b'_') {
             j += 1;
             continue;
@@ -443,9 +434,9 @@ fn op_ui_args(body: &str, pos: usize) -> Option<Vec<String>> {
             "arg" => {
                 let open_arg = j + skip;
                 if let Some(close_arg) = matching_paren(text, open_arg) {
-                    let args = split_args(&text[open_arg + 1..close_arg]);
-                    if let Some(name) = args.first() {
-                        names.push(name.trim().trim_matches('"').to_string());
+                    let mut args = argument_slices(&text[open_arg + 1..close_arg]);
+                    if let Some(name) = args.next() {
+                        crate::reactive_dependency_fold::row(c,&mut names)?;names.push(kc::own(c,name.trim().trim_matches('"'))?);
                     }
                 }
             }
@@ -453,23 +444,35 @@ fn op_ui_args(body: &str, pos: usize) -> Option<Vec<String>> {
         }
     }
     if bound {
-        Some(names)
+        Ok(Some(names))
     } else {
-        None
+        Ok(None)
     }
 }
 
 /// The `holder = /type` / `of = /type` parameter of a capability marker, if given.
-fn holder_arg(m: &Marker) -> String {
+fn holder_arg<C:kc::Control>(m: &Marker,c:&mut C) -> Result<String,C::Error> {
     for a in m.args {
-        let c = a.replace(' ', "");
+        kc::reserve(c,||a.len().checked_add(64))?;let compact = a.replace(' ', "");
         for p in ["holder=", "of="] {
-            if let Some(v) = c.strip_prefix(p) {
+            if let Some(v) = compact.strip_prefix(p) {
                 if v.starts_with('/') {
-                    return v.to_string();
+                    return kc::own(c,v);
                 }
             }
         }
     }
-    String::new()
+    Ok(String::new())
+}
+
+#[cfg(test)]
+#[path="reactive_hooks_frozen_original.rs"]mod hooks_original_reference;
+#[cfg(test)]mod growth_tests{
+ use super::*;use std::io;
+ use super::hooks_original_reference as original;
+ struct Probe{left:usize,polls:usize,fail:usize}
+ impl kc::Control for Probe{type Error=io::Error;const CHECKED:bool=true;fn checkpoint(&mut self)->io::Result<()>{self.polls+=1;if self.polls==self.fail{Err(io::Error::from_raw_os_error(1450))}else{Ok(())}}fn reserve(&mut self,n:usize)->io::Result<()>{self.left=self.left.checked_sub(n).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?;Ok(())}fn overflow(&mut self)->io::Error{io::ErrorKind::OutOfMemory.into()}fn allocation_failed(&mut self)->io::Error{io::ErrorKind::OutOfMemory.into()}}
+ fn run(body:&str,args:&[String],name:&str,c:&mut Probe)->io::Result<Vec<HandlerRef>>{discover_admitted(&[Marker{name,rel:"code/probe.dm",line:1,body,args,body_offset:0,line_starts:&[0]}],c)}
+ #[test]fn admitted_hook_discovery_matches_entire_original_rows_and_actual_growth(){let args=vec!["/datum/probe".into()];for body in ["op(x,ui_act(x,arg(\"value\")),needs(PROC_REF(ready)),then(PROC_REF(run)))","on_notice(/datum/notice/x,then(TYPE_PROC_REF(/datum/other,changed)))","registry(when = PROC_REF(once)), on_change(nameof(value),PROC_REF(changed))","every(1,then(CAP_PROC(tick))), outputs(PROC_REF(draw))"]{let marker=Marker{name:"CAPABILITIES",rel:"code/probe.dm",line:1,body,args:&args,body_offset:0,line_starts:&[0]};let old=original::discover(&[marker]);let got=run(body,&args,"CAPABILITIES",&mut Probe{left:65536,polls:0,fail:usize::MAX}).unwrap();assert_eq!(format!("{got:?}"),format!("{old:?}"));}let padded=format!("{}outputs(PROC_REF(draw))"," ".repeat(100_000));let mut c=Probe{left:65536,polls:0,fail:usize::MAX};assert_eq!(run(&padded,&args,"CAPABILITIES",&mut c).unwrap().len(),1);assert!(c.left>32768);}
+ #[test]fn admitted_hook_discovery_quota_and_actual_io_never_return_partial_rows_and_retry(){let args=vec!["/datum/probe".into()];let body="outputs(PROC_REF(draw)), outputs(PROC_REF(other))";let error=run(body,&args,"CAPABILITIES",&mut Probe{left:1,polls:0,fail:usize::MAX}).unwrap_err();assert_eq!(error.kind(),io::ErrorKind::OutOfMemory);let error=run(body,&args,"CAPABILITIES",&mut Probe{left:65536,polls:0,fail:3}).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(run(body,&args,"CAPABILITIES",&mut Probe{left:65536,polls:0,fail:usize::MAX}).unwrap().len(),2);}
 }

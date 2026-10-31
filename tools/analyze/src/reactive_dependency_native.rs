@@ -34,26 +34,29 @@ pub(crate) fn untracked(source:&ReadSource<'_>,facts:&PolicyFacts,globals:&dyn G
  let mut control=Native{source,facts,globals,poll};reactive_dependency_policy::untracked_of(View::Frozen(reads),&mut control,output)
 }
 
+/// Separate data-only full-page reads from existing finite verified results.
+/// A host full-result wrapper supplies current raw proof before either loan.
+pub(crate) enum ReadQuestions<'a>{Captured(&'a dyn crate::captured_reactive_reads::ReadProvider),RawData(&'a dyn crate::captured_reactive_reads::RawPolicyReadProvider)}
+impl ReadQuestions<'_>{pub(crate) fn with_facts<T>(&self,inputs:&dm_analysis::policy_inputs::PolicyInputs,receiver:&str,procedure:&str,context:Option<&str>,flavor:crate::captured_reactive_reads::Flavor,poll:&dyn Fn()->io::Result<()>,consume:impl FnOnce(&FrozenReadSet)->Result<T,Failure>)->Result<T,Failure>{match self{Self::Captured(provider)=>crate::captured_reactive_reads::with_read_facts(*provider,inputs,receiver,procedure,context,flavor,poll,consume),Self::RawData(provider)=>crate::captured_reactive_reads::with_raw_read_facts(*provider,inputs,receiver,procedure,context,flavor,poll,consume)}}}
+
 /// Ordered closed-root dependency aggregation. Marker discovery and every child
 /// result remain source-bound; auto inference/reaction additions are mandatory
 /// later inputs to completion, not empty fallback implementations here.
-pub(crate) fn fold_read_roots(source:&ReadSource<'_>,facts:&PolicyFacts,globals:&dyn GlobalFacts,provider:&dyn crate::captured_reactive_reads::ReadProvider,markers:&[crate::declare_policy::Marker<'_>],defines:&std::collections::BTreeSet<String>,poll:&dyn Fn()->io::Result<()>)->Result<crate::reactive_dependency_fold::Fold,Failure>{
+pub(crate) fn fold_read_roots(source:&ReadSource<'_>,facts:&PolicyFacts,globals:&dyn GlobalFacts,provider:&ReadQuestions<'_>,markers:&[crate::declare_policy::Marker<'_>],defines:&std::collections::BTreeSet<String>,poll:&dyn Fn()->io::Result<()>)->Result<crate::reactive_dependency_fold::Fold,Failure>{
  use crate::{reactive_dependency_fold::Fold,reactive_hooks_policy::{self as hooks,Role},captured_reactive_reads::{with_read_facts,Flavor},reactive_read_facts::ReadKind};use std::collections::BTreeSet;
  let mut control=Native{source,facts,globals,poll};kc::Control::checkpoint(&mut control)?;
- let width=markers.iter().try_fold(0usize,|n,m|m.args.iter().try_fold(n.checked_add(m.body.len())?.checked_add(m.rel.len())?.checked_add(256)?,|n,arg|n.checked_add(arg.len()))) ;
- source.reserve(width.and_then(|n|n.checked_mul(n.checked_add(1024)?)).and_then(|n|n.checked_mul(16)))?;
- let handlers=hooks::discover(markers);let extra=hooks::discover_in(markers,&["CAP_ENTRIES"]);let mut out=Fold::default();
+ let handlers=hooks::discover_admitted(markers,&mut control)?;let extra=hooks::discover_in_admitted(markers,&["CAP_ENTRIES"],&mut control)?;let mut out=Fold::default();
  for h in handlers{kc::Control::checkpoint(&mut control)?;if !h.role.reads_covered()||h.cap_proc||h.owner.is_empty(){continue}if !matches!(source.callable(&h.owner,&h.proc)?,SelectedCallable::Source(_)){continue}
   let id=kc::format(&mut control,format_args!("{}::{}",h.owner,h.proc))?;let first=!out.analysis.consumers.contains_key(&id);if !first&&h.role!=Role::Contribution{continue}
-  with_read_facts(provider,source.inputs(),&h.owner,&h.proc,Some(h.ctx.type_path()),Flavor::Closed,poll,|read|{
+  provider.with_facts(source.inputs(),&h.owner,&h.proc,Some(h.ctx.type_path()),Flavor::Closed,poll,|read|{
    if h.role==Role::Contribution{out.sample(&id,View::Frozen(read),&mut control)?;}if first{let gaps=untracked(source,facts,globals,read,h.role==Role::Output,poll)?;out.consumer(&id,View::Frozen(read),gaps,matches!(h.role,Role::Contribution|Role::Condition),false,&mut control)?;}Ok(())
   })?;
  }
  for h in extra{kc::Control::checkpoint(&mut control)?;if !h.role.reads_covered()||h.cap_proc||h.owner.is_empty(){continue}let id=kc::format(&mut control,format_args!("{}::{}",h.owner,h.proc))?;if out.analysis.consumers.contains_key(&id)||matches!(source.callable(&h.owner,&h.proc)?,SelectedCallable::Missing){continue}
-  with_read_facts(provider,source.inputs(),&h.owner,&h.proc,Some(h.ctx.type_path()),Flavor::Closed,poll,|read|{let gaps=untracked(source,facts,globals,read,h.role==Role::Output,poll)?;out.consumer(&id,View::Frozen(read),gaps,matches!(h.role,Role::Contribution|Role::Condition),false,&mut control)})?;
+  provider.with_facts(source.inputs(),&h.owner,&h.proc,Some(h.ctx.type_path()),Flavor::Closed,poll,|read|{let gaps=untracked(source,facts,globals,read,h.role==Role::Output,poll)?;out.consumer(&id,View::Frozen(read),gaps,matches!(h.role,Role::Contribution|Role::Condition),false,&mut control)})?;
  }
  for marker in markers.iter().filter(|m|m.name=="STAT"){let Some(owner)=marker.args.first()else{continue};for arg in marker.args{kc::Control::checkpoint(&mut control)?;source.reserve(arg.len().checked_add(64))?;let compact=arg.replace(' ',"");let Some(name)=compact.strip_prefix("formula=PROC_REF(").and_then(|r|r.strip_suffix(')'))else{continue};if matches!(source.callable(owner,name)?,SelectedCallable::Missing){continue}let id=kc::format(&mut control,format_args!("{}::{}",owner,name))?;
-  with_read_facts(provider,source.inputs(),owner,name,Some("/datum/act/eval"),Flavor::Closed,poll,|read|{let gaps=untracked(source,facts,globals,read,false,poll)?;out.sample(&id,View::Frozen(read),&mut control)?;out.consumer(&id,View::Frozen(read),gaps,true,true,&mut control)})?;
+  provider.with_facts(source.inputs(),owner,name,Some("/datum/act/eval"),Flavor::Closed,poll,|read|{let gaps=untracked(source,facts,globals,read,false,poll)?;out.sample(&id,View::Frozen(read),&mut control)?;out.consumer(&id,View::Frozen(read),gaps,true,true,&mut control)})?;
  }}
  // The old proc_defs order is (relative file, display header, owner, name), not
  // declaration iteration order. Keep every genuine version until this sort.
@@ -69,7 +72,7 @@ pub(crate) fn fold_read_roots(source:&ReadSource<'_>,facts:&PolicyFacts,globals:
   let output=matches!(name,"draw"|"hidden_verbs"|"granted_verbs");if output&&hooks::OPAQUE_DIRS.iter().any(|prefix|definition.relative.starts_with(prefix)){continue}
   if !output&&(owner=="/datum"||definition.relative.starts_with("code/engine/")){continue}
   let id=kc::format(&mut control,format_args!("{owner}::{name}"))?;kc::reserve(&mut control,||id.len().checked_add(320))?;if !seen.insert(id.clone()){continue}
-  with_read_facts(provider,source.inputs(),owner,name,if output{None}else{Some("/datum/act/eval")},Flavor::Closed,poll,|read|{
+  provider.with_facts(source.inputs(),owner,name,if output{None}else{Some("/datum/act/eval")},Flavor::Closed,poll,|read|{
    if name=="draw"{let gaps=untracked(source,facts,globals,read,true,poll)?;out.draw(owner,&id,View::Frozen(read),gaps,&capability_keys,&mut|c,name|crate::reactive_read_key_policy::canonical(c,&ReadKind::Accessor,name,&capability_keys,defines),&mut control)}
    else if output{let gaps=untracked(source,facts,globals,read,true,poll)?;out.verbs(&id,View::Frozen(read),&gaps,&mut control)}else{out.ui(View::Frozen(read),&mut control)}
   })?;
@@ -98,6 +101,10 @@ pub(crate) fn fold_marker_leaves(source:&ReadSource<'_>,facts:&PolicyFacts,globa
 /// reaction policy. Auto inference is required and supplied by the same caller;
 /// absence is never interpreted as an empty candidate set.
 pub(crate) fn analyze<A:crate::reactive_dependency_fold::Candidates<Error=Failure>>(source:&ReadSource<'_>,facts:&PolicyFacts,globals:&dyn GlobalFacts,provider:&dyn crate::captured_reactive_reads::ReadProvider,markers:&[crate::declare_policy::Marker<'_>],defines:&std::collections::BTreeSet<String>,auto:&A,poll:&dyn Fn()->io::Result<()>)->Result<crate::reactive_facts::DepsAnalysis,Failure>{
+ analyze_questions(source,facts,globals,&ReadQuestions::Captured(provider),markers,defines,auto,poll)
+}
+
+pub(crate) fn analyze_questions<A:crate::reactive_dependency_fold::Candidates<Error=Failure>>(source:&ReadSource<'_>,facts:&PolicyFacts,globals:&dyn GlobalFacts,provider:&ReadQuestions<'_>,markers:&[crate::declare_policy::Marker<'_>],defines:&std::collections::BTreeSet<String>,auto:&A,poll:&dyn Fn()->io::Result<()>)->Result<crate::reactive_facts::DepsAnalysis,Failure>{
  let reactions=crate::reactive_reaction_native::reaction_pairs(source)?;
  let mut fold=fold_read_roots(source,facts,globals,provider,markers,defines,poll)?;
  let mut control=Native{source,facts,globals,poll};

@@ -66,6 +66,8 @@ pub fn ordered_names(names: &[String]) -> Result<Vec<&'static str>, String> {
 pub struct RawPolicyViews<'a>{file:&'a SourceFile}
 #[cfg(feature="native-policy")]
 impl<'a> RawPolicyViews<'a>{
+ pub(crate) fn from_source(file:&'a SourceFile)->Self{Self{file}}
+
  fn require(&self)->Result<(),crate::reactive_reads_native::Failure>{self.file.captured_budget_error().map_or(Ok(()),|error|Err(crate::reactive_reads_native::Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,error))))}
  pub fn raw(&self)->Result<&'a str,crate::reactive_reads_native::Failure>{self.require()?;let value=self.file.text();self.require()?;Ok(value)}
  pub fn marker(&self)->Result<&'a str,crate::reactive_reads_native::Failure>{self.require()?;let value=self.file.marker();self.require()?;Ok(value.as_str())}
@@ -76,6 +78,13 @@ impl<'a> RawPolicyViews<'a>{
 pub fn is_code_dm(relative:&str)->bool{crate::tree::CODE_DM.matches_path(relative)}
 #[cfg(feature="native-policy")]
 pub fn code_dm_roots()-> &'static [(&'static str,&'static str)]{crate::tree::CODE_DM.roots}
+
+/// Generator CLI test-only classification has a distinct discovery role:
+/// unlike CODE_DM consumers it sees dot paths, and excludes generated outputs.
+#[cfg(feature="native-policy")]
+pub fn generator_cli_test_roots()-> &'static [(&'static str,&'static str)]{crate::generator_test_scope::cli_source_roots()}
+#[cfg(feature="native-policy")]
+pub fn is_generator_cli_test_source(relative:&str)->bool{crate::generator_test_scope::cli_test_source(relative)}
 
 impl File {
     /// Loan the SAME lazy source views. The boolean only controls traversal;

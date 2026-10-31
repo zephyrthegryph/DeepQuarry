@@ -12,13 +12,10 @@ impl PolicyFacts{
  pub(crate) fn capture(source:&ReadSource<'_>,checkpoint:&mut dyn FnMut()->io::Result<()>)->Result<Self,Failure>{
   // Reuse the one captured raw-marker producer. This is policy-only output,
   // never another declaration/parser roster or a source acquisition.
-  let mut actual=None;
-  let rows=source.marker_rows(&mut ||match checkpoint(){Ok(())=>Ok(()),Err(e)=>{if actual.is_none(){actual=Some(e)}Err("reactive STAT capture stopped".into())}});
-  if let Some(e)=actual{return Err(Failure::Operational(e))}
-  let rows=rows?;
+  let rows=source.marker_rows_checked(checkpoint)?;
   let annotations=crate::reactive_annotations_native::original_annotations_from_rows(source,&rows,checkpoint)?;
   let mut out=Self{annotations,tracked:BTreeMap::new(),relations:BTreeMap::new(),stats:Vec::new()};
-  source.raw_metadata_with_file(||{checkpoint()?;source.require()?;Ok::<_,Failure>(())},|relative,event|{
+  source.raw_metadata_checked(checkpoint,&mut|relative,event|{
    use crate::raw_reactive_metadata_policy::Event;
    let(owner,name,relation)=match event{Event::Tracked{owner,name}=>(owner,name,false),Event::Relation{owner,name}=>(owner,name,true)};
    source.reserve(owner.len().checked_add(name.len()).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(2048)))?;

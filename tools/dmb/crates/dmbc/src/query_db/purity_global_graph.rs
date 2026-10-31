@@ -49,7 +49,7 @@ pub(super) fn register(db:&Db,ledger:Arc<Mutex<Ledger>>,registry:SourceRegistry)
    let page=pages::obtain(ctx,&ledger,&input,&params.base.sources,start,width).map_err(|error|failure(&ledger,error))?;
    // Retain hashes/dependencies while releasing derived page payloads. The
    // returned Arc loan remains funded until this graph iteration drops it.
-   ctx.evict_values(&[pages::PAGE]);Ok(page)
+   Ok(page)
   };
   let mut checkpoint:fn()->std::io::Result<()>=crate::daemon::control::checkpoint;
   let computed=CompactEffectGraph::build_pages_reserved_checked(&source,params.width,input.archive().tree(),&admission,&mut checkpoint,&mut read,&mut|bytes|work.reserve(bytes)).and_then(|graph|graph.into_retained_checked(&mut crate::daemon::control::checkpoint,&mut|bytes|work.reserve(bytes))).map_err(|error|policy_read_failure(params.base.key,error));

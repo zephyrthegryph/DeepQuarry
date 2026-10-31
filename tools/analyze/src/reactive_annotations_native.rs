@@ -49,7 +49,7 @@ impl Source for Original<'_,'_,'_>{
   // width. Charge every repeated output prefix, not merely current arg bytes.
   // This intentionally conservative fixture frontier will need count tightening
   // for main; no quota increase or wholeworkspace availability claim.
-  let own=m.args.iter().try_fold(0usize,|n,s|n.checked_add(s.len()));let raw_width=self.source.raw_width()?;
+  let own=m.args.iter().try_fold(0usize,|n,s|n.checked_add(s.len()));let raw_width=self.source.raw_width_checked()?;
   self.reserve(own.and_then(|n|n.checked_add(raw_width)).and_then(|n|n.checked_mul(32)).and_then(|n|n.checked_add(2048)).and_then(|n|n.checked_mul(m.args.len().checked_add(1)?)))
  }
  fn admit_relation(&self,owner:&str,name:&str)->Result<(),Failure>{self.poll()?;self.reserve(owner.len().checked_add(name.len()).and_then(|n|n.checked_mul(4)).and_then(|n|n.checked_add(1024)))}
@@ -82,10 +82,7 @@ impl Source for Original<'_,'_,'_>{
  }
 }
 pub(crate) fn original_annotations(source:&ReadSource<'_>,checkpoint:&mut dyn FnMut()->io::Result<()>)->Result<Annotations,Failure>{
- checkpoint()?;source.require()?;let mut actual=None;
- let rows=source.marker_rows(&mut ||match checkpoint(){Ok(())=>Ok(()),Err(e)=>{if actual.is_none(){actual=Some(e);}Err("reactive original marker operation stopped".into())}});
- if let Some(actual)=actual{return Err(Failure::Operational(actual))}
- let rows=rows.map_err(|e|if source.budget().denied(){Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,e))}else{Failure::Unsupported(e)})?;
+ checkpoint()?;source.require()?;let rows=source.marker_rows_checked(checkpoint)?;
  original_annotations_from_rows(source,&rows,checkpoint)
 }
 pub(crate) fn original_annotations_from_rows<'a>(source:&ReadSource<'a>,rows:&crate::captured_marker_rows::Rows<'a>,checkpoint:&mut dyn FnMut()->io::Result<()>)->Result<Annotations,Failure>{

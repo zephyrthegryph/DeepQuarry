@@ -221,6 +221,16 @@ pub fn compute_body_checked_using_admitted(
             ReportBudget::for_operation(admission).deny();
             return Err(prefix_demand.resource("purity body exceeds bounded event admission"));
         }
+        // Reuse the actual already-obtained primary body. The stored optional
+        // point/result preserves deferred report-source refusal without adding
+        // an earlier body demand or a full roster search for each target.
+        let opening_parenthesis=body.signature_opening_parenthesis();
+        let original_note=self.archive.callable_note_origin_borrowed_from_parsed(procedure,ordinal,&body);
+        let origin_charge=match &original_note{Ok(point)=>point.retained_charge(),Err(_)=>Some(0)}.and_then(|n|n.checked_add(std::mem::size_of::<Option<Span>>()+std::mem::size_of::<Result<SourceNoteOrigin,dm_tree::frontend::BorrowedCallableOriginError>>())).ok_or_else(||prefix_demand.resource("effect original note capacity overflow"))?;
+        // Borrowed lookup above allocates/clones nothing, including failures.
+        // Admit the actual path backing BEFORE extending its Arc lifetime.
+        draft.transient.charge(origin_charge).map_err(|_|prefix_demand.resource("effect original note admission exhausted"))?;
+        let callable_origin=original_note.map(dm_tree::frontend::BorrowedSourceNoteOrigin::into_owned);
         let parent = source_parent(
             &self.archive,
             resolver,
@@ -247,6 +257,8 @@ pub fn compute_body_checked_using_admitted(
             direct: draft.direct.into(),
             calls: draft.calls.into(),
             immediate: draft.immediate.into(),
+            opening_parenthesis,
+            callable_origin,
         }))
     }
     pub fn plan(
@@ -355,6 +367,8 @@ pub struct BodyEffects {
     direct: Box<[DirectEffect]>,
     calls: Box<[CallEdge]>,
     immediate: Box<[Diagnostic]>,
+    opening_parenthesis:Option<Span>,
+    callable_origin:Result<SourceNoteOrigin,dm_tree::frontend::BorrowedCallableOriginError>,
 }
 impl BodyEffects {
     fn validate(&self, input: &Arc<EffectInput>) -> Result<(), String> {
@@ -970,4 +984,7 @@ pub use compact_source::{CompactEffectGraph,RetainedEffectGraph,CurrentEffectGra
 
 #[path="checker_effects_page_facts.rs"]
 mod page_facts;
-pub use page_facts::EffectPageFacts;
+pub use page_facts::{EffectPageFacts,EffectPageRead};
+
+#[path="checker_effects_fingerprint.rs"]mod fingerprint;
+pub use fingerprint::report_fingerprint;

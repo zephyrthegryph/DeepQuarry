@@ -60,48 +60,11 @@ pub fn strip_comments_keep_strings(text: &str) -> String {
     String::from_utf8(out).unwrap_or_default()
 }
 
-pub fn split_args(s: &str) -> Vec<String> {
-    let mut out = Vec::new();
-    let mut depth = 0i32;
-    let mut cur = String::new();
-    let mut in_str = false;
-    let mut prev = '\0';
-    for c in s.chars() {
-        if in_str {
-            cur.push(c);
-            if c == '"' && prev != '\\' {
-                in_str = false;
-            }
-            prev = c;
-            continue;
-        }
-        match c {
-            '"' => {
-                in_str = true;
-                cur.push(c);
-            }
-            '(' | '[' | '{' => {
-                depth += 1;
-                cur.push(c);
-            }
-            ')' | ']' | '}' => {
-                depth -= 1;
-                cur.push(c);
-            }
-            ',' if depth == 0 => {
-                out.push(cur.trim().to_string());
-                cur.clear();
-            }
-            _ => cur.push(c),
-        }
-        prev = c;
-    }
-    let last = cur.trim().to_string();
-    if !last.is_empty() || !out.is_empty() {
-        out.push(last);
-    }
-    out
-}
+/// Borrowed spelling slices from the SAME original argument grammar.
+pub struct Arguments<'a>{source:&'a str,chars:std::str::CharIndices<'a>,from:usize,depth:i32,in_str:bool,prev:char,emitted:bool,done:bool}
+pub fn argument_slices(source:&str)->Arguments<'_>{Arguments{source,chars:source.char_indices(),from:0,depth:0,in_str:false,prev:'\0',emitted:false,done:false}}
+impl<'a> Iterator for Arguments<'a>{type Item=&'a str;fn next(&mut self)->Option<Self::Item>{if self.done{return None}while let Some((i,c))=self.chars.next(){if self.in_str{if c=='"'&&self.prev!='\\'{self.in_str=false}self.prev=c;continue}match c{'"'=>self.in_str=true,'('| '['|'{' =>self.depth+=1,')'|']'|'}'=>self.depth-=1,',' if self.depth==0=>{let value=self.source[self.from..i].trim();self.from=i+1;self.prev=c;self.emitted=true;return Some(value)},_=>{}}self.prev=c;}self.done=true;let last=self.source[self.from..].trim();if !last.is_empty()||self.emitted{Some(last)}else{None}}}
+pub fn split_args(s:&str)->Vec<String>{argument_slices(s).map(str::to_owned).collect()}
 
 pub fn matching_paren(s: &str, open: usize) -> Option<usize> {
     let b = s.as_bytes();
@@ -321,3 +284,48 @@ pub fn marker_named_vars_admitted<C:crate::key_policy_control::Control>(body:&st
     }
     control.checkpoint()?;Ok(out)
 }
+
+#[cfg(test)]mod borrowed_argument_tests{fn original_split_args(s: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut depth = 0i32;
+    let mut cur = String::new();
+    let mut in_str = false;
+    let mut prev = '\0';
+    for c in s.chars() {
+        if in_str {
+            cur.push(c);
+            if c == '"' && prev != '\\' {
+                in_str = false;
+            }
+            prev = c;
+            continue;
+        }
+        match c {
+            '"' => {
+                in_str = true;
+                cur.push(c);
+            }
+            '(' | '[' | '{' => {
+                depth += 1;
+                cur.push(c);
+            }
+            ')' | ']' | '}' => {
+                depth -= 1;
+                cur.push(c);
+            }
+            ',' if depth == 0 => {
+                out.push(cur.trim().to_string());
+                cur.clear();
+            }
+            _ => cur.push(c),
+        }
+        prev = c;
+    }
+    let last = cur.trim().to_string();
+    if !last.is_empty() || !out.is_empty() {
+        out.push(last);
+    }
+    out
+}
+
+#[test]fn borrowed_argument_slices_preserve_exact_original_splitter(){for text in ["",",",",,","  ","a,","(a,b),[x,y],{z,q}","\"a,b\", c","α,\tβ,\"x\\\"y,z\"", ")a,b","a, "]{assert_eq!(super::split_args(text),original_split_args(text));}}}

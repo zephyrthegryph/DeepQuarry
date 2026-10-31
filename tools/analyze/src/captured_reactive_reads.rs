@@ -92,9 +92,7 @@ impl ReadResult{
 }
 pub fn reads(raw:&CapturedRawPolicy,inputs:&PolicyInputs,budget:&Arc<Budget>,provider:&dyn GlobalProvider,receiver:&str,procedure:&str,context:Option<&str>,flavor:Flavor,checkpoint:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>)->Result<ReadResult,Failure>{
  checkpoint()?;let source=source(raw,inputs,budget,checkpoint,body)?;let request=ReadIdentity::capture(budget,receiver,procedure,context,flavor)?;let mut poll=||checkpoint();let facts=PolicyFacts::capture(&source,&mut poll)?;
- let globals=GlobalAdapter{source:&source,provider};
- let result=reactive_reads_native::original_request(&source,Directives{facts:&facts,globals:Some(&globals)},receiver,procedure,context,matches!(flavor,Flavor::Closed),&mut poll)?;
- let frozen=FrozenReadSet::freeze(result,budget,&mut poll)?;checkpoint()?;source.require()?;Ok(ReadResult{owner:inputs.archive().original_owner_witness(),request,facts:frozen})
+ let frozen=freeze_original_read(&source,&facts,provider,receiver,procedure,context,flavor,budget,checkpoint)?;checkpoint()?;source.require()?;Ok(ReadResult{owner:inputs.archive().original_owner_witness(),request,facts:frozen})
 }
 
 
@@ -107,12 +105,29 @@ impl<F> ReadProvider for F where F:Fn(&str,&str,Option<&str>,Flavor,&mut dyn FnM
 impl std::fmt::Display for ReadCallbackStopped{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.write_str("read callback stopped")}}
 impl std::error::Error for ReadCallbackStopped{}
 fn read_callback_proxy(error:&io::Error)->bool{let mut cause=error.get_ref().map(|e|e as &(dyn std::error::Error+'static));while let Some(error)=cause{if error.is::<ReadCallbackStopped>(){return true}cause=error.downcast_ref::<io::Error>().and_then(io::Error::get_ref).map(|payload|payload as &(dyn std::error::Error+'static)).or_else(||error.source());}false}
-pub fn with_read_facts<T>(provider:&dyn ReadProvider,inputs:&PolicyInputs,receiver:&str,procedure:&str,context:Option<&str>,flavor:Flavor,checkpoint:&dyn Fn()->io::Result<()>,consume:impl FnOnce(&FrozenReadSet)->Result<T,Failure>)->Result<T,Failure>{
+/// Neutral page data is never exposed as a verified finite ReadResult.
+/// Host full-result wrappers must additionally check completed workspace proof.
+pub struct UnsealedReadData{owner:OriginalArchiveOwner,request:ReadIdentity,facts:FrozenReadSet}
+impl UnsealedReadData{
+ pub fn matches_compiled(&self,inputs:&PolicyInputs)->bool{self.owner.matches(inputs.archive())}
+ pub fn matches_request(&self,receiver:&str,procedure:&str,context:Option<&str>,flavor:Flavor)->bool{self.request.matches(receiver,procedure,context,flavor)}
+ pub fn facts(&self)->&FrozenReadSet{&self.facts}
+ pub fn retained_charge(&self)->Option<usize>{let mut bytes=Some(std::mem::size_of::<Self>()+2*std::mem::size_of::<usize>());self.visit_storage(|_,_,_,capacity|bytes=bytes.and_then(|n|n.checked_add(capacity)));bytes}
+ pub fn visit_storage(&self,mut visit:impl FnMut(&'static str,usize,usize,usize)){self.owner.visit_storage(&mut visit);self.request.visit_storage(&mut visit);self.facts.visit_storage(visit)}
+}
+pub trait RawPolicyReadProvider{fn with_read_data(&self,receiver:&str,procedure:&str,context:Option<&str>,flavor:Flavor,consume:&mut dyn FnMut(&UnsealedReadData)->Result<(),Failure>)->Result<(),Failure>;}
+impl<F> RawPolicyReadProvider for F where F:Fn(&str,&str,Option<&str>,Flavor,&mut dyn FnMut(&UnsealedReadData)->Result<(),Failure>)->Result<(),Failure>{fn with_read_data(&self,receiver:&str,procedure:&str,context:Option<&str>,flavor:Flavor,consume:&mut dyn FnMut(&UnsealedReadData)->Result<(),Failure>)->Result<(),Failure>{self(receiver,procedure,context,flavor,consume)}}
+trait QuestionValue{fn question_matches(&self,inputs:&PolicyInputs,receiver:&str,procedure:&str,context:Option<&str>,flavor:Flavor)->bool;fn question_facts(&self)->&FrozenReadSet;}
+impl QuestionValue for ReadResult{fn question_matches(&self,inputs:&PolicyInputs,r:&str,p:&str,c:Option<&str>,f:Flavor)->bool{self.matches(inputs)&&self.matches_request(r,p,c,f)}fn question_facts(&self)->&FrozenReadSet{self.facts()}}
+impl QuestionValue for UnsealedReadData{fn question_matches(&self,inputs:&PolicyInputs,r:&str,p:&str,c:Option<&str>,f:Flavor)->bool{self.matches_compiled(inputs)&&self.matches_request(r,p,c,f)}fn question_facts(&self)->&FrozenReadSet{self.facts()}}
+pub fn with_read_facts<T>(provider:&dyn ReadProvider,inputs:&PolicyInputs,receiver:&str,procedure:&str,context:Option<&str>,flavor:Flavor,checkpoint:&dyn Fn()->io::Result<()>,consume:impl FnOnce(&FrozenReadSet)->Result<T,Failure>)->Result<T,Failure>{with_read_question(|visit|provider.with_read(receiver,procedure,context,flavor,visit),inputs,receiver,procedure,context,flavor,checkpoint,consume)}
+pub fn with_raw_read_facts<T>(provider:&dyn RawPolicyReadProvider,inputs:&PolicyInputs,receiver:&str,procedure:&str,context:Option<&str>,flavor:Flavor,checkpoint:&dyn Fn()->io::Result<()>,consume:impl FnOnce(&FrozenReadSet)->Result<T,Failure>)->Result<T,Failure>{with_read_question(|visit|provider.with_read_data(receiver,procedure,context,flavor,visit),inputs,receiver,procedure,context,flavor,checkpoint,consume)}
+fn with_read_question<T,V:QuestionValue>(obtain:impl FnOnce(&mut dyn FnMut(&V)->Result<(),Failure>)->Result<(),Failure>,inputs:&PolicyInputs,receiver:&str,procedure:&str,context:Option<&str>,flavor:Flavor,checkpoint:&dyn Fn()->io::Result<()>,consume:impl FnOnce(&FrozenReadSet)->Result<T,Failure>)->Result<T,Failure>{
  checkpoint()?;let mut action=Some(consume);let mut answer=None;let mut first=None;
- let returned=provider.with_read(receiver,procedure,context,flavor,&mut|value|{
+ let returned=obtain(&mut|value|{
   let attempt=(||{checkpoint()?;let Some(consume)=action.take()else{return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"read provider repeated actual result callback")))};
-   if !value.matches(inputs)||!value.matches_request(receiver,procedure,context,flavor){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"read provider supplied a foreign source or requested root")))}
-   answer=Some(consume(value.facts())?);checkpoint()?;Ok(())})();
+   if !value.question_matches(inputs,receiver,procedure,context,flavor){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"read provider supplied a foreign source or requested root")))}
+   answer=Some(consume(value.question_facts())?);checkpoint()?;Ok(())})();
   if let Err(actual)=attempt{if first.is_none()||(!matches!(&first,Some(Failure::Operational(_)))&&matches!(&actual,Failure::Operational(_))){first=Some(actual)}return Err(Failure::Operational(io::Error::other(ReadCallbackStopped)))}Ok(())
  });
  if matches!(&first,Some(Failure::Operational(_))){return Err(first.take().unwrap())}
@@ -164,20 +179,7 @@ pub fn dependencies(raw:&CapturedRawPolicy,inputs:&PolicyInputs,budget:&Arc<Budg
  checkpoint()?;let source=source(raw,inputs,budget,checkpoint,body)?;
  let scratch=Budget::scoped_temporaries(budget).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;
  let produced:Result<DependencyResult,Failure>=source.with_budget(&scratch,|work|{
-  let mut poll=||checkpoint();let facts=PolicyFacts::capture(work,&mut poll)?;
-  // Auto's typed collector owns its real per-body scratch scopes. It borrows
-  // the SAME root-budget source (not this temporary child budget), so no nested
-  // scratch scope or alternate source/control domain is invented.
-  let auto=crate::auto_tracking_native::NativeCandidates::capture(&source,&facts,globals_provider)?;
-  let owned=work.dependency_marker_rows()?;let count=owned.markers.len();
-  let reservation=count.checked_mul(std::mem::size_of::<crate::declare_policy::Marker<'_>>()).and_then(|n|n.checked_mul(4)).and_then(|n|n.checked_add(64)).ok_or_else(||{scratch.deny();Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"dependency marker projection overflow"))})?;
-  scratch.charge(reservation).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;
-  let mut markers=Vec::new();markers.try_reserve_exact(count).map_err(|actual|{scratch.deny();Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,actual))})?;
-  if markers.capacity().checked_mul(std::mem::size_of::<crate::declare_policy::Marker<'_>>()).is_none_or(|n|n>reservation){scratch.deny();return Err(Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"dependency marker allocator exceeds admitted projection")))}
-  for row in &owned.markers{checkpoint()?;markers.push(crate::declare_policy::Marker{name:&row.name,rel:&row.rel,line:row.line,body:&row.body,args:&row.args,body_offset:row.body_offset,line_starts:row.line_starts.as_slice()});}
-  let defines=work.dependency_defines()?;let globals=GlobalAdapter{source:work,provider:globals_provider};
-  let folded=crate::reactive_dependency_native::analyze(work,&facts,&globals,read_provider,&markers,&defines,&auto,checkpoint)?;
-  finish_dependencies(work,folded,&scratch,checkpoint)
+  aggregate_from_source(&source,work,&scratch,globals_provider,&crate::reactive_dependency_native::ReadQuestions::Captured(read_provider),checkpoint)
  });
  let funded=match produced{Ok(value)=>match value.retained_charge().ok_or_else(||{budget.deny();io::Error::new(io::ErrorKind::OutOfMemory,"dependency retained capacity overflow")}).and_then(|bytes|budget.charge(bytes).map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message))){Ok(())=>Ok(value),Err(actual)=>{drop(value);Err(Failure::Operational(actual))}},Err(actual)=>Err(actual)};
  // Moved buffers now have parent retention funding BEFORE the temporary
@@ -186,4 +188,139 @@ pub fn dependencies(raw:&CapturedRawPolicy,inputs:&PolicyInputs,budget:&Arc<Budg
  if funded.is_err(){scratch.keep_failed_scratch()}drop(scratch);
  if matches!(&funded,Err(Failure::Operational(_))){return funded}checkpoint()?;
  if budget.denied(){return Err(Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"dependency aggregate admission refused")))}source.require()?;funded
+}
+
+impl DependencyResult{
+ /// Finite original-source AutoTracked data. The caller must authenticate the
+ /// fixed old lint_scopes configuration before selecting any artifact role.
+ pub fn render_auto_tracked(&self,raw:&crate::captured_raw_policy::CapturedRawPolicy,inputs:&PolicyInputs,configuration_path:&std::path::Path,budget:&Arc<Budget>,checkpoint:&dyn Fn()->io::Result<()>)->Result<crate::sparse_slots_policy::Output,Failure>{
+  checkpoint()?;if !self.matches(inputs){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"AutoTracked dependency source owner differs")))}raw.validate_current_raw_roster(inputs)?;
+  let expected=raw.tree.root.join("tools/ci/lint_scopes.toml");if dm_preprocess::regions::canonical_path(configuration_path)!=dm_preprocess::regions::canonical_path(&expected){return Err("AutoTracked requires the original fixed lint_scopes configuration".into())}
+  let scratch=Budget::scoped_temporaries(budget).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;
+  let produced=(||{
+   let source=ReadSource::capture(raw,inputs,&scratch)?.with_checkpoint(checkpoint);let scope=raw.scopes.borrowed_for_lint("auto_tracked","");let list=|name:&str|scope.map_or(&[][..],|scope|scope.list(name));
+   let excludes=[list("exclude"),list("exclude_fixtures"),list("exclude_heat"),list("exclude_memo")];let includes=list("include");
+   let count=self.facts.candidates.len().checked_add(includes.len()).ok_or_else(||{scratch.deny();Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"AutoTracked candidate count overflow"))})?;
+   let bytes=count.checked_mul(4*std::mem::size_of::<(&str,&str)>()).and_then(|n|n.checked_add(64)).ok_or_else(||{scratch.deny();Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"AutoTracked candidate capacity overflow"))})?;scratch.charge(bytes)?;let mut candidates=Vec::new();candidates.try_reserve_exact(count).map_err(|actual|{scratch.deny();Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,actual))})?;if candidates.capacity().checked_mul(std::mem::size_of::<(&str,&str)>()).is_none_or(|n|n>bytes){scratch.deny();return Err(Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"AutoTracked candidate allocator exceeds admission")))}
+   for(owner,var)in &self.facts.candidates{checkpoint()?;candidates.push((owner.as_str(),var.as_str()));}for entry in includes{checkpoint()?;if let Some(pair)=entry.split_once("::"){candidates.push(pair)}}candidates.sort_unstable();candidates.dedup();
+   let defs=crate::auto_tracking_native::setter_defs(&source)?;let set=crate::auto_tracking_native::decide_rows(&source,&defs,candidates.into_iter(),&excludes)?;
+   struct TestControl<'a>{budget:&'a Budget,poll:&'a dyn Fn()->io::Result<()>}
+   impl crate::key_policy_control::Control for TestControl<'_>{type Error=Failure;const CHECKED:bool=true;fn checkpoint(&mut self)->Result<(),Failure>{(self.poll)()?;self.budget.require().map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))}fn reserve(&mut self,bytes:usize)->Result<(),Failure>{self.budget.charge(bytes).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))}fn overflow(&mut self)->Failure{self.budget.deny();Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"AutoTracked test scope capacity overflow"))}fn allocation_failed(&mut self)->Failure{self.overflow()}}
+   let mut tests=crate::generator_test_scope::TestTypeCollector::default();let mut control=TestControl{budget:&scratch,poll:checkpoint};for file in &raw.tree.files{tests.observe(&file.rel,file.text(),&mut control)?;}let tests=tests.finish();
+   crate::auto_tracking_emitter::generate_admitted(&set,&tests,budget,checkpoint).map_err(Failure::Operational)
+  })();if produced.is_err(){scratch.keep_failed_scratch()}drop(scratch);if matches!(&produced,Err(Failure::Operational(_))){return produced}checkpoint()?;budget.require().map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;produced
+ }
+}
+
+fn freeze_original_read(source:&ReadSource<'_>,facts:&PolicyFacts,provider:&dyn GlobalProvider,receiver:&str,procedure:&str,context:Option<&str>,flavor:Flavor,budget:&Arc<Budget>,checkpoint:&dyn Fn()->io::Result<()>)->Result<FrozenReadSet,Failure>{
+ let mut poll=||checkpoint();let globals=GlobalAdapter{source,provider};let result=reactive_reads_native::original_request(source,Directives{facts,globals:Some(&globals)},receiver,procedure,context,matches!(flavor,Flavor::Closed),&mut poll)?;let frozen=FrozenReadSet::freeze(result,budget,&mut poll)?;checkpoint()?;source.require()?;Ok(frozen)
+}
+/// Unsealed full-page data production. The provider's bool is not coverage
+/// authority. Actual host exhaustion/WorkspaceCodeWitness must be checked
+/// before a full-role query may deliver this data, including every warm loan.
+pub fn read_data_from_pages(inputs:&PolicyInputs,root:&std::path::Path,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,budget:&Arc<Budget>,provider:&dyn GlobalProvider,receiver:&str,procedure:&str,context:Option<&str>,flavor:Flavor,checkpoint:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>)->Result<UnsealedReadData,Failure>{
+ checkpoint()?;let produced=(||{
+  let scratch=Budget::scoped_temporaries(budget).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;
+  let value=(||{let source=ReadSource::native(inputs,root,&scratch)?.with_raw_policy_pages(pages,order).with_checkpoint(checkpoint).with_body_borrower(body);let request=ReadIdentity::capture(&scratch,receiver,procedure,context,flavor)?;let mut poll=||checkpoint();let facts=PolicyFacts::capture(&source,&mut poll)?;let frozen=freeze_original_read(&source,&facts,provider,receiver,procedure,context,flavor,&scratch,checkpoint)?;Ok::<_,Failure>(UnsealedReadData{owner:inputs.archive().original_owner_witness(),request,facts:frozen})})();
+  // Source/facts/interpreter containers above are physically gone. The moved
+  // immutable payload remains funded while the conservative scratch credit is
+  // still live; only then may the scratch Arc retire. No root-by-root facts
+  // reservation accumulates for discarded policy/interpreter containers.
+  let funded=match value{Ok(value)=>match value.retained_charge().ok_or_else(||{budget.deny();io::Error::new(io::ErrorKind::OutOfMemory,"raw read retained capacity overflow")}).and_then(|bytes|budget.charge(bytes).map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message))){Ok(())=>Ok(value),Err(actual)=>{drop(value);Err(Failure::Operational(actual))}},Err(actual)=>Err(actual)};
+  if funded.is_err(){scratch.keep_failed_scratch()}drop(scratch);funded
+ })();finish_page_data(produced,budget,checkpoint)
+}
+
+fn aggregate_from_source(source:&ReadSource<'_>,work:&ReadSource<'_>,budget:&Arc<Budget>,globals_provider:&dyn GlobalProvider,questions:&crate::reactive_dependency_native::ReadQuestions<'_>,checkpoint:&dyn Fn()->io::Result<()>)->Result<DependencyResult,Failure>{
+  let mut poll=||checkpoint();let facts=PolicyFacts::capture(work,&mut poll)?;
+  // Auto's typed collector owns its real per-body scratch scopes. It borrows
+  // the SAME root-budget source (not this temporary child budget), so no nested
+  // scratch scope or alternate source/control domain is invented.
+  let auto=crate::auto_tracking_native::NativeCandidates::capture(source,&facts,globals_provider)?;
+  let owned=work.dependency_marker_rows()?;let count=owned.markers.len();
+  let reservation=count.checked_mul(std::mem::size_of::<crate::declare_policy::Marker<'_>>()).and_then(|n|n.checked_mul(4)).and_then(|n|n.checked_add(64)).ok_or_else(||{budget.deny();Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"dependency marker projection overflow"))})?;
+  budget.charge(reservation).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;
+  let mut markers=Vec::new();markers.try_reserve_exact(count).map_err(|actual|{budget.deny();Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,actual))})?;
+  if markers.capacity().checked_mul(std::mem::size_of::<crate::declare_policy::Marker<'_>>()).is_none_or(|n|n>reservation){budget.deny();return Err(Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"dependency marker allocator exceeds admitted projection")))}
+  for row in &owned.markers{checkpoint()?;markers.push(crate::declare_policy::Marker{name:&row.name,rel:&row.rel,line:row.line,body:&row.body,args:&row.args,body_offset:row.body_offset,line_starts:row.line_starts.as_slice()});}
+  let defines=work.dependency_defines()?;let globals=GlobalAdapter{source:work,provider:globals_provider};
+  let folded=crate::reactive_dependency_native::analyze_questions(work,&facts,&globals,questions,&markers,&defines,&auto,checkpoint)?;
+  finish_dependencies(work,folded,budget,checkpoint)
+}
+
+/// Data only. There is intentionally no conversion/getter to DependencyResult;
+/// generic callbacks cannot mint its finite-capture or any full-source role.
+pub struct UnsealedDependencyData{value:DependencyResult}
+impl UnsealedDependencyData{
+ pub fn matches_compiled(&self,inputs:&PolicyInputs)->bool{self.value.matches(inputs)}
+ pub fn retained_charge(&self)->Option<usize>{self.value.retained_charge()}
+ pub fn visit_storage(&self,visit:impl FnMut(&'static str,usize,usize,usize)){self.value.visit_storage(visit)}
+ pub fn serialize_facts<S:serde::Serializer>(&self,serializer:S)->Result<S::Ok,S::Error>{self.value.serialize_facts(serializer)}
+ pub fn render_deps_data(&self,inputs:&PolicyInputs,budget:&Arc<Budget>,checkpoint:&dyn Fn()->io::Result<()>)->Result<crate::sparse_slots_policy::Output,Failure>{self.value.render_deps(inputs,budget,checkpoint)}
+}
+/// Actual full-page fold, unsealed until the host consumes exhausted traversal
+/// proof and binds the current workspace/discovery/config owner. The concrete
+/// provider must use its ROOT reader budget for per-file scratch; policy fold
+/// scratch is a sibling under that same root, never a nested source budget.
+pub fn dependency_data_from_pages(inputs:&PolicyInputs,root:&std::path::Path,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,budget:&Arc<Budget>,globals_provider:&dyn GlobalProvider,read_provider:&dyn RawPolicyReadProvider,checkpoint:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>)->Result<UnsealedDependencyData,Failure>{
+ checkpoint()?;
+ let produced=(||{
+  let source=ReadSource::native(inputs,root,budget)?.with_raw_policy_pages(pages,order).with_checkpoint(checkpoint).with_body_borrower(body);
+  let scratch=Budget::scoped_temporaries(budget).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;
+  let value=source.with_budget(&scratch,|work|aggregate_from_source(&source,work,&scratch,globals_provider,&crate::reactive_dependency_native::ReadQuestions::RawData(read_provider),checkpoint));
+  let funded=match value{Ok(value)=>match value.retained_charge().ok_or_else(||{budget.deny();io::Error::new(io::ErrorKind::OutOfMemory,"raw dependency retained capacity overflow")}).and_then(|bytes|budget.charge(bytes).map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message))){Ok(())=>Ok(UnsealedDependencyData{value}),Err(actual)=>{drop(value);Err(Failure::Operational(actual))}},Err(actual)=>Err(actual)};
+  if funded.is_err(){scratch.keep_failed_scratch()}drop(scratch);funded
+ })();
+ finish_page_data(produced,budget,checkpoint)
+}
+fn finish_page_data<T>(produced:Result<T,Failure>,budget:&Budget,checkpoint:&dyn Fn()->io::Result<()>)->Result<T,Failure>{
+ if matches!(&produced,Err(Failure::Operational(_))){return produced}checkpoint()?;budget.require().map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;produced
+}
+
+/// Original DME include ordering only; completion/source roles remain host-owned.
+pub fn original_include_order(inputs:&PolicyInputs,root:&std::path::Path,budget:&Budget)->Result<std::collections::HashMap<String,usize>,Failure>{crate::captured_sparse_slots::original_order(root,inputs,budget).map_err(|message|if budget.denied(){Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message))}else{Failure::Unsupported(message)})}
+
+/// Exact finite original read-table generation. Whole CLI source coverage is
+/// a separate host receipt; this unchanged finite wrapper selects captured reads.
+pub fn render_reads(raw:&CapturedRawPolicy,inputs:&PolicyInputs,budget:&Arc<Budget>,provider:&dyn ReadProvider,checkpoint:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>)->Result<crate::sparse_slots_policy::Output,Failure>{
+ checkpoint()?;let source=match source(raw,inputs,budget,checkpoint,body){Ok(source)=>source,Err(Failure::Operational(actual))=>return Err(Failure::Operational(actual)),Err(Failure::Unsupported(message))if budget.denied()=>return Err(Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message))),Err(actual)=>return Err(actual)};
+ render_reads_scoped(&source,&crate::reactive_dependency_native::ReadQuestions::Captured(provider),|work|crate::reactive_reads_generator_native::test_types(work,raw),checkpoint)
+}
+fn render_reads_collect<T:std::borrow::Borrow<std::collections::BTreeSet<String>>>(work:&ReadSource<'_>,questions:&crate::reactive_dependency_native::ReadQuestions<'_>,make_tests:impl FnOnce(&ReadSource<'_>)->Result<T,Failure>,checkpoint:&dyn Fn()->io::Result<()>)->Result<crate::sparse_slots_policy::Output,Failure>{let scratch=work.budget();
+
+  let mut poll=||checkpoint();let facts=PolicyFacts::capture(work,&mut poll)?;let owned=work.dependency_marker_rows()?;let count=owned.markers.len();let reserve=count.checked_mul(std::mem::size_of::<crate::declare_policy::Marker<'_>>()).and_then(|n|n.checked_mul(4)).and_then(|n|n.checked_add(64)).ok_or_else(||{scratch.deny();Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"read generator marker projection overflow"))})?;scratch.charge(reserve).map_err(|actual|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,actual)))?;
+  let mut markers=Vec::new();markers.try_reserve_exact(count).map_err(|actual|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,actual)))?;if markers.capacity().checked_mul(std::mem::size_of::<crate::declare_policy::Marker<'_>>()).is_none_or(|n|n>reserve){scratch.deny();return Err(Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"read generator marker capacity exceeds admission")))}for row in &owned.markers{checkpoint()?;markers.push(crate::declare_policy::Marker{name:&row.name,rel:&row.rel,line:row.line,body:&row.body,args:&row.args,body_offset:row.body_offset,line_starts:&row.line_starts});}
+  let tests=make_tests(work)?;let tests:&std::collections::BTreeSet<String>=std::borrow::Borrow::borrow(&tests);
+  let defines=work.dependency_defines()?;let mut rendered=crate::reactive_reads_generator_native::generate_with_questions(work,&facts,questions,&markers,&defines,tests)?;let mut output=crate::sparse_slots_policy::Output::default();output.body=std::mem::take(&mut rendered.body);output.diags=std::mem::take(&mut rendered.diags);Ok(output)
+}
+fn render_reads_scoped<T:std::borrow::Borrow<std::collections::BTreeSet<String>>>(source:&ReadSource<'_>,questions:&crate::reactive_dependency_native::ReadQuestions<'_>,make_tests:impl FnOnce(&ReadSource<'_>)->Result<T,Failure>,checkpoint:&dyn Fn()->io::Result<()>)->Result<crate::sparse_slots_policy::Output,Failure>{let budget=source.budget();let scratch=Budget::scoped_temporaries(budget).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;let result=source.with_budget(&scratch,|work|render_reads_collect(work,questions,make_tests,checkpoint));
+let funded=match result{Ok(output)=>{let bytes=output.diags.capacity().checked_mul(std::mem::size_of::<crate::sparse_slots_policy::Diagnostic>()).and_then(|rows|output.body.capacity().checked_add(rows)).and_then(|n|n.checked_add(std::mem::size_of::<crate::sparse_slots_policy::Output>())).and_then(|initial|output.diags.iter().try_fold(initial,|n,d|n.checked_add(d.rel.capacity())?.checked_add(d.msg.capacity())));match bytes.ok_or_else(||{budget.deny();Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"read generator retained output overflow"))}).and_then(|bytes|budget.charge(bytes).map_err(|actual|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,actual)))){Ok(())=>Ok(output),Err(actual)=>{drop(output);Err(actual)}}},Err(actual)=>Err(actual)};if funded.is_err(){scratch.keep_failed_scratch()}drop(scratch);if matches!(&funded,Err(Failure::Operational(_))){return funded}checkpoint()?;if budget.denied(){return Err(Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"read generator aggregate admission refused")))}source.require()?;funded
+}
+
+/// Neutral owned renderer data from original raw-page loans. The supplied
+/// test-type set is data; only the actual host's completed CODE and distinct
+/// GeneratorCliTest witnesses may authorize a full-role Artifact/publication.
+pub fn render_reads_data_from_pages(inputs:&PolicyInputs,root:&std::path::Path,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,test_types:&std::collections::BTreeSet<String>,budget:&Arc<Budget>,provider:&dyn RawPolicyReadProvider,checkpoint:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>)->Result<crate::sparse_slots_policy::Output,Failure>{checkpoint()?;let produced=(||{let source=ReadSource::native(inputs,root,budget)?.with_raw_policy_pages(pages,order).with_checkpoint(checkpoint).with_body_borrower(body);render_reads_scoped(&source,&crate::reactive_dependency_native::ReadQuestions::RawData(provider),|_|Ok(test_types),checkpoint)})();finish_page_data(produced,budget,checkpoint)}
+
+/// Explicit finite original raw-derived rendering; source-free owned output
+/// does not certify full-workspace or compiled parser/source roles.
+pub fn render_derived_reads(raw:&CapturedRawPolicy,inputs:&PolicyInputs,budget:&Arc<Budget>,checkpoint:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>)->Result<String,Failure>{checkpoint()?;let source=match source(raw,inputs,budget,checkpoint,body){Ok(source)=>source,Err(Failure::Operational(actual))=>return Err(Failure::Operational(actual)),Err(Failure::Unsupported(message))if budget.denied()=>return Err(Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message))),Err(actual)=>return Err(actual)};let result=(||{let tests=crate::reactive_reads_generator_native::test_types(&source,raw)?;crate::reactive_derived_generator_native::generate(&source,&tests)})();if matches!(&result,Err(Failure::Operational(_))){return result}checkpoint()?;if budget.denied(){return Err(Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"derived read aggregate admission refused")))}source.require()?;result}
+
+/// Neutral raw-derived renderer data, sharing the exact finite collector. The
+/// caller's test-type rows and provider do not themselves grant source coverage.
+pub fn render_derived_data_from_pages(inputs:&PolicyInputs,root:&std::path::Path,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,test_types:&std::collections::BTreeSet<String>,budget:&Arc<Budget>,checkpoint:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>)->Result<String,Failure>{checkpoint()?;let produced=(||{let source=ReadSource::native(inputs,root,budget)?.with_raw_policy_pages(pages,order).with_checkpoint(checkpoint).with_body_borrower(body);crate::reactive_derived_generator_native::generate(&source,test_types)})();finish_page_data(produced,budget,checkpoint)}
+
+impl GlobalResult{
+ /// Only the fixed original-owner backing extended by this result. Canonical
+ /// graph buffers are already funded by their actual producer allocations.
+ pub fn owner_coordination_charge(&self)->Option<usize>{let mut bytes=Some(0usize);self.owner.visit_storage(|_,_,_,capacity|bytes=bytes.and_then(|n|n.checked_add(capacity)));bytes}
+}
+
+/// One temporary original-DME policy map. Buffers physically drop before the
+/// SAME existing scratch reservation can retire; no source/result authority.
+pub struct ScopedOriginalIncludeOrder{order:Option<std::collections::HashMap<String,usize>>,_scratch:Arc<Budget>}
+impl std::ops::Deref for ScopedOriginalIncludeOrder{type Target=std::collections::HashMap<String,usize>;fn deref(&self)->&Self::Target{self.order.as_ref().expect("original include order owner")}}
+impl Drop for ScopedOriginalIncludeOrder{fn drop(&mut self){drop(self.order.take());}}
+pub fn scoped_original_include_order(inputs:&PolicyInputs,root:&std::path::Path,budget:&Arc<Budget>)->Result<ScopedOriginalIncludeOrder,Failure>{
+ let scratch=Budget::scoped_temporaries(budget).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;let produced=original_include_order(inputs,root,&scratch);match produced{Ok(order)=>Ok(ScopedOriginalIncludeOrder{order:Some(order),_scratch:scratch}),Err(actual)=>{scratch.keep_failed_scratch();Err(actual)}}
 }

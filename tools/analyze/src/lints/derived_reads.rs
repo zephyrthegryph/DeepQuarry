@@ -71,15 +71,7 @@ static META: Meta = Meta {
 
 // ---- small mappings ---------------------------------------------------------------------------
 
-fn proc_kind(name: &str) -> Option<&'static str> {
-    match name {
-        "should_run" => Some("runs"),
-        "draw" | "hidden_verbs" => Some("drawn"),
-        "tgui_data" | "ui_data" => Some("ui"),
-        "push_to_rust" => Some("push"),
-        _ => None,
-    }
-}
+use crate::derived_reads_collect_policy::{proc_kind,derive_value,chain,paren_args};
 
 fn entry_kind(call: &str) -> &'static str {
     match call {
@@ -91,24 +83,7 @@ fn entry_kind(call: &str) -> &'static str {
     }
 }
 
-fn kind_call(kind: &str) -> Option<&'static str> {
-    match kind {
-        "runs" => Some("runs_while"),
-        "drawn" => Some("drawn_from"),
-        "ui" => Some("ui_from"),
-        "push" => Some("rust_push"),
-        _ => None,
-    }
-}
-
-fn reaction_kind_flag(call: &str) -> &'static str {
-    match call {
-        "every" => "RXB_EVERY",
-        "on_cross" => "RXB_CROSS",
-        "on_notice" => "RXB_NOTICE",
-        _ => unreachable!("reaction kind {call}"),
-    }
-}
+use crate::derived_reads_policy::kind_call;
 
 /// `(kind, handler, roots, output vars)` in `REACTION_OUTPUTS` order.
 
@@ -119,28 +94,6 @@ fn starts_any(rel: &str, dirs: &[&str]) -> bool {
 // ---- types ------------------------------------------------------------------------------------
 
 /// `state_schema_lint.ancestors`: every path prefix, shortest first.
-fn path_prefixes(path: &str) -> Vec<String> {
-    let segs: Vec<&str> = path.trim_matches('/').split('/').collect();
-    (1..=segs.len()).map(|i| format!("/{}", segs[..i].join("/"))).collect()
-}
-
-/// `state_schema_lint.chain`: the type and its ancestors, root first, with DM's implicit parents.
-fn chain(path: &str) -> Vec<String> {
-    let mut out = path_prefixes(path);
-    if out[0] != "/datum" {
-        let first = out[0].clone();
-        if matches!(first.as_str(), "/obj" | "/mob" | "/turf" | "/area") {
-            let n = if first == "/obj" || first == "/mob" { 3 } else { 2 };
-            let mut pre: Vec<String> = ["/datum", "/atom", "/atom/movable"][..n].iter().map(|s| s.to_string()).collect();
-            pre.extend(out);
-            out = pre;
-        } else if first == "/atom" {
-            out.insert(0, "/datum".to_string());
-        }
-    }
-    out
-}
-
 // ---- parsing ----------------------------------------------------------------------------------
 
 type VarTable = HashMap<String, HashSet<String>>;
@@ -237,22 +190,6 @@ fn split_args(text: &str) -> Vec<String> {
 }
 
 /// `call_args`: the text between the paren at `open` and its match, and the index after the match.
-fn paren_args(text: &str, open: usize) -> (&str, usize) {
-    let b = text.as_bytes();
-    let mut depth = 0i32;
-    for i in open..b.len() {
-        if b[i] == b'(' {
-            depth += 1;
-        } else if b[i] == b')' {
-            depth -= 1;
-            if depth == 0 {
-                return (&text[open + 1..i], i + 1);
-            }
-        }
-    }
-    (&text[open + 1..], text.len())
-}
-
 #[derive(Clone, Debug)]
 struct Entry {
     rel: String,
@@ -660,10 +597,6 @@ fn raw_allowed(tree: &Tree, sink: &mut Sink, rel: &str, line: usize) -> bool {
     }
 }
 
-fn derive_value(name: &str) -> Option<&str> {
-    name.strip_prefix("derive_").filter(|v| !v.is_empty())
-}
-
 fn analyze(model: &Model, tree: &Tree, sink: &mut Sink, generated_covers: bool) -> Vec<Finding> {
     let mut findings: Vec<Finding> = Vec::new();
     // A var no proc writes (outside a setter) and no setter call names never changes: nothing can fail to publish it. The same test the
@@ -816,13 +749,13 @@ fn reaction_reads(model:&Model)->Vec<ReactionRead>{
  struct Original<'model>(&'model Model);
  impl crate::reactive_reaction_policy::Source for Original<'_>{
   type Error=std::convert::Infallible;type Known<'a>=HashSet<String> where Self:'a;
-  fn for_each_named<'a>(&'a self,name:&str,visit:&mut dyn FnMut(crate::reactive_reaction_policy::ProcedureKey<'a>,crate::reactive_reaction_policy::Procedure<'a>)->Result<bool,Self::Error>)->Result<(),Self::Error>{
+  fn for_each_named(&self,name:&str,visit:&mut dyn FnMut(crate::reactive_reaction_policy::ProcedureKey<'_>,crate::reactive_reaction_policy::Procedure<'_>)->Result<bool,Self::Error>)->Result<(),Self::Error>{
    for(index,proc)in self.0.procs.iter().enumerate(){if proc.name==name&&!visit(crate::reactive_reaction_policy::ProcedureKey::Legacy(index),crate::reactive_reaction_policy::Procedure{owner:&proc.owner,name:&proc.name,relative:&proc.rel,args:&proc.args,lines:crate::reactive_reaction_policy::Lines::Owned(&proc.body)})?{break}}Ok(())
   }
   fn known<'a>(&'a self,owner:&'a str)->Result<Self::Known<'a>,Self::Error>{Ok(self.0.union(&self.0.vars,owner))}
  }
  let original=Original(model);let result=crate::reactive_reaction_policy::reaction_reads(&original,&mut crate::key_policy_control::Compatibility);let rows=match result{Ok(value)=>value,Err(never)=>match never{}};
- rows.into_iter().map(|row|ReactionRead{kind:row.kind,handler:row.handler,proc:match row.procedure{crate::reactive_reaction_policy::ProcedureKey::Legacy(index)=>index,crate::reactive_reaction_policy::ProcedureKey::Raw{..}=>unreachable!("legacy adapter issued a raw locator")},reads:row.reads}).collect()
+ rows.into_iter().map(|row|ReactionRead{kind:row.kind,handler:row.handler,proc:match row.procedure{crate::reactive_reaction_policy::OwnedProcedureKey::Legacy(index)=>index,crate::reactive_reaction_policy::OwnedProcedureKey::Raw{..}=>unreachable!("legacy adapter issued a raw locator")},reads:row.reads}).collect()
 }
 
 fn reaction_findings(model: &Model, tree: &Tree, sink: &mut Sink) -> Vec<Finding> {
@@ -855,72 +788,8 @@ fn reaction_findings(model: &Model, tree: &Tree, sink: &mut Sink) -> Vec<Finding
 
 // ---- generated reads --------------------------------------------------------------------------
 
-fn reaction_declarations(model: &Model) -> (BTreeMap<String, BTreeSet<&'static str>>, Vec<String>) {
-    let mut flags: BTreeMap<String, BTreeSet<&'static str>> = BTreeMap::new();
-    let mut members: BTreeSet<String> = BTreeSet::new();
-    for proc in &model.procs {
-        if proc.name != "reactions" || proc.owner == "/" || starts_any(&proc.rel, GENERATED_SKIP_DIRS) || proc.rel == GENERATED_REL {
-            continue;
-        }
-        let text = proc.body.iter().map(|(_, l)| l.as_str()).collect::<Vec<_>>().join("\n");
-        let mut pos = 0usize;
-        loop {
-            let Some(m) = pat!(r"(?<![\w.])(every|on_cross|on_notice)\s*\(").captures_at(&text, pos) else { break };
-            let (inner, end) = paren_args(&text, m.end(0) - 1);
-            pos = end;
-            flags.entry(proc.owner.clone()).or_default().insert(reaction_kind_flag(m.s(1)));
-            if m.s(1) == "every" {
-                if let Some(f) = pat!(r"\bmembers\s*=\s*(/[\w/]+)").captures(inner) {
-                    members.insert(f.s(1).to_string());
-                }
-            }
-        }
-    }
-    (flags, members.into_iter().collect())
-}
+fn reaction_declarations(model:&Model)->(BTreeMap<String,BTreeSet<&'static str>>,Vec<String>){let mut flags=BTreeMap::new();let mut members=BTreeSet::new();for proc in &model.procs{if proc.name!="reactions"||proc.owner=="/"||starts_any(&proc.rel,GENERATED_SKIP_DIRS)||proc.rel==GENERATED_REL{continue}match crate::derived_reads_collect_policy::boot_declarations(&proc.owner,proc.body.iter().map(|(number,line)|(*number,line.as_str())),&mut flags,&mut members,&mut crate::key_policy_control::Compatibility){Ok(())=>{},Err(never)=>match never{}}}(flags,members.into_iter().collect())}
 
-fn boot_text(model: &Model) -> Vec<String> {
-    let (flags, members) = reaction_declarations(model);
-    let mut out: Vec<String> = Vec::new();
-    let mut push = |s: &str| out.push(s.to_string());
-    push("/// Types whose reactions() declare every() / on_cross() / on_notice(), with the RXB_* kinds (code/datums/reactions/work.dm).");
-    push("/proc/rx_boot_types()");
-    push("\tRETURN_TYPE(/list)");
-    push("\t// Built on first call: a static or global initializer may not have run yet when the first atoms initialize.");
-    push("\t// ALLOW(sys_static_getter): built on first call; a global list may not exist yet while the first atoms initialize");
-    push("\tvar/static/list/table");
-    push("\tif(!table)");
-    if !flags.is_empty() {
-        push("\t\ttable = list(");
-        for (owner, fl) in &flags {
-            let joined = fl.iter().cloned().collect::<Vec<_>>().join(" | ");
-            push(&format!("\t\t\t{} = {},", owner, joined));
-        }
-        push("\t\t)");
-    } else {
-        push("\t\ttable = list()");
-    }
-    push("\treturn table");
-    push("");
-    push("/// Capabilities some every(members = ...) runs per member of: their holders join the membership store at init.");
-    push("/proc/rx_boot_members()");
-    push("\tRETURN_TYPE(/list)");
-    push("\t// ALLOW(sys_static_getter): built on first call; a global list may not exist yet while the first atoms initialize");
-    push("\tvar/static/list/table");
-    push("\tif(!table)");
-    if !members.is_empty() {
-        push("\t\ttable = list(");
-        for cap in &members {
-            push(&format!("\t\t\t{},", cap));
-        }
-        push("\t\t)");
-    } else {
-        push("\t\ttable = list()");
-    }
-    push("\treturn table");
-    push("");
-    out
-}
 
 /// The `(type, var)` pairs the presentation reactions (Life steps, HUD, sight, canmove: `REACTION_OUTPUTS`) read off the holder, whatever declares the var.
 /// A reaction is reactive code: read-driven tracking (`gens::auto_tracked`) tracks what it reads.
@@ -942,22 +811,7 @@ pub(crate) fn generated_for(tree: &Tree, files: &[&SourceFile]) -> String {
 }
 
 /// The names an unscoped call (`name(`, `src.name(`) in a proc body invokes. `..()` and `obj.name()` are not named.
-fn called_names(proc: &Proc) -> Vec<String> {
-    let mut out: Vec<String> = Vec::new();
-    for (_, line) in &proc.body {
-        let text = py_lstrip(line);
-        if text.starts_with('#') {
-            continue;
-        }
-        for m in pat!(r"(?<![\w.:/])(?:src\.)?([A-Za-z_]\w*)\s*\(").captures_iter(text) {
-            let n = m.s(1).to_string();
-            if !out.contains(&n) {
-                out.push(n);
-            }
-        }
-    }
-    out
-}
+fn called_names(proc:&Proc)->Vec<String>{match crate::derived_reads_collect_policy::called_names(proc.body.iter().map(|(number,line)|(*number,line.as_str())),&mut crate::key_policy_control::Compatibility){Ok(value)=>value,Err(never)=>match never{}}}
 
 /// A draw (or hidden_verbs) reads what the procs it calls read, on its own type and its parents, transitively: the reads of a callee
 /// belong to the drawn type; an override of a callee on a subtype is a read of that subtype (the call is virtual). The walk visits each
@@ -1067,58 +921,8 @@ fn generated_text(model: &Model, test_types: &BTreeSet<String>) -> String {
             }
         }
     }
-    let mut out: Vec<String> = vec![
-        "// GENERATED by tools/ci/derived_reads_lint.py --fix-generated. Do not edit by hand.".to_string(),
-        "// What each type's should_run / draw / hidden_verbs / tgui_data / push_to_rust / derive_<x> read, as implicit".to_string(),
-        "// reads for READERS() (code/datums/reactions). Not committed: every build regenerates it.".to_string(),
-        String::new(),
-    ];
-    let owners: BTreeSet<&String> = per_owner.keys().chain(reaction_slots.keys()).collect();
-    // Types that only the test fixtures define are compiled in test builds only: their reads go in a UNIT_TESTS block.
-    let mut test_out: Vec<String> = Vec::new();
-    for owner in owners {
-        let test_owner = test_types.contains(owner.as_str());
-        let mut lines: Vec<String> = Vec::new();
-        if let Some(slots) = per_owner.get(owner) {
-            for ((kind, value), names) in slots {
-                if names.is_empty() {
-                    continue;
-                }
-                let mut sorted = names.clone();
-                sorted.sort();
-                let args = sorted.iter().map(|n| format!("nameof({})", n)).collect::<Vec<_>>().join(", ");
-                if kind == "derive" {
-                    lines.push(format!("\t. += derive(nameof({}), {})", value, args));
-                } else {
-                    lines.push(format!("\t. += {}({})", kind_call(kind).unwrap_or(""), args));
-                }
-            }
-        }
-        if let Some(handlers) = reaction_slots.get(owner) {
-            for (handler, reads) in handlers {
-                if !reads.is_empty() {
-                    let mut sorted = reads.clone();
-                    sorted.sort();
-                    lines.push(format!("\t. += reaction_reads(PROC_REF({}), {})", handler, sorted.join(", ")));
-                }
-            }
-        }
-        if !lines.is_empty() {
-            let dest = if test_owner { &mut test_out } else { &mut out };
-            dest.push(format!("{}/generated_reads()", owner));
-            dest.push("\t. = ..()".to_string());
-            dest.extend(lines);
-            dest.push(String::new());
-        }
-    }
-    if !test_out.is_empty() {
-        out.push("#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)".to_string());
-        out.extend(test_out);
-        out.push("#endif".to_string());
-        out.push(String::new());
-    }
-    out.extend(boot_text(model));
-    out.join("\n")
+    let(flags,members)=reaction_declarations(model);
+    crate::derived_reads_policy::generate(&per_owner,&reaction_slots,&flags,&members,test_types)
 }
 
 // ---- --fix (ported for the self-test only) ----------------------------------------------------

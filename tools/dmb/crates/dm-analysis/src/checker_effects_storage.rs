@@ -62,6 +62,7 @@ impl EffectInput {
 impl BodyEffects {
     pub fn visit_storage(&self, v: &mut impl FnMut(Storage)) {
         object("purity.body", self, v);
+        match &self.callable_origin{Ok(origin)=>point(origin,v),Err(_)=>{}}
         buf("purity.direct", &self.direct, self.direct.len(), v);
         buf("purity.calls", &self.calls, self.calls.len(), v);
         buf("effects.blocking", &self.blocking, self.blocking.len(), v);

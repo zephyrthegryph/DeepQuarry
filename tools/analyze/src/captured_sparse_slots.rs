@@ -191,12 +191,15 @@ pub(crate) fn captured_order(
 ) -> Result<HashMap<String, usize>, String> {
     raw.validate_current_raw_roster(inputs)?;
     current_violation(raw)?;
+    original_order(&raw.tree.root,inputs,budget)
+}
+/// Same original manifest/include policy, independent of bounded raw roster.
+pub(crate) fn original_order(root:&std::path::Path,inputs:&PolicyInputs,budget:&crate::captured_generator_budget::Budget)->Result<HashMap<String,usize>,String>{
     let metadata = inputs
         .mapping()
         .source_acquisitions()
         .try_fold(
-            raw.tree
-                .root
+            root
                 .as_os_str()
                 .as_encoded_bytes()
                 .len()
@@ -214,11 +217,11 @@ pub(crate) fn captured_order(
         )
         .ok_or("generator manifest metadata overflow")?;
     budget.charge(metadata)?;
-    let original = CapturedSparseSlots::capture(&raw.tree.root, inputs.archive(), inputs)?;
+    let original = CapturedSparseSlots::capture(root, inputs.archive(), inputs)?;
     let mut width = 0usize;
     for (path, lease) in inputs.mapping().source_acquisitions() {
         if dm_preprocess::regions::canonical_path(path)
-            == dm_preprocess::regions::canonical_path(&raw.tree.root.join("deepquarry.dme"))
+            == dm_preprocess::regions::canonical_path(&root.join("deepquarry.dme"))
         {
             width = width.max(
                 lease

@@ -321,9 +321,8 @@ impl Generator for AutoTracked {
     }
 
     fn generate(&self, cx: &GenCx, out: &mut GenOut) {
-        out.doc("Read-driven tracking: the vars reactive code reads that no declaration makes tracked, written as the TRACKED() their author would have");
-        out.doc("declared (tools/analyze/src/gens/auto_tracked.rs, doc/rewrite/final_api.html section 7). Write them only through set_<var>();");
-        out.doc("the `tracked` lint holds every write to that and `analyze fix` rewrites it.");
+        let mut documents=crate::sparse_slots_policy::Output::default();
+        crate::auto_tracking_emitter::documents(&mut documents);append_policy_output(out,documents);
         let inf = inferred(cx.tree);
         let Some(set) = inf.as_ref().as_ref() else {
             out.diag("deepquarry.dme", 1, "the semantic model could not be built; read-driven tracking cannot be generated");
@@ -345,20 +344,14 @@ impl Generator for AutoTracked {
             }
         }
         let tests = crate::sem::gen::test_only_types(cx.tree);
-        let (test, content): (Vec<&Auto>, Vec<&Auto>) = set.tracked.iter().partition(|a| tests.contains(&a.ty));
-        for a in &content {
-            out.line(format!("TRACKED({}, {})", a.ty, a.var));
-        }
-        if !test.is_empty() {
-            out.line(crate::sem::gen::TEST_GUARD);
-            for a in &test {
-                out.line(format!("TRACKED({}, {})", a.ty, a.var));
-            }
-            out.line("#endif");
-        }
+        let mut rendered=crate::sparse_slots_policy::Output::default();
+        crate::auto_tracking_emitter::emit_rows(set,&tests,&mut rendered);append_policy_output(out,rendered);
     }
 }
 
 pub fn register(reg: &mut Vec<Box<dyn Generator>>) {
     reg.push(Box::new(AutoTracked));
 }
+
+/// Nominal legacy GenOut bridge; shared policy keeps the unique template.
+fn append_policy_output(out:&mut GenOut,rendered:crate::sparse_slots_policy::Output){for line in rendered.body.split_terminator('\n'){out.line(line);}for diagnostic in rendered.diags{out.diag(&diagnostic.rel,diagnostic.line,diagnostic.msg);}}

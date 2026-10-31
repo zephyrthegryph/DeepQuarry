@@ -43,24 +43,7 @@ pub const OUT_DIR: &str = "code/engine/_generated";
 pub use crate::generator_test_scope::{test_only, TEST_GUARD, TEST_ONLY_DIRS};
 
 /// The type a top-level definition line names: `/datum/x` of `/datum/x`, `/datum/x/var/y = 1`, `/datum/x/proc/f()` or `/datum/x/f()`.
-fn defined_type(line: &str) -> Option<&str> {
-    if !line.starts_with('/') || line.starts_with("//") {
-        return None;
-    }
-    let end = line
-        .find(|c: char| !(c.is_ascii_alphanumeric() || c == '_' || c == '/'))
-        .unwrap_or(line.len());
-    let mut path = line[..end].trim_end_matches('/');
-    for kw in ["/var/", "/proc/", "/verb/"] {
-        if let Some(i) = path.find(kw) {
-            path = &path[..i];
-        }
-    }
-    if line[end..].trim_start().starts_with('(') {
-        path = path.rsplit_once('/').map(|(a, _)| a).unwrap_or(path);
-    }
-    (path.len() > 1).then_some(path)
-}
+use crate::generator_test_scope::defined_type;
 
 /// The types only test-only files ([`test_only`]) define: a generated line that names one outside [`TEST_GUARD`] breaks the production build.
 pub fn test_only_types(tree: &Tree) -> std::collections::BTreeSet<String> {
@@ -69,8 +52,7 @@ pub fn test_only_types(tree: &Tree) -> std::collections::BTreeSet<String> {
 }
 
 fn test_only_types_uncached(tree: &Tree) -> std::collections::BTreeSet<String> {
-    let mut test = std::collections::BTreeSet::new();
-    let mut prod = std::collections::HashSet::new();
+    let mut types_seen = crate::generator_test_scope::TestTypeCollector::default();
     let files: Vec<&crate::tree::SourceFile> = tree
         .files
         .iter()
@@ -95,15 +77,10 @@ fn test_only_types_uncached(tree: &Tree) -> std::collections::BTreeSet<String> {
     for (f, types) in files.iter().zip(defined) {
         let is_test = test_only(&f.rel);
         for t in types {
-            if is_test {
-                test.insert(t);
-            } else {
-                prod.insert(t);
-            }
+            types_seen.insert_owned(is_test, t);
         }
     }
-    test.retain(|t| !prod.contains(t));
-    test
+    types_seen.finish()
 }
 
 /// The lines (1-based) of generated `text` that name a test-only type outside a [`TEST_GUARD`] block, with the type.

@@ -37,8 +37,14 @@ impl DiscoveryReceipt {
     /// Full CODE_DM coverage is a property of this actual unfiltered typed
     /// traversal, not a normal folder fact or a caller's claimed prefix.
     pub(crate) fn covers_code_dm(&self,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{
+        self.covers_dm_roots(dq_analyze::captured_raw_file::code_dm_roots(),false,admit)
+    }
+    pub(crate) fn covers_generator_cli_tests(&self,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{
+        self.covers_dm_roots(dq_analyze::captured_raw_file::generator_cli_test_roots(),true,admit)
+    }
+    fn covers_dm_roots(&self,roots:&[(&str,&str)],missing_is_empty:bool,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{
         match self.selection{DiscoverySelection::RecursiveDmNoChildLinksV1=>{}}
-        for &(directory,extension) in dq_analyze::captured_raw_file::code_dm_roots(){
+        for &(directory,extension) in roots{
             crate::daemon::control::checkpoint()?;
             if extension!="dm"{return Ok(false)}
             if !self.contract.recursive_roots.iter().any(|root|root.strip_prefix(&self.contract.root).is_ok_and(|relative|Path::new(directory).starts_with(relative))){return Ok(false)}
@@ -47,7 +53,7 @@ impl DiscoveryReceipt {
             // Must have been reached by THIS typed recursive traversal. An
             // unrelated cached/flat folder listing is absent from these facts.
             let Some(observation)=self.facts.policy_directories().get(&code)else{return Ok(false)};
-            if matches!(observation.listing,Listing::NotDirectory){return Ok(false)}
+            if !missing_is_empty&&matches!(observation.listing,Listing::NotDirectory){return Ok(false)}
             // Extra explicit roots must not follow a child symlink that the
             // original CODE_DM WalkDir(follow_links=false) would not traverse.
             for root in &self.contract.recursive_roots{

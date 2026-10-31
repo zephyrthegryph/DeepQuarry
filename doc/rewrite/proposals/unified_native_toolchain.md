@@ -1426,3 +1426,47 @@ the callback receives the same mutable context for child queries. Two focused
 tests pass for exact database identity, real dynamic child edges, warm reuse and
 refusal of a foreign executing context without a published result. The registered
 function retains only weak source owners, avoiding a database ownership cycle.
+
+### Original-page generators and full workspace dependency loans (2026-10-31)
+
+Reads and derived reads now use parser-free shared renderers with independent
+frozen original templates. Native automatic tracking consumes the same completed
+dependency candidates and shared decision policy. Two independent whole automatic
+tracking fixtures match complete paths, generated text (727 and 725 bytes), and
+ordered diagnostics. The two whole dependency fixtures again match all twelve
+ordered fields and complete 1,464/1,652-byte artifacts. Automatic tracking's
+blocked/debug decision presentation is not established by the artifact comparison.
+
+Actual full-workspace read/dependency jobs now run as children of the existing
+query database and use the current operation's root budget, even when an old
+cached child's value is evicted and verified after that earlier budget has died.
+The registered functions retain no old budget or strong database cycle. Tests
+cover 130 genuine original files, demand-only body parsing, no source rereads,
+actual IO, cancellation, constructor/weak-owner admission and callback unwinding.
+The generator CLI's test-type source domain has its own completed receipt: unlike
+ordinary CODE_DM discovery, that exact old CLI domain includes hidden code files.
+Neutral raw-page data cannot be promoted into a finite capture's verified read.
+
+Effect pages retain the original report metadata without retaining syntax or
+strong source archives. Their query hashes now cover report-observable fields,
+including waitfor/directive and original line changes. An actual cancellation
+during hashing prevents publication and permits a healthy same-key retry.
+
+The first runtime batch exposed a real quadratic allocation estimate in hook
+discovery: one small marker could exceed the existing 64 MiB limit before its
+provider ran. Discovery now shares the original algorithm through fallible actual
+row/string growth, with borrowed argument slices preserving the old grammar.
+The limit was not raised. Other repairs corrected independent-template projections
+and fixture setup; no source guard, output equality or refusal was weakened.
+Finite generator artifacts remain bound to their issued capture evidence: the
+same cohort reuses its artifact, while a fresh cohort rerenders it but reuses
+original-owner-checked read/global/dependency children without IO or body work.
+
+The combined cohort records 50 distinct focused Rust passes and zero remaining
+failures, preserving the failure history and rerunning only failed or newly
+affected checks. Both Analyze feature configurations and native libraries/tests
+were type-checked; the final fixture-only repairs were built and run through the
+native focused harness. This is a component checkpoint, not a default cutover.
+Canonical shared policy metadata, Plans, complete ordered checker reporting,
+full-project capacity checks, fresh production/DC/ratchets, and the real CLI and
+generation-stage lifecycle still require completion.

@@ -10,7 +10,7 @@ const STATIC_FLAG:u32=1;const CONST_FLAG:u32=2;const TMP_FLAG:u32=4;
 use std::{path::Path,sync::Arc,collections::HashMap,borrow::Cow};
 
 /// Stack-only source binding. No raw/native tree, callable map or AST is copied.
-pub(crate) struct ReadSource<'a>{raw:Option<&'a CapturedRawPolicy>,native_root:Option<&'a Path>,inputs:&'a PolicyInputs,budget:&'a Arc<Budget>,order:ReadOrder<'a>,checkpoint:Option<&'a dyn Fn()->std::io::Result<()>>,body_borrower:Option<&'a dyn Fn(&Arc<dm_tree::frontend::BodySyntaxInput>)->Result<Arc<dm_tree::frontend::BodySyntax>,dm_tree::frontend::BodySyntaxFailure>>}
+pub(crate) struct ReadSource<'a>{raw:Option<&'a CapturedRawPolicy>,raw_pages:Option<&'a dyn crate::reactive_raw_policy_pages::RawPolicyPages>,native_root:Option<&'a Path>,inputs:&'a PolicyInputs,budget:&'a Arc<Budget>,order:ReadOrder<'a>,checkpoint:Option<&'a dyn Fn()->std::io::Result<()>>,body_borrower:Option<&'a dyn Fn(&Arc<dm_tree::frontend::BodySyntaxInput>)->Result<Arc<dm_tree::frontend::BodySyntax>,dm_tree::frontend::BodySyntaxFailure>>}
 /// One existing include-order map; temporary page views borrow it directly.
 enum ReadOrder<'a>{Owned(HashMap<String,usize>),Borrowed(&'a HashMap<String,usize>)}
 impl std::ops::Deref for ReadOrder<'_>{type Target=HashMap<String,usize>;fn deref(&self)->&Self::Target{match self{Self::Owned(map)=>map,Self::Borrowed(map)=>map}}}
@@ -36,7 +36,7 @@ impl<'a> ReadSource<'a>{
     /// or credit is issued here. The caller must preadmit its temporary page
     /// and retain graph allocations under their real parent before page drop.
     pub(crate) fn with_budget<'page,T>(&'page self,budget:&'page Arc<Budget>,operation:impl FnOnce(&ReadSource<'page>)->T)->T{
-        let page=ReadSource{raw:self.raw,native_root:self.native_root,inputs:self.inputs,budget,order:ReadOrder::Borrowed(&self.order),checkpoint:self.checkpoint,body_borrower:self.body_borrower};operation(&page)
+        let page=ReadSource{raw:self.raw,raw_pages:self.raw_pages,native_root:self.native_root,inputs:self.inputs,budget,order:ReadOrder::Borrowed(&self.order),checkpoint:self.checkpoint,body_borrower:self.body_borrower};operation(&page)
     }
     pub(crate) fn reserve(&self,n:Option<usize>)->Result<(),String>{charge(self.budget,n)}
     pub(crate) fn inputs(&self)->&'a PolicyInputs{self.inputs}
@@ -64,7 +64,7 @@ impl<'a> ReadSource<'a>{
         let profile=tree.checker_builtin_profile().ok_or("reactive original source lacks exact builtin profile")?;
         tree.validate_checker_builtin_profile(profile).map_err(|e|format!("reactive source profile: {e:?}"))?;
         let order=crate::captured_sparse_slots::captured_order(raw,inputs,budget)?;
-        Ok(Self{raw:Some(raw),native_root:None,inputs,budget,order:ReadOrder::Owned(order),checkpoint:None,body_borrower:None})
+        Ok(Self{raw:Some(raw),raw_pages:None,native_root:None,inputs,budget,order:ReadOrder::Owned(order),checkpoint:None,body_borrower:None})
     }
     /// Original-native-only semantic source loan. PolicyInputs is the existing
     /// private captured archive/mapping producer; root is diagnostic formatting
@@ -74,8 +74,26 @@ impl<'a> ReadSource<'a>{
         budget.require()?;if !root.is_absolute(){return Err("native reactive diagnostic root must be absolute".into())}
         let tree=inputs.archive().tree();let profile=tree.checker_builtin_profile().ok_or("reactive original source lacks exact builtin profile")?;
         tree.validate_checker_builtin_profile(profile).map_err(|e|format!("reactive source profile: {e:?}"))?;
-        Ok(Self{raw:None,native_root:Some(root),inputs,budget,order:ReadOrder::Owned(HashMap::new()),checkpoint:None,body_borrower:None})
+        Ok(Self{raw:None,raw_pages:None,native_root:Some(root),inputs,budget,order:ReadOrder::Owned(HashMap::new()),checkpoint:None,body_borrower:None})
     }
+
+    /// Policy-only page provider. This does NOT prove full raw coverage; the
+    /// actual host must consume its exhausted traversal receipt before sealing.
+    pub(crate) fn with_raw_policy_pages(mut self,pages:&'a dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&'a HashMap<String,usize>)->Self{self.raw_pages=Some(pages);self.order=ReadOrder::Borrowed(order);self}
+    fn with_policy_files(&self,visit:&mut dyn FnMut(&str,crate::captured_raw_file::RawPolicyViews<'_>)->Result<bool,crate::reactive_reads_native::Failure>)->Result<bool,crate::reactive_reads_native::Failure>{
+        use crate::reactive_reads_native::Failure;
+        self.checkpoint()?;self.require()?;
+        let pending=(||{
+            if let Some(pages)=self.raw_pages{return pages.for_each(visit)}
+            for file in self.raw()?.tree.files.iter().filter(|file|crate::tree::CODE_DM.matches(file)){
+                self.checkpoint()?;self.require()?;let next=visit(&file.rel,crate::captured_raw_file::RawPolicyViews::from_source(file))?;file.require_view_budget().map_err(|message|Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))?;if !next{return Ok(false)}
+            }
+            Ok(true)
+        })();
+        if matches!(&pending,Err(Failure::Operational(_))){return pending}
+        self.checkpoint()?;self.require()?;pending
+    }
+
     fn raw(&self)->Result<&'a CapturedRawPolicy,String>{self.raw.ok_or_else(||"raw marker policy requires genuine captured raw roster".into())}
 
 
@@ -115,6 +133,23 @@ impl<'a> ReadSource<'a>{
         if matches!(&relative,Cow::Borrowed(_)){charge(self.budget,relative.len().checked_mul(4).and_then(|n|n.checked_add(256)))?;}
         Ok((relative.into_owned(),line))
     }
+
+    pub(crate) fn raw_width_checked(&self)->Result<usize,crate::reactive_reads_native::Failure>{
+        use crate::reactive_reads_native::Failure;let mut total=0usize;
+        if !self.with_policy_files(&mut|_,views|{self.checkpoint()?;total=total.checked_add(views.raw()?.len()).ok_or_else(||{self.budget.deny();Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"original raw policy width overflow"))})?;Ok(true)})?{return Err("original raw policy width traversal incomplete".into())}Ok(total)
+    }
+    pub(crate) fn marker_rows_checked(&self,checkpoint:&mut dyn FnMut()->std::io::Result<()>)->Result<crate::captured_marker_rows::Rows<'a>,crate::reactive_reads_native::Failure>{self.policy_marker_rows(false,false,false,checkpoint)}
+    fn policy_marker_rows(&self,entries:bool,capabilities:bool,runtime:bool,checkpoint:&mut dyn FnMut()->std::io::Result<()>)->Result<crate::captured_marker_rows::Rows<'a>,crate::reactive_reads_native::Failure>{
+        use crate::reactive_reads_native::Failure;let mut rows=Vec::new();let mut count=0;
+        let completed=self.with_policy_files(&mut|relative,views|{checkpoint()?;crate::captured_marker_rows::collect_file_admitted(relative,views.marker()?,self.budget,&["READS_AS","PROC_SUMMARY","READ_LOOKUP","CAPABILITY_TYPE","CAPABILITY_DEF","cap_keys","SYSTEM_ACCESSOR","READS_FROM","CAPABILITIES","STAT"],entries,capabilities,runtime,&mut rows,&mut count,&mut||{checkpoint()?;self.require()?;Ok::<_,Failure>(())})?;Ok(true)})?;
+        if !completed{return Err("original marker traversal incomplete".into())}
+        crate::reactive_raw_policy_pages::RawDependencyMarkers::from_rows(rows,count).finish(&self.order,self.budget,checkpoint)
+    }
+    pub(crate) fn raw_metadata_checked(&self,checkpoint:&mut dyn FnMut()->std::io::Result<()>,emit:&mut dyn FnMut(&str,crate::raw_reactive_metadata_policy::Event<'_>)->Result<(),crate::reactive_reads_native::Failure>)->Result<(),crate::reactive_reads_native::Failure>{
+        let completed=self.with_policy_files(&mut|relative,views|{for line in views.marker()?.split('\n'){checkpoint()?;self.require()?;crate::raw_reactive_metadata_policy::visit_line(line,|event|emit(relative,event))?;}Ok(true)})?;
+        if !completed{return Err("original raw metadata traversal incomplete".into())}checkpoint()?;self.require()?;Ok(())
+    }
+
     pub(crate) fn raw_width(&self)->Result<usize,String>{
         let raw=self.raw()?;raw.tree.files.iter().try_fold(0usize,|n,f|n.checked_add(f.text().len())).ok_or_else(||{self.budget.deny();"reactive raw source width overflow".into()})
     }
@@ -127,48 +162,28 @@ impl<'a> ReadSource<'a>{
 
     /// Borrow authenticated RAW-policy code views only. These include inactive
     /// text and cannot issue compiled BodySyntax/declaration/source receipts.
-    pub(crate) fn with_reaction_code<'borrow>(&'borrow self,hint:&str,mut visit:impl FnMut(&'borrow str,&'borrow crate::tree::View)->Result<bool,crate::reactive_reads_native::Failure>)->Result<(),crate::reactive_reads_native::Failure>{
-        use crate::reactive_reads_native::Failure;
-        let pending:Result<(),Failure>=(||{
-            self.checkpoint()?;self.require()?;let raw=self.raw()?;
-            for file in raw.tree.files.iter().filter(|file|crate::tree::CODE_DM.matches(file)){
-                self.checkpoint()?;self.require()?;
-                file.require_view_budget().map_err(|message|Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))?;
-                if !file.text().contains(hint){continue}
-                let code=file.code();file.require_view_budget().map_err(|message|Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))?;self.require()?;
-                if !visit(&file.rel,code)?{break}
-            }
-            raw.tree.captured_violation().map_or(Ok(()),Err)?;Ok(())
-        })();
-        if matches!(&pending,Err(Failure::Operational(_))){return pending}self.checkpoint()?;
-        if self.budget.denied(){return Err(Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"reaction raw-policy admission refused")))}pending
+    pub(crate) fn with_reaction_code(&self,hint:&str,mut visit:impl FnMut(&str,&crate::tree::View)->Result<bool,crate::reactive_reads_native::Failure>)->Result<(),crate::reactive_reads_native::Failure>{
+        // Each callback is local to ONE actual page/file loan. Unique reaction
+        // summaries own only identifiers/coords before another lookup begins.
+        self.with_policy_files(&mut|relative,views|{if !views.raw()?.contains(hint){return Ok(true)}visit(relative,views.code()?)})?;Ok(())
     }
+
+    /// Local raw-policy procedure loan. Body text cannot escape this callback.
+    pub(crate) fn with_raw_procedures(&self,selector:crate::reactive_reaction_native::ProcedureSelector<'_>,visit:&mut dyn FnMut(crate::reactive_reaction_policy::ProcedureKey<'_>,crate::reactive_reaction_policy::Procedure<'_>)->Result<bool,crate::reactive_reads_native::Failure>)->Result<(),crate::reactive_reads_native::Failure>{crate::reactive_reaction_native::visit_procedures(self,selector,visit)}
 
     /// Original Decls define roster through the SAME marker-text header policy.
     /// Entries are not retained here; this is policy data, never source authority.
     pub(crate) fn dependency_defines(&self)->Result<std::collections::BTreeSet<String>,crate::reactive_reads_native::Failure>{
-        use crate::reactive_reads_native::Failure;
-        self.checkpoint()?;self.require()?;let raw=self.raw()?;let mut defines=std::collections::BTreeSet::new();
-        for file in raw.tree.files.iter().filter(|file|crate::tree::CODE_DM.matches(file)){
-            self.checkpoint()?;file.require_view_budget().map_err(|message|Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))?;
-            let marker=file.marker();file.require_view_budget().map_err(|message|Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))?;self.require()?;
-            crate::raw_key_calls_policy::visit_headers_admitted(marker.as_str(),|_,_|{},|name|{defines.insert(name.to_owned());},|bytes|{self.checkpoint()?;self.budget.charge(bytes).map_err(|message|Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))},||{self.budget.deny();Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"dependency define capacity overflow"))})?;
-        }
-        raw.tree.captured_violation().map_or(Ok(()),Err)?;self.checkpoint()?;self.require()?;Ok(defines)
+        use crate::reactive_reads_native::Failure;let mut defines=std::collections::BTreeSet::new();
+        let completed=self.with_policy_files(&mut|_,views|{
+            crate::raw_key_calls_policy::visit_headers_admitted(views.marker()?,|_,_|{},|name|{defines.insert(name.to_owned());},|bytes|{self.checkpoint()?;self.budget.charge(bytes).map_err(|message|Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))},||{self.budget.deny();Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"dependency define capacity overflow"))})?;Ok(true)
+        })?;
+        if !completed{return Err("original define traversal incomplete".into())}self.checkpoint()?;self.require()?;Ok(defines)
     }
 
     /// Full dependency declarations use the SAME first-statement projectors as
     /// legacy Decls; no body syntax demand or source acquisition occurs here.
-    pub(crate) fn dependency_marker_rows(&self)->Result<crate::captured_marker_rows::Rows<'a>,crate::reactive_reads_native::Failure>{
-        self.checkpoint()?;self.require()?;
-        let mut rows=crate::captured_marker_rows::collect_full_admitted(self.raw()?,&self.order,self.budget,&["READS_AS","PROC_SUMMARY","READ_LOOKUP","CAPABILITY_TYPE","CAPABILITY_DEF","cap_keys","SYSTEM_ACCESSOR","READS_FROM","CAPABILITIES","STAT"],true,true,true,&mut||{self.checkpoint()?;self.require().map_err(crate::reactive_reads_native::Failure::from)})?;
-        // Original Decls performs a stable final include-rank/file/LINE sort.
-        // Runtime observers are discovered in a separate lexical pass, so an
-        // append-only roster would change first-handler consumer meaning.
-        self.reserve(rows.markers.len().checked_mul(std::mem::size_of::<crate::captured_marker_rows::OwnedMarker>()).and_then(|n|n.checked_mul(2)).and_then(|n|n.checked_add(128)))?;
-        rows.markers.sort_by(|a,b|(self.order.get(&a.rel).copied().unwrap_or(usize::MAX),a.rel.as_str(),a.line).cmp(&(self.order.get(&b.rel).copied().unwrap_or(usize::MAX),b.rel.as_str(),b.line)));
-        self.checkpoint()?;self.require()?;Ok(rows)
-    }
+    pub(crate) fn dependency_marker_rows(&self)->Result<crate::captured_marker_rows::Rows<'a>,crate::reactive_reads_native::Failure>{self.policy_marker_rows(true,true,true,&mut||self.checkpoint())}
 
     pub(crate) fn raw_metadata<E:From<String>>(&self,checkpoint:impl FnMut()->Result<(),E>,mut emit:impl FnMut(crate::raw_reactive_metadata_policy::Event<'_>)->Result<(),E>)->Result<(),E>{
         self.raw_metadata_with_file(checkpoint,|_,event|emit(event))
@@ -266,17 +281,8 @@ impl<'a> ReadSource<'a>{
     /// Only the unique lexical setter policy needs this code view. It is the
     /// SAME admitted raw-file transform, not another DM parse or source read.
     pub(crate) fn visit_setter_call_files(&self,mut emit:impl FnMut(&str,&str,&str)->Result<(),crate::reactive_reads_native::Failure>)->Result<(),crate::reactive_reads_native::Failure>{
-        self.checkpoint()?;self.require()?;
-        for file in self.raw()?.tree.files.iter().filter(|file|crate::tree::CODE_DM.matches(file)){
-            self.checkpoint()?;self.require()?;
-            if !crate::auto_setter_calls_policy::wants_file(&file.rel,file.text()){continue;}
-            // SourceFile::code admits its cached transform to its existing raw
-            // capture owner. Detect its typed budget violation before using a
-            // denied transform's sentinel as though it were valid empty code.
-            let code=file.code();self.require()?;
-            emit(&file.rel,file.text(),&code.text)?;
-        }
-        self.checkpoint()?;self.require()?;Ok(())
+        let completed=self.with_policy_files(&mut|relative,views|{let raw=views.raw()?;if !crate::auto_setter_calls_policy::wants_file(relative,raw){return Ok(true)}emit(relative,raw,&views.code()?.text)?;Ok(true)})?;
+        if !completed{return Err("original setter-call traversal incomplete".into())}self.checkpoint()?;self.require()?;Ok(())
     }
 
     /// Original selected declaration facts. Source properties use the original
@@ -403,9 +409,18 @@ impl<'a> ReadSource<'a>{
     /// Only two scalar tuples survive the scan; no def_index/model is rebuilt.
     pub(crate) fn definition_neighbors<E:From<String>+From<&'static str>>(&self,rel:&str,line:u32,mut checkpoint:impl FnMut()->Result<(),E>)->Result<(Option<(usize,&'a str,&'a str)>,Option<(usize,&'a str,&'a str)>),E>{
         self.require()?;let archive=self.inputs.archive();let tree=archive.tree();
-        let raw=self.raw()?.tree.get(rel).ok_or("reactive annotation source is not in current raw roster")?;
-        charge(self.budget,raw.abs.as_os_str().len().checked_mul(8).and_then(|n|n.checked_add(512)))?;
-        let current=self.inputs.file(&raw.abs).ok_or("reactive annotation current raw provider missing")?;
+        let current=if let Some(raw)=self.raw{
+            let raw=raw.tree.get(rel).ok_or("reactive annotation source is not in current raw roster")?;
+            charge(self.budget,raw.abs.as_os_str().len().checked_mul(8).and_then(|n|n.checked_add(512)))?;
+            self.inputs.file(&raw.abs).ok_or("reactive annotation current raw provider missing")?
+        }else{
+            // A lexical page may honestly contain uncompiled code. It has no
+            // semantic definition neighbor. Compiled metadata is selected only
+            // from the existing actual current PolicyInputs file issuer.
+            let root=self.native_root.ok_or("reactive annotation diagnostic root absent")?;
+            charge(self.budget,root.as_os_str().len().checked_add(rel.len()).and_then(|n|n.checked_mul(16)).and_then(|n|n.checked_add(1024)))?;
+            let path=root.join(rel);let Some(file)=self.inputs.file(&path).filter(|file|file.is_compiled()&&file.role()==PolicyRole::DmSource)else{checkpoint()?;return Ok((None,None))};file
+        };
         let mut before=None;let mut after=None;
         for target in tree.declarations(){
             checkpoint()?;self.require()?;let Target::Member(member)=target else{continue};

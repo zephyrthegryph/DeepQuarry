@@ -12,10 +12,10 @@ pub trait Source:Control{
 const RESERVED:&[&str]=&["value","src","usr","null","world"];
 fn reason<S:Source>(s:&mut S,text:&str)->Result<Option<String>,S::Error>{Ok(Some(kc::own(s,text)?))}
 fn related<S:Source>(s:&mut S,owner:&str,ty:&str)->Result<bool,S::Error>{Ok(s.subtype(owner,ty)?||s.subtype(ty,owner)?)}
-fn blocked<S:Source>(s:&mut S,defs:&HashMap<String,Vec<String>>,exclude:&[String],owner:&str,var:&str)->Result<Option<String>,S::Error>{
+fn blocked<S:Source>(s:&mut S,defs:&HashMap<String,Vec<String>>,exclude:&[&[String]],owner:&str,var:&str)->Result<Option<String>,S::Error>{
  s.checkpoint()?;
  if RESERVED.contains(&var){return reason(s,"a reserved name")}
- if exclude.iter().any(|e|e==var||e.strip_prefix(owner).and_then(|r|r.strip_prefix("::"))==Some(var)){return reason(s,"excluded in tools/ci/lint_scopes.toml [lint.auto_tracked.lists] exclude")}
+ if exclude.iter().flat_map(|items|items.iter()).any(|e|e==var||e.strip_prefix(owner).and_then(|r|r.strip_prefix("::"))==Some(var)){return reason(s,"excluded in tools/ci/lint_scopes.toml [lint.auto_tracked.lists] exclude")}
  let Some(sig)=s.variable(owner,var)?else{return reason(s,"no declaration")};
  if sig.file.is_empty(){return reason(s,"a built-in var")}
  if sig.file==crate::auto_setter_calls_policy::AUTO_REL{return reason(s,"declared in the generated file")}
@@ -37,6 +37,11 @@ fn blocked<S:Source>(s:&mut S,defs:&HashMap<String,Vec<String>>,exclude:&[String
  Ok(None)
 }
 pub fn decide<S:Source>(source:&mut S,defs:&HashMap<String,Vec<String>>,candidates:&BTreeSet<(String,String)>,exclude:&[String])->Result<AutoSet,S::Error>{
+ decide_rows(source,defs,candidates.iter().map(|(owner,var)|(owner.as_str(),var.as_str())),&[exclude])
+}
+/// SAME decision over borrowed sorted candidate result rows. No converted set
+/// or copied candidate Strings; exclude groups borrow original config lists.
+pub fn decide_rows<'a,S:Source>(source:&mut S,defs:&HashMap<String,Vec<String>>,candidates:impl IntoIterator<Item=(&'a str,&'a str)>,exclude:&[&[String]])->Result<AutoSet,S::Error>{
  let mut out=AutoSet::default();let mut kept=Vec::new();
  for(owner,var)in candidates{
   let why=blocked(source,defs,exclude,owner,var)?;

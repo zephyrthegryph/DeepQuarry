@@ -100,3 +100,17 @@ tools/analyze/fixtures/native_tracked_lists/code/probe.dm whitespace=-indent-wit
 # Frozen original write-policy bytes and intentional nested oracle indentation.
 tools/analyze/examples/support/writes_original.rs -text whitespace=-blank-at-eof
 tools/analyze/fixtures/native-global-classifier/code/calls.dm whitespace=-indent-with-non-tab
+
+tools/analyze/src/auto_tracking_emitter_frozen_original.rs -text
+
+# Frozen original read generator templates retain exact oracle bytes.
+tools/analyze/src/read_emitter_frozen_original.rs -text whitespace=cr-at-eol
+tools/analyze/src/derived_read_emitter_frozen_original.rs -text whitespace=cr-at-eol
+tools/analyze/src/reactive_rank_frozen_original.rs -text whitespace=cr-at-eol
+
+tools/analyze/examples/support/auto_generator_original/producer.rs -text
+
+# Exact old/native generator fixtures keep their authored DM indentation.
+tools/analyze/fixtures/native-auto-generator/** whitespace=-indent-with-non-tab
+
+/tools/analyze/src/reactive_hooks_frozen_original.rs -text
