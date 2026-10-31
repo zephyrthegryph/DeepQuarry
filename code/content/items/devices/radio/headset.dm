@@ -707,6 +707,7 @@ CAPABILITIES(/obj/item/radio/headset/heads/ai_integrated)
 //Badmin piece of clothing that applies a few effects to a mob, used specifically for events with "hunters"
 //This just helps me equip the hunters a little easier
 /obj/item/radio/headset/event
+	light_on = FALSE // its light is cast while worn (look_glow)
 	name = "totally normal headset"
 	desc = "A headset with numerous toolkits appended to it, applying a wide variety of effects to its wearer set as per its manufacturer."
 	icon_state = "cent_headset_alt"
@@ -728,8 +729,13 @@ CAPABILITIES(/obj/item/radio/headset/heads/ai_integrated)
 
 CAPABILITIES(/obj/item/radio/headset/event)
 	configure(light_glow(range = 6, power = 0, color = "#ffaaaa"))
+	look_glow(PROC_REF(worn_glow), when = nameof(wearer)) // lit while worn, when an admin gave it a power
 	owns_many(nameof(remove_spells))
 	ref_one(nameof(wearer), /mob/living/carbon/human)
+
+/// The light it casts while worn: its type's range (a look that goes dark zeroes the instance's range), the power and colour it has now.
+/obj/item/radio/headset/event/proc/worn_glow(datum/act/A)
+	return GLOW(glow_of_type(type).range, glow_of(src).power, glow_of(src).color)
 
 /obj/item/radio/headset/event/equipped(mob/living/carbon/human/H, slot)
 	worn_factors = slowdown_to_set ? alist(STAT_SLOWDOWN = slowdown_to_set) : null
@@ -737,8 +743,6 @@ CAPABILITIES(/obj/item/radio/headset/event)
 	. = ..()
 	if(H && ((H.get_equipped_item(SLOT_ID_EAR_L) == src) || (H.get_equipped_item(SLOT_ID_EAR_R) == src)))
 		rel_set(src, nameof(wearer), H)
-		if(glow_of(src).power)
-			set_glow(src, GLOW(glow_of(src).range, glow_of(src).power, glow_of(src).color), 1)
 		if(effect_icon)
 			effect_overlay = image(effect_icon, effect_icon_state, pixel_y = overlay_offset_y*H.size_multiplier)
 			effect_overlay.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
@@ -755,8 +759,6 @@ CAPABILITIES(/obj/item/radio/headset/event)
 	..()
 	if(wearer())
 		rel_clear(src, nameof(wearer))
-		if(glow_of(src).power)
-			set_light_on(0)
 		if(effect_icon)
 			H.remove_attached_overlays(effect_overlay)
 		if(length(remove_spells))

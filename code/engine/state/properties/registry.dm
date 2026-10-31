@@ -166,12 +166,19 @@
 /// The base provider answering `id` for `path`: the deepest applies_to.
 /datum/property_registry/proc/base_provider(path, id)
 	// A memo of references to our own providers, kept off the (registered, frozen-after-boot)
-	// registry instance: "[registry key]|[type]|[id]" -> the base provider, or FALSE. The registry
-	// is named by its cached own_key(), not ref(src): this runs per property read (~365k times at
-	// boot), and building a ref string each time was most of its cost.
+	// registry instance: "[registry key]" -> type path -> property id -> the base provider, or FALSE.
+	// The registry is named by its cached own_key(), not ref(src): this runs per property read
+	// (~365k times at boot), and the three-part text key it replaced was built on every one.
 	var/static/list/resolved_base = list()
-	var/key = "[own_key(src)]|[path]|[id]"
-	. = resolved_base[key]
+	var/list/by_path = resolved_base[own_key(src)]
+	if(!by_path)
+		by_path = list()
+		resolved_base[own_key(src)] = by_path
+	var/list/by_id = by_path[path]
+	if(!by_id)
+		by_id = list()
+		by_path[path] = by_id
+	. = by_id[id]
 	if(!isnull(.))
 		return . || null
 	var/datum/property_provider/best
@@ -180,7 +187,7 @@
 			continue
 		if(!best || ispath(provider.applies_to, best.applies_to))
 			best = provider
-	resolved_base[key] = best || FALSE
+	by_id[id] = best || FALSE
 	return best
 
 /// The interned per-type table for `path` and `variant`: measure id -> value,

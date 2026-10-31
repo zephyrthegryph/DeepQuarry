@@ -36,8 +36,7 @@ SETTER(/obj/item/stack, amount)
 CAPABILITIES(/obj/item/stack)
 	configure(item_handling(cavity_implantable = FALSE))
 	configure(item_handling(randpixel = 7, center_x = 0, center_y = 0))
-	ref_many(nameof(synths), /datum/matter_synth, on_unlink = PROC_REF(synth_unlinked))
-	on_change(nameof(synths), ANY, then(PROC_REF(synth_cost_changed)))
+	ref_many(nameof(synths), /datum/matter_synth)
 	interface("MaterialStack", state = nameof(GLOB.tgui_hands_state), input = in_hand())
 	op("make", ui_act("make", arg("multiplier", num()), arg("ref", schema_ref(/datum/xform))), then(PROC_REF(ui_act_make)))
 	op("consolidate", item(/obj/item/gripper), passes(), then(PROC_REF(consolidated)))
@@ -311,7 +310,6 @@ CAPABILITIES(/obj/item/stack)
 
 	if(amount != new_amount)
 		amount = new_amount
-		ledger_refresh_contribution()
 		tracked_changed(src, nameof(amount))
 
 	// Can set it to 0 without qdel if you really want
@@ -550,7 +548,6 @@ CAPABILITIES(/obj/item/stack)
 	if(uses_charge == value)
 		return FALSE
 	uses_charge = value
-	ledger_refresh_contribution()
 	tracked_changed(src, nameof(uses_charge))
 	return TRUE
 SETTER(/obj/item/stack, uses_charge)
@@ -558,7 +555,6 @@ SETTER(/obj/item/stack, uses_charge)
 	if(charge_costs == value)
 		return FALSE
 	charge_costs = value ? value.Copy() : null
-	ledger_refresh_contribution()
 	tracked_changed(src, nameof(charge_costs))
 	return TRUE
 SETTER(/obj/item/stack, charge_costs)
@@ -567,14 +563,7 @@ SETTER(/obj/item/stack, charge_costs)
 	for(var/datum/matter_synth/S as anything in synths)
 		. += list(list(S, nameof(S.energy)))
 
-/obj/item/stack/proc/synth_unlinked(datum/matter_synth/other)
-	ledger_refresh_contribution()
-/obj/item/stack/proc/synth_cost_changed(datum/act/A)
-	ledger_refresh_contribution()
-
-/// Model mutation keeps charged units and actual containment accounting coherent.
+/// Model mutation keeps charged units coherent.
 /obj/item/stack/proc/add_synth(datum/matter_synth/S)
-	. = rel_add(src, nameof(synths), S)
-	if(.)
-		ledger_refresh_contribution()
+	return rel_add(src, nameof(synths), S)
 

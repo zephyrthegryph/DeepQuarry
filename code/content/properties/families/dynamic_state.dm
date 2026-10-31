@@ -128,8 +128,7 @@
 	desc = "Running on a holder-provided clock (DQ Medical K1) right now."
 
 /// Reads live, unlike a type/material tag: instance_value() is only ever
-/// re-read when something asks (aggregate(), recompute(), or a holder's
-/// ledger_refresh_contribution() call), never on a timer of its own. Source
+/// re-read when something asks (aggregate(), recompute()), never on a timer of its own. Source
 /// is TYPE, same as integrity_ratio above -- no type declares this possible
 /// yet (type_value() answers FALSE for all of them), and instance_value()
 /// is the whole point.

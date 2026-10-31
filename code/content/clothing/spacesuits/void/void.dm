@@ -178,7 +178,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void)
 	if(H.stat) return
 	if(H.get_equipped_item(SLOT_ID_SUIT) != src) return
 
-	if(hood.light_on)
+	if(hood.lamp_lit)
 		to_chat(H, span_notice("The helmet light shuts off as it retracts."))
 		hood.update_flashlight(H)
 
