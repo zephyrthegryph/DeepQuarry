@@ -279,7 +279,7 @@
 
 /datum/unit_test/dq_ability_ops_ghost_whisper_needs_manifest/Run()
 	var/mob/observer/dead/ghost = allocate(/mob/observer/dead, test_floor())
-	ghost.is_manifest = FALSE
+	ghost.set_is_manifest(FALSE)
 	var/datum/op_result/R = dq_ability_menu_op(ghost, "ghost_whisper")
 	TEST_ASSERT_EQUAL(R?.outcome, ACT_REFUSED, "a ghost that has not been pulled past the veil cannot whisper")
 	var/mob/living/silicon/robot/borg = allocate(/mob/living/silicon/robot, test_floor())
