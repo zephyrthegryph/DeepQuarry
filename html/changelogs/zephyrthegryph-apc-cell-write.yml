@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "APC reports that move only the cell's charge and the charging lamp are applied 32 a tick (the native frame drains the rest), so the delivery frame every ten seconds and the one when charging starts are no longer 40-1000 ms"

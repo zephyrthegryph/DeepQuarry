@@ -582,6 +582,15 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 /obj/machinery/power/apc/on_apc_report(new_equipment, new_lighting, new_environ, new_charging, alarm, new_status, charge)
 	if(QDELETED(src))
 		return
+	// A report that moved only the cell's charge and the charging lamp (every APC's cell crosses a percent together and the lamps flip together, so ~380 of
+	// these arrive in one frame every ten seconds and again when the station starts charging): applying one is the cost of the report, and what it moves may
+	// reach the APC a few ticks later without anything noticing (apc_cosmetic_report()).
+	if(new_equipment == equipment && new_lighting == lighting && new_environ == environ && new_status == main_status && !!alarm == power_alarm_raised)
+		power_event_count++ // reports heard (tests: a settled APC hears nothing)
+		apc_cosmetic_report(src, new_charging, cell && pushed_cell_ref == REF(cell) ? clamp(charge, 0, cell.maxcharge) : null)
+		return
+	pending_report_charge = null // a report that moves more than the charge and the lamp applies at once, and is the newer
+	pending_report_charging = null
 	var/cost_start = TICK_USAGE
 	if(cell && pushed_cell_ref == REF(cell))
 		cell.set_charge(clamp(charge, 0, cell.maxcharge))
@@ -626,6 +635,28 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	var/report_ms = TICK_USAGE_TO_MS(cost_start)
 	if(report_ms >= 50)
 		log_world("APC_REPORT_SLOW: [src] ([area]) took [round(report_ms, 0.1)] ms: charge write [round(cell_ms, 0.1)], charging setter [round(charging_ms, 0.1)], status setter [round(status_ms, 0.1)], alarm [round(alarm_ms, 0.1)], channel apply [round(apply_ms, 0.1)] (channels changed [channels_changed], structural [structural_changed], alarm raised [power_alarm_raised]) at charge [charge]")
+
+/// A report that moved only the charge (null: the cell is not the one Rust charges) and the charging lamp, applied: the cell's charge, the lamp and, when the
+/// lamp changed, the folded APC_REPORT line (a charging-only report is logged once per APC_REPORT_LOG_INTERVAL and says how many it stands for).
+/obj/machinery/power/apc/proc/apply_cosmetic_report(new_charging, new_charge)
+	var/cost_start = TICK_USAGE
+	if(!isnull(new_charge) && cell)
+		cell.set_charge(new_charge)
+	var/cell_ms = TICK_USAGE_TO_MS(cost_start)
+	var/setters_start = TICK_USAGE
+	var/lamp_changed = new_charging != charging
+	set_charging(new_charging)
+	apc_report_cost_note(lamp_changed, cell_ms, TICK_USAGE_TO_MS(setters_start))
+	if(lamp_changed)
+		if(COOLDOWN_FINISHED(src, report_log_cooldown))
+			log_world("APC_REPORT: [src] ([area]) channels [equipment]/[lighting]/[environ] charging [charging] status [main_status] alarm [power_alarm_raised] charge [isnull(new_charge) ? "unchanged" : new_charge][report_log_skipped ? " ([report_log_skipped] charging-only reports since the last line)" : ""]")
+			report_log_skipped = 0
+			COOLDOWN_START(src, report_log_cooldown, APC_REPORT_LOG_INTERVAL)
+		else
+			report_log_skipped++
+	var/report_ms = TICK_USAGE_TO_MS(cost_start)
+	if(report_ms >= 50)
+		log_world("APC_REPORT_SLOW: [src] ([area]) took [round(report_ms, 0.1)] ms: charge write [round(cell_ms, 0.1)], charging setter [round(report_ms - cell_ms, 0.1)] (lamp changed [lamp_changed])")
 
 /// The exact charge Rust holds now, into the seated cell (the report carries it only at whole-percent crossings): for a reader that needs it
 /// exact, such as a cell about to leave the APC.
@@ -815,6 +846,11 @@ READS_AS(/obj/machinery/power/apc/proc/power_failing, "supplying")
 
 /// Pushes the channel state to the area; fires area.power_change() (the machinery power signals) only when a channel changed. The push to
 /// Rust is push_to_rust()'s (generated: it follows the state it reads).
+/// The charge a cosmetic report carried that has not reached the cell yet (apc_cosmetic_report()).
+/obj/machinery/power/apc/var/tmp/pending_report_charge
+/// The lamp that report carried (null: nothing waits).
+/obj/machinery/power/apc/var/tmp/pending_report_charging
+
 /// How long the last channel write took (ms), for apc_flip_note().
 /obj/machinery/power/apc/var/tmp/flip_channels_ms = 0
 
@@ -1058,3 +1094,48 @@ GLOBAL_VAR_INIT(apc_report_setter_ms, 0)
 	if(total_ms < 25)
 		return
 	log_world("APC_FLIP: [A] ([A.area]) took [round(total_ms, 0.1)] ms: channel write [round(A.flip_channels_ms, 0.1)] ms, contract report [round(total_ms - A.flip_channels_ms, 0.1)] ms; the area holds [length(A.area?.power_machines)] machine(s)")
+
+/// A cosmetic report (the charge and the lamp) applies at once while a tick has taken fewer than this many of them; the rest wait their turn (apc_charge_drain()).
+GLOBAL_VAR_INIT(apc_charge_budget, 32)
+GLOBAL_VAR_INIT(apc_charge_tick, -1)
+GLOBAL_VAR_INIT(apc_charge_taken, 0)
+/// Handles of the APCs whose reported charge and lamp wait to be applied, oldest first (their `pending_report_*` vars are the values).
+GLOBAL_LIST_EMPTY(apc_charge_backlog)
+/// Reports deferred so far, for the log.
+GLOBAL_VAR_INIT(apc_charge_deferred, 0)
+
+/// `apc`'s reported charge and lamp reach it: now for the first `GLOB.apc_charge_budget` of a tick, otherwise queued behind them and applied, that many a tick,
+/// by apc_charge_drain(). What the newest report says is what gets applied (a newer report replaces an older one that has not been applied).
+/proc/apc_cosmetic_report(obj/machinery/power/apc/apc, charging, charge)
+	if(GLOB.apc_charge_tick != TIME_NOW(CLOCK_WORLD))
+		STAMP(GLOB, apc_charge_tick, CLOCK_WORLD)
+		GLOB.apc_charge_taken = 0
+	if(GLOB.apc_charge_taken < GLOB.apc_charge_budget && !length(GLOB.apc_charge_backlog))
+		GLOB.apc_charge_taken++
+		apc.pending_report_charge = null
+		apc.pending_report_charging = null
+		apc.apply_cosmetic_report(charging, charge)
+		return
+	GLOB.apc_charge_deferred++
+	if(isnull(apc.pending_report_charging))
+		GLOB.apc_charge_backlog += ref_token(apc)
+	apc.pending_report_charge = charge
+	apc.pending_report_charging = charging
+
+/// Applies the next `GLOB.apc_charge_budget` waiting reports: the native frame calls it after each delivery, so what waits is applied, that many a tick.
+/proc/apc_charge_drain()
+	var/applied = 0
+	while(length(GLOB.apc_charge_backlog) && applied < GLOB.apc_charge_budget)
+		var/token = GLOB.apc_charge_backlog[1]
+		GLOB.apc_charge_backlog.Cut(1, 2)
+		var/obj/machinery/power/apc/apc = resolve_token(token)
+		if(!istype(apc) || QDELETED(apc) || isnull(apc.pending_report_charging))
+			continue
+		var/charging = apc.pending_report_charging
+		var/charge = apc.pending_report_charge
+		apc.pending_report_charging = null
+		apc.pending_report_charge = null
+		if(apc.cell && apc.pushed_cell_ref != REF(apc.cell))
+			charge = null // the cell Rust charges is not the one seated now
+		apc.apply_cosmetic_report(charging, charge)
+		applied++
