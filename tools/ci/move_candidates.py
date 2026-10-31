@@ -46,8 +46,8 @@ def atom_new_override(lines):
     return False
 
 
-VERB_DEF = re.compile(r"^\s*((?:/[\w/]+?)?)/?verb/(\w+)")
-GRANTED_VERB = re.compile(r"\b(?:granted_verb|verb_entry)\(\s*(/[\w/]+)")
+VERB_DEF = re.compile(r"^\s*(?:(/[\w/]+?)/verb/|verb/)(\w+)")
+GRANTED_VERB = re.compile(r"\b(?:granted_verb|verb_entry)\(\s*(/[\w/]+)|\b(?:ability|driver)\s*=\s*(/[\w/]+/verb/\w+)")
 
 
 def non_client_verb(lines, granted=()):
@@ -57,7 +57,7 @@ def non_client_verb(lines, granted=()):
     for ln in lines:
         m = VERB_DEF.match(ln)
         if m:
-            owner = m.group(1) or cur
+            owner = m.group(1) or cur  # `verb/x` indented under a type block belongs to that block's type
             if owner + "/verb/" + m.group(2) in granted:
                 continue  # granted_verb()/verb_entry() is the final form of a verb a type or a source hands out
             if owner.split("/")[1:2] != ["client"]:
@@ -85,6 +85,11 @@ OOC_VERB_FILES = (
     "code/modules/point/point.dm", "code/modules/mob/language/language_panel.dm", "code/modules/client/verbs/suicide.dm",
     "code/modules/mob/combat_mode.dm", "code/modules/mob/autowhisper.dm", "code/game/skincmd.dm",
     "code/modules/player_tips/player_tips_controller.dm",
+    # ghost, OOC and settings verbs (their categories are VERB_CAT_GHOST_*, OOC_* and *_SETTINGS / PREFERENCES_*)
+    "code/_onclick/observer.dm", "code/modules/mob/dead/observer/free.dm", "code/modules/env_message/env_message.dm",
+    "code/game/objects/items/devices/communicator/messaging.dm", "code/game/objects/items/devices/communicator/phone.dm",
+    "code/modules/mob/living/simple_mob/subtypes/animal/animal.dm",
+    "code/modules/mob/living/carbon/human/species/station/traits/states/waddle.dm",
 )
 VERB_EXEMPT = ("code/modules/admin/", "/admin_commands.dm", "/contract_admin.dm")
 
@@ -267,9 +272,10 @@ def main(argv):
     granted = set()
     for f in dm:
         text = read(root, f)
-        if "granted_verb" in text or "verb_entry" in text:
+        if "granted_verb" in text or "verb_entry" in text or "ability" in text or "driver" in text:
             for ln in strip_comments(text):
-                granted.update(GRANTED_VERB.findall(ln))
+                for a, b in GRANTED_VERB.findall(ln):
+                    granted.add(a or b)
     rows = []
     for f in sorted(old):
         why = []

@@ -123,7 +123,6 @@
 #define VERB_CAT_SERVER_CHAT "Server.Chat"
 #define VERB_CAT_SERVER_CONFIG "Server.Config"
 #define VERB_CAT_SERVER_GAME "Server.Game"
-#define VERB_CAT_SLIME "Slime"
 #define VERB_CAT_SOFTWARE "Software"
 #define VERB_CAT_SOULCATCHER "Soulcatcher"
 #define VERB_CAT_SPECIAL_VERBS "Special Verbs"
