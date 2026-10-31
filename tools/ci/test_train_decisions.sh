@@ -204,4 +204,26 @@ mh_run() { # <from> <to>
 mh_docs="$(mh_run origin/master origin/lane/d)"; mh_code="$(mh_run origin/master origin/lane/a)"
 check "master changes that touch no heavy path are not an interaction (moved_heavy is empty for docs, names code)" '[ -z "$mh_docs" ] && [ "$mh_code" = "code/a.dm" ]'
 
+# est_secs: an estimator that cannot run is loud and never 9999 (that value rejected every batch candidate past the first, 30-31 October)
+es_run() { # <runtime override or empty> test...: prints est_secs' answer; the log line lands in $dd/state/log/train.log
+	local ov="$1"; shift
+	( set +u; export DQ_TRAIN_STATE="$dd/state" DQ_TRAIN_WT="$dd/no-wt" DQ_TRAIN_ORIGIN_REPO="$here" DQ_TRAIN_NO_START=1 DQ_TRAIN_RUNS_DIRS="$dd/no-runs"
+	  . "$here/tools/dq_train.sh" __lib; repo_dir() { echo "$here"; }; mkdir -p "$LOGS"
+	  if [ -n "$ov" ]; then est_runtime() { [ "$ov" != none ] && echo "$ov"; }; fi
+	  est_secs "$@" ) 2>/dev/null
+}
+mkdir -p "$dd/state/log"; : >"$dd/state/log/train.log"
+cat >"$dd/badrt" <<'RT'
+#!/usr/bin/env bash
+echo "boom: cannot read runs" >&2; exit 3
+RT
+chmod +x "$dd/badrt"
+es_ok="$(es_run '' dq_a dq_b)"
+es_none="$(es_run none /datum/unit_test/dq_a /datum/unit_test/dq_b dq_a)"
+es_bad="$(es_run "$dd/badrt" dq_a dq_b dq_c)"
+check "est_secs with a working runtime is the estimator's number (30 s base + 20 s per unknown test)" '[ "$es_ok" = 70 ]'
+check "est_secs with no runtime falls back to the no-history default, not 9999" '[ "$es_none" = 70 ]'
+check "est_secs with a failing runtime falls back to the default, not 9999" '[ "$es_bad" = 90 ]'
+check "an estimator failure is logged loudly with the reason" 'grep -q "ESTIMATOR FAILED (no node or bun" "$dd/state/log/train.log" && grep -q "ESTIMATOR FAILED (exit 3 via .*boom: cannot read runs" "$dd/state/log/train.log"'
+
 [ "$fail" -eq 0 ] && echo "ALL PASSED" || { echo "SOME FAILED"; exit 1; }
