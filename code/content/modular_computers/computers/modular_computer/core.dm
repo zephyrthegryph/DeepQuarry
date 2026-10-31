@@ -90,8 +90,16 @@
 		to_chat(user, "You emag \the [src]. It's screen briefly shows a \"OVERRIDE ACCEPTED: New software downloads available.\" message.")
 		return OP_OK
 
+/// The state a covered computer shows instead of its screen (null: the screen shows). A subtype answers this rather than overriding draw().
+/obj/item/modular_computer/proc/draw_covered_state()
+	return null
+
 /obj/item/modular_computer/draw(datum/look/look)
 	..()
+	var/covered = draw_covered_state()
+	if(covered)
+		look.state(covered)
+		return
 	look.state(icon_state_unpowered)
 	if(bsod)
 		look.overlay("bsod", icon = overlay_icon)

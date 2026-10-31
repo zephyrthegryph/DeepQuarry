@@ -738,7 +738,7 @@ GLOBAL_VAR_INIT(refresh_look_log_next, 0)
 		if(findtext(key, " "))
 			rows += key
 	rows = sortTim(rows, GLOBAL_PROC_REF(cmp_refresh_look_rows), FALSE)
-	var/text = "first [stats["first"] || 0], changed [stats["changed"] || 0], same [stats["same"] || 0]; audit steps [GLOB.refresh_sweep_ran] ran, [GLOB.refresh_sweep_skipped] skipped"
+	var/text = "first [stats["first"] || 0], changed [stats["changed"] || 0], same [stats["same"] || 0]; audit steps [GLOB.refresh_sweep_ran] ran, [GLOB.refresh_sweep_skipped] skipped; drawn ahead of the backlog near a client [GLOB.refresh_near_drawn]"
 	for(var/i in 1 to min(top, length(rows)))
 		text += "; [rows[i]] x[stats[rows[i]]]"
 	return text
@@ -889,6 +889,11 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 		return FALSE
 	var/msg = "REFRESH DRIFT: [A.type] [jointext(drift, ", ")] changed with no state_changed() mark[derived_drift_hint(A)]"
 	GLOB.refresh_drift += msg
+	// Production keeps the report too (a look the audit had to repair is a mark somebody forgot): the first few per type, with the running total.
+	var/static/list/drift_logged = list()
+	drift_logged["[A.type]"]++
+	if(drift_logged["[A.type]"] <= 3)
+		log_world("[msg] (#[drift_logged["[A.type]"]] of this type)")
 #if defined(UNIT_TESTS)
 	if(!GLOB.refresh_drift_expected && !GLOB.staleness_expected)
 		stack_trace(msg)
