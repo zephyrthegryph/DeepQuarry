@@ -54,6 +54,15 @@ mk code/modules/mob/say_old.dm '/mob/verb/say_verb_old(message as text)
 	set name = "Say"'
 mk code/modules/mob/say_new.dm '/mob/verb/say_verb_new(message as text)
 	set name = "Say"'
+mk code/modules/widgets/async_kept.dm '/proc/e()
+	INVOKE_ASYNC(GLOBAL_PROC_REF(f)) // ALLOW(scheduler): the callee blocks on a window and has no other way to run'
+mk code/modules/widgets/async_kept_above.dm '/proc/g()
+	// ALLOW(scheduler): the callee blocks on a window and has no other way to run
+	INVOKE_ASYNC(GLOBAL_PROC_REF(f))'
+mk code/modules/widgets/async_bare.dm '/proc/h()
+	INVOKE_ASYNC(GLOBAL_PROC_REF(f))'
+mk 'code/modules/client/client procs.dm' '/client/Topic(href, href_list, hsrc)
+	return ..()'
 mk code/modules/widgets/allowed.dm '/proc/b()
 	return 1 // ALLOW(scheduler): a reason long enough to count'
 mk code/modules/widgets/baselined.dm '/obj/item/widget/baselined'
@@ -110,6 +119,10 @@ expect code/controllers/globals.dm clean ""
 expect code/controllers/other.dm dirty "oldform:Destroy()"
 expect code/modules/mob/say_old.dm clean ""
 expect code/modules/mob/say_new.dm dirty "oldform:verb"
+expect code/modules/widgets/async_kept.dm clean ""
+expect code/modules/widgets/async_kept_above.dm clean ""
+expect code/modules/widgets/async_bare.dm dirty "oldform:INVOKE_ASYNC"
+expect 'code/modules/client/client procs.dm' clean ""
 expect code/modules/widgets/allowed.dm clean ""
 expect code/modules/widgets/allow_init.dm dirty "allow"
 expect code/modules/widgets/allow_mixed.dm dirty "allow"
@@ -125,7 +138,7 @@ expect code/modules/power/cable.dm clean "layering:/obj/item/known"
 if [ -z "$(state code/__defines/widgets.dm)" ] || [ "$(state code/__defines/widgets.dm)" = dirty ]; then ok "defines are never clean"; else bad "defines file reported clean"; fi
 [ "$(target code/modules/widgets/clean.dm)" = code/content/widgets/clean.dm ] && ok "content target" || bad "content target: $(target code/modules/widgets/clean.dm)"
 [ "$(target code/modules/power/cable.dm)" = code/domains/power/cable.dm ] && ok "domain target" || bad "domain target: $(target code/modules/power/cable.dm)"
-if [ "$(bash "$here/tools/ci/move_candidates.sh" --root "$tmpn" --clean | wc -l)" -eq 16 ]; then ok "--clean lists the clean files"; else bad "--clean count"; fi
+if [ "$(bash "$here/tools/ci/move_candidates.sh" --root "$tmpn" --clean | wc -l)" -eq 19 ]; then ok "--clean lists the clean files"; else bad "--clean count"; fi
 bash "$here/tools/ci/move_candidates.sh" --root "$tmpn" --summary | grep -q 'code/modules/widgets' && ok "--summary groups by directory" || bad "--summary"
 
 [ $fail -eq 0 ] && echo "move_candidates: all passed"
