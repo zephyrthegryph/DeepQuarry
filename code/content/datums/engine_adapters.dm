@@ -1,6 +1,7 @@
 // Actual downstream implementations of engine transport interfaces.
 /// The presentation lane's draw pass: the refresh engine's queue, then its sweep (code/engine/change/refresh.dm).
 /datum/time_scheduler/drain_presentation()
+	refresh_drain_near() // atoms around a client first: a join during the boot backlog sees a drawn map
 	if(!refresh_drain(src))
 		return FALSE
 	refresh_sweep_step()
