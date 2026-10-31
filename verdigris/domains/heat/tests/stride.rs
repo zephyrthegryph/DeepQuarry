@@ -101,3 +101,36 @@ fn a_write_from_outside_takes_a_plain_step_at_once() {
     assert!(r.field.stats().woke_cells > 0);
     assert!(r.temperature(10) < before + 50_000.0 / CAPACITY, "the written cell did not start to exchange");
 }
+
+/// Multi-rate edges (`FieldState::set_multirate`): a row of plating with a 0.2 J/K radiating plate at its end (a stiff edge, so the whole
+/// field wants 16 sub-steps) against the exact scheme (every edge every sub-step).
+///
+/// Tolerance: after 300 steps every cell is within 0.05 K of the exact run (the slow edges take one Euler step per advance where
+/// the exact run takes 16 shorter ones: the same first-order scheme at a longer step, measured 0.012 K), the conserved total matches to 1e-5 relative in both runs (f32 rounding of cell energies near 1e6 J), and the fast cell is within the physical bounds.
+#[test]
+fn multirate_edges_stay_within_the_tolerance_of_every_edge_every_substep() {
+    let build = |multirate: bool| {
+        let mut r = row(1);
+        r.field.set_multirate(multirate);
+        // A 0.2 J/K plate between the row and space: radiating, its edge is stiff (4 e s A T^3 / C is about 23 per second), so the
+        // field wants its 16 sub-steps for it while every conduction edge (k = 0.05) needs one.
+        r.geom.set(N - 1, Geom::cell(0.2));
+        r.cells.set(N - 1, SolidCell::at(0.2, 285.0, 0.05, 0.9, 0));
+        r
+    };
+    let (mut exact, mut multi) = (build(false), build(true));
+    let start = exact.conserved();
+    for step in 0..300 {
+        exact.step();
+        multi.step();
+        for run in [&exact, &multi] {
+            assert!((run.conserved() - start).abs() <= 1e-5 * start.abs(), "conservation (1e-5, f32 rounding of 16 sub-steps) at step {step}: {} vs {start}", run.conserved());
+        }
+    }
+    let worst = (0..N).map(|i| (exact.temperature(i) - multi.temperature(i)).abs()).fold(0.0f32, f32::max);
+    let (se, sm) = (exact.field.stats(), multi.field.stats());
+    eprintln!("multirate: worst {worst} K, exact substeps {} multi substeps {} slow edges {}/{}", se.substeps, sm.substeps, sm.slow_edges, sm.edges);
+    assert!(worst <= 0.05, "multi-rate drifted {worst} K from the exact scheme");
+    assert!(sm.slow_edges > 0, "no edge ran on the slow cadence: {sm:?}");
+    assert_eq!(se.slow_edges, 0);
+}

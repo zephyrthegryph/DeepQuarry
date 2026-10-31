@@ -220,6 +220,10 @@ pub trait FieldKind: Domain {
     fn quiet(before: &Self::Value, after: &Self::Value) -> bool {
         before == after
     }
+    /// Whether the field runs each edge on its own sub-step cadence (multi-rate; see `FieldState::advance`). Off (the default) runs
+    /// every edge every sub-step. The gas field keeps it off: its bulk flow couples the edges through pressure, and events that read
+    /// a cell a few steps after a large write (a reaction) are sensitive to the timing.
+    const MULTIRATE: bool = false;
     /// The most steps the field may take as one advance of that many steps' time, while everything awake is slow. 1 (the default)
     /// is the exact scheme. A field that sets more also sets [`STRIDE_TOLERANCE`](Self::STRIDE_TOLERANCE) and
     /// [`relative_change`](Self::relative_change); see [`FieldState::step`].
@@ -283,6 +287,10 @@ pub struct FieldStats {
     pub kept_edges: u32,
     /// Chunks the last step kept awake because a cell's local step or a reservoir's relax asked to.
     pub kept_local: u32,
+    /// Live edges of the last step that ran on a coarser cadence than the sub-step grid (multi-rate), and the grid's sub-steps.
+    pub slow_edges: u32,
+    /// Live edges of the last step in all (each counted once, not per sub-step).
+    pub edges: u32,
     /// Steps the field takes per advance now (1: every step advances).
     pub stride: u32,
     /// Steps skipped (owed to the next advance) so far.
@@ -331,6 +339,8 @@ pub struct FieldState<K: FieldKind> {
     stride_cap: u32,
     /// Steps taken since the last advance, this one included.
     owed: u32,
+    /// Whether edges run on their own sub-step cadence (see `advance`); off is the exact scheme.
+    multirate: bool,
 }
 
 impl<K: FieldKind> fmt::Debug for FieldState<K> {
@@ -435,6 +445,7 @@ impl<K: FieldKind> FieldState<K> {
             stride: 1,
             stride_cap: K::MAX_STRIDE,
             owed: 0,
+            multirate: K::MULTIRATE,
         }
     }
 
@@ -450,6 +461,12 @@ impl<K: FieldKind> FieldState<K> {
 
     pub fn set_config(&mut self, config: FieldConfig) {
         self.config = config;
+    }
+
+    /// Turns the multi-rate sub-step cadence off (every edge every sub-step: the exact scheme) or on (only a field that sets
+    /// [`FieldKind::MULTIRATE`] has it by default).
+    pub fn set_multirate(&mut self, on: bool) {
+        self.multirate = on;
     }
 
     /// Lowers (or restores, up to [`FieldKind::MAX_STRIDE`]) the stride cap; 1 runs the exact scheme.
@@ -600,11 +617,17 @@ impl<K: FieldKind> FieldState<K> {
                 self.grid_seen = revision;
             }
         }
+        // The largest relative size of a write from outside since the last advance (only measured when the field may stride: a
+        // coupling that nudges a few cells every step is not an event, a big write is).
+        let mut outside = 0.0f32;
         match &self.last_cells {
             Some(last) => {
                 for chunk in cells.chunks_differing_from(last) {
                     self.active[chunk] = true;
                     self.stats.woke_cells += 1;
+                    if self.stride_cap > 1 {
+                        outside = outside.max(self.max_relative_change(cells, last, &[chunk]));
+                    }
                 }
             }
             // First step: every chunk that has geometry (a chunk without it
@@ -621,7 +644,9 @@ impl<K: FieldKind> FieldState<K> {
                 self.stats.woke_geom += 1;
             }
         }
-        let woke = self.stats.woke_cells + self.stats.woke_geom + self.stats.woke_grid > 0 || self.last_cells.is_none();
+        let woke = self.stats.woke_geom + self.stats.woke_grid > 0
+            || self.last_cells.is_none()
+            || (self.stats.woke_cells > 0 && (self.stride_cap <= 1 || !(outside <= K::STRIDE_TOLERANCE)));
         self.owed += 1;
         if self.stride_cap > 1 && !woke && self.owed < self.stride {
             // Everything awake is slow and nothing was written from outside: this step's time is owed to the advance `stride` steps in.
@@ -701,7 +726,7 @@ impl<K: FieldKind> FieldState<K> {
         }
         self.stats.touched_chunks = u32::try_from(targets.len()).unwrap_or(u32::MAX);
 
-        let (stiffness, live_edges) = {
+        let (stiffness, mut live_edges) = {
             let this = &*self;
             let cells = &*cells;
             let per_chunk: Vec<(f32, Vec<LiveEdge>)> =
@@ -721,6 +746,29 @@ impl<K: FieldKind> FieldState<K> {
             } else {
                 1
             }
+        };
+        // Multi-rate: the sub-step grid is a power of two, and an edge needing fewer sub-steps than the grid has is computed on a
+        // coarser cadence (every `period` sub-steps over that much time), so one stiff edge no longer makes every edge pay for it.
+        // Each edge still moves the same flux out of one cell and into the other, so conservation is unchanged.
+        self.stats.slow_edges = 0;
+        self.stats.edges = u32::try_from(live_edges.iter().map(Vec::len).sum::<usize>()).unwrap_or(u32::MAX);
+        let substeps = if self.multirate && substeps > 1 {
+            let grid = substeps.next_power_of_two().min(prev_power_of_two(self.config.max_substeps.max(1)));
+            #[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            let wanted = |stiff: f32| -> u32 {
+                let n = (dt * self.faces * stiff).ceil();
+                if n.is_finite() && n >= 1.0 { (n.min(grid as f32) as u32).next_power_of_two().min(grid) } else { 1 }
+            };
+            live_edges.par_iter_mut().for_each(|edges| {
+                for e in edges {
+                    e.period = grid / wanted(e.stiff);
+                }
+            });
+            let slow = live_edges.iter().flatten().filter(|e| e.period > 1).count();
+            self.stats.slow_edges = u32::try_from(slow).unwrap_or(u32::MAX);
+            grid
+        } else {
+            substeps
         };
         self.stats.substeps = substeps;
         // The substeps one step needs on its own: how far the stride may grow before the cap (the monotone bound) is hit.
@@ -745,7 +793,7 @@ impl<K: FieldKind> FieldState<K> {
                 owners
                     .par_iter()
                     .zip(live_edges.par_iter())
-                    .map(|(&c, edges)| this.chunk_flux(c, edges, old, sub_dt, last))
+                    .map(|(&c, edges)| this.chunk_flux(c, edges, old, sub_dt, s, last))
                     .collect()
             };
             self.times.flux += take(&mut lap);
@@ -760,9 +808,37 @@ impl<K: FieldKind> FieldState<K> {
                 }
             }
             self.stats.live_edges = live;
+            // The chunks this sub-step writes at all: an owner with a summed flux, and the neighbour a strip crosses into. Writing
+            // visits every cell of a chunk and its six neighbours, so a chunk with nothing to take is not visited (at idle most
+            // sub-steps only move the few edges on their turn).
+            let mut dirty = vec![false; chunks];
+            for (&c, f) in owners.iter().zip(&fluxes) {
+                let (own, east, north, up) = (!f.net.sum.is_empty(), !f.east.sum.is_empty(), !f.north.sum.is_empty(), !f.up.sum.is_empty());
+                if own {
+                    dirty[c] = true;
+                }
+                if east || north || up {
+                    let nbs = self.chunk_neighbors(c, geom.grid);
+                    for (face, nb) in Face::ALL.iter().zip(nbs) {
+                        let crosses = match face {
+                            Face::East => east,
+                            Face::North => north,
+                            Face::Up => up,
+                            _ => false,
+                        };
+                        if let (true, Some(nb)) = (crosses, nb) {
+                            dirty[nb] = true;
+                        }
+                    }
+                }
+            }
+            let dirty = &dirty;
             let (dims, layout) = (self.dims, self.layout);
             let (owner, slot, fluxes) = (&owner, &slot, &fluxes);
             cells.par_for_listed_chunks_mut(&targets, |chunk, values| {
+                if !dirty[chunk] {
+                    return;
+                }
                 for (i, value) in values.iter_mut().enumerate() {
                     let Some(index) = layout.index_of(chunk, i) else {
                         continue;
@@ -968,7 +1044,6 @@ impl<K: FieldKind> FieldState<K> {
         let mut max = 0.0f32;
         let mut edges = Vec::new();
         self.for_live_edges(chunk, geom, |i, axis, a, ga, b, gb| {
-            edges.push(LiveEdge { i, axis, a, ga, b, gb });
             let s = cells
                 .with(a, |va| {
                     cells.with(b, |vb| {
@@ -977,9 +1052,9 @@ impl<K: FieldKind> FieldState<K> {
                 })
                 .flatten()
                 .unwrap_or(0.0);
-            if s.is_finite() {
-                max = max.max(s);
-            }
+            let s = if s.is_finite() { s.max(0.0) } else { 0.0 };
+            max = max.max(s);
+            edges.push(LiveEdge { i, axis, a, ga, b, gb, stiff: s, period: 1 });
         });
         (max, edges)
     }
@@ -990,6 +1065,7 @@ impl<K: FieldKind> FieldState<K> {
         edges: &[LiveEdge],
         old: &CowStore<K::Value>,
         dt: f32,
+        step: u32,
         last: bool,
     ) -> ChunkFlux<K::Flux> {
         let len = self.layout.chunk_len();
@@ -1003,18 +1079,24 @@ impl<K: FieldKind> FieldState<K> {
             wake: Vec::new(),
             live: 0,
         };
-        for &LiveEdge { i, axis, a, ga, b, gb } in edges {
+        for &LiveEdge { i, axis, a, ga, b, gb, period, .. } in edges {
+            let due = step % period == 0;
             let located = self.layout.locate(b);
             let nc = located.map_or(chunk, |(c, _)| c);
             // An edge into a sleeping chunk only flows once it is unsettled,
             // so a sleeping chunk is never written until it wakes.
             let boundary = self.active[chunk] != self.active[nc];
+            if !due && !(last || boundary) {
+                // A slow edge between its turns, nothing to judge: no reads at all (the point of the cadence).
+                continue;
+            }
             let Some((flux, settled)) = old
                 .with(a, |va| {
                     old.with(b, |vb| {
                         let (sa, sb) = (side(va, ga, self.faces), side(vb, gb, self.faces));
                         let settled = (last || boundary) && K::settled(sa, sb);
-                        (K::flux(sa, sb, dt), settled || !(last || boundary))
+                        let flux = if due { K::flux(sa, sb, dt * period as f32) } else { Default::default() };
+                        (flux, settled || !(last || boundary))
                     })
                 })
                 .flatten()
@@ -1022,6 +1104,17 @@ impl<K: FieldKind> FieldState<K> {
                 continue;
             };
             if boundary && settled {
+                continue;
+            }
+            if !due {
+                // A slow edge between its turns: only its settled test counts (it keeps its chunks awake).
+                if !settled {
+                    for c in [chunk, nc] {
+                        if !out.wake.contains(&c) {
+                            out.wake.push(c);
+                        }
+                    }
+                }
                 continue;
             }
             // `a` (here) gives the flux up, `b` receives it.
@@ -1061,6 +1154,10 @@ struct LiveEdge {
     ga: Geom,
     b: u32,
     gb: Geom,
+    /// The edge's own stiffness (1/s).
+    stiff: f32,
+    /// The edge is computed every `period`-th sub-step, over `period` sub-steps' time (1: every one). Set per step from `stiff`.
+    period: u32,
 }
 
 /// A step's view of the geometry: the per-cell store plus the grid's
@@ -1161,4 +1258,9 @@ pub fn add_field<K: FieldKind>(
         geometry,
         state,
     }
+}
+
+/// The largest power of two not above `n` (`n >= 1`).
+const fn prev_power_of_two(n: u32) -> u32 {
+    1 << (31 - n.leading_zeros())
 }

@@ -111,6 +111,8 @@ pub fn snapshot_json() -> String {
                     ("kept_local", st.kept_local),
                     ("substeps", st.substeps),
                     ("stride", st.stride),
+                    ("slow_edges", st.slow_edges),
+                    ("edges", st.edges),
                     ("rate_ppm", st.rate_ppm),
                 ] {
                     metrics.gauge(&format!("world.awake.field_{name}_{what}")).set(f64::from(v));
