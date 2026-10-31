@@ -10,6 +10,8 @@
 	var/unlocked = 0
 	var/open = 0
 	var/brightness_on = 8		//can't remember what the maxed out value is
+	/// A nearly flat cell makes the light flicker for a moment (the draw dims it while this is set).
+	var/flickering = FALSE
 
 
 CAPABILITIES(/obj/machinery/floodlight)
@@ -28,10 +30,19 @@ CAPABILITIES(/obj/machinery/floodlight)
 /obj/machinery/floodlight/proc/appearance_battery()
 	return (open && cell) ? 1 : 0
 
-/// The look (the draw sweep: from its template).
+/// Whether the light burns: switched on, with a cell in it. A cell that cannot feed a step is the step's to find (work_step() switches the light off), so a drained cell
+/// turns the switch off and the look follows it: the draw reads no charge, which changes every step and is not tracked.
+/obj/machinery/floodlight/proc/powered_on()
+	return on && cell
+
+/// The look (the draw sweep: from its template). The light is part of it: lit while it is switched on and its cell can feed it, dark otherwise.
 /obj/machinery/floodlight/draw(datum/look/look)
 	..()
 	look.state("flood[open ? "o" : ""][appearance_battery() ? "b" : ""]0[on]")
+	if(powered_on())
+		look.glow(flickering ? brightness_on / 2 : brightness_on, flickering ? brightness_on / 4 : brightness_on / 2)
+	else
+		look.glow(GLOW_OFF)
 
 /obj/machinery/floodlight/proc/work_step(datum/act/timer/A)
 	if(!cell || (cell.charge < (use * CELLRATE)))
@@ -42,14 +53,11 @@ CAPABILITIES(/obj/machinery/floodlight)
 
 	// If the cell is almost empty rarely "flicker" the light. Aesthetic only.
 	if((cell.percent() < 10) && prob(5))
-		set_light_range(brightness_on/2)
-		set_light_power(brightness_on/4)
+		set_flickering(TRUE)
 		after(src, 2 SECONDS, PROC_REF(flicker_restore))
 
 /obj/machinery/floodlight/proc/flicker_restore()
-	if(on)
-		set_light_range(brightness_on)
-		set_light_power(brightness_on/2)
+	set_flickering(FALSE)
 
 
 // Returns 0 on failure and 1 on success
@@ -60,16 +68,12 @@ CAPABILITIES(/obj/machinery/floodlight)
 		return 0
 
 	set_on(1)
-	set_light_range(brightness_on)
-	set_light_power(brightness_on/2)
-	set_light_on(TRUE)
 	if(loud)
 		visible_message("\The [src] turns on.")
 	return 1
 
 /obj/machinery/floodlight/proc/turn_off(loud = 0)
 	set_on(0)
-	set_light_on(FALSE)
 	if(loud)
 		visible_message("\The [src] shuts down.")
 
@@ -101,7 +105,6 @@ CAPABILITIES(/obj/machinery/floodlight)
 
 		rel_take(src, nameof(cell))
 		set_on(0)
-		set_glow(src, GLOW(0, null, null))
 		to_chat(user, "You remove the power cell")
 		return TRUE
 
