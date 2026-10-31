@@ -142,3 +142,15 @@
 	for(var/key in list("evolve", "reproduce"))
 		var/datum/op_result/R = dq_ability_menu_op(S, key)
 		TEST_ASSERT_EQUAL(R?.outcome, ACT_REFUSED, "[key] is refused while pacified")
+
+/// The malfunction abilities that used `as mob in list` arguments pick a target by name from a request; malf_picked() finds it again.
+/datum/unit_test/dq_ability_ops_malf_picked_finds_by_name
+
+/datum/unit_test/dq_ability_ops_malf_picked_finds_by_name/Run()
+	var/mob/living/carbon/human/first = allocate(/mob/living/carbon/human, test_floor())
+	var/mob/living/carbon/human/second = allocate(/mob/living/carbon/human, test_floor())
+	first.name = "Alpha Unit"
+	second.name = "Beta Unit"
+	TEST_ASSERT_EQUAL(malf_picked(list(first, second), "Beta Unit"), second, "the second candidate is found by its name")
+	TEST_ASSERT_EQUAL(malf_picked(list(first, second), "Alpha Unit"), first, "the first candidate is found by its name")
+	TEST_ASSERT_NULL(malf_picked(list(first, second), "Gamma Unit"), "an unknown name finds nobody")

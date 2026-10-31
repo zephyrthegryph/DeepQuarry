@@ -54,3 +54,28 @@
 	rider.leave_passenger_compartment()
 	TEST_ASSERT_NULL(seat.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER), "the verb gets the passenger out of an unlocked compartment")
 	TEST_ASSERT(!(/mob/living/carbon/proc/leave_passenger_compartment in rider.verbs), "leaving revokes the Eject verb")
+
+/// The sleeper's slow release: the pilot starts it from the exosuit's menu, the occupant starts it by resisting. (The minute itself is the framework's
+/// after(); the test runs the completion directly, since a minute of test clock also ticks the humans' life through an unrelated atmospherics bind.)
+/datum/unit_test/dq_mecha_sleeper_release_sequence
+
+/datum/unit_test/dq_mecha_sleeper_release_sequence/Run()
+	test_driver_begin()
+	var/turf/T = test_floor()
+	var/obj/mecha/working/ripley/mech = allocate(/obj/mecha/working/ripley, T)
+	var/obj/item/mecha_parts/mecha_equipment/tool/sleeper/sleeper = allocate(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, T)
+	sleeper.attach(mech)
+	var/mob/living/carbon/human/pilot = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/patient = allocate(/mob/living/carbon/human, T)
+	TEST_ASSERT(move_into(mech, MECHA_SLOT_PILOT, pilot), "the pilot takes the seat")
+	var/datum/op_result/empty = test_menu(pilot, mech, "mecha_sleeper_release")
+	TEST_ASSERT_EQUAL(empty?.outcome, ACT_REFUSED, "with nobody in the sleeper the entry is refused")
+	TEST_ASSERT(move_into(sleeper, OCCUPANT_SLOT_MECHA_SLEEPER, patient), "the patient takes the sleeper")
+	var/datum/op_result/started = test_menu(pilot, mech, "mecha_sleeper_release")
+	TEST_ASSERT(test_op_committed(started), "the pilot starts the release")
+	TEST_ASSERT_EQUAL(sleeper.slot_item(OCCUPANT_SLOT_MECHA_SLEEPER), patient, "the patient is still inside right after it starts")
+	sleeper.release_sequence_done(patient)
+	TEST_ASSERT_NULL(sleeper.slot_item(OCCUPANT_SLOT_MECHA_SLEEPER), "when the release completes, the patient is out")
+	TEST_ASSERT(move_into(sleeper, OCCUPANT_SLOT_MECHA_SLEEPER, patient), "the patient takes the sleeper again")
+	sleeper.container_resist(patient)
+	TEST_ASSERT_EQUAL(sleeper.slot_item(OCCUPANT_SLOT_MECHA_SLEEPER), patient, "resisting starts the sequence and does not free the patient at once")
