@@ -192,6 +192,12 @@
 		return eyeobj
 	return src
 
+/// The map width a viewport fit may ask for: the map and the chat side each keep FIT_VIEWPORT_MIN_SIDE pixels
+/// (or half the window when it is narrower than that).
+/proc/fit_viewport_clamp_width(desired_width, split_width)
+	var/map_floor = min(FIT_VIEWPORT_MIN_SIDE, round(split_width / 2))
+	return clamp(desired_width, map_floor, max(map_floor, split_width - FIT_VIEWPORT_MIN_SIDE))
+
 /client/verb/fit_viewport()
 	set name = "Fit Viewport"
 	set category = VERB_CAT_OOC_CLIENT_SETTINGS
@@ -240,12 +246,17 @@
 	var/split_size = splittext(sizes["mainwindow.mainvsplit.size"], "x")
 	var/split_width = text2num(split_size[1])
 
-	// Avoid auto-resizing the statpanel and chat into nothing.
-	desired_width = min(desired_width, split_width - 300)
+	if(split_width <= 0)
+		CRASH("fit_viewport: mainvsplit reported width [split_width] (sizes: [size_params])")
+
+	// Keep both sides usable: the chat/statpanel keeps at least FIT_VIEWPORT_MIN_SIDE pixels and the
+	// map at least that or half the window, so a map measured while it was still collapsed can't hand
+	// the whole window to the chat.
+	desired_width = fit_viewport_clamp_width(desired_width, split_width)
 
 	// Calculate and apply a best estimate
 	// +4 pixels are for the width of the splitter's handle
-	var/pct = 100 * (desired_width + 4) / split_width
+	var/pct = clamp(100 * (desired_width + 4) / split_width, FIT_VIEWPORT_MIN_PCT, FIT_VIEWPORT_MAX_PCT)
 	winset(src, SKIN_MAIN_SPLIT, "splitter=[pct]")
 
 	// Apply an ever-lowering offset until we finish or fail: one round trip per step.
@@ -266,7 +277,7 @@
 		// if we overshot, halve the delta and reverse direction
 		delta = -delta/2
 
-	pct += delta
+	pct = clamp(pct + delta, FIT_VIEWPORT_MIN_PCT, FIT_VIEWPORT_MAX_PCT)
 	winset(src, SKIN_MAIN_SPLIT, "splitter=[pct]")
 	if(safety < 10)
 		dx_winget(src, src, "mapwindow", "size", PROC_REF(fit_viewport_step), desired_width, split_width, pct, delta, safety + 1)

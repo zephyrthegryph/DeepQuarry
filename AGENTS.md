@@ -41,7 +41,7 @@ Add, move or delete a file and build (every target that compiles or lints DM reg
 `python3 tools/build/gen_dme.py`; commit the result. `bash tools/ci/check_ratchets.sh` fails on a stale manifest and on a macro used
 before its `#define` in the generated order. A new order dependency (a macro in an ordinary file, a second definition of a type's var
 or proc in another file) needs a `before` rule; `bash tools/ci/dme_order_equiv.sh` compiles a reference order against the generated
-one and compares the worlds with dmb-equiv. Test files are listed in `code/modules/unit_tests/_unit_tests.dm` (still by hand).
+one and compares the worlds with dmb-equiv. Test files are listed in `code/tests/unit_tests/_unit_tests.dm` (still by hand).
 
 ---
 
