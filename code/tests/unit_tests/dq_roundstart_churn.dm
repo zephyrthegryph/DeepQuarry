@@ -127,3 +127,39 @@
 	TEST_ASSERT(!O.refresh_queued, "a client near it draws it ahead of the backlog")
 	qdel(O)
 	refresh_flush()
+
+/// A cell in air at its own temperature starts no material service (it would sample, find nothing and retire); a custom assembly needs one.
+/datum/unit_test/dq_cell_service_only_when_needed
+
+/datum/unit_test/dq_cell_service_only_when_needed/Run()
+	var/turf/T = test_floor()
+	var/datum/gas_mixture/air = T.return_air()
+	if(air && abs(air.return_temperature() - T20C) < MATERIAL_THERMAL_RESOLUTION)
+		var/obj/item/cell/high/warm = new(T)
+		TEST_ASSERT_NULL(material_service_of(warm), "a cell at its air's temperature starts no service")
+		TEST_ASSERT(!warm.material_service_needed_at_start(), "and still needs none")
+		qdel(warm)
+	var/obj/item/cell/high/custom = new(T)
+	material_assembly(custom).custom = TRUE
+	TEST_ASSERT(custom.material_service_needed_at_start(), "a custom assembly needs its service at once")
+	qdel(custom)
+
+/// A locker takes in everything it starts with and every loose item on its tile: none of it is refused for room (the full-map boot logged fifteen such
+/// refusals, which fail the boot gate of every full-map run).
+/datum/unit_test/dq_lockers_hold_their_contents
+
+/datum/unit_test/dq_lockers_hold_their_contents/Run()
+	var/turf/origin = test_floor()
+	var/list/refused = list()
+	var/spot = 0
+	for(var/type in list(/obj/structure/closet/secure_closet/medical3, /obj/structure/closet/wardrobe/red, /obj/structure/closet/wardrobe/science_white, /obj/structure/closet/secure_closet/explorer, /obj/structure/closet/secure_closet/pilot, /obj/structure/closet/secure_closet/pathfinder))
+		var/before = GLOB.boot_noise_count
+		var/turf/T = locate(origin.x + 2 * ++spot, origin.y, origin.z) // a tile of its own: a locker takes in the loose items on its tile
+		var/obj/structure/closet/C = new type(T)
+		refresh_flush()
+		if(GLOB.boot_noise_count != before)
+			refused += "[type] ([GLOB.boot_noise_count - before]): [jointext(GLOB.boot_noise_first, " | ")]"
+		qdel(C)
+		for(var/obj/item/spilled in T) // the locker spills what it held when it goes
+			qdel(spilled)
+	TEST_ASSERT_EQUAL(length(refused), 0, "lockers refused their own contents: [jointext(refused, "; ")]")
