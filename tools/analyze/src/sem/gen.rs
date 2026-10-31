@@ -42,12 +42,17 @@ pub const OUT_DIR: &str = "code/engine/_generated";
 /// in code/tests/_tests.dm and code/tests/unit_tests/_unit_tests.dm).
 pub const TEST_ONLY_DIRS: &[&str] = &["code/tests/", "code/modules/unit_tests/"];
 
+/// Under [`TEST_ONLY_DIRS`] but not test-only: the benchmark scenarios. The generators have always treated them as ordinary
+/// declarations (their lines unguarded, their reads analysed), so a `-DBENCHMARK` build gets the same generated code wherever the
+/// files sit; moving them under `code/tests/` must not change what a generator writes for them.
+pub const NOT_TEST_ONLY: &[&str] = &["code/tests/benchmarks/"];
+
 /// The guard a generator wraps test-only declarations in.
 pub const TEST_GUARD: &str = "#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)";
 
 /// Whether a source file is compiled only in a test build, so whatever a generator writes for it must sit inside [`TEST_GUARD`].
 pub fn test_only(rel: &str) -> bool {
-    TEST_ONLY_DIRS.iter().any(|d| rel.starts_with(d))
+    TEST_ONLY_DIRS.iter().any(|d| rel.starts_with(d)) && !NOT_TEST_ONLY.iter().any(|d| rel.starts_with(d))
 }
 
 /// The type a top-level definition line names: `/datum/x` of `/datum/x`, `/datum/x/var/y = 1`, `/datum/x/proc/f()` or `/datum/x/f()`.
@@ -537,6 +542,9 @@ mod tests {
         assert!(test_only("code/tests/engine/fixtures.dm"));
         assert!(test_only("code/modules/unit_tests/clothing_tests.dm"));
         assert!(!test_only("code/game/objects/items.dm"));
+        // the benchmark scenarios sit under code/tests/ but generate as ordinary code
+        assert!(!test_only("code/tests/benchmarks/dx_refresh.dm"));
+        assert!(test_only("code/tests/unit_tests/x.dm"));
     }
 
     #[test]
