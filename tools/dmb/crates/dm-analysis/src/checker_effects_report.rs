@@ -85,7 +85,7 @@ pub(crate) fn purity<A:ReportAccess>(access:&A,resolver:&(impl Resolver+?Sized),
                 }
                 at=parent(access,resolver,target,&budget.admission_view())?;
             }
-        
+
 Ok(())})();if pending.is_ok(){let after=budget.output_bound(&output)?.checked_add(coordinate_charge::<_,A::Error>(&targets)?).ok_or("effect report retained coordinate overflow")?;finish_group(access,&budget,marker,marked_used,before,after)?;}pending?;}
         // The pinned checker iterates HashMap directive groups and prints
         // immediately: only inter-target permutations are unspecified. Keep
@@ -195,7 +195,7 @@ Ok(())})();if pending.is_ok(){let after=budget.output_bound(&output)?.checked_ad
                     budget.queue(&mut queue, (edge.callee, next))?;
                 }
             }
-        
+
 Ok(())})();if pending.is_ok(){let after=budget.output_bound(&output)?;finish_group(access,&budget,marker,marked_used,before,after)?;}pending?;}
         Ok(output)
     }
@@ -224,7 +224,7 @@ pub(crate) fn sleep<A:ReportAccess>(access:&A,resolver:&(impl Resolver+?Sized),p
                 }
                 at=parent(access,resolver,target,&budget.admission_view())?;
             }
-        
+
 Ok(())})();if pending.is_ok(){let after=0usize.checked_add(coordinate_charge::<_,A::Error>(&targets)?).ok_or("effect report retained coordinate overflow")?;finish_group(access,&budget,marker,marked_used,before,after)?;}pending?;}
         // Same TARGET_GROUP_ORDER_CONTRACT as purity: only whole target-group
         // permutation is unspecified; each target gets a fresh visited/BFS below.
@@ -338,7 +338,7 @@ Ok(())})();if pending.is_ok(){let after=0usize.checked_add(coordinate_charge::<_
                     budget.queue(&mut queue, (edge.callee, next))?;
                 }
             }
-        
+
 Ok(())})();if pending.is_ok(){let after=budget.output_bound(&output)?;finish_group(access,&budget,marker,marked_used,before,after)?;}pending?;}
         Ok(output)
     }

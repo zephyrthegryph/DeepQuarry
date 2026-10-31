@@ -16,7 +16,7 @@ impl<'a> ArchivedOrder<'a>{
   heapsort(&mut groups,&mut|left,right|{checkpoint().map_err(PolicyFailure::Operational)?;Ok(left.cmp(right))})?;groups.dedup_by(|right,left|right.0==left.0&&right.1==left.1);
   let mut rows=allocate(archive.len(),&budget,work)?;for(ordinal,body)in archive.occurrences().iter().enumerate(){checkpoint().map_err(PolicyFailure::Operational)?;let member=tree.member(body.member).ok_or("checker body member absent")?;let owner=tree.type_node(member.owner).ok_or("checker body owner absent")?;let path=tree.symbols().text(owner.path).ok_or("checker owner path absent")?;let first=groups.binary_search_by_key(&(member.owner,member.name),|row|(row.0,row.1)).ok().map(|at|groups[at].2).ok_or("checker callable encounter absent")?;let occurrence=archive.callables().identity(ordinal).ok_or("checker callable occurrence absent")?.occurrence;rows.push(OrderedRow{path,first,override_value:member.definition!=DefinitionMode::Declare,occurrence,ordinal});}
   heapsort(&mut rows,&mut|left,right|{checkpoint().map_err(PolicyFailure::Operational)?;Ok(path_order(left.path,right.path,checkpoint)?.then_with(||(left.first,left.override_value,left.occurrence,left.ordinal).cmp(&(right.first,right.override_value,right.occurrence,right.ordinal))))})?;drop(groups);checkpoint().map_err(PolicyFailure::Operational)?;if admission.is_denied(){return Err(deny(&budget,"checker order operation denied"))}Ok(Self{rows})
- 
+
   })();
   if matches!(&pending,Err(PolicyFailure::Operational(_))){return pending}checkpoint().map_err(PolicyFailure::Operational)?;admission.reserve_external(0).map_err(PolicyFailure::Operational)?;pending
  }
