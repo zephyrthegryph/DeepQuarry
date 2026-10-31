@@ -25,7 +25,7 @@ pub fn parts() -> Vec<Part> {
         .allow(Allow::Strict)
         .needle("after("),
         Part::new(
-            "move_override_direct_arg",
+            "move_override_without_a_direct_argument",
             "Move override without a direct argument",
             "A Move() override must take (atom/newloc, direct = 0, movetime): callers pass `direct =` by name (handle_fall), and an override without it runtimes with a bad arg name.",
             Files::Code,
