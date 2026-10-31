@@ -4,7 +4,6 @@
 #define UAV_PACKED 3
 
 /obj/item/uav
-	light_on = FALSE // its declared light starts switched off (code/modules/lighting/glow.dm)
 	name = "recon skimmer"
 	desc = "A semi-portable reconnaissance drone that folds into a backpack-sized carrying case."
 	icon = 'icons/obj/uav.dmi'
@@ -44,7 +43,7 @@ CAPABILITIES(/obj/item/uav)
 	configure(atom_rules(light_system = MOVABLE_LIGHT_DIRECTIONAL))
 	configure(movable_motion(cone_y = 5))
 	setup(PROC_REF(prepare_ion_trail))
-	configure(light_glow(range = 4, power = 4))
+	look_glow(GLOW(4, 4, null), when = PROC_REF(is_flying)) // it lights while it flies, whatever put it in that state
 	ref_many(nameof(masters), /mob)
 	every(2 SECONDS, then(PROC_REF(uav_step)), when = PROC_REF(is_flying))
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type))
@@ -297,7 +296,6 @@ CAPABILITIES(/obj/item/uav)
 
 	set_state(UAV_ON)
 	start_hover()
-	set_light_on(TRUE)
 	no_masters_time = 0
 	visible_message(span_notice("[nickname] buzzes and lifts into the air."))
 
@@ -307,7 +305,6 @@ CAPABILITIES(/obj/item/uav)
 
 	set_state(UAV_OFF)
 	stop_hover()
-	set_light_on(FALSE)
 	clear_masters()
 	visible_message(span_notice("[nickname] gracefully settles onto the ground."))
 

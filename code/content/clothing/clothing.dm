@@ -450,6 +450,8 @@ CAPABILITIES(/obj/item/clothing/gloves/ring)
 
 
 	var/light_overlay = "helmet_light"
+	/// The helmet lamp is switched on. The light it casts is derived from this by the look (head_glow()).
+	var/lamp_lit = FALSE
 
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/head/mob_teshari.dmi',
@@ -461,6 +463,7 @@ CAPABILITIES(/obj/item/clothing/head)
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	configure(atom_rules(light_system = MOVABLE_LIGHT_DIRECTIONAL))
 	configure(movable_motion(cone_y = 11))
+	look_glow(PROC_REF(head_glow), when = nameof(lamp_lit))
 	configure(item_worn(covers = HEAD, slots = SLOT_HEAD))
 	configure(item_protection(heat_parts = HEAD, cold_parts = HEAD))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HAT, pickup = SFX_ITEMS_PICKUP_HAT))
@@ -476,16 +479,20 @@ CAPABILITIES(/obj/item/clothing/head)
 	var/mob/user = A.actor
 	if(special_handling)
 		return OP_DECLINE
-	if(glow_of(src).range)
+	if(glow_of_type(type).range)
 		if(!isturf(user.loc))
 			to_chat(user, "You cannot toggle the light while in this [user.loc]")
 			return OP_DECLINE
 		update_flashlight(user)
-		to_chat(user, "You [light_on ? "enable" : "disable"] the helmet light.")
+		to_chat(user, "You [lamp_lit ? "enable" : "disable"] the helmet light.")
 	return OP_DECLINE
 
+/// The light the lamp casts: its type's range (a look that goes dark zeroes the instance's range), the power and colour it has.
+/obj/item/clothing/head/proc/head_glow(datum/act/A)
+	return GLOW(glow_of_type(type).range, glow_of(src).power, glow_of(src).color)
+
 /obj/item/clothing/head/proc/update_flashlight(mob/user = null)
-	set_light_on(!light_on) // the setter reconciles the light source
+	set_lamp_lit(!lamp_lit)
 
 	user.update_mob_action_buttons()
 
@@ -516,7 +523,7 @@ CAPABILITIES(/obj/item/clothing/head)
 /// of whoever wears it (an effect of the look: the worn overlay stays the mob's own path).
 /obj/item/clothing/head/draw(datum/look/look)
 	..()
-	if(light_on)
+	if(lamp_lit)
 		look.overlay(look_cached_image("[light_overlay]-item", 'icons/obj/light_overlays.dmi', light_overlay))
 
 
