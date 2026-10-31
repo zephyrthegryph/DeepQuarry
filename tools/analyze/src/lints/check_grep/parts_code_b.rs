@@ -5,8 +5,8 @@ use super::framework::*;
 
 /// The `d3_pool` calls of the script: pattern and the paths it searches.
 static D3: &[(&str, &[&str])] = &[
-    (r"^[[:space:]]*var/(damage|damage_overlay)\b", &["code/game/turfs/simulated/walls.dm"]),
-    (r"^/turf/simulated/wall[^[:space:]]*/(take_damage|update_damage)\(", &["code/game/turfs"]),
+    (r"^[[:space:]]*var/(damage|damage_overlay)\b", &["code/content/turfs/simulated/walls.dm"]),
+    (r"^/turf/simulated/wall[^[:space:]]*/(take_damage|update_damage)\(", &["code/game/turfs", "code/content/turfs/flooring/seasonal.dm", "code/content/turfs/simulated/fancy_shuttles.dm", "code/content/turfs/simulated/floor_attackby.dm", "code/content/turfs/simulated/floor_icon.dm", "code/content/turfs/simulated/floor_types.dm", "code/content/turfs/simulated/lava.dm", "code/content/turfs/simulated/nanogoop.dm", "code/content/turfs/simulated/outdoors/grass.dm", "code/content/turfs/simulated/outdoors/outdoors.dm", "code/content/turfs/simulated/outdoors/survival_action.dm", "code/content/turfs/simulated/wall_attacks.dm", "code/content/turfs/simulated/wall_construction.dm", "code/content/turfs/simulated/wall_types.dm", "code/content/turfs/simulated/walls.dm", "code/content/turfs/space/space.dm", "code/content/turfs/turf.dm", "code/content/turfs/turf_changing.dm", "code/content/turfs/unsimulated/sky.dm"]),
     (r"^[[:space:]]+var/integrity\b|\bintegrity[[:space:]]*([-+*/]?=[^=]|\+\+|--)", &["code/modules/blob2"]),
     (r"\bblob_(max_)?health\b", &["code/modules/blob"]),
     (
@@ -24,7 +24,7 @@ static D3: &[(&str, &[&str])] = &[
         r"\bhealth\b",
         &["code/game/objects/items/weapons/material", "code/content/items/weapons/material", "code/content/items/weapons/traps.dm", "code/modules/vore/smoleworld"],
     ),
-    (r"\.integrity[[:space:]]*([-+*/]?=[^=]|\+\+|--)", &["code/game/mecha"]),
+    (r"\.integrity[[:space:]]*([-+*/]?=[^=]|\+\+|--)", &["code/content/mecha/combat/fighter.dm", "code/content/mecha/components/_component.dm", "code/content/mecha/equipment/mecha_equipment.dm", "code/content/mecha/equipment/tools/clamp.dm", "code/content/mecha/equipment/tools/drill.dm", "code/content/mecha/equipment/tools/passenger.dm", "code/content/mecha/equipment/tools/sleeper.dm", "code/content/mecha/equipment/weapons/energy/pulse.dm", "code/content/mecha/equipment/weapons/weapons.dm", "code/content/mecha/mecha.dm", "code/content/mecha/mecha_construction_paths.dm", "code/content/mecha/mecha_control_console.dm", "code/content/mecha/space/shuttle.dm", "code/content/mecha/working/ripley.dm"]),
 ];
 
 const D3_RULES: [&str; 11] = [
@@ -331,7 +331,7 @@ pub fn parts() -> Vec<Part> {
             "medical_condition_severity_writes",
             "medical condition severity writes",
             "direct medical-condition severity write detected. Use set_severity() or adjust_severity() so condition-dependent systems receive invalidation signals.",
-            Files::Under(&["code/modules/medical", "code/modules/contracts"], &["dm"]),
+            Files::Under(&["code/content/medical/book/conditions_tab.dm", "code/content/medical/conditions/limbs.dm", "code/content/medical/conditions/vital_systems.dm", "code/content/medical/conditions/wounds.dm", "code/content/medical/stabilisation/stasis.dm", "code/modules/contracts"], &["dm"]),
             line(r"\.severity[[:space:]]*[-+*/]?=[^=]"),
         ),
         Part::new(
@@ -349,7 +349,20 @@ pub fn parts() -> Vec<Part> {
                 &[
                     "code/modules/mob/living/bot",
                     "code/content/mob/living/bot",
-                    "code/game/mecha",
+                    "code/content/mecha/combat/fighter.dm",
+                    "code/content/mecha/components/_component.dm",
+                    "code/content/mecha/equipment/mecha_equipment.dm",
+                    "code/content/mecha/equipment/tools/clamp.dm",
+                    "code/content/mecha/equipment/tools/drill.dm",
+                    "code/content/mecha/equipment/tools/passenger.dm",
+                    "code/content/mecha/equipment/tools/sleeper.dm",
+                    "code/content/mecha/equipment/weapons/energy/pulse.dm",
+                    "code/content/mecha/equipment/weapons/weapons.dm",
+                    "code/content/mecha/mecha.dm",
+                    "code/content/mecha/mecha_construction_paths.dm",
+                    "code/content/mecha/mecha_control_console.dm",
+                    "code/content/mecha/space/shuttle.dm",
+                    "code/content/mecha/working/ripley.dm",
                     "code/game/objects/items/weapons/medigun",
                     "code/content/items/weapons/medigun",
                     "code/game/machinery/cryo.dm",
