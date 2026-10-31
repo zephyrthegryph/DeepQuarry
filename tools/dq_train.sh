@@ -508,6 +508,25 @@ mark_landed() { # <branch> <snapshot tip> <master sha>
 	fi
 	tlog "LANDED $b (tip ${tip:0:10}) in origin/master ${sha:0:10}"
 }
+# A batch whose setup failed twice judges no lane ("# SETUP ERROR twice" in dq_merge_batch's output: the gates' infra, e.g. `gen`, failed on the merged
+# tree). The lanes were then deferred, written to bisect.lanes and retried alone every ~100 s with the whole train waiting behind them: 30 cycles
+# (00:04-01:33Z 31 October) for one lane whose merge left a stale generated include. A lane gets DQ_TRAIN_SETUP_ERROR_MAX (2) such cycles, then is
+# bounced with the infra message and the log; it re-enqueues once fixed. Prints the lanes still to retry.
+note_setup_errors() { # <merge_batch output file> <deferred lanes...>
+	local out="$1" b n why; shift
+	grep -q '^# SETUP ERROR twice' "$out" 2>/dev/null || { printf '%s\n' "$@" | tr '\n' ' '; return 0; }
+	why="$(grep -m1 -E 'INFRA:|SETUP ERROR: the gates' "$out" | sed 's/^[ =>]*//' | head -c 300)"
+	for b in "$@"; do
+		n="$(qget "$(qfile "$b")" setup_errors)"; n=$(( ${n:-0} + 1 ))
+		if grep -q '^setup_errors=' "$(qfile "$b")" 2>/dev/null; then qedit "$b" -e "s/^setup_errors=.*/setup_errors=$n/"; else qedit "$b" -e "\$a setup_errors=$n"; fi
+		echo "$(now) train[$$]: ################ SETUP ERROR: $b: the gates' infrastructure failed twice on this batch ($n of ${DQ_TRAIN_SETUP_ERROR_MAX:-2}): ${why:-no reason found}; log $out" | tee -a "$LOGS/train.log" >&2
+		if [ "$n" -ge "${DQ_TRAIN_SETUP_ERROR_MAX:-2}" ]; then
+			bounce "$b" "the gates' setup failed in $n cycles on its merge (${why:-see the log}); usually a generated file or include that its merge leaves stale: rebase on master, run tools/build/build.sh gen, enqueue again. See $out" "$out" >&2
+			continue
+		fi
+		printf '%s ' "$b"
+	done
+}
 bump_attempts() { local f n; f="$(qfile "$1")"; [ -f "$f" ] || return 0; n="$(qget "$f" attempts)"; n=$(( ${n:-0} + 1 )); qedit "$1" -e "s/^attempts=.*/attempts=$n/"; }
 
 bump_push_refusals() { # <branch>: counts non-"master moved" push refusals in the queue file; prints the new count
@@ -752,7 +771,7 @@ pre_probe_conflict() { # <branch> <tip> <master>: 0 = merges (or only the manife
 	CONFLICT_FILES="$(tail -n +2 <<<"$out" | awk 'NF' | sort -u)"
 	# the manifest merges by sets, shared docs by union (tools/dq_merge_batch.sh doc_union_conflict): neither is a conflict here
 	# files with a merge driver or a union rule (baselines, the manifest, the unit-test list) never stop the real merge either
-	f="$(grep -vE '^(deepquarry\.dme|AGENTS\.md|CLAUDE\.md|doc/.*\.md|tools/.*/doc/[^/]*\.md|tools/ci/[^/]*_baseline\.txt|tools/ci/sys_baseline/.*\.txt|code/modules/unit_tests/_unit_tests\.dm)$' <<<"$CONFLICT_FILES")"
+	f="$(grep -vE '^(deepquarry\.dme|AGENTS\.md|CLAUDE\.md|doc/.*\.md|tools/.*/doc/[^/]*\.md|tools/ci/[^/]*_baseline\.txt|tools/ci/sys_baseline/.*\.txt|code/(modules|tests)/unit_tests/_unit_tests\.dm)$' <<<"$CONFLICT_FILES")"
 	[ -n "$f" ] || return 0
 	return 1
 }
@@ -1577,6 +1596,10 @@ heavy_cycle_gate() {
 		deferred="$(printf '%s\n' $deferred | grep -vxF "$b" | tr '\n' ' ')"
 		CYCLE_PROGRESS=1
 	done
+	if [ -n "${deferred// /}" ]; then
+		deferred="$(note_setup_errors "$out" $deferred)"
+		CYCLE_PROGRESS=1
+	fi
 	[ -z "${later// /}" ] || { tlog "conflicted with another lane of this batch only, they stay queued for the next cycle: [$later]"; CYCLE_PROGRESS=1; }
 	tlog "merge_batch rc=$rc good=[${good:-}] deferred=[${deferred:-}] capped=[${capped:-}]"
 	# bounces first: they are the lane's fault whatever happens to the push
