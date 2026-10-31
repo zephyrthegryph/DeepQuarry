@@ -394,7 +394,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 
 	return mobs
 
-/mob/observer/dead/verb/dead_tele(areaname as anything in jumpable_areas())
+/mob/observer/dead/verb/dead_tele()
 	set name = "Teleport"
 	set category = VERB_CAT_GHOST_GAME
 	set desc = "Teleport to a location."
@@ -403,14 +403,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		to_chat(src, span_filter_notice("Not when you're not dead!"))
 		return
 
-	var/area/A
-
-	if(areaname)
-		A = return_sorted_areas()[areaname]
-	else
-		open_request(src, /datum/prompt/choice, PROC_REF(dead_tele_chosen), answerer = src, title = "Ghost Teleport", question = "Select an area:", choices = jumpable_areas(), timeout = 0)
-		return
-	dead_tele_to(A)
+	open_request(src, /datum/prompt/choice, PROC_REF(dead_tele_chosen), answerer = src, title = "Ghost Teleport", question = "Select an area:", choices = jumpable_areas(), timeout = 0)
 
 /mob/observer/dead/proc/dead_tele_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -428,7 +421,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	src.forceMove(pick(get_area_turfs(A)))
 	src.on_mob_jump()
 
-/mob/observer/dead/verb/follow(mobname as anything in jumpable_mobs())
+/mob/observer/dead/verb/follow()
 	set name = "Follow"
 	set category = VERB_CAT_GHOST_GAME
 	set desc = "Follow and haunt a mob."
@@ -437,11 +430,8 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		to_chat(src, "Not when you're not dead!")
 		return
 
-	if(!mobname)
-		var/list/possible_mobs = jumpable_mobs()
-		open_request(src, /datum/prompt/choice, PROC_REF(follow_target_chosen), answerer = src, title = "Ghost Follow", question = "Select a mob:", choices = possible_mobs, timeout = 0)
-		return
-	follow_mob(jumpable_mobs()[mobname])
+	var/list/possible_mobs = jumpable_mobs()
+	open_request(src, /datum/prompt/choice, PROC_REF(follow_target_chosen), answerer = src, title = "Ghost Follow", question = "Select a mob:", choices = possible_mobs, timeout = 0)
 
 /mob/observer/dead/proc/follow_target_chosen(datum/act/request/A)
 	if(!A.answer)

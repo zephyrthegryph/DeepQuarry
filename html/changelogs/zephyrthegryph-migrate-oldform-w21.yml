@@ -2,3 +2,4 @@ author: "zephyrthegryph"
 delete-after: true
 changes:
   - refactor: "Show Held Item, Eject pAI, Check Default Language, Sleep, Show Laws, the vore sprite toggle and Check Nutrition are menu ops"
+  - refactor: "Ghost Teleport and Follow, Pull, Bot Nom and the robot Activate Held Object ask through requests or menu ops instead of native verb pickers"

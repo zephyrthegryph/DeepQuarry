@@ -246,3 +246,17 @@
 	for(var/key in list("vore_check_nutrition", "check_default_language", "showoff"))
 		var/datum/op_result/R = dq_ability_menu_op(H, key)
 		TEST_ASSERT(test_op_committed(R), "[key] commits on a human's own menu")
+
+/// Pull asks what to pull from the things within reach, and pulls the one picked.
+/datum/unit_test/dq_ability_ops_pull_asks_what
+
+/datum/unit_test/dq_ability_ops_pull_asks_what/Run()
+	test_driver_begin()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/puller = allocate(/mob/living/carbon/human, T)
+	var/obj/structure/closet/crate/crate = allocate(/obj/structure/closet/crate, T)
+	crate.forceMove(get_step(T, NORTH))
+	puller.pulled()
+	TEST_ASSERT_NOTNULL(SSrequests.open_for(puller), "the puller is asked what to pull")
+	test_answer(puller, crate.name)
+	TEST_ASSERT_EQUAL(puller.pulling_target(), crate, "the picked crate is being pulled")

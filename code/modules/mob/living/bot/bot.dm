@@ -657,14 +657,19 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 		if(user)
 			to_chat(user, span_notice("You eject the card from \the [initial(src.name)]."))
 
-/mob/living/bot/verb/bot_nom(mob/living/T in oview(1))
-	set name = "Bot Nom"
-	set category = VERB_CAT_BOT_COMMANDS
-	set desc = "Allows you to eat someone. Yum."
+/mob/living/bot/proc/bot_nom_ready(datum/act/op/A)
+	return stat == CONSCIOUS ? null : MSG(req_silent)
 
-	if (stat != CONSCIOUS)
-		return
-	return feed_grabbed_to_self(src,T)
+/mob/living/bot/proc/bot_nom_choices(datum/act/op/A)
+	var/list/eatable = list()
+	for(var/mob/living/candidate in oview(1, src))
+		eatable[candidate.name] = candidate
+	return eatable
+
+/mob/living/bot/proc/bot_nom_op(datum/act/op/A)
+	var/mob/living/T = bot_nom_choices(A)[A.step_value("target")]
+	if(T)
+		feed_grabbed_to_self(src, T)
 
 /mob/living/bot/proc/ejectself()
 	return ejectpai()
@@ -691,6 +696,7 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 // === merged from bot_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 
 CAPABILITIES(/mob/living/bot)
+	op("bot_nom", menu(desc = "Allows you to eat someone. Yum."), label("Bot Nom"), needs(req_self(), req(PROC_REF(bot_nom_ready))), asks(/datum/prompt/choice, fields = list("title" = "Bot Nom", "question" = "Eat whom?", "choices" = computed(PROC_REF(bot_nom_choices)), "timeout" = 0), step = "target"), then(PROC_REF(bot_nom_op)))
 	op("ejectself", menu(desc = "Eject your card, return to smole."), label("Eject pAI"), needs(req_self()), then(PROC_REF(ejectself_op)))
 	configure(mob_nature(can_pain_emote = FALSE, no_vore = TRUE))
 	ref_one(nameof(target), /atom)
