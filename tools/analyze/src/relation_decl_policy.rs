@@ -1,10 +1,11 @@
 //! Original relation declaration projection, not a general declaration model.
 use crate::tree::{SourceFile, CODE_DM};
 use std::collections::{BTreeMap, HashMap};
-pub fn visit_legacy_line(
-    t: &str,
-    mut emit: impl FnMut(&str, &str) -> Result<(), String>,
-) -> Result<(), String> {
+pub fn visit_legacy_line(t:&str,emit:impl FnMut(&str,&str)->Result<(),String>)->Result<(),String>{
+    try_visit_legacy_line(t,emit)
+}
+/// SAME literal matcher; typed native callback failures do not become strings.
+pub fn try_visit_legacy_line<E>(t:&str,mut emit:impl FnMut(&str,&str)->Result<(),E>)->Result<(),E>{
     if let Some(m)=crate::pat_match!(r"(?:OWN|OWN_POLICY|OWN_IF|REL|REL_LIST|REL_PAIR|REL_PAIR_LIST|REL_SET|REL_KEYED|REL_KEYED_LIST)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(t){emit(m.s(1),m.s(2))?;}
     Ok(())
 }

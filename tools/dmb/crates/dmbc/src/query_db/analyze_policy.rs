@@ -504,7 +504,7 @@ impl QueryDb {
                         let bytes = self.db.value_bytes_at(result_key);
                         self.db.remove(result_key);
                         self.raw_policy
-                            .leases
+                            .admission.leases
                             .lock()
                             .unwrap_or_else(|e| e.into_inner())
                             .remove(&result_key);

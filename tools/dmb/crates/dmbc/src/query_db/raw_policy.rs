@@ -38,8 +38,15 @@ const MAX_AGE: Duration = Duration::from_secs(5 * 60);
 #[path = "raw_policy_operational_abort.rs"]
 mod operational_abort;
 use operational_abort::OperationalAbort;
+#[path = "reactive_nested_admission.rs"]
+mod reactive_nested_admission;
+#[path="reactive_read_policy.rs"]
+mod reactive_read_policy;
+pub(crate) use reactive_read_policy::{Request as ReactiveRequest,Value as ReactiveValue};
 pub(super) struct Admission {
     abort: OperationalAbort,
+    leases: Mutex<BTreeMap<Key, Lease>>,
+    workspace_nodes: AtomicUsize,
     limit: AtomicUsize,
     denied: std::sync::atomic::AtomicBool,
     view_denied: std::sync::atomic::AtomicBool,
@@ -48,6 +55,8 @@ impl Default for Admission {
     fn default() -> Self {
         Self {
             abort: OperationalAbort::default(),
+            leases: Mutex::new(BTreeMap::new()),
+            workspace_nodes: AtomicUsize::new(0),
             limit: AtomicUsize::new(RESULT_BUDGET),
             denied: std::sync::atomic::AtomicBool::new(false),
             view_denied: std::sync::atomic::AtomicBool::new(false),
@@ -60,7 +69,6 @@ pub(super) struct State {
     // is a value in Db, never another map of analysis payloads.
     gate: Mutex<()>,
     workspace: workspace::State,
-    leases: Mutex<BTreeMap<Key, Lease>>,
     pub(super) charge: Arc<AtomicUsize>,
 }
 impl Default for State {
@@ -69,7 +77,6 @@ impl Default for State {
             admission: Arc::new(Admission::default()),
             gate: Mutex::new(()),
             workspace: workspace::State::default(),
-            leases: Mutex::new(BTreeMap::new()),
             charge: Arc::new(AtomicUsize::new(0)),
         }
     }
@@ -198,6 +205,7 @@ pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admissi
     workspace::register_with_admission(db, Arc::clone(&admission));
     analyze_policy::register_analyze(db, Arc::clone(&charge), Arc::clone(&admission));
     generator_policy::register(db, Arc::clone(&charge), Arc::clone(&admission));
+    reactive_read_policy::register(db,Arc::clone(&charge),Arc::clone(&admission));
     db.define_input(RAW_FILE, "native-raw-shared-file");
     db.define_input(RAW_CONFIG, "native-raw-captured-config");
     let scope_charge = Arc::clone(&charge);
@@ -273,6 +281,7 @@ pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admissi
 impl QueryDb {
     fn begin_result_admission_locked(&self) -> io::Result<()> {
         self.raw_policy.admission.abort.begin();
+        self.raw_policy.admission.workspace_nodes.store(self.workspace_nodes_locked(),Ordering::Release);
         let limit = RESULT_BUDGET
             .checked_sub(self.workspace_result_charge_locked()?)
             .ok_or_else(|| invalid("shared native policy result budget exhausted"))?;
@@ -318,7 +327,7 @@ impl QueryDb {
             .unwrap_or_else(|e| e.into_inner());
         let leases = self
             .raw_policy
-            .leases
+            .admission.leases
             .lock()
             .unwrap_or_else(|e| e.into_inner());
         let mut storage = BTreeMap::new();
@@ -354,7 +363,7 @@ impl QueryDb {
     fn raw_retained_view_bytes_locked(&self) -> io::Result<usize> {
         let leases = self
             .raw_policy
-            .leases
+            .admission.leases
             .lock()
             .unwrap_or_else(|e| e.into_inner());
         let mut storage = BTreeMap::new();
@@ -376,7 +385,7 @@ impl QueryDb {
     fn raw_clear_locked(&self) {
         let mut leases = self
             .raw_policy
-            .leases
+            .admission.leases
             .lock()
             .unwrap_or_else(|e| e.into_inner());
         for key in leases.keys() {
@@ -402,7 +411,7 @@ impl QueryDb {
             .unwrap_or_else(|e| e.into_inner());
         let mut leases = self
             .raw_policy
-            .leases
+            .admission.leases
             .lock()
             .unwrap_or_else(|e| e.into_inner());
         for key in leases.keys() {
@@ -479,7 +488,7 @@ impl QueryDb {
     fn raw_prune_locked(&self, now: Instant) {
         let mut leases = self
             .raw_policy
-            .leases
+            .admission.leases
             .lock()
             .unwrap_or_else(|e| e.into_inner());
         self.workspace_prune_expired_locked(now);
@@ -495,6 +504,7 @@ impl QueryDb {
                         | RAW_SCOPE
                         | analyze_policy::ANALYZE_FINDINGS
                         | generator_policy::GENERATOR_RESULT
+                        | reactive_read_policy::REACTIVE_RESULT
                 ) {
                     let _ = self.raw_policy.charge.fetch_update(
                         Ordering::Relaxed,
@@ -519,6 +529,7 @@ impl QueryDb {
                         | RAW_SCOPE
                         | analyze_policy::ANALYZE_FINDINGS
                         | generator_policy::GENERATOR_RESULT
+                        | reactive_read_policy::REACTIVE_RESULT
                 )
             })
             .fold(0usize, |n, key| {
@@ -543,7 +554,7 @@ impl QueryDb {
         }
         let mut leases = self
             .raw_policy
-            .leases
+            .admission.leases
             .lock()
             .unwrap_or_else(|e| e.into_inner());
         let mut total = leases
@@ -583,6 +594,7 @@ impl QueryDb {
                         | RAW_SCOPE
                         | analyze_policy::ANALYZE_FINDINGS
                         | generator_policy::GENERATOR_RESULT
+                        | reactive_read_policy::REACTIVE_RESULT
                 ) {
                     let _ = self.raw_policy.charge.fetch_update(
                         Ordering::Relaxed,

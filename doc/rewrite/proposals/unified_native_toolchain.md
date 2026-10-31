@@ -1274,3 +1274,18 @@ remain separate work. Full-project global classification also needs compact
 facts and bounded temporary windows: the existing conservative per-node
 envelope exceeds the unchanged 64 MiB policy limit on the real project. Neither
 that limit nor the bounded fixture domain has been widened to claim coverage.
+
+### Original-source runtime and reactive result checkpoint
+
+Original-source initializer runtime, constructor diagnostics, and an explicit
+cold ABI path now share the admitted native roots and checked static facts.
+Reactive read results are exposed through the existing query engine, retaining
+original-source ownership and nested admission checks. The global policy core
+uses compact interned facts while preserving the old classifier.
+
+This checkpoint passes 35 distinct focused Rust tests after failure-only repairs.
+A separately frozen whole old read interpreter matches six actual native requests
+across all ten result fields, including array and diagnostic order. Independent
+whole global/write and annotation oracles also match. These do not certify
+full-project memory admission, retained ABI reuse across rebuilt requests, or a
+client-default cutover. Those remain explicit follow-up work; no limits were raised.

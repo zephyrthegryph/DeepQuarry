@@ -63,15 +63,15 @@ impl<F: FnMut(&Expr, &Expr, Span)> Observer for Assignments<'_, F> {
 /// or the separate current legacy statement anchor. This view does not mint
 /// source authority; its caller is the already-issued native body observer.
 #[derive(Clone, Copy)]
-pub(crate) enum ExpressionObservation<'a> {
+pub enum ExpressionObservation<'a> {
     Owned(&'a Expr),
     Projected(dm_syntax::ProjectedExprView<'a>),
 }
 impl<'a> ExpressionObservation<'a> {
-    pub(crate) fn original(self) -> &'a Expr {
+    pub fn original(self) -> &'a Expr {
         match self { Self::Owned(e) => e, Self::Projected(v) => v.original() }
     }
-    pub(crate) fn current_span(self) -> Span {
+    pub fn current_span(self) -> Span {
         match self { Self::Owned(e) => e.span, Self::Projected(v) => v.current_span() }
     }
 }
@@ -85,6 +85,31 @@ impl<F: FnMut(ExpressionObservation<'_>, Span)> Observer for CurrentExpressions<
 }
 pub(crate) fn expressions_current(view: dm_syntax::StatementView<'_>, emit: &mut impl FnMut(ExpressionObservation<'_>, Span)) -> Result<(), &'static str> {
     observe(view, &mut CurrentExpressions(emit))
+}
+
+/// Fallible consumer of the SAME original policy walk. This interface grants no
+/// source authority; native callers must bind an actual issued StatementBody.
+pub enum PolicyVisitFailure<E>{Unsupported(&'static str),Callback(E)}
+pub fn try_policy_expressions<E>(
+ view:dm_syntax::StatementView<'_>,checkpoint:&mut impl FnMut()->Result<(),E>,
+ emit:&mut impl FnMut(ExpressionObservation<'_>,Span)->Result<(),E>,
+)->Result<(),PolicyVisitFailure<E>>{
+ struct Fallible<'a,E,P,F>{checkpoint:&'a mut P,emit:&'a mut F,error:Option<E>}
+ impl<E,P:FnMut()->Result<(),E>,F:FnMut(ExpressionObservation<'_>,Span)->Result<(),E>> Observer for Fallible<'_,E,P,F>{
+  fn stopped(&self)->bool{self.error.is_some()}
+  fn statement(&mut self,_:&Statement)->bool{
+   if self.error.is_some(){return false;}match(self.checkpoint)(){Ok(())=>true,Err(e)=>{self.error=Some(e);false}}
+  }
+  fn expression(&mut self,e:&Expr,at:Span){
+   if self.error.is_none(){if let Err(e)=(self.checkpoint)().and_then(|()|(self.emit)(ExpressionObservation::Owned(e),at)){self.error=Some(e);}}
+  }
+  fn projected_expression(&mut self,v:dm_syntax::ProjectedExprView<'_>,at:Span,_:bool)->Result<(),&'static str>{
+   if self.error.is_none(){if let Err(e)=(self.checkpoint)().and_then(|()|(self.emit)(ExpressionObservation::Projected(v),at)){self.error=Some(e);}}Ok(())
+  }
+ }
+ let mut observer=Fallible{checkpoint,emit,error:None};let coverage=observe(view,&mut observer);
+ if let Some(actual)=observer.error{return Err(PolicyVisitFailure::Callback(actual));}
+ coverage.map_err(PolicyVisitFailure::Unsupported)
 }
 struct Expressions<'a, F>(&'a mut F);
 impl<F: FnMut(&Expr, Span)> Observer for Expressions<'_, F> {

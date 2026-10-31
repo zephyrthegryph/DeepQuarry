@@ -540,7 +540,7 @@ impl QueryDb {
             .saturating_mul(2);
         let raw_nodes = self
             .raw_policy
-            .leases
+            .admission.leases
             .lock()
             .unwrap_or_else(|e| e.into_inner())
             .len()
@@ -608,7 +608,7 @@ impl QueryDb {
     pub(super) fn workspace_input_headroom_locked(&self, fixed: usize) -> io::Result<usize> {
         let raw_inputs = self
             .raw_policy
-            .leases
+            .admission.leases
             .lock()
             .unwrap_or_else(|e| e.into_inner())
             .values()

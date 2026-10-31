@@ -165,9 +165,15 @@ impl SourceSnapshot {
             Some(family)
         };
         if let Some(level) = loaded.policy.register(tag, producer) {
+            // Gather the complete findings/source rows before the first output
+            // write below. Actual body IO must escape intact, before a partial
+            // configured-checker envelope can reach the caller's output buffer.
             let body = archive
-                .parse(ordinal as usize)
-                .map_err(|error| io::Error::other(error.message))?;
+                .parse_checked(ordinal as usize)
+                .map_err(|error| match error {
+                    dm_tree::frontend::BodySyntaxFailure::Syntax(error) => io::Error::other(error.message),
+                    dm_tree::frontend::BodySyntaxFailure::Operational(actual) => actual,
+                })?;
             let found = match family {
                 "proc_has_no_parent" | "undefined_proc" | "undefined_variable" | "field_access_static_type" | "no_typehint_implicit_new" | "proc_call_static_type" => {
                     let resolver = self.resolved.as_ref()

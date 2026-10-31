@@ -288,3 +288,11 @@ required-features = ["legacy-sem", "native-policy"]
 [[example]]
 name="unified_global_policy"
 required-features=["legacy-sem","native-policy"]
+
+[[example]]
+name = "unified_reactive_annotations"
+required-features = ["legacy-sem", "native-policy"]
+
+[[example]]
+name="unified_reactive_reads_whole"
+required-features=["legacy-sem"]

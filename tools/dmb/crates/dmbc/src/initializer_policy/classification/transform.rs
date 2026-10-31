@@ -2,17 +2,17 @@
 //! Ordinary matrix variables retain their mutable constructor semantics.
 use super::super::*;
 
-pub(super) fn fold(write:&InitializerWrite,expression:&dm_syntax::Expr,source:&str,symbols:&SymbolTable,evaluator:&dyn CapturedInitializerEvaluator)->Result<Option<[u32;6]>,String>{fold_with::<value_demand::Compatibility>(write,expression,source,symbols,evaluator)}
+pub(super) fn fold(write:&InitializerWrite,expression:&dm_syntax::Expr,source:&str,symbols:&SymbolTable,evaluator:&dyn CapturedInitializerEvaluator)->Result<Option<[u32;6]>,String>{fold_with::<value_demand::Compatibility>(write,expression,value_demand::Source::Flat(source),symbols,evaluator)}
 pub(in crate::initializer_policy) fn fold_checked(write:&InitializerWrite,expression:&dm_syntax::Expr,source:&str,symbols:&SymbolTable,evaluator:&dyn CapturedInitializerEvaluator)->Result<Option<[u32;6]>,InitializerFailure>{
     crate::daemon::control::checkpoint().map_err(InitializerFailure::Operational)?;
-    let result=fold_with::<value_demand::Checked>(write,expression,source,symbols,evaluator);
+    let result=fold_with::<value_demand::Checked>(write,expression,value_demand::Source::Flat(source),symbols,evaluator);
     if matches!(&result,Err(InitializerFailure::Operational(_))){return result;}
     crate::daemon::control::checkpoint().map_err(InitializerFailure::Operational)?;result
 }
 fn fold_with<D: value_demand::Demand>(
     write: &InitializerWrite,
     expression: &dm_syntax::Expr,
-    source: &str,
+    source: value_demand::Source<'_,'_>,
     symbols: &SymbolTable,
     evaluator: &dyn CapturedInitializerEvaluator,
 ) -> Result<Option<[u32; 6]>, D::Error> {
@@ -154,4 +154,8 @@ mod checked_transport_tests {
         assert_eq!(fold_checked(&write,&ast,source,&symbols,&Numbers).unwrap(),fold(&write,&ast,source,&symbols,&Numbers).unwrap());
         let error=fold_checked(&write,&ast,source,&symbols,&Failed).err().unwrap().into_operational().unwrap();assert_eq!(error.raw_os_error(),Some(1450));
     }
+}
+
+pub(crate) fn fold_source_checked(write:&InitializerWrite,expression:&dm_syntax::Expr,source:value_demand::Source<'_,'_>,symbols:&SymbolTable,evaluator:&dyn CapturedInitializerEvaluator)->Result<Option<[u32;6]>,InitializerFailure>{
+ crate::daemon::control::checkpoint().map_err(InitializerFailure::Operational)?;let result=fold_with::<value_demand::Checked>(write,expression,source,symbols,evaluator);if matches!(&result,Err(InitializerFailure::Operational(_))){return result}crate::daemon::control::checkpoint().map_err(InitializerFailure::Operational)?;result
 }

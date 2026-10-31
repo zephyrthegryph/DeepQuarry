@@ -13,7 +13,8 @@ pub(crate) enum Shape {
 impl From<&RuntimeValue> for Shape {
     fn from(value: &RuntimeValue) -> Self {
         match value {
-            RuntimeValue::Expression(_) => Self::Expression,
+            RuntimeValue::Expression(_)|RuntimeValue::OriginalExpression(_) => Self::Expression,
+            RuntimeValue::OriginalSizedArray(explicit)=>Self::SizedArrayExplicit(Arc::clone(&explicit.dimensions),true),
             RuntimeValue::SizedArray(value) => Self::SizedArray(Arc::clone(value)),
             RuntimeValue::SizedArrayExplicit(explicit) => {
                 Self::SizedArrayExplicit(Arc::clone(&explicit.dimensions), explicit.expression.is_some())

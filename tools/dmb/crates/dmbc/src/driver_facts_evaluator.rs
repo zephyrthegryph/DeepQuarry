@@ -32,57 +32,52 @@ fn scalar_constant(value: SemanticValue, symbols: &dm_ir::SymbolTable) -> Option
         SemanticValue::List(_) => return None,
     })
 }
+
+fn require_original_adaptation(input:&dm_tree::frontend::OriginalInitializerExpressionInput<'_>,write:&dm_ir::InitializerWrite)->Result<(),crate::initializer_policy::InitializerFailure>{
+ use crate::initializer_policy::InitializerFailure;
+        let original=input.original_write();
+        let same_value=matches!((&original.value,&write.value),(dm_ir::InitializerValue::Expression(a),dm_ir::InitializerValue::Expression(b))if Arc::ptr_eq(&a.tokens,&b.tokens));
+        let same_array=match(&original.declared_array,&write.declared_array){(_,None)=>true,(Some(a),Some(b))=>Arc::ptr_eq(a,b),_=>false};
+        if original.source_site!=write.source_site || original.target!=write.target || original.lexical_owner!=write.lexical_owner || original.lexical_procedure!=write.lexical_procedure || original.declaration_flags!=write.declaration_flags || !same_value || !same_array {
+            return Err(InitializerFailure::Unsupported("adapted initializer write differs from original source input".into()));
+        }
+ Ok(())
+}
+/// Guarded, allocation-free membership walk over SAME already-prepared AST.
+/// Spans only prune work; exact node identity is the successful proof.
+fn original_subtree(root:&dm_syntax::Expr,target:&dm_syntax::Expr,a:&dm_syntax::SettingAdmission<'_>)->Result<bool,crate::initializer_policy::InitializerFailure>{
+ use crate::initializer_policy::InitializerFailure;
+ let _frame=a.evaluation_frame().map_err(InitializerFailure::Operational)?;
+ if std::ptr::eq(root,target){return Ok(true)}
+ if target.span.start<root.span.start||target.span.end>root.span.end{return Ok(false)}
+ // Source-ordered variable-width children are selected by binary span search;
+ // wide list/object/literal arguments do not rescan every sibling per helper.
+ fn child<'a>(rows:&'a[dm_syntax::Expr],target:&dm_syntax::Expr)->Option<&'a dm_syntax::Expr>{let at=rows.partition_point(|row|row.span.start<=target.span.start).checked_sub(1)?;rows.get(at).filter(|row|target.span.end<=row.span.end)}
+ use dm_syntax::ExprKind;
+ match &root.kind{
+  ExprKind::Call{callee,args}=>{if target.span.start>=callee.span.start&&target.span.end<=callee.span.end{return original_subtree(callee,target,a)}return child(args,target).map(|row|original_subtree(row,target,a)).unwrap_or(Ok(false))},
+  ExprKind::ObjectInitializer{object,fields}=>{if target.span.start>=object.span.start&&target.span.end<=object.span.end{return original_subtree(object,target,a)}let at=fields.partition_point(|(_,row)|row.span.start<=target.span.start).checked_sub(1);return at.and_then(|n|fields.get(n)).filter(|(_,row)|target.span.end<=row.span.end).map(|(_,row)|original_subtree(row,target,a)).unwrap_or(Ok(false))},
+  ExprKind::Literal(text)=>{return match text.retained_parts(){Some(Ok(Some(parts)))=>child(&parts.expressions,target).map(|row|original_subtree(row,target,a)).unwrap_or(Ok(false)),_=>Ok(false)}},
+  _=>{}
+ }
+ let mut found=false;dm_syntax::try_for_each_expression_child(root,|_,child|{if !found&&child.span.start<=target.span.start&&child.span.end>=target.span.end{found=original_subtree(child,target,a)?}Ok::<(),InitializerFailure>(())})?;Ok(found)
+}
 impl DriverEvaluator<'_> {
-    fn instance_call_error(
-        &self,
-        write: &dm_ir::InitializerWrite,
-        ast: &dm_syntax::Expr,
-    ) -> Option<String> {
-        if !matches!(write.target, dm_ir::InitializerTarget::Instance { .. })
-            || write.lexical_procedure.is_some()
-        {
-            return None;
+    fn instance_call_error(&self,write:&dm_ir::InitializerWrite,ast:&dm_syntax::Expr)->Option<String>{
+        match self.instance_call_error_controlled(write,ast,&||Ok::<(),std::convert::Infallible>(())){Ok(value)=>value,Err(never)=>match never{}}
+    }
+    fn instance_call_error_controlled<E,G>(&self,write:&dm_ir::InitializerWrite,ast:&dm_syntax::Expr,enter:&impl Fn()->Result<G,E>)->Result<Option<String>,E>{
+        if !matches!(write.target,dm_ir::InitializerTarget::Instance{..})||write.lexical_procedure.is_some(){return Ok(None)}
+        fn authored<E,G>(evaluator:&DriverEvaluator<'_>,owner:SymbolId,node:&dm_syntax::Expr,enter:&impl Fn()->Result<G,E>)->Result<bool,E>{
+            let _frame=enter()?;
+            if let dm_syntax::ExprKind::Call{callee,..}=&node.kind{if let dm_syntax::ExprKind::Ident(name)=&callee.kind{if !dm_codegen_byond::is_intrinsic_named_call(name){
+                let name=SymbolId::of(name);let member=evaluator.resolver.resolve(ResolveQuery::Proc{owner,name,verb:false});
+                if matches!(member,ResolvedMeaning::Member{ref data,..}if data.procedure.is_some()){return Ok(true)}
+                if matches!(member,ResolvedMeaning::Missing)&&matches!(evaluator.resolver.resolve(ResolveQuery::GlobalProc(name)),ResolvedMeaning::Member{ref data,..}if data.procedure.is_some()){return Ok(true)}
+            }}}
+            let mut found=false;dm_syntax::try_for_each_expression_child(node,|_,child|{if !found{found=authored(evaluator,owner,child,enter)?}Ok::<(),E>(())})?;Ok(found)
         }
-        fn authored(
-            evaluator: &DriverEvaluator<'_>,
-            owner: SymbolId,
-            node: &dm_syntax::Expr,
-        ) -> bool {
-            if let dm_syntax::ExprKind::Call { callee, .. } = &node.kind {
-                if let dm_syntax::ExprKind::Ident(name) = &callee.kind {
-                    if !dm_codegen_byond::is_intrinsic_named_call(name) {
-                        let name = SymbolId::of(name);
-                        let member = evaluator.resolver.resolve(ResolveQuery::Proc {
-                            owner,
-                            name,
-                            verb: false,
-                        });
-                        if matches!(member, ResolvedMeaning::Member { ref data, .. } if data.procedure.is_some())
-                        {
-                            return true;
-                        }
-                        // Missing is the only proof that member precedence permits
-                        // selecting the global declaration. Opaque answers decline.
-                        if matches!(member, ResolvedMeaning::Missing)
-                            && matches!(evaluator.resolver.resolve(ResolveQuery::GlobalProc(name)), ResolvedMeaning::Member { ref data, .. } if data.procedure.is_some())
-                        {
-                            return true;
-                        }
-                    }
-                }
-            }
-            let mut found = false;
-            dm_syntax::for_each_expression_child(node, |_, child| {
-                if !found {
-                    found = authored(evaluator, owner, child);
-                }
-            });
-            found
-        }
-        authored(self, write.lexical_owner, ast).then(|| match write.source_site {
-            dm_ir::InitializerSite::Declaration => "=: expected a constant expression".to_owned(),
-            dm_ir::InitializerSite::Assignment => ": expected a constant expression".to_owned(),
-        })
+        Ok(authored(self,write.lexical_owner,ast,enter)?.then(||match write.source_site{dm_ir::InitializerSite::Declaration=>"=: expected a constant expression".to_owned(),dm_ir::InitializerSite::Assignment=>": expected a constant expression".to_owned()}))
     }
 
     fn declaration_scalar(
@@ -616,6 +611,23 @@ impl DriverEvaluator<'_> {
 /// Native preparation borrows the exact original plan input. Array recursion
 /// may remove authored shape, but cannot substitute lexical/target/value facts.
 impl DriverEvaluator<'_> {
+    fn evaluate_original_ast_policy(&self,write:&dm_ir::InitializerWrite,ast:&dm_syntax::Expr,demand:&scalar_demand::Original<'_,'_,'_,'_>)->Result<(Evaluation,dm_codegen_byond::SourceFeatures),crate::initializer_policy::InitializerFailure>{
+      use crate::initializer_policy::InitializerFailure;
+        if let Some(reason)=self.instance_call_error_controlled(write,ast,&||demand.frame())?{return Ok((Evaluation::SourceError(reason),Default::default()))}
+        if let Some(reason)=self.constructor_reference_error_controlled(write,ast,&||demand.frame())?{return Ok((Evaluation::SourceError(reason),Default::default()))}
+        let features=RefCell::new(dm_codegen_byond::SourceFeatures::default());
+        let typed_failure=RefCell::new(None);
+        let result=self.scalar_ast_in_with_features_using(write.lexical_owner,ast,write.lexical_procedure,&RefCell::new(std::collections::HashSet::new()),Some(&features),match write.target{dm_ir::InitializerTarget::ProcedureStatic(identity)=>Some(identity),_=>None},Some(&typed_failure),demand);
+        // An actual operation failure cannot be hidden by an earlier recovered
+        // nameof/source feature diagnostic from the same evaluation traversal.
+        let result=match result{Err(actual@InitializerFailure::Operational(_))=>return Err(actual),result=>result};
+        let evaluation=match typed_failure.into_inner(){
+            Some(failure) if failure.error.kind==dm_codegen_byond::LowerErrorKind::SourceError=>match failure.recovery{Some(recovery)=>Evaluation::InvalidNameof(failure.error.reason,recovery),None=>Evaluation::SourceError(failure.error.reason)},
+            _=>result?.map_or(Evaluation::Runtime,Evaluation::Scalar),
+        };
+
+      Ok((evaluation,features.into_inner()))
+    }
     pub(super) fn evaluate_original_write_in<'source>(
         &self,
         input:&dm_tree::frontend::OriginalInitializerExpressionInput<'source>,
@@ -636,29 +648,13 @@ impl DriverEvaluator<'_> {
         let operation=(||{
         use crate::initializer_policy::{InitializerFailure,ScopedPreparedInitializerExpression};
         context.require_initializer(input).map_err(scalar_demand::source_domain_failure)?;
-        let original=input.original_write();
-        let same_value=matches!((&original.value,&write.value),(dm_ir::InitializerValue::Expression(a),dm_ir::InitializerValue::Expression(b))if Arc::ptr_eq(&a.tokens,&b.tokens));
-        let same_array=match(&original.declared_array,&write.declared_array){(_,None)=>true,(Some(a),Some(b))=>Arc::ptr_eq(a,b),_=>false};
-        if original.source_site!=write.source_site || original.target!=write.target || original.lexical_owner!=write.lexical_owner || original.lexical_procedure!=write.lexical_procedure || original.declaration_flags!=write.declaration_flags || !same_value || !same_array {
-            return Err(InitializerFailure::Unsupported("adapted initializer write differs from original source input".into()));
-        }
+        require_original_adaptation(input,write)?;
         crate::daemon::control::checkpoint().map_err(InitializerFailure::Operational)?;
         let root=input.prepare(admission).map_err(scalar_demand::source_failure)?;
         let mut prepared=ScopedPreparedInitializerExpression::from_original(root);
         let ast=prepared.ast();
-        if let Some(reason)=self.instance_call_error(write,ast){return Ok((Evaluation::SourceError(reason),Some(prepared)))}
-        if let Some(reason)=self.constructor_reference_error(write,ast){return Ok((Evaluation::SourceError(reason),Some(prepared)))}
-        let features=RefCell::new(dm_codegen_byond::SourceFeatures::default());
-        let typed_failure=RefCell::new(None);
-        let result=self.scalar_ast_in_with_features_using(write.lexical_owner,ast,write.lexical_procedure,&RefCell::new(std::collections::HashSet::new()),Some(&features),match write.target{dm_ir::InitializerTarget::ProcedureStatic(identity)=>Some(identity),_=>None},Some(&typed_failure),&demand);
-        // An actual operation failure cannot be hidden by an earlier recovered
-        // nameof/source feature diagnostic from the same evaluation traversal.
-        let result=match result{Err(actual@InitializerFailure::Operational(_))=>return Err(actual),result=>result};
-        let evaluation=match typed_failure.into_inner(){
-            Some(failure) if failure.error.kind==dm_codegen_byond::LowerErrorKind::SourceError=>match failure.recovery{Some(recovery)=>Evaluation::InvalidNameof(failure.error.reason,recovery),None=>Evaluation::SourceError(failure.error.reason)},
-            _=>result?.map_or(Evaluation::Runtime,Evaluation::Scalar),
-        };
-        prepared.set_source_features(features.into_inner());
+        let(evaluation,features)=self.evaluate_original_ast_policy(write,ast,&demand)?;
+        prepared.set_source_features(features);
         crate::daemon::control::checkpoint().map_err(InitializerFailure::Operational)?;
         Ok((evaluation,Some(prepared)))
         })();
@@ -674,6 +670,7 @@ pub(super) struct OriginalSettingEvaluator<'source, 'e, 'resolver> {
     pub(super) metadata: &'source dm_ir::ProcedureMetadata,
     pub(super) evaluator: &'e DriverEvaluator<'resolver>,
     pub(super) lexical: bool,
+    pub(super) source:Option<&'e OriginalAbiSources<'source>>,
 }
 impl OriginalSettingEvaluator<'_, '_, '_> {
     fn require_context(&self, context: &AbiContext<'_>) -> Result<(), AbiError> {
@@ -717,6 +714,16 @@ impl OriginalSettingEvaluator<'_, '_, '_> {
             verb: context.identity.namespace == Namespace::Verb,
             occurrence: context.identity.occurrence,
         });
+        if let Some(source)=self.source{
+            source.startup.validate_for(self.frontend).map_err(AbiError::invariant)?;
+            let receipt=source.startup.source_static_receipt(self.body.declaration);
+            let result=scalar_demand::with_admission(&source.context,|admission|{
+                if !root.is_retained_in(admission){return Err(crate::initializer_policy::InitializerFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"ABI setting root budget domain differs from source startup")))}
+                let demand=scalar_demand::Original{context:&source.context,admission,static_receipt:receipt};
+                let result=self.evaluator.scalar_ast_in_with_features_using(context.identity.owner,root.original_expression(),procedure,&RefCell::new(std::collections::HashSet::new()),None,None,None,&demand);demand.finish(result)
+            }).map_err(|failure|match failure{crate::initializer_policy::InitializerFailure::Operational(actual)=>AbiError::operational(actual),crate::initializer_policy::InitializerFailure::Unsupported(reason)=>AbiError::unsupported(reason)})?;
+            return result.ok_or_else(||AbiError::unsupported("ABI setting is not a captured scalar"));
+        }
         self.evaluator
             .scalar_ast_in(
                 context.identity.owner,
@@ -894,6 +901,35 @@ impl crate::initializer_policy::InitializerEvaluatorFactory for DriverEvaluator<
     }
 }
 impl CapturedInitializerEvaluator for DriverEvaluator<'_> {
+    fn evaluate_original_dimension_checked(&self,input:&dm_tree::frontend::OriginalInitializerDimensionInput<'_>,write:&dm_ir::InitializerWrite)->Result<Evaluation,crate::initializer_policy::InitializerFailure>{
+      use crate::initializer_policy::InitializerFailure;
+      let context=input.declaration_context();let receipt=input.source_static_receipt();
+      scalar_demand::with_admission(&context,|admission|{let demand=scalar_demand::Original{context:&context,admission,static_receipt:receipt.as_ref()};
+       let result=(||{
+        // The sealed dimension input supplies source authority. Equality only
+        // checks that the caller did not adapt its lexical/target policy.
+        if write!=input.original_write(){return Err(InitializerFailure::Unsupported("dimension write differs from original source input".into()))}
+        let root=input.prepare(admission).map_err(scalar_demand::source_failure)?;
+        self.evaluate_original_ast_policy(write,root.ast(),&demand).map(|(evaluation,_)|evaluation)
+       })();demand.finish(result)
+      })
+    }
+
+    fn evaluate_original_ast_write_checked<'source>(&self,input:&dm_tree::frontend::OriginalInitializerExpressionInput<'source>,write:&dm_ir::InitializerWrite,root:&dm_tree::frontend::OriginalInitializerExpression<'source>,ast:&dm_syntax::Expr,_symbols:&dm_ir::SymbolTable)->Result<Evaluation,crate::initializer_policy::InitializerFailure>{
+      use crate::initializer_policy::InitializerFailure;
+      let context=input.declaration_context();let receipt=input.source_static_receipt();
+      scalar_demand::with_admission(&context,|admission|{
+       let demand=scalar_demand::Original{context:&context,admission,static_receipt:receipt.as_ref()};
+       let result=(||{context.require_initializer(input).map_err(scalar_demand::source_domain_failure)?;require_original_adaptation(input,write)?;
+        let current=input.prepare(admission).map_err(scalar_demand::source_failure)?;
+        if !root.same_root(&current)||!original_subtree(current.ast(),ast,admission)?{return Err(InitializerFailure::Unsupported("initializer helper subtree is not original current source".into()))}
+        if let Some(reason)=self.instance_call_error_controlled(write,ast,&||demand.frame())?{return Ok(Evaluation::SourceError(reason))}
+        if let Some(reason)=self.constructor_reference_error_controlled(write,ast,&||demand.frame())?{return Ok(Evaluation::SourceError(reason))}
+        self.scalar_ast_in_with_features_using(write.lexical_owner,ast,write.lexical_procedure,&RefCell::new(std::collections::HashSet::new()),None,None,None,&demand).map(|value|value.map_or(Evaluation::Runtime,Evaluation::Scalar))
+       })();demand.finish(result)
+      })
+    }
+
     fn evaluate_original_write_checked<'source>(&self,input:&dm_tree::frontend::OriginalInitializerExpressionInput<'source>,adapted_write:&dm_ir::InitializerWrite)->Result<(Evaluation,Option<crate::initializer_policy::ScopedPreparedInitializerExpression<'source>>),crate::initializer_policy::InitializerFailure>{
         let context=input.declaration_context();
         self.evaluate_original_write_in(input,adapted_write,&context)
@@ -1249,6 +1285,7 @@ mod original_setting_tests {
                 metadata,
                 evaluator: &driver,
                 lexical: false,
+                source:None,
             };
             let first_body = (!abi_first).then(|| body_root(&front));
             SCALAR_TEXT_PARSES.with(|n| n.set(0));
@@ -1352,6 +1389,7 @@ mod original_setting_tests {
             metadata,
             evaluator: &driver,
             lexical: false,
+                source:None,
         }
         .evaluate(value, &context)
         .unwrap_err();
@@ -1453,6 +1491,7 @@ mod original_setting_tests {
             metadata,
             evaluator: &evaluator,
             lexical: false,
+                source:None,
         }
         .evaluate(expression, &context)
         .unwrap();
@@ -1667,6 +1706,7 @@ mod original_setting_tests {
                 metadata,
                 evaluator: &driver,
                 lexical: false,
+                source:None,
             };
             SCALAR_TEXT_PARSES.with(|n| n.set(0));
             let actual = procedure_abi::prepare_verified_procedure_original_tokens_with_sites(
@@ -1924,3 +1964,11 @@ mod scalar_original_tests;
 #[cfg(test)]
 #[path="driver_static_scalar_tests.rs"]
 mod driver_static_scalar_tests;
+
+#[cfg(test)]
+#[path="driver_original_abi_scalar_tests.rs"]
+mod original_abi_scalar_tests;
+
+#[cfg(test)]
+#[path="driver_original_precheck_tests.rs"]
+mod original_precheck_tests;

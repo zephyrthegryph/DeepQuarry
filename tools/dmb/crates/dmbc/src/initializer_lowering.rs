@@ -95,9 +95,10 @@ impl DebugSourceProvider for CapturedOrigins {
         u32::try_from(write_ordinal).map_err(|_| "initializer debug ordinal exceeds u32".into())
     }
 }
-fn value_expression(value: &RuntimeValue) -> std::borrow::Cow<'_, dm_syntax::Expr> {
+fn value_expression(value: &RuntimeValue) -> Option<std::borrow::Cow<'_, dm_syntax::Expr>> {
     use dm_syntax::{Expr, ExprKind, Span};
-    match value {
+    Some(match value {
+        RuntimeValue::OriginalExpression(_)|RuntimeValue::OriginalSizedArray(_)=>return None,
         RuntimeValue::Expression(value) => std::borrow::Cow::Borrowed(value.as_ref()),
         RuntimeValue::SizedArrayExplicit(explicit) if explicit.expression.is_some() => {
             std::borrow::Cow::Borrowed(explicit.expression.as_deref().unwrap())
@@ -132,7 +133,30 @@ fn value_expression(value: &RuntimeValue) -> std::borrow::Cow<'_, dm_syntax::Exp
                 },
             })
         }
-    }
+    })
+}
+enum CurrentValue<'value,'source>{Owned(std::borrow::Cow<'value,dm_syntax::Expr>),Original(crate::initializer_policy::CurrentRuntimeExpression<'source>)}
+impl AsRef<dm_syntax::Expr> for CurrentValue<'_,'_>{fn as_ref(&self)->&dm_syntax::Expr{match self{Self::Owned(value)=>value.as_ref(),Self::Original(value)=>value.ast()}}}
+fn current_value<'value,'source>(value:&'value RuntimeValue,source:Option<&dm_tree::frontend::OriginalInitializerContext<'source>>,ordinal:usize)->Result<CurrentValue<'value,'source>,InitializerLoweringError>{
+ if let Some(owned)=value_expression(value){return Ok(CurrentValue::Owned(owned))}
+ let source=source.ok_or_else(||InitializerLoweringError::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"original runtime requires current issued source context")))?;
+ let input=source.input(ordinal).map_err(runtime_source_error)?;
+ let recipe=match value{RuntimeValue::OriginalExpression(recipe)=>recipe,RuntimeValue::OriginalSizedArray(value)=>&value.expression,_=>return Err("current runtime shape unavailable".into())};
+ let current=recipe.reborrow(&input).map_err(runtime_source_error)?.ok_or("runtime original recipe differs from current source owner")?;Ok(CurrentValue::Original(current))
+}
+fn runtime_source_error(failure:dm_tree::frontend::BodySyntaxFailure)->InitializerLoweringError{match failure{dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>InitializerLoweringError::Operational(actual),dm_tree::frontend::BodySyntaxFailure::Syntax(source)=>InitializerLoweringError::Unsupported(source.message)}}
+/// Explicit source-required executable consumer. Compatibility entry points keep
+/// their original capture/algorithm and cannot mint this startup role.
+fn lower_original_startup_with_options<R:Resolver>(frontend:&ColdFrontend,startup:&crate::startup::OriginalStartup<'_>,evaluator:&dyn CapturedInitializerEvaluator,host:&R,resource_context:Option<u128>,options:LowerOptions<'_>)->Result<LoweredInitializers,InitializerLoweringError>{
+ crate::daemon::control::checkpoint().map_err(InitializerLoweringError::Operational)?;startup.validate_for(frontend)?;
+ let result=lower_plan_source((frontend,startup.plan()),Some(startup),evaluator,host,resource_context,false,options);
+ if matches!(&result,Err(InitializerLoweringError::Operational(_))){return result}crate::daemon::control::checkpoint().map_err(InitializerLoweringError::Operational)?;result
+}
+pub(crate) fn lower_original_startup<R:Resolver>(frontend:&ColdFrontend,startup:&crate::startup::OriginalStartup<'_>,evaluator:&dyn CapturedInitializerEvaluator,host:&R,resource:Option<u128>)->Result<LoweredInitializers,InitializerLoweringError>{
+ lower_original_startup_with_options(frontend,startup,evaluator,host,resource,LowerOptions{allocation:None,classification:None,observer:None,memo:None,executor:None,parallel:None})
+}
+pub(crate) fn lower_original_startup_on_executor_with_allocation<R:Resolver>(frontend:&ColdFrontend,startup:&crate::startup::OriginalStartup<'_>,evaluator:&dyn CapturedInitializerEvaluator,host:&R,resource:Option<u128>,execution:InitializerExecution<'_>,allocation:Option<&crate::startup_allocation::StartupAllocationRoster>)->Result<LoweredInitializers,InitializerLoweringError>{
+ lower_original_startup_with_options(frontend,startup,evaluator,host,resource,LowerOptions{allocation,classification:execution.classification,observer:execution.observer,memo:execution.memo,executor:Some(execution.executor),parallel:execution.evaluator.map(|e|(e,execution.executor))})
 }
 pub fn lower<R: Resolver>(
     frontend: &ColdFrontend,
@@ -291,8 +315,18 @@ fn lower_plan<R: Resolver>(
     resource_search_context: Option<u128>,
     validate_statics: bool,
     options: LowerOptions<'_>,
+) -> Result<LoweredInitializers, InitializerLoweringError> {lower_plan_source(captured,None,evaluator,host,resource_search_context,validate_statics,options)}
+fn lower_plan_source<R: Resolver>(
+    captured: (&ColdFrontend, &InitializerPlan),
+    original:Option<&crate::startup::OriginalStartup<'_>>,
+    evaluator: &dyn CapturedInitializerEvaluator,
+    host: &R,
+    resource_search_context: Option<u128>,
+    validate_statics: bool,
+    options: LowerOptions<'_>,
 ) -> Result<LoweredInitializers, InitializerLoweringError> {
     let (frontend, plan) = captured;
+    let source=original.map(|startup|{startup.validate_for(frontend)?;if !std::ptr::eq(plan,startup.plan()){return Err(InitializerLoweringError::Invariant("source startup plan is not actual captured owner".into()))}frontend.original_issued_initializer_context(startup.issued_initializer_plan()).map_err(runtime_source_error)}).transpose()?;
     let LowerOptions {
         allocation,
         classification: reuse,
@@ -321,7 +355,7 @@ fn lower_plan<R: Resolver>(
     let measurement =
         crate::stage_measurements::Scope::new(observer, InitializerStage::Classification);
     let debug_defined = frontend.plan.final_macros.contains_key("DEBUG");
-    let classification = match (parallel, reuse) {
+    let classification=if let Some(startup)=original{let captured=match(parallel.map(|(factory,_)|factory).or_else(||evaluator.parallel_evaluator()),reuse){(Some(factory),Some(reuse))=>initializer_policy::classify_original_startup_with_reuse(frontend,startup,evaluator,debug_defined,factory,reuse),_=>initializer_policy::classify_original_startup(frontend,startup,evaluator,debug_defined)};match captured{Ok(value)=>Ok(value),Err(initializer_policy::InitializerClassificationFailure::Semantic(source))=>Err(source),Err(initializer_policy::InitializerClassificationFailure::Operational(actual))=>return Err(InitializerLoweringError::Operational(actual))}}else{match (parallel, reuse) {
         (Some((context, executor)), Some(reuse)) => {
             initializer_policy::classify_with_reuse_on_executor(
                 &plan.writes,
@@ -347,6 +381,7 @@ fn lower_plan<R: Resolver>(
             evaluator,
             debug_defined,
         ),
+    }
     };
     let mut classified = match classification {
         Ok(classified) => classified,
@@ -393,6 +428,8 @@ fn lower_plan<R: Resolver>(
             ));
         }
     };
+    // Exact source reborrow precedes allocation order and all executable caches.
+    if source.is_some(){for write in &classified.writes{if let Some(value)=&write.runtime_value{let _current=current_value(value,source.as_ref(),write.source_ordinal)?;}}}
     if let Some(allocation) = allocation {
         allocation.order_runtime(plan, &mut classified, host)?;
     }
@@ -457,6 +494,7 @@ fn lower_plan<R: Resolver>(
             plan,
             &classified,
             &classified.groups[index],
+            source.as_ref(),
             host,
             resource_search_context,
             memo,
@@ -500,6 +538,7 @@ fn lower_group<R: Resolver>(
     plan: &InitializerPlan,
     classified: &ClassifiedInitializers,
     group: &initializer_policy::RuntimeGroup,
+    source:Option<&dm_tree::frontend::OriginalInitializerContext<'_>>,
     host: &R,
     resource_search_context: Option<u128>,
     memo: Option<&crate::lowering_memo::ProcedureMemo>,
@@ -659,6 +698,21 @@ fn lower_group<R: Resolver>(
             }
         }
     };
+    let assignments = group
+        .writes
+        .iter()
+        .map(|&index| {
+            let write = &classified.writes[index];
+            let value = current_value(
+                write
+                    .runtime_value
+                    .as_ref()
+                    .expect("current runtime presence validated above"),
+                source,write.source_ordinal,
+            )?;
+            Ok::<_,InitializerLoweringError>((&write.write.target, write.write.lexical_owner, value))
+        })
+        .collect::<Result<Vec<_>,InitializerLoweringError>>()?;
     let mut assembly_disk_attempt = disk::TransportAttempt::default();
     if let Some((store, key)) = assembly {
         let selected = memo.is_some_and(|memo| memo.verification.select());
@@ -671,7 +725,7 @@ fn lower_group<R: Resolver>(
                     recorder.record_occurrence(identity);
                 }
             }
-            let fresh = fragments::verify::assembly(classified, group, context(), &recorder);
+            let fresh = fragments::verify::assembly_with_values(classified,group,context(),&recorder,|index|assignments.get(index).map(|(_,_,value)|value.as_ref()));
             fragments::verify::code(
                 key,
                 old_reads,
@@ -687,7 +741,7 @@ fn lower_group<R: Resolver>(
                 group.writes.len(),
                 |index| {
                     let write = classified.writes.get(*group.writes.get(index)?)?;
-                    Some(value_expression(write.runtime_value.as_ref()?))
+                    let _=write;assignments.get(index).map(|(_,_,value)|std::borrow::Cow::Borrowed(value.as_ref()))
                 },
                 symbols,
                 host,
@@ -709,20 +763,6 @@ fn lower_group<R: Resolver>(
             });
         }
     }
-    let assignments = group
-        .writes
-        .iter()
-        .map(|&index| {
-            let write = &classified.writes[index];
-            let value = value_expression(
-                write
-                    .runtime_value
-                    .as_ref()
-                    .expect("current runtime presence validated above"),
-            );
-            (&write.write.target, write.write.lexical_owner, value)
-        })
-        .collect::<Vec<_>>();
     let value_continuations = group
         .writes
         .iter()
@@ -919,6 +959,7 @@ fn value_continuation(
     global: bool,
 ) -> Option<dm_codegen_byond::initializer::ValueContinuation<'_>> {
     match write.runtime_value.as_ref() {
+        Some(RuntimeValue::OriginalSizedArray(explicit))=>Some(dm_codegen_byond::initializer::ValueContinuation{dimensions:&explicit.dimensions,before_assignment:global,emit_assignment:true,assignment_is_allocation:false}),
         Some(RuntimeValue::SizedArrayExplicit(explicit)) => {
             Some(dm_codegen_byond::initializer::ValueContinuation {
                 dimensions: &explicit.dimensions,
@@ -938,3 +979,7 @@ fn value_continuation(
         _ => None,
     }
 }
+
+#[cfg(test)]
+#[path="initializer_original_runtime_tests.rs"]
+mod original_runtime_tests;

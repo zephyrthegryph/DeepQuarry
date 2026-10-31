@@ -1,5 +1,7 @@
 //! The original name-based boot graph judgement; no parser/type model/cache.
-use std::collections::{HashMap,HashSet};
+use std::collections::HashSet;
+#[path="global_compact.rs"]mod compact;
+pub(crate) use compact::Builder as CompactGlobalBuilder;
 /// The lifecycle procs of a system and a controller: the kernel calls them once, while the world boots.
 pub(crate) const BOOT_PROCS: &[&str] = &["New", "preinit", "initialize", "Initialize", "on_members_ready", "kernel_members_ready", "OnConfigLoad"];
 
@@ -72,85 +74,9 @@ impl GlobalIndex {
         match Self::from_facts_controlled(nodes,&roots,&mut crate::key_policy_control::Compatibility){Ok(v)=>v,Err(never)=>match never{}}
     }
     pub(crate) fn from_facts_controlled<C:crate::key_policy_control::Control>(nodes:&[(Node,Facts)],roots:&[bool],c:&mut C)->Result<GlobalIndex,C::Error>{
-        use crate::key_policy_control as kc;
-        c.checkpoint()?;
-        assert_eq!(nodes.len(),roots.len(),"producer must provide one original root fact per node");
-        kc::reserve(c,||{
-            let edges=nodes.iter().try_fold(0usize,|n,(_,f)|n.checked_add(f.calls.len())?.checked_add(f.refs.len())?.checked_add(f.writes.len())?.checked_add(f.field_writes.len()))?;
-            nodes.len().checked_mul(2048)?.checked_add(edges.checked_mul(1024)?)?.checked_add(8192)
-        })?;
-            // Who defines each name, and who calls it.
-            let mut defined: HashMap<&str, Vec<usize>> = HashMap::new();
-            for (i, (n, _)) in nodes.iter().enumerate() {
-                c.checkpoint()?;
-                defined.entry(n.1.as_str()).or_default().push(i);
-            }
-            let mut callers: HashMap<&str, Vec<usize>> = HashMap::new();
-            let mut referenced: HashSet<&str> = HashSet::new();
-            for (i, (_, f)) in nodes.iter().enumerate() {
-                c.checkpoint()?;
-                for c in &f.calls {
-                    callers.entry(c.as_str()).or_default().push(i);
-                }
-                for r in &f.refs {
-                    referenced.insert(r.as_str());
-                }
-            }
-            let roots = roots;
-            // What the roots reach.
-            let mut boot = vec![false; nodes.len()];
-            let mut stack: Vec<usize> = Vec::new();
-            for (i, r) in roots.iter().enumerate() {
-                if *r {
-                    boot[i] = true;
-                    stack.push(i);
-                }
-            }
-            while let Some(i) = stack.pop() {
-                c.checkpoint()?;
-                for c in &nodes[i].1.calls {
-                    for &d in defined.get(c.as_str()).map(|v| v.as_slice()).unwrap_or(&[]) {
-                        if !boot[d] {
-                            boot[d] = true;
-                            stack.push(d);
-                        }
-                    }
-                }
-            }
-            // Drop what something outside the set can also call, or what a callback names.
-            loop {
-                let mut changed = false;
-                for i in 0..nodes.len() {
-                    c.checkpoint()?;
-                    if !boot[i] || roots[i] {
-                        continue;
-                    }
-                    let name = nodes[i].0 .1.as_str();
-                    let outside = referenced.contains(name) || callers.get(name).map(|cs| cs.iter().any(|&c| !boot[c])).unwrap_or(false);
-                    if outside {
-                        boot[i] = false;
-                        changed = true;
-                    }
-                }
-                if !changed {
-                    break;
-                }
-            }
-            let mut out = GlobalIndex { boot_procs: boot.iter().filter(|b| **b).count(), ..Default::default() };
-            for (i, (_, f)) in nodes.iter().enumerate() {
-                c.checkpoint()?;
-                for w in &f.writes {
-                    out.written.insert(kc::own(c,w)?);
-                    if !boot[i] {
-                        out.runtime_written.insert(kc::own(c,w)?);
-                    }
-                }
-                if !boot[i] {
-                    for field in &f.field_writes{out.runtime_field_written.insert(kc::own(c,field)?);}
-                }
-            }
-            c.checkpoint()?;Ok(out)
+        compact::Builder::from_facts(nodes,roots,c)?.classify(c)
     }
+
 }
 pub(crate) fn is_root(n:&Node,is_system:impl FnOnce()->bool)->bool{
     match is_root_controlled(n,||Ok::<_,std::convert::Infallible>(is_system())){Ok(v)=>v,Err(never)=>match never{}}

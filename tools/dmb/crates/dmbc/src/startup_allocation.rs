@@ -277,9 +277,11 @@ impl StartupAllocationRoster {
                 .get(row.source_ordinal)
                 .ok_or("classified startup registration ordinal absent")?;
             let ast = match row.runtime_value.as_ref() {
-                Some(crate::initializer_policy::RuntimeValue::Expression(ast)) => Some(ast),
+                Some(crate::initializer_policy::RuntimeValue::Expression(ast)) => Some(ast.as_ref()),
+                Some(crate::initializer_policy::RuntimeValue::OriginalExpression(value))=>Some(value.shape_ast()),
+                Some(crate::initializer_policy::RuntimeValue::OriginalSizedArray(value))=>Some(value.expression.shape_ast()),
                 Some(crate::initializer_policy::RuntimeValue::SizedArrayExplicit(explicit)) => {
-                    explicit.expression.as_ref()
+                    explicit.expression.as_deref()
                 }
                 _ => None,
             };

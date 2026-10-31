@@ -2,6 +2,13 @@
 use super::*;
 use crate::initializer_policy::{ClassifiedInitializers, DefaultValue, RuntimeValue};
 impl HeapCensus {
+    pub(crate) fn original_initializer_runtime(&mut self,owner:&str,value:&Arc<crate::initializer_policy::OriginalRuntimeExpression>){
+      if self.arc_object(owner,value){
+       value.visit_storage(|pointer,bytes|{self.exposed_buffer(owner,pointer,bytes,bytes);});
+       if let Some(parent)=value.retained_statement_body(){if self.arc_object(owner,parent){self.typed_body(owner,parent);}}else{self.typed_expression(owner,value.shape_ast());}
+      }
+    }
+
     pub(crate) fn initializer_ledger(&mut self, classified: &ClassifiedInitializers) {
         let owner = "initializer_ledger";
         if self.vec_payload(owner, &classified.accepted) {
@@ -31,6 +38,8 @@ impl HeapCensus {
                     }
                 }
                 match &fact.runtime_value {
+                    Some(RuntimeValue::OriginalExpression(value))=>self.original_initializer_runtime(owner,value),
+                    Some(RuntimeValue::OriginalSizedArray(value))=>{if self.arc_object(owner,value){self.slice(owner,&value.dimensions,true);self.original_initializer_runtime(owner,&value.expression);}},
                     Some(RuntimeValue::Expression(expression)) => {
                         let owner = "initializer_ledger.runtime_ast";
                         if self.arc_object(owner, expression) {

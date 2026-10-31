@@ -558,7 +558,7 @@ impl QueryDb {
     fn workspace_admit_root(&self, input: Key, result: Key) -> io::Result<()> {
         let raw = self
             .raw_policy
-            .leases
+            .admission.leases
             .lock()
             .unwrap_or_else(|e| e.into_inner())
             .len();

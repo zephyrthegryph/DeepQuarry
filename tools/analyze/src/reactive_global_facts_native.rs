@@ -1,0 +1,187 @@
+//! Native producers for the original name-based boot and typed-write policies.
+//! Unique policy facts only; declarations/bodies/types stay in the original graph.
+use crate::{reactive_original_source::{ReadSource,ReadCallable},reactive_reads_native::{Failure,GlobalFacts},global_policy::{self,Facts,GlobalIndex},write_policy::WriteIndex,key_policy_control as kc};
+use dm_syntax::{Expr,ExprKind,Statement,StatementKind,ForControl,TypedVisitor,VisitDecision,NodeStep};
+use std::{collections::{HashMap,HashSet,BTreeSet},io,cell::RefCell};
+#[derive(serde::Serialize)]
+pub(crate) struct NativeGlobals{globals:crate::global_policy::GlobalRows,writes:crate::write_policy::WriteRows}
+fn denial()->Failure{Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"native global policy admission refused"))}
+fn require(source:&ReadSource<'_>)->Result<(),Failure>{source.require().map_err(|e|if source.budget().denied(){denial()}else{e.into()})}
+fn reserve(source:&ReadSource<'_>,bytes:Option<usize>)->Result<(),Failure>{source.reserve(bytes).map_err(|_|denial())}
+struct Control<'a,'s>{source:&'a ReadSource<'s>,poll:&'a dyn Fn()->io::Result<()>}
+impl kc::Control for Control<'_,'_>{
+ type Error=Failure;const CHECKED:bool=true;
+ fn checkpoint(&mut self)->Result<(),Failure>{(self.poll)()?;require(self.source)}
+ fn reserve(&mut self,n:usize)->Result<(),Failure>{reserve(self.source,Some(n))}
+ fn overflow(&mut self)->Failure{self.source.budget().deny();denial()}
+ fn allocation_failed(&mut self)->Failure{self.source.budget().deny();denial()}
+}
+fn row<T>(source:&ReadSource<'_>,rows:&mut Vec<T>)->Result<(),Failure>{if source.budget().row(rows){Ok(())}else{Err(denial())}}
+fn own(source:&ReadSource<'_>,text:&str)->Result<String,Failure>{reserve(source,text.len().checked_mul(4).and_then(|n|n.checked_add(256)))?;Ok(text.to_owned())}
+fn put(source:&ReadSource<'_>,set:&mut BTreeSet<String>,name:&str)->Result<(),Failure>{reserve(source,name.len().checked_mul(4).and_then(|n|n.checked_add(512)))?;set.insert(name.to_owned());Ok(())}
+fn test_code(rel:&str)->bool{rel.starts_with("code/tests/")||rel.starts_with("code/modules/unit_tests/")}
+fn plain(name:&str)->bool{let mut chars=name.chars();chars.next().is_some_and(|c|c=='_'||c.is_alphabetic())&&chars.all(|c|c=='_'||c.is_alphanumeric())}
+fn variable_owner(source:&ReadSource<'_>,owner:&str,name:&str)->Result<Option<String>,Failure>{
+ // Preserve var_owner's ancestry-only search; no implicit global fallback.
+ let mut current=Some(owner);let bound=source.inputs().archive().tree().types().len().checked_add(1).ok_or_else(denial)?;
+ for _ in 0..bound{
+  source.checkpoint().map_err(Failure::Operational)?;require(source)?;
+  let Some(ty)=current else{return Ok(None)};
+  if let Some(v)=source.variable(ty,name)?{if v.owner==ty{return Ok(Some(own(source,v.owner)?))}}
+  current=source.parent_type(ty)?;
+ }
+ if current.is_some(){return Err("global source ancestry exceeds actual original type roster".into())}Ok(None)
+}
+
+impl GlobalFacts for NativeGlobals{
+ fn constant_after_init(&self,name:&str)->Result<bool,Failure>{Ok(self.globals.constant_after_init(name))}
+ fn field_constant_after_init(&self,name:&str)->Result<bool,Failure>{Ok(self.globals.field_constant_after_init(name))}
+ fn is_written_on(&self,source:&ReadSource<'_>,owner:&str,name:&str)->Result<bool,Failure>{
+  reserve(source,owner.len().checked_mul(4).and_then(|n|n.checked_add(256)))?;
+  self.writes.is_written_on_checked(owner,name,|owner,name|variable_owner(source,owner,name),|a,b|source.is_subtype(a,b).map_err(Failure::from))
+ }
+}
+struct Locals{globals:HashSet<String>,typed:HashMap<String,Option<String>>}
+struct LocalCollector<'a,'body,'s>{source:&'a ReadSource<'s>,body:&'a dm_tree::frontend::ArchivedBody<'body>,locals:Locals,error:Option<Failure>,poll:&'a dyn Fn()->io::Result<()>}
+impl LocalCollector<'_,'_,'_>{
+ fn add(&mut self,name:&str,ty:Option<String>,typed:bool)->Result<(),Failure>{reserve(self.source,name.len().checked_add(ty.as_ref().map_or(0,String::len)).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(1024)))?;self.locals.globals.insert(name.to_owned());if typed{self.locals.typed.insert(name.to_owned(),ty);}Ok(())}
+ fn bind(&mut self,header:dm_syntax::Span,bare:&[&str],typed:bool)->Result<(),Failure>{
+  let locals=self.body.source_locals()?;let rows=locals.in_span(header)?;
+  if !rows.is_empty(){for entry in rows{(self.poll)()?;let name=locals.name(entry)?;reserve(self.source,locals.type_path_width(entry)?.checked_mul(8).and_then(|n|n.checked_add(512)))?;let ty=if typed{locals.type_path(entry)?}else{None};self.add(name,ty,typed)?;}
+   // Pair's declared key may be the only ledger row; its bare value still
+   // shadows a global in the old whole-proc local-name set.
+   for name in bare{if plain(name)&&!self.locals.globals.contains(*name){self.add(name,None,typed)?;}}
+   return Ok(())}
+  for name in bare{if !plain(name){return Err("global policy binding lacks original declaration or bare identifier".into())}self.add(name,None,typed)?;}Ok(())
+ }
+ fn statement_checked(&mut self,s:&Statement)->Result<(),Failure>{
+  (self.poll)()?;require(self.source)?;
+  match &s.kind{
+   StatementKind::Var{..}=>self.bind(s.header_span,&[],true)?,
+   StatementKind::For{control,..}=>match control{
+    ForControl::All{declaration}=>self.bind(s.header_span,&[declaration],true)?,
+    ForControl::Each{binding,..}=>self.bind(s.header_span,&[binding],true)?,
+    ForControl::Pair{key_binding,value_binding,..}=>self.bind(s.header_span,&[key_binding,value_binding],false)?,
+    ForControl::Range{binding,..}|ForControl::RangeImplicitArray{binding,..}=>self.bind(s.header_span,&[binding],false)?,
+    // The original collect_locals does not descend into C-style init clauses.
+    ForControl::CStyle{..}=>(),
+   },_=>(),
+  }Ok(())
+ }
+}
+impl TypedVisitor for LocalCollector<'_,'_,'_>{
+ fn statement(&mut self,s:&Statement,_:&[NodeStep])->VisitDecision{if self.error.is_some(){return VisitDecision::Stop}match self.statement_checked(s){Ok(())=>VisitDecision::Descend,Err(e)=>{self.error=Some(e);VisitDecision::Stop}}}
+ fn expression(&mut self,_:&Expr,_:&[NodeStep])->VisitDecision{VisitDecision::Skip}
+ fn projected_expression(&mut self,_:dm_syntax::ProjectedExprView<'_>,_:&[NodeStep])->VisitDecision{VisitDecision::Skip}
+}
+fn field_name(mut e:&Expr)->Option<&str>{loop{match &e.kind{ExprKind::Index{object,..}|ExprKind::SafeIndex{object,..}=>e=object,ExprKind::Member{selector,..}|ExprKind::SafeMember{selector,..}=>return Some(selector),ExprKind::Ident(n)=>return Some(n),_=>return None}}}
+fn is_bare_field(mut e:&Expr)->bool{loop{match &e.kind{ExprKind::Index{object,..}|ExprKind::SafeIndex{object,..}=>e=object,ExprKind::Ident(_)=>return true,_=>return false}}}
+fn global_name<'a>(mut e:&'a Expr,globals:&HashSet<String>,glob:&HashSet<String>,locals:&HashSet<String>)->Option<&'a str>{loop{match &e.kind{
+ ExprKind::Index{object,..}|ExprKind::SafeIndex{object,..}=>e=object,
+ ExprKind::Member{object,selector,..}|ExprKind::SafeMember{object,selector,..}=>{
+  if let ExprKind::Ident(n)=&object.kind{if n=="GLOB"&&glob.contains(selector){return Some(selector)}}
+  if selector=="len"{e=object;continue}return None
+ },ExprKind::Ident(n)if !locals.contains(n)&&globals.contains(n)=>return Some(n),_=>return None}}}
+
+fn receiver(source:&ReadSource<'_>,owner:&str,locals:&HashMap<String,Option<String>>,mut e:&Expr,poll:&dyn Fn()->io::Result<()>)->Result<Option<String>,Failure>{
+ let mut selectors=Vec::new();
+ loop{poll()?;require(source)?;match &e.kind{ExprKind::Member{object,selector,..}|ExprKind::SafeMember{object,selector,..}=>{row(source,&mut selectors)?;selectors.push(selector.as_str());e=object;},_=>break}}
+ let mut current=match &e.kind{
+  ExprKind::Ident(n)if n=="src"=>Some(own(source,owner)?),
+  ExprKind::Ident(n)if n=="usr"=>None,
+  ExprKind::Ident(n)=>if let Some(ty)=locals.get(n){ty.as_deref().map(|s|own(source,s)).transpose()?}else{source.variable(owner,n)?.and_then(|v|(!v.declared.is_empty()).then_some(v.declared))},
+  _=>None,
+ };
+ for selector in selectors.into_iter().rev(){poll()?;require(source)?;current=match current{Some(ty)=>source.variable(&ty,selector)?.and_then(|v|(!v.declared.is_empty()).then_some(v.declared)),None=>None};}
+ Ok(current)
+}
+
+fn write_target(source:&ReadSource<'_>,owner:&str,locals:&HashMap<String,Option<String>>,mut e:&Expr,poll:&dyn Fn()->io::Result<()>)->Result<Option<(String,String)>,Failure>{
+ require(source)?;while let ExprKind::Index{object,..}|ExprKind::SafeIndex{object,..}=&e.kind{e=object;poll()?;require(source)?;}let(recv,name)=match &e.kind{
+  ExprKind::Member{object,selector,..}|ExprKind::SafeMember{object,selector,..}=>(receiver(source,owner,locals,object,poll)?,selector.as_str()),
+  ExprKind::Ident(n)if !locals.contains_key(n)=>(Some(own(source,owner)?),n.as_str()),
+  _=>return Ok(None),
+ };
+ let declaring=match recv{Some(ty)=>variable_owner(source,&ty,name)?,None=>None};
+ Ok(Some((match declaring{Some(ty)=>ty,None=>own(source,crate::write_policy::UNTYPED_WRITE)?},own(source,name)?)))
+}
+struct Scan<'a,'s>{source:&'a ReadSource<'s>,owner:&'a str,locals:&'a Locals,global_names:&'a HashSet<String>,glob_names:&'a HashSet<String>,facts:Facts,typed:BTreeSet<(String,String)>,constructor:bool,poll:&'a dyn Fn()->io::Result<()>,error:Option<Failure>}
+impl Scan<'_,'_>{
+ fn note(&mut self,e:&Expr,typed:bool)->Result<(),Failure>{
+  if let Some(name)=field_name(e){if !is_bare_field(e)||!self.locals.globals.contains(name){put(self.source,&mut self.facts.field_writes,name)?;}}
+  if let Some(name)=global_name(e,self.global_names,self.glob_names,&self.locals.globals){put(self.source,&mut self.facts.writes,name)?;}
+  if typed&&!self.constructor{if let Some(pair)=write_target(self.source,self.owner,&self.locals.typed,e,self.poll)?{reserve(self.source,Some(512))?;self.typed.insert(pair);}}
+  Ok(())
+ }
+ fn expr(&mut self,e:&Expr)->Result<(),Failure>{
+  (self.poll)()?;require(self.source)?;
+  match &e.kind{
+   ExprKind::Binary{op,lhs,..}if dm_syntax::assignment_target_access(op).is_some()=>self.note(lhs,true)?,
+   ExprKind::Unary{op,value}if matches!(op.as_str(),"++"|"--"|"post++"|"post--")=>self.note(value,true)?,
+   ExprKind::Unary{op,..}if op=="new"=>put(self.source,&mut self.facts.calls,"New")?,
+   ExprKind::Call{callee,args}=>match dm_syntax::call_target(callee){
+    dm_syntax::CallTarget::Named(name)=>{
+     if name=="new"{put(self.source,&mut self.facts.calls,"New")?;}
+     else if !matches!(name,"."|".."|"list"|"pick"|"input"|"locate"|"call"|"call_ext"|"as"){
+      put(self.source,&mut self.facts.calls,name)?;
+      if global_policy::REF_MACROS.contains(&name){if let Some(Expr{kind:ExprKind::Ident(r),..})=args.last(){put(self.source,&mut self.facts.refs,r)?;}}
+      if global_policy::ARG_MUTATORS.contains(&name){if let Some(first)=args.first(){self.note(first,false)?;}}
+     }
+    },
+    dm_syntax::CallTarget::GlobalNamed(name)=>put(self.source,&mut self.facts.calls,name)?,
+    dm_syntax::CallTarget::Member{object,selector}|dm_syntax::CallTarget::SafeMember{object,selector,..}=>{put(self.source,&mut self.facts.calls,selector)?;if global_policy::LIST_MUTATORS.contains(&selector){self.note(object,false)?;}},
+    _=>if let ExprKind::StaticMember{selector,..}=&callee.kind{put(self.source,&mut self.facts.refs,selector)?;},
+   },_=>(),
+  }Ok(())
+ }
+ fn accept(&mut self,result:Result<(),Failure>)->VisitDecision{match result{Ok(())=>VisitDecision::Descend,Err(e)=>{self.error=Some(e);VisitDecision::Stop}}}
+}
+impl TypedVisitor for Scan<'_,'_>{
+ fn statement(&mut self,s:&Statement,_:&[NodeStep])->VisitDecision{if self.error.is_some(){return VisitDecision::Stop}(||{(self.poll)()?;require(self.source)?;if let StatementKind::Assign{target,..}=&s.kind{self.note(target,true)?;}Ok(())})().map_or_else(|e|{self.error=Some(e);VisitDecision::Stop},|_|VisitDecision::Descend)}
+ fn expression(&mut self,e:&Expr,_:&[NodeStep])->VisitDecision{if self.error.is_some(){return VisitDecision::Stop}let result=self.expr(e);self.accept(result)}
+ fn projected_expression(&mut self,e:dm_syntax::ProjectedExprView<'_>,_:&[NodeStep])->VisitDecision{if self.error.is_some(){return VisitDecision::Stop}let result=self.expr(e.original());self.accept(result)}
+}
+fn declared_names(source:&ReadSource<'_>,owner:&str,poll:&dyn Fn()->io::Result<()>)->Result<HashSet<String>,Failure>{
+ let tree=source.inputs().archive().tree();let mut out=HashSet::new();let Some(id)=tree.lookup_type(dm_ir::SymbolId::of(owner))else{return Ok(out)};
+ for member in tree.type_node(id).ok_or("global declaration owner missing")?.members.iter(){
+  poll()?;require(source)?;let member=tree.member(*member).ok_or("global original variable member missing")?;if member.kind!=dm_tree::MemberKind::Var{continue}
+  let name=tree.symbols().text(member.name).ok_or("global original variable name missing")?;
+  if variable_owner(source,owner,name)?.as_deref()==Some(owner){reserve(source,name.len().checked_mul(4).and_then(|n|n.checked_add(512)))?;out.insert(name.to_owned());}
+ }Ok(out)
+}
+impl NativeGlobals{
+ pub(crate) fn build(source:&ReadSource<'_>,mut checkpoint:impl FnMut()->io::Result<()>)->Result<Self,Failure>{
+  let pending=(||{
+   let cell=RefCell::new(&mut checkpoint);let poll=||cell.borrow_mut()();
+   let globals=declared_names(source,"/",&poll)?;let glob=declared_names(source,"/datum/controller/global_vars",&poll)?;
+   let mut nodes=Vec::new();let mut roots=Vec::new();let mut writes=Vec::new();
+   source.visit_all_callables(||poll().map_err(Failure::from),|call:ReadCallable<'_>|->Result<(),Failure>{
+    poll()?;require(source)?;
+    let body=source.parse_body(call.ordinal).map_err(|e|match e{dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>Failure::Operational(actual),dm_tree::frontend::BodySyntaxFailure::Syntax(d)=>Failure::Unsupported(d.message)})?;
+    if !body.statement_body().has_native_literal_syntax()||!body.statement_body().syntax_complete(){return Err("global classifier requires checked complete original body".into())}
+    let mut locals=LocalCollector{source,body:&body,locals:Locals{globals:HashSet::new(),typed:HashMap::new()},error:None,poll:&poll};
+    let params=body.source_parameters()?;for p in params.entries()?{poll()?;let name=params.name(p)?;reserve(source,p.type_components().iter().try_fold(0usize,|n,s|n.checked_add(s.end.checked_sub(s.start)?)).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(1024)))?;locals.add(name,params.type_path(p)?,true)?;}
+    dm_analysis::policy_body_observation::observe(body.statement_body().view(),&mut locals)?;if let Some(error)=locals.error{return Err(error)}
+    let mut scan=Scan{source,owner:call.owner,locals:&locals.locals,global_names:&globals,glob_names:&glob,facts:Facts::default(),typed:BTreeSet::new(),constructor:matches!(call.name,"New"|"Initialize"|"initialize"|"Init"),poll:&poll,error:None};
+    dm_analysis::policy_body_observation::observe(body.statement_body().view(),&mut scan)?;if let Some(error)=scan.error{return Err(error)}
+    let payload=scan.typed.len().checked_mul(std::mem::size_of::<(String,String)>()).and_then(|n|n.checked_mul(4)).ok_or_else(denial)?;reserve(source,payload.checked_add(128))?;let mut typed=Vec::new();typed.try_reserve_exact(scan.typed.len()).map_err(|_|denial())?;if typed.capacity().checked_mul(std::mem::size_of::<(String,String)>()).is_none_or(|n|n>payload){return Err(denial())}typed.extend(scan.typed);row(source,&mut writes)?;writes.push(typed);
+    let rel=source.site_line(call.ordinal,1)?.0;
+    // Global boot facts exclude tests; the typed-write index deliberately does not.
+    if !test_code(&rel){let node=(own(source,call.owner)?,own(source,call.name)?);let root=global_policy::is_root_controlled(&node,||Ok::<_,Failure>(source.is_subtype(call.owner,"/datum/system")?||source.is_subtype(call.owner,"/datum/world_service")?||source.is_subtype(call.owner,"/datum/controller")?))?;row(source,&mut nodes)?;nodes.push((node,scan.facts));row(source,&mut roots)?;roots.push(root);}
+    Ok(())
+   })?;
+   let mut control=Control{source,poll:&poll};
+   let globals=GlobalIndex::from_facts_controlled(&nodes,&roots,&mut control)?.into_rows(&mut control)?;
+   let writes=WriteIndex::from_facts_controlled(writes,&mut control)?.into_rows(&mut control)?;
+   poll()?;require(source)?;Ok(Self{globals,writes})
+  })();
+  if matches!(&pending,Err(Failure::Operational(_))){return pending}
+  if source.budget().denied(){return Err(denial())}pending
+ }
+}
+
+impl NativeGlobals{pub(crate) fn visit_storage(&self,mut visit:impl FnMut(usize,usize)){self.globals.visit_storage(&mut visit);self.writes.visit_storage(visit);}}
+
+impl NativeGlobals{
+ pub(crate) fn retained_charge(&self)->Option<usize>{let mut bytes=Some(std::mem::size_of::<Self>());self.visit_storage(|_,n|bytes=bytes.and_then(|old|old.checked_add(n)));bytes}
+}

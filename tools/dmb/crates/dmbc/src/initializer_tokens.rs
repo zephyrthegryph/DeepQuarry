@@ -87,10 +87,10 @@ fn framed(output: &mut Vec<u8>, bytes: &[u8]) {
     output.extend_from_slice(&(bytes.len() as u64).to_le_bytes());
     output.extend_from_slice(bytes);
 }
-pub fn construction_key(expression:&Expr,source:&str,write:&InitializerWrite,symbols:&SymbolTable,evaluator:&dyn CapturedInitializerEvaluator)->Result<Option<Vec<u8>>,String>{construction_key_with::<value_demand::Compatibility>(expression,source,write,symbols,evaluator)}
+pub fn construction_key(expression:&Expr,source:&str,write:&InitializerWrite,symbols:&SymbolTable,evaluator:&dyn CapturedInitializerEvaluator)->Result<Option<Vec<u8>>,String>{construction_key_with::<value_demand::Compatibility>(expression,value_demand::Source::Flat(source),write,symbols,evaluator)}
 pub(crate) fn construction_key_checked(expression:&Expr,source:&str,write:&InitializerWrite,symbols:&SymbolTable,evaluator:&dyn CapturedInitializerEvaluator)->Result<Option<Vec<u8>>,InitializerFailure>{
     crate::daemon::control::checkpoint().map_err(InitializerFailure::Operational)?;
-    let result=construction_key_with::<value_demand::Checked>(expression,source,write,symbols,evaluator);
+    let result=construction_key_with::<value_demand::Checked>(expression,value_demand::Source::Flat(source),write,symbols,evaluator);
     if matches!(&result,Err(InitializerFailure::Operational(_))){return result;}
     crate::daemon::control::checkpoint().map_err(InitializerFailure::Operational)?;result
 }
@@ -110,7 +110,7 @@ impl<E: for<'a> From<&'a str>> From<&str> for KeyError<E> {
 }
 fn construction_key_with<D: value_demand::Demand>(
     expression: &Expr,
-    source: &str,
+    source: value_demand::Source<'_,'_>,
     write: &InitializerWrite,
     symbols: &SymbolTable,
     evaluator: &dyn CapturedInitializerEvaluator,
@@ -124,7 +124,7 @@ fn construction_key_with<D: value_demand::Demand>(
 }
 fn argument<D: value_demand::Demand>(
     expression: &Expr,
-    source: &str,
+    source: value_demand::Source<'_,'_>,
     write: &InitializerWrite,
     symbols: &SymbolTable,
     evaluator: &dyn CapturedInitializerEvaluator,
@@ -145,7 +145,7 @@ fn argument<D: value_demand::Demand>(
 fn arguments<D: value_demand::Demand>(
     arguments: &[Expr],
     list: bool,
-    source: &str,
+    source: value_demand::Source<'_,'_>,
     write: &InitializerWrite,
     symbols: &SymbolTable,
     evaluator: &dyn CapturedInitializerEvaluator,
@@ -183,7 +183,7 @@ fn arguments<D: value_demand::Demand>(
 fn new_key<D: value_demand::Demand>(
     path: dm_ir::SymbolId,
     args: &[Expr],
-    source: &str,
+    source: value_demand::Source<'_,'_>,
     write: &InitializerWrite,
     symbols: &SymbolTable,
     evaluator: &dyn CapturedInitializerEvaluator,
@@ -208,7 +208,7 @@ fn new_key<D: value_demand::Demand>(
 }
 fn construction<D: value_demand::Demand>(
     expression: &Expr,
-    source: &str,
+    source: value_demand::Source<'_,'_>,
     write: &InitializerWrite,
     symbols: &SymbolTable,
     evaluator: &dyn CapturedInitializerEvaluator,
@@ -850,4 +850,8 @@ mod tests {
         assert_eq!(debug.issue(vec![1]).unwrap().0, 0);
         assert_eq!(debug.issue(vec![1]).unwrap().0, 1);
     }
+}
+
+pub(crate) fn construction_key_source_checked(expression:&Expr,source:value_demand::Source<'_,'_>,write:&InitializerWrite,symbols:&SymbolTable,evaluator:&dyn CapturedInitializerEvaluator)->Result<Option<Vec<u8>>,InitializerFailure>{
+ crate::daemon::control::checkpoint().map_err(InitializerFailure::Operational)?;let result=construction_key_with::<value_demand::Checked>(expression,source,write,symbols,evaluator);if matches!(&result,Err(InitializerFailure::Operational(_))){return result}crate::daemon::control::checkpoint().map_err(InitializerFailure::Operational)?;result
 }

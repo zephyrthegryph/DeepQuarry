@@ -206,7 +206,7 @@ fn eviction_recomputes_without_frontend_or_body_parse_and_preserves_exact_findin
         let _guard = db.raw_policy.gate.lock().unwrap();
         db.raw_prune_locked(Instant::now() + MAX_AGE + Duration::from_secs(1));
     }
-    assert!(db.raw_policy.leases.lock().unwrap().is_empty());
+    assert!(db.raw_policy.admission.leases.lock().unwrap().is_empty());
     assert_eq!(
         db.raw_findings(&input, &names()).unwrap().runs[0].run.sites,
         first.runs[0].run.sites
@@ -638,7 +638,7 @@ fn request_boundary_reconciles_global_reservations_to_live_derived_values_only()
     assert_eq!(rows.runs[0].run.sites.len(), 2);
     let expected = q
         .raw_policy
-        .leases
+        .admission.leases
         .lock()
         .unwrap()
         .keys()
@@ -681,7 +681,7 @@ fn raw_mid_compute_cancellation_is_not_a_cached_semantic_refusal() {
     assert_eq!(error.kind(), io::ErrorKind::Interrupted);
     assert_eq!(crate::request_failure::exit_code(&error), 75);
     assert_eq!(db.raw_policy.admission.abort.poll_count(), 3);
-    let leases = db.raw_policy.leases.lock().unwrap();
+    let leases = db.raw_policy.admission.leases.lock().unwrap();
     assert!(leases.keys().filter(|k| k.kind == RAW_FINDINGS).all(|k| db
         .db
         .retained_value::<Result<Arc<Findings>, String>>(*k)
@@ -728,7 +728,7 @@ fn typed_scanner_mid_compute_cancellation_retries_same_captured_input() {
     assert_eq!(error.kind(), io::ErrorKind::Interrupted);
     assert_eq!(crate::request_failure::exit_code(&error), 75);
     assert_eq!(db.raw_policy.admission.abort.poll_count(), 4);
-    let leases = db.raw_policy.leases.lock().unwrap();
+    let leases = db.raw_policy.admission.leases.lock().unwrap();
     assert!(leases
         .keys()
         .filter(|k| k.kind == analyze_policy::ANALYZE_FINDINGS)

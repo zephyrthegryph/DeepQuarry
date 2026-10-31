@@ -374,6 +374,7 @@ pub(super) fn prepare(
         metadata,
         evaluator: &evaluated,
         lexical,
+        source:None,
     };
     let selected: &dyn CapturedConstantEvaluator = &borrowed;
     let policy = crate::procedure_policy::CapturedProcedurePolicy {

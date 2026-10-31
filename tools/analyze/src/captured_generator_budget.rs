@@ -9,6 +9,7 @@ pub const MAX_ROWS: usize = 10_000;
 pub struct Budget {
     limit: usize,
     used: AtomicUsize,
+    nested_retained: AtomicUsize,
     denied: AtomicBool,
 }
 impl Budget {
@@ -20,6 +21,7 @@ impl Budget {
         Ok(Arc::new(Self {
             limit,
             used: AtomicUsize::new(fixed),
+            nested_retained: AtomicUsize::new(0),
             denied: AtomicBool::new(false),
         }))
     }
@@ -39,6 +41,11 @@ impl Budget {
         }
         Ok(())
     }
+    /// Nested derived values also live in the family's original retained charge.
+    /// Exclude transferred bytes from the live TEMPORARY reservation before
+    /// another child, while keeping them in used for this operation's limit.
+    pub fn temporary_charge(&self)->usize{self.used().saturating_sub(self.nested_retained.load(Ordering::Acquire))}
+    pub fn retain_nested(&self,bytes:usize)->Result<(),String>{self.charge(bytes)?;self.nested_retained.fetch_add(bytes,Ordering::AcqRel);Ok(())}
     pub fn denied(&self) -> bool {
         self.denied.load(Ordering::Acquire)
     }

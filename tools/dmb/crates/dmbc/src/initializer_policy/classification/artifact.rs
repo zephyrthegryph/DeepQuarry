@@ -14,6 +14,8 @@ use std::sync::atomic::{AtomicU64, Ordering};
 mod tests;
 
 enum RuntimeRecipe {
+    Original(Arc<OriginalRuntimeExpression>),
+    OriginalSizedArray{dimensions:Arc<[u16]>,expression:Arc<OriginalRuntimeExpression>},
     Expression(shared_expression::SharedExpression),
     SizedArray(Arc<[u16]>),
     SizedArrayExplicit {
@@ -366,6 +368,9 @@ pub(super) fn retain_roster(reuse: InitializerReuse<'_>, keys: &[Arc<[u8]>]) {
         .retain_current_keys(keys.iter().map(AsRef::as_ref));
 }
 impl SemanticClassification {
+    fn owned_runtime(&self)->bool{!matches!(self.runtime,Some(RuntimeRecipe::Original(_)|RuntimeRecipe::OriginalSizedArray{..}))}
+    pub(crate) fn original_runtime(&self)->Option<&Arc<OriginalRuntimeExpression>>{match &self.runtime{Some(RuntimeRecipe::Original(root)|RuntimeRecipe::OriginalSizedArray{expression:root,..})=>Some(root),_=>None}}
+
     pub(crate) fn identity(&self) -> Arc<u8> {
         Arc::clone(&self.identity)
     }
@@ -383,6 +388,8 @@ impl SemanticClassification {
         ),
     ) {
         match &self.runtime {
+            Some(RuntimeRecipe::Original(_))=>visitor(&self.default,self.key.as_ref(),None,None),
+            Some(RuntimeRecipe::OriginalSizedArray{dimensions,..})=>visitor(&self.default,self.key.as_ref(),Some(dimensions),None),
             Some(RuntimeRecipe::Expression(value)) => value.visit_retained(|source, syntax| {
                 visitor(
                     &self.default,
@@ -422,6 +429,8 @@ impl SemanticClassification {
         let parsed_source = pending.parsed_runtime_source.take();
         let runtime = match pending.write.runtime_value.as_ref() {
             None => None,
+            Some(RuntimeValue::OriginalExpression(root))=>Some(RuntimeRecipe::Original(Arc::clone(root))),
+            Some(RuntimeValue::OriginalSizedArray(value))=>Some(RuntimeRecipe::OriginalSizedArray{dimensions:Arc::clone(&value.dimensions),expression:Arc::clone(&value.expression)}),
             Some(RuntimeValue::SizedArray(dimensions)) => {
                 Some(RuntimeRecipe::SizedArray(Arc::clone(dimensions)))
             }
@@ -474,6 +483,20 @@ impl SemanticClassification {
             key: pending.key.clone(),
         })
     }
+    fn bind_original(&self,context:&dm_tree::frontend::OriginalInitializerContext<'_>,ordinal:usize,write:&InitializerWrite,admission:&dm_syntax::SettingAdmission<'_>)->Result<Option<PendingWrite>,InitializerFailure>{
+      fn source(failure:dm_tree::frontend::BodySyntaxFailure)->InitializerFailure{match failure{dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>InitializerFailure::Operational(actual),dm_tree::frontend::BodySyntaxFailure::Syntax(source)=>InitializerFailure::Unsupported(source.message)}}
+      if write.declared_array.is_some(){for row in context.dimensions(ordinal).map_err(source)?{let(_,input)=row.map_err(source)?;if let Some(input)=input{input.prepare(admission).map_err(source)?;}}}
+      let input=if matches!(write.value,InitializerValue::Expression(_)){let input=context.input(ordinal).map_err(source)?;input.prepare(admission).map_err(source)?;Some(input)}else{None};
+      let runtime_value=match &self.runtime{
+        Some(RuntimeRecipe::Original(root))=>{let input=input.as_ref().ok_or_else(||InitializerFailure::Unsupported("original runtime recipe requires authored RHS".into()))?;if root.reborrow(input).map_err(source)?.is_none(){return Ok(None)}Some(RuntimeValue::OriginalExpression(Arc::clone(root)))},
+        Some(RuntimeRecipe::OriginalSizedArray{dimensions,expression})=>{let input=input.as_ref().ok_or_else(||InitializerFailure::Unsupported("original sized runtime recipe requires authored RHS".into()))?;if expression.reborrow(input).map_err(source)?.is_none(){return Ok(None)}Some(RuntimeValue::OriginalSizedArray(Arc::new(OriginalSizedArray{dimensions:Arc::clone(dimensions),expression:Arc::clone(expression)})))},
+        Some(RuntimeRecipe::Expression(_)|RuntimeRecipe::SizedArrayExplicit{expression:Some(_),..})=>return Ok(None),
+        Some(RuntimeRecipe::SizedArray(dimensions))=>Some(RuntimeValue::SizedArray(Arc::clone(dimensions))),
+        Some(RuntimeRecipe::SizedArrayExplicit{dimensions,expression:None})=>Some(RuntimeValue::sized_array_explicit(Arc::clone(dimensions),None)),
+        None=>None,
+      };
+      Ok(Some(PendingWrite{write:ClassifiedWrite{source_features:self.source_features,source_ordinal:ordinal,write:write.clone(),default:self.default.clone(),phase:self.phase,runtime_value},key:None,accepted:None,parsed_runtime_source:None}))
+    }
     fn bind(
         &self,
         write: &InitializerWrite,
@@ -493,6 +516,7 @@ impl SemanticClassification {
         }
         let runtime_value = match &self.runtime {
             None => None,
+            Some(RuntimeRecipe::Original(_)|RuntimeRecipe::OriginalSizedArray{..})=>return None,
             Some(RuntimeRecipe::SizedArray(dimensions)) => {
                 Some(RuntimeValue::SizedArray(Arc::clone(dimensions)))
             }
@@ -645,6 +669,21 @@ pub(super) fn classify_one_keyed_grouped_with<D:Demand>(
     shared_write: Option<&Arc<InitializerWrite>>,
     tokens: Option<&super::token_owner::RequestTokens>,
     admission: Option<&super::super::current_admission::Admission<'_, '_>>,
+) -> Result<PendingWrite, D::Failure> {classify_one_keyed_grouped_source_with::<D>(write,symbols,evaluator,fact,ordinal,factory,reuse,prepared_key,receipt_pool,shared_write,tokens,admission,None)}
+fn classify_one_keyed_grouped_source_with<D:Demand>(
+    write: &InitializerWrite,
+    symbols: &SymbolTable,
+    evaluator: &dyn CapturedInitializerEvaluator,
+    fact: ModifierFact,
+    ordinal: usize,
+    factory: ParallelEvaluator<'_>,
+    reuse: InitializerReuse<'_>,
+    prepared_key: Option<&Arc<[u8]>>,
+    receipt_pool: Option<&ReceiptPool>,
+    shared_write: Option<&Arc<InitializerWrite>>,
+    tokens: Option<&super::token_owner::RequestTokens>,
+    admission: Option<&super::super::current_admission::Admission<'_, '_>>,
+    source:Option<(&dm_tree::frontend::OriginalInitializerContext<'_>,&dm_syntax::SettingAdmission<'_>)>,
 ) -> Result<PendingWrite, D::Failure> {
     static ITEM: dm_profile::Accumulator = dm_profile::Accumulator::new("init.value.item");
     static VISIT: dm_profile::Accumulator = dm_profile::Accumulator::new("init.value.visit");
@@ -656,12 +695,13 @@ pub(super) fn classify_one_keyed_grouped_with<D:Demand>(
     let Some(factory_policy) = factory.factory.recording_policy_identity() else {
         reuse.store.declined.fetch_add(1, Ordering::Relaxed);
         let mut local = 0;
-        let mut pending = D::finish(classify_pending_with::<D>(
+        let mut pending = D::finish(classify_pending_source_with::<D>(
             std::iter::once(write),
             symbols,
             evaluator,
             &[fact],
             &mut local,
+            source.map(|(context,a)|(context,a,ordinal)),
         ))?
         .pop()
         .ok_or("initializer classification produced no write")?;
@@ -699,18 +739,20 @@ pub(super) fn classify_one_keyed_grouped_with<D:Demand>(
                 );
                 if let Err(actual)=D::checkpoint(){result=Some(Err(actual));return;}
                 let visit_timer = VISIT.time();
-                let visited = super::super::current_admission::visit(
-                    &reuse.store.values,
-                    key,
-                    &host,
-                    admission,
-                    &mut |value| value.input.as_ref() == Some(&input),
-                )
-                .0;
+                let mut rebound=None;
+                let visited=if let Some((context,a))=source{
+                    let visited=D::original(||reuse.store.values.try_visit_explained::<_,InitializerFailure>(key,&super::super::current_admission::Host(&host),&mut|value|->Result<bool,InitializerFailure>{
+                      if value.input.as_ref()!=Some(&input){return Ok(false)}
+                      let current=value.bind_original(context,ordinal,write,a)?;
+                      if let Some(current)=current{rebound=Some(current);Ok(true)}else{Ok(false)}
+                    }));
+                    match visited{Ok((accepted,_))=>{if accepted.is_none(){rebound=None}accepted},Err(actual)=>{result=Some(Err(actual));return}}
+                }else{super::super::current_admission::visit(&reuse.store.values,key,&host,admission,&mut|value|value.input.as_ref()==Some(&input)&&value.owned_runtime()).0};
                 drop(visit_timer);
                 if let Some(value) = visited {
                     let _bind = BIND.time();
-                    if let Some(mut current) = value.bind(write, symbols, ordinal) {
+                    let current=if source.is_some(){rebound.take()}else{value.bind(write,symbols,ordinal)};
+                    if let Some(mut current) = current {
                         if let Err(actual)=D::checkpoint(){result=Some(Err(actual));return;}
                         current.accepted = Some(Arc::clone(&value));
                         hit = true;
@@ -741,12 +783,13 @@ pub(super) fn classify_one_keyed_grouped_with<D:Demand>(
                     }
                 }
                 let mut local = 0;
-                result = Some(D::finish(classify_pending_with::<D>(
+                result = Some(D::finish(classify_pending_source_with::<D>(
                     std::iter::once(write),
                     symbols,
                     worker,
                     &[fact],
                     &mut local,
+                    source.map(|(context,a)|(context,a,ordinal)),
                 )));
             });
     if !captured {D::discard(result.take())?;}
@@ -754,12 +797,13 @@ pub(super) fn classify_one_keyed_grouped_with<D:Demand>(
         D::finish(result.ok_or("initializer recording factory omitted operation")?)?
     } else {
         let mut local = 0;
-        D::finish(classify_pending_with::<D>(
+        D::finish(classify_pending_source_with::<D>(
             std::iter::once(write),
             symbols,
             evaluator,
             &[fact],
             &mut local,
+            source.map(|(context,a)|(context,a,ordinal)),
         ))?
     }
     .pop()
@@ -784,7 +828,8 @@ pub(super) fn classify_one_keyed_grouped_with<D:Demand>(
         let dimensions = match &value.runtime {
             Some(
                 RuntimeRecipe::SizedArray(dimensions)
-                | RuntimeRecipe::SizedArrayExplicit { dimensions, .. },
+                | RuntimeRecipe::SizedArrayExplicit { dimensions, .. }
+                | RuntimeRecipe::OriginalSizedArray{dimensions,..},
             ) => Some(dimensions),
             _ => None,
         };
@@ -819,6 +864,7 @@ pub(super) fn classify_one_keyed_grouped_with<D:Demand>(
                             .and_then(|extra| weight.checked_add(extra))
                     })
                 }),
+                Some(RuntimeRecipe::Original(root)|RuntimeRecipe::OriginalSizedArray{expression:root,..})=>crate::heap_census::initializer_artifacts::original_runtime_weight(root).and_then(|extra|weight.checked_add(extra)),
                 _ => Some(weight),
             })
         });
@@ -858,3 +904,22 @@ mod checked_transport_tests;
 
 #[cfg(test)]
 thread_local!{static AFTER_ITEM_CANCEL:std::cell::RefCell<Option<crate::daemon::control::Cancellation>>=const{std::cell::RefCell::new(None)};}
+
+/// Same per-write recording/claim core with private current source receipts.
+/// Completed earlier items remain valid cache entries if a later item aborts;
+/// no completed classification batch escapes an operational failure.
+pub(in crate::initializer_policy) fn classify_original_from_facts(context:&dm_tree::frontend::OriginalInitializerContext<'_>,admission:&dm_syntax::SettingAdmission<'_>,writes:&[InitializerWrite],symbols:&SymbolTable,evaluator:&dyn CapturedInitializerEvaluator,facts:&[ModifierFact],debug:bool,factory:ParallelEvaluator<'_>,reuse:InitializerReuse<'_>)->Result<ClassifiedInitializers,InitializerClassificationFailure>{
+ let policy=factory.factory.recording_policy_identity();let prepared=writes.iter().zip(facts).map(|(write,fact)|policy.map(|policy|Arc::<[u8]>::from(key(write,*fact,reuse,policy)))).collect::<Vec<_>>();
+ reuse.store.values.retain_current_keys(prepared.iter().flatten().map(|key|key.as_ref()));
+ let mut pending=Vec::with_capacity(writes.len());
+ for(ordinal,write)in writes.iter().enumerate(){
+  let value=<demand::Checked as Demand>::finish(classify_one_keyed_grouped_source_with::<demand::Checked>(write,symbols,evaluator,facts[ordinal],ordinal,factory,reuse,prepared[ordinal].as_ref(),None,None,None,None,Some((context,admission))));
+  match value{Ok(value)=>pending.push(value),Err(ClassificationReadFailure::Operational(actual))=>return Err(InitializerClassificationFailure::Operational(actual)),Err(ClassificationReadFailure::Semantic(source))=>return Err(InitializerClassificationFailure::Semantic(ClassificationError{issues:source.into_issues(ordinal)}))}
+ }
+ let mut ordinal=0;let result=finish_pending(pending.into_iter(),debug,&mut ordinal).map_err(|source|InitializerClassificationFailure::Semantic(ClassificationError{issues:ClassificationFailure::from(source).into_issues(ordinal)}));
+ crate::daemon::control::checkpoint().map_err(InitializerClassificationFailure::Operational)?;result
+}
+
+#[cfg(test)]
+#[path="artifact_original_tests.rs"]
+mod original_transport_tests;

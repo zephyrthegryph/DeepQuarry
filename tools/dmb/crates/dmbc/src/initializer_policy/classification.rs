@@ -14,12 +14,14 @@ pub(super) struct PendingWrite {
 fn classify_pending<'a>(writes:impl ExactSizeIterator<Item=&'a InitializerWrite>,symbols:&SymbolTable,evaluator:&dyn CapturedInitializerEvaluator,facts:&[ModifierFact],source_ordinal:&mut usize)->Result<Vec<PendingWrite>,ClassificationFailure>{
     classify_pending_with::<demand::Compatibility>(writes,symbols,evaluator,facts,source_ordinal)
 }
-fn classify_pending_with<'a,D:Demand>(
+fn classify_pending_with<'a,D:Demand>(writes:impl ExactSizeIterator<Item=&'a InitializerWrite>,symbols:&SymbolTable,evaluator:&dyn CapturedInitializerEvaluator,facts:&[ModifierFact],source_ordinal:&mut usize)->Result<Vec<PendingWrite>,D::Failure>{classify_pending_source_with::<D>(writes,symbols,evaluator,facts,source_ordinal,None)}
+fn classify_pending_source_with<'a,'source,D:Demand>(
     writes: impl ExactSizeIterator<Item = &'a InitializerWrite>,
     symbols: &SymbolTable,
     evaluator: &dyn CapturedInitializerEvaluator,
     facts: &[ModifierFact],
     source_ordinal: &mut usize,
+    source:Option<(&dm_tree::frontend::OriginalInitializerContext<'source>,&dm_syntax::SettingAdmission<'_>,usize)>,
 ) -> Result<Vec<PendingWrite>, D::Failure> {
     let mut classified = Vec::with_capacity(writes.len());
     for (ordinal, original) in writes.enumerate() {
@@ -46,7 +48,9 @@ fn classify_pending_with<'a,D:Demand>(
             let InitializerValue::Expression(value) = &original.value else {
                 return Err(format!("{label} header property requires an authored value").into());
             };
-            let (evaluation, prepared) = D::prepared(evaluator,original,value)?;
+            let original_input=source.map(|(context,_,base)|D::source(||context.input(base+ordinal))).transpose()?;
+            let (evaluation,prepared)=match &original_input{Some(input)=>D::original_prepared(evaluator,input,original)?,None=>D::prepared(evaluator,original,value)?};
+            if source.is_some(){D::original(||if prepared.as_ref().and_then(|value|value.original()).is_some(){Ok(())}else{Err(InitializerFailure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"source-required evaluator omitted original prepared syntax")))})?;}
             let Evaluation::Scalar(value) = evaluation.checked()? else {
                 return Err(format!("{label} header property requires a captured scalar").into());
             };
@@ -81,12 +85,21 @@ fn classify_pending_with<'a,D:Demand>(
         let write = original.clone();
         if let Some(array) = &original.declared_array {
             let unsized_only = array.dimensions.len() == 1 && array.dimensions[0].is_none();
+            let mut native_dimensions=source.map(|(context,_,base)|D::source(||context.dimensions(base+ordinal))).transpose()?;
+            if unsized_only{if let Some(cursor)=native_dimensions.as_mut(){for row in cursor{let(index,input)=D::source(||row)?;if index!=0||input.is_some(){return Err("unsized source dimensions differ from original metadata".into())}}}}
             if !unsized_only {
                 let mut dimensions = Vec::with_capacity(array.dimensions.len());
-                for dimension in array.dimensions.iter() {
+                for (dimension_ordinal,dimension) in array.dimensions.iter().enumerate() {
                     let dimension = dimension.as_ref().ok_or("mixed unsized array dimensions")?;
-                    let Evaluation::Scalar(SemanticValue::NumberBits(bits)) =
-                        D::write(evaluator,&write,dimension)?.checked()?
+                    let evaluation=if let Some(cursor)=native_dimensions.as_mut(){
+                        let(index,input)=D::source(||cursor.next().transpose())?.ok_or("original source dimension missing")?;
+                        if index!=dimension_ordinal{return Err("original source dimension ordinal differs".into())}
+                        let input=input.ok_or("mixed unsized array dimensions")?;
+                        let (_,admission,_)=source.expect("native dimension cursor has source operation");
+                        D::source(||input.prepare(admission))?;
+                        D::dimension(evaluator,&input,&write)?
+                    }else{D::write(evaluator,&write,dimension)?};
+                    let Evaluation::Scalar(SemanticValue::NumberBits(bits)) = evaluation.checked()?
                     else {
                         return Err("array dimension must be a constant integer".into());
                     };
@@ -96,6 +109,7 @@ fn classify_pending_with<'a,D:Demand>(
                     }
                     dimensions.push(size as u16);
                 }
+                if let Some(cursor)=native_dimensions.as_mut(){if D::source(||cursor.next().transpose())?.is_some(){return Err("original source has extra dimension suffix".into())}}
                 if dimensions.is_empty() {
                     return Err("array has no dimensions".into());
                 }
@@ -108,12 +122,13 @@ fn classify_pending_with<'a,D:Demand>(
                     let mut authored = original.clone();
                     authored.declared_array = None;
                     let mut local_ordinal = 0;
-                    let mut pending = classify_pending_with::<D>(
+                    let mut pending = classify_pending_source_with::<D>(
                         std::iter::once(&authored),
                         symbols,
                         evaluator,
                         &facts[ordinal..=ordinal],
                         &mut local_ordinal,
+                        source.map(|(context,a,base)|(context,a,base+ordinal)),
                     )?
                     .pop()
                     .ok_or("explicit array classification missing")?;
@@ -126,22 +141,13 @@ fn classify_pending_with<'a,D:Demand>(
                             "explicit sized array nonliteral initializer is unsupported".into()
                         );
                     }
-                    let expression = match pending.write.runtime_value.take() {
-                        Some(RuntimeValue::Expression(value)) => Some(value),
-                        None if pending.write.default
-                            == DefaultValue::Scalar(SemanticValue::Null) =>
-                        {
-                            None
-                        }
-                        _ => return Err("explicit sized array scalar value is unsupported".into()),
+                    let runtime_value=match pending.write.runtime_value.take(){
+                        Some(RuntimeValue::OriginalExpression(expression))=>RuntimeValue::OriginalSizedArray(Arc::new(OriginalSizedArray{dimensions:dimensions.into(),expression})),
+                        Some(RuntimeValue::Expression(expression))=>RuntimeValue::sized_array_explicit(dimensions.into(),Some(expression)),
+                        None if pending.write.default==DefaultValue::Scalar(SemanticValue::Null)=>RuntimeValue::sized_array_explicit(dimensions.into(),None),
+                        _=>return Err("explicit sized array scalar value is unsupported".into()),
                     };
-                    pending.write.write = original.clone();
-                    pending.write.source_ordinal = ordinal;
-                    pending.write.phase = Some(Phase::LiteralAllocation);
-                    pending.write.runtime_value = Some(RuntimeValue::sized_array_explicit(
-                        dimensions.into(),
-                        expression,
-                    ));
+                    pending.write.write=original.clone();pending.write.source_ordinal=ordinal;pending.write.phase=Some(Phase::LiteralAllocation);pending.write.runtime_value=Some(runtime_value);
                     classified.push(pending);
                     continue;
                 }
@@ -174,7 +180,9 @@ fn classify_pending_with<'a,D:Demand>(
                 return Err("array allocation lacks authored shape".into());
             }
             InitializerValue::Expression(value) => {
-                let (evaluation, prepared) = D::prepared(evaluator,&write,value)?;
+                let original_input=source.map(|(context,_,base)|D::source(||context.input(base+ordinal))).transpose()?;
+                let (evaluation,prepared)=match &original_input{Some(input)=>D::original_prepared(evaluator,input,&write)?,None=>D::prepared(evaluator,&write,value)?};
+            if source.is_some(){D::original(||if prepared.as_ref().and_then(|value|value.original()).is_some(){Ok(())}else{Err(InitializerFailure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"source-required evaluator omitted original prepared syntax")))})?;}
                 source_features = prepared
                     .as_ref()
                     .map_or(Default::default(), |value| value.source_features());
@@ -197,6 +205,18 @@ fn classify_pending_with<'a,D:Demand>(
                             None => ScopedPreparedInitializerExpression::from_owned(PreparedInitializerExpression::parse_captured(value, symbols)?
                                 .ok_or("missing initializer expression")?),
                         };
+                        if prepared.original().is_some(){
+                            let (root,_)=prepared.into_original().map_err(|_|"original prepared root disappeared")?;
+                            let input=original_input.as_ref().ok_or("original runtime classification requires issued complete source input")?;
+                            let view=value_demand::Source::Original{input,root:&root};
+                            if let Some(matrix)=D::source_fold(&write,root.ast(),view,symbols,evaluator)?{
+                                classified.push(PendingWrite{write:ClassifiedWrite{source_features,source_ordinal:ordinal,write,default:DefaultValue::Transform(matrix),phase:None,runtime_value:None},key:None,accepted:None,parsed_runtime_source:None});continue;
+                            }
+                            let literal=scalar_list||D::source_literal(root.ast(),&write,symbols,view,evaluator)?;
+                            pending_key=D::source_key(root.ast(),view,&write,symbols,evaluator)?.map(Into::into);
+                            parsed_runtime=Some(RuntimeValue::OriginalExpression(Arc::new(OriginalRuntimeExpression::from_original(root))));
+                            (DefaultValue::Scalar(SemanticValue::Null),Some(if literal{Phase::LiteralAllocation}else{Phase::Runtime}))
+                        }else{
                         let (text, ast, authored) = prepared.into_parts()?;
                         let parser_issued = authored.as_ref() == Some(value);
                         let expr = &ast;
@@ -232,7 +252,7 @@ fn classify_pending_with<'a,D:Demand>(
                         if parser_issued {
                             parsed_runtime_source = Some(text);
                         }
-                        parsed_runtime = Some(ast);
+                        parsed_runtime = Some(RuntimeValue::Expression(Arc::new(ast)));
                         (
                             default,
                             Some(if literal {
@@ -241,14 +261,13 @@ fn classify_pending_with<'a,D:Demand>(
                                 Phase::Runtime
                             }),
                         )
+                        }
                     }
                 }
             }
         };
         let runtime_value = if phase.is_some() {
-            Some(RuntimeValue::Expression(Arc::new(
-                parsed_runtime.ok_or("runtime expression missing")?,
-            )))
+            Some(parsed_runtime.ok_or("runtime expression missing")?)
         } else {
             None
         };
@@ -379,9 +398,10 @@ pub(super) mod parallel;
 #[path = "classification/token_roster.rs"]
 pub(in crate::initializer_policy) mod token_roster;
 
-pub(super) fn classify_from_facts_checked(writes:&[InitializerWrite],symbols:&SymbolTable,evaluator:&dyn CapturedInitializerEvaluator,facts:&[ModifierFact],source_ordinal:&mut usize,debug_defined:bool)->Result<ClassifiedInitializers,InitializerClassificationFailure>{
+pub(super) fn classify_from_facts_checked(writes:&[InitializerWrite],symbols:&SymbolTable,evaluator:&dyn CapturedInitializerEvaluator,facts:&[ModifierFact],source_ordinal:&mut usize,debug_defined:bool)->Result<ClassifiedInitializers,InitializerClassificationFailure>{classify_from_facts_source_checked(writes,symbols,evaluator,facts,source_ordinal,debug_defined,None)}
+pub(super) fn classify_from_facts_source_checked(writes:&[InitializerWrite],symbols:&SymbolTable,evaluator:&dyn CapturedInitializerEvaluator,facts:&[ModifierFact],source_ordinal:&mut usize,debug_defined:bool,source:Option<(&dm_tree::frontend::OriginalInitializerContext<'_>,&dm_syntax::SettingAdmission<'_>,usize)>)->Result<ClassifiedInitializers,InitializerClassificationFailure>{
     crate::daemon::control::checkpoint().map_err(InitializerClassificationFailure::Operational)?;
-    let pending=classify_pending_with::<demand::Checked>(writes.iter(),symbols,evaluator,facts,source_ordinal);
+    let pending=classify_pending_source_with::<demand::Checked>(writes.iter(),symbols,evaluator,facts,source_ordinal,source);
     let pending=match pending {
         Err(ClassificationReadFailure::Operational(actual))=>return Err(InitializerClassificationFailure::Operational(actual)),
         result=>result,

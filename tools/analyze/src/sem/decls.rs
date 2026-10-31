@@ -495,20 +495,13 @@ fn scan_file(f: &SourceFile) -> FileDecls {
                 line_starts: starts.clone(),
             });
         }
-        if let Some(m) =
-            pat_match!(r"(?:TRACKED|TRACKED_DATA|SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(t)
-        {
-            fd.tracked.push((m.s(1).to_string(), m.s(2).to_string()));
-        }
-        if let Some(pair) = crate::relation_decl_policy::legacy_line(t) {
-            fd.relations.push(pair);
-        }
-        let om = pat_match!(r"(?:OM_FIELD|OM_FLAG_FIELD|OM_FLAG_FIELD_BITS|OM_FIELD_SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)")
-            .captures(t)
-            .or_else(|| pat_match!(r"OM_FIELD_TYPED\(\s*(/[\w/]+)\s*,\s*[\w/]+\s*,\s*(\w+)").captures(t));
-        if let Some(m) = om {
-            fd.tracked.push((m.s(1).to_string(), m.s(2).to_string()));
-        }
+        match crate::raw_reactive_metadata_policy::visit_line(t,|event|{
+            match event{
+                crate::raw_reactive_metadata_policy::Event::Tracked{owner,name}=>fd.tracked.push((owner.to_owned(),name.to_owned())),
+                crate::raw_reactive_metadata_policy::Event::Relation{owner,name}=>fd.relations.push((owner.to_owned(),name.to_owned())),
+            }
+            Ok::<(),std::convert::Infallible>(())
+        }){Ok(())=>(),Err(never)=>match never{}}
         if t.contains("PUBLISH_CHANGE(") {
             for m in pat!(r"PUBLISH_CHANGE\(\s*[^,()]+,\s*([\w#]+)\s*\)").captures_iter(t) {
                 fd.publishers.push((

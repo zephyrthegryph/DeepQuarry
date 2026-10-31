@@ -10,7 +10,8 @@ use std::sync::Arc;
 pub mod warnings;
 #[path="initializer_policy/original_runtime.rs"]
 mod original_runtime;
-pub(crate) use original_runtime::{OriginalRuntimeExpression,CurrentRuntimeExpression};
+pub use original_runtime::OriginalRuntimeExpression;
+pub(crate) use original_runtime::CurrentRuntimeExpression;
 
 #[path="initializer_policy/failure.rs"]mod failure;
 pub use failure::InitializerFailure;
@@ -172,6 +173,12 @@ pub trait CapturedInitializerEvaluator {
         };
         self.evaluate_prepared_write_checked(adapted_write, value).map(|(evaluation,prepared)|(evaluation,prepared.map(ScopedPreparedInitializerExpression::from_owned)))
     }
+    /// A source-aware helper borrows an actual subtree of the SAME issued root.
+    /// Compatibility/custom adapters explicitly decline this native-only hook.
+    fn evaluate_original_ast_write_checked<'source>(&self,_input:&dm_tree::frontend::OriginalInitializerExpressionInput<'source>,_write:&InitializerWrite,_root:&dm_tree::frontend::OriginalInitializerExpression<'source>,_ast:&dm_syntax::Expr,_symbols:&SymbolTable)->Result<Evaluation,InitializerFailure>{
+        Err(InitializerFailure::Unsupported("evaluator has no original initializer subtree entry".into()))
+    }
+    fn evaluate_original_dimension_checked(&self,_input:&dm_tree::frontend::OriginalInitializerDimensionInput<'_>,_write:&InitializerWrite)->Result<Evaluation,InitializerFailure>{Err(InitializerFailure::Unsupported("evaluator has no original initializer dimension entry".into()))}
     /// Additive typed native boundary. Defaults deliberately preserve the
     /// corresponding custom compatibility hook; they never choose another
     /// parser/evaluator. No native producer is selected by these entries alone.
@@ -304,6 +311,9 @@ impl CapturedInitializerEvaluator for EngineCapturedEvaluator<'_> {
     ) -> Result<(Evaluation, Option<ScopedPreparedInitializerExpression<'source>>), InitializerFailure> {
         self.evaluator.evaluate_original_write_checked(input, adapted_write)
     }
+    fn evaluate_original_ast_write_checked<'source>(&self,input:&dm_tree::frontend::OriginalInitializerExpressionInput<'source>,write:&InitializerWrite,root:&dm_tree::frontend::OriginalInitializerExpression<'source>,ast:&dm_syntax::Expr,symbols:&SymbolTable)->Result<Evaluation,InitializerFailure>{self.evaluator.evaluate_original_ast_write_checked(input,write,root,ast,symbols)}
+
+    fn evaluate_original_dimension_checked(&self,input:&dm_tree::frontend::OriginalInitializerDimensionInput<'_>,write:&InitializerWrite)->Result<Evaluation,InitializerFailure>{self.evaluator.evaluate_original_dimension_checked(input,write)}
     fn evaluate_prepared_write_checked(&self,write:&InitializerWrite,value:&SymbolicExpression)
         ->Result<(Evaluation,Option<PreparedInitializerExpression>),InitializerFailure>{self.evaluator.evaluate_prepared_write_checked(write,value)}
     fn evaluate_ast_write_checked(&self,write:&InitializerWrite,ast:&dm_syntax::Expr,source:&str,symbols:&SymbolTable)
@@ -454,11 +464,16 @@ pub struct ClassifiedWrite {
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum RuntimeValue {
+    /// AST-only original recipe; current source must be rebound before use.
+    OriginalExpression(Arc<OriginalRuntimeExpression>),
+    OriginalSizedArray(Arc<OriginalSizedArray>),
     Expression(Arc<dm_syntax::Expr>),
     SizedArray(Arc<[u16]>),
     /// Boxed so a runtime slot stays at three words (the sparse ledger budget).
     SizedArrayExplicit(Arc<ExplicitSizedArray>),
 }
+#[derive(Clone,Debug,PartialEq,Eq)]
+pub struct OriginalSizedArray{pub dimensions:Arc<[u16]>,pub expression:Arc<OriginalRuntimeExpression>}
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ExplicitSizedArray {
     pub dimensions: Arc<[u16]>,
@@ -562,19 +577,23 @@ pub(crate) fn captured_scalar_subexpression(
 }
 pub(crate) mod value_demand;
 fn scalar_literal(expr:&dm_syntax::Expr,write:&InitializerWrite,symbols:&SymbolTable,source:&str,evaluator:&dyn CapturedInitializerEvaluator)->Result<bool,String>{
-    scalar_literal_with::<value_demand::Compatibility>(expr,write,symbols,source,evaluator)
+    scalar_literal_with::<value_demand::Compatibility>(expr,write,symbols,value_demand::Source::Flat(source),evaluator)
 }
 fn scalar_literal_checked(expr:&dm_syntax::Expr,write:&InitializerWrite,symbols:&SymbolTable,source:&str,evaluator:&dyn CapturedInitializerEvaluator)->Result<bool,InitializerFailure>{
     crate::daemon::control::checkpoint().map_err(InitializerFailure::Operational)?;
-    let result=scalar_literal_with::<value_demand::Checked>(expr,write,symbols,source,evaluator);
+    let result=scalar_literal_with::<value_demand::Checked>(expr,write,symbols,value_demand::Source::Flat(source),evaluator);
     if matches!(&result,Err(InitializerFailure::Operational(_))){return result;}
     crate::daemon::control::checkpoint().map_err(InitializerFailure::Operational)?;result
+}
+
+pub(crate) fn scalar_literal_source_checked(expr:&dm_syntax::Expr,write:&InitializerWrite,symbols:&SymbolTable,source:value_demand::Source<'_,'_>,evaluator:&dyn CapturedInitializerEvaluator)->Result<bool,InitializerFailure>{
+ crate::daemon::control::checkpoint().map_err(InitializerFailure::Operational)?;let result=scalar_literal_with::<value_demand::Checked>(expr,write,symbols,source,evaluator);if matches!(&result,Err(InitializerFailure::Operational(_))){return result}crate::daemon::control::checkpoint().map_err(InitializerFailure::Operational)?;result
 }
 fn scalar_literal_with<D: value_demand::Demand>(
     expr: &dm_syntax::Expr,
     write: &InitializerWrite,
     symbols: &SymbolTable,
-    source: &str,
+    source: value_demand::Source<'_,'_>,
     evaluator: &dyn CapturedInitializerEvaluator,
 ) -> Result<bool, D::Error> {
     use dm_syntax::ExprKind;
@@ -1046,3 +1065,21 @@ mod classifier_checked_tests;
 
 pub(crate) fn classify_with_reuse_on_executor_checked(writes:&[InitializerWrite],symbols:&SymbolTable,evaluator:ParallelEvaluator<'_>,debug_defined:bool,executor:&dm_exec::BuildExecutor,reuse:InitializerReuse<'_>)->Result<ClassifiedInitializers,InitializerClassificationFailure>{classification::parallel::classify_with_reuse_checked(writes,symbols,evaluator,debug_defined,executor,Some(reuse))}
 pub(crate) fn classify_with_token_mode_on_executor_checked(writes:&[InitializerWrite],symbols:&SymbolTable,evaluator:ParallelEvaluator<'_>,debug_defined:bool,executor:&dm_exec::BuildExecutor)->Result<ClassifiedInitializers,InitializerClassificationFailure>{classification::parallel::classify_with_reuse_checked(writes,symbols,evaluator,debug_defined,executor,None)}
+
+/// Explicit source-required mode over the SAME finalized startup plan and
+/// classifier. The role cannot be forged from detached equal plan rows.
+pub(crate) fn classify_original_startup(frontend:&dm_tree::frontend::ColdFrontend,startup:&crate::startup::OriginalStartup<'_>,evaluator:&dyn CapturedInitializerEvaluator,debug:bool)->Result<ClassifiedInitializers,InitializerClassificationFailure>{classify_original_startup_core(frontend,startup,evaluator,debug,None)}
+pub(crate) fn classify_original_startup_with_reuse(frontend:&dm_tree::frontend::ColdFrontend,startup:&crate::startup::OriginalStartup<'_>,evaluator:&dyn CapturedInitializerEvaluator,debug:bool,factory:ParallelEvaluator<'_>,reuse:InitializerReuse<'_>)->Result<ClassifiedInitializers,InitializerClassificationFailure>{classify_original_startup_core(frontend,startup,evaluator,debug,Some((factory,reuse)))}
+pub(crate) fn classify_original_startup_core(frontend:&dm_tree::frontend::ColdFrontend,startup:&crate::startup::OriginalStartup<'_>,evaluator:&dyn CapturedInitializerEvaluator,debug:bool,reuse:Option<(ParallelEvaluator<'_>,InitializerReuse<'_>)>)->Result<ClassifiedInitializers,InitializerClassificationFailure>{
+ crate::daemon::control::checkpoint().map_err(InitializerClassificationFailure::Operational)?;
+ startup.validate_for(frontend).map_err(|reason|InitializerClassificationFailure::Semantic(ClassificationError{issues:ClassificationFailure::from(reason).into_issues(0)}))?;
+ let plan=startup.plan();let context=frontend.original_issued_initializer_context(startup.issued_initializer_plan()).map_err(original_classification_source_failure)?;
+ let source=frontend.original_declaration_expression_context().map_err(original_classification_source_failure)?;
+ let facts=modifier_facts::modifier_facts_indexed_checked(plan.writes.iter(),&plan.symbols,evaluator,None).map_err(|failure|match failure{modifier_facts::ModifierReadFailure::Semantic(source)=>InitializerClassificationFailure::Semantic(source),modifier_facts::ModifierReadFailure::Operational(actual)=>InitializerClassificationFailure::Operational(actual)})?;
+ let mut completed=None;source.with_admission(&mut|a|{
+  let mut ordinal=0;let result=match reuse{Some((factory,reuse))=>classification::artifact::classify_original_from_facts(&context,a,&plan.writes,&plan.symbols,evaluator,&facts,debug,factory,reuse),None=>classification::classify_from_facts_source_checked(&plan.writes,&plan.symbols,evaluator,&facts,&mut ordinal,debug,Some((&context,a,0)))};
+  match result{Err(InitializerClassificationFailure::Operational(actual))=>Err(dm_tree::frontend::BodySyntaxFailure::Operational(actual)),result=>{completed=Some(result);Ok(())}}
+ }).map_err(original_classification_source_failure)?;
+ completed.ok_or_else(||InitializerClassificationFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"original classification admission omitted callback")))?
+}
+fn original_classification_source_failure(failure:dm_tree::frontend::BodySyntaxFailure)->InitializerClassificationFailure{match failure{dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>InitializerClassificationFailure::Operational(actual),dm_tree::frontend::BodySyntaxFailure::Syntax(source)=>InitializerClassificationFailure::Semantic(ClassificationError{issues:ClassificationFailure::from(source.message).into_issues(0)})}}

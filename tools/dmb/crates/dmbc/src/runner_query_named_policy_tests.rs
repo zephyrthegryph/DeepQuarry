@@ -929,3 +929,23 @@ fn proc_static_inherited_override_and_explicit_null_notes_select_actual_callable
         serde_json::json!(["15:6: return type evaluated to None"])
     );
 }
+
+#[test]
+fn configured_checker_actual_kind4_operational_cause_precedes_output_and_same_input_recovers(){
+    let snapshot=snapshot(None);let db=snapshot.native_raw_queries.as_ref().unwrap();
+    db.db().evict_values(&[dm_query::Kind(4)]);let before=db.db().stats(dm_query::Kind(4)).computed;
+    let schedule=db.fail_body_syntax_after_for_test(0,io::Error::from_raw_os_error(1450));
+    let mut bytes=Vec::new();let error=snapshot.write_native_configured_checker(0,"ambiguous_not_bitwise",&root().join("project.dme"),None,&snapshot.tree,&mut bytes).unwrap_err();
+    assert_eq!(error.raw_os_error(),Some(1450),"the genuine Kind4 IO cause must not become a source diagnostic string");
+    assert!(bytes.is_empty(),"body demand failed before the first configured-checker output write");assert_eq!(db.db().stats(dm_query::Kind(4)).computed,before,"actual operational failure has no syntax Outcome");drop(schedule);
+    snapshot.write_native_configured_checker(0,"ambiguous_not_bitwise",&root().join("project.dme"),None,&snapshot.tree,&mut bytes).unwrap();
+    let row:serde_json::Value=serde_json::from_slice(&bytes).unwrap();assert_eq!(row["row"],"source_native_configured_checker");assert_eq!(row["diagnostics"].as_array().unwrap().len(),1);assert_eq!(row["diagnostics"][0]["message"],"Ambiguous `!` on left side of bitwise `&` operator");
+    let computed=db.db().stats(dm_query::Kind(4)).computed;assert_eq!(computed,before+1);let mut warm=Vec::new();snapshot.write_native_configured_checker(0,"ambiguous_not_bitwise",&root().join("project.dme"),None,&snapshot.tree,&mut warm).unwrap();assert_eq!(warm,bytes);assert_eq!(db.db().stats(dm_query::Kind(4)).computed,computed);
+}
+#[test]
+fn configured_checker_actual_cancellation_has_no_output_and_preserves_warm_syntax_for_retry(){
+    let snapshot=snapshot(None);let db=snapshot.native_raw_queries.as_ref().unwrap();let mut expected=Vec::new();snapshot.write_native_configured_checker(0,"ambiguous_not_bitwise",&root().join("project.dme"),None,&snapshot.tree,&mut expected).unwrap();let computed=db.db().stats(dm_query::Kind(4)).computed;
+    let token=crate::daemon::control::Cancellation::default();let binding=crate::daemon::control::bind_with_deadline(token.clone(),std::time::Instant::now()+std::time::Duration::from_secs(300));token.cancel();
+    let mut bytes=Vec::new();let error=snapshot.write_native_configured_checker(0,"ambiguous_not_bitwise",&root().join("project.dme"),None,&snapshot.tree,&mut bytes).unwrap_err();assert_eq!(error.kind(),io::ErrorKind::Interrupted);assert!(bytes.is_empty());assert_eq!(db.db().stats(dm_query::Kind(4)).computed,computed);drop(binding);
+    snapshot.write_native_configured_checker(0,"ambiguous_not_bitwise",&root().join("project.dme"),None,&snapshot.tree,&mut bytes).unwrap();assert_eq!(bytes,expected);assert_eq!(db.db().stats(dm_query::Kind(4)).computed,computed);
+}

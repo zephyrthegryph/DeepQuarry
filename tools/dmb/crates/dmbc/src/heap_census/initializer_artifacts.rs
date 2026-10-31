@@ -52,6 +52,7 @@ pub(super) fn classification(c: &mut HeapCensus, value: &Arc<SemanticClassificat
     if let Some(write) = value.input_write() {
         c.shared_initializer_write("initializer_classification.inputs", write);
     }
+    if let Some(root)=value.original_runtime(){c.original_initializer_runtime("initializer_classification.original_ast",root);}
     value.visit_retained_parts(|default, key, dimensions, expression| {
         match default {
             DefaultValue::Transform(_) => (),
@@ -254,3 +255,5 @@ impl crate::lowering_memo::ProcedureMemo {
         })
     }
 }
+
+pub(crate) fn original_runtime_weight(root:&Arc<crate::initializer_policy::OriginalRuntimeExpression>)->Option<usize>{let mut census=HeapCensus::new("initializer.original_runtime_admission");census.original_initializer_runtime("initializer.original_runtime_admission",root);usize::try_from(census.finish().unique_known_capacity_bytes).ok()}

@@ -973,3 +973,6 @@ pub(crate) use stored_refs_scope::archived_stored_scope;
 #[path = "untyped_stored_refs.rs"]
 mod stored_refs;
 pub use stored_refs::{stored_findings, stored_findings_checked, stored_findings_with, StoredFinding, StoredPolicy};
+
+// Borrowed original-policy traversal for native read annotations/consumers.
+pub use crate::untyped_order::{try_policy_expressions,ExpressionObservation,PolicyVisitFailure};

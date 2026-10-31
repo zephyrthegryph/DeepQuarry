@@ -436,12 +436,12 @@ mod tests;
 /// A builtin boundary is deliberately NOT a fabricated builtin identity: only
 /// the separate original-catalog producer may issue that target.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) enum SourcePredecessorProjection {
+pub enum SourcePredecessorProjection {
     Source(ProcedureIdentity),
     NoParent,
     BuiltinBoundary,
 }
-pub(crate) fn source_predecessor_in_profile(
+pub fn source_predecessor_in_profile(
     tree: &SemanticTree,
     member: MemberId,
     resolver: &(impl Resolver + ?Sized),

@@ -397,7 +397,7 @@ impl QueryDb {
     pub(super) fn discard_poisoned_generator_files_locked(&self, cohort: &Cohort) {
         let mut leases = self
             .raw_policy
-            .leases
+            .admission.leases
             .lock()
             .unwrap_or_else(|e| e.into_inner());
         for path in &cohort.files {
@@ -527,7 +527,7 @@ impl QueryDb {
                     self.discard_poisoned_generator_files_locked(cohort);
                     let mut leases = self
                         .raw_policy
-                        .leases
+                        .admission.leases
                         .lock()
                         .unwrap_or_else(|e| e.into_inner());
                     let bytes = self.db.value_bytes_at(result_key);

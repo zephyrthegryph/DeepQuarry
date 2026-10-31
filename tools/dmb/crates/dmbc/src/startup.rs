@@ -121,7 +121,9 @@ impl StartupDemand for OriginalStartupDemand{
 /// detached/compatibility facts cannot certify body resource admission.
 pub struct OriginalStartup<'a>{captured:CapturedStartup<'a>}
 impl<'a> std::ops::Deref for OriginalStartup<'a>{type Target=CapturedStartup<'a>;fn deref(&self)->&Self::Target{&self.captured}}
-impl OriginalStartup<'_>{pub fn issued_initializer_plan(&self)->&dm_tree::initializers::IssuedInitializerPlan{self.captured.issued_initializer_plan().expect("source-required producer finishes an issued plan")}}
+impl OriginalStartup<'_>{
+ pub(crate) fn source_static_receipt(&self,occurrence:OccurrenceId)->Option<&std::sync::Arc<dm_tree::frontend::IssuedStaticPlan>>{let index=*self.captured.facts.procedure_index.get(&occurrence)?;match &self.captured.facts.procedures.get(index)?.1{ProcedureCapture::Issued(receipt)=>Some(receipt),ProcedureCapture::Empty(_)=>None}}
+pub fn issued_initializer_plan(&self)->&dm_tree::initializers::IssuedInitializerPlan{self.captured.issued_initializer_plan().expect("source-required producer finishes an issued plan")}}
 
 pub struct CapturedStartup<'a> {
     frontend: &'a ColdFrontend,

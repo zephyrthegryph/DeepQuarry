@@ -19,3 +19,5 @@ impl InitializerFailure {
     pub fn into_operational(self)->Result<std::io::Error,Self>{match self{Self::Operational(error)=>Ok(error),other=>Err(other)}}
     pub fn operational(&self)->Option<&std::io::Error>{match self{Self::Operational(error)=>Some(error),Self::Unsupported(_)=>None}}
 }
+
+impl From<std::io::Error> for InitializerFailure{fn from(actual:std::io::Error)->Self{Self::Operational(actual)}}

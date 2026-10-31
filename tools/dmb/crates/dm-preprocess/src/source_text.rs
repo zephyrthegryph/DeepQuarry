@@ -44,6 +44,13 @@ pub struct WeakSourceText {
     range: Range<usize>,
 }
 impl WeakSourceText {
+    /// Inventory the actual fixed backing allocation retained by this Weak,
+    /// including after payload destruction. Never dereferences a dead owner;
+    /// addresses here are census metadata, not a source-identity proof.
+    pub fn visit_backing_storage(&self,visit:impl FnOnce(usize,usize,usize)){
+        let bytes=std::mem::size_of::<Backing>();
+        visit(self.backing.as_ptr() as usize,if self.backing.strong_count()>0{bytes}else{0},bytes);
+    }
     pub fn upgrade(&self) -> Option<SourceText> {
         Some(SourceText {
             backing: self.backing.upgrade()?,

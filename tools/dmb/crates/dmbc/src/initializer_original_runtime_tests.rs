@@ -1,0 +1,37 @@
+use super::*;
+use std::path::Path;
+struct Source(&'static str);impl dm_preprocess::SourceProvider for Source{fn read(&self,_:&Path)->Result<String,String>{Ok(self.0.into())}}
+fn original_front(source:&'static str,host:&Arc<dyn dm_tree::frontend::SettingExpressionQueries>)->ColdFrontend{dm_tree::frontend::build(Path::new("original-runtime-emission.dme"),&Source(source),&Default::default(),1).unwrap().with_setting_expression_queries(host).unwrap()}
+#[test]
+fn actual_original_runtime_classifier_and_emitter_match_legacy_for_declaration_static_and_dimensions(){
+ let db=Arc::new(crate::query_db::QueryDb::default());let host=db.clone() as Arc<dyn dm_tree::frontend::SettingExpressionQueries>;let front=original_front("var/static/list/global_items=list(1,2)\n/proc/p()\n    var/const/base=1+2\n    var/static/list/items[2]=list(base)\n    return items\n",&host);let executor=dm_exec::BuildExecutor::new(1).unwrap();let bodies=dm_tree::frontend::BodyArena::new_typed(&front,dm_codegen_byond::typed_statements_supported_for_capture);let startup=crate::startup::capture_original_with_executor_and_bodies_checked(&front,&[],&executor,&bodies).unwrap();let resolver=startup.resolver(&front,front.snapshot.tree.as_ref()).unwrap();let driver=crate::driver_facts::DriverEvaluator{pure_calls:None,resource_search_context:None,resolver:&resolver,symbols:&startup.plan().symbols};
+ let legacy=lower_captured(&front,&startup,&driver,&resolver,None).unwrap();let current=lower_original_startup(&front,&startup,&driver,&resolver,None).unwrap();assert_eq!(legacy.units.len(),current.units.len());
+ for(old,native)in legacy.units.iter().zip(&current.units){assert_eq!(old.scope,native.scope);assert_eq!(old.write_ordinals,native.write_ordinals);assert_eq!(old.code.procedure,native.code.procedure);assert_eq!(old.debug_origins,native.debug_origins);}
+ let source=front.original_issued_initializer_context(startup.issued_initializer_plan()).unwrap();let mut originals=0;let mut sized=0;
+ for row in &current.classified.writes{match row.runtime_value.as_ref(){Some(RuntimeValue::OriginalExpression(recipe))=>{let root=recipe.reborrow(&source.input(row.source_ordinal).unwrap()).unwrap().unwrap();assert!(std::ptr::eq(root.ast(),source.input(row.source_ordinal).unwrap().expression().unwrap().ast()));originals+=1},Some(RuntimeValue::OriginalSizedArray(value))=>{assert_eq!(&*value.dimensions,&[2]);let root=value.expression.reborrow(&source.input(row.source_ordinal).unwrap()).unwrap().unwrap();assert!(root.flat_source().is_none());sized+=1},_=>{}}}
+ assert_eq!((originals,sized),(1,1));assert_eq!(std::mem::size_of::<RuntimeValue>(),3*std::mem::size_of::<usize>());assert_eq!(db.db().stats(dm_query::Kind(4)).computed,0);
+ let group=current.classified.groups.iter().find(|group|!group.writes.is_empty()).unwrap();let store=InitializerAssemblies::default();let key=receipts::Binding::fixture(b"actual-original-runtime-assembly");store.retain_keys(&[key.clone()]);
+ let first=lower_group(&front,startup.plan(),&current.classified,group,Some(&source),&resolver,None,None,None,Some((&store,&key))).unwrap();let second=lower_group(&front,startup.plan(),&current.classified,group,Some(&source),&resolver,None,None,None,Some((&store,&key))).unwrap();assert!(Arc::ptr_eq(first.code.code_owner(),second.code.code_owner()));assert_eq!(store.hits.load(std::sync::atomic::Ordering::Relaxed),1);
+ let token=crate::daemon::control::Cancellation::default();let binding=crate::daemon::control::bind_with_deadline(token.clone(),std::time::Instant::now()+std::time::Duration::from_secs(300));token.cancel();assert!(matches!(lower_original_startup(&front,&startup,&driver,&resolver,None),Err(InitializerLoweringError::Operational(ref actual))if actual.kind()==std::io::ErrorKind::Interrupted));drop(binding);let recovered=lower_original_startup(&front,&startup,&driver,&resolver,None).unwrap();assert_eq!(recovered.units[0].code.procedure,current.units[0].code.procedure);
+}
+#[test]
+fn original_runtime_census_retains_parent_after_startup_drop_and_source_neutral_emission_refuses_recipe(){
+ let db=Arc::new(crate::query_db::QueryDb::default());let host=db.clone() as Arc<dyn dm_tree::frontend::SettingExpressionQueries>;
+ let classified={let front=original_front("/proc/p()\n    var/static/list/items=list(1)\n    return items\n",&host);let executor=dm_exec::BuildExecutor::new(1).unwrap();let bodies=dm_tree::frontend::BodyArena::new_typed(&front,dm_codegen_byond::typed_statements_supported_for_capture);let startup=crate::startup::capture_original_with_executor_and_bodies_checked(&front,&[],&executor,&bodies).unwrap();let resolver=startup.resolver(&front,front.snapshot.tree.as_ref()).unwrap();let driver=crate::driver_facts::DriverEvaluator{pure_calls:None,resource_search_context:None,resolver:&resolver,symbols:&startup.plan().symbols};initializer_policy::classify_original_startup(&front,&startup,&driver,false).unwrap()};
+ let value=classified.writes.iter().find_map(|row|row.runtime_value.as_ref()).unwrap();assert!(value_expression(value).is_none(),"AST recipe cannot masquerade as a current source view");let mut census=crate::heap_census::HeapCensus::new("runtime-only");census.initializer_ledger(&classified);let report=census.finish();assert!(report.unique_known_capacity_bytes>0);assert!(report.owners.iter().any(|row|row.owner=="initializer_ledger"&&row.unique_known_capacity_bytes>0));
+}
+
+#[test]
+fn source_required_classifier_refuses_owned_custom_hook_while_legacy_custom_hook_remains_available(){
+ use crate::initializer_policy::{CapturedInitializerEvaluator,PreparedInitializerExpression,Evaluation,BindingKnowledge};
+ struct Owned<'a,'resolver>(&'a crate::driver_facts::DriverEvaluator<'resolver>);
+ impl CapturedInitializerEvaluator for Owned<'_,'_>{
+  fn evaluate(&self,owner:dm_ir::SymbolId,value:&dm_ir::SymbolicExpression)->Result<Evaluation,String>{self.0.evaluate(owner,value)}
+  fn evaluate_prepared_write(&self,write:&dm_ir::InitializerWrite,value:&dm_ir::SymbolicExpression)->Result<(Evaluation,Option<PreparedInitializerExpression>),String>{self.0.evaluate_prepared_write(write,value)}
+  fn binding_knowledge(&self,write:&dm_ir::InitializerWrite)->Result<Option<BindingKnowledge>,String>{self.0.binding_knowledge(write)}
+ }
+ let db=Arc::new(crate::query_db::QueryDb::default());let host=db.clone() as Arc<dyn dm_tree::frontend::SettingExpressionQueries>;let front=original_front("var/static/list/items=list(1)\n",&host);let executor=dm_exec::BuildExecutor::new(1).unwrap();let bodies=dm_tree::frontend::BodyArena::new_typed(&front,dm_codegen_byond::typed_statements_supported_for_capture);let startup=crate::startup::capture_original_with_executor_and_bodies_checked(&front,&[],&executor,&bodies).unwrap();let resolver=startup.resolver(&front,front.snapshot.tree.as_ref()).unwrap();let driver=crate::driver_facts::DriverEvaluator{pure_calls:None,resource_search_context:None,resolver:&resolver,symbols:&startup.plan().symbols};let custom=Owned(&driver);
+ assert!(initializer_policy::classify(&startup.plan().writes,&startup.plan().symbols,&custom).is_ok());
+ assert!(matches!(initializer_policy::classify_original_startup(&front,&startup,&custom,false),Err(initializer_policy::InitializerClassificationFailure::Operational(ref actual))if actual.kind()==std::io::ErrorKind::NotConnected));
+ assert!(lower_original_startup(&front,&startup,&driver,&resolver,None).is_ok(),"source-required refusal leaves same original input recoverable");
+}

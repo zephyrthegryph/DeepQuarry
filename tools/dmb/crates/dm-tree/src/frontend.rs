@@ -563,7 +563,7 @@ mod body_failure;
 pub use body_failure::BodySyntaxFailure;
 #[path = "frontend_body_archive.rs"]
 mod body_archive;
-pub use body_archive::{
+pub use body_archive::{OriginalArchiveOwner,
     AnnotationCandidateRoster, ArchivedBody, BodyArchive, CheckerVariableProperties,
     OriginalHeaderExpressionHandle, SourceHeaderExpressions, SourceLocalView, SourceParameterView,
 };

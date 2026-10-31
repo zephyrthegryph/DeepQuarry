@@ -281,7 +281,7 @@ fn regular_raw_and_workspace_share_node_input_and_result_limits_and_release() {
         q.workspace_remaining_results(result).unwrap() < RESULT_BOUND,
         "current old result stays charged while replacement holds its Arc"
     );
-    q.raw_policy.leases.lock().unwrap().insert(
+    q.raw_policy.admission.leases.lock().unwrap().insert(
         Key::new(super::super::RAW_FILE, 999),
         super::super::Lease {
             owner: Weak::new(),

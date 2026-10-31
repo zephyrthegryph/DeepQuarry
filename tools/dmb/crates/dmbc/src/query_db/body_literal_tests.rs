@@ -152,3 +152,33 @@ fn actual_host_prepare_error_precedes_context_callback_and_keeps_original_cause(
  let db=Arc::new(QueryDb::default());let source=Original(dm_preprocess::AcquiredSource::from_original_bytes(b"/proc/p()\n    return 1\n".to_vec(),()));let front=dm_tree::frontend::build(Path::new("prepare-stop.dme"),&source,&Default::default(),1).unwrap().with_body_queries(Arc::new(StopPrepare(db.clone())));let archive=front.body_archive().unwrap();let called=std::cell::Cell::new(false);
  let error=archive.parse_checked_using(0,|_|{called.set(true);panic!("prepare refusal must precede context get")}).err().unwrap();assert!(matches!(error,BodySyntaxFailure::Operational(ref actual)if actual.raw_os_error()==Some(1450)));assert!(!called.get());assert_eq!(db.db.stats(BODY_SYNTAX).computed,0);
 }
+
+#[test]
+fn archive_owner_witness_reuses_actual_tuple_across_fresh_policy_captures_and_refuses_foreign_text(){
+ let db=Arc::new(QueryDb::default());let text="/proc/p()\n    return 1\n";let front=frontend(text,&db);
+ let first=dm_analysis::policy_inputs::PolicyInputs::capture(&front,Vec::<dm_analysis::policy_inputs::HostCapture>::new()).unwrap();
+ let second=dm_analysis::policy_inputs::PolicyInputs::capture(&front,Vec::<dm_analysis::policy_inputs::HostCapture>::new()).unwrap();
+ assert!(!Arc::ptr_eq(first.archive(),second.archive()),"real capture constructs a new wrapper");let witness=first.archive().original_owner_witness();assert!(witness.matches(second.archive()),"original inner owner tuple is shared without source equality");
+ let foreign=frontend(text,&db).body_archive().unwrap();assert!(!witness.matches(&foreign),"equal text is not original owner identity");assert_eq!(db.db.stats(BODY_SYNTAX).computed,0,"headers/capture/witness never demand bodies");
+ let capacity=witness.fixed_retention_capacity().unwrap();assert!(capacity>0);let mut counted=0;witness.visit_storage(|_,_,_,n|counted+=n);assert_eq!(counted,capacity);
+ drop(first);drop(second);drop(front);assert!(!witness.matches(&foreign));let mut dead=0;witness.visit_storage(|_,_,live,_|if live==0{dead+=1});assert!(dead>0,"at least an actual original fixed owner is now weak-only");
+ for _ in 0..8{let fresh=frontend(text,&db).body_archive().unwrap();assert!(!witness.matches(&fresh),"reallocated wrappers/source owners cannot revive expired receipt");}
+}
+#[test]
+fn archive_owner_witness_rejects_genuine_same_width_body_edit_despite_shared_semantic_tree(){
+ fn retained(source:&str,state:&mut dm_tree::frontend::RetainedSemanticTree,db:&Arc<QueryDb>)->dm_tree::frontend::ColdFrontend{
+  let provider=Original(dm_preprocess::AcquiredSource::from_original_bytes(source.as_bytes().to_vec(),()));let executor=dm_exec::BuildExecutor::new(1).unwrap();
+  dm_tree::frontend::build_with_executor_and_semantic_state(Path::new("archive-owner-retained.dme"),&provider,&Default::default(),dm_tree::frontend::FrontendConfig{workers:1,engine:None,observer:None},None,&executor,Some(state)).unwrap().with_body_queries(db.clone())
+ }
+ let db=Arc::new(QueryDb::default());let mut state=dm_tree::frontend::RetainedSemanticTree::default();let first=retained("/proc/p()\n    return 1\n/proc/q()\n    return 2\n",&mut state,&db);let archive=first.body_archive().unwrap();let witness=archive.original_owner_witness();
+ let current=retained("/proc/p()\n    return 9\n/proc/q()\n    return 2\n",&mut state,&db);assert!(Arc::ptr_eq(&first.snapshot.tree,&current.snapshot.tree),"actual body-only semantic reuse control");let fresh=current.body_archive().unwrap();assert_eq!(archive.occurrences()[0].expanded_span,fresh.occurrences()[0].expanded_span);assert!(!witness.matches(&fresh),"same model/span does not authenticate another actual body/source epoch");assert_eq!(db.db.stats(BODY_SYNTAX).computed,0);
+}
+
+#[path="../../../dm-analysis/examples/support/reference_hierarchy.rs"]mod archive_owner_reference_hierarchy;
+#[test]
+fn archive_owner_witness_refuses_a_different_actual_published_builtin_profile(){
+ let db=Arc::new(QueryDb::default());let text="/proc/p()\n    return 1\n";let plain=frontend(text,&db);let old=plain.body_archive().unwrap();let witness=old.original_owner_witness();
+ let provider=Original(dm_preprocess::AcquiredSource::from_original_bytes(text.as_bytes().to_vec(),()));let seed=archive_owner_reference_hierarchy::seed();let executor=dm_exec::BuildExecutor::new(1).unwrap();
+ let certified=dm_tree::frontend::build_with_executor_and_semantic_state_for_policy(Path::new("archive-owner-profile.dme"),&provider,&Default::default(),dm_tree::frontend::FrontendConfig{workers:1,engine:Some(&seed),observer:None},None,&executor,None,true).unwrap().with_body_queries(db.clone());let current=certified.body_archive().unwrap();
+ assert!(current.tree().checker_builtin_profile().is_some());assert_ne!(old.tree().checker_builtin_profile(),current.tree().checker_builtin_profile(),"actual profile control, not a manufactured witness");assert!(!witness.matches(&current));assert_eq!(db.db.stats(BODY_SYNTAX).computed,0);
+}

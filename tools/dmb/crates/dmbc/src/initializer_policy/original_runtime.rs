@@ -4,7 +4,7 @@
 use dm_tree::frontend::{BodySyntaxFailure,InitializerExpressionRecipe,OriginalInitializerExpression,OriginalInitializerExpressionInput};
 
 #[derive(Clone,Debug)]
-pub(crate) struct OriginalRuntimeExpression {
+pub struct OriginalRuntimeExpression {
     recipe:InitializerExpressionRecipe,
 }
 /// Stack-only, source-lifetime-bound current expression. Its fields cannot be
@@ -12,7 +12,11 @@ pub(crate) struct OriginalRuntimeExpression {
 pub(crate) struct CurrentRuntimeExpression<'source> {
     root:OriginalInitializerExpression<'source>,
 }
+impl PartialEq for OriginalRuntimeExpression{fn eq(&self,other:&Self)->bool{self.same_shape(other)}}
+impl Eq for OriginalRuntimeExpression{}
 impl OriginalRuntimeExpression {
+    /// Shape inspection only; executable consumers must reborrow current source.
+    pub(crate) fn shape_ast(&self)->&dm_syntax::Expr{self.recipe.ast()}
     pub(crate) fn from_original(root:OriginalInitializerExpression<'_>)->Self{Self{recipe:root.into_recipe()}}
     pub(crate) fn reborrow<'source>(&self,input:&OriginalInitializerExpressionInput<'source>)->Result<Option<CurrentRuntimeExpression<'source>>,BodySyntaxFailure>{
         self.recipe.reborrow(input).map(|root|root.map(|root|CurrentRuntimeExpression{root}))

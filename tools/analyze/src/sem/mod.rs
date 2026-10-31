@@ -66,13 +66,7 @@ impl VarSig {
     }
 }
 
-const VALUE_TYPES: &[&str] = &["/list", "/text", "/num", "/string", "/icon", "/sound", "/mutable_appearance", "/image", "/matrix", "/regex", "/savefile", "/client", "/world", "/exception", "/path", "/color", "/alist"];
-
-/// True for a declared type that names a game object (anything but the value types above or
-/// `""`). `/image` and the other appearance types are values for reads purposes.
-pub fn is_object_type(declared: &str) -> bool {
-    !declared.is_empty() && !VALUE_TYPES.iter().any(|v| declared == *v || declared.starts_with(&format!("{}/", v)))
-}
+pub use crate::reactive_read_facts::is_object_type;
 
 /// A proc body with the facts the walkers need.
 pub struct ProcBody<'a> {

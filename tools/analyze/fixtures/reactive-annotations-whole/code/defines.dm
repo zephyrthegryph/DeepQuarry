@@ -1,0 +1,8 @@
+#define READS_AS(A...)
+#define READS_FROM(A...)
+#define READ_LOOKUP(A...)
+#define PROC_SUMMARY(A...)
+#define CAPABILITY_TYPE(A...)
+#define CAPABILITY_DEF(A...)
+#define cap_keys(A...)
+#define SYSTEM_ACCESSOR(A...)

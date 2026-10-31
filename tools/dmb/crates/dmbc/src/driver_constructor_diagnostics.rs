@@ -37,7 +37,16 @@ impl DriverEvaluator<'_> {
         write: &dm_ir::InitializerWrite,
         ast: &dm_syntax::Expr,
     ) -> Option<String> {
-        fn modified(evaluator: &DriverEvaluator<'_>, node: &dm_syntax::Expr) -> Option<String> {
+        match self.constructor_reference_error_controlled(write,ast,&||Ok::<(),std::convert::Infallible>(())){Ok(value)=>value,Err(never)=>match never{}}
+    }
+    pub(super) fn constructor_reference_error_controlled<E,G>(
+        &self,
+        write: &dm_ir::InitializerWrite,
+        ast: &dm_syntax::Expr,
+        enter:&impl Fn()->Result<G,E>,
+    ) -> Result<Option<String>,E> {
+        fn modified<E,G>(evaluator:&DriverEvaluator<'_>,node:&dm_syntax::Expr,enter:&impl Fn()->Result<G,E>)->Result<Option<String>,E>{
+            let _frame=enter()?;
             if let dm_syntax::ExprKind::ObjectInitializer { object, .. } = &node.kind {
                 if let dm_syntax::ExprKind::TypePath(path) = &object.kind {
                     // The object of a modified instance is necessarily a type;
@@ -50,23 +59,25 @@ impl DriverEvaluator<'_> {
                             ))),
                         ResolvedMeaning::Missing
                     ) {
-                        return Some(format!("{path}: undefined type"));
+                        return Ok(Some(format!("{path}: undefined type")));
                     }
                 }
             }
             let mut failure = None;
-            dm_syntax::for_each_expression_child(node, |_, child| {
+            dm_syntax::try_for_each_expression_child(node, |_, child| {
                 if failure.is_none() {
-                    failure = modified(evaluator, child);
+                    failure = modified(evaluator, child,enter)?;
                 }
-            });
-            failure
+                Ok::<(),E>(())
+            })?;
+            Ok(failure)
         }
-        if let Some(failure) = modified(self, ast) {
-            return Some(failure);
+        if let Some(failure) = modified(self, ast,enter)? {
+            return Ok(Some(failure));
         }
         let mut root = ast;
         while let dm_syntax::ExprKind::Group(value) = &root.kind {
+            let _frame=enter()?;
             root = value;
         }
         let inferred = match &root.kind {
@@ -77,22 +88,22 @@ impl DriverEvaluator<'_> {
             _ => false,
         };
         if !inferred {
-            return None;
+            return Ok(None);
         }
         // Only the root initializer owns this write's declared type. Nested
         // implicit constructors need their own field/argument context authority.
-        let path = self.declared_constructor_type(write).ok().flatten()?;
+        let Some(path)=self.declared_constructor_type(write).ok().flatten()else{return Ok(None)};
         let name = match write.target {
             dm_ir::InitializerTarget::Shared { name, .. }
             | dm_ir::InitializerTarget::Instance { name, .. } => name,
             dm_ir::InitializerTarget::ProcedureStatic(identity) => identity.name,
         };
-        let spelling = self.symbols.text(name)?;
-        matches!(
+        let Some(spelling)=self.symbols.text(name)else{return Ok(None)};
+        Ok(matches!(
             self.resolver.resolve(ResolveQuery::RuntimeType(path)),
             ResolvedMeaning::Missing
         )
-        .then(|| format!("{spelling}: unknown variable type"))
+        .then(|| format!("{spelling}: unknown variable type")))
     }
 }
 

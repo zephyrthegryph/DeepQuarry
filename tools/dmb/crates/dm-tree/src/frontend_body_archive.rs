@@ -1,6 +1,8 @@
 //! Current parser-issued body inputs, shared without retaining a frontend revision.
 use super::*;
 use crate::SemanticTree;
+#[path="frontend_archive_owner.rs"]mod archive_owner;
+pub use archive_owner::OriginalArchiveOwner;
 
 /// Only ColdFrontend can issue this archive. Coordinates belong to this exact
 /// tree/source/syntax owner; an archive cannot be rebound to a different revision.
@@ -638,6 +640,9 @@ impl ColdFrontend {
     }
 }
 impl BodyArchive {
+    /// Existing immutable original owner tuple, with no strong source/model pin.
+    pub fn original_owner_witness(&self)->OriginalArchiveOwner{archive_owner::issue(self)}
+
     /// Borrow the SAME original source-neutral code identity and current
     /// lexical boundary issued by the frontend. No parse, copied roster or key.
     pub fn body_code<'a>(

@@ -47,6 +47,10 @@ pub use evaluator::DriverEvaluator;
 #[cfg(test)]
 use evaluator::LexicalAbiEvaluator;
 use evaluator::OriginalSettingEvaluator;
+/// Stack-only source role for one synchronous ABI wave. The actual startup
+/// receipts and current mapping remain borrowed; no proof cache/model is built.
+struct OriginalAbiSources<'source>{context:dm_tree::frontend::OriginalDeclarationExpressionContext<'source>,startup:&'source crate::startup::OriginalStartup<'source>}
+
 #[path = "driver_facts/abi_artifacts.rs"]
 pub(crate) mod abi_artifacts;
 mod abi_scheduler;
@@ -385,10 +389,27 @@ pub fn prepare_pinned_source_abi_with_startup_on_executor_with_artifacts<R: Reso
     resource_search_context: Option<u128>,
     executor: &dm_exec::BuildExecutor,
     artifacts: Option<&AbiArtifacts>,
+) -> Result<PreparedPinnedSourceAbi, AbiError> {prepare_pinned_source_abi_startup_core(frontend,engine,resolver,startup,resource_search_context,executor,artifacts,None)}
+fn prepare_pinned_source_abi_startup_core<R: Resolver>(
+    frontend: &ColdFrontend,
+    engine: &EngineSnapshot,
+    resolver: &R,
+    startup: &crate::startup::CapturedStartup,
+    resource_search_context: Option<u128>,
+    executor: &dm_exec::BuildExecutor,
+    artifacts: Option<&AbiArtifacts>,
+    original:Option<&crate::startup::OriginalStartup<'_>>,
 ) -> Result<PreparedPinnedSourceAbi, AbiError> {
     startup
         .validate_for(frontend)
         .map_err(AbiError::unsupported)?;
+    let sources=original.map(|original|{
+        original.validate_for(frontend).map_err(AbiError::unsupported)?;
+        if !std::ptr::eq(startup,&**original){return Err(AbiError::invariant("ABI source startup role differs from captured owner"))}
+        if artifacts.is_some(){return Err(AbiError::invariant("source-required ABI entry requires its explicit uncached wave"))}
+        let context=frontend.original_declaration_expression_context().map_err(|failure|match failure{dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>AbiError::operational(actual),dm_tree::frontend::BodySyntaxFailure::Syntax(source)=>AbiError::unsupported(source.message)})?;
+        Ok(OriginalAbiSources{context,startup:original})
+    }).transpose()?;
     let static_resolver = startup
         .resolver(frontend, resolver)
         .map_err(AbiError::unsupported)?;
@@ -405,7 +426,7 @@ pub fn prepare_pinned_source_abi_with_startup_on_executor_with_artifacts<R: Reso
         resolver,
         symbols: startup.plan().symbols.as_ref(),
     };
-    let prepared = prepare_source_abi_mode_on_executor(
+    let prepared = prepare_source_abi_mode_source_on_executor(
         frontend,
         engine,
         &evaluator,
@@ -415,11 +436,20 @@ pub fn prepare_pinned_source_abi_with_startup_on_executor_with_artifacts<R: Reso
         true,
         Some(startup.unit_members()),
         artifacts,
+        sources.as_ref(),
     )?;
     Ok(PreparedPinnedSourceAbi {
         policy_identity,
         prepared,
     })
+}
+
+/// Explicit original scalar consumer, independent of legacy retained ABI
+/// payloads. All existing cached/compatibility entry points remain available.
+pub(crate) fn prepare_original_source_abi_with_startup_on_executor<R:Resolver>(frontend:&ColdFrontend,engine:&EngineSnapshot,resolver:&R,startup:&crate::startup::OriginalStartup<'_>,resource_search_context:Option<u128>,executor:&dm_exec::BuildExecutor)->Result<PreparedPinnedSourceAbi,AbiError>{
+ crate::daemon::control::checkpoint().map_err(AbiError::operational)?;
+ let result=prepare_pinned_source_abi_startup_core(frontend,engine,resolver,startup,resource_search_context,executor,None,Some(startup));
+ if matches!(&result,Err(error)if error.operational_error().is_some()){return result}crate::daemon::control::checkpoint().map_err(AbiError::operational)?;result
 }
 /// Dependency-ready waves borrow one immutable predecessor-layout map. A wave
 /// never mutates that map while workers read it, and clones no project bindings.
@@ -477,6 +507,18 @@ fn prepare_source_abi_mode_on_executor(
     lexical_statics: bool,
     issued_units: Option<&Arc<BTreeMap<UnitIdentity, MemberId>>>,
     artifacts: Option<&AbiArtifacts>,
+) -> Result<PreparedSourceAbi, AbiError> {prepare_source_abi_mode_source_on_executor(frontend,engine,evaluator,boundaries,resource_search_context,executor,lexical_statics,issued_units,artifacts,None)}
+fn prepare_source_abi_mode_source_on_executor(
+    frontend: &ColdFrontend,
+    engine: &EngineSnapshot,
+    evaluator: &DriverEvaluator<'_>,
+    boundaries: &BTreeMap<UnitIdentity, BoundaryAbi>,
+    resource_search_context: Option<u128>,
+    executor: &dm_exec::BuildExecutor,
+    lexical_statics: bool,
+    issued_units: Option<&Arc<BTreeMap<UnitIdentity, MemberId>>>,
+    artifacts: Option<&AbiArtifacts>,
+    source:Option<&OriginalAbiSources<'_>>,
 ) -> Result<PreparedSourceAbi, AbiError> {
     let batch_stage = dm_profile::stage("abi.batch.inputs");
     let batch_inputs = artifacts.and_then(|store| {
@@ -682,7 +724,7 @@ fn prepare_source_abi_mode_on_executor(
                                             ),
                                             None => {
                                                 let original=crate::procedure_policy::OriginalFormalTokens::capture(frontend,body,metadata)?;
-                                                let borrowed=OriginalSettingEvaluator{frontend,body,metadata,evaluator,lexical:lexical_statics};
+                                                let borrowed=OriginalSettingEvaluator{frontend,body,metadata,evaluator,lexical:lexical_statics,source};
                                                 let policy=crate::procedure_policy::CapturedProcedurePolicy{
                                                     evaluator:&borrowed,inherited:&inherited,resource_search_context};
                                                 policy.prepare_view_original(metadata,parsed,&context,&original)

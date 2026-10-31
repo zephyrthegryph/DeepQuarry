@@ -131,24 +131,27 @@ pub(in crate::initializer_lowering) fn assembly<R: Resolver>(
             let value = write.runtime_value.as_ref().ok_or_else(|| {
                 InitializerError::Invalid("current assembly runtime value missing".into())
             })?;
-            Ok(super::super::value_expression(value))
+            super::super::value_expression(value).ok_or_else(||InitializerError::Invalid("assembly requires rebound original source".into()))
         })
         .collect::<Result<Vec<_>, InitializerError>>()?;
+    assembly_with_values(classified,group,context,host,|index|values.get(index).map(|value|value.as_ref()))
+}
+pub(in crate::initializer_lowering) fn assembly_with_values<'syntax,R:Resolver>(classified:&crate::initializer_policy::ClassifiedInitializers,group:&crate::initializer_policy::RuntimeGroup,context:dm_codegen_byond::initializer::InitializerContext<'_>,host:&R,mut value:impl FnMut(usize)->Option<&'syntax dm_syntax::Expr>)->Result<dm_codegen_byond::lower_resolver::ResolverProc,InitializerError>{
     let views = group
         .writes
         .iter()
         .enumerate()
         .map(|(index, &write_index)| {
             let write = &classified.writes[write_index].write;
-            dm_codegen_byond::initializer::AssignmentView {
+            Ok::<_,InitializerError>(dm_codegen_byond::initializer::AssignmentView {
                 source_site: write.source_site,
                 target: &write.target,
                 lexical_owner: write.lexical_owner,
-                value: values[index].as_ref(),
+                value:value(index).ok_or_else(||InitializerError::Invalid("current assembly expression missing".into()))?,
                 occurrence: dm_syntax::Span::new(index, index),
-            }
+            })
         })
-        .collect::<Vec<_>>();
+        .collect::<Result<Vec<_>,InitializerError>>()?;
     let continuations = group
         .writes
         .iter()
