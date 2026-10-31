@@ -71,7 +71,10 @@ def non_client_verb(lines):
 OLDFORM_EXEMPT = ("code/tests/", "code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/")
 # The controller base and the GLOB holder run before the kernel exists: Initialize() is their boot hook, and the holder's
 # Destroy() deliberately never runs the parent chain (admin var-edit exploit). Neither has a declared replacement.
-BOOT_HOLDERS = ("code/controllers/controller.dm", "code/controllers/globals.dm")
+BOOT_HOLDERS = ("code/controllers/controller.dm", "code/controllers/globals.dm",
+                # BYOND's own entry points, which have no replacement: /client/Topic and /client/Destroy are the href and logout hooks, the metrics
+                # wrapper brackets /client/Topic, and /area/New() is where the maploader registers an area before any init chain exists.
+                "code/modules/client/client procs.dm", "code/modules/metrics/metrics_capture.dm", "code/game/area/areas.dm")
 # Chat, OOC and input verbs a player types by name or binds to a key are the final form (final_api section 17, "client, OOC and
 # admin commands"). An explicit list of files, never a pattern: a new verb file has to be added here on purpose.
 OOC_VERB_FILES = (
@@ -81,6 +84,25 @@ OOC_VERB_FILES = (
     "code/modules/player_tips/player_tips_controller.dm",
 )
 VERB_EXEMPT = ("code/modules/admin/", "/admin_commands.dm", "/contract_admin.dm")
+
+# A spawn/sleep/INVOKE_ASYNC/do_after line that carries an ALLOW(scheduler): <reason> annotation is a justified keep (the scheduler lint
+# demands the reason: the kernel's own loop, a callee that blocks on a window). It is not an old form, so the line is blanked before the
+# old-form patterns run. An annotation on a comment-only line covers the code line below it.
+SCHEDULER_KEEP = re.compile(r"ALLOW\(scheduler[^)]*\)")
+
+
+def blank_scheduler_keeps(text):
+    raw = text.split("\n")
+    for i, ln in enumerate(raw):
+        if not SCHEDULER_KEEP.search(ln):
+            continue
+        code = ln.split("//")[0]
+        if code.strip():
+            raw[i] = "// " + ln.split("//", 1)[1] if "//" in ln else ""
+        elif i + 1 < len(raw):
+            raw[i + 1] = ""
+    return "\n".join(raw)
+
 
 ALLOW = re.compile(r"\bALLOW\(([^)]*)\)")
 # doc/rewrite/migration_census.md kind M: an annotation naming one of these keeps a migration form, so the file is not done.
@@ -248,7 +270,7 @@ def main(argv):
         text = read(root, f)
         if migration_allow(text):
             why.append("allow")
-        lines = strip_comments(text)
+        lines = strip_comments(blank_scheduler_keeps(text))
         exempt = f.startswith(OLDFORM_EXEMPT) or f in BOOT_HOLDERS
         for label, rx in ([] if exempt else OLD_FORMS):
             if any(rx.search(ln) for ln in lines):
