@@ -657,6 +657,7 @@
 #include "dq_p2_apc_behaviour.dm"
 #include "../../modules/unit_tests/dq_wall_frame_behaviour.dm"
 #include "../../modules/unit_tests/dq_emp_disable_behaviour.dm"
+#include "../../modules/unit_tests/dq_roundstart_churn.dm"
 #include "dq_p2_chargers_behaviour.dm"
 #include "dq_p2_smes_behaviour.dm"
 #include "dq_mf_smes_behaviour.dm"
