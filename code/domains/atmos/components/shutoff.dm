@@ -99,14 +99,25 @@ CAPABILITIES(/obj/machinery/atmospherics/valve/shutoff)
 
 	if(close_on_leaks)
 		if(open && (network_node1.leaks.len || network_node2.leaks.len))
+			var/started = TICK_USAGE
 			find_leaks()	// If we can see the leak, then this will find it, close the valve, and cut off that network
 							// If we cannot see the leak, then this will not close the valve, and any valves that can see the leak will cut it off from us
+			var/search_ms = TICK_USAGE_TO_MS(started)
+			if(search_ms >= 25)
+				log_world("SHUTOFF_SEARCH: [src] at ([x],[y],[z]) searched for a leak for [round(search_ms, 0.1)] ms (open now [open]; leaks on its sides [network_node1.leaks.len]/[network_node2.leaks.len])")
 		else if(!open && !network_node1.leaks.len && !network_node2.leaks.len)
+			var/opening_started = TICK_USAGE
 			open()
+			var/open_ms = TICK_USAGE_TO_MS(opening_started)
+			if(open_ms >= 25)
+				log_world("SHUTOFF_SEARCH: [src] at ([x],[y],[z]) reopened (both sides sealed) in [round(open_ms, 0.1)] ms")
 
 // Breadth-first search for any leaking pipes that we can directly see
 /obj/machinery/atmospherics/valve/shutoff/proc/find_leaks()
 	var/list/obj/machinery/atmospherics/search = list()
+	// What the search has queued, as a keyed list: `search |= x` scanned the whole queue for every node it met, which on a network of thousands of
+	// pipes made the first check of a leaking network take a second (SLOW CALL check_leaks 1038 ms).
+	var/list/queued = list()
 
 	// We're the leak!
 	if(!node1 || !node2)
@@ -115,15 +126,18 @@ CAPABILITIES(/obj/machinery/atmospherics/valve/shutoff)
 
 	// Only searching pipes
 	if(istype(node1, /obj/machinery/atmospherics))
-		search |= node1
-	if(istype(node2, /obj/machinery/atmospherics))
-		search |= node2
+		search += node1
+		queued[node1] = TRUE
+	if(istype(node2, /obj/machinery/atmospherics) && !queued[node2])
+		search += node2
+		queued[node2] = TRUE
 
 	// Breadth-first search
 	for(var/i = 1, i <= search.len, i++) // wooo, proper for loop syntax!
 		var/obj/machinery/atmospherics/A = search[i]
 		if(!A)
 			continue
+		var/list/next // the nodes this one leads on to (null: a dead end)
 
 		if(istype(A, /obj/machinery/atmospherics/pipe))
 			var/obj/machinery/atmospherics/pipe/L = A
@@ -135,39 +149,43 @@ CAPABILITIES(/obj/machinery/atmospherics/valve/shutoff)
 			var/obj/machinery/atmospherics/valve/shutoff/S = A
 			if(S.close_on_leaks || !S.open)
 				continue 										// Either it will close, or it is closed. We don't care what's on the other side
-			search |= list(S.node1, S.node2) 					// |= skips existing nodes, so we don't search loops infinitely
+			next = list(S.node1, S.node2)
 
 		else if(istype(A, /obj/machinery/atmospherics/valve))	// Putting the shutoff before this means this won't catch shutoffs
 			var/obj/machinery/atmospherics/valve/V = A
 			if(V.open)
-				search |= list(V.node1, V.node2)
+				next = list(V.node1, V.node2)
 			else
 				continue // Closed valve, dead end
 
 		else if(istype(A, /obj/machinery/atmospherics/tvalve))
 			var/obj/machinery/atmospherics/tvalve/T = A
 			if(T.state)
-				search |= list(T.node1, T.node2)
+				next = list(T.node1, T.node2)
 			else
-				search |= list(T.node1, T.node3)
+				next = list(T.node1, T.node3)
 
 		else if(istype(A, /obj/machinery/atmospherics/pipe/zpipe))
 			var/obj/machinery/atmospherics/pipe/zpipe/P = A
-			search |= list(P.node1, P.node2)
+			next = list(P.node1, P.node2)
 
 		else if(istype(A, /obj/machinery/atmospherics/pipe/simple))
 			var/obj/machinery/atmospherics/pipe/P = A
-			search |= list(P.node1, P.node2)
+			next = list(P.node1, P.node2)
 
 		else if(istype(A, /obj/machinery/atmospherics/pipe/manifold))
 			var/obj/machinery/atmospherics/pipe/manifold/M = A
-			search |= list(M.node1, M.node2, M.node3)
+			next = list(M.node1, M.node2, M.node3)
 
 		else if(istype(A, /obj/machinery/atmospherics/pipe/manifold4w))
 			var/obj/machinery/atmospherics/pipe/manifold4w/M = A
-			search |= list(M.node1, M.node2, M.node3, M.node4)
+			next = list(M.node1, M.node2, M.node3, M.node4)
 
 		// else continue, dead end
+		for(var/obj/machinery/atmospherics/node in next)
+			if(!queued[node])
+				queued[node] = TRUE
+				search += node
 	// We broke out of the loop, so we see no leaks
 	// The leaks therefore must be on the other side of another shutoff valve
 	return

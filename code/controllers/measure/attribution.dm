@@ -383,3 +383,27 @@ GLOBAL_VAR_INIT(km_attr_depth, 0)
 	for(var/list/row as anything in select_top(5, KA_BY_POST))
 		names += "[km_attr_describe(row)] [row[KA_POST_COUNT]]x [round(row[KA_POST_MS] + row[KA_POST_MS_HI], 0.1)]ms (last +[round((row[KA_LAST] - init_real) * 0.1)]s[row[KA_LATE_COUNT] ? ", [row[KA_LATE_COUNT]]x past +2min" : ""])"
 	return "SETTLE: +[round((REALTIMEOFDAY - init_real) * 0.1)]s after init: [n] sources ran since init complete ([round(total, 0.1)]ms); [late_n] still ran past +[KA_SETTLE_FIRST / 10]s ([round(late_total, 0.1)]ms there); top: [length(names) ? jointext(names, "; ") : "none"]"
+
+/// Slow single calls logged so far this round (the log keeps the first KM_SLOW_CALL_LOG_MAX).
+GLOBAL_VAR_INIT(km_slow_calls_logged, 0)
+#define KM_SLOW_CALL_LOG_MAX 60
+
+/// What a holder adds to its slow-call line (where it stands, what it was doing). Overridden by the types whose slow calls need more than a type.
+/datum/proc/slow_call_detail()
+	return ""
+
+/atom/slow_call_detail()
+	var/turf/where = get_turf(src)
+	return where ? "at ([where.x],[where.y],[where.z]) in [get_area(where)]" : "in nullspace"
+
+/// Logs one callback that took `ms` or more (KM_SLOW_CALL_MS): the holder, the callback, how long after init it ran, and the holder's own detail, so a
+/// single 1 s call in a settle table is named by what it was holding and where, which a total by type cannot show.
+/proc/km_slow_call(datum/holder, what, ms)
+	if(GLOB.km_slow_calls_logged >= KM_SLOW_CALL_LOG_MAX)
+		return
+	if(!km_meter().attr.init_real)
+		return // during init the settle table and the boot logs account for every call; a line each would bury the round
+	GLOB.km_slow_calls_logged++
+	var/init_real = km_meter().attr.init_real
+	var/since = init_real ? "+[round((REALTIMEOFDAY - init_real) * 0.1)]s after init" : "during init"
+	log_world("SLOW CALL: [round(ms, 0.1)] ms [holder?.type] -> [what] ([since]) [holder?.slow_call_detail()] clients [length(GLOB.clients)]")
