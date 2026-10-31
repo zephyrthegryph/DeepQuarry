@@ -137,7 +137,7 @@ CAPABILITIES(/datum/overlay_lighting)
 	observe(owner, /datum/notice/atom_update_light_flags, src, then(PROC_REF(on_light_flags_change)))
 	observe(owner, /datum/notice/atom_used_in_craft, src, then(PROC_REF(on_parent_crafted)))
 	var/atom/movable/movable_parent = owner
-	if(movable_parent.light_flags & LIGHT_ATTACHED)
+	if(sparse_get_or(movable_parent, light_flags, NONE) & LIGHT_ATTACHED)
 		overlay_lighting_flags |= LIGHTING_ATTACHED
 		set_parent_attached_to(ismovable(movable_parent.loc) ? movable_parent.loc : null)
 	check_holder()
@@ -423,7 +423,7 @@ CAPABILITIES(/datum/overlay_lighting)
 	var/atom/source = A.target
 	var/datum/notice/atom_update_light_flags/event = A
 	var/old_flags = event.old_flags
-	var/new_flags = source.light_flags
+	var/new_flags = sparse_get_or(source, light_flags, NONE)
 	var/atom/movable/movable_parent = owner
 	if(!((new_flags ^ old_flags) & LIGHT_ATTACHED))
 		return

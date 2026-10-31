@@ -260,3 +260,16 @@
 	TEST_ASSERT_NOTNULL(SSrequests.open_for(puller), "the puller is asked what to pull")
 	test_answer(puller, crate.name)
 	TEST_ASSERT_EQUAL(puller.pulling_target(), crate, "the picked crate is being pulled")
+
+/// light_flags is a sparse slot: an ordinary atom has no var and no slot list, setting it stores it, and clearing it frees the list again.
+/datum/unit_test/dq_sparse_light_flags_slot
+
+/datum/unit_test/dq_sparse_light_flags_slot/Run()
+	var/obj/item/pen/P = allocate(/obj/item/pen, test_floor())
+	TEST_ASSERT(!("light_flags" in P.vars), "light_flags is not a var of every atom any more")
+	TEST_ASSERT_NULL(P.sparse_slots, "an ordinary atom carries no slot list")
+	TEST_ASSERT_EQUAL(sparse_get_or(P, light_flags, NONE), NONE, "an unset slot reads as no flags")
+	P.set_light_flags(LIGHT_ATTACHED)
+	TEST_ASSERT_EQUAL(sparse_get_or(P, light_flags, NONE), LIGHT_ATTACHED, "the flag is stored")
+	P.set_light_flags(NONE)
+	TEST_ASSERT_NULL(P.sparse_slots, "clearing the last flag frees the slot list")
