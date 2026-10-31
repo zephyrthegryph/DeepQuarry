@@ -110,6 +110,8 @@ pub fn snapshot_json() -> String {
                     ("kept_edges", st.kept_edges),
                     ("kept_local", st.kept_local),
                     ("substeps", st.substeps),
+                    ("stride", st.stride),
+                    ("rate_ppm", st.rate_ppm),
                 ] {
                     metrics.gauge(&format!("world.awake.field_{name}_{what}")).set(f64::from(v));
                 }
@@ -121,6 +123,8 @@ pub fn snapshot_json() -> String {
                     ("us_quiet", times.quiet),
                     ("us_local", times.local),
                     ("steps", st.steps),
+                    ("skipped_steps", st.skipped_steps),
+                    ("stride_changes", st.stride_changes),
                 ] {
                     metrics.gauge(&format!("world.awake.field_{name}_{what}")).set(v as f64);
                 }

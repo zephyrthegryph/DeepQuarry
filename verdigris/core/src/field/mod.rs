@@ -220,6 +220,18 @@ pub trait FieldKind: Domain {
     fn quiet(before: &Self::Value, after: &Self::Value) -> bool {
         before == after
     }
+    /// The most steps the field may take as one advance of that many steps' time, while everything awake is slow. 1 (the default)
+    /// is the exact scheme. A field that sets more also sets [`STRIDE_TOLERANCE`](Self::STRIDE_TOLERANCE) and
+    /// [`relative_change`](Self::relative_change); see [`FieldState::step`].
+    const MAX_STRIDE: u32 = 1;
+    /// The largest relative change of any cell ([`relative_change`](Self::relative_change)) one strided advance may make.
+    /// The stride is chosen so that the measured rate times the stride stays under it, so the error of one advance (second order
+    /// in this number) and the staleness of a read between advances are both bounded by it.
+    const STRIDE_TOLERANCE: f32 = 0.0;
+    /// How much `after` differs from `before`, relative to the cell's own size (0: identical). Infinite (the default) is never slow.
+    fn relative_change(_before: &Self::Value, _after: &Self::Value) -> f32 {
+        f32::INFINITY
+    }
     /// Refreshes cached intensive values (a temperature a channel reads)
     /// after a step, on every cell of a touched chunk. Must not change
     /// conserved quantities.
@@ -271,6 +283,14 @@ pub struct FieldStats {
     pub kept_edges: u32,
     /// Chunks the last step kept awake because a cell's local step or a reservoir's relax asked to.
     pub kept_local: u32,
+    /// Steps the field takes per advance now (1: every step advances).
+    pub stride: u32,
+    /// Steps skipped (owed to the next advance) so far.
+    pub skipped_steps: u64,
+    /// Times the stride changed so far.
+    pub stride_changes: u64,
+    /// The largest per-step relative change of the last advance, in millionths (0 when the field does not stride).
+    pub rate_ppm: u32,
 }
 
 /// Cumulative wall microseconds of the step's parts since the field was built: the chunk lists and stiffness, the flux of the
@@ -305,6 +325,12 @@ pub struct FieldState<K: FieldKind> {
     times: FieldTimes,
     /// The grid layer revision as of the last step.
     grid_seen: u64,
+    /// Steps per advance while everything awake is slow (see [`FieldKind::MAX_STRIDE`]).
+    stride: u32,
+    /// The cap on `stride` ([`FieldKind::MAX_STRIDE`] unless the host lowered it; 1 is the exact scheme).
+    stride_cap: u32,
+    /// Steps taken since the last advance, this one included.
+    owed: u32,
 }
 
 impl<K: FieldKind> fmt::Debug for FieldState<K> {
@@ -406,6 +432,9 @@ impl<K: FieldKind> FieldState<K> {
             stats: FieldStats::default(),
             times: FieldTimes::default(),
             grid_seen: 0,
+            stride: 1,
+            stride_cap: K::MAX_STRIDE,
+            owed: 0,
         }
     }
 
@@ -423,6 +452,14 @@ impl<K: FieldKind> FieldState<K> {
         self.config = config;
     }
 
+    /// Lowers (or restores, up to [`FieldKind::MAX_STRIDE`]) the stride cap; 1 runs the exact scheme.
+    pub fn set_stride_cap(&mut self, cap: u32) {
+        self.stride_cap = cap.clamp(1, K::MAX_STRIDE.max(1));
+        if self.stride > self.stride_cap {
+            self.stride = self.stride_cap;
+        }
+    }
+
     #[must_use]
     pub const fn times(&self) -> FieldTimes {
         self.times
@@ -433,6 +470,7 @@ impl<K: FieldKind> FieldState<K> {
         (self.stats, self.times)
     }
 
+    #[must_use]
     pub const fn stats(&self) -> FieldStats {
         self.stats
     }
@@ -583,18 +621,31 @@ impl<K: FieldKind> FieldState<K> {
                 self.stats.woke_geom += 1;
             }
         }
+        let woke = self.stats.woke_cells + self.stats.woke_geom + self.stats.woke_grid > 0 || self.last_cells.is_none();
+        self.owed += 1;
+        if self.stride_cap > 1 && !woke && self.owed < self.stride {
+            // Everything awake is slow and nothing was written from outside: this step's time is owed to the advance `stride` steps in.
+            self.stats.skipped_steps += 1;
+            self.stats.substeps = 0;
+            return;
+        }
+        // A write from outside takes a plain step now (and drops the time owed, at most the tolerance's worth of drift).
+        let steps = if woke { 1 } else { self.owed };
+        self.owed = 0;
         let geo = Geo {
             store: geom,
             grid,
             kind: K::BLOCK,
         };
-        self.advance(cells, &geo);
+        #[allow(clippy::cast_precision_loss)]
+        let dt = self.config.dt * steps as f32;
+        self.advance(cells, &geo, dt, steps, woke);
         self.last_cells = Some(cells.snapshot());
         self.last_geom = Some(geom.snapshot());
     }
 
     #[allow(clippy::too_many_lines)]
-    fn advance(&mut self, cells: &mut CowStore<K::Value>, geom: &Geo<'_>) {
+    fn advance(&mut self, cells: &mut CowStore<K::Value>, geom: &Geo<'_>, dt: f32, steps: u32, woke: bool) {
         self.stats.steps += 1;
         let mut lap = std::time::Instant::now();
         let take = |lap: &mut std::time::Instant| {
@@ -605,6 +656,7 @@ impl<K: FieldKind> FieldState<K> {
         let count = self.active.iter().filter(|&&a| a).count();
         self.stats.active_chunks = u32::try_from(count).unwrap_or(u32::MAX);
         if count == 0 {
+            self.set_stride(1, 0.0);
             self.stats.substeps = 0;
             self.stats.touched_chunks = 0;
             self.stats.live_edges = 0;
@@ -649,7 +701,6 @@ impl<K: FieldKind> FieldState<K> {
         }
         self.stats.touched_chunks = u32::try_from(targets.len()).unwrap_or(u32::MAX);
 
-        let dt = self.config.dt;
         let (stiffness, live_edges) = {
             let this = &*self;
             let cells = &*cells;
@@ -672,6 +723,11 @@ impl<K: FieldKind> FieldState<K> {
             }
         };
         self.stats.substeps = substeps;
+        // The substeps one step needs on its own: how far the stride may grow before the cap (the monotone bound) is hit.
+        let base_substeps = {
+            let n = (self.config.dt * self.faces * stiffness).ceil();
+            if n.is_finite() && n >= 1.0 { n } else { 1.0 }
+        };
         #[allow(clippy::cast_precision_loss)]
         let sub_dt = dt / substeps as f32;
 
@@ -689,7 +745,7 @@ impl<K: FieldKind> FieldState<K> {
                 owners
                     .par_iter()
                     .zip(live_edges.par_iter())
-                    .map(|(&c, edges)| this.chunk_flux(c, edges, old, geom, sub_dt, last))
+                    .map(|(&c, edges)| this.chunk_flux(c, edges, old, sub_dt, last))
                     .collect()
             };
             self.times.flux += take(&mut lap);
@@ -792,7 +848,62 @@ impl<K: FieldKind> FieldState<K> {
             }
         }
         self.stats.kept_local = kept_local;
+        if self.stride_cap > 1 {
+            #[allow(clippy::cast_precision_loss)]
+            let rate = if woke || kept_local > 0 {
+                f32::INFINITY
+            } else {
+                self.max_relative_change(cells, &start, &targets) / steps.max(1) as f32
+            };
+            let by_rate = if rate > 0.0 { (K::STRIDE_TOLERANCE / rate).floor() } else { f32::INFINITY };
+            #[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            let wanted = {
+                let by_cap = (self.config.max_substeps as f32 / base_substeps).floor();
+                by_rate.min(by_cap).min(self.stride_cap as f32).max(1.0) as u32
+            };
+            self.set_stride(wanted, rate);
+        }
         self.active = next;
+    }
+
+    /// The largest [`FieldKind::relative_change`] of any cell of the listed chunks between `start` and `cells`.
+    fn max_relative_change(&self, cells: &CowStore<K::Value>, start: &CowStore<K::Value>, targets: &[usize]) -> f32 {
+        targets
+            .par_iter()
+            .map(|&c| match (cells.chunk(c), start.chunk(c)) {
+                (Some(now), Some(then)) if now.as_ptr() != then.as_ptr() => now
+                    .iter()
+                    .zip(then)
+                    .map(|(a, b)| K::relative_change(b, a))
+                    .fold(0.0f32, |m, v| if v.is_nan() { f32::INFINITY } else { m.max(v) }),
+                (Some(_) | None, Some(_) | None) if cells.chunk(c).is_none() == start.chunk(c).is_none() => 0.0,
+                _ => f32::INFINITY,
+            })
+            .reduce(|| 0.0, f32::max)
+    }
+
+    /// Sets the stride, recording the change (the first few are logged to stderr: a stride that flaps shows up there and in the gauges).
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    fn set_stride(&mut self, stride: u32, rate: f32) {
+        static LOGGED: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+        let stride = stride.max(1);
+        self.stats.rate_ppm = if rate.is_finite() { (rate * 1.0e6).min(4.0e9) as u32 } else { u32::MAX };
+        if stride != self.stride {
+            self.stats.stride_changes += 1;
+            if LOGGED.fetch_add(1, Ordering::Relaxed) < 64 {
+                eprintln!(
+                    "verdigris field {}: stride {} -> {} (rate {rate:.3e}/step, tolerance {:.1e}, step {}, skipped {})",
+                    K::NAME,
+                    self.stride,
+                    stride,
+                    K::STRIDE_TOLERANCE,
+                    self.stats.steps,
+                    self.stats.skipped_steps
+                );
+            }
+            self.stride = stride;
+        }
+        self.stats.stride = stride;
     }
 
     fn active_changed(
@@ -878,7 +989,6 @@ impl<K: FieldKind> FieldState<K> {
         chunk: usize,
         edges: &[LiveEdge],
         old: &CowStore<K::Value>,
-        geom: &Geo<'_>,
         dt: f32,
         last: bool,
     ) -> ChunkFlux<K::Flux> {

@@ -228,6 +228,14 @@ impl FieldKind for SolidHeat {
         }
     }
 
+    // Idle stride: up to 8 steps per advance while every awake chunk changes by under 1e-3 of its energy per advance.
+    const MAX_STRIDE: u32 = 8;
+    const STRIDE_TOLERANCE: f32 = 1.0e-3;
+
+    fn relative_change(before: &SolidCell, after: &SolidCell) -> f32 {
+        (before.energy - after.energy).abs() / before.energy.abs().max(after.energy.abs()).max(1.0)
+    }
+
     fn quiet(before: &SolidCell, after: &SolidCell) -> bool {
         (before.energy - after.energy).abs() <= 1e-6 * before.energy.abs().max(after.energy.abs())
     }

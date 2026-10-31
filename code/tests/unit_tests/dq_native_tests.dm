@@ -50,6 +50,8 @@
 			break
 	TEST_ASSERT_NOTNULL(T, "no heat-tracked floor")
 	restore_solids_after(T)
+	// The world steps in this test, and the telecomms plating cools on its own meanwhile: put every floor back.
+	defer_cleanup(null, GLOBAL_PROC_REF(unit_test_solid_restore), unit_test_solid_snapshot())
 	var/datum/native_test_listener/listener = new
 	var/datum/native_watch/heat/watch = heat_watch_threshold(listener, T, T.get_temperature() + 50, TRUE, TYPE_PROC_REF(/datum/native_test_listener, on_cross))
 	TEST_ASSERT_NOTNULL(watch, "the turf watch was refused")

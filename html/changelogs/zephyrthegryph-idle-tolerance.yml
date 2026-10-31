@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The heat and gas fields take up to 8 (heat) or 4 (gas) steps as one longer advance while everything awake changes by under a small tolerance; a write from outside steps at once. Idle field cost drops accordingly"
+  - bugfix: "dq_native_heat_watch_crosses_through_the_frame puts the telecomms plating back (state leak)"
