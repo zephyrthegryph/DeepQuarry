@@ -105,3 +105,14 @@ off limits here) and the gitignored generated `verdigris/` bindings (their gener
 `modules/economy/{cargo_market,service_invoices,supply_agent_api,supply_api}.dm`, `modules/expedition/{api,expedition_debug}.dm`,
 `modules/mob/living/silicon/pai/api.dm`, `modules/resleeving/transcore_api.dm`, `modules/skybox_api.dm`, `modules/unit_tests/_test_build_overrides.dm`.
 Not moved in this lane: each owner file is itself dirty (oldform or allow), so owner and procs have to move in the same wave as the owner's conversion.
+
+**Base vars left in place (2026-10-31 verb and baseline sweep).** `light_flags` became a sparse slot, `aimed` and `holdingitems` lazy lists; the rest stay, each for a reason:
+- `atom_colours` (`game/atom/_atom.dm`): the state serializer saves it as a list var and special-cases it in `pristine_lists()` (`engine/state/serializer.dm`). The serializer has no sparse-slot handling and no test names `atom_colours`, so a move to a slot would drop it from save and restore and nothing would catch it. Needs the serializer to save `sparse_slots` first.
+- `identity_type`, `init_hide_identity` (`game/objects/items.dm`): read by `starts = when(nameof(init_hide_identity), nameof(identity_type))` on the item block (`modules/mob/living/silicon/robot/component.dm`). The `starts` form names vars, so the pair needs a per-type declaration form before it can leave the base type.
+- `realized_overlays`, `realized_underlays`, `our_overlays` (`controllers/subsystems/overlays.dm`, `game/atom/_atom.dm`): the per-atom overlay realisation cache on the appearance hot path; a slot list per atom with overlays costs more than the vars.
+- `shock_stage` (carbon), `life_tick`, `life_set` (`mob/living`): written every life tick of every mob; a slot lookup per tick, and `life_tick` is touched by the life sequence itself.
+- `insulation` (`/obj`, `datums/properties/families/temperature_thresholds.dm`): a type default read through `initial()` by a property provider; it needs the property-family provider redesigned, not a trait.
+- `default_language`, `faction` (`/mob`), `simulated`, `germ_level`, `armor_spec`, `catalogue_data`, `uses_integrity`, `atom_integrity`, `integrity_failure`, `init_from_table`, `worn_factors`: 55 to 2400 references each, set as type defaults in type bodies, which a slot cannot carry (a type default needs a trait block; none exists for these).
+- `move_speed`, `last_move`, `old_x`, `old_y` (`atoms_movable.dm`) and `bodytemperature`: written on every move or life tick; `move_speed` and `bodytemperature` were excluded by instruction.
+- The seven `ALLOW(base_vars)` files (`proximity.dm`, `structures.dm`, `floor.dm`, `material_construction.dm`, `living_defines.dm`, `autofire.dm`) and `ALLOW(decl)` in `spore.dm` were reviewed and kept; none is stale.
+- `sys/dx_review` `manual_push` in `modules/power/apc.dm` (`push_to_rust()` after the bind) stays: it needs the power domain's refresh redesigned.
