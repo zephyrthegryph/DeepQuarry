@@ -122,7 +122,7 @@ export function KeyComboModal(props) {
     (message.length && large_buttons ? 5 : 0);
 
   return (
-    <Window title={title} width={240} height={windowHeight}>
+    <Window fitContent title={title} width={240} height={windowHeight}>
       {timeout && <Loader value={timeout} />}
       <Window.Content onKeyDown={handleKeyDown}>
         <Section fill>
