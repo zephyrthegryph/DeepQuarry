@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The round log names single slow callbacks (SLOW CALL), slow brain runs (AI SLOW), slow native frames from 30 ms with their delivery split, APC report cost and slow shutoff-valve searches; Rust frames from 20 ms file their laps and the worst lap of each phase is kept"
+  - code_imp: "The shutoff valve's leak search queues each pipe once with a keyed list instead of scanning the queue for every node"

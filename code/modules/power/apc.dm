@@ -582,16 +582,20 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 /obj/machinery/power/apc/on_apc_report(new_equipment, new_lighting, new_environ, new_charging, alarm, new_status, charge)
 	if(QDELETED(src))
 		return
+	var/cost_start = TICK_USAGE
 	if(cell && pushed_cell_ref == REF(cell))
 		cell.set_charge(clamp(charge, 0, cell.maxcharge))
+	var/cell_ms = TICK_USAGE_TO_MS(cost_start)
 	var/channels_changed = new_equipment != equipment || new_lighting != lighting || new_environ != environ
 	var/structural_changed = channels_changed || new_status != main_status || !!alarm != power_alarm_raised
 	var/shown_changed = structural_changed || new_charging != charging
+	var/setters_start = TICK_USAGE
 	set_equipment(new_equipment)
 	set_lighting(new_lighting)
 	set_environ(new_environ)
 	set_charging(new_charging)
 	set_main_status(new_status)
+	apc_report_cost_note(shown_changed, cell_ms, TICK_USAGE_TO_MS(setters_start))
 	power_event_count++ // reports heard (tests: a settled APC hears nothing)
 	alarm = !!alarm
 	if(alarm != power_alarm_raised)
@@ -1008,3 +1012,20 @@ READS_AS(/obj/machinery/power/apc/proc/power_failing, "supplying")
 /obj/machinery/power/apc/proc/area_lights()
 	return area ? area.lights_here() : list()
 
+
+/// What the APC reports cost, so a frame that delivers a burst of them (every APC's cell crosses a percent together) names its share: reports heard, the
+/// ones that changed what the APC shows, the ms in the cell's charge write and in the five setters, logged every 1000 reports.
+GLOBAL_VAR_INIT(apc_report_count, 0)
+GLOBAL_VAR_INIT(apc_report_shown, 0)
+GLOBAL_VAR_INIT(apc_report_cell_ms, 0)
+GLOBAL_VAR_INIT(apc_report_setter_ms, 0)
+
+/proc/apc_report_cost_note(shown, cell_ms, setter_ms)
+	GLOB.apc_report_count++
+	if(shown)
+		GLOB.apc_report_shown++
+	GLOB.apc_report_cell_ms += cell_ms
+	GLOB.apc_report_setter_ms += setter_ms
+	if(GLOB.apc_report_count % 1000)
+		return
+	log_world("APC_REPORT_COST: [GLOB.apc_report_count] reports heard, [GLOB.apc_report_shown] changed what the APC shows; cell charge write [round(GLOB.apc_report_cell_ms, 0.1)] ms, setters [round(GLOB.apc_report_setter_ms, 0.1)] ms in total")
