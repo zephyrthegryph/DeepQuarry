@@ -276,6 +276,7 @@ CAPABILITIES(/obj/mecha)
 	op("mecha_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle strafing"), then(PROC_REF(interaction_mecha_alt)))
 	op("mecha_enter", menu(), label("Enter Exosuit"), then(PROC_REF(mecha_enter_op)))
 	op("mecha_enter_passenger", menu(), label("Enter Passenger Compartment"), then(PROC_REF(mecha_enter_passenger_op)))
+	op("mecha_sleeper_release", menu(), label("Sleeper Eject"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot)), req(PROC_REF(sleeper_occupied), silent = TRUE)), then(PROC_REF(mecha_sleeper_release_op)))
 	op("mecha_eject", menu(), label("Eject"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_eject_op)))
 	op("mecha_stats", menu(), label("View Stats"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_stats_op)))
 	op("mecha_lights", menu(), label("Toggle Lights"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_lights_op)))
@@ -1122,6 +1123,22 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	if(A.actor.loc == src || !pred_mecha_has_passenger_bay(A.actor, src, null) || can_enter_passenger(A.actor, src, null) != TRUE)
 		return OP_DECLINE
 	move_inside_passenger(A.actor)
+	return OP_OK
+
+/// The sleeper tool of this exosuit that has somebody in it, or null.
+/obj/mecha/proc/occupied_sleeper() as /obj/item/mecha_parts/mecha_equipment/tool/sleeper
+	for(var/obj/item/mecha_parts/mecha_equipment/tool/sleeper/sleeper in equipment)
+		if(sleeper.slot_item(OCCUPANT_SLOT_MECHA_SLEEPER))
+			return sleeper
+	return null
+
+/// Requirement: one of the exosuit's sleepers holds somebody.
+/obj/mecha/proc/sleeper_occupied(datum/act/op/A)
+	return occupied_sleeper() ? null : MSG(req_silent)
+
+/// The Sleeper Eject menu entry (the old tool verb that sourced from the pilot's location, which was never the tool).
+/obj/mecha/proc/mecha_sleeper_release_op(datum/act/op/A)
+	occupied_sleeper()?.begin_release_sequence(A.actor)
 	return OP_OK
 
 /obj/mecha/proc/mecha_eject_op(datum/act/op/A)

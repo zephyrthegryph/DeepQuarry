@@ -63,7 +63,7 @@ CAPABILITIES(/datum/malf_research_ability/interdiction/hack_cyborg)
 	cancel_call_proc(user)
 
 
-/datum/game_mode/malfunction/verb/unlock_cyborg(mob/living/silicon/robot/target = null as mob in get_linked_cyborgs(usr))
+/datum/game_mode/malfunction/verb/unlock_cyborg()
 	set name = "Unlock Cyborg"
 	set desc = "125 CPU - Bypasses firewalls on Cyborg lock mechanism, allowing you to override lock command from robotics control console."
 	set category = VERB_CAT_SOFTWARE
@@ -73,38 +73,22 @@ CAPABILITIES(/datum/malf_research_ability/interdiction/hack_cyborg)
 	if(!ability_prechecks(user, price))
 		return
 
-	if(target && !istype(target))
-		to_chat(user, "This is not a cyborg.")
+	var/list/robots = list()
+	var/list/robot_names = list()
+	for(var/mob/living/silicon/robot/R in REGISTRY_MEMBERS(REGISTRY_SILICONS))
+		if(istype(R, /mob/living/silicon/robot/drone))	// No drones.
+			continue
+		if(R.connected_ai != user)						// No robots linked to other AIs
+			continue
+		if(R.lockcharge)
+			robots += R
+			robot_names += R.name
+	if(!robots.len)
+		to_chat(user, "No locked cyborgs connected.")
 		return
 
-	if(target && target.connected_ai && (target.connected_ai != user))
-		to_chat(user, "This cyborg is not connected to you.")
-		return
-
-	if(target && !target.lockcharge)
-		to_chat(user, "This cyborg is not locked down.")
-		return
-
-
-	if(!target)
-		var/list/robots = list()
-		var/list/robot_names = list()
-		for(var/mob/living/silicon/robot/R in REGISTRY_MEMBERS(REGISTRY_SILICONS))
-			if(istype(R, /mob/living/silicon/robot/drone))	// No drones.
-				continue
-			if(R.connected_ai != user)						// No robots linked to other AIs
-				continue
-			if(R.lockcharge)
-				robots += R
-				robot_names += R.name
-		if(!robots.len)
-			to_chat(user, "No locked cyborgs connected.")
-			return
-
-
-		open_request(user, /datum/prompt/choice, TYPE_PROC_REF(/mob/living/silicon/ai, malf_unlock_target_chosen), answerer = user, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), title = "Unlock Target", question = "Select unlock target:", choices = robot_names, ask_flags = ASK_CONSCIOUS, timeout = 0)
-		return
-	malf_unlock_confirm(user, target)
+	open_request(user, /datum/prompt/choice, TYPE_PROC_REF(/mob/living/silicon/ai, malf_unlock_target_chosen), answerer = user, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), title = "Unlock Target", question = "Select unlock target:", choices = robot_names, ask_flags = ASK_CONSCIOUS, timeout = 0)
+	return
 
 /mob/living/silicon/ai/proc/malf_unlock_target_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -145,7 +129,7 @@ CAPABILITIES(/datum/malf_research_ability/interdiction/hack_cyborg)
 	user.hacking = 0
 
 
-/datum/game_mode/malfunction/verb/hack_cyborg(mob/living/silicon/robot/target as mob in get_unlinked_cyborgs(usr))
+/datum/game_mode/malfunction/verb/hack_cyborg()
 	set name = "Hack Cyborg"
 	set desc = "350 CPU - Allows you to hack cyborgs which are not slaved to you, bringing them under your control."
 	set category = VERB_CAT_SOFTWARE
@@ -155,24 +139,25 @@ CAPABILITIES(/datum/malf_research_ability/interdiction/hack_cyborg)
 	var/list/L = get_unlinked_cyborgs(user)
 	if(!L.len)
 		to_chat(user, span_notice("ERROR: No unlinked cyborgs detected!"))
-
-
-	if(target && !istype(target))
-		to_chat(user, "This is not a cyborg.")
-		return
-
-	if(target && target.connected_ai && (target.connected_ai == user))
-		to_chat(user, "This cyborg is already connected to you.")
-		return
-
-	if(!target)
 		return
 
 	if(!ability_prechecks(user,price))
 		return
 
-	if(target)
-		open_request(user, /datum/prompt/choice/malf_hack_target, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hack_cyborg_confirmed), answerer = user, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), title = "Hack Cyborg", question = "Really try to hack cyborg [target.name]?", subject = target, costs = list("[RES_CPU]" = price))
+	user.malf_pick_target(L, "Hack Cyborg", "Select cyborg to hack:", TYPE_PROC_REF(/mob/living/silicon/ai, malf_hack_cyborg_picked))
+
+/mob/living/silicon/ai/proc/malf_hack_cyborg_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/silicon/robot/target = malf_picked(get_unlinked_cyborgs(src), A.answer.value)
+	if(!target)
+		return
+	if(target.connected_ai && (target.connected_ai == src))
+		to_chat(src, "This cyborg is already connected to you.")
+		return
+	if(!ability_prechecks(src, 350))
+		return
+	open_request(src, /datum/prompt/choice/malf_hack_target, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hack_cyborg_confirmed), answerer = src, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), title = "Hack Cyborg", question = "Really try to hack cyborg [target.name]?", subject = target, costs = list("[RES_CPU]" = 350))
 
 /mob/living/silicon/ai/proc/malf_hack_cyborg_confirmed(datum/act/request/context)
 	if(!context.answer || context.answer.value != "Yes")
@@ -189,7 +174,7 @@ CAPABILITIES(/datum/malf_research_ability/interdiction/hack_cyborg)
 		list(10 SECONDS, "SYSTEM LOG: User Admin disconnected. Changes reverted.", "SYSTEM LOG: Operation keycodes reset. New master AI: [user.name].", "Hack completed.")))
 
 
-/datum/game_mode/malfunction/verb/hack_ai(mob/living/silicon/ai/target as mob in get_other_ais(usr))
+/datum/game_mode/malfunction/verb/hack_ai()
 	set name = "Hack AI"
 	set desc = "600 CPU - Allows you to hack other AIs, slaving them under you."
 	set category = VERB_CAT_SOFTWARE
@@ -199,19 +184,22 @@ CAPABILITIES(/datum/malf_research_ability/interdiction/hack_cyborg)
 	var/list/L = get_other_ais(user)
 	if(!L.len)
 		to_chat(user, span_notice("ERROR: No other AIs detected!"))
-
-	if(target && !istype(target))
-		to_chat(user, "This is not an AI.")
-		return
-
-	if(!target)
 		return
 
 	if(!ability_prechecks(user,price))
 		return
 
-	if(target)
-		open_request(user, /datum/prompt/choice/malf_hack_target, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hack_ai_confirmed), answerer = user, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), title = "Hack AI", question = "Really try to hack AI [target.name]?", subject = target, costs = list("[RES_CPU]" = price))
+	user.malf_pick_target(L, "Hack AI", "Select AI to hack:", TYPE_PROC_REF(/mob/living/silicon/ai, malf_hack_ai_picked))
+
+/mob/living/silicon/ai/proc/malf_hack_ai_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/silicon/ai/target = malf_picked(get_other_ais(src), A.answer.value)
+	if(!target)
+		return
+	if(!ability_prechecks(src, 600))
+		return
+	open_request(src, /datum/prompt/choice/malf_hack_target, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hack_ai_confirmed), answerer = src, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), title = "Hack AI", question = "Really try to hack AI [target.name]?", subject = target, costs = list("[RES_CPU]" = 600))
 
 /mob/living/silicon/ai/proc/malf_hack_ai_confirmed(datum/act/request/context)
 	if(!context.answer || context.answer.value != "Yes")

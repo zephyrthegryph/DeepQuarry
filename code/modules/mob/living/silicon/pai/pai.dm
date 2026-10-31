@@ -96,6 +96,7 @@
 
 
 CAPABILITIES(/mob/living/silicon/pai)
+	op("screen_message", menu(desc = "Allows you to display a message on your screen. This will show up in the chat of anyone who is holding your card."), label("Screen Message"), needs(req_self()), asks(/datum/prompt/text, fields = list("question" = "Enter text you would like to show on your screen.", "title" = "Screen Message", "encode" = FALSE, "timeout" = 0), step = "message"), then(PROC_REF(screen_message_op)))
 	op("paiInterface", menu(), label("Software Interface"), needs(req_self()), then(PROC_REF(paiInterface_op)))
 	op("pick_eye_color", menu(), label("Pick Eye Color"), needs(req_self(), req(PROC_REF(pick_eye_color_ready))), then(PROC_REF(pick_eye_color_op)))
 	op("toggle_eyeglow", menu(), label("Toggle Eye Glow"), needs(req_self(), req(PROC_REF(toggle_eyeglow_ready))), then(PROC_REF(toggle_eyeglow_op)))

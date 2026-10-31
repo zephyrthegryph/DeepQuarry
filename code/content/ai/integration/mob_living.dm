@@ -16,6 +16,8 @@
 
 
 CAPABILITIES(/mob/living)
+	op("give", menu(), label("Give"), needs(req_self()), asks(/datum/prompt/choice, fields = list("question" = "Give to whom?", "title" = "Give", "choices" = computed(PROC_REF(give_recipients)), "timeout" = 0), step = "recipient"), then(PROC_REF(give_op)))
+	op("look_up", menu(desc = "Look above you, and hope there's no ceiling spiders."), label("Look Up"), needs(req_self()), then(PROC_REF(look_up_op)))
 	op("print_healthbars", menu(), label("Print Prey Healthbars"), needs(req_self()), then(PROC_REF(print_healthbars_op)))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	setup(PROC_REF(prime_hud_list))

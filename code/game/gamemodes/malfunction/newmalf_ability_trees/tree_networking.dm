@@ -44,28 +44,27 @@ CAPABILITIES(/datum/malf_research_ability/networking/elite_hack)
 // END RESEARCH DATUMS
 // BEGIN ABILITY VERBS
 
-/datum/game_mode/malfunction/verb/basic_encryption_hack(obj/machinery/power/apc/A as obj in get_unhacked_apcs(src))
+/datum/game_mode/malfunction/verb/basic_encryption_hack()
 	set category = VERB_CAT_SOFTWARE
 	set name = "Basic Encryption Hack"
 	set desc = "10 CPU - Basic encryption hack that allows you to overtake APCs on the station."
-	var/price = 10
 	var/mob/living/silicon/ai/user = usr
 
-	if(!A)
-		return
+	user.malf_pick_target(get_unhacked_apcs(user), "Basic Encryption Hack", "Select an APC to hack:", TYPE_PROC_REF(/mob/living/silicon/ai, malf_apc_hack_picked))
 
-	if(!istype(A))
-		to_chat(user, "This is not an APC!")
+/mob/living/silicon/ai/proc/malf_apc_hack_picked(datum/act/request/A)
+	var/price = 10
+	if(!A.answer)
 		return
-
-	if(A)
-		if(A.hacker && A.hacker == user)
-			to_chat(user, "You already control this APC!")
-			return
-		else if(A.aidisabled)
-			to_chat(user, span_notice("Unable to connect to APC. Please verify wire connection and try again."))
-			return
-	else
+	var/obj/machinery/power/apc/target = malf_picked(get_unhacked_apcs(src), A.answer.value)
+	if(!target)
+		return
+	var/mob/living/silicon/ai/user = src
+	if(target.hacker && target.hacker == user)
+		to_chat(user, "You already control this APC!")
+		return
+	else if(target.aidisabled)
+		to_chat(user, span_notice("Unable to connect to APC. Please verify wire connection and try again."))
 		return
 
 	if(!ability_prechecks(user, price) || !res_spend(user, RES_CPU, price, actor = user))
@@ -75,7 +74,7 @@ CAPABILITIES(/datum/malf_research_ability/networking/elite_hack)
 	to_chat(user, "Beginning APC system override...")
 	after(user, 30 SECONDS, GLOBAL_PROC_REF(to_chat), with = list(user, "APC hack completed. Uploading modified operation software.."))
 	after(user, 50 SECONDS, GLOBAL_PROC_REF(to_chat), with = list(user, "Restarting APC to apply changes.."))
-	after(user, 60 SECONDS, GLOBAL_PROC_REF(malf_apc_hack_done), with = list(user, REF(A)))
+	after(user, 60 SECONDS, GLOBAL_PROC_REF(malf_apc_hack_done), with = list(user, REF(target)))
 
 /proc/malf_apc_hack_done(mob/living/silicon/ai/user, apc_ref)
 	var/obj/machinery/power/apc/A = locate(apc_ref)
