@@ -9,12 +9,6 @@
 		return port.airlock_program
 	return C.program
 
-/// Lets the sensors' first readings go out: a mapped sensor waits for SSair and tries again each second, so the test world's first moments are before it.
-/proc/dq_wait_for_first_readings()
-	test_driver_begin()
-	test_time(3 SECONDS)
-	test_driver_end()
-
 /// The chamber sensor a mapped controller listens to, or null.
 /proc/dq_controller_sensor(datum/embedded_program/airlock/program)
 	for(var/obj/machinery/airlock_sensor/S in world)
@@ -25,7 +19,6 @@
 /datum/unit_test/dq_mapped_airlock_controllers_read_pressure
 
 /datum/unit_test/dq_mapped_airlock_controllers_read_pressure/Run()
-	dq_wait_for_first_readings()
 	var/checked = 0
 	var/list/bad = list()
 	for(var/obj/machinery/embedded_controller/radio/airlock/C in world)
@@ -86,7 +79,6 @@
 /datum/unit_test/dq_mapped_air_sensors_report_current_air
 
 /datum/unit_test/dq_mapped_air_sensors_report_current_air/Run()
-	dq_wait_for_first_readings()
 	var/checked = 0
 	var/list/bad = list()
 	for(var/obj/machinery/air_sensor/S in world)

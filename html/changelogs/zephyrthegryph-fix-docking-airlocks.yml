@@ -1,4 +1,0 @@
-author: "zephyrthegryph"
-delete-after: true
-changes:
-  - bugfix: "Airlock controllers and atmos console sensors now report the real air pressure: sensors no longer read once before the air exists and stay at zero all round"

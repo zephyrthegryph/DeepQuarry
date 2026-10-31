@@ -108,13 +108,7 @@ CAPABILITIES(/obj/machinery/air_sensor)
 	signal.data["sigtype"]="status"
 	radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
 
-/// The first broadcast waits for the air: a mapped sensor's init is over before SSair registers the turfs' air in the arena, so it read 0 and could arm no gas watch on a
-/// mixture with no arena id (the tank and room sensors of the atmos consoles then reported the map-load air for the whole round). It tries again each second until SSair is up.
 /obj/machinery/air_sensor/proc/broadcast_after_init(datum/act/timer/A)
-	if(!SSair.initialized)
-		after(src, 1 SECONDS, PROC_REF(broadcast_after_init))
-		return
-	gas_watch_arm(src)
 	broadcast_readings()
 
 /// The air changed: a broadcast when what the sensor reports changed.
