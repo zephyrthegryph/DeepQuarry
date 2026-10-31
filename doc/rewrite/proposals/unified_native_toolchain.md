@@ -1142,3 +1142,50 @@ duplicate/source order, 16 complete findings across all six rules, annotation
 usage and complete report text. This verifies the extraction, not native
 whole-lint admission: the remaining authenticated raw-call, entry-op and system
 field joins still need their native query adapter and bounded admission.
+
+### Original initializer producer and current-frame source joins
+
+The original declaration header pass now issues initializer coordinates and the
+sole original expression slots before adapter constant folding. Checked frontend
+builders pass the same existing QueryDb provider and worker context into that
+pass. Local/shared declaration cache acceptance checks the completed producer and
+same resource counter before claiming a value; a replacement never grafts a new
+owner onto escaped old data. Operational failures remain outside findings.
+
+Transitive constant source lookup now has a sealed additive interface over the
+same original occurrence target grouping. Exact selected metadata, declaring
+owner, current frontend and original source cursor are checked before borrowing
+the existing expression root. Its index reservation lives with that physical
+index and uses the existing counter. This is not a separate declaration model.
+The actual QueryDb caller tests cover early-root reuse, worker cancellation,
+current-frame refusal, warm selection and same-source recovery without Kind4.
+Native runner selection and the remaining classifier/runtime/static/dimension
+consumers are still pending; this does not establish full one-parse convergence.
+
+### As-of report data and unique policy comparisons
+
+Raw workspace result rows retain their whitespace-normalized original source
+line from the same captured file. That report data is paired with each site,
+charged before allocation, counted in retained ownership and included in the
+result fingerprint. It grants no current-source authority. Native file/page
+queries propagate typed resource refusal before Outcome publication; constrained
+then recovered queries reuse the same input without a poisoned cached error.
+
+The complete key judgement and header/call joins now share the old unique policy.
+The complete plans emitter and raw hook discovery are also shared through borrowed
+policy rows. Frozen independent originals compare all 16 key findings, tables,
+annotation use and report text; the plans positive output is exactly 5,240 bytes,
+and its genuine temporary-file failure compares 212 bytes and one ordered
+diagnostic. Hook discovery matches all 12 ordered rows, including capability and
+world-action contexts. These are whole unique policy comparisons, not proof that
+the still-unregistered native reactive-read producer or native keys adapter is
+complete.
+
+Across this cohort, 77 distinct focused tests pass. Earlier failures are retained
+in separate logs: fixtures initially supplied equal text from different physical
+owners, expected a superseded roster claim to stay published, or exceeded the
+existing cleanup-depth allowance. Repairs preserve guards and limits. Source
+report recovery also accounts for the sink's existing 64-slot allocation. No
+production client default, compiler publication or game window changed. The last
+full production native/DreamChecker/ratchet gate remains the separately recorded
+f526 gate; this cohort has focused Rust and independent policy evidence.

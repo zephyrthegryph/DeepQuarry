@@ -41,7 +41,19 @@ pub const SOURCE_CALLS: &[&str] = &[
 ];
 
 
-pub fn visit_calls(rel: &str, stripped: &str, starts: &[u32], mut key: impl FnMut(KeyRef), mut bad_source: impl FnMut((String,u32,String))) {
+pub fn visit_calls(rel:&str,stripped:&str,starts:&[u32],key:impl FnMut(KeyRef),bad_source:impl FnMut((String,u32,String))){
+    let complete=visit_calls_with(rel,stripped,starts,key,bad_source,None);
+    debug_assert!(complete);
+}
+/// A native producer must discard all callback rows if admission returns false.
+/// Reservation runs BEFORE argument splitting and owned callback strings.
+pub fn visit_calls_checked(rel:&str,stripped:&str,starts:&[u32],key:impl FnMut(KeyRef),bad_source:impl FnMut((String,u32,String)),mut admit:impl FnMut(usize)->bool)->bool{
+    visit_calls_with(rel,stripped,starts,key,bad_source,Some(&mut admit))
+}
+fn work(admit:&mut Option<&mut dyn FnMut(usize)->bool>,bytes:impl FnOnce()->Option<usize>)->bool{
+    match admit.as_mut(){None=>true,Some(admit)=>bytes().is_some_and(|n|admit(n))}
+}
+fn visit_calls_with(rel:&str,stripped:&str,starts:&[u32],mut key:impl FnMut(KeyRef),mut bad_source:impl FnMut((String,u32,String)),mut admit:Option<&mut dyn FnMut(usize)->bool>)->bool {
     static RE: std::sync::LazyLock<crate::pat::Pat> = std::sync::LazyLock::new(|| {
         crate::pat::Pat::new(
             r"(?<![\w./])(extend|without|on_op|shares_effects|above|perform_op|e0_perform_op|configure|hold|hold_until|hold_override|grant|release|status_end)\s*\(",
@@ -60,6 +72,7 @@ pub fn visit_calls(rel: &str, stripped: &str, starts: &[u32], mut key: impl FnMu
             continue;
         };
         let body = &stripped[open + 1..close];
+        if !work(&mut admit,||body.len().checked_mul(128).and_then(|n|n.checked_add(8192))){return false;}
         let line = line_of(m.start(1));
         let args = split_args(body);
         if OP_KEY_CALLS.contains(&name) {
@@ -67,6 +80,7 @@ pub fn visit_calls(rel: &str, stripped: &str, starts: &[u32], mut key: impl FnMu
                 if let Some(s) = a.strip_prefix('"').and_then(|s| s.strip_suffix('"')) {
                     // `[x]` interpolation makes it a runtime value, not a key.
                     if !s.is_empty() && !s.contains('[') && !s.contains(' ') {
+                        if !work(&mut admit,||s.len().checked_add(name.len()).and_then(|n|n.checked_add(rel.len())).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(1024))){return false;}
                         key(KeyRef {
                             kind: KeyKind::Op,
                             key: s.to_string(),
@@ -85,6 +99,7 @@ pub fn visit_calls(rel: &str, stripped: &str, starts: &[u32], mut key: impl FnMu
                 .and_then(|s| s.strip_suffix('"'))
             {
                 if !s.is_empty() && !s.contains('[') {
+                    if !work(&mut admit,||s.len().checked_add(name.len()).and_then(|n|n.checked_add(rel.len())).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(1024))){return false;}
                     key(KeyRef {
                         kind: KeyKind::Capability,
                         key: s.to_string(),
@@ -100,10 +115,47 @@ pub fn visit_calls(rel: &str, stripped: &str, starts: &[u32], mut key: impl FnMu
                 let compact = a.replace(' ', "");
                 if let Some(v) = compact.strip_prefix("source=") {
                     if v == "null" || v.starts_with('"') {
+                        if !work(&mut admit,||v.len().checked_add(rel.len()).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(1024))){return false;}
                         bad_source((rel.to_string(), line, v.to_string()));
                     }
                 }
             }
         }
     }
+    true
 }
+
+/// Original entries()/raw-define projections in file order. These are unique
+/// declaration-policy facts, not a general type/procedure model.
+pub fn visit_headers(stripped:&str,entry:impl FnMut(&str,&str),define:impl FnMut(&str)){
+    let complete=visit_headers_with(stripped,entry,define,None);
+    debug_assert!(complete);
+}
+/// As above, false is operational incompleteness, never an empty clean result.
+pub fn visit_headers_checked(stripped:&str,entry:impl FnMut(&str,&str),define:impl FnMut(&str),mut admit:impl FnMut(usize)->bool)->bool{
+    visit_headers_with(stripped,entry,define,Some(&mut admit))
+}
+fn visit_headers_with(stripped:&str,mut entry:impl FnMut(&str,&str),mut define:impl FnMut(&str),mut admit:Option<&mut dyn FnMut(usize)->bool>)->bool {
+    let mut entries_of:Option<String>=None;
+    for line in stripped.split('\n'){
+        if !work(&mut admit,||line.len().checked_mul(8).and_then(|n|n.checked_add(1024))){return false;}
+        let t=line.trim_start();
+        if !line.is_empty() && !line.starts_with(|c:char|c.is_whitespace()){
+            entries_of=crate::pat_match!(r"^(/datum/[\w/]+)/entries\(\)")
+                .captures(line).map(|m|m.s(1).to_string());
+        }else if let Some(ty)=&entries_of{
+            for m in crate::pat!(r#"(?<![\w./])op\(\s*"([^"]+)""#).captures_iter(line){
+                if !work(&mut admit,||ty.len().checked_add(m.s(1).len()).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(2048))){return false;}entry(ty,m.s(1));
+            }
+        }
+        if let Some(rest)=t.strip_prefix('#'){
+            if let Some(m)=crate::pat_match!(r"\s*define\s+(\w+)").captures(rest){
+                if !work(&mut admit,||m.s(1).len().checked_mul(8).and_then(|n|n.checked_add(1024))){return false;}define(m.s(1));
+            }
+        }
+    }
+    true
+}
+
+#[cfg(test)]
+#[path="raw_key_visitors_tests.rs"]mod tests;

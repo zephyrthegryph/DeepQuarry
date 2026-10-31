@@ -247,10 +247,14 @@ pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admissi
                 .load(Ordering::Relaxed)
                 .saturating_sub(charge.load(Ordering::Relaxed));
             let result = match scope.as_ref() {
-                Ok(scope) => file
-                    .file
-                    .scan_budgeted(scope, MAX_FIXTURE_SITES, available.saturating_sub(512))
-                    .map(Arc::new),
+                Ok(scope) => match file.file.scan_budgeted_checked(scope, MAX_FIXTURE_SITES, available.saturating_sub(512)) {
+                    Ok(rows) => Ok(Arc::new(rows)),
+                    Err(captured_raw_file::ScanFailure::Policy(error)) => Err(error),
+                    Err(captured_raw_file::ScanFailure::Admission(_)) => {
+                        admission.denied.store(true,Ordering::Relaxed);
+                        return Err(QueryError::Missing(params.file));
+                    }
+                },
                 Err(error) => Err(error.clone()),
             };
             let (hash, bytes) = match &result {

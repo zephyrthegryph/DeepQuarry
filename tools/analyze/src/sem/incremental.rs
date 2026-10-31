@@ -163,7 +163,7 @@ pub(crate) fn bare_hash(tree: &Tree, rel: &str) -> Hash {
 }
 
 /// The text of an included file, from the tree or (a file no lint selected) from disk.
-pub(crate) fn text_of(tree: &Tree, rel: &str) -> String {
+pub fn text_of(tree: &Tree, rel: &str) -> String {
     match tree.get(rel) {
         Some(f) => f.text().to_string(),
         None => tree.read_extra(rel).map(|t| t.as_ref().clone()).unwrap_or_default(),

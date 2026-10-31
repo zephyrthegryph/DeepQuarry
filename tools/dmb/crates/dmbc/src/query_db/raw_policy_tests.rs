@@ -746,3 +746,42 @@ fn typed_scanner_mid_compute_cancellation_retries_same_captured_input() {
         serde_json::to_value(&expected.runs[0].run.sites).unwrap()
     );
 }
+
+#[test]
+fn report_source_headroom_and_sink_denials_never_cache_and_same_query_recovers() {
+    let q=QueryDb::default();
+    let config=Key::new(RAW_CONFIG,1992);
+    q.db.set_input(config,ConfigData{config:Arc::new(Config::capture(Configuration::ProvenMissing).unwrap()),hash:1,original:None},1);
+    let scope_key=Key::new(RAW_SCOPE,1993);
+    let scope_params=ScopeParams{config,name:"scheduler"};
+    let scope=q.db.get::<Result<Arc<Scope>,String>>(scope_key,Arc::new(scope_params.clone())).unwrap();
+    let scope=scope.as_ref().as_ref().unwrap();
+    let source=format!("/proc/p()\n    sleep(1) // {}\n","x".repeat(32768));
+    let file=Arc::new(File::capture(&root(),&root().join("code/a.dm"),source.into()).unwrap());
+    assert!(matches!(file.scan_budgeted_checked(scope,MAX_FIXTURE_SITES,16384),
+        Err(captured_raw_file::ScanFailure::Admission(error)) if error.contains("report evidence")),
+        "fixture specifically reaches new source-evidence denial after the ordinary finding fits");
+    let file_key=Key::new(RAW_FILE,1994);
+    q.db.set_input(file_key,FileData{file:file.clone(),hash:2},2);
+    let result_key=Key::new(RAW_FINDINGS,1995);
+    let params=Arc::new(FileParams{file:file_key,scope:scope_key,scope_params});
+    let prior=q.raw_policy.charge.load(Ordering::Relaxed);
+    // The same query first hits the old Sink admission and then the report evidence admission.
+    for available in [64,16384] {
+        q.raw_policy.admission.limit.store(prior+available+512,Ordering::Relaxed);
+        q.raw_policy.admission.denied.store(false,Ordering::Relaxed);
+        assert!(q.db.get::<Result<Arc<Findings>,String>>(result_key,params.clone()).is_err());
+        assert!(q.raw_policy.admission.denied.load(Ordering::Relaxed));
+        assert!(q.db.retained_value::<Result<Arc<Findings>,String>>(result_key).is_none());
+        assert_eq!(q.raw_policy.charge.load(Ordering::Relaxed),prior);
+    }
+    q.raw_policy.admission.limit.store(RESULT_BUDGET,Ordering::Relaxed);
+    q.raw_policy.admission.denied.store(false,Ordering::Relaxed);
+    let result=q.db.get::<Result<Arc<Findings>,String>>(result_key,params.clone()).unwrap();
+    let rows=result.as_ref().as_ref().unwrap();
+    assert_eq!(rows.run.sites.len(),1);
+    assert!(rows.site_text(0).unwrap().starts_with("sleep(1) // xxx"));
+    assert_eq!(rows.site_text(0).unwrap().len(),32768+12);
+    let warm=q.db.get::<Result<Arc<Findings>,String>>(result_key,params).unwrap();
+    assert!(Arc::ptr_eq(&result,&warm));
+}

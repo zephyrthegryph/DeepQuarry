@@ -271,6 +271,7 @@ pub(super) fn register_with_admission(db: &Db, admission: Arc<super::Admission>)
             admission.abort.before_outcome(p.input)?;
             let input = ctx.input::<PageInput>(p.input)?;
             let result = compute_with_admission(&input, &admission).map(Arc::new);
+            if admission.denied.load(Ordering::Relaxed) { return Err(QueryError::Missing(p.input)); }
             let (hash, charge) = match &result {
                 Ok(page) => {
                     // Content hash drives normal Db early-cutoff only. Every use
@@ -443,11 +444,17 @@ fn compute_with_admission(
                 .result_budget
                 .checked_sub(charge)
                 .ok_or("result headroom exhausted")?;
-            let rows = file.as_ref().expect("file created above").scan_budgeted(
+            let rows = file.as_ref().expect("file created above").scan_budgeted_checked(
                 scope,
                 p.remaining_sites - sites,
                 available,
-            )?;
+            ).map_err(|failure| match failure {
+                captured_raw_file::ScanFailure::Policy(error) => error,
+                captured_raw_file::ScanFailure::Admission(error) => {
+                    admission.denied.store(true,Ordering::Relaxed);
+                    error
+                }
+            })?;
             let cost = compact_charge(&rows);
             charge = charge
                 .checked_add(cost)

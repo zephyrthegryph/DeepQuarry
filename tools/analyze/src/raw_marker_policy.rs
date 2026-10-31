@@ -326,3 +326,22 @@ pub fn stages_op_args(stages_args: &str) -> Vec<String> {
     }
     out
 }
+
+fn marker_word(b:u8)->bool { b.is_ascii_alphanumeric() || b == b'_' }
+pub fn marker_named_vars(body: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut from = 0;
+    while let Some(at) = body[from..].find("nameof(") {
+        let start = from + at;
+        from = start + 7;
+        if start > 0 && marker_word(body.as_bytes()[start - 1]) {
+            continue;
+        }
+        let Some(close) = matching_paren(body, start + 6) else { continue };
+        let name = body[start + 7..close].trim();
+        if !name.is_empty() && name.bytes().all(marker_word) {
+            out.push(name.to_string());
+        }
+    }
+    out
+}

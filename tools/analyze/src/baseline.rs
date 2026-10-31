@@ -24,6 +24,18 @@ pub enum Mode {
 
 pub type Counter = HashMap<(String, String), i64>;
 
+/// Normalized source evidence for client-side reporting and fingerprints.
+/// This is report data only: it grants no current native source/query authority.
+/// Native clients must validate the response's as-of binding before supplying it;
+/// they must not re-read mutable source or synthesize a semantic Tree to render.
+pub trait SiteText {
+    fn site_text(&self,rel:&str,line:usize)->String;
+}
+impl SiteText for Tree {
+    fn site_text(&self,rel:&str,line:usize)->String{Tree::site_text(self,rel,line)}
+}
+
+
 /// The fingerprint text a ratchet compares for `rule`. An `init_lines` site is the job a line does in an `Initialize()` body, not
 /// its spelling: a write `x = v` and the call of its setter `set_x(v)` (`src.set_x(v)`) are the same site, so converting a write to
 /// its setter (which the `tracked` lint requires) neither adds a site nor hides one. Every other rule compares the text as written.
@@ -82,7 +94,7 @@ pub fn fp_of(site: &Site, text: &str) -> String {
     }
 }
 
-pub fn fingerprints<'a>(tree: &Tree, found: &[&'a Site]) -> Vec<Fp<'a>> {
+pub fn fingerprints<'a,S:SiteText+?Sized>(tree: &S, found: &[&'a Site]) -> Vec<Fp<'a>> {
     found
         .iter()
         .map(|s| {
@@ -95,10 +107,10 @@ pub fn fingerprints<'a>(tree: &Tree, found: &[&'a Site]) -> Vec<Fp<'a>> {
 
 /// `write_sites`. `rules` lists the rules to write, in order; `by_rule` maps a rule to its sites.
 /// Returns the number of rows written.
-pub fn write_sites(
+pub fn write_sites<S:SiteText+?Sized>(
     path: &Path,
     header: &[&str],
-    tree: &Tree,
+    tree: &S,
     by_rule: &[(&str, Vec<&Site>)],
     rules: &[&str],
     mode: Mode,
@@ -181,9 +193,9 @@ pub fn write_sites(
 
 /// The ratchet check against a fingerprint baseline (`check_sites`). Appends the report to `out`
 /// and returns true on any new site.
-pub fn check_sites(
+pub fn check_sites<S:SiteText+?Sized>(
     label: &str,
-    tree: &Tree,
+    tree: &S,
     by_rule: &[(&str, Vec<&Site>)],
     hints: &dyn Fn(&str) -> String,
     path: &Path,
@@ -570,3 +582,6 @@ r	code/a.dm	stale text
         assert!(!check_sites("t", &tree, &by_rule, &|_| String::new(), &path, &[], &mut out), "{out}");
     }
 }
+
+#[cfg(test)]
+#[path="baseline_source_tests.rs"]mod source_contract_tests;

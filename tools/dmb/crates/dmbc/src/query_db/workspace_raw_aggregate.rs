@@ -298,12 +298,15 @@ impl Serialize for Item<'_> {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let s = self.segment;
         let rows = &self.aggregate.pages[s.page].files[s.file].findings[s.lint];
-        let mut map = serializer.serialize_map(Some(3))?;
+        let mut map = serializer.serialize_map(Some(if s.kind == 0 { 4 } else { 3 }))?;
         map.serialize_entry("lint", self.aggregate.names[s.lint])?;
         match s.kind {
             0 => {
                 map.serialize_entry("kind", "site")?;
                 map.serialize_entry("site", &rows.run.sites[self.index])?;
+                let text = rows.site_text(self.index).ok_or_else(||
+                    <S::Error as serde::ser::Error>::custom("missing authenticated as-of report evidence"))?;
+                map.serialize_entry("source_text", text)?;
             }
             1 => {
                 map.serialize_entry("kind", "allow")?;
@@ -757,6 +760,7 @@ mod tests {
         assert_eq!(first["total_items"], 2);
         assert_eq!(first["items"][0]["lint"], "scheduler");
         assert_eq!(first["items"][0]["kind"], "site");
+        assert_eq!(first["items"][0]["source_text"], "sleep(1)");
         assert_eq!(
             first["items"][0]["site"],
             serde_json::to_value(&page.files[0].findings[0].run.sites[0]).unwrap()

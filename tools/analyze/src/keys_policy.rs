@@ -306,3 +306,95 @@ mod tests {
         assert_eq!(edit_distance("STAT_DENSTY", "STAT_DENSITY"), 1);
     }
 }
+
+/// Exact unique key-declaration judgement over original marker/call projections.
+/// Providers supply the original own-field policy; no model is built here.
+pub struct ScanInput<'a>{
+ pub keys:Input<'a>,pub defines:&'a HashSet<String>,
+ pub key_refs:&'a [crate::raw_key_calls_policy::KeyRef],
+ pub bad_sources:&'a [(String,u32,String)],
+}
+pub fn scan_keys(cx:&crate::lint::Cx<'_>,decls:&ScanInput<'_>,out:&mut crate::lint::Sink,
+ mut system_vars:impl FnMut(&str)->(bool,HashSet<String>),system_types:impl Fn(&str)->Vec<String>){
+ use crate::raw_key_calls_policy::KeyKind;
+ const CHECKED_MARKERS:&[&str]=&["CAPABILITIES","CAPABILITY_DEF","CAPABILITY_TYPE","cap_keys",crate::raw_entry_proc_policy::ENTRY_PROC,"STATE_GRAPH","RESOURCE_DEF","SCHEMA","ACTION"];
+        let idx = KeyIndex::from_markers(&decls.keys);
+        let allowed = |out: &mut crate::lint::Sink, rel: &str, line: u32| -> bool {
+            match cx.tree.get(rel) {
+                Some(f) => out.allowed(f, line as usize, "keys"),
+                None => false,
+            }
+        };
+
+        let cap_prefixes = idx.cap_state_prefixes();
+        for m in decls.keys.markers {
+            if !CHECKED_MARKERS.contains(&m.name) || cx.exempt(&m.rel) {
+                continue;
+            }
+            for (off, tok) in id_tokens(&m.body, &cap_prefixes) {
+                if idx.id_resolves(&tok, &decls.defines) {
+                    continue;
+                }
+                let line = m.line_at(off);
+                if allowed(out, &m.rel, line) {
+                    continue;
+                }
+                let msg = match idx.suggest(&tok, &decls.defines) {
+                    Some(s) => format!("`{}` is not declared; did you mean `{}`?", tok, s),
+                    None => format!("`{}` is not declared", tok),
+                };
+                out.site_in_msg("unresolved_id", &m.rel, line as usize, msg);
+            }
+        }
+
+        for r in decls.key_refs.iter().filter(|r| !cx.exempt(&r.rel)) {
+            match r.kind {
+                KeyKind::Op if !idx.op_resolves(&r.key) => {
+                    if allowed(out, &r.rel, r.line) {
+                        continue;
+                    }
+                    let msg = match idx.suggest_op(&r.key) {
+                        Some(s) => format!("op key \"{}\" in {}() is not declared; did you mean \"{}\"?", r.key, r.call, s),
+                        None => format!("op key \"{}\" in {}() is not declared", r.key, r.call),
+                    };
+                    out.site_in_msg("unresolved_op", &r.rel, r.line as usize, msg);
+                }
+                KeyKind::Capability if !idx.caps.contains_key(&r.key) => {
+                    if allowed(out, &r.rel, r.line) {
+                        continue;
+                    }
+                    out.site_in_msg("unresolved_capability", &r.rel, r.line as usize, format!("capability key \"{}\" in {}() is not declared", r.key, r.call));
+                }
+                _ => {}
+            }
+        }
+
+        for (rel, line, v) in decls.bad_sources.iter().filter(|(rel, _, _)| !cx.exempt(rel)) {
+            if allowed(out, rel, *line) {
+                continue;
+            }
+            out.site_in_msg("text_source", rel, *line as usize, format!("source = {} is not a datum or a SRC_*", v));
+        }
+
+        for (kind, name, first, second) in &idx.duplicates {
+            if allowed(out, &second.0, second.1) {
+                continue;
+            }
+            out.site_in_msg("duplicate_declaration", &second.0, second.1 as usize, format!("{} `{}` is already declared at {}:{}", kind, name, first.0, first.1));
+        }
+
+        // SYSTEM_ACCESSOR(system, name, nameof(var)): the var must be on the system.
+        for m in decls.keys.markers_named("SYSTEM_ACCESSOR") {
+            let (Some(system), Some(name), Some(key)) = (m.args.first(), m.args.get(1), m.args.get(2)) else { continue };
+            let Some(var) = key.trim().strip_prefix("nameof(").and_then(|s| s.strip_suffix(')')).map(|s| s.trim().to_string()) else { continue };
+            let (known, vars) = system_vars(system);
+            if !vars.contains(&var) && !allowed(out, &m.rel, m.line) {
+                let msg = if known {
+                    format!("accessor `{}`: system `{}` has no var `{}`", name, system, var)
+                } else {
+                    format!("accessor `{}`: no system type for `{}` (looked for {})", name, system, system_types(system).join(", "))
+                };
+                out.site_in_msg("accessor_var", &m.rel, m.line as usize, msg);
+            }
+        }
+}

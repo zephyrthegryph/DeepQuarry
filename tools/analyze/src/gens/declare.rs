@@ -128,6 +128,7 @@ pub fn register(reg: &mut Vec<Box<dyn Generator>>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::declare_ids_policy::split_opt;
     use crate::sem::gen::render;
     use crate::tree::{SourceFile, Tree};
     use std::path::Path;

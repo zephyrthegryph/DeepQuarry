@@ -271,3 +271,11 @@ required-features = ["legacy-sem", "native-policy"]
 [[example]]
 name="unified_keys_policy"
 required-features=["legacy-sem","native-policy"]
+
+[[example]]
+name="unified_plans_policy"
+required-features=["legacy-sem"]
+
+[[example]]
+name="unified_reactive_hooks"
+required-features=["legacy-sem"]

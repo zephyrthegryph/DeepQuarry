@@ -416,10 +416,14 @@ fn scan_file(f: &SourceFile) -> FileDecls {
         entry_ops: Vec::new(),
     };
     // The datum whose `entries()` body the scan is inside (the proc is declared at column 0 as `/datum/x/entries()`).
-    let mut entries_of: Option<String> = None;
     // A global proc (name, header line) whose first statement has not been seen yet: an entry proc when it is `return list(entries)`.
     let mut proc_head = crate::raw_entry_proc_policy::Head::default();
     // A capability datum's entries() (type, header line) whose first statement has not been seen yet.
+    {
+        let entries=&mut fd.entry_ops;
+        let defines=&mut fd.defines;
+        crate::raw_key_calls_policy::visit_headers(&stripped,|ty,op|entries.push((ty.to_string(),op.to_string())),|name|defines.push(name.to_string()));
+    }
     let mut cap_head: Option<(String, u32)> = None;
     for (ln0, line) in stripped.split('\n').enumerate() {
         let ln = ln0 as u32 + 1;
@@ -457,21 +461,7 @@ fn scan_file(f: &SourceFile) -> FileDecls {
                 );
             }
         }
-        if !line.is_empty() && !line.starts_with(|c: char| c.is_whitespace()) {
-            entries_of = pat_match!(r"^(/datum/[\w/]+)/entries\(\)")
-                .captures(line)
-                .map(|m| m.s(1).to_string());
-        } else if let Some(ty) = &entries_of {
-            for m in pat!(r#"(?<![\w./])op\(\s*"([^"]+)""#).captures_iter(line) {
-                fd.entry_ops.push((ty.clone(), m.s(1).to_string()));
-            }
-        }
-        if let Some(rest) = t.strip_prefix('#') {
-            if let Some(m) = pat_match!(r"\s*define\s+(\w+)").captures(rest) {
-                fd.defines.push(m.s(1).to_string());
-            }
-            continue;
-        }
+        if t.starts_with('#') { continue; }
         if t.is_empty() {
             continue;
         }

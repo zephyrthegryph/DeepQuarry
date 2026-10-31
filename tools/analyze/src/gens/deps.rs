@@ -18,6 +18,7 @@
 //! into an engine-internal body the walk does not enter. The `untracked_inputs` lint reports the same sites against a shrink-only baseline.
 
 use std::collections::{BTreeMap, BTreeSet};
+pub use crate::reactive_facts::{DepsAnalysis, Leaf, Untracked};
 
 use crate::sem::decls::{matching_paren, Decls, Marker};
 use crate::sem::gen::{GenCx, GenOut, Generator};
@@ -52,16 +53,6 @@ fn is_generated_setter(eng: &ReadsEngine, callee: &str) -> bool {
         return false;
     }
     eng.sem.proc_ref(owner, name).is_some_and(|p| eng.sem.file_of(p.get().location) == Some(super::auto_tracked::AUTO_REL))
-}
-
-/// One untracked read of a consumer: what it is, and where the read sits.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Untracked {
-    pub what: String,
-    /// The type that declares the var read (empty when the finding is not a var read).
-    pub owner: String,
-    pub rel: String,
-    pub line: u32,
 }
 
 /// The hops an output's subscriptions follow only one step from the holder: a draw (or another derived output) redraws from its own vars, from
@@ -120,13 +111,7 @@ pub fn untracked_of(set: &ReadSet, eng: &ReadsEngine, written: &WriteIndex, outp
 }
 
 /// A `nameof(v)` a declaration names as a stat input: inside contributes()/contributes_to()/factors(), or inside a when() that wraps one.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Leaf {
-    pub owner: String,
-    pub var: String,
-    pub rel: String,
-    pub line: u32,
-}
+
 
 fn is_word(b: u8) -> bool {
     b.is_ascii_alphanumeric() || b == b'_'
@@ -207,22 +192,7 @@ pub fn marker_leaves(m: &Marker) -> Vec<Leaf> {
 /// The var names a CAPABILITIES block names with `nameof(v)` (a `when` condition, a stat input, an `every(when =)` gate, a toggle): the block declares
 /// that it reads or drives them, so they are read by reactive code whether or not a proc body does.
 pub fn marker_named_vars(m: &Marker) -> Vec<String> {
-    let body = &m.body;
-    let mut out = Vec::new();
-    let mut from = 0;
-    while let Some(at) = body[from..].find("nameof(") {
-        let start = from + at;
-        from = start + 7;
-        if start > 0 && is_word(body.as_bytes()[start - 1]) {
-            continue;
-        }
-        let Some(close) = matching_paren(body, start + 6) else { continue };
-        let name = body[start + 7..close].trim();
-        if !name.is_empty() && name.bytes().all(is_word) {
-            out.push(name.to_string());
-        }
-    }
-    out
+    crate::raw_marker_policy::marker_named_vars(&m.body)
 }
 
 /// The vars a CAPABILITIES block hands to the engine to WRITE (`gas_level(into = nameof(v))`, `toggles(nameof(v))`): the engine calls their setters at run
@@ -236,39 +206,6 @@ pub fn marker_driven_vars(m: &Marker) -> Vec<String> {
         out.push(c.s(1).to_string());
     }
     out
-}
-
-/// Every consumer of a stat or a draw and its untracked reads, computed once per tree (the generator and the lint share it).
-pub struct DepsAnalysis {
-    /// "<type>::<proc>" -> its untracked reads.
-    pub consumers: BTreeMap<String, Vec<Untracked>>,
-    /// The consumers that are draw() procs (the lint reports them as `draw_untracked`).
-    pub draws: BTreeSet<String>,
-    /// Untracked leaves, per declaring type.
-    pub leaves: Vec<Leaf>,
-    /// "<type>" -> the holder vars its own draw() reads.
-    pub draw_reads: BTreeMap<String, BTreeSet<String>>,
-    /// "<type>" -> the published keys its own draw() reads through a READS_AS accessor (`nutrition_of(src)` stands for MOB_KEY_NUTRITION), as the
-    /// DM text of the key (a define is written `[MOB_KEY_NUTRITION]` so the compile resolves it): a PUBLISH_CHANGE of one redraws the thing.
-    pub draw_keys: BTreeMap<String, BTreeSet<String>>,
-    /// "<type>" -> what its own draw() reads one container, turf or area hop away, as "<hop>.<var>".
-    pub draw_hops: BTreeMap<String, BTreeSet<String>>,
-    /// "<type>" -> the first segment of every hop chain its own draw() reads (a link var on the holder, `cell` of `cell.charge`): a write of the
-    /// link changes what the draw sees. The change graph's plans (`gen plans`) mark these PLAN_DRAW too.
-    pub draw_links: BTreeMap<String, BTreeSet<String>>,
-    /// "<type>::hidden_verbs" / "<type>::granted_verbs" -> the holder vars (and hop chains' first segments) that proc reads, and whether its
-    /// walk left a read unresolved: the verb outputs share the draw's refresh bit, so the plans need them before a write may skip a redraw.
-    pub verb_reads: BTreeMap<String, (BTreeSet<String>, bool)>,
-    /// The var names contribution and condition handlers and STAT formulas read (a holder var, each link of a hop chain, a system var): the
-    /// over-inclusive stat input set `gen plans` writes takes them beside the declared names.
-    pub stat_reads: BTreeSet<String>,
-    /// Every `(declaring type, var)` a consumer reads off the holder (or through a declared relation hop), whatever its class: the read
-    /// set `gens::auto_tracked` turns into tracked vars.
-    pub reads: BTreeSet<(String, String)>,
-    /// The reads of `reads` no declaration makes reactive (see `gens::auto_tracked::candidate`): the vars the inference tracks.
-    pub candidates: BTreeSet<(String, String)>,
-    /// "<type>::<proc>" of a draw, a contribution or a STAT formula -> where it samples with `read_once()` (rule `sampled_in_look`).
-    pub sampled: BTreeMap<String, BTreeSet<(String, u32)>>,
 }
 
 /// What each consumer's reads leave the graph unable to see change, over the closed walk (`ReadsEngine::closed`): engine bodies entered, virtual

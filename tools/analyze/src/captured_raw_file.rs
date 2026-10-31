@@ -32,7 +32,15 @@ pub struct Findings {
     pub name: String,
     pub run: Run,
     pub allow_used: Vec<AllowUse>,
+    // As-of report data derived from the same admitted raw source, not source authority.
+    source_text: Vec<String>,
 }
+/// Operation-local failures never become reusable source findings.
+#[derive(Debug)]
+pub enum ScanFailure { Policy(String), Admission(String) }
+impl ScanFailure { pub fn into_message(self)->String { match self { Self::Policy(s)|Self::Admission(s)=>s } } }
+impl From<String> for ScanFailure { fn from(s:String)->Self {Self::Policy(s)} }
+impl From<&str> for ScanFailure { fn from(s:&str)->Self {Self::Policy(s.into())} }
 pub fn ordered_names(names: &[String]) -> Result<Vec<&'static str>, String> {
     if names.is_empty() {
         return Err("explicit raw-policy lint list required".into());
@@ -155,7 +163,10 @@ impl File {
         rows: usize,
         bytes: usize,
     ) -> Result<Findings, String> {
-        self.require_view_budget()?;
+        self.scan_budgeted_checked(scope,rows,bytes).map_err(ScanFailure::into_message)
+    }
+    pub fn scan_budgeted_checked(&self,scope:&Scope,rows:usize,bytes:usize)->Result<Findings,ScanFailure> {
+        self.require_view_budget().map_err(ScanFailure::Admission)?;
         let lint = captured_raw_policy::registry()
             .find(scope.name)
             .ok_or("raw lint registry entry missing")?;
@@ -179,12 +190,12 @@ impl File {
         }));
         // A denied lazy must never escape as an empty clean scan, including
         // callers that do not otherwise demand any view on this invocation.
-        self.require_view_budget()?;
+        self.require_view_budget().map_err(ScanFailure::Admission)?;
         if let Some(error) = sink.admission_error() {
-            return Err(error);
+            return Err(ScanFailure::Admission(error));
         }
         if let Some(error) = self.tree.captured_violation() {
-            return Err(error);
+            return Err(ScanFailure::Admission(error));
         }
         if result.is_err() {
             return Err("raw policy panicked; findings discarded".into());
@@ -192,14 +203,46 @@ impl File {
         if sink.sites.len() > captured_raw_policy::MAX_FIXTURE_SITES {
             return Err("raw policy exceeds finding fixture admission".into());
         }
-        Ok(Findings {
+        let mut findings = Findings {
+            source_text: Vec::new(),
             name: scope.name.into(),
             run: Run {
                 sites: sink.sites,
                 notes: sink.notes,
             },
             allow_used: sink.allow_used,
-        })
+        };
+        findings.source_text = self.report_source_text(
+            &findings.run.sites, bytes.saturating_sub(findings.budget_charge()),
+        )?;
+        if findings.budget_charge() > bytes {
+            return Err(ScanFailure::Admission("raw report evidence exceeds admitted result headroom".into()));
+        }
+        Ok(findings)
+    }
+    fn report_source_text(&self, sites: &[crate::lint::Site], available: usize) -> Result<Vec<String>, ScanFailure> {
+        let file = &self.tree.files[0];
+        let raw = file.raw();
+        self.require_view_budget().map_err(ScanFailure::Admission)?;
+        // normalize_ws reserves the original line length. Count that allocation,
+        // including repeated line uses, before allocating any output strings.
+        let mut bound = sites.len().checked_mul(std::mem::size_of::<String>())
+            .ok_or_else(|| ScanFailure::Admission("raw report evidence metadata overflow".into()))?;
+        for site in sites {
+            if site.rel != file.rel {
+                return Err("raw finding refers outside its authenticated source".into());
+            }
+            bound = bound.checked_add(raw.line(site.line as usize).len())
+                .ok_or_else(|| ScanFailure::Admission("raw report evidence byte overflow".into()))?;
+        }
+        if bound > available {
+            return Err(ScanFailure::Admission("raw report evidence exceeds admitted result headroom".into()));
+        }
+        let mut out = Vec::with_capacity(sites.len());
+        for site in sites {
+            out.push(crate::util::normalize_ws(raw.line(site.line as usize)));
+        }
+        Ok(out)
     }
 }
 impl Config {
@@ -294,6 +337,7 @@ impl Scope {
             name: self.name.into(),
             run: Run::default(),
             allow_used: Vec::new(),
+            source_text: Vec::new(),
         }))
     }
     /// Exact interpreted policy, not its cache hash, authenticates reuse.
@@ -308,11 +352,23 @@ impl Scope {
     }
 }
 impl Findings {
+    pub fn site_text(&self, index: usize) -> Option<&str> {
+        self.source_text.get(index).map(String::as_str)
+    }
     pub fn fingerprint(&self) -> u128 {
-        Self::fingerprint_parts(&self.name, &self.run, &self.allow_used)
+        let rows = Self::fingerprint_parts(&self.name, &self.run, &self.allow_used);
+        let mut hash = blake3::Hasher::new();
+        hash.update(&rows.to_le_bytes());
+        for text in &self.source_text {
+            hash.update(&(text.len() as u64).to_le_bytes());
+            hash.update(text.as_bytes());
+        }
+        u128::from_le_bytes(hash.finalize().as_bytes()[..16].try_into().unwrap())
     }
     pub fn budget_charge(&self) -> usize {
         Self::budget_charge_parts(&self.name, &self.run, &self.allow_used)
+            + self.source_text.capacity() * std::mem::size_of::<String>()
+            + self.source_text.iter().map(|text| text.capacity()).sum::<usize>()
     }
     pub fn fingerprint_parts(name: &str, run: &Run, allow_used: &[AllowUse]) -> u128 {
         struct HashWriter(blake3::Hasher);
@@ -488,6 +544,7 @@ mod borrowed_metric_tests {
                 notes: vec!["pool_lint: 1 problem(s)".into()],
             },
             allow_used: Vec::new(),
+            source_text: Vec::new(),
         };
         let bytes = serde_json::to_vec(&(
             &rows.name,
@@ -510,5 +567,57 @@ mod borrowed_metric_tests {
             rows.budget_charge()
                 >= 64 + rows.run.sites.capacity() * std::mem::size_of::<crate::lint::Site>()
         );
+    }
+}
+
+#[cfg(test)]
+mod report_evidence_tests {
+    use super::*;
+    fn site(rel: &str, line: u32) -> crate::lint::Site {
+        crate::lint::Site { rule: "scheduler".into(), rel: rel.into(), line,
+            msg: String::new(), key: String::new(), ident: String::new() }
+    }
+    #[test]
+    fn report_evidence_equals_original_fingerprint_normalization_and_stays_as_of_capture() {
+        let root = std::env::current_dir().unwrap().join("report-evidence-fixture");
+        let file = File::capture(&root, &root.join("code/a.dm"),
+            "/proc/p()\n\t sleep(1) \u{1c}\u{a0} // retained é\n".to_owned().into()).unwrap();
+        let sites = [site("code/a.dm", 2), site("code/a.dm", 0), site("code/a.dm", 90)];
+        let evidence = file.report_source_text(&sites, 4096).unwrap();
+        for (s, text) in sites.iter().zip(&evidence) {
+            assert_eq!(*text, file.tree.site_text(&s.rel, s.line as usize));
+        }
+        assert_eq!(evidence[0], "sleep(1) // retained é");
+        let changed = File::capture(&root, &root.join("code/a.dm"),
+            "/proc/p()\n sleep(99) // newer bytes\n".to_owned().into()).unwrap();
+        assert_ne!(changed.report_source_text(&sites, 4096).unwrap()[0], evidence[0]);
+        assert_eq!(file.report_source_text(&sites, 4096).unwrap(), evidence);
+    }
+    #[test]
+    fn report_evidence_budget_rejects_repeated_long_lines_and_foreign_paths_before_result() {
+        let root = std::env::current_dir().unwrap().join("report-evidence-fixture");
+        let source = format!("/proc/p()\n    sleep(1) // {}\n", "x".repeat(1024));
+        let file = File::capture(&root, &root.join("code/a.dm"), source.into()).unwrap();
+        let sites = [site("code/a.dm", 2), site("code/a.dm", 2)];
+        assert!(file.report_source_text(&sites, 1500).is_err());
+        assert_eq!(file.report_source_text(&sites, 4096).unwrap().len(), 2);
+        assert!(file.report_source_text(&[site("code/foreign.dm", 2)], 4096).is_err());
+    }
+    #[test]
+    fn report_evidence_changes_result_hash_and_owns_all_normalized_string_capacities() {
+        let root = std::env::current_dir().unwrap().join("report-evidence-fixture");
+        let config = Config::capture(Configuration::ProvenMissing).unwrap();
+        let scope = config.scope("scheduler").unwrap();
+        let scan = |comment: &str| File::capture(&root, &root.join("code/a.dm"),
+            format!("/proc/p()\n    sleep(1) // {comment}\n").into()).unwrap().scan(&scope).unwrap();
+        let a = scan("first comment"); let b = scan("second comment");
+        assert_eq!(a.run.sites.len(), 1);
+        assert_eq!(Findings::fingerprint_parts(&a.name,&a.run,&a.allow_used),
+                   Findings::fingerprint_parts(&b.name,&b.run,&b.allow_used));
+        assert_ne!(a.fingerprint(), b.fingerprint());
+        assert_eq!(a.site_text(0), Some("sleep(1) // first comment"));
+        assert_eq!(a.site_text(1), None);
+        assert_eq!(a.budget_charge() - Findings::budget_charge_parts(&a.name,&a.run,&a.allow_used),
+            a.source_text.capacity()*std::mem::size_of::<String>() + a.source_text.iter().map(String::capacity).sum::<usize>());
     }
 }

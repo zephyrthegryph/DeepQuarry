@@ -41,6 +41,9 @@ mod raw_name_match;
 #[cfg(feature = "legacy-sem")]
 pub mod run;
 pub mod scopes;
+pub mod reactive_facts;
+pub mod reactive_hooks_policy;
+pub(crate) mod plans_policy;
 #[cfg(feature = "legacy-sem")]
 pub mod sem;
 #[cfg(feature = "legacy-sem")]
