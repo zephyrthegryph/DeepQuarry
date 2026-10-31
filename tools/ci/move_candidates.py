@@ -114,6 +114,12 @@ def blank_scheduler_keeps(text):
     return "\n".join(raw)
 
 
+# A raw input()/alert() call, or a verb whose arguments are BYOND's own pickers (`target as mob in view()`), is not a final form even when the verb is
+# granted: a question is an asks() step or an open_request(). (Typed chat and OOC verbs are exempt by name, above.)
+RAW_PROMPT = re.compile(r"(?<![\w.])(?:input|alert)\(")
+VERB_PICKER_ARG = re.compile(r"^\s*(?:/[\w/]+?/verb/|verb/)\w+\([^)]*\bas\b[^)]*\bin\b")
+
+
 ALLOW = re.compile(r"\bALLOW\(([^)]*)\)")
 # doc/rewrite/migration_census.md kind M: an annotation naming one of these keeps a migration form, so the file is not done.
 # Any other lint's ALLOW (scheduler, silent_catch, ownership, api, ...) is a justified keep and does not block a move.
@@ -294,6 +300,8 @@ def main(argv):
                 why.append("oldform:" + label)
         if not exempt and f not in OOC_VERB_FILES and not any(v in f for v in VERB_EXEMPT) and non_client_verb(lines, granted):
             why.append("oldform:verb")
+        if not exempt and f not in OOC_VERB_FILES and not any(v in f for v in VERB_EXEMPT) and any(RAW_PROMPT.search(ln) or VERB_PICKER_ARG.match(ln) for ln in lines):
+            why.append("oldform:raw_prompt")
         if not exempt and atom_new_override(lines):
             why.append("oldform:New() override")
         if "/__defines/" in f:

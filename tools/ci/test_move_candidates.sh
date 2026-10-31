@@ -75,6 +75,12 @@ mk code/modules/widgets/ability_verb.dm '/datum/gm/verb/zap()
 	ability = /datum/gm/verb/zap'
 mk code/modules/widgets/adminverb.dm '/datum/admin_verb/poke/proc/stage(client/user)
 	return'
+mk code/modules/widgets/rawprompt.dm '/proc/ask()
+	return input("Name?")'
+mk code/modules/widgets/pickerverb.dm '/datum/gm/verb/zap_target(mob/M as mob in view())
+	set name = "Zap"
+CAPABILITIES(/datum/gm)
+	verb_entry(/datum/gm/verb/zap_target)'
 mk code/modules/widgets/allowed.dm '/proc/b()
 	return 1 // ALLOW(scheduler): a reason long enough to count'
 mk code/modules/widgets/baselined.dm '/obj/item/widget/baselined'
@@ -139,6 +145,8 @@ expect code/modules/widgets/granted_verb.dm clean ""
 expect code/modules/widgets/ungranted_verb.dm dirty "oldform:verb"
 expect code/modules/widgets/ability_verb.dm clean ""
 expect code/modules/widgets/adminverb.dm clean ""
+expect code/modules/widgets/rawprompt.dm dirty "oldform:raw_prompt"
+expect code/modules/widgets/pickerverb.dm dirty "oldform:raw_prompt"
 expect code/modules/widgets/allowed.dm clean ""
 expect code/modules/widgets/allow_init.dm dirty "allow"
 expect code/modules/widgets/allow_mixed.dm dirty "allow"
