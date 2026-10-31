@@ -122,6 +122,7 @@
 #include "dx_deps_tests.dm"
 #include "dx_reactions_tests.dm"
 #include "dq_a1_state_tests.dm"
+#include "dq_zone_sel_regions_tests.dm"
 #include "dx_reactions_work_tests.dm"
 #include "dx_condition_tests.dm"
 #include "decl_tests.dm"
