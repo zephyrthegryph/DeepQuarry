@@ -540,7 +540,7 @@ mod tests {
         rows.iter().map(|(a, b)| (a.to_string(), b.to_string())).collect()
     }
 
-    const GOOD: &str = "read every turf update in code/ATMOSPHERICS/environmental/LINDA_system.dm";
+    const GOOD: &str = "read every turf update in code/domains/atmos/environmental/LINDA_system.dm";
 
     #[test]
     fn listed_var_with_reader_and_justification_is_accepted() {
