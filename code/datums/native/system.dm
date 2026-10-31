@@ -96,6 +96,8 @@
 	var/list/box = vg_frame(elapsed, budget)
 	var/vg_done = TICK_USAGE_REAL
 	deliver(box)
+	if(length(GLOB.apc_charge_backlog))
+		apc_charge_drain() // the APC reports the delivery deferred (code/modules/power/apc.dm): a few a tick
 	last_frame_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - start)
 	if(last_frame_ms >= NATIVE_SLOW_FRAME_MS)
 		report_slow_frame(TICK_DELTA_TO_MS(vg_done - start))
