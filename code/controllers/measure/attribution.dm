@@ -407,3 +407,27 @@ GLOBAL_VAR_INIT(km_slow_calls_logged, 0)
 	var/init_real = km_meter().attr.init_real
 	var/since = init_real ? "+[round((REALTIMEOFDAY - init_real) * 0.1)]s after init" : "during init"
 	log_world("SLOW CALL: [round(ms, 0.1)] ms [holder?.type] -> [what] ([since]) [holder?.slow_call_detail()] clients [length(GLOB.clients)]")
+
+/// The proc profile as it stands (world.Profile, running under AUTO_PROFILE) as one line: the `self_rows` procs with the most self time and the `total_rows`
+/// with the most total time, seconds and calls. The caller clears the profile (PROFILE_CLEAR) where the stretch it wants named begins.
+/proc/km_profile_text(self_rows = 14, total_rows = 10)
+	var/list/rows = json_decode(world.Profile(PROFILE_REFRESH, format = "json"))
+	if(!islist(rows))
+		return "no profile (AUTO_PROFILE is off)"
+	var/list/by_self = sortTim(rows.Copy(), GLOBAL_PROC_REF(cmp_profile_self), FALSE)
+	var/list/by_total = sortTim(rows.Copy(), GLOBAL_PROC_REF(cmp_profile_total), FALSE)
+	var/text = "by self:"
+	for(var/i in 1 to min(self_rows, length(by_self)))
+		var/list/row = by_self[i]
+		text += " [row["name"]] self [row["self"]] total [row["total"]] x[row["calls"]];"
+	text += " by total:"
+	for(var/i in 1 to min(total_rows, length(by_total)))
+		var/list/row = by_total[i]
+		text += " [row["name"]] total [row["total"]] x[row["calls"]];"
+	return text
+
+/proc/cmp_profile_self(list/a, list/b)
+	return b["self"] - a["self"]
+
+/proc/cmp_profile_total(list/a, list/b)
+	return b["total"] - a["total"]
