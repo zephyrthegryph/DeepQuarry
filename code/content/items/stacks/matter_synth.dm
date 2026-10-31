@@ -67,14 +67,6 @@
 	if(energy == value)
 		return FALSE
 	energy = value
-	// Existing reverse REF index: only real stacks borrowing this synth need recosting.
-	var/obj/item/stack/stack_shape
-	for(var/datum/D as anything in rel_sources_via(src, nameof(stack_shape.synths)))
-		if(!istype(D, /obj/item/stack))
-			continue
-		var/obj/item/stack/S = D
-		if(!QDELETED(S) && S.synths && (src in S.synths))
-			S.ledger_refresh_contribution()
 	tracked_changed(src, nameof(energy))
 	return TRUE
 SETTER(/datum/matter_synth, energy)

@@ -195,13 +195,10 @@
 #define LEDGER_E_SLOT 1
 #define LEDGER_E_SERIAL 2
 #define LEDGER_E_COST 3
-/// Snapshot of the thing's contribution to the aggregates: measure values in
-/// the ledger's measure order, then tag words.
-#define LEDGER_E_SNAPSHOT 4
 /// The thing's `slot_key()` at insert time, for a keyed slot (J4). Null for
 /// an unkeyed slot, or a keyed slot whose thing has no key right now.
-#define LEDGER_E_KEY 5
-#define LEDGER_E_LEN 5
+#define LEDGER_E_KEY 4
+#define LEDGER_E_LEN 4
 
 /// Separates a slot id from the serial in an entry id: "interior#12".
 #define LEDGER_ENTRY_SEPARATOR "#"

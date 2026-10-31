@@ -241,9 +241,6 @@ CAPABILITIES(/obj/item/flashlight/slime)
 	configure(atom_rules(light_system = STATIC_LIGHT))
 	look_glow(GLOW(6, 0.8, "#FFF423"))
 
-/obj/item/flashlight/slime/update_brightness()
-	return
-
 //Radiation Emitter
 
 /obj/item/slime_irradiator
