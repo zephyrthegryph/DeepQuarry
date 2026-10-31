@@ -186,7 +186,7 @@
 		"code/modules/mob/living/silicon/robot/analyzer.dm",
 		"code/modules/mob/living/silicon/robot/examine.dm",
 		"code/modules/mob/living/silicon/robot/robot_ui.dm",
-		"code/modules/mob/living/silicon/ai/examine.dm",
+		"code/content/mob/living/silicon/ai/examine.dm",
 		"code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm",
 		"code/modules/mob/mob_grab_specials.dm",
 		"code/modules/pda/utilities.dm",
