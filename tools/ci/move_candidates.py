@@ -92,6 +92,13 @@ OOC_VERB_FILES = (
     "code/modules/mob/living/carbon/human/species/station/traits/states/waddle.dm",
     # a hidden verb the quick-equip keybind calls by name
     "code/modules/mob/living/carbon/human/inventory.dm",
+    # keybind, OOC, ghost and settings verbs of the core mobs: movement and facing keys, resist and lay down, the ghost menu, flavour and
+    # language settings, hotkey and preference toggles, the typed say/me family, round info and the HUD hotkey hooks
+    "code/_onclick/hud/hud.dm", "code/_onclick/hud/human.dm", "code/game/gamemodes/game_mode.dm", "code/modules/mob/dead/observer/observer.dm",
+    "code/modules/mob/living/carbon/human/emote.dm", "code/modules/mob/living/default_language.dm", "code/modules/mob/living/living.dm",
+    "code/modules/mob/living/silicon/silicon.dm", "code/modules/mob/living/simple_mob/simple_mob.dm", "code/modules/mob/mob.dm",
+    "code/modules/mob/mob_helpers.dm", "code/modules/mob/say.dm", "code/modules/multiz/movement.dm", "code/modules/vore/eating/living.dm",
+    "code/modules/vore/resizing/resize.dm",
 )
 VERB_EXEMPT = ("code/modules/admin/", "/admin_commands.dm", "/contract_admin.dm")
 
