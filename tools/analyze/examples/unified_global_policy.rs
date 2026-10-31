@@ -21,5 +21,8 @@ fn main(){
  assert!(dq_analyze::incr::dir().is_none());
  let mut original=serde_json::json!({"globals":old,"writes":old_writes});let mut candidate=serde_json::json!({"globals":shared,"writes":shared_writes});canonical(&mut original);canonical(&mut candidate);assert_eq!(original,candidate,"whole original boot/global/typed-write classifications");
  let globals=&original["globals"];assert!(!globals["runtime_written"].as_array().unwrap().is_empty());assert!(globals["boot_procs"].as_u64().unwrap()>0);assert!(!original["writes"]["untyped"].as_array().unwrap().is_empty());
+ assert!(original["writes"]["written"].as_array().unwrap().iter().any(|v|v=="global_only_control"),"actual typed receiver missing-field control must be scanned");
+ assert_eq!(sem.var_owner("/datum/global_owner_control","global_only_control").as_deref(),Some("/"),"preserve old traversal through the actual root ancestor");
+ assert_eq!(original["writes"]["typed"]["global_only_control"],serde_json::json!(["/"]),"real root ancestry differs from premature implicit global fallback");
  println!("{}",serde_json::to_string_pretty(&original).unwrap());
 }

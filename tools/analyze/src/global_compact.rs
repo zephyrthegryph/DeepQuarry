@@ -103,13 +103,14 @@ pub(crate) struct Builder {
     rows: Vec<Row>,
     edges: [Vec<Id>; 4],
     pending: Option<Pending>,
+    typed_writes: Vec<(Id, Id)>,
 }
 
 impl Builder {
     pub(crate) fn new<C: kc::Control>(c: &mut C, original_row_bound: usize) -> Result<Self, C::Error> {
         let mut rows = Vec::new();
         vector(c, &mut rows, original_row_bound)?;
-        Ok(Self { names: Names::default(), rows, edges: Default::default(), pending: None })
+        Ok(Self { names: Names::default(), rows, edges: Default::default(), pending: None, typed_writes: Vec::new() })
     }
     pub(crate) fn begin<C: kc::Control>(&mut self, c: &mut C, name: &str, root: bool) -> Result<(), C::Error> {
         assert!(self.pending.is_none(), "one actual body contribution at a time");
@@ -139,6 +140,22 @@ impl Builder {
             ranges[kind] = pending.starts[kind]..Id::try_from(end).map_err(|_| c.overflow())?;
         }
         push(c, &mut self.rows, Row { name: pending.name, root: pending.root, ranges })
+    }
+    /// Typed writes include test bodies, unlike the global boot graph.
+    /// No body-local String crosses this boundary: persistent unique names
+    /// are parent-funded here before copying out of the source scratch scope.
+    pub(crate) fn typed_write<C: kc::Control>(&mut self, c: &mut C, owner: &str, variable: &str) -> Result<(), C::Error> {
+        let owner = self.names.intern(c, owner)?;
+        let variable = self.names.intern(c, variable)?;
+        push(c, &mut self.typed_writes, (owner, variable))
+    }
+    pub(crate) fn write_rows<C: kc::Control>(&mut self, c: &mut C) -> Result<crate::write_policy::WriteRows, C::Error> {
+        c.checkpoint()?;
+        let names = &self.names;
+        self.typed_writes.sort_unstable_by(|a,b| names.get(a.1).cmp(names.get(b.1)).then_with(||names.get(a.0).cmp(names.get(b.0))));
+        self.typed_writes.dedup();
+        c.checkpoint()?;
+        crate::write_policy::WriteRows::from_sorted_pairs(self.typed_writes.iter().map(|(owner,var)|(names.get(*owner),names.get(*var))), c)
     }
     fn values(&self, row: usize, kind: Kind) -> &[Id] {
         let range = &self.rows[row].ranges[kind as usize];
@@ -267,5 +284,17 @@ mod tests {
         assert!(matches!(graph.classify(&mut c), Err("actual stop")));
         let result = graph.classify(&mut c).unwrap();
         assert_eq!(result.boot_procs, 2); assert!(result.is_written("only_boot")); assert!(result.constant_after_init("only_boot"));
+    }
+
+    #[test]
+    fn compact_typed_pairs_preserve_complete_old_union_and_untyped_rows() {
+        let mut c=Limit{limit:4*1024*1024,used:0,polls:0,stop:usize::MAX};
+        let mut graph=Builder::new(&mut c,0).unwrap();
+        let pairs=[("/base","charge"),("/child","charge"),("?","charge"),("/base","charge"),("?","wild"),("/base","only")];
+        for(owner,var)in pairs{graph.typed_write(&mut c,owner,var).unwrap();}
+        let result=graph.write_rows(&mut c).unwrap();
+        let old=crate::write_policy::WriteIndex::from_facts(vec![pairs.into_iter().map(|(o,v)|(o.to_owned(),v.to_owned())).collect()]).into_rows(&mut kc::Compatibility).unwrap();
+        let observed=serde_json::to_value(&result).unwrap();assert_eq!(observed,serde_json::to_value(&old).unwrap());
+        assert_eq!(observed,serde_json::json!({"written":["charge","only","wild"],"untyped":["charge","wild"],"typed":{"charge":["/base","/child"],"only":["/base"]}}));
     }
 }

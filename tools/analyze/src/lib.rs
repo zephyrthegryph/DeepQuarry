@@ -11,6 +11,7 @@ pub mod baseline;
 pub mod policy_judge;
 pub mod keys_policy;
 pub mod key_policy_control;
+pub mod auto_setter_calls_policy;
 #[cfg(feature="native-policy")]
 pub mod captured_keys;
 #[cfg(feature="native-policy")]

@@ -1,0 +1,2 @@
+# Preserve the space-indented old-parser fixture; mixed tab widths change its grammar.
+code/*.dm whitespace=-indent-with-non-tab

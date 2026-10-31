@@ -56,6 +56,11 @@ impl AbiStore {
             Self::Shared { lease, .. } => lease.retain_current_keys(keys),
         }
     }
+    pub(in crate::driver_facts) fn try_visit_receipted_with<E>(&self,key:&[u8],validate:&mut dyn FnMut(&Receipt<Query,Answer,Domain>)->Option<Query>,accept:&mut dyn FnMut(&Arc<Artifact>)->Result<bool,E>)->Result<Found,E>{
+        let mut replay=|reads:&Receipt<Query,Answer,Domain>,_:&Arc<Artifact>|Ok(validate(reads));
+        match self{Self::Private(store)=>store.try_visit_receipted_with_value::<E>(key,&mut replay,accept),Self::Shared{lease,..}=>lease.try_visit_receipted_with_value::<E>(key,&mut replay,accept)}
+    }
+    pub(in crate::driver_facts) fn insert_source_with_receipt(&self,key:Arc<[u8]>,reads:Receipt<Query,Answer,Domain>,weight:usize,create:impl FnOnce()->Artifact)->Option<Arc<Artifact>>{match self{Self::Private(store)=>store.insert_with_receipt(key,reads,weight,create),Self::Shared{lease,..}=>lease.insert_fresh_with_qualified_receipt(key,reads,weight,create)}}
     pub(in crate::driver_facts) fn visit_receipted_with(
         &self,
         key: &[u8],

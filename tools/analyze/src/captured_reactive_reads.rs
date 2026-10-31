@@ -28,6 +28,14 @@ pub fn globals(raw:&CapturedRawPolicy,inputs:&PolicyInputs,budget:&Arc<Budget>,c
  let source=source(raw,inputs,budget,checkpoint,body)?;let value=NativeGlobals::build(&source,checkpoint)?;checkpoint()?;source.require()?;
  Ok(GlobalResult{owner:inputs.archive().original_owner_witness(),value})
 }
+/// Native semantic-only Globals producer. The caller must authenticate current
+/// evidence/config/mapping before cache access and lend the SAME active query
+/// context body borrower. No raw marker coverage or producer selection follows.
+pub fn globals_native(inputs:&PolicyInputs,root:&std::path::Path,budget:&Arc<Budget>,checkpoint:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>)->Result<GlobalResult,Failure>{
+ checkpoint()?;let source=ReadSource::native(inputs,root,budget)?.with_checkpoint(checkpoint).with_body_borrower(body);
+ let value=NativeGlobals::build(&source,checkpoint)?;checkpoint()?;source.require()?;
+ Ok(GlobalResult{owner:inputs.archive().original_owner_witness(),value})
+}
 /// A stack-only lazy loan from the SAME query graph. The factory checks the
 /// returned value's original-source witness before any policy question.
 pub trait GlobalProvider{fn with_globals(&self,consume:&mut dyn FnMut(&GlobalResult)->Result<bool,Failure>)->Result<bool,Failure>;}

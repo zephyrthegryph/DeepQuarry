@@ -8,6 +8,8 @@ pub const MAX_ROWS: usize = 10_000;
 #[derive(Debug)]
 pub struct Budget {
     limit: usize,
+    temporary_parent: Option<Arc<Budget>>,
+    refund_temporaries: AtomicBool,
     used: AtomicUsize,
     nested_retained: AtomicUsize,
     denied: AtomicBool,
@@ -20,14 +22,45 @@ impl Budget {
         }
         Ok(Arc::new(Self {
             limit,
+            temporary_parent: None,
+            refund_temporaries: AtomicBool::new(true),
             used: AtomicUsize::new(fixed),
             nested_retained: AtomicUsize::new(0),
             denied: AtomicBool::new(false),
         }))
     }
+    /// Internal scratch only. The caller must drop all scratch-owned values
+    /// before the final Arc goes away; escaping graph facts are independently
+    /// charged to the parent BEFORE copying. This grants no source authority.
+    pub(crate) fn scoped_temporaries(parent: &Arc<Self>) -> Result<Arc<Self>, String> {
+        if parent.temporary_parent.is_some() {
+            return Err("nested source scratch scopes are not supported".into());
+        }
+        let fixed = std::mem::size_of::<Self>() + 2 * std::mem::size_of::<usize>();
+        parent.charge(fixed)?;
+        Ok(Arc::new(Self {
+            limit: parent.limit,
+            temporary_parent: Some(Arc::clone(parent)),
+            refund_temporaries: AtomicBool::new(true),
+            used: AtomicUsize::new(fixed),
+            nested_retained: AtomicUsize::new(0),
+            denied: AtomicBool::new(false),
+        }))
+    }
+    /// An Err/panic may carry scratch-owned data beyond the source callback.
+    /// Keep the conservative reservation for the rest of that failed operation.
+    pub(crate) fn keep_failed_scratch(&self) {
+        self.refund_temporaries.store(false, Ordering::Release);
+    }
     pub fn charge(&self, bytes: usize) -> Result<(), String> {
-        if self.denied.load(Ordering::Acquire) {
+        if self.denied() {
             return Err("captured generator allocation denied".into());
+        }
+        if let Some(parent) = &self.temporary_parent {
+            parent.charge(bytes)?;
+            self.used.fetch_update(Ordering::AcqRel, Ordering::Acquire, |n| n.checked_add(bytes))
+                .expect("funded scratch cannot exceed its live parent's bound");
+            return Ok(());
         }
         if self
             .used
@@ -44,10 +77,10 @@ impl Budget {
     /// Nested derived values also live in the family's original retained charge.
     /// Exclude transferred bytes from the live TEMPORARY reservation before
     /// another child, while keeping them in used for this operation's limit.
-    pub fn temporary_charge(&self)->usize{self.used().saturating_sub(self.nested_retained.load(Ordering::Acquire))}
-    pub fn retain_nested(&self,bytes:usize)->Result<(),String>{self.charge(bytes)?;self.nested_retained.fetch_add(bytes,Ordering::AcqRel);Ok(())}
+    pub fn temporary_charge(&self)->usize{if let Some(parent)=&self.temporary_parent{return parent.temporary_charge()}self.used().saturating_sub(self.nested_retained.load(Ordering::Acquire))}
+    pub fn retain_nested(&self,bytes:usize)->Result<(),String>{if let Some(parent)=&self.temporary_parent{return parent.retain_nested(bytes)}self.charge(bytes)?;self.nested_retained.fetch_add(bytes,Ordering::AcqRel);Ok(())}
     pub fn denied(&self) -> bool {
-        self.denied.load(Ordering::Acquire)
+        self.denied.load(Ordering::Acquire) || self.temporary_parent.as_ref().is_some_and(|parent|parent.denied())
     }
     pub fn used(&self) -> usize {
         self.used.load(Ordering::Acquire)
@@ -56,7 +89,8 @@ impl Budget {
         self.charge(0)
     }
     pub fn deny(&self) {
-        self.denied.store(true, Ordering::Release)
+        self.denied.store(true, Ordering::Release);
+        if let Some(parent)=&self.temporary_parent{parent.deny()}
     }
     pub(crate) fn string(&self, body: &mut String, text: &str) -> bool {
         if self.require().is_err() {
@@ -226,5 +260,55 @@ mod splitter_tests {
                 >= args.capacity() * std::mem::size_of::<String>()
                     + args.iter().map(String::capacity).sum::<usize>()
         );
+    }
+}
+
+impl Drop for Budget {
+    fn drop(&mut self) {
+        if let Some(parent) = &self.temporary_parent {
+            if !self.refund_temporaries.load(Ordering::Acquire) || std::thread::panicking() { return }
+            // Keep fixed Arc/payload metadata conservatively charged: its
+            // allocator/header lifetime is not certified by this destructor.
+            let fixed = std::mem::size_of::<Self>() + 2 * std::mem::size_of::<usize>();
+            let released = self.used().checked_sub(fixed).expect("scratch metadata was funded");
+            parent.used.fetch_update(Ordering::AcqRel, Ordering::Acquire, |n| n.checked_sub(released))
+                .expect("scratch release must correspond to actual parent reservations");
+        }
+    }
+}
+#[cfg(test)]
+mod scoped_scratch_tests {
+    use super::*;
+    #[test]
+    fn pages_share_live_graph_limit_and_only_dropped_scratch_is_credited() {
+        let parent=Budget::new(4096).unwrap();let fixed=parent.used();
+        parent.charge(700).unwrap();
+        {
+            let page=Budget::scoped_temporaries(&parent).unwrap();
+            assert_eq!(parent.used(),fixed*2+700);
+            let mut scratch=String::new();assert!(page.string(&mut scratch,"page-local name"));
+            assert_eq!(page.temporary_charge(),parent.temporary_charge());
+            parent.charge(211).unwrap(); // independently charged escaping graph fact
+            page.retain_nested(128).unwrap();
+            assert_eq!(page.temporary_charge(),parent.used()-128);
+            drop(scratch);drop(page);
+        }
+        assert_eq!(parent.used(),fixed*2+700+211+128);
+        assert_eq!(parent.temporary_charge(),fixed*2+700+211);
+        let next=Budget::scoped_temporaries(&parent).unwrap();
+        assert!(next.charge(4096).is_err());assert!(parent.denied());
+    }
+    #[test]
+    fn scratch_failure_and_unwind_keep_reservations_for_escaping_error_payloads() {
+        let parent=Budget::new(4096).unwrap();let fixed=parent.used();parent.charge(300).unwrap();
+        let result=std::panic::catch_unwind(std::panic::AssertUnwindSafe(||{
+            let page=Budget::scoped_temporaries(&parent).unwrap();
+            let mut text=String::new();assert!(page.string(&mut text,"scratch"));
+            parent.charge(77).unwrap();panic!("real scoped unwind");
+        }));assert!(result.is_err());assert_eq!(parent.used(),fixed*2+300+77+128);
+        assert!(!parent.denied());
+        let page=Budget::scoped_temporaries(&parent).unwrap();page.charge(90).unwrap();page.keep_failed_scratch();drop(page);
+        assert_eq!(parent.used(),fixed*3+300+77+128+90);
+        let page=Budget::scoped_temporaries(&parent).unwrap();page.deny();drop(page);assert!(parent.denied());
     }
 }

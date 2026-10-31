@@ -119,3 +119,41 @@ impl WriteRows{
   let mut capacity=0;rows.visit_storage(|_,n|capacity+=n);assert!(capacity>0);
  }
 }
+
+impl WriteRows {
+    /// Set union over sorted unique (owner,var) facts. The compact graph owns
+    /// the names; only the final private rows copy strings, under admission.
+    pub(crate) fn from_sorted_pairs<'a,C,I>(pairs:I,c:&mut C)->Result<Self,C::Error>
+    where C:crate::key_policy_control::Control,I:Clone+ExactSizeIterator<Item=(&'a str,&'a str)> {
+        use crate::key_policy_control as kc;
+        fn rows<C:kc::Control,T>(c:&mut C,len:usize)->Result<Vec<T>,C::Error>{
+            let bound=len.checked_mul(4).ok_or_else(||c.overflow())?;
+            kc::reserve(c,||bound.checked_mul(std::mem::size_of::<T>())?.checked_add(128))?;
+            let mut rows=Vec::new();rows.try_reserve_exact(len).map_err(|_|c.allocation_failed())?;
+            if C::CHECKED&&rows.capacity()>bound{return Err(c.allocation_failed())}Ok(rows)
+        }
+        let mut written_count=0usize;let mut typed_count=0usize;let mut untyped_count=0usize;
+        let mut prior=None;let mut had_typed=false;let mut had_untyped=false;
+        for(owner,var)in pairs.clone(){
+            c.checkpoint()?;
+            if prior!=Some(var){written_count+=1;had_typed=false;had_untyped=false;prior=Some(var);}
+            if owner==UNTYPED_WRITE{if !had_untyped{untyped_count+=1;had_untyped=true;}}
+            else if !had_typed{typed_count+=1;had_typed=true;}
+        }
+        let mut written=rows::<C,String>(c,written_count)?;let mut untyped=rows::<C,String>(c,untyped_count)?;let mut typed=rows::<C,(String,Vec<String>)>(c,typed_count)?;
+        let mut cursor=pairs.peekable();
+        while let Some(&(_,var))=cursor.peek(){
+            c.checkpoint()?;written.push(kc::own(c,var)?);
+            let mut count=0usize;for(owner,v)in cursor.clone(){c.checkpoint()?;if v!=var{break}if owner!=UNTYPED_WRITE{count+=1;}}
+            let mut owners=rows::<C,String>(c,count)?;let mut last_owner=None;
+            while let Some(&(owner,next))=cursor.peek(){
+                if next!=var{break}cursor.next();c.checkpoint()?;
+                if owner==UNTYPED_WRITE{if last_owner!=Some(owner){untyped.push(kc::own(c,var)?);}}
+                else if last_owner!=Some(owner){owners.push(kc::own(c,owner)?);}
+                last_owner=Some(owner);
+            }
+            if !owners.is_empty(){typed.push((kc::own(c,var)?,owners));}
+        }
+        c.checkpoint()?;Ok(Self{written,typed:TypedRows(typed),untyped})
+    }
+}

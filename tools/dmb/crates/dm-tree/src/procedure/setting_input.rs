@@ -306,6 +306,13 @@ impl OriginalProcedureHeaders {
         walk(self, items, owners, &mut rows)?;
         self.finish_settings(rows)
     }
+    pub(crate) fn abi_source_len(&self)->usize{self.source.len()}
+    pub(crate) fn cached_abi_root(&self,body:Span,owner:&Arc<ProcedureMetadata>,ordinal:usize,count:usize,returns:bool,a:&dm_syntax::SettingAdmission<'_>)->Result<dm_syntax::SettingExpression,dm_syntax::SettingSyntaxFailure>{
+      let fail=|message:String|dm_syntax::SettingSyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,message));
+      let row=self.expression_row(body,owner).map_err(fail)?;
+      let slots=if returns{&row.return_roots}else{if count!=owner.settings.len(){return Err(fail("ABI setting source count differs".into()))}&row.roots};
+      slots.obtain(ordinal,count,a,||Err(dm_syntax::SettingSyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"successful ABI source root is no longer retained"))))
+    }
     fn expression_row(
         &self,
         body: Span,

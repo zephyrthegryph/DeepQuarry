@@ -35,6 +35,7 @@ pub(super) struct Original<'context,'source,'admission,'op>{
     pub(super) context:&'context dm_tree::frontend::OriginalDeclarationExpressionContext<'source>,
     pub(super) admission:&'admission dm_syntax::SettingAdmission<'op>,
     pub(super) static_receipt:Option<&'context Arc<dm_tree::frontend::IssuedStaticPlan>>,
+    pub(super) roots:Option<&'context dyn abi_artifacts::RootObserver>,
 }
 pub(super) fn source_domain_failure(error:dm_tree::frontend::BodySyntaxFailure)->InitializerFailure{match error{dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>InitializerFailure::Operational(actual),dm_tree::frontend::BodySyntaxFailure::Syntax(error)=>InitializerFailure::Unsupported(error.message)}}
 pub(super) fn source_failure(error:dm_tree::frontend::BodySyntaxFailure)->InitializerFailure{
@@ -49,14 +50,15 @@ impl<'context,'source,'admission,'op> Demand for Original<'context,'source,'admi
     type Frame<'a>=dm_syntax::SettingEvaluationFrame<'a,'op> where Self:'a;
     fn frame(&self)->Result<Self::Frame<'_>,Self::Error>{self.admission.evaluation_frame().map_err(InitializerFailure::Operational)}
     fn expression<T>(&self,_:&DriverEvaluator<'_>,_:&SymbolicExpression,input:Input<'_>,operation:impl FnOnce(&dm_syntax::Expr)->Result<T,Self::Error>)->Result<Option<T>,Self::Error>{
-        let root=match input{
-            Input::Declaration{owner,name,data}=>self.context.selected_admitted(owner,name,data,self.admission).map_err(source_domain_failure)?.prepare(self.admission).map_err(source_failure)?,
+        let (root,subject)=match input{
+            Input::Declaration{owner,name,data}=>(self.context.selected_admitted(owner,name,data,self.admission).map_err(source_domain_failure)?.prepare(self.admission).map_err(source_failure)?,abi_artifacts::RootSubject::Declaration{owner,name}),
             Input::ProcedureStatic{identity,data}=>{
                 let receipt=self.static_receipt.ok_or_else(||InitializerFailure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"original scalar procedure-static producer receipt unavailable")))?;
-                self.context.selected_static_admitted(receipt,identity,data,self.admission).map_err(source_domain_failure)?.prepare(self.admission).map_err(source_failure)?
+                (self.context.selected_static_admitted(receipt,identity,data,self.admission).map_err(source_domain_failure)?.prepare(self.admission).map_err(source_failure)?,abi_artifacts::RootSubject::ProcedureStatic(identity))
             },
             Input::Detached=>return Err(InitializerFailure::Unsupported("native scalar expression requires an original source input".into())),
         };
+        if let Some(roots)=self.roots{roots.record(subject,&root,self.admission)?;}
         operation(root.ast()).map(Some)
     }
     fn semantic(&self,error:Self::Error)->Result<String,Self::Error>{match error{InitializerFailure::Unsupported(reason)=>Ok(reason),actual@InitializerFailure::Operational(_)=>Err(actual)}}

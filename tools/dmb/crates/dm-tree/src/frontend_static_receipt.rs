@@ -319,7 +319,19 @@ pub(crate) struct OriginalStaticInitializerRoot {
     dimension:Option<usize>,
     original_body:dm_syntax::Span,
 }
+#[derive(Clone)]
+pub(crate) struct OriginalStaticRootProvenance{body:Weak<super::StatementBody>,header:dm_syntax::Span,value:dm_syntax::Span,dimension:Option<usize>,original_body:dm_syntax::Span,root:usize}
+impl OriginalStaticRootProvenance{
+ pub(crate) fn matches(&self,current:&OriginalStaticInitializerRoot)->bool{
+  Weak::ptr_eq(&self.body,&Arc::downgrade(&current.body))&&self.header==current.header&&self.value==current.value&&self.dimension==current.dimension&&self.original_body==current.original_body
+ }
+ pub(crate) fn matches_prepared(&self,current:&OriginalStaticInitializerRoot)->bool{self.matches(current)&&self.root==current.ast() as *const dm_syntax::Expr as usize}
+ pub(crate) fn weak_backing_charge(&self)->usize{std::mem::size_of::<super::StatementBody>()}
+ pub(crate) fn visit_storage(&self,mut visit:impl FnMut(usize,usize)){visit(self.body.as_ptr() as usize,self.weak_backing_charge());}
+}
 impl OriginalStaticInitializerRoot {
+    pub(crate) fn provenance(&self)->OriginalStaticRootProvenance{OriginalStaticRootProvenance{body:Arc::downgrade(&self.body),header:self.header,value:self.value,dimension:self.dimension,original_body:self.original_body,root:self.ast() as *const dm_syntax::Expr as usize}}
+
     pub(crate) fn parent(&self)->&Arc<super::StatementBody>{&self.body}
     pub(crate) fn ast(&self)->&dm_syntax::Expr{
         match self.dimension{None=>static_value(&self.body.parsed().statements,self.header),Some(index)=>static_dimension(&self.body,self.header,index)}

@@ -12,7 +12,12 @@ pub(crate) mod observations;
 use observations::{Answer, Domain, Query};
 #[path = "abi_admission.rs"]
 pub(super) mod admission;
+#[path = "abi_source_witness.rs"]
+mod source_witness;
+pub(crate) use source_witness::SourceUnitWitness;
+pub(in crate::driver_facts) use source_witness::{RootCapture,RootObserver,RootSubject};
 pub(crate) struct UnitArtifact {
+    pub(crate) source:Option<SourceUnitWitness>,
     pub(crate) canonical: Option<Arc<crate::procedure_policy::PreparedCanonical>>,
     pub(crate) inputs: Arc<ProcedureInputs>,
     pub(crate) abi: Arc<PreparedAbi>,
@@ -235,6 +240,7 @@ pub(super) fn prepare(
     resource: Option<u128>,
     admission: Option<&admission::Admission<'_>>,
     batch_capture: Option<&batch::Capture>,
+    source:Option<&OriginalAbiSources<'_>>,
 ) -> Result<PreparedUnit, AbiError> {
     let ordinal = inherited
         .frontend
@@ -328,11 +334,11 @@ pub(super) fn prepare(
     if let Some(current) = &current {
         if let Some(accepted) = store
             .store
-            .visit_receipted_with(
+            .try_visit_receipted_with::<AbiError>(
                 &key,
                 &mut |reads| admission::changed(reads, current, admission),
-                &mut |value| matches!(value.as_ref(), Artifact::Unit(_)),
-            )
+                &mut |value| ->Result<bool,AbiError>{match value.as_ref(){Artifact::Unit(unit)=>match(source,unit.source.as_ref()){(Some(source),Some(witness))=>witness.accepts(source,body,metadata,evaluator),(None,_)=>Ok(true),_=>Ok(false)},_=>Ok(false)}},
+            )?
             .0
         {
             keys.lock()
@@ -368,13 +374,15 @@ pub(super) fn prepare(
     };
     // SAME recording resolver observes every original scalar dependency. Root
     // syntax authority comes from current frontend; no second evaluator/model.
+    let roots=source.map(|_|RootCapture::default());
     let borrowed = OriginalSettingEvaluator {
         frontend: inherited.frontend,
         body,
         metadata,
         evaluator: &evaluated,
         lexical,
-        source:None,
+        source,
+        roots:roots.as_ref(),
     };
     let selected: &dyn CapturedConstantEvaluator = &borrowed;
     let policy = crate::procedure_policy::CapturedProcedurePolicy {
@@ -396,7 +404,7 @@ pub(super) fn prepare(
         .read()
         .unwrap_or_else(|error| error.into_inner())
         .upgrade();
-    let disk = transport.as_deref().filter(|_| portable_policy.is_some());
+    let disk = transport.as_deref().filter(|_| source.is_none() && portable_policy.is_some());
     static DISK_LOOKUP: dm_profile::Accumulator = dm_profile::Accumulator::new("abi.disk_lookup");
     static DISK_STAGE: dm_profile::Accumulator = dm_profile::Accumulator::new("abi.disk_stage");
     static RECOMPUTE: dm_profile::Accumulator = dm_profile::Accumulator::new("abi.recompute");
@@ -424,6 +432,8 @@ pub(super) fn prepare(
         policy.prepare_view_original(metadata, parsed, &recorded_context, &original)?
     };
     unit.issue_canonical();
+    // This private producer witness is issued only after original policy success.
+    let source_witness=match(roots,source){(Some(roots),Some(source))=>Some(roots.complete(source)?),_=>None};
     if let Some(current) = current {
         let abi = Arc::clone(
             unit.abi
@@ -442,6 +452,7 @@ pub(super) fn prepare(
                 &current.inputs,
                 portable_policy.flatten(),
                 &UnitArtifact {
+                    source:None,
                     canonical: unit.canonical.clone(),
                     inputs: Arc::clone(&inputs),
                     abi: Arc::clone(&abi),
@@ -468,17 +479,14 @@ pub(super) fn prepare(
             + std::mem::size_of::<observations::Inputs>()
             + key.len();
         let captured_reads = reads.clone();
-        if let Some(accepted) =
-            store
-                .store
-                .insert_with_receipt(Arc::clone(&key), reads, charge, || {
-                    Artifact::Unit(Arc::new(UnitArtifact {
+        let create=||Artifact::Unit(Arc::new(UnitArtifact {
+                        source:source_witness,
                         inputs,
                         abi,
                         canonical: unit.canonical.clone(),
-                    }))
-                })
-        {
+                    }));
+        let accepted=if source.is_some(){store.store.insert_source_with_receipt(Arc::clone(&key),reads,charge,create)}else{store.store.insert_with_receipt(Arc::clone(&key),reads,charge,create)};
+        if let Some(accepted)=accepted {
             if let Artifact::Unit(artifact) = accepted.as_ref() {
                 batch::record(batch_capture, context.identity, artifact, &captured_reads);
             }

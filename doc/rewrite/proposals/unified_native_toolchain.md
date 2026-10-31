@@ -1289,3 +1289,27 @@ across all ten result fields, including array and diagnostic order. Independent
 whole global/write and annotation oracles also match. These do not certify
 full-project memory admission, retained ABI reuse across rebuilt requests, or a
 client-default cutover. Those remain explicit follow-up work; no limits were raised.
+
+### Retained source reuse and compact policy storage
+
+The explicit source ABI path now reuses original produced roots across genuinely
+rebuilt frontend wrappers. Its retained receipts check the physical source owner,
+original procedure row, root recipe and admission domain before any warm lookup
+or cache claim. Equal source text alone does not certify reuse. Complete-plan
+initializer and dimension inputs share the same checked provenance path.
+
+Global classification now interns persistent graph facts and drops admitted
+per-body scratch before the next body. Nested retained values keep their parent
+charge; errors and unwinding conservatively retain scratch reservations. A native
+source-only global producer uses the original compiled roster and active body
+query context without constructing a raw-source model. A real 129-include test
+covers cancellation, admission refusal, retry, warm reuse and source-read counts.
+The old lexical setter-call policy is shared without acquiring excluded code.
+
+The combined focused cohorts pass 35 distinct tests. Complete frozen old/native
+global and typed-write results match, including traversal through the real root
+ancestor; six complete read results match all ten fields in order. A failed new
+fixture assumption was corrected to the observed old behavior, without changing
+the frozen producer. This remains component proof: the real cold/incremental
+source selection, remaining generators, full-project checker admission and final
+client cutover are still pending. No budget or baseline was raised.

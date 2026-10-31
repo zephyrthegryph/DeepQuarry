@@ -47,27 +47,7 @@ pub fn set_calls(tree: &Tree) -> Arc<BTreeSet<String>> {
     tree.memo("gen/auto-set-calls", || {
         let files = tree.select(&CODE_DM);
         let facts: Vec<Vec<String>> = crate::incr::facts("auto-tracked-set-calls", &files, |f| {
-            let mut out: Vec<String> = Vec::new();
-            if f.rel == AUTO_REL || !SETTER_PREFIXES.iter().any(|p| f.text().contains(p)) {
-                return out;
-            }
-            let call = crate::pat!(r"(?:^|[^\w/])set_(\w+)\s*\(");
-            let list_call = crate::pat!(r"(?:^|[^\w/])(?:(?:add|include|remove|clear|insert|swap|cut)_(\w+)|set_(\w+)_at)\s*\(");
-            for line in f.code().text.lines() {
-                if !line.starts_with(char::is_whitespace) || line.contains("proc/set_") || line.trim_start().starts_with('#') {
-                    continue;
-                }
-                for m in call.captures_iter(line) {
-                    out.push(m.s(1).to_string());
-                }
-                for m in list_call.captures_iter(line) {
-                    let v = if m.s(1).is_empty() { m.s(2) } else { m.s(1) };
-                    out.push(format!("{}{}", v, LIST_CALL));
-                }
-            }
-            out.sort();
-            out.dedup();
-            out
+            crate::auto_setter_calls_policy::collect_file(&mut crate::key_policy_control::Compatibility, &f.rel, f.text(), || &f.code().text).unwrap()
         });
         facts.into_iter().flatten().collect()
     })

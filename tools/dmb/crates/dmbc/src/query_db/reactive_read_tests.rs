@@ -150,3 +150,37 @@ fn actual_full_original_read_fixture_emits_all_ordered_result_fields(){
   let json=String::from_utf8(output.bytes).map_err(io::Error::other)?;println!("NATIVE_READ_FULL={json}");Ok(())
  }).unwrap();}assert_eq!(reads.load(Ordering::Relaxed),before,"native query/output must not reread fixture source");
 }
+
+
+#[test]
+fn actual_native_only_globals_over_large_original_roster_uses_context_body_edges_without_raw_or_io(){
+ const SOURCE:Kind=Kind(247);const GLOBALS:Kind=Kind(248);
+ #[derive(Clone)]struct Files{rows:Arc<std::collections::BTreeMap<PathBuf,String>>,reads:Arc<AtomicUsize>}
+ impl SnapshotProvider for Files{
+  fn stamp(&self,p:&Path)->io::Result<Stamp>{self.reads.fetch_add(1,Ordering::Relaxed);let text=self.rows.get(&dm_preprocess::regions::canonical_path(p)).ok_or(io::ErrorKind::NotFound)?;Ok(Stamp{size:text.len() as u64,modified_ns:1,file_id:Some(1)})}
+  fn read(&self,p:&Path)->io::Result<(Stamp,Vec<u8>)>{self.reads.fetch_add(1,Ordering::Relaxed);let stamp=self.stamp(p)?;Ok((stamp,self.rows[&dm_preprocess::regions::canonical_path(p)].as_bytes().to_vec()))}
+  fn list(&self,p:&Path)->io::Result<FolderListing>{self.reads.fetch_add(1,Ordering::Relaxed);let p=dm_preprocess::regions::canonical_path(p);let mut names=std::collections::BTreeSet::new();for path in self.rows.keys(){if let Ok(rest)=path.strip_prefix(&p){if let Some(component)=rest.components().next(){names.insert(component.as_os_str().to_string_lossy().into_owned());}}}Ok(if names.is_empty(){FolderListing::Missing}else{FolderListing::Present(names.into_iter().collect())})}
+ }
+ let root=std::env::current_dir().unwrap().join("native-only-globals-large-roster");let mut rows=std::collections::BTreeMap::new();let mut manifest=String::new();
+ const CODE:&str="var/global/boot_only_control=0\nvar/global/runtime_only_control=0\n/world/New()\n    initialize_boot_control()\n/proc/initialize_boot_control()\n    boot_only_control=1\n/proc/runtime_control()\n    runtime_only_control=1\n";
+ for i in 0..129{let relative=format!("code/p_{i:03}.dm");manifest.push_str(&format!("#include \"{relative}\"\n"));rows.insert(dm_preprocess::regions::canonical_path(&root.join(relative)),if i==0{CODE.to_owned()}else{"// genuine acquired unused include\n".into()});}
+ rows.insert(dm_preprocess::regions::canonical_path(&root.join("deepquarry.dme")),manifest);let reads=Arc::new(AtomicUsize::new(0));let inputs=RecordingInputs::new(Files{rows:Arc::new(rows),reads:Arc::clone(&reads)},1);let db=Arc::new(QueryDb::default());let seed=reference_hierarchy::seed();let executor=dm_exec::BuildExecutor::new(1).unwrap();
+ let front=dm_tree::frontend::build_with_executor_and_semantic_state_for_policy(&root.join("deepquarry.dme"),&inputs,&Default::default(),dm_tree::frontend::FrontendConfig{workers:1,engine:Some(&seed),observer:None},None,&executor,None,true).unwrap().with_body_queries(db.clone());
+ let policy=Arc::new(dm_analysis::policy_inputs::PolicyInputs::capture(&front,std::iter::empty()).unwrap());assert!(policy.files().filter(|f|f.is_compiled()).count()>128);assert!(policy.files().all(|f|f.view(dm_analysis::policy_inputs::TextView::AnalyzeRaw).is_err()));assert_eq!(db.db.stats(crate::query_db::body_syntax::BODY_SYNTAX).computed,0);
+ let source_key=Key::new(SOURCE,1);let result_key=Key::new(GLOBALS,1);db.db.define_input(SOURCE,"test-native-only-original-policy");let loans=Arc::new(AtomicUsize::new(0));let queried=Arc::clone(&loans);let native_root=root.clone();
+ db.db.define(GLOBALS,"test-native-only-globals-original-context",move|ctx,_|{
+  let captured=ctx.input::<(Arc<dm_analysis::policy_inputs::PolicyInputs>,usize)>(source_key)?;let budget=Budget::new(captured.1).map_err(|e|QueryError::operational(result_key,io::Error::new(io::ErrorKind::OutOfMemory,e)))?;let active=std::cell::RefCell::new(ctx);
+  let body=|input:&Arc<dm_tree::frontend::BodySyntaxInput>|{queried.fetch_add(1,Ordering::Relaxed);crate::query_db::body_syntax::obtain(&mut active.borrow_mut(),input)};
+  let value=dq_analyze::captured_reactive_reads::globals_native(&captured.0,&native_root,&budget,&crate::daemon::control::checkpoint,&body).map_err(|e|match e{Failure::Operational(actual)=>QueryError::operational(result_key,actual),Failure::Unsupported(message)=>QueryError::operational(result_key,io::Error::new(io::ErrorKind::Unsupported,message))})?;
+  let charge=value.retained_charge().ok_or_else(||QueryError::operational(result_key,io::ErrorKind::OutOfMemory.into()))?;
+  Ok(dm_query::Outcome::new(value,captured.0.revision().compiler_source,charge))
+ });
+ let fixed=std::mem::size_of::<Budget>()+2*std::mem::size_of::<usize>();db.db.set_input(source_key,(Arc::clone(&policy),fixed),fixed as u128);let before=reads.load(Ordering::Relaxed);
+ let failed=db.db.get::<GlobalResult>(result_key,Arc::new(())).err().expect("actual cold quota refusal").into_operational().unwrap().into_io();assert_eq!(failed.kind(),io::ErrorKind::OutOfMemory);assert_eq!(loans.load(Ordering::Relaxed),0,"refuse before actual body demand");assert_eq!(db.db.stats(GLOBALS).computed,0);
+ db.db.set_input(source_key,(Arc::clone(&policy),64*1024*1024usize),(64*1024*1024)as u128);let schedule=db.fail_body_syntax_after_for_test(1,io::Error::from_raw_os_error(1450));let failed=db.db.get::<GlobalResult>(result_key,Arc::new(())).err().expect("actual body IO").into_operational().unwrap().into_io();assert_eq!(failed.raw_os_error(),Some(1450));drop(schedule);
+ let value=db.db.get::<GlobalResult>(result_key,Arc::new(())).unwrap();assert!(value.matches(&policy));assert_eq!(db.db.stats(crate::query_db::body_syntax::BODY_SYNTAX).computed,3,"only three real bodies in a129-file original source roster");
+ let mut bytes=[0u8;4096];let mut output=io::Cursor::new(&mut bytes[..]);value.serialize_facts(&mut serde_json::Serializer::new(&mut output)).unwrap();let length=output.position() as usize;drop(output);let actual:serde_json::Value=serde_json::from_slice(&bytes[..length]).unwrap();
+ let expected=serde_json::json!({"globals":{"runtime_written":["runtime_only_control"],"written":["boot_only_control","runtime_only_control"],"runtime_field_written":["runtime_only_control"],"boot_procs":2},"writes":{"written":["boot_only_control","runtime_only_control"],"typed":{"boot_only_control":["/"],"runtime_only_control":["/"]},"untyped":[]}});assert_eq!(actual,expected,"complete tiny original policy result, not selected booleans");
+ let warm=db.db.get::<GlobalResult>(result_key,Arc::new(())).unwrap();assert!(Arc::ptr_eq(&value,&warm));assert_eq!(db.db.stats(GLOBALS).computed,1);assert_eq!(reads.load(Ordering::Relaxed),before,"native source/Globals/serialization do not reacquire original inputs");assert_eq!(db.db.stats(RAW_FILE).computed,0,"no raw-file policy node was manufactured");assert!(db.raw_policy.admission.leases.lock().unwrap().is_empty(),"producer test does not manufacture raw-family inputs or result leases");
+ let actual_body=policy.archive().syntax_inputs().unwrap().first().unwrap();let body_key=Key::new(crate::query_db::body_syntax::BODY_SYNTAX,actual_body.key().into());assert!(db.db.dependants(&[body_key]).contains(&result_key),"actual original Kind4 dynamic edge under parent context");
+}

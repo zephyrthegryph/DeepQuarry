@@ -406,7 +406,6 @@ fn prepare_pinned_source_abi_startup_core<R: Resolver>(
     let sources=original.map(|original|{
         original.validate_for(frontend).map_err(AbiError::unsupported)?;
         if !std::ptr::eq(startup,&**original){return Err(AbiError::invariant("ABI source startup role differs from captured owner"))}
-        if artifacts.is_some(){return Err(AbiError::invariant("source-required ABI entry requires its explicit uncached wave"))}
         let context=frontend.original_declaration_expression_context().map_err(|failure|match failure{dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>AbiError::operational(actual),dm_tree::frontend::BodySyntaxFailure::Syntax(source)=>AbiError::unsupported(source.message)})?;
         Ok(OriginalAbiSources{context,startup:original})
     }).transpose()?;
@@ -449,6 +448,14 @@ fn prepare_pinned_source_abi_startup_core<R: Resolver>(
 pub(crate) fn prepare_original_source_abi_with_startup_on_executor<R:Resolver>(frontend:&ColdFrontend,engine:&EngineSnapshot,resolver:&R,startup:&crate::startup::OriginalStartup<'_>,resource_search_context:Option<u128>,executor:&dm_exec::BuildExecutor)->Result<PreparedPinnedSourceAbi,AbiError>{
  crate::daemon::control::checkpoint().map_err(AbiError::operational)?;
  let result=prepare_pinned_source_abi_startup_core(frontend,engine,resolver,startup,resource_search_context,executor,None,Some(startup));
+ if matches!(&result,Err(error)if error.operational_error().is_some()){return result}crate::daemon::control::checkpoint().map_err(AbiError::operational)?;result
+}
+/// Source role preserves the SAME retained unit store and semantic receipts.
+/// Legacy batch/provisional/disk shortcuts lack native source evidence and stay
+/// confined to ordinary callers; source units use fallible pre-claim admission.
+pub(crate) fn prepare_original_source_abi_with_startup_on_executor_with_artifacts<R:Resolver>(frontend:&ColdFrontend,engine:&EngineSnapshot,resolver:&R,startup:&crate::startup::OriginalStartup<'_>,resource_search_context:Option<u128>,executor:&dm_exec::BuildExecutor,artifacts:Option<&AbiArtifacts>)->Result<PreparedPinnedSourceAbi,AbiError>{
+ crate::daemon::control::checkpoint().map_err(AbiError::operational)?;
+ let result=prepare_pinned_source_abi_startup_core(frontend,engine,resolver,startup,resource_search_context,executor,artifacts,Some(startup));
  if matches!(&result,Err(error)if error.operational_error().is_some()){return result}crate::daemon::control::checkpoint().map_err(AbiError::operational)?;result
 }
 /// Dependency-ready waves borrow one immutable predecessor-layout map. A wave
@@ -521,7 +528,7 @@ fn prepare_source_abi_mode_source_on_executor(
     source:Option<&OriginalAbiSources<'_>>,
 ) -> Result<PreparedSourceAbi, AbiError> {
     let batch_stage = dm_profile::stage("abi.batch.inputs");
-    let batch_inputs = artifacts.and_then(|store| {
+    let batch_inputs = artifacts.filter(|_|source.is_none()).and_then(|store| {
         abi_artifacts::batch::inputs(
             store,
             frontend,
@@ -593,7 +600,7 @@ fn prepare_source_abi_mode_source_on_executor(
     };
     let roster = frontend.callable_roster().map_err(AbiError::unsupported)?;
     let tree = &frontend.snapshot.tree;
-    let scheduled = artifacts
+    let scheduled = artifacts.filter(|_|source.is_none())
         .map(|store| {
             executor.install(|| {
                 abi_scheduler::admitted(
@@ -721,10 +728,11 @@ fn prepare_source_abi_mode_source_on_executor(
                                                 resource_search_context,
                                                 shared_admission.as_ref(),
                                                 batch_capture.as_ref(),
+                                                source,
                                             ),
                                             None => {
                                                 let original=crate::procedure_policy::OriginalFormalTokens::capture(frontend,body,metadata)?;
-                                                let borrowed=OriginalSettingEvaluator{frontend,body,metadata,evaluator,lexical:lexical_statics,source};
+                                                let borrowed=OriginalSettingEvaluator{frontend,body,metadata,evaluator,lexical:lexical_statics,source,roots:None};
                                                 let policy=crate::procedure_policy::CapturedProcedurePolicy{
                                                     evaluator:&borrowed,inherited:&inherited,resource_search_context};
                                                 policy.prepare_view_original(metadata,parsed,&context,&original)

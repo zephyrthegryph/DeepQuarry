@@ -1,7 +1,7 @@
 //! The original name-based boot graph judgement; no parser/type model/cache.
 use std::collections::HashSet;
 #[path="global_compact.rs"]mod compact;
-pub(crate) use compact::Builder as CompactGlobalBuilder;
+pub(crate) use compact::{Builder as CompactGlobalBuilder,Kind as CompactGlobalKind};
 /// The lifecycle procs of a system and a controller: the kernel calls them once, while the world boots.
 pub(crate) const BOOT_PROCS: &[&str] = &["New", "preinit", "initialize", "Initialize", "on_members_ready", "kernel_members_ready", "OnConfigLoad"];
 

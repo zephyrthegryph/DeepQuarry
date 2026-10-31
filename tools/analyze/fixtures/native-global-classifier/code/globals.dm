@@ -37,3 +37,4 @@ var/global/loop_shadow = 0
     GLOB.version_only = 1
 /datum/system/boot/repeated()
     return
+var/global/global_only_control=0

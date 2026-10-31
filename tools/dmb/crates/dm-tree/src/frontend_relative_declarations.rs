@@ -735,6 +735,14 @@ impl DeclarationSyntax {
     /// Authenticate original current source inputs without demanding any body or
     /// setting expression grammar. The native frontend still validates its
     /// actual occurrence and selected runtime metadata before using this seam.
+    pub(super) fn abi_root_owner<'a>(&'a self,span:Span,code:&Arc<BodyCodeIdentity>)->Result<(&'a Arc<crate::procedure::OriginalProcedureHeaders>,Span),dm_syntax::Diagnostic>{let recipe=self.original_body_recipe(span,code)?;recipe.headers.map(|owner|(owner,recipe.relative.span)).ok_or_else(||dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:"ABI original header owner unavailable".into()})}
+    pub(super) fn cached_abi_root(&self,span:Span,code:&Arc<BodyCodeIdentity>,ordinal:usize,count:usize,returns:bool,a:&dm_syntax::SettingAdmission<'_>)->Result<dm_syntax::SettingExpression,dm_syntax::SettingSyntaxFailure>{
+      let recipe=self.original_body_recipe(span,code).map_err(dm_syntax::SettingSyntaxFailure::Syntax)?;
+      let fail=|message:&str|dm_syntax::SettingSyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,message));
+      let headers=recipe.headers.ok_or_else(||fail("ABI original header owner unavailable"))?;let owner=recipe.relative.settings_owner.as_ref().ok_or_else(||fail("ABI original metadata owner unavailable"))?;
+      let root=headers.cached_abi_root(recipe.relative.span,owner,ordinal,count,returns,a)?;
+      root.project_current(recipe.offset,headers.abi_source_len()).map_err(dm_syntax::SettingSyntaxFailure::Operational)
+    }
     pub(crate) fn setting_token_input<'a>(
         &'a self,
         span: Span,

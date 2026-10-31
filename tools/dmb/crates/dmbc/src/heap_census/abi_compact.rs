@@ -81,6 +81,7 @@ fn unit(c: &mut HeapCensus, value: &Arc<UnitArtifact>) -> Option<usize> {
     if !c.arc_object("compact.abi_unit", value) {
         return Some(0);
     }
+    if let Some(source)=&value.source{source.visit_storage(|address,bytes|{c.buffer("compact.abi_source_weak_owner",address,bytes,bytes);});}
     c.shared_procedure_inputs(&value.inputs);
     c.abi(&value.abi);
     let mut private = super::input_indexes::charge(&value.inputs);
@@ -148,6 +149,7 @@ mod tests {
     fn compact_unit_charges_reserved_parameter_map_capacity_without_new_meaning() {
         let mut inputs = dm_codegen_byond::ProcedureInputs::default();
         let original = Arc::new(UnitArtifact {
+            source:None,
             inputs: Arc::new(inputs.clone()),
             abi: Arc::new(crate::procedure_policy::PreparedAbi {
                 layout: Default::default(),
@@ -161,6 +163,7 @@ mod tests {
         assert!(inputs.parameter_types.is_empty());
         let capacity = inputs.parameter_types.capacity();
         let reserved = Arc::new(UnitArtifact {
+            source:None,
             inputs: Arc::new(inputs),
             abi: original.abi.clone(),
             canonical: None,

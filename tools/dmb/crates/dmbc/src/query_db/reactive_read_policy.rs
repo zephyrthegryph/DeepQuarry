@@ -81,11 +81,11 @@ pub(super) fn register(db:&Db,charge:Arc<AtomicUsize>,admission:Arc<Admission>){
    capture.semantic_source_evidence().check(capture.policy().mapping())?;generator_policy::manifest(&capture,&p.root)?;
    config.require_original(capture.configuration_bytes(&p.configuration_path)?)?;
    budget.charge(sources.iter().try_fold(0usize,|n,s|n.checked_add(s.file.path().as_os_str().len().checked_mul(16)?.checked_add(1024)?)).ok_or_else(||{budget.deny();Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"reactive source coordination overflow"))})?)?;
-   let files=sources.iter().map(|s|Arc::clone(&s.file)).collect::<Vec<_>>();
-   let raw=dq_analyze::captured_raw_policy::CapturedRawPolicy::from_shared_files(&p.root,capture.policy(),&config.config,&files)?;
    match &p.request{
-    Request::Globals=>captured_reactive_reads::globals(&raw,capture.policy(),&budget,&poll,&body).map(Value::Globals),
+    Request::Globals=>captured_reactive_reads::globals_native(capture.policy(),&p.root,&budget,&poll,&body).map(Value::Globals),
     Request::Read{receiver,procedure,context:binding,flavor}=>{
+     let files=sources.iter().map(|s|Arc::clone(&s.file)).collect::<Vec<_>>();
+     let raw=dq_analyze::captured_raw_policy::CapturedRawPolicy::from_shared_files(&p.root,capture.policy(),&config.config,&files)?;
      // This is an operation-local loan of an ORIGINAL Db value, not a new
      // retained cache. A root that asks no global/write question never gets it.
      let held=RefCell::new(None::<Arc<Result<Value,String>>>);

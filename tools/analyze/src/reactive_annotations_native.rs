@@ -49,8 +49,8 @@ impl Source for Original<'_,'_,'_>{
   // width. Charge every repeated output prefix, not merely current arg bytes.
   // This intentionally conservative fixture frontier will need count tightening
   // for main; no quota increase or wholeworkspace availability claim.
-  let own=m.args.iter().try_fold(0usize,|n,s|n.checked_add(s.len()));
-  self.reserve(own.and_then(|n|n.checked_add(self.source.raw_width())).and_then(|n|n.checked_mul(32)).and_then(|n|n.checked_add(2048)).and_then(|n|n.checked_mul(m.args.len().checked_add(1)?)))
+  let own=m.args.iter().try_fold(0usize,|n,s|n.checked_add(s.len()));let raw_width=self.source.raw_width()?;
+  self.reserve(own.and_then(|n|n.checked_add(raw_width)).and_then(|n|n.checked_mul(32)).and_then(|n|n.checked_add(2048)).and_then(|n|n.checked_mul(m.args.len().checked_add(1)?)))
  }
  fn admit_relation(&self,owner:&str,name:&str)->Result<(),Failure>{self.poll()?;self.reserve(owner.len().checked_add(name.len()).and_then(|n|n.checked_mul(4)).and_then(|n|n.checked_add(1024)))}
  fn relations(&self,emit:&mut dyn FnMut(&str,&str)->Result<(),Failure>)->Result<(),Failure>{

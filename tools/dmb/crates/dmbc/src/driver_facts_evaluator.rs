@@ -644,7 +644,7 @@ impl DriverEvaluator<'_> {
         admission:&dm_syntax::SettingAdmission<'_>,
     )->Result<(Evaluation,Option<crate::initializer_policy::ScopedPreparedInitializerExpression<'source>>),crate::initializer_policy::InitializerFailure>{
         let static_receipt=input.source_static_receipt();
-        let demand=scalar_demand::Original{context,admission,static_receipt:static_receipt.as_ref()};
+        let demand=scalar_demand::Original{context,admission,static_receipt:static_receipt.as_ref(),roots:None};
         let operation=(||{
         use crate::initializer_policy::{InitializerFailure,ScopedPreparedInitializerExpression};
         context.require_initializer(input).map_err(scalar_demand::source_domain_failure)?;
@@ -671,6 +671,7 @@ pub(super) struct OriginalSettingEvaluator<'source, 'e, 'resolver> {
     pub(super) evaluator: &'e DriverEvaluator<'resolver>,
     pub(super) lexical: bool,
     pub(super) source:Option<&'e OriginalAbiSources<'source>>,
+    pub(super) roots:Option<&'e abi_artifacts::RootCapture>,
 }
 impl OriginalSettingEvaluator<'_, '_, '_> {
     fn require_context(&self, context: &AbiContext<'_>) -> Result<(), AbiError> {
@@ -706,6 +707,8 @@ impl OriginalSettingEvaluator<'_, '_, '_> {
     fn evaluate_original_root(
         &self,
         root: &dm_syntax::SettingExpression,
+        kind:dm_tree::frontend::OriginalAbiExpressionKind,
+        expression:&SymbolicExpression,
         context: &AbiContext<'_>,
     ) -> Result<SemanticValue, AbiError> {
         let procedure = self.lexical.then(|| dm_ir::ProcedureIdentity {
@@ -719,7 +722,8 @@ impl OriginalSettingEvaluator<'_, '_, '_> {
             let receipt=source.startup.source_static_receipt(self.body.declaration);
             let result=scalar_demand::with_admission(&source.context,|admission|{
                 if !root.is_retained_in(admission){return Err(crate::initializer_policy::InitializerFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"ABI setting root budget domain differs from source startup")))}
-                let demand=scalar_demand::Original{context:&source.context,admission,static_receipt:receipt};
+                if let Some(roots)=self.roots{let input=source.context.abi_source_input(self.body,self.metadata).map_err(scalar_demand::source_domain_failure)?;roots.top(&input,kind,expression,root,admission)?;}
+                let demand=scalar_demand::Original{context:&source.context,admission,static_receipt:receipt,roots:self.roots.map(|roots|roots as &dyn abi_artifacts::RootObserver)};
                 let result=self.evaluator.scalar_ast_in_with_features_using(context.identity.owner,root.original_expression(),procedure,&RefCell::new(std::collections::HashSet::new()),None,None,None,&demand);demand.finish(result)
             }).map_err(|failure|match failure{crate::initializer_policy::InitializerFailure::Operational(actual)=>AbiError::operational(actual),crate::initializer_policy::InitializerFailure::Unsupported(reason)=>AbiError::unsupported(reason)})?;
             return result.ok_or_else(||AbiError::unsupported("ABI setting is not a captured scalar"));
@@ -758,7 +762,7 @@ impl CapturedConstantEvaluator for OriginalSettingEvaluator<'_, '_, '_> {
                             AbiError::unsupported("captured scalar expression failed parsing")
                         }
                     })?;
-                self.evaluate_original_root(&root, context)
+                self.evaluate_original_root(&root,dm_tree::frontend::OriginalAbiExpressionKind::ReturnAnnotation,expression,context)
             }
             Site::SettingCondition => Err(AbiError::unsupported(
                 "native conditional setting metadata has no original source issuer",
@@ -783,7 +787,7 @@ impl CapturedConstantEvaluator for OriginalSettingEvaluator<'_, '_, '_> {
                     AbiError::unsupported("captured scalar expression failed parsing")
                 }
             })?;
-        self.evaluate_original_root(&root, context)
+        self.evaluate_original_root(&root,dm_tree::frontend::OriginalAbiExpressionKind::Setting,expression,context)
     }
 }
 impl CapturedConstantEvaluator for DriverEvaluator<'_> {
@@ -904,7 +908,7 @@ impl CapturedInitializerEvaluator for DriverEvaluator<'_> {
     fn evaluate_original_dimension_checked(&self,input:&dm_tree::frontend::OriginalInitializerDimensionInput<'_>,write:&dm_ir::InitializerWrite)->Result<Evaluation,crate::initializer_policy::InitializerFailure>{
       use crate::initializer_policy::InitializerFailure;
       let context=input.declaration_context();let receipt=input.source_static_receipt();
-      scalar_demand::with_admission(&context,|admission|{let demand=scalar_demand::Original{context:&context,admission,static_receipt:receipt.as_ref()};
+      scalar_demand::with_admission(&context,|admission|{let demand=scalar_demand::Original{context:&context,admission,static_receipt:receipt.as_ref(),roots:None};
        let result=(||{
         // The sealed dimension input supplies source authority. Equality only
         // checks that the caller did not adapt its lexical/target policy.
@@ -919,7 +923,7 @@ impl CapturedInitializerEvaluator for DriverEvaluator<'_> {
       use crate::initializer_policy::InitializerFailure;
       let context=input.declaration_context();let receipt=input.source_static_receipt();
       scalar_demand::with_admission(&context,|admission|{
-       let demand=scalar_demand::Original{context:&context,admission,static_receipt:receipt.as_ref()};
+       let demand=scalar_demand::Original{context:&context,admission,static_receipt:receipt.as_ref(),roots:None};
        let result=(||{context.require_initializer(input).map_err(scalar_demand::source_domain_failure)?;require_original_adaptation(input,write)?;
         let current=input.prepare(admission).map_err(scalar_demand::source_failure)?;
         if !root.same_root(&current)||!original_subtree(current.ast(),ast,admission)?{return Err(InitializerFailure::Unsupported("initializer helper subtree is not original current source".into()))}
@@ -1286,6 +1290,7 @@ mod original_setting_tests {
                 evaluator: &driver,
                 lexical: false,
                 source:None,
+            roots:None,
             };
             let first_body = (!abi_first).then(|| body_root(&front));
             SCALAR_TEXT_PARSES.with(|n| n.set(0));
@@ -1390,6 +1395,7 @@ mod original_setting_tests {
             evaluator: &driver,
             lexical: false,
                 source:None,
+            roots:None,
         }
         .evaluate(value, &context)
         .unwrap_err();
@@ -1492,6 +1498,7 @@ mod original_setting_tests {
             evaluator: &evaluator,
             lexical: false,
                 source:None,
+            roots:None,
         }
         .evaluate(expression, &context)
         .unwrap();
@@ -1707,6 +1714,7 @@ mod original_setting_tests {
                 evaluator: &driver,
                 lexical: false,
                 source:None,
+            roots:None,
             };
             SCALAR_TEXT_PARSES.with(|n| n.set(0));
             let actual = procedure_abi::prepare_verified_procedure_original_tokens_with_sites(

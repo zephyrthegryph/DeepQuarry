@@ -2,6 +2,9 @@
 //! classification until typed initializer operational transport is complete.
 use super::*;
 use dm_ir::{InitializerValue, SymbolicExpression};
+#[path="frontend_initializer_provenance.rs"]
+mod provenance;
+pub use provenance::OriginalInitializerRootProvenance;
 
 /// Original source is BORROWED from its authenticated current owner. Only the
 /// canonical AST root is retained, under its existing SAME-counter lease. No
@@ -34,6 +37,11 @@ impl OriginalInitializerExpression<'_> {
     /// Borrow original immutable syntax for shape only. Its coordinates may
     /// precede a warm current prefix; use source_text/project_span explicitly.
     pub fn ast(&self)->&dm_syntax::Expr{self.root.ast()}
+    /// Storage-only original owner/slot observation. No AST/source alias escapes.
+    pub fn provenance(&self)->OriginalInitializerRootProvenance{provenance::issue(self)}
+    /// Borrow-only preflight: caller admits the fixed Weak backing BEFORE
+    /// creating/storing provenance. This does not clone a Weak/root/source.
+    pub fn provenance_weak_backing_charge(&self)->usize{match &self.root{OriginalInitializerRoot::Header(_)=>std::mem::size_of::<crate::procedure::OriginalProcedureHeaders>(),OriginalInitializerRoot::Static(_)=>std::mem::size_of::<StatementBody>()}}
     /// A flat original-coordinate source exists only for header roots.
     pub fn flat_source(&self)->Option<&str>{matches!(&self.root,OriginalInitializerRoot::Header(_)).then_some(self.source)}
     pub fn project_span(&self,span:dm_syntax::Span)->Option<dm_syntax::Span>{
@@ -314,6 +322,9 @@ pub struct OriginalDeclarationExpressionContext<'source>{
 }
 impl std::fmt::Debug for OriginalDeclarationExpressionContext<'_>{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.write_str("OriginalDeclarationExpressionContext")}}
 impl<'source> OriginalDeclarationExpressionContext<'source>{
+    /// The context has already authenticated the complete immutable source mapping.
+    pub fn abi_source_input(&self,body:&BodyOccurrence,metadata:&dm_ir::ProcedureMetadata)->Result<OriginalAbiSourceInput<'source>,BodySyntaxFailure>{abi_source::OriginalAbiSourceInput::issue(self.frontend,body,metadata)}
+
     /// One existing-host admission for a whole scalar traversal, including
     /// transitive selected roots. The permit never becomes source authority.
     pub fn with_admission(&self,operation:&mut dyn FnMut(&dm_syntax::SettingAdmission<'_>)->Result<(),BodySyntaxFailure>)->Result<(),BodySyntaxFailure>{
@@ -1223,6 +1234,7 @@ mod tests {
       let copied=data.as_ref().clone();declarations.with_admission(&mut|a|{assert!(declarations.selected_static_admitted(&receipt,copied.identity,&copied,a).is_err(),"equal cloned metadata cannot issue static source");Ok(())}).unwrap();
       let calls=std::cell::Cell::new(0);let stop=||{let n=calls.get()+1;calls.set(n);if n==2{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(())}};let failed=dm_syntax::SettingAdmission::new(&counter,128*1024*1024,&stop);
       let error=declarations.selected_static_admitted(&receipt,data.identity,data,&failed).err().expect("actual bounded row poll");assert!(matches!(error,BodySyntaxFailure::Operational(ref actual) if actual.raw_os_error()==Some(1450)));
+      let aliases=Arc::strong_count(&parent);let provenance=root.provenance();assert_eq!(Arc::strong_count(&parent),aliases,"static provenance retains no parent/AST strong alias");assert_eq!(provenance.weak_backing_charge(),std::mem::size_of::<StatementBody>());
       let recipe=root.into_recipe();let relative=receipt.relative_payload().unwrap();
       let padded=static_front(&mut state,q_chunk("// current prefix\n\n",333),&host);
       let current_body=padded.bodies.iter().find(|body|padded.snapshot.tree.member(body.member).unwrap().name==dm_ir::SymbolId::of("p")).unwrap();
@@ -1232,7 +1244,7 @@ mod tests {
       let current_context=padded.original_issued_initializer_context(&current).unwrap();let current_input=current_context.input(1).unwrap();
       let warm=recipe.reborrow(&current_input).unwrap().unwrap();assert!(std::ptr::eq(warm.ast(),original));assert_eq!(warm.source_text(warm.ast().span),Some("3+4"));assert_eq!(&padded.expanded.text[warm.current_span().range()],"3+4");assert_ne!(warm.current_span(),warm.ast().span);
       let warm_dimension=dimension_recipe.reborrow_dimension(&current_context.dimension_input(2,0).unwrap()).unwrap().unwrap();assert_eq!(warm_dimension.ast() as *const dm_syntax::Expr,dimension_pointer);assert_eq!(warm_dimension.source_text(warm_dimension.ast().span),Some("2+1"));assert_eq!(&padded.expanded.text[warm_dimension.current_span().range()],"2+1");
-      let current_declarations=current_input.declaration_context();let mut selected_current=None;current_declarations.with_admission(&mut|a|{selected_current=Some(current_declarations.selected_static_admitted(&rebound,data.identity,data,a)?);Ok(())}).unwrap();let selected_warm=recipe.reborrow_declaration(&selected_current.unwrap()).unwrap().unwrap();assert!(std::ptr::eq(selected_warm.ast(),original));assert_eq!(selected_warm.current_span(),warm.current_span());
+      let current_declarations=current_input.declaration_context();let mut selected_current=None;current_declarations.with_admission(&mut|a|{selected_current=Some(current_declarations.selected_static_admitted(&rebound,data.identity,data,a)?);Ok(())}).unwrap();let selected_current=selected_current.unwrap();current_declarations.with_admission(&mut|a|{assert!(provenance.matches_declaration(&selected_current,a)?);Ok(())}).unwrap();let selected_warm=recipe.reborrow_declaration(&selected_current).unwrap().unwrap();assert!(std::ptr::eq(selected_warm.ast(),original));assert_eq!(selected_warm.current_span(),warm.current_span());
       assert!(padded.original_issued_initializer_context(&issued).is_err(),"body source frame cannot be supplied by old complete plan");
       let check=||Ok(());let other=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&other,128*1024*1024,&check);
       assert!(matches!(current_input.prepare(&a),Err(BodySyntaxFailure::Operational(ref e)) if e.kind()==std::io::ErrorKind::InvalidInput));
@@ -1285,6 +1297,31 @@ mod tests {
       let host=Arc::new(OriginalHost(Arc::new(AtomicUsize::new(0)))) as Arc<dyn SettingExpressionQueries>;
       let front=front("var/static/list/as[1+2]\n",&host);let plan=crate::initializers::capture_declaration_plan(&front.snapshot,&front.emission_order).unwrap();assert!(matches!(plan.plan().writes[0].value,InitializerValue::ArrayAllocation(_)),"fixture must retain its implicit no-RHS allocation");let context=front.original_initializer_context(&plan).unwrap();
       let rows=context.dimensions(0).unwrap().collect::<Result<Vec<_>,_>>().unwrap();assert_eq!(rows.len(),1);let root=rows[0].1.as_ref().unwrap().expression().unwrap();assert_eq!(root.source_text(root.ast().span),Some("1+2"));
+    }
+
+    fn provenance_selected(front:&ColdFrontend)->OriginalDeclarationExpressionInput<'_>{
+      let owner=dm_ir::SymbolId::of("/");let name=dm_ir::SymbolId::of("value");let tree=&front.snapshot.tree;let member=tree.resolve(tree.lookup_type(owner).unwrap(),name,crate::MemberKind::Var).unwrap();front.original_declaration_expression_context().unwrap().selected(owner,name,&tree.member(member).unwrap().metadata).unwrap()
+    }
+    #[test]
+    fn original_root_provenance_keeps_no_ast_and_foreign_equal_owner_declines_before_prepare(){
+      let counter=Arc::new(AtomicUsize::new(0));let host=Arc::new(OriginalHost(counter.clone())) as Arc<dyn SettingExpressionQueries>;
+      let provenance={let current=front("var/const/value=unknown+1\n",&host);let input=provenance_selected(&current);let root=input.expression().unwrap();let backing=root.provenance_weak_backing_charge();let provenance=root.provenance();assert_eq!(provenance.weak_backing_charge(),backing);let check=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,128*1024*1024,&check);assert!(provenance.matches_declaration(&input,&a).unwrap());assert!(provenance.weak_backing_charge()>0);let mut buffers=Vec::new();provenance.visit_storage(|address,bytes|buffers.push((address,bytes)));assert_eq!(buffers.len(),1);assert_eq!(buffers[0].1,provenance.weak_backing_charge());provenance};
+      assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),0,"weak provenance does not retain original AST/slot lease after actual source owner drops");
+      let foreign=front("var/const/value=unknown+1\n",&host);let input=provenance_selected(&foreign);let before=counter.load(std::sync::atomic::Ordering::Acquire);let check=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,128*1024*1024,&check);assert!(!provenance.matches_declaration(&input,&a).unwrap());assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),before,"equal-text foreign owner decline cannot parse/allocate a replacement root");
+      let current=input.prepare(&a).unwrap();let current=current.provenance();assert!(current.matches_declaration(&input,&a).unwrap());
+      let other=Arc::new(AtomicUsize::new(0));let foreign_counter=dm_syntax::SettingAdmission::new(&other,128*1024*1024,&check);assert!(matches!(current.matches_declaration(&input,&foreign_counter),Err(BodySyntaxFailure::Operational(ref error))if error.kind()==std::io::ErrorKind::InvalidInput));
+      let stop=||Err(std::io::Error::from_raw_os_error(1450));let stopped=dm_syntax::SettingAdmission::new(&counter,128*1024*1024,&stop);assert!(matches!(current.matches_declaration(&input,&stopped),Err(BodySyntaxFailure::Operational(ref error))if error.raw_os_error()==Some(1450)));assert!(current.matches_declaration(&input,&a).unwrap());
+    }
+    #[test]
+    fn original_root_provenance_reissues_same_header_slot_across_current_prefix_mapping(){
+      let counter=Arc::new(AtomicUsize::new(0));let host=Arc::new(OriginalHost(counter.clone())) as Arc<dyn SettingExpressionQueries>;let mut state=RetainedSemanticTree::default();let old=included(&mut state,&host,q_chunk("",1));let first=provenance_selected(&old).expression().unwrap();let pointer=first.ast() as *const dm_syntax::Expr;let span=first.current_span();let provenance=first.provenance();drop(first);
+      let current=included(&mut state,&host,q_chunk("// changed earlier include\n\n",333));let input=provenance_selected(&current);let check=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,128*1024*1024,&check);assert!(provenance.matches_declaration(&input,&a).unwrap());let warm=input.prepare(&a).unwrap();assert_eq!(warm.ast() as *const dm_syntax::Expr,pointer);assert_ne!(warm.current_span(),span);assert_eq!(&current.expanded.text[warm.current_span().range()],"1+2");
+    }
+
+    #[test]
+    fn original_root_provenance_reissues_actual_private_rhs_and_distinct_dimension_inputs(){
+      let counter=Arc::new(AtomicUsize::new(0));let host=Arc::new(OriginalHost(counter.clone())) as Arc<dyn SettingExpressionQueries>;let current=front("var/static/list/value[1+2][][3+4]=null\n",&host);let plan=crate::initializers::capture_declaration_plan(&current.snapshot,&current.emission_order).unwrap();let context=current.original_initializer_context(&plan).unwrap();let rhs=context.input(0).unwrap();let dimension=context.dimension_input(0,0).unwrap();let other=context.dimension_input(0,2).unwrap();let check=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,128*1024*1024,&check);
+      let rhs_root=rhs.prepare(&a).unwrap().provenance();let dimension_root=dimension.prepare(&a).unwrap().provenance();assert!(rhs_root.matches_initializer(&rhs,&a).unwrap());assert!(dimension_root.matches_dimension(&dimension,&a).unwrap());let before=counter.load(std::sync::atomic::Ordering::Acquire);assert!(!rhs_root.matches_dimension(&dimension,&a).unwrap());assert!(!dimension_root.matches_initializer(&rhs,&a).unwrap());assert!(!dimension_root.matches_dimension(&other,&a).unwrap());assert_eq!(counter.load(std::sync::atomic::Ordering::Acquire),before,"wrong role/suffix declines before preparing a different original root");
     }
 
 }

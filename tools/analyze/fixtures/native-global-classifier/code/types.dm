@@ -27,3 +27,7 @@
 /datum/system/boot/proc/initialize_more()
     var/datum/singleton/S
     S.fill()
+/datum/global_owner_control
+    proc/missing_field_is_not_global()
+        var/datum/global_owner_control/P=src
+        P.global_only_control=1

@@ -196,7 +196,7 @@ impl<'a,'source,'op> Walk<'a,'source,'op>{
  fn internal_read(&self,rel:&str,owner:&str,name:&str)->Result<bool,Failure>{
   if !crate::reactive_read_facts::framework_file(rel){return Ok(false)}
   if matches!(name,"contents"|"overlays"|"underlays"){return Ok(true)}
-  Ok(self.source.variable(owner,name)?.and_then(|v|v.file).is_some_and(crate::reactive_read_facts::framework_file))
+  Ok(self.source.variable(owner,name)?.is_some_and(|v|v.file.as_deref().is_some_and(crate::reactive_read_facts::framework_file)))
  }
  fn record_read(&mut self,rel:&str,root:&Root,mut read:Read)->Result<(),Failure>{
   if !self.lookup_read(rel,root,&mut read)?{return Ok(())}
@@ -267,7 +267,7 @@ impl<'a,'source,'op> Walk<'a,'source,'op>{
   if let Some(ty)=&fr.this.ty{if self.source.variable(ty,name)?.is_some_and(|v|v.owner!="/"){return Ok(None)}}
   let Some(variable)=self.source.variable("/",name)?else{return Ok(None)};if variable.owner!="/"{return Ok(None)}
   let globals=self.directives.globals.ok_or("native global write/boot classifier is not yet issued")?;
-  if name!="GLOB"&&self.mute==0&&!variable.is_const&&!globals.constant_after_init(name)?&&!self.global_internal(fr,name,&variable.declared,variable.file)?{self.diag(fr,"untracked_global",format_args!("{}",name))?;}
+  if name!="GLOB"&&self.mute==0&&!variable.is_const&&!globals.constant_after_init(name)?&&!self.global_internal(fr,name,&variable.declared,variable.file.as_deref())?{self.diag(fr,"untracked_global",format_args!("{}",name))?;}
   let object=is_object(&variable.declared);let ty=(!variable.declared.is_empty()).then_some(variable.declared);
   if object{self.reserve(name.len().checked_mul(4).and_then(|n|n.checked_add(256)))?;Ok(Some(Value{ty,root:Root::Global(name.to_owned()),hops:Vec::new(),hop_ok:true,list:false,blame:None}))}else{Ok(Some(Value::local(ty)))}
  }
@@ -280,7 +280,7 @@ impl<'a,'source,'op> Walk<'a,'source,'op>{
    let read=Read{root:format!("system:{system}"),hops:Vec::new(),var:name.to_owned(),owner:ty.to_owned(),kind:ReadKind::System,hop_ok:true};self.record_read(&fr.rel,&Root::Local,read)?;
   }else if self.mute==0{
    let constant=variable.is_const||if is_glob{globals.constant_after_init(name)?}else{!globals.is_written_on(self.source,ty,name)?||(globals.field_constant_after_init(name)?&&!self.directives.facts.is_relation(self.source,ty,name)?)};
-   if !constant&&!self.global_internal(fr,name,if is_glob{&variable.declared}else{ty},variable.file)?{self.diag(fr,"untracked_global",format_args!("{}",child))?;}
+   if !constant&&!self.global_internal(fr,name,if is_glob{&variable.declared}else{ty},variable.file.as_deref())?{self.diag(fr,"untracked_global",format_args!("{}",child))?;}
   }
   let object=is_object(&variable.declared);let declared=(!variable.declared.is_empty()).then_some(variable.declared);
   if object&&child.matches('.').count()<MAX_HOPS{Ok(Value{ty:declared,root:Root::Global(child),hops:Vec::new(),hop_ok:true,list:false,blame:None})}else{Ok(Value::local(declared))}

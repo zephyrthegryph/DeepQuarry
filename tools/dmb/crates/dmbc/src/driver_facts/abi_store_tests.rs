@@ -52,6 +52,7 @@ fn inputs(engine: &Arc<crate::runner_host::EnginePayload>) -> Arc<Inputs> {
 
 fn unit() -> Artifact {
     Artifact::Unit(Arc::new(UnitArtifact {
+            source:None,
         canonical: None,
         inputs: Arc::new(ProcedureInputs::default()),
         abi: Arc::new(PreparedAbi {

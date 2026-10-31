@@ -543,9 +543,12 @@ mod relative_declarations;
 pub use body_code::IssuedBodyCode;
 #[path = "frontend_body_queries.rs"]
 mod body_queries;
+#[path = "frontend_abi_source.rs"]
+mod abi_source;
+pub use abi_source::{OriginalAbiSourceInput,OriginalAbiExpressionKind,OriginalAbiExpressionProvenance};
 #[path = "frontend_initializer_source.rs"]
 mod initializer_source;
-pub use initializer_source::{OriginalInitializerDimensionInput,OriginalInitializerDimensions,
+pub use initializer_source::{OriginalInitializerRootProvenance,OriginalInitializerDimensionInput,OriginalInitializerDimensions,
     OriginalDeclarationExpressionContext, OriginalDeclarationExpressionInput,
     InitializerExpressionRecipe, OriginalInitializerContext, OriginalInitializerExpression,
     OriginalInitializerExpressionInput,

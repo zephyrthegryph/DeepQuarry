@@ -133,6 +133,7 @@ impl HeapCensus {
     }
     fn abi_unit_artifact(&mut self, unit: &Arc<crate::driver_facts::abi_artifacts::UnitArtifact>) {
         if self.arc_object("prepared_abi.unit_payload", unit) {
+            if let Some(source)=&unit.source{source.visit_storage(|address,bytes|{self.buffer("prepared_abi.source_weak_owner",address,bytes,bytes);});self.unknown("prepared_abi.source_weak_owner","fixed Weak payloads counted; standard Arc control blocks/allocator overhead remain unexposed");}
             self.shared_procedure_inputs(&unit.inputs);
             self.abi(&unit.abi);
             if let Some(certificate) = &unit.canonical {
