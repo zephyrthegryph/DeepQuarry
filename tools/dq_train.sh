@@ -518,11 +518,35 @@ bump_push_refusals() { # <branch>: counts non-"master moved" push refusals in th
 	echo "$n"
 }
 
-est_secs() { # test names...
-	local dirs=() d runs
+# A JS runtime for the estimator: node on PATH, else the usual install places, else bun (the script uses only fs and path). The failures come in whole integrator processes (pid 8273: 7 of 8 cycles),
+# so the environment, not the data: the train runs detached, often from a shell whose PATH lacks node: 52 of 806 cycles on 30-31 October read "est ~9999s" (a silent `|| echo 9999`),
+# which rejected every batch candidate past the first (select_prechecked, "union would be ~9999s") and made the cycles one lane each.
+est_runtime() {
+	local c
+	for c in node "/d/Program Files/nodejs/node" "/c/Program Files/nodejs/node" "D:/Program Files/nodejs/node.exe" "C:/Program Files/nodejs/node.exe" bun "${DQ_BUN_CACHE:-E:/dq-cache/bun}/bun"; do
+		if command -v "$c" >/dev/null 2>&1; then echo "$c"; return 0; fi
+	done
+	return 1
+}
+est_secs() { # test names...: seconds the tests need. Never fails: a broken estimator is logged loudly and the no-history default is used.
+	local dirs=() d runs rt out rc err n
 	runs="${DQ_TRAIN_RUNS_DIRS:-$(repo_dir)/data/test-runs E:/projects/dq-wt/merge-base/data/test-runs}"
 	for d in $runs; do dirs+=(--runs "$d"); done
-	node "$SELF_DIR/dq_train_estimate.js" "${dirs[@]}" "$@" 2>/dev/null || echo 9999
+	err="${TMPDIR:-/tmp}/dq_est_err.$$"
+	if rt="$(est_runtime)"; then
+		out="$("$rt" "$SELF_DIR/dq_train_estimate.js" "${dirs[@]}" "$@" 2>"$err")"; rc=$?
+		case "$out" in ''|*[!0-9]*) [ "$rc" -eq 0 ] && rc=65 ;; esac
+		if [ "$rc" -eq 0 ]; then rm -f "$err"; echo "$out"; return 0; fi
+		d="exit $rc via $rt: $(head -c 400 "$err" 2>/dev/null | tr '\n' ' ')"
+	else
+		d="no node or bun found on PATH ($PATH)"
+	fi
+	rm -f "$err"
+	# the estimator's own answer with no history: its base 30 s plus 20 s per distinct test. Never a 9999 that blocks the batch.
+	n="$(printf '%s\n' "$@" | sed 's#^/datum/unit_test/##' | sort -u | grep -c .)"
+	# stdout of this function is the value (callers use $(...)), so the loud line goes straight to the log file and to stderr
+	echo "$(now) train[$$]: ESTIMATOR FAILED ($d); using the no-history default 30+20*$n s for $n test(s)" | tee -a "${LOGS:-/dev/null}/train.log" >&2
+	echo $(( 30 + 20 * n ))
 }
 
 # ---- prechecks: every heavy lane gated ALONE on current master before it may join a batch ------------------------------------------
