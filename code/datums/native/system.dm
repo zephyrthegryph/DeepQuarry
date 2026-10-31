@@ -34,6 +34,10 @@
 	/// The `frame.us.*` counters at the last slow-frame report, so the next report names the phases that grew (NATIVE_SLOW_FRAME_MS).
 	var/list/slow_frame_prev
 	var/slow_frames = 0
+	/// The slow-frame log's rate limit: when this minute began (REALTIMEOFDAY), the lines it has logged, and the reports it held back since the last line.
+	var/slow_log_minute_start = 0
+	var/slow_log_lines = 0
+	var/slow_log_held_back = 0
 	/// The last delivery's time per record kind, ms (changed, notices, crossed), and its slowest single record: how long it took and what it was.
 	var/delivery_changed_ms = 0
 	var/delivery_notices_ms = 0
@@ -107,20 +111,39 @@
 /// previous slow frame: a multi-second frame names its phase here instead of showing as an anonymous om_native overrun.
 /datum/system/native/proc/report_slow_frame(vg_ms = 0)
 	slow_frames++
-	if(slow_frames > NATIVE_SLOW_FRAME_LOG_MAX)
+	if(abs(REALTIMEOFDAY - slow_log_minute_start) >= 1 MINUTES)
+		slow_log_minute_start = REALTIMEOFDAY
+		slow_log_lines = 0
+	if(last_frame_ms < NATIVE_STALL_FRAME_MS && slow_log_lines >= NATIVE_SLOW_FRAME_LOG_PER_MINUTE)
+		slow_log_held_back++
 		return
+	slow_log_lines++
+	var/held_back = slow_log_held_back
+	slow_log_held_back = 0
 	var/list/rust = verdigris_metrics_list()
 	var/list/now_us = list()
 	for(var/name in rust)
 		if(findtext(name, "frame.slow_us.") == 1 && isnum(rust[name]))
 			now_us[name] = rust[name]
+	// What the machine did while the slow frames ran (frame.slow_n.*: counts, not milliseconds), and the priority class the server had.
+	var/list/os_counts = list()
+	for(var/name in rust)
+		if(findtext(name, "frame.slow_n.") == 1 && isnum(rust[name]))
+			now_us[name] = rust[name]
 	var/list/grew = list()
 	for(var/name in now_us)
 		var/delta = now_us[name] - (slow_frame_prev ? slow_frame_prev[name] : 0)
-		if(delta >= 1000)
+		if(findtext(name, "frame.slow_n.") == 1)
+			if(delta > 0)
+				os_counts[copytext(name, 14)] = delta
+		else if(delta >= 1000)
 			grew[copytext(name, 15)] = round(delta / 1000, 0.1)
 	slow_frame_prev = now_us
-	log_world("NATIVE_SLOW_FRAME: frame [frames] took [round(last_frame_ms, 0.1)] ms, of which vg_frame [round(vg_ms, 0.1)] ms and delivery [round(last_frame_ms - vg_ms, 0.1)] ms (records [last_records], changed [last_changed], notices [last_notices]); delivery ms by kind: changed [round(delivery_changed_ms, 0.1)], notices [round(delivery_notices_ms, 0.1)], crossed [round(delivery_crossed_ms, 0.1)], slowest record [round(last_slowest_ms, 0.1)] ms ([last_slowest]); Rust phases of the slow frames since the previous report, ms (frame.slow_us.*, empty when Rust saw no frame over 20 ms): [json_encode(grew)]")
+	if(isnum(rust["frame.priority_class"]))
+		os_counts["priority_class"] = rust["frame.priority_class"]
+	if(held_back)
+		os_counts["reports_held_back_by_the_rate_limit"] = held_back
+	log_world("NATIVE_SLOW_FRAME: frame [frames] took [round(last_frame_ms, 0.1)] ms, of which vg_frame [round(vg_ms, 0.1)] ms and delivery [round(last_frame_ms - vg_ms, 0.1)] ms (records [last_records], changed [last_changed], notices [last_notices]); delivery ms by kind: changed [round(delivery_changed_ms, 0.1)], notices [round(delivery_notices_ms, 0.1)], crossed [round(delivery_crossed_ms, 0.1)], slowest record [round(last_slowest_ms, 0.1)] ms ([last_slowest]); Rust phases of the slow frames since the previous report, ms (frame.slow_us.*, empty when Rust saw no frame over 20 ms; os_machine_busy against os_machine_capacity is the share of the whole machine in use, os_process_cpu the server's own CPU): [json_encode(grew)]; counts over the same frames (page_faults, io_ops) and the server's priority class (16384 below normal, 32 normal, 32768 above normal): [json_encode(os_counts)]")
 
 /// Test hook: drains what Rust holds now without pacing it (after vg_world_run_steps()).
 /datum/system/native/proc/drain()
