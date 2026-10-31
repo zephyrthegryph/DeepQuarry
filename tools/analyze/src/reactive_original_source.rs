@@ -125,11 +125,49 @@ impl<'a> ReadSource<'a>{
         ],false,checkpoint)
     }
 
+    /// Borrow authenticated RAW-policy code views only. These include inactive
+    /// text and cannot issue compiled BodySyntax/declaration/source receipts.
+    pub(crate) fn with_reaction_code<'borrow>(&'borrow self,hint:&str,mut visit:impl FnMut(&'borrow str,&'borrow crate::tree::View)->Result<bool,crate::reactive_reads_native::Failure>)->Result<(),crate::reactive_reads_native::Failure>{
+        use crate::reactive_reads_native::Failure;
+        let pending:Result<(),Failure>=(||{
+            self.checkpoint()?;self.require()?;let raw=self.raw()?;
+            for file in raw.tree.files.iter().filter(|file|crate::tree::CODE_DM.matches(file)){
+                self.checkpoint()?;self.require()?;
+                file.require_view_budget().map_err(|message|Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))?;
+                if !file.text().contains(hint){continue}
+                let code=file.code();file.require_view_budget().map_err(|message|Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))?;self.require()?;
+                if !visit(&file.rel,code)?{break}
+            }
+            raw.tree.captured_violation().map_or(Ok(()),Err)?;Ok(())
+        })();
+        if matches!(&pending,Err(Failure::Operational(_))){return pending}self.checkpoint()?;
+        if self.budget.denied(){return Err(Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"reaction raw-policy admission refused")))}pending
+    }
+
+    /// Original Decls define roster through the SAME marker-text header policy.
+    /// Entries are not retained here; this is policy data, never source authority.
+    pub(crate) fn dependency_defines(&self)->Result<std::collections::BTreeSet<String>,crate::reactive_reads_native::Failure>{
+        use crate::reactive_reads_native::Failure;
+        self.checkpoint()?;self.require()?;let raw=self.raw()?;let mut defines=std::collections::BTreeSet::new();
+        for file in raw.tree.files.iter().filter(|file|crate::tree::CODE_DM.matches(file)){
+            self.checkpoint()?;file.require_view_budget().map_err(|message|Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))?;
+            let marker=file.marker();file.require_view_budget().map_err(|message|Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))?;self.require()?;
+            crate::raw_key_calls_policy::visit_headers_admitted(marker.as_str(),|_,_|{},|name|{defines.insert(name.to_owned());},|bytes|{self.checkpoint()?;self.budget.charge(bytes).map_err(|message|Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))},||{self.budget.deny();Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"dependency define capacity overflow"))})?;
+        }
+        raw.tree.captured_violation().map_or(Ok(()),Err)?;self.checkpoint()?;self.require()?;Ok(defines)
+    }
+
     /// Full dependency declarations use the SAME first-statement projectors as
     /// legacy Decls; no body syntax demand or source acquisition occurs here.
     pub(crate) fn dependency_marker_rows(&self)->Result<crate::captured_marker_rows::Rows<'a>,crate::reactive_reads_native::Failure>{
         self.checkpoint()?;self.require()?;
-        crate::captured_marker_rows::collect_full_admitted(self.raw()?,&self.order,self.budget,&["READS_AS","PROC_SUMMARY","READ_LOOKUP","CAPABILITY_TYPE","CAPABILITY_DEF","cap_keys","SYSTEM_ACCESSOR","READS_FROM","CAPABILITIES","STAT"],true,true,true,&mut||{self.checkpoint()?;self.require().map_err(crate::reactive_reads_native::Failure::from)})
+        let mut rows=crate::captured_marker_rows::collect_full_admitted(self.raw()?,&self.order,self.budget,&["READS_AS","PROC_SUMMARY","READ_LOOKUP","CAPABILITY_TYPE","CAPABILITY_DEF","cap_keys","SYSTEM_ACCESSOR","READS_FROM","CAPABILITIES","STAT"],true,true,true,&mut||{self.checkpoint()?;self.require().map_err(crate::reactive_reads_native::Failure::from)})?;
+        // Original Decls performs a stable final include-rank/file/LINE sort.
+        // Runtime observers are discovered in a separate lexical pass, so an
+        // append-only roster would change first-handler consumer meaning.
+        self.reserve(rows.markers.len().checked_mul(std::mem::size_of::<crate::captured_marker_rows::OwnedMarker>()).and_then(|n|n.checked_mul(2)).and_then(|n|n.checked_add(128)))?;
+        rows.markers.sort_by(|a,b|(self.order.get(&a.rel).copied().unwrap_or(usize::MAX),a.rel.as_str(),a.line).cmp(&(self.order.get(&b.rel).copied().unwrap_or(usize::MAX),b.rel.as_str(),b.line)));
+        self.checkpoint()?;self.require()?;Ok(rows)
     }
 
     pub(crate) fn raw_metadata<E:From<String>>(&self,checkpoint:impl FnMut()->Result<(),E>,mut emit:impl FnMut(crate::raw_reactive_metadata_policy::Event<'_>)->Result<(),E>)->Result<(),E>{
@@ -291,6 +329,7 @@ impl<'a> ReadSource<'a>{
         self.require()?;
         let archive=self.inputs.archive();let tree=archive.tree();
         let profile=tree.checker_builtin_profile().ok_or("reactive callable profile absent")?;
+        if !tree.checker_source_type_presence(profile,receiver).map_err(|e|format!("{e:?}"))?{return Ok(SelectedCallable::Missing)}
         // callable_any asks both kind-qualified source chains and ancestry.
         // Four answer-vector envelopes cover simultaneous old/new capacities;
         // metadata stays the actual original Arc and is not materialized.

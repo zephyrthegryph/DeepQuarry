@@ -194,15 +194,7 @@ pub const HOP_TURF: &str = "turf";
 pub const HOP_AREA: &str = "area";
 
 /// How the engine decides a var is covered by the graph (see [`ReadsEngine::classify`]).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum VarClass {
-    /// Tracked, a relation, a stat, or a derived value: publishes on change.
-    Reactive,
-    /// Never written after init: readable, not reactive.
-    Constant,
-    /// Anything else: an unknown read.
-    Unknown,
-}
+pub use crate::reactive_variable_policy::VarClass;
 
 /// A value during the walk: what static type it has and which entity it is.
 #[derive(Clone, Debug)]
@@ -484,32 +476,25 @@ impl<'a> ReadsEngine<'a> {
     /// A read of `x`, `y` or `z` on the turf hop (`get_turf(a).z`): a turf never moves, and which turf a thing stands on is the turf hop,
     /// published when the thing moves, so the coordinate is a constant of the hop's target.
     pub fn turf_coordinate(&self, r: &Read) -> bool {
-        matches!(r.var.as_str(), "x" | "y" | "z") && r.hops.last().map(|h| h == HOP_TURF).unwrap_or(false)
+        crate::reactive_dependency_policy::turf_coordinate(r)
     }
 
     /// Whether a var read through `owner` is reactive, constant, or unknown.
-    pub fn classify(&self, owner: &str, var: &str, written: &WriteIndex) -> VarClass {
-        if self.is_tracked(owner, var) || self.is_relation(owner, var) {
-            return VarClass::Reactive;
+    pub fn classify(&self,owner:&str,var:&str,written:&WriteIndex)->VarClass{
+        struct Original<'a,'model>{engine:&'a ReadsEngine<'model>,written:&'a WriteIndex}
+        impl crate::reactive_variable_policy::Source for Original<'_,'_>{
+            type Error=std::convert::Infallible;
+            fn checkpoint(&mut self)->Result<(),Self::Error>{Ok(())}
+            fn tracked(&mut self,o:&str,n:&str)->Result<bool,Self::Error>{Ok(self.engine.is_tracked(o,n))}
+            fn relation(&mut self,o:&str,n:&str)->Result<bool,Self::Error>{Ok(self.engine.is_relation(o,n))}
+            fn stat(&mut self,o:&str,n:&str)->Result<bool,Self::Error>{Ok(self.engine.is_stat(o,n))}
+            fn derived(&mut self,o:&str,n:&str)->Result<bool,Self::Error>{Ok(self.engine.is_derived(o,n))}
+            fn published_builtin(&mut self,o:&str,n:&str)->Result<bool,Self::Error>{Ok(self.engine.is_published_builtin(o,n))}
+            fn flyweight(&mut self,o:&str)->Result<bool,Self::Error>{Ok(crate::dm::ownership_index::FLYWEIGHT_TYPES.iter().any(|f|self.engine.sem.is_subtype(o,f)))}
+            fn written(&mut self,o:&str,n:&str)->Result<bool,Self::Error>{Ok(self.written.is_written_on(self.engine.sem,o,n))}
+            fn constant(&mut self,o:&str,n:&str)->Result<bool,Self::Error>{Ok(self.engine.sem.var_decl(o,n).map(|v|v.is_const).unwrap_or(false))}
         }
-        if self.is_stat(owner, var) || self.is_derived(owner, var) || self.is_published_builtin(owner, var) {
-            return VarClass::Reactive;
-        }
-        // `type` and `parent_type` are fixed for the life of the thing (BYOND does not let a running world change them)
-        // `gc_destroyed` is the thing's own deletion mark: what holds a thing through a relation hears its deletion as the relation clearing, and
-        // the holder itself is gone with it, so a `QDELETED(x)` is not an input that changes under a live consumer.
-        if matches!(var, "type" | "parent_type" | "gc_destroyed") {
-            return VarClass::Constant;
-        }
-        // A flyweight is built once and shared: what it holds is constant (a lazy memo on one, like a material's cache id, is a pure function of it).
-        if crate::dm::ownership_index::FLYWEIGHT_TYPES.iter().any(|f| self.sem.is_subtype(owner, f)) {
-            return VarClass::Constant;
-        }
-        // a `var/const` never changes, whatever other types name a var the same
-        if !written.is_written_on(self.sem, owner, var) || self.sem.var_decl(owner, var).map(|v| v.is_const).unwrap_or(false) {
-            return VarClass::Constant;
-        }
-        VarClass::Unknown
+        match crate::reactive_variable_policy::classify(&mut Original{engine:self,written},owner,var){Ok(value)=>value,Err(never)=>match never{}}
     }
 
     /// The hop kind a read of `name` crosses when it is followed to another entity, or `None` when the var is not one of the closed kinds

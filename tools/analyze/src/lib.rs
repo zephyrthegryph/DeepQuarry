@@ -182,3 +182,25 @@ pub mod reactive_annotations_policy;
 #[cfg(feature="native-policy")]mod reactive_global_facts_native;
 
 #[cfg(feature="native-policy")]pub mod captured_reactive_reads;
+
+pub mod reactive_variable_policy;
+
+pub mod reactive_dependency_policy;
+
+pub mod reactive_dependency_fold;
+
+pub mod reactive_dependency_marker_policy;
+
+pub mod reactive_read_key_policy;
+
+pub mod reactive_reaction_policy;
+
+#[cfg(feature="native-policy")]mod reactive_reaction_native;
+
+#[cfg(feature="native-policy")]mod reactive_dependency_native;
+
+pub(crate) mod deps_policy;
+
+pub(crate) mod reactive_dependency_view;
+
+#[cfg(feature="native-policy")]pub(crate) mod reactive_dependency_result;

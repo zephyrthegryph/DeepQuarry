@@ -758,6 +758,10 @@ pub struct Ctx<'a> {
     seen: HashSet<Key>,
 }
 impl Ctx<'_> {
+    /// Release derived child payloads; hashes and already recorded dynamic
+    /// dependency edges remain. Caller-held Arc loans retain their payload.
+    pub fn evict_values(&self,kinds:&[Kind])->usize{self.db.evict_values(kinds)}
+
     /// Read-only admission observations of the SAME dynamic dependency set.
     pub fn has_dependency(&self,key:Key)->bool{self.seen.contains(&key)}
     pub fn dependency_count(&self)->usize{self.deps.len()}

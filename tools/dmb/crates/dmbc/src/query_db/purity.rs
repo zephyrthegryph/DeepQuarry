@@ -8,7 +8,8 @@ use dm_analysis::{
     },
 };
 use dm_ir::{ResolveQuery, ResolvedMeaning, Resolver};
-use std::{any::Any, sync::Weak};
+use std::{any::Any, sync::{Weak,atomic::Ordering}};
+use dm_analysis::checker_effects::Storage;
 const BODY: Kind = Kind(17);
 const PLAN: Kind = Kind(18);
 const SCC: Kind = Kind(19);
@@ -41,6 +42,7 @@ struct NodeLease {
 }
 struct Live {
     owner: Weak<dyn Any + Send + Sync>,
+    completion: Option<Arc<std::sync::atomic::AtomicBool>>,
     bytes: usize,
     kind: Kind,
     error: bool,
@@ -51,6 +53,7 @@ pub(super) struct Ledger {
     nodes: BTreeMap<Key, NodeLease>,
     live: Vec<Live>,
     active_policy: usize,
+    active_graph_work: usize,
     denied: bool,
     // Actual operational error, never a memoized semantic refusal String.
     aborted: Option<std::io::Error>,
@@ -59,7 +62,7 @@ pub(super) struct Ledger {
 }
 impl Ledger {
     fn live_bytes(&mut self) -> usize {
-        self.live.retain(|v| v.owner.strong_count() > 0);
+        self.live.retain(|v| v.completion.as_ref().map_or_else(||v.owner.strong_count()>0,|done|!done.load(Ordering::Acquire)));
         self.live
             .iter()
             .fold(0usize, |n, x| n.saturating_add(x.bytes))
@@ -83,6 +86,8 @@ impl Ledger {
                     .saturating_mul(std::mem::size_of::<Live>()),
             )
             .saturating_add(self.active_policy)
+            .saturating_add(self.active_graph_work)
+            .saturating_add(self.live.iter().filter(|entry|entry.completion.is_some()).count().saturating_mul(std::mem::size_of::<std::sync::atomic::AtomicBool>()))
     }
     fn admit(&mut self, extra: usize) -> Result<(), String> {
         let fits = self
@@ -347,6 +352,7 @@ fn keep_using(
     }
     l.live.push(Live {
         owner: Arc::downgrade(&owner),
+        completion:None,
         bytes,
         kind: key.kind,
         error,
@@ -583,6 +589,8 @@ impl Resolver for Observed<'_, '_> {
 }
 pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, registry: SourceRegistry) {
     pages::register(db,Arc::clone(&ledger),Arc::clone(&registry));
+    global_graph::register(db,Arc::clone(&ledger),Arc::clone(&registry));
+    global_summary::register(db,Arc::clone(&ledger),Arc::clone(&registry));
     let l = Arc::clone(&ledger);
     let sources = Arc::clone(&registry);
     db.define(RESOLVER, "native-effect-resolver-hash", move |ctx, raw| {
@@ -940,7 +948,11 @@ impl QueryDb {
                 continue;
             };
             if live.error {
-                let error = if live.kind == pages::PAGE {
+                let error = if live.kind == global_summary::SUMMARY {
+                    value.downcast_ref::<Result<Arc<global_summary::NativeEffectSummary>,String>>().and_then(|result|result.as_ref().err())
+                } else if live.kind == global_graph::GLOBAL_GRAPH {
+                    value.downcast_ref::<Result<Arc<global_graph::NativeEffectGraph>,String>>().and_then(|result|result.as_ref().err())
+                } else if live.kind == pages::PAGE {
                     value.downcast_ref::<Result<Arc<dm_analysis::checker_effects::EffectPageFacts>,String>>().and_then(|x|x.as_ref().err())
                 } else if live.kind == BODY {
                     value
@@ -969,6 +981,10 @@ impl QueryDb {
                         capacity: s.capacity(),
                     });
                 }
+            } else if live.kind == global_summary::SUMMARY {
+                if let Some(value)=value.downcast_ref::<global_summary::NativeEffectSummary>(){value.visit_storage(&mut visit)}
+            } else if live.kind == global_graph::GLOBAL_GRAPH {
+                if let Some(value)=value.downcast_ref::<global_graph::NativeEffectGraph>(){value.visit_storage(&mut visit)}
             } else if live.kind == pages::PAGE {
                 if let Some(value)=value.downcast_ref::<dm_analysis::checker_effects::EffectPageFacts>(){value.visit_storage(&mut visit)}
             } else if live.kind == BODY {
@@ -1199,3 +1215,11 @@ impl QueryDb {
 
 #[path="purity_pages.rs"]
 mod pages;
+
+#[path="purity_graph_work.rs"]mod graph_work;
+#[path="purity_global_graph.rs"]pub(super) mod global_graph;
+#[cfg(test)]impl QueryDb{pub(crate) fn effect_graph_work_for_test(&self)->usize{self.purity.ledger.lock().unwrap_or_else(|e|e.into_inner()).active_graph_work}}
+
+#[cfg(test)]impl QueryDb{pub(crate) fn effect_graph_ledger_liveness_for_test(&self)->impl Fn()->bool+Send+'static{let weak=Arc::downgrade(&self.purity.ledger);move||weak.strong_count()!=0}}
+
+#[path="purity_global_summary.rs"]pub(super) mod global_summary;

@@ -1899,3 +1899,7 @@ pub(crate) fn body_syntax_budget_for_test()->usize{body_syntax::BUDGET}
 
 #[cfg(test)]
 pub(crate) fn body_syntax_counter_for_test(db:&QueryDb)->&std::sync::Arc<std::sync::atomic::AtomicUsize>{&db.body_charge}
+
+pub(crate) use purity::global_graph::NativeEffectGraph;
+
+pub(crate) use purity::global_summary::NativeEffectSummary;

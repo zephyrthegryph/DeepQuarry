@@ -16,14 +16,58 @@ pub(crate) struct DiscoveryContract {
     pub root: PathBuf,
     pub recursive_roots: Vec<PathBuf>,
 }
+
+/// The selector actually executed by the only recursive receipt issuer.
+/// No caller flag, include glob or exclusion list can construct this value.
+#[derive(Clone,Copy)]
+enum DiscoverySelection{RecursiveDmNoChildLinksV1}
+impl DiscoverySelection{
+ fn includes_file(self,path:&Path)->bool{match self{Self::RecursiveDmNoChildLinksV1=>path.extension().is_some_and(|extension|extension=="dm")}}
+}
+
 /// All fields private. Only actual typed observations issue this receipt.
 pub(crate) struct DiscoveryReceipt {
     issuer: Arc<()>,
+    selection: DiscoverySelection,
     contract: DiscoveryContract,
     facts: InputSnapshot,
     files: Vec<PathBuf>,
 }
 impl DiscoveryReceipt {
+    /// Full CODE_DM coverage is a property of this actual unfiltered typed
+    /// traversal, not a normal folder fact or a caller's claimed prefix.
+    pub(crate) fn covers_code_dm(&self,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{
+        match self.selection{DiscoverySelection::RecursiveDmNoChildLinksV1=>{}}
+        for &(directory,extension) in dq_analyze::captured_raw_file::code_dm_roots(){
+            crate::daemon::control::checkpoint()?;
+            if extension!="dm"{return Ok(false)}
+            if !self.contract.recursive_roots.iter().any(|root|root.strip_prefix(&self.contract.root).is_ok_and(|relative|Path::new(directory).starts_with(relative))){return Ok(false)}
+            admit(self.contract.root.as_os_str().len().checked_add(directory.len()).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(512)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"code discovery proof path overflow"))?)?;
+            let code=self.contract.root.join(directory);
+            // Must have been reached by THIS typed recursive traversal. An
+            // unrelated cached/flat folder listing is absent from these facts.
+            let Some(observation)=self.facts.policy_directories().get(&code)else{return Ok(false)};
+            if matches!(observation.listing,Listing::NotDirectory){return Ok(false)}
+            // Extra explicit roots must not follow a child symlink that the
+            // original CODE_DM WalkDir(follow_links=false) would not traverse.
+            for root in &self.contract.recursive_roots{
+                if root==&code||!root.starts_with(&code){continue}
+                let mut current=root.as_path();
+                while current!=code.as_path(){
+                    crate::daemon::control::checkpoint()?;
+                    let Some(parent)=current.parent()else{return Ok(false)};
+                    let Some(name)=current.file_name().and_then(|name|name.to_str())else{return Ok(false)};
+                    let Some(parent_observation)=self.facts.policy_directories().get(parent)else{return Ok(false)};
+                    let Listing::Present(entries)=&parent_observation.listing else{return Ok(false)};
+                    let Ok(index)=entries.binary_search_by(|entry|entry.name.as_str().cmp(name))else{return Ok(false)};
+                    if entries[index].kind!=Kind::Directory{return Ok(false)}
+                    current=parent;
+                }
+            }
+        }
+        Ok(true)
+    }
+
     pub(crate) fn census(self: &Arc<Self>, census: &mut crate::heap_census::HeapCensus) {
         let owner = "query_snapshot.workspace.discovery";
         if !census.arc_object(owner, self) {
@@ -141,6 +185,7 @@ pub(crate) fn discover<P: SnapshotProvider>(
         Ok(())
     }
     check(inputs, metadata)?;
+    let selection=DiscoverySelection::RecursiveDmNoChildLinksV1;
     let mut stack = contract
         .recursive_roots
         .iter()
@@ -180,10 +225,7 @@ pub(crate) fn discover<P: SnapshotProvider>(
                             check(inputs, metadata)?;
                             stack.push((path, false));
                         }
-                        Kind::File
-                            if Path::new(&entry.name)
-                                .extension()
-                                .is_some_and(|v| v == "dm") =>
+                        Kind::File if selection.includes_file(Path::new(&entry.name)) =>
                         {
                             if !files.contains(&path) {
                                 metadata =
@@ -223,6 +265,7 @@ pub(crate) fn discover<P: SnapshotProvider>(
     }
     Ok(DiscoveryReceipt {
         issuer: inputs.policy_discovery_issuer(),
+        selection,
         contract,
         facts,
         files,

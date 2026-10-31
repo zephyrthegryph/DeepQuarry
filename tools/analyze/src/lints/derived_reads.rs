@@ -26,15 +26,14 @@ use crate::pat::Pat;
 use crate::tree::{SourceFile, Tree, CODE_DM};
 use crate::util::{is_py_space, py_lstrip, py_rstrip, py_strip};
 use crate::{pat, pat_match};
+use crate::reactive_reaction_policy::{GENERATED_SKIP_DIRS,EXEMPT_VARS};
+pub(crate) use crate::reactive_reaction_policy::GENERATED_REL;
 
 const LINT: &str = "derived_reads";
 const SKIP_SITE_DIRS: &[&str] = &["code/modules/unit_tests/", "code/tests/unit_tests/"];
-const GENERATED_SKIP_DIRS: &[&str] = &["code/modules/unit_tests/", "code/tests/unit_tests/", "code/modules/benchmarks/"];
-pub(crate) const GENERATED_REL: &str = "code/_generated/reads.dm";
-const EXEMPT_VARS: &[&str] = &["cap_state", "cap_data"];
 const MODIFIERS: &[&str] = &["tmp", "static", "global", "const", "final"];
 const OBJECT_ROOTS: &[&str] = &["datum", "obj", "mob", "atom", "turf", "area", "client", "image", "list"];
-const REACTION_OWNER_ROOT: &str = "/mob";
+
 
 const H_UNDECLARED: &str = "declare it in derived() (`--fix` adds it), or keep with // ALLOW(derived_reads): <reason>";
 const H_UNTRACKED: &str = "make it TRACKED / SETTER, a derive() value or a declared relation (OWN / REL)";
@@ -112,24 +111,6 @@ fn reaction_kind_flag(call: &str) -> &'static str {
 }
 
 /// `(kind, handler, roots, output vars)` in `REACTION_OUTPUTS` order.
-const REACTION_OUTPUTS: &[(&str, &str, &[&str], &[&str])] = &[
-    (
-        "hud",
-        "life_hud_changed",
-        &["life_hud", "life_hud_health_icons", "life_hud_darksight"],
-        &[
-            "dsoverlay", "health_doll_key", "healths", "damageoverlaytemp", "global_hud_claims", "alerts", "screens", "hud_list",
-            "hud_used", "card", "borer_chem_display", "pai_fold_display",
-        ],
-    ),
-    ("vision", "life_vision_changed", &["life_vision"], &["plane_holder", "global_hud_claims", "hud_used", "seer"]),
-    (
-        "canmove",
-        "life_canmove_changed",
-        &["life_canmove", "update_canmove"],
-        &["canmove", "lying", "lying_prev", "passtable_crawl_checked", "passtable_reset", "pass_flags"],
-    ),
-];
 
 fn starts_any(rel: &str, dirs: &[&str]) -> bool {
     dirs.iter().any(|d| rel.starts_with(d))
@@ -164,13 +145,7 @@ fn chain(path: &str) -> Vec<String> {
 
 type VarTable = HashMap<String, HashSet<String>>;
 
-fn decl_name(segs: &[&str]) -> Option<String> {
-    let mut i = 0;
-    while i < segs.len() && MODIFIERS.contains(&segs[i]) {
-        i += 1;
-    }
-    segs[i..].last().map(|s| s.to_string())
-}
+
 
 fn note_typed(typed: &mut VarTable, owner: &str, segs: &[&str], name: &str) {
     let segs: Vec<&&str> = segs.iter().filter(|s| !s.is_empty() && !MODIFIERS.contains(*s)).collect();
@@ -181,77 +156,10 @@ fn note_typed(typed: &mut VarTable, owner: &str, segs: &[&str], name: &str) {
 
 /// `parse_vars`: `{type: var names}` declared in one file's `code_only` lines; `typed` collects the
 /// object-typed ones.
-fn parse_vars(lines: &[&str], typed: &mut VarTable) -> VarTable {
-    let mut found: VarTable = HashMap::new();
-    let mut cur: Option<String> = None;
-    let mut in_proc = false;
-    let mut block_indent: Option<usize> = None;
-    for raw in lines {
-        if py_strip(raw).is_empty() {
-            continue;
-        }
-        let stripped = raw.trim_start_matches(['\t', ' ']);
-        let indent = raw.len() - stripped.len();
-        let text = py_rstrip(stripped);
-        if text.starts_with('#') {
-            continue;
-        }
-        if indent == 0 {
-            block_indent = None;
-            in_proc = false;
-            cur = None;
-            let Some(m) = pat_match!(r"(/?[A-Za-z_][\w/]*)\s*(?:$|=|\()").captures(text) else { continue };
-            let g1 = m.s(1);
-            let full = if g1.starts_with('/') { g1.to_string() } else { format!("/{}", g1) };
-            let segs: Vec<&str> = full.trim_matches('/').split('/').collect();
-            if segs.contains(&"proc") || segs.contains(&"verb") || py_lstrip(&text[m.end(1)..]).starts_with('(') {
-                in_proc = true;
-                continue;
-            }
-            if let Some(k) = segs.iter().position(|s| *s == "var") {
-                if let Some(name) = decl_name(&segs[k + 1..]) {
-                    let owner = format!("/{}", segs[..k].join("/"));
-                    found.entry(owner.clone()).or_default().insert(name.clone());
-                    note_typed(typed, &owner, &segs[k + 1..], &name);
-                }
-                continue;
-            }
-            cur = Some(full.trim_end_matches('/').to_string());
-            continue;
-        }
-        if in_proc {
-            continue;
-        }
-        let Some(owner) = cur.clone() else { continue };
-        if let Some(bi) = block_indent {
-            if indent > bi {
-                if let Some(m) = pat_match!(r"((?:[A-Za-z_]\w*/)*[A-Za-z_]\w*)\s*(?:\[[^\]]*\])?\s*(?:=|$)").captures(text) {
-                    let segs: Vec<&str> = m.s(1).split('/').collect();
-                    if let Some(name) = decl_name(&segs) {
-                        found.entry(owner.clone()).or_default().insert(name.clone());
-                        note_typed(typed, &owner, &segs, &name);
-                    }
-                }
-                continue;
-            }
-        }
-        block_indent = None;
-        if indent != 1 && !raw.starts_with("    ") {
-            continue;
-        }
-        if pat_match!(r"var(/(tmp|static|global|const))*\s*$").is_match(text) {
-            block_indent = Some(indent);
-            continue;
-        }
-        if let Some(m) = pat_match!(r"var((?:/[A-Za-z_]\w*)+)\s*(?:\[[^\]]*\])?\s*(?:=|$|as\b)").captures(text) {
-            let segs: Vec<&str> = m.s(1).trim_matches('/').split('/').collect();
-            if let Some(name) = decl_name(&segs) {
-                found.entry(owner.clone()).or_default().insert(name.clone());
-                note_typed(typed, &owner, &segs, &name);
-            }
-        }
-    }
-    found
+fn parse_vars(lines:&[&str],typed:&mut VarTable)->VarTable{
+ let mut found=VarTable::new();let result=crate::reactive_reaction_policy::visit_variable_lines(lines.iter().enumerate().map(|(n,line)|(n+1,*line)),&mut crate::key_policy_control::Compatibility,|_,row|{
+  let owner=format!("/{}",row.owner_without_leading_slash);let segs:Vec<&str>=row.qualified.split('/').collect();found.entry(owner.clone()).or_default().insert(row.name.to_owned());note_typed(typed,&owner,&segs,row.name);Ok(true)
+ });match result{Ok(_)=>found,Err(never)=>match never{}}
 }
 
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -265,10 +173,7 @@ struct Proc {
     body: Vec<(usize, String)>,
 }
 
-fn helper_name(name: &str) -> bool {
-    pat_match!(r"(?:life_hud|life_vision|life_canmove|update_canmove|hud_available|process_glasses|process_nifsoft_vision|pain_knockout_fraction|set_fullscreen|life_placed)")
-        .is_match(name)
-}
+
 
 /// Every proc keeps its body: a draw's reads include those of the procs it calls (`drawn_helper_reads`), so any proc may be a helper.
 fn keeps_body(_name: &str) -> bool {
@@ -291,13 +196,8 @@ fn parse_procs(rel: &str, code: &crate::tree::View) -> Vec<Proc> {
             if let Some(p) = cur.take() {
                 out.push(p);
             }
-            let text = py_rstrip(line);
-            if text.starts_with('#') || pat_match!(r"/[\w/]+\s*$").is_match(text) {
-                continue;
-            }
-            if let Some(m) = pat_match!(r"(/[\w/]*?)/(?:(?:proc|verb)/)?(\w+)\s*\((.*)$").captures(text) {
-                let owner = if m.s(1).is_empty() { "/" } else { m.s(1) };
-                cur = Some(Proc { rel: rel.to_string(), owner: owner.to_string(), name: m.s(2).to_string(), args: m.s(3).to_string(), start: number, body: Vec::new() });
+            if let Some(header)=crate::reactive_reaction_policy::header(line){
+                cur=Some(Proc{rel:rel.to_owned(),owner:header.owner.to_owned(),name:header.name.to_owned(),args:header.args.to_owned(),start:number,body:Vec::new()});
             }
             continue;
         }
@@ -420,63 +320,9 @@ fn parse_entries(proc: &Proc) -> Vec<Entry> {
 }
 
 /// `body_reads`: `(var, first line)` for each var in `known` the proc body reads, in read order.
-fn body_reads(proc: &Proc, known: &HashSet<String>) -> Vec<(String, usize)> {
-    let mut locals: HashSet<String> = HashSet::new();
-    let mut depth = 0i32;
-    let mut cur = String::new();
-    let mut params: Vec<String> = Vec::new();
-    for ch in proc.args.chars() {
-        if ch == '(' {
-            depth += 1;
-        } else if ch == ')' {
-            if depth == 0 {
-                break;
-            }
-            depth -= 1;
-        }
-        if ch == ',' && depth == 0 {
-            params.push(std::mem::take(&mut cur));
-        } else {
-            cur.push(ch);
-        }
-    }
-    params.push(cur);
-    for p in &params {
-        let before_eq = py_strip(p.split('=').next().unwrap_or(""));
-        let piece = match pat!(r"\s+as\s+").find(before_eq) {
-            Some(m) => &before_eq[..m.start],
-            None => before_eq,
-        };
-        if !piece.is_empty() {
-            locals.insert(py_strip(piece.rsplit('/').next().unwrap_or("")).to_string());
-        }
-    }
-    let mut reads: Vec<(String, usize)> = Vec::new();
-    let mut seen: HashSet<String> = HashSet::new();
-    for (number, line) in &proc.body {
-        if py_lstrip(line).starts_with('#') {
-            continue;
-        }
-        let mut cur_line = line.clone();
-        loop {
-            let next = pat!(r"\b(?:nameof|initial)\s*\([^()]*\)").replace_all(&cur_line, "");
-            if next == cur_line {
-                break;
-            }
-            cur_line = next;
-        }
-        for m in pat!(r"\bvar/(?:[\w/]*/)?(\w+)").captures_iter(&cur_line) {
-            locals.insert(m.s(1).to_string());
-        }
-        for m in pat!(r"(?<![\w.:/])(?:src\.)?([A-Za-z_]\w*)\b(?!\s*\()(?!\s*::)(?!\s*=(?!=))").captures_iter(&cur_line) {
-            let name = m.s(1);
-            if known.contains(name) && !locals.contains(name) && !seen.contains(name) && !EXEMPT_VARS.contains(&name) {
-                seen.insert(name.to_string());
-                reads.push((name.to_string(), *number));
-            }
-        }
-    }
-    reads
+fn body_reads(proc:&Proc,known:&HashSet<String>)->Vec<(String,usize)>{
+ let view=crate::reactive_reaction_policy::Procedure{owner:&proc.owner,name:&proc.name,relative:&proc.rel,args:&proc.args,lines:crate::reactive_reaction_policy::Lines::Owned(&proc.body)};
+ match crate::reactive_reaction_policy::body_reads(&view,known,&mut crate::key_policy_control::Compatibility){Ok(value)=>value,Err(never)=>match never{}}
 }
 
 // ---- the model --------------------------------------------------------------------------------
@@ -966,42 +812,17 @@ struct ReactionRead {
     reads: Vec<(String, usize)>,
 }
 
-fn reaction_reads(model: &Model) -> Vec<ReactionRead> {
-    let mut byname: HashMap<&str, Vec<usize>> = HashMap::new();
-    for (i, proc) in model.procs.iter().enumerate() {
-        if proc.owner.starts_with(REACTION_OWNER_ROOT) && !starts_any(&proc.rel, GENERATED_SKIP_DIRS) && proc.rel != GENERATED_REL {
-            byname.entry(proc.name.as_str()).or_default().push(i);
-        }
-    }
-    let mut out = Vec::new();
-    for (kind, handler, roots, skip) in REACTION_OUTPUTS {
-        let mut names: HashSet<String> = roots.iter().map(|s| s.to_string()).collect();
-        let mut todo: Vec<String> = roots.iter().map(|s| s.to_string()).collect();
-        while let Some(t) = todo.pop() {
-            for &pi in byname.get(t.as_str()).map(|v| v.as_slice()).unwrap_or(&[]) {
-                for (_n, text) in &model.procs[pi].body {
-                    for m in pat!(r"(?<![\w.])(?:src\.)?([A-Za-z_]\w*)\s*\(").captures_iter(text) {
-                        let name = m.s(1);
-                        if !names.contains(name) && byname.contains_key(name) && helper_name(name) {
-                            names.insert(name.to_string());
-                            todo.push(name.to_string());
-                        }
-                    }
-                }
-            }
-        }
-        let mut sorted: Vec<&String> = names.iter().collect();
-        sorted.sort();
-        for name in sorted {
-            for &pi in byname.get(name.as_str()).map(|v| v.as_slice()).unwrap_or(&[]) {
-                let proc = &model.procs[pi];
-                let known = model.union(&model.vars, &proc.owner);
-                let reads: Vec<(String, usize)> = body_reads(proc, &known).into_iter().filter(|(v, _)| !skip.contains(&v.as_str())).collect();
-                out.push(ReactionRead { kind, handler, proc: pi, reads });
-            }
-        }
-    }
-    out
+fn reaction_reads(model:&Model)->Vec<ReactionRead>{
+ struct Original<'model>(&'model Model);
+ impl crate::reactive_reaction_policy::Source for Original<'_>{
+  type Error=std::convert::Infallible;type Known<'a>=HashSet<String> where Self:'a;
+  fn for_each_named<'a>(&'a self,name:&str,visit:&mut dyn FnMut(crate::reactive_reaction_policy::ProcedureKey<'a>,crate::reactive_reaction_policy::Procedure<'a>)->Result<bool,Self::Error>)->Result<(),Self::Error>{
+   for(index,proc)in self.0.procs.iter().enumerate(){if proc.name==name&&!visit(crate::reactive_reaction_policy::ProcedureKey::Legacy(index),crate::reactive_reaction_policy::Procedure{owner:&proc.owner,name:&proc.name,relative:&proc.rel,args:&proc.args,lines:crate::reactive_reaction_policy::Lines::Owned(&proc.body)})?{break}}Ok(())
+  }
+  fn known<'a>(&'a self,owner:&'a str)->Result<Self::Known<'a>,Self::Error>{Ok(self.0.union(&self.0.vars,owner))}
+ }
+ let original=Original(model);let result=crate::reactive_reaction_policy::reaction_reads(&original,&mut crate::key_policy_control::Compatibility);let rows=match result{Ok(value)=>value,Err(never)=>match never{}};
+ rows.into_iter().map(|row|ReactionRead{kind:row.kind,handler:row.handler,proc:match row.procedure{crate::reactive_reaction_policy::ProcedureKey::Legacy(index)=>index,crate::reactive_reaction_policy::ProcedureKey::Raw{..}=>unreachable!("legacy adapter issued a raw locator")},reads:row.reads}).collect()
 }
 
 fn reaction_findings(model: &Model, tree: &Tree, sink: &mut Sink) -> Vec<Finding> {

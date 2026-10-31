@@ -15,6 +15,12 @@ pub struct PlansInput<'a>{
  pub reader_procs:&'a [ReaderProc<'a>],
  pub files:&'a [&'a SourceFile],
 }
+/// Readonly policy inputs shared by owned/frozen dependency result renderers.
+/// The source-bound caller supplies genuine marker/procedure/file loans.
+pub(crate) struct MetadataInput<'a>{
+ pub markers:&'a[MarkerRow<'a>],pub defines:&'a HashSet<String>,pub tracked:&'a HashMap<String,HashSet<String>>,
+ pub output_defining_owners:&'a[&'a str],pub reader_procs:&'a[ReaderProc<'a>],pub files:&'a[&'a SourceFile],
+}
 pub(crate) fn quote(s: &str) -> String {
     format!("\"{}\"", s.replace('\\', "\\\\").replace('"', "\\\"").replace('[', "\\["))
 }
@@ -42,18 +48,21 @@ fn emit_table(out: &mut Output, name: &str, rows: &[(String, String)]) {
     out.line_fmt(format_args!("GLOBAL_LIST_INIT({}, {}_build())", name, name));
 }
 
-pub fn generate(input:&PlansInput<'_>, out:&mut Output){
-        let an = input.analysis;
+pub fn generate(input:&PlansInput<'_>,out:&mut Output){
+ let metadata=MetadataInput{markers:input.markers,defines:input.defines,tracked:input.tracked,output_defining_owners:input.output_defining_owners,reader_procs:input.reader_procs,files:input.files};
+ generate_with_analysis(&metadata,crate::reactive_dependency_view::Analysis::Owned(input.analysis),out)
+}
+pub(crate) fn generate_with_analysis(input:&MetadataInput<'_>,an:crate::reactive_dependency_view::Analysis<'_>,out:&mut Output){
         // Per type: var -> PLAN bits as DM text.
         let mut plans: BTreeMap<&str, BTreeMap<String, BTreeSet<&str>>> = BTreeMap::new();
         let mut names: BTreeSet<String> = BTreeSet::new();
-        for (t, vars) in &an.draw_reads {
+        for (t, vars) in an.draw_reads() {
             for v in vars {
                 plans.entry(t.as_str()).or_default().entry(v.clone()).or_default().insert("PLAN_DRAW");
                 names.insert(v.clone());
             }
         }
-        for (t, reads) in &an.draw_hops {
+        for (t, reads) in an.draw_hops() {
             for r in reads {
                 plans.entry(t.as_str()).or_default().entry(r.clone()).or_default().insert("PLAN_DRAW_HOP");
                 if let Some((_, v)) = r.rsplit_once('.') {
@@ -61,14 +70,14 @@ pub fn generate(input:&PlansInput<'_>, out:&mut Output){
                 }
             }
         }
-        for (t, links) in &an.draw_links {
+        for (t, links) in an.draw_links() {
             for v in links {
                 plans.entry(t.as_str()).or_default().entry(v.clone()).or_default().insert("PLAN_DRAW");
                 names.insert(v.clone());
             }
         }
-        let mut verbs: BTreeMap<&str, BTreeMap<&str, &BTreeSet<String>>> = BTreeMap::new();
-        for (id, (vars, _)) in &an.verb_reads {
+        let mut verbs: BTreeMap<&str, BTreeMap<&str, crate::reactive_dependency_view::Names<'_>>> = BTreeMap::new();
+        for (id, (vars, _)) in an.verb_reads() {
             if let Some((t, proc_name)) = id.rsplit_once("::") {
                 verbs.entry(proc_name).or_default().insert(t, vars);
                 for v in vars {
@@ -76,7 +85,7 @@ pub fn generate(input:&PlansInput<'_>, out:&mut Output){
                 }
             }
         }
-        for (_, v) in &an.reads {
+        for (_, v) in an.reads() {
             names.insert(v.clone());
         }
         let names: Vec<String> = names.into_iter().filter(|n| key_ident(n)).collect();
@@ -123,15 +132,15 @@ pub fn generate(input:&PlansInput<'_>, out:&mut Output){
             emit_table(out, &format!("generated_plan_{}", proc_name), &rows);
         }
         let mut fallbacks: BTreeSet<&str> = BTreeSet::new();
-        for (id, (_, unresolved)) in &an.verb_reads {
-            if *unresolved {
+        for (id, (_, unresolved)) in an.verb_reads() {
+            if unresolved {
                 if let Some((t, _)) = id.rsplit_once("::") {
                     fallbacks.insert(t);
                 }
             }
         }
-        for id in &an.draws {
-            if an.consumers.get(id).is_some_and(|u| !u.is_empty()) {
+        for id in an.draws() {
+            if an.consumer(id).is_some_and(|u| !u.is_empty()) {
                 if let Some((t, _)) = id.rsplit_once("::") {
                     fallbacks.insert(t);
                 }
@@ -171,7 +180,7 @@ pub fn generate(input:&PlansInput<'_>, out:&mut Output){
                 }
             }
         }
-        for v in &an.stat_reads {
+        for v in an.stat_reads() {
             if key_ident(v) {
                 inputs.insert(quote(v));
             }
@@ -247,7 +256,7 @@ pub(crate) fn proc_body(text: &str, header: u32) -> String {
 /// Over-inclusive like the stat inputs: every name a declaration block (hooks, forms, sequences, stats) can name is PLAN_READ_ALL, every name a
 /// reactions() or derived() body names is PLAN_READ_REACT, and the runtime adds the names of the generated handler reads (plan_reader_keys_build(),
 /// code/engine/change/plan.dm). dq_change_reader_plan_oracle proves it covers every key the runtime tables register.
-fn emit_reader_keys(input: &PlansInput<'_>, out: &mut Output) {
+fn emit_reader_keys(input: &MetadataInput<'_>, out: &mut Output) {
     let mut keys: ReaderKeys = BTreeMap::new();
     const ALL: u8 = 7;
     const REACT: u8 = 1;

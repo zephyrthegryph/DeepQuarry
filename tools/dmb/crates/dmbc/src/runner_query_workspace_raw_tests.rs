@@ -470,3 +470,6 @@ fn cancelled_empty_workspace_is_not_a_clean_result() {
         .expect("cancelled empty capture must refuse");
     assert_eq!(failure.kind(), std::io::ErrorKind::Interrupted);
 }
+
+#[path="runner_query_workspace_code_tests.rs"]
+mod original_code_tests;

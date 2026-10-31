@@ -95,7 +95,7 @@ fn return_hint_mode_using<D:PrefixDemand>(
     if resolver.source_owner() != Resolver::source_owner(tree) {
         return Err("return context lacks original compiled owner provenance".into());
     }
-    tree.validate_checker_builtin_profile(profile)
+    demand.validate_profile(tree,profile)
         .map_err(|e| format!("return checker profile unavailable: {e:?}"))?;
     let fact = checker_call_facts::callable_any(tree, resolver, profile, receiver, name)?;
     match fact {
@@ -247,6 +247,7 @@ pub struct PuritySettingsPermit<'a> {
     own_pure: Option<dm_syntax::Span>,
     own_no_sleep: Option<dm_syntax::Span>,
     own_sleep_exempt: Option<dm_syntax::Span>,
+    validated_profile:Option<dm_tree::checker_builtins::ValidatedCheckerProfile<'a>>,
 }
 impl<'a> PuritySettingsPermit<'a> {
     pub fn issue(
@@ -260,7 +261,7 @@ pub(crate) fn issue_using<D:PrefixDemand>(
         identity: dm_ir::ProcedureIdentity , demand:&D
 ) -> Result<Self , D::Error> {
         let tree = archive.tree();
-        tree.validate_checker_builtin_profile(profile)
+        demand.validate_profile(tree,profile)
             .map_err(|e| format!("purity settings profile unavailable: {e:?}"))?;
         let (own_pure, own_no_sleep, own_sleep_exempt) =
             demand.prefix(archive,identity, |prefix| -> Result<_, String> {
@@ -365,6 +366,7 @@ pub(crate) fn issue_using<D:PrefixDemand>(
             own_pure,
             own_no_sleep,
             own_sleep_exempt,
+            validated_profile:demand.profile().map(|proof|proof.reborrow(tree,profile)).transpose().map_err(|e|format!("purity settings profile unavailable: {e:?}"))?,
         };
         // Reuse the existing return-setting evaluator; allowing purity must not
         // hide an unsupported return directive in the same prefix.
@@ -399,7 +401,7 @@ pub(crate) fn issue_using<D:PrefixDemand>(
                 "purity setting permit belongs to another archive/profile/callable issuance".into(),
             );
         }
-        tree.validate_checker_builtin_profile(profile)
+        match self.validated_profile{Some(proof)=>proof.require(tree,profile),None=>tree.validate_checker_builtin_profile(profile)}
             .map_err(|e| format!("purity setting profile changed: {e:?}"))?;
         Ok(())
     }

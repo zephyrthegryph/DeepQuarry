@@ -29,7 +29,7 @@ fn reserve_actual_dependency(ledger:&Arc<Mutex<Ledger>>,key:Key,old:usize,next:u
  live.reserve_external(delta)?;
  l.admit(delta).map_err(|_|std::io::Error::new(std::io::ErrorKind::OutOfMemory,"effect page dynamic edge admission exhausted"))?;l.nodes.get_mut(&key).unwrap().observed_edges=current.max(requested);Ok(())
 }
-fn page_execution_admission(ledger:&Arc<Mutex<Ledger>>)->Result<ExecutionAdmission,String>{
+pub(super) fn page_execution_admission(ledger:&Arc<Mutex<Ledger>>)->Result<ExecutionAdmission,String>{
  let mut l=ledger.lock().unwrap_or_else(|e|e.into_inner());let occupied=l.live_bytes().checked_add(l.metadata()).ok_or("effect page live family capacity overflow")?;let headroom=BUDGET.checked_sub(occupied).ok_or_else(||{l.denied=true;"effect page family admission exhausted".to_string()})?;
  #[cfg(test)]let headroom=headroom.min(l.storage_test_limit.unwrap_or(BUDGET));
  Ok(ExecutionAdmission::with_limit(headroom))
@@ -37,7 +37,7 @@ fn page_execution_admission(ledger:&Arc<Mutex<Ledger>>)->Result<ExecutionAdmissi
 #[derive(Debug)]struct PageGraphFailure(QueryError);
 impl std::fmt::Display for PageGraphFailure{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{write!(f,"native effect page graph: {:?}",self.0)}}
 impl std::error::Error for PageGraphFailure{}
-fn typed_publication(_ledger:&Arc<Mutex<Ledger>>,key:Key)->Result<(),QueryError>{
+pub(super) fn typed_publication(_ledger:&Arc<Mutex<Ledger>>,key:Key)->Result<(),QueryError>{
  #[cfg(test)]cancellation_test_checkpoint(key.kind);
  crate::daemon::control::checkpoint().map_err(|actual|QueryError::operational(key,actual))
 }
@@ -52,7 +52,8 @@ pub(super) fn register(db:&Db,ledger:Arc<Mutex<Ledger>>,registry:SourceRegistry)
   let admission=page_execution_admission(&ledger).map_err(|_|QueryError::Missing(p.base.key))?;
   let context=Mutex::new(ctx);
   let body=|syntax:&Arc<BodySyntaxInput>,live:&ExecutionAdmission|->Result<Arc<BodySyntax>,BodySyntaxFailure>{let mut context=context.lock().unwrap_or_else(|e|e.into_inner());let child=Key::new(body_syntax::BODY_SYNTAX,syntax.key().into());if !context.has_dependency(child){reserve_actual_dependency(&ledger,p.base.key,p.old_edges,context.dependency_count()+1,live,admission.available()).map_err(BodySyntaxFailure::Operational)?;}body_syntax::obtain(&mut context,syntax)};
-  let computed=EffectPageFacts::compute_checked(&source,p.start,p.width,input.archive().tree(),&admission,&mut crate::daemon::control::checkpoint,&body).map(Arc::new).map_err(|failure|policy_read_failure(p.base.key,failure));latch_transient_denial(&ledger,&admission);
+  let validated=input.archive().tree().validated_checker_profile(input.profile()).map_err(|_|QueryError::Missing(p.base.key))?;
+  let computed=EffectPageFacts::compute_checked(&source,p.start,p.width,&validated,&admission,&mut crate::daemon::control::checkpoint,&body).map(Arc::new).map_err(|failure|policy_read_failure(p.base.key,failure));latch_transient_denial(&ledger,&admission);
   p.dependencies.store(context.lock().unwrap_or_else(|e|e.into_inner()).dependency_count(),std::sync::atomic::Ordering::Release);
   let value=split_transport(computed)?;let bytes=size_error(&value,|page|page.retained_charge().unwrap_or(usize::MAX));finish_using(&ledger,p.base.key,value,bytes,typed_publication,|key,actual|QueryError::operational(key,std::io::Error::new(std::io::ErrorKind::OutOfMemory,actual)))
  });
@@ -79,3 +80,16 @@ impl QueryDb{
 
 #[cfg(test)]thread_local!{static PAGE_EXTRA_EDGE_TRACE:std::cell::Cell<Option<(usize,usize,usize)>>=const{std::cell::Cell::new(None)};}
 #[cfg(test)]impl QueryDb{pub(crate) fn take_effect_edge_headroom_for_test(&self)->Option<(usize,usize,usize)>{PAGE_EXTRA_EDGE_TRACE.with(|trace|trace.take())}}
+
+/// Same actual child getter, used under an already-held outer purity gate.
+/// No nested public host/get/gate/reset or independent source read occurs.
+pub(super) fn obtain(ctx:&mut dm_query::Ctx<'_>,ledger:&Arc<Mutex<Ledger>>,input:&Arc<EffectInput>,sources:&Arc<Vec<Key>>,start:usize,width:usize)->Result<Arc<EffectPageFacts>,ReadFailure>{
+ let source=EffectSource::new(input.archive(),input.profile()).map_err(|error|policy_read_failure(page_key(input,start,width),error))?;
+ if width==0||width>dm_analysis::checker_effects::MAX_EVENTS||start>=source.len(){return Err("nested effect page range outside original source".into())}
+ let key=page_key(input,start,width);let count=width.min(source.len()-start);let _node=node_admission(ledger,input,key,std::mem::size_of::<PageParams>())?;let mut peak=reserve_dependencies(ledger,key,count)?;
+ let params=Arc::new(PageParams{base:Params{input:Arc::downgrade(input),key,ordinal:0,sources:sources.clone(),policy:Weak::new()},start,width,old_edges:peak.old,dependencies:std::sync::atomic::AtomicUsize::new(0)});remember_params(ledger,input,key,&params);
+ let value=ctx.get::<Result<Arc<EffectPageFacts>,String>>(key,params.clone()).map_err(ReadFailure::Query)?;peak.commit(params.dependencies.load(std::sync::atomic::Ordering::Acquire));let value=value.as_ref().clone().map_err(ReadFailure::Semantic)?;
+ crate::daemon::control::checkpoint().map_err(|actual|ReadFailure::Query(QueryError::operational(key,actual)))?;value.validate(&source).map_err(|error|policy_read_failure(key,error))?;
+ if value.start()!=start||value.len()==0||value.len()>count{return Err("nested effect page returned another original range".into())}Ok(value)
+}
+pub(super) fn restore_graph_error(ledger:&Arc<Mutex<Ledger>>,error:QueryError)->std::io::Error{match error.into_operational(){Ok(actual)=>actual.into_io(),Err(error)=>{if let Err(actual)=crate::daemon::control::checkpoint(){return actual}if ledger.lock().unwrap_or_else(|e|e.into_inner()).denied{return std::io::Error::new(std::io::ErrorKind::OutOfMemory,"native effect graph family admission exhausted")}std::io::Error::other(PageGraphFailure(error))}}}

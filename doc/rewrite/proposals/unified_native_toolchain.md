@@ -1375,3 +1375,36 @@ borrowed validation capability is being implemented separately. This checkpoint
 does not claim that stress case passed, full-project checker admission, fresh
 production/DC/ratchet verification or a client-default cutover. The full
 dependency generators and complete raw-workspace scope remain follow-up work.
+
+### Shared dependency and checker graph checkpoint (2026-10-31)
+
+The borrowed immutable-profile proof now validates the original tree once while
+preserving exact tree/profile identity on reuse. The unchanged 12,000-edge window
+test passes in 91.813 seconds under its original 300-second cap. The profile,
+wrong-body, return-fact and actual page IO/cancellation tests also pass.
+
+The native dependency aggregate uses the same source-bound read and global
+queries and supplies the actual Kind11 dependency generator. Two independent
+legacy fixtures match all twelve ordered dependency fields and complete generated
+artifacts (1,464 and 1,652 bytes), including diagnostics. The legacy oracle retains
+the complete original producer; its private-access projections are asserted
+explicitly and do not widen production APIs. Constructor and fixed-source
+allocation refusals now retain their actual out-of-memory error and publish no
+successful query result; the failure-only regression passes after that repair.
+
+Actual Kind24 graph and Kind25 SCC-summary queries now consume original page
+results through the same query database. Their focused tests pass for original
+edges, warm reuse, semantic source errors, IO, cancellation, quota recovery and
+escaped ownership. Physical graph-buffer destruction precedes release of its
+charge, including when the last public strong handle is already gone or the
+database has been dropped. Whole-workspace original-file loans pass their
+late-page IO/quota recovery, typed recursive-discovery coverage and 257-file
+no-reread tests, including the repaired independent-recorder negative cases.
+The combined component evidence records 35 distinct focused passes; only failed
+or previously unrun cases were repeated during repairs.
+
+Both Analyze configurations and the native libraries/tests pass metadata checks.
+This remains component verification: the remaining read/automatic-tracking
+generators, complete dependency fold over workspace loans, ordered checker
+reporting, full-project admission, fresh production/DC/ratchet checks and final
+client cutover are not yet claimed.

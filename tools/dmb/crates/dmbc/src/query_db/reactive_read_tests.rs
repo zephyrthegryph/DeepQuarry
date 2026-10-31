@@ -286,3 +286,74 @@ fn actual_lazy_global_question_rejects_forged_loans_and_preserves_operational_pr
   assert!(with_global_question(&loan(0),inputs,&crate::daemon::control::checkpoint,&mut|_|Ok(true)).unwrap(),"same immutable result recovers without rebuilding facts");Ok(())
  }).unwrap();assert_eq!(fixture.reads.load(Ordering::Relaxed),before);
 }
+
+fn dependency_json(value:&DependencyResult)->serde_json::Value{let mut bytes=[0u8;32768];let mut output=io::Cursor::new(&mut bytes[..]);value.serialize_facts(&mut serde_json::Serializer::new(&mut output)).unwrap();let n=output.position()as usize;drop(output);serde_json::from_slice(&bytes[..n]).unwrap()}
+const DRAW_DEPENDENCIES:&str="#define TRACKED(T,v)
+/datum/probe
+    var/value
+    proc/draw()
+        return value
+    proc/unrelated()
+        return 99
+TRACKED(/datum/probe,value)
+";
+#[test]
+fn actual_dependency_aggregate_without_read_roots_stays_header_only_and_fresh_capture_warm(){
+ let fixture=Fixture::new(BODY,false);let first=fixture.capture();let before=fixture.reads.load(Ordering::Relaxed);let initial=fixture.db.with_reactive_fixture(&first,Request::Dependencies,|value|{let Value::Dependencies(value)=value else{panic!("actual dependency role")};assert!(value.matches(first.capture.policy()));Ok(dependency_json(value))}).unwrap();
+ for name in ["consumers","draws","leaves","draw_reads","draw_keys","draw_hops","draw_links","verb_reads","stat_reads","reads","candidates","sampled"]{assert_eq!(initial[name],serde_json::json!([]),"actual no-root field {name}");}
+ assert_eq!(fixture.db.db.stats(crate::query_db::body_syntax::BODY_SYNTAX).computed,0,"no unused/typed/global body demand when no lexical setter or read root exists");assert_eq!(fixture.db.db.stats(REACTIVE_RESULT).computed,1);assert_eq!(fixture.reads.load(Ordering::Relaxed),before);
+ let next=fixture.capture();let before=fixture.reads.load(Ordering::Relaxed);fixture.db.with_reactive_fixture(&next,Request::Dependencies,|value|{let Value::Dependencies(value)=value else{panic!("dependency role")};assert_eq!(dependency_json(value),initial);Ok(())}).unwrap();assert_eq!(fixture.db.db.stats(REACTIVE_RESULT).computed,1);assert_eq!(fixture.db.db.stats(crate::query_db::body_syntax::BODY_SYNTAX).computed,0);assert_eq!(fixture.reads.load(Ordering::Relaxed),before);
+}
+#[test]
+fn actual_dependency_draw_uses_real_read_child_and_preserves_complete_result_and_output(){
+ let fixture=Fixture::new(DRAW_DEPENDENCIES,false);let capture=fixture.capture();let before=fixture.reads.load(Ordering::Relaxed);
+ let expected=serde_json::json!({"consumers":[["/datum/probe::draw",[]]],"draws":["/datum/probe::draw"],"leaves":[],"draw_reads":[["/datum/probe",["value"]]],"draw_keys":[["/datum/probe",[]]],"draw_hops":[["/datum/probe",[]]],"draw_links":[["/datum/probe",[]]],"verb_reads":[],"stat_reads":[],"reads":[["/datum/probe","value"]],"candidates":[],"sampled":[]});
+ let first=fixture.db.with_reactive_fixture(&capture,Request::Dependencies,|value|{let Value::Dependencies(value)=value else{panic!("dependency role")};assert_eq!(dependency_json(value),expected);let available=RESULT_BUDGET.checked_sub(fixture.db.raw_policy.charge.load(Ordering::Acquire)).unwrap();let budget=Budget::new(available).map_err(io::Error::other)?;let output=value.render_deps(capture.capture.policy(),&budget,&crate::daemon::control::checkpoint).map_err(|e|match e{Failure::Operational(actual)=>actual,Failure::Unsupported(message)=>io::Error::other(message)})?;assert!(output.diags.is_empty());assert!(output.body.contains("generated_draw_keys_build"));Ok(output.body)}).unwrap();
+ assert_eq!(fixture.db.db.stats(REACTIVE_RESULT).computed,2,"aggregate plus genuine read child, no Globals needed for explicitly tracked own value");assert_eq!(fixture.db.db.stats(crate::query_db::body_syntax::BODY_SYNTAX).computed,1,"unrelated body remains undemanded");assert_eq!(fixture.reads.load(Ordering::Relaxed),before);
+ let reads=fixture.db.db.stats(crate::query_db::body_syntax::BODY_SYNTAX).computed;fixture.db.with_reactive_fixture(&capture,Request::Dependencies,|value|{let Value::Dependencies(value)=value else{panic!("dependency role")};assert_eq!(dependency_json(value),expected);Ok(())}).unwrap();assert_eq!(fixture.db.db.stats(REACTIVE_RESULT).computed,2);assert_eq!(fixture.db.db.stats(crate::query_db::body_syntax::BODY_SYNTAX).computed,reads);assert!(!first.is_empty());
+ let archive=capture.capture.policy().archive();let ordinal=(0..archive.callables().members().len()).find(|&ordinal|archive.callables().identity(ordinal).is_some_and(|identity|identity.name==dm_ir::SymbolId::of("draw"))).unwrap();let syntax=&archive.syntax_inputs().unwrap()[ordinal];let body_key=Key::new(crate::query_db::body_syntax::BODY_SYNTAX,syntax.key().into());let affected=fixture.db.db.dependants(&[body_key]);assert_eq!(affected.iter().filter(|key|key.kind==REACTIVE_RESULT).count(),2,"actual Kind4 to read to aggregate dynamic dependencies");
+}
+#[test]
+fn actual_dependency_aggregate_body_io_and_quota_are_uncached_and_retryable(){
+ let fixture=Fixture::new(DRAW_DEPENDENCIES,false);let capture=fixture.capture();let before=fixture.reads.load(Ordering::Relaxed);let stop=fixture.db.fail_body_syntax_after_for_test(0,io::Error::from_raw_os_error(1450));let error=fixture.db.with_reactive_fixture(&capture,Request::Dependencies,|_| -> io::Result<()> {panic!("no completed aggregate on actual child IO")}).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(fixture.db.db.stats(REACTIVE_RESULT).computed,0);drop(stop);
+ let healthy=fixture.db.with_reactive_fixture(&capture,Request::Dependencies,|value|{let Value::Dependencies(value)=value else{panic!("dependency role")};Ok(dependency_json(value))}).unwrap();let count=fixture.db.db.stats(REACTIVE_RESULT).computed;
+ let token=crate::daemon::control::Cancellation::default();let binding=crate::daemon::control::bind_with_deadline(token.clone(),Instant::now()+Duration::from_secs(30));token.cancel();assert_eq!(fixture.db.with_reactive_fixture(&capture,Request::Dependencies,|_|Ok(())).unwrap_err().kind(),io::ErrorKind::Interrupted);drop(binding);
+ fixture.db.with_reactive_fixture(&capture,Request::Dependencies,|value|{let Value::Dependencies(value)=value else{panic!("dependency role")};assert_eq!(dependency_json(value),healthy);Ok(())}).unwrap();assert_eq!(fixture.db.db.stats(REACTIVE_RESULT).computed,count);assert_eq!(fixture.reads.load(Ordering::Relaxed),before);
+ let cold=Fixture::new(DRAW_DEPENDENCIES,false);let input=cold.capture();let fixed=std::mem::size_of::<Budget>()+2*std::mem::size_of::<usize>();assert_eq!(Budget::new(fixed).unwrap().used(),fixed,"second limit admits constructor with no source-vector headroom");
+ for(limit,reason)in[(1,"budget metadata denied"),(fixed,"allocation denied")]{let error=cold.db.with_reactive_fixture_limit(&input,Request::Dependencies,Some(limit),|_| -> io::Result<()> {panic!("no aggregate output on actual admission refusal")}).unwrap_err();assert_eq!(error.kind(),io::ErrorKind::OutOfMemory,"actual limit {limit}: {error}");assert!(error.to_string().contains(reason),"actual constructor/fixed-source refusal reason survives: {error}");assert_eq!(cold.db.db.stats(REACTIVE_RESULT).computed,0);assert_eq!(cold.db.db.stats(crate::query_db::body_syntax::BODY_SYNTAX).computed,0);}
+ assert!(cold.db.with_reactive_fixture(&input,Request::Dependencies,|_|Ok(())).is_ok());
+}
+
+#[test]
+fn actual_dependency_read_loan_can_lazily_query_shared_globals_during_classification(){
+ const CODE:&str="var/global_counter=1\n/datum/probe\n    proc/draw()\n        return global_counter\n    proc/write_global()\n        global_counter=2\n    proc/unrelated()\n        return 99\n";
+ let fixture=Fixture::new(CODE,false);let capture=fixture.capture();let before=fixture.reads.load(Ordering::Relaxed);
+ let first=fixture.db.with_reactive_fixture(&capture,Request::Dependencies,|value|{let Value::Dependencies(value)=value else{panic!("actual dependency role")};let full=dependency_json(value);assert_eq!(full["draws"],serde_json::json!(["/datum/probe::draw"]));assert_eq!(full["consumers"][0][0],"/datum/probe::draw");Ok(full)}).unwrap();
+ assert_eq!(fixture.db.db.stats(REACTIVE_RESULT).computed,3,"aggregate, real read child and one lazily requested shared Globals result");
+ assert_eq!(fixture.db.db.stats(crate::query_db::body_syntax::BODY_SYNTAX).computed,3,"only actual Globals question expands all original callable bodies");
+ assert_eq!(fixture.reads.load(Ordering::Relaxed),before);
+ let next=fixture.capture();let before=fixture.reads.load(Ordering::Relaxed);fixture.db.with_reactive_fixture(&next,Request::Dependencies,|value|{let Value::Dependencies(value)=value else{panic!("dependency role")};assert_eq!(dependency_json(value),first);Ok(())}).unwrap();assert_eq!(fixture.db.db.stats(REACTIVE_RESULT).computed,3);assert_eq!(fixture.reads.load(Ordering::Relaxed),before);
+}
+
+#[test]
+fn actual_dependency_generator_is_a_kind11_child_of_the_same_dependency_and_read_queries(){
+ use super::super::generator_policy::GeneratorName;
+ let fixture=Fixture::new(DRAW_DEPENDENCIES,false);let capture=fixture.capture();let before=fixture.reads.load(Ordering::Relaxed);
+ let failure=fixture.db.fail_body_syntax_after_for_test(0,io::Error::from_raw_os_error(1450));let error=fixture.db.with_generator_fixture(&capture,GeneratorName::Deps,|_| -> io::Result<()> {panic!("actual body IO cannot publish artifact")}).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(fixture.db.db.stats(dm_query::Kind(11)).computed,0);drop(failure);
+ let text=fixture.db.with_generator_fixture(&capture,GeneratorName::Deps,|artifact|{assert_eq!(artifact.path(),"code/engine/_generated/deps.dm");assert!(artifact.diagnostics().is_empty());assert!(artifact.text().contains("generated_draw_keys_build"));Ok(artifact.text().to_owned())}).unwrap();
+ assert_eq!(fixture.db.db.stats(dm_query::Kind(11)).computed,1);assert_eq!(fixture.db.db.stats(REACTIVE_RESULT).computed,2);assert_eq!(fixture.db.db.stats(crate::query_db::body_syntax::BODY_SYNTAX).computed,1);assert_eq!(fixture.reads.load(Ordering::Relaxed),before);
+ let expected=fixture.db.with_reactive_fixture(&capture,Request::Dependencies,|value|{let Value::Dependencies(value)=value else{panic!("dependency role")};let available=RESULT_BUDGET.checked_sub(fixture.db.raw_policy.charge.load(Ordering::Acquire)).unwrap();let budget=Budget::new(available).map_err(io::Error::other)?;let output=value.render_deps(capture.capture.policy(),&budget,&crate::daemon::control::checkpoint).map_err(|e|match e{Failure::Operational(error)=>error,Failure::Unsupported(message)=>io::Error::other(message)})?;output.captured_named_file_text("deps","deps.dm",&budget).map_err(io::Error::other)}).unwrap();assert_eq!(text,expected,"complete final file wrapper and shared emitter bytes");
+ let next=fixture.capture();let before=fixture.reads.load(Ordering::Relaxed);fixture.db.with_generator_fixture(&next,GeneratorName::Deps,|artifact|{assert_eq!(artifact.text(),text);Ok(())}).unwrap();assert_eq!(fixture.reads.load(Ordering::Relaxed),before);
+ let syntax=&capture.capture.policy().archive().syntax_inputs().unwrap()[0];let deps=fixture.db.db.dependants(&[Key::new(crate::query_db::body_syntax::BODY_SYNTAX,syntax.key().into())]);assert!(deps.iter().any(|key|key.kind==dm_query::Kind(11)),"actual Kind4→Kind12 read→Kind12 dependency→Kind11 artifact edge");
+}
+
+#[test]
+fn actual_dependency_whole_fixtures_emit_all_ordered_facts_and_complete_artifacts_for_old_oracle(){
+ use super::super::generator_policy::GeneratorName;
+ for(label,code)in[("tracked",include_str!("../../../../../analyze/fixtures/native-dependencies/tracked/code/probe.dm")),("global",include_str!("../../../../../analyze/fixtures/native-dependencies/global/code/probe.dm"))]{
+  let fixture=Fixture::new(code,false);let capture=fixture.capture();let before=fixture.reads.load(Ordering::Relaxed);
+  let facts=fixture.db.with_reactive_fixture(&capture,Request::Dependencies,|value|{let Value::Dependencies(value)=value else{panic!("dependency role")};let facts=dependency_json(value);assert_eq!(facts["draws"],serde_json::json!(["/datum/probe::draw"]));assert!(!facts["consumers"].as_array().unwrap().is_empty());Ok(facts)}).unwrap();
+  let complete=fixture.db.with_generator_fixture(&capture,GeneratorName::Deps,|artifact|Ok(serde_json::json!({"facts":facts,"artifact":{"path":artifact.path(),"text":artifact.text(),"diagnostics":artifact.diagnostics().iter().map(|d|(&d.rel,d.line,&d.msg)).collect::<Vec<_>>()}}))).unwrap();
+  println!("NATIVE_DEPS_FULL_{}={}",label,serde_json::to_string(&complete).unwrap());assert_eq!(fixture.reads.load(Ordering::Relaxed),before,"actual dependency+artifact questions cannot reread fixture source");
+ }
+}

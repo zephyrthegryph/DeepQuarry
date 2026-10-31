@@ -114,6 +114,8 @@ impl SourceSnapshot {
     pub(crate) fn native_effect_source_page(&self,input:&Arc<EffectInput>,start:usize,width:usize,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree)->std::io::Result<Arc<dm_analysis::checker_effects::EffectPageFacts>>{
         self.with_effect_scope(input,environment,explicit,tree,|db,scope|db.native_effect_source_page(input,scope,start,width))
     }
+    pub(crate) fn native_effect_source_graph(&self,input:&Arc<EffectInput>,width:usize,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree)->std::io::Result<Arc<crate::query_db::NativeEffectGraph>>{self.with_effect_scope(input,environment,explicit,tree,|db,scope|db.native_effect_source_graph(input,scope,width))}
+    pub(crate) fn native_effect_source_summary(&self,input:&Arc<EffectInput>,width:usize,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree)->std::io::Result<Arc<crate::query_db::NativeEffectSummary>>{self.with_effect_scope(input,environment,explicit,tree,|db,scope|db.native_effect_source_summary(input,scope,width))}
     fn with_effect_scope<T>(
         &self,
         input: &Arc<EffectInput>,

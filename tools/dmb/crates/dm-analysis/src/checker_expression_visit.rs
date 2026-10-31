@@ -849,13 +849,14 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             )?;
             if let EvaluationCallSite::Written(expression) = site {
                 if self.new_context == 0 {
-                    if let Some(reason) = blocking_call_reason(
+                    if let Some(reason) = blocking_call_reason_using(
                         self.tree,
                         self.profile,
                         self.source,
                         expression,
                         receiver,
                         &fact,
+                        &self.prefix_demand,
                     )? {
                         let effects = self.effects.as_mut().unwrap();
                         if effects.blocking.len() >= crate::checker_effects::MAX_EVENTS {
@@ -2079,8 +2080,17 @@ fn blocking_call_reason(
     expression: &Expr,
     receiver: SymbolId,
     fact: &CallableFact,
+) -> Result<Option<&'static str>, String> {blocking_call_reason_using(tree,profile,source,expression,receiver,fact,&PrefixCompatibility::<String>::new())}
+fn blocking_call_reason_using<D:PrefixDemand>(
+    tree: &SemanticTree,
+    profile: PackedU128,
+    source: &str,
+    expression: &Expr,
+    receiver: SymbolId,
+    fact: &CallableFact,
+    demand:&D,
 ) -> Result<Option<&'static str>, String> {
-    tree.validate_checker_builtin_profile(profile)
+    demand.validate_profile(tree,profile)
         .map_err(|e| format!("blocking call profile: {e:?}"))?;
     let (identity_name, source_callable) = match fact {
         CallableFact::Source { identity, .. } => (identity.name, true),

@@ -368,6 +368,7 @@ impl SemanticTree {
         &self,
         profile: PackedU128,
     ) -> Result<(), CheckerBuiltinError> {
+        #[cfg(test)]PROFILE_VALIDATIONS.with(|count|count.set(count.get()+1));
         let catalog = pinned_catalog()?;
         if profile != catalog.profile {
             return Err(CheckerBuiltinError::Shape("foreign checker profile"));
@@ -466,8 +467,18 @@ impl SemanticTree {
         name: SymbolId,
         kind: MemberKind,
         presence: bool,
+    ) -> M {self.resolve_checker_builtin_using(query,profile,owner,name,kind,presence,||self.validate_checker_builtin_profile(profile))}
+    fn resolve_checker_builtin_using(
+        &self,
+        query: Q,
+        profile: PackedU128,
+        owner: SymbolId,
+        name: SymbolId,
+        kind: MemberKind,
+        presence: bool,
+        validate:impl FnOnce()->Result<(),CheckerBuiltinError>,
     ) -> M {
-        if self.validate_checker_builtin_profile(profile).is_err() {
+        if validate().is_err() {
             return M::Unsupported(query);
         }
         let Ok(catalog) = pinned_catalog() else {
@@ -592,3 +603,7 @@ impl SemanticTree {
         Ok(read(row))
     }
 }
+
+#[path="checker_profile.rs"]mod profile;
+pub use profile::ValidatedCheckerProfile;
+#[cfg(test)]thread_local!{static PROFILE_VALIDATIONS:std::cell::Cell<usize>=const{std::cell::Cell::new(0)};}

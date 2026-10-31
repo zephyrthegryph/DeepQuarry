@@ -4,6 +4,7 @@ use crate::input_snapshot::{
     FileInput, InputSnapshot, RecordedSourceOriginal, RecordingInputs, SnapshotProvider,
 };
 use crate::runner_host::workspace_discovery::DiscoveryReceipt;
+use crate::query_db::{CurrentWorkspaceRawFile as CurrentFile,WorkspaceRawSourceProof as SourceProof};
 use dm_preprocess::{
     regions::{canonical_path, relative_filesystem_path},
     SourceAcquisitionIdentity,
@@ -132,6 +133,7 @@ impl WorkspaceCapture {
             .all(|(p, f)| complete.policy_directories().get(p) == Some(f))
     }
 
+    pub(crate) fn covers_code_dm(&self,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{self.discovery.covers_code_dm(admit)}
     pub(crate) fn root(&self) -> &Path {
         &self.discovery.contract().root
     }
@@ -157,9 +159,16 @@ impl WorkspaceCapture {
         budget: usize,
         scopes: &[Arc<dq_analyze::captured_raw_file::Scope>],
     ) -> io::Result<(Vec<crate::query_db::CurrentWorkspaceRawFile>, usize)> {
-        use crate::query_db::{
-            CurrentWorkspaceRawFile as CurrentFile, WorkspaceRawSourceProof as SourceProof,
-        };
+        self.page_needed(scope,start,count,budget,|relative|{
+            let mut excluded=true;for scope in scopes{excluded &= scope.excludes_path(relative).map_err(io::Error::other)?;}Ok(!excluded)
+        })
+    }
+    /// Policy-only CODE_DM input loan. No lint scope may suppress semantic
+    /// marker/lexical work, and no raw tuple becomes a compiled source receipt.
+    pub(crate) fn code_page(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,start:usize,count:usize,budget:usize)->io::Result<(Vec<crate::query_db::CurrentWorkspaceRawFile>,usize)>{
+        self.page_needed(scope,start,count,budget,|relative|Ok(dq_analyze::captured_raw_file::is_code_dm(relative)))
+    }
+    fn page_needed(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,start:usize,count:usize,budget:usize,mut needed:impl FnMut(&str)->io::Result<bool>)->io::Result<(Vec<crate::query_db::CurrentWorkspaceRawFile>,usize)>{
         self.require_scope(scope)?;
         if count == 0 || count > 128 {
             return Err(io::Error::other(
@@ -177,10 +186,7 @@ impl WorkspaceCapture {
                 .ok_or_else(|| io::Error::other("workspace page path escapes root"))?
                 .to_string_lossy()
                 .replace('\\', "/");
-            let mut excluded = true;
-            for scope in scopes {
-                excluded &= scope.excludes_path(&rel).map_err(io::Error::other)?;
-            }
+            let excluded = !needed(&rel)?;
             let proof = match &file.original {
                 Original::Native(native) => SourceProof::Native(
                     scope.original_identity(native.occurrence, &native.identity)?,

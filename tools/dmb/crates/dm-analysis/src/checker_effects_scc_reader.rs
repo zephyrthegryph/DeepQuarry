@@ -12,6 +12,17 @@ const NONE:u32=u32::MAX;
 /// their partition matters, matching the existing whole-graph policy.
 pub struct CompactEffectScc{component:Vec<u32>,count:u32}
 impl CompactEffectScc{
+    /// SAME six-array envelope used by compute_checked, for an outer existing
+    /// family ledger to fund this work before entering the primitive.
+    pub fn work_charge(nodes:usize)->Option<usize>{let item=size_of::<u32>().checked_mul(4)?.checked_add(size_of::<bool>())?.checked_add(size_of::<Frame>())?;nodes.checked_mul(item)?.checked_mul(4)?.checked_add(size_of::<Self>()+6*size_of::<Vec<u32>>()+256)}
+    /// Maximum of the SAME summary arrays when every node is its own SCC;
+    /// retained component capacity is bounded by compute_checked's4x reserve.
+    pub fn summary_work_charge_bound(nodes:usize)->Option<usize>{nodes.checked_mul(size_of::<u32>()+size_of::<u32>()+size_of::<bool>())?.checked_mul(4)?.checked_add(nodes.checked_mul(size_of::<u32>())?.checked_mul(4)?)?.checked_add(size_of::<Self>()+3*size_of::<Vec<u32>>()+size_of::<CompactEffectSummary<'_>>()+128)}
+    pub fn summary_work_charge(&self)->Option<usize>{self.component.len().checked_mul(size_of::<u32>())?.checked_add((self.count as usize).checked_mul(size_of::<u32>()+size_of::<bool>())?)?.checked_mul(4)?.checked_add(self.retained_charge()?)?.checked_add(3*size_of::<Vec<u32>>()+size_of::<CompactEffectSummary<'_>>()+128)}
+    /// Consume the actual existing SCC/summary buffers; no node projection or
+    /// copied component roster is introduced for retained query publication.
+    pub fn into_summary_checked(self,admission:&ExecutionAdmission,direct:impl FnMut(usize,&ExecutionAdmission)->Result<bool,PolicyFailure>,successor:impl FnMut(usize,usize,&ExecutionAdmission)->Result<Option<usize>,PolicyFailure>,checkpoint:&mut impl FnMut()->io::Result<()>)->Result<OwnedCompactEffectSummary,PolicyFailure>{let CompactEffectSummary{effect,..}=self.summarize_checked(admission,direct,successor,checkpoint)?;Ok(OwnedCompactEffectSummary{component:self.component,effect})}
+
     pub fn components(&self)->&[u32]{&self.component}
     pub fn component_count(&self)->usize{self.count as usize}
     pub fn same_component(&self,a:usize,b:usize)->Option<bool>{Some(self.component.get(a)?==self.component.get(b)?)}
@@ -29,7 +40,7 @@ impl CompactEffectScc{
         checkpoint().map_err(PolicyFailure::Operational)?;
         let pending=(||{
             let budget=ReportBudget::for_operation(admission);let nodes=self.component.len();let count=self.count as usize;
-            let bytes=nodes.checked_mul(size_of::<u32>()).and_then(|n|n.checked_add(count.checked_mul(size_of::<u32>()+size_of::<bool>())?)).and_then(|n|n.checked_mul(4)).and_then(|n|n.checked_add(self.retained_charge()?)).and_then(|n|n.checked_add(3*size_of::<Vec<u32>>()+size_of::<CompactEffectSummary<'_>>()+128)).ok_or_else(||resource(&budget,"effect summary capacity overflow"))?;
+            let bytes=self.summary_work_charge().ok_or_else(||resource(&budget,"effect summary capacity overflow"))?;
             budget.charge(bytes).map_err(|_|resource(&budget,"effect summary admission exhausted"))?;
             let read_admission=admission.restricted(budget.remaining());
             let mut first=vector(count,NONE,&budget)?;let mut next=vector(nodes,NONE,&budget)?;let mut effect=vector(count,false,&budget)?;
@@ -57,8 +68,7 @@ impl CompactEffectScc{
             // Reserve all six maximum-length work arrays BEFORE allocating any.
             // No edge-count or whole-source MAX_EVENTS limit is raised: edges
             // are borrowed one at a time from independently admitted pages.
-            let item=size_of::<u32>().checked_mul(4).and_then(|n|n.checked_add(size_of::<bool>())).and_then(|n|n.checked_add(size_of::<Frame>())).ok_or_else(||resource(&budget,"effect SCC row layout overflow"))?;
-            let bound=nodes.checked_mul(item).and_then(|n|n.checked_mul(4)).and_then(|n|n.checked_add(size_of::<Self>()+6*size_of::<Vec<u32>>()+256)).ok_or_else(||resource(&budget,"effect SCC work capacity overflow"))?;
+            let bound=Self::work_charge(nodes).ok_or_else(||resource(&budget,"effect SCC work capacity overflow"))?;
             budget.charge(bound).map_err(|_|resource(&budget,"effect SCC work admission exhausted"))?;
             let read_admission=admission.restricted(budget.remaining());
             let mut index=vector(nodes,NONE,&budget)?;let mut low=vector(nodes,NONE,&budget)?;let mut active=vector(nodes,false,&budget)?;
@@ -94,6 +104,16 @@ impl CompactEffectSummary<'_>{
     pub fn node_has_effect(&self,node:usize)->Option<bool>{self.effect.get(*self.scc.component.get(node)? as usize).copied()}
     pub fn retained_charge(&self)->Option<usize>{size_of::<Self>().checked_add(self.effect.capacity().checked_mul(size_of::<bool>())?)}
 }
+
+/// Source-free scalar output only. Query callers must keep the actual original
+/// graph/current witness alongside this moved result before exposing reports.
+pub struct OwnedCompactEffectSummary{component:Vec<u32>,effect:Vec<bool>}
+impl OwnedCompactEffectSummary{
+ pub fn node_has_effect(&self,node:usize)->Option<bool>{self.effect.get(*self.component.get(node)? as usize).copied()}
+ pub fn len(&self)->usize{self.component.len()}
+ pub fn retained_charge(&self)->Option<usize>{size_of::<Self>().checked_add(self.component.capacity().checked_mul(size_of::<u32>())?)?.checked_add(self.effect.capacity())}
+ pub fn visit_storage(&self,mut visitor:impl FnMut(&'static str,usize,usize,usize)){visitor("purity.global_components",self.component.as_ptr() as usize,self.component.len()*size_of::<u32>(),self.component.capacity()*size_of::<u32>());visitor("purity.global_component_effects",self.effect.as_ptr() as usize,self.effect.len(),self.effect.capacity());}
+}
 fn resource(b:&ReportBudget,message:&'static str)->PolicyFailure{b.deny();PolicyFailure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message))}
 fn empty<T>(n:usize,b:&ReportBudget)->Result<Vec<T>,PolicyFailure>{let mut rows=Vec::new();rows.try_reserve_exact(n).map_err(|actual|{b.deny();PolicyFailure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,actual))})?;if rows.capacity()>n.saturating_mul(4){return Err(resource(b,"effect SCC exposed capacity exceeds reserved envelope"))}Ok(rows)}
 fn vector<T:Clone>(n:usize,value:T,b:&ReportBudget)->Result<Vec<T>,PolicyFailure>{let mut rows=empty(n,b)?;rows.resize(n,value);Ok(rows)}
@@ -117,4 +137,8 @@ fn vector<T:Clone>(n:usize,value:T,b:&ReportBudget)->Result<Vec<T>,PolicyFailure
         assert!(matches!(error,PolicyFailure::Operational(ref actual)if actual.raw_os_error()==Some(1450)),"reader actual cause outranks its shared denial state");assert!(limit.is_denied());
         let fresh=CompactEffectScc::compute_checked(1,&ExecutionAdmission::default(),|_,_,_|Ok(None),&mut||Ok(())).unwrap();let summary=fresh.summarize_checked(&ExecutionAdmission::default(),|_,_|Ok(true),|_,_,_|Ok(None),&mut||Ok(())).unwrap();assert_eq!(summary.node_has_effect(0),Some(true));
     }
+}
+
+#[cfg(test)]mod retained_tests{use super::*;
+ #[test]fn retained_summary_moves_actual_component_buffer_and_preserves_global_cycle_effects(){let edges=[vec![1],vec![0,2],vec![],vec![]];let a=ExecutionAdmission::default();let scc=CompactEffectScc::compute_checked(edges.len(),&a,|i,n,_|Ok(edges[i].get(n).copied()),&mut||Ok(())).unwrap();let pointer=scc.component.as_ptr();let old=scc.summarize_checked(&a,|i,_|Ok(i==2),|i,n,_|Ok(edges[i].get(n).copied()),&mut||Ok(())).unwrap();let expected=(0..edges.len()).map(|i|old.node_has_effect(i)).collect::<Vec<_>>();drop(old);let actual=scc.into_summary_checked(&a,|i,_|Ok(i==2),|i,n,_|Ok(edges[i].get(n).copied()),&mut||Ok(())).unwrap();assert_eq!(actual.component.as_ptr(),pointer);assert_eq!((0..actual.len()).map(|i|actual.node_has_effect(i)).collect::<Vec<_>>(),expected);assert_eq!(expected,[Some(true),Some(true),Some(true),Some(false)]);}
 }

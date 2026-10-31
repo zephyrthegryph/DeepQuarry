@@ -12,6 +12,8 @@ impl EffectPageFacts{
  pub fn total(&self)->usize{self.total}
  pub fn ordinal(&self,index:usize)->Option<usize>{Some(self.rows.get(index)?.ordinal)}
  pub fn procedure(&self,index:usize)->Option<ProcedureIdentity>{Some(self.rows.get(index)?.id)}
+ pub fn parent(&self,index:usize)->Option<Option<EffectTarget>>{Some(self.rows.get(index)?.parent)}
+ pub fn has_builtin_effect_call(&self,index:usize)->Option<bool>{Some(self.rows.get(index)?.builtin)}
  pub fn has_effect_seed(&self,index:usize)->Option<bool>{let row=self.rows.get(index)?;Some(row.direct||row.builtin)}
  pub fn has_direct_effect(&self,index:usize)->Option<bool>{Some(self.rows.get(index)?.direct)}
  pub fn source_calls(&self,index:usize)->Option<&[ProcedureIdentity]>{let row=self.rows.get(index)?;self.calls.get(row.start..row.end)}

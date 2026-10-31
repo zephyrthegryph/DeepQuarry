@@ -59,7 +59,35 @@ pub fn ordered_names(names: &[String]) -> Result<Vec<&'static str>, String> {
         .map(|lint| lint.meta().name)
         .collect())
 }
+
+/// Borrowed policy-only text views of ONE existing admitted original file.
+/// These strings grant no compiled source/AST/occurrence authority.
+#[cfg(feature="native-policy")]
+pub struct RawPolicyViews<'a>{file:&'a SourceFile}
+#[cfg(feature="native-policy")]
+impl<'a> RawPolicyViews<'a>{
+ fn require(&self)->Result<(),crate::reactive_reads_native::Failure>{self.file.captured_budget_error().map_or(Ok(()),|error|Err(crate::reactive_reads_native::Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,error))))}
+ pub fn raw(&self)->Result<&'a str,crate::reactive_reads_native::Failure>{self.require()?;let value=self.file.text();self.require()?;Ok(value)}
+ pub fn marker(&self)->Result<&'a str,crate::reactive_reads_native::Failure>{self.require()?;let value=self.file.marker();self.require()?;Ok(value.as_str())}
+ pub fn code(&self)->Result<&'a crate::tree::View,crate::reactive_reads_native::Failure>{self.require()?;let value=self.file.code();self.require()?;Ok(value)}
+}
+/// Exact existing CODE_DM path policy, including hidden-component exclusion.
+#[cfg(feature="native-policy")]
+pub fn is_code_dm(relative:&str)->bool{crate::tree::CODE_DM.matches_path(relative)}
+#[cfg(feature="native-policy")]
+pub fn code_dm_roots()-> &'static [(&'static str,&'static str)]{crate::tree::CODE_DM.roots}
+
 impl File {
+    /// Loan the SAME lazy source views. The boolean only controls traversal;
+    /// no source reference is returned by this callback API.
+    #[cfg(feature="native-policy")]
+    pub fn with_policy_views(&self,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,crate::reactive_reads_native::Failure>)->Result<bool,crate::reactive_reads_native::Failure>{
+        let views=RawPolicyViews{file:&self.tree.files[0]};views.require()?;
+        let pending=visit(&self.tree.files[0].rel,views);
+        if matches!(&pending,Err(crate::reactive_reads_native::Failure::Operational(_))){return pending}
+        RawPolicyViews{file:&self.tree.files[0]}.require()?;pending
+    }
+
     pub fn capture(
         root: &Path,
         path: &Path,
@@ -620,4 +648,34 @@ mod report_evidence_tests {
         assert_eq!(a.budget_charge() - Findings::budget_charge_parts(&a.name,&a.run,&a.allow_used),
             a.source_text.capacity()*std::mem::size_of::<String>() + a.source_text.iter().map(String::capacity).sum::<usize>());
     }
+}
+
+/// One host-funded, operation-local code loan. The host already authenticated
+/// raw bytes and normalized them before calling; no source receipt is minted.
+#[cfg(feature="native-policy")]
+pub fn with_original_policy_file(root:&Path,path:&Path,text:dm_preprocess::SourceText,live_page_bytes:usize,budget:&Arc<crate::captured_generator_budget::Budget>,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,crate::reactive_reads_native::Failure>)->Result<bool,crate::reactive_reads_native::Failure>{
+ use crate::reactive_reads_native::Failure;
+ fn refused(budget:&crate::captured_generator_budget::Budget,message:impl Into<String>)->Failure{budget.deny();Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message.into()))}
+ let scratch=crate::captured_generator_budget::Budget::scoped_temporaries(budget).map_err(|message|refused(budget,message))?;
+ struct Guard<'a>{scratch:&'a crate::captured_generator_budget::Budget,ok:bool}
+ impl Drop for Guard<'_>{fn drop(&mut self){if !self.ok{self.scratch.keep_failed_scratch()}}}
+ let mut guard=Guard{scratch:&scratch,ok:false};
+ let path_peak=root.as_os_str().len().checked_add(path.as_os_str().len()).and_then(|n|n.checked_mul(16)).and_then(|n|n.checked_add(1024)).ok_or_else(||refused(budget,"original code path peak overflow"))?;
+ scratch.charge(path_peak).map_err(|message|refused(budget,message))?;
+ let relative=dm_preprocess::regions::relative_filesystem_path(path,root).ok_or_else(||Failure::from("original code file escapes captured root"))?;
+ let rel=relative.to_string_lossy().replace('\\',"/");
+ let extra=SourceFile::raw_policy_view_extra_bound(&rel,path,&text)
+    .and_then(|n|n.checked_add(std::mem::size_of::<Tree>()+std::mem::size_of::<File>()+std::mem::size_of::<SourceFile>()+256))
+    .and_then(|n|n.checked_add(root.as_os_str().len().checked_mul(4)?))
+    .ok_or_else(||refused(budget,"original code view peak overflow"))?;
+ let reserve=live_page_bytes.checked_add(extra).ok_or_else(||refused(budget,"original code live peak overflow"))?;
+ scratch.charge(reserve).map_err(|message|refused(budget,message))?;
+ // The local source-view budget includes this file's already-funded backing.
+ // All other page originals remain funded by the SAME scratch reservation.
+ let local=extra.checked_add(live_page_bytes).ok_or_else(||refused(budget,"original code local bound overflow"))?;
+ let file=File::capture_budgeted(root,path,text,local).map_err(|message|refused(budget,message))?;
+ let pending=file.with_policy_views(visit);drop(file);
+ if matches!(&pending,Err(Failure::Operational(_))){return pending}
+ budget.require().map_err(|message|refused(budget,message))?;
+ guard.ok=pending.is_ok();pending
 }

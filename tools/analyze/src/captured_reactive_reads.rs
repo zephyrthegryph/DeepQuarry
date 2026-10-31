@@ -101,6 +101,7 @@ pub fn reads(raw:&CapturedRawPolicy,inputs:&PolicyInputs,budget:&Arc<Budget>,pro
 /// A borrowed child from the SAME active query graph. Current evidence/config
 /// admission belongs to the endpoint, and the result must prove this exact root.
 pub trait ReadProvider{fn with_read(&self,receiver:&str,procedure:&str,context:Option<&str>,flavor:Flavor,consume:&mut dyn FnMut(&ReadResult)->Result<(),Failure>)->Result<(),Failure>;}
+impl<F> ReadProvider for F where F:Fn(&str,&str,Option<&str>,Flavor,&mut dyn FnMut(&ReadResult)->Result<(),Failure>)->Result<(),Failure>{fn with_read(&self,receiver:&str,procedure:&str,context:Option<&str>,flavor:Flavor,consume:&mut dyn FnMut(&ReadResult)->Result<(),Failure>)->Result<(),Failure>{self(receiver,procedure,context,flavor,consume)}}
 
 #[derive(Debug)]struct ReadCallbackStopped;
 impl std::fmt::Display for ReadCallbackStopped{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.write_str("read callback stopped")}}
@@ -121,4 +122,68 @@ pub fn with_read_facts<T>(provider:&dyn ReadProvider,inputs:&PolicyInputs,receiv
  checkpoint()?;
  if let Some(actual)=first{return Err(actual)}returned?;
  answer.ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"read provider omitted actual result callback")))
+}
+
+/// Unique dependency-gap judgement over an actual completed original read
+/// result. Source owner equality alone is not a current-frame permission: the
+/// endpoint must keep its existing evidence/config/gate checks around this loan.
+pub fn untracked(raw:&CapturedRawPolicy,inputs:&PolicyInputs,budget:&Arc<Budget>,provider:&dyn GlobalProvider,read:&ReadResult,output:bool,checkpoint:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>)->Result<Vec<crate::reactive_facts::Untracked>,Failure>{
+ checkpoint()?;if !read.matches(inputs){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"dependency read belongs to another original source tuple")))}
+ let source=source(raw,inputs,budget,checkpoint,body)?;let mut poll=||checkpoint();let facts=PolicyFacts::capture(&source,&mut poll)?;
+ let globals=GlobalAdapter{source:&source,provider};let result=crate::reactive_dependency_native::untracked(&source,&facts,&globals,read.facts(),output,checkpoint)?;
+ checkpoint()?;source.require()?;Ok(result)
+}
+
+/// Completed dependency data bound to the actual original source-owner tuple.
+/// The retained payload contains ordered result rows only, never syntax/source.
+/// Endpoint evidence/config/complete raw-roster admission remains mandatory.
+pub struct DependencyResult{owner:OriginalArchiveOwner,facts:crate::reactive_dependency_result::FrozenDeps}
+impl DependencyResult{
+ /// Admitted unique deps emitter over the completed original result. No file
+ /// writing or default producer selection is granted by this returned data.
+ pub fn render_deps(&self,inputs:&PolicyInputs,budget:&Arc<Budget>,checkpoint:&dyn Fn()->io::Result<()>)->Result<crate::sparse_slots_policy::Output,Failure>{
+  checkpoint()?;if !self.matches(inputs){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"dependency emitter source owner differs")))}
+  crate::deps_policy::generate_view_admitted(crate::reactive_dependency_view::Analysis::Frozen(&self.facts),budget,checkpoint).map_err(Failure::Operational)
+ }
+ pub fn matches(&self,inputs:&PolicyInputs)->bool{self.owner.matches(inputs.archive())}
+ pub fn serialize_facts<S:serde::Serializer>(&self,serializer:S)->Result<S::Ok,S::Error>{serde::Serialize::serialize(&self.facts,serializer)}
+ pub fn visit_storage(&self,mut visit:impl FnMut(&'static str,usize,usize,usize)){self.owner.visit_storage(&mut visit);self.facts.visit_storage(visit)}
+ pub fn retained_charge(&self)->Option<usize>{let mut sum=Some(std::mem::size_of::<Self>()+2*std::mem::size_of::<usize>());self.visit_storage(|_,_,_,capacity|sum=sum.and_then(|n|n.checked_add(capacity)));sum}
+}
+// Called only by the unique successful aggregate fold inside the same source
+// operation. The enclosing scratch guard must remain live until parent-retained
+// capacity is charged, and release no escaping buffers on failure.
+fn finish_dependencies(source:&ReadSource<'_>,input:crate::reactive_facts::DepsAnalysis,budget:&Arc<Budget>,checkpoint:&dyn Fn()->io::Result<()>)->Result<DependencyResult,Failure>{
+ checkpoint()?;let facts=crate::reactive_dependency_result::FrozenDeps::freeze(input,budget,checkpoint)?;checkpoint()?;source.require()?;
+ Ok(DependencyResult{owner:source.inputs().archive().original_owner_witness(),facts})
+}
+
+/// Explicit finite-capture aggregate factory. All facts/providers use this SAME
+/// original tuple; this is not whole-workspace/default generator activation.
+pub fn dependencies(raw:&CapturedRawPolicy,inputs:&PolicyInputs,budget:&Arc<Budget>,globals_provider:&dyn GlobalProvider,read_provider:&dyn ReadProvider,checkpoint:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>)->Result<DependencyResult,Failure>{
+ checkpoint()?;let source=source(raw,inputs,budget,checkpoint,body)?;
+ let scratch=Budget::scoped_temporaries(budget).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;
+ let produced:Result<DependencyResult,Failure>=source.with_budget(&scratch,|work|{
+  let mut poll=||checkpoint();let facts=PolicyFacts::capture(work,&mut poll)?;
+  // Auto's typed collector owns its real per-body scratch scopes. It borrows
+  // the SAME root-budget source (not this temporary child budget), so no nested
+  // scratch scope or alternate source/control domain is invented.
+  let auto=crate::auto_tracking_native::NativeCandidates::capture(&source,&facts,globals_provider)?;
+  let owned=work.dependency_marker_rows()?;let count=owned.markers.len();
+  let reservation=count.checked_mul(std::mem::size_of::<crate::declare_policy::Marker<'_>>()).and_then(|n|n.checked_mul(4)).and_then(|n|n.checked_add(64)).ok_or_else(||{scratch.deny();Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"dependency marker projection overflow"))})?;
+  scratch.charge(reservation).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;
+  let mut markers=Vec::new();markers.try_reserve_exact(count).map_err(|actual|{scratch.deny();Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,actual))})?;
+  if markers.capacity().checked_mul(std::mem::size_of::<crate::declare_policy::Marker<'_>>()).is_none_or(|n|n>reservation){scratch.deny();return Err(Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"dependency marker allocator exceeds admitted projection")))}
+  for row in &owned.markers{checkpoint()?;markers.push(crate::declare_policy::Marker{name:&row.name,rel:&row.rel,line:row.line,body:&row.body,args:&row.args,body_offset:row.body_offset,line_starts:row.line_starts.as_slice()});}
+  let defines=work.dependency_defines()?;let globals=GlobalAdapter{source:work,provider:globals_provider};
+  let folded=crate::reactive_dependency_native::analyze(work,&facts,&globals,read_provider,&markers,&defines,&auto,checkpoint)?;
+  finish_dependencies(work,folded,&scratch,checkpoint)
+ });
+ let funded=match produced{Ok(value)=>match value.retained_charge().ok_or_else(||{budget.deny();io::Error::new(io::ErrorKind::OutOfMemory,"dependency retained capacity overflow")}).and_then(|bytes|budget.charge(bytes).map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message))){Ok(())=>Ok(value),Err(actual)=>{drop(value);Err(Failure::Operational(actual))}},Err(actual)=>Err(actual)};
+ // Moved buffers now have parent retention funding BEFORE the temporary
+ // reservation can be credited. All other fold/metadata/source loans have
+ // physically dropped when with_budget returned.
+ if funded.is_err(){scratch.keep_failed_scratch()}drop(scratch);
+ if matches!(&funded,Err(Failure::Operational(_))){return funded}checkpoint()?;
+ if budget.denied(){return Err(Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"dependency aggregate admission refused")))}source.require()?;funded
 }

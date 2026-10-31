@@ -176,10 +176,11 @@ pub fn compute_body_checked_using_admitted(
         self:&Arc<Self>,ordinal:usize,resolver:&(impl Resolver+?Sized),admission:&ExecutionAdmission,
         body:&dyn Fn(&Arc<dm_tree::frontend::BodySyntaxInput>,&ExecutionAdmission)->Result<Arc<dm_tree::frontend::BodySyntax>,dm_tree::frontend::BodySyntaxFailure>,
     )->Result<Arc<BodyEffects>,crate::policy_body_demand::PolicyFailure>{
+        let profile=self.archive.tree().validated_checker_profile(self.profile).map_err(|e|crate::policy_body_demand::PolicyFailure::from(format!("purity settings profile unavailable: {e:?}")))?;
         self.compute_body_using(ordinal,resolver,admission,|archive,ordinal|archive.parse_checked_using(ordinal,&|input:&std::sync::Arc<dm_tree::frontend::BodySyntaxInput>|body(input,&admission.current_view())).map_err(|failure|match failure{
             dm_tree::frontend::BodySyntaxFailure::Syntax(source)=>crate::policy_body_demand::PolicyFailure::from(source.message),
             dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>crate::policy_body_demand::PolicyFailure::Operational(actual),
-        }),crate::checker_prefix_demand::Checked{body,admission})
+        }),crate::checker_prefix_demand::Checked{body,admission,profile})
     }
     fn compute_body_using<'a,E:From<String>+for<'b>From<&'b str>,D:crate::checker_prefix_demand::Demand<Error=E>>(
         self:&'a Arc<Self>,ordinal:usize,resolver:&(impl Resolver+?Sized),admission:&ExecutionAdmission,
@@ -366,8 +367,9 @@ impl BodyEffects {
         storage::body_capacity_bound(self)
     }
 }
-/// A DAG plan over source-owned procedure IDs. Callee bodies are never requested
-/// while a body contribution is computing; recursive procedures cannot create
+/// A DAG plan over source-owned procedure IDs. Callee EFFECT contributions are
+/// never requested while a contribution computes; original callee prefix syntax
+/// is obtained through the same checked loan. Recursive effects cannot create
 /// recursive dm_query calls or wait cycles.
 pub struct EffectPlan {
     input: Weak<EffectInput>,
@@ -960,11 +962,11 @@ fn next_input_key()->Result<u64,String>{
 pub use source_pages::{EffectSource,EffectSourcePage,EffectContribution};
 
 #[path="checker_effects_scc_reader.rs"]mod scc_reader;
-pub use scc_reader::{CompactEffectScc,CompactEffectSummary};
+pub use scc_reader::{CompactEffectScc,CompactEffectSummary,OwnedCompactEffectSummary};
 
 #[path="checker_effects_compact_source.rs"]
 mod compact_source;
-pub use compact_source::CompactEffectGraph;
+pub use compact_source::{CompactEffectGraph,RetainedEffectGraph,CurrentEffectGraph};
 
 #[path="checker_effects_page_facts.rs"]
 mod page_facts;

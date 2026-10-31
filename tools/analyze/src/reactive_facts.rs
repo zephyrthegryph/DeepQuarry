@@ -1,7 +1,7 @@
 //! Shared reactive result rows, not a semantic tree or source receipt.
 //! Producers retain their own original input authority; these rows grant none.
 use std::collections::{BTreeMap,BTreeSet};
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord,serde::Serialize)]
 pub struct Untracked {
     pub what: String,
     /// The type that declares the var read (empty when the finding is not a var read).
@@ -10,7 +10,7 @@ pub struct Untracked {
     pub line: u32,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord,serde::Serialize)]
 pub struct Leaf {
     pub owner: String,
     pub var: String,

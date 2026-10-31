@@ -359,3 +359,11 @@ fn builtin_effect_identity_borrows_exact_original_metadata_and_rejects_equal_cop
         )
         .is_err());
 }
+
+#[test]
+fn borrowed_validated_profile_reuses_only_exact_immutable_tree_and_original_builtin_answers(){
+ let original=seeded("/datum/example\n");let foreign=seeded("/datum/example\n");let profile=original.checker_builtin_profile().unwrap();let other:PackedU128=0u128.into();let queries=[Q::CheckerBuiltinProc{profile,owner:SymbolId::of("/"),name:SymbolId::of("sleep"),verb:false},Q::CheckerBuiltinVar{profile,owner:SymbolId::of("/datum"),name:SymbolId::of("type")},callable(profile,"/datum/example","New"),Q::CheckerBuiltinProc{profile:other,owner:SymbolId::of("/"),name:SymbolId::of("sleep"),verb:false}];let expected=queries.map(|query|Resolver::resolve(&original,query));
+ PROFILE_VALIDATIONS.with(|count|count.set(0));let validated=original.validated_checker_profile(profile).unwrap();assert_eq!(PROFILE_VALIDATIONS.with(|count|count.get()),1);
+ for _ in 0..6000{validated.require(&original,profile).unwrap();for(query,expected)in queries.iter().zip(&expected){assert_eq!(Resolver::resolve(&validated,*query),*expected);}}
+ assert_eq!(PROFILE_VALIDATIONS.with(|count|count.get()),1,"same original profile query core must not rescan catalog per repeated call");assert!(validated.require(&foreign,profile).is_err());assert!(validated.require(&original,other).is_err());assert!(validated.reborrow(&foreign,profile).is_err());assert!(original.validated_checker_profile(other).is_err());assert_eq!(validated.source_owner(),Resolver::source_owner(&original));assert!(!validated.observes_reads());
+}

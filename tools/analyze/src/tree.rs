@@ -355,6 +355,26 @@ impl SourceFile {
             data,
         })
     }
+    /// Poll the SAME existing captured-view budget before/after a lazy loan.
+    /// This is admission status only; it grants no source/compiled authority.
+    pub(crate) fn require_view_budget(&self) -> Result<(), String> {
+        self.captured_budget_error().map_or(Ok(()), Err)
+    }
+
+
+    /// Peak for only the existing raw/marker/code views. The source backing
+    /// itself is counted by the host's live-original census, not this amount.
+    #[cfg(feature="native-policy")]
+    pub(crate) fn raw_policy_view_extra_bound(rel:&str,abs:&Path,text:&str)->Option<usize>{
+        let lines=text.bytes().filter(|b|*b==b'\n').count().checked_add(1)?;
+        std::mem::size_of::<SourceFile>().checked_add(std::mem::size_of::<Data>())?
+            .checked_add(std::mem::size_of::<DerivedViews>())?
+            .checked_add(captured_budget::OWNER_METADATA)?
+            .checked_add(rel.len())?.checked_add(abs.as_os_str().len().checked_mul(4)?)?
+            .checked_add(lines.checked_mul(4)?)?
+            .checked_add(captured_budget::transform_bound(text,12)?)?
+            .checked_add(captured_budget::transform_bound(text,4)?)
+    }
     pub(crate) fn captured_budget_error(&self) -> Option<String> {
         let data = self.data();
         let budget = data.captured_budget.as_ref()?;

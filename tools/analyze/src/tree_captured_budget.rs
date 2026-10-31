@@ -7,7 +7,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-const OWNER_METADATA: usize = 8192;
+pub(super) const OWNER_METADATA: usize = 8192;
 struct State {
     limit: usize,
     base: usize,

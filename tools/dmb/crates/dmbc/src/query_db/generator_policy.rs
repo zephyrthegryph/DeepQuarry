@@ -18,10 +18,12 @@ pub(crate) enum GeneratorName {
     Declare,
     UiTypes,
     TrackedLists,
+    Deps,
 }
 impl GeneratorName {
     pub(crate) fn name(self) -> &'static str {
         match self {
+            Self::Deps => "deps",
             Self::TrackedLists => "tracked_lists",
             Self::SparseSlots => "sparse_slots",
             Self::SystemAccessors => "system_accessors",
@@ -34,6 +36,7 @@ impl GeneratorName {
     }
     pub(crate) fn path(self) -> &'static str {
         match self {
+            Self::Deps => "code/engine/_generated/deps.dm",
             Self::TrackedLists => "code/engine/_generated/tracked_lists.dm",
             Self::SparseSlots => "code/engine/_generated/sparse_slots.dm",
             Self::SystemAccessors => "code/engine/_generated/system_accessors.dm",
@@ -220,7 +223,18 @@ pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admissi
                 .iter()
                 .map(|k| ctx.input::<FileData>(*k))
                 .collect::<Result<Vec<_>, _>>()?;
-            let result = (|| -> Result<Artifact, String> {
+            // Dependency generation is a real Kind11→Kind12 edge under this
+            // caller's current context and parent-funded nested admission.
+            // Actual child IO exits before any Artifact/Outcome publication.
+            let dependency = if p.name == GeneratorName::Deps {
+                let produced=super::reactive_read_policy::with_dependencies(ctx,&capture,p.configuration,&p.configuration_path,&p.root,&p.files,&budget,&charge,&admission,|value|{
+                    let out=value.render_deps(capture.policy(),&budget,&crate::daemon::control::checkpoint)?;
+                    let text=out.captured_named_file_text("deps","deps.dm",&budget)?;
+                    Ok(Artifact{name:p.name,text,files:Vec::new(),diags:out.diags})
+                });
+                Some(match produced{Ok(value)=>value,Err(dq_analyze::captured_reactive_reads::Failure::Operational(actual))=>return Err(QueryError::operational(p.result,actual)),Err(dq_analyze::captured_reactive_reads::Failure::Unsupported(message))=>return Err(QueryError::operational(p.result,io::Error::new(io::ErrorKind::Unsupported,message)))})
+            } else {None};
+            let result = if let Some(value)=dependency {Ok(value)} else {(|| -> Result<Artifact, String> {
                 if capture.semantic_source_evidence().key() != p.evidence {
                     return Err("generator semantic evidence issuance differs".into());
                 }
@@ -264,6 +278,7 @@ pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admissi
                 )?;
                 let checkpoint = || admission.abort.scan_checkpoint();
                 match p.name {
+                    GeneratorName::Deps => unreachable!("typed dependency branch handled above"),
                     GeneratorName::SparseSlots => {
                         let out =
                             BorrowedSparseSlots::capture(&raw, capture.policy(), budget.clone())?
@@ -365,7 +380,7 @@ pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admissi
                         })
                     }
                 }
-            })();
+            })()};
             // Record poisoned inputs even if cancellation wins at the final
             // checkpoint, so the next actual capture can rebuild them.
             let view_denied = sources

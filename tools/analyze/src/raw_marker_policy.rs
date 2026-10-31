@@ -302,10 +302,12 @@ pub fn stages_op_args_controlled<C:crate::key_policy_control::Control>(body:&str
 }
 
 fn marker_word(b:u8)->bool { b.is_ascii_alphanumeric() || b == b'_' }
-pub fn marker_named_vars(body: &str) -> Vec<String> {
+pub fn marker_named_vars(body:&str)->Vec<String>{match marker_named_vars_admitted(body,&mut crate::key_policy_control::Compatibility){Ok(value)=>value,Err(never)=>match never{}}}
+pub fn marker_named_vars_admitted<C:crate::key_policy_control::Control>(body:&str,control:&mut C)->Result<Vec<String>,C::Error>{
     let mut out = Vec::new();
     let mut from = 0;
     while let Some(at) = body[from..].find("nameof(") {
+        control.checkpoint()?;
         let start = from + at;
         from = start + 7;
         if start > 0 && marker_word(body.as_bytes()[start - 1]) {
@@ -314,8 +316,8 @@ pub fn marker_named_vars(body: &str) -> Vec<String> {
         let Some(close) = matching_paren(body, start + 6) else { continue };
         let name = body[start + 7..close].trim();
         if !name.is_empty() && name.bytes().all(marker_word) {
-            out.push(name.to_string());
+            crate::key_policy_control::row(control,&mut out)?;out.push(crate::key_policy_control::own(control,name)?);
         }
     }
-    out
+    control.checkpoint()?;Ok(out)
 }
