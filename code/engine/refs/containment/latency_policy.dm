@@ -56,6 +56,8 @@
  */
 /// Why the last can_be_latent() call refused, for diagnostics and test failure messages.
 GLOBAL_VAR_INIT(latency_last_ineligible, "")
+/// Pin scans (the subtree reference scan of dq_latent_pinned()) can_be_latent() has asked for: only an atom that passed every cheaper test gets one.
+GLOBAL_VAR_INIT(latency_pin_scans, 0)
 
 /// `caller_refs`: references to A in the frames above (dq_latent_pinned()); 1 for a caller's variable.
 /proc/can_be_latent(atom/movable/A, caller_refs = 1)
@@ -75,9 +77,6 @@ GLOBAL_VAR_INIT(latency_last_ineligible, "")
 	if(!dq_latent_eligible(A.type))
 		GLOB.latency_last_ineligible = "[A.type] is not latent-eligible"
 		return
-	if(dq_latent_pinned(A, caller_refs + 1))
-		GLOB.latency_last_ineligible = "[A.type] is pinned ([GLOB.latency_last_pin_reason])"
-		return
 	if(LAZYLEN(A.loc.open_tguis))
 		GLOB.latency_last_ineligible = "[A.loc.type] has an open UI"
 		return
@@ -96,6 +95,12 @@ GLOBAL_VAR_INIT(latency_last_ineligible, "")
 	var/idle = stamp_elapsed(A, latent_touched_at, CLOCK_WORLD)
 	if(idle < delay)
 		GLOB.latency_last_ineligible = "[A.type] idle [idle] of [delay]"
+		return
+	// The pin test last: it scans the atom's whole subtree for outside references (5-25 ms on a full locker, over a second on a loaded crate), and every
+	// condition above is a lookup. Asked first, the sweep scanned items that were not even idle yet.
+	GLOB.latency_pin_scans++
+	if(dq_latent_pinned(A, caller_refs + 1))
+		GLOB.latency_last_ineligible = "[A.type] is pinned ([GLOB.latency_last_pin_reason])"
 		return
 	GLOB.latency_last_ineligible = ""
 	return TRUE

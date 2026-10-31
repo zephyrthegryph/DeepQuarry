@@ -295,6 +295,9 @@ GLOBAL_LIST(construction_frame_floor)
 // Frame Object (Structure)
 //////////////////////////////
 
+/// A placed machine or computer frame is solid: a hold on its density from its class (prepare_placed_frame()).
+SOURCE_DEF(frame_class)
+
 /obj/structure/frame
 	material_template = /datum/material_template/machine_part
 	material_total = 5 * SHEET_MATERIAL_AMOUNT
@@ -386,11 +389,11 @@ CAPABILITIES(/obj/structure/frame)
 			need_circuit = FALSE
 			rel_set(src, nameof(circuit), new frame_type.circuit(src))
 
-	if(frame_type.name == "Computer")
-		set_density(TRUE)
-
-	if(frame_type.frame_class == FRAME_CLASS_MACHINE)
-		set_density(TRUE)
+	// Density is a stat: a raw write of it lands in the served value only, and the next recompute composes it back to the type's own (0 for a frame), so a placed
+	// machine or computer frame would lose its solidity (the staleness checker's `STALE stat: /obj/structure/frame density`, one boot in several). A hold
+	// from the frame's class is a contribution the composition keeps.
+	if(frame_type.name == "Computer" || frame_type.frame_class == FRAME_CLASS_MACHINE)
+		hold(src, STAT_DENSITY, TRUE, SRC_FRAME_CLASS, priority = PRIORITY_FORCE)
 
 	seed_native_frame_graph()
 
