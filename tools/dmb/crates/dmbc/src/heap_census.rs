@@ -754,6 +754,10 @@ impl HeapCensus {
             self.unknown("startup.unit_members", "private BTreeMap node capacity excluded; one shared authoritative procedure identity index");
         }
         startup_artifacts::inventory(self, startup.static_inventory());
+        if let Some(issued)=startup.issued_initializer_plan(){
+            issued.visit_frame_storage(|pointer,payload,capacity|{self.exposed_buffer("startup.issued_frame",pointer,payload,capacity);});
+            self.unknown("startup.issued_frame","std Arc control/header and allocator overhead for weak original body/code arrays excluded; existing data layouts counted without dereferencing dropped payloads");
+        }
         let plan = startup.plan();
         self.snapshot(&plan.source);
         self.symbols(&plan.symbols);

@@ -259,6 +259,7 @@ mod tests {
     #[test]
     fn inherited_receivers_warn_once_but_distinct_includes_remain_distinct() {
         let origin = InitializerOrigin {
+                static_receipt:None,
             occurrence: dm_tree::OccurrenceId(3),
             kind: dm_tree::initializers::InitializerOriginKind::Declaration(dm_tree::MemberId(2)),
             encounter_ordinal: 3,

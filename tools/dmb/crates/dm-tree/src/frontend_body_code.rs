@@ -38,6 +38,19 @@ pub(super) fn visit_issued_code_storage(
     }
 }
 impl ColdFrontend {
+    pub(super) fn require_current_body_code_owners(&self)->Result<(),Diagnostic>{
+        if !Arc::ptr_eq(&self.bodies, &self.issued_bodies)
+            || !Arc::ptr_eq(&self.syntax, &self.issued_syntax)
+            || !self.expanded.text.same_view(&self.issued_arena)
+        {
+            return Err(internal("body code differs from current frontend issuance"));
+        }
+        self.callable_roster()
+            .map_err(|message| internal(&message))?;
+        if self.issued_bodies.len()!=self.issued_body_codes.len(){return Err(internal("body code owner roster differs from issued bodies"));}
+        Ok(())
+    }
+
     pub fn visit_body_code_storage(&self, visit: impl FnMut(usize, usize, usize)) {
         visit_issued_code_storage(&self.issued_body_codes, visit)
     }
@@ -48,14 +61,7 @@ impl ColdFrontend {
         &'a self,
         body: &BodyOccurrence,
     ) -> Result<IssuedBodyCode<'a>, Diagnostic> {
-        if !Arc::ptr_eq(&self.bodies, &self.issued_bodies)
-            || !Arc::ptr_eq(&self.syntax, &self.issued_syntax)
-            || !self.expanded.text.same_view(&self.issued_arena)
-        {
-            return Err(internal("body code differs from current frontend issuance"));
-        }
-        self.callable_roster()
-            .map_err(|message| internal(&message))?;
+        self.require_current_body_code_owners()?;
         let index = *self
             .body_by_declaration
             .get(&body.declaration)

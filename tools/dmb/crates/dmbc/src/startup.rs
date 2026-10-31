@@ -24,6 +24,7 @@ impl From<&str> for StartupFailure {fn from(value:&str)->Self{Self::Semantic(val
 trait StartupDemand {
     type Failure:From<String>+From<&'static str>+Send;
     fn semantic(error:Self::Failure)->Result<String,Self::Failure>;
+    fn finish(draft:dm_tree::initializers::DeclarationDraft<'_>,frontend:&ColdFrontend,procedures:&[(OccurrenceId,ProcedureCapture)])->Result<StartupPlan,Self::Failure>;
     fn body<'f,T>(arena:&dm_tree::frontend::BodyArena<'f>,body:&dm_tree::frontend::BodyOccurrence,
         produce:impl FnOnce(&dm_tree::frontend::ParsedBody<'f>)->T)->Result<T,Self::Failure>;
 }
@@ -32,6 +33,9 @@ struct CheckedStartup;
 impl StartupDemand for CompatibilityStartup {
     type Failure=String;
     fn semantic(error:String)->Result<String,String>{Ok(error)}
+    fn finish(draft:dm_tree::initializers::DeclarationDraft<'_>,_frontend:&ColdFrontend,procedures:&[(OccurrenceId,ProcedureCapture)])->Result<StartupPlan,String>{
+        dm_tree::initializers::finish_declaration_draft(draft,procedures.iter().map(|(occurrence,plan)|(*occurrence,&**plan))).map(StartupPlan::Compatibility)
+    }
     fn body<'f,T>(arena:&dm_tree::frontend::BodyArena<'f>,body:&dm_tree::frontend::BodyOccurrence,
         produce:impl FnOnce(&dm_tree::frontend::ParsedBody<'f>)->T)->Result<T,String>{
         arena.with_parsed(body,produce).map_err(|error|format!("startup body: {error:?}"))
@@ -39,6 +43,10 @@ impl StartupDemand for CompatibilityStartup {
 }
 impl StartupDemand for CheckedStartup {
     type Failure=StartupFailure;
+    fn finish(draft:dm_tree::initializers::DeclarationDraft<'_>,frontend:&ColdFrontend,procedures:&[(OccurrenceId,ProcedureCapture)])->Result<StartupPlan,StartupFailure>{
+        for (_,capture) in procedures { if let ProcedureCapture::Empty(plan)=capture { if !plan.declarations.is_empty() || !plan.origins.is_empty() { return Err("unissued startup static capture contains rows".into()); } } }
+        dm_tree::initializers::finish_declaration_draft_issued(draft,frontend,procedures.iter().filter_map(|(occurrence,capture)|match capture{ProcedureCapture::Issued(receipt)=>Some((*occurrence,receipt)),ProcedureCapture::Empty(_)=>None})).map(StartupPlan::Issued).map_err(Into::into)
+    }
     fn semantic(error:StartupFailure)->Result<String,StartupFailure>{
         match error { StartupFailure::Semantic(reason)=>Ok(reason), operation=>Err(operation) }
     }
@@ -61,13 +69,28 @@ pub struct CapturedStartup<'a> {
 /// revision. No resolver or reference into a movable frontend is retained.
 pub struct StartupFacts {
     issuance: Option<dm_tree::frontend::FrontendIssuance>,
-    plan: InitializerPlan,
+    plan: StartupPlan,
     procedures: Vec<(OccurrenceId, ProcedureCapture)>,
     procedure_index: std::collections::HashMap<OccurrenceId, usize>,
     static_inventory: std::sync::Arc<dm_tree::procedure_statics::StaticInventory>,
     unit_members: std::sync::Arc<
         std::collections::BTreeMap<crate::lowering::UnitIdentity, dm_tree::MemberId>,
     >,
+}
+/// Exactly one plan allocation/row family is owned in either mode.
+/// The issued branch cannot be manufactured from a detached public plan.
+enum StartupPlan {
+    Compatibility(InitializerPlan),
+    Issued(dm_tree::initializers::IssuedInitializerPlan),
+}
+impl std::ops::Deref for StartupPlan {
+    type Target=InitializerPlan;
+    fn deref(&self)->&InitializerPlan {match self{Self::Compatibility(plan)=>plan,Self::Issued(plan)=>plan.plan()}}
+}
+impl StartupPlan {
+    fn replace_symbol_overlay(&mut self,symbols:std::sync::Arc<dm_ir::SymbolTable>)->Result<(),String>{
+        match self{Self::Compatibility(plan)=>{plan.symbols=symbols;Ok(())},Self::Issued(plan)=>plan.with_symbol_overlay(symbols)}
+    }
 }
 pub(crate) enum ProcedureCapture {
     Empty(StaticPlan),
@@ -89,6 +112,11 @@ impl std::ops::Deref for CapturedStartup<'_> {
     }
 }
 impl StartupFacts {
+    /// Only the checked original draft/static producer can issue this owner.
+    /// Current source/mapping validation remains the borrowing factory's duty.
+    pub fn issued_initializer_plan(&self)->Option<&dm_tree::initializers::IssuedInitializerPlan>{
+        match &self.plan{StartupPlan::Issued(plan)=>Some(plan),StartupPlan::Compatibility(_)=>None}
+    }
     pub(crate) fn static_inventory(
         &self,
     ) -> &std::sync::Arc<dm_tree::procedure_statics::StaticInventory> {
@@ -364,12 +392,7 @@ fn capture_impl_with_bodies_and_artifacts_using<D:StartupDemand>(
     .map_err(|e| format!("startup declarations: {e:?}"))?;
     drop(draft_timer);
     let finish_timer = dm_profile::detail_timer("startup.finish_draft");
-    let plan = dm_tree::initializers::finish_declaration_draft(
-        base,
-        procedures
-            .iter()
-            .map(|(occurrence, plan)| (*occurrence, &**plan)),
-    )?;
+    let plan = D::finish(base,frontend,&procedures)?;
     drop(finish_timer);
     dm_profile::request_mark("startup.plan_done");
     let procedure_index = procedures
@@ -653,7 +676,7 @@ fn capture_facts_with_executor_and_bodies_and_artifacts_using<D:StartupDemand>(
             return Err("captured spelling does not match symbolic identity".into());
         }
     }
-    startup.plan.symbols = std::sync::Arc::new(symbols);
+    startup.plan.replace_symbol_overlay(std::sync::Arc::new(symbols))?;
     dm_profile::request_mark("startup.spellings_done");
     Ok(std::sync::Arc::new(startup))
 }
@@ -1142,4 +1165,28 @@ mod checked_capture_tests {
         assert_eq!(db.db().stats(dm_query::Kind(4)).computed,1);
         drop(retry_binding);
     }
+}
+
+#[cfg(test)]
+mod issued_plan_tests {
+ use super::*;use std::path::Path;
+ struct Source(&'static str);
+ impl dm_preprocess::SourceProvider for Source{fn read(&self,_:&Path)->Result<String,String>{Ok(self.0.into())}}
+ #[test]
+ fn checked_startup_retains_one_issued_complete_plan_with_real_static_receipts_and_compatibility_stays_plain(){
+  let front=dm_tree::frontend::build(Path::new("checked-issued-startup.dme"),&Source("var/a=1\n/proc/p()\n    var/static/local=2\n    return local\nvar/b=3\n/proc/empty()\n    return 1\n"),&Default::default(),1).unwrap();
+  let executor=dm_exec::BuildExecutor::new(1).unwrap();let bodies=dm_tree::frontend::BodyArena::new(&front);
+  let old=capture_with_executor_and_bodies(&front,&[],&executor,&bodies).unwrap();
+  assert!(old.issued_initializer_plan().is_none());
+  let checked=capture_with_executor_and_bodies_checked(&front,&[],&executor,&bodies).unwrap();
+  let issued=checked.issued_initializer_plan().expect("checked private draft/static merge issues the plan");
+  assert!(std::ptr::eq(issued.plan(),checked.plan()),"one underlying plan, not a copied semantic model");assert!(issued.matches_snapshot(&front.snapshot));assert!(issued.matches_frontend(&front));
+  assert_eq!(old.plan().writes,checked.plan().writes);assert_eq!(old.plan().origins,checked.plan().origins);assert_eq!(old.plan().identity,checked.plan().identity);
+  assert!(checked.procedure_captures().iter().any(|(_,capture)|matches!(capture,ProcedureCapture::Issued(_))));
+  assert!(checked.procedure_captures().iter().any(|(_,capture)|matches!(capture,ProcedureCapture::Empty(_))));
+  let added=dm_ir::SymbolId::of("asset.png");
+  let spelled=capture_with_executor_and_bodies_checked(&front,&[(added,std::sync::Arc::from(b"asset.png".as_slice()))],&executor,&bodies).unwrap();
+  let issued=spelled.issued_initializer_plan().unwrap();assert_eq!(issued.plan().symbols.text(added),Some("asset.png"));assert!(issued.matches_snapshot(&front.snapshot));
+  assert_eq!(spelled.plan().writes,checked.plan().writes);assert_eq!(spelled.plan().origins,checked.plan().origins);
+ }
 }

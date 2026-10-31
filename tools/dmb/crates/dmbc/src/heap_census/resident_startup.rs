@@ -43,7 +43,10 @@ pub(crate) fn weight(
     let mut census = HeapCensus::new("resident_startup_admission");
     census.arc_object("resident_startup.receipt", receipt);
     census.arc_text("resident_startup.source", receipt.source());
+    receipt.visit_weak_syntax_storage(|p,b,c|{census.exposed_buffer("resident_startup.syntax_code",p,b,c);});
+    if receipt.retained_statement_body().is_some(){census.unknown("resident_startup.syntax_code","std Arc control/header and allocator overhead of original code Weak excluded");}
     let private_indexes = census.static_plan(receipt.plan());
+    if let Some(body)=receipt.retained_statement_body(){if census.arc_object("resident_startup.syntax",body){census.typed_body("resident_startup.syntax",body);}}
     let encounters = census.buffer_encounters;
     let report = census.finish();
     if report.unknown_capacity_payload_bytes != 0

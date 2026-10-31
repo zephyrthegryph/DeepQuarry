@@ -212,6 +212,18 @@ impl SymbolTable {
     }
 
     /// Deterministic traversal for export and self-contained cache segments.
+    /// True only for an immutable overlay retaining this exact original table.
+    /// Interning consults every parent before insertion, so an overlay cannot
+    /// replace an existing symbolic binding. No roster materialization occurs.
+    pub fn is_overlay_of(&self,original:&Arc<Self>)->bool {
+        let mut parent=self.parent.as_ref();
+        while let Some(table)=parent {
+            if Arc::ptr_eq(table,original) { return true; }
+            parent=table.parent.as_ref();
+        }
+        false
+    }
+
     pub fn ordered(&self) -> Vec<(SymbolId, &str)> {
         let mut symbols: Vec<_> = self
             .texts

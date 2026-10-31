@@ -1210,3 +1210,22 @@ leaked cancellation. Resource limits were not raised. The body cleanup reservati
 is conservative; main-workspace availability and performance remain unproven.
 No production client default or shared compiler binary changed. These focused
 checks do not replace the final production compile, DreamChecker and ratchet gate.
+
+
+### Complete initializer source identity and projected borrows
+
+The complete issued initializer plan now joins the original finalized plan with
+its actual current frontend and sealed static receipts. Static roots borrow the
+same retained statement body and variable RHS. A warm source-prefix change uses
+explicit span projection and requires the same body-code identity and termination
+profile; equal text from another frontend grants no authority. The compatibility
+owned-expression API remains separate from projected native borrows.
+
+Thirty-three focused native tests passed for issued complete plans, current-frame
+and foreign-counter checks, one-shot body admission, warm root reuse, projected
+source access, owned compatibility hooks and scalar evaluation. The native test
+build and native-only Analyze build passed. Two census callbacks and one older
+owned-API test needed type corrections; their failed build logs are preserved.
+The production runner, dimension consumers and runtime lowering are still not
+switched to this complete source factory. This is a verified source-identity
+checkpoint, not completed one-frontend client convergence.

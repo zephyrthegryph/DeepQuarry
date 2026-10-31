@@ -27,7 +27,7 @@ impl Demand for Compatibility{
     fn checkpoint()->Result<(),Self::Failure>{Ok(())}
     fn finish<T>(result:Result<T,Self::Failure>)->Result<T,Self::Failure>{result}
     fn discard<T>(_:Option<Result<T,Self::Failure>>)->Result<(),Self::Failure>{Ok(())}
-    fn prepared<'source>(e:&'source dyn CapturedInitializerEvaluator,w:&InitializerWrite,v:&SymbolicExpression)->Result<(Evaluation,Option<ScopedPreparedInitializerExpression<'source>>),Self::Failure>{e.evaluate_prepared_write(w,v).map_err(Into::into)}
+    fn prepared<'source>(e:&'source dyn CapturedInitializerEvaluator,w:&InitializerWrite,v:&SymbolicExpression)->Result<(Evaluation,Option<ScopedPreparedInitializerExpression<'source>>),Self::Failure>{e.evaluate_prepared_write(w,v).map(|(evaluation,prepared)|(evaluation,prepared.map(ScopedPreparedInitializerExpression::from_owned))).map_err(Into::into)}
     fn write(e:&dyn CapturedInitializerEvaluator,w:&InitializerWrite,v:&SymbolicExpression)->Result<Evaluation,Self::Failure>{e.evaluate_write(w,v).map_err(Into::into)}
     fn fold(w:&InitializerWrite,a:&dm_syntax::Expr,s:&str,t:&SymbolTable,e:&dyn CapturedInitializerEvaluator)->Result<Option<[u32;6]>,Self::Failure>{transform::fold(w,a,s,t,e).map_err(Into::into)}
     fn literal(a:&dm_syntax::Expr,w:&InitializerWrite,t:&SymbolTable,s:&str,e:&dyn CapturedInitializerEvaluator)->Result<bool,Self::Failure>{scalar_literal(a,w,t,s,e).map_err(Into::into)}

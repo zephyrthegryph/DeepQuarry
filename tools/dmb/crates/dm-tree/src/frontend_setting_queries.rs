@@ -102,7 +102,7 @@ impl<'issuer, 'item> SettingStatementsInput<'issuer, 'item> {
             )));
         }
         self.attempted = true;
-        let result = body_archive::parse_statements_with_setting_admission(
+        let result = body_archive::parse_statements_with_body_literal_admission(
             self.item,
             self.source,
             self.syntax,
@@ -110,7 +110,16 @@ impl<'issuer, 'item> SettingStatementsInput<'issuer, 'item> {
             Some(self.code.identity()),
             a,
             self.supported,
-        )?;
+        );
+        // SAME admitted native body boundary as Kind4: preserve the actual
+        // first IO, not a checkpoint proxy, before recording successful output.
+        if matches!(&result,Err(BodySyntaxFailure::Operational(_))){
+            return match a.take_operational_error(){Some(actual)=>Err(BodySyntaxFailure::Operational(actual)),None=>result};
+        }
+        let completion=a.checkpoint();
+        if let Some(actual)=a.take_operational_error(){return Err(BodySyntaxFailure::Operational(actual));}
+        completion.map_err(BodySyntaxFailure::Operational)?;
+        let result=result?;
         self.produced = Some(Arc::downgrade(&result));
         Ok(result)
     }

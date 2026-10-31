@@ -6,11 +6,17 @@ impl HeapCensus {
         receipt: &std::sync::Arc<dm_tree::frontend::IssuedStaticPlan>,
     ) {
         if self.arc_object("startup.static_receipts", receipt) {
+            receipt.visit_weak_source_storage(|pointer,payload,capacity|{self.exposed_buffer("startup.static_source_owners",pointer,payload,capacity);});
+            self.unknown("startup.static_source_owners","std Arc control/header and allocator overhead of weak original snapshot/code owners excluded; fixed owner data layouts counted");
             self.arc_text("startup.static_source", receipt.source());
+            if let Some(body)=receipt.retained_statement_body(){if self.arc_object("startup.static_syntax",body){self.typed_body("startup.static_syntax",body);}}
             if let Some(payload) = receipt.retained_relative_payload() {
                 if self.arc_object("startup.relative_plan", payload) {
                     self.arc_text("startup.static_source", payload.source());
+                    payload.visit_weak_syntax_storage(|p,b,c|{self.exposed_buffer("startup.static_syntax_code",p,b,c);});
+                    self.unknown("startup.static_syntax_code","std Arc control/header and allocator overhead of original code Weak excluded");
                     self.static_plan(payload.plan());
+                    if let Some(body)=payload.retained_statement_body(){if self.arc_object("startup.static_syntax",body){self.typed_body("startup.static_syntax",body);}}
                 }
             }
         }

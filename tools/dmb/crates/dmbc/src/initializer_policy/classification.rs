@@ -194,8 +194,8 @@ fn classify_pending_with<'a,D:Demand>(
                         drop(evaluation);
                         let prepared = match prepared {
                             Some(prepared) => prepared,
-                            None => PreparedInitializerExpression::parse_captured(value, symbols)?
-                                .ok_or("missing initializer expression")?,
+                            None => ScopedPreparedInitializerExpression::from_owned(PreparedInitializerExpression::parse_captured(value, symbols)?
+                                .ok_or("missing initializer expression")?),
                         };
                         let (text, ast, authored) = prepared.into_parts()?;
                         let parser_issued = authored.as_ref() == Some(value);

@@ -25,10 +25,17 @@ impl OriginalRuntimeExpression {
     /// Original AST lease only; the runtime wrapper and its eventual container
     /// must be counted separately by the existing initializer artifact owner.
     pub(crate) fn retained_root_charge(&self)->Option<usize>{self.recipe.retained_root_charge()}
+    /// Body-root variants share their existing admitted parent. The existing
+    /// typed-body census must visit child buffers; None root-charge is not zero.
+    pub(crate) fn retained_statement_body(&self)->Option<&std::sync::Arc<dm_tree::frontend::StatementBody>>{self.recipe.retained_statement_body()}
 }
 impl CurrentRuntimeExpression<'_> {
     pub(crate) fn ast(&self)->&dm_syntax::Expr{self.root.ast()}
-    pub(crate) fn source(&self)->&str{self.root.source()}
+    /// A flat view is available only when original AST coordinates already
+    /// index this source directly. Rebased body statics use projection instead.
+    pub(crate) fn flat_source(&self)->Option<&str>{self.root.flat_source()}
+    pub(crate) fn source_text(&self,original:dm_syntax::Span)->Option<&str>{self.root.source_text(original)}
+    pub(crate) fn project_span(&self,original:dm_syntax::Span)->Option<dm_syntax::Span>{self.root.project_span(original)}
     pub(crate) fn current_span(&self)->dm_syntax::Span{self.root.current_span()}
     pub(crate) fn into_recipe(self)->OriginalRuntimeExpression{OriginalRuntimeExpression::from_original(self.root)}
 }
@@ -56,7 +63,8 @@ mod tests {
             let recipe=OriginalRuntimeExpression::from_original(root);
             let current=recipe.reborrow(&input).unwrap().expect("actual same original input");
             assert_eq!(current.ast() as *const dm_syntax::Expr,pointer);
-            assert_eq!(&current.source()[current.ast().span.range()],"1+2");
+            assert_eq!(current.source_text(current.ast().span),Some("1+2"));
+            assert_eq!(current.project_span(current.ast().span),Some(current.current_span()));
             assert_eq!(&front.expanded.text[current.current_span().range()],"1+2");
             let again=current.into_recipe();assert!(again.same_root(&recipe));assert!(again.same_shape(&recipe));
             assert!(recipe.retained_root_charge().is_some());

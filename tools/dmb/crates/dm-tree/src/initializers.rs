@@ -2,16 +2,28 @@
 //! order without deciding BYOND's materialization or runtime scheduling phases.
 use crate::{DefinitionMode, MemberId, MemberKind, OccurrenceId, Provenance, Target, TreeSnapshot};
 use dm_ir::{InitializerTarget, InitializerValue, InitializerWrite, ResolveQuery, ResolvedMeaning};
-use std::sync::Arc;
+use std::sync::{Arc,Weak};
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub struct InitializerOrigin {
+    /// Producer proof only; compatibility rows carry None. This weak owner is
+    /// excluded from semantic/provenance equality and never grants source
+    /// authority without the private issued-plan/current-frame factory.
+    pub static_receipt:Option<Weak<crate::frontend::IssuedStaticPlan>>,
     pub occurrence: OccurrenceId,
     pub kind: InitializerOriginKind,
     pub encounter_ordinal: usize,
     pub emission_ordinal: usize,
     pub provenance: Provenance,
 }
+impl PartialEq for InitializerOrigin {
+    fn eq(&self,other:&Self)->bool {
+        self.occurrence==other.occurrence&&self.kind==other.kind
+            &&self.encounter_ordinal==other.encounter_ordinal&&self.emission_ordinal==other.emission_ordinal
+            &&self.provenance==other.provenance
+    }
+}
+impl Eq for InitializerOrigin {}
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum InitializerOriginKind {
     Declaration(MemberId),
@@ -32,6 +44,47 @@ pub struct InitializerPlan {
     /// Identity of this ordered authored ledger, not a replacement for lowering
     /// resolver dependency receipts or backend policy/configuration identity.
     pub identity: u128,
+}
+/// Owned result of the original declaration draft joined only to sealed static
+/// producers. The public plan is borrowed; detached public plans cannot mint
+/// this receipt. Source factories still validate their exact current mapping.
+#[derive(Debug)]
+pub struct IssuedInitializerPlan { plan: InitializerPlan, frame:crate::frontend::InitializerFrameReceipt }
+impl IssuedInitializerPlan {
+    pub fn plan(&self)->&InitializerPlan { &self.plan }
+    /// Caller must first bind this owner to its actual current frontend frame.
+    pub(crate) fn static_receipt(&self,ordinal:usize)->Option<Arc<crate::frontend::IssuedStaticPlan>>{
+        let origin=self.plan.origins.get(ordinal)?;
+        if !matches!(origin.kind,InitializerOriginKind::ProcedureStatic{..}){return None}
+        origin.static_receipt.as_ref()?.upgrade()
+    }
+    /// Snapshot ownership alone does not cover body-only changes. Source
+    /// factories must additionally require matches_frontend for the whole frame.
+    pub fn matches_snapshot(&self,source:&TreeSnapshot)->bool {
+        Arc::ptr_eq(&self.plan.source.tree,&source.tree)
+            && Arc::ptr_eq(&self.plan.source.occurrences,&source.occurrences)
+    }
+    /// Existing frame arrays and per-origin Weak static allocations remain
+    /// physically allocated until their last weak owner is dropped. Payloads
+    /// are never dereferenced after the last strong owner has gone.
+    pub fn visit_frame_storage(&self,mut visit:impl FnMut(usize,usize,usize)){
+        self.frame.visit_storage(&mut visit);
+        for origin in self.plan.origins.iter(){if let Some(weak)=&origin.static_receipt{
+            let size=std::mem::size_of::<crate::frontend::IssuedStaticPlan>();
+            visit(weak.as_ptr() as usize,if weak.strong_count()>0{size}else{0},size);
+        }}
+    }
+    pub fn matches_frontend(&self,frontend:&crate::frontend::ColdFrontend)->bool{
+        self.matches_snapshot(&frontend.snapshot)&&self.frame.matches_frontend(frontend)
+    }
+    /// Compilation may append resource/string spellings without replacing any
+    /// original binding. This changes no write, origin, or source owner.
+    pub fn with_symbol_overlay(&mut self,symbols:Arc<dm_ir::SymbolTable>)->Result<(),String> {
+        if !Arc::ptr_eq(&symbols,&self.plan.symbols) && !symbols.is_overlay_of(&self.plan.symbols) {
+            return Err("initializer spelling overlay does not retain original table".into());
+        }
+        self.plan.symbols=symbols; Ok(())
+    }
 }
 /// Issued declaration ledger for one immutable source and emission projection.
 /// The private plan cannot be replaced by a detached mutable public ledger.
@@ -234,6 +287,7 @@ pub fn capture_declaration_draft<'a>(
                 .then_some(metadata.flags),
         });
         origins.push(InitializerOrigin {
+            static_receipt:None,
             occurrence: id,
             kind: InitializerOriginKind::Declaration(member_id),
             encounter_ordinal: id.0 as usize,
@@ -261,6 +315,25 @@ pub fn finish_declaration_draft<'a>(
         draft.writes.into_iter().zip(draft.origins),
         captures,
     )
+}
+
+/// Finish the SAME original draft using producer-issued static plans only.
+/// Empty filtered procedures contribute no rows or spellings and are omitted.
+/// No borrowed source/order references are stored in the escaping receipt.
+pub fn finish_declaration_draft_issued<'a>(
+    draft:DeclarationDraft<'_>,
+    frontend:&crate::frontend::ColdFrontend,
+    captures:impl IntoIterator<Item=(OccurrenceId,&'a Arc<crate::frontend::IssuedStaticPlan>)>,
+)->Result<IssuedInitializerPlan,String> {
+    let source=draft.source;
+    if !Arc::ptr_eq(&source.tree,&frontend.snapshot.tree)||!Arc::ptr_eq(&source.occurrences,&frontend.snapshot.occurrences){return Err("initializer draft differs from current original frontend snapshot".into());}
+    if frontend.source_export_mapping().is_none(){return Err("initializer draft requires original current source mapping".into());}
+    let frame=crate::frontend::InitializerFrameReceipt::issue(frontend)?;
+    let plan=assemble_procedure_rows_checked(source,draft.order,draft.writes.into_iter().zip(draft.origins),captures.into_iter().map(|(occurrence,issued)|{
+        issued.require_current_source(frontend,occurrence)?;
+        Ok((occurrence,issued.plan(),Some(Arc::downgrade(issued))))
+    }),Some(frontend))?;
+    Ok(IssuedInitializerPlan{plan,frame})
 }
 
 /// Interleave captured procedure statics at the procedure declaration's actual
@@ -307,16 +380,37 @@ fn assemble_procedure_rows<'a>(
     rows: impl Iterator<Item = (InitializerWrite, InitializerOrigin)>,
     captures: impl IntoIterator<Item = (OccurrenceId, &'a crate::procedure_statics::StaticPlan)>,
 ) -> Result<InitializerPlan, String> {
+    assemble_procedure_rows_checked(source,order,rows,captures.into_iter().map(|(occurrence,capture)|Ok((occurrence,capture,None))),None)
+}
+fn assemble_procedure_rows_checked<'a>(
+    source: &TreeSnapshot,
+    order: &[OccurrenceId],
+    rows: impl Iterator<Item = (InitializerWrite, InitializerOrigin)>,
+    captures: impl IntoIterator<Item = Result<(OccurrenceId, &'a crate::procedure_statics::StaticPlan,Option<Weak<crate::frontend::IssuedStaticPlan>>),String>>,
+    current:Option<&crate::frontend::ColdFrontend>,
+) -> Result<InitializerPlan, String> {
     let mut symbols = dm_ir::SymbolTable::overlay(source.tree.shared_symbols());
     let mut by_occurrence = std::collections::HashMap::new();
-    for (occurrence, capture) in captures {
-        if by_occurrence.insert(occurrence, capture).is_some()
+    for capture in captures {
+        let (occurrence,capture,static_receipt)=capture?;
+        if by_occurrence.insert(occurrence, (capture,static_receipt)).is_some()
             || capture.declarations.len() != capture.origins.len()
         {
             return Err("duplicate or incomplete procedure static capture".into());
         }
         for (_, text) in capture.symbols.ordered() {
             symbols.intern(text).map_err(|e| e.to_string())?;
+        }
+    }
+    if let Some(frontend)=current {
+        // Reuse the existing join map, not a second procedure index. The
+        // original source-bound prefilter proves only absence; every candidate
+        // still requires an actual current producer-issued static receipt.
+        for body in frontend.bodies.iter(){
+            if !by_occurrence.contains_key(&body.declaration)
+                &&frontend.body_input(body).map_err(|error|error.message)?.may_contain_stored_declarations(){
+                return Err("current stored-declaration candidate lacks issued static producer".into());
+            }
         }
     }
     let mut declarations = rows.peekable();
@@ -331,7 +425,7 @@ fn assemble_procedure_rows<'a>(
             writes.push(write);
             origins.push(origin);
         }
-        if let Some(capture) = by_occurrence.remove(occurrence_id) {
+        if let Some((capture,static_receipt)) = by_occurrence.remove(occurrence_id) {
             let occurrence = source
                 .occurrences
                 .get(*occurrence_id)
@@ -390,6 +484,7 @@ fn assemble_procedure_rows<'a>(
                     declaration_flags: Some(declaration.modifiers),
                 });
                 origins.push(InitializerOrigin {
+                    static_receipt:static_receipt.clone(),
                     occurrence: *occurrence_id,
                     kind: InitializerOriginKind::ProcedureStatic {
                         identity,
@@ -637,3 +732,7 @@ mod tests {
 #[cfg(test)]
 #[path = "initializer_draft_tests.rs"]
 mod draft_tests;
+
+#[cfg(test)]
+#[path="initializers_issued_tests.rs"]
+mod issued_tests;

@@ -27,123 +27,59 @@ pub enum Evaluation {
 /// Request-local syntax prepared by the evaluator's existing admission path.
 /// It contains no cached resolution result or independent dependency domain.
 /// Existing standalone/custom compatibility name retains its owned/static API.
-pub type PreparedInitializerExpression = ScopedPreparedInitializerExpression<'static>;
-/// Native expressions borrow authenticated original source; owned compatibility
-/// expressions remain freely constructible and independently usable.
-pub struct ScopedPreparedInitializerExpression<'source> {
-    syntax: PreparedInitializerSyntax<'source>,
-    authored: Option<SymbolicExpression>,
-    source_features: dm_codegen_byond::SourceFeatures,
+/// Owned compatibility syntax. Its original public constructors, flat source
+/// and custom evaluator hooks remain independent of projected native syntax.
+pub struct PreparedInitializerExpression {
+    source:String,
+    ast:dm_syntax::Expr,
+    authored:Option<SymbolicExpression>,
+    source_features:dm_codegen_byond::SourceFeatures,
 }
-enum PreparedInitializerSyntax<'source> {
-    Compatibility {
-        source: String,
-        ast: dm_syntax::Expr,
-    },
-    Original(dm_tree::frontend::OriginalInitializerExpression<'source>),
-}
-impl<'source> ScopedPreparedInitializerExpression<'source> {
-    /// Compatibility syntax supplied by an evaluator; retention verifies it.
-    pub fn new(source: String, ast: dm_syntax::Expr) -> Self {
-        Self {
-            syntax: PreparedInitializerSyntax::Compatibility { source, ast },
-            authored: None,
-            source_features: Default::default(),
-        }
+impl PreparedInitializerExpression {
+    pub fn new(source:String,ast:dm_syntax::Expr)->Self{Self{source,ast,authored:None,source_features:Default::default()}}
+    pub fn parse(source:String)->Result<Self,String>{Self::parse_optional(source)?.ok_or_else(||"missing initializer expression".into())}
+    pub(crate) fn parse_optional(source:String)->Result<Option<Self>,String>{
+        let parsed=dm_syntax::parse_expression(&source);
+        if !parsed.diagnostics.is_empty(){return Err("invalid initializer expression".into());}
+        Ok(parsed.expr.map(|ast|Self::new(source,ast)))
     }
-    /// Issue syntax directly from the common parser without mutable access.
-    pub fn parse(source: String) -> Result<Self, String> {
-        Self::parse_optional(source)?.ok_or_else(|| "missing initializer expression".into())
-    }
-    pub(crate) fn parse_optional(source: String) -> Result<Option<Self>, String> {
-        let parsed = dm_syntax::parse_expression(&source);
-        if !parsed.diagnostics.is_empty() {
-            return Err("invalid initializer expression".into());
-        }
-        Ok(parsed.expr.map(|ast| Self {
-            syntax: PreparedInitializerSyntax::Compatibility { source, ast },
-            authored: None,
-            source_features: Default::default(),
-        }))
-    }
-    pub fn source(&self) -> &str {
-        match &self.syntax {
-            PreparedInitializerSyntax::Compatibility { source, .. } => source,
-            PreparedInitializerSyntax::Original(root) => root.source(),
-        }
-    }
-    pub fn ast(&self) -> &dm_syntax::Expr {
-        match &self.syntax {
-            PreparedInitializerSyntax::Compatibility { ast, .. } => ast,
-            PreparedInitializerSyntax::Original(root) => root.ast(),
-        }
-    }
-    pub(crate) fn set_source_features(&mut self, features: dm_codegen_byond::SourceFeatures) {
-        self.source_features = features;
-    }
-    pub(crate) fn source_features(&self) -> dm_codegen_byond::SourceFeatures {
-        self.source_features
-    }
-    pub(crate) fn parse_captured(
-        value: &SymbolicExpression,
-        symbols: &SymbolTable,
-    ) -> Result<Option<Self>, String> {
-        let source = value
-            .source_text(symbols)
-            .ok_or("expression spelling is not captured")?;
-        let mut prepared = Self::parse_optional(source)?;
-        if let Some(prepared) = &mut prepared {
-            prepared.authored = Some(value.clone());
-        }
+    pub fn source(&self)->&str{&self.source}
+    pub fn ast(&self)->&dm_syntax::Expr{&self.ast}
+    pub(crate) fn set_source_features(&mut self,features:dm_codegen_byond::SourceFeatures){self.source_features=features;}
+    pub(crate) fn source_features(&self)->dm_codegen_byond::SourceFeatures{self.source_features}
+    pub(crate) fn parse_captured(value:&SymbolicExpression,symbols:&SymbolTable)->Result<Option<Self>,String>{
+        let source=value.source_text(symbols).ok_or("expression spelling is not captured")?;
+        let mut prepared=Self::parse_optional(source)?;
+        if let Some(prepared)=&mut prepared{prepared.authored=Some(value.clone());}
         Ok(prepared)
     }
-    /// Legacy owned syntax cannot consume a native original root by cloning or
-    /// shifting it. The checked classifier must select the native decomposition.
-    fn into_parts(self) -> Result<(String, dm_syntax::Expr, Option<SymbolicExpression>), String> {
-        match self.syntax {
-            PreparedInitializerSyntax::Compatibility { source, ast } => {
-                Ok((source, ast, self.authored))
-            }
-            PreparedInitializerSyntax::Original(_) => {
-                Err("original initializer root requires checked borrowed classification".into())
-            }
-        }
-    }
-    pub(crate) fn from_original(
-        root: dm_tree::frontend::OriginalInitializerExpression<'source>,
-    ) -> Self {
-        Self {
-            authored: Some(root.authored().clone()),
-            syntax: PreparedInitializerSyntax::Original(root),
-            source_features: Default::default(),
-        }
-    }
-    pub(crate) fn original(
-        &self,
-    ) -> Option<&dm_tree::frontend::OriginalInitializerExpression<'source>> {
-        match &self.syntax {
-            PreparedInitializerSyntax::Original(root) => Some(root),
-            _ => None,
-        }
-    }
-    pub(crate) fn into_original(
-        self,
-    ) -> Result<
-        (
-            dm_tree::frontend::OriginalInitializerExpression<'source>,
-            dm_codegen_byond::SourceFeatures,
-        ),
-        Self,
-    > {
-        match self.syntax {
-            PreparedInitializerSyntax::Original(root) => Ok((root, self.source_features)),
-            syntax => Err(Self {
-                syntax,
-                authored: self.authored,
-                source_features: self.source_features,
-            }),
-        }
-    }
+    fn into_parts(self)->Result<(String,dm_syntax::Expr,Option<SymbolicExpression>),String>{Ok((self.source,self.ast,self.authored))}
+}
+/// A moved owned result or a sealed original view. Projected original spans
+/// are never presented as if they directly index a flat current source string.
+pub struct ScopedPreparedInitializerExpression<'source>{syntax:ScopedPreparedSyntax<'source>}
+enum ScopedPreparedSyntax<'source>{
+    Owned(PreparedInitializerExpression),
+    Original{root:dm_tree::frontend::OriginalInitializerExpression<'source>,source_features:dm_codegen_byond::SourceFeatures},
+}
+impl<'source> ScopedPreparedInitializerExpression<'source>{
+    pub fn from_owned(owned:PreparedInitializerExpression)->Self{Self{syntax:ScopedPreparedSyntax::Owned(owned)}}
+    pub fn new(source:String,ast:dm_syntax::Expr)->Self{Self::from_owned(PreparedInitializerExpression::new(source,ast))}
+    pub fn parse(source:String)->Result<Self,String>{PreparedInitializerExpression::parse(source).map(Self::from_owned)}
+    pub(crate) fn parse_optional(source:String)->Result<Option<Self>,String>{PreparedInitializerExpression::parse_optional(source).map(|value|value.map(Self::from_owned))}
+    pub(crate) fn parse_captured(value:&SymbolicExpression,symbols:&SymbolTable)->Result<Option<Self>,String>{PreparedInitializerExpression::parse_captured(value,symbols).map(|value|value.map(Self::from_owned))}
+    pub fn ast(&self)->&dm_syntax::Expr{match &self.syntax{ScopedPreparedSyntax::Owned(owned)=>owned.ast(),ScopedPreparedSyntax::Original{root,..}=>root.ast()}}
+    pub fn flat_source(&self)->Option<&str>{match &self.syntax{ScopedPreparedSyntax::Owned(owned)=>Some(owned.source()),ScopedPreparedSyntax::Original{root,..}=>root.flat_source()}}
+    pub fn source_text(&self,original:dm_syntax::Span)->Option<&str>{match &self.syntax{ScopedPreparedSyntax::Owned(owned)=>owned.source().get(original.range()),ScopedPreparedSyntax::Original{root,..}=>root.source_text(original)}}
+    pub fn project_span(&self,original:dm_syntax::Span)->Option<dm_syntax::Span>{match &self.syntax{ScopedPreparedSyntax::Owned(owned)=>owned.source().get(original.range()).map(|_|original),ScopedPreparedSyntax::Original{root,..}=>root.project_span(original)}}
+    pub(crate) fn set_source_features(&mut self,features:dm_codegen_byond::SourceFeatures){match &mut self.syntax{ScopedPreparedSyntax::Owned(owned)=>owned.set_source_features(features),ScopedPreparedSyntax::Original{source_features,..}=>*source_features=features}}
+    pub(crate) fn source_features(&self)->dm_codegen_byond::SourceFeatures{match &self.syntax{ScopedPreparedSyntax::Owned(owned)=>owned.source_features(),ScopedPreparedSyntax::Original{source_features,..}=>*source_features}}
+    /// Compatibility decomposition moves its original fields. Native runtime
+    /// classification must select its source-aware recipe path explicitly.
+    fn into_parts(self)->Result<(String,dm_syntax::Expr,Option<SymbolicExpression>),String>{match self.syntax{ScopedPreparedSyntax::Owned(owned)=>owned.into_parts(),ScopedPreparedSyntax::Original{..}=>Err("original initializer root requires checked borrowed classification".into())}}
+    pub(crate) fn from_original(root:dm_tree::frontend::OriginalInitializerExpression<'source>)->Self{Self{syntax:ScopedPreparedSyntax::Original{root,source_features:Default::default()}}}
+    pub(crate) fn original(&self)->Option<&dm_tree::frontend::OriginalInitializerExpression<'source>>{match &self.syntax{ScopedPreparedSyntax::Original{root,..}=>Some(root),ScopedPreparedSyntax::Owned(_)=>None}}
+    pub(crate) fn into_original(self)->Result<(dm_tree::frontend::OriginalInitializerExpression<'source>,dm_codegen_byond::SourceFeatures),Self>{match self.syntax{ScopedPreparedSyntax::Original{root,source_features}=>Ok((root,source_features)),syntax=>Err(Self{syntax})}}
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BindingKnowledge {
@@ -211,13 +147,14 @@ pub struct ParallelEvaluator<'a> {
 pub trait CapturedInitializerEvaluator {
     /// Typed prepared syntax tied to this evaluator's authenticated source
     /// lifetime. The old owned checked hook remains the compatibility default.
+    /// The owned result is moved into its scoped wrapper without syntax copying.
     /// No original root is selected or reconstructed by this adapter.
     fn evaluate_scoped_write_checked(
         &self,
         write: &InitializerWrite,
         value: &SymbolicExpression,
     ) -> Result<(Evaluation, Option<ScopedPreparedInitializerExpression<'_>>), InitializerFailure> {
-        self.evaluate_prepared_write_checked(write, value)
+        self.evaluate_prepared_write_checked(write, value).map(|(evaluation,prepared)|(evaluation,prepared.map(ScopedPreparedInitializerExpression::from_owned)))
     }
     /// Original declaration-wave input carries the immutable source ordinal.
     /// Only the authenticated row supplies the RHS; adapted writes from array
@@ -233,7 +170,7 @@ pub trait CapturedInitializerEvaluator {
                 "original declaration input has no authored RHS".into(),
             ));
         };
-        self.evaluate_prepared_write_checked(adapted_write, value)
+        self.evaluate_prepared_write_checked(adapted_write, value).map(|(evaluation,prepared)|(evaluation,prepared.map(ScopedPreparedInitializerExpression::from_owned)))
     }
     /// Additive typed native boundary. Defaults deliberately preserve the
     /// corresponding custom compatibility hook; they never choose another
@@ -1026,7 +963,7 @@ mod original_root_storage_tests {
         let original = root.ast() as *const dm_syntax::Expr;
         let prepared = ScopedPreparedInitializerExpression::from_original(root);
         assert_eq!(prepared.ast() as *const dm_syntax::Expr, original);
-        assert_eq!(&prepared.source()[prepared.ast().span.range()], "1+2");
+        assert_eq!(prepared.source_text(prepared.ast().span), Some("1+2"));
         assert!(prepared.original().is_some());
         assert_eq!(
             prepared.into_parts().err().unwrap(),
@@ -1040,7 +977,7 @@ mod original_root_storage_tests {
             .expect("native decomposition moves handle, never Expr");
         assert_eq!(root.ast() as *const dm_syntax::Expr, original);
         let compatibility = PreparedInitializerExpression::parse("1+2".into()).unwrap();
-        assert!(compatibility.original().is_none());
+        assert_eq!(compatibility.source(), "1+2");
         assert!(
             compatibility.into_parts().is_ok(),
             "standalone owned API remains independent"

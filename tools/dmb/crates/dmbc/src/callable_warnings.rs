@@ -59,6 +59,7 @@ pub(crate) fn capture(
                 unreachable!();
             };
             Ok(InitializerOrigin {
+                static_receipt:None,
                 occurrence: OccurrenceId(u32::try_from(*ordinal).map_err(|_| {
                     InitializerLoweringError::Invariant("too many warning occurrences".into())
                 })?),

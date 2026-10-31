@@ -7,32 +7,47 @@ use dm_ir::{InitializerValue, SymbolicExpression};
 /// canonical AST root is retained, under its existing SAME-counter lease. No
 /// raw source Arc, copied text or allocator role escapes through this handle.
 pub struct OriginalInitializerExpression<'source> {
-    root: dm_syntax::SettingExpression,
+    root: OriginalInitializerRoot,
     source: &'source dm_preprocess::SourceText,
     authored: &'source SymbolicExpression,
     recipe: OriginalInitializerRecipe,
+    current_body:Option<dm_syntax::Span>,
+}
+#[derive(Clone)]
+enum OriginalInitializerRoot{
+ Header(dm_syntax::SettingExpression),
+ Static(super::static_receipt::OriginalStaticInitializerRoot),
+}
+impl OriginalInitializerRoot{
+ fn ast(&self)->&dm_syntax::Expr{match self{Self::Header(root)=>root.original_expression(),Self::Static(root)=>root.ast()}}
+ fn same_root(&self,other:&Self)->bool{match(self,other){(Self::Header(a),Self::Header(b))=>a.same_root(b),(Self::Static(a),Self::Static(b))=>a.same_root(b),_=>false}}
+ fn visit_storage(&self,mut visit:impl FnMut(usize,usize)){match self{Self::Header(root)=>{root.visit_root_storage(&mut visit);root.visit_retention_storage(visit)},Self::Static(root)=>root.visit_storage(visit)}}
 }
 impl std::fmt::Debug for OriginalInitializerExpression<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("OriginalInitializerExpression")
-            .field("current_span", &self.root.current_span())
+            .field("current_span", &self.current_span())
             .finish_non_exhaustive()
     }
 }
 impl OriginalInitializerExpression<'_> {
-    /// Shape is in stable original chunk coordinates. The SAME source() view
-    /// indexes those spans; current diagnostic locations use current_span.
-    pub fn ast(&self) -> &dm_syntax::Expr {
-        self.root.original_expression()
+    /// Borrow original immutable syntax for shape only. Its coordinates may
+    /// precede a warm current prefix; use source_text/project_span explicitly.
+    pub fn ast(&self)->&dm_syntax::Expr{self.root.ast()}
+    /// A flat original-coordinate source exists only for header roots.
+    pub fn flat_source(&self)->Option<&str>{matches!(&self.root,OriginalInitializerRoot::Header(_)).then_some(self.source)}
+    pub fn project_span(&self,span:dm_syntax::Span)->Option<dm_syntax::Span>{
+      match &self.root{
+       OriginalInitializerRoot::Header(root)=>{if span.start>span.end||span.end>self.source.len(){return None}Some(dm_syntax::Span::new(span.start.checked_add(root.current_offset())?,span.end.checked_add(root.current_offset())?))},
+       OriginalInitializerRoot::Static(root)=>{let old=root.original_body();let current=self.current_body?;if span.start<old.start||span.start>span.end||span.end>old.end{return None}Some(dm_syntax::Span::new(span.start.checked_sub(old.start)?.checked_add(current.start)?,span.end.checked_sub(old.start)?.checked_add(current.start)?))}
+      }
     }
-    pub fn source(&self) -> &str {
-        &self.source
-    }
+    pub fn source_text(&self,span:dm_syntax::Span)->Option<&str>{match &self.root{OriginalInitializerRoot::Header(_)=>self.source.get(span.range()),OriginalInitializerRoot::Static(_)=>self.source.get(self.project_span(span)?.range())}}
     pub fn authored(&self) -> &SymbolicExpression {
         &self.authored
     }
     pub fn current_span(&self) -> dm_syntax::Span {
-        self.root.current_span()
+        self.project_span(self.ast().span).expect("sealed original root span has current projection")
     }
     pub fn same_root(&self, other: &Self) -> bool {
         self.root.same_root(&other.root)
@@ -50,18 +65,19 @@ impl OriginalInitializerExpression<'_> {
 /// allocation alive; this Weak points only at the original fixed owner payload.
 /// No source, token buffer, metadata Arc or semantic result is retained here.
 #[derive(Clone)]
-struct OriginalInitializerRecipe {
-    owner: std::sync::Weak<crate::procedure::OriginalProcedureHeaders>,
-    value: dm_syntax::Span,
-    ordinal: usize,
-    count: usize,
+enum OriginalInitializerRecipe {
+ Header{owner:std::sync::Weak<crate::procedure::OriginalProcedureHeaders>,value:dm_syntax::Span,ordinal:usize,count:usize},
+ Static,
+}
+impl OriginalInitializerRecipe{
+ fn matches_header(&self,i:&relative_declarations::OriginalInitializerTokenInput<'_>)->bool{match self{Self::Header{owner,value,ordinal,count}=>std::sync::Weak::ptr_eq(owner,&Arc::downgrade(i.owner))&&*value==i.value&&*ordinal==i.ordinal&&*count==i.count,Self::Static=>false}}
 }
 /// Owned AST-only syntax for runtime artifacts. This is NOT a source or scalar
 /// evaluation receipt. Exact current input and host admission are required again
 /// before any source, location, evaluation or codegen access.
 #[derive(Clone)]
 pub struct InitializerExpressionRecipe {
-    root: dm_syntax::SettingExpression,
+    root: OriginalInitializerRoot,
     recipe: OriginalInitializerRecipe,
 }
 impl std::fmt::Debug for InitializerExpressionRecipe {
@@ -73,27 +89,26 @@ impl std::fmt::Debug for InitializerExpressionRecipe {
 impl InitializerExpressionRecipe {
     /// Shape only, in original chunk coordinates; no source is retained.
     pub fn ast(&self) -> &dm_syntax::Expr {
-        self.root.original_expression()
+        self.root.ast()
     }
     pub fn same_root(&self, other: &Self) -> bool {
         self.root.same_root(&other.root)
     }
+    /// SAME retained parent must be visited with the existing typed-body census
+    /// when this AST-only recipe outlives startup's strong receipt.
+    pub fn retained_statement_body(&self)->Option<&Arc<StatementBody>>{match &self.root{OriginalInitializerRoot::Static(root)=>Some(root.parent()),_=>None}}
     /// Existing root lease covers its original AST allocations. Artifact callers
     /// must separately admit inline recipe/Weak coordination and standard Arc
     /// control-block overhead; this is not total heap/RSS accounting.
     pub fn retained_root_charge(&self) -> Option<usize> {
-        self.root.retained_charge()
+        match &self.root{OriginalInitializerRoot::Header(root)=>root.retained_charge(),OriginalInitializerRoot::Static(_)=>None}
     }
     /// Exposed fixed owner payload retained by Weak, root payload and lease
     /// counter addresses. Existing syntax visitors still account AST children;
     /// live owner contents are visited by their original owning frame only.
     pub fn visit_storage(&self, mut visit: impl FnMut(usize, usize)) {
-        visit(
-            self.recipe.owner.as_ptr() as usize,
-            std::mem::size_of::<crate::procedure::OriginalProcedureHeaders>(),
-        );
-        self.root.visit_root_storage(&mut visit);
-        self.root.visit_retention_storage(visit);
+        if let OriginalInitializerRecipe::Header{owner,..}=&self.recipe{visit(owner.as_ptr() as usize,std::mem::size_of::<crate::procedure::OriginalProcedureHeaders>());}
+        self.root.visit_storage(visit);
     }
     /// None is a genuine original-owner/slot decline and performs no root parse.
     /// Actual operational refusal is Err and must never become cache miss.
@@ -101,7 +116,7 @@ impl InitializerExpressionRecipe {
     /// obtaining the same warm slot then checks current host/counter/control.
     pub fn reborrow_declaration<'source>(&self,input:&OriginalDeclarationExpressionInput<'source>)->Result<Option<OriginalInitializerExpression<'source>>,BodySyntaxFailure>{
         let i=&input.input;
-        if !std::sync::Weak::ptr_eq(&self.recipe.owner,&Arc::downgrade(i.owner)) || self.recipe.value!=i.value || self.recipe.ordinal!=i.ordinal || self.recipe.count!=i.count{return Ok(None)}
+        if !self.recipe.matches_header(i){return Ok(None)}
         let current=input.expression()?;
         if !self.root.same_root(&current.root){return Ok(None)}
         Ok(Some(current))
@@ -110,13 +125,9 @@ impl InitializerExpressionRecipe {
         &self,
         input: &OriginalInitializerExpressionInput<'source>,
     ) -> Result<Option<OriginalInitializerExpression<'source>>, BodySyntaxFailure> {
-        let i = &input.input;
-        if !std::sync::Weak::ptr_eq(&self.recipe.owner, &Arc::downgrade(i.owner))
-            || self.recipe.value != i.value
-            || self.recipe.ordinal != i.ordinal
-            || self.recipe.count != i.count
-        {
-            return Ok(None);
+        match &input.input{
+          OriginalInitializerSource::Header(i)=>if !self.recipe.matches_header(i){return Ok(None)},
+          OriginalInitializerSource::Static{root,..}=>if !matches!(self.recipe,OriginalInitializerRecipe::Static)||!matches!(&self.root,OriginalInitializerRoot::Static(old) if old.same_root(root)){return Ok(None)},
         }
         let current = input.expression()?;
         if !self.root.same_root(&current.root) {
@@ -125,14 +136,27 @@ impl InitializerExpressionRecipe {
         Ok(Some(current))
     }
 }
+#[derive(Clone,Copy)]
+enum OriginalInitializerPlan<'source>{
+    Declaration(&'source crate::initializers::DeclarationPlan<'source>),
+    Issued(&'source crate::initializers::IssuedInitializerPlan),
+}
+impl<'source> OriginalInitializerPlan<'source>{
+    fn plan(self)->&'source crate::initializers::InitializerPlan{match self{Self::Declaration(plan)=>plan.plan(),Self::Issued(plan)=>plan.plan()}}
+    fn matches_frontend(self,frontend:&ColdFrontend)->bool{match self{Self::Declaration(plan)=>std::ptr::eq(plan.source(),&frontend.snapshot),Self::Issued(plan)=>plan.matches_frontend(frontend)}}
+}
+enum OriginalInitializerSource<'source>{
+ Header(relative_declarations::OriginalInitializerTokenInput<'source>),
+ Static{root:super::static_receipt::OriginalStaticInitializerRoot,current_body:dm_syntax::Span},
+}
 /// Exact original private declaration plan row. The adapted write supplied later
 /// by classifier array recursion cannot issue or replace this source proof.
 pub struct OriginalInitializerExpressionInput<'a> {
     frontend: &'a ColdFrontend,
-    plan: &'a crate::initializers::DeclarationPlan<'a>,
+    plan: OriginalInitializerPlan<'a>,
     ordinal: usize,
     expression: &'a SymbolicExpression,
-    input: relative_declarations::OriginalInitializerTokenInput<'a>,
+    input: OriginalInitializerSource<'a>,
 }
 impl std::fmt::Debug for OriginalInitializerExpressionInput<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -161,23 +185,22 @@ impl<'source> OriginalInitializerExpressionInput<'source> {
                 ))
             })?;
         let result = provider.initializer(self)?;
-        if result.root.current_offset() != self.input.offset
-            || !result.source.same_view(self.input.source)
-            || !Arc::ptr_eq(&result.authored.tokens, &self.expression.tokens)
-            || !self
-                .input
-                .slots
-                .contains_original(self.input.ordinal, &result.root)
-        {
-            return Err(BodySyntaxFailure::Operational(std::io::Error::new(
-                std::io::ErrorKind::InvalidData,
-                "initializer provider returned foreign source/root/projection",
-            )));
-        }
+        let valid=match (&self.input,&result.root){
+          (OriginalInitializerSource::Header(i),OriginalInitializerRoot::Header(root))=>root.current_offset()==i.offset&&result.source.same_view(i.source)&&i.slots.contains_original(i.ordinal,root),
+          (OriginalInitializerSource::Static{root,current_body},OriginalInitializerRoot::Static(got))=>root.same_root(got)&&result.current_body==Some(*current_body)&&result.source.same_view(&self.frontend.issued_arena),
+          _=>false,
+        };
+        if !valid || !Arc::ptr_eq(&result.authored.tokens,&self.expression.tokens){return Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"initializer provider returned foreign source/root/projection")))}
         Ok(result)
     }
     pub fn prepare(&self,a:&dm_syntax::SettingAdmission<'_>)->Result<OriginalInitializerExpression<'source>,BodySyntaxFailure>{
-        prepare_original_expression(self.frontend,self.expression,&self.input,a)
+        match &self.input{
+          OriginalInitializerSource::Header(i)=>prepare_original_expression(self.frontend,self.expression,i,a),
+          OriginalInitializerSource::Static{root,current_body}=>{
+            root.require_admission(a)?;
+            Ok(OriginalInitializerExpression{root:OriginalInitializerRoot::Static(root.clone()),source:&self.frontend.issued_arena,authored:self.expression,recipe:OriginalInitializerRecipe::Static,current_body:Some(*current_body)})
+          }
+        }
     }
 }
 fn prepare_original_expression<'source>(frontend:&'source ColdFrontend,expression:&'source SymbolicExpression,i:&relative_declarations::OriginalInitializerTokenInput<'source>,a:&dm_syntax::SettingAdmission<'_>)->Result<OriginalInitializerExpression<'source>,BodySyntaxFailure>{
@@ -211,10 +234,11 @@ fn prepare_original_expression<'source>(frontend:&'source ColdFrontend,expressio
             }
         })?;
         Ok(OriginalInitializerExpression {
-            root,
+            root:OriginalInitializerRoot::Header(root),
+            current_body:None,
             source: i.source,
             authored: expression,
-            recipe: OriginalInitializerRecipe {
+            recipe: OriginalInitializerRecipe::Header {
                 owner: Arc::downgrade(i.owner),
                 value: i.value,
                 ordinal: i.ordinal,
@@ -273,7 +297,7 @@ impl<'source> OriginalDeclarationExpressionContext<'source>{
     /// any transitive declaration read. No repeated whole-source validation.
     pub fn require_initializer(&self,input:&OriginalInitializerExpressionInput<'_>)->Result<(),BodySyntaxFailure>{
         if !std::ptr::eq(self.frontend,input.frontend)
-            || !std::ptr::eq(input.plan.source(),&self.frontend.snapshot)
+            || !input.plan.matches_frontend(self.frontend)
             || !std::ptr::eq(self.mapping,self.frontend.source_export_mapping.as_ref()){
             return Err(BodySyntaxFailure::Syntax(internal("initializer and transitive declaration context use different original frames")));
         }
@@ -320,7 +344,7 @@ impl ColdFrontend{
 /// source/include/mapping validation happens ONCE here, never per initializer.
 pub struct OriginalInitializerContext<'source> {
     frontend: &'source ColdFrontend,
-    plan: &'source crate::initializers::DeclarationPlan<'source>,
+    plan: OriginalInitializerPlan<'source>,
     mapping: &'source source_export_mapping::SourceExportMapping,
 }
 impl std::fmt::Debug for OriginalInitializerContext<'_> {
@@ -346,6 +370,19 @@ impl<'source> OriginalInitializerContext<'source> {
             .origins
             .get(ordinal)
             .ok_or_else(|| reject("original initializer origin unavailable"))?;
+        let InitializerValue::Expression(expression)=&write.value else{return Err(reject("initializer has no authored RHS expression"))};
+        if let crate::initializers::InitializerOriginKind::ProcedureStatic{identity,expanded_span}=origin.kind{
+            let OriginalInitializerPlan::Issued(issued)=plan else{return Err(reject("static source requires original complete issued plan"))};
+            let receipt=issued.static_receipt(ordinal).ok_or_else(||reject("complete static original producer receipt expired"))?;
+            receipt.require_current_source(frontend,origin.occurrence).map_err(|e|reject(&e))?;
+            let declaration=receipt.original_declaration(expanded_span).ok_or_else(||reject("complete static row has no exact producer declaration"))?;
+            let InitializerValue::Expression(native)=&declaration.initializer else{return Err(reject("static producer has no authored RHS expression"))};
+            if !Arc::ptr_eq(&native.tokens,&expression.tokens){return Err(reject("static authored token Arc differs from original producer"))}
+            let root=receipt.original_initializer_root(identity,expanded_span).map_err(|e|reject(&e))?;
+            let index=*frontend.body_by_declaration.get(&origin.occurrence).ok_or_else(||reject("static source current body unavailable"))?;
+            let current_body=frontend.issued_bodies.get(index).ok_or_else(||reject("static source current body index invalid"))?.expanded_span;
+            return Ok(OriginalInitializerExpressionInput{frontend,plan,ordinal,expression,input:OriginalInitializerSource::Static{root,current_body}});
+        }
         let crate::initializers::InitializerOriginKind::Declaration(member) = origin.kind else {
             return Err(reject(
                 "procedure-static initializer roots require original body issuer",
@@ -394,7 +431,7 @@ impl<'source> OriginalInitializerContext<'source> {
             plan,
             ordinal,
             expression,
-            input,
+            input:OriginalInitializerSource::Header(input),
         })
     }
 }
@@ -417,9 +454,16 @@ impl ColdFrontend {
             .ok_or_else(|| reject("initializer current source mapping is unissued"))?;
         Ok(OriginalInitializerContext {
             frontend: self,
-            plan,
+            plan: OriginalInitializerPlan::Declaration(plan),
             mapping,
         })
+    }
+    /// Actual complete ordinal from the SAME checked declaration/static merge.
+    /// Public detached InitializerPlan values cannot issue this source context.
+    pub fn original_issued_initializer_context<'source>(&'source self,plan:&'source crate::initializers::IssuedInitializerPlan)->Result<OriginalInitializerContext<'source>,BodySyntaxFailure>{
+        if !plan.matches_frontend(self) || !Arc::ptr_eq(&self.syntax,&self.issued_syntax) || !self.expanded.text.same_view(&self.issued_arena){return Err(BodySyntaxFailure::Syntax(internal("complete initializer plan is not this original current frontend frame")))}
+        let mapping=self.source_export_mapping().ok_or_else(||BodySyntaxFailure::Syntax(internal("complete initializer source mapping is unissued")))?;
+        Ok(OriginalInitializerContext{frontend:self,plan:OriginalInitializerPlan::Issued(plan),mapping})
     }
     /// Bounded single-input convenience. Native multi-write waves retain one
     /// original_initializer_context and use its input() for every ordinal.
@@ -465,6 +509,7 @@ mod tests {
     #[derive(Debug)]
     struct OriginalHost(Arc<AtomicUsize>);
     impl SettingExpressionQueries for OriginalHost {
+        fn statements(&self,input:&mut SettingStatementsInput<'_,'_>)->Result<Arc<StatementBody>,BodySyntaxFailure>{let check=||Ok(());let a=dm_syntax::SettingAdmission::new(&self.0,128*1024*1024,&check);input.prepare(&a)}
         fn with_declaration_admission(&self,operation:&mut dyn FnMut(&dm_syntax::SettingAdmission<'_>)->Result<(),BodySyntaxFailure>)->Result<(),BodySyntaxFailure>{
             let checkpoint=||Ok(());let a=dm_syntax::SettingAdmission::new(&self.0,128*1024*1024,&checkpoint);
             let result=operation(&a);
@@ -538,7 +583,7 @@ mod tests {
             assert!(root.same_root(&warm));
             assert!(std::ptr::eq(root.ast(), warm.ast()));
             assert_eq!(
-                root.source()[root.ast().span.range()].trim(),
+                root.source_text(root.ast().span).unwrap().trim(),
                 if text.contains("/*") {
                     // Original preprocessing blanks comments without changing byte spans.
                     "1 +                2"
@@ -548,10 +593,10 @@ mod tests {
             );
             assert_eq!(
                 &front.expanded.text[root.current_span().range()],
-                &root.source()[root.ast().span.range()],
+                root.source_text(root.ast().span).unwrap(),
                 "current expanded projection and original primary chunk agree"
             );
-            let actual = dm_syntax::parse_expression(&root.source()[root.ast().span.range()]);
+            let actual = dm_syntax::parse_expression(root.source_text(root.ast().span).unwrap());
             assert!(
                 actual.diagnostics.is_empty(),
                 "independent existing parser validates genuine original root grammar"
@@ -798,7 +843,7 @@ mod tests {
             "source lookup itself allocates no root/slot work"
         );
         let root = input.expression().unwrap();
-        assert_eq!(&root.source()[root.ast().span.range()], "1+2");
+        assert_eq!(root.source_text(root.ast().span).unwrap(), "1+2");
     }
     #[test]
     fn initializer_wave_validates_full_current_mapping_once_for_all_original_ordinals() {
@@ -850,7 +895,7 @@ mod tests {
             (root.into_recipe(), pointer)
         };
         assert!(
-            recipe.recipe.owner.upgrade().is_none(),
+            matches!(&recipe.recipe,OriginalInitializerRecipe::Header{owner,..} if owner.upgrade().is_none()),
             "recipe keeps no source owner alive"
         );
         assert_eq!(recipe.ast() as *const dm_syntax::Expr, pointer);
@@ -944,7 +989,7 @@ mod tests {
         let tree=&front.snapshot.tree;let owner=dm_ir::SymbolId::of("/datum/probe");let name=dm_ir::SymbolId::of("value");let member=tree.resolve(tree.lookup_type(owner).unwrap(),name,crate::MemberKind::Var).unwrap();let metadata=&tree.member(member).unwrap().metadata;
         let context=front.original_declaration_expression_context().unwrap();
         let input=context.selected(owner,name,metadata).unwrap();let first=input.expression().unwrap();
-        assert_eq!(&first.source()[first.ast().span.range()],"unknown+1");
+        assert_eq!(first.source_text(first.ast().span).unwrap(),"unknown+1");
         let warm=context.selected(owner,name,metadata).unwrap().expression().unwrap();assert!(first.same_root(&warm));
         let recipe=first.into_recipe();let rebound=recipe.reborrow_declaration(&input).unwrap().unwrap();assert!(std::ptr::eq(recipe.ast(),rebound.ast()));
         let copied=metadata.as_ref().clone();assert!(context.selected(owner,name,&copied).is_err(),"copied semantic meaning is not original source authority");
@@ -981,6 +1026,63 @@ mod tests {
         let tree=&front.snapshot.tree;let owner=dm_ir::SymbolId::of("/");let name=dm_ir::SymbolId::of("value");let id=tree.resolve(tree.lookup_type(owner).unwrap(),name,crate::MemberKind::Var).unwrap();let metadata=&tree.member(id).unwrap().metadata;
         let mut root=None;context.with_admission(&mut|a|{let _frame=a.evaluation_frame().map_err(BodySyntaxFailure::Operational)?;root=Some(context.selected_admitted(owner,name,metadata,a)?.prepare(a)?);Ok(())}).unwrap();
         let warm=context.selected(owner,name,metadata).unwrap().expression().unwrap();assert!(root.unwrap().same_root(&warm));
+    }
+
+    #[test]
+    fn complete_issued_declaration_ordinals_reuse_private_original_roots_and_refuse_foreign_frame() {
+        let host=Arc::new(OriginalHost(Arc::new(AtomicUsize::new(0)))) as Arc<dyn SettingExpressionQueries>;
+        let text="/datum/probe\n    var/static/value=1+2\n/proc/no_body()\n    return 1\n";
+        let current=front(text,&host);
+        let declarations=crate::initializers::capture_declaration_plan(&current.snapshot,&current.emission_order).unwrap();
+        let original=current.original_initializer_input(&declarations,0).unwrap().expression().unwrap();
+        let draft=crate::initializers::capture_declaration_draft(&current.snapshot,&current.emission_order).unwrap();
+        let issued=crate::initializers::finish_declaration_draft_issued(draft,&current,std::iter::empty()).unwrap();
+        let context=current.original_issued_initializer_context(&issued).unwrap();
+        let input=context.input(0).unwrap();
+        assert!(std::ptr::eq(input.original_write(),&issued.plan().writes[0]));
+        let root=input.expression().unwrap();
+        assert!(original.same_root(&root));
+        current.original_declaration_expression_context().unwrap().require_initializer(&input).unwrap();
+        assert!(context.input(1).is_err());
+        let other=front(text,&host);
+        assert!(other.original_issued_initializer_context(&issued).is_err(),"equal text cannot promote another actual body/code frame");
+    }
+
+    struct StaticIncludes{q:String}
+    impl dm_preprocess::SourceProvider for StaticIncludes{fn read(&self,path:&Path)->Result<String,String>{Ok(match path.file_name().and_then(|x|x.to_str()){Some("p.dm")=>"var/static/before=1+2\n/proc/p()\n    if(1)\n        var/static/value = 3+4\n    return value\nvar/static/after=5+6\n".into(),Some("q.dm")=>self.q.clone(),_=>"#include \"q.dm\"\n#include \"p.dm\"\n".into()})}}
+    fn static_front(state:&mut RetainedSemanticTree,q:String,host:&Arc<dyn SettingExpressionQueries>)->ColdFrontend{
+      let executor=dm_exec::BuildExecutor::new(1).unwrap();
+      build_with_executor_and_semantic_state(Path::new("complete-static.dme"),&StaticIncludes{q},&Default::default(),FrontendConfig{workers:1,engine:None,observer:None},None,&executor,Some(state)).unwrap().with_setting_expression_queries(host).unwrap()
+    }
+    fn static_identity(front:&ColdFrontend,body:&BodyOccurrence)->dm_ir::ProcedureIdentity{
+      let member=front.snapshot.tree.member(body.member).unwrap();dm_ir::ProcedureIdentity{owner:front.snapshot.tree.type_node(member.owner).unwrap().path,name:member.name,verb:false,occurrence:front.snapshot.tree.member_occurrence(body.member).unwrap()}
+    }
+    #[test]
+    fn complete_static_source_shares_actual_var_rhs_and_projects_same_parent_across_prefix_rebind(){
+      let counter=Arc::new(AtomicUsize::new(0));let host=Arc::new(OriginalHost(counter.clone())) as Arc<dyn SettingExpressionQueries>;
+      let mut state=RetainedSemanticTree::default();
+      let front=static_front(&mut state,q_chunk("",1),&host);let arena=BodyArena::new_typed(&front,|_|true);
+      let body=front.bodies.iter().find(|body|front.snapshot.tree.member(body.member).unwrap().name==dm_ir::SymbolId::of("p")).unwrap();
+      let (receipt,parent)=arena.with_parsed_checked(body,|parsed|(parsed.capture_stored_declarations(static_identity(&front,body)).unwrap(),parsed.shared_statement_body().unwrap())).unwrap();
+      let draft=crate::initializers::capture_declaration_draft(&front.snapshot,&front.emission_order).unwrap();
+      let issued=crate::initializers::finish_declaration_draft_issued(draft,&front,[(body.declaration,&receipt)]).unwrap();
+      assert_eq!(issued.plan().writes.len(),3,"complete ordinals interleave declarations and stored procedure rows");
+      let context=front.original_issued_initializer_context(&issued).unwrap();let input=context.input(1).unwrap();let root=input.expression().unwrap();
+      let dm_syntax::StatementKind::If{then_branch,..}=&parent.parsed().statements[0].kind else{panic!("original if")};
+      let dm_syntax::StatementKind::Var{value:Some(original),..}=&then_branch[0].kind else{panic!("original static Var")};
+      assert!(std::ptr::eq(root.ast(),original));assert_eq!(root.source_text(root.ast().span),Some("3+4"));assert!(root.flat_source().is_none());
+      let recipe=root.into_recipe();let relative=receipt.relative_payload().unwrap();
+      let padded=static_front(&mut state,q_chunk("// current prefix\n\n",333),&host);
+      let current_body=padded.bodies.iter().find(|body|padded.snapshot.tree.member(body.member).unwrap().name==dm_ir::SymbolId::of("p")).unwrap();
+      let rebound=relative.bind(&padded,current_body).unwrap();
+      let draft=crate::initializers::capture_declaration_draft(&padded.snapshot,&padded.emission_order).unwrap();
+      let current=crate::initializers::finish_declaration_draft_issued(draft,&padded,[(current_body.declaration,&rebound)]).unwrap();
+      let current_context=padded.original_issued_initializer_context(&current).unwrap();let current_input=current_context.input(1).unwrap();
+      let warm=recipe.reborrow(&current_input).unwrap().unwrap();assert!(std::ptr::eq(warm.ast(),original));assert_eq!(warm.source_text(warm.ast().span),Some("3+4"));assert_eq!(&padded.expanded.text[warm.current_span().range()],"3+4");assert_ne!(warm.current_span(),warm.ast().span);
+      assert!(padded.original_issued_initializer_context(&issued).is_err(),"body source frame cannot be supplied by old complete plan");
+      let check=||Ok(());let other=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&other,128*1024*1024,&check);
+      assert!(matches!(current_input.prepare(&a),Err(BodySyntaxFailure::Operational(ref e)) if e.kind()==std::io::ErrorKind::InvalidInput));
+      assert!(std::ptr::eq(current_input.expression().unwrap().ast(),original),"foreign counter refusal cannot replace original parent");
     }
 
 }

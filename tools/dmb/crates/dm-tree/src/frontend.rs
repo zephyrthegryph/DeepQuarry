@@ -575,7 +575,7 @@ pub use body_arena::{BodyArena, BodyArenaStorage};
 
 #[path = "frontend_static_receipt.rs"]
 mod static_receipt;
-pub use static_receipt::{IssuedStaticPlan, RelativeStaticPlan};
+pub use static_receipt::{InitializerFrameReceipt, IssuedStaticPlan, RelativeStaticPlan};
 #[path = "frontend_expression_site.rs"]
 mod expression_site;
 
@@ -761,8 +761,8 @@ impl ParsedBody<'_> {
     }
     /// Kind4 already carries its checked shared model. One-shot native demand
     /// uses ONLY the attached settings provider/direct permit, never a new Db or
-    /// a full-body query attachment. A proved empty settings roster needs no root
-    /// admission and keeps the existing ordinary statement parser fast path.
+    /// a full-body query attachment. Unattached compatibility demand with a
+    /// proved empty settings roster keeps the ordinary statement parser path.
     pub(super) fn admit_statements_checked(
         mut self,
         supported: fn(&[dm_syntax::Statement]) -> bool,
@@ -777,7 +777,10 @@ impl ParsedBody<'_> {
         let proof = proof.ok_or_else(|| {
             BodySyntaxFailure::Syntax(internal("original statement settings receipt unavailable"))
         })?;
-        if proof.owner.settings.is_empty() {
+        // A native provider also admits ordinary literal children/statics after
+        // an ACTUAL checked body request, even when this body has no Set.
+        // Unattached compatibility frontends retain the ordinary fast path.
+        if proof.owner.settings.is_empty() && self.issuer.setting_expression_queries.is_none() {
             return Ok(self.admit_statements(supported));
         }
         let statements =
