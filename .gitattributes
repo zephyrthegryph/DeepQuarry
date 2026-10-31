@@ -96,3 +96,7 @@ tools/dmb/fixtures/unified_checks/effect_multi_target/**/reference-*.stderr -tex
 tools/analyze/examples/support/tracked_lists_original.rs -text whitespace=cr-at-eol
 # Leading spaces exercise the original nested-proc lookalike matcher.
 tools/analyze/fixtures/native_tracked_lists/code/probe.dm whitespace=-indent-with-non-tab
+
+# Frozen original write-policy bytes and intentional nested oracle indentation.
+tools/analyze/examples/support/writes_original.rs -text whitespace=-blank-at-eof
+tools/analyze/fixtures/native-global-classifier/code/calls.dm whitespace=-indent-with-non-tab

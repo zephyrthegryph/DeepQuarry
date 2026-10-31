@@ -20,6 +20,7 @@ pub struct IssuedStaticPlan {
 /// source addresses, hashes and equal body text cannot mint this receipt.
 #[derive(Debug)]
 struct StaticSourceReceipt {
+    declaration:crate::OccurrenceId,
     tree:Weak<crate::SemanticTree>,
     occurrences:Weak<crate::OccurrenceTable>,
     code:Weak<super::BodyCodeIdentity>,
@@ -28,7 +29,7 @@ struct StaticSourceReceipt {
 impl StaticSourceReceipt {
     fn new(frontend:&ColdFrontend,body:&BodyOccurrence)->Result<Self,String>{
         let code=frontend.body_code(body).map_err(|error|error.message)?;
-        Ok(Self{tree:Arc::downgrade(&frontend.snapshot.tree),occurrences:Arc::downgrade(&frontend.snapshot.occurrences),code:Arc::downgrade(code.identity()),termination:code.termination()})
+        Ok(Self{declaration:body.declaration,tree:Arc::downgrade(&frontend.snapshot.tree),occurrences:Arc::downgrade(&frontend.snapshot.occurrences),code:Arc::downgrade(code.identity()),termination:code.termination()})
     }
     fn matches(&self,frontend:&ColdFrontend,body:&BodyOccurrence)->Result<bool,String>{
         let (Some(tree),Some(occurrences),Some(code))=(self.tree.upgrade(),self.occurrences.upgrade(),self.code.upgrade())else{return Ok(false)};
@@ -140,10 +141,17 @@ impl IssuedStaticPlan {
             (snapshot.code.as_ptr() as usize,snapshot.code.strong_count()>0,std::mem::size_of::<super::BodyCodeIdentity>()),
         ]{visit(pointer,if live{capacity}else{0},capacity);}
     }
+    /// Resource-domain predicate only. Current source/code/termination authority
+    /// is checked separately by require_current_source before native use.
+    pub fn admitted_by(&self,a:&dm_syntax::SettingAdmission<'_>)->Result<bool,super::BodySyntaxFailure>{
+        let pending=a.checkpoint();if let Some(actual)=a.take_operational_error(){return Err(super::BodySyntaxFailure::Operational(actual))}pending.map_err(super::BodySyntaxFailure::Operational)?;
+        Ok(self.syntax.as_ref().and_then(|body|body.literal_admission.as_ref()).is_some_and(|lease|lease.is_admitted_by(a)))
+    }
+    pub(crate) fn source_occurrence(&self)->crate::OccurrenceId{self.snapshot.declaration}
     pub(crate) fn require_current_source(&self,frontend:&ColdFrontend,occurrence:crate::OccurrenceId)->Result<(),String>{
         let index=*frontend.body_by_declaration.get(&occurrence).ok_or("static source occurrence has no current body")?;
         let body=frontend.issued_bodies.get(index).ok_or("static source current body missing")?;
-        if self.body_span!=body.expanded_span||!self.snapshot.matches(frontend,body)?{
+        if self.snapshot.declaration!=occurrence||self.body_span!=body.expanded_span||!self.snapshot.matches(frontend,body)?{
             return Err("static producer differs from current original body/code issuance".into());
         }
         Ok(())
@@ -308,17 +316,18 @@ pub(crate) struct OriginalStaticInitializerRoot {
     body:Arc<super::StatementBody>,
     header:dm_syntax::Span,
     value:dm_syntax::Span,
+    dimension:Option<usize>,
     original_body:dm_syntax::Span,
 }
 impl OriginalStaticInitializerRoot {
     pub(crate) fn parent(&self)->&Arc<super::StatementBody>{&self.body}
     pub(crate) fn ast(&self)->&dm_syntax::Expr{
-        static_value(&self.body.parsed().statements,self.header)
+        match self.dimension{None=>static_value(&self.body.parsed().statements,self.header),Some(index)=>static_dimension(&self.body,self.header,index)}
             .expect("private static root locator remains on immutable original body")
     }
     pub(crate) fn original_body(&self)->dm_syntax::Span{self.original_body}
     pub(crate) fn same_root(&self,other:&Self)->bool{
-        Arc::ptr_eq(&self.body,&other.body)&&self.header==other.header&&self.value==other.value
+        Arc::ptr_eq(&self.body,&other.body)&&self.header==other.header&&self.value==other.value&&self.dimension==other.dimension
     }
     pub(crate) fn require_admission(&self,a:&dm_syntax::SettingAdmission<'_>)->Result<(),super::BodySyntaxFailure>{
         let status=a.checkpoint();if let Some(actual)=a.take_operational_error(){return Err(super::BodySyntaxFailure::Operational(actual))}status.map_err(super::BodySyntaxFailure::Operational)?;
@@ -354,7 +363,7 @@ fn static_value(mut statements:&[dm_syntax::Statement],header:dm_syntax::Span)->
     }
 }
 impl IssuedStaticPlan {
-    pub(crate) fn original_initializer_root(&self,identity:dm_ir::ProcedureStaticIdentity,header:dm_syntax::Span)->Result<OriginalStaticInitializerRoot,String>{
+    fn original_syntax_header(&self,identity:dm_ir::ProcedureStaticIdentity,header:dm_syntax::Span)->Result<(&Arc<super::StatementBody>,dm_syntax::Span),String>{
         let index=self.plan.origins.binary_search_by_key(&header.start,|origin|origin.header_span.start).map_err(|_|"static root header is not original producer origin")?;
         let origin=self.plan.origins.get(index).ok_or("static root origin unavailable")?;
         let declaration=self.plan.declarations.get(index).ok_or("static root declaration unavailable")?;
@@ -364,9 +373,22 @@ impl IssuedStaticPlan {
             header.start.checked_sub(self.body_span.start).and_then(|v|v.checked_add(self.syntax_body.start)).ok_or("static header projection overflow")?,
             header.end.checked_sub(self.body_span.start).and_then(|v|v.checked_add(self.syntax_body.start)).ok_or("static header projection overflow")?);
         if original_header.start<self.syntax_body.start||original_header.end>self.syntax_body.end{return Err("static root header outside original body".into())}
+        Ok((body,original_header))
+    }
+    pub(crate) fn original_initializer_root(&self,identity:dm_ir::ProcedureStaticIdentity,header:dm_syntax::Span)->Result<OriginalStaticInitializerRoot,String>{
+        let (body,original_header)=self.original_syntax_header(identity,header)?;
         let value=static_value(&body.parsed().statements,original_header).ok_or("static producer original Var RHS unavailable")?;
         if value.span.start<original_header.start||value.span.end>original_header.end{return Err("static root RHS outside original header".into())}
-        Ok(OriginalStaticInitializerRoot{body:Arc::clone(body),header:original_header,value:value.span,original_body:self.syntax_body})
+        Ok(OriginalStaticInitializerRoot{body:Arc::clone(body),header:original_header,value:value.span,dimension:None,original_body:self.syntax_body})
+    }
+    pub(crate) fn original_dimension_root(&self,identity:dm_ir::ProcedureStaticIdentity,header:dm_syntax::Span,index:usize,count:usize)->Result<OriginalStaticInitializerRoot,String>{
+        let (body,original_header)=self.original_syntax_header(identity,header)?;
+        let [fact]=body.parsed().local_variables.in_span(original_header)? else{return Err("static dimension requires one original local declaration row".into())};
+        let array=fact.array_syntax.as_ref().ok_or("original static dimension array ledger unavailable")?;
+        if array.root.dimension_slots.len()!=count{return Err("static dimension count differs from original primary grammar".into())}
+        let value=static_dimension(body,original_header,index).ok_or("original static dimension expression unavailable")?;
+        if value.span.start<original_header.start||value.span.end>original_header.end{return Err("static dimension outside original declaration".into())}
+        Ok(OriginalStaticInitializerRoot{body:Arc::clone(body),header:original_header,value:value.span,dimension:Some(index),original_body:self.syntax_body})
     }
     pub(crate) fn original_declaration(&self,header:dm_syntax::Span)->Option<&dm_ir::ProcedureStaticDeclaration>{
         let index=self.plan.origins.binary_search_by_key(&header.start,|origin|origin.header_span.start).ok()?;
@@ -393,4 +415,9 @@ mod static_syntax_profile_tests{
   let changed=if current.termination()==dm_syntax::BodyTermination::Unknown{dm_syntax::BodyTermination::ExhaustedInput}else{dm_syntax::BodyTermination::Unknown};
   assert!(!same_syntax_profile(&code,changed,&current),"same actual code owner does not erase lexical termination proof");
  }
+}
+
+fn static_dimension(body:&super::StatementBody,header:dm_syntax::Span,index:usize)->Option<&dm_syntax::Expr>{
+ let [fact]=body.parsed().local_variables.in_span(header).ok()? else{return None};
+ let array=fact.array_syntax.as_ref()?;let slot=(*array.root.dimension_slots.get(index)?)?;array.root.dimensions.get(slot)
 }

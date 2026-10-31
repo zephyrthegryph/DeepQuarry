@@ -94,3 +94,61 @@ fn unattached_compatibility_zero_set_body_keeps_owned_lazy_literal_behavior(){
   let body=parsed.statement_body().unwrap();assert!(!body.has_native_literal_syntax());assert!(static_literal(body).retained_parts().is_none());
  }).unwrap();
 }
+
+#[test]
+fn active_context_direct_body_loan_records_dynamic_edges_and_survives_eviction_without_second_get(){
+ const CURRENT:Kind=Kind(241);const PARENT:Kind=Kind(242);
+ let db=Arc::new(QueryDb::default());db.db.define_input(CURRENT,"test-original-body-source");
+ let first_front=frontend("/proc/p()\n    return \"first [1]\"\n",&db);let first=first_front.body_archive().unwrap();
+ let first_input=Arc::clone(&first.syntax_inputs().unwrap()[0]);let first_key=Key::new(BODY_SYNTAX,first_input.key().into());let source_key=Key::new(CURRENT,1);let parent_key=Key::new(PARENT,1);
+ db.db.set_input(source_key,Arc::clone(&first),first_input.key().into());
+ let weak=Arc::downgrade(&db);
+ db.db.define(PARENT,"test-observed-original-body",move|ctx,_|{
+  let owner=ctx.input::<Arc<dm_tree::frontend::BodyArchive>>(source_key)?;
+  let q=weak.upgrade().ok_or(dm_query::QueryError::Missing(parent_key))?;
+  let body=owner.parse_checked_using(0,|input|{
+   let syntax=obtain(ctx,input)?;
+   // Exact returned owner remains live while the actual Db value is removed.
+   // A host re-get here would compute another body and fail the count below.
+   q.db.evict_values(&[BODY_SYNTAX]);Ok(syntax)
+  }).map_err(|error|match error{BodySyntaxFailure::Operational(actual)=>dm_query::QueryError::operational(parent_key,actual),BodySyntaxFailure::Syntax(_)=>dm_query::QueryError::Missing(parent_key)})?;
+  let text=literal(&body).as_str().to_owned();let hash=dm_query::hash_bytes(text.as_bytes());Ok(dm_query::Outcome::new(text,hash,1024))
+ });
+ let first_text=db.db.get::<String>(parent_key,Arc::new(())).unwrap();assert_eq!(first_text.as_str(),"\"first [1]\"");assert_eq!(db.db.stats(BODY_SYNTAX).computed,1);assert!(db.db.dependants(&[first_key]).contains(&parent_key),"actual Kind4 dynamic edge, not merely same Db identity");
+ let warm=db.db.get::<String>(parent_key,Arc::new(())).unwrap();assert!(Arc::ptr_eq(&first_text,&warm));assert_eq!(db.db.stats(PARENT).computed,1);assert_eq!(db.db.stats(BODY_SYNTAX).computed,1,"warm parent must not demand an evicted body again");
+ let next_front=frontend("/proc/p()\n    return \"second [1]\"\n",&db);let next=next_front.body_archive().unwrap();let next_input=&next.syntax_inputs().unwrap()[0];let next_key=Key::new(BODY_SYNTAX,next_input.key().into());assert_ne!(next_key,first_key);
+ db.db.set_input(source_key,Arc::clone(&next),next_input.key().into());
+ let changed=db.db.get::<String>(parent_key,Arc::new(())).unwrap();assert_eq!(changed.as_str(),"\"second [1]\"");assert_eq!(db.db.stats(PARENT).computed,2);assert_eq!(db.db.stats(BODY_SYNTAX).computed,2);assert!(db.db.dependants(&[next_key]).contains(&parent_key));assert!(!db.db.dependants(&[first_key]).contains(&parent_key),"source rebind replaces actual syntax dependency");
+}
+#[test]
+fn direct_body_loan_rejects_real_foreign_returned_arc_and_preserves_actual_io_then_same_input_retry(){
+ let db=Arc::new(QueryDb::default());let first=frontend("/proc/p()\n    return \"first [1]\"\n",&db).body_archive().unwrap();let other=frontend("/proc/p()\n    return \"other [2]\"\n",&db).body_archive().unwrap();
+ let foreign=db.syntax_checked(&other.syntax_inputs().unwrap()[0]).unwrap();let error=first.parse_checked_using(0,|_|Ok(Arc::clone(&foreign))).err().expect("different genuine original input must refuse");assert!(matches!(error,BodySyntaxFailure::Syntax(ref d)if d.message.contains("foreign parser issuance")));
+ let before=db.db.stats(BODY_SYNTAX).computed;let error=first.parse_checked_using(0,|_|Err(BodySyntaxFailure::Operational(io::Error::from_raw_os_error(1450)))).err().expect("actual operational refusal");assert!(matches!(error,BodySyntaxFailure::Operational(ref actual)if actual.raw_os_error()==Some(1450)));assert_eq!(db.db.stats(BODY_SYNTAX).computed,before);
+ let same=Arc::clone(&first.syntax_inputs().unwrap()[0]);let body=first.parse_checked_using(0,|input|{assert!(Arc::ptr_eq(input,&same));db.syntax_checked(input)}).unwrap();assert_eq!(literal(&body).as_str(),"\"first [1]\"");assert_eq!(db.db.stats(BODY_SYNTAX).computed,before+1);
+ let again=first.parse_checked_using(0,|input|db.syntax_checked(input)).unwrap();assert!(std::ptr::eq(body.statement_body(),again.statement_body()));assert_eq!(db.db.stats(BODY_SYNTAX).computed,before+1);
+}
+#[test]
+fn observed_body_api_has_no_standalone_fallback_or_early_parse(){
+ let db=Arc::new(QueryDb::default());let provider=Original(dm_preprocess::AcquiredSource::from_original_bytes(b"/proc/p()\n    return 1\n".to_vec(),()));let front=dm_tree::frontend::build(Path::new("no-observed-host.dme"),&provider,&Default::default(),1).unwrap();let archive=front.body_archive().unwrap();
+ let called=std::cell::Cell::new(false);let error=archive.parse_checked_using(0,|_|{called.set(true);panic!("no original query input exists")}).err().expect("mandatory native body query owner");assert!(matches!(error,BodySyntaxFailure::Operational(ref actual)if actual.kind()==io::ErrorKind::NotConnected));assert!(!called.get());assert_eq!(db.db.stats(BODY_SYNTAX).computed,0);
+}
+
+#[test]
+fn direct_body_loan_registers_weak_input_for_actual_revision_pruning(){
+ let db=Arc::new(QueryDb::default());let front=frontend("/proc/p()\n    return \"kept [1]\"\n",&db);let archive=front.body_archive().unwrap();let input=Arc::clone(&archive.syntax_inputs().unwrap()[0]);let key=Key::new(BODY_SYNTAX,input.key().into());let weak=Arc::downgrade(&input);
+ let body=archive.parse_checked_using(0,|input|db.syntax_checked(input)).unwrap();assert!(db.body_inputs.lock().unwrap().contains_key(&key));assert!(db.db.value_bytes_at(key)>0);
+ drop(body);drop(input);drop(archive);drop(front);assert_eq!(weak.strong_count(),0,"bookkeeping must not retain the original body input");
+ db.begin_revision();assert!(!db.body_inputs.lock().unwrap().contains_key(&key));assert_eq!(db.db.value_bytes_at(key),0,"existing revision pruning removes actual expired body node");
+}
+#[test]
+fn actual_host_prepare_error_precedes_context_callback_and_keeps_original_cause(){
+ #[derive(Debug)]struct StopPrepare(Arc<QueryDb>);
+ impl BodySyntaxQueries for StopPrepare{
+  fn syntax(&self,input:&Arc<BodySyntaxInput>)->Result<Arc<BodySyntax>,Diagnostic>{self.0.syntax(input)}
+  fn syntax_checked(&self,input:&Arc<BodySyntaxInput>)->Result<Arc<BodySyntax>,BodySyntaxFailure>{self.0.syntax_checked(input)}
+  fn prepare_checked_input(&self,_:&Arc<BodySyntaxInput>)->Result<(),BodySyntaxFailure>{Err(BodySyntaxFailure::Operational(io::Error::from_raw_os_error(1450)))}
+ }
+ let db=Arc::new(QueryDb::default());let source=Original(dm_preprocess::AcquiredSource::from_original_bytes(b"/proc/p()\n    return 1\n".to_vec(),()));let front=dm_tree::frontend::build(Path::new("prepare-stop.dme"),&source,&Default::default(),1).unwrap().with_body_queries(Arc::new(StopPrepare(db.clone())));let archive=front.body_archive().unwrap();let called=std::cell::Cell::new(false);
+ let error=archive.parse_checked_using(0,|_|{called.set(true);panic!("prepare refusal must precede context get")}).err().unwrap();assert!(matches!(error,BodySyntaxFailure::Operational(ref actual)if actual.raw_os_error()==Some(1450)));assert!(!called.get());assert_eq!(db.db.stats(BODY_SYNTAX).computed,0);
+}

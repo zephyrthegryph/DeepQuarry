@@ -461,6 +461,7 @@ dependencies = [
  "dm-analysis",
  "dm-ir",
  "dm-preprocess",
+ "dm-syntax",
  "dm-tree",
  "fancy-regex",
  "md-5",

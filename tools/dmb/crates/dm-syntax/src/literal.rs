@@ -110,7 +110,28 @@ impl Drop for LiteralOwner {
         }
     }
 }
+/// Failure to borrow a complete original lexical String token. Output failure
+/// may leave a prefix in a generic fmt sink; callers discard failed buffers.
+#[derive(Debug)]
+pub enum PinnedStaticTextError{Unprepared,DeferredSyntax,UnsupportedDelimiter,Lexical(LiteralLexicalError),Output(fmt::Error)}
 impl LiteralText {
+    /// Emit the pinned lexer's STATIC String token spelling from already-issued
+    /// original parts. Escapes remain lexical bytes; only the existing pinned
+    /// splice scanner removes escaped newline/indentation. Never parses children.
+    pub fn write_pinned_static_text(&self,out:&mut impl fmt::Write)->Result<bool,PinnedStaticTextError>{
+        let Some((is_raw,value))=literal_content(self.as_str())else{
+            return if self.as_str().starts_with('@'){Err(PinnedStaticTextError::UnsupportedDelimiter)}else{Ok(false)}
+        };
+        let parts=match self.retained_parts(){Some(Ok(Some(parts)))=>parts,Some(Err(_))=>return Err(PinnedStaticTextError::DeferredSyntax),_=>return Err(PinnedStaticTextError::Unprepared)};
+        let shape=parts.lexical.map_err(PinnedStaticTextError::Lexical)?;
+        if shape.interpolated{return Ok(false)}
+        if is_raw{out.write_str(value).map_err(PinnedStaticTextError::Output)?;return Ok(true)}
+        let mut observed=LiteralLexicalShape{interpolated:false,pinned_segment_nonempty:false};let mut error=None;
+        visit_pinned_segment(value.as_bytes(),&mut observed,&mut error,|bytes|out.write_str(std::str::from_utf8(bytes).expect("literal ranges end at original ASCII splice boundaries"))).map_err(PinnedStaticTextError::Output)?;
+        if let Some(error)=error{return Err(PinnedStaticTextError::Lexical(error))}
+        Ok(true)
+    }
+
     pub fn at(raw: String, origin: usize) -> Self {
         if raw.starts_with('"')
             || raw.starts_with("{\"")
@@ -372,41 +393,23 @@ pub fn shift_expression(expression: &mut Expr, offset: usize) {
 }
 /// One shared literal parser for emission and source registration. Expression
 /// nodes exist only for this literal's interpolation leaves, never a whole body.
+/// Exact delimiter policy shared by retained syntax and pinned text spelling.
+fn literal_content(raw:&str)->Option<(bool,&str)>{
+ if raw.starts_with("@{\"")&&raw.ends_with("\"}")&&raw.len()>=5{Some((true,&raw[3..raw.len()-2]))}
+ else if ((raw.starts_with("@\"")&&raw.ends_with('"'))||(raw.starts_with("@'")&&raw.ends_with('\'')))&&raw.len()>=3{Some((true,&raw[2..raw.len()-1]))}
+ else if raw.starts_with("{\"")&&raw.ends_with("\"}")&&raw.len()>=4{Some((false,&raw[2..raw.len()-2]))}
+ else if raw.starts_with('"')&&raw.ends_with('"')&&raw.len()>=2{Some((false,&raw[1..raw.len()-1]))}
+ else{None}
+}
 fn string_literal_parts_clean(
     raw: &str,
     projection: RawProjection<'_>,
     admission: Option<&crate::SettingAdmission<'_>>,
 ) -> Result<Option<LiteralParts>, String> {
-    // Raw literals preserve escapes and brackets exactly, including multiline text.
-    let raw_value = if raw.starts_with("@{\"") && raw.ends_with("\"}") && raw.len() >= 5 {
-        Some(&raw[3..raw.len() - 2])
-    } else if ((raw.starts_with("@\"") && raw.ends_with('"'))
-        || (raw.starts_with("@'") && raw.ends_with('\'')))
-        && raw.len() >= 3
-    {
-        Some(&raw[2..raw.len() - 1])
-    } else {
-        None
-    };
-    if let Some(value) = raw_value {
-        return Ok(Some(LiteralParts {
-            template: value.as_bytes().to_vec(),
-            expressions: Vec::new(),
-            lexical: Ok(LiteralLexicalShape {
-                interpolated: false,
-                pinned_segment_nonempty: !projection
-                    .segment(value.as_ptr() as usize - raw.as_ptr() as usize, value.len())
-                    .is_empty(),
-            }),
-        }));
+    let Some((is_raw,value))=literal_content(raw) else{return Ok(None)};
+    if is_raw{
+     return Ok(Some(LiteralParts{template:value.as_bytes().to_vec(),expressions:Vec::new(),lexical:Ok(LiteralLexicalShape{interpolated:false,pinned_segment_nonempty:!projection.segment(value.as_ptr() as usize-raw.as_ptr() as usize,value.len()).is_empty()})}));
     }
-    let value = if raw.starts_with("{\"") && raw.ends_with("\"}") && raw.len() >= 4 {
-        &raw[2..raw.len() - 2]
-    } else if raw.starts_with('"') && raw.ends_with('"') && raw.len() >= 2 {
-        &raw[1..raw.len() - 1]
-    } else {
-        return Ok(None);
-    };
     let offset = value.as_ptr() as usize - raw.as_ptr() as usize;
     let mut parts = parse_interpolated_string_clean(value, projection.offset(offset), admission)?;
     for expression in &mut parts.expressions {
@@ -459,19 +462,25 @@ impl<'a> RawProjection<'a> {
 /// segment ranges already issued by the one primary parser. Pinned read_string
 /// retains ordinary escape bytes, but consumes an escaped CR or LF followed by
 /// skip_ws(true): all CR/indentation and at most one additional LF.
-fn observe_segment(
+fn observe_segment(raw:&[u8],shape:&mut LiteralLexicalShape,error:&mut Option<LiteralLexicalError>){
+ let result=visit_pinned_segment(raw,shape,error,|_|Ok::<(),std::convert::Infallible>(()));
+ match result{Ok(())=>(),Err(never)=>match never{}}
+}
+
+fn visit_pinned_segment<E>(
     raw: &[u8],
     shape: &mut LiteralLexicalShape,
     error: &mut Option<LiteralLexicalError>,
-) {
-    let mut at = 0;
+    mut emit:impl FnMut(&[u8])->Result<(),E>,
+)->Result<(),E> {
+    let mut at = 0;let mut start=0;
     while at < raw.len() {
         match raw[at] {
             b'\\' => {
-                at += 1;
+                let escape=at;at += 1;
                 match raw.get(at) {
                     Some(b'\r' | b'\n') => {
-                        at += 1;
+                        emit(&raw[start..escape])?;at += 1;
                         let mut additional_lf = false;
                         while at < raw.len() {
                             match raw[at] {
@@ -483,6 +492,7 @@ fn observe_segment(
                                 _ => break,
                             }
                         }
+                        start=at;
                     }
                     Some(_) => {
                         shape.pinned_segment_nonempty = true;
@@ -503,6 +513,7 @@ fn observe_segment(
             }
         }
     }
+    emit(&raw[start..])?;Ok(())
 }
 
 fn parse_interpolated_string_clean(
@@ -1318,3 +1329,28 @@ mod setting_retention_owner_tests {
 thread_local!{static LITERAL_CHILD_PARSES:std::cell::Cell<usize>=const{std::cell::Cell::new(0)};}
 #[cfg(test)]
 pub(crate) fn literal_child_parses_for_test()->usize{LITERAL_CHILD_PARSES.with(|n|n.get())}
+
+#[cfg(test)]
+mod pinned_writer_tests{
+ use super::*;
+ fn literal(source:&str)->LiteralText{
+  let parsed=crate::parse_expression(source);assert!(parsed.diagnostics.is_empty(),"{source:?}: {:?}",parsed.diagnostics);
+  let Expr{kind:ExprKind::Literal(value),..}=parsed.expr.unwrap()else{panic!("original literal")};value
+ }
+ #[test]
+ fn static_text_writer_borrows_prepared_parts_and_preserves_lexical_escapes(){
+  for(source,expected)in[(r#""é\n\[text]""#,r"é\n\[text]"),("\"left\\\r\n \t right\"","leftright"),("\"left\\\n\n  right\"","leftright"),("{\"first\nsecond\"}","first\nsecond"),("@\"[raw]\\n\"","[raw]\\n"),("@{\"é\r\n[raw]\"}","é\r\n[raw]")]{
+   let value=literal(source);value.parts().unwrap();let before=literal_child_parses_for_test();let mut text=String::new();assert!(value.write_pinned_static_text(&mut text).unwrap());assert_eq!(text,expected,"{source:?}");assert_eq!(literal_child_parses_for_test(),before,"writer cannot lex/parse child expressions");
+  }
+ }
+ #[test]
+ fn writer_never_prepares_missing_parts_and_never_reports_interpolation_as_static(){
+  let value=literal("\"[f()]\"");let before=literal_child_parses_for_test();let mut text=String::new();assert!(matches!(value.write_pinned_static_text(&mut text),Err(PinnedStaticTextError::Unprepared)));assert!(text.is_empty());assert_eq!(literal_child_parses_for_test(),before);
+  value.parts().unwrap();let before=literal_child_parses_for_test();assert!(!value.write_pinned_static_text(&mut text).unwrap());assert!(text.is_empty());assert_eq!(literal_child_parses_for_test(),before);
+ }
+ #[test]
+ fn writer_propagates_output_refusal_without_a_completed_static_result(){
+  struct Refuse;impl fmt::Write for Refuse{fn write_str(&mut self,_:&str)->fmt::Result{Err(fmt::Error)}}
+  let value=literal("\"key\"");value.parts().unwrap();assert!(matches!(value.write_pinned_static_text(&mut Refuse),Err(PinnedStaticTextError::Output(_))));
+ }
+}

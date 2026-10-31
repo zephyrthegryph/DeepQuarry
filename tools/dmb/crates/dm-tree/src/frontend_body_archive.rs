@@ -778,6 +778,16 @@ impl BodyArchive {
             |item, occurrence| self.checked_statements(item, occurrence),
         )
     }
+    /// Borrow the EXACT syntax returned by an active native query context.
+    /// The existing private input issuance check is mandatory AFTER obtaining.
+    /// This path never falls back to standalone parsing or re-gets the host.
+    pub fn parse_checked_using(
+        &self,ordinal:usize,
+        obtain:impl FnOnce(&Arc<BodySyntaxInput>)->Result<Arc<BodySyntax>,BodySyntaxFailure>,
+    )->Result<ArchivedBody<'_>,BodySyntaxFailure>{
+        if self.body_queries.is_none(){return Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"observed body demand requires original native query inputs")))}
+        self.parse_with(ordinal,|input,host|{host.prepare_checked_input(input)?;input.obtain_checked_using(obtain)},|_,_|Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"observed body demand cannot use standalone statements"))))
+    }
     fn checked_statements(
         &self,
         item: &mut Item,

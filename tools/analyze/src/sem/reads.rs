@@ -900,84 +900,11 @@ impl Decls {
 /// a typed var, a field chain of those): `O.print_cooldown = x` is a write of `print_cooldown` on the type that declares it for `O`, and
 /// a var of the same name on an unrelated type is not written by it. A write whose receiver cannot be typed (`usr`, a call result, an
 /// untyped local) stays conservative: it counts for every var of that name, and is listed in [`WriteIndex::untyped`].
-#[derive(Default, serde::Serialize, serde::Deserialize)]
-pub struct WriteIndex {
-    /// Every written var name, typed or not.
-    written: HashSet<String>,
-    /// var -> the types that declare a var of that name some typed write reaches.
-    typed: HashMap<String, BTreeSet<String>>,
-    /// var names some write reaches through a receiver that could not be typed.
-    untyped: BTreeSet<String>,
-}
-
-/// The receiver of a write that could not be typed.
-pub const UNTYPED_WRITE: &str = "?";
-
+pub use crate::write_policy::{WriteIndex,UNTYPED_WRITE};
 impl WriteIndex {
-    /// A digest of the written vars (`walk_cache`).
-    pub fn digest(&self) -> u128 {
-        let mut v: Vec<&String> = self.written.iter().collect();
-        v.sort();
-        let mut h = blake3::Hasher::new();
-        for x in v {
-            h.update(x.as_bytes());
-            h.update(b"\n");
-        }
-        let mut t: Vec<(&String, &BTreeSet<String>)> = self.typed.iter().collect();
-        t.sort();
-        for (var, owners) in t {
-            h.update(var.as_bytes());
-            for o in owners {
-                h.update(b"@");
-                h.update(o.as_bytes());
-            }
-            h.update(b"\n");
-        }
-        for u in &self.untyped {
-            h.update(b"?");
-            h.update(u.as_bytes());
-        }
-        u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap())
+    pub fn is_written_on(&self,sem:&Sem,owner:&str,var:&str)->bool{
+        match self.is_written_on_checked(owner,var,|owner,var|Ok::<_,std::convert::Infallible>(sem.var_owner(owner,var)),|child,parent|Ok(sem.is_subtype(child,parent))){Ok(v)=>v,Err(never)=>match never{}}
     }
-
-    /// Whether some write names `var`, on whatever type: a name test for callers that have no owner.
-    pub fn is_written(&self, var: &str) -> bool {
-        self.written.contains(var)
-    }
-
-    /// Whether `var`, as `owner` sees it, is written: by a write through a receiver typed as a type that declares it (`owner`'s declaring type,
-    /// or one related to it), or by any write whose receiver could not be typed.
-    pub fn is_written_on(&self, sem: &Sem, owner: &str, var: &str) -> bool {
-        if !self.written.contains(var) {
-            return false;
-        }
-        if self.untyped.contains(var) {
-            return true;
-        }
-        let Some(decls) = self.typed.get(var) else { return false };
-        let at = sem.var_owner(owner, var).unwrap_or_else(|| owner.to_string());
-        decls.iter().any(|d| *d == at || sem.is_subtype(d, &at) || sem.is_subtype(&at, d))
-    }
-
-    /// The var names written through a receiver that could not be typed.
-    pub fn untyped(&self) -> &BTreeSet<String> {
-        &self.untyped
-    }
-
-    /// The index of the typed writes `sets` hold (`(declaring type or UNTYPED_WRITE, var)` per proc).
-    pub fn from_facts(sets: Vec<Vec<(String, String)>>) -> WriteIndex {
-        let mut w = WriteIndex::default();
-        for (owner, var) in sets.into_iter().flatten() {
-            w.written.insert(var.clone());
-            if owner == UNTYPED_WRITE {
-                w.untyped.insert(var);
-            } else {
-                w.typed.entry(var).or_default().insert(owner);
-            }
-        }
-        w
-    }
-
     pub fn build(sem: &Sem) -> WriteIndex {
         let procs: Vec<ProcRef> = sem.objtree.iter_types().flat_map(|t| t.iter_self_procs().collect::<Vec<_>>()).filter(|p| !p.is_builtin()).collect();
         // The facts depend on the declared types of vars, so the structure is the context.

@@ -29,7 +29,7 @@ impl<'a> LexedHeader<'a> {
     }
 }
 #[derive(Clone, Copy)]
-pub(super) struct HeaderView<'a> {
+pub(crate) struct HeaderView<'a> {
     source: &'a str,
     tokens: &'a [SpanToken],
     range: Span,

@@ -152,3 +152,6 @@ pub mod raw_entry_proc_policy;
 
 pub mod tracked_lists_policy;
 #[cfg(feature="native-policy")]pub mod captured_tracked_lists;
+
+pub mod global_policy;
+pub mod write_policy;

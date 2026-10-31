@@ -18,7 +18,7 @@ path = "src/lib.rs"
 [features]
 default = ["legacy-sem"]
 legacy-sem = ["dep:dreammaker"]
-native-policy = ["dep:dm-analysis", "dep:dm-tree", "dep:dm-ir"]
+native-policy = ["dep:dm-analysis", "dep:dm-tree", "dep:dm-ir", "dep:dm-syntax"]
 # Explicit independent migration oracle; never enabled by production defaults.
 unified-oracle = ["legacy-sem"]
 
@@ -67,6 +67,7 @@ dm-preprocess = { path = "../dmb/crates/dm-preprocess" }
 dm-analysis = { path = "../dmb/crates/dm-analysis", optional = true }
 dm-tree = { path = "../dmb/crates/dm-tree", optional = true }
 dm-ir = { path = "../dmb/crates/dm-ir", optional = true }
+dm-syntax = { path = "../dmb/crates/dm-syntax", optional = true }
 # The model, the walk store and every walk allocate millions of small values: a faster allocator is most of a warm run's CPU.
 mimalloc = { version = "0.1", default-features = false }
 # Parse-aware frontend: SpacemanDMM suite-1.11 dreammaker, vendored (vendor/README.md) to add model persistence.
@@ -279,3 +280,11 @@ required-features=["legacy-sem"]
 [[example]]
 name="unified_reactive_hooks"
 required-features=["legacy-sem"]
+
+[[example]]
+name = "unified_reactive_literal_spelling"
+required-features = ["legacy-sem", "native-policy"]
+
+[[example]]
+name="unified_global_policy"
+required-features=["legacy-sem","native-policy"]

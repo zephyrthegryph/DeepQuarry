@@ -1893,3 +1893,9 @@ mod checker_context_tests;
 #[cfg(test)]
 #[path = "query_db/source_runtime_answer_tests.rs"]
 mod source_runtime_answer_tests;
+
+#[cfg(test)]
+pub(crate) fn body_syntax_budget_for_test()->usize{body_syntax::BUDGET}
+
+#[cfg(test)]
+pub(crate) fn body_syntax_counter_for_test(db:&QueryDb)->&std::sync::Arc<std::sync::atomic::AtomicUsize>{&db.body_charge}

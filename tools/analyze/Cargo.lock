@@ -425,6 +425,7 @@ dependencies = [
  "dm-exec",
  "dm-ir",
  "dm-preprocess",
+ "dm-syntax",
  "dm-tree",
  "dreammaker",
  "fancy-regex",

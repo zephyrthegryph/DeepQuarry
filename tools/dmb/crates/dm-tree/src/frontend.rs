@@ -545,7 +545,7 @@ pub use body_code::IssuedBodyCode;
 mod body_queries;
 #[path = "frontend_initializer_source.rs"]
 mod initializer_source;
-pub use initializer_source::{
+pub use initializer_source::{OriginalInitializerDimensionInput,OriginalInitializerDimensions,
     OriginalDeclarationExpressionContext, OriginalDeclarationExpressionInput,
     InitializerExpressionRecipe, OriginalInitializerContext, OriginalInitializerExpression,
     OriginalInitializerExpressionInput,

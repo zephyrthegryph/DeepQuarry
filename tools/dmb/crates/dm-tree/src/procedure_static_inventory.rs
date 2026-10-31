@@ -8,35 +8,57 @@ pub struct StaticInventory {
         std::collections::BTreeMap<ProcedureStaticIdentity, Arc<ProcedureStaticDeclaration>>,
 }
 impl StaticInventory {
-    pub fn from_plans<'p>(
-        plans: impl IntoIterator<Item = (ProcedureIdentity, &'p StaticPlan)>,
-    ) -> Result<Self, String> {
-        let mut procedures = HashSet::new();
-        let mut declarations = std::collections::BTreeMap::new();
-        for (procedure, plan) in plans {
-            if plan.procedure != procedure {
-                return Err("procedure static inventory context mismatch".into());
-            }
-            if !procedures.insert(procedure) {
-                return Err("duplicate procedure static inventory".into());
-            }
-            for declaration in &plan.declarations {
-                if declaration.identity.procedure != procedure {
-                    return Err("static declaration belongs to another procedure".into());
-                }
-                if declarations
-                    .insert(declaration.identity, Arc::new(declaration.clone()))
-                    .is_some()
-                {
-                    return Err("duplicate structural static declaration".into());
-                }
-            }
+    pub fn from_plans<'p>(plans:impl IntoIterator<Item=(ProcedureIdentity,&'p StaticPlan)>)->Result<Self,String>{
+        Self::from_rows(plans.into_iter().map(|(procedure,plan)|(procedure,plan,move||Ok(plan.declarations.iter().cloned().map(Arc::new)))),|_,_|Ok(()))
+    }
+    /// Use the SAME canonical declaration objects already issued by the static
+    /// producer. This constructor is a semantic inventory, not a current-source
+    /// receipt; source consumers still require the private issued-plan binding.
+    pub fn from_issued_plans<'p>(plans:impl IntoIterator<Item=(ProcedureIdentity,&'p StaticPlan,Option<&'p Arc<crate::frontend::IssuedStaticPlan>>)>)->Result<Self,String>{
+        Self::from_rows(plans.into_iter().map(|(procedure,plan,issued)|(procedure,plan,move||{
+            let owner=match issued{
+                Some(issued)=>{if !std::ptr::eq(plan,issued.plan()){return Err("canonical static inventory differs from issued plan".into());}Some(issued.canonical_declarations()?)},
+                None=>{if !plan.declarations.is_empty()||!plan.origins.is_empty(){return Err("canonical static inventory requires original producer".into());}None},
+            };
+            Ok(CanonicalRows{owner,index:0})
+        })),Self::validate_canonical_rows)
+    }
+    pub fn from_canonical_declarations<'p>(plans:impl IntoIterator<Item=(ProcedureIdentity,&'p StaticPlan,Option<&'p Arc<[Arc<ProcedureStaticDeclaration>]>>)>)->Result<Self,String>{
+        Self::from_rows(plans.into_iter().map(|(procedure,plan,owner)|(procedure,plan,move||{
+            if owner.is_none()&&(!plan.declarations.is_empty()||!plan.origins.is_empty()){return Err("canonical static declaration owner unavailable".into());}
+            Ok(CanonicalRows{owner:owner.map(Arc::clone),index:0})
+        })),Self::validate_canonical_rows)
+    }
+    /// Read the original inventory map; no side question/value index is built.
+    pub fn declaration(&self,identity:ProcedureStaticIdentity)->Option<&Arc<ProcedureStaticDeclaration>>{self.declarations.get(&identity)}
+    /// Layouts have already been checked against the actual plans by the
+    /// original artifact producer. Share their objects rather than cloning a
+    /// second metadata roster; validate against the SAME final inventory map.
+    pub fn from_canonical_layouts<'p>(plans:impl IntoIterator<Item=(ProcedureIdentity,&'p StaticPlan,&'p Arc<StaticLayout>)>)->Result<Self,String>{
+        Self::from_rows(plans.into_iter().map(|(procedure,plan,layout)|(procedure,plan,move||Ok(CanonicalRows{owner:Some(Arc::clone(layout.declarations())),index:0}))),Self::validate_canonical_rows)
+    }
+    fn validate_canonical_rows(plan:&StaticPlan,declarations:&std::collections::BTreeMap<ProcedureStaticIdentity,Arc<ProcedureStaticDeclaration>>)->Result<(),String>{
+        for declaration in &plan.declarations{
+            if declarations.get(&declaration.identity).map(|row|row.as_ref())!=Some(declaration){return Err("canonical static inventory differs from original declarations".into());}
         }
-        Ok(Self {
-            procedures,
-            declarations,
-            certificates: Default::default(),
-        })
+        Ok(())
+    }
+    fn from_rows<'p,D,F,V>(plans:impl IntoIterator<Item=(ProcedureIdentity,&'p StaticPlan,F)>,validate:V)->Result<Self,String>
+    where D:IntoIterator<Item=Arc<ProcedureStaticDeclaration>>,F:FnOnce()->Result<D,String>,V:Fn(&StaticPlan,&std::collections::BTreeMap<ProcedureStaticIdentity,Arc<ProcedureStaticDeclaration>>)->Result<(),String>{
+        let mut procedures=HashSet::new();let mut declarations=std::collections::BTreeMap::new();
+        for (procedure,plan,produce) in plans{
+            if plan.procedure!=procedure{return Err("procedure static inventory context mismatch".into());}
+            if !procedures.insert(procedure){return Err("duplicate procedure static inventory".into());}
+            let mut count=0usize;
+            for declaration in produce()?{
+                if declaration.identity.procedure!=procedure{return Err("static declaration belongs to another procedure".into());}
+                if declarations.insert(declaration.identity,declaration).is_some(){return Err("duplicate structural static declaration".into());}
+                count=count.checked_add(1).ok_or("static inventory declaration count overflow")?;
+            }
+            if count!=plan.declarations.len(){return Err("canonical static inventory declaration count differs".into());}
+            validate(plan,&declarations)?;
+        }
+        Ok(Self{procedures,declarations,certificates:Default::default()})
     }
     /// Revalidate any returned owner against this exact current captured roster.
     /// An absent/incorrect receipt only disables scoped certification.
@@ -82,6 +104,14 @@ impl StaticInventory {
     pub fn declarations(&self) -> impl Iterator<Item = &Arc<ProcedureStaticDeclaration>> {
         self.declarations.values()
     }
+}
+
+/// An owned iterator over an existing canonical slice. Empty procedures create
+/// no Arc allocation and no temporary declaration Vec.
+struct CanonicalRows{owner:Option<Arc<[Arc<ProcedureStaticDeclaration>]>>,index:usize}
+impl Iterator for CanonicalRows{
+    type Item=Arc<ProcedureStaticDeclaration>;
+    fn next(&mut self)->Option<Self::Item>{let value=self.owner.as_ref()?.get(self.index).map(Arc::clone)?;self.index+=1;Some(value)}
 }
 
 #[cfg(test)]

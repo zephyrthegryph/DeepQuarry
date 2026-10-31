@@ -620,6 +620,9 @@ impl OriginalProcedureHeaders {
         symbols: &SymbolTable,
     ) -> Result<(&'a SourceText, &'a [SpanToken], Span), String> {
         let rhs = self.initializer_rhs(header, variable)?;
+        self.original_expression_tokens(rhs,expression,symbols)
+    }
+    fn original_expression_tokens<'a>(&'a self,rhs:HeaderView<'a>,expression:&dm_ir::SymbolicExpression,symbols:&SymbolTable)->Result<(&'a SourceText,&'a[SpanToken],Span),String>{
         let mut symbolic = expression.tokens.iter();
         for token in rhs.tokens().iter().filter(|t| {
             !matches!(
@@ -641,6 +644,32 @@ impl OriginalProcedureHeaders {
             return Err("original initializer primary token count differs".into());
         }
         Ok((&self.source, rhs.tokens(), rhs.span()))
+    }
+    /// Exact issued dimension subview from the SAME array declaration grammar
+    /// used by metadata production. Empty suffixes have no expression root.
+    pub(crate) fn initializer_dimension_views(&self,header:Span)->Result<super::ArrayDimensions<'_>,String>{
+        self.source.get(header.range()).ok_or("dimension header outside original source")?;
+        let first=self.tokens.partition_point(|t|t.span.start<header.start);let last=self.tokens.partition_point(|t|t.span.start<header.end);
+        let whole=HeaderView::original(&self.source,&self.tokens[first..last],header)?;
+        let end=whole.assignment_index().unwrap_or(whole.text().len());let declaration=whole.slice(0,end).trim();
+        let end=declaration.text().find(" as ").unwrap_or(declaration.text().len());
+        Ok(super::array_dimensions(declaration.slice(0,end).trim()))
+    }
+    pub(crate) fn dimension_tokens_view<'a>(&'a self,view:HeaderView<'a>,expression:Option<&dm_ir::SymbolicExpression>,symbols:&SymbolTable)->Result<Option<(&'a SourceText,&'a[SpanToken],Span)>,String>{
+        let span=view.span();let source=self.source.get(span.range()).ok_or("original dimension view outside source")?;
+        let first=self.tokens.partition_point(|t|t.span.start<span.start);let last=self.tokens.partition_point(|t|t.span.start<span.end);
+        if !std::ptr::eq(source,view.text())||view.tokens().len()!=last-first||view.tokens().as_ptr()!=self.tokens[first..last].as_ptr(){return Err("dimension view is not original token/source owner".into())}
+        match expression{
+          None if view.text().is_empty()=>Ok(None),
+          Some(expression) if !view.text().is_empty()=>self.original_expression_tokens(view,expression,symbols).map(Some),
+          _=>Err("dimension empty/source expression differs from original metadata".into()),
+        }
+    }
+    pub(crate) fn initializer_dimension_tokens<'a>(&'a self,header:Span,index:usize,count:usize,expression:&dm_ir::SymbolicExpression,symbols:&SymbolTable)->Result<(&'a SourceText,&'a[SpanToken],Span),String>{
+        let mut selected=None;let mut actual=0;
+        for view in self.initializer_dimension_views(header)?{let view=view?;if actual==index{selected=Some(view)}actual+=1;}
+        if actual!=count{return Err("dimension source count differs from original metadata".into())}
+        self.original_expression_tokens(selected.ok_or("original dimension ordinal unavailable")?,expression,symbols)
     }
     pub(crate) fn parse_body(
         &self,

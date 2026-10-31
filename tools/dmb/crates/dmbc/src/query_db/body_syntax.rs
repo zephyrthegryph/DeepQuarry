@@ -81,6 +81,7 @@ impl BodySyntaxQueries for QueryDb {
             }
         });
     }
+    fn prepare_checked_input(&self,input:&Arc<BodySyntaxInput>)->Result<(),BodySyntaxFailure>{self.prepare_body_input(input);Ok(())}
     fn syntax(&self, input: &Arc<BodySyntaxInput>) -> Result<Arc<BodySyntax>, Diagnostic> {
         self.body_syntax_result(input)
             .map_err(body_query_diagnostic)?
@@ -90,12 +91,7 @@ impl BodySyntaxQueries for QueryDb {
         input: &Arc<BodySyntaxInput>,
     ) -> Result<Arc<BodySyntax>, BodySyntaxFailure> {
         self.body_syntax_result(input)
-            .map_err(|error| match error.into_operational() {
-                Ok(actual) => BodySyntaxFailure::Operational(actual.into_io()),
-                Err(error) => BodySyntaxFailure::Operational(std::io::Error::other(
-                    BodyQueryGraphFailure(error),
-                )),
-            })?
+            .map_err(checked_query_failure)?
             .map_err(BodySyntaxFailure::Syntax)
     }
 }
@@ -123,10 +119,7 @@ fn body_query_diagnostic(error: QueryError) -> Diagnostic {
     }
 }
 impl QueryDb {
-    fn body_syntax_result(
-        &self,
-        input: &Arc<BodySyntaxInput>,
-    ) -> Result<Result<Arc<BodySyntax>, Diagnostic>, QueryError> {
+    fn prepare_body_input(&self,input:&Arc<BodySyntaxInput>){
         let key = Key::new(BODY_SYNTAX, input.key().into());
         self.body_inputs
             .lock()
@@ -143,6 +136,13 @@ impl QueryDb {
                     Some(charge.saturating_sub(freed))
                 });
         }
+    }
+    fn body_syntax_result(
+        &self,
+        input: &Arc<BodySyntaxInput>,
+    ) -> Result<Result<Arc<BodySyntax>, Diagnostic>, QueryError> {
+        self.prepare_body_input(input);
+        let key = Key::new(BODY_SYNTAX, input.key().into());
         let result = self.db.get::<Result<Arc<BodySyntax>, Diagnostic>>(
             key,
             Arc::new(Params {
@@ -152,6 +152,19 @@ impl QueryDb {
         )?;
         Ok(result.as_ref().clone())
     }
+}
+
+fn checked_query_failure(error:QueryError)->BodySyntaxFailure{
+ match error.into_operational(){Ok(actual)=>BodySyntaxFailure::Operational(actual.into_io()),Err(error)=>BodySyntaxFailure::Operational(std::io::Error::other(BodyQueryGraphFailure(error)))}
+}
+/// Record a REAL dynamic body dependency and retain its SAME returned owner.
+/// Callers lend this value to BodyArchive::parse_checked_using; no second get.
+pub(super) fn obtain(
+ ctx:&mut dm_query::Ctx<'_>,input:&Arc<BodySyntaxInput>,
+)->Result<Arc<BodySyntax>,BodySyntaxFailure>{
+ let key=Key::new(BODY_SYNTAX,input.key().into());
+ let result=ctx.get::<Result<Arc<BodySyntax>,Diagnostic>>(key,Arc::new(Params{input:Arc::downgrade(input),key})).map_err(checked_query_failure)?;
+ result.as_ref().clone().map_err(BodySyntaxFailure::Syntax)
 }
 
 /// Record a real syntax dependency of a derived policy query. The archive's

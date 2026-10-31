@@ -531,6 +531,9 @@ pub(crate) struct OriginalSettingTokenInput<'a> {
     pub(crate) original_value: Span,
 }
 pub(crate) struct OriginalInitializerTokenInput<'a> {
+    pub(crate) dimension:bool,
+    pub(crate) dimension_index:usize,
+    pub(crate) dimension_count:usize,
     pub(crate) owner: &'a Arc<crate::procedure::OriginalProcedureHeaders>,
     pub(crate) source: &'a dm_preprocess::SourceText,
     pub(crate) tokens: &'a [dm_syntax::SpanToken],
@@ -539,6 +542,18 @@ pub(crate) struct OriginalInitializerTokenInput<'a> {
     pub(crate) count: usize,
     pub(crate) offset: usize,
     pub(crate) slots: &'a dm_syntax::SettingExpressionSlots,
+}
+pub(crate) struct OriginalInitializerDimensionTokens<'source>{
+ owner:&'source Arc<crate::procedure::OriginalProcedureHeaders>,views:crate::procedure::ArrayDimensions<'source>,ordinal:usize,count:usize,offset:usize,next:usize,finished:bool,
+}
+impl<'source> OriginalInitializerDimensionTokens<'source>{
+ pub(crate) fn next_input(&mut self,array:&dm_ir::ArrayDeclaration,symbols:&dm_ir::SymbolTable)->Result<Option<(usize,Option<OriginalInitializerTokenInput<'source>>)>,String>{
+  if self.finished{return Ok(None)}
+  let view=match self.views.next(){Some(Ok(view))=>view,Some(Err(error))=>{self.finished=true;return Err(error)},None=>{self.finished=true;return if self.next==array.dimensions.len(){Ok(None)}else{Err("dimension source count differs from original metadata".into())}}};
+  let index=self.next;self.next+=1;let expression=array.dimensions.get(index).ok_or("original dimension source has extra suffix")?;
+  let value=self.owner.dimension_tokens_view(view,expression.as_ref(),symbols)?;
+  Ok(Some((index,value.map(|(source,tokens,value)|OriginalInitializerTokenInput{dimension:true,dimension_index:index,dimension_count:array.dimensions.len(),owner:self.owner,source,tokens,value,ordinal:self.ordinal,count:self.count,offset:self.offset,slots:self.owner.initializer_slots()}))))
+ }
 }
 pub(crate) struct OriginalReturnTokenInput<'a> {
     pub(crate) source: &'a str,
@@ -812,12 +827,7 @@ impl DeclarationSyntax {
             offset: recipe.offset,
         })
     }
-    pub(crate) fn initializer_token_input<'a>(
-        &'a self,
-        cursor: usize,
-        expression: &dm_ir::SymbolicExpression,
-        symbols: &dm_ir::SymbolTable,
-    ) -> Result<OriginalInitializerTokenInput<'a>, String> {
+    fn initializer_token_source<'a>(&'a self,cursor:usize)->Result<(&'a Arc<crate::procedure::OriginalProcedureHeaders>,Span,ItemKind,usize,usize,usize),String>{
         fn search<'a>(chunk: &'a CurrentSyntaxChunk, cursor: usize) -> Option<ItemView<'a>> {
             // Existing immutable arena coordinates only. Deep declaration
             // nesting consumes no recursive stack, allocation or second index.
@@ -835,7 +845,13 @@ impl DeclarationSyntax {
                     }
                 }
                 let node = get(low.checked_sub(1)?)?;
-                if node.header_span().start <= cursor && cursor < node.header_span().end {
+                // A no-RHS declaration is issued at its actual terminator,
+                // which may lie at or beyond the textual header end. Exact
+                // primary cursor identity covers that case without admitting
+                // an arbitrary point outside the original header.
+                if node.declaration_cursor() == Some(cursor)
+                    || (node.header_span().start <= cursor && cursor < node.header_span().end)
+                {
                     return Some(node);
                 }
                 if cursor >= node.span().end
@@ -875,20 +891,37 @@ impl DeclarationSyntax {
             .ok_or("original initializer token owner unavailable")?;
         let (ordinal, count) =
             headers.initializer_slot_coordinate(node.item.header_span(), (ordinal, count))?;
-        let (source, tokens, value) = headers.initializer_tokens(
-            node.item.header_span(),
-            node.kind() == ItemKind::Var,
-            expression,
-            symbols,
-        )?;
+        Ok((headers,node.item.header_span(),node.kind(),ordinal,count,chunk.offset))
+    }
+    pub(crate) fn initializer_dimension_cursor(&self,cursor:usize)->Result<OriginalInitializerDimensionTokens<'_>,String>{
+        let (owner,header,_,ordinal,count,offset)=self.initializer_token_source(cursor)?;
+        Ok(OriginalInitializerDimensionTokens{owner,views:owner.initializer_dimension_views(header)?,ordinal,count,offset,next:0,finished:false})
+    }
+    pub(crate) fn initializer_token_input<'a>(&'a self,cursor:usize,expression:&dm_ir::SymbolicExpression,symbols:&dm_ir::SymbolTable)->Result<OriginalInitializerTokenInput<'a>,String>{self.initializer_token_input_inner(cursor,expression,symbols,None)}
+    pub(crate) fn initializer_dimension_token_input<'a>(&'a self,cursor:usize,index:usize,count:usize,expression:&dm_ir::SymbolicExpression,symbols:&dm_ir::SymbolTable)->Result<OriginalInitializerTokenInput<'a>,String>{self.initializer_token_input_inner(cursor,expression,symbols,Some((index,count)))}
+    fn initializer_token_input_inner<'a>(
+        &'a self,
+        cursor: usize,
+        expression: &dm_ir::SymbolicExpression,
+        symbols: &dm_ir::SymbolTable,
+        dimension:Option<(usize,usize)>,
+    ) -> Result<OriginalInitializerTokenInput<'a>, String> {
+        let (headers,header,kind,ordinal,count,offset)=self.initializer_token_source(cursor)?;
+        let (source,tokens,value)=match dimension{
+          Some((index,count))=>headers.initializer_dimension_tokens(header,index,count,expression,symbols)?,
+          None=>headers.initializer_tokens(header,kind==ItemKind::Var,expression,symbols)?,
+        };
         Ok(OriginalInitializerTokenInput {
+            dimension:dimension.is_some(),
+            dimension_index:dimension.map_or(0,|pair|pair.0),
+            dimension_count:dimension.map_or(0,|pair|pair.1),
             owner: headers,
             source,
             tokens,
             value,
             ordinal,
             count,
-            offset: chunk.offset,
+            offset,
             slots: headers.initializer_slots(),
         })
     }

@@ -525,62 +525,37 @@ pub(crate) fn parse_array(
     }
     parse_array_view(tokens.view(), element_type, symbols)
 }
-fn parse_array_view(
-    view: HeaderView<'_>,
-    element_type: Option<SymbolId>,
-    symbols: &mut SymbolTable,
-) -> Result<Option<std::sync::Arc<dm_ir::ArrayDeclaration>>, String> {
-    let mut depth = 0;
-    let mut start = None;
-    let mut dimensions = Vec::new();
-    for token in view.tokens() {
-        if depth == 0
-            && !dimensions.is_empty()
-            && view.spelling(token) != "["
-            && !matches!(
-                token.kind,
-                TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment
-            )
-        {
-            return Err("unsupported text after array declaration".into());
-        }
-        match view.spelling(token) {
-            "[" => {
-                if depth == 0 {
-                    start = Some(view.relative_span(token).end)
-                }
-                depth += 1
-            }
-            "]" => {
-                if depth == 0 {
-                    return Err("unmatched array declaration bracket".into());
-                }
-                depth -= 1;
-                if depth == 0 {
-                    let dimension = view
-                        .slice(start.take().unwrap(), view.relative_span(token).start)
-                        .trim();
-                    dimensions.push(if dimension.text().is_empty() {
-                        None
-                    } else {
-                        Some(expression_view(dimension, symbols)?)
-                    });
-                }
-            }
-            _ => {}
-        }
-    }
-    if depth != 0 {
-        return Err("unterminated array declaration".into());
-    }
-    if dimensions.is_empty() {
-        Ok(None)
-    } else {
-        Ok(Some(std::sync::Arc::new(dm_ir::ArrayDeclaration {
-            dimensions: dimensions.into(),
-            element_type,
-        })))
-    }
+/// Borrowed cursor for the SAME existing suffix grammar. It owns no tokens,
+/// source, syntax or semantic roster; metadata and native roots consume it once.
+#[cfg(test)]thread_local!{static ARRAY_DIMENSION_STEPS:std::cell::Cell<usize>=const{std::cell::Cell::new(0)};}
+#[cfg(test)]pub(crate) fn reset_array_dimension_steps(){ARRAY_DIMENSION_STEPS.with(|n|n.set(0));}
+#[cfg(test)]pub(crate) fn array_dimension_steps()->usize{ARRAY_DIMENSION_STEPS.with(std::cell::Cell::get)}
+pub(crate) struct ArrayDimensions<'a>{view:HeaderView<'a>,at:usize,depth:usize,start:Option<usize>,count:usize,done:bool}
+pub(crate) fn array_dimensions(view:HeaderView<'_>)->ArrayDimensions<'_>{ArrayDimensions{view,at:0,depth:0,start:None,count:0,done:false}}
+impl<'a> Iterator for ArrayDimensions<'a>{
+ type Item=Result<HeaderView<'a>,String>;
+ fn next(&mut self)->Option<Self::Item>{
+  if self.done{return None}
+  while let Some(token)=self.view.tokens().get(self.at){
+   #[cfg(test)]ARRAY_DIMENSION_STEPS.with(|n|n.set(n.get()+1));
+   self.at+=1;
+   if self.depth==0&&self.count!=0&&self.view.spelling(token)!="["&&!matches!(token.kind,TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment){self.done=true;return Some(Err("unsupported text after array declaration".into()))}
+   match self.view.spelling(token){
+    "["=>{if self.depth==0{self.start=Some(self.view.relative_span(token).end)}self.depth+=1},
+    "]"=>{if self.depth==0{self.done=true;return Some(Err("unmatched array declaration bracket".into()))}self.depth-=1;if self.depth==0{let start=self.start.take().expect("outer bracket issued start");let dimension=self.view.slice(start,self.view.relative_span(token).start).trim();self.count+=1;return Some(Ok(dimension))}},
+    _=>{},
+   }
+  }
+  self.done=true;if self.depth!=0{Some(Err("unterminated array declaration".into()))}else{None}
+ }
+}
+pub(crate) fn visit_array_dimensions<'a>(view:HeaderView<'a>,mut emit:impl FnMut(usize,HeaderView<'a>)->Result<(),String>)->Result<usize,String>{
+ let mut count=0;for dimension in array_dimensions(view){emit(count,dimension?)?;count+=1;}Ok(count)
+}
+fn parse_array_view(view:HeaderView<'_>,element_type:Option<SymbolId>,symbols:&mut SymbolTable)->Result<Option<std::sync::Arc<dm_ir::ArrayDeclaration>>,String>{
+ let mut dimensions=Vec::new();
+ visit_array_dimensions(view,|_,dimension|{dimensions.push(if dimension.text().is_empty(){None}else{Some(expression_view(dimension,symbols)?)});Ok(())})?;
+ if dimensions.is_empty(){Ok(None)}else{Ok(Some(std::sync::Arc::new(dm_ir::ArrayDeclaration{dimensions:dimensions.into(),element_type})))}
 }
 
 #[cfg(test)]

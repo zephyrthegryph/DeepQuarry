@@ -1,5 +1,6 @@
 //! Explicit bounded Kind10 policy roster; does not expand RAW_FILE27 admission.
 pub const LINTS: &[&str] = &[
+    "sem/keys",
     "init",
     "decl",
     "base_vars",
@@ -23,6 +24,7 @@ pub const LINTS: &[&str] = &[
 ];
 pub fn metadata(name: &str) -> Option<&'static crate::lint::Meta> {
     match name {
+        "sem/keys" => Some(crate::keys_policy::metadata()),
         "init" => Some(crate::lints::init::captured_metadata()),
         "decl" => Some(crate::lints::decl::captured_metadata()),
         "base_vars" => Some(&crate::base_var_metadata::META),

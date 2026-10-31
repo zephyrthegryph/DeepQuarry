@@ -1250,3 +1250,27 @@ the frozen independent original separately matches complete key tables and the
 same report. Native-only Analyze checking also passes. This remains bounded
 explicit-file coverage: query registration, production workspace admission and
 client defaults are separate pending work, with no admission-limit increases.
+
+### Original initializer/query continuation
+
+The explicit source-required startup role now rejects foreign-budget cached
+static parents before claiming them and reissues a valid parent through the
+existing checked producer. Declaration and procedure-static array dimensions
+borrow the original header/ledger roots; genuine no-RHS declaration terminators
+are accepted through their exact issued cursor. Contextual body loans return
+the actual queried owner directly and record the dynamic body dependency without
+a second host lookup. Complete key policy is registered in Kind10, including
+the original manifest dependency.
+
+The global/write classifiers share their original policy core, with legacy
+source scanning kept as an independent oracle. Across this cohort and its
+failure-only/affected-boundary repairs, 58 distinct focused tests pass. Native-only
+Analyze checking passes; the frozen full global/write result matches, and eight
+complete literal spellings match the independent old lexer. These are component
+proofs, not a current production compilation or client-convergence proof.
+
+Native initializer runtime/artifact/ABI selection and complete reactive reads
+remain separate work. Full-project global classification also needs compact
+facts and bounded temporary windows: the existing conservative per-node
+envelope exceeds the unchanged 64 MiB policy limit on the real project. Neither
+that limit nor the bounded fixture domain has been widened to claim coverage.

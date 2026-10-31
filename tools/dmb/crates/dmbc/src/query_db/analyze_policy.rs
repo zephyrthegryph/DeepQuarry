@@ -2,7 +2,7 @@
 //! Explicit fixture admission, without workspace discovery or baseline mutation.
 use super::*;
 use dq_analyze::{
-    captured_base_vars_policy::BorrowedBaseVarsPolicy, captured_decl_policy::BorrowedDeclPolicy,
+    captured_keys::BorrowedKeys, captured_base_vars_policy::BorrowedBaseVarsPolicy, captured_decl_policy::BorrowedDeclPolicy,
     captured_generator_budget::Budget, captured_init_policy::BorrowedInitPolicy,
     captured_player_link::BorrowedPlayerLink, captured_pool::BorrowedPool,
     captured_raw_policy::CapturedRawPolicy, captured_raw_cohort::BorrowedRawCohort, captured_rel_write::BorrowedRelWrite,
@@ -13,7 +13,7 @@ use dq_analyze::{
 pub(super) const ANALYZE_FINDINGS: Kind = Kind(10);
 pub(crate) const ANALYZE_FIXTURE_LINTS: &[&str] = dq_analyze::captured_policy_metadata::LINTS;
 fn bounded_only(name: &str) -> bool {
-    name == "pool" || dq_analyze::captured_raw_cohort::LINTS.contains(&name)
+    name == "sem/keys" || name == "pool" || dq_analyze::captured_raw_cohort::LINTS.contains(&name)
 }
 #[derive(Clone)]
 struct Params {
@@ -115,6 +115,9 @@ pub(super) fn register_analyze(db: &Db, charge: Arc<AtomicUsize>, admission: Arc
             let mut bounded_budget = None;
             let result = (|| -> Result<Vec<RawRun>, AnalyzeReadFailure> {
                 evidence_admission?;
+                if p.ordered.iter().any(|name|name=="sem/keys") {
+                    super::generator_policy::manifest(&capture,&p.root).map_err(AnalyzeReadFailure::Operational)?;
+                }
                 config
                     .require_original(
                         capture
@@ -138,7 +141,7 @@ pub(super) fn register_analyze(db: &Db, charge: Arc<AtomicUsize>, admission: Arc
                 for name in &p.ordered {
                     let checkpoint = || admission.abort.scan_checkpoint();
                     let run = match name.as_str() {
-                        "pool" | "cooldown" | "declaration_block" | "duplicate_input_key" | "entry_slots" | "interactions" | "latent" | "pollers" | "read_back" | "cap_bits" => {
+                        "sem/keys" | "pool" | "cooldown" | "declaration_block" | "duplicate_input_key" | "entry_slots" | "interactions" | "latent" | "pollers" | "read_back" | "cap_bits" => {
                             // Joint remaining result-family admission includes all
                             // cached outcomes AND prior runs still under construction.
                             let prior = runs
@@ -161,7 +164,13 @@ pub(super) fn register_analyze(db: &Db, charge: Arc<AtomicUsize>, admission: Arc
                                 e
                             })?;
                             bounded_budget = Some(budget.clone());
-                            if name == "pool" {
+                            if name == "sem/keys" {
+                                BorrowedKeys::capture(&raw,capture.policy()).scan(
+                                    budget,remaining,MAX_FIXTURE_SITES-sites,
+                                    ||admission.abort.scan_checkpoint().map_err(|message|
+                                        admission.abort.take_error().unwrap_or_else(||io::Error::other(message))),
+                                )?
+                            } else if name == "pool" {
                                 BorrowedPool::capture(&raw, capture.policy())?.scan(
                                     budget, MAX_FIXTURE_SITES - sites, checkpoint,
                                 )?
@@ -400,6 +409,12 @@ impl QueryDb {
         let evidence = cohort.capture.semantic_source_evidence();
         evidence.check(cohort.capture.policy().mapping())?; // BEFORE ANY CACHE LOOKUP
         let ordered = ordered_names(names)?;
+        // Validate the original manifest BEFORE cache lookup too. Its existing
+        // RAW_FILE input is in prepared.sources and is read by ctx.input above;
+        // it is not hidden behind semantic evidence or an untracked host read.
+        if ordered.iter().any(|name|name=="sem/keys") {
+            super::generator_policy::manifest(&cohort.capture,&cohort.root)?;
+        }
         let _gate = self
             .raw_policy
             .gate
@@ -581,3 +596,7 @@ mod pool_tests;
 #[cfg(test)]
 #[path = "analyze_policy_raw_cohort_tests.rs"]
 mod raw_cohort_tests;
+
+#[cfg(test)]
+#[path="analyze_policy_keys_tests.rs"]
+mod keys_tests;

@@ -6,7 +6,7 @@ use crate::initializer_policy::InitializerFailure;
 pub(super) enum Input<'a>{
     Detached,
     Declaration{owner:SymbolId,name:SymbolId,data:&'a dm_ir::DeclarationMeaning},
-    ProcedureStatic{identity:dm_ir::ProcedureStaticIdentity},
+    ProcedureStatic{identity:dm_ir::ProcedureStaticIdentity,data:&'a dm_ir::ProcedureStaticDeclaration},
 }
 pub(super) trait Demand {
     type Frame<'a> where Self:'a;
@@ -34,6 +34,7 @@ impl Demand for Compatibility{
 pub(super) struct Original<'context,'source,'admission,'op>{
     pub(super) context:&'context dm_tree::frontend::OriginalDeclarationExpressionContext<'source>,
     pub(super) admission:&'admission dm_syntax::SettingAdmission<'op>,
+    pub(super) static_receipt:Option<&'context Arc<dm_tree::frontend::IssuedStaticPlan>>,
 }
 pub(super) fn source_domain_failure(error:dm_tree::frontend::BodySyntaxFailure)->InitializerFailure{match error{dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>InitializerFailure::Operational(actual),dm_tree::frontend::BodySyntaxFailure::Syntax(error)=>InitializerFailure::Unsupported(error.message)}}
 pub(super) fn source_failure(error:dm_tree::frontend::BodySyntaxFailure)->InitializerFailure{
@@ -50,7 +51,10 @@ impl<'context,'source,'admission,'op> Demand for Original<'context,'source,'admi
     fn expression<T>(&self,_:&DriverEvaluator<'_>,_:&SymbolicExpression,input:Input<'_>,operation:impl FnOnce(&dm_syntax::Expr)->Result<T,Self::Error>)->Result<Option<T>,Self::Error>{
         let root=match input{
             Input::Declaration{owner,name,data}=>self.context.selected_admitted(owner,name,data,self.admission).map_err(source_domain_failure)?.prepare(self.admission).map_err(source_failure)?,
-            Input::ProcedureStatic{identity}=>return Err(InitializerFailure::Unsupported(format!("original procedure-static scalar root unavailable for {identity:?}"))),
+            Input::ProcedureStatic{identity,data}=>{
+                let receipt=self.static_receipt.ok_or_else(||InitializerFailure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"original scalar procedure-static producer receipt unavailable")))?;
+                self.context.selected_static_admitted(receipt,identity,data,self.admission).map_err(source_domain_failure)?.prepare(self.admission).map_err(source_failure)?
+            },
             Input::Detached=>return Err(InitializerFailure::Unsupported("native scalar expression requires an original source input".into())),
         };
         operation(root.ast()).map(Some)

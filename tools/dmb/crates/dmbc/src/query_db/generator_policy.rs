@@ -169,7 +169,7 @@ struct Params {
     name: GeneratorName,
     result: Key,
 }
-fn manifest(capture: &CapturedPolicyInputs, root: &Path) -> io::Result<()> {
+pub(super) fn manifest(capture: &CapturedPolicyInputs, root: &Path) -> io::Result<()> {
     if !matches!(
         capture.untyped_manifest(root)?,
         dq_analyze::captured_untyped::ManifestRead::CompiledOriginalBytes(_)

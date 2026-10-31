@@ -342,7 +342,7 @@ impl DriverEvaluator<'_> {
                                 ));
                                 return Ok(None);
                             }
-                            let result=self.scalar_in_using(owner,value,Some(procedure),active,scalar_demand::Input::ProcedureStatic{identity:declaration.identity},demand);
+                            let result=self.scalar_in_using(owner,value,Some(procedure),active,scalar_demand::Input::ProcedureStatic{identity:declaration.identity,data:&declaration},demand);
                             active
                                 .borrow_mut()
                                 .remove(&ActiveConstant::ProcedureStatic(declaration.identity));
@@ -631,6 +631,8 @@ impl DriverEvaluator<'_> {
         context:&dm_tree::frontend::OriginalDeclarationExpressionContext<'source>,
         admission:&dm_syntax::SettingAdmission<'_>,
     )->Result<(Evaluation,Option<crate::initializer_policy::ScopedPreparedInitializerExpression<'source>>),crate::initializer_policy::InitializerFailure>{
+        let static_receipt=input.source_static_receipt();
+        let demand=scalar_demand::Original{context,admission,static_receipt:static_receipt.as_ref()};
         let operation=(||{
         use crate::initializer_policy::{InitializerFailure,ScopedPreparedInitializerExpression};
         context.require_initializer(input).map_err(scalar_demand::source_domain_failure)?;
@@ -648,7 +650,7 @@ impl DriverEvaluator<'_> {
         if let Some(reason)=self.constructor_reference_error(write,ast){return Ok((Evaluation::SourceError(reason),Some(prepared)))}
         let features=RefCell::new(dm_codegen_byond::SourceFeatures::default());
         let typed_failure=RefCell::new(None);
-        let result=self.scalar_ast_in_with_features_using(write.lexical_owner,ast,write.lexical_procedure,&RefCell::new(std::collections::HashSet::new()),Some(&features),match write.target{dm_ir::InitializerTarget::ProcedureStatic(identity)=>Some(identity),_=>None},Some(&typed_failure),&scalar_demand::Original{context,admission});
+        let result=self.scalar_ast_in_with_features_using(write.lexical_owner,ast,write.lexical_procedure,&RefCell::new(std::collections::HashSet::new()),Some(&features),match write.target{dm_ir::InitializerTarget::ProcedureStatic(identity)=>Some(identity),_=>None},Some(&typed_failure),&demand);
         // An actual operation failure cannot be hidden by an earlier recovered
         // nameof/source feature diagnostic from the same evaluation traversal.
         let result=match result{Err(actual@InitializerFailure::Operational(_))=>return Err(actual),result=>result};
@@ -660,7 +662,7 @@ impl DriverEvaluator<'_> {
         crate::daemon::control::checkpoint().map_err(InitializerFailure::Operational)?;
         Ok((evaluation,Some(prepared)))
         })();
-        scalar_demand::Original{context,admission}.finish(operation)
+        demand.finish(operation)
     }
 }
 /// Native original setting/return adapter over the SAME scalar evaluator and
@@ -892,6 +894,11 @@ impl crate::initializer_policy::InitializerEvaluatorFactory for DriverEvaluator<
     }
 }
 impl CapturedInitializerEvaluator for DriverEvaluator<'_> {
+    fn evaluate_original_write_checked<'source>(&self,input:&dm_tree::frontend::OriginalInitializerExpressionInput<'source>,adapted_write:&dm_ir::InitializerWrite)->Result<(Evaluation,Option<crate::initializer_policy::ScopedPreparedInitializerExpression<'source>>),crate::initializer_policy::InitializerFailure>{
+        let context=input.declaration_context();
+        self.evaluate_original_write_in(input,adapted_write,&context)
+    }
+
     fn initializer_intrinsic_constructor(
         &self,
         _write: &dm_ir::InitializerWrite,
@@ -1913,3 +1920,7 @@ mod original_setting_tests {
 #[cfg(test)]
 #[path="driver_scalar_original_tests.rs"]
 mod scalar_original_tests;
+
+#[cfg(test)]
+#[path="driver_static_scalar_tests.rs"]
+mod driver_static_scalar_tests;

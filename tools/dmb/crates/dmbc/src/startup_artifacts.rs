@@ -14,6 +14,11 @@ mod allocation_store;
 mod callable_index;
 #[path = "startup_inventory_receipt.rs"]
 mod inventory_receipt;
+#[derive(Clone,Copy)]
+enum MetadataOwners{Compatibility,Original}
+fn same_declaration_owners(old:&[Arc<ProcedureStaticDeclaration>],current:&[Arc<ProcedureStaticDeclaration>])->bool{
+    old.len()==current.len()&&old.iter().zip(current).all(|(old,current)|Arc::ptr_eq(old,current))
+}
 const INVENTORY_KEY: &[u8] = b"dmbc-startup-inventory-v1\0";
 
 pub struct StartupArtifacts {
@@ -165,7 +170,22 @@ impl StartupArtifacts {
         self.hits.fetch_add(1, Ordering::Relaxed);
         Some(Arc::clone(payload))
     }
-    pub(super) fn remember(&self, key: Vec<u8>, receipt: &Arc<IssuedStaticPlan>) {
+    /// A source-required candidate is bound and counter-checked before the
+    /// original store can claim it. Actual IO aborts the visit, never a miss.
+    pub(super) fn lookup_original<E:From<std::io::Error>>(&self,key:&[u8],accept:&mut dyn FnMut(&Arc<RelativeStaticPlan>)->Result<Option<Arc<IssuedStaticPlan>>,E>)->Result<Option<Arc<IssuedStaticPlan>>,E>{
+        let mut bound=None;
+        let (accepted,_)=self.values.try_visit_explained::<_,E>(key,&StaticInputs(Arc::from([])),&mut|owner| -> Result<bool,E> {
+            let Artifact::Syntax(payload)=owner.as_ref()else{return Ok(false)};
+            let candidate=accept(payload)?;
+            if let Some(candidate)=candidate{bound=Some(candidate);Ok(true)}else{Ok(false)}
+        })?;
+        if accepted.is_none(){return Ok(None);}
+        if bound.is_some(){self.hits.fetch_add(1,Ordering::Relaxed);}
+        Ok(bound)
+    }
+    pub(super) fn remember(&self,key:Vec<u8>,receipt:&Arc<IssuedStaticPlan>){self.remember_mode(key,receipt,MetadataOwners::Compatibility)}
+    pub(super) fn remember_original(&self,key:Vec<u8>,receipt:&Arc<IssuedStaticPlan>){self.remember_mode(key,receipt,MetadataOwners::Original)}
+    fn remember_mode(&self,key:Vec<u8>,receipt:&Arc<IssuedStaticPlan>,mode:MetadataOwners){
         let Ok(payload) = receipt.relative_payload() else {
             self.declined.fetch_add(1, Ordering::Relaxed);
             self.recomputed.fetch_add(1, Ordering::Relaxed);
@@ -173,47 +193,39 @@ impl StartupArtifacts {
         };
         // Current-roster retention has no byte admission budget. The issued
         // relative payload remains mandatory; this is only an inline charge.
-        self.values.insert_with(
-            key.into(),
-            Vec::new(),
-            std::mem::size_of::<Artifact>(),
-            || Artifact::Syntax(payload),
-        );
+        match mode{
+            MetadataOwners::Compatibility=>{self.values.insert_with(key.into(),Vec::new(),std::mem::size_of::<Artifact>(),||Artifact::Syntax(payload));}
+            MetadataOwners::Original=>{self.values.insert_fresh_with_owned(key.into(),Vec::new(),std::mem::size_of::<Artifact>(),||Artifact::Syntax(payload));}
+        }
         self.recomputed.fetch_add(1, Ordering::Relaxed);
     }
 }
 
 impl StartupArtifacts {
-    pub(super) fn admit_layout(
-        &self,
-        procedure: ProcedureIdentity,
-        declarations: Arc<[Arc<ProcedureStaticDeclaration>]>,
-    ) -> Option<Arc<dm_tree::procedure_statics::StaticLayout>> {
-        let key = layout_key(procedure);
-        let host = StaticInputs(Arc::clone(&declarations));
-        if let Some(owner) = self.values.lookup(&key, &host) {
-            if let Artifact::Layout(layout) = owner.as_ref() {
-                return Some(Arc::clone(layout));
-            }
+    pub(super) fn admit_layout(&self,procedure:ProcedureIdentity,declarations:Arc<[Arc<ProcedureStaticDeclaration>]>)->Option<Arc<dm_tree::procedure_statics::StaticLayout>>{
+        self.admit_layout_mode(procedure,declarations,MetadataOwners::Compatibility)
+    }
+    fn admit_layout_mode(&self,procedure:ProcedureIdentity,declarations:Arc<[Arc<ProcedureStaticDeclaration>]>,mode:MetadataOwners)->Option<Arc<dm_tree::procedure_statics::StaticLayout>>{
+        let key=layout_key(procedure);let host=StaticInputs(Arc::clone(&declarations));
+        let mut current=None;
+        match mode{
+            MetadataOwners::Compatibility=>if let Some(owner)=self.values.lookup(&key,&host){if let Artifact::Layout(layout)=owner.as_ref(){current=Some(Arc::clone(layout));}},
+            MetadataOwners::Original=>{self.values.visit_explained(&key,&host,&mut|owner|{
+                if let Artifact::Layout(layout)=owner.as_ref(){if same_declaration_owners(layout.declarations(),&declarations){current=Some(Arc::clone(layout));return true;}}
+                false
+            });}
         }
-        let ledger = dm_session::observations::ObservationLedger::default();
-        ledger.record(
-            Query::Static(procedure),
-            Answer::Static(Arc::clone(&declarations)),
-            None);
-        // Current-roster store has no byte admission budget. Exact owner
-        // accounting belongs to explicit census, not a hot-path heap walk.
-        let layout = dm_tree::procedure_statics::StaticLayout::capture(procedure, declarations)?;
-        let owner = self.values.insert_with_owned(
-            key,
-            ledger.reads(),
-            0,
-            || Artifact::Layout(Arc::new(layout)),
-        )?;
-        match owner.as_ref() {
-            Artifact::Layout(layout) => Some(Arc::clone(layout)),
-            _ => None,
-        }
+        if current.is_some(){return current;}
+        let ledger=dm_session::observations::ObservationLedger::default();
+        ledger.record(Query::Static(procedure),Answer::Static(Arc::clone(&declarations)),None);
+        // Same existing store/keys. A current original owner is published as a
+        // fresh physical variant; equal old values cannot substitute metadata.
+        let layout=dm_tree::procedure_statics::StaticLayout::capture(procedure,declarations)?;
+        let owner=match mode{
+            MetadataOwners::Compatibility=>self.values.insert_with_owned(key,ledger.reads(),0,||Artifact::Layout(Arc::new(layout))),
+            MetadataOwners::Original=>self.values.insert_fresh_with_owned(key,ledger.reads(),0,||Artifact::Layout(Arc::new(layout))),
+        }?;
+        match owner.as_ref(){Artifact::Layout(layout)=>Some(Arc::clone(layout)),_=>None}
     }
     /// Called only after current source capture and initializer assembly succeed.
     #[cfg(test)]
@@ -223,11 +235,14 @@ impl StartupArtifacts {
     ) -> Result<Arc<dm_tree::procedure_statics::StaticInventory>, String> {
         self.inventory_with_rosters(plans, &[])
     }
-    pub(super) fn inventory_with_rosters(
-        &self,
-        plans: &[&dm_tree::procedure_statics::StaticPlan],
-        rosters: &[Option<Arc<[Arc<ProcedureStaticDeclaration>]>>],
-    ) -> Result<Arc<dm_tree::procedure_statics::StaticInventory>, String> {
+    pub(super) fn inventory_with_rosters(&self,plans:&[&dm_tree::procedure_statics::StaticPlan],rosters:&[Option<Arc<[Arc<ProcedureStaticDeclaration>]>>])->Result<Arc<dm_tree::procedure_statics::StaticInventory>,String>{
+        self.inventory_with_rosters_mode(plans,rosters,MetadataOwners::Compatibility)
+    }
+    pub(super) fn inventory_with_original_rosters(&self,plans:&[&dm_tree::procedure_statics::StaticPlan],rosters:&[Option<Arc<[Arc<ProcedureStaticDeclaration>]>>])->Result<Arc<dm_tree::procedure_statics::StaticInventory>,String>{
+        if plans.len()!=rosters.len(){return Err("original static inventory roster count differs".into());}
+        self.inventory_with_rosters_mode(plans,rosters,MetadataOwners::Original)
+    }
+    fn inventory_with_rosters_mode(&self,plans:&[&dm_tree::procedure_statics::StaticPlan],rosters:&[Option<Arc<[Arc<ProcedureStaticDeclaration>]>>],mode:MetadataOwners)->Result<Arc<dm_tree::procedure_statics::StaticInventory>,String>{
         let mut rows = Vec::with_capacity(plans.len());
         for (index, plan) in plans.iter().enumerate() {
             let declarations = match rosters.get(index).and_then(Option::as_ref) {
@@ -235,19 +250,20 @@ impl StartupArtifacts {
                     let mut current: Vec<_> = plan.declarations.iter().collect();
                     current.sort_by_key(|declaration| declaration.identity);
                     if !owner.iter().map(AsRef::as_ref).eq(current) {
-                        return self.fresh_inventory(plans);
+                        return self.fresh_inventory_mode(plans,rosters,mode);
                     }
                     Arc::clone(owner)
                 }
                 None => {
+                    if matches!(mode,MetadataOwners::Original)&&!plan.declarations.is_empty(){return Err("original static declaration roster unavailable".into());}
                     let mut declarations: Vec<_> =
                         plan.declarations.iter().cloned().map(Arc::new).collect();
                     declarations.sort_by_key(|declaration| declaration.identity);
                     declarations.into()
                 }
             };
-            let Some(layout) = self.admit_layout(plan.procedure, declarations) else {
-                return self.fresh_inventory(plans);
+            let Some(layout) = self.admit_layout_mode(plan.procedure, declarations,mode) else {
+                return self.fresh_inventory_mode(plans,rosters,mode);
             };
             rows.push((plan.procedure, layout));
         }
@@ -255,7 +271,7 @@ impl StartupArtifacts {
         self.values
             .visit_explained(INVENTORY_KEY, &StaticInputs(Arc::from([])), &mut |owner| {
                 if let Artifact::Inventory(receipt) = owner.as_ref() {
-                    admitted = receipt.admit(&rows);
+                    admitted = match mode{MetadataOwners::Compatibility=>receipt.admit(&rows),MetadataOwners::Original=>receipt.admit_original(&rows,rosters)};
                 }
                 admitted.is_some()
             });
@@ -263,8 +279,9 @@ impl StartupArtifacts {
             self.inventory_hits.fetch_add(1, Ordering::Relaxed);
             return Ok(inventory);
         }
-        let Some(receipt) = inventory_receipt::InventoryReceipt::capture(rows, plans) else {
-            return self.fresh_inventory(plans);
+        let captured=match mode{MetadataOwners::Compatibility=>inventory_receipt::InventoryReceipt::capture(rows,plans),MetadataOwners::Original=>inventory_receipt::InventoryReceipt::capture_original(rows,plans)};
+        let Some(receipt) = captured else {
+            return self.fresh_inventory_mode(plans,rosters,mode);
         };
         let inventory = Arc::clone(receipt.storage().1);
         self.values.insert_fresh_with_owned(
@@ -276,14 +293,12 @@ impl StartupArtifacts {
         self.inventory_recomputed.fetch_add(1, Ordering::Relaxed);
         Ok(inventory)
     }
-    fn fresh_inventory(
-        &self,
-        plans: &[&dm_tree::procedure_statics::StaticPlan],
-    ) -> Result<Arc<dm_tree::procedure_statics::StaticInventory>, String> {
-        let mut inventory = dm_tree::procedure_statics::StaticInventory::from_plans(
-            plans.iter().map(|plan| (plan.procedure, *plan)),
-        )?;
-        inventory.certify(|procedure, declarations| self.admit_layout(procedure, declarations));
+    fn fresh_inventory_mode(&self,plans:&[&dm_tree::procedure_statics::StaticPlan],rosters:&[Option<Arc<[Arc<ProcedureStaticDeclaration>]>>],mode:MetadataOwners)->Result<Arc<dm_tree::procedure_statics::StaticInventory>,String>{
+        let mut inventory=match mode{
+            MetadataOwners::Compatibility=>dm_tree::procedure_statics::StaticInventory::from_plans(plans.iter().map(|plan|(plan.procedure,*plan)))?,
+            MetadataOwners::Original=>dm_tree::procedure_statics::StaticInventory::from_canonical_declarations(plans.iter().enumerate().map(|(index,plan)|(plan.procedure,*plan,rosters.get(index).and_then(Option::as_ref))))?,
+        };
+        inventory.certify(|procedure,declarations|self.admit_layout_mode(procedure,declarations,mode));
         self.inventory_recomputed.fetch_add(1, Ordering::Relaxed);
         Ok(Arc::new(inventory))
     }

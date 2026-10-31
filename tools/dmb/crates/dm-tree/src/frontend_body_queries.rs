@@ -51,10 +51,14 @@ impl BodySyntaxInput {
         self: &Arc<Self>,
         host: &dyn BodySyntaxQueries,
     ) -> Result<Arc<BodySyntax>, BodySyntaxFailure> {
-        let syntax = host.syntax_checked(self)?;
-        if syntax.issuance != self.id {
-            return Err(internal("body query returned a foreign parser issuance").into());
-        }
+        self.obtain_checked_using(|input|host.syntax_checked(input))
+    }
+    pub(super) fn obtain_checked_using(
+        self:&Arc<Self>,
+        obtain:impl FnOnce(&Arc<Self>)->Result<Arc<BodySyntax>,BodySyntaxFailure>,
+    )->Result<Arc<BodySyntax>,BodySyntaxFailure>{
+        let syntax=obtain(self)?;
+        if syntax.issuance!=self.id{return Err(internal("body query returned a foreign parser issuance").into())}
         Ok(syntax)
     }
     /// Standalone compatibility behavior remains the same explicit parser path.
@@ -248,6 +252,9 @@ pub trait BodySyntaxQueries: std::fmt::Debug + Send + Sync {
     /// Quiescent admission boundary: collect expired issuance metadata once,
     /// never scan the whole graph for every body in a large program.
     fn begin_revision(&self) {}
+    /// Preserve this host's existing input registration/eviction before a
+    /// direct active-context loan. Does not get/parse/reset any query.
+    fn prepare_checked_input(&self,_:&Arc<BodySyntaxInput>)->Result<(),BodySyntaxFailure>{Ok(())}
     fn syntax(&self, input: &Arc<BodySyntaxInput>) -> Result<Arc<BodySyntax>, Diagnostic>;
     /// Compatibility hosts have syntax failures only. Native hosts must
     /// override this before admitted settings can produce operational errors.

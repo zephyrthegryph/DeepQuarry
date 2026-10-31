@@ -19,76 +19,16 @@
 //! the boot set, or when the declaration is `const`. The write test is on the expression `GLOB.x` / `x`, not on aliases: a list handed to a
 //! proc that mutates it is not seen (the same limit the per-var write index has).
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 use dreammaker::ast::{Expression, Follow, Statement, Term};
 
 use super::ast::walk_block;
 use super::Sem;
 
-/// The lifecycle procs of a system and a controller: the kernel calls them once, while the world boots.
-const BOOT_PROCS: &[&str] = &["New", "preinit", "initialize", "Initialize", "on_members_ready", "kernel_members_ready", "OnConfigLoad"];
-
-/// Procs that run once before the first map load by the engine's own contract, though a late atom may call them as a fallback
-/// (`static_entries_ensure`, `static_entries_setup_early`): both are guarded by `ready`.
-const BOOT_ONCE: &[&str] = &["static_entries_build"];
-
-/// Calls that change the list they are called on.
-const LIST_MUTATORS: &[&str] = &["Add", "Cut", "Remove", "Insert", "Swap", "Splice"];
-
-/// Calls that change their first argument in place.
-const ARG_MUTATORS: &[&str] = &["sortTim", "shuffle", "reverse_range"];
-
-/// The names a `PROC_REF` family macro takes.
-const REF_MACROS: &[&str] = &["PROC_REF", "TYPE_PROC_REF", "GLOBAL_PROC_REF"];
-
-type Node = (String, String);
-
-#[derive(Default, serde::Serialize, serde::Deserialize)]
-pub struct GlobalIndex {
-    /// Global vars (`GLOB.x` as `x`, a real global as its name) written by a proc that is not boot-only.
-    runtime_written: HashSet<String>,
-    /// Every global var that is written anywhere.
-    written: HashSet<String>,
-    /// Var names (of any object) written by a proc that is not boot-only: the name-based test for a var of a global singleton (`SSjob.x`,
-    /// `using_map.x`). Test code is compiled out of production and does not count.
-    runtime_field_written: HashSet<String>,
-    /// How many procs the boot set holds (for the report).
-    pub boot_procs: usize,
-}
-
+pub use crate::global_policy::GlobalIndex;
+use crate::global_policy::{Node,Facts,LIST_MUTATORS,ARG_MUTATORS,REF_MACROS};
 impl GlobalIndex {
-    /// A digest of the index (`walk_cache`).
-    pub fn digest(&self) -> u128 {
-        let mut h = blake3::Hasher::new();
-        for set in [&self.runtime_written, &self.written, &self.runtime_field_written] {
-            let mut v: Vec<&String> = set.iter().collect();
-            v.sort();
-            for x in v {
-                h.update(x.as_bytes());
-                h.update(b"\n");
-            }
-            h.update(b"|");
-        }
-        h.update(&self.boot_procs.to_le_bytes());
-        u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap())
-    }
-
-    /// True when `var` (a `GLOB` field or a real global) is never changed after the world booted.
-    pub fn constant_after_init(&self, var: &str) -> bool {
-        !self.runtime_written.contains(var)
-    }
-
-    /// True when no proc outside the boot set writes a var of this name on any object: a var of a global singleton that only boot code fills reads
-    /// like a constant. Name-based, so it over-approximates who writes (a same-named var elsewhere keeps it dynamic).
-    pub fn field_constant_after_init(&self, var: &str) -> bool {
-        !self.runtime_field_written.contains(var)
-    }
-
-    pub fn is_written(&self, var: &str) -> bool {
-        self.written.contains(var)
-    }
-
     pub fn build(sem: &Sem) -> GlobalIndex {
                 let global_vars: HashSet<String> = sem.objtree.root().get().vars.iter().filter(|(_, v)| v.declaration.is_some()).map(|(n, _)| n.clone()).collect();
         let glob_fields: HashSet<String> = sem.ty("/datum/controller/global_vars").map(|t| t.get().vars.iter().filter(|(_, v)| v.declaration.is_some()).map(|(n, _)| n.clone()).collect()).unwrap_or_default();
@@ -132,100 +72,11 @@ impl GlobalIndex {
             for ((path, p), facts) in procs.iter().zip(scanned) {
                 nodes.push(((path.clone(), p.name().to_string()), facts));
             }
-            // Who defines each name, and who calls it.
-            let mut defined: HashMap<&str, Vec<usize>> = HashMap::new();
-            for (i, (n, _)) in nodes.iter().enumerate() {
-                defined.entry(n.1.as_str()).or_default().push(i);
-            }
-            let mut callers: HashMap<&str, Vec<usize>> = HashMap::new();
-            let mut referenced: HashSet<&str> = HashSet::new();
-            for (i, (_, f)) in nodes.iter().enumerate() {
-                for c in &f.calls {
-                    callers.entry(c.as_str()).or_default().push(i);
-                }
-                for r in &f.refs {
-                    referenced.insert(r.as_str());
-                }
-            }
-            let is_root = |n: &Node| -> bool {
-                if n.0 == "/datum/controller/global_vars" && n.1.starts_with("InitGlobal") {
-                    return true;
-                }
-                if n.0 == "/world" && n.1 == "New" {
-                    return true;
-                }
-                if BOOT_ONCE.contains(&n.1.as_str()) && n.0 == "/" {
-                    return true;
-                }
-                (sem.is_subtype(&n.0, "/datum/system") || sem.is_subtype(&n.0, "/datum/world_service") || sem.is_subtype(&n.0, "/datum/controller")) && BOOT_PROCS.contains(&n.1.as_str())
-            };
-            let roots: Vec<bool> = nodes.iter().map(|(n, _)| is_root(n)).collect();
-            // What the roots reach.
-            let mut boot = vec![false; nodes.len()];
-            let mut stack: Vec<usize> = Vec::new();
-            for (i, r) in roots.iter().enumerate() {
-                if *r {
-                    boot[i] = true;
-                    stack.push(i);
-                }
-            }
-            while let Some(i) = stack.pop() {
-                for c in &nodes[i].1.calls {
-                    for &d in defined.get(c.as_str()).map(|v| v.as_slice()).unwrap_or(&[]) {
-                        if !boot[d] {
-                            boot[d] = true;
-                            stack.push(d);
-                        }
-                    }
-                }
-            }
-            // Drop what something outside the set can also call, or what a callback names.
-            loop {
-                let mut changed = false;
-                for i in 0..nodes.len() {
-                    if !boot[i] || roots[i] {
-                        continue;
-                    }
-                    let name = nodes[i].0 .1.as_str();
-                    let outside = referenced.contains(name) || callers.get(name).map(|cs| cs.iter().any(|&c| !boot[c])).unwrap_or(false);
-                    if outside {
-                        boot[i] = false;
-                        changed = true;
-                    }
-                }
-                if !changed {
-                    break;
-                }
-            }
-            let mut out = GlobalIndex { boot_procs: boot.iter().filter(|b| **b).count(), ..Default::default() };
-            for (i, (_, f)) in nodes.iter().enumerate() {
-                for w in &f.writes {
-                    out.written.insert(w.clone());
-                    if !boot[i] {
-                        out.runtime_written.insert(w.clone());
-                    }
-                }
-                if !boot[i] {
-                    out.runtime_field_written.extend(f.field_writes.iter().cloned());
-                }
-            }
-            out
+            GlobalIndex::from_facts(&nodes,|owner|sem.is_subtype(owner,"/datum/system")||sem.is_subtype(owner,"/datum/world_service")||sem.is_subtype(owner,"/datum/controller"))
         })
     }
 }
 
-#[derive(Default, Clone, serde::Serialize, serde::Deserialize)]
-struct Facts {
-    // Ordered sets: `body_facts` digests them.
-    /// Names this body can call (`f()`, `x.f()`, `..()` as the proc's own name is not known here, so parent calls are skipped).
-    calls: std::collections::BTreeSet<String>,
-    /// Names a PROC_REF-family macro or a CALLBACK takes.
-    refs: std::collections::BTreeSet<String>,
-    /// Global vars written.
-    writes: std::collections::BTreeSet<String>,
-    /// Names of vars written on any object (`x = ..`, `a.x = ..`, `a.x[i] = ..`, `a.x.Add(..)`, `a.x++`).
-    field_writes: std::collections::BTreeSet<String>,
-}
 
 /// The global var an lvalue-ish expression names: `GLOB.x` (+ index steps) or a real global `x` (+ index steps), and whether anything but
 /// index steps follows it.

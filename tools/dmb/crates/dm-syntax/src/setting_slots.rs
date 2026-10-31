@@ -7,8 +7,18 @@ use std::{io, mem::size_of, sync::Mutex};
 pub struct SettingExpressionSlots {
     state: Mutex<Option<Storage>>,
 }
+struct DimensionGroup{
+    roots:Vec<Option<(crate::Span,SettingExpression)>>,
+    metadata:SettingRootLease,
+}
+struct DimensionStorage{
+    groups:Vec<Option<DimensionGroup>>,
+    // LAST: group roots and directory Vec physically free before credit.
+    metadata:SettingRootLease,
+}
 struct Storage {
     roots: Vec<Option<SettingExpression>>,
+    dimensions:Option<DimensionStorage>,
     // Last: actual Vec allocation and original root aliases die before credit.
     metadata: SettingRootLease,
 }
@@ -26,26 +36,19 @@ fn denied(
     a.record_operational_error(io::Error::new(kind, message));
     SettingSyntaxFailure::Operational(kind.into())
 }
+/// Same conservative4x requested-capacity envelope BEFORE allocation. Exposed
+/// excess refuses before publication; no post-allocation charge is its proof.
+fn dimension_rows<T>(count:usize,fixed:usize,a:&SettingAdmission<'_>)->Result<(Vec<T>,SettingRootLease),SettingSyntaxFailure>{
+ let bytes=count.checked_mul(4).and_then(|n|n.checked_mul(size_of::<T>())).and_then(|n|n.checked_add(fixed)).ok_or_else(||denied(a,io::ErrorKind::OutOfMemory,"dimension slot capacity overflow"))?;
+ let metadata=a.reserve(bytes).map_err(SettingSyntaxFailure::Operational)?;let mut rows=Vec::new();
+ rows.try_reserve_exact(count).map_err(|_|denied(a,io::ErrorKind::OutOfMemory,"dimension slot allocation refused"))?;
+ let actual=rows.capacity().checked_mul(size_of::<T>()).and_then(|n|n.checked_add(fixed)).ok_or_else(||denied(a,io::ErrorKind::OutOfMemory,"dimension slot exposed capacity overflow"))?;
+ if actual>bytes{return Err(denied(a,io::ErrorKind::OutOfMemory,"dimension slot exposed capacity exceeds reserved envelope"))}
+ Ok((rows,metadata))
+}
 impl SettingExpressionSlots {
-    /// No leaf QueryDb/gate/reset call. This lock serializes only this original
-    /// declaration's root publication, and is never held by the outer host gate.
-    /// Genuine syntax rejection stays uncached here. Operational failure leaves
-    /// the selected slot EMPTY; no error text can poison same-input retry.
-    pub fn obtain(
-        &self,
-        ordinal: usize,
-        count: usize,
-        a: &SettingAdmission<'_>,
-        produce: impl FnOnce() -> Result<SettingExpression, SettingSyntaxFailure>,
-    ) -> Result<SettingExpression, SettingSyntaxFailure> {
+    fn lock_storage<'slot>(&'slot self,count:usize,a:&SettingAdmission<'_>)->Result<std::sync::MutexGuard<'slot,Option<Storage>>,SettingSyntaxFailure>{
         a.checkpoint().map_err(SettingSyntaxFailure::Operational)?;
-        if ordinal >= count {
-            return Err(denied(
-                a,
-                io::ErrorKind::InvalidInput,
-                "setting slot ordinal unavailable",
-            ));
-        }
         let mut guard = self.state.lock().map_err(|_| {
             denied(
                 a,
@@ -93,7 +96,7 @@ impl SettingExpressionSlots {
                     .map_err(SettingSyntaxFailure::Operational)?;
             }
             roots.resize_with(count, || None);
-            *guard = Some(Storage { roots, metadata });
+            *guard = Some(Storage { roots, dimensions:None, metadata });
         }
         let storage = guard.as_mut().expect("initialized original slots");
         // Check actual counter identity BEFORE reading a warm root. A prepared
@@ -105,6 +108,57 @@ impl SettingExpressionSlots {
                 "original setting slot budget domain differs",
             ));
         }
+        Ok(guard)
+    }
+    /// Header/suffix ordinals address the SAME original slot family directly.
+    /// Only the enclosing immutable source receipt authenticates those axes.
+    pub fn obtain_dimension(&self,ordinal:usize,count:usize,dimension:usize,dimensions:usize,span:crate::Span,a:&SettingAdmission<'_>,produce:impl FnOnce()->Result<SettingExpression,SettingSyntaxFailure>)->Result<SettingExpression,SettingSyntaxFailure>{
+      if ordinal>=count||dimension>=dimensions||span.start>=span.end{return Err(denied(a,io::ErrorKind::InvalidInput,"original dimension coordinate unavailable"))}
+      let mut guard=self.lock_storage(count,a)?;let storage=guard.as_mut().expect("initialized original slot family");
+      if storage.dimensions.is_none(){
+        let (mut groups,metadata)=dimension_rows::<Option<DimensionGroup>>(count,size_of::<DimensionStorage>(),a)?;
+        groups.resize_with(count,||None);storage.dimensions=Some(DimensionStorage{groups,metadata});
+      }
+      let rows=storage.dimensions.as_mut().expect("dimension directory admitted");
+      if rows.groups.len()!=count||!a.matches_lease_domain(&rows.metadata){return Err(denied(a,io::ErrorKind::InvalidInput,"dimension directory source/domain differs"))}
+      let selected=&mut rows.groups[ordinal];
+      if selected.is_none(){
+        let (mut roots,metadata)=dimension_rows::<Option<(crate::Span,SettingExpression)>>(dimensions,size_of::<DimensionGroup>(),a)?;
+        roots.resize_with(dimensions,||None);*selected=Some(DimensionGroup{roots,metadata});
+      }
+      let group=selected.as_mut().expect("dimension group admitted");
+      if group.roots.len()!=dimensions||!a.matches_lease_domain(&group.metadata){return Err(denied(a,io::ErrorKind::InvalidInput,"dimension suffix count/domain differs"))}
+      if let Some((original,root))=&group.roots[dimension]{
+        if *original!=span||!root.is_retained_in(a)||root.current_offset()!=0{return Err(denied(a,io::ErrorKind::InvalidInput,"original dimension root source/domain differs"))}
+        a.checkpoint().map_err(SettingSyntaxFailure::Operational)?;return Ok(root.clone())
+      }
+      let root=produce()?;if !root.is_retained_in(a)||root.current_offset()!=0{return Err(denied(a,io::ErrorKind::InvalidInput,"unissued dimension cannot populate original slot"))}
+      a.checkpoint().map_err(SettingSyntaxFailure::Operational)?;group.roots[dimension]=Some((span,root.clone()));Ok(root)
+    }
+    pub fn contains_dimension(&self,ordinal:usize,dimension:usize,span:crate::Span,root:&SettingExpression)->bool{
+      self.state.lock().ok().and_then(|guard|guard.as_ref().and_then(|s|s.dimensions.as_ref()).and_then(|s|s.groups.get(ordinal)).and_then(Option::as_ref).and_then(|group|group.roots.get(dimension)).and_then(Option::as_ref).map(|(original,r)|*original==span&&r.same_root(root))).unwrap_or(false)
+    }
+    /// No leaf QueryDb/gate/reset call. This lock serializes only this original
+    /// declaration's root publication, and is never held by the outer host gate.
+    /// Genuine syntax rejection stays uncached here. Operational failure leaves
+    /// the selected slot EMPTY; no error text can poison same-input retry.
+    pub fn obtain(
+        &self,
+        ordinal: usize,
+        count: usize,
+        a: &SettingAdmission<'_>,
+        produce: impl FnOnce() -> Result<SettingExpression, SettingSyntaxFailure>,
+    ) -> Result<SettingExpression, SettingSyntaxFailure> {
+        a.checkpoint().map_err(SettingSyntaxFailure::Operational)?;
+        if ordinal >= count {
+            return Err(denied(
+                a,
+                io::ErrorKind::InvalidInput,
+                "setting slot ordinal unavailable",
+            ));
+        }
+        let mut guard=self.lock_storage(count,a)?;
+        let storage=guard.as_mut().expect("initialized original slots");
         if let Some(root) = &storage.roots[ordinal] {
             if !root.is_retained_in(a) || root.current_offset() != 0 {
                 return Err(denied(
@@ -161,6 +215,15 @@ impl SettingExpressionSlots {
                     storage.roots.len() * size_of::<Option<SettingExpression>>(),
                     storage.roots.capacity() * size_of::<Option<SettingExpression>>(),
                 );
+                if let Some(dimensions)=&storage.dimensions{
+                    dimensions.metadata.visit_counter_storage(|p,n|allocation(p,n,n));
+                    allocation(dimensions.groups.as_ptr() as usize,dimensions.groups.len()*size_of::<Option<DimensionGroup>>(),dimensions.groups.capacity()*size_of::<Option<DimensionGroup>>());
+                    for group in dimensions.groups.iter().flatten(){
+                        group.metadata.visit_counter_storage(|p,n|allocation(p,n,n));
+                        allocation(group.roots.as_ptr() as usize,group.roots.len()*size_of::<Option<(crate::Span,SettingExpression)>>(),group.roots.capacity()*size_of::<Option<(crate::Span,SettingExpression)>>());
+                        for (_,value) in group.roots.iter().flatten(){root(value);}
+                    }
+                }
                 for value in storage.roots.iter().flatten() {
                     root(value);
                 }
@@ -275,4 +338,20 @@ mod tests {
         let result = slots.obtain(0, 1, &retry, || prepare(&retry, "1")).unwrap();
         assert!(result.is_retained_in(&retry));
     }
+    #[test]
+    fn dimension_rows_share_original_family_retry_and_counter_without_aliasing_rhs(){
+      let counter=Arc::new(AtomicUsize::new(0));let healthy=||Ok(());let a=SettingAdmission::new(&counter,8*1024*1024,&healthy);let slots=SettingExpressionSlots::default();
+      let rhs=slots.obtain(0,2,&a,||prepare(&a,"null")).unwrap();let span=crate::Span::new(10,13);
+      let dimension=slots.obtain_dimension(0,2,0,2,span,&a,||prepare(&a,"1+2")).unwrap();
+      assert!(!rhs.same_root(&dimension));assert!(slots.contains_original(0,&rhs));assert!(slots.contains_dimension(0,0,span,&dimension));
+      let warm=slots.obtain_dimension(0,2,0,2,span,&a,||panic!("same dimension cannot parse twice")).unwrap();assert!(dimension.same_root(&warm));
+      let other=Arc::new(AtomicUsize::new(0));let foreign=SettingAdmission::new(&other,8*1024*1024,&healthy);
+      assert!(matches!(slots.obtain_dimension(0,2,0,2,span,&foreign,||panic!("foreign warm domain cannot produce")),Err(SettingSyntaxFailure::Operational(_))));
+      let stop=||Err(io::Error::from_raw_os_error(1450));let failed=SettingAdmission::new(&counter,8*1024*1024,&stop);
+      let next=crate::Span::new(20,23);assert!(slots.obtain_dimension(0,2,1,2,next,&failed,||panic!("actual entry stop precedes parser")).is_err());
+      assert_eq!(failed.take_operational_error().unwrap().raw_os_error(),Some(1450));
+      let recovered=slots.obtain_dimension(0,2,1,2,next,&a,||prepare(&a,"3+4")).unwrap();assert!(!dimension.same_root(&recovered));
+      drop(rhs);drop(dimension);drop(warm);drop(recovered);drop(slots);assert_eq!(counter.load(Ordering::Acquire),0,"dimension aliases/metadata physically release original credit");
+    }
+
 }

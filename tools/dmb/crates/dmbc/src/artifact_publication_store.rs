@@ -145,6 +145,18 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord> PublicationS
             None => self.core.visit_explained(key, host, accept),
         }
     }
+    /// Fallible validation uses the original core/lease acceptance path. An
+    /// error claims no candidate; a retired current request is operationally
+    /// unavailable rather than a source-required cache miss.
+    pub(crate) fn try_visit_explained<H:ObservationHost<Q,A,D>,E:From<std::io::Error>>(&self,key:&[u8],host:&H,accept:&mut dyn FnMut(&Arc<T>)->Result<bool,E>)->Result<(Option<Arc<T>>,Option<Q>),E>{
+        let (receipt,changed)=match &self.attempt{
+            Some(attempt)=>attempt.with_pending(|lease|lease.try_visit_explained_accepted(key,host,accept))
+                .ok_or_else(||E::from(std::io::Error::new(std::io::ErrorKind::NotConnected,"artifact source request is no longer pending")))??,
+            None=>self.core.try_visit_receipted(key,host,accept)?,
+        };
+        if self.attempt.as_ref().is_some_and(|attempt|attempt.with_pending(|_|()).is_none()){return Err(E::from(std::io::Error::new(std::io::ErrorKind::NotConnected,"artifact source request retired during validation")));}
+        Ok((receipt.map(|receipt|receipt.value),changed))
+    }
     /// Additive current-issuer admission. Ordinary/cross-host callers keep
     /// `visit_explained`; observable hosts always replay every exact answer.
     /// Only complete matching immutable provider-qualified issuer receipts skip
