@@ -95,6 +95,8 @@
 /datum/unit_test/proc/dq_latency_isolate_diagnostics()
 	set_global("latency_last_ineligible", GLOB.latency_last_ineligible)
 	set_global("latency_last_pin_reason", GLOB.latency_last_pin_reason)
+	set_global("latency_pin_scans", GLOB.latency_pin_scans)
+	set_global("latent_last_refusal", GLOB.latent_last_refusal)
 
 // ---- Per-condition unit tests ----
 
@@ -468,3 +470,24 @@ GLOBAL_VAR_INIT(dq_type_metadata_constructed, 0)
 	TEST_ASSERT_EQUAL(GLOB.dq_type_metadata_constructed, 0, "Dry type queries never allocate or initialize a content prototype")
 	TEST_ASSERT(latent_type_safe(/obj/item/paper), "Production registrations preserve a latent-safe parent")
 	TEST_ASSERT(!latent_type_safe(/obj/item/paper/sticky), "Production registrations preserve its explicit unsafe subtype")
+
+/// An item that is not idle yet is turned away without the subtree scan of the pin test; once idle it is scanned (the scan is the expensive part: it costs
+/// 5-25 ms on a full locker and the sweep used to pay it for every item it offered).
+/datum/unit_test/dq_latency_pin_scan_only_when_idle
+
+/datum/unit_test/dq_latency_pin_scan_only_when_idle/Run()
+	dq_latency_isolate_diagnostics()
+	set_global(nameof(GLOB.latency_pin_scans), GLOB.latency_pin_scans)
+	var/turf/floor = dq_latency_floor()
+	TEST_ASSERT_NOTNULL(floor, "need a clean floor")
+	var/obj/item/dq_latency_test_box/box = new(floor)
+	var/obj/item/dq_latency_test_item/item = new(box)
+	dq_ledger(box)
+	refresh_flush()
+	var/before = GLOB.latency_pin_scans
+	TEST_ASSERT(!latent_ok(item), "a freshly touched item is not eligible")
+	TEST_ASSERT_EQUAL(GLOB.latency_pin_scans, before, "and was refused without a pin scan")
+	stamp_set(item, latent_touched_at, world.time - (box?.latent_idle_delay_value() * 2))
+	TEST_ASSERT(latent_ok(item), "idle, it is eligible: [GLOB.latency_last_ineligible]")
+	TEST_ASSERT_EQUAL(GLOB.latency_pin_scans, before + 1, "after one pin scan")
+	qdel(box)
