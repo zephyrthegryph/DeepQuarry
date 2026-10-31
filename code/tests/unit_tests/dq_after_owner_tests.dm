@@ -13,17 +13,19 @@
 	test_driver_begin()
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
 	var/datum/after_owner_probe/probe = allocate(/datum/after_owner_probe)
+	var/delay = 1 SECONDS // the misordered call goes through call() so the argument-order lint (which reads the source line) does not see it
+	var/handler = TYPE_PROC_REF(/datum/after_owner_probe, fire)
 	var/reported = 0
 	var/own_id = 0
 	var/world_id = 0
 	// stack_trace() raises the runtime; the test catches it (a production call logs it and goes on).
 	try
-		own_id = after(1 SECONDS, TYPE_PROC_REF(/datum/after_owner_probe, fire), with = list(probe))
+		own_id = call(GLOBAL_PROC_REF(after))(delay, handler, handler, null, CLOCK_OWN, list(probe))
 	catch(var/exception/own_fault)
 		reported++
 		TEST_ASSERT(findtext(own_fault.name, "owner must be a datum"), "the report names the mistake: [own_fault.name]")
 	try
-		world_id = after(1 SECONDS, TYPE_PROC_REF(/datum/after_owner_probe, fire), with = list(probe), clock = CLOCK_WORLD)
+		world_id = call(GLOBAL_PROC_REF(after))(delay, handler, handler, null, CLOCK_WORLD, list(probe))
 	catch(var/exception/world_fault)
 		reported++
 		TEST_ASSERT(findtext(world_fault.name, "owner must be a datum"), "the report names the mistake: [world_fault.name]")

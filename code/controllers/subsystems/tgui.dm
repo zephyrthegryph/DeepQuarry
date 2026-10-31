@@ -380,7 +380,7 @@ CAPABILITIES(/datum/system/tgui)
 	if(!client)
 		return
 	for(var/index in 1 to prewarm_window_reserve)
-		after((1 + ((index - 1) * 2)) SECONDS, PROC_REF(maintain_client_prewarm), src, clock = CLOCK_WORLD, with = list(client))
+		after(src, (1 + ((index - 1) * 2)) SECONDS, PROC_REF(maintain_client_prewarm), clock = CLOCK_WORLD, with = list(client))
 
 /**
  * public
