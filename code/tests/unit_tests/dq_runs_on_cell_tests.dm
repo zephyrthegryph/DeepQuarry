@@ -47,8 +47,9 @@
 
 /datum/unit_test/dq_runs_on_cell/timer_drains_while_on/check()
 	var/before = light.cell.charge
+	var/list/early = light.rx?.timer_ids ? light.rx.timer_ids.Copy() : list()
 	test_time(MACHINE_SERVICE_INTERVAL * 3)
-	TEST_ASSERT(light.cell.charge < before, "the timer drains the cell while the light is on (on [light.on], operable [stat_value(light, STAT_OPERABLE)], has_power [stat_value(light, STAT_HAS_POWER)])")
+	TEST_ASSERT(light.cell.charge < before, "the timer drains the cell while the light is on (early [json_encode(early)] on [light.on], operable [stat_value(light, STAT_OPERABLE)], has_power [stat_value(light, STAT_HAS_POWER)], timers [json_encode(light.rx?.timer_ids ? light.rx.timer_ids.Copy() : list())], cap [!!cap_of(light, CAP_RUNS_ON_CELL)], gate [condition_holds(light, all_of(nameof(light.on), STAT_OPERABLE))])")
 	light.turn_off()
 	var/switched_off = light.cell.charge
 	test_time(MACHINE_SERVICE_INTERVAL * 3)

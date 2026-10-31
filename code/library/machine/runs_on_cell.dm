@@ -55,7 +55,6 @@ CAPABILITY_TYPE(runs_on_cell, CAP_RUNS_ON_CELL, /datum/capability/lib/runs_on_ce
 
 /// The timer's step.
 /datum/capability/lib/runs_on_cell/proc/run_step(datum/act/timer/A)
-	log_world("RUNS_ON_CELL: timer step on [A.holder.type]")
 	feed_step(A.holder)
 
 /// One step: a cell that cannot feed it crosses the state to unpowered; otherwise the step takes its charge.
