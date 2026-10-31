@@ -1743,8 +1743,6 @@ code/modules/client/movement.dm	code/content/client/movement.dm
 code/modules/client/persistent_client.dm	code/content/client/persistent_client.dm
 code/modules/client/preference_setup/loadout/loadout_general.dm	code/content/client/preference_setup/loadout/loadout_general.dm
 code/modules/client/preference_setup/loadout/loadout_shoes.dm	code/content/client/preference_setup/loadout/loadout_shoes.dm
-code/modules/client/preferences/middleware/_middleware.dm	code/content/client/preferences/middleware/_middleware.dm
-code/modules/client/preferences/types/game/sound.dm	code/content/client/preferences/types/game/sound.dm
 code/modules/client/preferences_spawnpoints.dm	code/content/client/preferences_spawnpoints.dm
 code/modules/client/preferences_toggle_procs.dm	code/content/client/preferences_toggle_procs.dm
 code/modules/client/shock.dm	code/content/client/shock.dm
@@ -1760,7 +1758,6 @@ code/modules/combat_ai/legacy_constants/say_list.dm	code/content/ai/legacy_const
 code/modules/combat_ai/pack/pack.dm	code/content/ai/pack/pack.dm
 code/modules/combat_ai/world_model/world_model.dm	code/content/ai/world_model/world_model.dm
 code/modules/communicator/exonet_log_panel.dm	code/content/communicator/exonet_log_panel.dm
-code/modules/contracts/contract_requirement.dm	code/content/contracts/contract_requirement.dm
 code/modules/debugging/debugger.dm	code/content/debugging/debugger.dm
 code/modules/debugging/tracy.dm	code/content/debugging/tracy.dm
 code/modules/detectivework/forensics.dm	code/content/detectivework/forensics.dm
