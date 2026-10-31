@@ -163,3 +163,20 @@
 		for(var/obj/item/spilled in T) // the locker spills what it held when it goes
 			qdel(spilled)
 	TEST_ASSERT_EQUAL(length(refused), 0, "lockers refused their own contents: [jointext(refused, "; ")]")
+
+/// The guard's baseline holds settled alarms: another scan of any air alarm changes none of the settings the guard watches (an alarm's first scan used to land
+/// in whichever test was running, which failed the end-of-run compare in two runs of five).
+/datum/unit_test/dq_guard_baseline_is_settled
+
+/datum/unit_test/dq_guard_baseline_is_settled/Run()
+	var/datum/unit_test_guard/guard = unit_test_guard_session()
+	var/list/moved = list()
+	for(var/obj/machinery/alarm/A as anything in unit_test_machines_tracked())
+		if(QDELETED(A) || !istype(A))
+			continue
+		var/list/was = guard.machine_state[A]
+		A.scan_room()
+		for(var/name in was)
+			if(A.vars[name] != was[name] && !guard.is_thermostat_answer(A, name))
+				moved += "[A] ([A.type]) at ([A.x],[A.y],[A.z]) [name] [was[name]] -> [A.vars[name]]"
+	TEST_ASSERT_EQUAL(length(moved), 0, "a scan changed what the guard baselined: [jointext(moved, "; ")]")
