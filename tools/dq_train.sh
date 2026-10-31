@@ -23,7 +23,8 @@
 #   1. focused tests green, `bash tools/ci/check_ratchets.sh --changed-only` clean, everything committed;
 #   2. `bash tools/dq_train.sh enqueue --tests "<the lane's tests>"` (add --light for docs/tooling/Rust-only work); it returns at once;
 #   3. `bash tools/dq_lane_pool.sh release <branch>`: the branch ref stays in the shared repository, the slot is free;
-#   4. later: `bash tools/dq_train.sh status`. A lane that is not listed under queue/bounced has landed. A bounced lane has a report
+#   4. later: `bash tools/dq_train.sh wait <branch>` blocks until it landed (exit 0) or bounced (exit 3, reason printed); or
+#      `bash tools/dq_train.sh status`. A lane that is not listed under queue/bounced has landed. A bounced lane has a report
 #      (`dq_train.sh report <branch>`): lease a slot, fix, commit, enqueue again.
 #
 # The integrator (a detached process: `ensure` starts it through PowerShell Start-Process so that a shell that is killed after 30
@@ -245,6 +246,12 @@ cmd_enqueue() {
 	ahead="$(git rev-list --count origin/master..HEAD)"
 	[ "$ahead" -gt 0 ] || die "$branch holds nothing origin/master lacks: there is nothing to land"
 	tip="$(git rev-parse HEAD)"
+	# Cheap refusals first, at once and with the fix: a lane that conflicts with master used to find out after a 4-20 min precheck (seconds here:
+	# the same `git merge-tree` probe the prechecker runs, with the same merge drivers and exemptions).
+	if ! DQ_TRAIN_ORIGIN_REPO="$(pwd)" pre_probe_conflict "$branch" "$tip" "$(git rev-parse origin/master)"; then
+		echo "$CONFLICT_FILES" | head -8 >&2
+		die "REFUSED: $branch conflicts with origin/master in the files above (it would be bounced after its precheck). Fix: bash tools/dq_merge_master.sh, resolve, commit, then enqueue again"
+	fi
 	if [ -n "$tests" ]; then
 		. "$SELF_DIR/dq_declared_tests.sh"
 		# shellcheck disable=SC2086
@@ -1949,8 +1956,61 @@ cmd_dequeue() {
 	tlog "dequeued $b (by hand)"
 }
 
+# wait <branch> [--timeout MIN] [--tip SHA]: blocks until the lane has landed or been bounced and says which, so a lane (or an agent) never
+# needs a hand-written watcher (wrong checkout, wrong match text: one missed a bounce for 40 minutes). Reads the train's state, not the log.
+# Exit: 0 landed, 3 bounced (reason and report printed), 4 not in the train (never enqueued, or dequeued), 5 timed out (still queued).
+cmd_wait() {
+	local b="" tmax=120 want="" start now_s lf bf f tip m last=0 phase_now
+	while [ $# -gt 0 ]; do
+		case "$1" in
+			--timeout) tmax="${2:?--timeout needs minutes}"; shift ;;
+			--tip) want="${2:?--tip needs a commit}"; shift ;;
+			-*) die "wait: unknown argument: $1" ;;
+			*) b="$1" ;;
+		esac
+		shift
+	done
+	[ -n "$b" ] || b="$(git symbolic-ref -q --short HEAD 2>/dev/null)" || die "usage: dq_train.sh wait <branch> [--timeout MIN] [--tip SHA]"
+	init_state
+	f="$(qfile "$b")"; lf="$LANDED/$(fname "$b").landed"; bf="$BOUNCED/$(fname "$b").q"
+	[ -n "$want" ] || want="$(qget "$f" tip)"
+	[ -n "$want" ] || want="$(qget "$bf" tip)"
+	[ -n "$want" ] || want="$(qget "$lf" tip)"
+	[ -n "$want" ] || want="$(git rev-parse -q --verify "refs/heads/$b^{commit}" 2>/dev/null)"
+	[ -n "$want" ] || die "wait: $b is unknown to the train (never enqueued) and has no local branch"
+	start="$(date +%s)"
+	while :; do
+		# bounced first: a bounce record for this tip is the answer even if an older landing of the branch exists
+		if [ -f "$bf" ] && [ "$(qget "$bf" tip)" = "$want" ]; then
+			echo "dq_train: BOUNCED $b (tip ${want:0:10}): $(qget "$bf" reason)"
+			echo "dq_train: report: $(qget "$bf" report)   (dq_train.sh report $b); fix, commit, enqueue again"
+			return 3
+		fi
+		if [ -f "$lf" ] && { [ "$(qget "$lf" tip)" = "$want" ] || git merge-base --is-ancestor "$want" "$(qget "$lf" master)" 2>/dev/null; }; then
+			echo "dq_train: LANDED $b (tip ${want:0:10}) in origin/master $(qget "$lf" master | cut -c1-10) at $(qget "$lf" landed)"
+			return 0
+		fi
+		if [ ! -f "$f" ]; then
+			# neither queued, landed nor bounced: it may have landed under another tip name; check master itself before giving up
+			git fetch -q origin 2>/dev/null
+			if git merge-base --is-ancestor "$want" origin/master 2>/dev/null; then echo "dq_train: LANDED $b (tip ${want:0:10} is in origin/master)"; return 0; fi
+			echo "dq_train: $b (tip ${want:0:10}) is not in the train: not queued, landed or bounced. Enqueue it: bash tools/dq_train.sh enqueue" >&2
+			return 4
+		fi
+		now_s="$(date +%s)"
+		[ $(( now_s - start )) -ge $(( tmax * 60 )) ] && { echo "dq_train: still queued after ${tmax} min: $b (tip ${want:0:10}); not landed, not bounced" >&2; return 5; }
+		if [ $(( now_s - last )) -ge 300 ]; then
+			last="$now_s"
+			IFS=$'\t' read -r _ phase_now <"$STATE/cycle.txt" 2>/dev/null || phase_now="?"
+			echo "dq_train: waiting for $b (tip ${want:0:10}), $(( (now_s - start) / 60 )) min so far; integrator phase: $phase_now"
+		fi
+		sleep 5
+	done
+}
+
 case "${1:-}" in
 	enqueue) shift; cmd_enqueue "$@" ;;
+	wait) shift; cmd_wait "$@" ;;
 	status) shift; cmd_status "$@" ;;
 	report) shift; cmd_report "$@" ;;
 	dequeue) shift; cmd_dequeue "$@" ;;
