@@ -346,7 +346,7 @@ CAPABILITIES(/datum/ticket)
 /datum/ticket/proc/TicketPanel(mob/user)
 	tgui_interact(user)
 
-//private
+// the ticket panel reads this too
 /datum/ticket/proc/FullMonty(ref_src, admin_commands = FALSE)
 	if(!ref_src)
 		ref_src = ref_token(src)
@@ -373,7 +373,7 @@ CAPABILITIES(/datum/ticket)
 		. = " (<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=resolve'>RSLVE</A>)"
 		. += " (<A href='byond://?_src_=holder;ticket=[ref_src];[HREF_TOKEN_PLACEHOLDER];ticket_action=escalate'>ESCALATE</A>)"
 
-//private
+// the ticket panel reads this too
 /datum/ticket/proc/LinkedReplyName(ref_src)
 	if(!ref_src)
 		ref_src = ref_token(src)
