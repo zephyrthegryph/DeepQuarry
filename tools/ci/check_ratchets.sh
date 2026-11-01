@@ -79,12 +79,15 @@ fi
 
 # Every lint runs here, check_grep included (it used to be excluded, so a failing check_grep passed this
 # script while tools/ci/check_grep.sh and build.sh lint failed).
-if ! "$bin" check --ci "$@"; then
+# The engine prints its own "All ratchet lints passed." when ITS lints pass; that line followed a failing tool self-test in the same output and read as an
+# overall pass (31 October). Only this script's last line says it, so the engine's is renamed.
+"$bin" check --ci "$@" | sed 's/^All ratchet lints passed\.$/analyze: all lints passed (the tool self-tests below decide the overall result)/'
+if [ "${PIPESTATUS[0]}" -ne 0 ]; then
 	failed+=("analyze check")
 fi
 
 if ! selftest_wanted '^tools/(dq_disk_budget\.sh|ci/disk_budget\.toml|ci/test_disk_budget\.sh)$'; then echo "check_ratchets: test_disk_budget skipped (the disk budget is unchanged)"
-elif ! bash tools/ci/test_disk_budget.sh; then
+elif ! bash "${DQ_RATCHETS_DISK_TEST:-tools/ci/test_disk_budget.sh}"; then   # the variable is the seam tools/ci/test_ratchets_selftest_fail.sh uses
 	failed+=("test_disk_budget")
 fi
 if ! selftest_wanted '\.rs$|^tools/ci/check_test_scratch\.sh$'; then echo "check_ratchets: check_test_scratch skipped (no Rust file changed)"
