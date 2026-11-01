@@ -15,7 +15,7 @@ SKIP_PREFIXES = (
     "code/tests/unit_tests/",
     "code/modules/tgs/",
     "code/engine/",
-    "code/controllers/kernel/",
+    "code/engine/kernel/",
     "code/_generated/",
 )
 
