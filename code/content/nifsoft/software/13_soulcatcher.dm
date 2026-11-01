@@ -349,7 +349,7 @@ CAPABILITIES(/mob/living/carbon/brain/caught_soul)
 	if(!src.parent_mob && !src.transient &&(src.life_tick % 150 == 0) && src.soulcatcher()?.setting_flags & NIF_SC_BACKUPS)
 		SStranscore.m_backup(src.mind,0) //Passed 0 means "Don't touch the nif fields on the mind record"
 
-	src.life_tick++
+	set_life_tick(life_tick + 1)
 
 	if(!src.client)
 		if(++src.client_missing == 300)

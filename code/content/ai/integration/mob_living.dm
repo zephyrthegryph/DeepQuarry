@@ -16,6 +16,7 @@
 
 
 CAPABILITIES(/mob/living)
+	ref_one(nameof(default_language), /datum/language)
 	op("vore_check_nutrition", menu(desc = "Check your current nutrition level."), label("Check Nutrition"), needs(req_self()), then(PROC_REF(vore_check_nutrition_op)))
 	op("mob_sleep", menu(), label("Sleep"), needs(req_self()), then(PROC_REF(mob_sleep_op)))
 	op("check_default_language", menu(), label("Check Default Language"), needs(req_self()), then(PROC_REF(check_default_language_op)))

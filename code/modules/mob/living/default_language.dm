@@ -40,7 +40,7 @@
 		to_chat(src, span_notice("You will now speak [language] if you do not specify a language when speaking."))
 	else
 		to_chat(src, span_notice("You will now speak whatever your standard default language is if you do not specify one when speaking."))
-	default_language = language
+	rel_set(src, nameof(default_language), language)
 
 // C
 /mob/living/proc/check_default_language()

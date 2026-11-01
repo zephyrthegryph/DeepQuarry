@@ -113,7 +113,7 @@ CAPABILITIES(/mob/living/silicon/pai/infomorph)
 	pda.set_owner(text("[]", src))
 	pda.name = pda.owner + " (" + pda.ownjob + ")"
 
-	default_language = GLOB.all_languages[LANGUAGE_GALCOM] // Same issue as bots
+	rel_set(src, nameof(default_language), GLOB.all_languages[LANGUAGE_GALCOM]) // Same issue as bots
 
 
 /mob/living/silicon/pai/infomorph/ui_data(datum/act/eval/A)
