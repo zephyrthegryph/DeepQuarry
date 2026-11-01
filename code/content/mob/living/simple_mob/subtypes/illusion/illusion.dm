@@ -62,7 +62,7 @@ CAPABILITIES(/mob/living/simple_mob/illusion)
 	op("illusion_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Shove"), then(PROC_REF(illusion_interaction_hand_disarm)))
 	op("illusion_hand_grab", hand(), ungated(), stance(I_GRAB), label("Grab"), then(PROC_REF(illusion_interaction_hand_grab)))
 	op("illusion_hand_hurt", hand(), ungated(), stance(I_HURT), label("Hit"), then(PROC_REF(illusion_interaction_hand_hurt)))
-	extend(/datum/act/hit/explosion, instead())
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_shrugged)), order = ORDER_EARLY))
 
 /// The help-stance input of illusion_interaction_hand: the shared handler with its stance.
 /mob/living/simple_mob/illusion/proc/illusion_interaction_hand_help(datum/act/op/A)
