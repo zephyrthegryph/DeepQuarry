@@ -120,6 +120,8 @@ CAPABILITIES(/mob/living/silicon/ai)
 	// A malfunctioning AI's scripted hack of another silicon: a lap per stage of the script (tree_interdiction.dm). Only the AI's own life keeps it going.
 	op("malf_hack_cyborg", ai(), takes("victim", "laps"), wait(PROC_REF(malf_hack_lap_time), keeps = ALIVE, repeats = PROC_REF(malf_hack_more), after_step = PROC_REF(malf_hack_lap_done)), on_interrupt(PROC_REF(malf_hack_stopped)), then(PROC_REF(malf_hack_cyborg_done)))
 	op("malf_hack_ai", ai(), takes("victim", "laps"), wait(PROC_REF(malf_hack_lap_time), keeps = ALIVE, repeats = PROC_REF(malf_hack_more), after_step = PROC_REF(malf_hack_lap_done)), on_interrupt(PROC_REF(malf_hack_stopped)), then(PROC_REF(malf_hack_ai_done)))
+	ref_one(nameof(cameraFollow))
+	on_change(nameof(cameraFollow), ANY, when(PROC_REF(life_vision_wanted)), coalesce(LIFE_PRESENT_MIN_INTERVAL, leading = TRUE), then(PROC_REF(life_vision_changed)))
 	every(PROC_REF(track_interval), then(PROC_REF(ai_track_step)), when = nameof(cameraFollow))
 	immune_to(STAT_WEAKENED)
 	owns_one(nameof(selected_sprite), on_destroy = ON_DESTROY_PRIVATE_COPY)
