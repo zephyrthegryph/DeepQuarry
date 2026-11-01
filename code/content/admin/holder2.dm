@@ -302,24 +302,6 @@ CAPABILITIES(/datum/admins)
 		owner().holder = null
 		rel_clear(src, nameof(owner))
 
-/// Returns the feedback forum thread for the admin holder's owner, as according to DB.
-/datum/admins/proc/feedback_link()
-	// This intentionally does not follow the 10-second maximum TTL rule,
-	// as this can be reloaded through the Reload-Admins verb.
-	if (fetched_feedback_link == NO_FEEDBACK_LINK)
-		return null
-
-	if (!isnull(fetched_feedback_link))
-		return fetched_feedback_link
-
-	if (!SSdbcore.IsConnected())
-		return FALSE
-
-	// Not known yet: ask (io_job, nothing waits). The answer fills the cache for the next call.
-	if(!feedback_link_pending)
-		feedback_link_pending = io_job(src, /datum/io_backend/sql, "SELECT feedback FROM [format_table_name("admin")] WHERE ckey = :ckey", list("ckey" = owner()?.ckey), PROC_REF(feedback_link_arrived))
-	return null
-
 /// io_job() callback: caches the admin's feedback link (or that there is none).
 /datum/admins/proc/feedback_link_arrived(list/result, error)
 	feedback_link_pending = 0

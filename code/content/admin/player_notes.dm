@@ -69,16 +69,3 @@
 	admin_action_message(user.key, key, "deleted note on", "\[Note gone\]", 0)
 	info.Flush()
 	info = null
-
-/proc/show_player_info_irc(key as text)
-	var/dat = "          Info on [key]\n"
-	var/savefile/info = new("data/player_saves/[copytext(key, 1, 2)]/[key]/info.sav")
-	var/list/infos
-	info >> infos
-	if(!infos)
-		dat = "No information found on the given key."
-	else
-		for(var/datum/player_info/I in infos)
-			dat += "[I.content]\nby [I.author] ([I.rank]) on [I.timestamp]\n\n"
-
-	return list2params(list(dat))

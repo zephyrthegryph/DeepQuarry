@@ -263,9 +263,6 @@ CAPABILITIES(/datum/preferences)
 		ready["bg"] = icon2base64(bg_icon)
 	dq_queue_preview_render(sprites, ready, scale_x, scale_y)
 
-/datum/preferences/proc/show_character_previews()
-	return
-
 /datum/preferences/proc/clear_character_previews()
 	dq_preview_generation++
 	set_dq_preview_version(dq_preview_version + 1)

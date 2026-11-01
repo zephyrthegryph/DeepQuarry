@@ -147,10 +147,6 @@ ADMIN_VERB(game_panel, R_ADMIN|R_SERVER|R_FUN, "Game Panel", "Look at the state 
 	admin_holder_of(user).Game()
 	feedback_add_details("admin_verb","GP") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-/// Returns this client's stealthed ckey
-/client/proc/getStealthKey()
-	return GLOB.stealthminID[ckey]
-
 /client/proc/findStealthKey(txt)
 	if(txt)
 		for(var/P in GLOB.stealthminID)
@@ -1345,3 +1341,6 @@ CAPABILITIES(/datum/prompt/text/admin_silicon_name)
 
 /datum/prompt/choice/security_ticket_empty_notification/recheck_extra()
 	return answerer?.client ? null : "gone"
+
+/client/proc/getStealthKey()
+	return GLOB.stealthminID[ckey]
