@@ -190,6 +190,7 @@
 		"deferred_appearance_updates" = max(0, length(deferred_appearance_updates) - deferred_appearance_update_index + 1),
 		"last_epoch_wall_ms" = last_epoch_ms,
 		"topology_batch_open" = atmos_topology_batch_open,
+		"last_commit_ms" = last_commit_ms,
 	)
 
 /// Starts the per-atom-type explosion profiling (benchmarks).
