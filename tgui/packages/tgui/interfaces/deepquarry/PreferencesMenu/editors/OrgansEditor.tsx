@@ -3,6 +3,7 @@
 // scrolling at the standard window size. Each row is a tight flex line with
 // label + button row + (for externals) model dropdown.
 
+import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Dropdown } from 'tgui-core/components';
 import type { EditorProps } from './index';
@@ -41,10 +42,36 @@ const INTERNAL_STATES: Array<{ key: string; label: string; color?: string }> = [
   { key: 'digital', label: 'Digital', color: 'olive' },
 ];
 
-export const OrgansEditor = ({ data, staticData }: EditorProps) => {
+/// Which values of `order` differ from `normal`, named, for a one-line summary.
+export const summarize = (
+  order: string[],
+  labels: Record<string, string>,
+  isChanged: (key: string) => boolean,
+  allNormal: string,
+): string => {
+  const changed = order.filter(isChanged).map((k) => labels[k] ?? k);
+  return changed.length ? `Changed: ${changed.join(', ')}` : allNormal;
+};
+
+const rowStyle = (changed: boolean, focused: boolean) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.4em',
+  padding: '0.1em 0.3em',
+  borderRadius: '0.2em',
+  borderLeft: `0.2em solid ${changed ? '#d9a02b' : 'transparent'}`,
+  background: focused ? 'rgba(255,255,255,0.14)' : undefined,
+});
+
+export const OrgansEditor = ({
+  data,
+  staticData,
+  focusLimb,
+}: EditorProps & { focusLimb?: string | null }) => {
   const { act } = useBackend();
   const d = data as Data;
   const s = (staticData ?? {}) as Static;
+  const [organsOpen, setOrgansOpen] = useState(false);
 
   const send = (action: string, params: Record<string, unknown>) =>
     act('dq_editor_action', { editor: 'organs', action, params });
@@ -55,110 +82,118 @@ export const OrgansEditor = ({ data, staticData }: EditorProps) => {
   const externalOrder = d.external_order ?? Object.keys(d.externals ?? {});
   const internalOrder = d.internal_order ?? Object.keys(d.internals ?? {});
   const limbModels = s.limb_models ?? [];
-  const modelOptions = limbModels.map((m) => ({ value: m, displayText: m }));
+  const statusOf = (limb: string) => d.externals?.[limb]?.status ?? 'normal';
+  const organOf = (organ: string) => d.internals?.[organ] ?? 'normal';
+  const shownOrgans = organsOpen
+    ? internalOrder
+    : internalOrder.filter((o) => organOf(o) !== 'normal');
 
   return (
-    <Box
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 30em), 1fr))',
-        gap: '1em',
-      }}
-    >
-      <Box>
-        <Box bold mb={0.5} color="label">
-          External Limbs
-        </Box>
+    <Box>
+      <Box color="label" mb={0.3}>
+        {summarize(
+          externalOrder,
+          externalLabels,
+          (l) => statusOf(l) !== 'normal',
+          'All limbs normal',
+        )}
+      </Box>
+      <Box
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 22em), 1fr))',
+          gap: '0.1em 0.8em',
+        }}
+      >
         {externalOrder.map((limb) => {
           const state = d.externals?.[limb] ?? { status: 'normal' };
           return (
             <Box
               key={limb}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5em',
-                padding: '0.167em 0',
-                fontSize: '0.9em',
-              }}
+              style={rowStyle(state.status !== 'normal', focusLimb === limb)}
             >
-              <Box style={{ flex: '0 0 6.667em' }}>
+              <Box style={{ flex: '0 0 6em' }}>
                 {externalLabels[limb] ?? limb}
               </Box>
-              <Box
-                style={{ flex: '0 0 auto', display: 'flex', gap: '0.167em' }}
-              >
-                {EXTERNAL_STATES.map((opt) => (
-                  <Button
-                    key={opt.key}
-                    compact
-                    selected={state.status === opt.key}
-                    color={state.status === opt.key ? opt.color : undefined}
-                    onClick={() =>
-                      send('set_external_status', { limb, status: opt.key })
-                    }
-                  >
-                    {opt.label}
-                  </Button>
-                ))}
-              </Box>
-              <Box style={{ flex: 1, minWidth: 0 }}>
-                {state.status === 'cyborg' && limbModels.length > 0 && (
+              <Dropdown
+                width="8em"
+                selected={state.status}
+                options={EXTERNAL_STATES.map((o) => ({
+                  value: o.key,
+                  displayText: o.label,
+                }))}
+                onSelected={(v) =>
+                  send('set_external_status', { limb, status: String(v) })
+                }
+              />
+              {state.status === 'cyborg' && limbModels.length > 0 && (
+                <Box style={{ flex: 1, minWidth: 0 }}>
                   <Dropdown
                     width="100%"
                     selected={state.model ?? limbModels[0]}
-                    options={modelOptions}
+                    options={limbModels.map((m) => ({
+                      value: m,
+                      displayText: m,
+                    }))}
                     onSelected={(v) =>
                       send('set_external_model', { limb, model: String(v) })
                     }
                   />
-                )}
-              </Box>
+                </Box>
+              )}
             </Box>
           );
         })}
       </Box>
-      <Box>
-        <Box bold mb={0.5} color="label">
-          Internal Organs
+      <Box
+        mt={0.6}
+        mb={0.3}
+        style={{ display: 'flex', alignItems: 'center', gap: '0.5em' }}
+      >
+        <Button
+          compact
+          icon={organsOpen ? 'chevron-down' : 'chevron-right'}
+          onClick={() => setOrgansOpen(!organsOpen)}
+        >
+          Organs
+        </Button>
+        <Box color="label">
+          {summarize(
+            internalOrder,
+            internalLabels,
+            (o) => organOf(o) !== 'normal',
+            'All organs normal',
+          )}
         </Box>
-        {internalOrder.map((organ) => {
-          const status = d.internals?.[organ] ?? 'normal';
-          return (
-            <Box
-              key={organ}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5em',
-                padding: '0.167em 0',
-                fontSize: '0.9em',
-              }}
-            >
-              <Box style={{ flex: '0 0 8.333em' }}>
-                {internalLabels[organ] ?? organ}
-              </Box>
-              <Box style={{ flex: 1, display: 'flex', gap: '0.167em' }}>
-                {INTERNAL_STATES.map((opt) => (
-                  <Button
-                    key={opt.key}
-                    compact
-                    selected={status === opt.key}
-                    color={status === opt.key ? opt.color : undefined}
-                    onClick={() =>
-                      send('set_internal_status', {
-                        limb: organ,
-                        status: opt.key,
-                      })
-                    }
-                  >
-                    {opt.label}
-                  </Button>
-                ))}
-              </Box>
+      </Box>
+      <Box
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 22em), 1fr))',
+          gap: '0.1em 0.8em',
+        }}
+      >
+        {shownOrgans.map((organ) => (
+          <Box key={organ} style={rowStyle(organOf(organ) !== 'normal', false)}>
+            <Box style={{ flex: '0 0 6em' }}>
+              {internalLabels[organ] ?? organ}
             </Box>
-          );
-        })}
+            <Dropdown
+              width="8em"
+              selected={organOf(organ)}
+              options={INTERNAL_STATES.map((o) => ({
+                value: o.key,
+                displayText: o.label,
+              }))}
+              onSelected={(v) =>
+                send('set_internal_status', {
+                  limb: organ,
+                  status: String(v),
+                })
+              }
+            />
+          </Box>
+        ))}
       </Box>
     </Box>
   );

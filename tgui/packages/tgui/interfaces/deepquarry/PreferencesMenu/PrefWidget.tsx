@@ -11,8 +11,8 @@ import {
   Stack,
   TextArea,
 } from 'tgui-core/components';
-import { SearchableDropdown, Segmented, SliderBox, Switch } from './controls';
 import { PrefColorSwatch } from './colors';
+import { SearchableDropdown, Segmented, SliderBox, Switch } from './controls';
 import { ColorizedImage, ColorizedImageButton } from './helper_components';
 import type { PrefWidgetItem } from './types';
 
@@ -344,6 +344,10 @@ const ThumbgridPicker = ({
 }) => {
   const choices = normalizeChoices(item.choices);
   const thumbs = item.thumbnails ?? {};
+  // A style that draws nothing shows its name alone.
+  const drawsNothing = ['bald', 'shaved', 'none', ''].includes(
+    String(item.value ?? '').toLowerCase(),
+  );
   // props.open: the caller wants the picker shown at once (an "Add tail" button).
   const [open, setOpen] = useState(!!item.props?.open);
   const [search, setSearch] = useState('');
