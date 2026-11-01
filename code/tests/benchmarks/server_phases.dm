@@ -156,3 +156,22 @@
 	count_metric("post_gc_collected", garbage["totals"]["collected"] - garbage_before["collected"], "datums", "none")
 	count_metric("post_hard_deletes", garbage["totals"]["hard_delete_count"] - garbage_before["hard_delete_count"], "deletes")
 	detail("garbage", garbage)
+	if(param("second_blast", 0))
+		second_blast(center, power)
+
+/// The same blast one deck up, then the same wait: what grows again is per-blast, what does not was made once. A leak shows as the second delta matching the first.
+/datum/benchmark/server_phases/proc/second_blast(turf/first, power)
+	var/turf/center = locate(first.x, first.y, first.z + 1)
+	if(!center)
+		fail("no deck above the first blast")
+	census_metrics("second_before")
+	var/before_mb = sample_field("private_mb")
+	var/start = REALTIMEOFDAY
+	explosion(center, power / 2, power, power * 2, power * 4, 1)
+	var/deadline = start + 600 SECONDS
+	while((explosions_awake() || SSexplosions.pending_blast_count()) && REALTIMEOFDAY < deadline)
+		stoplag()
+	metric("second_settle_s", (REALTIMEOFDAY - start) * 0.1, "s")
+	wait_seconds(param("post", 300))
+	metric("second_retained_mb", sample_field("private_mb") - before_mb, "MB")
+	census_metrics("second_post")
