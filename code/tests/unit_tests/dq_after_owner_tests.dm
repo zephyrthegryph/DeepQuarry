@@ -71,6 +71,20 @@
 		reported++
 		TEST_ASSERT(findtext(null_delay_fault.name, "delay must be a number"), "the report names the mistake: [null_delay_fault.name]")
 	TEST_ASSERT_EQUAL(reported, 2, "a null delay reports a runtime")
+	var/bad_with_id = 0
+	var/bad_key_id = 0
+	try
+		bad_with_id = call(GLOBAL_PROC_REF(after))(probe, 1 SECONDS, handler, null, CLOCK_OWN, probe)
+	catch(var/exception/with_fault)
+		reported++
+		TEST_ASSERT(findtext(with_fault.name, "with must be a list"), "the report names the mistake: [with_fault.name]")
+	try
+		bad_key_id = call(GLOBAL_PROC_REF(after))(probe, 1 SECONDS, handler, list(probe))
+	catch(var/exception/key_fault)
+		reported++
+		TEST_ASSERT(findtext(key_fault.name, "key must be text"), "the report names the mistake: [key_fault.name]")
+	TEST_ASSERT_EQUAL(reported, 4, "a bad with and a list in the key slot report a runtime")
+	TEST_ASSERT(!bad_with_id && !bad_key_id, "neither schedules anything")
 
 /// The declaration forms that would otherwise sit there and never run say so.
 /datum/unit_test/dq_declare_dead_forms_are_loud
@@ -82,8 +96,18 @@
 	var/bad_notice = on_notice(not_a_notice, then(TYPE_PROC_REF(/datum/after_owner_probe, fire)))
 	var/empty_notice = on_notice(/datum/notice/ended)
 	var/empty_change = on_change("fired", ANY)
-	release(allocate(/datum/after_owner_probe), "no such stat")
+	var/datum/after_owner_probe/held = allocate(/datum/after_owner_probe)
+	release(held, "no such stat")
+	var/read_unknown = stat_value(held, "no such stat either")
+	var/bad_every = every(PROC_REF(fire_never), 1 SECONDS)
+	var/empty_extend = extend("no parts here")
+	var/no_edge = on_change("fired")
+	observe(held, null, held)
 	var/list/reports = GLOB.declare_report_capture
 	GLOB.declare_report_capture = old_capture
 	TEST_ASSERT(isnull(bad_notice) && isnull(empty_notice) && isnull(empty_change), "a dead form makes no entry")
-	TEST_ASSERT_EQUAL(length(reports), 4, "each dead form reports: [json_encode(reports)]")
+	TEST_ASSERT(isnull(read_unknown) && isnull(bad_every) && isnull(empty_extend) && isnull(no_edge), "and neither do the others")
+	TEST_ASSERT_EQUAL(length(reports), 9, "each dead form reports: [json_encode(reports)]")
+
+/datum/unit_test/dq_declare_dead_forms_are_loud/proc/fire_never()
+	return

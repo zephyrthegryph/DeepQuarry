@@ -70,7 +70,11 @@ PROC_SUMMARY(/proc/rx_call) // vars[] / call() dispatcher: the walk cannot enter
  * dies. Returns the record (the same one if it already exists).
  */
 /proc/legacy_observe(datum/source, datum/reaction/trigger, datum/listener, handler)
-	if(!source || !listener || !istype(trigger) || QDELING(source) || QDELING(listener))
+	if(!istype(trigger))
+		// A path goes to the hook form in observe(), so this is a mistake: arguments out of order, or a trigger that came out null. It would never fire.
+		declare_report("observe(): the trigger must be a notice or act type or a reaction, got [isnull(trigger) ? "null" : "[trigger]"] (source [source], listener [listener]); arguments are observe(source, trigger, listener, ...)")
+		return null
+	if(!source || !listener || QDELING(source) || QDELING(listener))
 		return null
 	for(var/datum/rx_listener/known as anything in source.rx?.listeners)
 		if(known.listener == listener && known.trigger.sig == trigger.sig && known.handler == handler)
