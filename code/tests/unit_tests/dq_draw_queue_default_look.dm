@@ -81,12 +81,12 @@ CAPABILITIES(/obj/dq_stamp_plain)
 				created_only++
 	log_test("space requeue: [queued] space turf(s) queued at test start, [created_only] on the creation mark alone; stamp [GLOB.type_look_stamp[/turf/space] ? "empty" : "kept"], [GLOB.type_look_stamp_skipped] fresh atom(s) dropped so far")
 	GLOB.refresh_mark_probe_sources = list()
-	GLOB.refresh_mark_probe_type = /turf/space
+	set_global(nameof(GLOB.refresh_mark_probe_type), /turf/space)
 	kernel_test_begin()
 	for(var/pass in 1 to 20)
 		kernel_phase_run(KERNEL_PHASE_D)
 		kernel_drain_now()
-	GLOB.refresh_mark_probe_type = null
+	set_global(nameof(GLOB.refresh_mark_probe_type), null)
 	kernel_test_end()
 	var/total = 0
 	for(var/chain in GLOB.refresh_mark_probe_sources)

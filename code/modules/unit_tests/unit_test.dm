@@ -1331,6 +1331,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 		"vars" = TRUE, "type" = TRUE, "parent_type" = TRUE, "tag" = TRUE, "current_test" = TRUE, "failed_any_test" = TRUE,
 		"total_runtimes" = TRUE, "total_runtimes_skipped" = TRUE, "boot_noise_count" = TRUE, "boot_unclean" = TRUE,
 		"e0_proofs_passed" = TRUE, "e0_proofs_pending" = TRUE, "e0_proofs_failed" = TRUE,
+		"notice_late" = TRUE, "notice_taken" = TRUE, "act_too_deep" = TRUE, // monotonic metrics counters: a first bump from 0 to 1 only looks like a flag flip, so the verdict depended on test order
 	)
 	return ignored
 
