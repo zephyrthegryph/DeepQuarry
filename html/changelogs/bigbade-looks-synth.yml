@@ -1,0 +1,4 @@
+author: "bigbade"
+delete-after: true
+changes:
+  - balance: "Robotic limbs always tint from the synth colour, which defaults to the skin colour; the Use Synth Color toggle is gone."

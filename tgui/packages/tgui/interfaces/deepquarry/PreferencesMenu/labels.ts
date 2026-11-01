@@ -95,7 +95,6 @@ export const PREF_KEY_LABELS: Record<string, string> = {
   OOC_Notes_Favs: 'Favorites',
   OOC_Notes_System: 'Use Stylized Display',
   Private_Notes: 'Private Notes',
-  synth_color: 'Use Synth Color',
   synth_color_rgb: 'Synth Color',
   hair_style_name: 'Hair Style',
   facial_style_name: 'Facial Hair Style',

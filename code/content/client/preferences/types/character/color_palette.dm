@@ -241,6 +241,19 @@ GLOBAL_LIST_INIT(dq_palette_fields_table, list(
 	if(islist(save_data))
 		save_data["palette_linked"] = TRUE
 
+/// Robotic limbs always tint from the synth colour, which starts on the skin's own colour (a link follows its slot). The
+/// old "use synth colour" toggle decides once: a save that had it off takes the skin colour, one that had it on keeps its
+/// colour. The old key stays in the save, unread after this.
+/datum/preferences/proc/migrate_synth_color(new_character)
+	var/list/save_data = get_save_data_for_savefile_identifier(PREFERENCE_CHARACTER)
+	if(save_data?["synth_always"])
+		return
+	if(new_character || !save_data["synth_color"])
+		update_preference_by_type(/datum/preference/color/human/synth_color, read_preference_raw(/datum/preference/color/human/skin_color))
+	save_data = get_save_data_for_savefile_identifier(PREFERENCE_CHARACTER)
+	if(islist(save_data))
+		save_data["synth_always"] = TRUE
+
 /// The two species that drew from skin tone now draw from skin colour. Every other species ignored the tone. The old key
 /// stays in the save, unread after this.
 /datum/preferences/proc/convert_old_skin_tone(list/save_data)
