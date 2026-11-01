@@ -141,8 +141,6 @@
 		peak_mb = max(peak_mb, sample_field("private_mb"))
 	metric("post_recovery_s", (REALTIMEOFDAY - recovery_start) * 0.1, "s")
 	detail("post_recovery_slices", slices)
-	if(param("trace_leaks", 0))
-		trace_leaks()
 	open_phase()
 	begin_window()
 	wait_seconds(param("post", 300))
@@ -158,63 +156,3 @@
 	count_metric("post_gc_collected", garbage["totals"]["collected"] - garbage_before["collected"], "datums", "none")
 	count_metric("post_hard_deletes", garbage["totals"]["hard_delete_count"] - garbage_before["hard_delete_count"], "deletes")
 	detail("garbage", garbage)
-
-/// Who holds the atoms waiting in the GC's check queue with a stray reference. Walks every datum and atom, into lists and alists two levels deep, which
-/// find_references() does not: bench_trace_leaks=1, slow, and it stalls the world. Answers go to the runtime log as LEAK_TRACE.
-/datum/benchmark/server_phases/proc/trace_leaks()
-	// Just short of the check queue's five minutes: whatever is still queued with a stray reference is what will hard-delete.
-	wait_seconds(290)
-	var/list/suspects = list()
-	for(var/list/queue as anything in SSgarbage.queues)
-		for(var/list/row as anything in queue)
-			var/datum/D = row[GC_QUEUE_ITEM_REF]
-			if(isatom(D) && !isarea(D))
-				suspects[D] = TRUE
-	log_world("LEAK_TRACE: [length(suspects)] suspect atom(s)")
-	// Five is the queue row, the key here and this loop's locals: a sixth is the stray.
-	for(var/datum/D as anything in suspects.Copy())
-		if(refcount(D) <= 6)
-			suspects -= D
-			continue
-		log_world("LEAK_TRACE: suspect [ref(D)] [D.type] refcount [refcount(D)]")
-	var/hits = 0
-	var/list/roots = list()
-	for(var/datum/thing)
-		roots += thing
-	for(var/atom/thing in world)
-		roots += thing
-	for(var/datum/holder as anything in roots)
-		if(holder == SSgarbage || isturf(holder))
-			continue
-		for(var/name in holder.vars)
-			if(name == "vars")
-				continue
-			var/value = holder.vars[name]
-			if(isdatum(value) && suspects[value] && value != holder)
-				log_world("LEAK_TRACE: [holder.type] [ref(holder)].[name] -> [ref(value)]")
-				hits++
-			else if(islist(value))
-				hits += trace_list(value, "[holder.type] [ref(holder)].[name]", suspects, 2)
-	log_world("LEAK_TRACE: done, [hits] holder(s)")
-
-/datum/benchmark/server_phases/proc/trace_list(list/L, label, list/suspects, depth)
-	. = 0
-	for(var/key in L)
-		var/value = null
-		// A built-in list (overlays, filters, verbs) refuses an index.
-		try
-			if(istype(L, /alist) || (!isnum(key) && !isnull(key)))
-				value = L[key]
-		catch
-			value = null
-		if(isdatum(key) && suspects[key])
-			log_world("LEAK_TRACE: [label] holds key [ref(key)]")
-			.++
-		if(isdatum(value) && suspects[value])
-			log_world("LEAK_TRACE: [label] holds value [ref(value)]")
-			.++
-		if(depth > 1)
-			if(islist(key))
-				. += trace_list(key, label, suspects, depth - 1)
-			if(islist(value))
-				. += trace_list(value, label, suspects, depth - 1)
