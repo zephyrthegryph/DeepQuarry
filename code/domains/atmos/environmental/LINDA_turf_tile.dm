@@ -311,6 +311,11 @@ CAPABILITIES(/turf/open)
 			if(!firelock.density && !firelock.blocked)
 				firelock.close()
 
+/// Rust katmos hook: called during explosive depressurization; /tg rips up floor tiles
+/// under strong decompression. No-op stub (see note above). `sum` is the summed transfer.
+/turf/proc/handle_decompression_floor_rip(sum)
+	return
+
 /turf/open/proc/high_pressure_movements()
 	var/atom/movable/moving_atom
 	// ALLOW(spatial): per-active-turf atmos tick, raw loop avoids a list copy
