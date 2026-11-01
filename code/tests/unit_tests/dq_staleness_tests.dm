@@ -1,7 +1,7 @@
 // The staleness checker (code/engine/change/staleness.dm; doc/rewrite/final_api.html section 7, "The staleness checker"): a cached stat, an applied
 // draw, a derive() value or a keyed image is recomputed from scratch and compared. Each test below writes an input RAW (a plain assignment, no
 // setter, so nothing publishes) and proves the checker names it. A test that provokes a report on purpose sets GLOB.staleness_expected, so the report
-// is recorded but does not fail the test; the flag ends with the test.
+// is recorded but does not fail the test; the flag ends with the test. It also keeps GLOB.staleness_found with set_global(): the count moves on every report, and the state guard fails a test that leaves it moved.
 
 /// A stat fixture: stale_low and stale_open follow `gauge` (tracked) through a holder proc. stale_open is a var-backed stat, stale_low is virtual.
 /obj/stale_probe
@@ -66,6 +66,7 @@ SETTER(/obj/stale_lamp, glow)
 	boot_needs = list()
 
 /datum/unit_test/dq_staleness_stat_read_catches_raw_write/Run()
+	set_global(nameof(GLOB.staleness_found), GLOB.staleness_found)
 	GLOB.staleness_expected = TRUE
 	var/obj/stale_probe/P = allocate(/obj/stale_probe)
 	TEST_ASSERT_EQUAL(stat_value(P, STAT_STALE_LOW), TRUE, "gauge 0 is low")
@@ -103,6 +104,7 @@ SETTER(/obj/stale_lamp, glow)
 	boot_needs = list()
 
 /datum/unit_test/dq_staleness_sweep_catches_stat_var/Run()
+	set_global(nameof(GLOB.staleness_found), GLOB.staleness_found)
 	GLOB.staleness_expected = TRUE
 	var/obj/stale_probe/P = allocate(/obj/stale_probe)
 	TEST_ASSERT_EQUAL(P.stale_open, TRUE, "stale_open starts true")
@@ -125,7 +127,7 @@ SETTER(/obj/stale_lamp, glow)
 	boot_needs = list()
 
 /datum/unit_test/dq_staleness_draw_catches_raw_write/Run()
-	set_global(nameof(GLOB.staleness_found), GLOB.staleness_found) // the check counts what it finds: teardown restores the count
+	set_global(nameof(GLOB.staleness_found), GLOB.staleness_found)
 	GLOB.staleness_expected = TRUE
 	var/obj/stale_lamp/L = allocate(/obj/stale_lamp)
 	refresh_flush()
@@ -144,6 +146,7 @@ SETTER(/obj/stale_lamp, glow)
 	boot_needs = list()
 
 /datum/unit_test/dq_staleness_draw_served_from_cache/Run()
+	set_global(nameof(GLOB.staleness_found), GLOB.staleness_found)
 	GLOB.staleness_expected = TRUE
 	var/obj/stale_lamp/L = allocate(/obj/stale_lamp)
 	refresh_flush()
@@ -162,6 +165,7 @@ SETTER(/obj/stale_lamp, glow)
 /datum/unit_test/dq_staleness_full_sweep_attributes/Run()
 	set_global(nameof(GLOB.staleness_full_sweeps), GLOB.staleness_full_sweeps)
 	set_global(nameof(GLOB.staleness_every), GLOB.staleness_every)
+	set_global(nameof(GLOB.staleness_found), GLOB.staleness_found)
 	GLOB.staleness_expected = TRUE
 	var/obj/stale_lamp/L = allocate(/obj/stale_lamp)
 	refresh_flush()
@@ -187,6 +191,7 @@ SETTER(/obj/stale_lamp, glow)
 	boot_needs = list()
 
 /datum/unit_test/dq_staleness_image_key/Run()
+	set_global(nameof(GLOB.staleness_found), GLOB.staleness_found)
 	GLOB.staleness_expected = TRUE
 	var/since = length(GLOB.staleness_reports)
 	var/image/cached = image(null)
@@ -205,6 +210,7 @@ SETTER(/obj/stale_lamp, glow)
 	boot_needs = list()
 
 /datum/unit_test/dq_staleness_sampled_mode_logs_only/Run()
+	set_global(nameof(GLOB.staleness_found), GLOB.staleness_found)
 	GLOB.staleness_expected = TRUE // the end-of-test sweep runs strict and finds the same stale probe
 	var/obj/stale_probe/P = allocate(/obj/stale_probe)
 	TEST_ASSERT_EQUAL(stat_value(P, STAT_STALE_LOW), TRUE, "gauge 0 is low")
@@ -237,6 +243,7 @@ SETTER(/obj/stale_lamp, glow)
 	boot_needs = list()
 
 /datum/unit_test/dq_staleness_catches_an_untracked_draw_read/Run()
+	set_global(nameof(GLOB.staleness_found), GLOB.staleness_found)
 	GLOB.staleness_expected = TRUE
 	var/obj/stale_lamp/L = allocate(/obj/stale_lamp)
 	refresh_flush()
@@ -260,6 +267,7 @@ SETTER(/obj/stale_lamp, glow)
 	boot_needs = list()
 
 /datum/unit_test/dq_staleness_runs_the_drift_audit_on_every_check/Run()
+	set_global(nameof(GLOB.staleness_found), GLOB.staleness_found)
 	GLOB.staleness_expected = TRUE
 	var/obj/cap_fixture/dx_core/F = allocate(/obj/cap_fixture/dx_core)
 	F.set_power_level(5) // its secret verb is hidden above zero
