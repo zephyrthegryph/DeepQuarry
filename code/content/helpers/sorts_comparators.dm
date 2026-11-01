@@ -1,21 +1,4 @@
-//
-// Comparators for use with /datum/sortInstance (or wherever you want)
-// They should return negative, zero, or positive numbers for a < b, a == b, and a > b respectively.
-//
-
-// Sorts numeric ascending
-/proc/cmp_numeric_asc(a,b)
-	return a - b
-
-// Sorts qdel statistics recorsd by time and count
-/proc/cmp_qdel_item_time(datum/qdel_item/A, datum/qdel_item/B)
-	. = B.hard_delete_time - A.hard_delete_time
-	if (!.)
-		. = B.destroy_time - A.destroy_time
-	if (!.)
-		. = B.failures - A.failures
-	if (!.)
-		. = B.qdels - A.qdels
+// The content half of code/host/helpers/sorts/comparators.dm: what names content, so the layer the engine calls cannot hold it.
 
 // Sorts jobs by department, and then by flag within department
 /proc/cmp_job_datums(datum/job/a, datum/job/b)
@@ -36,22 +19,6 @@
 	if(. == 0) // If they have the same var, then sort by name.
 		. = sorttext(b.name, a.name)
 
-// Sorts entries in a performance stats list.
-/proc/cmp_generic_stat_item_time(list/A, list/B)
-	. = B[STAT_ENTRY_TIME] - A[STAT_ENTRY_TIME]
-	if (!.)
-		. = B[STAT_ENTRY_COUNT] - A[STAT_ENTRY_COUNT]
-
-/proc/cmp_typepaths_asc(A, B)
-	return sorttext("[B]","[A]")
-
-/**
- * Sorts crafting recipe requirements when crafting_recipes() makes the recipe
- *
- * Prioritises [/datum/reagent] to ensure reagent requirements are always processed first when crafting.
- * This prevents any reagent_containers from being consumed before the reagents they contain, which can
- * lead to runtimes and item duplication when it happens.
- */
 /proc/cmp_crafting_req_priority(A, B)
 	var/lhs
 	var/rhs
@@ -61,17 +28,10 @@
 
 	return lhs - rhs
 
-/proc/cmp_text_asc(a,b)
-	return sorttext(b,a)
-
 ///Tracks are sorted by genre then by title inside that.
 /proc/cmp_media_track_asc(datum/track/A, datum/track/B)
 	var/genre_sort = sorttext(B.genre || "Uncategorized", A.genre || "Uncategorized")
 	return genre_sort || sorttext(B.title, A.title)
-
-///Filters have a numerical priority.
-/proc/cmp_filter_data_priority(list/A, list/B)
-	return A["priority"] - B["priority"]
 
 ///Traits have sort they have defined on them to categorize themselves into groups. After that, alphabetical.
 /proc/cmp_trait_datums_name(datum/trait/A, datum/trait/B)
@@ -84,14 +44,9 @@
 /proc/cmp_stored_item_name(datum/stored_item/A, datum/stored_item/B)
 	return sorttext(B.item_name, A.item_name)
 
-/proc/cmp_name_asc(atom/a, atom/b)
-	return sorttext(b.name, a.name)
-
-/proc/cmp_name_dsc(atom/a, atom/b)
-	return sorttext(a.name, b.name)
-
 /proc/cmp_advdisease_resistance_asc(datum/affliction/contagion/engineered/A, datum/affliction/contagion/engineered/B)
 	return A.resistance - B.resistance
 
 /proc/cmp_advdisease_symptomid_asc(datum/viral_trait/A, datum/viral_trait/B)
 	return sorttext(B.id, A.id)
+

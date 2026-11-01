@@ -1342,5 +1342,5 @@ CAPABILITIES(/datum/prompt/text/admin_silicon_name)
 /datum/prompt/choice/security_ticket_empty_notification/recheck_extra()
 	return answerer?.client ? null : "gone"
 
-/client/proc/getStealthKey()
+/client/getStealthKey()
 	return GLOB.stealthminID[ckey]

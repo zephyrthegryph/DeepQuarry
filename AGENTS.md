@@ -151,14 +151,15 @@ Target tree (doc §22):
 
 | Path | Holds |
 |---|---|
+| `code/host/` | The neutral layer below the engine: helpers the engine calls, the act context, adjacency. Held to the engine boundary (`engine_layering`); what needs content is a virtual proc here, implemented in `code/content/`. |
 | `code/engine/{kernel,time,state,stats,refs,change,actions,parts,hooks,present,io,_generated}` | The framework, one folder per doc section. `_generated` is build output, never hand-edited. |
 | `code/library/` | Shared capabilities and bundles (machine, access, containers, reagents, items, structures, construction, providers, mobs). |
 | `code/domains/{body,damage,atmos,power,life,ai,verdigris}` | Large systems with their own model. |
 | `code/content/<domain>/` | Ordinary content: one type, one file (its capabilities, procs, messages, tests beside it). |
-| `code/world/` | Systems, map glue, round flow. |
+| `code/world/` | The scheduling kernel (`code/world/kernel/`; `code/engine/kernel/` holds only input, requests and jobs), systems, map glue, round flow. |
 | `code/defines/` | Defines, split per module; replaces `__defines/`. |
 
-Layering: engine may not reference library or content; library may not reference content;
+Layering: host and engine may not reference library or content; library may not reference content;
 nothing in the new tree may use an old form.
 
 **A file moves into the new tree only when it is fully migrated** (zero old forms). The old
