@@ -7,7 +7,6 @@
 	icon = 'icons/obj/railgun.dmi'
 	one_handed_penalty = 20
 	w_class = ITEMSIZE_LARGE
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)
 
 	burst = 3
 	burst_delay = 1
@@ -23,6 +22,7 @@
 	power_cost = 250
 
 CAPABILITIES(/obj/item/gun/magnetic/gasthrower)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)))
 	configure(atom_rules(description_fluff = "A weapon designed to effectively combat the threat posed by Almachi soldiers without the danger of other forms of flamethrower."))
 
 /obj/item/gun/magnetic/gasthrower/check_ammo()

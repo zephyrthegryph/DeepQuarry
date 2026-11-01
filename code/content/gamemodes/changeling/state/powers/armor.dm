@@ -104,9 +104,9 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots/changeling)
 	desc = "A tough, hard covering of black chitin."
 	icon_state = "lingarmor"
 	armor_spec = "melee=75;bullet=60;laser=60;energy=60;bomb=60;cold=60" //It costs 3 points, so it should be very protective.
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)
 
 CAPABILITIES(/obj/item/clothing/suit/space/changeling/armored)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)))
 	setup(PROC_REF(form_initial_armor))
 	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS))
 	configure(item_protection(siemens = 0.3, max_heat = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE))

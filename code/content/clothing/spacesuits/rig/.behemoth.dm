@@ -6,12 +6,14 @@
 	icon_state = "aegis_rig"
 	armor_spec = "melee=60;bullet=60;laser=60;energy=30;bomb=10;bio=100;rad=100"
 
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 6)
 
 	chest_type = /obj/item/clothing/suit/space/rig/ch/aegis
 	helm_type = /obj/item/clothing/head/helmet/space/rig/ch/aegis
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/ch/aegis
 	boot_type = /obj/item/clothing/shoes/magboots/rig/ch/aegis
+
+CAPABILITIES(/obj/item/rig/ch/aegis)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 6)))
 
 /obj/item/clothing/suit/space/rig/ch/aegis
 	name = "chassis"

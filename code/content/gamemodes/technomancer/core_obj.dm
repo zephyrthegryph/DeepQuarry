@@ -258,9 +258,11 @@ CAPABILITIES(/obj/spellbutton)
 	energy = 7000
 	max_energy = 7000
 	regen_rate = 70 //100 seconds to full
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = -0.5)
 	instability_modifier = 0.9
 	cooldown_modifier = 0.9
+
+CAPABILITIES(/obj/item/technomancer_core/rapid)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = -0.5)))
 
 //Big batteries but slow regen, buying energy spells is highly recommended.
 /obj/item/technomancer_core/bulky
@@ -272,9 +274,11 @@ CAPABILITIES(/obj/spellbutton)
 	energy = 20000
 	max_energy = 20000
 	regen_rate = 25 //800 seconds to full
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	instability_modifier = 1.0
 	spell_power_modifier = 1.4
+
+CAPABILITIES(/obj/item/technomancer_core/bulky)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 
 // Using this can result in abilities costing less energy.  If you're lucky.
 /obj/item/technomancer_core/recycling

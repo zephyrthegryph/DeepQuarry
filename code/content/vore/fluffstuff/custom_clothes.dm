@@ -970,12 +970,12 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/fluff/joan)
 	suit has seen combat."
 
 	armor_spec = "melee=50;bullet=40;laser=45;energy=25;bomb=50;bio=100;rad=50;cold=60" //These values were taken from the combat rigs and adjusted to be weaker than said rigs.
-	worn_factors = null
 
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "joansuit"
 
 CAPABILITIES(/obj/item/clothing/suit/space/fluff/joan)
+	configure(item_worn(worn_factors = TRAIT_NONE))
 	extend(/datum/act/equip, needs(req_wearer_ckey("joanrisu", because = MSG(custom_clothes/it_doesnt_fit))))
 	suit_storage(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS))
 

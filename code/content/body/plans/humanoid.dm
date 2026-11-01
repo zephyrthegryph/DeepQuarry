@@ -354,14 +354,14 @@
 		mod = 1
 	var/obj/item/stored = H.get_equipped_item(SLOT_ID_SUIT_STORAGE) // worn, but never encumbering
 	for(var/obj/item/I as anything in H.body_slot_items(BODY_SLOT_WORN))
-		if(!I.worn_factors)
+		if(!worn_of(I).worn_factors)
 			continue
-		var/alist/table = I.worn_factors
+		var/alist/table = worn_of(I).worn_factors
 		if(table[STAT_ITEM_ENCUMBRANCE])
 			table = alist()
-			for(var/stat in I.worn_factors)
-				table[stat] = I.worn_factors[stat]
-			table[STAT_ITEM_ENCUMBRANCE] = (I == stored) ? 0 : worn_encumbrance(I.worn_factors[STAT_ITEM_ENCUMBRANCE], mod)
+			for(var/stat in worn_of(I).worn_factors)
+				table[stat] = worn_of(I).worn_factors[stat]
+			table[STAT_ITEM_ENCUMBRANCE] = (I == stored) ? 0 : worn_encumbrance(worn_of(I).worn_factors[STAT_ITEM_ENCUMBRANCE], mod)
 		var/key = "[FACTOR_SOURCE_WORN][ref_token(I)]"
 		kept += key
 		set_factor_source(key, table)

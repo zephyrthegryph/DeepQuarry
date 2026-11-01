@@ -1217,7 +1217,6 @@ CAPABILITIES(/obj/item/clothing/glasses/welding/tiemgogs)
 	icon_state = "nikkicape"
 	w_class = ITEMSIZE_SMALL // It is after all only a necklace
 	armor_spec = "" // this isn't armor, it's a dorky frickin cape
-	worn_factors = null
 	offline_slowdown = 0
 	offline_vision_restriction = 0
 	chest_type = /obj/item/clothing/suit/fluff/nikki
@@ -1231,6 +1230,7 @@ CAPABILITIES(/obj/item/clothing/glasses/welding/tiemgogs)
 
 
 CAPABILITIES(/obj/item/rig/nikki)
+	configure(item_worn(worn_factors = TRAIT_NONE))
 	extend(/datum/act/equip, needs(req_wearer_ckey("ryumi", because = MSG(custom_items/the_necklace_never_quite_gets))))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_STORAGE))
 	owns_one(nameof(chest), /obj/item/clothing/suit/fluff/nikki)

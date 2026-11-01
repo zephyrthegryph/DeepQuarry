@@ -132,5 +132,6 @@ CAPABILITIES(/obj/item/clothing/suit/storage/vest)
 	icon_state = "ladiesredvictoriancoat"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/vest/heavy)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	owns_one(nameof(pockets), starts = /obj/item/storage/internal, starts_set = list("max_storage_space" = ITEMSIZE_COST_SMALL * 4)) // four pockets
 

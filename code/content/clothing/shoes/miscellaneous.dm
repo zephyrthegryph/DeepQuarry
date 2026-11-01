@@ -22,10 +22,10 @@ CAPABILITIES(/obj/item/clothing/shoes/syndigaloshes)
 	desc = "Rubber boots"
 	name = "galoshes"
 	icon_state = "galoshes"
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = SHOES_SLOWDOWN+0.5)
 	resistance_flags = ACID_PROOF
 
 CAPABILITIES(/obj/item/clothing/shoes/galoshes)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = SHOES_SLOWDOWN+0.5)))
 	fits_anyone()
 	configure(item_worn(flags = NOSLIP))
 	configure(item_protection(permeability = 0.05, siemens = 0))
@@ -120,10 +120,10 @@ CAPABILITIES(/obj/item/clothing/shoes/sandal/marisa)
 	desc = "The prankster's standard-issue clowning shoes. Damn they're huge!"
 	name = "clown shoes"
 	icon_state = "clown"
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = SHOES_SLOWDOWN+0.5)
 	//removed built in squeak sounds
 
 CAPABILITIES(/obj/item/clothing/shoes/clown_shoes)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = SHOES_SLOWDOWN+0.5)))
 	fits_anyone()
 	setup(PROC_REF(squeak_comically))
 
@@ -201,9 +201,9 @@ CAPABILITIES(/obj/item/clothing/shoes/slippers)
 	name = "swimming fins"
 	icon_state = "flippers"
 	item_state_slots = list(slot_r_hand_str = "galoshes", slot_l_hand_str = "galoshes")
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = SHOES_SLOWDOWN+0.5)
 
 CAPABILITIES(/obj/item/clothing/shoes/swimmingfins)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = SHOES_SLOWDOWN+0.5)))
 	fits_anyone()
 	configure(item_worn(flags = NOSLIP))
 
@@ -472,12 +472,12 @@ TYPE_TABLE(/obj/item/clothing/shoes/mech_shoes/mister_x, mech_shoes_squeak_sound
 	name = "absorbent galoshes"
 	icon = 'icons/inventory/feet/item.dmi'
 	icon_state = "galoshes_dry"
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = SHOES_SLOWDOWN+0.5)
 
 
 
 /// Dries the floor (and blood) under the wearer at every step: a notice the shoes hear (was the om behaviour dry).
 CAPABILITIES(/obj/item/clothing/shoes/dry_galoshes)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = SHOES_SLOWDOWN+0.5)))
 	fits_anyone()
 	configure(item_worn(flags = NOSLIP))
 	configure(item_protection(permeability = 0.05, siemens = 0))

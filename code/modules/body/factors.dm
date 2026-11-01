@@ -485,19 +485,18 @@ CAPABILITIES(/datum/reagent_dose)
 /obj/item
 	/// Body factors applied while this item is equipped outside the hands. STAT_ITEM_ENCUMBRANCE is how much the item slows its carrier (positive) or
 	/// speeds them up (negative); it also counts while the item is held, when it slows (humanoid sync_worn_factors()).
-	var/alist/worn_factors
 
 /// The value of one of the item's worn factors, 0 when it has none.
 /obj/item/proc/worn_factor(stat)
-	return worn_factors?[stat] || 0
+	return worn_of(src).worn_factors?[stat] || 0
 
 /// Per item type: the worn factor table its first instance was made with (a prototype: a type's table is shared, never written).
 GLOBAL_LIST_EMPTY(worn_factor_defaults)
 
 /// Notes the table a new item was made with, once per type (an item setup step), so a reset to "what the type gives" has something to read.
 /obj/item/proc/note_worn_factor_default()
-	if(worn_factors && !GLOB.worn_factor_defaults[type])
-		GLOB.worn_factor_defaults[type] = worn_factors
+	if(worn_of(src).worn_factors && !GLOB.worn_factor_defaults[type])
+		GLOB.worn_factor_defaults[type] = worn_of(src).worn_factors
 
 /// The value the item's type gives a worn factor (what it was made with, before anything changed it); 0 for a type that gives none.
 /obj/item/proc/default_worn_factor(stat)
@@ -508,13 +507,13 @@ GLOBAL_LIST_EMPTY(worn_factor_defaults)
 /// type's table is shared.
 /obj/item/proc/set_worn_factor(stat, value)
 	var/alist/table = alist()
-	for(var/key in worn_factors)
-		table[key] = worn_factors[key]
+	for(var/key in worn_of(src).worn_factors)
+		table[key] = worn_of(src).worn_factors[key]
 	if(value)
 		table[stat] = value
 	else
 		table -= stat
-	worn_factors = length(table) ? table : null
+	set_worn_factors(length(table) ? table : null)
 	var/mob/living/carrier = loc
 	if(istype(carrier))
 		carrier.body?.sync_worn_factors()
