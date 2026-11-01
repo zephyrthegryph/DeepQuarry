@@ -25,10 +25,8 @@ CAPABILITY_TYPE(runs_on_cell, CAP_RUNS_ON_CELL, /datum/capability/lib/runs_on_ce
 		every(interval, then(CAP_PROC(run_step)), when = when ? all_of(when, STAT_OPERABLE) : STAT_OPERABLE),
 		on_change(cell_var, ANY, then(CAP_PROC(cell_changed))))
 
-/// The holder's cell is read once its starting contents exist. A type-declared capability's activation is lazy (a state key write makes it, cap_activation()), and only an
-/// activation arms its every(); this capability has no state key, so it attaches its activation here or the drain never runs.
+/// The holder's cell is read once its starting contents exist.
 /datum/capability/lib/runs_on_cell/on_holder_init(datum/act/eval/A)
-	cap_activation(A.holder, CAP_RUNS_ON_CELL, null, TRUE)
 	settle(A.holder, can_feed(A.holder))
 
 /// Watts' worth of charge one step takes.
