@@ -71,6 +71,12 @@
 	close_phase("settled")
 	census_metrics("settled")
 
+	// What one log entry's world state costs, called apart from the file write: every log line pays it.
+	var/probe_start = TICK_USAGE
+	for(var/i in 1 to 200)
+		world.get_world_state_for_logging()
+	metric("log_world_state_us", TICK_USAGE_TO_MS(probe_start) * 1000 / 200, "us")
+
 	// Idle: tick cost, TiDi, memory growth.
 	var/idle_seconds = param("idle", 300)
 	var/list/series = list()
@@ -105,11 +111,15 @@
 	var/power = param("power", 12)
 	explosion(center, power / 2, power, power * 2, power * 4, 1)
 	var/deadline = start + 600 SECONDS
+	var/next_sample = 0
 	while((explosions_awake() || SSexplosions.pending_blast_count()) && REALTIMEOFDAY < deadline)
 		stoplag()
 		stall = max(stall, REALTIMEOFDAY - last)
 		last = REALTIMEOFDAY
-		peak_mb = max(peak_mb, sample_field("private_mb"))
+		// The sampler writes once a second: reading its file every tick would be this bench's own stall.
+		if(REALTIMEOFDAY >= next_sample)
+			next_sample = REALTIMEOFDAY + 1 SECONDS
+			peak_mb = max(peak_mb, sample_field("private_mb"))
 	metric("explosion_settle_s", (REALTIMEOFDAY - start) * 0.1, "s")
 	metric("explosion_longest_stall_s", stall * 0.1, "s")
 	count_metric("explosion_settled", explosions_awake() ? 0 : 1, "")
