@@ -1,4 +1,4 @@
-// Fixtures of the framework gap closures (OP_DECLINE, ...). Compiled under UNIT_TESTS only; code/modules/unit_tests/dq_gap_tests.dm drives them.
+// Fixtures of the framework gap closures (OP_DECLINE, ...). Compiled under UNIT_TESTS only; code/tests/unit_tests/dq_gap_tests.dm drives them.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 

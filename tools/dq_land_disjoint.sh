@@ -79,8 +79,8 @@ say "all $count master commit(s) since the base were landed through a proved gat
 # 3. disjoint files, global paths, deepquarry.dme
 fm="$tmpd/dq_ld_m.$$"; fl="$tmpd/dq_ld_l.$$"
 trap 'rm -f "$fm" "$fl"' EXIT
-git diff --name-only "$base" origin/master | grep -v '^code/modules/unit_tests/snapshots/op_bases/' | sort -u >"$fm"
-git diff --name-only "$base" "$tip" | grep -v '^code/modules/unit_tests/snapshots/op_bases/' | sort -u >"$fl"
+git diff --name-only "$base" origin/master | grep -v '^code/tests/unit_tests/snapshots/op_bases/' | sort -u >"$fm"
+git diff --name-only "$base" "$tip" | grep -v '^code/tests/unit_tests/snapshots/op_bases/' | sort -u >"$fl"
 both="$(comm -12 "$fm" "$fl" | grep -v '^deepquarry.dme$' | head -3 | tr '\n' ' ')"
 [ -z "$both" ] || no "both sides changed: $both"
 mapfile -t globals < <(grep -v '^\s*#' tools/ci/land_disjoint_global.txt | sed '/^\s*$/d')

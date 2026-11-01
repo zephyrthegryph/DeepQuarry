@@ -7,7 +7,7 @@
  * (`/obj/item/stack/material/steel#12`, `#7/3` for the third recipe of the seventh entry, a recipe list), and holds the title, the result, what it costs
  * and makes, the build time, the placement flags, the materials and whether it takes the stack's colour. A recipe list's own row holds its title.
  *
- * Rows are `key => value` in code/modules/unit_tests/snapshots/xform/stack_recipes.txt (see dq_xform_pins.dm); an empty file is recorded by the next run.
+ * Rows are `key => value` in code/tests/unit_tests/snapshots/xform/stack_recipes.txt (see dq_xform_pins.dm); an empty file is recorded by the next run.
  */
 #define DQ_STACK_PIN_NAME "stack_recipes"
 

@@ -22,7 +22,7 @@ from look_convert import ATOM_BUILTINS, Index, code_and_comment, draw_coverage
 TRACK_SKIP = ATOM_BUILTINS | {"stat", "reagents", "contents", "loc", "src", "usr"}
 WRITE_OPS = r"(?:=(?!=)|\+=|-=|\|=|&=|\*=|/=)"
 OWNED_PREFIXES = ("code/datums/om/", "code/datums/entity_state/", "code/game/objects/", "code/game/turfs/", "code/modules/body/organs/", "code/modules/mob/living/life/")
-TEST_PREFIXES = ("code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/")
+TEST_PREFIXES = ("code/tests/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/")
 ATOMS = ("/atom", "/obj", "/mob", "/turf", "/area")
 
 

@@ -306,7 +306,7 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   it. Never run `git checkout` (any form), `git stash`, `git reset`, `git restore` or
   `git cherry-pick`; they discard or move other agents' work.
 - **Production build:** `tools/build/build.sh dm` compiles without `UNIT_TESTS` (CI's Compile Checks job
-  runs it). Test-only code (`code/tests/`, `code/modules/unit_tests/`) must stay behind
+  runs it). Test-only code (`code/tests/`, `code/tests/unit_tests/`) must stay behind
   `#if defined(UNIT_TESTS)`; generators do this via `sem::gen::test_only`, and `analyze gen`
   fails on a generated line naming a test-only type outside the guard.
 - **Generated files are build output, not committed.** `code/engine/_generated/`, `code/_generated/reads.dm`
@@ -365,7 +365,7 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   add scenarios under `code/modules/benchmarks/`, not one-off profiling. `--profile-tests`
   gives per-test proc profiles.
 - `om_test_begin`/`om_test_end` are gone; use `kernel_test_begin()`/`kernel_test_end()`
-  (`code/tests/driver/kernel_clock.dm`, doc §15). Never commit a `TEST_FOCUS(...)` line in `code/modules/unit_tests/dq_focus.dm`.
+  (`code/tests/driver/kernel_clock.dm`, doc §15). Never commit a `TEST_FOCUS(...)` line in `code/tests/unit_tests/dq_focus.dm`.
 
 ## 5. TGUI
 
@@ -471,7 +471,7 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
   (`code/engine/declare/static_entries.dm`), looked up with `loot_decl_for()` / `map_resolver_proc()`.
   `DECLARE_LOOT`, the `LOOT_*` rows, `MAP_RESOLVER` and `MAP_RESOLVER_VARS` are hard-banned. Don't add
   hand-rolled spawn code. Tests: `dq_loot_roll_yields_table_item`, `dq_loot_search_yields_once_per_searcher`,
-  `dq_map_resolver_inherited` (`code/modules/unit_tests/dq_loot_behaviour.dm`).
+  `dq_map_resolver_inherited` (`code/tests/unit_tests/dq_loot_behaviour.dm`).
 - **Server metrics and the admin viewer.** `GLOB.metrics_service` (`code/modules/metrics/`) samples
   every `/datum/metrics_source` every 10 s and flushes through `om_io` into the `metric_*` tables
   (`SQL/metrics_schema.sql`, `METRICS_ENABLED`). Events come from single framework points through

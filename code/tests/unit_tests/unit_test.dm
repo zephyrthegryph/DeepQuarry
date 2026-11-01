@@ -1062,7 +1062,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 	var/path_prefix = replacetext(replacetext("[type]", "/datum/unit_test/", ""), "/", "_")
 	name = replacetext(name, "/", "_")
 
-	var/filename = "code/modules/unit_tests/screenshots/[path_prefix]_[name].png"
+	var/filename = "code/tests/unit_tests/screenshots/[path_prefix]_[name].png"
 
 	if (fexists(filename))
 		var/data_filename = "data/screenshots/[path_prefix]_[name].png"

@@ -2,7 +2,7 @@
  * Snapshot files: a recorded snapshot kept as one text file per type, outside the DM.
  *
  * A snapshot test (the xform pins, the UI pins) records a few
- * text rows per type. The rows live in `code/modules/unit_tests/snapshots/<snapshot>/<type>.txt`, where
+ * text rows per type. The rows live in `code/tests/unit_tests/snapshots/<snapshot>/<type>.txt`, where
  * <type> is the type path without its leading slash and with `/` written as `.`
  * (`/obj/machinery/atm` is `obj.machinery.atm.txt`), one row per line. So:
  *
@@ -18,7 +18,7 @@
  * Guide: doc/rewrite/snapshot_pins.md.
  */
 
-#define DQ_SNAPSHOT_ROOT "code/modules/unit_tests/snapshots/"
+#define DQ_SNAPSHOT_ROOT "code/tests/unit_tests/snapshots/"
 
 /// The file that holds `type`'s rows under `dir` (a directory path ending in /).
 /proc/dq_snapshot_type_file(dir, type)

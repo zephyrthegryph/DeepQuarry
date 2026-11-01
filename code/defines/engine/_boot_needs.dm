@@ -1,6 +1,6 @@
 // Boot work a focused unit-test world may skip (doc/testing.md "Boot work a focused run defers").
 //
-// A test declares `boot_needs = list(...)` (code/modules/unit_tests/unit_test.dm) naming the BOOT_NEED_* work it relies on;
+// A test declares `boot_needs = list(...)` (code/tests/unit_tests/unit_test.dm) naming the BOOT_NEED_* work it relies on;
 // a test that declares nothing (null) is assumed to need all of it. A focused world (tools/dq_focused_test.sh) skips one piece
 // of work only when EVERY selected test declared a list that leaves it out. The full suite, the merge gates and production never skip.
 

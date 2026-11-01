@@ -41,10 +41,10 @@ $runtimeSource=Join-Path $frozen 'runtime'
 $selection=(Resolve-Path -LiteralPath (Join-Path $frozen 'expected-runnable-tests.txt')).Path
 $selectionHash=(Get-FileHash -LiteralPath $selection -Algorithm SHA256).Hash
 if (-not (Test-Path -LiteralPath $runtimeSource -PathType Container)) { throw 'Frozen runtime missing.' }
-$fixture=Join-Path $runtimeSource 'code/modules/unit_tests/data/dq_constraint_parity.json'
+$fixture=Join-Path $runtimeSource 'code/tests/unit_tests/data/dq_constraint_parity.json'
 if (-not (Test-Path -LiteralPath $fixture -PathType Leaf)) { throw 'Frozen runtime missing constraint parity fixture; repair freezer before replay. Existing evidence remains untouched.' }
 $fixtureHash=(Get-FileHash -LiteralPath $fixture -Algorithm SHA256).Hash
-$fixtureSource=Join-Path $frozen 'source/code/modules/unit_tests/data/dq_constraint_parity.json'
+$fixtureSource=Join-Path $frozen 'source/code/tests/unit_tests/data/dq_constraint_parity.json'
 if ($fixtureHash -ne (Get-FileHash -LiteralPath $fixtureSource -Algorithm SHA256).Hash) { throw 'Runtime constraint fixture differs from pinned frozen source.' }
 
 if ($ResumeSession) {

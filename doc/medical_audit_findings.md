@@ -28,7 +28,7 @@ C11/C13 changed shape: `invalidate()` now raises `om_changed` on every call.
 ## MED-3 / MED-5 / MED-6 (2026-09-27, `rewrite/e-medical`)
 
 - **MED-3:** every P1 row listed above is FIXED (MED-3) with a regression test in
-  `code/modules/unit_tests/dq_medical_p1_tests.dm` (written, not yet run). Notes on choices:
+  `code/tests/unit_tests/dq_medical_p1_tests.dm` (written, not yet run). Notes on choices:
   B12's cold branch keeps the warm branch's magnitude (scaling both by `removed` is B15/NEW:HEAT);
   B22 keeps the suit's "injection port" delay (can_inject() is called with ignore_thickness);
   C6 makes dispatcher-owned afflictions (`metric_owned`) presentation-only for treatment;

@@ -6,7 +6,7 @@
  * field energy and temperature it needs, whether it has a special step (supermatter), and what get_fusion_reaction() answers for the pair in both orders
  * (the table is symmetric, and a pair named by two reactions answers the later one).
  *
- * Rows are `key => value` in code/modules/unit_tests/snapshots/xform/fusion.txt (see dq_xform_pins.dm); an empty file is recorded by the next run.
+ * Rows are `key => value` in code/tests/unit_tests/snapshots/xform/fusion.txt (see dq_xform_pins.dm); an empty file is recorded by the next run.
  */
 #define DQ_FUSION_PIN_NAME "fusion"
 

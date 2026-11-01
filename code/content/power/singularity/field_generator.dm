@@ -5,7 +5,7 @@
 // generator that cannot pay shuts down and its fields fall. Emitter beams charge its store.
 //
 // SAFETY: the fields are what holds a singularity (its can_move() refuses a field tile and an active generator's tile). Every number here is
-// pinned in code/modules/unit_tests/dq_power_plants_behaviour.dm (fg_*, containment_field_*).
+// pinned in code/tests/unit_tests/dq_power_plants_behaviour.dm (fg_*, containment_field_*).
 
 /// The store a field generator holds at most, J.
 #define FIELD_GEN_MAX_POWER 250000

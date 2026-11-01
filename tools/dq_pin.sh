@@ -5,19 +5,19 @@
 #   bash tools/dq_pin.sh --ui /datum/foo_panel [...]   # make the empty pin file (snapshots/ui_pins/, test dq_ui_data_pin, a /datum/ui_pin driver)
 #   bash tools/dq_pin.sh --rm --ui /datum/foo_panel    # drop one
 #
-# A pin is one file, code/modules/unit_tests/snapshots/ui_pins/<type with / as .>.txt; an empty file is recorded on
+# A pin is one file, code/tests/unit_tests/snapshots/ui_pins/<type with / as .>.txt; an empty file is recorded on
 # the next run of dq_ui_data_pin instead of failing it.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-dir="code/modules/unit_tests/snapshots/ui_pins"
+dir="code/tests/unit_tests/snapshots/ui_pins"
 test="dq_ui_data_pin"
 remove=0
 types=()
 for arg in "$@"; do
 	case "$arg" in
 		--rm) remove=1 ;;
-		--ui) dir="code/modules/unit_tests/snapshots/ui_pins"; test="dq_ui_data_pin" ;;
+		--ui) dir="code/tests/unit_tests/snapshots/ui_pins"; test="dq_ui_data_pin" ;;
 		-h|--help) sed -n '2,10p' "$0"; exit 0 ;;
 		/*) types+=("$arg") ;;
 		*) echo "not a type path (it starts with /): $arg" >&2; exit 2 ;;

@@ -32,11 +32,11 @@ filter_declared_tests() {
 #   - unknown: no `/datum/unit_test/<name>` is declared (nearest matches are listed);
 #   - abstract parent: declared types exist below it (or it carries `abstract_type`), and naming a parent does not run its subtests
 #     (the list of runnable subtests is printed: name those instead).
-# A tree without code/modules/unit_tests (a scratch repo) is not validated. Globs pass. Uses one `git grep`, well under a second.
+# A tree without code/tests/unit_tests (a scratch repo) is not validated. Globs pass. Uses one `git grep`, well under a second.
 validate_enqueue_tests() {
 	local rev="$1" bad=0
 	shift
-	git cat-file -e "$rev:code/modules/unit_tests" 2>/dev/null || return 0
+	git cat-file -e "$rev:code/tests/unit_tests" 2>/dev/null || return 0
 	local decl
 	decl="$(git grep -hE '^(/datum/unit_test/[A-Za-z0-9_/]+|[[:space:]]*abstract_type[[:space:]]*=[[:space:]]*/datum/unit_test/[A-Za-z0-9_/]+)' "$rev" -- code 2>/dev/null)" || true
 	printf '%s\n' "$decl" | awk -v names="$*" '

@@ -1,5 +1,5 @@
 [lint.base_vars.lists]
-list_init_exempt_prefixes = ["code/modules/unit_tests/", "code/tests/benchmarks/", "code/modules/tgs/"]
+list_init_exempt_prefixes = ["code/tests/unit_tests/", "code/tests/benchmarks/", "code/modules/tgs/"]
 list_init_exempt_files = ["code/__defines/tgs.dm"]
 base_var_home_macros = ["TRACKED", "TRACKED_SCHEMA", "TRACKED_DATA", "SETTER", "STAT"]
 base_var_home_types = ["/datum/hud", "/datum/record", "/datum/sparse_slots", "/datum/cooldown_table"]

@@ -5,7 +5,7 @@ it yet), `on_change(at_most =)`, the Life edge generator, focused tests and a be
 (S1-S4, section 7) are **[planned]** except S2, which is **[built]** (section 7a). Code: `code/controllers/kernel/sequence.dm` (runner, wakes, parking, audit),
 `sequence_table.dm` (steps, tables, order, the edge generator), `sequence_state.dm` (frame, state),
 `code/modules/mob/living/life/life_sequence.dm` (`/datum/sequence/life`). Tests:
-`code/modules/unit_tests/kernel_sequence.dm`. Bench: `code/modules/benchmarks/life_sequence.dm`.
+`code/tests/unit_tests/kernel_sequence.dm`. Bench: `code/modules/benchmarks/life_sequence.dm`.
 
 ## 1. Why a sequence
 

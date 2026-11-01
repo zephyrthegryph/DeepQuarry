@@ -1,4 +1,4 @@
-// Test-only types of the library capability tests (code/modules/unit_tests/dq_lib_*_tests.dm). Compiled under UNIT_TESTS only; each type declares the
+// Test-only types of the library capability tests (code/tests/unit_tests/dq_lib_*_tests.dm). Compiled under UNIT_TESTS only; each type declares the
 // capability it exercises in the final form, as a house would.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)

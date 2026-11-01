@@ -67,7 +67,7 @@ init_reagents	code/modules/decl/init.dm	75
 init_reagents	code/modules/decl/sp ace/s.dm	2
 init_reagents	code/modules/sub/unit_tests/t.dm	2
 init_reagents	code/modules/tgs/x.dm	2
-init_reagents	code/modules/unit_tests_other/t.dm	2
+init_reagents	code/tests/unit_tests_other/t.dm	2
 init_registry	code/modules/decl/init.dm	8
 init_registry	code/modules/decl/init.dm	10
 init_registry	code/modules/decl/init.dm	61

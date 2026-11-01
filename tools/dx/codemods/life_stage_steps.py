@@ -31,7 +31,7 @@ import sys
 ROOT = '/datum/om/stage/life'
 STEPS_FILE = 'code/modules/mob/living/life/life_steps.dm'
 WRITE = '--write' in sys.argv
-SKIP_DIRS = ('code/modules/unit_tests/', 'code/modules/benchmarks/', 'code/datums/om/')
+SKIP_DIRS = ('code/tests/unit_tests/', 'code/modules/benchmarks/', 'code/datums/om/')
 
 HAND = []
 

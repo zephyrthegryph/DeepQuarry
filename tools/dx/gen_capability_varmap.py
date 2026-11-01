@@ -39,7 +39,7 @@ ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 OUT = os.path.join(ROOT, "tools", "dx", "capability_varmap.json")
 BITS_FILE = os.path.join(ROOT, "code", "defines", "engine", "cap_bits.dm")
 LIB_DIR = os.path.join("code", "datums", "capabilities")
-SKIP_DIRS = ("code/modules/unit_tests/", "code/tests/benchmarks/")
+SKIP_DIRS = ("code/tests/unit_tests/", "code/tests/benchmarks/")
 
 DOC = (
     "Type path prefix -> rules. Longest prefix (on a path-segment boundary) wins. Var spec: \"CAP_X\" (truthy value "
@@ -586,7 +586,7 @@ def selftest():
 
 CAPABILITY(/obj/item/gizmo, emp_disable(5 SECONDS))
 """,
-        "code/modules/unit_tests/skip.dm": """
+        "code/tests/unit_tests/skip.dm": """
 /obj/cap_fixture/x/capabilities()
 	. += cap_bolts()
 """,

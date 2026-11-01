@@ -20,7 +20,7 @@ wants with `glow_of()`.
 
 ## Chargers (cell charger, recharger, wall recharger)
 
-Pinned by `code/modules/unit_tests/dq_p2_chargers_behaviour.dm` (28 tests, written and green on the legacy code first).
+Pinned by `code/tests/unit_tests/dq_p2_chargers_behaviour.dm` (28 tests, written and green on the legacy code first).
 
 * **Examine adds a line when the machine is unpowered or broken** ("It is unpowered.", "It is broken."): `machine_basics()` brings `powered()` and
   `breakable()` with their look layers and examine lines. A broken charger also draws the library's broken layer where the icon has one.
@@ -49,7 +49,7 @@ Pinned by `code/modules/unit_tests/dq_p2_chargers_behaviour.dm` (28 tests, writt
 
 ## Reagent containers: glass (beakers, buckets, kettles, mugs, bottles, vials, paint cans)
 
-Pinned by `code/modules/unit_tests/dq_p2_reagent_behaviour.dm` (written and green on the legacy code first; the converted code passes the same tests, only
+Pinned by `code/tests/unit_tests/dq_p2_reagent_behaviour.dm` (written and green on the legacy code first; the converted code passes the same tests, only
 its adapter block changed). Rags are not converted yet: they inherit the label and dip handling and keep their own rules.
 
 * **A hostile click on a person with an open container splashes them again.** It had been unreachable on master since the interaction migration: an item
@@ -83,7 +83,7 @@ its adapter block changed). Rags are not converted yet: they inherit the label a
 
 ## Reagent containers: syringes and droppers
 
-Pinned by `code/modules/unit_tests/dq_p2_reagent_needle_behaviour.dm` (31 tests, written and green on the legacy code first; only the set-amount adapter
+Pinned by `code/tests/unit_tests/dq_p2_reagent_needle_behaviour.dm` (31 tests, written and green on the legacy code first; only the set-amount adapter
 changed with the conversion).
 
 * **The waits show no progress bar and the first message is the library's.** An injection (two thirds of the syringe's time, a third for yourself), somebody
@@ -103,7 +103,7 @@ changed with the conversion).
 
 ## Reagent containers: pills and patches
 
-Pinned by `code/modules/unit_tests/dq_p2_reagent_pill_behaviour.dm` (13 tests, written and green on the legacy code first, and green unchanged after the
+Pinned by `code/tests/unit_tests/dq_p2_reagent_pill_behaviour.dm` (13 tests, written and green on the legacy code first, and green unchanged after the
 conversion).
 
 * **A pill or patch is not wasted on a full container or an empty hand-me-down.** A pill dissolved in a container with no room left used to be used up and
@@ -118,7 +118,7 @@ conversion).
 
 ## Reagent containers: hyposprays and blood packs
 
-Pinned by `code/modules/unit_tests/dq_p2_reagent_hypo_behaviour.dm` (the hypospray, autoinjector, vial and blood pack tests green on the legacy code first
+Pinned by `code/tests/unit_tests/dq_p2_reagent_hypo_behaviour.dm` (the hypospray, autoinjector, vial and blood pack tests green on the legacy code first
 and unchanged after the conversion; the vial test was red on master before this step, see below).
 
 * **A vial can be loaded into a vial hypospray again.** The glass container conversion (step 1) made a click with an open vial on the hypospray (an open
@@ -131,7 +131,7 @@ and unchanged after the conversion; the vial test was red on master before this 
 
 ## Reagent containers: cartridges, powder, rolling paper, e-cigarette cartridges
 
-Pinned by `code/modules/unit_tests/dq_p2_reagent_misc_behaviour.dm` (11 tests, green on the legacy code first and unchanged after the conversion). The chemical
+Pinned by `code/tests/unit_tests/dq_p2_reagent_misc_behaviour.dm` (11 tests, green on the legacy code first and unchanged after the conversion). The chemical
 canister is not converted: it refills the matching cartridge inside a dispenser machine (a machine-side rule) and is left as it was.
 
 * **A dispenser cartridge's cap is the lid:** "Open or close the lid" in hand or from the menu, "Set transfer amount" (50 to 500), and the label is a menu
@@ -149,7 +149,7 @@ Pinned by the `borghypo_*`, `drink_synthesizer_*` tests of `dq_p2_reagent_hypo_b
 
 ## Reagent containers: drinks
 
-Pinned by `code/modules/unit_tests/dq_p2_reagent_drink_behaviour.dm` (cartons, cans, cups, the golden cup; green on the legacy code first, unchanged after).
+Pinned by `code/tests/unit_tests/dq_p2_reagent_drink_behaviour.dm` (cartons, cans, cups, the golden cup; green on the legacy code first, unchanged after).
 Condiments, the cooking containers and solid food (`snacks`) are not converted; bottles keep their own smash, rag and spin rules and their `bottle_self` entry.
 
 * **A glass in combat mode splashes a person or a thing, not an open container** (a hostile click on an open container pours, as for a beaker; the old glass
@@ -160,7 +160,7 @@ Condiments, the cooking containers and solid food (`snacks`) are not converted; 
 * **A cap on a tank the cup is filled from:** a drink fills only from a tank whose top is shut (the old drink filled from any tank).
 ## Reagent containers: the rag
 
-Pinned by `code/modules/unit_tests/dq_p2_reagent_rag_behaviour.dm` (10 tests, green on the legacy code first, unchanged after the conversion).
+Pinned by `code/tests/unit_tests/dq_p2_reagent_rag_behaviour.dm` (10 tests, green on the legacy code first, unchanged after the conversion).
 
 * **Using an empty rag in hand says it is dry** (it used to do nothing); wringing out is still five deciseconds a unit and wipes still take three seconds, now
   as waits of the operation engine.
@@ -169,7 +169,7 @@ Pinned by `code/modules/unit_tests/dq_p2_reagent_rag_behaviour.dm` (10 tests, gr
 
 ## SMES and power terminals (power storage unit, buildable, hybrid, the input terminal)
 
-Pinned by `code/modules/unit_tests/dq_p2_smes_behaviour.dm` (56 tests, written and green on the legacy code first; only its adapters changed).
+Pinned by `code/tests/unit_tests/dq_p2_smes_behaviour.dm` (56 tests, written and green on the legacy code first; only its adapters changed).
 
 * **The unit and its input terminals are linked.** The terminal's `master` relation was declared for an APC only, so the old SMES's attempt to link a
   terminal was refused at every build and at every map load (a stack trace once per type). A terminal now answers `master()` with its unit
@@ -197,7 +197,7 @@ Pinned by `code/modules/unit_tests/dq_p2_smes_behaviour.dm` (56 tests, written a
 
 ## Battery rack (power cell rack PSU)
 
-Pinned by `code/modules/unit_tests/dq_p2_batteryrack_behaviour.dm` (34 tests, written and green on the legacy forms first; mutation-checked: a wrong cell limit, the
+Pinned by `code/tests/unit_tests/dq_p2_batteryrack_behaviour.dm` (34 tests, written and green on the legacy forms first; mutation-checked: a wrong cell limit, the
 least/most charged cell swapped, a wrong input mode, a wrong clamp, no capacity change on eject, no SMES unit conversion, a wrong slot flag, no transfer cap, a wrong
 overlay mark and a dismantle that deletes its cells are each caught by a test). Only the adapter block of the file changed with the conversion.
 
@@ -222,7 +222,7 @@ overlay mark and a dismantle that deletes its cells are each caught by a test). 
   `without("ui_open")` so the inherited open op does not clash with its own). Test: `dq_p2_engine/a_subtype_window_replaces_the_inherited_one`.
 ## Storage items (backpacks, bags, boxes, belts, pill bottles, toolboxes, lockboxes and the kits and cases around them)
 
-Pinned by `code/modules/unit_tests/dq_p2_storage_behaviour.dm` (written and green on the legacy code first; only its adapters changed, and the tests added with the bot assemblies and the looks were checked against the commit before the conversion).
+Pinned by `code/tests/unit_tests/dq_p2_storage_behaviour.dm` (written and green on the legacy code first; only its adapters changed, and the tests added with the bot assemblies and the looks were checked against the commit before the conversion).
 
 * **A crayon the box will not take says the general refusal.** The mime and rainbow crayons are `refuses` of the crayon box now (they are separate types), so they get "won't go in: it doesn't take that" instead of "too sad / too powerful to be contained in this box". The same check on the marker box was dead code (no mime or rainbow marker exists) and is gone.
 * **An ID without the access, on an unlocked lockbox, is refused ("Access denied") and not put in.** The old entry said "Access Denied" and then put the card in. A broken lock, a locked box and an energy blade behave as before (the blade still slices the lock and then goes in, now through `passes()`).
@@ -238,7 +238,7 @@ Pinned by `code/modules/unit_tests/dq_p2_storage_behaviour.dm` (written and gree
 
 ## Tables (tables, benches, racks and the shelves)
 
-Pinned by `code/modules/unit_tests/dq_p2_table_behaviour.dm` (written and green on the legacy code first; mutation-checked on the legacy code: a wrong plating time, a wrong strength, no flipped check on reinforcing, the carpet no longer blocking the wrench, no carpet dropped, a wrong unreinforcing time, a wrong dismantle sheet, a wrong repair amount, a flip that takes tables of any material, a movement check that ignores the side, no carpet in a full break, no brittle multiplier, a slam that does no harm, no one-table-per-tile rule, a frame that takes items, a drag that pushes the wrong sizes, a second carpet, a flip that does not shake climbers off, a look without the reinforcement layer and a description without the reinforcement's name are each caught by a test). Only the adapter block of the file changed with the conversion (the menu and drag adapters, and two tests that wrote the old layer vars now call `set_layers()`).
+Pinned by `code/tests/unit_tests/dq_p2_table_behaviour.dm` (written and green on the legacy code first; mutation-checked on the legacy code: a wrong plating time, a wrong strength, no flipped check on reinforcing, the carpet no longer blocking the wrench, no carpet dropped, a wrong unreinforcing time, a wrong dismantle sheet, a wrong repair amount, a flip that takes tables of any material, a movement check that ignores the side, no carpet in a full break, no brittle multiplier, a slam that does no harm, no one-table-per-tile rule, a frame that takes items, a drag that pushes the wrong sizes, a second carpet, a flip that does not shake climbers off, a look without the reinforcement layer and a description without the reinforcement's name are each caught by a test). Only the adapter block of the file changed with the conversion (the menu and drag adapters, and two tests that wrote the old layer vars now call `set_layers()`).
 
 * **A tool with no job on a table is put on it, like any item.** The old tool handlers answered every tool (a crowbar on an uncarpeted table, a wrench on a reinforced or carpeted one, a screwdriver on a table with no reinforcement, a welder on an undamaged table) by swallowing the click: the tool stayed in the hand and nothing was said. A tool that has no job here is an item, and an item clicked on a table is put on it.
 * **A reinforcing drag may come from either hand.** The old drag handler asked for the stack in the active hand; the drop asks that the stack is carried by the person dragging it (the reach gate still wants them beside the table).
@@ -257,7 +257,7 @@ Pinned by `code/modules/unit_tests/dq_p2_table_behaviour.dm` (written and green 
 
 ## Food containers: condiments and cooking containers
 
-Pinned by `code/modules/unit_tests/dq_p2_food_behaviour.dm` (written and green on the legacy code first; spot-checked on the legacy code with seven mutations at once: five were caught at once (a count not reset when emptied, a renamed small shaker, a wrong amount added to a food, a missing item on the oven dish's list, an emptying that ignores distance); the two that were not (a room check one step off, a carton level rounded to the wrong step) led to the boundary cases now in the tests, which were not re-run against the mutations). Only the adapter block changed with the conversion.
+Pinned by `code/tests/unit_tests/dq_p2_food_behaviour.dm` (written and green on the legacy code first; spot-checked on the legacy code with seven mutations at once: five were caught at once (a count not reset when emptied, a renamed small shaker, a wrong amount added to a food, a missing item on the oven dish's list, an emptying that ignores distance); the two that were not (a room check one step off, a carton level rounded to the wrong step) led to the boundary cases now in the tests, which were not re-run against the mutations). Only the adapter block changed with the conversion.
 
 * **A condiment is a `reagent_container()`** (always open; it is sipped by yourself and fed to others in three seconds in every stance, poured into an open container, filled from a tank with its top shut, and set to a transfer amount from the menu and by alt-click). The feeding texts of the fed are the library's ("You feed ... from ..."); the swallow keeps the old words. A condiment added to a solid food says "You add some of the condiment to ..." (the old line named the units that moved) and a full or empty one says why it cannot.
 * **A hot thing held to a condiment bottle with a changeling's blood in it tests the blood**, as it does for a drink or a glass. The bottle's old item entry swallowed every held item before the test was reached.
@@ -275,7 +275,7 @@ Pinned by `code/modules/unit_tests/dq_p2_food_behaviour.dm` (written and green o
 
 ## Solid food (snacks, pizza boxes, custom food) and the end of the old helpers
 
-Pinned by `code/modules/unit_tests/dq_p2_snack_behaviour.dm` (green on the legacy snack code first; one spot check of mutations was not run: the minimal test policy). Only its adapters changed (a question is answered after the click, a crayon and a fruit by type, a finished snack is given a second of time).
+Pinned by `code/tests/unit_tests/dq_p2_snack_behaviour.dm` (green on the legacy snack code first; one spot check of mutations was not run: the minimal test policy). Only its adapters changed (a question is answered after the click, a crayon and a fruit by type, a finished snack is given a second of time).
 
 * **`edible()` is the library capability for eating** (`code/library/reagents/edible.dm`): eat, feed another (three seconds), swallow whole (the feeder's belly prompt, five seconds), used up. A bite is a RES_REAGENTS transaction like a drink's sip; what a bite leaves behind (`On_Consume`, trash, a swallowed micro, the contract event) runs one tick after it, as for drinks.
 * **Refusals say why in the library's words** (wrapped, sealed, mouth covered, no mouth, too full, from a belly, unconscious while a mask is on); what is refused, and when, is unchanged. The fullness lines you read while eating are the old ones.
@@ -290,7 +290,7 @@ Pinned by `code/modules/unit_tests/dq_p2_snack_behaviour.dm` (green on the legac
 
 ## Seating and beds (beds, chairs, sofas, stools, roller beds and their rack, wheelchairs, the electric chair, the dirty mattress)
 
-Pinned by `code/modules/unit_tests/dq_p2_seating_behaviour.dm` (written and green on the legacy code first; mutation-checked on the legacy code: a wrong padding amount, padding with any material, no sheet back from the cutters, no sheet from a dismantled bed, a wrong buckle wait, a wrong double-bed raise, a roller bed that is not dense, a folded bed that is not used up, a disk not set at the pillow, a wrong mattress wrench time, a stool that gives no sheet and an electric chair that does not turn back are each caught by a test). The tests that pinned old bugs were edited in the same commit as the fix, and say so.
+Pinned by `code/tests/unit_tests/dq_p2_seating_behaviour.dm` (written and green on the legacy code first; mutation-checked on the legacy code: a wrong padding amount, padding with any material, no sheet back from the cutters, no sheet from a dismantled bed, a wrong buckle wait, a wrong double-bed raise, a roller bed that is not dense, a folded bed that is not used up, a disk not set at the pillow, a wrong mattress wrench time, a stool that gives no sheet and an electric chair that does not turn back are each caught by a test). The tests that pinned old bugs were edited in the same commit as the fix, and say so.
 
 * **Beds, chairs, sofas, the dirty mattress and wheelchairs declare the library `buckle()`** (`code/library/structures/buckle.dm`): the drag of a person onto the seat, the grab, and the empty hand are its ops. The library's refusal reasons replace the old chat lines (it no longer says "You can not buckle while grabbed"; it says who holds them).
 * **`buckle()` gained settings and behaviour the furniture needed:** `smallest` / `largest` (a number or the name of a var of the holder; the wheelchairs read `min_mob_buckle_size` / `max_mob_buckle_size` as before, and the old `can_buckle_check` override is gone); a predator who sits on a full seat swallows an occupant they can stumble-vore (`can_stumble_vore`, same rule as `user_buckle_mob`); a seat that was pulling the one who sits (a wheelchair) lets go of them (the old `buckle_mob` override); a grab that buckled its person is let go of (the old code tried to buckle while the grab was held, and a grabbed person cannot be buckled).
@@ -305,7 +305,7 @@ Pinned by `code/modules/unit_tests/dq_p2_seating_behaviour.dm` (written and gree
 
 ## Climbing structures (tables, railings, cliffs, fences, machines) on `climb()`
 
-Pinned by `code/modules/unit_tests/dq_climb_conversion_tests.dm` (written and green on the legacy `make_climbable()` behaviour first; only its adapters changed with the conversion: the climb is started by the mob's own drag, and a shake is `climb_shake_off()`). 81 `make_climbable()` sites became `climb()` entries on their types' `CAPABILITIES` blocks (`/datum/om/behaviour/climbable`, `make_climbable()`, `unmake_climbable()`, the `climbers` relation, the `climb_start` and `climb_shake` events and the old `cap_climb()` are deleted). The library's `climb()` gained `landing`, `delay_by`, `gate` and `climbed`: the table's flipped landing, the cliff's half time and climbing-shoes rule, the fence's hole rule and the unanchored railing that breaks are each one holder proc named in the type's own entry.
+Pinned by `code/tests/unit_tests/dq_climb_conversion_tests.dm` (written and green on the legacy `make_climbable()` behaviour first; only its adapters changed with the conversion: the climb is started by the mob's own drag, and a shake is `climb_shake_off()`). 81 `make_climbable()` sites became `climb()` entries on their types' `CAPABILITIES` blocks (`/datum/om/behaviour/climbable`, `make_climbable()`, `unmake_climbable()`, the `climbers` relation, the `climb_start` and `climb_shake` events and the old `cap_climb()` are deleted). The library's `climb()` gained `landing`, `delay_by`, `gate` and `climbed`: the table's flipped landing, the cliff's half time and climbing-shoes rule, the fence's hole rule and the unanchored railing that breaks are each one holder proc named in the type's own entry.
 
 * **A climber on a flipped table now climbs out the side the table faces** (when it can go there). The old table rule returned that tile and nothing moved the climber, so a climb from a flipped table's own tile did nothing at all.
 * **Everyone shaken off falls, not only the first.** The old shake stopped the loop at the first climber who was not hurt in the 25% fall; each climber is now knocked down, and each has the 25% chance to land hard.
@@ -317,7 +317,7 @@ Pinned by `code/modules/unit_tests/dq_climb_conversion_tests.dm` (written and gr
 * The climb delay of an instance is the type's declaration: a per-instance `climbable_delay` edit on a map no longer exists (none did).
 ## Closets, lockers, secure closets, crates and secure crates (the family under `code/game/objects/structures/crates_lockers/`)
 
-Pinned by `code/modules/unit_tests/dq_p2_closet_behaviour.dm` (108 tests: the closet, lockers, crates, secure crates, the personal and mind lockers, the emergency locker, coffins and graves, statues, eggs, body bags and stasis bags, wrapping). The file was written against the legacy forms first; the tests that failed there for a reason of their own (a person standing out of reach, a capacity worked out wrong, a fixture left on the tile, an EMP loop that opened the thing it was waiting on) were corrected in the same pass and are named in the commit.
+Pinned by `code/tests/unit_tests/dq_p2_closet_behaviour.dm` (108 tests: the closet, lockers, crates, secure crates, the personal and mind lockers, the emergency locker, coffins and graves, statues, eggs, body bags and stasis bags, wrapping). The file was written against the legacy forms first; the tests that failed there for a reason of their own (a person standing out of reach, a capacity worked out wrong, a fixture left on the tile, an EMP loop that opened the thing it was waiting on) were corrected in the same pass and are named in the commit.
 
 * **A closet is a door over an interior, declared with `CAPABILITIES(/obj/structure/closet)`.** The hand and the "Toggle Open" menu entry are one op (`door`), the bolts are the library's `anchor()` (two seconds, only while the door is open), the seal is the library's `weld_shut()` (two seconds, only while it is shut) and a lit welder cuts an open one apart (`cut_apart`). The mechanism (`open()`, `close()`, the swing, what it takes in and spills) is still the closet's own procs, as the doors keep theirs.
 * **`weld_shut()` took a `tool` parameter** (default the welder): a coffin is screwed shut (`configure(weld_shut(tool = TOOL_SCREWDRIVER))`), with no flame and no fuel. A grave and a statue have nothing to seal (`sealable = FALSE`); a filled grave is "welded" from the code that fills it, so it holds like a sealed closet, and examining it says so.
@@ -341,7 +341,7 @@ Pinned by `code/modules/unit_tests/dq_p2_closet_behaviour.dm` (108 tests: the cl
 
 ## The one transfer verb: `move_into(holder, slot_id, item, actor =)`
 
-Pinned by `code/modules/unit_tests/dq_ownership_transfer_tests.dm` (the old `own_set(..., user =, into =)` tests, moved onto the verb, plus tests for the record and log, the refusal reason, the undeclared var, adoption by shape and the insert hooks). `/atom/movable/proc/move_into(holder, slot_id, actor)` and the transfer arguments of `own_set` / `own_add` / `own_put` were one job done two ways; the verb in `code/engine/declare/transfer.dm` does both: a `slot_id` naming a declared owned var of the holder is the var-slot (checked, released, moved in, adopted through the tracked write of the var's shape, recorded); any other `slot_id` is a ledger slot (checked, released, placed).
+Pinned by `code/tests/unit_tests/dq_ownership_transfer_tests.dm` (the old `own_set(..., user =, into =)` tests, moved onto the verb, plus tests for the record and log, the refusal reason, the undeclared var, adoption by shape and the insert hooks). `/atom/movable/proc/move_into(holder, slot_id, actor)` and the transfer arguments of `own_set` / `own_add` / `own_put` were one job done two ways; the verb in `code/engine/declare/transfer.dm` does both: a `slot_id` naming a declared owned var of the holder is the var-slot (checked, released, moved in, adopted through the tracked write of the var's shape, recorded); any other `slot_id` is a ledger slot (checked, released, placed).
 
 * **A transfer asks the holder's `/datum/act/insert` hooks.** `extend(/datum/act/insert, needs(...))` on a holder now refuses a `move_into` too (it used to apply only through ops and `slot_transfer`); the insert's notice goes out when the item lands; the actor is the hook's actor. `force = TRUE` skips the checks and the hooks, as before. The part engine's `put_in` no longer starts the insert itself: the verb does.
 * **A refusal is a reason.** The verb returns FALSE (it returned the value or null), leaves the reason in `GLOB.act_last_reason` and the outcome in `GLOB.act_last_outcome`, tells the actor, and writes a `MOVE_INTO:` line to the world log; `move_into_refusal()` is the same check without the move.
@@ -360,7 +360,7 @@ Pinned by `code/modules/unit_tests/dq_ownership_transfer_tests.dm` (the old `own
 
 ## Computer consoles (code/game/machinery/computer), hand conversion
 
-Pinned by `code/modules/unit_tests/dq_hc_computers_*.dm` (written against the legacy forms first). Every window action keeps its name.
+Pinned by `code/tests/unit_tests/dq_hc_computers_*.dm` (written against the legacy forms first). Every window action keeps its name.
 
 * **A window button's guard is a requirement or an early effect.** The old `ui_act_allowed()` overrides moved into `extend(TAG_UI, ...)`: a pure requirement where it refused (the robotics console's authentication, "Access denied."), an early `then()` where it had a side effect (the timeclock's fingerprints, the patient monitor's `set_machine`, the AI restorer's key click and its "stop restoring when empty").
 * **Batch 1.** Atmospheric alert, prisoner management, AI restorer, patient monitor, timeclock, robotics control. The `ref` arguments of the windows (alarm, implant, cyborg) are bare arguments resolved in the handler with `ui_ref()`; a ref that is none of those does nothing, as before.
@@ -374,7 +374,7 @@ Pinned by `code/modules/unit_tests/dq_hc_computers_*.dm` (written against the le
 
 ## Hand-converted items (code/game/objects/items)
 
-Pinned by `code/modules/unit_tests/dq_hc_items_behaviour.dm` (written and green on the legacy code first, except where a line below says otherwise). Gun boxes also by `interim_gunbox_lifecycle.dm`, whose prompt step now goes through the click and the answer.
+Pinned by `code/tests/unit_tests/dq_hc_items_behaviour.dm` (written and green on the legacy code first, except where a line below says otherwise). Gun boxes also by `interim_gunbox_lifecycle.dm`, whose prompt step now goes through the click and the answer.
 
 * **Gun boxes are one op.** The base box's `open` op asks for the kit with a choice prompt; the five variants no longer replace the op, they override `kit_options()`, `kit_question()`, `kit_title()` and `kit_greeting()`. The `variant_gunbox` var and the `/datum/om/prompt/choice/gunbox` kind are gone. A cancelled question keeps the box (as before).
 * **Geiger counter.** The alt-click reset on a counter that is off is refused with the reason "It must be on to reset its radiation level." (the old text, now a message). The wall counter's empty-hand and silicon toggles are one `inputs(hand(), remote())` op. `scanning` and `last_perceived_radiation_danger` are tracked and the look is a `draw()`: the icon follows them after the next frame rather than inside the call that changed them.
@@ -385,7 +385,7 @@ Pinned by `code/modules/unit_tests/dq_hc_items_behaviour.dm` (written and green 
 
 ## Mobs (code/modules/mob/living), hand conversion
 
-Pinned by `code/modules/unit_tests/dq_hc_mobs_behaviour.dm` and `dq_hc_bots_behaviour.dm` (written and green on the legacy forms first). Each worker's area adds its own section below.
+Pinned by `code/tests/unit_tests/dq_hc_mobs_behaviour.dm` and `dq_hc_bots_behaviour.dm` (written and green on the legacy forms first). Each worker's area adds its own section below.
 
 * **A mob's damage reaction runs after the hit, not before it.** The 40 `DAMAGE_REACTION` / `DAMAGE_REACTION_AFTER` rows are `on_notice(/datum/notice/hit/<entry>)` for the ones that only react (EMP effects, projectile sounds, antlings, blinking, cloak breaks: they used to run just ahead of the sink) and `extend(/datum/act/hit/<entry>, instead(...))` for the ones that stop a blast (cockroach, illusion, rabbit, puffer, dark purple slime, oil slime, AI core, weaver silk, mimic crate, floor mimic, swarm pulse). A reaction that did not block therefore sees the mob after the hit landed and only when the hit was committed. The mob's own family ladder (human species, simple mob injuries) still runs after the reaction exactly as before.
 * **A thrown thing is the generic hit.** The simple mob's reaction sound and the demon's laugh on a thrown thing listen to `/datum/notice/hit` and check the entry (`DAMAGE_ENTRY_THROWN`) themselves: there is no thrown notice.
@@ -412,7 +412,7 @@ Pinned by `dq_hc_items_behaviour.dm` (green on the legacy code first) and the in
 
 ## hc-mobs silicon
 
-Pinned by `code/modules/unit_tests/dq_hc_silicon_behaviour.dm` (written on the legacy code first, except where noted).
+Pinned by `code/tests/unit_tests/dq_hc_silicon_behaviour.dm` (written on the legacy code first, except where noted).
 
 * **"Are you sure?" confirmations show Yes first.** The store-core and pAI wipe confirmations used `no_first = TRUE` (No on the left); `/datum/prompt/yes_no` has no button order, so Yes is first. The answer is unchanged.
 * **A hud-less pAI can finish a download.** `refresh_software_status()` read `hud_used.other` and crashed for a pAI with no HUD (nobody playing it); it now skips the buttons.
@@ -421,7 +421,7 @@ Pinned by `code/modules/unit_tests/dq_hc_silicon_behaviour.dm` (written on the l
 
 ## hc-struct (structures, code/game/objects/structures)
 
-Pinned by `code/modules/unit_tests/dq_hc_struct_behaviour.dm` (written on the legacy code first, except where noted).
+Pinned by `code/tests/unit_tests/dq_hc_struct_behaviour.dm` (written on the legacy code first, except where noted).
 
 * **Batch 1: hits, emags, windows, in-hand uses.** The hit reactions are hit hooks: a blast, blob or throw that took the hit over (tree, girder, inflatable, black box) is `extend(/datum/act/hit/<entry>, instead(then(...)))` answering TRUE; one that reacts and lets the hit land (alien resin on a throw, the janitorial cart's spill, the black box's lighter blast) answers `HOOK_DECLINE` from the same hook, as the old non-blocking reaction ran before the hit; a flag that survives a blast is torn from `on_notice(/datum/notice/hit/explosion)`.
 * **The holoplant and the biowaste tank take the library's `emag()`.** The old effects returned no number, so the sequencer never used a charge up on either; the card now pays its one use like every other emag, and says the library's line. The holoplant is one-shot (a second sequencer is refused, "It is already subverted."); the tank stays repeatable. The holoplant still sets `emagged` (its look reads it).
@@ -442,7 +442,7 @@ Pinned by `code/modules/unit_tests/dq_hc_struct_behaviour.dm` (written on the le
 
 ## hc-tgui (datum-hosted windows: tgui modules, panels, programs)
 
-Pinned by `code/modules/unit_tests/dq_hc_tgui_behaviour.dm` (written on the legacy code first).
+Pinned by `code/tests/unit_tests/dq_hc_tgui_behaviour.dm` (written on the legacy code first).
 
 * **A module's window is its type's `interface()`; the NTOS skin is added by `/datum/tgui_module/ui_interface()`** (`ntos = TRUE` gives `Ntos<Window>`), where `New()` used to rewrite `tgui_id`. A subtype that only changes the window's state keeps its `DECLARE_UI_STATE` row (the ratchet `tgui_state_override` wants it; `interface(null, state =)` would drop the window name).
 * **A ref argument is resolved at the boundary.** `schema_ref()` now accepts the text a window sends (`locate(text)`, null when it names nothing) when the value comes from a player, so `arg("valve", schema_ref(/obj/...))` hands the handler the entity. The old `UI_ARG_REF(name, SOURCE, type)` searched SOURCE; where SOURCE was a whole registry of the type (fuel injectors, fusion cores, gyrotrons, cameras, mobs, shutoff valves) the type check is the same set, so the source procs are gone; where it was narrower (a console's own alarms, an AI's own laws) the handler still checks membership.
@@ -458,7 +458,7 @@ Pinned by `code/modules/unit_tests/dq_hc_tgui_behaviour.dm` (written on the lega
 * **A window answer that is "no" to a confirmation** is a false answer to a `/datum/prompt/yes_no` (a legacy alert answered the text "No").
 ## hc-struct machinery (batches M1 to M3)
 
-Pinned by `code/modules/unit_tests/dq_hc_machinery_behaviour.dm` (written on the legacy code first; `machinery_window_shapes` pins the keys of every machine window's data, captured from the legacy forms and still asserted for the windows not yet converted).
+Pinned by `code/tests/unit_tests/dq_hc_machinery_behaviour.dm` (written on the legacy code first; `machinery_window_shapes` pins the keys of every machine window's data, captured from the legacy forms and still asserted for the windows not yet converted).
 
 * **Windows.** A machine window is `interface()` plus one `op(ui_act())` per old `UI_ACT`, the data proc is `ui_data(datum/act/eval/A)`; the action names and the data keys are the old ones (TSX unchanged). A handler argument that the old body also read as a machine var of the same name is passed as `raw_<name>` (the converted procs never shadow a var). `UI_ARG_TEXT` is `schema_text(4096)`, not sanitised on the way in; `UI_ARG_NUM` stays `num()` (a window that sent text there already got null).
 * **Guards of the old `ui_act_allowed()`** are requirements on every button (`extend(TAG_UI, needs(...))`) with a reason, where the old override dropped the press silently: the turrets' and the turret panel's lock (`lock_refusal()`, a pure read: "Controls locked." / the firewall line / "It can only be controlled using its assigned turret controller."), the fabricator being busy, the nuclear bomb's reach and the pressing person's state, the pipe dispenser's bolts, reach and state, the party button's power, the slipper's lock, the cryo cell's own occupant, the safe-like windows' human-only rule. The fingerprints the guards left are an early `then()` on every button.
@@ -509,7 +509,7 @@ Pinned by `code/modules/unit_tests/dq_hc_machinery_behaviour.dm` (written on the
 
 ## hc-items2: the stack family (`/obj/item/stack`, its subtypes, the sheets, rods, cable coils)
 
-Pinned by `code/modules/unit_tests/dq_hc_items2_stacks.dm` (written on the legacy forms first).
+Pinned by `code/tests/unit_tests/dq_hc_items2_stacks.dm` (written on the legacy forms first).
 
 * **`amount` is tracked.** The one writer is `set_amount()` (with `no_limits = TRUE` where the old code wrote the var directly: `use()`, `add()`, a built stack, a planted flag, a kiosk's one pack, the mint, the RMS); a subtype that derived something from the amount in its appearance proc (sandbag slowdown, cable name, processed-alloy export value) now does it in an override of `set_amount()`.
 * **The look of a pile is `look_state()`** (`/obj/item/stack/draw()` reads it); subtypes override that proc instead of declaring an appearance proc. The in-hand sprite name of a stack with variants (`item_state`) is set once at creation instead of on every redraw (it never changed).
@@ -524,7 +524,7 @@ Pinned by `code/modules/unit_tests/dq_hc_items2_stacks.dm` (written on the legac
 
 ## hc-items2 group B (weapons, tools, lighters, flashlights, melee, shields, grenades, defibs, bags, small items)
 
-Pinned by `code/modules/unit_tests/dq_hc_items2_B.dm` (written on the legacy forms first; the periodic steps were called directly there, since the legacy lane is not driven by the test clock, and the converted tests add the same checks through the clock).
+Pinned by `code/tests/unit_tests/dq_hc_items2_B.dm` (written on the legacy forms first; the periodic steps were called directly there, since the legacy lane is not driven by the test clock, and the converted tests add the same checks through the clock).
 
 ### Batch 1: matches, lighters, smokables, e-cigs, candles, chewables, ashtrays
 
@@ -539,8 +539,8 @@ Pinned by `code/modules/unit_tests/dq_hc_items2_B.dm` (written on the legacy for
 
 ## APC: the last legacy forms (outages, notices, night shift, area link) and the final emp_disable()
 
-Pinned by `code/modules/unit_tests/dq_p2_apc_behaviour.dm` (the outage, overload, signaller, silicon and night-shift tests were added and run green on the
-legacy tree first) and `code/modules/unit_tests/dq_emp_disable_behaviour.dm` (three users of the legacy `emp_disable()`, also green on the legacy tree).
+Pinned by `code/tests/unit_tests/dq_p2_apc_behaviour.dm` (the outage, overload, signaller, silicon and night-shift tests were added and run green on the
+legacy tree first) and `code/tests/unit_tests/dq_emp_disable_behaviour.dm` (three users of the legacy `emp_disable()`, also green on the legacy tree).
 
 * **An outage is a hold on operability.** A pulse (`emp_disable()`, source `SRC_EMP`) and an event's power failure (`energy_fail()`, the electrical fault
   and the supermatter shutdown, source `SRC_POWER_FAILURE`) hold `STAT_OPERABLE` off for their time; the `power_failed` stat is gone. While it lasts the
@@ -564,7 +564,7 @@ legacy tree first) and `code/modules/unit_tests/dq_emp_disable_behaviour.dm` (th
 
 ## Physical paths: spaces and doors (APC, airlock, lockers, vending, every hatch)
 
-Pinned by `code/modules/unit_tests/dq_paths_behaviour.dm` (16.1a cases 1 to 5, the APC hatch's reasons, the airlock's wires behind its panel, a
+Pinned by `code/tests/unit_tests/dq_paths_behaviour.dm` (16.1a cases 1 to 5, the APC hatch's reasons, the airlock's wires behind its panel, a
 locker's door; written and green on the old gates first) and the existing APC, door, closet and vending behaviour suites.
 
 * **A click behind a closed door that nothing else answers is refused with the door's reason** instead of doing nothing. The old gates were
@@ -592,7 +592,7 @@ locker's door; written and green on the old gates first) and the existing APC, d
 
 ## Wires: the wires library replaces /datum/wires
 
-Pinned by `code/modules/unit_tests/dq_wires_behaviour.dm` (written and green on the legacy code first; only its adapter block changed in the
+Pinned by `code/tests/unit_tests/dq_wires_behaviour.dm` (written and green on the legacy code first; only its adapter block changed in the
 conversion), with the holder tests that already drove wires (dq_p2_apc, dq_p2_door, dq_p2_vending, dq_p2_smes, interim_*_wire_*).
 
 * **A signaler on a wire works again.** `/obj/item/assembly/signaler` read the atom's `wires` var (the holder's legacy wire datum, null on a signaler)
@@ -648,7 +648,7 @@ its randomize behaviour; the round's shared colour layout is keyed by the wiring
 
 ### fw-gaps3 content: cryo cell, body scanner, reagent tanks, bedsheets, linen bin, inflatables
 
-Pinned by `code/modules/unit_tests/dq_fwg3_inputs.dm` (run on the legacy interactions first, through the player's own drag and click paths).
+Pinned by `code/tests/unit_tests/dq_fwg3_inputs.dm` (run on the legacy interactions first, through the player's own drag and click paths).
 
 * **`item(T)` no longer answers an item used on itself.** The binding matched a self-use (held == target), so an item with both an `in_hand()` and an `item(/obj/item)` op could run the item op on itself: a pillow used in the hand
   built a pillow pile out of itself. A self-use reaches only `in_hand()` ops, as the old `attackby` never ran on itself.
@@ -663,7 +663,7 @@ Pinned by `code/modules/unit_tests/dq_fwg3_inputs.dm` (run on the legacy interac
 * **Inflatables.** Inflating is the `inflate` op (a torn one re-declares it). The wall's hand, item and "Deflate" are ops; ctrl-click and the menu share `deflate_by()`. The door re-declares the hand and drops the item use (`without("use_item")`), as its old list did; its silicon "Open" stays a legacy entry until silicon entry points are ops.
 ### fw-gaps3 content: window routing (embedded controllers, telecrystal storage, sleeper, air alarm, atmospherics filters)
 
-Pinned by `code/modules/unit_tests/dq_fwg3_windows.dm` (buttons through `hc_ui()`, run on the legacy declarations first; the questions of the air alarm, the sleeper and the omni filter could not be answered through the legacy harness, so they are pinned on the converted forms only).
+Pinned by `code/tests/unit_tests/dq_fwg3_windows.dm` (buttons through `hc_ui()`, run on the legacy declarations first; the questions of the air alarm, the sleeper and the omni filter could not be answered through the legacy harness, so they are pinned on the converted forms only).
 
 * **Embedded controllers (airlocks, docking ports, escape pods).** The program's commands are the window's fallback, `op("program_command", ui_act("*"), needs(req(command_listed, silent)))`: a listed command reaches the program, any other does nothing, as before. **Fix:** an airlock controller's commands (cycle, force, abort, override) work with its maintenance panel shut again. The declared-UI migration had moved the panel check of the old `tgui_act()` into `ui_act_allowed()`, which gated every action; the panel now guards only the tag and frequency settings (`at(SPACE_PANEL)`, a declared space whose door is `panel_open`), which refuse with the panel's reason instead of silently. The tag question is an `asks()` step (its default the current tag).
 * **Telecrystal storage and every smart fridge.** "Release" is one op: with no amount it asks how many (`asks(..., when =)`), then vends. A secure fridge that does not work ignores the buttons (a silent requirement). The telecrystal storage's override runs the fridge's own release first and releases crystals only when that refuses, as before; its own number question is gone (the op's question is asked once).
@@ -674,7 +674,7 @@ Pinned by `code/modules/unit_tests/dq_fwg3_windows.dm` (buttons through `hc_ui()
 
 ### fw-gaps3 content: modals as in-window questions (chem master, chemical synthesizer, chemical dispenser)
 
-Pinned by `code/modules/unit_tests/dq_fwg3_modals.dm` (modals opened and answered as the client does, run on the legacy `ui_modal_opened()` /
+Pinned by `code/tests/unit_tests/dq_fwg3_modals.dm` (modals opened and answered as the client does, run on the legacy `ui_modal_opened()` /
 `ui_modal_answered()` first; the two flows whose legacy answer re-ran `tgui_act()` through an open window, the buffer's custom amounts and the chained
 "make several" modals, could not be driven there and are pinned on the converted form).
 
@@ -698,7 +698,7 @@ Pinned by `code/modules/unit_tests/dq_fwg3_modals.dm` (modals opened and answere
 ### fw-gaps3 content: questions that re-asked themselves (bookcase, ladder, chameleon stamp, alien coil, paper bin, trolley tank, gas pumps, ATM, artifact harvester, shield generator)
 
 The types the asks() codemod left because the question was not first in its handler (it stood after a guard, or inside an `if` or a `switch` case).
-Pinned by `code/modules/unit_tests/dq_fwg3_asks.dm` (the item and hand questions, run on the legacy re-run first) and `dq_fwg3_windows.dm` (the
+Pinned by `code/tests/unit_tests/dq_fwg3_asks.dm` (the item and hand questions, run on the legacy re-run first) and `dq_fwg3_windows.dm` (the
 window questions, on the converted form: a legacy `act_ask` re-run needs the open window).
 
 * **A question asked only in one case is an `asks()` step with `when =`**: the bookcase asks which book only when it has some, the paper bin which paper
@@ -716,7 +716,7 @@ window questions, on the converted form: a legacy `act_ask` re-run needs the ope
 
 ## Silicon entry points (phase A): remote() ops, the interface provider, the gripper as a provider
 
-Pinned by `code/modules/unit_tests/dq_silicon_entry_tests.dm` (16 tests, green on the legacy hooks first; the converted code passes the same tests, one
+Pinned by `code/tests/unit_tests/dq_silicon_entry_tests.dm` (16 tests, green on the legacy hooks first; the converted code passes the same tests, one
 of them strengthened as noted below). The shared hooks (`silicon_inspect`/`_pull`/`_alternate`/`_swap_hands`/`_quick`, `is_ai_remote_interface`,
 `remote_interface_blocked`, the gripper's `handle_afterattack_special`, the airlock's `silicon_or_ghost`) are gone; the `silicon_entry` lint bans them.
 
@@ -748,7 +748,7 @@ of them strengthened as noted below). The shared hooks (`silicon_inspect`/`_pull
 
 ## Construction slots and the wall frames
 
-Pinned by `code/modules/unit_tests/dq_wall_frame_behaviour.dm` (green on the legacy try_build() first), the APC ladder tests of
+Pinned by `code/tests/unit_tests/dq_wall_frame_behaviour.dm` (green on the legacy try_build() first), the APC ladder tests of
 `dq_p2_apc_behaviour.dm` and the e0 door assembly proof.
 
 * **An APC frame held to a wall builds the APC on the wall.** `try_build()` called `replace_with()` on the frame while it was still in the
@@ -764,7 +764,7 @@ Pinned by `code/modules/unit_tests/dq_wall_frame_behaviour.dm` (green on the leg
 
 ## SMES, the RCON console and the power-failure event (rewrite/machines-full)
 
-Pinned by `code/modules/unit_tests/dq_p2_smes_behaviour.dm` and the review findings in `code/modules/unit_tests/dq_mf_smes_behaviour.dm` (written and
+Pinned by `code/tests/unit_tests/dq_p2_smes_behaviour.dm` and the review findings in `code/tests/unit_tests/dq_mf_smes_behaviour.dm` (written and
 green on the legacy code first; only adapters changed, except the findings below, each edited in the commit that changes it).
 
 * **The unit shows what really flows.** Rust now reports each SMES's per-step flows (`Smes.output_used`, `input_used`, `input_available`, zeroed by
@@ -810,7 +810,7 @@ green on the legacy code first; only adapters changed, except the findings below
 
 ## Medical pods: occupant_pod(), paired_console(), beaker_bay() (sleeper, cryo cell, body scanner, their consoles, the transport pod)
 
-Pinned by `code/modules/unit_tests/dq_medical_pods_behaviour.dm` (28 tests, written and green on the legacy code first; every pin that changed below
+Pinned by `code/tests/unit_tests/dq_medical_pods_behaviour.dm` (28 tests, written and green on the legacy code first; every pin that changed below
 was marked LEGACY there and edited in the commit that changed it). The library pieces are tested by `dq_medpod_library_tests.dm` and
 `dx_cap_b2_library_tests.dm`.
 
@@ -884,7 +884,7 @@ was marked LEGACY there and edited in the commit that changed it). The library p
 * **The tube is drawn by `draw()`**: the old shared fluid image had its colour mutated on every redraw.
 ## Atmospherics machines: the vent pump and the scrubber
 
-Pinned by `code/modules/unit_tests/dq_atmos_machines_behaviour.dm` (green on the legacy code first) and the existing `dq_atmos_tests.dm` flow tests.
+Pinned by `code/tests/unit_tests/dq_atmos_machines_behaviour.dm` (green on the legacy code first) and the existing `dq_atmos_tests.dm` flow tests.
 
 * **The area names its air devices, numbered per kind and never reused** (`area_air_device()`): a vent placed after another one went no longer takes
   a number still in use ("#len+1" made two "Vent Pump #2"s).
@@ -918,7 +918,7 @@ Pinned by `code/modules/unit_tests/dq_atmos_machines_behaviour.dm` (green on the
 - Library: `credits_resource.dm` (the RES_CREDITS adapter: the payer is the actor's credits source), `rotatable()`, `toggles(key, when =)`.
 ## Airlock and APC, full conversion (rewrite/doors-full)
 
-Pinned by `code/modules/unit_tests/dq_doors_full_behaviour.dm` (written and green on the code before it, commit "Pin airlock and APC behaviour before
+Pinned by `code/tests/unit_tests/dq_doors_full_behaviour.dm` (written and green on the code before it, commit "Pin airlock and APC behaviour before
 the full conversion"), alongside the `dq_p2_door/*` and `dq_p2_apc/*` suites. Each row below edited the assertion that pinned the old behaviour.
 
 ### APC
@@ -981,7 +981,7 @@ the full conversion"), alongside the `dq_p2_door/*` and `dq_p2_apc/*` suites. Ea
 
 ## Atmospherics machines: the air alarm and the remote atmospherics console
 
-Pinned by `code/modules/unit_tests/dq_atmos_machines_behaviour.dm` (green on the legacy code first), `dq_atmos_tests.dm` and `dq_fwg3_windows.dm`.
+Pinned by `code/tests/unit_tests/dq_atmos_machines_behaviour.dm` (green on the legacy code first), `dq_atmos_tests.dm` and `dq_fwg3_windows.dm`.
 
 * **The Sif wilderness alarm reads its own oxygen band** (16/17 kPa): it was written under "oxygen", a key no reading used, so the station's band
   (16/19) judged Sif's air.
@@ -1028,7 +1028,7 @@ Pinned by `code/modules/unit_tests/dq_atmos_machines_behaviour.dm` (green on the
   one pile of n). Renaming is `asks()` a text prompt.
 ## Atmospherics machines: the canister and the portable machines
 
-Pinned by `code/modules/unit_tests/dq_atmos_machines_behaviour.dm` (green on the legacy code first) and the canister tests of `dq_atmos_tests.dm`.
+Pinned by `code/tests/unit_tests/dq_atmos_machines_behaviour.dm` (green on the legacy code first) and the canister tests of `dq_atmos_tests.dm`.
 
 * **The chilled oxygen canister holds one load of oxygen**, chilled to 80 K: it was filled twice (its own fill on top of the oxygen canister's).
 * **The presets are a `starts_with` table** (gas -> share of a 45-atmosphere load; the engine set-up canisters' share is 2). The room filler is a
@@ -1046,7 +1046,7 @@ Pinned by `code/modules/unit_tests/dq_atmos_machines_behaviour.dm` (green on the
 * **The canister's eject drops the tank on the floor and closes an open valve, as before; the label's colour is a tracked var drawn by `draw()`.**
 ## Missing forms: the bump action
 
-Pinned by `code/modules/unit_tests/dq_mfo_doors_behaviour.dm` (green on the legacy `Bumped()` first) and the bump tests of `dq_p2_door_behaviour.dm`.
+Pinned by `code/tests/unit_tests/dq_mfo_doors_behaviour.dm` (green on the legacy `Bumped()` first) and the bump tests of `dq_p2_door_behaviour.dm`.
 
 * **Walking into something is the bump action**: `/atom/movable/proc/bump_into()` is its one emitter (the movement path's `Bump()` and a mech's push
   call it), published on the bumped atom with `bumper`, `bumped` and `direction`. A type answers with `on_notice(/datum/notice/bumped, ...)` or takes it
@@ -1060,7 +1060,7 @@ Pinned by `code/modules/unit_tests/dq_mfo_doors_behaviour.dm` (green on the lega
 
 ## Missing forms: the generic hit
 
-Pinned by the smash tests of `code/modules/unit_tests/dq_mfo_doors_behaviour.dm` (green on `attack_generic()` first) and the animal tests of
+Pinned by the smash tests of `code/tests/unit_tests/dq_mfo_doors_behaviour.dm` (green on `attack_generic()` first) and the animal tests of
 `dq_p2_door_behaviour.dm`, `dq_p2_closet_behaviour.dm`, `dq_p2_lights_behaviour.dm` and the other callers' tests (now driven through `generic_hit()`).
 
 * **A generic attack is the hit/generic action**: `generic_hit(target, user, damage, attack_verb)` is its one emitter (simple mobs' attacks, xeno
@@ -1093,7 +1093,7 @@ Pinned by the smash tests of `code/modules/unit_tests/dq_mfo_doors_behaviour.dm`
 
 ## Missing forms: an explosion's contents
 
-Pinned by `code/modules/unit_tests/dq_mfo_blast_contents.dm` (green on the overrides first), `dq_explosion_batch_tests.dm` and `dq_c8a_occupant_slot_tests.dm`.
+Pinned by `code/tests/unit_tests/dq_mfo_blast_contents.dm` (green on the overrides first), `dq_explosion_batch_tests.dm` and `dq_c8a_occupant_slot_tests.dm`.
 
 * **How hard a blast reaches a holder's contents is declared**: `blast_contents()` or `blast_contents(shield = 1)` in the holder's CAPABILITIES; the
   explosion service reads it (`explosion_contents_severity_of()`). Every `explosion_contents_severity()` override is gone (body scanner, clone pod,
@@ -1102,7 +1102,7 @@ Pinned by `code/modules/unit_tests/dq_mfo_blast_contents.dm` (green on the overr
 
 ## Missing forms: door looks
 
-Pinned by the look tests of `code/modules/unit_tests/dq_mfo_doors_behaviour.dm` (green on the templates first).
+Pinned by the look tests of `code/tests/unit_tests/dq_mfo_doors_behaviour.dm` (green on the templates first).
 
 * **Every door draws through draw(look)**: the base door (`door1`/`door0`), the blast door (its type's open and closed states) and the windoor (its base
   state, `open` after it) replace their `APPEARANCE_TEMPLATE`s; the airlock's and firedoor's `update_icon()` -> `changed()` bridges and their
@@ -1111,7 +1111,7 @@ Pinned by the look tests of `code/modules/unit_tests/dq_mfo_doors_behaviour.dm` 
 ## Heat network (rewrite/thermal-domain)
 
 Heat moves only through Rust's conserved transfer primitive and declared edges (`heat_link()`, `heat_pump()`, `heat_engine()`; `heat_move()` and its
-wrappers for one-off events). Pins: `code/modules/unit_tests/dq_heat_machines_behaviour.dm` (before/after values logged by each test).
+wrappers for one-off events). Pins: `code/tests/unit_tests/dq_heat_machines_behaviour.dm` (before/after values logged by each test).
 
 * **Machine heat goes to a booked 20 °C reservoir (approved).** A heat pump with nothing physical to reject into (space heater, thermoregulator)
   pumps against `HEAT_AMBIENT`, an infinite 20 °C reservoir whose flows are booked in the heat ledger as leaving or entering the station. The old
@@ -1159,7 +1159,7 @@ wrappers for one-off events). Pins: `code/modules/unit_tests/dq_heat_machines_be
 
 ## Body heat against the room (rewrite/heat-followups)
 
-Pins: `code/modules/unit_tests/dq_body_heat_behaviour.dm` (a human in a sealed 9×9 room whose air, floor and walls start at the room's
+Pins: `code/tests/unit_tests/dq_body_heat_behaviour.dm` (a human in a sealed 9×9 room whose air, floor and walls start at the room's
 temperature; Life's environment and thermoregulation stages once per 6 s frame, the native world stepping 6 s of world time between frames). "Before" is the
 pre-heat code (f24504821c: the body relaxed toward a mixture that never warmed); "regressed" is the conserved heat domain as it first landed
 (43dce9c2bb), where the body met only its tile's ~2 kJ/K of air.
@@ -1195,7 +1195,7 @@ pre-heat code (f24504821c: the body relaxed toward a mixture that never warmed);
 
 ## Material science heat (rewrite/heat-followups)
 
-Pins: `code/modules/unit_tests/dq_material_heat_behaviour.dm` (green on the DM model first) and the existing `dq_material_*` tests. An
+Pins: `code/tests/unit_tests/dq_material_heat_behaviour.dm` (green on the DM model first) and the existing `dq_material_*` tests. An
 assembly's material service and a processed batch hold their heat in a Rust heat store (`code/domains/heat/heat_store.dm`: a heat body kept by
 handle, with the thermal stock's phase plateau) and move it through heat links Rust integrates every world step. The DM exchange maths
 (`exchange_with_gas()`, the ambient exchange in `advance()`, `convert_transferred_heat()`, the stock's 8 % step) is deleted.
@@ -1228,7 +1228,7 @@ handle, with the thermal stock's phase plateau) and move it through heat links R
 
 ## Gas reaction energy in Rust (rewrite/heat-followups)
 
-Pins: `code/modules/unit_tests/dq_gas_reaction_energy_behaviour.dm` (every reaction once on a test mixture; golden temperatures and moles
+Pins: `code/tests/unit_tests/dq_gas_reaction_energy_behaviour.dm` (every reaction once on a test mixture; golden temperatures and moles
 measured on the DM maths, green before and after) and the existing fire tests.
 
 * **A reaction's heat is Rust's.** DM's reaction procs keep their rates and stoichiometry and call `gas_react(air, GAS_REACTION_*, extent,
@@ -1240,7 +1240,7 @@ measured on the DM maths, green before and after) and the existing fire tests.
 
 ## Missing forms: the DNA modifier console's window
 
-Pinned by `code/modules/unit_tests/dq_mfo_dna_console.dm` (green on DECLARE_UI/UI_ACT and the tgui modals first).
+Pinned by `code/tests/unit_tests/dq_mfo_dna_console.dm` (green on DECLARE_UI/UI_ACT and the tgui modals first).
 
 * **The window is interface("DNAModifier") with ops**: every button keeps its action name; the buffer label and the block injector's block are
   `asks()` steps of the `bufferOption` op, shown as the window's modal (`changeBufferLabel`, `createInjectorBlock`), so `ui_modal_answered()` is gone.
@@ -1250,7 +1250,7 @@ Pinned by `code/modules/unit_tests/dq_mfo_dna_console.dm` (green on DECLARE_UI/U
 
 ## Missing forms: priced requests (the malfunctioning AI)
 
-Pinned by `code/modules/unit_tests/dq_mfo_malf_costs.dm` (green on the custom malf prompt kinds first).
+Pinned by `code/tests/unit_tests/dq_mfo_malf_costs.dm` (green on the custom malf prompt kinds first).
 
 * **A malf ability's price is a cost of its request**: `open_request(..., costs = list("[RES_CPU]" = price))` with the plain prompt kinds (yes_no,
   choice, text). The CPU is checked when the AI is asked, set aside when it says yes (or picks), and spent once the ability went through. The
@@ -1265,7 +1265,7 @@ Pinned by `code/modules/unit_tests/dq_mfo_malf_costs.dm` (green on the custom ma
 
 ## Missing forms: the frame's wrench refund
 
-Pinned by `wrench_refunds_a_loose_frame` and `wrench_refunds_a_held_frame` in `code/modules/unit_tests/dq_wall_frame_behaviour.dm` (no behaviour to pin
+Pinned by `wrench_refunds_a_loose_frame` and `wrench_refunds_a_held_frame` in `code/tests/unit_tests/dq_wall_frame_behaviour.dm` (no behaviour to pin
 first: no click reached the legacy `wrench_act()`).
 
 * **A wrench takes a loose wall or machine frame apart again** (op `frame.refund`, a `tool(TOOL_WRENCH)` op on the frame item): the frame becomes its
@@ -1361,7 +1361,7 @@ panel a crowbar takes it apart into the frame, its board and its parts), in plac
 
 ## Pipe devices: pumps, the regulator and the valves (rewrite/pipenet-full)
 
-Pinned by `dq_atmos_m/pipes/*` in `code/modules/unit_tests/dq_atmos_pipes_behaviour.dm`. The shared controls are `pipe_device_window()`,
+Pinned by `dq_atmos_m/pipes/*` in `code/tests/unit_tests/dq_atmos_pipes_behaviour.dm`. The shared controls are `pipe_device_window()`,
 `pipe_device_switch()`, `pipe_device_max()` and `pipe_device_unwrench()` (`code/domains/atmos/pipe_device.dm`).
 
 - **The window no longer swallows tools.** A wrench or a multitool on a pressure or volumetric pump opened its window (the window's hand op
@@ -1440,7 +1440,7 @@ focused tests of the touched windows (the tests that called a handler with its o
   `UI_ARG_CHOICE`/`UI_ARG_LIST` pass the raw value, checked in the handler (a choice no longer converts between number and text).
 * **No new way to open a window.** An atom's converted window says `without("ui_open")`: it still opens from the type's own
   interactions (with their access, power and hand checks), not from a fallback click or a silicon's remote open. Pinned by the conversion
-  pins (`code/modules/unit_tests/snapshots/pins/`, recorded before the conversion; only `keys:` changed).
+  pins (`code/tests/unit_tests/snapshots/pins/`, recorded before the conversion; only `keys:` changed).
 * **The power sensor's data** is `monitor_data(user)`, the power monitor's focus (the sensor has no window), not an output of the sensor.
 * **State rows.** A subtype's `DECLARE_UI_STATE` declares the inherited window again with `state =`; a parent's state goes to every window
   below it; `tgui_state()` falls back to the interface's state. The security console's state row was never read (its window is its camera
@@ -1560,7 +1560,7 @@ Codemods `tools/codemods/` (tool_act, interaction_datums, damage_reaction; `run_
 - Types left for a hand conversion, and why, are listed in `tools/codemods/exclusions.txt`.
 ## Body migration, slice 1: wounds, bleeding and blood on the body clock (rewrite/body-full)
 
-Pinned by `code/modules/unit_tests/dq_body_rate_pins.dm` (green on the old code first; numbers below are old -> new over the pin's span).
+Pinned by `code/tests/unit_tests/dq_body_rate_pins.dm` (green on the old code first; numbers below are old -> new over the pin's span).
 Wound healing, bleeding, arterial tears and blood refill are rates integrated over the time that passed (`code/modules/body/body_clock.dm`),
 run by one `every(LIFE_CYCLE)` per human gated by `body_clock_active`; the Life stage `blood` and the limb's `update_wounds()` are gone.
 
@@ -1612,7 +1612,7 @@ Pinned by `dq_atmos_m/pipes/algae_farm_converts` and the generated pin.
 
 ## Power plants: the supermatter (rewrite/power-plants)
 
-Pinned by `code/modules/unit_tests/dq_power_plants_behaviour.dm` (`dq_pp/sm_*`), green on the legacy code first.
+Pinned by `code/tests/unit_tests/dq_power_plants_behaviour.dm` (`dq_pp/sm_*`), green on the legacy code first.
 
 - **No machine step.** The crystal's reaction is `every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(sm_step)))` (2 s, as the pipeline frame was);
   it left the machine pipeline's roster. Off a turf it skips the step (it used to stop stepping for good on a null loc; a crystal with a null
@@ -1840,7 +1840,7 @@ is `pain_step()` on an `every(LIFE_CYCLE)` gated by `STAT_PAIN_FELT` (held while
 
 ## Mob Life on the kernel's Life sequence (rewrite/om-life, L1)
 
-Pinned by `code/modules/unit_tests/dq_life_om_tests.dm` (ported from the pipeline to the sequence in the same commit) and the medical, body,
+Pinned by `code/tests/unit_tests/dq_life_om_tests.dm` (ported from the pipeline to the sequence in the same commit) and the medical, body,
 form, robot and vore tests that run Life frames.
 
 * **A wake wakes the steps that read it, not the whole mob.** The pipeline's unpark woke every stage of a parked mob; the sequence clears the sleep
@@ -1991,7 +1991,7 @@ recycling, overmap consoles, the singularity beacon, ...) runs its step on `star
 `MACHINE_SLEEP()` and `sleep_until_powered()` route to `work_start()` / `work_stop()` / `work_wait_for_power()`; a `DECLARE_PERIODIC_WHILE`
 gate became the work's `when` (tracked vars) or `gate` (computed procs, asked before each step), with `wakes_on` the vars the gate read; a
 `step_start_condition()` became `starts =`. The machines left the machine pipeline roster. Conversion pins were recorded for every type
-before the change (`code/modules/unit_tests/snapshots/pins/`) and are unchanged: no interaction moved.
+before the change (`code/tests/unit_tests/snapshots/pins/`) and are unchanged: no interaction moved.
 
 - **Work no longer sleeps on change keys.** The disposal unit, the point defense turret and the shield capacitor slept on watched keys
   (`sleep_until_keys()`) and were woken by the pipeline: the disposal unit now stops (PROCESS_KILL) and is started by what changes it (an
@@ -2237,7 +2237,7 @@ cadences still follow it through `relevance_changed()` until the framework goes.
 
 ## Leftovers: the machinery sweep (rewrite/leftovers)
 
-Every machine still on datum interactions or tool procs was pinned first (`code/modules/unit_tests/snapshots/pins/`, recorded on the legacy
+Every machine still on datum interactions or tool procs was pinned first (`code/tests/unit_tests/snapshots/pins/`, recorded on the legacy
 code), then converted by the codemods: `tools/codemods/tool_act.py` (tool procs to `tool(Q)` ops with `wait(0)`), `tools/codemods/interaction_datums.py`
 (now also lowers the machinery bases `machine_hand`/`machine_item`/`machine_alt`/`machine_drag`/`machine_verb` and the shared `open_ui` and
 `part_replacement` datums) and `tools/dx/codemods/interact_declare.py` (compact specs to ops; the shared effects are the shared op handlers
@@ -2290,7 +2290,7 @@ code), then converted by the codemods: `tools/codemods/tool_act.py` (tool procs 
 
 ## The OM framework retired (rewrite/om-retire-2)
 
-Pinned by `code/modules/unit_tests/dq_retired_behaviour_pins.dm` and the existing AI, tether, burning, vore and property tests.
+Pinned by `code/tests/unit_tests/dq_retired_behaviour_pins.dm` and the existing AI, tether, burning, vore and property tests.
 
 - **The AI brain loops run on the mob's own clock** (CLOCK_OWN), as final_api.html section 14 specifies: suspension pauses them,
   stasis (CLOCK_BIO) no longer does. Out of relevance (RELEVANCE_NONE) or outside RUNLEVEL_GAME/POSTGAME a loop's timer still fires and
@@ -2353,7 +2353,7 @@ input takes the next tier down, so the legacy declaration order still decides.
 
 ## The draw sweep: legacy appearance declarations become draw(look) (rewrite/draw-sweep)
 
-Pinned by the look tree pins (`code/modules/unit_tests/snapshots/look_trees/`, `dq_look_tree_pin`): icon, icon_state, dir, colour, overlays and
+Pinned by the look tree pins (`code/tests/unit_tests/snapshots/look_trees/`, `dq_look_tree_pin`): icon, icon_state, dir, colour, overlays and
 underlays of every creatable subtype of each converted chain, recorded from the legacy code and compared after the conversion.
 
 * **A converted type is drawn as it is created, from its state at the end of its init.** A legacy template or layer was applied inside the
@@ -2501,7 +2501,7 @@ Design and migration: `doc/rewrite/power_grid.md`.
 
 ## Topic links as ops (rewrite/op-topic)
 
-Pinned by `code/modules/unit_tests/dq_topic_*_tests.dm` and `dq_e2/topic_*` (the behaviour tests were written and green on the `TOPIC_ACTION` rows first;
+Pinned by `code/tests/unit_tests/dq_topic_*_tests.dm` and `dq_e2/topic_*` (the behaviour tests were written and green on the `TOPIC_ACTION` rows first;
 the converted code passes the same tests). A browser or chat link (an `href`) is the op whose `topic("key", args...)` binding names its key, run through
 the input inbox with the requirements and refusals of a click. Every `TOPIC_ACTION` row outside the machinery folder is an op now.
 
@@ -2689,7 +2689,7 @@ Pinned by `dq_ui_data_pin` (`snapshots/ui_pins/`, recorded on the code before th
 
 ## Timed actions as ops (rewrite/timed-tasks)
 
-Pinned by `code/modules/unit_tests/dq_timed_pin_behaviour.dm` (written and green on the legacy `task_timed` / `task_start` forms first; 17 of 18 passed, the 18th leaked the teleport's sparks, now cleaned up; the adapters `running()`, `declared_duration()` and `was_cancelled()` read a pending op as well as a task, every other assertion is unchanged). Each class below is one cause, not one site.
+Pinned by `code/tests/unit_tests/dq_timed_pin_behaviour.dm` (written and green on the legacy `task_timed` / `task_start` forms first; 17 of 18 passed, the 18th leaked the teleport's sparks, now cleaned up; the adapters `running()`, `declared_duration()` and `was_cancelled()` read a pending op as well as a task, every other assertion is unchanged). Each class below is one cause, not one site.
 
 * **Class: the same player starts the action a second time.** The task refused the second action on the same target and the first went on. A bare-hand wait derives `CLAIM_BODY` (it keeps the actor in place), so the second click stops the first wait ("You stop what you were doing.") and starts its own; an item or tool wait also holds the hands. One wait is pending afterwards either way. An op that should run beside another says `claims(NONE)`. Pin: `same_actor_twice` (its refused-second-click lines are legacy-only).
 * **Class: the refusal only the old handler wrote.** `whetstone` with fewer than five sheets said "You need 5 [whetstone] to refine it ..."; the binding is `stack(/obj/item/stack/material, 5)` now, so a short stack is not a candidate and the click falls through unanswered. Pin: `whetstone_short_of_sheets` keeps "starts nothing" and "spends nothing" and drops the message line.
@@ -2701,7 +2701,7 @@ Pinned by `code/modules/unit_tests/dq_timed_pin_behaviour.dm` (written and green
 
 ## Timed actions as ops, W3 additions
 
-Pinned by `code/modules/unit_tests/dq_timed_pin_w3_behaviour.dm` (written on the legacy forms; the NIF tool pins call `screwdriver_act()` / `multitool_act()` there and `test_click()` after, because the driver's click does not reach a legacy `*_act` override: the assertions are the same). The goo trap pin `gootrap_free` stops before the end on the legacy form: the legacy end raises a runtime (`act_message` is handed the victims' names as its user), so completion is pinned on the converted form only.
+Pinned by `code/tests/unit_tests/dq_timed_pin_w3_behaviour.dm` (written on the legacy forms; the NIF tool pins call `screwdriver_act()` / `multitool_act()` there and `test_click()` after, because the driver's click does not reach a legacy `*_act` override: the assertions are the same). The goo trap pin `gootrap_free` stops before the end on the legacy form: the legacy end raises a runtime (`act_message` is handed the victims' names as its user), so completion is pinned on the converted form only.
 
 * **Class: a click cooldown set at the start is gone.** The implanter console's `setClickCooldown(DEFAULT_QUICK_COOLDOWN)` at the start of the self-implant; an op's wait holds the actor instead. Pin: `backup_implanter_self_implant`.
 * **Class: a legacy runtime that the conversion removes.** `backup_implanter_ch/wrench_done` wrapped a ternary in `span_notice()` (`"<span>" + anchoring ? ...`), a runtime at the end of every wrench; the pins record the start and the cancel only, and the converted form finishes. Pins: `backup_implanter_wrench_off`, `backup_implanter_wrench_on`.
@@ -2727,7 +2727,7 @@ The snapshot pins were re-blessed once, for these classes (one cause each; the r
 
 ## Timed actions as ops, X additions
 
-Pinned by `code/modules/unit_tests/dq_timed_pin_w5_behaviour.dm` (written on the legacy forms) and the earlier pins of the same sites (`e_beacon_*`, `low_wall_*`, `railing_welder`, `barricade_repair`, `flora_uproot`, `grille_window`).
+Pinned by `code/tests/unit_tests/dq_timed_pin_w5_behaviour.dm` (written on the legacy forms) and the earlier pins of the same sites (`e_beacon_*`, `low_wall_*`, `railing_welder`, `barricade_repair`, `flora_uproot`, `grille_window`).
 
 * **Class: a welder that is not lit does not weld.** The railing repair and the reflector weld / cut used to take any welding tool (the reflector only asked for fuel); `lit_welder()` refuses an unlit one with "Turn on the welding tool first!", as every other converted welder op does.
 * **Class: a short stack falls through.** The low wall's rods (two) and glass (four) and the grille's window sheet are `stack(T, n)` bindings: a stack that is too small is not this op's, and the click goes on to the wall's "place" op (it used to say "You need at least two rods"). Same shape as the whetstone's short stack.
@@ -2737,7 +2737,7 @@ Pinned by `code/modules/unit_tests/dq_timed_pin_w5_behaviour.dm` (written on the
 * **Class: the sniper rifle's take-down checks the carrier and the chambered round as requirements.** The legacy verb returned silently for a dead user; the op's `carried()` and `rifle_empty` refuse before the wait.
 ## Timed actions as ops, Y additions
 
-Pinned by `code/modules/unit_tests/dq_timed_pin_w6_behaviour.dm` (40 pins written and green on the legacy `task_timed` forms before the conversion; `candybowl_repeat_asks` is recorded on the converted form only, because the legacy repeat question was opened by a callback the driver cannot answer in the same way). The existing `candybowl_*` pins (dq_timed_pin_w4) cover the first search.
+Pinned by `code/tests/unit_tests/dq_timed_pin_w6_behaviour.dm` (40 pins written and green on the legacy `task_timed` forms before the conversion; `candybowl_repeat_asks` is recorded on the converted form only, because the legacy repeat question was opened by a callback the driver cannot answer in the same way). The existing `candybowl_*` pins (dq_timed_pin_w4) cover the first search.
 
 * **Class: a legacy re-entry that never reached the op is gone.** The event kit structure's delay called `attack_hand()` again past the delay, which never reached its op, so a delayed structure stayed off; the item's `attack_self()` re-entry did work. The converted structure turns on (or off) when the wait ends, like the item. Pin: `generic_structure_delayed` asserts the result on the converted form only.
 * **Class: a refusal the old handler wrote is the claim message, and a short stack falls through unanswered.** A second searcher of a candy bowl or a box pile is told the engine's claimed message ("Someone is already working on that.") where the bowl said "someone is already looking through"; a fishing rod with less than five lengths of cable is a `stack(coil, 5)` that does not match, so the click falls through without "You do not have enough length". Pins: `candybowl_one_searcher` (asserts that something is said), `boxpile_one_rummager`, `fishing_rod_string_short_of_cable` (starts nothing, spends nothing).
@@ -3345,7 +3345,7 @@ The final capture differs in 40 hit classes / 468 rows. All 62 master `emp 1 / r
 
 ## Relations conversion (rewrite/relations)
 
-Pinned by `code/modules/unit_tests/dq_rel_lifecycle_pins.dm` and the `dq_om_relation_*` tests, written green on the legacy relations first.
+Pinned by `code/tests/unit_tests/dq_rel_lifecycle_pins.dm` and the `dq_om_relation_*` tests, written green on the legacy relations first.
 
 * **A leash that outlives its pet's step stops on the next slow step** instead of stopping its periodic work in the unlink: `periodic_step()` returns `PROCESS_KILL` when it clears the leash. A leash on nobody does nothing in between.
 * **An overmap mob's marker deleting on its own expires the mob** through the marker's `on_destroy` (its `parent`) instead of the relation hook; a marker supplied to a mob without setting its own `parent` no longer takes the mob with it.
@@ -3465,7 +3465,7 @@ Pins were regenerated with `--bless` after the last merge; only rows that change
 * **`pins/` claw machine** (requests and bridges): the card PIN request is a native request, so its key `clawmachine_card_pin` is listed.
 ## Timed actions as ops, B additions
 
-Pinned by `code/modules/unit_tests/dq_timed_pin_w8_behaviour.dm` (nine pins green on the legacy forms; the mop, plastique, ladder weld, maintenance panel weld, hardsuit cable mend and blank-envelope open could not be driven on the legacy form, because the driver's click does not reach a legacy `afterattack()` / `*_act()` override, and were dropped).
+Pinned by `code/tests/unit_tests/dq_timed_pin_w8_behaviour.dm` (nine pins green on the legacy forms; the mop, plastique, ladder weld, maintenance panel weld, hardsuit cable mend and blank-envelope open could not be driven on the legacy form, because the driver's click does not reach a legacy `afterattack()` / `*_act()` override, and were dropped).
 
 * **Class: the target of the task is the real target.** The DNA injector, tape roll and mail used to name the item as the task's target, so a patient who left or was deleted did not stop the work. The op's target is the patient; a lost patient ends the work. Pins: `dna_injector` (no loss line), `tape_*`.
 * **Class: a refusal the old handler wrote is a requirement with the same words.** The grip, head, eyes, mouth, worn face cover, the smart magazine's attached cell, and the bag-valve mask's seal; a roll used in the help stance falls through (`stance(I_DISARM, I_GRAB, I_HURT)`) instead of answering a failure.
@@ -3475,7 +3475,7 @@ Pinned by `code/modules/unit_tests/dq_timed_pin_w8_behaviour.dm` (nine pins gree
 * A bonfire that is empty (or a permanent one) is taken apart by its own `dismantle` op; the fuel is taken out by `hand`. A blank envelope has `seal` (unsealed) and `open` (sealed) in hand; opening a blank envelope still hands nothing out (`special_handling`), as before.
 ## Timed actions as ops, A additions
 
-Pinned by `code/modules/unit_tests/dq_timed_pin_w7_behaviour.dm` (107 pins written and green on the legacy `task_timed` / `task_start` forms before the conversion; 19 more were dropped because the legacy form could not be driven or leaked in the test world: modular limb verbs, the pitcher fish-out, the teppi slaughter, the stardog, the space worm, cyborg wrench/extract, the sleeper patient/compactor completion, the tongue drink/dry/food/lick). Each class is one cause.
+Pinned by `code/tests/unit_tests/dq_timed_pin_w7_behaviour.dm` (107 pins written and green on the legacy `task_timed` / `task_start` forms before the conversion; 19 more were dropped because the legacy form could not be driven or leaked in the test world: modular limb verbs, the pitcher fish-out, the teppi slaughter, the stardog, the space worm, cyborg wrench/extract, the sleeper patient/compactor completion, the tongue drink/dry/food/lick). Each class is one cause.
 
 * **Class: a worker with no retained argument re-derives it at the end.** The strip slot's item, the first accessory, the grab and the airway obstruction, the grabbed limb and the platform's last stored thing are read when the wait ends, not captured at the start (`perform_op` carries no arguments). Pins: `h_strip_slot_remove`, `h_strip_tie`, `h_heimlich`, `h_grab_throat`, `h_grab_inspect`, `r_platform_unload`.
 * **Class: the grab-inspect chain hangs off the grab.** The target is the grab item, so a victim who steps away breaks the grab and ends the work. The appendicitis line names the user. Pins: `h_grab_inspect`, `h_grab_inspect_interrupted`.
@@ -3804,7 +3804,7 @@ AIcore waits explicitly preserve legacy toolspeed and tool_skill_factor, with fi
 
 ## Notices and asks (D3, H4)
 
-Pinned by `code/modules/unit_tests/dq_notice_late_deleted_tests.dm` and `dq_asks_repeat_tests.dm`.
+Pinned by `code/tests/unit_tests/dq_notice_late_deleted_tests.dm` and `dq_asks_repeat_tests.dm`.
 
 * **A late notice (published past the depth cap) is no longer dropped when its holder is deleted before the drain.** It is delivered to the holder's observers and legacy
   reactions as the holder's destroy transaction begins, with the holder in its deleting state; the holder's own hooks do not run (as for any notice from a dying holder). A
@@ -3901,7 +3901,7 @@ The cycler preserves shock-before-empty-grab checking: starts() silently refuses
 CableLayer's cable-or-on admission uses any_of(req_full(cable), req_is(on)); the bomb tester selects loading when either declared tank relation is empty; the painter selects on req_operable() and requires an empty insert relation. These replace four former-REQ boolean adapters without changing operation keys or labels. Cable and painter refusal text is unchanged, and native requirement reads track relation/stat changes directly. No pin row change is intended for these three classes.
 ## Look pin sweep (rewrite/pin-speed)
 
-The two look pins are one sweep (`code/modules/unit_tests/dq_look_sweep.dm`, doc/rewrite/agent_workflow.md section 9): each type is made once, from a block emptied and
+The two look pins are one sweep (`code/tests/unit_tests/dq_look_sweep.dm`, doc/rewrite/agent_workflow.md section 9): each type is made once, from a block emptied and
 restored to the template's state, with the kernel's zero-delay work settled on a frozen clock; the probes run on that instance and the look must come back after each. The
 look-state probes are narrowed to the vars `analyze look-keys` finds a draw reading, and a run probes only types whose key changed since `snapshots/look_keys.txt`.
 

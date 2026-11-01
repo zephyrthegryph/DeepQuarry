@@ -71,4 +71,4 @@ instance_list	code/modules/il/types.dm	39
 instance_list	code/modules/il/types.dm	40
 instance_list	code/modules/il/types.dm	43
 instance_list	code/modules/sub/unit_tests/t.dm	2
-instance_list	code/modules/unit_tests_other/t.dm	2
+instance_list	code/tests/unit_tests_other/t.dm	2

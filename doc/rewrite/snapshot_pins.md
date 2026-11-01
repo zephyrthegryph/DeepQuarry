@@ -18,7 +18,7 @@ never re-added. Test a draw's behaviour (`dq_fresh_look_default`, `dq_human_draw
 ## Window data pins
 
 A pin of what a window host shows after a scripted set of state changes, for the window conversions (a hand `update_uis()` or `changed()` mark
-deleted, the state the window reads tracked; `code/modules/unit_tests/dq_ui_pins.dm`). `bash tools/dq_pin.sh --ui /datum/foo_panel` records one host
+deleted, the state the window reads tracked; `code/tests/unit_tests/dq_ui_pins.dm`). `bash tools/dq_pin.sh --ui /datum/foo_panel` records one host
 (`snapshots/ui_pins/`, test `dq_ui_data_pin`). The host's driver is a `/datum/ui_pin` subtype in a `dq_ui_pins_*.dm` file: `script()` builds the host,
 then alternates the changes the window's buttons and the world make with `snap("label")`, which writes one row per top-level key of the host's
 `tgui_data()` (`<label> | <key>: <json>`, refs written as `[ref]`, keys sorted). Record the pins in one run on the unmodified code; after the

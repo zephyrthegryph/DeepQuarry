@@ -13,7 +13,7 @@ under code/) or a new one where the macro stood. A wave is closed under inherita
 the wave is converted with it (the legacy and the entry forms do not inherit from one another), and the script says so.
 
     --paths P...   only the DECLARE_LOOT sites in these files or directories (default: every site)
-    --tests        include code/modules/unit_tests/ (left alone by default)
+    --tests        include code/tests/unit_tests/ (left alone by default)
     --check        print what would change; write nothing
     --list         print the declared types, one per line, and exit
 
@@ -156,7 +156,7 @@ class Site:
 def find_sites(files, include_tests):
     sites = []
     for r, f in files.items():
-        if not include_tests and r.startswith("code/modules/unit_tests/"):
+        if not include_tests and r.startswith("code/tests/unit_tests/"):
             continue
         for i, line in enumerate(f.lines):
             if not line.startswith("DECLARE_LOOT("):

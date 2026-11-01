@@ -136,7 +136,7 @@ merge batch, before `dq_push_master.sh`.
 ## 6. Interaction snapshots are per-type files
 
 `doc/rewrite/snapshot_pins.md`. The i7 snapshots keep their rows in
-`code/modules/unit_tests/snapshots/<name>/<type>.txt`, one file per type, read at run time: parallel
+`code/tests/unit_tests/snapshots/<name>/<type>.txt`, one file per type, read at run time: parallel
 conversions touch different files and a snapshot-only change needs no recompile. Re-record with
 `bash tools/dq_focused_test.sh --bless 'dq_interaction_domain_snapshot/*'`. A branch that edited the old inline
 `expected = list(...)` in `dq_i7_*_capture.dm` conflicts once: take master's file, then re-bless.
@@ -367,7 +367,7 @@ instead of leaving `state=running`.
 
 ## 13. Op pins are factored (October 2026, `tooling-fix`)
 
-The op snapshot pins (`code/modules/unit_tests/snapshots/{pins,i7_*,*_1008}/`) no longer repeat inherited rows: a type file
+The op snapshot pins (`code/tests/unit_tests/snapshots/{pins,i7_*,*_1008}/`) no longer repeat inherited rows: a type file
 names a block in `snapshots/op_bases/<base type>.txt` per `actor|held item` group and writes only its delta (`@obj.item human|none`,
 `-menu: X`, `+2 menu: Y`). Comparison is the same (the file expands to exactly the old rows); a mismatch prints each differing row
 once with the types it differs for. Details: `doc/rewrite/snapshot_pins.md` "Factored op pins".
@@ -391,7 +391,7 @@ run. On a merge conflict in a pin file, take master's file (`git show origin/mas
   checks this in a scratch repository); (b) what master changed since
   the stamp's master base is disjoint from what the stamp depends on, judged by `tools/dq_lane_check.js --master <master parent>`: the
   lane's files and their directories, the files defining its tests, the snapshot directories those read
-  (`code/modules/unit_tests/snapshots/<dir>/`), its `--covers` globs and `tools/ci/lane_ready_global.txt`;
+  (`code/tests/unit_tests/snapshots/<dir>/`), its `--covers` globs and `tools/ci/lane_ready_global.txt`;
   `snapshots/op_bases/` is regenerated, so an overlap there does not count (a merge-batch stamp needs master's changes disjoint from the
   batch's files, directories and the global paths); (c) the compile, DreamChecker and the ratchets pass on the merged tree, which
   `dq_push_master.sh` runs on exactly that commit before pushing. A lane whose push races other pushes no longer re-gates: it re-merges
@@ -444,7 +444,7 @@ parameter lists and marked 33 position takeovers.
 A test that writes a tracked var raw (`A.equipment = POWERCHAN_ON_AUTO` on the map's APC) changes shared state with no
 `state_changed()` mark, and a later test's refresh sweep reports `REFRESH DRIFT` on it, far from the cause (it took the grid tests
 followed by the lights tests to show). The `tracked` lint exempts the test trees, so a second lint, `tracked_tests`, reads
-`code/modules/unit_tests/`, `code/modules/benchmarks/` and `code/tests/` for the same writes: `TRACKED`/`SETTER` vars, `derive()`
+`code/tests/unit_tests/`, `code/modules/benchmarks/` and `code/tests/` for the same writes: `TRACKED`/`SETTER` vars, `derive()`
 values and, here only, the vars a non-virtual `STAT()` composes. It is shrink-only over `tools/ci/tracked_tests_baseline.txt`
 (225 sites when it landed; the 43 cheap ones, APC channels/charging/status and cell charge, now use `set_x()`). In a test write
 `A.set_x(v)`, or `set_var()` when the test must put the value back. A drift report now also prints where the drawn look key and the

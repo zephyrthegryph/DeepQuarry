@@ -6,7 +6,7 @@
 /// Prevent the master controller from starting automatically
 #define NO_INIT_PARAMETER "no-init"
 /// This world's 0-based position in a sharded dm-test run (`dm-test --shards=N`).
-/// See dq_test_shard_init() in code/modules/unit_tests/unit_test.dm.
+/// See dq_test_shard_init() in code/tests/unit_tests/unit_test.dm.
 #define TEST_SHARD_INDEX_PARAMETER "shard-index"
 /// The shard count for a sharded dm-test run. See TEST_SHARD_INDEX_PARAMETER.
 #define TEST_SHARD_COUNT_PARAMETER "shard-count"
@@ -25,7 +25,7 @@
 /// profile under the log directory. See dq_test_write_profile().
 #define TEST_PROFILE_PARAMETER "test-profile"
 /// Which unit-test tier to run: "normal" (default), "all" or "exhaustive".
-/// See TEST_TIER_* in code/modules/unit_tests/_unit_tests.dm.
+/// See TEST_TIER_* in code/tests/unit_tests/_unit_tests.dm.
 #define TEST_TIER_PARAMETER "test-tier"
 
 GLOBAL_VAR(restart_counter)

@@ -11,4 +11,4 @@ attack_proc	code/modules/a/a.dm	17
 attack_proc	code/modules/a/a.dm	18
 attack_proc	code/modules/a/a.dm	19
 attack_proc	code/modules/sp ace/s.dm	1
-attack_proc	code/modules/unit_tests/u.dm	1
+attack_proc	code/tests/unit_tests/u.dm	1

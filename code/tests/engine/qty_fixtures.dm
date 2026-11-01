@@ -1,4 +1,4 @@
-// Fixtures for the quantity slot (code/modules/unit_tests/dq_slot_quantity_tests.dm): a bay whose limit is a var of the holder and that
+// Fixtures for the quantity slot (code/tests/unit_tests/dq_slot_quantity_tests.dm): a bay whose limit is a var of the holder and that
 // takes a thing by units.
 
 /obj/qty_fixture
