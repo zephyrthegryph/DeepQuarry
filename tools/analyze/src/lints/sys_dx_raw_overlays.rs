@@ -8,10 +8,7 @@ use crate::lint::{Registry, RuleMeta};
 use crate::pat;
 use crate::tree::SourceFile;
 
-const RULES: &[RuleMeta] = &[RuleMeta {
-    name: "dx_raw_overlays",
-    hint: "draw the layer in draw(datum/look/look) (look.overlay/glow/gauge), not a raw overlay write (design review M9)",
-}];
+use crate::allow_registry_fields::sys_dx_raw_overlays::RULES;
 
 /// `scan_file` of the Python: one site per sanitized line with a raw overlay write.
 fn scan_lines(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {

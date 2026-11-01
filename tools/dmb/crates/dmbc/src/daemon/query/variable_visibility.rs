@@ -102,7 +102,8 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
             row["native_declaration_error_count"].as_u64(),
         ) {
             (Some("strict-native-declarations"), Some(0)) => {}
-            (Some("native-diagnostic-inherited-variable-v1"), Some(count)) if count > 0 => {}
+            (Some("native-diagnostic-inherited-variable-v1"),Some(_))=>{},
+            (Some("native-diagnostic-source-declarations-v2"|"native-diagnostic-procedure-versions-v3"),Some(count)) if count>0=>{},
             _ => return Err(invalid("declaration profile or error domain")),
         }
         let selected =

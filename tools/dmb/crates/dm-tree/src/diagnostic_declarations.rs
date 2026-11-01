@@ -20,6 +20,7 @@ impl DiagnosticDeclarationReceipt {
     }
 
     pub fn settings_compilable(&self)->bool{self.settings_compilable}
+    pub fn profile(&self)->&'static str{if self.errors.iter().any(|error|matches!(error,TreeError::Duplicate{kind:MemberKind::Proc|MemberKind::Verb,..})){"native-diagnostic-procedure-versions-v3"}else if self.errors.iter().any(|error|matches!(error,TreeError::InheritedDuplicate{kind:MemberKind::Proc|MemberKind::Verb,..})){"native-diagnostic-source-declarations-v2"}else{"native-diagnostic-inherited-variable-v1"}}
     pub fn errors(&self) -> &[TreeError] {
         &self.errors
     }
@@ -45,11 +46,12 @@ impl DiagnosticDeclarationReceipt {
             owner: Weak::new(),
         }
     }
+    pub(crate) fn accept_callable_duplicate(&mut self,error:TreeError)->Result<(),TreeError>{if matches!(&error,TreeError::Duplicate{kind:MemberKind::Proc|MemberKind::Verb,..}){self.errors.push(error);Ok(())}else{Err(error)}}
     pub(crate) fn accept(&mut self, error: TreeError) -> Result<(), TreeError> {
         if matches!(
             &error,
             TreeError::InheritedDuplicate {
-                kind: MemberKind::Var,
+                kind: MemberKind::Var | MemberKind::Proc | MemberKind::Verb,
                 ..
             }
         ) {
@@ -95,7 +97,5 @@ impl DiagnosticDeclarations {
     pub const fn runtime_admissible(&self) -> bool {
         false
     }
-    pub const fn profile(&self) -> &'static str {
-        "native-diagnostic-inherited-variable-v1"
-    }
+    pub fn profile(&self) -> &'static str {self.receipt.profile()}
 }

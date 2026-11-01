@@ -36,7 +36,7 @@ static META: Meta = Meta {
         name: "qdel_src",
         hint: "say why the thing ends: consume() / replace_with() / expire() / slot_clear() / ledger_empty() (code/datums/lifecycle/verbs.dm); a real destroy-now keeps qdel(src) with `// ALLOW(lifecycle): <reason>`",
     }],
-    allow: &["lifecycle"],
+    allow: crate::allow_registry_fields::qdel_src::ALLOW_0,
     lists: &[],
 };
 

@@ -573,21 +573,9 @@ pub fn named_argument_positions(sem: &super::Sem, file: &str) -> BTreeSet<(usize
 /// Exact self slot-flags reads that are the old value of a registered tracked setter
 /// mutation. No conditions or arbitrary callback arguments receive this treatment.
 pub fn slot_flags_mutation_positions(sem: &super::Sem, decls: &super::decls::Decls, file: &str) -> BTreeSet<(usize, usize)> {
-    fn mask(e: &Expression) -> bool {
-        match strip_parens(e) {
-            Expression::BinaryOp { op: BinaryOp::BitAnd | BinaryOp::BitOr | BinaryOp::BitXor | BinaryOp::LShift | BinaryOp::RShift, lhs, rhs } => mask(lhs) && mask(rhs),
-            Expression::Base { term, follow } => {
-                if !follow.iter().all(|f| matches!(&f.elem, Follow::Unary(UnaryOp::BitNot | UnaryOp::Neg))) { return false; }
-                match &term.elem {
-                    Term::Int(_) | Term::Float(_) => true,
-                    Term::Ident(n) => n.as_str() != "slot_flags" && n.as_str() != "src",
-                    Term::Expr(inner) => mask(inner),
-                    _ => false,
-                }
-            }
-            _ => false,
-        }
-    }
+    struct Mask;
+    impl crate::check_grep_semantic_policy::MaskView<Expression> for Mask{fn mask<'a>(&self,e:&'a Expression)->crate::check_grep_semantic_policy::Mask<'a,Expression>{use crate::check_grep_semantic_policy::Mask as View;match strip_parens(e){Expression::BinaryOp{op:BinaryOp::BitAnd|BinaryOp::BitOr|BinaryOp::BitXor|BinaryOp::LShift|BinaryOp::RShift,lhs,rhs}=>View::Both(lhs,rhs),Expression::Base{term,follow}=>{if !follow.iter().all(|f|matches!(&f.elem,Follow::Unary(UnaryOp::BitNot|UnaryOp::Neg))){return View::Other}match &term.elem{Term::Int(_)|Term::Float(_)=>View::Number,Term::Ident(name)=>View::Name(name.as_str()),Term::Expr(inner)=>View::Through(inner),_=>View::Other}},_=>View::Other}}}
+    fn mask(e:&Expression)->bool{crate::check_grep_semantic_policy::mask(&Mask,e,&mut||Ok::<_,std::convert::Infallible>(())).unwrap_or_else(|never|match never{})}
     fn shadows(b: &Block) -> bool {
         b.iter().any(|s| match &s.elem {
             Statement::Var(v) if v.name.as_str() == "slot_flags" => true,
@@ -678,11 +666,7 @@ pub fn act_holder_positions(sem: &super::Sem, file: &str, text: &str) -> BTreeSe
             if sem.rel(term.location) != file { return; }
             let Some(line) = text.lines().nth(term.location.line as usize - 1) else { return; };
             let start = term.location.column as usize - 1;
-            let Some(tail) = line.get(start..) else { return; };
-            let Some(after_name) = tail.strip_prefix(receiver.as_str()) else { return; };
-            let optional = after_name.starts_with('?');
-            if !(after_name.starts_with(".holder") || after_name.starts_with("?.holder")) { return; }
-            positions.insert((term.location.line as usize, start + receiver.len() + usize::from(optional) + 1));
+            if let Some(column)=crate::check_grep_semantic_policy::holder_column(line,start,receiver.as_str()){positions.insert((term.location.line as usize,column));}
         });
     }
     positions

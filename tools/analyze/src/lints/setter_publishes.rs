@@ -30,7 +30,7 @@ static META: Meta = Meta {
         RuleMeta { name: "no_publish", hint: "call tracked_changed(src, nameof(v)) on every path that changes the var (or chain to ..()): a write nothing publishes leaves the var silently untracked" },
         RuleMeta { name: "not_a_setter", hint: "this proc shares the name of a setter but does not write the var, so the var (read by reactive code) cannot get a generated setter: rename the proc" },
     ],
-    allow: &[],
+    allow: crate::allow_registry_fields::setter_publishes::ALLOW_0,
     lists: &[],
 };
 

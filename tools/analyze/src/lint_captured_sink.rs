@@ -10,6 +10,7 @@ pub(super) struct Bound {
     records: usize,
     pub(super) error: Option<String>,
     pub(super) allow_start: usize,
+    #[cfg(feature="native-policy")] budget:Option<std::sync::Weak<crate::captured_generator_budget::Budget>>,
 }
 impl Bound {
     pub(super) fn new(rows: usize, bytes: usize) -> Self {
@@ -20,6 +21,7 @@ impl Bound {
             records: 0,
             error: None,
             allow_start: 0,
+            #[cfg(feature="native-policy")] budget:None,
         }
     }
     fn admit(&mut self, strings: usize, slots: usize) -> bool {
@@ -34,6 +36,8 @@ impl Bound {
             self.error = Some("captured raw findings exceed count/retained-byte admission".into());
             return false;
         }
+        #[cfg(feature="native-policy")]
+        if let Some(owner)=&self.budget{let Some(budget)=owner.upgrade()else{self.error=Some("captured output operation budget expired".into());return false};if let Err(actual)=budget.charge(strings.checked_add(slots).unwrap_or(usize::MAX)){self.error=Some(actual);return false}}
         self.used = next.unwrap();
         self.records += 1;
         true
@@ -70,6 +74,16 @@ impl Sink {
             ..Self::default()
         }
     }
+    /// SAME retained row/ALLOW accounting, funded before vector retention.
+    /// Policy-created individual String/regex temporaries remain the ordinary
+    /// scanner baseline; this is not an opaque-regex/RSS guarantee. The bound
+    /// must be dropped before returning source-free moved output vectors.
+    #[cfg(feature="native-policy")]
+    pub(crate) fn bounded_budget(budget:&std::sync::Arc<crate::captured_generator_budget::Budget>)->Result<Self,String>{
+        budget.charge(1024)?;let mut value=Self::bounded(usize::MAX,usize::MAX);
+        value.bound.as_mut().expect("bounded output").budget=Some(std::sync::Arc::downgrade(budget));Ok(value)
+    }
+
     /// Equivalent to a fresh legacy Sink for annotation dedup, while retaining
     /// all preceding output in the same admitted vectors and row/byte family.
     pub(crate) fn begin_captured_phase(&mut self, rel: &str) {

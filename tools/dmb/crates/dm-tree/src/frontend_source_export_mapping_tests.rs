@@ -425,6 +425,33 @@ fn declaration_policy_cursor_uses_issued_include_eof_without_fabricating_byte_po
     let cursor = archive.member_policy_compatibility_cursor(member).unwrap();
     assert_eq!(cursor.path.as_path(), Path::new("part.dm"));
     assert!(!cursor.logical_boundary);
+    // After an uninitialized variable, the original declaration lexer advances
+    // to the next included token. The physical token may belong to a sibling
+    // include or to a sibling of the returned parent.
+    for (manifest, middle) in [
+        ("#include \"part.dm\"\n#include \"next.dm\"\n", None),
+        ("#include \"middle.dm\"\n#include \"next.dm\"\n", Some("#include \"part.dm\"\n")),
+    ] {
+        let mut files = vec![
+            ("compat.dme", manifest),
+            ("part.dm", "/datum/probe\n    var/item\n"),
+            ("next.dm", "// genuine next source\n/datum/after\n    var/value = 1\n"),
+        ];
+        if let Some(middle) = middle { files.push(("middle.dm", middle)); }
+        let frontend = build(&files);
+        let archive = frontend.body_archive().unwrap();
+        let tree = archive.tree();
+        let owner = tree.lookup_type(SymbolId::of("/datum/probe")).unwrap();
+        let member = tree.resolve(owner, SymbolId::of("item"), MemberKind::Var).unwrap();
+        let cursor = archive.member_policy_compatibility_cursor(member).unwrap();
+        assert_eq!(cursor.path.as_path(), Path::new("next.dm"));
+        assert_eq!((cursor.line, cursor.byte_column, cursor.logical_boundary), (2, Some(1), false));
+        if let Ok(ordinary) = archive.member_policy_point(member) {
+            assert_eq!(ordinary.path.as_path(), Path::new("part.dm"),
+                "continuation must not relabel the declaration's physical source");
+            assert_ne!(cursor.path, ordinary.path);
+        }
+    }
     for (manifest, middle) in [
         ("#include \"middle.dm\"\n", "#include \"part.dm\"\n"),
         (

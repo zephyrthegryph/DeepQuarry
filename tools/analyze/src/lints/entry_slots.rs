@@ -34,7 +34,7 @@ static META: Meta = Meta {
     scan: ScanKind::File,
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "positional_overflow", hint: HINT }],
-    allow: &[],
+    allow: crate::allow_registry_fields::entry_slots::ALLOW_0,
     lists: &[],
 };
 

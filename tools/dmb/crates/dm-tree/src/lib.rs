@@ -540,7 +540,7 @@ fn build_with_intrinsic_members_structural_mode(
         &owner_normalization::RetainedNormalization,
     )>,
     structural: Option<metadata_update::StructuralMetadata<'_>>,
-    diagnostics: Option<&mut diagnostic_declarations::DiagnosticDeclarationReceipt>,
+    mut diagnostics: Option<&mut diagnostic_declarations::DiagnosticDeclarationReceipt>,
 ) -> Result<SemanticTree, TreeError> {
     let mut paths = Vec::new();
     let mut by_path = HashMap::new();
@@ -735,7 +735,7 @@ fn build_with_intrinsic_members_structural_mode(
             .callables
             .collect(&tree, declarations, intrinsics)?
     } else {
-        callable_namespace::collect_view(skeletons, intrinsics)?
+        if let Some(receipt)=diagnostics.as_deref_mut(){callable_namespace::collect_checker_diagnostic(skeletons,intrinsics,receipt)?}else{callable_namespace::collect_view(skeletons, intrinsics)?}
     };
     let local_owners = normalization.map(|(declarations, retained)| {
         retained.local.prepare(&tree, declarations, &callable_kinds)
@@ -799,7 +799,7 @@ fn build_with_intrinsic_members_structural_mode(
                                 .any(|id| modes[id.index()] == DefinitionMode::Declare)
                         })
                 };
-                if duplicate {
+                if duplicate && !(diagnostics.is_some()&&matches!(kind,MemberKind::Proc|MemberKind::Verb)) {
                     return Err(TreeError::Duplicate {
                         owner: *owner,
                         name: *name,
@@ -845,7 +845,7 @@ fn build_with_intrinsic_members_structural_mode(
             }
         }
     } else {
-        member_normalization::normalize_groups(&mut tree, &mut members, &modes, groups);
+        member_normalization::normalize_groups_mode(&mut tree, &mut members, &modes, groups,diagnostics.is_some());
     }
     drop(member_install_profile);
     drop(member_install_timer);

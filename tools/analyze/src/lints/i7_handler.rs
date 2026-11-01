@@ -25,7 +25,7 @@ static META: Meta = Meta {
     scan: ScanKind::File,
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "handler_override", hint: HINT }],
-    allow: &[],
+    allow: crate::allow_registry_fields::i7_handler::ALLOW_0,
     lists: &["allowed"],
 };
 

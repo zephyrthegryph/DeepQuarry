@@ -1,0 +1,4 @@
+/datum/redefinition/proc/plain()
+    return 0
+/datum/redefinition/proc/plain()
+    return 1

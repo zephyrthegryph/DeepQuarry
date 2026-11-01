@@ -79,7 +79,7 @@ impl SourceSnapshot {
             "row":"source_native_configured_variable_visibility","schema":"dm-session-source-query-v1",
             "semantic_revision":format!("{:032x}",tree.identity()),"source_revision":format!("{:032x}",self.source_revision),"policy_revision":format!("{:032x}",self.policy_revision.unwrap()),
             "environment":environment,"configuration":loaded.selected.path,"configuration_explicit":loaded.selected.explicit,"configuration_present":loaded.present,"configuration_schema":"complete_pinned_checker_schema",
-            "declaration_profile":if self.diagnostic_declarations.is_some(){"native-diagnostic-inherited-variable-v1"}else{"strict-native-declarations"},"native_declaration_error_count":self.diagnostic_declarations.as_ref().map_or(0,|receipt|receipt.errors().len()),
+            "declaration_profile":self.diagnostic_declarations.as_ref().map_or("strict-native-declarations",|receipt|receipt.profile()),"native_declaration_error_count":self.diagnostic_declarations.as_ref().map_or(0,|receipt|receipt.errors().len()),
             "producer_categories":coverage.producer_categories,"families":coverage.registered_tags,"untagged_companions":["variable_redeclaration"],"ordering":"parser_encounter_then_lexical_declarations_then_evaluated_checker_order","full_checker_parity":coverage.full_checker_parity,"all_source_contexts_supported":coverage.all_source_contexts_supported,"diagnostics":diagnostics,
         })).map_err(io::Error::other)?;
         output.write_all(b"\n")

@@ -9,10 +9,7 @@ use crate::pat;
 use crate::tree::SourceFile;
 use crate::util::before_slashes;
 
-const RULES: &[RuleMeta] = &[RuleMeta {
-    name: "presentation_call",
-    hint: "write the input through its setter or PUBLISH_CHANGE the key that covers it (MOB_KEY_*); the HUD / sight reactions run by themselves (living_systems.dm)",
-}];
+use crate::allow_registry_fields::sys_presentation::RULES;
 
 const QUERIES: [&str; 3] = ["_wanted", "_idle", "_rewake_delay"];
 

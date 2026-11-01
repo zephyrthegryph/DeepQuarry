@@ -10,10 +10,7 @@ use crate::pat;
 use crate::tree::SourceFile;
 use crate::util::before_slashes;
 
-const RULES: &[RuleMeta] = &[RuleMeta {
-    name: "emag_act",
-    hint: "DECLARE_EMAG(type, PROC_REF(on_emag), msg) + emag_target() (code/__defines/sys_emag.dm, doc/rewrite/systems.md section 13)",
-}];
+use crate::allow_registry_fields::sys_emag::RULES;
 
 const CARD: &str = "code/game/objects/items/weapons/id cards/cards.dm";
 

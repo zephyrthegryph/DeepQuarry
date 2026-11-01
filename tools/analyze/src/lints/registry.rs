@@ -26,7 +26,7 @@ static META: Meta = Meta {
     scan: ScanKind::File,
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "self_add", hint: HINT }],
-    allow: &["registry"],
+    allow: crate::allow_registry_fields::registry::ALLOW_0,
     lists: &[],
 };
 

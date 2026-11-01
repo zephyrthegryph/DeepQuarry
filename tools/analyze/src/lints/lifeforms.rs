@@ -44,7 +44,7 @@ static META: Meta = Meta {
         RuleMeta { name: "param_pos_override", hint: "an ancestor already maps this constructor position: say param(..., pos = N, overrides = TRUE) when the subtype means to take it over" },
         RuleMeta { name: "param_overrides_nothing", hint: "overrides = TRUE but no ancestor declares a param at this position: drop overrides =" },
     ],
-    allow: &[],
+    allow: crate::allow_registry_fields::lifeforms::ALLOW_0,
     lists: &[],
 };
 

@@ -1,0 +1,6 @@
+//! Metadata moved from the actual rel_write_undeclared registration fields; no scanner.
+
+pub(crate) fn collect<C:crate::key_policy_control::Control>(names:&mut std::collections::BTreeSet<String>,control:&mut C)->Result<(),C::Error>{
+ crate::allow_registry_fields::plain(&[],names,control)?;
+ control.checkpoint()
+}

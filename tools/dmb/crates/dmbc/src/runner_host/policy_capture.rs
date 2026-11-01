@@ -551,7 +551,7 @@ pub(crate) fn capture_diagnostic<P: SnapshotProvider>(
 pub(crate) fn capture_workspace_generator<P: SnapshotProvider>(
     frontend: &ColdFrontend, inputs: &RecordingInputs<P>, configuration: &Path,
 ) -> io::Result<CapturedPolicyInputs> {
-    let intent = crate::policy_request::PolicyInputRequest {workspace_generators:Vec::new(),
+    let intent = crate::policy_request::PolicyInputRequest {workspace_auxiliary:Vec::new(),workspace_generators:Vec::new(),
         workspace: None,
         files: vec![crate::policy_request::PolicyInputFile {
             path: configuration.to_owned(),

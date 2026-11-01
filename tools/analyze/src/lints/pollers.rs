@@ -43,7 +43,7 @@ static META: Meta = Meta {
         RuleMeta { name: "start", hint: "use om_task_periodic() or a machine wake" },
         RuleMeta { name: "step_coverage", hint: "" },
     ],
-    allow: &["pollers"],
+    allow: crate::allow_registry_fields::pollers::ALLOW_0,
     lists: &["step_exempt_prefixes"],
 };
 

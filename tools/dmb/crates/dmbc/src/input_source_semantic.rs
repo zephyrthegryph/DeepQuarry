@@ -192,6 +192,9 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
                 .occurrences
                 .iter()
                 .enumerate()
+                // Actual typed resources have no text/encoding lease. Keep
+                // original occurrence indices for every real source binding.
+                .filter(|(_,row)|row.non_text_kind().is_none())
                 .map(|(index, row)| (index, &row.path)),
         )
     }
@@ -207,7 +210,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         self.semantic_source_evidence_parts(
             frontend.mapping(),
             frontend.files(),
-            frontend.includes(),
+            frontend.semantic_includes(),
         )
     }
     fn semantic_source_evidence_parts<'a>(

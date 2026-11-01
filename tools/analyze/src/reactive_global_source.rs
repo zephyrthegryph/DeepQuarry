@@ -47,6 +47,10 @@ pub(crate) trait Source{
  fn visit_own_declared_variables(&self,emit:&mut dyn FnMut(&str,&str)->Result<(),Failure>)->Result<(),Failure>{visit_own_declared_variables_original(self,emit)}
  fn visit_setter_call_files(&self,emit:&mut dyn FnMut(&str,&str,&str)->Result<(),Failure>)->Result<(),Failure>{if !self.with_policy_files(&mut|relative,views|{let raw=views.raw()?;if !crate::auto_setter_calls_policy::wants_file(relative,raw){return Ok(true)}emit(relative,raw,&views.code()?.text)?;Ok(true)})?{return Err("original setter-call traversal incomplete".into())}self.checkpoint()?;self.require()}
  fn complete_inputs(&self)->Option<&dm_analysis::policy_inputs::PolicyInputs>{None}
+ fn plans_marker_rows(&self)->Result<crate::captured_marker_rows::Rows<'_>,Failure>;
+ fn with_plan_metadata_files(&self,visit:&mut dyn FnMut(&str,crate::captured_raw_file::RawPolicyViews<'_>,bool)->Result<bool,Failure>)->Result<bool,Failure>;
+ fn with_plan_reader_file(&self,ordinal:usize,name:&str,visit:&mut dyn FnMut(&str,crate::captured_raw_file::RawPolicyViews<'_>)->Result<(),Failure>)->Result<(),Failure>;
+ fn has_original_body(&self,member:dm_tree::MemberId)->Result<bool,Failure>;
  fn tree(&self)->&dm_tree::SemanticTree;
  fn budget(&self)->&Arc<Budget>;
  /// Actual operation root only for physical child scratch; not cache/source authority.
@@ -64,6 +68,11 @@ pub(crate) trait Source{
  fn with_budget(&self,budget:&Arc<Budget>,consume:&mut dyn FnMut(&dyn Source)->Result<(),Failure>)->Result<(),Failure>;
 }
 impl Source for ReadSource<'_>{
+ fn plans_marker_rows(&self)->Result<crate::captured_marker_rows::Rows<'_>,Failure>{self.plans_marker_rows()}
+ fn with_plan_metadata_files(&self,visit:&mut dyn FnMut(&str,crate::captured_raw_file::RawPolicyViews<'_>,bool)->Result<bool,Failure>)->Result<bool,Failure>{self.with_plan_metadata_files(visit)}
+ fn with_plan_reader_file(&self,ordinal:usize,name:&str,visit:&mut dyn FnMut(&str,crate::captured_raw_file::RawPolicyViews<'_>)->Result<(),Failure>)->Result<(),Failure>{self.with_plan_reader_file(ordinal,name,visit)}
+ fn has_original_body(&self,member:dm_tree::MemberId)->Result<bool,Failure>{self.require()?;Ok(self.inputs().archive().callables().ordinal(member).is_some())}
+
  fn dependency_marker_rows(&self,poll:&mut dyn FnMut()->std::io::Result<()>)->Result<crate::captured_marker_rows::Rows<'_>,Failure>{self.dependency_marker_rows()}
  fn member_has_source(&self,member:dm_tree::MemberId)->Result<bool,Failure>{Ok(self.inputs().archive().member_location(member).is_some())}
  fn with_header_line(&self,member:dm_tree::MemberId,consume:&mut dyn FnMut(&str,usize,&str)->Result<(),Failure>)->Result<(),Failure>{self.with_original_header_line(member,consume)}

@@ -22,6 +22,8 @@ use crate::checker_prefix_demand::{Demand as PrefixDemand,Compatibility as Prefi
 pub enum TypeFact {
     Known(SymbolId),
     List(Option<SymbolId>),
+    /// Recursive list shape from the existing original parameter/local issuer.
+    NestedList{depth:usize,element:Option<SymbolId>},
     Unknown,
     Unhinted,
     ReturnHint(crate::checker_return_facts::ReturnFixHint, Span),
@@ -38,7 +40,7 @@ impl TypeFact {
     fn receiver(self) -> Result<Option<SymbolId>, String> {
         match self {
             Self::Known(owner) => Ok(Some(owner)),
-            Self::List(_) => Ok(Some(SymbolId::of("/list"))),
+            Self::List(_) | Self::NestedList{..} => Ok(Some(SymbolId::of("/list"))),
             Self::Unknown | Self::Unhinted | Self::ReturnHint(..) => Ok(None),
             Self::Deferred(reason) => Err(reason.into()),
         }
@@ -216,8 +218,16 @@ impl LocalFact {
         }
     }
 }
-struct Walker<'a, 'r, R: ?Sized,D=PrefixCompatibility> {
+/// Borrowed pre-RHS hook in the existing evaluated call transition.
+/// The callback may retain source metadata, never the temporary CallableFact.
+pub(crate) trait KeywordObserver<E>{fn begin_call(&mut self,tree:&SemanticTree,fact:&CallableFact,name:&str)->Result<(),E>;fn accepted_argument(&mut self,tree:&SemanticTree,fact:&CallableFact,receiver:SymbolId,name:&str,key:&Expr,at:Span)->Result<(),E>;}
+/// Untagged original call-argument errors at the same pre-RHS transition.
+pub(crate) trait ArgumentObserver<E>{fn begin_call(&mut self,tree:&SemanticTree,fact:&CallableFact,name:&str)->Result<(),E>;fn argument(&mut self,tree:&SemanticTree,fact:&CallableFact,name:&str,key:Option<&Expr>,after_keyword:bool,at:Option<Span>,expression:Span)->Result<(),E>;}
+#[derive(Clone,Copy)]struct KeywordCall<'c>{fact:&'c CallableFact,receiver:SymbolId,name:&'c str,at:Option<Span>,expression:Span,exact:bool}
+struct Walker<'a, 'r, R: ?Sized,D:PrefixDemand=PrefixCompatibility> {
     prefix_demand:D,
+    keywords:Option<&'r mut dyn KeywordObserver<D::Error>>,
+    argument_errors:Option<&'r mut dyn ArgumentObserver<D::Error>>,
     tree: &'a SemanticTree,
     prefix_archive: Option<&'a BodyArchive>,
     local_syntax: &'a dm_syntax::LocalVariableLedger,
@@ -236,6 +246,7 @@ struct Walker<'a, 'r, R: ?Sized,D=PrefixCompatibility> {
     evaluation_anchor: Option<crate::checker_effects::CallOrigin>,
     statement_root: Option<&'a Expr>,
     scope_denied_depth: usize,
+    access: Option<crate::checks_proc_visibility::Access<'a>>,
 }
 impl<'a,'r,R:Resolver+?Sized> Walker<'a,'r,R,PrefixCompatibility>{
 fn new(
@@ -323,6 +334,8 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         }
         Ok(Walker {
             prefix_demand,
+            keywords:None,
+            argument_errors:None,
             tree,
             prefix_archive,
             local_syntax,
@@ -341,6 +354,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             evaluation_anchor: None,
             statement_root: None,
             scope_denied_depth: 0,
+            access: None,
         })
     }
     fn local_entry_bound() -> usize {
@@ -353,6 +367,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             .saturating_add(64)
     }
     fn check_effect_admission(&self) -> Result<(), D::Error> {
+        self.prefix_demand.checkpoint()?;
         if let Some(effects) = &self.effects {
             effects.transient.charge(0)?
         }
@@ -366,6 +381,8 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         Ok(())
     }
     fn event(&mut self, event: Event<'a>) -> Result<(), D::Error> {
+        if self.access.is_some(){return self.prefix_demand.checkpoint()}
+
         if let Some(effects) = &self.effects {
             effects.transient.push(&mut self.events, event)?
         } else {
@@ -549,19 +566,24 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             fact.metadata.list_element_type,
         ).map_err(D::Error::from)
     }
-    fn arguments(&mut self, args: &'a [Expr]) -> Result<(), D::Error> {
-        for argument in args {
-            let value = match &argument.kind {
-                ExprKind::Binary { op, lhs, rhs } if op == "=" && kwarg_key(lhs)? => rhs.as_ref(),
-                _ => argument,
-            };
-            let previous = self.in_arguments;
-            self.in_arguments = true;
-            let result = self.expression(value, None);
-            self.in_arguments = previous;
-            result?;
-        }
-        Ok(())
+    fn arguments(&mut self,args:&'a [Expr])->Result<(),D::Error>{self.arguments_for_call(args,None)}
+    fn arguments_for_call(&mut self,args:&'a [Expr],call:Option<KeywordCall<'_>>)->Result<(),D::Error>{
+      if let(Some(call),Some(observer))=(call,self.keywords.as_mut()){observer.begin_call(self.tree,call.fact,call.name)?;}
+      if let(Some(call),Some(observer))=(call,self.argument_errors.as_mut()){observer.begin_call(self.tree,call.fact,call.name)?;}
+      let mut any_keywords=false;
+      for argument in args {
+        let (key,value)=match &argument.kind{ExprKind::Binary{op,lhs,rhs}if op=="="&&kwarg_key_mode(lhs,self.access.is_some())?=>(Some(lhs.as_ref()),rhs.as_ref()),_=>(None,argument)};
+        // Original visit_call records the accepted key BEFORE visiting its
+        // RHS. The enclosing call therefore wins this key before nested calls.
+        any_keywords|=key.is_some();
+        if let(Some(call),Some(observer))=(call,self.argument_errors.as_mut()){observer.argument(self.tree,call.fact,call.name,key,key.is_none()&&any_keywords,call.at,call.expression)?;}
+        if let(Some(call),Some(key),Some(observer))=(call.filter(|call|!call.exact),key,self.keywords.as_mut()){observer.accepted_argument(self.tree,call.fact,call.receiver,call.name,key,call.at.ok_or("virtual keyword call lacks original source point")?)?;}
+        let previous=self.in_arguments;self.in_arguments=true;let result=self.expression(value,None);self.in_arguments=previous;result?;
+      }Ok(())
+    }
+    fn exact_policy_arguments(&mut self,args:&'a[Expr],at:Span,expression:Span,parent:bool)->Result<(),D::Error>{
+        let target=if let Some(access)=self.access.as_mut(){let target=access.explicit_fact(parent,self.resolver,self.profile,&self.prefix_demand)?.ok_or("issued exact source call disappeared")?;access.call(&target,self.owner,false,Some(at),expression,self.resolver,self.profile,&self.prefix_demand)?;Some(target)}else{None};
+        if self.argument_errors.is_some(){let target=target.ok_or("argument diagnostic exact call lacks its actual source context")?;let name=match &target{CallableFact::Source{identity,..}=>identity.name,CallableFact::CheckerBuiltin{name,..}=>*name,CallableFact::Missing=>return Err("argument exact target is missing".into())};let actual=crate::checker_effects::callable_target(self.tree,self.profile,&target)?;let catalog=dm_tree::checker_builtins::pinned_catalog().map_err(|e|format!("argument exact catalog: {e:?}"))?;let name=if matches!(actual,crate::checker_effects::EffectTarget::Builtin(_)){catalog.spelling(name)}else{self.tree.symbols().text(name)}.ok_or("argument exact target spelling unavailable")?;self.arguments_for_call(args,Some(KeywordCall{fact:&target,receiver:self.owner,name,at:Some(at),expression,exact:true}))}else{self.arguments(args)}
     }
     fn invalidate_local_name(&mut self, name: SymbolId) {
         let Some(current) = self.locals.get_mut(&name) else {
@@ -716,7 +738,12 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             // Exact old missing-callee branch never evaluates arguments.
             return Ok(TypeFact::Unknown);
         }
-        if member_follow {
+        if let Some(access)=self.access.as_mut(){
+            let expression=match site{EvaluationCallSite::Written(expression)=>expression.span,EvaluationCallSite::ImplicitList(_)=>at};
+            let origin=match site{EvaluationCallSite::Written(_)=>Some(at),EvaluationCallSite::ImplicitList(_)=>None};
+            if access.call(&fact,receiver,member_follow,origin,expression,self.resolver,self.profile,&self.prefix_demand)?{return Ok(TypeFact::Unknown)}
+        }
+        if member_follow && self.access.is_none() {
             // Pinned Follow::Call checks inherited private directives BEFORE
             // visit_call/argument visitation. Source annotations on an older
             // ancestor can affect even a nearer builtin implementation.
@@ -767,7 +794,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 }
             }
         }
-        if let Some(metadata) = fact.metadata() {
+        if self.access.is_none(){ if let Some(metadata) = fact.metadata() {
             let metadata = metadata
                 .procedure
                 .as_ref()
@@ -794,6 +821,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                         *identity, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|&effects.transient)))?;
                 }
             }
+        }
         }
         if self.effects.is_some() {
             let target = crate::checker_effects::callable_target(self.tree, self.profile, &fact)?;
@@ -888,12 +916,17 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             }
         }
         match site {
-            EvaluationCallSite::Written(_) => self.arguments_at(args, at)?,
+            EvaluationCallSite::Written(_) => {
+                let previous=self.evaluation_anchor.replace(crate::checker_effects::CallOrigin::Source(at));
+                let expression=match site{EvaluationCallSite::Written(expression)=>expression.span,EvaluationCallSite::ImplicitList(_)=>at};
+                let result=self.arguments_for_call(args,Some(KeywordCall{fact:&fact,receiver,name,at:Some(at),expression,exact}));
+                self.evaluation_anchor=previous;result?;
+            },
             EvaluationCallSite::ImplicitList(initializer) => {
                 let saved = self.evaluation_anchor.replace(
                     crate::checker_effects::CallOrigin::ImplicitList(initializer.origin),
                 );
-                let result = self.arguments(args);
+                let result = self.arguments_for_call(args,Some(KeywordCall{fact:&fact,receiver,name,at:None,expression:at,exact:true}));
                 self.evaluation_anchor = saved;
                 result?;
             }
@@ -1156,7 +1189,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 }
             }
             ExprKind::Literal(text) => {
-                if let Some(parts) = text.parts().map_err(str::to_owned)? {
+                if let Some(parts) = (if self.access.is_some(){text.syntax_parts()}else{text.parts()}).map_err(str::to_owned)? {
                     parts
                         .lexical
                         .map_err(|e| format!("checker literal context unsupported: {e:?}"))?;
@@ -1265,7 +1298,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 // Exact pinned visit_binary: only these LHS-list operations
                 // retain a static list type. Every other binary is empty.
                 Ok(
-                    if matches!(left, TypeFact::List(_))
+                    if matches!(left, TypeFact::List(_)|TypeFact::NestedList{..})
                         && matches!(op.as_str(), "+" | "-" | "|" | "&" | "^")
                     {
                         left
@@ -1289,6 +1322,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                     )
                 }
                 ExprKind::Ident(name) if name == ".." => {
+                    if let Some(access)=self.access.as_mut(){access.parent_call();}
                     let fact = checks_parent_call::parent_fact_in_profile(
                         self.tree,
                         self.member,
@@ -1303,13 +1337,13 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                         })?;
                         return Ok(TypeFact::Unknown);
                     }
-                    self.arguments(args)?;
+                    self.exact_policy_arguments(args,callee.span,expression.span,true)?;
                     Ok(TypeFact::Deferred(
                         "parent return/directive context not yet projected",
                     ))
                 }
                 ExprKind::Ident(name) if name == "." => {
-                    self.arguments(args)?;
+                    self.exact_policy_arguments(args,callee.span,expression.span,false)?;
                     Ok(TypeFact::Deferred(
                         "self-call return/directive context not yet projected",
                     ))
@@ -1472,12 +1506,15 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 let base = self.expression(object, None)?;
                 let impurity = self.last_impurity;
                 self.expression(index, None)?;
-                self.last_impurity = if matches!(base, TypeFact::List(_)) {
+                self.last_impurity = if matches!(base, TypeFact::List(_)|TypeFact::NestedList{..}) {
                     None
                 } else {
                     impurity
                 };
                 match base {
+                    TypeFact::NestedList{depth:2,element}=>Ok(TypeFact::List(element)),
+                    TypeFact::NestedList{depth,element}if depth>2=>Ok(TypeFact::NestedList{depth:depth-1,element}),
+                    TypeFact::NestedList{..}=>Err("recursive list fact has invalid issued depth".into()),
                     TypeFact::List(element) => {
                         checked_type(self.tree, self.resolver, element, None).map_err(D::Error::from)
                     }
@@ -1490,7 +1527,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 // The original parser issued this operator + operand shape.
                 // Verify its primary token bytes before evaluating the operand.
                 let _at = increment_origin(self.source, expression, value, op)?;
-                if self.effects.is_some() {
+                if self.effects.is_some() || self.access.is_some() {
                     let operand = self.expression(value, None)?;
                     let operator = if op.ends_with("++") {
                         "operator++"
@@ -1541,7 +1578,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                                 ),
                             }
                         }
-                        TypeFact::List(_) => {
+                        TypeFact::List(_) | TypeFact::NestedList{..} => {
                             self.immediate_effect("operator_overload",crate::checks::Severity::Error,_at,
                             format_args!("Attempting {operator} on a list which does not overload {operator}"),Vec::new())?;
                             Ok(TypeFact::Unhinted)
@@ -1755,36 +1792,19 @@ fn checked_parameter_type(
     let Some(path) = path else {
         return Ok(TypeFact::Unknown);
     };
-    let (owner, element) = if path == "/list" {
-        ("/list", None)
-    } else if let Some(element) = path.strip_prefix("/list/") {
-        // Borrow the slash already present in the original projected String.
-        let _ = element;
-        ("/list", Some(&path[5..]))
-    } else {
-        (path, None)
-    };
-    for spelling in std::iter::once(owner).chain(element) {
-        if !tree
-            .checker_source_type_presence(profile, spelling)
-            .map_err(|e| format!("parameter checker source type proof: {e:?}"))?
-        {
-            return Err("parameter checker type needs undefined-type diagnostic projection".into());
-        }
-        let id = SymbolId::of(spelling);
-        let query = Q::Type(id);
-        let expected = Resolver::resolve(tree, query);
-        if expected != M::Symbol(id) || resolver.resolve(query) != expected {
-            return Err("parameter checker type differs from current native resolver".into());
-        }
+    if path.is_empty(){return Err("parameter checker type spelling is empty".into())}
+    // The privately issued path already encodes every leading list layer and
+    // the declaration suffix. Decode that shape once; do not flatten it into
+    // an invented /list/subtype node or strip source modifiers again.
+    let mut remaining=path;let mut depth=0usize;
+    loop{if remaining=="/list"{depth=depth.checked_add(1).ok_or("recursive list depth overflow")?;remaining="";break}else if remaining.starts_with("/list/"){depth=depth.checked_add(1).ok_or("recursive list depth overflow")?;remaining=&remaining[5..];}else{break}}
+    let element=(!remaining.is_empty()).then_some(remaining);
+    for spelling in (depth>0).then_some("/list").into_iter().chain(element){
+        if !tree.checker_source_type_presence(profile,spelling).map_err(|e|format!("parameter checker source type proof: {e:?}"))?{return Err("parameter checker type needs undefined-type diagnostic projection".into())}
+        let id=SymbolId::of(spelling);let query=Q::Type(id);let expected=Resolver::resolve(tree,query);if expected!=M::Symbol(id)||resolver.resolve(query)!=expected{return Err("parameter checker type differs from current native resolver".into())}
     }
-    if element.is_some_and(|v| v == "/list" || v.starts_with("/list/")) {
-        return Err("nested-list parameter needs recursive native type projection".into());
-    }
-    Ok(TypeFact::declared(
-        Some(SymbolId::of(owner)),
-        element.map(SymbolId::of),
-    ))
+    Ok(match depth{0=>TypeFact::Known(SymbolId::of(path)),1=>TypeFact::List(element.map(SymbolId::of)),_=>TypeFact::NestedList{depth,element:element.map(SymbolId::of)}})
+
 }
 fn checked_type(
     tree: &SemanticTree,
@@ -1841,10 +1861,11 @@ fn checked_type_impl(
     }
     Ok(TypeFact::declared(owner, element))
 }
-fn kwarg_key(expression: &Expr) -> Result<bool, String> {
+fn kwarg_key(expression:&Expr)->Result<bool,String>{kwarg_key_mode(expression,false)}
+fn kwarg_key_mode(expression: &Expr,original:bool) -> Result<bool, String> {
     Ok(match &expression.kind {
         ExprKind::Ident(_) => true,
-        ExprKind::Literal(text) => match text.parts().map_err(str::to_owned)? {
+        ExprKind::Literal(text) => match (if original{text.syntax_parts()}else{text.parts()}).map_err(str::to_owned)? {
             Some(parts) => {
                 !parts
                     .lexical
@@ -2166,4 +2187,29 @@ fn blocking_call_reason_using<D:PrefixDemand>(
         }
     }
     Ok(None)
+}
+
+/// One evaluated call walk, with the original private/protected checks at its
+/// existing before-argument transition. No second call or statement traversal.
+pub(crate) fn procedure_visibility_archived<'a>(archive:&'a BodyArchive,body:&'a ArchivedBody<'_>,resolver:&(impl Resolver+?Sized),profile:PackedU128,family:crate::checks_proc_visibility::Family,severity:crate::checks::Severity,checkpoint:&dyn Fn()->std::io::Result<()>)->Result<Vec<crate::checks_proc_visibility::Row>,crate::policy_body_demand::PolicyFailure>{
+ if !body.belongs_to(archive)||!body.statement_body().original_literal_syntax_complete(){return Err("procedure visibility body is foreign or incomplete".into())}
+ let demand=crate::checker_prefix_demand::Policy{checkpoint};let mut walker=Walker::new_using(archive.tree(),Some(archive),&body.statement_body().parsed().local_variables,archive.expanded_source(),body.occurrence(),body.checker_parameters(profile)?,resolver,profile,None,demand)?;
+ walker.access=Some(crate::checks_proc_visibility::Access::new(archive,body,family,severity)?);crate::checker_reachable::archived_original_syntax_with_observer_using(body,&mut walker)?;walker.check_effect_admission()?;walker.access.take().expect("issued procedure visibility policy").finish(resolver,profile,&walker.prefix_demand)
+}
+
+/// Whole-frame keyword folding borrows this exact evaluated visitor; no events
+/// or per-body keyword findings are published or cached.
+pub(crate) fn keyword_calls_archived(archive:&BodyArchive,body:&ArchivedBody<'_>,resolver:&(impl Resolver+?Sized),profile:PackedU128,checkpoint:&dyn Fn()->std::io::Result<()>,observer:&mut dyn KeywordObserver<crate::policy_body_demand::PolicyFailure>)->Result<(),crate::policy_body_demand::PolicyFailure>{
+ if !body.belongs_to(archive)||!body.statement_body().original_literal_syntax_complete(){return Err("keyword call body is foreign or incomplete".into())}
+ let demand=crate::checker_prefix_demand::Policy{checkpoint};
+ let mut walker=Walker::new_using(archive.tree(),Some(archive),&body.statement_body().parsed().local_variables,archive.expanded_source(),body.occurrence(),body.checker_parameters(profile)?,resolver,profile,None,demand)?;
+ walker.access=Some(crate::checks_proc_visibility::Access::for_keyword_calls(archive,body)?);walker.keywords=Some(observer);
+ crate::checker_reachable::archived_original_syntax_with_observer_using(body,&mut walker)?;walker.check_effect_admission()?;Ok(())
+}
+
+/// Untagged call diagnostics share the original evaluated pre-RHS seam.
+pub(crate) fn call_arguments_archived(archive:&BodyArchive,body:&ArchivedBody<'_>,resolver:&(impl Resolver+?Sized),profile:PackedU128,checkpoint:&dyn Fn()->std::io::Result<()>,observer:&mut dyn ArgumentObserver<crate::policy_body_demand::PolicyFailure>)->Result<(),crate::policy_body_demand::PolicyFailure>{
+ if !body.belongs_to(archive)||!body.statement_body().original_literal_syntax_complete(){return Err("argument call body is foreign or incomplete".into())}
+ let demand=crate::checker_prefix_demand::Policy{checkpoint};let mut walker=Walker::new_using(archive.tree(),Some(archive),&body.statement_body().parsed().local_variables,archive.expanded_source(),body.occurrence(),body.checker_parameters(profile)?,resolver,profile,None,demand)?;
+ walker.access=Some(crate::checks_proc_visibility::Access::for_keyword_calls(archive,body)?);walker.argument_errors=Some(observer);crate::checker_reachable::archived_original_syntax_with_observer_using(body,&mut walker)?;walker.check_effect_admission()?;Ok(())
 }

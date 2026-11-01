@@ -28,7 +28,7 @@ static META: Meta = Meta {
         name: "internal_organs",
         hint: "use organ_in(tag), INTERNAL_ORGANS(M) or limb.held_organs() (code/modules/body/parts/queries.dm)",
     }],
-    allow: &["organ_slots"],
+    allow: crate::allow_registry_fields::organ_slots::ALLOW_0,
     lists: &[],
 };
 

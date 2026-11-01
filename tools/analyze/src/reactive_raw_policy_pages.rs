@@ -14,6 +14,9 @@ pub trait RawPolicyPages{
 
  /// Requested original callable file DATA only. Ordinary page providers do not
  /// implicitly grant an arbitrary-path or compiled-source loan.
+ /// One setter header DATA loan authenticated by its actual current member.
+ /// This cannot grant whole-file CODE coverage or a generic raw-file view.
+ fn with_setter_header(&self,_member:dm_tree::MemberId,_name:&str,_visit:&mut dyn FnMut(&str,usize,&str)->Result<(),Failure>)->Result<(),Failure>{Err(Failure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"actual setter header original source loan unavailable")))}
  fn with_callable_file(&self,_ordinal:usize,_name:&str,_visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<(),Failure>)->Result<(),Failure>{Err(Failure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"Plans requires the genuine original raw file of every issued reader definition")))}
 
  fn for_each(&self,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>;

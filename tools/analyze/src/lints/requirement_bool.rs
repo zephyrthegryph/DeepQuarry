@@ -32,7 +32,7 @@ static META: Meta = Meta {
         name: "legacy_macro",
         hint: "the requirement macro compiler was retired: use native null-or-reason requirements in acceptance() or needs()",
     }],
-    allow: &[],
+    allow: crate::allow_registry_fields::requirement_bool::ALLOW_0,
     lists: &["retired_macros"],
 };
 

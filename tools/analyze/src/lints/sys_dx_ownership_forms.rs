@@ -14,18 +14,7 @@ use crate::pat;
 use crate::tree::{SourceFile, Tree};
 use crate::util::{before_slashes, is_py_space};
 
-const RULES: &[RuleMeta] = &[
-    RuleMeta {
-        name: "old_ownership_macro",
-        hint: "ownership() with owns()/shares()/proto() and relations() with rel_one()/rel_many()/rel_key() (ownership.md §1.2, §4.1)",
-    },
-    RuleMeta { name: "old_destroy_macro", hint: "an override of the well-known teardown proc (destroy_step/destroy_capture/destroy_after) (ownership.md §6)" },
-    RuleMeta { name: "string_accessor_var", hint: "nameof(var) / nameof(/type::var) for the var name of an own_*/rel_*/proto_* accessor (ownership.md §1.2)" },
-    RuleMeta {
-        name: "owned_twice",
-        hint: "drop the ownership() line: the capability (cap_slot) already owns this var through its owned() entries (ownership.md §1.2)",
-    },
-];
+use crate::allow_registry_fields::sys_dx_ownership_forms::RULES;
 
 /// The same type, or one an ancestor of the other.
 fn related(a: &str, b: &str) -> bool {

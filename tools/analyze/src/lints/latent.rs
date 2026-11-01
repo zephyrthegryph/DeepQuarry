@@ -42,7 +42,7 @@ static META: Meta = Meta {
         banned: &[],
     },
     rules: &[RuleMeta { name: "raw_walks", hint: HINT }],
-    allow: &["latent"],
+    allow: crate::allow_registry_fields::latent::ALLOW_0,
     lists: &[],
 };
 

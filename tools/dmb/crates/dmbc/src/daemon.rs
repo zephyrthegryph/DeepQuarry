@@ -21,6 +21,7 @@ mod windows_spawn;
 mod protocol;
 pub mod query;
 pub mod generation;
+pub mod analyze;
 pub mod resident;
 mod service;
 mod transport;
@@ -144,6 +145,13 @@ fn hash_compiler_image() -> io::Result<u128> {
 pub fn route(
     request: crate::request::BuildRequest,
 ) -> Result<crate::request::BuildOutcome, Box<dyn std::error::Error>> {
+    route_with_diagnostics(request, &mut |stdout, bytes| { use std::io::Write; if stdout { io::stdout().lock().write_all(bytes) } else { io::stderr().lock().write_all(bytes) } })
+}
+/// Same resident preparation path with caller-owned diagnostic publication.
+fn route_with_diagnostics(
+    request: crate::request::BuildRequest,
+    diagnostic: &mut dyn FnMut(bool, &[u8])->io::Result<()>,
+)->Result<crate::request::BuildOutcome,Box<dyn std::error::Error>> {
     let mut request = request;
     if request.cache_root.is_none() {
         request.cache_root = Some(crate::request::client_cache_root()?);
@@ -181,12 +189,7 @@ pub fn route(
                         match protocol::receive::<protocol::Reply>(&mut stream)? {
                             protocol::Reply::Accepted => {}
                             protocol::Reply::Diagnostic { stdout, bytes } => {
-                                use std::io::Write;
-                                if stdout {
-                                    io::stdout().lock().write_all(&bytes)?;
-                                } else {
-                                    io::stderr().lock().write_all(&bytes)?;
-                                }
+                                diagnostic(stdout, &bytes)?;
                             }
                             protocol::Reply::Completed(outcome) => return Ok(outcome),
                             protocol::Reply::Rejected(error) => return Err(error.into()),

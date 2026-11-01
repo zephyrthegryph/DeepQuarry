@@ -27,18 +27,92 @@ fn number(row: &Value, name: &str) -> io::Result<usize> {
         .and_then(|n| usize::try_from(n).ok())
         .ok_or_else(|| invalid("invalid page number"))
 }
+/// Shape-only serde visitors. No interpreted scope payload is retained here.
+/// Escaped strings use serde_json's one reusable token scratch; unescaped
+/// strings are borrowed directly from the already-captured JSON projection.
+#[derive(Clone,Copy)]enum ScopeShape{Strings,Lists,Tables,Table,Ceilings,String,Integer}
+impl<'de> serde::de::DeserializeSeed<'de> for ScopeShape{
+ type Value=();
+ fn deserialize<D:serde::Deserializer<'de>>(self,deserializer:D)->Result<(),D::Error>{match self{
+  Self::Strings=>deserializer.deserialize_seq(ScopeStrings),
+  Self::Lists|Self::Tables|Self::Table|Self::Ceilings=>deserializer.deserialize_map(ScopeMap(self)),
+  Self::String=>deserializer.deserialize_str(ScopeString),
+  Self::Integer=>deserializer.deserialize_i64(ScopeInteger),
+ }}
+}
+struct ScopeString;
+impl<'de> serde::de::Visitor<'de> for ScopeString{
+ type Value=();fn expecting(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.write_str("an interpreted scope string")}
+ fn visit_str<E:serde::de::Error>(self,_:&str)->Result<(),E>{Ok(())}
+}
+struct ScopeInteger;
+impl<'de> serde::de::Visitor<'de> for ScopeInteger{
+ type Value=();fn expecting(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.write_str("an interpreted scope i64 ceiling")}
+ fn visit_i64<E:serde::de::Error>(self,_:i64)->Result<(),E>{Ok(())}
+ fn visit_u64<E:serde::de::Error>(self,value:u64)->Result<(),E>{i64::try_from(value).map(|_|()).map_err(|_|E::invalid_value(serde::de::Unexpected::Unsigned(value),&self))}
+}
+struct ScopeStrings;
+impl<'de> serde::de::Visitor<'de> for ScopeStrings{
+ type Value=();fn expecting(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.write_str("an interpreted scope string list")}
+ fn visit_seq<A:serde::de::SeqAccess<'de>>(self,mut sequence:A)->Result<(),A::Error>{while sequence.next_element_seed(ScopeShape::String)?.is_some(){}Ok(())}
+}
+struct ScopeMap(ScopeShape);
+impl<'de> serde::de::Visitor<'de> for ScopeMap{
+ type Value=();fn expecting(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.write_str("an interpreted scope map")}
+ fn visit_map<A:serde::de::MapAccess<'de>>(self,mut map:A)->Result<(),A::Error>{
+  let value=match self.0{ScopeShape::Lists=>ScopeShape::Strings,ScopeShape::Tables=>ScopeShape::Table,ScopeShape::Table=>ScopeShape::String,ScopeShape::Ceilings=>ScopeShape::Integer,_=>return Err(serde::de::Error::custom("invalid internal scope map shape"))};
+  while map.next_key_seed(ScopeShape::String)?.is_some(){map.next_value_seed(value)?;}Ok(())
+ }
+}
+struct ScopeTuple;
+struct NoExtraScopePart;
+impl<'de> serde::de::DeserializeSeed<'de> for NoExtraScopePart{
+ type Value=();fn deserialize<D:serde::Deserializer<'de>>(self,_:D)->Result<(),D::Error>{Err(serde::de::Error::custom("extra interpreted scope tuple field"))}
+}
+impl<'de> serde::de::Visitor<'de> for ScopeTuple{
+ type Value=();fn expecting(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.write_str("exactly seven interpreted scope fields")}
+ fn visit_seq<A:serde::de::SeqAccess<'de>>(self,mut sequence:A)->Result<(),A::Error>{
+  for(index,shape)in [ScopeShape::Strings,ScopeShape::Strings,ScopeShape::Strings,ScopeShape::Lists,ScopeShape::Tables,ScopeShape::Ceilings,ScopeShape::Strings].into_iter().enumerate(){if sequence.next_element_seed(shape)?.is_none(){return Err(serde::de::Error::invalid_length(index,&self))}}
+  // Reject an eighth value before traversing even a deeply nested payload.
+  let _:Option<()>=sequence.next_element_seed(NoExtraScopePart)?;Ok(())
+ }
+}
+/// Existing outer DOM only: scalar capacity census plus the already-established
+/// conservative standard-map node envelope. No rows or strings are copied.
+/// This does not qualify the preexisting outer JSON parser as a hard RSS bound.
+fn report_value_backing(value:&Value)->Option<usize>{match value{
+ Value::String(text)=>Some(text.capacity()),
+ Value::Array(rows)=>rows.iter().try_fold(rows.capacity().checked_mul(std::mem::size_of::<Value>())?,|n,value|n.checked_add(report_value_backing(value)?)),
+ Value::Object(rows)=>rows.iter().try_fold(rows.len().checked_mul(1024usize.checked_add(std::mem::size_of::<String>())?.checked_add(std::mem::size_of::<Value>())?)?,|n,(key,value)|n.checked_add(key.capacity())?.checked_add(report_value_backing(value)?)),
+ _=>Some(0),
+}}
+fn scope_projection(text:&str,outer_live:usize)->io::Result<()> {
+ // serde_json reuses ONE Vec for escaped-token decoding. Decoded UTF8 cannot
+ // exceed the encoded projection, and amortized Vec growth is covered by 2x.
+ // No per-element Value/Vec/map/String owner is constructed by these visitors.
+ let scratch=text.len().checked_mul(2).and_then(|n|n.checked_add(1024));
+ if scratch.and_then(|n|outer_live.checked_add(n)).is_none_or(|n|n>crate::query_db::QueryDb::workspace_raw_report_reserve()){
+  return Err(io::Error::new(io::ErrorKind::OutOfMemory,"interpreted scope validation exceeds existing report allowance"))
+ }
+ let mut deserializer=serde_json::Deserializer::from_str(text);
+ serde::Deserializer::deserialize_tuple(&mut deserializer,7,ScopeTuple).map_err(|_|invalid("invalid interpreted scope JSON"))?;
+ deserializer.end().map_err(|_|invalid("trailing interpreted scope JSON"))
+}
+
 pub(super) fn reads_policy(q: &SourceQuery) -> bool {
-    matches!(q, SourceQuery::NativeWorkspaceRawPolicy { .. })
+    matches!(q, SourceQuery::NativeWorkspaceRawPolicy { .. }|SourceQuery::NativeWorkspaceRawReportPage{..}|SourceQuery::NativeWorkspaceHygieneReportPage{..})
 }
 pub(super) fn validate_request(request: &QueryRequest) -> io::Result<()> {
     for question in &request.source_queries {
+        if let SourceQuery::NativeWorkspaceHygieneReportPage{root,configuration,lints,limit,..}=question{if !root.is_absolute()||!configuration.is_absolute()||request.expected_policy_revision.is_none()||!(1..=128).contains(limit)||lints.len()!=1||lints[0]!="sys/hygiene"{return Err(invalid("exact completed Hygiene domain request required"))}continue;}
+        if let SourceQuery::NativeWorkspaceSysReportPage{root,configuration,lints,limit,..}=question{if !root.is_absolute()||!configuration.is_absolute()||request.expected_policy_revision.is_none()||!(1..=128).contains(limit)||lints.len()!=1||!["sys/resolvers","sys/tables","system_boundary"].contains(&lints[0].as_str()){return Err(invalid("exact completed Sys-family domain request required"))}continue;}
         if let SourceQuery::NativeWorkspaceRawPolicy {
             root,
             configuration,
             lints,
             limit,
             ..
-        } = question
+        } | SourceQuery::NativeWorkspaceRawReportPage{root,configuration,lints,limit,..} = question
         {
             if !root.is_absolute()
                 || !configuration.is_absolute()
@@ -62,6 +136,7 @@ pub(super) fn validate_request(request: &QueryRequest) -> io::Result<()> {
     Ok(())
 }
 pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) -> io::Result<()> {
+    if reply.jsonl.len()>super::MAX_OUTPUT{return Err(invalid("workspace report exceeds existing wire bound"))}
     let wanted = questions
         .iter()
         .filter_map(|q| match q {
@@ -71,19 +146,21 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
                 lints,
                 cursor,
                 limit,
-            } => Some((root, configuration, lints, cursor, limit)),
+            } | SourceQuery::NativeWorkspaceRawReportPage{root,configuration,lints,cursor,limit} | SourceQuery::NativeWorkspaceHygieneReportPage{root,configuration,lints,cursor,limit} | SourceQuery::NativeWorkspaceSysReportPage{root,configuration,lints,cursor,limit} => Some((root, configuration, lints, cursor, limit,matches!(q,SourceQuery::NativeWorkspaceRawReportPage{..}),matches!(q,SourceQuery::NativeWorkspaceHygieneReportPage{..}),matches!(q,SourceQuery::NativeWorkspaceSysReportPage{..}))),
             _ => None,
         })
         .collect::<Vec<_>>();
     let mut observed = 0;
     for line in reply.jsonl.lines() {
         let row: Value = serde_json::from_str(line).map_err(|_| invalid("invalid JSONL"))?;
-        if row["row"] != "source_native_workspace_raw_policy" {
+        if row["row"] != "source_native_workspace_raw_policy" && row["row"] != "source_native_workspace_raw_report" && row["row"]!="source_native_workspace_hygiene_report" && row["row"]!="source_native_workspace_sys_report" {
             continue;
         }
-        let (root, configuration, lints, cursor, limit) = wanted
+        let (root, configuration, lints, cursor, limit,complete,hygiene,sys) = wanted
             .get(observed)
             .ok_or_else(|| invalid("unrequested page"))?;
+        if *hygiene&&(lints.len()!=1||lints[0]!="sys/hygiene"){return Err(invalid("Hygiene request names differ from actual issuer"))}
+        if *sys&&(lints.len()!=1||!["sys/resolvers","sys/tables","system_boundary"].contains(&lints[0].as_str())){return Err(invalid("Sys request name differs from actual issuer"))}
         exact(
             &row,
             &[
@@ -109,6 +186,7 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
                 "total_items",
                 "next_cursor",
                 "items",
+                "policy_scopes",
             ],
         )?;
         if row["schema"] != "dm-session-source-query-v1"
@@ -123,18 +201,29 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
                 != serde_json::to_value(configuration).map_err(io::Error::other)?
             || row["requested_lints"] != serde_json::to_value(lints).map_err(io::Error::other)?
             || row["lint_whitelist"]
-                != serde_json::to_value(dq_analyze::captured_raw_policy::RAW_FILE_LINTS)
+                != (if *hygiene||*sys{serde_json::to_value([lints[0].as_str()])}else{serde_json::to_value(dq_analyze::captured_raw_policy::RAW_FILE_LINTS)})
                     .map_err(io::Error::other)?
-            || row["scope"] != "typed_discovery_raw_files"
+            || row["scope"] != if *hygiene{"typed_discovery_complete_hygiene"}else if *sys{"typed_discovery_complete_sys_family"}else{"typed_discovery_raw_files"}
             || row["full_policy_parity"] != false
             || row["baseline_applied"] != false
-            || row["admission"] != "raw_findings"
+            || row["admission"] != if *hygiene{"complete_selected_hygiene_findings"}else if *sys{"complete_selected_sys_findings"}else if *complete{"complete_selected_raw_policy_findings"}else{"raw_findings"}
+            || row["row"] != if *hygiene{"source_native_workspace_hygiene_report"}else if *sys{"source_native_workspace_sys_report"}else if *complete{"source_native_workspace_raw_report"}else{"source_native_workspace_raw_policy"}
             || !matches!(
                 row["configuration_scope"].as_str(),
                 Some("captured_configuration_bytes" | "proven_missing_configuration")
             )
         {
             return Err(invalid("policy/request scope mismatch"));
+        }
+        let scopes=row["policy_scopes"].as_array().ok_or_else(||invalid("missing interpreted policy scopes"))?;
+        let raw_order;let folded_order;let ordered:&[&str]=if *hygiene||*sys{folded_order=[lints.first().ok_or_else(||invalid("folded name absent"))?.as_str()];&folded_order}else{raw_order=dq_analyze::captured_raw_file::ordered_names(lints).map_err(|_|invalid("unadmitted policy scope names"))?;&raw_order};
+        if scopes.len()!=ordered.len(){return Err(invalid("interpreted policy scope count mismatch"))}
+        let outer_live=reply.jsonl.capacity().checked_add(std::mem::size_of::<Value>()).and_then(|n|n.checked_add(report_value_backing(&row)?)).and_then(|n|n.checked_add(16*1024)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"workspace report validation accounting overflow"))?;
+        for(scope,name)in scopes.iter().zip(ordered){
+            let fields=scope.as_array().filter(|fields|fields.len()==2).ok_or_else(||invalid("invalid interpreted policy scope row"))?;
+            if fields[0].as_str()!=Some(*name){return Err(invalid("foreign or unordered interpreted scope"))}
+            let text=fields[1].as_str().ok_or_else(||invalid("missing interpreted scope JSON"))?;
+            scope_projection(text,outer_live)?;
         }
         let roots = row["recursive_roots"]
             .as_array()
@@ -188,11 +277,11 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
             if !lints.iter().any(|n| n == lint) {
                 return Err(invalid("unrequested lint record"));
             }
-            let meta = dq_analyze::captured_raw_policy::metadata(lint)
-                .ok_or_else(|| invalid("unknown raw lint"))?;
+            let meta=if *hygiene{dq_analyze::captured_sys_hygiene_pages::metadata()}else if *sys{match lint{"sys/resolvers"=>dq_analyze::captured_sys_resolvers_pages::metadata(),"sys/tables"=>dq_analyze::captured_sys_tables_pages::metadata(),"system_boundary"=>dq_analyze::captured_system_boundary_pages::metadata(),_=>return Err(invalid("unissued Sys metadata"))}}else{dq_analyze::captured_raw_policy::metadata(lint).ok_or_else(||invalid("unknown raw lint"))?};
             match text(item, "kind", true)? {
                 "site" => {
-                    exact(item, &["lint", "kind", "site"])?;
+                    exact(item, &["lint", "kind", "site", "source_text"])?;
+                    text(item,"source_text",false)?;
                     let s = &item["site"];
                     exact(s, &["rule", "rel", "line", "msg", "key", "ident"])?;
                     if meta.rule(text(s, "rule", true)?).is_none() {
@@ -201,12 +290,15 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
                     for name in ["rel", "msg", "key", "ident"] {
                         text(s, name, name == "rel")?;
                     }
-                    if number(s, "line")? == 0 || number(s, "line")? > u32::MAX as usize {
+                    let global=*sys&&lint=="system_boundary"&&matches!(s["rule"].as_str(),Some("B5"|"B7"))&&s["msg"].as_str().is_some_and(|s|!s.is_empty())&&s["key"].as_str().is_some_and(|s|!s.is_empty())&&item["source_text"]=="";
+                    if (number(s, "line")? == 0&&!global) || number(s, "line")? > u32::MAX as usize {
                         return Err(invalid("invalid site line"));
                     }
                 }
                 "allow" => {
-                    exact(item, &["lint", "kind", "allow"])?;
+                    exact(item, &["lint", "kind", "allow", "source_digest"])?;
+                    let digest=text(item,"source_digest",true)?;
+                    if digest.len()!=40||!digest.bytes().all(|byte|byte.is_ascii_digit()||(0x61..=0x66).contains(&byte)){return Err(invalid("invalid captured whole-file digest"))}
                     let a = &item["allow"];
                     exact(a, &["rel", "line", "name", "code"])?;
                     text(a, "rel", true)?;

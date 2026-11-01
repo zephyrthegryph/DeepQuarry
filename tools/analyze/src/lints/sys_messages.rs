@@ -11,10 +11,7 @@ use crate::tree::SourceFile;
 use crate::util::{is_py_space, py_lstrip, py_strip};
 use crate::{pat, pat_match};
 
-const RULES: &[RuleMeta] = &[RuleMeta {
-    name: "visible_pair",
-    hint: "act_message(user, target, MSG_SELF(), MSG_OTHERS(), MSG_BLIND()) or act_message_t() (doc/rewrite/systems.md section 15)",
-}];
+use crate::allow_registry_fields::sys_messages::RULES;
 
 const RUNTIME_PREFIX: &str = "code/modules/messages/";
 

@@ -73,7 +73,35 @@ impl<P:SnapshotProvider> RecordingInputs<P> {
                 self.record_search_folder(parent)?;
                 match self.read_recorded(path){
                     Ok(bytes)=>self.acquire_recorded_source(path,bytes).map(|source|Some(std::sync::Arc::clone(source.prepared()))),
-                    Err(actual) if actual.kind()==io::ErrorKind::NotFound=>{self.snapshot.lock().map_err(|_|invalid("input capture mutex poisoned"))?.record_negative(path)?;Ok(None)},
+                    Err(actual) if actual.kind()==io::ErrorKind::NotFound=>{
+                        // The actual read provider can classify an existing
+                        // nonregular candidate as NotFound. Only independently
+                        // observed absence may become a negative source input;
+                        // otherwise preserve the FIRST read error intact.
+                        let parent_absent={
+                            let snapshot=self.snapshot.lock().map_err(|_|invalid("input capture mutex poisoned"));
+                            match (snapshot.as_ref(),path.file_name().and_then(|name|name.to_str())){
+                                (Ok(snapshot),Some(name))=>match snapshot.folders.get(parent){
+                                    Some(FolderListing::Missing)=>true,
+                                    Some(FolderListing::Present(names))=>{
+                                        // Exact names include files, directories and nonregulars.
+                                        // A possible case alias is not proof of absence.
+                                        let exact=names.binary_search_by(|entry|entry.as_str().cmp(name)).is_ok();
+                                        let ambiguous=cfg!(windows)&&(!name.is_ascii()||names.iter().any(|entry|!entry.is_ascii()||entry.eq_ignore_ascii_case(name)));
+                                        !exact&&!ambiguous
+                                    },
+                                    None=>false,
+                                },
+                                _=>false,
+                            }
+                        };
+                        let stamp_missing=matches!(self.provider.stamp(path),Err(ref missing)if missing.kind()==io::ErrorKind::NotFound);
+                        // Typed Missing distinguishes an absent path from the
+                        // regular-file stamp API's existing nonregular refusal.
+                        // No directory roster is requested or retained here.
+                        let typed_missing=parent_absent&&stamp_missing&&matches!(self.provider.policy_directory(path,false,0),Ok(Some(PolicyDirectoryListing::Missing)));
+                        if typed_missing{self.snapshot.lock().map_err(|_|invalid("input capture mutex poisoned"))?.record_negative(path)?;Ok(None)}else{Err(actual)}
+                    },
                     Err(actual)=>Err(actual),
                 }
             };
@@ -194,7 +222,7 @@ impl GenerationQuestionBootstrap {
 }
 
 #[path="input_generation_sources.rs"]mod sources;
-pub(crate) use sources::{GenerationSourceReader,GenerationSourceFrame};
+pub(crate) use sources::{GenerationSourceReader,GenerationSourceFrame,OwnedGenerationFrame,RetiredGenerationInputs};
 impl GenerationBootstrap{
  pub(crate) fn require_recording<P:SnapshotProvider>(&self,inputs:&RecordingInputs<P>)->io::Result<()>{
   crate::daemon::control::checkpoint()?;
@@ -217,5 +245,15 @@ impl GenerationBootstrap{
  }
  #[test]fn unrelated_missing_include_never_becomes_notneeded_or_omitted_generation_source(){
   let root=crate::test_scratch::dir("generation-unrelated-source");let project=root.join("main.dme");std::fs::write(&project,"#include \"code/unregistered_missing.dm\"\n/datum/probe\n").unwrap();let recording=RecordingInputs::new(FileSystemInputs,0);let queries=Arc::new(crate::query_db::QueryDb::default())as Arc<dyn dm_tree::frontend::SettingExpressionQueries>;let executor=dm_exec::BuildExecutor::new(1).unwrap();let result=recording.prepare_generation_bootstrap(&project,&Default::default(),dm_tree::frontend::FrontendConfig{workers:1,engine:None,observer:None},&executor,&queries,&mut |_|Ok(()));assert!(matches!(result,Err(GenerationBootstrapFailure::Declarations(dm_tree::frontend::GenerationPreparationFailure::Preprocess(ref errors)))if !errors.is_empty()),"actual unrelated source refusal must remain visible");
+ }
+}
+
+#[cfg(all(test,windows))]mod source_notfound_tests{
+ use super::*;use std::sync::Arc;
+ #[test]fn actual_generation_nonregular_source_read_keeps_original_notfound_io_instead_of_missing_include_diagnostic(){
+  let root=crate::test_scratch::dir("generation-existing-directory-source");std::fs::create_dir_all(root.join("code")).unwrap();let source=root.join("code/nonregular.dm");std::fs::create_dir(&source).unwrap();let project=root.join("main.dme");std::fs::write(&project,"#include \"code/nonregular.dm\"\n#include \"code/engine/_generated/deps.dm\"\n").unwrap();
+  let expected=FileSystemInputs.read_verified(&source).err().unwrap();assert_eq!(expected.kind(),io::ErrorKind::NotFound);assert_eq!(FileSystemInputs.stamp(&source).err().unwrap().kind(),io::ErrorKind::NotFound,"regular-file stamps also reject an actual directory; they are insufficient absence proof");
+  let recording=RecordingInputs::new(FileSystemInputs,0);let db=Arc::new(crate::query_db::QueryDb::default())as Arc<dyn dm_tree::frontend::SettingExpressionQueries>;let executor=dm_exec::BuildExecutor::new(1).unwrap();let config=dm_tree::frontend::FrontendConfig{workers:1,engine:None,observer:None};
+  let error=recording.prepare_generation_bootstrap(&project,&BTreeMap::new(),config,&executor,&db,&mut |_|Ok(())).err().unwrap();let GenerationBootstrapFailure::Operational(actual)=error else{panic!("existing nonregular source read must remain operational: {error:?}")};assert_eq!(actual.kind(),expected.kind());assert_eq!(actual.raw_os_error(),expected.raw_os_error());assert_eq!(actual.to_string(),expected.to_string());assert!(!root.join("code/engine/_generated").exists());
  }
 }

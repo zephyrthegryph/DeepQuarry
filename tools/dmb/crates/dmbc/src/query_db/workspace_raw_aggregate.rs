@@ -26,6 +26,7 @@ struct Manifest {
     capture: Weak<WorkspaceCapture>,
     names: Vec<&'static str>,
     pages: Vec<Weak<PageResult>>,
+    scopes: Vec<Weak<Scope>>,
     id: u128,
     metadata_budget: usize,
 }
@@ -46,6 +47,7 @@ pub(super) struct Aggregate {
     capture: Weak<WorkspaceCapture>,
     names: Vec<&'static str>,
     pages: Vec<Arc<PageResult>>,
+    scopes: Vec<Arc<Scope>>,
     segments: Vec<Segment>,
     total: usize,
     id: u128,
@@ -56,6 +58,7 @@ impl Aggregate {
             + 2 * std::mem::size_of::<usize>()
             + self.names.capacity() * std::mem::size_of::<&str>()
             + self.pages.capacity() * std::mem::size_of::<Arc<PageResult>>()
+            + self.scopes.capacity() * std::mem::size_of::<Arc<Scope>>()
             + self.segments.capacity() * std::mem::size_of::<Segment>()
     }
     pub(super) fn visit(&self, owners: &mut Owners) {
@@ -63,6 +66,7 @@ impl Aggregate {
             return;
         }
         owners.add(3, self as *const _ as usize, self.metadata());
+        for scope in &self.scopes {owners.scope(scope);}
         for page in &self.pages {
             owners.page(page);
         }
@@ -138,6 +142,7 @@ fn aggregate_with_admission(
         + 2 * std::mem::size_of::<usize>()
         + m.pages.len() * std::mem::size_of::<Arc<PageResult>>()
         + m.names.len() * std::mem::size_of::<&str>()
+        + m.scopes.len() * std::mem::size_of::<Arc<Scope>>()
         + count
             .checked_mul(std::mem::size_of::<Segment>())
             .ok_or("segment size overflow")?;
@@ -148,6 +153,8 @@ fn aggregate_with_admission(
     for page in &m.pages {
         pages.push(page.upgrade().ok_or("aggregate page owner expired")?);
     }
+    let mut scopes=Vec::with_capacity(m.scopes.len());
+    for scope in &m.scopes {scopes.push(scope.upgrade().ok_or("captured report scope owner expired")?); }
     let mut segments = Vec::with_capacity(count);
     let mut total = 0usize;
     // Lint-major order, file order, then site/allow/note. Borrowing avoids
@@ -182,6 +189,7 @@ fn aggregate_with_admission(
         graph: m.graph,
         capture: m.capture.clone(),
         names: m.names.clone(),
+        scopes,
         pages,
         segments,
         total,
@@ -250,7 +258,7 @@ pub struct WorkspacePageView<'a> {
 }
 impl Serialize for WorkspacePageView<'_> {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        let mut map = serializer.serialize_map(Some(6))?;
+        let mut map = serializer.serialize_map(Some(7))?;
         let id = format!("{:032x}", self.aggregate.id);
         let next = self.offset + self.count;
         let cursor = (next < self.aggregate.total).then(|| WorkspaceCursor {
@@ -263,8 +271,32 @@ impl Serialize for WorkspacePageView<'_> {
         map.serialize_entry("total_items", &self.aggregate.total)?;
         map.serialize_entry("next_cursor", &cursor)?;
         map.serialize_entry("items", &Items(self))?;
+        map.serialize_entry("policy_scopes", &ScopeReports(self.aggregate))?;
         map.end()
     }
+}
+/// Borrowed exact interpreted projections from the captured policy, not hashes
+/// or a reopen of mutable lint_scopes.toml at report time.
+struct ScopeReports<'a>(&'a Aggregate);
+impl Serialize for ScopeReports<'_>{
+ fn serialize<S:serde::Serializer>(&self,serializer:S)->Result<S::Ok,S::Error>{
+  let mut seq=serializer.serialize_seq(Some(self.0.names.len()))?;
+  if self.0.scopes.len()!=self.0.names.len(){return Err(<S::Error as serde::ser::Error>::custom("captured configuration scope count mismatch"))}
+  for(name,scope)in self.0.names.iter().zip(&self.0.scopes){
+   let json=scope.report_scope_json().map_err(<S::Error as serde::ser::Error>::custom)?;
+   seq.serialize_element(&(name,json))?;
+  }
+  seq.end()
+ }
+}
+struct DigestHex<'a>(&'a [u8;20]);
+impl Serialize for DigestHex<'_>{
+ fn serialize<S:serde::Serializer>(&self,serializer:S)->Result<S::Ok,S::Error>{
+  let mut hex=[0u8;40];const DIGITS:&[u8;16]=b"0123456789abcdef";
+  for(i,byte)in self.0.iter().copied().enumerate(){hex[i*2]=DIGITS[(byte>>4)as usize];hex[i*2+1]=DIGITS[(byte&15)as usize];}
+  let text=std::str::from_utf8(&hex).map_err(<S::Error as serde::ser::Error>::custom)?;
+  serializer.serialize_str(text)
+ }
 }
 struct Items<'a, 'b>(&'a WorkspacePageView<'b>);
 impl Serialize for Items<'_, '_> {
@@ -298,7 +330,7 @@ impl Serialize for Item<'_> {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let s = self.segment;
         let rows = &self.aggregate.pages[s.page].files[s.file].findings[s.lint];
-        let mut map = serializer.serialize_map(Some(if s.kind == 0 { 4 } else { 3 }))?;
+        let mut map = serializer.serialize_map(Some(if s.kind == 0 || s.kind == 1 { 4 } else { 3 }))?;
         map.serialize_entry("lint", self.aggregate.names[s.lint])?;
         match s.kind {
             0 => {
@@ -311,6 +343,8 @@ impl Serialize for Item<'_> {
             1 => {
                 map.serialize_entry("kind", "allow")?;
                 map.serialize_entry("allow", &rows.allow_used[self.index])?;
+                let digest=rows.allow_source_digest().ok_or_else(||<S::Error as serde::ser::Error>::custom("missing captured whole-file ALLOW digest"))?;
+                map.serialize_entry("source_digest",&DigestHex(digest))?;
             }
             _ => {
                 map.serialize_entry("kind", "note")?;
@@ -367,7 +401,7 @@ impl QueryDb {
             {
                 entries = entries.saturating_add(1);
                 if let Ok(a) = value.as_ref() {
-                    entries = entries.saturating_add(1);
+                    entries = entries.saturating_add(1+a.scopes.len());
                     for p in &a.pages {
                         entries = entries.saturating_add(page_entries(p));
                     }
@@ -473,7 +507,7 @@ impl QueryDb {
         let result = if let Some(cached) = cached {
             cached
         } else {
-            let pages =
+            let (pages,scopes) =
                 self.build_workspace_pages_locked(capture, scope, names, scans, &inventory)?;
             let remaining = RESULT_BOUND
                 .checked_sub(inventory.bytes())
@@ -485,6 +519,8 @@ impl QueryDb {
                     + pages
                         .len()
                         .saturating_mul(std::mem::size_of::<Weak<PageResult>>())
+                    + scopes.len().saturating_mul(std::mem::size_of::<Weak<Scope>>())
+                    + scopes.len().saturating_mul(std::mem::size_of::<Scope>()+2*std::mem::size_of::<usize>())
                     + 4096,
             )?;
             inventory.require_pin_room()?;
@@ -500,6 +536,7 @@ impl QueryDb {
                     capture: Arc::downgrade(capture),
                     names: ordered.clone(),
                     pages: pages.iter().map(Arc::downgrade).collect(),
+                    scopes: scopes.iter().map(Arc::downgrade).collect(),
                     id,
                     metadata_budget: remaining,
                 },
@@ -607,6 +644,11 @@ impl QueryDb {
             n.saturating_add(self.db.input::<Manifest>(*key).map_or(0, |m| {
                 std::mem::size_of::<Manifest>()
                     + m.pages.capacity() * std::mem::size_of::<Weak<PageResult>>()
+                    + m.scopes.capacity() * std::mem::size_of::<Weak<Scope>>()
+                    // Fixed worst-case backing retained by initialized Weak
+                    // entries, even after their strong payload was evicted.
+                    // Deliberately conservative alongside live-owner census.
+                    + m.scopes.len() * (std::mem::size_of::<Scope>()+2*std::mem::size_of::<usize>())
                     + m.names.capacity() * std::mem::size_of::<&str>()
                     + 128
             }))
@@ -737,9 +779,41 @@ mod tests {
             capture: Weak::new(),
             names: vec!["scheduler"],
             pages: vec![Arc::downgrade(page)],
+            scopes: page.scopes.iter().map(Arc::downgrade).collect(),
             id: 7,
             metadata_budget: RESULT_BOUND,
         }
+    }
+
+mod empty_scope_report_tests{
+ use super::*;
+ #[test]fn zero_file_aggregate_retains_actual_captured_scope_and_counts_it_once_until_drop(){
+  let config=Config::capture(Configuration::Captured(b"[lint.scheduler.ceilings]\nscheduler=7\n[lint.scheduler.lists]\nextra=['first','second']\n")).unwrap();
+  let scope=Arc::new(config.scope("scheduler").unwrap());let weak=Arc::downgrade(&scope);
+  let manifest=Manifest{graph:1,capture:Weak::new(),names:vec!["scheduler"],pages:vec![],scopes:vec![weak.clone()],id:9,metadata_budget:RESULT_BOUND};
+  let aggregate=aggregate(&manifest).unwrap();drop(scope);drop(config);assert!(weak.upgrade().is_some());
+  let view=WorkspacePageView{aggregate:&aggregate,offset:0,count:0};let wire=serde_json::to_value(&view).unwrap();
+  assert_eq!(wire["count"],0);assert_eq!(wire["items"],serde_json::json!([]));assert_eq!(wire["policy_scopes"][0][0],"scheduler");
+  let interpreted:serde_json::Value=serde_json::from_str(wire["policy_scopes"][0][1].as_str().unwrap()).unwrap();assert_eq!(interpreted[5]["scheduler"],7);assert_eq!(interpreted[3]["extra"],serde_json::json!(["first","second"]));
+  let mut owners=Owners::default();aggregate.visit(&mut owners);let first=owners.bytes;assert!(first>=aggregate.metadata()+aggregate.scopes[0].budget_charge());aggregate.visit(&mut owners);assert_eq!(owners.bytes,first);
+  drop(aggregate);assert!(weak.upgrade().is_none());assert!(aggregate_with_admission(&manifest,&crate::query_db::raw_policy::Admission::default()).is_err());
+ }
+ #[test]fn scope_report_budget_and_digest_encoding_never_require_a_source_reopen(){
+  let page=fixture();let mut manifest=manifest(&page);manifest.metadata_budget=0;assert!(aggregate(&manifest).is_err());
+  let bytes:[u8;20]=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,255];assert_eq!(serde_json::to_string(&DigestHex(&bytes)).unwrap(),"\"000102030405060708090a0b0c0d0e0f101112ff\"");
+ }
+}
+
+    #[test]fn root_params_keep_exact_scope_vector_and_conservative_weak_backing_charge_after_eviction(){
+        let queries=QueryDb::default();let input=Key::new(ROOT_INPUT,1007);let result=Key::new(ROOT_RESULT,1007);
+        let scope=Arc::new(Config::capture(Configuration::ProvenMissing).unwrap().scope("scheduler").unwrap());
+        let observed=Arc::downgrade(&scope);
+        let manifest=Manifest{graph:queries.id,capture:Weak::new(),names:vec!["scheduler"],pages:Vec::new(),scopes:vec![observed.clone()],id:1007,metadata_budget:RESULT_BOUND};
+        let expected=std::mem::size_of::<Manifest>()+manifest.pages.capacity()*std::mem::size_of::<Weak<PageResult>>()+manifest.names.capacity()*std::mem::size_of::<&str>()+manifest.scopes.capacity()*std::mem::size_of::<Weak<Scope>>()+manifest.scopes.len()*(std::mem::size_of::<Scope>()+2*std::mem::size_of::<usize>())+128;
+        queries.db.set_input(input,manifest,1);queries.raw_policy.workspace.roots.lock().unwrap().insert(result,(input,std::time::Instant::now()));
+        assert_eq!(queries.workspace_manifest_charge_locked(),expected);drop(scope);assert!(observed.upgrade().is_none());
+        assert_eq!(queries.workspace_manifest_charge_locked(),expected,"fixed reservation must not disappear while the manifest retains an expired Weak backing");
+        drop(observed);queries.workspace_roots_clear_locked();assert_eq!(queries.workspace_manifest_charge_locked(),0);assert!(queries.db.input::<Manifest>(input).is_none());
     }
     #[test]
     fn borrowed_pages_serialize_exact_rows_without_cloning_payload() {
@@ -895,6 +969,7 @@ mod tests {
             capture: Weak::new(),
             names: vec!["scheduler"],
             pages: vec![Weak::new()],
+            scopes: Vec::new(),
             id: 996,
             metadata_budget: RESULT_BOUND,
         };
@@ -924,6 +999,7 @@ mod tests {
             capture: Weak::new(),
             names: vec!["scheduler"],
             pages: vec![Weak::new()],
+            scopes: Vec::new(),
             id: 996,
             metadata_budget: 0,
         };

@@ -43,7 +43,7 @@ static META: Meta = Meta {
     scan: ScanKind::Tree,
     policy: Policy::Custom,
     rules: &[RuleMeta { name: RULE, hint: HINT }],
-    allow: &["doc_snippets"],
+    allow: crate::allow_registry_fields::doc_snippets::ALLOW_0,
     lists: &[],
 };
 

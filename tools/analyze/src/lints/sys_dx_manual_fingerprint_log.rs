@@ -15,10 +15,7 @@ use crate::lint::{Registry, RuleMeta};
 use crate::pat;
 use crate::tree::{SourceFile, Tree};
 
-const RULES: &[RuleMeta] = &[RuleMeta {
-    name: "dx_manual_fingerprint_log",
-    hint: "drop it: dispatch_call() fingerprints and logs a successful dispatched call (set `log =` / ui_logged() for the level) (dx_conventions.md section 2, 8)",
-}];
+use crate::allow_registry_fields::sys_dx_manual_fingerprint_log::RULES;
 
 /// A handler named in a constructor call: kind ("src"/"type"/"global"), the type for "type", the
 /// proc name, and the calling type.

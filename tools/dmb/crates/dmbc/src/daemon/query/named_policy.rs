@@ -11,7 +11,7 @@ fn invalid(detail: &str) -> io::Error {
 fn is_named(q: &SourceQuery) -> bool {
     matches!(
         q,
-        SourceQuery::NativeNamedRule { .. } | SourceQuery::NativeConfiguredChecker { .. }
+        SourceQuery::NativeNamedRule { .. } | SourceQuery::NativeConfiguredChecker { .. } | SourceQuery::NativeKeywordOverrides{..}
     )
 }
 pub(super) fn reads_policy(q: &SourceQuery) -> bool {
@@ -51,12 +51,12 @@ pub(super) fn validate_request(request: &QueryRequest) -> io::Result<()> {
                             | "ambiguous_in_lhs"
                             | "invalid_set_value"
                             | "invalid_lint_directive_value"
+                            | "directive_at_definition"
                             | "unknown_linter_setting"
                             | "unknown_setting"
                             | "incompatible_directive"
                             | "disabled_directive"
                             | "sets_directive_twice"
-                            | "directive_at_definition"
                             | "control_condition_static"
                             | "set_has_no_effect"
                             | "unreachable_code"
@@ -67,9 +67,10 @@ pub(super) fn validate_request(request: &QueryRequest) -> io::Result<()> {
                             | "undefined_variable"
                             | "field_access_static_type"
                             | "no_typehint_implicit_new"
-                            | "proc_call_static_type"
+                            | "proc_call_static_type" | "private_proc" | "protected_proc" | "must_call_parent" | "must_not_override" | "redefined_proc" | "call_arguments"
                     )
             }
+            SourceQuery::NativeKeywordOverrides{environment,configuration}=>environment.is_absolute()&&configuration.as_ref().is_none_or(|p|p.is_absolute()),
             _ => false,
         };
         if !allowed {
@@ -103,7 +104,7 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
         let row: Value = serde_json::from_str(line).map_err(|_| invalid("JSONL"))?;
         if !matches!(
             row["row"].as_str(),
-            Some("source_native_named_rule" | "source_native_configured_checker")
+            Some("source_native_named_rule" | "source_native_configured_checker" | "source_native_keyword_override_checker")
         ) {
             continue;
         }
@@ -178,25 +179,17 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
                 environment,
                 configuration,
             } => {
-                exact(
-                    &row,
-                    &[
-                        "row",
-                        "schema",
-                        "semantic_revision",
-                        "source_revision",
-                        "policy_revision",
-                        "ordinal",
-                        "family",
-                        "environment",
-                        "configuration",
-                        "configuration_explicit",
-                        "configuration_present",
-                        "configuration_schema",
-                        "full_checker_parity",
-                        "diagnostics",
-                    ],
-                )?;
+                let access=matches!(family.as_str(),"private_proc"|"protected_proc"|"must_call_parent"|"must_not_override"|"redefined_proc"|"call_arguments");
+                let mut keys=vec!["row","schema","semantic_revision","source_revision","policy_revision","ordinal","family","environment","configuration","configuration_explicit","configuration_present","configuration_schema","full_checker_parity","diagnostics"];
+                if access{keys.extend(["declaration_profile","native_declaration_error_count"]);}if family=="redefined_proc"{keys.push("untagged_companions");}
+                exact(&row,&keys)?;
+                if access {match(row["declaration_profile"].as_str(),row["native_declaration_error_count"].as_u64()){
+                  (Some("strict-native-declarations"),Some(0))=>{},
+                  (Some("native-diagnostic-inherited-variable-v1"),Some(_))=>{},
+                  (Some("native-diagnostic-source-declarations-v2"|"native-diagnostic-procedure-versions-v3"),Some(count)) if count>0=>{},
+                  _=>return Err(invalid("procedure declaration profile")),
+                }}
+                if family=="redefined_proc"&&row["untagged_companions"]!=serde_json::json!(["procedure_redeclaration"]){return Err(invalid("redefined procedure companion contract"))}
                 let selected =
                     dm_analysis::check_configuration::select(environment, configuration.as_deref());
                 if row["row"] != "source_native_configured_checker"
@@ -217,6 +210,8 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
                     .as_array()
                     .ok_or_else(|| invalid("diagnostics"))?
                 {
+                    let access=matches!(family.as_str(),"private_proc"|"protected_proc"|"must_call_parent"|"must_not_override"|"redefined_proc"|"call_arguments");
+                    if family=="redefined_proc"{exact(d,&["family","severity","file","line","column","location_kind","expanded_span","expression_span","message","notes","registration_tag"])?;}else if access{exact(d,&["family","severity","file","line","column","location_kind","expanded_span","expression_span","message","notes"])?;}else{
                     exact(
                         d,
                         &[
@@ -230,16 +225,20 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
                             "notes",
                         ],
                     )?;
-                    if d["family"] != family.as_str()
+                    }
+                    let synthetic=matches!(family.as_str(),"private_proc"|"protected_proc"|"call_arguments")&&d["location_kind"]=="parser_synthetic";
+                    let valid_location=if synthetic{d["file"]=="(unknown)"&&d["line"]==0&&d["column"]==0&&d["expanded_span"].is_null()&&d["expression_span"].is_null()}else{(!access||(d["location_kind"]=="source"&&d["column"].as_u64().is_some_and(|n|n>0)))&&d["line"].as_u64().is_some_and(|n|n>0)&&span(&d["expanded_span"])&&span(&d["expression_span"])};
+                    let structural=family=="redefined_proc"&&d["family"]=="procedure_redeclaration"&&d["registration_tag"].is_null()&&d["severity"]=="error";
+                    let tagged=family!="call_arguments"&&d["family"]==family.as_str()&&(family!="redefined_proc"||d["registration_tag"]==family.as_str());
+                    let argument=family=="call_arguments"&&matches!(d["family"].as_str(),Some("bad_keyword_argument"|"non_keyword_after_keyword"))&&d["severity"]=="error";
+                    if !(structural||tagged||argument)
                         || !matches!(
                             d["severity"].as_str(),
                             Some("error" | "warning" | "info" | "hint")
                         )
                         || !text(&d["file"])
                         || !text(&d["message"])
-                        || !d["line"].as_u64().is_some_and(|n| n > 0)
-                        || !span(&d["expanded_span"])
-                        || !span(&d["expression_span"])
+                        || !valid_location
                         || !d["notes"]
                             .as_array()
                             .is_some_and(|notes| notes.iter().all(text))
@@ -247,6 +246,13 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
                         return Err(invalid("configured checker diagnostic"));
                     }
                 }
+            }
+            SourceQuery::NativeKeywordOverrides{environment,configuration}=>{
+                exact(&row,&["row","schema","semantic_revision","source_revision","policy_revision","family","environment","configuration","configuration_explicit","configuration_present","configuration_schema","coverage","body_count","complete","full_checker_parity","declaration_profile","native_declaration_error_count","diagnostics"])?;
+                let selected=dm_analysis::check_configuration::select(environment,configuration.as_deref());
+                if row["row"]!="source_native_keyword_override_checker"||row["family"]!="override_missing_keyword_arg"||row["environment"]!=serde_json::to_value(environment).map_err(io::Error::other)?||row["configuration"]!=serde_json::to_value(&selected.path).map_err(io::Error::other)?||row["configuration_explicit"]!=selected.explicit||!row["configuration_present"].is_boolean()||row["configuration_schema"]!="complete_pinned_checker_schema"||row["coverage"]!="whole_original_archive"||row["body_count"].as_u64().is_none()||row["complete"]!=true||row["full_checker_parity"]!=false{return Err(invalid("whole keyword metadata"))}
+                match(row["declaration_profile"].as_str(),row["native_declaration_error_count"].as_u64()){(Some("strict-native-declarations"),Some(0))|(Some("native-diagnostic-inherited-variable-v1"),Some(_))=>{},(Some("native-diagnostic-source-declarations-v2"|"native-diagnostic-procedure-versions-v3"),Some(n))if n>0=>{},_=>return Err(invalid("keyword declaration profile"))}
+                for d in row["diagnostics"].as_array().ok_or_else(||invalid("keyword diagnostics"))?{exact(d,&["family","severity","file","line","column","location_kind","expanded_span","expression_span","message","notes"])?;let location=match d["location_kind"].as_str(){Some("source")=>text(&d["file"])&&d["line"].as_u64().is_some_and(|n|n>0)&&d["column"].as_u64().is_some_and(|n|n>0)&&span(&d["expanded_span"])&&span(&d["expression_span"]),Some("builtin")=>d["file"]=="(builtins)"&&d["line"]==1&&d["column"]==1&&d["expanded_span"].is_null()&&d["expression_span"].is_null(),_=>false};if d["family"]!="override_missing_keyword_arg"||!matches!(d["severity"].as_str(),Some("error"|"warning"|"info"|"hint"))||!location||!text(&d["message"])||!d["notes"].as_array().is_some_and(|n|n.iter().all(text)){return Err(invalid("keyword diagnostic"))}}
             }
             _ => return Err(invalid("unexpected question")),
         }

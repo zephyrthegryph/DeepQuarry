@@ -41,7 +41,7 @@ static META: Meta = Meta {
         banned: &["counter_id", "ref_key"],
     },
     rules: &[RuleMeta { name: "counter_id", hint: H_COUNTER }, RuleMeta { name: "ref_key", hint: H_REF_KEY }],
-    allow: &[],
+    allow: crate::allow_registry_fields::entity_ids::ALLOW_0,
     lists: &[],
 };
 

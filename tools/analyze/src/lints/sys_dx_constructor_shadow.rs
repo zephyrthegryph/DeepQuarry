@@ -11,16 +11,7 @@ use crate::lint::{Registry, RuleMeta};
 use crate::pat;
 use crate::tree::{SourceFile, Tree};
 
-const RULES: &[RuleMeta] = &[
-    RuleMeta {
-        name: "dx_constructor_shadow",
-        hint: "rename the type proc: it shadows a global capability constructor or bundle inside capabilities() (framework review 2, H7)",
-    },
-    RuleMeta {
-        name: "part_constructor_shadow",
-        hint: "rename the proc: a capability datum's entries() calls the part constructors (cooldown(), flash(), put_in(), menu(), ...) bare, and its own proc of that name would answer instead of the engine's. A CAPABILITIES list is generated as `global.name(...)` and cannot clash; a hand-written entries() cannot be qualified for you",
-    },
-];
+use crate::allow_registry_fields::sys_dx_constructor_shadow::RULES;
 
 const PRESET_FILES: &str = "code/datums/capabilities/library/preset";
 const CAPS_DIR: &str = "code/datums/capabilities/";

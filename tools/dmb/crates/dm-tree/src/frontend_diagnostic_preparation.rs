@@ -126,6 +126,14 @@ impl DiagnosticSourceView<'_> {
     pub fn receipt(&self) -> &Arc<DiagnosticDeclarationReceipt> {
         &self.owner.receipt
     }
+    /// Only actual text occurrences need original semantic-decoding admission.
+    /// NonText items remain in includes()/dependency metadata, with their exact
+    /// original indices; absence of a text lease never classifies an item.
+    pub fn semantic_includes(&self)->impl Iterator<Item=(usize,&Arc<PathBuf>)>{
+        self.owner.inner.plan.occurrences.iter().enumerate()
+            .filter(|(_,row)|row.non_text_kind().is_none())
+            .map(|(index,row)|(index,&row.path))
+    }
     pub fn includes(&self) -> impl Iterator<Item = (usize, &Arc<PathBuf>)> {
         self.owner
             .inner

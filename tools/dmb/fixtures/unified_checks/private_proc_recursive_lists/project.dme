@@ -1,0 +1,9 @@
+/datum/access
+    proc/secret()
+        set SpacemanDMM_private_proc = TRUE
+        return 0
+/proc/recursive_param(list/list/datum/access/values)
+    values[1][1].secret()
+/proc/recursive_local()
+    var/list/list/datum/access/records[2]
+    records[1][1][1].secret()

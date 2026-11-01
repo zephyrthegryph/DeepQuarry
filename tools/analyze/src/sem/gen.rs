@@ -447,6 +447,24 @@ pub fn run_stage(
     check: bool,
     stage: Option<u8>,
 ) -> Vec<GenResult> {
+    run_stage_using(root, tree, names, check, stage, registry)
+}
+
+/// Independent immutable-generator oracle: share the exact ordinary stage
+/// renderer, writer, normalization and test-only checks. This data-only factory
+/// cannot issue a semantic/source owner and is absent from ordinary builds.
+#[cfg(feature = "unified-oracle")]
+pub fn run_stage_with_original_registry(
+    root: &Path, tree: &Tree, names: &[String], check: bool, stage: Option<u8>,
+    make_registry: fn() -> Vec<Box<dyn Generator>>,
+) -> Vec<GenResult> {
+    run_stage_using(root, tree, names, check, stage, make_registry)
+}
+
+fn run_stage_using(
+    root: &Path, tree: &Tree, names: &[String], check: bool, stage: Option<u8>,
+    make_registry: impl FnOnce() -> Vec<Box<dyn Generator>>,
+) -> Vec<GenResult> {
     let trace = std::env::var("DQ_ANALYZE_TRACE").is_ok();
     let began = std::time::Instant::now();
     // Reading and stripping every file up front pays only when most of them are read: a cold run. A run with a stored model reads the
@@ -464,7 +482,7 @@ pub fn run_stage(
             began.elapsed().as_millis()
         );
     }
-    let gens: Vec<Box<dyn Generator>> = registry()
+    let gens: Vec<Box<dyn Generator>> = make_registry()
         .into_iter()
         .filter(|g| names.is_empty() || names.iter().any(|n| n == g.name()))
         .filter(|g| !stage.is_some_and(|st| st != g.stage()))

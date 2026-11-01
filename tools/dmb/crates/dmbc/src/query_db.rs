@@ -29,6 +29,7 @@ mod no_weak_arc_owner;
 mod purity;
 mod raw_policy;
 pub use raw_policy::GeneratorName;
+pub(crate) use raw_policy::GeneratorArtifact;
 mod source_allocation;
 use answer_value_owner::{PooledOwner, ValueOwner};
 use source_allocation::{SourceAllocator, SourceLedger};

@@ -42,7 +42,7 @@ static META: Meta = Meta {
         banned: &["destroy"],
     },
     rules: &[RuleMeta { name: "destroy", hint: DESTROY_HINT }, RuleMeta { name: "qdel", hint: QDEL_HINT }],
-    allow: &["lifecycle"],
+    allow: crate::allow_registry_fields::lifecycle_counts::ALLOW_0,
     lists: &["exempt_prefixes", "exempt_files"],
 };
 

@@ -22,7 +22,7 @@ static META: Meta = Meta {
     scan: ScanKind::Tree,
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "duplicate_input_key", hint: HINT }],
-    allow: &[],
+    allow: crate::allow_registry_fields::duplicate_input_key::ALLOW_0,
     lists: &[],
 };
 

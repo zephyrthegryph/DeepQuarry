@@ -42,7 +42,7 @@ static META: Meta = Meta {
         name: "raw_compare",
         hint: "use COOLDOWN_START/COOLDOWN_FINISHED (code/__defines/cooldowns.dm) or om_after()",
     }],
-    allow: &["cooldown"],
+    allow: crate::allow_registry_fields::cooldown::ALLOW_0,
     lists: &[],
 };
 

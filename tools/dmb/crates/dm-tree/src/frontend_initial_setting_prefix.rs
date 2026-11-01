@@ -9,6 +9,7 @@ pub struct InitialSettingPrefix<'a> {
     archive: &'a BodyArchive,
     identity: ProcedureIdentity,
     settings: &'a [Statement],
+    syntax: &'a StatementBody,
     first_non_setting: Option<Span>,
 }
 impl<'a> InitialSettingPrefix<'a> {
@@ -18,6 +19,8 @@ impl<'a> InitialSettingPrefix<'a> {
     pub fn identity(&self) -> ProcedureIdentity {
         self.identity
     }
+    /// Same already-validated primary body, borrowed only inside this loan.
+    pub fn statement_body(&self)->&'a StatementBody{self.syntax}
     pub fn settings(&self) -> &'a [Statement] {
         self.settings
     }
@@ -52,6 +55,16 @@ impl BodyArchive {
         &'source self,identity:ProcedureIdentity,
         parse:impl FnOnce(&'source BodyArchive,usize)->Result<super::ArchivedBody<'source>,E>,
         consume:impl FnOnce(InitialSettingPrefix<'_>)->T,
+    )->Result<T,E>{self.with_initial_setting_prefix_mode_using(identity,false,parse,consume)}
+    pub fn with_initial_setting_prefix_original_syntax_using<'source,T,E:From<String>+From<&'static str>>(
+        &'source self,identity:ProcedureIdentity,
+        parse:impl FnOnce(&'source BodyArchive,usize)->Result<super::ArchivedBody<'source>,E>,
+        consume:impl FnOnce(InitialSettingPrefix<'_>)->T,
+    )->Result<T,E>{self.with_initial_setting_prefix_mode_using(identity,true,parse,consume)}
+    fn with_initial_setting_prefix_mode_using<'source,T,E:From<String>+From<&'static str>>(
+        &'source self,identity:ProcedureIdentity,original_syntax:bool,
+        parse:impl FnOnce(&'source BodyArchive,usize)->Result<super::ArchivedBody<'source>,E>,
+        consume:impl FnOnce(InitialSettingPrefix<'_>)->T,
     )->Result<T,E>{
         if self.body_query_host().is_none(){return Err("setting prefix needs the original retained compiler BodySyntax query owner".into())}
         let tree=self.tree();let kind=if identity.verb{MemberKind::Verb}else{MemberKind::Proc};
@@ -66,7 +79,7 @@ impl BodyArchive {
         let ordinal=selected.ok_or("source callable has no issued primary body for prefix proof")?;
         let body=parse(self,ordinal)?;
         if !std::ptr::eq(body.occurrence(),self.occurrences().get(ordinal).ok_or("prefix original occurrence unavailable")?){return Err("prefix parser returned another original callable occurrence".into())}
-        if !body.belongs_to(self) || !body.statement_body().syntax_complete() {
+        if !body.belongs_to(self) || !(if original_syntax{body.statement_body().original_literal_syntax_complete()}else{body.statement_body().syntax_complete()}) {
             return Err("prefix body is foreign or has incomplete primary syntax".into());
         }
         let syntax = body.statement_body();
@@ -76,6 +89,7 @@ impl BodyArchive {
             archive: self,
             identity,
             settings: &statements[..count],
+            syntax,
             first_non_setting: statements.get(count).map(|statement| statement.header_span),
         }))
     }

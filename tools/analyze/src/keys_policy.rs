@@ -429,7 +429,7 @@ static META: Meta = Meta {
         RuleMeta { name: "duplicate_declaration", hint: H_DUP },
         RuleMeta { name: "accessor_var", hint: H_ACC },
     ],
-    allow: &["keys"],
+    allow: crate::allow_registry_fields::sem_keys::ALLOW_SHARED_0,
     lists: &[],
 };
 pub fn metadata()->&'static Meta{&META}

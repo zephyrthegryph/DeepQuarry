@@ -1,0 +1,23 @@
+#define TRUE 1
+#define FALSE 0
+#define GLOBAL_LIST_INIT(X, InitValue)
+#define GLOBAL_VAR_INIT(X, InitValue)
+#define SETTER(T, V) ##T/proc/__setter_##V() { return TRUE }
+#define TRACKED_UNCHANGED(OLD, NEW) (((OLD) == (NEW)) && (isnull(OLD) == isnull(NEW)))
+#define TRACKED(T, V) ##T/proc/set_##V(value) { if(TRACKED_UNCHANGED(V, value)) { return FALSE }; V = value; tracked_changed(src, #V); return TRUE };SETTER(T, V)
+#include "code/probe.dm"
+#include "code/tests/only.dm"
+/proc/tracked_changed(datum/owner, key)
+    return null
+#include "code/engine/_generated/sparse_slots.dm"
+#include "code/engine/_generated/system_accessors.dm"
+#include "code/engine/_generated/stats.dm"
+#include "code/engine/_generated/actions.dm"
+#include "code/engine/_generated/ids.dm"
+#include "code/engine/_generated/declare.dm"
+#include "code/engine/_generated/tracked_lists.dm"
+#include "code/engine/_generated/deps.dm"
+#include "code/engine/_generated/auto_tracked.dm"
+#include "code/engine/_generated/reads.dm"
+#include "code/engine/_generated/plans.dm"
+#include "code/_generated/reads.dm"

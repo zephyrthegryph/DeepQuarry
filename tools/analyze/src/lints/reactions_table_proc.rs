@@ -21,7 +21,7 @@ static META: Meta = Meta {
     scan: ScanKind::File,
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "table_proc", hint: HINT }],
-    allow: &[],
+    allow: crate::allow_registry_fields::reactions_table_proc::ALLOW_0,
     lists: &[],
 };
 

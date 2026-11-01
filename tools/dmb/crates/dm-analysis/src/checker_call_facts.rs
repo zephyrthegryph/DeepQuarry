@@ -212,3 +212,14 @@ pub fn callable_any(
 #[cfg(test)]
 #[path = "checker_call_facts_tests.rs"]
 mod tests;
+
+/// Interim guard for the actual original combined builtin/source value group.
+/// A source formal can be inserted before the builtin value by the pinned
+/// register_proc rule. Until the shared resolver issues that true winner,
+/// neither consumer may infer a signature/return value from Source-first.
+/// This grants no source role and never silently omits an original call.
+pub(crate) fn require_original_group_chronology(tree:&SemanticTree,profile:PackedU128,fact:&CallableFact,name:&str)->Result<(),String>{
+ let target=crate::checker_effects::callable_target(tree,profile,fact)?;let catalog=dm_tree::checker_builtins::pinned_catalog().map_err(|e|format!("original call catalog: {e:?}"))?;if catalog.profile!=profile{return Err("original call catalog profile differs".into())}
+ let(actual_name,source)=match fact{CallableFact::Source{identity,..}=>(identity.name,Some(*identity)),CallableFact::CheckerBuiltin{name,..}=>(*name,None),CallableFact::Missing=>return Err("original call target is missing".into())};if actual_name!=SymbolId::of(name){return Err("original call name differs from actual target".into())}let spelling=if matches!(target,crate::checker_effects::EffectTarget::Builtin(_)){catalog.spelling(actual_name)}else{tree.symbols().text(actual_name)}.ok_or("original call spelling absent")?;if spelling!=name{return Err("original call spelling differs".into())}
+ if let Some(identity)=source{if catalog.declarations.iter().any(|row|row.owner==identity.owner&&row.name==identity.name&&matches!(row.kind,dm_tree::MemberKind::Proc|dm_tree::MemberKind::Verb)){return Err("original call needs source/builtin value chronology".into())}}Ok(())
+}

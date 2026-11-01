@@ -360,6 +360,11 @@ pub fn pinned_catalog() -> Result<Arc<CheckerBuiltinCatalog>, CheckerBuiltinErro
         OnceLock::new();
     CATALOG.get_or_init(|| import().map(Arc::new)).clone()
 }
+impl CheckerBuiltinCatalog {
+    /// Borrow fixed hash-verified spelling bytes only. This DATA projection does
+    /// not validate a source tree or grant a builtin/source callable identity.
+    pub fn spelling(&self,symbol:SymbolId)->Option<&'static str>{self.spellings.get(&symbol).copied()}
+}
 impl SemanticTree {
     /// Validate the fixed profile against this ORIGINAL compiler owner. The
     /// provider is immutable and always available for its exact hash; there is
@@ -609,3 +614,5 @@ impl SemanticTree {
 #[path="checker_profile.rs"]mod profile;
 pub use profile::ValidatedCheckerProfile;
 #[cfg(test)]thread_local!{static PROFILE_VALIDATIONS:std::cell::Cell<usize>=const{std::cell::Cell::new(0)};}
+
+#[cfg(test)]mod catalog_spelling_tests{use super::*;#[test]fn fixed_catalog_spelling_covers_every_actual_callable_and_parameter_without_source_interning(){let catalog=pinned_catalog().unwrap();let mut callables=0;let mut parameters=0;for row in catalog.declarations.iter().filter(|row|matches!(row.kind,MemberKind::Proc|MemberKind::Verb)){callables+=1;for symbol in[row.owner,row.name]{let text=catalog.spelling(symbol).expect("issued builtin spelling");assert_eq!(SymbolId::of(text),symbol);}for parameter in row.metadata.procedure.as_ref().unwrap().signature.parameters.iter(){parameters+=1;let text=catalog.spelling(parameter.name).expect("issued parameter spelling");assert_eq!(SymbolId::of(text),parameter.name);}}assert!(callables>100);assert!(parameters>100);assert!(catalog.spelling(SymbolId::of("__not_a_pinned_catalog_symbol__")).is_none());}}

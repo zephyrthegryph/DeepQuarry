@@ -25,7 +25,7 @@ static META: Meta = Meta {
         RuleMeta { name: "add_element", hint: HINT },
         RuleMeta { name: "comsig", hint: HINT },
     ],
-    allow: &[],
+    allow: crate::allow_registry_fields::dcs::ALLOW_0,
     lists: &[],
 };
 

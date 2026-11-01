@@ -119,6 +119,11 @@ fn main_inner() {
         }
         return;
     }
+    if matches!(arguments.first().map(String::as_str),Some("analyze-check"|"analyze-baseline")) {
+        let baseline=arguments[0]=="analyze-baseline";
+        let result=if compile_result.is_none()&&arguments.len()==3&&arguments[2]=="--jsonl"{dmbc::daemon::analyze::run_file(std::path::Path::new(&arguments[1]),baseline)}else{Err("usage: dmbc analyze-check|analyze-baseline REQUEST.json --jsonl".into())};
+        match result{Ok(true)=>return,Ok(false)=>std::process::exit(1),Err(error)=>{eprintln!("{error}");std::process::exit(2)}}
+    }
     if arguments.first().map(String::as_str) == Some("generate") {
         let result=if compile_result.is_none()&&arguments.len()==3&&arguments[2]=="--jsonl"{dmbc::daemon::generation::run_file(std::path::Path::new(&arguments[1]))}else{Err("usage: dmbc generate REQUEST.json --jsonl".into())};
         match result{Ok(true)=>return,Ok(false)=>std::process::exit(1),Err(error)=>{eprintln!("{error}");std::process::exit(2)}}

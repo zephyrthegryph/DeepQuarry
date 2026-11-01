@@ -15,7 +15,7 @@ static META: Meta = Meta {
     scan: ScanKind::File,
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "banned_name", hint: "the form was deleted: use its replacement (the hint after the name, in [lint.legacy_forms.lists] banned of tools/ci/lint_scopes.toml)" }],
-    allow: &[],
+    allow: crate::allow_registry_fields::legacy_forms::ALLOW_0,
     lists: &["banned", "banned_outside"],
 };
 

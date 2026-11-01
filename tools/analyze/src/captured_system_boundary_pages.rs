@@ -1,8 +1,12 @@
 //! Full original boundary policy over two source-page passes; no source authority.
 use crate::{captured_generator_budget::Budget,captured_raw_file::{Config,RawPolicyViews},reactive_raw_policy_pages::RawPolicyPages,reactive_reads_native::Failure,lint::{Site,AllowUse,Sink},system_boundary_policy as policy};
 use std::{io,sync::Arc};
-pub struct BoundaryData{sites:Vec<Site>,source_text:Vec<String>,allow_used:Vec<AllowUse>}
-impl BoundaryData{pub fn sites(&self)->&[Site]{&self.sites}pub fn source_text(&self)->&[String]{&self.source_text}pub fn allow_used(&self)->&[AllowUse]{&self.allow_used}}
+pub fn metadata()->&'static crate::lint::Meta{crate::system_boundary_report::metadata()}
+/// Explicit baseline I/O only, after a caller has completed as-of delivery.
+pub fn finish_report_after_delivery(root:&std::path::Path,run:&crate::lint::Run,text:&mut String)->bool{crate::system_boundary_report::finish_after_delivery(root,run,text)}
+pub fn update_baseline_after_delivery(root:&std::path::Path,run:&crate::lint::Run,mode:crate::baseline::Mode)->io::Result<String>{crate::system_boundary_report::update_after_delivery(root,run,mode)}
+pub struct BoundaryData{sites:Vec<Site>,source_text:Vec<String>,allow_used:Vec<AllowUse>,allow_digests:std::collections::BTreeMap<String,[u8;20]>}
+impl BoundaryData{pub fn sites(&self)->&[Site]{&self.sites}pub fn source_text(&self)->&[String]{&self.source_text}pub fn allow_used(&self)->&[AllowUse]{&self.allow_used}pub fn allow_source_digest(&self,relative:&str)->Option<&[u8;20]>{self.allow_digests.get(relative)}}
 fn oom(message:impl Into<String>)->Failure{Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message.into()))}
 fn charge(b:&Budget,n:Option<usize>)->Result<(),Failure>{let n=n.ok_or_else(||{b.deny();oom("Boundary retained capacity overflow")})?;b.charge(n).map_err(oom)}
 fn poll(b:&Budget,p:&dyn Fn()->io::Result<()>)->Result<(),Failure>{b.require().map_err(oom)?;p()?;b.require().map_err(oom)}
@@ -19,9 +23,10 @@ fn collect_using<P:RawPolicyPages+?Sized>(pages:&P,config:&Config,b:&Arc<Budget>
  if !pages.for_each(&mut|rel,views|{poll(b,p)?;if !selected(rel){return Ok(true)}let file=views.source_file()?;if file.rel!=rel{return Err("Boundary original file label differs".into())}let facts=policy::facts_of(file);charge(b,policy::facts_bytes(&facts).and_then(|n|n.checked_add(64)))?;let relative=own(b,rel)?;row(b,&mut files)?;files.push(FileFacts{relative,facts});Ok(true)})?{return Err("Boundary fact source pass stopped before EOF".into())}poll(b,p)?;
  charge(b,files.len().checked_mul(2*std::mem::size_of::<FileFacts>()).and_then(|n|n.checked_add(128)))?;files.sort_by(|a,b|a.relative.cmp(&b.relative));if files.windows(2).any(|w|w[0].relative==w[1].relative){return Err("Boundary source provider repeated a file".into())}
  charge(b,files.len().checked_mul(4*std::mem::size_of::<(&str,&policy::Facts)>()).and_then(|n|n.checked_add(64)))?;let mut borrowed=Vec::new();borrowed.try_reserve_exact(files.len()).map_err(|_|oom("Boundary borrowed fact projection allocation refused"))?;if borrowed.capacity()>files.len().saturating_mul(4){b.deny();return Err(oom("Boundary fact projection capacity exceeds reservation"))}for file in &files{borrowed.push((file.relative.as_str(),&file.facts));}charge(b,policy::prepared_headroom(&borrowed))?;let prepared=policy::prepare(&borrowed);drop(borrowed);
- let mut results=Vec::<FileResult>::new();let mut allows=Vec::<AllowUse>::new();
+ let mut results=Vec::<FileResult>::new();let mut allows=Vec::<AllowUse>::new();let mut allow_digests=std::collections::BTreeMap::new();
  if !pages.for_each(&mut|rel,views:RawPolicyViews<'_>|{poll(b,p)?;if !selected(rel){return Ok(true)}let index=files.binary_search_by(|f|f.relative.as_str().cmp(rel)).map_err(|_|Failure::Unsupported("Boundary second pass added a file".into()))?;let file=views.source_file()?;if file.rel!=rel{return Err("Boundary original judgement label differs".into())}
   let mut recorded=Sink::new();let result=crate::dm::pylines::recorded_into(&mut recorded,||policy::judge_file(file,&prepared));charge(b,policy::result_bytes(&result).and_then(|n|n.checked_add(64)))?;
+  if !recorded.allow_used.is_empty(){charge(b,Some(1024+std::mem::size_of::<(String,[u8;20])>()))?;let relative=own(b,rel)?;allow_digests.insert(relative,crate::captured_raw_file::source_allow_digest(file));}
   for value in recorded.allow_used{poll(b,p)?;charge(b,value.rel.capacity().checked_add(value.name.capacity()).and_then(|n|n.checked_add(value.code.capacity())).and_then(|n|n.checked_add(64)))?;if !allows.contains(&value){row(b,&mut allows)?;allows.push(value)}}
   let mut lines=Vec::new();let raw=file.raw();for number in result.hits.iter().map(|(_,line,_,_)|*line).chain(result.b6.iter().map(|(_,line,_)|*line)){if !lines.iter().any(|(old,_)|*old==number){let text=if number>0&&(number as usize)<=raw.num_lines(){raw.line(number as usize)}else{""};charge(b,text.len().checked_add(64))?;row(b,&mut lines)?;lines.push((number,crate::util::normalize_ws(text)))}}
   let relative=own(b,&files[index].relative)?;row(b,&mut results)?;results.push(FileResult{relative,result,lines});Ok(true)
@@ -33,9 +38,10 @@ fn collect_using<P:RawPolicyPages+?Sized>(pages:&P,config:&Config,b:&Arc<Budget>
  let mut lines=Vec::new();let mut ordered=Vec::new();for result in results{row(b,&mut lines)?;lines.push((own(b,&result.relative)?,result.lines));row(b,&mut ordered)?;ordered.push((result.relative,result.result));}
  let final_headroom=ordered.iter().try_fold(8192usize,|n,(_,r)|policy::result_bytes(r).and_then(|bytes|bytes.checked_mul(8)).and_then(|bytes|n.checked_add(bytes))) ;charge(b,final_headroom)?;
  let mut sink=Sink::new();policy::finish(&prepared,&ordered,&mut sink);let mut text=Vec::new();for site in &sink.sites{poll(b,p)?;let source=if site.line==0{None}else{lines.binary_search_by(|(rel,_)|rel.as_str().cmp(&site.rel)).ok().and_then(|i|lines[i].1.iter().find(|(line,_)|*line==site.line)).map(|(_,text)|text.as_str())};row(b,&mut text)?;text.push(own(b,source.unwrap_or(""))?);}
- poll(b,p)?;Ok(BoundaryData{sites:sink.sites,source_text:text,allow_used:allows})
+ poll(b,p)?;Ok(BoundaryData{sites:sink.sites,source_text:text,allow_used:allows,allow_digests})
 }
 #[cfg(all(test,feature="legacy-sem"))]#[path="system_boundary_report_frozen_original.rs"]mod original;
+#[cfg(all(test,feature="legacy-sem"))]#[path="../../dmb/shared/test_scratch.rs"]mod boundary_report_scratch;
 #[cfg(all(test,feature="legacy-sem"))]mod tests{
  use super::*;use crate::{captured_raw_file::{File,Config},captured_raw_policy::Configuration,lint::{Registry,Cx},tree::{Tree,SourceFile}};use std::cell::Cell;
  struct Pages{files:Vec<(String,String)>,calls:Cell<usize>,stop:Option<usize>,fail:Option<usize>}
@@ -54,5 +60,13 @@ exempt_files=['maps/client.dm']
  }
  #[test]fn boundary_two_pass_quota_io_stopped_and_late_cancel_refuse_without_partial_output(){
   let config=Config::capture(Configuration::ProvenMissing).unwrap();for stop in [0,1]{let mut p=pages();p.stop=Some(stop);assert!(collect(&p,&config,&Budget::new(32*1024*1024).unwrap(),&||Ok(())).is_err());}let mut p=pages();p.fail=Some(1);let error=collect(&p,&config,&Budget::new(32*1024*1024).unwrap(),&||Ok(())).err().unwrap();assert!(matches!(error,Failure::Operational(ref e)if e.raw_os_error()==Some(1450)));let p=pages();let error=collect(&p,&config,&Budget::new(std::mem::size_of::<Budget>()+2*std::mem::size_of::<usize>()).unwrap(),&||Ok(())).err().unwrap();assert!(matches!(error,Failure::Operational(ref e)if e.kind()==io::ErrorKind::OutOfMemory));let p=pages();let error=collect(&p,&config,&Budget::new(32*1024*1024).unwrap(),&||if p.calls.get()==2{Err(io::Error::new(io::ErrorKind::Interrupted,"actual final cancellation"))}else{Ok(())}).err().unwrap();assert!(matches!(error,Failure::Operational(ref e)if e.kind()==io::ErrorKind::Interrupted));let p=pages();assert!(collect(&p,&config,&Budget::new(32*1024*1024).unwrap(),&||Ok(())).is_ok());
+ }
+
+ #[test]fn boundary_delivered_custom_finish_and_baseline_are_whole_original_without_source_tree_reads(){
+  let p=pages();let mut tree=Tree::from_files(p.files.iter().map(|(rel,text)|SourceFile::from_text(rel,text)).collect());let root=super::boundary_report_scratch::dir("boundary-delivered-original");let other=super::boundary_report_scratch::dir("boundary-delivered-native");std::fs::create_dir_all(root.join("tools/ci")).unwrap();std::fs::create_dir_all(other.join("tools/ci")).unwrap();tree.root=root.clone();
+  let mut registry=Registry::default();original::register(&mut registry);let lint=registry.find("system_boundary").unwrap();let scopes=crate::scopes::Scopes::default();let scope=scopes.for_lint("system_boundary","");let cx=Cx{tree:&tree,meta:lint.meta(),scope:&scope};let mut sink=Sink::new();lint.scan_tree(&cx,&mut sink);let run=crate::lint::Run{sites:sink.sites,notes:sink.notes};
+  let mut old=String::new();let mut actual=String::new();assert_eq!(lint.finish(&cx,&run,&mut old),super::finish_report_after_delivery(&other,&run,&mut actual));assert_eq!(old,actual);assert!(run.sites.iter().any(|s|s.line==0&&matches!(s.rule.as_str(),"B5"|"B7")),"whole original global rows preserved");
+  for mode in [crate::baseline::Mode::Seed,crate::baseline::Mode::Update,crate::baseline::Mode::Migrate]{let old=lint.update_baseline(&cx,&run,mode).unwrap();let actual=super::update_baseline_after_delivery(&other,&run,mode).unwrap();assert_eq!(old,actual);assert_eq!(std::fs::read(root.join(crate::system_boundary_report::BASELINE)).unwrap(),std::fs::read(other.join(crate::system_boundary_report::BASELINE)).unwrap());}
+  let mut old=String::new();let mut actual=String::new();assert_eq!(lint.finish(&cx,&run,&mut old),super::finish_report_after_delivery(&other,&run,&mut actual));assert_eq!(old,actual);
  }
 }

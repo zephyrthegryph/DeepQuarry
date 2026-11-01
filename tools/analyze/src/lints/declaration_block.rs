@@ -19,7 +19,7 @@ static META: Meta = Meta {
     scan: ScanKind::Both,
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "backslash_list", hint: HINT }, RuleMeta { name: "two_blocks", hint: TWO_HINT }, RuleMeta { name: "bundle", hint: BUNDLE_HINT }],
-    allow: &[],
+    allow: crate::allow_registry_fields::declaration_block::ALLOW_0,
     lists: &[],
 };
 

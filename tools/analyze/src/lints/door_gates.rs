@@ -48,7 +48,7 @@ static META: Meta = Meta {
             hint: "a slot that exists only from a construction stage sits in a staged space: space(SPACE_X, from_stage = STAGE_Y, missing = MSG(...))",
         },
     ],
-    allow: &["door_gates"],
+    allow: crate::allow_registry_fields::door_gates::ALLOW_0,
     lists: &[],
 };
 

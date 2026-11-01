@@ -31,7 +31,7 @@ static META: Meta = Meta {
         name: "shadow",
         hint: "use EXTEND_INTERACTIONS, or annotate `// ALLOW(interactions): reason`",
     }],
-    allow: &["interactions"],
+    allow: crate::allow_registry_fields::interactions::ALLOW_0,
     lists: &[],
 };
 

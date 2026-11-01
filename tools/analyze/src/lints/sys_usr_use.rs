@@ -24,10 +24,7 @@ use crate::pat_match;
 use crate::tree::SourceFile;
 use crate::util::{py_lstrip, py_strip};
 
-const RULES: &[RuleMeta] = &[RuleMeta {
-    name: "usr_outside_verb",
-    hint: "take the acting mob as a `user` argument (or use `src`); `usr` is only meaningful at the top of a verb (AGENTS.md 3a)",
-}];
+use crate::allow_registry_fields::sys_usr_use::RULES;
 
 /// `verb_lines`: the set of 1-based line numbers that belong to a verb's body (or a verb macro's).
 fn verb_lines(f: &SourceFile) -> HashSet<usize> {

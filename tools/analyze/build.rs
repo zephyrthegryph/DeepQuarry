@@ -45,6 +45,24 @@ fn main() {
     let out_dir = PathBuf::from(std::env::var("OUT_DIR").unwrap());
     let legacy = std::env::var_os("CARGO_FEATURE_LEGACY_SEM").is_some();
     let _ = native_policy_roster::LINT_NAMES.len();
+    // SAME full discovery as real legacy registration, even in native-only
+    // builds. A newly registered module without its metadata descriptor fails.
+    let full_metadata_modules=discover(&src.join("lints"));
+    let mut full_metadata=String::new();
+    for module in &full_metadata_modules {
+        let descriptor=src.join("allow_registry_fields").join(format!("{module}.rs"));
+        assert!(descriptor.is_file(),"registered lint lacks shared ALLOW metadata: {module}");
+        writeln!(full_metadata,"#[path = \"{}\"] pub mod {};",descriptor.display().to_string().replace('\\',"/"),module).unwrap();
+    }
+    full_metadata.push_str("pub(crate) fn collect_all<C:crate::key_policy_control::Control>(names:&mut std::collections::BTreeSet<String>,control:&mut C)->Result<(),C::Error>{\n");
+    for module in &full_metadata_modules {
+        // Exactly the same two delegated registrations as lints_gen.rs.
+        if matches!(module.as_str(),"lifeform_allows"|"escape_hatches"){continue}
+        writeln!(full_metadata,"{}::collect(names,control)?;",module).unwrap();
+    }
+    full_metadata.push_str("control.checkpoint()\n}\n");
+    fs::write(out_dir.join("allow_registry_fields_gen.rs"),full_metadata).unwrap();
+
     let mut native_registry = String::from("{\n");
     for (module, _) in native_policy_roster::MODULES {
         let _ = writeln!(
@@ -78,6 +96,7 @@ fn main() {
                         "decl".to_string(),
                         "init".to_string(),
                         "requirement_bool".to_string(),
+                        "check_grep".to_string(),
                     ])
                     .collect(),
                 "dm" => vec![

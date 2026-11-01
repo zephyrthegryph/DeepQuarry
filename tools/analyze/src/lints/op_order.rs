@@ -45,7 +45,7 @@ static META: Meta = Meta {
         ],
     },
     rules: &[RuleMeta { name: "unordered_clash", hint: H_CLASH }, RuleMeta { name: "relative_priority", hint: H_REL }],
-    allow: &["op_order"],
+    allow: crate::allow_registry_fields::op_order::ALLOW_0,
     lists: &[],
 };
 

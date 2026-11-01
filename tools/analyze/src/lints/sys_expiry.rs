@@ -31,20 +31,7 @@ use crate::pat;
 use crate::tree::{SourceFile, Tree};
 use crate::util::{before_slashes, py_lstrip, py_strip};
 
-const RULES: &[RuleMeta] = &[
-    RuleMeta {
-        name: "world_time_expiry",
-        hint: "COOLDOWN_DECLARE/COOLDOWN_START/COOLDOWN_RUNNING/COOLDOWN_TIMELEFT for an end time, STAMP/ELAPSED for a start (code/__defines/cooldowns.dm, code/__defines/sys_expiry.dm)",
-    },
-    RuleMeta {
-        name: "world_time_write",
-        hint: "a stored time is written with COOLDOWN_START/COOLDOWN_EXTEND/STAMP (or TIME_NOW for list slots/records), never `x = world.time (+ N)`",
-    },
-    RuleMeta {
-        name: "expiry_undeclared",
-        hint: "a var read/written by COOLDOWN_EXTEND/RUNNING/LAPSED or an _OWN cooldown macro is declared with COOLDOWN_DECLARE (a base type uses a cooldowns() name and cooldown_*)",
-    },
-];
+use crate::allow_registry_fields::sys_expiry::RULES;
 
 const SKIP: &[&str] = &["code/datums/om/", "code/controllers/master.dm", "code/controllers/failsafe.dm"];
 /// `cooldown_lint.SKIP_DIRS`.

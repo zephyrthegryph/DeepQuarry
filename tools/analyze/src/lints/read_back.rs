@@ -28,7 +28,7 @@ static META: Meta = Meta {
     scan: ScanKind::Tree,
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "undeclared_read_back", hint: HINT }],
-    allow: &[],
+    allow: crate::allow_registry_fields::read_back::ALLOW_0,
     lists: &[],
 };
 

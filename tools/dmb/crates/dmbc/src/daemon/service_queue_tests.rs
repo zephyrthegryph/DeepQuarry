@@ -25,6 +25,7 @@ fn key(destination: &str) -> RequestKey {
         diagnostic_declarations: false,
         original_source_questions: false,
         workspace_generators: Vec::new(),
+        workspace_auxiliary: Vec::new(),
         defines: BTreeMap::new(),
         engine: None,
         bootstrap: true,
@@ -107,9 +108,9 @@ fn distinct_analysis_commands_do_not_supersede_each_other_but_same_mode_does() {
     };
     let mut request = *request;
     request.command = crate::request::BuildCommand::AnalyzeBodies;
-    let body_key = RequestKey::of(&request, &manifest,&[]);
+    let body_key = RequestKey::of(&request, &manifest,&[],&[]);
     request.command = crate::request::BuildCommand::AnalyzeResolved;
-    let resolved_key = RequestKey::of(&request, &manifest,&[]);
+    let resolved_key = RequestKey::of(&request, &manifest,&[],&[]);
     assert_ne!(body_key, resolved_key);
     let body_token = control::Cancellation::default();
     let body = LatestRequest::register(&slot, body_key, body_token.clone());

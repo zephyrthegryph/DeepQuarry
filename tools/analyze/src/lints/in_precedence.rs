@@ -25,7 +25,7 @@ static META: Meta = Meta {
         name: "mixed",
         hint: "`in` is the loosest DM operator: `!x in L` is `(!x) in L`, `x in L || y` is `x in (L || y)`, `var/v = x in L` stores x. Write `(x in L)` and combine that",
     }],
-    allow: &[],
+    allow: crate::allow_registry_fields::in_precedence::ALLOW_0,
     lists: &[],
 };
 

@@ -62,7 +62,7 @@ static META: Meta = Meta {
         name: "instance_list",
         hint: "allocates a list per instance: use a static var or getter (constant table), a lazy list (usually empty) or a shared copy-on-write list (AGENTS.md 3a); if it really is per-instance and always filled, mark it `// ALLOW(instance_list): <reason>`",
     }],
-    allow: &["instance_list"],
+    allow: crate::allow_registry_fields::instance_list::ALLOW_0,
     lists: &[],
 };
 

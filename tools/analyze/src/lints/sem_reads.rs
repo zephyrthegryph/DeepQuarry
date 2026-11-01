@@ -45,7 +45,7 @@ static META: Meta = Meta {
         RuleMeta { name: "condition_cycle", hint: H_CYCLE },
         RuleMeta { name: "reads_as_uncovered", hint: H_COVER },
     ],
-    allow: &["reads"],
+    allow: crate::allow_registry_fields::sem_reads::ALLOW_0,
     lists: &[],
 };
 

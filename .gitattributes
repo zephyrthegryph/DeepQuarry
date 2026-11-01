@@ -162,3 +162,38 @@ tools/analyze/src/deadline_policy_frozen_original.rs -text
 tools/analyze/src/policy_finish_original.reference -text
 tools/analyze/src/policy_finish_allow_original.reference -text
 tools/analyze/src/policy_finish_original.rs -text
+
+# Exact shared native/original cold-generation source fixture.
+tools/analyze/fixtures/native-cold-generation/** -text whitespace=cr-at-eol,-indent-with-non-tab
+
+# Preserve the runner's existing mixed byte/newline source during helper moves.
+tools/dmb/crates/dmbc/src/request_runner.rs -text whitespace=cr-at-eol
+tools/analyze/fixtures/original_policies/deadline_polling.rs -text whitespace=cr-at-eol
+
+# Whole-original keyword policy fixtures preserve authored source bytes.
+tools/dmb/fixtures/unified_checks/override_missing_keyword_arg/* -text
+tools/dmb/fixtures/unified_checks/override_missing_keyword_arg_builtin/* -text
+tools/dmb/fixtures/unified_checks/override_missing_keyword_arg_owner_prefix/* -text
+
+# Immutable complete original check_grep algorithm and shared differential bytes.
+tools/analyze/examples/support/check_grep_original/mod.rs -text
+tools/analyze/examples/support/check_grep_original/framework.rs -text
+tools/analyze/examples/support/check_grep_original/parts_code_a.rs -text
+tools/analyze/examples/support/check_grep_original/parts_code_b.rs -text
+tools/analyze/examples/support/check_grep_original/parts_maps.rs -text
+tools/analyze/examples/support/check_grep_original/parts_pcre.rs -text
+tools/analyze/examples/support/check_grep_original/tags.rs -text
+tools/analyze/examples/support/check_grep_original/semantic_checks.rs -text
+# Shared scanner fixtures preserve authored whitespace and source columns.
+tools/analyze/fixtures/native-check-grep/** -text whitespace=cr-at-eol
+
+# Immutable ALLOW policy differential sources.
+tools/analyze/src/allow_annotations_original.rs -text
+tools/analyze/src/allow_parser_original.rs -text
+
+# Exact original call-argument differential fixture bytes.
+tools/dmb/fixtures/unified_checks/call_arguments/project.dme -text
+tools/dmb/fixtures/unified_checks/call_arguments/base.dm -text
+tools/dmb/fixtures/unified_checks/call_arguments/children.dm -text
+tools/dmb/fixtures/unified_checks/call_arguments/calls.dm -text
+tools/dmb/fixtures/unified_checks/call_arguments_builtin/project.dme -text

@@ -144,3 +144,41 @@ fn retire_report_pages_under_pressure(ctx:&dm_query::Ctx<'_>,ledger:&Arc<Mutex<L
 
 #[cfg(test)]pub(crate) struct PageCachePressureForTest{_work:graph_work::GraphWork}
 #[cfg(test)]impl QueryDb{pub(crate) fn hold_effect_page_cache_pressure_for_test(&self)->std::io::Result<PageCachePressureForTest>{let _gate=self.purity.gate.lock().unwrap_or_else(|e|e.into_inner());let available={let mut l=self.purity.ledger.lock().unwrap_or_else(|e|e.into_inner());BUDGET.saturating_sub(l.live_bytes().saturating_add(l.metadata()))};let mut work=graph_work::GraphWork::new(self.purity.ledger.clone(),Key::new(PAGE,u128::MAX));work.reserve(available.saturating_sub(BUDGET/32))?;Ok(PageCachePressureForTest{_work:work})}}
+
+// This operation borrows the existing family ledger only for resource lifetime;
+// it neither constructs EffectInput nor registers a semantic query/Outcome.
+impl QueryDb{
+ pub(crate) fn with_original_keyword_overrides(&self,archive:&dm_tree::frontend::BodyArchive,resolver:&(impl Resolver+?Sized),profile:dm_ir::PackedU128,mut current:impl FnMut()->std::io::Result<()>,consume:impl FnOnce(&dm_analysis::checks_keyword_overrides::Findings<'_>)->std::io::Result<()>)->std::io::Result<()>{
+  use dm_analysis::policy_body_demand::PolicyFailure;
+  current()?;crate::daemon::control::checkpoint()?;self.prune_purity();
+  let _gate=self.purity.gate.lock().unwrap_or_else(|e|e.into_inner());
+  {let mut ledger=self.purity.ledger.lock().unwrap_or_else(|e|e.into_inner());ledger.denied=false;ledger.aborted=None;}
+  let validate=||->std::io::Result<()>{crate::daemon::control::checkpoint()?;if !archive.uses_body_queries(self)||resolver.source_owner()!=Some(std::ptr::from_ref(archive.tree()).cast()){return Err(std::io::Error::other("keyword fold requires this actual archive/Db/resolver"))}
+   // This is a resource-only loan. Diagnostic source frames do not publish
+   // the compiler PROGRAM registry; the caller authenticates the actual
+   // captured source/mapping, and the archive joins this exact body-query Db.
+   Ok(())};
+  current()?;validate()?;
+  // Key is coordination for GraphWork's lifetime brand, not a cached answer.
+  let mut work=graph_work::GraphWork::new(Arc::clone(&self.purity.ledger),Key::new(PAGE,archive.tree().identity()));
+  work.reserve(ExecutionAdmission::fixed_control_charge())?;
+  // Issued only after fixed backing is funded; it drops before this work.
+  let admission=page_execution_admission(&self.purity.ledger).map_err(|message|std::io::Error::new(std::io::ErrorKind::OutOfMemory,message))?;
+  let pending=dm_analysis::checks_keyword_overrides::with_archived(archive,resolver,profile,&admission,&mut work,&validate,|findings|{current().map_err(PolicyFailure::Operational)?;consume(findings).map_err(PolicyFailure::Operational)});
+  // The analysis callback owns every ephemeral map/output buffer; it has now
+  // physically dropped them. Work remains live until after final validation.
+  if let Err(PolicyFailure::Operational(actual))=pending{return Err(actual)}
+  current()?;validate()?;pending.map_err(|failure|match failure{PolicyFailure::Operational(actual)=>actual,PolicyFailure::Unsupported(message)=>std::io::Error::other(message.0)})
+ }
+}
+
+// Per-body untagged diagnostics borrow this same resource family; no semantic
+// query, cached answer, source role or alternative body representation is made.
+impl QueryDb{pub(crate) fn with_original_call_arguments(&self,archive:&dm_tree::frontend::BodyArchive,body:&dm_tree::frontend::ArchivedBody<'_>,resolver:&(impl Resolver+?Sized),profile:dm_ir::PackedU128,mut current:impl FnMut()->std::io::Result<()>,consume:impl FnOnce(&dm_analysis::checks_proc_visibility::Findings<'_>)->std::io::Result<()>)->std::io::Result<()>{
+ use dm_analysis::policy_body_demand::PolicyFailure;current()?;crate::daemon::control::checkpoint()?;self.prune_purity();let _gate=self.purity.gate.lock().unwrap_or_else(|e|e.into_inner());{let mut ledger=self.purity.ledger.lock().unwrap_or_else(|e|e.into_inner());ledger.denied=false;ledger.aborted=None;}
+ let validate=||->std::io::Result<()>{crate::daemon::control::checkpoint()?;if !archive.uses_body_queries(self)||!body.belongs_to(archive)||resolver.source_owner()!=Some(std::ptr::from_ref(archive.tree()).cast()){return Err(std::io::Error::other("argument findings require actual archive/body/Db/resolver"))}Ok(())};current()?;validate()?;let mut work=graph_work::GraphWork::new(Arc::clone(&self.purity.ledger),Key::new(PAGE,archive.tree().identity()));let pending=dm_analysis::checks_call_arguments::with_archived_body(archive,body,resolver,profile,&mut work,&validate,|findings|{current().map_err(PolicyFailure::Operational)?;consume(findings).map_err(PolicyFailure::Operational)});if let Err(PolicyFailure::Operational(actual))=pending{return Err(actual)}current()?;validate()?;pending.map_err(|failure|match failure{PolicyFailure::Operational(actual)=>actual,PolicyFailure::Unsupported(reason)=>std::io::Error::other(reason.0)})
+}}
+
+// Test-only real escrow owner. The production ledger limit is unchanged; this
+// holds an ordinary pre-allocation reservation while the tested operation runs.
+#[cfg(test)]impl QueryDb{pub(crate) fn effect_graph_headroom_for_test(&self,remaining:usize)->std::io::Result<impl Drop>{self.prune_purity();let _gate=self.purity.gate.lock().unwrap_or_else(|e|e.into_inner());let reserve={let mut ledger=self.purity.ledger.lock().unwrap_or_else(|e|e.into_inner());BUDGET.checked_sub(ledger.live_bytes()).and_then(|n|n.checked_sub(ledger.metadata())).and_then(|n|n.checked_sub(remaining)).ok_or_else(||std::io::Error::new(std::io::ErrorKind::OutOfMemory,"test cannot hold requested actual ledger headroom"))?};let mut held=graph_work::GraphWork::new(Arc::clone(&self.purity.ledger),Key::new(PAGE,0));held.reserve(reserve)?;Ok(held)}}

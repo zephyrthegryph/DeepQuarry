@@ -34,7 +34,7 @@ static META: Meta = Meta {
         RuleMeta { name: "contents_len", hint: HINT },
         RuleMeta { name: "locate_in", hint: HINT },
     ],
-    allow: &["spatial"],
+    allow: crate::allow_registry_fields::spatial::ALLOW_0,
     lists: &["api_prefixes", "api_files"],
 };
 

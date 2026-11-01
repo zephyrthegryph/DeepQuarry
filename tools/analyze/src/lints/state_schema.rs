@@ -24,7 +24,7 @@ static META: Meta = Meta {
         name: "schema",
         hint: "make it tmp, give it a codec in state_codecs(), or give it an ownership kind (own_set/rel_set/proto_set)",
     }],
-    allow: &[],
+    allow: crate::allow_registry_fields::state_schema::ALLOW_0,
     lists: &[],
 };
 

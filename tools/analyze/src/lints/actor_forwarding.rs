@@ -21,7 +21,7 @@ static META: Meta = Meta {
     scan: ScanKind::File,
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "attack_proc", hint: HINT }],
-    allow: &[],
+    allow: crate::allow_registry_fields::actor_forwarding::ALLOW_0,
     lists: &[],
 };
 

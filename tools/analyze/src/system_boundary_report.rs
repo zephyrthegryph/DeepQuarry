@@ -1,5 +1,6 @@
 //! Shared custom report policy over already-observed findings and ceilings.
-//! No filesystem, source view, semantic model or query receipt is created.
+//! Pure judgement plus baseline-only delivery helpers; no source/configuration
+//! reads, semantic model or query receipt is created.
 use std::{collections::BTreeMap,fmt::Write as _};
 use crate::{lint::{Meta,Policy,RuleMeta,ScanKind,Run},tree::CODE_MAPS_DM};
 
@@ -29,7 +30,7 @@ pub(crate) static META: Meta = Meta {
         RuleMeta { name: "B6", hint: HINT },
         RuleMeta { name: "B7", hint: HINT },
     ],
-    allow: &["system_boundary"],
+    allow: crate::allow_registry_fields::system_boundary::ALLOW_SHARED_0,
     lists: &[],
 };
 
@@ -68,3 +69,8 @@ pub fn judge(run:&Run,base:&BTreeMap<String,i64>,text:&mut String)->bool{
 
 /// Exact existing policy metadata; observational data only.
 pub fn metadata()->&'static Meta{&META}
+
+/// Unique original custom baseline policy. This performs baseline-only I/O;
+/// it reads no source/configuration and issues no completion/source receipt.
+pub(crate) fn finish_after_delivery(root:&std::path::Path,run:&Run,text:&mut String)->bool{let base=crate::baseline::read_ceilings(&root.join(BASELINE));judge(run,&base,text)}
+pub(crate) fn update_after_delivery(root:&std::path::Path,run:&Run,mode:crate::baseline::Mode)->std::io::Result<String>{let path=root.join(BASELINE);match mode{crate::baseline::Mode::Update=>{let n=crate::baseline::update_ceilings(&path,HEADER,&run.sites)?;Ok(format!("system_boundary: baseline lowered to {} entries",n))},crate::baseline::Mode::Migrate=>Ok("system_boundary: count ceilings have no rows to migrate".to_string()),crate::baseline::Mode::Seed=>{let counts=crate::baseline::key_counts(&run.sites);crate::baseline::write_ceilings(&path,HEADER,&counts)?;Ok(format!("system_boundary: wrote {} entries",counts.len()))}}}

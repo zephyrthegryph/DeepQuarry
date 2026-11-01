@@ -59,7 +59,7 @@ static META: Meta = Meta {
     scan: ScanKind::Tree,
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "outside_setter", hint: HINT }, RuleMeta { name: "list_mutation", hint: LIST_HINT }],
-    allow: &["tracked"],
+    allow: crate::allow_registry_fields::tracked::ALLOW_1,
     lists: &[],
 };
 
@@ -82,7 +82,7 @@ static META_TESTS: Meta = Meta {
         banned: &[],
     },
     rules: &[RuleMeta { name: "outside_setter", hint: "a test writes state through its setter too (A.set_x(v)), or set_var() when it must restore it" }, RuleMeta { name: "list_mutation", hint: LIST_HINT }],
-    allow: &["tracked"],
+    allow: crate::allow_registry_fields::tracked::ALLOW_0,
     lists: &[],
 };
 

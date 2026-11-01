@@ -173,7 +173,7 @@ fn incompatible_original_still_has_byte_faithful_raw_policy_findings() {
     let db = Arc::new(crate::query_db::QueryDb::default());
     let (inputs, frontend) = source(b"/proc/probe()\n    // \x80\n    sleep(1)\n", &db);
     let config = root().join("scopes.toml");
-    let intent = PolicyInputRequest {workspace_generators:Vec::new(),
+    let intent = PolicyInputRequest {workspace_auxiliary:Vec::new(),workspace_generators:Vec::new(),
         workspace: None,
         files: vec![PolicyInputFile {
             path: config.clone(),
@@ -291,4 +291,30 @@ fn immutable_admission_verdict_reuses_current_mapping_only_and_keeps_first_refus
         foreign_error, first,
         "foreign identity refuses before cached compatibility verdict"
     );
+}
+
+
+#[test]
+fn semantic_encoding_requires_actual_text_leases_and_preserves_typed_map_skin_dependencies(){
+    use crate::input_snapshot::FileSystemInputs;
+    let root=crate::test_scratch::dir("semantic-typed-nontext");
+    std::fs::write(root.join("project.dme"),b"#include \"first.dm\"\n#include \"probe.dmm\"\n#include \"probe.dmf\"\n#include \"after.dm\"\n").unwrap();
+    std::fs::write(root.join("first.dm"),b"/proc/first()\n    return\n").unwrap();
+    std::fs::write(root.join("after.dm"),b"/proc/after()\n    return\n").unwrap();
+    for name in ["probe.dmm","probe.dmf"]{std::fs::write(root.join(name),b"// actual nontext payload, not semantic UTF8: \xff\r\n").unwrap();}
+    let inputs=RecordingInputs::new(FileSystemInputs,4_000_000_000);
+    let front=dm_tree::frontend::build(&root.join("project.dme"),&inputs,&Default::default(),1).unwrap();
+    let mapping=front.source_export_mapping().unwrap();
+    let resources:Vec<_>=front.plan.occurrences.iter().enumerate().filter(|(_,row)|row.non_text_kind().is_some()).collect();
+    assert_eq!(resources.len(),2,"both real typed Map and Skin must remain in the original plan");
+    for(index,row)in &resources{assert!(mapping.source_acquisition(*index).is_none());assert!(matches!(row.path.extension().and_then(|value|value.to_str()),Some("dmm"|"dmf")));}
+    let after=front.plan.occurrences.iter().position(|row|row.path.as_path()==root.join("after.dm").as_path()).unwrap();assert!(after>resources.iter().map(|(index,_)|*index).max().unwrap());assert!(mapping.source_acquisition(after).is_some(),"filtering must preserve later original acquisition indices");
+    let evidence=inputs.semantic_source_evidence(&front).unwrap();evidence.check(mapping).unwrap();
+    let mut text_paths=Vec::new();evidence.visit_storage(|_,_|{},|path,lease|{assert!(lease.is_some());text_paths.push(path.as_ref().clone());});assert!(text_paths.contains(&root.join("after.dm")));assert!(!text_paths.iter().any(|path|matches!(path.extension().and_then(|value|value.to_str()),Some("dmm"|"dmf"))));
+    let missing=inputs.semantic_source_evidence_without_captured_roster(&front).unwrap();assert!(missing.check(mapping).unwrap_err().to_string().contains("original encoding unproven"),"an actual text occurrence with missing source-view proof still refuses");
+    let diagnostic_inputs=RecordingInputs::new(FileSystemInputs,4_000_000_001);let executor=dm_exec::BuildExecutor::new(1).unwrap();let diagnostic=dm_tree::frontend::build_for_checker_diagnostics(&root.join("project.dme"),&diagnostic_inputs,&Default::default(),dm_tree::frontend::FrontendConfig{workers:1,engine:None,observer:None},None,&executor).unwrap();let view=diagnostic.source_view().unwrap();let all=view.includes().count();let text=view.semantic_includes().count();assert_eq!(all-text,2);diagnostic_inputs.diagnostic_source_evidence(&view).unwrap().check(view.mapping()).unwrap();
+    // Actual DM text remains subject to strict original encoding. The suffix
+    // and the presence of neighboring NonText rows grant no exception.
+    std::fs::write(root.join("first.dm"),b"/proc/first()\n    // \x80\n    return\n").unwrap();
+    let incompatible_inputs=RecordingInputs::new(FileSystemInputs,4_000_000_002);let incompatible=dm_tree::frontend::build(&root.join("project.dme"),&incompatible_inputs,&Default::default(),1).unwrap();let refused=incompatible_inputs.semantic_source_evidence(&incompatible).unwrap();assert!(refused.check(incompatible.source_export_mapping().unwrap()).unwrap_err().to_string().contains("original source encoding lacks legacy semantic parity"));
 }

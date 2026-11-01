@@ -16,10 +16,7 @@ use crate::pat::Pat;
 use crate::tree::{SourceFile, Tree};
 use crate::pat_match;
 
-const RULES: &[RuleMeta] = &[RuleMeta {
-    name: "dx_string_names",
-    hint: "pass the var name as nameof(var), never a string literal (dx_conventions.md; design review §7)",
-}];
+use crate::allow_registry_fields::sys_dx_string_names::RULES;
 
 /// name -> positional indexes of var-name arguments (fallback when the tree defines none).
 const ACCESSORS: &[(&str, &[usize])] = &[

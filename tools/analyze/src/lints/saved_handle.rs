@@ -20,7 +20,7 @@ static META: Meta = Meta {
         name: "saved",
         hint: "a handle is per round and per connection: save an id, a ckey or a name, and re-link on load (relations.md D10)",
     }],
-    allow: &[],
+    allow: crate::allow_registry_fields::saved_handle::ALLOW_0,
     lists: &[],
 };
 

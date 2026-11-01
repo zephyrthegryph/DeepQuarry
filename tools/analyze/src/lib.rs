@@ -270,6 +270,11 @@ mod native_original_expression_debug_oracle;
 mod system_boundary_policy;
 #[cfg(feature="native-policy")]pub mod captured_system_boundary_pages;
 
+mod check_grep_semantic_policy;
+
+#[cfg(feature="native-policy")]
+mod check_grep_native_semantics;
+
 #[cfg(feature="native-policy")]
 mod reactive_global_source;
 #[cfg(feature="native-policy")]
@@ -278,4 +283,12 @@ mod generation_reactive_source;
 #[cfg(feature="native-policy")]
 pub mod captured_generation_auto;
 
+#[cfg(feature="native-policy")]pub mod captured_generation_questions;
+
 pub mod policy_finish;
+
+pub mod allow_annotation_policy;
+pub mod allow_registry_metadata;
+#[cfg(feature="native-policy")]pub mod captured_allow_annotations;
+
+pub(crate) mod allow_registry_fields;

@@ -1,0 +1,3 @@
+[diagnostics]
+redefined_proc = "warning"
+disabled_directive = "off"

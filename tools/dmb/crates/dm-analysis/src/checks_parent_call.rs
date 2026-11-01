@@ -446,6 +446,16 @@ pub fn source_predecessor_in_profile(
     member: MemberId,
     resolver: &(impl Resolver + ?Sized),
     profile: PackedU128,
+) -> Result<SourcePredecessorProjection, String> {source_predecessor_mode(tree,member,resolver,profile,false)}
+/// SOURCE annotation history only. Builtin records never own private/protected
+/// settings; None here makes NO claim that the callable has no builtin parent.
+pub(crate) fn source_annotation_predecessor(tree:&SemanticTree,member:MemberId,resolver:&(impl Resolver+?Sized),profile:PackedU128)->Result<Option<ProcedureIdentity>,String>{match source_predecessor_mode(tree,member,resolver,profile,true)?{SourcePredecessorProjection::Source(identity)=>Ok(Some(identity)),SourcePredecessorProjection::NoParent=>Ok(None),SourcePredecessorProjection::BuiltinBoundary=>Err("source-only annotation projection returned a builtin boundary".into())}}
+fn source_predecessor_mode(
+    tree: &SemanticTree,
+    member: MemberId,
+    resolver: &(impl Resolver + ?Sized),
+    profile: PackedU128,
+    source_annotations_only: bool,
 ) -> Result<SourcePredecessorProjection, String> {
     tree.validate_checker_builtin_profile(profile)
         .map_err(|e| format!("source-parent checker profile unavailable: {e:?}"))?;
@@ -512,6 +522,7 @@ pub fn source_predecessor_in_profile(
             source = Some(*identity);
         }
     }
+    if source_annotations_only{return Ok(source.map_or(SourcePredecessorProjection::NoParent,SourcePredecessorProjection::Source))}
     let query = Q::Ancestry(id.owner);
     let ancestry = resolver.resolve(query);
     if ancestry != Resolver::resolve(tree, query) {

@@ -24,7 +24,7 @@ static META: Meta = Meta {
     scan: ScanKind::File,
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "mouse_override", hint: HINT }],
-    allow: &[],
+    allow: crate::allow_registry_fields::mouse_override::ALLOW_0,
     lists: &[],
 };
 

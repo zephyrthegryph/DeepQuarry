@@ -12,6 +12,10 @@ pub(crate) fn collect_view(
     skeletons: crate::skeleton_roster::SkeletonView<'_>,
     intrinsics: &[IntrinsicMember],
 ) -> Result<CallableKinds, TreeError> {
+    collect_view_mode(skeletons,intrinsics,None)
+}
+pub(crate) fn collect_checker_diagnostic(skeletons:crate::skeleton_roster::SkeletonView<'_>,intrinsics:&[IntrinsicMember],diagnostics:&mut crate::diagnostic_declarations::DiagnosticDeclarationReceipt)->Result<CallableKinds,TreeError>{collect_view_mode(skeletons,intrinsics,Some(diagnostics))}
+fn collect_view_mode(skeletons:crate::skeleton_roster::SkeletonView<'_>,intrinsics:&[IntrinsicMember],mut diagnostics:Option<&mut crate::diagnostic_declarations::DiagnosticDeclarationReceipt>)->Result<CallableKinds,TreeError>{
     // A bare callable overrides either callable namespace. Resolve its kind
     // from positive declarations before forming groups, including forward
     // formals and nonlexical parents. Explicit proc/verb declarations retain
@@ -32,6 +36,7 @@ pub(crate) fn collect_view(
             ..
         } = skeleton
         {
+            let previous=callable_kinds.get(&(*owner,*name)).copied();
             if let Some(duplicate) = insert_anchor(
                 *owner,
                 *name,
@@ -40,7 +45,7 @@ pub(crate) fn collect_view(
                 &mut callable_kinds,
                 &mut callable_formals,
             ) {
-                return Err(duplicate);
+                if previous==Some(*kind)&&matches!(kind,MemberKind::Proc|MemberKind::Verb){if let Some(receipt)=diagnostics.as_deref_mut(){receipt.accept_callable_duplicate(duplicate)?;}else{return Err(duplicate)}}else{return Err(duplicate)};
             }
         }
     }

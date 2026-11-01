@@ -2,15 +2,9 @@
 //! Namespace and predecessor semantics remain authoritative here.
 use crate::*;
 use std::collections::HashMap;
-pub(crate) fn formal_chain<T: Copy + PartialEq>(
-    ids: &[T],
-    mut is_formal: impl FnMut(T) -> bool,
-) -> Vec<T> {
-    let formal = ids.iter().copied().find(|&id| is_formal(id));
-    formal
-        .into_iter()
-        .chain(ids.iter().copied().filter(|id| Some(*id) != formal))
-        .collect()
+pub(crate) fn formal_chain<T:Copy+PartialEq>(ids:&[T],is_formal:impl FnMut(T)->bool)->Vec<T>{formal_chain_mode(ids,is_formal,false)}
+fn formal_chain_mode<T:Copy+PartialEq>(ids:&[T],mut is_formal:impl FnMut(T)->bool,diagnostic_callables:bool)->Vec<T>{
+ if diagnostic_callables{let mut chain=Vec::with_capacity(ids.len());for &id in ids.iter().rev(){if is_formal(id){chain.push(id)}}for &id in ids{if !is_formal(id){chain.push(id)}}chain}else{let formal=ids.iter().copied().find(|&id|is_formal(id));formal.into_iter().chain(ids.iter().copied().filter(|id|Some(*id)!=formal)).collect()}
 }
 pub(crate) fn normalize_groups<M: crate::member_binding::MemberWrite + ?Sized>(
     tree: &mut SemanticTree,
@@ -18,11 +12,20 @@ pub(crate) fn normalize_groups<M: crate::member_binding::MemberWrite + ?Sized>(
     modes: &[DefinitionMode],
     groups: HashMap<(TypeId, SymbolId, MemberKind), Vec<MemberId>>,
 ) {
+    normalize_groups_mode(tree,members,modes,groups,false)
+}
+pub(crate) fn normalize_groups_mode<M: crate::member_binding::MemberWrite + ?Sized>(
+    tree: &mut SemanticTree,
+    members: &mut M,
+    modes: &[DefinitionMode],
+    groups: HashMap<(TypeId, SymbolId, MemberKind), Vec<MemberId>>,
+    diagnostic_callables:bool,
+) {
     // Formal definitions establish a group's base irrespective of source
     // position; overrides keep encounter order. BYOND compile-only probes show
     // implicit-before-formal and formal-before-implicit compile identically.
     for (key, ids) in groups {
-        let chain = formal_chain(&ids, |id| modes[id.index()] == DefinitionMode::Declare);
+        let chain = formal_chain_mode(&ids, |id| modes[id.index()] == DefinitionMode::Declare,diagnostic_callables&&matches!(key.2,MemberKind::Proc|MemberKind::Verb));
         let mut previous = None;
         for id in &chain {
             members.set_previous(id.index(), previous);

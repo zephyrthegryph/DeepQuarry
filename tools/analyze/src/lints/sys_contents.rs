@@ -9,10 +9,7 @@ use crate::pat;
 use crate::tree::SourceFile;
 use crate::util::before_slashes;
 
-const RULES: &[RuleMeta] = &[RuleMeta {
-    name: "materializing_walk",
-    hint: "FOR_REAL_CONTENTS() + latent_names()/latent_count() in tgui_data()/examine() (doc/rewrite/systems.md section 18)",
-}];
+use crate::allow_registry_fields::sys_contents::RULES;
 
 fn scan_file(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
     let mut inside = false;

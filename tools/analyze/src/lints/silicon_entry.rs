@@ -56,7 +56,7 @@ static META: Meta = Meta {
         RuleMeta { name: "siliconaccess", hint: H_ACCESS },
         RuleMeta { name: "legacy_entry", hint: H_LEGACY },
     ],
-    allow: &["silicon_entry"],
+    allow: crate::allow_registry_fields::silicon_entry::ALLOW_0,
     lists: &[],
 };
 

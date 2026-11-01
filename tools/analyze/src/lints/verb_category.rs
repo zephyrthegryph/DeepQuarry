@@ -38,7 +38,7 @@ static META: Meta = Meta {
         banned: &[],
     },
     rules: &[RuleMeta { name: "raw_category", hint: HINT }, RuleMeta { name: "duplicate_define", hint: HINT }],
-    allow: &["verb_category"],
+    allow: crate::allow_registry_fields::verb_category::ALLOW_0,
     lists: &[],
 };
 

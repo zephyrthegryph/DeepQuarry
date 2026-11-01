@@ -65,7 +65,7 @@ static META: Meta = Meta {
         RuleMeta { name: "untracked_ui_read", hint: H_UI_UNTRACKED },
         RuleMeta { name: "exact_on_state_changed", hint: H_EXACT },
     ],
-    allow: &["derived_reads"],
+    allow: crate::allow_registry_fields::derived_reads::ALLOW_0,
     lists: &[],
 };
 

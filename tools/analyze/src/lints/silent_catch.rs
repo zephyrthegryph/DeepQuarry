@@ -38,7 +38,7 @@ static META: Meta = Meta {
         name: "silent_catch",
         hint: "use dq_report_caught(e, \"context\") or annotate `// ALLOW(silent_catch): reason`",
     }],
-    allow: &["silent_catch"],
+    allow: crate::allow_registry_fields::silent_catch::ALLOW_0,
     lists: &["strict_dirs"],
 };
 

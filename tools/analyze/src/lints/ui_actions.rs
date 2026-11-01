@@ -73,7 +73,7 @@ static META: Meta = Meta {
             hint: "make the act() match an act_ proc of the interface's host (dispatcher rules: code/datums/capabilities/ui_actions.dm)",
         },
     ],
-    allow: &["ui_actions"],
+    allow: crate::allow_registry_fields::ui_actions::ALLOW_0,
     lists: &[],
 };
 

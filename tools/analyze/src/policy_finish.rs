@@ -123,3 +123,8 @@ pub fn allow_usage_rows<'a,E>(outcomes:&[Outcome],mut digest:impl FnMut(&str)->R
 pub fn write_allow_rows(rows:&BTreeSet<(String,String,u32)>,output:&mut impl std::io::Write)->std::io::Result<()>{for(name,digest,line)in rows{writeln!(output,"{}\t{}\t{}",name,digest,line)?;}Ok(())}
 
 #[cfg(test)]#[path="policy_finish_tests.rs"]mod tests;
+
+/// Exact final CLI line, after any existing timing/unused-ALLOW presentation.
+/// Failed labels intentionally retain input order and duplicates.
+pub fn result_line(failed:&[String])->String{if failed.is_empty(){"All ratchet lints passed.\n".to_owned()}else{format!("Ratchet lints failed: {}\n",failed.join(" "))}}
+#[cfg(test)]mod result_line_tests{use super::*;#[test]fn whole_cli_result_line_preserves_success_order_duplicates_and_selftest_labels(){assert_eq!(result_line(&[]),"All ratchet lints passed.\n");assert_eq!(result_line(&["qdel_src".into(),"scheduler".into(),"scheduler --selftest".into(),"scheduler".into()]),"Ratchet lints failed: qdel_src scheduler scheduler --selftest scheduler\n");}}

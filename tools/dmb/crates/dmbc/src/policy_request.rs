@@ -18,6 +18,8 @@ pub struct PolicyInputRequest {
     pub workspace: Option<WorkspacePolicyRequest>,
     #[serde(default,skip_serializing_if="Vec::is_empty",with="generator_names")]
     pub workspace_generators: Vec<crate::GeneratorName>,
+    #[serde(default,skip_serializing_if="Vec::is_empty",with="auxiliary_questions")]
+    pub workspace_auxiliary: Vec<WorkspaceAuxiliaryQuestion>,
 }
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -39,6 +41,12 @@ pub enum PolicyInputRole {
     Configuration,
 }
 
+
+/// Explicit fixed auxiliary questions, independent of generator/source roles.
+#[derive(Clone,Copy,Debug,Eq,PartialEq,Ord,PartialOrd,Serialize,Deserialize)]
+#[serde(rename_all="snake_case")]
+pub enum WorkspaceAuxiliaryQuestion{DeadlinePollingAllowlist,CheckGrep}
+
 /// Private normalized authority. Deserialization validates, never bypasses admission.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(try_from = "PolicyInputRequest", into = "PolicyInputRequest")]
@@ -47,6 +55,7 @@ pub struct AdmittedPolicyRequest {
     search_folders: Vec<PathBuf>,
     workspace: Option<WorkspacePolicyRequest>,
     workspace_generators: Vec<crate::GeneratorName>,
+    workspace_auxiliary: Vec<WorkspaceAuxiliaryQuestion>,
 }
 impl PolicyInputRequest {
     pub fn admit(self) -> io::Result<AdmittedPolicyRequest> {
@@ -69,6 +78,9 @@ impl PolicyInputRequest {
         if self.workspace_generators.len()>13{return Err(io::Error::new(io::ErrorKind::InvalidInput,"generator questions exceed the registered set"));}
         let mut workspace_generators=self.workspace_generators;workspace_generators.sort_unstable();
         if workspace_generators.windows(2).any(|pair|pair[0]==pair[1]){return Err(io::Error::new(io::ErrorKind::InvalidInput,"duplicate generator question"));}
+        if !self.workspace_auxiliary.is_empty() && self.workspace.is_none(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"auxiliary questions require actual workspace intent"))}
+        if self.workspace_auxiliary.len()>2{return Err(io::Error::new(io::ErrorKind::InvalidInput,"auxiliary questions exceed fixed registered set"))}
+        let mut workspace_auxiliary=self.workspace_auxiliary;workspace_auxiliary.sort_unstable();if workspace_auxiliary.windows(2).any(|pair|pair[0]==pair[1]){return Err(io::Error::new(io::ErrorKind::InvalidInput,"duplicate auxiliary question"))}
         let workspace = self
             .workspace
             .map(|wanted| -> io::Result<WorkspacePolicyRequest> {
@@ -121,6 +133,7 @@ impl PolicyInputRequest {
             search_folders: folders.into_iter().collect(),
             workspace,
             workspace_generators,
+            workspace_auxiliary,
         })
     }
 }
@@ -137,10 +150,12 @@ impl From<AdmittedPolicyRequest> for PolicyInputRequest {
             search_folders: value.search_folders,
             workspace: value.workspace,
             workspace_generators: value.workspace_generators,
+            workspace_auxiliary: value.workspace_auxiliary,
         }
     }
 }
 impl AdmittedPolicyRequest {
+    pub fn workspace_auxiliary(&self)->&[WorkspaceAuxiliaryQuestion]{&self.workspace_auxiliary}
     pub fn workspace_generators(&self)->&[crate::GeneratorName]{&self.workspace_generators}
     pub fn workspace(&self) -> Option<&WorkspacePolicyRequest> {
         self.workspace.as_ref()
@@ -263,4 +278,10 @@ mod generator_names{
  use super::*;
  pub fn serialize<S:serde::Serializer>(names:&[crate::GeneratorName],serializer:S)->Result<S::Ok,S::Error>{use serde::ser::SerializeSeq;let mut seq=serializer.serialize_seq(Some(names.len()))?;for name in names{seq.serialize_element(name.name())?;}seq.end()}
  pub fn deserialize<'de,D:serde::Deserializer<'de>>(decoder:D)->Result<Vec<crate::GeneratorName>,D::Error>{struct Names;impl<'de>serde::de::Visitor<'de>for Names{type Value=Vec<crate::GeneratorName>;fn expecting(&self,out:&mut std::fmt::Formatter)->std::fmt::Result{out.write_str("at most thirteen canonical generator questions")}fn visit_seq<A:serde::de::SeqAccess<'de>>(self,mut sequence:A)->Result<Self::Value,A::Error>{if sequence.size_hint().is_some_and(|n|n>13){return Err(serde::de::Error::custom("generator question list exceeds registered set"))}let mut names=Vec::new();names.try_reserve_exact(13).map_err(serde::de::Error::custom)?;while let Some(name)=sequence.next_element::<crate::GeneratorName>()?{if names.len()==13{return Err(serde::de::Error::custom("generator question list exceeds registered set"))}names.push(name);}Ok(names)}}decoder.deserialize_seq(Names)}
+}
+
+mod auxiliary_questions{
+ use super::*;
+ pub fn serialize<S:serde::Serializer>(values:&[WorkspaceAuxiliaryQuestion],serializer:S)->Result<S::Ok,S::Error>{values.serialize(serializer)}
+ pub fn deserialize<'de,D:serde::Deserializer<'de>>(decoder:D)->Result<Vec<WorkspaceAuxiliaryQuestion>,D::Error>{struct Questions;impl<'de>serde::de::Visitor<'de>for Questions{type Value=Vec<WorkspaceAuxiliaryQuestion>;fn expecting(&self,f:&mut std::fmt::Formatter)->std::fmt::Result{f.write_str("at most two fixed workspace auxiliary questions")}fn visit_seq<A:serde::de::SeqAccess<'de>>(self,mut seq:A)->Result<Self::Value,A::Error>{if seq.size_hint().is_some_and(|n|n>2){return Err(serde::de::Error::custom("too many auxiliary questions"))}let mut values=Vec::new();values.try_reserve_exact(2).map_err(serde::de::Error::custom)?;while let Some(value)=seq.next_element()?{if values.len()==2{return Err(serde::de::Error::custom("too many auxiliary questions"))}values.push(value)}Ok(values)}}decoder.deserialize_seq(Questions)}
 }

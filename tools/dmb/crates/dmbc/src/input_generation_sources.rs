@@ -128,3 +128,64 @@ impl<P:SnapshotProvider> dq_analyze::reactive_raw_policy_pages::RawPolicyPages f
  }
  fn for_each(&self,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{self.for_each_domain(false,visit)}
 }
+
+/// Consumed restricted owners. Neither variant is an ordinary frontend role.
+pub(crate) enum OwnedGenerationFrame{Declarations(GenerationBootstrap),Questions(GenerationQuestionBootstrap)}
+impl OwnedGenerationFrame{
+ fn borrowed(&self)->GenerationSourceFrame<'_>{match self{Self::Declarations(frame)=>GenerationSourceFrame::Declarations(frame),Self::Questions(frame)=>GenerationSourceFrame::Questions(frame)}}
+}
+/// This token can only be constructed after the unique actual producer phase
+/// has exhausted its real source domains and all owned source frames retire.
+pub(crate) struct RetiredGenerationInputs{inputs:InputSnapshot,root:PathBuf,names:[Option<crate::GeneratorName>;13]}
+impl RetiredGenerationInputs{pub(crate) fn into_parts(self)->(InputSnapshot,PathBuf,[Option<crate::GeneratorName>;13]){(self.inputs,self.root,self.names)}}
+impl<P:SnapshotProvider> RecordingInputs<P>{
+ fn with_generation_presentation<R>(&self,frame:GenerationSourceFrame<'_>,root:&Path,budget:&Budget,consume:impl FnOnce(dq_analyze::captured_untyped::ManifestRead<'_>)->io::Result<R>)->io::Result<R>{
+  let peak=root.as_os_str().len().checked_add("deepquarry.dme".len()).and_then(|n|n.checked_mul(32)).and_then(|n|n.checked_add(4096)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"generation presentation path overflow"))?;budget.charge(peak).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;
+  let path=canonical_path(&root.join("deepquarry.dme"));
+  if let Some(lease)=frame.originals().find_map(|(current,lease)|(current==path.as_path()).then_some(lease).flatten()){
+   if !self.validate_source_lease(&path,lease){return Err(invalid("generation fixed presentation acquisition differs"))}
+   let original=crate::input_snapshot::recorded_source_original(lease)?;let bytes=match &original{RecordedSourceOriginal::Utf8(text)=>text.as_bytes(),RecordedSourceOriginal::Bytes(bytes)=>bytes.as_slice()};return consume(dq_analyze::captured_untyped::ManifestRead::CompiledOriginalBytes(bytes))
+  }
+  let size=match self.provider.stamp(&path){Ok(stamp)=>usize::try_from(stamp.size).map_err(|_|io::Error::new(io::ErrorKind::OutOfMemory,"generation fixed presentation size exceeds address space"))?,Err(error)if error.kind()==io::ErrorKind::NotFound=>0,Err(actual)=>return Err(actual)};
+  let peak=size.checked_mul(4).and_then(|n|n.checked_add(8192)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"generation fixed presentation read overflow"))?;budget.charge(peak).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;
+  // The candidate operation records the actual bytes OR actual absence. A
+  // preliminary NotFound stamp alone never issues negative source authority.
+  match self.read_policy_candidate(&path,peak)?{Some(bytes)=>consume(dq_analyze::captured_untyped::ManifestRead::OriginalBytes(bytes.as_slice())),None=>consume(dq_analyze::captured_untyped::ManifestRead::ProvenUnavailable)}
+ }
+}
+
+impl crate::query_db::QueryDb{
+ pub(crate) fn stage_generation_bootstrap<P:SnapshotProvider>(
+  &self,frame:OwnedGenerationFrame,recording:RecordingInputs<P>,discovery:Arc<DiscoveryReceipt>,intent:&crate::policy_request::AdmittedPolicyRequest,names:&[crate::GeneratorName],spool:std::fs::File,
+ )->io::Result<crate::runner_host::query_snapshot::ClosedGeneration>{
+  if names.is_empty()||names.len()>13{return Err(io::Error::new(io::ErrorKind::InvalidInput,"restricted generation phase needs bounded requested roles"))}
+  let mut journal=crate::generation_journal::StagedJournal::new(spool)?;let mut included=[true;13];let mut selected=[None;13];let mut ordinal=0usize;let mut root=None;let mut validation_peak=0usize;
+  {
+   let borrowed=frame.borrowed();borrowed.require_recording(&recording)?;discovery.validate_recording(&recording)?;
+   let mut append=|artifact:&crate::query_db::GeneratorArtifact,budget:&Arc<Budget>,_:&std::collections::BTreeSet<String>|->io::Result<()>{
+    let name=*names.get(ordinal).ok_or_else(||invalid("generation producer repeated or invented a callback"))?;
+    if artifact.name()!=name.name(){return Err(invalid("generation producer callback role/order differs"))}
+    budget.charge(std::mem::size_of::<crate::generation_journal::StagedJournal>()).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;
+    if root.is_none(){budget.charge(discovery.contract().root.as_os_str().len().checked_mul(4).and_then(|n|n.checked_add(std::mem::size_of::<PathBuf>())).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"generation closure root overflow"))?).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;root=Some(discovery.contract().root.clone());}
+    if ordinal==0{recording.with_generation_presentation(borrowed,&discovery.contract().root,budget,|manifest|{for(i,name)in names.iter().enumerate(){use dq_analyze::captured_untyped::ManifestRead;let view=match &manifest{ManifestRead::Compiled=>ManifestRead::Compiled,ManifestRead::CompiledOriginalBytes(bytes)=>ManifestRead::CompiledOriginalBytes(bytes),ManifestRead::OriginalBytes(bytes)=>ManifestRead::OriginalBytes(bytes),ManifestRead::ProvenUnavailable=>ManifestRead::ProvenUnavailable};included[i]=crate::runner_host::query_snapshot::original_manifest_includes(view,*name)?;}Ok(())})?;}
+    journal.append_generator(ordinal as u32,name.name())?;
+    if name==crate::GeneratorName::UiTypes{let width=artifact.generated_files().map(|(path,_)|path.len()).max().unwrap_or(0);let peak=discovery.contract().root.as_os_str().len().checked_add(width).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(1024)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"generation UI path overflow"))?;if peak>validation_peak{budget.charge(peak-validation_peak).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;validation_peak=peak;}}
+    for(path,text)in artifact.generated_files(){
+     Self::validate_generation_output(&discovery.contract().root,name,path).map_err(|m|io::Error::new(io::ErrorKind::InvalidData,m))?;crate::daemon::control::checkpoint()?;journal.append_file(path,text)?;
+    }
+    for row in artifact.diagnostics(){crate::daemon::control::checkpoint()?;journal.append_diagnostic(&row.rel,row.line,&row.msg)?;}
+    budget.require().map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;selected[ordinal]=Some(name);ordinal+=1;Ok(())
+   };
+   match &frame{OwnedGenerationFrame::Declarations(value)=>self.with_generation_source_generators(value,&recording,&discovery,intent,names,&mut append)?,OwnedGenerationFrame::Questions(value)=>self.with_generation_question_generators(value,&recording,&discovery,intent,names,&mut append)?,}
+   if ordinal!=names.len(){return Err(invalid("generation producer omitted a requested role"))}
+   borrowed.require_recording(&recording)?;discovery.validate_recording(&recording)?;recording.require_generation_capture_current()?;
+  }
+  let journal=journal.seal()?;
+  // Consume every source/question/discovery owner before the final ledger move.
+  drop(frame);drop(discovery);recording.finish_prepared()?;recording.require_generation_capture_current()?;crate::daemon::control::checkpoint()?;
+  let inputs=recording.into_snapshot()?;
+  let retired=RetiredGenerationInputs{inputs,root:root.ok_or_else(||invalid("generation actual root was not issued"))?,names:selected};
+  let inputs=crate::request_runner::runner_freshness::GenerationInputClosure::from_bootstrap_retired(retired);
+  Ok(crate::runner_host::query_snapshot::ClosedGeneration{journal,inputs,included})
+ }
+}

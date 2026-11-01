@@ -20,10 +20,17 @@ pub(crate) struct DiscoveryContract {
 /// The selector actually executed by the only recursive receipt issuer.
 /// No caller flag, include glob or exclusion list can construct this value.
 #[derive(Clone,Copy)]
-enum DiscoverySelection{RecursiveDmNoChildLinksV1}
+enum DiscoverySelection{RecursiveDmNoChildLinksV1,CheckGrepDmAndRawNoChildLinksV1}
 impl DiscoverySelection{
- fn includes_file(self,path:&Path)->bool{match self{Self::RecursiveDmNoChildLinksV1=>path.extension().is_some_and(|extension|extension=="dm")}}
+ fn includes_file(self,path:&Path,root:&Path)->bool{match self{
+  Self::RecursiveDmNoChildLinksV1=>path.extension().is_some_and(|extension|extension=="dm"),
+  // Preserve existing code/maps DM roles; the added tgui walk retains only
+  // the unique CheckGrep selector, not unrelated tgui DM payloads.
+  Self::CheckGrepDmAndRawNoChildLinksV1=>path.strip_prefix(root).is_ok_and(|relative|{let code_or_maps=relative.starts_with("code")||relative.starts_with("maps");let dm=path.file_name().is_some_and(|name|name.as_encoded_bytes().ends_with(b".dm"));(code_or_maps&&dm)||dq_analyze::lints::check_grep::native::selects_filesystem_source(relative)}),
+ }}
 }
+/// Names are issued only by the actual private CheckGrep traversal.
+struct CheckGrepNames{dmes:Vec<PathBuf>,jsx:Vec<PathBuf>}
 
 /// All fields private. Only actual typed observations issue this receipt.
 pub(crate) struct DiscoveryReceipt {
@@ -32,8 +39,10 @@ pub(crate) struct DiscoveryReceipt {
     contract: DiscoveryContract,
     facts: InputSnapshot,
     files: Vec<PathBuf>,
+    check_grep:Option<CheckGrepNames>,
 }
 impl DiscoveryReceipt {
+    pub(crate) fn check_grep_names(&self)->io::Result<(&[PathBuf],&[PathBuf])>{match (&self.selection,&self.check_grep){(DiscoverySelection::CheckGrepDmAndRawNoChildLinksV1,Some(names))=>Ok((&names.dmes,&names.jsx)),_=>Err(io::Error::new(io::ErrorKind::Unsupported,"complete check_grep selection was not actually observed"))}}
     /// Full CODE_DM coverage is a property of this actual unfiltered typed
     /// traversal, not a normal folder fact or a caller's claimed prefix.
     pub(crate) fn covers_code_dm(&self,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{
@@ -43,10 +52,11 @@ impl DiscoveryReceipt {
         self.covers_dm_roots(dq_analyze::captured_raw_file::generator_cli_test_roots(),true,admit)
     }
     pub(crate) fn covers_dm_roots(&self,roots:&[(&str,&str)],missing_is_empty:bool,admit:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<bool>{
-        match self.selection{DiscoverySelection::RecursiveDmNoChildLinksV1=>{}}
+        match self.selection{DiscoverySelection::RecursiveDmNoChildLinksV1|DiscoverySelection::CheckGrepDmAndRawNoChildLinksV1=>{}}
         for &(directory,extension) in roots{
             crate::daemon::control::checkpoint()?;
             if extension!="dm"{return Ok(false)}
+            if matches!(self.selection,DiscoverySelection::CheckGrepDmAndRawNoChildLinksV1)&&!["code","maps","tgui/packages/tgui/interfaces"].iter().any(|root|Path::new(directory).starts_with(root)){return Ok(false)}
             if !self.contract.recursive_roots.iter().any(|root|root.strip_prefix(&self.contract.root).is_ok_and(|relative|Path::new(directory).starts_with(relative))){return Ok(false)}
             admit(self.contract.root.as_os_str().len().checked_add(directory.len()).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(512)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"code discovery proof path overflow"))?)?;
             let code=self.contract.root.join(directory);
@@ -88,6 +98,7 @@ impl DiscoveryReceipt {
         for path in &self.files {
             census.path(owner, path);
         }
+        if let Some(names)=&self.check_grep{for rows in [&names.dmes,&names.jsx]{census.vec_payload(owner,rows);for path in rows{census.path(owner,path);}}}
         census.workspace_policy_facts(&self.facts);
     }
 
@@ -128,7 +139,8 @@ impl DiscoveryReceipt {
                         .map(|path| path.capacity())
                         .sum::<usize>()
                     + self.files.capacity() * std::mem::size_of::<PathBuf>()
-                    + self.files.iter().map(|path| path.capacity()).sum::<usize>(),
+                    + self.files.iter().map(|path| path.capacity()).sum::<usize>()
+                    + self.check_grep.as_ref().map_or(0,|names|[&names.dmes,&names.jsx].into_iter().map(|rows|rows.capacity()*std::mem::size_of::<PathBuf>()+rows.iter().map(|path|path.capacity()).sum::<usize>()).sum::<usize>()),
             )
             .ok_or_else(|| io::Error::other("discovery metadata overflow"))
     }
@@ -137,10 +149,23 @@ impl DiscoveryReceipt {
         &self.contract
     }
 }
-pub(crate) fn discover<P: SnapshotProvider>(
-    inputs: &RecordingInputs<P>,
-    mut contract: DiscoveryContract,
-) -> io::Result<DiscoveryReceipt> {
+pub(crate) fn discover<P: SnapshotProvider>(inputs:&RecordingInputs<P>,contract:DiscoveryContract)->io::Result<DiscoveryReceipt>{
+ discover_selected(inputs,contract,DiscoverySelection::RecursiveDmNoChildLinksV1)
+}
+pub(crate) fn discover_check_grep<P:SnapshotProvider>(inputs:&RecordingInputs<P>,contract:DiscoveryContract)->io::Result<DiscoveryReceipt>{
+ let root=contract.root.as_path();
+ if !root.is_absolute(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"check_grep needs its actual absolute workspace root"))}
+ let preflight=root.as_os_str().len().checked_mul(16).and_then(|n|n.checked_add(8192)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"check_grep discovery root overflow"))?;
+ if inputs.policy_discovery_metadata_charge()?.checked_add(preflight).is_none_or(|n|n>64*1024*1024){return Err(io::Error::new(io::ErrorKind::OutOfMemory,"check_grep discovery exceeds existing metadata bound"))}
+ let expected=["code","maps","tgui"];
+ if contract.recursive_roots.len()!=expected.len()||expected.iter().any(|name|!contract.recursive_roots.contains(&root.join(name))){return Err(io::Error::new(io::ErrorKind::Unsupported,"check_grep requires the admitted code/maps/tgui recursive roots"))}
+ let receipt=discover_selected(inputs,contract,DiscoverySelection::CheckGrepDmAndRawNoChildLinksV1)?;
+ // Canonical alias roots cannot silently change the legacy report namespace.
+ // This actual issuer refuses the unproved root-alias domain, never relabels it.
+ let expected=["code","maps","tgui"];if expected.iter().any(|name|!receipt.contract.recursive_roots.contains(&receipt.contract.root.join(name))){return Err(io::Error::new(io::ErrorKind::Unsupported,"check_grep root alias report namespace is unissued"))}
+ Ok(receipt)
+}
+fn discover_selected<P:SnapshotProvider>(inputs:&RecordingInputs<P>,mut contract:DiscoveryContract,selection:DiscoverySelection)->io::Result<DiscoveryReceipt>{
     if !contract.root.is_absolute() || contract.recursive_roots.iter().any(|p| !p.is_absolute()) {
         return Err(io::Error::other(
             "workspace discovery paths must be caller absolute",
@@ -191,7 +216,6 @@ pub(crate) fn discover<P: SnapshotProvider>(
         Ok(())
     }
     check(inputs, metadata)?;
-    let selection=DiscoverySelection::RecursiveDmNoChildLinksV1;
     let mut stack = contract
         .recursive_roots
         .iter()
@@ -201,6 +225,12 @@ pub(crate) fn discover<P: SnapshotProvider>(
     let mut visited = BTreeSet::new();
     let mut files = BTreeSet::new();
     let mut observed = BTreeSet::new();
+    let mut dmes=BTreeSet::new();let mut jsx=BTreeSet::new();
+    if matches!(selection,DiscoverySelection::CheckGrepDmAndRawNoChildLinksV1){
+     let listing=inputs.capture_policy_directory_bounded(&contract.root,true,metadata)?;observed.insert(contract.root.clone());
+     let Listing::Present(entries)=listing else{return Err(io::Error::new(io::ErrorKind::Interrupted,"check_grep workspace root disappeared or changed kind"))};
+     for entry in entries.iter(){crate::daemon::control::checkpoint()?;if entry.kind==Kind::File&&dq_analyze::lints::check_grep::native::is_root_dme(&entry.name){let path=contract.root.join(&entry.name);metadata=metadata.checked_add(512+path.capacity()*4).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"check_grep root DME metadata overflow"))?;check(inputs,metadata)?;dmes.insert(path.clone());files.insert(path);}}
+    }
     while let Some((folder, follow_root)) = stack.pop() {
         crate::daemon::control::checkpoint()?;
         if relative_filesystem_path(&folder, &contract.root).is_none() {
@@ -231,7 +261,7 @@ pub(crate) fn discover<P: SnapshotProvider>(
                             check(inputs, metadata)?;
                             stack.push((path, false));
                         }
-                        Kind::File if selection.includes_file(Path::new(&entry.name)) =>
+                        Kind::File if selection.includes_file(&path,&contract.root) =>
                         {
                             if !files.contains(&path) {
                                 metadata =
@@ -241,6 +271,10 @@ pub(crate) fn discover<P: SnapshotProvider>(
                                 check(inputs, metadata)?;
                                 files.insert(path);
                             }
+                        }
+                        Kind::File if matches!(selection,DiscoverySelection::CheckGrepDmAndRawNoChildLinksV1)=>{
+                         let relative=path.strip_prefix(&contract.root).map_err(|_|io::Error::other("check_grep JSX observation escapes root"))?;
+                         if dq_analyze::lints::check_grep::native::is_jsx_path(relative)&&!jsx.contains(&path){metadata=metadata.checked_add(512+path.capacity()*4).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"check_grep JSX metadata overflow"))?;check(inputs,metadata)?;jsx.insert(path);}
                         }
                         Kind::File | Kind::Symlink | Kind::Other => {}
                     }
@@ -269,11 +303,19 @@ pub(crate) fn discover<P: SnapshotProvider>(
             ));
         }
     }
+    let mut names_vec=|rows:BTreeSet<PathBuf>|->io::Result<Vec<PathBuf>>{
+        let capacity=rows.len().checked_mul(4).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"check_grep name capacity overflow"))?;
+        metadata=metadata.checked_add(capacity.checked_mul(std::mem::size_of::<PathBuf>()).and_then(|n|n.checked_add(128)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"check_grep name metadata overflow"))?).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"check_grep name overlap overflow"))?;
+        check(inputs,metadata)?;let mut result=Vec::new();result.try_reserve_exact(rows.len()).map_err(|error|io::Error::new(io::ErrorKind::OutOfMemory,error))?;
+        if result.capacity()>capacity{return Err(io::Error::new(io::ErrorKind::OutOfMemory,"check_grep actual name capacity exceeds admitted overlap"))}
+        result.extend(rows);Ok(result)
+    };
+    let check_grep=if matches!(selection,DiscoverySelection::CheckGrepDmAndRawNoChildLinksV1){Some(CheckGrepNames{dmes:names_vec(dmes)?,jsx:names_vec(jsx)?})}else{None};
     Ok(DiscoveryReceipt {
         issuer: inputs.policy_discovery_issuer(),
         selection,
         contract,
         facts,
-        files,
+        files,check_grep,
     })
 }

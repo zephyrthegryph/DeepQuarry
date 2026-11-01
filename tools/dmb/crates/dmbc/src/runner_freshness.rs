@@ -429,6 +429,7 @@ pub(crate) struct GenerationInputClosure {
     names: [Option<crate::GeneratorName>; 13],
 }
 impl GenerationInputClosure {
+    pub(crate) fn from_bootstrap_retired(retired:crate::input_snapshot::RetiredGenerationInputs)->Self{let(inputs,root,names)=retired.into_parts();Self{inputs,root,names}}
     pub(crate) fn root(&self)->&std::path::Path{&self.root}
     pub(crate) fn names(&self)->impl Iterator<Item=crate::GeneratorName>+'_ {self.names.iter().flatten().copied()}
     pub(crate) fn matches_names(&self, names: &[Option<crate::GeneratorName>; 13]) -> bool {

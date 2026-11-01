@@ -39,6 +39,8 @@ mod aggregate;
 #[path = "workspace_raw_code.rs"]
 mod code;
 pub(crate) use code::{WorkspaceCodeReader,WorkspaceCodeWitness,WorkspaceCodeTraversal,WorkspaceGeneratorTestWitness};
+#[path = "workspace_check_grep.rs"]
+mod check_grep;
 #[path = "workspace_resource_inventory.rs"]
 mod resource_inventory;
 pub use aggregate::{WorkspaceCursor, WorkspacePageReader, WorkspacePageView};
@@ -511,6 +513,9 @@ impl Drop for PageInputLease<'_> {
     }
 }
 impl QueryDb {
+    /// Source-free protocol accounting, the SAME unchanged report reservation.
+    pub(crate) fn workspace_raw_report_reserve()->usize{aggregate::REPORT_RESERVE}
+
     pub(super) fn workspace_clear_locked(&self) {
         self.workspace_roots_clear_locked();
         let mut pages = self
@@ -710,7 +715,7 @@ impl QueryDb {
         names: &[String],
         scans: Arc<AtomicUsize>,
         inventory: &ResourceInventory,
-    ) -> io::Result<Vec<Arc<PageResult>>> {
+    ) -> io::Result<(Vec<Arc<PageResult>>, Vec<Arc<Scope>>)> {
         crate::daemon::control::checkpoint()?;
         capture.require_scope(scope)?; // exact immutable map/revision BEFORE cache
         if !scope.uses_queries(self) {
@@ -766,6 +771,8 @@ impl QueryDb {
             })
             .ok_or_else(|| invalid("workspace fixed input accounting overflow"))?;
         let page_budget = self.workspace_input_headroom_locked(fixed_inputs)?;
+        self.workspace_input_headroom_locked(fixed_inputs.saturating_add(inventory.coordination_charge(scopes.len())?))?;
+        inventory.add_scopes(&scopes);
         let mut held = Vec::new();
         let mut start = 0;
         let mut page_index = 0;
@@ -863,7 +870,7 @@ impl QueryDb {
         }
         capture.require_scope(scope)?;
         crate::daemon::control::checkpoint()?;
-        Ok(held)
+        Ok((held,scopes))
     }
     /// Internal compatibility adapter. The public endpoint uses borrowed paging.
     pub(crate) fn workspace_raw_findings(
@@ -891,7 +898,7 @@ impl QueryDb {
             .denied
             .store(false, Ordering::Relaxed);
         let inventory = self.workspace_resource_inventory_locked()?;
-        let pages = self.build_workspace_pages_locked(capture, scope, names, scans, &inventory)?;
+        let (pages,_scopes) = self.build_workspace_pages_locked(capture, scope, names, scans, &inventory)?;
         let ordered = captured_raw_file::ordered_names(names).map_err(invalid)?;
         let mut available = RESULT_BOUND
             .checked_sub(inventory.bytes())

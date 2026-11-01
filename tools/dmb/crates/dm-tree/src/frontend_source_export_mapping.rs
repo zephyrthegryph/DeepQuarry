@@ -16,6 +16,7 @@ pub(super) struct DeclarationCompatibility {
     pub line: usize,
     pub column: usize,
     pub source_len: usize,
+    pub logical_boundary: bool,
 }
 /// Policy diagnostic cursor: logical boundary and physical byte point remain
 /// distinct. No column is claimed from a macro LINE-only receipt.
@@ -669,9 +670,10 @@ impl SourceExportMapping {
         );
         let mut hash = xxhash_rust::xxh3::Xxh3::new();
         hash.update(&self.coordinate_fingerprint.to_le_bytes());
-        hash.update(b"native-declaration-policy-continuation-v1");
+        hash.update(b"native-declaration-policy-continuation-v2");
         for row in rows.iter() {
             hash.update(&row.ordinal.0.to_le_bytes());
+            hash.update(&[u8::from(row.logical_boundary)]);
             for value in [
                 row.occurrence.unwrap_or(usize::MAX),
                 row.line,
@@ -718,7 +720,7 @@ impl SourceExportMapping {
                 path: Arc::clone(&include.path),
                 line: row.line,
                 byte_column: Some(row.column),
-                logical_boundary: true,
+                logical_boundary: row.logical_boundary,
             });
         }
         match self.declaration_policy_point(ordinal) {
@@ -808,6 +810,7 @@ pub(super) fn full_source_admissions_for_test() -> usize {
 /// coordinate data, not a source/cache admission capability.
 #[derive(Clone,Copy)]pub struct BorrowedSourceNoteOrigin<'a>{path:&'a Arc<PathBuf>,registration:&'a Path,line:usize,byte_column:usize}
 impl BorrowedSourceNoteOrigin<'_>{
+ pub(super) fn physical_coordinates(&self)->(&Path,usize,usize){(self.path.as_path(),self.line,self.byte_column)}
  /// Exact original FileList registration key plus its reported source point.
  /// Physical acquisition identity alone is not reported-file identity.
  pub fn same_reported_point(&self,other:&BorrowedSourceNoteOrigin<'_>)->bool{self.registration==other.registration&&self.line==other.line&&self.byte_column==other.byte_column}

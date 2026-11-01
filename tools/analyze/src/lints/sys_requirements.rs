@@ -12,10 +12,7 @@ use crate::tree::{SourceFile, Tree};
 use crate::util::{is_py_space, py_rstrip, py_strip};
 use crate::{pat, pat_match};
 
-const RULES: &[RuleMeta] = &[RuleMeta {
-    name: "inline_refusal",
-    hint: "declare the guard as a requirement clause (REQ_FIELD/REQ_FIELD_NOT/REQ_FIELD_EQ/REQ_ACCESS/REQ_NOT_EMAGGED/REQ_ANCHORED/REQ_PANEL/REQ_ON) on the interaction (systems.md section 6)",
-}];
+use crate::allow_registry_fields::sys_requirements::RULES;
 
 fn decl_re() -> &'static Pat {
     pat!(r"\b(?:DECLARE_INTERACTIONS|EXTEND_INTERACTIONS)\(\s*(/[\w/]+)")

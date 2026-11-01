@@ -10,6 +10,10 @@ struct AdmissionControl{denied:std::sync::atomic::AtomicBool,external:std::sync:
 pub struct ExecutionAdmission{control:Arc<AdmissionControl>,limit:usize,external_base:usize}
 impl Default for ExecutionAdmission{fn default()->Self{Self::with_limit(RESULT_BUDGET)}}
 impl ExecutionAdmission{
+ /// Exposed fixed Arc control backing, with the existing nominal header margin.
+ /// This describes coordination geometry, never source/semantic authority.
+ pub fn fixed_control_charge()->usize{std::mem::size_of::<AdmissionControl>()+2*std::mem::size_of::<usize>()+64}
+
  pub fn with_limit(bytes:usize)->Self{Self{control:Arc::new(AdmissionControl{denied:std::sync::atomic::AtomicBool::new(false),external:std::sync::atomic::AtomicUsize::new(0)}),limit:bytes.min(RESULT_BUDGET),external_base:0}}
  pub fn is_denied(&self)->bool{self.control.denied.load(Ordering::Relaxed)}
  fn deny(&self){self.control.denied.store(true,Ordering::Relaxed)}

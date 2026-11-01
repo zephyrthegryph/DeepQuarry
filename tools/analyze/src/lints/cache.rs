@@ -35,7 +35,7 @@ static META: Meta = Meta {
         name: "hand_rolled",
         hint: "use DECLARE_SHARED_CACHE / CACHED() (doc/rewrite/caching.md), or annotate a genuine exception with `// ALLOW(cache): <reason>`",
     }],
-    allow: &["cache"],
+    allow: crate::allow_registry_fields::cache::ALLOW_0,
     lists: &[],
 };
 

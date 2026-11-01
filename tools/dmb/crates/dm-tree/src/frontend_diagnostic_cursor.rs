@@ -21,8 +21,8 @@ impl ColdFrontend {
                 continue;
             }
             let before = self.location(cursor);
-            let next = dm_syntax::next_significant_token(&self.expanded.text, cursor + 1)
-                .and_then(|token| self.location(token.span.start));
+            let next_token = dm_syntax::next_significant_token(&self.expanded.text, cursor + 1);
+            let next = next_token.as_ref().and_then(|token| self.location(token.span.start));
             if before
                 .as_ref()
                 .zip(next.as_ref())
@@ -36,6 +36,7 @@ impl ColdFrontend {
                 line: 0,
                 column: 0,
                 source_len: 0,
+                logical_boundary: true,
             };
             if let Some(CapturedCursor::Boundary {
                 location: Some(location),
@@ -68,6 +69,34 @@ impl ColdFrontend {
                                 row.source_len = file.text.len();
                             }
                         }
+                    }
+                }
+            }
+            // The expanded primary token is the declaration lexer's next token,
+            // including a sibling reached after directives. The general diagnostic
+            // resolver intentionally stops at directive anchors instead. Issue
+            // this token's existing primary-source point; do not
+            // turn an unissued boundary or a LINE-only receipt into a column.
+            if let (Some(before), Some(token), Some(location)) = (
+                before.as_ref(), next_token.as_ref(), next.as_ref(),
+            ) {
+                if let (Some(included), Some(acquired), Some(file), Ok(point)) = (
+                    self.plan.occurrences.get(location.include_occurrence),
+                    self.plan.source_acquisitions.get(&location.include_occurrence),
+                    self.files.iter().find(|file| file.path == location.path && file.captured),
+                    self.source_export_mapping.borrowed_source_note_point(token.span.start),
+                ) {
+                    let (path, line, column) = point.physical_coordinates();
+                    if before.include_occurrence != location.include_occurrence
+                        && path == included.path.as_path()
+                        && file.id == location.span.file
+                        && acquired.source_text().same_view(&file.text)
+                    {
+                        row.occurrence = Some(location.include_occurrence);
+                        row.line = line;
+                        row.column = column;
+                        row.source_len = acquired.source_text().len();
+                        row.logical_boundary = false;
                     }
                 }
             }

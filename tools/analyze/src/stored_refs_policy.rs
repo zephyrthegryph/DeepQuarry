@@ -27,7 +27,7 @@ pub(crate) static META: Meta = Meta {
         banned: &[],
     },
     rules: &[RuleMeta { name: "var", hint: H_VAR }, RuleMeta { name: "list", hint: H_LIST }],
-    allow: &["stored_refs"],
+    allow: crate::allow_registry_fields::stored_refs::ALLOW_SHARED_0,
     lists: &["exempt_types", "transient_types", "work_queues"],
 };
 

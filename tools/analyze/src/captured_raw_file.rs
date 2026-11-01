@@ -15,6 +15,7 @@ use std::{
 pub struct File {
     tree: Tree,
     charge: usize,
+    allow_digest: std::sync::OnceLock<[u8;20]>,
 }
 pub struct Config {
     scopes: Arc<Scopes>,
@@ -34,6 +35,8 @@ pub struct Findings {
     pub allow_used: Vec<AllowUse>,
     // As-of report data derived from the same admitted raw source, not source authority.
     source_text: Vec<String>,
+    // Original whole-file digest used only for the existing ALLOW usage report.
+    allow_source_digest: Option<[u8;20]>,
 }
 /// Operation-local failures never become reusable source findings.
 #[derive(Debug)]
@@ -147,6 +150,7 @@ impl File {
         Ok(Self {
             tree: Tree::from_captured_files(root, vec![file]),
             charge,
+            allow_digest: std::sync::OnceLock::new(),
         })
     }
     pub fn root(&self) -> &Path {
@@ -249,6 +253,7 @@ impl File {
         }
         let mut findings = Findings {
             source_text: Vec::new(),
+            allow_source_digest: None,
             name: scope.name.into(),
             run: Run {
                 sites: sink.sites,
@@ -256,6 +261,16 @@ impl File {
             },
             allow_used: sink.allow_used,
         };
+        if !findings.allow_used.is_empty() {
+            let source=&self.tree.files[0];
+            if findings.allow_used.iter().any(|used|used.rel!=source.rel) {
+                return Err("ALLOW usage refers outside its authenticated source".into());
+            }
+            // Same normalized SourceFile text and trailing-newline treatment as
+            // original write_allow_usage; fixed-size hash needs no source copy.
+            findings.allow_source_digest=Some(*self.allow_digest.get_or_init(||{source_allow_digest(source)}));
+            self.require_view_budget().map_err(ScanFailure::Admission)?;
+        }
         findings.source_text = self.report_source_text(
             &findings.run.sites, bytes.saturating_sub(findings.budget_charge()),
         )?;
@@ -293,6 +308,8 @@ impl Config {
  /// Interpreted path data only; this does not grant a source or completion role.
  pub fn policy_path_exempt(&self,name:&str,group:&str,relative:&str)->bool{self.scopes.borrowed_for_lint(name,group).is_some_and(|scope|scope.exempt(relative))}
  pub(crate) fn borrowed_policy_scope(&self,name:&str,group:&str)->Option<&crate::scopes::LintScope>{self.scopes.borrowed_for_lint(name,group)}
+    /// SAME interpreted config; data alone grants no source or EOF authority.
+    pub fn borrowed_report_scope(&self,name:&str,group:&str)->Option<&crate::scopes::LintScope>{self.borrowed_policy_scope(name,group)}
     /// Borrow the unchanged Auto lists from this actual interpreted owner.
     #[cfg(feature="native-policy")]
     pub fn with_auto_tracked_lists<T>(&self,consume:impl FnOnce(&[String],&[&[String]])->T)->T{let scope=self.scopes.borrowed_for_lint("auto_tracked","");let list=|name:&str|scope.map_or(&[][..],|scope|scope.list(name));consume(list("include"),&[list("exclude"),list("exclude_fixtures"),list("exclude_heat"),list("exclude_memo")])}
@@ -331,6 +348,7 @@ impl Config {
             .list(list)
             .to_vec())
     }
+    pub(crate) fn with_allow_known<T>(&self,consume:impl FnOnce(&[String])->T)->T{consume(&self.scopes.known_allow)}
     pub(crate) fn shared_scopes(&self) -> Arc<Scopes> {
         Arc::clone(&self.scopes)
     }
@@ -340,7 +358,13 @@ impl Config {
             .filter(|_| captured_raw_policy::RAW_FILE_LINTS.contains(&name))
             .ok_or("raw lint is not admitted")?;
         let meta = lint.meta();
-        let scope = self.scopes.for_lint(meta.name, meta.group);
+        self.scope_named(meta.name,meta.group)
+    }
+    /// Interpreted unique multi-file policy configuration; data, not source authority.
+    #[cfg(feature="native-policy")]
+    pub fn check_grep_scope(&self)->Result<Scope,String>{self.scope_named("check_grep","")}
+    fn scope_named(&self,name:&'static str,group:&'static str)->Result<Scope,String>{
+        let scope = self.scopes.for_lint(name,group);
         // HashMaps are ordered for the semantic fingerprint; TOML comments and
         // unrelated lint sections do not invalidate this interpreted projection.
         let lists: BTreeMap<_, _> = scope.lists.iter().collect();
@@ -357,7 +381,7 @@ impl Config {
         .map_err(|e| e.to_string())?;
         let hash = u128::from_le_bytes(blake3::hash(&bytes).as_bytes()[..16].try_into().unwrap());
         Ok(Scope {
-            name: meta.name,
+            name,
             scope,
             hash,
             charge: bytes.len().saturating_mul(32).saturating_add(2048),
@@ -373,6 +397,9 @@ pub fn visit_source_storage(
     crate::tree::visit_source_storage(text, visit)
 }
 impl Scope {
+    /// Captured interpreted configuration for report judgement, never source authority.
+    pub fn report_scope(&self)->&LintScope{&self.scope}
+    pub fn report_scope_json(&self)->Result<&str,std::str::Utf8Error>{std::str::from_utf8(&self.exact)}
     /// Exactly the existing Cx::files metadata selection, before any source view.
     pub fn excludes_path(&self, rel: &str) -> Result<bool, String> {
         let lint = captured_raw_policy::registry()
@@ -389,6 +416,7 @@ impl Scope {
             run: Run::default(),
             allow_used: Vec::new(),
             source_text: Vec::new(),
+            allow_source_digest: None,
         }))
     }
     /// Exact interpreted policy, not its cache hash, authenticates reuse.
@@ -403,6 +431,7 @@ impl Scope {
     }
 }
 impl Findings {
+    pub fn allow_source_digest(&self)->Option<&[u8;20]>{self.allow_source_digest.as_ref()}
     pub fn site_text(&self, index: usize) -> Option<&str> {
         self.source_text.get(index).map(String::as_str)
     }
@@ -410,6 +439,7 @@ impl Findings {
         let rows = Self::fingerprint_parts(&self.name, &self.run, &self.allow_used);
         let mut hash = blake3::Hasher::new();
         hash.update(&rows.to_le_bytes());
+        if let Some(digest)=&self.allow_source_digest{hash.update(&[1]);hash.update(digest);}else{hash.update(&[0]);}
         for text in &self.source_text {
             hash.update(&(text.len() as u64).to_le_bytes());
             hash.update(text.as_bytes());
@@ -596,6 +626,7 @@ mod borrowed_metric_tests {
             },
             allow_used: Vec::new(),
             source_text: Vec::new(),
+            allow_source_digest: None,
         };
         let bytes = serde_json::to_vec(&(
             &rows.name,
@@ -719,3 +750,28 @@ pub fn with_original_policy_file_prepared(root:&Path,path:&Path,live_page_bytes:
   let tiny=Budget::new(fixed).unwrap();let prepared=std::cell::Cell::new(false);let actual=with_original_policy_file_prepared(&root,&path,0,&tiny,|_|{prepared.set(true);Ok(dm_preprocess::SourceText::from(""))},&mut|_,_|panic!("quota must refuse before file loan"));assert!(matches!(actual,Err(Failure::Operational(ref error))if error.kind()==std::io::ErrorKind::OutOfMemory));assert!(!prepared.get());
  }
 }
+
+#[cfg(test)]mod whole_file_allow_evidence_tests{
+ use super::*;
+ #[test]fn captured_allow_digest_uses_original_universal_newlines_and_entire_file_even_without_sites(){
+  let root=std::env::current_dir().unwrap().join("whole-file-allow-evidence");
+  let config=Config::capture(Configuration::ProvenMissing).unwrap();let scope=config.scope("scheduler").unwrap();
+  let text="/proc/p()\r\n    sleep(1) // ALLOW(scheduler): synchronous external operation requires an actual wait\r\n// unrelated é\r\n\r\n";
+  // capture() loans an already-normalized AnalyzeRaw view, like the real
+  // host. Compare with the original SourceFile constructor rather than passing
+  // unnormalized bytes through that host-only precondition.
+  let original=SourceFile::from_text("code/probe.dm",text);
+  assert!(!original.text().contains('\r'));
+  let file=File::capture(&root,&root.join("code/probe.dm"),original.text().to_owned().into()).unwrap();
+  let rows=file.scan(&scope).unwrap();assert!(rows.run.sites.is_empty());assert_eq!(rows.allow_used.len(),1);
+  assert_eq!(rows.allow_source_digest().copied(),Some([175, 61, 94, 70, 156, 222, 31, 127, 239, 23, 200, 11, 25, 171, 207, 143, 1, 107, 116, 166]));
+  let changed_text=SourceFile::from_text("code/probe.dm",&text.replace("unrelated é","new unrelated line"));
+  let changed=File::capture(&root,&root.join("code/probe.dm"),changed_text.text().to_owned().into()).unwrap().scan(&scope).unwrap();
+  assert_eq!(Findings::fingerprint_parts(&rows.name,&rows.run,&rows.allow_used),Findings::fingerprint_parts(&changed.name,&changed.run,&changed.allow_used));
+  assert_ne!(rows.fingerprint(),changed.fingerprint());assert_ne!(rows.allow_source_digest(),changed.allow_source_digest());
+  assert!(file.scan_budgeted_checked(&scope,100,1).is_err());assert_eq!(file.scan(&scope).unwrap().allow_source_digest(),rows.allow_source_digest());
+ }
+}
+
+/// Exact original ALLOW fingerprint; called only inside an actual source loan.
+pub(crate) fn source_allow_digest(source:&SourceFile)->[u8;20]{use sha1::{Digest,Sha1};Sha1::digest(source.text().trim_end_matches('\n').as_bytes()).into()}

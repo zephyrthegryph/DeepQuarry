@@ -14,12 +14,7 @@ use crate::pat;
 use crate::tree::{SourceFile, Tree};
 use crate::util::{is_py_space, under};
 
-const RULES: &[RuleMeta] = &[
-    RuleMeta { name: "stat_bits", hint: "operable() / has_stat(BITS) to read, stat_add()/stat_remove()/set_stat() to write (systems.md section 2)" },
-    RuleMeta { name: "stat_owned", hint: "set_powered() for NOPOWER, atom_break() / atom_fix() for BROKEN (G8: they publish the state)" },
-    RuleMeta { name: "stat_helper", hint: "operable() is the one reader; inoperable()/is_operational() are gone (systems.md section 2)" },
-    RuleMeta { name: "field_write", hint: "set_<field>() (stat_add()/stat_remove() for bits); no direct writes to a core field (systems.md section 2)" },
-];
+use crate::allow_registry_fields::sys_fields::RULES;
 
 const CORE: &[&str] = &["on", "active", "state", "mode", "locked", "emagged", "stat", "anchored", "density", "use_power"];
 const STAT_ROOTS: &[&str] = &["/obj/machinery", "/obj/vehicle"];

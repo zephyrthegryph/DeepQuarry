@@ -8,10 +8,7 @@ use crate::pat;
 use crate::tree::SourceFile;
 use crate::util::before_slashes;
 
-const RULES: &[RuleMeta] = &[RuleMeta {
-    name: "verb_write",
-    hint: "om_grant(target, GRANT_VERB | GRANT_VERB_HIDE, verb, source) / om_revoke(), or DECLARE_VERB* on the type; the store is the only verbs writer (doc/rewrite/systems.md section 19)",
-}];
+use crate::allow_registry_fields::sys_grants::RULES;
 
 const STORE: &str = "code/engine/present/verb_store.dm";
 

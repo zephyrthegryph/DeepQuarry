@@ -9,7 +9,7 @@ static META: Meta = Meta {
     name: "engine_layering", group: "", label: "engine_layering", legacy: "",
     select: CODE_DM, scan: ScanKind::Tree, policy: Policy::Hard,
     rules: &[RuleMeta { name: "external_dependency", hint: HINT }, RuleMeta { name: "semantic_model", hint: "repair the parsed environment; engine layering cannot pass without the semantic model" }],
-    allow: &[], lists: &[],
+    allow: crate::allow_registry_fields::engine_layering::ALLOW_0, lists: &[],
 };
 struct EngineLayering;
 impl Lint for EngineLayering {

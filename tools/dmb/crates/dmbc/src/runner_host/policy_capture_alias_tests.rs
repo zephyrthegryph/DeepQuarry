@@ -95,7 +95,7 @@ fn setup(
 }
 fn intent(source: &Path, config: &Path) -> crate::policy_request::AdmittedPolicyRequest {
     use crate::policy_request::*;
-    PolicyInputRequest {workspace_generators:Vec::new(),
+    PolicyInputRequest {workspace_auxiliary:Vec::new(),workspace_generators:Vec::new(),
         workspace: None,
         files: vec![
             PolicyInputFile {

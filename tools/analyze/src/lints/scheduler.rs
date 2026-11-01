@@ -67,7 +67,7 @@ static META: Meta = Meta {
         "del",
         "blocking_builtins",
     ],
-    allow: &["scheduler"],
+    allow: crate::allow_registry_fields::scheduler::ALLOW_0,
     lists: &[],
 };
 

@@ -20,13 +20,13 @@
 
 
 
-use crate::baseline::{self, Mode};
+use crate::baseline::Mode;
 use crate::dm::pylines::recorded_into;
 use crate::incr;
 use crate::lint::{Cx, Lint, Meta, Registry, Run, Sink};
 use crate::parity::{ParseKind, Parity};
 
-use crate::system_boundary_report::{LINT,BASELINE,HEADER,META};
+use crate::system_boundary_report::{BASELINE,META};
 
 struct SystemBoundary;
 
@@ -50,26 +50,9 @@ impl Lint for SystemBoundary {
         self.check(cx, out);
     }
 
-    fn finish(&self, cx: &Cx, run: &Run, text: &mut String) -> bool {
-        let base = baseline::read_ceilings(&cx.tree.root.join(BASELINE));
-        crate::system_boundary_report::judge(run,&base,text)
-    }
+    fn finish(&self,cx:&Cx,run:&Run,text:&mut String)->bool{crate::system_boundary_report::finish_after_delivery(&cx.tree.root,run,text)}
 
-    fn update_baseline(&self, cx: &Cx, run: &Run, mode: Mode) -> std::io::Result<String> {
-        let path = cx.tree.root.join(BASELINE);
-        match mode {
-            Mode::Update => {
-                let n = baseline::update_ceilings(&path, HEADER, &run.sites)?;
-                Ok(format!("system_boundary: baseline lowered to {} entries", n))
-            }
-            Mode::Migrate => Ok("system_boundary: count ceilings have no rows to migrate".to_string()),
-            Mode::Seed => {
-                let counts = baseline::key_counts(&run.sites);
-                baseline::write_ceilings(&path, HEADER, &counts)?;
-                Ok(format!("system_boundary: wrote {} entries", counts.len()))
-            }
-        }
-    }
+    fn update_baseline(&self,cx:&Cx,run:&Run,mode:Mode)->std::io::Result<String>{crate::system_boundary_report::update_after_delivery(&cx.tree.root,run,mode)}
 
     fn parity(&self) -> Option<Parity> {
         Some(Parity {

@@ -25,24 +25,7 @@ use crate::pat;
 use crate::tree::{SourceFile, Tree};
 use crate::util::{is_py_space, py_rstrip, py_strip};
 
-const RULES: &[RuleMeta] = &[
-    RuleMeta {
-        name: "update_icon_call",
-        hint: "delete it: a declared field's setter refreshes the appearance (APPEARANCE_WATCH the field for a procedural update_icon(); systems.md section 1)",
-    },
-    RuleMeta {
-        name: "appearance_proc_overlays",
-        hint: "return the overlays from appearance_overlays(); the runtime owns cut/add (systems.md section 1)",
-    },
-    RuleMeta {
-        name: "appearance_proc_state",
-        hint: "a provider draws, it changes no state: move the setter to where the state changes (systems.md section 1)",
-    },
-    RuleMeta {
-        name: "update_icon_override",
-        hint: "declare the appearance (APPEARANCE_TEMPLATE/LEVEL/EMISSIVE/SLOT, DECLARE_APPEARANCE); genuinely procedural drawing keeps `// ALLOW(sys_update_icon): <reason>` (systems.md section 1)",
-    },
-];
+use crate::allow_registry_fields::sys_appearance::RULES;
 
 const RUNTIME: &[&str] = &["code/datums/sys/appearance.dm", "code/__defines/sys_appearance.dm"];
 const LIFECYCLE: &[&str] = &["Initialize", "New", "LateInitialize", "Destroy", "on_materialize", "on_dematerialize"];
@@ -612,7 +595,7 @@ pub fn register(reg: &mut Registry) {
         SysModule {
             name: "appearance",
             rules: RULES,
-            allow_extra: &["update_icon"],
+            allow_extra: crate::allow_registry_fields::sys_appearance::ALLOW_EXTRA,
             allow_extra_rules: &["update_icon_override"],
             files_scan: Some(files_scan),
             ..SysModule::DEFAULT

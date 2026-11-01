@@ -130,7 +130,9 @@ impl SourceSnapshot {
     ) -> io::Result<()> {
         crate::daemon::control::checkpoint()?;
         let producer = match family {
-            "incompatible_directive" => DiagnosticSeverity::Error,
+            "redefined_proc"=>DiagnosticSeverity::Hint,
+            "call_arguments"=>DiagnosticSeverity::Error,
+            "incompatible_directive" | "private_proc" | "protected_proc" | "must_call_parent" | "must_not_override" => DiagnosticSeverity::Error,
             "ambiguous_not_bitwise"
             | "ambiguous_in_lhs"
             | "invalid_set_value"
@@ -163,6 +165,8 @@ impl SourceSnapshot {
         if ordinal as usize >= archive.len() {
             return Err(io::Error::other("body ordinal unavailable"));
         }
+        if family=="call_arguments"{return self.write_original_call_arguments_using(ordinal,environment,tree,capture,&loaded,output)}
+        if matches!(family,"private_proc"|"protected_proc"|"must_call_parent"|"must_not_override"|"redefined_proc"){return self.write_original_procedure_visibility_using(ordinal,family,environment,tree,capture,&loaded,output)}
         if family=="invalid_lint_directive_value"{return self.write_original_invalid_directive_using(ordinal,environment,tree,capture,&loaded,output)}
         let mut rows = Vec::new();
         // These original producers are UNTAGGED: arbitrary observation-name
@@ -289,5 +293,21 @@ impl SourceSnapshot{
   crate::daemon::control::checkpoint()?;
   let envelope=OriginalInvalidEnvelope{configuration:&loaded.selected.path,configuration_explicit:loaded.selected.explicit,configuration_present:loaded.present,configuration_schema:"complete_pinned_checker_schema",diagnostics:OriginalInvalidRows{rows:rows.as_ref(),archive,level},environment,family:"invalid_lint_directive_value",full_checker_parity:false,ordinal,policy_revision:format!("{:032x}",self.policy_revision.ok_or_else(||io::Error::other("invalid-value policy revision unavailable"))?),row:"source_native_configured_checker",schema:"dm-session-source-query-v1",semantic_revision:format!("{:032x}",tree.identity()),source_revision:format!("{:032x}",self.source_revision)};
   serde_json::to_writer(&mut *output,&envelope).map_err(io::Error::other)?;output.write_all(b"\n")?;crate::daemon::control::checkpoint()
+ }
+}
+
+impl SourceSnapshot{
+ fn write_original_procedure_visibility_using(&self,ordinal:u32,family:&str,environment:&Path,tree:&dm_tree::SemanticTree,capture:&CapturedPolicyInputs,loaded:&config::Loaded,output:&mut impl io::Write)->io::Result<()>{
+  fn encoded(finding:dm_analysis::checks_proc_visibility::Finding<'_>,level:DiagnosticSeverity,definition:bool)->io::Result<serde_json::Value>{let row=finding.diagnostic();let point=finding.reported_point().map_err(io::Error::other)?;let(path,line,column)=point.coordinates();let synthetic=finding.is_parser_synthetic();let mut value=serde_json::json!({"family":row.family,"severity":severity(level),"file":path,"line":line,"column":column,"location_kind":if synthetic{"parser_synthetic"}else{"source"},"expanded_span":if synthetic{None}else{Some([row.span.start,row.span.end])},"expression_span":if synthetic{None}else{Some([row.expression_span.start,row.expression_span.end])},"message":row.message,"notes":row.notes.iter().map(|note|note.legacy_text()).collect::<Vec<_>>() });if definition{value.as_object_mut().unwrap().insert("registration_tag".into(),serde_json::json!(finding.registration_tag()));}Ok(value)}
+  let archive=capture.policy().archive();let definition=family=="redefined_proc";let mut rows=Vec::new();
+  if definition&&loaded.policy.register(None,DiagnosticSeverity::Error).is_some(){if let Some(receipt)=&self.diagnostic_declarations{let structural=dm_analysis::checks_proc_visibility::declaration_redeclaration_checked(archive,ordinal as usize,receipt,&crate::daemon::control::checkpoint).map_err(|failure|match failure{dm_analysis::policy_body_demand::PolicyFailure::Operational(actual)=>actual,dm_analysis::policy_body_demand::PolicyFailure::Unsupported(reason)=>io::Error::other(reason.0)})?;for finding in structural.iter(){rows.push(encoded(finding,DiagnosticSeverity::Error,true)?);}}}
+// The shared syntax finding has only Disabled/Warning/Error; the actual
+// producer Hint and configured final level remain DiagnosticSeverity below.
+if let Some(level)=loaded.policy.register(Some(family),if definition{DiagnosticSeverity::Hint}else{DiagnosticSeverity::Error}){
+   let body=archive.parse_checked(ordinal as usize).map_err(|failure|match failure{dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>actual,dm_tree::frontend::BodySyntaxFailure::Syntax(error)=>io::Error::other(error.message)})?;let resolver:&dyn dm_ir::Resolver=if let Some(receipt)=&self.diagnostic_declarations{if !receipt.authenticates(tree)||!self.matches_tree(tree){return Err(io::Error::other("procedure diagnostic owner is foreign"))}tree}else{self.resolved.as_ref().ok_or_else(||io::Error::other("procedure visibility requires retained semantic EngineHost"))?.checker_resolver(tree)?};let profile=tree.checker_builtin_profile().ok_or_else(||io::Error::other("procedure visibility requires actual pinned builtin profile"))?;let selected=match family{"private_proc"=>dm_analysis::checks_proc_visibility::Family::Private,"protected_proc"=>dm_analysis::checks_proc_visibility::Family::Protected,"must_call_parent"=>dm_analysis::checks_proc_visibility::Family::MustCallParent,"must_not_override"=>dm_analysis::checks_proc_visibility::Family::MustNotOverride,"redefined_proc"=>dm_analysis::checks_proc_visibility::Family::Redefined,_=>return Err(io::Error::other("procedure directive role differs"))};let found=dm_analysis::checks_proc_visibility::archived_checked(archive,&body,resolver,profile,selected,if definition{Severity::Warning}else{Severity::Error},&crate::daemon::control::checkpoint).map_err(|failure|match failure{dm_analysis::policy_body_demand::PolicyFailure::Operational(actual)=>actual,dm_analysis::policy_body_demand::PolicyFailure::Unsupported(reason)=>io::Error::other(reason.0)})?;
+   for finding in found.iter(){crate::daemon::control::checkpoint()?;rows.push(encoded(finding,level,definition)?);}
+
+  }
+  crate::daemon::control::checkpoint()?;let mut envelope=serde_json::json!({"row":"source_native_configured_checker","schema":"dm-session-source-query-v1","semantic_revision":format!("{:032x}",tree.identity()),"source_revision":format!("{:032x}",self.source_revision),"policy_revision":format!("{:032x}",self.policy_revision.unwrap()),"ordinal":ordinal,"family":family,"environment":environment,"configuration":loaded.selected.path,"configuration_explicit":loaded.selected.explicit,"configuration_present":loaded.present,"configuration_schema":"complete_pinned_checker_schema","full_checker_parity":false,"diagnostics":rows,"declaration_profile":self.diagnostic_declarations.as_ref().map_or("strict-native-declarations",|receipt|receipt.profile()),"native_declaration_error_count":self.diagnostic_declarations.as_ref().map_or(0,|receipt|receipt.errors().len())});if definition{envelope.as_object_mut().unwrap().insert("untagged_companions".into(),serde_json::json!(["procedure_redeclaration"]));}serde_json::to_writer(&mut *output,&envelope).map_err(io::Error::other)?;output.write_all(b"\n")?;crate::daemon::control::checkpoint()
  }
 }

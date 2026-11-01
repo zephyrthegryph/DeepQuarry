@@ -10,16 +10,7 @@ use crate::pat;
 use crate::tree::SourceFile;
 use crate::util::before_slashes;
 
-const RULES: &[RuleMeta] = &[
-    RuleMeta {
-        name: "manual_transfer",
-        hint: "own_set/own_add/own_put(holder, nameof(holder.var), item, user = user): one call takes it out of the hand, slot or storage (ownership.md §1.3a)",
-    },
-    RuleMeta {
-        name: "manual_move_adopt",
-        hint: "own_set/own_add/own_put(holder, nameof(holder.var), item, into = TRUE) moves it in itself (ownership.md §1.3a)",
-    },
-];
+use crate::allow_registry_fields::sys_dx_manual_transfer::RULES;
 
 const BEFORE: usize = 5; // lines looked at before an own_* call
 const AFTER: usize = 2; // and after it (the take-out written second)

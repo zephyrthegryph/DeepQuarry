@@ -142,7 +142,7 @@ fn compare_revision(shared: &Arc<Shared>, roots: &Roots) -> Vec<crate::publish::
                         let token = control::Cancellation::default();
                         let _latest = LatestRequest::register(
                             &slot,
-                            RequestKey::of(&retained, &retained.project,&[]),
+                            RequestKey::of(&retained, &retained.project,&[],&[]),
                             token.clone(),
                         );
                         let _binding = control::bind(token);

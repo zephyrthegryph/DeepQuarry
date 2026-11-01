@@ -23,6 +23,7 @@ pub mod semantic_client;
 mod semantic_pages;
 mod variable_visibility;
 mod workspace_policy;
+mod deadline_evidence;
 use std::{
     collections::BTreeMap,
     io::{self, Write},
@@ -104,6 +105,14 @@ pub enum SourceQuery {
         lints: Vec<String>,
     },
 
+    /// Complete whole Hygiene fold, under its distinct actual selected EOF role.
+    NativeWorkspaceHygieneReportPage {root:PathBuf,configuration:PathBuf,lints:Vec<String>,cursor:Option<crate::query_db::WorkspaceCursor>,limit:usize},
+    /// One exclusive completed Resolver/Tables/Boundary policy, under its own whole-fold issuer.
+    NativeWorkspaceSysReportPage {root:PathBuf,configuration:PathBuf,lints:Vec<String>,cursor:Option<crate::query_db::WorkspaceCursor>,limit:usize},
+    /// One explicitly admitted fixed optional file, bound to current policy pins.
+    NativeDeadlinePollingEvidence {root:PathBuf,configuration:PathBuf},
+    /// Complete selected metadata domains, proven by actual typed recursive discovery.
+    NativeWorkspaceRawReportPage {root:PathBuf,configuration:PathBuf,lints:Vec<String>,cursor:Option<crate::query_db::WorkspaceCursor>,limit:usize},
     /// Raw-only typed discovery, bound to the current exact workspace policy pin.
     NativeWorkspaceRawPolicy {
         root: PathBuf,
@@ -140,6 +149,8 @@ pub enum SourceQuery {
         environment: PathBuf,
         configuration: Option<PathBuf>,
     },
+    /// Complete keyword override judgement over the actual immutable archive.
+    NativeKeywordOverrides { environment:PathBuf, configuration:Option<PathBuf> },
     NativeConfiguredChecker {
         ordinal: u32,
         family: String,
@@ -256,6 +267,7 @@ pub fn execute(mut request: QueryRequest) -> Result<QueryReply, Box<dyn std::err
                         || variable_visibility::reads_policy(query)
                         || raw_policy::reads_policy(query)
                         || workspace_policy::reads_policy(query)
+                        || deadline_evidence::reads_policy(query)
                         || analyze_policy::reads_policy(query)
                 })
             {
@@ -269,6 +281,7 @@ pub fn execute(mut request: QueryRequest) -> Result<QueryReply, Box<dyn std::err
             variable_visibility::validate_requested(&reply, &source_questions)?;
             raw_policy::validate_requested(&reply, &source_questions)?;
             workspace_policy::validate_requested(&reply, &source_questions)?;
+            deadline_evidence::validate_requested(&reply,&source_questions)?;
             analyze_policy::validate_requested(&reply, &source_questions)?;
             validate_resolved_requests(&reply, &source_questions)?;
             occurrence_pages::validate_requested(&reply, &source_questions)?;
@@ -386,6 +399,10 @@ fn native_row_descriptor(row: &serde_json::Value) -> io::Result<Option<SourceQue
                 io::Error::new(io::ErrorKind::InvalidData, "invalid native lint roster")
             })?,
         },
+        Some("source_native_workspace_hygiene_report")=>SourceQuery::NativeWorkspaceHygieneReportPage{root:path("root")?,configuration:path("configuration")?,lints:serde_json::from_value(row["requested_lints"].clone()).map_err(io::Error::other)?,cursor:if row["offset"].as_u64().unwrap_or(0)==0{None}else{Some(serde_json::from_value(serde_json::json!({"aggregate_id":row["aggregate_id"],"offset":row["offset"]})).map_err(io::Error::other)?)},limit:128},
+        Some("source_native_workspace_sys_report")=>SourceQuery::NativeWorkspaceSysReportPage{root:path("root")?,configuration:path("configuration")?,lints:serde_json::from_value(row["requested_lints"].clone()).map_err(io::Error::other)?,cursor:if row["offset"].as_u64().unwrap_or(0)==0{None}else{Some(serde_json::from_value(serde_json::json!({"aggregate_id":row["aggregate_id"],"offset":row["offset"]})).map_err(io::Error::other)?)},limit:128},
+        Some("source_native_deadline_evidence")=>SourceQuery::NativeDeadlinePollingEvidence{root:path("root")?,configuration:path("configuration")?},
+        Some("source_native_workspace_raw_report") => SourceQuery::NativeWorkspaceRawReportPage {root:path("root")?,configuration:path("configuration")?,lints:serde_json::from_value(row["requested_lints"].clone()).map_err(io::Error::other)?,cursor:if row["offset"].as_u64().unwrap_or(0)==0{None}else{Some(serde_json::from_value(serde_json::json!({"aggregate_id":row["aggregate_id"],"offset":row["offset"]})).map_err(io::Error::other)?)},limit:128},
         Some("source_native_workspace_raw_policy") => SourceQuery::NativeWorkspaceRawPolicy {
             root: path("root")?,
             configuration: path("configuration")?,
@@ -421,6 +438,7 @@ fn native_row_descriptor(row: &serde_json::Value) -> io::Result<Option<SourceQue
         Some("source_native_effect_report_bytes") => SourceQuery::NativeEffectReportBytes{environment:path("environment")?,configuration:configuration()?,page_width:effect_reports::row_u32(row,"page_width")?,target_window:effect_reports::row_u32(row,"target_window")?,cursor:effect_report_bytes::cursor(row,"requested_cursor")?,limit:effect_reports::row_u32(row,"limit")?},
         Some("source_native_generator_bytes") => SourceQuery::NativeGeneratorBytes{generator:serde_json::from_value(row["generator"].clone()).map_err(io::Error::other)?,cursor:effect_report_bytes::cursor(row,"requested_cursor")?,limit:effect_reports::row_u32(row,"limit")?},
         Some("source_native_effect_reports") => SourceQuery::NativeEffectReports { environment:path("environment")?,configuration:configuration()?,page_width:effect_reports::row_u32(row,"page_width")?,target_window:effect_reports::row_u32(row,"target_window")? },
+        Some("source_native_keyword_override_checker") => SourceQuery::NativeKeywordOverrides{environment:path("environment")?,configuration:configuration()?},
         Some("source_native_configured_checker") => SourceQuery::NativeConfiguredChecker {
             ordinal: ordinal()?,
             family: text("family")?,
@@ -490,6 +508,7 @@ fn validate_native_outer_row(
     variable_visibility::validate_requested(&single, &shape.source_queries)?;
     raw_policy::validate_requested(&single, &shape.source_queries)?;
     workspace_policy::validate_requested(&single, &shape.source_queries)?;
+    deadline_evidence::validate_requested(&single,&shape.source_queries)?;
     analyze_policy::validate_requested(&single, &shape.source_queries)
 }
 
@@ -679,6 +698,7 @@ impl QueryRequest {
         variable_visibility::validate_request(self)?;
         raw_policy::validate_request(self)?;
         workspace_policy::validate_request(self)?;
+        deadline_evidence::validate_request(self)?;
         analyze_policy::validate_request(self)?;
         let source_count = self
             .source_queries
@@ -781,11 +801,11 @@ pub(crate) fn evaluate_snapshot(
         .is_some_and(|snapshot| snapshot.diagnostic_tree().is_some())
         && (!request.queries.is_empty()
             || request.source_queries.iter().any(|question| {
-                !matches!(question,SourceQuery::NativeConfiguredVariableVisibility{..})
-                    && !matches!(question,SourceQuery::NativeConfiguredChecker{family,..}if matches!(family.as_str(),"unknown_linter_setting"|"unknown_setting"|"invalid_lint_directive_value"|"directive_at_definition"))
+                !matches!(question,SourceQuery::NativeConfiguredVariableVisibility{..}|SourceQuery::NativeKeywordOverrides{..})
+                    && !matches!(question,SourceQuery::NativeConfiguredChecker{family,..}if matches!(family.as_str(),"unknown_linter_setting"|"unknown_setting"|"invalid_lint_directive_value"|"directive_at_definition"|"private_proc"|"protected_proc"|"must_call_parent"|"must_not_override"|"redefined_proc"|"call_arguments"))
             }))
     {
-        return Err(io::Error::other("diagnostic declaration frame admits only variable-visibility, unknown-setting, or invalid-directive syntax questions; no ordinary ABI/model query"));
+        return Err(io::Error::other("diagnostic declaration frame admits only registered source diagnostic checker questions; no ordinary ABI/model query"));
     }
     let revision = format!("{:032x}", tree.identity());
     if request
@@ -832,6 +852,7 @@ pub(crate) fn evaluate_snapshot(
                 || variable_visibility::reads_policy(query)
                 || raw_policy::reads_policy(query)
                 || workspace_policy::reads_policy(query)
+                        || deadline_evidence::reads_policy(query)
                 || analyze_policy::reads_policy(query)
         })
     {
@@ -907,6 +928,10 @@ pub(crate) fn evaluate_snapshot(
             )?;
             continue;
         }
+        if let SourceQuery::NativeWorkspaceHygieneReportPage{root,configuration,lints,cursor,limit}=question{snapshot.write_native_workspace_hygiene_report_page(root,configuration,lints,cursor.as_ref(),*limit,tree,&mut output)?;continue;}
+        if let SourceQuery::NativeWorkspaceSysReportPage{root,configuration,lints,cursor,limit}=question{snapshot.write_native_workspace_sys_report_page(root,configuration,lints,cursor.as_ref(),*limit,tree,&mut output)?;continue;}
+        if let SourceQuery::NativeDeadlinePollingEvidence{root,configuration}=question{snapshot.write_native_deadline_evidence(root,configuration,tree,&mut output)?;continue;}
+        if let SourceQuery::NativeWorkspaceRawReportPage{root,configuration,lints,cursor,limit}=question{snapshot.write_native_workspace_raw_report_page(root,configuration,lints,cursor.as_ref(),*limit,tree,&mut output)?;continue;}
         if let SourceQuery::NativeWorkspaceRawPolicy {
             root,
             configuration,
@@ -994,6 +1019,7 @@ pub(crate) fn evaluate_snapshot(
         if let SourceQuery::NativeEffectReports{environment,configuration,page_width,target_window}=question{
             snapshot.write_native_effect_request(*page_width as usize,*target_window as usize,environment,configuration.as_deref(),tree,&mut output)?;continue;
         }
+        if let SourceQuery::NativeKeywordOverrides{environment,configuration}=question{snapshot.write_native_keyword_overrides(environment,configuration.as_deref(),tree,&mut output)?;continue;}
         if let SourceQuery::NativeConfiguredChecker {
             ordinal,
             family,
@@ -1024,9 +1050,14 @@ pub(crate) fn evaluate_snapshot(
             | SourceQuery::NativeUntypedFixture { .. }
             | SourceQuery::NativeRawPolicyFixture { .. }
             | SourceQuery::NativeWorkspaceRawPolicy { .. }
+            | SourceQuery::NativeWorkspaceRawReportPage { .. }
+            | SourceQuery::NativeWorkspaceHygieneReportPage { .. }
+            | SourceQuery::NativeWorkspaceSysReportPage { .. }
+            | SourceQuery::NativeDeadlinePollingEvidence { .. }
             | SourceQuery::NativeAnalyzePolicyFixture { .. }
             | SourceQuery::NativeNamedRule { .. }
             | SourceQuery::NativeConfiguredChecker { .. }
+            | SourceQuery::NativeKeywordOverrides { .. }
             | SourceQuery::NativeEffectReports { .. }
             | SourceQuery::NativeEffectReportBytes { .. }
             | SourceQuery::NativeGeneratorBytes { .. }
@@ -1332,3 +1363,10 @@ mod occurrence_pages_tests;
 mod deadline_tests;
 
 #[cfg(test)]pub(crate) fn validate_effect_batch_for_test(request:&QueryRequest,reply:&QueryReply)->io::Result<()>{validate_reply(reply,request.queries.len(),request.source_queries.len(),request.expected_revision.as_deref(),request.expected_source_revision.as_deref())?;effect_reports::validate_requested(reply,&request.source_queries)?;effect_report_bytes::validate_requested(reply,&request.source_queries)?;control_batch::validate_requested(reply,&request.source_queries)?;generator_bytes::validate_requested(reply,&request.source_queries)?;named_policy::validate_requested(reply,&request.source_queries)}
+
+#[cfg(test)]pub(crate) fn validate_workspace_policy_for_test(reply:&QueryReply,questions:&[SourceQuery])->io::Result<()>{workspace_policy::validate_requested(reply,questions)}
+
+/// Reuse the actual strict workspace protocol validator for delivered report data.
+pub(crate) fn validate_workspace_report_delivery(reply:&QueryReply,questions:&[SourceQuery])->io::Result<()>{workspace_policy::validate_requested(reply,questions)}
+
+pub(crate) fn validate_deadline_evidence_delivery(reply:&QueryReply,questions:&[SourceQuery])->io::Result<()>{deadline_evidence::validate_requested(reply,questions)}

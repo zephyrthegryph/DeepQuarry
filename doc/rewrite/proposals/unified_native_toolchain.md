@@ -1618,3 +1618,75 @@ focused component passes and six independent oracle observations, with fresh
 native/analyzer type checks and no whole-project/default/performance claim.
 The full cold-start fixed-point coordinator and remaining question consumers
 remain under integration; no complete-convergence claim is made.
+
+
+### Cold generation, checker access and report integration in progress
+
+The remaining generation question consumers and the cold fixed-point coordinator
+are now connected to the same host. Three fresh independent purpose comparisons
+pass: the original basic producer, the original cold producer, and byte-for-byte
+six-purpose output equality. The current combined component run exposed real
+failures rather than establishing complete convergence. Repairs address an
+incorrect fixture configuration intent, source-only syntax traversal, recursive
+list projection and authentic synthetic diagnostic locations. The original
+private-procedure fixture remains unchanged; its whole-output comparison must
+pass after those repairs. Physical source-error propagation remains under test.
+
+The explicit native check and baseline clients now assemble the selected raw
+policy pages with captured source text, whole-file ALLOW digests and interpreted
+scopes. A private completion capability requires actual typed discovery to cover
+the selected policy roots; the earlier partial raw endpoint cannot claim that
+completion. The clients currently admit only 41 audited generic policies and
+refuse policies whose custom evidence or post-processing is not yet ported.
+They do not replace the default Analyze commands or claim full policy parity.
+Compile checks and focused runtime controls for this integration are pending.
+
+
+The next verified checker cohort adds diagnostic-only duplicate procedure values
+without permitting them through ordinary compiler admission. Five native controls
+and three complete original-checker comparisons pass, including the disabled
+warning case, which retains the original untagged declaration error. Both original
+private-procedure fixtures also pass without removing any diagnostic rows.
+
+The shared report client and newline/digest repair passed twenty focused controls
+in their repair cohort; five cold-generation controls still failed. Subsequent
+header and first-I/O-error repairs passed their direct controls and advanced the
+same cold tests to a missing native body-input attachment. The narrow attachment
+repair is applied but has not yet been verified. Real command/baseline equivalence,
+the remaining keyword checker, auxiliary policies and default cutover remain open.
+
+
+### Source-bound report and cold-generation checkpoint, 2026-10-31
+
+Cold generation now installs all thirteen generator families on the same host and
+reuses the final body-query inputs on an unchanged follow-up. The actual cold/warm
+regression and retained prepared-owner regression pass. An independent original
+producer, built without `native-policy`, converges through the original eight/five
+stage loop in three passes. Its complete final files and ordered diagnostics match
+all thirteen native families on the shared fixture. The earlier original `cold`
+mode remains a one-phase observation and is not substituted for that fixed point.
+
+The source-backed Hygiene, resolver, table and system-boundary report controls pass,
+as do the complete private grep producer controls, including compiled nontext maps.
+The ALLOW validator uses actual complete registration metadata: an independently
+captured pre-move registry matches all 106 names and 101 registration entries after
+the move. Complete known-name metadata does not certify complete policy execution
+or authorize a full unused-ALLOW report. That public route remains disabled.
+
+The keyword call checker passes its seven source, order, builtin and failure controls.
+The argument-error checker now has authentic builtin-profile fixtures, actual ledger
+quota controls, typed I/O and unwind recovery, and the original distinction between
+an exact-owner private call and a different static child receiver. Missing-profile
+admission refuses before body parsing. All verification failures observed in these
+cohorts have passing repair receipts; these are separate focused runs, not one
+whole-project proof or a recovered lane-ready stamp.
+
+This remains an explicit integration checkpoint. Mixed source/builtin callable
+selection, filter values, remaining checker diagnostics, public report composition,
+and remaining semantic policies are still under development. A further prerequisite
+is a genuine native analysis-default context: the pinned original preprocessor uses
+build 1666 and checker-specific predefined macros, whereas ordinary native compilation
+uses build 1687. Those contexts must not be equated merely because a template matches.
+Native analysis must use the same frontend and query system with correctly admitted
+context dependencies. No default cutover, full-main-project gate, complete checker or
+policy parity, total-memory bound, or performance target is claimed here.

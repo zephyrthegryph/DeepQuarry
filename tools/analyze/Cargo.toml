@@ -325,3 +325,7 @@ required-features = ["unified-oracle"]
 [[example]]
 name = "unified_generation_auto_original"
 required-features = ["unified-oracle"]
+
+[[example]]
+name = "unified_check_grep_original"
+required-features = ["legacy-sem", "unified-oracle"]

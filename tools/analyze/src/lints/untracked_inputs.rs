@@ -46,7 +46,7 @@ static META: Meta = Meta {
         RuleMeta { name: "sampled_in_look", hint: H_SAMPLED },
         RuleMeta { name: "leaf_untracked", hint: H_LEAF },
     ],
-    allow: &["untracked_inputs"],
+    allow: crate::allow_registry_fields::untracked_inputs::ALLOW_0,
     lists: &[],
 };
 

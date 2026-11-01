@@ -38,6 +38,6 @@ pub(crate) static META: Meta = Meta {
             hint: "a /datum/record holds data fields only: move the proc to the domain that uses the record (accessors `set_x`/`get_x` are fine)",
         },
     ],
-    allow: &["base_vars", "instance_list"],
+    allow: crate::allow_registry_fields::base_vars::ALLOW_SHARED_0,
     lists: &["list_init_exempt_prefixes", "list_init_exempt_files", "base_var_home_macros", "base_var_home_relations", "base_var_home_types", "record_accessor_prefixes", "hot_ceiling"],
 };

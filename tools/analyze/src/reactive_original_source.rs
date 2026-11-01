@@ -464,6 +464,13 @@ pub(crate) fn visit_setter_definitions(&self,mut emit:impl FnMut(&str,&str)->Res
 pub(crate) fn visit_own_declared_variables(&self,mut emit:impl FnMut(&str,&str)->Result<(),crate::reactive_reads_native::Failure>)->Result<(),crate::reactive_reads_native::Failure>{crate::reactive_global_source::Source::visit_own_declared_variables(self,&mut emit)}
 
     pub(crate) fn with_original_header_line(&self,member:dm_tree::MemberId,consume:&mut dyn FnMut(&str,usize,&str)->Result<(),crate::reactive_reads_native::Failure>)->Result<(),crate::reactive_reads_native::Failure>{
+        use crate::reactive_reads_native::Failure;
+        self.checkpoint()?;self.require()?;
+        if let Some(pages)=self.raw_pages{
+         let archive=self.inputs.archive();let node=archive.tree().member(member).ok_or("setter header original member absent")?;let name=archive.tree().symbols().text(node.name).ok_or("setter header original name absent")?;
+         let pending=pages.with_setter_header(member,name,consume);if matches!(&pending,Err(Failure::Operational(_))){return pending}self.budget.require().map_err(|message|Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))?;self.checkpoint()?;self.require()?;return pending
+        }
+
         let archive=self.inputs.archive();let point=archive.callable_header_policy_origin(member)?;let relative=self.relative_file(&point.path)?;let file=self.file(&point.path)?;let display=file.analyze_display_line(point.line).map_err(|e|e.to_string())?;let raw=file.view(dm_analysis::policy_inputs::TextView::AnalyzeRaw).map_err(|e|e.to_string())?;let line=raw.as_str().lines().nth(display.saturating_sub(1)).ok_or("setter raw source line absent")?;consume(&relative,display,line)
     }
 

@@ -12,17 +12,7 @@ use crate::pat;
 use crate::tree::{SourceFile, Tree};
 use crate::util::before_slashes;
 
-const RULES: &[RuleMeta] = &[
-    RuleMeta { name: "item_to_spawn", hint: "declare the table with loot(table = list(...)) in the type's CAPABILITIES block (systems.md section 8)" },
-    RuleMeta {
-        name: "loot_table_datum",
-        hint: "searchable tiers are loot(uncommon = ..., rare = ...) on the /loot/... table + loot_search(table =) on the pile (systems.md section 8)",
-    },
-    RuleMeta {
-        name: "random_spawn_list",
-        hint: "spawn lists and roll logic belong in the type's loot(table =, hook =) entry, not procs or list vars (systems.md section 8)",
-    },
-];
+use crate::allow_registry_fields::sys_loot::RULES;
 
 fn roots_of(f: &SourceFile) -> Vec<String> {
     let mut roots: BTreeSet<String> = BTreeSet::new();

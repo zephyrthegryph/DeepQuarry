@@ -31,7 +31,7 @@ static META: Meta = Meta {
         name: "raw_writes",
         hint: "use forceMove(), moveToNullspace(), the slot API (code/datums/containment/api.dm) or image_anchor(); a justified keep takes `// ALLOW(containment): <reason>`",
     }],
-    allow: &["containment"],
+    allow: crate::allow_registry_fields::containment::ALLOW_0,
     lists: &[],
 };
 

@@ -11,10 +11,7 @@ use crate::tree::SourceFile;
 use crate::util::py_strip;
 use crate::{pat, pat_match};
 
-const RULES: &[RuleMeta] = &[RuleMeta {
-    name: "entry_override",
-    hint: "declare it next to the type: DAMAGE_REACTION(type, trigger, PROC_REF(x)) / REFLECTS(type, kinds, chance) / EMP_DISABLE(type, duration, field), or a protection flag (doc/rewrite/systems.md section 12)",
-}];
+use crate::allow_registry_fields::sys_damage_reactions::RULES;
 
 const ENTRIES: &[&str] = &[
     "bullet_act",

@@ -455,6 +455,7 @@ fn validate_source_directives_mode_using<D:PrefixDemand>(
                 let attribute = setting.attribute;
                 if attribute.starts_with("SpacemanDMM_")
                     && attribute != "SpacemanDMM_return_type"
+                    && !demand.owns_directive_binding()
                     && !(matches!(
                         attribute,
                         "SpacemanDMM_should_be_pure"
@@ -500,6 +501,7 @@ fn prefix_return_override_mode_using<D:PrefixDemand>(
                 let value = setting.value.original();
                 if attribute.starts_with("SpacemanDMM_")
                     && attribute != "SpacemanDMM_return_type"
+                    && !demand.owns_directive_binding()
                     && !(matches!(
                         attribute,
                         "SpacemanDMM_should_be_pure"

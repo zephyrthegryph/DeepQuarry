@@ -61,7 +61,7 @@ static META: Meta = Meta {
         RuleMeta { name: "context_escape", hint: H_ESCAPE },
         RuleMeta { name: "output_signature", hint: H_OUTPUT },
     ],
-    allow: &["handlers"],
+    allow: crate::allow_registry_fields::sem_handlers::ALLOW_0,
     lists: &["try_calls"],
 };
 

@@ -10,10 +10,7 @@ use crate::tree::SourceFile;
 use crate::util::py_rstrip;
 use crate::{pat, pat_match};
 
-const RULES: &[RuleMeta] = &[RuleMeta {
-    name: "dx_raw_delay",
-    hint: "write the delay with a time define (2 SECONDS, 5 MINUTES, 1 TICK), not raw deciseconds (AGENTS.md §3f)",
-}];
+use crate::allow_registry_fields::sys_dx_raw_delay::RULES;
 
 /// call name -> (positional index of the delay, named argument that can carry it)
 const DELAY_ARGS: &[(&str, usize, &str)] = &[

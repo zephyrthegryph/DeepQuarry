@@ -1135,6 +1135,8 @@ mod workspace_raw_tests;
 
 #[path = "runner_query_workspace_policy.rs"]
 mod workspace_policy;
+#[path = "runner_query_check_grep.rs"]
+mod check_grep;
 
 impl SourceSnapshot {
     fn capture_diagnostic(
@@ -1312,4 +1314,12 @@ impl SourceSnapshot {
 
 #[path="runner_query_generation_stage.rs"]mod generation_stage;
 
-pub(crate) use generation_stage::ClosedGeneration;
+pub(crate) use generation_stage::{ClosedGeneration,original_manifest_includes};
+
+#[path="runner_query_keyword_overrides.rs"]mod keyword_overrides;
+
+#[path="runner_query_workspace_fold.rs"]mod workspace_fold_report;
+
+#[path="runner_query_allow_annotations.rs"]mod allow_annotations;
+
+#[path="runner_query_call_arguments.rs"]mod call_arguments;

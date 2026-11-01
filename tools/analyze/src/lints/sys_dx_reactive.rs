@@ -7,24 +7,7 @@ use crate::dm::sys::{register_module, SysModule};
 use crate::lint::{Registry, RuleMeta};
 use crate::tree::{SourceFile, Tree};
 
-const RULES: &[RuleMeta] = &[
-    RuleMeta {
-        name: "dx_untracked_read",
-        hint: "declare the var TRACKED(type, var) (or give it a set_<var>()), or read it through a watched relation (design review H4)",
-    },
-    RuleMeta {
-        name: "dx_reactive_write",
-        hint: "reactive procs (draw, should_run, hidden_verbs, tgui_data, a capability's draw/gate/ui_data/examine, needs procs) write nothing: move the write to the handler or setter that changes the state (design review H5)",
-    },
-    RuleMeta {
-        name: "dx_caps_instance_read",
-        hint: "capabilities() is per type: read the instance var inside the capability at run time instead (design review M3, H1)",
-    },
-    RuleMeta {
-        name: "dx_timed_write",
-        hint: "write this var only through timed_set() or its set_<var>() proc (design review M5)",
-    },
-];
+use crate::allow_registry_fields::sys_dx_reactive::RULES;
 
 fn scan(tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize)> {
     analyse(tree, files)

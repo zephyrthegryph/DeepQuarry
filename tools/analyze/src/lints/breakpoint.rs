@@ -29,7 +29,7 @@ static META: Meta = Meta {
         RuleMeta { name: "set_broken", hint: "call atom_break() (damage.md section 6)" },
         RuleMeta { name: "flag_only_override", hint: "delete the override: the base /obj/machinery atom_break()/atom_fix() already does that" },
     ],
-    allow: &[],
+    allow: crate::allow_registry_fields::breakpoint::ALLOW_0,
     lists: &[],
 };
 

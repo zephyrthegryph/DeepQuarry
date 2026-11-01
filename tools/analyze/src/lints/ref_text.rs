@@ -35,7 +35,7 @@ static META: Meta = Meta {
         banned: &[],
     },
     rules: &[RuleMeta { name: "stored", hint: H_STORED }, RuleMeta { name: "ref_macro", hint: H_MACRO }],
-    allow: &[],
+    allow: crate::allow_registry_fields::ref_text::ALLOW_0,
     lists: &[],
 };
 

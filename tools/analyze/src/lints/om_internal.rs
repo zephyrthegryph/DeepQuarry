@@ -21,7 +21,7 @@ static META: Meta = Meta {
     scan: ScanKind::File,
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "internal", hint: "use om_after / om_deadline / om_task_*" }],
-    allow: &["om_internal"],
+    allow: crate::allow_registry_fields::om_internal::ALLOW_0,
     lists: &[],
 };
 

@@ -57,7 +57,7 @@ static META: Meta = Meta {
         "reactor_api",
         "raw_relation",
     ],
-    allow: &["api"],
+    allow: crate::allow_registry_fields::api::ALLOW_0,
     lists: &[],
 };
 

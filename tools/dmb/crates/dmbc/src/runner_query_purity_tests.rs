@@ -114,7 +114,7 @@ fn fixture(source: &str, config: Option<&[u8]>) -> (SourceSnapshot, Arc<AtomicUs
     )])
     .unwrap();
     db.revise(&prepared, 123).unwrap();
-    let intent = PolicyInputRequest {workspace_generators:Vec::new(),
+    let intent = PolicyInputRequest {workspace_auxiliary:Vec::new(),workspace_generators:Vec::new(),
         workspace: None,
         files: vec![PolicyInputFile {
             path: environment.parent().unwrap().join("SpacemanDMM.toml"),

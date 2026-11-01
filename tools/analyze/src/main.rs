@@ -182,6 +182,8 @@ fn options(args: &Args, root: &Path) -> Options {
 fn main() -> ExitCode {
     let native_args=std::env::args().collect::<Vec<_>>();
     if native_args.get(1).is_some_and(|arg|arg=="native-query"){return dq_analyze::native_cli_client::cli(&native_args[2..]);}
+    if native_args.get(1).is_some_and(|arg|arg=="native-check"){return dq_analyze::native_cli_client::policy_cli(&native_args[2..],false);}
+    if native_args.get(1).is_some_and(|arg|arg=="native-baseline"){return dq_analyze::native_cli_client::policy_cli(&native_args[2..],true);}
     if native_args.get(1).is_some_and(|arg|arg=="native-gen"){return dq_analyze::native_cli_client::generation_cli(&native_args[2..]);}
     if native_args.get(1).is_some_and(|arg|arg=="gen")&&native_args.iter().skip(2).any(|arg|arg.starts_with("--native")){eprintln!("use analyze native-gen --dmbc ABSOLUTE_EXE REQUEST.json; refusing legacy fallback");return ExitCode::from(2);}
     let code = real_main();
@@ -302,10 +304,10 @@ fn real_main() -> ExitCode {
                 print_timing(&engine, &outcomes, t0.elapsed());
             }
             if failed.is_empty() {
-                println!("All ratchet lints passed.");
+                print!("{}",dq_analyze::policy_finish::result_line(&failed));
                 ExitCode::SUCCESS
             } else {
-                println!("Ratchet lints failed: {}", failed.join(" "));
+                print!("{}",dq_analyze::policy_finish::result_line(&failed));
                 ExitCode::FAILURE
             }
         }

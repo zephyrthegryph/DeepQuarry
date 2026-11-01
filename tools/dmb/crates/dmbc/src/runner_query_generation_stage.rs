@@ -5,7 +5,7 @@ use std::{fs::File, io};
 pub(crate) struct ClosedGeneration {
     pub(crate) journal: crate::generation_journal::SealedJournal,
     pub(crate) inputs: crate::request_runner::runner_freshness::GenerationInputClosure,
-    included: [bool;13],
+    pub(crate) included: [bool;13],
 }
 impl ClosedGeneration { pub(crate) fn included(&self)->[bool;13]{self.included} }
 impl SourceSnapshot {
@@ -122,7 +122,7 @@ impl SourceSnapshot {
     }
 }
 
-fn original_manifest_includes(manifest:dq_analyze::captured_untyped::ManifestRead<'_>,name:crate::GeneratorName)->io::Result<bool>{
+pub(crate) fn original_manifest_includes(manifest:dq_analyze::captured_untyped::ManifestRead<'_>,name:crate::GeneratorName)->io::Result<bool>{
  use dq_analyze::captured_untyped::ManifestRead;let bytes=match manifest{ManifestRead::CompiledOriginalBytes(bytes)|ManifestRead::OriginalBytes(bytes)=>bytes,ManifestRead::ProvenUnavailable=>return Ok(true),ManifestRead::Compiled=>return Err(io::Error::other("generator presentation requires actual original manifest bytes"))};
  // Old read_to_string(...).unwrap_or_default() treats invalid UTF8 as empty.
  let text=std::str::from_utf8(bytes).unwrap_or("");if !text.contains("#include")||name==crate::GeneratorName::UiTypes{return Ok(true)}let path=if name==crate::GeneratorName::DerivedReads{"code/_generated/reads.dm"}else{name.path()};let needle=path.as_bytes();let mut matched=0;for raw in text.bytes(){let byte=if raw==b'\\'{b'/'}else{raw};while matched>0&&needle[matched]!=byte{let mut next=matched-1;while next>0&&needle[..next]!=needle[matched-next..matched]{next-=1}matched=next;}if needle[matched]==byte{matched+=1;if matched==needle.len(){return Ok(true)}}}Ok(false)

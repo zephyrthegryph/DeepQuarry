@@ -36,7 +36,7 @@ static META: Meta = Meta {
         RuleMeta { name: "description_info", hint: WHY_DESC },
         RuleMeta { name: "input_stance", hint: WHY_INPUT },
     ],
-    allow: &[],
+    allow: crate::allow_registry_fields::stance_examine::ALLOW_0,
     lists: &["input_stance_readers"],
 };
 

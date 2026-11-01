@@ -22,7 +22,7 @@ static META: Meta = Meta {
     scan: ScanKind::File,
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "fire", hint: HINT }],
-    allow: &["subsystem_fire"],
+    allow: crate::allow_registry_fields::subsystem_fire::ALLOW_0,
     lists: &["core"],
 };
 

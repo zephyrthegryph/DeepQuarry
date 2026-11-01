@@ -69,7 +69,7 @@ static META: Meta = Meta {
         RuleMeta { name: "turf_on_materialize", hint: "turf on_materialize() overrides are skipped by SSatoms; use the type table" },
         RuleMeta { name: "table_init_overrides", hint: "set init_from_table = FALSE on a type that overrides Initialize()" },
     ],
-    allow: &["init"],
+    allow: crate::allow_registry_fields::init::ALLOW_0,
     lists: &["init_roots"],
 };
 

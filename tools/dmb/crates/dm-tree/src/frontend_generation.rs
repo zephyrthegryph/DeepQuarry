@@ -238,11 +238,12 @@ impl GenerationNativeQuestions {
         if self.snapshot.occurrences.native_target_index_charge()!=0{self.snapshot.occurrences.visit_target_index_storage(|pointer,_len,bytes|{if pointer!=counter{visit(pointer,bytes)}});}
     }
     /// Exact current declaration-to-body coordinate. No new roster or lookup owner.
-    pub fn body_ordinal_original_at<E:From<&'static str>>(&self,member:MemberId,ordinal:OccurrenceId,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<usize,E>{
+    pub fn body_ordinal_original_at<E:From<&'static str>>(&self,member:MemberId,ordinal:OccurrenceId,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<usize,E>{self.find_body_ordinal_original_at(member,ordinal,checkpoint)?.ok_or_else(||"generation callable original occurrence unavailable".into())}
+    pub fn find_body_ordinal_original_at<E:From<&'static str>>(&self,member:MemberId,ordinal:OccurrenceId,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<Option<usize>,E>{
         if self.tree().declarations().get(ordinal.0 as usize)!=Some(&Target::Member(member)){return Err("generation callable original declaration differs".into())}
         let start=usize::try_from(self.expanded_spans.get(ordinal.0 as usize).ok_or("generation callable expanded span unavailable")?.start).map_err(|_|"generation callable original span overflow")?;
-        let body=if self.bodies_in_span_order{self.bodies.binary_search_by_key(&start,|body|body.expanded_span.start).ok()}else{let mut found=None;for(i,body)in self.bodies.iter().enumerate(){checkpoint()?;if body.declaration==ordinal&&body.member==member{found=Some(i);break}}found}.ok_or("generation callable original occurrence unavailable")?;
-        if self.bodies[body].declaration!=ordinal||self.bodies[body].member!=member{return Err("generation callable original occurrence differs".into())}Ok(body)
+        let found=if self.bodies_in_span_order{self.bodies.binary_search_by_key(&start,|body|body.expanded_span.start).ok()}else{let mut found=None;for(i,body)in self.bodies.iter().enumerate(){checkpoint()?;if body.declaration==ordinal&&body.member==member{found=Some(i);break}}found};let Some(body)=found else{return Ok(None)};
+        if self.bodies[body].declaration!=ordinal||self.bodies[body].member!=member{return Err("generation callable original occurrence differs".into())}Ok(Some(body))
     }
     /// Actual expanded body spelling, borrowed for a negative work prefilter.
     /// It grants no raw-file/ordinary compiler role and owns no new source copy.

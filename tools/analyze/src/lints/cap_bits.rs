@@ -35,7 +35,7 @@ static META: Meta = Meta {
         RuleMeta { name: "bit_shared", hint: "every CAP_* bit needs its own value" },
         RuleMeta { name: "raw_write", hint: "write cap_state through cap_set()" },
     ],
-    allow: &[],
+    allow: crate::allow_registry_fields::cap_bits::ALLOW_0,
     lists: &["registry", "writers", "write_exempt_prefixes"],
 };
 

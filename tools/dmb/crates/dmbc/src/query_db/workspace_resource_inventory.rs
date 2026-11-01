@@ -59,6 +59,13 @@ impl ResourceInventory {
             Ok(())
         }
     }
+    /// Borrowed owners were admitted by the existing configuration producer.
+    /// The caller must preflight map growth before registering these weak census
+    /// rows. This stores no source authority or additional strong payload owner.
+    pub(super) fn add_scopes(&self,scopes:&[Arc<Scope>]) {
+        let mut owners=self.owners.lock().unwrap_or_else(|e|e.into_inner());
+        for scope in scopes {owners.scope(scope);}
+    }
     pub(super) fn add_page_result(
         &self,
         result: &Arc<Result<Arc<PageResult>, String>>,

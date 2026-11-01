@@ -86,7 +86,7 @@ static META: Meta = Meta {
         "destroy_unbind",
         "destroy_effects",
     ],
-    allow: &["decl"],
+    allow: crate::allow_registry_fields::decl::ALLOW_0,
     lists: &[],
 };
 

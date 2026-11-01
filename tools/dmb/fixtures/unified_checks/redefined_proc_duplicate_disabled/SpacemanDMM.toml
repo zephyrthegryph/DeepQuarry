@@ -1,0 +1,3 @@
+[diagnostics]
+redefined_proc = "off"
+procedure_redeclaration = "off"

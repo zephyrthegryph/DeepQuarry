@@ -61,6 +61,7 @@ pub mod checks_implicit_new;
 
 pub mod checker_static_type_notes;
 pub mod checks_proc_static;
+pub mod checks_proc_visibility;
 pub mod checks_variable_visibility;
 pub mod untyped_member_native;
 
@@ -82,3 +83,7 @@ mod checker_callable_display;
 pub mod checks_directive_binding;
 
 pub mod checker_original_expression_debug;
+
+pub mod checks_keyword_overrides;
+
+pub mod checks_call_arguments;

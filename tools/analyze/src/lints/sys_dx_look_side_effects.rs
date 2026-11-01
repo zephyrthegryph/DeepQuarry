@@ -11,10 +11,7 @@ use crate::lint::{Registry, RuleMeta};
 use crate::tree::{SourceFile, Tree};
 use crate::{pat, pat_match};
 
-const RULES: &[RuleMeta] = &[RuleMeta {
-    name: "dx_appearance_side_effect",
-    hint: "appearance procs (appearance_overlays, DECLARE_APPEARANCE_PROC rows; draw() is dx_reactive_write's) write no state and play no sound: move it to the handler or setter that changes the state (G12)",
-}];
+use crate::allow_registry_fields::sys_dx_look_side_effects::RULES;
 
 /// The proc names one file's `DECLARE_APPEARANCE_PROC(...)` rows name (per-file facts, cached by content).
 fn names_in_file(f: &SourceFile) -> Vec<String> {

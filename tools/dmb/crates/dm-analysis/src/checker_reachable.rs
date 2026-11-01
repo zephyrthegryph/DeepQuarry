@@ -156,9 +156,13 @@ pub fn archived_with_observer<'a>(
 pub(crate) fn archived_with_observer_using<'a,E:From<String>+for<'e>From<&'e str>>(
     body: &'a ArchivedBody<'_>,
     observer: &mut impl EvaluatedObserver<'a,E>,
-) -> Result<Walk<'a>, E> {
+) -> Result<Walk<'a>, E> {archived_with_observer_mode(body,observer,false)}
+/// Exact source diagnostic entry over already-prepared original literal parts;
+/// runtime/compatibility callers retain the strict readiness wrapper above.
+pub(crate) fn archived_original_syntax_with_observer_using<'a,E:From<String>+for<'e>From<&'e str>>(body:&'a ArchivedBody<'_>,observer:&mut impl EvaluatedObserver<'a,E>)->Result<Walk<'a>,E>{archived_with_observer_mode(body,observer,true)}
+fn archived_with_observer_mode<'a,E:From<String>+for<'e>From<&'e str>>(body:&'a ArchivedBody<'_>,observer:&mut impl EvaluatedObserver<'a,E>,original:bool)->Result<Walk<'a>,E>{
     let syntax = body.statement_body();
-    if !syntax.syntax_complete() {
+    if !(if original{syntax.original_literal_syntax_complete()}else{syntax.syntax_complete()}) {
         return Err("checker traversal has incomplete native syntax".into());
     }
     let mut walker = Walker {

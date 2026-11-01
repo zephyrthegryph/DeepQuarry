@@ -64,10 +64,14 @@ fn diagnostic_reply_profile_rejects_unknown_mismatched_and_unissued_domains() {
     diagnostic["declaration_profile"] = json!("native-diagnostic-inherited-variable-v1");
     diagnostic["native_declaration_error_count"] = json!(1);
     validate_requested(&reply(&diagnostic), &[question()]).unwrap();
+    diagnostic["native_declaration_error_count"]=json!(0);
+    validate_requested(&reply(&diagnostic), &[question()]).unwrap();
+    diagnostic["declaration_profile"]=json!("native-diagnostic-source-declarations-v2");diagnostic["native_declaration_error_count"]=json!(1);
+    validate_requested(&reply(&diagnostic), &[question()]).unwrap();
     for (profile, count) in [
         (json!("foreign"), json!(1)),
         (json!("strict-native-declarations"), json!(1)),
-        (json!("native-diagnostic-inherited-variable-v1"), json!(0)),
+        (json!("native-diagnostic-source-declarations-v2"), json!(0)),
         (json!("native-diagnostic-inherited-variable-v1"), json!("1")),
         (json!("native-diagnostic-inherited-variable-v1"), json!(-1)),
         (json!("native-diagnostic-inherited-variable-v1"), json!(1.5)),

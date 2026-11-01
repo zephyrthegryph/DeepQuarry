@@ -192,11 +192,7 @@ fn run_build_attempt(
             .expect("clock is after epoch")
             .as_nanos()
     };
-    let input_provider = match (&record_inputs, &replay_inputs) {
-        (Some(directory), _) => dmbc::frozen_inputs::Inputs::record(directory)?,
-        (_, Some(directory)) => dmbc::frozen_inputs::Inputs::replay(directory)?,
-        _ => dmbc::frozen_inputs::Inputs::Live,
-    };
+    let input_provider = generation_input_provider(record_inputs.as_deref(), replay_inputs.as_deref())?;
     input_provider.bind_policy_request(policy_inputs.as_ref())?;
     // Stamps come from session validation's directory proofs once captured.
     let stamped_provider = dmbc::frozen_inputs::ProofStampedInputs::new(&input_provider);
@@ -223,47 +219,14 @@ fn run_build_attempt(
     drop(request_profile);
     dm_profile::detail_mark("request.prepare", total);
     let engine_input_profile = dm_profile::stage("engine_input");
-    let engine_bytes = if embedded_engine {
-        Some(include_bytes!("../../../fixtures/native_template.bin").to_vec())
-    } else {
-        // A compile accepts only the pinned template (checked below against the embedded copy), so where the caller keeps the
-        // file says nothing about the build. Reading it through the capture recorded its PATH as a non-text input, and every
-        // worktree keeps its own copy: a body edit compiled from another worktree was declined as "non-text input changed:
-        // <template A> / <template B>" and took the full path. A live compile reads it unrecorded; recording and replay (which
-        // must reproduce every read) and the analysis commands (whose catalog does depend on it) keep the recorded read.
-        let unrecorded = executable && matches!(input_provider, dmbc::frozen_inputs::Inputs::Live);
-        engine_template
-            .as_ref()
-            .map(|path| {
-                if unrecorded {
-                    std::fs::read(path).map_err(|error| format!("engine template {}: {error}", path.display()))
-                } else {
-                    inputs_capture
-                        .read_binary(path)
-                        .map_err(|error| format!("engine template {}: {error}", path.display()))
-                }
-            })
-            .transpose()?
-    };
+    let engine_bytes = generation_engine_bytes(embedded_engine, executable, &input_provider, engine_template.as_deref(), &inputs_capture)?;
     let engine_identity = engine_bytes
         .as_ref()
         .map_or(0, |bytes| xxhash_rust::xxh3::xxh3_128(bytes));
     drop(engine_input_profile);
     dm_profile::detail_mark("engine_input", total);
     let input_context_profile = dm_profile::stage("request.input_context");
-    if executable {
-        if engine_bytes.as_deref()
-            != Some(include_bytes!("../../../fixtures/native_template.bin").as_slice())
-        {
-            return Err(dmbc::request_failure::RequestFailure::internal(
-                "native unsupported: compile requires the pinned BYOND 516.1687 engine template",
-            )
-            .into());
-        }
-        // This driver supports the pinned 516.1687 ABI. The reusable frontend
-        // still receives explicit configuration rather than inferring a target.
-        dmbc::pinned_target::admit_defines(&mut defines)?;
-    }
+    generation_engine_defines(executable, engine_bytes.as_deref(), &mut defines)?;
     let mut session = None;
     let mut pair_store = None;
     // Request-owned leases outlive the borrowed capture sink and cold compiler.
@@ -532,16 +495,7 @@ fn run_build_attempt(
     drop(engine_profile);
     dm_profile::detail_mark("engine_capture", total);
     let frontend_context_profile = dm_profile::stage("request.frontend_context");
-    let progress = |event: dm_tree::frontend::FrontendProgress| {
-        dmbc::daemon_eprintln!(
-            "frontend {:?} {:?}: {:.3}s {}/{}",
-            event.stage,
-            event.kind,
-            event.elapsed.as_secs_f64(),
-            event.completed_items,
-            event.total_items
-        );
-    };
+    let progress = generation_progress;
     // One request-local execution boundary spans input capture, parsing, ABI,
     // lowering and linking. Its Drop joins workers before the CLI profiler ends.
     let generation = if executable {
@@ -715,7 +669,7 @@ fn run_build_attempt(
                 .map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
             executor,
             Some(&mut *semantic_state),
-            policy_inputs.as_ref().is_some_and(|request| request.workspace().is_none()) || std::env::var_os("DMB_UNIFIED_ANALYSIS").is_some(),
+            policy_inputs.as_ref().is_some_and(|request| request.workspace().is_none() || !request.workspace_generators().is_empty() || request.workspace_auxiliary().contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrep)) || std::env::var_os("DMB_UNIFIED_ANALYSIS").is_some(),
             &settings_host,
         )
         }
@@ -727,7 +681,7 @@ fn run_build_attempt(
         Ok(frontend) => {
             // Migration opt-in until all checker/lint parity and memory gates
             // pass. Compile-only users keep the existing lazy body path.
-            if policy_inputs.as_ref().is_some_and(|request| request.workspace().is_none()) || std::env::var_os("DMB_UNIFIED_ANALYSIS").is_some() {
+            if policy_inputs.as_ref().is_some_and(|request| request.workspace().is_none() || !request.workspace_generators().is_empty() || request.workspace_auxiliary().contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrep)) || std::env::var_os("DMB_UNIFIED_ANALYSIS").is_some() {
                 match query_db.as_ref() {
                     Some(db) => frontend.with_body_queries(Arc::clone(db) as Arc<dyn dm_tree::frontend::BodySyntaxQueries>),
                     None => frontend,
@@ -765,16 +719,15 @@ fn run_build_attempt(
         let discovery_started=Instant::now();
         if progress_enabled { dmbc::daemon_eprintln!("native stage workspace.discovery: started"); }
         dm_profile::request_mark("workspace.discovery.start");
-        let discovery = std::sync::Arc::new(crate::runner_host::workspace_discovery::discover(
-            &inputs_capture, crate::runner_host::workspace_discovery::DiscoveryContract {
-                root: workspace.root.clone(), recursive_roots: workspace.recursive_roots.clone(),
-            })?);
+        let contract=crate::runner_host::workspace_discovery::DiscoveryContract{root:workspace.root.clone(),recursive_roots:workspace.recursive_roots.clone()};
+        let check_grep=policy_inputs.as_ref().is_some_and(|request|request.workspace_auxiliary().contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrep));
+        let discovery=std::sync::Arc::new(if check_grep{crate::runner_host::workspace_discovery::discover_check_grep(&inputs_capture,contract)?}else{crate::runner_host::workspace_discovery::discover(&inputs_capture,contract)?});
         if progress_enabled { dmbc::daemon_eprintln!("native stage workspace.discovery: {:.3}s sources={} directories={}",discovery_started.elapsed().as_secs_f64(),discovery.files().len(),discovery.directory_paths().count()); }
         dm_profile::request_mark("workspace.discovery.done");
         let capture_started=Instant::now();
         if progress_enabled { dmbc::daemon_eprintln!("native stage workspace.original_capture: started"); }
         dm_profile::request_mark("workspace.capture.start");
-        let captured = crate::runner_host::workspace_capture::capture(&frontend, &inputs_capture, discovery, &workspace.configuration)?;
+        let captured = crate::runner_host::workspace_capture::capture_with_auxiliary(&frontend, &inputs_capture, discovery, &workspace.configuration,policy_inputs.as_ref().expect("actual admitted workspace intent").workspace_auxiliary())?;
         if progress_enabled { dmbc::daemon_eprintln!("native stage workspace.original_capture: {:.3}s sources={}",capture_started.elapsed().as_secs_f64(),captured.file_count()); }
         dm_profile::request_mark("workspace.capture.done");
         let frame_started=Instant::now();
@@ -1603,4 +1556,73 @@ fn run_build_attempt(
     host.prune_foreign_callable_index();
     dm_profile::request_mark("runner.host_pruned");
     execution_result?
+}
+
+// Shared actual native engine recipe. Generation-only preparation uses this
+// same selection/read/ABI validation rather than a fixture seed or guessed template.
+pub(crate) fn generation_engine_bytes<P: crate::input_snapshot::SnapshotProvider>(
+    embedded_engine: bool, executable: bool, input_provider: &crate::frozen_inputs::Inputs,
+    engine_template: Option<&std::path::Path>, inputs_capture: &crate::input_snapshot::RecordingInputs<P>,
+) -> Result<Option<Vec<u8>>, Box<dyn std::error::Error>> {
+    let engine_bytes = if embedded_engine {
+        Some(include_bytes!("../../../fixtures/native_template.bin").to_vec())
+    } else {
+        // A compile accepts only the pinned template (checked below against the embedded copy), so where the caller keeps the
+        // file says nothing about the build. Reading it through the capture recorded its PATH as a non-text input, and every
+        // worktree keeps its own copy: a body edit compiled from another worktree was declined as "non-text input changed:
+        // <template A> / <template B>" and took the full path. A live compile reads it unrecorded; recording and replay (which
+        // must reproduce every read) and the analysis commands (whose catalog does depend on it) keep the recorded read.
+        let unrecorded = executable && matches!(input_provider, dmbc::frozen_inputs::Inputs::Live);
+        engine_template
+            .map(|path| {
+                if unrecorded {
+                    std::fs::read(path).map_err(|error| format!("engine template {}: {error}", path.display()))
+                } else {
+                    inputs_capture
+                        .read_binary(path)
+                        .map_err(|error| format!("engine template {}: {error}", path.display()))
+                }
+            })
+            .transpose()?
+    };
+    Ok(engine_bytes)
+}
+pub(crate) fn generation_engine_defines(executable: bool, engine_bytes: Option<&[u8]>, defines: &mut std::collections::BTreeMap<String,String>) -> Result<(),Box<dyn std::error::Error>> {
+    if executable {
+        if engine_bytes
+            != Some(include_bytes!("../../../fixtures/native_template.bin").as_slice())
+        {
+            return Err(dmbc::request_failure::RequestFailure::internal(
+                "native unsupported: compile requires the pinned BYOND 516.1687 engine template",
+            )
+            .into());
+        }
+        // This driver supports the pinned 516.1687 ABI. The reusable frontend
+        // still receives explicit configuration rather than inferring a target.
+        dmbc::pinned_target::admit_defines(defines)?;
+    }
+    Ok(())
+}
+
+#[path="runner_generation_cold.rs"]
+pub(crate) mod generation_cold;
+
+pub(crate) fn generation_input_provider(record_inputs: Option<&std::path::Path>, replay_inputs: Option<&std::path::Path>) -> std::io::Result<crate::frozen_inputs::Inputs> {
+    let input_provider = match (record_inputs, replay_inputs) {
+        (Some(directory), _) => dmbc::frozen_inputs::Inputs::record(directory)?,
+        (_, Some(directory)) => dmbc::frozen_inputs::Inputs::replay(directory)?,
+        _ => dmbc::frozen_inputs::Inputs::Live,
+    };
+    Ok(input_provider)
+}
+
+pub(crate) fn generation_progress(event: dm_tree::frontend::FrontendProgress) {
+        dmbc::daemon_eprintln!(
+            "frontend {:?} {:?}: {:.3}s {}/{}",
+            event.stage,
+            event.kind,
+            event.elapsed.as_secs_f64(),
+            event.completed_items,
+            event.total_items
+        );
 }

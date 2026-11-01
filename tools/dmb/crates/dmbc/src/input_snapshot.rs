@@ -150,7 +150,7 @@ pub struct FileSystemInputs;
 mod generated;
 #[path="input_generation.rs"]
 mod generation;
-pub(crate) use generation::{GenerationBootstrap,GenerationBootstrapFailure,GenerationBootstrapPreparation,GenerationSourceReader,GenerationSourceFrame,GenerationQuestionBootstrap};
+pub(crate) use generation::{GenerationBootstrap,GenerationBootstrapFailure,GenerationBootstrapPreparation,GenerationSourceReader,GenerationSourceFrame,GenerationQuestionBootstrap,OwnedGenerationFrame,RetiredGenerationInputs};
 pub use generated::GeneratedOutputInputs;
 #[path = "input_snapshot_open.rs"]
 mod source_open;

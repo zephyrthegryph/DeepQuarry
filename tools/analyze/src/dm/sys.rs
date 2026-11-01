@@ -73,6 +73,17 @@ fn leak<T: ?Sized>(b: Box<T>) -> &'static T {
 pub fn policy_selection()->crate::tree::Select{CODE_MAPS_DM}
 
 pub fn register_module(reg: &mut Registry, module: SysModule) {
+    let scan = match (module.file_scan.is_some(), module.files_scan.is_some()) {
+        (true, true) => ScanKind::Both,
+        (true, false) => ScanKind::File,
+        _ => ScanKind::Tree,
+    };
+    let meta=module_metadata(&module,scan);
+    reg.add(SysLint { module, meta });
+}
+
+/// Unique original static descriptor builder; no scan callback is invoked.
+pub(crate) fn module_metadata(module:&SysModule,scan:ScanKind)->Meta {
     let name: &'static str = leak(format!("sys/{}", module.name).into_boxed_str());
     let baseline: &'static str = leak(format!("tools/ci/sys_baseline/{}.txt", module.name).into_boxed_str());
     let header: &'static [&'static str] = leak(
@@ -84,17 +95,13 @@ pub fn register_module(reg: &mut Registry, module: SysModule) {
     let mut allow: Vec<&'static str> = module
         .rules
         .iter()
-        .map(|r| leak(format!("sys_{}", r.name).into_boxed_str()) as &'static str)
+        .map(|r| leak(crate::allow_registry_fields::legacy_sys_name(r.name).into_boxed_str()) as &'static str)
         .collect();
     for a in module.allow_extra {
-        allow.push(leak(format!("sys_{}", a).into_boxed_str()));
+        allow.push(leak(crate::allow_registry_fields::legacy_sys_name(a).into_boxed_str()));
     }
-    let scan = match (module.file_scan.is_some(), module.files_scan.is_some()) {
-        (true, true) => ScanKind::Both,
-        (true, false) => ScanKind::File,
-        _ => ScanKind::Tree,
-    };
-    let meta = Meta {
+
+    Meta {
         name,
         group: "sys",
         label: name,
@@ -105,8 +112,7 @@ pub fn register_module(reg: &mut Registry, module: SysModule) {
         rules: module.rules,
         allow: leak(allow.into_boxed_slice()),
         lists: &[],
-    };
-    reg.add(SysLint { module, meta });
+    }
 }
 
 thread_local! {

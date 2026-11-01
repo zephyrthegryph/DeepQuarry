@@ -1,0 +1,25 @@
+/datum/keyword_prefix/proc/outer(key)
+    return key
+/datum/keyword_prefix/child/outer()
+    return 0
+/datum/keyword_prefix/branch/proc/inner(key)
+    return key
+/datum/keyword_prefix/branch/child/inner()
+    return 0
+/proc/prefix_calls(datum/keyword_prefix/base,datum/keyword_prefix/branch/branch)
+    base.outer(key=1)
+    branch.inner(key=1)
+/datum/keyword_prefix/proc/versions(key)
+    return key
+/datum/keyword_prefix/versions(key)
+    return key
+/datum/keyword_prefix/child/versions()
+    return 0
+/proc/version_call(datum/keyword_prefix/base)
+    base.versions(key=1)
+/datum/keyword_prefix/proc/static_only(key)
+    return key
+/datum/keyword_prefix/receiver/child/static_only()
+    return 0
+/proc/static_receiver_call(datum/keyword_prefix/receiver/value)
+    value.static_only(key=1)

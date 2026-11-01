@@ -34,7 +34,7 @@ static META: Meta = Meta {
         RuleMeta { name: "traits", hint: HINT },
         RuleMeta { name: "disease", hint: HINT },
     ],
-    allow: &["radial"],
+    allow: crate::allow_registry_fields::leftovers::ALLOW_0,
     lists: &["radial_impl_prefixes"],
 };
 

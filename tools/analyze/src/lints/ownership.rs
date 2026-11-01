@@ -81,7 +81,7 @@ static META: Meta = Meta {
         RuleMeta { name: "string_name", hint: H_STRING_NAME },
         RuleMeta { name: "removed", hint: H_REMOVED },
     ],
-    allow: &["ownership"],
+    allow: crate::allow_registry_fields::ownership::ALLOW_0,
     lists: &[],
 };
 

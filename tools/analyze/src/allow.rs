@@ -27,11 +27,16 @@ pub struct Allow {
 }
 
 /// The annotation on `line`, if any (`allow_annotations.parse`).
-pub fn parse(line: &str) -> Option<Allow> {
+pub fn parse(line:&str)->Option<Allow>{match parse_with(line,&mut crate::key_policy_control::Compatibility){Ok(value)=>value,Err(never)=>match never{}}}
+
+pub fn parse_with<C: crate::key_policy_control::Control>(line: &str, control:&mut C) -> Result<Option<Allow>,C::Error> {
     if !line.contains("ALLOW(") {
-        return None;
+        return Ok(None);
     }
-    let c = pat!(r"(?://+|/\*)\s*ALLOW\(\s*([\w\s,/]*?)\s*\)\s*(:?)\s*(.*?)\s*(?:\*/.*)?$").captures(line)?;
+    control.checkpoint()?;
+    let pattern = pat!(r"(?://+|/\*)\s*ALLOW\(\s*([\w\s,/]*?)\s*\)\s*(:?)\s*(.*?)\s*(?:\*/.*)?$");
+    crate::key_policy_control::reserve(control,||pattern.capture_group_count().checked_mul(4*std::mem::size_of::<Option<(usize,usize)>>())?.checked_add(128))?;
+    let Some(c)=pattern.captures(line)else{return Ok(None)};
     let mut names = BTreeSet::new();
     let mut codes = BTreeMap::new();
     for entry in c.s(1).split(',') {
@@ -43,20 +48,22 @@ pub fn parse(line: &str) -> Option<Allow> {
             Some((lint, code)) => {
                 let (lint, code) = (util::py_strip(lint), util::py_strip(code));
                 if !lint.is_empty() {
-                    names.insert(lint.to_string());
+                    if !names.contains(lint){crate::key_policy_control::reserve(control,||lint.len().checked_mul(4)?.checked_add(2048))?;names.insert(lint.to_string());}
                     if !code.is_empty() {
+                        crate::key_policy_control::reserve(control,||lint.len().checked_add(code.len())?.checked_mul(4)?.checked_add(if codes.contains_key(lint){128}else{2048}))?;
                         codes.insert(lint.to_string(), code.to_string());
                     }
                 }
             }
             None => {
-                names.insert(entry.to_string());
+                if !names.contains(entry){crate::key_policy_control::reserve(control,||entry.len().checked_mul(4)?.checked_add(2048))?;names.insert(entry.to_string());}
             }
         }
     }
     let has_colon = !c.s(2).is_empty();
-    let reason = if has_colon { c.s(3).to_string() } else { String::new() };
-    Some(Allow { names, codes, reason, has_colon })
+    let reason = if has_colon { crate::key_policy_control::own(control,c.s(3))? } else { String::new() };
+    control.checkpoint()?;
+    Ok(Some(Allow { names, codes, reason, has_colon }))
 }
 
 /// Names an annotation keeps: only when it has a reason (`allow_annotations.names_on`).

@@ -27,7 +27,7 @@ static META: Meta = Meta {
         banned: &["raw_write"],
     },
     rules: &[RuleMeta { name: "raw_write", hint: HINT }],
-    allow: &[],
+    allow: crate::allow_registry_fields::native_ref_write::ALLOW_0,
     lists: &[],
 };
 

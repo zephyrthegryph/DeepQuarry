@@ -23,31 +23,80 @@ fn prepare(host:&mut BuildHost,context:&BuildRequest,names:&[GeneratorName])->Re
  let policy=request.policy_inputs.as_mut().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"generation requires actual workspace input intent"))?;if policy.workspace.is_none(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"generation requires issued workspace scope").into())}policy.workspace_generators=names.to_vec();policy.clone().admit()?;
  match crate::request_runner::run_build_with_host(request,host)?{BuildOutcome::QueryPrepared{..}=>Ok(()),_=>Err(io::Error::other("generation preparation did not publish the actual query frame").into())}
 }
-fn stage(host:&mut BuildHost,context:&BuildRequest,names:&[GeneratorName],cache:&Path,mode:Mode,existing:usize)->Result<Report,Failure>{
+fn full_stage(host:&mut BuildHost,context:&BuildRequest,names:&[GeneratorName],cache:&Path,mode:Mode,existing:usize)->Result<Report,Failure>{
  if names.is_empty(){return Ok(Report{rows:Vec::new(),diagnostics:Vec::new(),changed:Vec::new(),cleanup:Vec::new(),committed:false})}prepare(host,context,names)?;
  let snapshot={let state=host.query_state();let mut state=state.lock().unwrap_or_else(|error|error.into_inner());state.snapshot.take().ok_or_else(||io::Error::other("prepared generation snapshot unavailable"))?};
  let closed=snapshot.stage_generation(crate::generation_staging::temporary_output(cache)?)?;transaction::commit_with_existing(closed,cache,mode,existing).map_err(|error|Box::new(error)as Failure)
 }
+struct PhaseReport { report:Report, restricted:bool }
+fn source_only(name:GeneratorName)->bool{matches!(name,GeneratorName::Actions|GeneratorName::Declare|GeneratorName::DeclareIds|GeneratorName::SparseSlots|GeneratorName::Stats|GeneratorName::SystemAccessors|GeneratorName::UiTypes)}
+fn restricted_stage(host:&mut BuildHost,context:&BuildRequest,names:&[GeneratorName],requested:&[GeneratorName],cache:&Path,mode:Mode,existing:usize,questions:bool)->Result<Option<Report>,Failure>{
+ if names.is_empty(){return Ok(None)}
+ match crate::request_runner::generation_cold::stage(host,context,names,requested,questions,cache)?{
+  crate::request_runner::generation_cold::Preparation::NotNeeded=>Ok(None),
+  crate::request_runner::generation_cold::Preparation::Closed(closed)=>{
+   // Successful restricted preparation cannot retain an old published complete
+   // frame across mutation. Keep compiler caches, retire only that publication.
+   let old={let state=host.query_state();let mut state=state.lock().unwrap_or_else(|error|error.into_inner());state.snapshot.take()};drop(old);
+   transaction::commit_with_existing(closed,cache,mode,existing).map(Some).map_err(|error|Box::new(error)as Failure)
+  },
+ }
+}
+fn stage(host:&mut BuildHost,context:&BuildRequest,names:&[GeneratorName],requested:&[GeneratorName],cache:&Path,mode:Mode,existing:usize)->Result<PhaseReport,Failure>{
+ if let Some(report)=restricted_stage(host,context,names,requested,cache,mode,existing,true)?{return Ok(PhaseReport{report,restricted:true})}
+ Ok(PhaseReport{report:full_stage(host,context,names,cache,mode,existing)?,restricted:false})
+}
 fn merge(mut zero:Report,mut one:Report,other:usize)->io::Result<Report>{zero.committed|=one.committed;let live=sum(sum(report_bytes(&zero)?,report_bytes(&one)?)?,other)?;append(&mut zero.rows,&mut one.rows,live)?;let live=sum(sum(report_bytes(&zero)?,report_bytes(&one)?)?,other)?;append(&mut zero.diagnostics,&mut one.diagnostics,live)?;let live=sum(sum(report_bytes(&zero)?,report_bytes(&one)?)?,other)?;append(&mut zero.changed,&mut one.changed,live)?;let live=sum(sum(report_bytes(&zero)?,report_bytes(&one)?)?,other)?;append(&mut zero.cleanup,&mut one.cleanup,live)?;let sorting=zero.rows.len().checked_mul(2*std::mem::size_of::<transaction::OutputRow>()).and_then(|n|n.checked_add(zero.diagnostics.len().checked_mul(2*std::mem::size_of::<transaction::Diagnostic>())?)).ok_or(io::ErrorKind::OutOfMemory)?;bounded(sum(sum(report_bytes(&zero)?,other)?,sorting)?)?;zero.rows.sort_by(|a,b|a.name.name().cmp(b.name.name()));zero.diagnostics.sort_by(|a,b|a.name.name().cmp(b.name.name()));Ok(zero)}
 fn wrote(report:&Report)->bool{report.rows.iter().any(|row|row.state==State::Written)}
-fn remember(report:&Report,written:&mut BTreeSet<PathBuf>,other:usize)->io::Result<()>{for row in &report.rows{if row.state==State::Written&&!written.contains(&row.path){let next=row.path.as_os_str().len().checked_mul(4).and_then(|n|n.checked_add(1024+std::mem::size_of::<PathBuf>()+64)).ok_or(io::ErrorKind::OutOfMemory)?;bounded(sum(sum(sum(report_bytes(report)?,written_bytes(written)?)?,other)?,next)?)?;written.insert(row.path.clone());}}Ok(())}
-/// Full-frontend route only. Missing-output bootstrap is a distinct issuer and
-/// purpose-specific stage integration; it must never become a legacy fallback.
+fn remember(report:&Report,written:&mut BTreeSet<PathBuf>,other:usize)->io::Result<()>{for path in &report.changed{if !written.contains(path){let next=path.as_os_str().len().checked_mul(4).and_then(|n|n.checked_add(1024+std::mem::size_of::<PathBuf>()+64)).ok_or(io::ErrorKind::OutOfMemory)?;bounded(sum(sum(sum(report_bytes(report)?,written_bytes(written)?)?,other)?,next)?)?;written.insert(path.clone());}}Ok(())}
+fn complete_changed(report:&mut Report,written:&mut BTreeSet<PathBuf>,other:usize)->io::Result<()>{
+ let count=written.len();let backing=count.checked_mul(4).and_then(|n|n.checked_mul(std::mem::size_of::<PathBuf>())).and_then(|n|n.checked_add(std::mem::size_of::<Vec<PathBuf>>())).ok_or(io::ErrorKind::OutOfMemory)?;
+ bounded(sum(sum(sum(report_bytes(report)?,written_bytes(written)?)?,other)?,backing)?)?;
+ let mut changed=Vec::new();changed.try_reserve_exact(count).map_err(|error|io::Error::new(io::ErrorKind::OutOfMemory,error))?;if changed.capacity()>count.saturating_mul(4){return Err(io::ErrorKind::OutOfMemory.into())}
+ // BTree order is deterministic; no path backing is cloned. Both the old report
+ // vector and all set nodes/paths were funded until each physical owner drops.
+ for path in std::mem::take(written){changed.push(path)}
+ report.changed=changed;Ok(())
+}
+/// Restricted bootstrap precedes the existing native fixed point when needed.
+/// Only genuine ordinary preparation publishes the final complete source frame.
 pub(crate) fn run(host:&mut BuildHost,context:&BuildRequest,names:&[GeneratorName],mode:Mode,cache:&Path)->Result<Report,Failure>{run_using(host,context,names,mode,cache,&mut|_,_|Ok(()))}
 fn run_using(host:&mut BuildHost,context:&BuildRequest,names:&[GeneratorName],mode:Mode,cache:&Path,after_commit:&mut impl FnMut(&Report,&mut BuildHost)->Result<(),Failure>)->Result<Report,Failure>{
  if names.is_empty()||names.len()>13{return Err(io::Error::new(io::ErrorKind::InvalidInput,"generation requires 1..13 actual generator questions").into())}let mut names=names.to_vec();names.sort();if names.windows(2).any(|pair|pair[0]==pair[1]){return Err(io::Error::new(io::ErrorKind::InvalidInput,"duplicate generator question").into())}
+ // Auto's existing policy consumes the fixed CLI lint_scopes observation.
+ // Reject a predictable incompatible intent before any source-seven commit;
+ // the actual reader still authenticates/reads that same path later.
+ if names.contains(&GeneratorName::AutoTracked){
+  let workspace=context.policy_inputs.as_ref().and_then(|intent|intent.workspace.as_ref()).ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"generation Auto requires actual workspace configuration intent"))?;
+  let width=workspace.root.as_os_str().len().checked_add(workspace.configuration.as_os_str().len()).and_then(|n|n.checked_add("/tools/ci/lint_scopes.toml".len())).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(4096)).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?;bounded(width)?;
+  let expected=dm_preprocess::regions::canonical_path(&workspace.root.join("tools/ci/lint_scopes.toml"));
+  if dm_preprocess::regions::canonical_path(&workspace.configuration)!=expected{return Err(io::Error::new(io::ErrorKind::InvalidInput,"generation Auto requires the actual fixed lint_scopes configuration request before output mutation").into())}
+ }
  let zero:Vec<_>=names.iter().copied().filter(|name|phase(*name)==0).collect();let one:Vec<_>=names.iter().copied().filter(|name|phase(*name)==1).collect();let mut saved:Option<Report>=None;let mut written=BTreeSet::new();let mut cleanup=Vec::new();let mut pending_cleanup=Vec::new();let mut committed=false;
- let pending=(||->Result<Report,Failure>{for _ in 0..5{
+ let pending=(||->Result<Report,Failure>{
+ // Bootstrap only the requested seven source-only roles before the original
+ // eight/five fixed point. No missing declarations are faked and no unrequested
+ // prerequisite is written. Questions are reissued from actual installed bytes.
+ let source_names:Vec<_>=zero.iter().copied().filter(|name|source_only(*name)).collect();
+ if let Some(mut bootstrap)=restricted_stage(host,context,&source_names,&names,cache,mode,4096,false)?{
+  committed|=bootstrap.committed;pending_cleanup=std::mem::take(&mut bootstrap.cleanup);
+  // Commit state and cleanup are owned before any fallible metadata work.
+  let live=sum(sum(report_bytes(&bootstrap)?,warnings_bytes(&pending_cleanup)?)?,4096)?;
+  append(&mut cleanup,&mut pending_cleanup,live)?;
+  remember(&bootstrap,&mut written,sum(warnings_bytes(&cleanup)?,4096)?)?;
+  if bootstrap.committed{after_commit(&bootstrap,host)?;}
+ }
+ for _ in 0..5{
   let saved_bytes=saved.as_ref().map(report_bytes).transpose()?.unwrap_or(0);let existing=sum(sum(sum(sum(saved_bytes,written_bytes(&written)?)?,warnings_bytes(&cleanup)?)?,warnings_bytes(&pending_cleanup)?)?,4096)?;
-  let mut first=stage(host,context,&zero,cache,mode,existing)?;committed|=first.committed;pending_cleanup=std::mem::take(&mut first.cleanup);if first.committed{prepare(host,context,&names)?;after_commit(&first,host)?;}let live=sum(sum(sum(sum(sum(saved_bytes,written_bytes(&written)?)?,warnings_bytes(&cleanup)?)?,warnings_bytes(&pending_cleanup)?)?,report_bytes(&first)?)?,4096)?;append(&mut cleanup,&mut pending_cleanup,live)?;let other=sum(sum(sum(saved_bytes,warnings_bytes(&cleanup)?)?,warnings_bytes(&pending_cleanup)?)?,4096)?;remember(&first,&mut written,other)?;
+  let first_phase=stage(host,context,&zero,&names,cache,mode,existing)?;let first_restricted=first_phase.restricted;let mut first=first_phase.report;committed|=first.committed;pending_cleanup=std::mem::take(&mut first.cleanup);if first.committed{if !first_restricted{prepare(host,context,&names)?;}after_commit(&first,host)?;}let live=sum(sum(sum(sum(sum(saved_bytes,written_bytes(&written)?)?,warnings_bytes(&cleanup)?)?,warnings_bytes(&pending_cleanup)?)?,report_bytes(&first)?)?,4096)?;append(&mut cleanup,&mut pending_cleanup,live)?;let other=sum(sum(sum(saved_bytes,warnings_bytes(&cleanup)?)?,warnings_bytes(&pending_cleanup)?)?,4096)?;remember(&first,&mut written,other)?;
   // Every committed mutation advances the SAME real retained source frame.
 
   if mode==Mode::Write&&wrote(&first){saved=None;continue}
   let mut result=if let Some(second)=saved.take(){let other=sum(sum(sum(written_bytes(&written)?,warnings_bytes(&cleanup)?)?,warnings_bytes(&pending_cleanup)?)?,4096)?;merge(first,second,other)?}else{
-   let existing=sum(sum(sum(sum(report_bytes(&first)?,written_bytes(&written)?)?,warnings_bytes(&cleanup)?)?,warnings_bytes(&pending_cleanup)?)?,4096)?;let mut second=stage(host,context,&one,cache,mode,existing)?;committed|=second.committed;pending_cleanup=std::mem::take(&mut second.cleanup);if second.committed{prepare(host,context,&names)?;after_commit(&second,host)?;}let live=sum(sum(sum(sum(sum(report_bytes(&first)?,written_bytes(&written)?)?,warnings_bytes(&cleanup)?)?,warnings_bytes(&pending_cleanup)?)?,report_bytes(&second)?)?,4096)?;append(&mut cleanup,&mut pending_cleanup,live)?;let other=sum(sum(sum(report_bytes(&first)?,warnings_bytes(&cleanup)?)?,warnings_bytes(&pending_cleanup)?)?,4096)?;remember(&second,&mut written,other)?;if mode==Mode::Write&&wrote(&second){saved=Some(second);continue}let other=sum(sum(written_bytes(&written)?,warnings_bytes(&cleanup)?)?,4096)?;merge(first,second,other)?};
+   let existing=sum(sum(sum(sum(report_bytes(&first)?,written_bytes(&written)?)?,warnings_bytes(&cleanup)?)?,warnings_bytes(&pending_cleanup)?)?,4096)?;let second_phase=stage(host,context,&one,&names,cache,mode,existing)?;let second_restricted=second_phase.restricted;let mut second=second_phase.report;committed|=second.committed;pending_cleanup=std::mem::take(&mut second.cleanup);if second.committed{if !second_restricted{prepare(host,context,&names)?;}after_commit(&second,host)?;}let live=sum(sum(sum(sum(sum(report_bytes(&first)?,written_bytes(&written)?)?,warnings_bytes(&cleanup)?)?,warnings_bytes(&pending_cleanup)?)?,report_bytes(&second)?)?,4096)?;append(&mut cleanup,&mut pending_cleanup,live)?;let other=sum(sum(sum(report_bytes(&first)?,warnings_bytes(&cleanup)?)?,warnings_bytes(&pending_cleanup)?)?,4096)?;remember(&second,&mut written,other)?;if mode==Mode::Write&&wrote(&second){saved=Some(second);continue}let other=sum(sum(written_bytes(&written)?,warnings_bytes(&cleanup)?)?,4096)?;merge(first,second,other)?};
   // Leave the final unchanged actual native frame on THIS same host for the
   // following compile/check. No source/snapshot is synthesized from journal.
-  prepare(host,context,&names)?;if result.rows.is_empty(){return Err(Box::new(crate::request_failure::RequestFailure::source(format!("analyze gen: no generator named {:?}",names.iter().map(|name|name.name()).collect::<Vec<_>>()))))}for row in &mut result.rows{if row.state==State::Fresh&&written.contains(&row.path){row.state=State::Written}}result.cleanup=std::mem::take(&mut cleanup);result.committed=committed;return Ok(result)
+  prepare(host,context,&names)?;if result.rows.is_empty(){return Err(Box::new(crate::request_failure::RequestFailure::source(format!("analyze gen: no generator named {:?}",names.iter().map(|name|name.name()).collect::<Vec<_>>()))))}for row in &mut result.rows{if row.state==State::Fresh&&written.contains(&row.path){row.state=State::Written}}complete_changed(&mut result,&mut written,sum(sum(warnings_bytes(&cleanup)?,warnings_bytes(&pending_cleanup)?)?,4096)?)?;result.cleanup=std::mem::take(&mut cleanup);result.committed=committed;return Ok(result)
  }Err(io::Error::other("native generation did not reach the existing five-pass fixed point").into())})();
  match pending{Ok(report)=>Ok(report),Err(primary)=>Err(Box::new(CoordinatorFailure{primary,cleanup,pending_cleanup,committed}))}
 }
@@ -55,8 +104,12 @@ fn run_using(host:&mut BuildHost,context:&BuildRequest,names:&[GeneratorName],mo
 #[cfg(test)]mod tests{use super::*;use std::sync::Arc;
  use crate::generation_test_fixture::fixture;
  #[test]fn actual_same_build_host_coordinator_checks_writes_reprepares_and_keeps_final_frame_for_warm_generation(){let(mut host,request,cache,root)=fixture();let target=root.join("code/engine/_generated/deps.dm");let initial=std::fs::read(&target).unwrap();let check=run(&mut host,&request,&[GeneratorName::Deps],Mode::Check,&cache).unwrap();assert_eq!(check.rows.len(),1);assert_eq!(check.rows[0].state,State::Stale);assert_eq!(std::fs::read(&target).unwrap(),initial);let written=run(&mut host,&request,&[GeneratorName::Deps],Mode::Write,&cache).unwrap();assert_eq!(written.rows[0].state,State::Written);assert!(written.cleanup.is_empty());assert_ne!(std::fs::read(&target).unwrap(),initial);let tree=Arc::clone(host.query_tree().unwrap());{let state=host.query_state();let state=state.lock().unwrap();let snapshot=state.snapshot.as_ref().expect("final unchanged frame retained on the actual resident host");snapshot.workspace_native_read().unwrap();snapshot.workspace_generator_inputs(GeneratorName::Deps).unwrap();}let body=std::fs::read(&target).unwrap();let warm=run(&mut host,&request,&[GeneratorName::Deps],Mode::Write,&cache).unwrap();assert_eq!(warm.rows[0].state,State::Fresh);assert!(warm.changed.is_empty());assert_eq!(std::fs::read(&target).unwrap(),body);assert!(Arc::ptr_eq(&tree,host.query_tree().unwrap()),"same actual retained semantic owner, no second native declaration model");}
- #[test]fn actual_same_host_coordinator_missing_generated_include_refuses_without_a_fake_source_or_partial_install(){let(mut host,request,cache,root)=fixture();let target=root.join("code/engine/_generated/deps.dm");std::fs::remove_file(&target).unwrap();let error=run(&mut host,&request,&[GeneratorName::Deps],Mode::Write,&cache).err().expect("purpose-specific missing-output bootstrap remains separate");assert!(!error.to_string().is_empty());assert!(!target.exists());assert!(std::fs::read_dir(target.parent().unwrap()).unwrap().next().is_none());}
+ #[test]fn actual_same_host_missing_deps_uses_recorded_restricted_questions_then_keeps_real_full_frame(){let(mut host,request,cache,root)=fixture();let target=root.join("code/engine/_generated/deps.dm");std::fs::remove_file(&target).unwrap();let report=run(&mut host,&request,&[GeneratorName::Deps],Mode::Write,&cache).unwrap();assert!(report.committed);assert_eq!(report.rows.len(),1);assert_eq!(report.rows[0].state,State::Written);assert!(target.is_file());let state=host.query_state();let state=state.lock().unwrap();let snapshot=state.snapshot.as_ref().expect("actual installed bytes followed by the ordinary retained pipeline");snapshot.workspace_native_read().unwrap();snapshot.workspace_generator_inputs(GeneratorName::Deps).unwrap();}
  #[test]fn coordinator_stage_partition_is_the_exact_existing_eight_then_five_generator_order(){let zero=[GeneratorName::Actions,GeneratorName::AutoTracked,GeneratorName::Declare,GeneratorName::DeclareIds,GeneratorName::SparseSlots,GeneratorName::Stats,GeneratorName::SystemAccessors,GeneratorName::UiTypes];let one=[GeneratorName::Deps,GeneratorName::DerivedReads,GeneratorName::Plans,GeneratorName::Reads,GeneratorName::TrackedLists];assert!(zero.into_iter().all(|name|phase(name)==0));assert!(one.into_iter().all(|name|phase(name)==1));}
  #[test]fn actual_postcommit_metadata_allocation_failure_preserves_committed_status_and_current_host_frame(){let(mut host,request,cache,root)=fixture();let target=root.join("code/engine/_generated/deps.dm");let initial=std::fs::read(&target).unwrap();let error=run_using(&mut host,&request,&[GeneratorName::Deps],Mode::Write,&cache,&mut|_,_|{let mut impossible=Vec::<u8>::new();let cause=impossible.try_reserve_exact(usize::MAX).expect_err("actual metadata capacity overflow");Err(Box::new(io::Error::new(io::ErrorKind::OutOfMemory,cause)))}).err().unwrap();let error=error.downcast_ref::<CoordinatorFailure>().unwrap();assert!(error.committed,"real output commit precedes the actual metadata allocation failure");assert_eq!(error.primary.downcast_ref::<io::Error>().unwrap().kind(),io::ErrorKind::OutOfMemory);assert_ne!(std::fs::read(&target).unwrap(),initial);let state=host.query_state();let state=state.lock().unwrap();state.snapshot.as_ref().expect("actual reprepare precedes metadata work").workspace_native_read().unwrap();}
 
 }
+
+#[cfg(test)]
+#[path="generation_cold_tests.rs"]
+mod cold_tests;

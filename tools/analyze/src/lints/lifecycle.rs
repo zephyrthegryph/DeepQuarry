@@ -31,7 +31,7 @@ static META: Meta = Meta {
         RuleMeta { name: "global_signal_registration", hint: HINT },
         RuleMeta { name: "radio_join", hint: HINT },
     ],
-    allow: &[],
+    allow: crate::allow_registry_fields::lifecycle::ALLOW_0,
     lists: &[],
 };
 
