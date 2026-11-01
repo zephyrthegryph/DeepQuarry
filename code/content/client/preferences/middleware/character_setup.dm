@@ -206,6 +206,9 @@ GLOBAL_LIST_INIT(dq_editor_static_invalidators_by_key, dq_build_editor_static_in
 
 /proc/dq_build_editor_static_invalidator_index()
 	. = list()
+	// Globals initialise in compile order and this file comes first: the index was built from a null list, so it stayed empty and a change never invalidated an editor.
+	if(!GLOB.preference_editors)
+		GLOB.preference_editors = init_preference_editors()
 	for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
 		if(!islist(editor.static_invalidator_keys))
 			continue
