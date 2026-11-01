@@ -147,7 +147,7 @@ exempt_prefixes = ["code/tests/unit_tests/", "code/tests/unit_tests/", "code/tes
 
 [lint.cooldown]
 # cooldown_lint.py SKIP_DIRS.
-exempt_prefixes = ["code/tests/unit_tests/", "code/tests/unit_tests/", "code/controllers/", "code/world/", "code/datums/om/"]
+exempt_prefixes = ["code/tests/unit_tests/", "code/tests/unit_tests/", "code/controllers/", "code/world/kernel/", "code/world/systems/", "code/world/configuration/", "code/world/controllers/", "code/datums/om/"]
 [lint.system_boundary]
 # system_boundary_lint.py SKIP_DIRS (unit tests read private state through system_debug()) and
 # GENERATED_DIRS (the generated verdigris bindings are emitted for every system, so a new binding must
@@ -274,7 +274,7 @@ api_files = ["code/defines/engine/containment.dm"]
 # pollers_lint.py EXEMPT_PREFIXES / EXEMPT_FILES: the MC and subsystem framework, the object-model core, the
 # defines, the unit tests, and the external-I/O datums whose process() is not gameplay polling (tgui, dbcore).
 # This script does not call exempt_path(): benchmarks and the TGS DMAPI are counted.
-exempt_prefixes = ["code/controllers/", "code/world/", "code/datums/om/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/tests/unit_tests/", "code/tests/unit_tests/"]
+exempt_prefixes = ["code/controllers/", "code/world/kernel/", "code/world/systems/", "code/world/configuration/", "code/world/controllers/", "code/datums/om/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/tests/unit_tests/", "code/tests/unit_tests/"]
 exempt_files = ["code/library/ui/tgui/tgui.dm", "code/world/systems/dbcore.dm", "code/engine/kernel/cadences.dm"]
 [lint.pollers.lists]
 # check_step_coverage(): unit-test probes join the machine pipeline lazily through MACHINE_WAKE(); every other
@@ -288,7 +288,7 @@ exempt_files = ["code/defines/host/tgs.dm"]
 [lint.silent_catch.lists]
 # silent_catch_lint.py STRICT_DIRS: the object-model core, lifecycle, the controllers and the error handler (everything
 # that wraps other code's callbacks): a plain log is not enough there, the block must report, rethrow or trace.
-strict_dirs = ["code/datums/om/", "code/datums/lifecycle/", "code/controllers/", "code/world/", "code/modules/error_handler/", "code/content/error_handler/"]
+strict_dirs = ["code/datums/om/", "code/datums/lifecycle/", "code/controllers/", "code/world/kernel/", "code/world/systems/", "code/world/configuration/", "code/world/controllers/", "code/modules/error_handler/", "code/content/error_handler/"]
 
 [lint.cache]
 # cache_lint.py: exempt_path() (unit tests, benchmarks, the vendored TGS DMAPI) and the framework itself.
@@ -390,7 +390,7 @@ legacy_forms_converted = [
   "code/_helpers/",
   "code/_onclick/hud/",
   "code/content/_onclick/hud/",
-  "code/controllers/", "code/world/",
+  "code/controllers/", "code/world/kernel/", "code/world/systems/", "code/world/configuration/", "code/world/controllers/",
   "code/core/",
   "code/content/core/",
   "code/datums/abilities/",
