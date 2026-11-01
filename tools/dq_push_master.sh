@@ -198,6 +198,9 @@ for round in 1 2 3; do
 		log="data/push-check/${sha:0:12}"
 		echo "== re-proof passed: HEAD is now ${sha:0:12} and carries the fresh stamp"
 	fi
+	# The stamp is judged once per commit and nothing below can change it: refuse now. On 1 November a fast-land compiled and ran the ratchets for 793 s and
+	# only then printed the verdict it had 42 s in, holding every queued lane behind it.
+	stamp_of "$sha" >/dev/null; [ "$_stamp_rc" -eq 0 ] || die "$_stamp_out"
 
 	# tools/dq_merge_gates.sh runs the production build (native compile + DreamChecker) next to the test world and stamps the exact
 	# HEAD when both reported clean. Clean tree and an unmoved HEAD are checked here and below.
