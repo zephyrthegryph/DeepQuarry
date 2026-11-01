@@ -5,11 +5,15 @@
 
 import { useBackend } from 'tgui/backend';
 import { Box, Dropdown } from 'tgui-core/components';
+import { ColorChoice } from '../colors';
 import type { EditorProps } from './index';
 
 type ExternalState = {
   status: 'normal' | 'amputated' | 'cyborg';
   model?: string | null;
+  /// A robotic limb's own tint, and the palette slot it follows if any.
+  color?: string | null;
+  link?: string;
 };
 type Data = {
   externals: Record<string, ExternalState>;
@@ -52,6 +56,7 @@ const LIST_STYLE = {
 const rowStyle = (changed: boolean, focused: boolean) => ({
   display: 'flex',
   alignItems: 'center',
+  flexWrap: 'wrap',
   gap: '0.4em',
   padding: '0.1em 0.3em',
   borderRadius: '0.2em',
@@ -117,8 +122,20 @@ export const OrgansEditor = ({
                   send('set_external_status', { limb, status: String(v) })
                 }
               />
+              {state.status === 'cyborg' && (
+                <ColorChoice
+                  color={state.color ?? '#ffffff'}
+                  link={state.link}
+                  category="other"
+                  onLink={(slot) =>
+                    send('set_limb_color', { limb, color: slot })
+                  }
+                  onPick={(hex) => send('set_limb_color', { limb, color: hex })}
+                  onCustom={() => send('pick_limb_color', { limb })}
+                />
+              )}
               {state.status === 'cyborg' && limbModels.length > 0 && (
-                <Box style={{ flex: 1, minWidth: 0 }}>
+                <Box style={{ flex: '1 1 8em', minWidth: 0 }}>
                   <Dropdown
                     width="100%"
                     selected={state.model ?? limbModels[0]}

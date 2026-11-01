@@ -43,15 +43,6 @@
 /datum/preference/color/human/skin_color/apply_to_human(mob/living/carbon/human/target, value)
 	target.looks.set_skin_color(value)
 
-/datum/preference/color/human/synth_color
-	category = PREFERENCE_CATEGORY_MANUALLY_RENDERED
-	savefile_identifier = PREFERENCE_CHARACTER
-	savefile_key = "synth_color_rgb"
-	can_randomize = FALSE
-
-/datum/preference/color/human/synth_color/apply_to_human(mob/living/carbon/human/target, value)
-	target.looks.set_synth_color_rgb(value)
-
 /datum/preference/color/human/tail_color1
 	category = PREFERENCE_CATEGORY_MANUALLY_RENDERED
 	savefile_identifier = PREFERENCE_CHARACTER

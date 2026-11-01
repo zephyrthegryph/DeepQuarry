@@ -118,7 +118,7 @@
 	// savefile key -> list(record var, field)
 	var/list/map = list(
 		"hair_color" = list("looks", "hair_color"), "grad_color" = list("looks", "grad_color"), "facial_color" = list("looks", "facial_color"),
-		"eyes_color" = list("looks", "eyes_color"), "skin_color" = list("looks", "skin_color"), "synth_color_rgb" = list("looks", "synth_color_rgb"),
+		"eyes_color" = list("looks", "eyes_color"), "skin_color" = list("looks", "skin_color"), 
 		"hair_style_name" = list("looks", "hair_style"), "facial_style_name" = list("looks", "facial_style"),
 		"grad_style_name" = list("looks", "grad_style"), "digitigrade" = list("looks", "digitigrade"), 
 		"synth_markings" = list("looks", "synth_markings"),

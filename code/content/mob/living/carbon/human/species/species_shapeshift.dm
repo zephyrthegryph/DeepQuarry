@@ -314,7 +314,6 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 /mob/living/carbon/human/proc/shapeshifter_set_colour(new_skin)
 
 	looks.set_skin_color(new_skin)
-	looks.set_synth_color_rgb(looks.skin_color)
 
 
 	for(var/obj/item/organ/external/E in organs)
