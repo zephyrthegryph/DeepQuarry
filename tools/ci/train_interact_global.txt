@@ -13,7 +13,7 @@ code/_helpers/
 code/engine/
 code/controllers/
 code/library/
-code/datums/capabilities/
+code/library/capabilities/
 code/world/
 code/game/atom/
 maps/
