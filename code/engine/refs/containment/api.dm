@@ -13,9 +13,9 @@
 // may displace an occupant), then the insert action's needs(). The first refusal is the one a player sees.
 //
 // Each move checks both sides first: the thing can leave its current slot
-// (the slot's removal_refusal() and /datum/act/check_remove), and it can enter
+// (the slot's removal_refusal()), and it can enter
 // the new one (the slot's acceptance predicate, capacity, a keyed slot's
-// duplicate-key check, and /datum/act/check_insert). Nothing that can sleep
+// duplicate-key check). Nothing that can sleep
 // runs in between: the check procs and the check hooks' handlers are
 // synchronous typed action handlers. Then the move commits with one forceMove, whose
 // bookkeeping (ledger.dm) fires /datum/notice/slot_removed and /datum/notice/slot_inserted and
