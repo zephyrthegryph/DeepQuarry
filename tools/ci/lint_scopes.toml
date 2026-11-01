@@ -147,7 +147,7 @@ exempt_prefixes = ["code/tests/unit_tests/", "code/tests/unit_tests/", "code/tes
 
 [lint.cooldown]
 # cooldown_lint.py SKIP_DIRS.
-exempt_prefixes = ["code/tests/unit_tests/", "code/tests/unit_tests/", "code/controllers/", "code/world/", "code/engine/kernel/", "code/datums/om/"]
+exempt_prefixes = ["code/tests/unit_tests/", "code/tests/unit_tests/", "code/controllers/", "code/world/", "code/datums/om/"]
 [lint.system_boundary]
 # system_boundary_lint.py SKIP_DIRS (unit tests read private state through system_debug()) and
 # GENERATED_DIRS (the generated verdigris bindings are emitted for every system, so a new binding must
@@ -274,7 +274,7 @@ api_files = ["code/defines/engine/containment.dm"]
 # pollers_lint.py EXEMPT_PREFIXES / EXEMPT_FILES: the MC and subsystem framework, the object-model core, the
 # defines, the unit tests, and the external-I/O datums whose process() is not gameplay polling (tgui, dbcore).
 # This script does not call exempt_path(): benchmarks and the TGS DMAPI are counted.
-exempt_prefixes = ["code/controllers/", "code/world/", "code/engine/kernel/", "code/datums/om/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/tests/unit_tests/", "code/tests/unit_tests/"]
+exempt_prefixes = ["code/controllers/", "code/world/", "code/datums/om/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/tests/unit_tests/", "code/tests/unit_tests/"]
 exempt_files = ["code/modules/tgui/tgui.dm", "code/world/systems/dbcore.dm", "code/engine/kernel/cadences.dm"]
 [lint.pollers.lists]
 # check_step_coverage(): unit-test probes join the machine pipeline lazily through MACHINE_WAKE(); every other
@@ -288,7 +288,7 @@ exempt_files = ["code/defines/host/tgs.dm"]
 [lint.silent_catch.lists]
 # silent_catch_lint.py STRICT_DIRS: the object-model core, lifecycle, the controllers and the error handler (everything
 # that wraps other code's callbacks): a plain log is not enough there, the block must report, rethrow or trace.
-strict_dirs = ["code/datums/om/", "code/datums/lifecycle/", "code/controllers/", "code/world/", "code/engine/kernel/", "code/modules/error_handler/", "code/content/error_handler/"]
+strict_dirs = ["code/datums/om/", "code/datums/lifecycle/", "code/controllers/", "code/world/", "code/modules/error_handler/", "code/content/error_handler/"]
 
 [lint.cache]
 # cache_lint.py: exempt_path() (unit tests, benchmarks, the vendored TGS DMAPI) and the framework itself.
@@ -390,7 +390,7 @@ legacy_forms_converted = [
   "code/_helpers/",
   "code/_onclick/hud/",
   "code/content/_onclick/hud/",
-  "code/controllers/", "code/world/", "code/engine/kernel/",
+  "code/controllers/", "code/world/",
   "code/core/",
   "code/content/core/",
   "code/datums/abilities/",
@@ -882,7 +882,7 @@ call_ext_allow = [
 verdigris_defines_allow = ["code/__defines/verdigris/"]
 bindings_file_allow = ["code/__defines/verdigris/_bindings.dm"]
 # only the core pipeline runner and the kernel work engine change idle/park state
-pipelines_allow = ["code/datums/om/", "code/engine/kernel/", "code/engine/kernel/sequence.dm", "code/engine/time/pipelines.dm", "code/tests/unit_tests/", "code/tests/unit_tests/"]
+pipelines_allow = ["code/datums/om/", "code/world/kernel/", "code/engine/kernel/sequence.dm", "code/engine/time/pipelines.dm", "code/tests/unit_tests/", "code/tests/unit_tests/"]
 relation_fields_allow = ["code/datums/om/", "code/engine/refs/edges.dm", "code/engine/_generated/actions.dm"]
 timer_handles_allow = ["code/datums/om/", "code/engine/time/handles.dm", "code/engine/time/timers.dm"]
 # creation/deletion bookkeeping for the one revive path
@@ -991,7 +991,7 @@ banned_outside = [
   "CHANGE_RELATED @ code/engine/;code/__defines/;code/defines/engine/;code/defines/library/;code/defines/host/;code/defines/base/;code/defines/content/;code/tests/unit_tests/;code/tests/unit_tests/ = the engine's own channel of a forwarded change: watch the key of the thing that changed",
   "CHANGE_RELATION_ADDED @ code/engine/;code/__defines/;code/defines/engine/;code/defines/library/;code/defines/host/;code/defines/base/;code/defines/content/;code/tests/unit_tests/;code/tests/unit_tests/ = the engine's own channel of a relation edge: a slot or a relation write publishes its key",
   "CHANGE_RELATION_REMOVED @ code/engine/;code/__defines/;code/defines/engine/;code/defines/library/;code/defines/host/;code/defines/base/;code/defines/content/;code/tests/unit_tests/;code/tests/unit_tests/ = the engine's own channel of a relation edge: a slot or a relation write publishes its key",
-  "OM_DERIVE_FIELD @ code/datums/om/;code/defines/engine/om.dm;code/tests/unit_tests/;code/tests/unit_tests/;code/tests/;code/tests/benchmarks/;code/engine/kernel/measure/ = a tracked read; only the sys periodic gate tests still derive a field",
+  "OM_DERIVE_FIELD @ code/datums/om/;code/defines/engine/om.dm;code/tests/unit_tests/;code/tests/unit_tests/;code/tests/;code/tests/benchmarks/;code/world/kernel/measure/ = a tracked read; only the sys periodic gate tests still derive a field",
 ]
 # Names of forms that no longer exist (a hard ban, no baseline): `name = hint`.
 banned = [
@@ -1378,7 +1378,7 @@ banned = [
   "DECLARE_LOGIN_VERB = verb_entry(path, login = TRUE) in the type CAPABILITIES block",
   "DECLARE_VERB_IF = verb_entry(path, when = nameof(field)); write the tracked field through its setter",
   "DECLARE_VERB_HIDE = verb_entry(path, hidden = TRUE) in the type CAPABILITIES block",
-  "world_service = a system: SYSTEM_DEF(x) with /datum/system/x (code/engine/kernel/)",
+  "world_service = a system: SYSTEM_DEF(x) with /datum/system/x (code/world/kernel/)",
   "OM_EMIT = ACTION()/PUBLISH(E, token, args) for a typed event (code/defines/engine/declare/actions.dm)",
   "OM_EMIT_WORLD = PUBLISH(world_owner(), token, args)",
   "om_ask = asks(/datum/prompt/kind, fields = list(...)) on an op",
@@ -1965,8 +1965,8 @@ retired_macros = [
 exempt_files = ["code/_helpers/icons/flatten.dm"]
 
 [lint.stored_refs]
-exempt_prefixes = ["code/tests/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/refs/", "code/engine/time/", "code/datums/ownership/", "code/datums/om/", "code/datums/lifecycle/", "code/world/systems/garbage.dm", "code/content/admin/view_variables/reference_tracking.dm", "code/engine/_generated/", "code/engine/change/", "code/engine/lifeforms/", "code/engine/stats/", "code/engine/kernel/", "code/engine/kernel/measure/"] # (and the kernel loop and its meter) # change delivery, lifeform and stat machinery: engine tables (relations proposal section 4)
-exempt_files = ["code/defines/host/tgs.dm", "code/content/datums/registries.dm", "code/engine/kernel/membership.dm", "code/datums/native/entities.dm", "code/engine/declare/link_state.dm", "code/engine/actions/change.dm", "code/engine/actions/every.dm", "code/engine/actions/notices.dm", "code/engine/actions/reactions.dm", "code/engine/kernel/jobs.dm", "code/engine/io/jobs.dm", "code/engine/state/pool.dm", "code/engine/state/serializer.dm", "code/engine/present/type_verbs.dm", "code/engine/declare/capability_tables.dm", "code/engine/present/native_ends.dm", "code/engine/kernel/requests.dm", "code/engine/kernel/inbox.dm", "code/engine/kernel/sequence.dm", "code/engine/parts/run.dm", "code/engine/parts/resource.dm", "code/engine/declare/activation.dm", "code/engine/actions/hooks.dm", "code/engine/hooks/native_watch.dm"] # (run-state records the kernel sweeps: requests, input events, pending ops, reservations, activations, hooks, native watches; relations proposal section 7) the registry/membership/relation storage, and the kernel's own queues and tables (relations proposal section 4: engine tables are exempt by path and covered by dq_gc_sweep and the hard-delete counter)
+exempt_prefixes = ["code/tests/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/refs/", "code/engine/time/", "code/datums/ownership/", "code/datums/om/", "code/datums/lifecycle/", "code/world/systems/garbage.dm", "code/content/admin/view_variables/reference_tracking.dm", "code/engine/_generated/", "code/engine/change/", "code/engine/lifeforms/", "code/engine/stats/", "code/world/kernel/", "code/world/kernel/measure/"] # (and the kernel loop and its meter) # change delivery, lifeform and stat machinery: engine tables (relations proposal section 4)
+exempt_files = ["code/defines/host/tgs.dm", "code/content/datums/registries.dm", "code/world/kernel/membership.dm", "code/datums/native/entities.dm", "code/engine/declare/link_state.dm", "code/engine/actions/change.dm", "code/engine/actions/every.dm", "code/engine/actions/notices.dm", "code/engine/actions/reactions.dm", "code/engine/kernel/jobs.dm", "code/engine/io/jobs.dm", "code/engine/state/pool.dm", "code/engine/state/serializer.dm", "code/engine/present/type_verbs.dm", "code/engine/declare/capability_tables.dm", "code/engine/present/native_ends.dm", "code/engine/kernel/requests.dm", "code/engine/kernel/inbox.dm", "code/engine/kernel/sequence.dm", "code/engine/parts/run.dm", "code/engine/parts/resource.dm", "code/engine/declare/activation.dm", "code/engine/actions/hooks.dm", "code/engine/hooks/native_watch.dm"] # (run-state records the kernel sweeps: requests, input events, pending ops, reservations, activations, hooks, native watches; relations proposal section 7) the registry/membership/relation storage, and the kernel's own queues and tables (relations proposal section 4: engine tables are exempt by path and covered by dq_gc_sweep and the hard-delete counter)
 [lint.stored_refs.lists]
 # /datum/gear_tweak: a loadout tweak is a stateless flyweight (a colour, a name prompt): a reference to one names behaviour, not a world entity.
 exempt_types = ["/datum/system", "/datum/shared_cache", "/datum/controller", "/datum/world_service", "/datum/capability", "/datum/reaction", "/datum/xform_group", "/datum/entry", "/datum/xform", "/transformation", "/datum/own_entry", "/datum/derived_entry", "/datum/op_def", "/datum/gear_tweak", "/datum/gas_mixture", "/datum/debugger", "/datum/tracy", "/datum/admins", "/datum/persistent_client", "/datum/player_tips", "/datum/announcement", "/mob/dview", "/mob/proccall_handler", "/datum/look", "/datum/dispatch_context", "/datum/materialize_batch", "/datum/counter"]

@@ -143,7 +143,7 @@ a stat id, a `PROC_REF`) as well as requirements and build the same tree.
 
 Corrections to older notes: there is no `om_changed()`, `changed()` channels or `om_raise_change()`
 any more; state is tracked setters and generated reads. `SSbehaviours` no longer fires; its work
-was folded into the kernel (`code/engine/kernel/kernel.dm`).
+was folded into the kernel (`code/world/kernel/kernel.dm`).
 
 ### 3c. Source layout and the migration rule
 
@@ -412,7 +412,7 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
 ## 9. Current state (deployment-independent)
 
 - **Scheduling: one kernel, no Master Controller, no subsystems.** The `Kernel` global
-  (`code/engine/kernel/`) is the one loop. Each tick runs phases K S N U D P R G (host work and the
+  (`code/world/kernel/`) is the one loop. Each tick runs phases K S N U D P R G (host work and the
   input inbox, simulation sync, native frame, urgent, deadlines, lanes, presentation, garbage). What it hosts
   is `/datum/system`s declared with `SYSTEM_DEF(x)` (the `SSx` global): `needs`, `phase`, `roles`, and
   `every()` items in `reactions()`. A system's periodic handler is `x(dt)`, gated by

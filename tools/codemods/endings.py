@@ -31,7 +31,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from dmlib import File, dm_files, procs_in, strip_code  # noqa: E402
 
 ENGINE = ("code/engine/", "code/library/", "code/datums/lifecycle/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/tests/unit_tests/", "code/modules/benchmarks/",
-          "code/tests/", "code/modules/tgs/", "code/world/systems/garbage.dm", "code/engine/kernel/")
+          "code/tests/", "code/modules/tgs/", "code/world/systems/garbage.dm", "code/world/kernel/")
 
 QDEL = re.compile(r"(?<![\w.])qdel\s*\(")
 DESTROY = re.compile(r"(ex_act|emp_act|bullet_act|take_damage|damage|atom_break|atom_destruction|deconstruct|dismantle|_act_tool|tool_done|welder|crowbar|"
