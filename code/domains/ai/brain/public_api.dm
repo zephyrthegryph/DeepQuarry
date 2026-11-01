@@ -150,9 +150,6 @@
 	update_primary_threat()
 	return primary_threat
 
-/datum/ai_brain/proc/track_target_position()
-	return
-
 /datum/ai_brain/proc/check_attacker(mob/M)
 	var/value = grudge_value(M)
 	return !isnull(value) && dq_standing_disposition(value) <= DQ_DISPOSITION_HOSTILE

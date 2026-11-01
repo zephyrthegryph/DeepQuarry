@@ -250,10 +250,6 @@ CAPABILITIES(/obj/item/transfer_valve)
 
 // this doesn't do anything but the timer etc. expects it to be here
 // eventually maybe have it update icon to show state (timer, prox etc.) like old bombs
-/obj/item/transfer_valve/proc/c_state()
-	return
-
-
 /// Relation view: attacher (reads null once it is gone).
 /obj/item/transfer_valve/proc/attacher() as /mob
 	return attacher

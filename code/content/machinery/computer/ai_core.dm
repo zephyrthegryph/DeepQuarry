@@ -265,13 +265,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore/deactivated, REGISTRY_AI_CORES_DEACTIV
 
 	spent(src, user)
 
-/obj/structure/AIcore/deactivated/proc/check_malf(mob/living/silicon/ai/ai)
-	if(!ai)
-		return
-	for (var/datum/mind/malfai in antag_malf().current_antagonists)
-		if (ai.mind == malfai)
-			return 1
-
 CAPABILITIES(/obj/structure/AIcore/deactivated)
 	without("anchor")
 	without("unanchor")

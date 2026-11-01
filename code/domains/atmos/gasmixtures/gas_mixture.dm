@@ -94,22 +94,6 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache()) // ALLOW(cache): constant 
 //gas presence procs — the arena auto-manages gas presence, so the old
 //assert/add/garbage_collect family are no-ops kept for caller compatibility.
 
-///assert_gas(gas_id) - NO-OP. The arena auto-creates gases on first write.
-/datum/gas_mixture/proc/assert_gas(gas_id)
-	return
-
-///assert_gases(args) - NO-OP. The arena auto-manages presence.
-/datum/gas_mixture/proc/assert_gases(...)
-	return
-
-///add_gas(gas_id) - NO-OP. The arena auto-creates gases on first write.
-/datum/gas_mixture/proc/add_gas(gas_id)
-	return
-
-///add_gases(args) - NO-OP. The arena auto-manages presence.
-/datum/gas_mixture/proc/add_gases(...)
-	return
-
 ///garbage_collect() - NO-OP. The arena drops empty gases automatically.
 /datum/gas_mixture/proc/garbage_collect(list/tocheck)
 	return
@@ -225,24 +209,6 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache()) // ALLOW(cache): constant 
 /datum/gas_mixture/proc/return_volume()
 	return max(0, vg_return_volume_hook(src))
 
-/// Gets the gas visuals for everything in this mixture
-/datum/gas_mixture/proc/return_visuals(turf/z_context)
-	var/list/output
-	var/offset = GET_TURF_PLANE_OFFSET(z_context) + 1
-	var/list/cached_gases = get_gases()
-	for(var/id in cached_gases)
-		if(GLOB.nonoverlaying_gases[id])
-			continue
-		var/list/gas_meta = GLOB.meta_gas_info[id]
-		if(!gas_meta)
-			continue
-		var/moles = cached_gases[id]
-		if(moles <= gas_meta[META_GAS_MOLES_VISIBLE])
-			continue
-		var/list/gas_overlay = gas_meta[META_GAS_OVERLAY][offset]
-		LAZYADD(output, gas_overlay[min(TOTAL_VISIBLE_STATES, CEILING(moles / MOLES_GAS_VISIBLE_STEP, 1))])
-	return output
-
 /// Calculate thermal energy in joules
 /datum/gas_mixture/proc/thermal_energy()
 	return vg_thermal_energy_hook(src)
@@ -310,29 +276,6 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache()) // ALLOW(cache): constant 
 		return removed
 	ratio = min(ratio, 1)
 	vg_remove_ratio_hook(src, removed, ratio)
-	return removed
-
-///Removes an amount of a specific gas from the gas_mixture.
-///Returns: gas_mixture with the gas removed
-/datum/gas_mixture/proc/remove_specific(gas_id, amount)
-	amount = min(amount, vg_get_moles_hook(src, GAS_IDX(gas_id)))
-	if(amount <= 0)
-		return null
-	var/datum/gas_mixture/removed = new type
-	heat_set(removed, return_temperature())
-	vg_set_moles_hook(removed, GAS_IDX(gas_id), amount)
-	vg_adjust_moles_hook(src, GAS_IDX(gas_id), -amount)
-	return removed
-
-/datum/gas_mixture/proc/remove_specific_ratio(gas_id, ratio)
-	if(ratio <= 0)
-		return null
-	ratio = min(ratio, 1)
-	var/datum/gas_mixture/removed = new type
-	heat_set(removed, return_temperature())
-	var/amount = QUANTIZE(vg_get_moles_hook(src, GAS_IDX(gas_id)) * ratio)
-	vg_set_moles_hook(removed, GAS_IDX(gas_id), amount)
-	vg_adjust_moles_hook(src, GAS_IDX(gas_id), -amount)
 	return removed
 
 ///Distributes the contents of two mixes equally between themselves

@@ -771,15 +771,6 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 
 	return TURRET_PRIORITY_TARGET	//if the perp has passed all previous tests, congrats, it is now a "shoot-me!" nominee
 
-/obj/machinery/porta_turret/proc/assess_mecha(obj/mecha/M)
-	if(!istype(M))
-		return TURRET_NOT_TARGET
-
-	if(!M?.slot_item(MECHA_SLOT_PILOT))
-		return check_all ? TURRET_SECONDARY_TARGET : TURRET_NOT_TARGET
-
-	return assess_living(M?.slot_item(MECHA_SLOT_PILOT))
-
 /obj/machinery/porta_turret/proc/assess_perp(mob/living/carbon/human/H)
 	if(!H || !istype(H))
 		return 0

@@ -3006,13 +3006,6 @@ CAPABILITIES(/obj/item/toy/acorn_branch)
 	ref_one(nameof(registered_mob), /mob/living/carbon/human, weak = TRUE)
 	op("pick_acorn", in_hand(), when(req_actor_kind(/mob/living/carbon/human)), needs(req_conscious()), then(PROC_REF(interaction_self)))
 
-/obj/item/toy/acorn_branch/proc/can_pull_acorn(mob/user, atom/target, obj/item/held)
-	if(user.stat || !ishuman(user))
-		return TRUE // the effect declines silently
-	if(!COOLDOWN_FINISHED(src, next_use))
-		return "you need to wait a bit longer before you can pull out another acorn"
-	return TRUE
-
 /// Old attack_self: a person pulls an acorn out (one at a time, and only its registered owner).
 /obj/item/toy/acorn_branch/proc/interaction_self(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.actor

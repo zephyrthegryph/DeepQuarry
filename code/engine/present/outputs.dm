@@ -48,14 +48,6 @@
 /datum/capability/proc/on_ui_data(datum/act/eval/A, list/data)
 	return
 
-/// Do the when() blocks around a compiled entry and its own `when` hold on `holder` now?
-/proc/present_holds(datum/holder, datum/centry/C, datum/entry/E)
-	for(var/datum/entry/W as anything in C.whens)
-		if(!change_condition(holder, W.args["cond"]))
-			return FALSE
-	var/cond = E.args["when"]
-	return isnull(cond) || !!change_condition(holder, cond)
-
 /// A table of just the entries an activation's definition brings (the ones its attach applies), for the presentation to read.
 /proc/activation_table(datum/activation/A)
 	var/static/list/tables = list()

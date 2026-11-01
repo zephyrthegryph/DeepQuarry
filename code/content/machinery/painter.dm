@@ -82,13 +82,6 @@ CAPABILITIES(/obj/machinery/gear_painter)
 	SStgui.update_uis(src)
 	return OP_OK
 
-/obj/machinery/gear_painter/proc/insert_mob(mob/victim, mob/user)
-	if(inserted)
-		return
-	if(user)
-		act_message(user, victim, others = span_warning("%U% stuffs %T% into [src]!"))
-	move_into(src, nameof(src.inserted), victim, user)
-
 /obj/machinery/gear_painter/AllowDrop()
 	return FALSE
 

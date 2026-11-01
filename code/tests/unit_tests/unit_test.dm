@@ -1480,6 +1480,9 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 		var/changed = unit_test_air_change(was, was_off, now, now_off)
 		if(!changed)
 			continue
+		// A mapped vent or scrubber runs on its own between ticks: the air it moved is the world's doing, and blaming the running test made a flake of it (the powersink tests).
+		if((locate(/obj/machinery/atmospherics/unary/vent_pump) in T) || (locate(/obj/machinery/atmospherics/unary/vent_scrubber) in T))
+			continue
 		leaked++
 		kept["[i]"] = TRUE
 		lines += "[get_area(T)] ([T.x],[T.y],[T.z]): [changed]; moles [round(was[was_off + GAS_READ_TOTAL_MOLES], 0.1)] -> [round(now[now_off + GAS_READ_TOTAL_MOLES], 0.1)], [round(was[was_off + GAS_READ_TEMPERATURE], 0.1)] -> [round(now[now_off + GAS_READ_TEMPERATURE], 0.1)] K"

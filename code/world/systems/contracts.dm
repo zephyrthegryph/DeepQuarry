@@ -371,9 +371,6 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 		"offer_kind" = CONTRACT_OFFER_OPPORTUNITY,
 	), "A qualifying patient cohort became available", "experimental_medication_study:conditional", 80)
 
-/datum/system/contracts/proc/ensure_routine_medical_offer()
-	queue_offer("experimental_medication_study", list("offer_kind" = CONTRACT_OFFER_STANDING), "Routine VeyMed study catalog", "experimental_medication_study:initial:1")
-
 /datum/system/contracts/proc/on_contract_closed(datum/contract/contract)
 	handle_contract_closed(contract)
 	if(istype(contract, /datum/contract/faction_agent))

@@ -5,23 +5,6 @@
 #define SETUP_ERROR 3		// Something bad happened, and it's important so we won't continue setup.
 #define SETUP_DELAYED 4		// Wait for other things first.
 
-/datum/admins/proc/setup_fusion()
-	set category = VERB_CAT_DEBUG
-	set name = "Setup Fusion Core"
-	set desc = "Allows you to start the R-UST engine."
-
-	if (!istype(src,/datum/admins))
-		src = admin_holder_of(usr.client)
-	if (!istype(src,/datum/admins))
-		to_chat(usr, "Error: you are not an admin!")
-		return
-
-	if(!(locate_in_list(REGISTRY_MEMBERS(REGISTRY_MACHINES), /obj/machinery/power/fusion_core/mapped)))
-		to_chat(usr, "This map is not appropriate for this verb.")
-		return
-
-	open_request(src, /datum/prompt/choice, PROC_REF(setup_fusion_answered), answerer = usr, question = "Are you sure?", title = "Engine setup", choices = list("No", "Yes"), buttons = TRUE, timeout = 0)
-
 /// The engine setup is confirmed: the map is checked again, then the R-UST engine is started.
 /datum/admins/proc/setup_fusion_answered(datum/act/request/A)
 	if(!A.answer || A.answer.value != "Yes")
