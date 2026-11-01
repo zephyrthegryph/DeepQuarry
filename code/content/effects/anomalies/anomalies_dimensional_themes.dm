@@ -20,9 +20,6 @@
 	var/list/random_spawns
 	/// Prob of placing a random spawn in a completely open turf
 	var/random_spawn_chance = 0
-	/// Typepath of full-size windows which will replace existing ones
-	/// These need to be separate from replace_objs because we don't want to replace dir windows with full ones and they share typepath
-	var/replace_window
 	/// Colour to recolour windows with, replaced by material colour if material was specified.
 	var/window_colour = "#ffffff"
 

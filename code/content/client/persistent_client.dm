@@ -31,15 +31,10 @@
 	/// Callbacks invoked when this client logs in again
 	var/list/datum/action/player_actions
 	var/list/post_login_callbacks
-	/// Callbacks invoked when this client logs out
-	var/list/post_logout_callbacks
 
 	/// List of names this key played under this round
 	/// assoc list of name -> mob tag
 	var/list/played_names
-	/// Lazylist of preference slots this client has joined the round under
-	/// Numbers are stored as strings
-	var/list/joined_as_slots
 
 	/// Tracks achievements they have earned
 

@@ -239,7 +239,6 @@ CAPABILITIES(/obj/item/assembly/signaler/anomaly/choice)
 	var/datum/captured_callback
 	var/item_expected = FALSE
 	var/callback_expected = FALSE
-	var/callback_value
 	var/original_client_ckey
 
 CAPABILITIES(/datum/prompt/choice/research_anomaly)

@@ -13,7 +13,6 @@
 	density = TRUE
 	layer = TABLE_LAYER
 
-	var/frame_masks = 'icons/obj/wall_frame_bay.dmi'
 
 	max_integrity = 100
 	var/stripe_color

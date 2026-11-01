@@ -127,7 +127,6 @@ CAPABILITIES(/obj/machinery/computer/teleporter)
 	icon = 'icons/obj/stationobjs.dmi'
 	density = TRUE
 	anchored = TRUE
-	var/lockeddown = 0
 
 //////
 //////  The part you step into

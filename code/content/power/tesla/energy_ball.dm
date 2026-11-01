@@ -18,7 +18,6 @@
 	dissipate_delay = 5
 	dissipate_strength = 1
 	var/miniball = FALSE
-	var/produced_power
 	var/energy_to_raise = 32
 	var/energy_to_lower = -20
 	resistance_flags = BOMB_PROOF

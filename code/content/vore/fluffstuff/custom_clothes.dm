@@ -887,8 +887,6 @@ CAPABILITIES(/obj/item/storage/belt/utility/fluff/vulpine)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "molenar"
 
-	var/item_open = "molenar_open"
-	var/item_closed = "molenar"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle/labcoat/fluff/molenar)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))

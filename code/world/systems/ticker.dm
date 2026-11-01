@@ -20,8 +20,6 @@ SYSTEM_DEF(ticker)
 	var/hide_mode = FALSE
 	var/datum/game_mode/mode = null
 
-	var/login_music //music played in pregame lobby
-	var/round_end_sound //music/jingle played when the world reboots
 	var/round_end_sound_sent = TRUE //If all clients have loaded it
 
 	var/list/datum/mind/minds = list() //The characters in the game. Used for objective tracking.
@@ -31,13 +29,10 @@ SYSTEM_DEF(ticker)
 	var/ready_for_reboot = FALSE //all roundend preparation done with, all that's left is reboot
 
 	var/tipped = FALSE //Did we broadcast the tip of the day yet?
-	var/selected_tip // What will be the tip of the day?
 
 	var/timeLeft //pregame timer
 	COOLDOWN_DECLARE(start_at)
 
-	var/gametime_offset = 432000 //Deciseconds to add to world.time for station time.
-	var/station_time_rate_multiplier = 12 //factor of station time progressal vs real time.
 
 	/// Num of players, used for pregame stats on statpanel
 	var/totalPlayers = 0
@@ -46,24 +41,18 @@ SYSTEM_DEF(ticker)
 	/// Num of ready admins, used for pregame stats on statpanel (only viewable by admins)
 	var/total_admins_ready = 0
 
-	var/queue_delay = 0
 	var/list/queued_players = list() //used for join queues when the server exceeds the hard population cap
 
-	/// What is going to be reported to other stations at end of round?
-	var/news_report
 
 	var/roundend_check_paused = FALSE
 
 	var/round_start_time = 0
 	var/list/round_start_events
-	var/mode_result = "undefined"
 	var/end_state = "undefined"
 
 	/// People who have been commended and will receive a heart
 	var/list/hearts
 
-	/// Why an emergency shuttle was called
-	var/emergency_reason
 
 
 	/// ### LEGACY VARS ###

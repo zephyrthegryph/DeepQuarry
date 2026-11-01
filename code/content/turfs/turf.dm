@@ -37,7 +37,6 @@
 	var/blocks_air = 0          // Does this turf contain air/let air through?
 
 	// General properties.
-	var/icon_old = null
 	var/pathweight = 1          // How much does it cost to pathfind over this turf?
 	var/blessed = 0             // Has the turf been blessed?
 	var/dig_exhaustion_chance = 60 // Chance that the digging loot will be exhausted, if set to TURF_DIG_LOOT_EXHAUSTED then the turf is exhausted of loot. if set to TURF_DIG_LOOT_ENDLESS it will never run out.

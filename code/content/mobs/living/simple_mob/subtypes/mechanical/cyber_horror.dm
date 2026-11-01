@@ -26,7 +26,6 @@
 	attack_sound = SFX_WEAPONS_PUNCH3
 
 	var/emp_damage = 0
-	var/nanobot_chance = 40
 
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror)

@@ -248,7 +248,6 @@
 	new_icon = "ripley-old"
 	allowed_types = list("ripley")
 	var/showpilot = TRUE
-	var/showpilot_lift = 5
 
 /obj/item/kit/paint/ripley/customize(obj/mecha/M, mob/user)
 	if(!istype(M)) //Kicks it back and gives proper error text.

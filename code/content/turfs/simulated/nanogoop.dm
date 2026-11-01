@@ -24,7 +24,6 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 	var/digest_synth = FALSE
 	var/digest_robot = FALSE
 	var/active = FALSE
-	var/usesmes = TRUE
 	/// The mob fed by the nanites: a relation view.
 	var/mob/living/moblink
 	var/obj/machinery/power/smes/linkedsmes //when the nanites digest something, it becomes power in an SMES (a relation view)

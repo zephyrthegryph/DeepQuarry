@@ -5,8 +5,6 @@
 	// matter (most turfs are heat-able). Don't redeclare — runtime will use
 	// CHOMP's value (1) for all turfs, which means turfs CAN be heated by gas.
 	// This is closer to /tg/'s opt-OUT behavior anyway.
-	///All currently stored conductivities changes
-	var/list/thermal_conductivities
 
 	/**
 	 * used for mapping and for breathing while in walls (because that's a thing that needs to be accounted for...)
@@ -31,13 +29,9 @@
 	var/planetary_atmos = FALSE
 	/// The gas mixture is a constant source or sink and cannot be changed by diffusion.
 	var/immutable_atmos = FALSE
-	/// once our paired turfs are finished with all other shares, do one 100% share
-	/// exists so things like space can ask to take 100% of a tile's gas
-	var/run_later = FALSE
 
 	///gas IDs of current active gas overlays
 	var/list/atmos_overlay_types
-	var/significant_share_ticker = 0
 	///the cooldown on playing a fire starting sound each time a tile is ignited
 	COOLDOWN_DECLARE(fire_puff_cooldown)
 	#ifdef TRACK_MAX_SHARE

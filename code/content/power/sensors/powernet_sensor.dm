@@ -23,7 +23,6 @@
 	var/record_size = 60
 	var/record_interval = 50
 	var/next_record = 0
-	var/is_secret_monitor = FALSE
 
 // The sensor samples its network every record_interval (sensor_step()); the power monitors read its history.
 CAPABILITIES(/obj/machinery/power/sensor)

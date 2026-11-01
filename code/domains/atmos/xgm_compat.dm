@@ -468,11 +468,6 @@ GLOBAL_DATUM_INIT(gas_data, /datum/xgm_gas_data, new())
 	var/overlay_limit = 0
 	var/tile_overlay = null
 	var/flags = 0
-	var/condensation_temperature = 0
-	var/condensation_product = null
-	var/condensation_energy = 0
-	var/burn_product = null
-	var/burn_product_energy = 0
 
 // XGM contamination machinery + GLOB.vsc config holders fully
 // removed. /atom.contaminated had no setter under LINDA (ZAS contamination

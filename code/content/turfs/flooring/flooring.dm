@@ -54,7 +54,6 @@ GLOBAL_LIST_INIT(flooring_types, populate_flooring_types())
 
 
 	//Flooring Icon vars
-	var/smooth_nothing = FALSE //True/false only, optimisation
 	//If true, all smoothing logic is entirely skipped
 
 	//The rest of these x_smooth vars use one of the following options

@@ -16,8 +16,6 @@
 	var/max_flashes = 10
 	///Halloss damage per flash.
 	var/halloss_per_flash = 60
-	/// The percent to break increased by every use on the flash.
-	var/break_mod = 3
 
 	/// If the flash can break or not
 	var/can_break = TRUE

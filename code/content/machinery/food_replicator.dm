@@ -8,7 +8,6 @@
 	use_power = USE_POWER_IDLE
 
 	var/print_delay = 150
-	var/print_cost
 
 	var/efficiency = 1.35
 	var/speed = 1

@@ -21,8 +21,6 @@
 	/// Chance of malfunction when the component is damaged
 	var/malfunction_probability = 10
 	var/usage_flags = PROGRAM_ALL
-	/// Whether attackby will be passed on it even with a closed panel
-	var/external_slot
 
 CAPABILITIES(/obj/item/computer_hardware)
 	setup(PROC_REF(link_holder))

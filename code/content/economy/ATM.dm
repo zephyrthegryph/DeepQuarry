@@ -30,7 +30,6 @@ log transactions
 	var/ticks_left_timeout = 0
 	var/machine_id = ""
 	var/tmp/obj/item/card/held_card
-	var/editing_security_level = 0
 	var/view_screen = NO_SCREEN
 
 

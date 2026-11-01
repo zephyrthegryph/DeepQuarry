@@ -18,7 +18,6 @@
 	var/list/blob_mobs
 	var/list/resource_blobs = list() // ALLOW(instance_list): d: per-mob resource_blobs, filled at runtime; mobs are few
 	var/placed = 0
-	var/base_point_rate = 2 //for blob core placement
 	var/ai_controlled = TRUE
 	var/auto_pilot = FALSE // If true, and if a client is attached, the AI routine will continue running.
 

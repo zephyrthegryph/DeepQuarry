@@ -28,8 +28,6 @@
 	/// (Not really, this behavior is unimplemented)
 	var/show_to_observers = TRUE
 
-	/// The style the button's tooltips appear to be
-	var/buttontooltipstyle = ""
 
 	/// This is the file for the BACKGROUND underlay icon of the button
 	var/background_icon = 'icons/mob/actions/backgrounds.dmi'

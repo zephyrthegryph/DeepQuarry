@@ -20,7 +20,6 @@
 
 	var/list/visibleChunks = list() // ALLOW(instance_list): d: per-mob visibleChunks, filled at runtime; mobs are few
 
-	var/ghostimage = null
 	var/datum/visualnet/visualnet
 	var/use_static = TRUE
 	var/static_visibility_range = 16

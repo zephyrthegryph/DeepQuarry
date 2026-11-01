@@ -42,7 +42,6 @@
 
 	/// Sheets of plasteel fitted so far (0 to 2): welded into place they make the door heat proof.
 	var/reinforcing = 0
-	var/tintable = 0
 	var/icon_tinted
 	var/id_tint
 

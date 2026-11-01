@@ -266,7 +266,6 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/alpha)
 	max_n2 = 0
 	unsuitable_atoms_damage = 0
 
-	var/emp_chance = 20 // Beware synths
 	evo_point = 1000
 	evo_limit = 1500
 	next = "/mob/living/simple_mob/metroid/juvenile/zeta"

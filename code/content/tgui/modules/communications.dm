@@ -23,7 +23,6 @@
 	var/list/logins
 	var/menu_state = COMM_SCREEN_MAIN
 	var/ai_menu_state = COMM_SCREEN_MAIN
-	var/aicurrmsg
 
 	var/message_cooldown
 	var/centcomm_message_cooldown

@@ -4,8 +4,6 @@
 	icon = 'icons/obj/samples.dmi'
 	icon_state = "sample"
 	w_class = ITEMSIZE_TINY
-	var/tech_level = 0	//base level
-	var/rand_level = 0	//random level between 0 and this value is added during spawn, if the techgroup is randomized
 	var/supply_value = 5
 	var/fixed_name = FALSE
 

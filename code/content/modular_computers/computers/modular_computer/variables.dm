@@ -51,13 +51,9 @@
 	var/tmp/datum/ai_slot	// AI slot, an intellicard housing that allows modifications of AIs.
 	var/obj/item/computer_hardware/tesla_link/tesla_link						// Tesla Link, Allows remote charging from nearest APC.
 
-	var/modifiable = TRUE	// can't be modified or damaged if false
 
-	var/stores_pen = FALSE
 	var/tmp/obj/item/pen/stored_pen
 
-	var/interact_sounds
-	var/interact_sound_volume = 40
 
 
 /// A currently active program running on the computer. (a relation view: null once that is deleted).

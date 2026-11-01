@@ -23,7 +23,6 @@
 	var/activates = TRUE		// Whether or not this has an active power consumption mode
 	var/tick_flags = 0			// Flags to tell when we'd like to be ticked
 
-	var/empable = TRUE			// If the implant can be destroyed via EMP attack
 
 	var/expiring = FALSE		// Trial software! Or self-deleting illegal ones!
 	var/expires_at				// World.time for when they expire

@@ -15,7 +15,6 @@
 	var/dissipation_rate = 0.030	//the percentage of the shield strength that needs to be replaced each second
 	var/min_dissipation = 0.01		//will dissipate by at least this rate in renwicks per field tile (otherwise field would never dissipate completely as dissipation is a percentage)
 	var/powered = 0
-	var/check_powered = 1
 	var/list/capacitors
 	var/target_field_strength = 10
 	var/max_field_strength = 10

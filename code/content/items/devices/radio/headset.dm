@@ -670,7 +670,6 @@ CAPABILITIES(/obj/item/radio/headset)
 	icon = 'icons/obj/robot_component.dmi'
 	icon_state = "radio"
 	item_state = "headset"
-	var/mmiowner = null
 	var/radio_enabled = 1
 
 /obj/item/radio/headset/mmi_radio/receive_range(freq, level)

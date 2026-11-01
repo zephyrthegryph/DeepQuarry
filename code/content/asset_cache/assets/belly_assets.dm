@@ -1,9 +1,5 @@
 /datum/overlay_previews
-	var/old_precolored = 'icons/mob/vore_fullscreens/ui_lists/screen_full_vore.dmi'
 	var/base = 'icons/mob/vore_fullscreens/ui_lists/screen_full_vore_list_base.dmi'
-	var/layer1 = 'icons/mob/vore_fullscreens/ui_lists/screen_full_vore_list_layer1.dmi'
-	var/layer2 = 'icons/mob/vore_fullscreens/ui_lists/screen_full_vore_list_layer2.dmi'
-	var/layer3 = 'icons/mob/vore_fullscreens/ui_lists/screen_full_vore_list_layer3.dmi'
 
 /datum/belly_overlays
 	var/belly_icon

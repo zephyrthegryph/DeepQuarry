@@ -8,7 +8,6 @@
 	var/desiredstate = 0
 	/// TRUE for a moment after a press: the button draws pressed.
 	var/shown_pressed = FALSE
-	var/exposedwires_num = 0
 	var/wires_num = 3
 	/*
 	Bitflag,	1=checkID

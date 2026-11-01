@@ -46,7 +46,6 @@
 	var/blood_volume = 560									// Initial blood volume.
 	var/bloodloss_rate = 1									// Multiplier for how fast a species bleeds out. Higher = Faster
 	var/blood_level_safe = 0.85								//"Safe" blood level; above this, you're OK
-	var/blood_level_warning = 0.75								//"Warning" blood level; above this, you're a bit woozy and will have low-level oxydamage (no more than 20, or 15 with inap)
 	var/blood_level_danger = 0.6								//"Danger" blood level; above this, you'll rapidly take up to 50 oxyloss, and it will then steadily accumulate at a lower rate
 	var/blood_level_fatal = 0.4								//"Fatal" blood level; below this, you take extremely high oxydamage
 	var/hunger_factor = 0.05								// Multiplier for hunger.
@@ -228,7 +227,6 @@
 	var/spawn_flags = 0										// Flags that specify who can spawn as this species
 
 	var/move_trail = /obj/effect/decal/cleanable/blood/tracks/footprints // What marks are left when walking
-	var/list/skin_overlays
 	var/has_floating_eyes = 0								// Whether the eyes can be shown above other icons
 	var/has_glowing_eyes = 0								// Whether the eyes are shown above all lighting
 	var/water_movement = 0									// How much faster or slower the species is in water
@@ -320,7 +318,6 @@
 	var/wing_hair
 	var/wing
 	var/wing_animation
-	var/icobase_wing
 	var/wikilink = null //link to wiki page for species
 	var/icon_height = 32
 	var/agility = 20 //prob() to do agile things

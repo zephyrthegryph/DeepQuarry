@@ -6,9 +6,6 @@ SYSTEM_DEF(dbcore)
 
 	COOLDOWN_DECLARE(failed_connection_timeout)
 
-	var/schema_mismatch = 0
-	var/db_minor = 0
-	var/db_major = 0
 	var/failed_connections = 0
 
 	var/last_error

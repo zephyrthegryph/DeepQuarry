@@ -15,7 +15,6 @@
 	//this is just a copy of the remote scene tool, but with a different icon
 	//and a different name
 
-	var/underlayRotation = 45
 	//TODO: make this generic so it's easier for other stuff to use. ideally there's a magical thing that just has all the various greebles set up so u can pick and choose which ones are rendered traditionally
 	var/static/list/tail_data = list( DATA_X_OFFSET = 2, DATA_Y_OFFSET = -2,DATA_SCALE = 1.6, DATA_ROTATION = 45)
 	var/static/list/taur_data = list( DATA_X_OFFSET = 2, DATA_Y_OFFSET = 2, DATA_SCALE = 1.1, DATA_ROTATION = 45)

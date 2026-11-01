@@ -15,7 +15,6 @@
 	var/has_vore_belly_resting_sprites = FALSE
 	var/has_sleeper_light_indicator = FALSE //Moved here because there's no reason lights should be limited to just medical borgs. Or redefined every time they ARE used.
 	var/has_vore_struggle_sprite = FALSE
-	var/max_belly_size = 1 //If larger bellies are made, set this to the value of the largest size
 	var/has_rest_sprites = FALSE
 	var/has_rest_eyes_sprites = FALSE
 	var/has_rest_lights_sprites = FALSE

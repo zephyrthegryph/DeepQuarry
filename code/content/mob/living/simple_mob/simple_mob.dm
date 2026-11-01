@@ -17,7 +17,6 @@
 	var/tt_desc = null //Tooltip description
 
 	//Settings for played mobs
-	var/show_stat_health = 1		// Does the percentage health show in the stat panel for the mob
 	var/draws_life_state = TRUE		// FALSE: the type keeps its mapped icon_state and its base draw adds no life state, hands, fullness, pounce or eyes
 	var/has_hands = 0				// Set to 1 to enable the use of hands and the hands hud
 	var/humanoid_hands = 0			// Can a player in this mob use things like guns or AI cards?
@@ -137,9 +136,7 @@
 	// don't process me if there's nobody around to see it
 	low_priority = TRUE
 	// Used for if the mob can drop limbs. Overrides species dmi.
-	var/limb_icon
 	// Used for if the mob can drop limbs. Overrides the icon cache key, so it doesn't keep remaking the icon needlessly.
-	var/limb_icon_key
 	var/understands_common = TRUE // Makes it so that simplemobs can understand galcomm without being able to speak it.
 	var/heal_countdown = 5 // A cooldown ticker for passive healing
 	var/list/myid_access	// Lazy per-subtype constant.
@@ -506,7 +503,6 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 	var/vore_default_contamination_flavor = "Generic"	//Contamination descriptors
 	var/vore_default_contamination_color = "green"		//Contamination color
 
-	var/life_disabled = 0				// For performance reasons
 
 	var/vore_attack_override = FALSE	// Enable on mobs you want to have special behaviour on melee grab attack.
 
