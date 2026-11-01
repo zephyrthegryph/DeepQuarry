@@ -57,12 +57,12 @@ git switch -q -c st/slow master; echo '# x' >>tools/dq_slow.sh; git commit -qam 
 check "a self-test over its cap is a warning (inconclusive), not a failure" '[ "$rc" = 0 ] && grep -q "hit its 1s cap and was stopped" "$tmp/lc.out"'
 # self-tests run side by side, and one failing among them still fails the run (a changed test_*.sh runs itself)
 git switch -q -c st/par master
-printf '#!/usr/bin/env bash\nsleep 4\n' >tools/ci/test_par_a.sh; printf '#!/usr/bin/env bash\nsleep 4\n' >tools/ci/test_par_b.sh; printf '#!/usr/bin/env bash\nsleep 4\necho boom\nexit 1\n' >tools/ci/test_par_c.sh
+# a and b each wait for the other's mark, so they pass only when they really overlap: the proof is the order of events, not the clock
+for x in a:b b:a; do printf '#!/usr/bin/env bash\n: >"$PAR_DIR/%s"; for i in $(seq 1 40); do [ -e "$PAR_DIR/%s" ] && exit 0; sleep 0.5; done; exit 1\n' "${x%:*}" "${x#*:}" >"tools/ci/test_par_${x%:*}.sh"; done
+printf '#!/usr/bin/env bash\necho boom\nexit 1\n' >tools/ci/test_par_c.sh
 git add -A; git commit -qm par
-par_t0=$SECONDS; bash tools/dq_light_checks.sh origin/master HEAD >"$tmp/lc.out" 2>&1; rc=$?; par_dt=$(( SECONDS - par_t0 ))
+mkdir -p "$tmp/par"; PAR_DIR="$tmp/par" bash tools/dq_light_checks.sh origin/master HEAD >"$tmp/lc.out" 2>&1; rc=$?
 check "a failing self-test run side by side fails the light checks and is shown" '[ "$rc" != 0 ] && grep -q "self-test test_par_c.sh" "$tmp/lc.out" && grep -q boom "$tmp/lc.out"'
-check "the passing ones report their own verdict" 'grep -q "test_par_a.sh rc=0" "$tmp/lc.out" && grep -q "test_par_b.sh rc=0" "$tmp/lc.out"'
-: >"$ST_LOG"; DQ_LIGHT_SELFTEST_JOBS=1 bash tools/dq_light_checks.sh origin/master HEAD >"$tmp/lc1.out" 2>&1
-check "side by side is measurably shorter than one job at a time" 'grep -q "test_par_a.sh rc=0" "$tmp/lc1.out" && [ "$par_dt" -lt 12 ]'
+check "self-tests really overlap (two that wait for each other both pass)" 'grep -q "test_par_a.sh rc=0" "$tmp/lc.out" && grep -q "test_par_b.sh rc=0" "$tmp/lc.out"'
 [ "$fail" -eq 0 ] && echo "test_light_checks: all passed" || echo "test_light_checks: FAILED"
 exit "$fail"
