@@ -152,6 +152,21 @@ fn run_build_attempt(
         warnings: _,
     } = request;
     let policy_inputs = policy_inputs.map(|request| request.admit()).transpose()?;
+    let analysis_context=policy_inputs.as_ref().and_then(|request|request.analysis_context());
+    if analysis_context.is_some(){
+        if command!=BuildCommand::PrepareQuery || !retains_query_owners || !defines.is_empty()
+            || engine_template.is_some() || bootstrap_catalog || source_questions.is_some()
+            || record_inputs.is_some() || replay_inputs.is_some() || trace_path.is_some()
+            || artifact_directory.is_some() || output_store.is_some(){
+            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"original analysis context requires retained PrepareQuery with default declarations and no compiler/trace/replay overrides").into());
+        }
+        if policy_inputs.as_ref().and_then(|intent|intent.workspace()).is_some_and(|workspace|
+            policy_inputs.as_ref().is_some_and(|intent|intent.workspace_auxiliary().contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrep))
+            && project!=workspace.root.join("deepquarry.dme")){
+            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"original Analyze workspace requires its actual fixed deepquarry.dme environment").into());
+        }
+    }
+
     let publishable_artifacts = command == BuildCommand::Compile;
     let project = std::fs::canonicalize(project)?;
     if record_inputs.is_some() && replay_inputs.is_some() {
@@ -214,6 +229,7 @@ fn run_build_attempt(
             .expect("explicit generated output policy");
     let prepared_sources = host.prepared_sources();
     let inputs_capture = dmbc::input_snapshot::RecordingInputs::new(&generated_provider, now_ns())
+        .with_initial_environment(analysis_context.map_or(dm_preprocess::InitialEnvironment::Native5161687,|context|context.initial_environment()))
         .with_exact_reuse(exact_inputs)
         .with_prepared_sources(prepared_sources.clone());
     drop(request_profile);
@@ -226,7 +242,7 @@ fn run_build_attempt(
     drop(engine_input_profile);
     dm_profile::detail_mark("engine_input", total);
     let input_context_profile = dm_profile::stage("request.input_context");
-    generation_engine_defines(executable, engine_bytes.as_deref(), &mut defines)?;
+    if analysis_context.is_none(){generation_engine_defines(executable, engine_bytes.as_deref(), &mut defines)?;}
     let mut session = None;
     let mut pair_store = None;
     // Request-owned leases outlive the borrowed capture sink and cold compiler.
@@ -429,12 +445,13 @@ fn run_build_attempt(
     // An authenticated unchanged session needs no decoded engine or bootstrap
     // catalog. The key above pins exact engine bytes and this compiler/policy.
     let engine_capture = engine_bytes
-        .map(|bytes| host.engine(project.clone(), defines.clone(), bootstrap_catalog, bytes))
+        .map(|bytes| host.engine_with_context(project.clone(),defines.clone(),bootstrap_catalog,bytes,analysis_context))
         .transpose()?;
     if progress_enabled { dmbc::daemon_eprintln!("native stage request.engine_capture: {:.3}s",engine_capture_started.elapsed().as_secs_f64()); }
     if engine_capture.is_none() {
         host.clear_regions();
     }
+    query_attempt.bind_current_variant(host.query_state())?;
     // The variant's stored patch base (`dmbc::variant_spill`): this cache root's spill directory and this project, defines
     // and compiler policy's file.
     let spill_target = (executable && !no_cache && dmbc::variant_spill::enabled())
@@ -489,9 +506,10 @@ fn run_build_attempt(
             Some(publisher) => memo.with_publisher(Arc::clone(publisher)),
             None => memo,
         });
-    let seed = engine_capture
+    let analysis_seed=analysis_context.map(|_|dm_tree::checker_builtins::original_analysis_seed()).transpose().map_err(|error|format!("original analysis catalog: {error:?}"))?;
+    let seed = analysis_seed.as_ref().map(|owner|owner.frontend_seed()).or_else(||engine_capture
         .as_ref()
-        .map(|capture| capture.frontend_seed());
+        .map(|capture| capture.frontend_seed()));
     drop(engine_profile);
     dm_profile::detail_mark("engine_capture", total);
     let frontend_context_profile = dm_profile::stage("request.frontend_context");
@@ -593,6 +611,7 @@ fn run_build_attempt(
             configuration.extend_from_slice(&memo_policy.to_le_bytes());
             configuration.push(u8::from(bootstrap_catalog));
             configuration.extend_from_slice(if diagnostic_declarations {b"checker-declaration-domain-v1".as_slice()}else{b"strict-declaration-domain-v1".as_slice()});
+            if let Some(context)=analysis_context{configuration.extend_from_slice(b"original-analysis-context-v1");configuration.extend_from_slice(&context.initial_environment().profile().to_le_bytes());}
             crate::policy_request::append_identity(&mut configuration, policy_inputs.as_ref())?;
             match query_db.revise(inputs.sources(), dm_query::hash_bytes(&configuration)) {
                 Ok(revision) => dmbc::daemon_eprintln!("native query db: {revision:?}"),
@@ -619,7 +638,7 @@ fn run_build_attempt(
         drop(source_context_profile);
         dm_profile::detail_mark("source_context", total);
         let _frontend_profile = dm_profile::stage("frontend");
-        if diagnostic_declarations {
+        if diagnostic_declarations || analysis_context.is_some() {
             // Select the original builder's diagnostic mode BEFORE construction.
             // Valid graphs transfer the SAME owner; no strict-failure retry.
             let prepared=match dm_tree::frontend::build_for_checker_diagnostics_with_state_checked(&project,&provider,&defines,
@@ -632,6 +651,41 @@ fn run_build_attempt(
                 let kind=dmbc::diagnostics::failure_kind(diagnostics.iter().map(|diagnostic|diagnostic.kind));
                 return Err(dmbc::request_failure::RequestFailure{kind,message:"diagnostic preparation did not produce an admitted original declaration graph".into()}.into());
             }};
+            if analysis_context.is_some(){
+                // A genuine analysis purpose stays diagnostic-only even when
+                // the original graph has zero declaration errors. No ABI or
+                // lowering admission is inferred from that fact.
+                let prepared=Arc::new(prepared.with_body_queries(Arc::clone(&source_policy_queries) as Arc<dyn dm_tree::frontend::BodySyntaxQueries>)?);
+                let view=prepared.source_view()?;
+                let intent=policy_inputs.as_ref().ok_or("analysis purpose requires its actual admitted request")?;
+                if let Some(workspace)=intent.workspace(){
+                    let check_grep=intent.workspace_auxiliary().contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrep);
+                    if check_grep{
+                        let root=view.original_plan().occurrences.first().ok_or("analysis actual root occurrence absent")?;
+                        let original=view.original_plan().source_texts.get(root.path.as_ref()).ok_or("analysis actual manifest original absent")?;
+                        if root.path.file_name()!=Some(std::ffi::OsStr::new("deepquarry.dme")) || !original.as_str().contains("#include") {
+                            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"original Analyze context has no issued synthetic-manifest preparation; actual fixed include environment required").into());
+                        }
+                    }
+                    let contract=crate::runner_host::workspace_discovery::DiscoveryContract{root:workspace.root.clone(),recursive_roots:workspace.recursive_roots.clone()};
+                    let discovery=Arc::new(if check_grep{crate::runner_host::workspace_discovery::discover_check_grep(&inputs_capture,contract)?}else{crate::runner_host::workspace_discovery::discover(&inputs_capture,contract)?});
+                    let captured=crate::runner_host::workspace_capture::capture_analysis_with_auxiliary(&view,&inputs_capture,discovery,&workspace.configuration,intent.workspace_auxiliary())?;
+                    query_attempt.stage_analysis_workspace(&view,Arc::clone(&source_policy_queries),Arc::clone(&captured),workspace,&inputs_capture)?;
+                    let admission=runner_freshness::admit_workspace_captured(&inputs_capture,None,&input_provider,generated_paths,Arc::clone(&captured))?.1;
+                    input_provider.finish()?;inputs_capture.finish_prepared()?;dmbc::daemon::control::checkpoint()?;
+                    semantic_state.remember_analysis_frontend(&project,&defines,Arc::clone(&prepared))?;
+                    query_attempt.admit_workspace_policy(admission)?;
+                }else{
+                    let captured=Arc::new(crate::runner_host::policy_capture::capture_diagnostic(&view,&inputs_capture,&intent.capture_files(),intent.search_folders())?.bind_request(intent)?.bind_diagnostic_profile()?);
+                    query_attempt.stage_diagnostic(&view,Arc::clone(&source_policy_queries),Arc::clone(&captured))?;
+                    let admission=runner_freshness::admit_diagnostic_captured(&inputs_capture,None,&input_provider,generated_paths,captured)?.1;
+                    input_provider.finish()?;inputs_capture.finish_prepared()?;dmbc::daemon::control::checkpoint()?;
+                    semantic_state.remember_analysis_frontend(&project,&defines,Arc::clone(&prepared))?;
+                    query_attempt.admit_diagnostic_policy(admission)?;
+                }
+                let outcome=BuildOutcome::QueryPrepared{semantic_revision:format!("{:032x}",view.tree().identity()),source_revision:format!("{:032x}",view.source_revision()),policy_revision:query_attempt.policy_revision().map(|pin|format!("{pin:032x}")),retained:retains_query_owners};
+                query_attempt.finish_analyzed();return Ok(outcome);
+            }
             match prepared.try_into_compilable_retained(&mut *semantic_state){
                 Ok(frontend)=>Ok(frontend),
                 Err(prepared)=>{

@@ -10,6 +10,14 @@ pub(crate) struct DiagnosticRetainedRecords {
     owner: Weak<SemanticTree>,
 }
 impl DiagnosticRetainedRecords {
+    pub(in crate::frontend) fn visit_storage(&self,mut visit:impl FnMut(crate::frontend::AnalysisRetentionStorage<'_>)){
+        use crate::frontend::AnalysisRetentionStorage as V;
+        visit(V::Declarations(&self.index));visit(V::Symbols(&self.symbols));
+        if let Some(catalog)=&self.catalog{visit(V::Allocation{address:Arc::as_ptr(catalog)as usize,bytes:std::mem::size_of_val(catalog.as_ref())});let(symbols,source,engine)=catalog.storage_parts();visit(V::Symbols(symbols));visit(V::Symbols(source));if let Some(engine)=engine{visit(V::SymbolTable(engine));}}
+        if let Some(engine)=&self.engine{visit(V::Engine(engine));}
+    }
+
+    pub(crate) fn engine_matches(&self,engine:Option<&EngineSeed>)->bool { same_engine(self.engine.as_ref(),engine) }
     pub(crate) fn capture(
         adapted: &crate::SharedAdaptedDeclarations,
         engine: Option<&EngineSeed>,

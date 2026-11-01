@@ -27,6 +27,7 @@ pub struct SourceDeclarationPolicyCursor {
     pub logical_boundary: bool,
 }
 pub struct SourceExportMapping {
+    initial_environment:dm_preprocess::InitialEnvironment,
     acquisitions: Arc<[Option<dm_preprocess::SourceAcquisitionLease>]>,
     origins: dm_preprocess::regions::ExpandedOriginArena,
     arena: dm_preprocess::WeakSourceText,
@@ -111,6 +112,9 @@ pub(super) fn source_location_in(
     })
 }
 impl SourceExportMapping {
+    /// Exact configuration of the native pass, not a source completion grant.
+    pub fn initial_environment(&self)->dm_preprocess::InitialEnvironment{self.initial_environment}
+
     pub fn source_acquisition_storage(
         &self,
     ) -> &Arc<[Option<dm_preprocess::SourceAcquisitionLease>]> {
@@ -171,6 +175,7 @@ impl SourceExportMapping {
             .collect();
         let mut hash = xxhash_rust::xxh3::Xxh3::new();
         hash.update(b"dm-source-export-coordinates-v3\0");
+        if plan.initial_environment!=dm_preprocess::InitialEnvironment::Native5161687{hash.update(b"analysis-initial-environment-v1");hash.update(&plan.initial_environment.profile().to_le_bytes());}
         hash.update(&declaration_qualifiers);
         for cursor in declaration_cursors.iter() {
             hash.update(&cursor.to_le_bytes());
@@ -195,6 +200,7 @@ impl SourceExportMapping {
             );
         }
         Self {
+            initial_environment:plan.initial_environment,
             acquisitions: plan
                 .occurrences
                 .iter()
@@ -221,7 +227,8 @@ impl SourceExportMapping {
     fn admits(&self, current: &ColdFrontend) -> bool {
         #[cfg(test)]
         FULL_SOURCE_ADMISSIONS.with(|count| count.set(count.get() + 1));
-        self.acquisitions.len() == current.plan.occurrences.len()
+        self.initial_environment==current.plan.initial_environment
+            && self.acquisitions.len() == current.plan.occurrences.len()
             && self.acquisitions.iter().enumerate().all(|(id, old)| {
                 match (old, current.plan.source_acquisitions.get(&id)) {
                     (None, None) => true,

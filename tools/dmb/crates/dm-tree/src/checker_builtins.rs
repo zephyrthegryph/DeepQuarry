@@ -619,3 +619,34 @@ pub use profile::ValidatedCheckerProfile;
 #[cfg(test)]thread_local!{static PROFILE_VALIDATIONS:std::cell::Cell<usize>=const{std::cell::Cell::new(0)};}
 
 #[cfg(test)]mod catalog_spelling_tests{use super::*;#[test]fn fixed_catalog_spelling_covers_every_actual_callable_and_parameter_without_source_interning(){let catalog=pinned_catalog().unwrap();let mut callables=0;let mut parameters=0;for row in catalog.declarations.iter().filter(|row|matches!(row.kind,MemberKind::Proc|MemberKind::Verb)){callables+=1;for symbol in[row.owner,row.name]{let text=catalog.spelling(symbol).expect("issued builtin spelling");assert_eq!(SymbolId::of(text),symbol);}for parameter in row.metadata.procedure.as_ref().unwrap().signature.parameters.iter(){parameters+=1;let text=catalog.spelling(parameter.name).expect("issued parameter spelling");assert_eq!(SymbolId::of(text),parameter.name);}}assert!(callables>100);assert!(parameters>100);assert!(catalog.spelling(SymbolId::of("__not_a_pinned_catalog_symbol__")).is_none());}}
+
+/// Original analysis declaration seed, issued only from the hash-verified fixed
+/// checker catalog. Runtime members remain explicitly incomplete; this owner
+/// cannot certify executable slots, ABI, or absence of a runtime intrinsic.
+#[derive(Debug)]
+pub struct OriginalAnalysisSeed { seed: crate::frontend::EngineSeed, profile: PackedU128 }
+impl OriginalAnalysisSeed {
+    pub fn frontend_seed(&self)->&crate::frontend::EngineSeed { &self.seed }
+    pub fn profile(&self)->PackedU128 { self.profile }
+}
+pub fn original_analysis_seed()->Result<Arc<OriginalAnalysisSeed>,CheckerBuiltinError>{
+    static SEED:OnceLock<Result<Arc<OriginalAnalysisSeed>,CheckerBuiltinError>>=OnceLock::new();
+    SEED.get_or_init(||{
+        let catalog=pinned_catalog()?;
+        let mut symbols=dm_ir::SymbolTable::default();
+        let mut parents=Vec::with_capacity(data::PARENTS.len());
+        for &(path,parent) in data::PARENTS {
+            symbols.intern(path).map_err(|error|CheckerBuiltinError::Symbol(format!("{error:?}")))?;
+            parents.push((SymbolId::of(path),parent.map(SymbolId::of)));
+        }
+        let mut hash=Sha256::new();hash.update(b"original-analysis-declaration-seed-v1");
+        hash.update(EXPECTED_FACTS_SHA256.as_bytes());hash.update(PARENTS_SHA256.as_bytes());
+        let digest=hash.finalize();let identity=u128::from_le_bytes(digest[..16].try_into().unwrap());
+        Ok(Arc::new(OriginalAnalysisSeed{
+            profile:catalog.profile,
+            seed:crate::frontend::EngineSeed{identity,symbols,
+                hierarchy:crate::EngineHierarchy{schema:identity,parents},
+                intrinsics:Arc::from([]),fields:Arc::from([])},
+        }))
+    }).clone()
+}

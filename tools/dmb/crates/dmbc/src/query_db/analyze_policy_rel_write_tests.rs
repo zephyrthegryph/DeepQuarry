@@ -60,7 +60,7 @@ fn cohort(db: &Arc<QueryDb>) -> Arc<Cohort> {
     )
     .unwrap()
     .with_body_queries(db.clone());
-    let intent = PolicyInputRequest {workspace_auxiliary:Vec::new(),workspace_generators:Vec::new(),
+    let intent = PolicyInputRequest {analysis_context:None,workspace_auxiliary:Vec::new(),workspace_generators:Vec::new(),
         workspace: None,
         files: vec![PolicyInputFile {
             path: root.join("scopes.toml"),

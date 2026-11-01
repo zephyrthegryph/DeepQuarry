@@ -1,0 +1,6 @@
+/datum/static_verb/verb/wave()
+    return 0
+/datum/static_verb/proc/probe()
+    filter(type=src::wave(doesnotexist))
+/proc/global_probe()
+    filter(type=__TYPE__::abs(doesnotexist))

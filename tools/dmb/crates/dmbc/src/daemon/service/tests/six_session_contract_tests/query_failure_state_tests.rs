@@ -3,7 +3,7 @@ use super::*;
 use crate::daemon::query::{QueryReply, QueryRequest, SourceQuery};
 
 fn query_request(build: &BuildRequest) -> QueryRequest {
-    QueryRequest {
+    QueryRequest {analysis_context:None,
         timeout_seconds: Some(5),
         project: build.project.clone(),
         defines: build.defines.clone(),

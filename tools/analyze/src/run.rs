@@ -380,3 +380,9 @@ pub use crate::policy_finish::render;
 pub fn meta_of<'a>(reg: &'a Registry, name: &str) -> Option<&'a Meta> {
     reg.find(name).map(|l| l.meta())
 }
+
+#[cfg(test)]mod required_scope_preport_tests{
+ /// Genuine complete factory record BEFORE canonical required-list metadata moves.
+ /// This test does not execute policy scans or mint source/usage completeness.
+ #[test]fn actual_finished_registry_scope_contract_preport_record(){let registry=super::registry();assert!(!registry.lints.is_empty());let fields:Vec<_>=registry.lints.iter().map(|lint|{let meta=lint.meta();serde_json::json!({"name":meta.name,"group":meta.group,"lists":meta.lists})}).collect();let unique:std::collections::BTreeSet<_>=registry.lints.iter().map(|lint|lint.meta().name).collect();assert_eq!(unique.len(),registry.lints.len(),"actual all-registration factory must not hide duplicate policy names");let record=serde_json::json!({"schema":"actual-required-scope-registry-preport-v1","engine_hash":env!("DQ_ENGINE_HASH"),"factory":"run::registry","registered_fields":fields});println!("OLD_SCOPE_REGISTRY={record}");}
+}

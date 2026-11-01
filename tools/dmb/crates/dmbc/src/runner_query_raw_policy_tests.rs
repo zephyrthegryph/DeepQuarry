@@ -53,7 +53,7 @@ fn fixture(config: Option<&[u8]>, role: PolicyInputRole) -> (PathBuf, PathBuf, S
     )
     .unwrap()
     .with_body_queries(queries.clone());
-    let request = PolicyInputRequest {workspace_auxiliary:Vec::new(),workspace_generators:Vec::new(),
+    let request = PolicyInputRequest {analysis_context:None,workspace_auxiliary:Vec::new(),workspace_generators:Vec::new(),
         workspace: None,
         files: vec![PolicyInputFile {
             path: configuration.clone(),

@@ -52,7 +52,7 @@ fn plan_incremental_impl<P: SourceProvider>(
     omitted: Option<&BTreeSet<PathBuf>>,
     generation_source: Option<&dyn Fn(&Path)->std::io::Result<Option<Arc<prepared_source::PreparedSource>>>>,
 ) -> std::io::Result<(DirectivePlan, PlanReuse)> {
-    let previous = previous.filter(|previous| previous.trace.is_some() && previous.occurrences.first().and_then(IncludeOccurrence::original_entry_path).is_some_and(|entry|entry.as_os_str()==project.as_os_str()));
+    let previous = previous.filter(|previous| previous.initial_environment==provider.initial_environment() && previous.trace.is_some() && previous.occurrences.first().and_then(IncludeOccurrence::original_entry_path).is_some_and(|entry|entry.as_os_str()==project.as_os_str()));
     // Only the include subtrees whose files changed run again, when the provider can say which (same defines only).
     if let Some(previous) = previous.filter(|previous| &previous.defines == defines) {
         if let Some(patched) = patch::patch(provider, memo, previous) {
@@ -68,184 +68,8 @@ fn plan_incremental_impl<P: SourceProvider>(
     pass.omitted = omitted;
     pass.generation_source = generation_source;
     pass.plan.defines = defines.clone();
-    for (name, replacement) in [
-        ("EXCEPTION", "new /exception(message, __FILE__, __LINE__)"),
-        ("REGEX_QUOTE", "regex(message, 1)"),
-        ("REGEX_QUOTE_REPLACEMENT", "regex(message, 2)"),
-    ] {
-        pass.plan.final_macros.insert(
-            name.into(),
-            Macro {
-                parameters: Some(vec!["message".into()]),
-                variadic: false,
-                replacement: replacement.into(),
-            },
-        );
-    }
-    // Pinned native spellings are initial object macros. Undef removes only
-    // substitution; any remaining runtime/global meaning belongs to the resolver.
-    // Install them before caller definitions; source define/undef effects then
-    // apply through the same ordered environment as every other macro.
-    for (name, replacement) in [
-        // Exact native516.1687 #ifdef and root/datum values: native_sdk_macros/receipt.json.
-        ("ANIMATION_CONTINUE", "512"),
-        ("ANIMATION_END_LOOP", "16"),
-        ("ANIMATION_END_NOW", "1"),
-        ("ANIMATION_LINEAR_TRANSFORM", "2"),
-        ("ANIMATION_PARALLEL", "4"),
-        ("ANIMATION_RELATIVE", "256"),
-        ("ANIMATION_SLICE", "8"),
-        ("AREA_LAYER", "1"),
-        ("BACKGROUND_LAYER", "20000"),
-        ("BACK_EASING", "6"),
-        ("BLEND_ADD", "2"),
-        ("BLEND_DEFAULT", "0"),
-        ("BLEND_INSET_OVERLAY", "5"),
-        ("BLEND_MULTIPLY", "4"),
-        ("BLEND_OVERLAY", "1"),
-        ("BLEND_SUBTRACT", "3"),
-        ("BOUNCE_EASING", "4"),
-        ("CIRCULAR_EASING", "2"),
-        ("COLORSPACE_HCY", "3"),
-        ("COLORSPACE_HSL", "2"),
-        ("COLORSPACE_HSV", "1"),
-        ("COLORSPACE_RGB", "0"),
-        ("CONTROL_FREAK_ALL", "1"),
-        ("CONTROL_FREAK_MACROS", "4"),
-        ("CONTROL_FREAK_SKIN", "2"),
-        ("CUBIC_EASING", "3"),
-        ("DM_BUILD", "1687"),
-        ("DOWN", "32"),
-        ("EASE_IN", "64"),
-        ("EASE_OUT", "128"),
-        ("EAST", "4"),
-        ("EDGE_PERSPECTIVE", "2"),
-        ("EFFECTS_LAYER", "5000"),
-        ("ELASTIC_EASING", "5"),
-        ("EYE_PERSPECTIVE", "1"),
-        ("FALSE", "0"),
-        ("FEMALE", "\"female\""),
-        ("FILTER_COLOR_HCY", "3"),
-        ("FILTER_COLOR_HSL", "2"),
-        ("FILTER_COLOR_HSV", "1"),
-        ("FILTER_COLOR_RGB", "0"),
-        ("FILTER_OVERLAY", "1"),
-        ("FILTER_UNDERLAY", "2"),
-        ("FLOAT_LAYER", "(-1)"),
-        ("FLOAT_PLANE", "(-32767)"),
-        ("FLY_LAYER", "5"),
-        ("FORWARD_STEPS", "1"),
-        ("ICON_ADD", "0"),
-        ("ICON_AND", "4"),
-        ("ICON_MULTIPLY", "2"),
-        ("ICON_OR", "5"),
-        ("ICON_OVERLAY", "3"),
-        ("ICON_SUBTRACT", "1"),
-        ("ICON_UNDERLAY", "6"),
-        ("ISOMETRIC_MAP", "1"),
-        ("JSON_ALLOW_COMMENTS", "2"),
-        ("JSON_PRETTY_PRINT", "1"),
-        ("JSON_STRICT", "1"),
-        ("JUMP_EASING", "8"),
-        ("KEEP_APART", "64"),
-        ("KEEP_TOGETHER", "32"),
-        ("LEGACY_MOVEMENT_MODE", "0"),
-        ("LINEAR_EASING", "0"),
-        ("LINEAR_RAND", "2"),
-        ("LONG_GLIDE", "1"),
-        ("MALE", "\"male\""),
-        ("MASK_INVERSE", "1"),
-        ("MASK_SWAP", "2"),
-        ("MATRIX_ROTATE", "5"),
-        ("MATRIX_SCALE", "6"),
-        ("MATRIX_TRANSLATE", "7"),
-        ("MOB_LAYER", "4"),
-        ("MOB_PERSPECTIVE", "0"),
-        ("MOUSE_ACTIVE_POINTER", "1"),
-        ("MOUSE_ARROW_POINTER", "5"),
-        ("MOUSE_CROSSHAIRS_POINTER", "6"),
-        ("MOUSE_DRAG_POINTER", "3"),
-        ("MOUSE_DROP_POINTER", "4"),
-        ("MOUSE_HAND_POINTER", "7"),
-        ("MOUSE_INACTIVE_POINTER", "0"),
-        ("MS_WINDOWS", "\"MS Windows\""),
-        ("NEUTER", "\"neuter\""),
-        ("NORMAL_RAND", "1"),
-        ("NORTH", "1"),
-        ("NORTHEAST", "5"),
-        ("NORTHWEST", "9"),
-        ("NO_CLIENT_COLOR", "16"),
-        ("NO_STEPS", "0"),
-        ("OBJ_LAYER", "3"),
-        ("OUTLINE_SHARP", "1"),
-        ("OUTLINE_SQUARE", "2"),
-        ("PASS_MOUSE", "1024"),
-        ("PIXEL_MOVEMENT_MODE", "2"),
-        ("PIXEL_SCALE", "512"),
-        ("PLANE_MASTER", "128"),
-        ("PLURAL", "\"plural\""),
-        ("PROFILE_AVERAGE", "4"),
-        ("PROFILE_CLEAR", "2"),
-        ("PROFILE_REFRESH", "0"),
-        ("PROFILE_RESTART", "2"),
-        ("PROFILE_START", "0"),
-        ("PROFILE_STOP", "1"),
-        ("QUAD_EASING", "7"),
-        ("RESET_ALPHA", "4"),
-        ("RESET_COLOR", "2"),
-        ("RESET_TRANSFORM", "8"),
-        ("SEE_BLACKNESS", "1024"),
-        ("SEE_INFRA", "64"),
-        ("SEE_MOBS", "4"),
-        ("SEE_OBJS", "8"),
-        ("SEE_PIXELS", "256"),
-        ("SEE_SELF", "32"),
-        ("SEE_THRU", "512"),
-        ("SEE_TURFS", "16"),
-        ("SIDE_MAP", "2"),
-        ("SINE_EASING", "1"),
-        ("SLIDE_STEPS", "2"),
-        ("SOUND_MUTE", "1"),
-        ("SOUND_PAUSED", "2"),
-        ("SOUND_STREAM", "4"),
-        ("SOUND_UPDATE", "16"),
-        ("SOUTH", "2"),
-        ("SOUTHEAST", "6"),
-        ("SOUTHWEST", "10"),
-        ("SQUARE_RAND", "3"),
-        ("SYNC_STEPS", "3"),
-        ("TILED_ICON_MAP", "32768"),
-        ("TILE_BOUND", "256"),
-        ("TILE_MOVEMENT_MODE", "1"),
-        ("TILE_MOVER", "2048"),
-        ("TOPDOWN_LAYER", "10000"),
-        ("TOPDOWN_MAP", "0"),
-        ("TRUE", "1"),
-        ("TURF_LAYER", "2"),
-        ("UNIFORM_RAND", "0"),
-        ("UNIX", "\"UNIX\""),
-        ("UP", "16"),
-        ("VIS_HIDE", "128"),
-        ("VIS_INHERIT_DIR", "4"),
-        ("VIS_INHERIT_ICON", "1"),
-        ("VIS_INHERIT_ICON_STATE", "2"),
-        ("VIS_INHERIT_ID", "32"),
-        ("VIS_INHERIT_LAYER", "8"),
-        ("VIS_INHERIT_PLANE", "16"),
-        ("VIS_UNDERLAY", "64"),
-        ("WAVE_BOUNDED", "2"),
-        ("WAVE_SIDEWAYS", "1"),
-        ("WEST", "8"),
-    ] {
-        pass.plan.final_macros.insert(
-            name.into(),
-            Macro {
-                parameters: None,
-                variadic: false,
-                replacement: replacement.into(),
-            },
-        );
-    }
+    pass.plan.initial_environment=provider.initial_environment();
+    crate::initial_environment::install(provider.initial_environment(),&mut pass.plan.final_macros);
     for (name, replacement) in defines {
         let definition = Macro {
             parameters: None,
@@ -411,6 +235,7 @@ impl<'a, P: SourceProvider> DirectivePass<'a, P> {
             reuse: PlanReuse::default(),
             recording: None,
             plan: DirectivePlan {
+                initial_environment:provider.initial_environment(),
                 project_dir,
                 ..DirectivePlan::default()
             },
@@ -426,7 +251,32 @@ impl<'a, P: SourceProvider> DirectivePass<'a, P> {
     }
 }
 impl<P: SourceProvider> DirectivePass<'_, P> {
-    fn evaluate(&self, word: &str, rest: &str) -> Result<bool, String> {
+    fn evaluate(&self, occurrence: usize, line: usize, word: &str, rest: &str) -> Result<bool, String> {
+        if self.plan.initial_environment == crate::InitialEnvironment::OriginalChecker0290 {
+            let evaluate_original = |inner: &dyn crate::MacroLookup| {
+                let lookup = crate::initial_environment::ContextLookup {
+                    inner, environment: self.plan.initial_environment,
+                };
+                match word {
+                    "ifdef" | "ifndef" => directive_identifier(rest).map(|name| {
+                        let present = if name == "__MAIN__" {
+                            self.plan.original_main(occurrence)
+                        } else { crate::MacroLookup::contains_key(&lookup, name) };
+                        present == (word == "ifdef")
+                    }),
+                    _ => crate::condition_parser::eval_condition_at(rest, &lookup,
+                        crate::ExpandLocation { line, file_name: &self.plan.expansion_path(occurrence) }),
+                }
+            };
+            return if let Some(recording) = self.recording.as_ref() {
+                evaluate_original(&Tested {
+                    inner: &directive_memo::Lookup { environment: &self.environment, recording },
+                    log: &self.tested_log,
+                })
+            } else {
+                evaluate_original(&Tested { inner: &self.environment, log: &self.tested_log })
+            };
+        }
         if let Some(recording) = self.recording.as_ref() {
             evaluate(
                 word,
@@ -576,8 +426,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             name: name.clone(),
             definition: definition.clone(),
         });
-        self.environment
-            .insert(&name, definition.clone(), Some(origin));
+        if self.plan.initial_environment==crate::InitialEnvironment::OriginalChecker0290 {self.environment.insert_stacked(&name,definition.clone(),Some(origin));}else{self.environment.insert(&name,definition.clone(),Some(origin));}
         self.plan.final_macros.insert(name, definition);
     }
     /// Where a definition in `occurrence`'s file is reported: the file's path relative to the project directory (the
@@ -612,8 +461,10 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         Arc::make_mut(&mut self.plan.regions[region].effects).push(MacroEffect::Undef {
             name: name.to_owned(),
         });
-        self.plan.final_macros.remove(name);
-        self.environment.remove(name);
+        if self.plan.initial_environment==crate::InitialEnvironment::OriginalChecker0290 {
+            self.environment.remove_stacked(name);
+            if let Some(restored)=self.environment.shared_definition(name){self.plan.final_macros.insert(name.to_owned(),(*restored).clone());}else{self.plan.final_macros.remove(name);}
+        }else{self.plan.final_macros.remove(name);self.environment.remove(name);}
         if name == "FILE_DIR" {
             self.plan.file_dirs.pop();
             self.file_dir_definitions.pop();
@@ -626,7 +477,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             }
             if let Some(restored) = self.file_dir_definitions.last() {
                 let origin = self.file_dir_origins.last().cloned().flatten();
-                self.environment.insert(name, restored.clone(), origin);
+                if self.plan.initial_environment==crate::InitialEnvironment::Native5161687 {self.environment.insert(name,restored.clone(),origin);}
             }
         }
     }
@@ -1271,7 +1122,9 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                         .unwrap_or(lines.len());
                     let context_started = std::time::Instant::now();
                     let context =
-                        directive_memo::context(prepared.original(), lines.slice(cursor..end));
+                        directive_memo::context_in_environment(prepared.original(), lines.slice(cursor..end),
+                            self.plan.initial_environment, &self.plan.expansion_path(occurrence),
+                            self.plan.original_main(occurrence),self.environment.fingerprint());
                     self.detail.context += context_started.elapsed();
                     self.detail.intervals += 1;
                     if let Some(context) = context {
@@ -1585,7 +1438,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         match word {
             "if" | "ifdef" | "ifndef" => {
                 let result = if active {
-                    self.evaluate(word, rest)
+                    self.evaluate(occurrence, line, word, rest)
                 } else {
                     Ok(false)
                 };
@@ -1623,7 +1476,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                 } else if word == "else" {
                     Ok(true)
                 } else {
-                    self.evaluate("if", rest)
+                    self.evaluate(occurrence, line, "if", rest)
                 };
                 let yes = result.unwrap_or_else(|error| {
                     self.error(occurrence, line, DiagnosticKind::Conditional, error);

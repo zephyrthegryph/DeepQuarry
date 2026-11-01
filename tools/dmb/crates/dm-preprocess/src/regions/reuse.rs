@@ -305,6 +305,7 @@ pub fn expansions_equal(a: &ExpandedRegions, b: &ExpandedRegions) -> Result<(), 
 /// (including its include-return and end-of-file cursors), ordered item, source text, line start,
 /// dependency, terminal macro and `FILE_DIR`.
 pub fn plans_equal(a: &DirectivePlan, b: &DirectivePlan) -> Result<(), String> {
+    if a.initial_environment!=b.initial_environment{return Err("initial preprocessing environment differs".into())}
     if a.regions.len() != b.regions.len() || a.items.len() != b.items.len() {
         return Err("region or item count differs".into());
     }

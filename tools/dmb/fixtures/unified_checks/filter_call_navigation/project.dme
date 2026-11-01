@@ -1,0 +1,4 @@
+/datum/filter_nav/child
+/datum/filter_nav/proc/probe()
+    filter(type=.child)
+    filter(type=:child)

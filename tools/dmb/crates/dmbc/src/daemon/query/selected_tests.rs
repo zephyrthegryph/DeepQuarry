@@ -37,7 +37,7 @@ fn selected_rows_require_current_pins_and_explicit_existing_producer_capture() {
     let state = Arc::new(Mutex::new(QueryState::default()));
     let mut attempt = QueryAttempt::new(Arc::clone(&state), true);
     attempt.capture(&frontend);
-    let mut request = QueryRequest {
+    let mut request = QueryRequest {analysis_context:None,
         timeout_seconds: None,
         project: "project.dme".into(),
         defines: BTreeMap::new(),

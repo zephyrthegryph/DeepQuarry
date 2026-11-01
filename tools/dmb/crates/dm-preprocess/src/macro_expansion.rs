@@ -81,6 +81,7 @@ pub(crate) fn expand_traced_points(
         &mut Vec::new(),
         &mut Some(trace),
         &mut points,
+        depth_zero_physical_lines(macros),
     )?;
     Ok((text, points))
 }
@@ -150,8 +151,11 @@ fn expand_mode_disabled_traced<'a>(
         disabled,
         trace,
         &mut None,
+        depth == 0 && depth_zero_physical_lines(macros),
     )
 }
+
+fn depth_zero_physical_lines(macros:&dyn MacroLookup)->bool{macros.initial_environment()==crate::InitialEnvironment::OriginalChecker0290}
 
 #[allow(clippy::sliced_string_as_bytes)]
 fn expand_mode_disabled_traced_points<'a>(
@@ -163,6 +167,7 @@ fn expand_mode_disabled_traced_points<'a>(
     disabled: &mut Vec<&'a str>,
     trace: &mut Option<&mut MacroTrace<'_>>,
     points: &mut Option<Vec<MacroBytePoint>>,
+    physical_lines:bool,
 ) -> Result<String, String> {
     if depth > 32 {
         return Err("macro expansion exceeded depth 32".into());
@@ -176,7 +181,10 @@ fn expand_mode_disabled_traced_points<'a>(
     let tokens = lexed.tokens;
     let mut out = String::new();
     let mut i = 0;
+    let mut actual_line=location.line;let mut actual_at=0;
     while i < tokens.len() {
+        if physical_lines{let start=tokens[i].span.start;actual_line+=source[actual_at..start].bytes().filter(|byte|*byte==b'\n').count();actual_at=start;}
+        let location=ExpandLocation{line:actual_line,file_name:location.file_name};
         let first = i;
         let output_start = out.len();
         let mut invocation = false;
@@ -197,26 +205,35 @@ fn expand_mode_disabled_traced_points<'a>(
                     substitute_only,
                     disabled,
                     trace,
+                    physical_lines,
                 )?;
                 unsupported = expanded != token_text;
                 out.push_str(&expanded);
                 return Ok(i + 1);
             }
             if token.kind == TokenKind::Ident {
+                if macros.initial_environment()==crate::InitialEnvironment::OriginalChecker0290
+                    && !(substitute_only && macros.contains_key(token_text)) {
+                    // Pinned real_next substitutes these before ANY define-table
+                    // lookup, including source definitions shadowing their names.
+                    if token_text=="__LINE__"{unsupported=true;macros.location_read(false);out.push_str(&location.line.to_string());return Ok(i+1)}
+                    if token_text=="__FILE__"{unsupported=true;macros.location_read(true);original_quote(&mut out,location.file_name);return Ok(i+1)}
+                }
+
                 // `defined` consumes a macro *name*. Function-like macros may
                 // introduce it only after parameter substitution, so protect its
                 // operand during the later ordinary expansion pass as well.
-                if token_text == "defined" && !substitute_only {
+                if token_text == "defined" && !substitute_only
+                    && (macros.initial_environment()!=crate::InitialEnvironment::OriginalChecker0290 || macros.condition_expansion())
+                    && !(macros.initial_environment()==crate::InitialEnvironment::OriginalChecker0290 && macros.contains_key("defined")) {
                     let mut operand = i + 1;
                     while tokens.get(operand).is_some_and(|next| {
                         matches!(next.kind, TokenKind::Whitespace | TokenKind::Newline)
                     }) {
                         operand += 1;
                     }
-                    if tokens
-                        .get(operand)
-                        .is_some_and(|next| next.text(source) == "(")
-                    {
+                    let parenthesized=tokens.get(operand).is_some_and(|next|next.text(source)=="(");
+                    if parenthesized {
                         operand += 1;
                         while tokens.get(operand).is_some_and(|next| {
                             matches!(next.kind, TokenKind::Whitespace | TokenKind::Newline)
@@ -227,6 +244,8 @@ fn expand_mode_disabled_traced_points<'a>(
                     if let Some(name) = tokens
                         .get(operand)
                         .filter(|next| next.kind == TokenKind::Ident)
+                        .filter(|_|macros.initial_environment()!=crate::InitialEnvironment::OriginalChecker0290||parenthesized)
+                        .filter(|next| macros.initial_environment()!=crate::InitialEnvironment::OriginalChecker0290 || !matches!(next.text(source),"__FILE__"|"__LINE__"))
                     {
                         out.push_str(&source[token.span.start..name.span.end]);
                         return Ok(operand + 1);
@@ -304,9 +323,11 @@ fn expand_mode_disabled_traced_points<'a>(
                                 )
                             })
                             .collect::<BTreeMap<_, _>>();
+                        let context=SubstitutionLookup{replacements:&replacements,parent:macros};
+                        let lookup:&dyn MacroLookup=if macros.initial_environment()==crate::InitialEnvironment::OriginalChecker0290{&context}else{&replacements};
                         let substituted = expand_mode(
                             &def.replacement,
-                            &replacements,
+                            lookup,
                             depth + 1,
                             location,
                             true,
@@ -504,6 +525,7 @@ fn expand_interpolations<'a>(
     substitute_only: bool,
     disabled: &mut Vec<&'a str>,
     trace: &mut Option<&mut MacroTrace<'_>>,
+    physical_lines:bool,
 ) -> Result<String, String> {
     let mut result = String::with_capacity(literal.len());
     let mut cursor = 0;
@@ -583,14 +605,17 @@ fn expand_interpolations<'a>(
             return Err("unclosed string interpolation".into());
         };
         result.push_str(&literal[cursor..start]);
-        result.push_str(&expand_mode_disabled_traced(
+        let expression_location=ExpandLocation{file_name:location.file_name,line:location.line+if physical_lines{literal[..start].bytes().filter(|byte|*byte==b'\n').count()}else{0}};
+        result.push_str(&expand_mode_disabled_traced_points(
             &literal[start..end],
             macros,
             depth + 1,
-            location,
+            expression_location,
             substitute_only,
             disabled,
             trace,
+            &mut None,
+            physical_lines,
         )?);
         cursor = end;
     }
@@ -705,4 +730,54 @@ fn parse_arguments(
         }
     }
     Err(MISSING_CALL_CLOSE.into())
+}
+
+/// Exact pinned lexer::Quote transport, whose input escapes are unparsed.
+fn original_quote(output:&mut String,text:&str){
+    if text.contains("\"}"){output.push_str("@@");output.push_str(text);output.push('@');}
+    else if text.contains('"')||text.contains('\n'){output.push_str("{\"");output.push_str(text);output.push_str("\"}");}
+    else{output.push('"');output.push_str(text);output.push('"');}
+}
+
+#[cfg(test)]mod original_dynamic_transport_tests{
+ use super::*;
+ #[test]fn original_dynamic_tokens_precede_shadow_bindings_and_quote_unparsed_backslashes(){
+  let macros=BTreeMap::from([("__LINE__".to_owned(),Macro{parameters:None,variadic:false,replacement:"99".into()}),("__FILE__".to_owned(),Macro{parameters:None,variadic:false,replacement:"\"shadow_file\"".into()})]);let original=crate::initial_environment::ContextLookup{inner:&macros,environment:crate::InitialEnvironment::OriginalChecker0290};let mut trace=|_:&str,_:Span,_:&[&str]|{};
+  let text=expand_traced("__FILE__ __LINE__",&original,ExpandLocation{file_name:r"E:\folder\file.dm",line:7},&mut trace).unwrap();assert_eq!(text,r#""E:\folder\file.dm" 7"#);
+  let native=expand_traced("__FILE__ __LINE__",&macros,ExpandLocation{file_name:r"E:\folder\file.dm",line:7},&mut trace).unwrap();assert_eq!(native,"\"shadow_file\" 99");
+  for(input,wanted)in[("ordinary", "\"ordinary\""),("a\"b","{\"a\"b\"}"),("a\"}b","@@a\"}b@"),("a\nb","{\"a\nb\"}")]{let mut actual=String::new();original_quote(&mut actual,input);assert_eq!(actual,wanted);}
+ }
+}
+
+/// Parameter substitution owns no macro environment. It borrows the real
+/// Original context and forwards actual dynamic-location dependency reads.
+struct SubstitutionLookup<'a>{replacements:&'a BTreeMap<String,Macro>,parent:&'a dyn MacroLookup}
+impl MacroLookup for SubstitutionLookup<'_>{fn initial_environment(&self)->crate::InitialEnvironment{self.parent.initial_environment()}fn condition_expansion(&self)->bool{self.parent.condition_expansion()}fn get_key_value(&self,name:&str)->Option<(&str,&Macro)>{self.replacements.get_key_value(name).map(|(name,value)|(name.as_str(),value))}fn location_read(&self,file:bool){self.parent.location_read(file)}}
+
+#[cfg(test)]mod original_substitution_context_tests{
+ use super::*;
+ use std::cell::Cell;
+ struct Observed<'a>{inner:&'a BTreeMap<String,Macro>,file:Cell<bool>,line:Cell<bool>,environment:crate::InitialEnvironment}
+ impl MacroLookup for Observed<'_>{fn initial_environment(&self)->crate::InitialEnvironment{self.environment}fn get_key_value(&self,name:&str)->Option<(&str,&Macro)>{self.inner.get_key_value(name).map(|(name,value)|(name.as_str(),value))}fn location_read(&self,file:bool){if file{self.file.set(true)}else{self.line.set(true)}}}
+ #[test]fn original_function_interpolation_keeps_context_and_records_actual_location_dependencies(){
+  let macros=BTreeMap::from([("WHERE".to_owned(),Macro{parameters:Some(vec!["value".into()]),variadic:false,replacement:r#""[__FILE__]:[__LINE__]:[value]""#.into()})]);
+  let original=Observed{inner:&macros,file:Cell::new(false),line:Cell::new(false),environment:crate::InitialEnvironment::OriginalChecker0290};
+  let actual=expand("WHERE(7)",&original,0,ExpandLocation{file_name:r"E:\folder\source.dm",line:23}).unwrap();
+  assert_eq!(actual,r#""["E:\folder\source.dm"]:[23]:[7]""#);
+  assert!(original.file.get());assert!(original.line.get());
+  let native=Observed{inner:&macros,file:Cell::new(false),line:Cell::new(false),environment:crate::InitialEnvironment::Native5161687};
+  let actual=expand("WHERE(7)",&native,0,ExpandLocation{file_name:r"E:\folder\source.dm",line:23}).unwrap();
+  assert_eq!(actual,r#""["E:\\folder\\source.dm"]:[23]:[7]""#);
+ }
+}
+
+#[cfg(test)]mod original_dynamic_formal_tests{
+ use super::*;
+ struct FormalLookup<'a>{inner:&'a BTreeMap<String,Macro>,reads:std::cell::Cell<usize>}
+ impl MacroLookup for FormalLookup<'_>{fn initial_environment(&self)->crate::InitialEnvironment{crate::InitialEnvironment::OriginalChecker0290}fn get_key_value(&self,name:&str)->Option<(&str,&Macro)>{self.inner.get_key_value(name).map(|(name,value)|(name.as_str(),value))}fn location_read(&self,_file:bool){self.reads.set(self.reads.get()+1)}}
+ #[test]fn original_dynamic_formals_substitute_before_real_token_location_expansion(){
+  let macros=BTreeMap::from([("FORMALS".into(),Macro{parameters:Some(vec!["__FILE__".into(),"__LINE__".into()]),variadic:false,replacement:"__FILE__ + __LINE__".into()})]);
+  let original=FormalLookup{inner:&macros,reads:std::cell::Cell::new(0)};
+  assert_eq!(expand("FORMALS(7,8)",&original,0,ExpandLocation{file_name:r"E:\actual.dm",line:23}).unwrap(),"7 + 8");assert_eq!(original.reads.get(),0);
+ }
 }

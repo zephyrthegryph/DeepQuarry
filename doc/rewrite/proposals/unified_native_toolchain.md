@@ -1717,3 +1717,66 @@ Public Keys delivery, the full filter family, remaining untagged checker cases,
 analysis-default preprocessing/diagnostic-only retention, remaining semantic policy
 adapters, default cutover and main-project/performance qualification remain open.
 No whole-toolchain completion or lane-ready stamp is claimed by this checkpoint.
+
+### 2026-10-31: original analysis context and source-policy delivery (in progress)
+
+The native frontend now has an explicitly admitted original-checker preprocessing
+context on the existing host, prepared-source pipeline, retained variants and query
+database. It is distinct from ordinary compilation; a diagnostic-only owner cannot
+be promoted to a runtime ABI, including when it has no errors. The previous analysis
+owner and its retained declaration records participate in the existing deduplicating
+heap census. Unexposed allocator/index geometry remains explicitly unknown.
+
+The context installs the pinned 104-entry macro environment and original conditional
+arithmetic/definition-stack behavior. It preserves a shared resident host and query
+database while isolating incompatible request and retained-variant identities.
+Targeted tests found a real preexisting publication-order defect: QueryAttempt bound
+the old query-state Arc before engine selection switched variants. The repair binds
+the actual selected variant before source capture and restores the exact moved
+publication metadata on the stashed predecessor. Existing cached-publication behavior
+is unchanged. Real Native/Original/restoration and metadata failure controls pass.
+
+The evaluated-expression walker also gained the filter, relative navigation, catch
+parameter and static-reference slices. These borrow existing syntax and resolution
+owners; they do not add a second expression parser or semantic model. The static
+reference controls cover inherited receiver identity, real proc/verb/builtin kind,
+ignored reference arguments, foreign scopes, actual first-I/O failure, cancellation,
+quota refusal, unwind and warm reuse. The filter's previous eight-versus-nine-row
+mismatch is resolved by using the actual original context rather than changing the
+old flag algorithm or suppressing a row.
+
+Verification for this cohort is deliberately scoped:
+
+- All three nominal build routes passed: native compiler, native-only Analyze, and
+  reference-enabled Analyze.
+- The initial 29-test context/static batch had 25 passes and four failures. Repairs
+  were verified by running only those four failures and two new metadata controls;
+  all six passed. Analyze's independent original constant-display test also passed.
+- The independent original-tool comparison now passes for all 104 defaults, the
+  complete guarded type/parent graph, and the full canonical expanded program.
+  A paired fixture correction kept a multiline argument inside parentheses.
+  The reference observation transport now preserves actual token punctuation;
+  its previous pretty-printer had silently discarded braces and semicolons.
+  Actual implementation fixes distinguish condition buffering from ordinary body
+  expansion and preserve the original context and location dependencies through
+  parameter substitution. Four exact preprocessing controls also pass, including
+  formal parameters named __FILE__/__LINE__ taking their actual argument values.
+- Public Keys paging/whole-report controls and the fresh actual-command proof pass.
+  All five fixtures match complete original check/baseline text and status through
+  direct and thin-client delivery; captured configuration stays unchanged. The
+  composite command proof took 169.578 seconds and retired its private daemon in
+  0.11 seconds. It also exercises the seven previously qualified report names.
+  This is not execution of the entire admitted roster, default generation, or
+  the full registry's required-list validation. The three selected client and
+  old registry-contract tests pass. The original complete registry contract was
+  captured before metadata moves: 101 ordered descriptors and 55 required-list
+  entries, with verified source, artifact and test provenance. Capturing that
+  contract does not yet implement native global required-list validation.
+
+None of these results certifies full checker coverage, all Analyze policies or
+commands, a production default switch, a whole-project combined run, or the stated
+performance objectives. Several additional semantic/raw policies and the complete
+ordered checker union are still being implemented. Analyze's default legacy
+Tree/Sem command routes have not yet been retired. Use the existing gate-test
+profile for subsequent Analyze test harnesses; the optimized binary profile used
+for this cohort's test build was unnecessarily expensive.

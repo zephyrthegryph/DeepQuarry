@@ -4,6 +4,10 @@ use super::*;
 pub(super) fn write(plan: &DirectivePlan, index: usize, mut emit: impl FnMut(&[u8])) -> Option<()> {
     let region = plan.regions.get(index)?;
     emit(&EXPANSION_VERSION.to_le_bytes());
+    if plan.initial_environment != crate::InitialEnvironment::Native5161687 {
+        emit(b"analysis-initial-environment-v1");
+        emit(&plan.initial_environment.profile().to_le_bytes());
+    }
     for (segment, line) in region
         .segments
         .iter()

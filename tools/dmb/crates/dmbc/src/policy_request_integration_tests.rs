@@ -4,7 +4,7 @@ use crate::{
     policy_request::{PolicyInputFile, PolicyInputRequest, PolicyInputRole},
 };
 fn intent(required: bool) -> crate::policy_request::AdmittedPolicyRequest {
-    PolicyInputRequest {workspace_auxiliary:Vec::new(),workspace_generators:Vec::new(),
+    PolicyInputRequest {analysis_context:None,workspace_auxiliary:Vec::new(),workspace_generators:Vec::new(),
         workspace: None,
         files: vec![PolicyInputFile {
             path: std::env::temp_dir().join("policy-intent-fixture/a.dm"),
@@ -165,7 +165,7 @@ fn foreign_policy_pin_is_rejected_while_source_revision_remains_unchanged() {
         .capture_with_queries(&frontend, db.clone(), Some(Arc::new(first)))
         .unwrap();
     let source = dm_analysis::tree_export::source_revision(&frontend);
-    let next = PolicyInputRequest {workspace_auxiliary:Vec::new(),workspace_generators:Vec::new(),
+    let next = PolicyInputRequest {analysis_context:None,workspace_auxiliary:Vec::new(),workspace_generators:Vec::new(),
         workspace: None,
         files: vec![PolicyInputFile {
             path: root.join("marker.dm"),
@@ -185,7 +185,7 @@ fn foreign_policy_pin_is_rejected_while_source_revision_remains_unchanged() {
     attempt
         .capture_with_queries(&frontend, db, Some(Arc::new(captured)))
         .unwrap();
-    let request = crate::daemon::query::QueryRequest {
+    let request = crate::daemon::query::QueryRequest {analysis_context:None,
         timeout_seconds: None,
         project: root.join("p.dme"),
         defines: Default::default(),
@@ -220,7 +220,7 @@ fn configured_session_open_preserves_admitted_policy_intent_during_canonical_che
     let base =
         crate::session::Configuration::new(&root, &manifest, Default::default(), 1, 2, 3).unwrap();
     let empty = PolicyInputRequest::default().admit().unwrap();
-    let explicit = PolicyInputRequest {workspace_auxiliary:Vec::new(),workspace_generators:Vec::new(),
+    let explicit = PolicyInputRequest {analysis_context:None,workspace_auxiliary:Vec::new(),workspace_generators:Vec::new(),
         workspace: None,
         files: vec![PolicyInputFile {
             path: root.join("marker.dm"),

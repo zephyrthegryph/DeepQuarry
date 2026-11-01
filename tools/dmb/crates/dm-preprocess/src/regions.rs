@@ -204,6 +204,7 @@ pub enum OrderedItem {
 
 #[derive(Clone, Debug, Default)]
 pub struct DirectivePlan {
+    pub initial_environment:crate::InitialEnvironment,
     /// Per-current-include acquisition binding, separate from interned text.
     pub source_acquisitions: BTreeMap<usize, crate::SourceAcquisitionLease>,
     pub source_texts: BTreeMap<PathBuf, crate::SourceText>,
@@ -294,6 +295,21 @@ impl DirectivePlan {
         })
     }
 
+
+    /// The original checker reports the actual environment-relative opened
+    /// spelling, whereas native compilation preserves its existing semantic
+    /// include operand. Both originate from the SAME issued occurrence/root.
+    pub(crate) fn original_main(&self,occurrence:usize)->bool{
+        let Some(entry)=self.occurrences.first().and_then(IncludeOccurrence::original_entry_path)else{return false};
+        let row=&self.occurrences[occurrence];
+        row.parent.is_none() || entry.parent().unwrap_or_else(||Path::new("")).join(row.semantic_path.as_ref()).as_path()==entry.as_path()
+    }
+    pub(crate) fn expansion_path(&self,occurrence:usize)->String{
+        if self.initial_environment==crate::InitialEnvironment::Native5161687{return self.semantic_path(occurrence)}
+        let row=&self.occurrences[occurrence];
+        let Some(entry)=self.occurrences.first().and_then(IncludeOccurrence::original_entry_path)else{return self.semantic_path(occurrence)};
+        if row.parent.is_none(){entry.display().to_string()}else{entry.parent().unwrap_or_else(||Path::new("")).join(row.semantic_path.as_ref()).display().to_string()}
+    }
     pub fn semantic_path(&self, occurrence: usize) -> String {
         self.occurrences[occurrence].semantic_path.to_string()
     }

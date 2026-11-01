@@ -367,6 +367,8 @@ impl<'a, P> PreparedSourceProvider<'a, P> {
     }
 }
 impl<P: crate::SourceProvider> crate::SourceProvider for PreparedSourceProvider<'_, P> {
+    fn initial_environment(&self)->crate::InitialEnvironment{self.fallback.initial_environment()}
+
     fn acquired_source(&self, path: &Path) -> Result<Option<crate::AcquiredSource>, String> {
         if let Some(source) = self.captures.get(path) {
             Ok(self.fallback.source_acquisition(path, source.original()))

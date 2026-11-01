@@ -31,6 +31,8 @@ use std::{
 };
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct QueryRequest {
+    #[serde(default,skip_serializing_if="Option::is_none")]
+    pub analysis_context:Option<crate::policy_request::AnalysisContext>,
     /// Request budget after the generation handshake; absent preserves 20 seconds.
     #[serde(default)]
     pub timeout_seconds: Option<u16>,
@@ -109,6 +111,7 @@ pub enum SourceQuery {
     NativeWorkspaceHygieneReportPage {root:PathBuf,configuration:PathBuf,lints:Vec<String>,cursor:Option<crate::query_db::WorkspaceCursor>,limit:usize},
     /// One exclusive completed Resolver/Tables/Boundary policy, under its own whole-fold issuer.
     NativeWorkspaceSysReportPage {root:PathBuf,configuration:PathBuf,lints:Vec<String>,cursor:Option<crate::query_db::WorkspaceCursor>,limit:usize},
+    NativeWorkspaceKeysReportPage {root:PathBuf,configuration:PathBuf,lints:Vec<String>,cursor:Option<crate::query_db::WorkspaceCursor>,limit:usize},
     /// One explicitly admitted fixed optional file, bound to current policy pins.
     NativeDeadlinePollingEvidence {root:PathBuf,configuration:PathBuf},
     /// Complete selected metadata domains, proven by actual typed recursive discovery.
@@ -401,6 +404,7 @@ fn native_row_descriptor(row: &serde_json::Value) -> io::Result<Option<SourceQue
         },
         Some("source_native_workspace_hygiene_report")=>SourceQuery::NativeWorkspaceHygieneReportPage{root:path("root")?,configuration:path("configuration")?,lints:serde_json::from_value(row["requested_lints"].clone()).map_err(io::Error::other)?,cursor:if row["offset"].as_u64().unwrap_or(0)==0{None}else{Some(serde_json::from_value(serde_json::json!({"aggregate_id":row["aggregate_id"],"offset":row["offset"]})).map_err(io::Error::other)?)},limit:128},
         Some("source_native_workspace_sys_report")=>SourceQuery::NativeWorkspaceSysReportPage{root:path("root")?,configuration:path("configuration")?,lints:serde_json::from_value(row["requested_lints"].clone()).map_err(io::Error::other)?,cursor:if row["offset"].as_u64().unwrap_or(0)==0{None}else{Some(serde_json::from_value(serde_json::json!({"aggregate_id":row["aggregate_id"],"offset":row["offset"]})).map_err(io::Error::other)?)},limit:128},
+        Some("source_native_workspace_keys_report")=>SourceQuery::NativeWorkspaceKeysReportPage{root:path("root")?,configuration:path("configuration")?,lints:serde_json::from_value(row["requested_lints"].clone()).map_err(io::Error::other)?,cursor:if row["offset"].as_u64().unwrap_or(0)==0{None}else{Some(serde_json::from_value(serde_json::json!({"aggregate_id":row["aggregate_id"],"offset":row["offset"]})).map_err(io::Error::other)?)},limit:128},
         Some("source_native_deadline_evidence")=>SourceQuery::NativeDeadlinePollingEvidence{root:path("root")?,configuration:path("configuration")?},
         Some("source_native_workspace_raw_report") => SourceQuery::NativeWorkspaceRawReportPage {root:path("root")?,configuration:path("configuration")?,lints:serde_json::from_value(row["requested_lints"].clone()).map_err(io::Error::other)?,cursor:if row["offset"].as_u64().unwrap_or(0)==0{None}else{Some(serde_json::from_value(serde_json::json!({"aggregate_id":row["aggregate_id"],"offset":row["offset"]})).map_err(io::Error::other)?)},limit:128},
         Some("source_native_workspace_raw_policy") => SourceQuery::NativeWorkspaceRawPolicy {
@@ -469,7 +473,7 @@ fn validate_native_outer_row(
     row: &serde_json::Value,
     question: SourceQuery,
 ) -> io::Result<()> {
-    let shape = QueryRequest {
+    let shape = QueryRequest {analysis_context:None,
         timeout_seconds: None,
         project: PathBuf::new(),
         defines: BTreeMap::new(),
@@ -691,6 +695,7 @@ impl QueryRequest {
         Ok(std::time::Duration::from_secs(u64::from(seconds)))
     }
     pub(crate) fn validate(&self) -> io::Result<()> {
+        if self.analysis_context.is_some()&&(!self.defines.is_empty()||self.engine_template.is_some()||self.bootstrap_catalog){return Err(io::Error::new(io::ErrorKind::InvalidInput,"original analysis query context rejects compiler define/engine overrides"))}
         self.timeout()?;
         named_policy::validate_request(self)?;
         control_batch::validate_request(self)?;
@@ -792,7 +797,9 @@ pub(crate) fn evaluate_snapshot(
     state: &crate::runner_host::query_snapshot::QueryState,
 ) -> io::Result<QueryReply> {
     request.validate()?;
+    if request.analysis_context.is_some()&&state.snapshot.is_none(){return Err(io::Error::new(io::ErrorKind::NotFound,"analysis context has no actual retained source frame"))}
     if let Some(snapshot) = state.snapshot.as_ref() {
+        snapshot.require_analysis_context(request.analysis_context)?;
         snapshot.require_source_query_role(request)?;
     }
     if state
@@ -801,8 +808,9 @@ pub(crate) fn evaluate_snapshot(
         .is_some_and(|snapshot| snapshot.diagnostic_tree().is_some())
         && (!request.queries.is_empty()
             || request.source_queries.iter().any(|question| {
-                !matches!(question,SourceQuery::NativeConfiguredVariableVisibility{..}|SourceQuery::NativeKeywordOverrides{..})
-                    && !matches!(question,SourceQuery::NativeConfiguredChecker{family,..}if matches!(family.as_str(),"unknown_linter_setting"|"unknown_setting"|"invalid_lint_directive_value"|"directive_at_definition"|"private_proc"|"protected_proc"|"must_call_parent"|"must_not_override"|"redefined_proc"|"call_arguments"))
+                !state.snapshot.as_ref().is_some_and(|snapshot|snapshot.admits_original_analysis_workspace_question(question))
+                    && !matches!(question,SourceQuery::NativeConfiguredVariableVisibility{..}|SourceQuery::NativeKeywordOverrides{..})
+                    && !matches!(question,SourceQuery::NativeConfiguredChecker{family,..}if matches!(family.as_str(),"unknown_linter_setting"|"unknown_setting"|"invalid_lint_directive_value"|"directive_at_definition"|"private_proc"|"protected_proc"|"must_call_parent"|"must_not_override"|"redefined_proc"|"call_arguments"|"filter_call"|"catch_parameter_count"|"static_reference"))
             }))
     {
         return Err(io::Error::other("diagnostic declaration frame admits only registered source diagnostic checker questions; no ordinary ABI/model query"));
@@ -930,6 +938,7 @@ pub(crate) fn evaluate_snapshot(
         }
         if let SourceQuery::NativeWorkspaceHygieneReportPage{root,configuration,lints,cursor,limit}=question{snapshot.write_native_workspace_hygiene_report_page(root,configuration,lints,cursor.as_ref(),*limit,tree,&mut output)?;continue;}
         if let SourceQuery::NativeWorkspaceSysReportPage{root,configuration,lints,cursor,limit}=question{snapshot.write_native_workspace_sys_report_page(root,configuration,lints,cursor.as_ref(),*limit,tree,&mut output)?;continue;}
+        if let SourceQuery::NativeWorkspaceKeysReportPage{root,configuration,lints,cursor,limit}=question{snapshot.write_native_workspace_keys_report_page(root,configuration,lints,cursor.as_ref(),*limit,tree,&mut output)?;continue;}
         if let SourceQuery::NativeDeadlinePollingEvidence{root,configuration}=question{snapshot.write_native_deadline_evidence(root,configuration,tree,&mut output)?;continue;}
         if let SourceQuery::NativeWorkspaceRawReportPage{root,configuration,lints,cursor,limit}=question{snapshot.write_native_workspace_raw_report_page(root,configuration,lints,cursor.as_ref(),*limit,tree,&mut output)?;continue;}
         if let SourceQuery::NativeWorkspaceRawPolicy {
@@ -1053,6 +1062,7 @@ pub(crate) fn evaluate_snapshot(
             | SourceQuery::NativeWorkspaceRawReportPage { .. }
             | SourceQuery::NativeWorkspaceHygieneReportPage { .. }
             | SourceQuery::NativeWorkspaceSysReportPage { .. }
+            | SourceQuery::NativeWorkspaceKeysReportPage { .. }
             | SourceQuery::NativeDeadlinePollingEvidence { .. }
             | SourceQuery::NativeAnalyzePolicyFixture { .. }
             | SourceQuery::NativeNamedRule { .. }
@@ -1093,7 +1103,7 @@ pub(crate) fn evaluate_snapshot(
 mod tests {
     use super::*;
     fn request() -> QueryRequest {
-        QueryRequest {
+        QueryRequest {analysis_context:None,
             timeout_seconds: None,
             project: "fixture.dme".into(),
             defines: BTreeMap::new(),

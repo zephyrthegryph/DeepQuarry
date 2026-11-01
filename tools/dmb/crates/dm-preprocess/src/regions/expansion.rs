@@ -202,13 +202,20 @@ fn end_line(line: PreparedLineView<'_>, source: &str) -> usize {
     line.source_line + line.source_lines.saturating_sub(1) + source.matches('\n').count()
 }
 
+// Original Include::Expansion stores the invocation's last_input_loc; reading
+// argument tokens through inner_next does not advance that location. Native's
+// separately measured continuation-line behavior remains unchanged.
+fn expansion_line(plan:&DirectivePlan,line:PreparedLineView<'_>,source:&str)->usize{
+    if plan.initial_environment==crate::InitialEnvironment::OriginalChecker0290{line.source_line}else{end_line(line,source)}
+}
+
 pub(super) fn expand_region(
     plan: &DirectivePlan,
     index: usize,
     recorder: Option<&region_memo::Recorder>,
 ) -> RegionOutput {
     let region = &plan.regions[index];
-    let file_name = plan.semantic_path(region.occurrence);
+    let file_name = plan.expansion_path(region.occurrence);
     let mut text_buffer = String::new();
     let mut diagnostics = Vec::new();
     let mut lines = output_lines::OutputLineBuilder::default();
@@ -244,6 +251,10 @@ pub(super) fn expand_region(
             let lookup: &dyn crate::MacroLookup = recording
                 .as_ref()
                 .map_or(&segment.macros as &dyn crate::MacroLookup, |lookup| lookup);
+            let contextual = crate::initial_environment::ContextLookup {
+                inner: lookup, environment: plan.initial_environment,
+            };
+            let lookup: &dyn crate::MacroLookup = &contextual;
             let source = line.text.trim_end_matches(['\r', '\n']);
             let mut joined = false;
             let mut macro_points = None;
@@ -268,7 +279,7 @@ pub(super) fn expand_region(
                     // held back (measured against DreamMaker 516.1687: a call over n lines on 5..11 reads 17).
                     ExpandLocation {
                         file_name: &file_name,
-                        line: end_line(line, source) + held.len(),
+                        line: if plan.initial_environment==crate::InitialEnvironment::OriginalChecker0290{held[0].source_line}else{end_line(line, source) + held.len()},
                     },
                     &mut trace,
                 ) {
@@ -307,7 +318,7 @@ pub(super) fn expand_region(
                     lookup,
                     ExpandLocation {
                         file_name: &file_name,
-                        line: end_line(line, source),
+                        line: expansion_line(plan,line,source),
                     },
                     &mut trace,
                 ) {
@@ -408,12 +419,15 @@ fn flush_held(
                 definition: macros.definition_origin(name).cloned(),
             });
         };
+        let contextual = crate::initial_environment::ContextLookup {
+            inner: macros, environment: plan.initial_environment,
+        };
         let text = match expand_traced(
             source,
-            macros,
+            &contextual,
             ExpandLocation {
                 file_name,
-                line: end_line(line, source),
+                line: expansion_line(plan,line,source),
             },
             &mut trace,
         ) {

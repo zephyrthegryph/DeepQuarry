@@ -314,6 +314,7 @@ dependencies = [
  "dm-preprocess",
  "dm-syntax",
  "dm-tree",
+ "foldhash",
  "serde",
  "serde_json",
  "toml 0.5.11",

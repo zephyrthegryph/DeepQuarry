@@ -957,9 +957,11 @@ impl Compiler<'_> {
                 StatementKind::Try {
                     body,
                     catch_binding,
+                    catch_parameter_count,
                     catch_header_span,
                     catch_body,
                 } => {
+                    if *catch_parameter_count>1{return Err(error(&statement.raw_header,"multiple catch parameter lowering is not implemented"))}
                     let catch_label = self.label();
                     let end_label = self.label();
                     self.emit(0x12c, vec![Word::Branch(catch_label)]);

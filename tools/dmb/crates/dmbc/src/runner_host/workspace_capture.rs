@@ -446,7 +446,16 @@ pub(crate) fn capture<P: SnapshotProvider>(
 ) -> io::Result<Arc<WorkspaceCapture>> {
     capture_with_auxiliary(frontend,inputs,discovery,configuration,&[])
 }
+struct OriginalWorkspaceSource<'a>{mapping:&'a Arc<SourceExportMapping>,plan:&'a dm_preprocess::regions::DirectivePlan,files:&'a [dm_tree::frontend::SourceFile],revision:u128}
+pub(crate) fn capture_analysis_with_auxiliary<P:SnapshotProvider>(frontend:&dm_tree::frontend::DiagnosticSourceView<'_>,inputs:&RecordingInputs<P>,discovery:Arc<DiscoveryReceipt>,configuration:&Path,questions:&[crate::policy_request::WorkspaceAuxiliaryQuestion])->io::Result<Arc<WorkspaceCapture>>{
+    if frontend.mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290 {return Err(io::Error::new(io::ErrorKind::InvalidInput,"analysis workspace requires its actual original context"))}
+    capture_original(OriginalWorkspaceSource{mapping:frontend.mapping(),plan:frontend.original_plan(),files:frontend.files(),revision:frontend.source_revision()},inputs,discovery,configuration,questions)
+}
 pub(crate) fn capture_with_auxiliary<P:SnapshotProvider>(frontend:&ColdFrontend,inputs:&RecordingInputs<P>,discovery:Arc<DiscoveryReceipt>,configuration:&Path,questions:&[crate::policy_request::WorkspaceAuxiliaryQuestion])->io::Result<Arc<WorkspaceCapture>>{
+    let mapping=frontend.source_export_mapping().ok_or_else(||io::Error::other("workspace compiler mapping unproven"))?;
+    capture_original(OriginalWorkspaceSource{mapping,plan:&frontend.plan,files:&frontend.files,revision:frontend.source_export_revision()},inputs,discovery,configuration,questions)
+}
+fn capture_original<P:SnapshotProvider>(frontend:OriginalWorkspaceSource<'_>,inputs:&RecordingInputs<P>,discovery:Arc<DiscoveryReceipt>,configuration:&Path,questions:&[crate::policy_request::WorkspaceAuxiliaryQuestion])->io::Result<Arc<WorkspaceCapture>>{
     if questions.len()>3||questions.windows(2).any(|pair|pair[0]>=pair[1]){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual canonical auxiliary questions required"))}
     discovery.validate_recording(inputs)?;
     if !configuration.is_absolute() {
@@ -454,9 +463,7 @@ pub(crate) fn capture_with_auxiliary<P:SnapshotProvider>(frontend:&ColdFrontend,
             "workspace configuration must be caller absolute",
         ));
     }
-    let mapping = frontend
-        .source_export_mapping()
-        .ok_or_else(|| io::Error::other("workspace compiler mapping unproven"))?;
+    let mapping=frontend.mapping;
     let mut known = BTreeMap::new();
     for (index, occurrence) in frontend.plan.occurrences.iter().enumerate() {
         known.entry(occurrence.path.as_path()).or_insert(index);
@@ -501,7 +508,7 @@ pub(crate) fn capture_with_auxiliary<P:SnapshotProvider>(frontend:&ColdFrontend,
     let mut files = Vec::with_capacity(discovery.files().len());
     for path in discovery.files() {
         crate::daemon::control::checkpoint()?;
-        let original=capture_optional_original(inputs,mapping,&frontend.plan,&discovery,&known,&texts,&aliases,path,&mut used,0)?.ok_or_else(||io::Error::other("discovered source disappeared before capture"))?;
+        let original=capture_optional_original(inputs,mapping,frontend.plan,&discovery,&known,&texts,&aliases,path,&mut used,0)?.ok_or_else(||io::Error::other("discovered source disappeared before capture"))?;
         files.push(File {
             path: path.clone(),
             fact: inputs.recorded_file_fact(path)?,
@@ -539,7 +546,7 @@ pub(crate) fn capture_with_auxiliary<P:SnapshotProvider>(frontend:&ColdFrontend,
      for(index,path)in paths.iter().enumerate(){crate::daemon::control::checkpoint()?;
       if let Some(existing)=files.iter().position(|file|file.path==*path){indices[index]=Some(existing);continue}
       if path==configuration{if let Some(bytes)=&config{indices[index]=Some(files.len());files.push(File{path:path.clone(),fact:inputs.recorded_file_fact(path)?,original:Original::Owned(bytes.clone())});}continue}
-      if let Some(original)=capture_optional_original(inputs,mapping,&frontend.plan,&discovery,&known,&texts,&aliases,path,&mut used,128)?{indices[index]=Some(files.len());files.push(File{path:path.clone(),fact:inputs.recorded_file_fact(path)?,original});}
+      if let Some(original)=capture_optional_original(inputs,mapping,frontend.plan,&discovery,&known,&texts,&aliases,path,&mut used,128)?{indices[index]=Some(files.len());files.push(File{path:path.clone(),fact:inputs.recorded_file_fact(path)?,original});}
      }
      check_grep=Some(indices);check_grep_paths=Some(paths);
     }
@@ -550,7 +557,7 @@ pub(crate) fn capture_with_auxiliary<P:SnapshotProvider>(frontend:&ColdFrontend,
      let path=discovery.contract().root.join("deepquarry.dme");
      if files.capacity()<wanted{files.try_reserve_exact(1).map_err(|error|io::Error::new(io::ErrorKind::OutOfMemory,error))?;if files.capacity()>capacity{return Err(io::Error::new(io::ErrorKind::OutOfMemory,"keys manifest actual capacity exceeds admission"))}}
      let index=if let Some(existing)=files.iter().position(|file|file.path==path){Some(existing)}else{
-      let original=if path==configuration{config.as_ref().map(|bytes|Original::Owned(bytes.clone()))}else{capture_optional_original(inputs,mapping,&frontend.plan,&discovery,&known,&texts,&aliases,&path,&mut used,128)?};
+      let original=if path==configuration{config.as_ref().map(|bytes|Original::Owned(bytes.clone()))}else{capture_optional_original(inputs,mapping,frontend.plan,&discovery,&known,&texts,&aliases,&path,&mut used,128)?};
       if let Some(original)=original{let index=files.len();files.push(File{path:path.clone(),fact:inputs.recorded_file_fact(&path)?,original});Some(index)}else{None}
      };keys_manifest=Some(index);keys_manifest_path=Some(path);
     }
@@ -570,7 +577,7 @@ pub(crate) fn capture_with_auxiliary<P:SnapshotProvider>(frontend:&ColdFrontend,
         .collect();
     let facts = inputs.policy_workspace_closure(&selected, discovery.directory_paths())?;
     let policy_revision = crate::policy_request::workspace_revision(
-        frontend.source_export_revision(),
+        frontend.revision,
         &facts,
         &discovery.contract().root,
         &discovery.contract().recursive_roots,
@@ -588,7 +595,7 @@ pub(crate) fn capture_with_auxiliary<P:SnapshotProvider>(frontend:&ColdFrontend,
         .map_err(|_| io::Error::other("workspace capture issuance exhausted"))?;
     let result = Arc::new(WorkspaceCapture {
         source: Arc::downgrade(mapping),
-        source_revision: frontend.source_export_revision(),
+        source_revision: frontend.revision,
         policy_revision,
         issuance,
         discovery,

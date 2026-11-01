@@ -12,7 +12,7 @@ fn named() -> SourceQuery {
     }
 }
 fn request() -> QueryRequest {
-    QueryRequest {
+    QueryRequest {analysis_context:None,
         timeout_seconds: None,
         project: root().join("p.dme"),
         defines: Default::default(),

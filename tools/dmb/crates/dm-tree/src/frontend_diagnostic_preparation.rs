@@ -7,7 +7,7 @@ pub struct DiagnosticFrontend {
     inner: ColdFrontend,
     receipt: Arc<DiagnosticDeclarationReceipt>,
     archive: Arc<BodyArchive>,
-    retained_records: Option<super::DiagnosticRetainedRecords>,
+    retained_records: Option<Arc<super::DiagnosticRetainedRecords>>,
 }
 /// Sealed borrowed projection of existing handles, never an alternate Sem model.
 /// Only the original diagnostic preparation can issue this view.
@@ -15,6 +15,20 @@ pub struct DiagnosticSourceView<'a> {
     owner: &'a DiagnosticFrontend,
 }
 impl DiagnosticFrontend {
+    pub(super) fn visit_retention_storage(&self,mut visit:impl FnMut(super::AnalysisRetentionStorage<'_>)){
+        use super::AnalysisRetentionStorage as V;
+        visit(V::Source(DiagnosticSourceView{owner:self}));visit(V::Receipt(&self.receipt));
+        if let Some(records)=&self.retained_records{visit(V::Allocation{address:Arc::as_ptr(records)as usize,bytes:std::mem::size_of_val(records.as_ref())});records.visit_storage(&mut visit);}
+    }
+
+    pub(super) fn preparation_frontend(&self)->&ColdFrontend { &self.inner }
+    pub(super) fn preparation_engine_matches(&self,engine:Option<&EngineSeed>)->bool {
+        self.receipt.errors().is_empty() && self.receipt.settings_compilable()
+            && self.retained_records.as_ref().is_some_and(|records|records.engine_matches(engine))
+            && self.source_view().is_ok()
+    }
+    pub(super) fn preparation_records(&self)->Option<Arc<super::DiagnosticRetainedRecords>> { self.retained_records.clone() }
+
     pub(super) fn bind(
         inner: ColdFrontend,
         mut receipt: DiagnosticDeclarationReceipt,
@@ -73,6 +87,7 @@ impl DiagnosticFrontend {
         mut self,
         state: &mut RetainedSemanticTree,
     ) -> Result<ColdFrontend, Self> {
+        if self.archive.source_mapping().initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(self)}
         if self.receipt.settings_compilable() && self.receipt.errors().is_empty()
             && state
                 .snapshot_tree()
@@ -88,12 +103,14 @@ impl DiagnosticFrontend {
             .retained_records
             .take()
             .expect("complete original records checked");
+        let records=match Arc::try_unwrap(records){Ok(records)=>records,Err(records)=>{self.retained_records=Some(records);return Err(self)}};
         state
             .adopt_valid_diagnostic_records(records, &self.inner.snapshot)
             .expect("private original diagnostic record owner cannot change");
         Ok(self.inner)
     }
     pub fn try_into_compilable(self) -> Result<ColdFrontend, Self> {
+        if self.archive.source_mapping().initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(self)}
         if self.receipt.settings_compilable() && self.receipt.errors().is_empty() {
             Ok(self.inner)
         } else {
@@ -102,6 +119,11 @@ impl DiagnosticFrontend {
     }
 }
 impl DiagnosticSourceView<'_> {
+    pub fn storage_view(&self)->super::FrontendStorageView<'_>{self.owner.inner.storage_view()}
+    /// Borrowed preparation DATA only; callers still need their actual current source guard.
+    pub fn expanded_text(&self)->&str { self.owner.inner.expanded.text.as_str() }
+    /// Borrow the SAME directive plan for actual original-source acquisition joins.
+    pub fn original_plan(&self)->&dm_preprocess::regions::DirectivePlan { &self.owner.inner.plan }
     pub fn tree(&self) -> &Arc<SemanticTree> {
         &self.owner.inner.snapshot.tree
     }
@@ -148,3 +170,25 @@ impl DiagnosticSourceView<'_> {
 #[cfg(test)]
 #[path = "frontend_diagnostic_preparation_tests.rs"]
 mod tests;
+
+#[cfg(test)]mod original_analysis_promotion_tests{
+ use super::*;
+ struct Source(dm_preprocess::AcquiredSource);
+ impl dm_preprocess::SourceProvider for Source{
+  fn initial_environment(&self)->dm_preprocess::InitialEnvironment{dm_preprocess::InitialEnvironment::OriginalChecker0290}
+  fn read(&self,_:&std::path::Path)->Result<String,String>{Err("actual original source acquisition required".into())}
+  fn acquired_source(&self,_:&std::path::Path)->Result<Option<dm_preprocess::AcquiredSource>,String>{Ok(Some(self.0.clone()))}
+  fn source_acquisition(&self,_:&std::path::Path,text:&dm_preprocess::SourceText)->Option<dm_preprocess::AcquiredSource>{self.0.lease().source_text().same_view(text).then(||self.0.clone())}
+ }
+ #[test]fn original_analysis_zero_error_diagnostic_owner_cannot_promote_through_either_compiler_api(){
+  let source=Source(dm_preprocess::AcquiredSource::from_original_bytes(b"/datum/analysis_zero\n".to_vec(),()));let seed=crate::checker_builtins::original_analysis_seed().unwrap();let executor=dm_exec::BuildExecutor::new(1).unwrap();
+  let build=||super::super::build_for_checker_diagnostics_with_state(std::path::Path::new("analysis-zero.dme"),&source,&Default::default(),FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None},None,&executor,None).unwrap();
+  let first=build();assert!(first.source_view().unwrap().receipt().errors().is_empty());assert!(first.try_into_compilable().is_err());
+  let second=build();assert!(second.source_view().unwrap().receipt().errors().is_empty());let mut state=RetainedSemanticTree::new();assert!(second.try_into_compilable_retained(&mut state).is_err());assert!(state.snapshot_tree().is_none());
+ }
+ #[test]fn original_analysis_previous_storage_retains_actual_records_until_the_only_owner_drops(){
+  let source=Source(dm_preprocess::AcquiredSource::from_original_bytes(b"/datum/analysis_owned\n".to_vec(),()));let seed=crate::checker_builtins::original_analysis_seed().unwrap();let executor=dm_exec::BuildExecutor::new(1).unwrap();let mut preparation_state=RetainedSemanticTree::new();let diagnostic=Arc::new(super::super::build_for_checker_diagnostics_with_state(std::path::Path::new("analysis-owned.dme"),&source,&Default::default(),FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None},None,&executor,Some(&mut preparation_state)).unwrap());drop(preparation_state);
+  let weak=Arc::downgrade(&diagnostic);let records=diagnostic.retained_records.as_ref().unwrap();let records_address=Arc::as_ptr(records)as usize;let weak_records=Arc::downgrade(records);let mut state=RetainedSemanticTree::new();state.remember_analysis_frontend(std::path::Path::new("analysis-owned.dme"),&Default::default(),Arc::clone(&diagnostic)).unwrap();drop(diagnostic);assert!(weak.upgrade().is_some());assert!(weak_records.upgrade().is_some());
+  let mut allocations=std::collections::BTreeSet::new();let mut index=false;let mut source_owner=false;state.visit_previous_analysis_storage(|view|match view{super::super::AnalysisRetentionStorage::Allocation{address,..}=>{allocations.insert(address);},super::super::AnalysisRetentionStorage::Declarations(_)=>index=true,super::super::AnalysisRetentionStorage::Source(_)=>source_owner=true,_=>{}});assert!(allocations.contains(&records_address));assert!(index&&source_owner);drop(state);assert!(weak.upgrade().is_none());assert!(weak_records.upgrade().is_none());
+ }
+}

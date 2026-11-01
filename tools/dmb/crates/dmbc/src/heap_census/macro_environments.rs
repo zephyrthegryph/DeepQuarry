@@ -2,10 +2,10 @@
 use super::*;
 
 impl HeapCensus {
-    pub(super) fn macro_environments(&mut self, frontend: &dm_tree::frontend::ColdFrontend) {
+    pub(super) fn macro_environments_plan(&mut self, plan: &dm_preprocess::regions::DirectivePlan) {
         let owner = "frontend.macro_environments";
         let mut previous = None;
-        for region in &frontend.plan.regions {
+        for region in &plan.regions {
             for segment in region.segments.iter() {
                 let environment = &segment.macros;
                 if previous.is_some_and(|prior| environment.shares_storage_with(prior)) {
@@ -14,7 +14,7 @@ impl HeapCensus {
                 let visitor = |name: &Arc<str>, address, inline_bytes, definition: &Arc<dm_preprocess::Macro>, origin: Option<&dm_preprocess::regions::DefinitionOrigin>| {
                     self.arc_text(owner, name);
                     if !self.buffer(owner, address, inline_bytes, inline_bytes) {
-                        return;
+                        return false;
                     }
                     if self.arc_object(owner, definition) {
                         self.string(owner, &definition.replacement);
@@ -25,11 +25,12 @@ impl HeapCensus {
                     if let Some(origin) = origin {
                         self.arc_path(owner, &origin.path);
                     }
+                    true
                 };
                 if let Some(prior) = previous {
-                    environment.visit_storage_difference(prior, visitor);
+                    environment.visit_storage_difference_while(prior, visitor);
                 } else {
-                    environment.visit_storage(visitor);
+                    environment.visit_storage_while(visitor);
                 }
                 previous = Some(environment);
             }

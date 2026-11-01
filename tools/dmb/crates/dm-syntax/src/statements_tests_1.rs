@@ -372,7 +372,7 @@ fn try_catch_and_throw_are_structured() {
         catch_binding,
         catch_header_span: _,
         catch_body,
-    } = &body.statements[0].kind
+    ..} = &body.statements[0].kind
     else {
         panic!("expected try")
     };

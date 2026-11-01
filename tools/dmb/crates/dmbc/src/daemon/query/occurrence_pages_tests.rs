@@ -17,7 +17,7 @@ fn frontend(source: &str) -> dm_tree::frontend::ColdFrontend {
     .unwrap()
 }
 fn request(front: &dm_tree::frontend::ColdFrontend, start: u32, limit: u32) -> QueryRequest {
-    QueryRequest {
+    QueryRequest {analysis_context:None,
         timeout_seconds: None,
         project: "pages.dme".into(),
         defines: Default::default(),

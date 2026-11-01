@@ -6,6 +6,8 @@ license = "GPL-3.0-only"
 description = "Read-only exports of the shared resolved DM source model"
 
 [dependencies]
+# Exact pinned filter-key HashMap; iteration is intentionally unsorted.
+foldhash = "=0.2.0"
 dm-preprocess = { path = "../dm-preprocess" }
 dm-ir = { path = "../dm-ir" }
 dm-tree = { path = "../dm-tree" }

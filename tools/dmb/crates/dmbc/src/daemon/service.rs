@@ -74,6 +74,7 @@ impl EngineIdentity {
 }
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 struct RequestKey {
+    analysis_context:Option<crate::policy_request::AnalysisContext>,
     command: RequestCommand,
     diagnostic_declarations: bool,
     original_source_questions: bool,
@@ -91,6 +92,7 @@ impl RequestKey {
     fn of(request: &crate::request::BuildRequest, manifest: &std::path::Path, generators:&[crate::GeneratorName], auxiliary:&[crate::policy_request::WorkspaceAuxiliaryQuestion]) -> Self {
         Self {
             command: request.command.into(),
+            analysis_context:request.policy_inputs.as_ref().and_then(|p|p.analysis_context),
             diagnostic_declarations: request.diagnostic_declarations,
             original_source_questions: request.source_questions.is_some(),
             workspace_generators: generators.to_vec(),
@@ -1020,6 +1022,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                             | super::query::SourceQuery::NativeWorkspaceRawReportPage { .. }
                             | super::query::SourceQuery::NativeWorkspaceHygieneReportPage { .. }
                             | super::query::SourceQuery::NativeWorkspaceSysReportPage { .. }
+                            | super::query::SourceQuery::NativeWorkspaceKeysReportPage { .. }
                             | super::query::SourceQuery::NativeDeadlinePollingEvidence { .. }
                             | super::query::SourceQuery::NativeAnalyzePolicyFixture { .. }
                             | super::query::SourceQuery::NativeNamedRule { .. }
@@ -1041,7 +1044,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                         "query session is building; retry after completion",
                     )
                 })?;
-                if !host.serves_variant(&request.project, &request.defines) {
+                if !host.serves_variant_context(&request.project, &request.defines,request.analysis_context) {
                     return Err(io::Error::new(
                         io::ErrorKind::NotFound,
                         "query session holds another define set or manifest as its active variant; build this one first",
@@ -1434,6 +1437,7 @@ mod tests {
         let shared = shared();
         let slot = shared.slot(PathBuf::from("E:/fixture/project.dme"), None);
         let key = RequestKey {
+            analysis_context: None,
             diagnostic_declarations: false,
             original_source_questions: false,
         workspace_generators: Vec::new(),
@@ -1472,7 +1476,7 @@ mod tests {
     #[test]
     fn admitted_generator_questions_distinguish_requests_without_splitting_the_session_host(){
         let args=vec!["prepare-query".into(),"E:/fixture/project.dme".into()];let crate::request::Command::Build(request)=crate::cli::parse(&args).unwrap()else{panic!("actual prepare request")};
-        let root=std::path::PathBuf::from("E:/fixture");let policy=crate::policy_request::PolicyInputRequest{workspace_auxiliary:Vec::new(),files:Vec::new(),search_folders:Vec::new(),workspace:Some(crate::policy_request::WorkspacePolicyRequest{root:root.clone(),recursive_roots:vec![root.join("code")],configuration:root.join("scopes.toml")}),workspace_generators:vec![crate::GeneratorName::Reads]}.admit().unwrap();
+        let root=std::path::PathBuf::from("E:/fixture");let policy=crate::policy_request::PolicyInputRequest{analysis_context:None,workspace_auxiliary:Vec::new(),files:Vec::new(),search_folders:Vec::new(),workspace:Some(crate::policy_request::WorkspacePolicyRequest{root:root.clone(),recursive_roots:vec![root.join("code")],configuration:root.join("scopes.toml")}),workspace_generators:vec![crate::GeneratorName::Reads]}.admit().unwrap();
         let path=std::path::Path::new("E:/fixture/project.dme");let raw=RequestKey::of(&request,path,&[],&[]);let generated=RequestKey::of(&request,path,policy.workspace_generators(),&[]);assert_ne!(raw,generated);assert_ne!(generated,RequestKey::of(&request,path,&[crate::GeneratorName::Deps],&[]));
         let mut selected=(*request).clone();selected.policy_inputs=Some(policy.into());assert_eq!(SessionKey::of(path.to_path_buf(),Some(&request)),SessionKey::of(path.to_path_buf(),Some(&selected)),"same project/engine must retain the same native host");
     }
@@ -1654,3 +1658,11 @@ mod tests {
 }
 
 #[cfg(test)]mod auxiliary_key_tests{use super::*;#[test]fn actual_admitted_auxiliary_questions_distinguish_request_identity_without_splitting_semantic_session(){use crate::policy_request::{PolicyInputRequest,WorkspacePolicyRequest,WorkspaceAuxiliaryQuestion as Q};let root=std::env::current_dir().unwrap();let manifest=root.join("auxiliary-request-identity.dme");let args=vec!["prepare-query".into(),manifest.to_string_lossy().into_owned()];let crate::request::Command::Build(request)=crate::cli::parse(&args).unwrap()else{panic!("actual PrepareQuery")};let mut policy=PolicyInputRequest::default();policy.workspace=Some(WorkspacePolicyRequest{root:root.clone(),recursive_roots:vec![root.join("code")],configuration:root.join("tools/ci/lint_scopes.toml")});let empty=policy.clone().admit().unwrap();let raw=RequestKey::of(&request,&manifest,empty.workspace_generators(),empty.workspace_auxiliary());policy.workspace_auxiliary=vec![Q::DeadlinePollingAllowlist];let deadline=policy.clone().admit().unwrap();let with_deadline=RequestKey::of(&request,&manifest,deadline.workspace_generators(),deadline.workspace_auxiliary());assert_ne!(raw,with_deadline);policy.workspace_auxiliary=vec![Q::CheckGrep];let grep=policy.admit().unwrap();assert_ne!(with_deadline,RequestKey::of(&request,&manifest,grep.workspace_generators(),grep.workspace_auxiliary()));let mut changed=(*request).clone();let mut wire:PolicyInputRequest=deadline.into();wire.workspace_auxiliary.reverse();changed.policy_inputs=Some(wire);assert_eq!(SessionKey::of(manifest.clone(),Some(&request)),SessionKey::of(manifest,Some(&changed)));}}
+
+#[cfg(test)]mod analysis_context_key_tests{
+ use super::*;
+ #[test]fn original_analysis_context_separates_requests_but_uses_the_same_resident_host_session(){
+  let project=std::env::current_dir().unwrap().join("deepquarry.dme");let args=vec!["prepare-query".to_owned(),project.to_string_lossy().into_owned()];let crate::request::Command::Build(native)=crate::cli::parse(&args).unwrap()else{panic!("actual PrepareQuery parser changed")};let mut original=(*native).clone();let mut intent=crate::policy_request::PolicyInputRequest::default();intent.analysis_context=Some(crate::policy_request::AnalysisContext::OriginalChecker0290);original.policy_inputs=Some(intent);
+  assert_ne!(RequestKey::of(&native,&project,&[],&[]),RequestKey::of(&original,&project,&[],&[]));assert_eq!(SessionKey::of(project.clone(),Some(&native)),SessionKey::of(project,Some(&original)));
+ }
+}

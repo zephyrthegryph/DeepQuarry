@@ -207,3 +207,27 @@ tools/dmb/fixtures/unified_checks/call_arguments_mixed_parent_implicit/project.d
 
 # Preserve the exact original helper block, including its separating EOF blank.
 tools/analyze/fixtures/original_policies/keys_system_lookup.rs -text whitespace=cr-at-eol,-blank-at-eof
+tools/dmb/fixtures/unified_checks/filter_call/* -text
+tools/dmb/fixtures/unified_checks/filter_call_navigation/* -text
+tools/dmb/fixtures/unified_checks/filter_call_navigation_competing/* -text
+tools/dmb/fixtures/unified_checks/catch_parameter_count/* -text
+
+tools/dmb/fixtures/unified_checks/filter_unary_values/project.dme -text
+
+# Preserve original-analysis context shared proof input bytes.
+tools/analyze/fixtures/native-analysis-context/basic/code/constants.dm -text whitespace=cr-at-eol,-indent-with-non-tab
+tools/analyze/fixtures/native-analysis-context/basic/code/dynamic.dm -text whitespace=cr-at-eol,-indent-with-non-tab
+tools/analyze/fixtures/native-analysis-context/basic/code/functions.dm -text whitespace=cr-at-eol,-indent-with-non-tab
+tools/analyze/fixtures/native-analysis-context/basic/code/numeric.dm -text whitespace=cr-at-eol,-indent-with-non-tab
+tools/analyze/fixtures/native-analysis-context/basic/code/stack.dm -text whitespace=cr-at-eol,-indent-with-non-tab
+tools/analyze/fixtures/native-analysis-context/basic/deepquarry.dme -text whitespace=cr-at-eol,-indent-with-non-tab
+tools/analyze/fixtures/native-analysis-context/basic/maps/selection.dm -text whitespace=cr-at-eol,-indent-with-non-tab
+tools/analyze/fixtures/native-analysis-context/basic/tools/ci/lint_scopes.toml -text whitespace=cr-at-eol,-indent-with-non-tab
+tools/analyze/fixtures/native-analysis-context/basic/code/shadow_dynamic.dm -text whitespace=cr-at-eol,-indent-with-non-tab
+
+tools/dmb/fixtures/unified_checks/static_reference/project.dme -text
+tools/dmb/fixtures/unified_checks/static_reference_errors/project.dme -text
+tools/dmb/fixtures/unified_checks/filter_static_reference/project.dme -text
+tools/dmb/fixtures/unified_checks/filter_static_builtin_reference/project.dme -text
+
+tools/dmb/fixtures/unified_checks/static_modified_prefab/project.dme -text

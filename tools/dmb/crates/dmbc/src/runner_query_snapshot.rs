@@ -116,6 +116,19 @@ impl ReplayProof {
     }
 }
 impl SourceSnapshot {
+    pub(crate) fn require_analysis_context(&self,context:Option<crate::policy_request::AnalysisContext>)->std::io::Result<()> {
+        let expected=context.map_or(dm_preprocess::InitialEnvironment::Native5161687,|context|context.initial_environment());
+        if self.source_mapping.as_ref().map(|mapping|mapping.initial_environment()).is_some_and(|actual|actual!=expected) || (context.is_some()&&self.source_mapping.is_none()){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"query analysis context differs from its actual current source mapping"))}Ok(())
+    }
+    /// A diagnostic-only analysis frame can lend its separately completed
+    /// workspace source capture to these exact source report operations. This
+    /// does not admit ordinary compiler/ABI/model questions; each report still
+    /// authenticates its actual capture, source guard, QueryDb and typed EOF.
+    pub(crate) fn admits_original_analysis_workspace_question(&self,question:&crate::daemon::query::SourceQuery)->bool {
+        self.native_workspace.is_some()
+            && self.source_mapping.as_ref().is_some_and(|mapping|mapping.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290)
+            && matches!(question,crate::daemon::query::SourceQuery::NativeWorkspaceRawReportPage{..}|crate::daemon::query::SourceQuery::NativeWorkspaceHygieneReportPage{..}|crate::daemon::query::SourceQuery::NativeWorkspaceSysReportPage{..}|crate::daemon::query::SourceQuery::NativeWorkspaceKeysReportPage{..}|crate::daemon::query::SourceQuery::NativeDeadlinePollingEvidence{..})
+    }
     /// Always run before semantic findings/proof/cache access. Source revisions
     /// and BodySyntax identities deliberately do not prove original decoding.
     pub(crate) fn require_semantic_source_encoding(&self) -> std::io::Result<()> {
@@ -568,6 +581,9 @@ impl SourceSnapshot {
 }
 pub(crate) struct QueryAttempt {
     state: Arc<Mutex<QueryState>>,
+    // Move the prior metadata; a variant switch restores this exact old state.
+    // No pair String is cloned or new query owner constructed.
+    prior_state: Option<(&'static str,Option<String>)>,
     captured: bool,
     enabled: bool,
     finished: bool,
@@ -581,13 +597,15 @@ pub(crate) struct QueryAttempt {
 }
 impl QueryAttempt {
     pub(crate) fn new(state: Arc<Mutex<QueryState>>, enabled: bool) -> Self {
-        {
+        let prior_state={
             let mut current = state.lock().unwrap_or_else(|error| error.into_inner());
+            let prior=(current.last_request_outcome,current.publication_pair.take());
             current.last_request_outcome = "building";
-            current.publication_pair = None;
-        }
+            prior
+        };
         Self {
             state,
+            prior_state:Some(prior_state),
             captured: false,
             finished: false,
             configuration: None,
@@ -596,6 +614,17 @@ impl QueryAttempt {
             pending_source: None,
             enabled,
         }
+    }
+    /// Bind the actual selected BuildHost variant before any source capture.
+    /// Early cached publication stays on its existing path; a real engine
+    /// switch must not publish into the now-stashed previous variant.
+    pub(crate) fn bind_current_variant(&mut self,state:Arc<Mutex<QueryState>>)->std::io::Result<()>{
+        if Arc::ptr_eq(&self.state,&state){return Ok(())}
+        if self.finished||self.captured||self.pending_workspace.is_some()||self.pending_diagnostic.is_some()||self.pending_source.is_some(){return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"query variant changed after source capture"))}
+        let prior=self.prior_state.take().ok_or_else(||std::io::Error::other("query attempt prior variant metadata unavailable"))?;
+        {let mut previous=self.state.lock().unwrap_or_else(|error|error.into_inner());previous.last_request_outcome=prior.0;previous.publication_pair=prior.1;}
+        let prior={let mut current=state.lock().unwrap_or_else(|error|error.into_inner());let prior=(current.last_request_outcome,current.publication_pair.take());current.last_request_outcome="building";prior};
+        self.state=state;self.prior_state=Some(prior);Ok(())
     }
     pub(crate) fn pending_workspace(
         &self,
@@ -1154,20 +1183,27 @@ impl SourceSnapshot {
                 "diagnostic original graph/policy/Db issuance differs",
             ));
         }
-        policy
-            .semantic_source_evidence()
-            .check(frontend.mapping())?;
+        Self::capture_diagnostic_sources(frontend,queries,Some(Arc::clone(&policy)),Arc::clone(policy.semantic_source_evidence()))
+    }
+    fn capture_diagnostic_sources(
+        frontend:&dm_tree::frontend::DiagnosticSourceView<'_>,queries:Arc<crate::query_db::QueryDb>,
+        policy:Option<Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>>,
+        evidence:Arc<crate::input_snapshot::SemanticSourceEvidence>,
+    )->std::io::Result<Self>{
+        let archive=frontend.archive();
+        if !frontend.receipt().authenticates(frontend.tree()) || !archive.matches_tree(frontend.tree()) || !archive.uses_body_queries(queries.as_ref()) {return Err(std::io::Error::other("diagnostic source graph/archive/current Db differ"))}
+        evidence.check(frontend.mapping())?;
         Ok(Self {
             diagnostic_declarations: Some(Arc::clone(frontend.receipt())),
-            semantic_sources: Some(Arc::clone(policy.semantic_source_evidence())),
+            semantic_sources: Some(evidence),
             tree: Arc::clone(frontend.tree()),
             source_revision: frontend.source_revision(),
-            policy_revision: policy.policy_revision(),
+            policy_revision: policy.as_ref().and_then(|policy|policy.policy_revision()),
             outcome: "diagnostic_frontend_admitted",
             occurrences: Arc::clone(frontend.occurrences()),
             bodies: Some(Arc::clone(frontend.bodies())),
             body_archive: Some(Arc::clone(archive)),
-            native_policy_inputs: Some(policy),
+            native_policy_inputs: policy,
             policy_role: SnapshotPolicyRole::ExplicitSubset,
             workspace_generator_selection: None,
             native_workspace: None,
@@ -1215,6 +1251,25 @@ impl SourceSnapshot {
     }
 }
 impl QueryAttempt {
+
+    /// Stage the genuine diagnostic-only analysis owner with its separately
+    /// issued current workspace. Complete freshness still controls publication.
+    pub(crate) fn stage_analysis_workspace<P:crate::input_snapshot::SnapshotProvider>(
+        &mut self,frontend:&dm_tree::frontend::DiagnosticSourceView<'_>,
+        queries:Arc<crate::query_db::QueryDb>,
+        workspace:Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,
+        request:&crate::policy_request::WorkspacePolicyRequest,inputs:&crate::input_snapshot::RecordingInputs<P>,
+    )->std::io::Result<()>{
+        if !self.enabled || frontend.mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290 {
+            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"analysis workspace needs its actual retained original context"));
+        }
+        if !workspace.matches_source(frontend.mapping(),frontend.source_revision())||!workspace.matches_request(request)||!workspace.is_recorded_in(&inputs.snapshot()?){return Err(std::io::Error::other("analysis workspace capture differs from current actual source/request"))}
+        let evidence=inputs.diagnostic_source_evidence(frontend)?;
+        let snapshot=SourceSnapshot::capture_diagnostic_sources(frontend,Arc::clone(&queries),None,evidence)?;
+        self.pending_diagnostic=None;self.pending_source=None;
+        self.pending_workspace=Some((workspace,queries));
+        self.stage_source_snapshot(snapshot,inputs.snapshot()?)
+    }
     pub(crate) fn stage_diagnostic(
         &mut self,
         frontend: &dm_tree::frontend::DiagnosticSourceView<'_>,
@@ -1325,3 +1380,6 @@ pub(crate) use generation_stage::{ClosedGeneration,original_manifest_includes};
 #[path="runner_query_call_arguments.rs"]mod call_arguments;
 
 #[path="runner_query_keys.rs"]mod keys;
+
+#[cfg(test)]
+#[path="runner_query_analysis_context_tests.rs"]mod analysis_context_tests;

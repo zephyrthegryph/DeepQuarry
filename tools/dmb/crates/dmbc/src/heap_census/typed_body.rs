@@ -257,7 +257,7 @@ impl HeapCensus {
                             catch_binding,
                             catch_header_span: _,
                             catch_body,
-                        } => {
+                        ..} => {
                             statements(self, owner, body, &mut pending);
                             statements(self, owner, catch_body, &mut pending);
                             if let Some(binding) = catch_binding {

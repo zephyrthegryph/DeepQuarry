@@ -21,8 +21,24 @@ pub struct RetainedSemanticTree {
     previous: Option<(
         std::path::PathBuf,
         std::collections::BTreeMap<String, String>,
-        super::FrontendRevision,
+        RememberedFrontend,
     )>,
+}
+
+/// The existing single predecessor slot retains its actual publication kind.
+/// Diagnostic owners lend preparation data privately; they never become a
+/// public FrontendRevision or an ordinary compiler/source snapshot.
+#[derive(Clone)]
+pub(super) enum RememberedFrontend {
+    Compiler(super::FrontendRevision),
+    Analysis(Arc<super::DiagnosticFrontend>),
+}
+impl std::ops::Deref for RememberedFrontend {
+    type Target=super::ColdFrontend;
+    fn deref(&self)->&Self::Target { match self { Self::Compiler(row)=>row,Self::Analysis(row)=>row.preparation_frontend() } }
+}
+impl RememberedFrontend {
+    pub(super) fn diagnostic_records(&self)->Option<Arc<DiagnosticRetainedRecords>> { match self {Self::Analysis(row)=>row.preparation_records(),Self::Compiler(_)=>None} }
 }
 struct Entry {
     index: crate::declaration_contributions::KeyedDeclarations,
@@ -46,16 +62,34 @@ impl RetainedSemanticTree {
         release_in_background(self.previous.replace((
             project.to_path_buf(),
             defines.clone(),
-            revision,
+            RememberedFrontend::Compiler(revision),
         )));
+    }
+    /// Retains the actual analysis owner only after its checked preparation.
+    /// Borrow the retained analysis predecessor as DATA. It is not a current
+    /// source scope; consumers must join its mapping to their actual frame.
+    pub fn with_remembered_analysis_source<R>(&self,consume:impl FnOnce(super::DiagnosticSourceView<'_>)->R)->Result<Option<R>,String>{
+        let Some((_,_,RememberedFrontend::Analysis(frontend)))=&self.previous else{return Ok(None)};
+        Ok(Some(consume(frontend.source_view()?)))
+    }
+    pub fn remember_analysis_frontend(&mut self,project:&std::path::Path,defines:&std::collections::BTreeMap<String,String>,frontend:Arc<super::DiagnosticFrontend>)->Result<(),String>{
+        let source=frontend.source_view()?;
+        if source.mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290 {return Err("analysis predecessor lacks the actual original context".into())}
+        release_in_background(self.previous.replace((project.to_path_buf(),defines.clone(),RememberedFrontend::Analysis(frontend))));Ok(())
+    }
+    pub(super) fn admits_preparation_owner(&self,frontend:&RememberedFrontend,engine:Option<&EngineSeed>)->bool {
+        match frontend {RememberedFrontend::Compiler(row)=>self.admits_remembered_owner(row,engine),RememberedFrontend::Analysis(row)=>row.preparation_engine_matches(engine)}
     }
     pub(super) fn previous_frontend(
         &self,
         project: &std::path::Path,
         defines: &std::collections::BTreeMap<String, String>,
-    ) -> Option<super::FrontendRevision> {
+        environment:dm_preprocess::InitialEnvironment,
+        diagnostic:bool,
+    ) -> Option<RememberedFrontend> {
         let (path, remembered, revision) = self.previous.as_ref()?;
-        (path == project && remembered == defines).then(|| revision.clone())
+        (path == project && remembered == defines && revision.plan.initial_environment==environment
+            && matches!(revision,RememberedFrontend::Analysis(_))==(diagnostic&&environment==dm_preprocess::InitialEnvironment::OriginalChecker0290)).then(|| revision.clone())
     }
     /// Stage source-neutral declaration claims for this request, independently
     /// of the current semantic/query tree. Dropping the guard aborts claims.
@@ -84,6 +118,12 @@ impl RetainedSemanticTree {
         Ok(roster)
     }
 
+    /// Census-only loan of the actual previous analysis owner. It is never a
+    /// source-current receipt or an ordinary compiler frontend conversion.
+    pub fn visit_previous_analysis_storage(&self,mut visit:impl FnMut(super::AnalysisRetentionStorage<'_>)){
+        let Some((_,_,RememberedFrontend::Analysis(owner)))=&self.previous else{return};
+        visit(super::AnalysisRetentionStorage::Allocation{address:Arc::as_ptr(owner)as usize,bytes:std::mem::size_of_val(owner.as_ref())});owner.visit_retention_storage(visit);
+    }
     /// Actual immutable admission spellings; no separately owned text roster.
     pub fn retained_symbol_owner(&self) -> Option<&Arc<dm_ir::SymbolTable>> {
         self.entry.as_ref().map(|entry| &entry.symbols)

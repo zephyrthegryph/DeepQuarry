@@ -83,6 +83,7 @@ pub(super) fn inspect_into(mut census: &mut HeapCensus, state: &RetainedSemantic
             contribution_payload(&mut census, contribution);
         }
     });
+    super::retained_analysis::inspect(census,state);
 }
 
 fn contribution_payload(

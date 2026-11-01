@@ -40,7 +40,7 @@ fn cancelled_current_body_query_preserves_pinned_snapshot_for_retry() {
     capture.capture(&frontend);
     capture.finish_analyzed();
     drop(capture);
-    let request = QueryRequest {
+    let request = QueryRequest {analysis_context:None,
         timeout_seconds: Some(20),
         project: "probe.dme".into(),
         defines: Default::default(),

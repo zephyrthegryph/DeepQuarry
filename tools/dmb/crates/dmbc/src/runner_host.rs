@@ -126,6 +126,7 @@ struct VariantState {
 
 #[derive(Clone, Eq, Ord, PartialEq, PartialOrd)]
 struct EngineConfiguration {
+    analysis_context: Option<crate::policy_request::AnalysisContext>,
     project: PathBuf,
     defines: BTreeMap<String, String>,
     bootstrap_catalog: bool,
@@ -796,6 +797,11 @@ impl BuildHost {
         project: &std::path::Path,
         defines: &BTreeMap<String, String>,
     ) -> bool {
+        self.serves_variant_context(project,defines,None)
+    }
+    pub(crate) fn serves_variant_context(&self,project:&std::path::Path,defines:&BTreeMap<String,String>,analysis_context:Option<crate::policy_request::AnalysisContext>)->bool{
+        if self.engine.as_ref().is_some_and(|engine|engine.configuration.analysis_context!=analysis_context){return false}
+        if analysis_context.is_some(){return defines.is_empty()&&self.engine.as_ref().is_some_and(|engine|engine.configuration.defines.is_empty()&&engine.configuration.project.file_name()==project.file_name())}
         // A build admits the pinned target defines (DM_VERSION, DM_BUILD) before it reaches the host; a query names the
         // caller's defines, so admit them the same way before comparing.
         let mut admitted = defines.clone();
@@ -844,7 +850,15 @@ impl BuildHost {
         bootstrap_catalog: bool,
         bytes: Vec<u8>,
     ) -> Result<Arc<RetainedEngine>, String> {
+        self.engine_with_context(project,defines,bootstrap_catalog,bytes,None)
+    }
+    pub(crate) fn engine_with_context(
+        &mut self, project:PathBuf, defines:BTreeMap<String,String>,
+        bootstrap_catalog:bool, bytes:Vec<u8>,
+        analysis_context:Option<crate::policy_request::AnalysisContext>,
+    )->Result<Arc<RetainedEngine>,String>{
         let configuration = EngineConfiguration {
+            analysis_context,
             project,
             defines,
             bootstrap_catalog,

@@ -8,8 +8,17 @@ use std::{
     path::PathBuf,
 };
 
+/// Explicit analysis preprocessing purpose. This is configuration; the actual
+/// native frontend and source mapping must issue its current context separately.
+#[derive(Clone,Copy,Debug,Eq,PartialEq,Ord,PartialOrd,Serialize,Deserialize)]
+#[serde(rename_all="snake_case")]
+pub enum AnalysisContext { OriginalChecker0290 }
+impl AnalysisContext { pub(crate) fn initial_environment(self)->dm_preprocess::InitialEnvironment { match self { Self::OriginalChecker0290=>dm_preprocess::InitialEnvironment::OriginalChecker0290 } } }
+
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct PolicyInputRequest {
+    #[serde(default,skip_serializing_if="Option::is_none")]
+    pub analysis_context: Option<AnalysisContext>,
     #[serde(default)]
     pub files: Vec<PolicyInputFile>,
     #[serde(default)]
@@ -51,6 +60,7 @@ pub enum WorkspaceAuxiliaryQuestion{DeadlinePollingAllowlist,CheckGrep,Keys}
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(try_from = "PolicyInputRequest", into = "PolicyInputRequest")]
 pub struct AdmittedPolicyRequest {
+    analysis_context: Option<AnalysisContext>,
     files: Vec<PolicyInputFile>,
     search_folders: Vec<PathBuf>,
     workspace: Option<WorkspacePolicyRequest>,
@@ -76,6 +86,7 @@ impl PolicyInputRequest {
         }
         if !self.workspace_generators.is_empty() && self.workspace.is_none(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"generator questions require an actual workspace intent"));}
         if self.workspace_generators.len()>13{return Err(io::Error::new(io::ErrorKind::InvalidInput,"generator questions exceed the registered set"));}
+        if self.analysis_context.is_some() && !self.workspace_generators.is_empty() {return Err(io::Error::new(io::ErrorKind::InvalidInput,"analysis context cannot request native generation roles"));}
         let mut workspace_generators=self.workspace_generators;workspace_generators.sort_unstable();
         if workspace_generators.windows(2).any(|pair|pair[0]==pair[1]){return Err(io::Error::new(io::ErrorKind::InvalidInput,"duplicate generator question"));}
         if !self.workspace_auxiliary.is_empty() && self.workspace.is_none(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"auxiliary questions require actual workspace intent"))}
@@ -129,6 +140,7 @@ impl PolicyInputRequest {
             .map(absolute)
             .collect::<io::Result<BTreeSet<_>>>()?;
         Ok(AdmittedPolicyRequest {
+            analysis_context:self.analysis_context,
             files: files.into_values().collect(),
             search_folders: folders.into_iter().collect(),
             workspace,
@@ -146,6 +158,7 @@ impl TryFrom<PolicyInputRequest> for AdmittedPolicyRequest {
 impl From<AdmittedPolicyRequest> for PolicyInputRequest {
     fn from(value: AdmittedPolicyRequest) -> Self {
         Self {
+            analysis_context:value.analysis_context,
             files: value.files,
             search_folders: value.search_folders,
             workspace: value.workspace,
@@ -155,6 +168,7 @@ impl From<AdmittedPolicyRequest> for PolicyInputRequest {
     }
 }
 impl AdmittedPolicyRequest {
+    pub fn analysis_context(&self)->Option<AnalysisContext>{self.analysis_context}
     pub fn workspace_auxiliary(&self)->&[WorkspaceAuxiliaryQuestion]{&self.workspace_auxiliary}
     pub fn workspace_generators(&self)->&[crate::GeneratorName]{&self.workspace_generators}
     pub fn workspace(&self) -> Option<&WorkspacePolicyRequest> {
@@ -284,4 +298,14 @@ mod auxiliary_questions{
  use super::*;
  pub fn serialize<S:serde::Serializer>(values:&[WorkspaceAuxiliaryQuestion],serializer:S)->Result<S::Ok,S::Error>{values.serialize(serializer)}
  pub fn deserialize<'de,D:serde::Deserializer<'de>>(decoder:D)->Result<Vec<WorkspaceAuxiliaryQuestion>,D::Error>{struct Questions;impl<'de>serde::de::Visitor<'de>for Questions{type Value=Vec<WorkspaceAuxiliaryQuestion>;fn expecting(&self,f:&mut std::fmt::Formatter)->std::fmt::Result{f.write_str("at most three fixed workspace auxiliary questions")}fn visit_seq<A:serde::de::SeqAccess<'de>>(self,mut seq:A)->Result<Self::Value,A::Error>{if seq.size_hint().is_some_and(|n|n>3){return Err(serde::de::Error::custom("too many auxiliary questions"))}let mut values=Vec::new();values.try_reserve_exact(3).map_err(serde::de::Error::custom)?;while let Some(value)=seq.next_element()?{if values.len()==3{return Err(serde::de::Error::custom("too many auxiliary questions"))}values.push(value)}Ok(values)}}decoder.deserialize_seq(Questions)}
+}
+
+#[cfg(test)]mod analysis_context_tests{
+ use super::*;
+ #[test]fn explicit_analysis_context_is_canonical_and_native_absence_keeps_existing_wire_identity(){
+  let ordinary=PolicyInputRequest::default();assert_eq!(serde_json::to_string(&ordinary).unwrap(),"{\"files\":[],\"search_folders\":[]}");
+  let mut actual=ordinary.clone();actual.analysis_context=Some(AnalysisContext::OriginalChecker0290);let admitted=actual.clone().admit().unwrap();assert_eq!(admitted.analysis_context(),actual.analysis_context);assert_eq!(PolicyInputRequest::from(admitted.clone()),actual);let mut native=Vec::new();append_identity(&mut native,Some(&ordinary.admit().unwrap())).unwrap();let mut original=Vec::new();append_identity(&mut original,Some(&admitted)).unwrap();assert_ne!(native,original);
+  let mut impossible=actual;impossible.workspace_generators=vec![crate::GeneratorName::AutoTracked];assert!(impossible.admit().is_err());
+  assert!(serde_json::from_str::<PolicyInputRequest>(r#"{"analysis_context":"unissued_checker","files":[],"search_folders":[]}"#).is_err());
+ }
 }

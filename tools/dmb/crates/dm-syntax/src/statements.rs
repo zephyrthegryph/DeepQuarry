@@ -107,6 +107,8 @@ pub enum StatementKind {
     Try {
         body: Vec<Statement>,
         catch_binding: Option<String>,
+        /// Number of actual original tree-path parameters issued by the primary ledger.
+        catch_parameter_count: usize,
         catch_header_span: Span,
         catch_body: Vec<Statement>,
     },
@@ -259,6 +261,19 @@ struct BodyOrigins<'a> {
     deferred_literal_purity:bool,
 }
 impl BodyOrigins<'_> {
+    fn catch_parts(&mut self,source:&str,tokens:&[crate::SpanToken],base:usize){
+        let mut start=0usize;
+        for end in 0..=tokens.len(){
+            if end<tokens.len()&&tokens[end].text(source)!=","{continue}
+            if let Some(a)=self.admission{if let Err(actual)=a.checkpoint(){a.record_operational_error(actual);self.locals.decline("native catch operation stopped");return}}
+            let segment=&tokens[start..end];let mut significant=segment.iter().filter(|token|!matches!(token.kind,crate::TokenKind::Whitespace|crate::TokenKind::Newline|crate::TokenKind::Comment));
+            let Some(first)=significant.next()else{if end<tokens.len(){self.locals.decline("native catch parameter cannot be empty before comma");}if end==tokens.len(){break}start=end+1;continue};
+            let mut previous_ident=false;for token in std::iter::once(first).chain(significant){if token.kind==crate::TokenKind::Ident{if previous_ident{self.locals.decline("native catch path identifiers require separators");return}previous_ident=true;}else if token.text(source)=="/"{previous_ident=false;}else{self.locals.decline("native catch parameter is not an original tree path");return}}
+            let count=segment.iter().filter(|token|!matches!(token.kind,crate::TokenKind::Whitespace|crate::TokenKind::Newline|crate::TokenKind::Comment)).count();let has_var=count>1&&first.text(source)=="var";
+            self.locals.issue(source,segment,has_var,base,crate::LocalSourceKind::CatchBinding,None);
+            if end==tokens.len(){break}start=end+1;
+        }
+    }
     fn push(&mut self, origin: ControlOrigin) {
         self.controls.push(origin);
     }
@@ -450,46 +465,23 @@ fn parse_sequence(
                 None
             };
             if let Some(catch_binding) = catch_binding {
+                let before_catch=origins.locals.storage().len();
                 if catch_binding
                     .as_ref()
                     .is_some_and(|binding| !binding.trim().is_empty())
                 {
                     let source = catch_header[6..catch_header.len() - 1].trim();
                     let lexical = crate::lex_spans(source);
-                    let first = lexical
-                        .tokens
-                        .iter()
-                        .filter(|t| {
-                            !matches!(
-                                t.kind,
-                                crate::TokenKind::Whitespace
-                                    | crate::TokenKind::Comment
-                                    | crate::TokenKind::Newline
-                            )
-                        })
-                        .collect::<Vec<_>>();
-                    let has_var = first.len() > 1 && first[0].text(source) == "var";
                     let base = catch.header_span.start
                         + (source.as_ptr() as usize - catch.header.as_ptr() as usize);
-                    if lexical.diagnostics.is_empty() {
-                        origins.locals.issue(
-                            source,
-                            &lexical.tokens,
-                            has_var,
-                            base,
-                            crate::LocalSourceKind::CatchBinding,
-                            None,
-                        );
-                    } else {
-                        origins
-                            .locals
-                            .decline("native catch token grammar unavailable");
-                    }
+                    if lexical.diagnostics.is_empty(){origins.catch_parts(source,&lexical.tokens,base)}else{origins.locals.decline("native catch token grammar unavailable");}
                 }
+                let catch_parameter_count=origins.locals.storage().len()-before_catch;
                 statements.push(Statement {
                     kind: StatementKind::Try {
                         body: parse_sequence(&item.children, diagnostics, origins),
                         catch_binding,
+                        catch_parameter_count,
                         catch_header_span: catch.header_span,
                         catch_body: parse_sequence(&catch.children, diagnostics, origins),
                     },
@@ -1134,4 +1126,10 @@ pub fn parse_body_items_with_admitted_literals(
  let mut parsed=parse_body_items_using_settings(items,Some(settings),Some(admission),true);
  if !admission.is_stopped(){parsed.pending_bodies=crate::pending_body::pending_bodies(&parsed.statements,source,context);}
  crate::prepare_body_literal_syntax(parsed,cleanup,admission)
+}
+
+#[cfg(test)]mod original_catch_parameters{
+ use super::*;
+ #[test]fn primary_catch_parameter_count_and_original_rows_come_from_every_tree_path(){let source="/proc/probe()\n    try\n        var/not_a_parameter=1\n        return 0\n    catch(var/datum/a,var/b,)\n        return b\n";let syntax=crate::parse(source);assert!(syntax.diagnostics.is_empty());let parsed=parse_body_items(&syntax.items[0].children);assert!(parsed.diagnostics.is_empty(),"{:?}",parsed.diagnostics);let StatementKind::Try{catch_parameter_count,catch_header_span,..}=&parsed.statements[0].kind else{panic!("same native Try")};assert_eq!(*catch_parameter_count,2);let facts=parsed.local_variables.in_span(*catch_header_span).unwrap();assert_eq!(facts.len(),2);assert!(facts.iter().all(|fact|fact.source_kind==crate::LocalSourceKind::CatchBinding));assert_eq!(source.get(facts[0].name.range()),Some("a"));assert_eq!(source.get(facts[1].name.range()),Some("b"));assert_eq!(facts[0].type_path(source).unwrap().as_deref(),Some("/datum"));assert_eq!(facts[1].type_path(source).unwrap(),None);}
+ #[test]fn primary_catch_zero_single_and_invalid_suffixes_do_not_invent_extra_rows(){for(binding,count)in[("",0),("var/a",1),("var/a,",1)]{let source=format!("/proc/probe()\n    try\n        return 0\n    catch({binding})\n        return 1\n");let syntax=crate::parse(&source);let parsed=parse_body_items(&syntax.items[0].children);let StatementKind::Try{catch_parameter_count,..}=parsed.statements[0].kind else{panic!("native Try")};assert_eq!(catch_parameter_count,count);}for binding in["var/a=1","var a",",var/a","var/a,,var/b"]{let source=format!("/proc/probe()\n    try\n        return 0\n    catch({binding})\n        return 1\n");let syntax=crate::parse(&source);let parsed=parse_body_items(&syntax.items[0].children);assert!(parsed.local_variables.entries().is_err(),"invalid catch path admitted: {binding}");}}
 }

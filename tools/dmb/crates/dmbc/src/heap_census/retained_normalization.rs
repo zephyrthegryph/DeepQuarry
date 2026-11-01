@@ -6,7 +6,7 @@ use dm_tree::{
     frontend::{NormalizationStorageView, RetainedSemanticTree},
 };
 
-fn contribution(census: &mut HeapCensus, value: &Arc<TypeContribution>) {
+pub(super) fn contribution(census: &mut HeapCensus, value: &Arc<TypeContribution>) {
     let owner = "retained_normalization.contributions";
     if !census.arc_object(owner, value) {
         return;

@@ -42,7 +42,7 @@ fn root() -> PathBuf {
         .join("policy-capture-fixture")
 }
 fn intent(files: &[RequestedPolicyFile], folders: &[PathBuf]) -> AdmittedPolicyRequest {
-    PolicyInputRequest {workspace_auxiliary:Vec::new(),workspace_generators:Vec::new(),
+    PolicyInputRequest {analysis_context:None,workspace_auxiliary:Vec::new(),workspace_generators:Vec::new(),
         workspace: None,
         files: files
             .iter()

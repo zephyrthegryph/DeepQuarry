@@ -1,0 +1,5 @@
+/proc/probe()
+    try
+        return 0
+    catch(var/a,var/b)
+        return b

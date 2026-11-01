@@ -457,7 +457,7 @@ fn binding_setup() -> (Memory, RecordingInputs<Memory>, ColdFrontend, PathBuf) {
 fn bind_intent(
     files: Vec<crate::policy_request::PolicyInputFile>,
 ) -> crate::policy_request::AdmittedPolicyRequest {
-    crate::policy_request::PolicyInputRequest {workspace_auxiliary:Vec::new(),workspace_generators:Vec::new(),
+    crate::policy_request::PolicyInputRequest {analysis_context:None,workspace_auxiliary:Vec::new(),workspace_generators:Vec::new(),
         workspace: None,
         files,
         search_folders: vec![],
@@ -637,7 +637,7 @@ fn binding_requires_exact_explicit_search_scope_not_incidental_folder_proofs() {
     let (_, inputs, frontend) = setup();
     let folder = std::env::current_dir().unwrap().join("policy-search-scope");
     let empty = PolicyInputRequest::default().admit().unwrap();
-    let expected = PolicyInputRequest {workspace_auxiliary:Vec::new(),workspace_generators:Vec::new(),
+    let expected = PolicyInputRequest {analysis_context:None,workspace_auxiliary:Vec::new(),workspace_generators:Vec::new(),
         workspace: None,
         files: vec![],
         search_folders: vec![folder.clone()],

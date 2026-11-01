@@ -237,7 +237,26 @@ pub struct ColdFrontend {
     setting_expression_queries: Option<std::sync::Weak<dyn SettingExpressionQueries>>,
 }
 
+/// Readonly storage census view of existing frontend payloads. It lends no
+/// compiler/runtime receiver and grants no source-current or completion proof.
+pub struct FrontendStorageView<'a>{
+ pub plan:&'a DirectivePlan,pub expanded:&'a ExpandedRegions,pub syntax:&'a Arc<DeclarationSyntax>,pub allocation_ledger:&'a Arc<crate::allocation_ledger::AllocationLedger>,pub snapshot:&'a TreeSnapshot,pub files:&'a Arc<[SourceFile]>,pub bodies:&'a Arc<[BodyOccurrence]>,pub emission_order:&'a Arc<[OccurrenceId]>,frontend:&'a ColdFrontend,
+}
+impl FrontendStorageView<'_>{
+ pub fn callable_roster(&self)->Result<&Arc<CallableRoster>,String>{self.frontend.callable_roster()}
+ pub fn source_export_mapping(&self)->Option<&Arc<SourceExportMapping>>{self.frontend.source_export_mapping()}
+ pub fn visit_body_code_storage(&self,visit:impl FnMut(usize,usize,usize)){self.frontend.visit_body_code_storage(visit)}
+ pub fn settings_owner_storage(&self)->&Arc<[Option<Arc<dm_ir::ProcedureMetadata>>]>{self.frontend.settings_owner_storage()}
+}
+
+/// Actual borrowed retained-analysis allocations; no source/query authority.
+pub enum AnalysisRetentionStorage<'a>{
+ Allocation{address:usize,bytes:usize},Source(DiagnosticSourceView<'a>),Declarations(&'a crate::declaration_contributions::KeyedDeclarations),Symbols(&'a Arc<dm_ir::SymbolTable>),SymbolTable(&'a dm_ir::SymbolTable),Engine(&'a EngineSeed),Receipt(&'a Arc<crate::diagnostic_declarations::DiagnosticDeclarationReceipt>),
+}
+
 impl ColdFrontend {
+    pub fn storage_view(&self)->FrontendStorageView<'_>{FrontendStorageView{plan:&self.plan,expanded:&self.expanded,syntax:&self.syntax,allocation_ledger:&self.allocation_ledger,snapshot:&self.snapshot,files:&self.files,bodies:&self.bodies,emission_order:&self.emission_order,frontend:self}}
+
     pub fn settings_owner_storage(&self) -> &Arc<[Option<Arc<dm_ir::ProcedureMetadata>>]> {
         &self.issued_settings
     }
@@ -835,6 +854,8 @@ struct Captured<'a, P> {
 }
 
 impl<P: SourceProvider> SourceProvider for Captured<'_, P> {
+    fn initial_environment(&self)->dm_preprocess::InitialEnvironment{self.provider.initial_environment()}
+
     fn acquired_source(
         &self,
         path: &Path,

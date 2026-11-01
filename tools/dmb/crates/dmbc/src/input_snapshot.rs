@@ -315,6 +315,7 @@ pub(crate) use source_acquisition::{
     recorded_source_original, recorded_source_receipt_original, RecordedSourceOriginal, normalize_recorded_policy_original,
 };
 pub struct RecordingInputs<P = FileSystemInputs> {
+    initial_environment:dm_preprocess::InitialEnvironment,
     source_issuer: std::sync::Arc<()>,
     source_acquisitions: Mutex<BTreeMap<PathBuf, dm_preprocess::AcquiredSource>>,
     exceptional_originals: Mutex<BTreeMap<PathBuf, source_original::ExceptionalOriginal>>,
@@ -334,6 +335,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         // Merged retained parts narrow this (`InputSnapshot::merge`).
         snapshot.watch.replace(created);
         Self {
+            initial_environment:dm_preprocess::InitialEnvironment::Native5161687,
             source_issuer: std::sync::Arc::new(()),
             source_acquisitions: Mutex::new(BTreeMap::new()),
             created,
@@ -345,6 +347,8 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             exceptional_originals: Mutex::new(BTreeMap::new()),
         }
     }
+    /// Pipeline configuration only, never a source/current/completion receipt.
+    pub(crate) fn with_initial_environment(mut self,environment:dm_preprocess::InitialEnvironment)->Self{self.initial_environment=environment;self}
     pub fn with_exact_reuse(mut self, exact: bool) -> Self {
         self.exact_reuse = exact;
         self
@@ -461,6 +465,8 @@ fn decode_owned_source(bytes: Vec<u8>) -> String {
     }
 }
 impl<P: SnapshotProvider> dm_preprocess::SourceProvider for RecordingInputs<P> {
+    fn initial_environment(&self)->dm_preprocess::InitialEnvironment{self.initial_environment}
+
     fn acquired_source(
         &self,
         path: &Path,

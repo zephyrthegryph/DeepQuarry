@@ -25,7 +25,7 @@ fn retained_export_streams_current_facts_without_full_analysis_claims() {
     attempt.capture(&frontend);
     attempt.finish_analyzed();
     drop(attempt);
-    let mut request = QueryRequest {
+    let mut request = QueryRequest {analysis_context:None,
         timeout_seconds: None,
         project: "fixture.dme".into(),
         defines: Default::default(),
@@ -170,7 +170,7 @@ fn retained_export_streams_current_facts_without_full_analysis_claims() {
 
 #[test]
 fn export_rejects_invalid_aggregate_before_transport() {
-    let request = QueryRequest {
+    let request = QueryRequest {analysis_context:None,
         timeout_seconds: None,
         project: "fixture.dme".into(),
         defines: Default::default(),

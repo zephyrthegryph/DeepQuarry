@@ -115,7 +115,7 @@ fn resident_selected_model_uses_same_producer_after_frontend_release() {
     attempt.finish_analyzed();
     drop(attempt);
     drop(frontend);
-    let mut request = crate::daemon::query::QueryRequest {
+    let mut request = crate::daemon::query::QueryRequest {analysis_context:None,
         timeout_seconds: None,
         project: "project.dme".into(),
         defines: Default::default(),

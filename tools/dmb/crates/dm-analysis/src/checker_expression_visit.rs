@@ -16,7 +16,8 @@ use dm_tree::{
     frontend::{ArchivedBody, BodyArchive, ColdFrontend, ParsedBody},
     MemberId, SemanticTree,
 };
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap,borrow::Cow};
+use foldhash::{HashMap,HashMapExt};
 use crate::checker_prefix_demand::{Demand as PrefixDemand,Compatibility as PrefixCompatibility};
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum TypeFact {
@@ -198,20 +199,27 @@ pub fn archived<'a>(
         events: walker.events,
     })
 }
+/// Original evaluator value, carried beside static type by the SAME walk.
+/// These are borrowed primary literal/path facts, never native compiler constants.
+#[derive(Clone,Copy,Debug)]pub(crate) enum OriginalValue<'a>{Null,Literal(&'a dm_syntax::LiteralText),PrefabPath(&'a str),PrefabOwner(SymbolId),ProcedurePath{owner:SymbolId,kind:Option<&'static str>,name:&'a str}}
 /// Checker facts for an existing native local binding, not another model.
 /// The proof is intentionally narrow: authored null/literal initialization,
 /// with no later reassignment, argument escape, or unsupported initializer.
+/// original_value is the separate pinned evaluator channel: its local saved
+/// value intentionally survives assignment, matching the original evaluator.
 #[derive(Clone, Copy, Debug)]
-struct LocalFact {
+struct LocalFact<'a> {
+    original_value:Option<OriginalValue<'a>>,
     ty: TypeFact,
     declaration: Option<Span>,
     mutation_pure: bool,
     impurity: Option<bool>,
 }
-impl LocalFact {
+impl LocalFact<'_> {
     fn unproved(ty: TypeFact) -> Self {
         Self {
             ty,
+            original_value:None,
             declaration: None,
             mutation_pure: false,
             impurity: None,
@@ -220,13 +228,19 @@ impl LocalFact {
 }
 /// Borrowed pre-RHS hook in the existing evaluated call transition.
 /// The callback may retain source metadata, never the temporary CallableFact.
+pub(crate) trait StaticObserver<E>{fn failure(&mut self,failure:crate::checker_static_reference::Failure<'_>,name:&str,procedure:bool,at:Span,expression:Span)->Result<(),E>;}
+pub(crate) trait CatchObserver<E>{fn parameters(&mut self,count:usize,at:Span,expression:Span)->Result<(),E>;}
 pub(crate) trait KeywordObserver<E>{fn begin_call(&mut self,tree:&SemanticTree,fact:&CallableFact,name:&str)->Result<(),E>;fn accepted_argument(&mut self,tree:&SemanticTree,fact:&CallableFact,receiver:SymbolId,name:&str,key:&Expr,at:Span)->Result<(),E>;}
 /// Untagged original call-argument errors at the same pre-RHS transition.
-pub(crate) trait ArgumentObserver<E>{fn begin_call(&mut self,tree:&SemanticTree,fact:&CallableFact,name:&str)->Result<(),E>;fn argument(&mut self,tree:&SemanticTree,fact:&CallableFact,name:&str,key:Option<&Expr>,after_keyword:bool,at:Option<Span>,expression:Span)->Result<(),E>;}
+pub(crate) type NamedArguments<'a>=HashMap<Cow<'a,str>,&'a Expr>;
+#[derive(Clone,Copy,Debug,Default)]pub(crate) struct OriginalArguments<'a>{pub(crate) type_present:bool,pub(crate) type_value:Option<OriginalValue<'a>>,pub(crate) first_arglist:bool}
+pub(crate) trait ArgumentObserver<E>{fn reserve(&mut self,bytes:usize)->Result<(),E>;fn original_values(&self)->bool{false}fn finished(&mut self,_tree:&SemanticTree,_fact:&CallableFact,_name:&str,_args:&[Expr],_named:&NamedArguments<'_>,_values:OriginalArguments<'_>,_at:Option<Span>,_expression:Span)->Result<(),E>{Ok(())}fn begin_call(&mut self,tree:&SemanticTree,fact:&CallableFact,name:&str)->Result<(),E>;fn argument(&mut self,tree:&SemanticTree,fact:&CallableFact,name:&str,key:Option<&Expr>,after_keyword:bool,at:Option<Span>,expression:Span)->Result<(),E>;}
 #[derive(Clone,Copy)]struct KeywordCall<'c>{fact:&'c CallableFact,receiver:SymbolId,name:&'c str,at:Option<Span>,expression:Span,exact:bool}
 struct Walker<'a, 'r, R: ?Sized,D:PrefixDemand=PrefixCompatibility> {
     prefix_demand:D,
     keywords:Option<&'r mut dyn KeywordObserver<D::Error>>,
+    static_errors:Option<&'r mut dyn StaticObserver<D::Error>>,
+    catch_errors:Option<&'r mut dyn CatchObserver<D::Error>>,
     argument_errors:Option<&'r mut dyn ArgumentObserver<D::Error>>,
     tree: &'a SemanticTree,
     prefix_archive: Option<&'a BodyArchive>,
@@ -236,12 +250,14 @@ struct Walker<'a, 'r, R: ?Sized,D:PrefixDemand=PrefixCompatibility> {
     resolver: &'r R,
     profile: PackedU128,
     owner: SymbolId,
-    locals: BTreeMap<SymbolId, LocalFact>,
+    locals: BTreeMap<SymbolId, LocalFact<'a>>,
     events: Vec<Event<'a>>,
-    scopes: Vec<BTreeMap<SymbolId, LocalFact>>,
+    scopes: Vec<BTreeMap<SymbolId, LocalFact<'a>>>,
     in_arguments: bool,
     effects: Option<crate::checker_effects::Draft>,
     last_impurity: Option<bool>,
+    original_value:Option<OriginalValue<'a>>,
+    original_values:bool,
     new_context: usize,
     evaluation_anchor: Option<crate::checker_effects::CallOrigin>,
     statement_root: Option<&'a Expr>,
@@ -335,6 +351,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         Ok(Walker {
             prefix_demand,
             keywords:None,
+            static_errors:None,catch_errors:None,
             argument_errors:None,
             tree,
             prefix_archive,
@@ -350,6 +367,8 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             in_arguments: false,
             effects: None,
             last_impurity: None,
+            original_value:None,
+            original_values:false,
             new_context: 0,
             evaluation_anchor: None,
             statement_root: None,
@@ -363,7 +382,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
     fn local_map_bound(entries: usize) -> usize {
         entries
             .saturating_mul(Self::local_entry_bound())
-            .saturating_add(std::mem::size_of::<BTreeMap<SymbolId, LocalFact>>())
+            .saturating_add(std::mem::size_of::<BTreeMap<SymbolId, LocalFact<'a>>>())
             .saturating_add(64)
     }
     fn check_effect_admission(&self) -> Result<(), D::Error> {
@@ -373,7 +392,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         }
         Ok(())
     }
-    fn insert_local(&mut self, name: SymbolId, fact: LocalFact) -> Result<(), D::Error> {
+    fn insert_local(&mut self, name: SymbolId, fact: LocalFact<'a>) -> Result<(), D::Error> {
         if let Some(effects) = &self.effects {
             effects.transient.charge(Self::local_entry_bound())?
         }
@@ -523,6 +542,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             SymbolId::of(name),
             LocalFact {
                 ty,
+                original_value:if value.is_some(){self.original_value}else if fact.implicit_list_initializer().is_some(){None}else{Some(OriginalValue::Null)},
                 declaration: Some(fact.name),
                 mutation_pure: literal_mutation_origin(value)?,
                 impurity,
@@ -571,15 +591,23 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
       if let(Some(call),Some(observer))=(call,self.keywords.as_mut()){observer.begin_call(self.tree,call.fact,call.name)?;}
       if let(Some(call),Some(observer))=(call,self.argument_errors.as_mut()){observer.begin_call(self.tree,call.fact,call.name)?;}
       let mut any_keywords=false;
-      for argument in args {
+      let filter=call.is_some_and(|call|self.argument_errors.as_ref().is_some_and(|observer|observer.original_values())&&call.name=="filter"&&call.fact.owner()==Some(SymbolId::of("/")));
+      let mut values=OriginalArguments::default();
+      let mut named=filter.then(NamedArguments::new);
+      if filter{let bytes=args.len().checked_mul(std::mem::size_of::<(Cow<'_,str>,&Expr)>()).and_then(|n|n.checked_mul(16)).and_then(|n|n.checked_add(args.len().checked_mul(1024)?)).ok_or_else(||self.prefix_demand.resource("filter argument map capacity overflow"))?;self.argument_errors.as_mut().expect("filter observer selected").reserve(bytes)?;named.as_mut().expect("filter map selected").try_reserve(args.len()).map_err(|_|self.prefix_demand.resource("filter argument map allocation refused"))?;if named.as_ref().expect("filter map selected").capacity()>args.len().saturating_mul(4).saturating_add(3){return Err(self.prefix_demand.resource("filter argument map exceeded admitted capacity"))}}
+      let mut original_index=0usize;for argument in args.iter() {
+        if filter&&argument.span.start==argument.span.end&&matches!(&argument.kind,ExprKind::Literal(value)if value.as_str()=="null"){continue}let index=original_index;original_index=original_index.checked_add(1).ok_or("original argument index overflow")?;
         let (key,value)=match &argument.kind{ExprKind::Binary{op,lhs,rhs}if op=="="&&kwarg_key_mode(lhs,self.access.is_some())?=>(Some(lhs.as_ref()),rhs.as_ref()),_=>(None,argument)};
         // Original visit_call records the accepted key BEFORE visiting its
         // RHS. The enclosing call therefore wins this key before nested calls.
         any_keywords|=key.is_some();
         if let(Some(call),Some(observer))=(call,self.argument_errors.as_mut()){observer.argument(self.tree,call.fact,call.name,key,key.is_none()&&any_keywords,call.at,call.expression)?;}
         if let(Some(call),Some(key),Some(observer))=(call.filter(|call|!call.exact),key,self.keywords.as_mut()){observer.accepted_argument(self.tree,call.fact,call.receiver,call.name,key,call.at.ok_or("virtual keyword call lacks original source point")?)?;}
+        if filter&&index==0&&key.is_none(){values.first_arglist=matches!(&value.kind,ExprKind::Call{callee,..}if matches!(&callee.kind,ExprKind::Ident(name)if name=="arglist"));}
         let previous=self.in_arguments;self.in_arguments=true;let result=self.expression(value,None);self.in_arguments=previous;result?;
-      }Ok(())
+        if filter{if let Some(key)=key{let demand=&self.prefix_demand;let observer=self.argument_errors.as_mut().expect("selected filter observer");let name=original_argument_key::<D::Error>(key,&mut|bytes|observer.reserve(bytes),&|message|demand.resource(message))?;if name=="type"{values.type_present=true;values.type_value=self.original_value;}named.as_mut().expect("filter map selected").insert(name,value);}}
+      }
+      if filter{if let(Some(call),Some(observer))=(call,self.argument_errors.as_mut()){observer.finished(self.tree,call.fact,call.name,args,named.as_ref().expect("filter map selected"),values,call.at,call.expression)?;}}Ok(())
     }
     fn exact_policy_arguments(&mut self,args:&'a[Expr],at:Span,expression:Span,parent:bool)->Result<(),D::Error>{
         let target=if let Some(access)=self.access.as_mut(){let target=access.explicit_fact(parent,self.resolver,self.profile,&self.prefix_demand)?.ok_or("issued exact source call disappeared")?;access.call(&target,self.owner,false,Some(at),expression,self.resolver,self.profile,&self.prefix_demand)?;Some(target)}else{None};
@@ -1092,13 +1120,26 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
     ) -> Result<TypeFact, D::Error> {
         self.check_effect_admission()?;
         self.last_impurity = None;
+        self.original_value=None;
         let result = self.expression_inner(expression, hint)?;
+        // Child argument/RHS evaluation must not leak a value into a call,
+        // unary or binary result. Only the original propagation cases retain it.
+        if !match &expression.kind{ExprKind::Ident(_)|ExprKind::Literal(_)|ExprKind::TypePath(_)|ExprKind::Group(_)|ExprKind::Conditional{..}|ExprKind::Index{..}|ExprKind::SafeIndex{..}|ExprKind::ObjectInitializer{..}|ExprKind::StaticMember{..}=>true,ExprKind::Binary{op,..}=>op=="=",ExprKind::Call{callee,..}=>matches!(callee.kind,ExprKind::StaticMember{..}),_=>false}{self.original_value=None;}
         if self.effects.is_some() {
             if let TypeFact::Deferred(reason) = result {
                 return Err(reason.into());
             }
         }
         Ok(result)
+    }
+    fn static_failure(&mut self,failure:crate::checker_static_reference::Failure<'a>,name:&str,procedure:bool,at:Span,expression:Span)->Result<TypeFact,D::Error>{self.original_value=None;self.last_impurity=None;self.prefix_demand.checkpoint()?;if let Some(observer)=self.static_errors.as_mut(){observer.failure(failure,name,procedure,at,expression)?;}Ok(TypeFact::Unhinted)}
+    fn static_reference(&mut self,expression:&'a Expr,follow:&'a Expr,object:&'a Expr,name:&'a str,procedure:bool)->Result<TypeFact,D::Error>{
+        use crate::checker_static_reference::Failure;
+        if !self.original_values{return Err("static references require the original evaluated value channel".into())}
+        let base=self.expression(object,None)?;let value=self.original_value;self.original_value=None;self.last_impurity=None;let end=follow.span.end.checked_sub(name.len()).ok_or("static selector origin underflow")?;if self.source.get(end..follow.span.end)!=Some(name){return Err("static selector differs from primary span".into())}let gap=self.source.get(object.span.end..end).ok_or("static separator outside primary spans")?;if gap.trim()!="::"{return Err("static separator needs retained primary token origin".into())}let offset=object.span.end+gap.len()-gap.trim_start().len();let at=Span::new(offset,offset+2);
+        let owner=if let Some(owner)=base.receiver()?{owner}else{let Some(value)=value else{return self.static_failure(Failure::NoValue,name,procedure,at,expression.span)};if matches!(value,OriginalValue::Null|OriginalValue::Literal(_)){return self.static_failure(Failure::NonPath(value),name,procedure,at,expression.span)}let Some(owner)=crate::checker_static_reference::prefab_type_using(self.tree,self.resolver,value,&mut||self.prefix_demand.checkpoint())?else{return self.static_failure(Failure::MissingType(value),name,procedure,at,expression.span)};owner};
+        if procedure{let fact=checker_call_facts::callable_any_using(self.tree,self.resolver,self.profile,owner,SymbolId::of(name),&mut||self.prefix_demand.checkpoint())?;if matches!(fact,CallableFact::Missing){return self.static_failure(Failure::MissingProc(owner),name,true,at,expression.span)}let declaring=fact.owner().ok_or("static proc reference resolved owner absent")?;let kind=crate::checker_static_reference::declaration_kind_using(self.tree,self.resolver,self.profile,declaring,SymbolId::of(name),&mut||self.prefix_demand.checkpoint())?;self.original_value=Some(OriginalValue::ProcedurePath{owner,kind,name});Ok(TypeFact::Unhinted)
+        }else{match crate::checker_variable_facts::variable(self.tree,self.resolver,self.profile,owner,SymbolId::of(name))?{Some(fact)=>self.variable_type(&fact),None=>self.static_failure(Failure::MissingField(owner),name,false,at,expression.span)}}
     }
     fn expression_inner(
         &mut self,
@@ -1160,13 +1201,15 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 if let Some(local) = self.locals.get(&SymbolId::of(name)).copied() {
                     let ty = local.ty;
                     self.last_impurity = local.impurity;
+                    self.original_value=local.original_value;
                     if self.in_arguments {
                         self.invalidate_local_name(SymbolId::of(name));
                     }
                     return Ok(ty);
                 }
                 // Pinned `type` is a prefab/value fact, not a field declaration.
-                if matches!(name.as_str(), "type" | "null") {
+                if matches!(name.as_str(), "type" | "null") || self.original_values&&matches!(name.as_str(),"__TYPE__"|"__IMPLIED_TYPE__"|"__PROC__") {
+                    self.original_value=match name.as_str(){"null"=>Some(OriginalValue::Null),"__PROC__"=>None,"__IMPLIED_TYPE__"=>hint.map(OriginalValue::PrefabOwner),_=>Some(OriginalValue::PrefabOwner(self.owner))};
                     return Ok(TypeFact::Unknown);
                 }
                 match crate::checker_variable_facts::variable(
@@ -1192,18 +1235,18 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 }
             }
             ExprKind::Literal(text) => {
+                let mut static_value=true;
                 if let Some(parts) = (if self.access.is_some(){text.syntax_parts()}else{text.parts()}).map_err(str::to_owned)? {
-                    parts
-                        .lexical
-                        .map_err(|e| format!("checker literal context unsupported: {e:?}"))?;
+                    static_value=!parts.lexical.map_err(|e|format!("checker literal context unsupported: {e:?}"))?.interpolated;
                     for child in &parts.expressions {
                         self.expression(child, None)?;
                     }
                 }
                 self.last_impurity = None;
+                self.original_value=static_value.then_some(OriginalValue::Literal(text));
                 Ok(TypeFact::Unknown)
             }
-            ExprKind::TypePath(_) => Ok(TypeFact::Unknown),
+            ExprKind::TypePath(path) => {if self.original_values{let owner=crate::checker_prefab_value::value_using(self.tree,self.resolver,self.profile,self.owner,path,&mut||self.prefix_demand.checkpoint())?.ok_or("original prefab needs unresolved-path diagnostic projection")?;self.original_value=Some(OriginalValue::PrefabOwner(owner));}Ok(TypeFact::Unknown)},
             ExprKind::Group(value) => {
                 let old = self.evaluation_anchor;
                 if self.effects.is_some() {
@@ -1233,8 +1276,10 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 self.expression(condition, None)?;
                 let first = self.expression(then_value, hint)?;
                 let impurity = self.last_impurity;
+                let original_value=self.original_value;
                 self.expression(else_value, hint)?;
                 self.last_impurity = impurity;
+                self.original_value=original_value;
                 Ok(first)
             }
             ExprKind::Binary { op, lhs, rhs } => {
@@ -1395,6 +1440,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 ExprKind::Ident(name) => {
                     self.ordinary_call(expression, callee.span, name, self.owner, args, false)
                 }
+                ExprKind::StaticMember{object,selector}=>self.static_reference(expression,callee,object,selector,true),
                 ExprKind::Member {
                     object,
                     selector,
@@ -1439,6 +1485,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 }
                 _ => Err("call target requires pinned follow/selector origin context".into()),
             },
+            ExprKind::StaticMember{object,selector}=>self.static_reference(expression,expression,object,selector,false),
             ExprKind::Member {
                 object,
                 selector,
@@ -1509,7 +1556,9 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             ExprKind::Index { object, index } | ExprKind::SafeIndex { object, index } => {
                 let base = self.expression(object, None)?;
                 let impurity = self.last_impurity;
+                let original=self.original_value;
                 self.expression(index, None)?;
+                self.original_value=if matches!(base,TypeFact::List(_)|TypeFact::NestedList{..}){None}else{original};
                 self.last_impurity = if matches!(base, TypeFact::List(_)|TypeFact::NestedList{..}) {
                     None
                 } else {
@@ -1622,12 +1671,21 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                     ),
                 }
             }
+            ExprKind::Unary{op,value}if matches!(op.as_str(),"!"|"-"|"~"|"&"|"*")=>{
+                // Pinned visit_follow visits the operand first. visit_unary
+                // clears static type, value, fix hint and impurity for these
+                // operators (Not adds assumptions only, not a static type).
+                let _at=prefix_origin(self.source,expression,value,op)?;
+                self.expression(value,None)?;self.last_impurity=None;
+                Ok(TypeFact::Unhinted)
+            }
             ExprKind::Unary { .. } => {
                 Err("unary expression needs exact primary term-origin projection".into())
             }
             ExprKind::ObjectInitializer { object, .. }
                 if matches!(object.kind, ExprKind::TypePath(_)) =>
             {
+                if self.original_values{self.expression(object,None)?;}
                 Ok(TypeFact::Unknown)
             } // pinned Prefab fields are not evaluated
             ExprKind::ObjectInitializer { .. } => {
@@ -1760,28 +1818,12 @@ impl<'a,R:Resolver+?Sized,D:PrefixDemand> EvaluatedObserver<'a,D::Error> for Wal
         // Existing (nondeclared) range bindings deliberately skip their start.
         Ok(())
     }
-    fn catch_binding(&mut self, binding: Option<&'a str>, at: Span) -> Result<(), D::Error> {
-        if let Some(binding) = binding {
-            if binding.trim().is_empty() {
-                return Ok(());
-            }
-            let issued = self
-                .local_syntax
-                .entries()
-                .map_err(str::to_owned)?
-                .iter()
-                .any(|fact| {
-                    fact.source_kind == dm_syntax::LocalSourceKind::CatchBinding
-                        && fact.anchor.start >= at.start
-                        && fact.anchor.start < at.end
-                });
-            if issued {
-                self.declaration(binding, None, at)?;
-            } else {
-                self.binding(binding, None, true, at)?;
-            }
-        }
-        Ok(())
+    fn catch_parameters(&mut self,count:usize,at:Span,catch_header:Span)->Result<(),D::Error>{self.prefix_demand.checkpoint()?;if let Some(observer)=self.catch_errors.as_mut(){observer.parameters(count,at,catch_header)?;}Ok(())}
+    fn catch_binding(&mut self,binding:Option<&'a str>,at:Span)->Result<(),D::Error>{
+        let Some(binding)=binding else{return Ok(())};if binding.trim().is_empty(){return Ok(())}
+        let ledger=self.local_syntax;let facts=ledger.in_span(at).map_err(str::to_owned)?;let mut found=false;
+        for fact in facts.iter().filter(|fact|fact.source_kind==dm_syntax::LocalSourceKind::CatchBinding){self.prefix_demand.checkpoint()?;found=true;self.declaration(binding,None,Span::new(fact.anchor.start,fact.name.end))?;}
+        if !found{return Err("actual catch binding has no primary parameter facts".into())}Ok(())
     }
 }
 /// Reuse the privately issued ORIGINAL parameter path, then authenticate every
@@ -2216,5 +2258,20 @@ pub(crate) fn keyword_calls_archived(archive:&BodyArchive,body:&ArchivedBody<'_>
 pub(crate) fn call_arguments_archived(archive:&BodyArchive,body:&ArchivedBody<'_>,resolver:&(impl Resolver+?Sized),profile:PackedU128,checkpoint:&dyn Fn()->std::io::Result<()>,observer:&mut dyn ArgumentObserver<crate::policy_body_demand::PolicyFailure>)->Result<(),crate::policy_body_demand::PolicyFailure>{
  if !body.belongs_to(archive)||!body.statement_body().original_literal_syntax_complete(){return Err("argument call body is foreign or incomplete".into())}
  let demand=crate::checker_prefix_demand::Policy{checkpoint};let mut walker=Walker::new_using(archive.tree(),Some(archive),&body.statement_body().parsed().local_variables,archive.expanded_source(),body.occurrence(),body.checker_parameters(profile)?,resolver,profile,None,demand)?;
- walker.access=Some(crate::checks_proc_visibility::Access::for_keyword_calls(archive,body)?);walker.argument_errors=Some(observer);crate::checker_reachable::archived_original_syntax_with_observer_using(body,&mut walker)?;walker.check_effect_admission()?;Ok(())
+ walker.access=Some(crate::checks_proc_visibility::Access::for_keyword_calls(archive,body)?);walker.original_values=observer.original_values();walker.argument_errors=Some(observer);crate::checker_reachable::archived_original_syntax_with_observer_using(body,&mut walker)?;walker.check_effect_admission()?;Ok(())
+}
+
+fn original_argument_key<'a,E:From<String>+for<'s>From<&'s str>>(key:&'a Expr,reserve:&mut impl FnMut(usize)->Result<(),E>,resource:&impl Fn(&'static str)->E)->Result<Cow<'a,str>,E>{match &key.kind{ExprKind::Ident(name)=>Ok(Cow::Borrowed(name)),ExprKind::Literal(value)=>{let width=value.as_str().len();let bound=width.checked_mul(4).ok_or("original keyword capacity overflow")?;reserve(bound.checked_add(std::mem::size_of::<String>()+128).ok_or("original keyword capacity overflow")?)?;let mut text=String::new();text.try_reserve_exact(width).map_err(|_|resource("original keyword allocation refused"))?;if text.capacity()>bound{return Err(resource("original keyword capacity exceeded"))}struct Fixed<'a>(&'a mut String);impl std::fmt::Write for Fixed<'_>{fn write_str(&mut self,text:&str)->std::fmt::Result{if text.len()>self.0.capacity()-self.0.len(){return Err(std::fmt::Error)}self.0.push_str(text);Ok(())}}if !value.write_pinned_static_text(&mut Fixed(&mut text)).map_err(|error|format!("original argument keyword text: {error:?}"))?{return Err("original keyword is not static text".into())}Ok(Cow::Owned(text))},_=>Err("original argument key is outside the issued keyword grammar".into())}}
+
+/// Fixed original catch Warning uses this SAME evaluated/ordered catch scope.
+pub(crate) fn catch_parameters_archived(archive:&BodyArchive,body:&ArchivedBody<'_>,resolver:&(impl Resolver+?Sized),profile:PackedU128,checkpoint:&dyn Fn()->std::io::Result<()>,observer:&mut dyn CatchObserver<crate::policy_body_demand::PolicyFailure>)->Result<(),crate::policy_body_demand::PolicyFailure>{
+ if !body.belongs_to(archive)||!body.statement_body().original_literal_syntax_complete(){return Err("catch policy body is foreign or incomplete".into())}let demand=crate::checker_prefix_demand::Policy{checkpoint};let mut walker=Walker::new_using(archive.tree(),Some(archive),&body.statement_body().parsed().local_variables,archive.expanded_source(),body.occurrence(),body.checker_parameters(profile)?,resolver,profile,None,demand)?;walker.access=Some(crate::checks_proc_visibility::Access::for_keyword_calls(archive,body)?);walker.catch_errors=Some(observer);crate::checker_reachable::archived_original_syntax_with_observer_using(body,&mut walker)?;walker.check_effect_admission()?;Ok(())
+}
+
+/// Static-reference diagnostics use the same ordered evaluator and value facts.
+pub(crate) fn static_references_archived(archive:&BodyArchive,body:&ArchivedBody<'_>,resolver:&(impl Resolver+?Sized),profile:PackedU128,checkpoint:&dyn Fn()->std::io::Result<()>,observer:&mut dyn StaticObserver<crate::policy_body_demand::PolicyFailure>)->Result<(),crate::policy_body_demand::PolicyFailure>{if !body.belongs_to(archive)||!body.statement_body().original_literal_syntax_complete(){return Err("static policy body is foreign or incomplete".into())}let demand=crate::checker_prefix_demand::Policy{checkpoint};let mut walker=Walker::new_using(archive.tree(),Some(archive),&body.statement_body().parsed().local_variables,archive.expanded_source(),body.occurrence(),body.checker_parameters(profile)?,resolver,profile,None,demand)?;walker.access=Some(crate::checks_proc_visibility::Access::for_keyword_calls(archive,body)?);walker.original_values=true;walker.static_errors=Some(observer);crate::checker_reachable::archived_original_syntax_with_observer_using(body,&mut walker)?;walker.check_effect_admission()?;Ok(())}
+
+/// Validate the already-parsed prefix span; never lex or parse a new node.
+fn prefix_origin(source:&str,expression:&Expr,operand:&Expr,op:&str)->Result<Span,String>{
+ if expression.span.end!=operand.span.end||op.len()!=1{return Err("prefix operand extent differs from primary expression".into())}let start=expression.span.start;let end=start.checked_add(op.len()).ok_or("prefix origin overflow")?;if source.get(start..end)!=Some(op)||source.get(end..operand.span.start).is_none_or(|gap|!gap.chars().all(char::is_whitespace)){return Err("prefix needs retained primary operator origin".into())}Ok(Span::new(start,end))
 }

@@ -230,7 +230,7 @@ fn build_with_executor_and_semantic_state_for_policy_demand<P:SourceProvider,D:s
     // defines: every unchanged include subtree of its plan is adopted, not interpreted again.
     let previous = semantic_state
         .as_ref()
-        .and_then(|state| state.previous_frontend(project, defines));
+        .and_then(|state| state.previous_frontend(project,defines,provider.initial_environment(),diagnostic.is_some()));
     let (mut plan, mut plan_reuse) = dm_preprocess::regions::plan_regions_incremental(
         project,
         &captured,
@@ -503,7 +503,7 @@ fn build_with_executor_and_semantic_state_for_policy_demand<P:SourceProvider,D:s
         && previous
             .as_ref()
             .zip(semantic_state.as_ref())
-            .is_some_and(|(old, state)| state.admits_remembered_owner(old, config.engine))
+            .is_some_and(|(old, state)| state.admits_preparation_owner(old, config.engine))
     {
         let old = previous
             .as_ref()
@@ -527,7 +527,9 @@ fn build_with_executor_and_semantic_state_for_policy_demand<P:SourceProvider,D:s
                 // Return through the same private branch below, never parse or
                 // normalize an unchanged program a second time.
                 if let Some(slot) = diagnostic {
-                    *slot=Some(crate::diagnostic_declarations::DiagnosticDeclarationReceipt::reused_valid_tree(&frontend.snapshot.tree));
+                    let mut receipt=crate::diagnostic_declarations::DiagnosticDeclarationReceipt::reused_valid_tree(&frontend.snapshot.tree);
+                    receipt.retained_records=old.diagnostic_records();
+                    *slot=Some(receipt);
                 }
                 if let Some(request) = &declaration_request {
                     request.publish_successful();
@@ -691,7 +693,7 @@ fn build_with_executor_and_semantic_state_for_policy_demand<P:SourceProvider,D:s
         let (snapshot, mut receipt) = prepared.into_parts();
         if receipt.errors().is_empty() {
             receipt.retained_records =
-                diagnostic_records.map(|records| records.bind(&snapshot.tree));
+                diagnostic_records.map(|records| Arc::new(records.bind(&snapshot.tree)));
         }
 
         *slot = Some(receipt);

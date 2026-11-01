@@ -8,7 +8,18 @@ use std::sync::Arc;
 pub(super) struct Binding {
     definition: Arc<Macro>,
     origin: Option<DefinitionOrigin>,
+    previous: Option<Arc<Binding>>,
+    previous_digest:u128,
 }
+
+// Original macro stacks can be arbitrarily deep. Release uniquely owned links
+// iteratively; shared persistent snapshots retain their actual old chain.
+impl Drop for Binding { fn drop(&mut self) {
+    let mut previous=self.previous.take();
+    while let Some(owner)=previous { match Arc::try_unwrap(owner) {
+        Ok(mut binding)=>previous=binding.previous.take(),Err(_)=>break,
+    }}
+}}
 // The diagnostic structural diff observes allocation ownership, not macro meaning.
 // Fresh equal-content bindings must be visited because they retain distinct heaps.
 impl PartialEq for Binding {
@@ -59,6 +70,7 @@ fn binding_digest(name: &str, binding: &Binding) -> u128 {
             hash.update(&(origin.source_line as u64).to_le_bytes());
         }
     }
+    if binding.previous.is_some(){hash.update(b"original-definition-stack-v1");hash.update(&binding.previous_digest.to_le_bytes());}
     hash.digest128()
 }
 /// The bindings in which one environment differs from another (`MacroEnvironment::delta_from`): each name with the
@@ -134,43 +146,19 @@ impl MacroEnvironment {
 
     /// Borrow retained payloads; opaque persistent-map node capacity is not exposed.
     /// The binding address and inline size permit deduplication across snapshots.
-    pub fn visit_storage(
-        &self,
-        mut visitor: impl FnMut(&Arc<str>, usize, usize, &Arc<Macro>, Option<&DefinitionOrigin>),
-    ) {
-        for (name, binding) in &self.bindings {
-            visitor(
-                name,
-                Arc::as_ptr(binding) as usize,
-                std::mem::size_of::<Binding>(),
-                &binding.definition,
-                binding.origin.as_ref(),
-            );
-        }
+    pub fn visit_storage(&self,mut visitor:impl FnMut(&Arc<str>,usize,usize,&Arc<Macro>,Option<&DefinitionOrigin>)){
+        self.visit_storage_while(|name,address,bytes,definition,origin|{visitor(name,address,bytes,definition,origin);true});
     }
-
-    /// Visit current bindings absent by allocation identity from a previously
-    /// visited snapshot. The public persistent-map diff skips shared nodes;
-    /// removed bindings are already accounted through the previous snapshot.
-    pub fn visit_storage_difference(
-        &self,
-        previous: &Self,
-        mut visitor: impl FnMut(&Arc<str>, usize, usize, &Arc<Macro>, Option<&DefinitionOrigin>),
-    ) {
-        for difference in previous.bindings.diff(&self.bindings) {
-            let (name, binding) = match difference {
-                im::ordmap::DiffItem::Add(name, binding) => (name, binding),
-                im::ordmap::DiffItem::Update { new, .. } => new,
-                im::ordmap::DiffItem::Remove(_, _) => continue,
-            };
-            visitor(
-                name,
-                Arc::as_ptr(binding) as usize,
-                std::mem::size_of::<Binding>(),
-                &binding.definition,
-                binding.origin.as_ref(),
-            );
-        }
+    /// Returning false means this exact binding was already counted, so its
+    /// shared older chain can stop without another roster or pointer index.
+    pub fn visit_storage_while(&self,mut visitor:impl FnMut(&Arc<str>,usize,usize,&Arc<Macro>,Option<&DefinitionOrigin>)->bool){
+        for(name,binding)in &self.bindings{let mut current=Some(binding);while let Some(binding)=current{if !visitor(name,Arc::as_ptr(binding)as usize,std::mem::size_of::<Binding>(),&binding.definition,binding.origin.as_ref()){break}current=binding.previous.as_ref();}}
+    }
+    pub fn visit_storage_difference(&self,previous:&Self,mut visitor:impl FnMut(&Arc<str>,usize,usize,&Arc<Macro>,Option<&DefinitionOrigin>)){
+        self.visit_storage_difference_while(previous,|name,address,bytes,definition,origin|{visitor(name,address,bytes,definition,origin);true});
+    }
+    pub fn visit_storage_difference_while(&self,previous:&Self,mut visitor:impl FnMut(&Arc<str>,usize,usize,&Arc<Macro>,Option<&DefinitionOrigin>)->bool){
+        for difference in previous.bindings.diff(&self.bindings){let(name,binding)=match difference{im::ordmap::DiffItem::Add(name,binding)=>(name,binding),im::ordmap::DiffItem::Update{new,..}=>new,im::ordmap::DiffItem::Remove(_,_)=>continue};let old=previous.bindings.get(name.as_ref());let mut current=Some(binding);while let Some(binding)=current{if old.is_some_and(|old|Arc::ptr_eq(old,binding)){break}if !visitor(name,Arc::as_ptr(binding)as usize,std::mem::size_of::<Binding>(),&binding.definition,binding.origin.as_ref()){break}current=binding.previous.as_ref();}}
     }
     pub(super) fn insert(
         &mut self,
@@ -181,10 +169,22 @@ impl MacroEnvironment {
         let binding = Arc::new(Binding {
             definition: Arc::new(definition),
             origin,
+            previous:None,previous_digest:0,
         });
         self.fingerprint ^= binding_digest(name, &binding);
         if let Some(old) = self.bindings.insert(Arc::from(name), binding) {
             self.fingerprint ^= binding_digest(name, &old);
+        }
+    }
+    pub(super) fn insert_stacked(&mut self,name:&str,definition:Macro,origin:Option<DefinitionOrigin>){
+        let previous=self.bindings.remove(name);
+        let previous_digest=previous.as_ref().map_or(0,|old|binding_digest(name,old));self.fingerprint^=previous_digest;
+        let binding=Arc::new(Binding{definition:Arc::new(definition),origin,previous,previous_digest});
+        self.fingerprint^=binding_digest(name,&binding);self.bindings.insert(Arc::from(name),binding);
+    }
+    pub(super) fn remove_stacked(&mut self,name:&str){
+        if let Some(old)=self.bindings.remove(name){self.fingerprint^=binding_digest(name,&old);
+            if let Some(previous)=&old.previous{self.fingerprint^=binding_digest(name,previous);self.bindings.insert(Arc::from(name),Arc::clone(previous));}
         }
     }
     pub(super) fn remove(&mut self, name: &str) {
@@ -339,5 +339,19 @@ mod tests {
         assert_eq!(second.get("OTHER").unwrap().replacement, "2");
         assert_eq!(env.get("LARGE").unwrap().replacement, "new");
         assert!(env.get("OTHER").is_none());
+    }
+}
+
+#[cfg(test)]mod original_stack_tests{
+ use super::*;
+ fn value(n:usize)->Macro{Macro{parameters:None,variadic:false,replacement:n.to_string()}}
+ #[test]fn original_stack_retains_each_actual_binding_and_drops_deep_unique_history_iteratively(){
+  let mut environment=MacroEnvironment::default();for i in 0..8192{environment.insert_stacked("X",value(i),None);}let mut count=0;environment.visit_storage(|_,_,_,_,_|count+=1);assert_eq!(count,8192);let before=environment.fingerprint();let retained=environment.clone();environment.remove_stacked("X");assert_eq!(environment.get("X").unwrap().replacement,"8190");assert_eq!(retained.get("X").unwrap().replacement,"8191");assert_ne!(environment.fingerprint(),before);drop(retained);drop(environment);
+ }
+    #[test]fn original_history_census_stops_at_actual_already_counted_pop_ancestors(){
+        let mut environment=MacroEnvironment::default();for i in 0..128{environment.insert_stacked("A",Macro{parameters:None,variadic:false,replacement:i.to_string()},None);}
+        let mut seen=std::collections::HashSet::new();let mut calls=0;environment.visit_storage_while(|_,address,_,_,_|{calls+=1;seen.insert(address)});assert_eq!(seen.len(),128);
+        for _ in 0..128{let prior=environment.clone();environment.remove_stacked("A");environment.visit_storage_difference_while(&prior,|_,address,_,_,_|{calls+=1;seen.insert(address)});}
+        assert_eq!(seen.len(),128);assert!(calls<=256,"history pop revisited a whole counted chain: {calls}");assert!(environment.is_empty());
     }
 }

@@ -1,0 +1,5 @@
+/proc/filter_arglists(list/items)
+    filter(arglist(items))
+    filter(1,arglist(items))
+    filter((arglist(items)))
+    filter(size=1,arglist(items))

@@ -943,7 +943,7 @@ fn supported_statements(
                 catch_binding,
                 catch_header_span: _,
                 catch_body,
-            } => {
+            ..} => {
                 catch_binding
                     .as_ref()
                     .is_none_or(|binding| local_name(binding).is_some())
@@ -1144,11 +1144,16 @@ mod original_helper_expression_tests;
 #[cfg(test)]mod original_reference_frontend_backend_boundaries{
  use super::*;
  #[test]fn newly_admitted_original_terms_preserve_explicit_backend_refusals_without_guessing_code(){
-  for(text,reason)in[("&1","unsupported unary operator"),("::src","unsupported unary operator"),(".child/type","unsupported type path literal")]{let source=format!("/proc/probe()\n    return {text}\n");let syntax=dm_syntax::parse(&source);assert!(syntax.diagnostics.is_empty(),"{text}: {:?}",syntax.diagnostics);let failures=compile_simple_proc(&syntax.items[0].children).err().expect("explicit backend gap");assert_eq!(failures.len(),1,"{text}");assert_eq!(failures[0].kind,LowerErrorKind::UnsupportedModel,"{text}");assert_eq!(failures[0].reason,reason,"{text}");}
+  for(text,reason)in[("&1","unsupported unary operator"),("::src","unsupported unary operator"),(".child/type","unsupported type path literal"),(":child/type","unsupported type path literal")]{let source=format!("/proc/probe()\n    return {text}\n");let syntax=dm_syntax::parse(&source);assert!(syntax.diagnostics.is_empty(),"{text}: {:?}",syntax.diagnostics);let failures=compile_simple_proc(&syntax.items[0].children).err().expect("explicit backend gap");assert_eq!(failures.len(),1,"{text}");assert_eq!(failures[0].kind,LowerErrorKind::UnsupportedModel,"{text}");assert_eq!(failures[0].reason,reason,"{text}");}
  }
 }
 
 #[cfg(test)]mod ind_frontend_backend_boundary{
  use super::*;
  #[test]fn original_nan_token_admission_keeps_explicit_backend_refusal_without_an_opcode_guess(){let syntax=dm_syntax::parse("/proc/probe()\n    return 1.#IND\n");assert!(syntax.diagnostics.is_empty(),"{:?}",syntax.diagnostics);let errors=compile_simple_proc(&syntax.items[0].children).err().expect("existing NaN literal backend gap");assert_eq!(errors.len(),1);assert_eq!(errors[0].kind,LowerErrorKind::UnsupportedModel);assert_eq!(errors[0].reason,"unsupported literal");}
+}
+
+#[cfg(test)]mod multiple_catch_receiver_backend_boundary{
+ use super::*;
+ #[test]fn original_multiple_catch_parameters_refuse_runtime_lowering_instead_of_silently_binding_last(){let source="/proc/probe()\n    try\n        return 0\n    catch(var/a,var/b)\n        return b\n";let syntax=dm_syntax::parse(source);assert!(syntax.diagnostics.is_empty());let failures=compile_simple_proc(&syntax.items[0].children).err().expect("multiple VM catch receiver lowering remains explicitly unsupported");assert_eq!(failures.len(),1);assert_eq!(failures[0].kind,LowerErrorKind::UnsupportedModel);assert_eq!(failures[0].reason,"multiple catch parameter lowering is not implemented");}
 }

@@ -138,7 +138,7 @@ impl<'de,const RULE:u8> serde::de::Visitor<'de> for ReportString<RULE>{
  }
 }
 impl<'de,const RULE:u8> serde::Deserialize<'de> for ReportString<RULE>{fn deserialize<D:serde::Deserializer<'de>>(d:D)->Result<Self,D::Error>{d.deserialize_str(Self)}}
-const EXCLUSIVE_TREE_REPORT_NAMES:[&str;4]=["sys/hygiene","sys/resolvers","sys/tables","system_boundary"];
+const EXCLUSIVE_TREE_REPORT_NAMES:[&str;5]=["sys/hygiene","sys/resolvers","sys/tables","system_boundary","sem/keys"];
 struct LintName;
 impl<'de> serde::de::Visitor<'de> for LintName{
  type Value=usize;
@@ -273,6 +273,13 @@ pub fn policy_cli(args:&[String],baseline:bool)->std::process::ExitCode{
    assert!(!crate::native_policy_roster::RAW_FILE_LINT_NAMES.contains(&name));
   }assert_eq!(MAX_OUTPUT,524_288);assert_eq!(MAX_POLICY_OUTPUT,MAX_GENERATION_OUTPUT);
  }
+ #[test]fn native_policy_client_keys_is_exact_exclusive_hard_report_without_raw_authority(){
+  let mut row:serde_json::Value=serde_json::from_slice(&wire(false,false)).unwrap();row["lints"]=serde_json::json!(["sem/keys"]);validate_policy(&serde_json::to_vec(&row).unwrap(),1,false).unwrap();row["clean"]=true.into();row["baseline"]=true.into();validate_policy(&serde_json::to_vec(&row).unwrap(),0,true).unwrap();
+  for names in [serde_json::json!(["sem/keys","scheduler"]),serde_json::json!(["scheduler","sem/keys"]),serde_json::json!(["sem/keys","sys/hygiene"]),serde_json::json!(["sem/keys","sem/keys"]),serde_json::json!(["sem/keys_unported"]),serde_json::json!(["sem/reads"]),serde_json::json!(["SEM/KEYS"])]{row["lints"]=names;assert!(validate_policy(&serde_json::to_vec(&row).unwrap(),0,true).is_err());}
+  assert!(!crate::native_policy_roster::RAW_FILE_LINT_NAMES.contains(&"sem/keys"));assert!(matches!(crate::keys_policy::metadata().policy,crate::lint::Policy::Hard));
+  assert_eq!((MAX_OUTPUT,MAX_POLICY_OUTPUT,MAX_STDERR),(524_288,64*1024*1024,4_194_304));
+ }
+
 }
 
 }

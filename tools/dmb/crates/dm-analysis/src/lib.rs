@@ -89,3 +89,7 @@ pub mod checks_keyword_overrides;
 pub mod checks_call_arguments;
 
 mod checker_original_group;
+
+mod checker_prefab_value;
+
+mod checker_static_reference;

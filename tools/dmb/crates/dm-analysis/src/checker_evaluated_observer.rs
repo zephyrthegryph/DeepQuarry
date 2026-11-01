@@ -44,5 +44,6 @@ pub trait EvaluatedObserver<'a,E=String> {
         always_untyped: bool,
         at: Span,
     ) -> Result<(), E>;
+    fn catch_parameters(&mut self,_count:usize,_try_header:Span,_catch_header:Span)->Result<(),E>{Ok(())}
     fn catch_binding(&mut self, binding: Option<&'a str>, at: Span) -> Result<(), E>;
 }

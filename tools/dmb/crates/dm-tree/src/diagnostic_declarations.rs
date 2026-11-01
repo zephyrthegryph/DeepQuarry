@@ -7,7 +7,7 @@ pub struct DiagnosticDeclarations {
     receipt: DiagnosticDeclarationReceipt,
 }
 pub struct DiagnosticDeclarationReceipt {
-    pub(crate) retained_records: Option<crate::frontend::DiagnosticRetainedRecords>,
+    pub(crate) retained_records: Option<Arc<crate::frontend::DiagnosticRetainedRecords>>,
     errors: Vec<TreeError>,
     pub(crate) settings_compilable: bool,
     owner: Weak<SemanticTree>,

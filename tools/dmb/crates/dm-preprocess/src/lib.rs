@@ -88,6 +88,10 @@ pub struct Macro {
 
 /// Borrowed lookup keeps expansion independent of a concrete snapshot storage.
 pub(crate) trait MacroLookup {
+    fn initial_environment(&self) -> InitialEnvironment { InitialEnvironment::Native5161687 }
+    /// The original directive evaluator buffers a condition; ordinary token
+    /// iteration drains its output and therefore has no defined-name guard.
+    fn condition_expansion(&self)->bool{false}
     fn get_key_value(&self, name: &str) -> Option<(&str, &Macro)>;
     fn location_read(&self, _file: bool) {}
     fn contains_key(&self, name: &str) -> bool {
@@ -151,7 +155,14 @@ pub use source_acquisition::{
     AcquiredSource, SourceAcquisitionIdentity, SourceAcquisitionLease, SourceEncoding,
 };
 
+mod initial_environment;
+pub use initial_environment::InitialEnvironment;
+
 pub trait SourceProvider {
+    /// Exact initial macro dialect requested by this actual pipeline. This is
+    /// configuration only; it cannot issue a current source or completed frame.
+    fn initial_environment(&self)->InitialEnvironment{InitialEnvironment::Native5161687}
+
     fn read(&self, path: &Path) -> Result<String, String>;
     /// Optional primary read with original-byte provenance. Unknown providers
     /// retain existing compiler behavior; they grant no semantic parity proof.

@@ -245,7 +245,7 @@ mod tests {
     use super::*;
     #[test]
     fn rejects_unpinned_or_unbounded_traversal_before_transport() {
-        let mut request = QueryRequest {
+        let mut request = QueryRequest {analysis_context:None,
             timeout_seconds: None,
             project: "not-a-real-project.dme".into(),
             defines: Default::default(),
@@ -315,7 +315,7 @@ mod tests {
         attempt.capture(&frontend);
         attempt.finish_analyzed();
         drop(attempt);
-        let mut request = QueryRequest {
+        let mut request = QueryRequest {analysis_context:None,
             timeout_seconds: None,
             project: "fixture.dme".into(),
             defines: Default::default(),

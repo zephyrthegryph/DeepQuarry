@@ -33,7 +33,7 @@ pub(super) fn validate_requested(reply:&QueryReply,questions:&[SourceQuery])->io
 #[cfg(test)]mod tests{
  use super::*;
  #[test]fn generator_byte_request_canonical_wire_requires_pins_and_bounded_fragments(){
-  let root=std::env::current_dir().unwrap();let mut request=QueryRequest{timeout_seconds:Some(300),project:root.join("project.dme"),defines:Default::default(),engine_template:None,bootstrap_catalog:false,expected_revision:Some("1".repeat(32)),expected_source_revision:Some("2".repeat(32)),expected_policy_revision:Some("3".repeat(32)),queries:vec![],source_queries:vec![SourceQuery::NativeGeneratorBytes{generator:crate::GeneratorName::Deps,cursor:None,limit:97}]};
+  let root=std::env::current_dir().unwrap();let mut request=QueryRequest{analysis_context:None,timeout_seconds:Some(300),project:root.join("project.dme"),defines:Default::default(),engine_template:None,bootstrap_catalog:false,expected_revision:Some("1".repeat(32)),expected_source_revision:Some("2".repeat(32)),expected_policy_revision:Some("3".repeat(32)),queries:vec![],source_queries:vec![SourceQuery::NativeGeneratorBytes{generator:crate::GeneratorName::Deps,cursor:None,limit:97}]};
   let wire=serde_json::to_value(&request).unwrap();assert_eq!(wire["source_queries"][0]["NativeGeneratorBytes"]["generator"],"deps");let roundtrip:QueryRequest=serde_json::from_value(wire).unwrap();roundtrip.validate().unwrap();
   request.expected_policy_revision=None;assert!(request.validate().is_err());request.expected_policy_revision=Some("3".repeat(32));if let SourceQuery::NativeGeneratorBytes{limit,..}=&mut request.source_queries[0]{*limit=MAX_FRAGMENT as u32+1;}assert!(request.validate().is_err());
  }

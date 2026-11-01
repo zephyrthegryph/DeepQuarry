@@ -1406,7 +1406,7 @@ fn actual_ipc_source_question_prepare_and_query_use_real_scope_without_abi_owner
     assert_eq!(owners[0]["body_parser_computed"], 0);
     let request_path = root.join("questions.json");
     let query = |qs: Vec<crate::daemon::query::QueryItem>| {
-        let request = crate::daemon::query::QueryRequest {
+        let request = crate::daemon::query::QueryRequest {analysis_context:None,
             timeout_seconds: Some(30),
             project: project.clone(),
             defines: Default::default(),

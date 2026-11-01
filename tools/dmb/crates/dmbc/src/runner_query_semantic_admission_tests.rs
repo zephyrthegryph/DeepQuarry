@@ -173,7 +173,7 @@ fn incompatible_original_still_has_byte_faithful_raw_policy_findings() {
     let db = Arc::new(crate::query_db::QueryDb::default());
     let (inputs, frontend) = source(b"/proc/probe()\n    // \x80\n    sleep(1)\n", &db);
     let config = root().join("scopes.toml");
-    let intent = PolicyInputRequest {workspace_auxiliary:Vec::new(),workspace_generators:Vec::new(),
+    let intent = PolicyInputRequest {analysis_context:None,workspace_auxiliary:Vec::new(),workspace_generators:Vec::new(),
         workspace: None,
         files: vec![PolicyInputFile {
             path: config.clone(),

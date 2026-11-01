@@ -135,7 +135,7 @@ fn body_context_pages_share_current_owner_and_reject_semantic_stable_source_edit
     attempt.capture(&original);
     attempt.finish_analyzed();
     drop(attempt);
-    let mut request = QueryRequest {
+    let mut request = QueryRequest {analysis_context:None,
         timeout_seconds: None,
         project: "fixture.dme".into(),
         defines: Default::default(),
@@ -208,7 +208,7 @@ fn lazy_body_model_matches_full_current_parser_after_frontend_release() {
     drop(attempt);
     drop(frontend);
     assert_eq!(archive.len(), 2);
-    let mut request = QueryRequest {
+    let mut request = QueryRequest {analysis_context:None,
         timeout_seconds: None,
         project: "fixture.dme".into(),
         defines: Default::default(),

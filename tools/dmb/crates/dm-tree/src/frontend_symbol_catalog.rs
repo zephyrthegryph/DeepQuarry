@@ -8,6 +8,8 @@ pub(crate) struct SymbolCatalog {
     pub(super) engine: Option<SymbolTable>,
 }
 impl SymbolCatalog {
+    pub(super) fn storage_parts(&self)->(&Arc<SymbolTable>,&Arc<SymbolTable>,Option<&SymbolTable>){(&self.symbols,&self.source,self.engine.as_ref())}
+
     pub(super) fn capture(
         previous: Option<&Arc<Self>>,
         source: Arc<SymbolTable>,

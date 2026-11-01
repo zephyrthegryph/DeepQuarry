@@ -3,6 +3,7 @@
 //! Baseline oracle explicitly uses the supported as-of DQ_BASELINE_NO_GEN mode;
 //! this does not certify default generator/check cutover or the unported union.
 #[path="../../../shared/test_scratch.rs"]mod test_scratch;
+#[path="../../../../analyze/fixtures/native-keys/fixture.rs"]mod keys_fixture;
 use std::{error::Error,fs::{self,File},io::{self,Read,Write},path::{Path,PathBuf},process::{Command,Stdio,Child,Output},thread,time::{Duration,Instant},ffi::OsString};
 use dmbc::daemon::analyze::{AnalyzeRequest,BaselineMode};
 const TEST_OUTPUT:usize=4*1024*1024;
@@ -59,5 +60,22 @@ fn main()->Result<(),Box<dyn Error>>{let args=std::env::args_os().skip(1).collec
   let request=native_request(&new,&cache,&[name],true,true,None)?;let result=native(&daemon,&analyze,&request,&cache,false)?;assert_eq!(result.0,1,"{name}: actual positive fixture must fail before seeding");compare(legacy(&analyze,&old,&cache,None,true,true,&[name])?,&result)?;assert_eq!(native(&daemon,&analyze,&request,&cache,true)?,result,"entire as-of report/ALLOW/footer and immutable pins repeat, without shared-refold-work claim");
   let request=native_request(&new,&cache,&[name],false,false,Some(BaselineMode::Seed))?;let result=native(&daemon,&analyze,&request,&cache,true)?;compare(legacy(&analyze,&old,&cache,Some("--seed"),false,false,&[name])?,&result)?;assert_eq!(fs::read(old.join(baseline))?,fs::read(new.join(baseline))?);assert_eq!(fs::read(old.join("tools/ci/lint_scopes.toml"))?,fs::read(new.join("tools/ci/lint_scopes.toml"))?);
   let request=native_request(&new,&cache,&[name],false,false,None)?;let result=native(&daemon,&analyze,&request,&cache,false)?;assert_eq!(result.0,0,"{name}: actual seeded fixture must pass");compare(legacy(&analyze,&old,&cache,None,false,false,&[name])?,&result)?;
+ }
+
+ // Actual independent commands receive the identical original five source cases.
+ // Keys is a hard-message policy: no line text is manufactured for its reports.
+ for case in keys_fixture::CASES{
+  let old=outer.join(format!("keys-{case}-old"));let new=outer.join(format!("keys-{case}-native"));
+  for dir in [&old,&new]{fs::create_dir_all(dir)?;let files=keys_fixture::files(case).ok_or("missing shared Keys fixture")?;for(relative,bytes)in &files{let target=dir.join(relative);fs::create_dir_all(target.parent().ok_or("Keys fixture parent absent")?)?;fs::write(target,bytes)?;}
+   // The real legacy CLI validates every registry-required list before choosing
+   // one lint. Its full CLI fixture therefore needs the full real scopes file;
+   // the shared private policy fixtures deliberately test minimal config.
+   let mut scopes=include_bytes!("../../../../../tools/ci/lint_scopes.toml").to_vec();if let Some((_,overlay))=files.iter().find(|(relative,_)|*relative=="tools/ci/lint_scopes.toml"){scopes.push(b'\n');scopes.extend_from_slice(overlay);}
+   let path=dir.join("tools/ci/lint_scopes.toml");fs::create_dir_all(path.parent().ok_or("Keys scopes parent absent")?)?;fs::write(path,scopes)?;
+  }
+  let old=fs::canonicalize(old)?;let new=fs::canonicalize(new)?;let mut request=native_request(&new,&cache,&["sem/keys"],true,false,None)?;request.build.project=new.join("p.dme");request.build.policy_inputs.as_mut().unwrap().workspace_auxiliary=vec![dmbc::policy_request::WorkspaceAuxiliaryQuestion::Keys];
+  eprintln!("ACTUAL_KEYS_REPORT_CASE={case}");let result=native(&daemon,&analyze,&request,&cache,false)?;assert_eq!(result.0,1,"{case}: seeded Keys hard findings must fail");compare(legacy(&analyze,&old,&cache,None,true,false,&["sem/keys"])?,&result)?;assert_eq!(native(&daemon,&analyze,&request,&cache,true)?,result,"whole Keys hard report/ALLOW/pins repeats; warm work unqualified");
+  let old_config=fs::read(old.join("tools/ci/lint_scopes.toml"))?;let new_config=fs::read(new.join("tools/ci/lint_scopes.toml"))?;let mut baseline=request.clone();baseline.raw=false;baseline.baseline_mode=Some(BaselineMode::Update);let direct=native(&daemon,&analyze,&baseline,&cache,false)?;compare(legacy(&analyze,&old,&cache,Some("--update"),false,false,&["sem/keys"])?,&direct)?;let thin=native(&daemon,&analyze,&baseline,&cache,true)?;assert_eq!(thin,direct,"actual thin Keys baseline uses the same exclusive hard report and complete pinned text");assert_eq!(fs::read(old.join("tools/ci/lint_scopes.toml"))?,old_config);assert_eq!(fs::read(new.join("tools/ci/lint_scopes.toml"))?,new_config);
+  eprintln!("ACTUAL_THIN_KEYS_CHECK_AND_BASELINE_CASE={case}");
  }
  daemon.retire()?;println!("NATIVE_ANALYZE_ACTUAL_CLI_PROOF=whole-old-check-exit1-ci+thin-warm+baseline-seed+check-exit0+baseline-update; as-of baseline no-gen oracle; explicit policies only");Ok(())}

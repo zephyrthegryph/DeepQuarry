@@ -493,3 +493,19 @@ fn a_plan_of_other_defines_is_a_base_for_the_ordered_pass_and_never_for_the_patc
     assert_eq!(reuse.rebased_subtrees, 4, "{reuse:?}");
     assert_eq!(plan.defines, defines);
 }
+
+#[test]fn original_context_survives_real_changed_subtree_splice_and_native_context_rejects_the_predecessor(){
+ struct Original<'a>(&'a Prepared);
+ impl SourceProvider for Original<'_>{
+  fn initial_environment(&self)->crate::InitialEnvironment{crate::InitialEnvironment::OriginalChecker0290}
+  fn read(&self,path:&Path)->Result<String,String>{self.0.read(path)}
+  fn prepared_source(&self,path:&Path)->Option<Arc<prepared_source::PreparedSource>>{self.0.prepared_source(path)}
+  fn revision(&self)->Option<u64>{self.0.revision()}
+  fn changes_since(&self,revision:u64)->Option<Arc<BTreeSet<PathBuf>>>{self.0.changes_since(revision)}
+ }
+ let project=Path::new("project.dme");let memo=Memo::default();let zero=Prepared::new(&[("project.dme","#include \"a.dm\"\n"),("a.dm","#if SPACEMAN_DMM && 1 / 2\nvar/child = 1\n#endif\n")],None);
+ let(previous,_)=plan_regions_incremental(project,&Original(&zero),&BTreeMap::new(),Some(&memo),None);assert!(previous.diagnostics.is_empty(),"{:?}",previous.diagnostics);
+ let changed=Prepared::new(&[("project.dme","#include \"a.dm\"\n"),("a.dm","#if SPACEMAN_DMM && 1 / 2\nvar/child = 2\n#endif\n")],Some(&zero));
+ let(current,reuse)=plan_regions_incremental(project,&Original(&changed),&BTreeMap::new(),Some(&memo),Some(&previous));assert_eq!(current.initial_environment,crate::InitialEnvironment::OriginalChecker0290);assert_eq!(reuse.replanned,1,"{reuse:?}");let fresh=plan_regions(project,&Original(&changed),&BTreeMap::new());plans_equal(&current,&fresh).unwrap();assert!(expand_regions_text(&current,1).text.contains("var/child = 2"));
+ let(native,reuse)=plan_regions_incremental(project,&changed,&BTreeMap::new(),Some(&memo),Some(&current));assert_eq!(native.initial_environment,crate::InitialEnvironment::Native5161687);assert_eq!(reuse.replanned,0);assert!(!expand_regions_text(&native,1).text.contains("var/child"));
+}

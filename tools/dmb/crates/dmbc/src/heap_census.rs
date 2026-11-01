@@ -52,6 +52,7 @@ mod grammar_roster;
 pub(crate) mod initializer_assemblies;
 pub(crate) mod resident_weight;
 mod retained_declarations;
+mod retained_analysis;
 pub(crate) use initializer_assemblies::inspect as initializer_assembly_census;
 mod retained_normalization;
 mod session_symbolic;
@@ -374,6 +375,9 @@ impl HeapCensus {
         self.vec_payload(owner, bytes);
     }
     pub fn frontend(&mut self, frontend: &dm_tree::frontend::ColdFrontend) {
+        self.frontend_storage(frontend.storage_view());
+    }
+    pub(crate) fn frontend_storage(&mut self, frontend: dm_tree::frontend::FrontendStorageView<'_>) {
         if let Ok(roster) = frontend.callable_roster() {
             self.callable_roster(roster);
         }
@@ -463,7 +467,7 @@ impl HeapCensus {
                 }
             }
         }
-        self.macro_environments(frontend);
+        self.macro_environments_plan(frontend.plan);
         self.unknown(
             "frontend.directive_plan",
             "private hash indexes and persistent macro map nodes are not exposed",

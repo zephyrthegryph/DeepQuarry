@@ -20,7 +20,7 @@ fn shared() -> Arc<Shared> {
     })
 }
 fn key(destination: &str) -> RequestKey {
-    RequestKey {
+    RequestKey {analysis_context:None,
         command: RequestCommand::Compile,
         diagnostic_declarations: false,
         original_source_questions: false,

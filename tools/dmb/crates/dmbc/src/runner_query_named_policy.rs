@@ -131,7 +131,9 @@ impl SourceSnapshot {
         crate::daemon::control::checkpoint()?;
         let producer = match family {
             "redefined_proc"=>DiagnosticSeverity::Hint,
-            "call_arguments"=>DiagnosticSeverity::Error,
+            "call_arguments"|"filter_call"=>DiagnosticSeverity::Error,
+            "catch_parameter_count"=>DiagnosticSeverity::Warning,
+            "static_reference"=>DiagnosticSeverity::Error,
             "incompatible_directive" | "private_proc" | "protected_proc" | "must_call_parent" | "must_not_override" => DiagnosticSeverity::Error,
             "ambiguous_not_bitwise"
             | "ambiguous_in_lhs"
@@ -166,6 +168,9 @@ impl SourceSnapshot {
             return Err(io::Error::other("body ordinal unavailable"));
         }
         if family=="call_arguments"{return self.write_original_call_arguments_using(ordinal,environment,tree,capture,&loaded,output)}
+        if family=="filter_call"{return self.write_original_call_policy_using(ordinal,"filter_call",environment,tree,capture,&loaded,output)}
+        if family=="static_reference"{return self.write_original_call_policy_using(ordinal,"static_reference",environment,tree,capture,&loaded,output)}
+        if family=="catch_parameter_count"{return self.write_original_call_policy_using(ordinal,"catch_parameter_count",environment,tree,capture,&loaded,output)}
         if matches!(family,"private_proc"|"protected_proc"|"must_call_parent"|"must_not_override"|"redefined_proc"){return self.write_original_procedure_visibility_using(ordinal,family,environment,tree,capture,&loaded,output)}
         if family=="invalid_lint_directive_value"{return self.write_original_invalid_directive_using(ordinal,environment,tree,capture,&loaded,output)}
         let mut rows = Vec::new();

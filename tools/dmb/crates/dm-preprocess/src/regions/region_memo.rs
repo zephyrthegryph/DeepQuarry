@@ -765,7 +765,7 @@ pub(super) fn expand(
         if record.locations.iter().any(|(ordinal, file, expected)| {
             input.get(*ordinal).is_none_or(|(_, line)| {
                 if *file {
-                    plan.semantic_path(plan.regions[index].occurrence) != *expected
+                    plan.expansion_path(plan.regions[index].occurrence) != *expected
                 } else {
                     line.source_line.to_string() != *expected
                 }
@@ -870,7 +870,7 @@ pub(super) fn expand(
                 ordinal,
                 file,
                 if file {
-                    plan.semantic_path(plan.regions[index].occurrence)
+                    plan.expansion_path(plan.regions[index].occurrence)
                 } else {
                     input[ordinal].1.source_line.to_string()
                 },

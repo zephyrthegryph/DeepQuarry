@@ -1,0 +1,10 @@
+/datum/static_target
+    var/value=1
+    proc/work()
+        return 1
+/proc/probe()
+    var/a = (/datum/static_target{value=1})::value
+    var/b = (/datum/static_target{value=1})::work(doesnotexist)
+    var/c = /datum/static_target{value=1}
+    var/d = c::value
+    var/e = c::work(doesnotexist)

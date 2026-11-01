@@ -643,6 +643,12 @@ impl ExprParser<'_> {
         result
     }
 
+    fn original_prefab_tail(&mut self,start:&str,span:Span,namespace_dot:bool)->Option<Expr>{
+        let mut path=String::from(start);let mut end=span.end;
+        while let Some(next)=self.peek(){if next.span.start!=end{break}if next.kind==TokenKind::Ident||next.text=="/"{path.push_str(&next.text);end=next.span.end;self.index+=1;}else if namespace_dot&&next.text=="."&&self.tokens.get(self.index+1).is_some_and(|kind|matches!(kind.text.as_str(),"proc"|"verb"|"var"))&&self.tokens.get(self.index+2).is_some_and(|slash|slash.text=="/"){path.push('.');path.push_str(&self.tokens[self.index+1].text);end=self.tokens[self.index+1].span.end;self.index+=2;}else{break}}
+        if path==start{self.error(span,format!("expected type path after {start}"));None}else{path.truncate(path.trim_end_matches('/').len());Some(Expr{span:Span::new(span.start,end),kind:ExprKind::TypePath(path)})}
+    }
+
     pub(super) fn prefix(&mut self) -> Option<Expr> {
         let token = self.take()?;
         let span = token.span;
@@ -870,45 +876,8 @@ impl ExprParser<'_> {
                     kind: ExprKind::Group(Box::new(value)),
                 })
             }
-            TokenKind::Punctuation if token.text == "/" => {
-                let mut path = String::from("/");
-                let mut end = span.end;
-                while let Some(next) = self.peek() {
-                    if next.span.start != end {
-                        break;
-                    }
-                    if next.kind == TokenKind::Ident || next.text == "/" {
-                        path.push_str(&next.text);
-                        end = next.span.end;
-                        self.index += 1;
-                    } else if next.text == "."
-                        && self.tokens.get(self.index + 1).is_some_and(|kind| {
-                            matches!(kind.text.as_str(), "proc" | "verb" | "var")
-                        })
-                        && self
-                            .tokens
-                            .get(self.index + 2)
-                            .is_some_and(|slash| slash.text == "/")
-                    {
-                        path.push('.');
-                        path.push_str(&self.tokens[self.index + 1].text);
-                        end = self.tokens[self.index + 1].span.end;
-                        self.index += 2;
-                    } else {
-                        break;
-                    }
-                }
-                if path == "/" {
-                    self.error(span, "expected type path after /");
-                    None
-                } else {
-                    path.truncate(path.trim_end_matches('/').len());
-                    Some(Expr {
-                        span: Span::new(span.start, end),
-                        kind: ExprKind::TypePath(path),
-                    })
-                }
-            }
+            TokenKind::Punctuation if token.text == "/" => self.original_prefab_tail("/",span,true),
+            TokenKind::Punctuation if token.text == ":" => self.original_prefab_tail(":",span,false),
             TokenKind::Punctuation if token.text == "." => {
                 if let Some(second) = self.take_text(".") {
                     Some(Expr {
@@ -917,25 +886,7 @@ impl ExprParser<'_> {
                     })
                 } else if self.peek().is_some_and(|next| next.kind==TokenKind::Ident)
                 {
-                    let mut path = String::from(".");
-                    let mut end = span.end;
-                    while let Some(next) = self.peek() {
-                        if next.span.start != end {
-                            break;
-                        }
-                        if next.kind == TokenKind::Ident || next.text == "/" {
-                            path.push_str(&next.text);
-                            end = next.span.end;
-                            self.index += 1;
-                        } else {
-                            break;
-                        }
-                    }
-                    path.truncate(path.trim_end_matches('/').len());
-                    Some(Expr {
-                        span: Span::new(span.start, end),
-                        kind: ExprKind::TypePath(path),
-                    })
+                    self.original_prefab_tail(".",span,false)
                 } else {
                     Some(Expr {
                         span,
@@ -1237,4 +1188,9 @@ pub(crate) fn parse_expression_with_primary_tokens(source:&str,admission:Option<
  if spans.capacity()>count.saturating_mul(4){if let Some(a)=admission{a.record_operational_error(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"primary interpolation token geometry exposed excess"));}return Err("primary interpolation token geometry exposed excess".into())}
  for token in &lexical.tokens{if let Some(a)=admission{a.checkpoint().map_err(|_|"interpolation operation stopped".to_owned())?;}spans.push(SpanToken{kind:token.kind,span:token.span});}
  Ok((finish_expression_with_admission(lexical.tokens,lexical.diagnostics,admission),spans))
+}
+
+#[cfg(test)]mod original_colon_prefab_primary{
+ use super::*;
+ #[test]fn primary_colon_prefab_preserves_original_node_and_call_arguments_without_changing_ternary(){for text in[":child",":child/type",":proc/run"]{let parsed=parse_expression(text);assert!(parsed.diagnostics.is_empty(),"{text}: {:?}",parsed.diagnostics);let value=parsed.expr.unwrap();assert_eq!(value.span,Span::new(0,text.len()));assert!(matches!(value.kind,ExprKind::TypePath(ref path)if path==text));}let call=parse_expression("filter(type=:child)");assert!(call.diagnostics.is_empty(),"{:?}",call.diagnostics);let ternary=parse_expression("a ? b : c");assert!(ternary.diagnostics.is_empty());assert!(matches!(ternary.expr.unwrap().kind,ExprKind::Conditional{..}));for text in[":",":(child)"]{assert!(!parse_expression(text).diagnostics.is_empty(),"invalid colon prefab {text}");}}
 }
