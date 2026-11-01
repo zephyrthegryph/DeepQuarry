@@ -38,7 +38,7 @@ import sys
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 OUT = os.path.join(ROOT, "tools", "dx", "capability_varmap.json")
 BITS_FILE = os.path.join(ROOT, "code", "defines", "engine", "cap_bits.dm")
-LIB_DIR = os.path.join("code", "datums", "capabilities")
+LIB_DIR = os.path.join("code", "library", "capabilities")
 SKIP_DIRS = ("code/tests/unit_tests/", "code/tests/benchmarks/")
 
 DOC = (
