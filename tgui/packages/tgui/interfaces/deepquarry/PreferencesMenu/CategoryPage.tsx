@@ -13,8 +13,8 @@
 
 import { Box, Section } from 'tgui-core/components';
 import { getEditor } from './editors';
-import { labelForGroup, labelForKey } from './labels';
 import { LooksPage, looksHasBody } from './LooksPage';
+import { labelForGroup, labelForKey } from './labels';
 import { PrefWidget } from './PrefWidget';
 import {
   editorAnchor,

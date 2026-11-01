@@ -291,9 +291,7 @@ export const ColorSwatch = ({
         <span style={swatchStyle(hex)} />
         {showHex && <span style={{ fontFamily: 'monospace' }}>{hex}</span>}
         {label && !showHex && (
-          <span style={{ fontSize: '0.85em', color: 'var(--color-label)' }}>
-            {label}
-          </span>
+          <span style={{ color: 'rgba(255,255,255,0.9)' }}>{label}</span>
         )}
       </span>
     </Floating>
