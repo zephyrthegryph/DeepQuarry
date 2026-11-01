@@ -8,6 +8,23 @@ light_heavy_path() { # <path>: 0 when a light lane may not touch it
 	esac
 	return 1
 }
+# A gate's verdict does not read these: a heavy gate running while one of them lands on master still proves its lanes (dq_push_master.sh
+# DQ_PUSH_NEUTRAL_OK, dq_train.sh light_side). A list of what is known not to matter, not of what is not known to: the compiler, the
+# build, the analyzer, verdigris, the lints and their baselines, and anything a world reads are all left out.
+light_gate_neutral() { # <path>
+	light_heavy_path "$1" && return 1
+	case "$1" in
+		doc/*|html/changelogs/*|*.md|tools/ci/test_*.sh|tools/train/*|tools/hooks/*) return 0 ;;
+		tools/*/*) return 1 ;;
+		tools/dq_*.sh|tools/dq_*.js|tools/dq_*.py) return 0 ;;
+	esac
+	return 1
+}
+light_gate_unneutral_in() { # <base> <tip>: print every path changed since their merge base that a gate may read
+	local base f
+	base="$(git merge-base "$1" "$2" 2>/dev/null)" || { echo "(no merge base of $1 and $2)"; return 0; }
+	git diff --name-only "$base" "$2" 2>/dev/null | while IFS= read -r f; do light_gate_neutral "$f" || echo "$f"; done
+}
 light_heavy_in() { # <base> <tip>: print every heavy path changed between them (the changes of <tip> since the merge base)
 	local base f
 	base="$(git merge-base "$1" "$2" 2>/dev/null)" || base="$1"

@@ -936,14 +936,25 @@ before the gate, and on both single-lane cycles that reused the precheck's proof
   lanes go first, so every DM lane waited behind them (lane wait 22 -> 4 -> 14.7 min, 27 October). The prechecker now runs a light lane's
   cheap checks on its merge with master (`DQ_GATE_LIGHT`, in a precheck worker beside the gates), the light cycle takes a light lane once
   that passed (or after the wait limit), and lands it without repeating the checks (`DQ_LIGHT_TRUST` to `dq_land_batch.sh`) when master
-  changed nothing in the lane's areas since (`light_area`: a compiler crate, `tools/<x>`, a top-level script, a directory; a parent area
-  such as `tools/dmb` overlaps its crates). `DQ_TRAIN_LIGHT_PRECHECK=0` turns it off.
+  changed nothing those checks read since (`tools/train/light_trust.py`, 29e). `DQ_TRAIN_LIGHT_PRECHECK=0` turns it off.
 - **Queue files are written whole.** Every change to a queue file holds `queue.lock` and replaces the file by rename; an edit to a file a
   bounce removed is dropped, never appended into a new one (an append left `perf/refresh-timer` queued with no tip, tests or enqueue time).
   A malformed entry (no seq, branch or tip) is moved to `malformed/`, logged, listed by `status`, and never gated.
 - **A compiler lane's light precheck publishes its compiler.** When a light precheck's merge changes `tools/dmb`, it also runs
   `build.sh dmbc` (content-addressed), so the heavy gate after the lane lands finds the compiler instead of rebuilding it for 3-4
   minutes (`prebuild-compiler` 180-273 s in four of the slow cycles on 27 October). `DQ_GATE_LIGHT_PREBUILD=0` turns it off.
+
+### 29e. Light lanes do not wait for a gate, and repeat only what changed (1 November 2026, `rewrite/train-cost`)
+
+Measured from `train.log` (30 October to 1 November, 18 light cycles): 9 repeated their checks (median 292 s, worst 473 s); `tools/light-selftests-parallel` waited
+2071 s from its passing precheck, behind a 1730 s heavy cycle.
+
+- **The trust rule is what the checks read** (`tools/train/light_trust.py`, `tools/dq_train.sh light_trust`; it replaces `light_area`). A light lane lands on its precheck unless master
+  since then changed: the lane's own files or the checks themselves; its self-tests or what they name (followed through scripts under `tools/`; `tools/build`, `tools/analyze`, `tools/dmb` and `verdigris` count
+  only when named directly); the crates cargo tests for it and their path dependencies; for a lint input, anything but docs; for a doc, a link target. Replayed over the 11 cycles with a moved master: 3 needless repeats become trust (the 473 s one among them), and 1 lane that the directory rule wrongly trusted now repeats. Failing to tell repeats. A path built at run time is not seen; the miss costs a self-test failing on master, never a game build. Self-test: `tools/ci/test_train_light_trust.sh`.
+- **A light lane lands beside a heavy gate** (`light_side_loop`, `DQ_TRAIN_LIGHT_SIDE=0` turns it off). Conditions: a passing light precheck for its tip; every changed path satisfies `light_gate_neutral`
+  (`tools/dq_light_paths.sh`: docs, changelogs, `tools/dq_*`, `tools/train/`, `tools/hooks/`, self-tests; never the compiler, build, analyzer, verdigris, lints, baselines or anything a world reads); no directory shared with the lanes being gated; no bisect being resumed. Others, and a failed attempt, ride the normal light cycle, unbounced. No new landing starts once the gate's push starts.
+- **Why the gate survives it.** The gate's push keeps its strict check except under `DQ_PUSH_NEUTRAL_OK=1`, which only the train's heavy push sets: if everything master gained is neutral it merges master onto the gated commit, verifies the merge differs from the gated commit only in neutral paths and that `dq_push_stamp.sh` accepts it, and skips the compile and the ratchets, whose inputs did not change. Anything else refuses as "origin/master moved": the lanes stay queued for a fresh gate and are not blamed. A light lane changing the compiler or the lints still goes first and alone, as before. Self-test (the real push and stamp scripts): `tools/ci/test_train_light_side.sh`.
 
 ### 29d. A lone prechecked lane lands as a fast-forward (28 October 2026, `train/speed`)
 

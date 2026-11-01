@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - code_imp: "Docs and train-script lanes land while a heavy gate runs; the gate's push carries its proof across them instead of re-gating"
