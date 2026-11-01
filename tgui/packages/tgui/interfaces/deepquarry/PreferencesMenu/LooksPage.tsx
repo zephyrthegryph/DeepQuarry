@@ -1,6 +1,6 @@
 // The Looks tab: categories in the left column (with the body doll, the preview switches and the palette),
 // one category on the right. Every setting has exactly one category; anything no card claims is listed on
-// Skin & body. Ears, tail and wings have no category while absent, just a button on the Add row.
+// Skin & body. Ears, tail and wings always have a category; while absent it is the part's style picker.
 
 import { type ReactNode, useContext, useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
@@ -35,6 +35,7 @@ export type Region =
   | 'ears'
   | 'tail'
   | 'wings'
+  | 'legs'
   | 'markings'
   | 'organs';
 
@@ -44,6 +45,7 @@ const REGION_LABELS: Record<Region, string> = {
   ears: 'Ears',
   tail: 'Tail',
   wings: 'Wings',
+  legs: 'Legs',
   markings: 'Markings',
   organs: 'Limbs & organs',
 };
@@ -74,11 +76,12 @@ type CardId =
   | 'chassis';
 
 export const REGION_CARDS: Record<Region, CardId[]> = {
-  body: ['chassis', 'skin', 'eyes', 'legs'],
+  body: ['chassis', 'skin', 'eyes'],
   hair: ['hair'],
   ears: ['ears'],
   tail: ['tail'],
   wings: ['wings'],
+  legs: ['legs'],
   markings: ['markings'],
   organs: ['organs'],
 };
@@ -174,17 +177,6 @@ export const looksHasBody = (page: PrefCategory) =>
 /// Remembered across tab switches (the page remounts).
 let rememberedRegion: Region = 'body';
 
-/// Parts that may be absent; while absent each is one button on the Add row.
-const OPTIONAL_PARTS: Array<{
-  card: CardId;
-  title: string;
-  styleKey: string;
-}> = [
-  { card: 'ears', title: 'Ears', styleKey: 'ear_style' },
-  { card: 'tail', title: 'Tail', styleKey: 'tail_style' },
-  { card: 'wings', title: 'Wings', styleKey: 'wing_style' },
-];
-
 const PREVIEW_KEYS = ['preview_loadout', 'preview_job', 'animations_toggle'];
 
 /// A hair style that draws nothing: its colours mean nothing either.
@@ -239,8 +231,6 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
 
   // A search jump to a field the current region hides switches to a region that shows it.
   const highlight = useContext(SearchHighlightContext);
-  /// Absent parts whose style picker is open.
-  const [opened, setOpened] = useState<CardId[]>([]);
   const [focusLimb, setFocusLimb] = useState<string | null>(null);
   const [markingZones, setMarkingZones] = useState<
     (typeof ZONE_GROUPS)[number] | null
@@ -249,11 +239,6 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
     if (!highlight) return;
     const target = regionForHighlight(highlight);
     if (!target) return;
-    if (OPTIONAL_PARTS.some((p) => p.card === target)) {
-      setOpened((o) =>
-        o.includes(target as CardId) ? o : [...o, target as CardId],
-      );
-    }
     if (target === 'markings') setMarkingZones(null);
     setRegion(target);
   }, [highlight]);
@@ -279,16 +264,16 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
     .filter((group) => group.items.length > 0);
 
   const zones = markingZones?.zones;
-  const isAbsent = (p: (typeof OPTIONAL_PARTS)[number]) =>
-    isNoStyle(values[p.styleKey]) && !opened.includes(p.card);
-  const absent = OPTIONAL_PARTS.filter((p) => has(p.styleKey) && isAbsent(p));
-  // A category whose part is absent is not offered; if it was showing (the part was just removed), go home.
-  const shownRegion: Region = absent.some((p) => p.card === region)
-    ? 'body'
-    : region;
+  const shownRegion = region;
+  // Synth colour and markings only draw on robotic limbs (organ_icon.dm).
+  const externals = (editorData.organs?.externals ?? {}) as Record<
+    string,
+    { status?: string }
+  >;
+  const hasRoboticLimb = Object.values(externals).some(
+    (limb) => limb?.status === 'cyborg',
+  );
   const cards = REGION_CARDS[shownRegion].filter(cardHasContent);
-  const closePart = (card: CardId) =>
-    setOpened((o) => o.filter((c) => c !== card));
 
   const renderCard = (card: CardId) => {
     switch (card) {
@@ -301,11 +286,13 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
                 values={values}
               />
             )}
-            <Fields
-              keys={['synth_color', 'synth_markings']}
-              withValue={withValue}
-            />
-            {!!values.synth_color && (
+            {hasRoboticLimb && (
+              <Fields
+                keys={['synth_color', 'synth_markings']}
+                withValue={withValue}
+              />
+            )}
+            {hasRoboticLimb && !!values.synth_color && (
               <Box mt={0.3}>
                 <ColorStrip
                   colors={pick(widgets, [['synth_color_rgb', 'Synth']])}
@@ -361,7 +348,6 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
             styleKey="ear_style"
             values={values}
             withValue={withValue}
-            onClose={() => closePart('ears')}
           >
             <Fields
               keys={['ear_style', 'ear_secondary_style']}
@@ -398,7 +384,6 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
             styleKey={`${prefix}_style`}
             values={values}
             withValue={withValue}
-            onClose={() => closePart(card)}
           >
             <Fields keys={[`${prefix}_style`]} withValue={withValue} />
             <Box mt={0.4}>
@@ -503,7 +488,6 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
         <Box style={{ display: 'flex', flexDirection: 'column', gap: '0.1em' }}>
           {(Object.keys(REGION_LABELS) as Region[])
             .filter((r) => REGION_CARDS[r].some(cardHasContent))
-            .filter((r) => !absent.some((p) => p.card === r))
             .map((r) => (
               <Button
                 key={r}
@@ -566,29 +550,6 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
             </Box>
           );
         })}
-        {shownRegion === 'body' && absent.length > 0 && (
-          <Box
-            style={{
-              gridColumn: '1 / -1',
-              display: 'flex',
-              gap: '0.3em',
-              flexWrap: 'wrap',
-            }}
-          >
-            {absent.map((p) => (
-              <Button
-                key={p.card}
-                icon="plus"
-                onClick={() => {
-                  setOpened((o) => [...o, p.card]);
-                  setRegion(p.card as Region);
-                }}
-              >
-                Add {p.title.toLowerCase()}
-              </Button>
-            ))}
-          </Box>
-        )}
         {shownRegion === 'body' &&
           otherGroups.map((group) => (
             <Box key={`other-${group.group}`} style={{ gridColumn: '1 / -1' }}>
@@ -715,20 +676,18 @@ const BareField = ({ item }: { item: PrefWidgetItem }) => {
   );
 };
 
-/// Ears, tail and wings once opened: a style picker while the part has no style, the full card with Remove after.
+/// Ears, tail and wings: the style picker while the part has none, the full card with Remove after.
 const OptionalPart = ({
   title,
   styleKey,
   values,
   withValue,
-  onClose,
   children,
 }: {
   title: string;
   styleKey: string;
   values: Record<string, unknown>;
   withValue: (key: string) => PrefWidgetItem | null;
-  onClose: () => void;
   children: ReactNode;
 }) => {
   const { act } = useBackend();
@@ -736,14 +695,10 @@ const OptionalPart = ({
   if (isNoStyle(values[styleKey])) {
     const styleItem = withValue(styleKey);
     return (
-      <PartCard
-        title={`Add ${lowerTitle}`}
-        buttons={
-          <Button icon="xmark" onClick={onClose}>
-            Cancel
-          </Button>
-        }
-      >
+      <PartCard title={title}>
+        <Box color="label" mb={0.3}>
+          This character has no {lowerTitle}. Pick a style to add them.
+        </Box>
         {styleItem && (
           <BareField
             item={{ ...styleItem, props: { ...styleItem.props, open: true } }}
@@ -761,7 +716,6 @@ const OptionalPart = ({
           color="transparent"
           tooltip={`Remove the ${lowerTitle}`}
           onClick={() => {
-            onClose();
             act('dq_update_preference', { key: styleKey, value: '' });
           }}
         >
