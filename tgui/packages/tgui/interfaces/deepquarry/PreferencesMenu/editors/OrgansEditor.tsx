@@ -118,6 +118,9 @@ export const OrgansEditor = ({
               <Dropdown
                 width="8em"
                 selected={state.status}
+                displayText={
+                  EXTERNAL_STATES.find((o) => o.key === state.status)?.label
+                }
                 options={EXTERNAL_STATES.map((o) => ({
                   value: o.key,
                   displayText: o.label,
@@ -181,6 +184,9 @@ export const OrgansEditor = ({
             <Dropdown
               width="8em"
               selected={organOf(organ)}
+              displayText={
+                INTERNAL_STATES.find((o) => o.key === organOf(organ))?.label
+              }
               options={INTERNAL_STATES.map((o) => ({
                 value: o.key,
                 displayText: o.label,
