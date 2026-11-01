@@ -10,7 +10,6 @@ initial | change_hair_color: 16
 initial | change_misc: 256
 initial | change_race: 1
 initial | change_skin_color: 2
-initial | change_skin_tone: 0
 initial | character_records: []
 initial | digitigrade: 0
 initial | disk: 0
@@ -74,7 +73,6 @@ custom species name | change_hair_color: 16
 custom species name | change_misc: 256
 custom species name | change_race: 1
 custom species name | change_skin_color: 2
-custom species name | change_skin_tone: 0
 custom species name | character_records: []
 custom species name | digitigrade: 0
 custom species name | disk: 0
@@ -138,7 +136,6 @@ size set | change_hair_color: 16
 size set | change_misc: 256
 size set | change_race: 1
 size set | change_skin_color: 2
-size set | change_skin_tone: 0
 size set | character_records: []
 size set | digitigrade: 0
 size set | disk: 0
@@ -202,7 +199,6 @@ species sound | change_hair_color: 16
 species sound | change_misc: 256
 species sound | change_race: 1
 species sound | change_skin_color: 2
-species sound | change_skin_tone: 0
 species sound | character_records: []
 species sound | digitigrade: 0
 species sound | disk: 0
@@ -266,7 +262,6 @@ general flavor text | change_hair_color: 16
 general flavor text | change_misc: 256
 general flavor text | change_race: 1
 general flavor text | change_skin_color: 2
-general flavor text | change_skin_tone: 0
 general flavor text | character_records: []
 general flavor text | digitigrade: 0
 general flavor text | disk: 0
@@ -330,7 +325,6 @@ head flavor text | change_hair_color: 16
 head flavor text | change_misc: 256
 head flavor text | change_race: 1
 head flavor text | change_skin_color: 2
-head flavor text | change_skin_tone: 0
 head flavor text | character_records: []
 head flavor text | digitigrade: 0
 head flavor text | disk: 0
@@ -394,7 +388,6 @@ hair colour | change_hair_color: 16
 hair colour | change_misc: 256
 hair colour | change_race: 1
 hair colour | change_skin_color: 2
-hair colour | change_skin_tone: 0
 hair colour | character_records: []
 hair colour | digitigrade: 0
 hair colour | disk: 0
@@ -458,7 +451,6 @@ eye colour | change_hair_color: 16
 eye colour | change_misc: 256
 eye colour | change_race: 1
 eye colour | change_skin_color: 2
-eye colour | change_skin_tone: 0
 eye colour | character_records: []
 eye colour | digitigrade: 0
 eye colour | disk: 0
@@ -522,7 +514,6 @@ skin colour | change_hair_color: 16
 skin colour | change_misc: 256
 skin colour | change_race: 1
 skin colour | change_skin_color: 2
-skin colour | change_skin_tone: 0
 skin colour | character_records: []
 skin colour | digitigrade: 0
 skin colour | disk: 0

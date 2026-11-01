@@ -62,7 +62,6 @@ CAPABILITIES(/datum/tgui_module/appearance_changer)
 	op("race", ui_act("race", arg("race", schema_text(4096))), asks(/datum/prompt/text, fields = list("title" = "Custom Species Name", "question" = "Input custom species name:", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0), step = "custom_name", when = PROC_REF(asks_custom_species)), then(PROC_REF(ui_act_race)))
 	op("gender", ui_act("gender", arg("gender")), then(PROC_REF(ui_act_gender)))
 	op("gender_id", ui_act("gender_id", arg("gender_id", schema_text(4096))), then(PROC_REF(ui_act_gender_id)))
-	op("skin_tone", ui_act("skin_tone"), needs(req(PROC_REF(can_tone), silent = TRUE)), asks(/datum/prompt/number, fields = list("title" = "Skin Tone", "question" = "Choose your character's skin-tone:\n(Light 1 - 220 Dark)", "default" = computed(PROC_REF(skin_tone_default)), "max_value" = 220, "min_value" = 1)), then(PROC_REF(ui_act_skin_tone)))
 	op("skin_color", ui_act("skin_color"), then(PROC_REF(ui_act_skin_color)))
 	op("hair", ui_act("hair", arg("name")), then(PROC_REF(ui_act_hair)))
 	op("hair_grad", ui_act("hair_grad", arg("picked")), then(PROC_REF(ui_act_hair_grad)))
@@ -204,9 +203,6 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 /datum/tgui_module/appearance_changer/proc/has_owner(datum/act/op/A)
 	return (!!owner()) ? null : /datum/msg/req_failed
 
-/datum/tgui_module/appearance_changer/proc/can_tone(datum/act/op/A)
-	return (can_change_skin_tone(owner())) ? null : /datum/msg/req_silent
-
 /// The body designer's console, when the changer is the designer's.
 /datum/tgui_module/appearance_changer/proc/designer_console()
 	var/datum/tgui_module/appearance_changer/body_designer/BD = src
@@ -257,19 +253,6 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		owner().identifying_gender = gender_id
 		changed_hook(APPEARANCECHANGER_CHANGED_GENDER_ID, user)
 		return 1
-	return FALSE
-
-/datum/tgui_module/appearance_changer/proc/skin_tone_default(datum/act/op/A)
-	return -owner().looks.skin_tone + 35
-
-/datum/tgui_module/appearance_changer/proc/ui_act_skin_tone(datum/act/op/A)
-	var/mob/user = A.actor
-	var/datum/prompt/P = A.answer
-	var/new_s_tone = P?.value
-	if(isnum(new_s_tone))
-		new_s_tone = 35 - max(min( round(new_s_tone), 220),1)
-		changed_hook(APPEARANCECHANGER_CHANGED_SKINTONE, user)
-		return owner().change_skin_tone(new_s_tone)
 	return FALSE
 
 /datum/tgui_module/appearance_changer/proc/ui_act_skin_color(datum/act/op/A)
@@ -1025,7 +1008,6 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	if(data["change_facial_hair"])
 		data["facial_hair_style"] = owner().looks.facial_style
 
-	data["change_skin_tone"] = can_change_skin_tone(owner())
 	data["change_skin_color"] = can_change_skin_color(owner())
 	if(data["change_skin_color"])
 		data["skin_color"] = owner().looks.skin_color
@@ -1078,9 +1060,6 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 
 /datum/tgui_module/appearance_changer/proc/can_change(mob/living/carbon/human/target, flag)
 	return target && (flags & flag)
-
-/datum/tgui_module/appearance_changer/proc/can_change_skin_tone(mob/living/carbon/human/target)
-	return target && (flags & APPEARANCE_SKIN) &&target.species.appearance_flags & HAS_SKIN_TONE
 
 /datum/tgui_module/appearance_changer/proc/can_change_skin_color(mob/living/carbon/human/target)
 	return target && (flags & APPEARANCE_SKIN) && target.species.appearance_flags & HAS_SKIN_COLOR
@@ -1226,7 +1205,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer/vore)
 		if(APPEARANCECHANGER_CHANGED_GENDER_ID)
 			to_chat(M, span_notice("You start to feel... [capitalize(M.gender)]?"))
 			to_chat(O, span_notice("You feel strange as you alter your captive's gender identity."))
-		if(APPEARANCECHANGER_CHANGED_SKINTONE, APPEARANCECHANGER_CHANGED_SKINCOLOR)
+		if(APPEARANCECHANGER_CHANGED_SKINCOLOR)
 			to_chat(M, span_notice("Your body tingles all over..."))
 			to_chat(O, span_notice("You tingle as you make noticeable changes to your captive's body."))
 		if(APPEARANCECHANGER_CHANGED_HAIRSTYLE, APPEARANCECHANGER_CHANGED_HAIRCOLOR, APPEARANCECHANGER_CHANGED_F_HAIRSTYLE, APPEARANCECHANGER_CHANGED_F_HAIRCOLOR)

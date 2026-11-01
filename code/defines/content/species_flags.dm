@@ -37,7 +37,6 @@
 #define SPECIES_WHITELIST_SELECTABLE 0x80    // Can select and customize, but not join as
 
 // Species appearance flags
-#define HAS_SKIN_TONE     0x1    // Skin tone selectable in chargen. (0-255)
 #define HAS_SKIN_COLOR    0x2    // Skin colour selectable in chargen. (RGB)
 #define HAS_LIPS          0x4    // Lips are drawn onto the mob icon. (lipstick)
 #define HAS_UNDERWEAR     0x8    // Underwear is drawn onto the mob icon.

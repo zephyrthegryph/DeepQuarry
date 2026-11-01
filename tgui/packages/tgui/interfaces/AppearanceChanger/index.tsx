@@ -65,7 +65,6 @@ export const AppearanceChanger = (props) => {
     change_misc,
     change_gender,
     change_eye_color,
-    change_skin_tone,
     change_skin_color,
     change_hair_color,
     change_facial_hair_color,
@@ -82,7 +81,6 @@ export const AppearanceChanger = (props) => {
 
   const change_color =
     change_eye_color ||
-    change_skin_tone ||
     change_skin_color ||
     change_hair_color ||
     change_facial_hair_color;

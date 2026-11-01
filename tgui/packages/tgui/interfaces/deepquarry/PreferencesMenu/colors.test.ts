@@ -3,8 +3,8 @@ import {
   colorCategory,
   colorsInUse,
   isSlotName,
-  slotColors,
   SUGGESTED_COLORS,
+  slotColors,
   suggestedColors,
 } from './colors';
 

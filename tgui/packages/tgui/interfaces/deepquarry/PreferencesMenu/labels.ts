@@ -32,7 +32,6 @@ export const labelForGroup = (key: string) =>
 // requiring a DM-side touch on every pref. If a pref has display_label set on
 // the DM side (item.label), that always wins.
 export const PREF_KEY_LABELS: Record<string, string> = {
-  s_tone: 'Skin Tone',
   skin_color: 'Skin Color',
   eyes_color: 'Eye Color',
   hair_color: 'Hair Color',
@@ -98,7 +97,6 @@ export const PREF_KEY_LABELS: Record<string, string> = {
   Private_Notes: 'Private Notes',
   synth_color: 'Use Synth Color',
   synth_color_rgb: 'Synth Color',
-  skin_tone: 'Skin Tone',
   hair_style_name: 'Hair Style',
   facial_style_name: 'Facial Hair Style',
   grad_style_name: 'Hair Gradient',

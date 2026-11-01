@@ -21,8 +21,8 @@ import {
 import { labelForCategory } from './labels';
 import {
   buildSearchIndex,
-  type SearchHit,
   SearchHighlightContext,
+  type SearchHit,
   SettingsSearch,
 } from './search';
 import type {

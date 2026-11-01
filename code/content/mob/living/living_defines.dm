@@ -70,9 +70,6 @@
 
 
 // The mob owns its panel; the panel's host points back, so leaving it set would keep both alive.
-/// The mob an AI's follow-camera mode is tracking (camera/tracking.dm declares the follow loop on it). A relation view (ref_one in
-/// CAPABILITIES(/mob/living)): null once the target is deleted.
-/mob/living/var/mob/living/cameraFollow = null // ALLOW(base_vars): was an OM_FIELD_VIEW on this type; moved, not added
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
 /// The HUD-list bits (who sees what above this mob's head): flag_hud_update() sets them and publishes MOB_KEY_HUD_FLAGS.
