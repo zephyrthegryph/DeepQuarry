@@ -14,7 +14,7 @@ use crate::tree::Tree;
 
 /// Engine-internal directories the reads walk does not enter (dispatchers that read `vars[]` by
 /// design, the tgui plumbing). Their correctness is the engine's, not the handler's.
-pub const OPAQUE_DIRS: &[&str] = &["code/datums/sys/", "code/datums/om/", "code/library/ui/tgui/", "code/content/tgui/modules/", "code/datums/capabilities/", "code/datums/reactions/", "code/datums/ownership/", "code/engine/", "code/__defines/verdigris/"];
+pub const OPAQUE_DIRS: &[&str] = &["code/library/sys/", "code/datums/om/", "code/library/ui/tgui/", "code/content/tgui/modules/", "code/library/capabilities/", "code/library/reactions/", "code/library/ownership/", "code/engine/", "code/__defines/verdigris/"];
 
 pub struct Analyzed {
     pub h: HandlerRef,
