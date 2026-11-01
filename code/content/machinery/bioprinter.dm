@@ -166,10 +166,6 @@ CAPABILITIES(/obj/machinery/organ_printer)
 
 	return possible_list
 
-/// Re-checked on the answer: the printer is idle and works.
-/obj/machinery/organ_printer/proc/printer_ready(datum/request/R)
-	return !printing && operable()
-
 /obj/machinery/organ_printer/proc/print_choice_made(datum/act/op/A)
 	if(!printer_has_reservoir(A))
 		if(operable())

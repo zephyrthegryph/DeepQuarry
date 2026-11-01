@@ -26,9 +26,3 @@ CAPABILITIES(/obj/item/am_containment)
 		return OP_OK
 	stability -= 40 / (packet.severity - 1)
 	return OP_OK
-
-/obj/item/am_containment/proc/usefuel(wanted)
-	if(fuel < wanted)
-		wanted = fuel
-	fuel -= wanted
-	return wanted

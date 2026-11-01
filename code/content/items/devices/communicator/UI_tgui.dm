@@ -422,19 +422,6 @@ CAPABILITIES(/obj/item/communicator)
 		register_device(new_name)
 	return TRUE
 
-/obj/item/communicator/proc/ui_act_toggle_visibility(datum/act/op/A)
-	add_fingerprint(A.actor)
-	switch(network_visibility)
-		if(1) //Visible, becoming invisbile
-			set_network_visibility(0)
-			if(camera)
-				camera.remove_network(NETWORK_COMMUNICATORS)
-		if(0) //Invisible, becoming visible
-			set_network_visibility(1)
-			if(camera)
-				camera.add_network(NETWORK_COMMUNICATORS)
-	return OP_OK
-
 /obj/item/communicator/proc/ui_act_toggle_ringer(datum/act/op/A)
 	add_fingerprint(A.actor)
 	set_ringer(!ringer)
@@ -447,11 +434,6 @@ CAPABILITIES(/obj/item/communicator)
 		ttone = text_or_null(tone)
 	return TRUE
 
-/obj/item/communicator/proc/ui_act_selfie_mode(datum/act/op/A)
-	add_fingerprint(A.actor)
-	set_selfie_mode(!selfie_mode)
-	return OP_OK
-
 /obj/item/communicator/proc/ui_act_add_hex(datum/act/op/A, add_hex)
 	add_fingerprint(A.actor)
 	. = TRUE
@@ -462,11 +444,6 @@ CAPABILITIES(/obj/item/communicator)
 	add_fingerprint(A.actor)
 	. = TRUE
 	set_target_address(sanitizeSafe(val))
-
-/obj/item/communicator/proc/ui_act_clear_target_address(datum/act/op/A)
-	add_fingerprint(A.actor)
-	set_target_address("")
-	return OP_OK
 
 /obj/item/communicator/proc/ui_act_dial(datum/act/op/A, dial)
 	var/mob/user = A.actor
@@ -529,12 +506,6 @@ CAPABILITIES(/obj/item/communicator)
 	if(comm)
 		connect_video(user, comm)
 
-/obj/item/communicator/proc/ui_act_endvideo(datum/act/op/A)
-	add_fingerprint(A.actor)
-	if(video_source)
-		end_video()
-	return OP_OK
-
 /obj/item/communicator/proc/ui_act_copy(datum/act/op/A, copy)
 	add_fingerprint(A.actor)
 	. = TRUE
@@ -544,14 +515,6 @@ CAPABILITIES(/obj/item/communicator)
 	add_fingerprint(A.actor)
 	. = TRUE
 	set_target_address_name(copy_name)
-
-/obj/item/communicator/proc/ui_act_hang_up(datum/act/op/A)
-	add_fingerprint(A.actor)
-	for(var/mob/living/voice/V in contents)
-		close_connection(A.actor, V, "[A.actor] hung up")
-	for(var/obj/item/communicator/comm in communicating)
-		close_connection(A.actor, comm, "[A.actor] hung up")
-	return OP_OK
 
 /obj/item/communicator/proc/ui_act_switch_tab(datum/act/op/A, switch_tab)
 	add_fingerprint(A.actor)

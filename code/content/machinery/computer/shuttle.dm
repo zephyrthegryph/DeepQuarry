@@ -26,12 +26,6 @@ CAPABILITIES(/obj/machinery/computer/shuttle)
 CAPABILITIES(/datum/prompt/choice/shuttle_authorization)
 	ref_one(nameof(card), /obj/item/card)
 
-/// The card is still in the hands of whoever was asked, who can still act.
-/obj/machinery/computer/shuttle/proc/authorization_valid(datum/request/R)
-	var/datum/prompt/choice/shuttle_authorization/ask = R
-	var/mob/living/user = R.answerer
-	return istype(user) && ask.card?.loc == user && !user.incapacitated()
-
 /obj/machinery/computer/shuttle/proc/authorization_chosen(datum/act/op/A)
 	if(!A.answer)
 		var/obj/item/card/id/card = A.held_provider()
@@ -75,11 +69,6 @@ CAPABILITIES(/datum/prompt/choice/shuttle_authorization)
 
 CAPABILITIES(/datum/prompt/yes_no/shuttle_emag_launch)
 	ref_one(nameof(card), /obj/item/card)
-
-/obj/machinery/computer/shuttle/proc/emag_launch_valid(datum/request/R)
-	var/datum/prompt/yes_no/shuttle_emag_launch/ask = R
-	var/mob/living/user = R.answerer
-	return istype(user) && ask.card?.loc == user && !user.incapacitated()
 
 /obj/machinery/computer/shuttle/proc/emag_launch_chosen(datum/act/op/A)
 	if(!A.answer || !A.answer.value)

@@ -634,9 +634,6 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 	if(update_now)
 		SStgui.update_uis(src)
 
-/obj/machinery/computer/secure_data/proc/is_not_allowed(mob/user)
-	return !src.authenticated || user.stat || user.restrained() || (!in_range(src, user) && (!istype(user, /mob/living/silicon)))
-
 /obj/machinery/computer/secure_data/proc/get_photo(mob/user, picked_name)
 	if(istype(user.get_active_hand(), /obj/item/photo))
 		var/obj/item/photo/photo = user.get_active_hand()

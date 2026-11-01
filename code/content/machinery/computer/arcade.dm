@@ -422,12 +422,6 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/arcade/orion_trail, orion_stop_blurbs
 	add_fingerprint(user)
 	refresh_ui(src)
 
-/obj/machinery/computer/arcade/orion_trail/proc/orion_close(mob/user, list/args)
-	user.unset_machine()
-	// close the TGUI panel instead of a browse() window.
-	SStgui.close_uis(src)
-	orion_refresh(user)
-
 /obj/machinery/computer/arcade/orion_trail/proc/orion_continue(mob/user, list/args)
 	if(gameStatus == ORION_STATUS_NORMAL && !event && turns != 7)
 		if(turns >= ORION_TRAIL_WINTURN)

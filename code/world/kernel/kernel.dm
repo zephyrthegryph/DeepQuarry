@@ -266,12 +266,6 @@
 	for(var/i in 1 to KERNEL_PHASE_COUNT)
 		phase_ms_last[i] = 0
 
-/// Adds a phase's cost since `started` to the accounting.
-/datum/controller/kernel/proc/phase_note(phase, started)
-	var/ms = TICK_USAGE_TO_MS(started)
-	phase_ms_last[phase] = ms
-	phase_ms_total[phase] += ms
-
 /// Records a caught fault, and reports it through dq_report_caught() (the runtime log; a test run counts it) unless
 /// errors are expected.
 /datum/controller/kernel/proc/report_fault(exception/e, msg)
@@ -332,10 +326,6 @@
 		if(TICK_USAGE >= tick_limit)
 			break
 		run_item(W, tick_limit, now)
-
-/// The work items of a phase that has no scheduler piece of its own (K, N, G).
-/datum/controller/kernel/proc/run_work_phase(phase, tick_limit)
-	work_run_phase(phase, tick_limit, 0, world.time)
 
 // ---------------------------------------------------------------- SSbehaviours' remaining duties
 

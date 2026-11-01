@@ -26,9 +26,6 @@
 	if(vg_entity)
 		native_write(src, NATIVE_PRODUCER_SUPPLY, amount)
 
-/obj/machinery/power/proc/clear_power_supply()
-	set_power_supply(0)
-
 /obj/machinery/power/proc/draw_power(amount)
 	return power_draw(power_region, amount, src)
 

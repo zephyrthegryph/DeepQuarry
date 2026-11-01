@@ -6,11 +6,6 @@
 //  atmospherics devices.
 //--------------------------------------------
 
-/proc/pipe_color_lookup(color)
-	for(var/C in GLOB.pipe_colors)
-		if(color == GLOB.pipe_colors[C])
-			return "[C]"
-
 /proc/pipe_color_check(color)
 	if(!color)
 		return 1

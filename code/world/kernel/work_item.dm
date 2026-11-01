@@ -213,11 +213,6 @@ CAPABILITIES(/datum/work_item)
 	var/datum/controller/kernel/K = kernel()
 	return K.register_work(owner_type, W)
 
-/// Removes every item `owner_type` registered.
-/proc/kernel_unregister_work(owner_type)
-	var/datum/controller/kernel/K = kernel()
-	K.unregister_work(owner_type)
-
 /// Wakes a parked item.
 /proc/kernel_wake_work(key)
 	var/datum/controller/kernel/K = kernel()

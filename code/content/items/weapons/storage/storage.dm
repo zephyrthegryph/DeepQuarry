@@ -477,13 +477,6 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 // human/inventory.dm (the worn belt) and protean_rig.dm (the rig backpack).
 // The mover is whoever holds the item, if anyone. Don't add callers.
 
-/obj/item/storage/proc/can_be_inserted(obj/item/W, stop_messages = FALSE)
-	var/mob/user = ismob(W?.loc) ? W.loc : null
-	var/reason = insert_refusal(W, user)
-	if(reason && !stop_messages)
-		refuse_insert(W, user, reason)
-	return !reason
-
 /obj/item/storage/proc/handle_item_insertion(obj/item/W, prevent_warning = FALSE)
 	return insert_item(W, ismob(W?.loc) ? W.loc : null, prevent_warning)
 
