@@ -17,21 +17,3 @@
 				availible_traits[name] = trait
 
 	return availible_traits
-
-/// The names of the sources granting `trait`, for the pick list.
-/datum/admins/proc/trait_source_names(datum/D, trait)
-	. = list()
-	for(var/datum/source as anything in trait_sources(D, trait))
-		. |= "[source]"
-
-/// Applies the answers: `source` is null to remove the trait from every source.
-/datum/admins/proc/traits_answered(datum/D, mode, trait_name, source)
-	var/list/availible_traits = modifiable_traits(D, mode)
-	var/chosen_trait = availible_traits[trait_name]
-	if(!chosen_trait)
-		return
-	switch(mode)
-		if("Add") //Not doing source choosing here intentionally to make this bit faster to use, you can always vv it.
-			add_trait(D,chosen_trait,"adminabuse")
-		if("Remove")
-			remove_trait(D,chosen_trait,source)

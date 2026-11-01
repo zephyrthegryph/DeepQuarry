@@ -12,27 +12,6 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 //# define TOPIC_DEBUGGING 1
 
-/client/proc/reduce_minute_count()
-	if (!topiclimiter)
-		topiclimiter = new(LIMITER_SIZE)
-	if(topiclimiter[MINUTE_COUNT] > 0)
-		topiclimiter[MINUTE_COUNT] -= 1
-
-	/*
-	When somebody clicks a link in game, this Topic is called first.
-	It does the stuff in this proc and  then is redirected to the Topic() proc for the src=[0xWhatever]
-	(if specified in the link). ie locate(hsrc).Topic()
-
-	Such links can be spoofed.
-
-	Because of this certain things MUST be considered whenever adding a Topic() for something:
-		- Can it be fed harmful values which could cause runtimes?
-		- Is the Topic call an admin-only thing?
-		- If so, does it have checks to see if the person who called it (usr.client) is an admin?
-		- Are the processes being called by Topic() particularly laggy?
-		- If so, is there any protection against somebody spam-clicking a link?
-	If you have any  questions about this stuff feel free to ask. ~Carn
-	*/
 // ALLOW(sys_topic_override): BYOND's href entry point: rate limits, tgui middleware and logging, then the link goes to the input inbox (a datum's link is an op, code/engine/parts/inputs.dm).
 /client/Topic(href, href_list, hsrc)
 	// asset_cache: the ack needs no mob, so it is handled before the usr gate (a body swap

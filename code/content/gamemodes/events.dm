@@ -7,31 +7,6 @@ GLOBAL_VAR_INIT(hadevent, 0)
 		if(H.client && H.appendicitis())
 			break
 
-/proc/alien_infestation(spawncount = 1) // -- TLE
-	var/list/vents = list()
-	for(var/obj/machinery/atmospherics/unary/vent_pump/temp_vent in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(!is_welded(temp_vent) && temp_vent.network && (temp_vent.loc.z in using_map.station_levels))
-			if(temp_vent.network.normal_members.len > 50) // Stops Aliens getting stuck in small networks. See: Security, Virology
-				vents += temp_vent
-
-	var/list/candidates = get_alien_candidates()
-
-	if(prob(40)) spawncount++ //sometimes, have two larvae spawn instead of one
-	while((spawncount >= 1) && vents.len && candidates.len)
-
-		var/obj/vent = pick(vents)
-		var/candidate = pick(candidates)
-
-		var/mob/living/carbon/alien/larva/new_xeno = new(vent.loc)
-		bind_player(new_xeno, candidate)
-
-		candidates -= candidate
-		vents -= vent
-		spawncount--
-
-	//Delayed announcements to keep the crew on their toes.
-	after(null, rand(500 SECONDS, 600 SECONDS), GLOBAL_PROC_REF(delayed_command_announcement), with = list("Unidentified lifesigns detected coming aboard \the [station_name()]. Secure any exterior access, including ducting and ventilation.", "Lifesign Alert", ANNOUNCER_MSG_UNIDENTIFIED_LIFESIGNS))
-
 /proc/carp_migration() // -- Darem
 	for(var/obj/effect/landmark/C in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 		if(C.name == "carpspawn")

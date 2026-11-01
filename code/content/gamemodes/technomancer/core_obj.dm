@@ -207,10 +207,6 @@ CAPABILITIES(/obj/spellbutton)
 				wearer.ability_master.remove_ability(A)
 		spent(spell_to_remove)
 
-/obj/item/technomancer_core/proc/remove_all_spells()
-	for(var/obj/spellbutton/spell in spells)
-		rel_remove(src, nameof(spells), spell)
-
 /obj/item/technomancer_core/proc/has_spell(datum/technomancer/spell_to_check)
 	for(var/obj/spellbutton/spell in spells)
 		if(spell.spellpath == spell_to_check.obj_path)
