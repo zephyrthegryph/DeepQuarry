@@ -1226,6 +1226,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 		if(!test.run_finished)
 			log_world("UNIT TEST TIMEOUT: [test_path] did not return from Run() within [test.timeout]s; failing it and moving on. Its fiber may still be running in the background.")
 			test.Fail("timed out after [test.timeout]s -- Run() never returned (stuck sleep, unmet wait_for_condition, or a hung external call)", "TIMEOUT", 0)
+		unit_test_close_leaked_scopes(test, test_path)
 		staleness_test_end(test, current_index >= total_tests)
 		test.restore_atmos()
 		// A test that let world time pass (the kernel's clock, or the native world's frames: the tests step either) has the regulated rooms put back whether or not its
@@ -1895,6 +1896,60 @@ GLOBAL_VAR(boot_unclean)
 	set waitfor = FALSE
 	RunUnitTests()
 
+/// Real seconds one test may take from start to the end of its cleanup before the suite gives up on it. RunUnitTest()'s own limit covers only
+/// Run(), in world time; restore_atmos(), the block release and the leak guards after it had none, so one hang there stalled every test queued behind
+/// it (a full-suite shard, 1 November). World time runs slow under load, hence the margin.
+/proc/unit_test_hang_limit_seconds(datum/unit_test/test_path)
+	return max(initial(test_path.timeout), 60) * 3 + 120
+
+/// Runs one test in a fiber of its own and moves on if it hangs: the test fails with its name logged. The abandoned fiber cannot be stopped from DM.
+/// A loop that never sleeps blocks the whole world and cannot be caught from here; the run's outer cap (tools/dq_run_guard.js) ends such a world.
+/proc/unit_test_supervised(datum/unit_test/test_path, list/test_results, current_index, total_tests)
+	var/list/fiber = list("done" = FALSE)
+	unit_test_fiber(fiber, test_path, test_results, current_index, total_tests)
+	var/started = REALTIMEOFDAY
+	var/limit_ds = unit_test_hang_limit_seconds(test_path) * 10
+	while(!fiber["done"] && REALTIMEOFDAY - started < limit_ds)
+		sleep(1)
+	if(fiber["done"])
+		return
+	var/message = "hung: not finished, cleanup included, after [limit_ds / 10] real seconds; abandoned, the suite moved on"
+	GLOB.failed_any_test = TRUE
+	GLOB.current_test = null
+	GLOB.unit_test_runtime_capture = FALSE
+	log_world("::error::[TEST_OUTPUT_RED("FAIL")] [test_path]: [message]")
+	log_test("UNIT TEST HANG: [test_path]: [message]")
+	unit_test_close_leaked_scopes(null, test_path)
+	test_results[test_path] = list("status" = UNIT_TEST_FAILED, "message" = message, "name" = test_path, "duration" = limit_ds / 10)
+
+/proc/unit_test_fiber(list/fiber, datum/unit_test/unit_path, list/test_results, current_test_index, total_tests)
+	set waitfor = FALSE
+	// A runtime anywhere in RunUnitTest() outside the test's own Run() (block release, cleanup of what the test left behind) must not stop the suite silently.
+	try
+		RunUnitTest(unit_path, test_results, current_test_index, total_tests)
+	catch(var/exception/e)
+		GLOB.failed_any_test = TRUE
+		GLOB.current_test = null
+		GLOB.unit_test_runtime_capture = FALSE
+		if(LAZYLEN(GLOB.unit_test_runtime_events) < 256)
+			LAZYADD(GLOB.unit_test_runtime_events, list(list("name" = e.name, "file" = e.file, "line" = e.line, "description" = e.desc)))
+		else
+			GLOB.unit_test_runtime_events_truncated = TRUE
+		log_world("::error::[TEST_OUTPUT_RED("FAIL")] [unit_path]: harness runtime: [e.name] at [e.file]:[e.line]")
+		log_test("HARNESS RUNTIME in [unit_path]: [e.name] at [e.file]:[e.line] -- [e.desc]")
+		test_results[unit_path] = list("status" = UNIT_TEST_FAILED, "message" = "harness runtime: [e.name] at [e.file]:[e.line]", "name" = unit_path, "duration" = 0)
+	fiber["done"] = TRUE
+
+/// A scope a test left open would make every later qdel() defer, so the next tests inherit it. Closes it and fails the test that left it.
+/proc/unit_test_close_leaked_scopes(datum/unit_test/test, test_path)
+	if(GLOB.dq_destroy_collect_depth <= 0)
+		return
+	var/message = "left a destroy collecting scope open (dq_destroy_collect_depth [GLOB.dq_destroy_collect_depth]); closed"
+	log_test("UNIT TEST LEAK: [test_path]: [message]")
+	test?.Fail(message, "LEAK", 0)
+	GLOB.dq_destroy_collect_depth = 1
+	dq_destroy_collect_end()
+
 /proc/RunUnitTests()
 	#ifdef BENCHMARK
 	RunBenchmarks()
@@ -2034,19 +2089,7 @@ GLOBAL_VAR(boot_unclean)
 		// (block release, cleanup of what the test left behind) would otherwise
 		// unwind this loop into the OM trampoline's try/catch and stop the
 		// suite silently. Fail the run and carry on with the next test.
-		try
-			RunUnitTest(unit_path, test_results, current_test_index, total_tests)
-		catch(var/exception/e)
-			GLOB.failed_any_test = TRUE
-			GLOB.current_test = null
-			GLOB.unit_test_runtime_capture = FALSE
-			if(LAZYLEN(GLOB.unit_test_runtime_events) < 256)
-				LAZYADD(GLOB.unit_test_runtime_events, list(list("name" = e.name, "file" = e.file, "line" = e.line, "description" = e.desc)))
-			else
-				GLOB.unit_test_runtime_events_truncated = TRUE
-			log_world("::error::[TEST_OUTPUT_RED("FAIL")] [unit_path]: harness runtime: [e.name] at [e.file]:[e.line]")
-			log_test("HARNESS RUNTIME in [unit_path]: [e.name] at [e.file]:[e.line] -- [e.desc]")
-			test_results[unit_path] = list("status" = UNIT_TEST_FAILED, "message" = "harness runtime: [e.name] at [e.file]:[e.line]", "name" = unit_path, "duration_ds" = 0, "runtimes" = 1, "runtime_errors" = GLOB.unit_test_runtime_events, "runtime_errors_truncated" = GLOB.unit_test_runtime_events_truncated, "ticks" = null)
+		unit_test_supervised(unit_path, test_results, current_test_index, total_tests)
 	SSticker.delay_end = FALSE
 	// The last full compare of the watched machines (see unit_test_guard.dm): what changed since the previous full compare is named with the tests that ran since.
 	if(GLOB.unit_test_guard)
