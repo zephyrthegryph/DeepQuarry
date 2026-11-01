@@ -11,7 +11,7 @@
 #
 # What a batch does (merge lock held, in the merge worktree, the lock part is short because nothing here compiles):
 #   1. drops queue entries already in origin/master and REFUSES (and dequeues) a branch that touches a heavy path: .dm .dme .dmm .dmi, maps/,
-#      icons/, code/, interface/, sound/, tgui/ (tools/dq_light_paths.sh): those need a general lane and the full gates;
+#      icons/, code/, interface/, sound/, tgui/public/, tgui/packages/tgfont/static/ (tools/dq_light_paths.sh): those need a general lane and the full gates;
 #   2. merges each remaining branch with --no-ff; a branch that conflicts is skipped and stays queued, the rest still land;
 #   3. runs the cheap checks for what changed (tools/dq_light_checks.sh: bash -n/shellcheck, doc links, cargo test for touched crates,
 #      ratchets only when .dm files or the lints changed);
@@ -54,7 +54,7 @@ cmd_submit() {
 	heavy="$(light_heavy_in origin/master HEAD)"
 	if [ -n "$heavy" ]; then
 		echo "$heavy" | head -8 >&2
-		die "REFUSED: a light branch may not touch .dm/.dme/maps/icons/code/interface/sound/tgui (listed above). Move this work to a general lane (bash tools/dq_lane_pool.sh lease <branch>) and land it with tools/dq_land.sh."
+		die "REFUSED: a light branch may not touch .dm/.dme/maps/icons/code/interface/sound/tgui/public/tgfont (listed above). Move this work to a general lane (bash tools/dq_lane_pool.sh lease <branch>) and land it with tools/dq_land.sh."
 	fi
 	ahead="$(git rev-list --count origin/master..HEAD)"
 	[ "$ahead" -gt 0 ] || die "$branch holds nothing origin/master lacks; there is nothing to land"

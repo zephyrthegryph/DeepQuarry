@@ -8,6 +8,7 @@
 #   - cargo test for every Cargo manifest above a changed file under tools/ or verdigris/ (inside a machine cargo slot);
 #   - the ratchets (tools/ci/check_ratchets.sh) only when a .dm file changed or a lint input did (tools/analyze, lint_scopes.toml, baselines, check_*.sh);
 #   - the self-test of each changed tool (tools/ci/test_*.sh, mapped from the tool; test_train.sh only for the train / merge drivers), each capped;
+#   - TGUI, when a tgui/ file other than a doc changed: build.sh tgui-lint (biome, tsc), tgui-test and the bundle build; no DM compile, no world (DQ_LIGHT_TGUI=0 skips, fixture tests);
 #   - a changed heavy path (tools/dq_light_paths.sh) is a refusal: a light batch never carries it.
 # DQ_LIGHT_CARGO=0 skips cargo (fixture tests). Run from the worktree that holds <head>.
 set -uo pipefail
@@ -117,9 +118,17 @@ fi
 all_changed="$(printf '%s\n' "${changed[@]}" "${deleted[@]}")"
 # The ratchets read the tree and the lints: they run when a .dm file or a lint input changed, not for every file under tools/ci
 # (a self-test script or a tool edit changes no lint verdict). A tool's own self-test inside check_ratchets runs only when its files changed.
-if grep -q -E '\.dm$|^tools/analyze/|^tools/ci/(lint_scopes\.toml|check_[^/]*|[^/]*baseline[^/]*|[^/]*\.txt)$' <<<"$all_changed"; then
+if grep -q -E '\.dm$|^tools/analyze/|^tools/ci/(lint_scopes\.toml|check_[^/]*|[^/]*baseline[^/]*|[^/]*\.txt)$|^tgui/packages/tgui/interfaces/|^tgui/.*\.jsx$' <<<"$all_changed"; then
 	echo "== ratchets (a .dm file or a lint input changed)"
 	DQ_RATCHETS_SELFTESTS=changed bash tools/ci/check_ratchets.sh || bad "check_ratchets.sh"
+fi
+
+# TGUI: what the gates' tgui job ran, plus the tests and the bundle. tgui-lint's gen reads the DM declarations but compiles nothing.
+if [ "${DQ_LIGHT_TGUI:-1}" = 1 ] && grep -E '^tgui/' <<<"$all_changed" | grep -qvE '\.md$'; then
+	for target in tgui-lint tgui-test tgui; do
+		echo "== tgui: build.sh $target"
+		tools/build/build.sh "$target" || bad "build.sh $target"
+	done
 fi
 
 # Self-tests of the tools a lane changed (never the whole tools/ci/test_*.sh set): a changed tools/ci/test_X.sh runs itself; a changed tool runs the

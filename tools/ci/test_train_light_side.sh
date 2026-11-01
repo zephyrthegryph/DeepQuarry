@@ -14,7 +14,7 @@ ok() { echo "PASS: $1"; }; bad() { echo "FAIL: $1"; fail=1; }
 for p in doc/a.md README.md html/changelogs/x.yml tools/dq_train.sh tools/train/a.py tools/ci/test_x.sh tools/hooks/pre-push; do
 	light_gate_neutral "$p" && ok "neutral: $p" || bad "should be neutral: $p"
 done
-for p in code/a.dm maps/a.dmm deepquarry.dme tools/build/build.ts tools/dmb/crates/x/src/a.rs tools/analyze/src/a.rs verdigris/src/a.rs tools/ci/check_x.sh \
+for p in tgui/packages/x/a.ts tgui/public/tgui.html code/a.dm maps/a.dmm deepquarry.dme tools/build/build.ts tools/dmb/crates/x/src/a.rs tools/analyze/src/a.rs verdigris/src/a.rs tools/ci/check_x.sh \
 	tools/ci/lint_scopes.toml tools/ci/known_failures.txt tools/ci/smoke_tests.txt tools/ci/x_baseline.txt config/a.txt tools/other.py .github/x.yml; do
 	light_gate_neutral "$p" && bad "should not be neutral: $p" || ok "not neutral: $p"
 done
