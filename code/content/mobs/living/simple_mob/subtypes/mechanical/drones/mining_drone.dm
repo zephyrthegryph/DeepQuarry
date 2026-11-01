@@ -18,7 +18,6 @@
 /mob/living/simple_mob/mechanical/mining_drone
 	name = "mining drone"
 	desc = "An automated drone with a worn-out appearance, but an ominous gaze."
-	catalogue_data = list(/datum/category_item/catalogue/technology/drone/mining_drone)
 
 	icon_state = "miningdrone"
 	icon_living = "miningdrone"
@@ -64,6 +63,7 @@
 TYPE_TABLE_DECLARE(/mob/living/simple_mob/mechanical/mining_drone, mining_drone_allowed_tools, list(/obj/item/pickaxe, /obj/item/gun/energy/kinetic_accelerator, /obj/item/gun/magnetic/matfed/phoronbore, /obj/item/kinetic_crusher, /obj/item/melee/shock_maul))
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mining_drone)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/drone/mining_drone)))
 	configure(mob_rules(faction = FACTION_MALF_DRONE))
 	configure(living_rules(say_list_type = /datum/say_list/malf_drone/mining, delete_on_death = TRUE))
 	configure(mob_movement(hovering = TRUE))

@@ -73,7 +73,6 @@
 	name = "advanced dark gygax"
 	desc = "An experimental exosuit that utilizes advanced materials to allow for greater protection while still being lightweight and fast. \
 	It also is armed with an array of next-generation weaponry."
-	catalogue_data = list(/datum/category_item/catalogue/technology/adv_dark_gygax)
 	icon_state = "darkgygax_adv"
 	wreckage = /obj/structure/loot_pile/mecha/gygax/dark/adv
 	icon_scale_x = 1.5
@@ -93,6 +92,7 @@
 	var/obj/effect/overlay/energy_ball/energy_ball = null
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/adv_dark_gygax)))
 	owns_one(nameof(energy_ball), /obj/effect/overlay/energy_ball)
 
 

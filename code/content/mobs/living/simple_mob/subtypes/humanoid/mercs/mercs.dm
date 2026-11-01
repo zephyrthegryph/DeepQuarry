@@ -164,9 +164,9 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/melee/sword)
 	loot_list = list(/obj/item/gun/projectile/automatic/c20r = 100)
 
 	reload_max = 20
-	catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/human/peacekeeper)
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/smg/sol)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/human/peacekeeper)))
 	configure(mob_kind(attack_cooldown = 5))
 
 // Rifles
@@ -226,7 +226,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/rifle/mag)
 /mob/living/simple_mob/humanoid/merc/ranged/grenadier
 	name = "mercenary grenadier"
 	desc = "A tough looking individual armed with a shotgun and a belt of grenades."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/human/grenadier)
 	icon_state = "syndicateranged_shotgun"
 	icon_living = "syndicateranged_shotgun"
 	projectiletype = /obj/item/projectile/bullet/pellet/shotgun		// Buckshot
@@ -240,6 +239,9 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/rifle/mag)
 	projectile_dispersion = 8
 	projectile_accuracy = -40
 	special_attack_charges = 5
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/grenadier)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/human/grenadier)))
 
 // Technician, also kind of a miniboss. Carries a dartgun and manhack launcher.
 /mob/living/simple_mob/humanoid/merc/ranged/technician
@@ -378,7 +380,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/rifle/mag)
 	desc = "A tough looking individual, armred with an energy sword and shield."
 	icon_state = "syndicatespace-melee"
 	icon_living = "syndicatespace-melee"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/human/space)
 
 	movement_cooldown = -1
 
@@ -395,6 +396,9 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/rifle/mag)
 	minbodytemp = 0
 
 	corpse = /obj/effect/landmark/mobcorpse/syndicatecommando
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/merc/melee/sword/space)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/human/space)))
 
 /mob/living/simple_mob/humanoid/merc/melee/sword/space/Process_Spacemove(check_drift = 0)
 	return
@@ -509,7 +513,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/space/tommylas)
 	special_attack_charges = 5
 	loot_list = list() // oh, you killed him?
 	corpse = null // well, sorry, buddy, he doesn't drop shit
-	catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/human/space/suppressor)
 
 /mob/living/simple_mob/humanoid/merc/ranged/space/suppressor/elite // really reconsider why you're spawning this dude
 	name = "mercenary elite suppressor"
@@ -523,6 +526,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/space/tommylas)
 
 // being Actual Professionals, they have better (read: player-level) blocking chances
 CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/space/suppressor)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/human/space/suppressor)))
 	configure(living_rules(say_list_type = /datum/say_list/merc/elite))
 	configure(mob_kind(attack_cooldown = 3))
 	op("suppressor_item", item(/obj/item), then(PROC_REF(suppressor_interaction_item)))

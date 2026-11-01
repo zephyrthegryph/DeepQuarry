@@ -9,11 +9,12 @@
 
 STATIC_ENTRY(atom_rules)
 
-/proc/atom_rules(bubble_icon = null, throwpass = null, emp_integrity_factor = null, emp_protection = null, conflict_id = null, light_system = null, description_antag = null, description_fluff = null, price_tag = null)
+/proc/atom_rules(bubble_icon = null, throwpass = null, emp_integrity_factor = null, emp_protection = null, conflict_id = null, light_system = null, description_antag = null, description_fluff = null, price_tag = null, catalogue_data = null)
 	RETURN_TYPE(/datum/entry)
-	return entry_make(ENTRY_ATOM_RULES, null, list("bubble_icon" = bubble_icon, "throwpass" = throwpass, "emp_integrity_factor" = emp_integrity_factor, "emp_protection" = emp_protection, "conflict_id" = conflict_id, "light_system" = light_system, "description_antag" = description_antag, "description_fluff" = description_fluff, "price_tag" = price_tag))
+	return entry_make(ENTRY_ATOM_RULES, null, list("bubble_icon" = bubble_icon, "throwpass" = throwpass, "emp_integrity_factor" = emp_integrity_factor, "emp_protection" = emp_protection, "conflict_id" = conflict_id, "light_system" = light_system, "description_antag" = description_antag, "description_fluff" = description_fluff, "price_tag" = price_tag, "catalogue_data" = catalogue_data))
 
 /datum/type_trait/atom_rules
+	var/catalogue_data = null
 	var/bubble_icon = "normal"
 	var/throwpass = 0
 	var/emp_integrity_factor = 0
@@ -25,6 +26,7 @@ STATIC_ENTRY(atom_rules)
 	var/price_tag = null
 
 /datum/type_trait/atom_rules/copy_values(datum/type_trait/atom_rules/into)
+	into.catalogue_data = catalogue_data
 	into.bubble_icon = bubble_icon
 	into.throwpass = throwpass
 	into.emp_integrity_factor = emp_integrity_factor
@@ -40,7 +42,7 @@ STATIC_ENTRY(atom_rules)
 	trait_type = /datum/type_trait/atom_rules
 	publish_key = ATOM_RULES_KEY
 	base_type = /atom
-	var_names = list("bubble_icon" = "bubble_icon", "throwpass" = "throwpass", "emp_integrity_factor" = "emp_integrity_factor", "emp_protection_flags" = "emp_protection", "conflict_id" = "conflict_id", "light_system" = "light_system", "description_antag" = "description_antag", "description_fluff" = "description_fluff", "price_tag" = "price_tag")
+	var_names = list("catalogue_data" = "catalogue_data", "bubble_icon" = "bubble_icon", "throwpass" = "throwpass", "emp_integrity_factor" = "emp_integrity_factor", "emp_protection_flags" = "emp_protection", "conflict_id" = "conflict_id", "light_system" = "light_system", "description_antag" = "description_antag", "description_fluff" = "description_fluff", "price_tag" = "price_tag")
 
 /// The holder's atom_rules values (its own once one was set at run time). Read only.
 READS_AS(/proc/atom_rules_of, ATOM_RULES_KEY)
@@ -90,3 +92,6 @@ CAPABILITIES(/obj/machinery/computer/power_monitor/throwpass)
 
 /atom/movable/proc/set_price_tag(value)
 	return set_trait(src, ENTRY_ATOM_RULES, "price_tag", value)
+
+/atom/proc/set_catalogue_data(value)
+	return set_trait(src, ENTRY_ATOM_RULES, "catalogue_data", value)

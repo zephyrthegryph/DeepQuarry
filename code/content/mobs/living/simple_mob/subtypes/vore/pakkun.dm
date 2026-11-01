@@ -14,7 +14,6 @@
 	name = "pakkun"
 	desc = "A small, blue, bipedal reptile. Its head and jaws are rather large in proportion to its body."
 	tt_desc = "Mordens Lacerta"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/pakkun)
 	player_msg = "Pakkuns are bipedal lizardy things. You don't really have much in the way of grasping fingers, but you have an extremely long and powerful tongue and a frankly disproportionate \
 	stomach-to-body ratio. Pakkuns will eat just about anything, both for food and out of idle curiosity - if you encounter something you don't understand, put it in your mouth for science."
 
@@ -86,6 +85,7 @@
 		ai_brain.go_wake()
 
 CAPABILITIES(/mob/living/simple_mob/vore/pakkun)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/pakkun)))
 	configure(mob_rules(faction = FACTION_PAKKUN))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 5))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_pred" = 1, "allow_mind_transfer" = TRUE))

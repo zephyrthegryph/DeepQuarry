@@ -57,7 +57,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 	desc = "A fanatical zealot armed with a darkly colored sword."
 	icon_state = "cultist"
 	icon_living = "cultist"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/human)
 
 	status_flags = 0
 
@@ -227,7 +226,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 	desc = "A sinister looking hooded Teshari armed with a curved knife."
 	icon_state = "culttesh"
 	icon_living = "culttesh"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/tesh)
 
 
 	status_flags = 0
@@ -272,7 +270,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 	icon_state = "cultliz"
 	icon_living = "cultliz"
 	endurance = 200
-	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/lizard)
 
 
 	status_flags = 0
@@ -319,7 +316,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 	icon_state = "caster"
 	icon_living = "caster"
 	endurance = 150
-	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/caster)
 
 
 	status_flags = 0
@@ -363,7 +359,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 	icon_state = "initiate"
 	icon_living = "initiate"
 	endurance = 150
-	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/initiate)
 
 
 	status_flags = 0
@@ -408,7 +403,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 	desc = "This Teshari seems to have forsoken weapons for unfanthomable power."
 	icon_state = "castertesh"
 	icon_living = "castertesh"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/castertesh)
 
 
 	status_flags = 0
@@ -452,7 +446,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 	desc = "A heavily armed cultist with a mirror shield that hurts to look at."
 	icon_state = "cult_elite"
 	icon_living = "cult_elite"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/elite)
 
 	status_flags = 0
 
@@ -468,6 +461,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/elite)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/elite)))
 	configure(mob_rules(faction = "cult"))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(death_message = "shatters into bone and blood like pieces like the now shattered mirror."))
@@ -530,7 +524,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/elite)
 	desc = "A leader of the bloody cult and master of the forbidden arts, wielding powers beyond that of mortal men."
 	icon_state = "magus"
 	icon_living = "magus"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/magus)
 
 
 	status_flags = 0
@@ -557,6 +550,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/elite)
 	ghostize()
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/magus)))
 	configure(mob_rules(faction = "cult"))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(attack_cooldown = 5, death_message = "let's out a dark laugh as it collapses into a puddle of blood."))
@@ -583,7 +577,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus)
 	desc = "The smell of blood fills the air, how delicious it tastes. Let the hunt begin." // He is a horrifying lovechild of Caleb and a blooborne hunter.
 	icon_state = "hunterb" // He probably shouldn't even have other mobs supporting him.
 	icon_living = "hunterb"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/hunter)
 
 
 	status_flags = 0
@@ -827,6 +820,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/noodle)
 
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/tesh)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/tesh)))
 	configure(mob_rules(faction = "cult"))
 	configure(living_rules(vore_capacity = 6, delete_on_death = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
@@ -869,6 +863,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/tesh)
 
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/castertesh)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/castertesh)))
 	configure(mob_rules(faction = "cult"))
 	configure(living_rules(vore_capacity = 6, delete_on_death = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
@@ -903,12 +898,14 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/castertesh)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/human)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/human)))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(death_message = "let's out a maddening laugh as his body crumbles away."))
 	immune_to_incapacitation()
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/lizard)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/lizard)))
 	configure(mob_rules(faction = "cult"))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(attack_cooldown = 7.5, death_message = "hisses as he collapses into a pile of bones."))
@@ -916,6 +913,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/lizard)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/caster)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/caster)))
 	configure(mob_rules(faction = "cult"))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(death_message = "melts into a pile of blood and bones."))
@@ -923,6 +921,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/caster)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/initiate)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/initiate)))
 	configure(mob_rules(faction = "cult"))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(death_message = "lets out a horrified scream as his body crumbles away."))
@@ -932,6 +931,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/initiate)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/hunter)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/hunter)))
 	configure(mob_rules(faction = "cult"))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(attack_cooldown = 7.5, death_message = "laughs as he melts away. His laughs echo through the air even after only a dense red goo remains."))

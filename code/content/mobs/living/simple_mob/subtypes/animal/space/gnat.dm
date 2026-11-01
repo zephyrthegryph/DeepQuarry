@@ -20,7 +20,6 @@
 /mob/living/simple_mob/animal/space/gnat
 	name = "space gnat"
 	desc = "A small, wretched interstellar pest. Whilst little danger by themselves, they can be a problem in large numbers."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/gnat)
 	icon = 'icons/mob/mobs_monsters/animal.dmi'
 	icon_state = "gnat"
 	icon_living = "gnat"
@@ -46,6 +45,7 @@
 	organ_names = /datum/decl/mob_organ_names/space_gnat
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/gnat)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/gnat)))
 	configure(mob_rules(faction = FACTION_GNAT))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/gnat, meat_amount = 1))
 	configure(mob_movement(hovering = TRUE))

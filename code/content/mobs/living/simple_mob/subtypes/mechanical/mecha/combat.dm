@@ -2,6 +2,7 @@
 	projectiletype = /obj/item/projectile/energy/mob/heavylaser
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/durand)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/durand)))
 	op("toggle_defense_mode", menu(desc = "Toggles a special mode which makes you immobile and much more resilient."), label("Toggle Defense Mode"), needs(req_self()), then(PROC_REF(toggle_defense_mode_op)))
 	configure(mob_kind(attack_cooldown = 2 SECONDS))
 
@@ -9,6 +10,7 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/durand)
 	projectiletype = /obj/item/projectile/energy/mob/heavylaser
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/marauder)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/marauder)))
 	configure(mob_kind(attack_cooldown = 2 SECONDS))
 
 /mob/living/simple_mob/mechanical/mecha/hoverpod
@@ -40,8 +42,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/marauder)
 /mob/living/simple_mob/mechanical/mecha/odysseus
 	endurance = 60
 
-CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/odysseus)
-	configure(mob_kind(attack_cooldown = 2 SECONDS))
 
 /mob/living/simple_mob/mechanical/mecha/combat
 	melee_damage_lower = 15
@@ -50,8 +50,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/odysseus)
 /mob/living/simple_mob/mechanical/mecha/ripley
 	endurance = 100
 
-CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/ripley)
-	configure(mob_kind(attack_cooldown = 5))
 
 // Immune to heat damage, resistant to lasers, and somewhat beefier. Still tries to melee you.
 /mob/living/simple_mob/mechanical/mecha/ripley/firefighter

@@ -1449,16 +1449,20 @@ CAPABILITIES(/obj/item/clothing/under/moderncoat)
 	desc = "A uniform belonging to Major Bill's Transportation, a shipping megacorporation."
 	icon_state = "mbill"
 	worn_state = "mbill"
-	catalogue_data = list(/datum/category_item/catalogue/information/organization/major_bills)
+
+CAPABILITIES(/obj/item/clothing/under/mbill)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/organization/major_bills)))
 
 /obj/item/clothing/under/mbill_flight
 	name = "\improper Major Bill's flightsuit"
 	desc = "A flightsuit belonging to Major Bill's Transportation, a shipping megacorporation."
 	icon_state = "mbill_flight"
 	worn_state = "mbill_flight"
-	catalogue_data = list(/datum/category_item/catalogue/information/organization/major_bills)
 	starting_accessories = list(/obj/item/clothing/accessory/storage/webbing/pilot1)
 	rolled_sleeves = 0
+
+CAPABILITIES(/obj/item/clothing/under/mbill_flight)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/organization/major_bills)))
 
 /obj/item/clothing/under/corp/aether
 	name = "\improper Aether jumpsuit"

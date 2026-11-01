@@ -3,7 +3,6 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 /mob/living/simple_mob/animal/solargrub_larva
 	name = "solargrub larva"
 	desc = "A tiny wormy thing that can grow to massive sizes under the right conditions."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/solargrub)
 	icon = 'icons/mob/vore.dmi'
 	icon_state = "grublarva"
 	icon_living = "grublarva"
@@ -264,6 +263,7 @@ CAPABILITIES(/obj/machinery/abstract_grub_machine)
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/solargrub_larva)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/solargrub)))
 	configure(mob_rules(faction = FACTION_GRUBS))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/grubmeat, meat_amount = 1, butchery_loot = list()))
 	configure(mob_movement(pull_size = ITEMSIZE_TINY, pull_mobs = MOB_PULL_NONE))

@@ -406,7 +406,6 @@ CAPABILITIES(/obj/item/weldingtool/mini)
 /obj/item/weldingtool/alien
 	name = "alien welding tool"
 	desc = "An alien welding tool. Whatever fuel it uses, it never runs out."
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_welder)
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "welder"
 	flame_color = "#6699FF" // Light bluish.
@@ -415,6 +414,7 @@ CAPABILITIES(/obj/item/weldingtool/mini)
 	always_process = TRUE
 
 CAPABILITIES(/obj/item/weldingtool/alien)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_welder)))
 	configure(item_tooling(speed = 0.1))
 
 /obj/item/weldingtool/alien/weldingtool_step(datum/act/timer/A)

@@ -15,7 +15,6 @@
 /mob/living/simple_mob/mechanical/mecha/hoverpod
 	name = "hover pod"
 	desc = "Stubby and round, this space-capable craft is an ancient favorite. It has a jury-rigged welder-laser."
-	catalogue_data = list(/datum/category_item/catalogue/technology/hoverpod)
 	icon_state = "engineering_pod"
 	movement_sound = SFX_MACHINES_HISS
 	wreckage = /obj/structure/loot_pile/mecha/hoverpod
@@ -31,6 +30,7 @@
 	var/datum/effect/effect/system/ion_trail_follow/ion_trail
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/hoverpod)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/hoverpod)))
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 2 SECONDS))
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow, starts_args = list(TRUE)) // follows it, lit from the start

@@ -23,7 +23,6 @@
 	desc = "A piglike creature with a bright iridiscent mane that sparkles as though lit by an inner light. \
 	Don't be fooled by its beauty though."
 	tt_desc = "S Choeros shantak"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/shantak)
 
 
 	icon_state = "shantak"
@@ -47,6 +46,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/shantak)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/shantak)))
 	configure(mob_rules(faction = FACTION_SHANTAK))
 	configure(living_rules(say_list_type = /datum/say_list/shantak))
 	configure(mob_kind(attack_cooldown = 1 SECOND))

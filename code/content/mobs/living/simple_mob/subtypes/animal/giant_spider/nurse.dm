@@ -24,7 +24,6 @@
 
 /mob/living/simple_mob/animal/giant_spider/nurse
 	desc = "Furry and beige, it makes you shudder to look at it. This one has brilliant green eyes."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/giant_spider/nurse_spider)
 
 	icon_state = "nurse"
 	icon_living = "nurse"
@@ -68,6 +67,7 @@ MSG_DEF(spider/laying, null, span_notice("%U% begins to lay a cluster of eggs.")
 MSG_DEF(spider/cocooning, null, span_notice("%U% begins to secrete a sticky substance around %T%."))
 
 CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/nurse)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/giant_spider/nurse_spider)))
 	op("spin_web", ai(), reach(REACH_RANGE(1)), claims(), begins(MSG(spider/webbing)), wait(5 SECONDS, keeps = WAIT_KEEPS_DEFAULT & ~STAY), then(PROC_REF(web_done)), on_interrupt(PROC_REF(work_interrupted)))
 	op("lay_eggs", ai(), reach(REACH_RANGE(1)), claims(), begins(MSG(spider/laying)), wait(5 SECONDS, keeps = WAIT_KEEPS_DEFAULT & ~STAY), then(PROC_REF(eggs_done)), on_interrupt(PROC_REF(work_interrupted)))
 	op("spin_cocoon", ai(), reach(REACH_RANGE(1)), begins(MSG(spider/cocooning)), wait(5 SECONDS), then(PROC_REF(spin_cocoon_nurse_done)), on_interrupt(PROC_REF(spin_cocoon_nurse_failed)))

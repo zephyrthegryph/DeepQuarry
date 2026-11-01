@@ -25,7 +25,6 @@
 	harm_intent_damage = 5
 	melee_damage_lower = 5
 	melee_damage_upper = 1
-	catalogue_data = list(/datum/category_item/catalogue/fauna/woof)
 
 	var/knockdown_chance = 20
 
@@ -50,6 +49,7 @@
 	swallowTime = 0.1 SECONDS
 
 CAPABILITIES(/mob/living/simple_mob/vore/woof)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/woof)))
 	configure(mob_rules(faction = FACTION_DOG))
 	configure(living_rules(vore_capacity = 3, say_list_type = /datum/say_list/softdog))
 	verb_entry(/mob/living/proc/ventcrawl)

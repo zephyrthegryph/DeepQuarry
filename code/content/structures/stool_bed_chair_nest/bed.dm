@@ -394,13 +394,15 @@ CAPABILITIES(/obj/item/roller_holder)
 /obj/structure/bed/alien
 	name = "resting contraption"
 	desc = "Whatever species designed this must've enjoyed relaxation as well. Looks vaguely comfy."
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_bed)
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "bed_red"
 	flippable = FALSE
 	can_pad = FALSE
 	can_unpad = FALSE
 	can_dismantle = FALSE
+
+CAPABILITIES(/obj/structure/bed/alien)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_bed)))
 
 /// Draws none of what the types above draw.
 /obj/structure/bed/alien/look_parts(datum/look/look)

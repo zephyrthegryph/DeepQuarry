@@ -6,7 +6,6 @@
 /mob/living/simple_mob/animal/passive/mothroach
 	name = "mothroach"
 	desc = "This is the adorable by-product of multiple attempts at genetically mixing mothpeople with cockroaches."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/mothroach)
 
 	icon = 'icons/mob/animal.dmi'
 	icon_state = "mothroach"
@@ -39,6 +38,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/mothroach)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/mothroach)))
 	configure(mob_rules(faction = FACTION_MOTHROACH))
 	configure(living_rules(say_list_type = /datum/say_list/mothroach, climbing_delay = 2.0))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 2))

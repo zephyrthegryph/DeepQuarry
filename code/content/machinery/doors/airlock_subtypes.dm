@@ -560,7 +560,6 @@ CAPABILITIES(/obj/machinery/door/airlock/voidcraft)
 /obj/machinery/door/airlock/alien
 	name = "alien airlock"
 	desc = "You're fairly sure this is a door."
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_airlock)
 	icon = 'icons/obj/doors/Dooralien.dmi'
 	secured_wires = TRUE
 	assembly_type = /obj/structure/door_assembly/door_assembly_alien
@@ -568,6 +567,7 @@ CAPABILITIES(/obj/machinery/door/airlock/voidcraft)
 	security_level = 100
 
 CAPABILITIES(/obj/machinery/door/airlock/alien)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_airlock)))
 	configure(obj_rules(explosion_resistance = 20))
 
 /obj/machinery/door/airlock/alien/locked
@@ -585,13 +585,13 @@ CAPABILITIES(/obj/machinery/door/airlock/alien)
 /obj/machinery/door/airlock/alien/blue
 	name = "hybrid airlock"
 	desc = "You're fairly sure this is a door."
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_airlock)
 	icon = 'icons/obj/doors/Dooralien_blue.dmi'
 	secured_wires = TRUE
 	assembly_type = /obj/structure/door_assembly/door_assembly_alien
 	req_one_access = list()
 
 CAPABILITIES(/obj/machinery/door/airlock/alien/blue)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_airlock)))
 	configure(obj_rules(explosion_resistance = 20))
 
 /obj/machinery/door/airlock/alien/blue/locked

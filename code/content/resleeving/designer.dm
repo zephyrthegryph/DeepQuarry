@@ -7,7 +7,6 @@
 
 /obj/machinery/computer/transhuman/designer
 	name = "body design console"
-	catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)
 	icon = 'icons/obj/computer.dmi'
 	icon_keyboard = "med_key"
 	icon_screen = "explosive"
@@ -23,6 +22,7 @@
 	var/tmp/datum/transcore_db/our_db_static	// These persist all round and are never destroyed, just keep a hard ref
 
 CAPABILITIES(/obj/machinery/computer/transhuman/designer)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)))
 	setup(PROC_REF(connect_initial_database))
 	configure(light_glow(color = "#315ab4"))
 	owns_one(nameof(disk), on_destroy = ON_DESTROY_SPILL)

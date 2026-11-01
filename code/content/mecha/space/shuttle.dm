@@ -1,7 +1,6 @@
 /obj/mecha/working/hoverpod/shuttlecraft
 	desc = "A more advanced variant of the hoverpod."
 	name = "Shuttle"
-	catalogue_data = list(/datum/category_item/catalogue/technology/hoverpod)
 	icon = 'icons/mecha/mecha64x64.dmi'
 	icon_state = "shuttle_standard"
 	initial_icon = "shuttle_standard"
@@ -50,6 +49,7 @@
 
 
 CAPABILITIES(/obj/mecha/working/hoverpod/shuttlecraft)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/hoverpod)))
 	op("shuttlecraft_paint", item(/obj/item), label("Paint hull"), when(PROC_REF(paintable_by_multitool)),
 		asks(/datum/prompt/choice, fields = list("title" = "Paint Zone", "question" = "Please select a target zone.", "choices" = list("Central", "Engine", "Base", "Front", "CANCEL"), "subject" = computed(PROC_REF(paint_subject)), "ask_flags" = ASK_HELD | ASK_CAPABLE, "timeout" = 0), step = "zone"),
 		asks(/datum/prompt/color/mech_paint, fields = list("subject" = computed(PROC_REF(paint_subject))), step = "color", when = PROC_REF(paint_zone_chosen)),

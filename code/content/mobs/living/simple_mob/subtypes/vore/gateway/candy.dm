@@ -16,7 +16,6 @@
 	icon_state = "drone0"
 	icon_living = "drone0"
 	icon_dead = "drone0"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/livingcandy)
 
 
 
@@ -31,6 +30,7 @@
 	damage_fatigue_mult = 0 //Candy creatures. They will fight to the bitter end unaffected by their wounds. Also they have 25 health, do they really need slowdown?
 
 CAPABILITIES(/mob/living/simple_mob/vore/candy)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/livingcandy)))
 	configure(mob_rules(faction = "candy"))
 	configure(living_rules(vore_capacity = 6))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
@@ -416,7 +416,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/marshmellowserpent)
 	icon_state = "ouroboros"
 	icon_living = "ouroboros"
 	icon_dead = "slainouroboros"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/livingcandy)
 
 
 	icon_state = "ouroboros"
@@ -439,6 +438,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/marshmellowserpent)
 	special_attack_cooldown = 7 SECONDS
 
 CAPABILITIES(/mob/living/simple_mob/vore/candy/ouroboros)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/livingcandy)))
 	configure(mob_rules(faction = "candy"))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
 	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))

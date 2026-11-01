@@ -10,7 +10,6 @@
 /mob/living/simple_mob/vore/alienanimals/dustjumper
 	name = "dust jumper"
 	desc = "A small, unassuming mammal. It looks quite soft and fluffy, and has bright blue eyes."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/dustjumper)
 
 	icon = 'icons/mob/alienanimals_x32.dmi'
 	icon_state = "space_mouse"
@@ -58,6 +57,7 @@
 	vore_default_item_mode = IM_DIGEST
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/dustjumper)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/dustjumper)))
 	configure(mob_rules(faction = FACTION_SPACE_MOUSE))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/mouse))
 	configure(mob_rules(universal_understand = 1))

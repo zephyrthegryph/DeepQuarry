@@ -338,20 +338,28 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse/hivebot)
 	w_class = ITEMSIZE_SMALL
 
 /obj/item/prop/nanoweave/lime
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/limedisc)
 	icon_state = "limedisk"
 
+CAPABILITIES(/obj/item/prop/nanoweave/lime)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/limedisc)))
+
 /obj/item/prop/nanoweave/cyan
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/cyandisc)
 	icon_state = "cyandisk"
 
+CAPABILITIES(/obj/item/prop/nanoweave/cyan)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/cyandisc)))
+
 /obj/item/prop/nanoweave/orange
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/orangedisc)
 	icon_state = "orangedisk"
 
+CAPABILITIES(/obj/item/prop/nanoweave/orange)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/orangedisc)))
+
 /obj/item/prop/nanoweave/terraformers
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/terraformers)
 	icon_state = "reddisk"
+
+CAPABILITIES(/obj/item/prop/nanoweave/terraformers)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/terraformers)))
 
 
 /datum/category_item/catalogue/anomalous/cyandisc

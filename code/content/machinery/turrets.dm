@@ -1,11 +1,9 @@
 /obj/machinery/porta_turret/obelisk
 	name = "defense obelisk"
-	catalogue_data = list(/datum/category_item/catalogue/technology/turret)
 	anchored = TRUE
 
 	circuit = /obj/item/circuitboard/defenseonelisk
 
-	catalogue_data = null
 
 	turret_type = "obelisk"
 	icon_color = "obelisk_blue"
@@ -45,6 +43,7 @@
 	can_salvage = FALSE
 
 CAPABILITIES(/obj/machinery/porta_turret/obelisk)
+	configure(atom_rules(catalogue_data = TRAIT_NONE))
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_UNIQUE))
 	configure(uses_power(idle = 50000, active = 150000, channel = EQUIP))
 

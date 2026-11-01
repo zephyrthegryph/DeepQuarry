@@ -20,7 +20,6 @@
 /mob/living/simple_mob/mechanical/viscerator
 	name = "viscerator"
 	desc = "A small, twin-bladed machine capable of inflicting very deadly lacerations."
-	catalogue_data = list(/datum/category_item/catalogue/technology/drone/viscerator)
 
 	icon = 'icons/mob/critter.dmi'
 	icon_state = "viscerator_attack"
@@ -43,6 +42,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/viscerator)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/drone/viscerator)))
 	configure(mob_rules(faction = FACTION_SYNDICATE))
 	configure(living_rules(delete_on_death = TRUE, use_modern_ai = TRUE))
 	configure(mob_movement(hovering = TRUE))

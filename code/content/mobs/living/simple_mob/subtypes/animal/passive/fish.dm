@@ -11,7 +11,6 @@
 	icon = 'icons/mob/fish.dmi'
 	item_state = "fish"
 
-	catalogue_data = list(/datum/category_item/catalogue/fauna/invasive_fish) // CHOMPEnable
 
 	mob_size = MOB_SMALL
 	// So fish are actually underwater.
@@ -26,6 +25,7 @@
 	var/randomize_location = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/fish)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/invasive_fish)))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/fish, meat_amount = 3))
 	rolls(nameof(default_pixel_x), range_of(-12, 12), when = all_of(nameof(randomize_location), not(nameof(default_pixel_x))))
 	rolls(nameof(default_pixel_y), range_of(-6, 10), when = all_of(nameof(randomize_location), not(nameof(default_pixel_y))))
@@ -119,10 +119,10 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/fish)
 	icon_living = "javelin-swim"
 	icon_dead = "javelin-dead"
 
-	catalogue_data = list(/datum/category_item/catalogue/fauna/javelin)
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/javelin)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/javelin)))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/fish/sif))
 
 /datum/category_item/catalogue/fauna/icebass
@@ -148,7 +148,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/javelin)
 	icon_living = "sifbass-swim"
 	icon_dead = "sifbass-dead"
 
-	catalogue_data = list(/datum/category_item/catalogue/fauna/icebass)
 
 
 	var/max_red = 150
@@ -165,6 +164,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/javelin)
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/icebass)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/icebass)))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/fish/sif))
 	rolls(nameof(dorsal_color), PROC_REF(roll_colour))
 	rolls(nameof(belly_color), PROC_REF(roll_colour))
@@ -205,7 +205,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/icebass)
 	icon_living = "rockfish-swim"
 	icon_dead = "rockfish-dead"
 
-	catalogue_data = list(/datum/category_item/catalogue/fauna/rockfish)
 
 	armor_spec = "melee=90;bullet=50;laser=-15;energy=30;bomb=30;bio=100;rad=100"
 
@@ -222,6 +221,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/icebass)
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/rockfish)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/rockfish)))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/fish/sif))
 	rolls(nameof(head_color), PROC_REF(roll_colour))
 
@@ -259,12 +259,12 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/rockfish)
 	icon_living = "solarfin-swim"
 	icon_dead = "solarfin-dead"
 
-	catalogue_data = list(/datum/category_item/catalogue/fauna/solarfish)
 
 	has_eye_glow = TRUE
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/solarfish)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/solarfish)))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/fish/sif))
 
 /datum/category_item/catalogue/fauna/murkin
@@ -290,10 +290,10 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/solarfish)
 	icon_living = "murkin-swim"
 	icon_dead = "murkin-dead"
 
-	catalogue_data = list(/datum/category_item/catalogue/fauna/murkin)
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/murkin)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/murkin)))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/sif/murkfish))
 
 /datum/decl/mob_organ_names/fish

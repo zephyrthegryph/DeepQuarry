@@ -16,7 +16,6 @@
 	name = "siffet"
 	desc = "A small, solitary predator with silky fur. Despite its size, the Siffet is ferocious when provoked."
 	tt_desc = "S Pruinaeictis velocis" //Sivian frost weasel, fast
-	catalogue_data = list(/datum/category_item/catalogue/fauna/siffet)
 
 
 	mob_size = MOB_SMALL
@@ -37,6 +36,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/siffet)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/siffet)))
 	configure(mob_rules(faction = FACTION_SIFFET))
 	configure(living_rules(say_list_type = /datum/say_list/siffet))
 	configure(mob_kind(attack_cooldown = 1 SECOND))

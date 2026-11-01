@@ -112,11 +112,11 @@ CAPABILITIES(/obj/item/multitool)
 /obj/item/multitool/alien
 	name = "alien multitool"
 	desc = "An omni-technological interface."
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_multitool)
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "multitool"
 
 CAPABILITIES(/obj/item/multitool/alien)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_multitool)))
 	configure(item_tooling(speed = 0.1))
 
 // Alien multitool only has those icon states

@@ -28,7 +28,6 @@
 	melee_damage_lower = 1
 	melee_damage_upper = 1
 
-	catalogue_data = list(/datum/category_item/catalogue/fauna/abyss_lurker)
 
 	see_in_dark = 8
 
@@ -73,6 +72,7 @@
 	B.escape_stun = 5
 
 CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/abyss_lurker)))
 	configure(mob_rules(faction = FACTION_MACROBACTERIA))
 	configure(living_rules(vore_capacity = 1))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 5))
@@ -115,7 +115,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
 	melee_damage_upper = 1
 
 	movement_cooldown = 1
-	catalogue_data = list(/datum/category_item/catalogue/fauna/leaper)
 
 	see_in_dark = 8
 
@@ -155,6 +154,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
 	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
 
 CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/leaper)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/leaper)))
 	configure(mob_rules(faction = FACTION_MACROBACTERIA))
 	configure(living_rules(vore_capacity = 2))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 5))
@@ -241,7 +241,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/leaper)
 	melee_damage_upper = 1
 
 	movement_cooldown = 50
-	catalogue_data = list(/datum/category_item/catalogue/fauna/gelatinous_cube)
 
 	see_in_dark = 8
 
@@ -291,6 +290,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/leaper)
 	B.escape_stun = 3
 
 CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/gelatinous_cube)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/gelatinous_cube)))
 	configure(mob_rules(faction = FACTION_MACROBACTERIA))
 	configure(living_rules(vore_capacity = 1, delete_on_death = TRUE))
 	configure(butchery_rules(meat_type = TRAIT_NONE, meat_amount = 0))

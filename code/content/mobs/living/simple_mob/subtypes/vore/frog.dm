@@ -21,7 +21,6 @@
 	name = "giant frog"
 	desc = "You've heard of having a frog in your throat, now get ready for the reverse."
 	tt_desc = "Anura Gigantus"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/frog)
 
 	icon_dead = "frog-dead"
 	icon_living = "frog"
@@ -42,6 +41,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/frog)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/frog)))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 4))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_pred" = 1, "can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 	rolls(nameof(rare), PROC_REF(roll_rare))

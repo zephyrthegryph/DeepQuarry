@@ -22,7 +22,6 @@
 	name = "river leech"
 	desc = "What appears to be an oversized leech."
 	tt_desc = "S Hirudinea phorus"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/iceleech)
 
 
 	icon_state = "leech"
@@ -96,6 +95,7 @@
 	emote_hear = list("chitters", "clicks", "gurgles")
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/iceleech)))
 	op("feed_on_organ", menu(desc = "Extend probosci to feed on a piece of your host's organs."), label("Feed on Organ"), needs(req_self(), req(PROC_REF(awake_ready))), then(PROC_REF(feed_on_organ_op)))
 	op("medicate_host", menu(desc = "Inject your host with possibly beneficial chemicals, to keep the blood flowing."), label("Produce Chemicals (50)"), needs(req_self(), req(PROC_REF(medicate_host_ready))), then(PROC_REF(medicate_host_op)))
 	op("inject_victim", menu(desc = "Inject an organic host with an incredibly painful mixture of chemicals."), label("Incapacitate Potential Host"), needs(req_self(), req(PROC_REF(awake_ready))), then(PROC_REF(inject_victim_op)))

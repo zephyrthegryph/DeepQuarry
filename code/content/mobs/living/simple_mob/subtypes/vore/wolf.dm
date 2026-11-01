@@ -28,13 +28,13 @@
 
 	minbodytemp = 200
 
-	catalogue_data = list(/datum/category_item/catalogue/fauna/wolf)
 
 	vore_active = TRUE
 	vore_icons = SA_ICON_LIVING
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/wolf)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/wolf)))
 	configure(mob_rules(faction = FACTION_WOLF))
 	configure(living_rules(species_sounds = "Canine"))
 	configure(living_rules(vore_capacity = 1))

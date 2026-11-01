@@ -17,7 +17,6 @@
 	real_name = "ice hare"
 	desc = "A small horned herbivore with a tough 'ice-like' hide."
 	tt_desc = "S Lepus petropellis" //Sivian hare rockskin
-	catalogue_data = list(/datum/category_item/catalogue/fauna/hare)
 
 	icon_state = "hare"
 	icon_living = "hare"
@@ -45,6 +44,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/hare)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/hare)))
 	configure(living_rules(say_list_type = /datum/say_list/hare))
 	configure(butchery_rules(meat_amount = 1))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))

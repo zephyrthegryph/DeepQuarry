@@ -36,9 +36,9 @@
 	icon_state = "crystal"
 	density = TRUE
 	anchored = TRUE
-	catalogue_data = list(/datum/category_item/catalogue/material/regular_crystal)
 
 CAPABILITIES(/obj/machinery/crystal)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/material/regular_crystal)))
 	setup(PROC_REF(randomize_color))
 
 /// A crystal is violet 3 times in 10, else green.
@@ -60,7 +60,9 @@ CAPABILITIES(/obj/machinery/crystal)
 	name = "ice crystal"
 	desc = "A large crystalline ice formation."
 	icon_state = "icecrystal2"
-	catalogue_data = list(/datum/category_item/catalogue/material/ice_crystal)
+
+CAPABILITIES(/obj/machinery/crystal/ice)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/material/ice_crystal)))
 
 /obj/machinery/crystal/ice/randomize_color()
 	if(prob(30))
@@ -80,7 +82,9 @@ CAPABILITIES(/obj/machinery/crystal)
 	desc = "A large crystalline formation found near extreme heat."
 	icon_state = "grey_crystal"
 	color = "#FCCF64"
-	catalogue_data = list(/datum/category_item/catalogue/material/magma_crystal)
+
+CAPABILITIES(/obj/machinery/crystal/lava)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/material/magma_crystal)))
 
 /obj/machinery/crystal/lava/randomize_color()
 	if(prob(50))

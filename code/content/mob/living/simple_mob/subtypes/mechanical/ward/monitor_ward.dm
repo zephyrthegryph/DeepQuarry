@@ -20,7 +20,6 @@
 
 /mob/living/simple_mob/mechanical/ward/monitor
 	desc = "It's a little flying drone. This one seems to be watching you..."
-	catalogue_data = list(/datum/category_item/catalogue/technology/drone/ward)
 	icon_state = "ward"
 	icon_living = "ward"
 	glow_color = "#00FF00"
@@ -136,4 +135,5 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/ward/monitor/crew)
 // Special attacks are not blocked since they might be used for things besides attacking, and can be conditional.
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/ward/monitor)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/drone/ward)))
 	ref_many(nameof(seen_mobs))

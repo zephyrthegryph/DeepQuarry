@@ -47,21 +47,21 @@ CAPABILITIES(/obj/item/tool/crowbar/red)
 /obj/item/tool/crowbar/alien
 	name = "alien crowbar"
 	desc = "A hard-light crowbar. It appears to pry by itself, without any effort required."
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_crowbar)
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "crowbar"
 
 CAPABILITIES(/obj/item/tool/crowbar/alien)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_crowbar)))
 	configure(item_tooling(speed = 0.1))
 	configure(item_sounds(use = SFX_WEAPONS_SONIC_JACKHAMMER))
 
 /obj/item/tool/crowbar/hybrid
 	name = "strange crowbar"
 	desc = "A crowbar whose head seems to phase in and out of view."
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_crowbar)
 	icon_state = "hybcrowbar"
 
 CAPABILITIES(/obj/item/tool/crowbar/hybrid)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_crowbar)))
 	configure(item_tooling(speed = 0.4))
 	configure(item_combat(reach = 2))
 	configure(item_sounds(use = SFX_WEAPONS_SONIC_JACKHAMMER))

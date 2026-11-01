@@ -17,7 +17,6 @@
 	name = "diyaab"
 	desc = "A small pack animal. Although omnivorous, it will hunt meat on occasion."
 	tt_desc = "S Choeros hirtus" //diyaab and shantak are technically reletives!
-	catalogue_data = list(/datum/category_item/catalogue/fauna/diyaab)
 
 
 	icon_state = "diyaab"
@@ -52,6 +51,7 @@
 		)
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/diyaab)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/diyaab)))
 	configure(mob_rules(faction = FACTION_DIYAAB))
 	configure(living_rules(say_list_type = /datum/say_list/diyaab))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 2))

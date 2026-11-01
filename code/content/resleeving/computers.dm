@@ -4,7 +4,6 @@
 
 /obj/machinery/computer/transhuman/resleeving
 	name = "resleeving control console"
-	catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)
 	icon_keyboard = "med_key"
 	icon_screen = "dna"
 	circuit = /obj/item/circuitboard/resleeving_control
@@ -539,12 +538,12 @@
 /obj/item/cmo_disk_holder
 	name = "cmo emergency packet"
 	desc = "A small paper packet with printing on one side. \"Tear open in case of Code Delta or Emergency Evacuation ONLY. Use in any other case is UNLAWFUL.\""
-	catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_state = "cmoemergency"
 	item_state = "card-id"
 
 CAPABILITIES(/obj/item/cmo_disk_holder)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)))
 	op("cmo_disk_holder_interaction_tear", in_hand(), label("Tear open"), then(PROC_REF(cmo_disk_holder_interaction_tear)))
 
 /// Old attack_self.
@@ -563,7 +562,6 @@ CAPABILITIES(/obj/item/cmo_disk_holder)
 	\"1.INSERT DISK INTO RESLEEVING CONSOLE\n\
 	2. BEGIN CORE DUMP PROCEDURE\n\
 	3. ENSURE DISK SAFETY WHEN EJECTED\""
-	catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)
 	icon = 'icons/obj/cloning.dmi'
 	icon_state = "harddisk"
 	item_state = "card-id"
@@ -571,6 +569,7 @@ CAPABILITIES(/obj/item/cmo_disk_holder)
 	var/list/datum/transhuman/mind_record/stored = list() // ALLOW(instance_list): d: the disk's stored records
 
 CAPABILITIES(/obj/item/disk/transcore)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)))
 	owns_many(nameof(stored), /datum/transhuman/mind_record) // keyed by mind name; a core dump moves the database's records here
 
 /**
@@ -685,6 +684,7 @@ CAPABILITIES(/obj/item/disk/transcore)
 // Linked machines are independent: one-sided relation lists, each machine's `connected` a plain
 // back relation. Either end dying drops the link.
 CAPABILITIES(/obj/machinery/computer/transhuman/resleeving)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)))
 	configure(atom_rules(bubble_icon = "medical"))
 	setup(PROC_REF(updatemodules))
 	configure(light_glow(color = "#315ab4"))

@@ -7,7 +7,6 @@
 /obj/item/implant/backup
 	name = "backup implant"
 	desc = "A mindstate backup implant that occasionally stores a copy of one's mind on a central server for backup purposes."
-	catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_state = "backup_implant"
 	known_implant = TRUE
@@ -30,6 +29,7 @@
 	return dat
 
 CAPABILITIES(/obj/item/implant/backup)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)))
 	param(nameof(db_key), pos = 1)
 
 /obj/item/implant/backup/post_implant(mob/living/carbon/human/H)
@@ -44,7 +44,6 @@ MATERIAL_MIX(/obj/item/backup_implanter, list(MAT_STEEL = 2000, MAT_GLASS = 2000
 /obj/item/backup_implanter
 	name = "backup implanter"
 	desc = "After discovering that Nanotrasen was just re-using the same implanters over and over again on organics, leading to cross-contamination, Vey-Medical designed this self-cleaning model. Holds four backup implants at a time."
-	catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)
 	icon = 'icons/obj/device_alt.dmi'
 	icon_state = "bimplant"
 	item_state = "syringe_0"
@@ -55,6 +54,7 @@ MATERIAL_MIX(/obj/item/backup_implanter, list(MAT_STEEL = 2000, MAT_GLASS = 2000
 	var/db_key // To give to the baby implants
 
 CAPABILITIES(/obj/item/backup_implanter)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)))
 	configure(movable_motion(throw_range = 5, throw_speed = 1))
 	setup(PROC_REF(load_implants))
 	owns_many(nameof(imps), /obj/item/implant/backup)

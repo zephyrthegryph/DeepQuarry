@@ -7,7 +7,6 @@
 	icon_living = "medi"
 	icon_dead = "medi"
 	taser_kill = 0
-	catalogue_data = list(/datum/category_item/catalogue/fauna/astralcollective)
 	movement_cooldown = 0
 
 	status_flags = 0
@@ -487,6 +486,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective/mind/gravity)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis). Each member is one experiment: its effect, and its size with it.
 CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/astralcollective)))
 	configure(mob_rules(faction = FACTION_ECLIPSE))
 	configure(living_rules(vore_capacity = 1))
 	configure(movable_motion(unacidable = TRUE))

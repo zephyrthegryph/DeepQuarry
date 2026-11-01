@@ -12,7 +12,6 @@
 /mob/living/simple_mob/animal/space/shark
 	name = "space shark"
 	desc = "A regal and imposing interstellar creature, and one that poses a serious threat to the ill-prepared."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/shark)
 	icon = 'icons/mob/mobs_monsters/animal.dmi'
 	icon_state = "shark"
 	icon_living = "shark"
@@ -39,6 +38,7 @@
 	var/knockdown_chance = 10	//slightly reduced their knockdown prob compared to carp given their greater power
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/shark)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/shark)))
 	configure(mob_rules(faction = FACTION_SPACESHARK))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/shark, meat_amount = 10))
 	configure(mob_movement(hovering = TRUE))

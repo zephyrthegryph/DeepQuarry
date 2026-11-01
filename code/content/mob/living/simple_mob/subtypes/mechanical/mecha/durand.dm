@@ -18,7 +18,6 @@
 /mob/living/simple_mob/mechanical/mecha/combat/durand
 	name = "durand"
 	desc = "An aging combat exosuit utilized by many corporations. It was originally developed to fight in the First Contact War."
-	catalogue_data = list(/datum/category_item/catalogue/technology/durand)
 	icon_state = "durand"
 	movement_cooldown = 3
 	wreckage = /obj/structure/loot_pile/mecha/durand

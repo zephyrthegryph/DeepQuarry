@@ -1,7 +1,6 @@
 /mob/living/simple_mob/vore/leopardmander
 	name = "leopardmander"
 	desc = "A huge salamander-like drake. They are best known for their rarity, their voracity, their very potent paralyzing venom, and their healing stomach. This one is white."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/leopardmander)
 	tt_desc = "S Draconis uncia"
 	icon = 'icons/mob/vore128x64.dmi'
 	icon_dead = "leopardmander-dead"
@@ -54,6 +53,7 @@
 	value = CATALOGUER_REWARD_HARD
 
 CAPABILITIES(/mob/living/simple_mob/vore/leopardmander)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/leopardmander)))
 	configure(mob_rules(faction = FACTION_NEUTRAL))
 	configure(living_rules(species_sounds = "Canine"))
 	configure(living_rules(vore_capacity = 4))

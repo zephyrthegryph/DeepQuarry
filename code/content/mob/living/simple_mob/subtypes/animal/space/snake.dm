@@ -21,7 +21,6 @@
 	name = "snake"
 	desc = "A cute little, green snake. Wiggle wiggle."
 	tt_desc = "E Reptilia Serpentes"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/snake)
 
 	icon_state = "snek"
 	icon_living = "snek"
@@ -53,6 +52,7 @@
 	vore_bump_emote = "coils around and unhinges its jaws at"
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/snake)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/snake)))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/snake))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 2))
 	configure(mob_nature(faction_bump_vore = 1))
