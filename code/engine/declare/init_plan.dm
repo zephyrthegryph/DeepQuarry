@@ -18,7 +18,7 @@
 	var/hook_flags = 0
 	/// The type declares an on_change hook (hooks_change_baseline() has a baseline to take).
 	var/change_baseline = FALSE
-	/// The type has type-level every() entries (type_every_arm() has work).
+	/// The type has type-level every() entries, or a capability's that only arming can start (type_every_arm() has work).
 	var/every_arm = FALSE
 	/// The type declares verb entries (verb_entries_init() has work).
 	var/verb_entries = FALSE
@@ -62,7 +62,7 @@ GLOBAL_VAR_INIT(init_plan_traced_types, 0)
 		LAZYADD(P.rel_grant_vars, E.args["var"])
 	P.change_baseline = !!change_index_of(holder)
 	for(var/datum/centry/C as anything in compiled_entries(T, ENTRY_EVERY))
-		if(isnull(C.owner))
+		if(isnull(C.owner) || every_keyless_capability(T, C))
 			P.every_arm = TRUE
 			break
 	P.verb_entries = isatom(holder) && !!verb_entries_of(holder)

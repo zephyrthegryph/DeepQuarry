@@ -276,7 +276,11 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 /proc/release(datum/E, stat, source, key = null)
 	OP_PURE_GUARD("a hold on [E?.type] was released")
 	var/datum/stat_def/def = stat_def_of(stat)
-	if(!isdatum(E) || !def)
+	if(!def)
+		// hold() reports an unknown stat; a release of one would leave the real hold in place for the rest of the round with nothing said.
+		declare_report("release([E?.type], [stat]): no such stat")
+		return FALSE
+	if(!isdatum(E))
 		return FALSE
 	var/datum/stat_record/rec = E.rx?.stats
 	if(!rec?.holds)
