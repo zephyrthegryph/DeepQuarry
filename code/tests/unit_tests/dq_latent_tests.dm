@@ -101,6 +101,8 @@
 /datum/unit_test/dq_latent_collapse
 
 /datum/unit_test/dq_latent_collapse/Run()
+	// The refusals this test provokes (a referenced pen, a box without latent contents) record why in a global; it is put back with the rest.
+	set_global(nameof(GLOB.latent_last_refusal), GLOB.latent_last_refusal)
 	var/obj/structure/closet/closet = allocate(/obj/structure/closet, test_floor())
 	var/obj/item/pen/pen = new(closet)
 	pen.name = "labelled pen"
