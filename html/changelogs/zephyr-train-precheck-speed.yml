@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - code_imp: "A precheck no longer repeats its prepare step, and the slowest train self-tests run only when their subject changed"

@@ -958,6 +958,8 @@ Measured from `train.log` (30 October to 1 November, 18 light cycles): 9 repeate
 
 - **A tgui-only lane is light** (no DM compile, no world). `dq_light_checks.sh` runs `tgui-lint`, `tgui-test` and the bundle build; interfaces and `.jsx` also run the ratchets (`ui_actions`, `check_grep` read them). `tgui/public/` and `tgui/packages/tgfont/static/` stay heavy because DM embeds or reads them, and any DM in the lane keeps it heavy. It reruns when master changes `tgui/`, `code/`, `tools/analyze/` or `tools/build/`, and does not land beside a gate.
 
+- **A heavy precheck does not repeat its prepare** (`DQ_GATE_PREPARED`, `tools/build/lib/gate_prepared.ts`): dm-test skips the icon repack, DME check and bindings check the gate just passed on the same clean commit. **The slow train self-tests run for their subject**: `test_train_light_side.sh` and `test_train_light_trust.sh` run for `dq_train.sh` only when its diff touches `light_side`, `heavy_cycle`, `light_cycle`, `DQ_PUSH_NEUTRAL_OK` or `light_trust`.
+
 ### 29d. A lone prechecked lane lands as a fast-forward (28 October 2026, `train/speed`)
 
 Measured on `fix/pref-metadata-order` (one line, enqueued 16:23Z, landed 16:47Z as 6cd2d86b74): precheck 10.1 min, DreamChecker batch

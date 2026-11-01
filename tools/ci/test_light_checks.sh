@@ -79,6 +79,14 @@ check "a failing TGUI check fails the lane" '[ "$rc" != 0 ] && grep -q "build.sh
 git switch -q master
 promote_re="$(grep -F 'heavy = 1' "$here/tools/dq_train.sh" | head -1)"
 check "the train promotes by the same list" 'grep -qF "tgui\/(public|packages\/tgfont\/static)" <<<"$promote_re" && ! grep -qE "sound\|tgui\)" <<<"$promote_re"'
+git switch -q -c st/sub master; printf 'echo side\n' >tools/ci/test_train_light_side.sh; printf 'echo trust\n' >tools/ci/test_train_light_trust.sh; printf 'echo "side" >>"$ST_LOG"\n' >tools/ci/test_train_light_side.sh; printf 'echo "trust" >>"$ST_LOG"\n' >tools/ci/test_train_light_trust.sh; git add -A; git commit -qm stubs
+echo '# plain edit' >>tools/dq_train.sh; git commit -qam plain; : >"$ST_LOG"; bash tools/dq_light_checks.sh HEAD~1 HEAD >/dev/null 2>&1
+check "a dq_train.sh edit away from their subject runs neither slow self-test" '! grep -qE "side|trust" "$ST_LOG"'
+echo '# heavy_cycle edit' >>tools/dq_train.sh; git commit -qam side; : >"$ST_LOG"; bash tools/dq_light_checks.sh HEAD~1 HEAD >/dev/null 2>&1
+check "an edit of the gate cycle runs the light-side self-test" 'grep -qx side "$ST_LOG" && ! grep -qx trust "$ST_LOG"'
+echo '# light_trust edit' >>tools/dq_train.sh; git commit -qam trust; : >"$ST_LOG"; bash tools/dq_light_checks.sh HEAD~1 HEAD >/dev/null 2>&1
+check "an edit of light_trust runs its self-test" 'grep -qx trust "$ST_LOG"'
+git switch -q master
 git switch -q -c st/slow master; echo '# x' >>tools/dq_slow.sh; git commit -qam slow
 : >"$ST_LOG"; DQ_LIGHT_SELFTEST_CAP_SEC=1 bash tools/dq_light_checks.sh origin/master HEAD >"$tmp/lc.out" 2>&1; rc=$?
 check "a self-test over its cap is a warning (inconclusive), not a failure" '[ "$rc" = 0 ] && grep -q "hit its 1s cap and was stopped" "$tmp/lc.out"'

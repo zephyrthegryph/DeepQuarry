@@ -28,7 +28,8 @@ add_selftest() { [ -f "tools/ci/$1" ] && selftests["$1"]=1; }
 selftests_for() { # <changed file>
 	case "$1" in
 		tools/ci/test_*.sh) add_selftest "$(basename "$1")" ;;
-		tools/dq_train.sh|tools/dq_train_estimate.js|tools/dq_merge_batch.sh|tools/dq_merge_gates.sh|tools/dq_gate_retry.sh|tools/dq_gate_verdicts.sh|tools/dq_declared_tests.sh|tools/train/*) add_selftest test_train.sh; add_selftest test_train_decisions.sh ; add_selftest test_train_enqueue_wait.sh; add_selftest test_train_snapshot.sh ; add_selftest test_train_landed_times.sh ; add_selftest test_train_light_trust.sh; add_selftest test_train_light_side.sh ;;
+		tools/dq_train.sh|tools/dq_train_estimate.js|tools/dq_merge_batch.sh|tools/dq_merge_gates.sh|tools/dq_gate_retry.sh|tools/dq_gate_verdicts.sh|tools/dq_declared_tests.sh|tools/train/*) add_selftest test_train.sh; add_selftest test_train_decisions.sh ; add_selftest test_train_enqueue_wait.sh; add_selftest test_train_snapshot.sh ; add_selftest test_train_landed_times.sh ;;
+		tools/train/light_trust.py) add_selftest test_train_light_trust.sh ;;
 		tools/ci/check_ratchets.sh) add_selftest test_ratchets_selftest_fail.sh ;;
 		tools/ci/check_gitattributes.sh) add_selftest test_check_gitattributes.sh ;;
 		tools/dq_light_paths.sh|tools/dq_land_batch.sh) add_selftest test_light_checks.sh; add_selftest test_train_light_side.sh ;;
@@ -135,6 +136,9 @@ fi
 # test that covers it (tools/dq_X.sh -> tools/ci/test_X.sh when it exists, plus the explicit map below). test_train.sh runs only when the train or the
 # merge drivers change. Each self-test is capped (DQ_LIGHT_SELFTEST_CAP_SEC, default 300 s) so a slow one fails loudly instead of holding the precheck.
 for f in "${changed[@]}"; do selftests_for "$f"; done
+# The two train self-tests that cost minutes run for dq_train.sh only when its diff touches their subject (1 November: 514 s of a lane's 845 s precheck).
+if git diff "$base" "$head" -- tools/dq_train.sh | grep -E '^[-+]' | grep -qE 'light_side|heavy_cycle|light_cycle|DQ_PUSH_NEUTRAL_OK'; then add_selftest test_train_light_side.sh; fi
+if git diff "$base" "$head" -- tools/dq_train.sh | grep -E '^[-+]' | grep -q 'light_trust'; then add_selftest test_train_light_trust.sh; fi
 cap="${DQ_LIGHT_SELFTEST_CAP_SEC:-300}"
 # Self-tests run side by side (DQ_LIGHT_SELFTEST_JOBS, default 3): one after another they were most of a 744 s light precheck on 1 November, with
 # every lane behind it waiting. The ones that write to or build in this worktree run alone, after the others. Each test's report prints when it ends.
