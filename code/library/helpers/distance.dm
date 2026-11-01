@@ -28,10 +28,3 @@
 /proc/get_euclidean_dist(turf/A, turf/B)
 	return sqrt((A.x - B.x) ** 2 + (A.y - B.y) ** 2)
 
-/**
- * real taxicab dist
- *
- * accepts **TURFS**
- */
-/proc/get_manhattan_dist(turf/A, turf/B)
-	return abs(A.x - B.x) + abs(A.y - B.y)

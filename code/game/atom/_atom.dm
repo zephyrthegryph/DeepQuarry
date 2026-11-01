@@ -795,5 +795,5 @@ SETTER(/atom, icon_state)
 SETTER(/atom, icon)
 
 /// Its base colour, under any colour layers (a debug or effect tint that reverts later).
-/atom/proc/set_base_color(new_color)
+/atom/set_base_color(new_color)
 	set_color(new_color)

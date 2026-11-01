@@ -229,3 +229,15 @@ CAPABILITIES(/datum/pathfinding)
  */
 /atom/movable/proc/can_pathfinding_pass(atom/movable/actor, datum/pathfinding/search)
 	return !density /*|| (pass_flags_self & actor.pass_flags)*/
+
+/**
+ * real taxicab dist
+ *
+ * accepts **TURFS**
+ */
+/proc/get_manhattan_dist(turf/A, turf/B)
+	return abs(A.x - B.x) + abs(A.y - B.y)
+
+/// Its base colour, under any colour layers. The pathfinder's debug tint calls it; content implements it.
+/atom/proc/set_base_color(new_color)
+	return
