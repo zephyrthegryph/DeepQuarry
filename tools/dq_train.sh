@@ -741,8 +741,7 @@ dc_candidates() { # <master>: the queued heavy lanes that need a DreamChecker ru
 # ---- light prechecks (27 October: compiler lanes ride the light path; their cargo tests made each light cycle ~10 min, ahead of every DM lane) --
 # The prechecker runs a light lane's cheap checks on its merge with master (DQ_GATE_LIGHT) beside the gates. The light cycle takes a light
 # lane once that passed (or when prechecks are off, or after the wait limit), and lands it without repeating the checks when master changed
-# nothing in the lane's areas since (light_trust: a crate, tools/<x>, or a directory; a parent area such as tools/dmb overlaps its crates).
-light_area() { awk '{ n = split($0, p, "/"); if (p[1] == "tools" && p[2] == "dmb" && p[3] == "crates" && n > 4) print p[1] "/" p[2] "/" p[3] "/" p[4]; else if (p[1] == "tools" && n > 3) print p[1] "/" p[2]; else if (p[1] == "tools" && n == 2) print $0; else if (n > 1) { sub(/\/[^\/]*$/, "", $0); print } else print "." }' | sort -u; }
+# nothing its checks read since (light_trust, tools/train/light_trust.py: the lane's files, its self-tests and what they name, its crates).
 light_ready() { # <branch>: a light lane may ride now
 	local b="$1" tip st since_s
 	[ "$PRE_ON" = 1 ] && [ "$LIGHT_PRE" = 1 ] || return 0
@@ -754,7 +753,7 @@ light_ready() { # <branch>: a light lane may ride now
 	[ $(( $(date +%s) - since_s )) -ge $(( PRE_WAIT_MIN * 60 )) ]
 }
 light_trust() { # <lanes...>: 0 and LIGHT_TRUST_WHY set when every lane's light precheck still holds on current origin/master
-	local b tip vf pm master la ma a m seen=""
+	local b tip vf pm master st why seen=""
 	LIGHT_TRUST_WHY=""
 	[ "$PRE_ON" = 1 ] && [ "$LIGHT_PRE" = 1 ] || return 1
 	master="$(G rev-parse origin/master 2>/dev/null)" || return 1
@@ -765,16 +764,12 @@ light_trust() { # <lanes...>: 0 and LIGHT_TRUST_WHY set when every lane's light 
 		pm="$(qget "$vf" master)"
 		G merge-base --is-ancestor "$pm" "$master" 2>/dev/null || return 1
 		if [ "$pm" != "$master" ]; then
-			la="$(G diff --name-only "$master...$tip" | light_area)"
-			ma="$(G diff --name-only "$pm" "$master" | light_area)"
-			for a in $la; do for m in $ma; do
-				case "$a/" in "$m/"*) return 1 ;; esac
-				case "$m/" in "$a/"*) return 1 ;; esac
-			done; done
+			st="$(G diff --name-only "$master...$tip" | ( cd "$(repo_dir)" && bash tools/dq_light_checks.sh --selftests-for ))" || return 1
+			why="$(cd "$(repo_dir)" && python3 tools/train/light_trust.py --repo . --base "$pm" --master "$master" --tip "$tip" --selftests "$st" 2>&1)" || { tlog "light trust: $b repeats its checks: ${why//$'\r'/}"; return 1; }
 		fi
 		seen="$seen $b@${pm:0:10}"
 	done
-	LIGHT_TRUST_WHY="every lane passed these checks in its light precheck (${seen# }) and master changed nothing in their areas since"
+	LIGHT_TRUST_WHY="every lane passed these checks in its light precheck (${seen# }) and master changed nothing those checks read since"
 	return 0
 }
 lane_is_light() { [ "$(qget "$(qfile "$1")" light)" = 1 ]; }
