@@ -12,7 +12,6 @@
 	desc = "This rather dangerous looking armor will hopefully shock your enemies, and not you in the process."
 	icon_state = "tesla_armor_1" //wip
 	blood_overlay_type = "armor"
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	armor_spec = ""
 	var/active = 1	//Determines if the armor will zap or block
 	var/ready = 1 //Determines if the next attack will be blocked, as well if a strong lightning bolt is sent out at the attacker.
@@ -48,6 +47,7 @@
 	return 0
 
 CAPABILITIES(/obj/item/clothing/suit/armor/tesla)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_tesla_armor)))
 	op("tesla_armor_toggle_self", in_hand(), label("Toggle"), then(PROC_REF(tesla_armor_toggle_self)))
 

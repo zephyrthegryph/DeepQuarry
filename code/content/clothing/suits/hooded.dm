@@ -393,9 +393,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/knight)
 	icon_state = "robin"
 	hoodtype = /obj/item/clothing/head/hood/robin
 	armor_spec = "melee=70;bullet=40;laser=10"
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = -1)
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/knight/robin)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = -1)))
 	configure(item_protection(siemens = 3))
 
 // Weaker variants for the redgate
@@ -405,9 +405,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/knight/robin)
 	icon_state = "chain"
 	hoodtype = /obj/item/clothing/head/hood/chain
 	armor_spec = "melee=60;bullet=10;laser=10"
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/knight/chain)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_knight_headgear)))
 
 /obj/item/clothing/suit/storage/hooded/knight/chain/lezzy

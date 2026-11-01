@@ -20,6 +20,10 @@ import sys
 
 ROOTS = ("code", "maps")
 SPECS = {
+    "worn_factors": dict(
+        base="/obj/item", ctor="item_worn", reader="worn_of", type_reader="worn_of_type",
+        fields={"worn_factors": "worn_factors"}, skip={"code/content/items/item_worn.dm"},
+    ),
     "insulation": dict(
         base="/obj", ctor="obj_rules", reader="rules_of", type_reader="rules_of_type",
         fields={"insulation": "insulation"}, skip={"code/content/objects/obj_rules.dm"},

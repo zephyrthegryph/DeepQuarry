@@ -5,7 +5,6 @@
 	icon_state = "railgun"
 	power_cost = 300
 	w_class = ITEMSIZE_HUGE
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1) // Slowdown equals slowdown_worn, until we decide to import the system to differentiate between held and worn items
 	fire_delay = 1
 
 	load_type = /obj/item/rcd_ammo
@@ -21,6 +20,7 @@
 	var/empty_sound = SFX_MACHINES_TWOBEEP
 
 CAPABILITIES(/obj/item/gun/magnetic/railgun)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)))
 	configure(atom_rules(description_fluff = "Mars Military Industries is a Hephaestus Industries subsidiary focused on the development of new energy-ballistic hybrid weapons for use against heavy targets. \
 	The distribution of MMI weapons is understandably tightly tracked and controlled."))
 	setup(PROC_REF(magnetic_railgun_setup))
@@ -60,7 +60,6 @@ CAPABILITIES(/obj/item/gun/magnetic/railgun)
 	capacitor = /obj/item/stock_parts/capacitor
 	fire_delay = 0.1
 
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 2)
 	slowdown_held = 3
 	slowdown_worn = 2
 
@@ -73,6 +72,7 @@ CAPABILITIES(/obj/item/gun/magnetic/railgun)
 		)
 
 CAPABILITIES(/obj/item/gun/magnetic/railgun/automatic)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 2)))
 	configure(item_worn(slots = SLOT_BACK))
 
 /obj/item/gun/magnetic/railgun/automatic/examine(mob/user)
@@ -94,7 +94,6 @@ CAPABILITIES(/obj/item/gun/magnetic/railgun/automatic)
 
 	w_class = ITEMSIZE_HUGE //.
 
-	worn_factors = null
 	slowdown_held = 0
 	slowdown_worn = 0
 
@@ -111,6 +110,7 @@ CAPABILITIES(/obj/item/gun/magnetic/railgun/automatic)
 		)
 
 CAPABILITIES(/obj/item/gun/magnetic/railgun/flechette)
+	configure(item_worn(worn_factors = TRAIT_NONE))
 	configure(item_worn(slots = SLOT_BACK))
 
 /obj/item/gun/magnetic/railgun/flechette/pistol
@@ -128,7 +128,6 @@ CAPABILITIES(/obj/item/gun/magnetic/railgun/flechette)
 	move_delay = 0 // Pistols have move_delay of 0
 
 
-	worn_factors = null
 	slowdown_held = 0
 	slowdown_worn = 0
 
@@ -144,6 +143,7 @@ CAPABILITIES(/obj/item/gun/magnetic/railgun/flechette)
 	)
 
 CAPABILITIES(/obj/item/gun/magnetic/railgun/flechette/pistol)
+	configure(item_worn(worn_factors = TRAIT_NONE))
 	configure(atom_rules(description_fluff = "Mars Military Industries is a Hephaestus Industries subsidiary focused on the development of new energy-ballistic hybrid weapons for use against heavy targets. \
 	The distribution of MMI weapons is understandably tightly tracked and controlled."))
 	configure(item_worn(slots = SLOT_BELT))
@@ -162,7 +162,6 @@ CAPABILITIES(/obj/item/gun/magnetic/railgun/flechette/pistol)
 
 	w_class = ITEMSIZE_HUGE //.
 
-	worn_factors = null
 	slowdown_held = 0.3
 	slowdown_worn = 0
 
@@ -177,6 +176,7 @@ CAPABILITIES(/obj/item/gun/magnetic/railgun/flechette/pistol)
 		)
 
 CAPABILITIES(/obj/item/gun/magnetic/railgun/heater)
+	configure(item_worn(worn_factors = TRAIT_NONE))
 	configure(atom_rules(description_fluff = "The Hephaestus MI-51B is a weapon designed by Mars Military Industries - a Hephaestus subsidiary - in the days after the Grey Hour, in preparation for the need for updated equipment by Solar forces.<br>\
 		The design is based upon a larger rail-type weapon design."))
 	configure(item_worn(slots = SLOT_BACK))

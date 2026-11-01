@@ -5,7 +5,6 @@
 	icon = 'icons/obj/rig_modules_ch.dmi'
 	icon_state = "clockwork_rig"
 	armor_spec = "melee=70;bullet=55;laser=65;energy=65;bomb=65;rad=100"
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 2)
 	offline_slowdown = 4
 	offline_vision_restriction = 1
 	emp_protection = 40
@@ -28,6 +27,7 @@
 	req_one_access = list()
 
 CAPABILITIES(/obj/item/rig/ch/clockwork)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 2)))
 	suit_storage(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_ENGINEERING, POCKET_HEAVYTOOLS, POCKET_BAYSUIT,  /obj/item/storage/backpack, /obj/item/ratvarian_spear  ))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_protection(siemens = 0.75))

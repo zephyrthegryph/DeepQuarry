@@ -15,10 +15,10 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/capspace)
 	desc = "A bulky, heavy-duty piece of exclusive corporate armor. YOU are in charge!"
 	icon_state = "caparmor"
 	w_class = ITEMSIZE_HUGE
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)
 	armor_spec = "melee=65;bullet=50;laser=50;energy=25;bomb=50;bio=100;rad=50"
 
 CAPABILITIES(/obj/item/clothing/suit/armor/captain)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))
 	configure(item_worn(flags = 0, covers = CHEST|LEGS|FEET|ARMS|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL))
 	configure(item_protection(gas_transfer = 0.01, permeability = 0.02, min_pressure = 0, max_pressure = 2 * ONE_ATMOSPHERE, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0.7))
@@ -62,9 +62,9 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/santahat)
 	name = "Santa's suit"
 	desc = "Festive!"
 	icon_state = "santa"
-	worn_factors = null
 
 CAPABILITIES(/obj/item/clothing/suit/space/santa)
+	configure(item_worn(worn_factors = TRAIT_NONE))
 	suit_storage(list(/obj/item))
 	configure(item_worn(flags = 0))
 
@@ -86,10 +86,10 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/pirate)
 	desc = "Yarr."
 	icon_state = "pirate"
 	w_class = ITEMSIZE_NORMAL
-	worn_factors = null
 	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=30;rad=30;cold=60"
 
 CAPABILITIES(/obj/item/clothing/suit/space/pirate)
+	configure(item_worn(worn_factors = TRAIT_NONE))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO))
 	configure(item_worn(hides = HIDETAIL|HIDEHOLSTER, covers = UPPER_TORSO|ARMS))
 	configure(item_protection(siemens = 0.9))
@@ -107,4 +107,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/pirate)
 	name = "emergency softsuit"
 	icon_state = "syndicate-orange"
 	desc = "A thin, ungainly softsuit colored in blaze orange for rescuers to easily locate, looks pretty fragile."
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 2)
+
+CAPABILITIES(/obj/item/clothing/suit/space/emergency)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 2)))

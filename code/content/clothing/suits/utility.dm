@@ -16,10 +16,10 @@
 	icon_state = "firesuit"
 	item_state_slots = list(slot_r_hand_str = "black_suit", slot_l_hand_str = "black_suit")
 	w_class = ITEMSIZE_LARGE//bulky item
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.0)
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/suit/fire)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.0)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/extinguisher))
 	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER, flags = 0))
 	configure(item_protection(gas_transfer = 0.90, permeability = 0.50, heat_parts = CHEST|LEGS|FEET|ARMS|HANDS, max_heat = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE, cold_parts = CHEST|LEGS|FEET|ARMS|HANDS, min_pressure = 0.2 * ONE_ATMOSPHERE, max_pressure = 20  * ONE_ATMOSPHERE))
@@ -36,9 +36,9 @@ CAPABILITIES(/obj/item/clothing/suit/fire/firefighter)
 	name = "atmospheric firesuit"
 	desc = "A suit that protects against extreme fire and heat."
 	icon_state = "atmos_firesuit"
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)
 
 CAPABILITIES(/obj/item/clothing/suit/fire/heavy)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)))
 	configure(item_protection(max_heat = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000))
 
 /*
@@ -60,11 +60,11 @@ CAPABILITIES(/obj/item/clothing/head/bomb_hood)
 	desc = "A suit designed for safety when handling explosives."
 	icon_state = "bombsuit"
 	w_class = ITEMSIZE_LARGE//bulky item
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 2)
 	armor_spec = "bomb=100"
 	resistance_flags = BOMB_PROOF
 
 CAPABILITIES(/obj/item/clothing/suit/bomb_suit)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 2)))
 	configure(item_worn(hides = HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER))
 	configure(item_protection(gas_transfer = 0.01, permeability = 0.01, heat_parts = CHEST|LEGS|FEET|ARMS|HANDS, cold_parts = CHEST|LEGS|FEET|ARMS|HANDS, max_heat = ARMOR_MAX_HEAT_PROTECTION_TEMPERATURE, siemens = 0))
 
@@ -101,11 +101,11 @@ CAPABILITIES(/obj/item/clothing/head/radiation)
 	desc = "A suit that protects against radiation. Label: Made with lead, do not eat insulation."
 	icon_state = "rad"
 	w_class = ITEMSIZE_LARGE//bulky item
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)
 	armor_spec = "bio=60;rad=100"
 
 
 CAPABILITIES(/obj/item/clothing/suit/radiation)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/radiation))
 	configure(item_worn(covers = CHEST|LEGS|ARMS|HANDS|FEET, hides = HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER, flags = THICKMATERIAL))
 	configure(item_protection(gas_transfer = 0.90, permeability = 0.50))
@@ -117,7 +117,6 @@ CAPABILITIES(/obj/item/clothing/suit/radiation)
 	icon = 'icons/inventory/suit/item_teshari.dmi'
 	icon_override = 'icons/inventory/suit/mob_teshari.dmi'
 	icon_state = "rad_fitted"
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 
 
 /obj/item/clothing/head/radiation/teshari
@@ -161,6 +160,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/paramedic)
 
 
 CAPABILITIES(/obj/item/clothing/suit/radiation/teshari)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	fits_as(FIT_TESHARI)
 
 

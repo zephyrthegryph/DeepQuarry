@@ -17,5 +17,4 @@ base_var	code/game/atoms_movable.dm	@/atom/movable::last_move
 base_var	code/game/atoms_movable.dm	@/atom/movable::move_speed
 base_var	code/game/atoms_movable.dm	@/atom/movable::old_x
 base_var	code/game/atoms_movable.dm	@/atom/movable::old_y
-base_var	code/modules/body/factors.dm	@/obj/item::worn_factors
 base_var	code/modules/catalogue/atoms.dm	@/atom::catalogue_data

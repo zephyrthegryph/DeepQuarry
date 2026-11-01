@@ -17,12 +17,12 @@ CAPABILITIES(/obj/item/clothing/head/bio_hood)
 	desc = "A suit that protects against biological contamination."
 	icon_state = "bio"
 	w_class = ITEMSIZE_LARGE//bulky item
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.0)
 	armor_spec = "bio=100;rad=20;acid=60"
 	flags = PHORONGUARD
 	resistance_flags = UNACIDABLE
 
 CAPABILITIES(/obj/item/clothing/suit/bio_suit)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.0)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY))
 	configure(item_worn(covers = CHEST|LEGS|ARMS|HANDS|FEET, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER, flags = THICKMATERIAL))
 	configure(item_protection(gas_transfer = 0.01, permeability = 0.01, siemens = 0.9))

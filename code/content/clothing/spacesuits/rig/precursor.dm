@@ -7,7 +7,6 @@ MATERIAL_MIX(/obj/item/rig/ch/precursor, list(MAT_PLASTEEL = 1200, MAT_GOLD = 50
 	icon_state = "precursor_rig"
 	armor_spec = "melee=50;bullet=50;laser=70;energy=70;bomb=60;bio=100;rad=80"
 	var/block_chance = 15
-	worn_factors = null
 
 	chest_type = /obj/item/clothing/suit/space/rig/ch/precursor
 	helm_type = /obj/item/clothing/head/helmet/space/rig/ch/precursor
@@ -16,6 +15,9 @@ MATERIAL_MIX(/obj/item/rig/ch/precursor, list(MAT_PLASTEEL = 1200, MAT_GOLD = 50
 
 	req_access = list()
 	req_one_access = list()
+
+CAPABILITIES(/obj/item/rig/ch/precursor)
+	configure(item_worn(worn_factors = TRAIT_NONE))
 
 /obj/item/clothing/suit/space/rig/ch/precursor
 	name = "protective vest"

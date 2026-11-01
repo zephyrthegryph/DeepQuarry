@@ -15,7 +15,9 @@
 	name = "encumbering test item"
 
 /obj/item/clothing/shoes/dq_test_encumbrance/heavy
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 2.5)
+
+CAPABILITIES(/obj/item/clothing/shoes/dq_test_encumbrance/heavy)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 2.5)))
 
 /datum/unit_test/dq_item_encumbrance_default_factor
 
