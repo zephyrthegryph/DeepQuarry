@@ -719,12 +719,13 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         member_follow: bool,
         exact: bool,
     ) -> Result<TypeFact, D::Error> {
-        let fact = checker_call_facts::callable_any(
+        let fact = checker_call_facts::callable_any_using(
             self.tree,
             self.resolver,
             self.profile,
             receiver,
             SymbolId::of(name),
+            &mut||self.prefix_demand.checkpoint(),
         )?;
         if matches!(fact, CallableFact::Missing) {
             if let EvaluationCallSite::Written(expression) = site {
@@ -1007,12 +1008,13 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
     ) -> Result<TypeFact, D::Error> {
         let owner = SymbolId::of("/list");
         let _ = checked_type(self.tree, self.resolver, Some(owner), None)?;
-        let fact = checker_call_facts::callable_any(
+        let fact = checker_call_facts::callable_any_using(
             self.tree,
             self.resolver,
             self.profile,
             owner,
             SymbolId::of("New"),
+            &mut||self.prefix_demand.checkpoint(),
         )?;
         if matches!(fact, CallableFact::Missing) {
             return Ok(TypeFact::Unknown); // pinned constructor skips every dimension without /list/New
@@ -1052,12 +1054,13 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             }
         };
         let _ = checked_type(self.tree, self.resolver, Some(owner), None)?;
-        let new = crate::checker_call_facts::callable_any(
+        let new = crate::checker_call_facts::callable_any_using(
             self.tree,
             self.resolver,
             self.profile,
             owner,
             SymbolId::of("New"),
+            &mut||self.prefix_demand.checkpoint(),
         )?;
         if matches!(new, CallableFact::Missing) {
             if ["/list", "/alist", "/vector", "/pixloc"]
@@ -1323,11 +1326,12 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 }
                 ExprKind::Ident(name) if name == ".." => {
                     if let Some(access)=self.access.as_mut(){access.parent_call();}
-                    let fact = checks_parent_call::parent_fact_in_profile(
+                    let fact = checks_parent_call::parent_fact_in_profile_using(
                         self.tree,
                         self.member,
                         self.resolver,
                         Some(self.profile),
+                        &mut||self.prefix_demand.checkpoint(),
                     )?;
                     if !fact.has_parent {
                         self.event(Event::MissingParent {
@@ -1550,12 +1554,13 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                             Ok(TypeFact::Unhinted)
                         }
                         TypeFact::Known(owner) => {
-                            match checker_call_facts::callable_any(
+                            match checker_call_facts::callable_any_using(
                                 self.tree,
                                 self.resolver,
                                 self.profile,
                                 owner,
                                 SymbolId::of(operator),
+                                &mut||self.prefix_demand.checkpoint(),
                             )? {
                                 CallableFact::Missing => {
                                     let name = self
@@ -1918,7 +1923,7 @@ fn purity_annotation_using<D:PrefixDemand>(
                 return Ok(Some(at));
             }
         }
-        at = crate::checker_effects::original_target_parent(archive, profile, resolver, target)?;
+        at = crate::checker_effects::original_target_parent_using(archive,profile,resolver,target,&mut||demand.checkpoint())?;
     }
     Ok(None)
 }

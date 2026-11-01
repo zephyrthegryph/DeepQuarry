@@ -1323,3 +1323,5 @@ pub(crate) use generation_stage::{ClosedGeneration,original_manifest_includes};
 #[path="runner_query_allow_annotations.rs"]mod allow_annotations;
 
 #[path="runner_query_call_arguments.rs"]mod call_arguments;
+
+#[path="runner_query_keys.rs"]mod keys;

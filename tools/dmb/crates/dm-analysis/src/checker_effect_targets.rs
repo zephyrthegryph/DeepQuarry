@@ -49,28 +49,11 @@ pub(crate) fn display_target<E:From<String>+From<&'static str>>(
     input: &report_core::ReportSource<'_>,
     target: EffectTarget,
     budget: &output::ReportBudgetWith<'_,E>,
+    checkpoint:&mut impl FnMut()->Result<(),E>,
 ) -> Result<String, E> {
     match target {
-        EffectTarget::Source(p) => display(input, p, &budget),
-        EffectTarget::Builtin(p) => {let result=input
-            .archive
-            .tree()
-            .with_checker_builtin_procedure(p, |row| {
-                let owner = input
-                    .archive
-                    .tree()
-                    .checker_builtin_spelling(p.profile(), row.owner)
-                    .ok_or("builtin owner spelling unavailable")?;
-                let name = input
-                    .archive
-                    .tree()
-                    .checker_builtin_spelling(p.profile(), row.name)
-                    .ok_or("builtin name spelling unavailable")?;
-                budget.format(format_args!(
-                    "{}/proc/{name}",
-                    if owner == "/" { "" } else { owner }
-                ))
-            });match result{Ok(value)=>value,Err(error)=>Err(E::from(budget.format(format_args!("{error:?}"))?))}},
+        EffectTarget::Source(p) => display(input, p, &budget,checkpoint),
+        EffectTarget::Builtin(p) => {let value=crate::checker_callable_display::builtin(input.archive.tree(),p,&mut *checkpoint)?;budget.format(format_args!("{value}"))},
     }
 }
 /// Called ONLY after the exact original source-parent projection has exhausted
@@ -140,16 +123,19 @@ pub(crate) fn builtin_parent_after_sources(
     Ok(result.map(|(_, id)| EffectTarget::Builtin(id)))
 }
 
-pub(crate) fn original_target_parent(
+pub(crate) fn original_target_parent_using<E:From<String>+From<&'static str>>(
     archive: &BodyArchive,
     profile: PackedU128,
     resolver: &(impl Resolver + ?Sized),
     target: EffectTarget,
-) -> Result<Option<EffectTarget>, String> {
+    checkpoint:&mut impl FnMut()->Result<(),E>,
+) -> Result<Option<EffectTarget>, E> {
+    checkpoint()?;
+    if matches!(target,EffectTarget::Builtin(_)){if let Some(group)=crate::checker_original_group::Group::for_target_using(archive.tree(),profile,target,checkpoint)?{return group.parent_using(target,resolver,checkpoint)}}
     match target {
         EffectTarget::Source(id) => {
             let mut member = None;
-            for (ordinal, body) in archive.occurrences().iter().enumerate() {
+            for (ordinal, body) in archive.occurrences().iter().enumerate() {checkpoint()?;
                 if identity(archive, ordinal)? == id {
                     if member.replace(body.member).is_some() {
                         return Err(
@@ -158,12 +144,13 @@ pub(crate) fn original_target_parent(
                     }
                 }
             }
-            source_parent(
+            source_parent_using(
                 archive,
                 resolver,
                 profile,
                 member.ok_or("source parent has no original body occurrence")?,
                 id,
+                checkpoint,
             )
         }
         EffectTarget::Builtin(id) => {
@@ -189,29 +176,33 @@ pub(crate) fn original_target_parent(
                 return Ok(None);
             };
             let fact =
-                crate::checker_call_facts::callable_any(tree, resolver, profile, *parent, name)?;
+                crate::checker_call_facts::callable_any_using(tree, resolver, profile, *parent, name,checkpoint)?;
             if matches!(fact, crate::checker_call_facts::CallableFact::Missing) {
                 Ok(None)
             } else {
-                callable_target(tree, profile, &fact).map(Some)
+                Ok(Some(callable_target(tree, profile, &fact)?))
             }
         }
     }
 }
-pub(crate) fn target_parent_parts(
+pub(crate) fn original_target_parent(archive:&BodyArchive,profile:PackedU128,resolver:&(impl Resolver+?Sized),target:EffectTarget)->Result<Option<EffectTarget>,String>{original_target_parent_using(archive,profile,resolver,target,&mut||Ok(()))}
+
+pub(crate) fn target_parent_parts_using<E:From<String>+From<&'static str>>(
     input: &EffectInput,
     resolver: &(impl Resolver + ?Sized),
     target: EffectTarget,
     bodies: &[Arc<BodyEffects>],
     index: &BTreeMap<ProcedureIdentity, usize>,
-) -> Result<Option<EffectTarget>, String> {
+    checkpoint:&mut impl FnMut()->Result<(),E>,
+) -> Result<Option<EffectTarget>, E> {
+    checkpoint()?;
     match target {
         EffectTarget::Source(p) => Ok(bodies[*index
             .get(&p)
             .ok_or("effect source parent contribution absent")?]
         .parent),
         EffectTarget::Builtin(_) => {
-            original_target_parent(&input.archive, input.profile, resolver, target)
+            original_target_parent_using(&input.archive,input.profile,resolver,target,checkpoint)
         }
     }
 }

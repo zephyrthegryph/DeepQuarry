@@ -286,7 +286,25 @@ pub fn scan_keys(cx:&crate::lint::Cx<'_>,decls:&ScanInput<'_>,out:&mut crate::li
         |system,_|Ok(system_types(system)));
     match result{Ok(())=>{},Err(never)=>match never{}}
 }
+/// Source-neutral policy effects only. Implementations do not issue discovery,
+/// current-frame or complete-workspace authority by returning success.
+pub trait ScanSource<C:crate::key_policy_control::Control>{
+ fn exempt(&self,relative:&str)->bool;
+ fn allowed(&mut self,relative:&str,line:u32,control:&mut C)->Result<bool,C::Error>;
+ fn site(&mut self,rule:&'static str,relative:&str,line:usize,message:String)->Result<(),C::Error>;
+}
 pub fn scan_keys_controlled<C:crate::key_policy_control::Control>(cx:&crate::lint::Cx<'_>,decls:&ScanInput<'_>,out:&mut crate::lint::Sink,c:&mut C,
+ system_var:impl FnMut(&str,&str,&mut C)->Result<(bool,bool),C::Error>,system_types:impl FnMut(&str,&mut C)->Result<Vec<String>,C::Error>)->Result<(),C::Error>{
+ struct Legacy<'a,'tree>{cx:&'a crate::lint::Cx<'tree>,out:&'a mut crate::lint::Sink}
+ impl<C:crate::key_policy_control::Control> ScanSource<C> for Legacy<'_,'_>{
+  fn exempt(&self,relative:&str)->bool{self.cx.exempt(relative)}
+  fn allowed(&mut self,relative:&str,line:u32,control:&mut C)->Result<bool,C::Error>{allowed_controlled(self.cx,self.out,relative,line,control)}
+  fn site(&mut self,rule:&'static str,relative:&str,line:usize,message:String)->Result<(),C::Error>{self.out.site_in_msg(rule,relative,line,message);Ok(())}
+ }
+ scan_keys_using(&mut Legacy{cx,out},decls,c,system_var,system_types)
+}
+/// SAME unique key-resolution algorithm for original and native source loans.
+pub fn scan_keys_using<C:crate::key_policy_control::Control>(source:&mut impl ScanSource<C>,decls:&ScanInput<'_>,c:&mut C,
  mut system_var:impl FnMut(&str,&str,&mut C)->Result<(bool,bool),C::Error>,mut system_types:impl FnMut(&str,&mut C)->Result<Vec<String>,C::Error>)->Result<(),C::Error>{
  macro_rules! key_format{($control:expr,$($args:tt)*)=>{crate::key_policy_control::format($control,format_args!($($args)*))?}}
  use crate::raw_key_calls_policy::KeyKind;
@@ -297,7 +315,7 @@ pub fn scan_keys_controlled<C:crate::key_policy_control::Control>(cx:&crate::lin
         let cap_prefixes = idx.cap_state_prefixes_controlled(c)?;
         for m in decls.keys.markers {
             c.checkpoint()?;
-            if !CHECKED_MARKERS.contains(&m.name) || cx.exempt(&m.rel) {
+            if !CHECKED_MARKERS.contains(&m.name) || source.exempt(&m.rel) {
                 continue;
             }
             for (off, tok) in id_tokens_controlled(&m.body, &cap_prefixes,c)? {
@@ -305,54 +323,56 @@ pub fn scan_keys_controlled<C:crate::key_policy_control::Control>(cx:&crate::lin
                     continue;
                 }
                 let line = m.line_at(off);
-                if allowed_controlled(cx,out,&m.rel,line,c)? {
+                if source.allowed(&m.rel,line,c)? {
                     continue;
                 }
                 let msg = match idx.suggest_controlled(&tok, &decls.defines,c)? {
                     Some(s) => key_format!(c,"`{}` is not declared; did you mean `{}`?", tok, s),
                     None => key_format!(c,"`{}` is not declared", tok),
                 };
-                out.site_in_msg("unresolved_id", &m.rel, line as usize, msg);
+                source.site("unresolved_id", &m.rel, line as usize, msg)?;
             }
         }
 
-        for r in decls.key_refs.iter().filter(|r| !cx.exempt(&r.rel)) {
+        for r in decls.key_refs {
+            if source.exempt(&r.rel){continue}
             c.checkpoint()?;
             match r.kind {
                 KeyKind::Op if !idx.op_resolves_controlled(&r.key,c)? => {
-                    if allowed_controlled(cx,out,&r.rel,r.line,c)? {
+                    if source.allowed(&r.rel,r.line,c)? {
                         continue;
                     }
                     let msg = match idx.suggest_op_controlled(&r.key,c)? {
                         Some(s) => key_format!(c,"op key \"{}\" in {}() is not declared; did you mean \"{}\"?", r.key, r.call, s),
                         None => key_format!(c,"op key \"{}\" in {}() is not declared", r.key, r.call),
                     };
-                    out.site_in_msg("unresolved_op", &r.rel, r.line as usize, msg);
+                    source.site("unresolved_op", &r.rel, r.line as usize, msg)?;
                 }
                 KeyKind::Capability if !idx.caps.contains_key(&r.key) => {
-                    if allowed_controlled(cx,out,&r.rel,r.line,c)? {
+                    if source.allowed(&r.rel,r.line,c)? {
                         continue;
                     }
-                    out.site_in_msg("unresolved_capability", &r.rel, r.line as usize, key_format!(c,"capability key \"{}\" in {}() is not declared", r.key, r.call));
+                    source.site("unresolved_capability", &r.rel, r.line as usize, key_format!(c,"capability key \"{}\" in {}() is not declared", r.key, r.call))?;
                 }
                 _ => {}
             }
         }
 
-        for (rel, line, v) in decls.bad_sources.iter().filter(|(rel, _, _)| !cx.exempt(rel)) {
+        for (rel, line, v) in decls.bad_sources {
+            if source.exempt(rel){continue}
             c.checkpoint()?;
-            if allowed_controlled(cx,out,rel,*line,c)? {
+            if source.allowed(rel,*line,c)? {
                 continue;
             }
-            out.site_in_msg("text_source", rel, *line as usize, key_format!(c,"source = {} is not a datum or a SRC_*", v));
+            source.site("text_source", rel, *line as usize, key_format!(c,"source = {} is not a datum or a SRC_*", v))?;
         }
 
         for (kind, name, first, second) in &idx.duplicates {
             c.checkpoint()?;
-            if allowed_controlled(cx,out,&second.0,second.1,c)? {
+            if source.allowed(&second.0,second.1,c)? {
                 continue;
             }
-            out.site_in_msg("duplicate_declaration", &second.0, second.1 as usize, key_format!(c,"{} `{}` is already declared at {}:{}", kind, name, first.0, first.1));
+            source.site("duplicate_declaration", &second.0, second.1 as usize, key_format!(c,"{} `{}` is already declared at {}:{}", kind, name, first.0, first.1))?;
         }
 
         // SYSTEM_ACCESSOR(system, name, nameof(var)): the var must be on the system.
@@ -361,13 +381,13 @@ pub fn scan_keys_controlled<C:crate::key_policy_control::Control>(cx:&crate::lin
             let (Some(system), Some(name), Some(key)) = (m.args.first(), m.args.get(1), m.args.get(2)) else { continue };
             let Some(var) = key.trim().strip_prefix("nameof(").and_then(|s| s.strip_suffix(')')).map(str::trim) else { continue };
             let (known, contains) = system_var(system,var,c)?;
-            if !contains && !allowed_controlled(cx,out,&m.rel,m.line,c)? {
+            if !contains && !source.allowed(&m.rel,m.line,c)? {
                 let msg = if known {
                     key_format!(c,"accessor `{}`: system `{}` has no var `{}`", name, system, var)
                 } else {
                     {let types=system_types(system,c)?;let joined=types_joined_controlled(types,c)?;key_format!(c,"accessor `{}`: no system type for `{}` (looked for {})", name, system, joined)}
                 };
-                out.site_in_msg("accessor_var", &m.rel, m.line as usize, msg);
+                source.site("accessor_var", &m.rel, m.line as usize, msg)?;
             }
         }
 

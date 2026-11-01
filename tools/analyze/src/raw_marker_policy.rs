@@ -133,28 +133,28 @@ pub fn dme_include_order(text: &str) -> std::collections::HashMap<String, usize>
 }
 /// Acquisition may strip exactly the initial UTF8 BOM; do not copy a source
 /// buffer to put it back. Old trim() leaves BOM, so only first line is skipped.
-pub fn dme_include_order_view(
-    text: &str,
-    had_bom: bool,
-) -> std::collections::HashMap<String, usize> {
-    let mut out = std::collections::HashMap::new();
-    for (index, line) in text.lines().enumerate() {
-        if index == 0 && had_bom {
-            continue;
+pub fn dme_include_order_view(text:&str,had_bom:bool)->std::collections::HashMap<String,usize>{
+    match dme_include_order_controlled(text,had_bom,&mut crate::key_policy_control::Compatibility){Ok(value)=>value,Err(never)=>match never{}}
+}
+/// SAME include-order policy with actual observed path/table growth admitted.
+/// Generic data does not certify that these bytes are an original manifest.
+pub fn dme_include_order_controlled<C:crate::key_policy_control::Control>(text:&str,had_bom:bool,control:&mut C)->Result<std::collections::HashMap<String,usize>,C::Error>{
+    let mut out=std::collections::HashMap::new();
+    for(index,line)in text.lines().enumerate(){
+        control.checkpoint()?;
+        if index==0&&had_bom{continue}
+        let line=line.trim();let Some(rest)=line.strip_prefix("#include")else{continue};let rest=rest.trim();let Some(path)=rest.strip_prefix('"').and_then(|r|r.split('"').next())else{continue};
+        crate::key_policy_control::reserve(control,||path.len().checked_mul(4)?.checked_add(128))?;
+        let rel=path.replace('\\',"/");
+        if C::CHECKED&&rel.capacity()>path.len().checked_mul(4).and_then(|n|n.checked_add(128)).ok_or_else(||control.overflow())?{return Err(control.allocation_failed())}
+        if C::CHECKED&&!out.contains_key(&rel)&&out.len()==out.capacity(){
+            let target=out.capacity().checked_mul(2).map(|n|n.max(4)).ok_or_else(||control.overflow())?;let bound=target.checked_mul(4).ok_or_else(||control.overflow())?;
+            let bytes=bound.checked_mul(std::mem::size_of::<(String,usize)>()+2*std::mem::size_of::<usize>()).and_then(|n|n.checked_add(256)).ok_or_else(||control.overflow())?;control.reserve(bytes)?;
+            out.try_reserve(1).map_err(|_|control.allocation_failed())?;if out.capacity()>bound{return Err(control.allocation_failed())}
         }
-        let line = line.trim();
-        let Some(rest) = line.strip_prefix("#include") else {
-            continue;
-        };
-        let rest = rest.trim();
-        let Some(path) = rest.strip_prefix('"').and_then(|r| r.split('"').next()) else {
-            continue;
-        };
-        let rel = path.replace('\\', "/");
-        let n = out.len();
-        out.entry(rel).or_insert(n);
+        let n=out.len();out.entry(rel).or_insert(n);
     }
-    out
+    control.checkpoint()?;Ok(out)
 }
 
 pub fn block_extent(text: &str, close: usize) -> Option<usize> {

@@ -364,6 +364,9 @@ impl CheckerBuiltinCatalog {
     /// Borrow fixed hash-verified spelling bytes only. This DATA projection does
     /// not validate a source tree or grant a builtin/source callable identity.
     pub fn spelling(&self,symbol:SymbolId)->Option<&'static str>{self.spellings.get(&symbol).copied()}
+    /// Fixed metadata DATA only; callable identity still requires the exact
+    /// immutable tree/profile and original catalog metadata Arc join.
+    pub fn own_callable(&self,owner:SymbolId,name:SymbolId,verb:bool)->Option<&CheckerBuiltinDeclaration>{let kind=if verb{MemberKind::Verb}else{MemberKind::Proc};self.members.get(&(owner,name,kind)).and_then(|index|self.declarations.get(*index))}
 }
 impl SemanticTree {
     /// Validate the fixed profile against this ORIGINAL compiler owner. The

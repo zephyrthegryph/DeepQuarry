@@ -125,7 +125,7 @@ fn visit_overrides(source:&EffectSource<'_>,resolver:&(impl Resolver+?Sized),ind
   checkpoint().map_err(PolicyFailure::Operational)?;if !rows[child as usize].direct||id.name==SymbolId::of("New"){continue}
   let mut parent=rows[child as usize].parent;let mut visited=0;
   while let Some(target)=parent{checkpoint().map_err(PolicyFailure::Operational)?;visited+=1;if visited>steps{return Err("purity original predecessor cycle".into())}
-   parent=match target{EffectTarget::Source(id)=>{let at=find(id)?;edge(at,child)?;rows[at as usize].parent},EffectTarget::Builtin(_)=>original_target_parent(source.archive,source.profile,resolver,target)?};
+   parent=match target{EffectTarget::Source(id)=>{let at=find(id)?;edge(at,child)?;rows[at as usize].parent},EffectTarget::Builtin(_)=>original_target_parent_using(source.archive,source.profile,resolver,target,&mut||checkpoint().map_err(PolicyFailure::Operational))?};
   }
  }
  Ok(())

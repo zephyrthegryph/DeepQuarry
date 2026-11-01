@@ -197,3 +197,13 @@ tools/dmb/fixtures/unified_checks/call_arguments/base.dm -text
 tools/dmb/fixtures/unified_checks/call_arguments/children.dm -text
 tools/dmb/fixtures/unified_checks/call_arguments/calls.dm -text
 tools/dmb/fixtures/unified_checks/call_arguments_builtin/project.dme -text
+
+# Immutable whole-original keys policy and exact shared initial source bytes.
+tools/analyze/fixtures/original_policies/keys_*.rs -text whitespace=cr-at-eol
+tools/analyze/examples/support/keys_original/*.rs -text whitespace=cr-at-eol
+tools/analyze/fixtures/native-keys/** -text whitespace=cr-at-eol,-indent-with-non-tab
+tools/dmb/fixtures/unified_checks/call_arguments_mixed_implicit/project.dme -text
+tools/dmb/fixtures/unified_checks/call_arguments_mixed_parent_implicit/project.dme -text
+
+# Preserve the exact original helper block, including its separating EOF blank.
+tools/analyze/fixtures/original_policies/keys_system_lookup.rs -text whitespace=cr-at-eol,-blank-at-eof

@@ -690,3 +690,5 @@ fn actual_public_sys_reports_keep_distinct_complete_issuers_two_eofs_global_poin
 }
 
 #[path="runner_query_allow_annotations_tests.rs"]mod allow_annotations_validation;
+
+#[path="runner_query_keys_tests.rs"]mod keys_original_policy;

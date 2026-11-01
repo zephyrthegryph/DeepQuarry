@@ -1,0 +1,654 @@
+//! Declarations that expand to nothing in DM, read from source text.
+//!
+//! `CAPABILITIES(...)`, `STAT(...)`, `SOURCE_DEF(...)`, `READS_AS(...)`, `READS_FROM(...)` and the
+//! rest are generator markers (`code/__defines/engine/markers.dm`): the compiler discards their
+//! arguments, so the analysis engine reads them here, from comment-stripped text with balanced
+//! parentheses (a marker may span lines). Everything is per file and parallel; the merged
+//! [`Decls`] is memoized on the tree.
+//!
+//! Also collected here, because they too leave no AST: relation declarations
+//! (`REL/OWN/...(/type, var)`), tracked-var declarations (`TRACKED/SETTER/OM_FIELD...`),
+//! `#define` names (for id resolution) and `PUBLISH_CHANGE(E, KEY)` producers.
+
+use std::collections::{BTreeMap, HashMap, HashSet};
+use std::sync::Arc;
+
+pub use crate::raw_marker_policy::{matching_paren, split_args, strip_comments_keep_strings};
+use crate::tree::{SourceFile, Tree, CODE_DM};
+use crate::{pat, pat_match};
+
+/// Marker names the engine reads at the start of a statement.
+pub const MARKERS: &[&str] = &[
+    "CAPABILITIES",
+    "CAPABILITY_DEF",
+    "CAPABILITY_TYPE",
+    "cap_keys",
+    "ACTION",
+    "STAT",
+    "SCHEMA",
+    "TRACKED_SCHEMA",
+    "SYSTEM_ACCESSOR",
+    "sparse",
+    "STAGE_DEF",
+    "STATE_GRAPH",
+    "RESOURCE_DEF",
+    "SOURCE_DEF",
+    "READS_AS",
+    "READ_LOOKUP",
+    "READS_FROM",
+    "STATIC_ENTRY",
+    "PROC_SUMMARY",
+];
+
+/// Markers whose entries may follow as an indented block (doc/rewrite/final_api.html section 1).
+pub const BLOCK_MARKERS: &[&str] = &["CAPABILITIES", "CAPABILITY_DEF", "STATE_GRAPH"];
+
+/// The marker the scan makes for an entry proc: a global `/proc/name(...)` whose first statement is `return list(...)` of declaration
+/// entries (`op(`, `extend(`, `interface(`, ...). It is the plain-proc form of reuse (doc section 11): a CAPABILITIES block that names
+/// `name()` gets those entries, so what reads a block (op keys, handlers, UI types, op order) reads the proc's entries the same way.
+/// `args[0]` is the proc's name, the rest are the list's entries; `body` is the text inside `list(...)`.
+pub use crate::raw_marker_policy::ENTRY_PROC;
+/// A capability datum's `entries()` whose first statement is `return list(...)`: the entries a capability gives its holder. Only handler
+/// discovery reads it (`sem::hooks`), so a `TYPE_PROC_REF(/holder, x)` a capability names is analyzed like one a CAPABILITIES block names.
+pub const CAP_ENTRIES: &str = "CAP_ENTRIES";
+/// Runtime observe calls carry the same typed requirement parts as declarations.
+pub const RUNTIME_OBSERVE: &str = "RUNTIME_OBSERVE";
+
+/// Calls that make a returned list a list of declaration entries.
+use crate::raw_entry_proc_policy::ENTRY_CALLS;
+
+/// The end offset (exclusive, trailing blanks trimmed) of the indented block that follows the marker whose `)` is at `close`,
+/// or None when no indented line follows it (the legacy single-macro form, or a header with no entries).
+pub use crate::raw_marker_policy::{block_body, block_extent};
+/// One marker call: its name, raw argument text and top-level arguments, and where it starts.
+
+#[derive(Clone, Debug)]
+pub struct Marker {
+    pub name: String,
+    pub rel: String,
+    /// 1-based line of the marker name.
+    pub line: u32,
+    /// Text between the outer parentheses, comments stripped.
+    pub body: String,
+    /// `body` split at top-level commas, trimmed.
+    pub args: Vec<String>,
+    /// Absolute byte offset of `body` in the stripped file text (for line arithmetic).
+    pub body_offset: usize,
+    /// Line of each `\n` start inside the file, shared: `line_of(offset)` gives a 1-based line.
+    pub line_starts: Arc<Vec<u32>>,
+}
+
+impl Marker {
+    /// The 1-based file line of a byte offset into `body`.
+    pub fn line_at(&self, body_off: usize) -> u32 {
+        let abs = (self.body_offset + body_off) as u32;
+        match self.line_starts.binary_search(&abs) {
+            Ok(i) => i as u32 + 1,
+            Err(i) => i as u32,
+        }
+    }
+}
+
+#[derive(Default)]
+pub struct Decls {
+    pub markers: Vec<Marker>,
+    /// type path -> relation vars declared with REL/OWN/... (and `relations()` bodies).
+    pub relations: HashMap<String, HashSet<String>>,
+    /// type path -> tracked vars (TRACKED / SETTER / OM_FIELD ...).
+    pub tracked: HashMap<String, HashSet<String>>,
+    /// `tracked` without what `analyze gen auto_tracked` itself declares (`gens::auto_tracked::AUTO_REL`): the declarations a person wrote.
+    /// The inference reads this, so the file it writes is never an input of the next run.
+    pub tracked_explicit: HashMap<String, HashSet<String>>,
+    /// Every `#define NAME` in the tree.
+    pub defines: HashSet<String>,
+    /// KEY text -> producer sites of `PUBLISH_CHANGE(E, KEY)`.
+    pub publishers: BTreeMap<String, Vec<(String, u32)>>,
+    /// String-literal key references in `extend/without/configure/perform_op/...` calls.
+    pub key_refs: Vec<KeyRef>,
+    /// `source = "text"` / `source = null` arguments of hold/grant/release calls.
+    pub bad_sources: Vec<(String, u32, String)>,
+    /// The ops a capability datum declares in its own `entries()` (type path, op name): a CAPABILITY_TYPE marker carries no entries.
+    pub entry_ops: Vec<(String, String)>,
+    /// A digest of everything above as read from the files (the cache key of results derived from it).
+    pub key: u128,
+}
+
+pub use crate::raw_key_calls_policy::{KeyKind,KeyRef,OP_KEY_CALLS,CAP_KEY_CALLS,SOURCE_CALLS};
+
+/// The position of each `#include`d file of `deepquarry.dme` (repo-relative, forward slashes). A file the dme does not include (generated
+/// output) has no entry and sorts after every included file.
+pub fn dme_include_order(root: &std::path::Path) -> HashMap<String, usize> {
+    let Ok(text) = std::fs::read_to_string(root.join("deepquarry.dme")) else {
+        return HashMap::new();
+    };
+    crate::raw_marker_policy::dme_include_order(&text)
+}
+
+impl Decls {
+    pub fn get(tree: &Tree) -> Arc<Decls> {
+        tree.memo("sem/decls", || {
+            let t_decls = std::time::Instant::now();
+            let files = tree.select(&CODE_DM);
+            // Per file, cached on disk by content: a one-file edit rescans one file.
+            let stored: Vec<Stored> =
+                crate::incr::facts("sem-decls", &files, |f| Stored::from(scan_file(f)));
+            let default = Stored::default();
+            let nonempty: Vec<(&str, &Stored)> = files
+                .iter()
+                .zip(stored.iter())
+                .filter(|(_, s)| **s != default)
+                .map(|(f, s)| (f.rel.as_str(), s))
+                .collect();
+            // Generated declarations follow `deepquarry.dme` include order, not file path: moving a file leaves the include in its
+            // place, so it must not move the types and procs generated from its markers (typesof() and proc-table order follow them).
+            let include_order = dme_include_order(&tree.root);
+            let key = crate::incr::mix(&[
+                crate::incr::ctx_key(&nonempty),
+                crate::incr::ctx_key(
+                    &include_order
+                        .iter()
+                        .collect::<std::collections::BTreeMap<_, _>>(),
+                ),
+            ]);
+            let parts: Vec<FileDecls> = stored.into_iter().map(FileDecls::from).collect();
+            let mut d = Decls {
+                key,
+                ..Decls::default()
+            };
+            for (f, p) in files.iter().zip(parts) {
+                d.markers.extend(p.markers);
+                for (t, v) in p.relations {
+                    d.relations.entry(t).or_default().insert(v);
+                }
+                for (t, v) in p.tracked {
+                    if f.rel != crate::gens::auto_tracked::AUTO_REL {
+                        d.tracked_explicit
+                            .entry(t.clone())
+                            .or_default()
+                            .insert(v.clone());
+                    }
+                    d.tracked.entry(t).or_default().insert(v);
+                }
+                d.defines.extend(p.defines);
+                d.key_refs.extend(p.key_refs);
+                d.bad_sources.extend(p.bad_sources);
+                d.entry_ops.extend(p.entry_ops);
+                for (k, s) in p.publishers {
+                    d.publishers.entry(k).or_default().push(s);
+                }
+            }
+            let at = |rel: &str| include_order.get(rel).copied().unwrap_or(usize::MAX);
+            d.markers.sort_by(|a, b| {
+                (at(&a.rel), a.rel.as_str(), a.line).cmp(&(at(&b.rel), b.rel.as_str(), b.line))
+            });
+            // The relation entries of CAPABILITIES(T, ...) blocks (E1's declaration forms) declare their vars relations of T; link(/A::a, /B::b)
+            // declares `a` on /A and `b` on /B.
+            for m in d.markers.iter().filter(|m| m.name == "CAPABILITIES") {
+                if let Some(ty) = m.args.first() {
+                    for (owner, var) in crate::relation_decl_policy::capability_pairs(ty, &m.body) {
+                        d.relations.entry(owner).or_default().insert(var);
+                    }
+                }
+            }
+            if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+                eprintln!(
+                    "analyze: Decls built in {:.0?} ({} markers, {} defines)",
+                    t_decls.elapsed(),
+                    d.markers.len(),
+                    d.defines.len()
+                );
+            }
+            d
+        })
+    }
+
+    pub fn markers_named<'a>(&'a self, name: &'a str) -> impl Iterator<Item = &'a Marker> + 'a {
+        self.markers.iter().filter(move |m| m.name == name)
+    }
+
+    pub fn is_relation(&self, ty: &str, var: &str) -> bool {
+        self.relations
+            .get(ty)
+            .map(|s| s.contains(var))
+            .unwrap_or(false)
+    }
+}
+
+/// The on-disk form of a [`FileDecls`] (a marker's shared line table is stored once per file).
+#[derive(serde::Serialize, serde::Deserialize, Default, PartialEq)]
+struct Stored {
+    key_refs: Vec<(u8, String, String, String, u32)>,
+    bad_sources: Vec<(String, u32, String)>,
+    /// (name, rel, line, body, args, body_offset)
+    markers: Vec<(String, String, u32, String, Vec<String>, usize)>,
+    line_starts: Vec<u32>,
+    relations: Vec<(String, String)>,
+    tracked: Vec<(String, String)>,
+    defines: Vec<String>,
+    publishers: Vec<(String, (String, u32))>,
+    entry_ops: Vec<(String, String)>,
+}
+
+impl From<FileDecls> for Stored {
+    fn from(f: FileDecls) -> Stored {
+        let line_starts = f
+            .markers
+            .first()
+            .map(|m| m.line_starts.as_ref().clone())
+            .unwrap_or_default();
+        Stored {
+            key_refs: f
+                .key_refs
+                .into_iter()
+                .map(|k| {
+                    (
+                        matches!(k.kind, KeyKind::Capability) as u8,
+                        k.key,
+                        k.call,
+                        k.rel,
+                        k.line,
+                    )
+                })
+                .collect(),
+            bad_sources: f.bad_sources,
+            markers: f
+                .markers
+                .into_iter()
+                .map(|m| (m.name, m.rel, m.line, m.body, m.args, m.body_offset))
+                .collect(),
+            line_starts,
+            relations: f.relations,
+            tracked: f.tracked,
+            defines: f.defines,
+            publishers: f.publishers,
+            entry_ops: f.entry_ops,
+        }
+    }
+}
+
+impl From<Stored> for FileDecls {
+    fn from(s: Stored) -> FileDecls {
+        let starts = Arc::new(s.line_starts);
+        FileDecls {
+            key_refs: s
+                .key_refs
+                .into_iter()
+                .map(|(k, key, call, rel, line)| KeyRef {
+                    kind: if k == 1 {
+                        KeyKind::Capability
+                    } else {
+                        KeyKind::Op
+                    },
+                    key,
+                    call,
+                    rel,
+                    line,
+                })
+                .collect(),
+            bad_sources: s.bad_sources,
+            markers: s
+                .markers
+                .into_iter()
+                .map(|(name, rel, line, body, args, body_offset)| Marker {
+                    name,
+                    rel,
+                    line,
+                    body,
+                    args,
+                    body_offset,
+                    line_starts: starts.clone(),
+                })
+                .collect(),
+            relations: s.relations,
+            tracked: s.tracked,
+            defines: s.defines,
+            publishers: s.publishers,
+            entry_ops: s.entry_ops,
+        }
+    }
+}
+
+struct FileDecls {
+    key_refs: Vec<KeyRef>,
+    bad_sources: Vec<(String, u32, String)>,
+    markers: Vec<Marker>,
+    relations: Vec<(String, String)>,
+    tracked: Vec<(String, String)>,
+    defines: Vec<String>,
+    publishers: Vec<(String, (String, u32))>,
+    entry_ops: Vec<(String, String)>,
+}
+
+/// `text` with comments blanked (same length, newlines kept); strings are kept intact.
+/// The ops a `stages(VAR, stage_step(from, to, parts..., key = "k"), ...)` call's arguments stand for (code/library/structures/stages.dm), as
+/// `op(...)` argument lists: `"key", when(req_stage(VAR, from)), sets(VAR, to), parts...`. The key is `k`, else `<var>_<from>_<to>` with the var
+/// the `nameof(...)` of VAR. Readers of op declarations (the op keys, op_order) treat a stages() call as these ops.
+pub use crate::raw_marker_policy::stages_op_args;
+
+/// Splits `s` at top-level commas (not inside (), [], {} or strings), trimming each piece.
+/// Index of the `)` matching the `(` at `open` in `s`, or None.
+/// The ENTRY_PROC marker of a global proc whose first statement (`t`, on `line`) is `return list(...)` holding declaration entries.
+#[allow(clippy::too_many_arguments)]
+fn entry_proc(
+    stripped: &str,
+    starts: &Arc<Vec<u32>>,
+    ln0: usize,
+    line: &str,
+    t: &str,
+    name: String,
+    head_line: u32,
+    rel: &str,
+    out: &mut Vec<Marker>,
+) {
+    if let Some(projected) = crate::raw_entry_proc_policy::project_first_return(
+        stripped, starts, ln0, line, t, name, head_line,
+    ) {
+        out.push(Marker {
+            name: ENTRY_PROC.to_string(),
+            rel: rel.to_string(),
+            line: projected.line,
+            args: projected.args,
+            body: projected.body,
+            body_offset: projected.body_offset,
+            line_starts: starts.clone(),
+        });
+    }
+}
+
+/// The CAP_ENTRIES marker of a capability datum's `entries()` whose first statement is `return list(...)`.
+#[allow(clippy::too_many_arguments)]
+fn cap_entries(
+    stripped: &str,
+    starts: &Arc<Vec<u32>>,
+    ln0: usize,
+    line: &str,
+    t: &str,
+    ty: String,
+    head_line: u32,
+    rel: &str,
+    out: &mut Vec<Marker>,
+) {
+    let result=crate::raw_entry_proc_policy::project_capability_return_admitted(stripped,starts,ln0,line,t,ty,head_line,|_|Ok::<(),std::convert::Infallible>(()));
+    let projected=match result{Ok(value)=>value,Err(never)=>match never{}};
+    if let Some(projected)=projected{out.push(Marker{name:CAP_ENTRIES.to_owned(),rel:rel.to_owned(),line:projected.line,args:projected.args,body:projected.body,body_offset:projected.body_offset,line_starts:starts.clone()});}
+}
+
+fn scan_file(f: &SourceFile) -> FileDecls {
+    let stripped = f.marker().as_str();
+    let mut starts: Vec<u32> = vec![0];
+    for (i, b) in stripped.bytes().enumerate() {
+        if b == b'\n' {
+            starts.push((i + 1) as u32);
+        }
+    }
+    let starts = Arc::new(starts);
+    let mut fd = FileDecls {
+        key_refs: Vec::new(),
+        bad_sources: Vec::new(),
+        markers: Vec::new(),
+        relations: Vec::new(),
+        tracked: Vec::new(),
+        defines: Vec::new(),
+        publishers: Vec::new(),
+        entry_ops: Vec::new(),
+    };
+    // The datum whose `entries()` body the scan is inside (the proc is declared at column 0 as `/datum/x/entries()`).
+    // A global proc (name, header line) whose first statement has not been seen yet: an entry proc when it is `return list(entries)`.
+    let mut proc_head = crate::raw_entry_proc_policy::Head::default();
+    // A capability datum's entries() (type, header line) whose first statement has not been seen yet.
+    {
+        let entries=&mut fd.entry_ops;
+        let defines=&mut fd.defines;
+        crate::raw_key_calls_policy::visit_headers(&stripped,|ty,op|entries.push((ty.to_string(),op.to_string())),|name|defines.push(name.to_string()));
+    }
+    let mut cap_head=crate::raw_entry_proc_policy::Head::default();
+    for (ln0, line) in stripped.split('\n').enumerate() {
+        let ln = ln0 as u32 + 1;
+        let t = line.trim_start();
+        if !line.is_empty() && !line.starts_with(|c: char| c.is_whitespace()) {
+            proc_head.begin(line, ln);
+            cap_head.begin_capability(line,ln);
+        } else if !t.is_empty() && !t.starts_with('#') {
+            if let Some((name, head_line)) = proc_head.take() {
+                entry_proc(
+                    &stripped,
+                    &starts,
+                    ln0,
+                    line,
+                    t,
+                    name,
+                    head_line,
+                    &f.rel,
+                    &mut fd.markers,
+                );
+            }
+            if let Some((ty, head_line)) = cap_head.take() {
+                cap_entries(
+                    &stripped,
+                    &starts,
+                    ln0,
+                    line,
+                    t,
+                    ty,
+                    head_line,
+                    &f.rel,
+                    &mut fd.markers,
+                );
+            }
+        }
+        if t.starts_with('#') { continue; }
+        if t.is_empty() {
+            continue;
+        }
+        // Same borrowed statement-marker policy used by schema hint queries.
+        if let Some(marker) = crate::raw_marker_policy::statement_marker(
+            &stripped,
+            starts[ln0] as usize,
+            line,
+            MARKERS,
+        ) {
+            let name = marker.name;
+            let open = marker.open;
+            let close = marker.close;
+            let at_col0 = line.len() == t.len();
+            let block_end = if at_col0 && BLOCK_MARKERS.contains(&name) {
+                block_extent(&stripped, close)
+            } else {
+                None
+            };
+            let body = match block_end {
+                Some(end) => block_body(&stripped, open + 1, close, end),
+                None => stripped[open + 1..close].to_string(),
+            };
+            fd.markers.push(Marker {
+                name: name.to_string(),
+                rel: f.rel.clone(),
+                line: ln,
+                args: split_args(&body),
+                body,
+                body_offset: open + 1,
+                line_starts: starts.clone(),
+            });
+        }
+        match crate::raw_reactive_metadata_policy::visit_line(t,|event|{
+            match event{
+                crate::raw_reactive_metadata_policy::Event::Tracked{owner,name}=>fd.tracked.push((owner.to_owned(),name.to_owned())),
+                crate::raw_reactive_metadata_policy::Event::Relation{owner,name}=>fd.relations.push((owner.to_owned(),name.to_owned())),
+            }
+            Ok::<(),std::convert::Infallible>(())
+        }){Ok(())=>(),Err(never)=>match never{}}
+        if t.contains("PUBLISH_CHANGE(") {
+            for m in pat!(r"PUBLISH_CHANGE\(\s*[^,()]+,\s*([\w#]+)\s*\)").captures_iter(t) {
+                fd.publishers.push((
+                    m.s(1).trim_start_matches('#').to_string(),
+                    (f.rel.clone(), ln),
+                ));
+            }
+        }
+    }
+    scan_runtime_observers(f, &stripped, &starts, &mut fd);
+    scan_calls(f, &stripped, &starts, &mut fd);
+    fd
+}
+
+/// Records runtime observation parts without guessing the listener's type. Typed proc
+/// references in those parts are genuine callback roots for generated read metadata.
+fn scan_runtime_observers(f:&SourceFile,text:&str,starts:&Arc<Vec<u32>>,fd:&mut FileDecls){
+ let result=crate::raw_runtime_observer_policy::visit(text,starts,&mut crate::key_policy_control::Compatibility,&mut|_,p|{fd.markers.push(Marker{name:RUNTIME_OBSERVE.to_owned(),rel:f.rel.clone(),line:p.line,args:p.args,body:p.body,body_offset:p.body_offset,line_starts:starts.clone()});Ok(())});match result{Ok(())=>{},Err(never)=>match never{}}
+}
+
+/// Finds `name(...)` calls of the key/source families in comment-stripped text.
+fn scan_calls(f: &SourceFile, stripped: &str, starts: &[u32], fd: &mut FileDecls) {
+    let refs=&mut fd.key_refs;
+    let sources=&mut fd.bad_sources;
+    crate::raw_key_calls_policy::visit_calls(&f.rel,stripped,starts,|row|refs.push(row),|row|sources.push(row));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn stages_desugar_to_ops() {
+        let ops = stages_op_args("nameof(state), stage_step(0, 1, tool(TOOL_WRENCH), wait(0)), stage_step(1, 0, tool(TOOL_WRENCH), key = \"unanchor\")");
+        assert_eq!(ops.len(), 2);
+        assert_eq!(ops[0], "\"state_0_1\", when(req_stage(nameof(state), 0)), sets(nameof(state), 1), tool(TOOL_WRENCH), wait(0)");
+        assert_eq!(ops[1], "\"unanchor\", when(req_stage(nameof(state), 1)), sets(nameof(state), 0), tool(TOOL_WRENCH)");
+    }
+
+    #[test]
+    fn splits_top_level_commas_only() {
+        assert_eq!(
+            split_args("a, f(b, c), \"x,y\", [1,2]"),
+            vec!["a", "f(b, c)", "\"x,y\"", "[1,2]"]
+        );
+    }
+
+    #[test]
+    fn strips_comments_but_keeps_strings_and_newlines() {
+        let s = strip_comments_keep_strings("a // x\nb \"//keep\" /* c\n d */ e\n");
+        assert_eq!(s.matches('\n').count(), 3);
+        assert!(s.contains("\"//keep\""));
+        assert!(!s.contains(" x"));
+    }
+
+    #[test]
+    fn a_marker_can_span_lines() {
+        let f = SourceFile::from_text("code/a.dm", "STAT(/obj, foo,\n\tALL,\n\tbase = 1)\n");
+        let d = scan_file(&f);
+        assert_eq!(d.markers.len(), 1);
+        assert_eq!(d.markers[0].args, vec!["/obj", "foo", "ALL", "base = 1"]);
+        assert_eq!(d.markers[0].line, 1);
+    }
+
+    #[test]
+    fn a_global_proc_returning_entries_is_an_entry_proc() {
+        let f = SourceFile::from_text(
+            "code/a.dm",
+            "/proc/door_controls()\n\t// the buttons\n\treturn list(op(\"bolt\", ui_act()),\n\t\textend(\"open\", needs(x())))\n/proc/parts()\n\treturn list(tool(TOOL_CROWBAR))\n/proc/later()\n\tvar/x = 1\n\treturn list(op(\"y\"))\n",
+        );
+        let d = scan_file(&f);
+        let procs: Vec<&Marker> = d.markers.iter().filter(|m| m.name == ENTRY_PROC).collect();
+        assert_eq!(
+            procs.len(),
+            1,
+            "only a first-statement list of entries: {:?}",
+            procs.iter().map(|m| &m.args).collect::<Vec<_>>()
+        );
+        assert_eq!(
+            procs[0].args,
+            vec![
+                "door_controls",
+                "op(\"bolt\", ui_act())",
+                "extend(\"open\", needs(x()))"
+            ]
+        );
+        assert_eq!(procs[0].line, 1);
+        assert_eq!(procs[0].line_at(procs[0].body.find("extend").unwrap()), 4);
+    }
+}
+
+#[cfg(test)]
+mod block_tests {
+    use super::*;
+
+    fn legacy_text() -> String {
+        let bs = char::from(92u8);
+        format!("CAPABILITIES(/obj/thing, {bs}\n\ta(1, 2), {bs}\n\tb(\"x,y\",\n\t\tc()))\n/obj/thing/proc/x()\n\treturn 1\n")
+    }
+
+    #[test]
+    fn a_block_marker_reads_like_the_legacy_list() {
+        let legacy = SourceFile::from_text("code/a.dm", &legacy_text());
+        let block = SourceFile::from_text("code/a.dm", "CAPABILITIES(/obj/thing)\n\ta(1, 2)\n\tb(\"x,y\",\n\t\tc())\n\n/obj/thing/proc/x()\n\treturn 1\n");
+        let (l, b) = (scan_file(&legacy), scan_file(&block));
+        assert_eq!(l.markers.len(), 1);
+        assert_eq!(b.markers.len(), 1);
+        assert_eq!(b.markers[0].line, 1);
+        let strip = |a: &[String]| -> Vec<String> {
+            a.iter()
+                .map(|s| {
+                    s.trim_start_matches(|c: char| c == char::from(92u8) || c.is_whitespace())
+                        .to_string()
+                })
+                .collect()
+        };
+        assert_eq!(strip(&l.markers[0].args), strip(&b.markers[0].args));
+        assert_eq!(b.markers[0].args.len(), 3, "{:?}", b.markers[0].args);
+        // Offsets still map to the real lines: the third entry starts on line 3.
+        let body = &b.markers[0].body;
+        let off = body.find("b(").unwrap();
+        assert_eq!(b.markers[0].line_at(off), 3);
+    }
+
+    #[test]
+    fn no_indented_line_is_no_block() {
+        let f = SourceFile::from_text("code/a.dm", "CAPABILITY_DEF(x, CAP_X, key = NONE)\n\n/datum/capability/def/x/entries()\n\treturn list()\n");
+        let d = scan_file(&f);
+        // The CAPABILITY_DEF line keeps its own three arguments (no block swallows the lines below it); the second marker is the
+        // CAP_ENTRIES one the capability's `entries()` body (`return list()`) reads as.
+        assert_eq!(d.markers.len(), 2);
+        assert_eq!(d.markers[0].args, vec!["x", "CAP_X", "key = NONE"]);
+        assert_eq!(d.markers[1].name, CAP_ENTRIES);
+    }
+
+    #[test]
+    fn a_block_ends_at_the_next_column_zero_line() {
+        let f = SourceFile::from_text("code/a.dm", "STATE_GRAPH(GRAPH_X)\n\tstart(STAGE_A)\n\n\tstage(STAGE_B, then(PROC_REF(y)))\n/obj/thing/proc/x()\n\treturn 1\n");
+        let d = scan_file(&f);
+        assert_eq!(
+            d.markers[0].args,
+            vec![
+                "GRAPH_X",
+                "start(STAGE_A)",
+                "stage(STAGE_B, then(PROC_REF(y)))"
+            ]
+        );
+    }
+}
+
+#[cfg(test)]
+mod include_order_tests {
+    use super::dme_include_order;
+
+    /// The generated declarations follow the dme, so a file moved to a path that sorts elsewhere keeps its position.
+    #[test]
+    fn include_order_is_the_dme_line_order_not_the_path_order() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(
+            dir.path().join("deepquarry.dme"),
+            r#"// comment
+#include "code\zeta\late.dm"
+#include "code\alpha\early.dm"
+#include "code\alpha\early.dm"
+#define X 1
+"#,
+        )
+        .unwrap();
+        let order = dme_include_order(dir.path());
+        assert_eq!(order.get("code/zeta/late.dm"), Some(&0));
+        assert_eq!(order.get("code/alpha/early.dm"), Some(&1));
+        assert_eq!(order.len(), 2);
+        assert_eq!(dme_include_order(&dir.path().join("missing")).len(), 0);
+    }
+}

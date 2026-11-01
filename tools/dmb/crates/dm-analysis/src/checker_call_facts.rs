@@ -168,7 +168,7 @@ impl CallableFact {
 /// Pinned get_proc has one proc/verb name map. Native source namespaces remain
 /// separate; merge their exact candidates only when ancestry orders them.
 /// Same-owner mixed source occurrences need an issued unified chronology.
-pub fn callable_any(
+fn callable_any_native(
     tree: &SemanticTree,
     resolver: &(impl Resolver + ?Sized),
     profile: PackedU128,
@@ -213,13 +213,16 @@ pub fn callable_any(
 #[path = "checker_call_facts_tests.rs"]
 mod tests;
 
-/// Interim guard for the actual original combined builtin/source value group.
-/// A source formal can be inserted before the builtin value by the pinned
-/// register_proc rule. Until the shared resolver issues that true winner,
-/// neither consumer may infer a signature/return value from Source-first.
-/// This grants no source role and never silently omits an original call.
-pub(crate) fn require_original_group_chronology(tree:&SemanticTree,profile:PackedU128,fact:&CallableFact,name:&str)->Result<(),String>{
- let target=crate::checker_effects::callable_target(tree,profile,fact)?;let catalog=dm_tree::checker_builtins::pinned_catalog().map_err(|e|format!("original call catalog: {e:?}"))?;if catalog.profile!=profile{return Err("original call catalog profile differs".into())}
- let(actual_name,source)=match fact{CallableFact::Source{identity,..}=>(identity.name,Some(*identity)),CallableFact::CheckerBuiltin{name,..}=>(*name,None),CallableFact::Missing=>return Err("original call target is missing".into())};if actual_name!=SymbolId::of(name){return Err("original call name differs from actual target".into())}let spelling=if matches!(target,crate::checker_effects::EffectTarget::Builtin(_)){catalog.spelling(actual_name)}else{tree.symbols().text(actual_name)}.ok_or("original call spelling absent")?;if spelling!=name{return Err("original call spelling differs".into())}
- if let Some(identity)=source{if catalog.declarations.iter().any(|row|row.owner==identity.owner&&row.name==identity.name&&matches!(row.kind,dm_tree::MemberKind::Proc|dm_tree::MemberKind::Verb)){return Err("original call needs source/builtin value chronology".into())}}Ok(())
-}
+/// Authenticate a selected original value coordinate. Ordinary lookup chooses
+/// the group winner; exact/self/parent calls may deliberately name earlier values.
+pub(crate) fn require_original_group_chronology_using<E:From<String>+From<&'static str>>(tree:&SemanticTree,profile:PackedU128,fact:&CallableFact,name:&str,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<(),E>{checkpoint()?;let target=crate::checker_effects::callable_target(tree,profile,fact)?;let catalog=dm_tree::checker_builtins::pinned_catalog().map_err(|e|format!("original call catalog: {e:?}"))?;if catalog.profile!=profile{return Err("original call catalog profile differs".into())}let actual_name=match fact{CallableFact::Source{identity,..}=>identity.name,CallableFact::CheckerBuiltin{name,..}=>*name,CallableFact::Missing=>return Err("original call target is missing".into())};if actual_name!=SymbolId::of(name){return Err("original call name differs from actual target".into())}let spelling=if matches!(target,crate::checker_effects::EffectTarget::Builtin(_)){catalog.spelling(actual_name)}else{tree.symbols().text(actual_name)}.ok_or("original call spelling absent")?;if spelling!=name{return Err("original call spelling differs".into())}if let Some(group)=crate::checker_original_group::Group::for_target_using(tree,profile,target,checkpoint)?{let expected=group.fact_using(target,checkpoint)?;match(fact.metadata(),expected.metadata()){(Some(actual),Some(original))if Arc::ptr_eq(actual,original)=>(),_=>return Err("original call group metadata owner differs".into())}}Ok(())}
+
+/// Original get_proc selection over the same issued native source and fixed
+/// checker declarations. The kind-qualified compatibility query above remains
+/// useful independently of a complete checker profile.
+/// DATA-only checked form of the existing public lookup. The callback is
+/// operation control, never a source/profile or model authority.
+pub fn callable_any_using<E:From<String>+From<&'static str>>(tree:&SemanticTree,resolver:&(impl Resolver+?Sized),profile:PackedU128,owner:SymbolId,name:SymbolId,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<CallableFact,E>{checkpoint()?;let selected=callable_any_native(tree,resolver,profile,owner,name)?;let selected_owner=match &selected{CallableFact::Source{identity,..}=>identity.owner,CallableFact::CheckerBuiltin{declaring_owner,..}=>*declaring_owner,CallableFact::Missing=>return Ok(selected)};let catalog=dm_tree::checker_builtins::pinned_catalog().map_err(|e|format!("original winner catalog: {e:?}"))?;let builtin=catalog.own_callable(selected_owner,name,false).is_some()||catalog.own_callable(selected_owner,name,true).is_some();if !builtin{return Ok(selected)}let ty=tree.lookup_type(selected_owner).ok_or("original winner owner absent")?;let source=[dm_tree::MemberKind::Proc,dm_tree::MemberKind::Verb].into_iter().any(|kind|tree.resolve(ty,name,kind).and_then(|id|tree.member(id)).is_some_and(|row|row.owner==ty));if !source{return Ok(selected)}if catalog.profile!=profile{return Err("original winner profile differs".into())}let group=crate::checker_original_group::Group::issue_using(tree,profile,selected_owner,name,checkpoint)?;group.observe_using(resolver,checkpoint)?;group.winner_using(checkpoint)?.ok_or_else(||E::from("original selected group is empty"))}
+
+pub fn callable_any(tree:&SemanticTree,resolver:&(impl Resolver+?Sized),profile:PackedU128,owner:SymbolId,name:SymbolId)->Result<CallableFact,String>{callable_any_using(tree,resolver,profile,owner,name,&mut||Ok(()))}
+pub(crate) fn require_original_group_chronology(tree:&SemanticTree,profile:PackedU128,fact:&CallableFact,name:&str)->Result<(),String>{require_original_group_chronology_using(tree,profile,fact,name,&mut||Ok(()))}

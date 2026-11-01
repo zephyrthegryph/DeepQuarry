@@ -22,6 +22,8 @@ mod auto_tracking_native;
 #[cfg(feature="native-policy")]
 pub mod captured_keys;
 #[cfg(feature="native-policy")]
+pub mod captured_keys_pages;
+#[cfg(feature="native-policy")]
 mod captured_keys_source;
 pub mod raw_key_calls_policy;
 #[cfg(feature = "legacy-sem")]
@@ -292,3 +294,21 @@ pub mod allow_registry_metadata;
 #[cfg(feature="native-policy")]pub mod captured_allow_annotations;
 
 pub(crate) mod allow_registry_fields;
+
+#[cfg(all(feature="legacy-sem",feature="unified-oracle"))]
+#[path="../examples/support/keys_original/marker.rs"]mod keys_old_marker;
+#[cfg(all(feature="legacy-sem",feature="unified-oracle"))]
+#[path="../examples/support/keys_original/calls.rs"]mod keys_old_calls;
+#[cfg(all(feature="legacy-sem",feature="unified-oracle"))]
+#[path="../examples/support/keys_original/entries.rs"]mod keys_old_entries;
+#[cfg(all(feature="legacy-sem",feature="unified-oracle"))]
+#[path="../examples/support/keys_original/decls.rs"]mod keys_old_decls;
+#[cfg(all(feature="legacy-sem",feature="unified-oracle"))]
+#[path="../examples/support/keys_original/policy.rs"]mod keys_old_policy;
+#[cfg(all(feature="legacy-sem",feature="unified-oracle"))]
+mod keys_old_system{use crate::tree::Tree;use std::sync::Arc;include!("../fixtures/original_policies/keys_system_lookup.rs");}
+#[cfg(all(feature="legacy-sem",feature="unified-oracle"))]
+pub mod keys_original_reference;
+#[cfg(any(test,all(feature="legacy-sem",feature="unified-oracle")))]
+#[path="../../dmb/shared/test_scratch.rs"]
+mod test_scratch;

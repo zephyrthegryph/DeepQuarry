@@ -53,6 +53,6 @@ impl EffectPlan {
         admission: &ExecutionAdmission,
         mut checkpoint: impl FnMut() -> Result<(), String>,
     ) -> Result<Vec<Produced>, D::Error> {
- self.validate(input)?;report_core::sleep(&report_core::LegacyReportAccess::<D>{input,plan:self,summary:None,demand:std::marker::PhantomData},resolver,policy,admission,||checkpoint().map_err(D::Error::from))
+ self.validate(input)?;let control=std::cell::RefCell::new(checkpoint);let poll=||(control.borrow_mut())().map_err(D::Error::from);report_core::sleep(&report_core::LegacyReportAccess::<D>{input,plan:self,summary:None,checkpoint:&poll,demand:std::marker::PhantomData},resolver,policy,admission,&poll)
 }
 }

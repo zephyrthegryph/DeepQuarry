@@ -284,3 +284,40 @@ impl QueryDb{
  pub(crate) fn with_workspace_allow_annotations<R>(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,consume:impl FnOnce(&dq_analyze::captured_allow_annotations::ValidationData,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{self.with_workspace_code_pages(capture,scope,|reader|allow_annotations_using(reader,consume))}
  #[cfg(test)]pub(crate) fn with_workspace_allow_annotations_limit<R>(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,limit:usize,consume:impl FnOnce(&dq_analyze::captured_allow_annotations::ValidationData,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{crate::daemon::control::checkpoint()?;capture.require_scope(scope)?;if !scope.uses_queries(self){return Err(Failure::Operational(invalid("ALLOW source pages need the actual current QueryDb")))}let _gate=self.raw_policy.gate.lock().unwrap_or_else(|error|error.into_inner());self.with_workspace_code_pages_limit_locked(capture,scope,Some(limit),|reader|allow_annotations_using(reader,consume))}
 }
+
+
+// Actual sem/keys source completion is distinct from finite capture coverage.
+struct KeysSourceCompletion<'reader,'capture,'scope>{reader:&'reader WorkspaceCodeReader<'capture,'scope>}
+impl KeysSourceCompletion<'_,'_,'_>{fn require(self)->Result<(),Failure>{self.reader.require_full_code_discovery()?;self.reader.checkpoint()}}
+struct KeysPages<'reader,'capture,'scope>{reader:&'reader WorkspaceCodeReader<'capture,'scope>,completed:std::cell::RefCell<[Option<KeysSourceCompletion<'reader,'capture,'scope>>;2]>,passes:std::cell::Cell<usize>}
+impl<'reader,'capture,'scope> KeysPages<'reader,'capture,'scope>{
+ fn new(reader:&'reader WorkspaceCodeReader<'capture,'scope>)->Self{Self{reader,completed:std::cell::RefCell::new([None,None]),passes:std::cell::Cell::new(0)}}
+ fn finish(&self)->Result<(),Failure>{if self.passes.get()!=2{return Err("keys did not execute both actual original source phases".into())}for completed in self.completed.borrow_mut().iter_mut(){completed.take().ok_or("keys actual original phase did not reach EOF")?.require()?;}self.reader.checkpoint()}
+}
+impl dq_analyze::reactive_raw_policy_pages::RawPolicyPages for KeysPages<'_,'_,'_>{
+ fn for_each(&self,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>{
+  let index=self.passes.get();if index>=2{return Err("keys source provider exceeded its actual original phases".into())}self.reader.require_full_code_discovery()?;
+  if !self.reader.for_each_code_file(visit)?{self.passes.set(index+1);return Ok(false)}self.reader.require_full_code_discovery()?;self.completed.borrow_mut()[index]=Some(KeysSourceCompletion{reader:self.reader});self.passes.set(index+1);Ok(true)
+ }
+}
+struct KeysOrderScratch{budget:Arc<Budget>,complete:bool}impl KeysOrderScratch{fn new(root:&Arc<Budget>)->Result<Self,Failure>{Ok(Self{budget:Budget::scoped_temporaries(root).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?,complete:false})}}impl Drop for KeysOrderScratch{fn drop(&mut self){if !self.complete{self.budget.keep_failed_scratch()}}}
+fn keys_using<R>(reader:&WorkspaceCodeReader<'_,'_>,consume:impl FnOnce(&dq_analyze::captured_keys_pages::KeyData,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{
+ reader.require_full_code_discovery()?;let meta=dq_analyze::keys_policy::metadata();if meta.select.roots!=dq_analyze::captured_raw_file::code_dm_roots()||meta.select.hidden!=dq_analyze::tree::CODE_DM.hidden{return Err("keys original selection differs from actual CODE source issuer".into())}
+ let(_,bytes)=reader.configuration();let width=bytes.map_or(Some(1024),|bytes|bytes.len().checked_mul(64).and_then(|n|n.checked_add(1024))).ok_or_else(||Failure::Operational(io::ErrorKind::OutOfMemory.into()))?;reader.budget().charge(width).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;let config=Config::capture(bytes.map_or(Configuration::ProvenMissing,Configuration::Captured))?;
+ let checkpoint=||reader.checkpoint().map_err(|error|match error{Failure::Operational(actual)=>actual,Failure::Unsupported(message)=>invalid(message)});
+ reader.capture.with_keys_manifest(reader.scope,|original|{
+  let mut scratch=KeysOrderScratch::new(reader.budget())?;
+  let text=original.and_then(|bytes|std::str::from_utf8(bytes).ok()).unwrap_or("");
+  let mut control=dq_analyze::captured_allow_annotations::Operation{budget:&scratch.budget,poll:&checkpoint};
+  let order=dq_analyze::raw_marker_policy::dme_include_order_controlled(text,false,&mut control)?;
+  let pages=KeysPages::new(reader);let data=dq_analyze::captured_keys_pages::collect(&pages,&config,&order,reader.budget(),&checkpoint)?;pages.finish()?;reader.checkpoint()?;
+  let pending=consume(&data,&config,reader.budget()).map_err(Failure::Operational);
+  // Source/row/order owners physically end before a successful scratch credit.
+  drop(data);drop(pages);drop(order);drop(control);scratch.complete=pending.is_ok();drop(scratch);
+  if matches!(&pending,Err(Failure::Operational(_))){return pending}reader.checkpoint()?;pending
+ })
+}
+impl QueryDb{
+ pub(crate) fn with_workspace_keys<R>(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,consume:impl FnOnce(&dq_analyze::captured_keys_pages::KeyData,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{self.with_workspace_code_pages(capture,scope,|reader|keys_using(reader,consume))}
+ #[cfg(test)]pub(crate) fn with_workspace_keys_limit<R>(&self,capture:&Arc<WorkspaceCapture>,scope:&NativeReadGuard<'_>,limit:usize,consume:impl FnOnce(&dq_analyze::captured_keys_pages::KeyData,&Config,&Arc<Budget>)->io::Result<R>)->Result<R,Failure>{crate::daemon::control::checkpoint()?;capture.require_scope(scope)?;if !scope.uses_queries(self){return Err(Failure::Operational(invalid("keys source pages require actual current QueryDb")))}let _gate=self.raw_policy.gate.lock().unwrap_or_else(|error|error.into_inner());self.with_workspace_code_pages_limit_locked(capture,scope,Some(limit),|reader|keys_using(reader,consume))}
+}

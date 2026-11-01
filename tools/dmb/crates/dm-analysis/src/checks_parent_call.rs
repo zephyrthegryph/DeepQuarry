@@ -37,7 +37,7 @@ pub fn parent_fact(
 }
 /// An explicit checker profile uses the same native resolver's fixed-DSL
 /// builtin namespace. It never interprets runtime inventory as checker parity.
-pub fn parent_fact_in_profile(
+fn parent_fact_in_profile_native(
     tree: &SemanticTree,
     member_id: MemberId,
     resolver: &(impl Resolver + ?Sized),
@@ -240,6 +240,9 @@ pub fn parent_fact_in_profile(
     })
 }
 
+pub fn parent_fact_in_profile(tree:&SemanticTree,member:MemberId,resolver:&(impl Resolver+?Sized),profile:Option<PackedU128>)->Result<ParentFact,String>{parent_fact_in_profile_using(tree,member,resolver,profile,&mut||Ok(()))}
+pub(crate) fn parent_fact_in_profile_using<E:From<String>+From<&'static str>>(tree:&SemanticTree,member:MemberId,resolver:&(impl Resolver+?Sized),profile:Option<PackedU128>,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<ParentFact,E>{checkpoint()?;if let Some(profile)=profile{let node=tree.member(member).ok_or("original parent member absent")?;if !matches!(node.kind,MemberKind::Proc|MemberKind::Verb){return Err("original parent member is not callable".into())}let owner=tree.type_node(node.owner).ok_or("original parent owner absent")?.path;if crate::checker_original_group::Group::mixed(tree,owner,node.name)?{let identity=ProcedureIdentity{owner,name:node.name,verb:node.kind==MemberKind::Verb,occurrence:tree.member_occurrence(member).ok_or("original parent source ordinal absent")?};let target=crate::checker_effects::EffectTarget::Source(identity);let group=crate::checker_original_group::Group::for_target_using(tree,profile,target,checkpoint)?.ok_or("original mixed parent group absent")?;let has_parent=group.parent_using(target,resolver,checkpoint)?.is_some();let display=crate::checker_callable_display::original(tree,identity,|_|Ok::<(),E>(()),&mut *checkpoint)?.to_string();checkpoint()?;return Ok(ParentFact{identity,has_parent,display})}}Ok(parent_fact_in_profile_native(tree,member,resolver,profile)?)}
+
 pub fn check(
     frontend: &ColdFrontend,
     body: &ParsedBody<'_>,
@@ -276,6 +279,17 @@ pub(crate) fn check_issued_statement_body(
     profile: Option<PackedU128>,
     severity: Severity,
 ) -> Result<Vec<Diagnostic>, String> {
+check_issued_statement_body_using(tree,member,syntax,resolver,profile,severity,&mut||Ok(()))}
+pub(crate) fn check_issued_statement_body_using<E:From<String>+From<&'static str>>(
+    tree: &SemanticTree,
+    member: MemberId,
+    syntax: &dm_tree::frontend::StatementBody,
+    resolver: &(impl Resolver + ?Sized),
+    profile: Option<PackedU128>,
+    severity: Severity,
+    checkpoint:&mut impl FnMut()->Result<(),E>,
+) -> Result<Vec<Diagnostic>, E> {
+    checkpoint()?;
     if !syntax.syntax_complete() {
         return Err("checker body contains unsupported primary syntax".into());
     }
@@ -284,13 +298,13 @@ pub(crate) fn check_issued_statement_body(
     }
     let mut out = Vec::new();
     let mut fact = None;
-    for statement in &syntax.parsed().statements {
-        let mut expression = |expression: &Expr| -> Result<(), String> {
+    for statement in &syntax.parsed().statements {checkpoint()?;
+        let mut expression = |expression: &Expr| -> Result<(), E> {
             if !contains_parent(expression)? {
                 return Ok(());
             }
             if fact.is_none() {
-                fact = Some(parent_fact_in_profile(tree, member, resolver, profile)?);
+                fact = Some(parent_fact_in_profile_using(tree,member,resolver,profile,checkpoint)?);
             }
             let fact = fact.as_ref().unwrap();
             // Every parent call in this body has the same availability. Once a
@@ -459,8 +473,8 @@ fn source_predecessor_mode(
 ) -> Result<SourcePredecessorProjection, String> {
     tree.validate_checker_builtin_profile(profile)
         .map_err(|e| format!("source-parent checker profile unavailable: {e:?}"))?;
-    let presence = parent_fact_in_profile(tree, member, resolver, Some(profile))?;
-    let expected = parent_fact_in_profile(tree, member, tree, Some(profile))?;
+    let presence = parent_fact_in_profile_native(tree, member, resolver, Some(profile))?;
+    let expected = parent_fact_in_profile_native(tree, member, tree, Some(profile))?;
     if presence != expected {
         return Err("source-parent resolver differs from original profile-qualified facts".into());
     }

@@ -114,6 +114,8 @@ impl<'a, R: Resolver + ?Sized> CheckerContext<'a, R> {
             severity,
         )
     }
+    /// Same original parent policy with the caller's existing operation control.
+    pub fn parent_archived_checked(&self,body:&ArchivedBody<'_>,severity:Severity,checkpoint:&mut impl FnMut()->std::io::Result<()>)->Result<Vec<Diagnostic>,crate::policy_body_demand::PolicyFailure>{use crate::policy_body_demand::PolicyFailure;let Owner::Archive(archive)=self.owner else{return Err("checker context is frontend-owned".into())};if !body.belongs_to(archive){return Err("checker body belongs to another compiler archive".into())}let mut poll=||checkpoint().map_err(PolicyFailure::Operational);let pending=checks_parent_call::check_issued_statement_body_using(self.tree(),body.occurrence().member,body.statement_body(),self.resolver,Some(self.profile),severity,&mut poll);if matches!(&pending,Err(PolicyFailure::Operational(_))){return pending}poll()?;pending}
     pub fn variable_visibility_archived(
         &self,
         policy: &crate::check_policy::CheckerPolicy,

@@ -774,4 +774,6 @@ pub fn with_original_policy_file_prepared(root:&Path,path:&Path,live_page_bytes:
 }
 
 /// Exact original ALLOW fingerprint; called only inside an actual source loan.
-pub(crate) fn source_allow_digest(source:&SourceFile)->[u8;20]{use sha1::{Digest,Sha1};Sha1::digest(source.text().trim_end_matches('\n').as_bytes()).into()}
+pub(crate) fn source_allow_digest(source:&SourceFile)->[u8;20]{source_allow_digest_text(source.text())}
+/// Exact old whole-file annotation digest over an actual borrowed original view.
+pub(crate) fn source_allow_digest_text(text:&str)->[u8;20]{use sha1::{Digest,Sha1};Sha1::digest(text.trim_end_matches('\n').as_bytes()).into()}

@@ -47,9 +47,18 @@ pub(crate) struct WorkspaceCapture {
     auxiliary: Vec<crate::policy_request::WorkspaceAuxiliaryQuestion>,
     deadline: Option<(PathBuf,Option<SharedBytes>)>,
     check_grep:Option<[Option<usize>;6]>,
+    keys_manifest:Option<Option<usize>>,
     facts: InputSnapshot,
 }
 impl WorkspaceCapture {
+    /// Exact fixed original manifest used by the unique declaration order policy.
+    /// Missing is an actual recorded negative; unselected is a refusal.
+    pub(crate) fn with_keys_manifest<R>(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,visit:impl FnOnce(Option<&[u8]>)->Result<R,dq_analyze::captured_reactive_reads::Failure>)->Result<R,dq_analyze::captured_reactive_reads::Failure>{
+     use dq_analyze::captured_reactive_reads::Failure;self.require_scope(scope)?;
+     if !self.auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::Keys){return Err("keys original manifest question was not selected".into())}
+     let pending=match self.keys_manifest.ok_or("keys original manifest observation unavailable")?{None=>visit(None),Some(index)=>{let file=self.files.get(index).ok_or("keys original manifest file absent")?;if file.path.parent()!=Some(self.root())||file.path.file_name()!=Some(std::ffi::OsStr::new("deepquarry.dme")){return Err("keys original fixed manifest role differs".into())}let original=self.original(index,scope)?;visit(Some(match &original{RecordedSourceOriginal::Utf8(text)=>text.as_bytes(),RecordedSourceOriginal::Bytes(bytes)=>bytes.as_slice()}))}};
+     if matches!(&pending,Err(Failure::Operational(_))){return pending}self.require_scope(scope)?;crate::daemon::control::checkpoint()?;pending
+    }
     pub(crate) fn require_check_grep_archive(&self,scope:&crate::runner_host::query_snapshot::workspace_native_guard::NativeReadGuard<'_>,archive:&dm_tree::frontend::BodyArchive)->io::Result<()>{
      self.check_grep_names(scope)?;if !Weak::ptr_eq(&self.source,&Arc::downgrade(archive.source_mapping())){return Err(io::Error::new(io::ErrorKind::InvalidInput,"check_grep body archive belongs to another actual source mapping"))}Ok(())
     }
@@ -438,7 +447,7 @@ pub(crate) fn capture<P: SnapshotProvider>(
     capture_with_auxiliary(frontend,inputs,discovery,configuration,&[])
 }
 pub(crate) fn capture_with_auxiliary<P:SnapshotProvider>(frontend:&ColdFrontend,inputs:&RecordingInputs<P>,discovery:Arc<DiscoveryReceipt>,configuration:&Path,questions:&[crate::policy_request::WorkspaceAuxiliaryQuestion])->io::Result<Arc<WorkspaceCapture>>{
-    if questions.len()>2||questions.windows(2).any(|pair|pair[0]>=pair[1]){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual canonical auxiliary questions required"))}
+    if questions.len()>3||questions.windows(2).any(|pair|pair[0]>=pair[1]){return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual canonical auxiliary questions required"))}
     discovery.validate_recording(inputs)?;
     if !configuration.is_absolute() {
         return Err(io::Error::other(
@@ -508,7 +517,7 @@ pub(crate) fn capture_with_auxiliary<P:SnapshotProvider>(frontend:&ColdFrontend,
         ));
     }
     let config = inputs.read_policy_candidate(configuration, remaining)?;
-    let mut auxiliary=Vec::new();let mut deadline=None;let mut check_grep=None;let mut check_grep_paths:Option<[PathBuf;6]>=None;
+    let mut auxiliary=Vec::new();let mut deadline=None;let mut check_grep=None;let mut check_grep_paths:Option<[PathBuf;6]>=None;let mut keys_manifest=None;let mut keys_manifest_path=None;
     if !questions.is_empty(){
      used=used.checked_add(config.as_ref().map_or(0,SharedBytes::capacity)).and_then(|n|n.checked_add(4*questions.len()*std::mem::size_of::<crate::policy_request::WorkspaceAuxiliaryQuestion>())).and_then(|n|n.checked_add(128)).filter(|n|*n<=EXTRA_BUDGET).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"auxiliary metadata overflow"))?;
      auxiliary.try_reserve_exact(questions.len()).map_err(|actual|io::Error::new(io::ErrorKind::OutOfMemory,actual))?;if auxiliary.capacity()>4*questions.len(){return Err(io::ErrorKind::OutOfMemory.into())}auxiliary.extend_from_slice(questions);
@@ -534,6 +543,17 @@ pub(crate) fn capture_with_auxiliary<P:SnapshotProvider>(frontend:&ColdFrontend,
      }
      check_grep=Some(indices);check_grep_paths=Some(paths);
     }
+    if questions.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::Keys){
+     let width=discovery.contract().root.as_os_str().len().checked_add("/deepquarry.dme".len()).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(2048)).ok_or(io::ErrorKind::OutOfMemory)?;
+     let wanted=files.len().checked_add(1).ok_or(io::ErrorKind::OutOfMemory)?;let capacity=wanted.checked_mul(4).ok_or(io::ErrorKind::OutOfMemory)?;
+     used=used.checked_add(width).and_then(|n|if files.capacity()<wanted{n.checked_add(capacity.checked_mul(std::mem::size_of::<File>())?)}else{Some(n)}).filter(|n|*n<=EXTRA_BUDGET).ok_or(io::ErrorKind::OutOfMemory)?;
+     let path=discovery.contract().root.join("deepquarry.dme");
+     if files.capacity()<wanted{files.try_reserve_exact(1).map_err(|error|io::Error::new(io::ErrorKind::OutOfMemory,error))?;if files.capacity()>capacity{return Err(io::Error::new(io::ErrorKind::OutOfMemory,"keys manifest actual capacity exceeds admission"))}}
+     let index=if let Some(existing)=files.iter().position(|file|file.path==path){Some(existing)}else{
+      let original=if path==configuration{config.as_ref().map(|bytes|Original::Owned(bytes.clone()))}else{capture_optional_original(inputs,mapping,&frontend.plan,&discovery,&known,&texts,&aliases,&path,&mut used,128)?};
+      if let Some(original)=original{let index=files.len();files.push(File{path:path.clone(),fact:inputs.recorded_file_fact(&path)?,original});Some(index)}else{None}
+     };keys_manifest=Some(index);keys_manifest_path=Some(path);
+    }
     let selected = files
         .iter()
         .flat_map(|file| {
@@ -545,6 +565,7 @@ pub(crate) fn capture_with_auxiliary<P:SnapshotProvider>(frontend:&ColdFrontend,
         })
         .chain(std::iter::once(canonical_path(configuration)))
         .chain(deadline.iter().map(|(path,_)|canonical_path(path)))
+        .chain(keys_manifest_path.iter().map(|path|canonical_path(path)))
         .chain(check_grep_paths.iter().flat_map(|paths|paths.iter().map(|path|canonical_path(path))))
         .collect();
     let facts = inputs.policy_workspace_closure(&selected, discovery.directory_paths())?;
@@ -556,6 +577,7 @@ pub(crate) fn capture_with_auxiliary<P:SnapshotProvider>(frontend:&ColdFrontend,
         &canonical_path(configuration),
     )?;
     let policy_revision=if auxiliary.is_empty(){policy_revision}else{let flags=[auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::DeadlinePollingAllowlist),auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrep)];let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"native-workspace-auxiliary-v1");hash.update(&policy_revision.to_le_bytes());hash.update(&[u8::from(flags[0]),u8::from(flags[1])]);hash.digest128()};
+    let policy_revision=if auxiliary.contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::Keys){let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"native-workspace-keys-intent-v1");hash.update(&policy_revision.to_le_bytes());hash.digest128()}else{policy_revision};
     static NEXT_ISSUANCE: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
     let issuance = NEXT_ISSUANCE
         .fetch_update(
@@ -576,6 +598,7 @@ pub(crate) fn capture_with_auxiliary<P:SnapshotProvider>(frontend:&ColdFrontend,
         auxiliary,
         deadline,
         check_grep,
+        keys_manifest,
         facts,
     });
     if result.retained_charge()? > EXTRA_BUDGET {

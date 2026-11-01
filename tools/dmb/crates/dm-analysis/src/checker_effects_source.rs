@@ -78,7 +78,7 @@ impl<'source> EffectSource<'source>{
                     // The next child receives only the live page's remaining
                     // allowance, sharing the SAME denial state (never reset).
                     let child=budget.admission_view();
-                    let computed=input.compute_body_checked_using_admitted(ordinal,resolver,&child,body);
+                    let computed={let control=std::cell::RefCell::new(&mut *checkpoint);input.compute_body_checked_using_admitted_controlled(ordinal,resolver,&child,body,&||(control.borrow_mut())())};
                     let value=match computed{Err(PolicyFailure::Operational(actual))=>return Err(PolicyFailure::Operational(actual)),result=>{if child.is_denied(){return Err(resource(&budget,"effect page body admission exhausted"))}result?}};
                     checkpoint().map_err(PolicyFailure::Operational)?;
                     let count=value.direct.len().checked_add(value.calls.len()).and_then(|n|n.checked_add(value.blocking.len())).and_then(|n|n.checked_add(value.immediate.len())).ok_or_else(||resource(&budget,"effect page event overflow"))?;

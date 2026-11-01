@@ -158,6 +158,16 @@ impl EffectInput {
         let host=self.archive.body_query_host().ok_or("effect checked body requires original body-query host")?;
         self.compute_body_checked_using(ordinal,resolver,admission,&|input|host.syntax_checked(input))
     }
+    pub fn compute_body_checked_controlled(
+        self: &Arc<Self>,
+        ordinal: usize,
+        resolver: &(impl Resolver + ?Sized),
+        admission: &ExecutionAdmission,
+        checkpoint:&dyn Fn()->std::io::Result<()>,
+    ) -> Result<Arc<BodyEffects>, crate::policy_body_demand::PolicyFailure> {
+        let host=self.archive.body_query_host().ok_or("effect checked body requires original body-query host")?;
+        self.compute_body_checked_using_admitted_controlled(ordinal,resolver,admission,&|input,_|host.syntax_checked(input),checkpoint)
+    }
     fn compute_body_with<D: crate::policy_body_demand::Demand>(
         self: &Arc<Self>,
         ordinal: usize,
@@ -176,11 +186,17 @@ pub fn compute_body_checked_using_admitted(
         self:&Arc<Self>,ordinal:usize,resolver:&(impl Resolver+?Sized),admission:&ExecutionAdmission,
         body:&dyn Fn(&Arc<dm_tree::frontend::BodySyntaxInput>,&ExecutionAdmission)->Result<Arc<dm_tree::frontend::BodySyntax>,dm_tree::frontend::BodySyntaxFailure>,
     )->Result<Arc<BodyEffects>,crate::policy_body_demand::PolicyFailure>{
+self.compute_body_checked_using_admitted_controlled(ordinal,resolver,admission,body,&||Ok(()))}
+pub fn compute_body_checked_using_admitted_controlled(
+        self:&Arc<Self>,ordinal:usize,resolver:&(impl Resolver+?Sized),admission:&ExecutionAdmission,
+        body:&dyn Fn(&Arc<dm_tree::frontend::BodySyntaxInput>,&ExecutionAdmission)->Result<Arc<dm_tree::frontend::BodySyntax>,dm_tree::frontend::BodySyntaxFailure>,
+        checkpoint:&dyn Fn()->std::io::Result<()>,
+    )->Result<Arc<BodyEffects>,crate::policy_body_demand::PolicyFailure>{
         let profile=self.archive.tree().validated_checker_profile(self.profile).map_err(|e|crate::policy_body_demand::PolicyFailure::from(format!("purity settings profile unavailable: {e:?}")))?;
         self.compute_body_using(ordinal,resolver,admission,|archive,ordinal|archive.parse_checked_using(ordinal,&|input:&std::sync::Arc<dm_tree::frontend::BodySyntaxInput>|body(input,&admission.current_view())).map_err(|failure|match failure{
             dm_tree::frontend::BodySyntaxFailure::Syntax(source)=>crate::policy_body_demand::PolicyFailure::from(source.message),
             dm_tree::frontend::BodySyntaxFailure::Operational(actual)=>crate::policy_body_demand::PolicyFailure::Operational(actual),
-        }),crate::checker_prefix_demand::Checked{body,admission,profile})
+        }),crate::checker_prefix_demand::Checked{body,admission,profile,checkpoint})
     }
     fn compute_body_using<'a,E:From<String>+for<'b>From<&'b str>,D:crate::checker_prefix_demand::Demand<Error=E>>(
         self:&'a Arc<Self>,ordinal:usize,resolver:&(impl Resolver+?Sized),admission:&ExecutionAdmission,
@@ -231,7 +247,7 @@ pub fn compute_body_checked_using_admitted(
         // Admit the actual path backing BEFORE extending its Arc lifetime.
         draft.transient.charge(origin_charge).map_err(|_|prefix_demand.resource("effect original note admission exhausted"))?;
         let callable_origin=original_note.map(dm_tree::frontend::BorrowedSourceNoteOrigin::into_owned);
-        let parent = source_parent(
+        let parent = source_parent_using(
             &self.archive,
             resolver,
             self.profile,
@@ -241,6 +257,7 @@ pub fn compute_body_checked_using_admitted(
                 .ok_or("effect ordinal absent")?
                 .member,
             procedure,
+            &mut||prefix_demand.checkpoint(),
         )?;
         Ok(Arc::new(BodyEffects {
             input: Arc::downgrade(self),
@@ -267,6 +284,16 @@ pub fn compute_body_checked_using_admitted(
         resolver: &(impl Resolver + ?Sized),
         admission: &ExecutionAdmission,
     ) -> Result<Arc<EffectPlan>, String> {
+self.plan_using(bodies,resolver,admission,&mut||Ok(()))}
+    pub fn plan_checked_controlled(self:&Arc<Self>,bodies:Vec<Arc<BodyEffects>>,resolver:&(impl Resolver+?Sized),admission:&ExecutionAdmission,checkpoint:&dyn Fn()->std::io::Result<()>)->Result<Arc<EffectPlan>,crate::policy_body_demand::PolicyFailure>{self.plan_using(bodies,resolver,admission,&mut||checkpoint().map_err(crate::policy_body_demand::PolicyFailure::Operational))}
+    fn plan_using<E:From<String>+From<&'static str>>(
+        self: &Arc<Self>,
+        bodies: Vec<Arc<BodyEffects>>,
+        resolver: &(impl Resolver + ?Sized),
+        admission: &ExecutionAdmission,
+        checkpoint:&mut impl FnMut()->Result<(),E>,
+    ) -> Result<Arc<EffectPlan>, E> {
+        checkpoint()?;
         if !self.whole_roster{return Err("effect contribution windows require the global source graph; independent page SCC is forbidden".into())}
         if resolver.source_owner() != Resolver::source_owner(self.archive.tree()) {
             return Err("effect plan resolver foreign".into());
@@ -326,7 +353,7 @@ pub fn compute_body_checked_using_admitted(
                         .ok_or("purity predecessor has no source contribution")?;
                     overrides[at].push(child);
                 }
-                parent = target_parent_parts(self, resolver, p, &bodies, &index)?;
+                parent = target_parent_parts_using(self,resolver,p,&bodies,&index,checkpoint)?;
             }
         }
         let mut graph = adjacency.clone();
@@ -506,7 +533,7 @@ impl SccSummary {
         admission: &ExecutionAdmission,
         mut checkpoint: impl FnMut() -> Result<(), String>,
     ) -> Result<Vec<Produced>, D::Error> {
- self.validate(input)?;report_core::purity(&report_core::LegacyReportAccess::<D>{input,plan:&self.plan,summary:Some(self),demand:std::marker::PhantomData},resolver,policy,admission,||checkpoint().map_err(D::Error::from))
+ self.validate(input)?;let control=std::cell::RefCell::new(checkpoint);let poll=||(control.borrow_mut())().map_err(D::Error::from);report_core::purity(&report_core::LegacyReportAccess::<D>{input,plan:&self.plan,summary:Some(self),checkpoint:&poll,demand:std::marker::PhantomData},resolver,policy,admission,&poll)
 }
 }
 #[derive(Clone, Debug)]
@@ -609,6 +636,7 @@ fn call_notes<E:From<String>+From<&'static str>>(
     path: &[CallEdge],
     out: &mut Vec<Note>,
     budget: &output::ReportBudgetWith<'_,E>,
+    checkpoint:&mut impl FnMut()->Result<(),E>,
 ) -> Result<(), E> {
     for edge in path {
         budget.push(
@@ -616,7 +644,7 @@ fn call_notes<E:From<String>+From<&'static str>>(
             Note {
                 message: budget.format(format_args!(
                     "{}() called here",
-                    display_target(input, edge.callee, &budget)?
+                    display_target(input, edge.callee, &budget,checkpoint)?
                 ))?,
                 source: Some(edge.origin.note_point(input, budget)?),
             },
@@ -655,14 +683,18 @@ fn identity(archive: &BodyArchive, ordinal: usize) -> Result<ProcedureIdentity, 
             .ok_or("purity original source version absent")?,
     })
 }
-pub(crate) fn source_parent(
+pub(crate) fn source_parent_using<E:From<String>+From<&'static str>>(
     archive: &BodyArchive,
     resolver: &(impl Resolver + ?Sized),
     profile: PackedU128,
     member: dm_tree::MemberId,
     id: ProcedureIdentity,
-) -> Result<Option<EffectTarget>, String> {
+    checkpoint:&mut impl FnMut()->Result<(),E>,
+) -> Result<Option<EffectTarget>, E> {
+    checkpoint()?;
     use crate::checks_parent_call::SourcePredecessorProjection;
+    if archive.callables().identity_for_member(member)!=Some(id){return Err("original mixed parent source occurrence is foreign".into())}
+    if let Some(group)=crate::checker_original_group::Group::for_target_using(archive.tree(),profile,EffectTarget::Source(id),checkpoint)?{return group.parent_using(EffectTarget::Source(id),resolver,checkpoint)}
     match crate::checks_parent_call::source_predecessor_in_profile(
         archive.tree(),
         member,
@@ -679,7 +711,9 @@ pub(crate) fn source_parent(
     }
 }
 
-fn display<E:From<String>+From<&'static str>>(input:&report_core::ReportSource<'_>,id:ProcedureIdentity,budget:&output::ReportBudgetWith<'_,E>)->Result<String,E>{let text=crate::checker_callable_display::original(input.archive.tree(),id,|count|budget.charge(count),||Ok::<(),E>(()))?;budget.format(format_args!("{text}"))}
+pub(crate) fn source_parent(archive:&BodyArchive,resolver:&(impl Resolver+?Sized),profile:PackedU128,member:dm_tree::MemberId,id:ProcedureIdentity)->Result<Option<EffectTarget>,String>{source_parent_using(archive,resolver,profile,member,id,&mut||Ok(()))}
+
+fn display<E:From<String>+From<&'static str>>(input:&report_core::ReportSource<'_>,id:ProcedureIdentity,budget:&output::ReportBudgetWith<'_,E>,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<String,E>{let text=crate::checker_callable_display::original(input.archive.tree(),id,|count|budget.charge(count),&mut *checkpoint)?;budget.format(format_args!("{text}"))}
 /// Iterative Kosaraju over the unique effect graph. No Rust recursion or Db
 /// callee recursion, even for deep or mutually recursive source programs.
 fn scc(edges: &[Vec<usize>]) -> Result<Vec<usize>, String> {
@@ -747,8 +781,8 @@ use sleep::SleepSettings;
 #[path = "checker_effect_targets.rs"]
 mod targets;
 pub(crate) use targets::{
-    builtin_parent_after_sources, callable_target, display_target, original_target_parent,
-    target_owner, target_parent_parts, EffectTarget,
+    builtin_parent_after_sources, callable_target, display_target, original_target_parent, original_target_parent_using,
+    target_owner, target_parent_parts_using, EffectTarget,
 };
 
 fn next_input_key()->Result<u64,String>{

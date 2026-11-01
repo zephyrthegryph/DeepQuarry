@@ -1690,3 +1690,30 @@ uses build 1687. Those contexts must not be equated merely because a template ma
 Native analysis must use the same frontend and query system with correctly admitted
 context dependencies. No default cutover, full-main-project gate, complete checker or
 policy parity, total-memory bound, or performance target is claimed here.
+
+
+### Callable ordering and explicit command proof, 2026-10-31
+
+Mixed source/builtin callable groups now preserve the original formal/builtin/
+implicit value positions, predecessor selection and displayed ordinals. Ten focused
+ordering/control tests and five current-source Keys tests pass. Four further Keys
+policy/oracle controls pass, including quota and stopped-provider behavior. An
+independent immutable-original producer matches all five complete native Keys
+records (ordered sites, notes, ALLOW use and digests, failure result and text).
+Keys is still a private selected producer at this checkpoint, not a public/default
+policy route. Its hard-message policy does not require invented source-line text.
+
+The real command proof also passes for scheduler, qdel_src, deadline_polling,
+sys/hygiene, sys/resolvers, sys/tables and system_boundary, including the exercised
+raw/CI/thin/warm and baseline seed/update paths. Complete output, status, baseline
+files, configuration bytes and ALLOW accounting are compared. This is seven
+executed names, not proof that every admitted policy has run. The test-owned daemon
+retired successfully. Valid explicit proc declarations and a genuine local static
+list getter repair the paired fixtures; no lint behavior or positive assertion was
+weakened. Four full argument-checker and three keyword-checker original comparisons
+also pass after the callable changes, including both mixed implicit/parent cases.
+
+Public Keys delivery, the full filter family, remaining untagged checker cases,
+analysis-default preprocessing/diagnostic-only retention, remaining semantic policy
+adapters, default cutover and main-project/performance qualification remain open.
+No whole-toolchain completion or lane-ready stamp is claimed by this checkpoint.

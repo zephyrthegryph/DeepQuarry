@@ -97,7 +97,7 @@ fn return_hint_mode_using<D:PrefixDemand>(
     }
     demand.validate_profile(tree,profile)
         .map_err(|e| format!("return checker profile unavailable: {e:?}"))?;
-    let fact = checker_call_facts::callable_any(tree, resolver, profile, receiver, name)?;
+    let fact = checker_call_facts::callable_any_using(tree,resolver,profile,receiver,name,&mut||demand.checkpoint())?;
     match fact {
         CallableFact::Missing => Err("return hint requires a positively resolved callable".into()),
         CallableFact::CheckerBuiltin {
@@ -608,7 +608,7 @@ fn return_fix_hint_mode_using<D:PrefixDemand>(
     if hint.declared_type.is_some() {
         return Ok(ReturnFixHint::None);
     }
-    match checker_call_facts::callable_any(tree, resolver, profile, receiver, name)? {
+    match checker_call_facts::callable_any_using(tree,resolver,profile,receiver,name,&mut||demand.checkpoint())? {
         CallableFact::Source { identity, metadata } => {
             if !metadata
                 .procedure

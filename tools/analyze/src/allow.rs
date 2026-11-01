@@ -82,9 +82,14 @@ pub struct Kept {
 }
 
 fn keeps(line: &str, lint: &str) -> Option<Option<String>> {
-    match parse(line) {
-        Some(a) if !a.reason.is_empty() && a.names.contains(lint) => Some(a.codes.get(lint).cloned()),
-        _ => None,
+    match keeps_with(line,lint,&mut crate::key_policy_control::Compatibility){Ok(value)=>value,Err(never)=>match never{}}
+}
+/// SAME annotation acceptance used by original line queries and native local
+/// source loans. This is membership DATA, never a source/usage completion.
+pub(crate) fn keeps_with<C:crate::key_policy_control::Control>(line:&str,lint:&str,control:&mut C)->Result<Option<Option<String>>,C::Error>{
+    match parse_with(line,control)?{
+        Some(mut annotation) if !annotation.reason.is_empty()&&annotation.names.contains(lint)=>Ok(Some(annotation.codes.remove(lint))),
+        _=>Ok(None),
     }
 }
 

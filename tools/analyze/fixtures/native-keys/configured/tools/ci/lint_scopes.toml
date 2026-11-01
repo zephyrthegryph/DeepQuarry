@@ -1,0 +1,2 @@
+[lint.sem]
+exempt_files = ["code/modules/unit_tests/t.dm"]

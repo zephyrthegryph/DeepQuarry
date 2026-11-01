@@ -197,7 +197,7 @@ impl SourceSnapshot {
                         .ok_or_else(|| io::Error::other("compiled hierarchy incompatible with pinned checker builtin profile"))?;
                     let context = dm_analysis::checker_context::CheckerContext::archived(archive, host, resolver, profile)
                         .map_err(io::Error::other)?;
-                    if family == "proc_has_no_parent" { context.parent_archived(&body, Severity::Error) }
+                    if family == "proc_has_no_parent" {match context.parent_archived_checked(&body,Severity::Error,&mut crate::daemon::control::checkpoint){Ok(rows)=>Ok(rows),Err(dm_analysis::policy_body_demand::PolicyFailure::Operational(actual))=>return Err(actual),Err(dm_analysis::policy_body_demand::PolicyFailure::Unsupported(message))=>Err(message.0)}}
                     else if family == "undefined_proc" { context.undefined_archived(&body, true) }
                     else if family == "undefined_variable" { context.variables_archived(&body, true) }
                     else if family == "no_typehint_implicit_new" {context.implicit_new_archived(&body,Severity::Error)}

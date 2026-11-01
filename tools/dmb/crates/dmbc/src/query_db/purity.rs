@@ -637,7 +637,7 @@ pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, registry: SourceRegi
             error: Mutex::new(None),
         };
         let admission = execution_admission(&l);
-        let computed = input.compute_body_checked(p.ordinal, &resolver, &admission);
+        let computed = input.compute_body_checked_controlled(p.ordinal,&resolver,&admission,&||crate::daemon::control::checkpoint());
         let result = resolver
             .finish()
             .and_then(|_| computed.map_err(|e| policy_read_failure(p.key, e)));
@@ -668,9 +668,9 @@ pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, registry: SourceRegi
                 parent: p.key,
                 error: Mutex::new(None),
             };
-            let plan = input.plan(bodies, &resolver, &admission);
+            let plan = input.plan_checked_controlled(bodies,&resolver,&admission,&||crate::daemon::control::checkpoint());
             resolver.finish()?;
-            plan.map_err(ReadFailure::Semantic)
+            plan.map_err(|error|policy_read_failure(p.key,error))
         })();
         latch_transient_denial(&l, &admission);
         let result = split_transport(result)?;
