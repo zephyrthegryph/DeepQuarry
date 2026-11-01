@@ -7,7 +7,9 @@ use super::{Sem, ast::{stmt_blocks, stmt_exprs, walk_expr}};
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Finding { pub rule: &'static str, pub file: String, pub line: u32, pub message: String }
 
-fn engine(file: &str) -> bool { file.starts_with("code/engine/") }
+/// code/base/ is the neutral layer the engine calls: held to the engine's own boundary, so it names nothing external.
+fn base(file: &str) -> bool { file.starts_with("code/base/") }
+fn engine(file: &str) -> bool { file.starts_with("code/engine/") || base(file) }
 fn generated(file: &str) -> bool { file.starts_with("code/engine/_generated/") }
 fn external(file: &str) -> bool {
     ["code/library/", "code/content/", "code/game/", "code/modules/", "code/datums/"].iter().any(|root| file.starts_with(root))
@@ -53,9 +55,7 @@ impl Walker<'_> {
         // ownership and cannot authorize an application-defined type. Only a
         // genuine, non-generated engine declaration establishes that boundary.
         if !files.iter().any(|file| engine(file)) {
-            for file in files {
-                if external(file) { self.provenance(&path, file); }
-            }
+            for file in files { self.provenance(&path, file); }
         }
     }
     // A virtual interface declared in the engine is lawful even if a descendant overrides it downstream.
@@ -386,6 +386,18 @@ mod tests {
         assert!(found.iter().any(|f| f.message.starts_with("/obj/item is defined in code/library/")),
             "findings={:?}; headers={:?}; owner_defs={:?}", found, sem.layering_type_defs, sem.layering_owner_defs);
         assert!(!found.iter().any(|f| f.message.contains("::engine_hook")));
+    }
+
+    #[test]
+    fn base_layer_is_held_to_the_engine_boundary() {
+        let (_root, sem) = fixture_sources(&[
+            ("code/base/probe.dm", "/proc/base_entry(obj/item/held)\n\treturn held\n/proc/base_other()\n\treturn engine_helper()\n"),
+            ("code/engine/caller.dm", "/proc/engine_helper()\n\treturn base_entry(null)\n"),
+            ("code/library/not_a_prefix.dm", "/obj/item\n\tname = \"item\"\n"),
+        ]);
+        let scanned = scan(&sem, &["code/base/probe.dm".to_string(), "code/engine/caller.dm".to_string()].into_iter().collect());
+        assert!(scanned.iter().any(|f| f.file == "code/base/probe.dm" && f.message.starts_with("/obj/item is defined in code/library/")));
+        assert!(!scanned.iter().any(|f| f.message.contains("/proc/base_entry")), "the engine may call base");
     }
 
     #[test]

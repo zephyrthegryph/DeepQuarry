@@ -340,23 +340,6 @@ GLOBAL_LIST_INIT(alphabet_upper, list("A","B","C","D","E","F","G","H","I","J","K
 /proc/copytext_preserve_html(text, first, last)
 	return html_encode(copytext(html_decode(text), first, last))
 
-//For generating neat chat tag-images
-//The icon var could be local in the proc, but it's a waste of resources
-//	to always create it and then throw it out.
-GLOBAL_VAR_INIT(text_tag_icons, 'icons/chattags.dmi')
-DECLARE_SHARED_CACHE_EX(text_tags, GLOBAL_PROC_REF(build_text_tag), SC_NEVER, 256, 0)
-
-/proc/build_text_tag(tagname)
-	var/datum/asset/spritesheet_batched/chatassets = get_asset_datum(/datum/asset/spritesheet_batched/chat)
-	return chatassets.icon_tag(tagname)
-
-/proc/create_text_tag(tagname, tagdesc = tagname, client/C = null)
-	if(!(C && C.prefs?.read_preference(/datum/preference/toggle/chat_tags)))
-		return tagdesc
-	if(!C.tgui_panel.is_ready() || C.tgui_panel.oldchat)
-		return "<IMG src='[REF(GLOB.text_tag_icons)]' class='text_tag' iconstate='[tagname]'" + (tagdesc ? " alt='[tagdesc]'" : "") + ">"
-	return CACHED(text_tags, tagname)
-
 /proc/contains_az09(input)
 	for(var/i=1, i<=length(input), i++)
 		var/ascii_char = text2ascii(input,i)
@@ -719,3 +702,6 @@ DECLARE_SHARED_CACHE_EX(text_tags, GLOBAL_PROC_REF(build_text_tag), SC_NEVER, 25
 		text2num(semver_regex.group[2]),
 		text2num(semver_regex.group[3]),
 	)
+
+/proc/text_or_null(value)
+	return isnull(value) ? null : "[value]"

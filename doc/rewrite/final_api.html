@@ -5284,6 +5284,8 @@ code/host/{helpers,globals,click,client,admin,tgui,assets,config,vendor}
 code/base/{atom,area,turf,obj,mob}
     <span class="c">// the root types /atom /atom/movable /obj /obj/item /obj/machinery /obj/structure /mob /mob/living /turf /area:
     // their vars, base procs and base STAT and TRACKED declarations.</span>
+code/base/        the neutral layer the engine calls: helpers, act context, adjacency
+code/world/kernel the scheduling kernel (code/engine/kernel holds input, requests and jobs)
 code/engine/{declare,kernel,time,state,stats,refs,change,actions,parts,hooks,present,io,_generated}
     <span class="c">// the framework, one folder per concept. _generated holds the analysis engine's output
     // (reads tables, STAT ids, ACTION types) and is never hand-edited.</span>

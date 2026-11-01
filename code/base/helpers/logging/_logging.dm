@@ -1,3 +1,9 @@
+/// The log writer: the type and its entry point are what the engine calls, content (code/content/logging/) implements them.
+GLOBAL_REAL(logger, /datum/log_holder)
+/datum/log_holder
+/datum/log_holder/proc/Log(category, message, list/data)
+	return
+
 //print a warning message to world.log
 #define WARNING(MSG) warning("[MSG] in [__FILE__] at line [__LINE__] src: [UNLINT(src)] usr: [usr].")
 /proc/warning(msg)
@@ -53,59 +59,24 @@ GLOBAL_LIST_INIT(testing_global_profiler, list("_PROFILE_NAME" = "Global"))
 #define log_reftracker(msg)
 #endif
 
-/**
- * Generic logging helper
- *
- * reads the type of the log
- * and writes it to the respective log file
- * unless log_globally is FALSE
- * Arguments:
- * * message - The message being logged
- * * message_type - the type of log the message is(ATTACK, SAY, etc)
- * * color - color of the log text
- * * log_globally - boolean checking whether or not we write this log to the log file
- */
-/atom/proc/log_message(message, message_type, color = null, log_globally = TRUE, list/data)
-	if(!log_globally)
-		return
-
-	var/log_text = "[key_name_and_tag(src)] [message] [loc_name(src)]"
-	switch(message_type)
-		/// ship both attack logs and victim logs to the end of round attack.log just to ensure we don't lose information
-		if(LOG_ATTACK, LOG_VICTIM)
-			log_attack(log_text, data)
-		if(LOG_SAY)
-			log_say(log_text, data)
-		if(LOG_WHISPER)
-			log_whisper(log_text, data)
-		if(LOG_EMOTE)
-			log_emote(log_text, data)
-		if(LOG_PDA)
-			log_pda(log_text, data)
-		if(LOG_OOC)
-			log_ooc(log_text, data)
-		if(LOG_LOOC)
-			log_looc(log_text, data)
-		if(LOG_ADMIN)
-			log_admin(log_text, data)
-		if(LOG_ADMIN_PRIVATE)
-			log_admin_private(log_text, data)
-		if(LOG_ASAY)
-			log_adminsay(log_text, data)
-		if(LOG_GAME)
-			log_game(log_text, data)
-		else
-			stack_trace("Invalid individual logging type: [message_type]. Defaulting to [LOG_GAME] (LOG_GAME).")
-			log_game(log_text, data)
-
 /* For logging round startup. */
 /proc/start_log(log)
 	WRITE_LOG(log, "Starting up round ID [GLOB.round_id].\n-------------------------")
 
-/* Close open log handles. This should be called as late as possible, and no logging should hapen after. */
-/proc/shutdown_logging()
-	rustg_log_close_all()
-	logger.shutdown_logging()
+/// What key_name() prints for a datum that stands for a player: list(key, mob, fallback name). Null for any other datum. Content answers.
+/datum/proc/key_name_fields()
+	return null
+
+/proc/key_name_fields_of(datum/D)
+	return D.key_name_fields()
+
+/// TRUE when this client's key is hidden in logs that leave the name out. Content answers.
+/client/proc/key_name_masked()
+	return FALSE
+
+/// The key a masked client's links use. Content answers.
+/client/proc/getStealthKey()
+	return null
 
 /* Helper procs for building detailed log lines */
 /proc/key_name(whom, include_link = null, include_name = TRUE)
@@ -133,16 +104,16 @@ GLOBAL_LIST_INIT(testing_global_profiler, list("_PROFILE_NAME" = "Global"))
 		C = GLOB.directory[ckey]
 		if(C)
 			M = C.mob
-	else if(istype(whom,/datum/mind))
-		var/datum/mind/mind = whom
-		key = mind.key
+	else if(isdatum(whom) && !isnull(key_name_fields_of(whom)))
+		var/list/fields = key_name_fields_of(whom)
+		key = fields[1]
 		ckey = ckey(key)
-		if(mind.current)
-			M = mind.current
+		if(fields[2])
+			M = fields[2]
 			if(M.client)
 				C = M.client
 		else
-			fallback_name = mind.name
+			fallback_name = fields[3]
 	else // Catch-all cases if none of the types above match
 		var/swhom = null
 
@@ -163,7 +134,7 @@ GLOBAL_LIST_INIT(testing_global_profiler, list("_PROFILE_NAME" = "Global"))
 		include_link = FALSE
 
 	if(key)
-		if(admin_can(C, 0) && admin_fakekey(C) && !include_name)
+		if(C?.key_name_masked() && !include_name)
 			if(include_link)
 				. += "<a href='byond://?priv_msg=[C.getStealthKey()]'>"
 			. += "Administrator"
@@ -217,10 +188,6 @@ GLOBAL_LIST_INIT(testing_global_profiler, list("_PROFILE_NAME" = "Global"))
 //
 // These procs must not fail under ANY CIRCUMSTANCES!
 // Are these even still required?
-
-/proc/report_progress(progress_message)
-	admin_notice(span_boldannounce("[progress_message]"), R_DEBUG)
-	log_world(progress_message)
 
 /datum/proc/log_info_line()
 	return "[src] ([type])"
