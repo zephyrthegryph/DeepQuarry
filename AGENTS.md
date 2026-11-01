@@ -113,7 +113,7 @@ Rules that hold under both old and new forms:
 - Sounds are sets: `play_sfx(atom, SFX_ID)`; sparks are `fx_sparks(atom, amount)`.
 - SQL is parameterized only; ask players with typed prompts, not raw `input()`/`alert()`.
 - Cache appearances, not raw `/icon`. Don't add an `/atom` proc for something only one capability uses.
-- Run DreamChecker before pushing.
+- DreamChecker is off for now, per the user (the compiler's own diagnostics gate; do not run or edit it). When it returns: run it before pushing.
 
 ### 3b. Legacy forms (what is left)
 
@@ -128,7 +128,7 @@ table procs, `world_service`, `PERIODIC_*`, `update_icon(`, the `APPEARANCE_*` l
 What is still open, and still correct to write where a file already uses it:
 
 - The `BF_*` body factors themselves are done: they are stats on `/mob/living`. A `factors = alist(...)` var on a flyweight or prototype (a body effect, affliction, reagent, trait, perk or form type) is final data read by its type's one reader, not open work (`doc/rewrite/proposals/stat_layer.md` §8, end); `factors_converted` is only for types that move the table into the entry itself.
-- `prompt_flow()`, `flow_select()`, `flow_sql()`, `flow_http_get()` (database and HTTP reads that re-ran their entry) are gone and hard-banned: a read that carries on from its answer is `sql_ask(owner, sql, params, PROC_REF(next), context...)` with `sql_answer_rows()` in the callback, an HTTP read is `http_ask()`, a typed read is a `/datum/io/sql` request, a write nobody reads is `sql_write()`. `rerun_ask`, `verb_ask`, `client_ask`, `cast_ask` and `flow_ask` are gone and hard-banned: an admin verb asks with `ask_steps()`, a spell with `target_questions()`, an admin tool with `ask_admin()` and its pickers (`code/modules/admin/view_variables/pickers.dm`).
+- `prompt_flow()`, `flow_select()`, `flow_sql()`, `flow_http_get()` (database and HTTP reads that re-ran their entry) are gone and hard-banned: a read that carries on from its answer is `sql_ask(owner, sql, params, PROC_REF(next), context...)` with `sql_answer_rows()` in the callback, an HTTP read is `http_ask()`, a typed read is a `/datum/io/sql` request, a write nobody reads is `sql_write()`. `rerun_ask`, `verb_ask`, `client_ask`, `cast_ask` and `flow_ask` are gone and hard-banned: an admin verb asks with `ask_steps()`, a spell with `target_questions()`, an admin tool with `ask_admin()` and its pickers (`code/content/admin/view_variables/pickers.dm`).
 - The `base_vars` ratchet (its baseline shrinks as files convert). The init, raw-overlay, untyped and escape_hatches ratchets are at 0 and hard-banned.
 - File moves into the new tree (§3c).
 
@@ -143,7 +143,7 @@ a stat id, a `PROC_REF`) as well as requirements and build the same tree.
 
 Corrections to older notes: there is no `om_changed()`, `changed()` channels or `om_raise_change()`
 any more; state is tracked setters and generated reads. `SSbehaviours` no longer fires; its work
-was folded into the kernel (`code/controllers/kernel/kernel.dm`).
+was folded into the kernel (`code/world/kernel/kernel.dm`).
 
 ### 3c. Source layout and the migration rule
 
@@ -262,7 +262,7 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   sources fails that check and loses every shard. If you do build Rust in a worktree, its
   target is about 1.3 GB: delete your own `verdigris/target` when you remove the worktree.
 - **Lanes get worktrees from the pool, nowhere else.** `bash tools/dq_lane_pool.sh lease <branch>` hands out one of
-  `DQ_LANE_POOL_SIZE` (3) fixed worktrees, `E:/projects/dq-wt/pool-N`, started on `origin/master` with `git switch -c` (it refuses a
+  `DQ_LANE_POOL_SIZE` (5 general slots here, plus the reserved compiler slots and the light slot) fixed worktrees, `E:/projects/dq-wt/pool-N`, started on `origin/master` with `git switch -c` (it refuses a
   dirty slot and never discards anything); a lane beyond the pool size is refused ("POOL FULL"). To wait for a slot, run
   `... lease <branch> --wait` once in the background (a first-come-first-served queue); never write a retry or `until` loop. `... release <branch>` retires the dmbc
   daemon, deletes the build outputs and detaches the slot at `origin/master`, keeping `icons/gen`, `node_modules` links, the analyzer
@@ -273,7 +273,7 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
 - **Disk hygiene.** Nothing a build, compile or probe writes may live in `.git`: compiler caches go to `E:/dq-cache/` (the native
   compiler's `DM_COMPILER_CACHE_ROOT`; never `<git-common-dir>/dm-compiled-cache`), and `tools/dq_push_stamp.sh` runs its
   `git merge-tree --write-tree` probes in a throwaway object dir so they leave no loose trees. Lane worktrees come from the pool:
-  `bash tools/dq_worktree.sh lease <branch>` / `release <branch>` (the entry point of `tools/dq_lane_pool.sh`, at most 3 lanes at once);
+  `bash tools/dq_worktree.sh lease <branch>` / `release <branch>` (the entry point of `tools/dq_lane_pool.sh`, at most `DQ_LANE_POOL_SIZE` general lanes at once);
   `dq_worktree.sh new` is only for non-lane worktrees and refuses past 8 worktrees or under 60 GB free on E:. `tools/dq_push_master.sh` runs
   `bash tools/dq_worktree.sh gc` after a successful push (removes clean non-pool worktrees merged into origin/master (`pool-N` slots are never removed), build targets deleted
   first, `DQ_WT_KEEP="a b"` protects names); run it by hand any time. Remove your own worktree when your lane is merged.
@@ -306,7 +306,7 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   it. Never run `git checkout` (any form), `git stash`, `git reset`, `git restore` or
   `git cherry-pick`; they discard or move other agents' work.
 - **Production build:** `tools/build/build.sh dm` compiles without `UNIT_TESTS` (CI's Compile Checks job
-  runs it). Test-only code (`code/tests/`, `code/modules/unit_tests/`) must stay behind
+  runs it). Test-only code (`code/tests/`, `code/tests/unit_tests/`) must stay behind
   `#if defined(UNIT_TESTS)`; generators do this via `sem::gen::test_only`, and `analyze gen`
   fails on a generated line naming a test-only type outside the guard.
 - **Generated files are build output, not committed.** `code/engine/_generated/`, `code/_generated/reads.dm`
@@ -317,7 +317,7 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   `_unit_tests.dm` merges by union (`.gitattributes`).
   `doc/rewrite/agent_workflow.md`. There are no look pins (deleted 2026-10-17; playtesting finds visual issues): don't add a snapshot
   of how types look; test a draw's behaviour instead (`dq_fresh_look_default`, `dq_human_draw_deterministic`, the staleness checker).
-- Heed every DreamChecker warning. If another agent's unfinished work breaks the build,
+- DreamChecker is off for now, per the user; when it returns, heed every warning. If another agent's unfinished work breaks the build,
   `DQ_WIP_TREE=1` lets test and bench builds skip dangling includes.
 - **Shared build caches** (`doc/testing.md` "Shared build caches"): the analyzer binary is cached by source hash
   but built in each worktree's own target (never share a cargo target between worktrees), Bun lives in a shared
@@ -334,7 +334,7 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   `bash tools/dq_train.sh enqueue --tests "<its tests>"` (`--light` for a change with no DM), and releases its slot. One integrator
   merges the ready lanes, runs one gate (test build only; CI keeps the production compile cross-check), pushes, and bisects to bounce
   only a culprit. `dq_land.sh` and `dq_lane_ready.sh` are retired (they refuse): per-lane proofs re-ran on every master move and took
-  lanes hours. At most 3 general lanes run at once (`DQ_LANE_POOL_SIZE`): one DM compile slot serves about three lanes plus the train,
+  lanes hours. At most `DQ_LANE_POOL_SIZE` general lanes run at once (5 here): one DM compile slot serves them plus the train,
   and the train's dmbc session is kept resident (`DQ_DMBC_KEEP_ROOTS`) so its gate compiles stay incremental.
 
 ### 4a. Testing (full reference: `doc/testing.md`)
@@ -365,7 +365,7 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   add scenarios under `code/modules/benchmarks/`, not one-off profiling. `--profile-tests`
   gives per-test proc profiles.
 - `om_test_begin`/`om_test_end` are gone; use `kernel_test_begin()`/`kernel_test_end()`
-  (`code/tests/driver/kernel_clock.dm`, doc §15). Never commit a `TEST_FOCUS(...)` line in `code/modules/unit_tests/dq_focus.dm`.
+  (`code/tests/driver/kernel_clock.dm`, doc §15). Never commit a `TEST_FOCUS(...)` line in `code/tests/unit_tests/dq_focus.dm`.
 
 ## 5. TGUI
 
@@ -395,7 +395,7 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
 - [ ] `deepquarry.dme` regenerated and committed (the build does it; `check_ratchets.sh` checks it); new `.dm` test files in `_unit_tests.dm`.
 - [ ] Only forms that exist on master (§3a "On master"); no use of a legacy form whose ban lint is on (§3b).
 - [ ] Absolute paths; no `:` subtype access; no `Destroy()`; time defines used.
-- [ ] DreamChecker passes; `bash tools/ci/check_ratchets.sh` passes; any kept site has `// ALLOW(<lint>): <reason>`.
+- [ ] (DreamChecker is off for now, per the user; when it returns, it must pass.) `bash tools/ci/check_ratchets.sh` passes; any kept site has `// ALLOW(<lint>): <reason>`.
 - [ ] Touched tests pass; `dq_focus.dm` is empty.
 - [ ] TGUI, if changed: `tools/build/build.sh lint tgui-test` clean.
 - [ ] One changelog stub; squash-able history; commit subject at most 72 characters.
@@ -412,7 +412,7 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
 ## 9. Current state (deployment-independent)
 
 - **Scheduling: one kernel, no Master Controller, no subsystems.** The `Kernel` global
-  (`code/controllers/kernel/`) is the one loop. Each tick runs phases K S N U D P R G (host work and the
+  (`code/world/kernel/`) is the one loop. Each tick runs phases K S N U D P R G (host work and the
   input inbox, simulation sync, native frame, urgent, deadlines, lanes, presentation, garbage). What it hosts
   is `/datum/system`s declared with `SYSTEM_DEF(x)` (the `SSx` global): `needs`, `phase`, `roles`, and
   `every()` items in `reactions()`. A system's periodic handler is `x(dt)`, gated by
@@ -438,7 +438,7 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
   Verdigris, driven from SSair's atmos step (phase N). `/datum/gas_mixture` is an opaque handle: read with
   `return_temperature()`/`return_volume()`, write with `set_temperature()`/`set_volume()`, and
   cache reads in hot loops (each call crosses the FFI). Atoms use `get_temperature()` /
-  `add_heat()` (`code/modules/heat/heat.dm`). Requires BYOND 516.1682+. Gas reactions stay in
+  `add_heat()` (`code/domains/heat/heat.dm`). Requires BYOND 516.1682+. Gas reactions stay in
   DM. `xgm_compat.dm` and `tg_infra_compat.dm` are stable compatibility API, not temporary shims.
 - **Expeditions and Flight Operations.** `GLOB.expedition_service` generates sites on demand
   (`load_new_z()`, cave automata or generated stations, POIs, loot, missions) and recycles
@@ -471,7 +471,7 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
   (`code/engine/declare/static_entries.dm`), looked up with `loot_decl_for()` / `map_resolver_proc()`.
   `DECLARE_LOOT`, the `LOOT_*` rows, `MAP_RESOLVER` and `MAP_RESOLVER_VARS` are hard-banned. Don't add
   hand-rolled spawn code. Tests: `dq_loot_roll_yields_table_item`, `dq_loot_search_yields_once_per_searcher`,
-  `dq_map_resolver_inherited` (`code/modules/unit_tests/dq_loot_behaviour.dm`).
+  `dq_map_resolver_inherited` (`code/tests/unit_tests/dq_loot_behaviour.dm`).
 - **Server metrics and the admin viewer.** `GLOB.metrics_service` (`code/modules/metrics/`) samples
   every `/datum/metrics_source` every 10 s and flushes through `om_io` into the `metric_*` tables
   (`SQL/metrics_schema.sql`, `METRICS_ENABLED`). Events come from single framework points through

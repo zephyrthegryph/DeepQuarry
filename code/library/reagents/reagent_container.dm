@@ -255,10 +255,6 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 			return TRUE
 	return FALSE
 
-/datum/capability/lib/reagent_container/proc/held_has_reagents(datum/act/op/A)
-	var/atom/holder = A.holder
-	return !!holder.reagents?.total_volume
-
 /datum/capability/lib/reagent_container/proc/targets_self(datum/act/op/A)
 	return !isnull(A.target) && A.target == A.actor
 

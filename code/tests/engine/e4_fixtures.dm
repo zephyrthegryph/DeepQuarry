@@ -1,4 +1,4 @@
-// E4, actions and hooks: the gate fixtures of doc/rewrite/final_api.html section 19 "The seven workers" (code/modules/unit_tests/dq_e4_actions_tests.dm).
+// E4, actions and hooks: the gate fixtures of doc/rewrite/final_api.html section 19 "The seven workers" (code/tests/unit_tests/dq_e4_actions_tests.dm).
 //
 // One ACTION with an instead (its notice marked replaced), an adjusts and an on_notice; actions nothing hooks (ACT_PASS), actions only a committed
 // listener hears (an outcome nobody asked for), a recursive takeover (the nested-action cap), and while_slotted entries that are hooks. Compiled under

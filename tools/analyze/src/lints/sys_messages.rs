@@ -16,7 +16,7 @@ const RULES: &[RuleMeta] = &[RuleMeta {
     hint: "act_message(user, target, MSG_SELF(), MSG_OTHERS(), MSG_BLIND()) or act_message_t() (doc/rewrite/systems.md section 15)",
 }];
 
-const RUNTIME_PREFIX: &str = "code/modules/messages/";
+const RUNTIME_PREFIX: &str = "code/content/messages/";
 
 /// Top-level args of the call whose '(' ends at `start`. Returns (args, end_index).
 fn split_args(text: &str, start: usize) -> (Vec<String>, usize) {

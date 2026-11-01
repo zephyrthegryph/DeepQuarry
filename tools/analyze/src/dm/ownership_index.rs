@@ -48,7 +48,7 @@ pub const CORE_DIRS: &[&str] = &[
     "code/datums/lifecycle/",
     "code/engine/state/",
     "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/",
-    "code/controllers/",
+    "code/controllers/", "code/world/kernel/", "code/world/systems/", "code/world/configuration/", "code/world/controllers/",
     "code/engine/refs/containment/",
     "code/datums/containment/stock.dm",
     "code/datums/shared_cache/",
@@ -62,7 +62,7 @@ pub const CALLBACK_OK: &[&str] = &[
     "code/engine/kernel/cadences.dm",
     "code/engine/kernel/sequence.dm",
     "code/engine/kernel/sequence_table.dm",
-    "code/controllers/",
+    "code/controllers/", "code/world/kernel/", "code/world/systems/", "code/world/configuration/", "code/world/controllers/",
     "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/",
     "code/datums/ownership/",
     "code/datums/callback.dm",
@@ -83,7 +83,7 @@ pub const HANDLE_OK: &[&str] = &[
     "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/",
     "code/engine/refs/containment/",
     "code/datums/containment/stock.dm",
-    "code/modules/unit_tests/",
+    "code/tests/unit_tests/",
     "code/tests/unit_tests/",
 ];
 

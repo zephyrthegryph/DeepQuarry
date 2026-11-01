@@ -24,7 +24,7 @@ points or `tools\build\build.bat`; on Linux (and in Git Bash) use
 
 ## Unit tests
 
-Unit tests are `/datum/unit_test` subtypes under `code/modules/unit_tests/`,
+Unit tests are `/datum/unit_test` subtypes under `code/tests/unit_tests/`,
 registered in `_unit_tests.dm`. `dm-test` compiles the game with `UNIT_TESTS`,
 `CITESTING` and `CIBUILDING`, boots it in DreamDaemon, runs every test, and
 shuts down. It also repacks icons and builds Verdigris first if they are stale.
@@ -46,7 +46,7 @@ disables it. The runner still checks `VERDIGRIS_ABI` before booting.
   only if every test passed and there were no runtimes; the world then writes
   `data/logs/ci/clean_run.lk`. Runtimes alone fail the run
   (`data/logs/ci/runtime.log`).
-- **Writing tests.** See `code/modules/unit_tests/README.md` for the API
+- **Writing tests.** See `code/tests/unit_tests/README.md` for the API
   (`allocate()`, `TEST_ASSERT*`, `TEST_FAIL`). Use real game objects where you
   can, and avoid `prob()`, since RNG is seeded during tests.
 
@@ -116,7 +116,7 @@ them can hide a failure in the full suite, which still does all of them:
 
 | Skipped in focused runs | Full suite | Why it is safe |
 |---|---|---|
-| Round-start settle before the first test: 1 s instead of 10 s (0 s for `--boot`) (`HandleTestRun`, `code/game/world.dm`) | 10 s | Nothing is skipped, only started sooner. A test that fails only when focused depends on round-start settling and should wait for what it needs itself. |
+| Round-start settle before the first test: 1 s instead of 10 s (0 s for `--boot`) (`HandleTestRun`, `code/content/game/world.dm`) | 10 s | Nothing is skipped, only started sooner. A test that fails only when focused depends on round-start settling and should wait for what it needs itself. |
 | Round-end report delay: 0 s instead of 5 s (`declare_completion`, `code/_helpers/roundend.dm`) | 5 s | The delay lets players read the report; a test world has none. |
 | Generating every asset and spritesheet at boot, about 2.3 s (`SSassets.Initialize`) | all generated | `get_asset_datum()` builds an asset on first use, and the `spritesheets` and `test_asset_smart_cache` tests call it, so focusing those still generates and checks every sheet. |
 
@@ -196,7 +196,7 @@ contains a focus line, or if a `TEST_FOCUS` anywhere else is not inside an
 
 ### Tiers
 
-Every test has a `tier` (`code/modules/unit_tests/_unit_tests.dm`):
+Every test has a `tier` (`code/tests/unit_tests/_unit_tests.dm`):
 
 | Tier | Runs in | What it holds |
 |---|---|---|
@@ -258,7 +258,7 @@ holders and stays whole in the normal tier.
 
 Phase 1 of the rewrite (`doc/rewrite/final_api.html` section 19) starts with ten executable proofs of the
 semantic contracts that would be expensive to get wrong after content conversion begins. They live in
-`code/modules/unit_tests/dq_e0_proofs_tests.dm` as `/datum/unit_test/dq_e0_proof/p01_...` to `p10_...`, are written with the test driver
+`code/tests/unit_tests/dq_e0_proofs_tests.dm` as `/datum/unit_test/dq_e0_proof/p01_...` to `p10_...`, are written with the test driver
 (`code/tests/driver/`) and the test-only fixtures (`code/tests/engine/`), and are all green only when engines E1-E6 have landed.
 Until then each one fails, on purpose, with `E1-E6 not implemented: <what>` naming every engine piece it reached.
 
@@ -305,7 +305,7 @@ room unless the override says otherwise (a test world boots through ticks far pa
 
 ### Gameplay scenarios
 
-`code/modules/unit_tests/gameplay/` holds end-to-end tests of the core player loops (`/datum/unit_test/dq_gameplay/...`): joining at
+`code/tests/unit_tests/gameplay/` holds end-to-end tests of the core player loops (`/datum/unit_test/dq_gameplay/...`): joining at
 arrivals, walking through a door, putting a coat on and off, the tail's layer against the uniform, breathing phoron with and without
 internals, losing the room's oxygen, an airlock controller's window, picking up and dropping, a wall's right-click menu, and cutting and
 restoring an area's power. They drive the game as a player does and assert what the player would see, never a snapshot:
@@ -780,7 +780,7 @@ moved:
 | Metric | Meaning |
 |---|---|
 | `tick_p50`, `tick_p95`, `tick_p99`, `overruns`, `overrun_ratio` | Whole-tick usage (%) and the ticks over 100%. |
-| `system.<id>.ms_per_s`, `.p99_ms`, `.late_max`, `.breaches` | Per system (OM behaviour families such as `life` and `machines`, and `mc_<subsystem>`): ms of work per second, p99 of ms per tick over the ticks it ran, worst slot lateness in deciseconds, and slots that started past their max interval. Ids are `code/controllers/measure/systems.dm` keys. |
+| `system.<id>.ms_per_s`, `.p99_ms`, `.late_max`, `.breaches` | Per system (OM behaviour families such as `life` and `machines`, and `mc_<subsystem>`): ms of work per second, p99 of ms per tick over the ticks it ran, worst slot lateness in deciseconds, and slots that started past their max interval. Ids are `code/world/kernel/measure/systems.dm` keys. |
 | `input_p99`, `input_p99_ticks`, `input_p50`, `click_wait_p99_ms`, `verb_queue_p99_ms`, `input_queue_hwm`, `input_run_depth_p95` | How long clicks and queued verbs waited before being handled (ms and ticks), how deep the verb queue got, and how far into the tick input ran. |
 
 `bench-compare` gates on these regardless of the generic threshold: `input_p99`

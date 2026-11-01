@@ -5,7 +5,7 @@
  *   dq_physiology_vector_pin   a fresh human per scenario, advanced in physiology steps of two seconds; at each checkpoint the vector
  *                              (ventilation, oxygenation, perfusion, oxygen debt, heart rate, blood pressure, respiratory rate) is a row.
  *
- * Rows are text, one file: code/modules/unit_tests/snapshots/factors/physiology.txt (key => value). A missing or empty file is recorded by the
+ * Rows are text, one file: code/tests/unit_tests/snapshots/factors/physiology.txt (key => value). A missing or empty file is recorded by the
  * next run; `bash tools/dq_focused_test.sh --bless dq_physiology_vector_pin` rewrites it. Numbers compare as text, rounded to four places.
  */
 
@@ -64,7 +64,7 @@
 				stepped++
 			rows["[scenario]@[checkpoint]"] = physiology_pin_row(H)
 		qdel(H)
-	var/file_name = "code/modules/unit_tests/snapshots/factors/physiology.txt"
+	var/file_name = "code/tests/unit_tests/snapshots/factors/physiology.txt"
 	var/list/expected = list()
 	for(var/line in dq_snapshot_file_rows(file_name))
 		var/at = findtext(line, " => ")

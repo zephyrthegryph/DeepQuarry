@@ -6,7 +6,7 @@
  * a large holder when it grinds three sheets (a stack of three) or one ore: each reagent and its amount. The supermatter stack is not ground (it explodes);
  * its row records only the table.
  *
- * Rows are `key => value` in code/modules/unit_tests/snapshots/xform/grinding.txt (see dq_xform_pins.dm); an empty file is recorded by the next run.
+ * Rows are `key => value` in code/tests/unit_tests/snapshots/xform/grinding.txt (see dq_xform_pins.dm); an empty file is recorded by the next run.
  */
 #define DQ_GRINDING_PIN_NAME "grinding"
 

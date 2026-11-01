@@ -15,7 +15,7 @@ destroy_effects	code/modules/decl/destroy.dm	59
 destroy_effects	code/modules/decl/destroy.dm	61
 destroy_effects	code/modules/decl/destroy.dm	63
 destroy_effects	code/modules/decl/sp ace/s.dm	4
-destroy_effects	code/modules/tgs/x.dm	4
+destroy_effects	code/world/tgs/x.dm	4
 destroy_qdel_owned	code/modules/decl/crlf.dm	6
 destroy_qdel_owned	code/modules/decl/destroy.dm	30
 destroy_qdel_owned	code/modules/decl/destroy.dm	31
@@ -66,7 +66,7 @@ init_reagents	code/modules/decl/init.dm	51
 init_reagents	code/modules/decl/init.dm	75
 init_reagents	code/modules/decl/sp ace/s.dm	2
 init_reagents	code/modules/sub/unit_tests/t.dm	2
-init_reagents	code/modules/tgs/x.dm	2
+init_reagents	code/world/tgs/x.dm	2
 init_reagents	code/modules/unit_tests_other/t.dm	2
 init_registry	code/modules/decl/init.dm	8
 init_registry	code/modules/decl/init.dm	10

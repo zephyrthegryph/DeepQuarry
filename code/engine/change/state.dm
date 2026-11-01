@@ -219,33 +219,11 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 	rx_ledger_publish(holder, kind, what)
 	return TRUE
 
-/// Drops every hold `source` has under `kind` on `holder`. Returns the number of whats that vanished.
-/proc/rx_ledger_clear_source(datum/holder, kind, source)
-	if(isnum(source))
-		source = "[source]"
-	var/list/whats = holder.rx?.ledger?["[kind]"]
-	. = 0
-	for(var/what in whats?.Copy())
-		var/list/sources = whats[what]
-		if(!sources?[source])
-			continue
-		if(rx_ledger_remove(holder, kind, what, source, sources[source]))
-			.++
-
 /// TRUE while any source holds `what` under `kind` on `holder`.
 /proc/rx_ledger_has(datum/holder, kind, what)
 	if(isnum(what))
 		what = "[what]"
 	return !!holder.rx?.ledger?["[kind]"]?[what]
-
-/// How many counts across every source hold `what`.
-/proc/rx_ledger_count(datum/holder, kind, what)
-	if(isnum(what))
-		what = "[what]"
-	. = 0
-	var/list/sources = holder.rx?.ledger?["[kind]"]?[what]
-	for(var/source in sources)
-		. += sources[source]
 
 /// The sources holding `what` (a fresh list).
 /proc/rx_ledger_sources(datum/holder, kind, what)
@@ -253,14 +231,6 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 		what = "[what]"
 	var/list/sources = holder.rx?.ledger?["[kind]"]?[what]
 	return sources ? sources.Copy() : list()
-
-/// Every `what` present under `kind` (a fresh list of keys).
-/proc/rx_ledger_whats(datum/holder, kind)
-	var/list/whats = holder.rx?.ledger?["[kind]"]
-	var/list/out = list()
-	for(var/what in whats)
-		out += what
-	return out
 
 /// A relation write publishes the holder's key, and the partner's when `what` is a datum.
 /proc/rx_ledger_publish(datum/holder, kind, what)

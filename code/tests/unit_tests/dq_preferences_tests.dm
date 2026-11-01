@@ -1,7 +1,7 @@
 // Smoke tests for the new preferences architecture. These don't run any UI;
 // they exercise the registry / batch / constraint / sanitize / serialize paths.
 //
-// Included from /code/modules/unit_tests/_unit_tests.dm which already gates on UNIT_TESTS,
+// Included from /code/tests/unit_tests/_unit_tests.dm which already gates on UNIT_TESTS,
 // so the file body does not need its own #if guard and the TEST_X macros are in scope.
 //
 // /datum/preferences/New() requires a real client and CRASHes without one. We use a
@@ -184,7 +184,7 @@
 	TEST_ASSERT(!pref.is_valid(list("#zzzzzz")), "a bad colour is not a valid palette")
 
 	var/path = "data/dq_palette_saves/[world.realtime]_[rand(1, 99999)]/preferences.json"
-	TEST_ASSERT(fcopy("code/modules/unit_tests/data/profile_saves/headless_preferences.json", path), "the fixture save is copied to a scratch path")
+	TEST_ASSERT(fcopy("code/tests/unit_tests/data/profile_saves/headless_preferences.json", path), "the fixture save is copied to a scratch path")
 	var/datum/preferences/dq_test_stub/P = allocate(/datum/preferences/dq_test_stub)
 	P.load_and_save = TRUE
 	P.path = path
@@ -225,7 +225,7 @@
 
 /datum/unit_test/dq_pref_marking_palette_colour/Run()
 	var/path = "data/dq_palette_saves/[world.realtime]_[rand(1, 99999)]/preferences.json"
-	TEST_ASSERT(fcopy("code/modules/unit_tests/data/profile_saves/headless_preferences.json", path), "the fixture save is copied to a scratch path")
+	TEST_ASSERT(fcopy("code/tests/unit_tests/data/profile_saves/headless_preferences.json", path), "the fixture save is copied to a scratch path")
 	var/datum/preferences/dq_test_stub/P = allocate(/datum/preferences/dq_test_stub)
 	P.path = path
 	P.load_savefile()
@@ -269,7 +269,7 @@
 	var/datum/preference_editor/language/editor = GLOB.preference_editors_by_key["language"]
 	TEST_ASSERT_NOTNULL(editor, "the language editor is registered")
 	var/path = "data/dq_language_saves/[world.realtime]_[rand(1, 99999)]/preferences.json"
-	TEST_ASSERT(fcopy("code/modules/unit_tests/data/profile_saves/headless_preferences.json", path), "the fixture save is copied to a scratch path")
+	TEST_ASSERT(fcopy("code/tests/unit_tests/data/profile_saves/headless_preferences.json", path), "the fixture save is copied to a scratch path")
 	var/datum/preferences/dq_test_stub/P = allocate(/datum/preferences/dq_test_stub)
 	P.path = path
 	P.load_savefile()

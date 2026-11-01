@@ -51,10 +51,6 @@
 	RETURN_TYPE(/datum/entry)
 	return xform_cond("all", null, entry_flatten(args))
 
-/proc/xform_any(...)
-	RETURN_TYPE(/datum/entry)
-	return xform_cond("any", null, entry_flatten(args))
-
 /proc/xform_not(condition)
 	RETURN_TYPE(/datum/entry)
 	return xform_cond("not", null, list(condition))

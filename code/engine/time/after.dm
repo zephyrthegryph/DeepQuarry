@@ -20,6 +20,24 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 		// DM does not check a typed parameter at runtime: a call written after(delay, handler, ...) lands its delay here as the owner.
 		stack_trace("after(): the owner must be a datum or null, got [owner] ([handler]); arguments are after(owner, delay, handler, ...)")
 		return 0
+	if(isnull(handler) || isnum(handler))
+		// after(src, PROC_REF(x), delay) lands the delay here; a null handler would only runtime when it fires, far from the mistake.
+		stack_trace("after(): the handler must be a proc reference, got [isnull(handler) ? "null" : "[handler]"] on [owner?.type]; arguments are after(owner, delay, handler, ...)")
+		return 0
+	if(!isnum(delay))
+		// max(text or null, 0) runs the handler on the next tick, whatever was meant. A delay that came out null still runs (dropping gameplay is worse), and says so.
+		stack_trace("after(): the delay must be a number of deciseconds, got [isnull(delay) ? "null" : "[delay]"] ([handler] on [owner?.type])")
+		if(!isnull(delay))
+			return 0
+		delay = 0
+	if(!isnull(handler_args) && !islist(handler_args))
+		// with = probe instead of with = list(probe) would only runtime in arglist() when it fires.
+		stack_trace("after(): with must be a list, got [handler_args] ([handler] on [owner?.type])")
+		return 0
+	if(!isnull(key) && !istext(key) && !isnum(key))
+		// after(src, delay, PROC_REF(x), list(a)) lands the arguments here: the handler would run without them, under a key nothing can cancel.
+		stack_trace("after(): the key must be text or a number, got [key] ([handler] on [owner?.type]); arguments go in with =")
+		return 0
 	if(isnull(key) && clock == CLOCK_OWN)
 		return timer_schedule_list(owner, delay, handler, handler_args, keeps_dead)
 	var/datum/holder = owner || timer_global_owner()

@@ -49,13 +49,13 @@ if [ "$merge_rc" -ne 0 ]; then
 	fi
 	# The look pins are deleted: a lane that still edits their snapshot files conflicts with the deletion. Take the deletion.
 	mapfile -t dead < <(printf '%s
-' "${conflicted[@]}" | grep -E '^code/modules/unit_tests/snapshots/(look_keys\.txt|looks/|look_states/|look_trees/)' || true)
+' "${conflicted[@]}" | grep -E '^code/tests/unit_tests/snapshots/(look_keys\.txt|looks/|look_states/|look_trees/)' || true)
 	if [ ${#dead[@]} -gt 0 ]; then
 		echo "dq_merge_master: dropping ${#dead[@]} look-pin snapshot file(s) the lane edited (the look pins are deleted)"
 		git rm -q --cached -- "${dead[@]}" 2>/dev/null || true
 		rm -f -- "${dead[@]}"
 		mapfile -t conflicted < <(printf '%s
-' "${conflicted[@]}" | grep -vE '^code/modules/unit_tests/snapshots/(look_keys\.txt|looks/|look_states/|look_trees/)' || true)
+' "${conflicted[@]}" | grep -vE '^code/tests/unit_tests/snapshots/(look_keys\.txt|looks/|look_states/|look_trees/)' || true)
 	fi
 	# deepquarry.dme is generated: a conflict on it (a merge without the dq-dme driver) resolves by regeneration from the merged files.
 	for f in "${conflicted[@]}"; do
@@ -82,8 +82,8 @@ if [ ${#tracked[@]} -gt 0 ]; then
 fi
 
 # Includes of files the merge deleted (a union merge of an include list brings them back): dropped from the merge and reported.
-if git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1 && [ -z "$(git diff --name-only --diff-filter=U -- code/tests/unit_tests/_unit_tests.dm code/modules/unit_tests/_unit_tests.dm deepquarry.dme)" ]; then
-	for ut in code/tests/unit_tests/_unit_tests.dm code/modules/unit_tests/_unit_tests.dm; do
+if git rev-parse -q --verify MERGE_HEAD >/dev/null 2>&1 && [ -z "$(git diff --name-only --diff-filter=U -- code/tests/unit_tests/_unit_tests.dm code/tests/unit_tests/_unit_tests.dm deepquarry.dme)" ]; then
+	for ut in code/tests/unit_tests/_unit_tests.dm code/tests/unit_tests/_unit_tests.dm; do
 		[ -f "$ut" ] && dq_drop_stale_includes "$ut" "$(dirname "$ut")" "dq_merge_master"
 	done
 	dq_drop_stale_includes deepquarry.dme . "dq_merge_master"

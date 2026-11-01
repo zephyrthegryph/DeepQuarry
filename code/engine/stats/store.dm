@@ -276,7 +276,11 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 /proc/release(datum/E, stat, source, key = null)
 	OP_PURE_GUARD("a hold on [E?.type] was released")
 	var/datum/stat_def/def = stat_def_of(stat)
-	if(!isdatum(E) || !def)
+	if(!def)
+		// hold() reports an unknown stat; a release of one would leave the real hold in place for the rest of the round with nothing said.
+		declare_report("release([E?.type], [stat]): no such stat")
+		return FALSE
+	if(!isdatum(E))
 		return FALSE
 	var/datum/stat_record/rec = E.rx?.stats
 	if(!rec?.holds)
@@ -330,32 +334,6 @@ GLOBAL_LIST_EMPTY(stat_release_queue) // list(entity, source) rows waiting for t
 		if(pending[1] == E && pending[2] == source)
 			return
 	GLOB.stat_release_queue += list(list(E, source))
-
-/// One slice of the releases a big source left behind: HOLD_RELEASE_BATCH rows per entity. Phase G runs it; the recompute it marks runs at the next
-/// marked drain. The holds not yet released still apply until their slice runs. Returns how many rows it released.
-/proc/stat_release_slice()
-	. = 0
-	var/list/pending = GLOB.stat_release_queue
-	GLOB.stat_release_queue = list()
-	for(var/list/entry as anything in pending)
-		var/datum/E = entry[1]
-		var/source = entry[2]
-		if(QDELETED(E))
-			continue
-		var/datum/stat_record/rec = E.rx?.stats
-		if(!rec?.holds)
-			continue
-		var/list/mine = list()
-		for(var/list/row as anything in rec.holds)
-			if(row[H_SOURCE] == source)
-				mine += list(row)
-		if(!length(mine))
-			continue
-		var/list/slice = mine
-		if(length(mine) > HOLD_RELEASE_BATCH)
-			slice = mine.Copy(1, HOLD_RELEASE_BATCH + 1)
-			GLOB.stat_release_queue += list(entry)
-		. += stat_release_rows_marked(E, rec, slice)
 
 /// stat_release_rows() for a slice: the stats it touches are marked for the next marked drain instead of recomputed inline.
 /proc/stat_release_rows_marked(datum/E, datum/stat_record/rec, list/rows)

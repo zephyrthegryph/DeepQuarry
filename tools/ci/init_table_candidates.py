@@ -7,7 +7,7 @@ table_initialize() mirrors (MIRRORED below). SSatoms.InitAtom() can then run
 table_initialize() in place of the proc chain and its arglist.
 
 The tool reports the maximal qualifying types (those whose parent does not
-qualify) and, with --write, regenerates code/game/atom/init_from_table_types.dm,
+qualify) and, with --write, regenerates code/content/atom/init_from_table_types.dm,
 which turns init_from_table on for them. A type that later gains an override is
 caught by tools/ci/init_lint.py (`table_init_overrides`, ceiling 0); rerun
 --write to drop it from the list.
@@ -25,7 +25,7 @@ import sys
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 OUT = os.path.join(ROOT, "code", "game", "atom", "init_from_table_types.dm")
-OUT_REL = "code/game/atom/init_from_table_types.dm"
+OUT_REL = "code/content/atom/init_from_table_types.dm"
 
 # Types whose Initialize() override has a table_initialize() mirror running the same setup.
 MIRRORED = {"/atom", "/atom/movable", "/obj", "/obj/effect", "/obj/structure"}

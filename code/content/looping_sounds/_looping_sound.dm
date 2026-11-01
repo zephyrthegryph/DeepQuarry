@@ -226,7 +226,7 @@
 	var/start_wait = 1 // On TG this is 0, however it needs to be 1 to work around an issue.
 	if(start_sound)
 		play(start_sound)
-		start_wait = start_length
+		start_wait = isnull(start_length) ? start_wait : start_length // a start sound without a stated length (most tcomms loops) waits as a silent start does
 	set_loop_timer(start_wait)
 
 /datum/looping_sound/proc/on_stop()

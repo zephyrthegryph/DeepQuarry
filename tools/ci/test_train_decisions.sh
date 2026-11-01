@@ -158,15 +158,15 @@ check "lint_scopes driver: a text disagreement is still a conflict" '[ "$ls_rc2"
 # in _unit_tests.dm (relative to its folder) and in deepquarry.dme (root-relative, backslashes); the includes that exist stay.
 si="$tmp/si"; mkdir -p "$si"; (
 	cd "$si" && git init -q && git config user.email t@t && git config user.name t
-	mkdir -p code/modules/unit_tests code/game; echo x >code/modules/unit_tests/here.dm; echo y >code/game/kept.dm
-	printf '#include "here.dm"\n#include "moved_away.dm"\n' >code/modules/unit_tests/_unit_tests.dm
+	mkdir -p code/tests/unit_tests code/game; echo x >code/tests/unit_tests/here.dm; echo y >code/game/kept.dm
+	printf '#include "here.dm"\n#include "moved_away.dm"\n' >code/tests/unit_tests/_unit_tests.dm
 	printf '#include "code\\game\\kept.dm"\n#include "code\\modules\\unit_tests\\gone.dm"\n' >deepquarry.dme
 	git add -A; git commit -q -m init
 	. "$here/tools/dq_stale_includes.sh"
-	dq_drop_stale_includes code/modules/unit_tests/_unit_tests.dm code/modules/unit_tests test
+	dq_drop_stale_includes code/tests/unit_tests/_unit_tests.dm code/tests/unit_tests test
 	dq_drop_stale_includes deepquarry.dme . test
 ) >"$si.out" 2>&1
-check "stale includes are dropped and reported in _unit_tests.dm and deepquarry.dme; existing ones stay" 'grep -q "moved_away.dm" "$si.out" && grep -q "gone.dm" "$si.out" && ! grep -q moved_away "$si/code/modules/unit_tests/_unit_tests.dm" && grep -q "here.dm" "$si/code/modules/unit_tests/_unit_tests.dm" && grep -q "kept.dm" "$si/deepquarry.dme" && ! grep -q "gone.dm" "$si/deepquarry.dme" && [ -n "$(git -C "$si" diff --cached --name-only)" ]'
+check "stale includes are dropped and reported in _unit_tests.dm and deepquarry.dme; existing ones stay" 'grep -q "moved_away.dm" "$si.out" && grep -q "gone.dm" "$si.out" && ! grep -q moved_away "$si/code/tests/unit_tests/_unit_tests.dm" && grep -q "here.dm" "$si/code/tests/unit_tests/_unit_tests.dm" && grep -q "kept.dm" "$si/deepquarry.dme" && ! grep -q "gone.dm" "$si/deepquarry.dme" && [ -n "$(git -C "$si" diff --cached --name-only)" ]'
 check "dq_merge_master.sh drops stale includes during a merge" 'grep -q "code/tests/unit_tests/_unit_tests.dm" "$here/tools/dq_merge_master.sh" && grep -q "dq_drop_stale_includes" "$here/tools/dq_merge_master.sh"'
 
 # gates: an sccache server drop is infra (retried without sccache, then exit 95); a real compile error is not

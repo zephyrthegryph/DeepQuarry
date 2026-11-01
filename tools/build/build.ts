@@ -299,7 +299,7 @@ export const ValidateDmeTarget = new Juke.Target({
     // A .dm file is "compiled" if it is reachable from the .dme through the
     // transitive #include graph — NOT just if it appears literally in the .dme.
     // Many files are pulled in by intermediate aggregators (e.g.
-    // code/modules/tgs/includes.dm includes its core/v5 subfiles; code/__odlint.dm
+    // code/world/tgs/includes.dm includes its core/v5 subfiles; code/__odlint.dm
     // includes __pragmas.dm). A naive "is it in the .dme" check false-positives
     // on every such transitively-included file, so we walk the graph.
     //
@@ -373,7 +373,7 @@ export const ValidateDmeTarget = new Juke.Target({
     // Unit-test files are compiled only under a separate test .dme, never from
     // deepquarry.dme — exclude them from the "is it wired into the build" check.
     const EXCLUDED_PREFIXES = [
-      'code/modules/unit_tests/',
+      'code/tests/unit_tests/',
       'code/tests/unit_tests/',
     ];
 
@@ -1959,7 +1959,7 @@ function reportFocus(focus: string[] | null = null): void {
     return;
   }
   const focusedTests = fs
-    .readFileSync('code/modules/unit_tests/dq_focus.dm', 'utf-8')
+    .readFileSync('code/tests/unit_tests/dq_focus.dm', 'utf-8')
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter((line) => line.startsWith('TEST_FOCUS('));
@@ -2306,7 +2306,7 @@ function testWorldParams(get: any): Record<string, string> {
   const params: Record<string, string> = { 'test-tier': resolveTier(get) };
   if (get(ProfileTestsParameter)) params['test-profile'] = '1';
   // `tools/dq_focused_test.sh --bless`: snapshot tests write their current rows over the recorded files
-  // (code/modules/unit_tests/dq_snapshot_files.dm) instead of failing.
+  // (code/tests/unit_tests/dq_snapshot_files.dm) instead of failing.
   if (process.env.DQ_SNAPSHOT_BLESS === '1') {
     params['snapshot-bless'] = '1';
     Juke.logger.warn('DQ_SNAPSHOT_BLESS=1: snapshot tests rewrite their recorded files; review the diff before committing.');
@@ -2377,7 +2377,7 @@ function resolveTestSelection(get: any): string[] | null {
 
 const SHARD_DIR = 'data/test-shards';
 
-/** Every `/datum/unit_test/...` type declared under code/modules/unit_tests,
+/** Every `/datum/unit_test/...` type declared under code/tests/unit_tests,
  * by scanning source (a bare `/datum/unit_test/foo` line, not a proc/var
  * line under it) rather than booting a world -- used to seed shard
  * assignment for tests with no historical duration yet (new tests, or a

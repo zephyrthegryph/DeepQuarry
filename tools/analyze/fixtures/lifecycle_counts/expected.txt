@@ -1,6 +1,6 @@
 destroy	code/__defines/macros.dm	3
 destroy	code/defines/host/tgs.dm	2
-destroy	code/controllers/subsystems/garbage.dm	3
+destroy	code/world/systems/garbage.dm	3
 destroy	code/controllers/subsystems/other.dm	3
 destroy	code/datums/containment/lifecycle.dm	2
 destroy	code/datums/lifecycle/links.dm	2
@@ -17,8 +17,8 @@ destroy	code/modules/foo/destroys.dm	19
 destroy	code/modules/foo/destroys.dm	21
 destroy	code/modules/foo/destroys.dm	23
 destroy	code/modules/foo/destroys.dm	24
-destroy	code/modules/tgs/t.dm	2
-destroy	code/modules/unit_tests/t.dm	2
+destroy	code/world/tgs/t.dm	2
+destroy	code/tests/unit_tests/t.dm	2
 destroy	maps/m.dm	2
 qdel	code/controllers/subsystems/other.dm	2
 qdel	code/controllers/subsystems/other.dm	4

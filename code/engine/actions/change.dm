@@ -32,11 +32,18 @@ GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number o
 /// on_change(cond, ENTER | EXIT | ANY, parts...). The legacy form takes a list of reads and a handler.
 /proc/on_change(cond, edge, ENTRY_SLOTS, at_most = 0, when = null)
 	if(!isnum(edge))
+		if(isnull(edge))
+			declare_report("on_change([cond]): no edge and no handler: it would never do anything")
+			return null
 		return reaction_on_change(cond, edge, at_most, when)
 	if(change_is_published(cond) && edge != ANY)
 		declare_report("on_change(cond_published(...)): a published key has no value to compare, so its edge is ANY")
 		return null
-	return entry_make(ENTRY_ON_CHANGE, null, list("cond" = cond, "edge" = edge), entry_flatten(ENTRY_SLOT_LIST))
+	var/list/parts = entry_flatten(ENTRY_SLOT_LIST)
+	if(!length(parts))
+		declare_report("on_change([cond]): no parts: it would never do anything; give it then(PROC_REF(x))")
+		return null
+	return entry_make(ENTRY_ON_CHANGE, null, list("cond" = cond, "edge" = edge), parts)
 
 /// TRUE for a cond_published() condition: the hook runs when one of its keys is published, with no value to compare.
 /proc/change_is_published(cond)

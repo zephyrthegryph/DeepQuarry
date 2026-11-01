@@ -228,46 +228,6 @@ GLOBAL_LIST_INIT(modulo_angle_to_dir, list(NORTH,NORTHEAST,EAST,SOUTHEAST,SOUTH,
 	return list(red, green, blue)
 
 /**
- * Convert RBG to HSL
- */
-/proc/rgb2hsl(red, green, blue)
-	red   /= 255
-	green /= 255
-	blue  /= 255
-
-	var/max   = max(red, green, blue)
-	var/min   = min(red, green, blue)
-	var/range = max - min
-
-	var/hue        = 0
-	var/saturation = 0
-	var/lightness  = 0
-
-	lightness = (max + min) / 2
-	if(range != 0)
-		if(lightness < 0.5)
-			saturation = range / (max + min)
-		else
-			saturation = range / (2 - max - min)
-
-		var/dred   = ((max - red)   / (6 * max)) + 0.5
-		var/dgreen = ((max - green) / (6 * max)) + 0.5
-		var/dblue  = ((max - blue)  / (6 * max)) + 0.5
-
-		if(max == red)
-			hue = dblue - dgreen
-		else if(max == green)
-			hue = dred - dblue + (1 / 3)
-		else
-			hue = dgreen - dred + (2 / 3)
-		if(hue < 0)
-			hue++
-		else if(hue > 1)
-			hue--
-
-	return list(hue, saturation, lightness)
-
-/**
  * Convert hue to RGB
  */
 /proc/hue2rgb(a, b, hue)
@@ -360,45 +320,6 @@ GLOBAL_LIST_INIT(modulo_angle_to_dir, list(NORTH,NORTHEAST,EAST,SOUTHEAST,SOUTH,
 
 // Very ugly, BYOND doesn't support unix time and rounding errors make it really hard to convert it to BYOND time.
 // returns "YYYY-MM-DD" by default
-/proc/unix2date(timestamp, seperator = "-")
-	if(timestamp < 0)
-		return 0 //Do not accept negative values
-
-	var/const/dayInSeconds = 86400 //60secs*60mins*24hours
-	var/const/daysInYear = 365 //Non Leap Year
-	var/const/daysInLYear = daysInYear + 1//Leap year
-	var/days = round(timestamp / dayInSeconds) //Days passed since UNIX Epoc
-	var/year = 1970 //Unix Epoc begins 1970-01-01
-	var/tmpDays = days + 1 //If passed (timestamp < dayInSeconds), it will return 0, so add 1
-	var/monthsInDays = list() //Months will be in here ***Taken from the PHP source code***
-	var/month = 1 //This will be the returned MONTH NUMBER.
-	var/day //This will be the returned day number.
-
-	while(tmpDays > daysInYear) //Start adding years to 1970
-		year++
-		if(isLeap(year))
-			tmpDays -= daysInLYear
-		else
-			tmpDays -= daysInYear
-
-	if(isLeap(year)) //The year is a leap year
-		monthsInDays = list(-1,30,59,90,120,151,181,212,243,273,304,334)
-	else
-		monthsInDays = list(0,31,59,90,120,151,181,212,243,273,304,334)
-
-	var/mDays = 0;
-	var/monthIndex = 0;
-
-	for(var/m in monthsInDays)
-		monthIndex++
-		if(tmpDays > m)
-			mDays = m
-			month = monthIndex
-
-	day = tmpDays - mDays //Setup the date
-
-	return "[year][seperator][((month < 10) ? "0[month]" : month)][seperator][((day < 10) ? "0[day]" : day)]"
-
 /proc/isLeap(y)
 	return ((y) % 4 == 0 && ((y) % 100 != 0 || (y) % 400 == 0))
 
@@ -613,26 +534,6 @@ GLOBAL_LIST_INIT(modulo_angle_to_dir, list(NORTH,NORTHEAST,EAST,SOUTHEAST,SOUTH,
 		var/list/l = i
 		return l.Copy()
 	return i
-
-/proc/slot2body_zone(slot)
-	switch(slot)
-		if(SLOT_BACK, SLOT_OCLOTHING, SLOT_ICLOTHING, SLOT_BELT, SLOT_ID)
-			return BP_TORSO
-
-		if(SLOT_GLOVES)
-			return pick(BP_L_HAND, BP_R_HAND)
-
-		if(SLOT_HEAD, SLOT_TWOEARS, SLOT_TIE, SLOT_EARS)
-			return BP_HEAD
-
-		if(SLOT_MASK)
-			return BP_HEAD
-
-		if(SLOT_EYES)
-			return BP_HEAD
-
-		if(SLOT_FEET)
-			return pick(BP_R_FOOT, BP_L_FOOT)
 
 //		if(SLOT_LEGCUFFED)
 //			return pick(BP_L_LEG, BODY_ZONE_R_LEG)

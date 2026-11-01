@@ -171,6 +171,6 @@ unknown_var	code/modules/own/drift.dm	8
 unknown_var	code/modules/own/globals.dm	11
 unknown_var	code/modules/own/unicode.dm	9
 unknown_var	code/modules/own/unicode.dm	10
-unknown_var	code/modules/tgs/tgs_api.dm	8
-unknown_var	code/modules/unit_tests/own_tests.dm	9
-unknown_var	code/modules/unit_tests/own_tests.dm	10
+unknown_var	code/world/tgs/tgs_api.dm	8
+unknown_var	code/tests/unit_tests/own_tests.dm	9
+unknown_var	code/tests/unit_tests/own_tests.dm	10

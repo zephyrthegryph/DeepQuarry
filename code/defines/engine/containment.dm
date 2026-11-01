@@ -69,7 +69,7 @@
 #define OCCUPANT_SLOT_TYR_PROP "tyr_prop_occupant"
 /// The sealed occupant slot of a suit cycler.
 #define OCCUPANT_SLOT_SUIT_CYCLER "suit_cycler_occupant"
-/// The occupant pod test fixtures' slot (code/modules/unit_tests/dq_medpod_library_tests.dm).
+/// The occupant pod test fixtures' slot (code/tests/unit_tests/dq_medpod_library_tests.dm).
 #define OCCUPANT_SLOT_TEST_FIXTURE "test_fixture_occupant"
 /// A mecha's sealed pilot slot.
 #define MECHA_SLOT_PILOT "mecha_pilot"

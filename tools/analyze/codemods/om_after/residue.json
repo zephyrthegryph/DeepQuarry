@@ -26,7 +26,7 @@
     {"file": "code/_helpers/pathfinding/jps.dm", "reason": "not_in_ast", "text": "om_after(top[JPS_NODE_POS], debug_t, TYPE_PROC_REF(/atom, set_base_color), GLOB.jps_visualization_resolve? JPS_VISUAL_COLOR_INTERMEDIATE : JPS_VISUAL_COLOR_F..."},
     {"file": "code/_helpers/pathfinding/jps.dm", "reason": "not_in_ast", "text": "om_after(T, debug_t, TYPE_PROC_REF(/atom, set_base_color), JPS_VISUAL_COLOR_FOUND)"},
     {"file": "code/datums/operations/cap_op.dm", "reason": "value_used", "text": "if(!after_slot(actor, \"op_wait\", duration_for(actor, target, held), GLOBAL_PROC_REF(op_wait_done), ctx.id))"},
-    {"file": "code/game/world.dm", "reason": "reference", "text": "SSticker.OnRoundstart(om_callable(null, GLOBAL_PROC_REF(om_after), null, start_delay, after_start))"},
+    {"file": "code/content/game/world.dm", "reason": "reference", "text": "SSticker.OnRoundstart(om_callable(null, GLOBAL_PROC_REF(om_after), null, start_delay, after_start))"},
     {"file": "code/modules/body/body_effects.dm", "reason": "value_used", "text": "return after_slot(null, body_effect_slot(def, name), delay, GLOBAL_PROC_REF(body_effect_world_timer), src, proc_ref, path)"},
     {"file": "code/modules/body/body_effects.dm", "reason": "value_used", "text": "return after_slot(src, body_effect_slot(def, name), delay, proc_ref, path)"}
   ]

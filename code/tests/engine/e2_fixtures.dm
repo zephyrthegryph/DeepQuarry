@@ -2,7 +2,7 @@
 // in-hand, menu, drag, UI, topic, inside) resolves to its intended winner; a refusal shows its reason; asks() cancel leaves costs unspent, and an effect
 // written above an asks() is a build error; wait() is cancelled with feedback when the target is deleted; two ops with the same input, intent and
 // tier are a build error; explain_click matches a golden").
-// Test-only types, compiled under UNIT_TESTS only (code/modules/unit_tests/dq_e2_parts_tests.dm drives them).
+// Test-only types, compiled under UNIT_TESTS only (code/tests/unit_tests/dq_e2_parts_tests.dm drives them).
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 

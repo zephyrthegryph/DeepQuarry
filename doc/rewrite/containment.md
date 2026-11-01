@@ -375,7 +375,7 @@ derived, checked-in fact, and adds the *policy* that decides, per atom, whether
 it should actually be collapsed right now.
 
 **Verified storability.** `latent_safe` stops being asserted by hand for the common
-case. `dq_storability_sandbox` (`code/modules/unit_tests/dq_storability_sandbox.dm`)
+case. `dq_storability_sandbox` (`code/tests/unit_tests/dq_storability_sandbox.dm`)
 is a CI/unit-test pass, in the same family as `dq_lifecycle_sandbox`
 (`state.md §6`), that for every candidate `/obj/item` and other candidate movable
 type:
@@ -637,7 +637,7 @@ These are interactions that perform ledger moves, so each one is a single atomic
 - **Serialization.** The belly serializer becomes a client of the generic serializer.
 - **What stays in the vore module:** the vore UI, messages and preferences.
 
-**As built (C7).** Code: `code/modules/vore/eating/belly_slot.dm`, `belly_shared_lists.dm`, `vore_consent.dm`; tests in `code/modules/unit_tests/dq_vore_slot_tests.dm`.
+**As built (C7).** Code: `code/modules/vore/eating/belly_slot.dm`, `belly_shared_lists.dm`, `vore_consent.dm`; tests in `code/tests/unit_tests/dq_vore_slot_tests.dm`.
 - **Slot.** `/datum/slot_def/belly_interior` (`BELLY_SLOT_INTERIOR`): sealed, `reaches_mobs`, no heat or damage share from outside (the belly's own modes act on its contents). Eating, releasing, transfers, absorbing, egging and in-belly spawning go through `belly_insert()` (`move_into`), `belly_release_to()` (`slot_remove`, falling back to the turf when a full holder refuses) and `slot_transfer()`. The ledger is made on first use.
 - **Scheduling.** SSbellies is deleted. `belly_reschedule()` arms one OM deadline (`/datum/om/behaviour/belly_cycle`, 6 s, 2 s in turbo) when something enters and re-arms it each cycle until the belly empties; an empty belly that makes liquid from nutrition waits on the same deadline for its next batch. Callers: `Initialize`, `Entered`/`Exited`, `state_post_apply`, the vore panel's attribute setters and the belly preview.
 - **Rates.** `belly_cycle(seconds)` replaces `process()`. Every mode's per-cycle amount is a rate per `BELLY_BASELINE_TICK`, scaled by the elapsed seconds, so late and turbo cycles give the same totals (drain and resize exactly). Digestion damage goes through `injure()` as continuous harm (`INJURE_CONTINUOUS`): it grows an existing wound or lesion additively, with no per-hit rounding, thresholds or rolls, so turbo and normal digestion land the same injury over the same time. The belly's interior is the predator's body temperature (`/obj/belly/get_interior_temperature()`); prey who allow temperature play feel `bellytemperature` instead.

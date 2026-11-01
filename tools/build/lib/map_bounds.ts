@@ -3,7 +3,7 @@
 // /datum/map_template/New() used to parse every .dmm just to learn its width and
 // height. This writes those bounds to data/map_template_bounds.json so the DM side
 // only parses a template when it is actually loaded. The scan mirrors
-// /datum/parsed_map/New() in code/modules/maps/reader.dm; each entry also records
+// /datum/parsed_map/New() in code/content/maps/reader.dm; each entry also records
 // the file size, and DM re-parses any template whose size no longer matches.
 
 import fs from 'node:fs';

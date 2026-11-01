@@ -62,10 +62,6 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 /proc/instead(ENTRY_SLOTS, order = ORDER_NORMAL)
 	return entry_make(ENTRY_INSTEAD, null, list("order" = order), entry_flatten(ENTRY_SLOT_LIST))
 
-/// needs(parts...): refuses the action. The requirement language is E2's; its parts reach act_needs_refusal().
-/proc/hook_needs(...)
-	return entry_make(ENTRY_NEEDS, null, null, entry_flatten(args.Copy()))
-
 /// adjusts(packet.amount, by =, scale =, when =): modifies one typed field of the action before it reaches its sink. `field` is text (the
 /// generator rewrites the path a declaration writes); scale applies before by.
 /proc/adjusts(field, by = null, scale = null, when = null)
@@ -81,6 +77,9 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 /// world action it starts (the op engine pre-checks it; a hook ignores it).
 /// `early` (an op effect only): the effect runs before the op's other effects, in declaration order among the early ones (a shock a touch takes first).
 /proc/then(handler, checks = null, early = FALSE)
+	if(isnull(handler))
+		declare_report("then(): no handler: this part would run nothing") // a PROC_REF held in an unset var, say
+		return null
 	return entry_make(ENTRY_THEN, null, list("handler" = handler, "checks" = checks, "early" = early))
 
 /// chance(p, otherwise = parts): inside an instead, takes over with probability p percent (one roll, drawn only when the hook's earlier gates held). In an
@@ -91,6 +90,13 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 /// on_notice(/datum/notice/x, parts..., outcome = ACT_COMMITTED): reacts when the notice is delivered. The legacy form takes a handler:
 /// on_notice(/datum/notice/x, PROC_REF(y)).
 /proc/on_notice(type, ENTRY_SLOTS, outcome = ACT_COMMITTED, op = null)
+	if(!ispath(type, /datum/notice))
+		// Nothing is ever delivered under anything else, so the hook would just never run.
+		declare_report("on_notice(): [isnull(type) ? "null" : "[type]"] is not a /datum/notice type")
+		return null
+	if(isnull(p1))
+		declare_report("on_notice([type]): no parts and no handler: it would never do anything")
+		return null
 	if(!istype(p1, /datum/entry) && !islist(p1))
 		return reaction_on_notice(type, p1)
 	return entry_make(ENTRY_ON_NOTICE, null, list("notice" = type, "outcome" = outcome, "op" = op), entry_flatten(ENTRY_SLOT_LIST))
@@ -98,10 +104,6 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 /// on_op("cover.open", parts..., outcome =): sugar for on_notice(/datum/notice/op_done, parts..., op = key).
 /proc/on_op(op_key, ENTRY_SLOTS, outcome = ACT_COMMITTED)
 	return entry_make(ENTRY_ON_NOTICE, null, list("notice" = /datum/notice/op_done, "outcome" = outcome, "op" = op_key), entry_flatten(ENTRY_SLOT_LIST))
-
-/// A capability of triggers only: the entries it brings are its hooks. No key of its own beyond what tells two of them apart.
-/proc/hook_capability(...)
-	return hook_capability_of(entry_flatten(args.Copy()), FALSE)
 
 /datum/capability/hook
 	var/list/hook_entries

@@ -12,7 +12,3 @@
 /// A thing its owner keeps out of sight at `level` (a component hidden inside its machine, a pipe stub awaiting removal): a hold sourced SRC_CONCEALED.
 /proc/conceal(atom/A, level = INVISIBILITY_MAXIMUM)
 	hold(A, STAT_INVISIBILITY, level, SRC_CONCEALED)
-
-/// Ends conceal().
-/proc/unconceal(atom/A)
-	release(A, STAT_INVISIBILITY, SRC_CONCEALED)

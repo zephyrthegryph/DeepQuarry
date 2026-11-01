@@ -14,15 +14,6 @@
 	return default
 
 // Checks if the given input is a valid list index; returns true/false and doesn't change anything.
-/proc/is_valid_index(input, list/given_list)
-	if(!isnum(input))
-		return FALSE
-	if(input != round(input))
-		return FALSE
-	if(input < 1 || input > length(given_list))
-		return FALSE
-	return TRUE
-
 /proc/sanitize_text(text, default="")
 	if(istext(text))
 		return "[text]" // the same text, spelled so the result is plainly text
@@ -36,17 +27,6 @@
 
 
 //more specialised stuff
-/proc/sanitize_gender(gender,neuter=0,plural=0, default="male")
-	switch(gender)
-		if(MALE, FEMALE)return gender
-		if(NEUTER)
-			if(neuter)	return gender
-			else		return default
-		if(PLURAL)
-			if(plural)	return gender
-			else		return default
-	return default
-
 /proc/sanitize_hexcolor(color, default="#000000")
 	if(!istext(color)) return text_or_null(default)
 	var/len = length(color)
@@ -63,23 +43,6 @@
 	return .
 
 //Valid format codes: YY, YEAR, MM, DD, hh, mm, ss, :, -. " " (space). Invalid format will return default.
-/proc/sanitize_time(time, default, format = "hh:mm")
-	if(!istext(time) || !(length(time) == length(format)))
-		return default
-	var/fragment = ""
-	. = list()
-	for(var/i = 1, i <= length(format), i++)
-		fragment += copytext(format,i,i+1)
-		if(fragment in list("YY", "YEAR", "MM", "DD", "hh", "mm", "ss"))
-			. += sanitize_one_time(copytext(time, i - length(fragment) + 1, i + 1), copytext(default, i - length(fragment) + 1, i + 1), fragment)
-			fragment = ""
-		else if(fragment in list(":", "-", " "))
-			. += fragment
-			fragment = ""
-	if(fragment)
-		return default //This means the format was improper.
-	return JOINTEXT(.)
-
 //Internal proc, expects valid format and text input of equal length to format.
 /proc/sanitize_one_time(input, default, format)
 	var/list/ainput = list()

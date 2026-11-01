@@ -17,7 +17,7 @@
  * differs between runs out of the data it snaps (or out of the host it builds). script() must work with no client: the data is read
  * through tgui_data(user, null, state), the way the window reads it, and state changes go through the host's own handlers.
  */
-#define DQ_UI_PIN_DIR "code/modules/unit_tests/snapshots/ui_pins/"
+#define DQ_UI_PIN_DIR "code/tests/unit_tests/snapshots/ui_pins/"
 
 /// A window stand-in for the pins and the push tests: counts the pushes the framework delivers to it (no client, no browser).
 /datum/tgui/dq_ui_probe

@@ -55,7 +55,7 @@ def archive_assets(archive, destination):
 
 def restore_external_runtime_inputs(frozen):
     """Only explicit non-imported fixture data, not a wholesale source overlay."""
-    relative = 'code/modules/unit_tests/data/dq_constraint_parity.json'
+    relative = 'code/tests/unit_tests/data/dq_constraint_parity.json'
     source = frozen / 'source' / relative
     target = frozen / 'runtime' / relative
     if not source.is_file():

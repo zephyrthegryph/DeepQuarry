@@ -1,4 +1,4 @@
-// The factor oracle against the live body (code/modules/unit_tests/dq_factor_oracle.dm): the old fold, folded from a mob's real sources, gives the
+// The factor oracle against the live body (code/tests/unit_tests/dq_factor_oracle.dm): the old fold, folded from a mob's real sources, gives the
 // same vector as what the mob reads now, for a spread of scenarios that drive every kind of source through the production paths.
 
 /datum/unit_test/dq_factor_oracle_parity

@@ -713,14 +713,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/work_pipeline) // compiled with the definiti
 	if(!isnull(idle_frames))
 		S.idle_frames = idle_frames
 
-/// TRUE while stage `stage_type` (a family root or variant) is idle on `E`.
-/proc/pipeline_stage_idle(datum/E, P, stage_type)
-	var/datum/work_frame/S = pipeline_pipe_state(E, P)
-	if(!S)
-		return FALSE
-	var/i = pipeline_plan_position(S, stage_type)
-	return i && (S.bits[OM_PIPE_WORD(i)] & OM_PIPE_BIT(i))
-
 /// Plan position of the variant of `stage_type`'s family on `E`'s plan, or 0.
 /proc/pipeline_plan_position(datum/work_frame/S, stage_type)
 	var/datum/work_stage/listed = definition_registry().stage_by_type[stage_type]
@@ -731,25 +723,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/work_pipeline) // compiled with the definiti
 		if(T.family == listed.family)
 			return i
 	return 0
-
-/// TRUE while `E` is parked in pipeline `P`.
-/proc/pipeline_pipe_parked(datum/E, P)
-	var/datum/work_frame/S = pipeline_pipe_state(E, P)
-	return S?.parked
-
-/// Adds (or removes) a stage for this entity only: its plan is rebuilt and every stage wakes.
-/// Nothing happens for an entity that doesn't run the stage's pipeline.
-/proc/pipeline_stage_add(datum/E, stage_type)
-	var/datum/work_stage/T = definition_registry().stage_by_type[stage_type]
-	if(!T)
-		CRASH("om: [stage_type] is not a stage")
-	if(!E?.om_rec || !entity_attached(E, T.pipeline))
-		return
-	var/datum/work_frame/S = pipeline_pipe_state(E, T.pipeline, TRUE)
-	if(!S || (stage_type in S.extras))
-		return
-	LAZYADD(S.extras, stage_type)
-	pipeline_pipe_replan(E, T.pipeline, S)
 
 /proc/pipeline_pipe_replan(datum/E, P, datum/work_frame/S)
 	var/datum/work_pipeline/def = definition_registry().behaviour(P)
@@ -783,33 +756,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/work_pipeline) // compiled with the definiti
 	var/datum/work_frame/F = P.frame_acquire(sched, E, P.step_interval || P.every / 10)
 	. = T.perform(E, F)
 	P.frame_release(sched, F)
-
-/// Runs one whole frame of pipeline `P` on `E` now (content that must see a frame at once, and
-/// tests). It is a real frame: idles, rewakes and parking follow from it.
-/proc/pipeline_run_frame_now(datum/E, P)
-	var/datum/work_pipeline/def = definition_registry().behaviour(P)
-	if(!pipeline_pipe_state(E, def) && entity_attached(E, def))
-		pipeline_pipe_state(E, def, TRUE)
-	// A real pass drains the wake queue before it runs frames: deliver the wakes already raised
-	// for this pipeline on E (a setter called just before), so the frame sees them instead of
-	// running against stages still idle from before the change. The queue entry left behind
-	// finds nothing pending and is skipped.
-	var/datum/scheduler_record/rec = E.om_rec
-	var/att_i = rec?.att.Find(def)
-	if(att_i && rec.att_pend[att_i] && (rec.att_state[att_i] & OM_ATT_STARTED))
-		var/bits = rec.att_pend[att_i]
-		rec.att_pend[att_i] = 0
-		rec.pend_union &= ~bits
-		rec.sched.call_hook(rec, def, OM_HOOK_WAKE, bits)
-		if(rec.torn_down)
-			return
-	def.run_frame(E, def.step_interval || def.every / 10)
-
-/// Entities parked in `P` on the live scheduler (or `sched`).
-/proc/pipeline_pipeline_parked_count(P, datum/time_scheduler/sched)
-	sched = sched || GLOB.om_live_sched || time_scheduler()
-	var/datum/work_pipeline/def = definition_registry().behaviour(P)
-	return length(def.parked_on(sched))
 
 // ---------------------------------------------------------------- missed-wake audit
 

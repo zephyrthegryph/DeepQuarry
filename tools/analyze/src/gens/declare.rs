@@ -466,7 +466,7 @@ impl Generator for Declare {
         let globals = global_constructors(cx, &caps);
         let statics = static_kinds(cx);
         section(cx, out, &caps, &globals, &statics, false);
-        // What the test fixtures declare (files under code/tests/ and code/modules/unit_tests/, see `test_only`) is compiled in test builds only.
+        // What the test fixtures declare (files under code/tests/ and code/tests/unit_tests/, see `test_only`) is compiled in test builds only.
         let mut tests = GenOut::default();
         section(cx, &mut tests, &caps, &globals, &statics, true);
         if !tests.text().trim().is_empty() {

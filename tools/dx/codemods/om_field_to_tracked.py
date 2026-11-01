@@ -75,7 +75,7 @@ converted = skipped = 0
 edits = {}
 for p, i, m, a in sites:
     kind = m.group(2) or ''
-    if p.startswith('code/modules/unit_tests/'):
+    if p.startswith('code/tests/unit_tests/'):
         skipped += 1
         continue
     if kind == '_TYPED':

@@ -92,9 +92,6 @@
 		return "malformed check"
 	return C.why_not(actor, target)
 
-/proc/definition_can(spec, datum/actor, datum/target)
-	return isnull(definition_why_not(spec, actor, target))
-
 /datum/requirement_definition/combinator
 	var/op
 	var/list/parts

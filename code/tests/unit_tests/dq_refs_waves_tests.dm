@@ -48,9 +48,9 @@
 
 /datum/unit_test/dq_refs_preferences_refuse_unforced_delete/Run()
 	var/datum/preferences/dq_preview_test_stub/prefs = new()
-	GLOB.lifecycle_keep_expected = TRUE // this test checks the refusal itself
+	set_global(nameof(GLOB.lifecycle_keep_expected), TRUE) // this test checks the refusal itself
 	qdel(prefs)
-	GLOB.lifecycle_keep_expected = FALSE
+	set_global(nameof(GLOB.lifecycle_keep_expected), FALSE)
 	TEST_ASSERT(!QDELETED(prefs), "an unforced delete leaves the preferences whole")
 	qdel(prefs, TRUE)
 	TEST_ASSERT(QDELETED(prefs), "a forced delete removes them")
@@ -136,9 +136,9 @@ CAPABILITIES(/obj/refs_two_step)
 
 /datum/unit_test/dq_refs_uplink_selection_refuses_unforced_delete/Run()
 	var/datum/uplink_random_selection/selection = new
-	GLOB.lifecycle_keep_expected = TRUE // this test checks the refusal itself
+	set_global(nameof(GLOB.lifecycle_keep_expected), TRUE) // this test checks the refusal itself
 	qdel(selection)
-	GLOB.lifecycle_keep_expected = FALSE
+	set_global(nameof(GLOB.lifecycle_keep_expected), FALSE)
 	TEST_ASSERT(!QDELETED(selection), "an unforced delete leaves the selection whole")
 	qdel(selection, TRUE)
 	TEST_ASSERT(QDELETED(selection), "a forced delete removes it")

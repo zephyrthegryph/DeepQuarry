@@ -13,7 +13,7 @@ agent who happens to read the log.
 | A warning | `WARNING()` / `warning()` ("## WARNING: ..."), and a refused `move_into()` ("MOVE_INTO: ... refused: ...") |
 
 Both counters (`GLOB.total_runtimes`, `GLOB.boot_noise_count` in `code/_helpers/logging/_logging.dm`) are read by
-`unit_test_boot_gate()` (`code/modules/unit_tests/unit_test.dm`) right after "Unit-test suite starting".
+`unit_test_boot_gate()` (`code/tests/unit_tests/unit_test.dm`) right after "Unit-test suite starting".
 Informational lines (`log_world()`, "System X initialized", a shuttle without a landmark on the test map)
 are not counted; a problem worth fixing is logged with `WARNING()`.
 
