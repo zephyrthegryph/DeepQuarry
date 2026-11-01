@@ -204,6 +204,13 @@ mh_run() { # <from> <to>
 mh_docs="$(mh_run origin/master origin/lane/d)"; mh_code="$(mh_run origin/master origin/lane/a)"
 check "master changes that touch no heavy path are not an interaction (moved_heavy is empty for docs, names code)" '[ -z "$mh_docs" ] && [ "$mh_code" = "code/a.dm" ]'
 
+# disk_budget_bg: the all-light cycle's housekeeping returns at once (a synchronous enforce held the train 17+ minutes on 31 October)
+db_t0=$SECONDS
+( set +u; export DQ_TRAIN_STATE="$dd/state" DQ_TRAIN_WT="$dd/no-wt" DQ_TRAIN_ORIGIN_REPO="$here" DQ_TRAIN_NO_START=1
+  . "$here/tools/dq_train.sh" __lib; disk_budget() { sleep 6; echo done >"$dd/db.ran"; }; disk_budget_bg enforce --quiet ) 2>/dev/null
+db_dt=$(( SECONDS - db_t0 ))
+check "disk_budget_bg returns before the budget run finishes" '[ "$db_dt" -lt 5 ] && [ ! -e "$dd/db.ran" ]'
+check "the all-light cycle's enforce is the detached form" '! grep -n "^[[:space:]]*disk_budget enforce" "$here/tools/dq_train.sh" && grep -q "disk_budget_bg enforce --quiet --throttle 10" "$here/tools/dq_train.sh"'
 # note_setup_errors: a lane whose batch setup failed twice is retried DQ_TRAIN_SETUP_ERROR_MAX times, then bounced (30 cycles / 90 min, 31 October)
 se_run() { # <output file> <lanes...>: prints the lanes to retry; the bounce is recorded in $dd/state/bounced.txt
 	( set +u; export DQ_TRAIN_STATE="$dd/state" DQ_TRAIN_WT="$dd/no-wt" DQ_TRAIN_ORIGIN_REPO="$here" DQ_TRAIN_NO_START=1
