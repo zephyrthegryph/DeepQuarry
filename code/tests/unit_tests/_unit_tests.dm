@@ -355,6 +355,7 @@
 #include "dq_containment_path_tests.dm"
 #include "dq_host_layer_virtuals.dm"
 #include "dq_pathfinder_tests.dm"
+#include "dq_ref_unindexed.dm"
 #include "dq_vore_slot_tests.dm"
 #include "dq_c8a_occupant_slot_tests.dm"
 #include "dq_mecha_dispatch_tests.dm"

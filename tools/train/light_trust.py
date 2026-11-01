@@ -33,7 +33,7 @@ CHECKS = {"tools/dq_light_checks.sh", "tools/dq_light_paths.sh", "tools/light_ca
 BARRIER = ("tools/build/", "tools/analyze/", "tools/dmb/", "verdigris/")
 NOT_FOLLOWED = {"tools/ci/check_ratchets.sh", "tools/dq_focused_test.sh"}
 SCRIPT = (".sh", ".py", ".js")
-LINT = re.compile(r"\.dm$|^tools/analyze/|^tools/ci/(lint_scopes\.toml|check_[^/]*|[^/]*baseline[^/]*|[^/]*\.txt)$")  # dq_light_checks.sh's ratchet rule
+LINT = re.compile(r"\.dm$|^tools/analyze/|^tools/ci/(lint_scopes\.toml|check_[^/]*|[^/]*baseline[^/]*|[^/]*\.txt)$|^tgui/packages/tgui/interfaces/|^tgui/.*\.jsx$")  # dq_light_checks.sh's ratchet rule
 PATH = re.compile(r"(?<![\w./-])((?:tools|doc|config)/[\w./-]*[\w/])")
 BARE = re.compile(r"(?<![\w./-])((?:dq_|test_)\w+\.(?:sh|js|py))\b")
 DOCS = re.compile(r"^doc/|^html/changelogs/|\.md$")
@@ -195,6 +195,12 @@ def verdict(a):
         for f in gone:
             if os.path.basename(f) in text:
                 return "master deleted or renamed %s, which the lane's %s may link to" % (f, doc)
+
+    # TGUI checks read all of tgui/, and tsc reads types generated from the DM by the analyzer through the build
+    if any(f.startswith("tgui/") and not f.endswith(".md") for f in lane):
+        for f in changed:
+            if f.startswith(("tgui/", "code/", "tools/analyze/", "tools/build/")) and not f.endswith(".md"):
+                return "the lane changes TGUI, whose checks read %s" % f
 
     roots = {"tools/ci/" + s for s in a.selftests.split()} | {f for f in lane if f.endswith(SCRIPT)}
     reads = script_closure(repo, a.master, roots, tree, dirs)

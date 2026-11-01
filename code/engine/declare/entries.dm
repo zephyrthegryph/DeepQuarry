@@ -128,13 +128,17 @@
 /// `weak = TRUE` (relations proposal D5): the var stores a generation-checked handle, the build generates the accessor (`v()` reads the datum or
 /// null; a many reads the live members), and nothing is indexed or published. Nothing runs when the target dies, so on_unlink, on_other_deleted and
 /// by = are refused with it: a reader that must react to the death uses a normal ref_one.
+/// `unindexed = TRUE`: the write skips the target's reverse index, so the target cannot find this holder: rel_sources() and hops do not see it, and nothing clears
+/// the var when the target dies. Only for a link whose target clears it itself (rel_clear() in its on_destroy) and that no reactive read hops over; rel_names() still answers.
 /// The constructor arguments and early/starts_after phases are the same as owns_one().
-/proc/ref_one(var_name, type = null, on_other_deleted = OTHER_CLEAR, on_unlink = null, by = null, key = null, target_key = null, starts = null, starts_args = null, early = FALSE, starts_after = null, weak = FALSE)
+/proc/ref_one(var_name, type = null, on_other_deleted = OTHER_CLEAR, on_unlink = null, by = null, key = null, target_key = null, starts = null, starts_args = null, early = FALSE, starts_after = null, weak = FALSE, unindexed = FALSE)
 	ref_weak_check("ref_one", var_name, weak, on_other_deleted, on_unlink, by)
+	if(unindexed && (weak || on_other_deleted != OTHER_CLEAR || on_unlink || by))
+		declare_report("ref_one(\"[var_name]\", unindexed = TRUE): nothing finds the holder from the target, so weak, on_other_deleted, on_unlink and by cannot go with it")
 	if(!isnull(starts) && by)
 		declare_report("ref_one(): starts and keyed lookup by cannot both initialize the same reference")
 		return null
-	return entry_make(ENTRY_REF_ONE, key, list("var" = var_name, "type" = type, "on_other_deleted" = on_other_deleted, "on_unlink" = on_unlink, "by" = by, "target_key" = target_key, "starts" = starts, "starts_args" = starts_args, "early" = !!early, "starts_after" = starts_after, "weak" = !!weak))
+	return entry_make(ENTRY_REF_ONE, key, list("var" = var_name, "type" = type, "on_other_deleted" = on_other_deleted, "on_unlink" = on_unlink, "by" = by, "target_key" = target_key, "starts" = starts, "starts_args" = starts_args, "early" = !!early, "starts_after" = starts_after, "weak" = !!weak, "unindexed" = !!unindexed))
 
 /proc/ref_many(var_name, type = null, on_other_deleted = OTHER_CLEAR, on_unlink = null, by = null, key = null, target_key = null, weak = FALSE)
 	ref_weak_check("ref_many", var_name, weak, on_other_deleted, on_unlink, by)

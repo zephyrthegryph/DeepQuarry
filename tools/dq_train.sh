@@ -262,7 +262,7 @@ cmd_enqueue() {
 		heavy="$(light_heavy_in origin/master HEAD)"
 		if [ -n "$heavy" ]; then
 			echo "$heavy" | head -8 >&2
-			die "REFUSED: --light may not touch .dm/.dme/maps/icons/code/interface/sound/tgui (listed above): enqueue without --light"
+			die "REFUSED: --light may not touch .dm/.dme/maps/icons/code/interface/sound/tgui/public/tgfont (listed above): enqueue without --light"
 		fi
 		# the light batch merges origin/<branch>
 		git push -q origin "HEAD:refs/heads/$branch" || die "could not push $branch to origin (never forced)"
@@ -483,7 +483,7 @@ promote_light() { # <branch>
 	[ "$(qget "$f" light)" = 1 ] && return 0
 	tip="${TIP_OF[$b]:-$(qget "$f" tip)}"
 	G diff --name-only "origin/master...$tip" 2>/dev/null | awk '
-		/\.(dm|dme|dmm|dmf|dmi|dmb|rsc)$/ || /^(maps|icons|code|interface|sound|tgui)\// || /^tools\/(dmb|build)\// { heavy = 1 }
+		/\.(dm|dme|dmm|dmf|dmi|dmb|rsc)$/ || /^(maps|icons|code|interface|sound)\// || /^tgui\/(public|packages\/tgfont\/static)\// || /^tools\/(dmb|build)\// { heavy = 1 }
 		END { exit heavy ? 0 : 1 }' && return 0
 	if [ "$(G rev-parse -q --verify "refs/remotes/origin/$b" 2>/dev/null)" != "$tip" ] && ! G push -q origin "$tip:refs/heads/$b" 2>/dev/null; then return 0; fi
 	qedit "$b" -e "s/^light=.*/light=1/"
