@@ -16,17 +16,30 @@ light_heavy_path() { # <path>: 0 when a light lane may not touch it
 # build, the analyzer, verdigris, the lints and their baselines, and anything a world reads are all left out.
 light_gate_neutral() { # <path>
 	light_heavy_path "$1" && return 1
+	light_gate_lint_read "$1" && return 1
 	case "$1" in
-		doc/*|html/changelogs/*|*.md|tools/ci/test_*.sh|tools/train/*|tools/hooks/*) return 0 ;;
+		doc/*|html/changelogs/*|*.md|tools/ci/test_*.sh|tools/train/*|tools/hooks/*|tgui/*) return 0 ;;
 		tools/*/*) return 1 ;;
 		tools/dq_*.sh|tools/dq_*.js|tools/dq_*.py) return 0 ;;
 	esac
 	return 1
 }
+# What the compile and the tests do not read, though a lint may: the same list plus the light part of tgui/. A push across one of these keeps the compile's proof;
+# light_gate_lint_read says when it must run the ratchets again.
+light_gate_compile_neutral() { # <path>
+	light_gate_neutral "$1" && return 0
+	light_heavy_path "$1" && return 1
+	case "$1" in tgui/*) return 0 ;; esac
+	return 1
+}
+light_gate_lint_read() { # <path>: ui_actions and check_grep read these (the ratchet rule of dq_light_checks.sh)
+	case "$1" in tgui/packages/tgui/interfaces/*|tgui/*.jsx) return 0 ;; esac
+	return 1
+}
 light_gate_unneutral_in() { # <base> <tip>: print every path changed since their merge base that a gate may read
 	local base f
 	base="$(git merge-base "$1" "$2" 2>/dev/null)" || { echo "(no merge base of $1 and $2)"; return 0; }
-	git diff --name-only "$base" "$2" 2>/dev/null | while IFS= read -r f; do light_gate_neutral "$f" || echo "$f"; done
+	git diff --name-only "$base" "$2" 2>/dev/null | while IFS= read -r f; do "${3:-light_gate_neutral}" "$f" || echo "$f"; done
 }
 light_heavy_in() { # <base> <tip>: print every heavy path changed between them (the changes of <tip> since the merge base)
 	local base f

@@ -11,10 +11,10 @@ ok() { echo "PASS: $1"; }; bad() { echo "FAIL: $1"; fail=1; }
 
 # ---- which paths a gate does not read ------------------------------------------------------------------------------------------
 . "$here/tools/dq_light_paths.sh"
-for p in doc/a.md README.md html/changelogs/x.yml tools/dq_train.sh tools/train/a.py tools/ci/test_x.sh tools/hooks/pre-push; do
+for p in tgui/packages/x/a.ts doc/a.md README.md html/changelogs/x.yml tools/dq_train.sh tools/train/a.py tools/ci/test_x.sh tools/hooks/pre-push; do
 	light_gate_neutral "$p" && ok "neutral: $p" || bad "should be neutral: $p"
 done
-for p in tgui/packages/x/a.ts tgui/public/tgui.html code/a.dm maps/a.dmm deepquarry.dme tools/build/build.ts tools/dmb/crates/x/src/a.rs tools/analyze/src/a.rs verdigris/src/a.rs tools/ci/check_x.sh \
+for p in tgui/packages/tgui/interfaces/W.tsx tgui/x/o.jsx tgui/public/tgui.html code/a.dm maps/a.dmm deepquarry.dme tools/build/build.ts tools/dmb/crates/x/src/a.rs tools/analyze/src/a.rs verdigris/src/a.rs tools/ci/check_x.sh \
 	tools/ci/lint_scopes.toml tools/ci/known_failures.txt tools/ci/smoke_tests.txt tools/ci/x_baseline.txt config/a.txt tools/other.py .github/x.yml; do
 	light_gate_neutral "$p" && bad "should not be neutral: $p" || ok "not neutral: $p"
 done
@@ -60,6 +60,13 @@ git log -1 --format=%P origin/master | grep -q "$GATED" && ok "the pushed commit
 gated lane/b; land_on_master tools/dq_side.sh; push
 if [ "$rc" -eq 0 ] && git merge-base --is-ancestor "$GATED" origin/master && [ ! -s "$MARK" ]; then ok "a lane script landed during the gate: the same"; else bad "script beside the gate: rc=$rc mark=[$(cat "$MARK")] $out"; fi
 
+mkdir -p tgui/packages/tgui/interfaces tgui/x tgui/public; git switch -q --detach origin/master; echo a >tgui/x/a.ts; echo a >tgui/packages/tgui/interfaces/W.tsx; echo a >tgui/public/t.html; git add -A; git commit -qm tgui; git push -q origin HEAD:refs/heads/master 2>/dev/null; git fetch -q origin
+gated lane/t1; land_on_master tgui/x/a.ts; push
+if [ "$rc" -eq 0 ] && git merge-base --is-ancestor "$GATED" origin/master && [ ! -s "$MARK" ]; then ok "plain TGUI on master: the proof carries, no compile, no ratchets"; else bad "plain tgui: rc=$rc mark=[$(cat "$MARK")] $out"; fi
+gated lane/t2; land_on_master tgui/packages/tgui/interfaces/W.tsx; push
+if [ "$rc" -eq 0 ] && git merge-base --is-ancestor "$GATED" origin/master && [ "$(cat "$MARK")" = ratchets ]; then ok "a TGUI interface on master: the ratchets run on the merge, no compile"; else bad "interface: rc=$rc mark=[$(cat "$MARK")] $out"; fi
+gated lane/t3; land_on_master tgui/public/t.html; moved="$(git rev-parse origin/master)"; push
+if [ "$rc" -ne 0 ] && [ "$(git rev-parse origin/master)" = "$moved" ]; then ok "tgui/public on master: refused, DM reads it"; else bad "public: rc=$rc $out"; fi
 before="$(git rev-parse origin/master)"
 gated lane/c; before="$(git rev-parse origin/master)"; land_on_master tools/analyze/x.rs; moved="$(git rev-parse origin/master)"; push
 if [ "$rc" -ne 0 ] && grep -q 'origin/master moved' <<<"$out" && [ "$(git rev-parse origin/master)" = "$moved" ]; then ok "the analyzer moved during the gate: refused as master moved, nothing pushed (a fresh gate)"; else bad "analyzer beside the gate: rc=$rc $out"; fi
@@ -111,5 +118,5 @@ STOP_AFTER=5 bash "$tmp/side.sh" >/dev/null 2>&1
 [ ! -s "$tmp/side.log" ] && ok "nothing lands beside a resumed bisect" || bad "landed during a bisect: $(cat "$tmp/side.log")"
 
 grep -q 'DQ_PUSH_NEUTRAL_OK="${DQ_TRAIN_LIGHT_SIDE:-1}"' "$here/tools/dq_train.sh" && ok "the heavy push is the push that takes the flag" || bad "heavy push does not pass DQ_PUSH_NEUTRAL_OK"
-[ "$(grep -c 'DQ_PUSH_NEUTRAL_OK=' "$here/tools/dq_train.sh")" = 1 ] && ok "and no other train push does" || bad "another train push takes the flag"
+[ "$(grep -c 'DQ_PUSH_NEUTRAL_OK=' "$here/tools/dq_train.sh")" = 2 ] && ok "and only the fast-land merge besides it" || bad "another train push takes the flag"
 [ "$fail" -eq 0 ] && echo "ALL PASSED" || { echo "SOME FAILED"; exit 1; }
