@@ -5,6 +5,8 @@ SCHEMA(/obj/machinery/atmospherics, rust_budget_group, num())
 /datum/system/air
 	/// Pipe region gas handle -> its /datum/pipe_network wrapper (numeric keys).
 	var/alist/rust_pipe_region_networks = alist()
+	/// Pipes' temporary mixtures that a commit's binds replaced: destroyed as one batch when the commit ends (about 11,000 at boot).
+	var/list/rust_pipe_replaced_air
 	/// Topology changed since the last vg_pipe_commit().
 	var/rust_pipe_topology_dirty = FALSE
 	/// Registered device edges (M2, simulation.md §5), for the step's early out.
@@ -596,6 +598,10 @@ CAPABILITIES(/obj/machinery/atmospherics)
 		transition["air"] = region_air
 		ports_total += length(transition["ports"])
 		rust_materialize_pipe_region(transition)
+	if(length(rust_pipe_replaced_air))
+		var/list/replaced = rust_pipe_replaced_air
+		rust_pipe_replaced_air = null
+		qdel_batch(replaced)
 	var/total_ms = TICK_USAGE_TO_MS(commit_start)
 	if(total_ms >= 25)
 		log_world("PIPE_COMMIT: [round(total_ms, 0.1)] ms: Rust commit [round(native_ms, 0.1)] ms, parse [round(parse_ms, 0.1)] ms, retire [length(retired_regions)] region(s) [round(retire_ms, 0.1)] ms, materialize [length(transitions) - updated_in_place] region(s) with [ports_total] port(s) ([kept_count] of them replaced a wrapper under the same handle, [kept_ports] port(s)); [updated_in_place] region(s) updated in place for [updated_ports] port(s) that left or joined [round(TICK_USAGE_TO_MS(materialize_start), 0.1)] ms")
@@ -759,8 +765,8 @@ CAPABILITIES(/obj/machinery/atmospherics)
 /obj/machinery/atmospherics/pipe/rust_bind_pipe_port(index, datum/pipe_network/network, datum/gas_mixture/network_air)
 	if(air_temporary == network_air)
 		rel_take(src, nameof(air_temporary))
-	else
-		rel_clear(src, nameof(air_temporary))
+	else if(air_temporary)
+		LAZYADD(SSair.rust_pipe_replaced_air, rel_take(src, nameof(air_temporary)))
 	return TRUE
 
 /obj/machinery/atmospherics/unary/rust_pipe_port_count()
