@@ -4,7 +4,10 @@
 # anything the game build, a test world or the map/icon pipeline reads. This is the one list of those paths.
 light_heavy_path() { # <path>: 0 when a light lane may not touch it
 	case "$1" in
-		*.dm|*.dme|*.dmm|*.dmf|*.dmi|*.dmb|*.rsc|maps/*|icons/*|code/*|interface/*|sound/*|tgui/*|deepquarry.dme) return 0 ;;
+		*.dm|*.dme|*.dmm|*.dmf|*.dmi|*.dmb|*.rsc|maps/*|icons/*|code/*|interface/*|sound/*|deepquarry.dme) return 0 ;;
+		# DM embeds or reads these two; the rest of tgui/ no DM gate reads (a world runs without a built bundle), and the lints that read
+		# interfaces/ and .jsx are run by dq_light_checks.sh
+		tgui/public/*|tgui/packages/tgfont/static/*) return 0 ;;
 	esac
 	return 1
 }

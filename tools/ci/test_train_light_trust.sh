@@ -61,6 +61,13 @@ expect_repeat "the checks themselves do" lane/doc "" 'echo y >>tools/dq_light_ch
 expect_repeat "a lint input reads the whole tree: game code does" lane/lint "" 'echo y >>code/a.dm' code/a.dm
 expect_repeat "a doc's link target deleted on master does" lane/doc "" 'rm doc/b.md' b.md
 
+# TGUI: its checks read tgui/, and tsc reads types generated from code/ by the analyzer through the build
+git switch -qC tguibase "$base"; mkdir -p tgui/x tools/analyze; echo a >tgui/x/a.ts; echo a >tgui/x/b.ts; echo a >tgui/x/r.md; echo a >tools/analyze/g.rs; git add -A; git commit -qm tgui; tb="$(git rev-parse HEAD)"
+git switch -qc lane/tgui; echo y >>tgui/x/a.ts; git commit -qam t
+tgt() { git switch -qC "m$RANDOM" "$tb"; echo y >>"$1"; git add -A; git commit -qm m; python3 "$py_tool" --repo . --base "$tb" --master HEAD --tip lane/tgui; }
+for f in tgui/x/b.ts code/a.dm tools/analyze/g.rs tools/build/build.ts; do out="$(tgt "$f")"; rc=$?; if [ "$rc" = 1 ]; then ok "a TGUI lane repeats its checks for $f"; else bad "TGUI lane, $f: rc=$rc $out"; fi; done
+for f in tools/dq_other.sh tgui/x/r.md; do out="$(tgt "$f")"; rc=$?; if [ "$rc" = 0 ]; then ok "a TGUI lane does not for $f"; else bad "TGUI lane, $f: rc=$rc $out"; fi; done
+
 # a failure to tell is not a pass
 on_master 'echo y >>tools/dq_other.sh'
 python3 "$py_tool" --repo . --base nosuchref --master HEAD --tip lane/tool >/dev/null 2>&1; rc=$?
