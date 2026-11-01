@@ -11,6 +11,7 @@
 import { type ReactNode, useContext, useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Section } from 'tgui-core/components';
+import { type DollRegion, ZoneDoll } from '../shared/ZoneDoll';
 import { WidgetGrid } from './CategoryPage';
 import { ColorStrip, type StripColor } from './colors';
 import { Switch } from './controls';
@@ -440,12 +441,7 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
         <BodyDiagram
           region={region}
           onPick={setRegion}
-          values={values}
-          available={{
-            ears: has('ear_style'),
-            tail: has('tail_style'),
-            wings: has('wing_style'),
-          }}
+          regions={(staticData?.organs?.doll_regions as DollRegion[]) ?? []}
         />
         <Box style={{ display: 'flex', flexDirection: 'column', gap: '0.1em' }}>
           {(Object.keys(REGION_LABELS) as Region[])
@@ -724,113 +720,55 @@ const OptionalPart = ({
   );
 };
 
-/// A front-view body schematic; each region is a clickable shape. Optional parts the character
-/// lacks are drawn dashed. Colours follow the character's skin, hair and part colours.
+/// The body picker: the HUD's own zone-select doll (art and hit areas shared with the game, see ZoneDoll), each part
+/// choosing the region that covers it. Ears, tail and wings are not on the doll; they are picked from the list below it.
 const BodyDiagram = ({
   region,
   onPick,
-  values,
-  available,
+  regions,
 }: {
   region: Region;
   onPick: (r: Region) => void;
-  values: Record<string, unknown>;
-  available: { ears: boolean; tail: boolean; wings: boolean };
+  regions: DollRegion[];
 }) => {
   const [hover, setHover] = useState<Region | null>(null);
-  const col = (key: string, fallback: string) => {
-    const v = String(values[key] ?? '');
-    return /^#[0-9a-f]{6}$/i.test(v) ? v : fallback;
-  };
-  const skin = col('skin_color', '#c8a283');
-  const hair = col('hair_color', '#5a3b1e');
-  const part = (r: Region, fill: string, has = true) => ({
-    fill: has ? fill : 'transparent',
-    fillOpacity: has ? 0.85 : 0,
-    stroke:
-      region === r
-        ? '#ffd75e'
-        : hover === r
-          ? '#fff'
-          : 'rgba(255,255,255,0.45)',
-    strokeWidth: region === r ? 2.2 : 1.1,
-    strokeDasharray: has ? undefined : '3 2',
-    cursor: 'pointer',
-    onClick: () => onPick(region === r ? 'all' : r),
-    onMouseEnter: () => setHover(r),
-    onMouseLeave: () => setHover(null),
-  });
-  const hasEars = !isNoStyle(values.ear_style);
-  const hasTail = !isNoStyle(values.tail_style);
-  const hasWings = !isNoStyle(values.wing_style);
+  const zonesOf = (r: Region | null) => (r ? (REGION_ZONES[r] ?? []) : []);
+  const regionOfZone = (zone: string): Region | null =>
+    (Object.keys(REGION_ZONES) as Region[]).find((r) =>
+      REGION_ZONES[r]?.includes(zone),
+    ) ?? null;
+  // The doll's head covers the eyes and mouth too.
+  const groupOf = (zone: string) =>
+    zonesOf(regionOfZone(zone)).concat(
+      regionOfZone(zone) === 'head' ? ['eyes', 'mouth'] : [],
+    );
   return (
     <Box
       style={{
         background: 'rgba(0,0,0,0.25)',
         borderRadius: '0.3em',
         padding: '0.3em',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
       }}
     >
-      <svg
-        viewBox="0 0 120 200"
-        style={{ width: '100%', height: 'auto', display: 'block' }}
-        role="img"
-        aria-label="Body regions"
-      >
-        <title>Pick a body region</title>
-        {available.wings && (
-          <g {...part('wings', col('wing_color1', '#8a8a8a'), hasWings)}>
-            <path d="M44 62 C20 40 6 50 4 86 C14 78 24 80 34 88 Z" />
-            <path d="M76 62 C100 40 114 50 116 86 C106 78 96 80 86 88 Z" />
-          </g>
-        )}
-        {available.tail && (
-          <path
-            {...part('tail', col('tail_color1', '#8a8a8a'), hasTail)}
-            d="M66 112 C88 120 98 140 92 160 C90 150 84 138 70 126 Z"
-          />
-        )}
-        {/* arms */}
-        <g {...part('arms', skin)}>
-          <path d="M40 58 L30 60 L22 104 L30 106 L38 74 Z" />
-          <path d="M80 58 L90 60 L98 104 L90 106 L82 74 Z" />
-        </g>
-        {/* hands and feet */}
-        <g {...part('extremities', skin)}>
-          <ellipse cx="25" cy="112" rx="6" ry="7" />
-          <ellipse cx="95" cy="112" rx="6" ry="7" />
-          <path d="M44 184 L58 184 L58 192 L40 192 Z" />
-          <path d="M62 184 L76 184 L80 192 L62 192 Z" />
-        </g>
-        {/* legs */}
-        <g {...part('legs', skin)}>
-          <path d="M44 118 L59 118 L58 184 L45 184 Z" />
-          <path d="M61 118 L76 118 L75 184 L62 184 Z" />
-        </g>
-        {/* torso */}
-        <path
-          {...part('torso', skin)}
-          d="M42 54 L78 54 L82 76 L78 120 L42 120 L38 76 Z"
-        />
-        {/* head */}
-        <g {...part('head', skin)}>
-          <rect x="54" y="44" width="12" height="10" />
-          <ellipse cx="60" cy="30" rx="15" ry="17" />
-          <path
-            d="M45 28 C46 10 74 10 75 28 C70 20 50 20 45 28 Z"
-            fill={hair}
-            fillOpacity={0.95}
-          />
-        </g>
-        {available.ears && (
-          <g {...part('ears', col('ears_color1', '#8a8a8a'), hasEars)}>
-            <path d="M46 18 L42 2 L54 13 Z" />
-            <path d="M74 18 L78 2 L66 13 Z" />
-          </g>
-        )}
-      </svg>
+      <ZoneDoll
+        regions={regions}
+        selected={zonesOf(region)}
+        groupOf={groupOf}
+        onHover={(zone) => setHover(zone ? regionOfZone(zone) : null)}
+        onPick={(zone) => {
+          const picked =
+            regionOfZone(zone) ??
+            (zone === 'eyes' || zone === 'mouth' ? 'head' : null);
+          if (picked) {
+            onPick(region === picked ? 'all' : picked);
+          }
+        }}
+      />
       <Box textAlign="center" color="label" fontSize="0.85em" mt={0.2}>
-        {hover ? REGION_LABELS[hover] : REGION_LABELS[region]}
+        {REGION_LABELS[hover ?? region]}
       </Box>
     </Box>
   );
