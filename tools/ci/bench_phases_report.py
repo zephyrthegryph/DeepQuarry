@@ -39,6 +39,9 @@ def main():
         for name in names:
             if name in metrics:
                 print(f"| {phase} | {name} | {metrics[name]['median']:.2f} | {metrics[name]['unit']} |")
+    work = sorted(k for k in metrics if '_work_' in k)
+    if work:
+        print('\nLoad-independent work: ' + ', '.join(f"{k} {metrics[k]['median']:.0f}" for k in work))
     inits = sorted(((k[len('startup_init_ms_'):], v['median']) for k, v in metrics.items() if k.startswith('startup_init_ms_')), key=lambda r: -r[1])
     print('\nInit by system (s): ' + ', '.join(f'{k} {v / 1000:.1f}' for k, v in inits[:12]))
     detail = run['iterations'][-1]['scenarios']['server_phases'].get('details', {})

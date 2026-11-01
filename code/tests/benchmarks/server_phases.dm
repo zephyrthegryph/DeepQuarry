@@ -10,6 +10,8 @@
 	var/phase_cpu = 0
 	var/phase_real = 0
 	var/phase_world_time = 0
+	/// work_counts() when the phase opened.
+	var/list/phase_work
 
 /datum/benchmark/server_phases/proc/sample_field(field, default_value = 0)
 	var/list/process = benchmark_process_memory()
@@ -17,13 +19,45 @@
 		return default_value
 	return process[field]
 
+/// Load-independent work done so far: the same boot does the same work whatever else the machine runs, so these compare from one run where timings need many.
+/datum/benchmark/server_phases/proc/work_counts()
+	var/list/looks = GLOB.refresh_look_stats
+	return list(
+		"writes_published" = GLOB.plan_reader_probes,
+		"writes_preinit" = GLOB.state_changed_preinit_skipped,
+		"relation_writes_spared" = GLOB.own_field_memo_spared,
+		"stat_evals" = GLOB.stat_evals,
+		"stat_read_computes" = GLOB.stat_read_computes,
+		"ffi_calls" = __verdigris_ffi_calls,
+		"looks_first" = looks["first"] || 0,
+		"looks_changed" = looks["changed"] || 0,
+		"looks_same" = looks["same"] || 0,
+		"draws_spared" = GLOB.refresh_dispatched_draws_spared,
+	)
+
+/datum/benchmark/server_phases/proc/work_metrics(prefix, list/since)
+	var/list/now = work_counts()
+	for(var/name in now)
+		count_metric("[prefix]_work_[name]", now[name] - (since ? since[name] : 0), "count")
+	// Timers and draws fired since the census last took them, whatever their source.
+	var/list/churn = GLOB.churn_census.take()
+	for(var/kind in list("timer", "draw"))
+		var/total = 0
+		var/list/rows = churn[kind]
+		for(var/key in rows)
+			total += rows[key]
+		count_metric("[prefix]_work_[kind]s", total, "count")
+
 /datum/benchmark/server_phases/proc/open_phase()
+	GLOB.churn_census.take()
+	phase_work = work_counts()
 	phase_cpu = sample_field("cpu_seconds")
 	phase_real = REALTIMEOFDAY
 	phase_world_time = world.time
 
 /// The world's CPU share (100 = one core, all threads), the machine's load and the time dilation since open_phase().
 /datum/benchmark/server_phases/proc/close_phase(prefix)
+	work_metrics(prefix, phase_work)
 	var/real_ds = max(REALTIMEOFDAY - phase_real, 1)
 	metric("[prefix]_dd_cpu_pct", (sample_field("cpu_seconds") - phase_cpu) * 1000 / real_ds, "%")
 	metric("[prefix]_machine_cpu_pct", sample_field("machine_cpu_pct"), "%", "none")
@@ -56,6 +90,7 @@
 
 /datum/benchmark/server_phases/Run()
 	// Startup. The world has reached here without ever yielding to a benchmark, so the sampler's numbers so far are the boot's.
+	work_metrics("startup", null)
 	metric("startup_launch_to_ready_s", sample_field("t"), "s")
 	metric("startup_cpu_s", sample_field("cpu_seconds"), "s")
 	metric("startup_peak_private_mb", sample_field("peak_private_mb"), "MB")
@@ -83,7 +118,6 @@
 
 	// Idle: tick cost, TiDi, memory growth.
 	mark("idle_start")
-	GLOB.churn_census.take()
 	var/idle_seconds = param("idle", 300)
 	var/list/series = list()
 	var/idle_first_mb = sample_field("private_mb")
@@ -97,7 +131,6 @@
 	var/list/idle_tick = end_window("idle")
 	close_phase("idle")
 	mark("idle_end")
-	detail("idle_churn", GLOB.churn_census.take())
 	metric("idle_growth_mb_per_min", (sample_field("private_mb") - idle_first_mb) * 60 / idle_seconds, "MB/min")
 	detail("idle_memory_series", series)
 
@@ -169,7 +202,7 @@
 
 /// The same blast one deck up, then the same wait: what grows again is per-blast, what does not was made once. A leak shows as the second delta matching the first.
 /datum/benchmark/server_phases/proc/second_blast(turf/first, power)
-	var/turf/center = locate(first.x, first.y, first.z + 1)
+	var/turf/center = param("second_same", 0) ? first : locate(first.x, first.y, first.z + 1)
 	if(!center)
 		fail("no deck above the first blast")
 	census_metrics("second_before")
