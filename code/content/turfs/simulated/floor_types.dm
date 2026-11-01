@@ -1,28 +1,31 @@
 
 
 //Shuttle Floors
-/obj/landed_holder
-	name = "landed turf holder"
-	desc = "holds all the info about the turf this turf 'landed on'"
+/// What a shuttle turf landed on: the type and appearance to put back when it leaves. A record, not an atom: every landed turf makes and ends one per move.
+/datum/landed_holder
 	var/turf_type
 	var/turf/simulated/shuttle/my_turf
-	var/image/turf_image
+	var/saved_dir
+	var/saved_icon
+	var/saved_icon_state
+	var/list/saved_overlays
+	var/list/saved_underlays
 	var/list/decals
 
-/obj/landed_holder/proc/remember_turf()
-	if(loc)
-		rel_set(src, nameof(my_turf), get_turf(src))
-		moveToNullspace()
+/datum/landed_holder/New(turf/simulated/shuttle/held)
+	..()
+	if(held)
+		rel_set(src, nameof(my_turf), held)
 
-/obj/landed_holder/proc/land_on(turf/T)
+/datum/landed_holder/proc/land_on(turf/T)
 	//Gather destination information
-	var/obj/landed_holder/new_holder = new(null)
+	var/datum/landed_holder/new_holder = new()
 	new_holder.turf_type = T.type
-	new_holder.set_dir(T.dir)
-	new_holder.set_icon(T.icon)
-	new_holder.set_icon_state(T.icon_state)
-	new_holder.copy_overlays(T, TRUE)
-	new_holder.underlays = T.underlays_without_lighting()
+	new_holder.saved_dir = T.dir
+	new_holder.saved_icon = T.icon
+	new_holder.saved_icon_state = T.icon_state
+	new_holder.saved_overlays = T.overlays.Copy()
+	new_holder.saved_underlays = T.underlays_without_lighting()
 	new_holder.decals = T.decals ? T.decals.Copy() : null
 
 	//Set the destination to be like us
@@ -55,16 +58,16 @@
 
 	return new_dest
 
-/obj/landed_holder/proc/leave_turf(turf/base_turf = null)
+/datum/landed_holder/proc/leave_turf(turf/base_turf = null)
 	var/turf/new_source
 	//Change our source to whatever it was before
 	if(turf_type)
 		new_source = my_turf().ChangeTurf(turf_type,,1)
-		new_source.set_dir(dir)
-		new_source.set_icon_state(icon_state)
-		new_source.set_icon(icon)
-		new_source.copy_overlays(src, TRUE)
-		new_source.set_underlays_keeping_lighting(underlays)
+		new_source.set_dir(saved_dir)
+		new_source.set_icon_state(saved_icon_state)
+		new_source.set_icon(saved_icon)
+		new_source.restore_overlays(saved_overlays)
+		new_source.set_underlays_keeping_lighting(saved_underlays)
 		new_source.set_decals(decals)
 		if(!new_source.lighting_object)
 			new_source.lighting_build_overlay()
@@ -82,7 +85,7 @@
 
 	/// What this shuttle floor landed on (a nullspace holder). Owned: the var
 	/// is the holder's only reference, so a handle let BYOND free it at once.
-	var/obj/landed_holder/landed_holder_ref
+	var/datum/landed_holder/landed_holder_ref
 	var/interior_corner = 0
 	var/takes_underlays = 0
 	var/under_turf //Underlay override turf path.
@@ -95,7 +98,7 @@
 CAPABILITIES(/turf/simulated/shuttle)
 	configure(atom_shielding(rad_material = MAT_TITANIUM, rad_thickness_mm = RAD_SHUTTLE_HULL_THICKNESS_MM))
 	setup(PROC_REF(finish_shuttle_turf))
-	owns_one(nameof(landed_holder_ref), /obj/landed_holder)
+	owns_one(nameof(landed_holder_ref), /datum/landed_holder)
 
 /turf/simulated/shuttle/proc/finish_shuttle_turf()
 	apply_rad_shield_material()
@@ -132,11 +135,13 @@ CAPABILITIES(/turf/simulated/shuttle)
 	if(landed_holder() && !interior_corner)
 		//Space gets special treatment
 		if(ispath(landed_holder().turf_type, /turf/space))
-			var/image/spaceimage = image(landed_holder().icon, landed_holder().icon_state)
+			var/image/spaceimage = image(landed_holder().saved_icon, landed_holder().saved_icon_state)
 			spaceimage.plane = SPACE_PLANE
 			underlays = list(spaceimage)
 		else
-			var/mutable_appearance/landed_on = new(landed_holder())
+			var/mutable_appearance/landed_on = new(image(landed_holder().saved_icon, icon_state = landed_holder().saved_icon_state, dir = landed_holder().saved_dir))
+			landed_on.overlays = landed_holder().saved_overlays
+			landed_on.underlays = landed_holder().saved_underlays
 			landed_on.layer = FLOAT_LAYER //Not turf
 			landed_on.plane = FLOAT_PLANE //Not turf
 			us.underlays = list(landed_on)
@@ -459,14 +464,13 @@ CAPABILITIES(/turf/simulated/shuttle/plating/airless/carry)
 
 
 /// My turf (a relation view).
-/obj/landed_holder/proc/my_turf() as /turf/simulated/shuttle
+/datum/landed_holder/proc/my_turf() as /turf/simulated/shuttle
 	return my_turf
 
 
 /// The landed holder this floor owns (landed_holder_ref), or null.
-/turf/simulated/shuttle/proc/landed_holder() as /obj/landed_holder
+/turf/simulated/shuttle/proc/landed_holder() as /datum/landed_holder
 	return QDELETED(landed_holder_ref) ? null : landed_holder_ref
 
-CAPABILITIES(/obj/landed_holder)
-	setup(PROC_REF(remember_turf))
+CAPABILITIES(/datum/landed_holder)
 	ref_one(nameof(my_turf))

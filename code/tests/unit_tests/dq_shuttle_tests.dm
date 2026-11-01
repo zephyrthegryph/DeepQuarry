@@ -343,19 +343,19 @@
 /// lighting out of the appearance a landed holder remembers (a stale gradient would come back when the shuttle leaves).
 /datum/unit_test/dq_shuttle_move_keeps_lighting
 
-/datum/unit_test/dq_shuttle_move_keeps_lighting/proc/lighting_underlays(atom/A)
+/datum/unit_test/dq_shuttle_move_keeps_lighting/proc/lighting_underlays(list/underlay_list)
 	. = 0
-	for(var/mutable_appearance/U as anything in A.underlays)
+	for(var/mutable_appearance/U as anything in underlay_list)
 		if(U.icon == LIGHTING_ICON)
 			.++
 
 /datum/unit_test/dq_shuttle_move_keeps_lighting/proc/check_turf(turf/T, label)
 	if(!T.has_dynamic_lighting())
-		TEST_ASSERT_EQUAL(lighting_underlays(T), 0, "[label]: non-dynamic [T.type] at [T.x],[T.y],[T.z] kept a lighting underlay")
+		TEST_ASSERT_EQUAL(lighting_underlays(T.underlays), 0, "[label]: non-dynamic [T.type] at [T.x],[T.y],[T.z] kept a lighting underlay")
 		return
 	TEST_ASSERT_NOTNULL(T.lighting_object, "[label]: dynamic [T.type] at [T.x],[T.y],[T.z] has no lighting object")
 	TEST_ASSERT_EQUAL(T.lighting_object.affected_turf, T, "[label]: lighting object at [T.x],[T.y],[T.z] names another turf")
-	TEST_ASSERT(lighting_underlays(T) <= 1, "[label]: [T.type] at [T.x],[T.y],[T.z] stacked lighting underlays")
+	TEST_ASSERT(lighting_underlays(T.underlays) <= 1, "[label]: [T.type] at [T.x],[T.y],[T.z] stacked lighting underlays")
 
 /datum/unit_test/dq_shuttle_move_keeps_lighting/Run()
 	var/datum/shuttle/autodock/ferry/shuttle = SSshuttles.shuttles["Ferry-Demo"]
@@ -377,13 +377,13 @@
 				check_turf(T, "landed on move [hop]")
 				var/turf/simulated/shuttle/landed = T
 				if(istype(landed) && landed.landed_holder())
-					TEST_ASSERT_EQUAL(lighting_underlays(landed.landed_holder()), 0, "move [hop]: the landed holder at [T.x],[T.y],[T.z] remembered a lighting underlay")
+					TEST_ASSERT_EQUAL(lighting_underlays(landed.landed_holder().saved_underlays), 0, "move [hop]: the landed holder at [T.x],[T.y],[T.z] remembered a lighting underlay")
 	// The counter above sees a real lighting underlay: an updated object shows exactly one.
 	var/updated = 0
 	for(var/area/A as anything in shuttle.shuttle_area)
 		for(var/turf/T in contents_of(A))
 			if(T.lighting_object)
 				T.lighting_object.update()
-				TEST_ASSERT_EQUAL(lighting_underlays(T), 1, "[T.type] at [T.x],[T.y],[T.z] does not show one lighting underlay after an update")
+				TEST_ASSERT_EQUAL(lighting_underlays(T.underlays), 1, "[T.type] at [T.x],[T.y],[T.z] does not show one lighting underlay after an update")
 				updated++
 	TEST_ASSERT(updated > 0, "no Ferry-Demo turf had a lighting object")
