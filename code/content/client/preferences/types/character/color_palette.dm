@@ -164,8 +164,7 @@
 	return update_preference_by_type(/datum/preference/body_markings, incoming)
 
 /// The colour fields a character links, in the order that decides which spare colours become Extra 1 and Extra 2.
-/proc/dq_palette_fields()
-	var/static/list/fields = list(
+GLOBAL_LIST_INIT(dq_palette_fields_table, list(
 		/datum/preference/color/human/skin_color = "primary",
 		/datum/preference/color/human/hair_color = "secondary",
 		/datum/preference/color/human/eyes_color = "tertiary",
@@ -180,8 +179,10 @@
 		/datum/preference/color/human/wing_color1 = "primary",
 		/datum/preference/color/human/wing_color2 = "secondary",
 		/datum/preference/color/human/wing_color3 = "tertiary",
-	)
-	return fields
+))
+
+/proc/dq_palette_fields()
+	return GLOB.dq_palette_fields_table
 
 /// The multiply colour closest to an old skin tone (an offset on the shaded sprite): per-channel fit against r_human's
 /// body sprites. A tone above 0 brightened, which a multiply cannot: it becomes white, the unshaded sprite.
@@ -262,9 +263,8 @@
 		var/stored = read_preference_raw(field)
 		if(istext(stored) && !dq_color_slot_type(stored) && !(lowertext(stored) in taken))
 			counts[lowertext(stored)] += 1
-	var/list/spare_slots = list(/datum/preference/color/human/color_slot/extra1 = 4, /datum/preference/color/human/color_slot/extra2 = 5)
-	for(var/slot_type in spare_slots)
-		if(islist(old_palette) && length(old_palette) >= spare_slots[slot_type])
+	for(var/datum/preference/color/human/color_slot/slot_type as anything in list(/datum/preference/color/human/color_slot/extra1, /datum/preference/color/human/color_slot/extra2))
+		if(islist(old_palette) && length(old_palette) >= initial(slot_type.old_palette_index))
 			continue
 		var/best
 		for(var/hex in counts)
