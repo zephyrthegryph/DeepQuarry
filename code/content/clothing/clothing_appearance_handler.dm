@@ -127,7 +127,7 @@ GLOBAL_DATUM_INIT(clothing_appearance_handler, /datum/clothing_appearance_handle
 /datum/clothing_appearance_handler/proc/recolour_channels(obj/item/clothing/accessory/acc, image/result)
 	if(!sparse_has(acc, clothing_channel_colors))
 		return
-	var/icon/recoloured = clothing_channel_icon(acc.type, result.icon, result.icon_state, sparse_get(acc, clothing_channel_colors))
+	var/recoloured = clothing_channel_icon(acc.type, result.icon, result.icon_state, sparse_get(acc, clothing_channel_colors))
 	if(recoloured)
 		result.icon = recoloured
 		result.icon_state = ""

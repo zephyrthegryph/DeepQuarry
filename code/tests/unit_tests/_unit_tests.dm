@@ -145,6 +145,7 @@
 #include "genetics_tests.dm"
 #include "interaction_tests.dm"
 #include "language_tests.dm"
+#include "dq_clothing_channels.dm"
 #include "loadout_tests.dm"
 #include "map_tests.dm"
 #include "mapping.dm"

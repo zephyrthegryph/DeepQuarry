@@ -674,7 +674,7 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 
 	//Generate the base onmob icon: the sheet's own state, or a copy when an ICON_ADD shader blends into it (one copy per sheet, state and shader)
 	var/image/standing
-	var/icon/recoloured = sparse_has(src, clothing_channel_colors) ? clothing_channel_icon(type, icon2use, state2use, sparse_get(src, clothing_channel_colors), inhands ? null : addblends) : null
+	var/recoloured = sparse_has(src, clothing_channel_colors) ? clothing_channel_icon(type, icon2use, state2use, sparse_get(src, clothing_channel_colors), inhands ? null : addblends) : null
 	if(recoloured)
 		standing = image(recoloured)
 	else if(!inhands && addblends && icon2use)

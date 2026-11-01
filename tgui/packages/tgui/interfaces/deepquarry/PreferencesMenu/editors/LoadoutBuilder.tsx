@@ -21,6 +21,7 @@
 // removes land instantly; the server is still authoritative and our op queue drops
 // each entry once the server reflects it.
 
+import { ColorChoice, isSlotName } from '../colors';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import {
@@ -889,7 +890,7 @@ const RecolorWidget = ({
   onPickTint: () => void;
   onPickPaletteSwatch: (originalHex: string) => void;
   onOpenMatrixModal: () => void;
-  onPickChannel: (index: number) => void;
+  onPickChannel: (index: number, current: string) => void;
 }) => {
   const mode = meta.mode;
   const setMode = (m: RecolorMeta['mode']) => {
@@ -930,6 +931,7 @@ const RecolorWidget = ({
         <Stack ml={4} mb={0.25} wrap align="center">
           {channels.map((base, i) => {
             const picked = (meta.value as string[] | undefined) ?? [];
+            const stored = picked[i] ?? '';
             const setChannel = (hex: string) => {
               const next = channels.map((_, j) => picked[j] ?? '');
               next[i] = hex;
@@ -937,12 +939,14 @@ const RecolorWidget = ({
             };
             return (
               <Stack.Item key={CHANNEL_NAMES[i]} mr={1}>
-                <ColorSwatch
+                <ColorChoice
                   label={CHANNEL_NAMES[i]}
                   category="clothing_channel"
-                  color={picked[i] || base}
+                  color={stored && !isSlotName(stored) ? stored : base}
+                  link={isSlotName(stored) ? stored : undefined}
+                  onLink={setChannel}
                   onPick={setChannel}
-                  onCustom={() => onPickChannel(i)}
+                  onCustom={() => onPickChannel(i + 1, stored || base)}
                 />
                 {!!picked[i] && (
                   <Button
@@ -1221,6 +1225,14 @@ const TweakRow = ({
               gear: item.name,
               tweak: tweak.key,
               original: orig,
+            })
+          }
+          onPickChannel={(index, current) =>
+            sendTo(act, 'loadout', 'recolor_pick_channel', {
+              gear: item.name,
+              tweak: tweak.key,
+              index,
+              current: isSlotName(current) ? '' : current,
             })
           }
           onOpenMatrixModal={() =>
