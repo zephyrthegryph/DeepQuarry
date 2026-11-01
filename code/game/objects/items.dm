@@ -674,7 +674,10 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 
 	//Generate the base onmob icon: the sheet's own state, or a copy when an ICON_ADD shader blends into it (one copy per sheet, state and shader)
 	var/image/standing
-	if(!inhands && addblends && icon2use)
+	var/recoloured = clothing_channel_worn(icon2use, state2use, inhands ? null : addblends)
+	if(recoloured)
+		standing = image(recoloured)
+	else if(!inhands && addblends && icon2use)
 		standing = image(worn_addblend_icon(icon2use, state2use, addblends))
 	else
 		standing = image(icon = icon2use, icon_state = state2use)

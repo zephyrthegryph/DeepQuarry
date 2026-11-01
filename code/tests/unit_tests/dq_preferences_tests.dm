@@ -187,9 +187,7 @@
 
 /datum/unit_test/dq_pref_palette_link_roundtrip/Run()
 	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs()
-	var/old_hair = P.read_preference(/datum/preference/color/human/hair_color)
-	TEST_ASSERT_EQUAL(P.read_preference_raw(/datum/preference/color/human/hair_color), old_hair, "an existing save loads as a custom colour")
-	TEST_ASSERT_EQUAL(lowertext(old_hair), "#5c50e1", "and nothing shifts")
+	TEST_ASSERT_EQUAL(lowertext(P.read_preference(/datum/preference/color/human/hair_color)), "#5c50e1", "an existing save's colour does not shift")
 	TEST_ASSERT(P.update_preference_by_type(/datum/preference/color/human/color_slot/primary, "#112233"), "a slot takes a colour")
 	TEST_ASSERT(P.update_preference_by_type(/datum/preference/color/human/hair_color, "primary"), "a field links to a slot")
 	TEST_ASSERT(P.update_preference_by_type(/datum/preference/color/human/eyes_color, "#abcdef"), "another keeps its own")
@@ -227,6 +225,56 @@
 	P = dq_palette_test_prefs()
 	TEST_ASSERT_EQUAL(lowertext(P.read_preference(/datum/preference/color/human/color_slot/primary)), "#4468af", "no palette: Primary is the skin colour")
 	TEST_ASSERT_EQUAL(lowertext(P.read_preference(/datum/preference/color/human/skin_color)), "#4468af", "and the field is unchanged")
+	fdel(P.path)
+
+/// Linking an existing character changes no resolved colour, links what equals a slot, leaves the rest, and runs once.
+/datum/unit_test/dq_pref_palette_links_existing
+
+/datum/unit_test/dq_pref_palette_links_existing/Run()
+	var/list/raw_save = json_decode(file2text("code/tests/unit_tests/data/profile_saves/headless_preferences.json"))
+	var/list/saved = raw_save["character1"]
+	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs()
+	var/list/fields = dq_palette_fields()
+	for(var/field in fields)
+		var/datum/preference/pref = GLOB.preference_entries[field]
+		TEST_ASSERT_EQUAL(lowertext(P.read_preference(field)), lowertext(saved[pref.savefile_key]), "[pref.savefile_key] resolves to its saved colour")
+	TEST_ASSERT_EQUAL(P.read_preference_raw(/datum/preference/color/human/skin_color), "primary", "skin equals Primary, so it links")
+	TEST_ASSERT_EQUAL(P.read_preference_raw(/datum/preference/color/human/hair_color), "secondary", "hair equals Secondary")
+	TEST_ASSERT_EQUAL(P.read_preference_raw(/datum/preference/color/human/eyes_color), "tertiary", "eyes equal Tertiary")
+	TEST_ASSERT_EQUAL(lowertext(P.read_preference(/datum/preference/color/human/color_slot/extra1)), lowertext(saved["facial_color"]), "the next field colour seeds Extra 1")
+	TEST_ASSERT_EQUAL(P.read_preference_raw(/datum/preference/color/human/facial_color), "extra1", "and that field links to it")
+	var/custom = lowertext(saved["wing_color3"])
+	TEST_ASSERT_EQUAL(lowertext(P.read_preference_raw(/datum/preference/color/human/wing_color3)), custom, "a field matching no slot stays its own colour")
+	// A user's later choice survives a reload: the migration does not run twice.
+	P.update_preference_by_type(/datum/preference/color/human/hair_color, lowertext(saved["skin_color"]))
+	P.save_character()
+	P.savefile.save()
+	var/datum/preferences/dq_test_stub/Q = allocate(/datum/preferences/dq_test_stub)
+	Q.path = P.path
+	Q.load_savefile()
+	TEST_ASSERT(Q.load_character(1), "the saved character loads again")
+	TEST_ASSERT_EQUAL(lowertext(Q.read_preference_raw(/datum/preference/color/human/hair_color)), lowertext(saved["skin_color"]), "a custom colour equal to a slot is not relinked")
+	fdel(P.path)
+
+/// A new character starts linked; the old tone converts only for the two species that drew from it.
+/datum/unit_test/dq_pref_palette_new_and_tone
+
+/datum/unit_test/dq_pref_palette_new_and_tone/Run()
+	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs()
+	TEST_ASSERT(P.load_character(2), "an empty slot loads as a new character")
+	TEST_ASSERT_EQUAL(P.read_preference_raw(/datum/preference/color/human/skin_color), "primary", "skin is linked")
+	TEST_ASSERT_EQUAL(P.read_preference_raw(/datum/preference/color/human/tail_color3), "tertiary", "so is a tail channel")
+	fdel(P.path)
+	P = dq_palette_test_prefs(list("species" = "Virtual Reality Human", "skin_tone" = -75))
+	if(P.read_preference(/datum/preference/choiced/species) == "Virtual Reality Human")
+		TEST_ASSERT_EQUAL(lowertext(P.read_preference(/datum/preference/color/human/skin_color)), lowertext(rgb(174, 152, 134)), "the tone converts to its fitted colour")
+	fdel(P.path)
+	TEST_ASSERT_EQUAL(dq_skin_tone_to_color(0), "#ffffff", "no tone is no tint")
+	TEST_ASSERT_EQUAL(dq_skin_tone_to_color(30), "#ffffff", "a brightening tone clamps to white")
+	TEST_ASSERT_EQUAL(dq_skin_tone_to_color(-185), lowertext(rgb(56, 2, 0)), "the darkest fit")
+	TEST_ASSERT_EQUAL(dq_skin_tone_to_color(-75), lowertext(rgb(174, 152, 134)), "a table row is exact")
+	P = dq_palette_test_prefs()
+	TEST_ASSERT_EQUAL(lowertext(P.read_preference(/datum/preference/color/human/color_slot/primary)), "#4468af", "a Human's tone is ignored, as it always was")
 	fdel(P.path)
 
 /// A slot change reaches every linked field and marking in what the window is sent and in what is applied to the mob,
@@ -303,6 +351,33 @@
 	P.update_preference_by_type(/datum/preference/color/human/tail_color1, "#0a0b0c")
 	P.update_preference_by_type(/datum/preference/text/human/tail_style, other)
 	TEST_ASSERT_EQUAL(lowertext(P.read_preference_raw(/datum/preference/color/human/tail_color1)), "#0a0b0c", "changing style keeps a custom colour")
+	fdel(P.path)
+
+
+/// The synth colour starts on the skin's unless the old toggle was on, once; robotic limbs always tint from it.
+/datum/unit_test/dq_pref_synth_color_always
+
+/datum/unit_test/dq_pref_synth_color_always/Run()
+	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs(list("synth_color" = 0))
+	TEST_ASSERT_EQUAL(P.read_preference_raw(/datum/preference/color/human/synth_color), "primary", "toggle off: takes the skin's link")
+	P.update_preference_by_type(/datum/preference/color/human/synth_color, "#123456")
+	P.save_character()
+	P.savefile.save()
+	var/datum/preferences/dq_test_stub/Q = allocate(/datum/preferences/dq_test_stub)
+	Q.path = P.path
+	Q.load_savefile()
+	TEST_ASSERT(Q.load_character(1), "the character loads again")
+	TEST_ASSERT_EQUAL(lowertext(Q.read_preference(/datum/preference/color/human/synth_color)), "#123456", "a later choice survives the reload")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	Q.copy_to(H)
+	TEST_ASSERT_EQUAL(lowertext(H.looks.synth_color_rgb), "#123456", "the mob has the colour")
+	var/obj/item/organ/external/arm = H.organs_by_name[BP_L_ARM]
+	arm.robotize()
+	arm.sync_colour_to_human(H)
+	TEST_ASSERT_EQUAL(json_encode(arm.s_col), json_encode(hex2rgb("#123456")), "a robotic limb tints from it with no toggle")
+	fdel(P.path)
+	P = dq_palette_test_prefs(list("synth_color" = 1, "synth_color_rgb" = "#abcdef"))
+	TEST_ASSERT_EQUAL(lowertext(P.read_preference(/datum/preference/color/human/synth_color)), "#abcdef", "toggle on: keeps its colour")
 	fdel(P.path)
 
 

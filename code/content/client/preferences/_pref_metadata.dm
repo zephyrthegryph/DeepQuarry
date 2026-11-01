@@ -90,10 +90,8 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 
 	//// APPEARANCE ////
 	// Body
-	tag_pref(., /datum/preference/numeric/human/s_tone, "appearance", "body")
 	tag_pref(., /datum/preference/color/human/skin_color, "appearance", "body")
 	tag_pref(., /datum/preference/color/human/eyes_color, "appearance", "body")
-	tag_pref(., /datum/preference/toggle/human/synth_color, "appearance", "body")
 	tag_pref(., /datum/preference/toggle/human/synth_markings, "appearance", "body")
 	tag_pref(., /datum/preference/color/human/synth_color, "appearance", "body")
 	tag_pref(., /datum/preference/toggle/human/digitigrade, "appearance", "body")

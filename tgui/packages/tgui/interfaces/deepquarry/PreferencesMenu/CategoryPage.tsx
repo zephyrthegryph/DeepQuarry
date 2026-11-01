@@ -13,8 +13,8 @@
 
 import { Box, Section } from 'tgui-core/components';
 import { getEditor } from './editors';
-import { labelForGroup, labelForKey } from './labels';
 import { LooksPage, looksHasBody } from './LooksPage';
+import { labelForGroup, labelForKey } from './labels';
 import { PrefWidget } from './PrefWidget';
 import {
   editorAnchor,
@@ -139,7 +139,6 @@ export const DEPENDENT_ROWS: Record<
   string,
   (values: Record<string, unknown>) => boolean
 > = {
-  synth_color_rgb: (v) => !!v.synth_color,
   grad_color: (v) => !noStyle(v.grad_style_name),
   facial_color: (v) =>
     !['shaved', ''].includes(String(v.facial_style_name ?? '').toLowerCase()),

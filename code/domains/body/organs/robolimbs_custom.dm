@@ -56,7 +56,7 @@
 	lifelike = 1
 	unavailable_to_build = 1
 	includes_tail = 1
-	skin_tone = 1
+	skin_color = 1
 	suggested_species = SPECIES_TAJARAN
 
 /obj/item/disk/limb/dsi_tajaran
@@ -70,7 +70,7 @@
 	lifelike = 1
 	unavailable_to_build = 1
 	includes_tail = 1
-	skin_tone = 1
+	skin_color = 1
 	suggested_species = SPECIES_UNATHI
 
 /obj/item/disk/limb/dsi_lizard
@@ -84,7 +84,7 @@
 	lifelike = 1
 	unavailable_to_build = 1
 	includes_tail = 1
-	skin_tone = 1
+	skin_color = 1
 	suggested_species = SPECIES_SERGAL
 
 /obj/item/disk/limb/dsi_sergal
@@ -98,7 +98,7 @@
 	lifelike = 1
 	unavailable_to_build = 1
 	includes_tail = 1
-	skin_tone = 1
+	skin_color = 1
 	suggested_species = SPECIES_NEVREAN
 
 /obj/item/disk/limb/dsi_nevrean
@@ -112,7 +112,7 @@
 	lifelike = 1
 	unavailable_to_build = 1
 	includes_tail = 1
-	skin_tone = 1
+	skin_color = 1
 	suggested_species = SPECIES_VULPKANIN
 
 /obj/item/disk/limb/dsi_vulpkanin
@@ -126,7 +126,7 @@
 	lifelike = 1
 	unavailable_to_build = 1
 	includes_tail = 1
-	skin_tone = 1
+	skin_color = 1
 	suggested_species = SPECIES_AKULA
 
 /obj/item/disk/limb/dsi_akula
@@ -140,7 +140,7 @@
 	lifelike = 1
 	unavailable_to_build = 1
 	includes_tail = 1
-	skin_tone = 1
+	skin_color = 1
 	suggested_species = SPECIES_VASILISSAN
 
 /obj/item/disk/limb/dsi_spider
@@ -151,7 +151,7 @@
 	desc = "This limb has a thin synthflesh casing with a few connection ports."
 	icon = 'icons/mob/human_races/cyberlimbs/DSITeshari/dsi_teshari.dmi'
 	lifelike = 1
-	skin_tone = 1
+	skin_color = 1
 	suggested_species = SPECIES_TESHARI
 
 /datum/robolimb/dsi_teshari/New()
@@ -172,7 +172,7 @@
 	lifelike = 1
 	unavailable_to_build = 1
 	includes_tail = 1
-	skin_tone = 1
+	skin_color = 1
 	suggested_species = SPECIES_ZORREN_HIGH
 
 /obj/item/disk/limb/dsi_zorren
@@ -186,7 +186,7 @@
 	lifelike = 1
 	unavailable_to_build = 1
 	includes_tail = 1
-	skin_tone = 1
+	skin_color = 1
 	suggested_species = SPECIES_FENNEC
 
 /obj/item/disk/limb/dsi_fennec

@@ -51,6 +51,28 @@ pub fn run(args: &[String], root: &Path) -> ExitCode {
             }
             ExitCode::SUCCESS
         }
+        "clothing-dump" => {
+            // One JSON object per line: every wearable type and its resolved (inherited) art vars. tools/clothing_channels reads this.
+            const ROOTS: [&str; 3] = ["/obj/item/clothing", "/obj/item/storage/belt", "/obj/item/storage/backpack"];
+            const VARS: [&str; 8] = ["icon", "icon_state", "item_state", "worn_state", "icon_override", "item_icons", "sprite_sheets", "item_state_slots"];
+            for t in sem.objtree.iter_types() {
+                if !ROOTS.iter().any(|r| t.path == *r || t.path.starts_with(&format!("{r}/"))) {
+                    continue;
+                }
+                let mut vars = serde_json::Map::new();
+                for name in VARS {
+                    let Some(v) = t.get_value(name) else { continue };
+                    let text = match (&v.constant, &v.expression) {
+                        (Some(c), _) => format!("{c:?}"),
+                        (None, Some(e)) => format!("{e:?}"),
+                        (None, None) => continue,
+                    };
+                    vars.insert(name.to_string(), serde_json::Value::String(text));
+                }
+                println!("{}", serde_json::json!({"path": t.path, "vars": vars}));
+            }
+            ExitCode::SUCCESS
+        }
         "closure" => super::closure::run(&engine.tree, root, args.iter().any(|a| a == "--write")),
         "oracle" => {
             let cfg_path = root.join("tools/analyze/oracle/spike.toml");
@@ -98,7 +120,7 @@ pub fn run(args: &[String], root: &Path) -> ExitCode {
             ExitCode::SUCCESS
         }
         _ => {
-            println!("analyze sem reads /type proc | analyze sem oracle [--all] | analyze sem closure [--write]");
+            println!("analyze sem reads /type proc | analyze sem oracle [--all] | analyze sem closure [--write] | analyze sem clothing-dump");
             ExitCode::SUCCESS
         }
     }

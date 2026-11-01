@@ -1,12 +1,6 @@
-// DQAdd — the Looks tab, laid out around the body. A body diagram on the left picks a region
-// (head, ears, tail, wings, torso, arms, legs, hands & feet); the right shows just that region's
-// styles, colours and markings, or everything ("Whole body"). Each part is one card: its style,
-// one colour strip (primary/secondary/tertiary + opacity) and, for optional parts (ears, tail,
-// wings), an "Add …" button while the part has no style.
-//
-// Every setting of the category stays reachable: anything a card does not claim is listed under
-// "Other" in the whole-body view, and a settings-search jump to a field in another region
-// switches to the whole-body view first.
+// The Looks tab: categories in the left column (with the body doll, the preview switches and the palette),
+// one category on the right. Every setting has exactly one category; anything no card claims is listed on
+// Skin & body. Ears, tail and wings always have a category; while absent it is the part's style picker.
 
 import { type ReactNode, useContext, useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
@@ -22,6 +16,7 @@ import {
 import { Switch } from './controls';
 import { getEditor } from './editors';
 import { BodyMarkingsEditor } from './editors/BodyMarkingsEditor';
+import { OrgansEditor } from './editors/OrgansEditor';
 import { labelForGroup } from './labels';
 import { PrefWidget } from './PrefWidget';
 import {
@@ -35,36 +30,38 @@ import {
 import type { PrefCategory, PrefWidgetItem } from './types';
 
 export type Region =
-  | 'all'
-  | 'head'
+  | 'body'
+  | 'hair'
   | 'ears'
   | 'tail'
   | 'wings'
-  | 'torso'
-  | 'arms'
   | 'legs'
-  | 'extremities';
+  | 'markings'
+  | 'organs';
 
 const REGION_LABELS: Record<Region, string> = {
-  all: 'Whole body',
-  head: 'Head & hair',
+  body: 'Skin & body',
+  hair: 'Head & hair',
   ears: 'Ears',
   tail: 'Tail',
   wings: 'Wings',
-  torso: 'Torso & skin',
-  arms: 'Arms',
   legs: 'Legs',
-  extremities: 'Hands & feet',
+  markings: 'Markings',
+  organs: 'Limbs & organs',
 };
 
-/// Organ tags (BP_*) a region's markings cover.
-const REGION_ZONES: Partial<Record<Region, string[]>> = {
-  head: ['head'],
-  torso: ['torso', 'groin'],
-  arms: ['l_arm', 'r_arm'],
-  legs: ['l_leg', 'r_leg'],
-  extremities: ['l_hand', 'r_hand', 'l_foot', 'r_foot'],
-};
+/// Doll groups, and the marking filter each sets (organ tags, BP_*).
+const ZONE_GROUPS: Array<{ label: string; zones: string[] }> = [
+  { label: 'Head', zones: ['head'] },
+  { label: 'Torso', zones: ['torso', 'groin'] },
+  { label: 'Arms', zones: ['l_arm', 'r_arm'] },
+  { label: 'Legs', zones: ['l_leg', 'r_leg'] },
+  { label: 'Hands & feet', zones: ['l_hand', 'r_hand', 'l_foot', 'r_foot'] },
+];
+const zoneGroup = (zone: string) =>
+  ZONE_GROUPS.find((g) =>
+    g.zones.includes(zone === 'eyes' || zone === 'mouth' ? 'head' : zone),
+  ) ?? null;
 
 type CardId =
   | 'skin'
@@ -78,38 +75,20 @@ type CardId =
   | 'organs'
   | 'chassis';
 
-const REGION_CARDS: Record<Region, CardId[]> = {
-  all: [
-    'chassis',
-    'skin',
-    'eyes',
-    'hair',
-    'ears',
-    'tail',
-    'wings',
-    'legs',
-    'markings',
-    'organs',
-  ],
-  head: ['hair', 'eyes', 'markings'],
+export const REGION_CARDS: Record<Region, CardId[]> = {
+  body: ['chassis', 'skin', 'eyes'],
+  hair: ['hair'],
   ears: ['ears'],
   tail: ['tail'],
   wings: ['wings'],
-  torso: ['skin', 'markings', 'organs'],
-  arms: ['markings', 'organs'],
-  legs: ['legs', 'markings', 'organs'],
-  extremities: ['markings', 'organs'],
+  legs: ['legs'],
+  markings: ['markings'],
+  organs: ['organs'],
 };
 
 /// The prefs and editors each card owns (anything else lands in "Other").
 const CARD_KEYS: Record<CardId, string[]> = {
-  skin: [
-    'skin_tone',
-    'skin_color',
-    'synth_color',
-    'synth_color_rgb',
-    'synth_markings',
-  ],
+  skin: ['skin_color', 'synth_color_rgb', 'synth_markings'],
   eyes: ['eyes_color'],
   hair: [
     'hair_style_name',
@@ -153,11 +132,36 @@ for (const [card, keys] of Object.entries(CARD_KEYS)) {
   for (const key of keys) KEY_TO_CARD[key] = card as CardId;
 }
 
-/// The regions a card is shown in (for search jumps: stay in a region that shows the field).
-const cardRegions = (card: CardId): Region[] =>
-  (Object.keys(REGION_CARDS) as Region[]).filter((r) =>
+/// The one category that shows a card.
+const cardRegion = (card: CardId): Region =>
+  (Object.keys(REGION_CARDS) as Region[]).find((r) =>
     REGION_CARDS[r].includes(card),
-  );
+  ) ?? 'body';
+
+const LEFT_COLUMN_KEYS = [
+  'palette_primary',
+  'palette_secondary',
+  'palette_tertiary',
+  'palette_extra1',
+  'palette_extra2',
+  'preview_loadout',
+  'preview_job',
+  'animations_toggle',
+];
+const LEFT_COLUMN_GROUPS = ['palette', 'preview'];
+
+/// Where a search jump lands: the category holding it, or null when it stays put (the left column is always shown).
+export const regionForHighlight = (highlight: string): Region | null => {
+  if (highlight.startsWith('group:')) {
+    const group = highlight.slice(highlight.indexOf('/') + 1);
+    if (LEFT_COLUMN_GROUPS.includes(group)) return null;
+    return group in REGION_LABELS ? (group as Region) : 'body';
+  }
+  const key = highlight.replace(/^(pref|editor):/, '');
+  if (LEFT_COLUMN_KEYS.includes(key)) return null;
+  const card = KEY_TO_CARD[key];
+  return card ? cardRegion(card) : 'body';
+};
 
 /// The body layout fits a page with body parts (human mode); robot and pAI pages, which have
 /// none of these, keep the plain group list.
@@ -171,7 +175,14 @@ export const looksHasBody = (page: PrefCategory) =>
   );
 
 /// Remembered across tab switches (the page remounts).
-let rememberedRegion: Region = 'all';
+let rememberedRegion: Region = 'body';
+
+const PREVIEW_KEYS = ['preview_loadout', 'preview_job', 'animations_toggle'];
+
+/// A hair style that draws nothing: its colours mean nothing either.
+const isNoHair = (value: unknown) =>
+  isNoStyle(value) ||
+  ['bald', 'shaved'].includes(String(value).trim().toLowerCase());
 
 const isNoStyle = (value: unknown) => {
   const s = String(value ?? '')
@@ -220,26 +231,26 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
 
   // A search jump to a field the current region hides switches to a region that shows it.
   const highlight = useContext(SearchHighlightContext);
+  const [focusLimb, setFocusLimb] = useState<string | null>(null);
+  const [markingZones, setMarkingZones] = useState<
+    (typeof ZONE_GROUPS)[number] | null
+  >(null);
   useEffect(() => {
     if (!highlight) return;
-    const key = highlight.replace(/^(pref|editor):/, '');
-    const card = KEY_TO_CARD[key];
-    if (card) {
-      if (!REGION_CARDS[region].includes(card)) {
-        setRegion(cardRegions(card).includes(region) ? region : 'all');
-      }
-    } else if (region !== 'all' && highlight.startsWith('pref:')) {
-      setRegion('all');
-    } else if (highlight.startsWith('group:') && region !== 'all') {
-      setRegion('all');
-    }
+    const target = regionForHighlight(highlight);
+    if (!target) return;
+    if (target === 'markings') setMarkingZones(null);
+    setRegion(target);
   }, [highlight]);
 
   // Cards that have something to show in this play mode.
   const cardHasContent = (card: CardId) => CARD_KEYS[card].some(has);
   const claimed = new Set(
-    [...Object.values(CARD_KEYS).flat(), ...PALETTE_SLOTS.map((p) => p.prefKey)]
-      .filter((k) => has(k)),
+    [
+      ...Object.values(CARD_KEYS).flat(),
+      ...PALETTE_SLOTS.map((p) => p.prefKey),
+      ...PREVIEW_KEYS,
+    ].filter((k) => has(k)),
   );
   const otherGroups = page.groups
     .map((group) => ({
@@ -252,24 +263,33 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
     }))
     .filter((group) => group.items.length > 0);
 
-  const zones = REGION_ZONES[region];
-  const cards = REGION_CARDS[region].filter(cardHasContent);
+  const zones = markingZones?.zones;
+  const shownRegion = region;
+  // Synth colour and markings only draw on robotic limbs (organ_icon.dm).
+  const externals = (editorData.organs?.externals ?? {}) as Record<
+    string,
+    { status?: string }
+  >;
+  const hasRoboticLimb = Object.values(externals).some(
+    (limb) => limb?.status === 'cyborg',
+  );
+  const cards = REGION_CARDS[shownRegion].filter(cardHasContent);
 
   const renderCard = (card: CardId) => {
     switch (card) {
       case 'skin':
         return (
           <PartCard key={card} title="Skin" anchorGroup={groupOf.skin_color}>
-            <Fields keys={['skin_tone']} withValue={withValue} />
-            <ColorStrip
-              colors={pick(widgets, [['skin_color', 'Skin']])}
-              values={values}
-            />
-            <Fields
-              keys={['synth_color', 'synth_markings']}
-              withValue={withValue}
-            />
-            {!!values.synth_color && (
+            {values.species_has_skin_color !== 0 && (
+              <ColorStrip
+                colors={pick(widgets, [['skin_color', 'Skin']])}
+                values={values}
+              />
+            )}
+            {hasRoboticLimb && (
+              <Fields keys={['synth_markings']} withValue={withValue} />
+            )}
+            {hasRoboticLimb && (
               <Box mt={0.3}>
                 <ColorStrip
                   colors={pick(widgets, [['synth_color_rgb', 'Synth']])}
@@ -300,8 +320,12 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
                 colors={pick(
                   widgets,
                   [
-                    ['hair_color', 'Hair'],
-                    ['facial_color', 'Facial'],
+                    isNoHair(values.hair_style_name)
+                      ? null
+                      : ['hair_color', 'Hair'],
+                    isNoHair(values.facial_style_name)
+                      ? null
+                      : ['facial_color', 'Facial'],
                     // The gradient colour only matters with a gradient.
                     isNoStyle(values.grad_style_name)
                       ? null
@@ -386,17 +410,28 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
               data={editorData.body_markings ?? {}}
               staticData={staticData?.body_markings}
               zones={zones}
-              zoneLabel={zones ? REGION_LABELS[region] : undefined}
+              zoneLabel={markingZones?.label}
             />
           </Box>
         );
       case 'organs':
+        return (
+          <Box key={card} data-dq-anchor={editorAnchor('organs')}>
+            <Section title="Limbs & organs">
+              <OrgansEditor
+                data={editorData.organs ?? {}}
+                staticData={staticData?.organs}
+                focusLimb={focusLimb}
+              />
+            </Section>
+          </Box>
+        );
       case 'chassis': {
-        const key = card === 'organs' ? 'organs' : 'robot_chassis';
+        const key = 'robot_chassis';
         const Editor = getEditor(key);
         return (
           <Box key={card} data-dq-anchor={editorAnchor(key)}>
-            <Section title={card === 'organs' ? 'Organs & limbs' : 'Chassis'}>
+            <Section title="Chassis">
               <Editor
                 data={editorData[key] ?? {}}
                 staticData={staticData?.[key]}
@@ -419,7 +454,7 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
     >
       <Box
         style={{
-          flex: '0 0 12em',
+          flex: '0 0 15em',
           position: 'sticky',
           top: 0,
           display: 'flex',
@@ -428,29 +463,40 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
         }}
       >
         <BodyDiagram
-          region={region}
-          onPick={setRegion}
+          selected={
+            shownRegion === 'markings' ? (markingZones?.zones ?? []) : []
+          }
+          caption={
+            shownRegion === 'markings'
+              ? (markingZones?.label ?? 'All markings')
+              : REGION_LABELS[shownRegion]
+          }
+          onPick={(zone) => {
+            if (shownRegion === 'organs') {
+              setFocusLimb(zone);
+            } else {
+              const group = zoneGroup(zone);
+              setMarkingZones(group === markingZones ? null : group);
+              setRegion('markings');
+            }
+          }}
           regions={(staticData?.organs?.doll_regions as DollRegion[]) ?? []}
         />
         <Box style={{ display: 'flex', flexDirection: 'column', gap: '0.1em' }}>
           {(Object.keys(REGION_LABELS) as Region[])
-            .filter((r) => REGION_CARDS[r].some(cardHasContent) || r === 'all')
-            .filter(
-              (r) => !REGION_ZONES[r] || REGION_CARDS[r].some(cardHasContent),
-            )
+            .filter((r) => REGION_CARDS[r].some(cardHasContent))
             .map((r) => (
               <Button
                 key={r}
                 fluid
-                selected={region === r}
-                icon={r === 'all' ? 'person' : undefined}
+                selected={shownRegion === r}
                 onClick={() => setRegion(r)}
               >
                 {REGION_LABELS[r]}
               </Button>
             ))}
         </Box>
-        {['preview_loadout', 'preview_job', 'animations_toggle'].some(has) && (
+        {PREVIEW_KEYS.some(has) && (
           <Section
             title="Preview"
             data-dq-anchor={groupAnchor('appearance', 'preview')}
@@ -458,8 +504,7 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
             <Box
               style={{ display: 'flex', flexDirection: 'column', gap: '0.3em' }}
             >
-              {['preview_loadout', 'preview_job', 'animations_toggle']
-                .map(withValue)
+              {PREVIEW_KEYS.map(withValue)
                 .filter((item): item is PrefWidgetItem => !!item)
                 .map((item) => (
                   <PreviewSwitch key={item.key} item={item} />
@@ -482,7 +527,7 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
           minWidth: 0,
           display: 'grid',
           gridTemplateColumns:
-            region === 'all'
+            shownRegion === 'body'
               ? 'repeat(auto-fit, minmax(min(100%, max(22em, calc(50% - 0.25em))), 1fr))'
               : '1fr',
           gap: '0.5em',
@@ -494,6 +539,7 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
           const wide =
             card === 'markings' ||
             card === 'organs' ||
+            card === 'legs' ||
             card === 'chassis';
           return (
             <Box key={card} style={wide ? { gridColumn: '1 / -1' } : undefined}>
@@ -501,7 +547,7 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
             </Box>
           );
         })}
-        {region === 'all' &&
+        {shownRegion === 'body' &&
           otherGroups.map((group) => (
             <Box key={`other-${group.group}`} style={{ gridColumn: '1 / -1' }}>
               <Section
@@ -627,8 +673,7 @@ const BareField = ({ item }: { item: PrefWidgetItem }) => {
   );
 };
 
-/// Ears, tail and wings: while the part has no style the card is one "Add …" button that opens
-/// the style picker; with a style it is the full card plus a Remove button.
+/// Ears, tail and wings: the style picker while the part has none, the full card with Remove after.
 const OptionalPart = ({
   title,
   styleKey,
@@ -643,48 +688,13 @@ const OptionalPart = ({
   children: ReactNode;
 }) => {
   const { act } = useBackend();
-  const [adding, setAdding] = useState(false);
-  const empty = isNoStyle(values[styleKey]);
-  const highlight = useContext(SearchHighlightContext);
   const lowerTitle = title.toLowerCase();
-  // A search jump into this part opens it even while it has no style.
-  const card = KEY_TO_CARD[styleKey];
-  const searchHit =
-    !!highlight &&
-    !!card &&
-    CARD_KEYS[card].some((key) => highlight === prefAnchor(key));
-  // Once a search has opened the part it stays open (until the tab is left).
-  const [revealed, setRevealed] = useState(false);
-  useEffect(() => {
-    if (searchHit) setRevealed(true);
-  }, [searchHit]);
-  const forced = searchHit || revealed;
-  if (empty && !adding && !forced) {
-    return (
-      <PartCard title={title}>
-        <Button
-          icon="plus"
-          onClick={() => setAdding(true)}
-          tooltip={`This character has no ${lowerTitle}. Pick a style to add them.`}
-        >
-          Add {lowerTitle}
-        </Button>
-      </PartCard>
-    );
-  }
-  if (empty && !forced) {
+  if (isNoStyle(values[styleKey])) {
     const styleItem = withValue(styleKey);
     return (
-      <PartCard
-        title={`Add ${lowerTitle}`}
-        buttons={
-          <Button icon="xmark" onClick={() => setAdding(false)}>
-            Cancel
-          </Button>
-        }
-      >
+      <PartCard title={title}>
         <Box color="label" mb={0.3}>
-          Pick a style; colours appear once the part has one.
+          This character has no {lowerTitle}. Pick a style to add them.
         </Box>
         {styleItem && (
           <BareField
@@ -703,7 +713,6 @@ const OptionalPart = ({
           color="transparent"
           tooltip={`Remove the ${lowerTitle}`}
           onClick={() => {
-            setAdding(false);
             act('dq_update_preference', { key: styleKey, value: '' });
           }}
         >
@@ -716,28 +725,26 @@ const OptionalPart = ({
   );
 };
 
-/// The body picker: the HUD's own zone-select doll (art and hit areas shared with the game, see ZoneDoll), each part
-/// choosing the region that covers it. Ears, tail and wings are not on the doll; they are picked from the list below it.
+/// The body picker: the HUD's zone-select doll (art and hit areas shared with the game). A part filters the markings, or points at the limb on Limbs & organs.
 const BodyDiagram = ({
-  region,
+  selected,
+  caption,
   onPick,
   regions,
 }: {
-  region: Region;
-  onPick: (r: Region) => void;
+  selected: string[];
+  caption: string;
+  onPick: (zone: string) => void;
   regions: DollRegion[];
 }) => {
-  const [hover, setHover] = useState<Region | null>(null);
-  const zonesOf = (r: Region | null) => (r ? (REGION_ZONES[r] ?? []) : []);
-  const regionOfZone = (zone: string): Region | null =>
-    (Object.keys(REGION_ZONES) as Region[]).find((r) =>
-      REGION_ZONES[r]?.includes(zone),
-    ) ?? null;
-  // The doll's head covers the eyes and mouth too.
-  const groupOf = (zone: string) =>
-    zonesOf(regionOfZone(zone)).concat(
-      regionOfZone(zone) === 'head' ? ['eyes', 'mouth'] : [],
-    );
+  const [hover, setHover] = useState<string | null>(null);
+  const groupOf = (zone: string) => {
+    const group = zoneGroup(zone);
+    if (!group) return [zone];
+    return group.label === 'Head'
+      ? [...group.zones, 'eyes', 'mouth']
+      : group.zones;
+  };
   return (
     <Box
       style={{
@@ -750,21 +757,15 @@ const BodyDiagram = ({
       }}
     >
       <ZoneDoll
+        size={192}
         regions={regions}
-        selected={zonesOf(region)}
+        selected={selected}
         groupOf={groupOf}
-        onHover={(zone) => setHover(zone ? regionOfZone(zone) : null)}
-        onPick={(zone) => {
-          const picked =
-            regionOfZone(zone) ??
-            (zone === 'eyes' || zone === 'mouth' ? 'head' : null);
-          if (picked) {
-            onPick(region === picked ? 'all' : picked);
-          }
-        }}
+        onHover={setHover}
+        onPick={onPick}
       />
-      <Box textAlign="center" color="label" fontSize="0.85em" mt={0.2}>
-        {REGION_LABELS[hover ?? region]}
+      <Box textAlign="center" color="label" mt={0.2}>
+        {hover ? (zoneGroup(hover)?.label ?? hover) : caption}
       </Box>
     </Box>
   );

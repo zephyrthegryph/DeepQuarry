@@ -30,7 +30,6 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 	var/unavailable_at_chargen                           // If set, not available at chargen.
 	var/unavailable_to_build                             // If set, can't be constructed.
 	var/lifelike                                         // If set, appears organic.
-	var/skin_tone                                        // If set, applies skin tone rather than part color Overrides color.
 	var/skin_color                                       // If set, applies skin color rather than part color.
 	var/blood_color = SYNTH_BLOOD_COLOUR                 // Colour for blood splatters.
 	var/blood_name = "oil"                               // Descriptor for blood splatters.
@@ -339,7 +338,7 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 	icon = 'icons/mob/human_races/cyberlimbs/veymed/veymed_main_vr.dmi' // fixing the color application
 	unavailable_to_build = 1
 	lifelike = 1
-	skin_tone = 1
+	skin_color = 1
 	species_alternates = list(SPECIES_SKRELL = "Vey-Med - Skrell")
 	blood_color = "#CCCCCC"
 	blood_name = "coolant"
@@ -447,7 +446,7 @@ GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 	icon = 'icons/mob/human_races/cyberlimbs/zenghu/zenghu_main.dmi'
 	species_alternates = list(SPECIES_TAJARAN = "Zeng-Hu - Tajaran")
 	unavailable_to_build = 1
-	skin_tone = 1
+	skin_color = 1
 	modular_bodyparts = MODULAR_BODYPART_PROSTHETIC // remove the restrictions
 
 /datum/robolimb/wooden
@@ -613,7 +612,7 @@ CAPABILITIES(/obj/item/disk/species)
 	company = "VALE Hound- Head"
 	desc = "A VALE hound head meant for synthetics."
 	icon = 'icons/mob/human_races/cyberlimbs/VALE/vale_head.dmi' //Sprited by: Skits
-	skin_tone = 1
+	skin_color = 1
 	parts = list(BP_HEAD)
 
 /datum/robolimb/dsi_tajaran
@@ -649,7 +648,7 @@ CAPABILITIES(/obj/item/disk/species)
 	blood_color = "#ffe2ff"
 	lifelike = 1
 	unavailable_to_build = 1
-	skin_tone = 1
+	skin_color = 1
 	no_icon = TRUE
 
 /datum/robolimb/hellscout
@@ -750,7 +749,7 @@ GLOBAL_LIST_INIT(dsi_to_species, list(SPECIES_TAJARAN = "DSI - Tajaran", SPECIES
 	icon = 'icons/mob/human_races/cyberlimbs/_fluff/Frosty.dmi'
 	blood_color = "#45ccff"
 	lifelike = 1
-	skin_tone = 1
+	skin_color = 1
 	unavailable_to_build = 1
 	whitelisted_to = list("tucker0666")
 
@@ -779,7 +778,7 @@ CAPABILITIES(/obj/item/disk/limb/zenghu_frost)
 	icon = 'icons/mob/human_races/cyberlimbs/zenghu/zenghu_glacier_main.dmi'
 	species_alternates = list(SPECIES_TAJARAN = "Zeng-Hu - Tajaran")
 	unavailable_to_build = 1
-	skin_tone = 1
+	skin_color = 1
 	modular_bodyparts = MODULAR_BODYPART_PROSTHETIC
 
 /datum/robolimb/zenghu_taj_glacier
@@ -848,13 +847,13 @@ CAPABILITIES(/obj/item/disk/limb/zenghu_frost)
 	company = "YR3 Enviroshell-Colorable"
 	icon = 'icons/mob/human_races/cyberlimbs/YR3/YR3_enviroshell_colorable.dmi'
 	lifelike = 1
-	skin_tone = 1
+	skin_color = 1
 
 /datum/robolimb/enviroshell/original/colorable
 	company = "YR3 Enviroshell- Colorable Xenochimera Model"
 	icon = 'icons/mob/human_races/cyberlimbs/YR3/YR3_enviroshell_colorable.dmi'
 	lifelike = 1
-	skin_tone = 1
+	skin_color = 1
 
 /datum/robolimb/enviroshell/sleek
 	company = "YR3 Slimline"

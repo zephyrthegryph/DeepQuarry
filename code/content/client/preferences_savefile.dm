@@ -170,6 +170,7 @@
 	if(needs_update == -2) //fatal, can't load any data
 		return FALSE
 
+	var/palette_new_character = !length(save_data)
 	// Read everything into cache (pre-migrations, as migrations should have access to deserialized data)
 	// Uses priority order as some values may rely on others for creating default values
 	for(var/datum/preference/preference as anything in get_preferences_in_priority_order())
@@ -178,6 +179,9 @@
 
 		remove_value_cache(preference.type)
 		read_preference(preference.type)
+
+	link_palette_on_load(palette_new_character)
+	migrate_synth_color(palette_new_character)
 
 	// Bay player_setup.load_character chain deleted; pre-cache loop above already
 	// loaded every PREFERENCE_CHARACTER pref from save_data via read_preference().

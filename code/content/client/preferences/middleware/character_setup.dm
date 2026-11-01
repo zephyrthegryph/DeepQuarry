@@ -62,7 +62,7 @@ GLOBAL_LIST_INIT(dq_robot_mode_hidden_groups, list(
 	"blood",
 	"markings",
 	"organs",
-	"body",     // All body-group prefs (s_tone, skin_color, eyes_color, digitigrade, synth_color/markings) are organic-only.
+	"body",     // All body-group prefs (skin_color, eyes_color, digitigrade, synth_color/markings) are organic-only.
 	"preview",  // Animations toggle / preview_loadout / preview_job don't apply to chassis-sprite previews.
 	"nif",      // Cyborgs don't have NIFs (those are neural interfaces for organic brains).
 	"pai",      // Cyborgs aren't pAIs.
@@ -75,14 +75,13 @@ GLOBAL_LIST_INIT(dq_robot_mode_hidden_groups, list(
 ))
 
 GLOBAL_LIST_INIT(dq_robot_mode_hidden_pref_keys, list(
-	"s_tone"         = TRUE,
 	"skin_color"     = TRUE,
 	"eyes_color"     = TRUE,
 	"digitigrade"    = TRUE,
 	// synth_color / synth_markings live on /mob/living/carbon/human (they
 	// color synth limbs on organic bodies or synth species like Protean).
 	// Cyborgs are /mob/living/silicon/robot — these vars don't exist there.
-	"synth_color"    = TRUE,
+	"synth_color_rgb" = TRUE,
 	"synth_markings" = TRUE,
 ))
 
@@ -119,11 +118,10 @@ GLOBAL_LIST_INIT(dq_pai_mode_hidden_groups, list(
 ))
 
 GLOBAL_LIST_INIT(dq_pai_mode_hidden_pref_keys, list(
-	"s_tone"         = TRUE,
 	"skin_color"     = TRUE,
 	"eyes_color"     = TRUE,
 	"digitigrade"    = TRUE,
-	"synth_color"    = TRUE,
+	"synth_color_rgb" = TRUE,
 	"synth_markings" = TRUE,
 ))
 

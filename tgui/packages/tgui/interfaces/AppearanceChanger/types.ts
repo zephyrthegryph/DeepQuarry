@@ -22,7 +22,6 @@ export type Data = {
   Genders: Genders;
   id_genders: Genders;
   change_eye_color: BooleanLike;
-  change_skin_tone: BooleanLike;
   change_skin_color: BooleanLike;
   change_hair_color: BooleanLike;
   change_facial_hair_color: BooleanLike;

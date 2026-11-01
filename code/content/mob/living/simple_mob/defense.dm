@@ -142,6 +142,10 @@
 	simple_mob_blast_ladder(blast_severity(A.packet.severity))
 	return OP_OK
 
+/// A blast on a type that ignores blasts: an empty instead() takes nothing, so the next hook (simple_mob_blast) would still run.
+/mob/living/simple_mob/proc/blast_shrugged(datum/act/hit/explosion/A)
+	return OP_OK
+
 /// The severity a blast lands at before the mob's explosion shift: a type that turns blasts aside makes it less severe.
 /mob/living/simple_mob/proc/blast_severity(severity)
 	return severity
