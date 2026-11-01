@@ -45,7 +45,7 @@
 #if defined(UNIT_TESTS) && !defined(BENCHMARK) && !defined(GC_FAILURE_HARD_LOOKUP)
 #define GC_FAILURE_HARD_LOOKUP
 #endif
-#if defined(GC_FAILURE_HARD_LOOKUP) && !defined(REFERENCE_TRACKING)
+#if (defined(GC_FAILURE_HARD_LOOKUP) || defined(UNIT_TESTS)) && !defined(REFERENCE_TRACKING)
 #define REFERENCE_TRACKING
 #endif
 #ifdef REFERENCE_TRACKING
