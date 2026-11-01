@@ -10,8 +10,6 @@
 	var/facial_style = "Shaved"
 	var/facial_color = "#000000"
 	var/eyes_color = "#000000"
-	/// Skin tone for species with HAS_SKIN_TONE (a negative darkens).
-	var/skin_tone = 0
 	/// Skin colour for species with HAS_SKIN_COLOR.
 	var/skin_color = "#eeceb3"
 	/// Whether synthetic parts that can't normally be coloured take synth_color_rgb.
@@ -45,7 +43,6 @@ TRACKED_DATA(/datum/record/appearance, grad_color)
 TRACKED_DATA(/datum/record/appearance, facial_style)
 TRACKED_DATA(/datum/record/appearance, facial_color)
 TRACKED_DATA(/datum/record/appearance, eyes_color)
-TRACKED_DATA(/datum/record/appearance, skin_tone)
 TRACKED_DATA(/datum/record/appearance, skin_color)
 TRACKED_DATA(/datum/record/appearance, synth_color)
 TRACKED_DATA(/datum/record/appearance, synth_color_rgb)

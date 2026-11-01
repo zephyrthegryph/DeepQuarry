@@ -81,7 +81,6 @@ ADMIN_VERB(editappear, R_FUN, "Edit Appearance", "Edit a human's apperance.", AD
 	var/new_hair
 	var/new_eyes
 	var/new_skin
-	var/new_tone
 	var/new_hstyle
 	var/new_fstyle
 	var/new_gender
@@ -115,12 +114,10 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 		if(5)
 			open_request(src, /datum/prompt/color/admin_edit_new_skin, PROC_REF(answered), answerer = actor)
 		if(6)
-			open_request(src, /datum/prompt/number/admin_edit_new_tone, PROC_REF(answered), answerer = actor)
-		if(7)
 			open_request(src, /datum/prompt/choice/admin_edit_new_hstyle, PROC_REF(answered), answerer = actor, choices = GLOB.hair_styles_list)
-		if(8)
+		if(7)
 			open_request(src, /datum/prompt/choice/admin_edit_new_fstyle, PROC_REF(answered), answerer = actor, choices = GLOB.facial_hair_styles_list)
-		if(9)
+		if(8)
 			open_request(src, /datum/prompt/choice/admin_edit_new_gender, PROC_REF(answered), answerer = actor)
 
 /datum/admin_edit_appearance_review/proc/answered(datum/act/request/context)
@@ -149,12 +146,10 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 		if(5)
 			new_skin = context.request.value
 		if(6)
-			new_tone = context.request.value
-		if(7)
 			new_hstyle = context.request.value
-		if(8)
+		if(7)
 			new_fstyle = context.request.value
-		if(9)
+		if(8)
 			new_gender = context.request.value
 	stage++
 	replay_prefix()
@@ -178,19 +173,15 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 	if(stage >= 6 && new_skin)
 		target_human.looks.set_skin_color(new_skin)
 
-	if(stage >= 7 && new_tone)
-		target_human.looks.set_skin_tone(max(min(round(text2num(new_tone)), 220), 1))
-		target_human.looks.set_skin_tone(-target_human.looks.skin_tone + 35)
-
 	// hair
-	if(stage >= 8 && new_hstyle)
+	if(stage >= 7 && new_hstyle)
 		target_human.looks.set_hair_style(new_hstyle)
 
 	// facial hair
-	if(stage >= 9 && new_fstyle)
+	if(stage >= 8 && new_fstyle)
 		target_human.looks.set_facial_style(new_fstyle)
 
-	if(stage >= 10 && new_gender)
+	if(stage >= 9 && new_gender)
 		target_human.set_biological_gender(new_gender)
 
 
@@ -288,29 +279,6 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 		return
 	var/datum/admin_edit_appearance_review/review = owner
 	return review.refusal()
-
-/datum/prompt/number/admin_edit_new_tone
-	rights = R_FUN
-	timeout = 0
-	question = "Please select skin tone level: 1-220 (1=albino, 35=caucasian, 150=black, 220='very' black)"
-	title = "Character Generation"
-	min_value = null
-	max_value = null
-	step = null
-	recheck_on_open = TRUE
-
-/datum/prompt/number/admin_edit_new_tone/recheck_extra()
-	. = ..()
-	if(.)
-		return
-	var/datum/admin_edit_appearance_review/review = owner
-	return review.refusal()
-
-/datum/prompt/number/admin_edit_new_tone/present(mob/user)
-	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, 220, 1, timeout, TRUE, GLOB.tgui_always_state)
-	rel_set(box, nameof(box.prompt), src)
-	box.tgui_interact(user)
-	return box
 
 /datum/prompt/choice/admin_edit_new_hstyle
 	rights = R_FUN

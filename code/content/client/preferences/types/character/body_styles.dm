@@ -92,7 +92,8 @@
 
 // / Shared helper: build a {style_name -> {icon, icon_state}} payload from a
 /// sprite_accessory global. Lives on /datum/preferences so any subtype can call it.
-/proc/sprite_accessory_thumbs(list/accessory_list)
+/// `state_suffix`: what the drawing code appends to icon_state (hair and beards are drawn from "<state>_s").
+/proc/sprite_accessory_thumbs(list/accessory_list, state_suffix = "")
 	if(!accessory_list)
 		return null
 	var/list/out = list()
@@ -102,7 +103,7 @@
 			continue
 		out[S.name] = list(
 			"icon" = "[REF(S.icon)]",
-			"icon_state" = S.icon_state,
+			"icon_state" = "[S.icon_state][state_suffix]",
 		)
 	return out
 

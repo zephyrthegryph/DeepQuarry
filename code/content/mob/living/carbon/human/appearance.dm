@@ -128,15 +128,6 @@
 	force_update_limbs()
 	return 1
 
-/mob/living/carbon/human/proc/change_skin_tone(tone)
-	if(looks.skin_tone == tone || !(species.appearance_flags & HAS_SKIN_TONE))
-		return
-
-	looks.set_skin_tone(tone)
-
-	force_update_limbs()
-	return 1
-
 /mob/living/carbon/human/proc/update_dna()
 	check_dna()
 	dna.ResetUIFrom(src) // Do not call ready_dna here: it resets ALL SE blocks, wiping trait gene state

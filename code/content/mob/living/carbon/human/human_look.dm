@@ -174,7 +174,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 /// The body icon cache key from the species, skin, eyes and every visible part, and whether every part is transparent: list(key, whole icon
 /// transparent).
 /mob/living/carbon/human/proc/body_icon_key(datum/look/look)
-	var/icon_key = "[species.get_race_key(src)][looks.skin_tone][looks.skin_color]" // the parts carry the body's gender (their data's body_gender)
+	var/icon_key = "[species.get_race_key(src)][looks.skin_color]" // the parts carry the body's gender (their data's body_gender)
 	icon_key += looks.lip_style ? "[looks.lip_style]" : "nolips"
 	var/obj/item/organ/internal/eyes/eyes = eyes_organ(look)
 	if(eyes)
@@ -198,7 +198,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 /// One visible part's share of the body icon key: species, colours, markings, polish and state (1 normal, 2 robotic, 3 necrotic),
 /// transparency, taur clip and digitigrade legs.
 /mob/living/carbon/human/proc/body_part_icon_key(obj/item/organ/external/part)
-	. = "[part.data.get_species_race_key(src)][part.data.body_gender][part.s_tone]"
+	. = "[part.data.get_species_race_key(src)][part.data.body_gender]"
 	if(length(part.s_col) >= 3)
 		. += "[rgb(part.s_col[1],part.s_col[2],part.s_col[3])]"
 	if(part.body_hair && length(part.h_col) >= 3)
