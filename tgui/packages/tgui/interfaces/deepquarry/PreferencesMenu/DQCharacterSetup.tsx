@@ -16,6 +16,7 @@ import {
   ColorToolsContext,
   normalizeHex,
   PALETTE_KEY,
+  colorsInUse,
   paletteFromValue,
 } from './colors';
 import { labelForCategory } from './labels';
@@ -211,6 +212,7 @@ export const DQCharacterSetup = () => {
   }
   const colorTools = {
     palette: paletteFromValue(values[PALETTE_KEY]),
+    inUse: colorsInUse(values),
     clipboard: colorClipboard,
     setClipboard: setColorClipboard,
     references,
