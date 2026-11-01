@@ -1235,6 +1235,7 @@
 #include "../benchmarks/dx_deps.dm"
 #include "../benchmarks/op_resolve.dm"
 #include "../benchmarks/apc_flip.dm"
+#include "../benchmarks/shuttle_landing.dm"
 #include "../benchmarks/join_cost.dm"
 #include "../benchmarks/mapload_init.dm"
 #include "../benchmarks/soak.dm"
