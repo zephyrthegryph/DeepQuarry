@@ -3,7 +3,7 @@
 	var/last_actor_ref
 	var/insert_count = 0
 
-/datum/interim_resleever_actor_probe/proc/on_insert(datum/act/check_insert/check)
+/datum/interim_resleever_actor_probe/proc/on_insert(datum/act/insert/check)
 	SHOULD_NOT_SLEEP(TRUE)
 	last_actor_ref = check.actor ? REF(check.actor) : null
 	insert_count++
