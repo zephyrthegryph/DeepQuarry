@@ -9,9 +9,7 @@
 //   - an item used on the holder with no answer is the attackby action's notice, /datum/notice/attacked_by.
 
 ACTION(move, turf/origin, turf/destination, direction)
-ACTION(z_change, turf/origin, turf/destination)
 ACTION(cross, atom/movable/crosser)
-ACTION(uncross, atom/movable/crosser)
 // bump is published on the BUMPED atom (the door, the pod, the wall): `bumper` walked into it heading `direction`. One emitter,
 // /atom/movable/proc/bump_into() (atoms_movable.dm), which the movement path's Bump() and a mech's push both call.
 ACTION(bump, atom/movable/bumper, atom/bumped, direction)
@@ -35,15 +33,12 @@ ACTION(injure, kind, amount, zone, atom/cause, flags)
 ACTION(body_status, notice = /datum/notice/body_status_changed)
 ACTION(insert, atom/movable/item, slot_id, amount)
 ACTION(remove, atom/movable/item, slot_id)
-// equip and unequip run on the item (holder = the item, target = the wearer), so an item type's extend(/datum/act/equip, needs(...)) is its own
+// equip runs on the item (holder = the item, target = the wearer), so an item type's extend(/datum/act/equip, needs(...)) is its own
 // rule and the body slot's accepts the wearer's (admission.md D2k).
 ACTION(equip, mob/wearer, slot_id)
-ACTION(unequip, mob/wearer, slot_id)
 ACTION(buckle, mob/living/buckled)
 ACTION(unbuckle, mob/living/unbuckled)
 ACTION(climb, atom/climbed)
-ACTION(speak, message, language)
-ACTION(emote, emote_key)
 ACTION(slash, mob/living/slasher, FIXED)
 // Gates the legacy before/ events were: an emit site asks the action first and goes on only when nothing refused or took it over. A caller that has a
 // result to give back (a flag word, a name) reads ACT_REPLY(R) of the hook that took it over. See doc/rewrite/codemod_rules.md.
