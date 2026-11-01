@@ -335,6 +335,8 @@ function normalizeChoices(
 /// inline below the trigger row, scoped to the widget's grid cell — no
 /// full-window Dimmer overlay. The panel has its own scroll for long lists
 /// of thumbnails (hair/marking catalogs run into the hundreds of entries).
+const THUMB_BACKING = '#9a9a9a';
+
 const ThumbgridPicker = ({
   item,
   onPick,
@@ -344,10 +346,6 @@ const ThumbgridPicker = ({
 }) => {
   const choices = normalizeChoices(item.choices);
   const thumbs = item.thumbnails ?? {};
-  // A style that draws nothing shows its name alone.
-  const drawsNothing = ['bald', 'shaved', 'none', ''].includes(
-    String(item.value ?? '').toLowerCase(),
-  );
   // props.open: the caller wants the picker shown at once (an "Add tail" button).
   const [open, setOpen] = useState(!!item.props?.open);
   const [search, setSearch] = useState('');
@@ -371,12 +369,21 @@ const ThumbgridPicker = ({
       <Stack align="center">
         {currentThumb ? (
           <Stack.Item>
-            <ColorizedImage
-              iconRef={currentThumb.icon}
-              iconState={currentThumb.icon_state}
-              color="#ffffff"
-              size={32}
-            />
+            {/* Hair and beard art is near-black (the colour is added in game): it needs a light backing. */}
+            <Box
+              style={{
+                display: 'flex',
+                background: THUMB_BACKING,
+                borderRadius: '0.2em',
+              }}
+            >
+              <ColorizedImage
+                iconRef={currentThumb.icon}
+                iconState={currentThumb.icon_state}
+                color="#ffffff"
+                size={32}
+              />
+            </Box>
           </Stack.Item>
         ) : null}
         <Stack.Item grow style={{ minWidth: 0 }}>

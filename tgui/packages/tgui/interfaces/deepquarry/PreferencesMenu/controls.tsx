@@ -3,18 +3,11 @@
 //   on/off            -> Switch
 //   2-4 short choices -> Segmented
 //   long choice lists -> SearchableDropdown
-//   numbers           -> SliderBox (slider plus a typed box)
+//   numbers           -> SliderBox (one slider showing its value)
 // Every size is in em so the controls follow the theme font and the display scale.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Box,
-  Button,
-  Floating,
-  Input,
-  NumberInput,
-  Slider,
-} from 'tgui-core/components';
+import { Box, Button, Floating, Input, Slider } from 'tgui-core/components';
 
 /// An on/off switch: a pill with a knob, and the state written beside it.
 export const Switch = ({
@@ -281,36 +274,15 @@ export const SliderBox = ({
     }, 150);
   };
   return (
-    <Box style={{ display: 'flex', alignItems: 'center', gap: '0.4em' }}>
-      <Box style={{ flex: 1, minWidth: '4em' }}>
-        <Slider
-          minValue={min}
-          maxValue={max}
-          step={step}
-          value={local}
-          format={() => ''}
-          animated={false}
-          tickWhileDragging
-          onChange={(_, v) => change(v)}
-        />
-      </Box>
-      <Box
-        style={{
-          flex: '0 0 auto',
-          width: '5.5em',
-        }}
-      >
-        <NumberInput
-          fluid
-          value={local}
-          minValue={min}
-          maxValue={max}
-          step={step}
-          format={format}
-          animated={false}
-          onChange={(v) => change(v)}
-        />
-      </Box>
-    </Box>
+    <Slider
+      minValue={min}
+      maxValue={max}
+      step={step}
+      value={local}
+      format={format}
+      animated={false}
+      tickWhileDragging
+      onChange={(_, v) => change(v)}
+    />
   );
 };

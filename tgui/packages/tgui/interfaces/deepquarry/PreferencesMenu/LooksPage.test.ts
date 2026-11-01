@@ -11,7 +11,7 @@ describe('Looks categories', () => {
     expect(regionForHighlight('pref:hair_style_name')).toBe('hair');
     expect(regionForHighlight('editor:body_markings')).toBe('markings');
     expect(regionForHighlight('editor:organs')).toBe('organs');
-    expect(regionForHighlight('pref:digitigrade')).toBe('body');
+    expect(regionForHighlight('pref:digitigrade')).toBe('legs');
     expect(regionForHighlight('group:appearance/wings')).toBe('wings');
     expect(regionForHighlight('pref:something_unclaimed')).toBe('body');
   });
