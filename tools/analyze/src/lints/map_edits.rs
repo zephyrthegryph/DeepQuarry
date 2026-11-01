@@ -18,7 +18,7 @@ static META: Meta = Meta {
     select: CODE_DM,
     scan: ScanKind::Tree,
     policy: Policy::Sites {
-        baseline: "map_edits_baseline.txt",
+        baseline: "tools/ci/map_edits_baseline.txt",
         header: &["# Map edits of a var no type has (tools/analyze/src/lints/map_edits.rs). rule<TAB>file<TAB>text.", "# Shrink-only."],
         banned: &[],
     },
