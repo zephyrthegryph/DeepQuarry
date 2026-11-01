@@ -226,12 +226,26 @@ GLOBAL_COUNTER(every_activation_parks)
 	var/index = 0
 	for(var/datum/centry/C as anything in compiled_entries(T, ENTRY_EVERY))
 		if(!isnull(C.owner))
-			continue // a capability's: its activation arms it
+			// A capability's: its activation arms it. A type-declared activation is lazy (a state key write makes it), so one with no state key has nothing that
+			// would ever make it: it attaches here, or its every() silently never runs (the runs_on_cell drain did not).
+			var/datum/capability/def = every_keyless_capability(T, C)
+			if(def && !activation_find(holder, def.key, holder))
+				activation_attach(holder, def, holder, null, SCOPE_TYPE, null, null)
+			continue
 		index++
 		if(type_every_parkable(holder, C) && !type_every_gate(holder, C))
 			type_every_park(holder, index)
 			continue
 		type_every_schedule(holder, C, index, TRUE)
+
+/// The capability that owns the every() `C`, when it declares no state key (nothing but arming would ever make its type-level activation); else null.
+/proc/every_keyless_capability(datum/type_table/T, datum/centry/C)
+	var/datum/capability/def = T.caps?[C.owner]
+	if(!def)
+		return null
+	if(!GLOB.cap_keys_built)
+		cap_keys_build()
+	return length(GLOB.cap_key_defs["[def.cap_id]"]) ? null : def
 
 /// The first delay of a type-level every() of `interval`, spread: map load arms a type's instances on one tick and an exact interval would make them all
 /// run on one tick for the rest of the round (the burst ticks of an idle station). Intervals under TYPE_EVERY_PHASE_MIN are left alone. The phase
