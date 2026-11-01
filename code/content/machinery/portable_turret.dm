@@ -409,9 +409,18 @@ CAPABILITIES(/obj/machinery/porta_turret)
 	var/turf/here = get_turf(src)
 	if(!here)
 		return FALSE
+	var/here_x = here.x
+	var/here_y = here.y
+	var/here_z = here.z
 	for(var/mob/M as anything in REGISTRY_MEMBERS(REGISTRY_MOBS))
+		// A mob on the map carries its own coordinates: no proc call for the many standing elsewhere. One inside something reads 0 and asks for its turf.
+		var/at_z = M.z
+		if(at_z)
+			if(at_z == here_z && abs(M.x - here_x) <= range && abs(M.y - here_y) <= range)
+				return TRUE
+			continue
 		var/turf/there = get_turf(M)
-		if(there && there.z == here.z && abs(there.x - here.x) <= range && abs(there.y - here.y) <= range)
+		if(there && there.z == here_z && abs(there.x - here_x) <= range && abs(there.y - here_y) <= range)
 			return TRUE
 	return FALSE
 

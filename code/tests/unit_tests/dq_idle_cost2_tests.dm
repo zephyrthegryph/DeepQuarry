@@ -51,3 +51,37 @@
 	TEST_ASSERT(!turret.mob_nearby(0) || person.loc == at, "a mob on the next tile counted as on the turret's own tile")
 	for(var/mob/M in turret.scan_candidates())
 		TEST_ASSERT(turret.mob_nearby(world.view + 1), "the look found [M] but the pre-test did not")
+
+/// The pre-test finds a mob inside something near the turret, reads no mob far away, and what it costs is logged against the walk it replaced.
+/datum/unit_test/dq_turret_mob_nearby_finds_contained_mobs
+
+/datum/unit_test/dq_turret_mob_nearby_finds_contained_mobs/Run()
+	var/turf/at = run_loc_floor_bottom_left
+	var/obj/machinery/porta_turret/turret = allocate(/obj/machinery/porta_turret, at)
+	for(var/mob/M as anything in REGISTRY_MEMBERS(REGISTRY_MOBS))
+		var/turf/there = get_turf(M)
+		TEST_ASSERT(!there || there.z != at.z || abs(there.x - at.x) > 1 || abs(there.y - at.y) > 1, "[M] already stands beside the turret")
+	TEST_ASSERT(!turret.mob_nearby(1), "nobody is beside the turret yet")
+	var/obj/structure/closet/closet = allocate(/obj/structure/closet, get_step(at, EAST))
+	var/mob/living/carbon/human/person = allocate(/mob/living/carbon/human, closet)
+	TEST_ASSERT(!isturf(person.loc), "the mob is not inside the closet")
+	TEST_ASSERT(turret.mob_nearby(1), "a mob in a closet beside the turret was not found")
+	closet.forceMove(locate(at.x + 3, at.y, at.z))
+	TEST_ASSERT(!turret.mob_nearby(1), "a mob whose closet moved away still counted")
+	TEST_ASSERT(turret.mob_nearby(3), "a mob whose closet moved was not found at its new place")
+	var/turf/far = locate(at.x + 5, at.y + 5, at.z)
+	for(var/i in 1 to 1000)
+		allocate(/mob, far)
+	var/mobs = length(REGISTRY_MEMBERS(REGISTRY_MOBS))
+	var/here_z = at.z + 1000 // nothing matches: both walks visit every mob
+	var/stamp = TICK_USAGE_REAL
+	for(var/i in 1 to 200)
+		for(var/mob/M as anything in REGISTRY_MEMBERS(REGISTRY_MOBS))
+			var/turf/there = get_turf(M)
+			if(there && there.z == here_z)
+				break
+	var/old_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp) / 200
+	stamp = TICK_USAGE_REAL
+	for(var/i in 1 to 200)
+		turret.mob_nearby(-1)
+	log_world("TURRET_SCAN_COST mobs=[mobs] walk_get_turf=[old_ms]ms mob_nearby=[TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp) / 200]ms")
