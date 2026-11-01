@@ -2168,6 +2168,30 @@
 
 #endif
 
+/// A blast's worth of damage reports is published across ticks, not in the tick that ends the batch: 2800 reports in one go held a tick for seconds.
+/// A small batch still publishes the moment it ends (dq_contract_damage_batch_aggregates); a large one drains in chunks, stays batched until its last
+/// chunk (so each opportunity window is still evaluated once) and then closes.
+/datum/unit_test/dq_contract_damage_batch_drains_across_ticks
+
+/datum/unit_test/dq_contract_damage_batch_drains_across_ticks/Run()
+	test_driver_begin()
+	var/count = CONTRACT_DAMAGE_FLUSH_INLINE * 4
+	var/list/targets = list()
+	for(var/i in 1 to count)
+		targets += allocate(/obj/structure/girder)
+	var/published_before = SScontracts.events_published
+	SScontracts.begin_contract_batch()
+	for(var/obj/structure/girder/target as anything in targets)
+		SScontracts.queue_damage_report(target, 40)
+	SScontracts.end_contract_batch()
+	TEST_ASSERT(SScontracts.events_published - published_before < count, "a large batch published all [count] reports in the tick that ended it")
+	TEST_ASSERT(SScontracts.is_contract_batching(), "the batch stays open while it drains, so each window is evaluated once at the end")
+	test_time(5 SECONDS)
+	TEST_ASSERT_EQUAL(SScontracts.events_published - published_before, count, "every report was published once it had drained")
+	TEST_ASSERT(!SScontracts.is_contract_batching(), "the batch closed after its last chunk")
+	TEST_ASSERT_EQUAL(length(SScontracts.pending_damage_reports), 0, "no report is left waiting")
+	test_driver_end()
+
 /// Bulk damage in a contract batch publishes one aggregated fact per atom
 /// when the batch ends, not one per hit (init_and_turfs.md §2.1).
 /datum/unit_test/dq_contract_damage_batch_aggregates

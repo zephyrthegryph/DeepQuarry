@@ -21,6 +21,8 @@ SYSTEM_DEF(explosions)
 	VAR_PRIVATE/list/explosion_signals = list()
 	VAR_PRIVATE/list/pending_sound_events = list()
 	VAR_PRIVATE/atmos_topology_batch_open = FALSE
+	/// What closing the last epoch's batches cost, ms: pipenets, power, contracts (see suspend_and_invoke_deferred_subsystems()).
+	VAR_PRIVATE/list/last_commit_ms
 	VAR_PRIVATE/epoch_started_at = 0
 	VAR_PRIVATE/epoch_prepare_ms = 0
 	VAR_PRIVATE/epoch_resolve_ms = 0
@@ -434,9 +436,18 @@ SYSTEM_DEF(explosions)
 	// Resolve all the stuff we put off for after the explosion resolved
 	if(atmos_topology_batch_open)
 		atmos_topology_batch_open = FALSE
+		// Each commit is timed: they run in the tick that ends the epoch, after the profile is logged, and the tick meter attributes none of it.
+		var/stamp = TICK_USAGE_REAL
 		SSair.rust_commit_pending_pipenets()
+		var/pipenets_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp)
+		stamp = TICK_USAGE_REAL
 		vg_power_commit()
+		var/power_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp)
+		stamp = TICK_USAGE_REAL
 		SScontracts?.end_contract_batch()
+		var/contracts_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp)
+		last_commit_ms = list("pipenets" = round(pipenets_ms, 0.1), "power" = round(power_ms, 0.1), "contracts" = round(contracts_ms, 0.1))
+		log_runtime("EXPLOSION_COMMIT: closing the epoch's batches took pipenets [round(pipenets_ms, 0.1)] ms, power [round(power_ms, 0.1)] ms, contracts [round(contracts_ms, 0.1)] ms (epoch: [epoch_submissions] explosions, [epoch_turfs_resolved] turfs, [epoch_atoms_resolved] atoms)")
 	// we've finished. Pause because was have no more work to do.
 	if(!awake) // already asleep
 		return
