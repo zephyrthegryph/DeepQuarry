@@ -19,7 +19,7 @@ use crate::{pat, pat_match};
 const RULES: &[RuleMeta] = &[
     RuleMeta {
         name: "literal_playsound",
-        hint: "play_sfx(atom, SFX_ID) with a SOUND_SET row (code/game/sound_sets.dm), not a literal file",
+        hint: "play_sfx(atom, SFX_ID) with a SOUND_SET row (code/content/game/sound_sets.dm), not a literal file",
     },
     RuleMeta { name: "literal_sound_var", hint: "hold a SOUND_SET id (SFX_*) in sound vars/lists fed to playsound, not a literal file" },
     RuleMeta { name: "sfx_string_key", hint: "pass the SFX_* id, not the bare string key" },
@@ -114,7 +114,7 @@ fn char_find(text: &str, needle: &str) -> isize {
 
 fn scan_file(f: &SourceFile, fed: &HashSet<String>, named: &HashSet<String>, out: &mut Vec<(&'static str, usize)>) {
     let rel = f.rel.as_str();
-    if rel == "code/game/sound_sets.dm" {
+    if rel == "code/content/game/sound_sets.dm" {
         return;
     }
     let lines = f.raw().lines_vec();

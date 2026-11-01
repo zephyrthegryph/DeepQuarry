@@ -55,7 +55,7 @@ pub fn framework_file(rel: &str) -> bool {
 
 /// Test-only code (the unit tests and the test driver): compiled out of production, so never an input of a stat or a look.
 pub fn is_test_code(rel: &str) -> bool {
-    (rel.starts_with("code/tests/") || rel.starts_with("code/modules/unit_tests/")) && !crate::sem::gen::NOT_TEST_ONLY.iter().any(|d| rel.starts_with(d))
+    (rel.starts_with("code/tests/") || rel.starts_with("code/tests/unit_tests/")) && !crate::sem::gen::NOT_TEST_ONLY.iter().any(|d| rel.starts_with(d))
 }
 
 /// Calls whose body is an effect or a diagnostic: the closed walk does not follow them. What they read is not an input of the value

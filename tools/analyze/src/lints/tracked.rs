@@ -87,7 +87,7 @@ static META_TESTS: Meta = Meta {
 };
 
 /// The test and benchmark trees `tracked_tests` reads (and `tracked` leaves to it).
-const TEST_PREFIXES: &[&str] = &["code/modules/unit_tests/", "code/tests/benchmarks/", "code/tests/"];
+const TEST_PREFIXES: &[&str] = &["code/tests/unit_tests/", "code/tests/benchmarks/", "code/tests/"];
 
 /// The procs that construct an instance. A write of the instance's own tracked var there (`v = x`, `src.v = x`, `LAZYADD(v, x)`) is the construction of
 /// the instance, not a change of a live one: nothing reads or watches an object that is still being built, so the write sets the var and publishes

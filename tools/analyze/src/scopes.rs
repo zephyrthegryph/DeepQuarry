@@ -206,7 +206,7 @@ mod tests {
 [allow]
 known = ["x"]
 [lint.sys]
-exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/"]
+exempt_prefixes = ["code/tests/unit_tests/", "code/tests/unit_tests/"]
 [lint.scheduler]
 exempt_contains = ["/unit_tests/"]
 [lint.scheduler.lists]
@@ -214,7 +214,7 @@ core = ["a", "b"]
 "#,
         )
         .unwrap();
-        assert!(s.for_lint("sys/emag", "sys").exempt("code/modules/unit_tests/a.dm"));
+        assert!(s.for_lint("sys/emag", "sys").exempt("code/tests/unit_tests/a.dm"));
         let sc = s.for_lint("scheduler", "");
         assert!(sc.exempt("code/x/unit_tests/a.dm"));
         assert!(!sc.exempt("code/x/a.dm"));

@@ -83,7 +83,7 @@ pub const HANDLE_OK: &[&str] = &[
     "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/",
     "code/engine/refs/containment/",
     "code/datums/containment/stock.dm",
-    "code/modules/unit_tests/",
+    "code/tests/unit_tests/",
     "code/tests/unit_tests/",
 ];
 

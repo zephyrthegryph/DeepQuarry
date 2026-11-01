@@ -11,7 +11,7 @@ writes the boot breakdown (boot.json), sets the phase to idle, resets the kernel
 profile, waits --idle seconds, then saves kmsystems.json, churn.json and the proc profile (mcprof.json, top procs) and sets
 the phase to done. Run `sample` beside it for the per-tick numbers.
 
-`sample` polls the world's localhost diagnostic probes (code/game/world.dm): `kmticks` every 10 s (every tick's usage and
+`sample` polls the world's localhost diagnostic probes (code/content/game/world.dm): `kmticks` every 10 s (every tick's usage and
 maptick from the flight recorder, which holds the last 30 s at 40 fps), `mcdiag` every 60 s, and the process memory of
 DreamDaemon plus the machine load every 30 s. Rows carry the phase named in --phase-file, so one sampler covers a whole
 run while the phase changes. Files written in --out: ticks.csv, proc.jsonl, mcdiag.jsonl. `summary` prints per-phase tick
