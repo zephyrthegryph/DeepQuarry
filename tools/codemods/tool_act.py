@@ -50,7 +50,7 @@ QUALITIES = {
 }
 BANNED = (
     "code/modules/organs/", "code/modules/body/", "code/modules/medical/", "code/datums/om/",
-    "code/modules/atmospherics/", "code/ATMOSPHERICS/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/modules/unit_tests/", "code/tests/",
+    "code/modules/atmospherics/", "code/ATMOSPHERICS/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/tests/unit_tests/", "code/tests/",
     "code/engine/", "code/_onclick/",
 )
 DEF_RE = re.compile(r"^(/[\w/]+?)/(" + "|".join(QUALITIES) + r")_act\((.*)\)\s*(//.*)?$")
@@ -289,7 +289,7 @@ def main(argv):
                 continue
             if rtype and not (rtype == root.type or is_ancestor(root.type, rtype) or is_ancestor(rtype, root.type)):
                 continue
-            if rel(p).startswith(("code/modules/unit_tests/", "code/tests/")) and rtype:
+            if rel(p).startswith(("code/tests/unit_tests/", "code/tests/")) and rtype:
                 test_callers.append((root.type, q, rel(p), i + 1))
                 continue
             problems.append("external_call")

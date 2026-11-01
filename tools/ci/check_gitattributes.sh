@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Every pattern in .gitattributes must name something that exists, and every merge= driver it names must be one the merge tools supply.
-# A file move (the 12b wave moved code/modules/unit_tests/_unit_tests.dm) used to leave its `merge=union` line dead without a word: git
+# A file move (the 12b wave moved code/tests/unit_tests/_unit_tests.dm) used to leave its `merge=union` line dead without a word: git
 # matched nothing, every parallel lane that added a test conflicted, and trains bounced for it. The generated manifest and the
 # baselines have the same exposure.
 #

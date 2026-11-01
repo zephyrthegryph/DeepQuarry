@@ -5,7 +5,7 @@
 // (emitter_step()): bursts of burst_shots shots burst_delay apart, then a random min_burst_delay..max_burst_delay pause. Steel sheets repair it,
 // an anomaly scanner switches it to anomalous particles, and a multitool picks the particle.
 //
-// SAFETY: the shot energy and the burst pattern are pinned in code/modules/unit_tests/dq_power_plants_behaviour.dm (emitter_*).
+// SAFETY: the shot energy and the burst pattern are pinned in code/tests/unit_tests/dq_power_plants_behaviour.dm (emitter_*).
 
 MSG_DEF_SELF(emitter/unwelded, "It needs to be firmly secured to the floor first.")
 MSG_DEF_SELF(emitter/controls_locked, "The controls are locked!")

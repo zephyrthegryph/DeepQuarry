@@ -1,6 +1,6 @@
 // The fixtures of the phase-2 engine pieces: the hit bridge (receive_damage() runs the hit action of the engine, code/game/atom/damage_packet.dm) and
 // ruined() in a state-graph dismantle (code/engine/parts/graph_ops.dm). Test-only types, compiled under UNIT_TESTS only
-// (code/modules/unit_tests/dq_p2_engine_tests.dm drives them).
+// (code/tests/unit_tests/dq_p2_engine_tests.dm drives them).
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 

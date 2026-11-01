@@ -49,7 +49,7 @@
   },
   "external_runtime_inputs": [
     {
-      "path": "code/modules/unit_tests/data/dq_constraint_parity.json",
+      "path": "code/tests/unit_tests/data/dq_constraint_parity.json",
       "sha256": "e8543f5ed9dac113f6750368d537409069320f055eebdce408db5513ce971cb4",
       "bytes": 692309
     }

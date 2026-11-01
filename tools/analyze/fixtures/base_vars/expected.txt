@@ -25,7 +25,7 @@ base_var	code/modules/bv/hot.dm	4
 base_var	code/modules/bv/relations.dm	4
 base_var	code/modules/bv/relations.dm	5
 base_var	code/modules/tgs/x.dm	2
-base_var	code/modules/unit_tests/t.dm	2
+base_var	code/tests/unit_tests/t.dm	2
 hot_home	tools/ci/lint_scopes.toml	1
 hot_home	tools/ci/lint_scopes.toml	1
 hot_home	tools/ci/lint_scopes.toml	1

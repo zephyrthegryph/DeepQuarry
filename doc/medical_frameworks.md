@@ -420,8 +420,8 @@ code/datums/clocks/clocked.dm            /atom/movable clocked API, holder_clock
 code/datums/clocks/providers.dm          preserver/stasis provider mixin: clock_speed var + provided_clock()
 code/modules/body/clock.dm               body clock, life_advance(), sync_clock_speed()
 code/modules/organs/organ_time.dm        organ on_settle(), thresholds, life_tick() base
-code/modules/unit_tests/dq_clock_tests.dm
-code/modules/unit_tests/dq_body_time_tests.dm
+code/tests/unit_tests/dq_clock_tests.dm
+code/tests/unit_tests/dq_body_time_tests.dm
 ```
 Include order in `deepquarry.dme`: `clocks.dm` in `__defines`, then `code/datums/clocks/*`
 before `code/modules/body/*`.
@@ -950,7 +950,7 @@ code/modules/body/parts/attach.dm       on_attached/on_detached, adopt_subtree/r
 code/modules/body/parts/queries.dm      parts(), part(), organs(), organ(), embedded_objects(), foreign_objects()
 code/domains/body/parts/verify.dm       verify_body_tree(), used by tests and the debug verb
 code/domains/body/revival.dm            return_from_death()
-code/modules/unit_tests/dq_part_lifecycle_tests.dm
+code/tests/unit_tests/dq_part_lifecycle_tests.dm
 tools/ci/check_part_moves.py (+ tools/ci/part_moves_allowlist.txt)
 ```
 
@@ -975,7 +975,7 @@ exist.
 
 ### 2.10 The lifecycle test harness
 
-`code/modules/unit_tests/dq_part_lifecycle_tests.dm` is a matrix test.
+`code/tests/unit_tests/dq_part_lifecycle_tests.dm` is a matrix test.
 
 **Part kinds:** limb with children (arm with hand), leaf limb (hand), internal organ (liver),
 brain holding a mind (a test mind with a key), implant (tracking), NIF, embedded shard, cavity
@@ -1548,8 +1548,8 @@ code/modules/body/exposure/effects/*.dm        /datum/reagent_effect family
 code/modules/body/exposure/adapter.dm          phase A adapter (deleted in step 9)
 code/modules/medical/conditions/pharmacology/  overdose, toxicity, allergic_reaction, withdrawal afflictions (existing folder)
 tools/dq_reagent_codemod/                      codemod + parity baseline recorder
-code/modules/unit_tests/dq_exposure_tests.dm
-code/modules/unit_tests/dq_reagent_parity_tests.dm (generated)
+code/tests/unit_tests/dq_exposure_tests.dm
+code/tests/unit_tests/dq_reagent_parity_tests.dm (generated)
 ```
 
 ### 4.9 Slices

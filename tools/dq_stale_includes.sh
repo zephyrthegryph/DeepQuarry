@@ -2,7 +2,7 @@
 # Sourced by tools/dq_merge_batch.sh and tools/dq_merge_master.sh.
 # dq_drop_stale_includes <file> <dir the includes are relative to> <label>: a union-merged include list can bring back an include of a
 # file one side deleted (28 October: _unit_tests.dm kept dq_reagents_start_snapshot.dm after tests/cut-pins removed it; gr/bumped-notices,
-# merged by hand, kept code/modules/unit_tests/... includes after the tests-wave1 move, and DreamChecker failed on them). Every
+# merged by hand, kept code/tests/unit_tests/... includes after the tests-wave1 move, and DreamChecker failed on them). Every
 # `#include "x"` whose file does not exist (and is not a gitignored generated file) is dropped and REPORTED on stderr (never silently), and the file is staged.
 # Sets DQ_STALE_DROPPED to the number dropped. Returns 1 only when the file could not be rewritten.
 dq_drop_stale_includes() {

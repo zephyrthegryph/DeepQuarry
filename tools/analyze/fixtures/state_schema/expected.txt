@@ -46,4 +46,4 @@ schema	code/modules/schema/types.dm	85
 schema	code/modules/schema/types.dm	89
 schema	code/modules/schema/types.dm	90
 schema	code/modules/schema/types.dm	95
-schema	code/modules/unit_tests/t.dm	3
+schema	code/tests/unit_tests/t.dm	3

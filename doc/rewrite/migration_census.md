@@ -98,7 +98,7 @@ off limits here) and the gitignored generated `verdigris/` bindings (their gener
     `modules/mob/living/carbon/shock.dm`, `modules/mob/living/default_language.dm`, `modules/mob/living/life/life_om.dm`, `modules/mob/mob_defines.dm` (2);
     `list_init`: `modules/projectiles/targeting/targeting_mob.dm`, `modules/refinery/core/industrial_reagent_grinder.dm`.
   - `sys/dx_review`: `modules/power/apc.dm` (`manual_push`), `modules/mob/living/silicon/robot/robot_ui_module.dm` (2 `output_side_effect`).
-  - `lane_ready_global.txt` names `code/modules/unit_tests/unit_test.dm`: a move needs the path updated there (a one-line change in its move commit).
+  - `lane_ready_global.txt` names `code/tests/unit_tests/unit_test.dm`: a move needs the path updated there (a one-line change in its move commit).
 
 **systemowner (20 left, was 35).** Files defining `/datum/system/X` procs apart from the `SYSTEM_DEF(X)` file: `ATMOSPHERICS/{air_api,rust_pipenets,xgm_compat}.dm`,
 `controllers/subsystems/{garbage,job,lighting,ticker,ticker_roundend,ticker_roundstats}_api.dm`, `game/objects/items/devices/radio/radio_api.dm`,

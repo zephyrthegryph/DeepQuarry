@@ -675,7 +675,7 @@ fi
 gate_diff_args=()
 if [ "$snapshot_output" -eq 1 ]; then
 	# Lane-ready commits successful pin output itself; every other tracked edit remains forbidden.
-	gate_diff_args=(-- . ":!code/modules/unit_tests/snapshots/")
+	gate_diff_args=(-- . ":!code/tests/unit_tests/snapshots/")
 fi
 if [ "$(git rev-parse HEAD)" != "$sha" ] || ! git diff --quiet "${gate_diff_args[@]}" || ! git diff --cached --quiet; then
 	echo "dq_merge_gates: the tree changed during the gates; not stamping" >&2

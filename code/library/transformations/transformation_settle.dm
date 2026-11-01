@@ -3,7 +3,7 @@
 // A subject's reagents settle to a fixed point: gather the rules that are candidates for what the holder holds (the bucket of each reagent it contains,
 // in the holder's own order, each rule once), test them cheap to expensive, step each one that holds, and repeat until a pass fires nothing. Then every rule
 // that fired is announced once (its message and sound, a /datum/notice/transformed). The loop, the order and the arithmetic are chemistry's, ported from
-// /datum/reagents/proc/handle_reactions() and /datum/decl/chemical_reaction/proc/react_step(); the pins of code/modules/unit_tests/dq_xform_pins.dm hold the
+// /datum/reagents/proc/handle_reactions() and /datum/decl/chemical_reaction/proc/react_step(); the pins of code/tests/unit_tests/dq_xform_pins.dm hold the
 // outcome identical.
 //
 // Debug and audit: GLOB.xform_trace logs every step (rule, subject, extent, product) to the world log; a settle that hits XFORM_MAX_PASSES is logged

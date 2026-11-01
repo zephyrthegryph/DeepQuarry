@@ -10,7 +10,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
-FOCUS_FILE="code/modules/unit_tests/dq_focus.dm"
+FOCUS_FILE="code/tests/unit_tests/dq_focus.dm"
 backup="$(mktemp)"
 cp "$FOCUS_FILE" "$backup"
 restore() { cp "$backup" "$FOCUS_FILE"; rm -f "$backup"; }

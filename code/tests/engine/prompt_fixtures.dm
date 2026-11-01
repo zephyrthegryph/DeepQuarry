@@ -1,5 +1,5 @@
 // Fixtures of the interruption policy of an open prompt (final_api.html section 9, "Interruption and flows"). Compiled under UNIT_TESTS only;
-// code/modules/unit_tests/dq_prompt_interrupt_tests.dm drives them.
+// code/tests/unit_tests/dq_prompt_interrupt_tests.dm drives them.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 

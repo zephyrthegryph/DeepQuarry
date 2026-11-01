@@ -28,8 +28,8 @@ class AdmissionTests(unittest.TestCase):
 
     def test_probe_and_runtime_parameters_match_actual_game_eligibility_contract(self):
         checkout = Path(__file__).resolve().parents[5]
-        eligibility = (checkout / 'code/modules/unit_tests/unit_test.dm').read_text()
-        definitions = (checkout / 'code/modules/unit_tests/_unit_tests.dm').read_text()
+        eligibility = (checkout / 'code/tests/unit_tests/unit_test.dm').read_text()
+        definitions = (checkout / 'code/tests/unit_tests/_unit_tests.dm').read_text()
         probe = Path(__file__).with_name('probe.dm').read_text()
         runner = Path(__file__).with_name('run.py').read_text()
         self.assertIn('if(ispath(test_path, /datum/unit_test/focus_only))', eligibility)

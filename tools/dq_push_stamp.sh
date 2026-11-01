@@ -44,7 +44,7 @@ exempt_path() {
 # Files regenerated from the tree after a merge: a difference there is not a difference.
 regenerated() {
 	case "$1" in
-		code/modules/unit_tests/snapshots/op_bases/*) return 0 ;;
+		code/tests/unit_tests/snapshots/op_bases/*) return 0 ;;
 	esac
 	return 1
 }

@@ -323,7 +323,7 @@ lint is a hard ban). Converting a machine:
 ## 11. Lifecycle forms: what replaces Initialize() overrides, qdel(src) and usr
 
 Ten declaration forms (`code/engine/lifeforms/`, `doc/rewrite/final_api.html` section 6 "Lifecycle forms", one test file each:
-`code/modules/unit_tests/dq_lifeform_*_tests.dm`) take over what an `Initialize()` override, a `qdel(src)` or a read of `usr` did by hand. The
+`code/tests/unit_tests/dq_lifeform_*_tests.dm`) take over what an `Initialize()` override, a `qdel(src)` or a read of `usr` did by hand. The
 codemods of `tools/codemods/` (`init_overrides.py`, `qdel_src.py`, `usr_sites.py`) do the mechanical half; the table says what to write by hand.
 
 | Old shape | Write instead |

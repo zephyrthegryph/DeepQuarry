@@ -4,7 +4,7 @@
 //! `set category = "X"` and the category argument of `DEBUG_VERB` / `ADMIN_VERB` /
 //! `ADMIN_VERB_AND_CONTEXT_MENU` are counted, and so is a define in verb_categories.dm that repeats
 //! another define's string. `#define` lines (outside the ADMIN_VERB/DEBUG_VERB ones),
-//! `code/modules/unit_tests` and `// ALLOW(verb_category): <reason>` lines are skipped.
+//! `code/tests/unit_tests` and `// ALLOW(verb_category): <reason>` lines are skipped.
 //!
 //! Quirks kept from the Python: the defines file itself is only scanned for duplicates (never for raw
 //! categories); the ALLOW lookup indexes the raw lines with the line number of the `code_only` view

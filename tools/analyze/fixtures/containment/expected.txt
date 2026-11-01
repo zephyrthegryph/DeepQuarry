@@ -42,5 +42,5 @@ raw_writes	code/modules/foo/drift.dm	5
 raw_writes	code/modules/foo/drift.dm	7
 raw_writes	code/modules/sp ace/s p.dm	2
 raw_writes	code/modules/sp ace/s p.dm	3
-raw_writes	code/modules/unit_tests/t.dm	2
-raw_writes	code/modules/unit_tests/t.dm	3
+raw_writes	code/tests/unit_tests/t.dm	2
+raw_writes	code/tests/unit_tests/t.dm	3

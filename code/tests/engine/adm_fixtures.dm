@@ -1,4 +1,4 @@
-// Fixtures for the slot admission tests (code/modules/unit_tests/dq_slot_admission_tests.dm): slots with a mixed accepts, a fits, and each replace policy.
+// Fixtures for the slot admission tests (code/tests/unit_tests/dq_slot_admission_tests.dm): slots with a mixed accepts, a fits, and each replace policy.
 
 /obj/adm_fixture
 	name = "admission holder"

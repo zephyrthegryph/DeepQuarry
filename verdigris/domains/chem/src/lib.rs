@@ -9,7 +9,7 @@
 //!   whether (and how hard) it overdoses.
 //!
 //! The maths is `f32`, in the order DM did it, so the numbers are DM's to the last bit (pinned by
-//! `code/modules/unit_tests/dq_chem_math_pins.dm`, recorded on the DM implementation).
+//! `code/tests/unit_tests/dq_chem_math_pins.dm`, recorded on the DM implementation).
 
 pub mod metabolism;
 pub mod reaction;

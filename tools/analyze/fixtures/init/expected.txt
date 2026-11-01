@@ -74,8 +74,8 @@ table_init_overrides	code/modules/init/table.dm	40
 table_init_overrides	code/modules/init/table.dm	41
 table_init_overrides	code/modules/init/table.dm	47
 table_init_overrides	code/modules/init/table.dm	48
-table_init_overrides	code/modules/unit_tests/u.dm	3
-table_init_overrides	code/modules/unit_tests/u.dm	9
+table_init_overrides	code/tests/unit_tests/u.dm	3
+table_init_overrides	code/tests/unit_tests/u.dm	9
 table_init_overrides	maps/m.dm	3
 turf_on_materialize	code/modules/init/.dot.dm	5
 turf_on_materialize	code/modules/init/crlf.dm	5

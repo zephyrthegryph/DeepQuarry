@@ -104,7 +104,7 @@ this branch. Items marked OPEN are not.
     `crates/*` workspace glob then fails with "failed to read .../Cargo.toml". `tools/dmb` must be made exactly the takeover tree
     after a merge with master's old `tools/dmb`.
 13. **`unit_test.dm` / `error_handler.dm` coupling (low).** The native build tooling needs the runtime-event and inventory hooks in
-    `code/modules/unit_tests/unit_test.dm`; they merge-conflict with every master change to that file. They were re-applied by
+    `code/tests/unit_tests/unit_test.dm`; they merge-conflict with every master change to that file. They were re-applied by
     hand onto master's version (E0 tier and `want_e0` kept).
 14. **Removed.** The old `dmb-check` target and `DQ_DMB_PRECHECK` (crate `dm-compile` no longer exists in `tools/dmb`) and
     `tools/dmb/precheck_known.txt`.

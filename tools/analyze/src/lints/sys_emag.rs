@@ -15,7 +15,7 @@ const RULES: &[RuleMeta] = &[RuleMeta {
     hint: "DECLARE_EMAG(type, PROC_REF(on_emag), msg) + emag_target() (code/defines/engine/sys_emag.dm, doc/rewrite/systems.md section 13)",
 }];
 
-const CARD: &str = "code/game/objects/items/weapons/id cards/cards.dm";
+const CARD: &str = "code/content/items/weapons/id cards/cards.dm";
 
 fn scan_file(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
     for (number, line) in f.raw().numbered() {

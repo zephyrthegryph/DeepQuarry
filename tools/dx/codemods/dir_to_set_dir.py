@@ -16,7 +16,7 @@ import subprocess
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
-SKIP = ("code/game/machinery/", "code/modules/power/", "code/modules/unit_tests/")
+SKIP = ("code/game/machinery/", "code/modules/power/", "code/tests/unit_tests/")
 ATOM_HOLDERS = {"mob", "user", "host", "H", "AM", "shadekin", "result", "new_pad", "plant", "frame", "WD", "bottom", "gargoyle", "P2", "door_bottom", "placement", "new_holder"}
 WRITE = re.compile(r"^(?P<ind>\s*)(?:(?P<holder>[A-Za-z_][\w\.]*)\.)?dir\s*(?P<op>\|=|&=|\^=|\+=|-=|=)\s*(?P<val>[^=].*?)\s*(?P<cmt>//.*)?$")
 
