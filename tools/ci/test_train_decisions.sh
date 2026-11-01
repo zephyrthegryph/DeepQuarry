@@ -204,6 +204,24 @@ mh_run() { # <from> <to>
 mh_docs="$(mh_run origin/master origin/lane/d)"; mh_code="$(mh_run origin/master origin/lane/a)"
 check "master changes that touch no heavy path are not an interaction (moved_heavy is empty for docs, names code)" '[ -z "$mh_docs" ] && [ "$mh_code" = "code/a.dm" ]'
 
+# note_setup_errors: a lane whose batch setup failed twice is retried DQ_TRAIN_SETUP_ERROR_MAX times, then bounced (30 cycles / 90 min, 31 October)
+se_run() { # <output file> <lanes...>: prints the lanes to retry; the bounce is recorded in $dd/state/bounced.txt
+	( set +u; export DQ_TRAIN_STATE="$dd/state" DQ_TRAIN_WT="$dd/no-wt" DQ_TRAIN_ORIGIN_REPO="$here" DQ_TRAIN_NO_START=1
+	  . "$here/tools/dq_train.sh" __lib; mkdir -p "$LOGS" "$Q"
+	  bounce() { echo "$1" >>"$dd/state/bounced.txt"; }
+	  note_setup_errors "$@" ) 2>/dev/null
+}
+mkdir -p "$dd/state/queue"; printf 'seq=1\nbranch=lane/s\ntip=abc\n' >"$dd/state/queue/lane_s.q"
+printf 'dq_merge_gates: INFRA: gen failed twice\n# SETUP ERROR twice: no lane is judged; [lane/s] are deferred to the next run\n' >"$dd/se.out"
+printf 'BATCH_DEFERRED: lane/s\n' >"$dd/dl.out"
+se1="$(se_run "$dd/se.out" lane/s)"
+check "the first setup-error cycle retries the lane and does not bounce it" '[ "$se1" = "lane/s " ] && [ ! -s "$dd/state/bounced.txt" ] && grep -q "^setup_errors=1" "$dd/state/queue/lane_s.q"'
+se2="$(se_run "$dd/se.out" lane/s)"
+check "the second setup-error cycle bounces it and retries nothing" '[ -z "${se2// /}" ] && grep -qx "lane/s" "$dd/state/bounced.txt"'
+se3="$(se_run "$dd/dl.out" lane/s)"
+check "a deferral with no setup error is passed through untouched (a deadline bisect)" '[ "$se3" = "lane/s " ]'
+
+check "the precheck conflict probe exempts the unit-test include list at its current path (a conflict there is the union driver's, not a bounce)" 'grep -q "code/(modules|tests)/unit_tests/_unit_tests" "$here/tools/dq_train.sh"'
 # est_secs: an estimator that cannot run is loud and never 9999 (that value rejected every batch candidate past the first, 30-31 October)
 es_run() { # <runtime override or empty> test...: prints est_secs' answer; the log line lands in $dd/state/log/train.log
 	local ov="$1"; shift
