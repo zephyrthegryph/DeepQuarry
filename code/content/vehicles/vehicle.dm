@@ -206,9 +206,6 @@ CAPABILITIES(/obj/vehicle)
 		turn_off()
 
 // For downstream compatibility (in particular Paradise)
-/obj/vehicle/proc/handle_rotation()
-	return
-
 //-------------------------------------------
 // Vehicle procs
 //-------------------------------------------

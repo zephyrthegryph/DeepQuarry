@@ -229,9 +229,6 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX
 	if(loc && loc.density)
 		loc.blob_act(src) //don't ask how a wall got on top of the core, just eat it
 
-/obj/structure/blob/proc/blob_glow_animation()
-	flick("[icon_state]_glow", src)
-
 /obj/structure/blob/proc/blob_attack_animation(atom/A = null, controller) //visually attacks an atom
 	var/obj/effect/temporary_effect/blob_attack/O = new /obj/effect/temporary_effect/blob_attack(src.loc)
 	O.set_dir(dir)

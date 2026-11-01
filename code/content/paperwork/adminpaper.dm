@@ -207,9 +207,6 @@ CAPABILITIES(/obj/item/paper/admin)
 		updateinfolinks()
 	update_space(t)
 
-/obj/item/paper/admin/proc/updateDisplay()
-	SStgui.update_uis(src)
-
 /// The signature the admin gave for the [sign] tags of their last write.
 /obj/item/paper/admin/get_signature(obj/item/pen/P, mob/user)
 	return admin_signature || "Anonymous"

@@ -138,9 +138,6 @@
 // Depending on certain circumstances, the shuttles can fail.
 // What happens depends on where the shuttle is.  If it's in space, it just can't move until its fixed.
 // If it's flying in Sif, however, things get interesting.
-/datum/shuttle_destination/proc/flight_failure()
-	return
-
 // Returns a /datum/shuttle_route connecting this destination to origin, if one exists.
 /datum/shuttle_destination/proc/get_route_to(origin_type)
 	for(var/datum/shuttle_route/R in routes)

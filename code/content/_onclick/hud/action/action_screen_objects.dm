@@ -250,17 +250,6 @@ CAPABILITIES(/atom/movable/screen/movable/action_button)
 	global.observe(take_from, /datum/notice/mob_granted_action, src, then(PROC_REF(on_observing_action_granted)))
 	global.observe(take_from, /datum/notice/mob_removed_action, src, then(PROC_REF(on_observing_action_removed)))
 
-/**
- * Hide another mob's action buttons from this mob
- *
- * Used for observers viewing another mob's screen
- */
-/mob/proc/hide_other_mob_action_buttons(mob/take_from)
-	for(var/datum/action/action as anything in take_from.actions)
-		action.HideFrom(src)
-	unobserve(take_from, /datum/notice/mob_granted_action, src)
-	unobserve(take_from, /datum/notice/mob_removed_action, src)
-
 /// Hook for /datum/notice/mob_granted_action - If we're viewing another mob's action buttons,
 /// we need to update with any newly added buttons granted to the mob.
 /mob/proc/on_observing_action_granted(datum/act/notice/A)
@@ -511,3 +500,8 @@ CAPABILITIES(/atom/movable/screen/action_landing)
 /atom/movable/screen/action_landing/proc/owner() as /datum/action_group
 	return owner
 
+/mob/proc/hide_other_mob_action_buttons(mob/take_from)
+	for(var/datum/action/action as anything in take_from.actions)
+		action.HideFrom(src)
+	unobserve(take_from, /datum/notice/mob_granted_action, src)
+	unobserve(take_from, /datum/notice/mob_removed_action, src)

@@ -212,20 +212,6 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 			return TRUE
 	return FALSE
 
-/// One network-owned leak transaction. Individual pipe objects merely publish
-/// topology/settings changes; the pipenet processes all open faces together.
-/obj/machinery/atmospherics/pipe/proc/process_network_leak()
-	if(!leaking || !parent || !loc)
-		return FALSE
-	var/datum/gas_mixture/environment = loc.return_air()
-	if(!environment)
-		return FALSE
-	parent.leak_into(loc, volume)
-	if(!leak_needs_equalization(parent.air, environment))
-		hibernate_stable_leak()
-		return FALSE
-	return TRUE
-
 /obj/machinery/atmospherics/pipe/proc/release_sorbed_material_gas(datum/gas_mixture/release_target)
 	if(material_sorbed_moles <= 0)
 		return

@@ -1279,29 +1279,6 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 				ChangeArea(T, space_area)
 		CHECK_TICK
 
-/datum/generated_station_materializer/proc/carve_departments()
-	for(var/datum/generated_station_layout_node/node in spec().layout_nodes)
-		var/area/generated_station/department_area = result.department_areas?[node.id]
-		for(var/x in node.x to node.x + node.width - 1)
-			for(var/y in node.y to node.y + node.height - 1)
-				var/turf/T = world_turf(x, y)
-				if(!T)
-					continue
-				var/on_edge = x == node.x || y == node.y || x == node.x + node.width - 1 || y == node.y + node.height - 1
-				var/floor_type = /turf/simulated/floor/tiled
-				if(spec().architecture_style == "sterile")
-					floor_type = /turf/simulated/floor/tiled/eris/white
-				else if(spec().architecture_style == "fortified")
-					floor_type = /turf/simulated/floor/tiled/eris/steel/techfloor
-				var/wall_type = spec().architecture_style == "fortified" ? /turf/simulated/wall/r_wall : /turf/simulated/wall
-				T.ChangeTurf(on_edge ? wall_type : floor_type, tell_universe = FALSE)
-				ChangeArea(T, department_area)
-				if(on_edge)
-					result.wall_count++
-				else
-					result.floor_count++
-		CHECK_TICK
-
 /datum/generated_station_materializer/proc/node_at(local_x, local_y)
 	for(var/datum/generated_station_layout_node/node in spec().layout_nodes)
 		if(local_x >= node.x && local_x < node.x + node.width && local_y >= node.y && local_y < node.y + node.height)
@@ -1321,68 +1298,6 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 		T.ChangeTurf(/turf/simulated/floor/tiled, tell_universe = FALSE)
 		ChangeArea(T, transit_area())
 		result.corridor_count++
-
-/datum/generated_station_materializer/proc/carve_corridors()
-	for(var/datum/generated_station_layout_edge/edge in spec().layout_edges)
-		if(edge.kind != GENERATED_STATION_EDGE_TRANSIT)
-			continue
-		var/corridor_width = edge.corridor_class == "primary" ? 3 : 2
-		for(var/i in 1 to length(edge.path))
-			var/list/point = edge.path[i]
-			carve_corridor_tile(point[1], point[2])
-			var/dx = 0
-			var/dy = 0
-			if(i < length(edge.path))
-				var/list/next = edge.path[i + 1]
-				dx = next[1] - point[1]
-				dy = next[2] - point[2]
-			else if(i > 1)
-				var/list/previous = edge.path[i - 1]
-				dx = point[1] - previous[1]
-				dy = point[2] - previous[2]
-			if(dx)
-				carve_corridor_tile(point[1], point[2] + 1)
-				if(corridor_width >= 3)
-					carve_corridor_tile(point[1], point[2] - 1)
-			else if(dy)
-				carve_corridor_tile(point[1] + 1, point[2])
-				if(corridor_width >= 3)
-					carve_corridor_tile(point[1] - 1, point[2])
-		CHECK_TICK
-
-/// Gives every exposed transit floor a real hull wall instead of leaving it open to space.
-/datum/generated_station_materializer/proc/enclose_corridors()
-	var/list/to_wall = list()
-	for(var/turf/simulated/floor/T in transit_area())
-		for(var/direction in GLOB.cardinal)
-			var/turf/neighbor = get_step(T, direction)
-			if(istype(neighbor, /turf/space))
-				to_wall |= neighbor
-	for(var/turf/T as anything in to_wall)
-		T.ChangeTurf(spec().architecture_style == "fortified" ? /turf/simulated/wall/r_wall : /turf/simulated/wall, tell_universe = FALSE)
-		ChangeArea(T, transit_area())
-		result.wall_count++
-
-/// Returns whether a department hull tile has clear room and transit approaches.
-/datum/generated_station_materializer/proc/is_interface_door_candidate(datum/generated_station_layout_node/node, local_x, local_y, outward)
-	var/turf/T = world_turf(local_x, local_y)
-	var/turf/outside = get_step(T, outward)
-	var/turf/inside = get_step(T, turn(outward, 180))
-	return istype(outside, /turf/simulated/floor) && get_area(outside) == transit_area() && istype(inside, /turf/simulated/floor) && node_at(local_x, local_y) == node
-
-/// Converts the center of one continuous corridor frontage into an intentional entrance.
-/datum/generated_station_materializer/proc/place_interface_door_run(datum/generated_station_layout_node/node, datum/generated_station_department_instance/department, list/run, outward)
-	if(!length(run))
-		return
-	var/list/point = run[CEILING(length(run) / 2, 1)]
-	var/turf/T = world_turf(point[1], point[2])
-	T.ChangeTurf(/turf/simulated/floor/tiled, tell_universe = FALSE)
-	ChangeArea(T, result.department_areas?[node.id])
-	var/obj/machinery/door/airlock/airlock = new(T)
-	airlock.set_dir((outward in list(EAST, WEST)) ? EAST : NORTH)
-	configure_department_airlock(airlock, department)
-	rel_add(result, nameof(result.doors), airlock)
-	result.door_count++
 
 /// Applies the generated station's department access policy to an entrance.
 /datum/generated_station_materializer/proc/configure_department_airlock(obj/machinery/door/airlock/airlock, datum/generated_station_department_instance/department)

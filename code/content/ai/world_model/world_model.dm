@@ -79,12 +79,6 @@
 		recent_damage_events.Cut(1, 2)
 	UNSETEMPTY(recent_damage_events)
 
-/datum/world_model/proc/record_sound(turf/T, type)
-	if(!T)
-		return
-	LAZYINITLIST(heard_sounds)
-	heard_sounds += list(list(T, type, world.time))
-
 /datum/world_model/proc/trim_old_sounds()
 	if(!LAZYLEN(heard_sounds))
 		return
@@ -102,16 +96,6 @@
 
 CAPABILITIES(/datum/known_hazard)
 	ref_one(nameof(hazard), /atom)
-
-/datum/world_model/proc/record_hazard(atom/hazard, severity = 1, duration = 5 SECONDS)
-	if(!hazard)
-		return
-	var/datum/known_hazard/known = new
-	rel_set(known, nameof(known.hazard), hazard)
-	known.severity = severity
-	known.duration = duration
-	STAMP(known, noted_at, CLOCK_WORLD)
-	rel_add(src, nameof(known_hazards), known)
 
 /datum/world_model/proc/trim_old_hazards()
 	if(!LAZYLEN(known_hazards))

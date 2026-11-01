@@ -392,9 +392,5 @@ CAPABILITIES(/datum/transhuman/body_record)
 
 	return H
 
-/datum/transhuman/body_record/proc/revive_promethean(mob/living/carbon/human/H)
-	// TODO - See note in code\modules\organs\internal\brain.dm for slime brains
-	return
-
 CAPABILITIES(/datum/transhuman/mind_record)
 	ref_one(nameof(mind_ref))

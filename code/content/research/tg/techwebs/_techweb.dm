@@ -121,33 +121,15 @@ CAPABILITIES(/datum/techweb)
 		if((i in SSresearch.point_types) && pointlist[i] > 0)
 			set_research_points_at(i, FLOOR(LAZYACCESS(research_points, i) + pointlist[i], 0.1))
 
-/datum/techweb/proc/add_points_all(amount)
-	var/list/l = SSresearch.point_types.Copy()
-	for(var/i in l)
-		l[i] = amount
-	add_point_list(l)
-
 /datum/techweb/proc/remove_point_list(list/pointlist)
 	for(var/i in pointlist)
 		if((i in SSresearch.point_types) && pointlist[i] > 0)
 			set_research_points_at(i, FLOOR(max(0, LAZYACCESS(research_points, i) - pointlist[i]), 0.1))
 
-/datum/techweb/proc/remove_points_all(amount)
-	var/list/l = SSresearch.point_types.Copy()
-	for(var/i in l)
-		l[i] = amount
-	remove_point_list(l)
-
 /datum/techweb/proc/modify_point_list(list/pointlist)
 	for(var/i in pointlist)
 		if((i in SSresearch.point_types) && pointlist[i] != 0)
 			set_research_points_at(i, FLOOR(max(0, LAZYACCESS(research_points, i) + pointlist[i]), 0.1))
-
-/datum/techweb/proc/modify_points_all(amount)
-	var/list/l = SSresearch.point_types.Copy()
-	for(var/i in l)
-		l[i] = amount
-	modify_point_list(l)
 
 /datum/techweb/proc/copy_research_to(datum/techweb/receiver) //Adds any missing research to theirs.
 	for(var/i in receiver.hidden_nodes)
@@ -179,24 +161,6 @@ CAPABILITIES(/datum/techweb)
 
 /datum/techweb/proc/get_researched_nodes()
 	return (researched_nodes || list()) - hidden_nodes
-
-/datum/techweb/proc/add_point_type(type, amount)
-	if(!(type in SSresearch.point_types) || (amount <= 0))
-		return FALSE
-	LAZYADDASSOC(research_points, type, amount)
-	return TRUE
-
-/datum/techweb/proc/modify_point_type(type, amount)
-	if(!(type in SSresearch.point_types))
-		return FALSE
-	set_research_points_at(type, max(0, LAZYACCESS(research_points, type) + amount))
-	return TRUE
-
-/datum/techweb/proc/remove_point_type(type, amount)
-	if(!(type in SSresearch.point_types) || (amount <= 0))
-		return FALSE
-	set_research_points_at(type, max(0, LAZYACCESS(research_points, type) - amount))
-	return TRUE
 
 /**
  * add_design_by_id
@@ -230,9 +194,6 @@ CAPABILITIES(/datum/techweb)
 		remove_hidden_nodes(node_id)
 
 	return TRUE
-
-/datum/techweb/proc/remove_design_by_id(id, custom = FALSE)
-	return remove_design(SSresearch.techweb_design_by_id(id), custom)
 
 /datum/techweb/proc/remove_design(datum/design_techweb/design, custom = FALSE)
 	if(!istype(design))
@@ -332,9 +293,6 @@ CAPABILITIES(/datum/techweb)
 
 	log_research("[completed_experiment.name] ([completed_experiment.type]) has been completed on techweb [id]/[organization][refund ? ", refunding [refund] points" : ""][points_rewarded].")
 	return result_text
-
-/datum/techweb/proc/printout_points()
-	return techweb_point_display_generic(research_points || list())
 
 /datum/techweb/proc/enqueue_node(id, mob/user)
 	var/user_h = ref_token(user)
@@ -441,9 +399,6 @@ CAPABILITIES(/datum/techweb)
 	flush_deferred_tiers()
 	return TRUE
 
-/datum/techweb/proc/unresearch_node_id(id)
-	return unresearch_node(SSresearch.techweb_node_by_id(id))
-
 /datum/techweb/proc/unresearch_node(datum/techweb_node/node)
 	if(!istype(node))
 		return FALSE
@@ -543,33 +498,11 @@ CAPABILITIES(/datum/techweb)
 		update_tiers(node)
 
 //Laggy procs to do specific checks, just in case. Don't use them if you can just use the vars that already store all this!
-/datum/techweb/proc/designHasReqs(datum/design_techweb/D)
-	for(var/i in researched_nodes)
-		var/datum/techweb_node/N = SSresearch.techweb_node_by_id(i)
-		if(LAZYACCESS(N.design_ids, D.id))
-			return TRUE
-	return FALSE
-
-/datum/techweb/proc/isDesignResearched(datum/design_techweb/D)
-	return isDesignResearchedID(D.id)
-
 /datum/techweb/proc/isDesignResearchedID(id)
 	return LAZYACCESS(researched_designs, id)? SSresearch.techweb_design_by_id(id) : FALSE
 
-/datum/techweb/proc/isNodeResearched(datum/techweb_node/N)
-	return isNodeResearchedID(N.id)
-
 /datum/techweb/proc/isNodeResearchedID(id)
 	return LAZYACCESS(researched_nodes, id)? SSresearch.techweb_node_by_id(id) : FALSE
-
-/datum/techweb/proc/isNodeVisible(datum/techweb_node/N)
-	return isNodeResearchedID(N.id)
-
-/datum/techweb/proc/isNodeVisibleID(id)
-	return LAZYACCESS(visible_nodes, id)? SSresearch.techweb_node_by_id(id) : FALSE
-
-/datum/techweb/proc/isNodeAvailable(datum/techweb_node/N)
-	return isNodeAvailableID(N.id)
 
 /datum/techweb/proc/isNodeAvailableID(id)
 	return LAZYACCESS(available_nodes, id)? SSresearch.techweb_node_by_id(id) : FALSE

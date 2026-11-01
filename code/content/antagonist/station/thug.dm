@@ -18,7 +18,3 @@
 
 /datum/antagonist/thug/New()
 	..()
-
-/// The /datum/antagonist/thug template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
-/proc/antag_thugs() as /datum/antagonist/thug
-	return SSantag?.all_antag_types[MODE_THUG]

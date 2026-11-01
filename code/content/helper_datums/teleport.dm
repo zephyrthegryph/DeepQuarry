@@ -112,24 +112,6 @@ GLOBAL_LIST_INIT(bluespace_item_types, list(
 		effect.attach()
 		effect.start()
 
-/proc/find_safe_turf(zlevel, list/zlevels, dense_atoms = FALSE)
-	if(!zlevels)
-		if(zlevel)
-			zlevels = list(zlevel)
-		else
-			zlevels = using_map.station_levels
-
-	var/cycles = 1000
-
-	for(var/cycle in 1 to cycles)
-		var/x = rand(1, world.maxx)
-		var/y = rand(1, world.maxy)
-		var/z = pick(zlevels)
-		var/random_location = locate(x, y, z)
-
-		if(is_safe_turf(random_location, dense_atoms, cycle < 300))
-			return random_location
-
 /proc/is_safe_turf(turf/random_location, dense_atoms = FALSE, no_teleport = FALSE)
 	. = FALSE
 	if(!isfloorturf(random_location))

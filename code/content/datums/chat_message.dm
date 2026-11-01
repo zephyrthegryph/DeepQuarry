@@ -311,16 +311,6 @@ CAPABILITIES(/datum/chatmessage)
 	return (1 - ((time_spent - time_before_fade) / CHAT_MESSAGE_EOL_FADE)) * 255
 
 /**
- * Applies final animations to overlay CHAT_MESSAGE_EOL_FADE deciseconds prior to message deletion
- */
-/datum/chatmessage/proc/end_of_life(fadetime = CHAT_MESSAGE_EOL_FADE)
-	if(gc_destroyed || ending_life)
-		return
-	ending_life = TRUE
-	animate(message, alpha = 0, time = fadetime, flags = ANIMATION_PARALLEL)
-	expire(fadetime)
-
-/**
  * Creates a message overlay at a defined location for a given speaker
  *
  * Arguments:

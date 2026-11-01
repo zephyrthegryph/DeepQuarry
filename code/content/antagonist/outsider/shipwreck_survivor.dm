@@ -45,7 +45,3 @@
 	You should use your ambitions to flesh out why your ship got wrecked \
 	and how you wish to proceed now that you were rescued. \n \
 	You <b>DON'T</b> need to set your ambitions. Feel free to ignore them."))
-
-/// The /datum/antagonist/shipwreck_survivor template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
-/proc/antag_survivors() as /datum/antagonist/shipwreck_survivor
-	return SSantag?.all_antag_types[MODE_SURVIVOR]

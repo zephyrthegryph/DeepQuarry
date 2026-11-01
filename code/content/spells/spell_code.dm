@@ -366,9 +366,6 @@ CAPABILITIES(/datum/spell)
 
 	return 1
 
-/datum/spell/proc/empower_spell()
-	return
-
 /datum/spell/proc/quicken_spell()
 	if(!can_improve(Sp_SPEED))
 		return 0

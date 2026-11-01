@@ -237,13 +237,6 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 /mob/living/silicon/robot/is_slaved()
 	return lawupdate && connected_ai ? sanitize(read_once(connected_ai.name)) : null
 
-/datum/tgui_module/law_manager/proc/sync_laws(mob/living/silicon/ai/AI, mob/actor)
-	if(!AI)
-		return
-	for(var/mob/living/silicon/robot/R in AI.connected_robots)
-		R.sync()
-	log_and_message_admins("has syncronized [AI]'s laws with its borgs.", actor)
-
 /datum/tgui_module/law_manager/robot
 CAPABILITIES(/datum/tgui_module/law_manager/robot)
 	interface("LawManager", state = nameof(GLOB.tgui_self_state))

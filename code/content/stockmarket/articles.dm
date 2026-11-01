@@ -111,12 +111,6 @@ SCHEMA(/datum/article, headline, schema_text())
 		ticksp = "0[ticksp]"
 	spacetime = "[ticksp][time2text(world.realtime, "MM")][time2text(world.realtime, "DD")][text2num(time2text(world.realtime, "YYYY"))+540]"
 
-/datum/article/proc/formatArticle()
-	if (spacetime == "")
-		formatSpacetime()
-	var/output = "<div class='article'><div class='headline'>[headline]</div><div class='subtitle'>[subtitle]</div><div class='article-body'>[article]</div><div class='author'>[author]</div><div class='timestamp'>[spacetime]</div></div>"
-	return output
-
 /datum/article/proc/detokenize(token_string, list/industry_tokens, list/product_tokens = list())
 	var/list/T_list = default_tokens.Copy()
 	for (var/I in industry_tokens)

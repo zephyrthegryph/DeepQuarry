@@ -562,9 +562,6 @@ SCHEMA(/datum/asset/simple, assets, schema_any())
 			var/prefix2 = (directions.len > 1) ? "[dir2text(direction)]-" : ""
 			Insert("[prefix][prefix2][icon_state_name]", I, icon_state=icon_state_name, dir=direction)
 
-/datum/asset/spritesheet/proc/css_tag()
-	return {"<link rel="stylesheet" href="[css_filename()]" />"}
-
 /datum/asset/spritesheet/proc/css_filename()
 	return SSassets.get_asset_url("spritesheet_[name].css")
 

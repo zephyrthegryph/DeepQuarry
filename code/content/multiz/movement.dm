@@ -285,9 +285,6 @@
 	return 42
 
 //If atom stands under open space, it can prevent fall, or not
-/atom/proc/can_prevent_fall(atom/movable/mover, turf/coming_from)
-	return (!CanPass(mover, coming_from))
-
 ////////////////////////////
 
 

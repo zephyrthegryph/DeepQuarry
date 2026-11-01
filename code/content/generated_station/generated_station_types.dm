@@ -140,9 +140,6 @@ CAPABILITIES(/datum/generated_station_room_allocation)
 	fixture_ids = list()
 
 
-/datum/generated_station_room_allocation/proc/add_tile(x, y)
-	tiles["[x],[y]"] = TRUE
-
 /// One exact Rust-authored furnishing or service endpoint.
 /datum/generated_station_fixture_placement
 	var/id

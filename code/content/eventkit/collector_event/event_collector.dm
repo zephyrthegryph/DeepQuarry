@@ -261,8 +261,5 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 	for(var/atom/movable/to_move in contents)
 		to_move.forceMove(get_turf(src))
 
-/obj/structure/event_collector/proc/post_object_insert(mob/user)
-	return
-
 /obj/structure/event_collector/proc/post_recipe_complete()
 	return

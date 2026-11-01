@@ -117,12 +117,6 @@ CAPABILITIES(/atom/movable/screen/movable)
 		. = text2num(Y)
 
 //Debug procs
-/client/proc/test_movable_UI()
-	set category = VERB_CAT_DEBUG
-	set name = "Spawn Movable UI Object"
-
-	open_request(src, /datum/prompt/text/client_debug_screen, PROC_REF(movable_ui_position_answered), answerer = mob, question = "Where on the screen? (Formatted as 'X,Y' e.g: '1,1' for bottom left)", title = "Spawn Movable UI Object", max_len = MAX_MESSAGE_LEN, encode = TRUE, timeout = 0)
-
 /client/proc/movable_ui_position_answered(datum/act/request/A)
 	if(!A.answer)
 		return
@@ -140,12 +134,6 @@ CAPABILITIES(/atom/movable/screen/movable)
 
 	screen += M
 
-
-/client/proc/test_snap_UI()
-	set category = VERB_CAT_DEBUG
-	set name = "Spawn Snap UI Object"
-
-	open_request(src, /datum/prompt/text/client_debug_screen, PROC_REF(snap_ui_position_answered), answerer = mob, question = "Where on the screen? (Formatted as 'X,Y' e.g: '1,1' for bottom left)", title = "Spawn Snap UI Object", max_len = MAX_MESSAGE_LEN, encode = TRUE, timeout = 0)
 
 /client/proc/snap_ui_position_answered(datum/act/request/A)
 	if(!A.answer)

@@ -144,3 +144,5 @@
 CAPABILITIES(/obj/item/spell/control)
 	ref_many(nameof(controlled_mobs))
 
+/mob/living/carbon/human/proc/technomancer_control()
+	place_spell_in_hand(/obj/item/spell/control)

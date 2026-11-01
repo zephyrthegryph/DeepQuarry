@@ -1,11 +1,3 @@
-/proc/count_unique_techweb_nodes()
-	var/static/list/L = typesof(/datum/techweb_node)
-	return L.len
-
-/proc/count_unique_techweb_designs()
-	var/static/list/L = typesof(/datum/design_techweb)
-	return L.len
-
 /proc/node_boost_error(id, message)
 	warning("Invalid boost information for node \[[id]\]: [message]")
 	SSresearch.invalid_node_boost[id] = message

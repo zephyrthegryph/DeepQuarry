@@ -7,10 +7,6 @@
 /atom/proc/op_open_ui(datum/act/op/A)
 	tgui_interact(A.actor)
 
-/atom/proc/op_open_ui_fingerprint(datum/act/op/A)
-	add_fingerprint(A.actor)
-	tgui_interact(A.actor)
-
 /obj/machinery/proc/op_open_ui_powered(datum/act/op/A)
 	if(!operable())
 		return

@@ -342,10 +342,6 @@ CAPABILITIES(/datum/faction_agent_record)
 	var/datum/faction_agent_record/record = get_agent_record(account_number)
 	return record && record.tier >= FACTION_AGENT_TIER_CANDIDATE && (!faction_id || record.faction_id == faction_id)
 
-/datum/station_faction_relations/proc/account_is_trusted_agent(account_number, faction_id)
-	var/datum/faction_agent_record/record = get_agent_record(account_number)
-	return record && record.tier >= FACTION_AGENT_TIER_TRUSTED && (!faction_id || record.faction_id == faction_id)
-
 /datum/station_faction_relations/proc/account_has_market_access(account_number, faction_id)
 	if(account_has_principal_access(account_number, faction_id))
 		return TRUE
@@ -375,11 +371,6 @@ CAPABILITIES(/datum/faction_agent_record)
 	log_game("[key_name(user)] opened exclusive faction vetting with [faction?.name || faction_id].")
 	SScontracts?.queue_agent_vetting(account.account_number, faction_id)
 	return TRUE
-
-/// Compatibility entry point for callers written before the vetting ladder.
-/// It deliberately begins vetting rather than bypassing accreditation.
-/datum/station_faction_relations/proc/appoint_agent(mob/living/user, faction_id)
-	return begin_agent_vetting(user, faction_id)
 
 /datum/station_faction_relations/proc/accredit_agent(account_number)
 	var/datum/faction_agent_record/record = get_agent_record(account_number)
@@ -443,10 +434,6 @@ CAPABILITIES(/datum/faction_agent_record)
 	record.operative_contract_id = null
 	record.set_tier(FACTION_AGENT_TIER_TRUSTED)
 	return TRUE
-
-/proc/is_faction_agent(mob/living/user, faction_id)
-	var/datum/money_account/account = contract_account_for_mob(user)
-	return account && GLOB.station_faction_relations.account_is_agent(account.account_number, faction_id)
 
 /proc/has_faction_market_access(mob/living/user, faction_id)
 	var/datum/money_account/account = contract_account_for_mob(user)

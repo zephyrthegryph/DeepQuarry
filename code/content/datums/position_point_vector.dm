@@ -39,9 +39,6 @@
 /datum/position/proc/return_py()
 	return pixel_y
 
-/datum/position/proc/return_point()
-	return new /datum/point(src)
-
 /proc/point_midpoint_points(datum/point/a, datum/point/b)	//Obviously will not support multiZ calculations! Same for the two below.
 	var/datum/point/P = new
 	P.x = a.x + (b.x - a.x) / 2
@@ -105,12 +102,6 @@
 
 /datum/point/proc/return_turf()
 	return locate(CEILING(x / world.icon_size, 1), CEILING(y / world.icon_size, 1), z)
-
-/datum/point/proc/return_coordinates()		//[turf_x, turf_y, z]
-	return list(CEILING(x / world.icon_size, 1), CEILING(y / world.icon_size, 1), z)
-
-/datum/point/proc/return_position()
-	return new /datum/position(src)
 
 /datum/point/proc/return_px()
 	return MODULUS(x, world.icon_size) - 16 - 1

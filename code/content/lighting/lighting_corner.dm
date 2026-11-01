@@ -75,21 +75,6 @@
 
 	if(((SSplanets.is_initialized() && SSplanets.planet_at_z(z)) || SSlighting.get_pshandler_z(z)) && dynamic) sunlight = SUNLIGHT_POSSIBLE
 
-/datum/lighting_corner/proc/save_master(turf/master, dir)
-	switch (dir)
-		if (NORTHEAST)
-			master_NE = master // ALLOW(ownership): lighting engine master turf, set once per corner; the corner dies with its turfs, and a turf index entry per corner would cost the whole map
-			rel_set(master, nameof(/turf::lighting_corner_SW), src)
-		if (SOUTHEAST)
-			master_SE = master // ALLOW(ownership): lighting engine master turf, set once per corner; the corner dies with its turfs, and a turf index entry per corner would cost the whole map
-			rel_set(master, nameof(/turf::lighting_corner_NW), src)
-		if (SOUTHWEST)
-			master_SW = master // ALLOW(ownership): lighting engine master turf, set once per corner; the corner dies with its turfs, and a turf index entry per corner would cost the whole map
-			rel_set(master, nameof(/turf::lighting_corner_NE), src)
-		if (NORTHWEST)
-			master_NW = master // ALLOW(ownership): lighting engine master turf, set once per corner; the corner dies with its turfs, and a turf index entry per corner would cost the whole map
-			rel_set(master, nameof(/turf::lighting_corner_SE), src)
-
 /datum/lighting_corner/proc/self_destruct_if_idle()
 	if (!LAZYLEN(affecting) && !sunlight)
 		spent(src, force = TRUE)

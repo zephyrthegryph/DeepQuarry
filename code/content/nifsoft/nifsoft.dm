@@ -145,9 +145,6 @@
 	return nif_result
 
 //Called when installed from a disk
-/datum/nifsoft/proc/disk_install(mob/living/carbon/human/target,mob/living/carbon/human/user)
-	return TRUE
-
 //Status text for menu
 /datum/nifsoft/proc/stat_text()
 	if(activates)

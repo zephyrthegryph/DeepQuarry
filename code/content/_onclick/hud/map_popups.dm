@@ -100,13 +100,6 @@
 	screen_maps -= map_name
 
 /**
- * Clears all the maps of registered screen objects.
- */
-/client/proc/clear_all_maps()
-	for(var/map_name in screen_maps)
-		clear_map(map_name)
-
-/**
  * Creates a popup window with a basic map element in it, without any
  * further initialization.
  *

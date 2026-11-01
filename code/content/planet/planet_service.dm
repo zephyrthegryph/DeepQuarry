@@ -94,9 +94,6 @@ SYSTEM_DEF(planets)
 	for(var/turf/unsimulated/wall/planetary/wall as anything in P.planet_walls)
 		heat_set_solid(wall, P.weather_holder.temperature)
 
-/datum/system/planets/proc/weatherDisco()
-	weather_disco_step(100000)
-
 /datum/system/planets/proc/weather_disco_step(count)
 	for(var/datum/planet/P as anything in planets)
 		if(P.weather_holder)

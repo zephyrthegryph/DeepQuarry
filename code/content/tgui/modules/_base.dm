@@ -36,9 +36,6 @@ Code is pretty much ripped verbatim from nano modules, but with un-needed stuff 
 	if(host())
 		host().tgui_close(user)
 
-/datum/tgui_module/proc/can_still_topic(mob/user, datum/tgui_state/state)
-	return (tgui_status(user, state) == STATUS_INTERACTIVE)
-
 /datum/tgui_module/proc/check_access(mob/user, access)
 	if(!access)
 		return 1

@@ -57,13 +57,6 @@ CAPABILITIES(/datum/ai_intent)
 	pack.trace("intent [found.name] on [subject || "nothing"] from [source || "no one"] [lasts ? "for [lasts] ds" : "until released"]")
 	return found
 
-/// Ends the orders of `intent_type` given by `source` (every source when null).
-/proc/unintend(datum/ai_pack/pack, intent_type, datum/source = null)
-	for(var/datum/ai_intent/I as anything in pack?.intents?.Copy())
-		if(I.type == intent_type && (isnull(source) || I.source == source))
-			rel_remove(pack, nameof(pack.intents), I)
-			spent(I)
-
 /// The orders still in force: expired ones and those whose issuer is gone or dead are released first.
 /datum/ai_pack/proc/active_intents()
 	. = list()

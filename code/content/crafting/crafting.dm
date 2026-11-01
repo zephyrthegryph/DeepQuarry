@@ -629,11 +629,6 @@ CAPABILITIES(/datum/personal_crafting)
 
 //Mind helpers
 
-/datum/mind/proc/teach_crafting_recipe(R)
-	if(!learned_recipes)
-		set_learned_recipes(list())
-	include_learned_recipes(R)
-
 // Screen objects
 /atom/movable/screen/craft
 	name = "crafting menu"

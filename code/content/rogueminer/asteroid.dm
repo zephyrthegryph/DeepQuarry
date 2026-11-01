@@ -62,21 +62,7 @@
 	GLOB.rm_controller.dbg("A(n): [x],[y] now contains [work.len] items.")
 
 //Removes something from a spot in the asteroid map
-/datum/rogue/asteroid/proc/spot_remove(x,y,thing)
-	if(!x || !y || !thing)
-		return
-
-	var/list/work = map[x][y]
-	work.Remove(thing)
-
 //Just removes everything from a spot in the asteroid map
-/datum/rogue/asteroid/proc/spot_clear(x,y)
-	if(!x || !y)
-		return
-
-	var/list/work = map[x][y]
-	work.Cut()
-
 /////////////////////////////
 // Predefined asteroid maps
 /////////////////////////////

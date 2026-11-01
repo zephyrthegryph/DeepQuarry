@@ -14,12 +14,6 @@
 /datum/data/pda/proc/stop()
 	return
 
-/datum/data/pda/proc/program_process()
-	return
-
-/datum/data/pda/proc/program_hit_check()
-	return
-
 /datum/data/pda/proc/notify(message, blink = 1)
 	if(message)
 		//Search for holder of the PDA.

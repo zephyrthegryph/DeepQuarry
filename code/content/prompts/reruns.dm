@@ -20,10 +20,6 @@
 		return resolve_token(value["rerun_h"])
 	return value
 
-/// TRUE when `wrapped` held a datum or client (so a null unwrap means it is gone).
-/proc/rerun_was_ref(wrapped)
-	return islist(wrapped) || (istext(wrapped) && copytext(wrapped, 1, 6) == "ckey:")
-
 // ---------------------------------------------------------------- shared questions
 
 /// A name typed into one of the asker's vars (a bot assembly's created_name, a label). The user must still be next to the atom and able.

@@ -209,14 +209,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/void)
 		return "there is no helmet installed"
 	return TRUE
 
-/// Requirement: TRUE, or why nothing can be ejected (a suit nobody wears is ignored silently by the effect).
-/obj/item/clothing/suit/space/void/proc/can_eject_tank(mob/user, atom/target, obj/item/held)
-	if(!isliving(loc))
-		return TRUE
-	if(!tank && !cooler)
-		return "there is no tank or cooling unit inserted"
-	return TRUE
-
 /// Old click_alt. It never reached the clothing alt-click.
 /obj/item/clothing/suit/space/void/proc/voidsuit_eject_tank_alt(datum/act/op/A)
 	eject_tank_for(A.actor)

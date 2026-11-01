@@ -151,13 +151,6 @@
 
 	src << S
 
-/proc/sound_to_playing_players(sound, volume = 100, vary)
-	sound = get_sfx(sound)
-	for(var/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-		if(ismob(M) && !isnewplayer(M))
-			var/mob/MO = M
-			MO.playsound_local(get_turf(MO), sound, volume, vary, pressure_affected = FALSE)
-
 /mob/proc/stop_sound_channel(chan)
 	src << sound(null, repeat = 0, wait = 0, channel = chan)
 

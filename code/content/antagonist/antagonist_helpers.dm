@@ -39,14 +39,6 @@
 	if(player in current_antagonists)
 		return 1
 
-/datum/antagonist/proc/is_type(antag_type)
-	if(antag_type == id || antag_type == role_text)
-		return 1
-	return 0
-
-/datum/antagonist/proc/is_votable()
-	return (flags & ANTAG_VOTABLE)
-
 /datum/antagonist/proc/can_late_spawn()
 	if(!(allow_latejoin))
 		return 0

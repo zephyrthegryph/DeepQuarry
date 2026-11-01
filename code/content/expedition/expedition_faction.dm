@@ -85,27 +85,7 @@ GLOBAL_LIST_INIT(expedition_hostile_pools, list(
 	return /mob/living/simple_mob/animal/sif/savik
 
 // One-line threat briefing for the mission board / active readout.
-/proc/expedition_faction_brief(faction)
-	switch(faction)
-		if(EXP_FACTION_XENO)
-			return "A xenomorph brood has infested the site."
-		if(EXP_FACTION_SYNTH)
-			return "Rogue synthetics hold the site."
-		if(EXP_FACTION_MERC)
-			return "A mercenary company has dug in at the site."
-	return "Hostile wildlife has claimed the site."
-
 // Reward multiplier — tougher factions pay a threat premium.
-/proc/expedition_faction_danger(faction)
-	switch(faction)
-		if(EXP_FACTION_XENO)
-			return 1.25
-		if(EXP_FACTION_SYNTH)
-			return 1.3
-		if(EXP_FACTION_MERC)
-			return 1.4
-	return 1.0
-
 // Themed kill-loot a grunt may drop (path = drop-chance %), per EXP_FACTION_*. Appended to each
 // spawned guard's simple_mob loot_list, so the spoils match who you're fighting.
 GLOBAL_LIST_INIT(expedition_faction_loot_pools, list(

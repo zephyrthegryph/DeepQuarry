@@ -1252,11 +1252,6 @@ CAPABILITIES(/obj/belly)
 			surrounding.Add(get_belly_surrounding(I.contents))
 	return surrounding
 
-/obj/belly/proc/effective_emote_hearers()
-	. = list(loc)
-	for(var/atom/movable/AM as anything in contents)
-		. += AM
-
 /obj/belly/proc/get_belly_name(original)
 	if(original)
 		return display_name ? display_name : name

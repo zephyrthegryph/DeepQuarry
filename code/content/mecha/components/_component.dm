@@ -196,7 +196,4 @@ CAPABILITIES(/obj/item/mecha_parts/component)
 /obj/item/mecha_parts/component/proc/get_step_delay()
 	return step_delay
 
-/obj/item/mecha_parts/component/proc/handle_move()
-	return
-
 // Read by detach() in Destroy().

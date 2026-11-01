@@ -90,23 +90,6 @@ CAPABILITIES(/datum/squeak)
 		steps++
 	return 1
 
-/datum/squeak/proc/play_squeak_crossed(datum/source, atom/movable/arrived, atom/old_loc, list/atom/old_locs)
-	/* We don't have abstract items yet
-	if(isitem(arrived))
-		var/obj/item/I = arrived
-		if(worn_of(I).flags & ABSTRACT)
-			return
-	//Annoyingly, our flight code doesn't set the movement_type, nor do we have a define for it. So I'm not adding it yet.
-	//if(arrived.movement_type & (FLYING|FLOATING) || !arrived.get_gravity())
-	*/
-	if(!arrived.get_gravity())
-		return
-	if(ismob(arrived) && !arrived.density) // Prevents 10 overlapping mice from making an unholy sound while moving
-		return
-	var/atom/current_parent = owner
-	if(isturf(current_parent?.loc))
-		play_squeak()
-
 /datum/squeak/proc/on_attack_self(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)
 	use_squeak()

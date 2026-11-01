@@ -3,15 +3,6 @@
 /////////////////////////////
 
 // Pads 0s to t until length == u
-/proc/add_zero2(t, u)
-	var/temp1
-	while (length(t) < u)
-		t = "0[t]"
-	temp1 = t
-	if (length(t) > u)
-		temp1 = copytext(t,2,u+1)
-	return temp1
-
 // DNA Gene activation boundaries, see dna2.dm.
 // Returns a list object with 4 numbers.
 /proc/GetDNABounds(block)
@@ -160,5 +151,3 @@
 	species.post_spawn_special(src)
 
 // Used below, simple injection modifier.
-/proc/probinj(pr, inj)
-	return prob(pr+inj*pr)

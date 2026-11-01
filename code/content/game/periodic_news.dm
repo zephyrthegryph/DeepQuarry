@@ -101,9 +101,6 @@
 	the riots. More on this at 6."}
 	round_time = 60 * 60
 
-/proc/process_newscaster()
-	check_for_newscaster_updates(ticker_mode().newscaster_announcements)
-
 GLOBAL_LIST_EMPTY(announced_news_types)
 /proc/check_for_newscaster_updates(type)
 	for(var/subtype in subtypesof(type))

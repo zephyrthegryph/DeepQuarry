@@ -115,7 +115,3 @@
 	for(var/M in people_with_jobs)
 		if(J.has_alt_title(M, null, A.title))
 			. += M
-
-/datum/metric/proc/count_people_with_alt_title(job_type, alt_title_type, cutoff = 75)
-	var/list/L = get_people_with_alt_title(job_type, alt_title_type, cutoff)
-	return L.len
