@@ -500,14 +500,14 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
           }}
           regions={(staticData?.organs?.doll_regions as DollRegion[]) ?? []}
         />
-        <Box style={{ display: 'flex', flexWrap: 'wrap', gap: '0.15em' }}>
+        <Box style={{ display: 'flex', flexDirection: 'column', gap: '0.1em' }}>
           {(Object.keys(REGION_LABELS) as Region[])
             .filter((r) => REGION_CARDS[r].some(cardHasContent))
             .filter((r) => !absent.some((p) => p.card === r))
             .map((r) => (
               <Button
                 key={r}
-                compact
+                fluid
                 selected={shownRegion === r}
                 onClick={() => setRegion(r)}
               >
