@@ -3,7 +3,7 @@
 # dq_drop_stale_includes <file> <dir the includes are relative to> <label>: a union-merged include list can bring back an include of a
 # file one side deleted (28 October: _unit_tests.dm kept dq_reagents_start_snapshot.dm after tests/cut-pins removed it; gr/bumped-notices,
 # merged by hand, kept code/modules/unit_tests/... includes after the tests-wave1 move, and DreamChecker failed on them). Every
-# `#include "x"` whose file does not exist is dropped and REPORTED on stderr (never silently), and the file is staged.
+# `#include "x"` whose file does not exist (and is not a gitignored generated file) is dropped and REPORTED on stderr (never silently), and the file is staged.
 # Sets DQ_STALE_DROPPED to the number dropped. Returns 1 only when the file could not be rewritten.
 dq_drop_stale_includes() {
 	local f="$1" dir="$2" label="$3" inc stale tmp
@@ -11,7 +11,11 @@ dq_drop_stale_includes() {
 	[ -f "$f" ] || return 0
 	stale="$(sed -n 's/^#include "\([^"]*\)".*/\1/p' "$f" | tr -d '\r' | while IFS= read -r inc; do
 		case "$inc" in *.dmm|*.dmf|*.dms) continue ;; esac   # maps and skins are resolved elsewhere (FILE_DIR); only code includes
-		[ -f "$dir/${inc//\\//}" ] || echo "$inc"
+		[ -f "$dir/${inc//\\//}" ] && continue
+		# a generated, gitignored include (tools\ci\generated\doc_snippets.dm, compiled only with -DDOC_SNIPPETS) is absent until its generator
+		# runs: that is not a stale include. The drop preceded every `gen` failure of the 30 October setup-error loop.
+		git -C "$dir" check-ignore -q -- "${inc//\\//}" 2>/dev/null && continue
+		echo "$inc"
 	done)"
 	[ -n "$stale" ] || return 0
 	tmp="$f.stale.$$"
