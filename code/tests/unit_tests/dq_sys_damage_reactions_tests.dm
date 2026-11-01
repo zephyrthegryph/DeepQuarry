@@ -110,6 +110,17 @@ CAPABILITY(/obj/structure/dq_reflect_probe/burn_only, reflects(list(BURN), PROC_
 	rel_set(B, nameof(B.starting), run_loc_floor_bottom_left)
 	TEST_ASSERT_EQUAL(slime.bullet_act(B), PROJECTILE_CONTINUE, "a silver slime reflects beams")
 
+/// A body whose death already destroyed it closes the collecting scope disintegrate() opened; a scope left open wedges every later qdel.
+/datum/unit_test/sys_damage_reactions/gib_of_a_vanishing_body_closes_its_scope
+
+/datum/unit_test/sys_damage_reactions/gib_of_a_vanishing_body_closes_its_scope/Run()
+	var/mob/living/simple_mob/animal/passive/cockroach/roach = allocate(/mob/living/simple_mob/animal/passive/cockroach)
+	var/depth = GLOB.dq_destroy_collect_depth
+	roach.gib()
+	TEST_ASSERT_EQUAL(GLOB.dq_destroy_collect_depth, depth, "the scope closed")
+	for(var/obj/effect/decal/cleanable/bug_remains/left in run_loc_floor_bottom_left)
+		own(left)
+
 /// A mob that blocks every projectile by declaration (a shield, an immunity).
 /mob/living/simple_mob/dq_projectile_immune
 	name = "projectile-immune probe"

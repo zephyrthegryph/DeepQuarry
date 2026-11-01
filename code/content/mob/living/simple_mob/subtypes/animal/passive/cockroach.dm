@@ -76,7 +76,7 @@
 CAPABILITIES(/mob/living/simple_mob/animal/passive/cockroach)
 	configure(mob_movement(pull_mobs = MOB_PULL_NONE))
 	after_init(0, then(PROC_REF(cockroach_pest_ready)))
-	extend(/datum/act/hit/explosion, instead()) // Explosions are a terrible way to handle a cockroach.
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_shrugged)), order = ORDER_EARLY)) // Explosions are a terrible way to handle a cockroach.
 
 //Custom stain so it's not "spiderling remains"
 /obj/effect/decal/cleanable/bug_remains

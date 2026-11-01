@@ -16,6 +16,11 @@ import { ColorChoice } from '../colors';
 import { Switch } from '../controls';
 import { ColorizedImage, getImage } from '../helper_components';
 import type { EditorProps } from './index';
+import {
+  MARKING_CATEGORIES,
+  type MarkingCategory,
+  markingCategory,
+} from './markingCategories';
 
 type ZoneState = { color: string; on: number };
 type MarkingState = Record<string, ZoneState | string>;
@@ -362,6 +367,9 @@ const MarkingLayer = ({
 
 const PREVIEW_SIZE = 128;
 
+/// The abstract base types' name (DEVELOPER_WARNING_NAME): never a real marking.
+const DEVELOPER_NAME = 'you should not see this...';
+
 const MarkingPicker = ({
   styles,
   layers,
@@ -380,12 +388,14 @@ const MarkingPicker = ({
   const [search, setSearch] = useState('');
   const [allSpecies, setAllSpecies] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
+  const [category, setCategory] = useState<MarkingCategory>('Full body');
   const used = new Set(layers.map(([k]) => k));
   const blocked = new Set(incompatible);
   const lc = search.trim().toLowerCase();
   const candidates = Object.entries(styles)
     .filter(([key, meta]) => {
       if (used.has(key)) return false;
+      if (meta.name === DEVELOPER_NAME) return false;
       if (!allSpecies && blocked.has(key)) return false;
       if (zones && !meta.body_parts.some((z) => zones.includes(z)))
         return false;
@@ -398,6 +408,17 @@ const MarkingPicker = ({
       );
     })
     .sort((a, b) => a[1].name.localeCompare(b[1].name));
+  // A search looks everywhere; otherwise one category, so a few dozen sprites mount instead of all of them.
+  const counts = new Map<MarkingCategory, number>();
+  for (const [, meta] of candidates) {
+    const c = markingCategory(meta.name, meta.body_parts);
+    counts.set(c, (counts.get(c) ?? 0) + 1);
+  }
+  const shown = lc
+    ? candidates
+    : candidates.filter(
+        ([, meta]) => markingCategory(meta.name, meta.body_parts) === category,
+      );
   const previewKey = hovered && styles[hovered] ? hovered : null;
   return (
     <Box
@@ -456,8 +477,25 @@ const MarkingPicker = ({
           />
         </Box>
         <Box color="label" fontSize="0.85em" mb={0.3}>
-          {candidates.length} marking{candidates.length === 1 ? '' : 's'}
+          {shown.length} marking{shown.length === 1 ? '' : 's'}
         </Box>
+        {!lc && (
+          <Box
+            mb={0.3}
+            style={{ display: 'flex', flexWrap: 'wrap', gap: '0.15em' }}
+          >
+            {MARKING_CATEGORIES.filter((c) => counts.has(c)).map((c) => (
+              <Button
+                key={c}
+                compact
+                selected={c === category}
+                onClick={() => setCategory(c)}
+              >
+                {c} ({counts.get(c)})
+              </Button>
+            ))}
+          </Box>
+        )}
         <Box
           style={{
             maxHeight: '20em',
@@ -469,7 +507,7 @@ const MarkingPicker = ({
           }}
           onMouseLeave={() => setHovered(null)}
         >
-          {candidates.map(([key, meta]) => (
+          {shown.map(([key, meta]) => (
             <Button
               key={key}
               color={blocked.has(key) ? 'average' : 'transparent'}
