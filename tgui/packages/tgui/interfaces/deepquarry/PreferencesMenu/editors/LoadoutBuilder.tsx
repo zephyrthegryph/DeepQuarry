@@ -21,7 +21,6 @@
 // removes land instantly; the server is still authoritative and our op queue drops
 // each entry once the server reflects it.
 
-import { ColorChoice, isSlotName } from '../colors';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import {
@@ -36,6 +35,7 @@ import {
   TextArea,
   Tooltip,
 } from 'tgui-core/components';
+import { ColorChoice, isSlotName } from '../colors';
 import { ColorizedImage, ColorizedImageButton } from '../helper_components';
 import type { EditorProps } from './index';
 
@@ -59,7 +59,7 @@ type GearTweakKind =
 
 type RecolorMeta = {
   mode: 'off' | 'tint' | 'palette' | 'matrix' | 'channels';
-  value?: string | Record<string, string> | number[];
+  value?: string | Record<string, string> | number[] | string[];
 };
 
 type GearTweakDescriptor = {

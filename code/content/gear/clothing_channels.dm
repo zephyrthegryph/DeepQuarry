@@ -20,6 +20,7 @@ sparse(/obj/item, clothing_channel_colors, type = text)
 /// The data, read on first use: a server where nobody recolours anything never parses it.
 GLOBAL_LIST_EMPTY(clothing_channel_data)
 
+PROC_SUMMARY(/proc/clothing_channel_data_load) // constant data read once from disk: nothing a look could follow
 /proc/clothing_channel_data_load()
 	if(length(GLOB.clothing_channel_data))
 		return GLOB.clothing_channel_data
@@ -32,6 +33,7 @@ GLOBAL_LIST_EMPTY(clothing_channel_data)
 	return GLOB.clothing_channel_data
 
 /// list(key, channels): the channels of a type and the key its work is cached under (types with the same channels share one). Null when it has none.
+PROC_SUMMARY(/proc/clothing_channels_of) // a lookup in that constant data, by type
 /proc/clothing_channels_of(item_type)
 	var/list/data = clothing_channel_data_load()
 	var/type_key = "[item_type]"

@@ -124,6 +124,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/clothing_appearance_handler)
 GLOBAL_DATUM_INIT(clothing_appearance_handler, /datum/clothing_appearance_handler, new)
 
 /// An accessory with chosen channel colours draws the recoloured copy of the state this image shows.
+PROC_SUMMARY(/datum/clothing_appearance_handler/proc/recolour_channels) // the colours are set once, when the item spawns, before anything draws it
 /datum/clothing_appearance_handler/proc/recolour_channels(obj/item/clothing/accessory/acc, image/result)
 	if(!sparse_has(acc, clothing_channel_colors))
 		return
