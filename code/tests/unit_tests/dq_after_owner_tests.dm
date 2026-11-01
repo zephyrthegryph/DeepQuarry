@@ -186,3 +186,18 @@
 	var/obj/item/reagent_containers/hypospray/autoinjector/bonemed/plain = allocate(/obj/item/reagent_containers/hypospray/autoinjector/bonemed)
 	TEST_ASSERT(istype(hidden.identity, /datum/identification/hypo), "the unidentified one has its hypo identification, got [hidden.identity]")
 	TEST_ASSERT_NULL(plain.identity, "the ordinary one has none")
+
+/// The base vars homed as a relation, a setter and a trait keep working.
+/datum/unit_test/dq_mob_base_var_homes
+
+/datum/unit_test/dq_mob_base_var_homes/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/datum/language/L = GLOB.all_languages[LANGUAGE_GALCOM]
+	rel_set(H, nameof(H.default_language), L)
+	TEST_ASSERT_EQUAL(H.default_language, L, "the default language is set through its relation")
+	rel_set(H, nameof(H.default_language), null)
+	TEST_ASSERT_NULL(H.default_language, "and cleared")
+	H.set_shock(5)
+	TEST_ASSERT_EQUAL(H.shock_stage, 5, "set_shock still sets the stage")
+	var/list/field = type_trait_field_for_var(H, "faction")
+	TEST_ASSERT(islist(field), "a map edit of faction reaches the mob_rules trait now the shadow var is gone")

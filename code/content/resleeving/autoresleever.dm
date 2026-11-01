@@ -289,7 +289,7 @@ CAPABILITIES(/obj/machinery/transhuman/autoresleever)
 	if(ghost_client.prefs.read_preference(/datum/preference/text/human/preferred_language)) // Do we have a preferred language?
 		var/datum/language/def_lang = GLOB.all_languages[ghost_client.prefs.read_preference(/datum/preference/text/human/preferred_language)]
 		if(def_lang)
-			new_character.default_language = def_lang
+			rel_set(new_character, nameof(new_character.default_language), def_lang)
 
 /// Equip, log, implant a backup and announce a freshly resleeved character.
 /obj/machinery/transhuman/autoresleever/proc/finish_autoresleeve(mob/living/carbon/human/new_character, charjob)

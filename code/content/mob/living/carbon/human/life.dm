@@ -27,7 +27,7 @@
 
 	//TODO: seperate this out
 	// update the current life tick, can be used to e.g. only do something every 4 ticks
-	src.life_tick++
+	set_life_tick(life_tick + 1)
 	return ..()
 
 /// Periodic safety refresh of every HUD: once a minute every hud_updateflag bit is set. It follows

@@ -232,7 +232,7 @@ CAPABILITIES(/obj/item/organ/internal/intestine/horror)
 /obj/item/organ/internal/voicebox/horror/replaced(mob/living/carbon/human/target,obj/item/organ/external/affected)
 	..()
 	target.add_language(LANGUAGE_REDSPACE)
-	target.default_language = redspace
+	rel_set(target, nameof(target.default_language), redspace)
 
 /obj/item/organ/internal/voicebox/horror/organ_tick(cycles)
 	..()

@@ -315,7 +315,7 @@ MSG_DEF_SELF(protean_reconstitutor/no_components, "%T% does not have any protean
 		if(posibrain_client.prefs.read_preference(/datum/preference/text/human/preferred_language))
 			var/datum/language/def_lang = GLOB.all_languages[posibrain_client.prefs.read_preference(/datum/preference/text/human/preferred_language)]
 			if(def_lang)
-				P.default_language = def_lang
+				rel_set(P, nameof(P.default_language), def_lang)
 
 		PUBLISH_LEGACY(P, /datum/notice/human_dna_finalized)
 

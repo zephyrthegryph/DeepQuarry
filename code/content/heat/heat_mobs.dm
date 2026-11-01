@@ -9,7 +9,7 @@
 /// The mob's heat body handle, made on first use at its starting temperature and kept for its life.
 /mob/proc/mob_heat_body()
 	if(isnull(heat_body))
-		create_heat_body(TRUE, bodytemperature)
+		create_heat_body(TRUE, BODYTEMP_NORMAL)
 	else
 		HEAT_BODY_RESOLVE(src)
 	return heat_body
@@ -22,7 +22,7 @@
 /mob/proc/body_temperature()
 	var/h = mob_heat_body()
 	var/t = h ? vg_heat_body_temperature(h) : null
-	return isnull(t) ? bodytemperature : t
+	return isnull(t) ? BODYTEMP_NORMAL : t
 
 /// Sets this mob's body temperature (K): an authority write (a machine, a spawn, a test), booked.
 /mob/proc/set_bodytemperature(new_temperature, source = HEAT_SOURCE_AUTHORITY)
