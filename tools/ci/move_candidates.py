@@ -5,7 +5,7 @@ import re
 import subprocess
 import sys
 
-NEW_TREE = ("code/engine/", "code/library/", "code/domains/", "code/content/", "code/world/", "code/defines/", "code/_generated/")
+NEW_TREE = ("code/engine/", "code/library/", "code/domains/", "code/content/", "code/world/", "code/defines/", "code/_generated/", "code/tests/")
 # Old directory -> section 22 target. Anything not listed becomes code/content/<name>.
 DOMAINS = {"power": "domains/power", "heat": "domains/heat", "ATMOSPHERICS": "domains/atmos", "body": "domains/body",
            "damage": "domains/damage", "combat_ai": "domains/ai", "life": "domains/life"}
@@ -185,6 +185,8 @@ def target_of(rel):
     if parts[0] != "code" or len(parts) < 3 or rel.startswith(NEW_TREE):
         return None
     top = parts[1]
+    if rel.startswith("code/modules/unit_tests/"):
+        return "code/tests/unit_tests/" + "/".join(parts[3:])
     if top == "game" and parts[2] == "objects" and len(parts) > 4:
         return "code/content/" + "/".join(parts[3:])  # doc section 22 M07: objects/{items,structures,effects} -> content/{items,structures,effects}
     if top in ("modules", "game", "datums") and len(parts) > 3:

@@ -6,7 +6,7 @@
  * made (so the requirements as sorted and split by the constructor): name, result, requirements, blacklist, tools, catalysts, machinery, parts, time, category,
  * whether it is always available, its extra text, whether only one may stand on a turf, and its material template and total.
  *
- * Rows are `key => value` in code/modules/unit_tests/snapshots/xform/crafting.txt (see dq_xform_pins.dm); an empty file is recorded by the next run.
+ * Rows are `key => value` in code/tests/unit_tests/snapshots/xform/crafting.txt (see dq_xform_pins.dm); an empty file is recorded by the next run.
  */
 #define DQ_CRAFTING_PIN_NAME "crafting"
 

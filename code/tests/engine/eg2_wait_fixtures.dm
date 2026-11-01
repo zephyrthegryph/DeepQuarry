@@ -1,4 +1,4 @@
-// Fixtures of the progress bar on an op's wait. Compiled under UNIT_TESTS only; code/modules/unit_tests/dq_eg2_wait_tests.dm drives them.
+// Fixtures of the progress bar on an op's wait. Compiled under UNIT_TESTS only; code/tests/unit_tests/dq_eg2_wait_tests.dm drives them.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 

@@ -7,7 +7,7 @@
 //
 // Sibling test files in this directory cover bodyscanner and the
 // cross-cutting audit. They share helper procs declared on the base
-// unit_test type in code/modules/unit_tests/dq_medical_tests.dm.
+// unit_test type in code/tests/unit_tests/dq_medical_tests.dm.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 

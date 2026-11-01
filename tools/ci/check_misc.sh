@@ -31,7 +31,7 @@ if bad:
     sys.exit(1)
 PY
 then
-	echo -e "${RED}ERROR: committed TEST_FOCUS found. Empty code/modules/unit_tests/dq_focus.dm or guard the line with #ifdef.${NC}"
+	echo -e "${RED}ERROR: committed TEST_FOCUS found. Empty code/tests/unit_tests/dq_focus.dm or guard the line with #ifdef.${NC}"
 	exit 1
 fi
 echo "No committed test focus."

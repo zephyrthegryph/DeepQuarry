@@ -128,7 +128,7 @@ table procs, `world_service`, `PERIODIC_*`, `update_icon(`, the `APPEARANCE_*` l
 What is still open, and still correct to write where a file already uses it:
 
 - The `BF_*` body factors themselves are done: they are stats on `/mob/living`. A `factors = alist(...)` var on a flyweight or prototype (a body effect, affliction, reagent, trait, perk or form type) is final data read by its type's one reader, not open work (`doc/rewrite/proposals/stat_layer.md` §8, end); `factors_converted` is only for types that move the table into the entry itself.
-- `prompt_flow()`, `flow_select()`, `flow_sql()`, `flow_http_get()` (database and HTTP reads that re-ran their entry) are gone and hard-banned: a read that carries on from its answer is `sql_ask(owner, sql, params, PROC_REF(next), context...)` with `sql_answer_rows()` in the callback, an HTTP read is `http_ask()`, a typed read is a `/datum/io/sql` request, a write nobody reads is `sql_write()`. `rerun_ask`, `verb_ask`, `client_ask`, `cast_ask` and `flow_ask` are gone and hard-banned: an admin verb asks with `ask_steps()`, a spell with `target_questions()`, an admin tool with `ask_admin()` and its pickers (`code/modules/admin/view_variables/pickers.dm`).
+- `prompt_flow()`, `flow_select()`, `flow_sql()`, `flow_http_get()` (database and HTTP reads that re-ran their entry) are gone and hard-banned: a read that carries on from its answer is `sql_ask(owner, sql, params, PROC_REF(next), context...)` with `sql_answer_rows()` in the callback, an HTTP read is `http_ask()`, a typed read is a `/datum/io/sql` request, a write nobody reads is `sql_write()`. `rerun_ask`, `verb_ask`, `client_ask`, `cast_ask` and `flow_ask` are gone and hard-banned: an admin verb asks with `ask_steps()`, a spell with `target_questions()`, an admin tool with `ask_admin()` and its pickers (`code/content/admin/view_variables/pickers.dm`).
 - The `base_vars` ratchet (its baseline shrinks as files convert). The init, raw-overlay, untyped and escape_hatches ratchets are at 0 and hard-banned.
 - File moves into the new tree (§3c).
 
@@ -306,7 +306,7 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   it. Never run `git checkout` (any form), `git stash`, `git reset`, `git restore` or
   `git cherry-pick`; they discard or move other agents' work.
 - **Production build:** `tools/build/build.sh dm` compiles without `UNIT_TESTS` (CI's Compile Checks job
-  runs it). Test-only code (`code/tests/`, `code/modules/unit_tests/`) must stay behind
+  runs it). Test-only code (`code/tests/`, `code/tests/unit_tests/`) must stay behind
   `#if defined(UNIT_TESTS)`; generators do this via `sem::gen::test_only`, and `analyze gen`
   fails on a generated line naming a test-only type outside the guard.
 - **Generated files are build output, not committed.** `code/engine/_generated/`, `code/_generated/reads.dm`
@@ -365,7 +365,7 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   add scenarios under `code/modules/benchmarks/`, not one-off profiling. `--profile-tests`
   gives per-test proc profiles.
 - `om_test_begin`/`om_test_end` are gone; use `kernel_test_begin()`/`kernel_test_end()`
-  (`code/tests/driver/kernel_clock.dm`, doc §15). Never commit a `TEST_FOCUS(...)` line in `code/modules/unit_tests/dq_focus.dm`.
+  (`code/tests/driver/kernel_clock.dm`, doc §15). Never commit a `TEST_FOCUS(...)` line in `code/tests/unit_tests/dq_focus.dm`.
 
 ## 5. TGUI
 
@@ -438,7 +438,7 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
   Verdigris, driven from SSair's atmos step (phase N). `/datum/gas_mixture` is an opaque handle: read with
   `return_temperature()`/`return_volume()`, write with `set_temperature()`/`set_volume()`, and
   cache reads in hot loops (each call crosses the FFI). Atoms use `get_temperature()` /
-  `add_heat()` (`code/modules/heat/heat.dm`). Requires BYOND 516.1682+. Gas reactions stay in
+  `add_heat()` (`code/domains/heat/heat.dm`). Requires BYOND 516.1682+. Gas reactions stay in
   DM. `xgm_compat.dm` and `tg_infra_compat.dm` are stable compatibility API, not temporary shims.
 - **Expeditions and Flight Operations.** `GLOB.expedition_service` generates sites on demand
   (`load_new_z()`, cave automata or generated stations, POIs, loot, missions) and recycles
@@ -471,7 +471,7 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
   (`code/engine/declare/static_entries.dm`), looked up with `loot_decl_for()` / `map_resolver_proc()`.
   `DECLARE_LOOT`, the `LOOT_*` rows, `MAP_RESOLVER` and `MAP_RESOLVER_VARS` are hard-banned. Don't add
   hand-rolled spawn code. Tests: `dq_loot_roll_yields_table_item`, `dq_loot_search_yields_once_per_searcher`,
-  `dq_map_resolver_inherited` (`code/modules/unit_tests/dq_loot_behaviour.dm`).
+  `dq_map_resolver_inherited` (`code/tests/unit_tests/dq_loot_behaviour.dm`).
 - **Server metrics and the admin viewer.** `GLOB.metrics_service` (`code/modules/metrics/`) samples
   every `/datum/metrics_source` every 10 s and flushes through `om_io` into the `metric_*` tables
   (`SQL/metrics_schema.sql`, `METRICS_ENABLED`). Events come from single framework points through

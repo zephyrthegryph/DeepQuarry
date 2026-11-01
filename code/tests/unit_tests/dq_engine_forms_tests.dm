@@ -277,7 +277,7 @@ CAPABILITIES(/obj/forms_holder)
 /datum/unit_test/dq_forms/modes_grant_and_revoke
 
 /datum/unit_test/dq_forms/modes_grant_and_revoke/run_forms()
-	GLOB.forms_trace = TRUE
+	set_global(nameof(GLOB.forms_trace), TRUE)
 	var/obj/forms_machine/M = allocate(/obj/forms_machine)
 	TEST_ASSERT(granted(M, /datum/capability/forms_idle), "the var's capability is granted when the holder initializes")
 	TEST_ASSERT_EQUAL(mode_now(M, "mode"), /datum/capability/forms_idle, "and is the mode")
@@ -288,7 +288,7 @@ CAPABILITIES(/obj/forms_holder)
 	TEST_ASSERT(!mode_enter(M, "mode", /datum/capability/forms_working), "setting the same mode changes nothing")
 	TEST_ASSERT(mode_enter(M, "mode", null), "no mode at all")
 	TEST_ASSERT(!granted(M, /datum/capability/forms_working), "revokes the state")
-	GLOB.forms_trace = FALSE
+	set_global(nameof(GLOB.forms_trace), FALSE)
 
 /datum/unit_test/dq_forms/modes_setter_is_picked_up
 
@@ -462,7 +462,7 @@ CAPABILITIES(/obj/forms_holder)
 	var/obj/forms_holder/H = allocate(/obj/forms_holder)
 	var/obj/forms_subject/S = allocate(/obj/forms_subject)
 	var/datum/forms_source/a = allocate(/datum/forms_source)
-	GLOB.forms_trace = TRUE
+	set_global(nameof(GLOB.forms_trace), TRUE)
 	standing(H, toward = "wolves", value = STANDING_WARY, source = a)
 	TEST_ASSERT_EQUAL(H.changes, 1, "placing a row publishes standing_changed")
 	var/misses = GLOB.standing_cache_misses.n
@@ -487,7 +487,7 @@ CAPABILITIES(/obj/forms_holder)
 	test_time(3 SECONDS)
 	TEST_ASSERT(H.changes > changes, "an expiry publishes")
 	TEST_ASSERT_EQUAL(standing_toward(H, S), STANDING_NEUTRAL, "and the cache did not keep the expired row")
-	GLOB.forms_trace = FALSE
+	set_global(nameof(GLOB.forms_trace), FALSE)
 
 /datum/unit_test/dq_forms/standing_players_and_any
 

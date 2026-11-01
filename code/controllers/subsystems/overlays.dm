@@ -141,6 +141,11 @@ SYSTEM_DEF(overlays)
 		STAT_STOP_STOPWATCH
 		SSoverlays.log_stat(type, STAT_TIME)
 
+/// Replaces our overlays with a list another atom's overlays were copied into (`copy_overlays()` for an atom that no longer exists).
+/atom/proc/restore_overlays(list/snapshot)
+	overlays = snapshot ? snapshot.Copy() : null
+	VALIDATE_OVERLAY_LIMIT(src)
+
 //TODO: Better solution for these?
 /image/proc/add_overlay(x)
 	overlays |= x

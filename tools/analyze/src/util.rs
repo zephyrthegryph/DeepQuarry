@@ -78,7 +78,7 @@ pub fn rel_slash(path: &std::path::Path, root: &std::path::Path) -> String {
 }
 
 /// Folds `.` and `..` segments lexically: a file reached through a relative `#include "../../x/y.dm"` is the tree's `code/x/y.dm`, the path
-/// every lint and the semantic model key it by (a path left as `code/modules/unit_tests/../../tests/y.dm` matches no tree file).
+/// every lint and the semantic model key it by (a path left as `code/tests/unit_tests/../../tests/y.dm` matches no tree file).
 pub fn normalize_dots(path: &str) -> String {
     if !path.contains("/.") {
         return path.to_string();
@@ -223,7 +223,7 @@ mod normalize_dots_tests {
 
     #[test]
     fn folds_relative_include_paths() {
-        assert_eq!(normalize_dots("code/modules/unit_tests/../../tests/unit_tests/x.dm"), "code/tests/unit_tests/x.dm");
+        assert_eq!(normalize_dots("code/tests/unit_tests/../../tests/unit_tests/x.dm"), "code/tests/unit_tests/x.dm");
         assert_eq!(normalize_dots("code/a/./b.dm"), "code/a/b.dm");
         assert_eq!(normalize_dots("code/a/b.dm"), "code/a/b.dm");
         assert_eq!(normalize_dots("../x.dm"), "../x.dm");

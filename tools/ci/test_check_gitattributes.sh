@@ -20,8 +20,8 @@ run() { # <attributes text>: prints the checker's output, sets $rc
 }
 run $'* text=auto\n*.htm text\ncode/tests/_unit_tests.dm merge=union\ncode/x/*.dm merge=dq-ok'
 check "live paths, a matching glob, a known driver, bare patterns and * pass" '[ "$rc" -eq 0 ]'
-run $'code/modules/unit_tests/_unit_tests.dm merge=union'
-check "a moved path fails and names the line" '[ "$rc" -ne 0 ] && grep -q ".gitattributes:1: .code/modules/unit_tests/_unit_tests.dm. matches no tracked file" <<<"$out"'
+run $'code/tests/unit_tests/_unit_tests.dm merge=union'
+check "a moved path fails and names the line" '[ "$rc" -ne 0 ] && grep -q ".gitattributes:1: .code/tests/unit_tests/_unit_tests.dm. matches no tracked file" <<<"$out"'
 run $'code/y/*.dm merge=union'
 check "a glob matching nothing fails" '[ "$rc" -ne 0 ]'
 run $'code/x/one.dm merge=dq-typo'

@@ -84,7 +84,7 @@
 	var/mob/living/simple_mob/e0_fixture/M = actor()
 	var/obj/e0_fixture/p1_impure/X = allocate(/obj/e0_fixture/p1_impure)
 	var/obj/item/e2_key/key = allocate(/obj/item/e2_key)
-	GLOB.op_pure_expected = TRUE
+	set_global(nameof(GLOB.op_pure_expected), TRUE)
 	GLOB.op_pure_violations.Cut()
 	// a menu read evaluates the when() of "writes" and the requirement of "touches"
 	action_options(M, X, null)
@@ -101,7 +101,7 @@
 	// the read-only condition leaves nothing
 	var/datum/op_result/clean = perform_op(M, X, "clean", key, origin = ORIGIN_SYSTEM)
 	var/list/clean_found = GLOB.op_pure_violations.Copy()
-	GLOB.op_pure_expected = FALSE
+	set_global(nameof(GLOB.op_pure_expected), FALSE)
 	GLOB.op_pure_violations.Cut()
 	var/wrote_in_condition = FALSE
 	var/wrote_in_requirement = FALSE

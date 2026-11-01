@@ -1,6 +1,6 @@
 // Constraints (roadmap P3, doc/rewrite/rules.md §3).
 //
-// Parity: code/modules/unit_tests/data/dq_constraint_parity.json holds the
+// Parity: code/tests/unit_tests/data/dq_constraint_parity.json holds the
 // accept/refuse matrices the legacy code produced (can_be_inserted, suit
 // `allowed` lists, holster can_hold/slot_flags, mob_can_equip with
 // species_restricted and every override), captured before the conversion.
@@ -14,7 +14,7 @@
 //                 had mob_can_equip overrides) x 22 slots x naked/dressed, for
 //                 a human; the species-sensitive items for 38 species.
 
-#define DQ_PARITY_FIXTURE "code/modules/unit_tests/data/dq_constraint_parity.json"
+#define DQ_PARITY_FIXTURE "code/tests/unit_tests/data/dq_constraint_parity.json"
 #define DQ_PARITY_REPORT_LIMIT 30
 
 /proc/dq_parity_fixture()

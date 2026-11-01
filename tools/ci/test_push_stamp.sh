@@ -39,7 +39,7 @@ merge_with() { # <lane> <master> <path=content for the regenerated file>: a merg
 	g read-tree "$tree"
 	local blob
 	blob="$(printf '%s\n' "$keys" | g hash-object -w --stdin)"
-	g update-index --add --cacheinfo "100644,$blob,code/modules/unit_tests/snapshots/op_bases/regen.txt"
+	g update-index --add --cacheinfo "100644,$blob,code/tests/unit_tests/snapshots/op_bases/regen.txt"
 	commit_tree "$lane" "$master"
 }
 check() { # <name> <expect: STAMPED|UNSTAMPED> <commit>
@@ -62,17 +62,17 @@ cp "$here/tools/dq_push_stamp.sh" "$here/tools/dq_lane_check.js" "$tmp/repo/tool
 printf 'tools/analyze/\n' >"$tmp/repo/tools/ci/lane_ready_global.txt"
 g add -A
 base0="$(commit_tree)"
-base="$(put "$base0" code/modules/unit_tests/snapshots/op_bases/regen.txt "keys v0")"
+base="$(put "$base0" code/tests/unit_tests/snapshots/op_bases/regen.txt "keys v0")"
 base="$(put "$base" code/a/one.dm "one")"
 base="$(put "$base" code/b/two.dm "two")"
 g update-ref refs/heads/main "$base"
 
 # 1. both sides touch op_bases/regen.txt only besides disjoint code.
 lane="$(put "$base" code/a/one.dm "one changed")"
-lane="$(put "$lane" code/modules/unit_tests/snapshots/op_bases/regen.txt "keys lane")"
+lane="$(put "$lane" code/tests/unit_tests/snapshots/op_bases/regen.txt "keys lane")"
 stamp "$lane" "$base"
 master="$(put "$base" code/b/two.dm "two changed")"
-master="$(put "$master" code/modules/unit_tests/snapshots/op_bases/regen.txt "keys master")"
+master="$(put "$master" code/tests/unit_tests/snapshots/op_bases/regen.txt "keys master")"
 g update-ref refs/remotes/origin/master "$master"
 m="$(merge_with "$lane" "$master" "keys regenerated")"
 check "regenerated-only conflict carries the stamp" STAMPED "$m"

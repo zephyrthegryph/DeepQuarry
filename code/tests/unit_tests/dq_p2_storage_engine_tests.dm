@@ -50,11 +50,11 @@
 	var/obj/item/p2_storage_probe/tiny/inside = new(B) // in the box with no move: the ledger has not seen it
 	TEST_ASSERT_EQUAL(inside.loc, B, "the thing is in the box")
 	GLOB.op_pure_violations.Cut()
-	GLOB.op_pure_expected = TRUE
+	set_global(nameof(GLOB.op_pure_expected), TRUE)
 	op_pure_begin()
 	var/total = storage_total(B)
 	op_pure_end()
-	GLOB.op_pure_expected = FALSE
+	set_global(nameof(GLOB.op_pure_expected), FALSE)
 	TEST_ASSERT_EQUAL(total, 1, "the read adopted the thing and counted it")
 	TEST_ASSERT_EQUAL(length(GLOB.op_pure_violations), 0, "and wrote nothing a condition may not write")
 

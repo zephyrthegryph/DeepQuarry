@@ -8,7 +8,7 @@
 //   - faction vs. personal disposition resolution
 //   - item-granted behavior declaration
 //
-// This file is #included from code/modules/unit_tests/_unit_tests.dm so the
+// This file is #included from code/tests/unit_tests/_unit_tests.dm so the
 // TEST_ASSERT* macros are in scope. The combat_ai defines header is re-included
 // here (DM dedupes identical includes) because the test block compiles before
 // the combat_ai framework includes later in the DME.

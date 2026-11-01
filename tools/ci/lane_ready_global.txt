@@ -5,7 +5,7 @@
 tools/analyze/
 tools/build/
 tools/dq_focused_test.sh
-code/modules/unit_tests/unit_test.dm
+code/tests/unit_tests/unit_test.dm
 code/engine/kernel/
 code/defines/engine/
 maps/virgo_minitest/

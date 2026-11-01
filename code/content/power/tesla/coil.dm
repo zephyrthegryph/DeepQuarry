@@ -49,7 +49,7 @@
 // The tesla coils (doc/rewrite/final_api.html section 16): an energy ball's bolt that strikes a coil is turned into power on its cable network
 // (coil_act(): power / power_loss * input_power_multiplier, supplied for the next power step) and arced on; the subtypes relay, split, amplify,
 // recast or only collect it. A multitool behind the open panel turns a coil into another kind, keeping its parts; a grab buckles someone to it.
-// The curves are pinned in code/modules/unit_tests/dq_power_plants_behaviour.dm (tesla_coil_curves).
+// The curves are pinned in code/tests/unit_tests/dq_power_plants_behaviour.dm (tesla_coil_curves).
 CAPABILITIES(/obj/machinery/power/tesla_coil)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE))
 	configure(buckle_rules(lying = FALSE))

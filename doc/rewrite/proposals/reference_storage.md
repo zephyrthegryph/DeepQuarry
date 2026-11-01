@@ -64,7 +64,7 @@ Seeded 2026-10-12: 1,768 sites (var 1,391, list 377); 1,737 after generated outp
 
 ## The GC sweep test
 
-`/datum/unit_test/dq_gc_sweep` (normal tier, `code/modules/unit_tests/dq_gc_sweep_tests.dm`) creates and
+`/datum/unit_test/dq_gc_sweep` (normal tier, `code/tests/unit_tests/dq_gc_sweep_tests.dm`) creates and
 deletes a representative set (machines, items, a human with an outfit, simple mobs, a window datum opened
 and closed, HUD screens, lights) and, once the collector's filter pass has run, checks that no subject is
 left in its check queue with any reference besides the queue's own. A surplus reference fails the test and
@@ -141,5 +141,5 @@ everywhere. What changed is where the text work is done: once, when a slot is ta
 A turf handle is the turf's key (no new string) once the level has been released and reused it carries `#<generation>`; a handle to a
 deleted datum stays dead when its slot is reused (the slot's text carries the generation, and a freed slot's text leaves the index).
 
-The cost passes are `dq_rel_perf_*` (`code/modules/unit_tests/dq_rel_perf_*.dm`): microseconds per operation at two sizes, no thresholds.
+The cost passes are `dq_rel_perf_*` (`code/tests/unit_tests/dq_rel_perf_*.dm`): microseconds per operation at two sizes, no thresholds.
 `dq_rel_core_*` is the correctness set: long lists, sets, numeric tables, deletion of members and holders, handle reuse.

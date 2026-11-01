@@ -98,7 +98,7 @@
 	qdel(H)
 	TEST_ASSERT(QDELETED(looks), "the record goes with its holder")
 
-#define DQ_PROFILE_SAVES "code/modules/unit_tests/data/profile_saves/"
+#define DQ_PROFILE_SAVES "code/tests/unit_tests/data/profile_saves/"
 
 /// A real character save (a headless test account's preferences.json) applied to a human lands in its profile records, and
 /// written back from the records it saves the same values: the save format did not change (colours were already "#rrggbb"
@@ -230,7 +230,7 @@
 
 /// Writes the fixture save with character1's keys overridden, to a scratch path; returns the path.
 /proc/dq_test_write_character_save(list/overrides)
-	var/list/save = json_decode(file2text("code/modules/unit_tests/data/profile_saves/headless_preferences.json"))
+	var/list/save = json_decode(file2text("code/tests/unit_tests/data/profile_saves/headless_preferences.json"))
 	var/list/character = save["character1"]
 	for(var/key in overrides)
 		character[key] = overrides[key]

@@ -16,7 +16,7 @@ Nothing here has runtime behaviour except the test driver's own bookkeeping. Eng
 | `code/engine/<engine folder>/stubs.dm` | One stub per public proc, final signature, reports `ENGINE_STUB` and returns null. |
 | `code/tests/driver/` | The test driver and the recorder. |
 | `code/tests/engine/fixtures.dm` | Test-only capability registry and fixture types. The capability lists are written in the final syntax as markers. |
-| `code/modules/unit_tests/dq_e0_*.dm` | The ten proofs and the alias shim around them. |
+| `code/tests/unit_tests/dq_e0_*.dm` | The ten proofs and the alias shim around them. |
 
 The contracts and defines are included right after `code\__defines`, before `_helpers` (compile order 2). Engine stubs are included before
 `code\_generated`. `code\tests\_tests.dm` is included just before `_unit_tests.dm` and is guarded by `UNIT_TESTS`.
@@ -161,7 +161,7 @@ Not in E0 (named in section 19 but outside the task given): the compiled-table s
 
 ## Phase 1 close (all ten E0 proofs)
 
-The proofs that waited (3, 7, 9) and the E2 gaps closed on branch `rewrite/p1-close`. `dm-test --tier=e0` is 10 of 10; `dq_p1/*` (`code/modules/unit_tests/dq_p1_close_tests.dm`, fixtures `code/tests/engine/p1_fixtures.dm`) pins each piece below.
+The proofs that waited (3, 7, 9) and the E2 gaps closed on branch `rewrite/p1-close`. `dm-test --tier=e0` is 10 of 10; `dq_p1/*` (`code/tests/unit_tests/dq_p1_close_tests.dm`, fixtures `code/tests/engine/p1_fixtures.dm`) pins each piece below.
 
 | Piece | Where | What it is |
 |---|---|---|
@@ -194,7 +194,7 @@ Semantics when something is hooked: `needs` refuses the hit (outcome `ACT_REFUSE
 
 **`ruined()` in `dismantle()`.** `dismantle(tool(...), becomes(frame), ruined(cond, becomes(scrap)))`. The condition is any section 9 condition, evaluated with `op_cond()` and the dismantle op's context (a `PROC_REF` or `TYPE_PROC_REF` of `x(datum/act/A)`). The dismantle op now runs: its input parts, then the ledger refund, then the dismantle's effects (or, when a `ruined()` holds, that entry's effects in their place; several `ruined()` entries are tried in order, none holding runs the ordinary effects), then the instance ends unless a `becomes()` already replaced it. Only effect parts (and `then()`) belong in `ruined()`; others are reported. Refund choice: the whole ledger is refunded whether or not the dismantle is ruined (section 12: "It refunds the whole ledger"; ruined swaps what the thing becomes, not what the crew put in). The refund now runs before the effects, because `becomes()` deletes the instance and its history with it.
 
-Tests: `code/modules/unit_tests/dq_p2_engine_tests.dm`, fixtures `code/tests/engine/p2_fixtures.dm`.
+Tests: `code/tests/unit_tests/dq_p2_engine_tests.dm`, fixtures `code/tests/engine/p2_fixtures.dm`.
 
 **Library and presentation (APC reference conversion).** Shared machine capabilities live in `code/library/machine/` (`cover`, `panel`, `wires`, `machine.dm`: `breakable`, `wall_mount`, `machine_basics`, `wall_machine`, `maintenance_hatch`) and `code/library/access/` (`lock`, `emag`, `subversion_reset`); `powered()` and `powered_by()` are in `code/domains/power/powered.dm`; `cell_bay()` and `space()` are in `code/engine/library/spaces.dm` (`compartment()` and the `BAY_*` names of the new library became `space()` and `SPACE_*`; the legacy datum library keeps the `legacy_` prefix). Hands: `code/library/mob/hands.dm` declares `hands()` on `/mob/living/carbon/human` and `/mob/living/silicon/robot` (the engine had no hand provider on any real mob).
 

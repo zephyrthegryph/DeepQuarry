@@ -161,7 +161,7 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "one_temperature_api_no_ad_hoc_return_temperature_procs_h1",
             "one temperature API: no ad-hoc return_temperature procs (H1)",
-            "return_temperature() is only the gas mixture accessor. Atoms override get_temperature() / get_interior_temperature() (code/modules/heat/heat.dm).",
+            "return_temperature() is only the gas mixture accessor. Atoms override get_temperature() / get_interior_temperature() (code/domains/heat/heat.dm).",
             Files::Code,
             line(r"^/[A-Za-z0-9_/]*/return_temperature\("),
         )
@@ -179,7 +179,7 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "input_modifier_ladders",
             "input: modifier ladders",
-            "a click modifier check outside the input router. Add a row to a click table in code/modules/keybindings/router.dm and branch on the INPUT_ACTION_* it produces.",
+            "a click modifier check outside the input router. Add a row to a click table in code/content/keybindings/router.dm and branch on the INPUT_ACTION_* it produces.",
             Files::Code,
             line(r#"\bmodifiers\[\s*"(shift|ctrl|alt|middle|right|left|xbutton1|xbutton2)"|LAZYACCESS\(\s*modifiers\s*,\s*(SHIFT_CLICK|CTRL_CLICK|ALT_CLICK|MIDDLE_CLICK|RIGHT_CLICK|LEFT_CLICK|BUTTON4|BUTTON5)|\bmodifiers\[\s*(SHIFT_CLICK|CTRL_CLICK|ALT_CLICK|MIDDLE_CLICK|RIGHT_CLICK|LEFT_CLICK|BUTTON4|BUTTON5)\s*\]"#),
         )
@@ -227,7 +227,7 @@ pub fn parts() -> Vec<Part> {
             "robot_cell_writes_outside_the_power_ledger",
             "robot cell writes outside the power ledger",
             "direct robot cell write detected. Use draw_power() / add_power() with ROBOT_CELL_JOULES().",
-            Files::Under(&["code/modules/mob/living/silicon/robot", "code/content/mob/living/silicon/robot"], &["dm"]),
+            Files::Under(&["code/content/mob/living/silicon/robot", "code/content/mob/living/silicon/robot"], &["dm"]),
             line(r"\bcell\.(charge[[:space:]]*[-+*/]?=[^=]|use\(|give\(|checked_use\()"),
         )
         .flt(vec![drop(r"/robot/robot\.dm:")]),

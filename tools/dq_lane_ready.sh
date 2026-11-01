@@ -207,11 +207,11 @@ done
 git update-index -q --refresh >/dev/null 2>&1
 changed="$(git status --porcelain --untracked-files=no)"
 if [ -n "$changed" ]; then
-	other="$(printf '%s\n' "$changed" | grep -v ' code/modules/unit_tests/snapshots/' || true)"
+	other="$(printf '%s\n' "$changed" | grep -v ' code/tests/unit_tests/snapshots/' || true)"
 	[ -z "$other" ] || die "the gates changed tracked files that are not snapshots (not stamping):
 $other"
-	git add -u code/modules/unit_tests/snapshots
-	git add -- code/modules/unit_tests/snapshots/op_bases 2>/dev/null || true
+	git add -u code/tests/unit_tests/snapshots
+	git add -- code/tests/unit_tests/snapshots/op_bases 2>/dev/null || true
 	git commit -q -m "Record snapshots after the lane-ready run
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>" || die "could not commit the recorded snapshots"

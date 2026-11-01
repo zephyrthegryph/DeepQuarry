@@ -4,7 +4,7 @@
 // a little of the phoron; a singularity within 15 tiles pulses it directly (receive_pulse()). Its switch is behind an ID lock that only locks
 // while it runs; a crowbar takes the tank out of an unlocked collector, and a blast knocks it out.
 //
-// SAFETY: the output curve is pinned in code/modules/unit_tests/dq_power_plants_behaviour.dm (collector_output, sing_pulse_feeds_collectors).
+// SAFETY: the output curve is pinned in code/tests/unit_tests/dq_power_plants_behaviour.dm (collector_output, sing_pulse_feeds_collectors).
 
 /// W supplied per mole of phoron per unit of pulse strength.
 #define RAD_COLLECTOR_POWER_PER_RAD 20

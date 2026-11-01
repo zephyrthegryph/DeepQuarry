@@ -114,7 +114,7 @@ before code/engine/state/construction.dm code/content/state/construction_adapter
 before code/engine/state/properties/providers.dm code/content/properties/providers.dm   # validate_rules(), variant_values()
 before code/engine/state/schema.dm code/datums/state/latent_safe_types.dm              # register_defaults()
 before code/engine/state/serializer.dm code/content/state/serializer.dm   # identity(), lookup()
-before code/game/objects/items/weapons/id?cards/cards.dm code/content/items/weapons/id?cards/id_stacks.dm   # base_icon
+before code/content/items/weapons/id?cards/cards.dm code/content/items/weapons/id?cards/id_stacks.dm   # base_icon
 before code/content/casino/board_games/four_in_a_row.dm code/content/casino/board_games/tic_tac_toe.dm   # change_win_count()
 before code/content/mobs/living/simple_mob/subtypes/animal/passive/possum.dm code/domains/ai/ports/possum.dm  # respond_to_damage()
 before code/content/reagents/reagents/content/food.dm code/content/reagents/reagents/content/alcohol.dm   # nutriment_factor
@@ -123,7 +123,6 @@ before code/content/stockmarket/stocks.dm code/content/admin/admin_report_panel.
 before code/content/integrated_electronics/core/special_pins/list_pin.dm code/content/integrated_electronics/list_pin_panel.dm   # interact()
 
 # The test trees are compiled through their aggregators (their own include lists, under UNIT_TESTS).
-skip code/modules/unit_tests/**
 file code/tests/unit_tests/_unit_tests.dm
 skip code/tests/**
 file code/tests/_tests.dm
@@ -171,7 +170,7 @@ first code/engine/_generated/ids.dm      # the ids the declaration markers decla
 first code/contracts/**                  # the contracts layer: ids (TAG_UI, RES_*), act types, accessor declarations
 first code/content/contracts/**   # the contracts layer: ids (TAG_UI, RES_*), act types, accessor declarations
 first **/*_defines.dm                    # a module's own macro file (combat_ai, integrated_electronics, flight_operations, expedition, ...)
-first code/game/machinery/machinery_fields.dm   # declares the machine families' state vars (on, active, locked, mode) their files set
+first code/content/machinery/machinery_fields.dm   # declares the machine families' state vars (on, active, locked, mode) their files set
 
 # Macros defined in an ordinary file and used by others: the definer before its users.
 before code/content/mob/living/carbon/human/species/station/traits/_traits.dm code/content/client/preferences/**   # TRAIT_TYPE_*
@@ -233,7 +232,7 @@ before code/domains/heat/heat_bind_batch.dm code/domains/atmos/pipes/tank.dm   #
 before code/domains/heat/heat_bind_batch.dm code/domains/atmos/pipes/universal.dm   # HEAT_BODY_RESOLVE
 before code/domains/heat/heat_bind_batch.dm code/content/rules/world_adapter.dm
 before code/domains/heat/heat_bind_batch.dm code/domains/heat/**
-before code/domains/heat/heat_bind_batch.dm code/modules/heat/heat.dm
+before code/domains/heat/heat_bind_batch.dm code/domains/heat/heat.dm
 before code/game/atom/atom_type_table.dm code/controllers/subsystems/atoms_init.dm   # TYPE_TABLE_*
 before code/game/atom/atom_type_table.dm code/content/atom/atom_materialize.dm
 before code/engine/declare/entries.dm code/engine/actions/**                  # ENTRY_SLOTS, ENTRY_SLOT_LIST

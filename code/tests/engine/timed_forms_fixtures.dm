@@ -1,5 +1,5 @@
 // Fixtures of the timed-action forms: starts(), plays(at_start), msg_text(), asks(ends_on_no), captures() on a wait, claims(), ORIGIN_SYSTEM pendings,
-// hold_busy() and every_running(). Compiled under UNIT_TESTS only; code/modules/unit_tests/dq_timed_forms_tests.dm drives them.
+// hold_busy() and every_running(). Compiled under UNIT_TESTS only; code/tests/unit_tests/dq_timed_forms_tests.dm drives them.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 

@@ -8,7 +8,7 @@ stop a caller writing into a list every other caller shares.
 
 Code: `code/__defines/shared_cache.dm` (macros), `code/datums/shared_cache/shared_cache.dm`
 (miss path, policies, interning, LRU, stats, mutation guard). Tests:
-`code/modules/unit_tests/dq_shared_cache_tests.dm`. Bench:
+`code/tests/unit_tests/dq_shared_cache_tests.dm`. Bench:
 `code/modules/benchmarks/shared_cache.dm`. Lint: `tools/ci/cache_lint.py`.
 
 This is not the per-entity declared-cache machinery (`declared_cache_vars()`,

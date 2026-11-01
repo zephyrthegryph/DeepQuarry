@@ -38,7 +38,7 @@ const RULES: &[RuleMeta] = &[
     RuleMeta { name: "undef_then_used", hint: "#undef a file-local define after its last use, or define it in __defines" },
 ];
 
-const EXEMPT_PREFIXES: &[&str] = &["code/modules/unit_tests/", "code/tests/", "code/engine/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/"];
+const EXEMPT_PREFIXES: &[&str] = &["code/tests/unit_tests/", "code/tests/", "code/engine/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/"];
 
 /// The proc a line belongs to: its type path, its name, whether it is an op effect, and whether it is an output.
 struct ProcCtx {
@@ -250,7 +250,7 @@ fn selftest() -> Result<String, String> {
     if got != want {
         return Err(format!("dx_review selftest: got {:?}", got));
     }
-    let t = SourceFile::from_text("code/modules/unit_tests/x.dm", "/obj/a/proc/b(datum/act/op/A)\n\topen_request(A, x)");
+    let t = SourceFile::from_text("code/tests/unit_tests/x.dm", "/obj/a/proc/b(datum/act/op/A)\n\topen_request(A, x)");
     let mut v2 = Vec::new();
     scan_file(&t, &mut v2);
     if !v2.is_empty() {

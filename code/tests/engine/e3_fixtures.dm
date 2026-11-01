@@ -1,4 +1,4 @@
-// E3, stats: the gate fixtures of doc/rewrite/final_api.html section 19 "E3, stats" (code/modules/unit_tests/dq_e3_stats_tests.dm).
+// E3, stats: the gate fixtures of doc/rewrite/final_api.html section 19 "E3, stats" (code/tests/unit_tests/dq_e3_stats_tests.dm).
 //
 // /obj/e3_rules carries one stat of each combine rule, and a FORMULA that reads one of them. /obj/e3_machine is the gated-contribution case
 // (operable from broken, draw from on) and a status. /obj/e3_apc and /obj/e3_load are the fan-out of the spike: one channel var, 50 readers.

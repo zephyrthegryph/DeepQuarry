@@ -10,7 +10,7 @@
  * and the facts the conversion must keep: result, quantity, time, mix, coating, appliance, wiki flag, the reagents, items and fruit.
  * A recipe whose fixture cannot be built (an item that refuses to be made, a fruit tag with no seed) records `fixture=unbuilt` and the missing part.
  *
- * Rows are `key => value` in code/modules/unit_tests/snapshots/xform/kitchen_select.txt (see dq_xform_pins.dm); an empty file is recorded by the next run.
+ * Rows are `key => value` in code/tests/unit_tests/snapshots/xform/kitchen_select.txt (see dq_xform_pins.dm); an empty file is recorded by the next run.
  */
 #define DQ_KITCHEN_PIN_NAME "kitchen_select"
 

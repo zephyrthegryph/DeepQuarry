@@ -9,14 +9,14 @@
  *   dq_xform_overlap_pin   every pair of rules that compete for a reactant (the same first input, the same family, a compatible subject and window): a
  *                          subject holding the union of their inputs; the winner and the leftovers. This is the pin that proves a change of ordering.
  *
- * Rows are `key => value` text, one file per test under code/modules/unit_tests/snapshots/xform/. A rule's key is its type path below the root of
+ * Rows are `key => value` text, one file per test under code/tests/unit_tests/snapshots/xform/. A rule's key is its type path below the root of
  * the rule types (`instant/carthatoline`, `distilling/biomass`, `instant/slime/grey_new_slime`), which the conversion kept. The recorders read rules
  * through /datum/xform_pin_rule, which dq_xform_pin_rules() fills from the compiled rules.
  *
  * An empty or missing file is recorded by the next run; `bash tools/dq_focused_test.sh --bless <test>` rewrites it. Record on one unsharded world.
  * Every row seeds the global rng first, so a rule whose tail rolls dice is reproducible.
  */
-#define DQ_XFORM_PIN_DIR "code/modules/unit_tests/snapshots/xform/"
+#define DQ_XFORM_PIN_DIR "code/tests/unit_tests/snapshots/xform/"
 /// The inputs of a canonical subject are this many times the rule's minimum.
 #define DQ_XFORM_SCALE 4
 /// The seed of the global rng before each settle.

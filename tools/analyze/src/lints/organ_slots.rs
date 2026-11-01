@@ -26,7 +26,7 @@ static META: Meta = Meta {
     policy: Policy::Hard,
     rules: &[RuleMeta {
         name: "internal_organs",
-        hint: "use organ_in(tag), INTERNAL_ORGANS(M) or limb.held_organs() (code/modules/body/parts/queries.dm)",
+        hint: "use organ_in(tag), INTERNAL_ORGANS(M) or limb.held_organs() (code/domains/body/parts/queries.dm)",
     }],
     allow: &["organ_slots"],
     lists: &[],

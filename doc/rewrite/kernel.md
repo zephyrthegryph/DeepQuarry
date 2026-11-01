@@ -1317,7 +1317,7 @@ events (emitter -> handlers, no dependency):
 
 ### 5.3 Testing
 
-**Unit tests** (new, `code/modules/unit_tests/`):
+**Unit tests** (new, `code/tests/unit_tests/`):
 
 | Test | Checks |
 |---|---|

@@ -303,7 +303,7 @@ fn text_owner(line: &str) -> String {
     init_header.captures(line).map(|c| c.s(1).to_string()).unwrap_or_default()
 }
 
-/// The atom built-ins `SETTER()`-registered in code/game/atom/atom_visual.dm.
+/// The atom built-ins `SETTER()`-registered in code/content/atom/atom_visual.dm.
 const VISUAL_SETTER_VARS: &[&str] = &["color", "alpha", "layer", "plane", "pixel_x", "pixel_y", "pixel_w", "pixel_z", "appearance_flags", "gender"];
 
 /// What an `init_lines` statement is about, for its identity (`owner::Initialize::target`):
@@ -344,7 +344,7 @@ pub fn init_line_target(stmt: &str) -> String {
                 return var.to_string();
             }
         }
-        // `obj.set_color(v)` is the write `obj.color = v` converted to its registered visual setter (code/game/atom/atom_visual.dm): the same
+        // `obj.set_color(v)` is the write `obj.color = v` converted to its registered visual setter (code/content/atom/atom_visual.dm): the same
         // site (`a.b`). Only those: `cell.set_charge(v)` is a call like any other.
         if let Some((recv, last)) = callee.rsplit_once('.') {
             if let Some(var) = last.strip_prefix("set_") {

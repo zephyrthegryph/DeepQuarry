@@ -7,22 +7,22 @@ use super::framework::*;
 static D3: &[(&str, &[&str])] = &[
     (r"^[[:space:]]*var/(damage|damage_overlay)\b", &["code/content/turfs/simulated/walls.dm"]),
     (r"^/turf/simulated/wall[^[:space:]]*/(take_damage|update_damage)\(", &["code/game/turfs", "code/content/turfs/flooring/seasonal.dm", "code/content/turfs/simulated/fancy_shuttles.dm", "code/content/turfs/simulated/floor_attackby.dm", "code/content/turfs/simulated/floor_icon.dm", "code/content/turfs/simulated/floor_types.dm", "code/content/turfs/simulated/lava.dm", "code/content/turfs/simulated/nanogoop.dm", "code/content/turfs/simulated/outdoors/grass.dm", "code/content/turfs/simulated/outdoors/outdoors.dm", "code/content/turfs/simulated/outdoors/survival_action.dm", "code/content/turfs/simulated/wall_attacks.dm", "code/content/turfs/simulated/wall_construction.dm", "code/content/turfs/simulated/wall_types.dm", "code/content/turfs/simulated/walls.dm", "code/content/turfs/space/space.dm", "code/content/turfs/turf.dm", "code/content/turfs/turf_changing.dm", "code/content/turfs/unsimulated/sky.dm"]),
-    (r"^[[:space:]]+var/integrity\b|\bintegrity[[:space:]]*([-+*/]?=[^=]|\+\+|--)", &["code/modules/blob2"]),
+    (r"^[[:space:]]+var/integrity\b|\bintegrity[[:space:]]*([-+*/]?=[^=]|\+\+|--)", &["code/content/blob2"]),
     (r"\bblob_(max_)?health\b", &["code/modules/blob"]),
     (
         r"^[[:space:]]+var/(damage|max_damage|broken_damage|damage_failure)\b|\b(max_damage|broken_damage|damage_failure)\b",
         &["code/modules/modular_computers", "code/content/modular_computers"],
     ),
-    (r"\b(maxintegrity|integrity[[:space:]]*([-+*/]?=[^=]|\+\+|--))|^[[:space:]]+var/integrity\b", &["code/game/objects/items/weapons/tanks", "code/content/items/weapons/tanks"]),
+    (r"\b(maxintegrity|integrity[[:space:]]*([-+*/]?=[^=]|\+\+|--))|^[[:space:]]+var/integrity\b", &["code/content/items/weapons/tanks", "code/content/items/weapons/tanks"]),
     (r"\bshield_health\b", &["code"]),
-    (r"^[[:space:]]+var/hp\b|\bhp[[:space:]]*[-+]?=[^=]", &["code/game/objects/items/shooting_range.dm"]),
+    (r"^[[:space:]]+var/hp\b|\bhp[[:space:]]*[-+]?=[^=]", &["code/content/items/shooting_range.dm"]),
     (
         r"^[[:space:]]+var/(strength|max_strength)\b|\.(strength|max_strength)\b",
-        &["code/modules/shieldgen/energy_field.dm", "code/modules/shieldgen/shield_gen.dm", "code/content/xenoarcheaology/effects/forcefield.dm"],
+        &["code/content/shieldgen/energy_field.dm", "code/content/shieldgen/shield_gen.dm", "code/content/xenoarcheaology/effects/forcefield.dm"],
     ),
     (
         r"\bhealth\b",
-        &["code/game/objects/items/weapons/material", "code/content/items/weapons/material", "code/content/items/weapons/traps.dm", "code/modules/vore/smoleworld"],
+        &["code/content/items/weapons/material", "code/content/items/weapons/material", "code/content/items/weapons/traps.dm", "code/content/vore/smoleworld"],
     ),
     (r"\.integrity[[:space:]]*([-+*/]?=[^=]|\+\+|--)", &["code/content/mecha/combat/fighter.dm", "code/content/mecha/components/_component.dm", "code/content/mecha/equipment/mecha_equipment.dm", "code/content/mecha/equipment/tools/clamp.dm", "code/content/mecha/equipment/tools/drill.dm", "code/content/mecha/equipment/tools/passenger.dm", "code/content/mecha/equipment/tools/sleeper.dm", "code/content/mecha/equipment/weapons/energy/pulse.dm", "code/content/mecha/equipment/weapons/weapons.dm", "code/content/mecha/mecha.dm", "code/content/mecha/mecha_construction_paths.dm", "code/content/mecha/mecha_control_console.dm", "code/content/mecha/space/shuttle.dm", "code/content/mecha/working/ripley.dm"]),
 ];
@@ -53,7 +53,7 @@ pub fn parts() -> Vec<Part> {
             Files::Code,
             line(r"check_rights\("),
         )
-        .flt(vec![Flt::DropLit("code/modules/admin/holder"), Flt::DropLit("proc/check_rights"), drop(r"ALLOW\([^)]*check_grep")]),
+        .flt(vec![Flt::DropLit("code/content/admin/holder"), Flt::DropLit("proc/check_rights"), drop(r"ALLOW\([^)]*check_grep")]),
         Part::new(
             "admin_rights_shrink_only_baseline_one_mechanism_admin_can__holder",
             "admin rights: shrink-only baseline (one mechanism: admin_can)",
@@ -62,13 +62,13 @@ pub fn parts() -> Vec<Part> {
             Find::Tree,
         )
         .flt(vec![
-            Flt::DropLit("code/modules/admin/holder"),
+            Flt::DropLit("code/content/admin/holder"),
             Flt::DropPaths("admin_holder_allow"),
             Flt::DropLit("proc/check_rights"),
             drop(r"ALLOW\([^)]*check_grep"),
             drop(r"nameof\([^)]*\.holder|\.holder\("),
             // receivers that are never a /client: brain/module/io/pin/wire/reagent holders and op/act/ledger contexts
-            Flt::DropLit("code/game/objects/effects/effect_system.dm"),
+            Flt::DropLit("code/content/effects/effect_system.dm"),
             Flt::DropLit("code/datums/containment/ledger.dm"),
             Flt::DropLit("C.holder.trans_to_holder"),
             Flt::DropLit("// holder.holder is"),
@@ -81,7 +81,7 @@ pub fn parts() -> Vec<Part> {
             Files::Code,
             line(r"rights & R_"),
         )
-        .flt(vec![Flt::DropLit("code/modules/admin/holder"), Flt::DropLit("proc/check_rights"), drop(r"ALLOW\([^)]*check_grep")]),
+        .flt(vec![Flt::DropLit("code/content/admin/holder"), Flt::DropLit("proc/check_rights"), drop(r"ALLOW\([^)]*check_grep")]),
         // `rg -c`: matching lines, no filters, no allow
         Part::new(
             "heat_ratchet_on_fire_act_overrides_h3",
@@ -91,7 +91,7 @@ pub fn parts() -> Vec<Part> {
             line(r"^/[A-Za-z0-9_/]*/fire_act\("),
         )
         // The entry-point adapters (atom, obj, mob/living) are where fire exposure lands and is published; they are not overrides.
-        .flt(vec![Flt::DropLit("code/game/atom/_atom.dm"), Flt::DropLit("code/game/objects/obj_defense.dm"), Flt::DropLit("code/modules/mob/living/living_fire.dm")]),
+        .flt(vec![Flt::DropLit("code/game/atom/_atom.dm"), Flt::DropLit("code/content/objects/obj_defense.dm"), Flt::DropLit("code/content/mob/living/living_fire.dm")]),
         // Hard ban (temperature and energy writes outside code/domains): DM outside the gas and heat domains never writes a gas's or a solid's temperature or energy.
         Part::new(
             "heat_raw_temperature_writes",
@@ -110,7 +110,7 @@ pub fn parts() -> Vec<Part> {
             line(r"^/(atom|obj|mob|area)[A-Za-z0-9_/]*/ex_act\("),
         )
         // The entry-point adapters (atom, obj, mob/living) start the explosion action and deliver the packet; they are not overrides.
-        .flt(vec![Flt::DropLit("code/game/atom/_atom.dm"), Flt::DropLit("code/game/objects/obj_defense.dm"), Flt::DropLit("code/modules/mob/living/living_defense.dm")]),
+        .flt(vec![Flt::DropLit("code/game/atom/_atom.dm"), Flt::DropLit("code/content/objects/obj_defense.dm"), Flt::DropLit("code/content/mob/living/living_defense.dm")]),
         Part::new(
             "damage_ratchet_on_atom_break_set_broken_overrides_d4",
             "damage: ratchet on atom_break()/set_broken() overrides (D4)",
@@ -119,7 +119,7 @@ pub fn parts() -> Vec<Part> {
             line(r"^/[A-Za-z0-9_/]*/(atom_break|set_broken)\("),
         )
         // The entry-point adapters (atom, obj, machinery) are the one place the break is written and published; they are not overrides.
-        .flt(vec![Flt::DropLit("code/game/atom/atom_defense.dm"), Flt::DropLit("code/game/objects/obj_defense.dm"), Flt::DropLit("code/game/machinery/machinery.dm")]),
+        .flt(vec![Flt::DropLit("code/game/atom/atom_defense.dm"), Flt::DropLit("code/content/objects/obj_defense.dm"), Flt::DropLit("code/game/machinery/machinery.dm")]),
         Part::new(
             "generic_hit_ratchet_on_attack_generic_overrides",
             "generic hit: ratchet on attack_generic() overrides",
@@ -331,7 +331,7 @@ pub fn parts() -> Vec<Part> {
             "medical_condition_severity_writes",
             "medical condition severity writes",
             "direct medical-condition severity write detected. Use set_severity() or adjust_severity() so condition-dependent systems receive invalidation signals.",
-            Files::Under(&["code/content/medical/book/conditions_tab.dm", "code/content/medical/conditions/limbs.dm", "code/content/medical/conditions/vital_systems.dm", "code/content/medical/conditions/wounds.dm", "code/content/medical/stabilisation/stasis.dm", "code/modules/contracts"], &["dm"]),
+            Files::Under(&["code/content/medical/book/conditions_tab.dm", "code/content/medical/conditions/limbs.dm", "code/content/medical/conditions/vital_systems.dm", "code/content/medical/conditions/wounds.dm", "code/content/medical/stabilisation/stasis.dm", "code/content/contracts"], &["dm"]),
             line(r"\.severity[[:space:]]*[-+*/]?=[^=]"),
         ),
         Part::new(
@@ -363,14 +363,14 @@ pub fn parts() -> Vec<Part> {
                     "code/content/mecha/mecha_control_console.dm",
                     "code/content/mecha/space/shuttle.dm",
                     "code/content/mecha/working/ripley.dm",
-                    "code/game/objects/items/weapons/medigun",
                     "code/content/items/weapons/medigun",
-                    "code/game/machinery/cryo.dm",
-                    "code/game/machinery/rechargestation.dm",
+                    "code/content/items/weapons/medigun",
+                    "code/content/machinery/cryo.dm",
+                    "code/content/machinery/rechargestation.dm",
                     "code/content/items/stacks/nanopaste.dm",
-                    "code/game/objects/items/robobag.dm",
-                    "code/modules/mob/living/simple_mob/subtypes/animal/sif/leech.dm",
-                    "code/modules/admin/view_variables",
+                    "code/content/items/robobag.dm",
+                    "code/content/mob/living/simple_mob/subtypes/animal/sif/leech.dm",
+                    "code/content/admin/view_variables",
                 ],
                 &["dm"],
             ),
@@ -400,7 +400,7 @@ pub fn parts() -> Vec<Part> {
             "contract_only_physical_types",
             "contract-only physical types",
             "contract-only physical type detected. Store contract identity in generic evidence/components/reagent provenance and use an existing world object.",
-            Files::Under(&["code/modules/contracts"], &["dm"]),
+            Files::Under(&["code/content/contracts"], &["dm"]),
             line(r"^/(obj|mob|turf|area)/"),
         )
         .flt(vec![drop(

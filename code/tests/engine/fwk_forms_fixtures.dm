@@ -1,5 +1,5 @@
 // Fixtures of the framework forms of the K19-K25 gaps (doc/rewrite/framework_gaps.md): wait(repeats =, after_step =), wait_until(), perform_op(with =)
-// and takes(), asks(keeps_answer =), MSG_BALLOON, costs(locked =). Compiled under UNIT_TESTS only; code/modules/unit_tests/dq_fwk_forms_tests.dm drives them.
+// and takes(), asks(keeps_answer =), MSG_BALLOON, costs(locked =). Compiled under UNIT_TESTS only; code/tests/unit_tests/dq_fwk_forms_tests.dm drives them.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 

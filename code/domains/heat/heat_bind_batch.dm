@@ -13,7 +13,7 @@
 //      call when the scope ends.
 //
 // Handle-validity invariants (tested in verdigris/ffi/src/heat.rs and
-// code/modules/unit_tests/dq_boot_bind_tests.dm):
+// code/tests/unit_tests/dq_boot_bind_tests.dm):
 //   - a reserved handle resolves to a live body from the moment it is taken;
 //   - the configure never undoes a write made in between (temperature set,
 //     slot 0 coupled, keep changed, heat added: see heat.rs `Reserved`);
