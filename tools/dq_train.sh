@@ -397,6 +397,13 @@ disk_budget() {
 	bash "$s" "$@" >>"$LOGS/train.log" 2>&1; rc=$?
 	return "$rc"
 }
+# Housekeeping never holds a cycle: the all-light path ran `enforce` synchronously, and a find over the pool's worktrees (30 GB of build output
+# in some) held the whole train for 17+ minutes with every lane queued (31 October, 22:58Z; the heavy path was detached on 27 October for the
+# same reason). The floor check (`disk_budget gate`) stays inline: it is what refuses heavy work on a full disk.
+disk_budget_bg() { # <args for dq_disk_budget.sh>: starts it detached and returns at once; its output goes to the train log
+	( disk_budget "$@" ) >/dev/null 2>&1 &
+	disown $! 2>/dev/null || true
+}
 precheck_ensure() { # start the prechecker when prechecks are on, lanes are queued and none runs (the integrator calls this every cycle)
 	[ "$PRE_ON" = 1 ] && [ "${DQ_TRAIN_NO_START:-0}" != 1 ] || return 0
 	prechecker_alive && return 0
@@ -1761,7 +1768,7 @@ cycle() {
 	tlog "cycle: queue=[${all[*]}] valid=[${VALID[*]}] chosen=[${CHOSEN[*]}] (limit $BATCH_LIMIT_NOW, est ~${BATCH_EST}s of tests) all_light=$all_light; preamble: $PREAMBLE_WHY"
 	# Disk budget (tools/dq_disk_budget.sh): enforce the caps at every cycle start; below the floor a heavy cycle is not started (the lanes stay queued).
 	if [ "$all_light" -eq 1 ]; then
-		disk_budget enforce --quiet --throttle 10 || true
+		disk_budget_bg enforce --quiet --throttle 10
 		light_cycle
 	else
 		# only exit 4 is a real floor breach (the REFUSED message above in this log has the free GB and the floor); anything else is a warning and the cycle runs

@@ -65,7 +65,8 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/organs, internal_organ_labels, list(
 	var/list/limb_models = list()
 	for(var/key in GLOB.all_robolimbs)
 		limb_models += key
-	return list("limb_models" = limb_models)
+	// The doll of the Looks tab draws the HUD zone-select art and clicks through the HUD's own hit areas.
+	return list("limb_models" = limb_models, "doll_regions" = GLOB.zone_sel_regions)
 
 /datum/preference_editor/organs/proc/ui_act_set_external_status(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/limb = params["limb"]

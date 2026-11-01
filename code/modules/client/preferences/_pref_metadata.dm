@@ -7,9 +7,9 @@
 // in the fork's own pref files should not appear here.
 //
 // CATEGORY LAYOUT (consolidated for a clean character setup UI):
-//   identity   — Name, Demographics, Gender, Species, Spawn, Background, Records, OOC notes,
+//   identity   — Name, Demographics, Blood, Gender, Species, Spawn, Background, Records, OOC notes,
 //                 Speech verbs, Language (everything personal/biographical about the char)
-//   appearance — Body, Hair, Ears, Tail, Wings, Blood, Markings, Organs, Preview
+//   appearance — Body, Hair, Ears, Tail, Wings, Markings, Organs, Preview
 //   size_voice — Size sliders + voice/sound prefs
 //   loadout    — Starting Kit + Underwear + Gear builder
 //   occupation — Job priorities
@@ -101,10 +101,10 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	// The two underlying text prefs are hidden from the auto-renderer.
 	tag_pref(., /datum/preference/text/human/robot_module, "appearance", "chassis", PREF_WIDGET_HIDDEN)
 	tag_pref(., /datum/preference/text/human/robot_chassis, "appearance", "chassis", PREF_WIDGET_HIDDEN)
-	// Blood
-	tag_pref(., /datum/preference/text/human/b_type, "appearance", "blood")
-	tag_pref(., /datum/preference/text/human/blood_reagents, "appearance", "blood")
-	tag_pref(., /datum/preference/color/human/blood_color, "appearance", "blood")
+	// Blood (moved to Identity; the savefile keys are unchanged, so saved values carry over)
+	tag_pref(., /datum/preference/text/human/b_type, "identity", "blood")
+	tag_pref(., /datum/preference/text/human/blood_reagents, "identity", "blood")
+	tag_pref(., /datum/preference/color/human/blood_color, "identity", "blood")
 	// Hair
 	tag_pref(., /datum/preference/text/human/h_style, "appearance", "hair")
 	tag_pref(., /datum/preference/text/human/f_style, "appearance", "hair")
