@@ -58,6 +58,9 @@
 		return
 	after(D, D.periodic_interval, GLOBAL_PROC_REF(periodic_interval_fire), key = "periodic_interval", with = list(D))
 
+/// The atom whose Initialize() is running: state_changed() treats its writes as a not-yet-initialized atom's.
+GLOBAL_DATUM(atom_initializing, /atom)
+
 /// Marks E changed: queues its refresh (and its owners', up the chain) and raises `channel` for OM
 /// observers. The rare direct write outside a dispatched call or a TRACKED setter calls this.
 /// `var_name` is the tracked var that state_changed (TRACKED setters, timed_set and the ownership accessors
@@ -79,7 +82,7 @@
 	// (server_bench_20261027.md, boot).
 	if(isatom(E))
 		var/atom/pending = E
-		if(!(pending.flags & ATOM_INITIALIZED))
+		if(!(pending.flags & ATOM_INITIALIZED) || pending == GLOB.atom_initializing)
 			if(var_name && (GLOB.stat_input_keys?[var_name] || IS_LOOKUP_READ_KEY(var_name)) && var_name != GLOB.stat_writing)
 				stat_inputs_changed(E, var_name)
 			if(var_name && draw_hop_reads_var(var_name))
