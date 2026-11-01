@@ -91,6 +91,13 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 /// on_notice(/datum/notice/x, parts..., outcome = ACT_COMMITTED): reacts when the notice is delivered. The legacy form takes a handler:
 /// on_notice(/datum/notice/x, PROC_REF(y)).
 /proc/on_notice(type, ENTRY_SLOTS, outcome = ACT_COMMITTED, op = null)
+	if(!ispath(type, /datum/notice))
+		// Nothing is ever delivered under anything else, so the hook would just never run.
+		declare_report("on_notice(): [isnull(type) ? "null" : "[type]"] is not a /datum/notice type")
+		return null
+	if(isnull(p1))
+		declare_report("on_notice([type]): no parts and no handler: it would never do anything")
+		return null
 	if(!istype(p1, /datum/entry) && !islist(p1))
 		return reaction_on_notice(type, p1)
 	return entry_make(ENTRY_ON_NOTICE, null, list("notice" = type, "outcome" = outcome, "op" = op), entry_flatten(ENTRY_SLOT_LIST))
