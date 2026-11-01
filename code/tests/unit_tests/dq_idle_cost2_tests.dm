@@ -51,3 +51,22 @@
 	TEST_ASSERT(!turret.mob_nearby(0) || person.loc == at, "a mob on the next tile counted as on the turret's own tile")
 	for(var/mob/M in turret.scan_candidates())
 		TEST_ASSERT(turret.mob_nearby(world.view + 1), "the look found [M] but the pre-test did not")
+
+/// The pre-test follows a mob that walks between chunks, drops one that left or died out of the world.
+/datum/unit_test/dq_turret_mob_nearby_follows_moves
+
+/datum/unit_test/dq_turret_mob_nearby_follows_moves/Run()
+	var/turf/at = run_loc_floor_bottom_left
+	var/obj/machinery/porta_turret/turret = allocate(/obj/machinery/porta_turret, at)
+	TEST_ASSERT(!turret.mob_nearby(1), "nobody is beside the turret yet")
+	var/mob/living/carbon/human/person = allocate(/mob/living/carbon/human, locate(at.x + 3, at.y, at.z))
+	TEST_ASSERT(turret.mob_nearby(3), "a mob three tiles off was not found")
+	TEST_ASSERT(!turret.mob_nearby(2), "a mob three tiles off counted at two")
+	person.forceMove(get_step(at, EAST))
+	TEST_ASSERT(turret.mob_nearby(1), "a mob that moved beside the turret was not found")
+	person.forceMove(locate(at.x + 40, at.y, at.z))
+	TEST_ASSERT(!turret.mob_nearby(8), "a mob that crossed chunks away still counted")
+	person.forceMove(get_step(at, EAST))
+	TEST_ASSERT(turret.mob_nearby(1), "a mob that crossed chunks back was not found")
+	qdel(person)
+	TEST_ASSERT(!turret.mob_nearby(1), "a deleted mob still counted")
