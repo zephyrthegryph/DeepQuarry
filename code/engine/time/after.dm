@@ -30,6 +30,14 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 		if(!isnull(delay))
 			return 0
 		delay = 0
+	if(!isnull(handler_args) && !islist(handler_args))
+		// with = probe instead of with = list(probe) would only runtime in arglist() when it fires.
+		stack_trace("after(): with must be a list, got [handler_args] ([handler] on [owner?.type])")
+		return 0
+	if(!isnull(key) && !istext(key) && !isnum(key))
+		// after(src, delay, PROC_REF(x), list(a)) lands the arguments here: the handler would run without them, under a key nothing can cancel.
+		stack_trace("after(): the key must be text or a number, got [key] ([handler] on [owner?.type]); arguments go in with =")
+		return 0
 	if(isnull(key) && clock == CLOCK_OWN)
 		return timer_schedule_list(owner, delay, handler, handler_args, keeps_dead)
 	var/datum/holder = owner || timer_global_owner()

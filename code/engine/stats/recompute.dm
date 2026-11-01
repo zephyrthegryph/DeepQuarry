@@ -48,7 +48,11 @@ PROC_SUMMARY(/proc/stat_value) // vars[] / call() dispatcher: the walk cannot en
 /proc/stat_value(datum/E, stat_id)
 	READS_FROM(E)
 	var/datum/stat_def/def = stat_def_of(stat_id)
-	if(!def || !isdatum(E))
+	if(!def)
+		// A condition reading a stat that does not exist would just read false for ever.
+		declare_report("stat_value([E?.type], [stat_id]): no such stat")
+		return null
+	if(!isdatum(E))
 		return null
 	var/datum/stat_type_info/I = stat_type_of(E)
 	if(I ? I.has_var[def.skey] : (def.name in E.vars))
