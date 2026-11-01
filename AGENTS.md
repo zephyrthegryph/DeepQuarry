@@ -113,7 +113,7 @@ Rules that hold under both old and new forms:
 - Sounds are sets: `play_sfx(atom, SFX_ID)`; sparks are `fx_sparks(atom, amount)`.
 - SQL is parameterized only; ask players with typed prompts, not raw `input()`/`alert()`.
 - Cache appearances, not raw `/icon`. Don't add an `/atom` proc for something only one capability uses.
-- Run DreamChecker before pushing.
+- DreamChecker is off for now, per the user (the compiler's own diagnostics gate; do not run or edit it). When it returns: run it before pushing.
 
 ### 3b. Legacy forms (what is left)
 
@@ -262,7 +262,7 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   sources fails that check and loses every shard. If you do build Rust in a worktree, its
   target is about 1.3 GB: delete your own `verdigris/target` when you remove the worktree.
 - **Lanes get worktrees from the pool, nowhere else.** `bash tools/dq_lane_pool.sh lease <branch>` hands out one of
-  `DQ_LANE_POOL_SIZE` (3) fixed worktrees, `E:/projects/dq-wt/pool-N`, started on `origin/master` with `git switch -c` (it refuses a
+  `DQ_LANE_POOL_SIZE` (5 general slots here, plus the reserved compiler slots and the light slot) fixed worktrees, `E:/projects/dq-wt/pool-N`, started on `origin/master` with `git switch -c` (it refuses a
   dirty slot and never discards anything); a lane beyond the pool size is refused ("POOL FULL"). To wait for a slot, run
   `... lease <branch> --wait` once in the background (a first-come-first-served queue); never write a retry or `until` loop. `... release <branch>` retires the dmbc
   daemon, deletes the build outputs and detaches the slot at `origin/master`, keeping `icons/gen`, `node_modules` links, the analyzer
@@ -273,7 +273,7 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
 - **Disk hygiene.** Nothing a build, compile or probe writes may live in `.git`: compiler caches go to `E:/dq-cache/` (the native
   compiler's `DM_COMPILER_CACHE_ROOT`; never `<git-common-dir>/dm-compiled-cache`), and `tools/dq_push_stamp.sh` runs its
   `git merge-tree --write-tree` probes in a throwaway object dir so they leave no loose trees. Lane worktrees come from the pool:
-  `bash tools/dq_worktree.sh lease <branch>` / `release <branch>` (the entry point of `tools/dq_lane_pool.sh`, at most 3 lanes at once);
+  `bash tools/dq_worktree.sh lease <branch>` / `release <branch>` (the entry point of `tools/dq_lane_pool.sh`, at most `DQ_LANE_POOL_SIZE` general lanes at once);
   `dq_worktree.sh new` is only for non-lane worktrees and refuses past 8 worktrees or under 60 GB free on E:. `tools/dq_push_master.sh` runs
   `bash tools/dq_worktree.sh gc` after a successful push (removes clean non-pool worktrees merged into origin/master (`pool-N` slots are never removed), build targets deleted
   first, `DQ_WT_KEEP="a b"` protects names); run it by hand any time. Remove your own worktree when your lane is merged.
@@ -317,7 +317,7 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   `_unit_tests.dm` merges by union (`.gitattributes`).
   `doc/rewrite/agent_workflow.md`. There are no look pins (deleted 2026-10-17; playtesting finds visual issues): don't add a snapshot
   of how types look; test a draw's behaviour instead (`dq_fresh_look_default`, `dq_human_draw_deterministic`, the staleness checker).
-- Heed every DreamChecker warning. If another agent's unfinished work breaks the build,
+- DreamChecker is off for now, per the user; when it returns, heed every warning. If another agent's unfinished work breaks the build,
   `DQ_WIP_TREE=1` lets test and bench builds skip dangling includes.
 - **Shared build caches** (`doc/testing.md` "Shared build caches"): the analyzer binary is cached by source hash
   but built in each worktree's own target (never share a cargo target between worktrees), Bun lives in a shared
@@ -334,7 +334,7 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   `bash tools/dq_train.sh enqueue --tests "<its tests>"` (`--light` for a change with no DM), and releases its slot. One integrator
   merges the ready lanes, runs one gate (test build only; CI keeps the production compile cross-check), pushes, and bisects to bounce
   only a culprit. `dq_land.sh` and `dq_lane_ready.sh` are retired (they refuse): per-lane proofs re-ran on every master move and took
-  lanes hours. At most 3 general lanes run at once (`DQ_LANE_POOL_SIZE`): one DM compile slot serves about three lanes plus the train,
+  lanes hours. At most `DQ_LANE_POOL_SIZE` general lanes run at once (5 here): one DM compile slot serves them plus the train,
   and the train's dmbc session is kept resident (`DQ_DMBC_KEEP_ROOTS`) so its gate compiles stay incremental.
 
 ### 4a. Testing (full reference: `doc/testing.md`)
@@ -395,7 +395,7 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
 - [ ] `deepquarry.dme` regenerated and committed (the build does it; `check_ratchets.sh` checks it); new `.dm` test files in `_unit_tests.dm`.
 - [ ] Only forms that exist on master (§3a "On master"); no use of a legacy form whose ban lint is on (§3b).
 - [ ] Absolute paths; no `:` subtype access; no `Destroy()`; time defines used.
-- [ ] DreamChecker passes; `bash tools/ci/check_ratchets.sh` passes; any kept site has `// ALLOW(<lint>): <reason>`.
+- [ ] (DreamChecker is off for now, per the user; when it returns, it must pass.) `bash tools/ci/check_ratchets.sh` passes; any kept site has `// ALLOW(<lint>): <reason>`.
 - [ ] Touched tests pass; `dq_focus.dm` is empty.
 - [ ] TGUI, if changed: `tools/build/build.sh lint tgui-test` clean.
 - [ ] One changelog stub; squash-able history; commit subject at most 72 characters.

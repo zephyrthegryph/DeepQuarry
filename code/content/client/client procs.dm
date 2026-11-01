@@ -350,7 +350,6 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 	STAMP(src, connection_time, CLOCK_WORLD)
 	connection_realtime = world.realtime
-	connection_timeofday = world.timeofday
 
 	dx_winexists(src, src, SKIN_ASSET_CACHE_BROWSER, PROC_REF(asset_browser_checked)) // a client round trip
 

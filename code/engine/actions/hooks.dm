@@ -81,6 +81,9 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 /// world action it starts (the op engine pre-checks it; a hook ignores it).
 /// `early` (an op effect only): the effect runs before the op's other effects, in declaration order among the early ones (a shock a touch takes first).
 /proc/then(handler, checks = null, early = FALSE)
+	if(isnull(handler))
+		declare_report("then(): no handler: this part would run nothing") // a PROC_REF held in an unset var, say
+		return null
 	return entry_make(ENTRY_THEN, null, list("handler" = handler, "checks" = checks, "early" = early))
 
 /// chance(p, otherwise = parts): inside an instead, takes over with probability p percent (one roll, drawn only when the hook's earlier gates held). In an
