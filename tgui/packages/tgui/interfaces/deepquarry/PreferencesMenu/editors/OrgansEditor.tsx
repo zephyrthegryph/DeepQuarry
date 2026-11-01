@@ -3,9 +3,8 @@
 // scrolling at the standard window size. Each row is a tight flex line with
 // label + button row + (for externals) model dropdown.
 
-import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
-import { Box, Button, Dropdown } from 'tgui-core/components';
+import { Box, Dropdown } from 'tgui-core/components';
 import type { EditorProps } from './index';
 
 type ExternalState = {
@@ -42,16 +41,13 @@ const INTERNAL_STATES: Array<{ key: string; label: string; color?: string }> = [
   { key: 'digital', label: 'Digital', color: 'olive' },
 ];
 
-/// Which values of `order` differ from `normal`, named, for a one-line summary.
-export const summarize = (
-  order: string[],
-  labels: Record<string, string>,
-  isChanged: (key: string) => boolean,
-  allNormal: string,
-): string => {
-  const changed = order.filter(isChanged).map((k) => labels[k] ?? k);
-  return changed.length ? `Changed: ${changed.join(', ')}` : allNormal;
-};
+const LIST_STYLE = {
+  flex: '1 1 20em',
+  minWidth: 0,
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.1em',
+} as const;
 
 const rowStyle = (changed: boolean, focused: boolean) => ({
   display: 'flex',
@@ -71,7 +67,6 @@ export const OrgansEditor = ({
   const { act } = useBackend();
   const d = data as Data;
   const s = (staticData ?? {}) as Static;
-  const [organsOpen, setOrgansOpen] = useState(false);
 
   const send = (action: string, params: Record<string, unknown>) =>
     act('dq_editor_action', { editor: 'organs', action, params });
@@ -84,27 +79,20 @@ export const OrgansEditor = ({
   const limbModels = s.limb_models ?? [];
   const statusOf = (limb: string) => d.externals?.[limb]?.status ?? 'normal';
   const organOf = (organ: string) => d.internals?.[organ] ?? 'normal';
-  const shownOrgans = organsOpen
-    ? internalOrder
-    : internalOrder.filter((o) => organOf(o) !== 'normal');
 
   return (
-    <Box>
-      <Box color="label" mb={0.3}>
-        {summarize(
-          externalOrder,
-          externalLabels,
-          (l) => statusOf(l) !== 'normal',
-          'All limbs normal',
-        )}
-      </Box>
-      <Box
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 22em), 1fr))',
-          gap: '0.1em 0.8em',
-        }}
-      >
+    <Box
+      style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '0.5em 1.5em',
+        alignItems: 'flex-start',
+      }}
+    >
+      <Box style={LIST_STYLE}>
+        <Box bold color="label" mb={0.2}>
+          Limbs
+        </Box>
         {externalOrder.map((limb) => {
           const state = d.externals?.[limb] ?? { status: 'normal' };
           return (
@@ -148,35 +136,11 @@ export const OrgansEditor = ({
           );
         })}
       </Box>
-      <Box
-        mt={0.6}
-        mb={0.3}
-        style={{ display: 'flex', alignItems: 'center', gap: '0.5em' }}
-      >
-        <Button
-          compact
-          icon={organsOpen ? 'chevron-down' : 'chevron-right'}
-          onClick={() => setOrgansOpen(!organsOpen)}
-        >
+      <Box style={LIST_STYLE}>
+        <Box bold color="label" mb={0.2}>
           Organs
-        </Button>
-        <Box color="label">
-          {summarize(
-            internalOrder,
-            internalLabels,
-            (o) => organOf(o) !== 'normal',
-            'All organs normal',
-          )}
         </Box>
-      </Box>
-      <Box
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 22em), 1fr))',
-          gap: '0.1em 0.8em',
-        }}
-      >
-        {shownOrgans.map((organ) => (
+        {internalOrder.map((organ) => (
           <Box key={organ} style={rowStyle(organOf(organ) !== 'normal', false)}>
             <Box style={{ flex: '0 0 6em' }}>
               {internalLabels[organ] ?? organ}
