@@ -4028,7 +4028,6 @@ code/_helpers/sanitize_values.dm	code/library/helpers/sanitize_values.dm
 code/_helpers/screen_objs.dm	code/content/helpers/screen_objs.dm
 code/_helpers/shell.dm	code/library/helpers/shell.dm
 code/_helpers/soft_assert.dm	code/library/helpers/soft_assert.dm
-code/_helpers/sorts/__main.dm	code/library/helpers/sorts/__main.dm
 code/_helpers/spatial_info.dm	code/library/helpers/spatial_info.dm
 code/_helpers/string_lists.dm	code/library/helpers/string_lists.dm
 code/_helpers/traits.dm	code/content/helpers/traits.dm
