@@ -780,7 +780,7 @@ moved:
 | Metric | Meaning |
 |---|---|
 | `tick_p50`, `tick_p95`, `tick_p99`, `overruns`, `overrun_ratio` | Whole-tick usage (%) and the ticks over 100%. |
-| `system.<id>.ms_per_s`, `.p99_ms`, `.late_max`, `.breaches` | Per system (OM behaviour families such as `life` and `machines`, and `mc_<subsystem>`): ms of work per second, p99 of ms per tick over the ticks it ran, worst slot lateness in deciseconds, and slots that started past their max interval. Ids are `code/controllers/measure/systems.dm` keys. |
+| `system.<id>.ms_per_s`, `.p99_ms`, `.late_max`, `.breaches` | Per system (OM behaviour families such as `life` and `machines`, and `mc_<subsystem>`): ms of work per second, p99 of ms per tick over the ticks it ran, worst slot lateness in deciseconds, and slots that started past their max interval. Ids are `code/world/kernel/measure/systems.dm` keys. |
 | `input_p99`, `input_p99_ticks`, `input_p50`, `click_wait_p99_ms`, `verb_queue_p99_ms`, `input_queue_hwm`, `input_run_depth_p95` | How long clicks and queued verbs waited before being handled (ms and ticks), how deep the verb queue got, and how far into the tick input ran. |
 
 `bench-compare` gates on these regardless of the generic threshold: `input_p99`

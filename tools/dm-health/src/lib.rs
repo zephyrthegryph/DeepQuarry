@@ -80,7 +80,7 @@ pub fn load_source_contracts(
                     && ![
                         "code/_global_vars/configuration.dm",
                         "code/controllers/master.dm",
-                        "code/controllers/globals.dm",
+                        "code/world/controllers/globals.dm",
                         "code/controllers/failsafe.dm",
                         "code/modules/logging/log_holder.dm",
                         "code/modules/debugging/tracy.dm",

@@ -98,8 +98,8 @@ const ENGINE_PREFIXES: &[&str] = &[
     "code/engine/",
     "code/library/",
     "code/library/lifecycle/",
-    "code/controllers/subsystems/garbage.dm",
-    "code/controllers/kernel/", // the Kernel is the engine's one loop (its target home is code/engine/kernel): its boot step and watchdog clear usr
+    "code/world/systems/garbage.dm",
+    "code/world/kernel/", // the Kernel is the engine's one loop (its target home is code/world/kernel): its boot step and watchdog clear usr
     "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/",
     "code/tests/unit_tests/",
     "code/tests/benchmarks/",

@@ -50,7 +50,7 @@ pub const MESSAGE_CALLS: &[&str] = &["to_chat", "visible_message", "audible_mess
 const HANDLE_RESOLUTION_FILE: &str = "code/engine/time/handles.dm";
 
 pub fn framework_file(rel: &str) -> bool {
-    ENGINE_DIRS.iter().any(|d| rel.starts_with(d)) || rel.starts_with("code/controllers/kernel/") || rel == "code/library/datum/datum.dm" || is_test_code(rel)
+    ENGINE_DIRS.iter().any(|d| rel.starts_with(d)) || rel.starts_with("code/world/kernel/") || rel == "code/library/datum/datum.dm" || is_test_code(rel)
 }
 
 /// Test-only code (the unit tests and the test driver): compiled out of production, so never an input of a stat or a look.
