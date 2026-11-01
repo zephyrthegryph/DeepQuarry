@@ -1227,6 +1227,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 			log_world("UNIT TEST TIMEOUT: [test_path] did not return from Run() within [test.timeout]s; failing it and moving on. Its fiber may still be running in the background.")
 			test.Fail("timed out after [test.timeout]s -- Run() never returned (stuck sleep, unmet wait_for_condition, or a hung external call)", "TIMEOUT", 0)
 		unit_test_close_leaked_scopes(test, test_path)
+		unit_test_settle_explosions(test, test_path)
 		staleness_test_end(test, current_index >= total_tests)
 		test.restore_atmos()
 		// A test that let world time pass (the kernel's clock, or the native world's frames: the tests step either) has the regulated rooms put back whether or not its
@@ -1323,6 +1324,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 /// GLOB vars the state guard ignores: run bookkeeping and counters that move on their own.
 /proc/unit_test_globals_ignored()
 	var/static/list/ignored = list(
+		"last_round_duration" = TRUE, // a display cache that its first reader fills
 		"dview_mob" = TRUE, // a lazily created singleton (the first dview() call makes it): nothing a test could put back
 		"latency_last_ineligible" = TRUE, // diagnostic text the latency tooling writes about the last pin it refused; it is not simulation state
 		"latency_last_pin_reason" = TRUE, // diagnostic text, same writer: the reason for the last pin
@@ -1939,6 +1941,19 @@ GLOBAL_VAR(boot_unclean)
 		log_test("HARNESS RUNTIME in [unit_path]: [e.name] at [e.file]:[e.line] -- [e.desc]")
 		test_results[unit_path] = list("status" = UNIT_TEST_FAILED, "message" = "harness runtime: [e.name] at [e.file]:[e.line]", "name" = unit_path, "duration" = 0)
 	fiber["done"] = TRUE
+
+/// An explosion a test set off (the glow sweep spawns every object) resolves over later ticks. While it does, pipe topology commits wait for its end, so
+/// a later test's new pipe devices never step: dq_full_atmos_cycle_vent_then_scrubber and dq_binary_pump_transfers_between_pipenets failed after the sweep and
+/// passed alone (1 November). It finishes inside the test that started it; one that will not fails that test, by name.
+/proc/unit_test_settle_explosions(datum/unit_test/test, test_path)
+	if(!SSexplosions.has_explosion_work())
+		return
+	var/started = REALTIMEOFDAY
+	while(SSexplosions.has_explosion_work() && REALTIMEOFDAY - started < 30 SECONDS)
+		sleep(1)
+	log_test("UNIT TEST SETTLE: [test_path] left an explosion resolving; [SSexplosions.has_explosion_work() ? "still not finished" : "finished"] after [(REALTIMEOFDAY - started) / 10] s")
+	if(SSexplosions.has_explosion_work())
+		test.Fail("left an explosion resolving that did not finish in 30 s", "LEAK", 0)
 
 /// A scope a test left open would make every later qdel() defer, so the next tests inherit it. Closes it and fails the test that left it.
 /proc/unit_test_close_leaked_scopes(datum/unit_test/test, test_path)
