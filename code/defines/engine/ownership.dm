@@ -84,6 +84,8 @@
 /// REL pair from links(conflict = REFUSE): TRUE when a write that would replace either end's partner is refused (null returned) instead. Only a
 /// refusing pair entry is this long; read it with rel_entry_refuses().
 #define OWNE_CONFLICT 11
+/// REL single from ref_one(unindexed = TRUE): TRUE when a write skips the target's reverse index. Only such an entry is this long.
+#define OWNE_UNINDEXED 12
 
 /// Registry singletons: PATH and subtypes are shared. GETTER(D) returns the registered
 /// instance D stands for (so D is registered iff GETTER(D) == D).

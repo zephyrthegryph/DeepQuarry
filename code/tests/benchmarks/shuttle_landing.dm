@@ -19,12 +19,15 @@
 	begin_window()
 	for(var/leg in 1 to legs)
 		var/obj/effect/shuttle_landmark/target = (leg % 2) ? shuttle.landmark_station() : shuttle.landmark_offsite()
+		GLOB.churn_census.take()
+		var/list/leg_work = work_counts()
 		var/stamp = TICK_USAGE_REAL
 		var/moved = shuttle.attempt_move(target)
 		var/move_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - stamp)
 		var/follow_start = REALTIMEOFDAY
 		for(var/tick in 1 to 40)
 			stoplag()
+		work_metrics("leg[leg]", leg_work)
 		metric("leg[leg]_moved", moved ? 1 : 0, "", "none", "count")
 		metric("leg[leg]_move_ms", move_ms, "ms")
 		metric("leg[leg]_follow_up_wall_ms", (REALTIMEOFDAY - follow_start) * 100, "ms")
