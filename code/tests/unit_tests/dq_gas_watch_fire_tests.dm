@@ -64,8 +64,13 @@
 	TEST_ASSERT(length(gas_watch_heard(pipe_air, GAS_DEPENDENCY_TEMPERATURE, PROC_REF(gas_watch_heat_up))), "heat_set() on a pipe region fired no temperature watch")
 	TEST_ASSERT(length(gas_watch_heard(pipe_air, GAS_DEPENDENCY_TEMPERATURE, PROC_REF(gas_watch_heat_move_in))), "heat_add() on a pipe region fired no temperature watch")
 
-	// A turf's air.
-	var/turf/simulated/floor/T = A
+	// A turf's air: one that holds gas (a heat write to an empty mixture changes nothing, so the first clear floor of a map that opens with an airless one tests nothing).
+	var/turf/simulated/floor/T
+	for(var/turf/simulated/floor/candidate in world)
+		if(candidate.air && !candidate.blocks_air && !candidate.immutable_atmos && candidate.air.total_moles() > 1)
+			T = candidate
+			break
+	TEST_ASSERT_NOTNULL(T, "no floor holds gas to watch")
 	dq_atmos_test_snapshot_air(T)
 	dq_atmos_test_isolate_pair(T, T)
 	TEST_ASSERT(length(gas_watch_heard(T.air, GAS_DEPENDENCY_TEMPERATURE, PROC_REF(gas_watch_heat_up))), "heat_set() on a turf's air fired no temperature watch")
