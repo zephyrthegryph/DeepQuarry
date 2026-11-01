@@ -76,9 +76,14 @@
 	for(var/i in 1 to 200)
 		world.get_world_state_for_logging()
 	metric("log_world_state_us", TICK_USAGE_TO_MS(probe_start) * 1000 / 200, "us")
+	probe_start = TICK_USAGE
+	for(var/i in 1 to 200)
+		logger.human_readable_timestamp()
+	metric("log_timestamp_us", TICK_USAGE_TO_MS(probe_start) * 1000 / 200, "us")
 
 	// Idle: tick cost, TiDi, memory growth.
 	mark("idle_start")
+	GLOB.churn_census.take()
 	var/idle_seconds = param("idle", 300)
 	var/list/series = list()
 	var/idle_first_mb = sample_field("private_mb")
@@ -92,6 +97,7 @@
 	var/list/idle_tick = end_window("idle")
 	close_phase("idle")
 	mark("idle_end")
+	detail("idle_churn", GLOB.churn_census.take())
 	metric("idle_growth_mb_per_min", (sample_field("private_mb") - idle_first_mb) * 60 / idle_seconds, "MB/min")
 	detail("idle_memory_series", series)
 

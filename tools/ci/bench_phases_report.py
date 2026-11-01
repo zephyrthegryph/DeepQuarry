@@ -11,7 +11,7 @@ import sys
 ROWS = [
     ('Startup', ['startup_launch_to_ready_s', 'startup_init_s', 'startup_cpu_s', 'startup_peak_private_mb', 'settled_private_mb',
                  'settled_rust_heap_mb', 'settled_instances_total', 'startup_machine_cpu_pct']),
-    ('Idle', ['log_world_state_us', 'idle_tick_avg', 'idle_tick_p50', 'idle_tick_p95', 'idle_tick_p99', 'idle_tick_max', 'idle_overruns', 'idle_tps', 'idle_tidi_pct',
+    ('Idle', ['log_world_state_us', 'log_timestamp_us', 'idle_tick_avg', 'idle_tick_p50', 'idle_tick_p95', 'idle_tick_p99', 'idle_tick_max', 'idle_overruns', 'idle_tps', 'idle_tidi_pct',
               'idle_dd_cpu_pct', 'idle_growth_mb_per_min', 'idle_private_mb', 'idle_machine_cpu_pct']),
     ('Explosion', ['explosion_settle_s', 'explosion_longest_stall_s', 'explosion_tick_max', 'explosion_overruns', 'explosion_tidi_pct',
                    'explosion_dd_cpu_pct', 'explosion_private_mb', 'explosion_machine_cpu_pct']),
