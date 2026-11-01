@@ -64,4 +64,4 @@ list_init	code/modules/bv/singleton.dm	26
 list_init	code/modules/bv/singleton.dm	32
 list_init	code/modules/sub/unit_tests/t.dm	2
 list_init	code/modules/tgs2/t.dm	2
-list_init	code/tests/unit_tests_other/t.dm	2
+list_init	code/modules/unit_tests_other/t.dm	2

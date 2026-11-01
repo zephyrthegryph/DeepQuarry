@@ -1,6 +1,6 @@
 sync_sql	code/controllers/subsystems/dbcore_extra.dm	2
 sync_sql	code/datums/om/flow_io_other.dm	2
-sync_sql	code/modules/admin/IsBanned2.dm	2
+sync_sql	code/content/admin/IsBanned2.dm	2
 sync_sql	code/modules/ss/calls.dm	2
 sync_sql	code/modules/ss/calls.dm	3
 sync_sql	code/modules/ss/calls.dm	4

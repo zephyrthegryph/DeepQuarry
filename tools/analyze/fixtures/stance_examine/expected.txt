@@ -1,4 +1,4 @@
-a_intent	code/modules/mob/combat_mode.dm	2
+a_intent	code/content/mob/combat_mode.dm	2
 a_intent	code/x/a.dm	13
 a_intent	code/x/a.dm	24
 a_intent	code/x/a.dm	25

@@ -42,7 +42,7 @@ init_lines	code/modules/init/world.dm	33
 init_lines	code/modules/init/world.dm	40
 init_lines	code/modules/sub/unit_tests/t.dm	2
 init_lines	code/modules/tgs/x.dm	2
-init_lines	code/tests/unit_tests_other/t.dm	2
+init_lines	code/modules/unit_tests_other/t.dm	2
 init_lines	maps/m.dm	5
 initialize	code/modules/init/a.dm	16
 initialize	code/modules/init/a.dm	18
@@ -114,5 +114,5 @@ world_reads	code/modules/init/world.dm	33
 world_reads	code/modules/init/world.dm	40
 world_reads	code/modules/sub/unit_tests/t.dm	2
 world_reads	code/modules/tgs/x.dm	2
-world_reads	code/tests/unit_tests_other/t.dm	2
+world_reads	code/modules/unit_tests_other/t.dm	2
 world_reads	maps/m.dm	5
