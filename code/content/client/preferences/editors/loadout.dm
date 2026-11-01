@@ -481,21 +481,6 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 		"underwear" = uw_static,
 	)
 
-/// Returns FALSE when `G` is a known taur-restricted item and the player's tail doesn't match.
-/// Taur-half check moved to /datum/gear._is_taur_gear_allowed (entity-level rule).
-/// This wrapper kept temporarily for any out-of-tree callers; new code should call
-/// G._is_taur_gear_allowed(preferences) or, preferably, G.is_pickable_by(preferences).
-/datum/preference_editor/loadout/proc/taur_item_allowed(datum/gear/G, datum/sprite_accessory/tail/player_tail)
-	if(!G || !G.path)
-		return TRUE
-	if(ispath(G.path, /obj/item/clothing/suit/armor/vest/wolftaur))
-		return istype(player_tail, /datum/sprite_accessory/tail/taur/wolf)
-	if(ispath(G.path, /obj/item/clothing/suit/taur))
-		return istype(player_tail, /datum/sprite_accessory/tail/taur/wolf) || istype(player_tail, /datum/sprite_accessory/tail/taur/horse)
-	if(ispath(G.path, /obj/item/clothing/suit/drake_cloak))
-		return istype(player_tail, /datum/sprite_accessory/tail/taur/drake)
-	return TRUE
-
 /// Server-side enforcement that defers to the gear datum's own pickability rule. The
 /// rule lives on /datum/gear (is_pickable_by); this thin wrapper exists only because
 /// "permitted to write into this loadout slot" historically lived on the editor. New
