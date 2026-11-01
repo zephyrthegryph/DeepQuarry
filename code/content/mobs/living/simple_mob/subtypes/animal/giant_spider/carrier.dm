@@ -14,7 +14,6 @@
 
 /mob/living/simple_mob/animal/giant_spider/carrier
 	desc = "Furry, beige, and red, it makes you shudder to look at it. This one has luminous green eyes."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/giant_spider/carrier_spider)
 
 	icon_state = "carrier"
 	icon_living = "carrier"
@@ -40,6 +39,7 @@
 
 // It carries five to ten spiderlings, and is a size bigger.
 CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/carrier)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/giant_spider/carrier_spider)))
 	rolls(nameof(spiderling_count), range_of(5, 10))
 
 /mob/living/simple_mob/animal/giant_spider/carrier
@@ -60,9 +60,11 @@ CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/carrier)
 /mob/living/simple_mob/animal/giant_spider/carrier/recursive
 	desc = "Furry, beige, and red, it makes you shudder to look at it. This one has luminous green eyes. \
 	You have a distinctly <font face='comic sans ms'>bad</font> feeling about this."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/giant_spider/recursive_carrier_spider)
 
 	swarmling_type = /mob/living/simple_mob/animal/giant_spider/carrier/recursive
+
+CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/carrier/recursive)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/giant_spider/recursive_carrier_spider)))
 
 /mob/living/simple_mob/animal/giant_spider/carrier/event
 

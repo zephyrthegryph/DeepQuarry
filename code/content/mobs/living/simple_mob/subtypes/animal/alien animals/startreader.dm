@@ -10,7 +10,6 @@
 	name = "asteroid star treader"
 	desc = "A slow, hard shelled creature that stalks asteroids."
 	tt_desc = "Testudines Stellarus"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/startreader)
 
 	icon = 'icons/mob/alienanimals_x32.dmi'
 	icon_state = "startreader"
@@ -64,6 +63,7 @@
 	var/flip_cooldown = 0
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/startreader)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/startreader)))
 	configure(mob_rules(faction = FACTION_SPACE_TURTLE))
 	configure(living_rules(vore_capacity = 2, say_list_type = /datum/say_list/startreader))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))

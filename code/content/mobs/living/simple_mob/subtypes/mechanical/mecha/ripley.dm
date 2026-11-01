@@ -14,7 +14,6 @@
 /mob/living/simple_mob/mechanical/mecha/ripley
 	name = "\improper APLU ripley"
 	desc = "Autonomous Power Loader Unit. The workhorse of the exosuit world. This one has big drill."
-	catalogue_data = list(/datum/category_item/catalogue/technology/ripley)
 	icon_state = "ripley"
 	wreckage = /obj/structure/loot_pile/mecha/ripley
 
@@ -64,3 +63,6 @@
 
 /mob/living/simple_mob/mechanical/mecha/ripley/deathripley/manned
 	pilot_type = /mob/living/simple_mob/humanoid/merc/ranged
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/ripley)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/ripley)))

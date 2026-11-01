@@ -16,7 +16,6 @@
 /mob/living/simple_mob/vore/oregrub
 	name = "juvenile oregrub"
 	desc = "A young, leathery oregrub."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/oregrub)
 	icon = 'icons/mob/vore.dmi' //all of these are placeholders
 	icon_state = "oregrub"
 	icon_living = "oregrub"
@@ -66,6 +65,7 @@
 	glow_override = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/vore/oregrub)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/oregrub)))
 	configure(mob_rules(faction = FACTION_GRUBS))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/oregrub))
 	configure(butchery_rules(meat_type = /obj/item/ore/coal))
@@ -74,7 +74,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/oregrub)
 /mob/living/simple_mob/vore/oregrub/lava
 	name = "mature lavagrub"
 	desc = "A mature, rocky lavagrub"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/lavagrub)
 	icon_state = "lavagrub"
 	icon_living = "lavagrub"
 	icon_dead = "lavagrub-dead"
@@ -91,6 +90,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/oregrub)
 
 	poison_per_bite = 5
 	poison_chance = 66
+
+CAPABILITIES(/mob/living/simple_mob/vore/oregrub/lava)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/lavagrub)))
 
 /datum/say_list/oregrub
 	emote_see = list("burbles", "chitters", "snuffles around for fresh ore")

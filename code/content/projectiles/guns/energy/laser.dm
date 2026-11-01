@@ -102,7 +102,6 @@ CAPABILITIES(/obj/item/gun/energy/retro)
 /obj/item/gun/energy/alien
 	name = "alien pistol"
 	desc = "A weapon that works very similarly to a traditional energy weapon. How this came to be will likely be a mystery for the ages."
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_pistol)
 	icon = 'icons/obj/gun.dmi' // Override back to base gun.dmi
 	icon_state = "alienpistol"
 	item_state = "alienpistol"
@@ -114,6 +113,9 @@ CAPABILITIES(/obj/item/gun/energy/retro)
 	modifystate = "alienpistol"
 	battery_lock = 1 // adds battery lock.
 	move_delay = 0 // Pistols have move_delay of 0
+
+CAPABILITIES(/obj/item/gun/energy/alien)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_pistol)))
 
 /datum/category_item/catalogue/anomalous/precursor_a/alien_pistol
 	name = "Precursor Alpha Weapon - Appendageheld Laser"

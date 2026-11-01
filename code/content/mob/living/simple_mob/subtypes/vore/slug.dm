@@ -3,7 +3,6 @@
 /mob/living/simple_mob/vore/slug
 	name = "slug"
 	desc = "A giant, cold-tolerant slug. It seems excessively passive."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/slug)
 	tt_desc = "S Arion hortensis"
 	icon = 'icons/mob/vore.dmi'
 	icon_dead = "slug-dead"
@@ -42,6 +41,7 @@
 	vore_default_mode = DM_DIGEST
 
 CAPABILITIES(/mob/living/simple_mob/vore/slug)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/slug)))
 	configure(mob_rules(faction = "slug"))
 	configure(living_rules(vore_capacity = 1))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat))

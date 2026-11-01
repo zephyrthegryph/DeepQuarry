@@ -2,7 +2,6 @@
 	name = "Fluffy"
 	desc = "It's a pink Diyaab! It seems to be very tame and quiet."
 	tt_desc = "S Choeros hirtus"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/diyaab)
 
 	icon_state = "fluffy"
 	icon_living = "fluffy"
@@ -28,6 +27,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/fluffy)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/diyaab)))
 	configure(living_rules(say_list_type = /datum/say_list/fluffy_vr))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 1))
 	configure(mob_movement(makes_dirt = FALSE, bump = 0))

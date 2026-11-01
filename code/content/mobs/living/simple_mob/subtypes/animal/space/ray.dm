@@ -28,7 +28,6 @@
 /mob/living/simple_mob/animal/space/ray
 	name = "space ray"
 	desc = "A horrifying-looking but ultimately misunderstood creature that poses little actual threat."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/ray)
 	icon = 'icons/mob/mobs_monsters/animal.dmi'
 	icon_state = "ray"
 	icon_living = "ray"
@@ -57,6 +56,7 @@
 	var/knockdown_chance = 66
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/ray)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/ray)))
 	configure(mob_rules(faction = FACTION_RAY))
 	configure(living_rules(say_list_type = /datum/say_list/space_ray))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/ray, meat_amount = 5))

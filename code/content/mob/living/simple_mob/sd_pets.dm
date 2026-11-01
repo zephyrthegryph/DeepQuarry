@@ -27,10 +27,10 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/fox/syndicate/aipet)
 	icon_living = "tulidaan"
 	icon_rest = "tulidaan_rest"
 	icon_dead = "tulidaan_dead"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/catslug/tulidaan)
 	holder_type = /obj/item/holder/catslug/tulidaan
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/tulidaan)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/catslug/tulidaan)))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0))
 
 /obj/item/holder/catslug/tulidaan
@@ -112,9 +112,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/fennec/bridgette)
 /mob/living/simple_mob/vore/otie/red/chubby/cocoa
 	name = "Cocoa"
 	desc = "A good boi, eats the scraps when you're not looking."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/otie/cocoa)
 
 CAPABILITIES(/mob/living/simple_mob/vore/otie/red/chubby/cocoa)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/otie/cocoa)))
 	configure(mob_rules(faction = FACTION_BAR))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = 0, "digestable" = 0))
 	configure(mob_movement(bump = 32))

@@ -24,7 +24,9 @@ CAPABILITIES(/obj/structure/prop/blackbox)
 
 
 /obj/structure/prop/blackbox/quarantined_shuttle
-	catalogue_data = list(/datum/category_item/catalogue/information/blackbox/quarantined_shuttle)
+
+CAPABILITIES(/obj/structure/prop/blackbox/quarantined_shuttle)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/blackbox/quarantined_shuttle)))
 
 // The actual 'data' on the black box. Obtainable with a Cataloguer.
 /datum/category_item/catalogue/information/blackbox
@@ -62,7 +64,9 @@ CAPABILITIES(/obj/structure/prop/blackbox)
 	"}
 
 /obj/structure/prop/blackbox/crashed_med_shuttle
-	catalogue_data = list(/datum/category_item/catalogue/information/blackbox/crashed_med_shuttle)
+
+CAPABILITIES(/obj/structure/prop/blackbox/crashed_med_shuttle)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/blackbox/crashed_med_shuttle)))
 
 /datum/category_item/catalogue/information/blackbox/crashed_med_shuttle
 	name = "Black Box Data - VMV Aurora's Light" // This might be incorrect.
@@ -119,7 +123,9 @@ CAPABILITIES(/obj/structure/prop/blackbox)
 	"}
 
 /obj/structure/prop/blackbox/xenofrigate
-	catalogue_data = list(/datum/category_item/catalogue/information/blackbox/xenofrigate)
+
+CAPABILITIES(/obj/structure/prop/blackbox/xenofrigate)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/blackbox/xenofrigate)))
 
 /datum/category_item/catalogue/information/blackbox/xenofrigate
 	name = "Black Box Data - MBT-540"
@@ -144,7 +150,9 @@ CAPABILITIES(/obj/structure/prop/blackbox)
 
 // additions below this line - Killian's wrecks
 /obj/structure/prop/blackbox/mackerel_wreck
-	catalogue_data = list(/datum/category_item/catalogue/information/blackbox/mackerel_wreck)
+
+CAPABILITIES(/obj/structure/prop/blackbox/mackerel_wreck)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/blackbox/mackerel_wreck)))
 
 /datum/category_item/catalogue/information/blackbox/mackerel_wreck
 	name = "Black Box Data - ITV Phish Phood"
@@ -187,7 +195,9 @@ CAPABILITIES(/obj/structure/prop/blackbox)
 	"}
 
 /obj/structure/prop/blackbox/gecko_wreck
-	catalogue_data = list(/datum/category_item/catalogue/information/blackbox/gecko_wreck)
+
+CAPABILITIES(/obj/structure/prop/blackbox/gecko_wreck)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/blackbox/gecko_wreck)))
 
 /datum/category_item/catalogue/information/blackbox/gecko_wreck
 	name = "Black Box Data - ITV Sticky Situation"
@@ -227,7 +237,9 @@ CAPABILITIES(/obj/structure/prop/blackbox)
 	"}
 
 /obj/structure/prop/blackbox/salamander_wreck
-	catalogue_data = list(/datum/category_item/catalogue/information/blackbox/salamander_wreck)
+
+CAPABILITIES(/obj/structure/prop/blackbox/salamander_wreck)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/blackbox/salamander_wreck)))
 
 /datum/category_item/catalogue/information/blackbox/salamander_wreck
 	name = "Black Box Data - ITV Unity"
@@ -264,7 +276,9 @@ CAPABILITIES(/obj/structure/prop/blackbox)
 // start - Snowfield blackbox. Could move this to snowfield_ch.dm tbh.
 
 /obj/structure/prop/blackbox/snowfield_base
-	catalogue_data = list(/datum/category_item/catalogue/information/blackbox/snowfield_base)
+
+CAPABILITIES(/obj/structure/prop/blackbox/snowfield_base)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/blackbox/snowfield_base)))
 
 /datum/category_item/catalogue/information/blackbox/snowfield_base
 	name = "Black Box Data - CCCP Sector 108 Base"

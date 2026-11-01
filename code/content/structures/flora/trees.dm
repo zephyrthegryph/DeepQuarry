@@ -330,7 +330,6 @@ TYPE_TABLE(/obj/structure/flora/tree/winter1, winter_icon_suffix, TRUE)
 	icon_state = "tree_sif"
 	base_state = "tree_sif"
 	product = /obj/item/stack/material/log/sif
-	catalogue_data = list(/datum/category_item/catalogue/flora/sif_tree)
 	randomize_size = TRUE
 
 	harvest_tool = /obj/item/material/knife
@@ -345,6 +344,7 @@ TYPE_TABLE(/obj/structure/flora/tree/winter1, winter_icon_suffix, TRUE)
 	var/light_shift = 0
 
 CAPABILITIES(/obj/structure/flora/tree/sif)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/flora/sif_tree)))
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_NONE))
 
 /obj/structure/flora/tree/sif/choose_icon_state(datum/roller/R)

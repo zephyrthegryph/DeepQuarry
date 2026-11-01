@@ -23,7 +23,6 @@
 	name = "giant rat"
 	desc = "In what passes for a hierarchy among verminous rodents, this one is king."
 	tt_desc = "Mus muscular"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/rat)
 
 	icon_state = "rous"
 	icon_living = "rous"
@@ -215,6 +214,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/tame)
 	..()
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/rat)))
 	configure(mob_rules(faction = FACTION_MOUSE))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/rat))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 6))

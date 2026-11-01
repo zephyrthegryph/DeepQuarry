@@ -201,20 +201,26 @@ CAPABILITIES(/obj/random/tyroutcrop)
 /obj/item/prop/tyrlore/baseneon
 	name = "data disc"
 	desc = "A disc for storing data."
-	catalogue_data = list(/datum/category_item/catalogue/technology/base_neon)
 	icon_state = "neon_disc"
+
+CAPABILITIES(/obj/item/prop/tyrlore/baseneon)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/base_neon)))
 
 /obj/item/prop/tyrlore/neonsec
 	name = "data disc"
 	desc = "A disc for storing data."
-	catalogue_data = list(/datum/category_item/catalogue/technology/base_neon_forward)
 	icon_state = "sec_disc"
+
+CAPABILITIES(/obj/item/prop/tyrlore/neonsec)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/base_neon_forward)))
 
 /obj/item/prop/tyrlore/neonmedi
 	name = "data disc"
 	desc = "A disc for storing data."
-	catalogue_data = list(/datum/category_item/catalogue/technology/base_neon_virus)
 	icon_state = "medi_disc"
+
+CAPABILITIES(/obj/item/prop/tyrlore/neonmedi)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/base_neon_virus)))
 
 /obj/item/prop/tyrlore/monodisc
 	name = "strange disk"
@@ -224,14 +230,18 @@ CAPABILITIES(/obj/random/tyroutcrop)
 /obj/item/prop/tyrlore/neonengi
 	name = "data disc"
 	desc = "A disc for storing data."
-	catalogue_data = list(/datum/category_item/catalogue/technology/base_neon_anomalous)
 	icon_state = "engi_disc"
+
+CAPABILITIES(/obj/item/prop/tyrlore/neonengi)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/base_neon_anomalous)))
 
 /obj/item/prop/tyrlore/neonsci
 	name = "data disc"
 	desc = "A disc for storing data."
-	catalogue_data = list(/datum/category_item/catalogue/technology/base_neon_planetary_report)
 	icon_state = "sci_disc"
+
+CAPABILITIES(/obj/item/prop/tyrlore/neonsci)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/base_neon_planetary_report)))
 
 /datum/category_item/catalogue/technology/base_neon
 	name = "Goal Manifest"
@@ -302,8 +312,10 @@ CAPABILITIES(/obj/random/tyroutcrop)
 /obj/item/prop/tyrlore/neonjanus
 	name = "data disc"
 	desc = "A disc for storing data."
-	catalogue_data = list(/datum/category_item/catalogue/technology/base_neon_janus)
 	icon_state = "disc_janus"
+
+CAPABILITIES(/obj/item/prop/tyrlore/neonjanus)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/base_neon_janus)))
 
 /datum/category_item/catalogue/technology/base_neon_janus
 	name = "Shielding Tech"
@@ -322,8 +334,10 @@ CAPABILITIES(/obj/random/tyroutcrop)
 /obj/item/prop/tyrlore/truegoal
 	name = "data disc"
 	desc = "A disc for storing data."
-	catalogue_data = list(/datum/category_item/catalogue/technology/truegoal)
 	icon_state = "disc_eclipse"
+
+CAPABILITIES(/obj/item/prop/tyrlore/truegoal)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/truegoal)))
 
 /datum/category_item/catalogue/technology/truegoal
 	name = "Success For All"
@@ -351,8 +365,10 @@ CAPABILITIES(/obj/random/tyroutcrop)
 /obj/item/prop/tyrlore/stolenbreacher
 	name = "data disc"
 	desc = "A disc for storing data."
-	catalogue_data = list(/datum/category_item/catalogue/technology/stolen_breacher)
 	icon_state = "disc_eclipse"
+
+CAPABILITIES(/obj/item/prop/tyrlore/stolenbreacher)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/stolen_breacher)))
 
 /datum/category_item/catalogue/technology/stolen_breacher
 	name = "Reverse Breacher Suit"
@@ -367,7 +383,9 @@ CAPABILITIES(/obj/random/tyroutcrop)
 /obj/item/prop/tyrlore/fossiltank
 	name = "final desgination"
 	icon_state = "old_disc_eclipse"
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/fossil_tank)
+
+CAPABILITIES(/obj/item/prop/tyrlore/fossiltank)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/fossil_tank)))
 
 /datum/category_item/catalogue/anomalous/fossil_tank
 	name = "Rolling Crematorium"
@@ -394,7 +412,9 @@ CAPABILITIES(/obj/random/tyroutcrop)
 
 /obj/item/prop/tyrlore/disc_one
 	name = "tyrian data disc one"
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/disc_one)
+
+CAPABILITIES(/obj/item/prop/tyrlore/disc_one)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/disc_one)))
 
 /datum/category_item/catalogue/anomalous/disc_one
 	name = "Tyr Expirment Data - Corrupted Data One"
@@ -405,7 +425,9 @@ CAPABILITIES(/obj/random/tyroutcrop)
 
 /obj/item/prop/tyrlore/disc_two
 	name = "tyrian data disc two"
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/disc_two)
+
+CAPABILITIES(/obj/item/prop/tyrlore/disc_two)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/disc_two)))
 
 /datum/category_item/catalogue/anomalous/disc_two
 	name = "Tyr Expirment Data - Corrupted Data Two"
@@ -416,7 +438,9 @@ CAPABILITIES(/obj/random/tyroutcrop)
 
 /obj/item/prop/tyrlore/disc_three
 	name = "tyrian data disc three"
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/disc_three)
+
+CAPABILITIES(/obj/item/prop/tyrlore/disc_three)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/disc_three)))
 
 /datum/category_item/catalogue/anomalous/disc_three
 	name = "Tyr Expirment Data - Corrupted Data Three"
@@ -428,7 +452,9 @@ CAPABILITIES(/obj/random/tyroutcrop)
 
 /obj/item/prop/tyrlore/disc_four
 	name = "tyrian data disc four"
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/disc_four)
+
+CAPABILITIES(/obj/item/prop/tyrlore/disc_four)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/disc_four)))
 
 /datum/category_item/catalogue/anomalous/disc_four
 	name = "Tyr Expirment Data - Corrupted Data Four"
@@ -440,7 +466,9 @@ CAPABILITIES(/obj/random/tyroutcrop)
 
 /obj/item/prop/tyrlore/disc_five
 	name = "tyrian data disc five"
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/disc_five)
+
+CAPABILITIES(/obj/item/prop/tyrlore/disc_five)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/disc_five)))
 
 /datum/category_item/catalogue/anomalous/disc_five
 	name = "Tyr Expirment Data - Corrupted Data Five"
@@ -458,7 +486,9 @@ CAPABILITIES(/obj/random/tyroutcrop)
 
 /obj/item/prop/tyrlore/disc_six
 	name = "tyrian data disc six"
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/disc_six)
+
+CAPABILITIES(/obj/item/prop/tyrlore/disc_six)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/disc_six)))
 
 /datum/category_item/catalogue/anomalous/disc_six
 	name = "Tyr Expirment Data - Corrupted Data Six"
@@ -470,7 +500,9 @@ CAPABILITIES(/obj/random/tyroutcrop)
 
 /obj/item/prop/tyrlore/disc_seven
 	name = "tyrian data disc seven"
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/disc_seven)
+
+CAPABILITIES(/obj/item/prop/tyrlore/disc_seven)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/disc_seven)))
 
 /datum/category_item/catalogue/anomalous/disc_seven
 	name = "Tyr Expirment Data - Corrupted Data Seven"
@@ -481,7 +513,9 @@ CAPABILITIES(/obj/random/tyroutcrop)
 
 /obj/item/prop/tyrlore/disc_eight
 	name = "tyrian data disc eight"
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/disc_eight)
+
+CAPABILITIES(/obj/item/prop/tyrlore/disc_eight)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/disc_eight)))
 
 /datum/category_item/catalogue/anomalous/disc_eight
 	name = "Tyr Expirment Data - Corrupted Data Eight"

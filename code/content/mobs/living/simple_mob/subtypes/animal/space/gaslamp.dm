@@ -19,7 +19,6 @@ TODO: Make them light up and heat the air when exposed to oxygen.
 	name = "gaslamp"
 	desc = "Some sort of floaty alien with a warm glow. This creature is endemic to Virgo-3B."
 	tt_desc = "Semaeostomeae virginus"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/gaslamp)
 
 	icon_state = "gaslamp"
 	icon_living = "gaslamp"
@@ -55,6 +54,7 @@ TODO: Make them light up and heat the air when exposed to oxygen.
 	max_n2 = 0
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/gaslamp)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/gaslamp)))
 	configure(mob_rules(faction = FACTION_VIRGO3B))
 	configure(living_rules(vore_capacity = 2, say_list_type = /datum/say_list/gaslamp))
 

@@ -15,7 +15,6 @@
 /mob/living/simple_mob/mechanical/mecha/combat/gygax
 	name = "gygax"
 	desc = "A lightweight, security exosuit. Popular among private and corporate security."
-	catalogue_data = list(/datum/category_item/catalogue/technology/gygax)
 	icon_state = "gygax"
 	movement_cooldown = -1
 	wreckage = /obj/structure/loot_pile/mecha/gygax
@@ -48,7 +47,6 @@
 	name = "dark gygax"
 	desc = "A significantly upgraded Gygax security mech, often utilized by corporate asset protection teams and \
 	PMCs."
-	catalogue_data = list(/datum/category_item/catalogue/technology/dark_gygax)
 	icon_state = "darkgygax"
 	wreckage = /obj/structure/loot_pile/mecha/gygax/dark
 
@@ -94,3 +92,9 @@
 	say_escalate = list("Intruder is tresspassing. Maximum force authorized by Vir System Suthority.")
 	threaten_sound = 'sound/mob/robots/gygaxintruder4.ogg'
 	stand_down_sound = 'sound/mob/robots/gygaxdanger.ogg'
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/gygax)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/gygax)))
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/dark_gygax)))

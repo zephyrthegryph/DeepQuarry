@@ -132,7 +132,6 @@ CAPABILITIES(/obj/item/cell/device/weapon/empproof)
 	standard_overlays = FALSE
 	name = "void cell (device)"
 	desc = "An alien technology that produces energy seemingly out of nowhere. Its small, cylinderal shape means it might be able to be used with human technology, perhaps?"
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_void_cell)
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "cell"
 	charge = 5000
@@ -143,6 +142,7 @@ CAPABILITIES(/obj/item/cell/device/weapon/empproof)
 	standard_overlays = FALSE
 
 CAPABILITIES(/obj/item/cell/device/weapon/recharge/alien)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_void_cell)))
 	// This ran before the inherited charge/drain entries.
 	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT), label("Use"), then(PROC_REF(interaction_self)))
 

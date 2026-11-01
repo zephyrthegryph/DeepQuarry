@@ -25,7 +25,6 @@
 
 /mob/living/simple_mob/animal/giant_spider/phorogenic
 	desc = "Crystalline and purple, it makes you shudder to look at it. This one has haunting purple eyes."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/giant_spider/phorogenic_spider)
 
 	icon_state = "phoron"
 	icon_living = "phoron"

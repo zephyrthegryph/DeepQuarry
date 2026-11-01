@@ -1,7 +1,6 @@
 /mob/living/simple_mob/vore/sonadile
 	name = "sonadile"
 	desc = "A tall, oddly proportioned bipedal reptile. Whilst its body is fairly large on its own, the incredibly long neck brings its height up to near 14 feet tall. Covered in green scales with a yellow underbelly, with a long thin tail, short legs and stubby arms. It has orange frills down its spine and the eyes are an odd grey colour, it doesn't appear to be able to see very well."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/sonadile)
 	/// Ten seconds after the last meal: the full sprite shows its settled second stage.
 	var/settled = FALSE
 	tt_desc = "Crocodylidae"
@@ -77,6 +76,7 @@
 		look.state("[icon_living]-2")
 
 CAPABILITIES(/mob/living/simple_mob/vore/sonadile)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/sonadile)))
 	configure(mob_rules(faction = FACTION_SONADILE))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/sonadile))
 	on_change(nameof(vore_fullness), ANY, then(PROC_REF(fullness_changed)))

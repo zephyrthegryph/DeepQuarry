@@ -30,7 +30,6 @@
 	endurance = 150
 	attacktext = list("haunts")
 	see_in_dark = 8
-	catalogue_data = list(/datum/category_item/catalogue/fauna/ysbryd)
 
 	var/static/list/emote_threats = list(
 								"I have come to collect a meal, now that your people have broken the seal.",

@@ -25,7 +25,6 @@
 	desc = "A titanic, chitin-plated insectoid whose multiple crimson eyes cast a frightful red light. Its \
 	abdomen has an unusually soft and... flexible-looking underbelly..."
 	tt_desc = "V Insecta maximus gigantus"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/sect_queen)
 
 	icon_dead = "sect_queen_dead"
 	icon_living = "sect_queen"
@@ -76,6 +75,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/sect_queen)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/sect_queen)))
 	configure(mob_rules(faction = FACTION_INSECTS))
 	configure(living_rules(vore_capacity = 2, say_list_type = /datum/say_list/sect_queen))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat, meat_amount = 8))

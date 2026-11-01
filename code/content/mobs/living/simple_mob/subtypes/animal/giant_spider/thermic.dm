@@ -17,7 +17,6 @@
 
 /mob/living/simple_mob/animal/giant_spider/thermic
 	desc = "Mirage-cloaked and orange, it makes you shudder to look at it. This one has simmering orange eyes."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/giant_spider/thermic_spider)
 
 	icon_state = "pit"
 	icon_living = "pit"

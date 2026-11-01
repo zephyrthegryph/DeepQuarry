@@ -6,7 +6,6 @@
 /mob/living/simple_mob/vore/reindeer
 	name = "reindeer"
 	desc = "A large reindeer."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/reindeer)
 
 	icon_state = "reindeer"
 	icon_living = "reindeer"
@@ -41,6 +40,7 @@
 	vore_icons = SA_ICON_LIVING
 
 CAPABILITIES(/mob/living/simple_mob/vore/reindeer)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/reindeer)))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 5))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 

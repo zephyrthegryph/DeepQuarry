@@ -52,7 +52,6 @@ I think I covered everything.
 	drag_buckle = FALSE
 	name = "large dragon"
 	desc = "A large, intimidating creature reminiscent of the traditional idea of medieval fire breathing lizards."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/bigdragon)
 	tt_desc = "S Draco Ignis"
 	icon = 'icons/mob/vore128x64.dmi'
 	icon_state = "dragon_bodyScaled"
@@ -926,6 +925,7 @@ CAPABILITIES(/obj/item/projectile/bullet/incendiary/dragonflame)
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/bigdragon)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/bigdragon)))
 	configure(mob_rules(faction = FACTION_DRAGON))
 	configure(living_rules(vore_capacity = 2, say_list_type = /datum/say_list/bigdragon, use_modern_ai = TRUE))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 40))

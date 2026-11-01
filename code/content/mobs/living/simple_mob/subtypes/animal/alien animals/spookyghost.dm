@@ -12,7 +12,6 @@
 	name = "space ghost"
 	desc = "A pulsing mass of darkness that seems to have gained sentience."
 	tt_desc = "?????"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/space_ghost)
 
 	icon = 'icons/mob/alienanimals_x32.dmi'
 	icon_state = "space_ghost"
@@ -67,6 +66,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_ghost)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/space_ghost)))
 	configure(mob_rules(faction = FACTION_SPACE_GHOST))
 	configure(living_rules(delete_on_death = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
@@ -106,7 +106,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_ghost)
 	name = "space ghost"
 	desc = "A pulsing mass of darkness that seems to have gained sentience."
 	tt_desc = "?????"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/space_ghost)
 
 	icon = 'icons/mob/alienanimals_x32.dmi'
 	icon_state = "spookyghost-1"
@@ -170,6 +169,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_ghost)
 		src.injure(INJURY_BURN, 1, source = T) // Light sears it.
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/spooky_ghost)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/space_ghost)))
 	configure(mob_rules(faction = FACTION_SPACE_GHOST))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_movement(hovering = TRUE))

@@ -370,7 +370,9 @@ MSG_DEF_SELF(pottedplant/nothing, span_filter_notice(span_bold("You see nothing 
 	name = "mysterious potted bulbs"
 	desc = "This is a mysterious looking plant. Touching the bulbs cause them to shrink."
 	icon_state = "plant-07"
-	catalogue_data = list(/datum/category_item/catalogue/flora/eyebulbs)
+
+CAPABILITIES(/obj/structure/flora/pottedplant/mysterious)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/flora/eyebulbs)))
 
 /obj/structure/flora/pottedplant/smalltree
 	name = "small potted tree"
@@ -381,9 +383,9 @@ MSG_DEF_SELF(pottedplant/nothing, span_filter_notice(span_bold("You see nothing 
 	name = "unusual potted plant"
 	desc = "This is an unusual plant. It's bulbous ends emit a soft blue light."
 	icon_state = "plant-09"
-	catalogue_data = list(/datum/category_item/catalogue/flora/sif_tree)
 
 CAPABILITIES(/obj/structure/flora/pottedplant/unusual)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/flora/sif_tree)))
 	configure(light_glow(range = 2, power = 0.6, color = "#33CCFF"))
 
 /obj/structure/flora/pottedplant/orientaltree
@@ -555,13 +557,13 @@ CAPABILITIES(/obj/random/pottedplant)
 	name = "subterranean bulbs"
 	desc = "This is a subterranean plant. It's bulbous ends glow faintly."
 	icon_state = "glowplant"
-	catalogue_data = list(/datum/category_item/catalogue/flora/subterranean_bulbs)
 	harvest_loot = list(/obj/item/reagent_containers/food/snacks/grown/sif/cavebulbs = 1)
 	harvest_tool = /obj/item/material/knife
 	max_harvests = 2
 	min_harvests = 0
 
 CAPABILITIES(/obj/structure/flora/sif/subterranean)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/flora/subterranean_bulbs)))
 	configure(light_glow(range = 2, power = 0.6, color = "#FF6633"))
 
 TYPE_TABLE(/obj/structure/flora/sif/subterranean, initial_icon_variant_count, 2)
@@ -577,11 +579,13 @@ TYPE_TABLE(/obj/structure/flora/sif/subterranean, initial_icon_variant_count, 2)
 	name = "eyebulbs"
 	desc = "This is a mysterious-looking plant. They kind of look like eyeballs. Creepy."
 	icon_state = "eyeplant"
-	catalogue_data = list(/datum/category_item/catalogue/flora/eyebulbs)
 	harvest_tool = /obj/item/material/knife
 	max_harvests = 2
 	min_harvests = 0
 	harvest_loot = list(/obj/item/reagent_containers/food/snacks/grown/sif/eyebulbs = 1)
+
+CAPABILITIES(/obj/structure/flora/sif/eyes)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/flora/eyebulbs)))
 
 TYPE_TABLE(/obj/structure/flora/sif/eyes, initial_icon_variant_count, 3)
 
@@ -597,7 +601,6 @@ TYPE_TABLE(/obj/structure/flora/sif/eyes, initial_icon_variant_count, 3)
 	desc = "A 'plant' made up of hardened moss. It has tiny hairs that bunch together to look like snow."
 	icon_state = "grass"
 	randomize_size = TRUE
-	catalogue_data = list(/datum/category_item/catalogue/flora/mosstendrils)
 
 	harvest_tool = /obj/item/material/knife
 	max_harvests = 3
@@ -607,6 +610,9 @@ TYPE_TABLE(/obj/structure/flora/sif/eyes, initial_icon_variant_count, 3)
 		/obj/item/reagent_containers/food/snacks/grown/sif/blackwabback = 1,
 		/obj/item/reagent_containers/food/snacks/grown/sif/wildwabback = 30
 	)
+
+CAPABILITIES(/obj/structure/flora/sif/tendrils)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/flora/mosstendrils)))
 
 TYPE_TABLE(/obj/structure/flora/sif/tendrils, initial_icon_variant_count, 3)
 
@@ -627,7 +633,6 @@ TYPE_TABLE(/obj/structure/flora/sif/tendrils, initial_icon_variant_count, 3)
 	desc = "A stocky plant with fins bearing luminescent veins along its branches."
 	icon_state = "frostbelle"
 	randomize_size = TRUE
-	catalogue_data = list(/datum/category_item/catalogue/flora/frostbelle)
 
 	harvest_tool = /obj/item/material/knife
 	max_harvests = 2
@@ -639,6 +644,7 @@ TYPE_TABLE(/obj/structure/flora/sif/tendrils, initial_icon_variant_count, 3)
 	var/variantnum = null
 
 CAPABILITIES(/obj/structure/flora/sif/frostbelle)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/flora/frostbelle)))
 	rolls(nameof(variantnum), PROC_REF(roll_variantnum))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.

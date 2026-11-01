@@ -22,7 +22,6 @@
 
 /mob/living/simple_mob/animal/giant_spider/lurker
 	desc = "Translucent and white, it makes you shudder to look at it. This one has incandescent red eyes."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/giant_spider/lurker_spider)
 
 	icon_state = "lurker"
 	icon_living = "lurker"
@@ -108,6 +107,7 @@
 
 // Force uncloaking if attacked.
 CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/lurker)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/giant_spider/lurker_spider)))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(hit_breaks_cloak)))
 
 /mob/living/simple_mob/animal/giant_spider/lurker/hit_with_weapon(obj/item/O, mob/living/user, effective_force, hit_zone)

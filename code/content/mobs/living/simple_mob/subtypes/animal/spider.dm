@@ -7,10 +7,14 @@
 	projectiletype = /obj/item/projectile/energy/mob/electric_spider
 
 CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/electric)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/giant_spider/electric_spider)))
 	configure(mob_kind(attack_cooldown = 15))
 
 /mob/living/simple_mob/animal/giant_spider/frost //tank, old 175
 	endurance = 75
+
+CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/frost)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/giant_spider/frost_spider)))
 
 /mob/living/simple_mob/animal/giant_spider //tank, old 200
 	endurance = 80
@@ -24,25 +28,41 @@ CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/ion)
 /mob/living/simple_mob/animal/giant_spider/hunter //disrupter, old 120
 	endurance = 40
 
+CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/hunter)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/giant_spider/hunter_spider)))
+
 /mob/living/simple_mob/animal/giant_spider/lurker //disrupter, old 100
 	endurance = 40
 
 /mob/living/simple_mob/animal/giant_spider/pepper //tank, old 210
 	endurance = 80
 
+CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/pepper)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/giant_spider/pepper_spider)))
+
 /mob/living/simple_mob/animal/giant_spider/phorogenic //tank, old 225
 	endurance = 200 //Gives people a second to stand back
+
+CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/phorogenic)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/giant_spider/phorogenic_spider)))
 
 /mob/living/simple_mob/animal/giant_spider/thermic //tank, old 175
 	endurance = 75
 
+CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/thermic)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/giant_spider/thermic_spider)))
+
 /mob/living/simple_mob/animal/giant_spider/tunneler //disrupter, old 120
 	endurance = 65
+
+CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/tunneler)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/giant_spider/tunneler_spider)))
 
 /mob/living/simple_mob/animal/giant_spider/webslinger //disrupter, old 90
 	endurance = 40
 
 CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/webslinger)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/giant_spider/webslinger_spider)))
 	configure(mob_kind(attack_cooldown = 10))
 
 /obj/effect/spider/eggcluster

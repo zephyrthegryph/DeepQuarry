@@ -9,22 +9,28 @@
 /obj/item/tool/crowbar/alien/magic
 	name = "sentient crowbar"
 	desc = "A crowbar with a green gem set in it and a green ribbon tied to it, it floats lightly by itself and appears to be able to pry on its own. It almost feels like there is some sort of anti gravity generator running in it..."
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_crowbar)
 	icon_state = "crowbar_sentient"
+
+CAPABILITIES(/obj/item/tool/crowbar/alien/magic)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_crowbar)))
 
 /obj/item/tool/screwdriver/alien/magic
 	name = "vintage screwdriver of revolving"
 	desc = "A vintage screwdriver that spins as fast as a drill with little aid, it has a red gem on the handle. It oddly sounds like a drill too..."
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_screwdriver)
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "screwdriver_old"
+
+CAPABILITIES(/obj/item/tool/screwdriver/alien/magic)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_screwdriver)))
 
 /obj/item/weldingtool/alien/magic
 	name = "bellows of flame"
 	desc = "A set of bellows that have a yellow gem on the spout, they emit flames when pressed. Oddly seems to have a faint phoron smell to it..."
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_welder)
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "bellows"
+
+CAPABILITIES(/obj/item/weldingtool/alien/magic)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_welder)))
 
 /obj/item/tool/wirecutters/alien/magic
 	name = "secateurs of organisation"
@@ -35,9 +41,11 @@
 /obj/item/tool/wrench/alien/magic
 	name = "pliers of molding"
 	desc = "A set of pliers that seems to mold to the shape of their target, housing a pink gem. Oddly seems to have a slightly slimey texture at the metal..."
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_wrench)
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "pliers"
+
+CAPABILITIES(/obj/item/tool/wrench/alien/magic)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_wrench)))
 
 /obj/item/surgical/bone_clamp/alien/magic
 	icon = 'icons/obj/abductor.dmi'

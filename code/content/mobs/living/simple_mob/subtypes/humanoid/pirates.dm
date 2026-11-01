@@ -23,7 +23,6 @@
 	icon_state = "piratemelee"
 	icon_living = "piratemelee"
 	icon_dead = "piratemelee_dead"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/pirate)
 
 
 	response_help = "pushes"
@@ -46,6 +45,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/pirate)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/pirate)))
 	configure(mob_rules(faction = FACTION_PIRATE))
 	configure(living_rules(say_list_type = /datum/say_list/pirate))
 
@@ -478,7 +478,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/captain)
 /mob/living/simple_mob/mechanical/mecha/ripley/pirate
 	name = "Hull Ripper"
 	desc = "A Ripley modified by pirates. Sports additional riveted armor plating and a jury rigged machine gun in addition to its hull piercing drill."
-	catalogue_data = list(/datum/category_item/catalogue/technology/ripley)
 	icon = 'icons/mob/pirates.dmi'
 	icon_state = "pirate"
 	wreckage = /obj/structure/loot_pile/mecha/ripley/pirate
@@ -504,3 +503,5 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/captain)
 	pilot_type = /mob/living/simple_mob/humanoid/possessed/merc/feral	//Possessed rig suit piloting a mech. Tremble in fear
 	movement_shake_radius = 5
 
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/ripley/pirate)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/ripley)))

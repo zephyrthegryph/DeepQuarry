@@ -1,7 +1,6 @@
 /mob/living/simple_mob/shadekin //Spawning the prototype spawns a random one, see initialize()
 	name = "shadekin"
 	desc = "Some sort of fluffer. Big ears, long tail."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/shadekin)
 	icon = 'icons/mob/vore_shadekin.dmi'
 	icon_state = "map_example"
 	icon_living = "map_example"
@@ -70,6 +69,7 @@
 	var/check_timer = 0
 
 CAPABILITIES(/mob/living/simple_mob/shadekin)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/shadekin)))
 	configure(mob_rules(faction = FACTION_SHADEKIN))
 	configure(living_rules(say_list_type = /datum/say_list/shadekin))
 	setup(PROC_REF(replace_prototype), mapload = TRUE)

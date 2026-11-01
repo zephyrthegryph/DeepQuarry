@@ -17,7 +17,6 @@
 
 /mob/living/simple_mob/animal/giant_spider/frost
 	desc = "Icy and blue, it makes you shudder to look at it. This one has brilliant blue eyes."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/giant_spider/frost_spider)
 
 	icon_state = "frost"
 	icon_living = "frost"

@@ -3,7 +3,6 @@
 /mob/living/simple_mob/vore/mantrap
 	name = "mantrap"
 	desc = "This massive plant lays in wait in the brush, and can be very difficult to spot. When laying open on the ground, the trap mechanism resembles a massive saw-toothed maw."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/mantrap)
 	tt_desc = "Dionaea Humanis"
 	icon = 'icons/mob/vore.dmi'
 	icon_dead = "flytrap-dead"
@@ -37,6 +36,7 @@
 	var/list/eaten_mobs
 
 CAPABILITIES(/mob/living/simple_mob/vore/mantrap)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/mantrap)))
 	configure(mob_rules(faction = FACTION_PLANTS))
 	configure(living_rules(vore_capacity = 1))
 	ref_many(nameof(eaten_mobs))
@@ -86,7 +86,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/mantrap)
 /mob/living/simple_mob/vore/pitcher
 	name = "pitcher plant"
 	desc = "This large pitcher plant looks big enough to fit an entire person, with a little stretching. Long tendrils rest at the entrance."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/pitcher)
 	tt_desc = "Nepenthes Titanis"
 	icon = 'icons/mob/vore.dmi'
 	icon_dead = "pitcher-dead"
@@ -122,6 +121,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/mantrap)
 	projectilesound = SFX_EFFECTS_SLIME_SQUISH
 
 CAPABILITIES(/mob/living/simple_mob/vore/pitcher)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/pitcher)))
 	configure(mob_rules(faction = FACTION_PLANTS))
 	configure(living_rules(vore_capacity = 1, appendage_color = "#03a319"))
 	configure(mob_kind(attack_cooldown = 5 SECONDS))

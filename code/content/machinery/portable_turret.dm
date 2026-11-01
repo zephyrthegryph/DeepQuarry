@@ -46,7 +46,6 @@
 
 /obj/machinery/porta_turret
 	name = "turret"
-	catalogue_data = list(/datum/category_item/catalogue/technology/turret)
 	icon = 'icons/obj/turrets.dmi'
 	icon_state = "turret_cover_normal"
 	anchored = TRUE
@@ -116,6 +115,7 @@ MSG_DEF_SELF(porta_turret/wrecked, "It is wrecked: pry it apart instead.")
 MSG_DEF(porta_turret/haywire, "You short out %T%'s threat assessment circuits.", "")
 
 CAPABILITIES(/obj/machinery/porta_turret)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/turret)))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	configure(atom_rules(description_antag = "Turrets can be emagged to target anyone and everyone, on lethals, and cannot be turned off if emagged."))
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_UNIQUE))
@@ -515,7 +515,6 @@ CAPABILITIES(/obj/machinery/porta_turret)
 /obj/machinery/porta_turret/alien // The kind used on the UFO submap.
 	name = "interior anti-boarding turret"
 	desc = "A very tough looking turret made by alien hands."
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_turret)
 	icon_state = "turret_cover_alien"
 	req_one_access = list(ACCESS_ALIEN)
 	installation = /obj/item/gun/energy/alien
@@ -528,6 +527,7 @@ CAPABILITIES(/obj/machinery/porta_turret)
 
 /// Superior alien technology: a pulse knocks it out for a minute or two, but three pulses in four do nothing.
 CAPABILITIES(/obj/machinery/porta_turret/alien)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_turret)))
 	configure(emp_disable(lasts = list(1 MINUTE, 2 MINUTES), resist = 75))
 
 /obj/machinery/porta_turret/alien/destroyed/starts_broken()

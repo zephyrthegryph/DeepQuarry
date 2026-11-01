@@ -17,7 +17,6 @@
 /mob/living/simple_mob/animal/giant_spider/webslinger
 	desc = "Furry and green, it makes you shudder to look at it. This one has brilliant green eyes, and a cloak of web."
 	tt_desc = "X Brachypelma phorus balisticus"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/giant_spider/webslinger_spider)
 
 	icon_state = "webslinger"
 	icon_living = "webslinger"

@@ -285,7 +285,6 @@ CAPABILITIES(/obj/mecha/combat/fighter)
 	icon_state = "gunpod"
 	initial_icon = "gunpod"
 
-	catalogue_data = list(/datum/category_item/catalogue/technology/gunpod)
 	wreckage = /obj/effect/decal/mecha_wreckage/gunpod
 
 	step_in = 3 //Slightly slower than others
@@ -312,6 +311,7 @@ TYPE_TABLE(/obj/mecha/combat/fighter/gunpod/recon, mecha_starting_equipment, lis
 
 
 CAPABILITIES(/obj/mecha/combat/fighter/gunpod)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/gunpod)))
 	op("gunpod_paint", item(/obj/item), label("Paint stripes"), when(PROC_REF(paintable_by_multitool)),
 		asks(/datum/prompt/choice, fields = list("title" = "Paint Zone", "question" = "Please select a target zone.", "choices" = list("Fore Stripe", "Aft Stripe", "CANCEL"), "subject" = computed(PROC_REF(paint_subject)), "ask_flags" = ASK_HELD | ASK_CAPABLE, "timeout" = 0), step = "zone"),
 		asks(/datum/prompt/color/mech_paint, fields = list("subject" = computed(PROC_REF(paint_subject))), step = "color", when = PROC_REF(paint_zone_chosen)),
@@ -374,10 +374,12 @@ CAPABILITIES(/obj/mecha/combat/fighter/gunpod)
 	icon_state = "baron"
 	initial_icon = "baron"
 
-	catalogue_data = list(/datum/category_item/catalogue/technology/baron)
 	wreckage = /obj/effect/decal/mecha_wreckage/baron
 
 	ground_capable = FALSE
+
+CAPABILITIES(/obj/mecha/combat/fighter/baron)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/baron)))
 
 //Loaded version with guns
 TYPE_TABLE(/obj/mecha/combat/fighter/baron/loaded, mecha_starting_equipment, list(/obj/item/mecha_parts/mecha_equipment/weapon/energy/laser, /obj/item/mecha_parts/mecha_equipment/omni_shield))
@@ -407,10 +409,12 @@ TYPE_TABLE(/obj/mecha/combat/fighter/baron/loaded, mecha_starting_equipment, lis
 	icon_state = "scoralis"
 	initial_icon = "scoralis"
 
-	catalogue_data = list(/datum/category_item/catalogue/technology/scoralis)
 	wreckage = /obj/effect/decal/mecha_wreckage/scoralis
 
 	ground_capable = FALSE
+
+CAPABILITIES(/obj/mecha/combat/fighter/scoralis)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/scoralis)))
 
 //Loaded version with guns
 TYPE_TABLE(/obj/mecha/combat/fighter/scoralis/loaded, mecha_starting_equipment, list(/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/lmg, /obj/item/mecha_parts/mecha_equipment/cloak))
@@ -439,12 +443,14 @@ TYPE_TABLE(/obj/mecha/combat/fighter/scoralis/loaded, mecha_starting_equipment, 
 	icon_state = "allure"
 	initial_icon = "allure"
 
-	catalogue_data = list(/datum/category_item/catalogue/technology/allure)
 	wreckage = /obj/effect/decal/mecha_wreckage/allure
 
 	ground_capable = FALSE
 
 	max_integrity = 500
+
+CAPABILITIES(/obj/mecha/combat/fighter/allure)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/allure)))
 
 //Loaded version with guns
 TYPE_TABLE(/obj/mecha/combat/fighter/allure/loaded, mecha_starting_equipment, list(/obj/item/mecha_parts/mecha_equipment/cloak))
@@ -473,12 +479,14 @@ TYPE_TABLE(/obj/mecha/combat/fighter/allure/loaded, mecha_starting_equipment, li
 	icon_state = "pinnace"
 	initial_icon = "pinnace"
 
-	catalogue_data = list(/datum/category_item/catalogue/technology/pinnace)
 	wreckage = /obj/effect/decal/mecha_wreckage/pinnace
 
 	ground_capable = TRUE
 
 	max_integrity = 200
+
+CAPABILITIES(/obj/mecha/combat/fighter/pinnace)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/pinnace)))
 
 //Loaded version with guns
 TYPE_TABLE(/obj/mecha/combat/fighter/pinnace/loaded, mecha_starting_equipment, list(/obj/item/mecha_parts/mecha_equipment/weapon/energy/laser))

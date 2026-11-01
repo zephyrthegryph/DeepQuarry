@@ -15,7 +15,6 @@
 	name = "fire bug"
 	desc = "A tiny plated bug found in Sif's volcanic regions."
 	tt_desc = "S Armadillidiidae calidi"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/pillbug)
 
 	icon_state = "pillbug"
 	icon_living = "pillbug"
@@ -31,6 +30,9 @@
 	organ_names = /datum/decl/mob_organ_names/pillbug
 
 	armor_spec = "melee=30;bullet=10;laser=50;energy=50;bomb=30;bio=100;rad=100"
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/pillbug)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/pillbug)))
 
 /datum/decl/mob_organ_names/pillbug
 TYPE_TABLE(/datum/decl/mob_organ_names/pillbug, mob_organ_hit_zones, list("cephalon", "pereon", "pleon", "left forelegs", "right forelegs", "left hind legs", "right hind legs"))

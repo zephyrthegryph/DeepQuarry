@@ -6,12 +6,12 @@
 /////// Grower Pod ///////
 /obj/machinery/clonepod/transhuman
 	name = "grower pod"
-	catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)
 	circuit = /obj/item/circuitboard/transhuman_clonepod
 	var/obj/machinery/computer/transhuman/resleeving/resleeving_console //What console it's done up with (relation); `connected` is the cloning console's alone
 
 // The grower pod is one of the resleeving console's pods (two-sided; clears when either dies).
 CAPABILITIES(/obj/machinery/clonepod/transhuman)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)))
 	links(/obj/machinery/computer/transhuman/resleeving::pods, /obj/machinery/clonepod/transhuman::resleeving_console, a_many = TRUE)
 
 //A full version of the pod
@@ -128,7 +128,6 @@ CAPABILITIES(/obj/machinery/clonepod/transhuman/full)
 /obj/machinery/transhuman/synthprinter
 	name = "SynthFab 3000"
 	desc = "A rapid fabricator for synthetic bodies."
-	catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)
 	icon = 'icons/obj/machines/synthpod.dmi'
 	icon_state = "pod_0"
 	circuit = /obj/item/circuitboard/transhuman_synthprinter
@@ -193,6 +192,7 @@ CAPABILITIES(/obj/machinery/clonepod/transhuman/full)
 /// Prints while busy with a body; idle, it sleeps until one is queued.
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/transhuman/synthprinter)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)))
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
 	setup(PROC_REF(prepare_empty_parts))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(busy), wakes_on = list(nameof(busy)))
@@ -310,7 +310,6 @@ CAPABILITIES(/obj/machinery/transhuman/synthprinter)
 /obj/machinery/transhuman/resleever
 	name = "resleeving pod"
 	desc = "Used to combine mind and body into one unit."
-	catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)
 	icon = 'icons/obj/machines/implantchair.dmi'
 	icon_state = "implantchair"
 	circuit = /obj/item/circuitboard/transhuman_resleever
@@ -375,6 +374,7 @@ CAPABILITIES(/obj/machinery/transhuman/synthprinter)
 	return istext(answer) ? answer : (answer ? null : /datum/msg/req_failed)
 
 CAPABILITIES(/obj/machinery/transhuman/resleever)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)))
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
 	setup(PROC_REF(prepare_empty_parts))
 	interface("ResleevingPod", title = "Resleever")

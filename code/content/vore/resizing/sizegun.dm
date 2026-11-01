@@ -124,12 +124,14 @@ CAPABILITIES(/obj/item/gun/energy/sizegun/admin)
 /obj/item/gun/energy/sizegun/admin/abductor
 	name = "alien size gun"
 	desc = "A strange looking ray gun weapon with an adjustor knob on the side. The design is alien, but it bares a striking resemblence to the older model size guns that NT uses for research."
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_sizegun)
 	icon_state = "sizegun-abductor-shrink100"
 	item_state = "sizegun-abductor"
 	initial_icon_state = "sizegun-abductor"
 	charge_cost = 0
 	projectile_type = /obj/item/projectile/beam/sizelaser/admin/alien
+
+CAPABILITIES(/obj/item/gun/energy/sizegun/admin/abductor)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_sizegun)))
 
 /obj/item/gun/energy/sizegun/admin/select_size(mob/user = usr)
 	set name = "Select Size"

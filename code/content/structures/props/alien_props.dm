@@ -90,7 +90,9 @@
 	icon_state = "core"
 	desc = "An alien machine that seems to be producing energy seemingly out of nowhere."
 	interaction_message = span_warning("Messing with something that makes energy out of nowhere seems very unwise.")
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_void_core)
+
+CAPABILITIES(/obj/structure/prop/alien/power)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_void_core)))
 
 /obj/item/prop/alien
 	name = "some alien item"

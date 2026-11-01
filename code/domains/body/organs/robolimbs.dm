@@ -512,7 +512,9 @@ CAPABILITIES(/obj/item/disk/limb)
 
 /obj/item/disk/limb/bishop
 	company = "Bishop"
-	catalogue_data = list(/datum/category_item/catalogue/information/organization/bishop)
+
+CAPABILITIES(/obj/item/disk/limb/bishop)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/organization/bishop)))
 
 /obj/item/disk/limb/cybersolutions
 	company = "Cyber Solutions"
@@ -522,15 +524,21 @@ CAPABILITIES(/obj/item/disk/limb)
 
 /obj/item/disk/limb/hephaestus
 	company = "Hephaestus"
-	catalogue_data = list(/datum/category_item/catalogue/information/organization/hephaestus)
+
+CAPABILITIES(/obj/item/disk/limb/hephaestus)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/organization/hephaestus)))
 
 /obj/item/disk/limb/morpheus
 	company = "Morpheus"
-	catalogue_data = list(/datum/category_item/catalogue/information/organization/morpheus)
+
+CAPABILITIES(/obj/item/disk/limb/morpheus)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/organization/morpheus)))
 
 /obj/item/disk/limb/veymed
 	company = "Vey-Med"
-	catalogue_data = list(/datum/category_item/catalogue/information/organization/vey_med)
+
+CAPABILITIES(/obj/item/disk/limb/veymed)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/organization/vey_med)))
 
 // Bus disk for Diona mech parts.
 /obj/item/disk/limb/veymed/diona
@@ -538,19 +546,27 @@ CAPABILITIES(/obj/item/disk/limb)
 
 /obj/item/disk/limb/wardtakahashi
 	company = "Ward-Takahashi"
-	catalogue_data = list(/datum/category_item/catalogue/information/organization/ward_takahashi)
+
+CAPABILITIES(/obj/item/disk/limb/wardtakahashi)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/organization/ward_takahashi)))
 
 /obj/item/disk/limb/xion
 	company = "Xion"
-	catalogue_data = list(/datum/category_item/catalogue/information/organization/xion)
+
+CAPABILITIES(/obj/item/disk/limb/xion)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/organization/xion)))
 
 /obj/item/disk/limb/zenghu
 	company = "Zeng-Hu"
-	catalogue_data = list(/datum/category_item/catalogue/information/organization/zeng_hu)
+
+CAPABILITIES(/obj/item/disk/limb/zenghu)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/organization/zeng_hu)))
 
 /obj/item/disk/limb/nanotrasen
 	company = "NanoTrasen"
-	catalogue_data = list(/datum/category_item/catalogue/information/organization/nanotrasen)
+
+CAPABILITIES(/obj/item/disk/limb/nanotrasen)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/organization/nanotrasen)))
 
 /obj/item/disk/species
 	name = "Species Bioprints"
@@ -740,7 +756,9 @@ GLOBAL_LIST_INIT(dsi_to_species, list(SPECIES_TAJARAN = "DSI - Tajaran", SPECIES
 
 /obj/item/disk/limb/zenghu_frost
 	company = "Zeng-Hu (Modified)"
-	catalogue_data = list(/datum/category_item/catalogue/information/organization/zeng_hu)
+
+CAPABILITIES(/obj/item/disk/limb/zenghu_frost)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/organization/zeng_hu)))
 
 //Ported from CitRP
 /datum/robolimb/cyber_beast

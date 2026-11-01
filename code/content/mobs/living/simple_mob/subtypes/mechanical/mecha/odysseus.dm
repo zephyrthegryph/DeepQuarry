@@ -14,10 +14,6 @@
 /mob/living/simple_mob/mechanical/mecha/odysseus
 	name = "odysseus"
 	desc = "These exosuits are developed and produced by Vey-Med. This one has a syringe gun."
-	catalogue_data = list(
-		/datum/category_item/catalogue/technology/odysseus,
-		/datum/category_item/catalogue/information/organization/vey_med
-		)
 	icon_state = "odysseus"
 	wreckage = /obj/structure/loot_pile/mecha/odysseus
 
@@ -82,3 +78,6 @@
 	if(. && isliving(target) && blocked < 100)
 		var/mob/living/L = target
 		L.lingering_poison(1, 1 MINUTE, firer)
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/odysseus)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/odysseus, /datum/category_item/catalogue/information/organization/vey_med)))

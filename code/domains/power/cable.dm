@@ -886,7 +886,6 @@ CAPABILITIES(/obj/item/stack/cable_coil/random_belt)
 /obj/item/stack/cable_coil/alien
 	name = "alien spool"
 	desc = "A spool of cable. No matter how hard you try, you can never seem to get to the end."
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_wire)
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "coil"
 	amount = MAXCOIL
@@ -927,6 +926,7 @@ CAPABILITIES(/obj/item/stack/cable_coil/random_belt)
 
 // The endless coil's touch replaces the stack's split: it asks how much wire to take.
 CAPABILITIES(/obj/item/stack/cable_coil/alien)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_wire)))
 	configure(movable_motion(throw_range = 5, throw_speed = 2))
 	setup(PROC_REF(work_out_embed_chance))
 	configure(item_tooling(speed = 0.25))

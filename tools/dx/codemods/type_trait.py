@@ -20,6 +20,10 @@ import sys
 
 ROOTS = ("code", "maps")
 SPECS = {
+    "catalogue_data": dict(
+        base="/atom", ctor="atom_rules", reader="atom_rules_of", type_reader="atom_rules_of_type",
+        fields={"catalogue_data": "catalogue_data"}, skip={"code/content/atom/atom_rules.dm", "code/content/mob/living/carbon/human/species/species.dm"},
+    ),
     "worn_factors": dict(
         base="/obj/item", ctor="item_worn", reader="worn_of", type_reader="worn_of_type",
         fields={"worn_factors": "worn_factors"}, skip={"code/content/items/item_worn.dm"},

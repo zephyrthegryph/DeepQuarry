@@ -8,7 +8,6 @@
 	icon_living = "ddraig"
 	icon_state = "ddraig"
 	icon_rest = "ddraig_rest"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/ddraig)
 	old_x = -32
 	old_y = 0
 	vis_height = 92
@@ -79,6 +78,7 @@
 	movement_cooldown = -3
 
 CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/ddraig)))
 	configure(mob_rules(faction = FACTION_GLAMOUR))
 	configure(living_rules(vore_capacity = 3))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))

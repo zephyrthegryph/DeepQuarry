@@ -1,7 +1,6 @@
 /mob/living/simple_mob/vore/scrubble
 	name = "scrubble"
 	desc = "A small skittish animal with some features resembling rodents and foxes. Usually seen coated with beige and brown fur, the scrubble has four ears that pivot quickly, two long fluffy tails and dark red eyes."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/scrubble)
 	tt_desc = "vuldentia"
 	icon = 'icons/mob/vore.dmi'
 	icon_dead = "scrubble-dead"

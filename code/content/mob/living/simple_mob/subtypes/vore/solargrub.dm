@@ -20,7 +20,6 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 /mob/living/simple_mob/vore/solargrub
 	name = "juvenile solargrub"
 	desc = "A young sparkling solargrub"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/solargrub)
 	icon = 'icons/mob/vore.dmi'
 	icon_state = "solargrub"
 	icon_living = "solargrub"
@@ -58,6 +57,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 	glow_override = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/vore/solargrub)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/solargrub)))
 	configure(mob_rules(faction = FACTION_GRUBS))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/solargrub))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/grubmeat, meat_amount = 6))

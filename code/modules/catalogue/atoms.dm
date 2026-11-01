@@ -1,11 +1,6 @@
 // catalogue_delay var on /atom moved to GLOB.dq_catalogue_delay_by_type
 // (per-type defaults) plus GLOB.dq_catalogue_delay_by_atom (per-instance overrides).
 // See code/datums/sparse_vars/catalogue_delay.dm.
-/atom
-	// List of types of /datum/category_item/catalogue that should be 'unlocked' when scanned by a Cataloguer.
-	// It is null by default to save memory by not having everything hold onto empty lists. Use macros like LAZYLEN() to check.
-	// Also you should use get_catalogue_data() to access this instead of doing so directly, so special behavior can be enabled.
-	var/list/catalogue_data = null
 
 // Tests if something can be catalogued.
 // If something goes wrong and a mob was supplied, the mob will be told why they can't catalogue it.
@@ -50,7 +45,8 @@
 // Should return a list with one or more "/datum/category_item/catalogue" types, or null.
 // If overriding, it may be wise to call the super and get the results in order to merge the base result and the special result, if appropiate.
 /atom/proc/get_catalogue_data()
-	return catalogue_data
+	var/datum/type_trait/atom_rules/rules = atom_rules_of(src)
+	return rules.catalogue_data
 
 /mob/living/carbon/human/get_catalogue_data()
 	var/list/data = list()

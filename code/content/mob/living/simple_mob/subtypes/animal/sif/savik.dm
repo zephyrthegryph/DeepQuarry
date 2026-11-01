@@ -20,7 +20,6 @@
 /mob/living/simple_mob/animal/sif/savik
 	name = "savik"
 	tt_desc = "S Pistris tellus" //landshark
-	catalogue_data = list(/datum/category_item/catalogue/fauna/savik)
 
 	icon_state = "savik"
 	icon_living = "savik"
@@ -52,6 +51,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/savik)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/savik)))
 	op("berserk", menu(desc = "Enrage and become vastly stronger for a period of time, however you will be weaker afterwards."), label("Berserk"), needs(req_self()), then(PROC_REF(berserk_op)))
 	configure(mob_rules(faction = FACTION_SAVIK))
 	configure(living_rules(say_list_type = /datum/say_list/savik))

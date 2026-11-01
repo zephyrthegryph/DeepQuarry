@@ -15,7 +15,6 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	name = "space jellyfish"
 	desc = "A semi-translucent space creature, possessing of tentacles and a hypnotizing, flashing bio-luminescent display."
 	tt_desc = "Semaeostomeae Stellarus"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/space_jellyfish)
 
 	icon = 'icons/mob/alienanimals_x32.dmi'
 	icon_state = "space_jellyfish"
@@ -100,6 +99,7 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 			L.injure(INJURY_PAIN, leech, source = src, affliction = /datum/affliction/venom/cnidarian_sting)
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_jellyfish)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/space_jellyfish)))
 	configure(mob_rules(faction = FACTION_JELLYFISH))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/jellyfish, delete_on_death = TRUE))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/jellyfishcore, meat_amount = 0))

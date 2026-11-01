@@ -62,7 +62,6 @@
 	name = "giant spider"
 	desc = "Furry and brown, it makes you shudder to look at it. This one has deep red eyes."
 	tt_desc = "X Atrax robustus gigantus"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/giant_spider/guard_spider)
 
 	icon_state = "guard"
 	icon_living = "guard"
@@ -116,6 +115,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/giant_spider)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/giant_spider/guard_spider)))
 	configure(mob_rules(faction = FACTION_SPIDERS))
 	configure(living_rules(species_sounds = "Spider"))
 	configure(living_rules(say_list_type = /datum/say_list/spider))

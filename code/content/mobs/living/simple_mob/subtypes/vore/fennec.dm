@@ -23,7 +23,6 @@
 	name = "fennec" //why isn't this in the fox file, fennecs are foxes silly.
 	desc = "It's a dusty big-eared sandfox! Adorable!"
 	tt_desc = "Vulpes zerda maxima"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/fennec)
 
 	icon_state = "fennec"
 	icon_living = "fennec"
@@ -46,6 +45,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/fennec)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/fennec)))
 	configure(mob_rules(faction = FACTION_FENNEC))
 	configure(living_rules(species_sounds = "Vulpine"))
 	configure(living_rules(say_list_type = /datum/say_list/fennec))

@@ -10,7 +10,6 @@
 	name = "seagull"
 	desc = "The most dangerous and hostile scavenger of seashores. Beware!"
 	tt_desc = "Larus brachyrhynchus"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/seagull)
 
 	icon_state = "seagull"
 	icon_living = "seagull"
@@ -44,6 +43,7 @@
 	emote_see = list("pecks at the ground","looks around hungrily")
 
 CAPABILITIES(/mob/living/simple_mob/vore/seagull)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/seagull)))
 	configure(mob_rules(faction = FACTION_SEAGULL))
 	configure(living_rules(vore_capacity = 5, say_list_type = /datum/say_list/seagull))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken, meat_amount = 2))

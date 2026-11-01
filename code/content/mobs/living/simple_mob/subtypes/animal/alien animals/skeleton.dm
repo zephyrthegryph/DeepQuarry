@@ -16,7 +16,6 @@
 /mob/living/simple_mob/vore/alienanimals/skeleton
 	name = "skeleton"
 	desc = "An arrangement of what appears to be bones, given life and mobility. It looks REALLY spooky."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/skeleton)
 
 	icon = 'icons/mob/alienanimals_x32.dmi'
 	icon_state = "skeleton"
@@ -71,6 +70,7 @@
 	vore_default_item_mode = IM_DIGEST
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/skeleton)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/skeleton)))
 	configure(mob_rules(faction = FACTION_SPACE_SKELETON))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/skeleton))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))

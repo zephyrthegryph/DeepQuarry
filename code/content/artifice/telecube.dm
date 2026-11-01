@@ -24,7 +24,6 @@
 	icon_state = "cube"
 	w_class = ITEMSIZE_NO_CONTAINER // Made impossible to store to help resolve a certain repeated issue that has been happening with these.
 
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/telecube)
 
 	// slowdown = 2.5 // Removes slowdown in exchange for being impossible to store in backpacks.
 
@@ -214,6 +213,7 @@
 	. = ..()
 
 CAPABILITIES(/obj/item/telecube)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/telecube)))
 	configure(movable_motion(throw_range = 2))
 	on_ending(TYPE_PROC_REF(/obj, ending_consequences))
 	ref_one(nameof(mate), /obj/item/telecube)

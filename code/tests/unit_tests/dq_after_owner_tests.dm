@@ -201,3 +201,17 @@
 	TEST_ASSERT_EQUAL(H.shock_stage, 5, "set_shock still sets the stage")
 	var/list/field = type_trait_field_for_var(H, "faction")
 	TEST_ASSERT(islist(field), "a map edit of faction reaches the mob_rules trait now the shadow var is gone")
+
+/// catalogue_data is an atom_rules field now: declared lists arrive whole, multi-line ones included, and a subtype inherits them.
+/datum/unit_test/dq_catalogue_data_is_a_trait
+
+/datum/unit_test/dq_catalogue_data_is_a_trait/Run()
+	var/datum/type_trait/atom_rules/rules = atom_rules_of_type(/mob/living/simple_mob/mechanical/mecha/odysseus)
+	var/list/rows = rules.catalogue_data
+	TEST_ASSERT_EQUAL(length(rows), 2, "a list written over several lines kept every row: [json_encode(rows)] of [rules.type], [rules == type_trait_default(ENTRY_ATOM_RULES) ? "the defaults" : "declared"]")
+	TEST_ASSERT(/datum/category_item/catalogue/technology/odysseus in rows, "with its own entry")
+	rules = atom_rules_of_type(/obj/item/gun/projectile/cell_loaded)
+	rows = rules.catalogue_data
+	TEST_ASSERT_EQUAL(length(rows), 2, "and so did the gun's: [json_encode(rows)]")
+	var/atom/plain = allocate(/obj/item/tool/crowbar)
+	TEST_ASSERT(!length(plain.get_catalogue_data()), "an atom with none reads as none")
