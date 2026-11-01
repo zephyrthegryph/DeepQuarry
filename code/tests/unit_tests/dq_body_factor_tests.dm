@@ -193,7 +193,7 @@
 /datum/unit_test/dq_body_factor_worn_equipment/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/clothing/shoes/boots = allocate(/obj/item/clothing/shoes/black)
-	boots.worn_factors = alist(STAT_SLOWDOWN = 1.5)
+	boots.set_worn_factors(alist(STAT_SLOWDOWN = 1.5))
 
 	H.put_in_hands(boots)
 	TEST_ASSERT_EQUAL(H.slowdown, 0, "gear held in the hands should not contribute")

@@ -49,20 +49,20 @@
 	name = "security armor plate"
 	desc = "A plasteel-reinforced synthetic armor plate designed for Nanotrasen security forces. Attaches to a plate carrier."
 	icon_state = "armor_medium"
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.1)
 	armor_spec = "melee=30;bullet=30;laser=45;energy=25;bomb=10"
 
 CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/security)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.1)))
 	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/accessory/armor/armorplate/security/heavy
 	name = "heavy security armor plate"
 	desc = "A plastitanium-reinforced armor plate designed for Nanotrasen security forces. Attaches to a plate carrier."
 	icon_state = "armor_medium"
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	armor_spec = "melee=50;bullet=50;laser=55;energy=35;bomb=30;rad=15"
 
 CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/security/heavy)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	configure(item_protection(siemens = 0.5))
 
 ///armored gloves
@@ -76,11 +76,11 @@ CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/security/heavy)
 	item_state = "handguards"
 	overgloves = 1
 	punch_force = 3
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.1)
 	w_class = ITEMSIZE_NORMAL
 	armor_spec = "melee=30;bullet=30;laser=45;energy=25;bomb=10"
 
 CAPABILITIES(/obj/item/clothing/gloves/handguards_modarm)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.1)))
 	configure(item_worn(worn_icon = "handguards", covers = HANDS))
 	configure(item_protection(heat_parts = HANDS, cold_parts = HANDS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
@@ -96,7 +96,6 @@ CAPABILITIES(/obj/item/clothing/gloves/handguards_modarm)
 	item_state = "footguards"
 	armor_spec = "melee=30;bullet=30;laser=45;energy=25;bomb=10"
 	w_class = ITEMSIZE_NORMAL
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.1)
 	step_volume_mod = 1.3
 	overshoes = 1
 	shoes_under_pants = -1
@@ -104,6 +103,7 @@ CAPABILITIES(/obj/item/clothing/gloves/handguards_modarm)
 	update_icon_define_digi = 'icons/obj/modular_armor_digi.dmi' ///this doesn't work, not sure why
 
 CAPABILITIES(/obj/item/clothing/shoes/footguards_modarm)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.1)))
 	configure(item_worn(worn_icon = "footguards", covers = FEET))
 	configure(item_protection(heat_parts = FEET, cold_parts = FEET))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))

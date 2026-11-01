@@ -160,28 +160,30 @@ CAPABILITIES(/obj/item/clothing/suit/armor/buffvest)
 	name = "rocky suit"
 	desc = "A strange set of armor made of rocky plates"
 	icon_state = "alien_tank"
-	worn_factors = null
 	armor_spec = "melee=25;bullet=25;laser=25;energy=25;bomb=25;bio=25;rad=25" //Should be good enough to mimic the old '12% reduction'.
 	block_chance = 12
 
 CAPABILITIES(/obj/item/clothing/suit/armor/alien/vistor)
+	configure(item_worn(worn_factors = TRAIT_NONE))
 	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
 
 /obj/item/clothing/suit/armor/tesla/vistor
 	name = "zapping suit"
 	desc = "A strange set of armor crackling with lighting"
-	worn_factors = null
 	armor_spec = "melee=60;bullet=60;laser=60;energy=60"
 
 CAPABILITIES(/obj/item/clothing/suit/armor/tesla/vistor)
+	configure(item_worn(worn_factors = TRAIT_NONE))
 	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
 
 /obj/item/clothing/suit/armor/reactive/vistor
 	name = "vibrating suit"
 	desc = "A strange set of armor that crackles with energy"
 	icon_state = "reactiveoff"
-	worn_factors = null
 	armor_spec = "melee=35;bullet=35;laser=35;energy=35"
+
+CAPABILITIES(/obj/item/clothing/suit/armor/reactive/vistor)
+	configure(item_worn(worn_factors = TRAIT_NONE))
 
 /obj/item/clothing/suit/armor/protectionbubble
 	name = "protective bubble"

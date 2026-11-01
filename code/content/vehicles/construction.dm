@@ -13,12 +13,12 @@
 	item_state = "buildpipe"
 
 	density = TRUE
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 10) //It's a vehicle frame, what do you expect?
 	w_class = ITEMSIZE_HUGE
 
 	var/tmp/obj/item/cell/cell
 
 CAPABILITIES(/obj/item/vehicle_assembly)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 10)))
 	after_init(0, then(PROC_REF(frame_picture)))
 	ref_one(nameof(cell))
 

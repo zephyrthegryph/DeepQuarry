@@ -275,10 +275,10 @@ CAPABILITIES(/obj/item/storage/bag/cash)
 	desc = "A bag for storing pills, patches, and bottles."
 	max_storage_space = 200
 	w_class = ITEMSIZE_LARGE
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1) //you probably shouldn't be running with chemicals
 	resistance_flags = FLAMMABLE
 
 CAPABILITIES(/obj/item/storage/bag/chemistry)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)))
 	configure(storage(accepts = list(
 		/obj/item/reagent_containers/pill,
 		/obj/item/reagent_containers/glass/beaker,

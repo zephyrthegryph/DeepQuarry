@@ -55,7 +55,6 @@ CAPABILITIES(/obj/item/clothing/accessory/bracelet/friendship)
 /obj/item/clothing/accessory/bracelet/material
 	icon_state = "materialbracelet"
 	material_slowdown_multiplier = 0
-	worn_factors = null
 
 TYPE_TABLE_DECLARE(/obj/item/clothing/accessory/bracelet/material, bracelet_forced_material, null)
 
@@ -144,6 +143,7 @@ CAPABILITIES(/obj/item/clothing/accessory/wristband)
 	icon_state = "wristband_collection6"
 
 CAPABILITIES(/obj/item/clothing/accessory/bracelet/material)
+	configure(item_worn(worn_factors = TRAIT_NONE))
 	param(nameof(default_material), pos = 1, overrides = TRUE)
 	derives(nameof(default_material), PROC_REF(forced_material))
 	setup(PROC_REF(find_material), mapload = TRUE)

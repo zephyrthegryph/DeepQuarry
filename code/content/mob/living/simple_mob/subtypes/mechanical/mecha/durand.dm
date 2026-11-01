@@ -67,6 +67,3 @@
 	projectiletype = /obj/item/projectile/beam/heavylaser/fakeemitter
 
 	pilot_type = /mob/living/simple_mob/humanoid/merc/ranged
-
-CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/durand)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/durand)))

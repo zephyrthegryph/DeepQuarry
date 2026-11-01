@@ -158,7 +158,6 @@ CAPABILITIES(/obj/item/melee/agate_hammer)
 /obj/item/clothing/suit/armor/tyrtribalcloak
 	name = "leaf cloak"
 	desc = "A strange cloak made of leaves and fiber. A strange residue resides upon the equipment"
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.2)
 	icon = 'icons/mob/tribal_gear.dmi'
 	icon_override = 'icons/mob/tribal_gear.dmi'
 	icon_state = "lilly_cloak"
@@ -166,6 +165,7 @@ CAPABILITIES(/obj/item/melee/agate_hammer)
 	var/block_chance = 20
 
 CAPABILITIES(/obj/item/clothing/suit/armor/tyrtribalcloak)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.2)))
 	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO|LEGS|FEET|ARMS|HANDS))
 
 /obj/item/clothing/suit/armor/tyrtribalcloak/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
@@ -262,7 +262,6 @@ CAPABILITIES(/obj/item/shield_projector/rectangle/automatic/tyrbarrier)
 	active_force = 10
 	active_armourpen = 60
 	active_throwforce = 40
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 2)
 	defend_chance = 70
 	projectile_parry_chance = 70
 	active_w_class = ITEMSIZE_HUGE
@@ -273,6 +272,7 @@ CAPABILITIES(/obj/item/shield_projector/rectangle/automatic/tyrbarrier)
 		)
 
 CAPABILITIES(/obj/item/melee/energy/sword/top_shield)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 2)))
 	configure(movable_motion(throw_range = 7, throw_speed = 1))
 
 //E sword has 30 damage, 50 AP, and 65% projectile block

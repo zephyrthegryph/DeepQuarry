@@ -10,10 +10,12 @@
 	desc = "A special suit that protects against hazardous, low pressure environments. This model sacrifices mobility for even more armor."
 	icon_state = "capsuit_void"
 	item_state_slots = list(slot_r_hand_str = "sec_voidsuit", slot_l_hand_str = "sec_voidsuit")
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)
 	armor_spec = "melee=60;bullet=35;laser=35;energy=15;bomb=55;bio=100;rad=20;cold=60"
 	breach_threshold = 14 //These are kinda thicc
 	resilience = 0.15 //Armored
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/captain)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)))
 
 /obj/item/clothing/head/helmet/space/void/security/prototype
 	name = "\improper security prototype voidsuit helmet"

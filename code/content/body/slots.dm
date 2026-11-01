@@ -357,7 +357,7 @@
 	. = ..()
 	var/obj/item/I = thing
 	body?.invalidate(BODY_DIRTY_ARMOR)
-	if(istype(I) && I.worn_factors)
+	if(istype(I) && worn_of(I).worn_factors)
 		body?.sync_worn_factors()
 	on_equipment_changed()
 

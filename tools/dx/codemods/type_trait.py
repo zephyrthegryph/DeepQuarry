@@ -24,6 +24,10 @@ SPECS = {
         base="/atom", ctor="atom_rules", reader="atom_rules_of", type_reader="atom_rules_of_type",
         fields={"catalogue_data": "catalogue_data"}, skip={"code/content/atom/atom_rules.dm", "code/content/mob/living/carbon/human/species/species.dm"},
     ),
+    "worn_factors": dict(
+        base="/obj/item", ctor="item_worn", reader="worn_of", type_reader="worn_of_type",
+        fields={"worn_factors": "worn_factors"}, skip={"code/content/items/item_worn.dm"},
+    ),
     "insulation": dict(
         base="/obj", ctor="obj_rules", reader="rules_of", type_reader="rules_of_type",
         fields={"insulation": "insulation"}, skip={"code/content/objects/obj_rules.dm"},

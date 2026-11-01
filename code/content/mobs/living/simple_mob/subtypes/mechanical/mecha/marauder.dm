@@ -54,8 +54,5 @@
 	icon_state = "mauler"
 	wreckage = /obj/structure/loot_pile/mecha/marauder/mauler
 
-CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/marauder)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/marauder)))
-
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/marauder/seraph)
 	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/seraph)))

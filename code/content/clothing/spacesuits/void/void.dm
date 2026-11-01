@@ -20,7 +20,6 @@
 	icon_state = "void"
 	item_state_slots = list(slot_r_hand_str = "space_suit_syndicate", slot_l_hand_str = "space_suit_syndicate")
 	desc = "A high-tech dark red space suit. Used for AI satellite maintenance."
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	armor_spec = "melee=30;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=20;cold=60"
 	special_hood_handling = TRUE
 	sprite_sheets = ALL_SPRITE_SHEETS_SUIT_MOB
@@ -53,6 +52,7 @@ MSG_DEF_SELF(void/nothing_to_eject, "There is no tank or cooling unit inserted."
 MSG_DEF_SELF(void/no_helmet, "There is no helmet installed.")
 
 CAPABILITIES(/obj/item/clothing/suit/space/void)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_helmet), sprite_sheets_obj = SPECIES_SPRITE_SHEETS_SUIT_ITEM))
 	suit_storage(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS))
 	fits_as(FIT_HUMANOID_HYBRID_SKRELL)
@@ -313,8 +313,10 @@ CAPABILITIES(/obj/item/clothing/suit/space/void)
 	desc = "Hostile Environment Cross-Kinetic Suit: A suit designed to withstand the wide variety of hazards from \[REDACTED\]. It wasn't enough for its last owner."
 	icon_state = "hostile_env"
 	item_state = "hostile_env"
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)
 	armor_spec = "melee=60;bullet=35;laser=35;energy=15;bomb=55;bio=100;rad=20;cold=60"
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/heck)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)))
 
 /obj/item/clothing/head/helmet/space/void/syndicate_contract
 	name = "syndicate contract helmet"
@@ -356,13 +358,13 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/syndicate_contract)
 	item_state = "autoloksuit"
 	item_state_slots = list(slot_r_hand_str = "space_suit_syndicate", slot_l_hand_str = "space_suit_syndicate")
 	armor_spec = "melee=15;bullet=5;laser=5;energy=5;bomb=5;bio=100;rad=80;cold=60"
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	breach_threshold = 6 //this thing is basically tissue paper
 	w_class = ITEMSIZE_NORMAL //if it's snug, high-tech, and made of relatively soft materials, it should be much easier to store!
 	sprite_sheets = ALL_SPRITE_SHEETS_SUIT_MOB
 	hood = /obj/item/clothing/head/helmet/space/void/autolok // autoinstall the helmet
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/autolok)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	configure(item_rules(sprite_sheets_obj = TRAIT_NONE))
 	fits_as(FIT_NO_DIONA_VOX)
 	configure(item_worn(worn_icon = 'icons/inventory/suit/mob.dmi'))
