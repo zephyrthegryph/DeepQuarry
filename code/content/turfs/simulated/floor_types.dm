@@ -17,23 +17,22 @@
 /obj/landed_holder/proc/land_on(turf/T)
 	//Gather destination information
 	var/obj/landed_holder/new_holder = new(null)
-	T.lighting_clear_overlay()
 	new_holder.turf_type = T.type
 	new_holder.set_dir(T.dir)
 	new_holder.set_icon(T.icon)
 	new_holder.set_icon_state(T.icon_state)
 	new_holder.copy_overlays(T, TRUE)
-	new_holder.underlays = T.underlays.Copy()
+	new_holder.underlays = T.underlays_without_lighting()
 	new_holder.decals = T.decals ? T.decals.Copy() : null
 
 	//Set the destination to be like us
+	// ChangeTurf() keeps the lighting object of a dynamic turf and makes or ends one when the type's dynamic lighting differs; the source keeps its own until it changes.
 	var/turf/simulated/shuttle/new_dest = T.ChangeTurf(my_turf().type,,1)
-	my_turf().lighting_clear_overlay()
 	new_dest.set_dir(my_turf().dir)
 	new_dest.set_icon_state(my_turf().icon_state)
 	new_dest.set_icon(my_turf().icon)
 	new_dest.copy_overlays(my_turf(), TRUE)
-	new_dest.underlays = my_turf().underlays.Copy()
+	new_dest.set_underlays_keeping_lighting(my_turf().underlays_without_lighting())
 	var/turf/simulated/shuttle/held_turf = my_turf()
 	new_dest.set_decals(held_turf.decals)
 	//Shuttle specific stuff
@@ -42,7 +41,8 @@
 	new_dest.under_turf = my_turf().under_turf
 	new_dest.set_join_flags(my_turf().join_flags)
 	new_dest.join_group = my_turf().join_group
-	new_dest.lighting_build_overlay()
+	if(!new_dest.lighting_object)
+		new_dest.lighting_build_overlay()
 
 	// Associate the holder with the new turf.
 	rel_set(new_holder, nameof(new_holder.my_turf), new_dest)
@@ -51,6 +51,7 @@
 	//Update underlays if necessary (interior corners won't have changed).
 	if(new_dest.takes_underlays && !new_dest.interior_corner)
 		new_dest.underlay_update()
+		new_dest.lighting_object?.addtoturf() // underlay_update() rewrites the underlays
 
 	return new_dest
 
@@ -59,14 +60,14 @@
 	//Change our source to whatever it was before
 	if(turf_type)
 		new_source = my_turf().ChangeTurf(turf_type,,1)
-		new_source.lighting_clear_overlay()
 		new_source.set_dir(dir)
 		new_source.set_icon_state(icon_state)
 		new_source.set_icon(icon)
 		new_source.copy_overlays(src, TRUE)
-		new_source.underlays = underlays.Copy()
+		new_source.set_underlays_keeping_lighting(underlays)
 		new_source.set_decals(decals)
-		new_source.lighting_build_overlay()
+		if(!new_source.lighting_object)
+			new_source.lighting_build_overlay()
 	else
 		new_source = my_turf().ChangeTurf(base_turf ? base_turf : get_base_turf_by_area(my_turf()),,1)
 
