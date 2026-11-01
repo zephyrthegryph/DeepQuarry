@@ -1,6 +1,9 @@
 // Declared lookups bind real argument, registry-identity and result producers.
 // Cache/evaluation consumers own their scopes; bindings never retain pooled acts.
 GLOBAL_LIST_EMPTY(lookup_read_index)
+/// "[REF(producer)]" -> the index keys ("[REF(producer)]|[key]") that have readers: what a producer being destroyed (and a registry asked for its watched keys)
+/// reads instead of walking the whole index, which every destroyed object used to pay for.
+GLOBAL_LIST_EMPTY(lookup_read_producer_keys)
 GLOBAL_DATUM(lookup_read_scope_frame, /datum/lookup_read_scope)
 
 /datum/proc/generated_lookup_reads(proc_name = null)
@@ -126,6 +129,12 @@ CAPABILITIES(/datum/lookup_read_scope)
 	if(!readers)
 		readers = list()
 		GLOB.lookup_read_index[index_key] = readers
+		var/producer_ref = "[REF(producer)]"
+		var/list/producer_keys = GLOB.lookup_read_producer_keys[producer_ref]
+		if(!producer_keys)
+			producer_keys = list()
+			GLOB.lookup_read_producer_keys[producer_ref] = producer_keys
+		producer_keys += index_key
 	if(src in readers)
 		return
 	readers += src
@@ -142,6 +151,11 @@ CAPABILITIES(/datum/lookup_read_scope)
 		readers -= src
 		if(!length(readers))
 			GLOB.lookup_read_index -= read[3]
+			var/producer_ref = copytext(read[3], 1, findtext(read[3], "|"))
+			var/list/producer_keys = GLOB.lookup_read_producer_keys[producer_ref]
+			producer_keys -= read[3]
+			if(!length(producer_keys))
+				GLOB.lookup_read_producer_keys -= producer_ref
 	watching = null
 
 /datum/lookup_read_binding/proc/rebind()
@@ -203,10 +217,7 @@ CAPABILITIES(/datum/lookup_read_scope)
 /proc/lookup_reads_source_gone(datum/producer)
 	READS_FROM()
 	var/list/all_bindings
-	var/prefix = "[REF(producer)]|"
-	for(var/key in GLOB.lookup_read_index)
-		if(findtext(key, prefix) != 1)
-			continue
+	for(var/key in GLOB.lookup_read_producer_keys?["[REF(producer)]"]) // null before the globals exist: objects are destroyed during early boot
 		for(var/datum/lookup_read_binding/binding as anything in GLOB.lookup_read_index[key])
 			LAZYOR(all_bindings, binding)
 	for(var/datum/lookup_read_binding/binding as anything in all_bindings)
@@ -236,6 +247,6 @@ CAPABILITIES(/datum/lookup_read_scope)
 	if(!registry || QDELING(registry))
 		return
 	var/prefix = "[REF(registry)]|"
-	for(var/index_key in GLOB.lookup_read_index)
-		if(findtext(index_key, prefix) == 1 && length(GLOB.lookup_read_index[index_key]))
+	for(var/index_key in GLOB.lookup_read_producer_keys?["[REF(registry)]"])
+		if(length(GLOB.lookup_read_index[index_key]))
 			. |= list(copytext(index_key, length(prefix) + 1))
