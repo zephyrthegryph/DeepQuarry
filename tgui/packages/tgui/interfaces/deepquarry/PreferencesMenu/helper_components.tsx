@@ -8,6 +8,7 @@ import {
   type ReactNode,
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from 'react';
 import { Button, ColorBox, ImageButton, Stack } from 'tgui-core/components';
@@ -44,6 +45,50 @@ export const preloadImage = (url: string): void => {
 /// we've already drawn this session.
 const bitmapCache = new Map<string, string>();
 
+/// Runs at most `limit` tasks at once, the rest in arrival order: a picker's sprites must not all hit the client's
+/// resource server and the canvas pipeline in the same frame.
+export const makeLimiter = (limit: number) => {
+  let running = 0;
+  const waiting: Array<() => void> = [];
+  return async <T,>(task: () => Promise<T>): Promise<T> => {
+    if (running >= limit) {
+      await new Promise<void>((resolve) => waiting.push(resolve));
+    } else {
+      running++;
+    }
+    try {
+      return await task();
+    } finally {
+      const next = waiting.shift();
+      if (next) next();
+      else running--;
+    }
+  };
+};
+const renderLimit = makeLimiter(8);
+
+/// Whether the element has come near the visible part of its scroller (once true, stays true).
+const useNearView = <T extends Element>(enabled: boolean) => {
+  const ref = useRef<T | null>(null);
+  const [near, setNear] = useState(false);
+  useEffect(() => {
+    if (!enabled || near || !ref.current) return;
+    if (typeof IntersectionObserver === 'undefined') {
+      setNear(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) setNear(true);
+      },
+      { rootMargin: '200px' },
+    );
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [enabled, near]);
+  return [ref, near] as const;
+};
+
 /// Renders the output of a user-supplied OffscreenCanvas draw callback into an <img>.
 /// Re-renders when the render prop reference changes; caller should memoize via useCallback.
 /// Pass `cacheKey` to reuse the rendered data: URL across remounts (much cheaper
@@ -60,6 +105,7 @@ export const CanvasBackedImage = (props: {
   const cached = props.cacheKey ? bitmapCache.get(props.cacheKey) : undefined;
   const [bitmap, setBitmap] = useState<string>(cached ?? '');
   const size = props.size ?? 64;
+  const [placeholder, near] = useNearView<HTMLSpanElement>(!bitmap);
 
   useEffect(() => {
     // Fast path: cached value already populated, no need to re-render.
@@ -67,6 +113,7 @@ export const CanvasBackedImage = (props: {
       setBitmap(bitmapCache.get(props.cacheKey) ?? '');
       return;
     }
+    if (!near) return;
     const offscreenCanvas = new OffscreenCanvas(size, size);
     const ctx = offscreenCanvas.getContext('2d');
     if (!ctx) return;
@@ -75,9 +122,13 @@ export const CanvasBackedImage = (props: {
     let url = '';
 
     (async () => {
-      await props.render(offscreenCanvas, ctx);
-      const blob = await offscreenCanvas.convertToBlob();
-      if (!active) return;
+      // Queued long enough to have scrolled away or closed: skip the work.
+      const blob = await renderLimit(async () => {
+        if (!active) return null;
+        await props.render(offscreenCanvas, ctx);
+        return offscreenCanvas.convertToBlob();
+      });
+      if (!active || !blob) return;
       // Use FileReader to get a data: URL — survives unmount/remount where
       // ObjectURL would be revoked. Slightly larger but cacheable.
       const reader = new FileReader();
@@ -93,7 +144,7 @@ export const CanvasBackedImage = (props: {
     return () => {
       active = false;
     };
-  }, [props.render, size, props.cacheKey]);
+  }, [props.render, size, props.cacheKey, near]);
 
   // imageRendering: 'pixelated' — the OffscreenCanvas draws at 1 px = 1 source-px, but at
   // HiDPI scaling the <img> picks bilinear by default and DMI sprites end up blurry.
@@ -106,7 +157,12 @@ export const CanvasBackedImage = (props: {
       alt=""
       style={{ imageRendering: 'pixelated' }}
     />
-  ) : null;
+  ) : (
+    <span
+      ref={placeholder}
+      style={{ display: 'inline-block', width: size, height: size }}
+    />
+  );
 };
 
 /// Renders an icon_state from a DMI ref, tinted with `color`. The standard pattern is:
