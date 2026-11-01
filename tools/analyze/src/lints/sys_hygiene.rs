@@ -33,7 +33,7 @@ const RULES: &[RuleMeta] = &[
 const PLACEHOLDERS: &[&str] = &["baseline when ci was wired", "convert or give a real reason", "mobs at boot", "see audit"];
 
 /// Vendored upstream code kept verbatim (the tgstation-server DMAPI).
-const VENDORED: &[&str] = &["code/modules/tgs/"];
+const VENDORED: &[&str] = &["code/world/tgs/"];
 
 fn kind_path(kind: &str) -> &'static str {
     match kind {

@@ -200,7 +200,7 @@ def collect(spec: Spec, root: str) -> list[str]:
     for f in spec.optional:
         if os.path.isfile(os.path.join(root, f)):
             found.add(f)
-    # A file another included file #includes (an aggregator: code/modules/tgs/includes.dm, maps/~turfpacks/turfpacks.dm) is the
+    # A file another included file #includes (an aggregator: code/world/tgs/includes.dm, maps/~turfpacks/turfpacks.dm) is the
     # aggregator's, not the manifest's: drop everything reachable from the scanned files' own includes. A `file` entry's includes are
     # not followed: the test aggregators include game files under UNIT_TESTS only (code/content/medical/_defines.dm), which the game
     # build still needs directly; their own trees are `skip` rules.

@@ -19,8 +19,8 @@ process	code/modules/foo/blocks.dm	19
 process	code/modules/foo/blocks.dm	23
 process	code/modules/foo/blocks.dm	25
 process	code/modules/sp ace/s p.dm	3
-process	code/modules/tgs/t.dm	2
-process	code/modules/tgui/other.dm	2
+process	code/world/tgs/t.dm	2
+process	code/library/ui/tgui/other.dm	2
 process	maps/m.dm	3
 start	code/datums/om_other/x.dm	3
 start	code/tests/benchmarks/b.dm	3
@@ -41,8 +41,8 @@ start	code/modules/foo/a.dm	68
 start	code/modules/foo/blocks.dm	9
 start	code/modules/foo/blocks.dm	13
 start	code/modules/sp ace/s p.dm	4
-start	code/modules/tgs/t.dm	3
-start	code/modules/tgui/other.dm	3
+start	code/world/tgs/t.dm	3
+start	code/library/ui/tgui/other.dm	3
 start	maps/m.dm	4
 step_coverage	code/__defines/macros.dm	1
 step_coverage	code/controllers/subsystems/ctl.dm	1
