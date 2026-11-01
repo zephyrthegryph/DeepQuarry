@@ -57,7 +57,7 @@ type GearTweakKind =
   | 'modal';
 
 type RecolorMeta = {
-  mode: 'off' | 'tint' | 'palette' | 'matrix';
+  mode: 'off' | 'tint' | 'palette' | 'matrix' | 'channels';
   value?: string | Record<string, string> | number[];
 };
 
@@ -72,6 +72,8 @@ type GearTweakDescriptor = {
   /// For "recolor" kind: the gear's source-icon palette (top N distinct hex colors),
   /// used to render the palette-swap swatch grid.
   palette?: string[];
+  /// For "recolor" kind: each colour channel's base colour; empty when the item has no channels.
+  channels?: string[];
 };
 
 type CatalogItem = {
@@ -859,6 +861,8 @@ const MultiSlotCell = ({
   );
 };
 
+const CHANNEL_NAMES = ['Primary', 'Secondary', 'Tertiary'];
+
 /// Recolor widget — three modes in one tweak.
 ///   Off — no recoloring; item spawns as-authored.
 ///   Tint — single multiplicative color picker. Cheap, can't darken→bright, just shifts hue.
@@ -869,19 +873,23 @@ const MultiSlotCell = ({
 const RecolorWidget = ({
   label,
   palette,
+  channels,
   meta,
   onSet,
   onPickTint,
   onPickPaletteSwatch,
   onOpenMatrixModal,
+  onPickChannel,
 }: {
   label: string;
   palette: string[];
+  channels: string[];
   meta: RecolorMeta;
   onSet: (next: RecolorMeta) => void;
   onPickTint: () => void;
   onPickPaletteSwatch: (originalHex: string) => void;
   onOpenMatrixModal: () => void;
+  onPickChannel: (index: number) => void;
 }) => {
   const mode = meta.mode;
   const setMode = (m: RecolorMeta['mode']) => {
@@ -889,6 +897,7 @@ const RecolorWidget = ({
     else if (m === 'tint') onSet({ mode: 'tint', value: '#ffffff' });
     else if (m === 'palette') onSet({ mode: 'palette', value: {} });
     else if (m === 'matrix') onSet({ mode: 'matrix', value: [] });
+    else if (m === 'channels') onSet({ mode: 'channels', value: [] });
   };
 
   return (
@@ -899,7 +908,10 @@ const RecolorWidget = ({
         </Stack.Item>
         <Stack.Item grow>
           <Stack>
-            {(['off', 'tint', 'palette', 'matrix'] as const).map((m) => (
+            {(channels.length
+              ? (['off', 'tint', 'channels', 'palette', 'matrix'] as const)
+              : (['off', 'tint', 'palette', 'matrix'] as const)
+            ).map((m) => (
               <Stack.Item key={m}>
                 <Button
                   compact
@@ -914,6 +926,37 @@ const RecolorWidget = ({
           </Stack>
         </Stack.Item>
       </Stack>
+      {mode === 'channels' && (
+        <Stack ml={4} mb={0.25} wrap align="center">
+          {channels.map((base, i) => {
+            const picked = (meta.value as string[] | undefined) ?? [];
+            const setChannel = (hex: string) => {
+              const next = channels.map((_, j) => picked[j] ?? '');
+              next[i] = hex;
+              onSet({ mode: 'channels', value: next });
+            };
+            return (
+              <Stack.Item key={CHANNEL_NAMES[i]} mr={1}>
+                <ColorSwatch
+                  label={CHANNEL_NAMES[i]}
+                  category="clothing_channel"
+                  color={picked[i] || base}
+                  onPick={setChannel}
+                  onCustom={() => onPickChannel(i)}
+                />
+                {!!picked[i] && (
+                  <Button
+                    compact
+                    icon="undo"
+                    tooltip="Back to the original colour"
+                    onClick={() => setChannel('')}
+                  />
+                )}
+              </Stack.Item>
+            );
+          })}
+        </Stack>
+      )}
       {mode === 'tint' && (
         <Stack ml={4} align="center" mb={0.25}>
           <Stack.Item>
@@ -1164,6 +1207,7 @@ const TweakRow = ({
         <RecolorWidget
           label={tweak.label}
           palette={tweak.palette ?? []}
+          channels={tweak.channels ?? []}
           meta={meta}
           onSet={setMeta}
           onPickTint={() =>

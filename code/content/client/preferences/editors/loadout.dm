@@ -448,6 +448,7 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 				// runs once per session per type.
 				if(_kind == "recolor")
 					desc["palette"] = dq_get_gear_palette(G)
+					desc["channels"] = clothing_channel_bases(G.path)
 				tweak_descriptors += list(desc)
 			items += list(list(
 				"name" = G.display_name,
@@ -934,7 +935,7 @@ CAPABILITIES(/datum/prompt/colormatrix/prefs/gear_tweak)
 
 /datum/preference_editor/loadout/proc/ui_act_set_recolor(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	// direct write for the unified recolor tweak. value is a dict:
-	//   {mode: "off"|"tint"|"palette"|"matrix", value: <mode-specific>}
+	//   {mode: "off"|"tint"|"palette"|"matrix"|"channels", value: <mode-specific>}
 	var/gear_name = params["gear"]
 	var/tweak_idx = params["tweak"]
 	var/list/value = params["value"]
@@ -947,7 +948,7 @@ CAPABILITIES(/datum/prompt/colormatrix/prefs/gear_tweak)
 	if(!islist(value))
 		return PREF_UPDATE_REJECTED
 	var/mode = value["mode"]
-	if(!(mode in list("off", "tint", "palette", "matrix")))
+	if(!(mode in list("off", "tint", "palette", "matrix", "channels")))
 		return PREF_UPDATE_REJECTED
 	// Validate-and-reconstruct: never persist the caller's dict directly — it may
 	// carry stray params keys, and writing back the same reference would mutate the
@@ -972,6 +973,15 @@ CAPABILITIES(/datum/prompt/colormatrix/prefs/gear_tweak)
 				if(istext(orig) && istext(new_color) && orig != new_color)
 					cleaned[orig] = new_color
 			value = list("mode" = "palette", "value" = cleaned)
+		if("channels")
+			// At most 3 entries, each a colour or "" (that channel stays as drawn); anything else reads as "".
+			var/list/picked = value["value"]
+			if(!islist(picked))
+				return PREF_UPDATE_REJECTED
+			var/list/cleaned = list()
+			for(var/i in 1 to min(length(picked), 3))
+				cleaned += clothing_channel_normal_hex(picked[i]) || ""
+			value = list("mode" = "channels", "value" = cleaned)
 		if("matrix")
 			// Initial switch to matrix mode sends an empty list — that's fine, the
 			// matrix picker fills it. Only reject if value is *set* but malformed
