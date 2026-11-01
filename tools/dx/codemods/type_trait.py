@@ -20,6 +20,14 @@ import sys
 
 ROOTS = ("code", "maps")
 SPECS = {
+    "insulation": dict(
+        base="/obj", ctor="obj_rules", reader="rules_of", type_reader="rules_of_type",
+        fields={"insulation": "insulation"}, skip={"code/content/objects/obj_rules.dm"},
+    ),
+    "life_set": dict(
+        base="/mob/living", ctor="living_rules", reader="living_rules_of", type_reader="living_rules_of_type",
+        fields={"life_set": "life_set"}, skip={"code/content/mob/living/living_rules.dm"},
+    ),
     "power": dict(
         base="/obj/machinery", ctor="uses_power", reader="power_of", type_reader="power_of_type",
         fields={"idle_power_usage": "idle", "active_power_usage": "active", "power_channel": "channel"},

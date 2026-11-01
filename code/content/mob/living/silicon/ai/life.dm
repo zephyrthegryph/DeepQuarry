@@ -6,7 +6,6 @@
 /mob/living/silicon/ai
 
 /mob/living/silicon/ai
-	life_set = LIFE_SET_AI
 
 /// `if(stat == DEAD) return`, local failure cleanup and power.
 /mob/living/silicon/ai/proc/life_ai_power(datum/seq_frame/life/F)

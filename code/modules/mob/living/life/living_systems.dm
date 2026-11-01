@@ -365,15 +365,15 @@
 	return loc && !transforming
 
 /mob/living/proc/life_canmove_wanted(datum/act/A)
-	return life_set & LIFE_CANMOVE_SETS
+	return living_rules_of(src).life_set & LIFE_CANMOVE_SETS
 
 /// The HUD reaction's gate: only a mob with a client draws one.
 /mob/living/proc/life_hud_wanted(datum/act/A)
-	return client && (life_set & LIFE_PRESENT_SETS)
+	return client && (living_rules_of(src).life_set & LIFE_PRESENT_SETS)
 
 /// Sight flags matter for every living mob, client or not.
 /mob/living/proc/life_vision_wanted(datum/act/A)
-	return life_set & LIFE_PRESENT_SETS
+	return living_rules_of(src).life_set & LIFE_PRESENT_SETS
 
 /mob/living/proc/life_canmove_changed(datum/act/A)
 	if(QDELETED(src) || !life_canmove_wanted())
