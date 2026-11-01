@@ -101,15 +101,3 @@
 /proc/cut_relative_direction(fragment)
 	var/static/regex/regex = regex(@"([A-Z])\w+", "g")
 	return regex.Replace(fragment, "")
-
-/// Returns a screen_loc format for a tiling screen objects from start and end positions. Start should be bottom left corner, and end top right corner.
-/proc/spanning_screen_loc(start_px, start_py, end_px, end_py)
-	var/starting_tile_x = round(start_px / ICON_SIZE_X)
-	start_px -= starting_tile_x * ICON_SIZE_X
-	var/starting_tile_y = round(start_py/ ICON_SIZE_Y)
-	start_py -= starting_tile_y * ICON_SIZE_Y
-	var/ending_tile_x = round(end_px / ICON_SIZE_X)
-	end_px -= ending_tile_x * ICON_SIZE_X
-	var/ending_tile_y = round(end_py / ICON_SIZE_Y)
-	end_py -= ending_tile_y * ICON_SIZE_Y
-	return "[starting_tile_x]:[start_px],[starting_tile_y]:[start_py] to [ending_tile_x]:[end_px],[ending_tile_y]:[end_py]"

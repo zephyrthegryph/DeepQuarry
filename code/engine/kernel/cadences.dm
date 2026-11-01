@@ -190,8 +190,3 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/cadence)
 	for(var/P in cadence_types())
 		var/datum/cadence/def = cadence_def(P)
 		.["[def.name]"] = list("members" = members_total(P))
-
-/// A timer target that restarts periodic work on the slow lane (after(src, delay, PROC_REF(periodic_resume))).
-/datum/proc/periodic_resume()
-	cadence_start(src, PERIODIC_SLOW)
-

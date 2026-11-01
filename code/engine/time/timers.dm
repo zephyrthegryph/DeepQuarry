@@ -107,19 +107,9 @@ GLOBAL_VAR_INIT(om_resolve_nulled, 0)
 /proc/after_slot(datum/E, slot, delay, proc_ref, ...)
 	return !!rx_after(E, delay, proc_ref, slot, CLOCK_OWN, length(args) > 4 ? args.Copy(5) : null, FALSE)
 
-/// Cancels whatever is pending in E's slot `slot`. Returns TRUE if a timer was pending.
-/proc/timer_cancel_slot(datum/E, slot)
-	return cancel_after(E, slot)
-
 /// TRUE while a timer is pending in E's slot `slot`.
 /proc/timer_slot_pending(datum/E, slot)
 	return after_pending(E, slot)
-
-/// Deciseconds of E's timer clock left on the timer in slot `slot`, or null when none is pending.
-/proc/timer_slot_left(datum/E, slot)
-	if(!after_pending(E, slot))
-		return null
-	return after_left(E, slot)
 
 /// TRUE when `proc_ref` is a global proc (/proc/x), FALSE for a type proc. Decided once, when a
 /// deferred call is recorded, so firing never stringifies the proc.
@@ -579,13 +569,6 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 // which slows under time dilation. They go on the global owner. The wheel runs in game
 // time, so a real-time timer is due at a REALTIMEOFDAY, and re-arms for what is left when the
 // wheel fires it early. (Was TIMER_CLIENT_TIME.)
-
-/// Runs `proc` after `delay` deciseconds of real time, on the global owner. Arguments are
-/// captured weakly, as timer_schedule() does. A global proc gets the arguments; a type proc runs on
-/// the first argument and gets the rest.
-/proc/timer_schedule_realtime(delay, proc_ref, ...)
-	var/list/call_args = length(args) > 2 ? args.Copy(3) : list()
-	return timer_schedule(arglist(list(null, delay, /proc/timer_realtime_fire, REALTIMEOFDAY + max(delay, 0), proc_ref) + call_args))
 
 /proc/timer_realtime_fire(due, proc_ref, ...)
 	var/list/call_args = length(args) > 2 ? args.Copy(3) : list()

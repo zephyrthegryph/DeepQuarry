@@ -135,24 +135,6 @@
 				target.vars[R.undo_list] = null // ALLOW(api): the relation machinery restores the undo list itself; it is the accessor for relations
 				own_field_changed(target, R.undo_list)
 
-/// A member leaves through its own domain proc: the relation's on_member_leave() runs, then the
-/// edge between `member` and `other` (either direction) is unlinked with RELATION_LEFT.
-/proc/relation_leave(datum/member, rel_path, datum/other)
-	var/datum/relation_definition/R = definition_registry().relation(rel_path)
-	for(var/datum/relation_edge/edge as anything in member?.om_rec?.edges)
-		if(edge.rel != R)
-			continue
-		if(other && edge.source != other && edge.target != other)
-			continue
-		try
-			R.on_member_leave(edge.source, edge.target, member)
-		catch(var/exception/e)
-			dq_report_caught(e, "[R.type] on_member_leave")
-		edge.unlink_reason = RELATION_LEFT
-		relation_unlink_edge(edge)
-		return TRUE
-	return FALSE
-
 /// z-level release: every REF view naming a turf on `z` is cleared, and every rich edge with a
 /// turf end on `z` is unlinked (RELATION_Z_RELEASED). Movables on the z-level drop their own
 /// edges when they are destroyed.
@@ -197,29 +179,12 @@ GLOBAL_LIST_EMPTY(om_z_generations)
 		if(edge.rel == R && edge.source == E)
 			. += edge.target
 
-/// Sources of edges of this relation pointing at `E` (E is the target): its members.
-/proc/linked_to(datum/E, rel_path)
-	. = list()
-	var/datum/relation_definition/R = definition_registry().relation(rel_path)
-	for(var/datum/relation_edge/edge as anything in E?.om_rec?.edges)
-		if(edge.rel == R && edge.target == E)
-			. += edge.source
-
 /// The single target of `E`'s edge of this relation, or null.
 /proc/link_of(datum/E, rel_path)
 	var/datum/relation_definition/R = definition_registry().relation(rel_path)
 	for(var/datum/relation_edge/edge as anything in E?.om_rec?.edges)
 		if(edge.rel == R && edge.source == E)
 			return edge.target
-	return null
-
-/// The single source of an edge of this relation targeting `E`, or null.
-/// Pair with a target_single relation (at most one exists to find).
-/proc/link_source_of(datum/E, rel_path)
-	var/datum/relation_definition/R = definition_registry().relation(rel_path)
-	for(var/datum/relation_edge/edge as anything in E?.om_rec?.edges)
-		if(edge.rel == R && edge.target == E)
-			return edge.source
 	return null
 
 // ---------------------------------------------------------------- edge contributions

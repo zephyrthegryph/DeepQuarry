@@ -295,15 +295,6 @@
 
 	#undef PROCESS_OVERLAYS_OR_UNDERLAYS
 
-/proc/getIconMask(atom/A)//By yours truly. Creates a dynamic mask for a mob/whatever. /N
-	var/icon/alpha_mask = new(A.icon,A.icon_state)//So we want the default icon and icon state of A.
-	for(var/I in A.overlays)//For every image in overlays. var/image/I will not work, don't try it.
-		if(I:layer>A.layer)	continue//If layer is greater than what we need, skip it.
-		var/icon/image_overlay = new(I:icon,I:icon_state)//Blend only works with icon objects.
-		//Also, icons cannot directly set icon_state. Slower than changing variables but whatever.
-		alpha_mask.Blend(image_overlay,ICON_OR)//OR so they are lumped together in a nice overlay.
-	return alpha_mask//And now return the mask.
-
 //getFlatIcon but generates an icon that can face ALL four directions. The only four.
 /proc/getCompoundIcon(atom/A)
 	var/icon/north = getFlatIcon(A,defdir=NORTH)
@@ -348,28 +339,6 @@
 	return composite
 
 GLOBAL_LIST_EMPTY(icon_state_lists)
-/// Gets the cached icon_state for the provided icon (only cached if its a file).
-/// mode=0 will only show the sub-states ("open 0,0" and so on)
-/// mode=1 will show the main state names ("open")
-/// mode=2 will show all of the states
-/proc/cached_icon_states(icon/I, mode=1)
-	if(!I)
-		return list()
-	var/key = I
-	var/returnlist = GLOB.icon_state_lists[key]
-	if(!returnlist)
-		returnlist = icon_states(I, mode)
-		if(isfile(I)) // It's something that will stick around
-			GLOB.icon_state_lists[key] = returnlist
-	return returnlist
-
-/proc/expire_states_cache(key)
-	if(GLOB.icon_state_lists[key])
-		GLOB.icon_state_lists -= key
-		return TRUE
-	return FALSE
-
-
 /proc/set_cached_examine_icon(atom/A, icon/I, expiry = 20 MINUTES)
 	if(!A)
 		return
@@ -869,21 +838,6 @@ DECLARE_SHARED_CACHE(icon_size_pure, GLOBAL_PROC_REF(build_icon_size_pure), SC_N
 	. = list()
 	for(var/istate in icon_states_fast(file))
 		.[istate] = TRUE
-
-/// Functions the same as `/proc/icon_exists()`, but with the addition of a stack trace if the
-/// specified file or state doesn't exist.
-///
-/// Stack traces will only be output once for each file.
-/proc/icon_exists_or_scream(file, state)
-	if(icon_exists(file, state))
-		return TRUE
-
-	var/static/list/screams = list()
-	if(isnull(screams[file]))
-		screams[file] = TRUE
-		stack_trace("State [state] in file [file] does not exist.")
-
-	return FALSE
 
 /**
  * Returns the size of the sprite in tiles.

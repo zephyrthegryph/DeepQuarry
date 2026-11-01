@@ -21,10 +21,6 @@ GLOBAL_TABLE(get_abstract_types, GLOBAL_PROC_REF(build_get_abstract_types))
 /proc/valid_subtypesof(datum/sometype)
 	return subtypesof(sometype) - GLOBAL_TABLE_GET(get_abstract_types)
 
-/// Like typesof, but automatically excludes abstract typepaths
-/proc/valid_typesof(datum/sometype)
-	return typesof(sometype) - GLOBAL_TABLE_GET(get_abstract_types)
-
 /// Returns a list of concrete types under abstract sub-branches of `root`
 /proc/get_abstract_branch_descendants(datum/root)
 	var/list/abstracts = GLOBAL_TABLE_GET(get_abstract_types)
@@ -44,27 +40,3 @@ GLOBAL_TABLE(get_abstract_types, GLOBAL_PROC_REF(build_get_abstract_types))
 			parenttype = parenttype.parent_type
 
 	return to_remove
-
-/// Like valid_subtypesof(), but excludes concrete descendants of abstract sub-branches
-/proc/valid_direct_subtypesof(datum/root)
-	var/list/result = subtypesof(root)
-
-	// Remove all abstract types
-	result -= GLOBAL_TABLE_GET(get_abstract_types)
-
-	// Remove concrete types under abstract sub-branches
-	result -= get_abstract_branch_descendants(root)
-
-	return result
-
-/// Like valid_typesof(), but excludes concrete descendants of abstract sub-branches
-/proc/valid_direct_typesof(datum/root)
-	var/list/result = typesof(root)
-
-	// Remove all abstract types
-	result -= GLOBAL_TABLE_GET(get_abstract_types)
-
-	// Remove concrete types under abstract sub-branches
-	result -= get_abstract_branch_descendants(root)
-
-	return result

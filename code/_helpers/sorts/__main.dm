@@ -546,50 +546,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/sort_instance)
 		cursor1 -= len1
 		moveRange(L, cursor1+1, cursor2+1, len1)
 
-/datum/sort_instance/proc/mergeSort(start, end)
-	var/remaining = end - start
-
-	//If array is small, do an insertion sort
-	if(remaining < MIN_MERGE)
-		binarySort(start, end, start/*+initRunLen*/)
-		return
-
-	var/minRun = minRunLength(remaining)
-
-	do
-		var/runLen = (remaining <= minRun) ? remaining : minRun
-
-		binarySort(start, start+runLen, start)
-
-		//add data about run to queue
-		runBases.Add(start)
-		runLens.Add(runLen)
-
-		//Advance to find next run
-		start += runLen
-		remaining -= runLen
-
-	while(remaining > 0)
-
-	while(runBases.len >= 2)
-		var/n = runBases.len - 1
-		if(n > 1 && runLens[n-1] <= runLens[n] + runLens[n+1])
-			if(runLens[n-1] < runLens[n+1])
-				--n
-			mergeAt2(n)
-		else if(runLens[n] <= runLens[n+1])
-			mergeAt2(n)
-		else
-			break //Invariant is established
-
-	while(runBases.len >= 2)
-		var/n = runBases.len - 1
-		if(n > 1 && runLens[n-1] < runLens[n+1])
-			--n
-		mergeAt2(n)
-
-	return L
-
 /datum/sort_instance/proc/mergeAt2(i)
 	var/list/L = src.L
 	var/cursor1 = runBases[i]

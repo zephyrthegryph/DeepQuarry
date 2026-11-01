@@ -84,21 +84,6 @@
 /proc/cmp_stored_item_name(datum/stored_item/A, datum/stored_item/B)
 	return sorttext(B.item_name, A.item_name)
 
-/proc/cmp_embed_text_asc(a,b)
-	if(isdatum(a))
-		a = ref_token(a) // a stable name for the tie order, never resolved
-	if(isdatum(b))
-		b = ref_token(b)
-	return sorttext("[b]", "[a]")
-
-/proc/cmp_embed_text_dsc(a,b)
-	if(isdatum(a))
-		a = ref_token(a) // a stable name for the tie order, never resolved
-	if(isdatum(b))
-		b = ref_token(b)
-	return sorttext("[a]", "[b]")
-
-
 /proc/cmp_name_asc(atom/a, atom/b)
 	return sorttext(b.name, a.name)
 

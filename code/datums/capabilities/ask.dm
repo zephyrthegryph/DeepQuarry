@@ -99,17 +99,6 @@ GLOBAL_LIST_EMPTY(asks_open)
 		return null
 	return ui_choice(answer, choices)
 
-/// TRUE for yes, FALSE for no, null when cancelled or no longer valid.
-/proc/ask_yes_no(mob/user, message, title, datum/target, datum/dispatch_context/context, needs, third_party = FALSE)
-	var/datum/dispatch_context/ctx = ask_context(user, target, context, needs, third_party)
-	if(!ask_open(ctx))
-		return null
-	var/answer = tgui_alert(user, message, title || "Confirm", list("Yes", "No")) // ALLOW(scheduler): ask_*() is the capability system's one blocking prompt primitive (re-validates after the answer)
-	ask_close(ctx)
-	if(isnull(answer) || !ask_still_valid(ctx))
-		return null
-	return answer == "Yes"
-
 /proc/ask_color(mob/user, message, title, default = "#ffffff", datum/target, datum/dispatch_context/context, needs, third_party = FALSE)
 	var/datum/dispatch_context/ctx = ask_context(user, target, context, needs, third_party)
 	if(!ask_open(ctx))
@@ -119,14 +108,3 @@ GLOBAL_LIST_EMPTY(asks_open)
 	if(isnull(answer) || !ask_still_valid(ctx))
 		return null
 	return sanitize_hexcolor(answer, default)
-
-/// One of `candidates` (mobs), by name.
-/proc/ask_mob(mob/user, message, list/candidates, title, datum/target, datum/dispatch_context/context, needs, third_party = FALSE)
-	var/list/by_name = list()
-	for(var/mob/M as anything in candidates)
-		by_name[avoid_assoc_duplicate_keys(M.name, by_name)] = M
-	var/choice = ask_list(user, message, by_name, title, target = target, context = context, needs = needs, third_party = third_party)
-	if(isnull(choice))
-		return null
-	var/mob/M = by_name[choice]
-	return QDELETED(M) ? null : M

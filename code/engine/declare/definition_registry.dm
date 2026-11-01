@@ -283,14 +283,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 				best = h
 	return isnull(best) ? null : slot_groups_by_holder[best]
 
-/// Returns a new list: a's entries, then b's (b wins). Neither is modified.
-/proc/definition_merge_assoc(list/a, list/b)
-	if(!length(b))
-		return a
-	. = a ? a.Copy() : list()
-	for(var/key in b)
-		.[key] = b[key]
-
 // ---------------------------------------------------------------- behaviours
 
 /datum/definition_registry/proc/build_behaviours()
