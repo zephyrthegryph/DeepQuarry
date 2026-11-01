@@ -117,7 +117,7 @@ if [ "$strict" -eq 1 ] && [ -n "$start_base" ]; then
 	# (tools/dq_light_paths.sh light_gate_neutral), so the proof holds on the merge of the two: re-merged below, not re-gated.
 	if [ "${DQ_PUSH_NEUTRAL_OK:-0}" = 1 ] && ! git merge-base --is-ancestor "$now_master" HEAD; then
 		. tools/dq_light_paths.sh
-		_nn="$(light_gate_unneutral_in HEAD "$now_master" | head -n 3 | tr '\n' ' ')"
+		_nn="$(light_gate_unneutral_in HEAD "$now_master" light_gate_compile_neutral | head -n 3 | tr '\n' ' ')"
 		[ -z "$_nn" ] || die "origin/master moved since the gates started (${start_base:0:12} -> ${now_master:0:12}) and changed what a gate reads ($_nn): re-run them"
 		neutral_over="$(git rev-parse HEAD)"
 		echo "== dq_push_master: origin/master moved since the gates started (${start_base:0:12} -> ${now_master:0:12}), only by what a gate does not read: the proof on ${neutral_over:0:12} carries across the merge"
@@ -177,13 +177,18 @@ for round in 1 2 3; do
 	# Refused as "master moved", so the train keeps the lanes queued for a fresh gate and never blames them.
 	if [ -n "$neutral_over" ] && [ "$sha" != "$neutral_over" ]; then
 		. tools/dq_light_paths.sh
-		_nn="$(git diff --name-only "$neutral_over" "$sha" | while IFS= read -r _f; do light_gate_neutral "$_f" || echo "$_f"; done | head -n 3 | tr '\n' ' ')"
+		_nn="$(git diff --name-only "$neutral_over" "$sha" | while IFS= read -r _f; do light_gate_compile_neutral "$_f" || echo "$_f"; done | head -n 3 | tr '\n' ' ')"
 		[ -z "$_nn" ] || die "origin/master moved and the merge onto it differs from the gated ${neutral_over:0:12} in what a gate reads ($_nn): re-run the gates"
 		[ "$_stamp_rc" -eq 0 ] || die "origin/master moved and the gate's stamp does not carry across the merge: ${_stamp_out:0:300}"
 	fi
 	if [ "$light" -eq 0 ] && [ "${DQ_PUSH_FULL:-0}" != "1" ]; then
 		if [ -n "$neutral_over" ] && [ "$sha" != "$neutral_over" ]; then
 			fast_skip="the gates passed on ${neutral_over:0:12} and this merge differs from it only in what a gate does not read"
+			# master's TGUI interfaces are what the lints read beside the DM: the ratchets run on the merge, the compile does not
+			if git diff --name-only "$neutral_over" "$sha" | while IFS= read -r _f; do light_gate_lint_read "$_f" && echo "$_f"; done | grep -q .; then
+				echo "== check_ratchets.sh: master changed what the lints read (log $log.ratchets.log)"
+				bash tools/ci/check_ratchets.sh >"$log.ratchets.log" 2>&1 || { tail -30 "$log.ratchets.log"; die "check_ratchets.sh failed"; }
+			fi
 		elif git notes --ref=lane-ready show "$sha" 2>/dev/null | grep -q '"ok":true' && git merge-base --is-ancestor origin/master "$sha"; then
 			fast_skip="a lane-ready stamp is on exactly this commit and it contains origin/master (fast-forward): the gates already ran on this tree"
 		elif stamp_of "$sha" >/dev/null 2>&1; then
