@@ -671,6 +671,8 @@ GLOBAL_LIST_INIT(common_tools, list(
 // Checks if user can use this object. Set use_flags to customize what checks are done.
 // Returns 0 if they can use it, a value representing why they can't if not.
 // Flags are in `code/defines/content/misc.dm`
+#define NOT_FLAG(flag) (!(flag & use_flags))
+#define HAS_FLAG(flag) (flag & use_flags)
 /atom/proc/use_check(mob/user, use_flags = 0, show_messages = FALSE)
 	. = 0
 	if (NOT_FLAG(USE_ALLOW_NONLIVING) && !isliving(user))
@@ -701,6 +703,9 @@ GLOBAL_LIST_INIT(common_tools, list(
 		if (show_messages)
 			to_chat(user, span_notice("You need to be holding [src] to do that."))
 		return USE_FAIL_NOT_IN_USER
+
+#undef NOT_FLAG
+#undef HAS_FLAG
 
 /proc/make_types_fancy(list/types)
 	if (ispath(types))
@@ -789,6 +794,7 @@ GLOBAL_LIST_INIT(common_tools, list(
 	. += new /atom/movable/screen/plane_master{plane = PLANE_CH_STOMACH}				//Stomachs
 	. += new /atom/movable/screen/plane_master{plane = PLANE_AUGMENTED}				//Augmented reality
 	. += new /atom/movable/screen/plane_master{plane = PLANE_SOULCATCHER}			//Soulcatcher
+
 /**
  * - is_valid_z_level
  *
@@ -800,7 +806,7 @@ GLOBAL_LIST_INIT(common_tools, list(
  * checking_loc - turf we are comparing to source_loc.
  *
  * returns TRUE if connection is valid, FALSE otherwise.
-
+ */
 /proc/is_valid_z_level(turf/source_loc, turf/checking_loc)
 	return is_on_same_plane_or_station(source_loc.z, checking_loc.z)
 
@@ -820,6 +826,7 @@ GLOBAL_LIST_INIT(common_tools, list(
  * * multiplier - multiplier passed to set_custom_materials
  * * [target_object][atom] - the target object who's custom materials we are trying to modify
 
+ */
 /proc/split_materials_uniformly(list/custom_materials, multiplier, obj/item/target_object)
 	if(!length(target_object.contents)) //most common case where the object is just 1 thing
 		target_object.set_custom_materials(custom_materials, multiplier)

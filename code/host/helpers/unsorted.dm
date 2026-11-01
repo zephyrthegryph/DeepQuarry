@@ -515,11 +515,6 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 		if(areas)
 			. |= T.loc
 
-#define NOT_FLAG(flag) (!(flag & use_flags))
-#define HAS_FLAG(flag) (flag & use_flags)
-
-#undef NOT_FLAG
-#undef HAS_FLAG
 
 // Returns direction-string, rounded to multiples of 22.5, from the first parameter to the second
 // N, NNE, NE, ENE, E, ESE, SE, SSE, S, SSW, SW, WSW, W, WNW, NW, NNW
@@ -591,8 +586,6 @@ GLOBAL_TABLE(get_fancy_list_of_datum_types, GLOBAL_PROC_REF(build_get_fancy_list
 /proc/href(href_src, list/href_params, href_text)
 	return "<a href='byond://?src=[REF(href_src)];[list2params(href_params)]'>[href_text]</a>"
 
- */
- */
 
 /proc/spiral_range(dist = 0, atom/center = null, orange = FALSE)
 	var/list/atom_list = list()
