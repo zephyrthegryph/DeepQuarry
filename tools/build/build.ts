@@ -3106,6 +3106,8 @@ export const BenchTarget = new Juke.Target({
     const warmup = Math.max(get(WarmupParameter) ?? (runs > 1 ? 1 : 0), 0);
     const worldParams: Record<string, string> = { bench: scenarios.length ? scenarios.join(',') : 'default' };
     if (get(ProfileParameter)) worldParams.bench_profile = '1';
+    // The config folder the world reads: config/example is what the server runs (ServerTarget's default).
+    if (process.env.DQ_BENCH_CONFIG_DIR) worldParams['config-directory'] = process.env.DQ_BENCH_CONFIG_DIR;
     for (const arg of get(ArgParameter)) {
       const [key, ...rest] = arg.split('=');
       worldParams[`bench_${key}`] = rest.join('=');

@@ -72,6 +72,10 @@ export type ProcessSample = {
   private_mb: number;
   working_set_mb: number;
   cpu_seconds: number;
+  /** Highest private_mb so far, and the whole machine's CPU load over the last interval and since sampling began: what a world reads to label its numbers. */
+  peak_private_mb?: number;
+  machine_cpu_pct?: number;
+  mean_machine_cpu_pct?: number;
 };
 
 export type ProcessSummary = {
@@ -96,10 +100,28 @@ while ($p -and -not $p.HasExited) {
 }
 `;
 
+function machineCpuTimes(): { idle: number; total: number } {
+  let idle = 0;
+  let total = 0;
+  for (const cpu of os.cpus()) {
+    idle += cpu.times.idle;
+    total += cpu.times.user + cpu.times.nice + cpu.times.sys + cpu.times.irq + cpu.times.idle;
+  }
+  return { idle, total };
+}
+
+function busyPercent(from: { idle: number; total: number }, to: { idle: number; total: number }): number {
+  const total = to.total - from.total;
+  return total > 0 ? Math.round((1 - (to.idle - from.idle) / total) * 1000) / 10 : 0;
+}
+
 export class ProcessSampler {
   samples: ProcessSample[] = [];
   private started = Date.now();
   private stopFn: (() => void) | null = null;
+  private peakPrivate = 0;
+  private cpuAtStart = machineCpuTimes();
+  private cpuAtLast = this.cpuAtStart;
 
   constructor(
     private liveFile: string,
@@ -108,6 +130,8 @@ export class ProcessSampler {
 
   start(pid: number): void {
     this.started = Date.now();
+    this.cpuAtStart = machineCpuTimes();
+    this.cpuAtLast = this.cpuAtStart;
     if (process.platform === 'win32') {
       const child = spawn(
         'powershell',
@@ -150,12 +174,18 @@ export class ProcessSampler {
   }
 
   private record(privateMb: number, workingSetMb: number, cpuSeconds: number): void {
+    this.peakPrivate = Math.max(this.peakPrivate, privateMb);
+    const cpuNow = machineCpuTimes();
     const sample: ProcessSample = {
+      peak_private_mb: Math.round(this.peakPrivate * 10) / 10,
+      machine_cpu_pct: busyPercent(this.cpuAtLast, cpuNow),
+      mean_machine_cpu_pct: busyPercent(this.cpuAtStart, cpuNow),
       t: (Date.now() - this.started) / 1000,
       private_mb: Math.round(privateMb * 10) / 10,
       working_set_mb: Math.round(workingSetMb * 10) / 10,
       cpu_seconds: Math.round(cpuSeconds * 100) / 100,
     };
+    this.cpuAtLast = cpuNow;
     this.samples.push(sample);
     try {
       writeJson(this.liveFile, sample);
