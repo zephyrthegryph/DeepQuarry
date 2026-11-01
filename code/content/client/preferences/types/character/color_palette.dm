@@ -29,6 +29,7 @@
 	var/old_palette_index
 	/// A colour field whose saved colour seeds this slot when the old list has no entry for it.
 	var/seed_key
+	/// A new character's colour, and an old save's when nothing else seeds the slot.
 	var/fallback = "#ffffff"
 
 /datum/preference/color/human/color_slot/create_default_value()
@@ -55,18 +56,21 @@
 	display_label = "Primary"
 	old_palette_index = 1
 	seed_key = "skin_color"
+	fallback = "#c8a283"
 
 /datum/preference/color/human/color_slot/secondary
 	savefile_key = "palette_secondary"
 	display_label = "Secondary"
 	old_palette_index = 2
 	seed_key = "hair_color"
+	fallback = "#5a3b1e"
 
 /datum/preference/color/human/color_slot/tertiary
 	savefile_key = "palette_tertiary"
 	display_label = "Tertiary"
 	old_palette_index = 3
 	seed_key = "eyes_color"
+	fallback = "#3b2a1c"
 
 /datum/preference/color/human/color_slot/extra1
 	savefile_key = "palette_extra1"
@@ -158,3 +162,115 @@
 			if(lowertext(resolve_color_link(old_entry["color"])) == lowertext(entry["color"]))
 				entry["color"] = old_entry["color"]
 	return update_preference_by_type(/datum/preference/body_markings, incoming)
+
+/// The colour fields a character links, in the order that decides which spare colours become Extra 1 and Extra 2.
+/proc/dq_palette_fields()
+	var/static/list/fields = list(
+		/datum/preference/color/human/skin_color = "primary",
+		/datum/preference/color/human/hair_color = "secondary",
+		/datum/preference/color/human/eyes_color = "tertiary",
+		/datum/preference/color/human/facial_color = "secondary",
+		/datum/preference/color/human/grad_color = "tertiary",
+		/datum/preference/color/human/tail_color1 = "primary",
+		/datum/preference/color/human/tail_color2 = "secondary",
+		/datum/preference/color/human/tail_color3 = "tertiary",
+		/datum/preference/color/human/ears_color1 = "primary",
+		/datum/preference/color/human/ears_color2 = "secondary",
+		/datum/preference/color/human/ears_color3 = "tertiary",
+		/datum/preference/color/human/wing_color1 = "primary",
+		/datum/preference/color/human/wing_color2 = "secondary",
+		/datum/preference/color/human/wing_color3 = "tertiary",
+	)
+	return fields
+
+/// The multiply colour closest to an old skin tone (an offset on the shaded sprite): per-channel fit against r_human's
+/// body sprites. A tone above 0 brightened, which a multiply cannot: it becomes white, the unshaded sprite.
+/proc/dq_skin_tone_to_color(tone)
+	var/static/list/tones = list(-185, -150, -115, -75, -40, -20, 0)
+	var/static/list/fits = list(list(56, 2, 0), list(94, 50, 12), list(131, 98, 69), list(174, 152, 134), list(212, 200, 190), list(234, 228, 222), list(255, 255, 255))
+	tone = clamp(tone, -185, 0)
+	for(var/i in 1 to length(tones) - 1)
+		if(tone > tones[i + 1])
+			continue
+		var/weight = (tone - tones[i]) / (tones[i + 1] - tones[i])
+		var/list/low = fits[i]
+		var/list/high = fits[i + 1]
+		return lowertext(rgb(round(LERP(low[1], high[1], weight)), round(LERP(low[2], high[2], weight)), round(LERP(low[3], high[3], weight))))
+	return "#ffffff"
+
+/// Run once per character on load (the save's "palette_linked" says it ran). A new character's fields link to the slots.
+/// An existing one keeps its exact look: the slots came from its own colours, and each field or marking zone whose hex
+/// equals a slot links to it; one matching no slot stays its own colour.
+/datum/preferences/proc/link_palette_on_load(new_character)
+	var/list/save_data = get_save_data_for_savefile_identifier(PREFERENCE_CHARACTER)
+	if(save_data?["palette_linked"] || (!islist(save_data) && !new_character))
+		return
+	begin_update_batch()
+	var/list/fields = dq_palette_fields()
+	if(new_character)
+		for(var/field in fields)
+			update_preference_by_type(field, fields[field])
+	else
+		convert_old_skin_tone(save_data)
+		seed_spare_slots(save_data)
+		var/list/slot_of_hex = list()
+		for(var/slot in list("extra2", "extra1", "tertiary", "secondary", "primary")) // the first slot wins a shared colour
+			slot_of_hex[lowertext(read_preference(dq_color_slot_type(slot)))] = slot
+		for(var/field in fields)
+			var/stored = read_preference_raw(field)
+			var/slot = istext(stored) ? slot_of_hex[lowertext(stored)] : null
+			if(slot)
+				update_preference_by_type(field, slot)
+		var/list/markings = read_preference_raw(/datum/preference/body_markings)
+		for(var/marking in markings)
+			var/list/zones = markings[marking]
+			if(!islist(zones))
+				continue
+			for(var/zone in zones)
+				var/list/entry = zones[zone]
+				if(zone == "color")
+					if(istext(entry) && slot_of_hex[lowertext(entry)])
+						zones[zone] = slot_of_hex[lowertext(entry)]
+				else if(islist(entry) && istext(entry["color"]) && slot_of_hex[lowertext(entry["color"])])
+					entry["color"] = slot_of_hex[lowertext(entry["color"])]
+		update_preference_by_type(/datum/preference/body_markings, markings)
+	end_update_batch()
+	// A new character's entry exists only once the batch above has saved it.
+	save_data = get_save_data_for_savefile_identifier(PREFERENCE_CHARACTER)
+	if(islist(save_data))
+		save_data["palette_linked"] = TRUE
+
+/// The two species that drew from skin tone now draw from skin colour. Every other species ignored the tone. The old key
+/// stays in the save, unread after this.
+/datum/preferences/proc/convert_old_skin_tone(list/save_data)
+	var/tone = save_data["skin_tone"]
+	var/static/list/tone_species = list(SPECIES_EVENT1, "Virtual Reality Human")
+	if(isnum(tone) && (read_preference(/datum/preference/choiced/species) in tone_species))
+		update_preference_by_type(/datum/preference/color/human/skin_color, dq_skin_tone_to_color(tone))
+		// Primary was seeded from the old skin colour, which these species never showed.
+		update_preference_by_type(/datum/preference/color/human/color_slot/primary, dq_skin_tone_to_color(tone))
+
+/// Extra 1 and 2, when no old palette set them: the next most used colours among the fields.
+/datum/preferences/proc/seed_spare_slots(list/save_data)
+	var/list/old_palette = save_data["color_palette"]
+	var/list/taken = list()
+	for(var/slot in list("primary", "secondary", "tertiary"))
+		taken += lowertext(read_preference(dq_color_slot_type(slot)))
+	var/list/counts = list()
+	var/list/fields = dq_palette_fields()
+	for(var/field in fields)
+		var/stored = read_preference_raw(field)
+		if(istext(stored) && !dq_color_slot_type(stored) && !(lowertext(stored) in taken))
+			counts[lowertext(stored)] += 1
+	var/list/spare_slots = list(/datum/preference/color/human/color_slot/extra1 = 4, /datum/preference/color/human/color_slot/extra2 = 5)
+	for(var/slot_type in spare_slots)
+		if(islist(old_palette) && length(old_palette) >= spare_slots[slot_type])
+			continue
+		var/best
+		for(var/hex in counts)
+			if(!best || counts[hex] > counts[best])
+				best = hex
+		if(!best)
+			return
+		counts -= best
+		update_preference_by_type(slot_type, best)

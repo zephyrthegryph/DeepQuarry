@@ -103,11 +103,7 @@ SCHEMA(/datum/dna, base_species, schema_text())
 // Create random UI.
 /datum/dna/proc/ResetUI(defer=0)
 	for(var/i=1,i<=DNA_UI_LENGTH,i++)
-		switch(i)
-			if(DNA_UI_SKIN_TONE)
-				SetUIValueRange(DNA_UI_SKIN_TONE,rand(1,220),220,1) // Otherwise, it gets fucked
-			else
-				set_UI_at(i, rand(0,4095))
+		set_UI_at(i, rand(0,4095))
 	if(!defer)
 		UpdateUI()
 
@@ -236,7 +232,6 @@ SCHEMA(/datum/dna, base_species, schema_text())
 
 	SetUIColour(DNA_UI_SKIN_R, character.looks.skin_color)
 
-	SetUIValueRange(DNA_UI_SKIN_TONE, 35-character.looks.skin_tone, 220,    1) // Value can be negative.
 
 	SetUIState(DNA_UI_GENDER,         character.gender!=MALE,        1)
 
@@ -263,7 +258,6 @@ SCHEMA(/datum/dna, base_species, schema_text())
 	//Skin color (Tone for humans is seperate)
 	H.looks.set_skin_color(GetUIColour(DNA_UI_SKIN_R))
 
-	H.looks.set_skin_tone(35 - GetUIValueRange(DNA_UI_SKIN_TONE, 220))// Value can be negative.
 
 	//Eye color
 	H.looks.set_eyes_color(GetUIColour(DNA_UI_EYES_R))
