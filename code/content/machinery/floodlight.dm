@@ -12,12 +12,14 @@
 	var/brightness_on = 8		//can't remember what the maxed out value is
 	/// A nearly flat cell makes the light flicker for a moment (the draw dims it while this is set).
 	var/flickering = FALSE
+	/// Whether the cell can feed the light a step (runs_on_cell() writes it when it crosses, not once per step).
+	var/cell_powered = FALSE
 
 
 CAPABILITIES(/obj/machinery/floodlight)
 	configure(atom_rules(light_system = MOVABLE_LIGHT_DIRECTIONAL))
 	configure(movable_motion(cone_y = 8))
-	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(on), wakes_on = list(nameof(on)))
+	runs_on_cell(draw = nameof(use), when = nameof(on), powered_var = nameof(cell_powered), on_lost = PROC_REF(cell_power_lost), after_draw = PROC_REF(drawn))
 	climb()
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
@@ -30,10 +32,9 @@ CAPABILITIES(/obj/machinery/floodlight)
 /obj/machinery/floodlight/proc/appearance_battery()
 	return (open && cell) ? 1 : 0
 
-/// Whether the light burns: switched on, with a cell in it. A cell that cannot feed a step is the step's to find (work_step() switches the light off), so a drained cell
-/// turns the switch off and the look follows it: the draw reads no charge, which changes every step and is not tracked.
+/// Whether the light burns: switched on, with a cell in it that can feed it (cell_powered, which runs_on_cell() writes when the cell crosses the threshold).
 /obj/machinery/floodlight/proc/powered_on()
-	return on && cell
+	return on && cell && cell_powered
 
 /// The look (the draw sweep: from its template). The light is part of it: lit while it is switched on and its cell can feed it, dark otherwise.
 /obj/machinery/floodlight/draw(datum/look/look)
@@ -44,15 +45,14 @@ CAPABILITIES(/obj/machinery/floodlight)
 	else
 		look.glow(GLOW_OFF)
 
-/obj/machinery/floodlight/proc/work_step(datum/act/timer/A)
-	if(!cell || (cell.charge < (use * CELLRATE)))
+/// The cell can no longer feed the light: it shuts down, and stays off when the cell is charged again.
+/obj/machinery/floodlight/proc/cell_power_lost()
+	if(on)
 		turn_off(1)
-		return PROCESS_KILL
 
-	cell.use(use * CELLRATE)
-
-	// If the cell is almost empty rarely "flicker" the light. Aesthetic only.
-	if((cell.percent() < 10) && prob(5))
+/// After a step took its charge: a nearly empty cell rarely makes the light "flicker". Aesthetic only.
+/obj/machinery/floodlight/proc/drawn(obj/item/cell/C)
+	if((C.percent() < 10) && prob(5))
 		set_flickering(TRUE)
 		after(src, 2 SECONDS, PROC_REF(flicker_restore))
 
@@ -62,9 +62,7 @@ CAPABILITIES(/obj/machinery/floodlight)
 
 // Returns 0 on failure and 1 on success
 /obj/machinery/floodlight/proc/turn_on(loud = 0)
-	if(!cell)
-		return 0
-	if(cell.charge < (use * CELLRATE))
+	if(!cell_can_feed(src))
 		return 0
 
 	set_on(1)
@@ -156,10 +154,3 @@ CAPABILITIES(/obj/machinery/floodlight)
 
 CAPABILITIES(/obj/machinery/floodlight/starts_on)
 	setup(PROC_REF(turn_on))
-
-
-
-/// Whether its work starts at initialization (started_work(starts =)).
-/obj/machinery/floodlight/step_start_condition()
-	return on
-

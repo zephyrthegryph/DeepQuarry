@@ -3449,6 +3449,7 @@
 #include "code\library\machine\panel.dm"
 #include "code\library\machine\parts.dm"
 #include "code\library\machine\popup_cover.dm"
+#include "code\library\machine\runs_on_cell.dm"
 #include "code\library\machine\started_work.dm"
 #include "code\library\machine\wire_caps.dm"
 #include "code\library\machine\wires.dm"

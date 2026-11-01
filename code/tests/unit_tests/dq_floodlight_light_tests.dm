@@ -34,7 +34,7 @@
 /datum/unit_test/dq_floodlight_light/cell_empty/check()
 	light.cell.set_charge(0) // run flat (use() is rate-limited, so a drain in one call does not empty it)
 	TEST_ASSERT_EQUAL(light.cell.charge, 0, "the cell is flat")
-	light.work_step() // the step that finds it: the floodlight shuts down
+	cell_run_step(light) // the step that finds it: the floodlight shuts down
 	TEST_ASSERT(!light.on, "a floodlight whose cell cannot feed a step is switched off by its step")
 	refresh_flush()
 	TEST_ASSERT_EQUAL(glow_of(light).range, 0, "and casts nothing")
