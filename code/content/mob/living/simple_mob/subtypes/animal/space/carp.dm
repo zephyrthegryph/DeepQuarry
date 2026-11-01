@@ -28,7 +28,6 @@
 /mob/living/simple_mob/animal/space/carp
 	name = "space carp"
 	desc = "A ferocious, fang-bearing creature that resembles a fish."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/carp)
 	icon = 'icons/mob/carp.dmi'
 	icon_state = "carp"
 	icon_living = "carp"
@@ -81,6 +80,7 @@
 	)
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/carp)))
 	configure(mob_rules(faction = FACTION_CARP))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat, meat_amount = 5))
 	setup(PROC_REF(prepare_carp_colour))
@@ -294,7 +294,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp/holographic)
 /mob/living/simple_mob/animal/space/carp/puffer
 	name = "puffercarp"
 	desc = "A bloated, inflated carp covered in spines."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/carp, /datum/category_item/catalogue/fauna/carp/puffer)
 	icon_state = "puffercarp"
 	icon_living = "puffercarp"
 	icon_dead = "puffercarp_dead"
@@ -341,6 +340,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp/holographic)
 	return ..()
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/carp/puffer)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/carp, /datum/category_item/catalogue/fauna/carp/puffer)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_kaboom)))) // explode? YOU BETTER BELIEVE THAT'S AN EXPLODE
 
 /mob/living/simple_mob/animal/space/carp/puffer/proc/blast_kaboom(datum/act/A)

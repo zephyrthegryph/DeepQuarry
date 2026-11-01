@@ -1,7 +1,6 @@
 /mob/living/simple_mob/vore/devil
 	name = "statue of temptation"
 	desc = "A tall statue made of red-tinted metal in the shape of some sort of demon or devil."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/devil)
 	tt_desc = "Metal Statue"
 	icon = 'icons/mob/vore64x64.dmi'
 	icon_dead = "devil-dead"
@@ -40,6 +39,7 @@
 	vore_bump_emote = "pounces on"
 
 CAPABILITIES(/mob/living/simple_mob/vore/devil)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/devil)))
 	configure(mob_rules(faction = FACTION_DEVIL))
 	configure(living_rules(vore_capacity = 1))
 

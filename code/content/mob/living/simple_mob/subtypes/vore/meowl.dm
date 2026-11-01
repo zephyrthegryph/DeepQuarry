@@ -1,7 +1,6 @@
 /mob/living/simple_mob/vore/meowl
 	name = "Meowl"
 	desc = "A rather cute looking creature that seems to have the features of both a cat and an owl."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/meowl)
 	tt_desc = "Strigiline"
 	icon = 'icons/mob/vore.dmi'
 	icon_dead = "meowl-dead"
@@ -98,6 +97,7 @@
 		"Strain as you might, you can't keep up the effort long enough before you sink back into %pred's %belly."))
 
 CAPABILITIES(/mob/living/simple_mob/vore/meowl)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/meowl)))
 	configure(mob_rules(faction = FACTION_MEOWL))
 	configure(living_rules(vore_capacity = 1))
 	op("meowl_interaction_feed", item(/obj/item/reagent_containers/food), label("Feed"), then(PROC_REF(meowl_interaction_feed)))

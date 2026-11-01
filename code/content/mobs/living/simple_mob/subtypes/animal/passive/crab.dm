@@ -47,9 +47,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/crab)
 	icon = 'icons/mob/fish.dmi'
 	tt_desc = "S Ocypode glacian"
 
-	catalogue_data = list(/datum/category_item/catalogue/fauna/sif_crab)
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/crab/sif)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/sif_crab)))
 	rolls(nameof(icon_scale_x), range_of(0.5, 1.2, 0.1))
 	rolls(nameof(icon_scale_y), PROC_REF(roll_same_scale), from = list(nameof(icon_scale_x)))
 

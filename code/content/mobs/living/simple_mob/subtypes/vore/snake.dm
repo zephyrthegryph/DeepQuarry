@@ -23,7 +23,6 @@
 	name = "giant snake"
 	desc = "Snakes. Why did it have to be snakes?"
 	tt_desc = "Serpentes gigantus"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/giant_snake)
 
 	icon_dead = "snake-dead"
 	icon_living = "snake"
@@ -49,6 +48,7 @@
 	pixel_y = -16
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/giant_snake)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/giant_snake)))
 	configure(mob_rules(faction = FACTION_SNAKE))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 6))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))

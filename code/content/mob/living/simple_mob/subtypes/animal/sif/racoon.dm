@@ -15,7 +15,6 @@
 	name = "sakimm"
 	desc = "What appears to be an oversized rodent with hands."
 	tt_desc = "S Procyon cogitae"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/sakimm)
 
 
 	icon_state = "raccoon"
@@ -99,6 +98,7 @@
 	emote_hear = list("chitters", "clicks")
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/sakimm)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/sakimm)))
 	op("remove_hat", menu(desc = "Remove the animal's hat. You monster."), label("Remove Hat"), needs(req_adjacent()), then(PROC_REF(remove_hat_op)))
 	op("give_hat", menu(desc = "Give the animal a hat. You hero."), label("Give Hat"), needs(req_adjacent()), then(PROC_REF(give_hat_op)))
 	configure(mob_rules(faction = FACTION_SAKIMM))

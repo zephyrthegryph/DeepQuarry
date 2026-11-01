@@ -4,8 +4,6 @@
 	desc = "Variety is the spice of life! This weapon is a hybrid of the HI-102b 'Nanotech Selectable-Cell Weapon' and the Vey-Med NERD 'Medigun'. \
 	It can fire both harmful and healing cells with an internal nanite fabricator and energy weapon cell loader. Up to three combinations of \
 	energy beams can be configured at once. Ammo not included."
-	catalogue_data = list(/datum/category_item/catalogue/information/organization/hephaestus,
-							/datum/category_item/catalogue/information/organization/vey_med)
 
 	icon = 'icons/vore/custom_guns_vr.dmi'
 	icon_state = "nsfw"
@@ -26,6 +24,9 @@
 
 	special_handling = TRUE
 	special_weapon_handling = TRUE
+
+CAPABILITIES(/obj/item/gun/projectile/cell_loaded)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/organization/hephaestus, /datum/category_item/catalogue/information/organization/vey_med)))
 
 /obj/item/gun/projectile/cell_loaded/consume_next_projectile()
 	if(chambered && ammo_magazine)

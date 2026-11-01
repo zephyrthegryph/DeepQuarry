@@ -30,7 +30,6 @@
 	mob_size = MOB_SMALL
 	friendly = list("hugs")
 
-	catalogue_data = list(/datum/category_item/catalogue/fauna/succlet)
 	player_msg = "You can move with ALT+click. You can only move when no one will see you, unless you are targetting someone. If no one else will see you move, and you can eat the target, then you will be able to move to them. Use your power to responsibly, and move confusingly right to left as if to distract them."
 	has_langs = list(LANGUAGE_ANIMAL)
 
@@ -131,6 +130,7 @@
 	expire(25)
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/succlet)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/succlet)))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/succlet))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("vore_taste" = "some kind of snack from a distant unseen universe", "vore_smell" = "some kind of snack from a distant unseen universe"))
 	configure(mob_kind(death_message = "shrieks in agony as it is eradicated from reality."))

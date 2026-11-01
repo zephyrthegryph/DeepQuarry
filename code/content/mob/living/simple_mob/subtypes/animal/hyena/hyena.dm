@@ -22,7 +22,6 @@ They're also cool, and Rykka/Nyria wrote this uwu
 	name = "Hyena"
 	desc = "Yeen! Its fur is a dusty yellow-brown color with black spots, and it has rounded ears... and SHARP TEETH! You inexplicably want to pet it, though."
 	tt_desc = "Crocuta crocuta"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/hyena)
 
 	icon = 'icons/mob/hyena.dmi'
 	icon_state = "yeen"
@@ -133,6 +132,7 @@ They're also cool, and Rykka/Nyria wrote this uwu
 	emote_hear = list("yawns", "cackles", "playfully yaps")
 
 CAPABILITIES(/mob/living/simple_mob/animal/hyena)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/hyena)))
 	op("remove_hat", menu(desc = "Remove the yeen's hat. You monster. ;~;"), label("Remove Hat"), needs(req_adjacent()), then(PROC_REF(remove_hat_op)))
 	op("give_hat", menu(desc = "Give the yeen a hat. You wonderful bean. <3"), label("Give Hat"), needs(req_adjacent()), then(PROC_REF(give_hat_op)))
 	configure(mob_rules(faction = "yeen"))

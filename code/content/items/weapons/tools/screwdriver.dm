@@ -72,13 +72,13 @@ GLOBAL_LIST_INIT(screwdriver_colours, list(
 /obj/item/tool/screwdriver/alien
 	name = "alien screwdriver"
 	desc = "An ultrasonic screwdriver."
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_screwdriver)
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "screwdriver_a"
 	item_state = "screwdriver_black"
 	random_color = FALSE
 
 CAPABILITIES(/obj/item/tool/screwdriver/alien)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_screwdriver)))
 	configure(item_tooling(speed = 0.1))
 	configure(item_sounds(use = SFX_ITEMS_PSHOOM))
 

@@ -26,7 +26,6 @@
 	name = "Tymisian Moth"
 	desc = "A huge, fuzzy insect with a disorienting dust."
 	tt_desc = "B Lepidoptera cinereus"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/tymisian)
 
 
 	icon_state = "moth"
@@ -130,6 +129,7 @@
 TYPE_TABLE(/datum/decl/mob_organ_names/moth, mob_organ_hit_zones, list("head", "thorax", "abdomen", "left forewing", "left hindwing", "right forewing", "right hindwing", "left foreleg", "right foreleg", "left hindleg", "right hindleg"))
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/tymisian)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/tymisian)))
 	configure(mob_rules(faction = FACTION_SPIDERS))
 	configure(living_rules(say_list_type = /datum/say_list/tymisian))
 	configure(mob_movement(hovering = TRUE))

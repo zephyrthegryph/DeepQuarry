@@ -93,7 +93,6 @@
 /mob/living/simple_mob/vore/aggressive/dragon/virgo3b
 	name = "phoron dragon"
 	tt_desc = "Phoron Draconinae"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/phoron_dragon)
 	endurance = 300
 	icon_dead = "phoron_dragon_dead"
 	icon_living = "phoron_dragon"

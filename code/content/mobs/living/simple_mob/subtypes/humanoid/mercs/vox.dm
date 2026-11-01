@@ -123,7 +123,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/voxpirate/boarder)
 	icon_state = "voxboarder_r"
 	icon_living = "voxboarder_r"
 	icon_dead = "voxboarder_r_dead"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/vox/boarder)
 
 	projectiletype = /obj/item/projectile/bullet/pellet/shotgun
 	projectilesound = SFX_WEAPONS_GUNSHOT_SHOTGUN
@@ -135,6 +134,9 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/voxpirate/boarder)
 
 	needs_reload = TRUE
 	reload_max = 10
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/merc/voxpirate/boarder/ranged)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/vox/boarder)))
 
 /datum/category_item/catalogue/fauna/mercenary/vox/technician
 	name = "Mercenaries - Vox Technician"
@@ -152,7 +154,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/voxpirate/boarder)
 	icon_state = "voxboarder_t"
 	icon_living = "voxboarder_t"
 	icon_dead = "voxboarder_t_dead"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/vox/technician)
 
 	projectiletype = /obj/item/projectile/ion
 	projectilesound = SFX_WEAPONS_LASER
@@ -162,6 +163,9 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/voxpirate/boarder)
 
 	needs_reload = TRUE
 	reload_max = 25 //Suppressive tech weapon.
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/merc/voxpirate/technician)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/vox/technician)))
 
 /datum/category_item/catalogue/fauna/mercenary/vox/suppressor
 	name = "Mercenaries - Vox Suppressor"
@@ -181,7 +185,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/voxpirate/boarder)
 	icon_state = "voxsuppressor"
 	icon_living = "voxsuppressor"
 	icon_dead = "voxsuppresor_dead"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/vox/suppressor)
 
 	armor_spec = "melee=30;bullet=50;laser=60;energy=30;bomb=35;bio=100;rad=100" // Boosted armor to represent Tank role.
 
@@ -211,7 +214,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/voxpirate/boarder)
 	icon_state = "voxcaptain"
 	icon_living = "voxcaptain"
 	icon_dead = "voxcaptain_dead"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/vox/captain)
 
 	armor_spec = "melee=60;bullet=50;laser=40;energy=15;bomb=30;bio=100;rad=100" // Vox RIG armor values.
 
@@ -223,3 +225,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/voxpirate/boarder)
 
 	needs_reload = TRUE
 	reload_max = 15 //Other Vox should be carrying ammo.
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/merc/voxpirate/ranged/captain)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/vox/captain)))

@@ -25,7 +25,6 @@
 	name = "glitterfly"
 	desc = "A large, shiny butterfly!"
 	tt_desc = "S Lepidoptera adamas"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/glitterfly)
 
 
 	icon_state = "butterfly"
@@ -58,6 +57,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/glitterfly)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/glitterfly)))
 	configure(mob_rules(faction = FACTION_NEUTRAL))
 	configure(atom_rules(description_fluff = "Glitterflies tend to have a wingspan equivalent to the length of an average human head."))
 	configure(living_rules(say_list_type = /datum/say_list/glitterfly))
@@ -79,7 +79,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/glitterfly)
 /mob/living/simple_mob/animal/sif/glitterfly/rare
 	name = "sparkling glitterfly"
 	desc = "A large, incredibly shiny butterfly!"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/glitterfly, /datum/category_item/catalogue/fauna/glitterfly_rare)
 	endurance = 30
 
 	movement_cooldown = -3
@@ -87,6 +86,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/glitterfly)
 	melee_damage_upper = 5
 
 	plane = PLANE_LIGHTING_ABOVE
+
+CAPABILITIES(/mob/living/simple_mob/animal/sif/glitterfly/rare)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/glitterfly, /datum/category_item/catalogue/fauna/glitterfly_rare)))
 
 /mob/living/simple_mob/animal/sif/glitterfly/unique_tame_check(obj/O, mob/user)
 	. = ..()

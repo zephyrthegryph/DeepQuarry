@@ -4079,10 +4079,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/rawsunflower)
 	bitesize = 1
 	nutriment_amt = 1
 	nutriment_desc = list("another world" = 2)
-	catalogue_data = list(/datum/category_item/catalogue/flora/frostbelle)
 	filling_color = "#5dadcf"
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/frostbelle)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/flora/frostbelle)))
 	configure(light_glow(range = 1.4, power = 1, color = "#5dadcf"))
 	configure(reagents(add = list(REAGENT_ID_OXYCODONE = 1, REAGENT_ID_SIFSAP = 5, REAGENT_ID_BLISS = 5)))
 

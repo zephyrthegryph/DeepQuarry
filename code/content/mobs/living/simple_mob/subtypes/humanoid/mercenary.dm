@@ -33,6 +33,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/rifle)
 	reload_max = 20
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/merc/voxpirate/ranged/suppressor)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/vox/suppressor)))
 	configure(mob_kind(attack_cooldown = 5))
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).

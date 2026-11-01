@@ -7,7 +7,6 @@
 /mob/living/simple_mob/vore/retaliate/lion
 	name = "lion"
 	desc = "A large feline creature."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/lion)
 
 	icon_state = "lion"
 	icon_living = "lion"
@@ -105,6 +104,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/retaliate/lion)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/lion)))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 5))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 	verb_entry(/mob/living/simple_mob/vore/retaliate/lion/proc/set_sex, login = TRUE)

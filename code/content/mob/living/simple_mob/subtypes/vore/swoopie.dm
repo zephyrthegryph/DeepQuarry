@@ -20,7 +20,6 @@
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie
 	name = "SWOOPIE XL"
 	desc = "A large birdlike robot with thick assets, plump belly, and a long elastic vacuum hose of a neck. Somehow still a cleanbot, even if just for its duties."
-	catalogue_data = list(/datum/category_item/catalogue/technology/drone/corrupt_hound/swoopie)
 	icon_state = "swoopie"
 	icon_living = "swoopie"
 	icon_dead = "swoopie_dead"
@@ -255,6 +254,7 @@
 	return FALSE
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/drone/corrupt_hound/swoopie)))
 	op("borrow_vac", menu(desc = "Allows adjacent user to borrow Swoopie's Vac-Pack"), label("Borrow Vac-Pack"), needs(req_adjacent(), req(PROC_REF(borrow_vac_ready))), then(PROC_REF(borrow_vac_op)))
 	op("borrow_vac_self", menu(desc = "Allows adjacent user to borrow Swoopie's Vac-Pack"), label("Borrow Vac-Pack"), needs(req_self(), req(PROC_REF(borrow_vac_self_ready))), asks(/datum/prompt/choice, fields = list("title" = "Swoopie", "question" = "Borrow Vac-Pack for", "choices" = computed(PROC_REF(borrow_vac_choices)), "timeout" = 0), step = "borrower"), then(PROC_REF(borrow_vac_self_op)))
 	configure(mob_rules(faction = "neutral"))

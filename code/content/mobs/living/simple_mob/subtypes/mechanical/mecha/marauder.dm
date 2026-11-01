@@ -11,7 +11,6 @@
 /mob/living/simple_mob/mechanical/mecha/combat/marauder
 	name = "marauder"
 	desc = "A heavy-duty, combat exosuit, developed after the Durand model. This is rarely found among civilian populations."
-	catalogue_data = list(/datum/category_item/catalogue/technology/marauder)
 	icon_state = "marauder"
 	movement_cooldown = 1.5
 	wreckage = /obj/structure/loot_pile/mecha/marauder
@@ -43,7 +42,6 @@
 	name = "seraph"
 	desc = "A heavy-duty, combat/command exosuit. This one is specialized towards housing important commanders such as high-ranking \
 	military personnel. It's stronger than the regular Marauder model, but not by much."
-	catalogue_data = list(/datum/category_item/catalogue/technology/seraph)
 	icon_state = "seraph"
 	wreckage = /obj/structure/loot_pile/mecha/marauder/seraph
 	melee_damage_lower = 55 // The real version hits this hard apparently. Ouch.
@@ -55,3 +53,9 @@
 	desc = "A heavy duty, combat exosuit that is based off of the Marauder model."
 	icon_state = "mauler"
 	wreckage = /obj/structure/loot_pile/mecha/marauder/mauler
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/marauder)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/marauder)))
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/marauder/seraph)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/seraph)))

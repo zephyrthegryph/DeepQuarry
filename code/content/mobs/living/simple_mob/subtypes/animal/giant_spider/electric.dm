@@ -19,7 +19,6 @@
 
 /mob/living/simple_mob/animal/giant_spider/electric
 	desc = "Spined and yellow, it makes you shudder to look at it. This one has flickering gold eyes."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/giant_spider/electric_spider)
 
 	icon_state = "spark"
 	icon_living = "spark"

@@ -228,9 +228,9 @@ CAPABILITIES(/obj/item/clothing/head/pilot_vr/talon)
 	name = "\improper Major Bill's pilot helmet"
 	desc = "An Major Bill's Transportation version of the standard pilot helmet. Protects the head from impacts. This one has a retractable visor"
 	icon_state = "pilot3"
-	catalogue_data = list(/datum/category_item/catalogue/information/organization/major_bills)
 
 CAPABILITIES(/obj/item/clothing/head/pilot_vr/mbill)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/organization/major_bills)))
 	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_visor)))
 
 /// the shuttle_comp this refers to (a relation view: null once it is deleted).

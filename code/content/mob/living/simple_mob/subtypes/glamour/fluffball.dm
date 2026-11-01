@@ -1,7 +1,6 @@
 /mob/living/simple_mob/vore/fluffball
 	name = "fluffball"
 	desc = "A small, rotund humanoid creature. It is difficult to make out physical features of it as it covers most of its face behind big floppy, fluffy ears with only beady yellow eyes looking out. Most of its body is covered by a thick, soft tail that it wraps around itself and holds onto with small stumpy arms."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/fluffball)
 	tt_desc = "glamoris fluffalia"
 	icon = 'icons/mob/vore.dmi'
 	icon_dead = "fluffball-dead"
@@ -125,6 +124,7 @@
 		return //just leave them
 
 CAPABILITIES(/mob/living/simple_mob/vore/fluffball)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/fluffball)))
 	configure(mob_rules(faction = FACTION_GLAMOUR))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/fluffball))
 	op("fluffball_item", item(/obj/item), then(PROC_REF(fluffball_interaction_item)))

@@ -12,7 +12,6 @@
 	icon_state = "bookbat_purple"
 	icon_living = "bookbat_purple"
 	icon_dead = "bookbat_purple_dead"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/vrerror)
 
 
 
@@ -35,6 +34,7 @@
 			)
 
 CAPABILITIES(/mob/living/simple_mob/vr)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/vrerror)))
 	configure(mob_rules(faction = "vr"))
 	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 

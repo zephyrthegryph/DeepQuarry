@@ -510,7 +510,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur/ranged/hmg)
 	name = "singularity gygax"
 	desc = "An experimental exosuit that utilizes advanced materials to allow for greater protection while still being lightweight and fast. \
 	It also is armed with an array of next-generation weaponry."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/blackhole)
 	icon = 'icons/blackhole/blackhole32x32.dmi'
 	icon_living = "mech2"
 	icon_state = "mech2"
@@ -528,6 +527,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur/ranged/hmg)
 	armor_spec = "melee=50;bullet=50;laser=50;energy=30;bomb=30;bio=100;rad=100"
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/blackhole)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/blackhole)))
 	configure(mob_rules(faction = FACTION_BLACKHOLE))
 
 /obj/structure/loot_pile/mecha/gygax/dark/adv/blackhole
@@ -537,7 +537,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/
 /mob/living/simple_mob/mechanical/mecha/combat/durand/blackhole
 	name = "singularity vulture"
 	desc = "A robust, advanced exosuit of Black Hole design, utilizing highly dangerous tesla weaponry."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/blackhole)
 	icon = 'icons/blackhole/blackhole32x32.dmi'
 	icon_living = "mech1"
 	icon_state = "mech1"
@@ -559,6 +558,7 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/
 	projectile_accuracy = -25
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/durand/blackhole)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/blackhole)))
 	configure(mob_rules(faction = FACTION_BLACKHOLE))
 	configure(mob_kind(attack_cooldown = 12))
 

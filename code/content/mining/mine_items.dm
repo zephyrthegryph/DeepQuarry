@@ -376,9 +376,9 @@ CAPABILITIES(/obj/item/stack/lightpole)
 	density = TRUE
 	anchored = TRUE
 	var/stack_type = /obj/item/stack/lightpole/red
-	catalogue_data = list(/datum/category_item/catalogue/material/trail_blazer)
 
 CAPABILITIES(/obj/structure/trailblazer)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/material/trail_blazer)))
 	setup(PROC_REF(set_beacon_glow))
 	climb()
 	op("hand", hand(), ungated(), label("Use"), wait(8 SECONDS), then(PROC_REF(knock_down_done)))

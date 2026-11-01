@@ -17,7 +17,6 @@
 
 /mob/living/simple_mob/animal/giant_spider/hunter
 	desc = "Furry and black, it makes you shudder to look at it. This one has sparkling purple eyes."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/giant_spider/hunter_spider)
 
 	icon_state = "hunter"
 	icon_living = "hunter"

@@ -19,7 +19,6 @@
 	name = "frostfly"
 	desc = "A large insect with glittering wings."
 	tt_desc = "S Carabidae glacios"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/frostfly)
 
 
 	icon_state = "firefly"
@@ -115,6 +114,7 @@
 TYPE_TABLE(/datum/decl/mob_organ_names/frostfly, mob_organ_hit_zones, list("head", "thorax", "abdomen", "left vestigal wing", "right vestigal wing", "left legs", "right legs"))
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/frostfly)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/frostfly)))
 	configure(mob_rules(faction = FACTION_DIYAAB))
 	configure(living_rules(say_list_type = /datum/say_list/frostfly))
 	configure(mob_kind(attack_cooldown = 1.5 SECONDS))

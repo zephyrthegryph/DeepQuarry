@@ -18,7 +18,6 @@
 	tt_desc = "E Canis lupus stellarus"
 
 	scanner_desc = "I appears to be a canine of some sort, though absolutely massive in scale and surrounded in radical redspace energies!"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/stardog)
 
 	icon = 'icons/mob/vore.dmi'
 	icon_state = "woof"
@@ -54,6 +53,7 @@
 	var/list/weather_areas = list()	//We'll call a proc on these areas when we eat, don't worry!
 
 CAPABILITIES(/mob/living/simple_mob/vore/overmap/stardog)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/stardog)))
 	op("transition", menu(desc = "Attempt to go to the location you have arrived at, or return to space!"), label("Transition"), needs(req_self(), req(PROC_REF(transition_ready))), asks(/datum/prompt/choice/stardog_transition, fields = list("choices" = computed(PROC_REF(transition_destinations))), step = "destination", when = PROC_REF(transition_on_map)), then(PROC_REF(transition_op)))
 	op("eat_space_weather", menu(desc = "Eat carp or rocks!"), label("Eat Space Weather"), needs(req_self()), then(PROC_REF(eat_space_weather_op)))
 	op("eject", menu(desc = "Stop controlling the dog and return to your own body."), label("Eject"), needs(req_self()), then(PROC_REF(eject_op)))

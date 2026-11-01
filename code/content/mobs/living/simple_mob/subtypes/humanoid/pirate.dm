@@ -11,6 +11,7 @@
 	endurance = 125
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/ripley/pirate)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/ripley)))
 	configure(mob_rules(faction = "pirate"))
 	configure(mob_kind(attack_cooldown = 0.5 SECONDS))
 

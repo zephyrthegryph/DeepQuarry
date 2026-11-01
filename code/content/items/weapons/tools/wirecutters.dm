@@ -69,12 +69,12 @@ GLOBAL_LIST_INIT(wirecutter_colours, list(
 /obj/item/tool/wirecutters/alien
 	name = "alien wirecutters"
 	desc = "Extremely sharp wirecutters, made out of a silvery-green metal."
-	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_wirecutters)
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "cutters"
 	random_color = FALSE
 
 CAPABILITIES(/obj/item/tool/wirecutters/alien)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_wirecutters)))
 	configure(item_tooling(speed = 0.1))
 
 /obj/item/tool/wirecutters/hybrid

@@ -278,7 +278,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/stealth)
 /mob/living/simple_mob/mechanical/mecha/mouse_tank
 	name = "\improper Whisker Tank"
 	desc = "A shockingly functional, miniaturized tank. Its inventor is unknown, but widely reviled."
-	catalogue_data = list(/datum/category_item/catalogue/technology/mouse_tank)
 	icon = 'icons/mob/mouse_army.dmi'
 	icon_state = "whisker"
 	wreckage = /obj/structure/loot_pile/mecha/mouse_tank
@@ -291,6 +290,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/stealth)
 	movement_cooldown = 2
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/mouse_tank)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/mouse_tank)))
 	configure(mob_rules(faction = FACTION_MOUSE_ARMY))
 	configure(mob_kind(attack_cooldown = 8))
 
@@ -311,7 +311,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/mouse_tank)
 /mob/living/simple_mob/mechanical/mecha/mouse_tank/livewire
 	name = "\improper Livewire Assault Tank"
 	desc = "A scorched, miniaturized light tank. It is mentioned only in hushed whispers."
-	catalogue_data = list(/datum/category_item/catalogue/technology/mouse_tank/livewire)
 	icon_state = "livewire"
 	wreckage = /obj/structure/loot_pile/mecha/mouse_tank/livewire
 
@@ -324,6 +323,7 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/mouse_tank)
 	movement_cooldown = 3
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/mouse_tank/livewire)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/mouse_tank/livewire)))
 	configure(mob_kind(attack_cooldown = 15))
 
 
@@ -342,7 +342,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/mouse_tank/livewire)
 /mob/living/simple_mob/mechanical/mecha/mouse_tank/eraticator
 	name = "\improper Eraticator Artillery Platform"
 	desc = "A heavy, miniaturized artillery platform. If you can hear it squeaking, you're too close."
-	catalogue_data = list(/datum/category_item/catalogue/technology/mouse_tank/eraticator)
 	icon_state = "eraticator"
 	wreckage = /obj/structure/loot_pile/mecha/mouse_tank/eraticator
 
@@ -355,6 +354,7 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/mouse_tank/livewire)
 	movement_cooldown = 5
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/mouse_tank/eraticator)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/mouse_tank/eraticator)))
 	configure(mob_kind(attack_cooldown = 15))
 
 

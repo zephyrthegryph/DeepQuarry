@@ -19,7 +19,6 @@
 /mob/living/simple_mob/mechanical/corrupt_maint_drone
 	name = "Corrupt Maintenance Drone"
 	desc = "A small, normal-looking drone. It looks like one you'd find on station, except... IT'S COMING AT YOU!"
-	catalogue_data = list(/datum/category_item/catalogue/technology/drone/corrupt_maint_drone)
 
 	icon = 'icons/mob/robots_vr.dmi'
 	icon_state = "corrupt-repairbot"
@@ -42,6 +41,7 @@
 	var/poison_per_bite = 5			// Amount added per injection.
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/corrupt_maint_drone)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/drone/corrupt_maint_drone)))
 	configure(mob_rules(faction = FACTION_UNDERDARK))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_movement(hovering = FALSE))

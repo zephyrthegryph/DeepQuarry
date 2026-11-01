@@ -21,7 +21,6 @@
 	name = "kururak"
 	desc = "A large animal with sleek fur."
 	tt_desc = "S Felidae fluctursora"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/kururak)
 
 
 	icon_state = "bigcat"
@@ -88,6 +87,7 @@
 	instinct = 50
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/kururak)))
 	op("do_strike", menu(desc = "Strike viciously at an entity within range."), label("Rending Strike"), needs(req_self(), req(PROC_REF(do_strike_ready))), then(PROC_REF(do_strike_op)))
 	op("rally_pack", menu(desc = "Tries to command your fellow pack members to follow you."), label("Rally Pack"), needs(req_self(), req(PROC_REF(rally_pack_ready))), then(PROC_REF(rally_pack_op)))
 	op("do_flash", menu(desc = "Disorient a creature within range."), label("Tail Blind"), needs(req_self(), req(PROC_REF(do_flash_ready))), then(PROC_REF(do_flash_op)))

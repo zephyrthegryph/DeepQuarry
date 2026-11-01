@@ -32,7 +32,6 @@
 /mob/living/simple_mob/mechanical/combat_drone
 	name = "combat drone"
 	desc = "An automated combat drone armed with state of the art weaponry and shielding."
-	catalogue_data = list(/datum/category_item/catalogue/technology/drone/combat_drone)
 
 	icon_state = "drone"
 	icon_living = "drone"
@@ -57,6 +56,7 @@
 	var/obj/item/shield_projector/shields = null
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/combat_drone)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/drone/combat_drone)))
 	configure(mob_rules(faction = FACTION_MALF_DRONE))
 	configure(living_rules(say_list_type = /datum/say_list/malf_drone, delete_on_death = TRUE))
 	configure(mob_movement(hovering = TRUE))

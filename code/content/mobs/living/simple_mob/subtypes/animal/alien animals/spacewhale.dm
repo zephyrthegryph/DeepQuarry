@@ -14,7 +14,6 @@
 	name = "space whale"
 	desc = "It's a space whale. I don't know what more you expected."
 	scanner_desc = "An absolutely massive space-born creature. A layer of radical energy around its body prevents detailed scanning, though, the energy along with its movements seem to be what propels it through space. A series of bio-luminescent lights ripple rhythmically across its surface. It is difficult to spot at range except for the wake of energy that swirls around it."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/spacewhale)
 
 	icon = 'icons/mob/alienanimals_x32.dmi'
 	icon_state = "space_whale"
@@ -119,6 +118,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/overmap/spacewhale)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/spacewhale)))
 	configure(living_rules(vore_capacity = 99, say_list_type = /datum/say_list/spacewhale))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	after_init(0, then(PROC_REF(spacewhale_restless_ready)))

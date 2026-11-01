@@ -2,7 +2,6 @@
 	drag_buckle = FALSE
 	name = "great white wolf"
 	desc = "A massive white wolf, with piercing green eyes. Much like a dire wolf, but bigger. Passive, until you give it a reason to not be."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/greatwolf)
 	tt_desc = "Canis lupus greatus"
 	icon = 'icons/mob/vore128x64.dmi'
 	icon_dead = "whitewolf-dead"
@@ -86,6 +85,7 @@
 	movement_cooldown = -1.5 // 1.5 Downstream
 
 CAPABILITIES(/mob/living/simple_mob/vore/greatwolf)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/greatwolf)))
 	configure(mob_rules(faction = FACTION_SIF))
 	configure(living_rules(species_sounds = "Canine"))
 	configure(living_rules(vore_capacity = 2))

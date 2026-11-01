@@ -14,7 +14,6 @@
 	drag_buckle = FALSE
 	name = "corrupt hound"
 	desc = "Good boy machine broke. This is definitely no good news for the organic lifeforms in vicinity."
-	catalogue_data = list(/datum/category_item/catalogue/technology/drone/corrupt_hound)
 
 	icon_state = "badboi"
 	icon_living = "badboi"
@@ -108,6 +107,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound/prettyboi)
 	set_icon_state(icon_dead)
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/drone/corrupt_hound)))
 	configure(mob_rules(faction = FACTION_CORRUPT))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/corrupthound))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
@@ -256,7 +256,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound)
 	drag_buckle = FALSE
 	name = "corrupt janihound"
 	desc = "An old janihound! Evidently, it doesn't seem to be lawed anymore. You should probably leave it alone."
-	catalogue_data = list(/datum/category_item/catalogue/technology/drone/corrupt_hound)
 
 	icon_state = "cjhound"
 	icon_living = "cjhound"
@@ -318,12 +317,14 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound)
 /mob/living/simple_mob/vore/retaliate/corrupthound/janihound/medihound
 	name = "corrupt medihound"
 	desc = "An old medihound! He probably doesn't want to heal you anymore."
-	catalogue_data = list(/datum/category_item/catalogue/technology/drone/corrupt_hound)
 
 	icon_state = "cmhound"
 	icon_living = "cmhound"
 	icon_dead = "cmhound-dead"
 	icon_rest = "cmhound-dead"
+
+CAPABILITIES(/mob/living/simple_mob/vore/retaliate/corrupthound/janihound/medihound)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/drone/corrupt_hound)))
 
 
 /mob/living/simple_mob/vore/retaliate/corrupthound/janihound
@@ -349,6 +350,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound)
 	set_icon_state(icon_dead)
 
 CAPABILITIES(/mob/living/simple_mob/vore/retaliate/corrupthound/janihound)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/drone/corrupt_hound)))
 	configure(mob_rules(faction = "corrupt"))
 	configure(living_rules(vore_capacity = 2, say_list_type = /datum/say_list/corrupthound/janihound))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))

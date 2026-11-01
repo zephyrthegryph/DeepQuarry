@@ -213,11 +213,12 @@ CAPABILITIES(/obj/item/research_sample)
 	return OP_PASS
 
 /obj/item/research_sample/common
-	catalogue_data = list(/datum/category_item/catalogue/information/research_sample/common)
 	supply_value = 15
 
+CAPABILITIES(/obj/item/research_sample/common)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/research_sample/common)))
+
 /obj/item/research_sample/uncommon
-	catalogue_data = list(/datum/category_item/catalogue/information/research_sample/uncommon)
 	supply_value = 35
 
 	handle_risk		= 50
@@ -228,10 +229,12 @@ CAPABILITIES(/obj/item/research_sample)
 	min_ore			= 4
 	max_ore			= 6
 
+CAPABILITIES(/obj/item/research_sample/uncommon)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/research_sample/uncommon)))
+
 TYPE_TABLE(/obj/item/research_sample/uncommon, research_sample_resources, list(/obj/item/ore/phoron,/obj/item/ore/silver,/obj/item/ore/gold,/obj/item/ore/osmium,/obj/item/ore/diamond))
 
 /obj/item/research_sample/rare
-	catalogue_data = list(/datum/category_item/catalogue/information/research_sample/rare)
 	supply_value = 75
 
 	handle_risk		= 80
@@ -242,6 +245,9 @@ TYPE_TABLE(/obj/item/research_sample/uncommon, research_sample_resources, list(/
 	min_ore			= 8
 	max_ore			= 10
 
+CAPABILITIES(/obj/item/research_sample/rare)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/research_sample/rare)))
+
 TYPE_TABLE(/obj/item/research_sample/rare, research_sample_resources, list(/obj/item/ore/osmium,/obj/item/ore/uranium,/obj/item/ore/hydrogen,/obj/item/ore/diamond,/obj/item/ore/verdantium))
 
 /obj/item/research_sample/bluespace
@@ -250,7 +256,6 @@ TYPE_TABLE(/obj/item/research_sample/rare, research_sample_resources, list(/obj/
 	icon_state = "sample_bluespace"
 	fixed_name = TRUE
 	var/lightcolor = "#0066CC"
-	catalogue_data = list(/datum/category_item/catalogue/information/research_sample/bluespace)
 	supply_value = 100
 
 	handle_risk		= 80
@@ -264,6 +269,7 @@ TYPE_TABLE(/obj/item/research_sample/rare, research_sample_resources, list(/obj/
 TYPE_TABLE(/obj/item/research_sample/bluespace, research_sample_resources, list(/obj/item/bluespace_crystal))
 
 CAPABILITIES(/obj/item/research_sample/bluespace)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/research_sample/bluespace)))
 	after_init(0, then(PROC_REF(start_glowing)))
 
 /// The sample glows from the start.

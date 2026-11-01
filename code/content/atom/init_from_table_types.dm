@@ -596,6 +596,9 @@ CAPABILITIES(/obj/structure/portal_gateway)
 /obj/structure/prop/poicanister
 	init_from_table = TRUE
 
+CAPABILITIES(/obj/structure/prop/poicanister)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/objects/growthcanister)))
+
 /obj/structure/prop/rock
 	init_from_table = TRUE
 
@@ -820,6 +823,9 @@ CAPABILITIES(/obj/structure/portal_gateway)
 
 /obj/structure/sign/nanotrasen
 	init_from_table = TRUE
+
+CAPABILITIES(/obj/structure/sign/nanotrasen)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/organization/nanotrasen)))
 
 /obj/structure/sign/nosmoking_1
 	init_from_table = TRUE

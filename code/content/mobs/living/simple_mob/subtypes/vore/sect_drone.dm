@@ -22,7 +22,6 @@
 	desc = "A large, chitin-plated insectoid whose multiple cyan eyes cast a frightful blue light. Its \
 	abdomen has an unusually soft and... flexible-looking underbelly..."
 	tt_desc = "V Insecta gigantus"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/sect_drone)
 
 	icon_dead = "sect_drone_dead"
 	icon_living = "sect_drone"
@@ -75,6 +74,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/sect_drone)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/sect_drone)))
 	configure(mob_rules(faction = FACTION_INSECTS))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/sect_drone))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat, meat_amount = 4))

@@ -56,7 +56,6 @@
 		/obj/structure/flora/sif/tendrils = 10
 		)
 	*/
-	catalogue_data = list(/datum/category_item/catalogue/flora/sif_grass)
 	// catalogue_delay encoded in GLOB.dq_catalogue_delay_by_type
 
 /turf/simulated/floor/outdoors/grass/sif/roll_spawns(datum/act/timer/A)
@@ -105,6 +104,7 @@ CAPABILITIES(/turf/simulated/floor/outdoors/rocks/sif)
 
 // Other tiles have ways to build on them, sif grass doesn't, so this snowflake is just on sif grass.
 CAPABILITIES(/turf/simulated/floor/outdoors/grass/sif)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/flora/sif_grass)))
 	op("sif_grass_plate", item(/obj/item), label("Plate"), then(PROC_REF(sif_grass_plate)))
 
 /// Old attackby: floor tiles plate the grass.

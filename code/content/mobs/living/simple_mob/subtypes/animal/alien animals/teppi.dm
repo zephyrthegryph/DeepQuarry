@@ -81,7 +81,6 @@ GLOBAL_VAR_CONST(max_teppi, 50)	// How many teppi CAN we have?
 	minbodytemp = 150
 	maxbodytemp = 400
 	unsuitable_atoms_damage = 0.5
-	catalogue_data = list(/datum/category_item/catalogue/fauna/teppi)
 	vis_height = 64
 
 	var/list/affinity
@@ -409,6 +408,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/teppi, butchery_organ_types,
 	/////HIGHEST LAYER/////
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/teppi)))
 	configure(mob_rules(faction = FACTION_TEPPI))
 	configure(living_rules(vore_capacity = 3, say_list_type = /datum/say_list/teppi))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 12, butchery_loot = list( /obj/item/stack/animalhide = 3, /obj/item/bone/horn = 1 )))

@@ -4,7 +4,6 @@
 /mob/living/simple_mob/vore/scel
 	name = "scel"
 	desc = "A large serpentine creature with malleable and shadowy-black flesh covering most of it's body. The soft substance seems solid, but hardly seems to stay in a singular shape. There are numerous spots of neon-bright colour that's visible through translucent patches across their body."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/scel)
 	tt_desc = "Voidwyrm"
 	icon = 'icons/mob/vore_scel.dmi'
 	icon_dead = "scel_orange-dead"
@@ -67,6 +66,7 @@
 	vore_bump_emote = "tries to devour"
 
 CAPABILITIES(/mob/living/simple_mob/vore/scel)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/scel)))
 	configure(mob_rules(faction = FACTION_SCEL))
 	configure(living_rules(vore_capacity = 1, appendage_color = "#000000"))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))

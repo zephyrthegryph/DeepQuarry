@@ -1,7 +1,6 @@
 /obj/mecha/working/hoverpod
 	desc = "Stubby and round, this space-capable craft is an ancient favorite."
 	name = "Hover Pod"
-	catalogue_data = list(/datum/category_item/catalogue/technology/hoverpod)
 	icon_state = "engineering_pod"
 	initial_icon = "engineering_pod"
 	internal_damage_threshold = 80
@@ -26,6 +25,7 @@
 	max_special_equip = 1
 
 CAPABILITIES(/obj/mecha/working/hoverpod)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/hoverpod)))
 	setup(PROC_REF(prepare_ion_trail))
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
 	op("toggle_stabilization", ui_act("toggle_stabilization"), then(PROC_REF(ui_act_toggle_stabilization)))

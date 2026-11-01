@@ -26,7 +26,6 @@
 
 /mob/living/simple_mob/animal/giant_spider/tunneler
 	desc = "Sandy and brown, it makes you shudder to look at it. This one has glittering yellow eyes."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/giant_spider/tunneler_spider)
 
 	icon_state = "tunneler"
 	icon_living = "tunneler"

@@ -27,13 +27,13 @@
 	icon_state = "pascalb"
 	name = "misshapen manhole cover"
 	desc = "The top of this twisted chunk of metal is faintly stamped with a five pointed star. 'Property of US Army, Pascal B - 1957'."
-	catalogue_data = list(/datum/category_item/catalogue/information/objects/pascalb)
 	COOLDOWN_DECLARE(event_cooldown)
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
 /// Radiates only while a client is near (STAT_RELEVANCE); otherwise the every() parks until one comes near.
 CAPABILITIES(/obj/item/poi/pascalb)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/objects/pascalb)))
 	every(2 SECONDS, then(PROC_REF(pascalb_step)), when = STAT_RELEVANCE)
 
 /obj/item/poi/pascalb/proc/pascalb_step(datum/act/timer/A)
@@ -98,12 +98,12 @@ CAPABILITIES(/obj/item/poi/pascalb)
 	desc = "Used in older models of nuclear reactors, essentially a cooling rack for high volumes of radioactive material."
 	icon = 'icons/obj/closets/poireactor.dmi'
 	closet_appearance = null
-	catalogue_data = list(/datum/category_item/catalogue/information/objects/oldreactor)
 
 	starts_with = list(
 		/obj/item/fuel_assembly/deuterium = 6)
 
 CAPABILITIES(/obj/structure/closet/crate/oldreactor)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/objects/oldreactor)))
 	without(CAP_CLIMB) // not climbable
 
 /obj/item/poi/brokenoldreactor
@@ -111,13 +111,13 @@ CAPABILITIES(/obj/structure/closet/crate/oldreactor)
 	icon_state = "poireactor_broken"
 	name = "ruptured fission reactor rack"
 	desc = "This broken hunk of machinery looks extremely dangerous."
-	catalogue_data = list(/datum/category_item/catalogue/information/objects/oldreactor)
 	COOLDOWN_DECLARE(event_cooldown)
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
 /// Radiates only while a client is near (STAT_RELEVANCE); otherwise the every() parks until one comes near.
 CAPABILITIES(/obj/item/poi/brokenoldreactor)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/objects/oldreactor)))
 	every(2 SECONDS, then(PROC_REF(brokenoldreactor_step)), when = STAT_RELEVANCE)
 
 /obj/item/poi/brokenoldreactor/proc/brokenoldreactor_step(datum/act/timer/A)
@@ -163,7 +163,6 @@ CAPABILITIES(/obj/item/poi/brokenoldreactor)
 	desc = "A cracked open chemical canister labelled 'Growth Inhibitor 78-1'"
 	icon = 'icons/obj/atmos.dmi'
 	icon_state = "yellow-1"
-	catalogue_data = list(/datum/category_item/catalogue/information/objects/growthcanister)
 	anchored = FALSE
 	density = TRUE
 
@@ -171,7 +170,6 @@ CAPABILITIES(/obj/item/poi/brokenoldreactor)
 	name = "Central Processing Strata"	//Ideally we spawn this as loot for robotic enemies
 	desc = "The pinnacle of artifical intelligence which can be achieved using classical computer science. \n \
 	This one seems somewhat damaged. Perhaps a trained roboticist could extract its memories?"
-	catalogue_data = list(/datum/category_item/catalogue/technology/drone/drones)
 	icon = 'icons/obj/module.dmi'
 	icon_state = "mainboard"
 	w_class = ITEMSIZE_NORMAL
@@ -196,6 +194,7 @@ CAPABILITIES(/obj/item/poi/brokenoldreactor)
 /// Requirement: a fried circuit is past working on.
 
 CAPABILITIES(/obj/item/poi/broken_drone_circuit)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/drone/drones)))
 	// the old attack_self: study the circuit for a while
 	op("analyze", in_hand(), label("Analyze"), when(not(nameof(fried))), begins(MSG(drone_circuit/analyzing)), wait(5 SECONDS), then(PROC_REF(analyzed)))
 	op("analyze_fried", in_hand(), label("Analyze"), when(nameof(fried)), then(PROC_REF(analyzed_fried)))

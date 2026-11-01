@@ -82,9 +82,9 @@ CAPABILITIES(/obj/item/tool/screwdriver/diamonddrill)
 	icon_state = "coil"
 	item_state = "coil"
 	color = "#8A0303"
-	catalogue_data = null
 
 CAPABILITIES(/obj/item/stack/cable_coil/alien/blood)
+	configure(atom_rules(catalogue_data = TRAIT_NONE))
 	configure(item_tooling(speed = 0.1))
 
 /obj/item/storage/belt/utility/spicyfull

@@ -27,7 +27,6 @@
 	name = "hooligan crab"
 	desc = "A large, hard-shelled crustacean. This one is mostly grey. \
 	You probably shouldn't mess with it."
-	catalogue_data = list(/datum/category_item/catalogue/fauna/hooligan_crab) // CHOMPEnable
 
 	icon_state = "sif_crab"
 	icon_living = "sif_crab"
@@ -66,6 +65,7 @@
 	var/weaken_amount = 2 // Be careful with this number. High values will equal a permastun.
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/hooligan_crab)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/hooligan_crab)))
 	configure(mob_rules(faction = FACTION_CRABS))
 	configure(living_rules(say_list_type = /datum/say_list/crab))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/crabmeat, meat_amount = 6))

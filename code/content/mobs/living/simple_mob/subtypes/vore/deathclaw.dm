@@ -23,7 +23,6 @@
 	name = "deathclaw"
 	desc = "Big! Big! The size of three men! Claws as long as my forearm! Ripped apart! Ripped apart!"
 	tt_desc = "Trioceros dominus"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/deathclaw)
 
 	icon_dead = "deathclaw_new-dead"
 	icon_living = "deathclaw_new"
@@ -63,6 +62,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/deathclaw)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/deathclaw)))
 	configure(mob_rules(faction = FACTION_AWAYMISSION))
 	configure(living_rules(vore_capacity = 2))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 8))
@@ -119,6 +119,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/deathclaw)
 /mob/living/simple_mob/vore/aggressive/dragon/virgo3b //phoron dragon
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dragon/virgo3b)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/phoron_dragon)))
 	configure(mob_rules(faction = FACTION_VIRGO3B))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/phorondragonmeat))
 	configure(mob_nature(vore_eyes = TRUE))

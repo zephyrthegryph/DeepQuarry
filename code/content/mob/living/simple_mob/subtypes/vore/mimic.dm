@@ -121,6 +121,7 @@ CAPABILITIES(/obj/structure/closet/crate/mimic)
 	var/knockdown_chance = 10 //Stubbing your toe on furniture hurts.
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic)
+	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/mimic)))
 	configure(mob_rules(faction = FACTION_MIMIC))
 	configure(living_rules(vore_capacity = 1, delete_on_death = TRUE))
 	ref_one(nameof(real_crate), /obj/structure/closet/crate)
@@ -129,7 +130,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic)
 
 /mob/living/simple_mob/vore/aggressive/mimic
 	tt_desc = "Mimus vorare"
-	catalogue_data = list(/datum/category_item/catalogue/fauna/mimic)
 	vore_active = 1
 	vore_pounce_chance = 10
 	swallowTime = 3 SECONDS
