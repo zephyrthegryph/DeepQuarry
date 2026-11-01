@@ -88,7 +88,9 @@ gate_tests_with_retry() {
 	json="$(sed -n 's/.*(json: \([^)]*\)).*/\1/p' <<<"$res")"
 	names=()
 	if [ -n "$json" ] && [ -f "$json" ]; then mapfile -t names < <(gate_failed_names "$json"); fi
-	first_line="$(grep -m1 -iE 'FAIL|error|deadline|watchdog|changed during' "$log" | head -c 200 | tr '\t' ' ')"
+	# The real failure text first: the loose pattern below also matches build chatter ("0 failed" in the icon repack line), which filled the ledger with it.
+	first_line="$(grep -m1 -E '=> FAILED |FAILURE #|::error::FAIL' "$log" | head -c 300 | tr '\t' ' ')"
+	[ -n "$first_line" ] || first_line="$(grep -iE 'FAIL|error|deadline|watchdog|changed during' "$log" | grep -vE '^icon-repack:| 0 failed' | head -n 1 | head -c 200 | tr '\t' ' ')"
 	if [ ${#names[@]} -gt 0 ]; then
 		echo "== GATE RETRY: ${#names[@]} test(s) failed; running only those once more in a fresh world: ${names[*]:0:8}"
 		rlog="$(mktemp)"

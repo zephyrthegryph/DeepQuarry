@@ -317,7 +317,7 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 		return
 	if(damage > emergency_point)
 		alert_msg = emergency_alert + alert_msg
-		lastwarning = world.timeofday - WARNING_DELAY * 4
+		lastwarning = REALTIMEOFDAY - WARNING_DELAY * 4
 		// /obj/machinery/firealarm was deleted with ZAS fire_alarm.dm;
 		// the critalarm/engalarm sound loops are gone. Just track the warn flag
 		// so subsequent ticks don't re-trigger; alarm audio comes back if a LINDA
@@ -337,12 +337,12 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 			engwarn = TRUE
 		safe_warned = FALSE
 		alert_msg = warning_alert + alert_msg
-		lastwarning = world.timeofday
+		lastwarning = REALTIMEOFDAY
 
 	else if(!safe_warned)
 		safe_warned = TRUE // We are safe, warn only once
 		alert_msg = safe_alert
-		lastwarning = world.timeofday
+		lastwarning = REALTIMEOFDAY
 		reset_alarms() // Looping Alarms
 	else
 		alert_msg = null
@@ -379,12 +379,12 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 		shift_light(5, warning_color)
 		if(damage > emergency_point)
 			shift_light(7, emergency_color)
-		if(!istype(L, /turf/space) && (world.timeofday - lastwarning) >= WARNING_DELAY * 10)
+		if(!istype(L, /turf/space) && (REALTIMEOFDAY - lastwarning) >= WARNING_DELAY * 10)
 			announce_warning()
 	else
 		shift_light(4,glow_of_type(type).color)
 
-	if(damage < warning_point && !safe_warned && (world.timeofday - lastwarning) >= WARNING_DELAY * 10) // In case our safe announcement was not sent, we send it latest now
+	if(damage < warning_point && !safe_warned && (REALTIMEOFDAY - lastwarning) >= WARNING_DELAY * 10) // In case our safe announcement was not sent, we send it latest now
 		announce_warning()
 
 	if(grav_pulling)

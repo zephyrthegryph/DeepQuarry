@@ -110,8 +110,6 @@
 	var/connection_time = 0
 	///world.realtime they connected
 	var/connection_realtime
-	///world.timeofday they connected
-	var/connection_timeofday
 
 	// Runechat messages
 	var/list/seen_messages

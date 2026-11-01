@@ -47,8 +47,7 @@ CAPABILITIES(/datum/search_object)
 	// Condition 3: Using opendream
 #if defined(OPENDREAM) || defined(UNIT_TESTS)
 	return
-#endif
-
+#else
 	// Condition 4: Using older byond version
 	var/build = owner.byond_build
 	var/version = owner.byond_version
@@ -58,6 +57,7 @@ CAPABILITIES(/datum/search_object)
 
 	icon = "[item.icon]"
 	icon_state = item.icon_state
+#endif
 
 /// Generates the icon for the search object. This is the expensive part.
 /datum/search_object/proc/generate_icon(client/owner)

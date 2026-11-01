@@ -525,7 +525,7 @@ MSG_DEF_SELF(pai/not_accepting, span_notice("%T% is not accepting access modifca
 /mob/living/silicon/pai/proc/show_silenced()
 	. = ""
 	if(src.silence_time)
-		var/timeleft = round((silence_time - world.timeofday)/10 ,1)
+		var/timeleft = round((silence_time - REALTIMEOFDAY)/10 ,1)
 		. += "Communications system reboot in -[(timeleft / 60) % 60]:[add_zero(num2text(timeleft % 60), 2)]"
 
 /// Fully heals a pai, used when a pai is repaired
