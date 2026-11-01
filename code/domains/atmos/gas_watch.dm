@@ -72,6 +72,8 @@ CAPABILITIES(/datum/cap_data/gas_watch)
 	data.armed_id = id
 	if(isnull(id))
 		return
+	if(!SSair.initialized)
+		GLOB.early_gas_watches++ // armed before the turfs register: the arena moves the watch onto the turf's cell when they do (free_into_turf)
 	rel_set(data, nameof(data.watch), gas_dependency_watch(data, id, def.mask, TYPE_PROC_REF(/datum/cap_data/gas_watch, heard)))
 
 /// Rust reported a change of the watched mixture: the holder's handler hears it.
