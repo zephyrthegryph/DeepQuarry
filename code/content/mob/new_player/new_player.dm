@@ -403,7 +403,7 @@ MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
 	if(client.prefs.read_preference(/datum/preference/text/human/preferred_language)) // Do we have a preferred language?
 		var/datum/language/def_lang = GLOB.all_languages[client.prefs.read_preference(/datum/preference/text/human/preferred_language)]
 		if(def_lang)
-			new_character.default_language = def_lang
+			rel_set(new_character, nameof(new_character.default_language), def_lang)
 	// And uncomment this, too.
 	//new_character.dna.UpdateSE()
 

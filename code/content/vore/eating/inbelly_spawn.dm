@@ -250,7 +250,7 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 	if(_preferred_language) // Do we have a preferred language?
 		var/datum/language/def_lang = GLOB.all_languages[_preferred_language]
 		if(def_lang)
-			new_character.default_language = def_lang
+			rel_set(new_character, nameof(new_character.default_language), def_lang)
 
 	PUBLISH_LEGACY(new_character, /datum/notice/human_dna_finalized)
 

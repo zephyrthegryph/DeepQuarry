@@ -227,7 +227,7 @@
 /mob/living/remove_language(rem_language)
 	var/datum/language/L = GLOB.all_languages[rem_language]
 	if(default_language == L)
-		default_language = null
+		rel_set(src, nameof(default_language), null)
 	return ..()
 
 // Can we speak this language, as opposed to just understanding it?

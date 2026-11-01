@@ -16,6 +16,10 @@
 
 /// Sets shock_stage absolutely (clamped) and wakes the shock stage.
 /mob/living/carbon/proc/set_shock(value, source)
+	return set_shock_stage(value)
+
+SETTER(/mob/living/carbon, shock_stage)
+/mob/living/carbon/proc/set_shock_stage(value)
 	var/new_stage = clamp(value, 0, SHOCK_STAGE_MAX)
 	if(new_stage == shock_stage)
 		return shock_stage
