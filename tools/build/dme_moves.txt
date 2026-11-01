@@ -4126,3 +4126,4 @@ code/base/helpers/text.dm	code/host/helpers/text.dm
 code/base/helpers/time.dm	code/host/helpers/time.dm
 code/base/helpers/type2type.dm	code/host/helpers/type2type.dm
 code/base/helpers/unsorted.dm	code/host/helpers/unsorted.dm
+code/modules/mob/living/living_defines.dm	code/content/mob/living/living_defines.dm

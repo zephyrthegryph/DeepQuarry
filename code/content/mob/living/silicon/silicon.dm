@@ -423,9 +423,16 @@ CAPABILITIES(/datum/silicon_alarm_queue)
 /mob/living/silicon/setEarDamage()
 	return
 
+/mob/living/silicon/ai/reset_perspective_clear_follow()
+	rel_clear(src, nameof(cameraFollow))
+
+/// What a perspective change ends on this silicon: an AI's follow-camera mode.
+/mob/living/silicon/proc/reset_perspective_clear_follow()
+	return
+
 /mob/living/silicon/reset_perspective(atom/new_eye)
 	. = ..()
-	rel_clear(src, nameof(cameraFollow))
+	reset_perspective_clear_follow()
 
 /mob/living/silicon/flash_eyes(intensity = FLASH_PROTECTION_MODERATE, override_blindness_check = FALSE, affect_silicon = FALSE, visual = FALSE, type = /atom/movable/screen/fullscreen/flash)
 	if(affect_silicon)
