@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Hacked vendors and machines, coloured lights and other map settings in shelters and derelicts apply again when the map loads."

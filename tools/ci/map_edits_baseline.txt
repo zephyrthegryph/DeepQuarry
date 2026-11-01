@@ -1,0 +1,26 @@
+# # Map edits of a var no type has (tools/analyze/src/lints/map_edits.rs). rule<TAB>file<TAB>text.
+# # Shrink-only.
+unknown_var	maps/submaps/shelters/7x7/shelter_a.dmm	@/obj/machinery/door/airlock/voidcraft/survival_pod::destroy_hits
+unknown_var	maps/submaps/shelters/7x7/shelter_cab.dmm	@/obj/machinery/door/airlock/voidcraft/survival_pod::destroy_hits
+unknown_var	maps/submaps/shelters/CrashedInfestedShip-56x25.dmm	@/obj/machinery/sleeper::initial_bin_rating
+unknown_var	maps/submaps/shelters/DemonPool-21x21.dmm	@/mob/living/simple_mob/vore/demonAI/engorge::health
+unknown_var	maps/submaps/shelters/HydroCave-40x40.dmm	@/obj/structure/closet/secure_closet::icon_broken
+unknown_var	maps/submaps/shelters/HydroCave-40x40.dmm	@/obj/structure/closet/secure_closet::icon_closed
+unknown_var	maps/submaps/shelters/HydroCave-40x40.dmm	@/obj/structure/closet/secure_closet::icon_locked
+unknown_var	maps/submaps/shelters/HydroCave-40x40.dmm	@/obj/structure/closet/secure_closet::icon_off
+unknown_var	maps/submaps/shelters/HydroCave-40x40.dmm	@/obj/structure/closet/secure_closet::icon_opened
+unknown_var	maps/submaps/shelters/HydroCave-40x40.dmm	@/obj/machinery/atmospherics/unary/vent_scrubber::scrub_N2O
+unknown_var	maps/submaps/shelters/HydroCave-40x40.dmm	@/obj/machinery/atmospherics/unary/vent_scrubber::scrub_Toxins
+unknown_var	maps/submaps/shelters/LargeAlienShip-57x25.dmm	@/obj/machinery/sleeper::initial_bin_rating
+unknown_var	maps/submaps/shelters/MechFabShip-27x24.dmm	@/obj/item/stack/material/platinum::matter
+unknown_var	maps/submaps/shelters/MercShip-57x25.dmm	@/obj/machinery/sleeper::initial_bin_rating
+unknown_var	maps/submaps/shelters/randomshelters/7x7/shelter_tiny_space.dmm	@/obj/machinery/light::stat
+unknown_var	maps/submaps/shelters/ripperdocpod-12x15.dmm	@/obj/machinery/optable::surgery_odds
+unknown_var	maps/submaps/shelters/shelter_a.dmm	@/obj/machinery/door/airlock/voidcraft/survival_pod::destroy_hits
+unknown_type	maps/overmap/om_ships/shelter_5.dmm	@/obj/machinery/computer/shuttle_control/explore/escapepod::dir
+unknown_type	maps/submaps/shelters/10x5/shelter_5.dmm	@/obj/machinery/computer/shuttle_control/explore/escapepod::dir
+unknown_type	maps/submaps/shelters/LargeAlienShip-57x25.dmm	@/obj/machinery/gateway/brass::dir
+unknown_type	maps/submaps/shelters/Logcabin-19x9.dmm	@/obj/structure/lightpost/atoll::pixel_y
+unknown_type	maps/submaps/shelters/Logcabin-19x9.dmm	@/obj/structure/lightpost/atoll::pixel_x
+unknown_type	maps/submaps/shelters/secondlifebar-19x25.dmm	@/obj/item/reagent_containers/glass/beaker/mayo::pixel_y
+unknown_type	maps/virgo_minitest/virgo_minitest-sector-2.dmm	@/obj/machinery/gateway/centeraway::calibrated
