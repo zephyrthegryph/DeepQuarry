@@ -735,6 +735,10 @@ Tests: `bash tools/ci/test_lane_pool.sh`, `bash tools/ci/test_light_checks.sh`, 
 
 ## 29. The batch train (24 October 2026, `tools/batch-train`)
 
+**Train tests go in their own file.** `tools/ci/test_train_decisions.sh` is the shared tail every lane appended to and conflicted on; put new train tests in
+`tools/ci/test_train_<topic>.sh` and map it in `tools/dq_light_checks.sh` (a changed `tools/ci/test_*.sh` already runs itself). The train log's `LANDED` line now
+reports `enqueued`, `ready` (precheck pass) and the seconds waited, so lands per hour and queue wait come from `train.log`.
+
 **The default way to land a lane.** Per-lane landing (`dq_land.sh`) proved every lane on its own merge and proved it again whenever master moved:
 with 25-40 minute gate rounds and frequent landings a lane needed 2-2.5 hours. Audit of one day's logs: gate rounds median 23 min (production
 compile 1184 s, test phase 1055 s), 13 of 14 focused runs at 10 minutes or more, 86 full test-dme compiles = 8146 s. The train gates every waiting lane

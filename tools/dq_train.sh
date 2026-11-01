@@ -503,9 +503,25 @@ adopt_tip() { # <branch> <queued tip> <current tip>: 0 = the queue now holds the
 	tlog "adopted the new tip of $b (${old:0:10} -> ${cur:0:10}): it stays queued, no bounce"
 	return 0
 }
+# What a lane waited, for the LANDED line (lands per hour and queue wait are measured from the log): " [enqueued T, ready T, waited Ns to land (Ms since ready)]".
+# "ready" is when its precheck verdict passed (the verdict file's mtime): the earliest the train could have landed it.
+landed_times() { # <branch> <tip> <enqueued iso>
+	local b="$1" tip="$2" enq="$3" vf rdy="" e="" r="" n out=""
+	n="$(date +%s)"
+	vf="$(pre_verdict_file "$b" "$tip" 2>/dev/null)"
+	[ -n "$vf" ] && [ "$(qget "$vf" verdict)" = pass ] && rdy="$(date -u -r "$vf" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null)"
+	e="$(date -d "$enq" +%s 2>/dev/null)" || e=""
+	[ -n "$e" ] && out="enqueued $enq, "
+	[ -n "$rdy" ] && { r="$(date -d "$rdy" +%s 2>/dev/null)"; out="${out}ready $rdy, "; }
+	[ -n "$e" ] && out="${out}waited $(( n - e ))s to land"
+	[ -n "$r" ] && out="${out} ($(( n - r ))s since ready)"
+	[ -n "$out" ] && echo " [$out]"
+	return 0
+}
 mark_landed() { # <branch> <snapshot tip> <master sha>
-	local b="$1" tip="$2" sha="$3" f cur
+	local b="$1" tip="$2" sha="$3" f cur enq_at
 	f="$(qfile "$b")"
+	enq_at="$(qget "$f" since)"   # read before the queue file goes
 	printf 'branch=%s\ntip=%s\nmaster=%s\nlanded=%s\n' "$b" "$tip" "$sha" "$(now)" >"$LANDED/$(fname "$b").landed"
 	# a bounce record for this tip (or an older one) is stale once the tip is in master: a racing cycle may have written it
 	if [ -f "$BOUNCED/$(fname "$b").q" ] && G merge-base --is-ancestor "$(qget "$BOUNCED/$(fname "$b").q" tip)" "$sha" 2>/dev/null; then
@@ -520,7 +536,7 @@ mark_landed() { # <branch> <snapshot tip> <master sha>
 			rm -f "$f"
 		fi
 	fi
-	tlog "LANDED $b (tip ${tip:0:10}) in origin/master ${sha:0:10}"
+	tlog "LANDED $b (tip ${tip:0:10}) in origin/master ${sha:0:10}$(landed_times "$b" "$tip" "$enq_at")"
 }
 # A batch whose setup failed twice judges no lane ("# SETUP ERROR twice" in dq_merge_batch's output: the gates' infra, e.g. `gen`, failed on the merged
 # tree). The lanes were then deferred, written to bisect.lanes and retried alone every ~100 s with the whole train waiting behind them: 30 cycles
