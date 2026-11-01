@@ -9,10 +9,6 @@
 /datum/proc/registry_getter()
 	return null
 
-/// TRUE when `D`'s type is a registry type (its instances may be registered singletons).
-/proc/registry_type(datum/D)
-	return isdatum(D) && !isnull(D.registry_getter())
-
 /// TRUE when `D` is the registered instance of its registry: shared, immortal, never tracked.
 /proc/is_registered(datum/D)
 	if(!isdatum(D))

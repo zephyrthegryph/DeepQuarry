@@ -56,26 +56,6 @@
 	var/cond = E.args["when"]
 	return isnull(cond) || !!change_condition(holder, cond)
 
-/// The entries of `kind` that apply to `holder` now, with their enclosing conditions already checked, in effective order: the type's own, then those of
-/// the activations it carries (a granted capability's look layers and examine lines).
-/proc/present_entries(datum/holder, kind)
-	. = list()
-	var/datum/type_table/T = table_of(holder)
-	for(var/datum/centry/C as anything in compiled_entries(T, kind))
-		var/datum/entry/E = C.item
-		if(present_holds(holder, C, E))
-			. += E
-	var/datum/rx_state/rx = holder.rx
-	if(!rx?.activations)
-		return
-	for(var/datum/activation/A as anything in rx.activations)
-		if(A.dead || A.scope == SCOPE_TYPE)
-			continue
-		for(var/datum/centry/C as anything in compiled_entries(activation_table(A), kind))
-			var/datum/entry/E = C.item
-			if(present_holds(holder, C, E))
-				. += E
-
 /// A table of just the entries an activation's definition brings (the ones its attach applies), for the presentation to read.
 /proc/activation_table(datum/activation/A)
 	var/static/list/tables = list()

@@ -61,17 +61,6 @@ GLOBAL_VAR_INIT(next_station_date_change, 1 DAY)
 	return time2text(wtime - GLOB.timezoneOffset, format)
 
 /* Returns 1 if it is the selected month and day */
-/proc/isDay(month, day)
-	if(isnum(month) && isnum(day))
-		var/MM = text2num(time2text(world.timeofday, "MM")) // get the current month
-		var/DD = text2num(time2text(world.timeofday, "DD")) // get the current day
-		if(month == MM && day == DD)
-			return 1
-
-		// Uncomment this out when debugging!
-		//else
-			//return 1
-
 GLOBAL_VAR_INIT(next_duration_update, 0)
 GLOBAL_VAR_INIT(last_round_duration, 0)
 GLOBAL_VAR_INIT(round_start_time, 0)

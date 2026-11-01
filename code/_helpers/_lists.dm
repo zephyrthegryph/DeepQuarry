@@ -183,12 +183,6 @@
 		if(typecache[A.type])
 			. += A
 
-/proc/typecache_filter_list_reverse(list/atoms, list/typecache)
-	. = list()
-	for(var/atom/A as anything in atoms)
-		if(!typecache[A.type])
-			. += A
-
 /proc/typecache_filter_multi_list_exclusion(list/atoms, list/typecache_include, list/typecache_exclude)
 	. = list()
 	for(var/atom/A as anything in atoms)
@@ -419,25 +413,6 @@ Checks if a list has the same entries and values as an element of big.
 	return (result + R.Copy(Ri, 0))
 
 //Mergsort: does the actual sorting and returns the results back to sortAtom
-/proc/mergeAtoms(list/atom/L, list/atom/R, order = 1)
-	var/Li=1
-	var/Ri=1
-	var/list/result = new()
-	while(Li <= L.len && Ri <= R.len)
-		var/atom/rL = L[Li]
-		var/atom/rR = R[Ri]
-		if(sorttext(rL.name, rR.name) == order)
-			result += L[Li++]
-		else
-			result += R[Ri++]
-
-	if(Li <= L.len)
-		return (result + L.Copy(Li, 0))
-	return (result + R.Copy(Ri, 0))
-
-
-
-
 //Mergesort: Specifically for record datums in a list.
 /proc/sortRecord(list/datum/data/record/L, field = "name", order = 1)
 	if(isnull(L))
@@ -483,21 +458,6 @@ Checks if a list has the same entries and values as an element of big.
 	for(var/atom/x in L)
 		Q[x.name] = x
 	return sortList(Q)
-
-/proc/mergeLists(list/L, list/R)
-	var/Li=1
-	var/Ri=1
-	var/list/result = new()
-	while(Li <= L.len && Ri <= R.len)
-		if(sorttext(L[Li], R[Ri]) < 1)
-			result += R[Ri++]
-		else
-			result += L[Li++]
-
-	if(Li <= L.len)
-		return (result + L.Copy(Li, 0))
-	return (result + R.Copy(Ri, 0))
-
 
 // List of lists, sorts by element[key] - for things like crew monitoring computer sorting records by name.
 /proc/sortByKey(list/L, key)
@@ -583,13 +543,6 @@ Checks if a list has the same entries and values as an element of big.
 		if(L[key] == value)
 			return key
 
-/proc/count_by_type(list/L, type)
-	var/i = 0
-	for(var/T in L)
-		if(istype(T, type))
-			i++
-	return i
-
 //Don't use this on lists larger than half a dozen or so
 /proc/insertion_sort_numeric_list_ascending(list/L)
 	var/list/out = list(pop(L))
@@ -605,10 +558,6 @@ Checks if a list has the same entries and values as an element of big.
 				out.Add(entry)
 
 	return out
-
-/proc/insertion_sort_numeric_list_descending(list/L)
-	var/list/out = insertion_sort_numeric_list_ascending(L)
-	return reverseList(out)
 
 /proc/dd_sortedObjectList(list/L, cache=list())
 	if(L.len < 2)
@@ -781,11 +730,6 @@ Checks if a list has the same entries and values as an element of big.
 	return sorted_text
 
 
-/proc/dd_sortedTextList(list/incoming)
-	var/case_sensitive = 1
-	return dd_sortedtextlist(incoming, case_sensitive)
-
-
 /datum/proc/dd_SortValue()
 	return "[src]"
 
@@ -811,12 +755,6 @@ Checks if a list has the same entries and values as an element of big.
 
 //creates every subtype of prototype (excluding prototype) and adds it to list L as a type/instance pair.
 //if no list/L is provided, one is created.
-/proc/init_subtypes_assoc(prototype, list/L)
-	if(!istype(L))	L = list()
-	for(var/path in subtypesof(prototype))
-		L[path] = new path()
-	return L
-
 //Move a single element from position fromIndex within a list, to position toIndex
 //All elements in the range [1,toIndex) before the move will be before the pivot afterwards
 //All elements in the range [toIndex, L.len+1) before the move will be after the pivot afterwards
@@ -913,15 +851,6 @@ DECLARE_SHARED_CACHE_EX(json_decoded, GLOBAL_PROC_REF(build_json_decoded), SC_NE
 
 /proc/build_json_decoded(json_to_decode)
 	return json_decode(json_to_decode)
-
-/proc/cached_json_decode(json_to_decode)
-	if(!json_to_decode || !length(json_to_decode))
-		return list()
-	try
-		. = CACHED(json_decoded, json_to_decode)
-	catch(var/exception/e)
-		log_runtime("Exception during JSON decoding ([json_to_decode]): [e]")
-		return list()
 
 //takes an input_key, as text, and the list of keys already used, outputting a replacement key in the format of "[input_key] ([number_of_duplicates])" if it finds a duplicate
 //use this for lists of things that might have the same name, like mobs or objects, that you plan on giving to a player as input
