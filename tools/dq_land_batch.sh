@@ -24,8 +24,10 @@ set -uo pipefail
 export DQ_NATIVE_NO_DAEMON=1 DMB_DAEMON_AUTOSTART=0
 cd "$(git rev-parse --show-toplevel)"
 here="$(pwd)"
-. "$here/tools/dq_git_safe.sh"
-. "$here/tools/dq_light_paths.sh"
+# DQ_LAND_TOOLS_DIR: where this batch's own scripts live when the checkout it runs from is moving under it (dq_train.sh light_side: the train worktree mid-gate).
+tools_dir="${DQ_LAND_TOOLS_DIR:-$here/tools}"
+. "$tools_dir/dq_git_safe.sh"
+. "$tools_dir/dq_light_paths.sh"
 STATE="${DQ_LANE_POOL_STATE:-E:/dq-cache/lane-pool}"
 Q="$STATE/light-queue"
 
@@ -79,8 +81,8 @@ cmd_run() {
 	[ ${#lanes[@]} -gt 0 ] || { log "nothing is waiting in the light queue"; return 0; }
 	log "batch of ${#lanes[@]}: ${lanes[*]}"
 	export DQ_MERGE_SESSION="light-batch-$$"
-	. "$here/tools/dq_machine_slots.sh"
-	wt="$(bash "$here/tools/dq_merge_worktree.sh" --lanes "${lanes[*]}")" || die "could not take the merge lock / worktree"
+	. "$tools_dir/dq_machine_slots.sh"
+	wt="$(bash "$tools_dir/dq_merge_worktree.sh" --lanes "${lanes[*]}")" || die "could not take the merge lock / worktree"
 	rc=0
 	(
 		cd "$wt" || exit 1

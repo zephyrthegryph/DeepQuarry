@@ -38,8 +38,6 @@
 	var/datum/target
 	/// The acting mob; null for a world action without one.
 	var/mob/actor
-	/// The item the actor holds (an op's held item; null on a world action that has none): requirements read it in any context.
-	var/obj/item/held
 	/// ORIGIN_*: where the input arrived.
 	var/origin
 	/// What performs the op: a hand, a held tool, a module (a datum so a granted power can be one).

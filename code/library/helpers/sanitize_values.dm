@@ -46,9 +46,6 @@
 //Internal proc, expects valid format and text input of equal length to format.
 /// `value` as text, or null when it is none. For a value whose contract is text (a text preference's, a prompt's text answer): the same
 /// text comes back, and the result is plainly text.
-/proc/text_or_null(value)
-	return isnull(value) ? null : "[value]"
-
 /// `value` as a number, or null when it is none. For a value whose contract is a number (a toggle, a numeric preference's): the same
 /// number comes back, and the result is plainly a number.
 /proc/num_or_null(value)
