@@ -422,7 +422,7 @@ MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
 		rel_set(src, nameof(manifest_dialog), new /datum/tgui_module/crew_manifest/new_player(src))
 	manifest_dialog.tgui_interact(src)
 
-/mob/new_player/Move()
+/mob/new_player/Move(atom/newloc, direct = 0, movetime)
 	return 0
 
 /mob/new_player/proc/close_spawn_windows()

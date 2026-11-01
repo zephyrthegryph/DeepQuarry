@@ -335,6 +335,11 @@ async function compileByond(
 }
 
 type DDOptions = {
+  /**
+   * The player-facing server (`build.sh server`): its DreamDaemon runs at Normal priority even though the build runner lowered itself to
+   * below normal, so builds and test worlds beside it cannot starve it. Test, bench and gate worlds leave this unset and stay low.
+   */
+  playerFacing?: boolean;
   runtimeLibrary?: import('./captured_runtime_library').CapturedRuntimeLibrary;
   dmbFile: string;
   /** Exact successful native pair, or explicit conventional fallback output. */
@@ -687,6 +692,28 @@ async function approveWorldDlls(dmbFile: string) {
   Juke.logger.info(`Approved ${want} for DLL use in ${file} (avoids BYOND's headless security dialog).`);
 }
 
+/** Starts the player-facing world and lifts it to Normal priority (DQ_SERVER_PRIORITY=above for AboveNormal), whatever the runner lowered itself to. */
+export function runPlayerFacingDreamDaemon(exe: string, args: string[]): Promise<DDResult> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(exe, args, { stdio: 'inherit' });
+    if (child.pid) {
+      const above = process.env.DQ_SERVER_PRIORITY === 'above';
+      try {
+        os.setPriority(child.pid, above ? os.constants.priority.PRIORITY_ABOVE_NORMAL : os.constants.priority.PRIORITY_NORMAL);
+        console.log(`world priority: ${above ? 'above normal' : 'normal'} (player-facing server, pid ${child.pid})`);
+      } catch {
+        console.log(`world priority: could not be raised (pid ${child.pid}); the server runs at the build's priority`);
+      }
+    }
+    child.on('error', reject);
+    child.on('close', (code, signal) => {
+      const result: DDResult = { code, signal, stdout: '', stderr: '', combined: '' };
+      if (code === 0) resolve(result);
+      else reject(new Error(`${exe} exited with ${code ?? signal}`));
+    });
+  });
+}
+
 export async function DreamDaemon(
   options: DDOptions,
   ...args: any[]
@@ -818,6 +845,7 @@ async function runHostedWorld(options: DDOptions, args: any[]): Promise<DDResult
     }
     return await runDreamDaemonWithWatchdog(ddExePath, [options.dmbFile, ...args], options);
   }
+  if (options.playerFacing) return await runPlayerFacingDreamDaemon(ddExePath, [options.dmbFile, ...args]);
   return await Juke.exec(ddExePath, [options.dmbFile, ...args]);
   }, () => {
     if (conventionalLibrary) verifyObservedRuntimeLibrary(conventionalLibrary);

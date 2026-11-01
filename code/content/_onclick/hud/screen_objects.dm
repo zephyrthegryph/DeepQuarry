@@ -132,6 +132,32 @@ CAPABILITIES(/atom/movable/screen/storage)
 			input_submit(new /datum/input_event/click(user, master))
 	return 1
 
+/// The hit areas of the zone-select doll, the one source for the HUD's click and for every window that draws the same doll
+/// (the flavor text picker sends it as data). Each row is list(zone, x1, y1, x2, y2), pixels of the 32x32 art counted from the
+/// bottom left. The first row containing the pixel wins, so the eyes and mouth come before the head they sit on.
+GLOBAL_LIST_INIT(zone_sel_regions, list(
+	list(O_MOUTH, 15, 23, 17, 24),
+	list(O_EYES, 14, 26, 18, 26),
+	list(O_EYES, 15, 25, 17, 27),
+	list(BP_HEAD, 12, 23, 20, 30),
+	list(BP_R_HAND, 8, 10, 11, 13),
+	list(BP_GROIN, 12, 10, 20, 13),
+	list(BP_L_HAND, 21, 10, 24, 13),
+	list(BP_R_ARM, 8, 14, 11, 22),
+	list(BP_TORSO, 12, 14, 20, 22),
+	list(BP_L_ARM, 21, 14, 24, 22),
+	list(BP_R_LEG, 10, 4, 15, 9),
+	list(BP_L_LEG, 17, 4, 22, 9),
+	list(BP_R_FOOT, 10, 1, 15, 3),
+	list(BP_L_FOOT, 17, 1, 22, 3),
+))
+
+/proc/zone_sel_zone_at(icon_x, icon_y)
+	for(var/list/region as anything in GLOB.zone_sel_regions)
+		if(icon_x >= region[2] && icon_y >= region[3] && icon_x <= region[4] && icon_y <= region[5])
+			return region[1]
+	return null
+
 /atom/movable/screen/zone_sel
 	name = "damage zone"
 	icon_state = "zone_sel"
@@ -139,6 +165,8 @@ CAPABILITIES(/atom/movable/screen/storage)
 	var/selecting = BP_TORSO
 	var/static/list/hover_overlays_cache = list() // ALLOW(cache): overlay objects placed in vis_contents (pooled objects)
 	var/hovering_choice
+
+SCHEMA(/atom/movable/screen/zone_sel, hovering_choice, schema_text())
 
 CAPABILITIES(/atom/movable/screen/zone_sel)
 	hover(PROC_REF(zone_hovered))
@@ -207,49 +235,9 @@ CAPABILITIES(/atom/movable/screen/zone_sel)
 		vis_remove(src, hover_overlays_cache[hovering_choice])
 		hovering_choice = null
 
+/// The zone under a pixel of the doll (1-based, from the bottom left), or null.
 /atom/movable/screen/zone_sel/proc/get_zone_at(icon_x, icon_y)
-	switch(icon_y)
-		if(1 to 3) //Feet
-			switch(icon_x)
-				if(10 to 15)
-					return BP_R_FOOT
-				if(17 to 22)
-					return BP_L_FOOT
-		if(4 to 9) //Legs
-			switch(icon_x)
-				if(10 to 15)
-					return BP_R_LEG
-				if(17 to 22)
-					return BP_L_LEG
-		if(10 to 13) //Hands and groin
-			switch(icon_x)
-				if(8 to 11)
-					return BP_R_HAND
-				if(12 to 20)
-					return BP_GROIN
-				if(21 to 24)
-					return BP_L_HAND
-		if(14 to 22) //Chest and arms to shoulders
-			switch(icon_x)
-				if(8 to 11)
-					return BP_R_ARM
-				if(12 to 20)
-					return BP_TORSO
-				if(21 to 24)
-					return BP_L_ARM
-		if(23 to 30) //Head, but we need to check for eye or mouth
-			if(icon_x in 12 to 20)
-				switch(icon_y)
-					if(23 to 24)
-						if(icon_x in 15 to 17)
-							return O_MOUTH
-					if(26) //Eyeline, eyes are on 15 and 17
-						if(icon_x in 14 to 18)
-							return O_EYES
-					if(25 to 27)
-						if(icon_x in 15 to 17)
-							return O_EYES
-				return BP_HEAD
+	return zone_sel_zone_at(icon_x, icon_y)
 
 /atom/movable/screen/zone_sel/proc/set_selected_zone(choice, mob/user)
 	if(isobserver(user))

@@ -14,7 +14,7 @@
 * Movement Handling *
 ********************/
 // Entered() typically lifts the moved event, but in the case of null-space we'll have to handle it.
-/atom/movable/Move()
+/atom/movable/Move(atom/newloc, direct = 0, movetime)
 	var/old_loc = loc
 	. = ..()
 	if(. && !loc)

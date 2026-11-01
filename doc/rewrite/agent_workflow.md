@@ -103,8 +103,11 @@ conflicts back). Don't commit regenerated output after a declaration change: com
   bisect names the lane), and `dq_merge_gates.sh` amends it into a batch merge or refuses a stale one elsewhere.
   `bash tools/ci/test_dme_merge.sh [LANE...]` merges each queued lane that edits the manifest in memory and compares the result with a
   regeneration over the merged files.
-- `code/modules/unit_tests/_unit_tests.dm` is still kept by hand and still merges by union: two branches that each add an `#include`
-  at the same spot both keep theirs; a duplicate `#include` is harmless, an include of a deleted file fails the compile.
+- `code/tests/unit_tests/_unit_tests.dm` is still kept by hand and still merges by union: two branches that each add an `#include`
+  at the same spot both keep theirs; a duplicate `#include` is harmless, an include of a deleted file fails the compile. A move
+  once left this rule pointing at the old path (union silently stopped; every parallel lane that added a test conflicted):
+  `tools/ci/check_gitattributes.sh` (in `check_ratchets.sh`) now fails when a `.gitattributes` path or glob matches no tracked file or a
+  `merge=` driver is undefined, and `gen_dme.py --moved` rewrites a moved file's own `.gitattributes` line.
 
 ## 4. Boot must be clean
 
@@ -1013,3 +1016,8 @@ character (`data/player_saves/<letter>/<ckey>/preferences.json` and `vore/charac
   `bin\server.cmd`. `data/` is gitignored, so a fast-forward never deletes saves. It creates the worktree if it is missing; the first
   build seeds `icons/gen` from the main checkout (`DQ_ICON_SEED`), so only changed icons repack.
 - **Agents never run, build in, update or edit this folder.** The user (or the coordinator on the user's behalf) restarts the server.
+
+The player-facing server runs at Normal priority (30 October 2026 finding: it ran at BelowNormal beside lanes and starved). `build.ts`
+lowers itself, so the daemon inherited that; `ServerTarget` now passes `playerFacing: true` and `runPlayerFacingDreamDaemon()`
+(`tools/build/lib/byond.ts`) raises its dd process to Normal (`DQ_SERVER_PRIORITY=above` for AboveNormal). Test, bench and gate worlds
+stay at below normal; slot counts are unchanged; `dq_run_guard` only watches test worlds.

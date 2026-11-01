@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Alert, text, list, number and key prompts (such as the Quit This Round prompt) now grow to fit their message instead of cutting off the bottom."

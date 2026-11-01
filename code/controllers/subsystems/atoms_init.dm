@@ -14,6 +14,12 @@
 	if(GLOB.map_resolvers[the_type] && map_resolve_instance(A))
 		return TRUE
 
+	// An atom initializes with the air under it already made: whatever it reads of it in Initialize() or in a condition (a sensor, a generator's
+	// cooling) is the turf's own mixture, not vacuum, whichever of the two the map load initializes first. Outside any condition, so it may write.
+	if(isturf(A.loc))
+		var/turf/home = A.loc
+		home.settle_air()
+
 	// This is handled and battle tested by dreamchecker. Limit to UNIT_TESTS just in case that ever fails.
 	#ifdef UNIT_TESTS
 	var/start_tick = world.time
