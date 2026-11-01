@@ -239,7 +239,7 @@ pub fn parts() -> Vec<Part> {
         )
         .flt(vec![Flt::KeepPaths("factors_converted")])
         .allow(Allow::None),
-        // The hand window pushes: a window updates because its ui_data(A) re-runs when something it reads changes (code/modules/tgui/ui_push.dm). A file
+        // The hand window pushes: a window updates because its ui_data(A) re-runs when something it reads changes (code/library/ui/tgui/ui_push.dm). A file
         // is listed under `ui_push_converted` when its last SStgui.update_uis() and hand changed() mark is gone; a hard ban there. Files are only ever added.
         Part::new(
             "hand_window_pushes_banned_in_converted_files",

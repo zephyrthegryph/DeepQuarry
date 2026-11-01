@@ -104,7 +104,7 @@ const ENGINE_PREFIXES: &[&str] = &[
     "code/tests/unit_tests/",
     "code/tests/benchmarks/",
     "code/tests/",
-    "code/modules/tgs/",
+    "code/world/tgs/",
 ];
 
 fn is_engine(rel: &str) -> bool {
