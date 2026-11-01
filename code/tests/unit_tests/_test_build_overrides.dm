@@ -135,16 +135,12 @@
 	dq_test_shard_init()
 	after_start = GLOBAL_PROC_REF(start_unit_tests)
 	var/start_delay = 10 SECONDS
-	// The full suite keeps upstream's 10 s round-start settle so CI and local
-	// full runs see the same world. Focused runs are for iteration and start
-	// after 2 s; a test that only passes after the longer settle should wait
-	// for what it needs itself (see doc/testing.md).
+	// The full suite keeps upstream's 10 s round-start settle so CI and local full runs see the same world. A focused run starts at once:
+	// the "1 s" settle really cost 7-9 s, because a timer waits for the first post-init kernel ticks (1 November, the batch train's worlds),
+	// and a test that needs a settled world waits for what it needs itself (see doc/testing.md).
 	if(unit_test_is_focused_run())
-		start_delay = 1 SECONDS
-		// --boot (only dq_boot_gate): the gate reads what the boot logged, so there is nothing to settle.
-		if(unit_test_is_boot_only_run())
-			start_delay = 0
-		log_world("Unit tests: round-start settle [start_delay / (1 SECONDS)] s ([unit_test_is_boot_only_run() ? "boot-only" : "focused"] run).")
+		start_delay = 0
+		log_world("Unit tests: no round-start settle ([unit_test_is_boot_only_run() ? "boot-only" : "focused"] run).")
 	SSticker.OnRoundstart(null, after_start, delay = start_delay)
 
 /world/proc/FinishTestRun()
