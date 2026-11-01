@@ -172,10 +172,6 @@ CAPABILITIES(/datum/rule_binding)
 /datum/rule_binding/proc/rule_list()
 	return table.rules
 
-/// Whether rule i held at the last look (tests and diagnostics).
-/datum/rule_binding/proc/is_holding(i)
-	return (holding & RULE_BIT(i)) ? TRUE : FALSE
-
 /datum/rule_binding/proc/active_count()
 	. = 0
 	for(var/i in 1 to table.count)

@@ -100,17 +100,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 //To be used by GMs and calling through var edits for the overmap object
 //It causes the overmap object to "reinitialize" its real_appearance for known = FALSE objects
 //Includes an argument that allows GMs/Admins to set a previously known sector to unknown. Set to any value except 0/False/Null to activate
-/obj/effect/overmap/visitable/proc/gmtools_update_omobject_vars(setToHidden)
-	real_appearance = image(real_icon, src, real_icon_state)
-	real_appearance.override = TRUE
-	if(setToHidden && known) //
-		name = unknown_name
-		set_icon('icons/obj/overmap.dmi')
-		set_icon_state(unknown_state)
-		set_color(null)
-		desc = "Scan this to find out more information."
-		known = FALSE
-
 // You generally shouldn't destroy these.
 // its z-levels are unregistered.
 /obj/effect/overmap/visitable/lifecycle_dematerialize()
@@ -236,8 +225,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 	icon_state = "sector"
 	anchored = TRUE
 
-/obj/effect/overmap/visitable/sector/proc/announce_atc(atom/movable/AM, going = FALSE) //Base proc. Used for virgo3b at this time.
-	return
 // Because of the way these are spawned, they will potentially have their invisibility adjusted by the turfs they are mapped on
 // prior to being moved to the overmap. This blocks that. Use set_invisibility to adjust invisibility as needed instead.
 /obj/effect/overmap/visitable/sector/hide()
@@ -276,28 +263,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 
 	for(var/zlevel in levels_for_distress)
 		GLOB.priority_announcement.Announce(message, new_title = "Automated Distress Signal", new_sound = ANNOUNCER_MSG_DISTRESS_SIGNAL, zlevel = zlevel)
-
-/proc/build_overmap()
-	if(!using_map.use_overmap)
-		return 1
-
-	testing("Building overmap...")
-	world.increment_max_z()
-	using_map.overmap_z = world.maxz
-
-	testing("Putting overmap on [using_map.overmap_z]")
-	var/area/overmap/A = new
-	for(var/turf/T as anything in block(locate(1,1,using_map.overmap_z), locate(using_map.overmap_size,using_map.overmap_size,using_map.overmap_z)))
-		if(T.x == 1 || T.y == 1 || T.x == using_map.overmap_size || T.y == using_map.overmap_size)
-			T = T.ChangeTurf(/turf/unsimulated/map/edge)
-		else
-			T = T.ChangeTurf(/turf/unsimulated/map)
-		ChangeArea(T, A)
-
-	using_map.sealed_levels |= using_map.overmap_z
-
-	testing("Overmap build complete.")
-	return 1
 
 /// A sector the map gave no docking codes gets four random capital letters.
 /obj/effect/overmap/visitable/proc/roll_docking_codes(datum/roller/R)

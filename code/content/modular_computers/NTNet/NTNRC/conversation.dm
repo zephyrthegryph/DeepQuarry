@@ -59,13 +59,6 @@ CAPABILITIES(/datum/ntnet_conversation)
 		rel_set(src, nameof(/datum/ntnet_conversation/::operator), newop)
 		add_status_message("Channel operator status transferred to [newop.username].")
 
-/datum/ntnet_conversation/proc/change_title(newtitle, datum/computer_file/program/chatclient/client)
-	if(channel_operator() != client)
-		return 0 // Not Authorised
-
-	add_status_message("[client.username] has changed channel title from [title] to [newtitle]")
-	title = newtitle
-
 /// "Administrator" of this channel. Creator starts as channel's operator, (a relation view: null once that is deleted).
 /datum/ntnet_conversation/proc/channel_operator() as /datum/computer_file/program/chatclient
 	return operator

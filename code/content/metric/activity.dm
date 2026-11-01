@@ -60,31 +60,11 @@
 		//todo: finish
 	return most_active_departments
 
-/datum/metric/proc/assess_all_living_mobs() // Living refers to the type, not the stat variable.
-	. = 0
-	var/num = 0
-	for(var/mob/living/L in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-		. += assess_player_activity(L)
-		num++
-	if(num)
-		. = round(. / num, 0.1)
-
 /datum/metric/proc/assess_all_dead_mobs() // Ditto.
 	. = 0
 	var/num = 0
 	for(var/mob/observer/dead/O in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		. += assess_player_activity(O)
 		num++
-	if(num)
-		. = round(. / num, 0.1)
-
-/datum/metric/proc/assess_all_outdoor_mobs()
-	. = 0
-	var/num = 0
-	for(var/mob/living/L in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-		var/turf/T = get_turf(L)
-		if(istype(T) && !istype(T, /turf/space) && T.is_outdoors())
-			. += assess_player_activity(L)
-			num++
 	if(num)
 		. = round(. / num, 0.1)

@@ -137,3 +137,9 @@
 
 /mob/proc/lesser_transform_apply(datum/act/request/context)
 	return lesser_transform_stage(context.answer.value, TRUE)
+
+/mob/proc/changeling_lesser_transform()
+	set category = VERB_CAT_CHANGELING
+	set name = "Transform (1)"
+
+	return lesser_transform_stage()

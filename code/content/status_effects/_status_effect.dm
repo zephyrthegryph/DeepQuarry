@@ -183,14 +183,6 @@ CAPABILITIES(/datum/status_effect)
 		return
 	COOLDOWN_START(src, duration, original_duration)
 
-/// Adds nextmove modifier multiplicatively to the owner while applied
-/datum/status_effect/proc/nextmove_modifier()
-	return 1
-
-/// Adds nextmove adjustment additiviely to the owner while applied
-/datum/status_effect/proc/nextmove_adjust()
-	return 0
-
 /// /datum/notice/living_aheal handler: removes us on a full heal
 /datum/status_effect/proc/remove_effect_on_heal(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)

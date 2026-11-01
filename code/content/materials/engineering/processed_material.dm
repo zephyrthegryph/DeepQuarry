@@ -268,16 +268,6 @@ CAPABILITIES(/datum/material/processed_alloy)
 	stock.update_thermal_processing()
 	return stock
 
-/proc/material_batch_from_stack(obj/item/stack/material/stack)
-	if(!istype(stack) || !stack.material)
-		return null
-	if(istype(stack.material, /datum/material/processed_alloy))
-		var/obj/item/stack/material/processed_alloy/processed_stack = stack
-		return processed_stack.physical_batch()?.copy_batch()
-	var/datum/material_batch/batch = new
-	batch.add_material(stack.material.name, stack.amount)
-	return batch
-
 /obj/item/stack/material/processed_alloy
 	name = "alloy sheets"
 	desc = "Sheets of a custom alloy, ready for further treatment or fabrication."

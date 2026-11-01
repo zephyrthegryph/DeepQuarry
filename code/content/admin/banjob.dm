@@ -84,3 +84,7 @@ GLOBAL_LIST_EMPTY(jobban_keylist)		//to store the keys & ranks
 			jobban_savebanfile()
 			return 1
 	return 0
+
+/hook/startup/proc/loadJobBans()
+	jobban_loadbanfile()
+	return 1

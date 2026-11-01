@@ -68,19 +68,6 @@ MSG_DEF(generated_station_department_control/overriding, span_notice("You begin 
 /datum/generated_station_director/proc/unregister_defender(mob/living/defender)
 	rel_remove(src, nameof(registered_defenders), defender)
 
-/datum/generated_station_director/proc/medical_heal(mob/living/defender, amount)
-	if(!(defender in registered_defenders) || simulation().department_state("medical-1") == GENERATED_DEPARTMENT_OFFLINE)
-		return FALSE
-	var/cost = max(1, CEILING(amount / 10, 1))
-	if(!simulation().consume_stockpile("medical-1", "medicine", cost))
-		return FALSE
-	defender.mend(TREAT_TISSUE_REPAIR, amount)
-	defender.mend(TREAT_BURN_CARE, amount)
-	defender.mend(TREAT_PLATING_REPAIR, amount)
-	defender.mend(TREAT_WIRING_REPAIR, amount)
-	on_capabilities_changed()
-	return TRUE
-
 /datum/generated_station_director/proc/engineering_repair(department_id, amount)
 	if(amount <= 0 || simulation().department_state("engineering-1") == GENERATED_DEPARTMENT_OFFLINE)
 		return FALSE

@@ -304,3 +304,7 @@ ADMIN_VERB(Set_Holiday, R_SERVER, "Set Holiday", "Force-set the Holiday variable
 
 	if(("Christmas" in GLOB.Holiday) || ("Christmas Eve" in GLOB.Holiday))
 		if(prob(GLOB.eventchance))	ChristmasEvent()
+
+/hook/startup/proc/updateHoliday()
+	Get_Holiday()
+	return 1

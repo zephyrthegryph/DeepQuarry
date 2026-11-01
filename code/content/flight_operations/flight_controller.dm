@@ -383,15 +383,6 @@ CAPABILITIES(/datum/system/flight)
 		return TRUE
 	return FALSE
 
-/datum/system/flight/proc/compatible_waypoint(obj/effect/overmap/visitable/target, datum/shuttle/autodock/overmap/shuttle)
-	if(!target || !shuttle)
-		return null
-	var/list/waypoints = target.get_waypoints(shuttle.name)
-	for(var/obj/effect/shuttle_landmark/waypoint in waypoints)
-		if(waypoint.is_valid(shuttle))
-			return waypoint
-	return null
-
 /datum/system/flight/proc/finish_plan(datum/flight_plan/plan)
 	own_take_member(src, nameof(plans), plan.id)
 	if(plan.vessel?.active_plan == plan)

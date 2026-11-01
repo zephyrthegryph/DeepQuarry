@@ -87,14 +87,6 @@ CAPABILITIES(/datum/generated_station_director)
 		local_knowledge[department_id] = list()
 	process_dirty()
 
-/// Narrow integration hook for whichever station runtime owns the dependency
-/// simulation. The caller retains ownership of the simulation.
-/proc/generated_station_create_director(datum/generated_station_simulation/simulation)
-	if(!istype(simulation))
-		return null
-	return new /datum/generated_station_director(simulation)
-
-
 /datum/generated_station_director/proc/mark_dirty(department_id)
 	strategic_dirty = TRUE
 	if(department_id)

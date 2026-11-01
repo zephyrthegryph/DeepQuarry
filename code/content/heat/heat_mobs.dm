@@ -40,10 +40,6 @@
 	heat_add(src, (target - old) * body_heat_capacity(), source)
 	return body_temperature() - old
 
-/// Moves this mob's body temperature `fraction` of the way toward `target` K.
-/mob/proc/approach_bodytemperature(target, fraction)
-	return adjust_bodytemperature((target - body_temperature()) * fraction)
-
 /// Seconds between two runs of Life's environment stage (one Life frame): the old convection moved 1/divisor of the gap per run.
 #define LIFE_ENVIRONMENT_SECONDS LIFE_CYCLE_SECONDS
 
@@ -205,3 +201,6 @@
 
 /mob/thermal_properties()
 	return list(body_heat_capacity(), 0, THERMAL_EMISSIVITY_DEFAULT)
+
+/mob/proc/approach_bodytemperature(target, fraction)
+	return adjust_bodytemperature((target - body_temperature()) * fraction)

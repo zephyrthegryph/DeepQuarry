@@ -9,10 +9,6 @@
 	var/mob/actor = A.actor
 	return (isliving(actor) && !isanimal(actor) && !actor.incapacitated()) ? null : "you can't do that"
 
-/// Why pred_computer_hands_on refuses.
-/obj/item/modular_computer/proc/pred_computer_hands_on_refusal(datum/act/op/A)
-	return "you can't do that"
-
 /// Old verb "Forced Shutdown": to be used when something bugs out and the UI is nonfunctional.
 /obj/item/modular_computer/proc/computer_emergency_shutdown(datum/act/op/A)
 	var/mob/user = A.actor

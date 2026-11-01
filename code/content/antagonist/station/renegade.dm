@@ -95,14 +95,6 @@
 	player.put_in_hands(gun)
 
 
-/proc/rightandwrong(mob/user)
-	to_chat(user, span_infoplain(span_bold("You summoned guns!")))
-	message_admins("[key_name_admin(user, 1)] summoned guns!")
-	for(var/mob/living/carbon/human/H in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-		if(H.stat == 2 || !(H.client)) continue
-		if(is_special_character(H)) continue
-		antag_renegades().add_antagonist(H.mind)
-
 /// The /datum/antagonist/renegade template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
 /proc/antag_renegades() as /datum/antagonist/renegade
 	return SSantag?.all_antag_types[MODE_RENEGADE]

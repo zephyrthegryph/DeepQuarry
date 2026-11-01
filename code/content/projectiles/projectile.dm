@@ -197,11 +197,6 @@ CAPABILITIES(/obj/item/projectile)
 	var/datum/point/vector/v = current.return_vector_after_increments(moves * GLOB.projectile_iterations_per_move)
 	return v.return_turf()
 
-/obj/item/projectile/proc/return_pathing_turfs_in_moves(moves, forced_angle)
-	var/turf/current = get_turf(src)
-	var/turf/ending = return_predicted_turf_after_moves(moves, forced_angle)
-	return getline(current, ending)
-
 /obj/item/projectile/proc/set_pixel_speed(new_speed)
 	if(trajectory)
 		trajectory.set_speed(new_speed)
@@ -414,10 +409,6 @@ CAPABILITIES(/obj/item/projectile)
 
 /obj/item/projectile/proc/after_move()
 	return
-
-/obj/item/projectile/proc/store_hitscan_collision(datum/point/pcache)
-	rel_add(src, nameof(beam_segments), pcache)
-	rel_set(src, nameof(beam_index), pcache)
 
 //Spread is FORCED!
 /obj/item/projectile/proc/preparePixelProjectile(atom/target, atom/source, params, spread = 0)
@@ -744,11 +735,6 @@ CAPABILITIES(/obj/item/projectile)
 //return 1 if the projectile should be allowed to pass through after all, 0 if not.
 /obj/item/projectile/proc/check_penetrate(atom/A)
 	return 1
-
-/obj/item/projectile/proc/check_fire(atom/target as mob, mob/living/user as mob)  //Checks if you can hit them or not.
-	if(target in check_trajectory(target, user, pass_flags, flags))
-		return TRUE
-	return FALSE
 
 /obj/item/projectile/CanPass()
 	return TRUE

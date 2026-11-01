@@ -1,8 +1,4 @@
 
-/hook/startup/proc/createDatacore()
-	GLOB.data_core = new /datum/datacore()
-	return 1
-
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/datacore)
 /datum/datacore
 	var/name = "datacore"
@@ -568,3 +564,7 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 		return H.job
 	else
 		return "Unassigned"
+
+/hook/startup/proc/createDatacore()
+	GLOB.data_core = new /datum/datacore()
+	return 1

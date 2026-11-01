@@ -13,26 +13,6 @@
 		return FALSE
 	return TRUE
 
-/// Scores continuous physical properties for the job a part performs. This is
-/// used only to choose and rank defaults; every solid stack remains selectable.
-/proc/material_role_score(datum/material/material, role)
-	if(!istype(material))
-		return -INFINITY
-	switch(role)
-		if(MATERIAL_ROLE_CONDUCTOR, MATERIAL_ROLE_CONTACTS, MATERIAL_ROLE_ACTUATOR)
-			return material.conductivity * 2 + material.corrosion_resistance + material.critical_current_density * 0.02 - material.electrical_resistivity
-		if(MATERIAL_ROLE_INSULATION, MATERIAL_ROLE_GRIP, MATERIAL_ROLE_SUBSTRATE, MATERIAL_ROLE_DIELECTRIC)
-			return material.dielectric_strength + material.thermal_insulation + material.integrity * 0.2 - material.conductivity
-		if(MATERIAL_ROLE_WORKING, MATERIAL_ROLE_BARREL, MATERIAL_ROLE_BEARINGS, MATERIAL_ROLE_FEED, MATERIAL_ROLE_SPRING)
-			return material.hardness + material.heat_resistance + material.fracture_toughness * 0.5 - material.brittleness
-		if(MATERIAL_ROLE_SENSOR, MATERIAL_ROLE_EMITTER, MATERIAL_ROLE_OPTICAL)
-			return material.purity_equivalent() + material.heat_resistance + material.conductivity * 0.5 - material.reactivity
-		if(MATERIAL_ROLE_THERMAL)
-			return material.specific_heat * 0.05 + material.heat_resistance + material.phase_change_capacity * 0.1
-		if(MATERIAL_ROLE_LINER, MATERIAL_ROLE_JACKET)
-			return material.corrosion_resistance + material.heat_resistance * 0.5 + material.biocompatibility - material.reactivity - material.toxicity
-	return material.integrity + material.yield_strength * 0.2 + material.fracture_toughness - material.brittleness * 0.5 - material.density * 0.05
-
 /// TGUI rows for a blueprint's configurable roles.
 /proc/material_slots_tgui(datum/material_template/template, total)
 	var/list/out = list()

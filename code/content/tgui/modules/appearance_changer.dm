@@ -195,9 +195,6 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 /datum/tgui_module/appearance_changer/proc/can_misc(datum/act/op/A)
 	return (can_change(owner(), APPEARANCE_MISC)) ? null : /datum/msg/req_silent
 
-/datum/tgui_module/appearance_changer/proc/can_race(datum/act/op/A)
-	return can_change(owner(), APPEARANCE_RACE)
-
 /datum/tgui_module/appearance_changer/proc/can_race_silent(datum/act/op/A)
 	return (can_change(owner(), APPEARANCE_RACE)) ? null : /datum/msg/req_silent
 

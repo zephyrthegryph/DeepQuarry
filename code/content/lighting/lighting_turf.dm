@@ -90,13 +90,6 @@
 // Soft lighting being the threshold at which point the overlay considers
 // itself as too dark to allow sight and see_in_dark becomes useful.
 // So basically if this returns true the tile is unlit black.
-/turf/proc/is_softly_lit()
-	if (!lighting_object)
-		return FALSE
-
-	return !(luminosity || dynamic_lumcount)
-
-
 ///Proc to add movable sources of opacity on the turf and let it handle lighting code.
 /turf/proc/add_opacity_source(atom/movable/new_source)
 	rel_add(src, nameof(opacity_sources), new_source)
@@ -118,12 +111,6 @@
 		return
 
 	luminosity = new_luminosity
-
-///Checks planets and fake_suns to see if our turf should be handled by either
-/turf/proc/check_for_sun()
-	if((SSplanets.is_initialized() && SSplanets.planet_at_z(z)) || (z in GLOB.fake_sunlight_zs))
-		return TRUE
-	return FALSE
 
 ///Calculate on which directions this turfs block view.
 /turf/proc/recalculate_directional_opacity()

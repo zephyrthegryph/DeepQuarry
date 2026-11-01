@@ -43,11 +43,6 @@
 	for(var/category in screens)
 		clear_fullscreen(category)
 
-/mob/proc/hide_fullscreens()
-	if(client)
-		for(var/category in screens)
-			client_screen_remove(client, screens[category])
-
 /mob/proc/reload_fullscreen()
 	if(client && stat != DEAD) //dead mob do not see any of the fullscreen overlays that he has.
 		for(var/category in screens)
@@ -168,3 +163,8 @@
 	if(client)
 		client_screen_remove(client, screen)
 	lapsed(screen)
+
+/mob/proc/hide_fullscreens()
+	if(client)
+		for(var/category in screens)
+			client_screen_remove(client, screens[category])

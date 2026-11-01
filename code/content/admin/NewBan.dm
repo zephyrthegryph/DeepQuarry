@@ -204,3 +204,6 @@ GLOBAL_DATUM(banlist, /savefile)
 	GLOB.banlist.cd = "/base"
 	for (var/A in GLOB.banlist.dir)
 		RemoveBan(A, user)
+
+/hook/startup/proc/loadBans()
+	return LoadBans()

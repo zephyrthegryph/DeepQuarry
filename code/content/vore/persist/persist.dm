@@ -14,30 +14,6 @@
 	var/loaded_from_slot = null
 
 // Handle people leaving due to round ending.
-/hook/roundend/proc/persist_locations()
-	for(var/mob/living/carbon/human/Player in REGISTRY_MEMBERS(REGISTRY_HUMANS))
-		if(!Player.mind || isnewplayer(Player))
-			continue // No mind we can do nothing, new players we care not for
-		else if(Player.stat == DEAD)
-			if(isobserver(Player))
-				var/mob/observer/dead/O = Player
-				if(O.started_as_observer)
-					continue // They are just a pure observer, ignore
-			// Died and were not cloned - Respawn at centcomm
-			persist_interround_data(Player, using_map.spawnpoint_died)
-		else
-			var/turf/playerTurf = get_turf(Player)
-			if(!playerTurf)
-				log_runtime("Player [Player.name] ([Player.ckey]) playing as [Player.species] was in nullspace at round end.")
-				continue
-			if(isAdminLevel(playerTurf.z))
-				// Evac'd - Next round they arrive on the shuttle.
-				persist_interround_data(Player, using_map.spawnpoint_left)
-			else
-				// Stayed on station, go to dorms
-				persist_interround_data(Player, using_map.spawnpoint_stayed)
-	return 1
-
 /**
  * Prep for save: returns a preferences object if we're ready and allowed to save this mob.
  */
@@ -131,34 +107,6 @@
 	prefs.update_preference_by_type(/datum/preference/text/human/b_type, character.dna ? character.dna.b_type : DEFAULT_BLOOD_TYPE)
 
 // Saves mob's current custom species, ears, tail, wings and digitigrade legs state to prefs.
-/proc/apply_ears_to_prefs(mob/living/carbon/human/character, datum/preferences/prefs)
-	if(character.ear_style) prefs.update_preference_by_type(/datum/preference/text/human/ear_style, character.ear_style.name)
-	if(character.tail_style) prefs.update_preference_by_type(/datum/preference/text/human/tail_style, character.tail_style.name)
-	if(character.wing_style) prefs.update_preference_by_type(/datum/preference/text/human/wing_style, character.wing_style.name)
-
-	prefs.update_preference_by_type(/datum/preference/color/human/ears_color1, character.looks.ears_color)
-	prefs.update_preference_by_type(/datum/preference/color/human/ears_color2, character.looks.ears_color2)
-	prefs.update_preference_by_type(/datum/preference/color/human/ears_color3, character.looks.ears_color3)
-	prefs.update_preference_by_type(/datum/preference/numeric/human/ears_alpha, character.looks.ears_alpha)
-
-	// secondary ears
-	prefs.update_preference_by_type(/datum/preference/text/human/ear_secondary_style, character.ear_secondary_style?.name)
-	prefs.update_preference_by_type(/datum/preference/ear_secondary_colors, character.ear_secondary_colors) // migrated pref
-
-	prefs.update_preference_by_type(/datum/preference/color/human/tail_color1, character.looks.tail_color)
-	prefs.update_preference_by_type(/datum/preference/color/human/tail_color2, character.looks.tail_color2)
-	prefs.update_preference_by_type(/datum/preference/color/human/tail_color3, character.looks.tail_color3)
-	prefs.update_preference_by_type(/datum/preference/numeric/human/tail_alpha, character.looks.tail_alpha)
-
-	// TODO: This will break if update_preference_by_type starts to respect is_accessible
-	prefs.update_preference_by_type(/datum/preference/color/human/wing_color1, character.looks.wing_color)
-	prefs.update_preference_by_type(/datum/preference/color/human/wing_color2, character.looks.wing_color2)
-	prefs.update_preference_by_type(/datum/preference/color/human/wing_color3, character.looks.wing_color3)
-	prefs.update_preference_by_type(/datum/preference/numeric/human/wing_alpha, character.looks.wing_alpha)
-
-	prefs.update_preference_by_type(/datum/preference/text/human/custom_species, character.bio.custom_species) // migrated pref
-	prefs.update_preference_by_type(/datum/preference/toggle/human/digitigrade, character.looks.digitigrade) // migrated pref
-
 // Saves mob's current organ state to prefs.
 /proc/apply_organs_to_prefs(mob/living/carbon/human/character, datum/preferences/prefs)
 	if(!istype(character) || !character.species) return
@@ -275,3 +223,27 @@
 		LAZYREMOVE(H.client.prefs.value_cache, /datum/preference/nif_path)
 		LAZYREMOVE(H.client.prefs.value_cache, /datum/preference/numeric/nif_durability)
 		LAZYREMOVE(H.client.prefs.value_cache, /datum/preference/nif_savedata)
+
+/hook/roundend/proc/persist_locations()
+	for(var/mob/living/carbon/human/Player in REGISTRY_MEMBERS(REGISTRY_HUMANS))
+		if(!Player.mind || isnewplayer(Player))
+			continue // No mind we can do nothing, new players we care not for
+		else if(Player.stat == DEAD)
+			if(isobserver(Player))
+				var/mob/observer/dead/O = Player
+				if(O.started_as_observer)
+					continue // They are just a pure observer, ignore
+			// Died and were not cloned - Respawn at centcomm
+			persist_interround_data(Player, using_map.spawnpoint_died)
+		else
+			var/turf/playerTurf = get_turf(Player)
+			if(!playerTurf)
+				log_runtime("Player [Player.name] ([Player.ckey]) playing as [Player.species] was in nullspace at round end.")
+				continue
+			if(isAdminLevel(playerTurf.z))
+				// Evac'd - Next round they arrive on the shuttle.
+				persist_interround_data(Player, using_map.spawnpoint_left)
+			else
+				// Stayed on station, go to dorms
+				persist_interround_data(Player, using_map.spawnpoint_stayed)
+	return 1

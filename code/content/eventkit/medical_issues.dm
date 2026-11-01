@@ -167,14 +167,6 @@ GLOBAL_LIST_INIT(dq_custom_internal_surgeries, list( \
 		return "Required surgery: [cure_surgery_name]."
 	return "[location ? capitalize(location.name) : "The affected organ"] may require surgical removal or transplantation."
 
-/// Custom afflictions on `O` (in a body or detached).
-/proc/dq_custom_afflictions_on(obj/item/organ/O)
-	. = list()
-	if(!O)
-		return
-	for(var/datum/affliction/custom/A in O.afflictions_here())
-		. += A
-
 /// Every custom affliction on a mob.
 /proc/dq_custom_afflictions_of(mob/living/M)
 	. = list()

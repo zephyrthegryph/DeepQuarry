@@ -124,13 +124,3 @@ CAPABILITIES(/obj/item/entopic_debug)
 /// The starting entopic (owns_one(starts =)).
 /obj/item/entopic_debug/proc/make_ent_debug(current)
 	return new /datum/entopic(aholder = src, aicon = icon, aicon_state = "holo_Jin")
-
-/proc/entopic_icon_helper(atom/A, holo = TRUE, mob/user)
-	ASSERT(A)
-
-	var/icon/CI = getCompoundIcon(A)
-	var/icon/HI = getHologramIcon(CI)
-
-	user << ftp(holo ? HI : CI,"[A.name].dmi")
-
-

@@ -418,9 +418,6 @@ CAPABILITIES(/turf)
 			return 1
 	return 0
 
-/turf/proc/update_blood_overlays()
-	return
-
 // Called when turf is hit by a thrown object
 /turf/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	if(!density)

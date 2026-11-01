@@ -16,11 +16,6 @@
 /// Filled by the first rotate_verb_defs() call: the capability tables are not up when the globals are made.
 GLOBAL_LIST_EMPTY(rotate_verb_defs)
 
-/atom/movable/proc/unmake_rotatable()
-	revoke(src, /atom/movable/proc/rotate_clockwise, src)
-	revoke(src, /atom/movable/proc/rotate_counterclockwise, src)
-	revoke(src, /atom/movable/proc/turn_around, src)
-
 // Core rotation proc, override me to add conditions to object rotations or update_icons/state after!
 /atom/movable/proc/handle_rotation_verbs(angle, mob/user)
 	if(isobserver(user))

@@ -320,15 +320,6 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 		body.add_contagion_immunity(GetDiseaseID())
 	..()
 
-/// A self-limiting disease the host threw off (the old stage_act "You feel
-/// better." branches).
-/datum/affliction/contagion/proc/resolve_naturally()
-	if(host)
-		to_chat(host, span_notice("You feel better."))
-		log_game("CONTAGION: [key_name(host)] recovered from [name].")
-	cure()
-
-
 // --- Presentation (diagnosis) ---------------------------------------------------
 
 /// Hidden strains never show on a scanner; undiscovered ones only on lab
@@ -404,9 +395,6 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 /// Can it pass to another host at all (special and non-contagious strains don't)?
 /datum/affliction/contagion/proc/is_spreadable()
 	return !(spread_flags & (DISEASE_SPREAD_SPECIAL | DISEASE_SPREAD_NON_CONTAGIOUS))
-
-/datum/affliction/contagion/proc/remove_virus()
-	body?.remove_affliction(src)
 
 // Called when the disease starts acting on a host
 /datum/affliction/contagion/proc/Start()

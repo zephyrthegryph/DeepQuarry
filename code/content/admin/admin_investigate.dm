@@ -72,3 +72,7 @@ ADMIN_VERB(investigate_show, R_ADMIN|R_MOD|R_SERVER, "Investigate", "Check hrefs
 	recheck_on_open = TRUE
 
 #undef INVESTIGATE_DIR
+
+/hook/startup/proc/resetInvestigate()
+	investigate_reset()
+	return 1

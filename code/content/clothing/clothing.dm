@@ -1090,14 +1090,6 @@ CAPABILITIES(/obj/item/clothing/under)
 	return "it has no holster"
 
 
-/// Requirement: the uniform can be rolled down (replaces removing the verb at Initialize).
-/obj/item/clothing/under/proc/pred_can_roll_down(mob/actor, atom/target, obj/item/held)
-	return rolled_down != -1
-
-/// Requirement: the sleeves can be rolled (replaces removing the verb at Initialize).
-/obj/item/clothing/under/proc/pred_can_roll_sleeves(mob/actor, atom/target, obj/item/held)
-	return rolled_sleeves != -1
-
 /// Old holster verb the holster added to the uniform: holster or draw with the attached holster.
 /obj/item/clothing/under/proc/under_holster_verb(datum/act/op/A)
 	var/obj/item/clothing/accessory/holster/H = locate_in_list(accessories, /obj/item/clothing/accessory/holster)
@@ -1405,26 +1397,6 @@ CAPABILITIES(/obj/item/clothing/under/rank)
 /obj/item/clothing/under/equipped(mob/user, slot)
 	. = ..()
 	handle_digitigrade(user)
-
-/obj/item/clothing/proc/attach_clothing_traits(trait_or_traits)
-	if(!islist(trait_or_traits))
-		trait_or_traits = list(trait_or_traits)
-
-	LAZYOR(clothing_traits, trait_or_traits)
-	var/mob/wearer = loc
-	if(istype(wearer) && dq_item_fits_slot_flags(src, wearer.inventory_slot_id(src)))
-		for(var/new_trait in trait_or_traits)
-			ADD_CLOTHING_TRAIT(wearer, new_trait)
-
-/obj/item/clothing/proc/detach_clothing_traits(trait_or_traits)
-	if(!islist(trait_or_traits))
-		trait_or_traits = list(trait_or_traits)
-
-	LAZYREMOVE(clothing_traits, trait_or_traits)
-	var/mob/wearer = loc
-	if(istype(wearer))
-		for(var/new_trait in trait_or_traits)
-			REMOVE_CLOTHING_TRAIT(wearer, new_trait)
 
 /obj/item/clothing/head/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	. = ..()

@@ -320,18 +320,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/surgical_step)
 
 // --- Running a step -------------------------------------------------------------------
 
-/// Steps `tool` can do on `target` at `zone` right now: name -> step.
-/proc/available_surgical_steps(mob/living/user, mob/living/carbon/human/target, zone, obj/item/tool)
-	. = list()
-	for(var/datum/surgical_step/S as anything in surgical_steps())
-		if(!S.tool_quality(tool))
-			continue
-		var/result = S.can_use(user, target, zone, tool)
-		if(!result || result == SURGERY_REFUSED)
-			continue
-		if(!(S.name in .))
-			.[S.name] = S
-
 /// Steps any tool could do next at `zone` (the operating computer).
 /proc/next_surgical_steps(mob/living/user, mob/living/carbon/human/target, zone)
 	. = list()

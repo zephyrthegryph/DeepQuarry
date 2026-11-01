@@ -83,13 +83,6 @@
 		return null
 	return content_hash
 
-/datum/asset/simple/namespaced/tgui_chunks/proc/reload_from_directory(directory, list/filenames)
-	unregister()
-	assets = list()
-	asset_directory = directory
-	allowed_assets = filenames
-	register()
-
 /datum/asset/simple/namespaced/tgui_chunks/proc/get_public_base_url()
 	if(!length(assets))
 		return null

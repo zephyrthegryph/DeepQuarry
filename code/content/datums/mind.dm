@@ -425,12 +425,6 @@ CAPABILITIES(/datum/mind)
 				return G
 			break
 
-///Proc that FORCIBLY grabs a client no matter where they are and returns their currently inhabited mob.
-/datum/mind/proc/forcibly_grab_client()
-	for(var/mob/mob_to_grab in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-		if(mob_to_grab.ckey == loaded_from_ckey)
-			return mob_to_grab
-
 /datum/mind/proc/grab_ghost(force)
 	var/mob/observer/dead/G = get_ghost(even_if_they_cant_reenter = force)
 	. = G

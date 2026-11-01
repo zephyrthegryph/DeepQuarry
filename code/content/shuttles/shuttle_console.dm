@@ -14,11 +14,6 @@
 	var/tgui_subtemplate = "ShuttleControlConsoleDefault"
 	var/ai_control = TRUE // AI/Borgs shouldn't really be flying off in ships without crew help //ChompStation Edit: Flying is better prevented by restricting the helm console if wanted. This is only an unnecessary nuisance that also breaks various other uses for the shuttle console.
 
-/obj/machinery/computer/shuttle_control/proc/lets_silicon_in(mob/actor, atom/target, obj/item/held)
-	if(!ai_control && issilicon(actor))
-		return FALSE
-	return TRUE
-
 /obj/machinery/computer/shuttle_control/proc/lets_in(mob/actor, atom/target, obj/item/held)
 	return allowed(actor)
 

@@ -156,11 +156,3 @@
 
 	set_fields_at("area", other.fields["area"])
 	set_fields_at("time", other.fields["time"])
-
-/datum/data/record/forensic/proc/update_prints(list/o_prints)
-	var/list/prints = fields["fprints"]
-	for(var/print in o_prints)
-		if(prints[print])
-			prints[print] = stringmerge(prints[print], o_prints[print])
-			.=1
-	set_fields_at("fprints", prints)

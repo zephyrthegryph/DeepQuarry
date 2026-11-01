@@ -704,22 +704,6 @@ CAPABILITIES(/obj/item/organ/internal/malignant/engineered/lattice)
 
 	return newpath
 
-/obj/item/organ/internal/malignant/engineered/lattice/proc/make_mutoid(reagent)
-	if(!prepared)
-		return FALSE
-	if(chem_target)
-		return FALSE
-	if(!get_mutation_result(reagent))
-		return FALSE
-	// BEGIN MUTATION PROCESS
-	chem_target = reagent
-	name = "mutoid"
-	set_icon_state("crypto") // TEMP TODO: "lattice-mutated"
-	desc = "A fully grown mutoid ready for radiation training."
-	growth = 0
-	set_growth_trigger(rand(160,210)) // we will quickly start dying now unless trained
-	return TRUE
-
 // Chemical dispensing organs, USES SUB TYPES
 /obj/item/organ/internal/malignant/engineered/chemorgan
 	name = "chem organ DO NOT USE THIS"

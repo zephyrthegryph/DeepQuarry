@@ -1071,11 +1071,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 /obj/mecha/take_damage(amount, type=BRUTE)
 	mech_body_plan().injure(src, amount, type)
 
-/// The mech's injure(): a hit of `amount` keyed by armour key, through the body plan.
-/// Returns the chassis integrity lost.
-/obj/mecha/proc/injure_mech(amount, armor_key = MELEE)
-	return mech_body_plan().injure(src, amount, armor_key)
-
 /obj/mecha/airlock_crush(crush_damage)
 	..()
 	take_damage(crush_damage)
@@ -1644,10 +1639,6 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 /// Requirement: the actor is this mech's pilot (old `set src = usr.loc` + pilot checks).
 /obj/mecha/proc/pred_mecha_pilot(mob/actor, atom/target, obj/item/held)
 	return actor && actor == slot_item(MECHA_SLOT_PILOT)
-
-/// Requirement: the actor is outside this mech (old `set src in oview(1)`).
-/obj/mecha/proc/pred_mecha_outside(mob/actor, atom/target, obj/item/held)
-	return actor && actor.loc != src
 
 /// Requirement: the mech has an internal airtank (old removeVerb on Initialize without one).
 /obj/mecha/proc/pred_mecha_has_airtank(mob/actor, atom/target, obj/item/held)
@@ -2700,24 +2691,6 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 /obj/mecha
 	damage_minimum = 5				//Incoming damage lower than this won't actually deal damage. Scrapes shouldn't be a real thing.
 	minimum_penetration = 10		//Incoming damage won't be fully applied if you don't have at least 20. Almost all AP clears this.
-
-/// Copies one mob's injuries onto another (used when an AI is temporarily
-/// moved into a mecha shell and back). The target is fully healed first, then
-/// each of the source's injuries is re-inflicted as the injury kind that makes
-/// it, at the same part, and the source's oxygen debt is carried over.
-/obj/mecha/proc/mirror_injury_state(mob/living/source_mob, mob/living/target_mob)
-	if(!source_mob?.body || !target_mob)
-		return
-	target_mob.fully_heal()
-	for(var/datum/affliction/A as anything in source_mob.body.afflictions)
-		var/kind = mirrored_injury_kind(A)
-		var/amount = A.load_value()
-		if(!kind || amount <= 0)
-			continue
-		target_mob.injure(kind, amount, A.location?.organ_tag, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
-	var/oxygen_debt = source_mob.oxygen_debt()
-	if(oxygen_debt)
-		target_mob.add_oxygen_debt(oxygen_debt, src)
 
 /// The injury kind (INJURY_*) that re-creates affliction `A`, or null when it
 /// is not an injury (a disease, a lesion, a vital-system state).

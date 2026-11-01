@@ -1024,21 +1024,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi/baby)
 ///////////////////AI Things////////////////////////
 //Thank you very much Aronai <3
 
-/mob/living/simple_mob/vore/alienanimals/teppi/proc/do_I_know_you()
-	// Get list of everyone who can see us (which is everyone we can see, typically)
-	var/list/people_nearby = oviewers(world.view, src)
-	// Use the hidden . var to avoid needing to create a new local var (saves CPU)
-	. = list()
-	// Add everyone nearby to the list if they're in affinity, with key of the mob and value of the affinity
-	// . becomes list(jane = 1, tim = -3) etc
-	for(var/mob/living/M in people_nearby)
-		var/their_affinity = LAZYACCESS(affinity, M.real_name)
-		if(their_affinity)
-			if(their_affinity >= 25 || their_affinity <= -10)
-				.[M] = LAZYACCESS(affinity, M.real_name)
-	// Sort the list (timsort default sort comperator is numeric ascending, so highest affinity will be last in the list)
-	sortTim(., associative = TRUE)
-
 //This a teppi with funny colors will spawn!
 /mob/living/simple_mob/vore/alienanimals/teppi/mutant
 	teppi_mutate = TRUE
@@ -1087,3 +1072,18 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi/baby)
 
 /mob/living/simple_mob/vore/alienanimals/teppi/baby/starting_nutrition() // a baby is born hungry
 	return 0
+
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/do_I_know_you()
+	// Get list of everyone who can see us (which is everyone we can see, typically)
+	var/list/people_nearby = oviewers(world.view, src)
+	// Use the hidden . var to avoid needing to create a new local var (saves CPU)
+	. = list()
+	// Add everyone nearby to the list if they're in affinity, with key of the mob and value of the affinity
+	// . becomes list(jane = 1, tim = -3) etc
+	for(var/mob/living/M in people_nearby)
+		var/their_affinity = LAZYACCESS(affinity, M.real_name)
+		if(their_affinity)
+			if(their_affinity >= 25 || their_affinity <= -10)
+				.[M] = LAZYACCESS(affinity, M.real_name)
+	// Sort the list (timsort default sort comperator is numeric ascending, so highest affinity will be last in the list)
+	sortTim(., associative = TRUE)

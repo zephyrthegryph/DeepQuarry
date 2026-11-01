@@ -48,17 +48,6 @@ SYSTEM_DEF(sounds)
 	channel_random_low = 1
 	channel_reserve_high = length(channel_list)
 
-/// Removes a channel from using list.
-/datum/system/sounds/proc/free_sound_channel(channel)
-	var/text_channel = num2text(channel)
-	var/using = using_channels[text_channel]
-	using_channels -= text_channel
-	if(using) // a datum or datumless reservation
-		using_channels_by_datum[using] -= channel
-		if(!length(using_channels_by_datum[using]))
-			using_channels_by_datum -= using
-	free_channel(channel)
-
 /// Frees all the channels a datum is using.
 /datum/system/sounds/proc/release_datum_channels(datum/D)
 	var/key = (D == DATUMLESS) ? DATUMLESS : ref(D)
@@ -69,20 +58,6 @@ SYSTEM_DEF(sounds)
 		using_channels -= num2text(channel)
 		free_channel(channel)
 	using_channels_by_datum -= key
-
-/// Frees all datumless channels
-/datum/system/sounds/proc/free_datumless_channels()
-	release_datum_channels(DATUMLESS)
-
-/// NO AUTOMATIC CLEANUP - If you use this, you better manually free it later! Returns an integer for channel.
-/datum/system/sounds/proc/reserve_sound_channel_datumless()
-	. = reserve_channel()
-	if(!.) //oh no..
-		return FALSE
-	var/text_channel = num2text(.)
-	using_channels[text_channel] = DATUMLESS
-	LAZYINITLIST(using_channels_by_datum[DATUMLESS])
-	using_channels_by_datum[DATUMLESS] += .
 
 /// Reserves a channel for a datum, which frees it with free_datum_channels() (songs do when they stop). Returns an integer for channel.
 /datum/system/sounds/proc/claim_sound_channel(datum/D)

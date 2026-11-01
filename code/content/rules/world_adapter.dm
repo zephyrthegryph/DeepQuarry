@@ -33,14 +33,6 @@
 /datum/rule_binding/proc/on_world_wake(datum/native_watch/world/watch, reason, source, source_kind)
 	rule_wake(reason, source)
 
-/datum/rule_binding/proc/keep_watch(datum/native_watch/W)
-	if(W)
-		rel_add(src, nameof(world_watches), W)
-	return W
-
-/proc/dq_rx_now()
-	return world.time
-
 /// Subscribes `D` to DM-owned key `kind`. The token is text; dq_rx_cancel() gives it back.
 /proc/dq_rx_on_key(datum/rule_binding/D, kind)
 	LAZYINITLIST(D.key_subs)
