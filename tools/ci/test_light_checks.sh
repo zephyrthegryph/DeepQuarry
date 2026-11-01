@@ -55,5 +55,14 @@ check "a changed lint input runs the ratchets with the changed-only self-tests" 
 git switch -q -c st/slow master; echo '# x' >>tools/dq_slow.sh; git commit -qam slow
 : >"$ST_LOG"; DQ_LIGHT_SELFTEST_CAP_SEC=1 bash tools/dq_light_checks.sh origin/master HEAD >"$tmp/lc.out" 2>&1; rc=$?
 check "a self-test over its cap is a warning (inconclusive), not a failure" '[ "$rc" = 0 ] && grep -q "hit its 1s cap and was stopped" "$tmp/lc.out"'
+# self-tests run side by side, and one failing among them still fails the run (a changed test_*.sh runs itself)
+git switch -q -c st/par master
+printf '#!/usr/bin/env bash\nsleep 4\n' >tools/ci/test_par_a.sh; printf '#!/usr/bin/env bash\nsleep 4\n' >tools/ci/test_par_b.sh; printf '#!/usr/bin/env bash\nsleep 4\necho boom\nexit 1\n' >tools/ci/test_par_c.sh
+git add -A; git commit -qm par
+par_t0=$SECONDS; bash tools/dq_light_checks.sh origin/master HEAD >"$tmp/lc.out" 2>&1; rc=$?; par_dt=$(( SECONDS - par_t0 ))
+check "a failing self-test run side by side fails the light checks and is shown" '[ "$rc" != 0 ] && grep -q "self-test test_par_c.sh" "$tmp/lc.out" && grep -q boom "$tmp/lc.out"'
+check "the passing ones report their own verdict" 'grep -q "test_par_a.sh rc=0" "$tmp/lc.out" && grep -q "test_par_b.sh rc=0" "$tmp/lc.out"'
+: >"$ST_LOG"; DQ_LIGHT_SELFTEST_JOBS=1 bash tools/dq_light_checks.sh origin/master HEAD >"$tmp/lc1.out" 2>&1
+check "side by side is measurably shorter than one job at a time" 'grep -q "test_par_a.sh rc=0" "$tmp/lc1.out" && [ "$par_dt" -lt 12 ]'
 [ "$fail" -eq 0 ] && echo "test_light_checks: all passed" || echo "test_light_checks: FAILED"
 exit "$fail"

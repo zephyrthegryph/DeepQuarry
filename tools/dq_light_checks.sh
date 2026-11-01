@@ -116,22 +116,45 @@ for f in "${changed[@]}"; do
 	esac
 done
 cap="${DQ_LIGHT_SELFTEST_CAP_SEC:-300}"
-for t in "${!selftests[@]}"; do
-	echo "== self-test tools/ci/$t (cap ${cap}s)"
+# Self-tests run side by side (DQ_LIGHT_SELFTEST_JOBS, default 3): one after another they were most of a 744 s light precheck on 1 November, with
+# every lane behind it waiting. The ones that write to or build in this worktree run alone, after the others. Each test's report prints when it ends.
+selftest_tmp="$(mktemp -d)"
+run_selftest() { # <test>: the verdict goes to its .rc file; test_train.sh runs only its quick subset (enqueue, light), the full file runs by hand
+	local t="$1" t0 rc tt_only=""
 	t0=$(date +%s)
-	# test_train.sh: only its quick subset (enqueue, light) is on the critical path; the full file runs by hand
-	tt_only=""; [ "$t" != test_train.sh ] || tt_only="quick"
-	TEST_TRAIN_ONLY="$tt_only" timeout -k 10 "$cap" bash "tools/ci/$t" >"${TMPDIR:-/tmp}/light-selftest-$$.log" 2>&1; rc=$?
-	echo "   $t rc=$rc in $(( $(date +%s) - t0 ))s"
+	[ "$t" != test_train.sh ] || tt_only="quick"
+	TEST_TRAIN_ONLY="$tt_only" timeout -k 10 "$cap" bash "tools/ci/$t" >"$selftest_tmp/$t.log" 2>&1; rc=$?
+	echo "$rc $(( $(date +%s) - t0 ))" >"$selftest_tmp/$t.rc"
+}
+report_selftest() { # <test>
+	local t="$1" rc secs log="$selftest_tmp/$1.log"
+	read -r rc secs <"$selftest_tmp/$t.rc" 2>/dev/null || { rc=1; secs=0; }
+	echo "== self-test tools/ci/$t (cap ${cap}s)"
+	echo "   $t rc=$rc in ${secs}s"
 	if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
 		# a cap is not a verdict: on a loaded machine a healthy self-test can run past it. The cases that finished are shown; nothing is failed, the author ran the test.
 		echo "light check WARNING: $t hit its ${cap}s cap and was stopped (inconclusive, not a failure); the cases that finished:" >&2
-		grep -E '^(PASS|FAIL)' "${TMPDIR:-/tmp}/light-selftest-$$.log" >&2
-		grep -q '^FAIL' "${TMPDIR:-/tmp}/light-selftest-$$.log" && bad "self-test $t (a case failed before the cap)"
+		grep -E '^(PASS|FAIL)' "$log" >&2
+		grep -q '^FAIL' "$log" && bad "self-test $t (a case failed before the cap)"
 	elif [ "$rc" -ne 0 ]; then
-		tail -n 25 "${TMPDIR:-/tmp}/light-selftest-$$.log" >&2
+		tail -n 25 "$log" >&2
 		bad "self-test $t"
 	fi
-	rm -f "${TMPDIR:-/tmp}/light-selftest-$$.log"
+}
+side_by_side=(); alone=()
+for t in "${!selftests[@]}"; do
+	case "$t" in
+		test_ratchets_selftest_fail.sh|test_vg_bindings_key.sh|test_train.sh) alone+=("$t") ;;
+		*) side_by_side+=("$t") ;;
+	esac
 done
+jobs_max="${DQ_LIGHT_SELFTEST_JOBS:-3}"
+for t in ${side_by_side[@]+"${side_by_side[@]}"}; do
+	while [ "$(jobs -rp | wc -l)" -ge "$jobs_max" ]; do wait -n 2>/dev/null || true; done
+	run_selftest "$t" &
+done
+wait
+for t in ${side_by_side[@]+"${side_by_side[@]}"}; do report_selftest "$t"; done
+for t in ${alone[@]+"${alone[@]}"}; do run_selftest "$t"; report_selftest "$t"; done
+rm -rf "$selftest_tmp"
 [ "$fail" -eq 0 ] && echo "== light checks passed" || exit 1
