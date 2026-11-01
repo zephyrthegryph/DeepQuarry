@@ -39,6 +39,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/clothing_appearance_handler)
 	else
 		result = image(icon = INV_ACCESSORIES_DEF_ICON, icon_state = tmp_icon_state, dir = SOUTH)
 
+	recolour_channels(acc, result)
 	result.color = acc.color
 	result.appearance_flags = acc.appearance_flags
 	return result
@@ -84,6 +85,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/clothing_appearance_handler)
 	else
 		result = image(icon = INV_ACCESSORIES_DEF_ICON, icon_state = tmp_icon_state)
 
+	recolour_channels(acc, result)
+
 	// Addblend compositing
 	if(acc.addblends)
 		var/icon/base = new/icon(icon = result.icon, icon_state = result.icon_state)
@@ -119,3 +122,13 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/clothing_appearance_handler)
 
 /// Global singleton instance — created at world startup.
 GLOBAL_DATUM_INIT(clothing_appearance_handler, /datum/clothing_appearance_handler, new)
+
+/// An accessory with chosen channel colours draws the recoloured copy of the state this image shows.
+PROC_SUMMARY(/datum/clothing_appearance_handler/proc/recolour_channels) // the colours are set once, when the item spawns, before anything draws it
+/datum/clothing_appearance_handler/proc/recolour_channels(obj/item/clothing/accessory/acc, image/result)
+	if(!sparse_has(acc, clothing_channel_colors))
+		return
+	var/recoloured = clothing_channel_icon(acc.type, result.icon, result.icon_state, sparse_get(acc, clothing_channel_colors))
+	if(recoloured)
+		result.icon = recoloured
+		result.icon_state = ""
