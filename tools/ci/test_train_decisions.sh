@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# NEW TESTS GO IN A NEW FILE (tools/ci/test_train_<topic>.sh; tools/dq_light_checks.sh maps it): this file is appended to by every train lane and
+# conflicted on every parallel merge (31 October: two of five lanes bounced on it).
 # Fast unit checks (a few seconds) of the train's proof-landing decisions, without a scratch repository: the functions are extracted from
 # tools/dq_train.sh and tools/dq_merge_batch.sh and called directly. tools/ci/test_train.sh drives the whole train end to end.
 set -uo pipefail
