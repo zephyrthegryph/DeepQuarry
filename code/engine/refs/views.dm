@@ -69,6 +69,9 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	else
 		target.om_refs_in = null
 
+/// Reverse index writes so far: load-independent, the benchmarks report it.
+GLOBAL_VAR_INIT(rel_index_writes, 0)
+
 /proc/_rel_index(datum/target, datum/source, var_name)
 	// A relation var some type's derived() hops over: join the dependency index (derived.dm). Before the
 	// rel_tracked() check: a hop follows an area or a registry singleton as well.
@@ -76,6 +79,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		derived_linked(source, var_name, target)
 	if(!rel_tracked(target))
 		return
+	GLOB.rel_index_writes++
 	var/list/index = _rel_index_of(target, TRUE)
 	var/source_ref = OWN_KEY(source)
 	var/current = index[source_ref]
@@ -159,6 +163,9 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		if(istype(value, /alist))
 			return (target in value) || !isnull(rel_keys_of(source, var_name, target))
 		return islist(value) ? (target in value) : value == target
+	var/list/entry = own_table_of(source).entries[var_name]
+	if(length(entry) >= OWNE_UNINDEXED && entry[OWNE_UNINDEXED])
+		return source.vars[var_name] == target
 	var/list/index = _rel_index_of(target)
 	if(!index)
 		return FALSE
@@ -356,7 +363,11 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		own_field_changed(source, var_name)
 		BOOT_PHASE_END(bp_src1, "rel_attach: own_field_changed(source) [source.type]/[var_name]", null)
 	BOOT_PHASE_BEGIN(bp_idx)
-	_rel_index(target, source, var_name)
+	if(length(entry) >= OWNE_UNINDEXED && entry[OWNE_UNINDEXED])
+		if(GLOB?.derived_link_vars?[var_name])
+			derived_linked(source, var_name, target)
+	else
+		_rel_index(target, source, var_name)
 	BOOT_PHASE_END(bp_idx, "rel_attach: _rel_index(target) [target.type]/[var_name]", null)
 	if(entry[OWNE_WATCH])
 		_rel_watch(target, source)
@@ -417,7 +428,11 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		source.vars[var_name] = null // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 		if(notify_source)
 			own_field_changed(source, var_name)
-	_rel_unindex(target, source, var_name)
+	if(length(entry) >= OWNE_UNINDEXED && entry[OWNE_UNINDEXED])
+		if(GLOB?.derived_link_vars?[var_name])
+			derived_unlinked(source, var_name, target)
+	else
+		_rel_unindex(target, source, var_name)
 	if(entry?[OWNE_WATCH])
 		_rel_unwatch(target, source)
 	_rel_unlinked(source, target, entry)

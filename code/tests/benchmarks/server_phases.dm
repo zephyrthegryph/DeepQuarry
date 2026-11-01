@@ -19,35 +19,6 @@
 		return default_value
 	return process[field]
 
-/// Load-independent work done so far: the same boot does the same work whatever else the machine runs, so these compare from one run where timings need many.
-/datum/benchmark/server_phases/proc/work_counts()
-	var/list/looks = GLOB.refresh_look_stats
-	return list(
-		"writes_published" = GLOB.plan_reader_probes,
-		"writes_preinit" = GLOB.state_changed_preinit_skipped,
-		"relation_writes_spared" = GLOB.own_field_memo_spared,
-		"stat_evals" = GLOB.stat_evals,
-		"stat_read_computes" = GLOB.stat_read_computes,
-		"ffi_calls" = __verdigris_ffi_calls,
-		"looks_first" = looks["first"] || 0,
-		"looks_changed" = looks["changed"] || 0,
-		"looks_same" = looks["same"] || 0,
-		"draws_spared" = GLOB.refresh_dispatched_draws_spared,
-	)
-
-/datum/benchmark/server_phases/proc/work_metrics(prefix, list/since)
-	var/list/now = work_counts()
-	for(var/name in now)
-		count_metric("[prefix]_work_[name]", now[name] - (since ? since[name] : 0), "count")
-	// Timers and draws fired since the census last took them, whatever their source.
-	var/list/churn = GLOB.churn_census.take()
-	for(var/kind in list("timer", "draw"))
-		var/total = 0
-		var/list/rows = churn[kind]
-		for(var/key in rows)
-			total += rows[key]
-		count_metric("[prefix]_work_[kind]s", total, "count")
-
 /datum/benchmark/server_phases/proc/open_phase()
 	GLOB.churn_census.take()
 	phase_work = work_counts()

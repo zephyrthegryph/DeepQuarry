@@ -169,7 +169,7 @@
 	E.keyed_key = key_var
 	return E
 
-/proc/_rel_decl(var_name, is_list, type, back, other_deleted, on_unlink, keyed, keyed_target, list/watch, keep_after_destroy, pool_reset, forward)
+/proc/_rel_decl(var_name, is_list, type, back, other_deleted, on_unlink, keyed, keyed_target, list/watch, keep_after_destroy, pool_reset, forward, unindexed = FALSE)
 	var/shape = RELS_PLAIN
 	if(back)
 		shape = (is_list && back == var_name) ? RELS_SYMMETRIC : RELS_PAIR
@@ -179,6 +179,9 @@
 			CRASH("rel_one/rel_many([var_name]): keyed_target needs keyed = nameof(our key var)")
 		extra = list(keyed_target, keyed)
 	var/list/entry = list(OWNK_REL, shape, back, extra, !!is_list, length(watch) ? watch.Copy() : null, other_deleted || CLEAR, on_unlink, type)
+	if(unindexed)
+		entry.len = OWNE_UNINDEXED
+		entry[OWNE_UNINDEXED] = TRUE
 	return _own_entry(var_name, entry, keep_after_destroy, pool_reset, forward)
 
 /// The declarations collected from one type's capabilities and its CAPABILITIES relation entries.
