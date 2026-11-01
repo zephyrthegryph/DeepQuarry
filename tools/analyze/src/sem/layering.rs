@@ -49,7 +49,7 @@ impl Walker<'_> {
         let files: Vec<_> = if genuine_headers.is_empty() {
             self.sem.layering_owner_defs.get(&path).into_iter().flatten().filter(|file| !generated(file)).collect()
         } else { genuine_headers };
-        // A neutral reopening (for example in code/_helpers) is not engine
+        // A neutral reopening (for example in code/library/helpers) is not engine
         // ownership and cannot authorize an application-defined type. Only a
         // genuine, non-generated engine declaration establishes that boundary.
         if !files.iter().any(|file| engine(file)) {

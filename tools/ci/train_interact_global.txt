@@ -9,7 +9,7 @@ code/defines/base/
 code/defines/content/
 code/__odlint.dm
 code/__pragmas.dm
-code/_helpers/
+code/library/helpers/
 code/engine/
 code/controllers/
 code/library/

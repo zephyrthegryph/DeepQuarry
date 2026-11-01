@@ -66,7 +66,7 @@ pub const CALLBACK_OK: &[&str] = &[
     "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/",
     "code/datums/ownership/",
     "code/datums/callback.dm",
-    "code/_helpers/",
+    "code/library/helpers/", "code/content/helpers/",
 ];
 pub const HANDLE_OK: &[&str] = &[
     "code/datums/om/",

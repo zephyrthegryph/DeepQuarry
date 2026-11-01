@@ -2254,7 +2254,7 @@ impl<'a, 'e> Walk<'a, 'e> {
             if p.is_builtin() {
                 return Val::local(None);
             }
-            if self.eng.virtual_dispatch && sem.rel(p.get().location).starts_with("code/_helpers/logging/") {
+            if self.eng.virtual_dispatch && sem.rel(p.get().location).starts_with("code/library/helpers/logging/") {
                 // The logging helpers write the world log; what they read is not an input of a value.
                 return Val::local(None);
             }
