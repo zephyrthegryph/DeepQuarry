@@ -8,8 +8,33 @@
 		return
 	if(--contract_batch_depth > 0)
 		return
+	// A blast's reports (thousands, about a millisecond each) are published over the following ticks; the batch stays open until the last chunk, so
+	// each opportunity window is still evaluated once, with its last event.
+	if(length(pending_damage_reports) > CONTRACT_DAMAGE_FLUSH_INLINE)
+		contract_batch_depth++
+		job(src, PROC_REF(flush_damage_chunk), CONTRACT_DAMAGE_FLUSH_BUDGET, PROC_REF(damage_flush_finished))
+		return
 	flush_damage_reports()
 	flush_opportunity_windows()
+
+/// One chunk of a large batch's reports, published and disposed of. More while reports wait (those of batches that began and ended meanwhile too).
+/datum/system/contracts/proc/flush_damage_chunk(datum/act/timer/A)
+	var/list/keys = list()
+	for(var/key in pending_damage_reports)
+		keys += key
+		if(length(keys) >= CONTRACT_DAMAGE_FLUSH_CHUNK)
+			break
+	for(var/key in keys)
+		var/datum/contract_damage_report/report = rel_take(src, nameof(pending_damage_reports), key = key)
+		if(!report)
+			continue
+		publish_damage_report(report)
+		spent(report)
+	return length(pending_damage_reports) ? JOB_MORE : JOB_DONE
+
+/// The drain's last chunk is out: close the batch it held open, which publishes whatever was queued since and evaluates the windows.
+/datum/system/contracts/proc/damage_flush_finished(datum/act/timer/A)
+	end_contract_batch()
 
 /datum/system/contracts/proc/is_contract_batching()
 	return contract_batch_depth > 0
