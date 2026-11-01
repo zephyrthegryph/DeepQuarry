@@ -23,16 +23,6 @@
 	else if((ACCESS_HOP in held_card.access) || (ACCESS_CAPTAIN in held_card.access))
 		return 1
 
-/obj/machinery/account_database/proc/create_transation(target, reason, amount)
-	var/datum/transaction/T = new()
-	T.target_name = target
-	T.purpose = reason
-	T.amount = amount
-	T.date = GLOB.current_date_string
-	T.time = stationtime2text()
-	T.source_terminal = machine_id
-	return T
-
 /obj/machinery/account_database/proc/accounting_letterhead(report_name)
 	return {"
 		<center><h1><b>[report_name]</b></h1></center>

@@ -110,13 +110,6 @@ CAPABILITIES(/obj/item/technomancer_catalog)
 // Parameters: 1 (category - the category link to display)
 // Description: Shows an href link to go to a spell subcategory if the category is not already selected, otherwise is bold, to reduce
 // code duplicating.
-/obj/item/technomancer_catalog/proc/show_categories(category)
-	if(category)
-		if(spell_tab != category)
-			return "<a href='byond://?src=[REF(src)];spell_category=[category]'>[category]</a>"
-		else
-			return span_bold("[category]")
-
 // TGUI migration: full structured data, no embedded
 // byond:// hrefs. All actions dispatched via tgui_act.
 

@@ -558,13 +558,6 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 
 	return TRUE
 
-/// Returns whether or not, given the PREFERENCE_TAB_*, this preference should
-/// appear.
-/datum/preference/proc/should_show_on_page(preference_tab)
-	var/is_on_character_page = preference_tab == PREFERENCE_TAB_CHARACTER_PREFERENCES
-	var/is_character_preference = savefile_identifier == PREFERENCE_CHARACTER
-	return is_on_character_page == is_character_preference
-
 /// A preference that is a choice of one option among a fixed set.
 /// Used for preferences such as clothing.
 /datum/preference/choiced

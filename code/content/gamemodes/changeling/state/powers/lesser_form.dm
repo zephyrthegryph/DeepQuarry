@@ -41,12 +41,6 @@
 	return 1
 
 //Transform into a human
-/mob/proc/changeling_lesser_transform()
-	set category = VERB_CAT_CHANGELING
-	set name = "Transform (1)"
-
-	return lesser_transform_stage()
-
 /mob/proc/lesser_transform_stage(selected_form, selected_ready = FALSE)
 
 	var/datum/changeling/changeling = changeling_power(1,1,0)
