@@ -93,7 +93,7 @@ radial_impl_prefixes = ["code/_onclick/hud/radial"]
 # ownership_lint.py: the index, the usage map, unknown_var, kinds, matrix and contradiction still read these
 # files; string_name, removed, callback, handle and raw_write skip them.
 # tracked_lists.dm is build output: the tracked-list mutators it writes (add_<v>, set_<v>_at, ...) are judged where the list is declared.
-exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/modules/tgs/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/world/tgs/"]
 exempt_files = ["code/defines/host/tgs.dm", "code/engine/_generated/tracked_lists.dm"]
 
 # E5 semantic lints (tools/analyze/src/lints/sem_*.rs; tools/analyze/README.md, "Semantic layer").
@@ -112,14 +112,14 @@ try_calls = []
 
 [lint.scheduler]
 # scheduler_lints.py exempt_path()
-exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/modules/tgs/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/world/tgs/"]
 exempt_files = ["code/defines/host/tgs.dm"]
 
 [lint.tracked]
 # tracked_lint.py exempt_path(): the TRACKED/SETTER/derive() index still reads these files; writes in them
 # are not counted. code/engine/_generated/ is build output: its source lines are judged where they are declared (a
 # ui_shape(registered_name = ...) row is a named argument there, not a write).
-exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/modules/tgs/", "code/engine/_generated/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/world/tgs/", "code/engine/_generated/"]
 exempt_files = ["code/defines/host/tgs.dm"]
 
 [lint.auto_tracked.lists]
@@ -159,7 +159,7 @@ exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/_
 # base_vars_lint.py: `list_init` takes allow_annotations.exempt_path() (EXEMPT_DIRS and EXEMPT_FILES: unit
 # tests and benchmarks build the forbidden things on purpose, the vendored tgstation-server DMAPI is kept
 # verbatim). `base_var` counts every path, so these are lists the rule reads, not whole-lint exemptions.
-list_init_exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/modules/tgs/"]
+list_init_exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/world/tgs/"]
 list_init_exempt_files = ["code/defines/host/tgs.dm"]
 # Homes for base-type vars (doc/rewrite/proposals/base_vars.md). A var a home macro names on its own type
 # (`TRACKED(/mob, stat)`), or whose declared type is under a home type path (the HUD datum, the profile records,
@@ -220,7 +220,7 @@ init_roots = [
 # instance_list_lint.py: allow_annotations.exempt_path() (EXEMPT_DIRS and EXEMPT_FILES): unit tests and
 # benchmarks build the forbidden things on purpose, the vendored tgstation-server DMAPI is kept verbatim.
 # The GLOBAL_DATUM_INIT singleton scan still reads these files (cx.all_files()).
-exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/modules/tgs/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/world/tgs/"]
 exempt_files = ["code/defines/host/tgs.dm"]
 
 [lint.latent]
@@ -231,7 +231,7 @@ exempt_contains = ["/unit_tests/"]
 # lifecycle_counts_lint.py: a path listed here has its qdel( sites uncounted but is still checked for
 # Destroy() overrides (banned everywhere), so these are lists, not exempt_* keys. exempt_path() (unit tests,
 # benchmarks, the vendored TGS DMAPI), the lifecycle engine itself, and the macro definitions.
-exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/modules/tgs/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/world/tgs/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/"]
 exempt_files = [
     "code/defines/host/tgs.dm",
     "code/controllers/subsystems/garbage.dm",
@@ -249,7 +249,7 @@ exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/t
 [lint.qdel_src]
 # qdel_src_lint.py: exempt_path() (unit tests, benchmarks, the vendored TGS DMAPI), the lifecycle engine
 # (it calls qdel(src) as its mechanism) and the macro definitions.
-exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/modules/tgs/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/world/tgs/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/"]
 exempt_files = [
     "code/defines/host/tgs.dm",
     "code/controllers/subsystems/garbage.dm",
@@ -262,7 +262,7 @@ exempt_files = [
 
 [lint.spatial]
 # spatial_lint.py: exempt_path() (unit tests, benchmarks, the vendored TGS DMAPI) is skipped before the scan.
-exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/modules/tgs/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/world/tgs/"]
 exempt_files = ["code/defines/host/tgs.dm"]
 [lint.spatial.lists]
 # spatial_lint.py API_DIRS / API_FILES: the files that implement the ledger and spatial API. They are scanned
@@ -275,7 +275,7 @@ api_files = ["code/defines/engine/containment.dm"]
 # defines, the unit tests, and the external-I/O datums whose process() is not gameplay polling (tgui, dbcore).
 # This script does not call exempt_path(): benchmarks and the TGS DMAPI are counted.
 exempt_prefixes = ["code/controllers/", "code/datums/om/", "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/", "code/modules/unit_tests/", "code/tests/unit_tests/"]
-exempt_files = ["code/modules/tgui/tgui.dm", "code/controllers/subsystems/dbcore.dm", "code/engine/kernel/cadences.dm"]
+exempt_files = ["code/library/ui/tgui/tgui.dm", "code/controllers/subsystems/dbcore.dm", "code/engine/kernel/cadences.dm"]
 [lint.pollers.lists]
 # check_step_coverage(): unit-test probes join the machine pipeline lazily through MACHINE_WAKE(); every other
 # file (the exempt ones above included) is checked.
@@ -283,7 +283,7 @@ step_exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/"]
 
 [lint.silent_catch]
 # silent_catch_lint.py: exempt_path() (unit tests catch on purpose; benchmarks; the vendored TGS DMAPI).
-exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/modules/tgs/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/world/tgs/"]
 exempt_files = ["code/defines/host/tgs.dm"]
 [lint.silent_catch.lists]
 # silent_catch_lint.py STRICT_DIRS: the object-model core, lifecycle, the controllers and the error handler (everything
@@ -292,7 +292,7 @@ strict_dirs = ["code/datums/om/", "code/datums/lifecycle/", "code/controllers/",
 
 [lint.cache]
 # cache_lint.py: exempt_path() (unit tests, benchmarks, the vendored TGS DMAPI) and the framework itself.
-exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/modules/tgs/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/world/tgs/"]
 exempt_files = ["code/defines/host/tgs.dm", "code/defines/engine/shared_cache.dm", "code/datums/shared_cache/shared_cache.dm"]
 
 [lint.registry]
@@ -344,8 +344,8 @@ factors_converted = []
 # The files (a directory ends in `/`, else an exact file) with no SStgui.update_uis() and no hand changed() mark left: a window there updates because its
 # ui_data(A) re-runs when something it reads changes. A hard ban there. Files are only ever added.
 ui_push_converted = [
-  "code/modules/tgui/modules/agentcard.dm",
-  "code/modules/tgui/modules/appearance_changer.dm",
+  "code/content/tgui/modules/agentcard.dm",
+  "code/content/tgui/modules/appearance_changer.dm",
   "code/content/vore/eating/panel_databackend/vorepanel_set_attribute.dm",
   "code/content/mob/living/notes_panels.dm",
   "code/content/admin/admin_newscaster_panel.dm",
@@ -834,12 +834,12 @@ legacy_forms_converted = [
   "code/content/tension/",
   "code/modules/tgchat/",
   "code/content/tgchat/",
-  "code/modules/tgs_commands/",
-  "code/modules/tgui/",
+  "code/content/tgs_commands/",
+  "code/library/ui/tgui/",
   "code/content/tgui/",
-  "code/modules/tgui_input/",
+  "code/library/ui/tgui_input/",
   "code/content/tgui_input/",
-  "code/modules/tgui_panel/",
+  "code/library/ui/tgui_panel/",
   "code/content/tgui_panel/",
   "code/modules/tickets/",
   "code/content/tickets/",
@@ -875,7 +875,7 @@ call_ext_allow = [
   "code/__byond_version_compat.dm",
   "code/content/debugging/tracy.dm",
   "code/content/debugging/debugger.dm",
-  "code/modules/tgs/",
+  "code/world/tgs/",
   "code/tests/benchmarks/scenarios.dm",
 ]
 # the dynamic R10/thermal checks read their names from these generated files
@@ -1526,13 +1526,13 @@ banned = [
   "own_put = rel_add(holder, nameof(v), value, key): the engine's accessor is _own_put, never called from content",
   "ability_pay = a malf ability's price is costs = list(\"[RES_CPU]\" = price) on its request, or res_spend(user, RES_CPU, price) when it asks nothing",
   "explosion_contents_severity = declare blast_contents() (code/library/structures/blast_contents.dm); the explosion service reads explosion_contents_severity_of()",
-  "om_ui_bind = the window push is the UI push system (code/modules/tgui/ui_push.dm): a tracked change marks the host, phase R pushes once per frame",
-  "om_ui_unbind = the window push is the UI push system (code/modules/tgui/ui_push.dm)",
-  "om_ui_bind_table = the window push is the UI push system (code/modules/tgui/ui_push.dm)",
-  "om_ui_push = the window push is the UI push system: /datum/tgui/push_coalesced() (code/modules/tgui/ui_push.dm)",
-  "om_ui_status_bind = a window's status is /datum/tgui/status_watch() (code/modules/tgui/ui_status.dm)",
-  "om_ui_status_unbind = a window's status is /datum/tgui/status_unwatch() (code/modules/tgui/ui_status.dm)",
-  "om_ui_status = a window's status is re-checked in phase R by the UI push system (code/modules/tgui/ui_status.dm)",
+  "om_ui_bind = the window push is the UI push system (code/library/ui/tgui/ui_push.dm): a tracked change marks the host, phase R pushes once per frame",
+  "om_ui_unbind = the window push is the UI push system (code/library/ui/tgui/ui_push.dm)",
+  "om_ui_bind_table = the window push is the UI push system (code/library/ui/tgui/ui_push.dm)",
+  "om_ui_push = the window push is the UI push system: /datum/tgui/push_coalesced() (code/library/ui/tgui/ui_push.dm)",
+  "om_ui_status_bind = a window's status is /datum/tgui/status_watch() (code/library/ui/tgui/ui_status.dm)",
+  "om_ui_status_unbind = a window's status is /datum/tgui/status_unwatch() (code/library/ui/tgui/ui_status.dm)",
+  "om_ui_status = a window's status is re-checked in phase R by the UI push system (code/library/ui/tgui/ui_status.dm)",
   "tgui_change_mask = the window push is the UI push system: nothing names change channels",
   "DECLARE_UI = interface(\"Window\") in the type's CAPABILITIES block (doc/rewrite/final_api.html section 13)",
   "DECLARE_UI_STATE = interface(..., state = nameof(GLOB.x_state)), or a tgui_state() override for a state per instance",
@@ -1965,7 +1965,7 @@ retired_macros = [
 exempt_files = ["code/_helpers/icons/flatten.dm"]
 
 [lint.stored_refs]
-exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/refs/", "code/engine/time/", "code/datums/ownership/", "code/datums/om/", "code/datums/lifecycle/", "code/controllers/subsystems/garbage.dm", "code/modules/admin/view_variables/reference_tracking.dm", "code/engine/_generated/", "code/engine/change/", "code/engine/lifeforms/", "code/engine/stats/", "code/controllers/kernel/", "code/controllers/measure/"] # (and the kernel loop and its meter) # change delivery, lifeform and stat machinery: engine tables (relations proposal section 4)
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/world/tgs/", "code/tests/", "code/engine/refs/", "code/engine/time/", "code/datums/ownership/", "code/datums/om/", "code/datums/lifecycle/", "code/controllers/subsystems/garbage.dm", "code/modules/admin/view_variables/reference_tracking.dm", "code/engine/_generated/", "code/engine/change/", "code/engine/lifeforms/", "code/engine/stats/", "code/controllers/kernel/", "code/controllers/measure/"] # (and the kernel loop and its meter) # change delivery, lifeform and stat machinery: engine tables (relations proposal section 4)
 exempt_files = ["code/defines/host/tgs.dm", "code/content/datums/registries.dm", "code/controllers/kernel/membership.dm", "code/datums/native/entities.dm", "code/engine/declare/link_state.dm", "code/engine/actions/change.dm", "code/engine/actions/every.dm", "code/engine/actions/notices.dm", "code/engine/actions/reactions.dm", "code/engine/kernel/jobs.dm", "code/engine/io/jobs.dm", "code/engine/state/pool.dm", "code/engine/state/serializer.dm", "code/engine/present/type_verbs.dm", "code/engine/declare/capability_tables.dm", "code/engine/present/native_ends.dm", "code/engine/kernel/requests.dm", "code/engine/kernel/inbox.dm", "code/engine/kernel/sequence.dm", "code/engine/parts/run.dm", "code/engine/parts/resource.dm", "code/engine/declare/activation.dm", "code/engine/actions/hooks.dm", "code/engine/hooks/native_watch.dm"] # (run-state records the kernel sweeps: requests, input events, pending ops, reservations, activations, hooks, native watches; relations proposal section 7) the registry/membership/relation storage, and the kernel's own queues and tables (relations proposal section 4: engine tables are exempt by path and covered by dq_gc_sweep and the hard-delete counter)
 [lint.stored_refs.lists]
 # /datum/gear_tweak: a loadout tweak is a stateless flyweight (a colour, a name prompt): a reference to one names behaviour, not a world entity.
@@ -1998,20 +1998,20 @@ exempt_prefixes = ["code/engine/_generated/"]
 
 # ref_text (doc/rewrite/proposals/relations.md D9): a stored REF() / \ref[] text. The engine's own staleness keys and relation machinery key by REF text by design; tests are exempt.
 [lint.ref_text]
-exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/", "code/datums/ownership/", "code/datums/om/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/world/tgs/", "code/tests/", "code/engine/", "code/datums/ownership/", "code/datums/om/"]
 
 [lint.saved_handle]
 exempt_prefixes = ["code/engine/_generated/"]
 
 # untyped (doc/rewrite/proposals/relations.md D8): the same scope as stored_refs.
 [lint.untyped]
-exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/refs/", "code/engine/time/", "code/datums/ownership/", "code/datums/om/", "code/engine/_generated/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/world/tgs/", "code/tests/", "code/engine/refs/", "code/engine/time/", "code/datums/ownership/", "code/datums/om/", "code/engine/_generated/"]
 [lint.untyped.lists]
 exempt_types = ["/datum/system", "/datum/shared_cache", "/datum/controller", "/datum/world_service", "/datum/capability"]
 
 # untyped_member (doc/rewrite/native_compiler_issues.md, untyped receiver): a hard ban with no baseline. The vendored TGS DMAPI and generated output are exempt.
 [lint.untyped_member]
-exempt_prefixes = ["code/modules/tgs/", "code/engine/_generated/"]
+exempt_prefixes = ["code/world/tgs/", "code/engine/_generated/"]
 
 # mouse_override (doc/rewrite/final_api.html section 2): a hard ban with no baseline. BYOND's mouse and click procs are overridden only in the engine's entry file;
 # what a type does with its input is declared (click_on(), drag_onto(), hover(), ...) and found by the resolver.
@@ -2039,4 +2039,4 @@ exempt_prefixes = ["code/engine/_generated/"]
 # entity_ids (tools/analyze/src/lints/entity_ids.rs; doc/rewrite/proposals/relations.md D9, "One handle"): ad-hoc entity ids, counters minted as
 # ids and REF() text list keys; ref_token() is the one handle. The engine implements the handles and keeps ordering serials; tests and generated output are exempt.
 [lint.entity_ids]
-exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/unit_tests/", "code/tests/benchmarks/", "code/world/tgs/", "code/tests/", "code/engine/"]
