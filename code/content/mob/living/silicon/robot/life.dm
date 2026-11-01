@@ -8,7 +8,6 @@
 // Countdowns (killswitch, weapon lock) are timers (robot.dm).
 
 /mob/living/silicon/robot
-	life_set = LIFE_SET_ROBOT
 
 /// `if(transforming) return` and the per-cycle power counter reset.
 /mob/living/silicon/robot/proc/life_robot_cycle(datum/seq_frame/life/F)

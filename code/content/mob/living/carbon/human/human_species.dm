@@ -10,7 +10,6 @@
 	return TRUE
 
 /mob/living/carbon/human/dummy
-	life_set = LIFE_SET_DELIST
 
 /// A dummy is a mannequin for previews and look pins, never a crowd: its name is rolled at make, so seeding the tail loop from it would
 /// draw a different idle frame state on every run. Every dummy plays loop 0.
@@ -216,6 +215,7 @@ CAPABILITIES(/mob/living/carbon/human/sergal)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/carbon/human/dummy)
+	configure(living_rules(life_set = LIFE_SET_DELIST))
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_NONE))
 	configure(living_rules(has_huds = FALSE))
 	configure(mob_nature(no_vore = TRUE))

@@ -10,11 +10,12 @@
 
 STATIC_ENTRY(living_rules)
 
-/proc/living_rules(use_modern_ai = null, has_huds = null, max_nutrition = null, fire_reaction = null, fire_trigger_proc = null, fire_trigger_verb = null, fire_heats_body = null, force_max_speed = null, adminbus_trash = null, parasitic = null, appendage_color = null, vore_shred_time = null, composition_reagent = null, low_sorting_priority = null, delete_on_death = null, say_list_type = null, vore_capacity = null, vore_capacity_ex = null, climbing_delay = null, vore_icon_bellies = null, species_sounds = null)
+/proc/living_rules(use_modern_ai = null, has_huds = null, max_nutrition = null, fire_reaction = null, fire_trigger_proc = null, fire_trigger_verb = null, fire_heats_body = null, force_max_speed = null, adminbus_trash = null, parasitic = null, appendage_color = null, vore_shred_time = null, composition_reagent = null, low_sorting_priority = null, delete_on_death = null, say_list_type = null, vore_capacity = null, vore_capacity_ex = null, climbing_delay = null, vore_icon_bellies = null, species_sounds = null, life_set = null)
 	RETURN_TYPE(/datum/entry)
-	return entry_make(ENTRY_LIVING_RULES, null, list("use_modern_ai" = use_modern_ai, "has_huds" = has_huds, "max_nutrition" = max_nutrition, "fire_reaction" = fire_reaction, "fire_trigger_proc" = fire_trigger_proc, "fire_trigger_verb" = fire_trigger_verb, "fire_heats_body" = fire_heats_body, "force_max_speed" = force_max_speed, "adminbus_trash" = adminbus_trash, "parasitic" = parasitic, "appendage_color" = appendage_color, "vore_shred_time" = vore_shred_time, "composition_reagent" = composition_reagent, "low_sorting_priority" = low_sorting_priority, "delete_on_death" = delete_on_death, "say_list_type" = say_list_type, "vore_capacity" = vore_capacity, "vore_capacity_ex" = vore_capacity_ex, "climbing_delay" = climbing_delay, "vore_icon_bellies" = vore_icon_bellies, "species_sounds" = species_sounds))
+	return entry_make(ENTRY_LIVING_RULES, null, list("use_modern_ai" = use_modern_ai, "has_huds" = has_huds, "max_nutrition" = max_nutrition, "fire_reaction" = fire_reaction, "fire_trigger_proc" = fire_trigger_proc, "fire_trigger_verb" = fire_trigger_verb, "fire_heats_body" = fire_heats_body, "force_max_speed" = force_max_speed, "adminbus_trash" = adminbus_trash, "parasitic" = parasitic, "appendage_color" = appendage_color, "vore_shred_time" = vore_shred_time, "composition_reagent" = composition_reagent, "low_sorting_priority" = low_sorting_priority, "delete_on_death" = delete_on_death, "say_list_type" = say_list_type, "vore_capacity" = vore_capacity, "vore_capacity_ex" = vore_capacity_ex, "climbing_delay" = climbing_delay, "vore_icon_bellies" = vore_icon_bellies, "species_sounds" = species_sounds, "life_set" = life_set))
 
 /datum/type_trait/living_rules
+	var/life_set = LIFE_SET_LIVING
 	var/use_modern_ai = FALSE
 	var/has_huds = FALSE
 	var/max_nutrition = MAX_NUTRITION
@@ -41,6 +42,7 @@ STATIC_ENTRY(living_rules)
 	var/species_sounds = "None"
 
 /datum/type_trait/living_rules/copy_values(datum/type_trait/living_rules/into)
+	into.life_set = life_set
 	into.use_modern_ai = use_modern_ai
 	into.has_huds = has_huds
 	into.max_nutrition = max_nutrition
@@ -68,7 +70,7 @@ STATIC_ENTRY(living_rules)
 	trait_type = /datum/type_trait/living_rules
 	publish_key = LIVING_RULES_KEY
 	base_type = /mob/living
-	var_names = list("use_modern_ai" = "use_modern_ai", "has_huds" = "has_huds", "max_nutrition" = "max_nutrition", "fire_reaction" = "fire_reaction", "fire_trigger_proc" = "fire_trigger_proc", "fire_trigger_verb" = "fire_trigger_verb", "fire_heats_body" = "fire_heats_body", "force_max_speed" = "force_max_speed", "adminbus_trash" = "adminbus_trash", "parasitic" = "parasitic", "appendage_color" = "appendage_color", "vore_shred_time" = "vore_shred_time", "composition_reagent" = "composition_reagent", "low_sorting_priority" = "low_sorting_priority", "delete_on_death" = "delete_on_death", "say_list_type" = "say_list_type", "vore_capacity" = "vore_capacity", "vore_capacity_ex" = "vore_capacity_ex", "climbing_delay" = "climbing_delay", "vore_icon_bellies" = "vore_icon_bellies", "species_sounds" = "species_sounds")
+	var_names = list("life_set" = "life_set", "use_modern_ai" = "use_modern_ai", "has_huds" = "has_huds", "max_nutrition" = "max_nutrition", "fire_reaction" = "fire_reaction", "fire_trigger_proc" = "fire_trigger_proc", "fire_trigger_verb" = "fire_trigger_verb", "fire_heats_body" = "fire_heats_body", "force_max_speed" = "force_max_speed", "adminbus_trash" = "adminbus_trash", "parasitic" = "parasitic", "appendage_color" = "appendage_color", "vore_shred_time" = "vore_shred_time", "composition_reagent" = "composition_reagent", "low_sorting_priority" = "low_sorting_priority", "delete_on_death" = "delete_on_death", "say_list_type" = "say_list_type", "vore_capacity" = "vore_capacity", "vore_capacity_ex" = "vore_capacity_ex", "climbing_delay" = "climbing_delay", "vore_icon_bellies" = "vore_icon_bellies", "species_sounds" = "species_sounds")
 
 /// The holder's living_rules values (its own once one was set at run time). Read only.
 READS_AS(/proc/living_rules_of, LIVING_RULES_KEY)
@@ -143,3 +145,6 @@ READS_AS(/proc/living_rules_of, LIVING_RULES_KEY)
 
 /mob/living/proc/set_vore_capacity_ex(value)
 	return set_trait(src, ENTRY_LIVING_RULES, "vore_capacity_ex", value)
+
+/mob/living/proc/set_life_set(value)
+	return set_trait(src, ENTRY_LIVING_RULES, "life_set", value)

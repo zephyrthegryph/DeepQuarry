@@ -6,7 +6,6 @@
 	w_class = ITEMSIZE_SMALL
 	pressure_resistance = 2
 	/// Card stock: barely slows a fire (containment paths, C2).
-	insulation = 0.1
 
 // ---- Containment (C1): one pages slot for paperwork. Destroying the folder
 // destroys its pages, as before. C2: the pages are inside the cover, and a
@@ -118,6 +117,7 @@ CAPABILITIES(/obj/item/folder/white_rd)
 	return OP_OK
 
 CAPABILITIES(/obj/item/folder)
+	configure(obj_rules(insulation = 0.1))
 	configure(item_worn(slots = SLOT_BELT | SLOT_HOLSTER))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
 	op("folder_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
