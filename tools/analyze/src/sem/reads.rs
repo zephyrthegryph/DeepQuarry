@@ -30,7 +30,7 @@ use super::Sem;
 
 /// Engine-internal directories the lints' walk does not enter (dispatchers that read `vars[]` by design, the tgui plumbing, the Verdigris
 /// bindings). The closed walk ([`ReadsEngine::closed`]) enters them; what it finds there or beneath them is `closed_only`.
-pub const ENGINE_DIRS: &[&str] = &["code/datums/sys/", "code/datums/om/", "code/library/ui/tgui/", "code/content/tgui/modules/", "code/datums/capabilities/", "code/datums/reactions/", "code/datums/ownership/", "code/engine/", "code/__defines/verdigris/"];
+pub const ENGINE_DIRS: &[&str] = &["code/library/sys/", "code/datums/om/", "code/library/ui/tgui/", "code/content/tgui/modules/", "code/library/capabilities/", "code/library/reactions/", "code/library/ownership/", "code/engine/", "code/__defines/verdigris/"];
 
 /// Maximum depth of followed procs (a guard against pathological recursion, not a semantic limit).
 const MAX_DEPTH: usize = 24;
@@ -50,7 +50,7 @@ pub const MESSAGE_CALLS: &[&str] = &["to_chat", "visible_message", "audible_mess
 const HANDLE_RESOLUTION_FILE: &str = "code/engine/time/handles.dm";
 
 pub fn framework_file(rel: &str) -> bool {
-    ENGINE_DIRS.iter().any(|d| rel.starts_with(d)) || rel.starts_with("code/world/kernel/") || rel == "code/datums/datum.dm" || is_test_code(rel)
+    ENGINE_DIRS.iter().any(|d| rel.starts_with(d)) || rel.starts_with("code/world/kernel/") || rel == "code/library/datum/datum.dm" || is_test_code(rel)
 }
 
 /// Test-only code (the unit tests and the test driver): compiled out of production, so never an input of a stat or a look.

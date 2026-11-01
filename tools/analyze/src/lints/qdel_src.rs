@@ -34,7 +34,7 @@ static META: Meta = Meta {
     },
     rules: &[RuleMeta {
         name: "qdel_src",
-        hint: "say why the thing ends: consume() / replace_with() / expire() / slot_clear() / ledger_empty() (code/datums/lifecycle/verbs.dm); a real destroy-now keeps qdel(src) with `// ALLOW(lifecycle): <reason>`",
+        hint: "say why the thing ends: consume() / replace_with() / expire() / slot_clear() / ledger_empty() (code/library/lifecycle/verbs.dm); a real destroy-now keeps qdel(src) with `// ALLOW(lifecycle): <reason>`",
     }],
     allow: &["lifecycle"],
     lists: &[],

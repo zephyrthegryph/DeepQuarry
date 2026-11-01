@@ -10,7 +10,7 @@ outside_registry	code/a.dm	4
 outside_registry	code/b.dm	1
 outside_registry	code/b.dm	2
 outside_registry	code/b.dm	3
-outside_registry	code/datums/capabilities/capabilities.dm	1
+outside_registry	code/library/capabilities/capabilities.dm	1
 outside_registry	code/tests/unit_tests/t.dm	1
 raw_write	code/a.dm	7
 raw_write	code/a.dm	10

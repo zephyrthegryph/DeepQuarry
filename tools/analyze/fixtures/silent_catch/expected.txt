@@ -3,7 +3,7 @@ silent_catch	code/.hid.dm	2
 silent_catch	code/__defines/other.dm	2
 silent_catch	code/controllers/subsystems/x.dm	2
 silent_catch	code/controllers_extra/x.dm	4
-silent_catch	code/datums/lifecycle/x.dm	2
+silent_catch	code/library/lifecycle/x.dm	2
 silent_catch	code/datums/om/core.dm	2
 silent_catch	code/datums/om/core.dm	4
 silent_catch	code/datums/om/core.dm	6

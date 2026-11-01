@@ -21,7 +21,7 @@ from own_transfers_survey import calls, split_args  # noqa: E402
 
 MARKS = []
 MARK_RE = re.compile(r"\s*/\*MP:(\d+)\*/")
-SKIP = ("code/datums/ownership/",)
+SKIP = ("code/library/ownership/",)
 DIRECT = ("code/tests/unit_tests/", "code/modules/benchmarks/", "code/tests/")
 
 

@@ -2,7 +2,7 @@ hand_rolled	code/.hd/h.dm	2
 hand_rolled	code/.hid.dm	2
 hand_rolled	code/__defines/other.dm	1
 hand_rolled	code/__defines/other.dm	2
-hand_rolled	code/datums/shared_cache/other.dm	2
+hand_rolled	code/library/shared_cache/other.dm	2
 hand_rolled	code/modules/foo/a.dm	2
 hand_rolled	code/modules/foo/a.dm	3
 hand_rolled	code/modules/foo/a.dm	6

@@ -44,7 +44,7 @@ const RULES: &[RuleMeta] = &[
     },
 ];
 
-const RUNTIME: &[&str] = &["code/datums/sys/appearance.dm", "code/__defines/sys_appearance.dm"];
+const RUNTIME: &[&str] = &["code/library/sys/appearance.dm", "code/__defines/sys_appearance.dm"];
 const LIFECYCLE: &[&str] = &["Initialize", "New", "LateInitialize", "Destroy", "on_materialize", "on_dematerialize"];
 const HARMLESS_CALLS: &[&str] = &[
     "to_chat", "visible_message", "audible_message", "balloon_alert", "balloon_alert_to_viewers",

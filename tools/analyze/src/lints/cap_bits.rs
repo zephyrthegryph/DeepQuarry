@@ -142,7 +142,7 @@ impl Lint for CapBits {
         ];
         let mut scope = LintScope::default();
         scope.lists.insert("registry".into(), vec![REG.into()]);
-        scope.lists.insert("writers".into(), vec!["code/datums/capabilities/capabilities.dm".into()]);
+        scope.lists.insert("writers".into(), vec!["code/library/capabilities/capabilities.dm".into()]);
         scope.lists.insert("write_exempt_prefixes".into(), vec!["code/tests/unit_tests/".into(), "code/tests/unit_tests/".into()]);
         let refs: Vec<&SourceFile> = files.iter().collect();
         let mut out = Sink::new();
