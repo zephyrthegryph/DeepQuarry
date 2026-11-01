@@ -121,13 +121,6 @@
 	frequency = text2num(frequency)
 	return frequency * 10
 
-//Generalised helper proc for letting mobs rename themselves. Used to be clname() and ainame()
-//Last modified by Carn
-/mob/proc/rename_self(role, allow_numbers=0, attempt = 1, started_at)
-	if(isnull(started_at))
-		started_at = TIME_NOW(CLOCK_WORLD)
-	open_request(src, /datum/prompt/text/rename_self, TYPE_PROC_REF(/mob, rename_self_entered), answerer = src, default = real_name, role = role, allow_numbers = allow_numbers, attempt = attempt, started_at = started_at)
-
 /// A mob picking its own name for a role (rename_self()).
 /datum/prompt/text/rename_self
 	title = "Name change"
@@ -515,7 +508,6 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 		if(areas)
 			. |= T.loc
 
-
 // Returns direction-string, rounded to multiples of 22.5, from the first parameter to the second
 // N, NNE, NE, ENE, E, ESE, SE, SSE, S, SSW, SW, WSW, W, WNW, NW, NNW
 /proc/get_adir(turf/A, turf/B)
@@ -585,7 +577,6 @@ GLOBAL_TABLE(get_fancy_list_of_datum_types, GLOBAL_PROC_REF(build_get_fancy_list
 // Third one is the text that will be clickable.
 /proc/href(href_src, list/href_params, href_text)
 	return "<a href='byond://?src=[REF(href_src)];[list2params(href_params)]'>[href_text]</a>"
-
 
 /proc/spiral_range(dist = 0, atom/center = null, orange = FALSE)
 	var/list/atom_list = list()

@@ -924,3 +924,10 @@ GLOBAL_LIST_INIT(common_tools, list(
 	pre_generated_list = make_types_fancy(sortList(typesof(/datum) - typesof(/atom)))
 	return pre_generated_list
 
+//Generalised helper proc for letting mobs rename themselves. Used to be clname() and ainame()
+//Last modified by Carn
+/mob/proc/rename_self(role, allow_numbers=0, attempt = 1, started_at)
+	if(isnull(started_at))
+		started_at = TIME_NOW(CLOCK_WORLD)
+	open_request(src, /datum/prompt/text/rename_self, TYPE_PROC_REF(/mob, rename_self_entered), answerer = src, default = real_name, role = role, allow_numbers = allow_numbers, attempt = attempt, started_at = started_at)
+
