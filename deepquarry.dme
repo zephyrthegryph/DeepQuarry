@@ -2165,7 +2165,7 @@
 #include "code\world\kernel\measure\report.dm"
 #include "code\world\kernel\measure\systems.dm"
 #include "code\world\configuration\config_entry.dm"
-#include "code\controllers\configuration\configuration.dm"
+#include "code\world\configuration\configuration.dm"
 #include "code\world\configuration\legacy.dm"
 #include "code\world\configuration\entries\chompstation.dm"
 #include "code\world\configuration\entries\containment.dm"

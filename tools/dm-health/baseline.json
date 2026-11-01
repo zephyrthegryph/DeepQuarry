@@ -76,7 +76,7 @@
   "large-proc:code/content/_onclick/hud/robot.dm:230 lines; threshold 160",
   "large-proc:code/content/_onclick/hud/screen_objects.dm:434 lines; threshold 160",
   "argument-type:code/content/_onclick/hud/spell_screen_objects.dm:/atom/movable/screen/spell/cut_overlay: remove_overlays receives text instead of /list",
-  "parent-always:code/controllers/configuration/configuration.dm:/datum/controller/configuration/can_vv_get must call ..() on every normal path",
+  "parent-always:code/world/configuration/configuration.dm:/datum/controller/configuration/can_vv_get must call ..() on every normal path",
   "type-coupling:code/content/asset_cache/assets/circuits.dm:47 distinct type paths",
   "parent-always:code/world/systems/dbcore.dm:/datum/controller/subsystem/dbcore/can_vv_get must call ..() on every normal path",
   "large-proc:code/world/systems/internal_wiki.dm:163 lines; threshold 160",

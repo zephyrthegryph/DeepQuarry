@@ -4083,3 +4083,4 @@ code/datums/sys/damage_reactions.dm	code/library/sys/damage_reactions.dm
 code/datums/sys/emag.dm	code/library/sys/emag.dm
 code/datums/sys/tables.dm	code/library/sys/tables.dm
 code/datums/sys/ui.dm	code/library/sys/ui.dm
+code/controllers/configuration/configuration.dm	code/world/configuration/configuration.dm
