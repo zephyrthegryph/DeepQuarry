@@ -527,6 +527,13 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	for(var/category_key in categories_to_send)
 		dq_category_values(category_key, widget_values)
 	data["dq_values"] = widget_values
+	// Every linkable field sent gets an entry ("" = its own colour): the window merges this over what it has.
+	var/list/color_links = list()
+	for(var/value_key in widget_values)
+		var/datum/preference/color/color_pref = GLOB.preference_entries_by_key[value_key]
+		if(istype(color_pref) && color_pref.linkable)
+			color_links[value_key] = color_pref.linked_slot(prefs_datum.read_preference_raw(color_pref.type)) || ""
+	data["dq_color_links"] = color_links
 
 	var/list/editor_data = list()
 	var/list/editor_versions = list()

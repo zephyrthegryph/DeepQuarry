@@ -79,7 +79,7 @@
 	// that aren't on the global markings list (legacy data) plus any whose `allowed_species`
 	// or marker presence depends on species — handled by the marking_species_filter constraint
 	// triggered by body_markings updates.
-	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
+	var/list/markings = preferences.read_preference_raw(/datum/preference/body_markings)
 	if(!islist(markings))
 		return
 	markings &= GLOB.body_marking_styles_list

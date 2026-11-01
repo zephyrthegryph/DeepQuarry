@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - code_imp: "A light lane repeats its checks only when master changed something those checks read, not when a neighbour in the same directory moved"

@@ -262,7 +262,7 @@ cmd_enqueue() {
 		heavy="$(light_heavy_in origin/master HEAD)"
 		if [ -n "$heavy" ]; then
 			echo "$heavy" | head -8 >&2
-			die "REFUSED: --light may not touch .dm/.dme/maps/icons/code/interface/sound/tgui (listed above): enqueue without --light"
+			die "REFUSED: --light may not touch .dm/.dme/maps/icons/code/interface/sound/tgui/public/tgfont (listed above): enqueue without --light"
 		fi
 		# the light batch merges origin/<branch>
 		git push -q origin "HEAD:refs/heads/$branch" || die "could not push $branch to origin (never forced)"
@@ -483,7 +483,7 @@ promote_light() { # <branch>
 	[ "$(qget "$f" light)" = 1 ] && return 0
 	tip="${TIP_OF[$b]:-$(qget "$f" tip)}"
 	G diff --name-only "origin/master...$tip" 2>/dev/null | awk '
-		/\.(dm|dme|dmm|dmf|dmi|dmb|rsc)$/ || /^(maps|icons|code|interface|sound|tgui)\// || /^tools\/(dmb|build)\// { heavy = 1 }
+		/\.(dm|dme|dmm|dmf|dmi|dmb|rsc)$/ || /^(maps|icons|code|interface|sound)\// || /^tgui\/(public|packages\/tgfont\/static)\// || /^tools\/(dmb|build)\// { heavy = 1 }
 		END { exit heavy ? 0 : 1 }' && return 0
 	if [ "$(G rev-parse -q --verify "refs/remotes/origin/$b" 2>/dev/null)" != "$tip" ] && ! G push -q origin "$tip:refs/heads/$b" 2>/dev/null; then return 0; fi
 	qedit "$b" -e "s/^light=.*/light=1/"
@@ -741,8 +741,7 @@ dc_candidates() { # <master>: the queued heavy lanes that need a DreamChecker ru
 # ---- light prechecks (27 October: compiler lanes ride the light path; their cargo tests made each light cycle ~10 min, ahead of every DM lane) --
 # The prechecker runs a light lane's cheap checks on its merge with master (DQ_GATE_LIGHT) beside the gates. The light cycle takes a light
 # lane once that passed (or when prechecks are off, or after the wait limit), and lands it without repeating the checks when master changed
-# nothing in the lane's areas since (light_trust: a crate, tools/<x>, or a directory; a parent area such as tools/dmb overlaps its crates).
-light_area() { awk '{ n = split($0, p, "/"); if (p[1] == "tools" && p[2] == "dmb" && p[3] == "crates" && n > 4) print p[1] "/" p[2] "/" p[3] "/" p[4]; else if (p[1] == "tools" && n > 3) print p[1] "/" p[2]; else if (p[1] == "tools" && n == 2) print $0; else if (n > 1) { sub(/\/[^\/]*$/, "", $0); print } else print "." }' | sort -u; }
+# nothing its checks read since (light_trust, tools/train/light_trust.py: the lane's files, its self-tests and what they name, its crates).
 light_ready() { # <branch>: a light lane may ride now
 	local b="$1" tip st since_s
 	[ "$PRE_ON" = 1 ] && [ "$LIGHT_PRE" = 1 ] || return 0
@@ -754,7 +753,7 @@ light_ready() { # <branch>: a light lane may ride now
 	[ $(( $(date +%s) - since_s )) -ge $(( PRE_WAIT_MIN * 60 )) ]
 }
 light_trust() { # <lanes...>: 0 and LIGHT_TRUST_WHY set when every lane's light precheck still holds on current origin/master
-	local b tip vf pm master la ma a m seen=""
+	local b tip vf pm master st why seen=""
 	LIGHT_TRUST_WHY=""
 	[ "$PRE_ON" = 1 ] && [ "$LIGHT_PRE" = 1 ] || return 1
 	master="$(G rev-parse origin/master 2>/dev/null)" || return 1
@@ -765,16 +764,12 @@ light_trust() { # <lanes...>: 0 and LIGHT_TRUST_WHY set when every lane's light 
 		pm="$(qget "$vf" master)"
 		G merge-base --is-ancestor "$pm" "$master" 2>/dev/null || return 1
 		if [ "$pm" != "$master" ]; then
-			la="$(G diff --name-only "$master...$tip" | light_area)"
-			ma="$(G diff --name-only "$pm" "$master" | light_area)"
-			for a in $la; do for m in $ma; do
-				case "$a/" in "$m/"*) return 1 ;; esac
-				case "$m/" in "$a/"*) return 1 ;; esac
-			done; done
+			st="$(G diff --name-only "$master...$tip" | ( cd "$(repo_dir)" && bash tools/dq_light_checks.sh --selftests-for ))" || return 1
+			why="$(cd "$(repo_dir)" && python3 tools/train/light_trust.py --repo . --base "$pm" --master "$master" --tip "$tip" --selftests "$st" 2>&1)" || { tlog "light trust: $b repeats its checks: ${why//$'\r'/}"; return 1; }
 		fi
 		seen="$seen $b@${pm:0:10}"
 	done
-	LIGHT_TRUST_WHY="every lane passed these checks in its light precheck (${seen# }) and master changed nothing in their areas since"
+	LIGHT_TRUST_WHY="every lane passed these checks in its light precheck (${seen# }) and master changed nothing those checks read since"
 	return 0
 }
 lane_is_light() { [ "$(qget "$(qfile "$1")" light)" = 1 ]; }
@@ -1511,7 +1506,7 @@ light_cycle() { # CHOSEN are all light
 	local trust=""
 	if light_trust "${CHOSEN[@]}"; then trust="$LIGHT_TRUST_WHY"; tlog "light cycle: the cheap checks are not repeated: $trust"; fi
 	printf '%s\n' "${CHOSEN[@]}" >"$STATE/light.lanes"
-	( cd "$(repo_dir)" && DQ_LANE_POOL_STATE="$lstate" DQ_MERGE_SESSION="train-light-$$" DQ_LIGHT_TRUST="$trust" bash tools/dq_land_batch.sh run ) >"$out" 2>&1
+	( cd "$(repo_dir)" && DQ_LANE_POOL_STATE="$lstate" DQ_MERGE_SESSION="train-light-$$" DQ_LIGHT_TRUST="$trust" bash "${DQ_LAND_TOOLS_DIR:-tools}/dq_land_batch.sh" run ) >"$out" 2>&1
 	rc=$?
 	G fetch -q origin
 	for b in "${CHOSEN[@]}"; do
@@ -1526,7 +1521,7 @@ light_cycle() { # CHOSEN are all light
 		for one in "${again[@]}"; do
 			printf 'branch=%s\ntip=%s\nowner=train\nsince=%s\n' "$one" "${TIP_OF[$one]}" "$(now)" >"$lq/$(fname "$one").q"
 			tlog "light lane $one retried alone"
-			( cd "$(repo_dir)" && DQ_LANE_POOL_STATE="$lstate" DQ_MERGE_SESSION="train-light-$$" bash tools/dq_land_batch.sh run ) >"$out.$(fname "$one")" 2>&1
+			( cd "$(repo_dir)" && DQ_LANE_POOL_STATE="$lstate" DQ_MERGE_SESSION="train-light-$$" bash "${DQ_LAND_TOOLS_DIR:-tools}/dq_land_batch.sh" run ) >"$out.$(fname "$one")" 2>&1
 			G fetch -q origin
 			G merge-base --is-ancestor "${TIP_OF[$one]}" origin/master || unlanded+=("$one")
 			rm -f "$lq"/*.q
@@ -1545,12 +1540,72 @@ light_cycle() { # CHOSEN are all light
 	done
 }
 
+# ---- light lanes during a heavy gate (1 November: tools/light-selftests-parallel waited 2071 s from its passing precheck behind a 1730 s cycle) ----
+# A push during a gate used to cost the gate: its strict push refused any master but the one it started on. A light lane lands beside the gate when
+#   - its light precheck passed for this tip (the prechecker runs beside the gate already);
+#   - every path it changes is one no gate reads (tools/dq_light_paths.sh light_gate_neutral: docs, changelogs, train and lane scripts, self-tests;
+#     never the compiler, the build, the analyzer, verdigris, lints or anything a world reads);
+#   - it shares no directory with the lanes being gated (the rule dq_push_stamp.sh's batch_disjoint applies to the gate's stamp at the push);
+#   - no bisect is being resumed (bisect.cache is keyed to origin/master).
+# The gate's push then merges master onto the gated commit and keeps the proof (dq_push_master.sh DQ_PUSH_NEUTRAL_OK): that commit differs from the gated
+# one only in paths no gate reads, which the push verifies itself. Anything else there refuses as "master moved": the lanes stay queued, nothing is
+# blamed. A lane that does not land here is not bounced; it rides the next normal light cycle. No new landing starts once the gate's push does.
+# DQ_TRAIN_LIGHT_SIDE=0 turns it off.
+light_side_eligible() { # <branch>: why not on stdout and 1, or 0
+	local b="$1" tip f nn bf d
+	tip="$(qget "$(qfile "$b")" tip)"
+	nn="$( . "$LIGHT_SIDE_TOOLS/dq_light_paths.sh"; cd "$(repo_dir)" && light_gate_unneutral_in origin/master "$tip" | head -n 3 | tr '\n' ' ')"
+	[ -z "$nn" ] || { echo "it changes what a gate reads ($nn)"; return 1; }
+	local -A dirs=()
+	while IFS= read -r bf; do
+		[ -n "$bf" ] || continue
+		while IFS= read -r f; do [ -z "$f" ] || dirs[${f%/*}/]=1; done < <(G diff --name-only "origin/master...$(qget "$(qfile "$bf")" tip)" 2>/dev/null)
+	done <"$STATE/batch.lanes"
+	while IFS= read -r f; do
+		d="${f%/*}/"
+		[ -z "${dirs[$d]:-}" ] || { echo "it shares $d with the lanes being gated"; return 1; }
+	done < <(G diff --name-only "origin/master...$tip" 2>/dev/null)
+	return 0
+}
+light_side_loop() { # <integrator pid>: lands eligible light lanes while the gate runs; exits when the gate's push starts or it ends
+	local parent="$1" b why tip tried=" "
+	bounce() { tlog "light side: $1 did not land beside the gate ($2); it rides the normal light cycle"; }
+	phase() { :; } # cycle.txt names the gate
+	LIGHT_SIDE_TOOLS="$STATE/side-tools/tools"
+	while alive "$parent" && [ -f "$STATE/batch.lanes" ] && [ ! -f "$STATE/light_side.stop" ]; do
+		if [ ! -s "$STATE/bisect.lanes" ]; then
+			for b in $(queue_branches); do
+				lane_is_light "$b" || continue
+				tip="$(qget "$(qfile "$b")" tip)"
+				case "$tried" in *" $b@$tip "*) continue ;; esac
+				[ "$(pre_status "$b" "$tip")" = pass ] || continue
+				tried="$tried$b@$tip "
+				G fetch -q origin 2>/dev/null
+				# this process's own copy of the batch scripts: the train worktree moves under it while the gate merges
+				rm -rf "$STATE/side-tools"; mkdir -p "$STATE/side-tools"
+				G archive origin/master -- 'tools/*.sh' | tar -x -C "$STATE/side-tools" 2>/dev/null
+				grep -q light_gate_neutral "$LIGHT_SIDE_TOOLS/dq_light_paths.sh" 2>/dev/null || continue
+				if ! why="$(light_side_eligible "$b")"; then tlog "light side: $b waits for the normal light cycle: $why"; continue; fi
+				[ -f "$STATE/batch.lanes" ] && [ ! -f "$STATE/light_side.stop" ] || break
+				TIP_OF[$b]="$tip"; CHOSEN=("$b")
+				tlog "light side: $b lands beside the gate of [$(tr '\n' ' ' <"$STATE/batch.lanes")]"
+				DQ_LAND_TOOLS_DIR="$LIGHT_SIDE_TOOLS" light_cycle
+			done
+		fi
+		sleep "${DQ_TRAIN_LIGHT_SIDE_POLL:-5}"
+	done
+}
 heavy_cycle() { # the lanes being gated are listed in batch.lanes while it runs (the prechecker leaves them alone)
-	local hrc
+	local hrc side=""
 	printf '%s\n' "${CHOSEN[@]}" >"$STATE/batch.lanes"
 	GATE_T0=$(date +%s)   # the gate and push alone; "cycle" also counts the preamble, the disk floor check and any fast-land attempts
+	rm -f "$STATE/light_side.stop"
+	if [ "${DQ_TRAIN_LIGHT_SIDE:-1}" = 1 ] && [ "${DQ_TRAIN_DRY_RUN:-0}" != 1 ]; then ( light_side_loop "$$" ) & side=$!; fi
 	heavy_cycle_gate; hrc=$?
+	: >"$STATE/light_side.stop"
 	rm -f "$STATE/batch.lanes"
+	# its landing in progress finishes first: the next cycle's light batch shares its queue directory
+	[ -z "$side" ] || wait "$side" 2>/dev/null
 	return "$hrc"
 }
 heavy_cycle_gate() {
@@ -1695,10 +1750,11 @@ heavy_cycle_gate() {
 		return 0
 	fi
 	phase "push: $good"
+	: >"$STATE/light_side.stop"   # no new landing beside the gate from here; one still running makes this push re-merge
 	pushlog="$LOGS/cycle-$stamp.push.log"
 	(
 		cd "$WT" || exit 99
-		export DQ_MERGE_SESSION="train-$$" DQ_DREAMMAKER_GATE=0 DQ_PUSH_STRICT=1 DQ_PUSH_NO_REPROOF=1 DQ_PUSH_TRUST_GATE_DM=1
+		export DQ_MERGE_SESSION="train-$$" DQ_DREAMMAKER_GATE=0 DQ_PUSH_STRICT=1 DQ_PUSH_NO_REPROOF=1 DQ_PUSH_TRUST_GATE_DM=1 DQ_PUSH_NEUTRAL_OK="${DQ_TRAIN_LIGHT_SIDE:-1}"
 		[ "${DQ_TRAIN_DRY_RUN:-0}" = 1 ] && export DQ_PUSH_DRY_RUN=1
 		bash tools/dq_push_master.sh --expect "$good"
 	) >"$pushlog" 2>&1

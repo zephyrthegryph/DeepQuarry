@@ -2,6 +2,8 @@ import { describe, expect, it } from 'bun:test';
 import {
   colorCategory,
   colorsInUse,
+  isSlotName,
+  slotColors,
   SUGGESTED_COLORS,
   suggestedColors,
 } from './colors';
@@ -43,5 +45,19 @@ describe('colorsInUse', () => {
       ]),
     );
     expect(colorsInUse(values, 5)).toHaveLength(5);
+  });
+});
+
+describe('palette slots', () => {
+  it('knows a slot name from a hex', () => {
+    expect(isSlotName('primary')).toBe(true);
+    expect(isSlotName('extra2')).toBe(true);
+    expect(isSlotName('#ffffff')).toBe(false);
+    expect(isSlotName('')).toBe(false);
+  });
+  it('reads the slots from the values, each as a hex', () => {
+    const slots = slotColors({ palette_primary: '#AABBCC' });
+    expect(slots.primary).toBe('#aabbcc');
+    expect(slots.extra2).toBe('#000000');
   });
 });

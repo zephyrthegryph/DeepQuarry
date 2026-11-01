@@ -11,7 +11,7 @@
 #
 # What a batch does (merge lock held, in the merge worktree, the lock part is short because nothing here compiles):
 #   1. drops queue entries already in origin/master and REFUSES (and dequeues) a branch that touches a heavy path: .dm .dme .dmm .dmi, maps/,
-#      icons/, code/, interface/, sound/, tgui/ (tools/dq_light_paths.sh): those need a general lane and the full gates;
+#      icons/, code/, interface/, sound/, tgui/public/, tgui/packages/tgfont/static/ (tools/dq_light_paths.sh): those need a general lane and the full gates;
 #   2. merges each remaining branch with --no-ff; a branch that conflicts is skipped and stays queued, the rest still land;
 #   3. runs the cheap checks for what changed (tools/dq_light_checks.sh: bash -n/shellcheck, doc links, cargo test for touched crates,
 #      ratchets only when .dm files or the lints changed);
@@ -24,8 +24,10 @@ set -uo pipefail
 export DQ_NATIVE_NO_DAEMON=1 DMB_DAEMON_AUTOSTART=0
 cd "$(git rev-parse --show-toplevel)"
 here="$(pwd)"
-. "$here/tools/dq_git_safe.sh"
-. "$here/tools/dq_light_paths.sh"
+# DQ_LAND_TOOLS_DIR: where this batch's own scripts live when the checkout it runs from is moving under it (dq_train.sh light_side: the train worktree mid-gate).
+tools_dir="${DQ_LAND_TOOLS_DIR:-$here/tools}"
+. "$tools_dir/dq_git_safe.sh"
+. "$tools_dir/dq_light_paths.sh"
 STATE="${DQ_LANE_POOL_STATE:-E:/dq-cache/lane-pool}"
 Q="$STATE/light-queue"
 
@@ -52,7 +54,7 @@ cmd_submit() {
 	heavy="$(light_heavy_in origin/master HEAD)"
 	if [ -n "$heavy" ]; then
 		echo "$heavy" | head -8 >&2
-		die "REFUSED: a light branch may not touch .dm/.dme/maps/icons/code/interface/sound/tgui (listed above). Move this work to a general lane (bash tools/dq_lane_pool.sh lease <branch>) and land it with tools/dq_land.sh."
+		die "REFUSED: a light branch may not touch .dm/.dme/maps/icons/code/interface/sound/tgui/public/tgfont (listed above). Move this work to a general lane (bash tools/dq_lane_pool.sh lease <branch>) and land it with tools/dq_land.sh."
 	fi
 	ahead="$(git rev-list --count origin/master..HEAD)"
 	[ "$ahead" -gt 0 ] || die "$branch holds nothing origin/master lacks; there is nothing to land"
@@ -79,8 +81,8 @@ cmd_run() {
 	[ ${#lanes[@]} -gt 0 ] || { log "nothing is waiting in the light queue"; return 0; }
 	log "batch of ${#lanes[@]}: ${lanes[*]}"
 	export DQ_MERGE_SESSION="light-batch-$$"
-	. "$here/tools/dq_machine_slots.sh"
-	wt="$(bash "$here/tools/dq_merge_worktree.sh" --lanes "${lanes[*]}")" || die "could not take the merge lock / worktree"
+	. "$tools_dir/dq_machine_slots.sh"
+	wt="$(bash "$tools_dir/dq_merge_worktree.sh" --lanes "${lanes[*]}")" || die "could not take the merge lock / worktree"
 	rc=0
 	(
 		cd "$wt" || exit 1

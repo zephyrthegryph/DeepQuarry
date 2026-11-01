@@ -258,7 +258,7 @@
 		var/datum/preference/pref = GLOB.preference_entries[pref_type]
 		if(pref.savefile_identifier != PREFERENCE_CHARACTER)
 			continue
-		var/current = read_preference(pref_type)
+		var/current = read_preference_raw(pref_type) // the stored form: a palette link is not a stale value
 		var/sanitized = pref.sanitize(current, src)
 		if(islist(sanitized) || sanitized != current)
 			update_preference_by_type(pref_type, sanitized)

@@ -8,6 +8,7 @@
 #   - cargo test for every Cargo manifest above a changed file under tools/ or verdigris/ (inside a machine cargo slot);
 #   - the ratchets (tools/ci/check_ratchets.sh) only when a .dm file changed or a lint input did (tools/analyze, lint_scopes.toml, baselines, check_*.sh);
 #   - the self-test of each changed tool (tools/ci/test_*.sh, mapped from the tool; test_train.sh only for the train / merge drivers), each capped;
+#   - TGUI, when a tgui/ file other than a doc changed: build.sh tgui-lint (biome, tsc), tgui-test and the bundle build; no DM compile, no world (DQ_LIGHT_TGUI=0 skips, fixture tests);
 #   - a changed heavy path (tools/dq_light_paths.sh) is a refusal: a light batch never carries it.
 # DQ_LIGHT_CARGO=0 skips cargo (fixture tests). Run from the worktree that holds <head>.
 set -uo pipefail
@@ -21,6 +22,30 @@ light_cargo_target_args() {
 }
 [ "${1:-}" != --target-args ] || { light_cargo_target_args "$2"; exit 0; }
 cd "$(git rev-parse --show-toplevel)"
+# The one map from a changed file to the self-tests that cover it. tools/train/light_trust.py reads the same answer through --selftests-for.
+declare -A selftests=()
+add_selftest() { [ -f "tools/ci/$1" ] && selftests["$1"]=1; }
+selftests_for() { # <changed file>
+	case "$1" in
+		tools/ci/test_*.sh) add_selftest "$(basename "$1")" ;;
+		tools/dq_train.sh|tools/dq_train_estimate.js|tools/dq_merge_batch.sh|tools/dq_merge_gates.sh|tools/dq_gate_retry.sh|tools/dq_gate_verdicts.sh|tools/dq_declared_tests.sh|tools/train/*) add_selftest test_train.sh; add_selftest test_train_decisions.sh ; add_selftest test_train_enqueue_wait.sh; add_selftest test_train_snapshot.sh ; add_selftest test_train_landed_times.sh ; add_selftest test_train_light_trust.sh; add_selftest test_train_light_side.sh ;;
+		tools/ci/check_ratchets.sh) add_selftest test_ratchets_selftest_fail.sh ;;
+		tools/ci/check_gitattributes.sh) add_selftest test_check_gitattributes.sh ;;
+		tools/dq_light_paths.sh|tools/dq_land_batch.sh) add_selftest test_light_checks.sh; add_selftest test_train_light_side.sh ;;
+		tools/dq_push_master.sh) add_selftest test_push_refuse_early.sh; add_selftest test_train_light_side.sh ;;
+		tools/dq_light_checks.sh) add_selftest test_light_checks.sh; add_selftest test_train_decisions.sh; add_selftest test_train_light_trust.sh ;;
+		tools/dq_stale_includes.sh|tools/dq_merge_master.sh|tools/light_cargo_rdeps.py) add_selftest test_train_decisions.sh; add_selftest test_stale_includes_generated.sh ;;
+		tools/ci/lint_scopes_merge_driver.sh|tools/dq_git_safe.sh) add_selftest test_train_decisions.sh ;;
+		tools/dq_*.sh) add_selftest "test_$(basename "$1" .sh | sed 's/^dq_//').sh" ;;
+	esac
+	return 0
+}
+# --selftests-for: file names on stdin, the self-tests they map to on stdout, one line (no checks run)
+if [ "${1:-}" = --selftests-for ]; then
+	while IFS= read -r f; do f="${f%$'\r'}"; [ -z "$f" ] || selftests_for "$f"; done
+	echo "${!selftests[*]}"
+	exit 0
+fi
 . "$(dirname "${BASH_SOURCE[0]}")/dq_light_paths.sh"
 base="${1:?base}"; head="${2:-HEAD}"
 # The lane's own changes: diff from the merge base, never from <base> itself. A precheck merged onto an older master is diffed
@@ -93,29 +118,23 @@ fi
 all_changed="$(printf '%s\n' "${changed[@]}" "${deleted[@]}")"
 # The ratchets read the tree and the lints: they run when a .dm file or a lint input changed, not for every file under tools/ci
 # (a self-test script or a tool edit changes no lint verdict). A tool's own self-test inside check_ratchets runs only when its files changed.
-if grep -q -E '\.dm$|^tools/analyze/|^tools/ci/(lint_scopes\.toml|check_[^/]*|[^/]*baseline[^/]*|[^/]*\.txt)$' <<<"$all_changed"; then
+if grep -q -E '\.dm$|^tools/analyze/|^tools/ci/(lint_scopes\.toml|check_[^/]*|[^/]*baseline[^/]*|[^/]*\.txt)$|^tgui/packages/tgui/interfaces/|^tgui/.*\.jsx$' <<<"$all_changed"; then
 	echo "== ratchets (a .dm file or a lint input changed)"
 	DQ_RATCHETS_SELFTESTS=changed bash tools/ci/check_ratchets.sh || bad "check_ratchets.sh"
+fi
+
+# TGUI: what the gates' tgui job ran, plus the tests and the bundle. tgui-lint's gen reads the DM declarations but compiles nothing.
+if [ "${DQ_LIGHT_TGUI:-1}" = 1 ] && grep -E '^tgui/' <<<"$all_changed" | grep -qvE '\.md$'; then
+	for target in tgui-lint tgui-test tgui; do
+		echo "== tgui: build.sh $target"
+		tools/build/build.sh "$target" || bad "build.sh $target"
+	done
 fi
 
 # Self-tests of the tools a lane changed (never the whole tools/ci/test_*.sh set): a changed tools/ci/test_X.sh runs itself; a changed tool runs the
 # test that covers it (tools/dq_X.sh -> tools/ci/test_X.sh when it exists, plus the explicit map below). test_train.sh runs only when the train or the
 # merge drivers change. Each self-test is capped (DQ_LIGHT_SELFTEST_CAP_SEC, default 300 s) so a slow one fails loudly instead of holding the precheck.
-declare -A selftests=()
-add_selftest() { [ -f "tools/ci/$1" ] && selftests["$1"]=1; }
-for f in "${changed[@]}"; do
-	case "$f" in
-		tools/ci/test_*.sh) add_selftest "$(basename "$f")" ;;
-		tools/dq_train.sh|tools/dq_train_estimate.js|tools/dq_merge_batch.sh|tools/dq_merge_gates.sh|tools/dq_gate_retry.sh|tools/dq_gate_verdicts.sh|tools/dq_declared_tests.sh|tools/train/*) add_selftest test_train.sh; add_selftest test_train_decisions.sh ; add_selftest test_train_enqueue_wait.sh; add_selftest test_train_snapshot.sh ; add_selftest test_train_landed_times.sh ;;
-		tools/ci/check_ratchets.sh) add_selftest test_ratchets_selftest_fail.sh ;;
-		tools/ci/check_gitattributes.sh) add_selftest test_check_gitattributes.sh ;;
-		tools/dq_light_paths.sh|tools/dq_land_batch.sh) add_selftest test_light_checks.sh ;;
-		tools/dq_light_checks.sh) add_selftest test_light_checks.sh; add_selftest test_train_decisions.sh ;;
-		tools/dq_stale_includes.sh|tools/dq_merge_master.sh|tools/light_cargo_rdeps.py) add_selftest test_train_decisions.sh; add_selftest test_stale_includes_generated.sh ;;
-		tools/ci/lint_scopes_merge_driver.sh|tools/dq_git_safe.sh) add_selftest test_train_decisions.sh ;;
-		tools/dq_*.sh) add_selftest "test_$(basename "$f" .sh | sed 's/^dq_//').sh" ;;
-	esac
-done
+for f in "${changed[@]}"; do selftests_for "$f"; done
 cap="${DQ_LIGHT_SELFTEST_CAP_SEC:-300}"
 # Self-tests run side by side (DQ_LIGHT_SELFTEST_JOBS, default 3): one after another they were most of a 744 s light precheck on 1 November, with
 # every lane behind it waiting. The ones that write to or build in this worktree run alone, after the others. Each test's report prints when it ends.
