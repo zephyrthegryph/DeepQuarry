@@ -277,6 +277,13 @@ DECLARE_SHARED_CACHE_EX(clothing_channel_item_sheets, GLOBAL_PROC_REF(build_clot
 			sheet.Insert(build_clothing_channel_icon(source_icon, name, swaps), name)
 	return fcopy_rsc(sheet)
 
+PROC_SUMMARY(/obj/item/proc/clothing_channel_worn) // the colours are set once, when the item spawns, before anything draws it
+/// The recoloured worn sprite of this item, or null: an item with no chosen colours stops at the first check.
+/obj/item/proc/clothing_channel_worn(source_icon, state, addblends)
+	if(!sparse_has(src, clothing_channel_colors))
+		return null
+	return clothing_channel_icon(type, source_icon, state, sparse_get(src, clothing_channel_colors), addblends)
+
 /// Gear metadata with every channel colour linked to a palette slot replaced by the slot's colour now. The saved metadata is never written to; metadata with no channels comes back as it is.
 /proc/clothing_channel_resolve_links(list/metadata, datum/preferences/prefs)
 	if(!prefs || !islist(metadata))
