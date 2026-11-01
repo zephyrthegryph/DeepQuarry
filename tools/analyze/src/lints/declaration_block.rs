@@ -62,7 +62,7 @@ impl DeclarationBlock {
             if !f.rel.ends_with(".dm") || f.rel.starts_with("code/engine/_generated/") {
                 continue;
             }
-            for (number, line) in f.raw().numbered() {
+            for (number, line) in f.code().numbered() {
                 let Some(m) = head.captures(line) else { continue };
                 let ty = m.s(1).to_string();
                 match first.get(&ty) {

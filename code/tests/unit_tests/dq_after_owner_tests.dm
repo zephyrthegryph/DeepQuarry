@@ -215,3 +215,17 @@
 	TEST_ASSERT_EQUAL(length(rows), 2, "and so did the gun's: [json_encode(rows)]")
 	var/atom/plain = allocate(/obj/item/tool/crowbar)
 	TEST_ASSERT(!length(plain.get_catalogue_data()), "an atom with none reads as none")
+
+/// A faction a map writes reaches the mob_rules trait through the map loader: it used to land in a var nothing read.
+/datum/unit_test/dq_mapped_faction_reaches_the_trait
+
+/datum/unit_test/dq_mapped_faction_reaches_the_trait/Run()
+	var/mob/living/simple_mob/vore/demonAI/demon = allocate(/mob/living/simple_mob/vore/demonAI, test_floor())
+	TEST_ASSERT_EQUAL(mob_rules_of(demon).faction, "demon", "the type declares its faction")
+	set_global(nameof(GLOB._preloader_path), GLOB._preloader_path)
+	set_global(nameof(GLOB._preloader_attributes), GLOB._preloader_attributes)
+	world.preloader_setup(list("faction" = "neutral"), demon.type)
+	world.preloader_load(demon)
+	TEST_ASSERT_EQUAL(mob_rules_of(demon).faction, "neutral", "the map's faction reached this mob's trait")
+	TEST_ASSERT_EQUAL(demon.standing_faction(), "neutral", "and standings read it")
+	TEST_ASSERT_EQUAL(mob_rules_of_type(demon.type).faction, "demon", "other mobs of the type keep the declared one")
