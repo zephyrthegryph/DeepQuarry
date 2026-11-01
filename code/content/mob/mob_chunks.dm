@@ -5,8 +5,8 @@
 // client -- and whatever sleeps on it (a calm AI brain, a dormant looping sound, a proximity-gated
 // object) is called back: watch_mob_chunks(watcher, chunks, mask, PROC_REF(x)) runs
 // watcher.x(chunk, bits). Watchers are held by REF text, so a deleted watcher is dropped at the
-// next wake. A chunk nobody watches has no datum, and mob movement skips the lookup entirely while
-// nothing watches any chunk.
+// next wake. A chunk exists once something watched or read it (bounded by the map), and mob movement
+// skips the raise entirely while nothing watches any chunk.
 
 /// Chunk id -> /datum/mob_chunk, for chunks something watches.
 GLOBAL_LIST_EMPTY(mob_chunks)
@@ -84,9 +84,7 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 	var/datum/mob_chunk/C = GLOB.mob_chunks["[id]"]
 	if(!C)
 		return
-	if(!length(C.watchers))
-		GLOB.mob_chunks -= "[id]"
-		spent(C)
+	if(!length(C.watchers)) // kept: its living index is read by turrets and packs, and making it again scans 256 turfs
 		return
 	for(var/key in C.watchers.Copy())
 		var/list/watch = C.watchers[key]

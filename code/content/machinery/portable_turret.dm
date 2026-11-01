@@ -409,9 +409,14 @@ CAPABILITIES(/obj/machinery/porta_turret)
 	var/turf/here = get_turf(src)
 	if(!here)
 		return FALSE
-	for(var/mob/M as anything in REGISTRY_MEMBERS(REGISTRY_MOBS))
-		var/turf/there = get_turf(M)
-		if(there && there.z == here.z && abs(there.x - here.x) <= range && abs(there.y - here.y) <= range)
+	// What the look can target: a living mob on the map (the chunks' index), or a pilot, whose mech is on the map while the pilot is not. A mob in a closet is not seen.
+	for(var/datum/mob_chunk/chunk as anything in mob_chunks_around(here, range))
+		for(var/key in chunk.living_refs)
+			var/mob/living/L = resolve_token(key)
+			if(L && L.z == here.z && abs(L.x - here.x) <= range && abs(L.y - here.y) <= range)
+				return TRUE
+	for(var/obj/mecha/mech as anything in REGISTRY_MEMBERS(REGISTRY_MECHAS))
+		if(mech.z == here.z && abs(mech.x - here.x) <= range && abs(mech.y - here.y) <= range && mech.get_mob())
 			return TRUE
 	return FALSE
 
