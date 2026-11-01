@@ -14,7 +14,6 @@
 	var/monitor_last_time = 0
 	var/monitor_configuration = -1
 	var/maintenance_open = FALSE
-	var/last_reading_id
 	var/list/last_reading
 	var/monitor_started = 0
 	var/monitor_input = 0

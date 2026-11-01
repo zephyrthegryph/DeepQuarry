@@ -10,7 +10,6 @@
 
 	active = 0
 	var/power_gen = 5000
-	var/recent_fault = 0
 	var/power_output = 1
 
 // The portable generators (doc/rewrite/final_api.html section 16): switched on and fuelled, bolted down and wired, every machine service

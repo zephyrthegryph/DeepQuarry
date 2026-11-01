@@ -34,8 +34,6 @@
 	var/list/ordered_args
 	/// TRUE once the op passed Match and Require and started its Wait or Do: refusals after this point are logged.
 	var/started = FALSE
-	/// The slot units a put_in() moved, and the reservation they came from.
-	var/list/moved_units
 	/// TRUE once an effect answered OP_PASS: the op commits and the click goes on to the next candidate.
 	var/passed = FALSE
 
@@ -431,7 +429,6 @@
 	var/datum/progress_view/progbar
 	var/datum/cog_view/cog
 	var/progress_planned = FALSE
-	var/steps_done = 0
 	/// The actor's pending slot, and whether the pending ended.
 	var/active = TRUE
 	var/key

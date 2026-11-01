@@ -20,7 +20,6 @@
 	var/algae_per_mole = 2
 	var/carbon_per_mole = 2
 
-	var/recent_power_used = 0
 	var/recent_moles_transferred = 0
 	var/ui_error = null // For error messages to show up in nano ui.
 

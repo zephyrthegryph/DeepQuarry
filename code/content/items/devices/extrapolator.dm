@@ -16,8 +16,6 @@
 	var/extract_time = 10 SECONDS
 	/// How long it tkaes for the extrapolator to isolate a symptom.
 	var/isolate_time = 15 SECONDS
-	/// The extrapolator can extract any virus with a stealth below this value.
-	var/maximum_stealth = 3
 	/// The extrapolator can extract any symptom with a stealth below this value.
 	var/maximum_level = 5
 	/// The typepath of the default scanning module that will generate in the extrapolator, if it starts with none.

@@ -9,7 +9,6 @@
 	var/cloaked = FALSE
 	var/can_cloak = FALSE
 
-	var/at_origin = 1
 	var/cooldown = 20
 	var/last_move = 0 //the time at which we last moved
 
@@ -19,7 +18,6 @@
 
 	var/obj/effect/shuttle_landmark/start_location
 	var/obj/effect/shuttle_landmark/last_location
-	var/return_warning = 0
 	var/legit = FALSE
 
 /datum/shuttle/autodock/multi/New()

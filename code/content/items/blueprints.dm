@@ -33,11 +33,9 @@
 	var/wire_schematics = 0					// If the areaeditor can see wires.
 	var/can_override = 0						// If you want the areaeditor to override the 'Don't make a new area where one already exists' logic. Only given to CE blueprints.
 
-	var/can_create_areas_in = AREA_SPACE	// Must be standing in space to create
 	var/can_create_areas_into = AREA_SPACE	// New areas will only overwrite space area turfs.
 	var/can_expand_areas_in = AREA_STATION	// Must be standing in station to expand
 	var/can_expand_areas_into = AREA_SPACE	// Can expand station areas only into space.
-	var/can_rename_areas_in = AREA_STATION	// Only station areas can be reanamed
 
 	var/const/ROOM_ERR_LOLWAT = 0 			// Don't touch these three consts or BYOND will literally tear out your throat
 	var/const/ROOM_ERR_SPACE = -1

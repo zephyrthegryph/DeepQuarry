@@ -684,7 +684,6 @@ MSG_DEF(paper/wiping, span_notice("You begin to wipe off %T%'s lipstick."), span
 /obj/item/paper/photograph
 	name = "photo"
 	icon_state = "photo"
-	var/photo_id = 0.0
 	item_state = "paper"
 
 /obj/item/paper/sop

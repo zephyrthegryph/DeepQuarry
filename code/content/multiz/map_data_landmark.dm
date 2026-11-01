@@ -4,4 +4,3 @@
 	invisibility = INVISIBILITY_ABSTRACT
 
 	var/height = 1     ///< The number of Z-Levels in the map.
-	var/edge_type	///< What the map edge should be formed with. (null = world.turf)

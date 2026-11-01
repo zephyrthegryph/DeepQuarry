@@ -86,7 +86,6 @@
 	var/min_explosion_power = 12 // some more damage was 8
 	var/max_explosion_power = 24 // some more damage was 16
 
-	var/emergency_issued = 0
 
 	// Time in 1/10th of seconds since the last sent warning
 	var/lastwarning = 0

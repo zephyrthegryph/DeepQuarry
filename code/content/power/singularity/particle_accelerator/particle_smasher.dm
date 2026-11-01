@@ -18,7 +18,6 @@
 	var/max_energy = 600
 	var/obj/item/target	// The material or persistent workpiece being bombarded.
 	var/tmp/obj/item/reagent_containers/reagent_container	// Holds the beaker. The process will consume ALL reagents inside it.
-	var/beaker_type = /obj/item/reagent_containers/glass/beaker
 	var/list/storage		// Holds references to items allowed to be used in the fabrication phase.
 	var/max_storage = 3	// How many items can be jammed into it?
 	var/list/recipes	// The list containing the Particle Smasher's recipes.

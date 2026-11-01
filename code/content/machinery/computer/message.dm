@@ -17,7 +17,6 @@
 	var/hacking = 0		// Is it being hacked into by the AI/Cyborg
 	var/emag = 0		// When it is emagged.
 	var/auth = 0 // Are they authenticated?
-	var/optioncount = 8
 	// Custom temp Properties
 	var/customsender = "System Administrator"
 	var/obj/item/pda/customrecepient

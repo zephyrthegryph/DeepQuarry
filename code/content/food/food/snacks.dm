@@ -1168,7 +1168,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/brainburger)
 	bitesize = 2
 
 /obj/item/reagent_containers/food/snacks/human
-	var/hname = ""
 	var/job = null
 	filling_color = "#D63C3C"
 

@@ -7,7 +7,6 @@
 	density = TRUE
 	req_one_access = list(ACCESS_HOP, ACCESS_CAPTAIN, ACCESS_CENT_CAPTAIN)
 	anchored = TRUE
-	var/receipt_num
 	var/machine_id = ""
 	var/obj/item/card/id/held_card
 	var/tmp/datum/money_account/detailed_account_view

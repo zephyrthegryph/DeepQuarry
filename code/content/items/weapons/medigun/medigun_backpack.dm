@@ -25,7 +25,6 @@
 	var/burnvol = 0
 	var/chemcap = 60
 	var/tankmax = 30
-	var/containsgun = TRUE
 	var/maintenance = FALSE
 	var/smaniptier = 1
 	var/sbintier = 1

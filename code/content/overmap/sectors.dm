@@ -41,18 +41,13 @@
 	var/list/added_player_levels
 	var/list/added_sealed_levels
 
-	var/hide_from_reports = FALSE
 
 	var/has_distress_beacon
 	var/list/levels_for_distress
 	var/list/unowned_areas // areas we don't own despite them being present on our z
 
-	var/list/possible_descriptors //While only affects sectors for now, initialized here for proc definition convenience.
-	var/visitable_renamed = FALSE //changed if non-default name is assigned.
 
-	var/unique_identifier //Define this for objs that we want to be able to rename. Needed to avoid compiler errors if not included.
 
-	var/mob_announce_cooldown = 0 //Define this to make it so when visited, the ATC will announce their arrival. Only used if you have a Crossed/Uncrossed that calls announce_atc w/ announce_atc being redefined.
 
 CAPABILITIES(/obj/effect/overmap/visitable)
 	setup(PROC_REF(register_sector))

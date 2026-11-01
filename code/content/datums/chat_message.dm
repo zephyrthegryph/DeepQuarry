@@ -43,8 +43,6 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 	var/atom/message_loc
 	/// The client who heard this message
 	var/client/owned_by
-	/// Contains the scheduled destruction time
-	var/scheduled_destruction
 	/// Contains the approximate amount of lines for height decay
 	var/approx_lines
 	/// If we are currently processing animation and cleanup at EOL

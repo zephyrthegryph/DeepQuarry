@@ -13,8 +13,6 @@
 	var/list/gamemode_cache
 	var/list/votable_modes // votable modes
 	var/list/mode_names
-	var/list/mode_reports
-	var/list/mode_false_report_weight
 
 	var/motd
 	var/list/policy

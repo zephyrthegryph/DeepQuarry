@@ -64,8 +64,6 @@
 	var/list/throttle
 	var/bulk_bits = 0
 	var/service_pend = 0
-	/// Stack of before_* event types being delivered on this entity (lazy).
-	var/list/in_veto
 	var/native_bits = 0
 
 /datum/scheduler_record/New(datum/owner, datum/time_scheduler/sched)

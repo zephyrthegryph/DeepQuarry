@@ -188,8 +188,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/relation_definition)
 	/// A proc name on the source recomputing a view from linked() after every structural change
 	/// (omni filter/mixer port roles).
 	var/derived_view
-	/// entity_clone(): an edge leaving the cloned subtree is re-linked to the clone.
-	var/clone_follows = FALSE
 	/// Bundles whose relation fields (contributes, grants_*) are merged in.
 	var/list/include
 
