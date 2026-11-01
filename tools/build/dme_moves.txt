@@ -3982,9 +3982,6 @@ code/modules/tgui/states/not_incapacitated.dm	code/library/ui/tgui/states/not_in
 code/modules/tgui/tgui.dm	code/library/ui/tgui/tgui.dm
 code/modules/tgui/tgui_window.dm	code/library/ui/tgui/tgui_window.dm
 code/modules/tgui/ui_push.dm	code/library/ui/tgui/ui_push.dm
-code/_onclick/adjacent.dm	code/engine/parts/adjacent.dm
-code/contracts/acts/context.dm	code/engine/actions/context.dm
-code/core/datum/IsAbstract.dm	code/engine/datum/IsAbstract.dm
 code/datums/callback.dm	code/library/datum/callback.dm
 code/datums/capabilities/_capability.dm	code/library/capabilities/_capability.dm
 code/datums/capabilities/ask.dm	code/library/capabilities/ask.dm

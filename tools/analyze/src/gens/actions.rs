@@ -11,7 +11,7 @@
 //!
 //! The notice name is the action's name in the past tense (fall -> fell, insert -> inserted); a name that already reads as past tense (hit,
 //! stumbled_into, round_started) is kept, and `notice =` overrides. A name with a slash inherits its parent's fields and its proc and ACT_TRY token
-//! use an underscore. The `op` action's act type is the op context (code/engine/actions/context.dm), so only its notice is generated.
+//! use an underscore. The `op` action's act type is the op context (code/contracts/acts/context.dm), so only its notice is generated.
 //! A field named `origin` is declared `origin_turf` (every act has an ORIGIN_* `origin`); any other reserved name is a diagnostic.
 //! Declarations in files under `code/tests/` go in an `#if defined(UNIT_TESTS)` block.
 
