@@ -9,7 +9,6 @@
 	anchored = TRUE
 	plane = PLANE_GHOSTS
 	color = "#ff0000"
-	var/text_size = 3 // Larger values clip when the displayed text is larger than 2 digits
 	var/displayed_text
 	var/atom/attached_to
 

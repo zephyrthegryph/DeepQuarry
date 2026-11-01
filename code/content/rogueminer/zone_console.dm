@@ -17,7 +17,6 @@
 	var/debug = 0
 	var/debug_scans = 0
 	var/scanning = 0
-	var/legacy_zone = 0 //Disable scanning and whatnot.
 	var/tmp/obj/machinery/computer/shuttle_control/belter/shuttle_control
 
 /obj/machinery/computer/roguezones/proc/link_shuttle_console()

@@ -21,10 +21,6 @@
 	///extra-range for this squeak's sound
 	var/sound_extra_range = -1
 	/*
-	///when sounds start falling off for the squeak
-	var/sound_falloff_distance = 1
-	///sound exponent for squeak. Defaults to 10 as squeaking is loud and annoying enough.
-	var/sound_falloff_exponent = 10
 	*/
 	/// The squeaky shoes.
 	var/obj/item/clothing/shoes/owner

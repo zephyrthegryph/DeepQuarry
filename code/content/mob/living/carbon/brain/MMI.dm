@@ -208,7 +208,6 @@ CAPABILITIES(/obj/item/mmi)
 
 /obj/item/mmi/digital
 	var/searching = 0
-	var/askDelay = 10 * 60 * 1
 	req_access = list(ACCESS_ROBOTICS)
 	locked = 0
 	mecha = null//This does not appear to be used outside of reference in mecha.dm.

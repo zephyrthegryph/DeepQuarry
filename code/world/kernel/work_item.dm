@@ -90,8 +90,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/work_item)
 	var/list/last_at
 	/// Pending urgent requests: member (or owner) -> /datum/urgent_request. Dedup lives here.
 	var/list/urgent_pending
-	/// Tick of the first sweep run this phase pass (cost accounting for one sweep).
-	var/sweep_started_at = 0
 	/// The membership store's list for `members` (members_of(members), kept: the store never replaces a key's list),
 	/// so the engine can see an empty sweep without a call. Null for a memberless item.
 	var/list/member_list

@@ -21,7 +21,6 @@
 	var/downloaderror = ""
 	var/list/downloads_queue
 
-	var/file_info
 	var/server
 	usage_flags = PROGRAM_ALL
 	category = PROG_UTIL

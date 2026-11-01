@@ -7,7 +7,6 @@
 	w_class = ITEMSIZE_LARGE//So you can't hide it in your pocket or some such.
 	var/mob/living/creator
 	var/mopping = 0
-	var/mopcount = 0
 
 
 /turf/proc/clean_deploy(atom/source)

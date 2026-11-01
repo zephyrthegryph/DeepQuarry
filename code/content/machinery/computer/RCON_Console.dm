@@ -11,7 +11,6 @@
 	icon_screen = "ai-fixer"
 	circuit = /obj/item/circuitboard/rcon_console
 	req_one_access = list(ACCESS_ENGINE)
-	var/current_tag = null
 	var/datum/tgui_module/rcon/rcon
 
 CAPABILITIES(/obj/machinery/computer/rcon)

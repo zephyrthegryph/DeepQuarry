@@ -46,15 +46,8 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache()) // ALLOW(cache): constant 
 	// This makes a stale-mirror read impossible and a mis-write a COMPILE error. In hot
 	// loops, cache the accessor result in a local (e.g. `var/temp = air.return_temperature()`)
 	// rather than calling it repeatedly, since each call crosses the FFI boundary.
-	/// The last tick this gas mixture shared on. A counter that turfs use to manage activity
-	var/last_share = 0
 	/// Tells us what reactions have happened in our gasmix. Assoc list of reaction - moles reacted pair.
 	var/list/reaction_results
-	/// Whether to call garbage_collect() on the sharer during shares, used for immutable mixtures
-	var/gc_share = FALSE
-	/// When this gas mixture was last touched by pipeline processing
-	/// I am sorry
-	var/pipeline_cycle = -1
 	/// auxmos arena handle: index into the Rust gas-mixture arena, written by
 	/// register_gasmixture_hook_ffi (verdigris GasArena::register_mix). Null until
 	/// registered. See code/ATMOSPHERICS/README.md.

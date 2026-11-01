@@ -21,8 +21,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/shuttle)
 
 	var/ceiling_type // Type path of turf to roof over the shuttle when at multi-z landmarks. Ignored if null.
 
-	var/sound_takeoff = 'sound/effects/shuttles/shuttle_takeoff.ogg'
-	var/sound_landing = 'sound/effects/shuttles/shuttle_landing.ogg'
 
 	var/knockdown = 1 //whether shuttle downs non-buckled people when it moves
 

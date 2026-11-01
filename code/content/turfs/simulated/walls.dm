@@ -20,7 +20,6 @@
 	var/datum/material/girder_material
 	var/datum/material/material
 	var/datum/material/reinf_material
-	var/last_state
 	var/construction_stage
 
 	/// Corner states from dirs_to_corner_states(), interned with string_list() so walls with the

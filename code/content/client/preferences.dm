@@ -40,7 +40,6 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	var/list/character_preview_b64
 
 	//character preferences
-	var/slot_randomized //keeps track of round-to-round randomization of the character slot, prevents overwriting
 
 	var/list/randomise
 

@@ -56,7 +56,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 	var/wall_shift = 12
 	var/spread_chance = 40
 	var/spread_distance = 3
-	var/evolve_chance = 2
 	COOLDOWN_DECLARE(mature_time) //minimum maturation time
 	COOLDOWN_DECLARE(neighbor_refresh_cooldown)
 	var/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/plant

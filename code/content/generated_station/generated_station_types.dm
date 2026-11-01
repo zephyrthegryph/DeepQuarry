@@ -297,8 +297,6 @@ CAPABILITIES(/datum/generated_station_validation_result)
 	var/layout_archetype = "offset_loop"
 	/// Unitless quality score used for diagnostics and deterministic candidate selection.
 	var/layout_aesthetic_score = 0
-	/// Orientation of the dominant public circulation route.
-	var/primary_corridor_axis = "network"
 	var/list/department_definitions
 	var/list/departments
 	var/list/layout_nodes

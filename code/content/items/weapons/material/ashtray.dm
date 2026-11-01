@@ -14,7 +14,6 @@ DECLARE_SHARED_CACHE(ashtray_overlays, GLOBAL_PROC_REF(build_ashtray_overlay), S
 	force_divisor = 0.1
 	thrown_force_divisor = 0.1
 	w_class = ITEMSIZE_SMALL
-	var/image/base_image
 	var/max_butts = 10
 
 /// Declared setup: prepare material dish, after its parents initialize.

@@ -22,10 +22,8 @@
 	var/rank = null
 	var/screen = null
 	var/datum/data/record/active1
-	var/a_id = null
 	var/list/temp = null
 	var/printing = null
-	var/can_change_id = 0
 	// The below are used to make modal generation more convenient
 	var/list/field_edit_questions
 	var/list/field_edit_choices

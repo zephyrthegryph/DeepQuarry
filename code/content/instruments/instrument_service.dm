@@ -6,12 +6,6 @@ SYSTEM_DEF(instruments)
 	name = "Instruments"
 	/// List of all instrument data, associative id = datum
 	var/list/datum/instrument/instrument_data = list()
-	/// Max lines in songs
-	var/musician_maxlines = 600
-	/// Max characters per line in songs
-	var/musician_maxlinechars = 300
-	/// Deciseconds between hearchecks. Too high and instruments seem to lag when people are moving around in terms of who can hear it. Too low and the server lags from this.
-	var/musician_hearcheck_mindelay = 5
 	/// Maximum instrument channels total instruments are allowed to use. This is so you don't have instruments deadlocking all sound channels.
 	var/max_instrument_channels = MAX_INSTRUMENT_CHANNELS
 	/// Current number of channels allocated for instruments

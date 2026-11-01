@@ -105,14 +105,14 @@ before code/content/observation/turf_enterexit.dm code/content/turfs/simulated/o
 # Declaration before use, for DreamMaker: it warns when a type's var is set, or a proc overridden, before the file that declares it
 # (var_before_def, override_before_def). The native compiler does not care and the worlds are the same; these pairs keep DreamMaker's
 # warnings at what the old order gave (tools/ci/dm_equiv.sh compiles with both).
-before code/engine/declare/lifecycle.dm code/datums/lifecycle/declarations.dm          # validate_registries()
+before code/engine/declare/lifecycle.dm code/library/lifecycle/declarations.dm          # validate_registries()
 before code/engine/hooks/content_adapters.dm code/content/datums/engine_adapters.dm   # bind_native(), send(), lookup(), ...
 before code/engine/parts/input_adapter.dm code/content/datums/engine_adapters.dm   # compatibility_topic()
-before code/engine/refs/transfer.dm code/datums/ownership/transfer.dm                 # record(), refusal()
+before code/engine/refs/transfer.dm code/library/ownership/transfer.dm                 # record(), refusal()
 before code/engine/state/collapse.dm code/content/state/collapse.dm   # describe(), hook_blockers()
 before code/engine/state/construction.dm code/content/state/construction_adapter.dm   # create()
 before code/engine/state/properties/providers.dm code/content/properties/providers.dm   # validate_rules(), variant_values()
-before code/engine/state/schema.dm code/datums/state/latent_safe_types.dm              # register_defaults()
+before code/engine/state/schema.dm code/library/state/latent_safe_types.dm              # register_defaults()
 before code/engine/state/serializer.dm code/content/state/serializer.dm   # identity(), lookup()
 before code/content/items/weapons/id?cards/cards.dm code/content/items/weapons/id?cards/id_stacks.dm   # base_icon
 before code/content/casino/board_games/four_in_a_row.dm code/content/casino/board_games/tic_tac_toe.dm   # change_win_count()

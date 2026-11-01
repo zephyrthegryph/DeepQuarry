@@ -10,7 +10,7 @@ declarations in code/, so the converter covers every converted type, now and as 
 What it reads
   * every `/T/capabilities()` proc body and every `CAPABILITY(T, entry)` line under code/ (unit-test and
     benchmark fixtures are skipped);
-  * the global bundle procs of code/datums/capabilities/ (`machine_basics`, `wall_machine`, `maintenance_hatch`,
+  * the global bundle procs of code/library/capabilities/ (`machine_basics`, `wall_machine`, `maintenance_hatch`,
     `door`, `console`, ...), resolved recursively down to library constructors (`cap_panel`, `cap_bolts`, ...);
   * `cap_state = CAP_A|CAP_B` type defaults;
   * code/defines/engine/cap_bits.dm for the bit names.
@@ -38,7 +38,7 @@ import sys
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 OUT = os.path.join(ROOT, "tools", "dx", "capability_varmap.json")
 BITS_FILE = os.path.join(ROOT, "code", "defines", "engine", "cap_bits.dm")
-LIB_DIR = os.path.join("code", "datums", "capabilities")
+LIB_DIR = os.path.join("code", "library", "capabilities")
 SKIP_DIRS = ("code/tests/unit_tests/", "code/tests/benchmarks/")
 
 DOC = (
@@ -53,7 +53,7 @@ DOC = (
 
 # ---- what each library constructor carries -------------------------------------------------------------------
 # constructor proc -> (the /datum/capability type it builds, the cap_state bits it owns). A bundle is NOT listed: it
-# is resolved from its body. Verified against code/datums/capabilities/library/*.dm (the "State:" header of each).
+# is resolved from its body. Verified against code/library/capabilities/*.dm (the "State:" header of each).
 CONSTRUCTOR_BITS = {
     "cap_panel": ("/datum/capability/panel", ["CAP_PANEL_OPEN"]),
     "cap_cover": ("/datum/capability/cover", ["CAP_COVER_OPEN"]),  # + CAP_COVER_REMOVED with removable = TRUE
@@ -543,7 +543,7 @@ def render(table):
 # ---- CLI ----------------------------------------------------------------------------------------------------------
 def selftest():
     fx = {
-        "code/datums/capabilities/library/presets.dm": """
+        "code/library/capabilities/presets.dm": """
 /proc/machine_basics(board, powered = TRUE)
 	. = list(
 		cap_panel(),
@@ -613,7 +613,7 @@ CAPABILITY(/obj/item/gizmo, emp_disable(5 SECONDS))
     eq("defaults", scan.defaults, {"/obj/machinery/gate/closed": ["CAP_BOLTED"]})
     # no removable_cover passed -> the removed bit is not carried
     scan2 = Scan()
-    scan_text(scan2, "code/datums/capabilities/library/presets.dm", fx["code/datums/capabilities/library/presets.dm"])
+    scan_text(scan2, "code/library/capabilities/presets.dm", fx["code/library/capabilities/presets.dm"])
     scan_text(scan2, "code/x/b.dm", "/obj/machinery/plain/capabilities()\n\t. = ..()\n\t. += maintenance_hatch()\n")
     eq("removable default FALSE", "CAP_COVER_REMOVED" in carried(scan2)["/obj/machinery/plain"], False)
     table = generate(scan)

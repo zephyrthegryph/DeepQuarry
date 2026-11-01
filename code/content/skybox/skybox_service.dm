@@ -145,7 +145,6 @@ SYSTEM_DEF(skybox)
 	var/random_color = FALSE
 
 	var/use_stars = TRUE
-	var/star_icon = 'icons/skybox/skybox.dmi'
 	var/star_state = "stars"
 
 	var/use_overmap_details = TRUE //Do we try to draw overmap visitables in our sector on the map?

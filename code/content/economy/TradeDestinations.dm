@@ -6,7 +6,6 @@ GLOBAL_LIST_EMPTY(weighted_mundaneevent_locations)
 	var/name = ""
 	var/description = ""
 	var/distance = 0
-	var/can_shuttle_here = 0		//one day crew from the station will be able to travel to this destination
 	var/list/viable_random_events
 	var/list/temp_price_change[BIOMEDICAL] // ALLOW(instance_list): d: fixed-size per-category price table (list/x[N]), always indexed
 	var/mundane_probability = 0

@@ -11,7 +11,6 @@ MATERIAL_MIX(/obj/item/assembly/signaler, list(MAT_STEEL = 1000, MAT_GLASS = 200
 	var/code = 30
 	var/frequency = RSD_FREQ
 	var/delay = 0
-	var/airlock_wire = null
 	var/tmp/datum/cap_data/wires/connected
 	var/tmp/datum/radio_frequency/radio_connection
 

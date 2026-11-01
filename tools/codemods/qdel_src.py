@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 r"""qdel(src) -> the lifecycle verbs (Phase C; doc/rewrite/final_api.html section 6 "Lifecycle", doc/rewrite/lifecycle.md section 5,
-code/datums/lifecycle/verbs.dm; the qdel_src lint in tools/analyze/src/lints/qdel_src.rs).
+code/library/lifecycle/verbs.dm; the qdel_src lint in tools/analyze/src/lints/qdel_src.rs).
 
     python tools/codemods/qdel_src.py [--apply] [--class C ...] [--sites] [--others] [--paths prefix ...]
 

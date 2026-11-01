@@ -24,7 +24,6 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	var/sunfrac = 0
 	var/adir = SOUTH // actual dir
 	var/ndir = SOUTH // target dir
-	var/turn_angle = 0
 	var/tmp/obj/machinery/power/solar_control/control
 	var/glass_type = /obj/item/stack/material/glass
 	var/SOLAR_MAX_DIST = 60 // ours are >40 away

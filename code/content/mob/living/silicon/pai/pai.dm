@@ -18,7 +18,6 @@
 	var/ram = 100	// Used as currency to purchase different abilities
 	/// Installed software: id -> TRUE. The definitions are GLOB.pai_software_by_key[id].
 	var/list/software = list() // ALLOW(instance_list): d: per-mob software, sized at creation and filled in place; mobs are few
-	var/userDNA		// The DNA string of our assigned user
 
 	var/default_pai_card_path = /obj/item/paicard // Used when the pai is spawned directly by mapping or admin
 	var/obj/item/paicard/card	// The card we inhabit
@@ -43,7 +42,6 @@
 
 	var/temp				// General error reporting text contained here will typically be shown once and cleared
 	var/screen				// Which screen our main window displays
-	var/subscreen			// Which specific function of the main screen is being displayed
 
 	var/obj/item/pda/ai/pai/pda = null
 
@@ -70,9 +68,7 @@
 	/// /datum/pai_software/translator in software_modules.dm.
 	var/list/translator_added_languages
 
-	var/current_pda_messaging = null
 
-	var/our_icon_rotation = 0
 
 	var/eye_glow = TRUE
 	var/hide_glow = FALSE

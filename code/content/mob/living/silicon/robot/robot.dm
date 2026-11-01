@@ -102,9 +102,7 @@
 	var/viewalerts = 0
 	var/modtype = "Default"
 	var/sprite_type = null
-	var/lower_mod = 0
 	var/jetpack = 0
-	var/jeton = 0
 	var/lawupdate = TRUE //Cyborgs will sync their laws with their AI by default
 	var/lockcharge //Used when looking to see if a borg is locked down.
 	var/lockdown = 0 //Controls whether or not the borg is actually locked down.

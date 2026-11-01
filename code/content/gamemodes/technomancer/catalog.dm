@@ -34,7 +34,6 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 	var/list/assistance_instances
 	var/tab = 4 // Info tab, so new players can read it before doing anything.
 	var/spell_tab = ALL_SPELLS
-	var/show_scepter_text = 0
 	var/universal = FALSE // Allows non-technomancers to use this catalog
 
 CAPABILITIES(/obj/item/technomancer_catalog)

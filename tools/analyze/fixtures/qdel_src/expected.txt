@@ -1,5 +1,5 @@
 qdel_src	code/controllers/subsystems/other.dm	2
-qdel_src	code/datums/lifecycle/other.dm	2
+qdel_src	code/library/lifecycle/other.dm	2
 qdel_src	code/modules/foo/a.dm	2
 qdel_src	code/modules/foo/a.dm	3
 qdel_src	code/modules/foo/a.dm	4

@@ -353,7 +353,6 @@ MSG_DEF_SELF(lightreplacer/no_reserves, "Insufficient material reserves.")
 	desc = "A magnetic clamp which can halt the flow of gas in a pipe, via a localised stasis field."
 	icon = 'icons/atmos/clamp.dmi'
 	icon_state = "pclamp0"
-	var/max_clamps = 3
 	var/list/clamps
 
 /obj/item/dogborg/stasis_clamp/afterattack(atom/A, mob/user as mob, proximity)

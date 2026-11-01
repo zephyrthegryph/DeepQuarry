@@ -80,7 +80,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter)
 	attack_armor_pen = 30
 	water_resist = 0
 
-	var/mycolour = COLOR_RED //Variable Lighting colours
 	var/original_temp = null //Value to remember temp
 	var/set_temperature = T0C + 5000	//Sets the target point of 10k degrees celsius
 	var/heating_power = 50000

@@ -28,7 +28,6 @@
 	var/pdiff_alert = 0
 	var/pdiff = 0
 	var/nextstate = null
-	var/net_id
 	var/list/areas_added
 	/// The mixture ids of the air watches a shut door has armed (null while it has none).
 	var/list/datum/native_watch/gas/air_watches

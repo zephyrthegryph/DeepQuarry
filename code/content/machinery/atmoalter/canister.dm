@@ -22,7 +22,6 @@
 	var/canister_color = "yellow"
 	start_pressure = 45 * ONE_ATMOSPHERE
 	pressure_resistance = 7 * ONE_ATMOSPHERE
-	var/temperature_resistance = 1000 + T0C
 	/// Integrity of the material which actually touches the stored gas.
 	var/material_liner_integrity = 100
 	var/material_last_exposure = 0

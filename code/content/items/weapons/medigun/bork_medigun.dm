@@ -15,7 +15,6 @@
 	var/action_cancelled = FALSE
 	var/wielded = FALSE
 	var/mob/current_target
-	var/mgcmo
 	canremove = FALSE
 
 /obj/item/bork_medigun/update_twohanding()

@@ -28,8 +28,6 @@ CAPABILITIES(/datum/generated_room_placement)
 	var/score = 0
 	var/floor_tiles = 0
 	var/occupied_tiles = 0
-	var/wall_placements = 0
-	var/largest_empty_region = 0
 	var/list/placements
 	var/list/circulation
 	var/list/door_circulation

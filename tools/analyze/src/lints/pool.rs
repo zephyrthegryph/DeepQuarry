@@ -1,4 +1,4 @@
-//! Port of `tools/ci/pool_lint.py`: pool take/release (code/datums/lifecycle/pool.dm).
+//! Port of `tools/ci/pool_lint.py`: pool take/release (code/library/lifecycle/pool.dm).
 //!
 //! A pooled type (a subtype of `/datum/pooled`, or declared with `POOL_DECLARE`) is taken with
 //! `take(type)` and given back with `.release()`, never built with `new`. Fails when `new` builds a
@@ -183,7 +183,7 @@ impl Lint for Pool {
 
     fn selftest(&self) -> Result<String, String> {
         let mut scope = LintScope::default();
-        scope.lists.insert("exempt_prefixes".into(), vec!["code/tests/unit_tests/".into(), "code/tests/unit_tests/".into(), "code/datums/lifecycle/pool.dm".into()]);
+        scope.lists.insert("exempt_prefixes".into(), vec!["code/tests/unit_tests/".into(), "code/tests/unit_tests/".into(), "code/library/lifecycle/pool.dm".into()]);
         let run = |files: Vec<(&str, &str)>| -> usize {
             let fs: Vec<SourceFile> = files.iter().map(|(r, t)| SourceFile::from_text(r, t)).collect();
             let refs: Vec<&SourceFile> = fs.iter().collect();

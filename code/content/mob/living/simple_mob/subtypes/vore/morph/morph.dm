@@ -44,7 +44,6 @@
 	var/morphed = FALSE
 	var/tooltip = TRUE
 	var/melee_damage_disguised = 0
-	var/eat_while_disguised = FALSE
 	var/atom/movable/form = null
 	var/morph_time = 0
 	var/our_size_multiplier = 1

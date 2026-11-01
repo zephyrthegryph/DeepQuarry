@@ -14,7 +14,6 @@
 	var/datum/material/material
 	var/state = 0 //closed, 1 == open
 	var/isSwitchingStates = 0
-	var/oreAmount = 7
 	var/knock_sound = SFX_MACHINES_DOOR_KNOCK_GLASS
 	var/knock_hammer_sound = SFX_WEAPONS_SONIC_JACKHAMMER
 

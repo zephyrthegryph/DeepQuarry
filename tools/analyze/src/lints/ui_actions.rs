@@ -5,7 +5,7 @@
 //! the dispatcher rejects or no host answers, a key it drops or the proc doesn't declare) are the
 //! banned rule `problem`; the C1/C2 ratchets are `ui_unsent_param` / `ui_unvalidated_param` on the
 //! fingerprint baseline. The dispatcher's `ui_action_key()` normalisation is read out of
-//! `code/datums/capabilities/ui_actions.dm`, as in the Python.
+//! `code/library/capabilities/ui_actions.dm`, as in the Python.
 //!
 //! Quirks replicated: the problem list is not baselined and ignores ALLOW; an unsent parameter
 //! yields one site per parameter (several sites on the proc head line); `$` in the dispatcher's
@@ -25,11 +25,11 @@ use crate::tree::{Select, SourceFile, Tree};
 use crate::util::{is_py_space, py_rstrip, py_strip};
 use crate::{pat, pat_match};
 
-const DISPATCHER: &str = "code/datums/capabilities/ui_actions.dm";
+const DISPATCHER: &str = "code/library/capabilities/ui_actions.dm";
 const INTERFACES: &str = "tgui/packages/tgui/interfaces";
 const BASELINE: &str = "tools/ci/ui_actions_baseline.txt";
 const CAP_ROOT: &str = "/datum/capability";
-const CAPS_DIR: &str = "code/datums/capabilities/";
+const CAPS_DIR: &str = "code/library/capabilities/";
 /// Framework types whose act_ procs every host inherits (the modal actions).
 const BUILTIN_HOSTS: [&str; 2] = ["/datum", "/atom"];
 const VALIDATORS: [&str; 7] = ["ui_number", "ui_text", "ui_choice", "ui_ref", "ui_token", "ui_member", "ui_bool"];
@@ -70,7 +70,7 @@ static META: Meta = Meta {
         },
         RuleMeta {
             name: R_PROBLEM,
-            hint: "make the act() match an act_ proc of the interface's host (dispatcher rules: code/datums/capabilities/ui_actions.dm)",
+            hint: "make the act() match an act_ proc of the interface's host (dispatcher rules: code/library/capabilities/ui_actions.dm)",
         },
     ],
     allow: &["ui_actions"],

@@ -21,8 +21,8 @@ use crate::pat_match;
 use crate::tree::{SourceFile, CODE_MAPS_DM};
 use crate::util::{py_strip, starts_with_any};
 
-const DESTROY_HINT: &str = "Destroy() overrides are banned outside the core chain; use DECLARE_REF declarations, a phase hook, on_destroy(), destroy_hint or lifecycle_keep() (code/datums/lifecycle/transaction.dm)";
-const QDEL_HINT: &str = "use consume()/replace_with()/expire()/slot_clear()/ledger_empty()/delete_on_death (code/datums/lifecycle/verbs.dm)";
+const DESTROY_HINT: &str = "Destroy() overrides are banned outside the core chain; use DECLARE_REF declarations, a phase hook, on_destroy(), destroy_hint or lifecycle_keep() (code/library/lifecycle/transaction.dm)";
+const QDEL_HINT: &str = "use consume()/replace_with()/expire()/slot_clear()/ledger_empty()/delete_on_death (code/library/lifecycle/verbs.dm)";
 
 static META: Meta = Meta {
     name: "lifecycle_counts",
@@ -127,7 +127,7 @@ mod tests {
     fn scan(rel: &str, text: &str) -> Sink {
         let mut scope = LintScope::default();
         scope.lists.insert("exempt_prefixes".to_string(), vec!["code/__defines/".to_string()]);
-        scope.lists.insert("exempt_files".to_string(), vec!["code/datums/lifecycle/verbs.dm".to_string()]);
+        scope.lists.insert("exempt_files".to_string(), vec!["code/library/lifecycle/verbs.dm".to_string()]);
         let tree = Tree::from_files(vec![]);
         let cx = Cx { tree: &tree, meta: &META, scope: &scope };
         let f = SourceFile::from_text(rel, text);
@@ -150,7 +150,7 @@ mod tests {
 
     #[test]
     fn exempt_paths_still_check_destroy_overrides() {
-        for rel in ["code/__defines/x.dm", "code/datums/lifecycle/verbs.dm"] {
+        for rel in ["code/__defines/x.dm", "code/library/lifecycle/verbs.dm"] {
             let out = scan(rel, "/obj/foo/Destroy()\n\tqdel(M)\n\tqdel(src)\n");
             let rules: Vec<&str> = out.sites.iter().map(|s| s.rule.as_str()).collect();
             assert_eq!(rules, vec!["destroy"], "{}", rel);

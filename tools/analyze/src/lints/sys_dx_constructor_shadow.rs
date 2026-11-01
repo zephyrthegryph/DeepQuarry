@@ -22,11 +22,11 @@ const RULES: &[RuleMeta] = &[
     },
 ];
 
-const PRESET_FILES: &str = "code/datums/capabilities/library/preset";
-const CAPS_DIR: &str = "code/datums/capabilities/";
+const PRESET_FILES: &str = "code/library/capabilities/preset";
+const CAPS_DIR: &str = "code/library/capabilities/";
 
 /// `reserved_names`: cap_* globals, presets-file globals, and every global in
-/// code/datums/capabilities/ that builds a capability (directly or by calling one that does).
+/// code/library/capabilities/ that builds a capability (directly or by calling one that does).
 fn reserved_names(tree: &Tree, procs: &[Proc]) -> HashSet<String> {
     let new_cap = pat!(r"\bnew\s+/datum/capability\b|\bvar/datum/capability[\w/]*\s*=\s*new\b");
     let call = pat!(r"(?<![\w./:])([A-Za-z_]\w*)\s*\(");

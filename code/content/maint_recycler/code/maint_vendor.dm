@@ -13,7 +13,6 @@
 	//wide sprite
 	pixel_x = -8
 
-	var/item_creation_energy_use = 400 //old and clunky
 
 	// ALLOW(instance_list): d: filled in Initialize with the vendor stock and shuffled
 	var/list/product_datums = list() //assoc list of obj spawn type to datum

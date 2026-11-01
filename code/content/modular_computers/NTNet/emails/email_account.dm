@@ -15,8 +15,6 @@
 	var/fullname	= "N/A"
 	var/assignment	= "N/A"
 
-	var/notification_mute = FALSE
-	var/notification_sound = "*beep*"
 
 /datum/computer_file/data/email_account/calculate_size()
 	set_size(1)

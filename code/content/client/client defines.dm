@@ -122,8 +122,6 @@
 	var/list/spell_tabs
 	/// list of misc tabs from mob
 	var/list/misc_tabs = list() // ALLOW(instance_list): d: one per connected client; stat panel tabs
-	///A lazy list of atoms we've examined in the last RECENT_EXAMINE_MAX_WINDOW (default 2) seconds, so that we will call [/atom/proc/examine_more] instead of [/atom/proc/examine] on them when examining
-	var/list/recent_examines
 
 	var/list/misc_cache = list() // ALLOW(instance_list): d: one per connected client; protean code indexes it directly
 

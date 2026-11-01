@@ -24,7 +24,7 @@ const RULES: &[RuleMeta] = &[
 const BEFORE: usize = 5; // lines looked at before an own_* call
 const AFTER: usize = 2; // and after it (the take-out written second)
 
-const EXEMPT_PREFIXES: &[&str] = &["code/datums/ownership/", "code/datums/containment/"];
+const EXEMPT_PREFIXES: &[&str] = &["code/library/ownership/", "code/library/containers/containment/"];
 
 fn holder(name: &str) -> &str {
     if name == "src" || name.is_empty() {
@@ -121,7 +121,7 @@ fn selftest() -> Result<String, String> {
     if adopt != vec![at_all("own_set(src, nameof(src.cell), C)")[1]] {
         return Err(format!("dx_manual_transfer selftest: manual_move_adopt got {:?}", adopt));
     }
-    if run("code/datums/ownership/x.dm").iter().any(|(r, _)| *r == "manual_transfer") {
+    if run("code/library/ownership/x.dm").iter().any(|(r, _)| *r == "manual_transfer") {
         return Err("dx_manual_transfer selftest: the framework is exempt".to_string());
     }
     Ok("dx_manual_transfer".to_string())

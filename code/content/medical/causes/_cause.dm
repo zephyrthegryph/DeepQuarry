@@ -206,8 +206,6 @@ CAPABILITIES(/datum/affliction_trigger)
 
 /datum/affliction_trigger/blood_loss
 	category = "Environmental"
-	/// 0..1 fraction lost (e.g. 0.4 = "below 60% of normal").
-	var/loss_fraction
 
 
 // --- Subtype: germ_level ------------------------------------------------

@@ -60,7 +60,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/error_viewer/error_cache)
 /datum/error_viewer/error_cache
 	var/list/errors = list() // ALLOW(instance_list): d: error viewer state
 	var/list/error_sources
-	var/list/errors_silenced
 
 CAPABILITIES(/datum/error_viewer/error_cache)
 	owns_many(nameof(errors))

@@ -185,7 +185,6 @@
 	var/metabolism_overlay = FALSE					//Extra mush layer for ingested reagents currently in metabolism.
 	var/metabolism_mush_ratio = 15					//Metabolism reagent volume per unit compared to nutrition units.
 	var/max_ingested = 500							//How much metabolism content for full overlay.
-	var/tmp/ingested_color = "#664330"					//Normal color holder for ingested layer. Blended from existing reagent colors.
 	var/custom_ingested_color = null				//Custom color for ingested reagent layer.
 	var/custom_ingested_alpha = 255					//Custom alpha for ingested reagent layer if not using normal mush layer.
 
