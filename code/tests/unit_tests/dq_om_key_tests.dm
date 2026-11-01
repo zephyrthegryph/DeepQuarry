@@ -18,6 +18,7 @@
 /datum/unit_test/dq_om_keys_wake_calm_brain
 
 /datum/unit_test/dq_om_keys_wake_calm_brain/Run()
+	set_global(nameof(GLOB.ai_pack_perceptions), GLOB.ai_pack_perceptions)
 	var/turf/T = run_loc_floor_bottom_left || locate(1, 1, 1)
 	var/mob/living/simple_mob/M = allocate(/mob/living/simple_mob, T)
 	var/datum/ai_brain/B = M.ai_brain
