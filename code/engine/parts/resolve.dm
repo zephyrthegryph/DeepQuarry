@@ -69,12 +69,6 @@
 	var/datum/op_plan/oplan
 	var/datum/activation/activation
 
-/// Every op plan of an entity: its type's, and the ones of capabilities granted to it. A fresh list.
-/proc/op_plans_of(datum/D)
-	. = list()
-	for(var/datum/op_src/S as anything in op_sources_of(D))
-		. += S.oplan
-
 /// The ops an entity has with the activation that brought each. A granted capability whose activation does not run (stacking: another beat
 /// it) brings none.
 /proc/op_sources_of(datum/D)

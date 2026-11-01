@@ -320,9 +320,6 @@ GLOBAL_LIST_INIT(modulo_angle_to_dir, list(NORTH,NORTHEAST,EAST,SOUTHEAST,SOUTH,
 
 // Very ugly, BYOND doesn't support unix time and rounding errors make it really hard to convert it to BYOND time.
 // returns "YYYY-MM-DD" by default
-/proc/isLeap(y)
-	return ((y) % 4 == 0 && ((y) % 100 != 0 || (y) % 400 == 0))
-
 //Takes a string and a datum
 //The string is well, obviously the string being checked
 //The datum is used as a source for var names, to check validity

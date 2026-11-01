@@ -544,21 +544,6 @@ Checks if a list has the same entries and values as an element of big.
 			return key
 
 //Don't use this on lists larger than half a dozen or so
-/proc/insertion_sort_numeric_list_ascending(list/L)
-	var/list/out = list(pop(L))
-	for(var/entry in L)
-		if(isnum(entry))
-			var/success = 0
-			for(var/i=1, i<=out.len, i++)
-				if(entry <= out[i])
-					success = 1
-					out.Insert(i, entry)
-					break
-			if(!success)
-				out.Add(entry)
-
-	return out
-
 /proc/dd_sortedObjectList(list/L, cache=list())
 	if(L.len < 2)
 		return L
