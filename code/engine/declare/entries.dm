@@ -234,7 +234,11 @@
 /// extend(key | CAP_X | TAG_X | /datum/act/x, parts...): changes what the type inherits. `parts` are opaque to E1: the engine that owns
 /// the addressed thing reads them (E2 for an op key, E4 for an act). drop = "id" relaxes a named requirement.
 /proc/extend(key_or_id, ENTRY_SLOTS, drop = null)
-	return entry_make(ENTRY_EXTEND, null, list("target" = key_or_id, "drop" = drop), entry_flatten(ENTRY_SLOT_LIST))
+	var/list/parts = entry_flatten(ENTRY_SLOT_LIST)
+	if(!length(parts) && isnull(drop))
+		declare_report("extend([islist(key_or_id) ? "list" : key_or_id]): no parts and no drop: it changes nothing")
+		return null
+	return entry_make(ENTRY_EXTEND, null, list("target" = key_or_id, "drop" = drop), parts)
 
 /// configure(e1_widget("a", power = 9), variant = /datum/capability/x/other): rebuilds the capability of that id and selector with the params
 /// the call names (the ones left out keep their value). configure(loot(chance = 20)) changes the static entry (static_entries.dm) a supertype declared. DM cannot take a capability's params as named arguments of one generic proc, so the
