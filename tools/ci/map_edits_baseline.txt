@@ -1,0 +1,2 @@
+# Map edits of a var no type has (tools/analyze/src/lints/map_edits.rs). rule<TAB>file<TAB>text.
+# Shrink-only.

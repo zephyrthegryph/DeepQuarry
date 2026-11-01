@@ -27,9 +27,52 @@ GLOBAL_LIST_EMPTY(_preloader_attributes)
 			if(trait_field)
 				set_trait(what, trait_field[1], trait_field[2], value)
 				continue
+			if(map_edit_moved_var(what, attribute, value))
+				continue
 			stack_trace("map edit of unknown var [attribute] on [what.type]")
 			continue
 		what.vars[attribute] = value // ALLOW(api): map loader: DMM var overrides
+
+/// A var that left the atom for another home but keeps its map edits: a sparse slot, the glow, the emag state. TRUE when the edit landed.
+/// tools/analyze/src/lints/map_edits.rs names the same vars, so an edit of anything else fails the gate before the map is ever loaded.
+/world/proc/map_edit_moved_var(atom/what, attribute, value)
+	var/slot = sparse_slot_named(what, attribute)
+	if(slot)
+		sparse_slot_write(what, slot, value)
+		return TRUE
+	switch(attribute)
+		if("light_range")
+			set_glow(what, GLOW(value, null, null))
+			return TRUE
+		if("light_power")
+			set_glow(what, GLOW(null, value, null))
+			return TRUE
+		if("light_color")
+			set_glow(what, GLOW(null, null, value))
+			return TRUE
+		if("emagged")
+			return value ? map_edit_set_emagged(what) : TRUE
+		if("cap_state")
+			return (value & CAP_EMAGGED) ? map_edit_set_emagged(what) : TRUE
+		if("req_access_txt", "req_one_access_txt")
+			// The old text form; "0" meant no requirement. The one kind of map left using it writes "0" beside a real req_access list.
+			if(value == "0" || !length("[value]"))
+				return TRUE
+			var/list/ids = list()
+			for(var/id in splittext("[value]", ";"))
+				ids += text2num(id)
+			var/obj/holder = what
+			if(attribute == "req_access_txt")
+				holder.set_req_access(ids)
+			else
+				holder.set_req_one_access(ids)
+			return TRUE
+	return FALSE
+
+/// A map that places something already subverted (a derelict's hacked vendor) sets the generic bit is_emagged() reads.
+/world/proc/map_edit_set_emagged(atom/what)
+	cap_set(what, CAP_EMAGGED, TRUE)
+	return TRUE
 
 /area/template_noop
 	name = "Area Passthrough"

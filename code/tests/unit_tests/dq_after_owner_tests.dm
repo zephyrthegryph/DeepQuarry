@@ -229,3 +229,33 @@
 	TEST_ASSERT_EQUAL(mob_rules_of(demon).faction, "neutral", "the map's faction reached this mob's trait")
 	TEST_ASSERT_EQUAL(demon.standing_faction(), "neutral", "and standings read it")
 	TEST_ASSERT_EQUAL(mob_rules_of_type(demon.type).faction, "demon", "other mobs of the type keep the declared one")
+
+/// What a map edits on the real loader path: the value reaches where the code reads it now.
+/datum/unit_test/dq_map_edits_reach_their_home
+
+/datum/unit_test/dq_map_edits_reach_their_home/proc/alist_of_edit(name, value)
+	. = list()
+	.[name] = value
+
+/datum/unit_test/dq_map_edits_reach_their_home/proc/placed(path, list/edits)
+	set_global(nameof(GLOB._preloader_path), GLOB._preloader_path)
+	set_global(nameof(GLOB._preloader_attributes), GLOB._preloader_attributes)
+	world.preloader_setup(edits, path)
+	return allocate(path, test_floor())
+
+/datum/unit_test/dq_map_edits_reach_their_home/Run()
+	var/obj/machinery/atmospherics/binary/pump/on/pump = placed(/obj/machinery/atmospherics/binary/pump/on, alist_of_edit("init_" + "target_pressure", 200)) // the map's own spelling, written apart: only a var edit may name a bind seed
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(pump.get_target_pressure(), 200, "and the running pump holds 200 kPa")
+	var/obj/machinery/vending/tool/vendor = placed(/obj/machinery/vending/tool, list("cap_state" = CAP_EMAGGED))
+	TEST_ASSERT(is_emagged(vendor), "cap_state = 16 still means a subverted vendor")
+	var/obj/machinery/sleeper/sleeper = placed(/obj/machinery/sleeper, list("emagged" = 1))
+	TEST_ASSERT(is_emagged(sleeper), "emagged = 1 too")
+	var/obj/effect/map_effect/perma_light/brighter/lamp = placed(/obj/effect/map_effect/perma_light/brighter, list("light_color" = "#DDFFD3"))
+	TEST_ASSERT_EQUAL(glow_of(lamp).color, "#DDFFD3", "a mapped glow keeps its colour")
+	var/obj/structure/barricade/cutout/greytide/cutout = placed(/obj/structure/barricade/cutout/greytide, list("icon_rotation" = 90))
+	TEST_ASSERT_EQUAL(sparse_get(cutout, icon_rotation), 90, "a sparse slot takes its edit")
+	var/obj/machinery/door/airlock/maintenance/door = placed(/obj/machinery/door/airlock/maintenance, list("req_access" = list(201), "req_one_access_txt" = "0"))
+	TEST_ASSERT(201 in door.req_access, "the door HydroCave maps keeps its real list beside the old \"0\" text")
+	var/obj/machinery/door/airlock/maintenance/texted = placed(/obj/machinery/door/airlock/maintenance, list("req_access_txt" = "5;7"))
+	TEST_ASSERT((5 in texted.req_access) && (7 in texted.req_access), "the old text form still restricts")
