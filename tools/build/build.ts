@@ -25,7 +25,7 @@ import { acquireDdSlot, countFreeDdSlots } from './lib/dd_slot';
 import { claimFreePort, shouldRetryBoot } from './lib/free_port';
 import { acquireSlot, acquireSlotGroup, type HeldSlot, slotCapacity, slotRoleSize, withSlot } from './lib/machine_slots';
 import { measuredDurations, neverRan, packShards, parseRunLog, readDurations, recordDurations, type SalvagedRun, suiteStalenessParams } from './lib/suite_runner';
-import { dmeValidationKey, isGeneratedDm, seedFromMainCheckout } from './lib/seed';
+import { dmeValidationKey, seedFromMainCheckout } from './lib/seed';
 import { generateVerdigrisBindings } from './lib/verdigris_bindings';
 import {
   BALANCE_RESULTS_FILE,
@@ -450,13 +450,15 @@ export const VerdigrisBindingsTarget = new Juke.Target({
   },
 });
 
-// The bindings check reads every Rust source and every DM file (15+ s on Windows). It is skipped when nothing it
-// reads has changed since it last passed here: the Rust sources and the generated files by content, the DM tree by
-// its file list (the DM side only checks that the types a component names exist; editing inside a file that removes
-// such a type is caught by CI, which always runs the full check, and by the next Rust or file-list change).
+// The bindings check reads every Rust source and every DM file (20-120 s on a loaded machine). It is skipped when nothing it
+// reads has changed since it last passed here: the Rust sources and the generated files by content. The DM side only checks that the
+// types a component names exist and picks `proc/` or an override: a DM change that alters that is caught by the compile (a second
+// `proc/` is an error) and by CI, which always runs the full check. The DM file list used to be in the key too, but an added file can do
+// nothing an edit inside a file cannot, and edits were never in it: it only made every master that added a .dm file regenerate the
+// same output (7 of the last 14 train batches on 31 October, 19-122 s each, before the gates).
 // data/verdigris-bindings-check.json holds the key; DQ_FULL_CHECKS=1 forces the full check.
 const verdigrisBindingsCheckKey = (): string => {
-  const hash = createHash('sha256').update('vg-bindings-check-v1|');
+  const hash = createHash('sha256').update('vg-bindings-check-v2|');
   const rs: string[] = [];
   const walk = (dir: string, keep: (name: string) => boolean, out: string[]) => {
     if (!fs.existsSync(dir)) return;
@@ -473,10 +475,6 @@ const verdigrisBindingsCheckKey = (): string => {
     hash.update(file);
     hash.update(fs.readFileSync(file));
   }
-  const dm: string[] = [];
-  walk('code', (n) => n.endsWith('.dm'), dm);
-  // `gen` restores its build output into code/ after a fresh tree's first key was computed: leave it out.
-  hash.update(dm.filter((f) => !isGeneratedDm(f)).sort().join('\n'));
   return hash.digest('hex');
 };
 const VERDIGRIS_BINDINGS_CHECK_RECORD = 'data/verdigris-bindings-check.json';
