@@ -116,3 +116,12 @@ Not moved in this lane: each owner file is itself dirty (oldform or allow), so o
 - `move_speed`, `last_move`, `old_x`, `old_y` (`atoms_movable.dm`) and `bodytemperature`: written on every move or life tick; `move_speed` and `bodytemperature` were excluded by instruction.
 - The seven `ALLOW(base_vars)` files (`proximity.dm`, `structures.dm`, `floor.dm`, `material_construction.dm`, `living_defines.dm`, `autofire.dm`) and `ALLOW(decl)` in `spore.dm` were reviewed and kept; none is stale.
 - `sys/dx_review` `manual_push` in `modules/power/apc.dm` (`push_to_rust()` after the bind) stays: it needs the power domain's refresh redesigned.
+
+## File moves, final state (2026-11-01)
+
+`move_candidates.sh` reports 34 dirty and 20 clean old-tree `.dm` files; `code/tests` no longer counts as old tree. Nothing else is left to move as a pure `git mv`.
+
+- **Clean but held (20).** Files the engine calls: 16 in `code/_helpers`, plus `code/contracts/acts/context.dm`, `code/core/datum/IsAbstract.dm`, `code/_onclick/adjacent.dm` and three sort files counted under `_helpers`. `engine_layering` treats `code/library/` and `code/content/` as external, so they fail there; in `code/engine/` `context.dm` and `adjacent.dm` fail because they name `/obj/item`. They need the engine to stop depending on them, or a neutral layer.
+- **Kernel placement.** The kernel is at `code/world/kernel/`, not doc section 22's `code/engine/kernel/`: it calls content directly (51 `engine_layering` findings).
+- **Dirty, baseline (16).** `base_vars` rows; the reasons are under "Base vars left in place" above. A move would only rename the row.
+- **Dirty, allow (16) and oldform (2 outside baseline).** Reviewed `ALLOW` keeps, and the root types' own `Initialize`/`New` (`atoms_initializing_EXPENSIVE.dm`, `micro_structures.dm`'s `/obj/Initialize`, an `init_roots` type).
