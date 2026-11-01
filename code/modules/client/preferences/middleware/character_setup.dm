@@ -218,8 +218,8 @@ GLOBAL_LIST_INIT(dq_editor_static_invalidators_by_key, dq_build_editor_static_in
 // which is type-registration order (not file order), so "Name" wasn't reliably
 // first in Identity even though the metadata file lists it first.
 GLOBAL_LIST_INIT(dq_group_order, list(
-	"identity"    = list("name", "gender", "demographics", "species", "spawn", "language", "background", "speech_verbs", "flavor", "directory", "records", "ooc_notes"),
-	"appearance"  = list("palette", "chassis", "body", "hair", "ears", "tail", "wings", "blood", "markings", "organs", "preview"),
+	"identity"    = list("name", "gender", "demographics", "blood", "species", "spawn", "language", "background", "speech_verbs", "flavor", "directory", "records", "ooc_notes"),
+	"appearance"  = list("palette", "chassis", "body", "hair", "ears", "tail", "wings", "markings", "organs", "preview"),
 	"size_voice"  = list("size", "voice"),
 	"antag"       = list("antag", "be_special"),
 	"game"        = list("input", "view", "sound", "ui", "chat", "persistence", "roleplay", "nif", "pai"),

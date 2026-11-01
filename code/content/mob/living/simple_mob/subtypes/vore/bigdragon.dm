@@ -799,7 +799,7 @@ CAPABILITIES(/obj/item/projectile/bullet/incendiary/dragonflame)
 /obj/item/projectile/bullet/incendiary/dragonflame/on_range()
 	consume(src)
 
-/obj/item/projectile/bullet/incendiary/dragonflame/Move()
+/obj/item/projectile/bullet/incendiary/dragonflame/Move(atom/newloc, direct = 0, movetime)
 	. = ..()
 	var/turf/T = get_turf(src)
 	if(T)

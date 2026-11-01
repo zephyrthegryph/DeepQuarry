@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "dq_train.sh enqueue refuses a lane that conflicts with master at once with the fix command, and dq_train.sh wait <branch> blocks until the lane landed or was bounced and prints which"

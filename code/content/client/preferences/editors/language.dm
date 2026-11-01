@@ -18,6 +18,23 @@
 	display_name = "Languages"
 	pref_keys = list("alternate_languages", "language_prefixes", "language_custom_keys", "extra_languages", "preferred_language", "runechat_color")
 
+/// The languages this character may actually pick as alternates: the same rule the alternate_languages sanitizer applies
+/// (not restricted, and either one of the species' secondary languages or open to this player), so the picker never offers
+/// a language that is dropped the moment it is chosen. Keys of GLOB.all_languages.
+/datum/preference_editor/language/proc/pickable_languages(datum/preferences/preferences)
+	var/datum/species/S = GLOB.all_species[preferences.read_preference(/datum/preference/choiced/species)]
+	var/client/C = preferences.client()
+	. = list()
+	for(var/key in GLOB.all_languages)
+		var/datum/language/L = GLOB.all_languages[key]
+		if(!istype(L) || (L.flags & RESTRICTED))
+			continue
+		if(S && L.name == S.language)
+			continue // already known: the species default
+		if(S && !(key in S.secondary_langs) && C && !is_lang_whitelisted(C, L))
+			continue
+		. += key
+
 /datum/preference_editor/language/build_ui_data(datum/preferences/preferences)
 	var/datum/species/S = GLOB.all_species[preferences.read_preference(/datum/preference/choiced/species)]
 	var/list/alt_languages = preferences.read_preference(/datum/preference/alternate_languages) || list()
@@ -32,6 +49,7 @@
 		"extra_languages" = extra,
 		"max_alternate_languages" = S ? (S.num_alternate_languages + extra) : extra,
 		"species_default_language" = S ? S.language : null,
+		"pickable_languages" = pickable_languages(preferences),
 	)
 
 /datum/preference_editor/language/build_ui_static_data(datum/preferences/preferences)
@@ -50,6 +68,8 @@
 	var/list/alt = preferences.read_preference(/datum/preference/alternate_languages) || list()
 	if(lang in alt)
 		return PREF_UPDATE_UNCHANGED
+	if(!(lang in pickable_languages(preferences)))
+		return PREF_UPDATE_REJECTED
 	alt += lang
 	preferences.update_preference_by_type(/datum/preference/alternate_languages, alt)
 	return PREF_UPDATE_ACCEPTED

@@ -51,9 +51,19 @@ CAPABILITIES(/turf/open)
 	setup(PROC_REF(setup_open_air))
 	setup(PROC_REF(register_open_air))
 
+/// Makes the air of a turf whose own Initialize() has not run yet, for whatever initializes on it first (/datum/system/atoms/InitAtom()). Base turfs have none.
+/turf/proc/settle_air()
+	return
+
+/turf/open/settle_air()
+	if(!air && !blocks_air && !(flags & ATOM_INITIALIZED))
+		GLOB.early_air_made++
+		setup_open_air()
+
 /// Gives the turf its gas mixture (a setup() hook).
 /turf/open/proc/setup_open_air()
-	PRIVATE_PROC(TRUE)
+	if(air) // made on demand by return_air() before this turf's Initialize(): the one mixture stays
+		return
 	if(!blocks_air)
 		if(immutable_atmos)
 			// Space and transit hold nothing but vacuum, so they all share one
@@ -174,6 +184,14 @@ CAPABILITIES(/turf/open)
 	// for airless tiles instead of returning null: consumers read 0-pressure vacuum,
 	// which is the correct answer for a wall/space tile, rather than runtiming. The
 	// atmos hot path (share/process_cell) uses .air directly and is unaffected.
+	// A read before SSair registers the turfs reads the turf's own mixture (a main-owned arena slot that holds its real gas); registration moves that same
+	// datum into its field cell, so the reading is the same either side of it. The count is logged when the turfs register (early_air_report()).
+	if(!SSair.initialized)
+		GLOB.early_air_reads++
+	if(!air && !blocks_air && !(flags & ATOM_INITIALIZED))
+		// Asked before this turf's own Initialize() ran, by something that did not initialize on it (/datum/system/atoms/InitAtom() settles the air under
+		// what initializes): a vacuum answer a caller may keep. Loud, so the boot gate names the reader; the air is not made here, a read stays a read.
+		WARNING("return_air() of a turf whose air does not exist yet ([type] at [x],[y],[z]): the reader gets vacuum")
 	return air || ..()
 
 /turf/open/return_analyzable_air()

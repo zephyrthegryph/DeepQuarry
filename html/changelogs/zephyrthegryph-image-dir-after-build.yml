@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Target scorch marks and voodoo doll layers keep their facing; overlay images built from an atom keep a turned dir"
+  - code_imp: "A dir assigned to an image or mutable_appearance after it is built is a lint error"

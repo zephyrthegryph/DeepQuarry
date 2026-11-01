@@ -144,7 +144,7 @@
 
 		if(!client.asset_json_update_queued)
 			client.asset_json_update_queued = TRUE
-			after(1 SECONDS, TYPE_PROC_REF(/client, asset_cache_update_json), client, clock = CLOCK_WORLD)
+			after(client, 1 SECONDS, TYPE_PROC_REF(/client, asset_cache_update_json), clock = CLOCK_WORLD)
 		return TRUE
 	return FALSE
 

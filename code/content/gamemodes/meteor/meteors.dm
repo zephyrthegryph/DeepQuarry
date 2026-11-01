@@ -136,7 +136,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/meteor, REGISTRY_METEORS)
 	z_original = z
 	SpinAnimation()
 
-/obj/effect/meteor/Move()
+/obj/effect/meteor/Move(atom/newloc, direct = 0, movetime)
 	if(z != z_original || loc == dest)
 		spent(src)
 		return

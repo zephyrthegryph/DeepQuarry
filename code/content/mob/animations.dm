@@ -180,8 +180,7 @@
 		// Scale the icon.
 		I.transform *= 0.75
 	else //They had a hardcoded one specified
-		I = image(kind_of(src).attack_icon, A, kind_of(src).attack_icon_state, A.layer + 1)
-		I.dir = dir
+		I = image(kind_of(src).attack_icon, A, kind_of(src).attack_icon_state, A.layer + 1, dir = dir)
 
 	// Show the overlay to the clients
 	flick_overlay(I, viewing, 5, TRUE) // 5 ticks/half a second

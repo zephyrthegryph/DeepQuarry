@@ -41,7 +41,7 @@ Add, move or delete a file and build (every target that compiles or lints DM reg
 `python3 tools/build/gen_dme.py`; commit the result. `bash tools/ci/check_ratchets.sh` fails on a stale manifest and on a macro used
 before its `#define` in the generated order. A new order dependency (a macro in an ordinary file, a second definition of a type's var
 or proc in another file) needs a `before` rule; `bash tools/ci/dme_order_equiv.sh` compiles a reference order against the generated
-one and compares the worlds with dmb-equiv. Test files are listed in `code/modules/unit_tests/_unit_tests.dm` (still by hand).
+one and compares the worlds with dmb-equiv. Test files are listed in `code/tests/unit_tests/_unit_tests.dm` (still by hand).
 
 ---
 
@@ -301,6 +301,7 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   `DMB_PAIR_MAX_AGE_DAYS` (7), `PairStore::evict_to_budget`; the dmbc cache spares only its newest segment by age, so the budget holds); the
   manifest above lists every one, `tools/dq_cache_prune.sh` is now a wrapper for `dq_disk_budget.sh enforce`, and abandoned test-run directories idle for a day are
   its `test-scratch` table. Don't measure with `du`; count entries.
+- **The test-server folder is the user's.** `E:/projects/dq-wt/test-server` holds the permanent local server and the user's saved character (`data/player_saves`); agents never run, build in, edit, clean or remove it. It is started and updated only by `bash tools/dq_test_server.sh` (`doc/rewrite/agent_workflow.md` section 29).
 - **Git safety.** Never delete `.git/index.lock` or any other lock file; another process holds
   it. Never run `git checkout` (any form), `git stash`, `git reset`, `git restore` or
   `git cherry-pick`; they discard or move other agents' work.

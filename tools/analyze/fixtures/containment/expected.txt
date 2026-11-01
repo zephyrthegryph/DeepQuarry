@@ -1,6 +1,6 @@
 raw_writes	code/datums/containment/lifecycle.dm	2
 raw_writes	code/datums/containment/lifecycle.dm	3
-raw_writes	code/modules/benchmarks/b.dm	2
+raw_writes	code/tests/benchmarks/b.dm	2
 raw_writes	code/modules/foo/a.dm	2
 raw_writes	code/modules/foo/a.dm	3
 raw_writes	code/modules/foo/a.dm	4

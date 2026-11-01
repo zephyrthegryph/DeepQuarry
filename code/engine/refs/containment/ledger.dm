@@ -2,9 +2,12 @@
 //
 // Every holder that declares slots (slot_def.dm) gets one /datum/ledger, made
 // on first use by dq_ledger(). It records which slot each thing inside is in,
-// gives each an entry id, and keeps the holder's aggregates (mass, heat
-// capacity, minimum thresholds, capability tags) current on every insert and
-// remove through P1's /datum/property_accumulator.
+// gives each an entry id, and answers the holder's aggregates (mass, heat
+// capacity, minimum thresholds, capability tags) when asked: they are folded
+// from the things inside on a read (recompute()), not kept current on every
+// insert and remove. The only readers are contents_property() and
+// contents_has_tag(), and they are rare; a move runs on every body, organ and
+// item, so it pays only for its bookkeeping.
 //
 // Bookkeeping happens at the one place a movable's loc changes: doMove()
 // calls note_exit() on the old holder's ledger and note_enter() on the new
@@ -142,8 +145,8 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 /// What `thing` adds to its holder's aggregates: its own property values
 /// combined with its own ledger's aggregates (so nested holders roll up).
 /// A list of measure values then tag words, or null when it adds nothing.
-/// `from_scratch` recomputes nested holders instead of reading their ledgers.
-/proc/dq_ledger_contribution(atom/movable/thing, from_scratch = FALSE)
+/// A nested holder's contribution is folded from its own contents.
+/proc/dq_ledger_contribution(atom/movable/thing)
 	var/datum/property_registry/registry = dq_property_registry()
 	var/list/ids = CACHED(ledger_measure_ids, "ids")
 	var/count = length(ids)
@@ -151,7 +154,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	var/list/nested
 	var/datum/ledger/inner = dq_ledger_peek(thing)
 	if(inner)
-		nested = from_scratch ? inner.recompute() : inner.totals()
+		nested = inner.recompute()
 	var/list/snapshot = new /list(count + words)
 	var/any = FALSE
 	for(var/i in 1 to count)
@@ -192,9 +195,6 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	var/tracked = 0
 	/// Entry serials only increase (the last one issued), so an entry id is never reused.
 	var/last_serial = 0
-	/// Measure accumulators (ledger_measure_ids order) then tag-word
-	/// accumulators. Each is made when its first value arrives.
-	var/tmp/list/accumulators
 	/// The slot the next note_enter() of `pending_thing` goes to (api.dm).
 	var/tmp/atom/movable/pending_thing
 	var/pending_slot
@@ -229,7 +229,6 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	if(!default_id)
 		var/datum/relation_definition/slot/first = defs[1]
 		default_id = first.slot_id
-	accumulators = new /list(length(CACHED(ledger_measure_ids, "ids")) + dq_ledger_tag_words())
 
 // the ledger is the containment engine itself; it lets go of its holder.
 
@@ -295,31 +294,22 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 
 /// Adopts contents that arrived without a move and forgets things that left
 /// without one. One comparison when nothing changed.
-///
-/// The whole reconciliation is one change to the holder's totals, so it reaches the container once,
-/// after every entry is recorded. Propagating per entry made the container re-read this holder
-/// mid-sync (refresh() -> dq_ledger_contribution() -> dq_ledger_peek() -> sync()), adopting the next
-/// thing one stack frame deeper: a lazily built ledger over hundreds of things (a circuit kit's
-/// boxes, built by their destroy transaction) hit BYOND's recursion limit.
 /datum/ledger/proc/sync()
 	if(length(holder.contents) == tracked)
 		return
-	var/changed = FALSE
 	for(var/atom/movable/thing as anything in entries.Copy())
 		if(thing.loc != holder)
-			changed = note_exit(thing, tell_container = FALSE) || changed
+			note_exit(thing)
 	for(var/atom/movable/thing as anything in holder.contents)
 		// A thing being deleted left its slot in destroy phase 4 (it keeps its loc until phase 7):
 		// note_enter()'s teardown guard never re-adopts it.
 		if(!entries[thing])
-			changed = note_enter(thing, tell_container = FALSE) || changed
-	if(changed)
-		propagate()
+			note_enter(thing)
 
 // ---- Bookkeeping (called from doMove) ----
 
-/// `tell_container` FALSE leaves telling the container to the caller (sync() does it once). TRUE when it recorded `thing`.
-/datum/ledger/proc/note_enter(atom/movable/thing, tell_container = TRUE)
+/// TRUE when it recorded `thing`.
+/datum/ledger/proc/note_enter(atom/movable/thing)
 	if(entries[thing])
 		return FALSE
 	var/id = default_id
@@ -336,9 +326,8 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 		return FALSE
 	var/datum/relation_definition/slot/def = def_by_id(id)
 	var/cost = def.cost(holder, thing)
-	var/list/snapshot = dq_ledger_contribution(thing)
 	var/key = def.keyed ? thing.slot_key() : null
-	entries[thing] = list(id, ++last_serial, cost, snapshot, key)
+	entries[thing] = list(id, ++last_serial, cost, key)
 	if(def.keyed && !isnull(key))
 		index_key(id, key, thing)
 	var/list/things = slots[id]
@@ -346,9 +335,6 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	used[id] += cost
 	tracked++
 	. = TRUE
-	add_snapshot(snapshot)
-	if(tell_container)
-		propagate()
 	if(thing.containment_move_flags())
 		adjust_hooked(1)
 	// The one idle-tracking seam (roadmap C10, containment.md §4.7): this is
@@ -365,8 +351,8 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	if(thing.slot_hooks_enabled())
 		thing.on_slotted(holder, id, flags)
 
-/// `tell_container` as note_enter(). TRUE when it forgot `thing`.
-/datum/ledger/proc/note_exit(atom/movable/thing, tell_container = TRUE)
+/// TRUE when it forgot `thing`.
+/datum/ledger/proc/note_exit(atom/movable/thing)
 	var/list/entry = entries[thing]
 	if(!entry)
 		return FALSE
@@ -382,9 +368,6 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	used[id] -= entry[LEDGER_E_COST]
 	tracked--
 	. = TRUE
-	remove_snapshot(entry[LEDGER_E_SNAPSHOT])
-	if(tell_container)
-		propagate()
 	if(thing.containment_move_flags())
 		adjust_hooked(-1)
 	PUBLISH_CHANGE(holder, SLOT_OCCUPANCY_KEY)
@@ -436,66 +419,15 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	if(thing.slot_hooks_enabled())
 		thing.on_slotted(holder, new_id, flags)
 
-/// Re-reads one thing's contribution, e.g. after its own contents changed.
-/// Changes to a child's own properties reach here through the reactor later
-/// (containment.md §2, invariant 5); until then callers refresh by hand.
-/datum/ledger/proc/refresh(atom/movable/thing)
-	if(!entries[thing])
-		return
-	// Compute first: reading the child can sync its ledger, which refreshes
-	// this entry re-entrantly. Swap whatever snapshot is current afterwards.
-	var/list/fresh = dq_ledger_contribution(thing)
-	var/list/entry = entries[thing]
-	if(!entry)
-		return
-	remove_snapshot(entry[LEDGER_E_SNAPSHOT])
-	entry[LEDGER_E_SNAPSHOT] = fresh
-	add_snapshot(fresh)
-	propagate()
-
-/// Our totals changed, so the holder's own contribution to its container did.
-/datum/ledger/proc/propagate()
-	var/atom/parent = holder.loc
-	if(parent?.containment_ledger())
-		parent.containment_ledger().refresh(holder)
-
 // ---- Aggregates ----
 
-/datum/ledger/proc/add_snapshot(list/snapshot)
-	if(!snapshot)
-		return
-	for(var/i in 1 to length(snapshot))
-		var/value = snapshot[i]
-		if(isnull(value))
-			continue
-		var/datum/property_accumulator/acc = accumulators[i]
-		if(!acc)
-			acc = new /datum/property_accumulator(dq_ledger_aggregator(i))
-			accumulators[i] = acc
-		acc.add(value)
-
-/datum/ledger/proc/remove_snapshot(list/snapshot)
-	if(!snapshot)
-		return
-	for(var/i in 1 to length(snapshot))
-		var/value = snapshot[i]
-		if(isnull(value))
-			continue
-		var/datum/property_accumulator/acc = accumulators[i]
-		acc.remove(value)
-
-/// Current aggregates, as a snapshot-shaped list.
-/datum/ledger/proc/totals()
-	. = new /list(length(accumulators))
-	for(var/i in 1 to length(accumulators))
-		var/datum/property_accumulator/acc = accumulators[i]
-		.[i] = acc?.value()
-
-/// The same aggregates recomputed from scratch, recursing into nested holders.
+/// The aggregates folded from what is inside now, as a snapshot-shaped list, recursing into nested holders. Reads each thing's
+/// properties as they are at this moment, so there is nothing to refresh when one of them changes.
 /datum/ledger/proc/recompute()
-	. = new /list(length(accumulators))
+	sync()
+	. = new /list(length(CACHED(ledger_measure_ids, "ids")) + dq_ledger_tag_words())
 	for(var/atom/movable/thing as anything in holder.contents)
-		var/list/snapshot = dq_ledger_contribution(thing, TRUE)
+		var/list/snapshot = dq_ledger_contribution(thing)
 		if(!snapshot)
 			continue
 		for(var/i in 1 to length(snapshot))
@@ -511,32 +443,20 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	var/index = ids.Find(id)
 	if(!index)
 		CRASH("[id] is not a ledger aggregate")
-	var/datum/property_accumulator/acc = accumulators[index]
-	return acc?.value()
+	var/list/totals = recompute()
+	return totals[index]
 
 /// Whether anything inside has tag `tag`.
 /datum/ledger/proc/has_tag(tag)
 	var/bit = dq_property_registry().tag_bits[tag]
 	if(isnull(bit))
 		CRASH("unknown tag [tag]")
-	var/datum/property_accumulator/acc = accumulators[length(CACHED(ledger_measure_ids, "ids")) + round(bit / PROP_TAG_WORD_BITS) + 1]
-	return (acc?.value() & (1 << (bit % PROP_TAG_WORD_BITS))) ? TRUE : FALSE
+	var/list/totals = recompute()
+	return (totals[length(CACHED(ledger_measure_ids, "ids")) + round(bit / PROP_TAG_WORD_BITS) + 1] & (1 << (bit % PROP_TAG_WORD_BITS))) ? TRUE : FALSE
 
-/// Mismatches between the ledger and the holder's real contents, and between
-/// the incremental aggregates and a recomputation, as text. Empty when sound.
+/// Mismatches between the ledger and the holder's real contents, as text. Empty when sound.
 /datum/ledger/proc/verify()
 	. = list()
-	var/list/ids = CACHED(ledger_measure_ids, "ids")
-	var/list/have = totals()
-	var/list/want = recompute()
-	for(var/i in 1 to length(have))
-		var/a = have[i]
-		var/b = want[i]
-		if(isnull(a) && isnull(b))
-			continue
-		if(isnull(a) || isnull(b) || abs(a - b) > 1e-4 * max(1, abs(b)))
-			var/label = i <= length(ids) ? ids[i] : "tag word [i - length(ids)]"
-			. += "[holder] [label]: incremental [isnull(a) ? "null" : a], recomputed [isnull(b) ? "null" : b]"
 	var/total = 0
 	for(var/id in slots)
 		var/list/things = slots[id]
@@ -669,16 +589,6 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	L?.rekey(src)
 
 // ---- Dynamic tags (J7) ----
-
-/// Re-reads `src`'s whole contribution (every measure and tag, TAG_CLOCKED
-/// included) into its holder's ledger, if it is in one. The ledger caches a
-/// thing's contribution at note_enter() (file header) and never re-reads it
-/// on its own, so anything that can change while a thing sits still --
-/// today, only TAG_CLOCKED (dynamic_state.dm) -- must call this itself right
-/// after it changes. A no-op when `src` isn't in a slot right now.
-/atom/movable/proc/ledger_refresh_contribution()
-	var/datum/ledger/L = dq_ledger_peek(loc)
-	L?.refresh(src)
 
 // ---- J5: the move hook gate ----
 

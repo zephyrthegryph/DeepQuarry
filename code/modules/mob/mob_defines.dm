@@ -282,7 +282,6 @@ SETTER(/mob, stat)
 	if(mob_size == value)
 		return FALSE
 	mob_size = value
-	ledger_refresh_contribution()
 	tracked_changed(src, nameof(mob_size))
 	return TRUE
 SETTER(/mob, mob_size)

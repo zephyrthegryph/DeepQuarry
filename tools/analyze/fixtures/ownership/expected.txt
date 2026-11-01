@@ -157,7 +157,7 @@ string_name	code/modules/own/string_bs.dm	7
 string_name	code/modules/own/string_bs.dm	14
 string_name	code/modules/own/string_bs.dm	15
 unknown_var	code/datums/om/core.dm	9
-unknown_var	code/modules/benchmarks/own_bench.dm	9
+unknown_var	code/tests/benchmarks/own_bench.dm	9
 unknown_var	code/modules/own/accessors.dm	17
 unknown_var	code/modules/own/accessors.dm	18
 unknown_var	code/modules/own/accessors.dm	19

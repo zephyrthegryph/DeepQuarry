@@ -135,6 +135,11 @@
 #define CONTRACT_OPPORTUNITY_FACT_LIMIT 128
 /// Least damage (integrity points) one atom must take, per hit or per batch, to be reported.
 #define CONTRACT_INFRASTRUCTURE_DAMAGE_MINIMUM 25
+/// A batch of at most this many damage reports is published in the tick it ends; a larger one is published in chunks over the following ticks.
+#define CONTRACT_DAMAGE_FLUSH_INLINE 64
+/// Damage reports published per chunk of a large batch, and the percent of a tick the chunks may use (a report cost about a millisecond).
+#define CONTRACT_DAMAGE_FLUSH_CHUNK 20
+#define CONTRACT_DAMAGE_FLUSH_BUDGET 15
 #define CONTRACT_OPPORTUNITY_DEFAULT_WINDOW 10 MINUTES
 #define CONTRACT_OPPORTUNITY_DEFAULT_COOLDOWN 20 MINUTES
 #define CONTRACT_OPPORTUNITY_RESET_RATIO 0.5

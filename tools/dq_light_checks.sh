@@ -106,10 +106,11 @@ add_selftest() { [ -f "tools/ci/$1" ] && selftests["$1"]=1; }
 for f in "${changed[@]}"; do
 	case "$f" in
 		tools/ci/test_*.sh) add_selftest "$(basename "$f")" ;;
-		tools/dq_train.sh|tools/dq_train_estimate.js|tools/dq_merge_batch.sh|tools/dq_merge_gates.sh|tools/dq_gate_retry.sh|tools/dq_gate_verdicts.sh|tools/dq_declared_tests.sh|tools/train/*) add_selftest test_train.sh; add_selftest test_train_decisions.sh ;;
+		tools/dq_train.sh|tools/dq_train_estimate.js|tools/dq_merge_batch.sh|tools/dq_merge_gates.sh|tools/dq_gate_retry.sh|tools/dq_gate_verdicts.sh|tools/dq_declared_tests.sh|tools/train/*) add_selftest test_train.sh; add_selftest test_train_decisions.sh ; add_selftest test_train_enqueue_wait.sh; add_selftest test_train_snapshot.sh ; add_selftest test_train_landed_times.sh ;;
+		tools/ci/check_gitattributes.sh) add_selftest test_check_gitattributes.sh ;;
 		tools/dq_light_paths.sh|tools/dq_land_batch.sh) add_selftest test_light_checks.sh ;;
 		tools/dq_light_checks.sh) add_selftest test_light_checks.sh; add_selftest test_train_decisions.sh ;;
-		tools/dq_stale_includes.sh|tools/dq_merge_master.sh|tools/light_cargo_rdeps.py) add_selftest test_train_decisions.sh ;;
+		tools/dq_stale_includes.sh|tools/dq_merge_master.sh|tools/light_cargo_rdeps.py) add_selftest test_train_decisions.sh; add_selftest test_stale_includes_generated.sh ;;
 		tools/ci/lint_scopes_merge_driver.sh|tools/dq_git_safe.sh) add_selftest test_train_decisions.sh ;;
 		tools/dq_*.sh) add_selftest "test_$(basename "$f" .sh | sed 's/^dq_//').sh" ;;
 	esac

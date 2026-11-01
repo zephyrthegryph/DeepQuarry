@@ -103,8 +103,11 @@ conflicts back). Don't commit regenerated output after a declaration change: com
   bisect names the lane), and `dq_merge_gates.sh` amends it into a batch merge or refuses a stale one elsewhere.
   `bash tools/ci/test_dme_merge.sh [LANE...]` merges each queued lane that edits the manifest in memory and compares the result with a
   regeneration over the merged files.
-- `code/modules/unit_tests/_unit_tests.dm` is still kept by hand and still merges by union: two branches that each add an `#include`
-  at the same spot both keep theirs; a duplicate `#include` is harmless, an include of a deleted file fails the compile.
+- `code/tests/unit_tests/_unit_tests.dm` is still kept by hand and still merges by union: two branches that each add an `#include`
+  at the same spot both keep theirs; a duplicate `#include` is harmless, an include of a deleted file fails the compile. A move
+  once left this rule pointing at the old path (union silently stopped; every parallel lane that added a test conflicted):
+  `tools/ci/check_gitattributes.sh` (in `check_ratchets.sh`) now fails when a `.gitattributes` path or glob matches no tracked file or a
+  `merge=` driver is undefined, and `gen_dme.py --moved` rewrites a moved file's own `.gitattributes` line.
 
 ## 4. Boot must be clean
 
@@ -732,6 +735,10 @@ Tests: `bash tools/ci/test_lane_pool.sh`, `bash tools/ci/test_light_checks.sh`, 
 
 ## 29. The batch train (24 October 2026, `tools/batch-train`)
 
+**Train tests go in their own file.** `tools/ci/test_train_decisions.sh` is the shared tail every lane appended to and conflicted on; put new train tests in
+`tools/ci/test_train_<topic>.sh` and map it in `tools/dq_light_checks.sh` (a changed `tools/ci/test_*.sh` already runs itself). The train log's `LANDED` line now
+reports `enqueued`, `ready` (precheck pass) and the seconds waited, so lands per hour and queue wait come from `train.log`.
+
 **The default way to land a lane.** Per-lane landing (`dq_land.sh`) proved every lane on its own merge and proved it again whenever master moved:
 with 25-40 minute gate rounds and frequent landings a lane needed 2-2.5 hours. Audit of one day's logs: gate rounds median 23 min (production
 compile 1184 s, test phase 1055 s), 13 of 14 focused runs at 10 minutes or more, 86 full test-dme compiles = 8146 s. The train gates every waiting lane
@@ -998,3 +1005,23 @@ Measured on `fix/pref-metadata-order` (one line, enqueued 16:23Z, landed 16:47Z 
   remote-tracking ref the push updated (a fetch only when that does not hold the commit), computes the stamp verdict once, and logs
   laps for setup/lock and the stamp verdict. The `pushed:` line reports `gate+push` seconds next to the whole cycle (which also counts
   the preamble and the disk floor check).
+
+## 29. The test-server folder (31 October 2026)
+
+The user's local test server (port 1337, `config/example`) used to run from whatever pool slot was free. A pool `release` runs
+`drop_outputs()`, which deletes `data/*` (except `data/analyze-cache`), and the next lease may be a different slot, so the saved
+character (`data/player_saves/<letter>/<ckey>/preferences.json` and `vore/character1.json`; JSON files, not SQL) vanished each time.
+
+- **One permanent worktree, `E:/projects/dq-wt/test-server`**, detached, outside the pool. Nothing in `dq_lane_pool.sh` or
+  `dq_cache_prune.sh` touches non-pool worktrees, and `dq_worktree.sh gc` names `test-server` in its built-in keep list (no env var
+  or keep file to remember). `tools/ci/test_test_server_folder.sh` checks that, and that the launcher refuses a dirty tree.
+- **Start or update it with `bash tools/dq_test_server.sh`** (`--no-update` starts the current tree). It refuses when the worktree has
+  uncommitted changes, fast-forwards with `git merge --ff-only origin/master` (no reset, checkout, stash or clean), then runs
+  `bin\server.cmd`. `data/` is gitignored, so a fast-forward never deletes saves. It creates the worktree if it is missing; the first
+  build seeds `icons/gen` from the main checkout (`DQ_ICON_SEED`), so only changed icons repack.
+- **Agents never run, build in, update or edit this folder.** The user (or the coordinator on the user's behalf) restarts the server.
+
+The player-facing server runs at Normal priority (30 October 2026 finding: it ran at BelowNormal beside lanes and starved). `build.ts`
+lowers itself, so the daemon inherited that; `ServerTarget` now passes `playerFacing: true` and `runPlayerFacingDreamDaemon()`
+(`tools/build/lib/byond.ts`) raises its dd process to Normal (`DQ_SERVER_PRIORITY=above` for AboveNormal). Test, bench and gate worlds
+stay at below normal; slot counts are unchanged; `dq_run_guard` only watches test worlds.

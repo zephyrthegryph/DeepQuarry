@@ -628,7 +628,8 @@ fn register_turf(src: ByondValue, flag: i32, mask: Option<u8>) -> Result<()> {
         Ok(())
     })?;
     if let MixRef::Main(slot) = r {
-        mix::free(slot);
+        // Watches armed on the pre-registration slot follow the gas to its cell.
+        mix::free_into_turf(slot, cell);
     }
     MixRef::Turf(cell).store(&mut air)?;
     Ok(())

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "The blood settings (type, reagent, colour) moved from the Looks tab to Identity. Saved characters keep their values."

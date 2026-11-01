@@ -10,7 +10,6 @@
 			continue
 		var/mutable_appearance/blocker = mutable_appearance(AM.icon, AM.icon_state, plane = PLANE_EMISSIVE, alpha = AM.alpha)
 		blocker.color = GLOB.em_block_color
-		blocker.dir = AM.dir
 		blocker.appearance_flags |= AM.appearance_flags
 		look_replace_priority_overlay(AM, old, blocker)
 		return

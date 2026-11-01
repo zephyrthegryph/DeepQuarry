@@ -105,9 +105,8 @@ CAPABILITIES(/obj/item/remote_scene_tool/voodoo_doll)
 /obj/item/remote_scene_tool/voodoo_doll/proc/generate_layer_image(image/input, matrix/newtransform, outline_width = 0, outline_color = rgb(50,50,50), mask_inverse = FALSE)
 	if(input == null)
 		return null
-	input = image(input) // the wearer's layers are shared images: the doll turns and outlines its own copy
+	input = image(input, dir = SOUTH) // the wearer's layers are shared images: the doll turns and outlines its own copy (a dir set after the copy is lost on an overlay)
 
-	input.dir = SOUTH
 	input.transform = newtransform
 	input.layer = FLOAT_LAYER
 	if(outline_width > 0)

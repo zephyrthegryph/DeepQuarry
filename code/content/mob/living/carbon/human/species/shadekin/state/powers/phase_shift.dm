@@ -225,7 +225,6 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 					if(istype(held_lights,/obj/item/flashlight/glowstick) ||istype(held_lights,/obj/item/flashlight/flare) ) //No affecting glowsticks or flares...As funny as that is
 						continue
 					held_lights.set_on(0)
-					held_lights.update_brightness()
 
 	if(!SK)
 		return
