@@ -10,6 +10,10 @@
 	var/body_k = body_temperature()
 	if(stat != DEAD)
 		death(1)
+	// A death that ended the body at once (replace_death: a cockroach) leaves nothing to animate; the open scope must still close.
+	if(QDELETED(src))
+		dq_destroy_collect_end()
+		return
 	set_transforming(1)
 	set_canmove(0)
 	set_icon(null)
