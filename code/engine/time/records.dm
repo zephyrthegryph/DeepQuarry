@@ -140,28 +140,6 @@
 	entity_sync(rec, pos, TRUE)
 	return TRUE
 
-/proc/entity_detach(datum/E, B)
-	var/datum/scheduler_record/rec = E.om_rec
-	if(!rec)
-		return FALSE
-	var/datum/scheduled_behaviour/def = definition_registry().behaviour(B)
-	var/i = rec.att.Find(def)
-	if(!i)
-		return FALSE
-	entity_stop_behaviour(rec, i)
-	deadline_cancel_after(E, def)
-	rec.att_ver++
-	rec.att.Cut(i, i + 1)
-	rec.att_pend.Cut(i, i + 1)
-	rec.att_ring.Cut(i, i + 1)
-	rec.att_state.Cut(i, i + 1)
-	entity_recompute_listen(rec)
-	if(def.compiled_related)
-		relation_rebuild_fwd(rec)
-	if(def.wake_on_native)
-		entity_native_watch(rec)
-	return TRUE
-
 /proc/entity_attached(datum/E, B)
 	var/datum/scheduler_record/rec = E.om_rec
 	if(!rec)
@@ -392,11 +370,6 @@
 				rec.pend_union |= bits
 				rec.sched.enqueue(rec, B.lane)
 			return
-
-/// Wakes behaviour `B` on `E` next drain (on_wake gets CHANGE_EXPLICIT).
-/proc/entity_wake(datum/E, B)
-	var/datum/scheduled_behaviour/def = definition_registry().behaviour(B)
-	entity_wake_id(E, def.id, CHANGE_EXPLICIT)
 
 // ---------------------------------------------------------------- watches
 

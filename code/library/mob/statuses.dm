@@ -321,17 +321,6 @@ PROC_SUMMARY(/datum/proc/status_flipped) // vars[] / call() dispatcher: the walk
 /mob/proc/disable_godmode()
 	release(src, STAT_GODMODE, SRC_GODMODE)
 
-/// Holds every incapacitation immunity on `M` with `source` as the source.
-/proc/hold_incapacitation_immunity(mob/M, source)
-	hold(M, STAT_IMMUNE(STAT_STUNNED), source = source)
-	hold(M, STAT_IMMUNE(STAT_WEAKENED), source = source)
-	hold(M, STAT_IMMUNE(STAT_PARALYZED), source = source)
-
-/proc/release_incapacitation_immunity(mob/M, source)
-	release(M, STAT_IMMUNE(STAT_STUNNED), source)
-	release(M, STAT_IMMUNE(STAT_WEAKENED), source)
-	release(M, STAT_IMMUNE(STAT_PARALYZED), source)
-
 /// Mutation -> list(the source its immunities are held under, the statuses it makes the mob immune to while it has it).
 GLOBAL_LIST_INIT(mutation_immunities, list(
 	"[HULK]" = list(SRC_MUTATION_HULK, STAT_STUNNED, STAT_WEAKENED, STAT_PARALYZED),

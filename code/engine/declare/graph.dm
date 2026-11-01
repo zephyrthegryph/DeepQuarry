@@ -273,11 +273,6 @@ CAPABILITY_TYPE(deployment_graph, CAP_DEPLOYMENT, /datum/capability/construction
 		return def
 	return built
 
-/// An interned definition of a graph capability: its params are the graph (by identity), start and via. The default interning cannot see
-/// the graph, so the signature adds it.
-/datum/capability/construction/proc/graph_signature()
-	return "[graph?.id]:[start]:[via ? jointext(via, ",") : ""]"
-
 /datum/capability/construction/carry_over(datum/capability/construction/copy)
 	copy.graph = graph // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
 

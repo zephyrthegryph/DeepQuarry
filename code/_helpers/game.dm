@@ -7,16 +7,6 @@
 		return 1
 	return 0
 
-/proc/max_default_z_level()
-	var/max_z = 0
-	for(var/z in using_map.station_levels)
-		max_z = max(z, max_z)
-	for(var/z in using_map.admin_levels)
-		max_z = max(z, max_z)
-	for(var/z in using_map.player_levels)
-		max_z = max(z, max_z)
-	return max_z
-
 /proc/get_area(atom/A)
 	READS_FROM(A) // area lookup follows the supplied atom location
 	RETURN_TYPE(/area)
@@ -491,23 +481,6 @@
 	src.power_y = power_y
 	src.dest_x = dest_x
 	src.dest_y = dest_y
-
-/proc/projectile_trajectory(src_x, src_y, rotation, angle, power)
-
-	// returns the destination (Vx,y) that a projectile shot at [src_x], [src_y], with an angle of [angle],
-	// rotated at [rotation] and with the power of [power]
-	// Thanks to VistaPOWA for this function
-
-	var/power_x = power * cos(angle)
-	var/power_y = power * sin(angle)
-	var/time = 2* power_y / 10 //10 = g
-
-	var/distance = time * power_x
-
-	var/dest_x = src_x + distance*sin(rotation);
-	var/dest_y = src_y + distance*cos(rotation);
-
-	return new /datum/projectile_data(src_x, src_y, time, distance, power_x, power_y, dest_x, dest_y)
 
 /proc/GetRedPart(const/hexa)
 	return hex2num(copytext(hexa,2,4))

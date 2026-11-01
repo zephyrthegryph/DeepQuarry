@@ -35,53 +35,6 @@
 			mobs += M
 
 	return mobs
-/proc/random_hair_style(gender, species = SPECIES_HUMAN)
-	var/h_style = "Bald"
-
-	var/list/valid_hairstyles = list()
-	for(var/hairstyle in GLOB.hair_styles_list)
-		var/datum/sprite_accessory/S = GLOB.hair_styles_list[hairstyle]
-		if(gender == MALE && S.gender == FEMALE)
-			continue
-		if(gender == FEMALE && S.gender == MALE)
-			continue
-		if(S.name == DEVELOPER_WARNING_NAME)
-			continue
-		if(!(species in S.species_allowed))
-			continue
-		if(!S.can_be_selected)
-			continue
-		valid_hairstyles[hairstyle] = GLOB.hair_styles_list[hairstyle]
-
-	if(valid_hairstyles.len)
-		h_style = pick(valid_hairstyles)
-
-	return h_style
-
-/proc/random_facial_hair_style(gender, species = SPECIES_HUMAN)
-	var/f_style = "Shaved"
-
-	var/list/valid_facialhairstyles = list()
-	for(var/facialhairstyle in GLOB.facial_hair_styles_list)
-		var/datum/sprite_accessory/S = GLOB.facial_hair_styles_list[facialhairstyle]
-		if(gender == MALE && S.gender == FEMALE)
-			continue
-		if(gender == FEMALE && S.gender == MALE)
-			continue
-		if(S.name == DEVELOPER_WARNING_NAME)
-			continue
-		if(!(species in S.species_allowed))
-			continue
-		if(!S.can_be_selected)
-			continue
-
-		valid_facialhairstyles[facialhairstyle] = GLOB.facial_hair_styles_list[facialhairstyle]
-
-	if(valid_facialhairstyles.len)
-		f_style = pick(valid_facialhairstyles)
-
-	return f_style
-
 /proc/sanitize_name(name, species = SPECIES_HUMAN, robot = 0)
 	var/datum/species/current_species
 	if(species)
@@ -102,31 +55,6 @@
 			return capitalize(pick(GLOB.first_names_male)) + " " + capitalize(pick(GLOB.last_names))
 	else
 		return current_species.get_random_name(gender)
-
-/proc/skintone2racedescription(tone)
-	switch (tone)
-		if(30 to INFINITY)		return "albino"
-		if(20 to 30)			return "pale"
-		if(5 to 15)				return "light skinned"
-		if(-10 to 5)			return "white"
-		if(-25 to -10)			return "tan"
-		if(-45 to -25)			return "darker skinned"
-		if(-65 to -45)			return "brown"
-		if(-INFINITY to -65)	return "black"
-		else					return "unknown"
-
-/proc/age2agedescription(age)
-	switch(age)
-		if(0 to 1)			return "infant"
-		if(1 to 3)			return "toddler"
-		if(3 to 13)			return "child"
-		if(13 to 19)		return "teenager"
-		if(19 to 30)		return "young adult"
-		if(30 to 45)		return "adult"
-		if(45 to 60)		return "middle-aged"
-		if(60 to 70)		return "aging"
-		if(70 to INFINITY)	return "elderly"
-		else				return "unknown"
 
 /// Medical-HUD health bar icon_state for a mob, from its vitality() (0..1).
 /// Critical mobs show the bottom of the bar.

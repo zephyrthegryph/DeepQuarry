@@ -111,16 +111,6 @@
 	filter_data[name] = copied_parameters
 	update_filters()
 
-///A version of add_filter that takes a list of filters to add rather than being individual, to limit calls to update_filters().
-/datum/proc/add_filters(list/list/filters)
-	LAZYINITLIST(filter_data)
-	for(var/list/individual_filter as anything in filters)
-		var/list/params = individual_filter["params"]
-		var/list/copied_parameters = params.Copy()
-		copied_parameters["priority"] = individual_filter["priority"]
-		filter_data[individual_filter["name"]] = copied_parameters
-	update_filters()
-
 /// Reapplies all the filters.
 /datum/proc/update_filters()
 	ASSERT(isatom(src) || isimage(src))
@@ -240,12 +230,6 @@
 	if(.)
 		update_filters()
 	return .
-
-/datum/proc/clear_filters()
-	ASSERT(isatom(src) || isimage(src))
-	var/atom/atom_cast = src // filters only work with images or atoms.
-	filter_data = null
-	atom_cast.filters = null
 
 /// Return text from this proc to provide extra context to hard deletes that happen to it
 /// Optional, you should use this for cases where replication is difficult and extra context is required

@@ -80,11 +80,6 @@ GLOBAL_LIST_EMPTY(dq_destroy_effect_turfs)
 	var/effects_merged = 0
 	var/edges_dropped = 0
 
-/// TRUE if `D` is in the running batch's doomed set (or a doomed turf).
-/proc/dq_batch_doomed(datum/D)
-	var/datum/destroy_batch/batch = GLOB.dq_destroy_batch
-	return batch && D && (batch.doomed[D] || batch.doomed_places[D])
-
 /// Destroys `roots` (datums; a movable's contents follow it when their drop
 /// location is doomed) and everything on `doomed_turfs` (turfs themselves are
 /// not deleted) as one batch. `roots[D]`, when set, is D's qdel force.

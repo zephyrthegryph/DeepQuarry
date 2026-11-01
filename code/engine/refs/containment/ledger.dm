@@ -546,15 +546,6 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 /atom/proc/on_slot_changed(slot_id, atom/movable/thing, inserted)
 	containment_slot_changed(slot_id, thing, inserted)
 
-/// Whether `holder`'s own destroy transaction (L1, doc/rewrite/lifecycle.md
-/// §2) is running right now -- set from phase 0, for the life of the
-/// transaction. A hook reacting to a move can check this (or the `flags`
-/// arg it's already given, LEDGER_MOVE_DESTROYING) to skip re-derivation
-/// that a moment-later qdel would waste (body invalidate, stage wakes, HUD,
-/// factor recompute).
-/proc/holder_destroying(datum/holder)
-	return (holder && (holder.datum_flags & DF_DESTROYING)) ? TRUE : FALSE
-
 // ---- Thing-side commit hooks (J6) ----
 
 /// Set on a type that overrides on_slotted()/on_unslotted(), so a plain

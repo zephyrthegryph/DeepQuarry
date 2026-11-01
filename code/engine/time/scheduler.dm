@@ -744,18 +744,6 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 		report_caught(e, "[B.name] hook [kind]: [e] ([e.file]:[e.line])")
 		stat_inc(B.id, OM_STAT_ERRORS)
 
-/// Runs `B`'s tick on `E` now, outside its ring (Life's run-this-system-now
-/// path). dt is the caller's; the ring's own schedule is unchanged.
-/proc/scheduler_tick_now(datum/E, B, dt)
-	var/datum/scheduler_record/rec = E?.om_rec
-	if(!rec)
-		return FALSE
-	var/datum/scheduled_behaviour/def = definition_registry().behaviour(B)
-	if(!rec.att.Find(def))
-		return FALSE
-	rec.sched.call_hook(rec, def, OM_HOOK_TICK, dt)
-	return TRUE
-
 // ---------------------------------------------------------------- wakes
 
 /datum/time_scheduler/proc/enqueue(datum/scheduler_record/rec, lane)

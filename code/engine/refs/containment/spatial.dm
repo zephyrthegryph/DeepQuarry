@@ -32,21 +32,6 @@
 		return null
 	return locate(type) in T
 
-/// Calls `callback` (a `/datum/callback` from `CALLBACK()`) once per atom of
-/// `type` on turf `T`, without allocating a list. For hot paths (radiation,
-/// EMP, explosion falloff) that only need a side effect per atom and would
-/// otherwise build a list with `turf_contents_of_type()` and throw it away.
-/// Returns the number of atoms visited.
-/proc/turf_each(turf/T, type, datum/actor_callback/callback)
-	. = 0
-	if(!T || !callback)
-		return
-	for(var/atom/movable/AM in T)
-		if(!istype(AM, type))
-			continue
-		. += 1
-		callback.invoke_actor(AM)
-
 /// Every atom of `type` (and subtypes) anywhere in area `A`, as a new list.
 /// Equivalent to `for(var/type/A in Area)`, one level up from
 /// `turf_contents_of_type()`. `type` can be a movable type (BYOND yields the

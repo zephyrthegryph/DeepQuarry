@@ -184,15 +184,6 @@ GLOBAL_VAR_INIT(staleness_late_parked_total, 0)
 	text = replacetext(text, "\n", " ")
 	return copytext(text, 1, 300)
 
-/// A fresh computation could not run (it threw, or it needs state the check cannot set up): counted, logged once per type and thing.
-/proc/staleness_unchecked(kind, datum/E, what, exception/fault)
-	GLOB.staleness_skipped++
-	var/key = "unchecked|[kind]|[E?.type]|[what]"
-	if(GLOB.staleness_seen[key])
-		return
-	GLOB.staleness_seen[key] = TRUE
-	log_world("STALENESS|unchecked|[kind]|[E?.type]|[what]|[fault ? "[fault.name] at [fault.file]:[fault.line]" : "no cause"]")
-
 // ---------------------------------------------------------------- input snapshots (strict mode names the culprit)
 
 /// TRUE when two input values are the same, lists by content.

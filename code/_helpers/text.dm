@@ -15,11 +15,6 @@ GLOBAL_LIST_INIT(alphabet_upper, list("A","B","C","D","E","F","G","H","I","J","K
  */
 
 // Run all strings to be used in an SQL query through this proc first to properly escape out injection attempts.
-/proc/sanitizeSQL(t as text)
-	//var/sqltext = dbcon.Quote(t);
-	//return copytext(sqltext, 2, length(sqltext));//Quote() adds quotes around input, we already do that
-	return t
-
 /proc/format_table_name(table as text)
 	return table // We don't implement tableprefix
 
@@ -211,11 +206,6 @@ GLOBAL_LIST_INIT(alphabet_upper, list("A","B","C","D","E","F","G","H","I","J","K
 
 //Checks the beginning of a string for a specified sub-string. This proc is case sensitive
 //Returns the position of the substring or 0 if it was not found
-/proc/dd_hasprefix_case(text, prefix)
-	var/start = 1
-	var/end = length(prefix) + 1
-	return findtextEx(text, prefix, start, end)
-
 //Checks the end of a string for a specified substring.
 //Returns the position of the substring or 0 if it was not found
 /proc/dd_hassuffix(text, suffix)
@@ -226,11 +216,6 @@ GLOBAL_LIST_INIT(alphabet_upper, list("A","B","C","D","E","F","G","H","I","J","K
 
 //Checks the end of a string for a specified substring. This proc is case sensitive
 //Returns the position of the substring or 0 if it was not found
-/proc/dd_hassuffix_case(text, suffix)
-	var/start = length(text) - length(suffix)
-	if(start)
-		return findtextEx(text, suffix, start, null)
-
 /*
  * Text modification
  */
@@ -246,17 +231,7 @@ GLOBAL_LIST_INIT(alphabet_upper, list("A","B","C","D","E","F","G","H","I","J","K
 	return t
 
 //Adds 'u' number of spaces ahead of the text 't'
-/proc/add_lspace(t, u)
-	while(length(t) < u)
-		t = " [t]"
-	return t
-
 //Adds 'u' number of spaces behind the text 't'
-/proc/add_tspace(t, u)
-	while(length(t) < u)
-		t = "[t] "
-	return t
-
 //Returns a string with reserved characters and spaces before the first letter removed
 /proc/trim_left(text)
 	READS_FROM() // Pure text transformation: arguments, local variables and immutable character table only.
@@ -382,11 +357,6 @@ DECLARE_SHARED_CACHE_EX(text_tags, GLOBAL_PROC_REF(build_text_tag), SC_NEVER, 25
 		return "<IMG src='[REF(GLOB.text_tag_icons)]' class='text_tag' iconstate='[tagname]'" + (tagdesc ? " alt='[tagdesc]'" : "") + ">"
 	return CACHED(text_tags, tagname)
 
-/proc/create_text_tag_old(tagname, tagdesc = tagname, client/C = null)
-	if(!(C && C.prefs?.read_preference(/datum/preference/toggle/chat_tags)))
-		return tagdesc
-	return "<IMG src='[REF(GLOB.text_tag_icons)]' class='text_tag' iconstate='[tagname]'" + (tagdesc ? " alt='[tagdesc]'" : "") + ">"
-
 /proc/contains_az09(input)
 	for(var/i=1, i<=length(input), i++)
 		var/ascii_char = text2ascii(input,i)
@@ -464,46 +434,6 @@ DECLARE_SHARED_CACHE_EX(text_tags, GLOBAL_PROC_REF(build_text_tag), SC_NEVER, 25
 	return pencode2html(text)
 
 //Will kill most formatting; not recommended.
-/proc/html2pencode(t)
-	t = replacetext(t, "<pre>", "\[pre\]")
-	t = replacetext(t, "</pre>", "\[/pre\]")
-	t = replacetext(t, "<font color=\"red\">", "\[fontred\]")//</font> to pass html tag integrity unit test
-	t = replacetext(t, "<font color=\"blue\">", "\[fontblue\]")//</font> to pass html tag integrity unit test
-	t = replacetext(t, "<font color=\"green\">", "\[fontgreen\]")
-	t = replacetext(t, "</font>", "\[/font\]")
-	t = replacetext(t, "<BR>", "\[br\]")
-	t = replacetext(t, "<br>", "\[br\]")
-	t = replacetext(t, "<B>", "\[b\]")
-	t = replacetext(t, "</B>", "\[/b\]")
-	t = replacetext(t, "<I>", "\[i\]")
-	t = replacetext(t, "</I>", "\[/i\]")
-	t = replacetext(t, "<U>", "\[u\]")
-	t = replacetext(t, "</U>", "\[/u\]")
-	t = replacetext(t, "<center>", "\[center\]")
-	t = replacetext(t, "</center>", "\[/center\]")
-	t = replacetext(t, "<H1>", "\[h1\]")
-	t = replacetext(t, "</H1>", "\[/h1\]")
-	t = replacetext(t, "<H2>", "\[h2\]")
-	t = replacetext(t, "</H2>", "\[/h2\]")
-	t = replacetext(t, "<H3>", "\[h3\]")
-	t = replacetext(t, "</H3>", "\[/h3\]")
-	t = replacetext(t, "<li>", "\[*\]")
-	t = replacetext(t, "<HR>", "\[hr\]")
-	t = replacetext(t, "<ul>", "\[list\]")
-	t = replacetext(t, "</ul>", "\[/list\]")
-	t = replacetext(t, "<table>", "\[grid\]")
-	t = replacetext(t, "</table>", "\[/grid\]")
-	t = replacetext(t, "<tr>", "\[row\]")
-	t = replacetext(t, "<td>", "\[cell\]")
-	t = replacetext(t, "<img src=[REF('html/images/ntlogo.png')]>", "\[logo\]")
-	t = replacetext(t, "<img src=[REF('html/images/redntlogo.png')]>", "\[redlogo\]")
-	t = replacetext(t, "<img src=[REF('html/images/talonlogo.png')]>", "\[talogo\]")
-	t = replacetext(t, "<img src=[REF('html/images/sglogo.png')]>", "\[sglogo\]")
-	t = replacetext(t, "<span class=\"paper_field\"></span>", "\[field\]")
-	t = replacetext(t, "<span class=\"redacted\">R E D A C T E D</span>", "\[redacted\]")
-	t = strip_html_properly(t)
-	return t
-
 // Random password generator
 /proc/GenerateKey()
 	//Feel free to move to Helpers.
@@ -778,14 +708,6 @@ DECLARE_SHARED_CACHE_EX(text_tags, GLOBAL_PROC_REF(build_text_tag), SC_NEVER, 25
 //finds the first occurrence of one of the characters from needles argument inside haystack
 //it may appear this can be optimised, but it really can't. findtext() is so much faster than anything you can do in byondcode.
 //stupid byond :(
-/proc/findchar(haystack, needles, start=1, end=0)
-	var/temp
-	var/len = length(needles)
-	for(var/i=1, i<=len, i++)
-		temp = findtextEx(haystack, ascii2text(text2ascii(needles,i)), start, end)	//Note: ascii2text(text2ascii) is faster than copytext()
-		if(temp)	end = temp
-	return end
-
 /// Converts a semver string into a list of numbers
 /proc/semver_to_list(semver_string)
 	var/static/regex/semver_regex = regex(@"(\d+)\.(\d+)\.(\d+)", "")

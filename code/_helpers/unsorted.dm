@@ -8,9 +8,6 @@
 #define BIT_TEST_ALL(bitfield, req_mask) ((~(bitfield) & (req_mask)) == 0)
 
 //Returns the middle-most value
-/proc/dd_range(low, high, num)
-	return max(low,min(high,num))
-
 //Returns whether or not A is the middle most value
 /proc/InRange(A, lower, upper)
 	if(A < lower) return 0
@@ -501,12 +498,6 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	return "[round((powerused * 0.000000001),0.0001)] GW"
 
 //Forces a variable to be posative
-/proc/modulus(M)
-	if(M >= 0)
-		return M
-	if(M < 0)
-		return -M
-
 // returns the turf located at the map edge in the specified direction relative to A
 // used for mass driver
 /proc/get_edge_target_turf(atom/A, direction)
@@ -612,9 +603,6 @@ Turf and target are seperate in case you want to teleport some distance from a t
 /* //If you uncomment and use this I will assimilate you. -C.L.
 //Takes: Anything that could possibly have variables and a varname to check.
 //Returns: 1 if found, 0 if not.
-/proc/hasvar(datum/A, varname)
-	if(A.vars.Find(lowertext(varname))) return 1
-	else return 0
 */
 
 //Returns: all the areas in the world
@@ -1200,19 +1188,6 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 	return locate(tX, tY, tZ)
 
 // Displays something as commonly used (non-submultiples) SI units.
-/proc/format_SI(number, symbol)
-	switch(round(abs(number)))
-		if(0 to 1000-1)
-			return "[number] [symbol]"
-		if(1e3 to 1e6-1)
-			return "[round(number / 1000, 0.1)] k[symbol]" // kilo
-		if(1e6 to 1e9-1)
-			return "[round(number / 1e6, 0.1)] M[symbol]" // mega
-		if(1e9 to 1e12-1) // Probably not needed but why not be complete?
-			return "[round(number / 1e9, 0.1)] G[symbol]" // giga
-		if(1e12 to 1e15-1)
-			return "[round(number / 1e12, 0.1)] T[symbol]" // tera
-
 //ultra range (no limitations on distance, faster than range for distances > 8); including areas drastically decreases performance
 /proc/urange(dist=0, atom/center=null, orange=0, areas=0)
 	if(!dist)
@@ -1441,39 +1416,6 @@ GLOBAL_TABLE(get_fancy_list_of_datum_types, GLOBAL_PROC_REF(build_get_fancy_list
 	. += new /atom/movable/screen/plane_master{plane = PLANE_CH_STOMACH}				//Stomachs
 	. += new /atom/movable/screen/plane_master{plane = PLANE_AUGMENTED}				//Augmented reality
 	. += new /atom/movable/screen/plane_master{plane = PLANE_SOULCATCHER}			//Soulcatcher
-/proc/describeThis(datum/D)
-	if(istype(D))
-		var/msg = "[D.type] - [D]"
-		if(isatom(D))
-			var/atom/A = D
-			if(!A.z)
-				msg += " - Coords unavailable (in contents?)"
-				if(ismovable(A))
-					var/turf/T = get_turf(A)
-					if(T)
-						msg += " - Parent turf: [T.x],[T.y],[T.z]"
-					else
-						msg += " - In nullspace"
-				else
-					msg += " - In nullspace"
-			else
-				msg += "- [A.x],[A.y],[A.z]"
-		return msg
-	else if(isnull(D))
-		return "NULL"
-	else if(istext(D))
-		return "TEXT: [D]"
-	else if(isnum(D))
-		return "NUM: [D]"
-	else if(ispath(D))
-		return "PATH: [D]"
-	else if(islist(D))
-		return "LIST: [D]"
-	else if(isclient(D))
-		return "CLIENT: [D]"
-	else
-		return "Unknown data type: [D]"
-
 /**
  * - is_valid_z_level
  *
