@@ -62,6 +62,10 @@ run_gen gen_dme_check tools/build/gen_dme.py --check
 if selftest_wanted '^tools/build/(gen_dme\.py|dme_spec\.txt)$'; then run_gen gen_dme_selftest tools/build/gen_dme.py --selftest; gen_names+=(gen_dme_selftest)
 else echo "check_ratchets: gen_dme --selftest skipped (the generator is unchanged)"; fi
 
+# .gitattributes must name files that exist and merge drivers that exist (a move once left the _unit_tests.dm union rule dead).
+( bash tools/ci/check_gitattributes.sh >"$gen_dir/gitattributes_check.out" 2>&1; echo $? >"$gen_dir/gitattributes_check.rc" ) &
+gen_names+=(gitattributes_check)
+
 # The generated DM (code/engine/_generated/, code/_generated/reads.dm, the tgui .d.ts) is not committed;
 # every build writes it, and so does this, before the lints that read it. It fails on what still matters:
 # a generator diagnostic (a bad declaration), a test-only type outside the guard, or a generated file

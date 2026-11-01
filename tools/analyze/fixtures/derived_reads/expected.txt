@@ -22,7 +22,7 @@ declared_untracked	code/c.dm	62
 declared_untracked	code/c.dm	71
 declared_untracked	code/d.dm	58
 declared_untracked	code/e.dm	5
-declared_untracked	code/modules/benchmarks/b.dm	6
+declared_untracked	code/tests/benchmarks/b.dm	6
 exact_on_state_changed	code/a.dm	77
 exact_on_state_changed	code/a.dm	88
 exact_on_state_changed	code/a.dm	104
@@ -59,4 +59,4 @@ undeclared_read	code/c.dm	38
 undeclared_read	code/c.dm	77
 undeclared_read	code/d.dm	61
 undeclared_read	code/e.dm	8
-undeclared_read	code/modules/benchmarks/b.dm	9
+undeclared_read	code/tests/benchmarks/b.dm	9

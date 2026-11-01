@@ -23,7 +23,8 @@
 #   1. focused tests green, `bash tools/ci/check_ratchets.sh --changed-only` clean, everything committed;
 #   2. `bash tools/dq_train.sh enqueue --tests "<the lane's tests>"` (add --light for docs/tooling/Rust-only work); it returns at once;
 #   3. `bash tools/dq_lane_pool.sh release <branch>`: the branch ref stays in the shared repository, the slot is free;
-#   4. later: `bash tools/dq_train.sh status`. A lane that is not listed under queue/bounced has landed. A bounced lane has a report
+#   4. later: `bash tools/dq_train.sh wait <branch>` blocks until it landed (exit 0) or bounced (exit 3, reason printed); or
+#      `bash tools/dq_train.sh status`. A lane that is not listed under queue/bounced has landed. A bounced lane has a report
 #      (`dq_train.sh report <branch>`): lease a slot, fix, commit, enqueue again.
 #
 # The integrator (a detached process: `ensure` starts it through PowerShell Start-Process so that a shell that is killed after 30
@@ -245,6 +246,12 @@ cmd_enqueue() {
 	ahead="$(git rev-list --count origin/master..HEAD)"
 	[ "$ahead" -gt 0 ] || die "$branch holds nothing origin/master lacks: there is nothing to land"
 	tip="$(git rev-parse HEAD)"
+	# Cheap refusals first, at once and with the fix: a lane that conflicts with master used to find out after a 4-20 min precheck (seconds here:
+	# the same `git merge-tree` probe the prechecker runs, with the same merge drivers and exemptions).
+	if ! DQ_TRAIN_ORIGIN_REPO="$(pwd)" pre_probe_conflict "$branch" "$tip" "$(git rev-parse origin/master)"; then
+		echo "$CONFLICT_FILES" | head -8 >&2
+		die "REFUSED: $branch conflicts with origin/master in the files above (it would be bounced after its precheck). Fix: bash tools/dq_merge_master.sh, resolve, commit, then enqueue again"
+	fi
 	if [ -n "$tests" ]; then
 		. "$SELF_DIR/dq_declared_tests.sh"
 		# shellcheck disable=SC2086
@@ -390,6 +397,13 @@ disk_budget() {
 	bash "$s" "$@" >>"$LOGS/train.log" 2>&1; rc=$?
 	return "$rc"
 }
+# Housekeeping never holds a cycle: the all-light path ran `enforce` synchronously, and a find over the pool's worktrees (30 GB of build output
+# in some) held the whole train for 17+ minutes with every lane queued (31 October, 22:58Z; the heavy path was detached on 27 October for the
+# same reason). The floor check (`disk_budget gate`) stays inline: it is what refuses heavy work on a full disk.
+disk_budget_bg() { # <args for dq_disk_budget.sh>: starts it detached and returns at once; its output goes to the train log
+	( disk_budget "$@" ) >/dev/null 2>&1 &
+	disown $! 2>/dev/null || true
+}
 precheck_ensure() { # start the prechecker when prechecks are on, lanes are queued and none runs (the integrator calls this every cycle)
 	[ "$PRE_ON" = 1 ] && [ "${DQ_TRAIN_NO_START:-0}" != 1 ] || return 0
 	prechecker_alive && return 0
@@ -507,6 +521,25 @@ mark_landed() { # <branch> <snapshot tip> <master sha>
 		fi
 	fi
 	tlog "LANDED $b (tip ${tip:0:10}) in origin/master ${sha:0:10}"
+}
+# A batch whose setup failed twice judges no lane ("# SETUP ERROR twice" in dq_merge_batch's output: the gates' infra, e.g. `gen`, failed on the merged
+# tree). The lanes were then deferred, written to bisect.lanes and retried alone every ~100 s with the whole train waiting behind them: 30 cycles
+# (00:04-01:33Z 31 October) for one lane whose merge left a stale generated include. A lane gets DQ_TRAIN_SETUP_ERROR_MAX (2) such cycles, then is
+# bounced with the infra message and the log; it re-enqueues once fixed. Prints the lanes still to retry.
+note_setup_errors() { # <merge_batch output file> <deferred lanes...>
+	local out="$1" b n why; shift
+	grep -q '^# SETUP ERROR twice' "$out" 2>/dev/null || { printf '%s\n' "$@" | tr '\n' ' '; return 0; }
+	why="$(grep -m1 -E 'INFRA:|SETUP ERROR: the gates' "$out" | sed 's/^[ =>]*//' | head -c 300)"
+	for b in "$@"; do
+		n="$(qget "$(qfile "$b")" setup_errors)"; n=$(( ${n:-0} + 1 ))
+		if grep -q '^setup_errors=' "$(qfile "$b")" 2>/dev/null; then qedit "$b" -e "s/^setup_errors=.*/setup_errors=$n/"; else qedit "$b" -e "\$a setup_errors=$n"; fi
+		echo "$(now) train[$$]: ################ SETUP ERROR: $b: the gates' infrastructure failed twice on this batch ($n of ${DQ_TRAIN_SETUP_ERROR_MAX:-2}): ${why:-no reason found}; log $out" | tee -a "$LOGS/train.log" >&2
+		if [ "$n" -ge "${DQ_TRAIN_SETUP_ERROR_MAX:-2}" ]; then
+			bounce "$b" "the gates' setup failed in $n cycles on its merge (${why:-see the log}); usually a generated file or include that its merge leaves stale: rebase on master, run tools/build/build.sh gen, enqueue again. See $out" "$out" >&2
+			continue
+		fi
+		printf '%s ' "$b"
+	done
 }
 bump_attempts() { local f n; f="$(qfile "$1")"; [ -f "$f" ] || return 0; n="$(qget "$f" attempts)"; n=$(( ${n:-0} + 1 )); qedit "$1" -e "s/^attempts=.*/attempts=$n/"; }
 
@@ -776,7 +809,7 @@ pre_probe_conflict() { # <branch> <tip> <master>: 0 = merges (or only the manife
 	CONFLICT_FILES="$(tail -n +2 <<<"$out" | awk 'NF' | sort -u)"
 	# the manifest merges by sets, shared docs by union (tools/dq_merge_batch.sh doc_union_conflict): neither is a conflict here
 	# files with a merge driver or a union rule (baselines, the manifest, the unit-test list) never stop the real merge either
-	f="$(grep -vE '^(deepquarry\.dme|AGENTS\.md|CLAUDE\.md|doc/.*\.md|tools/.*/doc/[^/]*\.md|tools/ci/[^/]*_baseline\.txt|tools/ci/sys_baseline/.*\.txt|code/modules/unit_tests/_unit_tests\.dm)$' <<<"$CONFLICT_FILES")"
+	f="$(grep -vE '^(deepquarry\.dme|AGENTS\.md|CLAUDE\.md|doc/.*\.md|tools/.*/doc/[^/]*\.md|tools/ci/[^/]*_baseline\.txt|tools/ci/sys_baseline/.*\.txt|code/(modules|tests)/unit_tests/_unit_tests\.dm)$' <<<"$CONFLICT_FILES")"
 	[ -n "$f" ] || return 0
 	return 1
 }
@@ -1601,6 +1634,10 @@ heavy_cycle_gate() {
 		deferred="$(printf '%s\n' $deferred | grep -vxF "$b" | tr '\n' ' ')"
 		CYCLE_PROGRESS=1
 	done
+	if [ -n "${deferred// /}" ]; then
+		deferred="$(note_setup_errors "$out" $deferred)"
+		CYCLE_PROGRESS=1
+	fi
 	[ -z "${later// /}" ] || { tlog "conflicted with another lane of this batch only, they stay queued for the next cycle: [$later]"; CYCLE_PROGRESS=1; }
 	tlog "merge_batch rc=$rc good=[${good:-}] deferred=[${deferred:-}] capped=[${capped:-}]"
 	# bounces first: they are the lane's fault whatever happens to the push
@@ -1731,7 +1768,7 @@ cycle() {
 	tlog "cycle: queue=[${all[*]}] valid=[${VALID[*]}] chosen=[${CHOSEN[*]}] (limit $BATCH_LIMIT_NOW, est ~${BATCH_EST}s of tests) all_light=$all_light; preamble: $PREAMBLE_WHY"
 	# Disk budget (tools/dq_disk_budget.sh): enforce the caps at every cycle start; below the floor a heavy cycle is not started (the lanes stay queued).
 	if [ "$all_light" -eq 1 ]; then
-		disk_budget enforce --quiet --throttle 10 || true
+		disk_budget_bg enforce --quiet --throttle 10
 		light_cycle
 	else
 		# only exit 4 is a real floor breach (the REFUSED message above in this log has the free GB and the floor); anything else is a warning and the cycle runs
@@ -1949,8 +1986,61 @@ cmd_dequeue() {
 	tlog "dequeued $b (by hand)"
 }
 
+# wait <branch> [--timeout MIN] [--tip SHA]: blocks until the lane has landed or been bounced and says which, so a lane (or an agent) never
+# needs a hand-written watcher (wrong checkout, wrong match text: one missed a bounce for 40 minutes). Reads the train's state, not the log.
+# Exit: 0 landed, 3 bounced (reason and report printed), 4 not in the train (never enqueued, or dequeued), 5 timed out (still queued).
+cmd_wait() {
+	local b="" tmax=120 want="" start now_s lf bf f tip m last=0 phase_now
+	while [ $# -gt 0 ]; do
+		case "$1" in
+			--timeout) tmax="${2:?--timeout needs minutes}"; shift ;;
+			--tip) want="${2:?--tip needs a commit}"; shift ;;
+			-*) die "wait: unknown argument: $1" ;;
+			*) b="$1" ;;
+		esac
+		shift
+	done
+	[ -n "$b" ] || b="$(git symbolic-ref -q --short HEAD 2>/dev/null)" || die "usage: dq_train.sh wait <branch> [--timeout MIN] [--tip SHA]"
+	init_state
+	f="$(qfile "$b")"; lf="$LANDED/$(fname "$b").landed"; bf="$BOUNCED/$(fname "$b").q"
+	[ -n "$want" ] || want="$(qget "$f" tip)"
+	[ -n "$want" ] || want="$(qget "$bf" tip)"
+	[ -n "$want" ] || want="$(qget "$lf" tip)"
+	[ -n "$want" ] || want="$(git rev-parse -q --verify "refs/heads/$b^{commit}" 2>/dev/null)"
+	[ -n "$want" ] || die "wait: $b is unknown to the train (never enqueued) and has no local branch"
+	start="$(date +%s)"
+	while :; do
+		# bounced first: a bounce record for this tip is the answer even if an older landing of the branch exists
+		if [ -f "$bf" ] && [ "$(qget "$bf" tip)" = "$want" ]; then
+			echo "dq_train: BOUNCED $b (tip ${want:0:10}): $(qget "$bf" reason)"
+			echo "dq_train: report: $(qget "$bf" report)   (dq_train.sh report $b); fix, commit, enqueue again"
+			return 3
+		fi
+		if [ -f "$lf" ] && { [ "$(qget "$lf" tip)" = "$want" ] || git merge-base --is-ancestor "$want" "$(qget "$lf" master)" 2>/dev/null; }; then
+			echo "dq_train: LANDED $b (tip ${want:0:10}) in origin/master $(qget "$lf" master | cut -c1-10) at $(qget "$lf" landed)"
+			return 0
+		fi
+		if [ ! -f "$f" ]; then
+			# neither queued, landed nor bounced: it may have landed under another tip name; check master itself before giving up
+			git fetch -q origin 2>/dev/null
+			if git merge-base --is-ancestor "$want" origin/master 2>/dev/null; then echo "dq_train: LANDED $b (tip ${want:0:10} is in origin/master)"; return 0; fi
+			echo "dq_train: $b (tip ${want:0:10}) is not in the train: not queued, landed or bounced. Enqueue it: bash tools/dq_train.sh enqueue" >&2
+			return 4
+		fi
+		now_s="$(date +%s)"
+		[ $(( now_s - start )) -ge $(( tmax * 60 )) ] && { echo "dq_train: still queued after ${tmax} min: $b (tip ${want:0:10}); not landed, not bounced" >&2; return 5; }
+		if [ $(( now_s - last )) -ge 300 ]; then
+			last="$now_s"
+			IFS=$'\t' read -r _ phase_now <"$STATE/cycle.txt" 2>/dev/null || phase_now="?"
+			echo "dq_train: waiting for $b (tip ${want:0:10}), $(( (now_s - start) / 60 )) min so far; integrator phase: $phase_now"
+		fi
+		sleep 5
+	done
+}
+
 case "${1:-}" in
 	enqueue) shift; cmd_enqueue "$@" ;;
+	wait) shift; cmd_wait "$@" ;;
 	status) shift; cmd_status "$@" ;;
 	report) shift; cmd_report "$@" ;;
 	dequeue) shift; cmd_dequeue "$@" ;;

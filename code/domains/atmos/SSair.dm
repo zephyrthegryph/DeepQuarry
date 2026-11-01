@@ -162,6 +162,7 @@ SYSTEM_DEF(air)
 	benchmark_rust_mark("air: before turfs")
 #endif
 	setup_allturfs()
+	early_air_report()
 	init_phase_mark("turfs")
 #ifdef BENCHMARK
 	benchmark_rust_mark("air: turfs registered")
@@ -423,6 +424,14 @@ SYSTEM_DEF(air)
 			continue
 		links[z] = (traits[Z_LEVEL_UP] ? UP : NONE) | (traits[Z_LEVEL_DOWN] ? DOWN : NONE)
 	vg_set_z_links(links)
+
+/// Air reads and gas watches made before the turfs registered (they read, and watch, the right air: see /turf/open/return_air()); logged so a rise is seen.
+GLOBAL_VAR_INIT(early_air_reads, 0)
+GLOBAL_VAR_INIT(early_gas_watches, 0)
+GLOBAL_VAR_INIT(early_air_made, 0)
+
+/datum/system/air/proc/early_air_report()
+	log_world("AIR_EARLY_READS: [GLOB.early_air_reads] turf air reads and [GLOB.early_gas_watches] gas watches before the turfs registered ([GLOB.early_air_made] turfs had their air made by an early read)")
 
 /datum/system/air/proc/setup_allturfs()
 	set_times_fired(times_fired + 1)

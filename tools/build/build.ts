@@ -3809,6 +3809,7 @@ export const ServerTarget = new Juke.Target({
     const options = {
       dmbFile: `${DME_NAME}.dmb`,
       namedDmVersion: get(DmVersionParameter),
+      playerFacing: true,
     };
     const webroot = spawn(
       process.platform === 'win32' ? 'python' : 'python3',

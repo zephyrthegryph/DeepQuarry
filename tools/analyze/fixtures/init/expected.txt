@@ -61,8 +61,8 @@ late_initialize	code/modules/init/table.dm	5
 late_initialize	code/modules/init/table.dm	41
 late_initialize	code/modules/init/world.dm	36
 late_initialize	code/modules/init/world.dm	41
-table_init_overrides	code/modules/benchmarks/b.dm	3
-table_init_overrides	code/modules/benchmarks/b.dm	4
+table_init_overrides	code/tests/benchmarks/b.dm	3
+table_init_overrides	code/tests/benchmarks/b.dm	4
 table_init_overrides	code/modules/init/.hid/h.dm	1
 table_init_overrides	code/modules/init/sp ace/s.dm	3
 table_init_overrides	code/modules/init/table.dm	4

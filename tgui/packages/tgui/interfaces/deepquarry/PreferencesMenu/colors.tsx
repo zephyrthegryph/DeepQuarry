@@ -14,13 +14,15 @@ import { createContext, type ReactNode, useContext, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Floating, Input } from 'tgui-core/components';
 import { SliderBox } from './controls';
-import { prefAnchor, highlightStyle, useSearchHighlight } from './search';
+import { highlightStyle, prefAnchor, useSearchHighlight } from './search';
 
 export const PALETTE_KEY = 'color_palette';
 export const PALETTE_MAX = 8;
 
 export type ColorTools = {
   palette: string[];
+  /// Every colour the character already wears, distinct, in the order they appear.
+  inUse: string[];
   /// The colours of the last "copy" (a part's set), shared by every strip.
   clipboard: string[] | null;
   setClipboard: (colors: string[] | null) => void;
@@ -30,6 +32,7 @@ export type ColorTools = {
 
 export const ColorToolsContext = createContext<ColorTools>({
   palette: [],
+  inUse: [],
   clipboard: null,
   setClipboard: () => {},
   references: {},
@@ -57,6 +60,82 @@ export const paletteFromValue = (value: unknown): string[] =>
       )
     : [];
 
+/// The colours the character already uses: every "#rrggbb" among the preference values (a colour pref, or a
+/// list of them), distinct, at most `limit`.
+export const colorsInUse = (
+  values: Record<string, unknown>,
+  limit = 16,
+): string[] => {
+  const seen = new Set<string>();
+  for (const value of Object.values(values)) {
+    for (const item of Array.isArray(value) ? value : [value]) {
+      const hex =
+        typeof item === 'string' && HEX.test(item) ? normalizeHex(item) : null;
+      if (hex) seen.add(hex);
+      if (seen.size >= limit) return [...seen];
+    }
+  }
+  return [...seen];
+};
+
+export type ColorCategory = 'skin' | 'hair' | 'eyes' | 'other';
+
+/// Which curated set suits a colour, from the pref key or the label that names it.
+export const colorCategory = (name: string | undefined): ColorCategory => {
+  const n = (name ?? '').toLowerCase();
+  if (/hair|facial|beard|gradient|grad_/.test(n)) return 'hair';
+  if (/eye/.test(n)) return 'eyes';
+  if (/skin|body|fur|scale/.test(n)) return 'skin';
+  return 'other';
+};
+
+/// A short curated set per category, offered as quick swatches next to the character's own palette.
+export const SUGGESTED_COLORS: Record<ColorCategory, string[]> = {
+  skin: [
+    '#f5d7c3',
+    '#e8b796',
+    '#c8a283',
+    '#a97c5b',
+    '#7c5438',
+    '#523221',
+    '#d9e4ec',
+    '#9fc7a0',
+  ],
+  hair: [
+    '#0f0f10',
+    '#3b2a1c',
+    '#5a3b1e',
+    '#8b5a2b',
+    '#c28a45',
+    '#e6c88a',
+    '#b3342d',
+    '#c8c8cc',
+  ],
+  eyes: [
+    '#3b2a1c',
+    '#6b4a2b',
+    '#2e6f9e',
+    '#3f8f5a',
+    '#7a8f3f',
+    '#8a8a92',
+    '#a2306b',
+    '#d4a017',
+  ],
+  other: [
+    '#ffffff',
+    '#c8c8cc',
+    '#6b6b73',
+    '#1c1c20',
+    '#b3342d',
+    '#d98a2b',
+    '#3f8f5a',
+    '#2e6f9e',
+  ],
+};
+
+export const suggestedColors = (name: string | undefined): string[] =>
+  SUGGESTED_COLORS[colorCategory(name)];
+
 const swatchStyle = (color: string, size = 1.25) => ({
   display: 'inline-block',
   width: `${size}em`,
@@ -69,6 +148,46 @@ const swatchStyle = (color: string, size = 1.25) => ({
   flex: '0 0 auto',
 });
 
+const QuickSwatches = ({
+  title,
+  colors,
+  current,
+  onPick,
+}: {
+  title: string;
+  colors: string[];
+  current: string;
+  onPick: (hex: string) => void;
+}) =>
+  colors.length === 0 ? null : (
+    <>
+      <Box color="label" fontSize="0.85em" mb={0.2}>
+        {title}
+      </Box>
+      <Box
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '0.25em',
+          marginBottom: '0.4em',
+        }}
+      >
+        {colors.map((c) => (
+          <span
+            key={c}
+            title={c}
+            onClick={() => onPick(c)}
+            style={{
+              ...swatchStyle(c, 1.25),
+              cursor: 'pointer',
+              outline: c === current ? '0.12em solid #fff' : undefined,
+            }}
+          />
+        ))}
+      </Box>
+    </>
+  );
+
 /// One colour: a swatch that opens the picker popover. `onPick` writes a colour directly
 /// (palette entry or paste); `onCustom` opens BYOND's own colour picker.
 export const ColorSwatch = ({
@@ -78,9 +197,12 @@ export const ColorSwatch = ({
   onCustom,
   showHex,
   extra,
+  category,
 }: {
   color: string;
   label?: string;
+  /// Name used to pick the curated set (a pref key); defaults to the label.
+  category?: string;
   onPick: (hex: string) => void;
   onCustom: () => void;
   showHex?: boolean;
@@ -88,7 +210,9 @@ export const ColorSwatch = ({
   extra?: ReactNode;
 }) => {
   const { act } = useBackend();
-  const { palette } = useColorTools();
+  const { palette, inUse } = useColorTools();
+  const suggested = suggestedColors(category ?? label);
+  const used = inUse.filter((c) => !palette.includes(c));
   const hex = normalizeHex(color) ?? '#000000';
   const inPalette = palette.includes(hex);
   return (
@@ -140,6 +264,18 @@ export const ColorSwatch = ({
               />
             ))}
           </Box>
+          <QuickSwatches
+            title="In use"
+            colors={used}
+            current={hex}
+            onPick={onPick}
+          />
+          <QuickSwatches
+            title="Suggested"
+            colors={suggested}
+            current={hex}
+            onPick={onPick}
+          />
           <Button fluid icon="eye-dropper" onClick={onCustom}>
             Custom…
           </Button>
@@ -211,6 +347,7 @@ export const PrefColorSwatch = ({
       label={label}
       showHex={showHex}
       extra={extra}
+      category={prefKey}
       onPick={(hex) =>
         act('dq_update_preference', { key: prefKey, value: hex })
       }

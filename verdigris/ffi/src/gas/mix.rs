@@ -403,7 +403,7 @@ struct Mixes {
     /// The cells of each mirrored watch, by `(port, watch)`, to unmirror them.
     cells: HashMap<(u8, WatchId), Vec<u32>>,
     /// Dependency watches, by DM watch handle: `(mixture id, watch)`.
-    dirty: HashMap<Subscriber, (u32, WatchId)>,
+    dirty: HashMap<Subscriber, (u32, u8, WatchId)>,
     /// Probe chunks written since the mirrors last evaluated, each once (`written_mark`). The mirrors are
     /// told which chunks changed instead of diffing the 16k-chunk store against a snapshot, which also
     /// made every first write to a chunk copy it (the snapshot shared it).
@@ -524,16 +524,40 @@ pub fn alloc(mix: Mixture) -> Result<u32> {
 
 /// Frees a main-owned slot and its dependency watches.
 pub fn free(i: u32) {
-    let subs: Vec<Subscriber> = with_mixes(|m| {
+    drop_watches(i);
+    release_slot(i);
+}
+
+/// Frees a main-owned slot whose gas moved into turf cell `cell` (a turf's air
+/// joining the arena): the dependency watches armed on the slot follow the gas
+/// to the cell, with the same masks, so a watch armed before registration keeps
+/// hearing the turf's air. Returns how many moved.
+pub fn free_into_turf(i: u32, cell: u32) -> usize {
+    let moved = drop_watches(i);
+    release_slot(i);
+    let to = MixRef::Turf(cell).id();
+    for &(sub, mask) in &moved {
+        watch_dirty(to, sub, mask);
+    }
+    moved.len()
+}
+
+/// Drops the dependency watches on handle `i`, returning each `(watcher, mask)`.
+fn drop_watches(i: u32) -> Vec<(Subscriber, u8)> {
+    let subs: Vec<(Subscriber, u8)> = with_mixes(|m| {
         m.dirty
             .iter()
-            .filter(|(_, (id, _))| *id == i)
-            .map(|(&s, _)| s)
+            .filter(|(_, (id, _, _))| *id == i)
+            .map(|(&s, &(_, mask, _))| (s, mask))
             .collect()
     });
-    for s in subs {
+    for &(s, _) in &subs {
         unwatch_dirty(s);
     }
+    subs
+}
+
+fn release_slot(i: u32) {
     with_mixes(|m| {
         if let Some(slot) = m.slots.get_mut(i as usize).filter(|s| s.live) {
             slot.live = false;
@@ -1328,13 +1352,13 @@ pub fn watch_dirty(id: u32, sub: Subscriber, mask: u8) {
         mask: bits,
     };
     if let Ok(w) = watch_mirrored(DEPENDENCY_PORT, sub, Lane::Normal, &cond, vec![id]) {
-        with_mixes(|m| m.dirty.insert(sub, (id, w)));
+        with_mixes(|m| m.dirty.insert(sub, (id, mask, w)));
     }
 }
 
 /// Drops DM watch `sub`'s dependency watch.
 pub fn unwatch_dirty(sub: Subscriber) {
-    if let Some((_, w)) = with_mixes(|m| m.dirty.remove(&sub)) {
+    if let Some((_, _, w)) = with_mixes(|m| m.dirty.remove(&sub)) {
         unwatch(DEPENDENCY_PORT, w);
     }
 }
