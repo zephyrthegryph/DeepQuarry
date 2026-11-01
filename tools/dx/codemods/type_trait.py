@@ -193,8 +193,9 @@ SPECS = {
         skip_refs=r"(^|\.)def$",  # a wire definition's own reach  # items.dm is rewritten too: its base declarations are deleted by hand
     ),
 }
+SPECS["selftest"] = dict(base="/obj/item", ctor="item_x", reader="x_of", type_reader="x_of_type", fields={"thing": "thing"}, skip=set())
 _args = [a for a in sys.argv[1:] if not a.startswith("--")]
-_spec_name = next((a for a in _args if a in SPECS), None)
+_spec_name = "selftest" if "--selftest" in sys.argv else next((a for a in _args if a in SPECS and a != "selftest"), None)
 if _spec_name is None:
     print("type_trait: name a spec: " + ", ".join(sorted(SPECS)))
     sys.exit(2)
@@ -314,6 +315,64 @@ SHADOW = set()  # field names the current proc declares itself (an argument `for
 ROOTS_OF = {"/atom": ("/atom", "/obj", "/mob", "/turf", "/area"), "/atom/movable": ("/atom/movable", "/obj", "/mob")}
 
 
+def block_commented(lines):
+    """The indices of the lines inside a /* */ comment. Nothing there is code: a block in one declares nothing, so an entry written into it is lost."""
+    out = set()
+    inside = False
+    for i, raw in enumerate(lines):
+        code = re.sub(r'"(?:[^"\\\n]|\\.)*"', '""', raw)
+        code = code.split("//")[0] if not inside else code
+        if inside:
+            out.add(i)
+        at = 0
+        while True:
+            if inside:
+                end = code.find("*/", at)
+                if end < 0:
+                    break
+                inside = False
+                at = end + 2
+            else:
+                start = code.find("/*", at)
+                if start < 0:
+                    break
+                inside = True
+                at = start + 2
+                if code[:start].strip() == "":
+                    out.add(i)
+    return out
+
+
+def paren_depth(text):
+    masked = mask_strings(split_code_comment(text)[0])
+    return masked.count("(") - masked.count(")")
+
+
+def read_value(lines, i, first):
+    """A value that opens a paren on line i runs on until it closes. Returns the value on one line and the index after its last line."""
+    parts = [first]
+    depth = paren_depth(first)
+    j = i + 1
+    while depth > 0 and j < len(lines):
+        code = split_code_comment(lines[j].rstrip("\r"))[0].strip()
+        parts.append(code)
+        depth += paren_depth(code)
+        j += 1
+    value = " ".join(x for x in parts if x)
+    value = re.sub(r"\(\s+", "(", value)
+    value = re.sub(r",?\s+\)", ")", value)
+    value = re.sub(r",\)", ")", value)
+    return value, j
+
+
+FOREIGN = {}  # var name -> declared types anywhere in the tree: every one outside the base means X.field is not ours
+
+
+def note_foreign(text):
+    for m in re.finditer(r"\bvar/((?:[A-Za-z_]\w*/)+)([A-Za-z_]\w*)", text):
+        FOREIGN.setdefault(m.group(2), set()).add("/" + m.group(1).rstrip("/"))
+
+
 def under_base(path):
     return any(path == r or path.startswith(r + "/") for r in ROOTS_OF.get(BASE, (BASE,)))
 
@@ -326,11 +385,15 @@ def ref_ok(ref):
     if "." in ref or "(" in ref:
         return True  # a chain (A.held.x): the head's type says nothing about the last link
     head = ref
+    if head == "GLOB" or head == "global":
+        return False  # a global of the same name, never the var
     if head == "src":
         return OWNER[0] is not None and under_base(OWNER[0])
     t = LOCALS.get(head)
     if t is None:
-        return True
+        # Not typed in this proc: a var of that name typed only outside the base (species.x on a mob) is not ours.
+        known = {k for k in FOREIGN.get(head, ()) if k != "/list"}
+        return not known or any(under_base(k) or BASE.startswith(k + "/") for k in known)
     return under_base(t) or BASE.startswith(t + "/") or t == BASE.rsplit("/", 1)[0]
 
 
@@ -416,9 +479,12 @@ def main():
     files = {p: read(p) for p in code_files()}
     caps_at = {}
     for p, text in files.items():
-        for i, line in enumerate(text.split("\n")):
+        note_foreign(text)
+        split = text.split("\n")
+        hidden = block_commented(split)
+        for i, line in enumerate(split):
             m = CAPS.match(line.rstrip("\r"))
-            if m:
+            if m and i not in hidden:
                 caps_at[m.group(1)] = (p, i)
     entries = {}  # type -> list of "name = value"
     new = {}
@@ -428,7 +494,16 @@ def main():
         lines = text.split("\n")
         cur = None
         keep = []
+        hidden = block_commented(lines)
+        at = -1
+        skip_to = 0
         for raw in lines:
+            at += 1
+            if at < skip_to:
+                continue
+            if at in hidden:
+                keep.append(raw)  # a comment: not a type, not a write, and never a place for an entry
+                continue
             line = raw.rstrip("\r")
             tm = TYPE_LINE.match(line)
             if tm and "/proc/" not in line and "/verb/" not in line:
@@ -447,7 +522,7 @@ def main():
                         LOCALS[am.group(2)] = "/" + am.group(1).rstrip("/")
             om =OVERRIDE.match(line) if cur else None
             if om and under_base(cur):
-                value = om.group(2)
+                value, skip_to = read_value(lines, at, om.group(2))
                 if value.strip() == "null":
                     value = "TRAIT_NONE"
                 entries.setdefault(cur, []).append((FIELDS[om.group(1)], value))
@@ -471,7 +546,8 @@ def main():
         else:
             # after the type's definition block in the first file that defines it with an override
             for p in new:
-                if any(TYPE_LINE.match(l.rstrip("\r")) and TYPE_LINE.match(l.rstrip("\r")).group(1) == t for l in new[p]):
+                dead = block_commented(new[p])
+                if any(i not in dead and TYPE_LINE.match(l.rstrip("\r")) and TYPE_LINE.match(l.rstrip("\r")).group(1) == t for i, l in enumerate(new[p])):
                     made_blocks.setdefault(p, []).append(("after_def", t, entry))
                     break
     for p, adds in made_blocks.items():
@@ -479,10 +555,12 @@ def main():
         for kind, t, entry in adds:
             cr = "\r" if lines and lines[0].endswith("\r") else ""
             if kind == "after_caps":
-                idx = next(i for i, l in enumerate(lines) if l.rstrip("\r") == "CAPABILITIES(%s)" % t)
+                dead = block_commented(lines)
+                idx = next(i for i, l in enumerate(lines) if i not in dead and l.rstrip("\r") == "CAPABILITIES(%s)" % t)
                 lines.insert(idx + 1, entry + cr)
             else:
-                idx = next(i for i, l in enumerate(lines) if TYPE_LINE.match(l.rstrip("\r")) and TYPE_LINE.match(l.rstrip("\r")).group(1) == t)
+                dead = block_commented(lines)
+                idx = next(i for i, l in enumerate(lines) if i not in dead and TYPE_LINE.match(l.rstrip("\r")) and TYPE_LINE.match(l.rstrip("\r")).group(1) == t)
                 j = idx + 1
                 while j < len(lines) and continues_def(lines, j):
                     j += 1
@@ -496,5 +574,70 @@ def main():
     print("type_trait %s: %d types declared, %d files changed" % (_spec_name, len(entries), changed))
 
 
+def selftest():
+    import _guard as guard
+    fixture = """/obj/item/good
+	thing = list(
+		/a,
+		/b
+		)
+	icon = 'x.dmi'
+
+/* old
+/obj/item/commented
+	thing = 1
+
+CAPABILITIES(/obj/item/commented)
+	op("x")
+*/
+
+/obj/item/commented
+	thing = 2
+
+/obj/item/cleared
+	thing = null
+
+/obj/item/proc/reads(mob/M)
+	var/datum/species/species = M.species
+	var/a = species.thing
+	var/b = GLOB.thing
+	var/c = thing
+	return src
+"""
+    files = {"code/a.dm": fixture}
+    global code_files, read, write
+    written = {}
+    code_files = lambda: list(files)
+    read = lambda p: files[p]
+    write = lambda p, text: written.__setitem__(p, text)
+    main()
+    out = written.get("code/a.dm", "")
+    wanted = {
+        "a multi-line list is whole": "configure(item_x(thing = list(/a, /b)))",
+        "its continuation lines are gone": None,
+        "a null is TRAIT_NONE": "configure(item_x(thing = TRAIT_NONE))",
+        "a live type next to a comment gets a live block": "CAPABILITIES(/obj/item/commented)\n\top(\"x\")\n*/",
+        "the commented type is untouched": "/obj/item/commented\n\tthing = 1\n",
+        "a foreign var keeps its field": "var/a = species.thing",
+        "a global keeps its field": "var/b = GLOB.thing",
+        "the holder's own var is read through the trait": "var/c = x_of(src).thing",
+    }
+    fail = 0
+    for name, text in wanted.items():
+        ok = ("\t\t/a," not in out) if text is None else (text in out)
+        print(("ok   " if ok else "FAIL ") + name)
+        fail |= not ok
+    live = out.split("*/", 1)[1]
+    ok = "configure(item_x(thing = 2))" in live
+    print(("ok   " if ok else "FAIL ") + "the live type's entry is in live code")
+    fail |= not ok
+    if fail:
+        print(out)
+    print("type_trait selftest: " + ("FAILED" if fail else "ok"))
+    return 1 if fail else 0
+
+
 if __name__ == "__main__":
+    if "--selftest" in sys.argv:
+        sys.exit(selftest())
     main()
