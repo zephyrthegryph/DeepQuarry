@@ -111,3 +111,16 @@
 
 /datum/unit_test/dq_declare_dead_forms_are_loud/proc/fire_never()
 	return
+
+/// A relation whose entry names no type still has a typed var, which DM does not check: rel_var_type_note() holds the writes.
+/datum/unit_test/dq_rel_var_types_hold
+
+/datum/unit_test/dq_rel_var_types_hold/Run()
+	TEST_ASSERT(length(declared_rel_var_types()), "the generator lists the typed relation vars")
+	var/list/seen = list()
+	for(var/text in GLOB.rel_type_mismatches)
+		// The one known case: a hose connector is a datum that poses as its reagents' my_atom on purpose (connector.dm, "atom reagent code piggyback").
+		if(findtext(text, "/datum/reagents.my_atom is declared /atom, got a /datum/hose_connector"))
+			continue
+		seen += text
+	TEST_ASSERT(!length(seen), "relation writes broke a var's declared type: [jointext(seen, "; ")]")

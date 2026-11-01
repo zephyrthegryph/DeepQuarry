@@ -388,3 +388,32 @@ GLOBAL_LIST_EMPTY(def_freeze_snapshot)
 			. += "DEF FROZEN: [D.type] ([ref(D)]) was written after boot: [jointext(changed, ", ")]"
 
 #endif
+
+#if defined(UNIT_TESTS)
+/// "holder.var <- value type" of each relation write that broke the var's declared type (DM does not check one). dq_rel_var_types_hold fails on any.
+GLOBAL_LIST_EMPTY(rel_type_mismatches)
+
+/// A relation whose entry names no type still has a typed var: a test build holds the write to it. Logged, not refused, so a live round is unchanged.
+/proc/rel_var_type_note(datum/holder, var_name, value)
+	var/static/list/declared
+	if(isnull(declared))
+		declared = declared_rel_var_types()
+	var/static/list/resolved = list()
+	var/cache_key = "[holder.type]|[var_name]"
+	var/want = resolved[cache_key]
+	if(isnull(want))
+		want = FALSE
+		for(var/path = holder.type; path; path = type2parent(path))
+			var/found = declared["[path]|[var_name]"]
+			if(found)
+				want = found
+				break
+		resolved[cache_key] = want
+	if(!want || istype(value, want))
+		return
+	var/datum/D = value
+	var/text = "[holder.type].[var_name] is declared [want], got [isdatum(value) ? "a [D.type]" : "[value]"]"
+	if(!GLOB.rel_type_mismatches[text])
+		GLOB.rel_type_mismatches[text] = TRUE
+		log_world("REL TYPE: [text]")
+#endif
