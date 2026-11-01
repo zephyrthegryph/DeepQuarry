@@ -15,11 +15,12 @@
 
 STATIC_ENTRY(obj_rules)
 
-/proc/obj_rules(tk_reach = null, redgate_allowed = null, micro_target = null, surgery_cleanliness = null, show_messages = null, sellable_type = null, broken_icon = null, show_examine = null, explosion_resistance = null, debris_entry = null, can_speak = null)
+/proc/obj_rules(tk_reach = null, redgate_allowed = null, micro_target = null, surgery_cleanliness = null, show_messages = null, sellable_type = null, broken_icon = null, show_examine = null, explosion_resistance = null, debris_entry = null, can_speak = null, insulation = null)
 	RETURN_TYPE(/datum/entry)
-	return entry_make(ENTRY_OBJ_RULES, null, list("tk_reach" = tk_reach, "redgate_allowed" = redgate_allowed, "micro_target" = micro_target, "surgery_cleanliness" = surgery_cleanliness, "show_messages" = show_messages, "sellable_type" = sellable_type, "broken_icon" = broken_icon, "show_examine" = show_examine, "explosion_resistance" = explosion_resistance, "debris_entry" = debris_entry, "can_speak" = can_speak))
+	return entry_make(ENTRY_OBJ_RULES, null, list("tk_reach" = tk_reach, "redgate_allowed" = redgate_allowed, "micro_target" = micro_target, "surgery_cleanliness" = surgery_cleanliness, "show_messages" = show_messages, "sellable_type" = sellable_type, "broken_icon" = broken_icon, "show_examine" = show_examine, "explosion_resistance" = explosion_resistance, "debris_entry" = debris_entry, "can_speak" = can_speak, "insulation" = insulation))
 
 /datum/type_trait/obj_rules
+	var/insulation = 0
 	var/tk_reach = TRUE
 	var/redgate_allowed = TRUE
 	var/micro_target = FALSE
@@ -33,6 +34,7 @@ STATIC_ENTRY(obj_rules)
 	var/can_speak = FALSE
 
 /datum/type_trait/obj_rules/copy_values(datum/type_trait/obj_rules/into)
+	into.insulation = insulation
 	into.tk_reach = tk_reach
 	into.redgate_allowed = redgate_allowed
 	into.micro_target = micro_target
@@ -50,7 +52,7 @@ STATIC_ENTRY(obj_rules)
 	trait_type = /datum/type_trait/obj_rules
 	publish_key = OBJ_RULES_KEY
 	base_type = /obj
-	var_names = list("tk_reach" = "tk_reach", "redgate_allowed" = "redgate_allowed", "micro_target" = "micro_target", "surgery_cleanliness" = "surgery_cleanliness", "show_messages" = "show_messages", "sellable_type" = "sellable_type", "broken_icon_state" = "broken_icon", "show_examine" = "show_examine", "explosion_resistance" = "explosion_resistance", "debris_type" = "debris_entry", "can_speak" = "can_speak")
+	var_names = list("insulation" = "insulation", "tk_reach" = "tk_reach", "redgate_allowed" = "redgate_allowed", "micro_target" = "micro_target", "surgery_cleanliness" = "surgery_cleanliness", "show_messages" = "show_messages", "sellable_type" = "sellable_type", "broken_icon_state" = "broken_icon", "show_examine" = "show_examine", "explosion_resistance" = "explosion_resistance", "debris_type" = "debris_entry", "can_speak" = "can_speak")
 
 /// The holder's obj_rules values (its own once one was set at run time). Read only.
 READS_AS(/proc/rules_of, OBJ_RULES_KEY)
@@ -92,3 +94,6 @@ READS_AS(/proc/rules_of, OBJ_RULES_KEY)
 
 /obj/proc/set_can_speak(value)
 	return set_trait(src, ENTRY_OBJ_RULES, "can_speak", value)
+
+/obj/proc/set_insulation(value)
+	return set_trait(src, ENTRY_OBJ_RULES, "insulation", value)

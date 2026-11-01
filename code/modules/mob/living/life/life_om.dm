@@ -24,9 +24,6 @@
 	if((RUNLEVEL_GAME | RUNLEVEL_POSTGAME) & (1 << (Kernel.current_runlevel - 1)))
 		upkeep()
 
-/mob/living
-	/// LIFE_SET_* of the Life sequence this mob type runs.
-	var/life_set = LIFE_SET_LIVING
 
 /// The z-level whose presence lists this low-priority mob (sparse slot life_z; unset: none).
 sparse(/mob/living, life_z, type = num)

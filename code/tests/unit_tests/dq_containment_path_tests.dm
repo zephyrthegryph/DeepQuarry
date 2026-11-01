@@ -32,8 +32,10 @@ CAPABILITIES(/obj/item/dq_path_probe)
 /// A probe that also covers what is under it: half insulation, half armour.
 /obj/item/dq_path_probe/padded
 	name = "padded path probe"
-	insulation = 0.5
 	armor_spec = "melee=50;bullet=50;laser=50;energy=50;bomb=50;bio=50;rad=50"
+
+CAPABILITIES(/obj/item/dq_path_probe/padded)
+	configure(obj_rules(insulation = 0.5))
 
 /// A bag: one internal slot with the default damage shares.
 /obj/item/dq_path_bag
@@ -85,7 +87,9 @@ CAPABILITIES(/obj/item/dq_path_probe)
 
 /obj/structure/closet/dq_path_freezer
 	name = "path test freezer"
-	insulation = 0.9
+
+CAPABILITIES(/obj/structure/closet/dq_path_freezer)
+	configure(obj_rules(insulation = 0.9))
 
 #define DQ_PATH_CLOSE(a, b) (abs((a) - (b)) < 0.01)
 

@@ -61,7 +61,6 @@
 	COOLDOWN_DECLARE(timeofdeath) //Living
 	/// What onlookers see when this mob dies ("\The [src] <death_message>"). See /mob/proc/get_death_message().
 
-	var/bodytemperature = BODYTEMP_NORMAL
 
 	var/m_intent = I_RUN//Living
 	/// Set around a holder-driven forced step (a chair/wheelchair moving its
@@ -95,7 +94,6 @@
 
 
 
-	var/faction = FACTION_NEUTRAL //Used for checking whether hostile simple animals will attack you, possibly more stuff later
 
 
 // LAssailant (the last mob/living/carbon to push/drag/grab this mob) is a weak sparse slot (code/datums/sparse_vars/mob_state.dm).
@@ -155,7 +153,6 @@
 
 
 
-SCHEMA(/mob, faction, schema_text())
 
 CAPABILITIES(/mob)
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_GENERIC, unacidable = FALSE))

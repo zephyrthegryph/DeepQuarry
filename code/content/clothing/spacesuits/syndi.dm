@@ -13,10 +13,10 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/syndicate)
 	icon_state = "syndicate"
 	desc = "A crimson spacesuit sporting clean lines and durable plating. Robust, reliable, and slightly suspicious."
 	w_class = ITEMSIZE_NORMAL
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=30;rad=30;cold=60"
 
 CAPABILITIES(/obj/item/clothing/suit/space/syndicate)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))
 	configure(item_protection(siemens = 0.6))
 

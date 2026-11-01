@@ -1,5 +1,4 @@
 /mob/living/silicon/pai
-	life_set = LIFE_SET_PAI
 
 /// Cable retraction and `if(stat == DEAD) return`.
 /mob/living/silicon/pai/proc/life_pai_cable(datum/seq_frame/life/F)

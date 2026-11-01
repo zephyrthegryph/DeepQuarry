@@ -223,7 +223,6 @@ CAPABILITIES(/obj/structure/redgate/away)
 /obj/item/laserdome_flag
 	name = "Flag"
 	desc = "Steal the enemy flag and take it to your base in order to score! First team to three captures wins! Or was it five? Eh, check with the referee I guess."
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1) //big flag is harder to run with, encourages teamwork and lets the opposing team catch up. would be nice if this was a forced slowdown that ignores hardy.
 	icon = 'icons/obj/flags.dmi'
 	item_icons = list(
 			slot_l_hand_str = 'icons/mob/items/lefthand_vr.dmi',
@@ -255,6 +254,7 @@ CAPABILITIES(/obj/structure/redgate/away)
 	return OP_OK
 
 CAPABILITIES(/obj/item/laserdome_flag)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)))
 	ref_one(nameof(start_pos), /atom)
 	configure(obj_rules(redgate_allowed = FALSE))
 	setup(PROC_REF(remember_start_pos))
@@ -369,7 +369,6 @@ CAPABILITIES(/obj/structure/flag_base)
 /obj/item/laserdome_hyperball
 	name = "\improper HYPERball"	//*always* refer to it as "the hyperball", not just "the ball". corporate insists.
 	desc = "Because regular balls aren't exciting enough, the future needs HYPERballs!"
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = -0.5) //carrying the ball actually speeds you up a little bit? given you need to get past enemy defense and dunk. also makes it easier to get the ball away from your base if you intercept.
 	icon = 'icons/obj/flags.dmi'
 	icon_state = "hyperball"
 	item_icons = list(
@@ -386,18 +385,19 @@ CAPABILITIES(/obj/structure/flag_base)
 /obj/item/laserdome_hyperball_prop
 	name = "demonstration HYPERball"
 	desc = "Because regular balls aren't exciting enough, the future needs HYPERballs!"
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 3) //really discourage people from trying to actually use these in the game if they get them out of the display cases
 	icon = 'icons/obj/flags.dmi'
 	icon_state = "hyperball"
 	w_class = ITEMSIZE_NO_CONTAINER
 
 CAPABILITIES(/obj/item/laserdome_hyperball_prop)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 3)))
 	configure(obj_rules(redgate_allowed = FALSE))
 
 /obj/item/laserdome_hyperball/proc/remember_start_pos()
 	rel_set(src, nameof(start_pos), src.loc)	//save our starting location for later
 
 CAPABILITIES(/obj/item/laserdome_hyperball)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = -0.5)))
 	ref_one(nameof(start_pos), /atom)
 	ref_one(nameof(last_holder), /mob/living/carbon/human)
 	configure(obj_rules(redgate_allowed = FALSE))

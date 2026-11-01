@@ -1,13 +1,13 @@
 /obj/item/clothing/shoes/leg_guard
 	name = DEVELOPER_WARNING_NAME // "leg guards"
 	desc = "These will protect your legs and feet."
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = SHOES_SLOWDOWN+0.5)
 	w_class = ITEMSIZE_NORMAL
 	step_volume_mod = 1.3
 	can_hold_knife = TRUE
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/shoes/leg_guard)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = SHOES_SLOWDOWN+0.5)))
 	fits_anyone()
 	extend(/datum/act/equip, needs(req_leg_clearance()))
 	configure(item_worn(covers = LEGS|FEET))
@@ -73,10 +73,10 @@ CAPABILITIES(/obj/item/clothing/shoes/leg_guard/combat)
 	desc = "These will protect your legs and feet from a variety of weapons while still allowing mobility."
 	icon_state = "leg_guards_flexitac"
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = SHOES_SLOWDOWN+0.5)
 	armor_spec = "melee=40;bullet=40;laser=60;energy=35;bomb=30"
 
 CAPABILITIES(/obj/item/clothing/shoes/leg_guard/flexitac)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = SHOES_SLOWDOWN+0.5)))
 	configure(item_protection(siemens = 0.6, min_cold = T0C - 20, cold_parts = LEGS))
 
 

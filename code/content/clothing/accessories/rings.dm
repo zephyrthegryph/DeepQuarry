@@ -13,9 +13,9 @@
 	w_class = ITEMSIZE_SMALL
 	icon = 'icons/inventory/hands/item.dmi'
 	punch_force = 2	//added to base punch strength when added as a glove accessory
-	worn_factors = null
 
 CAPABILITIES(/obj/item/clothing/accessory/ring)
+	configure(item_worn(worn_factors = TRAIT_NONE))
 	configure(item_worn(slots = SLOT_GLOVES))
 	configure(item_combat(force = 7))
 	configure(item_protection(siemens = 1))

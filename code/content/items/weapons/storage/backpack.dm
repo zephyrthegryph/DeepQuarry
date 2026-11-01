@@ -173,7 +173,6 @@ CAPABILITIES(/obj/item/storage/backpack/holding)
 	name = "dufflebag"
 	desc = "A large dufflebag for holding extra things."
 	icon_state = "duffle"
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	var/tilted = 0
 	var/can_tilt = 1
 	max_storage_space = INVENTORY_DUFFLEBAG_SPACE
@@ -185,6 +184,7 @@ CAPABILITIES(/obj/item/storage/backpack/holding)
 MSG_DEF_SELF(backpack/cant_tilt, "It can't be adjusted like that.")
 
 CAPABILITIES(/obj/item/storage/backpack/dufflebag)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	op("tilt", menu(), label("Adjust Duffelbag Angle"), needs(carried(), req(PROC_REF(can_adjust_tilt))), then(PROC_REF(dufflebag_tilt_effect)))
 	rolls(nameof(tilted), chance(50))
 	rolls(nameof(icon_state), PROC_REF(roll_tilted_look), from = list(nameof(tilted)))
@@ -211,7 +211,9 @@ CAPABILITIES(/obj/item/storage/backpack/dufflebag)
 	name = "black dufflebag"
 	desc = "A large dufflebag for holding extra tactical supplies. This one appears to be made out of lighter material than usual."
 	icon_state = "duffle_syndie"
-	worn_factors = null
+
+CAPABILITIES(/obj/item/storage/backpack/dufflebag/syndie)
+	configure(item_worn(worn_factors = TRAIT_NONE))
 
 /obj/item/storage/backpack/dufflebag/syndie/med
 	name = "medical dufflebag"
@@ -553,7 +555,6 @@ CAPABILITIES(/obj/item/storage/backpack/parachute)
 	item_state = "saddlebag"
 	icon_state = "saddlebag"
 	max_storage_space = INVENTORY_DUFFLEBAG_SPACE //Saddlebags can hold more, like dufflebags
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5) //And are slower, too...
 	var/taurtype = /datum/sprite_accessory/tail/taur/horse //Acceptable taur type to be wearing this
 	var/no_message = "You aren't the appropriate taur type to wear this!"
 
@@ -577,7 +578,6 @@ CAPABILITIES(/obj/item/storage/backpack/parachute)
 	icon_state = "saddlebag"
 	var/icon_base = "saddlebag"
 	max_storage_space = INVENTORY_DUFFLEBAG_SPACE //Saddlebags can hold more, like dufflebags
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5) //And are slower, too...
 	var/no_message = "You aren't the appropriate taur type to wear this!"
 
 
@@ -605,7 +605,9 @@ CAPABILITIES(/obj/item/storage/backpack/parachute)
 	icon_state = "taurvest"
 	icon_base = "taurvest"
 	max_storage_space = INVENTORY_STANDARD_SPACE
-	worn_factors = null
+
+CAPABILITIES(/obj/item/storage/backpack/saddlebag_common/vest)
+	configure(item_worn(worn_factors = TRAIT_NONE))
 
 /obj/item/storage/backpack/dufflebag/fluff //Black dufflebag without syndie buffs.
 	name = "plain black dufflebag"
@@ -706,26 +708,34 @@ CAPABILITIES(/obj/item/storage/backpack/parachute)
 	name = "Taur Saddlebags (Light)"
 	desc = "A saddle that holds items. Lighter than its heavier cousin, as the cost of storage space."
 	max_storage_space = INVENTORY_STANDARD_SPACE
-	worn_factors = null
+
+CAPABILITIES(/obj/item/storage/backpack/saddlebag_common/lightweight)
+	configure(item_worn(worn_factors = TRAIT_NONE))
 
 /obj/item/storage/backpack/saddlebag_common/robust/lightweight
 	name = "Lightweight Saddlebags"
 	desc = "A saddle that holds items. Lighter than it's robust cousin, at the cost of storage space.."
 	max_storage_space = INVENTORY_STANDARD_SPACE
-	worn_factors = null
+
+CAPABILITIES(/obj/item/storage/backpack/saddlebag_common/robust/lightweight)
+	configure(item_worn(worn_factors = TRAIT_NONE))
 
 /obj/item/storage/backpack/saddlebag_common/vest/heavy
 	name = "Taur Duty Vest (Heavy)"
 	desc = "An armored vest with the armor modules replaced with various handy compartments with decent storage capacity. Useless for protection though. Holds more than its lighter cousin.."
 	max_storage_space = INVENTORY_DUFFLEBAG_SPACE
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
+
+CAPABILITIES(/obj/item/storage/backpack/saddlebag_common/vest/heavy)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 
 
 CAPABILITIES(/obj/item/storage/backpack/saddlebag)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	extend(/datum/act/equip, needs(req(PROC_REF(taur_fit))))
 
 
 CAPABILITIES(/obj/item/storage/backpack/saddlebag_common)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	on_notice(/datum/notice/item_equipped, then(PROC_REF(apply_equipped_taur)))
 	extend(/datum/act/equip, needs(req(PROC_REF(taur_fit))))
 

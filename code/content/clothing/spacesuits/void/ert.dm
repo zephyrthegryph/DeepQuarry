@@ -4,12 +4,12 @@
 	icon_state = "ertsuit"
 	item_state = "ertsuit"
 	armor_spec = "melee=65;bullet=55;laser=55;energy=15;bomb=50;bio=100;rad=100;cold=60"
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 	w_class = ITEMSIZE_NORMAL //the mark vii packs itself down when not in use, thanks future-materials
 	breach_threshold = 16 //Extra Thicc
 	resilience = 0.05 //Military Armor
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/responseteam)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	configure(item_rules(sprite_sheets_obj = list( SPECIES_TAJARAN = 'icons/inventory/suit/item.dmi', SPECIES_SKRELL = 'icons/inventory/suit/item.dmi', SPECIES_UNATHI = 'icons/inventory/suit/item.dmi', SPECIES_XENOHYBRID = 'icons/inventory/suit/item.dmi', SPECIES_AKULA = 'icons/inventory/suit/item.dmi', SPECIES_SERGAL = 'icons/inventory/suit/item.dmi', SPECIES_VULPKANIN = 'icons/inventory/suit/item.dmi', SPECIES_ZORREN_HIGH = 'icons/inventory/suit/item.dmi', SPECIES_FENNEC = 'icons/inventory/suit/item.dmi', SPECIES_SHADEKIN = 'icons/inventory/suit/item.dmi', SPECIES_VASILISSAN = 'icons/inventory/suit/item.dmi', SPECIES_NEVREAN = 'icons/inventory/suit/item.dmi', SPECIES_RAPALA = 'icons/inventory/suit/item.dmi', SPECIES_ALRAUNE = 'icons/inventory/suit/item.dmi', SPECIES_ZADDAT = 'icons/inventory/suit/item.dmi', SPECIES_LLEILL = 'icons/inventory/suit/item.dmi' )))
 	fits_as(FIT_NO_DIONA_VOX_TESHARI_ALTEVIAN)
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY))
@@ -48,9 +48,9 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/responseteam)
 	icon_state = "ertsuit_j"
 	item_state = "ertsuit_j"
 	armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=20;bio=100;rad=100;cold=60" //awful armor
-	worn_factors = null //light armor means no slowdown
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/responseteam/janitor)
+	configure(item_worn(worn_factors = TRAIT_NONE))
 	configure(item_worn(flags = NOSLIP))
 
 

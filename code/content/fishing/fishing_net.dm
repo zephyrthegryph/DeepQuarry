@@ -14,7 +14,6 @@
 	w_class = ITEMSIZE_SMALL
 	flags = NOBLUDGEON
 
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)
 
 
 	default_material = MAT_CLOTH
@@ -56,6 +55,7 @@ TYPE_TABLE_DECLARE(/obj/item/material/fishing_net, fishing_net_accepted_mobs, li
 	return ..()
 
 CAPABILITIES(/obj/item/material/fishing_net)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	configure(item_combat(reach = 2))
 	slot(CONTAINER_SLOT_NET)
 	op("fishing_net_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Empty"), then(PROC_REF(fishing_net_self)))

@@ -50,7 +50,6 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig)
 
 /obj/item/clothing/suit/space/rig
 	name = "chestpiece"
-	worn_factors = null
 	//will reach 10 breach damage after 25 laser carbine blasts, 3 revolver hits, or ~1 PTR hit. Completely immune to smg or sts hits.
 	breach_threshold = 38
 	resilience = 0.2
@@ -80,6 +79,7 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig)
 
 
 CAPABILITIES(/obj/item/clothing/suit/space/rig)
+	configure(item_worn(worn_factors = TRAIT_NONE))
 	suit_storage(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS,/obj/item/storage))
 	fits_as(FIT_HARDSUIT)
 	ref_one(nameof(tacknife), /obj/item/material/knife)

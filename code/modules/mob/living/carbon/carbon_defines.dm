@@ -28,3 +28,8 @@
 // owns. proto_set() deletes the private copy it replaces; teardown deletes it with the mob.
 
 /// The pulse level: the heartbeat step reads it.
+
+SETTER(/mob/living/carbon, life_tick)
+/mob/living/carbon/proc/set_life_tick(value)
+	life_tick = value
+	tracked_changed(src, "life_tick")

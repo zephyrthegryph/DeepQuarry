@@ -737,7 +737,7 @@ CAPABILITIES(/obj/item/radio/headset/event)
 	return GLOW(glow_of_type(type).range, glow_of(src).power, glow_of(src).color)
 
 /obj/item/radio/headset/event/equipped(mob/living/carbon/human/H, slot)
-	worn_factors = slowdown_to_set ? alist(STAT_SLOWDOWN = slowdown_to_set) : null
+	set_worn_factors(slowdown_to_set ? alist(STAT_SLOWDOWN = slowdown_to_set) : null)
 	H?.body?.sync_worn_factors() // the table was written after the slot change that would have asked for it
 	. = ..()
 	if(H && ((H.get_equipped_item(SLOT_ID_EAR_L) == src) || (H.get_equipped_item(SLOT_ID_EAR_R) == src)))

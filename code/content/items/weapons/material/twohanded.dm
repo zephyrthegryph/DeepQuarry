@@ -211,7 +211,6 @@ CAPABILITIES(/obj/item/material/twohanded/riding_crop)
 	force_divisor = 0.9 // 10/42 with hardness 60 (steel) and 0.25 unwielded divisor
 	icon = 'icons/obj/hammer_sprites_ch.dmi'
 	w_class = ITEMSIZE_HUGE
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)
 	dulled_divisor = 0.95	//Still metal on a stick
 	force_wielded = 23 //A fair bit less than the fireaxe.
 	applies_material_colour = 0
@@ -222,6 +221,7 @@ CAPABILITIES(/obj/item/material/twohanded/riding_crop)
 		)
 
 CAPABILITIES(/obj/item/material/twohanded/sledgehammer)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)))
 	configure(item_combat(force = 25, sharp = 0, edge = 0, attack_verbs = list("attacked", "smashed", "crushed", "wacked", "pounded")))
 	configure(item_sounds(hit = SFX_WEAPONS_HEAVYSMASH))
 
@@ -264,9 +264,9 @@ CAPABILITIES(/obj/item/material/twohanded/sledgehammer)
 	desc = "A long, heavy hammer. This weapons crackles with barely contained energy."
 	force_divisor = 2
 	force_wielded = 75
-	worn_factors = null
 
 CAPABILITIES(/obj/item/material/twohanded/sledgehammer/mjollnir)
+	configure(item_worn(worn_factors = TRAIT_NONE))
 	configure(item_thrown(force = 15))
 	configure(item_combat(force = 50))
 	configure(item_sounds(hit = SFX_EFFECTS_LIGHTNINGBOLT))

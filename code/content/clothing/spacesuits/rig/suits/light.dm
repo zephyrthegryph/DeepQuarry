@@ -6,7 +6,6 @@
 	suit_type = "light suit"
 	armor_spec = "melee=50;bullet=15;laser=50;energy=10;bomb=25"
 	emp_protection = 10
-	worn_factors = null
 	offline_slowdown = 0
 	offline_vision_restriction = 0
 
@@ -18,6 +17,7 @@
 	rigsuit_min_pressure = 0							  // Min pressure the rig protects against when sealed
 
 CAPABILITIES(/obj/item/rig/light)
+	configure(item_worn(worn_factors = TRAIT_NONE))
 	suit_storage(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_EXPLO, POCKET_SUIT_REGULATORS, POCKET_STORAGE))
 
 	configure(item_worn(flags = THICKMATERIAL))
@@ -94,7 +94,6 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/light/hacker)
 	icon_state = "ninja_rig"
 	armor_spec = "melee=50;bullet=15;laser=30;energy=10;bomb=25;bio=100;rad=30"
 	emp_protection = 40 //change this to 30 if too high.
-	worn_factors = null
 
 	chest_type = /obj/item/clothing/suit/space/rig/light/ninja
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/light/ninja
@@ -146,4 +145,5 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/light/ninja)
 		)
 
 CAPABILITIES(/obj/item/rig/light/ninja)
+	configure(item_worn(worn_factors = TRAIT_NONE))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY, POCKET_BAYSUIT))

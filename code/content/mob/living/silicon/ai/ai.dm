@@ -103,6 +103,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	canmove = 0
 
 CAPABILITIES(/mob/living/silicon/ai)
+	configure(living_rules(life_set = LIFE_SET_AI))
 	op("holo_nom_menu", menu(desc = "Wrap up a person in hardlight holograms."), label("Hardlight Nom"), needs(req_self(), req(PROC_REF(holo_nom_menu_ready))), then(PROC_REF(holo_nom_menu_op)))
 	op("store_core", menu(desc = "Enter intelligence storage. This is functionally equivalent to cryo or robotic storage, freeing up your job slot."), label("Store Core"), needs(req_self(), req(PROC_REF(store_core_ready))), then(PROC_REF(store_core_op)))
 	// Local HUD questions are operations on the AI itself, independent of its wireless link.
@@ -1123,12 +1124,14 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/mob/living/silicon/ai/announcer)
 /mob/living/silicon/ai/announcer
 	is_dummy = 1
 
+CAPABILITIES(/mob/living/silicon/ai/announcer)
+	configure(living_rules(life_set = LIFE_SET_DELIST))
+
 /// The announcer is in no mob registry.
 /mob/living/silicon/ai/announcer/skips_registry(registry_id)
 	return TRUE
 
 /mob/living/silicon/ai/announcer
-	life_set = LIFE_SET_DELIST
 
 /mob/living/silicon/ai/announcer/life_delist(datum/seq_frame/life/F)
 	spent(src?.active_eye())

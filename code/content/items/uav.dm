@@ -13,7 +13,6 @@
 	var/cell_type = null //Can put a starting cell here
 
 	density = TRUE //Is dense, but not anchored, so you can swap with it
-	worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5) //Heevvee.
 
 	max_integrity = 100
 
@@ -40,6 +39,7 @@
 	var/no_masters_time = 0
 
 CAPABILITIES(/obj/item/uav)
+	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)))
 	configure(atom_rules(light_system = MOVABLE_LIGHT_DIRECTIONAL))
 	configure(movable_motion(cone_y = 5))
 	setup(PROC_REF(prepare_ion_trail))
