@@ -332,12 +332,12 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 				var/priority = num2text(O.markings[marking]["priority"])
 				if (markings[priority])
 					if (markings[priority][marking])
-						markings[priority][marking] |= list(limb_tag = list("on" = O.markings[marking]["on"], "color" = O.markings[marking]["color"]))
+						markings[priority][marking][O.organ_tag] = list("on" = O.markings[marking]["on"], "color" = O.markings[marking]["color"])
 					else
-						markings[priority] |= list("[marking]" = list(limb_tag = list("on" = O.markings[marking]["on"], "color" = O.markings[marking]["color"]))) //yes I know technically you could have a limb that was attached that has the same marking as another limb with a different color but I'm too tired
+						markings[priority] |= list("[marking]" = list("[O.organ_tag]" = list("on" = O.markings[marking]["on"], "color" = O.markings[marking]["color"]))) //yes I know technically you could have a limb that was attached that has the same marking as another limb with a different color but I'm too tired
 				else
 					priorities |= O.markings[marking]["priority"]
-					markings[priority] = list("[marking]" = list(limb_tag = list("on" = O.markings[marking]["on"], "color" = O.markings[marking]["color"])))
+					markings[priority] = list("[marking]" = list("[O.organ_tag]" = list("on" = O.markings[marking]["on"], "color" = O.markings[marking]["color"])))
 	var/list/sorted = list()
 	while (priorities.len > 0)
 		var/priority = min(priorities)

@@ -12,7 +12,7 @@ import { useMemo, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { getIconFromRefMap } from 'tgui/events/handlers/assets';
 import { Box, Button, Input, Section } from 'tgui-core/components';
-import { ColorSwatch } from '../colors';
+import { ColorChoice } from '../colors';
 import { Switch } from '../controls';
 import { ColorizedImage, getImage } from '../helper_components';
 import type { EditorProps } from './index';
@@ -20,6 +20,8 @@ import type { EditorProps } from './index';
 type ZoneState = { color: string; on: number };
 type MarkingState = Record<string, ZoneState | string>;
 type MarkingsData = {
+  /// Marking -> zone (or "color") -> the palette slot it links to.
+  links?: Record<string, Record<string, string>>;
   markings: Record<string, MarkingState>;
   /// Marking names the current species cannot wear (the picker hides them by default).
   incompatible?: string[];
@@ -110,6 +112,7 @@ export const BodyMarkingsEditor = ({
   const touches = (key: string) =>
     !zones || (styles[key]?.body_parts ?? []).some((z) => zones.includes(z));
   const layers = Object.entries(d.markings ?? {});
+  const allLinks = d.links ?? {};
   const shown = layers.filter(([key]) => touches(key));
 
   return (
@@ -151,6 +154,7 @@ export const BodyMarkingsEditor = ({
             key={key}
             markingKey={key}
             state={state}
+            links={allLinks[key]}
             meta={styles[key]}
             index={layers.findIndex(([k]) => k === key)}
             count={layers.length}
@@ -166,6 +170,7 @@ export const BodyMarkingsEditor = ({
 const MarkingLayer = ({
   markingKey,
   state,
+  links,
   meta,
   index,
   count,
@@ -174,6 +179,8 @@ const MarkingLayer = ({
 }: {
   markingKey: string;
   state: MarkingState;
+  /// Zone (or "color", the whole marking) -> the palette slot it links to.
+  links?: Record<string, string>;
   meta?: MarkingStyleMeta;
   index: number;
   count: number;
@@ -260,9 +267,12 @@ const MarkingLayer = ({
             flexWrap: 'wrap',
           }}
         >
-          <ColorSwatch
+          <ColorChoice
             color={color}
-            label="Colour"
+            link={links?.color}
+            onLink={(slot) =>
+              send(act, 'set_color_value', { marking: markingKey, color: slot })
+            }
             onPick={(hex) =>
               send(act, 'set_color_value', { marking: markingKey, color: hex })
             }
@@ -319,9 +329,18 @@ const MarkingLayer = ({
               key={zone}
               style={{ display: 'flex', alignItems: 'center', gap: '0.3em' }}
             >
-              <ColorSwatch
+              <ColorChoice
                 color={z.color}
+                link={links?.[zone]}
                 label={ZONE_LABELS[zone] ?? zone}
+                category="other"
+                onLink={(slot) =>
+                  send(act, 'set_color_value', {
+                    marking: markingKey,
+                    zone,
+                    color: slot,
+                  })
+                }
                 onPick={(hex) =>
                   send(act, 'set_color_value', {
                     marking: markingKey,
@@ -333,9 +352,6 @@ const MarkingLayer = ({
                   send(act, 'set_zone_color', { marking: markingKey, zone })
                 }
               />
-              <Box color={z.on ? undefined : 'label'}>
-                {ZONE_LABELS[zone] ?? zone}
-              </Box>
             </Box>
           ))}
         </Box>

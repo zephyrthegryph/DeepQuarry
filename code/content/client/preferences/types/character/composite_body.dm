@@ -29,6 +29,30 @@
 /datum/preference/body_markings/is_valid(value)
 	return islist(value)
 
+/// Linked zones read as hex. `value` is a shallow copy of the cache, so what changes here is copied first.
+/datum/preference/body_markings/resolve_read(list/value, datum/preferences/preferences)
+	if(!islist(value))
+		return value
+	for(var/marking in value)
+		var/list/zones = value[marking]
+		if(!islist(zones))
+			continue
+		var/list/resolved
+		for(var/zone in zones)
+			var/list/entry = zones[zone]
+			if(zone == "color")
+				if(dq_color_slot_type(entry))
+					resolved = resolved || zones.Copy()
+					resolved[zone] = preferences.resolve_color_link(entry)
+			else if(islist(entry) && dq_color_slot_type(entry["color"]))
+				resolved = resolved || zones.Copy()
+				var/list/entry_copy = entry.Copy()
+				entry_copy["color"] = preferences.resolve_color_link(entry["color"])
+				resolved[zone] = entry_copy
+		if(resolved)
+			value[marking] = resolved
+	return value
+
 /datum/preference/body_markings/apply_to_human(mob/living/carbon/human/target, value)
 	return
 /datum/preference/body_markings/apply_to_living(mob/living/target, value)

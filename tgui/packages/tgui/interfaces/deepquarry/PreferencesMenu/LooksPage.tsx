@@ -13,7 +13,12 @@ import { useBackend } from 'tgui/backend';
 import { Box, Button, Section } from 'tgui-core/components';
 import { type DollRegion, ZoneDoll } from '../shared/ZoneDoll';
 import { WidgetGrid } from './CategoryPage';
-import { ColorStrip, type StripColor } from './colors';
+import {
+  ColorStrip,
+  PALETTE_SLOTS,
+  PaletteSlots,
+  type StripColor,
+} from './colors';
 import { Switch } from './controls';
 import { getEditor } from './editors';
 import { BodyMarkingsEditor } from './editors/BodyMarkingsEditor';
@@ -71,12 +76,10 @@ type CardId =
   | 'legs'
   | 'markings'
   | 'organs'
-  | 'palette'
   | 'chassis';
 
 const REGION_CARDS: Record<Region, CardId[]> = {
   all: [
-    'palette',
     'chassis',
     'skin',
     'eyes',
@@ -142,7 +145,6 @@ const CARD_KEYS: Record<CardId, string[]> = {
   legs: ['digitigrade'],
   markings: ['body_markings'],
   organs: ['organs'],
-  palette: ['color_palette'],
   chassis: ['robot_chassis'],
 };
 
@@ -236,8 +238,7 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
   // Cards that have something to show in this play mode.
   const cardHasContent = (card: CardId) => CARD_KEYS[card].some(has);
   const claimed = new Set(
-    Object.values(CARD_KEYS)
-      .flat()
+    [...Object.values(CARD_KEYS).flat(), ...PALETTE_SLOTS.map((p) => p.prefKey)]
       .filter((k) => has(k)),
   );
   const otherGroups = page.groups
@@ -263,7 +264,6 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
             <ColorStrip
               colors={pick(widgets, [['skin_color', 'Skin']])}
               values={values}
-              matches={['Hair']}
             />
             <Fields
               keys={['synth_color', 'synth_markings']}
@@ -274,7 +274,6 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
                 <ColorStrip
                   colors={pick(widgets, [['synth_color_rgb', 'Synth']])}
                   values={values}
-                  matches={['Skin']}
                 />
               </Box>
             )}
@@ -286,7 +285,6 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
             <ColorStrip
               colors={pick(widgets, [['eyes_color', 'Eyes']])}
               values={values}
-              matches={['Hair', 'Skin']}
             />
           </PartCard>
         );
@@ -311,7 +309,6 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
                   ].filter(Boolean) as Array<[string, string]>,
                 )}
                 values={values}
-                matches={['Skin']}
               />
             </Box>
           </PartCard>
@@ -346,7 +343,6 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
                   ].filter(Boolean) as Array<[string, string]>,
                 )}
                 values={values}
-                matches={['Skin', 'Hair']}
               />
             </Box>
           </OptionalPart>
@@ -372,7 +368,6 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
                 ])}
                 alphas={pick(widgets, [[`${prefix}_alpha`, 'Opacity']])}
                 values={values}
-                matches={['Skin', 'Hair']}
               />
             </Box>
           </OptionalPart>
@@ -382,12 +377,6 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
         return (
           <PartCard key={card} title="Legs">
             <Fields keys={['digitigrade']} withValue={withValue} />
-          </PartCard>
-        );
-      case 'palette':
-        return (
-          <PartCard key={card} title="Palette" anchorGroup="palette">
-            <Fields keys={['color_palette']} withValue={withValue} bare />
           </PartCard>
         );
       case 'markings':
@@ -478,6 +467,14 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
             </Box>
           </Section>
         )}
+        {has('palette_primary') && (
+          <Section
+            title="Palette"
+            data-dq-anchor={groupAnchor('appearance', 'palette')}
+          >
+            <PaletteSlots values={values} />
+          </Section>
+        )}
       </Box>
       <Box
         style={{
@@ -497,7 +494,6 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
           const wide =
             card === 'markings' ||
             card === 'organs' ||
-            card === 'palette' ||
             card === 'chassis';
           return (
             <Box key={card} style={wide ? { gridColumn: '1 / -1' } : undefined}>

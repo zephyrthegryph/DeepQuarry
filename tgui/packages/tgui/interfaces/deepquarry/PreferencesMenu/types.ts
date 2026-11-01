@@ -67,6 +67,8 @@ export type CharacterSetupData = {
   dq_cache_key?: string;
   dq_structure_version?: number;
   dq_values?: Record<string, unknown>;
+  /// Linkable pref key -> the palette slot it follows ("" = its own colour).
+  dq_color_links?: Record<string, string>;
   dq_editor_data?: Record<string, Record<string, unknown>>;
   /// A shared catalog is versioned by its cache key (string), a per-player one by a counter.
   dq_editor_versions?: Record<string, number | string>;
