@@ -14,8 +14,8 @@ import { Box, Button, Section } from 'tgui-core/components';
 import { WidgetGrid } from './CategoryPage';
 import { ColorStrip, type StripColor } from './colors';
 import { Switch } from './controls';
-import { BodyMarkingsEditor } from './editors/BodyMarkingsEditor';
 import { getEditor } from './editors';
+import { BodyMarkingsEditor } from './editors/BodyMarkingsEditor';
 import { labelForGroup } from './labels';
 import { PrefWidget } from './PrefWidget';
 import {
@@ -68,7 +68,6 @@ type CardId =
   | 'tail'
   | 'wings'
   | 'legs'
-  | 'blood'
   | 'markings'
   | 'organs'
   | 'palette'
@@ -85,7 +84,6 @@ const REGION_CARDS: Record<Region, CardId[]> = {
     'tail',
     'wings',
     'legs',
-    'blood',
     'markings',
     'organs',
   ],
@@ -93,7 +91,7 @@ const REGION_CARDS: Record<Region, CardId[]> = {
   ears: ['ears'],
   tail: ['tail'],
   wings: ['wings'],
-  torso: ['skin', 'blood', 'markings', 'organs'],
+  torso: ['skin', 'markings', 'organs'],
   arms: ['markings', 'organs'],
   legs: ['legs', 'markings', 'organs'],
   extremities: ['markings', 'organs'],
@@ -141,7 +139,6 @@ const CARD_KEYS: Record<CardId, string[]> = {
     'wing_alpha',
   ],
   legs: ['digitigrade'],
-  blood: ['b_type', 'blood_reagents', 'blood_color'],
   markings: ['body_markings'],
   organs: ['organs'],
   palette: ['color_palette'],
@@ -384,18 +381,6 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
         return (
           <PartCard key={card} title="Legs">
             <Fields keys={['digitigrade']} withValue={withValue} />
-          </PartCard>
-        );
-      case 'blood':
-        return (
-          <PartCard key={card} title="Blood" anchorGroup="blood">
-            <Fields keys={['b_type', 'blood_reagents']} withValue={withValue} />
-            <Box mt={0.3}>
-              <ColorStrip
-                colors={pick(widgets, [['blood_color', 'Blood']])}
-                values={values}
-              />
-            </Box>
           </PartCard>
         );
       case 'palette':

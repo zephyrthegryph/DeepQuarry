@@ -259,3 +259,24 @@
 	for(var/name in ui["incompatible"])
 		TEST_ASSERT(name in GLOB.body_marking_styles_list, "[name] is a real marking")
 	fdel(path)
+
+
+/// The blood settings are on the Identity tab, under their own group, and still save under the keys existing characters have.
+/datum/unit_test/dq_pref_blood_settings_live_in_identity
+
+/datum/unit_test/dq_pref_blood_settings_live_in_identity/Run()
+	var/list/expected = list(
+		/datum/preference/text/human/b_type = "b_type",
+		/datum/preference/text/human/blood_reagents = "blood_reagents",
+		/datum/preference/color/human/blood_color = "blood_color",
+	)
+	for(var/pref_type in expected)
+		var/datum/preference/pref = GLOB.preference_entries[pref_type]
+		TEST_ASSERT_NOTNULL(pref, "[pref_type] is registered")
+		TEST_ASSERT_EQUAL(pref.get_category(null), "identity", "[pref_type] is on the Identity tab")
+		TEST_ASSERT_EQUAL(pref.get_group(null), "blood", "[pref_type] is in the blood group")
+		TEST_ASSERT_EQUAL(pref.savefile_key, expected[pref_type], "[pref_type] keeps its savefile key, so saved values carry over")
+	var/list/appearance_order = GLOB.dq_group_order["appearance"]
+	TEST_ASSERT(!("blood" in appearance_order), "the Looks tab no longer lists a blood group")
+	var/list/identity_order = GLOB.dq_group_order["identity"]
+	TEST_ASSERT("blood" in identity_order, "the Identity tab orders the blood group")
