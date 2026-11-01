@@ -424,11 +424,8 @@
 #include "dq_shuttle_tests.dm"
 #include "dq_docking_controller_work.dm"
 #include "dq_floodlight_light_tests.dm"
-<<<<<<< HEAD
 #include "dq_runs_on_cell_tests.dm"
-=======
 #include "dq_state_derived_light_tests.dm"
->>>>>>> origin/master
 #include "dq_glide_tests.dm"
 #include "dq_roundstart_regression_tests.dm"
 #include "dq_state_tests.dm"
