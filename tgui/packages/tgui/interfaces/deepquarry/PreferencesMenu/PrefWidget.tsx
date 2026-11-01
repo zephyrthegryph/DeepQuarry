@@ -12,7 +12,7 @@ import {
   TextArea,
 } from 'tgui-core/components';
 import { SearchableDropdown, Segmented, SliderBox, Switch } from './controls';
-import { PaletteEditor, PrefColorSwatch } from './colors';
+import { PrefColorSwatch } from './colors';
 import { ColorizedImage, ColorizedImageButton } from './helper_components';
 import type { PrefWidgetItem } from './types';
 
@@ -216,9 +216,6 @@ export const PrefWidget = ({ item }: Props) => {
         </Stack>
       );
     }
-
-    case 'palette':
-      return <PaletteEditor value={item.value} />;
 
     case 'segmented':
       return (

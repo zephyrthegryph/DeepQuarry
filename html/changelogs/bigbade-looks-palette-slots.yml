@@ -1,0 +1,7 @@
+author: "bigbade"
+delete-after: true
+changes:
+  - rscadd: "Looks: a five-slot colour palette. Link any colour field or marking to a slot; changing the slot changes everything linked to it."
+  - rscdel: "Looks: Copy set, Paste set and Match hair/skin are gone; linking replaces them."
+  - bugfix: "Round-end persistence saved body markings under a wrong zone key."
+  - bugfix: "Ear, tail and wing style pickers offered values the server refused."
