@@ -30,7 +30,8 @@
 
 	own_take_member(src, nameof(screens), category)
 
-	if(animated)
+	// A fade needs someone watching, and the watcher's screen list is what keeps the taken screen alive until the timer: its `with` is only a handle.
+	if(animated && client)
 		animate(screen, alpha = 0, time = animated)
 		after(src, animated, PROC_REF(remove_faded_fullscreen), with = list(screen))
 	else
