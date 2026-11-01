@@ -27,7 +27,6 @@ GLOBAL_LIST_INIT(advance_cures, list(
 	// lists the engineered family through its traits, not per subtype.
 	catalogued = FALSE
 
-	var/last_modified_by = "no CKEY"
 	var/resistance
 	var/stealth
 	var/stage_rate

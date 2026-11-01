@@ -724,11 +724,6 @@
 	burst_four(target)
 	attackcycle = next_cycle
 
-/mob/living/simple_mob/mechanical/mecha/eclipse/proc/dual_burst(atom/target, next_cycle)
-	burst_two(target)
-	burst_four(target)
-	attackcycle = next_cycle
-
 /mob/living/simple_mob/mechanical/mecha/eclipse/proc/giant_burst(atom/target, next_cycle)
 	burst_four(target)
 	attackcycle = next_cycle
@@ -1026,24 +1021,6 @@
 	bullet_heck(target, -7, -6)
 	bullet_heck(target, -7, -7)
 	attackcycle = next_cycle
-
-/mob/living/simple_mob/mechanical/mecha/eclipse/proc/death_wallR(atom/target, next_cycle, fire_delay)
-	bullet_heck(target, -7, 0)
-	bullet_heck(target, -7, 1)
-	bullet_heck(target, -7, 2)
-	bullet_heck(target, -7, 3)
-	bullet_heck(target, -7, 4)
-	bullet_heck(target, -7, 5)
-	bullet_heck(target, -7, 6)
-	bullet_heck(target, -7, 7)
-	bullet_heck(target, -7, -1)
-	bullet_heck(target, -7, -2)
-	bullet_heck(target, -7, -3)
-	bullet_heck(target, -7, -4)
-	bullet_heck(target, -7, -5)
-	bullet_heck(target, -7, -6)
-	bullet_heck(target, -7, -7)
-	after(src, fire_delay, PROC_REF(death_wallRA), with = list(target, next_cycle, fire_delay))
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/proc/death_wallRA(atom/target, next_cycle, fire_delay)
 	bullet_heck(target, 7, 0)
@@ -1498,3 +1475,26 @@
 #undef ECLIPSE_VOLLEY_GATTLING
 #undef ECLIPSE_VOLLEY_CUTOFF
 #undef ECLIPSE_VOLLEY_CUTOFF_ULTI
+
+/mob/living/simple_mob/mechanical/mecha/eclipse/proc/dual_burst(atom/target, next_cycle)
+	burst_two(target)
+	burst_four(target)
+	attackcycle = next_cycle
+
+/mob/living/simple_mob/mechanical/mecha/eclipse/proc/death_wallR(atom/target, next_cycle, fire_delay)
+	bullet_heck(target, -7, 0)
+	bullet_heck(target, -7, 1)
+	bullet_heck(target, -7, 2)
+	bullet_heck(target, -7, 3)
+	bullet_heck(target, -7, 4)
+	bullet_heck(target, -7, 5)
+	bullet_heck(target, -7, 6)
+	bullet_heck(target, -7, 7)
+	bullet_heck(target, -7, -1)
+	bullet_heck(target, -7, -2)
+	bullet_heck(target, -7, -3)
+	bullet_heck(target, -7, -4)
+	bullet_heck(target, -7, -5)
+	bullet_heck(target, -7, -6)
+	bullet_heck(target, -7, -7)
+	after(src, fire_delay, PROC_REF(death_wallRA), with = list(target, next_cycle, fire_delay))

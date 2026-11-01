@@ -11,10 +11,6 @@
 /proc/investigate_subject2file(subject)
 	return file("[INVESTIGATE_DIR][subject].html")
 
-/hook/startup/proc/resetInvestigate()
-	investigate_reset()
-	return 1
-
 /proc/investigate_reset()
 	if(fdel(INVESTIGATE_DIR))	return 1
 	return 0
@@ -76,3 +72,7 @@ ADMIN_VERB(investigate_show, R_ADMIN|R_MOD|R_SERVER, "Investigate", "Check hrefs
 	recheck_on_open = TRUE
 
 #undef INVESTIGATE_DIR
+
+/hook/startup/proc/resetInvestigate()
+	investigate_reset()
+	return 1

@@ -1,9 +1,3 @@
-/client/proc/admin_teleport()
-	set name = "Admin teleport"
-	set category = VERB_CAT_ADMIN_GAME
-	set desc = "Teleports an atom to a set of coordinates or to the contents of another atom"
-	ask_admin(/datum/ask_sequence/admin/teleport, null)
-
 /// Admin teleport: the atom to move, then where: a set of coordinates or another atom.
 /datum/ask_sequence/admin/teleport
 

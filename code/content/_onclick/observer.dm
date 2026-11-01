@@ -65,9 +65,4 @@
 // but I'm leaving it here anyway
 // commented out, of course.
 /*
-/atom/proc/attack_admin(mob/user as mob)
-	if(!user || !user.client || !check_rights_for(user.client, R_HOLDER))
-		return
-	attack_hand(user)
-
 */

@@ -257,7 +257,6 @@ But for now, for what it's been used for, it works.
 	var/obj/effect/autostriptarget/target
 	/// Keyed relation view: the mob autostriptarget with our targetid.
 	var/obj/effect/autostriptarget/mob/Mtarget
-	var/remove_implants = 0	//Havn't bothered to implement this yet
 	var/remove_mutations = 0
 
 CAPABILITIES(/obj/effect/step_trigger/autostrip)

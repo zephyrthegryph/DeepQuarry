@@ -2,16 +2,6 @@
 // tool bonuses, effective density and resistance, the gun deltas) are the item's /datum/material_build
 // (material_state.dm). New fabrication records every functional part in the object's material blueprint.
 
-/obj/item/proc/apply_engineered_material(datum/material/material, application_profile)
-	if(!istype(material) || !application_profile)
-		return FALSE
-	var/datum/material_template/template = material_template_for_application(application_profile)
-	var/list/choices = list()
-	for(var/primary_role in template.roles)
-		choices[primary_role] = material.name
-		break
-	return apply_material_construction(choices, template.type, SHEET_MATERIAL_AMOUNT)
-
 /obj/item/proc/apply_material_role_effects(application_profile)
 	var/datum/material/primary = primary_construction_material()
 	if(!primary)

@@ -206,17 +206,6 @@ CAPABILITIES(/datum/generated_station_defense_runtime)
 	if(director()?.local_alert_levels?[department_id] == GENERATED_STATION_ALERT_BLUE)
 		director().set_alert(GENERATED_STATION_ALERT_GREEN, department_id)
 
-/// Door controllers call this only after a denied or forced transition, avoiding
-/// any scan of idle doors.
-/datum/generated_station_defense_runtime/proc/notify_department_breach(department_id, atom/breach)
-	var/datum/generated_station_knowledge_report/report = notify_sensor_contact(department_id, breach, "access controller", 90, FALSE)
-	if(!report)
-		return FALSE
-	var/squad_id = squads_by_department[department_id] || squads_by_department["security-1"]
-	if(squad_id)
-		director().issue_order(squad_id, report.id, GENERATED_STATION_ORDER_DEFEND, FALSE)
-	return TRUE
-
 /datum/generated_station_defense_runtime/proc/apply_order(datum/generated_station_order/order)
 	var/datum/generated_station_squad/squad = director().squads?[order.squad_id]
 	var/datum/generated_station_knowledge_report/report = director().reports?[order.report_id]

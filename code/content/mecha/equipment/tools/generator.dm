@@ -146,7 +146,6 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/generator)
 	fuel_per_cycle_active = 30
 	power_per_cycle = 50
 	fuel_type = /obj/item/stack/material/uranium
-	var/rad_per_cycle = 0.3
 
 /obj/item/mecha_parts/mecha_equipment/generator/nuclear/generator_step(datum/act/timer/A)
 	if(..())

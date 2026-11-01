@@ -133,15 +133,6 @@ CAPABILITIES(/obj/item/analyzer/plant_analyzer)
 
 	tgui_interact(user)
 
-/obj/item/analyzer/plant_analyzer/proc/print_report_verb()
-	set name = "Print Plant Report"
-	set category = VERB_CAT_OBJECT
-	set src = usr
-
-	if(usr.stat || usr.restrained() || usr.lying)
-		return
-	print_report(usr)
-
 /obj/item/analyzer/plant_analyzer/proc/print_report(mob/living/user)
 	var/datum/seed/grown_seed = last_seed
 	if(!istype(grown_seed))

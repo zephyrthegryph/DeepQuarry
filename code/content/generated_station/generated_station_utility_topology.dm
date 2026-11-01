@@ -149,14 +149,6 @@ CAPABILITIES(/datum/generated_station_utility_topology)
 			return TRUE
 	return FALSE
 
-/datum/generated_station_utility_topology/proc/power_network_summary()
-	var/list/parts = list()
-	for(var/obj/machinery/power/apc/APC in apcs)
-		parts += "APC@[generated_station_coordinate(APC)] terminal=[generated_station_coordinate(APC.terminal)] network=[APC.terminal?.power_region ? APC.terminal.power_region : "null"]"
-	for(var/obj/machinery/power/generator/generated_station/generator in power_objects)
-		parts += "generator@[generated_station_coordinate(generator)] network=[generator.power_region ? generator.power_region : "null"]"
-	return jointext(parts, "; ")
-
 /datum/generated_station_utility_topology/proc/atmosphere_networks_are_global()
 	var/datum/pipe_network/supply_network
 	for(var/obj/machinery/atmospherics/unary/vent_pump/vent in supply_vents)
@@ -177,14 +169,6 @@ CAPABILITIES(/datum/generated_station_utility_topology)
 	if(!supply_network || !scrub_network)
 		return FALSE
 	return supply_network != scrub_network
-
-/datum/generated_station_utility_topology/proc/atmosphere_network_summary()
-	var/list/parts = list()
-	for(var/obj/machinery/atmospherics/unary/vent_pump/vent in supply_vents)
-		parts += "vent@[generated_station_coordinate(vent)] node=[REF(vent.node)] network=[REF(vent.network)]"
-	for(var/obj/machinery/atmospherics/unary/vent_scrubber/scrubber in scrubbers)
-		parts += "scrubber@[generated_station_coordinate(scrubber)] node=[REF(scrubber.node)] network=[REF(scrubber.network)]"
-	return jointext(parts, "; ")
 
 /datum/generated_station_utility_topology/proc/atmosphere_network_break_summary()
 	var/list/parts = list()
@@ -563,26 +547,6 @@ CAPABILITIES(/datum/generated_station_utility_builder)
 	initialize_global_atmos()
 	publish_utility_state()
 	return result
-
-/// Proves that every department floor lies near a powered, intact, active fixture.
-/datum/generated_station_utility_builder/proc/validate_operational_light_coverage(max_distance = 7)
-	for(var/module_id in materialization().module_areas)
-		var/area/generated_station/department_area = materialization().module_areas?[module_id]
-		var/list/working_lights = list()
-		for(var/obj/machinery/light/light in area_contents_of_type(department_area, /obj/machinery/light))
-			if(light.status == LIGHT_OK && light.on && light.powered(LIGHT))
-				working_lights += light
-		if(!length(working_lights))
-			return FALSE
-		for(var/turf/simulated/floor/floor in area_contents_of_type(department_area, /turf/simulated/floor))
-			var/covered = FALSE
-			for(var/obj/machinery/light/light as anything in working_lights)
-				if(get_dist(floor, light) <= max_distance)
-					covered = TRUE
-					break
-			if(!covered)
-				return FALSE
-	return TRUE
 
 /datum/generated_station_utility_builder/proc/planned_fixture_turf(owner_id, utility_id, zone_id)
 	for(var/key in materialization().tile_plan.tiles)

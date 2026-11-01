@@ -99,23 +99,6 @@ GLOBAL_DATUM_INIT(security_announcement_down, /datum/announcement/priority/secur
 		if(SEC_LEVEL_DELTA)
 			return "delta"
 
-/proc/num2seclevel(num)
-	switch(num)
-		if(SEC_LEVEL_GREEN)
-			return "green"
-		if(SEC_LEVEL_YELLOW)
-			return "yellow"
-		if(SEC_LEVEL_VIOLET)
-			return "violet"
-		if(SEC_LEVEL_ORANGE)
-			return "orange"
-		if(SEC_LEVEL_BLUE)
-			return "blue"
-		if(SEC_LEVEL_RED)
-			return "red"
-		if(SEC_LEVEL_DELTA)
-			return "delta"
-
 /proc/seclevel2num(seclevel)
 	switch( lowertext(seclevel) )
 		if("green")

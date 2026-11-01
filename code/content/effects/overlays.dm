@@ -1,6 +1,5 @@
 /obj/effect/overlay
 	name = "overlay"
-	var/i_attached //Added for possible image attachments to objects. For hallucinations and the like.
 
 CAPABILITIES(/obj/effect/overlay)
 	configure(movable_motion(unacidable = TRUE))
@@ -161,7 +160,6 @@ CAPABILITIES(/obj/effect/overlay/light_visible)
 	vis_flags = NONE
 	alpha = 110
 
-	var/static/matrix/normal_transform
 
 /obj/effect/overlay/light_cone/proc/reset_transform(apply_standard)
 	transform = initial(transform)

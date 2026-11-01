@@ -34,7 +34,6 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 	var/list/assistance_instances
 	var/tab = 4 // Info tab, so new players can read it before doing anything.
 	var/spell_tab = ALL_SPELLS
-	var/show_scepter_text = 0
 	var/universal = FALSE // Allows non-technomancers to use this catalog
 
 CAPABILITIES(/obj/item/technomancer_catalog)
@@ -110,13 +109,6 @@ CAPABILITIES(/obj/item/technomancer_catalog)
 // Parameters: 1 (category - the category link to display)
 // Description: Shows an href link to go to a spell subcategory if the category is not already selected, otherwise is bold, to reduce
 // code duplicating.
-/obj/item/technomancer_catalog/proc/show_categories(category)
-	if(category)
-		if(spell_tab != category)
-			return "<a href='byond://?src=[REF(src)];spell_category=[category]'>[category]</a>"
-		else
-			return span_bold("[category]")
-
 // TGUI migration: full structured data, no embedded
 // byond:// hrefs. All actions dispatched via tgui_act.
 

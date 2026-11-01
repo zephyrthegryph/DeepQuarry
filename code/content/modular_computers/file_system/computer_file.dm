@@ -19,8 +19,6 @@
 	var/uid
 	/// Any metadata the file uses.
 	var/list/metadata
-	/// Paper type to use for printing
-	var/papertype = /obj/item/paper
 
 /datum/computer_file/New(list/md = null)
 	..()

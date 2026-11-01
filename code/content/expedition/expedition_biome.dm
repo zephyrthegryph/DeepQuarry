@@ -11,9 +11,3 @@
 
 /proc/expedition_region_min_y()
 	return max(2, round((world.maxy - min(EXP_REGION_SIZE, world.maxy - 4)) / 2))
-
-/proc/expedition_region_max_x()
-	return min(world.maxx - 1, expedition_region_min_x() + EXP_REGION_SIZE - 1)
-
-/proc/expedition_region_max_y()
-	return min(world.maxy - 1, expedition_region_min_y() + EXP_REGION_SIZE - 1)

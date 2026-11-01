@@ -40,7 +40,6 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	var/list/character_preview_b64
 
 	//character preferences
-	var/slot_randomized //keeps track of round-to-round randomization of the character slot, prevents overwriting
 
 	var/list/randomise
 
@@ -263,9 +262,6 @@ CAPABILITIES(/datum/preferences)
 		var/icon/bg_icon = icon('icons/effects/setup_backgrounds_vr.dmi', bgstate)
 		ready["bg"] = icon2base64(bg_icon)
 	dq_queue_preview_render(sprites, ready, scale_x, scale_y)
-
-/datum/preferences/proc/show_character_previews()
-	return
 
 /datum/preferences/proc/clear_character_previews()
 	dq_preview_generation++

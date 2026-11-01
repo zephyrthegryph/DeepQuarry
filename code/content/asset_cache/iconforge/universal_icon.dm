@@ -171,14 +171,6 @@ CAPABILITIES(/datum/universal_icon)
 	transform.map_colors(rr, rg, rb, ra, gr, gg, gb, ga, br, bg, bb, ba, ar, ag, ab, aa, r0, b0, g0, a0)
 	return src
 
-/// Internally performs a color blend.
-/// Amount ranges from 0-1 (100% opacity)
-/datum/universal_icon/proc/change_opacity(amount)
-	if(!transform)
-		rel_set(src, nameof(transform), new /datum/icon_transformer)
-	transform.blend_color("#ffffff[num2hex(clamp(amount, 0, 1) * 255, 2)]", ICON_MULTIPLY)
-	return src
-
 /datum/universal_icon/proc/to_list()
 	RETURN_TYPE(/list)
 	// resolve_icon_dmi_path() handles the DQ Architecture-A case: repacked DMIs live

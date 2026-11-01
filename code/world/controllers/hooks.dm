@@ -23,6 +23,8 @@
  * @param hook	Identifier of the hook to call.
  * @returns		1 if all hooked code runs successfully, 0 otherwise.
  */
+GLOBAL_LIST_EMPTY(hooks_called) // every hook proc callHook() has run, in order: dq_startup_hooks_exist_and_run reads it
+
 /proc/callHook(hook, list/arguments=null)
 	var/hook_path = text2path("/hook/[hook]")
 	if(!hook_path)
@@ -32,6 +34,7 @@
 	var/requester = new hook_path
 	var/status = 1
 	for(var/P in typesof("[hook_path]/proc"))
+		LAZYADD(GLOB.hooks_called, P)
 		if(!call(requester, P)(arglist(arguments)))
 			log_world("## ERROR Hook '[P]' failed or runtimed.")
 			status = 0

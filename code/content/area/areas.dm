@@ -40,7 +40,6 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	var/lights_nightshift = FALSE
 	/// The APC switched emergency lighting off (derived from it; the lights read it).
 	var/lights_emergency_off = FALSE
-	var/no_air = null
 	var/list/all_doors = null		//Added by Strumpetplaya - Alarm Change - Contains a list of doors adjacent to this area
 	var/firedoors_closed = 0
 	var/arfgs_active = 0
@@ -310,11 +309,6 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	return 0
 
 // Helper for APCs; will generally be called every tick.
-/area/proc/clear_usage()
-	oneoff_equip = 0
-	oneoff_light = 0
-	oneoff_environ = 0
-
 // Use this for a one-time power draw from the area, typically for non-machines.
 /area/proc/use_power_oneoff(amount, chan)
 	switch(chan)
@@ -484,35 +478,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 /*I am far too lazy to make it a proper list of areas so I'll just make it run the usual telepot routine at the start of the game*/
 GLOBAL_LIST_EMPTY(teleportlocs)
 
-/hook/startup/proc/setupTeleportLocs()
-	for(var/area/AR in world)
-		if(istype(AR, /area/shuttle) || istype(AR, /area/syndicate_station) || istype(AR, /area/wizard_station)) continue
-		if(GLOB.teleportlocs.Find(AR.name)) continue
-		var/turf/picked = pick(get_area_turfs(AR.type))
-		if (picked.z in using_map.station_levels)
-			GLOB.teleportlocs += AR.name
-			GLOB.teleportlocs[AR.name] = AR
-
-	GLOB.teleportlocs = sortAssoc(GLOB.teleportlocs)
-
-	return 1
-
 GLOBAL_LIST_EMPTY(ghostteleportlocs)
-
-/hook/startup/proc/setupGhostTeleportLocs()
-	for(var/area/AR in world)
-		if(GLOB.ghostteleportlocs.Find(AR.name)) continue
-		if(istype(AR, /area/aisat) || istype(AR, /area/derelict) || istype(AR, /area/tdome) || istype(AR, /area/shuttle/specops/centcom))
-			GLOB.ghostteleportlocs += AR.name
-			GLOB.ghostteleportlocs[AR.name] = AR
-		var/turf/picked = pick(get_area_turfs(AR.type))
-		if (picked.z in using_map.player_levels)
-			GLOB.ghostteleportlocs += AR.name
-			GLOB.ghostteleportlocs[AR.name] = AR
-
-	GLOB.ghostteleportlocs = sortAssoc(GLOB.ghostteleportlocs)
-
-	return 1
 
 /area/proc/get_name()
 	if(flag_check(AREA_SECRET_NAME))
@@ -642,3 +608,31 @@ CAPABILITIES(/area)
 /// What the area's machines ask of a channel changed: its APC takes the new load at the next power step.
 /area/proc/demand_changed(datum/act/A)
 	power_loads_changed()
+
+/hook/startup/proc/setupTeleportLocs()
+	for(var/area/AR in world)
+		if(istype(AR, /area/shuttle) || istype(AR, /area/syndicate_station) || istype(AR, /area/wizard_station)) continue
+		if(GLOB.teleportlocs.Find(AR.name)) continue
+		var/turf/picked = pick(get_area_turfs(AR.type))
+		if (picked.z in using_map.station_levels)
+			GLOB.teleportlocs += AR.name
+			GLOB.teleportlocs[AR.name] = AR
+
+	GLOB.teleportlocs = sortAssoc(GLOB.teleportlocs)
+
+	return 1
+
+/hook/startup/proc/setupGhostTeleportLocs()
+	for(var/area/AR in world)
+		if(GLOB.ghostteleportlocs.Find(AR.name)) continue
+		if(istype(AR, /area/aisat) || istype(AR, /area/derelict) || istype(AR, /area/tdome) || istype(AR, /area/shuttle/specops/centcom))
+			GLOB.ghostteleportlocs += AR.name
+			GLOB.ghostteleportlocs[AR.name] = AR
+		var/turf/picked = pick(get_area_turfs(AR.type))
+		if (picked.z in using_map.player_levels)
+			GLOB.ghostteleportlocs += AR.name
+			GLOB.ghostteleportlocs[AR.name] = AR
+
+	GLOB.ghostteleportlocs = sortAssoc(GLOB.ghostteleportlocs)
+
+	return 1

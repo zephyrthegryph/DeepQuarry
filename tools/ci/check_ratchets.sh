@@ -90,6 +90,10 @@ if ! selftest_wanted '^tools/(dq_disk_budget\.sh|ci/disk_budget\.toml|ci/test_di
 elif ! bash "${DQ_RATCHETS_DISK_TEST:-tools/ci/test_disk_budget.sh}"; then   # the variable is the seam tools/ci/test_ratchets_selftest_fail.sh uses
 	failed+=("test_disk_budget")
 fi
+if ! selftest_wanted '^tools/ci/dead_code_scan\.py$'; then echo "check_ratchets: dead_code_scan selftest skipped (the scan is unchanged)"
+elif ! python3 tools/ci/dead_code_scan.py --selftest; then
+	failed+=("dead_code_scan")
+fi
 if ! selftest_wanted '\.rs$|^tools/ci/check_test_scratch\.sh$'; then echo "check_ratchets: check_test_scratch skipped (no Rust file changed)"
 elif ! bash tools/ci/check_test_scratch.sh; then
 	failed+=("check_test_scratch")

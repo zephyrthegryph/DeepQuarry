@@ -80,9 +80,7 @@
 	var/delivered_moles = 0
 	var/last_delivery_pressure = 0
 	var/last_delivery_temperature = 0
-	var/last_delivery_mixture
 	var/last_work_time = 0
-	var/last_work_kind
 	var/last_work_duration = 0
 
 /datum/material_service/proc/record_work(input_energy, useful_energy, elapsed = 1)

@@ -45,7 +45,6 @@
 
 	//internal stuff, don't touch this with subtypes.
 	var/calls_remaining
-	var/list/disabling_sources //what things are disabling us?
 	var/list/active_recipe //volatile, when given an item it removes it
 	var/current_step = 0 //current step for icon states
 
@@ -261,9 +260,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 /obj/structure/event_collector/proc/empty_items() //manual call only atm
 	for(var/atom/movable/to_move in contents)
 		to_move.forceMove(get_turf(src))
-
-/obj/structure/event_collector/proc/post_object_insert(mob/user)
-	return
 
 /obj/structure/event_collector/proc/post_recipe_complete()
 	return

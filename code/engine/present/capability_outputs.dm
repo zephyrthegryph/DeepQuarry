@@ -12,8 +12,6 @@
 /// Made on first write (cap_engine_state_make()), read without making one (cap_engine_state_of()); cap_data's teardown
 /// (caps_destroy()) deletes it with the atom.
 /datum/cap_engine_state
-	/// entry id -> world.time when a capability entry's cooldown ends (entry `cooldown =`). Lazy.
-	var/list/entry_cooldowns
 	/// state -> TRUE for the overlays look_flash() is showing now. Lazy.
 	var/list/look_flashes
 	/// The base state look_flash(as_state = TRUE) is showing now, or null.

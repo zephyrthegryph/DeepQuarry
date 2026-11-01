@@ -43,8 +43,6 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 	var/atom/message_loc
 	/// The client who heard this message
 	var/client/owned_by
-	/// Contains the scheduled destruction time
-	var/scheduled_destruction
 	/// Contains the approximate amount of lines for height decay
 	var/approx_lines
 	/// If we are currently processing animation and cleanup at EOL
@@ -311,16 +309,6 @@ CAPABILITIES(/datum/chatmessage)
 		return 255
 
 	return (1 - ((time_spent - time_before_fade) / CHAT_MESSAGE_EOL_FADE)) * 255
-
-/**
- * Applies final animations to overlay CHAT_MESSAGE_EOL_FADE deciseconds prior to message deletion
- */
-/datum/chatmessage/proc/end_of_life(fadetime = CHAT_MESSAGE_EOL_FADE)
-	if(gc_destroyed || ending_life)
-		return
-	ending_life = TRUE
-	animate(message, alpha = 0, time = fadetime, flags = ANIMATION_PARALLEL)
-	expire(fadetime)
 
 /**
  * Creates a message overlay at a defined location for a given speaker

@@ -80,12 +80,6 @@ CAPABILITIES(/datum/generated_station_simulation)
 		if(!QDELETED(A))
 			A.power_change()
 
-/datum/generated_station_simulation/proc/register_power_area(area/generated_station/A)
-	if(!A)
-		return
-	power_areas |= A
-	A.power_change()
-
 /datum/generated_station_simulation/proc/set_integrity(department_id, value)
 	var/datum/generated_station_department_runtime/runtime = departments?[department_id]
 	if(!runtime)

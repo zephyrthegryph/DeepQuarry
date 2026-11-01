@@ -24,15 +24,6 @@
 	media.update_music()
 
 // Stop media when the round ends. I guess so it doesn't play forever or something (for some reason?)
-/hook/roundend/proc/stop_all_media()
-	log_world("Stopping all playing media...")
-	// Stop all music.
-	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
-		if(M && M.client)
-			M.stop_all_music()
-	// The reboot waits out its own round-end delay, so the stop messages reach the clients first.
-	return TRUE
-
 // Update when moving between areas.
 // TODO - While this direct override might technically be faster, probably better code to use observer or hooks ~Leshana
 /area/Entered(mob/M)
@@ -251,3 +242,12 @@ CAPABILITIES(/datum/media_manager)
 /// Client this is actually running in (a relation view: null once it is deleted).
 /datum/media_manager/proc/owner() as /client
 	return owner
+
+/hook/roundend/proc/stop_all_media()
+	log_world("Stopping all playing media...")
+	// Stop all music.
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
+		if(M && M.client)
+			M.stop_all_music()
+	// The reboot waits out its own round-end delay, so the stop messages reach the clients first.
+	return TRUE

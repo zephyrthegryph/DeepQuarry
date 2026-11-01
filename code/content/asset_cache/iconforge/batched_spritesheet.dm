@@ -349,9 +349,6 @@
  * ===================
  */
 
-/datum/asset/spritesheet_batched/proc/css_tag()
-	return {"<link rel="stylesheet" href="[css_filename()]" />"}
-
 /datum/asset/spritesheet_batched/proc/css_filename()
 	return SSassets.get_asset_url("spritesheet_[name].css")
 

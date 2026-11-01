@@ -335,9 +335,6 @@
 					adjust_germ_level(0.4 * cycles)
 					owner.reagents.add_reagent(REAGENT_ID_TOXIN, 0.15 * cycles)
 
-/obj/item/organ/proc/receive_chem(chemical as obj)
-	return 0
-
 /obj/item/organ/proc/remove_rejuv()
 	spent(src)
 

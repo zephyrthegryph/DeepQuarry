@@ -53,7 +53,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/stat_def)
 	var/datum/stat_def/immune_of
 	/// Ranks come from the reads graph: one above the highest rank of any stat it reads on the same entity.
 	var/rank = 0
-	var/rank_known = FALSE
 
 CAPABILITIES(/datum/stat_def)
 	ref_one(nameof(immune_of)) // a definition lives for the round; the link names the status an immunity stat belongs to

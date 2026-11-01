@@ -269,8 +269,6 @@ TYPE_TABLE(/datum/generated_room_feature/operating_computer, build_utility_requi
 	var/max_instances = 1
 	/// Approximate usable floor area supported by one complete activity cluster.
 	var/tiles_per_instance = 0
-	/// Maximum walking distance between fixtures in one activity module.
-	var/cohesion_radius = 5
 
 CAPABILITIES(/datum/generated_room_feature_group)
 	owns_many(nameof(constraints))

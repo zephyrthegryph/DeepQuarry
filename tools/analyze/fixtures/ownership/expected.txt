@@ -10,8 +10,8 @@ contradiction	code/modules/own/accessors.dm	75
 contradiction	code/modules/own/relw.dm	44
 contradiction	code/modules/own/relw.dm	45
 contradiction	code/modules/own/relw.dm	48
-handle	code/_helpers/helpers.dm	5
-handle	code/_helpers/helpers.dm	8
+handle	code/library/helpers/helpers.dm	5
+handle	code/library/helpers/helpers.dm	8
 handle	code/controllers/subsystem.dm	5
 handle	code/modules/own/misc.dm	13
 handle	code/modules/own/misc.dm	14
@@ -31,8 +31,8 @@ matrix	code/modules/own/accessors.dm	68
 matrix	code/modules/own/types.dm	38
 matrix	code/modules/own/types.dm	39
 matrix	code/modules/own/types.dm	41
-raw_write	code/_helpers/helpers.dm	3
-raw_write	code/datums/callback.dm	4
+raw_write	code/library/helpers/helpers.dm	3
+raw_write	code/library/datum/callback.dm	4
 raw_write	code/modules/own/ctrl.dm	8
 raw_write	code/modules/own/drift.dm	5
 raw_write	code/modules/own/drift.dm	9

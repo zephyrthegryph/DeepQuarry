@@ -135,11 +135,6 @@ CAPABILITIES(/datum/artifact_master)
 
 	return effects
 
-/datum/artifact_master/proc/add_effect(mob/user)
-	if(!ismob(user) || QDELETED(user))
-		return
-	open_request(src, /datum/prompt/choice, PROC_REF(effect_type_chosen), answerer = user, question = "What type do you want?", title = "Effect Type", choices = subtypesof(/datum/artifact_effect), timeout = 0)
-
 /// The effect type is chosen: it is added, unless the holder cannot take it.
 /datum/artifact_master/proc/effect_type_chosen(datum/act/request/A)
 	if(!A.answer || !A.answer.value)
@@ -150,11 +145,6 @@ CAPABILITIES(/datum/artifact_master)
 	if(!istype(holder(), my_effect.req_type))
 		to_chat(A.request.answerer, span_filter_notice("This effect can not be applied to this atom type."))
 		rel_remove(src, nameof(my_effects), my_effect)
-
-/datum/artifact_master/proc/remove_effect(mob/user)
-	if(!ismob(user) || QDELETED(user))
-		return
-	open_request(src, /datum/prompt/choice, PROC_REF(effect_to_remove_chosen), answerer = user, question = "What effect do you want to remove?", title = "Remove Effect", choices = my_effects, timeout = 0)
 
 /// The effect to remove is chosen.
 /datum/artifact_master/proc/effect_to_remove_chosen(datum/act/request/A)

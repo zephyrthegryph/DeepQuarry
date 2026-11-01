@@ -23,16 +23,6 @@ CAPABILITIES(/obj/item/deck)
 	op("deck_verb_search", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Search for Cards"), then(PROC_REF(deck_verb_search_op)))
 	op("deck_verb_shuffle", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Shuffle"), then(PROC_REF(deck_verb_shuffle_op)))
 
-/// Requirement (was REQ_*): the legacy check answers TRUE to pass, else its reason.
-/obj/item/deck/proc/can_draw_holds(datum/act/op/A)
-	var/answer = can_draw(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Requirement (was REQ_*): the legacy check answers TRUE to pass, else its reason.
-/obj/item/deck/proc/can_deal_holds(datum/act/op/A)
-	var/answer = can_deal(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
 /obj/item/deck/holder
 	name = "card box"
 	desc = "A small leather case to show how classy you are compared to everyone else."
@@ -564,11 +554,6 @@ CAPABILITIES(/obj/item/hand)
 	op("hand_verb_discard", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Discard"), needs(carried()), then(PROC_REF(hand_verb_discard_op)))
 	op("hand_verb_remove_card", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Remove card"), then(PROC_REF(hand_verb_remove_card_op)))
 	owns_many(nameof(cards)) // a hand owns its cards, as the deck and the pack it is dealt from do (rel_move() between owners)
-
-/// Requirement (was REQ_*): the legacy check answers TRUE to pass, else its reason.
-/obj/item/hand/proc/can_remove_card_holds(datum/act/op/A)
-	var/answer = can_remove_card(A.actor, src, A.held)
-	return !istext(answer) && !!answer
 
 /// Requirement: a free hand for the removed card (the effect's silent stat/reach guard passes here).
 /obj/item/hand/proc/can_remove_card(mob/living/carbon/user, atom/target, obj/item/held)

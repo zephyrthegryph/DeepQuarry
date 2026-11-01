@@ -506,7 +506,6 @@ CAPABILITIES(/obj/machinery/telecomms/processor)
 	circuit = /obj/item/circuitboard/telecomms/server
 	var/list/log_entries
 	var/list/stored_names
-	var/list/TrafficActions
 	var/totaltraffic = 0 // gigabytes (if > 1024, divide by 1024 -> terrabytes)
 
 	// ALLOW(instance_list): d: telecomms server state

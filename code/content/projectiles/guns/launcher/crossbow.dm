@@ -165,12 +165,6 @@ CAPABILITIES(/obj/item/gun/launcher/crossbow)
 
 	act_message(user, src, MSG_SELF(span_notice("You continue drawing back the string of %T%!")), MSG_OTHERS("%U% draws back the string of %T%!"))
 
-/obj/item/gun/launcher/crossbow/proc/increase_tension(mob/user as mob)
-
-	if(!bolt || !tension || current_user() != user) //Arrow has been fired, bow has been relaxed or user has changed.
-		return
-
-
 /// Its own screwdriver work, ahead of the gun's DNA lock removal.
 /obj/item/gun/launcher/crossbow/proc/screwdriver_worked(datum/act/op/A)
 	var/mob/user = A.actor

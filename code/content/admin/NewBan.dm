@@ -58,9 +58,6 @@ GLOBAL_DATUM(banlist, /savefile)
 	GLOB.c_minutes = (world.realtime / 10) / 60
 	return 1
 
-/hook/startup/proc/loadBans()
-	return LoadBans()
-
 /proc/LoadBans()
 
 	GLOB.banlist = new("data/banlist.bdb")
@@ -207,3 +204,6 @@ GLOBAL_DATUM(banlist, /savefile)
 	GLOB.banlist.cd = "/base"
 	for (var/A in GLOB.banlist.dir)
 		RemoveBan(A, user)
+
+/hook/startup/proc/loadBans()
+	return LoadBans()

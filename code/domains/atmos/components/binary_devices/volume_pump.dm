@@ -36,7 +36,6 @@ Thus, the two variables affect pump operation are set in New():
 	var/datum/radio_frequency/radio_connection
 
 	var/overclocked = FALSE
-	var/mutable_appearance/overclock_overlay
 
 // M2 (simulation.md §5): the flow law lives on the Rust device edge
 // (device::DeviceParams::VolumePump). rust_bind_pipe_port fires once per

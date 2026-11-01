@@ -111,3 +111,52 @@
 
 /datum/unit_test/dq_declare_dead_forms_are_loud/proc/fire_never()
 	return
+
+/// A relation whose entry names no type still has a typed var, which DM does not check: rel_var_type_note() holds the writes.
+/datum/unit_test/dq_rel_var_types_hold
+
+/datum/unit_test/dq_rel_var_types_hold/Run()
+	TEST_ASSERT(length(declared_rel_var_types()), "the generator lists the typed relation vars")
+	var/list/seen = list()
+	for(var/text in GLOB.rel_type_mismatches)
+		// The one known case: a hose connector is a datum that poses as its reagents' my_atom on purpose (connector.dm, "atom reagent code piggyback").
+		if(findtext(text, "/datum/reagents.my_atom is declared /atom, got a /datum/hose_connector"))
+			continue
+		seen += text
+	TEST_ASSERT(!length(seen), "relation writes broke a var's declared type: [jointext(seen, "; ")]")
+
+/// A hook is called through typesof(), so nothing names it: deleting one compiles, passes every other test, and quietly stops bans from loading.
+/// These paths fail the compile if one goes. A new hook is added here.
+/datum/unit_test/dq_startup_hooks_exist_and_run
+
+/datum/unit_test/dq_startup_hooks_exist_and_run/Run()
+	var/list/startup = list(
+		/hook/startup/proc/loadBans,
+		/hook/startup/proc/loadJobBans,
+		/hook/startup/proc/resetInvestigate,
+		/hook/startup/proc/setupTeleportLocs,
+		/hook/startup/proc/setupGhostTeleportLocs,
+		/hook/startup/proc/runechat_images,
+		/hook/startup/proc/createDatacore,
+		/hook/startup/proc/loadMode,
+		/hook/startup/proc/updateHoliday,
+		/hook/startup/proc/populate_gear_list,
+		/hook/startup/proc/load_robot_custom_sprites,
+		/hook/startup/proc/init_vore_datum_ref_lists,
+		/hook/startup/proc/initialise_map_list,
+	)
+	for(var/hook in startup)
+		TEST_ASSERT(hook in GLOB.hooks_called, "[hook] did not run at startup")
+	for(var/hook in typesof(/hook/startup/proc))
+		TEST_ASSERT((hook in startup) || !findtext("[hook]", "/proc/"), "[hook] is a startup hook this test does not name: add it")
+	TEST_ASSERT(GLOB.data_core, "createDatacore made the data core")
+	var/list/roundend = list(/hook/roundend/proc/stop_all_media, /hook/roundend/proc/metrics_round_end, /hook/roundend/proc/persist_locations)
+	TEST_ASSERT_EQUAL(length(roundend), 3, "the round end hooks exist (the paths compile); they run only at round end")
+
+/// Rust invokes these by name through call_id: a missing one panics the FFI call, and no DM source calls them.
+/datum/unit_test/dq_native_callbacks_exist
+
+/datum/unit_test/dq_native_callbacks_exist/Run()
+	var/turf/T = test_floor()
+	TEST_ASSERT(hascall(T, "consider_firelocks"), "the katmos firelock callback exists")
+	TEST_ASSERT(hascall(T, "handle_decompression_floor_rip"), "the katmos floor rip callback exists")

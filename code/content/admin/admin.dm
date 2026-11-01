@@ -492,20 +492,6 @@ ADMIN_VERB(togglepersistence, R_SERVER, "Toggle Persistent Data", "Whether persi
 	world.update_status()
 	feedback_add_details("admin_verb","TPD") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-/datum/admins/proc/togglemaploadpersistence()
-	set category = VERB_CAT_SERVER_CONFIG
-	set desc="Whether mapload persistent data will be saved from now on."
-	set name="Toggle Mapload Persistent Data"
-	CONFIG_SET(flag/persistence_ignore_mapload, !CONFIG_GET(flag/persistence_ignore_mapload))
-	if(!CONFIG_GET(flag/persistence_ignore_mapload))
-		to_chat(world, span_world("Persistence is now enabled."))
-	else
-		to_chat(world, span_world("Persistence is no longer enabled."))
-	message_admins(span_blue("[key_name_admin(usr)] toggled persistence to [CONFIG_GET(flag/persistence_ignore_mapload) ? "Off" : "On"]."))
-	log_admin("[key_name(usr)] toggled persistence to [CONFIG_GET(flag/persistence_ignore_mapload) ? "Off" : "On"].")
-	world.update_status()
-	feedback_add_details("admin_verb","TMPD") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
-
 ADMIN_VERB(toggle_aliens, R_FUN|R_SERVER, "Toggle Aliens", "Toggle alien mobs.", ADMIN_CATEGORY_SERVER_GAME)
 	CONFIG_SET(flag/aliens_allowed, !CONFIG_GET(flag/aliens_allowed))
 	log_admin("[key_name(user)] toggled Aliens to [CONFIG_GET(flag/aliens_allowed)].")
@@ -549,20 +535,6 @@ ADMIN_VERB(adrev, R_SERVER, "Toggle Revive", "Toggle admin revives.", ADMIN_CATE
 	CONFIG_SET(flag/allow_admin_rev, !CONFIG_GET(flag/allow_admin_rev))
 	message_admins(span_blue("Toggled reviving to [CONFIG_GET(flag/allow_admin_rev)]."))
 	feedback_add_details("admin_verb","TAR") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
-
-/datum/admins/proc/unprison(mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
-	set category = VERB_CAT_ADMIN_MODERATION
-	set name = "Unprison"
-	if (M.z == 2)
-		if (CONFIG_GET(flag/allow_admin_jump))
-			M.forceMove(get_turf(pick(REGISTRY_MEMBERS(REGISTRY_LATEJOIN))))
-			message_admins("[key_name_admin(usr)] has unprisoned [key_name_admin(M)]", 1)
-			log_admin("[key_name(usr)] has unprisoned [key_name(M)]")
-		else
-			tgui_alert_async(usr, "Admin jumping disabled")
-	else
-		tgui_alert_async(usr, "[M.name] is not prisoned.")
-	feedback_add_details("admin_verb","UP") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ////////////////////////////////////////////////////////////////////////////////////////////////ADMIN HELPER PROCS
 
@@ -752,18 +724,6 @@ ADMIN_VERB(toggleguests, R_HOST, "Toggle guests", "Guests can't enter.", ADMIN_C
 	log_admin("[key_name(user)] toggled guests game entering [CONFIG_GET(flag/guests_allowed)?"":"dis"]allowed.")
 	message_admins(span_blue("[key_name_admin(user)] toggled guests game entering [CONFIG_GET(flag/guests_allowed)?"":"dis"]allowed."))
 	feedback_add_details("admin_verb","TGU") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
-
-/client/proc/update_mob_sprite(mob/living/carbon/human/H as mob)
-	set category = VERB_CAT_ADMIN_GAME
-	set name = "Update Mob Sprite"
-	set desc = "Should fix any mob sprite update errors."
-
-	if (!check_rights_for(src, R_HOLDER))
-		to_chat(src, "Only administrators may use this command.")
-		return
-
-	if(istype(H))
-		draw_now(H) // draws the mob again from its state
 
 /proc/get_options_bar(whom, detail = 2, name = 0, link = 1, highlight_special = 1)
 	if(!whom)

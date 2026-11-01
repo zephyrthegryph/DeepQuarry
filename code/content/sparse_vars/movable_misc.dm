@@ -50,8 +50,6 @@ sparse(/atom/movable, throw_source, type = weak)
 // recursive_listeners is read+written using LAZY* semantics.
 /proc/dq_get_recursive_listeners(atom/movable/am)
 	return sparse_get(am, recursive_listeners)
-/proc/dq_set_recursive_listeners(atom/movable/am, list/v)
-	sparse_set(am, recursive_listeners, v)
 /// LAZYOR equivalent.
 /proc/dq_recursive_listeners_or(atom/movable/am, item)
 	var/list/L = sparse_get(am, recursive_listeners)
@@ -77,8 +75,6 @@ sparse(/atom/movable, throw_source, type = weak)
 
 /proc/dq_get_affected_dynamic_lights(atom/movable/am)
 	return sparse_get(am, dynamic_lights)
-/proc/dq_set_affected_dynamic_lights(atom/movable/am, list/v)
-	sparse_set(am, dynamic_lights, v)
 /// LAZYSET-equivalent for affected_dynamic_lights (auto-create list if null).
 /proc/dq_affected_dynamic_lights_set(atom/movable/am, key, value)
 	var/list/L = sparse_get(am, dynamic_lights)
@@ -134,18 +130,10 @@ sparse(/atom/movable, throw_source, type = weak)
 		return sparse_get(am, parachuting)
 	return ismob(am) ? movement_of(am).parachuting : FALSE // the type's mob_movement() trait
 
-/proc/dq_set_parachuting(atom/movable/am, v)
-	sparse_set_or(am, parachuting, v, FALSE)
-
 /proc/dq_get_softfall(atom/movable/am)
 	if(sparse_has(am, softfall))
 		return sparse_get(am, softfall)
 	return ismob(am) ? movement_of(am).softfall : FALSE // the type's mob_movement() trait
-
-/proc/dq_set_softfall(atom/movable/am, v)
-	if(isnull(v) && !sparse_has(am, softfall))
-		return
-	sparse_set(am, softfall, v ? TRUE : FALSE)
 
 /proc/dq_get_hovering(atom/movable/am)
 	if(sparse_has(am, hovering))
@@ -159,9 +147,6 @@ sparse(/atom/movable, throw_source, type = weak)
 /// Clears the per-instance override so the type default (the mob_movement() trait) re-applies.
 /proc/dq_clear_hovering(atom/movable/am)
 	sparse_set(am, hovering, null)
-/proc/dq_clear_softfall(atom/movable/am)
-	sparse_set(am, softfall, null)
-
 /// TRUE while any of this movable's sparse runtime state differs from its default.
 /proc/dq_movable_state_set(atom/movable/am)
 	var/list/S = am.sparse_slots

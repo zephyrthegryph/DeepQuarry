@@ -12,10 +12,6 @@ GLOBAL_LIST_EMPTY(Holiday) //Holidays are lists now, so we can have more than on
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 //																							~Carn
 
-/hook/startup/proc/updateHoliday()
-	Get_Holiday()
-	return 1
-
 //sets up the Holiday global variable. Shouldbe called on game configuration or something.
 /proc/Get_Holiday()
 	if(!GLOB.Holiday)	return		// Holiday stuff was not enabled in the config!
@@ -308,3 +304,7 @@ ADMIN_VERB(Set_Holiday, R_SERVER, "Set Holiday", "Force-set the Holiday variable
 
 	if(("Christmas" in GLOB.Holiday) || ("Christmas Eve" in GLOB.Holiday))
 		if(prob(GLOB.eventchance))	ChristmasEvent()
+
+/hook/startup/proc/updateHoliday()
+	Get_Holiday()
+	return 1

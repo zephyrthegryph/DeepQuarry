@@ -73,7 +73,3 @@
 	to_chat(killer, span_infoplain(span_bold("Your laws have been changed!")))
 	killer.set_zeroth_law(law, law_borg)
 	to_chat(killer, "New law: 0. [law]")
-
-/// The /datum/antagonist/traitor/infiltrator template, from the antag system (relations proposal wave 4: a lookup, not a stored global).
-/proc/antag_infiltrators() as /datum/antagonist/traitor/infiltrator
-	return SSantag?.all_antag_types[MODE_INFILTRATOR]

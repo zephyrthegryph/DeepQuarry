@@ -267,18 +267,6 @@ CAPABILITIES(/obj/machinery/computer/HolodeckControl)
 	return 1
 
 //Why is it called toggle if it doesn't toggle?
-/obj/machinery/computer/HolodeckControl/proc/togglePower(toggleOn = 0)
-	if(toggleOn)
-		loadProgram(default_program, 0)
-	else
-		loadProgram(powerdown_program, 0)
-
-		if(!linkedholodeck().get_gravity())
-			linkedholodeck().gravitychange(1)
-
-		set_active(0)
-		set_use_power(USE_POWER_IDLE)
-
 /obj/machinery/computer/HolodeckControl/proc/loadProgram(prog, check_delay = 1)
 	if(!prog)
 		return

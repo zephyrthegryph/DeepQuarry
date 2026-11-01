@@ -78,8 +78,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/cadence)
 	var/runlevels = RUNLEVELS_DEFAULT
 	/// CLOCK_WORLD, or CLOCK_BIO (stasis slows or stops the member's steps).
 	var/clock = CLOCK_WORLD
-	/// Continuous lanes only: why this work has to tick at (near) frame rate.
-	var/continuous_why
 
 /datum/cadence/slow
 	name = "periodic (2 s)"

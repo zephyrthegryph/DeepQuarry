@@ -2,11 +2,11 @@ destroy	code/__defines/macros.dm	3
 destroy	code/defines/host/tgs.dm	2
 destroy	code/world/systems/garbage.dm	3
 destroy	code/controllers/subsystems/other.dm	3
-destroy	code/datums/containment/lifecycle.dm	2
-destroy	code/datums/lifecycle/links.dm	2
-destroy	code/datums/lifecycle/other.dm	2
-destroy	code/datums/lifecycle/transaction.dm	2
-destroy	code/datums/lifecycle/verbs.dm	2
+destroy	code/library/containers/containment/lifecycle.dm	2
+destroy	code/library/lifecycle/links.dm	2
+destroy	code/library/lifecycle/other.dm	2
+destroy	code/library/lifecycle/transaction.dm	2
+destroy	code/library/lifecycle/verbs.dm	2
 destroy	code/tests/benchmarks/b.dm	2
 destroy	code/modules/foo/a.dm	2
 destroy	code/modules/foo/destroys.dm	9
@@ -22,7 +22,7 @@ destroy	code/tests/unit_tests/t.dm	2
 destroy	maps/m.dm	2
 qdel	code/controllers/subsystems/other.dm	2
 qdel	code/controllers/subsystems/other.dm	4
-qdel	code/datums/lifecycle/other.dm	3
+qdel	code/library/lifecycle/other.dm	3
 qdel	code/modules/foo/a.dm	3
 qdel	code/modules/foo/a.dm	4
 qdel	code/modules/foo/a.dm	9

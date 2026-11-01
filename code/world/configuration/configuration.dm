@@ -13,8 +13,6 @@
 	var/list/gamemode_cache
 	var/list/votable_modes // votable modes
 	var/list/mode_names
-	var/list/mode_reports
-	var/list/mode_false_report_weight
 
 	var/motd
 	var/list/policy
@@ -127,11 +125,10 @@
 	configuration_errors?.Cut()
 
 // Engine: wipes every config entry and the global config ref.
-/datum/controller/configuration/Destroy()
+/datum/controller/configuration/on_destroy(force)
 	full_wipe()
 	config = null
-
-	return ..()
+	..()
 
 /datum/controller/configuration/proc/log_config_error(error_message)
 	configuration_errors += error_message

@@ -132,7 +132,6 @@
 	// Path to resulting stacktype.
 	var/stack_type
 	// Wallrot crumble message.
-	var/rotting_touch_message = "crumbles under your touch"
 
 	var/wiki_flag = 0
 

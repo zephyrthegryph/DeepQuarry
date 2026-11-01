@@ -12,7 +12,6 @@
 
 	var/list/network = list(NETWORK_DEFAULT) // ALLOW(instance_list): d: replaced per instance at runtime (26 assignments)
 	var/c_tag = null
-	var/c_tag_order = 999
 	var/status = 1
 	anchored = TRUE
 	var/invuln = 0

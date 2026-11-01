@@ -93,8 +93,6 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 	var/dl_cursor = 0
 	var/dl_processing = FALSE
 
-	/// Events (event.dm).
-	var/emit_depth = 0
 	var/list/event_queue
 
 	/// Budget shares per lane (fractions of the run's budget).

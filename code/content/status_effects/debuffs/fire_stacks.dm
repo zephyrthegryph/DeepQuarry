@@ -295,16 +295,6 @@ CAPABILITIES(/datum/status_effect/fire_handler/fire_stacks)
 	observe(owner, /datum/notice/atom_extinguish, src, then(PROC_REF(on_extinguish_event)))
 	owner.update_fire()
 
-/datum/status_effect/fire_handler/fire_stacks/proc/add_fire_overlay(mob/living/source)
-	if(stacks <= 0 || !on_fire)
-		return
-
-	var/mutable_appearance/created_overlay = owner.get_fire_overlay(stacks, on_fire)
-	if(isnull(created_overlay))
-		return
-
-	source.overlays |= created_overlay
-
 // WET
 /datum/status_effect/fire_handler/wet_stacks
 	id = "wet_stacks"

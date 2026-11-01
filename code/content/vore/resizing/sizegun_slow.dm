@@ -13,7 +13,6 @@
 	/// scale, the beam handle, the outline filter, the box segments and the user's client.
 	var/tmp/list/beam_state
 	var/sizeshift_mode = SIZE_SHRINK
-	var/dorm_size = TRUE
 	var/size_increment = 0.01
 	// The scan in progress (relation views: a deleted target, user or beam reads null, and the
 	// next step still reaches sizegun_finish() to clean up).

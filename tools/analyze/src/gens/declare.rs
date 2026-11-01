@@ -294,7 +294,7 @@ fn rewrite_calls(text: &str, name: &str, f: &dyn Fn(&[String]) -> String) -> Str
 fn global_constructors(cx: &GenCx, caps: &[Cap]) -> BTreeSet<String> {
     let mut set: BTreeSet<String> = caps.iter().map(|c| c.name.clone()).collect();
     set.extend(static_kinds(cx));
-    // `every` keeps its legacy body in code/datums/reactions (the system form) and dispatches a capability's every(interval, then(...)) to the engine.
+    // `every` keeps its legacy body in code/library/reactions (the system form) and dispatches a capability's every(interval, then(...)) to the engine.
     set.insert("every".to_string());
     for f in cx.tree.select(&crate::tree::CODE_DM) {
         if !f.rel.starts_with("code/engine/") {
@@ -477,6 +477,7 @@ impl Generator for Declare {
             out.line("#endif");
         }
         keyed_targets(cx, out);
+        rel_var_types(cx, out);
         weak_accessors(cx, out);
         static_blocks(cx, out, &caps, &globals, &statics);
         make_procs(cx, out);
@@ -539,6 +540,42 @@ fn static_blocks(cx: &GenCx, out: &mut GenOut, caps: &[Cap], globals: &BTreeSet<
         }
         out.blank();
     }
+}
+
+/// The declared type of each single-valued relation var whose entry names no type: DM does not check a typed var, so a test build compares what is
+/// written with it (own_type_ok(), rel_var_type_note()). Test builds only: a relation that names its type is already refused at runtime.
+fn rel_var_types(cx: &GenCx, out: &mut GenOut) {
+    use std::cell::RefCell;
+    let Some(sem) = cx.sem() else { return };
+    let rows: RefCell<BTreeMap<String, String>> = RefCell::new(BTreeMap::new());
+    for m in cx.markers("CAPABILITIES") {
+        let Some(owner) = m.args.first().map(|s| s.trim().to_string()) else { continue };
+        for a in m.args.iter().skip(1) {
+            for name in ["ref_one", "owns_one"] {
+                rewrite_calls(a, name, &|args| {
+                    let var = args.first().and_then(|v| v.trim().strip_prefix("nameof(").and_then(|s| s.strip_suffix(')')).map(|s| s.trim().to_string()));
+                    let typed = args.get(1).is_some_and(|t| split_opt(t).is_none());
+                    if let (Some(var), false) = (var, typed) {
+                        if let Some(sig) = sem.var_decl(&owner, &var) {
+                            if sig.is_object() && !sig.is_list() {
+                                rows.borrow_mut().insert(format!("{}|{}", owner, var), sig.declared.clone());
+                            }
+                        }
+                    }
+                    String::new()
+                });
+            }
+        }
+    }
+    out.line(crate::sem::gen::TEST_GUARD);
+    out.doc("declared_rel_var_types(): \"holder type|var\" -> the var's declared type, for the relations whose entry names none.");
+    out.line("/proc/declared_rel_var_types()");
+    out.line("	. = list()");
+    for (key, ty) in rows.into_inner() {
+        out.line(format!("	.[{}] = {}", quote(&key), ty));
+    }
+    out.line("#endif");
+    out.blank();
 }
 
 /// The keyed relations the CAPABILITIES lists declare (`ref_one(nameof(v), /type, by = nameof(id))`): the type the holder finds and the id var both

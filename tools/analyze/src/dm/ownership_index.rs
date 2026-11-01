@@ -36,7 +36,7 @@ macro_rules! re_m {
 }
 
 pub const CORE_DIRS: &[&str] = &[
-    "code/datums/ownership/",
+    "code/library/ownership/",
     "code/datums/om/",
     "code/engine/time/",
     "code/engine/refs/edges.dm",
@@ -45,13 +45,13 @@ pub const CORE_DIRS: &[&str] = &[
     "code/engine/kernel/cadences.dm",
     "code/engine/kernel/sequence.dm",
     "code/engine/kernel/sequence_table.dm",
-    "code/datums/lifecycle/",
+    "code/library/lifecycle/",
     "code/engine/state/",
     "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/",
     "code/controllers/", "code/world/kernel/", "code/world/systems/", "code/world/configuration/", "code/world/controllers/",
     "code/engine/refs/containment/",
-    "code/datums/containment/stock.dm",
-    "code/datums/shared_cache/",
+    "code/library/containers/containment/stock.dm",
+    "code/library/shared_cache/",
 ];
 pub const CALLBACK_OK: &[&str] = &[
     "code/datums/om/",
@@ -64,9 +64,9 @@ pub const CALLBACK_OK: &[&str] = &[
     "code/engine/kernel/sequence_table.dm",
     "code/controllers/", "code/world/kernel/", "code/world/systems/", "code/world/configuration/", "code/world/controllers/",
     "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/",
-    "code/datums/ownership/",
-    "code/datums/callback.dm",
-    "code/_helpers/",
+    "code/library/ownership/",
+    "code/library/datum/callback.dm",
+    "code/_helpers/", "code/library/helpers/", "code/content/helpers/",
 ];
 pub const HANDLE_OK: &[&str] = &[
     "code/datums/om/",
@@ -77,18 +77,18 @@ pub const HANDLE_OK: &[&str] = &[
     "code/engine/kernel/cadences.dm",
     "code/engine/kernel/sequence.dm",
     "code/engine/kernel/sequence_table.dm",
-    "code/datums/ownership/",
+    "code/library/ownership/",
     "code/engine/state/",
-    "code/datums/lifecycle/",
+    "code/library/lifecycle/",
     "code/__defines/", "code/defines/engine/", "code/defines/library/", "code/defines/host/", "code/defines/base/", "code/defines/content/",
     "code/engine/refs/containment/",
-    "code/datums/containment/stock.dm",
+    "code/library/containers/containment/stock.dm",
     "code/tests/unit_tests/",
     "code/tests/unit_tests/",
 ];
 
 pub const ENTITY_ROOTS: &[&str] = &["/datum", "/atom", "/obj", "/mob", "/turf"];
-/// Flyweights (code/datums/ownership/flyweight.dm, GLOB.flyweight_types; keep in step).
+/// Flyweights (code/library/ownership/flyweight.dm, GLOB.flyweight_types; keep in step).
 pub const FLYWEIGHT_TYPES: &[&str] = &[
     "/datum/capability",
     "/datum/reaction",

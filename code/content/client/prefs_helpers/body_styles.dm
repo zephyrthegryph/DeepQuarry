@@ -2,40 +2,6 @@
 // ear_secondary_colors, tail_style, wing_style migrated to /datum/preference subtypes.
 // bgstate_options moved onto /datum/preference/text/human/bgstate as bgstate_choices.
 // Sanitize ear/wing/tail styles
-/datum/preferences/proc/sanitize_body_styles()
-	// migrated ear/tail/wing styles to /datum/preference
-	var/_ear_style = read_preference(/datum/preference/text/human/ear_style)
-	var/_ear_secondary_style = read_preference(/datum/preference/text/human/ear_secondary_style)
-	var/_wing_style = read_preference(/datum/preference/text/human/wing_style)
-	var/_tail_style = read_preference(/datum/preference/text/human/tail_style)
-
-	// Grandfather in anyone loading paths from a save.
-	if(ispath(_ear_style, /datum/sprite_accessory))
-		var/datum/sprite_accessory/instance = GLOB.ear_styles_list[_ear_style]
-		if(istype(instance))
-			_ear_style = instance.name
-			update_preference_by_type(/datum/preference/text/human/ear_style, _ear_style)
-	if(ispath(_wing_style, /datum/sprite_accessory))
-		var/datum/sprite_accessory/instance = GLOB.wing_styles_list[_wing_style]
-		if(istype(instance))
-			_wing_style = instance.name
-			update_preference_by_type(/datum/preference/text/human/wing_style, _wing_style)
-	if(ispath(_tail_style, /datum/sprite_accessory))
-		var/datum/sprite_accessory/instance = GLOB.tail_styles_list[_tail_style]
-		if(istype(instance))
-			_tail_style = instance.name
-			update_preference_by_type(/datum/preference/text/human/tail_style, _tail_style)
-
-	// Sanitize for non-existent keys.
-	if(_ear_style && !(_ear_style in get_available_styles(GLOB.ear_styles_list)))
-		update_preference_by_type(/datum/preference/text/human/ear_style, null)
-	if(_ear_secondary_style && !(_ear_secondary_style in get_available_styles(GLOB.ear_styles_list)))
-		update_preference_by_type(/datum/preference/text/human/ear_secondary_style, null)
-	if(_wing_style && !(_wing_style in get_available_styles(GLOB.wing_styles_list)))
-		update_preference_by_type(/datum/preference/text/human/wing_style, null)
-	if(_tail_style && !(_tail_style in get_available_styles(GLOB.tail_styles_list)))
-		update_preference_by_type(/datum/preference/text/human/tail_style, null)
-
 /datum/preferences/proc/get_available_styles(style_list)
 	. = list("Normal" = null)
 	var/pref_species = read_preference(/datum/preference/choiced/species)

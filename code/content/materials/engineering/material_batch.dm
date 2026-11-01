@@ -234,13 +234,6 @@
 /datum/material_batch/proc/unit_production_cost()
 	return total_production_cost() / usable_output()
 
-/datum/material_batch/proc/cost_breakdown()
-	var/list/result = cost_ledger.Copy()
-	result["total"] = total_production_cost()
-	result["usable_output"] = usable_output()
-	result["per_sheet"] = unit_production_cost()
-	return result
-
 /datum/material_batch/proc/can_process(process)
 	if(!length(composition))
 		return FALSE
@@ -324,34 +317,6 @@
 			total += LAZYACCESS(impurities, additive)
 	return total / max(amount, 1)
 
-/datum/material_batch/proc/functional_roles()
-	var/list/roles = list("matrix" = TRUE)
-	for(var/material_name in composition)
-		var/datum/material/material = get_material_by_name(material_name)
-		if(!material)
-			continue
-		if(material.hardness >= 60)
-			roles["hardener"] = TRUE
-		if(material.conductivity >= 40)
-			roles["conductive phase"] = TRUE
-		if(max(material.heat_resistance, (material.melting_point - 500) / 60) >= 55)
-			roles["thermal stabilizer"] = TRUE
-		if(max(material.corrosion_resistance, 58 - material.reactivity * 0.4) >= 55)
-			roles["corrosion inhibitor"] = TRUE
-		if(material.fracture_toughness >= 60 || (material.hardness >= 55 && material.brittleness >= 25))
-			roles["reinforcement"] = TRUE
-	for(var/additive in impurities)
-		var/lower_additive = lowertext(additive)
-		if(findtext(lower_additive, "carbon"))
-			roles["interstitial hardener"] = TRUE
-		if(findtext(lower_additive, "silicon"))
-			roles["deoxidizer"] = TRUE
-		if(findtext(lower_additive, "flux"))
-			roles["flux"] = TRUE
-		if(findtext(lower_additive, "catalyst") || findtext(lower_additive, "stabilizer"))
-			roles["phase catalyst"] = TRUE
-	return roles
-
 /datum/material_batch/proc/normalize_structure()
 	var/total = 0
 	for(var/structure_name in structure)
@@ -370,16 +335,6 @@
 		if(material)
 			weighted += material.melting_point * (LAZYACCESS(composition, material_name) / max(amount, 1))
 	return max(round(weighted), 500)
-
-/datum/material_batch/proc/hazard_score()
-	var/reactivity = 0
-	for(var/material_name in composition)
-		var/datum/material/material = get_material_by_name(material_name)
-		if(material)
-			reactivity += material.reactivity * LAZYACCESS(composition, material_name) / max(amount, 1)
-	var/thermal_fraction = temperature() / max(melting_temperature(), 1)
-	var/atmosphere_risk = atmosphere == MATERIAL_ATMOSPHERE_AIR ? 22 : (atmosphere == MATERIAL_ATMOSPHERE_REDUCING ? 10 : -10)
-	return clamp(round(reactivity * 0.45 + thermal_fraction * 35 + atmosphere_risk + oxidation * 0.3), 0, 100)
 
 /datum/material_batch/proc/fingerprint()
 	var/list/parts = list()

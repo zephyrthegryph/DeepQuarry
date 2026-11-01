@@ -37,9 +37,7 @@
 	var/panic_on_alert = FALSE	// Will the bot go faster when the alert level is raised?
 	var/min_target_dist = 1 // How close we try to get to the target
 	var/max_target_dist = 50 // How far we are willing to go
-	var/max_patrol_dist = 250
 
-	var/target_patience = 5
 	var/frustration = 0
 	var/max_frustration = 0
 

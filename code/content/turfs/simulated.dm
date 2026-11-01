@@ -16,7 +16,6 @@
 
 	oxygen = MOLES_O2STANDARD
 	nitrogen = MOLES_N2STANDARD
-	var/max_fire_temperature_sustained = 0 //The max temperature of the fire which it was subjected to
 	var/can_dirty = TRUE	// If false, tile never gets dirty
 	var/can_start_dirty = TRUE	// If false, cannot start dirty roundstart
 	var/dirty_prob = 2	// Chance of being dirty roundstart

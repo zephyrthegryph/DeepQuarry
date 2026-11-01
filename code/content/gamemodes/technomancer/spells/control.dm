@@ -10,9 +10,6 @@
 	ability_icon_state = "tech_control"
 	category = UTILITY_SPELLS
 
-/mob/living/carbon/human/proc/technomancer_control()
-	place_spell_in_hand(/obj/item/spell/control)
-
 /obj/item/spell/control
 	name = "control"
 	icon_state = "control"
@@ -147,3 +144,5 @@
 CAPABILITIES(/obj/item/spell/control)
 	ref_many(nameof(controlled_mobs))
 
+/mob/living/carbon/human/proc/technomancer_control()
+	place_spell_in_hand(/obj/item/spell/control)

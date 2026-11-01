@@ -97,11 +97,6 @@ DECLARE_SHARED_CACHE_EX(overmap_skybox_images, GLOBAL_PROC_REF(build_overmap_sky
 /obj/effect/overmap/proc/expire_skybox_representation()
 	INVALIDATE_SHARED_CACHE(overmap_skybox_images)
 
-/obj/effect/overmap/proc/update_skybox_representation()
-	expire_skybox_representation()
-	for(var/obj/effect/overmap/visitable/O in contents_of(loc))
-		SSskybox.ready().rebuild_skyboxes(O.map_z)
-
 /obj/effect/overmap/proc/get_scan_data(mob/user)
 	var/dat = {"\[b\]Scan conducted at\[/b\]: [stationtime2text()] [stationdate2text()]\n\n[scanner_desc]"}
 

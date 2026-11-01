@@ -278,10 +278,6 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship)
 	adjust_speed(-speed[1], -speed[2])
 	halted = 1
 
-/obj/effect/overmap/visitable/ship/proc/unhalt()
-	if(!shuttles_overmap_halted())
-		halted = 0
-
 /obj/effect/overmap/visitable/ship/populate_sector_objects()
 	..()
 	for(var/obj/machinery/computer/ship/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))

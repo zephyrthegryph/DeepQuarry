@@ -33,10 +33,6 @@ GLOBAL_LIST_INIT(modules, list( \
 	status = needed
 	installed = needed
 
-/datum/moduletypes/proc/addmod(type, modtextlist)
-	GLOB.modules += type	// index by type text
-	GLOB.modules[type] = modtextlist
-
 /datum/moduletypes/proc/inmodlist(type)
 	return ("[type]" in GLOB.modules)
 

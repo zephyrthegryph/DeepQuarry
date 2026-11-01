@@ -34,7 +34,6 @@
 	var/seen_melee
 	var/seen_gun
 	var/transformed
-	var/seen_armour
 	endurance = 100
 
 

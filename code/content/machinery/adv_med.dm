@@ -34,7 +34,6 @@ MSG_DEF(body_scanner/buffered, "You store %T% in your multitool's buffer.", "")
 	circuit = /obj/item/circuitboard/body_scanner
 	use_power = USE_POWER_IDLE
 	var/obj/machinery/body_scanconsole/console
-	var/printing_text = null
 	var/scan_level = SCANNABLE_DIFFICULT //By default, we start with level 2 scanning level.
 	/// What the scan shows: BODY_SCAN_EMPTY, BODY_SCAN_DEAD, BODY_SCAN_CRITICAL or the occupant's vitality. Worked out when someone gets in or out and
 	/// when the power changes (scan()), so the look reads a tracked var and redraws when it moves.

@@ -170,18 +170,6 @@ DECLARE_SHARED_CACHE(proto_reagent_tags, GLOBAL_PROC_REF(build_proto_reagent_tag
 	. = R.treatment_tags
 	spent(R)
 
-/// reagent ID -> potency for every reagent that provides `tag`.
-/proc/dq_reagents_providing(tag)
-	var/list/out = list()
-	var/list/table = GLOBAL_TABLE_GET(dq_reagent_tag_table)
-	for(var/id in table)
-		var/potency = table[id][tag]
-		if(potency)
-			out[id] = potency
-	return out
-
-
-
 // --- Affliction-side helpers ---------------------------------------------------
 
 /// reagent ID -> effective cure rate at standard dose, merging the direct

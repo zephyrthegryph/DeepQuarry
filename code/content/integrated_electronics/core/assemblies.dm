@@ -629,10 +629,6 @@ CAPABILITIES(/datum/ic_export_view)
 	return ..()  // Fall back to default behavior if no access_card
 
 // Returns TRUE if I is something that could/should have a valid interaction. Used to tell circuitclothes to hit the circuit with something instead of the clothes
-/obj/item/electronic_assembly/proc/is_valid_tool(obj/item/I)
-	return I.has_tool_quality(TOOL_CROWBAR) || I.has_tool_quality(TOOL_SCREWDRIVER) || istype(I, /obj/item/integrated_circuit) || istype(I, /obj/item/cell/device) || istype(I, /obj/item/integrated_electronics)
-
-
 /// ID card for door access (a relation view: null once that is deleted).
 /obj/item/electronic_assembly/proc/access_card() as /obj/item/card/id
 	return access_card

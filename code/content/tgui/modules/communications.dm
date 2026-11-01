@@ -23,7 +23,6 @@
 	var/list/logins
 	var/menu_state = COMM_SCREEN_MAIN
 	var/ai_menu_state = COMM_SCREEN_MAIN
-	var/aicurrmsg
 
 	var/message_cooldown
 	var/centcomm_message_cooldown
@@ -468,10 +467,6 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 	ntos = TRUE
 
 /* Etc global procs */
-/proc/enable_prison_shuttle(mob/user)
-	for(var/obj/machinery/computer/prison_shuttle/PS in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		PS.allowedtocall = !(PS.allowedtocall)
-
 /proc/call_shuttle_proc(mob/user)
 	if ((!( SSticker ) || !SSemergency_shuttle.location()))
 		return

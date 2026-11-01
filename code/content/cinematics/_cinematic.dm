@@ -46,8 +46,6 @@
 	/// How long the intro plays before the blast (the blast runs on an after() timer).
 	/// Callers that act at the blast wait initial(intro_time).
 	var/intro_time = 0
-	/// Whether the cinematic turns off ooc when played globally.
-	var/stop_ooc = TRUE
 
 CAPABILITIES(/datum/cinematic)
 	ref_many(nameof(watching))

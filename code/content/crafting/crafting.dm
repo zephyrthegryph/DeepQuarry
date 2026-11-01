@@ -23,8 +23,6 @@
 
 /datum/personal_crafting
 	var/mob/owner
-	var/viewing_category = 1 //typical powergamer starting on the Weapons tab
-	var/viewing_subcategory = 1
 	var/list/categories = list( // ALLOW(instance_list): d: edited in place per instance (2 writers)
 				CAT_WEAPONRY = list(
 					CAT_WEAPON,
@@ -630,11 +628,6 @@ CAPABILITIES(/datum/personal_crafting)
 	return data
 
 //Mind helpers
-
-/datum/mind/proc/teach_crafting_recipe(R)
-	if(!learned_recipes)
-		set_learned_recipes(list())
-	include_learned_recipes(R)
 
 // Screen objects
 /atom/movable/screen/craft

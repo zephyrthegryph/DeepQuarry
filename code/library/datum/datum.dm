@@ -39,7 +39,6 @@
 	var/tmp/list/filter_data
 
 #ifdef REFERENCE_TRACKING
-	var/tmp/running_find_references
 	var/tmp/last_find_references = 0
 	var/tmp/find_references_on_destroy = FALSE //set this to true on an item to have it find refs after
 	#ifdef REFERENCE_TRACKING_DEBUG

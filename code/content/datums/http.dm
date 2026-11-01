@@ -23,21 +23,6 @@
 	src.headers = headers
 	src.output_file = output_file
 
-/datum/http_request/proc/execute_blocking()
-	_raw_response = rustg_http_request_blocking(method, url, body, headers, build_options())
-
-/datum/http_request/proc/begin_async()
-	if (in_progress)
-		CRASH("Attempted to re-use a request object.")
-
-	id = rustg_http_request_async(method, url, body, headers, build_options())
-
-	if (isnull(text2num(id)))
-		stack_trace("Proc error: [id]")
-		_raw_response = "Proc error: [id]"
-	else
-		in_progress = TRUE
-
 /datum/http_request/proc/build_options()
 	if(output_file)
 		return json_encode(list("output_filename"=output_file,"body_filename"=null))

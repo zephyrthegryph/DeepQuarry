@@ -1,5 +1,4 @@
 /datum/technomancer/assistance
-	var/one_use_only = 0
 
 /datum/technomancer/assistance/apprentice
 	name = "Friendly Apprentice"

@@ -24,7 +24,6 @@ SYSTEM_DEF(air)
 	// list (nothing was ever registered) so the dispatcher's hot loop only
 	// touches code that does work.
 	var/cost_turfs = 0
-	var/cost_groups = 0
 	var/cost_highpressure = 0
 	var/cost_superconductivity = 0
 	var/cost_pipenets = 0
@@ -93,8 +92,6 @@ SYSTEM_DEF(air)
 	var/list/queued_for_activation
 	var/display_all_groups = FALSE
 
-	var/list/reaction_handbook
-	var/list/gas_handbook
 
 
 /datum/system/air/stat_entry(msg)

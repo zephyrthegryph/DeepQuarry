@@ -25,7 +25,6 @@
 	var/food_color					// Colour of resulting food item.
 	var/cooked_sound = SFX_MACHINES_DING				// Sound played when cooking completes.
 	var/can_burn_food = FALSE		// Can the object burn food that is left inside?
-	var/burn_chance = 10			// How likely is the food to burn?
 	var/list/cooking_objs	// List of things being cooked
 
 	// If the machine has multiple output modes, define them here.
@@ -34,7 +33,6 @@
 
 	var/container_type = null
 
-	var/combine_first = FALSE // If TRUE, this appliance will do combination cooking before checking recipes
 	var/food_safety = FALSE	// If true, the appliance automatically ejects food instead of burning it
 
 	var/static/radial_eject = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_eject")

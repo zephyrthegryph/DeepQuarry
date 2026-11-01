@@ -174,22 +174,6 @@ PROC_SUMMARY(/proc/material_cache_id) // a never-reused id for a material, memoi
 			spent(src)
 	return TRUE
 
-/obj/proc/process_material_reagent_liner(datum/reagents/contents, elapsed_seconds = 0)
-	var/datum/material/liner = material_for_role(MATERIAL_ROLE_LINER)
-	if(!liner || !contents?.total_volume)
-		return FALSE
-	var/corrosion = 0
-	for(var/datum/reagent/reagent in contents.reagent_list)
-		corrosion += liner.corrosion_rate(reagent.id) * reagent.volume / max(contents.total_volume, 1)
-	if(corrosion <= 0)
-		return FALSE
-	var/datum/material_assembly/wear = material_assembly(src)
-	wear.liner_integrity = max(0, wear.liner_integrity - corrosion * max(elapsed_seconds, 0))
-	if(wear.liner_integrity <= 0)
-		material_environment_begin_leak()
-		material_environment_rupture()
-	return TRUE
-
 /obj/item/reagent_containers/proc/construction_liner_material()
 	return material_for_role(MATERIAL_ROLE_LINER)
 

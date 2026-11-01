@@ -8,11 +8,6 @@ GLOBAL_LIST_EMPTY(jobban_keylist)		//to store the keys & ranks
 	GLOB.jobban_keylist += "[M.ckey] - [rank] ## [reason]"
 	jobban_savebanfile()
 
-/proc/jobban_client_fullban(ckey, rank)
-	if (!ckey || !rank) return
-	GLOB.jobban_keylist += "[ckey] - [rank]"
-	jobban_savebanfile()
-
 //returns a reason if M is banned from rank, returns 0 otherwise
 /proc/jobban_isbanned(mob/M, rank)
 	READS_FROM() // the job bans are admin records, not round state
@@ -41,10 +36,6 @@ GLOBAL_LIST_EMPTY(jobban_keylist)		//to store the keys & ranks
 					return text
 			return "Reason Unspecified"
 	return 0
-
-/hook/startup/proc/loadJobBans()
-	jobban_loadbanfile()
-	return 1
 
 /proc/jobban_loadbanfile()
 	if(CONFIG_GET(flag/ban_legacy_system))
@@ -93,3 +84,7 @@ GLOBAL_LIST_EMPTY(jobban_keylist)		//to store the keys & ranks
 			jobban_savebanfile()
 			return 1
 	return 0
+
+/hook/startup/proc/loadJobBans()
+	jobban_loadbanfile()
+	return 1

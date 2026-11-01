@@ -92,26 +92,3 @@
 		return
 	if(incendiary && source && source.obj_damage_type() == BURN)
 		T.hotspot_expose(700, 5)
-
-/// Merge another projectile_effects datum's values additively into this one.
-/// Useful when composing effects from multiple sources at fire-time.
-/datum/projectile_effects/proc/merge_from(datum/projectile_effects/other)
-	if(!other)
-		return
-	stun       += other.stun
-	weaken     += other.weaken
-	paralyze   += other.paralyze
-	irradiate  += other.irradiate
-	stutter    += other.stutter
-	eyeblur    += other.eyeblur
-	drowsy     += other.drowsy
-	agony      += other.agony
-	if(other.incendiary > incendiary)
-		incendiary  = other.incendiary
-		flammability = other.flammability
-	else if(other.incendiary == incendiary)
-		flammability += other.flammability
-	// Last-writer wins for modifiers (caller should order deliberately).
-	if(other.modifier_type_to_apply)
-		modifier_type_to_apply = other.modifier_type_to_apply
-		modifier_duration      = other.modifier_duration

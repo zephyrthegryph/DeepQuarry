@@ -22,12 +22,10 @@
 	/// One owned /datum/silicon_alarm_queue per registered alarm handler, keyed by "[handler.type]" text.
 	var/list/queued_alarms
 
-	var/list/access_rights
 	var/obj/item/card/id/idcard
 
 	var/sensor_type = 0 // add - silicon omni "is sensor on or nah"
 
-	var/hudmode = null
 	var/idcard_type = /obj/item/card/id/synthetic
 	// footsteps (footstep() in its CAPABILITIES)
 

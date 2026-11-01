@@ -69,7 +69,7 @@ pub fn parts() -> Vec<Part> {
             drop(r"nameof\([^)]*\.holder|\.holder\("),
             // receivers that are never a /client: brain/module/io/pin/wire/reagent holders and op/act/ledger contexts
             Flt::DropLit("code/content/effects/effect_system.dm"),
-            Flt::DropLit("code/datums/containment/ledger.dm"),
+            Flt::DropLit("code/library/containers/containment/ledger.dm"),
             Flt::DropLit("C.holder.trans_to_holder"),
             Flt::DropLit("// holder.holder is"),
             drop(r"\b(?:brain|ai_brain|module|io|selected_io|linked_pin|wires|reagent|ask|act|op|ctx|reagents|ledger|A|O|D|S|R|W|P|P1|P2|L|holder)\??\.holder\b"),
@@ -86,7 +86,7 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "heat_ratchet_on_fire_act_overrides_h3",
             "heat: ratchet on fire_act() overrides (H3)",
-            "fire_act() overrides are banned. Declare a heat rule (code/datums/rules/declarations.dm) or a temperature threshold, or react with on_notice(/datum/notice/atom_fire_act, then(PROC_REF(x))).",
+            "fire_act() overrides are banned. Declare a heat rule (code/content/rules/declarations.dm) or a temperature threshold, or react with on_notice(/datum/notice/atom_fire_act, then(PROC_REF(x))).",
             Files::Code,
             line(r"^/[A-Za-z0-9_/]*/fire_act\("),
         )

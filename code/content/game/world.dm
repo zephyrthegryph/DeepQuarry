@@ -299,10 +299,6 @@ GLOBAL_VAR(restart_counter)
 
 
 
-/// after() target: ends the round now (a test-harness run with no tests compiled in).
-/proc/force_end_round()
-	SSticker.request_round_ending(ADMIN_FORCE_END_ROUND)
-
 /// Returns a list of data about the world state, don't clutter
 /world/proc/get_world_state_for_logging()
 	var/data = list()
@@ -853,10 +849,6 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 	QDEL_NULL(Debugger)
 	. = ..()
 
-/hook/startup/proc/loadMode()
-	world.load_mode()
-	return 1
-
 /world/proc/load_mode()
 	if(!fexists("data/mode.txt"))
 		return
@@ -1007,9 +999,6 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 /proc/auxtools_stack_trace(msg)
 	CRASH(msg)
 
-/proc/auxtools_expr_stub()
-	CRASH("auxtools not loaded")
-
 /proc/enable_debugging(mode, port)
 	CRASH("auxtools not loaded")
 
@@ -1037,3 +1026,10 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 	if(required_key && topic_params["key"] != required_key)
 		return null
 	return topic_params[1]
+
+/proc/auxtools_expr_stub()
+	CRASH("auxtools not loaded")
+
+/hook/startup/proc/loadMode()
+	world.load_mode()
+	return 1

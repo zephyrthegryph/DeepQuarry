@@ -16,7 +16,6 @@
 	integrity_failure = 0.5
 
 	// TODO - Port use_auto_lights from /vg - for now declare here
-	var/use_auto_lights = 1
 	var/light_power_on = 1
 	var/light_range_on = 2
 

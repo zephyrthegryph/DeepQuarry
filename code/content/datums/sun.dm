@@ -5,7 +5,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/sun)
 	var/dx
 	var/dy
 	var/rate
-	var/solar_next_update	// last time the sun position was checked and adjusted
 
 /datum/sun/New()
 	rate = rand(50,200)/100			// 50% - 200% of standard rotation

@@ -108,31 +108,11 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 	/// is for PREFERENCE_CHARACTER.
 	var/can_randomize = TRUE
 
-	/// If randomizable (PREFERENCE_CHARACTER and can_randomize), whether
-	/// or not to enable randomization by default.
-	/// This doesn't mean it'll always be random, but rather if a player
-	/// DOES have random body on, will this already be randomized?
-	var/randomize_by_default = TRUE
 
-	/// If the selected species has this in its /datum/species/mutant_bodyparts,
-	/// will show the feature as selectable.
-	var/relevant_mutant_bodypart = null
 
-	/// If the selected species has this in its /datum/species/body_markings,
-	/// will show the feature as selectable.
-	var/relevant_body_markings = null
 
-	/// If the selected species has this in its /datum/species/inherent_traits,
-	/// will show the feature as selectable.
-	var/relevant_inherent_trait = null
 
-	/// If the selected species has this in its /datum/species/var/external_organs,
-	/// will show the feature as selectable.
-	var/relevant_external_organ = null
 
-	/// If the selected species has this head_flag by default,
-	/// will show the feature as selectable.
-	var/relevant_head_flag = null
 
 /// Called on the saved input when retrieving.
 /// Also called by the value sent from the user through UI. Do not trust it.
@@ -557,13 +537,6 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 	// 	return FALSE
 
 	return TRUE
-
-/// Returns whether or not, given the PREFERENCE_TAB_*, this preference should
-/// appear.
-/datum/preference/proc/should_show_on_page(preference_tab)
-	var/is_on_character_page = preference_tab == PREFERENCE_TAB_CHARACTER_PREFERENCES
-	var/is_character_preference = savefile_identifier == PREFERENCE_CHARACTER
-	return is_on_character_page == is_character_preference
 
 /// A preference that is a choice of one option among a fixed set.
 /// Used for preferences such as clothing.

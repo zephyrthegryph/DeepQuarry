@@ -9,11 +9,12 @@ code/defines/base/
 code/defines/content/
 code/__odlint.dm
 code/__pragmas.dm
+code/library/helpers/
 code/_helpers/
 code/engine/
 code/controllers/
 code/library/
-code/datums/capabilities/
+code/library/capabilities/
 code/world/
 code/game/atom/
 maps/

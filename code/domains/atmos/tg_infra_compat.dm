@@ -56,7 +56,6 @@ GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00
 // === /datum/atmosphere (planet atmosphere descriptor) ===
 /datum/atmosphere
 	var/id
-	var/base_gases
 	var/gas_string = ""
 	var/temperature = T20C
 

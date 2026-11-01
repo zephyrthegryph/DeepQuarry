@@ -247,3 +247,6 @@ GLOBAL_LIST_INIT(testing_global_profiler, list("_PROFILE_NAME" = "Global"))
 	if(!istype(d))
 		return json_encode(d)
 	return d.log_info_line()
+
+/mob/proc/simple_info_line()
+	return "[key_name(src)] ([x],[y],[z])"

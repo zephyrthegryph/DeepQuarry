@@ -173,20 +173,6 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 	new /datum/ticket(raw_msg, src, FALSE, 1)
 
 //admin proc
-/client/proc/cmd_admin_ticket_panel()
-	set name = "Show Ticket List"
-	set category = VERB_CAT_ADMIN_MISC
-
-	if(!admin_require(src, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "ticket.panel"))
-		return
-
-	if(QDELETED(mob))
-		return
-	var/datum/admin_ticket_panel_review/review = new
-	review.client_ckey = ckey
-	rel_set(review, nameof(review.actor), mob)
-	open_request(review, /datum/prompt/choice/admin_ticket_panel_list, TYPE_PROC_REF(/datum/admin_ticket_panel_review, answered), answerer = mob)
-
 /datum/admin_ticket_panel_review
 	var/tmp/mob/actor
 	var/client_ckey
