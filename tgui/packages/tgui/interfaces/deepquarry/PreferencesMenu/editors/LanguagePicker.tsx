@@ -11,11 +11,13 @@
 //   3. Footer — species default + total picked counter so the user always knows
 //      how many slots are left.
 
+import { useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import {
   Box,
   Button,
   Icon,
+  Input,
   Section,
   Stack,
   Tooltip,
@@ -31,6 +33,8 @@ type LangData = {
   extra_languages: number;
   max_alternate_languages: number;
   species_default_language: string | null;
+  /// The languages this character may pick (server rule); undefined while an old payload is cached.
+  pickable_languages?: string[];
 };
 
 type LangStatic = {
@@ -44,6 +48,35 @@ type Act = ReturnType<typeof useBackend>['act'];
 
 const send = (act: Act, action: string, params: Record<string, unknown>) =>
   act('dq_editor_action', { editor: 'language', action, params });
+
+type LangMeta = { name: string; desc: string; restricted: boolean };
+
+/// The rows to list: unrestricted, pickable by this character (or already picked), matching the search; picked first.
+export const filterLanguages = (
+  entries: [string, LangMeta][],
+  pickable: Set<string> | null,
+  selected: Set<string>,
+  search: string,
+): [string, LangMeta][] => {
+  const q = search.trim().toLowerCase();
+  return entries
+    .filter(
+      ([key, meta]) =>
+        selected.has(key) ||
+        (!meta.restricted && (!pickable || pickable.has(key))),
+    )
+    .filter(
+      ([, meta]) =>
+        !q ||
+        meta.name.toLowerCase().includes(q) ||
+        meta.desc.toLowerCase().includes(q),
+    )
+    .sort((x, y) => {
+      const xs = selected.has(x[0]) ? 0 : 1;
+      const ys = selected.has(y[0]) ? 0 : 1;
+      return xs - ys || x[1].name.localeCompare(y[1].name);
+    });
+};
 
 export const LanguagePicker = ({ data, staticData }: EditorProps) => {
   const { act } = useBackend();
@@ -62,18 +95,16 @@ export const LanguagePicker = ({ data, staticData }: EditorProps) => {
     langToKey[lang] = k;
   }
 
-  // Display order: selected languages first (so the player's working set sits
-  // at the top), then unselected alphabetically. Restricted entries are
-  // filtered out entirely — the user can't pick them anyway.
-  const sortedLanguageEntries = Object.entries(all)
-    .filter(([, meta]) => !meta.restricted)
-    .sort((a, b) => {
-      const aSel = selected.has(a[0]) ? 0 : 1;
-      const bSel = selected.has(b[0]) ? 0 : 1;
-      if (aSel !== bSel) return aSel - bSel;
-      return a[1].name.localeCompare(b[1].name);
-    });
-
+  // The server names the languages this character may actually pick; anything else (restricted, whitelisted for someone
+  // else) is not listed at all. Selected ones come first, then the rest alphabetically; the search narrows both.
+  const pickable = d.pickable_languages ? new Set(d.pickable_languages) : null;
+  const [search, setSearch] = useState('');
+  const sortedLanguageEntries = filterLanguages(
+    Object.entries(all),
+    pickable,
+    selected,
+    search,
+  );
   return (
     <Stack vertical>
       <Stack.Item>
@@ -140,17 +171,31 @@ export const LanguagePicker = ({ data, staticData }: EditorProps) => {
               </Box>
             </Box>
           )}
-          {sortedLanguageEntries.map(([key, meta]) => (
-            <LanguageRow
-              key={key}
-              languageKey={key}
-              meta={meta}
-              selected={selected.has(key)}
-              roomLeft={room}
-              customKey={langToKey[key]}
-              act={act}
-            />
-          ))}
+          <Input
+            fluid
+            mb={0.5}
+            placeholder={`Search ${pickable ? pickable.size + selected.size : Object.keys(all).length} languages...`}
+            value={search}
+            onChange={setSearch}
+          />
+          <Box style={{ maxHeight: '20em', overflowY: 'auto' }}>
+            {sortedLanguageEntries.length === 0 && (
+              <Box color="label" italic>
+                No language matches.
+              </Box>
+            )}
+            {sortedLanguageEntries.map(([key, meta]) => (
+              <LanguageRow
+                key={key}
+                languageKey={key}
+                meta={meta}
+                selected={selected.has(key)}
+                roomLeft={room}
+                customKey={langToKey[key]}
+                act={act}
+              />
+            ))}
+          </Box>
         </Section>
       </Stack.Item>
     </Stack>
@@ -287,9 +332,9 @@ const LanguageRow = ({
   const disabled = isRestricted || (!selected && roomLeft === 0);
   return (
     <Box
-      mb={0.5}
-      px={1}
-      py={0.5}
+      mb={0.25}
+      px={0.75}
+      py={0.25}
       style={{
         borderRadius: '0.333em',
         background: selected
@@ -303,10 +348,17 @@ const LanguageRow = ({
     >
       <Stack align="center">
         <Stack.Item grow>
-          <Box bold>
-            {meta.name}
-            {isRestricted && (
-              <Tooltip content="This language is restricted — only certain characters or roles can speak it.">
+          <Tooltip content={hasDesc ? meta.desc : meta.name}>
+            <Box
+              bold
+              style={{
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {meta.name}
+              {isRestricted && (
                 <Box
                   inline
                   ml={1}
@@ -321,14 +373,9 @@ const LanguageRow = ({
                 >
                   RESTRICTED
                 </Box>
-              </Tooltip>
-            )}
-          </Box>
-          {hasDesc && (
-            <Box fontSize="0.82em" color="label" mt={0.25}>
-              {meta.desc}
+              )}
             </Box>
-          )}
+          </Tooltip>
         </Stack.Item>
         {selected && (
           <Stack.Item>

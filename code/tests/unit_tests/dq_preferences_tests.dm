@@ -261,6 +261,36 @@
 	fdel(path)
 
 
+/// The language picker offers what the character can actually take: nothing restricted, not the species' own language,
+/// and the add action refuses the rest.
+/datum/unit_test/dq_pref_language_picker_lists_only_pickable
+
+/datum/unit_test/dq_pref_language_picker_lists_only_pickable/Run()
+	var/datum/preference_editor/language/editor = GLOB.preference_editors_by_key["language"]
+	TEST_ASSERT_NOTNULL(editor, "the language editor is registered")
+	var/path = "data/dq_language_saves/[world.realtime]_[rand(1, 99999)]/preferences.json"
+	TEST_ASSERT(fcopy("code/modules/unit_tests/data/profile_saves/headless_preferences.json", path), "the fixture save is copied to a scratch path")
+	var/datum/preferences/dq_test_stub/P = allocate(/datum/preferences/dq_test_stub)
+	P.path = path
+	P.load_savefile()
+	TEST_ASSERT(P.load_character(1), "the fixture character loads")
+	var/datum/species/S = GLOB.all_species[P.read_preference(/datum/preference/choiced/species)]
+	TEST_ASSERT_NOTNULL(S, "the fixture character has a species")
+	var/list/pickable = editor.pickable_languages(P)
+	var/restricted_key
+	var/restricted_count = 0
+	for(var/key in GLOB.all_languages)
+		var/datum/language/L = GLOB.all_languages[key]
+		if(L.flags & RESTRICTED)
+			restricted_count++
+			restricted_key ||= key
+			TEST_ASSERT(!(key in pickable), "restricted [key] is not pickable")
+	TEST_ASSERT(restricted_count > 0, "the catalogue has restricted languages to filter")
+	TEST_ASSERT(!(S.language in pickable), "the species default [S.language] is not offered again")
+	TEST_ASSERT(length(pickable) < length(GLOB.all_languages), "the picker lists fewer than the whole catalogue")
+	log_test("language picker: [length(GLOB.all_languages)] languages in the catalogue, [restricted_count] restricted, [length(pickable)] pickable for [S.name]")
+	TEST_ASSERT_EQUAL(editor.ui_act_add_language(null, list("language" = restricted_key), P, null, "add_language"), PREF_UPDATE_REJECTED, "adding a restricted language is refused")
+
 /// The blood settings are on the Identity tab, under their own group, and still save under the keys existing characters have.
 /datum/unit_test/dq_pref_blood_settings_live_in_identity
 
