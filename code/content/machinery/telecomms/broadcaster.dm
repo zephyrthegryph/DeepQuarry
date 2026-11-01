@@ -698,11 +698,6 @@ CAPABILITIES(/obj/machinery/telecomms/allinone/antag)
 
 //Use this to test if an obj can communicate with a Telecommunications Network
 
-/proc/test_telecomms(atom/source)
-	var/datum/signal/signal = source.telecomms_process()
-	var/pos_z = get_z(source)
-	return ((pos_z in signal.data["level"]) && signal.data["done"])
-
 /atom/proc/telecomms_process(do_sleep = 1)
 
 	// First, we want to generate a new radio signal

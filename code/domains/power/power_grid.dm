@@ -193,16 +193,6 @@ PROC_SUMMARY(/proc/vg_power_region_read)
 	var/datum/power_grid/grid = power_grid_lookup(id)
 	return grid?.nodes || list()
 
-/proc/power_percent_load(id, smes_only = FALSE)
-	var/load = power_load(id)
-	if(smes_only)
-		// SMES output is not reported per tick any more; nothing is available from storage here.
-		return 0
-	var/avail = power_avail(id)
-	if(!load || !avail)
-		return 0
-	return between(0, (load / avail) * 100, 100)
-
 /proc/power_electrocute_damage(id)
 	// Logarithmic damage scaling:
 	// 1kW=5, 10kW=24, 100kW=45, 250kW=53, 1MW=66, 10MW=88, 100MW=110, 1GW=132
@@ -278,10 +268,6 @@ PROC_SUMMARY(/proc/vg_power_region_read)
 	var/datum/power_grid/grid = power_grid(id)
 	grid.set_avail(avail)
 	return id
-
-/proc/power_test_set_avail(id, avail)
-	var/datum/power_grid/grid = power_grid(id)
-	grid.set_avail(avail)
 
 /proc/power_test_set_brownout(id, value)
 	var/datum/power_grid/grid = power_grid(id)

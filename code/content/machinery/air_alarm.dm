@@ -534,16 +534,6 @@ CAPABILITIES(/obj/machinery/alarm)
 	alarm_area.air_device_register(dev_type, id_tag) // the area names it (a device registers itself; one from elsewhere joins here)
 	alarm_area.air_device_report(dev_type, id_tag, signal.data)
 
-/// Asks the devices whose status is stale for a fresh one.
-/obj/machinery/alarm/proc/refresh_all()
-	for(var/kind in list(AREA_AIR_VENT, AREA_AIR_SCRUBBER))
-		var/list/info = alarm_area.air_device_info(kind)
-		for(var/id_tag in alarm_area.air_device_names(kind))
-			var/datum/air_device_status/status = LAZYACCESS(info, id_tag)
-			if(status && ELAPSED(status, reported_at, CLOCK_WORLD) < AALARM_REPORT_TIMEOUT / 2)
-				continue
-			send_signal(id_tag, list("status" = TRUE))
-
 /obj/machinery/alarm/proc/set_frequency(new_frequency)
 	SSradio.remove_object(src, frequency)
 	frequency = new_frequency

@@ -78,9 +78,6 @@ CAPABILITIES(/obj/machinery/power/breakerbox/activated)
 	set_update_locked(1)
 	after(src, 60 SECONDS, PROC_REF(unlock_updates))
 
-/obj/machinery/power/breakerbox/proc/breakerbox_not_locked(mob/actor, atom/target, obj/item/held)
-	return !update_locked
-
 /obj/machinery/power/breakerbox/proc/hand_toggle_started(datum/act/op/A)
 	for(var/mob/O in viewers(A.actor))
 		O.show_message(span_red(text("[A.actor] started reprogramming [src]!")), 1)

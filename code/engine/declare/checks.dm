@@ -85,13 +85,6 @@
 		return "[L[1]]=[islist(arg) ? json_encode(arg) : "[arg]"]"
 	return null
 
-/// Why `spec` fails for actor/target, or null if it passes.
-/proc/definition_why_not(spec, datum/actor, datum/target)
-	var/datum/requirement_definition/C = definition_check_get(spec)
-	if(!C)
-		return "malformed check"
-	return C.why_not(actor, target)
-
 /datum/requirement_definition/combinator
 	var/op
 	var/list/parts

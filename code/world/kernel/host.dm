@@ -511,11 +511,6 @@ GLOBAL_LIST_INIT(empty_performance_window, list("samples" = 0, "avg" = 0, "p50" 
 
 #undef PERF_HISTOGRAM_BINS
 
-/// Warns us that the end of tick byond map_update will be laggier then normal, so that we can just skip the tick's work this tick.
-/datum/controller/kernel/proc/laggy_byond_map_update_incoming()
-	if (!skip_ticks)
-		skip_ticks = 1
-
 /datum/controller/kernel/stat_entry(msg)
 	msg = "(TickRate:[Kernel.processing]) (Iteration:[Kernel.iteration]) (TickLimit: [round(Kernel.current_ticklimit, 0.1)])"
 	return msg

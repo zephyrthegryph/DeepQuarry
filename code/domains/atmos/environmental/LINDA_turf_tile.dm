@@ -158,10 +158,6 @@ CAPABILITIES(/turf/open)
 	air_update_turf(FALSE, FALSE)
 	return removed
 
-/turf/open/proc/copy_air_with_tile(turf/open/target_turf)
-	if(istype(target_turf))
-		air.copy_from(target_turf.air)
-
 /turf/open/proc/copy_air(datum/gas_mixture/copy)
 	if(copy)
 		air.copy_from(copy)
@@ -320,11 +316,6 @@ CAPABILITIES(/turf/open)
 		for(var/obj/machinery/door/firedoor/firelock in boundary)
 			if(!firelock.density && !firelock.blocked)
 				firelock.close()
-
-/// Rust katmos hook: called during explosive depressurization; /tg rips up floor tiles
-/// under strong decompression. No-op stub (see note above). `sum` is the summed transfer.
-/turf/proc/handle_decompression_floor_rip(sum)
-	return
 
 /turf/open/proc/high_pressure_movements()
 	var/atom/movable/moving_atom

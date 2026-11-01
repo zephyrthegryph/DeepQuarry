@@ -140,12 +140,6 @@
 	entity_sync(rec, pos, TRUE)
 	return TRUE
 
-/proc/entity_attached(datum/E, B)
-	var/datum/scheduler_record/rec = E.om_rec
-	if(!rec)
-		return FALSE
-	return !!rec.att.Find(definition_registry().behaviour(B))
-
 /// Parks `B` on `E`: off its cadence ring until entity_unpark(). Wakes and deadlines still arrive.
 /proc/entity_park(datum/E, B)
 	var/datum/scheduler_record/rec = E.om_rec

@@ -357,13 +357,6 @@ SYSTEM_DEF(air)
 		return
 	T.update_air_ref(-1)
 
-///Legacy API alias — the arena has no separate "sleep" state; treat it as a
-///normal re-register (auxmos will drop it from processing once it's equalized).
-/datum/system/air/proc/sleep_active_turf(turf/open/T)
-	if(!T)
-		return
-	T.update_air_ref(0)
-
 /datum/system/air/StartLoadingMap()
 	LAZYINITLIST(queued_for_activation)
 	map_loading = TRUE

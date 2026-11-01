@@ -713,34 +713,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/work_pipeline) // compiled with the definiti
 	if(!isnull(idle_frames))
 		S.idle_frames = idle_frames
 
-/// Plan position of the variant of `stage_type`'s family on `E`'s plan, or 0.
-/proc/pipeline_plan_position(datum/work_frame/S, stage_type)
-	var/datum/work_stage/listed = definition_registry().stage_by_type[stage_type]
-	if(!listed)
-		return 0
-	for(var/i in 1 to S.plan.n)
-		var/datum/work_stage/T = S.plan.stages[i]
-		if(T.family == listed.family)
-			return i
-	return 0
-
-/proc/pipeline_pipe_replan(datum/E, P, datum/work_frame/S)
-	var/datum/work_pipeline/def = definition_registry().behaviour(P)
-	var/datum/work_plan/plan = def.plan_for(E, S.extras)
-	if(plan == S.plan)
-		return
-	deadline_cancel_all_after(E, def)
-	S.plan = plan
-	S.bits = pipeline_pipe_words(plan.n)
-	S.asleep = 0
-	S.idle_frames = 0
-	S.last_run = null
-	if(def.reactive)
-		pipeline_pipe_set_all(S, TRUE)
-	if(S.parked)
-		def.unpark(E, S, CHANGE_EXPLICIT)
-	entity_wake_id(E, def.id, CHANGE_EXPLICIT)
-
 /// Runs `E`'s variant of family `stage_type` now, outside the schedule, with its own frame (facts
 /// work; dt is the pipeline's nominal step). Its idle bit is unchanged. Returns perform()'s result.
 /proc/pipeline_stage_run_now(datum/E, stage_type)

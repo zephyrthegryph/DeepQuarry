@@ -263,11 +263,6 @@ SYSTEM_DEF(atoms)
 		return
 	atom_initialized = initialized_state[length(initialized_state)][2]
 
-/// Returns TRUE if anything is currently being initialized
-/datum/system/atoms/proc/initializing_something()
-	return length(initialized_state) > 1
-
-
 /datum/system/atoms/proc/InitLog()
 	. = ""
 	for(var/path in BadInitializeCalls)

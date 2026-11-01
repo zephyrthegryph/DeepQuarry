@@ -41,10 +41,11 @@
 //   tools/build/build.sh -DGC_FAILURE_HARD_LOOKUP    also auto-search every GC failure (freezes the world)
 // Unit-test builds (UNIT_TESTS) keep both on: find_reference_sanity and the
 // GC tests rely on them. See doc/testing.md "Reference tracking".
-#if defined(UNIT_TESTS) && !defined(GC_FAILURE_HARD_LOOKUP)
+// A benchmark build keeps them off: it measures what the server does, and one search freezes the world for two minutes.
+#if defined(UNIT_TESTS) && !defined(BENCHMARK) && !defined(GC_FAILURE_HARD_LOOKUP)
 #define GC_FAILURE_HARD_LOOKUP
 #endif
-#if defined(GC_FAILURE_HARD_LOOKUP) && !defined(REFERENCE_TRACKING)
+#if (defined(GC_FAILURE_HARD_LOOKUP) || defined(UNIT_TESTS)) && !defined(REFERENCE_TRACKING)
 #define REFERENCE_TRACKING
 #endif
 #ifdef REFERENCE_TRACKING

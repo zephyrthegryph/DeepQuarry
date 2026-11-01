@@ -42,8 +42,3 @@
 		return
 	rel_set(src, nameof(destination), T)
 	invalidate_selection()
-
-/datum/ai_brain/proc/clear_destination()
-	rel_clear(src, nameof(destination))
-	clear_path()
-	invalidate_selection()

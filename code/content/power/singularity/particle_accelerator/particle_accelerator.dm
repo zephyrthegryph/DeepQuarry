@@ -162,9 +162,6 @@ CAPABILITIES(/obj/structure/particle_accelerator)
 /obj/structure/particle_accelerator/proc/report_ready(obj/O)
 	return O && O == master && !QDELETED(src) && pa_stage() >= 3
 
-/obj/structure/particle_accelerator/proc/report_master()
-	return master || 0
-
 /obj/structure/particle_accelerator/proc/connect_master(obj/O)
 	if(O && istype(O,/obj/machinery/particle_accelerator/control_box))
 		if(O.dir == src.dir)
