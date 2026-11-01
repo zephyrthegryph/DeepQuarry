@@ -457,7 +457,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 			// full 4-direction cost (~1 s).
 			update_preview_icon_lazy()
 	catch(var/exception/e)
-		stack_trace("update_preference runtimed: [e.name] at [e.file]:[e.line] (key=[preference.savefile_key])")
+		dq_report_caught(e, "update_preference runtimed (key=[preference.savefile_key])")
 		// Undo only this frame's increment (nested frames each unwind their own), then
 		// clamp as a last-resort guard. The batch counter is decremented by
 		// end_update_batch below regardless.
@@ -465,7 +465,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 			constraint_cascade_depth -= 1
 			cascade_bumped = FALSE
 		if(constraint_cascade_depth < 0)
-			stack_trace("constraint_cascade_depth went negative ([constraint_cascade_depth]) after runtime in [preference.savefile_key]; clamping")
+			dq_report_caught(EXCEPTION("constraint_cascade_depth went negative ([constraint_cascade_depth]) after runtime in [preference.savefile_key]; clamping"), "update_preference")
 			constraint_cascade_depth = 0
 
 	end_update_batch()

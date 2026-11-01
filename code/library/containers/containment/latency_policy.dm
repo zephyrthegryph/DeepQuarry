@@ -94,7 +94,7 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 				// One bad atom must not end the whole frame (and with it every
 				// other holder's turn): log it with context and back it off.
 				cooldown_start(A, latent_refused_until, max(holder?.latent_idle_delay_value(), LATENCY_REFUSAL_BACKOFF_MIN))
-				stack_trace("LATENCY_SWEEP: can_be_latent([A.type] in [holder.type]) runtimed: [e.name] at [e.file]:[e.line] -- [e.desc]")
+				dq_report_caught(e, "LATENCY_SWEEP: can_be_latent([A.type] in [holder.type]) runtimed")
 				continue
 			var/check_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - check_start)
 			if(check_ms >= LATENCY_SWEEP_SLOW_MS && GLOB.latency_slow_logged < 40)

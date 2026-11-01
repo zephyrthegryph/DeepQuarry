@@ -176,7 +176,7 @@ GLOBAL_LIST_EMPTY(lives_scope_of)
 			try
 				call(thing, E.args["handler"])(cause, by)
 			catch(var/exception/e)
-				stack_trace("on_ending() of [thing.type]: [e] ([e.file]:[e.line])")
+				dq_report_caught(e, "on_ending() of [thing.type]")
 	if(thing.lifeform_scoped)
 		lives_in_scope_ended(thing)
 	// Something can listen only when the thing has reaction state (an observer) or its type a compiled table (an on_notice hook).
