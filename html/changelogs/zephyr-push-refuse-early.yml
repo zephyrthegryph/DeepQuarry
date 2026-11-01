@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "A push with a stale stamp is refused before its compile and ratchets, not after"
