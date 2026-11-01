@@ -79,7 +79,7 @@
 	P.silence_time = 0
 	P.emp_act(EMP_MEDIUM)
 	own_around()
-	TEST_ASSERT(P.silence_time > world.timeofday, "a pulse starts the communication reboot")
+	TEST_ASSERT(P.silence_time > REALTIMEOFDAY, "a pulse starts the communication reboot")
 
 /// A synthetic simple mob takes ionic damage from a pulse, scaled to its endurance; an organic one takes none.
 /datum/unit_test/dq_hc_mobs/simple_mob_emp_surge
