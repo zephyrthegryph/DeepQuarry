@@ -37,7 +37,9 @@ pub enum Mode {
 }
 
 /// A frame that follows one shorter than this runs on the one-thread light pool instead of the frame pool.
-pub const LIGHT_FRAME: Duration = Duration::from_millis(2);
+// A frame runs off the DM thread, so a few more milliseconds on one thread cost nothing while 14 workers spinning through a frame cost a quarter of a core.
+// At 2 ms no idle frame ever qualified: the idle step takes about 7 ms on the full pool and about 20 ms on one thread, a tenth of its 500 ms period.
+pub const LIGHT_FRAME: Duration = Duration::from_millis(50);
 
 /// Construction options.
 #[derive(Clone, Debug)]
