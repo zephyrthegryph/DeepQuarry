@@ -36,6 +36,19 @@
 		lighting_object.removefromturf()
 		spent(lighting_object, force = TRUE)
 
+/// A copy of this turf's underlays without its lighting underlay: what a snapshot of the turf's appearance keeps. The lighting object stays.
+/turf/proc/underlays_without_lighting()
+	if(!lighting_object)
+		return underlays.Copy()
+	lighting_object.removefromturf()
+	. = underlays.Copy()
+	lighting_object.addtoturf()
+
+/// Replaces this turf's underlays with a snapshot, keeping its lighting underlay.
+/turf/proc/set_underlays_keeping_lighting(list/snapshot)
+	underlays = snapshot.Copy()
+	lighting_object?.addtoturf()
+
 // Builds a lighting object for us, but only if our area is dynamic.
 /turf/proc/lighting_build_overlay()
 	if(!has_dynamic_lighting())
