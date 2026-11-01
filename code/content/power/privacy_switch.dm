@@ -20,10 +20,6 @@ CAPABILITIES(/obj/structure/privacyswitch)
 	op("toggle_privacy", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(cooled_down_holds))),
 		asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(toggle_question)), "title" = "Toggle ghost vision?", "choices" = list("Yes", "No"), "buttons" = TRUE), when = PROC_REF(has_area)), then(PROC_REF(interaction_hand)))
 
-/// Requirement: the switch has a use cooldown.
-/obj/structure/privacyswitch/proc/cooled_down(mob/user, atom/target, obj/item/held)
-	return COOLDOWN_FINISHED(src, use_cooldown) ? TRUE : "the area can not be altered so soon again"
-
 /// Old attack_hand.
 /obj/structure/privacyswitch/proc/interaction_hand(datum/act/op/action)
 	var/mob/user = action.actor

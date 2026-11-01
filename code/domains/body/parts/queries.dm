@@ -55,10 +55,6 @@
 		return null
 	return E
 
-/// This limb's child limbs.
-/obj/item/organ/external/proc/child_parts()
-	return slot_contents(SLOT_ID_PART_CHILD)
-
 /// The internal organs this limb holds.
 /obj/item/organ/external/proc/held_organs()
 	return slot_contents(SLOT_ID_PART_ORGANS)

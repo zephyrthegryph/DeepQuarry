@@ -335,19 +335,6 @@ GLOBAL_LIST_EMPTY(stat_release_queue) // list(entity, source) rows waiting for t
 			return
 	GLOB.stat_release_queue += list(list(E, source))
 
-/// stat_release_rows() for a slice: the stats it touches are marked for the next marked drain instead of recomputed inline.
-/proc/stat_release_rows_marked(datum/E, datum/stat_record/rec, list/rows)
-	var/list/touched = list()
-	for(var/list/row as anything in rows)
-		var/datum/stat_def/def = stat_def_of(row[H_STAT])
-		if(def && !(def in touched))
-			touched += def
-		stat_hold_remove(E, rec, row)
-	stat_expiry_reschedule(E)
-	for(var/datum/stat_def/def as anything in touched)
-		stat_mark(E, def)
-	return length(rows)
-
 /// Takes one row out of the record, and its source's index of where it holds.
 /proc/stat_hold_remove(datum/E, datum/stat_record/rec, list/row)
 	rec.holds -= list(row)

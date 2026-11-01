@@ -4,10 +4,6 @@
 /datum/system/power
 	name = "power"
 
-/// The members holding `role` (a copy: a caller that yields may see members leave meanwhile).
-/datum/system/power/proc/members_with_role(role)
-	return members_of(type, role).Copy()
-
 /// The role `A` holds here, or null.
 /datum/system/power/proc/role_of(atom/A)
 	return member_role(type, A)

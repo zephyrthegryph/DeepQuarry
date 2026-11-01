@@ -698,28 +698,6 @@ CAPABILITIES(/datum/system/tgui)
 	ui.status_watch()
 	return TRUE
 
-/**
- * public
- *
- * Re-home every UI a src_object has open onto the given mob. Used by persistent,
- * client-scoped UIs (tooltip, media panel) whose window belongs to the client
- * rather than to any one mob, so they follow the client across mob changes
- * (lobby -> spawn, ghosting, respawn) instead of being left bound to a dead mob.
- *
- * required src_object datum The object whose UIs should follow the client.
- * required target mob The client's current mob.
- *
- * return int The number of UIs transferred.
- */
-/datum/system/tgui/proc/rehome_uis(datum/src_object, mob/target)
-	var/count = 0
-	if(!LAZYLEN(src_object?.open_tguis) || QDELETED(target))
-		return count
-	for(var/datum/tgui/ui in src_object.open_tguis)
-		if(transfer_ui(ui, target))
-			count++
-	return count
-
 /// The shell asset bundle of this generation: its own for a live build, else the registry singleton.
 /datum/tgui_asset_generation/proc/shell_assets() as /datum/asset/simple
 	return live_shell_assets || get_asset_datum(/datum/asset/simple/tgui)

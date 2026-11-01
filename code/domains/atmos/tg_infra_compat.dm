@@ -60,10 +60,6 @@ GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00
 	var/gas_string = ""
 	var/temperature = T20C
 
-/datum/atmosphere/proc/return_gas_string()
-	return ""
-
-
 // === SSmapping multi-z helpers (CHOMP doesn't expose these as GLOB lists) ===
 /datum/system/mapping
 	var/list/z_list = list() // subsystem singleton; one entry per z-level
