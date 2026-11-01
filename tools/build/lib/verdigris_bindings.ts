@@ -888,7 +888,7 @@ function renderComponentsDm(root: string, components: Component[], domainEvents:
 
   // The one event path (rust_architecture.md §4.8): the frame's outbox carries
   // every typed event as a NOTICE record (`vg_frame`, ffi/src/frame.rs); the
-  // native system (code/datums/native/system.dm) hands each to this decoder.
+  // native system (code/domains/verdigris/system.dm) hands each to this decoder.
   dm += `/// Dispatches one typed event, a NOTICE record of the frame outbox (§4.8):\n`;
   dm += `/// \`header\` and \`entity\` from the record, its fields at \`flat[p]\` on. Component\n`;
   dm += `/// events go to the bound atom (checked against vg_entity: a detached\n`;

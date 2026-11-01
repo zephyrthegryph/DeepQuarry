@@ -294,7 +294,7 @@ fn rewrite_calls(text: &str, name: &str, f: &dyn Fn(&[String]) -> String) -> Str
 fn global_constructors(cx: &GenCx, caps: &[Cap]) -> BTreeSet<String> {
     let mut set: BTreeSet<String> = caps.iter().map(|c| c.name.clone()).collect();
     set.extend(static_kinds(cx));
-    // `every` keeps its legacy body in code/datums/reactions (the system form) and dispatches a capability's every(interval, then(...)) to the engine.
+    // `every` keeps its legacy body in code/library/reactions (the system form) and dispatches a capability's every(interval, then(...)) to the engine.
     set.insert("every".to_string());
     for f in cx.tree.select(&crate::tree::CODE_DM) {
         if !f.rel.starts_with("code/engine/") {

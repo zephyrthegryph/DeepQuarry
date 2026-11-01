@@ -1062,7 +1062,7 @@ fn boot_text(model: &Model) -> Vec<String> {
     let (flags, members) = reaction_declarations(model);
     let mut out: Vec<String> = Vec::new();
     let mut push = |s: &str| out.push(s.to_string());
-    push("/// Types whose reactions() declare every() / on_cross() / on_notice(), with the RXB_* kinds (code/datums/reactions/work.dm).");
+    push("/// Types whose reactions() declare every() / on_cross() / on_notice(), with the RXB_* kinds (code/library/reactions/work.dm).");
     push("/proc/rx_boot_types()");
     push("\tRETURN_TYPE(/list)");
     push("\t// Built on first call: a static or global initializer may not have run yet when the first atoms initialize.");

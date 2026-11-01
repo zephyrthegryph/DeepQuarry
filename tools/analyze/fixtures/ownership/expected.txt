@@ -32,7 +32,7 @@ matrix	code/modules/own/types.dm	38
 matrix	code/modules/own/types.dm	39
 matrix	code/modules/own/types.dm	41
 raw_write	code/_helpers/helpers.dm	3
-raw_write	code/datums/callback.dm	4
+raw_write	code/library/datum/callback.dm	4
 raw_write	code/modules/own/ctrl.dm	8
 raw_write	code/modules/own/drift.dm	5
 raw_write	code/modules/own/drift.dm	9

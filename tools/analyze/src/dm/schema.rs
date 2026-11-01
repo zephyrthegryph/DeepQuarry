@@ -35,7 +35,7 @@ pub const DEF_TYPES: &[&str] = &["/datum/material", "/datum/decl", "/decl", "/da
 /// Base types whose vars are reported by `--report` (the tmp hygiene pass).
 pub const BASE_TYPES: &[&str] = &["/datum", "/atom", "/atom/movable", "/obj", "/obj/item", "/obj/machinery", "/mob"];
 /// Where `REGISTRY_TYPE(...)` rows live.
-pub const REGISTRY_FILE: &str = "code/datums/ownership/registry_types.dm";
+pub const REGISTRY_FILE: &str = "code/library/ownership/registry_types.dm";
 
 /// A declared var (`class Var`).
 #[derive(Clone, Debug)]

@@ -1,4 +1,4 @@
-// Global procs under code/datums/capabilities/ are followed as constructor bundles.
+// Global procs under code/library/capabilities/ are followed as constructor bundles.
 /proc/door_bundle(subtypes)
 	. = list(cap_lock(), cap_cycle_a())
 
