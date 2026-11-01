@@ -836,6 +836,7 @@ legacy_forms_converted = [
   "code/content/tgchat/",
   "code/content/tgs_commands/",
   "code/library/ui/tgui/",
+  "code/content/tgui/modules/",
   "code/content/tgui/",
   "code/library/ui/tgui_input/",
   "code/content/tgui_input/",

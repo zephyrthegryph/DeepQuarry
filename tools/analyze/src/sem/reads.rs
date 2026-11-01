@@ -30,7 +30,7 @@ use super::Sem;
 
 /// Engine-internal directories the lints' walk does not enter (dispatchers that read `vars[]` by design, the tgui plumbing, the Verdigris
 /// bindings). The closed walk ([`ReadsEngine::closed`]) enters them; what it finds there or beneath them is `closed_only`.
-pub const ENGINE_DIRS: &[&str] = &["code/datums/sys/", "code/datums/om/", "code/library/ui/tgui/", "code/datums/capabilities/", "code/datums/reactions/", "code/datums/ownership/", "code/engine/", "code/__defines/verdigris/"];
+pub const ENGINE_DIRS: &[&str] = &["code/datums/sys/", "code/datums/om/", "code/library/ui/tgui/", "code/content/tgui/modules/", "code/datums/capabilities/", "code/datums/reactions/", "code/datums/ownership/", "code/engine/", "code/__defines/verdigris/"];
 
 /// Maximum depth of followed procs (a guard against pathological recursion, not a semantic limit).
 const MAX_DEPTH: usize = 24;
