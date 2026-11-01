@@ -1,4 +1,4 @@
-// The content half of code/base/helpers/sorts/comparators.dm: what names content, so the layer the engine calls cannot hold it.
+// The content half of code/host/helpers/sorts/comparators.dm: what names content, so the layer the engine calls cannot hold it.
 
 // Sorts jobs by department, and then by flag within department
 /proc/cmp_job_datums(datum/job/a, datum/job/b)

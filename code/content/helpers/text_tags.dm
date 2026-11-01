@@ -1,4 +1,4 @@
-// The content half of code/base/helpers/text.dm: what names content, so the layer the engine calls cannot hold it.
+// The content half of code/host/helpers/text.dm: what names content, so the layer the engine calls cannot hold it.
 
 //For generating neat chat tag-images
 //The icon var could be local in the proc, but it's a waste of resources

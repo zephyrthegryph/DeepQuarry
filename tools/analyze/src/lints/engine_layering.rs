@@ -1,4 +1,4 @@
-//! Hard engine boundary to library/content/game/modules/datums, and base (code/base/) boundary to everything above it: semantic provenance, not name prefixes.
+//! Hard engine boundary to library/content/game/modules/datums, with code/host/ held to the same boundary: semantic provenance, not name prefixes.
 //! Dynamic target values and untyped receiver chains have no static provenance and are not prohibited by this lint.
 use std::collections::BTreeSet;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
@@ -15,7 +15,7 @@ struct EngineLayering;
 impl Lint for EngineLayering {
     fn meta(&self) -> &Meta { &META }
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
-        let files: Vec<_> = cx.files().into_iter().filter(|f| f.rel.starts_with("code/engine/") || f.rel.starts_with("code/base/")).collect();
+        let files: Vec<_> = cx.files().into_iter().filter(|f| f.rel.starts_with("code/engine/") || f.rel.starts_with("code/host/")).collect();
         if files.is_empty() { return; }
         let Some(sem) = cx.sem() else {
             out.site_in_msg("semantic_model", &files[0].rel, 1, "no semantic model: engine boundary not verified"); return;

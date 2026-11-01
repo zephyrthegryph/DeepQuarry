@@ -1,4 +1,4 @@
-// The content half of code/base/adjacent.dm: what names content, so the layer the engine calls cannot hold it.
+// The content half of code/host/adjacent.dm: what names content, so the layer the engine calls cannot hold it.
 
 // This is necessary for storage items not on your person.
 /obj/item/Adjacent(atom/neighbor, recurse = 1)

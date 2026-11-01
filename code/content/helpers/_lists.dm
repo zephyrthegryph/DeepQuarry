@@ -1,4 +1,4 @@
-// The content half of code/base/helpers/_lists.dm: what names content, so the layer the engine calls cannot hold it.
+// The content half of code/host/helpers/_lists.dm: what names content, so the layer the engine calls cannot hold it.
 
 //Mergsort: does the actual sorting and returns the results back to sortAtom
 //Mergesort: Specifically for record datums in a list.

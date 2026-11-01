@@ -1,4 +1,4 @@
-// The content half of code/base/helpers/unsorted.dm: what names content, so the layer the engine calls cannot hold it.
+// The content half of code/host/helpers/unsorted.dm: what names content, so the layer the engine calls cannot hold it.
 
 //Returns location. Returns null if no location was found.
 /proc/get_teleport_loc(turf/location,mob/target,distance = 1, density = FALSE, errorx = 0, errory = 0, eoffsetx = 0, eoffsety = 0)

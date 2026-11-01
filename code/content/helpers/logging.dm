@@ -1,4 +1,4 @@
-// The content half of code/base/helpers/logging/_logging.dm: what names content, so the layer the engine calls cannot hold it.
+// The content half of code/host/helpers/logging/_logging.dm: what names content, so the layer the engine calls cannot hold it.
 
 /**
  * Generic logging helper
