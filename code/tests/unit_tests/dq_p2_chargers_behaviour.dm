@@ -26,17 +26,8 @@
 /proc/p2c_power_change(obj/machinery/M)
 	M.power_change()
 
-/// The machine is still the legacy interaction-table form (its handlers are the interaction_* procs): a tool, a drag and a cyborg's touch reach it
-/// through the mob click paths the driver does not run, so the adapters below call them. The converted charger has ops for all three and the
-/// adapters use the driver.
-/proc/p2c_legacy(obj/machinery/M)
-	return !!hascall(M, "interaction_take")
-
 /// A wrench used on the machine.
 /proc/p2c_wrench(mob/living/carbon/human/H, obj/machinery/M, obj/item/tool)
-	if(p2c_legacy(M) && hascall(M, "wrench_act"))
-		call(M, "wrench_act")(H, tool)
-		return
 	cooldown_set_end(H, next_click, 0)
 	test_click(H, M, tool)
 
@@ -46,12 +37,6 @@
 
 /// A cyborg beside the machine touches it with no module in hand.
 /proc/p2c_borg_touch(mob/living/silicon/robot/B, obj/machinery/M)
-	if(p2c_legacy(M))
-		if(hascall(M, "cell_charger_silicon_take"))
-			call(M, "cell_charger_silicon_take")(B, null, null)
-		else
-			call(M, "recharger_silicon_take")(B, null, null)
-		return
 	test_click(B, M, null)
 
 /datum/unit_test/dq_p2_chargers
