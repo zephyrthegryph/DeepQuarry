@@ -11,7 +11,6 @@
 	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
 
 /obj/item/dq_decl_hidden_item
-	init_hide_identity = TRUE
 
 /datum/unit_test/dq_decl_remaining/identity
 /datum/unit_test/dq_decl_remaining/identity/Run()
@@ -148,3 +147,6 @@
 	for(var/obj/item/mmi/brain in contents_of(holder))
 		count++
 	TEST_ASSERT_EQUAL(count, 1, "adoption does not allocate a duplicate brain")
+
+CAPABILITIES(/obj/item/dq_decl_hidden_item)
+	owns_one(nameof(identity), /datum/identification, starts = /datum/identification, early = TRUE)

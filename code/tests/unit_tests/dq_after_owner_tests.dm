@@ -160,3 +160,29 @@
 	var/turf/T = test_floor()
 	TEST_ASSERT(hascall(T, "consider_firelocks"), "the katmos firelock callback exists")
 	TEST_ASSERT(hascall(T, "handle_decompression_floor_rip"), "the katmos floor rip callback exists")
+
+/// Move wave A changed the compile order of nine client preference files. Their global initialisers read other globals, so an order that broke would leave these empty.
+/datum/unit_test/dq_preference_globals_init_in_order
+
+/datum/unit_test/dq_preference_globals_init_in_order/Run()
+	TEST_ASSERT(length(GLOB.preference_entries), "the preference singletons exist")
+	TEST_ASSERT(length(GLOB.preference_entries_by_key), "and by key")
+	TEST_ASSERT(length(GLOB.pref_metadata_table), "the metadata table was built")
+	for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
+		for(var/key in editor.static_invalidator_keys)
+			TEST_ASSERT(editor in GLOB.dq_editor_static_invalidators_by_key[key], "[editor.type] is indexed under [key]")
+	TEST_ASSERT(GLOB.dq_species_preview_cache["__robot__"], "the species preview cache was warmed")
+	for(var/species_name in GLOB.playable_species)
+		var/datum/species/S = GLOB.all_species[species_name]
+		if(S && species_name != SPECIES_CUSTOM)
+			TEST_ASSERT(length(GLOB.dq_species_preview_cache), "species were available when the cache warmed")
+			break
+
+/// An unidentified hypospray starts with its hypo identification from its own block; an ordinary injector allocates none.
+/datum/unit_test/dq_unidentified_hypo_has_identity
+
+/datum/unit_test/dq_unidentified_hypo_has_identity/Run()
+	var/obj/item/reagent_containers/hypospray/autoinjector/bonemed/unidentified/hidden = allocate(/obj/item/reagent_containers/hypospray/autoinjector/bonemed/unidentified)
+	var/obj/item/reagent_containers/hypospray/autoinjector/bonemed/plain = allocate(/obj/item/reagent_containers/hypospray/autoinjector/bonemed)
+	TEST_ASSERT(istype(hidden.identity, /datum/identification/hypo), "the unidentified one has its hypo identification, got [hidden.identity]")
+	TEST_ASSERT_NULL(plain.identity, "the ordinary one has none")

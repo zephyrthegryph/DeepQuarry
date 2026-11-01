@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Changing species in character setup refreshes the loadout and robot chassis editors again."

@@ -58,8 +58,6 @@
 	var/list/possessed_voice //Allows for items to be possessed/inhabited by voices.
 	var/list/tool_qualities
 	var/datum/identification/identity = null // owned: identification datum, refers back to its holder
-	var/identity_type = /datum/identification
-	var/init_hide_identity = FALSE // Set to true to automatically obscure the object on initialization.
 
 	var/d_mult = 1 //digest stage descriptions
 	var/gurgled = FALSE
