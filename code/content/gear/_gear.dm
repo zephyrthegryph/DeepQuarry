@@ -157,7 +157,9 @@ CAPABILITIES(/datum/gear)
 	src.path = path
 	src.location = location
 
-/datum/gear/proc/spawn_item(location, metadata)
+/// `prefs`: whose palette a channel colour linked to a slot follows; without it a linked channel stays as drawn.
+/datum/gear/proc/spawn_item(location, metadata, datum/preferences/prefs)
+	metadata = clothing_channel_resolve_links(metadata, prefs)
 	var/datum/gear_data/gd = new(path, location)
 	// propagate variant from gear to gear_data so tweaks can override it.
 	gd.variant = variant

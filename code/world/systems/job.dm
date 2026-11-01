@@ -549,7 +549,7 @@ CAPABILITIES(/datum/system/job)
 					// no_jacket pref deleted; this gate is dead code now.
 // if(gaar_thing.slot == SLOT_ID_SHOES && human_mob.client?.prefs?.shoe_hater) //RS ADD // Disable
 // continue // Disable
-					if(human_mob.equip_to_slot_or_del(gaar_thing.spawn_item(human_mob, metadata), gaar_thing.slot))
+					if(human_mob.equip_to_slot_or_del(gaar_thing.spawn_item(human_mob, metadata, human_mob.client?.prefs), gaar_thing.slot))
 						to_chat(human_mob, span_notice("Equipping you with \the [thing]!"))
 						if(gaar_thing.slot != SLOT_ID_TIE)
 							custom_equip_slots.Add(gaar_thing.slot)
@@ -583,7 +583,7 @@ CAPABILITIES(/datum/system/job)
 			else
 				var/list/active_gear_list = human_mob.client.prefs.get_loadout_for_job(rank) // per-job loadout (was: gear_list[gear_slot])
 				var/metadata = active_gear_list[gear_thing.display_name]
-				if(human_mob.equip_to_slot_or_del(gear_thing.spawn_item(human_mob, metadata), gear_thing.slot))
+				if(human_mob.equip_to_slot_or_del(gear_thing.spawn_item(human_mob, metadata, human_mob.client?.prefs), gear_thing.slot))
 					to_chat(human_mob, span_notice("Equipping you with \the [thing]!"))
 					custom_equip_slots.Add(gear_thing.slot)
 				else
@@ -642,7 +642,7 @@ CAPABILITIES(/datum/system/job)
 					to_chat(human_mob, span_notice("Placing \the [thing] in your [storage_bag.name]!"))
 					var/datum/gear/gear_thing = GLOB.gear_datums[thing]
 					var/metadata = active_gear_list[gear_thing.display_name]
-					gear_thing.spawn_item(storage_bag, metadata)
+					gear_thing.spawn_item(storage_bag, metadata, human_mob.client?.prefs)
 			else
 				to_chat(human_mob, span_danger("Failed to locate a storage object on your mob, either you spawned with no arms and no backpack or this is a bug."))
 

@@ -6,6 +6,7 @@
 //   tint    — value is a hex string ("#aabbcc"); multiplies via add_atom_colour
 //   palette — value is a {original_hex: new_hex} dict; SwapColor per entry
 //   matrix  — value is a 12+ element color matrix list; applied via add_atom_colour
+//   channels — value is up to 3 "#rrggbb" (or "": that channel stays as drawn), one per colour channel (clothing_channels.dm)
 //
 // The palette swap mode reads the gear's source icon at edit time to enumerate the
 // distinct colors the user can recolor. dq_get_gear_palette() caches per gear-type so
@@ -33,6 +34,8 @@
 			return "Recolor: palette ([count] swap[count == 1 ? "" : "s"])"
 		if("matrix")
 			return "Recolor: matrix"
+		if("channels")
+			return "Recolor: channels"
 	return "Recolor: ?"
 
 // Modal flow is unused for this tweak — React drives all three modes inline through
@@ -104,6 +107,8 @@
 					var/icon/swapped_sheet = _swap_icon(I.sprite_sheets[species], swaps)
 					new_sheets[species] = swapped_sheet || I.sprite_sheets[species]
 				I.set_sprite_sheets(new_sheets)
+		if("channels")
+			I.apply_clothing_channels(metadata["value"])
 		if("matrix")
 			var/list/m = metadata["value"]
 			if(islist(m) && length(m) >= 12)

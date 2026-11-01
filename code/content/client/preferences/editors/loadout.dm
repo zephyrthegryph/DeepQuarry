@@ -448,6 +448,7 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 				// runs once per session per type.
 				if(_kind == "recolor")
 					desc["palette"] = dq_get_gear_palette(G)
+					desc["channels"] = clothing_channel_bases(G.path)
 				tweak_descriptors += list(desc)
 			items += list(list(
 				"name" = G.display_name,
@@ -655,6 +656,21 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 		swaps[original] = sanitized
 	write_tweak_meta(ask, list("mode" = "palette", "value" = swaps))
 
+/datum/preference_editor/loadout/proc/channel_color_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/color/prefs/gear_tweak/ask = A.answer
+	var/list/gear_list = ask.preferences.read_preference(/datum/preference/gear_list) || list()
+	var/list/active = gear_list[ask.loadout_key] || list()
+	var/list/item_meta = active[ask.gear_name]
+	var/list/cur_meta = islist(item_meta) ? item_meta["[ask.tweak_idx]"] : null
+	var/list/cur = (islist(cur_meta) && cur_meta["mode"] == "channels" && islist(cur_meta["value"])) ? cur_meta["value"] : list()
+	var/list/colors = cur.Copy()
+	while(length(colors) < ask.original)
+		colors += ""
+	colors[ask.original] = lowertext(sanitize_hexcolor(ask.value, default = ask.default))
+	write_tweak_meta(ask, list("mode" = "channels", "value" = colors))
+
 /datum/preference_editor/loadout/before_action(datum/preferences/preferences, mob/user, action)
 	_validate_and_persist_slot(preferences)
 
@@ -860,6 +876,25 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 	open_request(src, /datum/prompt/color/prefs/gear_tweak, PROC_REF(swatch_color_picked), answerer = user, title = "[G.display_name]", question = "Recolor source [original]", default = cur_value, preferences = preferences, gear_name = gear_name, tweak_idx = tweak_idx, loadout_key = loadout_key, original = original)
 	return PREF_UPDATE_UNCHANGED
 
+/datum/preference_editor/loadout/proc/ui_act_recolor_pick_channel(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
+	// BYOND's colour picker for one colour channel of the unified recolor tweak.
+	var/gear_name = params["gear"]
+	var/tweak_idx = params["tweak"]
+	var/index = params["index"]
+	var/datum/gear/G = GLOB.gear_datums[gear_name]
+	if(!G || !isnum(tweak_idx) || tweak_idx < 1 || tweak_idx > length(G.gear_tweaks) || !isnum(index) || index < 1 || index > 3)
+		return PREF_UPDATE_REJECTED
+	if(!istype(LAZYACCESS(G.gear_tweaks, tweak_idx), /datum/gear_tweak/recolor))
+		return PREF_UPDATE_REJECTED
+	var/loadout_key = _current_slot(preferences)
+	var/list/gear_list = preferences.read_preference(/datum/preference/gear_list) || list()
+	var/list/active = gear_list[loadout_key] || list()
+	if(!(gear_name in active))
+		return PREF_UPDATE_REJECTED
+	var/current = params["current"]
+	open_request(src, /datum/prompt/color/prefs/gear_tweak, PROC_REF(channel_color_picked), answerer = user, title = "[G.display_name]", question = "Channel [index] colour", default = clothing_channel_normal_hex(current) || "#ffffff", preferences = preferences, gear_name = gear_name, tweak_idx = tweak_idx, loadout_key = loadout_key, original = index)
+	return PREF_UPDATE_UNCHANGED
+
 /datum/preference_editor/loadout/proc/ui_act_recolor_pick_matrix(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	// opens the matrix colormatrix picker for the unified recolor tweak.
 	var/gear_name = params["gear"]
@@ -934,7 +969,7 @@ CAPABILITIES(/datum/prompt/colormatrix/prefs/gear_tweak)
 
 /datum/preference_editor/loadout/proc/ui_act_set_recolor(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	// direct write for the unified recolor tweak. value is a dict:
-	//   {mode: "off"|"tint"|"palette"|"matrix", value: <mode-specific>}
+	//   {mode: "off"|"tint"|"palette"|"matrix"|"channels", value: <mode-specific>}
 	var/gear_name = params["gear"]
 	var/tweak_idx = params["tweak"]
 	var/list/value = params["value"]
@@ -947,7 +982,7 @@ CAPABILITIES(/datum/prompt/colormatrix/prefs/gear_tweak)
 	if(!islist(value))
 		return PREF_UPDATE_REJECTED
 	var/mode = value["mode"]
-	if(!(mode in list("off", "tint", "palette", "matrix")))
+	if(!(mode in list("off", "tint", "palette", "matrix", "channels")))
 		return PREF_UPDATE_REJECTED
 	// Validate-and-reconstruct: never persist the caller's dict directly — it may
 	// carry stray params keys, and writing back the same reference would mutate the
@@ -972,6 +1007,15 @@ CAPABILITIES(/datum/prompt/colormatrix/prefs/gear_tweak)
 				if(istext(orig) && istext(new_color) && orig != new_color)
 					cleaned[orig] = new_color
 			value = list("mode" = "palette", "value" = cleaned)
+		if("channels")
+			// At most 3 entries, each a colour, a palette slot name (it follows the slot) or "" (that channel stays as drawn); anything else reads as "".
+			var/list/picked = value["value"]
+			if(!islist(picked))
+				return PREF_UPDATE_REJECTED
+			var/list/cleaned = list()
+			for(var/i in 1 to min(length(picked), 3))
+				cleaned += dq_color_slot_type(picked[i]) ? picked[i] : (clothing_channel_normal_hex(picked[i]) || "")
+			value = list("mode" = "channels", "value" = cleaned)
 		if("matrix")
 			// Initial switch to matrix mode sends an empty list — that's fine, the
 			// matrix picker fills it. Only reject if value is *set* but malformed
@@ -1078,6 +1122,12 @@ CAPABILITIES(/datum/prompt/colormatrix/prefs/gear_tweak)
 				return PREF_UPDATE_REJECTED
 			before_action(preferences, user, action)
 			return ui_act_recolor_pick_palette_swatch(user, typed, preferences, null, action)
+		if("recolor_pick_channel")
+			typed = payload_args(src, params, list("gear" = null, "tweak" = num(), "index" = num(), "current" = schema_text(16)))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_recolor_pick_channel(user, typed, preferences, null, action)
 		if("recolor_pick_matrix")
 			typed = payload_args(src, params, list("gear" = null, "tweak" = num()))
 			if(!typed)
