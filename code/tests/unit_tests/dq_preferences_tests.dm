@@ -164,46 +164,146 @@
 		TEST_ASSERT_EQUAL(mode_index[1], "identity", "[mode] mode opens on Identity")
 
 
-/// A character's colour palette is a real character preference: written, saved to the character's save and read
-/// back the same, cleaned on the way in (bad entries and duplicates dropped, at most eight colours).
-/datum/unit_test/dq_pref_color_palette_roundtrip
-
-/datum/unit_test/dq_pref_color_palette_roundtrip/Run()
-	var/datum/preference/color_palette/pref = GLOB.preference_entries[/datum/preference/color_palette]
-	TEST_ASSERT_NOTNULL(pref, "color_palette is registered")
-	TEST_ASSERT_EQUAL(pref.savefile_identifier, PREFERENCE_CHARACTER, "the palette is saved per character")
-	TEST_ASSERT_EQUAL(pref.get_category(null), "appearance", "the palette lives on the Looks tab")
-	TEST_ASSERT_EQUAL(pref.get_group(null), "palette", "in its own group")
-	TEST_ASSERT_EQUAL(pref.get_widget(null), PREF_WIDGET_PALETTE, "with the palette widget")
-	TEST_ASSERT(pref.is_client_writable(null), "the window may write it")
-
-	var/list/cleaned = pref.pref_deserialize(list("#AA0000", "#aa0000", "not a colour", 5, "#00ff00", "#0000ff", "#111111", "#222222", "#333333", "#444444", "#555555", "#666666"), null)
-	TEST_ASSERT_EQUAL(length(cleaned), 8, "at most eight colours survive: [json_encode(cleaned)]")
-	TEST_ASSERT_EQUAL(cleaned[1], "#aa0000", "colours are lower-cased, the duplicate dropped")
-	TEST_ASSERT_EQUAL(cleaned[2], "#00ff00", "and the bad entries dropped")
-	TEST_ASSERT(!pref.is_valid(list("#zzzzzz")), "a bad colour is not a valid palette")
-
+/// A scratch copy of the fixture save, with `character_overrides` written into character 1, loaded.
+/proc/dq_palette_test_prefs(list/character_overrides)
 	var/path = "data/dq_palette_saves/[world.realtime]_[rand(1, 99999)]/preferences.json"
-	TEST_ASSERT(fcopy("code/tests/unit_tests/data/profile_saves/headless_preferences.json", path), "the fixture save is copied to a scratch path")
-	var/datum/preferences/dq_test_stub/P = allocate(/datum/preferences/dq_test_stub)
+	if(!fcopy("code/tests/unit_tests/data/profile_saves/headless_preferences.json", path))
+		CRASH("the fixture save did not copy")
+	if(length(character_overrides))
+		var/datum/json_savefile/save = new(path)
+		var/list/character = save.get_entry("character1")
+		for(var/key in character_overrides)
+			character[key] = character_overrides[key]
+		save.save()
+	var/datum/preferences/dq_test_stub/P = new
 	P.load_and_save = TRUE
 	P.path = path
 	P.load_savefile()
-	TEST_ASSERT(P.load_character(1), "the fixture character loads")
-	TEST_ASSERT_EQUAL(length(P.read_preference(/datum/preference/color_palette)), 0, "a save without a palette has an empty one")
-	var/list/palette = list("#123456", "#abcdef", "#ff8800")
-	TEST_ASSERT(P.update_preference(pref, palette), "the palette is written like any window write")
+	P.load_character(1)
+	return P
+
+/// A field saves a slot's name or its own hex, across a real save and load, and reads as hex either way.
+/datum/unit_test/dq_pref_palette_link_roundtrip
+
+/datum/unit_test/dq_pref_palette_link_roundtrip/Run()
+	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs()
+	var/old_hair = P.read_preference(/datum/preference/color/human/hair_color)
+	TEST_ASSERT_EQUAL(P.read_preference_raw(/datum/preference/color/human/hair_color), old_hair, "an existing save loads as a custom colour")
+	TEST_ASSERT_EQUAL(lowertext(old_hair), "#5c50e1", "and nothing shifts")
+	TEST_ASSERT(P.update_preference_by_type(/datum/preference/color/human/color_slot/primary, "#112233"), "a slot takes a colour")
+	TEST_ASSERT(P.update_preference_by_type(/datum/preference/color/human/hair_color, "primary"), "a field links to a slot")
+	TEST_ASSERT(P.update_preference_by_type(/datum/preference/color/human/eyes_color, "#abcdef"), "another keeps its own")
+	P.update_preference_by_type(/datum/preference/color/human/color_slot/secondary, "primary")
+	TEST_ASSERT(!dq_color_slot_type(P.read_preference_raw(/datum/preference/color/human/color_slot/secondary)), "a slot cannot link to a slot")
 	P.save_character()
 	P.savefile.save()
-	var/datum/json_savefile/again = new(path)
-	var/list/saved = again.get_entry("character1")?["color_palette"]
-	TEST_ASSERT_EQUAL(json_encode(saved), json_encode(palette), "the save holds the palette")
+	var/datum/json_savefile/again = new(P.path)
+	TEST_ASSERT_EQUAL(again.get_entry("character1")?["hair_color"], "primary", "the save holds the slot's name")
 	var/datum/preferences/dq_test_stub/Q = allocate(/datum/preferences/dq_test_stub)
-	Q.path = path
+	Q.path = P.path
 	Q.load_savefile()
 	TEST_ASSERT(Q.load_character(1), "the saved character loads again")
-	TEST_ASSERT_EQUAL(json_encode(Q.read_preference(/datum/preference/color_palette)), json_encode(palette), "and reads back the same palette")
-	fdel(path)
+	TEST_ASSERT_EQUAL(Q.read_preference_raw(/datum/preference/color/human/hair_color), "primary", "the link is back")
+	TEST_ASSERT_EQUAL(lowertext(Q.read_preference(/datum/preference/color/human/hair_color)), "#112233", "resolved to the slot")
+	TEST_ASSERT_EQUAL(lowertext(Q.read_preference(/datum/preference/color/human/eyes_color)), "#abcdef", "the custom colour is the same")
+	TEST_ASSERT(Q.update_preference_by_type(/datum/preference/color/human/hair_color, "#010203"), "a custom colour unlinks the field")
+	TEST_ASSERT_EQUAL(lowertext(Q.read_preference(/datum/preference/color/human/color_slot/primary)), "#112233", "and leaves the slot")
+	var/datum/preference/color/human/blood_color/unlinkable = GLOB.preference_entries[/datum/preference/color/human/blood_color]
+	TEST_ASSERT(!unlinkable.is_valid("primary"), "a field that cannot link refuses a slot name")
+	fdel(P.path)
+
+/// A saved eight-colour palette becomes the slots; a save without one seeds them from the character.
+/datum/unit_test/dq_pref_palette_migration
+
+/datum/unit_test/dq_pref_palette_migration/Run()
+	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs(list("color_palette" = list("#000001", "#000002", "#000003", "#000004", "#000005", "#000006", "#000007", "#000008")))
+	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/color/human/color_slot/primary), "#000001", "first colour is Primary")
+	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/color/human/color_slot/extra2), "#000005", "fifth is Extra 2")
+	fdel(P.path)
+	P = dq_palette_test_prefs(list("color_palette" = list("#000001", "bad")))
+	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/color/human/color_slot/primary), "#000001", "a short palette fills what it has")
+	TEST_ASSERT_EQUAL(lowertext(P.read_preference(/datum/preference/color/human/color_slot/secondary)), "#5c50e1", "and the rest seed from the character")
+	fdel(P.path)
+	P = dq_palette_test_prefs()
+	TEST_ASSERT_EQUAL(lowertext(P.read_preference(/datum/preference/color/human/color_slot/primary)), "#4468af", "no palette: Primary is the skin colour")
+	TEST_ASSERT_EQUAL(lowertext(P.read_preference(/datum/preference/color/human/skin_color)), "#4468af", "and the field is unchanged")
+	fdel(P.path)
+
+/// A slot change reaches every linked field and marking in what the window is sent and in what is applied to the mob,
+/// which gets plain hex. The preview is built by the same apply, and a slot write schedules it like any Looks pref.
+/datum/unit_test/dq_pref_palette_slot_change_refreshes
+
+/datum/unit_test/dq_pref_palette_slot_change_refreshes/Run()
+	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs()
+	var/datum/preference_editor/body_markings/editor = GLOB.preference_editors_by_key["body_markings"]
+	var/marking
+	var/zone = BP_TORSO
+	for(var/name in GLOB.body_marking_styles_list)
+		var/datum/sprite_accessory/marking/M = GLOB.body_marking_styles_list[name]
+		if(LAZYLEN(M.body_parts) >= 2 && (zone in M.body_parts))
+			marking = name
+			break
+	TEST_ASSERT_NOTNULL(marking, "a marking on the torso exists")
+	P.update_preference_by_type(/datum/preference/body_markings, list())
+	TEST_ASSERT_EQUAL(editor.handle_action(P, "add", list("marking" = marking), null), PREF_UPDATE_ACCEPTED, "the marking is added")
+	var/list/raw = P.read_preference_raw(/datum/preference/body_markings)
+	TEST_ASSERT_EQUAL(raw[marking][zone]["color"], "primary", "a new marking starts on Primary")
+	P.update_preference_by_type(/datum/preference/color/human/hair_color, "primary")
+	var/slot_pref = GLOB.preference_entries[/datum/preference/color/human/color_slot/primary]
+	TEST_ASSERT(P.dq_preference_affects_preview(slot_pref), "a slot change rebuilds the preview")
+	P.update_preference_by_type(/datum/preference/color/human/color_slot/primary, "#223344")
+
+	var/list/ui = editor.build_ui_data(P)
+	TEST_ASSERT_EQUAL(lowertext(ui["markings"][marking][zone]["color"]), "#223344", "the window's marking shows the slot's new colour")
+	TEST_ASSERT_EQUAL(ui["links"][marking][zone], "primary", "and knows it is linked")
+	raw = P.read_preference_raw(/datum/preference/body_markings)
+	TEST_ASSERT_EQUAL(raw[marking][zone]["color"], "primary", "resolving does not write hex into the stored markings")
+	TEST_ASSERT_EQUAL(editor.handle_action(P, "toggle_zone", list("marking" = marking, "zone" = zone), null), PREF_UPDATE_ACCEPTED, "an edit")
+	raw = P.read_preference_raw(/datum/preference/body_markings)
+	TEST_ASSERT_EQUAL(raw[marking][zone]["color"], "primary", "keeps the link")
+	editor.handle_action(P, "toggle_zone", list("marking" = marking, "zone" = zone), null)
+
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	P.copy_to(H)
+	TEST_ASSERT_EQUAL(lowertext(H.looks.hair_color), "#223344", "the spawned hair is the resolved hex")
+	var/obj/item/organ/external/torso = H.organs_by_name[zone]
+	TEST_ASSERT_NOTNULL(torso, "the mob has the marking's organ")
+	TEST_ASSERT_EQUAL(lowertext(torso.markings[marking]["color"]), "#223344", "the spawned marking is the resolved hex")
+
+	P.update_preference_by_type(/datum/preference/color/human/color_slot/primary, "#556677")
+	P.copy_to(H)
+	torso = H.organs_by_name[zone]
+	TEST_ASSERT_EQUAL(lowertext(H.looks.hair_color), "#556677", "a second slot change reaches the hair")
+	TEST_ASSERT_EQUAL(lowertext(torso.markings[marking]["color"]), "#556677", "and the marking")
+
+	TEST_ASSERT(P.persist_color(/datum/preference/color/human/hair_color, "#556677"), "persisting the same colour")
+	TEST_ASSERT_EQUAL(P.read_preference_raw(/datum/preference/color/human/hair_color), "primary", "keeps the link")
+	TEST_ASSERT(P.persist_markings(H.get_prioritised_markings()), "persisting the mob's markings")
+	raw = P.read_preference_raw(/datum/preference/body_markings)
+	TEST_ASSERT_EQUAL(raw[marking][zone]["color"], "primary", "keeps the marking's link")
+	TEST_ASSERT(P.persist_color(/datum/preference/color/human/hair_color, "#700000"), "a colour changed in the round")
+	TEST_ASSERT_EQUAL(lowertext(P.read_preference_raw(/datum/preference/color/human/hair_color)), "#700000", "becomes the field's own")
+	fdel(P.path)
+
+/// A part gaining a style links its channels; a part that had one keeps its colours.
+/datum/unit_test/dq_pref_palette_new_part_links
+
+/datum/unit_test/dq_pref_palette_new_part_links/Run()
+	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs()
+	var/datum/preference/text/human/tail_style/tail_pref = GLOB.preference_entries[/datum/preference/text/human/tail_style]
+	var/list/offered = tail_pref.get_pref_choices(P)
+	var/style = offered[1] // what the window offers is what it sends back
+	var/other = offered[2]
+	TEST_ASSERT(istext(style), "the choices are text, as a client sends them")
+	P.update_preference_by_type(/datum/preference/text/human/tail_style, "")
+	TEST_ASSERT(P.update_preference_by_type(/datum/preference/text/human/tail_style, style), "the part is added")
+	TEST_ASSERT_EQUAL(P.read_preference_raw(/datum/preference/color/human/tail_color1), "primary", "channel 1")
+	TEST_ASSERT_EQUAL(P.read_preference_raw(/datum/preference/color/human/tail_color2), "secondary", "channel 2")
+	TEST_ASSERT_EQUAL(P.read_preference_raw(/datum/preference/color/human/tail_color3), "tertiary", "channel 3")
+	P.update_preference_by_type(/datum/preference/color/human/tail_color1, "#0a0b0c")
+	P.update_preference_by_type(/datum/preference/text/human/tail_style, other)
+	TEST_ASSERT_EQUAL(lowertext(P.read_preference_raw(/datum/preference/color/human/tail_color1)), "#0a0b0c", "changing style keeps a custom colour")
+	fdel(P.path)
 
 
 /// Ears, tail and wings are optional: the window's Remove writes an empty style, which is valid; any other value

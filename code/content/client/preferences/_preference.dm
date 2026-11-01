@@ -188,6 +188,10 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 
 	return TRUE
 
+/// What a stored value reads as outside the character setup.
+/datum/preference/proc/resolve_read(value, datum/preferences/preferences)
+	return value
+
 /// Apply this preference onto the given client.
 /// Called when the savefile_identifier == PREFERENCE_PLAYER.
 /datum/preference/proc/apply_to_client(client/client, value)
@@ -255,9 +259,15 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 		else
 			CRASH("Unknown savefile identifier [savefile_identifier]")
 
-/// Read a /datum/preference type and return its value.
+/// Read a /datum/preference type and return its value, palette links resolved to plain hex.
 /// This will write to the savefile if a value was not found with the new value.
 /datum/preferences/proc/read_preference(preference_type)
+	var/value = read_preference_raw(preference_type)
+	var/datum/preference/preference_entry = GLOB.preference_entries[preference_type]
+	return preference_entry.resolve_read(value, src)
+
+/// The stored value: what to read when the value is edited and written back, so palette links survive the write.
+/datum/preferences/proc/read_preference_raw(preference_type)
 	var/datum/preference/preference_entry = GLOB.preference_entries[preference_type]
 	if(isnull(preference_entry))
 		var/extra_info = ""
@@ -685,18 +695,30 @@ TYPE_TABLE_DECLARE(/datum/preference/choiced, pref_choices, null)
 /// Will give the value as 6 hex digits, without a hash.
 /datum/preference/color
 	abstract_type = /datum/preference/color
+	/// Whether this field may store a palette slot's name instead of a hex (types/character/color_palette.dm).
+	var/linkable = FALSE
+
+/// The slot `value` names, when this field can link to one.
+/datum/preference/color/proc/linked_slot(value)
+	if(!linkable || !istext(value))
+		return null
+	var/slot = lowertext(value)
+	return dq_color_slot_type(slot) ? slot : null
+
+/datum/preference/color/resolve_read(value, datum/preferences/preferences)
+	return linkable ? preferences.resolve_color_link(value) : value
 
 /datum/preference/color/pref_deserialize(input, datum/preferences/preferences)
-	return sanitize_hexcolor(input)
+	return linked_slot(input) || sanitize_hexcolor(input)
 
 /datum/preference/color/create_default_value()
 	return random_color()
 
 /datum/preference/color/pref_serialize(input)
-	return sanitize_hexcolor(input)
+	return linked_slot(input) || sanitize_hexcolor(input)
 
 /datum/preference/color/is_valid(value)
-	return findtext(value, GLOB.is_color)
+	return linked_slot(value) || findtext(value, GLOB.is_color)
 
 /datum/preference/color/human
 	abstract_type = /datum/preference/color/human
