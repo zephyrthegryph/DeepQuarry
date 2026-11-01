@@ -354,6 +354,33 @@
 	fdel(P.path)
 
 
+/// The synth colour starts on the skin's unless the old toggle was on, once; robotic limbs always tint from it.
+/datum/unit_test/dq_pref_synth_color_always
+
+/datum/unit_test/dq_pref_synth_color_always/Run()
+	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs(list("synth_color" = 0))
+	TEST_ASSERT_EQUAL(P.read_preference_raw(/datum/preference/color/human/synth_color), "primary", "toggle off: takes the skin's link")
+	P.update_preference_by_type(/datum/preference/color/human/synth_color, "#123456")
+	P.save_character()
+	P.savefile.save()
+	var/datum/preferences/dq_test_stub/Q = allocate(/datum/preferences/dq_test_stub)
+	Q.path = P.path
+	Q.load_savefile()
+	TEST_ASSERT(Q.load_character(1), "the character loads again")
+	TEST_ASSERT_EQUAL(lowertext(Q.read_preference(/datum/preference/color/human/synth_color)), "#123456", "a later choice survives the reload")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	Q.copy_to(H)
+	TEST_ASSERT_EQUAL(lowertext(H.looks.synth_color_rgb), "#123456", "the mob has the colour")
+	var/obj/item/organ/external/arm = H.organs_by_name[BP_L_ARM]
+	arm.robotize()
+	arm.sync_colour_to_human(H)
+	TEST_ASSERT_EQUAL(json_encode(arm.s_col), json_encode(hex2rgb("#123456")), "a robotic limb tints from it with no toggle")
+	fdel(P.path)
+	P = dq_palette_test_prefs(list("synth_color" = 1, "synth_color_rgb" = "#abcdef"))
+	TEST_ASSERT_EQUAL(lowertext(P.read_preference(/datum/preference/color/human/synth_color)), "#abcdef", "toggle on: keeps its colour")
+	fdel(P.path)
+
+
 /// Ears, tail and wings are optional: the window's Remove writes an empty style, which is valid; any other value
 /// must still be a style on offer.
 /datum/unit_test/dq_pref_optional_parts_removable

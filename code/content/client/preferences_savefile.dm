@@ -181,6 +181,7 @@
 		read_preference(preference.type)
 
 	link_palette_on_load(palette_new_character)
+	migrate_synth_color(palette_new_character)
 
 	// Bay player_setup.load_character chain deleted; pre-cache loop above already
 	// loaded every PREFERENCE_CHARACTER pref from save_data via read_preference().
