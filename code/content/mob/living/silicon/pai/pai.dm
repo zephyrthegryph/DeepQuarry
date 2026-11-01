@@ -495,7 +495,7 @@ MSG_DEF_SELF(pai/not_accepting, span_notice("%T% is not accepting access modifca
 		// 33% chance to change prime directive (based on severity)
 		// 33% chance of no additional effect
 
-	src.silence_time = world.timeofday + 120 * 10		// Silence for 2 minutes
+	src.silence_time = REALTIMEOFDAY + 120 * 10		// Silence for 2 minutes
 	to_chat(src, span_infoplain(span_green(span_bold("Communication circuit overload. Shutting down and reloading communication circuits - speech and messaging functionality will be unavailable until the reboot is complete."))))
 	if(prob(20))
 		var/turf/T = get_turf_or_move(src.loc)

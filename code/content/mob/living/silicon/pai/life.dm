@@ -30,7 +30,7 @@
 /// The communication circuit comes back after a silence.
 /mob/living/silicon/pai/proc/life_pai_silence(datum/seq_frame/life/F)
 	if(src.silence_time)
-		if(world.timeofday >= src.silence_time)
+		if(REALTIMEOFDAY >= src.silence_time)
 			src.silence_time = null
 			to_chat(src, span_green("Communication circuit reinitialized. Speech and messaging functionality restored."))
 

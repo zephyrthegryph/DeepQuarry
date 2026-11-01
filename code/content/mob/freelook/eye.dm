@@ -150,7 +150,7 @@ CAPABILITIES(/mob/observer/eye)
 	var/initial = initial(sprint)
 	var/max_sprint = 50
 
-	if(cooldown && cooldown < world.timeofday)
+	if(cooldown && cooldown < REALTIMEOFDAY)
 		sprint = initial
 
 	for(var/i = 0; i < max(sprint, initial); i += 20)
@@ -158,7 +158,7 @@ CAPABILITIES(/mob/observer/eye)
 		if(step)
 			setLoc(step)
 
-	cooldown = world.timeofday + 5
+	cooldown = REALTIMEOFDAY + 5
 	if(acceleration)
 		sprint = min(sprint + 0.5, max_sprint)
 	else

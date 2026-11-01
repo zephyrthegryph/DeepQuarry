@@ -844,7 +844,7 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 
 /mob/living/silicon/ai/proc/lightNearbyCamera()
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-	if(camera_light_on && camera_light_on < world.timeofday)
+	if(camera_light_on && camera_light_on < REALTIMEOFDAY)
 		if(src.camera)
 			var/obj/machinery/camera/camera = near_range_camera(eyeobj)
 			if(camera && src.camera != camera)
@@ -862,7 +862,7 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 			if(camera && !camera.light_disabled)
 				rel_set(src, nameof(camera), camera)
 				set_glow(src.camera, GLOW(AI_CAMERA_LUMINOSITY, null, null))
-		camera_light_on = world.timeofday + 1 * 20 // Update the light every 2 seconds.
+		camera_light_on = REALTIMEOFDAY + 1 * 20 // Update the light every 2 seconds.
 
 /// Old attackby: an intelliCard pulls the AI in.
 /mob/living/silicon/ai/proc/ai_interaction_card(datum/act/op/A)
