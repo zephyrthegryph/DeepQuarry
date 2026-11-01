@@ -40,10 +40,10 @@ const RULES: &[RuleMeta] = &[
 
 /// Where windows are legitimately built by hand: the tgui core and the declared-UI runtime.
 const OPEN_EXEMPT: &[&str] =
-    &["code/modules/tgui/", "code/content/tgui_input/alert.dm", "code/content/tgui_input/color.dm", "code/content/tgui_input/list.dm", "code/content/tgui_input/matrix.dm", "code/content/tgui_input/number.dm", "code/content/tgui_input/say_modal/typing.dm", "code/content/tgui_input/text.dm", "code/world/systems/tgui.dm", "code/datums/sys/ui.dm"];
+    &["code/library/ui/tgui/", "code/content/tgui/modules/", "code/content/tgui_input/alert.dm", "code/content/tgui_input/color.dm", "code/content/tgui_input/list.dm", "code/content/tgui_input/matrix.dm", "code/content/tgui_input/number.dm", "code/content/tgui_input/say_modal/typing.dm", "code/content/tgui_input/text.dm", "code/controllers/subsystems/tgui.dm", "code/datums/sys/ui.dm"];
 
 /// The vendored TGS DMAPI: its `params` are world.Topic query strings, never a tgui message.
-const NOT_TGUI: &[&str] = &["code/modules/tgs/"];
+const NOT_TGUI: &[&str] = &["code/world/tgs/"];
 
 fn starts_any(rel: &str, prefixes: &[&str]) -> bool {
     prefixes.iter().any(|p| rel.starts_with(p))

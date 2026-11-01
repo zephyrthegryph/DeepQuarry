@@ -299,7 +299,7 @@ export const ValidateDmeTarget = new Juke.Target({
     // A .dm file is "compiled" if it is reachable from the .dme through the
     // transitive #include graph — NOT just if it appears literally in the .dme.
     // Many files are pulled in by intermediate aggregators (e.g.
-    // code/modules/tgs/includes.dm includes its core/v5 subfiles; code/__odlint.dm
+    // code/world/tgs/includes.dm includes its core/v5 subfiles; code/__odlint.dm
     // includes __pragmas.dm). A naive "is it in the .dme" check false-positives
     // on every such transitively-included file, so we walk the graph.
     //

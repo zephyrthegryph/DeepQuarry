@@ -3,7 +3,7 @@
 //!
 //! ```toml
 //! [lint.scheduler]
-//! exempt_prefixes = ["code/modules/tgs/"]   # rel path starts with
+//! exempt_prefixes = ["code/world/tgs/"]   # rel path starts with
 //! exempt_contains = ["/unit_tests/"]        # rel path contains
 //! exempt_files    = ["code/__defines/tgs.dm"]
 //!

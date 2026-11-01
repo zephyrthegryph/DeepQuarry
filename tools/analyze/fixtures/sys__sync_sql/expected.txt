@@ -29,5 +29,5 @@ sync_sql	code/modules/ss/crlf.dm	4
 sync_sql	code/modules/ss/sp ace/s.dm	2
 sync_sql	code/modules/ss/spaced2.dm	3
 sync_sql	code/modules/ss/spaced2.dm	4
-sync_sql	code/modules/tgs/x.dm	2
+sync_sql	code/world/tgs/x.dm	2
 sync_sql	maps/m.dm	2

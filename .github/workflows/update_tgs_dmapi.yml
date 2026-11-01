@@ -26,7 +26,7 @@ jobs:
         id: dmapi-update
         with:
           header-path: "code/defines/host/tgs.dm"
-          library-path: "code/modules/tgs"
+          library-path: "code/world/tgs"
 
       - name: Commit and Push
         continue-on-error: true
