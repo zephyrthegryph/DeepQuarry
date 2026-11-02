@@ -298,7 +298,7 @@ CAPABILITIES(/obj/item/clothing/accessory/maid_arms)
 					MSG_OTHERS("%U% places %T% against [M]'s [body_part] and listens attentively."))
 				return ITEM_INTERACT_SUCCESS
 
-	return ..(M,user)
+	return ..(M, user, target_zone, attack_modifier, stance)
 
 //Medals
 /obj/item/clothing/accessory/medal

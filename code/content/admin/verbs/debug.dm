@@ -38,12 +38,16 @@ ADMIN_VERB(simple_DPS, R_DEBUG, "Simple DPS", "Gives a really basic idea of how 
 
 		else if(istype(I, /obj/item/gun/projectile))
 			var/obj/item/gun/projectile/projectile_gun = G
-			var/obj/item/ammo_casing/ammo = projectile_gun.chambered
-			P = ammo.BB
+			var/obj/item/ammo_casing/ammo = projectile_gun.first_loaded_casing()
+			P = ammo?.BB
 
 		else
 			to_chat(user, span_warning("DPS calculation by this verb is not supported for \the [G]'s type. Energy or Ballistic only, sorry."))
+			return
 
+		if(!P)
+			to_chat(user, span_warning("\The [G] has no projectile loaded to measure."))
+			return
 		weapon_damage = P.damage
 		weapon_attack_speed = G.fire_delay / 10
 		spent(P)

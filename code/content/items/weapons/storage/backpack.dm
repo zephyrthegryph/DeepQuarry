@@ -45,7 +45,7 @@ CAPABILITIES(/obj/item/storage/backpack)
 				return
 		else
 			playsound(src, src.use_sound, 50, 1, -5)
-	..(user)
+	..(user, equipping, slot)
 */
 
 /*

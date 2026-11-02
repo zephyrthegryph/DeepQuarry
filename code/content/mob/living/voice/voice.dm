@@ -130,9 +130,9 @@
 
 /mob/living/voice/custom_emote(m_type = VISIBLE_MESSAGE, message = null, range = world.view, typed = FALSE)
 	if(comm)
-		..(m_type,message,comm.video_range)
+		..(m_type, message, comm.video_range, typed = typed)
 	else if(item_tf)
-		..(m_type,message,range)
+		..(m_type, message, range, typed = typed)
 
 // Emotes!
 /mob/living/voice/get_available_emotes()

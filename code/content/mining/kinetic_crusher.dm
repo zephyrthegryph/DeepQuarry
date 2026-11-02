@@ -296,7 +296,7 @@ CAPABILITIES(/obj/item/kinetic_crusher/machete/gauntlets/rig)
 	ref_one(nameof(storing_module))
 
 /obj/item/kinetic_crusher/machete/gauntlets/rig/dropped(mob/user, equipping, slot)
-	. = ..(user)
+	. = ..(user, equipping, slot)
 	if(storing_module())
 		src.forceMove(storing_module())
 		storing_module().stored_gauntlets = src

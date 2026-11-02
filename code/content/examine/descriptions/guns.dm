@@ -14,12 +14,8 @@
 			P = ammo.BB
 	else if(istype(src, /obj/item/gun/projectile))
 		var/obj/item/gun/projectile/projectile_gun = src
-		var/obj/item/ammo_casing/ammo
-		if(projectile_gun.ammo_magazine)
-			ammo = projectile_gun.ammo_magazine.contents[1]
-		else
-			ammo = projectile_gun.contents[1]
-		P = ammo.BB
+		var/obj/item/ammo_casing/ammo = projectile_gun.first_loaded_casing()
+		P = ammo?.BB
 	if(!P)
 		return "no"
 	var/firepower = P.damage
@@ -59,12 +55,8 @@
 			P = ammo.BB
 	else if(istype(src, /obj/item/gun/projectile))
 		var/obj/item/gun/projectile/projectile_gun = src
-		var/obj/item/ammo_casing/ammo
-		if(projectile_gun.ammo_magazine)
-			ammo = projectile_gun.ammo_magazine.contents[1]
-		else
-			ammo = projectile_gun.contents[1]
-		P = ammo.BB
+		var/obj/item/ammo_casing/ammo = projectile_gun.first_loaded_casing()
+		P = ammo?.BB
 	if(!P)
 		return "no"
 	var/penetration = combat_of(P).armor_penetration
@@ -162,3 +154,13 @@
 		weapon_stats += "\nIt can attack targets up to [combat_of(src).reach] tiles away, and can attack over certain objects."
 
 	return weapon_stats
+
+/// The casing an examine reads firepower from: the chambered one, else the first in the magazine, else the first loose one.
+/// Null when the gun is empty (an empty magazine has no contents[1]).
+/obj/item/gun/projectile/proc/first_loaded_casing()
+	if(istype(chambered))
+		return chambered
+	var/list/pool = ammo_magazine ? ammo_magazine.contents : contents
+	for(var/obj/item/ammo_casing/casing in pool)
+		return casing
+	return null

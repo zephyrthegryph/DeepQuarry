@@ -48,14 +48,15 @@
 		act_message(user, O, others = span_alien("\The [holder] lurches away from %U%"))
 
 	/// This does the 'we are in an artifact utilizer' functionality
-	if(istype(holder, /obj/item/anobattery))
+	if(istype(holder, /obj/item/anobattery) && istype(O.loc, /obj/item/anodevice))
 		var/obj/item/anodevice/utilizer = O.loc
-		user = utilizer.last_user_touched()
+		user = utilizer.last_user_touched() || user
 		T = get_step_away(utilizer, user)
 		if(istype(utilizer.loc, /turf))
 			utilizer.Move(T)
 			act_message(user, utilizer, others = span_alien("\The [holder] lurches away from %U%"))
 		else if(istype(utilizer.loc, /mob)) //It's in your hands and running away!
+			user = utilizer.loc // the carrier, who may not be the last to touch it
 			user.drop_from_inventory(utilizer, user.loc)
 			act_message(user, utilizer, others = span_alien("\The [holder] squirms out of %U%'s hand!"))
 			T = get_step_away(utilizer, user)
@@ -65,7 +66,7 @@
 	var/atom/holder = get_master_holder()
 	var/obj/O = holder
 	var/mob/user
-	if(istype(holder, /obj/item/anobattery))
+	if(istype(holder, /obj/item/anobattery) && istype(O.loc, /obj/item/anodevice))
 		var/obj/item/anodevice/utilizer = O.loc
 		O = O.loc //Yes, this seems weird, but it's needed for below.
 		user = utilizer.last_user_touched()
