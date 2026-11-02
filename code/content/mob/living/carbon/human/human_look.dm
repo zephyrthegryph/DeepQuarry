@@ -607,26 +607,12 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 
 /// A custom or prosthetic tail's image at `layer`, or null.
 /mob/living/carbon/human/proc/get_tail_image(layer = FLOAT_LAYER)
-	//If you are FBP with tail style and didn't set a custom one
-	var/datum/robolimb/model = robolimb_model()
-	if(istype(model) && model.includes_tail && !tail_style && !tail_hidden)
-		return human_look_icon("synth_tail|[initial(synthetic.icon)]|[looks.skin_color]|[species.color_mult]|[layer]", "build_synth_part", "tail", layer)
-	//If you have a custom tail selected
 	var/obj/item/suit = get_equipped_item(SLOT_ID_SUIT)
 	if(!tail_style || (suit && (worn_of(suit).hides & HIDETAIL) && !istaurtail(tail_style)) || tail_hidden)
 		return null
 	var/loaf = tail_style.can_loaf && resting
 	var/wag = wagging && tail_style.ani_state
 	return human_look_icon("tail|[tail_style.type]|[loaf]|[wag]|[looks.tail_color]|[looks.tail_color2]|[looks.tail_color3]|[looks.tail_alpha]|[layer]", "build_tail_image", loaf, wag, layer)
-
-/mob/living/carbon/human/proc/build_synth_part(state, layer)
-	var/icon/part_s = new/icon("icon" = initial(synthetic.icon), "icon_state" = state)
-	part_s.Blend(looks.skin_color, species.color_mult ? ICON_MULTIPLY : ICON_ADD)
-	var/image/working = image(part_s)
-	if(state == "wing")
-		working = look_composed_image(working, list(em_block_image_generic(working)))
-	working.layer = layer
-	return working
 
 /mob/living/carbon/human/proc/build_tail_image(loaf, wag, layer)
 	var/tail_file = loaf ? tail_style.icon_loaf : tail_style.icon
@@ -654,10 +640,6 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 /// The wings (`under_layer`: the half drawn behind the body, for wings drawn in two halves), or null.
 /mob/living/carbon/human/proc/wing_look(under_layer)
 	var/layer = BODY_LAYER + (under_layer ? WING_LOWER_LAYER : WING_LAYER)
-	//If you are FBP with wing style and didn't set a custom one
-	if(synthetic && synthetic.includes_wing && !wing_style && !wings_hidden)
-		return human_look_icon("synth_wing|[initial(synthetic.icon)]|[looks.skin_color]|[species.color_mult]|[layer]", "build_synth_part", "wing", layer)
-	//If you have custom wings selected
 	var/obj/item/suit = get_equipped_item(SLOT_ID_SUIT)
 	if(!wing_style || (suit && (worn_of(suit).hides & HIDETAIL)) || wings_hidden)
 		return null

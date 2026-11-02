@@ -1,0 +1,4 @@
+author: "bigbade"
+delete-after: true
+changes:
+  - qol: "Looks: one Body table with a row per part and colour columns; digitigrade and taur are choices in the Legs row."

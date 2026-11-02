@@ -4699,6 +4699,7 @@
 #include "code\content\client\preferences\editors\antag_optin.dm"
 #include "code\content\client\preferences\editors\birthday.dm"
 #include "code\content\client\preferences\editors\body_markings.dm"
+#include "code\content\client\preferences\editors\ear_secondary_colors.dm"
 #include "code\content\client\preferences\editors\faction_affiliations.dm"
 #include "code\content\client\preferences\editors\flavor.dm"
 #include "code\content\client\preferences\editors\language.dm"

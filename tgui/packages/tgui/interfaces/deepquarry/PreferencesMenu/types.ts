@@ -34,6 +34,10 @@ export type PrefWidgetItem = {
       /// A hair sprite this thumbnail (a hair gradient) is drawn on.
       hair_icon?: string;
       hair_state?: string;
+      /// Colour channels this style draws.
+      channels?: number;
+      /// This tail style is a taur body.
+      taur?: number;
     }
   >;
 };

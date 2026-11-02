@@ -93,6 +93,12 @@
 	var/list/series = list()
 	var/idle_first_mb = sample_field("private_mb")
 	var/waited = 0
+	// --arg=attribute=1: where the idle time goes, by system and by timer callback. The census adds a little cost to each timer, so its runs are not baselines.
+	var/attribute = param("attribute", 0)
+	if(attribute)
+		GLOB.census_on = TRUE
+		census_report(TRUE)
+		km_meter().live.reset()
 	open_phase()
 	begin_window()
 	while(waited < idle_seconds)
@@ -101,6 +107,13 @@
 		series += list(list("t" = waited, "private_mb" = sample_field("private_mb")))
 	var/list/idle_tick = end_window("idle")
 	close_phase("idle")
+	if(attribute)
+		GLOB.census_on = FALSE
+		var/list/km_report = km_diagnostics(GLOB.om_live_sched)
+		km_report["elapsed_s"] = km_meter().live.elapsed_seconds()
+		detail("idle_km_systems", km_report["systems"])
+		detail("idle_km_elapsed_s", km_report["elapsed_s"])
+		detail("idle_census", census_report(TRUE))
 	mark("idle_end")
 	metric("idle_growth_mb_per_min", (sample_field("private_mb") - idle_first_mb) * 60 / idle_seconds, "MB/min")
 	detail("idle_memory_series", series)

@@ -76,6 +76,73 @@
 	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs(list("organ_data" = list(BP_TORSO = "cyborg"), "rlimb_data" = list(BP_TORSO = "Kitsuhana"), "ear_style" = null, "ear_secondary_style" = null))
 	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/text/human/ear_style), "Kitsuhana cybernetic ears", "the save migrates")
 	P.update_preference_by_type(/datum/preference/text/human/ear_style, "")
-	P.migrate_robotic_ears()
+	P.migrate_robotic_parts()
 	TEST_ASSERT(!P.read_preference(/datum/preference/text/human/ear_style), "and None then stays None")
 	fdel(P.path)
+
+/// The Body table reads each style's channels and whether a tail style is a taur from its thumbnail data.
+/datum/unit_test/dq_style_thumbs_carry_channels
+
+/datum/unit_test/dq_style_thumbs_carry_channels/Run()
+	var/list/thumbs = sprite_accessory_thumbs(GLOB.tail_styles_list)
+	var/datum/sprite_accessory/tail/taur/wolf/wolf = GLOB.tail_styles_list[/datum/sprite_accessory/tail/taur/wolf/wolf_2c]
+	TEST_ASSERT(thumbs[wolf.name]["taur"], "a taur tail says so")
+	TEST_ASSERT_EQUAL(thumbs[wolf.name]["channels"], wolf.get_color_channel_count(), "and its channels")
+	TEST_ASSERT(wolf.get_color_channel_count() >= 2, "a two colour taur counts its overlay")
+
+/// The second ear's colours are written per channel and reach the body.
+/datum/unit_test/dq_second_ear_colours_write
+
+/datum/unit_test/dq_second_ear_colours_write/Run()
+	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs()
+	var/datum/preference_editor/ear_secondary/editor = new
+	TEST_ASSERT_EQUAL(editor.write_channel(P, 2, "#123456"), PREF_UPDATE_ACCEPTED, "a channel is written")
+	var/list/colors = P.read_preference(/datum/preference/ear_secondary_colors)
+	TEST_ASSERT_EQUAL(colors[2], "#123456", "in its place")
+	TEST_ASSERT_EQUAL(editor.write_channel(P, 99, "#123456"), PREF_UPDATE_REJECTED, "a channel past the last is refused")
+	TEST_ASSERT_EQUAL(editor.write_channel(P, 1, "red"), PREF_UPDATE_REJECTED, "a non-colour is refused")
+	var/list/data = editor.build_ui_data(P)
+	TEST_ASSERT_EQUAL(data["colors"][2], "#123456", "and the window sees it")
+	var/datum/preference/ear_secondary_colors/pref = GLOB.preference_entries[/datum/preference/ear_secondary_colors]
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	pref.apply_to_human(H, colors)
+	TEST_ASSERT_EQUAL(H.ear_secondary_colors[2], "#123456", "and the body takes it")
+	fdel(P.path)
+
+/// Each model's built-in tail is a style with a sprite; a save migrates once; a mob with no setup gets its parts and a setup's None stands.
+/datum/unit_test/dq_robotic_tails_are_styles
+
+/datum/unit_test/dq_robotic_tails_are_styles/Run()
+	var/count = 0
+	for(var/company in GLOB.all_robolimbs)
+		var/datum/robolimb/model = GLOB.all_robolimbs[company]
+		if(!model.built_in_tail)
+			continue
+		count++
+		var/datum/sprite_accessory/tail/style = GLOB.tail_styles_list[model.built_in_tail]
+		TEST_ASSERT(style, "[company] has its tail style")
+		TEST_ASSERT(style.icon_state in icon_states(style.icon), "[company]: its tail sprite exists")
+	TEST_ASSERT(count == 12, "the models are all listed")
+
+	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs(list("organ_data" = list(BP_TORSO = "cyborg"), "rlimb_data" = list(BP_TORSO = "DSI - Lizard"), "tail_style" = null))
+	var/datum/sprite_accessory/tail/lizard = GLOB.tail_styles_list[/datum/sprite_accessory/tail/robolimb/dsi_lizard]
+	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/text/human/tail_style), lizard.name, "the save migrates")
+	TEST_ASSERT_EQUAL(P.read_preference_raw(/datum/preference/color/human/tail_color1), "primary", "tinted as the skin was")
+	P.update_preference_by_type(/datum/preference/text/human/tail_style, "")
+	P.migrate_robotic_parts()
+	TEST_ASSERT(!P.read_preference(/datum/preference/text/human/tail_style), "and None then stays None")
+	fdel(P.path)
+
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	H.set_species(SPECIES_HUMAN)
+	H.organs_by_name[BP_TORSO].robotize("Kitsuhana")
+	TEST_ASSERT_EQUAL(H.tail_style?.type, /datum/sprite_accessory/tail/robolimb/kitsuhana, "a mob with no setup keeps its tail")
+	TEST_ASSERT_EQUAL(H.ear_style?.type, /datum/sprite_accessory/ears/kitsuhana, "and its ears")
+	var/datum/preferences/dq_test_stub/none = dq_palette_test_prefs(list("organ_data" = list(BP_TORSO = "cyborg"), "rlimb_data" = list(BP_TORSO = "Kitsuhana"), "tail_style" = null, "ear_style" = null))
+	none.update_preference_by_type(/datum/preference/text/human/tail_style, "")
+	var/mob/living/carbon/human/chose = allocate(/mob/living/carbon/human, test_floor())
+	chose.set_species(SPECIES_HUMAN)
+	var/datum/preference_apply_hook/organs/hook = new
+	hook.apply(chose, none)
+	TEST_ASSERT_NULL(chose.tail_style, "a setup without a tail stays without one")
+	fdel(none.path)
