@@ -391,3 +391,102 @@ fn a_slowly_cooled_room_does_not_ring() {
 		}
 	}
 }
+
+/// A sealed room with one open face to space: how many frames until its far corner falls to half and to a tenth of its moles, and the sub-steps
+/// the field takes meanwhile. The bulk flow's stability scheme must not slow a breach (the test bounds the frames and prints both counts).
+#[test]
+fn a_one_face_breach_decompresses_promptly() {
+	const SIZE: u32 = 12;
+	let mut r = Rig::new(SIZE, SIZE);
+	let idx = |x: u32, y: u32| y * SIZE + x;
+	for y in 0..SIZE {
+		for x in 0..SIZE {
+			let wall = x == 0 || y == 0 || x == SIZE - 1 || y == SIZE - 1;
+			if wall && !(x == 0 && y == SIZE / 2) {
+				continue;
+			}
+			if x == 0 {
+				let mut v = GasCell::default();
+				v.flags |= crate::cell::flags::IMMUTABLE;
+				r.register(idx(x, y), v, true, 0);
+			} else {
+				r.register(idx(x, y), air(1.0, 293.15), false, 0);
+			}
+		}
+	}
+	let probe = idx(SIZE - 2, 1);
+	let start = r.read(probe).unwrap().total_moles();
+	let (mut half, mut tenth, mut max_sub) = (None, None, 0);
+	r.run(1);
+	let before = r.totals();
+	for frame in 1..=400u32 {
+		r.run(1);
+		let state = r.key.state;
+		let sub = r.w.sim_mut().with_idle_world(|res| res.get(state).stats().substeps).unwrap();
+		max_sub = max_sub.max(sub);
+		let n = r.read(probe).unwrap().total_moles();
+		if half.is_none() && n < start * 0.5 {
+			half = Some(frame);
+		}
+		if tenth.is_none() && n < start * 0.1 {
+			tenth = Some(frame);
+			break;
+		}
+	}
+	let after = r.totals();
+	close(&before, &after, 1e-4).unwrap();
+	eprintln!("one-face breach: half at {half:?}, tenth at {tenth:?} frames, max substeps {max_sub}");
+	assert!(tenth.is_some_and(|f| f <= 400), "the room did not decompress: half {half:?} tenth {tenth:?}");
+}
+
+/// Per-region sub-steps: a room with a pressure step (stiff: its bulk flow wants the sub-step cap) and a far room with a gentle gradient,
+/// chunks apart. The gentle room's edges run on their own coarse cadence (slow edges), not the stiff room's sub-step count, and it ends
+/// where it does with the stiff room absent (within 1e-3: its own count is rounded up to a power of two and it sleeps on its own region's schedule, so the explicit scheme's rounding differs slightly).
+#[test]
+fn one_stiff_region_does_not_raise_sub_steps_elsewhere() {
+	const W: u32 = 64;
+	const H: u32 = 8;
+	let idx = |x: u32, y: u32| y * W + x;
+	let build = |stiff: bool| {
+		let mut r = Rig::new(W, H);
+		for y in 1..H - 1 {
+			// The stiff room: x 1..=6, half at 3x pressure.
+			if stiff {
+				for x in 1..=6 {
+					r.register(idx(x, y), air(if x <= 3 { 3.0 } else { 1.0 }, 293.15), false, 0);
+				}
+			}
+			// The gentle room: x 40..=46, a 2 % gradient (below the stiffness threshold).
+			for x in 40..=46 {
+				r.register(idx(x, y), air(1.0 + 0.003 * (x - 40) as f32, 293.15), false, 0);
+			}
+		}
+		r
+	};
+	let (mut both, mut alone) = (build(true), build(false));
+	let state = both.key.state;
+	let mut regions = 0;
+	let mut both_sub = 0;
+	let mut slow = 0;
+	for _ in 0..30 {
+		both.run(1);
+		alone.run(1);
+		let st = both.w.sim_mut().with_idle_world(|res| res.get(state).stats().clone()).unwrap();
+		regions = regions.max(st.regions);
+		both_sub = both_sub.max(st.substeps);
+		slow = slow.max(st.slow_edges);
+	}
+	let alone_sub = alone.w.sim_mut().with_idle_world(|res| res.get(alone.key.state).stats().substeps).unwrap();
+	for y in 1..H - 1 {
+		for x in 40..=46 {
+			let (a, b) = (both.read(idx(x, y)).unwrap(), alone.read(idx(x, y)).unwrap());
+			for g in [GAS_OXYGEN, GAS_NITROGEN] {
+				assert!((a.moles[g] - b.moles[g]).abs() <= 1e-3 * b.moles[g].abs().max(1.0), "({x},{y}) gas {g}: {} with the stiff room vs {} alone", a.moles[g], b.moles[g]);
+			}
+		}
+	}
+	eprintln!("regions {regions}, slow edges {slow}, sub-steps with the stiff room {both_sub}, gentle room alone {alone_sub}");
+	assert!(both_sub > alone_sub.max(1), "the stiff room did not want more sub-steps: {both_sub} vs {alone_sub}");
+	assert!(regions >= 2, "the two rooms were not stepped as separate regions");
+	assert!(slow > 0, "no edge ran on a coarser cadence than the stiff room's");
+}

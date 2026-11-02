@@ -118,6 +118,7 @@ pub fn snapshot_json() -> String {
                     ("stiffest_milli", st.stiffest_milli),
                     ("outside_chunk", st.outside_chunk),
                     ("outside_ppm", st.outside_ppm),
+                    ("regions", st.regions),
                 ] {
                     metrics.gauge(&format!("world.awake.field_{name}_{what}")).set(f64::from(v));
                 }

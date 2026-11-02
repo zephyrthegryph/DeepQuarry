@@ -297,6 +297,8 @@ pub struct FieldStats {
     /// The chunk with the largest write from outside at the last step and its relative size in millionths: what reset the stride (0 when the field does not stride).
     pub outside_chunk: u32,
     pub outside_ppm: u32,
+    /// Regions of the last advance stepped on their own sub-step cadence (per-region sub-steps; 0 when one count served all).
+    pub regions: u32,
     /// Steps the field takes per advance now (1: every step advances).
     pub stride: u32,
     /// Steps skipped (owed to the next advance) so far.
@@ -633,7 +635,7 @@ impl<K: FieldKind> FieldState<K> {
                     self.stats.woke_cells += 1;
                     if self.stride_cap > 1 {
                         let change = self.max_relative_change(cells, last, &[chunk]);
-                        if !(change <= outside) {
+                        if change > outside || change.is_nan() {
                             self.stats.outside_chunk = u32::try_from(chunk).unwrap_or(u32::MAX);
                         }
                         outside = outside.max(change);
@@ -788,7 +790,10 @@ impl<K: FieldKind> FieldState<K> {
             let slow = live_edges.iter().flatten().filter(|e| e.period > 1).count();
             self.stats.slow_edges = u32::try_from(slow).unwrap_or(u32::MAX);
             grid
+        } else if substeps > 1 {
+            self.region_periods(&owners, &targets, &mut live_edges, geom, dt, substeps)
         } else {
+            self.stats.regions = 0;
             substeps
         };
         self.stats.substeps = substeps;
@@ -961,6 +966,62 @@ impl<K: FieldKind> FieldState<K> {
             self.set_stride(wanted, rate);
         }
         self.active = next;
+    }
+
+    /// Per-region sub-steps (fields without multi-rate edges): the owner chunks fall into regions, chunks joined when one's edges reach the
+    /// other (a face neighbour). Regions share no cell, so within one step they do not interact: each region's edges run on the cadence
+    /// its own stiffest edge needs (a power of two, at least its need), as if that region were stepped alone, and one stiff region (a
+    /// pumped loop) no longer puts every other region on the sub-step cap. Returns the sub-step grid (the stiffest region's count).
+    #[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    fn region_periods(&mut self, owners: &[usize], targets: &[usize], live_edges: &mut [Vec<LiveEdge>], geom: &Geo<'_>, dt: f32, substeps: u32) -> u32 {
+        let chunks = self.layout.chunk_count();
+        let mut parent: Vec<u32> = (0..u32::try_from(chunks).expect("chunk count fits u32")).collect();
+        fn root(parent: &mut [u32], mut c: u32) -> u32 {
+            while parent[c as usize] != c {
+                let up = parent[parent[c as usize] as usize];
+                parent[c as usize] = up;
+                c = up;
+            }
+            c
+        }
+        // Only chunks with field nodes join: an empty chunk between two rooms carries no edge and must not merge them.
+        let mut joins = vec![false; chunks];
+        for &c in owners.iter().chain(targets) {
+            joins[c] = true;
+        }
+        for &c in owners {
+            for nb in self.chunk_neighbors(c, geom.grid).into_iter().flatten().filter(|&nb| joins[nb]) {
+                let (ra, rb) = (root(&mut parent, c as u32), root(&mut parent, nb as u32));
+                if ra != rb {
+                    parent[ra.max(rb) as usize] = ra.min(rb);
+                }
+            }
+        }
+        let mut stiff: std::collections::BTreeMap<u32, f32> = std::collections::BTreeMap::new();
+        let region: Vec<u32> = owners.iter().map(|&c| root(&mut parent, c as u32)).collect();
+        for (r, edges) in region.iter().zip(live_edges.iter()) {
+            let worst = edges.iter().map(|e| e.stiff).fold(0.0f32, f32::max);
+            let entry = stiff.entry(*r).or_insert(0.0);
+            *entry = entry.max(worst);
+        }
+        let grid = substeps.next_power_of_two().min(prev_power_of_two(self.config.max_substeps.max(1))).max(1);
+        let wanted = |s: f32| -> u32 {
+            let n = (dt * self.faces * s).ceil();
+            if n.is_finite() && n >= 1.0 { (n.min(grid as f32) as u32).next_power_of_two().min(grid) } else { 1 }
+        };
+        let mut slow = 0usize;
+        for (r, edges) in region.iter().zip(live_edges.iter_mut()) {
+            let period = grid / wanted(stiff[r]);
+            for e in edges.iter_mut() {
+                e.period = period;
+            }
+            if period > 1 {
+                slow += edges.len();
+            }
+        }
+        self.stats.regions = u32::try_from(stiff.len()).unwrap_or(u32::MAX);
+        self.stats.slow_edges = u32::try_from(slow).unwrap_or(u32::MAX);
+        grid
     }
 
     /// The largest [`FieldKind::relative_change`] of any cell of the listed chunks between `start` and `cells`.
