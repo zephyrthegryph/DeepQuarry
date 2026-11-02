@@ -67,6 +67,13 @@
 	if(istype(value, /datum/entry))
 		var/datum/entry/E = value
 		return "e:[E.sig]"
+	if(istype(value, /alist))
+		// By key and value: an alist indexes by key, so the positional walk below would read every one as the same empty list and intern them all together.
+		var/alist/table = value
+		var/list/pairs = list()
+		for(var/k in table)
+			pairs += entry_value_signature(k) + "=" + entry_value_signature(table[k])
+		return "a\[[jointext(pairs, ",")]]"
 	if(islist(value))
 		var/list/L = value
 		var/list/parts = list()
