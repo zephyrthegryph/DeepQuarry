@@ -1,0 +1,2 @@
+throwing_report	code/a/a.dm	5
+throwing_report	code/a/a.dm	9

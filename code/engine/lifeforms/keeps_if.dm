@@ -65,5 +65,5 @@ GLOBAL_REAL_VAR(list/init_discard_pending)
 		try
 			call(A, mark)()
 		catch(var/exception/e)
-			stack_trace("keeps_if(instead = [mark]) on [A.type]: [e] ([e.file]:[e.line])")
+			dq_report_caught(e, "keeps_if(instead = [mark]) on [A.type]")
 	return TRUE

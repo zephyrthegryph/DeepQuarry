@@ -305,7 +305,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	try
 		prefs.sanitize_preferences()
 	catch(var/exception/prefs_error)
-		stack_trace("client/New: sanitize_preferences runtimed for [key]: [prefs_error.name] at [prefs_error.file]:[prefs_error.line]; continuing login")
+		dq_report_caught(prefs_error, "client/New: sanitize_preferences runtimed for [key]; continuing login")
 	if(prefs)
 		prefs.selecting_slots = FALSE
 

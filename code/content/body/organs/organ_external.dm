@@ -62,6 +62,8 @@
 	// Wound and structural data.
 	// Wounds are /datum/affliction/wound located on this limb: see get_wounds() (body/parts/limb.dm).
 	var/obj/item/organ/external/parent // Master-limb.
+	/// This robotic limb's tint: its own colour from the character, or its parent's (a hand made robotic with its arm).
+	var/synth_rgb
 	var/list/children                  // Sub-limbs.
 	var/sabotaged = 0                  // If a prosthetic limb is emagged, it will detonate when it fails.
 	var/list/implants                  // Currently implanted objects.

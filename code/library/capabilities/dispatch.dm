@@ -85,7 +85,7 @@ GLOBAL_DATUM(dispatch_context_now, /datum/dispatch_context)
 		var/msg = "dispatch: [target.type].[proc_ref] ([action_name]) by [key_name(ctx.user)] failed: [e] ([e.file]:[e.line])"
 		GLOB.dispatch_failures += msg
 		if(!GLOB.dispatch_failure_expected)
-			stack_trace(msg)
+			dq_report_caught(e, msg)
 		else
 			log_runtime(msg)
 		if(ctx.user)

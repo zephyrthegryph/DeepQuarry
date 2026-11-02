@@ -442,7 +442,7 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 			if(sched)
 				sched.report_caught(e, "refresh of [D.type]: [e] ([e.file]:[e.line])")
 			else
-				stack_trace("refresh of [D.type]: [e] ([e.file]:[e.line])")
+				dq_report_caught(e, "refresh of [D.type]")
 		attr.note(KA_KIND_DRAW, KM_SYS_OM_APPEARANCE, D.type, km_attr_reason(pending | fresh), TICK_USAGE_TO_MS(attr_start))
 		if(sched?.out_of_budget() && i < length(Q))
 			Q.Cut(1, i + 1)
@@ -951,7 +951,7 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 			try
 				call(holder, effect[1])(arglist(call_args))
 			catch(var/exception/e)
-				stack_trace("look effect [effect[1]] of [holder.type]: [e] ([e.file]:[e.line])")
+				dq_report_caught(e, "look effect [effect[1]] of [holder.type]")
 
 /// Brings `A`'s subscriptions to other entities in line with what its draw reads now (`keys`: own keys, null for none). The record is kept
 /// in the atom's engine state, which only an atom that has watched something (or kept a cooldown or a flash) owns.

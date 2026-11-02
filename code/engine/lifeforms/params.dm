@@ -260,7 +260,7 @@ GLOBAL_REAL_VAR(param_writing) = 0
 		try
 			call(holder, E.args["apply"])(holder.vars[var_name])
 		catch(var/exception/e)
-			stack_trace("param([var_name], apply = [E.args["apply"]]) on [holder.type]: [e] ([e.file]:[e.line])")
+			dq_report_caught(e, "param([var_name], apply = [E.args["apply"]]) on [holder.type]")
 		if(QDELETED(holder))
 			return
 	if(P.param_drops)
@@ -288,7 +288,7 @@ GLOBAL_REAL_VAR(list/param_early_done)
 		try
 			call(A, E.args["apply"])(A.vars[var_name])
 		catch(var/exception/e)
-			stack_trace("param([var_name], apply = [E.args["apply"]], early = TRUE) on [A.type]: [e] ([e.file]:[e.line])")
+			dq_report_caught(e, "param([var_name], apply = [E.args["apply"]], early = TRUE) on [A.type]")
 		if(QDELETED(A))
 			return TRUE
 	if(P.param_drops)

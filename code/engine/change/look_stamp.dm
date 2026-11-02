@@ -62,7 +62,7 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 		try
 			refresh_one(D, bits, pending)
 		catch(var/exception/e)
-			stack_trace("refresh of [D.type]: [e] ([e.file]:[e.line])")
+			dq_report_caught(e, "refresh of [D.type]")
 			continue
 		type_look_stamp_record(D)
 	var/list/kept = list()
@@ -108,7 +108,7 @@ GLOBAL_VAR_INIT(type_look_stamp_skipped, 0)
 				if(fresh)
 					type_look_stamp_record(A)
 			catch(var/exception/e)
-				stack_trace("near refresh of [A.type]: [e] ([e.file]:[e.line])")
+				dq_report_caught(e, "near refresh of [A.type]")
 			.++
 	if(.)
 		GLOB.refresh_near_drawn += .

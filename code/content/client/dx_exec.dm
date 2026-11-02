@@ -133,7 +133,7 @@ GLOBAL_LIST_EMPTY(dx_exec_stats)
 		else
 			call(owner, on_done)(arglist(call_args))
 	catch(var/exception/e)
-		stack_trace("dx_exec [op] callback [on_done] on [owner]: [e]")
+		dq_report_caught(e, "dx_exec [op] callback [on_done] on [owner]")
 
 #undef DX_WINGET
 #undef DX_WINEXISTS
