@@ -14,6 +14,7 @@ CAPABILITIES(/obj/machinery/dq_trait_write_probe)
 
 /datum/unit_test/dq_type_trait_map_edit/Run()
 	var/obj/machinery/dq_trait_write_probe/M = allocate(/obj/machinery/dq_trait_write_probe)
+	set_global(nameof(GLOB._preloader_path), GLOB._preloader_path)
 	world.preloader_setup(list("active_power_usage" = 7500), /obj/machinery/dq_trait_write_probe)
 	world.preloader_load(M)
 	TEST_ASSERT_EQUAL(power_of(M).active, 7500, "the map edit wrote the machine's active draw")

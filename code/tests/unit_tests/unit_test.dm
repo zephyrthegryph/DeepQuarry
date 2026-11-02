@@ -1334,6 +1334,11 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 		"vars" = TRUE, "type" = TRUE, "parent_type" = TRUE, "tag" = TRUE, "current_test" = TRUE, "failed_any_test" = TRUE,
 		"total_runtimes" = TRUE, "total_runtimes_skipped" = TRUE, "boot_noise_count" = TRUE, "boot_unclean" = TRUE,
 		"e0_proofs_passed" = TRUE, "e0_proofs_pending" = TRUE, "e0_proofs_failed" = TRUE,
+		"km_attr_a" = TRUE, "km_attr_entry" = TRUE, // the kernel meter's attribution slot: written by a dispatcher, cleared by the timer loop before its next call, read by nothing else
+		"fusion_reactions" = TRUE, // a lazily built cache (the reaction table, made on its first lookup)
+		"word_to_uristrune_table" = TRUE, // a lazily built cache (the rune glyphs, made on their first draw)
+		"acceptable_items" = TRUE, // a lazily built cache (the kitchen's accepted ingredients, made on the first microwave check)
+		"ai_pack_perceptions" = TRUE, // a monotonic metrics counter, like those below: any pack AI test bumps it, first from 0 to 1
 		"notice_late" = TRUE, "notice_taken" = TRUE, "act_too_deep" = TRUE, // monotonic metrics counters: a first bump from 0 to 1 only looks like a flag flip, so the verdict depended on test order
 	)
 	return ignored
