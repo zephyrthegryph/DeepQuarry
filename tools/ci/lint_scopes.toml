@@ -170,7 +170,7 @@ base_var_home_types = ["/datum/hud", "/datum/record", "/datum/sparse_slots", "/d
 # kinds naming it in the CAPABILITIES block of the type that declares it, or an end of links(/A::a, /B::b).
 base_var_home_relations = ["ref_one", "ref_many", "owns_one", "owns_many", "links", "slot"]
 # The most hot-var rows `[lint.base_vars.tables.base_var_home_hot]` may hold (one number). It only falls.
-hot_ceiling = ["11"]
+hot_ceiling = ["10"]
 # records_data_only: the procs a /datum/record may define (accessors).
 record_accessor_prefixes = ["set_", "get_"]
 
@@ -179,7 +179,6 @@ record_accessor_prefixes = ["set_", "get_"]
 # (not a `base_var` site). Criteria: declared on a base type, read on a per-tick, per-move or per-turf-update path by most
 # instances, not per-type constant data (that is a trait block), not rare (that is a sparse slot). The justification is at
 # least 40 characters and names the hot reader (a .dm file and the proc); a row whose var no longer exists fails (`hot_home`).
-"/atom/flags_1" = "read per turf activation: SSair.add_to_active tests flags_1 & INITIALIZED_1 (code/domains/atmos/SSair.dm:343); set on every atom at init"
 "/atom/can_atmos_pass" = "read per turf update for each object on the turf: air_block_mask folds it (code/domains/atmos/environmental/LINDA_system.dm:58)"
 "/atom/movable/pressure_resistance" = "read per spacewind move: experience_pressure_difference move_prob (code/domains/atmos/environmental/LINDA_turf_tile.dm:338)"
 "/atom/flags" = "read on every move and bump scan: ON_BORDER tests in /turf/Enter and contains_dense_objects (code/content/turfs/turf.dm:349), held by all atoms"
@@ -959,7 +958,7 @@ damage_ratchet_on_atom_break_set_broken_overrides_d4 = 0
 improper_atom_new_usage = 2
 legacy_equip_restriction_vars__slot_flags = 0
 bump_ratchet_on_bumped_overrides = 1
-transform_ratchet_on_bespoke_then_tails = 4
+transform_ratchet_on_bespoke_then_tails = 0
 generic_hit_ratchet_on_attack_generic_overrides = 0
 
 # Kept at the end of this table, away from the then-tails ceiling that every chemistry landing lowers, so the two never share a merge hunk.

@@ -68,6 +68,27 @@ CAPABILITIES(/transformation/dq_spawn/scatter)
 CAPABILITIES(/transformation/dq_spawn/slick)
 	configure(transformation(takes = list(reagent(REAGENT_ID_MILK, 1)), made = 1, effects = sets_off(kind = XFORM_FX_SLICK, range = 1)))
 
+/// A rule whose subject answers it: the rule names its notice, the subject listens on its own type.
+/transformation/dq_spawn/answered
+
+CAPABILITIES(/transformation/dq_spawn/answered)
+	configure(transformation(takes = list(reagent(REAGENT_ID_TEA, 1)), made = 1, notice = /datum/notice/transformed/dq_answered))
+
+/datum/notice/transformed/dq_answered
+
+/// A subject that counts the notices of its rules.
+/obj/item/dq_answering_probe
+	var/heard = 0
+	var/heard_made = 0
+
+CAPABILITIES(/obj/item/dq_answering_probe)
+	on_notice(/datum/notice/transformed/dq_answered, then(PROC_REF(answered)))
+
+/obj/item/dq_answering_probe/proc/answered(datum/act/notice/A)
+	var/datum/notice/transformed/N = A
+	heard++
+	heard_made = N.made
+
 /datum/unit_test/dq_xform_wave_statuses_by_distance
 	boot_needs = list()
 
@@ -182,5 +203,27 @@ CAPABILITIES(/transformation/dq_spawn/slick)
 	TEST_ASSERT_EQUAL(T.wet, TURFSLIP_WET, "the vessel's floor is wet")
 	for(var/turf/simulated/W in trange(1, T))
 		W.set_wet(TURFSLIP_DRY)
+
+/// The subject hears the notice of a rule that settled in it, once per settle, and the blob chunk, the promethean core and a xenochimera listen
+/// for theirs (the tails they replaced).
+/datum/unit_test/dq_xform_subject_answers_its_rule
+	boot_needs = list()
+
+/datum/unit_test/dq_xform_subject_answers_its_rule/Run()
+	var/obj/item/dq_answering_probe/P = allocate(/obj/item/dq_answering_probe, test_floor())
+	var/datum/reagents/dq_spawn_fixture/H = new(1000, P)
+	own(H)
+	H.add_reagent(REAGENT_ID_TEA, 2, safety = 1)
+	xform_settle_reagents(H)
+	TEST_ASSERT_EQUAL(P.heard, 1, "the subject heard its rule once for the settle")
+	TEST_ASSERT_EQUAL(P.heard_made, 2, "with what the settle made")
+	var/obj/item/blobcore_chunk/chunk = allocate(/obj/item/blobcore_chunk, test_floor())
+	TEST_ASSERT(notice_wanted(chunk, /datum/notice/transformed/blob_revival), "a blob chunk answers the hostile revival")
+	TEST_ASSERT(notice_wanted(chunk, /datum/notice/transformed/blob_domination), "and the allied one")
+	var/obj/item/organ/internal/brain/slime/core = allocate(/obj/item/organ/internal/brain/slime, test_floor())
+	TEST_ASSERT(notice_wanted(core, /datum/notice/transformed/promethean_revival), "a promethean core answers its revival")
+	var/mob/living/carbon/human/chimera = allocate(/mob/living/carbon/human, test_floor())
+	chimera.add_xenochimera()
+	TEST_ASSERT(notice_wanted(chimera, /datum/notice/transformed/xenolazarus), "a xenochimera's state answers Discount Lazarus in its body")
 
 #endif

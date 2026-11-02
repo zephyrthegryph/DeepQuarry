@@ -434,6 +434,8 @@
 #include "dq_ui_capture.dm"
 #include "dq_shuttle_tests.dm"
 #include "dq_docking_controller_work.dm"
+#include "dq_docking_end_to_end.dm"
+#include "dq_engine_room_mapped.dm"
 #include "dq_floodlight_light_tests.dm"
 #include "dq_runs_on_cell_tests.dm"
 #include "dq_state_derived_light_tests.dm"

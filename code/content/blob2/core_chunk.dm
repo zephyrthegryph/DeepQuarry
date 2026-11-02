@@ -27,6 +27,8 @@ CAPABILITIES(/obj/item/blobcore_chunk)
 	param(nameof(parent_blob_type), pos = 1, apply = PROC_REF(setup_blobtype), keep = FALSE)
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
+	on_notice(/datum/notice/transformed/blob_revival, then(PROC_REF(revival_reacted)))
+	on_notice(/datum/notice/transformed/blob_domination, then(PROC_REF(domination_reacted)))
 
 /obj/item/blobcore_chunk/is_open_container()
 	return 1
@@ -129,29 +131,33 @@ CAPABILITIES(/obj/item/blobcore_chunk)
 CAPABILITIES(/transformation/chem/instant/blob_reconstitution)
 	configure(transformation(name = "Hostile Blob Revival", id = "blob_revival", takes = list(reagent(REAGENT_ID_PHORON, 60)), made = 1,
 		holds = subject_is(/obj/item/blobcore_chunk),
-		then = TYPE_PROC_REF(/transformation/chem/instant/blob_reconstitution, on_reaction)))
+		notice = /datum/notice/transformed/blob_revival))
 
-/transformation/chem/instant/blob_reconstitution/proc/on_reaction(datum/reagents/holder)
-	var/obj/item/blobcore_chunk/chunk = holder.my_atom
-	if(chunk.can_genesis && chunk.regen())
-		chunk.visible_message(span_notice("[chunk] bubbles, surrounding itself with a rapidly expanding mass of [chunk.blob_type.name]!"))
-		chunk.can_genesis = FALSE
+/// Phoron revived a chunk: the chunk regrows a hostile blob (blobcore_chunk/revival_reacted()).
+/datum/notice/transformed/blob_revival
+
+/// The allied mix revived a chunk: the chunk regrows a neutral blob (blobcore_chunk/domination_reacted()).
+/datum/notice/transformed/blob_domination
+
+/// The chunk grows a new blob of `faction` (null: its own) once; a spent chunk only shifts.
+/obj/item/blobcore_chunk/proc/genesis(faction = null)
+	if(can_genesis && regen(faction))
+		visible_message(span_notice("[src] bubbles, surrounding itself with a rapidly expanding mass of [blob_type.name]!"))
+		can_genesis = FALSE
 	else
-		chunk.visible_message(span_warning("[chunk] shifts strangely, but falls still."))
+		visible_message(span_warning("[src] shifts strangely, but falls still."))
+
+/obj/item/blobcore_chunk/proc/revival_reacted(datum/act/notice/A)
+	genesis()
+
+/obj/item/blobcore_chunk/proc/domination_reacted(datum/act/notice/A)
+	genesis("neutral")
 
 /transformation/chem/instant/blob_reconstitution/domination
 
 CAPABILITIES(/transformation/chem/instant/blob_reconstitution/domination)
 	configure(transformation(name = "Allied Blob Revival", id = "blob_friend",
 		takes = list(reagent(REAGENT_ID_HYDROPHORON, 40), reagent(REAGENT_ID_PERIDAXON, 20), reagent(REAGENT_ID_MUTAGEN, 20)),
-		made = 1, then = TYPE_PROC_REF(/transformation/chem/instant/blob_reconstitution/domination, on_reaction)))
-
-/transformation/chem/instant/blob_reconstitution/domination/on_reaction(datum/reagents/holder)
-	var/obj/item/blobcore_chunk/chunk = holder.my_atom
-	if(chunk.can_genesis && chunk.regen("neutral"))
-		chunk.visible_message(span_notice("[chunk] bubbles, surrounding itself with a rapidly expanding mass of [chunk.blob_type.name]!"))
-		chunk.can_genesis = FALSE
-	else
-		chunk.visible_message(span_warning("[chunk] shifts strangely, but falls still."))
+		made = 1, notice = /datum/notice/transformed/blob_domination))
 
 // The chunk owns its own blob type instance (the overmind's is deleted with the overmind).
