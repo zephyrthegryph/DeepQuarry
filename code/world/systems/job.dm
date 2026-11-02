@@ -1158,7 +1158,7 @@ CAPABILITIES(/datum/system/job)
 				if(islist(decoded))
 					restricted_keys = decoded
 			catch(var/exception/error)
-				log_world("Job: discarded an unreadable [savepath]: [error.name]")
+				dq_report_caught(error, "Job: discarded an unreadable [savepath]")
 
 /datum/system/job/on_shutdown()
 	. = ..()

@@ -92,7 +92,12 @@
 	var/path = SSjob.savepath
 	TEST_ASSERT(!fexists(path), "no camp list is waiting in the test world")
 	text2file(copytext(json_encode(list("ckey" = list(1, 2))), 1, 10), path) // cut short mid-write
+	var/list/saved_capture = GLOB.dq_caught_capture
+	GLOB.dq_caught_capture = list()
 	SSjob.load_camp_lists()
+	var/list/capture = GLOB.dq_caught_capture
+	GLOB.dq_caught_capture = saved_capture
+	TEST_ASSERT_EQUAL(length(capture), 1, "the bad file is reported once")
 	TEST_ASSERT(!fexists(path), "the bad file is removed")
 	TEST_ASSERT(SSjob.restricted_keys == before, "a bad file leaves the list alone")
 	text2file(json_encode(list("somebody" = 1)), path)
