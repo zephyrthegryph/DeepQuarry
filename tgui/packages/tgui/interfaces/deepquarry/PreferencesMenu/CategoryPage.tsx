@@ -346,6 +346,16 @@ const GroupBlock = ({
       data-dq-anchor={anchor}
       style={highlightStyle(lit)}
     >
+      {group.group === 'flavor' &&
+        editors.map((item, idx) => (
+          <Box key={`editor:${item.key}-${idx}`} mb={plain.length > 0 ? 0.5 : 0}>
+            <EditorBlock
+              item={item}
+              editorData={editorData}
+              staticData={staticData}
+            />
+          </Box>
+        ))}
       {switched.length > 0 && (
         <SwitcherGroup group={group.group} widgets={switched} values={values} />
       )}
@@ -354,7 +364,8 @@ const GroupBlock = ({
           <WidgetGrid widgets={plain} values={values} />
         </Box>
       )}
-      {editors.map((item, idx) => (
+      {group.group !== 'flavor' &&
+        editors.map((item, idx) => (
         <Box
           key={`editor:${item.key}-${idx}`}
           mt={widgets.length > 0 ? 0.5 : 0}
