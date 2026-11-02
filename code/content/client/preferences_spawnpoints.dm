@@ -99,7 +99,7 @@ GLOBAL_LIST_INIT(spawntypes, populate_spawn_points())
 	if(!isturf(T) || T.density || istype(T, /turf/space))
 		return FALSE
 	for(var/obj/O in T)
-		if(O.density)
+		if(O.density && !(O.flags & ON_BORDER)) // a border window beside a shuttle seat does not stop anyone standing there
 			return FALSE
 	return TRUE
 
