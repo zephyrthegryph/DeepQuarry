@@ -338,7 +338,7 @@ SYSTEM_DEF(air)
 		return
 	// During mapload we can't register turfs whose air isn't set up yet; queue
 	// them and register on StopLoadingMap, preserving the old load-time behaviour.
-	if(map_loading && !(activate.flags_1 & INITIALIZED_1))
+	if(map_loading && !(activate.flags & ATOM_INITIALIZED))
 		if(queued_for_activation)
 			queued_for_activation[activate] = activate // ALLOW(ownership): scratch list of the air system, written only by its own procs and emptied each pass
 		return

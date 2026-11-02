@@ -9,7 +9,13 @@ CAPABILITIES(/obj/effect/landmark/engine_loader)
 	setup(PROC_REF(register_loader))
 
 /// The mapping system's engine loader is the last one placed; an earlier one is flagged a duplicate (setup hook).
+/// The compiled-in map is loaded before world/New() creates the systems, so a landmark placed there initializes (immediately)
+/// while SSmapping is still null: it leaves itself to be found by the mapping system's load_engine(). Calling through the null
+/// global here was a runtime before the logs open, and the engine room stayed empty. (As a landmark it is in REGISTRY_LANDMARKS, whose
+/// registries are built before GLOB, so load_engine() finds it there.)
 /obj/effect/landmark/engine_loader/proc/register_loader()
+	if(!SSmapping)
+		return
 	if(mapping_engine_loader())
 		WARNING("Duplicate engine_loader landmarks: [log_info_line(src)] and [log_info_line(mapping_engine_loader())]")
 		delete_me = TRUE

@@ -71,9 +71,6 @@ GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00
 	var/list/traits = list() // ALLOW(instance_list): d: every z-level has traits
 
 
-// flags_1 declaration moved to code/atmospherics/atom_flags_1.dm so
-// /atom/Initialize sets INITIALIZED_1 properly (was a dead zero stub).
-//
 /// Whether SSair.setup_allturfs registers this turf's air at round start.
 /turf/var/init_air = TRUE
 

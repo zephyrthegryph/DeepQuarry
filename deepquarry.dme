@@ -4145,7 +4145,6 @@
 #include "code\content\atmos\_atmospherics_helpers.dm"
 #include "code\domains\atmos\air_api.dm"
 #include "code\domains\atmos\atmospherics.dm"
-#include "code\domains\atmos\atom_flags_1.dm"
 #include "code\domains\atmos\auxmos_init_bridge.dm"
 #include "code\domains\atmos\dq_chomp_gas_types.dm"
 #include "code\domains\atmos\dq_linda_turf_air.dm"

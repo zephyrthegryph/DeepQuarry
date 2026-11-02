@@ -49,6 +49,9 @@ ADMIN_VERB(admin_ghost, R_HOLDER, "Aghost", "Ghost out of your body with the opt
 			to_chat(user, "Will not re-enter buildmode after switch.")
 
 	var/mob/mob = user.mob
+	if(isnewplayer(mob) && boot_draws_pending())
+		to_chat(user, span_warning("The map is still being drawn. Please try again in a moment."))
+		return
 	if(isobserver(mob))
 		//re-enter
 		var/mob/observer/dead/ghost = mob

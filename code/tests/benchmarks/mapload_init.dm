@@ -20,6 +20,7 @@ GLOBAL_LIST_INIT(mapload_init_bench_types, list(
 	/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers,
 	/obj/machinery/door/firedoor/border_only,
 	/obj/machinery/door/firedoor/glass,
+	/obj/machinery/door/firedoor/multi_tile/glass,
 	/obj/machinery/light,
 	/obj/machinery/power/apc,
 	/obj/machinery/alarm,
@@ -39,7 +40,11 @@ GLOBAL_LIST_INIT(mapload_init_bench_types, list(
 		world.Profile(PROFILE_CLEAR)
 	var/total_atoms = 0
 	var/total_us = 0
+	// --arg=only=<text>: only the types whose path contains it, so a profile covers one type.
+	var/only = "[param("only", "")]"
 	for(var/type in GLOB.mapload_init_bench_types)
+		if(length(only) && !findtext("[type]", only))
+			continue
 		var/list/atoms = list()
 		SSatoms.set_tracked_initalized(INITIALIZATION_INSSATOMS, "mapload_init bench")
 		for(var/i in 1 to count)

@@ -204,7 +204,6 @@ before code/domains/heat/heat_bind_batch.dm code/content/atmos/components/portab
 before code/domains/heat/heat_bind_batch.dm code/content/atmos/pipes/pipe_base.dm   # HEAT_BODY_RESOLVE
 before code/domains/heat/heat_bind_batch.dm code/content/atmos/pipes/vent.dm   # HEAT_BODY_RESOLVE
 before code/domains/heat/heat_bind_batch.dm code/domains/atmos/_atmos_setup.dm   # HEAT_BODY_RESOLVE
-before code/domains/heat/heat_bind_batch.dm code/domains/atmos/atom_flags_1.dm   # HEAT_BODY_RESOLVE
 before code/domains/heat/heat_bind_batch.dm code/domains/atmos/auxmos_init_bridge.dm   # HEAT_BODY_RESOLVE
 before code/domains/heat/heat_bind_batch.dm code/domains/atmos/components/atmos_network_mixin.dm   # HEAT_BODY_RESOLVE
 before code/domains/heat/heat_bind_batch.dm code/domains/atmos/components/binary_devices/binary_atmos_base.dm   # HEAT_BODY_RESOLVE
