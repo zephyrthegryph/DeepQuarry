@@ -54,11 +54,6 @@
 #define SSAIR_REBUILD_PIPELINE 1
 #define SSAIR_REBUILD_QUEUE 2
 
-// /tg/'s init-state flag — set on atom.flags_1 after Initialize completes.
-// CHOMP uses atom_init/SS_INITIALIZED elsewhere; LINDA atom-aware atmos code
-// checks this flag to skip pre-init atoms. Defined here so vendored atmos files
-// compile; the flag bit value matches /tg/'s code/__DEFINES/_flags.dm:33.
-#define INITIALIZED_1 (1<<5)
 
 // /tg/'s "iterate every turf in the world" macro. Variadic to match the /tg/
 // signature exactly; uses BYOND's block(x1, y1, z1, x2, y2, z2) form.

@@ -65,7 +65,6 @@
 /atom/proc/table_initialize()
 	SHOULD_CALL_PARENT(TRUE)
 	flags |= ATOM_INITIALIZED
-	flags_1 |= INITIALIZED_1
 	if(uses_integrity)
 		atom_integrity = max_integrity
 	BOOT_PHASE_BEGIN(bp_decls)

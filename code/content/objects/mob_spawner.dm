@@ -1,3 +1,7 @@
+/// A mob spawner's shortest and its full-nest wait between steps (spawn_wait()).
+#define SPAWNER_MIN_WAIT (2 SECONDS)
+#define SPAWNER_FULL_WAIT (1 MINUTES)
+
 /obj/structure/mob_spawner
 	name = "mob spawner"
 	desc = "This shouldn't be seen, yell at a dev."
@@ -32,9 +36,18 @@ TYPE_TABLE_DECLARE(/obj/structure/mob_spawner, mob_spawner_types, list( \
 // Spawned mobs leave the list when they die (one-sided: the mob's own `nest` var is its side).
 CAPABILITIES(/obj/structure/mob_spawner)
 	setup(PROC_REF(start_spawn_cooldown))
-	every(2 SECONDS, then(PROC_REF(mob_spawner_step)), when = STAT_RELEVANCE)
+	every(PROC_REF(spawn_wait), then(PROC_REF(mob_spawner_step)), when = STAT_RELEVANCE)
 	ref_many(nameof(spawned_mobs))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+
+/// How long until the next step: when the spawn cooldown ends, so a nest does not wake every 2 s for a spawn that is minutes away. A full nest
+/// looks again in a minute (a spawned mob dying frees a place), a nest that may spawn now in 2 s.
+/obj/structure/mob_spawner/proc/spawn_wait(datum/act/A)
+	if(!total_spawns)
+		return SPAWNER_FULL_WAIT
+	if(length(spawned_mobs) >= simultaneous_spawns)
+		return SPAWNER_FULL_WAIT
+	return max(SPAWNER_MIN_WAIT, COOLDOWN_TIMELEFT(src, spawn_cooldown))
 
 /// Acts only while a player is near (STAT_RELEVANCE); otherwise the every() parks until one comes near.
 /obj/structure/mob_spawner/proc/mob_spawner_step(datum/act/timer/A)
@@ -354,3 +367,6 @@ TYPE_TABLE(/obj/structure/mob_spawner/recycler, mob_spawner_types, list(/mob/liv
 
 TYPE_TABLE(/obj/structure/mob_spawner/recycler, mob_spawner_types, list(/mob/living/simple_mob/mechanical/hivebot/swarm = 200, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/basic = 50, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/laser = 25, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/ion = 10, /mob/living/simple_mob/mechanical/hivebot/tank/meatshield = 10))
 
+
+#undef SPAWNER_MIN_WAIT
+#undef SPAWNER_FULL_WAIT

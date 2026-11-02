@@ -150,7 +150,11 @@ GLOBAL_VAR(restart_counter)
  * Non-compiled-in maps are maploaded, all atoms are new()ed
  * All atoms in both compiled and uncompiled maps are initialized()
  */
+/// world.timeofday when world/New() began: after the .dmb, the global variables and the compiled map have loaded.
+GLOBAL_REAL_VAR(boot_world_new_tod)
+
 /world/New()
+	boot_world_new_tod = world.timeofday
 	log_world("World loaded at [time_stamp()]!")
 #ifdef UNIT_TESTS
 	// `-params boot_profile=1` (DQ_WORLD_PARAMS): the harness stamps launch_tod (deciseconds since midnight UTC) when it spawns DreamDaemon, so this line is the

@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The latency sweep no longer re-checks the same ineligible item every 2 seconds, which caused a recurring hitch on long-running servers."
+  - code_imp: "Mob spawners (mouse holes and nests) wait for their spawn cooldown instead of checking every 2 seconds."
+  - code_imp: "Armed turrets stop scanning while nobody is near and wake when a mob comes close."
+  - code_imp: "Power cells redraw only when their shown charge step changes, not on every percent."

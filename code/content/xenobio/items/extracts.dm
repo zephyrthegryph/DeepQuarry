@@ -58,14 +58,15 @@ CAPABILITIES(/obj/item/slime_extract)
 /transformation/chem/instant/slime
 
 CAPABILITIES(/transformation/chem/instant/slime)
-	configure(transformation(holds = subject_var_over("uses", 0), then = TYPE_PROC_REF(/transformation/chem/instant/slime, on_reaction)))
+	configure(transformation(holds = subject_var_over("uses", 0), spends = "uses"))
 
-/transformation/chem/instant/slime/proc/on_reaction(datum/reagents/holder)
-	var/obj/item/slime_extract/T = holder.my_atom
-	T.uses--
-	if(T.uses <= 0)
-		T.visible_message("[icon2html(T,viewers(T))]<b>\The [T]</b> goes inert.")
-		T.name = "inert [initial(T.name)]"
+/// Every slime reaction spends a use (the rules' `spends`); the extract goes inert when none are left.
+/obj/item/slime_extract/proc/spend_uses(amount)
+	var/was = uses
+	uses = amount
+	if(was > 0 && uses <= 0)
+		visible_message("[icon2html(src, viewers(src))]<b>\The [src]</b> goes inert.")
+		name = "inert [initial(name)]"
 
 // ***************
 // * Grey slimes *
@@ -247,51 +248,9 @@ CAPABILITIES(/transformation/chem/instant/slime/orange_fire)
 CAPABILITIES(/transformation/chem/instant/slime/orange_heatwave)
 	configure(transformation(name = "Slime Heat Wave", id = "m_orange_heatwave", takes = list(reagent(REAGENT_ID_BLOOD, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/orange),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/orange_heatwave, on_reaction)))
+		effects = sets_off(kind = XFORM_FX_THERMAL, direction = THERMAL_HEAT, temperature = T0C + 60, joules = 15 * 1000 * 1000, audit = "Orange extract reaction (heat wave)",
+			sfx = SFX_EFFECTS_PHASEIN, sfx_volume = 0.75)))
 
-/transformation/chem/instant/slime/orange_heatwave/on_reaction(datum/reagents/holder)
-	var/turf/simulated/T = get_turf(holder.my_atom)
-	if(!T)
-		return
-
-	if(!istype(T))
-		return
-
-	// was filtering by ZAS zone membership; under LINDA there are no
-	// zones. Fall back to view-radius proximity (visually meaningful and matches
-	// "you're in the same room" 95% of the time on stations without windowed walls).
-	log_and_message_admins("Orange extract reaction (heat wave) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
-
-	var/list/nearby_things = view(T)
-
-	// Hurt mobs.
-	for(var/mob/living/L in nearby_things)
-		var/turf/simulated/their_turf = get_turf(L)
-		if(!istype(their_turf)) // Not simulated.
-			continue
-
-		if(ishuman(L))
-			var/mob/living/carbon/human/H = L
-			var/protection = H.get_heat_protection()
-
-			if(protection < 1)
-				var/cold_factor = abs(protection - 1)
-				H.set_bodytemperature(between(50, (H.body_temperature() - ((H.body_temperature() + 50) * cold_factor) ), H.body_temperature()))
-
-			if(protection < 0.7)
-				to_chat(L, span_danger("A scalding wave of heat overwhelms you!"))
-			else
-				to_chat(L, span_warning("A scalding wave of heat passes by you, as your armor protects you from it."))
-			continue
-
-	// Now make it very cold.
-	var/datum/gas_mixture/env = T.return_air()
-	if(env)
-		// This is most likely physically impossible but when has that stopped slimes before?
-		heat_add(env, 15 * 1000 * 1000, HEAT_SOURCE_REACTION)
-
-	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.75)
-	..()
 
 /transformation/chem/instant/slime/orange_smoke
 
@@ -475,63 +434,9 @@ CAPABILITIES(/transformation/chem/instant/slime/dark_purple_blood)
 CAPABILITIES(/transformation/chem/instant/slime/dark_blue_cold_snap)
 	configure(transformation(name = "Slime Cold Snap", id = "m_darkblue_coldsnap", takes = list(reagent(REAGENT_ID_PHORON, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/dark_blue),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/dark_blue_cold_snap, on_reaction)))
+		effects = sets_off(kind = XFORM_FX_THERMAL, direction = THERMAL_COLD, joules = -10 * 1000 * 1000, slime_damage = list(100, 200), audit = "Dark Blue extract reaction (cold snap)",
+			sfx = SFX_EFFECTS_PHASEIN, sfx_volume = 0.75)))
 
-// This iterates over a ZAS zone's contents, so that things seperated in other zones aren't subjected to the temperature drop.
-/transformation/chem/instant/slime/dark_blue_cold_snap/on_reaction(datum/reagents/holder)
-	var/turf/simulated/T = get_turf(holder.my_atom)
-	if(!T) // Nullspace lacks zones.
-		return
-
-	if(!istype(T))
-		return
-
-	// was ZAS-zone filter; under LINDA fall back to view-radius.
-	log_and_message_admins("Dark Blue extract reaction (cold snap) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
-
-	var/list/nearby_things = view(T)
-
-	// Hurt mobs.
-	for(var/mob/living/L in nearby_things)
-		var/turf/simulated/their_turf = get_turf(L)
-		if(!istype(their_turf)) // Not simulated.
-			continue
-
-		if(istype(L, /mob/living/simple_mob/slime))
-			var/mob/living/simple_mob/slime/S = L
-			if(S.cold_resist >= 1) // Immune to cold.
-				to_chat(S, span_warning("A chill is felt around you, however it cannot harm you."))
-				continue
-			if(S.client) // Don't instantly kill player slimes.
-				to_chat(S, span_danger("You feel your body crystalize as an intense chill overwhelms you!"))
-				S.inflict_cold_damage(100)
-			else
-				S.inflict_cold_damage(200) // Metal slimes can survive this 'slime nuke'.
-			continue
-
-		if(ishuman(L))
-			var/mob/living/carbon/human/H = L
-			var/protection = H.get_cold_protection()
-
-			if(protection < 1)
-				var/cold_factor = abs(protection - 1)
-				H.set_bodytemperature(between(50, (H.body_temperature() - ((H.body_temperature() - 50) * cold_factor) ), H.body_temperature()))
-
-			if(protection < 0.7)
-				to_chat(L, span_danger("A chilling wave of cold overwhelms you!"))
-			else
-				to_chat(L, span_warning("A chilling wave of cold passes by you, as your armor protects you from it."))
-			continue
-
-	// Now make it very cold.
-	var/datum/gas_mixture/env = T.return_air()
-	if(env)
-		// This is most likely physically impossible but when has that stopped slimes before?
-		heat_add(env, -10 * 1000 * 1000, HEAT_SOURCE_REACTION) // For a moderately sized room this doesn't actually lower it that much.
-
-	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.75)
-
-	..()
 
 /transformation/chem/instant/slime/dark_blue_temp_resist
 
@@ -705,18 +610,8 @@ CAPABILITIES(/transformation/chem/instant/slime/pink_organ_fix)
 CAPABILITIES(/transformation/chem/instant/slime/pink_heal_pulse)
 	configure(transformation(name = "Slime Heal Pulse", id = "m_pink_heal_pulse", takes = list(reagent(REAGENT_ID_SLIMEJELLY, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/pink),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/pink_heal_pulse, on_reaction)))
-
-/transformation/chem/instant/slime/pink_heal_pulse/on_reaction(datum/reagents/holder)
-	for(var/mob/living/carbon/C in viewers(get_turf(holder.my_atom), null))
-		to_chat(C, span_notice("A wave of energy suddenly invigorates you."))
-		C.mend(TREAT_TISSUE_REPAIR, 25)
-		C.mend(TREAT_BURN_CARE, 25)
-		C.mend(TREAT_ANTITOXIN, 25)
-		C.mend(TREAT_OXYGENATION, 25)
-		C.mend(TREAT_NEURAL_REPAIR, 25)
-		C.mend(TREAT_GENETIC_REPAIR, 25)
-	..()
+		effects = sets_off(kind = XFORM_FX_WAVE, range = world.view, line_of_sight = TRUE, mob_type = /mob/living/carbon, tell_each = "A wave of energy suddenly invigorates you.",
+			mends = list(TREAT_TISSUE_REPAIR, TREAT_BURN_CARE, TREAT_ANTITOXIN, TREAT_OXYGENATION, TREAT_NEURAL_REPAIR, TREAT_GENETIC_REPAIR), mend_amount = 25)))
 
 // **************
 // * Oil slimes *
@@ -756,21 +651,10 @@ CAPABILITIES(/transformation/chem/instant/slime/oil_fakesplosion)
 CAPABILITIES(/transformation/chem/instant/slime/oil_explosion)
 	configure(transformation(name = "Slime Explosion", id = "m_oil_boom", takes = list(reagent(REAGENT_ID_SLIMEJELLY, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/oil),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/oil_explosion, on_reaction)))
+		spends_all = TRUE,
+		effects = sets_off(kind = XFORM_FX_LATER, delay = 5 SECONDS, handler = GLOBAL_PROC_REF(slime_extract_explode), tell = TRUE, audit = "Oil extract reaction (explosion)",
+			sfx = SFX_EFFECTS_PHASEIN, sfx_volume = 0.75)))
 
-/transformation/chem/instant/slime/oil_explosion/on_reaction(datum/reagents/holder)
-	..()
-	var/obj/item/slime_extract/E = holder.my_atom
-	var/power = 1
-	if(E.enhanced)
-		power++
-	E.uses = 0
-
-	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
-	holder.my_atom.visible_message(span_danger("\The [holder.my_atom] begins to vibrate violently!"))
-	log_and_message_admins("Oil extract reaction (explosion) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
-
-	after(holder.my_atom, 5 SECONDS, GLOBAL_PROC_REF(slime_extract_explode), with = list(holder.my_atom, power))
 
 // ********************
 // * Bluespace slimes *
@@ -804,21 +688,8 @@ CAPABILITIES(/transformation/chem/instant/slime/bluespace_pouch)
 CAPABILITIES(/transformation/chem/instant/slime/bluespace_chaotic_tele)
 	configure(transformation(name = "Slime Bluespace Chaos", id = "m_bs_chaos", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/bluespace),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/bluespace_chaotic_tele, on_reaction)))
+		effects = sets_off(kind = XFORM_FX_SCATTER, range = 2, distance = 50, audit = "Bluespace extract reaction (chaos teleport)")))
 
-/transformation/chem/instant/slime/bluespace_chaotic_tele/on_reaction(datum/reagents/holder)
-	log_and_message_admins("Bluespace extract reaction (chaos teleport) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
-	for(var/mob/living/M in range(2,get_turf(holder.my_atom)))
-		if(M?.buckled_to())
-			var/atom/movable/_tmp_buck_51 = M?.buckled_to()
-			_tmp_buck_51.unbuckle_mob()
-
-		fx_sparks(get_turf(M), 3, FALSE)
-
-		M.forceMove(pick(trange(50, get_turf(holder.my_atom))))
-
-		fx_sparks(M.loc, 3, FALSE)
-	..()
 
 /transformation/chem/instant/slime/bluespace_teleporter
 
@@ -1067,16 +938,8 @@ CAPABILITIES(/transformation/chem/instant/slime/emerald_hyperzine)
 CAPABILITIES(/transformation/chem/instant/slime/emerald_hell)
 	configure(transformation(name = "Slime Hell", id = "m_emerald_hell", takes = list(reagent(REAGENT_ID_SLIMEJELLY, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/emerald),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/emerald_hell, on_reaction)))
+		effects = sets_off(kind = XFORM_FX_SLICK, range = 5, freeze = TRUE, audit = "Emerald extract reaction (slip hell)")))
 
-/transformation/chem/instant/slime/emerald_hell/on_reaction(datum/reagents/holder)
-	log_and_message_admins("Emerald extract reaction (slip hell) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]", null)
-	for(var/turf/simulated/T in trange(5, get_turf(holder.my_atom)))
-		if(!istype(T))
-			continue
-		T.set_wet(TURFSLIP_WET)
-		T.freeze_floor()
-	..()
 
 // *********************
 // * Light Pink slimes *
@@ -1153,12 +1016,7 @@ CAPABILITIES(/transformation/chem/instant/slime/rainbow_random_extract)
 CAPABILITIES(/transformation/chem/instant/slime/rainbow_colors)
 	configure(transformation(name = "Slime Colors", id = "m_rainbow_colors", takes = list(reagent(REAGENT_ID_WATER, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/rainbow),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/rainbow_colors, on_reaction)))
-
-/transformation/chem/instant/slime/rainbow_colors/on_reaction(datum/reagents/holder)
-	for(var/mob/living/carbon/human/H in range(3, holder.my_atom))
-		H.status_at_least(STAT_DRUGGED, 30)
-	..()
+		effects = sets_off(kind = XFORM_FX_WAVE, range = 3, mob_type = /mob/living/carbon/human, statuses = list(list(3, STAT_DRUGGED, 30)))))
 
 /transformation/chem/instant/slime/rainbow_unity
 
@@ -1174,7 +1032,10 @@ CAPABILITIES(/transformation/chem/instant/slime/rainbow_unity)
 	if(istype(X))
 		X.set_emitting(TRUE)
 
-/proc/slime_extract_explode(atom/extract, power)
+/proc/slime_extract_explode(atom/extract, power = null)
+	if(isnull(power))
+		var/obj/item/slime_extract/X = extract
+		power = istype(X) && X.enhanced ? 2 : 1
 	explosion(get_turf(extract), 1 * power, 3 * power, 6 * power)
 	if(!QDELETED(extract)) // Explosion may or may not have deleted the extract.
 		destroyed(extract, null, "explosion")

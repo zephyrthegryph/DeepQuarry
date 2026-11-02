@@ -93,6 +93,11 @@
 	var/lethal_is_configurable = TRUE // if false, its lethal setting cannot be changed
 	/// It has a target in its sights (the cover is up while it engages, and it scans quickly).
 	var/engaging = FALSE
+	/// A mob may be near: the scan runs. A scan that finds nobody near clears it, and a mob stirring the chunks it watches sets it again
+	/// (watch_for_mobs()), so an armed turret with nobody about does no work.
+	var/mob_near = TRUE
+	/// The mob chunks it watches (unwatched before it watches again from a new place).
+	var/list/watched_chunks
 
 	var/shot_sound 				//what sound should play when the turret fires
 	var/lethal_shot_sound		//what sound should play when the emagged turret fires
@@ -132,7 +137,9 @@ CAPABILITIES(/obj/machinery/porta_turret)
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(scramble_settings)))
 	emag(then(PROC_REF(go_haywire)), say = MSG(porta_turret/haywire), disables_for = 6 SECONDS)
 	popup_cover(raised_while = PROC_REF(cover_wanted), on_move = PROC_REF(cover_moves))
-	every(PROC_REF(scan_interval), then(PROC_REF(scan)), when = STAT_ARMED)
+	every(PROC_REF(scan_interval), then(PROC_REF(scan)), when = all_of(STAT_ARMED, nameof(mob_near)))
+	setup(PROC_REF(watch_for_mobs))
+	on_change(STAT_ARMED, ENTER, then(PROC_REF(rearmed)))
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(self_repair)), when = nameof(auto_repair))
 	on_change(STAT_ARMED, EXIT, then(PROC_REF(disarmed)))
 	anchor()
@@ -420,9 +427,36 @@ CAPABILITIES(/obj/machinery/porta_turret)
 			return TRUE
 	return FALSE
 
-/// One look around while armed: it fires at the best target it sees (the cover comes down `timeout` frames after its last shot).
+/// Watches the mob chunks the turret can see into: a mob moving or appearing there wakes the scan (mobs_stirred()).
+/obj/machinery/porta_turret/proc/watch_for_mobs()
+	if(watched_chunks)
+		watched_chunks = unwatch_mob_chunks(src, watched_chunks, MOB_CHUNK_WATCH_ANY_MOB)
+	var/turf/here = get_turf(src)
+	if(here)
+		watched_chunks = watch_mob_chunks(src, mob_chunks_around(here, world.view + 1), MOB_CHUNK_WATCH_ANY_MOB, PROC_REF(mobs_stirred))
+
+/// A deleted turret stops watching: a watch it left would keep mob movement publishing to its chunks.
+/obj/machinery/porta_turret/on_destroy(force)
+	if(watched_chunks)
+		watched_chunks = unwatch_mob_chunks(src, watched_chunks, MOB_CHUNK_WATCH_ANY_MOB)
+	return ..()
+
+/// A mob moved in a watched chunk: the scan runs again.
+/obj/machinery/porta_turret/proc/mobs_stirred(datum/mob_chunk/C, bits)
+	set_mob_near(TRUE)
+
+/// Armed again (switched on, repaired, powered): it may have been moved while it was off, so it watches from where it stands and looks once.
+/obj/machinery/porta_turret/proc/rearmed(datum/act/A)
+	watch_for_mobs()
+	set_mob_near(TRUE)
+
+/// One look around while armed: it fires at the best target it sees (the cover comes down `timeout` frames after its last shot). With nobody
+/// near and nothing engaged it stops scanning until a mob stirs its chunks.
 /obj/machinery/porta_turret/proc/scan(datum/act/timer/A)
-	if(!last_fired && mob_nearby(world.view + 1)) // We cannot fire anyway until our cooldown ends, and there is nothing to look at with no mob near.
+	if(!engaging && !mob_nearby(world.view + 1))
+		set_mob_near(FALSE)
+		return
+	if(!last_fired) // We cannot fire anyway until our cooldown ends.
 		var/list/targets = list()			//list of primary targets
 		var/list/secondarytargets = list()	//targets that are least important
 		for(var/mob/M in scan_candidates())
