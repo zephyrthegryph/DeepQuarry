@@ -27,7 +27,17 @@
 /datum/antagonist/borer/New()
 	..(1)
 
+CAPABILITIES(/datum/antagonist/xenos/borer)
+	op("move_to_spawn", topic("move_to_spawn", arg("move_to_spawn", schema_ref(/mob/living), optional = TRUE)), needs(req_rights(R_ADMIN|R_EVENT)), then(PROC_REF(topic_move_to_spawn)))
+
+/// The panel's [put in host] link: nothing answered it.
+/datum/antagonist/xenos/borer/proc/topic_move_to_spawn(datum/act/op/A, mob/living/href_mob)
+	if(istype(href_mob))
+		place_mob(href_mob)
+
 /datum/antagonist/xenos/borer/get_extra_panel_options(datum/mind/player)
+	if(!player.current)
+		return ""
 	return "<a href='byond://?src=[REF(src)];[HREF_TOKEN_PLACEHOLDER];move_to_spawn=[url_encode(ref_token(player.current))]'>\[put in host\]</a>"
 
 /datum/antagonist/borer/create_objectives(datum/mind/player)

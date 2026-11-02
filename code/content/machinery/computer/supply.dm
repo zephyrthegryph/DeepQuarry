@@ -162,7 +162,7 @@ CAPABILITIES(/obj/machinery/computer/supplycomp)
 		receipts.Add(list(list(
 			"ref" = ref_token(E),
 			"contents" = E.rows,
-			"error" = E.rows["error"],
+			"error" = E.rows?["error"], // a receipt with no lines has no rows list
 			"title" = list(
 				list("field" = "Name", "entry" = E.name),
 				list("field" = "Value", "entry" = E.value),
