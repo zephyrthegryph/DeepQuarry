@@ -1414,7 +1414,7 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 /mob/living/proc/print_ooc_notes_chat(mob/user)
 	if(!identity().ooc_notes)
 		return
-	var/msg = identity().ooc_notes
+	var/msg = encode_html_emphasis(identity().ooc_notes) // the chat's emphasis markers, as the notes window shows them
 	if(identity().ooc_notes_style && (identity().ooc_notes_favs || identity().ooc_notes_likes || identity().ooc_notes_maybes || identity().ooc_notes_dislikes) && !user.client?.prefs?.read_preference(/datum/preference/toggle/vchat_enable)) // Oldchat hates proper formatting
 		msg += "<br><br>"
 		msg += "<table><tr>"
@@ -1430,33 +1430,33 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 		if(identity().ooc_notes_favs)
 			msg += "<td>"
 			for(var/line in splittext(identity().ooc_notes_favs, "\n"))
-				msg += "\t[line]\n"
+				msg += "\t[encode_html_emphasis(line)]\n"
 			msg += "</td>"
 		if(identity().ooc_notes_likes)
 			msg += "<td>"
 			for(var/line in splittext(identity().ooc_notes_likes, "\n"))
-				msg += "\t[line]\n"
+				msg += "\t[encode_html_emphasis(line)]\n"
 			msg += "</td>"
 		if(identity().ooc_notes_maybes)
 			msg += "<td>"
 			for(var/line in splittext(identity().ooc_notes_maybes, "\n"))
-				msg += "\t[line]\n"
+				msg += "\t[encode_html_emphasis(line)]\n"
 			msg += "</td>"
 		if(identity().ooc_notes_dislikes)
 			msg += "<td>"
 			for(var/line in splittext(identity().ooc_notes_dislikes, "\n"))
-				msg += "\t[line]\n"
+				msg += "\t[encode_html_emphasis(line)]\n"
 			msg += "</td>"
 		msg += "</tr></table>"
 	else
 		if(identity().ooc_notes_favs)
-			msg += "<br><br><b>[span_blue("FAVOURITES")]</b><br>[identity().ooc_notes_favs]"
+			msg += "<br><br><b>[span_blue("FAVOURITES")]</b><br>[encode_html_emphasis(identity().ooc_notes_favs)]"
 		if(identity().ooc_notes_likes)
-			msg += "<br><br><b>[span_green("LIKES")]</b><br>[identity().ooc_notes_likes]"
+			msg += "<br><br><b>[span_green("LIKES")]</b><br>[encode_html_emphasis(identity().ooc_notes_likes)]"
 		if(identity().ooc_notes_maybes)
-			msg += "<br><br><b>[span_yellow("MAYBES")]</b><br>[identity().ooc_notes_maybes]"
+			msg += "<br><br><b>[span_yellow("MAYBES")]</b><br>[encode_html_emphasis(identity().ooc_notes_maybes)]"
 		if(identity().ooc_notes_dislikes)
-			msg += "<br><br><b>[span_red("DISLIKES")]</b><br>[identity().ooc_notes_dislikes]"
+			msg += "<br><br><b>[span_red("DISLIKES")]</b><br>[encode_html_emphasis(identity().ooc_notes_dislikes)]"
 	to_chat(user, span_chatexport("<b>[src]'s Metainfo:</b><br>[msg]"))
 /mob/living/verb/set_custom_link()
 	set name = "Set Custom Link"

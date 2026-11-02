@@ -3,11 +3,7 @@
 
 import { useBackend } from 'tgui/backend';
 import { Box, Button } from 'tgui-core/components';
-import {
-  renderFlavor,
-  type SwitcherEntry,
-  TextSwitcher,
-} from '../TextSwitcher';
+import { type SwitcherEntry, TextSwitcher } from '../TextSwitcher';
 import type { EditorProps } from './index';
 
 type FlavorData = {
@@ -71,7 +67,8 @@ export const FlavorTextEditor = ({ data, staticData }: EditorProps) => {
           </Button>
         )
       }
-      render={renderFlavor}
+      formatted
+      buttonsBelow
     />
   );
 };

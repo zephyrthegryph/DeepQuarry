@@ -1,10 +1,9 @@
-// DQAdd — A button list choosing which text is edited, one editor beside it, and optionally a preview of how
-// the texts read. Flavor, speech verbs, records and OOC notes all use it.
+// DQAdd — A button list choosing which text is edited and one editor; the editor can show the chat's formatting
+// in place. Flavor, speech verbs, records and OOC notes all use it.
 
 import { type ReactNode, useEffect, useState } from 'react';
-import { useBackend } from 'tgui/backend';
 import { Box, Button, Input, TextArea } from 'tgui-core/components';
-import { FormattedText } from 'tgui-say/LanguagePreview';
+import { FormattingTextArea } from './FormattingTextArea';
 
 export type SwitcherEntry = {
   key: string;
@@ -33,16 +32,16 @@ export const TextSwitcher = ({
   onCommit,
   buttonsBelow,
   actions,
-  render,
+  formatted,
 }: {
   entries: SwitcherEntry[];
   onCommit: (key: string, value: string) => void;
   /// The entry buttons as a row under the text box instead of a column beside it.
   buttonsBelow?: boolean;
-  /// Controls under the editor (e.g. inspect in game).
+  /// Controls in the row of entry buttons (e.g. inspect in game).
   actions?: ReactNode;
-  /// How the text reads in game, shown live under the box as it is typed (as the chat input previews a message).
-  render?: (text: string) => ReactNode;
+  /// The box shows the chat's emphasis as it is typed, and takes the chat's Ctrl+B/I/U.
+  formatted?: boolean;
 }) => {
   const [picked, setPicked] = useState(entries[0]?.key ?? '');
   const entry = entries.find((e) => e.key === picked) ?? entries[0];
@@ -77,6 +76,13 @@ export const TextSwitcher = ({
       onBlur={commit}
       onEnter={commit}
     />
+  ) : formatted ? (
+    <FormattingTextArea
+      maxLength={entry.maxLength}
+      value={draft}
+      onChange={setDraft}
+      onBlur={commit}
+    />
   ) : (
     <TextArea
       fluid
@@ -97,6 +103,7 @@ export const TextSwitcher = ({
             style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25em' }}
           >
             {buttons}
+            {actions && <Box style={{ marginLeft: 'auto' }}>{actions}</Box>}
           </Box>
         </Box>
       ) : (
@@ -105,58 +112,9 @@ export const TextSwitcher = ({
           <Box style={{ flex: '1 1 0', minWidth: 0 }}>{editor}</Box>
         </Box>
       )}
-      {render && !!draft && (
-        <Box
-          mt={0.25}
-          p={0.5}
-          style={{
-            border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: '0.25em',
-            background: 'rgba(0,0,0,0.2)',
-            overflowWrap: 'anywhere',
-          }}
-        >
-          {render(draft)}
-        </Box>
-      )}
-      {actions && (
-        <Box mt={0.25} style={{ display: 'flex', gap: '0.25em' }}>
-          {actions}
-        </Box>
-      )}
     </Box>
   );
 };
-
-/// The chat's emphasis markers, sent with the character setup's static data.
-const LiveFormatted = ({ text }: { text: string }) => {
-  const { data } = useBackend<{ dq_text_markers?: Record<string, string> }>();
-  return <FormattedText text={text} markers={data.dq_text_markers ?? {}} />;
-};
-
-/// Flavor as examine renders it: "||" marks spoilers (blacked out), the chat's emphasis applied, line breaks kept.
-export const renderFlavor = (text: string): ReactNode => (
-  <Box>
-    {splitSpoilers(text).map(([part, spoiler], i) =>
-      spoiler ? (
-        <span
-          key={i}
-          title="Spoiler"
-          style={{ background: '#000', color: '#000', borderRadius: '0.2em' }}
-        >
-          {part}
-        </span>
-      ) : (
-        <LiveFormatted key={i} text={part} />
-      ),
-    )}
-  </Box>
-);
-
-/// Notes and records: the chat's emphasis applied, line breaks kept.
-export const renderPlain = (text: string): ReactNode => (
-  <LiveFormatted text={text} />
-);
 
 /// The parts of a flavor text and whether each is a spoiler (between "||" pairs), as topic_flavor_more splits it.
 export const splitSpoilers = (text: string): [string, boolean][] =>
