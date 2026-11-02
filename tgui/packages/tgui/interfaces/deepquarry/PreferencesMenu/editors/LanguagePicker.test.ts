@@ -47,15 +47,15 @@ describe('filterLanguages', () => {
 });
 
 describe('languageKeyProblem', () => {
-  const keys = { Galcom: 'g', Siik: 'q' };
-  it('takes a free letter or digit, and the language\'s own key', () => {
-    expect(languageKeyProblem('x', 'Siik', keys)).toBeNull();
-    expect(languageKeyProblem('7', 'Siik', keys)).toBeNull();
-    expect(languageKeyProblem('q', 'Siik', keys)).toBeNull();
+  const keys = { Galcom: ',g', Siik: ',q' };
+  it("takes a free prefix, and the language's own", () => {
+    expect(languageKeyProblem(',x', 'Siik', keys)).toBeNull();
+    expect(languageKeyProblem('~lat', 'Siik', keys)).toBeNull();
+    expect(languageKeyProblem(',q', 'Siik', keys)).toBeNull();
   });
   it('refuses a key another language holds, and anything else', () => {
-    expect(languageKeyProblem('g', 'Siik', keys)).toContain('Galcom');
-    expect(languageKeyProblem('#', 'Siik', keys)).not.toBeNull();
+    expect(languageKeyProblem(',g', 'Siik', keys)).toContain('Galcom');
+    expect(languageKeyProblem(':x', 'Siik', keys)).not.toBeNull();
     expect(languageKeyProblem('', 'Siik', keys)).not.toBeNull();
   });
 });

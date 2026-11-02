@@ -10,12 +10,17 @@
 	return null
 
 /mob/living/carbon/human/say_hiss_rules()
-	if(!client || client.autohiss_mode == AUTOHISS_OFF || !species?.autohiss_basic_map)
+	var/list/picked = client?.prefs ? GLOB.autohiss_choices[client.prefs.read_preference(/datum/preference/text/human/autohiss)] : null
+	if(!picked || picked["mode"] == AUTOHISS_OFF)
+		return null
+	var/own = picked["species"]
+	var/list/basic = own ? species?.autohiss_basic_map : picked["basic"]
+	if(!basic)
 		return null
 	return list(
-		"basic" = species.autohiss_basic_map,
-		"extra" = client.autohiss_mode == AUTOHISS_FULL ? species.autohiss_extra_map : null,
-		"exempt" = species.autohiss_exempt || list(),
+		"basic" = basic,
+		"extra" = picked["mode"] == AUTOHISS_FULL ? (own ? species.autohiss_extra_map : picked["extra"]) : null,
+		"exempt" = (own ? species.autohiss_exempt : picked["exempt"]) || list(),
 	)
 
 /mob/proc/say_language_info(datum/language/L)
@@ -31,8 +36,8 @@
 /mob/proc/say_language_rules()
 	var/list/key_names = list()
 	var/list/infos = list()
-	for(var/key in GLOB.language_keys | language_keys)
-		var/datum/language/L = language_for_key(key)
+	for(var/key in GLOB.language_keys | language_keys) // whole prefixes
+		var/datum/language/L = language_for_prefix(key)
 		if(!L)
 			continue
 		key_names[key] = L.name
@@ -62,7 +67,6 @@
 		radio_keys += radio_key
 
 	return list(
-		"prefixes" = CONFIG_GET(str_list/language_prefixes),
 		"mode" = client?.prefs?.read_preference(/datum/preference/choiced/multilingual_mode) || MULTILINGUAL_DEFAULT,
 		"name" = name,
 		"defaultLanguage" = preferred?.name || "",

@@ -1,10 +1,10 @@
 {
-  "_comment": "Run over both parsers: /datum/unit_test/inline_language_shared_cases (DM) and tgui-say parseLanguages.test.ts. Language labels: default is the preferred language; s and k are spoken; q is a real language the speaker cannot speak; n is noise; gibberish is the fallback. 5 is bound to a spoken language so 3,5 proves the boundary rule. Prefixes are , # and -. A piece is [language label, text]. whole names a language that takes the entire message.",
+  "_comment": "Run over both parsers: /datum/unit_test/inline_language_shared_cases (DM) and tgui-say parseLanguages.test.ts. Language labels: default is the preferred language; s and k are spoken; q is a real language the speaker cannot speak; n is noise; gibberish is the fallback. 5 is bound to a spoken language so 3,5 proves the boundary rule. Each language has one whole prefix: ,s ,k ,5 ,q ,n ,h and the longer ~lat for s2. A piece is [language label, text]. whole names a language that takes the entire message.",
   "cases": [
     { "name": "plain", "message": "Hello there", "pieces": [["default", "Hello there"]] },
     { "name": "single prefix", "message": ",s Hello", "pieces": [["s", "Hello"]] },
     { "name": "single prefix without a space", "message": ",sHello", "pieces": [["s", "Hello"]] },
-    { "name": "other prefix character", "message": "#k Hello", "pieces": [["k", "Hello"]] },
+    { "name": "the old # form is gone", "message": "#k Hello", "pieces": [["default", "#k Hello"]] },
     { "name": "two languages", "message": ",s Hello ,k friend", "pieces": [["s", "Hello"], ["k", "friend"]] },
     { "name": "unkeyed text first is preferred", "message": "Hello ,k friend", "pieces": [["default", "Hello"], ["k", "friend"]] },
     { "name": "three pieces", "message": ",s a ,k b ,s c", "pieces": [["s", "a"], ["k", "b"], ["s", "c"]] },
@@ -26,6 +26,8 @@
     { "name": "hivemind key mid-sentence takes the whole message", "message": "Hello ,h secret", "whole": "h", "text": "Hello secret" },
     { "name": "decimal survives a hivemind message", "message": ",h 3,5 units", "whole": "h", "text": "3,5 units" },
     { "name": "noise", "message": "!shouts", "pieces": [["n", "shouts"]] },
+    { "name": "the old - form is gone", "message": "well -k then", "pieces": [["default", "well -k then"]] },
+    { "name": "a longer prefix", "message": "Hello ~lat friend", "pieces": [["default", "Hello"], ["s2", "friend"]] },
     { "name": "formatting stays in its piece", "message": ",s +Hello+ ,k |friend|", "pieces": [["s", "+Hello+"], ["k", "|friend|"]] }
   ]
 }

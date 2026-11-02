@@ -146,6 +146,13 @@
 		"tgui-panel.bundle.css" = file("tgui/public/tgui-panel.bundle.css"),
 	)
 
+/datum/asset/simple/tgui_statpanel
+	keep_local_name = TRUE
+	assets = list(
+		"tgui-statpanel.bundle.js" = file("tgui/public/tgui-statpanel.bundle.js"),
+		"tgui-statpanel.bundle.css" = file("tgui/public/tgui-statpanel.bundle.css"),
+	)
+
 // Let TGUI use all of our custom fonts
 /datum/asset/simple/namespaced/tgui_extra_fonts
 	assets = list(

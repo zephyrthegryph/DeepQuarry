@@ -1121,6 +1121,9 @@ CAPABILITIES(/obj/item/clothing/under/fashionminiskirt)
 
 /obj/item/clothing/under/swimsuit/
 
+CAPABILITIES(/obj/item/clothing/under/swimsuit)
+	configure(item_worn(covers = CHEST))
+
 /obj/item/clothing/under/swimsuit/black
 	name = "black swimsuit"
 	desc = "An oldfashioned black swimsuit."

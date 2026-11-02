@@ -164,6 +164,7 @@ export default defineConfig({
     tgui: './packages/tgui',
     'tgui-panel': './packages/tgui-panel',
     'tgui-say': './packages/tgui-say',
+    'tgui-statpanel': './packages/tgui-panel/statpanel',
   },
   mode: 'production',
   module: {

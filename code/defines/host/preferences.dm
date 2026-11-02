@@ -64,12 +64,12 @@
 #define PREF_TRANSACTION_BEGIN(prefs) prefs.begin_update_batch()
 #define PREF_TRANSACTION_END(prefs)   prefs.end_update_batch()
 
-// autohiss client.autohiss_mode levels. Used by both
-// /datum/preference/text/human/autohiss.apply_to_human() and the Login() hook on
-// /mob/living/carbon/human. Previously redefined locally in each file.
+// autohiss levels. Used by both
+// the autohiss choices and /datum/species/proc/handle_autohiss.
 #define AUTOHISS_OFF    0
 #define AUTOHISS_BASIC  1
 #define AUTOHISS_FULL   2
+#define AUTOHISS_DEFAULT_CHOICE "Default (Full)"
 
 // Values for /datum/preferences/current_tab
 /// Open the character preference window

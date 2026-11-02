@@ -1,7 +1,7 @@
 /**
  * The native client's dark palette: the tgui-core theme values as hex, because
  * skin.dmf and winset take no CSS variables. interface/skin.dmf and
- * html/statbrowser.css cannot import this file, so palette.test.ts holds them
+ * statpanel/statpanel.scss cannot import this file, so palette.test.ts holds them
  * to these values.
  */
 export const DARK_PALETTE = {

@@ -37,7 +37,6 @@ CAPABILITIES(/datum/languages_panel)
 	var/list/data = list()
 	if(!host)
 		return data
-	data["prefix"] = host.get_language_prefix()
 	var/mob/living/L = host
 	var/datum/language/default_lang = istype(L) ? L.default_language : null
 	data["has_default"] = !!default_lang
@@ -53,7 +52,7 @@ CAPABILITIES(/datum/languages_panel)
 		rows += list(list(
 			"id" = lang.name,
 			"name" = lang.name,
-			"key" = lang.key,
+			"key" = language_default_prefix(lang),
 			"custom_key" = lang_key,
 			"description" = lang.desc,
 			"can_speak" = !!can_speak_lang,
@@ -101,16 +100,20 @@ CAPABILITIES(/datum/languages_panel)
 	var/datum/language/L = arg_language(A)
 	var/old_key = get_custom_prefix_by_lang(M, L)
 	var/custom_key = A.step_value("key")
-	if(custom_key && length(custom_key) == 1)
-		if(contains_az09(custom_key))
-			M.set_language_keys_at(custom_key, L)
-			if(old_key && old_key != custom_key)
-				M.remove_language_keys(old_key)
-		else if(custom_key == " ")
-			if(old_key && old_key != custom_key)
-				M.remove_language_keys(old_key)
+	if(custom_key == " ")
+		if(old_key)
+			M.remove_language_keys(old_key)
+	else if(custom_key)
+		var/problem = language_prefix_problem(custom_key)
+		var/datum/language/holder = M.language_keys[custom_key]
+		if(!problem && holder && holder != L)
+			problem = "[custom_key] already speaks [holder.name]"
+		if(problem)
+			tgui_alert_async(M, "Language prefix refused: [problem].", "Error")
 		else
-			tgui_alert_async(M, "Improper language key. Rejected.", "Error")
+			if(old_key && old_key != custom_key)
+				M.remove_language_keys(old_key)
+			M.set_language_keys_at(custom_key, L)
 	SStgui.update_uis(src)
 	return OP_OK
 

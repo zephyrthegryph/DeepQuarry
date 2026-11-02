@@ -1,6 +1,5 @@
-// DQAdd — Language picker. One list of the languages the character knows or may learn. Each known one has
-// a preferred-language radio (the language spoken by default) and its own key, typed after the chat prefix
-// to speak it. A key another known language holds is refused here and again on the server.
+// DQAdd — Language picker. One list of every language this character can have: known ones in green with their
+// prefix, typed to speak it, and a button to make one the default. Languages it can't take aren't listed. A key another known language holds is refused here and again on the server.
 
 import { useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
@@ -17,23 +16,18 @@ import type { EditorProps } from './index';
 
 type LangData = {
   alternate_languages: string[];
-  /// Language name -> the key that speaks it for this character.
+  /// Language name -> the prefix that speaks it for this character.
   language_keys: Record<string, string>;
   known_languages: string[];
-  language_prefix: string;
   preferred_language: string | null;
   extra_languages: number;
   max_alternate_languages: number;
-  species_default_language: string | null;
   /// The languages this character may pick (server rule); undefined while an old payload is cached.
   pickable_languages?: string[];
 };
 
 type LangStatic = {
-  all_languages: Record<
-    string,
-    LangMeta
-  >;
+  all_languages: Record<string, LangMeta>;
 };
 
 type Act = ReturnType<typeof useBackend>['act'];
@@ -48,13 +42,18 @@ type LangMeta = {
   default_key?: string;
 };
 
-/// Why `key` cannot speak `language`, or null when it can: the rule ui_act_set_key applies on the server.
+/// Why `key` (a whole prefix) cannot speak `language`, or null when it can: the rule of language_prefix_problem and language_key_problem.
 export const languageKeyProblem = (
   key: string,
   language: string,
   keys: Record<string, string>,
 ): string | null => {
-  if (!/^[A-Za-z0-9]$/.test(key)) return 'One letter or digit.';
+  const size = [...key].length;
+  if (size < 2 || size > 4) return '2 to 4 characters.';
+  if (key.includes(' ')) return 'No spaces.';
+  if (/^[A-Za-z0-9;:.!*^+|_<>&"']/.test(key)) {
+    return `Can't start with ${key[0]}.`;
+  }
   for (const [other, held] of Object.entries(keys)) {
     if (other !== language && held === key) return `Already speaks ${other}.`;
   }
@@ -99,7 +98,6 @@ export const LanguagePicker = ({ data, staticData }: EditorProps) => {
   const max = d.max_alternate_languages ?? 0;
   const room = Math.max(0, max - selected.size);
   const keys = d.language_keys ?? {};
-  const prefix = d.language_prefix ?? ',';
 
   // The server names the languages this character may actually pick; anything else (restricted, whitelisted for someone
   // else) is not listed at all. Selected ones come first, then the rest alphabetically; the search narrows both.
@@ -148,35 +146,9 @@ export const LanguagePicker = ({ data, staticData }: EditorProps) => {
               {max}
             </Box>{' '}
             alternate languages your character knows on top of their species
-            default. The circle marks the language spoken by default. To speak
-            another in chat, type{' '}
-            <Box inline bold color="white" style={{ fontFamily: 'monospace' }}>
-              {prefix}
-            </Box>{' '}
-            then its key.
+            default. Green languages are known. To speak another in chat, type
+            its prefix.
           </Box>
-          {d.species_default_language && (
-            <Box
-              mb={1}
-              p={0.5}
-              style={{
-                borderLeft: '0.25em solid rgba(255,255,255,0.3)',
-                paddingLeft: '0.667em',
-                background: 'rgba(255,255,255,0.04)',
-                fontSize: '0.9em',
-              }}
-            >
-              <Icon
-                name="circle-info"
-                mr={0.5}
-                style={{ color: 'rgba(255,255,255,0.5)' }}
-              />
-              Species default:{' '}
-              <Box inline bold>
-                {d.species_default_language}
-              </Box>
-            </Box>
-          )}
           <Input
             fluid
             mb={0.5}
@@ -231,14 +203,8 @@ const LanguageRow = ({
   keys: Record<string, string>;
   act: Act;
 }) => {
-  // tgui sends BooleanLike (0/1) for booleans. `meta.restricted && (…)` with a
-  // 0 would render literal "0" next to the language name. Coerce to a real
-  // boolean before the conditional. (Restricted entries are filtered upstream
-  // in sortedLanguageEntries, but keep the guard so a future caller can render
-  // a single LanguageRow without surprises.)
-  const isRestricted = !!meta.restricted;
   const hasDesc = !!meta.desc;
-  const disabled = isRestricted || (!selected && roomLeft === 0);
+  const disabled = !selected && roomLeft === 0;
   return (
     <Box
       mb={0.25}
@@ -246,37 +212,18 @@ const LanguageRow = ({
       py={0.25}
       style={{
         borderRadius: '0.333em',
-        background: known
-          ? 'rgba(52,152,219,0.08)'
-          : 'rgba(255,255,255,0.03)',
+        background: known ? 'rgba(46,204,113,0.1)' : 'rgba(255,255,255,0.03)',
         border: known
-          ? '1px solid rgba(52,152,219,0.45)'
+          ? '1px solid rgba(46,204,113,0.5)'
           : '1px solid rgba(255,255,255,0.06)',
-        opacity: isRestricted ? 0.55 : 1,
       }}
     >
       <Stack align="center">
-        {known && (
-          <Stack.Item>
-            <Button
-              compact
-              icon={preferred ? 'circle-dot' : 'circle'}
-              selected={preferred}
-              tooltip={
-                preferred
-                  ? 'Spoken by default'
-                  : 'Speak this language by default'
-              }
-              onClick={() =>
-                send(act, 'set_preferred', { language: languageKey })
-              }
-            />
-          </Stack.Item>
-        )}
         <Stack.Item grow>
           <Tooltip content={hasDesc ? meta.desc : meta.name}>
             <Box
               bold
+              color={known ? 'good' : undefined}
               style={{
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
@@ -284,22 +231,6 @@ const LanguageRow = ({
               }}
             >
               {meta.name}
-              {isRestricted && (
-                <Box
-                  inline
-                  ml={1}
-                  style={{
-                    fontSize: '0.72em',
-                    padding: '0 0.5em',
-                    borderRadius: '0.667em',
-                    backgroundColor: 'rgba(231,76,60,0.2)',
-                    color: '#E74C3C',
-                    fontWeight: 'bold',
-                  }}
-                >
-                  RESTRICTED
-                </Box>
-              )}
             </Box>
           </Tooltip>
         </Stack.Item>
@@ -311,6 +242,25 @@ const LanguageRow = ({
               keys={keys}
               act={act}
             />
+          </Stack.Item>
+        )}
+        {known && (
+          <Stack.Item>
+            <Button
+              ml={0.5}
+              compact
+              selected={preferred}
+              tooltip={
+                preferred
+                  ? 'Spoken by default'
+                  : 'Speak this language by default'
+              }
+              onClick={() =>
+                send(act, 'set_preferred', { language: languageKey })
+              }
+            >
+              {preferred ? 'Default' : 'Set default'}
+            </Button>
           </Stack.Item>
         )}
         {(selected || !known) && (
@@ -375,11 +325,11 @@ const LanguageKeyInput = ({
         </Box>
       )}
       <Box inline color="label" mr={0.25}>
-        Key
+        Prefix
       </Box>
       <Input
-        width="2.5em"
-        maxLength={1}
+        width="3.5em"
+        maxLength={4}
         value={draft}
         onChange={setDraft}
         onBlur={() => commit(draft)}
@@ -390,7 +340,7 @@ const LanguageKeyInput = ({
           ml={0.25}
           compact
           icon="rotate-left"
-          tooltip={`Back to its own key (${defaultKey})`}
+          tooltip={`Back to its own prefix (${defaultKey})`}
           onClick={() => send(act, 'reset_key', { language: languageKey })}
         />
       )}

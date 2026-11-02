@@ -23,14 +23,13 @@ export type HissRules = {
 };
 
 export type LanguageRules = {
-  prefixes: string[];
   /** "Default", "Space", "Double Delimiter" or "Single Language". */
   mode: string;
   name: string;
   defaultLanguage: string;
   gibberish: string;
   noise: string;
-  /** Typed key to language name. */
+  /** A language's whole typed prefix to its name. */
   keys: Record<string, string>;
   languages: Record<string, LanguageInfo>;
   /** The language list's order, for the Ctrl+number shortcuts. */
@@ -50,25 +49,37 @@ const trim = (text: string) => text.replace(/^\s+|\s+$/g, '');
 
 export type Switch = { language: string; start: number; textStart: number };
 
+/** The longest language prefix at position i. Prefixes are 2 to 4 characters. */
+function prefixAt(
+  message: string,
+  i: number,
+  rules: LanguageRules,
+): string | null {
+  const chars = [...message.slice(i, i + 8)];
+  for (let size = 4; size >= 2; size--) {
+    if (chars.length < size) continue;
+    const candidate = chars.slice(0, size).join('');
+    if (rules.keys[candidate]) return candidate;
+  }
+  return null;
+}
+
 export function findSwitches(message: string, rules: LanguageRules): Switch[] {
   const found: Switch[] = [];
-  const isPrefix = (char: string) => rules.prefixes.includes(char);
   for (let i = 0; i < message.length; i++) {
     if (i > 0) {
       if (rules.mode === 'Single Language') break;
       if (message[i - 1] !== ' ') continue;
     }
-    if (!isPrefix(message[i])) continue;
-    const codePoint = message.codePointAt(i + 1);
-    if (codePoint === undefined || codePoint === 32) continue;
-    const key = String.fromCodePoint(codePoint);
-    let textStart = i + 1 + key.length;
+    const prefix = prefixAt(message, i, rules);
+    if (!prefix) continue;
+    let textStart = i + prefix.length;
     if (rules.mode === 'Space' && message[textStart] !== ' ') continue;
     if (rules.mode === 'Double Delimiter') {
-      if (!isPrefix(message[textStart] ?? '')) continue;
+      if (message[textStart] !== prefix[0]) continue;
       textStart++;
     }
-    const language = rules.keys[key];
+    const language = rules.keys[prefix];
     const info = language ? rules.languages[language] : null;
     if (!info) continue;
     if (info.spoken) {

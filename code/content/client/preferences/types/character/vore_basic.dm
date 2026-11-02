@@ -30,25 +30,27 @@
 	maximum_value_length = MAX_NAME_LEN
 
 /datum/preference/text/human/autohiss/create_default_value()
-	return "Full"
-
-GLOBAL_LIST_INIT(autohiss_mode_choices, list("Off", "Basic", "Full"))
+	return AUTOHISS_DEFAULT_CHOICE
 
 /datum/preference/text/human/autohiss/get_pref_choices(datum/preferences/preferences)
-	return GLOB.autohiss_mode_choices
+	return assoc_to_keys(GLOB.autohiss_choices)
+
+/datum/preference/text/human/autohiss/get_widget_props(datum/preferences/preferences)
+	. = ..()
+	.["option_tooltips"] = autohiss_choice_tooltips()
 
 /datum/preference/text/human/autohiss/is_valid(value)
-	return (value in list("Off", "Basic", "Full"))
+	return !isnull(GLOB.autohiss_choices[value])
 
-/datum/preference/text/human/autohiss/apply_to_human(mob/living/carbon/human/target, value)
-	if(!target.client)
-		return
-	switch(value)
+/// Saves from before the exact types: Full and Basic were the species' own hiss at that level.
+/datum/preference/text/human/autohiss/pref_deserialize(input, datum/preferences/preferences)
+	switch(input)
 		if("Full")
-			target.client.autohiss_mode = AUTOHISS_FULL
+			return AUTOHISS_DEFAULT_CHOICE
 		if("Basic")
-			target.client.autohiss_mode = AUTOHISS_BASIC
-		if("Off")
-			target.client.autohiss_mode = AUTOHISS_OFF
-		else
-			target.client.autohiss_mode = AUTOHISS_FULL
+			return "Default (Basic)"
+	return GLOB.autohiss_choices[input] ? input : AUTOHISS_DEFAULT_CHOICE
+
+/// Read from the prefs of the client speaking (handle_autohiss).
+/datum/preference/text/human/autohiss/apply_to_human(mob/living/carbon/human/target, value)
+	return

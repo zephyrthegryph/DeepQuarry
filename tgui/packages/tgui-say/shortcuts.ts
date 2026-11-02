@@ -75,19 +75,18 @@ export function toggleMarker(
   };
 }
 
-/** The key typed for a language: the first the server lists for it. */
+/** The prefix typed for a language: the first the server lists for it. */
 function keyFor(language: string, rules: LanguageRules): string | undefined {
   return Object.keys(rules.keys).find((key) => rules.keys[key] === language);
 }
 
 /** What selects a language in text, trailing separator included, per the speaker's mode. */
 function tokenFor(language: string, rules: LanguageRules): string | null {
-  const key = keyFor(language, rules);
-  if (!key) return null;
-  const prefix = rules.prefixes[0];
+  const prefix = keyFor(language, rules);
+  if (!prefix) return null;
   return rules.mode === 'Double Delimiter'
-    ? `${prefix}${key}${prefix}`
-    : `${prefix}${key} `;
+    ? `${prefix}${prefix[0]}`
+    : `${prefix} `;
 }
 
 /** Where the message proper starts: past a radio key, as the server reads it. */

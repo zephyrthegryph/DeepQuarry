@@ -1,12 +1,13 @@
-// DQAdd — Flavor text editor. Body and robot flavor each show a single tall
-// textarea with a button-row above to swap between zones (general/head/face/
-// eyes/torso/arms/hands/legs/feet for body; Default + each robot module for
-// robot). The previous grid-of-tiny-textareas layout fragmented the editing
-// experience and the boxes were too short to write a sentence in.
+// DQAdd — Flavor text editor: a button list of the entries (General/Face/Body, or Default + each robot module), one text
+// area beside it, and the text as examine prints it below.
 
-import { useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
-import { Box, Button, TextArea } from 'tgui-core/components';
+import { Box } from 'tgui-core/components';
+import {
+  flavorPreviewText,
+  type SwitcherEntry,
+  TextSwitcher,
+} from '../TextSwitcher';
 import type { EditorProps } from './index';
 
 type FlavorData = {
@@ -27,6 +28,7 @@ const send = (
 ) => act('dq_editor_action', { editor: 'flavor', action, params });
 
 export const FlavorTextEditor = ({ data, staticData }: EditorProps) => {
+  const { act } = useBackend();
   const d = data as FlavorData;
   const s = (staticData ?? {}) as FlavorStatic;
   const zones = s.flavor_zones ?? [];
@@ -41,97 +43,34 @@ export const FlavorTextEditor = ({ data, staticData }: EditorProps) => {
     );
   }
 
+  const robot = mode === 'robot';
+  const shownZones = robot ? robotZones : zones;
+  const texts = (robot ? d.flavour_texts_robot : d.flavor_texts) ?? {};
+  const entries: SwitcherEntry[] = shownZones.map((z) => ({
+    key: z,
+    label: z.charAt(0).toUpperCase() + z.slice(1),
+    value: texts[z] ?? '',
+  }));
+  const previewText = flavorPreviewText(robot ? [] : zones, texts);
   return (
-    <Box>
-      {mode === 'robot' ? (
-        <>
-          <Box bold mb={0.5} color="label">
-            Robot Flavor
+    <TextSwitcher
+      entries={entries}
+      onCommit={(zone, text) =>
+        robot
+          ? send(act, 'set_robot_flavor', { module: zone, text })
+          : send(act, 'set_flavor', { zone, text })
+      }
+      preview={
+        robot ? (
+          <Box preserveWhitespace>{texts.Default ?? ''}</Box>
+        ) : previewText ? (
+          <Box preserveWhitespace>{previewText}</Box>
+        ) : (
+          <Box color="label" italic>
+            Nothing to show yet.
           </Box>
-          <ZoneSwitcher
-            zones={robotZones}
-            getValue={(z) => d.flavour_texts_robot?.[z] ?? ''}
-            actionKey="set_robot_flavor"
-            paramKey="module"
-          />
-        </>
-      ) : (
-        <>
-          <Box bold mb={0.5} color="label">
-            Body Flavor
-          </Box>
-          <ZoneSwitcher
-            zones={zones}
-            getValue={(z) => d.flavor_texts?.[z] ?? ''}
-            actionKey="set_flavor"
-            paramKey="zone"
-          />
-        </>
-      )}
-    </Box>
-  );
-};
-
-/// Renders a wrap-able row of zone-select buttons and a single large textarea
-/// for the currently-selected zone. Each zone's text persists on the server
-/// even when not displayed; the user just sees one zone at a time.
-const ZoneSwitcher = ({
-  zones,
-  getValue,
-  actionKey,
-  paramKey,
-}: {
-  zones: string[];
-  getValue: (zone: string) => string;
-  actionKey: string;
-  paramKey: string;
-}) => {
-  const { act } = useBackend();
-  const [picked, setSelected] = useState<string>(zones[0] ?? '');
-  // The zones arrive with the editor's catalog, after the first render: until the player picks one, show the first.
-  const selected = zones.includes(picked) ? picked : (zones[0] ?? '');
-  const value = getValue(selected);
-  const [draft, setDraft] = useState(value);
-
-  // When the user switches zones (or the server pushes a new value for the
-  // current zone), resync the draft buffer. Without this, an out-of-band
-  // server update would silently drop onto the editor's draft.
-  useEffect(() => {
-    setDraft(getValue(selected));
-  }, [selected, value]);
-
-  return (
-    <Box>
-      <Box
-        mb={0.5}
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '0.333em',
-        }}
-      >
-        {zones.map((z) => (
-          <Button
-            key={z}
-            compact
-            selected={z === selected}
-            onClick={() => setSelected(z)}
-          >
-            {z.charAt(0).toUpperCase() + z.slice(1)}
-          </Button>
-        ))}
-      </Box>
-      <TextArea
-        fluid
-        height="8em"
-        value={draft}
-        onChange={(v) => setDraft(v)}
-        onBlur={() => {
-          if (draft !== value) {
-            send(act, actionKey, { [paramKey]: selected, text: draft });
-          }
-        }}
-      />
-    </Box>
+        )
+      }
+    />
   );
 };
