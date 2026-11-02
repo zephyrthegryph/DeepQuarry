@@ -72,6 +72,31 @@ describe('native dark palette', () => {
   });
 });
 
+describe('vchatdark chat colours', () => {
+  const vchatDark = readFileSync(
+    join(import.meta.dir, '../styles/tgchat/chat-vchatdark.scss'),
+    'utf8',
+  );
+
+  it('every text colour on the bare chat background is readable', () => {
+    const background = luminance(hslToRgb(0, 0, 12.5));
+    const unreadable: string[] = [];
+    for (const rule of vchatDark.matchAll(/([^{};]+)\{([^{}]*)\}/g)) {
+      if (rule[2].includes('background')) continue;
+      const color = rule[2].match(
+        /(?:^|\s)color:\s*hsl\(([\d.]+),\s*([\d.]+)%,\s*([\d.]+)%\)/,
+      );
+      if (!color) continue;
+      const [h, s, l] = color.slice(1).map(Number);
+      const text = luminance(hslToRgb(h, s, l));
+      if ((text + 0.05) / (background + 0.05) < 4.5) {
+        unreadable.push(rule[1].trim());
+      }
+    }
+    expect(unreadable).toEqual([]);
+  });
+});
+
 describe('dark chat colours', () => {
   it.each([
     'red',
