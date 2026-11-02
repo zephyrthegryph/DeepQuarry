@@ -5,7 +5,7 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
-import { Button, Input, Section } from 'tgui-core/components';
+import { Button, Input, Section, Tabs } from 'tgui-core/components';
 import { McTab } from './McTab';
 import { MenuPage } from './MenuPage';
 import {
@@ -276,27 +276,27 @@ export function App(props: {
   return (
     <div className="stat-root">
       <div className={`stat-tabs stat-tabs--${tabsStyle}`}>
-        {visibleTabs(state).map((tab) => (
-          <Button
-            key={tab}
-            compact={tabsStyle === 'classic'}
-            selected={!menuOpen && tab === state.currentTab}
-            onClick={() => {
-              setQuery('');
-              setMenuOpen(false);
-              store.setTab(tab);
-            }}
+        <Tabs className="stat-tabs__list">
+          {visibleTabs(state).map((tab) => (
+            <Tabs.Tab
+              key={tab}
+              selected={!menuOpen && tab === state.currentTab}
+              onClick={() => {
+                setQuery('');
+                setMenuOpen(false);
+                store.setTab(tab);
+              }}
+            >
+              {tab}
+            </Tabs.Tab>
+          ))}
+          <Tabs.Tab
+            selected={menuOpen}
+            onClick={() => setMenuOpen(!menuOpen)}
           >
-            {tab}
-          </Button>
-        ))}
-        <Button
-          compact={tabsStyle === 'classic'}
-          selected={menuOpen}
-          onClick={() => setMenuOpen(!menuOpen)}
-        >
-          Menu
-        </Button>
+            Menu
+          </Tabs.Tab>
+        </Tabs>
         <Input
           className="stat-search"
           placeholder="Search verbs..."

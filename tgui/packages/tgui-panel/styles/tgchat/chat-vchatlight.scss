@@ -213,8 +213,7 @@ a:visited {
 
 .motd {
   color: hsl(75, 100%, 26%);
-  font-family: Verdana, sans-serif;
-  white-space: normal;
+    white-space: normal;
 }
 
 .motd h1,
@@ -224,7 +223,8 @@ a:visited {
 .motd h5,
 .motd h6 {
   color: hsl(75, 100%, 26%);
-  text-decoration: underline;
+  margin: 0 0 var(--space-s);
+  font-family: inherit;
 }
 
 .motd a,
@@ -1127,9 +1127,11 @@ h2.alert {
 
 .examine_block {
   background: hsl(202, 44%, 96%);
-  border: 1px solid hsl(215, 39%, 11%);
-  margin: 0.5em;
-  padding: 0.5em 0.75em;
+  border: var(--border-thickness-tiny) solid hsla(215, 39%, 11%, 0.25);
+  border-left: var(--border-thickness-large) solid hsla(215, 60%, 35%, 0.6);
+  border-radius: var(--border-radius-medium);
+  margin: var(--space-m) 0;
+  padding: var(--space-m) var(--space-l);
 }
 
 .tooltip {

@@ -2,3 +2,5 @@ author: "Ethan"
 delete-after: true
 changes:
   - bugfix: "Fit Viewport keeps the chat and stat side at a usable width (30% or 480 px) instead of squeezing it on tall windows."
+  - qol: "Stat panel tabs are underlined tabs that wrap (or scroll), MC cards only colour when a threshold is crossed, and the MC overview shows the tick graph."
+  - qol: "Chat: softer notice blue, themed welcome box and Reconnected divider, inline 99+ unread badges."

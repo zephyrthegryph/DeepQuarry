@@ -69,36 +69,72 @@ h3 {
   height: 100vh;
 }
 
+// Underlined tgui-core Tabs, as in the chat. Tabs wrap onto more rows by
+// default; "scrollable" keeps one row that scrolls; "classic" is denser.
 .stat-tabs {
   display: flex;
   flex-wrap: wrap;
   flex: none;
-  gap: 0.2em;
-  align-items: center;
-  padding: 0.35em;
+  gap: var(--space-s) var(--space-m);
+  align-items: flex-end;
+  padding: 0 var(--space-m);
   background-color: var(--stat-section);
+  border-bottom: 1px solid var(--stat-line);
 
-  .Button {
+  .stat-tabs__list {
+    flex: 1 1 16em;
+    flex-wrap: wrap;
+    min-width: 0;
     margin: 0;
+    padding: var(--space-s) 0 0;
+    background-color: transparent;
+  }
+
+  .Tab {
+    min-width: 0;
+    min-height: 2em;
+  }
+
+  .Tab .Tab__text {
+    margin: 0 var(--space-ml);
+    white-space: nowrap;
+  }
+
+  &--classic {
+    .Tab {
+      min-height: 1.6em;
+    }
+
+    .Tab .Tab__text {
+      margin: 0 var(--space-sm);
+    }
   }
 
   &--scrollable {
     flex-wrap: nowrap;
-    overflow-x: auto;
+
+    .stat-tabs__list {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+
+    .Tab {
+      flex-shrink: 0;
+    }
   }
 }
 
 .stat-search {
-  flex: 1 1 8em;
-  min-width: 6em;
-  max-width: 16em;
-  margin-left: auto;
+  flex: 0 1 13em;
+  min-width: 8em;
+  margin: var(--space-s) 0 var(--space-sm) auto;
 }
 
 .stat-content {
   flex: 1;
   min-height: 0;
-  padding: 0.6em;
+  padding: var(--space-m) var(--space-ml);
   overflow: hidden auto;
 }
 
@@ -114,7 +150,7 @@ h3 {
 .verb-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(10em, 1fr));
-  gap: 0.2em;
+  gap: var(--space-s);
 
   .Button {
     margin: 0;
@@ -194,58 +230,81 @@ h3 {
 .mc-dashboard {
   display: flex;
   flex-direction: column;
-  gap: 0.65em;
+  gap: var(--space-m);
 }
 
 .mc-card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(11em, 1fr));
-  gap: 0.45em;
+  grid-template-columns: repeat(auto-fill, minmax(9.5em, 1fr));
+  gap: var(--space-m);
 }
 
-.mc-navigation {
-  display: flex;
+.mc-navigation.Tabs {
   flex-wrap: wrap;
-  gap: 0.2em;
+  margin: calc(-1 * var(--space-s)) 0 0;
+  padding: 0;
+  background-color: transparent;
+  border-bottom: 1px solid var(--stat-line);
 
-  .Button {
-    margin: 0;
+  .Tab {
+    min-width: 0;
+    min-height: 1.8em;
+  }
+
+  .Tab .Tab__text {
+    margin: 0 var(--space-m);
   }
 }
 
 .mc-metric-card,
 .mc-panel {
-  padding: 0.55em;
+  padding: var(--space-m) var(--space-ml);
   background-color: var(--stat-section);
-  border-radius: 0.2em;
+  border: 1px solid var(--stat-line);
+  border-radius: var(--border-radius-medium);
 }
 
+.mc-panel h3 + .mc-panel-hint {
+  display: block;
+  margin-top: calc(-1 * var(--space-s));
+}
+
+// Neutral unless a threshold is crossed; then the value and edge take the colour.
 .mc-metric-card {
-  border-left: 0.3em solid transparent;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
 
-  &.healthy {
-    border-left-color: #2c9b52;
+  &--warning {
+    border-color: hsl(from var(--color-average) h s l / 0.6);
+
+    .mc-metric-value {
+      color: var(--color-average);
+    }
   }
 
-  &.warning {
-    border-left-color: #d28b18;
-  }
+  &--critical {
+    border-color: hsl(from var(--color-bad) h s l / 0.7);
 
-  &.critical {
-    border-left-color: #cf3b3b;
+    .mc-metric-value {
+      color: var(--color-bad);
+    }
   }
 }
 
 .mc-metric-label {
   color: var(--stat-muted);
-  font-size: 0.82em;
+  font-size: 0.78em;
+  font-weight: bold;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .mc-metric-value {
-  font-size: 1.45em;
+  font-size: 1.6em;
   font-weight: bold;
-  line-height: 1.2;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
 }
 
 .mc-metric-detail,
@@ -279,15 +338,15 @@ h3 {
 .mc-subsystem-used,
 .mc-breakdown-bar {
   &.healthy {
-    background-color: #2c9b52;
+    background-color: var(--color-good);
   }
 
   &.warning {
-    background-color: #d28b18;
+    background-color: var(--color-average);
   }
 
   &.critical {
-    background-color: #cf3b3b;
+    background-color: var(--color-bad);
   }
 }
 
@@ -296,7 +355,7 @@ h3 {
   left: 0;
   right: 0;
   bottom: 50%;
-  border-top: 1px dashed #cf3b3b;
+  border-top: 1px dashed var(--color-bad);
   pointer-events: none;
 }
 
@@ -350,7 +409,7 @@ h3 {
 }
 
 .mc-subsystem-overrun {
-  background-color: #842323;
+  background-color: hsl(from var(--color-bad) h s calc(l * 0.6));
 }
 
 .mc-subsystem-value {
@@ -408,10 +467,26 @@ h3 {
 }
 
 .mc-details {
-  margin-top: 0.6em;
+  margin-top: var(--space-m);
+  border: 1px solid var(--stat-line);
+  border-radius: var(--border-radius-medium);
 
   summary {
+    padding: var(--space-sm) var(--space-ml);
     cursor: pointer;
+    color: var(--stat-muted);
     font-weight: bold;
+
+    &:hover {
+      color: var(--stat-text);
+    }
+  }
+
+  &[open] summary {
+    border-bottom: 1px solid var(--stat-line);
+  }
+
+  .stat-table {
+    margin: var(--space-s) 0;
   }
 }
