@@ -8,21 +8,39 @@ const skin = readFileSync(
   'utf8',
 );
 
+/** What the native menu bar did, before it left skin.dmf. */
+const NATIVE_MENU_COMMANDS = [
+  '.screenshot auto',
+  '.screenshot',
+  '.reconnect',
+  '.ping',
+  '.quit',
+  '.winset "mapwindow.map.icon-size=0"',
+  '.winset "mapwindow.map.icon-size=128"',
+  '.winset "mapwindow.map.icon-size=96"',
+  '.winset "mapwindow.map.icon-size=64"',
+  '.winset "mapwindow.map.icon-size=48"',
+  '.winset "mapwindow.map.icon-size=32"',
+  '.winset "mapwindow.map.zoom-mode=distort"',
+  '.winset "mapwindow.map.zoom-mode=normal"',
+  '.winset "mapwindow.map.zoom-mode=blur"',
+  'request-help',
+  'hotkeys-help',
+  'character-setup',
+  'game-options',
+];
+
 describe('stat panel menu', () => {
-  it('reaches every command of the native menu bar', () => {
-    const block = skin.slice(
-      skin.indexOf('menu "menu"'),
-      skin.indexOf('window "mainwindow"'),
-    );
-    const commands = [...block.matchAll(/command = "((?:[^"\\]|\\.)*)"/g)]
-      .map((match) => match[1].replace(/\\"/g, '"'))
-      .filter((command) => command && !command.includes('menu.textmode'));
-    expect(commands.length).toBeGreaterThan(10);
+  it('reaches every command of the old native menu bar', () => {
     const reachable = allCommands();
-    expect(commands.filter((c) => !reachable.includes(c))).toEqual([]);
+    expect(NATIVE_MENU_COMMANDS.filter((c) => !reachable.includes(c))).toEqual(
+      [],
+    );
   });
 
-  it('the link strip left the skin', () => {
+  it('the menu bar and link strip left the skin', () => {
+    expect(skin).not.toContain('menu "menu"');
+    expect(skin).not.toMatch(/^\s*menu = "/m);
     for (const name of ['wikib', 'forumb', 'discord', 'patreon']) {
       expect(skin).not.toContain(`elem "${name}"`);
     }

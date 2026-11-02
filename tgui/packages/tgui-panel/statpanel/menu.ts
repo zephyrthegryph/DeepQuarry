@@ -1,8 +1,6 @@
 /**
- * The Menu page: everything skin.dmf's native menu bar and link strip did. The
- * native bar stays in the skin and is hidden once this page mounts, so a panel
- * that fails to load still leaves it usable. menu.test.ts holds this list to the
- * skin's commands.
+ * The Menu page: everything skin.dmf's native menu bar and link strip did, now
+ * that the skin has neither. menu.test.ts holds this list to the old bar.
  */
 export type MenuItem = { label: string; command: string };
 
