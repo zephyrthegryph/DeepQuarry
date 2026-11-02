@@ -16,8 +16,8 @@ type ExternalState = {
   color?: string | null;
   link?: string;
   own_color?: boolean;
-  /// The ancestor this limb is robotic through, while its own setting is Normal.
-  via?: string | null;
+  /// The cybernetic ancestor that rules out Normal for this limb.
+  forced_by?: string | null;
   /// The amputated ancestor this limb is lost with.
   lost_via?: string | null;
 };
@@ -184,27 +184,25 @@ export const OrgansEditor = ({
               <Segmented
                 options={asOptions(EXTERNAL_STATES)}
                 value={state.status}
+                disabledValues={state.forced_by ? ['normal'] : undefined}
                 onSelect={(status) =>
                   send('set_external_status', { limb, status })
                 }
               />
-              {!!state.via && (
-                <Box color="label">
-                  Cybernetic via {externalLabels[state.via] ?? state.via}
-                </Box>
-              )}
-              {!!state.via && state.own_color && (
+              {!!state.forced_by && !!state.own_color && (
                 <Button
                   compact
                   icon="link"
-                  tooltip={`Follow ${externalLabels[state.via] ?? state.via} again`}
+                  tooltip={`Follow ${externalLabels[state.forced_by] ?? state.forced_by} again`}
                   onClick={() => send('clear_limb_color', { limb })}
                 />
               )}
-              {(state.status === 'cyborg' || !!state.via) && (
+              {state.status === 'cyborg' && (
                 <ColorChoice
                   color={state.color ?? '#ffffff'}
-                  link={state.via && !state.own_color ? undefined : state.link}
+                  link={
+                    state.forced_by && !state.own_color ? undefined : state.link
+                  }
                   category="other"
                   onLink={(slot) =>
                     send('set_limb_color', { limb, color: slot })

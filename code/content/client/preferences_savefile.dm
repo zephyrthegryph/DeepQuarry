@@ -182,6 +182,8 @@
 
 	link_palette_on_load(palette_new_character)
 	migrate_limb_colors()
+	link_skin_and_eyes()
+	migrate_robotic_ears()
 	// Markings always draw on robotic limbs now: the old Synth Markings toggle has no reader.
 	var/list/retired_keys = get_save_data_for_savefile_identifier(PREFERENCE_CHARACTER)
 	if(islist(retired_keys))

@@ -51,6 +51,17 @@ GLOBAL_LIST_INIT(dq_limb_parents, list(BP_L_HAND = BP_L_ARM, BP_R_HAND = BP_R_AR
 		up = limb_parents[up]
 	return null
 
+/// The nearest cybernetic ancestor of a limb in saved organ data, or null (an amputated one in between ends the walk). Such a limb is cybernetic or amputated, never Normal.
+/proc/dq_limb_forced_by(list/organ_data, limb)
+	var/up = GLOB.dq_limb_parents[limb]
+	while(up)
+		if(organ_data?[up] == "cyborg")
+			return up
+		if(organ_data?[up] == "amputated")
+			return null
+		up = GLOB.dq_limb_parents[up]
+	return null
+
 /datum/preference_editor/organs/build_ui_data(datum/preferences/preferences)
 	var/list/organ_data = preferences.read_preference(/datum/preference/organ_data) || list()
 	var/list/rlimb_data = preferences.read_preference(/datum/preference/rlimb_data) || list()
@@ -59,27 +70,18 @@ GLOBAL_LIST_INIT(dq_limb_parents, list(BP_L_HAND = BP_L_ARM, BP_R_HAND = BP_R_AR
 	var/list/externals = list()
 	var/list/limb_parents = GLOB.dq_limb_parents
 	for(var/name in TYPE_TABLE_GET(src, external_limb_labels))
-		// Robotic through a parent: robotize() recurses, so the limb is robotic while its own setting is Normal.
-		var/robotic_parent
-		if(!organ_data[name])
-			var/up = limb_parents[name]
-			while(up && !robotic_parent)
-				if(organ_data[up] == "cyborg")
-					robotic_parent = up
-				else if(organ_data[up])
-					break
-				up = limb_parents[up]
 		var/shown_color = colors[name]
-		var/inherit = robotic_parent
+		var/forced_by = dq_limb_forced_by(organ_data, name)
+		var/inherit = forced_by
 		while(inherit && !shown_color)
 			shown_color = colors[inherit]
 			inherit = limb_parents[inherit]
 		externals[name] = list(
-			"status" = organ_data[name] || "normal",
+			"status" = organ_data[name] || (forced_by ? "cyborg" : "normal"),
 			"model"  = rlimb_data[name] || null,
 			"color"  = shown_color || null,
 			"own_color" = !!colors[name],
-			"via" = robotic_parent,
+			"forced_by" = forced_by,
 			"lost_via" = dq_limb_lost_through(organ_data, name),
 			"link"   = dq_color_slot_type(stored_colors[name]) ? stored_colors[name] : "",
 		)
@@ -118,10 +120,20 @@ GLOBAL_LIST_INIT(dq_limb_parents, list(BP_L_HAND = BP_L_ARM, BP_R_HAND = BP_R_AR
 	if(!(limb in TYPE_TABLE_GET(src, external_limb_labels)))
 		return PREF_UPDATE_REJECTED
 	var/list/organ_data = preferences.read_preference(/datum/preference/organ_data) || list()
-	if(dq_limb_lost_through(organ_data, limb))
+	if(dq_limb_lost_through(organ_data, limb) || (status == "normal" && dq_limb_forced_by(organ_data, limb)))
 		return PREF_UPDATE_REJECTED
 	var/list/rlimb_data = preferences.read_preference(/datum/preference/rlimb_data) || list()
 	var/list/colors = preferences.read_preference_raw(/datum/preference/limb_colors) || list()
+	// Everything below a cybernetic limb moves with it; a child already set stays as it is.
+	if(status == "cyborg")
+		for(var/child in GLOB.dq_limb_parents)
+			var/up = GLOB.dq_limb_parents[child]
+			while(up && up != limb)
+				up = GLOB.dq_limb_parents[up]
+			if(up && !organ_data[child])
+				organ_data[child] = "cyborg"
+				if(rlimb_data[limb])
+					rlimb_data[child] = rlimb_data[limb]
 	if(status == "normal")
 		organ_data -= limb
 		rlimb_data -= limb

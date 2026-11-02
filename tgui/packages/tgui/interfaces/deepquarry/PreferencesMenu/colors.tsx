@@ -29,9 +29,9 @@ export const PALETTE_SLOTS: Array<{
   prefKey: string;
   label: string;
 }> = [
-  { slot: 'primary', prefKey: 'palette_primary', label: 'Primary' },
+  { slot: 'primary', prefKey: 'palette_primary', label: 'Primary (skin)' },
   { slot: 'secondary', prefKey: 'palette_secondary', label: 'Secondary' },
-  { slot: 'tertiary', prefKey: 'palette_tertiary', label: 'Tertiary' },
+  { slot: 'tertiary', prefKey: 'palette_tertiary', label: 'Tertiary (eyes)' },
   { slot: 'extra1', prefKey: 'palette_extra1', label: 'Extra 1' },
   { slot: 'extra2', prefKey: 'palette_extra2', label: 'Extra 2' },
 ];

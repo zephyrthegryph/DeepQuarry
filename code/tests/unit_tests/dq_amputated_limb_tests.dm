@@ -42,3 +42,40 @@
 	var/list/save_data = P.get_save_data_for_savefile_identifier(PREFERENCE_CHARACTER)
 	TEST_ASSERT(!("synth_markings" in save_data), "loading drops it")
 	fdel(P.path)
+
+/// A cybernetic limb takes its children with it: Normal is refused below it, Amputated is not.
+/datum/unit_test/dq_cybernetic_parent_moves_children
+
+/datum/unit_test/dq_cybernetic_parent_moves_children/Run()
+	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs()
+	var/datum/preference_editor/organs/editor = new
+	TEST_ASSERT_EQUAL(editor.ui_act_set_external_status(null, list("limb" = BP_R_ARM, "status" = "cyborg"), P, null, null), PREF_UPDATE_ACCEPTED, "the arm goes cybernetic")
+	var/list/organ_data = P.read_preference(/datum/preference/organ_data)
+	TEST_ASSERT_EQUAL(organ_data[BP_R_HAND], "cyborg", "the hand moves with it")
+	TEST_ASSERT_EQUAL(editor.ui_act_set_external_status(null, list("limb" = BP_R_HAND, "status" = "normal"), P, null, null), PREF_UPDATE_REJECTED, "the hand cannot be Normal")
+	TEST_ASSERT_EQUAL(editor.ui_act_set_external_status(null, list("limb" = BP_R_HAND, "status" = "amputated"), P, null, null), PREF_UPDATE_ACCEPTED, "the hand can be amputated")
+	fdel(P.path)
+
+/// A skin colour differing from Primary becomes Primary, and what was linked to Primary keeps the colour it showed.
+/datum/unit_test/dq_skin_eyes_follow_slots
+
+/datum/unit_test/dq_skin_eyes_follow_slots/Run()
+	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs(list("palette_linked" = TRUE, "palette_primary" = "#111111", "skin_color" = "#222222", "tail_color1" = "primary"))
+	TEST_ASSERT_EQUAL(P.read_preference_raw(/datum/preference/color/human/skin_color), "primary", "skin links to Primary")
+	TEST_ASSERT_EQUAL(lowertext(P.read_preference(/datum/preference/color/human/skin_color)), "#222222", "and keeps its colour")
+	TEST_ASSERT_EQUAL(lowertext(P.read_preference(/datum/preference/color/human/color_slot/primary)), "#222222", "Primary took the skin colour")
+	TEST_ASSERT_EQUAL(lowertext(P.read_preference_raw(/datum/preference/color/human/tail_color1)), "#111111", "the tail keeps the colour it showed")
+	TEST_ASSERT_EQUAL(P.read_preference_raw(/datum/preference/color/human/eyes_color), "tertiary", "eyes link to Tertiary")
+	fdel(P.path)
+
+/// A Kitsuhana body with no ear style takes the ear style that replaced its built-in ears, once.
+/datum/unit_test/dq_robotic_ears_are_a_style
+
+/datum/unit_test/dq_robotic_ears_are_a_style/Run()
+	TEST_ASSERT(GLOB.ear_styles_list[/datum/sprite_accessory/ears/kitsuhana], "the ears are an ordinary style")
+	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs(list("organ_data" = list(BP_TORSO = "cyborg"), "rlimb_data" = list(BP_TORSO = "Kitsuhana"), "ear_style" = null, "ear_secondary_style" = null))
+	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/text/human/ear_style), "Kitsuhana cybernetic ears", "the save migrates")
+	P.update_preference_by_type(/datum/preference/text/human/ear_style, "")
+	P.migrate_robotic_ears()
+	TEST_ASSERT(!P.read_preference(/datum/preference/text/human/ear_style), "and None then stays None")
+	fdel(P.path)

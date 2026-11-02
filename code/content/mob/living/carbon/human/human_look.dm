@@ -493,9 +493,6 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 
 /// The text of every input of the ears overlay (get_ears_overlay()).
 /mob/living/carbon/human/proc/ears_look_key(block_head_hair)
-	var/datum/robolimb/model = robolimb_model()
-	if(istype(model) && model.includes_ears && !ear_style && !ear_secondary_style)
-		return "synth|[initial(synthetic.icon)]|[looks.ears_color]|[species.color_mult]"
 	if(block_head_hair)
 		return ""
 	. = ""
@@ -692,13 +689,6 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 
 /// The ears overlay: the prosthetic's, or the chosen ears and secondary ears in their colours. A cache builder input of build_hair_look().
 /mob/living/carbon/human/proc/get_ears_overlay(block_head_hair)
-	//If you are FBP with ear style and didn't set a custom one
-	var/datum/robolimb/model = robolimb_model()
-	if(istype(model) && model.includes_ears && !ear_style && !ear_secondary_style)
-		var/icon/ears_s = new/icon("icon" = initial(synthetic.icon), "icon_state" = "ears")
-		ears_s.Blend(src.looks.ears_color, species.color_mult ? ICON_MULTIPLY : ICON_ADD)
-		return ears_s
-
 	var/icon/rendered
 	if(ear_style && !block_head_hair)
 		var/icon/ears_s = new/icon("icon" = initial(ear_style.icon), "icon_state" = initial(ear_style.icon_state))
