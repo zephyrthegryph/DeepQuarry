@@ -17,7 +17,7 @@
 // alone. `when =` gates one preset on a condition (section 5), read after the presets before it. `from =` names other presets whose targets must be
 // set first; the engine orders them and a cycle is a declaration error (reported, the presets on the cycle are not run).
 
-/proc/preset(target, generator, from = null, when = null)
+/proc/preset(target, generator, from = null, when = null, overrides = FALSE, default = null)
 	if(!istext(target))
 		declare_report("preset(): the target is nameof(var), got [target]")
 		return null
@@ -26,7 +26,7 @@
 		return null
 	if(!islist(from) && !isnull(from))
 		from = list(from)
-	return entry_make(ENTRY_PRESET, "preset:[target]", list("target" = target, "gen" = generator, "when" = when, "from" = from))
+	return entry_make(ENTRY_PRESET, "preset:[target]", list("target" = target, "gen" = generator, "when" = when, "from" = from, "overrides" = overrides, "default" = default))
 
 /// Sets every preset() of the type on `holder`, in dependency order.
 /proc/presets_run(datum/holder, datum/lifeform_plan/P, mapload)
@@ -72,5 +72,10 @@
 		return
 	if(!isnull(E.args["when"]) && !condition_holds(holder, E.args["when"]))
 		return
+	// A subtype's own compiled value counts as given (`default`: the declaring type's value of the var; BYOND has no initial() by name on a path). overrides = TRUE computes anyway.
+	if(!E.args["overrides"])
+		var/compiled = initial(holder.vars[target])
+		if(!islist(compiled) && compiled != E.args["default"])
+			return
 	var/value = call(holder, E.args["gen"])(target)
 	holder.vars[target] = value // ALLOW(api): a preset writes its declared target before init, as a map edit would

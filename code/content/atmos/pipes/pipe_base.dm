@@ -36,9 +36,9 @@ MSG_DEF(pipe/sealed, "You seal the fatigue crack in %T%.", "%U% seals the fatigu
 MSG_DEF_SELF(pipe/not_cracked, "It has no crack to seal.")
 
 CAPABILITIES(/obj/machinery/atmospherics/pipe)
-	preset(nameof(level), PROC_REF(level_for_place))
-	preset(nameof(material_total), PROC_REF(drive_material_total), when = nameof(power_rating))
-	preset(nameof(material_template), PROC_REF(drive_material_template), from = list(nameof(material_total)), when = nameof(power_rating))
+	preset(nameof(level), PROC_REF(level_for_place), overrides = TRUE) // a subtype's level is only its default: the place it stands on still decides
+	preset(nameof(material_total), PROC_REF(drive_material_total), when = nameof(power_rating), default = SHEET_MATERIAL_AMOUNT)
+	preset(nameof(material_template), PROC_REF(drive_material_template), from = list(nameof(material_total)), when = nameof(power_rating), default = /datum/material_template/pressure)
 	configure(buckle_rules(require_restraints = 1, lying = -1))
 	unpowered_machine() // a pipe draws nothing: it carries no has_power for an APC flip to re-evaluate
 	owns_one(nameof(air_temporary), /datum/gas_mixture)
