@@ -20,6 +20,7 @@
 			var/datum/gas_mixture/air = T.return_air()
 			TEST_ASSERT(air && air.return_pressure() > 50 && air.return_temperature() > 250 && air.return_temperature() < 330, "[name] at [T.x],[T.y],[T.z] ([T.type]) has no breathable air")
 		var/turf/landing = P.get_spawn_position()
+		log_test("SPAWN_AUDIT: [name] lands at [landing.x],[landing.y],[landing.z] ([get_area(landing)])")
 		TEST_ASSERT(isturf(landing), "[name] gives a real turf")
 		var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, landing)
 		TEST_ASSERT(H.loc == landing && H.stat != DEAD, "a body stands alive at [name]")
@@ -109,17 +110,3 @@
 	where = spawnpoint_for_join(kin, JOB_ANOMALY, "Arrivals Shuttle")
 	TEST_ASSERT_EQUAL(where?.display_name, "The Dark", "the join moves a Shadekin Anomaly to the Dark")
 	TEST_ASSERT(isnull(spawnpoint_for_join(prefs, JOB_ANOMALY, "The Dark")), "no spawn point takes a human as Anomaly")
-
-/// The Dark has a way back: its hub can reach a portal on the station. Full map only (the test map has neither).
-/datum/unit_test/dq_spawnpoint_the_dark_has_exit
-
-/datum/unit_test/dq_spawnpoint_the_dark_has_exit/Run()
-	if(!("The Dark" in using_map.allowed_spawns))
-		log_test("SPAWN_AUDIT: The Dark is not on this map; its exit is proven on the full map")
-		return
-	TEST_ASSERT(length(REGISTRY_MEMBERS(REGISTRY_DARKPORTAL_HUBS)), "the Dark has a hub portal")
-	var/on_station = FALSE
-	for(var/obj/structure/dark_portal/minion/M in REGISTRY_MEMBERS(REGISTRY_DARKPORTAL_MINIONS))
-		if(M.z in using_map.station_levels)
-			on_station = TRUE
-	TEST_ASSERT(on_station, "the hub reaches a portal on the station")

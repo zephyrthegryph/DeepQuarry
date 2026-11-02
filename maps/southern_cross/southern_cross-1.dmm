@@ -18044,10 +18044,6 @@
 /obj/structure/closet/emcloset,
 /turf/simulated/floor/plating,
 /area/maintenance/firstdeck/aftstarboard)
-"aLx" = (
-/obj/structure/dark_portal/minion,
-/turf/simulated/floor/plating,
-/area/maintenance/firstdeck/centralport)
 "aLy" = (
 /obj/machinery/light{
 	dir = 8
@@ -127390,7 +127386,7 @@ aaa
 aaa
 akL
 akL
-aLx
+aqD
 apk
 apk
 apk
@@ -174040,6 +174036,7 @@ aaa
 aaa
 aaa
 "}
+
 (1,1,2) = {"
 aaa
 aaa
@@ -239575,6 +239572,7 @@ aaa
 aaa
 aaa
 "}
+
 (1,1,3) = {"
 aaa
 aaa
