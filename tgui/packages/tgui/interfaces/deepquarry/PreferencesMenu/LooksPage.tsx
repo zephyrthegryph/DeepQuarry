@@ -8,7 +8,7 @@ import { useBackend } from 'tgui/backend';
 import { Box, Button, Section } from 'tgui-core/components';
 import { type DollRegion, ZoneDoll } from '../shared/ZoneDoll';
 import { WidgetGrid } from './CategoryPage';
-import { ColorStrip, PALETTE_SLOTS, PaletteSlots } from './colors';
+import { ColorStrip, ColorSwatch, PALETTE_SLOTS, PaletteSlots } from './colors';
 import { SearchableDropdown, Segmented, Switch } from './controls';
 import { getEditor } from './editors';
 import { BodyMarkingsEditor } from './editors/BodyMarkingsEditor';
@@ -81,6 +81,7 @@ const CARD_KEYS: Record<CardId, string[]> = {
     'wing_color3',
     'wing_alpha',
     'digitigrade',
+    'ear_secondary',
   ],
   markings: ['body_markings'],
   organs: ['organs'],
@@ -231,6 +232,9 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
             values={values}
             widgets={widgets}
             withValue={withValue}
+            secondEarColors={
+              (editorData.ear_secondary?.colors ?? []) as string[]
+            }
           />
         );
       case 'markings':
@@ -531,6 +535,33 @@ const ChannelCell = ({
   </Box>
 );
 
+/// A second-ear channel: its own colour, stored in the list ear_secondary_colors.
+const SecondEarCell = ({
+  index,
+  color,
+  shown,
+}: {
+  index: number;
+  color?: string;
+  shown: boolean;
+}) => {
+  const { act } = useBackend();
+  const send = (action: string, params: Record<string, unknown>) =>
+    act('dq_editor_action', { editor: 'ear_secondary', action, params });
+  return (
+    <Box style={cellStyle}>
+      {shown && (
+        <ColorSwatch
+          color={color ?? '#ffffff'}
+          category="ears_color1"
+          onPick={(hex) => send('set_color', { index, color: hex })}
+          onCustom={() => send('pick_color', { index })}
+        />
+      )}
+    </Box>
+  );
+};
+
 const AlphaCell = ({
   alpha,
   values,
@@ -580,10 +611,12 @@ const BodyTable = ({
   values,
   widgets,
   withValue,
+  secondEarColors,
 }: {
   values: Record<string, unknown>;
   widgets: Record<string, PrefWidgetItem>;
   withValue: (key: string) => PrefWidgetItem | null;
+  secondEarColors: string[];
 }) => {
   const tailItem = withValue('tail_style');
   const tailValue = values.tail_style;
@@ -659,14 +692,23 @@ const BodyTable = ({
                   clearable={row.clearable}
                   value={value}
                 />
-                {[0, 1, 2].map((i) => (
-                  <ChannelCell
-                    key={i}
-                    prefKey={row.colors[i]}
-                    values={values}
-                    shown={i < count && !!widgets[row.colors[i]]}
-                  />
-                ))}
+                {[0, 1, 2].map((i) =>
+                  row.styleKey === 'ear_secondary_style' ? (
+                    <SecondEarCell
+                      key={i}
+                      index={i + 1}
+                      color={secondEarColors[i]}
+                      shown={i < count}
+                    />
+                  ) : (
+                    <ChannelCell
+                      key={i}
+                      prefKey={row.colors[i]}
+                      values={values}
+                      shown={i < count && !!widgets[row.colors[i]]}
+                    />
+                  ),
+                )}
                 <Box style={cellStyle}>
                   {row.alpha && !isNoStyle(value) && widgets[row.alpha] && (
                     <AlphaCell alpha={row.alpha} values={values} />

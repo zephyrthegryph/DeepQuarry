@@ -89,3 +89,22 @@
 	TEST_ASSERT(thumbs[wolf.name]["taur"], "a taur tail says so")
 	TEST_ASSERT_EQUAL(thumbs[wolf.name]["channels"], wolf.get_color_channel_count(), "and its channels")
 	TEST_ASSERT(wolf.get_color_channel_count() >= 2, "a two colour taur counts its overlay")
+
+/// The second ear's colours are written per channel and reach the body.
+/datum/unit_test/dq_second_ear_colours_write
+
+/datum/unit_test/dq_second_ear_colours_write/Run()
+	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs()
+	var/datum/preference_editor/ear_secondary/editor = new
+	TEST_ASSERT_EQUAL(editor.write_channel(P, 2, "#123456"), PREF_UPDATE_ACCEPTED, "a channel is written")
+	var/list/colors = P.read_preference(/datum/preference/ear_secondary_colors)
+	TEST_ASSERT_EQUAL(colors[2], "#123456", "in its place")
+	TEST_ASSERT_EQUAL(editor.write_channel(P, 99, "#123456"), PREF_UPDATE_REJECTED, "a channel past the last is refused")
+	TEST_ASSERT_EQUAL(editor.write_channel(P, 1, "red"), PREF_UPDATE_REJECTED, "a non-colour is refused")
+	var/list/data = editor.build_ui_data(P)
+	TEST_ASSERT_EQUAL(data["colors"][2], "#123456", "and the window sees it")
+	var/datum/preference/ear_secondary_colors/pref = GLOB.preference_entries[/datum/preference/ear_secondary_colors]
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	pref.apply_to_human(H, colors)
+	TEST_ASSERT_EQUAL(H.ear_secondary_colors[2], "#123456", "and the body takes it")
+	fdel(P.path)
