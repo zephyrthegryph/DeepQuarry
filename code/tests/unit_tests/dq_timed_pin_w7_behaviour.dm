@@ -2071,7 +2071,7 @@
 	test_time(0.5 SECONDS)
 	TEST_ASSERT_EQUAL(nutrition_of(M), 200, "nothing is spent before the end")
 	test_time(5 SECONDS)
-	TEST_ASSERT(nutrition_of(M) <= 190, "nutrition_of(src) is spent at the end")
+	TEST_ASSERT(nutrition_of(M) <= 190, "nutrition is spent at the end")
 	TEST_ASSERT_NULL(running(M), "nothing is left running")
 
 /datum/unit_test/dq_timed_pin_w7/v_nutrition_heal_cancel_on_move

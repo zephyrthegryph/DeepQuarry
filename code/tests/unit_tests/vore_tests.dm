@@ -26,7 +26,7 @@
 	TEST_ASSERT(pred && prey, "Failed to create test mobs")
 
 	pred.init_vore(TRUE)
-	TEST_ASSERT(vore_selected_of(pred), "[pred] has no vore_selected_of(src)")
+	TEST_ASSERT(vore_selected_of(pred), "[pred] has no selected belly")
 
 	vore_selected_of(pred).nom_atom(prey)
 
@@ -48,7 +48,7 @@
 	TEST_ASSERT(pred && prey, "Failed to create test mobs")
 
 	pred.init_vore(TRUE)
-	TEST_ASSERT(vore_selected_of(pred), "[pred] has no vore_selected_of(src)")
+	TEST_ASSERT(vore_selected_of(pred), "[pred] has no selected belly")
 
 	vore_selected_of(pred).nom_atom(prey)
 
@@ -83,7 +83,7 @@
 	TEST_ASSERT(pred && prey, "Failed to create test mobs")
 
 	pred.init_vore(TRUE)
-	TEST_ASSERT(vore_selected_of(pred), "[pred] has no vore_selected_of(src)")
+	TEST_ASSERT(vore_selected_of(pred), "[pred] has no selected belly")
 
 	vore_selected_of(pred).nom_atom(prey)
 

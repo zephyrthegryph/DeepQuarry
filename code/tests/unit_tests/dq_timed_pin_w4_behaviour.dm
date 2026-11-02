@@ -27,7 +27,7 @@
 	test_time(2 SECONDS)
 	TEST_ASSERT(nutrition_of(user) > 395, "nothing is spent before the end")
 	test_time(2 SECONDS)
-	TEST_ASSERT(nutrition_of(user) < 395 && nutrition_of(user) > 385, "it costs ten nutrition_of(src)")
+	TEST_ASSERT(nutrition_of(user) < 395 && nutrition_of(user) > 385, "it costs ten nutrition")
 	TEST_ASSERT(said(user, "You successfully perform"), "it says it finished")
 
 /datum/unit_test/dq_timed_pin_w4/dumbbell_cancel_on_move

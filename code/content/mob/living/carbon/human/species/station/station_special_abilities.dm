@@ -794,7 +794,7 @@ CAPABILITIES(/datum/shred_limb_review)
 	if(C.incapacitated(INCAPACITATION_ALL))
 		to_chat(src, "You cannot hover in your current state!")
 		return
-	if(nutrition_of(C) < 50 && !stat_value(C, STAT_FLYING)) //Don't have any food in you?" You can't hover, since it takes up 25 nutrition_of(src). And it's not 25 since we don't want them to immediately fall.
+	if(nutrition_of(C) < 50 && !stat_value(C, STAT_FLYING)) //Don't have any food in you?" You can't hover, since it takes up 25 nutrition. And it's not 25 since we don't want them to immediately fall.
 		to_chat(C, span_notice("You lack the nutrition to fly."))
 		return
 	if(C.anchored)

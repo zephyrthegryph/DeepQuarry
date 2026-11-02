@@ -205,7 +205,7 @@
 	var/mob/living/carbon/human/absorbee = pair[2]
 	absorbee.set_nutrition(110)
 	vore_test_cycles(B, 10)
-	TEST_ASSERT(absorbee.absorbed, "an absorb belly should absorb a drained prey (nutrition_of(src) [nutrition_of(absorbee)])")
+	TEST_ASSERT(absorbee.absorbed, "an absorb belly should absorb a drained prey (nutrition [nutrition_of(absorbee)])")
 	B.release_all_contents(TRUE, TRUE)
 	TEST_ASSERT(!absorbee.absorbed, "release should unabsorb")
 

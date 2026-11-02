@@ -14,7 +14,7 @@
 	var/mob/living/simple_mob/slime/xenobio/slime = allocate(/mob/living/simple_mob/slime/xenobio, surface)
 	var/obj/item/slimepotion/docility/potion = allocate(/obj/item/slimepotion/docility, surface)
 	TEST_ASSERT(slime.ai_brain && slime.slime_state, "Actual slime constructor supplies its real brain and slime state")
-	TEST_ASSERT(!slime.harmless && nutrition_of(slime) != 700, "Actual untreated slime starts without potion pacification or full treatment nutrition_of(src)")
+	TEST_ASSERT(!slime.harmless && nutrition_of(slime) != 700, "Actual untreated slime starts without potion pacification or full treatment nutrition")
 	TEST_ASSERT(!potion.currently_using, "Actual new potion starts unused")
 	var/original_name = slime.name
 	var/original_real_name = slime.real_name
@@ -28,7 +28,7 @@
 	TEST_ASSERT_EQUAL(question.subject, slime, "Naming request keeps the actual treated slime as its subject")
 	TEST_ASSERT_EQUAL(question.answerer, user, "Original real human receives the naming question")
 	TEST_ASSERT(potion.currently_using && slime.harmless, "Actual attack locks potion use and really pacifies the slime before naming")
-	TEST_ASSERT_EQUAL(nutrition_of(slime), 700, "Actual potion attack fills treated slime nutrition_of(src) to seven hundred")
+	TEST_ASSERT_EQUAL(nutrition_of(slime), 700, "Actual potion attack fills treated slime nutrition to seven hundred")
 	TEST_ASSERT_NULL(slime.ai_brain.primary_threat, "Actual pacification removes the real brain threat")
 	TEST_ASSERT(!QDELETED(potion) && user.get_active_hand() == potion, "Potion remains in real inventory while its naming request is pending")
 	if(name_case == "closed")
