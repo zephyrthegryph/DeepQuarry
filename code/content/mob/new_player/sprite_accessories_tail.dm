@@ -44,6 +44,16 @@
 	var/struggle_anim = FALSE
 	var/bellies_icon_path = 'icons/mob/vore/Taur_Bellies.dmi'
 
+/datum/sprite_accessory/tail/get_color_channel_count()
+	if(!do_colouration)
+		return 0
+	. = 1
+	if(extra_overlay)
+		. += 1
+	if(extra_overlay2)
+		. += 1
+
+
 
 /datum/sprite_accessory/tail/New()
 	. = ..()

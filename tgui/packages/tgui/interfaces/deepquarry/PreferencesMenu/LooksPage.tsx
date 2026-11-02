@@ -1,24 +1,20 @@
 // The Looks tab: two categories in the left column (with the body doll, the preview switches and the palette).
-// Body & markings is one window of sections (skin, hair, ears, tail, wings, legs, anything no card claims), with
-// the markings selector below them; Limbs & organs is its own. Ears, tail and wings show their style picker while absent.
+// Body is one table with a row per part (style, its colour channels, options) and the markings selector below it;
+// Limbs & organs is its own. Skin and eyes are palette slots. Legs choose among plantigrade, digitigrade and taur:
+// a taur is still saved and worn as a tail style, so riding, clothing and vore sprites read what they always did.
 
-import { type ReactNode, useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import { Box, Button, Section } from 'tgui-core/components';
 import { type DollRegion, ZoneDoll } from '../shared/ZoneDoll';
 import { WidgetGrid } from './CategoryPage';
-import {
-  ColorStrip,
-  PALETTE_SLOTS,
-  PaletteSlots,
-  type StripColor,
-} from './colors';
-import { Switch } from './controls';
+import { ColorStrip, PALETTE_SLOTS, PaletteSlots } from './colors';
+import { SearchableDropdown, Segmented, Switch } from './controls';
 import { getEditor } from './editors';
 import { BodyMarkingsEditor } from './editors/BodyMarkingsEditor';
 import { OrgansEditor } from './editors/OrgansEditor';
 import { labelForGroup } from './labels';
-import { PrefWidget } from './PrefWidget';
+import { normalizeChoices, PrefWidget } from './PrefWidget';
 import {
   editorAnchor,
   groupAnchor,
@@ -32,7 +28,7 @@ import type { PrefCategory, PrefWidgetItem } from './types';
 export type Region = 'body' | 'organs';
 
 const REGION_LABELS: Record<Region, string> = {
-  body: 'Body & markings',
+  body: 'Body',
   organs: 'Limbs & organs',
 };
 
@@ -49,46 +45,24 @@ const zoneGroup = (zone: string) =>
     g.zones.includes(zone === 'eyes' || zone === 'mouth' ? 'head' : zone),
   ) ?? null;
 
-type CardId =
-  | 'skin'
-  | 'eyes'
-  | 'hair'
-  | 'ears'
-  | 'tail'
-  | 'wings'
-  | 'legs'
-  | 'markings'
-  | 'organs'
-  | 'chassis';
+type CardId = 'parts' | 'markings' | 'organs' | 'chassis';
 
 export const REGION_CARDS: Record<Region, CardId[]> = {
-  body: [
-    'chassis',
-    'skin',
-    'eyes',
-    'hair',
-    'ears',
-    'tail',
-    'wings',
-    'legs',
-    'markings',
-  ],
+  body: ['chassis', 'parts', 'markings'],
   organs: ['organs'],
 };
 
 /// The prefs and editors each card owns (anything else lands in "Other").
 const CARD_KEYS: Record<CardId, string[]> = {
-  skin: ['skin_color'],
-  eyes: ['eyes_color'],
-  hair: [
+  parts: [
+    'skin_color',
+    'eyes_color',
     'hair_style_name',
     'facial_style_name',
     'grad_style_name',
     'hair_color',
     'facial_color',
     'grad_color',
-  ],
-  ears: [
     'ear_style',
     'ear_secondary_style',
     'ears_color1',
@@ -96,22 +70,18 @@ const CARD_KEYS: Record<CardId, string[]> = {
     'ears_color3',
     'ears_alpha',
     'secondary_ears_alpha',
-  ],
-  tail: [
     'tail_style',
     'tail_color1',
     'tail_color2',
     'tail_color3',
     'tail_alpha',
-  ],
-  wings: [
     'wing_style',
     'wing_color1',
     'wing_color2',
     'wing_color3',
     'wing_alpha',
+    'digitigrade',
   ],
-  legs: ['digitigrade'],
   markings: ['body_markings'],
   organs: ['organs'],
   chassis: ['robot_chassis'],
@@ -168,11 +138,6 @@ export const looksHasBody = (page: PrefCategory) =>
 let rememberedRegion: Region = 'body';
 
 const PREVIEW_KEYS = ['preview_loadout', 'preview_job', 'animations_toggle'];
-
-/// A hair style that draws nothing: its colours mean nothing either.
-const isNoHair = (value: unknown) =>
-  isNoStyle(value) ||
-  ['bald', 'shaved'].includes(String(value).trim().toLowerCase());
 
 const isNoStyle = (value: unknown) => {
   const s = String(value ?? '')
@@ -259,120 +224,14 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
 
   const renderCard = (card: CardId) => {
     switch (card) {
-      case 'skin':
+      case 'parts':
         return (
-          <PartCard key={card} title="Skin" anchorGroup={groupOf.skin_color}>
-            {values.species_has_skin_color !== 0 && (
-              <ColorStrip
-                colors={pick(widgets, [['skin_color', 'Skin']])}
-                values={values}
-              />
-            )}
-          </PartCard>
-        );
-      case 'eyes':
-        return (
-          <PartCard key={card} title="Eyes">
-            <ColorStrip
-              colors={pick(widgets, [['eyes_color', 'Eyes']])}
-              values={values}
-            />
-          </PartCard>
-        );
-      case 'hair':
-        return (
-          <PartCard key={card} title="Hair" anchorGroup="hair">
-            <Fields
-              keys={['hair_style_name', 'facial_style_name', 'grad_style_name']}
-              withValue={withValue}
-            />
-            <Box mt={0.4}>
-              <ColorStrip
-                colors={pick(
-                  widgets,
-                  [
-                    isNoHair(values.hair_style_name)
-                      ? null
-                      : ['hair_color', 'Hair'],
-                    isNoHair(values.facial_style_name)
-                      ? null
-                      : ['facial_color', 'Facial'],
-                    // The gradient colour only matters with a gradient.
-                    isNoStyle(values.grad_style_name)
-                      ? null
-                      : ['grad_color', 'Gradient'],
-                  ].filter(Boolean) as Array<[string, string]>,
-                )}
-                values={values}
-              />
-            </Box>
-          </PartCard>
-        );
-      case 'ears':
-        return (
-          <OptionalPart
+          <BodyTable
             key={card}
-            title="Ears"
-            styleKey="ear_style"
             values={values}
+            widgets={widgets}
             withValue={withValue}
-          >
-            <Fields
-              keys={['ear_style', 'ear_secondary_style']}
-              withValue={withValue}
-            />
-            <Box mt={0.4}>
-              <ColorStrip
-                colors={pick(widgets, [
-                  ['ears_color1', 'Primary'],
-                  ['ears_color2', 'Secondary'],
-                  ['ears_color3', 'Tertiary'],
-                ])}
-                alphas={pick(
-                  widgets,
-                  [
-                    ['ears_alpha', 'Opacity'],
-                    isNoStyle(values.ear_secondary_style)
-                      ? null
-                      : ['secondary_ears_alpha', 'Secondary opacity'],
-                  ].filter(Boolean) as Array<[string, string]>,
-                )}
-                values={values}
-              />
-            </Box>
-          </OptionalPart>
-        );
-      case 'tail':
-      case 'wings': {
-        const prefix = card === 'tail' ? 'tail' : 'wing';
-        return (
-          <OptionalPart
-            key={card}
-            title={card === 'tail' ? 'Tail' : 'Wings'}
-            styleKey={`${prefix}_style`}
-            values={values}
-            withValue={withValue}
-          >
-            <Fields keys={[`${prefix}_style`]} withValue={withValue} />
-            <Box mt={0.4}>
-              <ColorStrip
-                colors={pick(widgets, [
-                  [`${prefix}_color1`, 'Primary'],
-                  [`${prefix}_color2`, 'Secondary'],
-                  [`${prefix}_color3`, 'Tertiary'],
-                ])}
-                alphas={pick(widgets, [[`${prefix}_alpha`, 'Opacity']])}
-                values={values}
-              />
-            </Box>
-          </OptionalPart>
-        );
-      }
-      case 'legs':
-        return (
-          <PartCard key={card} title="Legs">
-            <Fields keys={['digitigrade']} withValue={withValue} />
-          </PartCard>
+          />
         );
       case 'markings':
         return (
@@ -512,10 +371,7 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
           .map((card) => {
             const node = renderCard(card);
             const wide =
-              card === 'hair' ||
-              card === 'organs' ||
-              card === 'legs' ||
-              card === 'chassis';
+              card === 'parts' || card === 'organs' || card === 'chassis';
             return (
               <Box
                 key={card}
@@ -587,61 +443,365 @@ const PreviewSwitch = ({ item }: { item: PrefWidgetItem }) => {
   );
 };
 
-/// [key, label] pairs for the keys the page actually has.
-const pick = (
-  widgets: Record<string, PrefWidgetItem>,
-  pairs: Array<[string, string]>,
-): StripColor[] =>
-  pairs.filter(([key]) => widgets[key]).map(([key, label]) => ({ key, label }));
+type StyleThumb = { channels?: number; taur?: number };
 
-const PartCard = ({
-  title,
-  children,
-  buttons,
-  anchorGroup,
+/// The channels a style draws, from its thumbnail data; a style with no data shows all three.
+const channelsOf = (item: PrefWidgetItem | null, value: unknown) => {
+  const thumb = item?.thumbnails?.[String(value ?? '')] as
+    | StyleThumb
+    | undefined;
+  return thumb?.channels ?? 3;
+};
+
+type PartRow = {
+  label: string;
+  group: string;
+  styleKey: string;
+  colors: string[];
+  alpha?: string;
+  /// A blank style means none, and None offers to clear it.
+  clearable?: boolean;
+};
+
+const PART_ROWS: PartRow[] = [
+  {
+    label: 'Hair',
+    group: 'hair',
+    styleKey: 'hair_style_name',
+    colors: ['hair_color'],
+  },
+  {
+    label: 'Facial hair',
+    group: 'hair',
+    styleKey: 'facial_style_name',
+    colors: ['facial_color'],
+  },
+  {
+    label: 'Ears',
+    group: 'ears',
+    styleKey: 'ear_style',
+    colors: ['ears_color1', 'ears_color2', 'ears_color3'],
+    alpha: 'ears_alpha',
+    clearable: true,
+  },
+  {
+    label: 'Second ears',
+    group: 'ears',
+    styleKey: 'ear_secondary_style',
+    colors: [],
+    alpha: 'secondary_ears_alpha',
+    clearable: true,
+  },
+  {
+    label: 'Tail',
+    group: 'tail',
+    styleKey: 'tail_style',
+    colors: ['tail_color1', 'tail_color2', 'tail_color3'],
+    alpha: 'tail_alpha',
+    clearable: true,
+  },
+  {
+    label: 'Wings',
+    group: 'wings',
+    styleKey: 'wing_style',
+    colors: ['wing_color1', 'wing_color2', 'wing_color3'],
+    alpha: 'wing_alpha',
+    clearable: true,
+  },
+];
+
+const TABLE_COLUMNS =
+  '6em minmax(13em, 1fr) repeat(3, 9.5em) minmax(11em, 1fr)';
+const cellStyle = { minWidth: 0, alignSelf: 'center' } as const;
+
+/// A colour cell; blank when the style lacks the channel.
+const ChannelCell = ({
+  prefKey,
+  values,
+  shown,
 }: {
-  title: string;
-  children: ReactNode;
-  buttons?: ReactNode;
-  anchorGroup?: string;
+  prefKey?: string;
+  values: Record<string, unknown>;
+  shown: boolean;
+}) => (
+  <Box style={cellStyle}>
+    {shown && prefKey && (
+      <ColorStrip colors={[{ key: prefKey, label: '' }]} values={values} />
+    )}
+  </Box>
+);
+
+const AlphaCell = ({
+  alpha,
+  values,
+}: {
+  alpha: string;
+  values: Record<string, unknown>;
+}) => (
+  <ColorStrip
+    colors={[]}
+    alphas={[{ key: alpha, label: 'Opacity' }]}
+    values={values}
+  />
+);
+
+/// A style cell: the picker, and None for a part that can be absent.
+const StyleCell = ({
+  item,
+  clearable,
+  value,
+}: {
+  item: PrefWidgetItem | null;
+  clearable?: boolean;
+  value: unknown;
 }) => {
-  const anchor = anchorGroup ? groupAnchor('appearance', anchorGroup) : '';
-  const lit = useSearchHighlight(anchor);
+  const { act } = useBackend();
+  if (!item) return <Box style={cellStyle} />;
   return (
-    <Section
-      title={title}
-      buttons={buttons}
-      data-dq-anchor={anchor || undefined}
-      style={highlightStyle(!!anchor && lit)}
-    >
-      {children}
+    <Box style={{ ...cellStyle, display: 'flex', gap: '0.3em' }}>
+      <Box style={{ flex: 1, minWidth: 0 }}>
+        <BareField item={item} />
+      </Box>
+      {clearable && !isNoStyle(value) && (
+        <Button
+          icon="xmark"
+          tooltip="None"
+          onClick={() =>
+            act('dq_update_preference', { key: item.key, value: '' })
+          }
+        />
+      )}
+    </Box>
+  );
+};
+
+/// One row per part: style, Primary, Secondary and Tertiary where the style has them, then its options.
+const BodyTable = ({
+  values,
+  widgets,
+  withValue,
+}: {
+  values: Record<string, unknown>;
+  widgets: Record<string, PrefWidgetItem>;
+  withValue: (key: string) => PrefWidgetItem | null;
+}) => {
+  const tailItem = withValue('tail_style');
+  const tailValue = values.tail_style;
+  const allTails = normalizeChoices(tailItem?.choices);
+  const isTaur = (val: unknown) =>
+    !!(tailItem?.thumbnails?.[String(val ?? '')] as StyleThumb | undefined)
+      ?.taur;
+  const taurNow = isTaur(tailValue);
+  const header = [
+    'Part',
+    'Style',
+    'Primary',
+    'Secondary',
+    'Tertiary',
+    'Options',
+  ];
+  return (
+    <Section title="Body">
+      <Box style={{ overflowX: 'auto' }}>
+        <Box
+          style={{
+            display: 'grid',
+            gridTemplateColumns: TABLE_COLUMNS,
+            gap: '0.3em 0.5em',
+            minWidth: '60em',
+          }}
+        >
+          {header.map((h) => (
+            <Box key={h} bold color="label">
+              {h}
+            </Box>
+          ))}
+          {PART_ROWS.filter((row) => widgets[row.styleKey]).map((row) => {
+            const isTail = row.styleKey === 'tail_style';
+            const value = values[row.styleKey];
+            const item = withValue(row.styleKey);
+            const count = isNoStyle(value) ? 0 : channelsOf(item, value);
+            if (isTail && taurNow) {
+              return (
+                <Box
+                  key={row.label}
+                  style={{ display: 'contents' }}
+                  data-dq-anchor={groupAnchor('appearance', row.group)}
+                >
+                  <Box style={cellStyle}>{row.label}</Box>
+                  <Box
+                    color="label"
+                    style={{ ...cellStyle, gridColumn: '2 / -1' }}
+                  >
+                    The taur body in Legs takes the place of a tail.
+                  </Box>
+                </Box>
+              );
+            }
+            const shownItem =
+              isTail && item
+                ? {
+                    ...item,
+                    choices: allTails
+                      .filter(([v]) => !isTaur(v))
+                      .map(([v]) => v),
+                  }
+                : item;
+            return (
+              <Box
+                key={row.label}
+                style={{ display: 'contents' }}
+                data-dq-anchor={groupAnchor('appearance', row.group)}
+              >
+                <Box style={cellStyle}>{row.label}</Box>
+                <StyleCell
+                  item={shownItem}
+                  clearable={row.clearable}
+                  value={value}
+                />
+                {[0, 1, 2].map((i) => (
+                  <ChannelCell
+                    key={i}
+                    prefKey={row.colors[i]}
+                    values={values}
+                    shown={i < count && !!widgets[row.colors[i]]}
+                  />
+                ))}
+                <Box style={cellStyle}>
+                  {row.alpha && !isNoStyle(value) && widgets[row.alpha] && (
+                    <AlphaCell alpha={row.alpha} values={values} />
+                  )}
+                  {row.styleKey === 'hair_style_name' && (
+                    <GradientOption
+                      values={values}
+                      widgets={widgets}
+                      withValue={withValue}
+                    />
+                  )}
+                </Box>
+              </Box>
+            );
+          })}
+          <LegsRow
+            values={values}
+            widgets={widgets}
+            tailItem={tailItem}
+            taurStyles={allTails.filter(([v]) => isTaur(v))}
+            taurNow={taurNow}
+          />
+        </Box>
+      </Box>
     </Section>
   );
 };
 
-/// A label/control list for some of the page's prefs (skipping the ones it lacks).
-const Fields = ({
-  keys,
+const GradientOption = ({
+  values,
+  widgets,
   withValue,
-  bare,
 }: {
-  keys: string[];
+  values: Record<string, unknown>;
+  widgets: Record<string, PrefWidgetItem>;
   withValue: (key: string) => PrefWidgetItem | null;
-  bare?: boolean;
 }) => {
-  const items = keys.map(withValue).filter(Boolean) as PrefWidgetItem[];
-  if (!items.length) return null;
-  if (bare) {
-    return (
-      <>
-        {items.map((item) => (
-          <BareField key={item.key} item={item} />
-        ))}
-      </>
-    );
-  }
-  const values = Object.fromEntries(items.map((i) => [i.key, i.value]));
-  return <WidgetGrid widgets={items} values={values} />;
+  const item = withValue('grad_style_name');
+  if (!item) return null;
+  return (
+    <Box>
+      <Box color="label" fontSize="0.85em">
+        Gradient
+      </Box>
+      <BareField item={item} />
+      {!isNoStyle(values.grad_style_name) && widgets.grad_color && (
+        <ColorStrip
+          colors={[{ key: 'grad_color', label: '' }]}
+          values={values}
+        />
+      )}
+    </Box>
+  );
+};
+
+const LEG_OPTIONS: Array<[string, string]> = [
+  ['plantigrade', 'Plantigrade'],
+  ['digitigrade', 'Digitigrade'],
+  ['taur', 'Taur'],
+];
+
+/// Plantigrade, digitigrade or a taur body. A taur is saved as the tail style it always was.
+const LegsRow = ({
+  values,
+  widgets,
+  tailItem,
+  taurStyles,
+  taurNow,
+}: {
+  values: Record<string, unknown>;
+  widgets: Record<string, PrefWidgetItem>;
+  tailItem: PrefWidgetItem | null;
+  taurStyles: Array<[string, string]>;
+  taurNow: boolean;
+}) => {
+  const { act } = useBackend();
+  const [choosingTaur, setChoosingTaur] = useState(false);
+  if (!widgets.digitigrade && !taurStyles.length) return null;
+  const digi = !!values.digitigrade;
+  const showTaur = taurNow || choosingTaur;
+  const mode = showTaur ? 'taur' : digi ? 'digitigrade' : 'plantigrade';
+  const set = (key: string, value: unknown) =>
+    act('dq_update_preference', { key, value });
+  const pick = (next: string) => {
+    setChoosingTaur(next === 'taur');
+    if (next === 'taur') return;
+    if (taurNow) set('tail_style', '');
+    if (widgets.digitigrade && (next === 'digitigrade') !== digi) {
+      set('digitigrade', next === 'digitigrade');
+    }
+  };
+  const count = taurNow ? channelsOf(tailItem, values.tail_style) : 0;
+  return (
+    <Box
+      style={{ display: 'contents' }}
+      data-dq-anchor={prefAnchor('digitigrade')}
+    >
+      <Box style={cellStyle}>Legs</Box>
+      <Box style={cellStyle}>
+        <Segmented
+          options={LEG_OPTIONS.filter(
+            ([v]) => v !== 'taur' || taurStyles.length > 0,
+          )}
+          value={mode}
+          onSelect={pick}
+        />
+        {showTaur && (
+          <Box mt={0.2}>
+            <SearchableDropdown
+              placeholder="Filter taur bodies…"
+              options={taurStyles}
+              value={String(values.tail_style ?? '')}
+              onSelect={(style) => {
+                setChoosingTaur(false);
+                set('tail_style', style);
+              }}
+            />
+          </Box>
+        )}
+      </Box>
+      {['tail_color1', 'tail_color2', 'tail_color3'].map((key, i) => (
+        <ChannelCell
+          key={key}
+          prefKey={key}
+          values={values}
+          shown={i < count && !!widgets[key]}
+        />
+      ))}
+      <Box style={cellStyle}>
+        {taurNow && widgets.tail_alpha && (
+          <AlphaCell alpha="tail_alpha" values={values} />
+        )}
+      </Box>
+    </Box>
+  );
 };
 
 const BareField = ({ item }: { item: PrefWidgetItem }) => {
@@ -651,54 +811,6 @@ const BareField = ({ item }: { item: PrefWidgetItem }) => {
     <Box data-dq-anchor={anchor} style={highlightStyle(lit)}>
       <PrefWidget item={item} />
     </Box>
-  );
-};
-
-/// Ears, tail and wings: the style picker while the part has none, the full card with Remove after.
-const OptionalPart = ({
-  title,
-  styleKey,
-  values,
-  withValue,
-  children,
-}: {
-  title: string;
-  styleKey: string;
-  values: Record<string, unknown>;
-  withValue: (key: string) => PrefWidgetItem | null;
-  children: ReactNode;
-}) => {
-  const { act } = useBackend();
-  const lowerTitle = title.toLowerCase();
-  if (isNoStyle(values[styleKey])) {
-    const styleItem = withValue(styleKey);
-    return (
-      <PartCard title={title}>
-        <Box color="label" mb={0.3}>
-          This character has no {lowerTitle}. Pick a style to add them.
-        </Box>
-        {styleItem && <BareField item={styleItem} />}
-      </PartCard>
-    );
-  }
-  return (
-    <PartCard
-      title={title}
-      buttons={
-        <Button.Confirm
-          icon="trash"
-          color="transparent"
-          tooltip={`Remove the ${lowerTitle}`}
-          onClick={() => {
-            act('dq_update_preference', { key: styleKey, value: '' });
-          }}
-        >
-          Remove
-        </Button.Confirm>
-      }
-    >
-      {children}
-    </PartCard>
   );
 };
 

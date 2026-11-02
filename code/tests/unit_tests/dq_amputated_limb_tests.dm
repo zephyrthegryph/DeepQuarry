@@ -79,3 +79,13 @@
 	P.migrate_robotic_ears()
 	TEST_ASSERT(!P.read_preference(/datum/preference/text/human/ear_style), "and None then stays None")
 	fdel(P.path)
+
+/// The Body table reads each style's channels and whether a tail style is a taur from its thumbnail data.
+/datum/unit_test/dq_style_thumbs_carry_channels
+
+/datum/unit_test/dq_style_thumbs_carry_channels/Run()
+	var/list/thumbs = sprite_accessory_thumbs(GLOB.tail_styles_list)
+	var/datum/sprite_accessory/tail/taur/wolf/wolf = GLOB.tail_styles_list[/datum/sprite_accessory/tail/taur/wolf/wolf_2c]
+	TEST_ASSERT(thumbs[wolf.name]["taur"], "a taur tail says so")
+	TEST_ASSERT_EQUAL(thumbs[wolf.name]["channels"], wolf.get_color_channel_count(), "and its channels")
+	TEST_ASSERT(wolf.get_color_channel_count() >= 2, "a two colour taur counts its overlay")
