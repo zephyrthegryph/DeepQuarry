@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - code_imp: "Lanes land directly with tools/dq_land.sh: no gates, stamps or queue; agents choose their own tests"
