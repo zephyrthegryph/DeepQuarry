@@ -170,6 +170,16 @@
 		spawnkeys += spawntype
 	return spawnkeys
 
+/// What the setup list offers this character (the same check the join makes, /datum/spawnpoint/proc/refusal()).
+/datum/preference/choiced/living/spawnpoint/get_pref_choices(datum/preferences/preferences)
+	return spawnpoint_choices_for(preferences)
+
+/datum/preference/choiced/living/spawnpoint/validate(datum/preferences/preferences, value)
+	return is_valid(value) && (value in spawnpoint_choices_for(preferences))
+
+/datum/preference/choiced/living/spawnpoint/create_informed_default_value(datum/preferences/preferences)
+	return spawnpoint_default_for(preferences)
+
 /datum/preference/choiced/living/spawnpoint/apply_to_living(mob/living/target, value)
 	return // handled in job_controller
 
