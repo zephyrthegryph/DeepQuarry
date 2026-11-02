@@ -110,3 +110,20 @@
 	where = spawnpoint_for_join(kin, JOB_ANOMALY, "Arrivals Shuttle")
 	TEST_ASSERT_EQUAL(where?.display_name, "The Dark", "the join moves a Shadekin Anomaly to the Dark")
 	TEST_ASSERT(isnull(spawnpoint_for_join(prefs, JOB_ANOMALY, "The Dark")), "no spawn point takes a human as Anomaly")
+
+/// An Outsider spawns at whichever spawn point the player chose, like a normal job.
+/datum/unit_test/dq_spawnpoint_outsider_takes_chosen
+
+/datum/unit_test/dq_spawnpoint_outsider_takes_chosen/Run()
+	var/datum/preferences/prefs = dq_spawn_audit_prefs(SPECIES_HUMAN)
+	for(var/name in using_map.allowed_spawns)
+		var/datum/spawnpoint/P = GLOB.spawntypes[name]
+		if(!P.check_job_spawning(JOB_OUTSIDER))
+			TEST_ASSERT(P.allowed_mob_types == JOB_SILICON || length(P.restrict_job), "[name] refuses an Outsider")
+			continue
+		var/datum/spawnpoint/where = spawnpoint_for_join(prefs, JOB_OUTSIDER, name)
+		TEST_ASSERT_EQUAL(where?.display_name, name, "an Outsider who chose [name] goes there")
+		var/turf/landing = where.get_spawn_position()
+		var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, landing)
+		TEST_ASSERT(H.loc == landing && H.stat != DEAD, "an Outsider stands alive at [name]")
+		log_test("SPAWN_AUDIT: Outsider at [name] lands at [landing.x],[landing.y],[landing.z]")

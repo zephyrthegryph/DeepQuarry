@@ -12,6 +12,7 @@
 	assignable = FALSE
 	account_allowed = 0
 	offmap_spawn = TRUE
+	any_spawn_point = TRUE
 
 	outfit_type = /datum/decl/hierarchy/outfit/noncrew
 	job_description = {"Players taking a role of an outsider not employed by NT with no special mechanics. One superpose pod is provided.

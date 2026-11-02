@@ -51,6 +51,8 @@ CAPABILITIES(/obj/effect/landmark)
 			return GLOB.newplayer_start
 		if("JoinLateGateway")
 			return GLOB.latejoin_gateway
+		if("JoinLateTeleporter")
+			return GLOB.latejoin_teleporter
 		if("JoinLateStationGateway")
 			return GLOB.latejoin_gatewaystation
 		if("JoinLateSifPlains")
