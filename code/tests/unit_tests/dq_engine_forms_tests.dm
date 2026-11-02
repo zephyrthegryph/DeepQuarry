@@ -174,6 +174,7 @@ CAPABILITIES(/obj/forms_holder)
 /// A clean driver, and the declaration reports captured: some tests make them on purpose.
 /datum/unit_test/dq_forms/Run()
 	test_driver_begin()
+	set_global(nameof(GLOB.forms_runs), GLOB.forms_runs)
 	GLOB.declare_report_capture = list()
 	run_forms()
 	GLOB.declare_report_capture = null

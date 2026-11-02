@@ -530,13 +530,28 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/queen)
 	configure(mob_movement(makes_dirt = TRUE))
 	after_init(0, then(PROC_REF(queen_metroid_ready)))
 
+/mob/living/simple_mob/metroid/juvenile/queen
+	/// Holds a place in GLOB.queen_amount.
+	var/queen_counted = FALSE
+
 /mob/living/simple_mob/metroid/juvenile/queen/proc/queen_metroid_ready(datum/act/timer/A)
 	play_sfx(src, SFX_METROID_METROIDQUEEN)
+	queen_counted = TRUE
 	GLOB.queen_amount++
 
+/mob/living/simple_mob/metroid/juvenile/queen/proc/queen_uncount()
+	if(queen_counted)
+		queen_counted = FALSE
+		GLOB.queen_amount--
+
 /mob/living/simple_mob/metroid/juvenile/queen/on_death(gibbed)
-	GLOB.queen_amount--
+	queen_uncount()
 	..()
+
+/mob/living/simple_mob/metroid/juvenile/queen/on_destroy(force)
+	queen_uncount() // a queen deleted alive (admin, despawn) must not hold the one-queen slot for the rest of the round
+	return ..()
+
 
 /mob/living/simple_mob/metroid/juvenile/queen //active noms
 	vore_active = 1

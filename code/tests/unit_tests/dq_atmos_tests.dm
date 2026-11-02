@@ -113,6 +113,7 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 	for(var/turf/simulated/floor/cand in world)
 		if(!istype(cand, /turf/simulated/open))  // exclude openspace floors
 			solid = cand
+			dq_atmos_test_snapshot_air(solid)
 			break
 	TEST_ASSERT_NOTNULL(solid, "no solid floor found on map for zAir test")
 
@@ -145,6 +146,7 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor to place the test structure")
 
@@ -487,6 +489,7 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor available for full-chain breath test")
 
@@ -723,6 +726,7 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 		if(cand.initial_gas_mix != OPENTURF_DEFAULT_ATMOS)
 			continue
 		F = cand
+		dq_atmos_test_snapshot_air(F)
 		break
 	TEST_ASSERT_NOTNULL(F, "no /turf/simulated/floor on the test map — can't validate reparent")
 	TEST_ASSERT(istype(F, /turf/open), \
@@ -814,6 +818,7 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	TEST_ASSERT_NOTNULL(T, "no /turf/simulated/floor with air for phoron-render test")
 
@@ -864,6 +869,7 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	TEST_ASSERT_NOTNULL(T, "no /turf/simulated/floor with air for phoron-invisibility test")
 
@@ -1627,6 +1633,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	for(var/turf/simulated/mineral/cand in world)
 		if(cand.density && cand.blocks_air)
 			M = cand
+			dq_atmos_test_snapshot_air(M)
 			break
 	TEST_ASSERT_NOTNULL(M, "no /turf/simulated/mineral on test map to carve")
 
@@ -2053,6 +2060,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	dq_atmos_test_snapshot_air_around(T) // shared world turf: restore_atmos() puts its air, and its neighbours', back
 	TEST_ASSERT_NOTNULL(T, "no floor on test map for fire-protection test")
@@ -2537,6 +2545,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor on test map for vent_scrubber test")
 	dq_atmos_test_snapshot_air(T)
@@ -2610,6 +2619,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor on test map for supermatter construct test")
 
@@ -2723,6 +2733,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for water_vapor test")
 
@@ -3258,6 +3269,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	dq_atmos_test_snapshot_air_around(T) // shared world turf: restore_atmos() puts its air, and its neighbours', back
 	TEST_ASSERT_NOTNULL(T, "no floor for portable pump test")
@@ -3299,6 +3311,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for portable scrubber test")
 
@@ -3397,6 +3410,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	dq_atmos_test_snapshot_air_around(T) // shared world turf: restore_atmos() puts its air, and its neighbours', back
 	TEST_ASSERT_NOTNULL(T, "no floor for passive gate test")
@@ -3796,6 +3810,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for full-cycle test")
 	dq_atmos_test_snapshot_air(T)
@@ -3876,6 +3891,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	dq_atmos_test_snapshot_air_around(T) // shared world turf: restore_atmos() puts its air, and its neighbours', back
 	TEST_ASSERT_NOTNULL(T, "no floor for high-pressure test")
@@ -3910,7 +3926,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 /datum/unit_test/dq_extreme_cold_damages_human/Run()
 	test_driver_begin()
-	var/list/room = body_heat_room(4, 50)
+	var/list/room = body_heat_room(4, 50, src)
 	TEST_ASSERT_NOTNULL(room, "no clear room for the cold-damage test")
 	for(var/turf/open/T as anything in room)
 		T.air.clear()
@@ -3965,6 +3981,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for air alarm test")
 
@@ -5206,6 +5223,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for fusion construct test")
 
@@ -5309,6 +5327,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	dq_atmos_test_snapshot_air_around(T) // shared world turf: restore_atmos() puts its air, and its neighbours', back
 	TEST_ASSERT_NOTNULL(T, "no floor for species breath sweep")
@@ -5389,6 +5408,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	dq_atmos_test_snapshot_air_around(T) // shared world turf: restore_atmos() puts its air, and its neighbours', back
 	TEST_ASSERT_NOTNULL(T, "no floor for gas-overlay sweep")
@@ -5441,6 +5461,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for supermatter delam test")
 
@@ -5528,6 +5549,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for cryo construct test")
 
@@ -5546,6 +5568,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for binary pump test")
 
@@ -5606,6 +5629,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for shared-pipenet test")
 	dq_atmos_test_snapshot_air(T)
@@ -5702,6 +5726,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	dq_atmos_test_snapshot_air_around(T) // shared world turf: restore_atmos() puts its air, and its neighbours', back
 	TEST_ASSERT_NOTNULL(T, "no floor for cryo cool test")
@@ -5815,6 +5840,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for gas thruster test")
 
@@ -5853,6 +5879,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for filter construct test")
 
@@ -5870,6 +5897,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for mixer construct test")
 
@@ -6058,6 +6086,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	dq_atmos_test_snapshot_air_around(T) // shared world turf: restore_atmos() puts its air, and its neighbours', back
 	TEST_ASSERT_NOTNULL(T, "no floor for thruster remove_ratio test")
@@ -6322,6 +6351,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for hotspot threshold test")
 
@@ -6363,6 +6393,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for pipeline build test")
 
@@ -6467,6 +6498,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			pipe_turf = cand
+			dq_atmos_test_snapshot_air(pipe_turf)
 			break
 	dq_atmos_test_snapshot_air_around(pipe_turf) // shared world turf: restore_atmos() puts its air, and its neighbours', back
 	TEST_ASSERT_NOTNULL(pipe_turf, "no floor for the three-pipeline test")
@@ -6525,6 +6557,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for 2-pipe pipeline test")
 
@@ -6721,6 +6754,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for freezer construct test")
 
@@ -6740,6 +6774,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for heater construct test")
 
@@ -6833,6 +6868,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	dq_atmos_test_snapshot_air_around(T) // shared world turf: restore_atmos() puts its air, and its neighbours', back
 	TEST_ASSERT_NOTNULL(T, "no floor for volume_pump test")
@@ -6935,6 +6971,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for siphon test")
 	dq_atmos_test_snapshot_air(T)
@@ -7270,6 +7307,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	for(var/turf/simulated/floor/cand in world)
 		if(cand.air && !cand.blocks_air)
 			T = cand
+			dq_atmos_test_snapshot_air(T)
 			break
 	dq_atmos_test_snapshot_air_around(T) // shared world turf: restore_atmos() puts its air, and its neighbours', back
 	TEST_ASSERT_NOTNULL(T, "no floor for overlay test")

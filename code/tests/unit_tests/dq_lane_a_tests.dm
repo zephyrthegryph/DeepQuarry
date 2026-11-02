@@ -101,6 +101,7 @@ CAPABILITIES(/obj/lanea_fixture)
 /datum/unit_test/dq_lane_a/kernel_backstop_resets_a_leaked_depth
 
 /datum/unit_test/dq_lane_a/kernel_backstop_resets_a_leaked_depth/run_lane_a()
+	set_global(nameof(GLOB.act_backstops), GLOB.act_backstops)
 	TEST_ASSERT(!act_backstop_reset(), "nothing leaked: nothing reset")
 	GLOB.act_depth = 5
 	GLOB.act_chain += "leaked"
