@@ -59,9 +59,9 @@ CAPABILITIES(/datum/system/mapping)
 /datum/system/mapping/proc/load_engine()
 	if(!engine_loader)
 		// The compiled-in map's landmark initialized before this system existed and could not register (register_loader()).
-		var/obj/effect/landmark/engine_loader/mapped = /obj/effect/landmark/engine_loader::placed
-		if(mapped && !QDELETED(mapped))
-			set_engine_loader(mapped)
+		for(var/obj/effect/landmark/engine_loader/mapped in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
+			if(!QDELETED(mapped))
+				set_engine_loader(mapped)
 	if(!engine_loader)
 		log_world("Mapping: no engine loader on this map; no engine template placed.")
 		return
