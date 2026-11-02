@@ -178,36 +178,6 @@
 	snap("back to belly tab")
 	A.release()
 
-// ---- Private notes --------------------------------------------------------
-
-/datum/ui_pin/private_notes_panel
-	host_type = /datum/private_notes_panel
-
-/datum/ui_pin/private_notes_panel/script(turf/T)
-	make_user(T)
-	user.set_real_name("Pin Tester")
-	user.name = "Pin Tester"
-	user.private_notes = " "
-	var/datum/private_notes_panel/panel = new(user)
-	host = panel
-	watch_host()
-	snap("initial")
-	var/datum/act/op/A = op_ctx(user)
-	panel.ui_act_edit(A)
-	snap("edit asked")
-	// The answer handler (private_notes_entered) stores the text and saves the preference through the client; with no client the
-	// stored text is set by hand, as the answer would, and the open question dropped.
-	user.private_notes = "Remember the <b>keys</b> & the door code."
-	cancel_open()
-	snap("notes written")
-	panel.ui_act_edit(A)
-	user.private_notes = "Second line\nthird line"
-	cancel_open()
-	snap("notes rewritten")
-	user.private_notes = ""
-	snap("notes cleared")
-	A.release()
-
 // ---- OOC notes ------------------------------------------------------------
 
 /datum/ui_pin/ooc_notes_panel

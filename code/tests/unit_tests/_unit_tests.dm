@@ -466,6 +466,7 @@
 #include "dq_power_door_regression.dm"
 #include "dq_power_wakes_tests.dm"
 #include "dq_power_tests.dm"
+#include "dq_rust_push_phase_s_tests.dm"
 #include "dq_power_plants_behaviour.dm"
 #include "dq_system_moves_ctor_tests.dm"
 #include "dq_om_wake_tests.dm"

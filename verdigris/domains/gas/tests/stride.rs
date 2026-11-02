@@ -76,3 +76,30 @@ fn the_stride_stays_within_the_tolerance_of_the_exact_scheme_and_conserves() {
 	eprintln!("gas stride: advances {} skipped {} stride {} changes {}", stats.steps, stats.skipped_steps, stats.stride, stats.stride_changes);
 	assert!(stats.skipped_steps > 0, "the idle stride never skipped a step: {stats:?}");
 }
+
+/// The implicit bulk solve gives bit-identical cells for any thread count: a room at three pressures beside a space edge, stepped in
+/// pools of 1, 3 and 8 threads (the Gauss-Seidel sweeps run in one fixed order, whatever the pool).
+#[test]
+fn the_implicit_bulk_solve_is_bit_identical_across_thread_counts() {
+	let run = |threads: usize| {
+		let pool = rayon::ThreadPoolBuilder::new().num_threads(threads).build().unwrap();
+		pool.install(|| {
+			let mut r = room(1);
+			for i in 0..LEN {
+				let mut c = GasCell::new([0.0; N], 293.0);
+				c.moles[GAS_OXYGEN] = [300.0, 100.0, 30.0][(i * 3 / LEN) as usize];
+				c.refresh_in(CAPACITY);
+				r.cells.set(i, c);
+			}
+			r.geom.set(0, Geom { capacity: CAPACITY, blocked: vg_core::grid::Dir::NONE, reservoir: true });
+			r.cells.set(0, GasCell::new([0.0; N], 2.7));
+			for _ in 0..40 {
+				r.step();
+			}
+			(0..LEN).map(|i| r.cells.get(i).unwrap().moles[GAS_OXYGEN].to_bits()).collect::<Vec<_>>()
+		})
+	};
+	let one = run(1);
+	assert_eq!(run(3), one);
+	assert_eq!(run(8), one);
+}

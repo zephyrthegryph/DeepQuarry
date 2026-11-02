@@ -287,7 +287,6 @@ CAPABILITIES(/mob/living/silicon/ai)
 		identity().ooc_notes_favs = text_or_null(read_preference(/datum/preference/text/living/ooc_notes_favs))
 		identity().ooc_notes_maybes = text_or_null(read_preference(/datum/preference/text/living/ooc_notes_maybes))
 		identity().ooc_notes_style = num_or_null(read_preference(/datum/preference/toggle/living/ooc_notes_style))
-		set_private_notes(client.prefs.read_preference(/datum/preference/text/living/private_notes))
 
 	if (antag_malf() && !(mind in antag_malf().current_antagonists))
 		show_laws()

@@ -176,6 +176,12 @@
 			work_run_phase(KERNEL_PHASE_S, tick_limit, 0, world.time)
 		catch(var/exception/s_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
 			phase_fault(KERNEL_PHASE_S, s_e)
+	// The Rust pushes marked since the last frame (a rust_push read changed, a fresh bind): before N, never shed.
+	if(length(GLOB.refresh_push_queue))
+		try
+			refresh_drain_pushes()
+		catch(var/exception/push_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
+			phase_fault(KERNEL_PHASE_S, push_e)
 	KERNEL_PHASE_NOTE(KERNEL_PHASE_S, s_start)
 
 	if(!light && sched && isnull(sched.manual_time) && sched_runs(init_stage))

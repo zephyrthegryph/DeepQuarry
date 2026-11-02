@@ -2,13 +2,14 @@
 // on the picked month). Sends `set_month` / `set_day` to /datum/preference_editor/birthday.
 
 import { useBackend } from 'tgui/backend';
-import { Dropdown, Stack } from 'tgui-core/components';
+import { Button, Dropdown, Stack } from 'tgui-core/components';
 import type { EditorProps } from './index';
 
 type Data = {
   month: number;
   day: number;
   max_day_for_month: number;
+  announce: boolean;
 };
 
 type Static = {
@@ -47,11 +48,14 @@ export const BirthdayEditor = ({ data, staticData }: EditorProps) => {
     dayOptions.find((o) => o.value === dayVal)?.displayText ?? dayVal;
 
   return (
-    <Stack align="center">
+    // Wraps in a narrow column instead of pushing Announce? over the next panel.
+    <Stack align="center" style={{ flexWrap: 'wrap', rowGap: '0.3em' }}>
       <Stack.Item color="label">Month</Stack.Item>
       <Stack.Item>
         <Dropdown
           width="11.667em"
+          // A fixed menu size: sized to its content, the menu's own scrollbar changed that width every frame.
+          menuWidth="11.667em"
           selected={monthVal}
           displayText={monthLabel}
           options={monthOptions}
@@ -64,10 +68,27 @@ export const BirthdayEditor = ({ data, staticData }: EditorProps) => {
       <Stack.Item>
         <Dropdown
           width="6.667em"
+          menuWidth="6.667em"
           selected={dayVal}
           displayText={dayLabel}
           options={dayOptions}
           onSelected={(v) => send('set_day', String(v))}
+        />
+      </Stack.Item>
+      <Stack.Item color="label" ml={1}>
+        Announce?
+      </Stack.Item>
+      <Stack.Item>
+        <Button.Checkbox
+          checked={!!d.announce}
+          tooltip="Announce your birthday to the station"
+          onClick={() =>
+            act('dq_editor_action', {
+              editor: 'birthday',
+              action: 'set_announce',
+              params: { value: d.announce ? 0 : 1 },
+            })
+          }
         />
       </Stack.Item>
     </Stack>

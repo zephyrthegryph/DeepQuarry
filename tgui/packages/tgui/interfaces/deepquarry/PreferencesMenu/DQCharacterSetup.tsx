@@ -115,7 +115,7 @@ const PreviewPane = ({ assets }: { assets: CharacterPreviewAssets }) => {
                 flex: 1,
                 minHeight: 0,
                 display: 'flex',
-                alignItems: 'center',
+                alignItems: 'flex-end',
                 justifyContent: 'center',
                 // Wider sprites (dogborgs) overflow horizontally rather than
                 // shrink vertically — without this they'd render at half the
@@ -127,13 +127,14 @@ const PreviewPane = ({ assets }: { assets: CharacterPreviewAssets }) => {
                 <img
                   src={`data:image/png;base64,${assets[dir]}`}
                   alt=""
+                  onLoad={(e) => {
+                    // The server bakes the body size into the sprite; keep it. A slot holds the largest body
+                    // (PREVIEW_MAX_SCALE x 32 px tall), so a normal body is that fraction of it and a bigger one fills more.
+                    const img = e.currentTarget;
+                    img.style.height = `${(100 * img.naturalHeight) / (32 * PREVIEW_MAX_SCALE)}%`;
+                  }}
                   style={{
-                    // Match the slot height; width auto preserves aspect ratio.
-                    // For 32x32 humans this fills the square slot exactly. For
-                    // wider sprites (64x32 dogborgs) the image overflows to the
-                    // sides at the same pixel scale — matches the user's
-                    // expectation of "same scale as a character".
-                    height: '100%',
+                    height: `${100 / PREVIEW_MAX_SCALE}%`,
                     width: 'auto',
                     imageRendering: 'pixelated',
                   }}
@@ -146,6 +147,9 @@ const PreviewPane = ({ assets }: { assets: CharacterPreviewAssets }) => {
     </Box>
   );
 };
+
+/// The largest body size (RESIZE_HUGE): a slot is tall enough for it, so every size shows at its true scale.
+const PREVIEW_MAX_SCALE = 2;
 
 // Editors that fill their container and manage their own internal scrolling. When the
 // active page hosts one of these, the wrapping Section drops `scrollable` so we don't

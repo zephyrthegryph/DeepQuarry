@@ -75,6 +75,10 @@ pub const SPECIFIC_HEATS: [f32; N] = [
 /// difference relaxes at `G (pa/na + pb/nb)` per second (about `2G` for two
 /// standard cells, `G` against vacuum).
 pub const BULK_CONDUCTANCE: f32 = 4.0;
+/// The implicit bulk flow's conductance rises with the gap: `BULK_CONDUCTANCE (1 + |dp| / GAP_PRESSURE)`, at most `GAP_FACTOR_MAX`
+/// times it. A pumped loop's kilopascal flows as before; a breach-sized gap drains faster. Stable at any value (the solve is implicit).
+pub const GAP_PRESSURE: f32 = 20.0;
+pub const GAP_FACTOR_MAX: f32 = 4.0;
 /// Diffusion conductance, L/s: two standard cells relax their
 /// concentration difference at `DIFFUSION_RATE` per second.
 pub const DIFFUSION_RATE: f32 = 1.15;
@@ -92,12 +96,6 @@ pub const REVISION_MOLES: f32 = 0.05;
 /// Planet cells relax this fraction of the way back to their baseline each
 /// frame.
 const PLANET_RELAX: f32 = 0.25;
-/// Pressure differences below this (kPa) do not add bulk flow to the
-/// stiffness (they still flow).
-const STIFF_PRESSURE: f32 = 1.0;
-/// The most faces a cell exchanges through (four planar, up and down): the share of a pair's levelling flow one edge may take in a sub-step
-/// whose length ignored the bulk flow.
-const STABLE_FACES: f32 = 6.0;
 
 /// Cell flags.
 pub mod flags {
@@ -391,27 +389,8 @@ impl FieldKind for TurfGas {
 	fn flux(a: Side<'_, GasCell>, b: Side<'_, GasCell>, dt: f32) -> Amounts<Q> {
 		let (xa, xb) = (a.cell.amounts(), b.cell.amounts());
 		let (op_a, op_b) = (operand(&a, &xa), operand(&b, &xb));
-		let (pa, pb) = (
-			a.cell.pressure_in(a.capacity),
-			b.cell.pressure_in(b.capacity),
-		);
-		let mut bulk = kernel::pressure_flow(op_a, pa, op_b, pb, N, BULK_CONDUCTANCE, dt);
-		if (pa - pb).abs() <= STIFF_PRESSURE {
-			// Below the threshold the bulk flow is not in the stiffness, so the sub-step is sized for diffusion alone and an
-			// unlimited bulk flow overshoots: the room rang, growing until a difference crossed the threshold. Each edge moves
-			// at most 1/FACES of the moles that would level the pair, so a cell's edges together never overshoot (monotone).
-			let k = dp_dn(&a, pa) + dp_dn(&b, pb);
-			if k > 0.0 {
-				let level = (pa - pb).abs() / k / STABLE_FACES;
-				let moved: f32 = bulk.0[..N].iter().sum::<f32>().abs();
-				if moved > level {
-					let scale = level / moved;
-					bulk = Amounts(bulk.0.map(|v| v * scale));
-				}
-			}
-		}
-		let diffusion = kernel::diffusion(op_a, op_b, DIFFUSION_CONDUCTANCE, dt);
-		bulk + diffusion
+		// The bulk flow is solved implicitly once per advance (`IMPLICIT_BULK`, `FieldState::implicit_bulk`); only diffusion is explicit.
+		kernel::diffusion(op_a, op_b, DIFFUSION_CONDUCTANCE, dt)
 	}
 
 	fn apply_flux(cell: &mut GasCell, flux: Amounts<Q>) {
@@ -436,17 +415,36 @@ impl FieldKind for TurfGas {
 	}
 
 	fn stiffness(a: Side<'_, GasCell>, b: Side<'_, GasCell>) -> f32 {
-		let diff_rate =
-			kernel::exchange_stiffness(DIFFUSION_CONDUCTANCE, a.inv_capacity, b.inv_capacity);
-		let (pa, pb) = (
-			a.cell.pressure_in(a.capacity),
-			b.cell.pressure_in(b.capacity),
-		);
-		if (pa - pb).abs() > STIFF_PRESSURE {
-			diff_rate + kernel::pressure_stiffness(BULK_CONDUCTANCE, dp_dn(&a, pa), dp_dn(&b, pb))
-		} else {
-			diff_rate
+		// Diffusion only: the bulk flow is the implicit solve's (stable at any gap and step).
+		kernel::exchange_stiffness(DIFFUSION_CONDUCTANCE, a.inv_capacity, b.inv_capacity)
+	}
+
+	const IMPLICIT_BULK: bool = true;
+
+	fn bulk_potential(side: Side<'_, GasCell>) -> (f32, f32) {
+		let p = side.cell.pressure_in(side.capacity);
+		(p, dp_dn(&side, p))
+	}
+
+	fn bulk_conductance(gap: f32) -> f32 {
+		(BULK_CONDUCTANCE * (1.0 + gap.abs() / GAP_PRESSURE)).min(BULK_CONDUCTANCE * GAP_FACTOR_MAX)
+	}
+
+	fn bulk_held(cell: &GasCell) -> f32 {
+		cell.amounts()[..N].iter().sum()
+	}
+
+	fn bulk_move(a: Side<'_, GasCell>, b: Side<'_, GasCell>, amount: f32) -> Amounts<Q> {
+		let (up, sign) = if amount > 0.0 { (a, 1.0) } else { (b, -1.0) };
+		let amounts = up.cell.amounts();
+		let carried: f32 = amounts[..N].iter().sum();
+		if carried <= 0.0 {
+			return Amounts::default();
 		}
+		// No per-edge share cap: the implicit solve already balances every cell (its end pressures are a stable solution), and a cap
+		// per advance would throttle a breach to one share of a cell per step.
+		let fraction = (amount.abs() / carried).min(1.0);
+		Amounts(amounts.map(|v| sign * v * fraction))
 	}
 
 	fn local(cell: &mut GasCell, _capacity: f32, _dt: f32) -> bool {

@@ -126,7 +126,7 @@
 		/obj/machinery/embedded_controller/radio/airlock/advanced_airlock_controller = list("AirlockConsoleAdvanced", "chamber_pressure", "external_pressure", "internal_pressure", "purge", "secure"),
 		/obj/machinery/embedded_controller/radio/airlock/access_controller = list("DoorAccessConsole", "exterior_status", "interior_status", "processing"),
 	)
-	var/list/known = list("AirlockConsoleAdvanced", "AirlockConsoleSimple", "AirlockConsolePhoron", "AirlockConsoleDocking", "DockingConsoleSimple", "DockingConsoleMulti", "DoorAccessConsole", "EscapePodConsole", "EscapePodBerthConsole")
+	var/list/known = list("AirlockConsoleAdvanced", "AirlockConsoleSimple", "AirlockConsoleDocking", "DockingConsoleSimple", "DockingConsoleMulti", "DoorAccessConsole", "EscapePodConsole", "EscapePodBerthConsole")
 	for(var/path in expect)
 		var/obj/machinery/embedded_controller/C = allocate(path, T)
 		var/list/data = hc_data(C, H)

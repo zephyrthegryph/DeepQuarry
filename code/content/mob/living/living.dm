@@ -1411,6 +1411,17 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 	if(client.prefs.save_character())
 		to_chat(src, span_filter_notice("Character preferences saved."))
 
+/// An OOC list (favourites, likes, maybes, dislikes): one entry per line, sorted alphabetically ignoring case, ties in written order.
+/proc/dq_sorted_note_lines(text)
+	if(!text)
+		return text
+	var/list/lines = list()
+	for(var/line in splittext(text, "\n"))
+		if(length(trim(line)))
+			lines += line
+	sortTim(lines, GLOBAL_PROC_REF(cmp_text_asc)) // stable
+	return jointext(lines, "\n")
+
 /mob/living/proc/print_ooc_notes_chat(mob/user)
 	if(!identity().ooc_notes)
 		return
@@ -1429,34 +1440,34 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 		msg += "</tr><tr>"
 		if(identity().ooc_notes_favs)
 			msg += "<td>"
-			for(var/line in splittext(identity().ooc_notes_favs, "\n"))
+			for(var/line in splittext(dq_sorted_note_lines(identity().ooc_notes_favs), "\n"))
 				msg += "\t[encode_html_emphasis(line)]\n"
 			msg += "</td>"
 		if(identity().ooc_notes_likes)
 			msg += "<td>"
-			for(var/line in splittext(identity().ooc_notes_likes, "\n"))
+			for(var/line in splittext(dq_sorted_note_lines(identity().ooc_notes_likes), "\n"))
 				msg += "\t[encode_html_emphasis(line)]\n"
 			msg += "</td>"
 		if(identity().ooc_notes_maybes)
 			msg += "<td>"
-			for(var/line in splittext(identity().ooc_notes_maybes, "\n"))
+			for(var/line in splittext(dq_sorted_note_lines(identity().ooc_notes_maybes), "\n"))
 				msg += "\t[encode_html_emphasis(line)]\n"
 			msg += "</td>"
 		if(identity().ooc_notes_dislikes)
 			msg += "<td>"
-			for(var/line in splittext(identity().ooc_notes_dislikes, "\n"))
+			for(var/line in splittext(dq_sorted_note_lines(identity().ooc_notes_dislikes), "\n"))
 				msg += "\t[encode_html_emphasis(line)]\n"
 			msg += "</td>"
 		msg += "</tr></table>"
 	else
 		if(identity().ooc_notes_favs)
-			msg += "<br><br><b>[span_blue("FAVOURITES")]</b><br>[encode_html_emphasis(identity().ooc_notes_favs)]"
+			msg += "<br><br><b>[span_blue("FAVOURITES")]</b><br>[encode_html_emphasis(dq_sorted_note_lines(identity().ooc_notes_favs))]"
 		if(identity().ooc_notes_likes)
-			msg += "<br><br><b>[span_green("LIKES")]</b><br>[encode_html_emphasis(identity().ooc_notes_likes)]"
+			msg += "<br><br><b>[span_green("LIKES")]</b><br>[encode_html_emphasis(dq_sorted_note_lines(identity().ooc_notes_likes))]"
 		if(identity().ooc_notes_maybes)
-			msg += "<br><br><b>[span_yellow("MAYBES")]</b><br>[encode_html_emphasis(identity().ooc_notes_maybes)]"
+			msg += "<br><br><b>[span_yellow("MAYBES")]</b><br>[encode_html_emphasis(dq_sorted_note_lines(identity().ooc_notes_maybes))]"
 		if(identity().ooc_notes_dislikes)
-			msg += "<br><br><b>[span_red("DISLIKES")]</b><br>[encode_html_emphasis(identity().ooc_notes_dislikes)]"
+			msg += "<br><br><b>[span_red("DISLIKES")]</b><br>[encode_html_emphasis(dq_sorted_note_lines(identity().ooc_notes_dislikes))]"
 	to_chat(user, span_chatexport("<b>[src]'s Metainfo:</b><br>[msg]"))
 /mob/living/verb/set_custom_link()
 	set name = "Set Custom Link"
@@ -1532,38 +1543,6 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 			sparse_set(src, voice_sounds_list, DEFAULT_TALK_SOUNDS)
 		return
 	sparse_set(src, voice_sounds_list, get_talk_sound(A.answer.value))
-
-/mob/living/proc/save_private_notes(mob/user)
-	if(user != src)
-		return
-	if(client.prefs.read_preference(/datum/preference/name/real_name) != real_name)
-		to_chat(src, span_danger("Your selected character slot name is not the same as your character's name. Aborting save. Please select [real_name]'s character slot in character setup before saving."))
-		return
-	if(client.prefs.save_character())
-		to_chat(src, span_filter_notice("Character preferences saved."))
-
-/mob/living/verb/open_private_notes()
-	set name = "Private Notes"
-	set desc = "View and edit your character's private notes, that persist between rounds!"
-	set category = VERB_CAT_IC_NOTES
-
-	private_notes_window(src)
-
-/mob/living/proc/set_metainfo_private_notes(mob/user)
-	if(user != src)
-		return
-	open_request(src, /datum/prompt/text, PROC_REF(private_notes_entered), answerer = src, title = "Private Notes", question = "Write some notes for yourself. These can be anything that is useful, whether it's character events that you want to remember or a bit of lore. Things that you would normally stick in a txt file for yourself! This will not be saved unless you press save in the private notes panel.", default = html_decode(private_notes), multiline = TRUE, timeout = 0)
-
-/mob/living/proc/private_notes_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/new_metadata = A.answer.value
-	if(new_metadata && CanUseTopic(src))
-		set_private_notes(new_metadata)
-		client.prefs.update_preference_by_type(/datum/preference/text/living/private_notes, new_metadata)
-		to_chat(src, span_filter_notice("Private notes updated. Don't forget to save!"))
-		private_notes_window(user)
 
 /// after() target: the mob's AI picks up where it paused.
 /mob/living/proc/ai_brain_resume()

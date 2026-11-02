@@ -354,7 +354,7 @@ GLOBAL_LIST_EMPTY(native_key_names)
 	. = vg_component_set(entity, NATIVE_KEY_CODE(key), NATIVE_KEY_FIELD(key), index, value)
 	native_read_invalidate(entity)
 
-/// A freshly bound (or rebound) entity sends its settings: its push_to_rust() runs at the frame's refresh, coalesced with any other change of
+/// A freshly bound (or rebound) entity sends its settings: its push_to_rust() runs at phase S (refresh_drain_pushes()), before the next native step, coalesced with any other change of
 /// what it reads. The bind itself is not a tracked write, so the hook that learns of a (re)bind (power_registered()) calls this instead of
 /// calling push_to_rust() by hand.
 /proc/native_resync(datum/E)

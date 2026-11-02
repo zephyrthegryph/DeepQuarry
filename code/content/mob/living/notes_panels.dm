@@ -2,75 +2,7 @@
 // Owner edits gated to user==host; OOC view is open to anyone.
 
 /// Open panels: host key -> the panel's ref_token (a deleted panel stops resolving).
-GLOBAL_LIST_EMPTY(dq_private_notes_panels)
-/// Open panels: host key -> the panel's ref_token (a deleted panel stops resolving).
 GLOBAL_LIST_EMPTY(dq_ooc_notes_panels)
-
-// ---- Private Notes --------------------------------------------------------
-
-/datum/private_notes_panel
-	var/mob/living/host
-
-/datum/private_notes_panel/New(mob/living/host_mob)
-	rel_set(src, nameof(host), host_mob)
-
-/// Phase 2: leaves the per-host panel index.
-/datum/private_notes_panel/lifecycle_dematerialize()
-	. = ..()
-	if(host)
-		GLOB.dq_private_notes_panels -= ref_token(host)
-
-CAPABILITIES(/datum/private_notes_panel)
-	ref_one(nameof(host), /mob/living)
-	interface("PrivateNotes", state = nameof(GLOB.tgui_default_state))
-	op("edit", ui_act("edit"), then(PROC_REF(ui_act_edit)))
-	op("save", ui_act("save"), then(PROC_REF(ui_act_save)))
-
-/datum/private_notes_panel/ui_prepare(mob/user, datum/tgui/ui)
-	if(!host || user != host)
-		return FALSE
-	return TRUE
-
-/datum/private_notes_panel/ui_title(mob/user)
-	return "Private Notes: [host.name]"
-
-/// /datum/private_notes_panel's window data.
-/datum/private_notes_panel/ui_data(datum/act/eval/A)
-	var/list/data = list()
-	data["owner"] = host ? host.name : "(unknown)"
-	data["notes"] = host ? html_decode(host.private_notes || "") : ""
-	return data
-
-/datum/private_notes_panel/proc/ui_gate(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!host || user != host)
-		return FALSE
-	return TRUE
-
-/datum/private_notes_panel/proc/ui_act_edit(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
-	host.set_metainfo_private_notes(host)
-	return TRUE
-
-/datum/private_notes_panel/proc/ui_act_save(datum/act/op/A)
-	if(!ui_gate(A))
-		return FALSE
-	host.save_private_notes(host)
-	return TRUE
-
-/mob/living/proc/private_notes_window(mob/user)
-	if(user != src)
-		return
-	if(!private_notes)
-		set_private_notes(" ")
-		return
-	var/key = ref_token(src)
-	var/datum/private_notes_panel/panel = resolve_token(LAZYACCESS(GLOB.dq_private_notes_panels, key))
-	if(!panel)
-		panel = new(src)
-		GLOB.dq_private_notes_panels[key] = ref_token(panel)
-	panel.tgui_interact(user)
 
 // ---- OOC Notes ------------------------------------------------------------
 
@@ -115,10 +47,10 @@ CAPABILITIES(/datum/ooc_notes_panel)
 	data["owner"] = host.name
 	data["is_owner"] = (user == host)
 	data["ooc_notes"] = html_decode(host.identity().ooc_notes || "")
-	data["ooc_likes"] = html_decode(host.identity().ooc_notes_likes || "")
-	data["ooc_dislikes"] = html_decode(host.identity().ooc_notes_dislikes || "")
-	data["ooc_favs"] = html_decode(host.identity().ooc_notes_favs || "")
-	data["ooc_maybes"] = html_decode(host.identity().ooc_notes_maybes || "")
+	data["ooc_likes"] = html_decode(dq_sorted_note_lines(host.identity().ooc_notes_likes) || "")
+	data["ooc_dislikes"] = html_decode(dq_sorted_note_lines(host.identity().ooc_notes_dislikes) || "")
+	data["ooc_favs"] = html_decode(dq_sorted_note_lines(host.identity().ooc_notes_favs) || "")
+	data["ooc_maybes"] = html_decode(dq_sorted_note_lines(host.identity().ooc_notes_maybes) || "")
 	data["ooc_style"] = !!host.identity().ooc_notes_style
 	data["markers"] = GLOB.speech_toppings // the chat's emphasis markers, applied as the say preview applies them
 	return data

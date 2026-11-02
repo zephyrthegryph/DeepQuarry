@@ -244,6 +244,28 @@ pub trait FieldKind: Domain {
     fn totals(cell: &Self::Value, out: &mut [f64]);
     /// Adds a flux's conserved quantities into `out`.
     fn flux_totals(flux: &Self::Flux, out: &mut [f64]);
+
+    /// Implicit bulk flow ([`FieldState::implicit_bulk`]): a potential that relaxes toward equal between neighbours with conductance
+    /// [`bulk_conductance`](Self::bulk_conductance), solved backward in time once per advance (stable at any gap and step), its moves
+    /// then applied as fluxes. Off by default; a field that turns it on leaves the bulk part out of [`flux`](Self::flux) and
+    /// [`stiffness`](Self::stiffness).
+    const IMPLICIT_BULK: bool = false;
+    /// The cell's potential and its slope in the moved amount (`p` and `dp/dn`; a slope of 0 holds the potential fixed, a reservoir).
+    fn bulk_potential(_side: Side<'_, Self::Value>) -> (f32, f32) {
+        (0.0, 0.0)
+    }
+    /// Amount moved per second per unit potential difference, at a potential gap of `gap` (an edge's gap when the advance starts).
+    fn bulk_conductance(_gap: f32) -> f32 {
+        0.0
+    }
+    /// What a cell holds of the moved amount (its moles): the most its edges together may give in one advance.
+    fn bulk_held(_cell: &Self::Value) -> f32 {
+        0.0
+    }
+    /// The flux that moves `amount` from `a` to `b` (negative: from `b` to `a`), in the giving side's proportions.
+    fn bulk_move(_a: Side<'_, Self::Value>, _b: Side<'_, Self::Value>, _amount: f32) -> Self::Flux {
+        Self::Flux::default()
+    }
 }
 
 /// Field options.
@@ -297,6 +319,8 @@ pub struct FieldStats {
     /// The chunk with the largest write from outside at the last step and its relative size in millionths: what reset the stride (0 when the field does not stride).
     pub outside_chunk: u32,
     pub outside_ppm: u32,
+    /// Gauss-Seidel sweeps the last implicit bulk solve took ([`FieldKind::IMPLICIT_BULK`]).
+    pub implicit_sweeps: u32,
     /// Steps the field takes per advance now (1: every step advances).
     pub stride: u32,
     /// Steps skipped (owed to the next advance) so far.
@@ -801,6 +825,9 @@ impl<K: FieldKind> FieldState<K> {
         let sub_dt = dt / substeps as f32;
 
         let start = cells.snapshot();
+        if K::IMPLICIT_BULK {
+            self.implicit_bulk(cells, &live_edges, dt);
+        }
         let mut next = vec![false; chunks];
         self.times.setup += take(&mut lap);
         for s in 0..substeps {
@@ -961,6 +988,114 @@ impl<K: FieldKind> FieldState<K> {
             self.set_stride(wanted, rate);
         }
         self.active = next;
+    }
+
+    /// Implicit bulk flow over this advance's live edges ([`FieldKind::IMPLICIT_BULK`]). Backward Euler on the potential: each cell's
+    /// end potential satisfies `p' = p + c dt G sum(p_nb' - p')`, solved by Gauss-Seidel sweeps in a fixed order (deterministic for
+    /// any thread count) until no potential moves by more than [`IMPLICIT_TOLERANCE`] of its size. Each edge then moves
+    /// `dt G (p_a' - p_b')` from `a` to `b` in the giver's proportions, the same amount out of one cell and into the other, so the
+    /// totals are unchanged; what a reservoir receives goes to the ledger. Being implicit it never overshoots (no ringing) and levels a
+    /// large gap in one advance instead of one cell per sub-step, so the explicit sub-steps are sized for the rest of the physics alone.
+    #[allow(clippy::cast_possible_truncation)]
+    fn implicit_bulk(&mut self, cells: &mut CowStore<K::Value>, live_edges: &[Vec<LiveEdge>], dt: f32) {
+        let mut ids: Vec<u32> = live_edges.iter().flatten().flat_map(|e| [e.a, e.b]).collect();
+        if ids.is_empty() || dt <= 0.0 {
+            return;
+        }
+        ids.sort_unstable();
+        ids.dedup();
+        let pos = |c: u32| ids.binary_search(&c).expect("an edge's cell is listed");
+        let n = ids.len();
+        let mut geoms = vec![Geom::default(); n];
+        for e in live_edges.iter().flatten() {
+            geoms[pos(e.a)] = e.ga;
+            geoms[pos(e.b)] = e.gb;
+        }
+        let (mut p0, mut slope) = (vec![0.0f32; n], vec![0.0f32; n]);
+        for (k, &c) in ids.iter().enumerate() {
+            let (p, s) = cells.with(c, |v| K::bulk_potential(side(v, geoms[k], self.faces))).unwrap_or((0.0, 0.0));
+            p0[k] = p;
+            slope[k] = if geoms[k].reservoir { 0.0 } else { s.max(0.0) };
+        }
+        // Each edge's conductance over the advance, from its gap at the start (a larger gap flows faster).
+        let edges: Vec<(usize, usize, f32)> = live_edges
+            .iter()
+            .flatten()
+            .map(|e| {
+                let (a, b) = (pos(e.a), pos(e.b));
+                (a, b, K::bulk_conductance(p0[a] - p0[b]) * dt)
+            })
+            .collect();
+        let mut adj: Vec<Vec<(u32, f32)>> = vec![Vec::new(); n];
+        for &(a, b, g) in &edges {
+            adj[a].push((u32::try_from(b).expect("cell count fits u32"), g));
+            adj[b].push((u32::try_from(a).expect("cell count fits u32"), g));
+        }
+        let mut p = p0.clone();
+        let mut sweeps = 0u32;
+        for _ in 0..IMPLICIT_SWEEPS {
+            sweeps += 1;
+            let mut moved = 0.0f32;
+            for k in 0..n {
+                let c = slope[k];
+                if c <= 0.0 || adj[k].is_empty() {
+                    continue;
+                }
+                let (sum, weight) = adj[k].iter().fold((0.0f32, 0.0f32), |(s, w), &(j, g)| (s + g * p[j as usize], w + g));
+                let next = (p0[k] + c * sum) / (1.0 + c * weight);
+                moved = moved.max((next - p[k]).abs() / p[k].abs().max(1.0));
+                p[k] = next;
+            }
+            if moved < IMPLICIT_TOLERANCE {
+                break;
+            }
+        }
+        self.stats.implicit_sweeps = sweeps;
+        // What each edge moves, and each giver's total: a cell never gives more than it holds (its edges' moves are scaled down
+        // together when they would), so every move is real and the totals stay exact.
+        let amounts: Vec<f32> = edges.iter().map(|&(a, b, g)| g * (p[a] - p[b])).collect();
+        let mut given = vec![0.0f32; n];
+        for (&(a, b, _), &m) in edges.iter().zip(&amounts) {
+            if m > 0.0 {
+                given[a] += m;
+            } else {
+                given[b] -= m;
+            }
+        }
+        let held: Vec<f32> = ids
+            .iter()
+            .enumerate()
+            .map(|(k, &c)| if geoms[k].reservoir { f32::INFINITY } else { cells.with(c, K::bulk_held).unwrap_or(0.0) })
+            .collect();
+        let mut net = vec![K::Flux::default(); n];
+        for (e, (&(a, b, _), &m)) in live_edges.iter().flatten().zip(edges.iter().zip(&amounts)) {
+            let giver = if m > 0.0 { a } else { b };
+            let scale = if given[giver] > held[giver] && given[giver] > 0.0 { held[giver] / given[giver] } else { 1.0 };
+            let amount = m * scale;
+            if amount == 0.0 || !amount.is_finite() {
+                continue;
+            }
+            let flux = cells
+                .with(e.a, |va| cells.with(e.b, |vb| K::bulk_move(side(va, e.ga, self.faces), side(vb, e.gb, self.faces), amount)))
+                .flatten()
+                .unwrap_or_default();
+            net[a] = net[a] + -flux;
+            net[b] = net[b] + flux;
+            if e.gb.reservoir {
+                K::flux_totals(&flux, &mut self.ledger);
+            } else if e.ga.reservoir {
+                K::flux_totals(&-flux, &mut self.ledger);
+            }
+        }
+        for (k, &c) in ids.iter().enumerate() {
+            if geoms[k].reservoir {
+                continue;
+            }
+            if let Some(mut v) = cells.get(c) {
+                K::apply_flux(&mut v, net[k]);
+                cells.set(c, v);
+            }
+        }
     }
 
     /// The largest [`FieldKind::relative_change`] of any cell of the listed chunks between `start` and `cells`.
@@ -1282,6 +1417,10 @@ pub fn add_field<K: FieldKind>(
 }
 
 /// The largest power of two not above `n` (`n >= 1`).
+/// The most Gauss-Seidel sweeps of one implicit bulk solve, and the relative change of a potential under which it stops.
+const IMPLICIT_SWEEPS: u32 = 64;
+const IMPLICIT_TOLERANCE: f32 = 1.0e-5;
+
 const fn prev_power_of_two(n: u32) -> u32 {
     1 << (31 - n.leading_zeros())
 }

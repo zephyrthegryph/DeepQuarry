@@ -1588,6 +1588,7 @@ dependencies = [
  "itertools 0.14.0",
  "parking_lot",
  "proptest",
+ "rayon",
  "rustc-hash",
  "tinyvec",
  "vg-core",
