@@ -17,9 +17,9 @@
 # process start costs 100-200 ms on the dev machine), a directory-level table walks once and keeps the per-child sizes in
 # <cache>/disk-budget/index.tsv for index_ttl_min.
 #
-# Run at every lease, release, train cycle start and dmbc daemon start (throttled to once per 10 minutes) and on demand. Below
+# Run at every lease, release and dmbc daemon start (throttled to once per 10 minutes) and on demand. Below
 # DQ_DISK_FLOOR_GB (default 50) free, every cap is scaled to aggressive_pct and idle protection drops to 5 minutes; if it is still
-# under the floor, `gate` exits 4 and lease and train refuse heavy work with a clear message instead of filling the disk.
+# under the floor, `gate` exits 4 and lease refuses heavy work with a clear message instead of filling the disk.
 #
 # Environment: DQ_CACHE_ROOT (E:/dq-cache), DQ_WT_ROOT (E:/projects/dq-wt), DQ_DISK_MANIFEST, DQ_CACHE_BUDGET_GB, DQ_DISK_FLOOR_GB,
 # DQ_DISK_EXCLUDE_WT ("pool-1 play": worktree names whose growth dirs and cargo targets are never touched), DQ_DISK_BUDGET=off

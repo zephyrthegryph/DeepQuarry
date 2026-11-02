@@ -62,7 +62,7 @@
 # directory and results file (data/runs/runN), and is killed after
 # DQ_FOCUS_TIMEOUT_MINUTES (default 15) with the last log lines printed.
 set -euo pipefail
-# User order (28 October 2026): the dmbc daemon must not run. Every train process compiles without it, whatever the caller's environment.
+# User order (28 October 2026): the dmbc daemon must not run. Every focused run compiles without it, whatever the caller's environment.
 export DQ_NATIVE_NO_DAEMON=1 DMB_DAEMON_AUTOSTART=0
 
 cd "$(dirname "$0")/.."
@@ -442,20 +442,6 @@ fi
 # ---- the wall-clock cap -------------------------------------------------------------------------------------------------------
 # focused_cap_minutes <allow_exhaustive>: prints the cap in minutes (DQ_FOCUSED_MAX_MIN, default 10; clamped to 10 without --allow-exhaustive).
 focused_cap_minutes() {
-	# The merge gates (tools/dq_gate_retry.sh) pass DQ_GATE_FOCUSED_MAX_MIN, sized to the gate's test count; it replaces the agent cap
-	# and its 10-minute clamp, and has its own firm ceiling of 10. It is for the gates only: ad-hoc runs use DQ_FOCUSED_MAX_MIN.
-	if [ -n "${DQ_GATE_FOCUSED_MAX_MIN:-}" ]; then
-		case "$DQ_GATE_FOCUSED_MAX_MIN" in
-			*[!0-9]* | 0) echo "dq_focused_test: DQ_GATE_FOCUSED_MAX_MIN='$DQ_GATE_FOCUSED_MAX_MIN' is not a positive integer; ignoring it" >&2 ;;
-			*)
-				local gcap="$DQ_GATE_FOCUSED_MAX_MIN"
-				[ "$gcap" -gt 10 ] && gcap=10
-				echo "dq_focused_test: gate cap $gcap min (DQ_GATE_FOCUSED_MAX_MIN, ceiling 10)" >&2
-				echo "$gcap"
-				return 0
-				;;
-		esac
-	fi
 	local cap="${DQ_FOCUSED_MAX_MIN:-10}"
 	case "$cap" in '' | *[!0-9]* | 0) echo "dq_focused_test: DQ_FOCUSED_MAX_MIN='$cap' is not a positive integer; using 10" >&2; cap=10 ;; esac
 	if [ "$cap" -gt 10 ] && [ "${1:-0}" -eq 0 ]; then
@@ -647,7 +633,7 @@ print_result() {
 mkdir -p data/focused-runs
 combined_log="data/focused-runs/last.$$.log"
 
-# The end-of-test staleness sweep is bounded in an ordinary focused run; DQ_STALENESS=full (the merge gates, lane_ready, by hand) keeps it full.
+# The end-of-test staleness sweep is bounded in an ordinary focused run; DQ_STALENESS=full (by hand) keeps it full.
 # Call inside the subshell that starts a world: it adds the world param there. tests.log names the mode at suite start and at every test end.
 staleness_world_param() {
 	if [ "${DQ_STALENESS:-bounded}" = "full" ]; then
