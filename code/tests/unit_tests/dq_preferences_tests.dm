@@ -421,6 +421,43 @@
 	fdel(P.path)
 
 
+/// A hand on a robotic arm shows it, follows the arm, can take its own colour and go back; a robotic species has one
+/// body colour, Tertiary until set.
+/datum/unit_test/dq_pref_limb_colors_follow_and_body
+
+/datum/unit_test/dq_pref_limb_colors_follow_and_body/Run()
+	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs()
+	var/datum/preference_editor/organs/editor = GLOB.preference_editors_by_key["organs"]
+	editor.handle_action(P, "set_external_status", list("limb" = BP_L_ARM, "status" = "cyborg"), null)
+	editor.handle_action(P, "set_limb_color", list("limb" = BP_L_ARM, "color" = "#111111"), null)
+	var/list/ui = editor.build_ui_data(P)
+	TEST_ASSERT_EQUAL(ui["externals"][BP_L_HAND]["via"], BP_L_ARM, "the hand shows it is robotic through the arm")
+	TEST_ASSERT_EQUAL(lowertext(ui["externals"][BP_L_HAND]["color"]), "#111111", "and the arm's colour")
+	TEST_ASSERT(!ui["externals"][BP_R_HAND]["via"], "the other hand is not")
+	TEST_ASSERT_EQUAL(editor.handle_action(P, "set_limb_color", list("limb" = BP_L_HAND, "color" = "#222222"), null), PREF_UPDATE_ACCEPTED, "the hand takes its own")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	P.copy_to(H)
+	var/obj/item/organ/external/hand = H.organs_by_name[BP_L_HAND]
+	var/obj/item/organ/external/arm = H.organs_by_name[BP_L_ARM]
+	TEST_ASSERT_EQUAL(lowertext(hand.synth_rgb), "#222222", "the hand renders its own")
+	TEST_ASSERT_EQUAL(lowertext(arm.synth_rgb), "#111111", "the arm is untouched")
+	editor.handle_action(P, "clear_limb_color", list("limb" = BP_L_HAND), null)
+	P.copy_to(H)
+	hand = H.organs_by_name[BP_L_HAND]
+	TEST_ASSERT_EQUAL(lowertext(hand.synth_rgb), "#111111", "and can follow the arm again")
+	fdel(P.path)
+	TEST_ASSERT(dq_species_robotic_body(SPECIES_PROTEAN), "a Protean is robotic by species")
+	TEST_ASSERT(!dq_species_robotic_body(SPECIES_HUMAN), "a Human is not")
+	P = dq_palette_test_prefs(list("species" = SPECIES_PROTEAN))
+	ui = editor.build_ui_data(P)
+	TEST_ASSERT(ui["robotic_body"], "the window offers the body colour")
+	TEST_ASSERT_EQUAL(ui["body_link"], "tertiary", "Tertiary by default")
+	TEST_ASSERT_EQUAL(editor.handle_action(P, "set_limb_color", list("limb" = "body", "color" = "#333333"), null), PREF_UPDATE_ACCEPTED, "the body takes a colour")
+	var/list/stored = P.read_preference_raw(/datum/preference/limb_colors)
+	TEST_ASSERT_EQUAL(stored["body"], "#333333", "stored for the body")
+	fdel(P.path)
+
+
 /// Ears, tail and wings are optional: the window's Remove writes an empty style, which is valid; any other value
 /// must still be a style on offer.
 /datum/unit_test/dq_pref_optional_parts_removable
