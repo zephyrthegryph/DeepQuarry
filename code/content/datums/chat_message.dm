@@ -122,13 +122,6 @@ CAPABILITIES(/datum/chatmessage)
 	if(!dq_get_chat_color(target) || dq_get_chat_color_name(target) != target.name)
 		var/c = colorize_string(target.name)
 		var/cd = colorize_string(target.name, 0.85, 0.85)
-		// Always force it back to a pref if they have one
-		if(ismob(target))
-			var/mob/M = target
-			// runechat_color migrated to /datum/preference
-			if(M?.client?.prefs && M.client.prefs.read_preference(/datum/preference/color/human/runechat_color) != COLOR_BLACK)
-				c = M.client.prefs.read_preference(/datum/preference/color/human/runechat_color)
-				cd = M.client.prefs.read_preference(/datum/preference/color/human/runechat_color)
 		dq_set_chat_color_cache(target, c, target.name, cd)
 
 	// Get rid of any URL schemes that might cause BYOND to automatically wrap something in an anchor tag
@@ -179,7 +172,7 @@ CAPABILITIES(/datum/chatmessage)
 	text = encode_html_emphasis(text)
 
 	// We dim italicized text to make it more distinguishable from regular text
-	var/tgt_color = extra_classes.Find("italics") ? dq_get_chat_color_darkened(target) : dq_get_chat_color(target) // route through DQ chat-color cache so runechat colours match the per-mob runechat_color pref
+	var/tgt_color = extra_classes.Find("italics") ? dq_get_chat_color_darkened(target) : dq_get_chat_color(target) // route through DQ chat-color cache
 
 	// Approximate text height
 	var/complete_text = "<span class='center maptext [extra_classes != null ? extra_classes.Join(" ") : ""]' style='color: [tgt_color];'>[text]</span>"

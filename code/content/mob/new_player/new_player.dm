@@ -385,21 +385,12 @@ MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
 
 	// migrated language prefs to /datum/preference
 	var/list/_alt_languages = client.prefs.read_preference(/datum/preference/alternate_languages)
-	var/list/_lang_custom = client.prefs.read_preference(/datum/preference/language_custom_keys)
 	for(var/lang in _alt_languages)
 		var/datum/language/chosen_language = GLOB.all_languages[lang]
 		if(chosen_language)
 			if(is_lang_whitelisted(src,chosen_language) || (new_character.species && (chosen_language.name in new_character.species.secondary_langs)))
 				new_character.add_language(lang)
-	for(var/key in _lang_custom)
-		if(_lang_custom[key])
-			var/datum/language/keylang = GLOB.all_languages[_lang_custom[key]]
-			if(keylang)
-				new_character.set_language_keys_at(key, keylang)
-	if(client.prefs.read_preference(/datum/preference/text/human/preferred_language)) // Do we have a preferred language?
-		var/datum/language/def_lang = GLOB.all_languages[client.prefs.read_preference(/datum/preference/text/human/preferred_language)]
-		if(def_lang)
-			rel_set(new_character, nameof(new_character.default_language), def_lang)
+	new_character.apply_language_prefs(client.prefs)
 	// And uncomment this, too.
 	//new_character.dna.UpdateSE()
 

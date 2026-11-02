@@ -41,8 +41,14 @@
 
 	return "[trim(full_name)]"
 
-/datum/language
-	var/list/scramble_cache = list() // ALLOW(instance_list): d: one per language singleton; the cache fills as soon as the language is heard
+/// Language name -> its list of remembered scrambles. Kept outside the language singletons: those are frozen definitions, this fills as languages are heard.
+DECLARE_SHARED_CACHE(language_scramble_cache, GLOBAL_PROC_REF(build_language_scramble_cache), SC_NEVER)
+
+/proc/build_language_scramble_cache(language_name)
+	return list()
+
+/datum/language/proc/get_scramble_cache()
+	return CACHED(language_scramble_cache, name)
 
 /* moved to its own file because it was edited so much.
 /datum/language/proc/scramble(input, list/known_languages)
@@ -81,6 +87,7 @@
 	return scrambled_text
 
 /datum/language/proc/scramble_word(input)
+	var/list/scramble_cache = get_scramble_cache()
 	if(!syllables || !syllables.len)
 		return stars(input)
 
@@ -253,19 +260,9 @@
 	return 0
 
 /mob/proc/get_language_prefix()
-	// migrated language_prefixes
-	var/list/_lang_prefixes = client?.prefs?.read_preference(/datum/preference/language_prefixes)
-	if(_lang_prefixes && _lang_prefixes.len)
-		return _lang_prefixes[1]
-
 	return CONFIG_GET(str_list/language_prefixes)[1]
 
 /mob/proc/is_language_prefix(prefix)
-	// migrated language_prefixes
-	var/list/_lang_prefixes = client?.prefs?.read_preference(/datum/preference/language_prefixes)
-	if(_lang_prefixes && _lang_prefixes.len)
-		return prefix in _lang_prefixes
-
 	return prefix in CONFIG_GET(str_list/language_prefixes)
 
 /// Re-checked on the answer: the answerer still knows the language.
@@ -379,6 +376,7 @@ CAPABILITIES(/datum/prompt/text/language_key)
 	return scrambled_text
 
 /datum/language/proc/scramble_word(input, capitalize = FALSE)
+	var/list/scramble_cache = get_scramble_cache()
 	if(!syllables || !syllables.len)
 		return capitalize ? capitalize(stars(input)) : stars(input)
 

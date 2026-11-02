@@ -43,26 +43,18 @@
 			value -= language
 	return value
 
-/datum/preference/language_prefixes/sanitize(list/value, datum/preferences/preferences)
-	if(!islist(value) || !value.len)
-		var/list/defaults = CONFIG_GET(str_list/language_prefixes)
-		return defaults.Copy()
-	var/static/list/forbidden_prefixes = list(";", ":", ".", "!", "*", "^", "-")
-	for(var/prefix in value.Copy()) // iterate copy; mutating `value` mid-loop skips entries
-		if(prefix in forbidden_prefixes)
-			value -= prefix
-	return value
-
 /datum/preference/language_custom_keys/sanitize(list/value, datum/preferences/preferences)
 	if(!islist(value))
 		return list()
 	var/datum/species/S = GLOB.all_species[preferences.read_preference(/datum/preference/choiced/species)]
 	var/list/alt = preferences.read_preference(/datum/preference/alternate_languages) || list()
+	var/list/seen = list()
 	for(var/key in value.Copy()) // iterate copy; .Remove() mid-loop skips entries
 		var/lang = value[key]
-		if(!lang)
+		if(!lang || length(key) != 1 || (lang in seen)) // one key per language: the first stays
 			value.Remove(key)
 			continue
+		seen += lang
 		if(!S)
 			continue
 		if((lang == S.language) || (lang == S.default_language && S.default_language != S.language) || (lang in alt))
