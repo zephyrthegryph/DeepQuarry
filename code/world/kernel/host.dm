@@ -295,8 +295,14 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	// atoms of types whose default look is empty (code/engine/change/look_stamp.dm).
 	refresh_settle_created()
 	var/tail_settle = REALTIMEOFDAY
-	// What the settle kept is every first draw the map still owes: they finish now, before "Initializations complete" (code/engine/change/look_stamp.dm).
-	refresh_boot_drain()
+	// What the settle kept is every first draw the map still owes. A server leaves them to the presentation lane, which draws the atoms
+	// around each client first (refresh_drain_near()): nobody sees the map from the lobby, and anything a client does see is drawn before
+	// the rest, so the lobby opens without waiting about 45 s for draws nobody is looking at. Test worlds draw everything now, as their
+	// tests read looks right after boot; a bench passes defer_boot_drain=1 to measure the server's way.
+	if(boot_drain_deferred())
+		log_world("Boot drain deferred: [length(GLOB.refresh_queue)] first draws left to the presentation lane (nearest clients first).")
+	else
+		refresh_boot_drain()
 	var/tail_drain = REALTIMEOFDAY
 	cells_ambient_checked() // the air is set up now: cells that sit in air of another temperature start their material service
 	// What the boot does after the last system: logged, and read by the server_phases bench (boot_tail_*).
@@ -569,3 +575,11 @@ GLOBAL_LIST_INIT(empty_performance_window, list("samples" = 0, "avg" = 0, "p50" 
 		return FALSE
 	last_profiled = REALTIMEOFDAY
 	SSprofiler.DumpFile(allow_yield = FALSE)
+
+/// Whether boot leaves the map's first draws to the presentation lane (servers) instead of drawing them all before init completes (tests).
+/proc/boot_drain_deferred()
+#ifdef UNIT_TESTS
+	return !!text2num(world.params?["bench_defer_boot_drain"])
+#else
+	return TRUE
+#endif
