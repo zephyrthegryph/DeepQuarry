@@ -66,10 +66,8 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	// Language (formerly its own tab). extra_languages is a derived stat
 	// (computed from traits, NIF, etc.) — not a player-editable preference.
 	tag_pref(., /datum/preference/numeric/human/extra_languages, "identity", "language", PREF_WIDGET_HIDDEN)
-	tag_pref(., /datum/preference/text/human/preferred_language, "identity", "language")
-	tag_pref(., /datum/preference/color/human/runechat_color, "identity", "language")
+	tag_pref(., /datum/preference/text/human/preferred_language, "identity", "language", PREF_WIDGET_HIDDEN)
 	tag_pref(., /datum/preference/alternate_languages, "identity", "language", PREF_WIDGET_HIDDEN)
-	tag_pref(., /datum/preference/language_prefixes, "identity", "language", PREF_WIDGET_HIDDEN)
 	tag_pref(., /datum/preference/language_custom_keys, "identity", "language", PREF_WIDGET_HIDDEN)
 	// Flavor / custom link
 	tag_pref(., /datum/preference/text/human/custom_link, "identity", "flavor")

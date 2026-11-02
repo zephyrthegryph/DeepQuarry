@@ -304,18 +304,7 @@ MSG_DEF_SELF(protean_reconstitutor/no_components, "%T% does not have any protean
 			P.mind.role_alt_title = SSjob.get_player_alt_title(P, charjob)
 
 		// Languages come with the character's identity when the mind moves in.
-		// migrated language_custom_keys
-		var/list/_posi_lang_custom = posibrain_client.prefs.read_preference(/datum/preference/language_custom_keys)
-		for(var/key in _posi_lang_custom)
-			if(_posi_lang_custom[key])
-				var/datum/language/keylang = GLOB.all_languages[_posi_lang_custom[key]]
-				if(keylang)
-					P.set_language_keys_at(key, keylang)
-
-		if(posibrain_client.prefs.read_preference(/datum/preference/text/human/preferred_language))
-			var/datum/language/def_lang = GLOB.all_languages[posibrain_client.prefs.read_preference(/datum/preference/text/human/preferred_language)]
-			if(def_lang)
-				rel_set(P, nameof(P.default_language), def_lang)
+		P.apply_language_prefs(posibrain_client.prefs)
 
 		PUBLISH_LEGACY(P, /datum/notice/human_dna_finalized)
 

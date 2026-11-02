@@ -75,7 +75,6 @@ export const PREF_KEY_LABELS: Record<string, string> = {
   religion: 'Religion',
   economic_status: 'Economic Status',
   preferred_language: 'Preferred Language',
-  runechat_color: 'Runechat Color',
   med_record: 'Medical Record',
   sec_record: 'Security Record',
   gen_record: 'General Record',

@@ -1,17 +1,8 @@
-// DQAdd — Language picker.
-//
-// Three panels:
-//   1. Prefix keys — the three single-character shortcuts the player binds for
-//      :1 :2 :3 style language prefixes. Each button shows the currently bound
-//      character (or "unset" if blank); clicking opens a server-side prompt to
-//      type the new character.
-//   2. Languages — full catalogue with Add/Remove and an optional per-language
-//      custom key binding. Restricted entries surface why they're restricted
-//      and disable their Add button.
-//   3. Footer — species default + total picked counter so the user always knows
-//      how many slots are left.
+// DQAdd — Language picker. One list of the languages the character knows or may learn. Each known one has
+// a preferred-language radio (the language spoken by default) and its own key, typed after the chat prefix
+// to speak it. A key another known language holds is refused here and again on the server.
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
 import {
   Box,
@@ -26,10 +17,11 @@ import type { EditorProps } from './index';
 
 type LangData = {
   alternate_languages: string[];
-  language_prefixes: string[];
-  language_custom_keys: Record<string, string>;
+  /// Language name -> the key that speaks it for this character.
+  language_keys: Record<string, string>;
+  known_languages: string[];
+  language_prefix: string;
   preferred_language: string | null;
-  runechat_color: string;
   extra_languages: number;
   max_alternate_languages: number;
   species_default_language: string | null;
@@ -40,7 +32,7 @@ type LangData = {
 type LangStatic = {
   all_languages: Record<
     string,
-    { name: string; desc: string; restricted: boolean }
+    LangMeta
   >;
 };
 
@@ -49,7 +41,25 @@ type Act = ReturnType<typeof useBackend>['act'];
 const send = (act: Act, action: string, params: Record<string, unknown>) =>
   act('dq_editor_action', { editor: 'language', action, params });
 
-type LangMeta = { name: string; desc: string; restricted: boolean };
+type LangMeta = {
+  name: string;
+  desc: string;
+  restricted: boolean;
+  default_key?: string;
+};
+
+/// Why `key` cannot speak `language`, or null when it can: the rule ui_act_set_key applies on the server.
+export const languageKeyProblem = (
+  key: string,
+  language: string,
+  keys: Record<string, string>,
+): string | null => {
+  if (!/^[A-Za-z0-9]$/.test(key)) return 'One letter or digit.';
+  for (const [other, held] of Object.entries(keys)) {
+    if (other !== language && held === key) return `Already speaks ${other}.`;
+  }
+  return null;
+};
 
 /// The rows to list: unrestricted, pickable by this character (or already picked), matching the search; picked first.
 export const filterLanguages = (
@@ -85,15 +95,11 @@ export const LanguagePicker = ({ data, staticData }: EditorProps) => {
 
   const all = s.all_languages ?? {};
   const selected = new Set(d.alternate_languages ?? []);
+  const known = new Set(d.known_languages ?? []);
   const max = d.max_alternate_languages ?? 0;
   const room = Math.max(0, max - selected.size);
-
-  // Reverse the {key → language} map so we can show a language's key with the
-  // language. One key may only bind one language.
-  const langToKey: Record<string, string> = {};
-  for (const [k, lang] of Object.entries(d.language_custom_keys ?? {})) {
-    langToKey[lang] = k;
-  }
+  const keys = d.language_keys ?? {};
+  const prefix = d.language_prefix ?? ',';
 
   // The server names the languages this character may actually pick; anything else (restricted, whitelisted for someone
   // else) is not listed at all. Selected ones come first, then the rest alphabetically; the search narrows both.
@@ -102,15 +108,11 @@ export const LanguagePicker = ({ data, staticData }: EditorProps) => {
   const sortedLanguageEntries = filterLanguages(
     Object.entries(all),
     pickable,
-    selected,
+    new Set([...selected, ...known]),
     search,
   );
   return (
     <Stack vertical>
-      <Stack.Item>
-        <PrefixPanel prefixes={d.language_prefixes ?? []} act={act} />
-      </Stack.Item>
-
       <Stack.Item>
         <Section
           title={
@@ -146,8 +148,12 @@ export const LanguagePicker = ({ data, staticData }: EditorProps) => {
               {max}
             </Box>{' '}
             alternate languages your character knows on top of their species
-            default. Bind a single-character "key" to a language to switch to it
-            in chat with that key.
+            default. The circle marks the language spoken by default. To speak
+            another in chat, type{' '}
+            <Box inline bold color="white" style={{ fontFamily: 'monospace' }}>
+              {prefix}
+            </Box>{' '}
+            then its key.
           </Box>
           {d.species_default_language && (
             <Box
@@ -190,8 +196,10 @@ export const LanguagePicker = ({ data, staticData }: EditorProps) => {
                 languageKey={key}
                 meta={meta}
                 selected={selected.has(key)}
+                known={known.has(key)}
+                preferred={d.preferred_language === key}
                 roomLeft={room}
-                customKey={langToKey[key]}
+                keys={keys}
                 act={act}
               />
             ))}
@@ -202,124 +210,25 @@ export const LanguagePicker = ({ data, staticData }: EditorProps) => {
   );
 };
 
-// ─── Prefix keys panel ────────────────────────────────────────────────────────────
-
-const PrefixPanel = ({ prefixes, act }: { prefixes: string[]; act: Act }) => (
-  <Section
-    title={
-      <Stack align="center">
-        <Stack.Item>
-          <Icon name="key" mr={0.5} />
-          Prefix Keys
-        </Stack.Item>
-      </Stack>
-    }
-  >
-    <Box mb={1} fontSize="0.85em" color="label">
-      Type one of these characters in chat as a prefix to broadcast on the
-      matching language slot — for example, with{' '}
-      <Box inline bold color="white">
-        {prefixes[0] || ':'}
-      </Box>{' '}
-      bound, typing{' '}
-      <Box inline bold color="white" style={{ fontFamily: 'monospace' }}>
-        {`${prefixes[0] || ':'}hello`}
-      </Box>{' '}
-      sends "hello" on slot 1's language. Click a slot to rebind.
-    </Box>
-    <Stack>
-      {[1, 2, 3].map((idx) => (
-        <Stack.Item key={idx}>
-          <PrefixSlot
-            index={idx}
-            char={prefixes[idx - 1] ?? ''}
-            onClick={() => send(act, 'set_prefix', { index: idx })}
-          />
-        </Stack.Item>
-      ))}
-      <Stack.Item grow />
-      <Stack.Item>
-        <Button
-          icon="rotate-left"
-          onClick={() => send(act, 'reset_prefixes', {})}
-        >
-          Reset to defaults
-        </Button>
-      </Stack.Item>
-    </Stack>
-  </Section>
-);
-
-const PrefixSlot = ({
-  index,
-  char,
-  onClick,
-}: {
-  index: number;
-  char: string;
-  onClick: () => void;
-}) => (
-  <Tooltip
-    content={
-      char
-        ? `Slot ${index}: bound to "${char}"`
-        : `Slot ${index}: unbound (click to set)`
-    }
-  >
-    <Box
-      onClick={onClick}
-      style={{
-        cursor: 'pointer',
-        width: '7.333em',
-        padding: '0.333em 0.5em',
-        borderRadius: '0.5em',
-        border: `1px solid ${
-          char ? 'rgba(52,152,219,0.6)' : 'rgba(255,255,255,0.18)'
-        }`,
-        background: char ? 'rgba(52,152,219,0.12)' : 'rgba(255,255,255,0.04)',
-        transition: 'all 120ms',
-      }}
-    >
-      <Box
-        style={{
-          fontSize: '0.62em',
-          color: 'rgba(255,255,255,0.5)',
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase',
-        }}
-      >
-        Slot {index}
-      </Box>
-      <Box
-        style={{
-          fontSize: '1.5em',
-          fontWeight: 'bold',
-          fontFamily: 'monospace',
-          lineHeight: '1',
-          color: char ? '#fff' : 'rgba(255,255,255,0.35)',
-        }}
-      >
-        {char || '—'}
-      </Box>
-    </Box>
-  </Tooltip>
-);
-
 // ─── Single language row ──────────────────────────────────────────────────────────
 
 const LanguageRow = ({
   languageKey,
   meta,
   selected,
+  known,
+  preferred,
   roomLeft,
-  customKey,
+  keys,
   act,
 }: {
   languageKey: string;
-  meta: { name: string; desc: string; restricted: boolean };
+  meta: LangMeta;
   selected: boolean;
+  known: boolean;
+  preferred: boolean;
   roomLeft: number;
-  customKey?: string;
+  keys: Record<string, string>;
   act: Act;
 }) => {
   // tgui sends BooleanLike (0/1) for booleans. `meta.restricted && (…)` with a
@@ -337,16 +246,33 @@ const LanguageRow = ({
       py={0.25}
       style={{
         borderRadius: '0.333em',
-        background: selected
+        background: known
           ? 'rgba(52,152,219,0.08)'
           : 'rgba(255,255,255,0.03)',
-        border: selected
+        border: known
           ? '1px solid rgba(52,152,219,0.45)'
           : '1px solid rgba(255,255,255,0.06)',
         opacity: isRestricted ? 0.55 : 1,
       }}
     >
       <Stack align="center">
+        {known && (
+          <Stack.Item>
+            <Button
+              compact
+              icon={preferred ? 'circle-dot' : 'circle'}
+              selected={preferred}
+              tooltip={
+                preferred
+                  ? 'Spoken by default'
+                  : 'Speak this language by default'
+              }
+              onClick={() =>
+                send(act, 'set_preferred', { language: languageKey })
+              }
+            />
+          </Stack.Item>
+        )}
         <Stack.Item grow>
           <Tooltip content={hasDesc ? meta.desc : meta.name}>
             <Box
@@ -377,50 +303,97 @@ const LanguageRow = ({
             </Box>
           </Tooltip>
         </Stack.Item>
-        {selected && (
+        {known && (
           <Stack.Item>
-            <Button
-              icon={customKey ? 'keyboard' : 'plus'}
-              tooltip={
-                customKey
-                  ? `Bound to key "${customKey}" — click to rebind`
-                  : 'Bind a single-character key to this language'
-              }
-              onClick={() =>
-                send(act, 'set_custom_key', { language: languageKey })
-              }
-            >
-              {customKey ? `key: ${customKey}` : 'set key'}
-            </Button>
-            {customKey && (
-              <Button
-                ml={0.5}
-                icon="xmark"
-                color="bad"
-                tooltip="Unbind this language's key"
-                onClick={() =>
-                  send(act, 'clear_custom_key', { language: languageKey })
-                }
-              />
-            )}
+            <LanguageKeyInput
+              languageKey={languageKey}
+              defaultKey={meta.default_key ?? ''}
+              keys={keys}
+              act={act}
+            />
           </Stack.Item>
         )}
-        <Stack.Item>
-          <Button
-            ml={0.5}
-            icon={selected ? 'minus' : 'plus'}
-            color={selected ? 'bad' : 'good'}
-            disabled={disabled}
-            onClick={() =>
-              selected
-                ? send(act, 'remove_language', { language: languageKey })
-                : send(act, 'add_language', { language: languageKey })
-            }
-          >
-            {selected ? 'Remove' : 'Add'}
-          </Button>
-        </Stack.Item>
+        {(selected || !known) && (
+          <Stack.Item>
+            <Button
+              ml={0.5}
+              icon={selected ? 'minus' : 'plus'}
+              color={selected ? 'bad' : 'good'}
+              disabled={disabled}
+              onClick={() =>
+                selected
+                  ? send(act, 'remove_language', { language: languageKey })
+                  : send(act, 'add_language', { language: languageKey })
+              }
+            >
+              {selected ? 'Remove' : 'Add'}
+            </Button>
+          </Stack.Item>
+        )}
       </Stack>
+    </Box>
+  );
+};
+
+/// The key that speaks a language: typed in place, sent when valid, refused with the reason beside it.
+const LanguageKeyInput = ({
+  languageKey,
+  defaultKey,
+  keys,
+  act,
+}: {
+  languageKey: string;
+  defaultKey: string;
+  keys: Record<string, string>;
+  act: Act;
+}) => {
+  const current = keys[languageKey] ?? '';
+  const [draft, setDraft] = useState(current);
+  const [problem, setProblem] = useState<string | null>(null);
+  useEffect(() => {
+    setDraft(current);
+    setProblem(null);
+  }, [current]);
+  const commit = (value: string) => {
+    if (value === current) {
+      setProblem(null);
+      return;
+    }
+    if (value === '') {
+      send(act, 'reset_key', { language: languageKey });
+      return;
+    }
+    const why = languageKeyProblem(value, languageKey, keys);
+    setProblem(why);
+    if (!why) send(act, 'set_key', { language: languageKey, key: value });
+  };
+  return (
+    <Box inline>
+      {problem && (
+        <Box inline color="bad" mr={0.5} fontSize="0.85em">
+          {problem}
+        </Box>
+      )}
+      <Box inline color="label" mr={0.25}>
+        Key
+      </Box>
+      <Input
+        width="2.5em"
+        maxLength={1}
+        value={draft}
+        onChange={setDraft}
+        onBlur={() => commit(draft)}
+        onEnter={() => commit(draft)}
+      />
+      {current !== defaultKey && !!defaultKey && (
+        <Button
+          ml={0.25}
+          compact
+          icon="rotate-left"
+          tooltip={`Back to its own key (${defaultKey})`}
+          onClick={() => send(act, 'reset_key', { language: languageKey })}
+        />
+      )}
     </Box>
   );
 };

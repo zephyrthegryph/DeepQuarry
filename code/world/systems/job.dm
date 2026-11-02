@@ -884,7 +884,6 @@ CAPABILITIES(/datum/system/job)
 /datum/system/job/proc/late_spawn(client/spawn_client, rank, mob/new_player/joiner, list/answers = null, consent = null)
 
 	var/datum/spawnpoint/spawnpos
-	var/fail_deadly = FALSE
 	var/obj/belly/vore_spawn_gut
 	var/absorb_choice = FALSE // Ability to start absorbed with vorespawn
 	var/mob/living/prey_to_nomph
@@ -969,7 +968,7 @@ CAPABILITIES(/datum/system/job)
 				to_chat(spawn_client, span_warning("No predators were available to accept you."))
 				return
 			spawnpos = GLOB.spawntypes[spawn_client.prefs.read_preference(/datum/preference/choiced/living/spawnpoint)]
-		if(preferred_spawn == "Vorespawn - Pred") //Same as above, but in reverse!
+		else if(preferred_spawn == "Vorespawn - Pred") //Same as above, but in reverse!
 			var/list/preys = vorespawn_preys()
 			if(length(preys))
 				var/prey_name = LAZYACCESS(answers, "prey")
@@ -1077,16 +1076,10 @@ CAPABILITIES(/datum/system/job)
 			else
 				to_chat(spawn_client, span_warning("No items were available to accept you."))
 				return
-		else
-			if(!(spawn_client.prefs.read_preference(/datum/preference/choiced/living/spawnpoint) in using_map.allowed_spawns))
-				if(fail_deadly)
-					to_chat(spawn_client, span_warning("Your chosen spawnpoint is unavailable for this map and your job requires a specific spawnpoint. Please correct your spawn point choice."))
-					return
-				else
-					to_chat(spawn_client, span_warning("Your chosen spawnpoint ([spawn_client.prefs.read_preference(/datum/preference/choiced/living/spawnpoint)]) is unavailable for the current map. Spawning you at one of the enabled spawn points instead."))
-					spawnpos = null
-			else
-				spawnpos = GLOB.spawntypes[spawn_client.prefs.read_preference(/datum/preference/choiced/living/spawnpoint)]
+
+	// Everyone but a vore or item join goes where the one check says they may; a choice that no longer holds moves quietly to one that does.
+	if(spawn_client?.prefs && !vore_spawn_gut && !prey_to_nomph && !item_to_be)
+		spawnpos = spawnpoint_for_join(spawn_client.prefs, rank, preferred_spawn)
 
 	//We will return a list key'd by "turf" and "msg"
 	. = list("turf","msg", "voreny", "prey", "itemtf", "vorgans", "carrier") // Item TF spawnpoints, spawn as mob
@@ -1100,23 +1093,20 @@ CAPABILITIES(/datum/system/job)
 		.["carrier"] = item_carrier
 		.["vorgans"] = vorgans
 		.["itemtf"] = item_to_be
-	if(spawnpos && istype(spawnpos) && length(spawnpos.turfs))
-		if(spawnpos.check_job_spawning(rank))
-			.["turf"] = spawnpos.get_spawn_position()
-			.["msg"] = spawnpos.msg
-			.["channel"] = spawnpos.announce_channel
-		else
-			var/datum/job/job_rank = SSjob.get_job(rank)
-			if(fail_deadly || job_rank?.offmap_spawn)
-				to_chat(spawn_client, span_warning("Your chosen spawnpoint ([spawnpos.display_name]) is unavailable for your chosen job. Please correct your spawn point choice."))
-				return
-			to_chat(spawn_client, span_filter_warning("Your chosen spawnpoint ([spawnpos.display_name]) is unavailable for your chosen job. Spawning you at the Arrivals shuttle instead."))
-			var/spawning = pick(REGISTRY_MEMBERS(REGISTRY_LATEJOIN))
-			.["turf"] = get_turf(spawning)
-			.["msg"] = "will arrive at the station shortly"
-	else if(!fail_deadly)
-		var/spawning = pick(REGISTRY_MEMBERS(REGISTRY_LATEJOIN))
-		.["turf"] = get_turf(spawning)
+	var/turf/landing = spawnpos?.get_spawn_position()
+	if(landing)
+		.["turf"] = landing
+		.["msg"] = spawnpos.msg
+		.["channel"] = spawnpos.announce_channel
+		return
+	// An offmap job has no business on the arrivals shuttle: with nowhere it may go, it does not join.
+	var/datum/job/job_rank = SSjob.get_job(rank)
+	if(spawn_client && job_rank?.offmap_spawn && !vore_spawn_gut && !prey_to_nomph && !item_to_be)
+		to_chat(spawn_client, span_warning("[rank] has no spawn point on this map."))
+		return
+	var/list/arrivals = REGISTRY_MEMBERS(REGISTRY_LATEJOIN)
+	if(length(arrivals))
+		.["turf"] = get_turf(pick(arrivals))
 		.["msg"] = "has arrived on the station"
 
 /// A refused vore or item spawn: the one who refused may leave the joiner a message.

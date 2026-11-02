@@ -105,7 +105,9 @@
 /datum/unit_test/dq_profile_pref_save_roundtrip
 
 /datum/unit_test/dq_profile_pref_save_roundtrip/Run()
-	var/path = "data/dq_profile_saves/[world.realtime]_[rand(1, 99999)]/preferences.json"
+	var/static/saves_written = 0
+	saves_written++ // each test reseeds rand: the time and a roll alone can name the same file twice
+	var/path = "data/dq_profile_saves/[world.realtime]_[saves_written]/preferences.json"
 	TEST_ASSERT(fcopy(DQ_PROFILE_SAVES + "headless_preferences.json", path), "the fixture save is copied to a scratch path")
 	var/datum/preferences/dq_test_stub/P = allocate(/datum/preferences/dq_test_stub)
 	P.load_and_save = TRUE
@@ -233,7 +235,9 @@
 	var/list/character = save["character1"]
 	for(var/key in overrides)
 		character[key] = overrides[key]
-	var/path = "data/dq_profile_saves/[world.realtime]_[rand(1, 99999)]/preferences.json"
+	var/static/saves_written = 0
+	saves_written++ // each test reseeds rand: the time and a roll alone can name the same file twice
+	var/path = "data/dq_profile_saves/[world.realtime]_[saves_written]/preferences.json"
 	text2file(json_encode(save), path)
 	return path
 
