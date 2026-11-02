@@ -319,6 +319,7 @@
 #include "dq_rust_memory_tests.dm"
 #include "dq_medical_tests.dm"
 #include "dq_mob_size_source_tests.dm"
+#include "dq_mob_spawner_wait.dm"
 #include "dq_mob_alpha_source_tests.dm"
 #include "dq_robot_push_and_vtec_tests.dm"
 #include "dq_denecrotizer_tests.dm"
