@@ -103,6 +103,10 @@
 /datum/system/explosions/proc/is_bulk_resolving()
 	return bulk_resolution_active
 
+/// An explosion is waiting for its epoch or being resolved.
+/datum/system/explosions/proc/has_explosion_work()
+	return bulk_resolution_active || length(pending_explosions)
+
 /datum/system/explosions/proc/defer_turf_update(turf/T)
 	if(!T)
 		return

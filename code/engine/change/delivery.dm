@@ -192,7 +192,7 @@ GLOBAL_VAR_INIT(rx_draining, FALSE)
 							rx_call(L.listener, L.handler, E, keys)
 							attr.note(KA_KIND_REACTION, KM_SYS_OM_APPEARANCE, L.listener.type, L.handler, TICK_USAGE_TO_MS(attr_start))
 				catch(var/exception/e)
-					stack_trace("rx_drain: [E.type]: [e] ([e.file]:[e.line])")
+					dq_report_caught(e, "rx_drain: [E.type]")
 	GLOB.rx_draining = FALSE
 
 /// A change reaction of `E` kept re-queueing itself past RX_DRAIN_PASSES deliveries in one drain: names the pair (the rest

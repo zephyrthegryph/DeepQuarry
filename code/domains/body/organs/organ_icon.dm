@@ -25,7 +25,8 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 	if(is_robotic())
 		var/datum/robolimb/franchise = GLOB.all_robolimbs[model]
 		if(!(franchise && franchise.skin_color))
-			set_s_col(hex2rgb(human.looks.synth_color_rgb))
+			if(synth_rgb)
+				set_s_col(hex2rgb(synth_rgb))
 			return
 	if(human.species && data.get_species_name() != human.species.name)
 		return
@@ -39,6 +40,8 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 	if(is_robotic())
 		var/datum/robolimb/franchise = GLOB.all_robolimbs[model]
 		if(!(franchise && franchise.skin_color))
+			if(synth_rgb)
+				set_s_col(hex2rgb(synth_rgb))
 			return
 	if(data.get_species_appearance_flags() & HAS_SKIN_COLOR)
 		set_s_col(data.skin_color.Copy())
