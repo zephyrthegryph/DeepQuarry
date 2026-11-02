@@ -120,6 +120,7 @@ CAPABILITIES(/datum/ooc_notes_panel)
 	data["ooc_favs"] = html_decode(host.identity().ooc_notes_favs || "")
 	data["ooc_maybes"] = html_decode(host.identity().ooc_notes_maybes || "")
 	data["ooc_style"] = !!host.identity().ooc_notes_style
+	data["markers"] = GLOB.speech_toppings // the chat's emphasis markers, applied as the say preview applies them
 	return data
 
 /datum/ooc_notes_panel/proc/ui_gate(datum/act/op/A)

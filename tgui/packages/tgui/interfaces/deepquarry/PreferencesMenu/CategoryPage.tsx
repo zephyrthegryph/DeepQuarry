@@ -196,7 +196,7 @@ const SwitcherGroup = ({
       entries={entries}
       onCommit={(key, value) => act('dq_update_preference', { key, value })}
       buttonsBelow
-      render={group === 'speech_verbs' ? undefined : renderPlain}
+      render={group === 'ooc_notes' ? renderPlain : undefined}
       actions={
         group === 'ooc_notes' ? (
           <Button

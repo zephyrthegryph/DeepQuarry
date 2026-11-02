@@ -219,16 +219,16 @@
 /datum/unit_test/dq_flavor_more_expands_in_chat
 
 /datum/unit_test/dq_flavor_more_expands_in_chat/Run()
-	var/long_text = "A tall person with a long coat, scuffed boots and a scar over one eye. END_OF_TEXT"
+	var/long_text = "A tall person with a long coat, scuffed boots and a scar over one eye. ENDMARK"
 	var/datum/preferences/dq_test_stub/P = dq_test_load_character(list("species" = SPECIES_HUMAN, "flavor_texts" = list("general" = long_text)))
 	var/text = P.dq_examine_profile_text()
 	TEST_ASSERT(findtext(text, "flavor_more=1"), "a long flavor is shortened with a More link: [text]")
-	TEST_ASSERT(!findtext(text, "END_OF_TEXT"), "the shortened text stops early")
+	TEST_ASSERT(!findtext(text, "ENDMARK"), "the shortened text stops early")
 	var/mob/living/carbon/human/viewer = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/mannequin = get_mannequin(P.client_ckey)
 	TEST_ASSERT(topic_dispatch(mannequin, viewer, list("flavor_more" = "1")), "the More link's op answers")
 	var/list/said = test_chat_of(viewer)
-	TEST_ASSERT(length(said) && findtext(said[length(said)], "END_OF_TEXT"), "the whole flavor is in chat: [jointext(said, " | ")]")
+	TEST_ASSERT(length(said) && findtext(said[length(said)], "ENDMARK"), "the whole flavor is in chat: [jointext(said, " | ")]")
 
 /// The OOC inspection opens the real notes panel on the mannequin, held in a state that lets a far-away viewer keep it, even with no notes.
 /datum/unit_test/dq_ooc_inspection_opens_panel
@@ -267,3 +267,30 @@
 	TEST_ASSERT_EQUAL(editor.handle_action(P, "set_leg_style", list("style" = "plantigrade"), null), PREF_UPDATE_ACCEPTED, "normal is a choice")
 	TEST_ASSERT(!P.has_taur_body() && !P.read_preference(/datum/preference/toggle/human/digitigrade), "it sets normal legs")
 	TEST_ASSERT_EQUAL(editor.handle_action(P, "set_leg_style", list("style" = "no such style"), null), PREF_UPDATE_REJECTED, "anything else is refused")
+
+/// Examine, the More link and the OOC notes in chat style text the way the character setup previews it: emphasis markers and "||" spoilers.
+/datum/unit_test/dq_flavor_and_notes_formatting
+
+/datum/unit_test/dq_flavor_and_notes_formatting/Run()
+	var/rendered = dq_render_flavor("A +bold+ |soft| _under_ ||secret|| end")
+	TEST_ASSERT(findtext(rendered, "<b>bold</b>"), "emphasis: [rendered]")
+	TEST_ASSERT(findtext(rendered, "<i>soft</i>") && findtext(rendered, "<u>under</u>"), "every marker: [rendered]")
+	TEST_ASSERT(findtext(rendered, span_spoiler("secret")), "spoilers: [rendered]")
+	TEST_ASSERT(!findtext(rendered, "||"), "the spoiler marks are gone")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	H.bio.flavor_texts = list("general" = "Short +bold+ ||hid||")
+	H.print_flavor_text(0)
+	var/shown = H.print_flavor_text()
+	TEST_ASSERT(findtext(shown, "<b>bold</b>") && findtext(shown, span_spoiler("hid")), "examine's short text is formatted: [shown]")
+	H.bio.flavor_texts = list("general" = "A long description that runs on and on, +loud+ at the very end.")
+	H.print_flavor_text(0)
+	shown = H.print_flavor_text()
+	TEST_ASSERT(findtext(shown, "flavor_more=1"), "a long text is cut with More")
+	var/mob/living/carbon/human/viewer = allocate(/mob/living/carbon/human)
+	TEST_ASSERT(topic_dispatch(H, viewer, list("flavor_more" = "1")), "the More link answers")
+	var/list/said = test_chat_of(viewer)
+	TEST_ASSERT(length(said) && findtext(said[length(said)], "loud") && !findtext(said[length(said)], "+loud+"), "More prints it formatted: [jointext(said, " | ")]")
+	H.identity().ooc_notes = "Likes +cats+"
+	H.print_ooc_notes_chat(viewer)
+	said = test_chat_of(viewer)
+	TEST_ASSERT(length(said) && findtext(said[length(said)], "cats") && !findtext(said[length(said)], "+cats+"), "OOC notes in chat are formatted: [jointext(said, " | ")]")

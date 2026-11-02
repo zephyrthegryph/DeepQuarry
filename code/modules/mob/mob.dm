@@ -366,13 +366,24 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		to_chat(src, span_filter_notice("<h2 class='alert'>OOC Warning:</h2>"))
 		to_chat(src, span_filter_notice(span_warning("Your flavor text is likely out of date! <a href='byond://?src=[REF(src)];flavor_change=1'>Change</a>")))
 
+/// Flavor text as players read it: "||" pairs hide spoilers, the chat's emphasis markers (GLOB.speech_toppings) style the rest, line breaks kept.
+/// The character setup's live preview renders the same rules (tgui-say FormattedText).
+/proc/dq_render_flavor(text)
+	var/list/parts = splittext(text, "||")
+	. = ""
+	for(var/i in 1 to length(parts))
+		var/part = encode_html_emphasis(parts[i])
+		. += (i % 2) ? part : span_spoiler(part)
+	. = replacetext(., "\n", "<BR>")
+
 /mob/proc/print_flavor_text()
 	if (bio.flavor_text && bio.flavor_text != "")
 		var/msg = replacetext(bio.flavor_text, "\n", " ")
 		if(length(msg) <= 40)
-			return span_notice("[msg]")
+			return span_notice(dq_render_flavor(msg))
 		else
-			return span_notice("[copytext_preserve_html(msg, 1, 37)]... <a href='byond://?src=[REF(src)];flavor_more=1'>More...</a>")
+			// Shortened before rendering, so a cut never splits a tag; a marker left open just shows as typed.
+			return span_notice("[dq_render_flavor(copytext(msg, 1, 37))]... <a href='byond://?src=[REF(src)];flavor_more=1'>More...</a>")
 
 /mob/proc/set_respawn_timer(time)
 	// Try to figure out what time to use
@@ -590,18 +601,8 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 /mob/proc/topic_flavor_more(datum/act/op/A)
 	var/mob/user = A.actor
-	var/examine_text = splittext(bio.flavor_text, "||")
-	var/index = 0
-	var/rendered_text = ""
-	for(var/part in examine_text)
-		if(index % 2)
-			rendered_text += span_spoiler("[part]")
-		else
-			rendered_text += "[part]"
-		index++
-	examine_text = replacetext(rendered_text, "\n", "<BR>")
 	// The whole text, in chat where the shortened one was.
-	to_chat(user, examine_block(span_infoplain(span_notice(examine_text))))
+	to_chat(user, examine_block(span_infoplain(span_notice(dq_render_flavor(bio.flavor_text)))))
 	return TRUE
 
 /mob/proc/topic_flavor_change(datum/act/op/A, href_flavor_change)
