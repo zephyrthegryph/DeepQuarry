@@ -55,12 +55,13 @@
 	// preview lives here. The frames are shipped to a window only when its copy is older
 	// (dq_preview_version), not on every update: React keeps the last copy it received and
 	// only PreviewPane re-renders when a new one arrives.
-	var/datum/tgui/open_ui = SStgui.get_open_ui(user, src) // the window the data is for (a pooled window keeps its own versions)
-	var/preview_window_id = open_ui?.window()?.id || "unpooled"
+	// New frames go to every open window: each one's data carries them until the push that reaches them all has run. (They were once
+	// versioned per window, keyed by get_open_ui(), which answers the user's first window only: the window on screen could be marked
+	// as having frames it never received.)
+	var/datum/tgui/open_ui = SStgui.get_open_ui(user, src)
 	data["character_preview_version"] = dq_preview_version
-	if(character_preview_b64 && dq_window_preview_versions?[preview_window_id] != dq_preview_version)
+	if(character_preview_b64 && dq_preview_unsent)
 		data["character_preview_assets"] = character_preview_b64
-		set_dq_window_preview_versions_at(preview_window_id, dq_preview_version)
 
 	for(var/datum/preference_middleware/preference_middleware as anything in middleware)
 		data += preference_middleware.get_ui_data(user, open_ui)
@@ -217,7 +218,7 @@
 	// close click. Keep the preview byte cache warm and queue one async straggler-flush.
 	SScharacter_setup.queue_preferences_save(src)
 	// A reopened window may have a fresh page: send it the preview again.
-	set_dq_window_preview_versions(null)
+	set_dq_preview_unsent(TRUE)
 
 /datum/preferences/proc/create_character_profiles()
 	var/list/profiles = list()

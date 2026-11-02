@@ -440,6 +440,7 @@ CAPABILITIES(/datum/dq_preview_poll)
 	for(var/key in result)
 		set_character_preview_b64_at(key, result[key])
 	set_dq_preview_version(dq_preview_version + 1)
+	set_dq_preview_unsent(TRUE)
 	dq_schedule_data_push()
 	return TRUE
 

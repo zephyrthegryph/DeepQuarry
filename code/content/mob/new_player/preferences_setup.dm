@@ -309,10 +309,13 @@
 	dq_data_push_pending = TRUE
 	after(src, 0, TYPE_PROC_REF(/datum/preferences, dq_flush_data_push), key = "preferences_data_push")
 
+/// Pushes every open window; new preview frames ride along in each, and are marked sent once all of them had the push.
 /datum/preferences/proc/dq_flush_data_push()
 	dq_data_push_pending = FALSE
 	for(var/datum/tgui/window as anything in open_tguis)
 		window.send_update()
+	if(dq_preview_unsent && length(open_tguis))
+		set_dq_preview_unsent(FALSE)
 
 /datum/preferences/proc/dq_schedule_static_push()
 	// Coalesce editor-catalog invalidations into one update. The next payload
