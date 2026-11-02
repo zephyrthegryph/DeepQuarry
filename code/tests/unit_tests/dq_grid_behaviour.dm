@@ -214,6 +214,8 @@ CAPABILITIES(/obj/machinery/dq_grid_load)
 
 /datum/unit_test/dq_grid_channels_shed_in_order/Run()
 	var/obj/machinery/power/apc/apc = dq_grid_isolated_apc(0.12)
+	if(apc)
+		keep_area_power(apc.area) // queued first, so it runs last: after the APC is back
 	defer_cleanup(null, GLOBAL_PROC_REF(dq_grid_restore_apc), apc)
 	TEST_ASSERT_NOTNULL(apc, "the test map has no working APC")
 	if(!apc)

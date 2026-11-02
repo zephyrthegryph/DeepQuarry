@@ -26,7 +26,16 @@ export type PrefWidgetItem = {
   value?: unknown;
   props: Record<string, unknown>;
   choices?: string[] | Record<string, string>;
-  thumbnails?: Record<string, { icon: string; icon_state: string }>;
+  thumbnails?: Record<
+    string,
+    {
+      icon: string;
+      icon_state: string;
+      /// A hair sprite this thumbnail (a hair gradient) is drawn on.
+      hair_icon?: string;
+      hair_state?: string;
+    }
+  >;
 };
 
 export type PrefEditorItem = {

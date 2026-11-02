@@ -25,7 +25,7 @@
 		TEST_ASSERT_EQUAL(length(contents_of(T, /obj/item/mine/training)), 0, "the pending pulse refunds no casing early")
 		test_time(1.5 SECONDS)
 	else
-		mine.Bumped(user)
+		user.bump_into(mine)
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(mine), "actual crossing or scheduled detonation consumes the deployed mine")
 	TEST_ASSERT(isnull(wiring_of(mine)), "actual consumption drops the mine's wire record")
@@ -45,10 +45,10 @@
 	var/mine_h = ref_token(mine) // the floor danger index holds handles
 	TEST_ASSERT(mouse.mob_size <= MOB_TINY, "the actual mouse meets the existing tiny-victim exemption")
 	TEST_ASSERT(!user.has_status(STAT_STUNNED), "the actual person starts without stun")
-	mine.Bumped(mouse)
+	mouse.bump_into(mine)
 	TEST_ASSERT(!QDELETED(mine), "the actual tiny-mouse crossing preserves the mine")
 	TEST_ASSERT(!mine.triggered, "the tiny-mouse crossing does not trigger the mine")
-	mine.Bumped(user)
+	user.bump_into(mine)
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(mine), "the real full-size crossing consumes the stun mine")
 	TEST_ASSERT(user.has_status(STAT_STUNNED), "the actual mine applies real stun to the full-size victim")
@@ -67,7 +67,7 @@
 	TEST_ASSERT(user.put_in_inactive_hand(pen), "the actual victim holds the original pen in the other hand")
 	var/obj/effect/mine/stripping/mine = allocate(/obj/effect/mine/stripping, T)
 	var/mine_h = ref_token(mine) // the floor danger index holds handles
-	mine.Bumped(user)
+	user.bump_into(mine)
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(mine), "the actual crossing consumes the stripping mine")
 	TEST_ASSERT_NULL(user.get_active_hand(), "the actual stripping effect clears the original active hand")
