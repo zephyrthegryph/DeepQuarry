@@ -404,6 +404,9 @@ CAPABILITIES(/obj/machinery/transhuman/resleever)
 		data["stat"] = H.stat
 		data["mindStatus"] = !!H.mind
 		data["mindName"] = H.mind?.name
+		// The window warns about resleeving sickness and the disorientation a fresh sleeve wakes with.
+		data["resleeveSick"] = H.has_body_effect(/datum/body_effect/resleeving_sickness)
+		data["initialSick"] = H.has_status(STAT_CONFUSED)
 	return data
 
 /// Old attackby.
