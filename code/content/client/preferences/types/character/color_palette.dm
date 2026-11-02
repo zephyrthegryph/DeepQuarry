@@ -274,11 +274,25 @@ GLOBAL_LIST_INIT(dq_palette_fields_table, list(
 /datum/preference/limb_colors/apply_to_animal(mob/living/simple_mob/target, value)
 	return
 
-/// Give each robotic limb its tint. robotize() recurses into children, so a limb with no colour of its own takes its
-/// nearest ancestor's; a Protean's limbs are robotic by species and have no rows, so they fall back on Tertiary.
+/// Whether a species' own limbs are robotic: it has no Cybernetic rows, its whole body takes one colour.
+/proc/dq_species_robotic_body(species_name)
+	var/datum/species/species = GLOB.all_species[species_name]
+	if(!species)
+		return FALSE
+	for(var/tag in species.has_limbs)
+		var/list/limb = species.has_limbs[tag]
+		var/obj/item/organ/external/path = limb["path"]
+		if(initial(path.robotic) >= ORGAN_ROBOT)
+			return TRUE
+	return species_name == SPECIES_PROTEAN // its limbs turn robotic when it forms, not by type
+
+/// Give each robotic limb its tint: its own colour, else its nearest ancestor's (robotize() recurses into children), else
+/// the body's colour for a robotic species, Tertiary until that is set.
 /datum/preferences/proc/apply_limb_colors(mob/living/carbon/human/target)
 	var/list/colors = read_preference(/datum/preference/limb_colors)
-	var/fallback = read_preference(/datum/preference/choiced/species) == SPECIES_PROTEAN ? read_preference(/datum/preference/color/human/color_slot/tertiary) : null
+	var/fallback
+	if(dq_species_robotic_body(read_preference(/datum/preference/choiced/species)))
+		fallback = colors[DQ_LIMB_COLOR_BODY] || read_preference(/datum/preference/color/human/color_slot/tertiary)
 	for(var/name in target.organs_by_name)
 		var/obj/item/organ/external/limb = target.organs_by_name[name]
 		if(!istype(limb) || !limb.is_robotic())
@@ -290,7 +304,7 @@ GLOBAL_LIST_INIT(dq_palette_fields_table, list(
 			source = source.parent
 		limb.synth_rgb = color || fallback
 
-/// Once per character. Every robotic limb (for a Protean, every limb) takes the old single synth colour when the old toggle
+/// Once per character. Every robotic limb (for a robotic species, its body) takes the old single synth colour when the old toggle
 /// was on with a colour, otherwise Tertiary. The old keys stay in the save, unread after this.
 /datum/preferences/proc/migrate_limb_colors()
 	var/list/save_data = get_save_data_for_savefile_identifier(PREFERENCE_CHARACTER)
@@ -300,9 +314,11 @@ GLOBAL_LIST_INIT(dq_palette_fields_table, list(
 	var/value = (save_data?["synth_color"] && istext(old_rgb) && findtext(old_rgb, GLOB.is_color)) ? lowertext(sanitize_hexcolor(old_rgb)) : "tertiary"
 	var/list/colors = list()
 	var/list/organ_data = read_preference(/datum/preference/organ_data)
-	var/protean = read_preference(/datum/preference/choiced/species) == SPECIES_PROTEAN
+	var/robotic_body = dq_species_robotic_body(read_preference(/datum/preference/choiced/species))
+	if(robotic_body)
+		colors[DQ_LIMB_COLOR_BODY] = value
 	for(var/limb in list(BP_TORSO, BP_HEAD, BP_GROIN, BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND, BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT))
-		if(protean || organ_data?[limb] == "cyborg")
+		if(organ_data?[limb] == "cyborg")
 			colors[limb] = value
 	update_preference_by_type(/datum/preference/limb_colors, colors)
 	save_data = get_save_data_for_savefile_identifier(PREFERENCE_CHARACTER)

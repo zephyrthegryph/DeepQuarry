@@ -44,11 +44,29 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/organs, internal_organ_labels, list(
 	var/list/colors = preferences.read_preference(/datum/preference/limb_colors) || list()
 	var/list/stored_colors = preferences.read_preference_raw(/datum/preference/limb_colors) || list()
 	var/list/externals = list()
+	var/static/list/limb_parents = list(BP_L_HAND = BP_L_ARM, BP_R_HAND = BP_R_ARM, BP_L_FOOT = BP_L_LEG, BP_R_FOOT = BP_R_LEG, BP_L_ARM = BP_TORSO, BP_R_ARM = BP_TORSO, BP_L_LEG = BP_GROIN, BP_R_LEG = BP_GROIN, BP_GROIN = BP_TORSO, BP_HEAD = BP_TORSO)
 	for(var/name in TYPE_TABLE_GET(src, external_limb_labels))
+		// Robotic through a parent: robotize() recurses, so the limb is robotic while its own setting is Normal.
+		var/robotic_parent
+		if(!organ_data[name])
+			var/up = limb_parents[name]
+			while(up && !robotic_parent)
+				if(organ_data[up] == "cyborg")
+					robotic_parent = up
+				else if(organ_data[up])
+					break
+				up = limb_parents[up]
+		var/shown_color = colors[name]
+		var/inherit = robotic_parent
+		while(inherit && !shown_color)
+			shown_color = colors[inherit]
+			inherit = limb_parents[inherit]
 		externals[name] = list(
 			"status" = organ_data[name] || "normal",
 			"model"  = rlimb_data[name] || null,
-			"color"  = colors[name] || null,
+			"color"  = shown_color || null,
+			"own_color" = !!colors[name],
+			"via" = robotic_parent,
 			"link"   = dq_color_slot_type(stored_colors[name]) ? stored_colors[name] : "",
 		)
 	var/list/internals = list()
@@ -56,7 +74,11 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/organs, internal_organ_labels, list(
 		internals[name] = organ_data[name] || "normal"
 	// Labels and order ride with the data (a few hundred bytes): as a catalog they arrived
 	// one round-trip after the page, and until then the section showed bare headings.
+	var/robotic_body = dq_species_robotic_body(preferences.read_preference(/datum/preference/choiced/species))
 	return list(
+		"robotic_body" = robotic_body,
+		"body_color" = colors[DQ_LIMB_COLOR_BODY] || preferences.read_preference(/datum/preference/color/human/color_slot/tertiary),
+		"body_link" = stored_colors[DQ_LIMB_COLOR_BODY] ? (dq_color_slot_type(stored_colors[DQ_LIMB_COLOR_BODY]) ? stored_colors[DQ_LIMB_COLOR_BODY] : "") : "tertiary",
 		"externals" = externals,
 		"internals" = internals,
 		"external_labels" = TYPE_TABLE_GET(src, external_limb_labels),
@@ -106,21 +128,31 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/organs, internal_organ_labels, list(
 /datum/preference_editor/organs/proc/ui_act_set_limb_color(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/limb = params["limb"]
 	var/color = params["color"]
-	if(!(limb in TYPE_TABLE_GET(src, external_limb_labels)) || !istext(color))
+	if(!(limb == DQ_LIMB_COLOR_BODY || (limb in TYPE_TABLE_GET(src, external_limb_labels))) || !istext(color))
 		return PREF_UPDATE_REJECTED
 	if(!dq_color_slot_type(color))
 		if(!findtext(color, GLOB.is_color))
 			return PREF_UPDATE_REJECTED
 		color = lowertext(sanitize_hexcolor(color))
 	var/list/colors = preferences.read_preference_raw(/datum/preference/limb_colors) || list()
+	// An earlier migration gave a robotic species one entry per limb: the body colour replaces them.
+	if(limb == DQ_LIMB_COLOR_BODY)
+		colors.Cut()
 	colors[limb] = color
+	preferences.update_preference_by_type(/datum/preference/limb_colors, colors)
+	return PREF_UPDATE_ACCEPTED
+
+/// A limb robotic through its parent goes back to following that parent.
+/datum/preference_editor/organs/proc/ui_act_clear_limb_color(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
+	var/list/colors = preferences.read_preference_raw(/datum/preference/limb_colors) || list()
+	colors -= params["limb"]
 	preferences.update_preference_by_type(/datum/preference/limb_colors, colors)
 	return PREF_UPDATE_ACCEPTED
 
 /// The same through BYOND's colour picker.
 /datum/preference_editor/organs/proc/ui_act_pick_limb_color(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/limb = params["limb"]
-	if(!(limb in TYPE_TABLE_GET(src, external_limb_labels)))
+	if(!(limb == DQ_LIMB_COLOR_BODY || (limb in TYPE_TABLE_GET(src, external_limb_labels))))
 		return PREF_UPDATE_REJECTED
 	var/list/colors = preferences.read_preference(/datum/preference/limb_colors) || list()
 	open_request(src, /datum/prompt/color/prefs/limb, PROC_REF(limb_color_picked), answerer = user, title = "Color picker", question = "Limb color", default = colors[limb] || "#FFFFFF", preferences = preferences, limb = limb)
@@ -199,6 +231,12 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/organs, internal_organ_labels, list(
 				return PREF_UPDATE_REJECTED
 			before_action(preferences, user, action)
 			return ui_act_set_limb_color(user, typed, preferences, null, action)
+		if("clear_limb_color")
+			typed = payload_args(src, params, list("limb" = schema_text(64)))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_clear_limb_color(user, typed, preferences, null, action)
 		if("pick_limb_color")
 			typed = payload_args(src, params, list("limb" = schema_text(64)))
 			if(!typed)

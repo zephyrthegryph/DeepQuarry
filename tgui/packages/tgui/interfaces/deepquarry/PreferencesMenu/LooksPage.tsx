@@ -270,9 +270,9 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
     string,
     { status?: string }
   >;
-  const hasRoboticLimb = Object.values(externals).some(
-    (limb) => limb?.status === 'cyborg',
-  );
+  const hasRoboticLimb =
+    !!editorData.organs?.robotic_body ||
+    Object.values(externals).some((limb) => limb?.status === 'cyborg');
   const cards = REGION_CARDS[shownRegion].filter(cardHasContent);
 
   const renderCard = (card: CardId) => {
