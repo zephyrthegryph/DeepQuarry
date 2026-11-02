@@ -141,3 +141,13 @@
 	H.put_in_hands(S)
 	TEST_ASSERT(test_op_committed(op_ui_act(H, S, "clear", list("index" = 1))), "Delete Entry (an index) is accepted")
 	TEST_ASSERT(test_op_committed(op_ui_act(H, S, "clear", list())), "Delete All (no index) is accepted")
+
+/// Every SE block, the last included, can carry a trait gene (setupgenetics stopped one short).
+/datum/unit_test/dq_health_bughunt/dna_last_block_assignable
+
+/datum/unit_test/dq_health_bughunt/dna_last_block_assignable/Run()
+	var/list/blocks = dna_assignable_blocks()
+	TEST_ASSERT_EQUAL(length(blocks), DNA_SE_LENGTH, "every block is assignable")
+	TEST_ASSERT(DNA_SE_LENGTH in blocks, "the last block is assignable")
+	TEST_ASSERT(!(0 in blocks), "block 0 is not a block")
+	TEST_ASSERT(("[DNA_SE_LENGTH]" in GLOB.assigned_blocks) || (DNA_SE_LENGTH in GLOB.assigned_blocks), "setupgenetics registered the last block")
