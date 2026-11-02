@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - balance: "Air pressure now evens out through an implicit solve: small pressure differences settle in a few seconds, large breaches drain somewhat faster, and idle atmos costs far less CPU."

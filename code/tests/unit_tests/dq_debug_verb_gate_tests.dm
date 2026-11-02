@@ -1,6 +1,6 @@
 // Debug verbs must not be native /client/verb entries.
 //
-// A native verb on /client is given to every client by BYOND, and an in-body check_rights() only stops
+// A native verb on /client is given to every client by BYOND, and an in-body rights check only stops
 // the call, not the "Debug" tab: every player saw the expedition generators. ADMIN_VERB grants the verb
 // only to admins holding the right, and re-checks it at call time (SSadmin_verbs.dynamic_invoke_verb).
 

@@ -3,7 +3,6 @@ import { Window } from 'tgui/layouts';
 
 import { AirlockConsoleAdvanced } from './AirlockConsoleAdvanced';
 import { AirlockConsoleDocking } from './AirlockConsoleDocking';
-import { AirlockConsolePhoron } from './AirlockConsolePhoron';
 import { AirlockConsoleSimple } from './AirlockConsoleSimple';
 import { DockingConsoleMulti } from './DockingConsoleMulti';
 import { DockingConsoleSimple } from './DockingConsoleSimple';
@@ -83,7 +82,6 @@ export const EmbeddedController = (props) => {
 
   primaryRoutes.AirlockConsoleAdvanced = <AirlockConsoleAdvanced />;
   primaryRoutes.AirlockConsoleSimple = <AirlockConsoleSimple />;
-  primaryRoutes.AirlockConsolePhoron = <AirlockConsolePhoron />;
   primaryRoutes.AirlockConsoleDocking = <AirlockConsoleDocking />;
   primaryRoutes.DockingConsoleSimple = <DockingConsoleSimple />;
   primaryRoutes.DockingConsoleMulti = <DockingConsoleMulti />;
