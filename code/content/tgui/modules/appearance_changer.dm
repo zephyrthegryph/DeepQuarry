@@ -961,14 +961,8 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	var/mob/living/carbon/human/flavor_owner = owner()
 	if(!LAZYLEN(flavor_owner.bio.flavor_texts))
 		LAZYSET(flavor_owner.bio.flavor_texts, "general", "")
-		LAZYSET(flavor_owner.bio.flavor_texts, "head", "")
 		LAZYSET(flavor_owner.bio.flavor_texts, "face", "")
-		LAZYSET(flavor_owner.bio.flavor_texts, "eyes", "")
-		LAZYSET(flavor_owner.bio.flavor_texts, "torso", "")
-		LAZYSET(flavor_owner.bio.flavor_texts, "arms", "")
-		LAZYSET(flavor_owner.bio.flavor_texts, "hands", "")
-		LAZYSET(flavor_owner.bio.flavor_texts, "legs", "")
-		LAZYSET(flavor_owner.bio.flavor_texts, "feet", "")
+		LAZYSET(flavor_owner.bio.flavor_texts, "body", "")
 	data["flavor_text"] = owner().bio.flavor_texts.Copy()
 
 	data["name"] = owner().name

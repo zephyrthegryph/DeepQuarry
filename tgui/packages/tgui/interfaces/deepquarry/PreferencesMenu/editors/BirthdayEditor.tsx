@@ -21,22 +21,16 @@ export const BirthdayEditor = ({ data, staticData }: EditorProps) => {
   const s = (staticData ?? {}) as Static;
   const months = s.months ?? [];
 
-  const monthOptions = [
-    { value: '0', displayText: '— Unset —' },
-    ...months.map((name, i) => ({
-      value: String(i + 1),
-      displayText: name,
-    })),
-  ];
+  const monthOptions = months.map((name, i) => ({
+    value: String(i + 1),
+    displayText: name,
+  }));
 
   const dayMax = d.max_day_for_month || 31;
-  const dayOptions = [
-    { value: '0', displayText: '—' },
-    ...Array.from({ length: dayMax }, (_, i) => ({
-      value: String(i + 1),
-      displayText: String(i + 1),
-    })),
-  ];
+  const dayOptions = Array.from({ length: dayMax }, (_, i) => ({
+    value: String(i + 1),
+    displayText: String(i + 1),
+  }));
 
   const send = (action: string, value: string) =>
     act('dq_editor_action', {
@@ -45,10 +39,10 @@ export const BirthdayEditor = ({ data, staticData }: EditorProps) => {
       params: { value },
     });
 
-  const monthVal = String(d.month ?? 0);
+  const monthVal = String(d.month ?? 1);
   const monthLabel =
     monthOptions.find((o) => o.value === monthVal)?.displayText ?? monthVal;
-  const dayVal = String(d.day ?? 0);
+  const dayVal = String(d.day ?? 1);
   const dayLabel =
     dayOptions.find((o) => o.value === dayVal)?.displayText ?? dayVal;
 

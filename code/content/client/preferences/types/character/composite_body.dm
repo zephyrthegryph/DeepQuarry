@@ -75,7 +75,7 @@
 /datum/preference/flavor_texts/pref_deserialize(input, datum/preferences/preferences)
 	if(!islist(input))
 		return list()
-	return input
+	return dq_migrate_flavor_zones(input)
 
 /datum/preference/flavor_texts/pref_serialize(input)
 	if(!islist(input))
@@ -91,7 +91,7 @@
 	// Re-strip on apply. The editor strips on write but a savefile loaded from a state
 	// predating that strip (or hand-edited JSON) can carry tags through to the mob —
 	// where it lands in examine, character_directory, etc. Cheap insurance.
-	for(var/zone in list("general", "head", "face", "eyes", "torso", "arms", "hands", "legs", "feet"))
+	for(var/zone in GLOB.dq_flavor_zones)
 		var/t = value[zone]
 		LAZYSET(target.bio.flavor_texts, zone, istext(t) ? strip_html_simple(t) : null)
 /datum/preference/flavor_texts/apply_to_living(mob/living/target, value)

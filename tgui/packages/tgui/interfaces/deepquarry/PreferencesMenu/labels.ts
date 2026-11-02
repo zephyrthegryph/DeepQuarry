@@ -12,6 +12,7 @@ export const titleCase = (s: string) =>
 // yields "Mind Body" (should be "Mind & Body"). Keys match the `group` field
 // emitted by tag_pref on the DM side.
 export const GROUP_LABELS: Record<string, string> = {
+  name: 'Name & Details',
   ooc_notes: 'OOC Notes',
   speech_verbs: 'Speech Verbs',
   starting_kit: 'Starting Kit',
@@ -64,10 +65,10 @@ export const PREF_KEY_LABELS: Record<string, string> = {
   bday_announce: 'Announce Birthday',
   digitigrade: 'Digitigrade Legs',
   custom_link: 'Custom Link',
-  custom_say: 'Custom Say Verb',
-  custom_whisper: 'Custom Whisper Verb',
-  custom_ask: 'Custom Ask Verb',
-  custom_exclaim: 'Custom Exclaim Verb',
+  custom_say: 'Say',
+  custom_whisper: 'Whisper',
+  custom_ask: 'Ask',
+  custom_exclaim: 'Exclaim',
   birthplace: 'Birthplace',
   citizenship: 'Citizenship',
   faction: 'Faction',
