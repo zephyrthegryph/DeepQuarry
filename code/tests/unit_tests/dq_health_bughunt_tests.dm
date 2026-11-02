@@ -131,3 +131,13 @@
 	var/obj/item/modular_computer/tablet/T = allocate(/obj/item/modular_computer/tablet, test_floor())
 	var/list/header = T.get_header_data()
 	TEST_ASSERT_EQUAL(header["PC_device_theme"], T.device_theme, "the header carries the device theme")
+
+/// The depth scanner's Delete Entry sends `index` and Delete All sends nothing; the op required a `clear` number, so both were refused.
+/datum/unit_test/dq_health_bughunt/depth_scanner_clear_presses
+
+/datum/unit_test/dq_health_bughunt/depth_scanner_clear_presses/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/obj/item/depth_scanner/S = allocate(/obj/item/depth_scanner, test_floor())
+	H.put_in_hands(S)
+	TEST_ASSERT(test_op_committed(op_ui_act(H, S, "clear", list("index" = 1))), "Delete Entry (an index) is accepted")
+	TEST_ASSERT(test_op_committed(op_ui_act(H, S, "clear", list())), "Delete All (no index) is accepted")
