@@ -7850,6 +7850,41 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(QDELETED(omni_old), "rebinding did not delete the omni port's old air")
 	omni.push_to_rust()
 
+/// push_to_rust() is an output (it runs under DERIVED_EVAL_BEGIN): the budget-group devices record their power draw and flow in
+/// rust_device_stepped(), never in the push. Every server bench once logged a PURITY runtime for the high-power omni mixer's
+/// last_power_draw being reset inside its push.
+/datum/unit_test/dq_atmos_budget_group_push_writes_nothing
+
+/datum/unit_test/dq_atmos_budget_group_push_writes_nothing/Run()
+	var/list/types = list(
+		/obj/machinery/atmospherics/omni/mixer/high_power,
+		/obj/machinery/atmospherics/omni/mixer,
+		/obj/machinery/atmospherics/omni/atmos_filter,
+		/obj/machinery/atmospherics/trinary/mixer,
+		/obj/machinery/atmospherics/trinary/atmos_filter,
+	)
+	for(var/path in types)
+		var/obj/machinery/atmospherics/D = allocate(path)
+		D.rust_device_stepped(1, 100, FALSE)
+		TEST_ASSERT(D.last_power_draw > 0, "[path]: a step did not record its draw")
+		set_global("derived_write_expected", TRUE)
+		GLOB.derived_write_violations.Cut()
+		GLOB.op_pure_violations.Cut()
+		DERIVED_EVAL_BEGIN
+		try
+			D.push_to_rust()
+		catch(var/exception/fault)
+			DERIVED_EVAL_END
+			set_global("derived_write_expected", FALSE)
+			throw fault
+		DERIVED_EVAL_END
+		set_global("derived_write_expected", FALSE)
+		var/list/seen = GLOB.derived_write_violations + GLOB.op_pure_violations
+		GLOB.derived_write_violations.Cut()
+		GLOB.op_pure_violations.Cut()
+		TEST_ASSERT(!length(seen), "[path]: push_to_rust() wrote state: [jointext(seen, "; ")]")
+		TEST_ASSERT_EQUAL(D.last_power_draw, 100, "[path]: the push reset the recorded draw")
+
 /// The pipe devices' Rust law is a generated push: a write to a var the law reads queues push_to_rust() once (DEP_PUSH),
 /// a var it does not read queues nothing, and no device has a hand update_rust_device().
 /datum/unit_test/dq_pipe_device_law_push_is_generated
