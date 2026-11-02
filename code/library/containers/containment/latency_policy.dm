@@ -101,6 +101,9 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 				GLOB.latency_slow_logged++
 				log_world("LATENCY_SWEEP_SLOW: can_be_latent([A.type] in [holder.type]) took [round(check_ms, 0.1)] ms (eligible [eligible]; [length(A.contents)] thing(s) inside it, [length(holder.contents)] in the holder, pin scans so far [GLOB.latency_pin_scans])")
 			if(!eligible)
+				// Not latent yet: back off like a refusal. Without it an ineligible atom is checked again on every turn of its holder,
+				// and one check can cost tens of ms (a first-aid kit in a wall locker: 25-76 ms, every few seconds on Southern Cross).
+				cooldown_start(A, latent_refused_until, max(holder?.latent_idle_delay_value(), LATENCY_REFUSAL_BACKOFF_MIN))
 				continue
 			// Through dq_latent_attempt_collapse(): its frame is part of the calibrated held_refs.
 			if(dq_latent_attempt_collapse(A, LATENCY_SWEEP_FRAME_REFS))
