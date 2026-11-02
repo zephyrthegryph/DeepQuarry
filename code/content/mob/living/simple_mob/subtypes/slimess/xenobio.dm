@@ -454,12 +454,7 @@ CAPABILITIES(/transformation/chem/instant/slime/nightmarewater)
 CAPABILITIES(/transformation/chem/instant/slime/nightmarejelly)
 	configure(transformation(name = "nightmare jelly", id = "m_nightmare_jelly", takes = list(reagent(REAGENT_ID_SLIMEJELLY, 5)), made = 1,
 		holds = subject_is(/obj/item/slime_extract/nightmare),
-		then = TYPE_PROC_REF(/transformation/chem/instant/slime/nightmarejelly, on_reaction)))
-
-/transformation/chem/instant/slime/nightmarejelly/on_reaction(datum/reagents/holder)
-	for(var/mob/living/L in range(14, holder.my_atom))
-		L.lingering_poison(2, 3 MINUTES)
-	..()
+		effects = sets_off(kind = XFORM_FX_WAVE, range = 14, poison = list(2, 3 MINUTES))))
 
 /transformation/chem/instant/slime/nightmareblood
 

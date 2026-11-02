@@ -706,30 +706,8 @@ CAPABILITIES(/transformation/chem/instant/explosion_potassium)
 CAPABILITIES(/transformation/chem/instant/flash_powder)
 	configure(transformation(name = "Flash powder", id = "flash_powder",
 		takes = list(reagent(REAGENT_ID_ALUMINIUM, 1), reagent(REAGENT_ID_POTASSIUM, 1), reagent(REAGENT_ID_SULFUR, 1)),
-		then = TYPE_PROC_REF(/transformation/chem/instant/flash_powder, on_reaction)))
-
-/transformation/chem/instant/flash_powder/proc/on_reaction(datum/reagents/holder, created_volume)
-	var/location = get_turf(holder.my_atom)
-	fx_sparks(location, 2)
-	for(var/mob/living/carbon/M in viewers(world.view, location))
-		switch(get_dist(M, location))
-			if(0 to 3)
-				if(ishuman(M))
-					var/mob/living/carbon/human/target = M
-					if(istype(target.get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses/sunglasses))
-						continue
-
-				M.flash_eyes()
-				M.status_at_least(STAT_WEAKENED, 15)
-
-			if(4 to 5)
-				if(ishuman(M))
-					var/mob/living/carbon/human/target = M
-					if(istype(target.get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses/sunglasses))
-						continue
-
-				M.flash_eyes()
-				M.status_at_least(STAT_STUNNED, 5)
+		effects = sets_off(kind = XFORM_FX_WAVE, range = world.view, line_of_sight = TRUE, mob_type = /mob/living/carbon, sparks = 2, flash = TRUE,
+			statuses = list(list(3, STAT_WEAKENED, 15), list(5, STAT_STUNNED, 5)))))
 
 /transformation/chem/instant/emp_pulse
 

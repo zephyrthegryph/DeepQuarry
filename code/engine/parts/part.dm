@@ -647,8 +647,44 @@
 	edit = null,
 	levels = null,
 	symptoms = null,
-	sfx_volume = null)
+	sfx_volume = null,
+	mob_type = null,
+	statuses = null,
+	flash = null,
+	mends = null,
+	mend_amount = null,
+	poison = null,
+	tell_each = null,
+	sparks = null,
+	joules = null,
+	slime_damage = null,
+	distance = null,
+	freeze = null)
 	var/list/arguments = list("kind" = kind)
+	if(!isnull(mob_type))
+		arguments["mob_type"] = mob_type
+	if(!isnull(statuses))
+		arguments["statuses"] = statuses
+	if(!isnull(flash))
+		arguments["flash"] = flash
+	if(!isnull(mends))
+		arguments["mends"] = mends
+	if(!isnull(mend_amount))
+		arguments["mend_amount"] = mend_amount
+	if(!isnull(poison))
+		arguments["poison"] = poison
+	if(!isnull(tell_each))
+		arguments["tell_each"] = tell_each
+	if(!isnull(sparks))
+		arguments["sparks"] = sparks
+	if(!isnull(joules))
+		arguments["joules"] = joules
+	if(!isnull(slime_damage))
+		arguments["slime_damage"] = slime_damage
+	if(!isnull(distance))
+		arguments["distance"] = distance
+	if(!isnull(freeze))
+		arguments["freeze"] = freeze
 	if(!isnull(clears))
 		arguments["clears"] = clears
 	if(!isnull(tell))
