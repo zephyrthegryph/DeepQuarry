@@ -1,33 +1,3 @@
-// This is the elements from the skin.dmf that we need to adjust the fontsize of
-const ELEMENTS_TO_ADJUST = [
-  'rpane.wikib',
-  'rpane.forumb',
-  'rpane.rulesb',
-  'rpane.mapb',
-  'rpane.github',
-  'rpane.discord',
-  'rpane.patreon',
-  'rpane.textb',
-  'rpane.infob',
-];
-
-const DEFAULT_BUTTON_FONT_SIZE = 4;
-
-export async function setDisplayScaling() {
-  if (window.devicePixelRatio === 1) {
-    return;
-  }
-
-  const newSizes: { [element: string]: number } = {};
-
-  for (const element of ELEMENTS_TO_ADJUST) {
-    newSizes[`${element}.font-size`] =
-      DEFAULT_BUTTON_FONT_SIZE * window.devicePixelRatio;
-  }
-
-  Byond.winset(null, newSizes);
-}
-
 const PANE_SPLITTERS = {
   info_button_child: 2,
   input_buttons_child: 80,

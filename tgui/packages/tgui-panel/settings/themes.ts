@@ -23,16 +23,6 @@ export const SKIN_PANES = [
   'statbrowser',
 ] as const;
 
-/** The top link buttons. Patreon keeps its own green. */
-export const SKIN_BUTTONS = [
-  'discord',
-  'github',
-  'mapb',
-  'rulesb',
-  'forumb',
-  'wikib',
-] as const;
-
 /**
  * The winset for a client theme. BYOND has no skin stylesheet, so a theme is
  * set per element; palette.test.ts fails on a name that left skin.dmf. Native
@@ -44,14 +34,6 @@ export function clientThemeWinset(name: string): Record<string, string> {
   for (const pane of SKIN_PANES) {
     params[`${pane}.background-color`] = isDark ? DARK_PALETTE.base : 'none';
     params[`${pane}.text-color`] = isDark ? DARK_PALETTE.text : '#000000';
-  }
-  for (const button of SKIN_BUTTONS) {
-    params[`${button}.background-color`] = isDark
-      ? DARK_PALETTE.primary
-      : 'none';
-    params[`${button}.text-color`] = isDark
-      ? DARK_PALETTE.buttonText
-      : '#000000';
   }
   params['output.background-color'] = isDark ? DARK_PALETTE.section : 'none';
   params['output.text-color'] = isDark ? DARK_PALETTE.text : '#000000';

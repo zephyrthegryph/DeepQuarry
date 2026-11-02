@@ -85,6 +85,8 @@ function mount() {
   );
   win.__statpanelMounted = true;
   Byond.winset(Byond.windowId, { 'is-visible': true });
+  // The Menu page has taken over; a page that never mounts leaves the native bar.
+  Byond.winset('mainwindow', { menu: '' });
   Byond.sendMessage('Set-Tab', { tab: 'Status' });
   Byond.sendMessage('Update-Verbs');
   // The server can miss the first request while the client is still logging in.

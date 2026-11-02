@@ -415,125 +415,14 @@ window "rpane"
 		type = CHILD
 		background-color = #202020
 		text-color = #B3CCE6
-		pos = 0,30
-		size = 640x445
+		pos = 0,0
+		size = 640x480
 		anchor1 = 0,0
 		anchor2 = 100,100
 		saved-params = "splitter"
 		left = "statwindow"
 		right = "outputwindow"
 		is-vert = false
-	elem "patreon"
-		type = BUTTON
-		pos = 488,0
-		size = 60x16
-		anchor1 = -1,-1
-		anchor2 = -1,-1
-		background-color = '#005813'
-		text-color = #FFFFFF
-		saved-params = "is-checked"
-		text = "Patreon"
-		command = "patreon"
-		group = "rpanemode"
-	elem "discord"
-		type = BUTTON
-		background-color = #48739E
-		text-color = #FFFFFF
-		pos = 428,0
-		size = 60x16
-		anchor1 = -1,-1
-		anchor2 = -1,-1
-		saved-params = "is-checked"
-		text = "Discord"
-		command = "discord"
-		group = "rpanemode"
-	elem "github"
-		type = BUTTON
-		background-color = #48739E
-		text-color = #FFFFFF
-		pos = 368,0
-		size = 60x16
-		anchor1 = -1,-1
-		anchor2 = -1,-1
-		saved-params = "is-checked"
-		text = "GitHub"
-		command = "github"
-		group = "rpanemode"
-	elem "mapb"
-		type = BUTTON
-		background-color = #48739E
-		text-color = #FFFFFF
-		pos = 308,0
-		size = 60x16
-		anchor1 = -1,-1
-		anchor2 = -1,-1
-		saved-params = "is-checked"
-		text = "Map"
-		command = "map"
-		group = "rpanemode"
-	elem "rulesb"
-		type = BUTTON
-		background-color = #48739E
-		text-color = #FFFFFF
-		pos = 248,0
-		size = 60x16
-		anchor1 = -1,-1
-		anchor2 = -1,-1
-		saved-params = "is-checked"
-		text = "Rules"
-		command = "rules"
-		group = "rpanemode"
-	elem "forumb"
-		type = BUTTON
-		background-color = #48739E
-		text-color = #FFFFFF
-		pos = 188,0
-		size = 60x16
-		anchor1 = -1,-1
-		anchor2 = -1,-1
-		saved-params = "is-checked"
-		text = "Forum"
-		command = "forum"
-		group = "rpanemode"
-	elem "wikib"
-		type = BUTTON
-		background-color = #48739E
-		text-color = #FFFFFF
-		pos = 128,0
-		size = 60x16
-		anchor1 = -1,-1
-		anchor2 = -1,-1
-		saved-params = "is-checked"
-		text = "Wiki"
-		command = "wiki"
-		group = "rpanemode"
-	elem "textb"
-		type = BUTTON
-		pos = 0,0
-		size = 60x16
-		anchor1 = -1,-1
-		anchor2 = -1,-1
-		background-color = none
-		is-visible = false
-		saved-params = "is-checked"
-		text = "Text"
-		command = ".winset \"rpanewindow.left=;\""
-		is-checked = true
-		group = "rpanemode"
-		button-type = pushbox
-	elem "infob"
-		type = BUTTON
-		pos = 60,0
-		size = 60x16
-		anchor1 = -1,-1
-		anchor2 = -1,-1
-		background-color = none
-		is-visible = false
-		saved-params = "is-checked"
-		text = "Info"
-		command = ".winset \"rpanewindow.left=statwindow\""
-		group = "rpanemode"
-		button-type = pushbox
 	elem "mediapanel"
 		type = BROWSER
 		pos = 392,25
