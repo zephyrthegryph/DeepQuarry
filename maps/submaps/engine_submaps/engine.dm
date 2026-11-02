@@ -2,6 +2,9 @@
 /obj/effect/landmark/engine_loader
 	name = "Engine Loader"
 	var/clean_turfs // A list of lists, where each list is (x, )
+	/// The last engine loader placed. A static var exists before any system does, so the compiled-in map's landmark, which initializes
+	/// before world/New() creates SSmapping, can still be found by load_engine().
+	var/static/obj/effect/landmark/engine_loader/placed
 
 INITIALIZE_IMMEDIATE(/obj/effect/landmark/engine_loader)
 
@@ -9,7 +12,13 @@ CAPABILITIES(/obj/effect/landmark/engine_loader)
 	setup(PROC_REF(register_loader))
 
 /// The mapping system's engine loader is the last one placed; an earlier one is flagged a duplicate (setup hook).
+/// The compiled-in map is loaded before world/New() creates the systems, so a landmark placed there initializes (immediately)
+/// while SSmapping is still null: it leaves itself to be found by the mapping system's load_engine(). Calling through the null
+/// global here was a runtime before the logs open, and the engine room stayed empty.
 /obj/effect/landmark/engine_loader/proc/register_loader()
+	placed = src
+	if(!SSmapping)
+		return
 	if(mapping_engine_loader())
 		WARNING("Duplicate engine_loader landmarks: [log_info_line(src)] and [log_info_line(mapping_engine_loader())]")
 		delete_me = TRUE
