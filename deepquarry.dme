@@ -4703,6 +4703,7 @@
 #include "code\content\client\preferences\editors\faction_affiliations.dm"
 #include "code\content\client\preferences\editors\flavor.dm"
 #include "code\content\client\preferences\editors\language.dm"
+#include "code\content\client\preferences\editors\legs.dm"
 #include "code\content\client\preferences\editors\mind_body.dm"
 #include "code\content\client\preferences\editors\nif_status.dm"
 #include "code\content\client\preferences\editors\occupation.dm"
