@@ -111,6 +111,16 @@
 /mob/living/carbon/human/proc/robolimb_model()
 	return synthetic
 
+/// A body with no player takes the parts its model comes with. A player's character keeps its own choice, None included, when a revive robotizes it again.
+/mob/living/carbon/human/proc/take_built_in_parts(datum/robolimb/model)
+	if(client || !model)
+		return
+	if(model.built_in_tail && !tail_style)
+		rel_set(src, nameof(tail_style), GLOB.tail_styles_list[model.built_in_tail])
+		looks.set_tail_color(looks.skin_color)
+	if(model.built_in_ears && !ear_style && !ear_secondary_style)
+		rel_set(src, nameof(ear_style), GLOB.ear_styles_list[model.built_in_ears])
+
 // Would an onlooker know this person is synthetic?
 // Based on sort of logical reasoning, 'Look at head, look at torso'
 /mob/living/carbon/human/proc/looksSynthetic()

@@ -1,6 +1,6 @@
 /datum/robolimb
-	var/includes_tail			//Cyberlimbs dmi includes a tail sprite to wear.
-	var/includes_wing			//Cyberlimbs dmi includes a wing sprite to wear.
+	var/built_in_tail			//The tail style a body of this model comes with.
+	var/built_in_ears			//The ear style a body of this model comes with.
 	var/list/whitelisted_to		//List of ckeys that are allowed to pick this in charsetup.
 
 //////////////// For-specific-character fluff ones ///////////////// May be viable to place these into a custom_item subfolder, in order to allow CI Repo integration.
@@ -11,7 +11,7 @@
 	desc = "This limb has a slight salvaged handicraft vibe to it. The CE-marking on it is definitely not the standardized one, it looks more like a hand-written sharpie monogram."
 	icon = 'icons/mob/human_races/cyberlimbs/_fluff/rahboop.dmi'
 	blood_color = "#5e280d"
-	includes_tail = 1
+	built_in_tail = /datum/sprite_accessory/tail/robolimb/eggnerdltd
 	unavailable_to_build = 1
 
 /obj/item/disk/limb/eggnerdltd
@@ -38,7 +38,7 @@
 	desc = "A slightly more refined limb variant from Eggnerd Prototyping. Its got red plating instead of orange."
 	icon = 'icons/mob/human_races/cyberlimbs/rahboopred/rahboopred.dmi'
 	blood_color = "#5e280d"
-	includes_tail = 1
+	built_in_tail = /datum/sprite_accessory/tail/robolimb/eggnerdltdred
 	unavailable_to_build = 1
 
 /obj/item/disk/limb/eggnerdltdred
@@ -54,7 +54,7 @@
 	blood_color = "#ffe2ff"
 	lifelike = 1
 	unavailable_to_build = 1
-	includes_tail = 1
+	built_in_tail = /datum/sprite_accessory/tail/robolimb/dsi_tajaran
 	skin_color = 1
 	suggested_species = SPECIES_TAJARAN
 
@@ -68,7 +68,7 @@
 	blood_color = "#ffe2ff"
 	lifelike = 1
 	unavailable_to_build = 1
-	includes_tail = 1
+	built_in_tail = /datum/sprite_accessory/tail/robolimb/dsi_lizard
 	skin_color = 1
 	suggested_species = SPECIES_UNATHI
 
@@ -82,7 +82,7 @@
 	blood_color = "#ffe2ff"
 	lifelike = 1
 	unavailable_to_build = 1
-	includes_tail = 1
+	built_in_tail = /datum/sprite_accessory/tail/robolimb/dsi_sergal
 	skin_color = 1
 	suggested_species = SPECIES_SERGAL
 
@@ -96,7 +96,7 @@
 	blood_color = "#ffe2ff"
 	lifelike = 1
 	unavailable_to_build = 1
-	includes_tail = 1
+	built_in_tail = /datum/sprite_accessory/tail/robolimb/dsi_nevrean
 	skin_color = 1
 	suggested_species = SPECIES_NEVREAN
 
@@ -110,7 +110,7 @@
 	blood_color = "#ffe2ff"
 	lifelike = 1
 	unavailable_to_build = 1
-	includes_tail = 1
+	built_in_tail = /datum/sprite_accessory/tail/robolimb/dsi_vulpkanin
 	skin_color = 1
 	suggested_species = SPECIES_VULPKANIN
 
@@ -124,7 +124,7 @@
 	blood_color = "#ffe2ff"
 	lifelike = 1
 	unavailable_to_build = 1
-	includes_tail = 1
+	built_in_tail = /datum/sprite_accessory/tail/robolimb/dsi_akula
 	skin_color = 1
 	suggested_species = SPECIES_AKULA
 
@@ -138,7 +138,6 @@
 	blood_color = "#ffe2ff"
 	lifelike = 1
 	unavailable_to_build = 1
-	includes_tail = 1
 	skin_color = 1
 	suggested_species = SPECIES_VASILISSAN
 
@@ -170,7 +169,7 @@
 	blood_color = "#ffe2ff"
 	lifelike = 1
 	unavailable_to_build = 1
-	includes_tail = 1
+	built_in_tail = /datum/sprite_accessory/tail/robolimb/dsi_zorren
 	skin_color = 1
 	suggested_species = SPECIES_ZORREN_HIGH
 
@@ -184,7 +183,7 @@
 	blood_color = "#ffe2ff"
 	lifelike = 1
 	unavailable_to_build = 1
-	includes_tail = 1
+	built_in_tail = /datum/sprite_accessory/tail/robolimb/dsi_fennec
 	skin_color = 1
 	suggested_species = SPECIES_FENNEC
 

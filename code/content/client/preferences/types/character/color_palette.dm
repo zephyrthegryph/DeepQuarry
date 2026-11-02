@@ -359,21 +359,32 @@ GLOBAL_LIST_INIT(dq_palette_fields_table, list(
 		counts -= best
 		update_preference_by_type(slot_type, best)
 
-/// Once per character: the ears a Kitsuhana body used to draw by itself when no ear style was set are now that ear style.
-/datum/preferences/proc/migrate_robotic_ears()
+/// Once per character per part: what a robotic body used to draw by itself when no style was set is now that style. Only the torso ever set the model.
+/datum/preferences/proc/migrate_robotic_parts()
 	var/list/save_data = get_save_data_for_savefile_identifier(PREFERENCE_CHARACTER)
-	if(!islist(save_data) || save_data["robotic_ears_migrated"])
+	if(!islist(save_data))
 		return
+	var/ears_done = save_data["robotic_ears_migrated"]
+	var/tail_done = save_data["robotic_tail_migrated"]
 	save_data["robotic_ears_migrated"] = TRUE
-	if(read_preference(/datum/preference/text/human/ear_style) || read_preference(/datum/preference/text/human/ear_secondary_style))
-		return
+	save_data["robotic_tail_migrated"] = TRUE
 	var/list/organ_data = read_preference(/datum/preference/organ_data)
 	var/list/rlimb_data = read_preference(/datum/preference/rlimb_data)
-	for(var/limb in list(BP_TORSO, BP_HEAD))
-		if(organ_data?[limb] == "cyborg" && rlimb_data?[limb] == "Kitsuhana")
-			update_preference_by_type(/datum/preference/text/human/ear_style, "Kitsuhana cybernetic ears")
-			log_world("PREFS: [client_ckey] robotic ears became the Kitsuhana ear style")
-			return
+	if(organ_data?[BP_TORSO] != "cyborg")
+		return
+	var/datum/robolimb/model = GLOB.all_robolimbs[rlimb_data?[BP_TORSO]]
+	if(!model)
+		return
+	if(!ears_done && model.built_in_ears && !read_preference(/datum/preference/text/human/ear_style) && !read_preference(/datum/preference/text/human/ear_secondary_style))
+		var/datum/sprite_accessory/ears = GLOB.ear_styles_list[model.built_in_ears]
+		update_preference_by_type(/datum/preference/text/human/ear_style, ears.name)
+		log_world("PREFS: [client_ckey] built-in ears became the style [ears.name]")
+	if(!tail_done && model.built_in_tail && !read_preference(/datum/preference/text/human/tail_style))
+		var/datum/sprite_accessory/tail = GLOB.tail_styles_list[model.built_in_tail]
+		update_preference_by_type(/datum/preference/text/human/tail_style, tail.name)
+		// The built-in tail was tinted with the skin colour, which is Primary.
+		update_preference_by_type(/datum/preference/color/human/tail_color1, "primary")
+		log_world("PREFS: [client_ckey] built-in tail became the style [tail.name]")
 
 /// Skin is always Primary and eyes always Tertiary. A character whose colour differs keeps its look: the slot takes that
 /// colour, and whatever was linked to the slot is pinned to the colour it showed, so no custom colour is lost and nothing else shifts.

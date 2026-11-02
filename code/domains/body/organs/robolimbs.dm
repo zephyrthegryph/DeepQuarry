@@ -719,7 +719,8 @@ GLOBAL_LIST_INIT(dsi_to_species, list(SPECIES_TAJARAN = "DSI - Tajaran", SPECIES
 	desc = "This limb seems rather vulpine and fuzzy, with realistic-feeling flesh."
 	icon = 'icons/mob/human_races/cyberlimbs/_fluff/aronai.dmi'
 	blood_color = "#5dd4fc"
-	includes_tail = 1
+	built_in_tail = /datum/sprite_accessory/tail/robolimb/kitsuhana
+	built_in_ears = /datum/sprite_accessory/ears/kitsuhana
 	lifelike = 1
 	unavailable_to_build = 1
 	suggested_species = SPECIES_VULPKANIN
@@ -735,7 +736,7 @@ GLOBAL_LIST_INIT(dsi_to_species, list(SPECIES_TAJARAN = "DSI - Tajaran", SPECIES
 	icon = 'icons/mob/human_races/cyberlimbs/_fluff/serdykov.dmi'
 	blood_color = "#ff6a00"
 	unavailable_to_build = 1
-	includes_tail = 1
+	built_in_tail = /datum/sprite_accessory/tail/robolimb/white_kryten
 	whitelisted_to = list("silencedmp5a5")
 
 /obj/item/disk/limb/white_kryten
@@ -898,7 +899,6 @@ CAPABILITIES(/obj/item/disk/limb/zenghu_frost)
 	blood_color = "#ffe2ff"
 	lifelike = 1
 	unavailable_to_build = 1
-	includes_tail = 0
 	suggested_species = "Tajara"
 	whitelisted_to = list("dameonowen")
 
@@ -909,7 +909,6 @@ CAPABILITIES(/obj/item/disk/limb/zenghu_frost)
 	blood_color = "#ffe2ff"
 	lifelike = 1
 	unavailable_to_build = 1
-	includes_tail = 0
 	suggested_species = "Unathi"
 	whitelisted_to = list("dameonowen")
 
@@ -920,7 +919,6 @@ CAPABILITIES(/obj/item/disk/limb/zenghu_frost)
 	monitor_icon = 'icons/mob/human_races/cyberlimbs/dopiotl/nanovulp_animations.dmi'
 	lifelike = 1
 	unavailable_to_build = 1
-	includes_tail = 0
 	suggested_species = "Vuplkanin"
 	whitelisted_to = list("dopiotl")
 	monitor_styles = "idle=idle;\
