@@ -24,11 +24,7 @@ import {
   prefAnchor,
   useSearchHighlight,
 } from './search';
-import {
-  renderPlain,
-  type SwitcherEntry,
-  TextSwitcher,
-} from './TextSwitcher';
+import { type SwitcherEntry, TextSwitcher } from './TextSwitcher';
 import type {
   PrefCategory,
   PrefGroup,
@@ -196,7 +192,7 @@ const SwitcherGroup = ({
       entries={entries}
       onCommit={(key, value) => act('dq_update_preference', { key, value })}
       buttonsBelow
-      render={group === 'ooc_notes' ? renderPlain : undefined}
+      formatted={group === 'ooc_notes'}
       actions={
         group === 'ooc_notes' ? (
           <Button

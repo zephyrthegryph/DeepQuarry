@@ -7,6 +7,9 @@ import {
 
 export type TextEdit = { value: string; start: number; end: number };
 
+/** The emphasis marker each Ctrl shortcut toggles (Ctrl+B bold, Ctrl+I italic, Ctrl+U underline). */
+export const SHORTCUT_MARKERS: Record<string, string> = { b: '+', i: '|', u: '_' };
+
 /** Ctrl+B/I/U: wrap or unwrap the selection, or at the cursor open a pair, step out of it, or drop an empty one. */
 export function toggleMarker(
   value: string,

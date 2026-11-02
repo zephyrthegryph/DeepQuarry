@@ -192,7 +192,11 @@ const escapeRegex = (char: string) =>
   char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /** encode_html_emphasis over the whole line, so a span can cross pieces as it does in chat. */
-export function emphasize(texts: string[], rules: LanguageRules): Segment[][] {
+export function emphasize(
+  texts: string[],
+  rules: LanguageRules,
+  keepMarkers = false,
+): Segment[][] {
   const joined = texts.join(SEPARATOR);
   const hidden = new Array<boolean>(joined.length).fill(false);
   const tags = joined.split('').map(() => [] as string[]);
@@ -214,7 +218,11 @@ export function emphasize(texts: string[], rules: LanguageRules): Segment[][] {
       result.push([]);
       continue;
     }
-    if (hidden[i]) continue;
+    if (hidden[i]) {
+      // An editor's backdrop keeps the marker in place (dimmed), so the text lines up with what is typed.
+      if (keepMarkers) result[result.length - 1].push({ text: joined[i], tags: ['marker'] });
+      continue;
+    }
     const segments = result[result.length - 1];
     const last = segments[segments.length - 1];
     if (last && last.tags.join() === tags[i].join()) {
