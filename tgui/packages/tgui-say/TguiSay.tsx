@@ -1,6 +1,6 @@
 import './styles/main.scss';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { dragStartHandler } from 'tgui/drag';
 import { isEscape, KEY } from 'tgui-core/keys';
 import { clamp } from 'tgui-core/math';
@@ -9,15 +9,15 @@ import { type BooleanLike, classes } from 'tgui-core/react';
 import { type Channel, ChannelIterator } from './ChannelIterator';
 import { ChatHistory } from './ChatHistory';
 import { LineLength, RADIO_PREFIXES, WindowSize } from './constants';
-import {
-  getMarkupString,
-  getPrefix,
-  windowClose,
-  windowOpen,
-  windowSet,
-} from './helpers';
+import { getPrefix, windowClose, windowOpen, windowSet } from './helpers';
 import { LanguagePreview, previewHeight } from './LanguagePreview';
 import { buildPreview, type LanguageRules } from './parseLanguages';
+import {
+  activeAt,
+  type TextEdit,
+  toggleLanguage,
+  toggleMarker,
+} from './shortcuts';
 import { byondMessages } from './timers';
 
 type ByondOpen = {
@@ -60,6 +60,8 @@ export function TguiSay() {
   const position = useRef([window.screenX, window.screenY]);
   const isDragging = useRef(false);
   const appliedExtra = useRef(0);
+  const pendingSelection = useRef<[number, number] | null>(null);
+  const [caret, setCaret] = useState(0);
 
   function handleArrowKeys(direction: KEY.PageUp | KEY.PageDown): void {
     const chat = chatHistory.current;
@@ -224,51 +226,45 @@ export function TguiSay() {
     setValue(newValue);
   }
 
+  function applyEdit(edit: TextEdit | null): void {
+    if (!edit || edit.value.length > maxLength) return;
+    pendingSelection.current = [edit.start, edit.end];
+    setValue(edit.value);
+    setCaret(edit.start);
+  }
+
+  /** Ctrl+B/I/U and Ctrl+1..9, read by physical digit so layouts without number-row digits work. */
+  function handleShortcut(
+    event: React.KeyboardEvent<HTMLTextAreaElement>,
+  ): boolean {
+    if (!(event.ctrlKey || event.metaKey) || event.shiftKey || event.altKey) {
+      return false;
+    }
+    const { selectionStart: start, selectionEnd: end } = event.currentTarget;
+    const marker = { b: '+', i: '|', u: '_' }[event.key.toLowerCase()];
+    if (marker) {
+      event.preventDefault();
+      applyEdit(toggleMarker(value, start, end, marker));
+      return true;
+    }
+    const digit = /^(?:Digit|Numpad)([1-9])$/.exec(event.code);
+    if (digit) {
+      event.preventDefault();
+      if (rules) {
+        applyEdit(toggleLanguage(value, start, end, Number(digit[1]), rules));
+      }
+      return true;
+    }
+    return false;
+  }
+
   function handleKeyDown(
     event: React.KeyboardEvent<HTMLTextAreaElement>,
   ): void {
     if (event.getModifierState('AltGraph')) return;
+    if (handleShortcut(event)) return;
 
     switch (event.key) {
-      case 'u':
-        if (event.ctrlKey || event.metaKey) {
-          event.preventDefault();
-          const { value, selectionStart, selectionEnd } = event.currentTarget;
-          event.currentTarget.value = getMarkupString(
-            value,
-            '_',
-            selectionStart,
-            selectionEnd,
-          );
-          event.currentTarget.selectionEnd = selectionEnd + 2;
-        }
-        break;
-      case 'i':
-        if (event.ctrlKey || event.metaKey) {
-          event.preventDefault();
-          const { value, selectionStart, selectionEnd } = event.currentTarget;
-          event.currentTarget.value = getMarkupString(
-            value,
-            '|',
-            selectionStart,
-            selectionEnd,
-          );
-          event.currentTarget.selectionEnd = selectionEnd + 2;
-        }
-        break;
-      case 'b':
-        if (event.ctrlKey || event.metaKey) {
-          event.preventDefault();
-          const { value, selectionStart, selectionEnd } = event.currentTarget;
-          event.currentTarget.value = getMarkupString(
-            value,
-            '+',
-            selectionStart,
-            selectionEnd,
-          );
-          event.currentTarget.selectionEnd = selectionEnd + 2;
-        }
-        break;
       case KEY.PageUp:
       case KEY.PageDown:
         event.preventDefault();
@@ -347,6 +343,19 @@ export function TguiSay() {
     Byond.subscribeTo('languageRules', setRules);
   }, []);
 
+  useLayoutEffect(() => {
+    const selection = pendingSelection.current;
+    if (selection && innerRef.current) {
+      innerRef.current.setSelectionRange(selection[0], selection[1]);
+      pendingSelection.current = null;
+    }
+  }, [value]);
+
+  const active = useMemo(
+    () => activeAt(value, caret, rules),
+    [value, caret, rules],
+  );
+
   // Parsed on the client from the server's rule data: no round trip per keystroke.
   const iteratorChannel = channelIterator.current.current();
   const preview = useMemo(() => {
@@ -421,9 +430,20 @@ export function TguiSay() {
           maxLength={maxLength}
           onInput={handleInput}
           onKeyDown={handleKeyDown}
+          onSelect={(event) => setCaret(event.currentTarget.selectionStart)}
           ref={innerRef}
           value={value}
         />
+        {active && (
+          <span
+            className={classes([
+              'indicator',
+              lightMode && 'indicator-lightMode',
+            ])}
+          >
+            {active}
+          </span>
+        )}
         <button
           key="escape"
           className={`button button-${theme}`}

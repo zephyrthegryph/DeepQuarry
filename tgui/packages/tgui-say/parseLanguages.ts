@@ -48,9 +48,9 @@ export type Parsed = { pieces: Piece[]; whole: boolean };
 
 const trim = (text: string) => text.replace(/^\s+|\s+$/g, '');
 
-type Switch = { language: string; start: number; textStart: number };
+export type Switch = { language: string; start: number; textStart: number };
 
-function findSwitches(message: string, rules: LanguageRules): Switch[] {
+export function findSwitches(message: string, rules: LanguageRules): Switch[] {
   const found: Switch[] = [];
   const isPrefix = (char: string) => rules.prefixes.includes(char);
   for (let i = 0; i < message.length; i++) {
@@ -216,7 +216,7 @@ export function emphasize(texts: string[], rules: LanguageRules): Segment[][] {
 }
 
 /** The radio key parse_message_mode would consume, and what that leaves. */
-function stripChannel(
+export function stripChannel(
   message: string,
   rules: LanguageRules,
 ): { text: string; whisper: boolean } {
