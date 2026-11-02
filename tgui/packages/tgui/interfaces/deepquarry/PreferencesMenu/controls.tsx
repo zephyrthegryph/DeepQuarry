@@ -78,15 +78,32 @@ export const Switch = ({
   </span>
 );
 
+/// An option of a Segmented: its value, its label and, when the choice means something other than
+/// plain "selected", the theme colour name it shows in (Button's `color`).
+export type SegmentedOption = [value: string, label: string, color?: string];
+
+/// The left bar of a list row: the colour of the option the row is set to. An option with no colour of its
+/// own uses the selected green, and `null` (a row at its default) draws no bar.
+export const optionBar = (option: { color?: string } | null | undefined) =>
+  `0.2em solid ${
+    !option
+      ? 'transparent'
+      : option.color
+        ? `var(--color-${option.color})`
+        : 'var(--color-good, #5baa27)'
+  }`;
+
 /// A row of joined buttons, one of which is selected.
 export const Segmented = ({
   options,
   value,
   onSelect,
+  disabled,
 }: {
-  options: Array<[string, string]>;
+  options: SegmentedOption[];
   value: string;
   onSelect: (value: string) => void;
+  disabled?: boolean;
 }) => (
   <Box
     style={{
@@ -96,11 +113,13 @@ export const Segmented = ({
       maxWidth: '100%',
     }}
   >
-    {options.map(([val, label]) => (
+    {options.map(([val, label, color]) => (
       <Button
         key={val}
         m={0}
-        selected={val === value}
+        disabled={disabled}
+        selected={val === value && !color}
+        color={val === value ? color : undefined}
         onClick={() => val !== value && onSelect(val)}
       >
         {label}
