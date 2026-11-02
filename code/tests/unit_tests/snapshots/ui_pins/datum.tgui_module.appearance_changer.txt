@@ -22,7 +22,7 @@ initial | ear_style: null
 initial | eye_color: "#000000"
 initial | facial_hair_color: "#000000"
 initial | facial_hair_style: "Shaved"
-initial | flavor_text: {"general":"","head":"","face":"","eyes":"","torso":"","arms":"","hands":"","legs":"","feet":""}
+initial | flavor_text: {"general":"","face":"","body":""}
 initial | gender: "male"
 initial | genders: [{"gender_name":"Male","gender_key":"male"},{"gender_name":"Female","gender_key":"female"},{"gender_name":"Plural","gender_key":"plural"},{"gender_name":"Neuter","gender_key":"neuter"}]
 initial | gender_id: null
@@ -85,7 +85,7 @@ custom species name | ear_style: null
 custom species name | eye_color: "#000000"
 custom species name | facial_hair_color: "#000000"
 custom species name | facial_hair_style: "Shaved"
-custom species name | flavor_text: {"general":"","head":"","face":"","eyes":"","torso":"","arms":"","hands":"","legs":"","feet":""}
+custom species name | flavor_text: {"general":"","face":"","body":""}
 custom species name | gender: "male"
 custom species name | genders: [{"gender_name":"Male","gender_key":"male"},{"gender_name":"Female","gender_key":"female"},{"gender_name":"Plural","gender_key":"plural"},{"gender_name":"Neuter","gender_key":"neuter"}]
 custom species name | gender_id: null
@@ -148,7 +148,7 @@ size set | ear_style: null
 size set | eye_color: "#000000"
 size set | facial_hair_color: "#000000"
 size set | facial_hair_style: "Shaved"
-size set | flavor_text: {"general":"","head":"","face":"","eyes":"","torso":"","arms":"","hands":"","legs":"","feet":""}
+size set | flavor_text: {"general":"","face":"","body":""}
 size set | gender: "male"
 size set | genders: [{"gender_name":"Male","gender_key":"male"},{"gender_name":"Female","gender_key":"female"},{"gender_name":"Plural","gender_key":"plural"},{"gender_name":"Neuter","gender_key":"neuter"}]
 size set | gender_id: null
@@ -211,7 +211,7 @@ species sound | ear_style: null
 species sound | eye_color: "#000000"
 species sound | facial_hair_color: "#000000"
 species sound | facial_hair_style: "Shaved"
-species sound | flavor_text: {"general":"","head":"","face":"","eyes":"","torso":"","arms":"","hands":"","legs":"","feet":""}
+species sound | flavor_text: {"general":"","face":"","body":""}
 species sound | gender: "male"
 species sound | genders: [{"gender_name":"Male","gender_key":"male"},{"gender_name":"Female","gender_key":"female"},{"gender_name":"Plural","gender_key":"plural"},{"gender_name":"Neuter","gender_key":"neuter"}]
 species sound | gender_id: null
@@ -274,7 +274,7 @@ general flavor text | ear_style: null
 general flavor text | eye_color: "#000000"
 general flavor text | facial_hair_color: "#000000"
 general flavor text | facial_hair_style: "Shaved"
-general flavor text | flavor_text: {"general":"A tidy test subject.","head":"","face":"","eyes":"","torso":"","arms":"","hands":"","legs":"","feet":""}
+general flavor text | flavor_text: {"general":"A tidy test subject.","face":"","body":""}
 general flavor text | gender: "male"
 general flavor text | genders: [{"gender_name":"Male","gender_key":"male"},{"gender_name":"Female","gender_key":"female"},{"gender_name":"Plural","gender_key":"plural"},{"gender_name":"Neuter","gender_key":"neuter"}]
 general flavor text | gender_id: null
@@ -337,7 +337,7 @@ head flavor text | ear_style: null
 head flavor text | eye_color: "#000000"
 head flavor text | facial_hair_color: "#000000"
 head flavor text | facial_hair_style: "Shaved"
-head flavor text | flavor_text: {"general":"A tidy test subject.","head":"Short hair.","face":"","eyes":"","torso":"","arms":"","hands":"","legs":"","feet":""}
+head flavor text | flavor_text: {"general":"A tidy test subject.","face":"Short hair.","body":""}
 head flavor text | gender: "male"
 head flavor text | genders: [{"gender_name":"Male","gender_key":"male"},{"gender_name":"Female","gender_key":"female"},{"gender_name":"Plural","gender_key":"plural"},{"gender_name":"Neuter","gender_key":"neuter"}]
 head flavor text | gender_id: null
@@ -400,7 +400,7 @@ hair colour | ear_style: null
 hair colour | eye_color: "#000000"
 hair colour | facial_hair_color: "#000000"
 hair colour | facial_hair_style: "Shaved"
-hair colour | flavor_text: {"general":"A tidy test subject.","head":"Short hair.","face":"","eyes":"","torso":"","arms":"","hands":"","legs":"","feet":""}
+hair colour | flavor_text: {"general":"A tidy test subject.","face":"Short hair.","body":""}
 hair colour | gender: "male"
 hair colour | genders: [{"gender_name":"Male","gender_key":"male"},{"gender_name":"Female","gender_key":"female"},{"gender_name":"Plural","gender_key":"plural"},{"gender_name":"Neuter","gender_key":"neuter"}]
 hair colour | gender_id: null
@@ -463,7 +463,7 @@ eye colour | ear_style: null
 eye colour | eye_color: "#00ff00"
 eye colour | facial_hair_color: "#000000"
 eye colour | facial_hair_style: "Shaved"
-eye colour | flavor_text: {"general":"A tidy test subject.","head":"Short hair.","face":"","eyes":"","torso":"","arms":"","hands":"","legs":"","feet":""}
+eye colour | flavor_text: {"general":"A tidy test subject.","face":"Short hair.","body":""}
 eye colour | gender: "male"
 eye colour | genders: [{"gender_name":"Male","gender_key":"male"},{"gender_name":"Female","gender_key":"female"},{"gender_name":"Plural","gender_key":"plural"},{"gender_name":"Neuter","gender_key":"neuter"}]
 eye colour | gender_id: null
@@ -526,7 +526,7 @@ skin colour | ear_style: null
 skin colour | eye_color: "#00ff00"
 skin colour | facial_hair_color: "#000000"
 skin colour | facial_hair_style: "Shaved"
-skin colour | flavor_text: {"general":"A tidy test subject.","head":"Short hair.","face":"","eyes":"","torso":"","arms":"","hands":"","legs":"","feet":""}
+skin colour | flavor_text: {"general":"A tidy test subject.","face":"Short hair.","body":""}
 skin colour | gender: "male"
 skin colour | genders: [{"gender_name":"Male","gender_key":"male"},{"gender_name":"Female","gender_key":"female"},{"gender_name":"Plural","gender_key":"plural"},{"gender_name":"Neuter","gender_key":"neuter"}]
 skin colour | gender_id: null

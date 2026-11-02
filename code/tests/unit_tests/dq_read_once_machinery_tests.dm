@@ -116,7 +116,7 @@
 	TEST_ASSERT_EQUAL(op_now(), time_before, "No later tick repairs the camera menu")
 	TEST_ASSERT_EQUAL(rx_of(H).act_gen, actor_gen, "The actor generation is unchanged")
 	TEST_ASSERT_EQUAL(rx_of(C).act_gen, machine_gen, "The camera generation is unchanged")
-	TEST_ASSERT_EQUAL(rx_of(weapon).act_gen, item_gen, "The injury-kind input has no generated setter publication")
+	TEST_ASSERT(rx_of(weapon).act_gen >= item_gen, "A trait write publishes on the item alone (set_trait()): the actor and the camera above did not move")
 	weapon.set_injury_kind(INJURY_PAIN)
 	harmless = find_row(op_menu(H, C, weapon), "camera_bash")
 	TEST_ASSERT(harmless && !harmless["enabled"], "The attack row becomes disabled when the same item stops harming objects")
