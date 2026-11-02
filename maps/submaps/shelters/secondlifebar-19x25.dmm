@@ -505,7 +505,7 @@
 /area/survivalpod/superpose/secondlifebar)
 "uY" = (
 /obj/structure/table/bench/marble,
-/obj/item/reagent_containers/glass/beaker/mayo{
+/obj/item/reagent_containers/food/condiment/small/packet/mayo{
 	pixel_y = 5
 	},
 /obj/effect/decal/cleanable/fruit_smudge,

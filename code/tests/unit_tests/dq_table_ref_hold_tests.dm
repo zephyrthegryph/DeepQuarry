@@ -81,7 +81,8 @@
 		wait_ticks(round(1 SECONDS / world.tick_lag))
 		refresh_flush()
 		dq_test_gc_pass(GC_QUEUE_FILTER)
-	out["held"] = dq_table_refs_of(subject_ref)
+	var/datum/still = locate(subject_ref)
+	out["held"] = (still?.type == path) ? dq_table_refs_of(subject_ref) : -1 // a freed subject's ref text is reused by whatever is made next
 	if(out["held"] != -1)
 		log_world("TABLE_REF_HOLD: [label]: the subject is still alive after the settle time: [dq_table_gc_whereabouts(subject_ref)]")
 	out["pen"] = dq_table_refs_of(pen_ref) - pen_before

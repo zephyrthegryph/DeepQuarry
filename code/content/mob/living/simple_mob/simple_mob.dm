@@ -161,6 +161,7 @@
 CAPABILITIES(/mob/living/simple_mob)
 	op("toggle_vore_icons", menu(desc = "Toggle visibility of changed mob sprite when you have eaten other things."), label("Toggle Vore Sprite"), needs(req_self()), then(PROC_REF(toggle_vore_icons_op)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(simple_mob_blast))))
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_by)))
 	configure(living_rules(vore_capacity = 1, use_modern_ai = TRUE, has_huds = TRUE))
 	configure(footstep_rules(footstep_type = FOOTSTEP_MOB_SHOE, footstep_volume = 1, footstep_e_range = -6))
 	configure(movable_motion(does_spin = FALSE, blocks_emissive = EMISSIVE_BLOCK_UNIQUE)) // no stripping of simplemobs; note, this should be refactored to drop priority overlays
@@ -705,10 +706,10 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 	B.set_belly_fullscreen_color("#823232")
 	B.set_belly_fullscreen_color2("#823232")
 
-/mob/living/simple_mob/Bumped(atom/movable/AM, yes)
-	if(tryBumpNom(AM))
-		return
-	..()
+/// Something walked into it (the bump action's notice): it may try to eat the bumper.
+/mob/living/simple_mob/proc/bumped_by(datum/act/A)
+	var/datum/notice/bumped/N = A
+	tryBumpNom(N.bumper)
 
 /mob/living/simple_mob/proc/tryBumpNom(mob/tmob)
 	//returns TRUE if we actually start an attempt to bumpnom, FALSE if checks fail or the random bump nom chance fails

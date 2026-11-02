@@ -37,6 +37,13 @@ git switch -qc l/conflict origin/master; echo mine >code/b.dm; git commit -qam m
 if [ "$rc" != 0 ] && grep -q 'merge conflict' <<<"$out"; then ok "a merge conflict is refused and left to resolve"; else bad "conflict: rc=$rc $out"; fi
 echo mine >code/b.dm; git add -A; git commit -qm resolved; out="$(bash "$land" 2>&1)"; rc=$?
 [ "$rc" = 0 ] && ok "after resolving it lands" || bad "resolved: rc=$rc $out"
+# a deepquarry.dme both sides edited at the same line merges through the dq-dme driver, not into a conflict
+git fetch -q origin; git switch -qc l/dme-base origin/master; mkdir -p tools/build
+cp "$here/tools/build/dme_merge_driver.sh" "$here/tools/build/gen_dme.py" "$here/tools/build/dme_spec.txt" tools/build/; cp "$here/.gitattributes" .gitattributes
+printf '#include "code\\a.dm"\n#include "code\\b.dm"\n' >deepquarry.dme; echo c >code/c.dm; echo d >code/d.dm; git add -A; git commit -qm dme; bash "$land" >/dev/null 2>&1; git fetch -q origin
+git switch -qc l/dme-theirs origin/master; printf '#include "code\\a.dm"\n#include "code\\c.dm"\n#include "code\\b.dm"\n' >deepquarry.dme; git commit -qam theirs; git push -q origin HEAD:master; git fetch -q origin
+git switch -qc l/dme-mine HEAD~1; printf '#include "code\\a.dm"\n#include "code\\d.dm"\n#include "code\\b.dm"\n' >deepquarry.dme; git commit -qam mine; out="$(bash "$land" 2>&1)"; rc=$?
+if [ "$rc" = 0 ] && git show origin/master:deepquarry.dme | grep -q 'c\.dm' && git show origin/master:deepquarry.dme | grep -q 'd\.dm' && ! git show origin/master:deepquarry.dme | grep -q '<<<<'; then ok "a deepquarry.dme conflict resolves through the driver"; else bad "dme: rc=$rc $out"; fi
 git switch -q master; out="$(bash "$land" 2>&1)"; rc=$?
 if [ "$rc" != 0 ] && grep -q 'on master' <<<"$out"; then ok "master itself is refused"; else bad "master: rc=$rc $out"; fi
 git switch -q l/plain

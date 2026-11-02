@@ -3,7 +3,7 @@
 # (git merge-tree, with the dq-dme merge driver that tools/dq_git_safe.sh supplies), then compare the merged manifest with a fresh
 # regeneration over the merged tree's files (tools/build/gen_dme.py --root on an extract of the merged tree's .dm files).
 #
-#   bash tools/ci/test_dme_merge.sh [LANE...]     # default: every lane queued on the batch train whose diff touches deepquarry.dme
+#   bash tools/ci/test_dme_merge.sh LANE...
 #
 # Never touches the worktree, HEAD or the index. Exit 0 when every lane's merged manifest equals the regeneration; a lane that
 # conflicts elsewhere is reported and skipped (that is the lane's own merge, not the manifest's).
@@ -14,15 +14,7 @@ source tools/dq_git_safe.sh
 out="data/dme_merge_test"
 mkdir -p "$out"
 lanes=("$@")
-if [ ${#lanes[@]} -eq 0 ]; then
-	state="${DQ_TRAIN_STATE:-E:/dq-cache/train}"
-	for q in "$state"/queue/*; do
-		[ -f "$q" ] || continue
-		b="$(grep -m1 '^branch=' "$q" 2>/dev/null | cut -d= -f2-)"
-		[ -n "$b" ] || b="$(basename "$q" | sed 's/__/\//g')"
-		lanes+=("$b")
-	done
-fi
+[ ${#lanes[@]} -gt 0 ] || { echo "usage: test_dme_merge.sh LANE..." >&2; exit 2; }
 status=0
 checked=0
 for lane in "${lanes[@]}"; do

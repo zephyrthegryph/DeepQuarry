@@ -156,11 +156,6 @@
 /area/survivalpod/superpose/HydroCave)
 "eV" = (
 /obj/structure/closet/secure_closet{
-	icon_broken = "hydrosecurebroken";
-	icon_closed = "hydrosecure";
-	icon_locked = "hydrosecure1";
-	icon_off = "hydrosecureoff";
-	icon_opened = "hydrosecureopen";
 	icon_state = "hydrosecure";
 	locked = 0;
 	name = "botanist's locker";
@@ -345,9 +340,7 @@
 /area/survivalpod/superpose/HydroCave)
 "lY" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
-	dir = 1;
-	scrub_N2O = 0;
-	scrub_Toxins = 0
+	dir = 1
 	},
 /obj/structure/bed,
 /obj/item/bedsheet/pirate,
@@ -662,11 +655,6 @@
 /area/survivalpod/superpose/HydroCave)
 "rn" = (
 /obj/structure/closet/secure_closet{
-	icon_broken = "secbroken";
-	icon_closed = "sec";
-	icon_locked = "sec1";
-	icon_off = "secoff";
-	icon_opened = "secopen";
 	icon_state = "sec1";
 	name = "security officer's locker";
 	req_access = list(201)
@@ -758,10 +746,7 @@
 /turf/simulated/floor/tiled/dark,
 /area/survivalpod/superpose/HydroCave)
 "tu" = (
-/obj/machinery/atmospherics/unary/vent_scrubber{
-	scrub_N2O = 0;
-	scrub_Toxins = 0
-	},
+/obj/machinery/atmospherics/unary/vent_scrubber,
 /turf/simulated/floor/tiled/red,
 /area/survivalpod/superpose/HydroCave)
 "up" = (
@@ -795,11 +780,6 @@
 	},
 /obj/structure/closet/secure_closet{
 	desc = "It's a secure locker for personnel. The first card swiped gains control.";
-	icon_broken = "cabinetdetective_broken";
-	icon_closed = "cabinetdetective";
-	icon_locked = "cabinetdetective_locked";
-	icon_off = "cabinetdetective_broken";
-	icon_opened = "cabinetdetective_open";
 	icon_state = "cabinetdetective";
 	locked = 0;
 	name = "personal closet";
@@ -1022,9 +1002,7 @@
 /area/survivalpod/superpose/HydroCave)
 "Cs" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
-	dir = 1;
-	scrub_N2O = 0;
-	scrub_Toxins = 0
+	dir = 1
 	},
 /obj/structure/table/glass,
 /turf/simulated/floor/carpet,
@@ -1199,11 +1177,6 @@
 /obj/machinery/atmospherics/pipe/simple/hidden/scrubbers,
 /obj/structure/closet/secure_closet{
 	desc = "It's a secure locker for personnel. The first card swiped gains control.";
-	icon_broken = "cabinetdetective_broken";
-	icon_closed = "cabinetdetective";
-	icon_locked = "cabinetdetective_locked";
-	icon_off = "cabinetdetective_broken";
-	icon_opened = "cabinetdetective_open";
 	icon_state = "cabinetdetective";
 	locked = 0;
 	name = "personal closet";
@@ -1420,10 +1393,7 @@
 /turf/simulated/floor/tiled/hydro,
 /area/survivalpod/superpose/HydroCave)
 "Nq" = (
-/obj/machinery/atmospherics/unary/vent_scrubber{
-	scrub_N2O = 0;
-	scrub_Toxins = 0
-	},
+/obj/machinery/atmospherics/unary/vent_scrubber,
 /turf/simulated/floor/tiled/dark,
 /area/survivalpod/superpose/HydroCave)
 "Nw" = (
@@ -1449,9 +1419,7 @@
 "NI" = (
 /obj/structure/disposalpipe/segment,
 /obj/machinery/atmospherics/unary/vent_scrubber{
-	dir = 1;
-	scrub_N2O = 0;
-	scrub_Toxins = 0
+	dir = 1
 	},
 /obj/machinery/portable_atmospherics/hydroponics,
 /obj/item/seeds/pumpkinseed,
@@ -1562,9 +1530,7 @@
 	req_access = null
 	},
 /obj/machinery/atmospherics/unary/vent_scrubber{
-	dir = 1;
-	scrub_N2O = 0;
-	scrub_Toxins = 0
+	dir = 1
 	},
 /turf/simulated/floor/carpet,
 /area/survivalpod/superpose/HydroCave)
@@ -1752,9 +1718,7 @@
 /area/survivalpod/superpose/HydroCave)
 "Uq" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
-	dir = 8;
-	scrub_N2O = 0;
-	scrub_Toxins = 0
+	dir = 8
 	},
 /turf/simulated/floor/tiled/red,
 /area/survivalpod/superpose/HydroCave)

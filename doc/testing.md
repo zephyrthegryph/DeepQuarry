@@ -93,7 +93,7 @@ your change runs at boot. `doc/rewrite/boot_gate.md`.
 **Bounded staleness sweep (focused runs).** The staleness checker's end-of-test sweep (`staleness_test_end`) checks every
 entity the boot created (about 15,700) after the first test, 8-15 s. A focused run passes the world param `staleness=bounded`:
 each test end checks what the test created (entities that were queued for a first draw when the first test began count as boot backlog, not the test's), 300 entities of the boot backlog in order, and 100 from the rotating cursor, and
-flushes the refresh queue only when it holds 500 or fewer entries (the checks skip a queued atom). `tools/dq_merge_gates.sh` and `tools/dq_lane_ready.sh` stay `full`: the param is absent there, and the two scripts
+flushes the refresh queue only when it holds 500 or fewer entries (the checks skip a queued atom).
 export `DQ_STALENESS=full`, which `dq_focused_test.sh` honours (`DQ_STALENESS=full bash tools/dq_focused_test.sh ...` forces
 it by hand). `tests.log` says which ran: `STALENESS: test-end mode ...` at suite start and, per test, `STALENESS: end of <test>
 mode=... entities_checked=... backlog_remaining=...`.
@@ -226,7 +226,7 @@ machine slot, queue time is reported apart (`FOCUSED RUN TIME: queued N min`), a
 (5400) is stopped. Do not wrap the tool in `timeout`; the built-in cap replaces it. A native compile the resident compiler cannot admit
 (exit 75, "admission deadline expired") queues again, holding its compile-root slot, up to `DQ_NATIVE_ADMISSION_MAX_MIN` (30)
 instead of failing (`tools/ci/test_admission_retry.sh`).
-A focused run, and a lane-ready proof (`dq_merge_gates.sh --no-dm`), compile only `deepquarry.test.dme` (the game plus `UNIT_TESTS` code); the game-only production compile + DreamChecker is not part of them. It runs at integration (`dq_push_master.sh` when no `dm.ok` stamp exists; the batch train) and in CI. A lane proof records `dm=0`, so a reused proof never produces a `dm.ok`.
+A focused run compiles only `deepquarry.test.dme` (the game plus `UNIT_TESTS` code); the game-only production compile + DreamChecker is not part of them. It runs at integration (`dq_push_master.sh` when no `dm.ok` stamp exists; the batch train) and in CI. A lane proof records `dm=0`, so a reused proof never produces a `dm.ok`.
 The merge gates are not ad-hoc runs: `tools/dq_gate_retry.sh` gives each focused run `DQ_GATE_FOCUSED_MAX_MIN` (5 minutes plus 1 per test, ceiling 10;
 `gate_cap_minutes`), which replaces the agent cap and its 10 clamp. It is for the gates only; an agent's own run uses `DQ_FOCUSED_MAX_MIN`.
 The exhaustive refusal is unchanged under it. The shared compile root (`tools/build/lib/compile_root.ts`) never copies or deletes `*.lk` lock files
@@ -321,7 +321,7 @@ restoring an area's power. They drive the game as a player does and assert what 
   native gas frame and a power step, which the injected clock does not step);
 - the player is `spawn_player()` (or `spawn_arrival()`, the late-join path): a body someone controls, with a HUD.
 
-`tools/dq_lane_ready.sh` adds every line of `tools/ci/gameplay_tests.txt` to each lane's tests, so they run on every landing; the whole
+`tools/ci/gameplay_tests.txt` lists them; the whole
 set takes about 20 s of world time. A scenario failing because of a bug in another lane's scope sets `expected_failure = "<why>"`: it
 still runs, its failure is logged as an `EXPECTED FAILURE` notice, and a pass fails it so the marker comes off with the fix.
 
@@ -838,8 +838,7 @@ paths, wall times and miss causes.
 
 SpacemanDMM's DreamChecker has no incremental or changed-files mode: every run parses and checks the whole tree (2+ minutes on
 every core, in parallel with the compile). It used to run inside every `build.sh dm`, so a local `dm`, `server` or test build paid
-for it each time. Now `dm` runs it only where its verdict is required: `DQ_DREAMCHECKER=1` (set by `tools/dq_merge_gates.sh` and
-`tools/dq_push_master.sh`, so the merge gates and the push still require "Found 0 diagnostics"), a `CI` environment, or when you
+for it each time. Now `dm` runs it only where its verdict is required: `DQ_DREAMCHECKER=1`, a `CI` environment, or when you
 ask for it (`DQ_DREAMCHECKER=1 build.sh dm`). `build.sh lint` always runs it (explicit lint). Whatever runs it does so at
 below-normal priority (`DQ_PRIORITY=normal` opts out). Local builds log one line saying it was skipped. The analyze engine's
 ratchets (`check_ratchets.sh`, incremental per file) still run wherever they ran before.

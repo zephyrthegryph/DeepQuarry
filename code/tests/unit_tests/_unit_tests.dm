@@ -390,6 +390,7 @@
 #include "dq_circuit_kit_delete_tests.dm"
 #include "dq_destroy_guard_tests.dm"
 #include "dq_pool_tests.dm"
+#include "dq_health_bughunt_tests.dm"
 #include "dq_foundation_look_tests.dm"
 #include "dq_robot_machine_tests.dm"
 #include "dq_b4_tracking_tests.dm"

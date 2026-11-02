@@ -54,32 +54,6 @@ export function rootKey(dme: string): string {
   return variantKey(dme).split('.')[0] || variantKey(dme);
 }
 
-/**
- * The compile root a worktree compiles in. The merge worktree (DQ_MERGE_WT, default E:/projects/dq-wt/merge-base) and the batch train's
- * worktree (DQ_TRAIN_WT, default E:/projects/dq-wt/train-base; tools/dq_train.sh) share one of their own (both only ever hold master plus a batch):
- * every gate there compiles master plus a batch, so its session patches from the previous gate's tree, and it never waits behind
- * (or is reset to) a lane's tree. Measured 2026-10-17: a gate's test compile waited 315 s for the shared root and then ran a full
- * compile ("declaration skeleton changed") because lanes with different declarations took turns in it.
- */
-export function rootKeyFor(dme: string, worktree: string, env: NodeJS.ProcessEnv = process.env): string {
-  const norm = (p: string) => path.resolve(p).replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase();
-  const merge = env.DQ_MERGE_WT ?? 'E:/projects/dq-wt/merge-base';
-  const train = env.DQ_TRAIN_WT ?? 'E:/projects/dq-wt/train-base';
-  const wt = norm(worktree);
-  // The train's gate may compile in the root of a precheck worker (DQ_TRAIN_ROOT_KEY=pre<N>, set by tools/dq_train.sh to the train root
-  // that compiled last): the dmbc daemon's memory budget keeps about one session, the most recently used one, so the root a precheck
-  // just compiled master + a lane in is the warm one, and the batch (master + its lanes) is a patch from it instead of a cold compile.
-  if (wt === norm(train) && /^(merge|pre[0-9]+)$/.test(env.DQ_TRAIN_ROOT_KEY ?? '')) return `${rootKey(dme)}-${env.DQ_TRAIN_ROOT_KEY}`;
-  if (wt === norm(merge) || wt === norm(train)) return `${rootKey(dme)}-merge`;
-  // The train's precheck workers (DQ_TRAIN_PRE_WT<N>) and its parallel-bisect worktree (DQ_TRAIN_WT2) each compile in a root of their
-  // own: they run beside the train's gate and each other, and each only ever holds master plus one lane (a worker's next precheck patches
-  // from its previous one) or master plus part of a batch. In the shared lane root they would queue behind every lane's focused run.
-  const pre = norm(env.DQ_TRAIN_PRE_WT ?? 'E:/projects/dq-wt/train-pre');
-  if (wt.startsWith(pre) && /^[0-9]+$/.test(wt.slice(pre.length))) return `${rootKey(dme)}-pre${wt.slice(pre.length)}`;
-  if (wt === norm(env.DQ_TRAIN_WT2 ?? 'E:/projects/dq-wt/train-bisect')) return `${rootKey(dme)}-bisect`;
-  return rootKey(dme);
-}
-
 function normalizeTarget(target: string): string {
   let text = target.replace(/^\\\\\?\\/, '');
   text = path.resolve(text);
@@ -239,7 +213,7 @@ export async function withSharedCompileRoot<T>(
   const manifest = path.resolve(dme);
   const base = path.resolve(worktree);
   if (path.dirname(manifest).toLowerCase() !== base.toLowerCase() || !/\.dme$/i.test(manifest) || !fs.existsSync(manifest)) return undefined;
-  const key = rootKeyFor(manifest, base, env);
+  const key = rootKey(manifest);
   const root = path.join(compileRootsDir(env), key);
   const stem = path.basename(manifest).replace(/\.dme$/i, '');
   return await withSlot(`dmb_root_${key}`, `compile root ${key} <- ${base}`, async () => {

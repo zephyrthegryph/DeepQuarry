@@ -105,16 +105,6 @@ eval "$(sed -n '/^focused_cap_minutes() {/,/^}/p' "$ROOT/tools/dq_focused_test.s
 [ "$(DQ_FOCUSED_MAX_MIN=45 focused_cap_minutes 1 2>/dev/null)" = 45 ] && ok "--allow-exhaustive lifts the clamp" || fail "unclamped"
 [ "$(DQ_FOCUSED_MAX_MIN=abc focused_cap_minutes 0 2>/dev/null)" = 10 ] && ok "a bad value falls back to 10" || fail "bad value"
 
-# The gate cap: DQ_GATE_FOCUSED_MAX_MIN replaces the agent cap and its clamp, with a firm ceiling of 10; a bad value is ignored.
-[ "$(DQ_GATE_FOCUSED_MAX_MIN=7 focused_cap_minutes 0 2>/dev/null)" = 7 ] && ok "the gate cap sets its own value" || fail "gate cap 50"
-[ "$(DQ_GATE_FOCUSED_MAX_MIN=90 focused_cap_minutes 0 2>/dev/null)" = 10 ] && ok "the gate cap has a ceiling of 10" || fail "gate ceiling"
-[ "$(DQ_GATE_FOCUSED_MAX_MIN=x DQ_FOCUSED_MAX_MIN=45 focused_cap_minutes 0 2>/dev/null)" = 10 ] && ok "a bad gate cap is ignored" || fail "bad gate cap"
-. "$ROOT/tools/dq_gate_retry.sh"
-[ "$(gate_cap_minutes 0)" = 5 ] && [ "$(gate_cap_minutes 3)" = 8 ] && [ "$(gate_cap_minutes 47)" = 10 ] && [ "$(gate_cap_minutes 500)" = 10 ] && ok "gate_cap_minutes: 5 + 1 per test, ceiling 10" || fail "gate_cap_minutes"
-out="$(FAKE_MODE=quick DQ_GATE_FOCUSED_MAX_MIN=9 focused --force quick 2>&1)"
-echo "$out" | grep -q "hard cap 9 min" && ok "a focused run under the gate variable reports the gate cap" || fail "gate cap not applied: $out"
-out="$(FAKE_MODE=quick DQ_GATE_FOCUSED_MAX_MIN=9 focused --force big_sweep 2>&1)"; rc=$?
-[ "$rc" -eq 3 ] && ok "the gate cap does not lift the exhaustive refusal" || fail "exhaustive under gate cap: $rc"
 
 # ---- 2b. the cap kills the world --------------------------------------------------------------------------------------------
 rm -f "$T/dd.pid"

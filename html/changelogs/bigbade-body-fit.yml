@@ -1,0 +1,5 @@
+author: "bigbade"
+delete-after: true
+changes:
+  - qol: "The Body table fits the window: compact swatches, aligned rows; Second ears shows only with ears."
+  - bugfix: "Second ears colour like the first ears until given their own colours."

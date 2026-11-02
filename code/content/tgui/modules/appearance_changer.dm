@@ -109,12 +109,12 @@ CAPABILITIES(/datum/tgui_module/appearance_changer)
 
 	section(records, "The save slots, body records and disks of the appearance changer")
 	op("load_saveslot", ui_act("load_saveslot"), needs(req(PROC_REF(can_cosmetic_silent), silent = TRUE)), asks(/datum/prompt/yes_no, fields = list("title" = "Load Savefile", "question" = "Are you certain you wish to load the currently selected savefile?", "timeout" = 0)), then(PROC_REF(ui_act_load_saveslot)))
-	op("view_brec", ui_act("view_brec", arg("view_brec", schema_ref(/datum/transhuman/body_record))), then(PROC_REF(ui_act_view_brec)))
-	op("view_stock_brec", ui_act("view_stock_brec", arg("view_stock_brec", schema_text(4096))), then(PROC_REF(ui_act_view_stock_brec)))
-	op("loadfromdisk", ui_act("loadfromdisk"), then(PROC_REF(ui_act_loadfromdisk)))
-	op("savetodisk", ui_act("savetodisk"), asks(/datum/prompt/yes_no, fields = list("title" = "Mind Compatability", "question" = "This body record will be written to a disk and allow any mind to inhabit it. This is against the current body owner's configured OOC preferences for body impersonation. Please confirm that you have permission to do this, and are sure! Admins will be notified.", "timeout" = 0), step = "permission", when = PROC_REF(asks_record_permission)), then(PROC_REF(ui_act_savetodisk)))
-	op("ejectdisk", ui_act("ejectdisk"), then(PROC_REF(ui_act_ejectdisk)))
-	op("back_to_library", ui_act("back_to_library"), then(PROC_REF(ui_act_back_to_library)))
+	op("view_brec", ui_act("view_brec", arg("view_brec", schema_ref(/datum/transhuman/body_record))), needs(req(PROC_REF(has_designer_console), silent = TRUE)), then(PROC_REF(ui_act_view_brec)))
+	op("view_stock_brec", ui_act("view_stock_brec", arg("view_stock_brec", schema_text(4096))), needs(req(PROC_REF(has_designer_console), silent = TRUE)), then(PROC_REF(ui_act_view_stock_brec)))
+	op("loadfromdisk", ui_act("loadfromdisk"), needs(req(PROC_REF(has_designer_console), silent = TRUE)), then(PROC_REF(ui_act_loadfromdisk)))
+	op("savetodisk", ui_act("savetodisk"), needs(req(PROC_REF(has_designer_console), silent = TRUE)), asks(/datum/prompt/yes_no, fields = list("title" = "Mind Compatability", "question" = "This body record will be written to a disk and allow any mind to inhabit it. This is against the current body owner's configured OOC preferences for body impersonation. Please confirm that you have permission to do this, and are sure! Admins will be notified.", "timeout" = 0), step = "permission", when = PROC_REF(asks_record_permission)), then(PROC_REF(ui_act_savetodisk)))
+	op("ejectdisk", ui_act("ejectdisk"), needs(req(PROC_REF(has_designer_console), silent = TRUE)), then(PROC_REF(ui_act_ejectdisk)))
+	op("back_to_library", ui_act("back_to_library"), needs(req(PROC_REF(has_designer_console), silent = TRUE)), then(PROC_REF(ui_act_back_to_library)))
 	ref_one(nameof(last_camera_turf))
 
 /datum/tgui_module/appearance_changer/New(

@@ -130,7 +130,7 @@
 	var/datum/pending_op/pending = op_pending_for(actor, "hud_camera_list")
 	TEST_ASSERT_NOTNULL(pending, "the actual camera question belongs to its native local HUD operation")
 	TEST_ASSERT_EQUAL(pending.actor, actor, "the native continuation preserves the actual clicking AI")
-	TEST_ASSERT_EQUAL(pending.holder, actor, "the local question is owned by the AI, not a wireless machine interface")
+	TEST_ASSERT_EQUAL(pending.request?.owner_holder(), actor, "the local question is owned by the AI, not a wireless machine interface")
 	TEST_ASSERT_EQUAL(pending.held, button, "the exact clicked screen remains the continuation's source lifetime context")
 	TEST_ASSERT_EQUAL(pending.request, ask, "the native pending operation owns this exact typed question")
 	var/datum/op_result/native_result = pending.result

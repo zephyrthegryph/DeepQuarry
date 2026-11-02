@@ -23,7 +23,7 @@ CAPABILITIES(/datum/lootpanel)
 	every(0.5 SECONDS, then(PROC_REF(image_step)), when = nameof(imaging))
 	interface("LootPanel")
 	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
-	op("grab", ui_act("grab", arg("ref", schema_ref(/datum/search_object)), arg("ctrl", bool()), arg("middle", bool()), arg("shift", bool()), arg("alt", bool()), arg("right", bool())), then(PROC_REF(ui_act_grab)))
+	op("grab", ui_act("grab", arg("ref", schema_ref(/datum/search_object)), arg("ctrl", bool(), optional = TRUE), arg("middle", bool(), optional = TRUE), arg("shift", bool(), optional = TRUE), arg("alt", bool(), optional = TRUE), arg("right", bool(), optional = TRUE)), then(PROC_REF(ui_act_grab)))
 	ref_one(nameof(owner))
 	ref_one(nameof(source_turf))
 

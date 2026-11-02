@@ -1,5 +1,7 @@
 # Merge pipeline: where the time goes, what changed, what is left
 
+> History: the merge train and gates described here were removed on 2 November 2026; landing is `tools/dq_land.sh` (`agent_workflow.md` section 29).
+
 Branch `rewrite/merge-speed`, 2026-10-08. The tooling is described in `doc/rewrite/agent_workflow.md` section 9. This
 file holds the measurements and the reasoning. "Measured" means read from a log or run JSON; "estimated" means my
 arithmetic from those numbers. The machine was loaded by other agents' builds for the whole session, so read the spread

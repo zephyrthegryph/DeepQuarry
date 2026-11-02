@@ -14,12 +14,8 @@
 			P = ammo.BB
 	else if(istype(src, /obj/item/gun/projectile))
 		var/obj/item/gun/projectile/projectile_gun = src
-		var/obj/item/ammo_casing/ammo
-		if(projectile_gun.ammo_magazine)
-			ammo = projectile_gun.ammo_magazine.contents[1]
-		else
-			ammo = projectile_gun.contents[1]
-		P = ammo.BB
+		var/obj/item/ammo_casing/ammo = projectile_gun.first_loaded_casing()
+		P = ammo?.BB
 	if(!P)
 		return "no"
 	var/firepower = P.damage
@@ -59,12 +55,8 @@
 			P = ammo.BB
 	else if(istype(src, /obj/item/gun/projectile))
 		var/obj/item/gun/projectile/projectile_gun = src
-		var/obj/item/ammo_casing/ammo
-		if(projectile_gun.ammo_magazine)
-			ammo = projectile_gun.ammo_magazine.contents[1]
-		else
-			ammo = projectile_gun.contents[1]
-		P = ammo.BB
+		var/obj/item/ammo_casing/ammo = projectile_gun.first_loaded_casing()
+		P = ammo?.BB
 	if(!P)
 		return "no"
 	var/penetration = combat_of(P).armor_penetration
@@ -155,10 +147,20 @@
 	else
 		weapon_stats += "\nIt isn't loaded!"
 	if(combat_of(src).force)
-		weapon_stats += "\nIf used in melee, it deals [describe_power(src)] [combat_of(src).sharp ? "combat_of(src).sharp" : "blunt"] damage, [describe_penetration(src)], and has [describe_speed(src)]."
+		weapon_stats += "\nIf used in melee, it deals [describe_power(src)] [combat_of(src).sharp ? "sharp" : "blunt"] damage, [describe_penetration(src)], and has [describe_speed(src)]."
 	if(combat_of(src).can_cleave)
 		weapon_stats += "\nIt is capable of hitting multiple targets with a single swing."
 	if(combat_of(src).reach > 1)
 		weapon_stats += "\nIt can attack targets up to [combat_of(src).reach] tiles away, and can attack over certain objects."
 
 	return weapon_stats
+
+/// The casing an examine reads firepower from: the chambered one, else the first in the magazine, else the first loose one.
+/// Null when the gun is empty (an empty magazine has no contents[1]).
+/obj/item/gun/projectile/proc/first_loaded_casing()
+	if(istype(chambered))
+		return chambered
+	var/list/pool = ammo_magazine ? ammo_magazine.stored_ammo : loaded
+	for(var/obj/item/ammo_casing/casing in pool)
+		return casing
+	return null

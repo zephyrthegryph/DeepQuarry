@@ -8,7 +8,6 @@
  */
 
 import { spawn, spawnSync } from 'node:child_process';
-import { gatePrepared } from './lib/gate_prepared';
 import { createHash, randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import net from 'node:net';
@@ -111,7 +110,7 @@ if (process.env.DQ_PRIORITY !== 'normal') {
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 
 /** `cargo <args>` under the machine-wide cargo slot (lib/machine_slots.ts, tools/dq_machine_slots.sh): by default one cargo build at a
- * time on the machine, the merge worktree first, instead of a dozen worktrees fighting over the cores. DQ_SLOTS_CARGO=N changes it. */
+ * time on the machine, compiler lanes first, instead of a dozen worktrees fighting over the cores. DQ_SLOTS_CARGO=N changes it. */
 const cargoExec = (args: string[], options?: any) =>
   withSlot('cargo', `cargo ${args.slice(0, 2).join(' ')}`, () => cargoWithIceRetry(args, options), (m) => Juke.logger.info(m));
 
@@ -239,7 +238,6 @@ export const DmMapsIncludeTarget = new Juke.Target({
 // build_step.py's own BLAKE2b dirty-check is the authoritative per-file
 // gate; Juke's coarser mtime check is the outer skip-entirely gate.
 export const IconRepackTarget = new Juke.Target({
-  onlyWhen: () => !gatePrepared(),
   // No Juke inputs/outputs: build_step.py does its own BLAKE2b dirty-check, and
   // declaring an 'icons/gen/**/*.dmi' output makes Juke try to touch outputs
   // that may not exist yet, crashing the build. Let the python step gate itself.
@@ -294,7 +292,6 @@ export const MapBoundsTarget = new Juke.Target({
 // Key of the last passing validation (deepquarry.dme, the .dm file list and their stats); see lib/seed.ts.
 const VALIDATE_DME_RECORD = 'data/validate-dme.json';
 export const ValidateDmeTarget = new Juke.Target({
-  onlyWhen: () => !gatePrepared(),
   // Generates code/engine/_generated first (GenTarget, defined below: hence the function form).
   dependsOn: () => [GenTarget],
   inputs: ['code/**/*.dm', `${DME_NAME}.dme`],
@@ -536,7 +533,6 @@ const storeSharedBindings = (key: string): void => {
 };
 
 export const VerdigrisBindingsCheckTarget = new Juke.Target({
-  onlyWhen: () => !gatePrepared(),
   executes: async () => {
     const full = !!process.env.CI || process.env.DQ_FULL_CHECKS === '1';
     const key = full ? null : verdigrisBindingsCheckKey();
@@ -3766,7 +3762,7 @@ export const DreamCheckerTarget = new Juke.Target({
   executes: async () => {
     await waitForDreamCheckerMemory();
     await runDreamChecker();
-    Juke.logger.info('dream-checker: passed'); // the merge gates read this line (tools/dq_merge_gates.sh, job dreamchecker)
+    Juke.logger.info('dream-checker: passed');
   },
 });
 

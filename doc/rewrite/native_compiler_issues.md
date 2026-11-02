@@ -132,8 +132,7 @@ this branch. Items marked OPEN are not.
 ## Status 2026-10-15 (tools/native-default: native is the default)
 
 **Default.** `DQ_COMPILER` unset now means native (when a `dmbc` binary exists or cargo can build one, else DreamMaker). `dreammaker`
-(alias `byond`) is the fallback, `shadow` compares the two. `build.sh dm`, `dm-test`, `dq_focused_test.sh`, `dq_merge_gates.sh`,
-`dq_lane_ready.sh` and `dq_push_master.sh` all go through that selection, so they compile natively. CI's production compile check
+(alias `byond`) is the fallback, `shadow` compares the two. `build.sh dm`, `dm-test` and `dq_focused_test.sh` all go through that selection, so they compile natively. CI's production compile check
 (`tools/ci/compile_and_run.sh`) and the benchmark workflow compile natively (switched 2026-10-22); the `dreammaker_cross_check` job runs `tools/ci/dm_equiv.sh`. `DmbcTarget` now restores
 `dmbc`/`dmbd` from a shared content-addressed cache (`E:/dq-cache/dmbc`, `DQ_DMBC_CACHE`, `lib/dmbc_cache.ts`) keyed by the git ids of
 `tools/dmb`, so a fresh worktree copies the executables instead of running a 3-5 minute cargo build and keeping its own `target/`.

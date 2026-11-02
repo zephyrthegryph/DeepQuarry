@@ -23,9 +23,8 @@
 # State lives under DQ_SLOTS_DIR (default E:/dq-cache/slots, else ~/.cache/dq/slots), one directory per class:
 #   slot.N/owner        a held slot (an atomic mkdir). key=value lines: pid, winpid, kind (bash|node), worktree, label,
 #                       started. The file's mtime is the holder's heartbeat, touched every 15 s while it holds the slot.
-#   queue/P-T-PID       a waiter. P is 0 for the merge worktree (DQ_MERGE_WT, default E:/projects/dq-wt/merge-base) and 1
-#                       for everyone else, T the arrival time, so the merge worktree jumps the queue and the rest go in
-#                       arrival order. A waiter takes a slot only when it is first. Its mtime is refreshed on every poll.
+#   queue/P-T-PID       a waiter. P is 0 for a compiler lane (or DQ_SLOT_PRIORITY=0) and 1 for everyone else, T the
+#                       arrival time, so priority 0 jumps the queue and the rest go in arrival order. A waiter takes a slot only when it is first. Its mtime is refreshed on every poll.
 #   events.tsv          one line per release: time, class, slot, worktree, label, waited seconds, held seconds.
 #   <worktree>/data/slot-waits.log  the same line for that worktree's own releases, kept to its last 2000 lines.
 # A holder or waiter is dead when its pid is gone (a bash pid is checked with kill -0, a node pid through its Windows
@@ -35,7 +34,7 @@
 # two in sync (the selftest and tools/build/lib/machine_slots.test.ts check they agree).
 #
 # Lane classes (tools/dq_lane_pool.sh): a compiler lane (worktree pool-c1/pool-c2, or DQ_LANE_CLASS=compiler) has first claim on every class
-# above, the way the merge worktree does: priority 0, so it goes to the front of each queue and takes the next slot that frees up; and it
+# above: priority 0, so it goes to the front of each queue and takes the next slot that frees up; and it
 # may hold ONE slot beyond the cargo cap (DQ_SLOTS_COMPILER_EXTRA_CARGO, default 1) so a compiler build never waits for a game lane's
 # cargo. A light lane (pool-light, or DQ_LANE_CLASS=light) never compiles DM or runs a test world: dm_compile and test_world refuse
 # there with exit 64.
@@ -44,14 +43,14 @@
 # run that takes several test worlds as a group (a full `dm-test`, a many-world focused run) would otherwise hold both worlds for its
 # whole run and starve every other lane's focused run, so a non-priority group takes at most DQ_SLOTS_SUITE_MAX_WORLDS worlds: unset
 # means 1 when any other run is queued for a test world at the moment the group asks (else all it wants), a number N always caps it at
-# N, 0 turns the cap off. The merge worktree and compiler lanes (priority 0) are exempt. The cap applies to new acquisitions only: a
+# N, 0 turns the cap off. Compiler lanes (priority 0) are exempt. The cap applies to new acquisitions only: a
 # group already running keeps what it holds (nothing is preempted), and the shards past the cap take their own slot, in queue order,
 # one by one (tools/build/lib/machine_slots.ts acquireSlotGroup; tools/dq_focused_test.sh hands slots on as worlds end).
 # `dq_machine_slots.sh waiting <worktree>` lists the queue entries a worktree has (class, seconds waited): tools/dq_lane_pool.sh status
 # uses it to show which pool slots sit idle while waiting for a machine slot.
 #
 # Waiting prints the class, your place in the queue and who holds the slots every 30 s. DQ_SLOT_PRIORITY=0 forces the
-# front of the queue for a caller that is not the merge worktree.
+# front of the queue for any caller.
 
 slots_dir() {
 	if [ -n "${DQ_SLOTS_DIR:-}" ]; then
@@ -87,7 +86,6 @@ slots_role_cap() { # class usable max -> what this caller may hold: test_world, 
 
 slots_capacity() { # class -> count (0 = off)
 	local cls="$1" up var val
-	[ "$cls" = "merge_base" ] && { echo 1; return; } # the merge worktree lock is always exactly one and never off (no limit would be the race)
 	[ "${DQ_SLOTS:-1}" = "0" ] && { echo 0; return; }
 	up="${cls^^}"
 	var="DQ_SLOTS_$up"
@@ -104,8 +102,8 @@ slots_capacity() { # class -> count (0 = off)
 	echo "$val"
 }
 
-# Slots kept free for the merge worktree: a caller that is not the merge worktree (priority 1) may hold only the first
-# (max - reserve) slots of a class, so a gate in the merge worktree never queues behind a full house of lane runs. The reserve is
+# Slots kept free for priority 0 (compiler lanes): a priority 1 caller may hold only the first
+# (max - reserve) slots of a class, so a compiler lane never queues behind a full house of lane runs. The reserve is
 # DQ_SLOTS_MERGE_RESERVE (default 1 for test_world when the class has at least 3 slots, else 0; any class: DQ_SLOTS_MERGE_RESERVE_<CLASS>).
 slots_usable() { # class max prio -> how many slots (counted from 1) this caller may take
 	local cls="$1" max="$2" prio="$3" up var res
@@ -161,11 +159,8 @@ _slots_is_lane() { # <worktree> <compiler|light>: is this worktree a compiler / 
 	return 1
 }
 
-_slots_priority() { # worktree -> 0 (merge worktree or compiler lane, front of the queue) or 1
+_slots_priority() { # worktree -> 0 (compiler lane, front of the queue) or 1
 	if [ -n "${DQ_SLOT_PRIORITY:-}" ]; then echo "$DQ_SLOT_PRIORITY"; return; fi
-	local a
-	_slots_norm_set "$1"; a="$NORM"; _slots_norm_set "${DQ_MERGE_WT:-E:/projects/dq-wt/merge-base}"
-	if [ "$a" = "$NORM" ]; then echo 0; return; fi
 	if _slots_is_lane "$1" compiler; then echo 0; else echo 1; fi
 }
 
@@ -196,13 +191,6 @@ _slots_num() { # file key default -> the key's value when it is a number, else t
 	local v
 	v="$(_slots_field "$1" "$2")"
 	case "$v" in '' | *[!0-9]*) echo "$3" ;; *) echo "$v" ;; esac
-}
-
-_slots_lanes() { # owner file -> " lanes 'a b'" for a merge_base holder
-	local l
-	l="$(_slots_field "$1" lanes)"
-	[ -n "$l" ] && printf " lanes '%s'" "$l"
-	return 0
 }
 
 _slots_mtime() { # file -> epoch seconds (0 when missing)
@@ -282,7 +270,7 @@ _slots_who() { # class dir -> " [slot N: worktree 'label' held 3m] ..."
 	for f in "$d"/slot.*; do
 		[ -f "$f/owner" ] || continue
 		started="$(_slots_field "$f/owner" started)"
-		out="$out [${f##*/}: $(_slots_field "$f/owner" worktree) '$(_slots_field "$f/owner" label)' pid $(_slots_field "$f/owner" pid)$(_slots_lanes "$f/owner"), held $(( now - ${started:-$now} ))s]"
+		out="$out [${f##*/}: $(_slots_field "$f/owner" worktree) '$(_slots_field "$f/owner" label)' pid $(_slots_field "$f/owner" pid), held $(( now - ${started:-$now} ))s]"
 	done
 	echo "${out:- nobody}"
 }
@@ -322,7 +310,7 @@ _slots_acquire() {
 	now="$EPOCHSECONDS"
 	printf -v name '%s-%013d-%s' "$prio" "$now" "$$"
 	SLOTS_QUEUE="$d/queue/$name"
-	printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nqueued=%s\nsession=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$now" "${DQ_MERGE_SESSION:+env:$DQ_MERGE_SESSION}" >"$SLOTS_QUEUE"
+	printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nqueued=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$now" >"$SLOTS_QUEUE"
 	SLOTS_T_QUEUED="$now"
 	_slots_mark_waiting
 	while true; do
@@ -351,7 +339,7 @@ _slots_acquire() {
 		if [ "$waited" -eq 0 ] || [ $((waited - last)) -ge 30 ]; then
 			last="$waited"
 			pos="$(ls "$d/queue" 2>/dev/null | sort | grep -n -x -- "$name" | cut -d: -f1)"
-			echo "== machine slots: $cls: waiting ${waited}s, place ${pos:-?} of $(ls "$d/queue" 2>/dev/null | wc -l) in the queue (at most $max at once on this machine; the merge worktree goes first). Held by:$(_slots_who "$d")"
+			echo "== machine slots: $cls: waiting ${waited}s, place ${pos:-?} of $(ls "$d/queue" 2>/dev/null | wc -l) in the queue (at most $max at once on this machine; priority 0 goes first). Held by:$(_slots_who "$d")"
 		fi
 		touch "$SLOTS_QUEUE" 2>/dev/null
 		sleep "${DQ_SLOTS_POLL_SEC:-3}"
@@ -568,266 +556,6 @@ slots_group_release() { # hand back all of them (an EXIT trap calls this), and l
 	return 0
 }
 
-# ---- the merge worktree lock: one batch owns E:/projects/dq-wt/merge-base from the clear check until the push lands ------------
-# Class merge_base, exactly one slot, the same slot directory protocol as above (queue, atomic mkdir, owner file, heartbeat, dead-holder
-# reclaim). A batch spans several processes (dq_merge_worktree.sh, git merge, dq_merge_gates.sh, dq_push_master.sh), so no one of them can
-# be the holder: the acquiring script starts a detached holder process (`dq_machine_slots.sh _hold`) that keeps the heartbeat, and the
-# slot's owner file names it. The holder process ends when the slot directory is gone (released), when the slot was taken over, or after
-# DQ_MERGE_LOCK_MAX_SEC (default 21600, six hours: an abandoned batch cannot hold the merge worktree forever). If it is killed or the machine
-# restarts the next waiter reclaims the slot like any dead holder.
-# Who is "the holder" for a later call: the owner file records `session`, the caller's DQ_MERGE_SESSION, which every merge command must set
-# explicitly (the lane branch name is a good value). It is never inferred: the lanes of one agent session share an environment and a process
-# tree. A caller is the holder only when its DQ_MERGE_SESSION equals the recorded one; without it the merge tools refuse.
-#   dq_machine_slots.sh merge-lock status | release [--force]     (dq_merge_worktree.sh --release / --join are the usual front ends)
-
-_ml_slot() { echo "$(slots_dir)/merge_base/slot.1"; }
-
-_ml_need_session() { # the caller must name its batch; it is never inferred
-	[ -n "${DQ_MERGE_SESSION:-}" ] && return 0
-	echo "REFUSED: DQ_MERGE_SESSION is not set. The merge tools need an explicit batch name, never inferred from the environment (every lane of one agent session shares the same CLAUDE_CODE_SESSION_ID and process tree, so they could not tell lanes apart). Set it to your lane branch name for every merge command, e.g.: export DQ_MERGE_SESSION=rewrite/<lane>" >&2
-	return 1
-}
-
-_ml_session() { echo "env:$DQ_MERGE_SESSION"; }
-
-_ml_is_holder() { # owner file: is the caller the batch's holder (same DQ_MERGE_SESSION as the one that took the lock)?
-	local o="$1" rec
-	[ -f "$o" ] || return 1
-	[ -n "${DQ_MERGE_SESSION:-}" ] || return 1
-	rec="$(_slots_field "$o" session)"
-	[ "$rec" = "env:$DQ_MERGE_SESSION" ]
-}
-
-_ml_set_field() { # owner key value: rewrite one line atomically
-	local o="$1" k="$2" v="$3" t
-	t="$o.$$.tmp"
-	{ grep -v "^$k=" "$o" 2>/dev/null; printf '%s=%s\n' "$k" "$v"; } >"$t" && mv -f "$t" "$o"
-}
-
-_ml_event() { # owner: one events.tsv line for the end of a batch
-	local o="$1" now
-	now="$EPOCHSECONDS"
-	printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$now" merge_base 1 "$(_slots_field "$o" worktree)" "$(_slots_field "$o" lanes)" 0 "$((now - $(_slots_num "$o" started "$now")))" >>"$(slots_dir)/events.tsv" 2>/dev/null
-}
-
-# Is the batch over although its holder is alive? Prints why and returns 0 when the lock should be released. A heartbeat is not proof of
-# life: it only shows the holder process runs. The batch is over when the lane's worktree (the caller that took the lock) or the merge
-# worktree is gone, or when the merge worktree's HEAD has moved since the batch began and is now in origin/master, with no gate or push
-# running (those mark $slot/busy with their pid).
-_ml_orphaned() { # slotdir
-	local d="$1" o="$1/owner" lane mb base head busy
-	lane="$(_slots_field "$o" worktree)"
-	mb="$(_slots_field "$o" merge_wt)"
-	if [ -n "$lane" ] && [ ! -d "$lane" ]; then echo "the lane worktree $lane no longer exists"; return 0; fi
-	if [ -n "$mb" ] && [ ! -d "$mb" ]; then echo "the merge worktree $mb no longer exists"; return 0; fi
-	busy="$(cat "$d/busy" 2>/dev/null)"
-	if [ -n "$busy" ] && kill -0 "$busy" 2>/dev/null; then return 1; fi
-	base="$(_slots_field "$o" base)"
-	[ -n "$base" ] && [ -n "$mb" ] || return 1
-	head="$(git -C "$mb" rev-parse HEAD 2>/dev/null)" || return 1
-	[ "$head" != "$base" ] || return 1
-	git -C "$mb" fetch -q origin 2>/dev/null
-	if git -C "$mb" merge-base --is-ancestor "$head" origin/master 2>/dev/null; then echo "the batch HEAD ${head:0:12} is already in origin/master and no gate or push is running"; return 0; fi
-	return 1
-}
-
-merge_lock_busy() { # begin|end: a gate or push run in the merge worktree marks itself so the holder does not release under it
-	local d
-	d="$(_ml_slot)"
-	[ -d "$d" ] || return 0
-	case "$1" in
-		begin)
-			# A live marker stays (a push that runs the gates is still running when they end); the outermost run owns it.
-			local cur
-			cur="$(cat "$d/busy" 2>/dev/null)"
-			if [ -n "$cur" ] && kill -0 "$cur" 2>/dev/null; then return 0; fi
-			merge_lock_holder_check 2>/dev/null && echo "$$" >"$d/busy" 2>/dev/null ;;
-		end) [ "$(cat "$d/busy" 2>/dev/null)" = "$$" ] && rm -f "$d/busy" ;;
-	esac
-	return 0
-}
-
-merge_lock_mark_base() { # the merge worktree's HEAD when the batch began (after dq_merge_worktree.sh moved it)
-	local o
-	o="$(_ml_slot)/owner"
-	[ -f "$o" ] && _ml_set_field "$o" base "$1"
-	merge_lock_record_session
-	return 0
-}
-
-# The batch's session, recorded inside the merge worktree's git dir (dq-merge-session): a plain `git merge` / `git commit` run in a later
-# shell call, where the holder's `export DQ_MERGE_SESSION` did not survive, is accepted by the reference-transaction hook when the record
-# names the live holder (same session, same holder pid). An explicit DQ_MERGE_SESSION always wins, so another lane's merge is still refused.
-_ml_session_file() {
-	local gd
-	gd="$(git -C "${DQ_MERGE_WT:-E:/projects/dq-wt/merge-base}" rev-parse --absolute-git-dir 2>/dev/null)" || return 1
-	echo "$gd/dq-merge-session"
-}
-
-merge_lock_record_session() { # the holder writes its session and holder pid for the ref hook
-	local o f
-	o="$(_ml_slot)/owner"
-	[ -f "$o" ] && _ml_is_holder "$o" || return 0
-	f="$(_ml_session_file)" || return 0
-	printf 'session=%s
-pid=%s
-' "$(_slots_field "$o" session)" "$(_slots_field "$o" pid)" >"$f.$$.tmp" && mv -f "$f.$$.tmp" "$f"
-	return 0
-}
-
-merge_lock_recorded_session() { # -> the recorded session name (without env:) when it names the live holder of the lock; 1 otherwise
-	local o f rec
-	o="$(_ml_slot)/owner"
-	[ -f "$o" ] || return 1
-	_slots_dead "$o" && return 1
-	f="$(_ml_session_file)" || return 1
-	[ -f "$f" ] || return 1
-	rec="$(_slots_field "$f" session)"
-	[ -n "$rec" ] && [ "$rec" = "$(_slots_field "$o" session)" ] || return 1
-	[ "$(_slots_field "$f" pid)" = "$(_slots_field "$o" pid)" ] || return 1
-	echo "${rec#env:}"
-}
-
-merge_lock_require_ref() { # the ref hook: merge_lock_require, falling back to the recorded holder session when DQ_MERGE_SESSION is unset
-	local rec
-	if [ -z "${DQ_MERGE_SESSION:-}" ] && rec="$(merge_lock_recorded_session)"; then
-		DQ_MERGE_SESSION="$rec" merge_lock_require
-		return $?
-	fi
-	merge_lock_require
-}
-
-_ml_hold() { # slotdir max_sec: the detached holder process; takes the slot over from the acquiring shell and keeps it alive
-	local d="$1" max="${2:-21600}" o t0 now pid="$$" body last_check=0 why
-	o="$d/owner"
-	t0="$EPOCHSECONDS"
-	body="$(grep -v -e '^pid=' -e '^winpid=' -e '^kind=' "$o" 2>/dev/null)"
-	{ printf 'kind=bash\npid=%s\nwinpid=%s\n' "$pid" "$(_slots_winpid "$pid")"; printf '%s\n' "$body"; } >"$o.$pid.tmp" && mv -f "$o.$pid.tmp" "$o"
-	while true; do
-		[ -d "$d" ] && [ "$(_slots_field "$o" pid)" = "$pid" ] || exit 0 # released, or reclaimed and taken by another batch
-		now="$EPOCHSECONDS"
-		if [ $((now - t0)) -ge "$max" ]; then
-			echo "== merge lock: holder pid $pid expired after ${max}s; releasing" >&2
-			break
-		fi
-		if [ $((now - last_check)) -ge "${DQ_MERGE_LOCK_CHECK_SEC:-60}" ]; then
-			last_check="$now"
-			if why="$(_ml_orphaned "$d")"; then
-				echo "== merge lock: holder pid $pid releasing: $why" >&2
-				break
-			fi
-		fi
-		touch "$o" 2>/dev/null || exit 0
-		sleep "${DQ_SLOTS_HEARTBEAT_SEC:-15}"
-	done
-	[ "$(_slots_field "$o" pid)" = "$pid" ] || exit 0
-	_ml_event "$o"
-	rm -rf "$d"
-}
-
-merge_lock_acquire() { # lanes...: wait for the merge worktree lock (printing who holds it), then keep it with a detached holder
-	local lanes="$*" sess d o hp i
-	_ml_need_session || return 1
-	_slots_errexit_off
-	sess="$(_ml_session)"
-	d="$(_ml_slot)"
-	# The same session and worktree never queue twice: a second call while one is waiting is refused (the first keeps its place).
-	local qf qtop
-	qtop="$(_slots_worktree)"
-	for qf in "$(slots_dir)"/merge_base/queue/*; do
-		[ -f "$qf" ] || continue
-		_slots_dead "$qf" && continue
-		if [ "$(_slots_field "$qf" session)" = "$sess" ] && [ "$(_slots_field "$qf" worktree)" = "$qtop" ]; then
-			echo "dq_merge_worktree: REFUSED: this session ($sess) and worktree already wait for the merge lock (pid $(_slots_field "$qf" pid)); not queueing twice. Wait for that call, or end it." >&2
-			_slots_errexit_back
-			return 4
-		fi
-	done
-	if [ -f "$d/owner" ] && ! _slots_dead "$d/owner" && _ml_is_holder "$d/owner"; then
-		echo "dq_merge_worktree: you already hold the merge lock (lanes '$(_slots_field "$d/owner" lanes)'); join more lanes with --join, or finish and --release" >&2
-		_slots_errexit_back
-		return 3
-	fi
-	trap 'slots_release; exit 130' INT TERM
-	_slots_acquire merge_base "${lanes:0:80}" >&2 # stdout of the merge scripts is the worktree path
-	trap - INT TERM
-	d="$SLOTS_HELD"
-	if [ -z "$d" ]; then _slots_errexit_back; return 1; fi
-	o="$d/owner"
-	_ml_set_field "$o" lanes "$lanes"
-	_ml_set_field "$o" session "$sess"
-	_ml_set_field "$o" merge_wt "${DQ_MERGE_WT:-E:/projects/dq-wt/merge-base}"
-	if [ -n "$SLOTS_HB_PID" ]; then kill "$SLOTS_HB_PID" 2>/dev/null; SLOTS_HB_PID=""; fi
-	nohup bash "$SLOTS_SELF" _hold "$d" "${DQ_MERGE_LOCK_MAX_SEC:-21600}" >/dev/null 2>&1 &
-	hp=$!
-	disown "$hp" 2>/dev/null || true
-	SLOTS_HELD=""
-	for ((i = 0; i < 100; i++)); do # wait for the holder process to put its pid in the owner file
-		[ "$(_slots_field "$o" pid)" = "$hp" ] && break
-		sleep 0.1
-	done
-	if [ "$(_slots_field "$o" pid)" != "$hp" ]; then
-		echo "dq_merge_worktree: the lock holder process did not start; releasing" >&2
-		rm -rf "$d"
-		_slots_errexit_back
-		return 1
-	fi
-	echo "== merge lock: held (holder pid $hp, lanes '$lanes', session $sess; ends at --release, the push, or after $((${DQ_MERGE_LOCK_MAX_SEC:-21600} / 3600))h)" >&2
-	_slots_errexit_back
-	return 0
-}
-
-merge_lock_holder_check() { # -> 0 when the merge lock is held by a live holder and the caller is that holder
-	local o
-	_ml_need_session || return 1
-	o="$(_ml_slot)/owner"
-	[ -f "$o" ] || return 1
-	_slots_dead "$o" && return 1
-	_ml_is_holder "$o"
-}
-
-merge_lock_who() {
-	local o now
-	o="$(_ml_slot)/owner"
-	if [ ! -f "$o" ]; then echo "nobody holds the merge lock"; return 0; fi
-	now="$EPOCHSECONDS"
-	echo "merge lock held by $(_slots_field "$o" worktree) lanes '$(_slots_field "$o" lanes)' holder pid $(_slots_field "$o" pid), held $((now - $(_slots_num "$o" started "$now")))s$(_slots_dead "$o" && echo ' [DEAD, reclaimed by the next waiter]')"
-}
-
-merge_lock_join() { # lanes...: the holder adds lanes to its batch
-	local o lanes
-	o="$(_ml_slot)/owner"
-	merge_lock_holder_check || { echo "dq_merge_worktree: --join refused: you do not hold the merge lock ($(merge_lock_who))" >&2; return 1; }
-	lanes="$(_slots_field "$o" lanes) $*"
-	_ml_set_field "$o" lanes "$(echo $lanes)"
-	echo "== merge lock: batch lanes now '$(_slots_field "$o" lanes)'" >&2
-}
-
-merge_lock_release() { # [--force]: end the batch. The holder (or anyone with --force, or when the holder is dead) may.
-	local o d force=0
-	[ "${1:-}" = "--force" ] && force=1
-	[ "$force" -eq 1 ] || _ml_need_session || return 1
-	d="$(_ml_slot)"
-	o="$d/owner"
-	if [ ! -d "$d" ]; then echo "== merge lock: not held"; return 0; fi
-	if [ -f "$o" ] && ! _slots_dead "$o" && ! _ml_is_holder "$o" && [ "$force" -ne 1 ]; then
-		echo "dq_merge_worktree: refused: the merge lock belongs to another batch ($(merge_lock_who)); only its holder releases it (--release --force overrides, for a batch you know is abandoned)" >&2
-		return 1
-	fi
-	_ml_event "$o"
-	rm -rf "$d" # the holder process sees the directory gone and exits by itself
-	echo "== merge lock: released"
-}
-
-merge_lock_require() { # the caller's checkout: return 1 in the shared merge worktree unless the caller holds the lock
-	local top
-	top="$(git rev-parse --show-toplevel 2>/dev/null)" || return 0
-	[ "$(_slots_norm "$top")" = "$(_slots_norm "${DQ_MERGE_WT:-E:/projects/dq-wt/merge-base}")" ] || return 0
-	merge_lock_holder_check && return 0
-	echo "REFUSED: $top is the shared merge worktree and you do not hold its lock ($(merge_lock_who)). Take it with: bash tools/dq_merge_worktree.sh --lanes \"<branch> ...\"  (it waits for the current batch); then merge, gate and push from this worktree." >&2
-	return 1
-}
-
 slots_run() { # class [--label TEXT] -- command...
 	local cls="${1:?class}" label="" rc
 	shift
@@ -850,14 +578,14 @@ slots_status() { # [class]
 	local root cls d f any=0 now max
 	root="$(slots_dir)"
 	now="$EPOCHSECONDS"
-	for cls in ${1:-dm_compile test_world cargo merge_base}; do
+	for cls in ${1:-dm_compile test_world cargo}; do
 		d="$root/$cls"
 		max="$(slots_capacity "$cls")"
 		echo "$cls: at most $max at once$( [ "$max" -eq 0 ] && echo ' (limit off)')"
 		for f in "$d"/slot.*; do
 			[ -f "$f/owner" ] || continue
 			any=1
-			echo "  ${f##*/}: $(_slots_field "$f/owner" worktree) '$(_slots_field "$f/owner" label)' pid $(_slots_field "$f/owner" pid)$(_slots_lanes "$f/owner"), held $(( now - $(_slots_num "$f/owner" started "$now") ))s, heartbeat $(( now - $(_slots_mtime "$f/owner") ))s ago$(_slots_dead "$f/owner" && echo ' [DEAD, reclaimed by the next waiter]')"
+			echo "  ${f##*/}: $(_slots_field "$f/owner" worktree) '$(_slots_field "$f/owner" label)' pid $(_slots_field "$f/owner" pid), held $(( now - $(_slots_num "$f/owner" started "$now") ))s, heartbeat $(( now - $(_slots_mtime "$f/owner") ))s ago$(_slots_dead "$f/owner" && echo ' [DEAD, reclaimed by the next waiter]')"
 		done
 		for f in "$d"/queue/*; do
 			[ -f "$f" ] || continue
@@ -962,7 +690,7 @@ slots_selftest() {
 	DQ_SLOTS_CARGO=0 bash "$0" run cargo -- echo unlimited | grep -q unlimited || { echo "FAIL: DQ_SLOTS_CARGO=0 should run without a limit"; ok=0; }
 	# 4. env counts.
 	[ "$(DQ_SLOTS_DM_COMPILE=5 slots_capacity dm_compile)" = 5 ] && [ "$(unset DQ_SLOTS_CARGO; slots_capacity cargo)" = 1 ] || { echo "FAIL: capacity env"; ok=0; }
-	# 4b. the merge reserve: with 3 test_world slots a lane caller may use 2, the merge worktree all 3, and a class below 3 reserves nothing.
+	# 4b. the merge reserve: with 3 test_world slots a lane caller may use 2, a priority 0 caller all 3, and a class below 3 reserves nothing.
 	[ "$(DQ_SLOTS_TEST_WORLD=3 DQ_SLOT_PRIORITY=1 slots_group_size test_world 9)" = 2 ] && [ "$(DQ_SLOTS_TEST_WORLD=3 DQ_SLOT_PRIORITY=0 slots_group_size test_world 9)" = 3 ] 		&& [ "$(slots_usable test_world 2 1)" = 2 ] && [ "$(DQ_SLOTS_MERGE_RESERVE=9 slots_usable test_world 3 1)" = 1 ] && [ "$(slots_usable dm_compile 2 1)" = 2 ] 		|| { echo "FAIL: merge reserve"; ok=0; }
 	# 5. a group is clamped to the capacity and starts only when it has all its slots; two groups never run each on part of the budget.
 	export DQ_SLOTS_TEST_WORLD=3 DQ_SLOTS_MERGE_RESERVE=0
@@ -1014,17 +742,8 @@ if ! (return 0 2>/dev/null); then
 		holding) slots_holding "$@" ;;
 		usage-all) slots_usage_all ;;
 		usage) slots_holding "$@" | sed 's/^/hold /'; slots_waiting "$@" | sed 's/^/wait /' ;;   # both in one process: the pool calls this once per leased slot
-		reap) for c in dm_compile test_world cargo merge_base; do _slots_reap "$(slots_dir)/$c"; done; slots_status ;;
+		reap) for c in dm_compile test_world cargo; do _slots_reap "$(slots_dir)/$c"; done; slots_status ;;
 		selftest) slots_selftest; exit $? ;;
-		_hold) _ml_hold "$@"; exit 0 ;;
-		merge-lock)
-			sub="${1:-status}"
-			[ $# -gt 0 ] && shift
-			case "$sub" in
-				status) merge_lock_who ;;
-				release) merge_lock_release "$@"; exit $? ;;
-				*) echo "usage: dq_machine_slots.sh merge-lock status | release [--force]" >&2; exit 2 ;;
-			esac ;;
 		*) sed -n '2,12p' "$0"; [ "$cmd" = "-h" ] || [ "$cmd" = "--help" ] || exit 2 ;;
 	esac
 fi

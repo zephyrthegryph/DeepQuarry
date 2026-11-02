@@ -99,8 +99,6 @@
 /obj/machinery/atmospherics/omni/mixer/push_to_rust()
 	if(QDELETED(src))
 		return
-	set_last_power_draw(0)
-	set_last_flow_rate(0)
 	rust_unregister_all_devices_n()
 	if(!operable() || !use_power || !output || length(inputs) < 2) // ALLOW(derived_reads): set_use_power() and power_change() bump rust_device_rev, as do port binds and disconnect() (nodes, ports, modes)
 		return

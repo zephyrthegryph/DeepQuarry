@@ -218,14 +218,14 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
 `BUN_RUNTIME_TRANSPILER_CACHE_PATH=0` (Bun's shared cache once built a sibling worktree);
 `build.ts` refuses to run if its root differs from the invoking worktree's toplevel.
 
-- **Native compiler (default).** `build.sh dm`, `dm-test`, `dq_focused_test.sh`, the merge gates and `dq_lane_ready.sh` compile with
+- **Native compiler (default).** `build.sh dm`, `dm-test` and `dq_focused_test.sh` compile with
   the in-tree Rust compiler `tools/dmb` through a resident daemon; the targets build `dmbc` first (cargo machine slot, skipped when
   current). `DQ_COMPILER=dreammaker` (alias `byond`) is the other compiler. A native compiler failure fails the build: the automatic
   DreamMaker fallback on a native internal error is opt-in (`DQ_COMPILER_FALLBACK=1`), so no gate passes on DreamMaker's output by accident. And `DQ_COMPILER=shadow` compares the two. **CI compiles with the native compiler too**
   (`tools/ci/compile_and_run.sh`, the benchmark workflow; `DQ_COMPILER=dreammaker` still selects DreamMaker), and a DreamMaker cross-check job
   (`dreammaker_cross_check` in `run_compile_checks.yml`, part of the completion gate) runs `bash tools/ci/dm_equiv.sh`: it compiles the production
   dme and the unit-test dme both ways and runs `dmb-equiv` (every difference listed). 2026-10-22 the production dme reports zero differences, including the order the global initializers run in; the unit-test dme reports one open
-  cause (an untyped receiver naming a member declared on several types, `doc/rewrite/native_compiler_issues.md`). Without cargo or a `dmbc` binary an unset `DQ_COMPILER` fails the build instead of falling back to DreamMaker (set `DQ_COMPILER=dreammaker` on purpose). The local land/merge/push gates no longer run a DreamMaker compile; the CI cross-check above is the DreamMaker check. See
+  cause (an untyped receiver naming a member declared on several types, `doc/rewrite/native_compiler_issues.md`). Without cargo or a `dmbc` binary an unset `DQ_COMPILER` fails the build instead of falling back to DreamMaker (set `DQ_COMPILER=dreammaker` on purpose). Landing runs no compile; the CI cross-check above is the DreamMaker check. See
   `doc/testing.md` "Native compiler (incremental)" and `doc/rewrite/native_compiler_issues.md`.
 - **One shared dmbc daemon per compiler version.** Every native compile uses the one shared compiler binary
   (`tools/build/lib/dmbc_cache.ts`), so every worktree talks to the same daemon (`tools/build/lib/dmbc_daemons.ts`), which keeps one
@@ -268,25 +268,24 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   `... lease <branch> --wait` once in the background (a first-come-first-served queue); never write a retry or `until` loop. `... release <branch>` retires the dmbc
   daemon, deletes the build outputs and detaches the slot at `origin/master`, keeping `icons/gen`, `node_modules` links, the analyzer
   binary and `data/analyze-cache` warm; a merged lane's slot is also reclaimed by the next lease. Do not `git worktree add` a lane
-  worktree by hand and do not delete pool worktrees. The merge worktree (`merge-base`) is separate and permanent.
+  worktree by hand and do not delete pool worktrees.
   Worktrees and caches live on E: only: worktrees under `E:/projects/dq-wt/`, build caches under `E:/dq-cache/`; never on `D:` or `C:`.
-  Details and the gate flow: `doc/rewrite/agent_workflow.md` sections 19-23.
+  Details: `doc/rewrite/agent_workflow.md` section 19.
 - **Disk hygiene.** Nothing a build, compile or probe writes may live in `.git`: compiler caches go to `E:/dq-cache/` (the native
-  compiler's `DM_COMPILER_CACHE_ROOT`; never `<git-common-dir>/dm-compiled-cache`), and `tools/dq_push_stamp.sh` runs its
-  `git merge-tree --write-tree` probes in a throwaway object dir so they leave no loose trees. Lane worktrees come from the pool:
+  compiler's `DM_COMPILER_CACHE_ROOT`; never `<git-common-dir>/dm-compiled-cache`). Lane worktrees come from the pool:
   `bash tools/dq_worktree.sh lease <branch>` / `release <branch>` (the entry point of `tools/dq_lane_pool.sh`, at most `DQ_LANE_POOL_SIZE` general lanes at once);
-  `dq_worktree.sh new` is only for non-lane worktrees and refuses past 8 worktrees or under 60 GB free on E:. `tools/dq_push_master.sh` runs
-  `bash tools/dq_worktree.sh gc` after a successful push (removes clean non-pool worktrees merged into origin/master (`pool-N` slots are never removed), build targets deleted
-  first, `DQ_WT_KEEP="a b"` protects names); run it by hand any time. Remove your own worktree when your lane is merged.
+  `dq_worktree.sh new` is only for non-lane worktrees and refuses past 8 worktrees or under 60 GB free on E:. `bash tools/dq_worktree.sh gc`
+  (removes clean non-pool worktrees merged into origin/master (`pool-N` slots are never removed), build targets deleted
+  first, `DQ_WT_KEEP="a b"` protects names) runs by hand. Remove your own worktree when your lane is merged.
 - **Disk use is bounded by construction.** `tools/ci/disk_budget.toml` lists EVERY directory under `E:/dq-cache` and every per-worktree growth dir
   (`data/test-runs`, `merge-gates`, `merge-batch`, `bench`, test-world logs in the checkout root, worktree-local cargo targets, ...) with a size cap,
   an age cap and an eviction policy, plus a whole-cache total (`DQ_CACHE_BUDGET_GB`, default 60). `bash tools/dq_disk_budget.sh enforce` applies it
   (least recently modified first; never a unit modified in the last 30 min, a leased slot's own cargo target, the `dmb-bin/current` version or a file
-  a running process holds open; stat listings, never `du`; `--dry-run`, `status`). It runs at every lease, release, train cycle start and dmbc daemon
+  a running process holds open; stat listings, never `du`; `--dry-run`, `status`). It runs at every lease, release and dmbc daemon
   start (throttled to once per 10 min). A directory under `E:/dq-cache` that the manifest does not name is unknown: it is reported, and removed once idle only when clearly a cache
-  (`*.log`, `dmb-*`, ...); `train`, `lane-pool`, `slots`, `dmb-bin`, `flakes.tsv` are never removed. A file git tracks is never deleted in a worktree. Add the
+  (`*.log`, `dmb-*`, ...); `lane-pool`, `slots`, `dmb-bin`, `flakes.tsv` are never removed. A file git tracks is never deleted in a worktree. Add the
   `[cache.<name>]` table first. Below `DQ_DISK_FLOOR_GB` (default 50) free on E:, caps are halved, and if it is still under the floor `lease` (exit 6)
-  and the train's heavy cycles refuse to start with a REFUSED message instead of filling the disk. Never delete under `E:/dq-cache` by hand.
+  refuses to start with a REFUSED message instead of filling the disk. Never delete under `E:/dq-cache` by hand.
   `tools/ci/test_disk_budget.sh` (part of `check_ratchets.sh`) proves eviction, protection, unknown-dir removal and the floor.
 - **Stuck lanes and waiting.** `bash tools/dq_lane_pool.sh stuck` lists leases with no live process and no activity for 30 min (exit 1 if any; `status` flags them, with
   idle time and machine-slot waits). A dirty or unpushed one is only reported, never wiped; a clean pushed one is reclaimed. `... cancel <branch>` withdraws a queued
@@ -317,7 +316,7 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   declarations, never the output. Merge master with `bash tools/dq_merge_master.sh`; it settles a branch
   that still tracks them. `deepquarry.dme` merges by its include sets (the `dq-dme` driver) and is regenerated after every merge;
   `_unit_tests.dm` merges by union (`.gitattributes`).
-  `doc/rewrite/agent_workflow.md`. There are no look pins (deleted 2026-10-17; playtesting finds visual issues): don't add a snapshot
+  There are no look pins (deleted 2026-10-17; playtesting finds visual issues): don't add a snapshot
   of how types look; test a draw's behaviour instead (`dq_fresh_look_default`, `dq_human_draw_deterministic`, the staleness checker).
 - DreamChecker is off for now, per the user; when it returns, heed every warning. If another agent's unfinished work breaks the build,
   `DQ_WIP_TREE=1` lets test and bench builds skip dangling includes.
@@ -329,7 +328,7 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   test worlds and 1 cargo build at once on the machine (the machine is also the user's desktop), everything we start
   runs below normal priority (test worlds idle, `DQ_PRIORITY=normal` for neither), and the dmbc daemon keeps at most 8 GB of sessions and
   12 GB of RAM free (`DQ_SLOTS_DM_COMPILE`, `DQ_SLOTS_TEST_WORLD`,
-  `DQ_SLOTS_CARGO`); a waiter prints who holds them, the merge worktree goes first, a crashed
+  `DQ_SLOTS_CARGO`); a waiter prints who holds them, a crashed
   holder is reclaimed. `bash tools/dq_machine_slots.sh status` shows the table.
 - **Land with `bash tools/dq_land.sh`** from the lane's worktree, everything committed: it merges origin/master and pushes, in seconds. Nothing gates master. Run the tests you judge reasonable, and `bash tools/ci/check_ratchets.sh --changed-only` before a DM change. After a landing `tools/dq_post_push_check.sh` boots the newest master in the background (report only); while master fails, `E:/dq-cache/health/MASTER_BROKEN.txt` names the first bad range and `dq_land.sh` prints it. Details: `doc/rewrite/agent_workflow.md` section 29.
 
@@ -341,12 +340,12 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   runtime or a `WARNING()` before its first test (the boot gate, `doc/rewrite/boot_gate.md`; `--boot` checks
   boot alone).
 - **Agents never run `tools/build/build.sh dm-test`:** it compiles AND runs the full sharded suite.
-  Use `tools/dq_focused_test.sh` for every run. The full suite runs only at integration or when the
+  Use `tools/dq_focused_test.sh` for every run. The full suite runs only in CI or when the
   user asks: `tools/build/build.sh dm-test` (normal tier, sharded; `--shards=1` for one world). CI and nightly add the exhaustive tier
   (`dm-test --tier=all`). Exhaustive tests are whole-type sweeps with a small normal-tier
   `.../representative`; `dq_focused_test.sh` refuses an exhaustive test (or one with exhaustive subtypes) unless `--allow-exhaustive`,
   and names the `/representative` to run instead.
-- **A focused or lane run compiles only the test build** (`deepquarry.test.dme`: the game plus `UNIT_TESTS` code, a superset), never `deepquarry.dme` as well; `dq_lane_ready.sh` runs the gates with `--no-dm`. The production compile + DreamChecker (`build.sh dm`, unchanged for explicit use) runs at integration (`dq_push_master.sh`, the batch train) and in CI.
+- **A focused or lane run compiles only the test build** (`deepquarry.test.dme`: the game plus `UNIT_TESTS` code, a superset), never `deepquarry.dme` as well. The production compile (`build.sh dm`, unchanged for explicit use) runs in CI.
 - **Every focused run is capped.** Hard wall-clock limit `DQ_FOCUSED_MAX_MIN` (default 10, clamped to 10 without `--allow-exhaustive`; testing never runs past 10 minutes, and every agent shell has a hard 30-minute limit);
   at the cap, or when the run's shell dies or is killed, `tools/dq_run_guard.js` kills the run's own DreamDaemon worlds and frees
   their test-world slots. The cap counts run time, not time queued for a slot (reported as "queued N min"): never wrap the tool in

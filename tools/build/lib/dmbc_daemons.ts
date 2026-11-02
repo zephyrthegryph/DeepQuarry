@@ -126,12 +126,9 @@ function retire(executable: string, namespace: string): string {
 
 export type DaemonScope = { namespace: string | undefined; release(): void };
 
-/**
- * Roots whose daemon is never evicted for the cap: the batch train's worktree compiles every cycle, and an evicted train session
- * turns each gate's compile from incremental (seconds) into a full one (minutes). `DQ_DMBC_KEEP_ROOTS` is a ';'-separated list.
- */
+/** Roots whose daemon is never evicted for the cap: `DQ_DMBC_KEEP_ROOTS` is a ';'-separated list (default none). */
 function keptRoot(root: string): boolean {
-  const raw = process.env.DQ_DMBC_KEEP_ROOTS ?? 'E:/projects/dq-wt/train-base';
+  const raw = process.env.DQ_DMBC_KEEP_ROOTS ?? '';
   const norm = (p: string) => path.resolve(p).replace(/\\/g, '/').toLowerCase();
   return raw.split(';').filter(Boolean).some((keep) => norm(keep) === norm(root));
 }
@@ -151,7 +148,7 @@ function enforceDiskBudget(root: string): void {
     const script = path.join(path.resolve(root), 'tools', 'dq_disk_budget.sh');
     if (!fs.existsSync(script)) return;
     const child = spawn('bash', [script, 'enforce', '--quiet', '--throttle', '10'], { detached: true, stdio: 'ignore', windowsHide: true });
-    child.on('error', () => { /* no bash on PATH: the lease, release and train hooks still enforce */ });
+    child.on('error', () => { /* no bash on PATH: the lease and release hooks still enforce */ });
     child.unref();
   } catch { /* housekeeping only */ }
 }

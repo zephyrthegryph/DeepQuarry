@@ -11,7 +11,7 @@ CAPABILITIES(/datum/particle_editor)
 	op("delete_and_close", ui_act("delete_and_close"), then(PROC_REF(ui_act_delete_and_close)))
 	op("new_type", ui_act("new_type"), asks(/datum/prompt/choice/particle_editor_type, fields = list("choices" = computed(PROC_REF(particle_type_choices))), step = "type"), then(PROC_REF(ui_act_new_type)))
 	op("transform_size", ui_act("transform_size", arg("new_value")), then(PROC_REF(ui_act_transform_size)))
-	op("edit", ui_act("edit", arg("new_value"), arg("var", schema_text(4096)), arg("var_mod", schema_text(4096))), then(PROC_REF(ui_act_edit)))
+	op("edit", ui_act("edit", arg("new_value"), arg("var", schema_text(4096)), arg("var_mod", schema_text(4096), optional = TRUE)), then(PROC_REF(ui_act_edit)))
 
 /datum/particle_editor/ui_assets(mob/user)
 	. = ..()

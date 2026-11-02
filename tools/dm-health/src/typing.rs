@@ -16320,7 +16320,7 @@ mod tests {
             Ty::Unknown
         );
         let medical = crate::contracts::collect(include_str!(
-            "../../../code/modules/medical/conditions/pharmacology/_pharmacology.dm"
+            "../../../code/content/medical/conditions/pharmacology/_pharmacology.dm"
         ));
         let stage = annotated_type(
             &medical,

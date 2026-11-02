@@ -192,3 +192,14 @@
 	H.delete_inventory(TRUE)
 	P.dress_preview_mob(H, TRUE)
 	TEST_ASSERT_NOTNULL(H.get_equipped_item(SLOT_ID_UNIFORM), "the loadout tab shows the job outfit anyway")
+
+/// Voice settings are in Identity; the antag tab is admin-only and a clientless (player) prefs does not see it.
+/datum/unit_test/dq_voice_in_identity_antag_hidden
+
+/datum/unit_test/dq_voice_in_identity_antag_hidden/Run()
+	var/datum/preference/voice = GLOB.preference_entries[/datum/preference/text/human/voice_sound]
+	TEST_ASSERT_EQUAL(voice.get_category(null), "identity", "voice sound is in Identity")
+	TEST_ASSERT("voice" in GLOB.dq_group_order["identity"], "and ordered there")
+	TEST_ASSERT("antag" in GLOB.dq_admin_only_categories, "antag is admin-only")
+	TEST_ASSERT(!dq_sees_admin_categories(new /datum/preferences/dq_test_stub), "a player does not see it")
+	TEST_ASSERT("antag" in dq_character_category_index("human"), "the shared index still holds it for admins")

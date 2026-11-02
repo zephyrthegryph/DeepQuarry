@@ -157,9 +157,6 @@
 /turf/simulated/floor/bluegrid,
 /area/awaymission)
 "az" = (
-/obj/machinery/gateway/centeraway{
-	calibrated = 0
-	},
 /turf/simulated/floor/bluegrid,
 /area/awaymission)
 "aA" = (

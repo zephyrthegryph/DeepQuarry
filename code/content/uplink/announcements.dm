@@ -48,12 +48,10 @@
 		general.set_fields_at("name", I.registered_name)
 		general.set_fields_at("sex", I.sex)
 	else
-		var/mob/living/carbon/human/H
+		// A non-human buyer keeps the age CreateGeneralRecord() gave the record (initial(H.bio.age) read null.bio).
 		if(ishuman(user))
-			H = user
+			var/mob/living/carbon/human/H = user
 			general.set_fields_at("age", H.bio.age)
-		else
-			general.set_fields_at("age", initial(H.bio.age))
 		var/assignment = GetAssignment(user)
 		general.set_fields_at("rank", assignment)
 		general.set_fields_at("real_rank", assignment)

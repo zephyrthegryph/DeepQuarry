@@ -48,7 +48,7 @@ export const ControlAbilities = (props) => {
       <Button fluid onClick={() => act('active_cloaking')}>
         Give Active Cloaking
       </Button>
-      <Button fluid onClick={() => act('colormater')}>
+      <Button fluid onClick={() => act('colormate')}>
         Give ColorMate to simplemob/borg
       </Button>
       <Button fluid onClick={() => act('be_event_invis')}>

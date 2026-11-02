@@ -87,14 +87,22 @@
 /// The text of one value of window data: JSON with refs and clock readings made stable.
 /proc/dq_ui_pin_text(value)
 	var/static/regex/ref_text = regex(@"\[0x[0-9a-fA-F]+\]", "g")
-	var/static/regex/token_text = regex(@"admin_token=[0-9]+", "g")
+	var/static/regex/token_text = regex(@"admin_token=([0-9]+|@href_token@)", "g")
+	// A ref_token (id:generation): a whole value, or a "ref" row's.
+	var/static/regex/handle_whole = regex(@"^.[1-9][0-9]*:[0-9]+.$")
+	var/static/regex/handle_text = regex(@"(ref.:.)[1-9][0-9]*:[0-9]+", "g")
 	var/static/regex/gene_text = regex(@".name.:.[^,}]*:([0-9]+).,.tname.:.[^}]*?.,.state.", "g")
+	// Which blocks hold a gene at all is rolled too (setupgenetics() picks each trait gene's block), so an idle cell, holding a gene or not, reads the same.
+	var/static/regex/idle_cell = regex(@"\{.block.:([0-9]+),.name.:(null|.gene:[0-9]+.),(.tname.:null,)?.state.:.(empty|inactive).\}", "g")
 	var/text = json_encode(value)
 	text = ref_text.Replace(text, "\[ref\]")
+	text = handle_whole.Replace(text, "\"\[ref\]\"")
+	text = handle_text.Replace(text, "$1\[ref\]")
 	// Only values rolled per world are masked: the admin href token, and the gene behind each DNA block (the block and its state are what
 	// the window shows).
 	text = token_text.Replace(text, "admin_token=\[token\]")
 	text = gene_text.Replace(text, "\"name\":\"gene:$1\",\"state\"")
+	text = idle_cell.Replace(text, "{\"block\":$1,\"state\":\"idle\"}")
 	return text
 
 /proc/dq_ui_pin_same(list/a, list/b)

@@ -838,7 +838,7 @@ MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
 		toggle_piece(piece, H, ONLY_DEPLOY)
 
 /obj/item/rig/dropped(mob/user, equipping, slot)
-	. = ..(user)
+	. = ..(user, equipping, slot)
 	// So the next user will see the boot animation
 	tgui_shared_states?.Cut()
 	// Piece retraction and seal-state reset are handled in Moved() (the universal hook

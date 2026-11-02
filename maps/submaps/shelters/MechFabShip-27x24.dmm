@@ -1376,9 +1376,7 @@
 /obj/item/stack/material/plastic{
 	material = 50
 	},
-/obj/item/stack/material/platinum{
-	matter = 25
-	},
+/obj/item/stack/material/platinum,
 /obj/item/stack/material/silver{
 	material = 25
 	},

@@ -9,9 +9,20 @@
 	pref_keys = list("ear_secondary_colors")
 
 /datum/preference_editor/ear_secondary/build_ui_data(datum/preferences/preferences)
-	return list("colors" = preferences.read_preference(/datum/preference/ear_secondary_colors) || list())
+	return list(
+		"colors" = preferences.read_preference(/datum/preference/ear_secondary_colors) || list(),
+		"fallback" = first_ear_colors(preferences),
+	)
 
-/// Writes one channel. Channels below it that have no colour yet start white.
+/// What an unset channel draws: the first ear's colour for that channel (get_ears_overlay()).
+/datum/preference_editor/ear_secondary/proc/first_ear_colors(datum/preferences/preferences)
+	return list(
+		lowertext(preferences.read_preference(/datum/preference/color/human/ears_color1)),
+		lowertext(preferences.read_preference(/datum/preference/color/human/ears_color2)),
+		lowertext(preferences.read_preference(/datum/preference/color/human/ears_color3)),
+	)
+
+/// Writes one channel. Channels below it that have no colour yet take the first ear's, which is what they drew.
 /datum/preference_editor/ear_secondary/proc/write_channel(datum/preferences/preferences, index, color)
 	var/list/colors = preferences.read_preference(/datum/preference/ear_secondary_colors) || list()
 	if(!isnum(index) || index < 1 || index > length(GLOB.fancy_sprite_accessory_color_channel_names))
@@ -19,8 +30,9 @@
 	if(!istext(color) || !findtext(color, GLOB.is_color))
 		return PREF_UPDATE_REJECTED
 	colors = colors.Copy()
+	var/list/fallback = first_ear_colors(preferences)
 	while(length(colors) < index)
-		colors += "#ffffff"
+		colors += fallback[length(colors) + 1]
 	colors[index] = lowertext(sanitize_hexcolor(color))
 	preferences.update_preference_by_type(/datum/preference/ear_secondary_colors, colors)
 	return PREF_UPDATE_ACCEPTED

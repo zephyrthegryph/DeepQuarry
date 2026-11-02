@@ -242,7 +242,7 @@
 	if(failure)
 		return failure
 	var/list/data = hc_bot_data(borg, M)
-	TEST_ASSERT(data["issillicon"], "the window knows a silicon is looking")
-	TEST_ASSERT(!hc_bot_data(crew, M)["issillicon"], "and an ordinary person is not")
+	TEST_ASSERT(data["issilicon"], "the window knows a silicon is looking")
+	TEST_ASSERT(!hc_bot_data(crew, M)["issilicon"], "and an ordinary person is not")
 	TEST_ASSERT_EQUAL(data["power"], M.on, "the power field is the power state")
 	TEST_ASSERT_EQUAL(data["hatch"], M.open, "the hatch field is the hatch state")

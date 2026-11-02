@@ -910,7 +910,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi/baby)
 		"faction" = mob_rules_of(teppi).faction,
 		"affinity" = teppi.affinity || list(),
 		"affection_factor" = teppi.affection_factor,
-		"nutrition_of(src)" = nutrition_of(teppi),
+		"nutrition" = nutrition_of(teppi),
 		"allergen_preference" = teppi.allergen_preference,
 		"allergen_unpreference" = teppi.allergen_unpreference,
 		"color" = teppi.color,

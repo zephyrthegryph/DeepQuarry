@@ -9,6 +9,27 @@
 	A.actor = actor
 	return A
 
+/// Presses a window button of the host as the user, through a live window as a player's would be (a test person has no client, so its state is always-interactive).
+/datum/ui_pin
+	/// Real deciseconds to wait after a press.
+	var/press_gap = 0
+
+/datum/ui_pin/proc/press(action, list/args)
+	var/datum/tgui/ui = SStgui.get_open_ui(user, host)
+	if(!ui)
+		ui = new(user, host, "HcTest")
+		ui.status = STATUS_INTERACTIVE
+		ui.set_state(GLOB.tgui_always_state)
+		SStgui.on_open(ui)
+		test.own(ui)
+		test_time(10 SECONDS) // a window opening takes its first press only after it has settled
+	if(press_gap)
+		sleep(press_gap) // a window that rate-limits its buttons on world.time (an answer is a press too), which the test clock does not move
+	var/datum/op_result/pressed = test_ui(user, host, action, args)
+	if(pressed?.outcome && pressed.outcome != ACT_COMMITTED)
+		rows += "press refused: [action] [pressed.reason]"
+	test_time(10 SECONDS) // a converted op may wait
+
 /// Answers the user's open request with `value` as a window answer would. The request's usable check wants an open window, which a unit
 /// test has none of, so the check is dropped; the rest of the answer path (the kernel, the handler) is the real one.
 /datum/ui_pin/proc/answer_open(value)
@@ -17,9 +38,10 @@
 		rows += "no open request"
 		return
 	R.valid = null
-	var/why = request_submit(R, value)
-	if(why)
-		rows += "answer refused: [why]"
+	var/datum/op_result/done = test_answer(user, value)
+	if(done?.outcome && done.outcome != ACT_COMMITTED)
+		rows += "answer refused: [done.outcome] [done.reason]"
+	test_time(10 SECONDS) // a converted op may wait
 
 /// Drops whatever the user is still being asked.
 /datum/ui_pin/proc/cancel_open()
@@ -44,31 +66,31 @@
 	snap("electronic warfare on")
 	module.ui_act_electronic_warfare(A)
 	snap("electronic warfare off")
-	module.ui_act_name(A)
+	press("name", list())
 	answer_open("Jane Doe")
 	snap("name set")
-	module.ui_act_age(A)
+	press("age", list())
 	answer_open(42)
 	snap("age set")
-	module.ui_act_assignment(A)
+	press("assignment", list())
 	answer_open("Janitor")
 	snap("assignment set")
-	module.ui_act_bloodtype(A)
+	press("bloodtype", list())
 	answer_open("AB-")
 	snap("blood type set")
-	module.ui_act_dnahash(A)
+	press("dnahash", list())
 	answer_open("DEADBEEF")
 	snap("dna hash set")
-	module.ui_act_fingerprinthash(A)
+	press("fingerprinthash", list())
 	answer_open("CAFEBABE")
 	snap("fingerprint hash set")
-	module.ui_act_sex(A)
+	press("sex", list())
 	answer_open("Female")
 	snap("sex set")
-	module.ui_act_species(A)
+	press("species", list())
 	answer_open("Skrell")
 	snap("species set")
-	module.ui_act_factoryreset(A)
+	press("factoryreset", list())
 	answer_open(TRUE)
 	snap("factory reset")
 	A.release()
@@ -80,6 +102,8 @@
 
 /datum/ui_pin/appearance_changer/script(turf/T)
 	make_user(T)
+	test.interim_keep_awake(user) // a body nobody plays falls asleep, and its questions are dropped
+	press_gap = 6 // its buttons answer at most twice a second (ui_cooled())
 	user.set_real_name("Pin Tester")
 	user.name = "Pin Tester"
 	var/datum/tgui_module/appearance_changer/module = new(user, user)
@@ -89,28 +113,28 @@
 	snap("initial")
 	var/datum/act/op/A = op_ctx(user)
 	// The custom species name, the size, the species sound set, a flavor text and the colour prompts all end in an update_uis() call.
-	module.ui_act_race_name(A)
+	press("race_name", list())
 	answer_open("Pinfolk")
 	snap("custom species name")
-	module.ui_act_size_scale(A)
+	press("size_scale", list())
 	answer_open(60)
 	snap("size set")
-	module.ui_act_species_sound(A)
+	press("species_sound", list())
 	answer_open("Canine")
 	snap("species sound")
-	module.ui_act_flavor_text(A, "general")
+	press("flavor_text", list("target" = "general"))
 	answer_open("A tidy test subject.")
 	snap("general flavor text")
-	module.ui_act_flavor_text(A, "head")
+	press("flavor_text", list("target" = "face"))
 	answer_open("Short hair.")
 	snap("head flavor text")
-	module.ui_act_hair_color(A)
+	press("hair_color", list())
 	answer_open("#336699")
 	snap("hair colour")
-	module.ui_act_eye_color(A)
+	press("eye_color", list())
 	answer_open("#00ff00")
 	snap("eye colour")
-	module.ui_act_skin_color(A)
+	press("skin_color", list())
 	answer_open("#aa8866")
 	snap("skin colour")
 	cancel_open()

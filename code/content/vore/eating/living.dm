@@ -1887,7 +1887,7 @@ TYPE_TABLE_DECLARE(/mob/living, injection_reagent_table, null)
 		stop_sound_channel(CHANNEL_PREYLOOP)
 
 /mob/living/proc/vore_check_nutrition()
-	to_chat(src, span_vnotice("Current nutrition_of(src) level: [nutrition_of(src)]."))
+	to_chat(src, span_vnotice("Current nutrition level: [nutrition_of(src)]."))
 
 /mob/living/proc/vore_check_nutrition_op(datum/act/op/A)
 	vore_check_nutrition()

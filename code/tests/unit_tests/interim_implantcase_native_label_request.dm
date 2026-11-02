@@ -19,7 +19,8 @@
 	TEST_ASSERT(istype(request, /datum/prompt/text), "a real pen click opens the native label request")
 	TEST_ASSERT_EQUAL(request.subject, pen, "the request rechecks the actual original pen")
 	var/datum/pending_op/pending = request.owner
-	TEST_ASSERT_EQUAL(pending.holder, case, "the request belongs to the actual case's op")
+	TEST_ASSERT(istype(pending), "the request is owned by the case's pending op")
+	TEST_ASSERT_EQUAL(request.owner_holder(), case, "the request belongs to the actual case's op")
 	TEST_ASSERT_EQUAL(request.ask_flags, ASK_HELD | ASK_CAPABLE, "both original actor gates remain")
 	TEST_ASSERT_EQUAL(request.timeout, REQUEST_DEFAULT_TIMEOUT, "the label question retains its indefinite timeout (a request given no timeout gets the default, framework_gaps.md E2)")
 	var/datum/prompt/text/prompt = request

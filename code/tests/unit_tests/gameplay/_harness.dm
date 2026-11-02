@@ -9,7 +9,7 @@
 // A scenario that fails because of a bug in another lane's scope sets `expected_failure` to the reason: it still runs, a failure is
 // reported as a notice ("EXPECTED FAILURE"), and a pass fails the test so the marker is removed once the bug is fixed.
 //
-// The whole suite runs on every lane landing (tools/dq_lane_ready.sh reads tools/ci/gameplay_tests.txt). Keep each scenario short.
+// tools/ci/gameplay_tests.txt lists the suite. Keep each scenario short.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 

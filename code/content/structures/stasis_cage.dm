@@ -23,12 +23,13 @@ CAPABILITIES(/obj/structure/stasis_cage)
 
 MSG_DEF_SELF(stasis_cage/needs_net, "It's going to be difficult to convince the creature to move into the cage without capturing it in a net.")
 
-/// Only a creature caught in an energy net can be stuffed inside; Bumped() is what the old drag did first.
+/// Only a creature caught in an energy net can be stuffed inside; the old drag bumped it first (a bump nom, else the plain bump).
 /obj/structure/stasis_cage/proc/stuffing_started(datum/act/op/A)
 	var/mob/living/simple_mob/animal = A.held
 	if(QDELETED(animal) || !istype(animal.buckled_to(), /obj/effect/energy_net))
 		return /datum/msg/stasis_cage/needs_net
-	animal.Bumped(A.actor)
+	if(!animal.tryBumpNom(A.actor))
+		animal.Bumped(A.actor)
 
 /obj/structure/stasis_cage/proc/stuffing_begins(datum/act/op/A)
 	return msg_text("You begin stuffing [A.held] into \the [src].", "%U% begins stuffing [A.held] into \the [src].")

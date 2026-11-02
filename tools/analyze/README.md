@@ -276,7 +276,7 @@ includes that did not exist when the model was stored (a generated file, on the 
 reused the model without it, and `auto_tracked`, `plans` and `reads` wrote less than an uncached run (`print_cooldown` of the gold star and ticket
 printers was not tracked, so `untracked_inputs` failed on some trees and not on others). `model_store::appeared_include` now makes that a full parse.
 
-Merge gates take no cache on trust: `DQ_ANALYZE_COLD=1 bash tools/ci/check_ratchets.sh` (set by `tools/dq_merge_gates.sh`) runs gen and the lints
+For a run that takes no cache on trust, `DQ_ANALYZE_COLD=1 bash tools/ci/check_ratchets.sh` runs gen and the lints
 with an empty private cache directory, no shared-cache seed and no gen store. To compare by hand: wipe `data/analyze-cache` and the generated
 files, set `DQ_GEN_STORE=off DQ_ANALYZE_SHARED_CACHE=off`, and add `DQ_MODEL_STORE=off DQ_WALK_CACHE=off DQ_BODY_FACTS=off` for the uncached truth.
 

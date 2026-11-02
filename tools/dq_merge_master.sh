@@ -17,10 +17,8 @@ set -uo pipefail
 cd "$(git rev-parse --show-toplevel)"
 . "$(dirname "${BASH_SOURCE[0]}")/dq_git_safe.sh"
 . "$(dirname "${BASH_SOURCE[0]}")/dq_stale_includes.sh"
-# In the shared merge worktree only the batch that holds the merge lock may merge; and a merge never starts on a tree with staged or
+# A merge never starts on a tree with staged or
 # modified tracked files (another batch's half-finished merge, or work a merge would have to set aside).
-. "$(dirname "${BASH_SOURCE[0]}")/dq_machine_slots.sh"
-merge_lock_require || exit 1
 git update-index -q --refresh >/dev/null 2>&1
 if ! git diff --quiet || ! git diff --cached --quiet; then
 	echo "dq_merge_master: REFUSED: the tree has staged or modified tracked files (a merge in progress, or unfinished work); commit or finish it first. Nothing was merged:" >&2

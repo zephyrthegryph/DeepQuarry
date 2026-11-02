@@ -43,8 +43,6 @@
 /obj/machinery/atmospherics/trinary/mixer/push_to_rust()
 	if(QDELETED(src))
 		return
-	set_last_power_draw(0)
-	set_last_flow_rate(0)
 	if(!operable() || !use_power || !node1 || !node2 || !node3) // ALLOW(derived_reads): set_use_power() and power_change() bump rust_device_rev, as do port binds and disconnect() (nodes, ports, modes)
 		rust_unregister_device_n("in1")
 		rust_unregister_device_n("in2")

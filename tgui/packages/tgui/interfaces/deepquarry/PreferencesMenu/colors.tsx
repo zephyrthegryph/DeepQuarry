@@ -341,6 +341,7 @@ export const ColorChoice = ({
   onLink,
   onPick,
   onCustom,
+  compact,
 }: {
   color: string;
   link?: string;
@@ -349,10 +350,66 @@ export const ColorChoice = ({
   onLink: (slot: SlotName) => void;
   onPick: (hex: string) => void;
   onCustom: () => void;
+  /// One swatch; the slots move into its popover (a table cell).
+  compact?: boolean;
 }) => {
   const { slots, brush } = useColorTools();
   const linked = isSlotName(link) ? link : null;
   const hex = normalizeHex(color) ?? '#000000';
+  if (compact) {
+    return (
+      <span
+        className="dq-color-choice"
+        data-link={linked ?? 'custom'}
+        title={linked ? `Linked to ${linked}` : hex}
+        onClickCapture={(e) => {
+          if (!brush) return;
+          e.stopPropagation();
+          e.preventDefault();
+          onLink(brush);
+        }}
+        style={{
+          display: 'inline-flex',
+          borderRadius: '0.25em',
+          outline: linked ? '0.12em dashed rgba(255,255,255,0.7)' : undefined,
+          outlineOffset: '0.08em',
+          cursor: brush ? 'copy' : undefined,
+        }}
+      >
+        <ColorSwatch
+          color={hex}
+          category={category ?? label}
+          onPick={onPick}
+          onCustom={onCustom}
+          extra={
+            <Box mt={0.3}>
+              <Box color="label" fontSize="0.85em" mb={0.2}>
+                Link to a palette slot
+              </Box>
+              <Box style={{ display: 'flex', gap: '0.3em' }}>
+                {PALETTE_SLOTS.map(({ slot, label: slotLabel }) => (
+                  <span
+                    key={slot}
+                    className="dq-slot-dot"
+                    title={`Link to ${slotLabel}`}
+                    onClick={() => onLink(slot)}
+                    style={{
+                      ...swatchStyle(slots[slot] ?? '#000000', 1.25),
+                      borderRadius: '50%',
+                      cursor: 'pointer',
+                      outline:
+                        linked === slot ? '0.15em solid #fff' : undefined,
+                      outlineOffset: '0.08em',
+                    }}
+                  />
+                ))}
+              </Box>
+            </Box>
+          }
+        />
+      </span>
+    );
+  }
   return (
     <span
       className="dq-color-choice"
@@ -415,8 +472,11 @@ export const ColorStrip = ({
   colors,
   alphas,
   values,
+  compact,
 }: {
   colors: StripColor[];
+  /// Swatches only, and opacity sliders that shrink: for table cells.
+  compact?: boolean;
   /// Opacity prefs (0-255) shown after the fields.
   alphas?: StripColor[];
   values: Record<string, unknown>;
@@ -439,6 +499,7 @@ export const ColorStrip = ({
             link={links[c.key]}
             label={c.label}
             category={c.key}
+            compact={compact}
             onLink={(slot) =>
               act('dq_update_preference', { key: c.key, value: slot })
             }
@@ -456,8 +517,8 @@ export const ColorStrip = ({
               display: 'flex',
               alignItems: 'center',
               gap: '0.4em',
-              minWidth: '12em',
-              flex: '1 1 12em',
+              minWidth: compact ? 0 : '12em',
+              flex: compact ? '1 1 0' : '1 1 12em',
             }}
           >
             <Box color="label" fontSize="0.85em" style={{ flex: '0 0 auto' }}>

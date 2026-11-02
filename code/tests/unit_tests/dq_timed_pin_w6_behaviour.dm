@@ -929,7 +929,7 @@
 	TEST_ASSERT_EQUAL(nutrition_of(B), 150, "and nothing is spent")
 	test_time(2 SECONDS)
 	TEST_ASSERT(!isnull(locate(/obj/effect/ant_structure) in T), "a structure stands at the end")
-	TEST_ASSERT_EQUAL(nutrition_of(B), 120, "and thirty nutrition_of(src) are spent")
+	TEST_ASSERT_EQUAL(nutrition_of(B), 120, "and thirty nutrition are spent")
 	TEST_ASSERT_NULL(running(B), "and the builder is free again")
 	for(var/obj/effect/ant_structure/S in T)
 		qdel(S)
@@ -947,7 +947,7 @@
 	TEST_ASSERT_EQUAL(nutrition_of(Q), 630, "and nothing is spent")
 	test_time(2 SECONDS)
 	TEST_ASSERT(!isnull(locate(/obj/effect/spider/spiderling/antling) in T), "an antling is laid at the end")
-	TEST_ASSERT_EQUAL(nutrition_of(Q), 600, "and thirty nutrition_of(src) are spent")
+	TEST_ASSERT_EQUAL(nutrition_of(Q), 600, "and thirty nutrition are spent")
 	for(var/obj/effect/spider/spiderling/antling/S in T)
 		qdel(S)
 
@@ -963,7 +963,7 @@
 	// The mob work only ended when the worker was more than a tile from the turf; an ai() op has no range keep (doc/rewrite/framework_gaps.md, K), so a worker
 	// that strays further goes on as well. One step aside builds on the legacy form too.
 	TEST_ASSERT(!isnull(locate(/obj/effect/ant_structure) in T), "a builder one tile away still builds")
-	TEST_ASSERT_EQUAL(nutrition_of(B), 120, "and thirty nutrition_of(src) are spent")
+	TEST_ASSERT_EQUAL(nutrition_of(B), 120, "and thirty nutrition are spent")
 	for(var/obj/effect/ant_structure/S in T)
 		qdel(S)
 
