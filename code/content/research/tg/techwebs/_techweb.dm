@@ -195,16 +195,6 @@ CAPABILITIES(/datum/techweb)
 
 	return TRUE
 
-/datum/techweb/proc/remove_design(datum/design_techweb/design, custom = FALSE)
-	if(!istype(design))
-		return FALSE
-	if(LAZYACCESS(custom_designs, design.id) && !custom)
-		return FALSE
-	PUBLISH_LEGACY(src, /datum/notice/techweb_remove_design, design, custom)
-	LAZYREMOVE(custom_designs, design.id)
-	remove_researched_designs(design.id)
-	return TRUE
-
 /datum/techweb/proc/get_point_total(list/pointlist)
 	for(var/i in pointlist)
 		. += pointlist[i]

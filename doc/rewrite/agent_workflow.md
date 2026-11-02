@@ -960,6 +960,8 @@ Measured from `train.log` (30 October to 1 November, 18 light cycles): 9 repeate
 
 - **A heavy precheck does not repeat its prepare** (`DQ_GATE_PREPARED`, `tools/build/lib/gate_prepared.ts`): dm-test skips the icon repack, DME check and bindings check the gate just passed on the same clean commit. **The slow train self-tests run for their subject**: `test_train_light_side.sh` and `test_train_light_trust.sh` run for `dq_train.sh` only when its diff touches `light_side`, `heavy_cycle`, `light_cycle`, `DQ_PUSH_NEUTRAL_OK` or `light_trust`.
 
+- **A landing that only moved TGUI or docs does not cost the next lane a build.** `fast_land_more` pushes the stamped precheck merge with `DQ_PUSH_NEUTRAL_OK` when master gained only `light_gate_compile_neutral` paths; the push merges master, verifies the difference and carries the proof. TGUI interfaces and `.jsx` on master run the ratchets on the merge. Anything else takes the old path (`build.sh dm` and ratchets, 362-793 s measured).
+
 ### 29d. A lone prechecked lane lands as a fast-forward (28 October 2026, `train/speed`)
 
 Measured on `fix/pref-metadata-order` (one line, enqueued 16:23Z, landed 16:47Z as 6cd2d86b74): precheck 10.1 min, DreamChecker batch

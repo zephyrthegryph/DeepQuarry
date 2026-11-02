@@ -944,14 +944,24 @@ fast_land_more() {
 			[ -z "$hit" ] || { tlog "fast-land more: $b shares areas with what master changed since its precheck ($hit); next cycle"; continue; }
 		fi
 		tree="$(G merge-tree --write-tree "$cur" "$pm" 2>/dev/null | head -n 1)" && [ -n "$tree" ] || { tlog "fast-land more: $b does not merge cleanly onto ${cur:0:10}; next cycle"; continue; }
+		# Master gained only what a compile and a world do not read (1 November: a tgui-only landing, then 533-793 s of build.sh dm and ratchets to prove the same DM):
+		# push the stamped precheck merge itself, and the push merges master onto it and carries the proof (DQ_PUSH_NEUTRAL_OK verifies the difference).
+		local carry="" pshort="${pm:0:12}"
+		if [ -z "$(cd "$(repo_dir)" && . tools/dq_light_paths.sh 2>/dev/null && light_gate_unneutral_in "$pm" "$cur" light_gate_compile_neutral | head -n 1)" ] && [ -f "$PRE/proof/$pshort/$pshort.ok" ] && [ -f "$PRE/proof/$pshort/$pshort.ratchets.ok" ]; then carry=1; fi
 		c="$(G commit-tree "$tree" -p "$cur" -p "$pm" -m "Merge $b (train fast-land on ${cur:0:10}; precheck ${pm:0:10} on ${base:0:10})")" || continue
 		pushlog="$LOGS/fastland-$(date +%Y%m%dT%H%M%S)-more.push.log"
 		phase "fast-land more: $b"
 		printf '%s\n' "$b" >"$STATE/batch.lanes"
-		tlog "PROOF precheck-merge: $b (precheck ${pm:0:10} on ${base:0:10}) $([ -n "$heavy" ] && echo "shares no area with what master changed since" || echo "and master changed nothing heavy since"); pushing merge ${c:0:10} onto ${cur:0:10} (the push compiles and runs the ratchets on it; no test world); log $pushlog"
+		tlog "PROOF precheck-merge: $b (precheck ${pm:0:10} on ${base:0:10}) $([ -n "$heavy" ] && echo "shares no area with what master changed since" || echo "and master changed nothing heavy since"); pushing merge ${c:0:10} onto ${cur:0:10} ($([ -n "$carry" ] && echo "master gained only what a compile does not read: the push carries the precheck's proof" || echo "the push compiles and runs the ratchets on it"); no test world); log $pushlog"
 		(
 			cd "$WT" || exit 99
-			git switch -q --detach "$c" || exit 98
+			if [ -n "$carry" ]; then
+				git switch -q --detach "$pm" || exit 98
+				mkdir -p data/merge-gates && cp -f "$PRE/proof/$pshort"/* data/merge-gates/ || exit 97
+				export DQ_PUSH_NEUTRAL_OK=1 DQ_PUSH_TRUST_GATE_DM=1
+			else
+				git switch -q --detach "$c" || exit 98
+			fi
 			export DQ_MERGE_SESSION="train-$$" DQ_DREAMMAKER_GATE=0 DQ_PUSH_STRICT=1 DQ_PUSH_NO_REPROOF=1
 			[ "${DQ_TRAIN_DRY_RUN:-0}" = 1 ] && export DQ_PUSH_DRY_RUN=1
 			bash tools/dq_push_master.sh --expect "$b"

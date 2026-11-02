@@ -120,7 +120,7 @@
 		"hair_color" = list("looks", "hair_color"), "grad_color" = list("looks", "grad_color"), "facial_color" = list("looks", "facial_color"),
 		"eyes_color" = list("looks", "eyes_color"), "skin_color" = list("looks", "skin_color"), "synth_color_rgb" = list("looks", "synth_color_rgb"),
 		"hair_style_name" = list("looks", "hair_style"), "facial_style_name" = list("looks", "facial_style"),
-		"grad_style_name" = list("looks", "grad_style"), "digitigrade" = list("looks", "digitigrade"), "synth_color" = list("looks", "synth_color"),
+		"grad_style_name" = list("looks", "grad_style"), "digitigrade" = list("looks", "digitigrade"), 
 		"synth_markings" = list("looks", "synth_markings"),
 		"age" = list("bio", "age"), "home_system" = list("bio", "home_system"), "birthplace" = list("bio", "birthplace"),
 		"citizenship" = list("bio", "citizenship"), "religion" = list("bio", "religion"), "med_record" = list("bio", "med_record"),

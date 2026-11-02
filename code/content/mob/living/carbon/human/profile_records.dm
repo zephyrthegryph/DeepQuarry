@@ -12,8 +12,6 @@
 	var/eyes_color = "#000000"
 	/// Skin colour for species with HAS_SKIN_COLOR.
 	var/skin_color = "#eeceb3"
-	/// Whether synthetic parts that can't normally be coloured take synth_color_rgb.
-	var/synth_color = FALSE
 	var/synth_color_rgb = "#000000"
 	/// Whether markings show on synthetic parts.
 	var/synth_markings = FALSE
@@ -44,7 +42,6 @@ TRACKED_DATA(/datum/record/appearance, facial_style)
 TRACKED_DATA(/datum/record/appearance, facial_color)
 TRACKED_DATA(/datum/record/appearance, eyes_color)
 TRACKED_DATA(/datum/record/appearance, skin_color)
-TRACKED_DATA(/datum/record/appearance, synth_color)
 TRACKED_DATA(/datum/record/appearance, synth_color_rgb)
 TRACKED_DATA(/datum/record/appearance, synth_markings)
 TRACKED_DATA(/datum/record/appearance, digitigrade)
