@@ -279,6 +279,67 @@ fn null_guard(node: &Value) -> Option<(&str, bool)> {
     }
 }
 
+fn identifier_of(node: &Value) -> Option<&str> {
+    (kind(node) == "DMASTIdentifier")
+        .then(|| field(node, "Identifier").as_str())
+        .flatten()
+}
+
+/// The local a type check tests: `istype(x, T)`, `istype(x)`, or a builtin `isX(x)` that is false for null.
+fn type_guard(node: &Value) -> Option<&str> {
+    match kind(node) {
+        "DMASTIsType" => identifier_of(field(node, "LHS")),
+        "DMASTImplicitIsType" => identifier_of(field(node, "Value")),
+        "DMASTProcCall" => {
+            let callable = field(node, "Callable");
+            if kind(callable) != "DMASTCallableProcIdentifier" {
+                return None;
+            }
+            let name = field(callable, "Identifier").as_str()?;
+            if !matches!(
+                name,
+                "islist"
+                    | "isnum"
+                    | "istext"
+                    | "isarea"
+                    | "ismob"
+                    | "isobj"
+                    | "isturf"
+                    | "ismovable"
+                    | "isatom"
+                    | "isdatum"
+                    | "isicon"
+                    | "isfile"
+                    | "isclient"
+            ) {
+                return None;
+            }
+            let args = field(node, "Parameters").as_array()?;
+            if args.len() != 1 {
+                return None;
+            }
+            identifier_of(field(&args[0], "Value"))
+        }
+        _ => None,
+    }
+}
+
+fn narrow_nonnull(
+    result: &mut HashMap<String, TypeState>,
+    vars: &HashMap<String, TypeState>,
+    name: &str,
+) {
+    let Some(state) = vars.get(name) else {
+        return;
+    };
+    let alias_id = state.alias_id;
+    for (candidate, value) in result.iter_mut() {
+        if candidate == name || (alias_id != 0 && value.alias_id == alias_id) {
+            value.null = Nullability::NonNull;
+        }
+    }
+}
+
 fn narrowed(
     condition: &Value,
     truth: bool,
@@ -308,6 +369,22 @@ fn narrowed(
         }
         _ => {
             let mut result = vars.clone();
+            if let Some(name) = type_guard(condition) {
+                // A true type check (istype, islist, ismob ...) proves the value non-null; a false one
+                // proves nothing about null (it may hold another type).
+                if truth {
+                    narrow_nonnull(&mut result, vars, name);
+                }
+                return result;
+            }
+            if kind(condition) == "DMASTIsNull" {
+                if !truth {
+                    if let Some(name) = identifier_of(field(condition, "Value")) {
+                        narrow_nonnull(&mut result, vars, name);
+                    }
+                }
+                return result;
+            }
             if let Some((name, null_on_true)) = null_guard(condition) {
                 if let Some(state) = vars.get(name) {
                     let exact_null_check =
@@ -1110,6 +1187,10 @@ impl ProcAnalysis<'_> {
                 };
                 try_return && catch_return
             }
+            // `continue` ends this path: the loop head already sees the merged state, so an
+            // `if(!x) continue` guard leaves `x` non-null for the rest of the body. (`break` is not an
+            // exit here: its state would have to reach the code after the loop.)
+            "DMASTProcStatementContinue" => true,
             _ => {
                 self.inspect(node, vars);
                 false
@@ -1772,6 +1853,64 @@ mod tests {
         );
         // The deref after its own assignment is fine; the case that never assigns still derefs null.
         assert_eq!(null_derefs(&proc_with(&switch)), vec![6]);
+    }
+    fn maybe_null_derefs(input: &str) -> Vec<usize> {
+        analyze_reader(input.as_bytes(), &[])
+            .unwrap()
+            .into_iter()
+            .filter(|f| f.rule == "maybe-null-deref")
+            .map(|f| f.line)
+            .collect()
+    }
+    #[test]
+    fn continue_guard_narrows_the_rest_of_the_loop_body() {
+        let flag = r#"{"kind":"DMASTIdentifier","fields":{"Identifier":"flag"}}"#;
+        let maybe_assign = format!(
+            r#"{{"kind":"DMASTProcStatementIf","file":"x.dm","line":3,"fields":{{"Condition":{flag},"Body":{{"kind":"DMASTProcBlockInner","fields":{{"Statements":[{}]}}}},"ElseBody":null}}}}"#,
+            assign_a(3)
+        );
+        let guard = |jump: &str| {
+            format!(
+                r#"{{"kind":"DMASTProcStatementIf","file":"x.dm","line":5,"fields":{{"Condition":{{"kind":"DMASTNot","fields":{{"Value":{{"kind":"DMASTIdentifier","fields":{{"Identifier":"A"}}}}}}}},"Body":{{"kind":"DMASTProcBlockInner","fields":{{"Statements":[{{"kind":"{jump}","file":"x.dm","line":5,"fields":{{}}}}]}}}},"ElseBody":null}}}}"#
+            )
+        };
+        let looped = |jump: &str| {
+            proc_with(&format!(
+                r#"{maybe_assign},{{"kind":"DMASTProcStatementWhile","file":"x.dm","line":4,"fields":{{"Conditional":{flag},"Body":{{"kind":"DMASTProcBlockInner","fields":{{"Statements":[{},{}]}}}}}}}}"#,
+                guard(jump),
+                deref_a(6)
+            ))
+        };
+        assert!(maybe_null_derefs(&looped("DMASTProcStatementContinue")).is_empty());
+        // `break` leaves the loop with A still null, so it does not narrow (and nothing else here guards A).
+        assert_eq!(maybe_null_derefs(&looped("DMASTProcStatementBreak")), vec![6]);
+    }
+    #[test]
+    fn type_checks_prove_non_null() {
+        let flag = r#"{"kind":"DMASTIdentifier","fields":{"Identifier":"flag"}}"#;
+        let a = r#"{"kind":"DMASTIdentifier","fields":{"Identifier":"A"}}"#;
+        let maybe_assign = format!(
+            r#"{{"kind":"DMASTProcStatementIf","file":"x.dm","line":3,"fields":{{"Condition":{flag},"Body":{{"kind":"DMASTProcBlockInner","fields":{{"Statements":[{}]}}}},"ElseBody":null}}}}"#,
+            assign_a(3)
+        );
+        let guarded = |condition: String| {
+            proc_with(&format!(
+                r#"{maybe_assign},{{"kind":"DMASTProcStatementIf","file":"x.dm","line":4,"fields":{{"Condition":{condition},"Body":{{"kind":"DMASTProcBlockInner","fields":{{"Statements":[{}]}}}},"ElseBody":{{"kind":"DMASTProcBlockInner","fields":{{"Statements":[{}]}}}}}}}}"#,
+                deref_a(5),
+                deref_a(6)
+            ))
+        };
+        let istype = format!(
+            r#"{{"kind":"DMASTIsType","fields":{{"LHS":{a},"RHS":{{"kind":"DMASTConstantPath","fields":{{"Value":{{"Path":"/mob"}}}}}}}}}}"#
+        );
+        let implicit = format!(r#"{{"kind":"DMASTImplicitIsType","fields":{{"Value":{a}}}}}"#);
+        let islist = format!(
+            r#"{{"kind":"DMASTProcCall","fields":{{"Callable":{{"kind":"DMASTCallableProcIdentifier","fields":{{"Identifier":"islist"}}}},"Parameters":[{{"kind":"DMASTCallParameter","fields":{{"Value":{a},"Key":null}}}}]}}}}"#
+        );
+        // The true branch is narrowed; the false branch may still hold another non-null value or null.
+        for condition in [istype, implicit, islist] {
+            assert_eq!(maybe_null_derefs(&guarded(condition)), vec![6]);
+        }
     }
     #[test]
     fn try_body_assignment_reaches_code_after_a_returning_catch() {

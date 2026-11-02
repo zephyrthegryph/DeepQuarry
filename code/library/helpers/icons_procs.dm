@@ -476,17 +476,22 @@ ColorTone(rgb, tone)
 	dir = newdir
 
 /* Gives the result RGB of a RGB string after a matrix transformation. No alpha.
- * Input: rr, rg, rb, gr, gg, gb, br, bg, bb, cr, cg, cb
+ * Input: rr, rg, rb, gr, gg, gb, br, bg, bb, cr, cg, cb (BYOND colour matrix order: `rg` is how much
+ * input red adds to output green, so output red = r*rr + g*gr + b*br + cr).
  * Output: RGB string
+ * Reads the input channels before writing any (each output is a mix of all three) and leaves the
+ * caller's lists alone.
  */
 /proc/RGBMatrixTransform(list/color, list/cm)
 	ASSERT(cm.len >= 9)
-	if(cm.len < 12)		// fill in the rest
-		for(var/i in 1 to (12 - cm.len))
-			cm += 0
-	if(!islist(color))
-		color = ReadRGB(color)
-	color[1] = color[1] * cm[1] + color[2] * cm[2] + color[3] * cm[3] + cm[10] * 255
-	color[2] = color[1] * cm[4] + color[2] * cm[5] + color[3] * cm[6] + cm[11] * 255
-	color[3] = color[1] * cm[7] + color[2] * cm[8] + color[3] * cm[9] + cm[12] * 255
-	return rgb(color[1], color[2], color[3])
+	var/list/rgb_in = islist(color) ? color : ReadRGB(color)
+	var/r = rgb_in[1]
+	var/g = rgb_in[2]
+	var/b = rgb_in[3]
+	var/cr = cm.len >= 10 ? cm[10] : 0
+	var/cg = cm.len >= 11 ? cm[11] : 0
+	var/cb = cm.len >= 12 ? cm[12] : 0
+	var/out_r = r * cm[1] + g * cm[4] + b * cm[7] + cr * 255
+	var/out_g = r * cm[2] + g * cm[5] + b * cm[8] + cg * 255
+	var/out_b = r * cm[3] + g * cm[6] + b * cm[9] + cb * 255
+	return rgb(clamp(out_r, 0, 255), clamp(out_g, 0, 255), clamp(out_b, 0, 255))
