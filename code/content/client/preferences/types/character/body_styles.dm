@@ -104,6 +104,8 @@
 		out[S.name] = list(
 			"icon" = "[REF(S.icon)]",
 			"icon_state" = "[S.icon_state][state_suffix]",
+			"channels" = S.get_color_channel_count(),
+			"taur" = istaurtail(S),
 		)
 	return out
 

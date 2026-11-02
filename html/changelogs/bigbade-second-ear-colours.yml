@@ -1,0 +1,4 @@
+author: "bigbade"
+delete-after: true
+changes:
+  - qol: "The Second ears row of the Body table sets its own colours."

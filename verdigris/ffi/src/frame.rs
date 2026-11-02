@@ -263,7 +263,7 @@ struct PhaseTimer {
 }
 
 /// What the machine and this process had done up to now: the evidence that tells a frame that waited for the CPU from one that waited for memory or
-/// the disk, or that nothing ran at all. Read at the start of every frame and at the end of a slow one; zeros off Windows.
+/// the disk, or that nothing ran at all. Read at most every OS_READING_PERIOD at a frame start and at the end of a slow one; zeros off Windows.
 #[derive(Clone, Copy, Default, PartialEq, Debug)]
 struct OsReading {
     /// CPU time of every thread of this process, microseconds.
@@ -398,6 +398,28 @@ fn thread_cpu_us() -> u64 {
 /// slow frame is named by its phase and not hidden in the cumulative `frame.us.*` totals of the quick ones.
 const SLOW_FRAME_US: u64 = 20_000;
 
+/// How old the reading a slow frame's OS evidence is measured from may be. `os_reading()` on every frame was itself the idle stall: 40 times a second on the
+/// main thread, it held 7.3 s of the 7.7 s of slow frames in a run with the machine saturated, nearly all off the CPU, so the machine shares in a slow frame's
+/// report now cover up to this long around it.
+const OS_READING_PERIOD: std::time::Duration = std::time::Duration::from_secs(10);
+
+thread_local! {
+    /// The last [`OsReading`] taken and when.
+    static OS_LAST: std::cell::Cell<Option<(std::time::Instant, OsReading)>> = const { std::cell::Cell::new(None) };
+}
+
+/// The latest [`OsReading`], taken again only when it is older than [`OS_READING_PERIOD`].
+fn os_reading_recent(now: std::time::Instant) -> OsReading {
+    if let Some((at, reading)) = OS_LAST.get() {
+        if now.duration_since(at) < OS_READING_PERIOD {
+            return reading;
+        }
+    }
+    let reading = os_reading();
+    OS_LAST.set(Some((now, reading)));
+    reading
+}
+
 thread_local! {
     /// Every lap of the frame in progress (the nested `pace_*` ones too): `(phase, microseconds)`.
     static TRACE: std::cell::RefCell<Vec<(String, u64)>> = const { std::cell::RefCell::new(Vec::new()) };
@@ -419,7 +441,11 @@ impl PhaseTimer {
     fn start() -> Self {
         crate::metrics::registry().counter("frame.count").inc();
         TRACE.with_borrow_mut(Vec::clear);
-        Self { at: std::time::Instant::now(), total_us: 0, cpu_start_us: thread_cpu_us(), os_start: os_reading() }
+        let at = std::time::Instant::now();
+        let mut timer = Self { at, total_us: 0, cpu_start_us: thread_cpu_us(), os_start: os_reading_recent(at) };
+        // These readings are syscalls and can block: their time is a phase of its own, not charged to whatever runs first.
+        timer.lap("open");
+        timer
     }
 
     fn lap(&mut self, phase: &str) {
@@ -435,7 +461,13 @@ impl PhaseTimer {
     fn finish(&self) {
         let cpu_us = thread_cpu_us().saturating_sub(self.cpu_start_us);
         // The machine is read only for a frame that turned out slow (the start reading is the cheap half).
-        let os = if self.total_us < SLOW_FRAME_US { OsReading::default() } else { os_reading().since(self.os_start) };
+        let os = if self.total_us < SLOW_FRAME_US {
+            OsReading::default()
+        } else {
+            let reading = os_reading();
+            OS_LAST.set(Some((std::time::Instant::now(), reading)));
+            reading.since(self.os_start)
+        };
         self.file_slow(crate::metrics::registry(), cpu_us, os);
     }
 

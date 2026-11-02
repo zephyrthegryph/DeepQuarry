@@ -49,6 +49,11 @@
 				O.robotize()
 
 	preferences.apply_limb_colors(target)
+	// Robotizing the torso offers the model's built-in parts; the character's own choice, None included, stands.
+	var/list/ear_styles = preferences.get_available_styles(GLOB.ear_styles_list)
+	var/list/tail_styles = preferences.get_available_styles(GLOB.tail_styles_list)
+	rel_set(target, nameof(target.ear_style), ear_styles[preferences.read_preference(/datum/preference/text/human/ear_style)])
+	rel_set(target, nameof(target.tail_style), tail_styles[preferences.read_preference(/datum/preference/text/human/tail_style)])
 
 	// Internal organ FBP states.
 	for(var/name in list(O_HEART, O_EYES, O_VOICE, O_LUNGS, O_LIVER, O_KIDNEYS, O_SPLEEN, O_STOMACH, O_INTESTINE, O_BRAIN))

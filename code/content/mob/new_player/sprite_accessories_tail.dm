@@ -44,6 +44,16 @@
 	var/struggle_anim = FALSE
 	var/bellies_icon_path = 'icons/mob/vore/Taur_Bellies.dmi'
 
+/datum/sprite_accessory/tail/get_color_channel_count()
+	if(!do_colouration)
+		return 0
+	. = 1
+	if(extra_overlay)
+		. += 1
+	if(extra_overlay2)
+		. += 1
+
+
 
 /datum/sprite_accessory/tail/New()
 	. = ..()
@@ -1871,3 +1881,62 @@
 	extra_overlay = "chu_markings"
 	extra_overlay2 = "chu_tipmarkings"
 
+/// Tails drawn into robotic bodies: ordinary styles a body of that model starts with (/datum/robolimb/var/built_in_tail).
+/datum/sprite_accessory/tail/robolimb
+	desc = ""
+	icon_state = "tail"
+	do_colouration = 1
+	color_blend_mode = ICON_MULTIPLY
+
+/datum/sprite_accessory/tail/robolimb/eggnerdltd
+	name = "Eggnerd cybernetic tail"
+	icon = 'icons/mob/human_races/cyberlimbs/_fluff/rahboop.dmi'
+
+/datum/sprite_accessory/tail/robolimb/eggnerdltdred
+	name = "Eggnerd red cybernetic tail"
+	icon = 'icons/mob/human_races/cyberlimbs/rahboopred/rahboopred.dmi'
+
+/datum/sprite_accessory/tail/robolimb/dsi_tajaran
+	name = "DSI Tajaran cybernetic tail"
+	icon = 'icons/mob/human_races/cyberlimbs/DSITajaran/dsi_tajaran.dmi'
+
+/datum/sprite_accessory/tail/robolimb/dsi_lizard
+	name = "DSI Lizard cybernetic tail"
+	icon = 'icons/mob/human_races/cyberlimbs/DSILizard/dsi_lizard.dmi'
+
+/datum/sprite_accessory/tail/robolimb/dsi_sergal
+	name = "DSI Sergal cybernetic tail"
+	icon = 'icons/mob/human_races/cyberlimbs/DSISergal/dsi_sergal.dmi'
+
+/datum/sprite_accessory/tail/robolimb/dsi_nevrean
+	name = "DSI Nevrean cybernetic tail"
+	icon = 'icons/mob/human_races/cyberlimbs/DSINevrean/dsi_nevrean.dmi'
+
+/datum/sprite_accessory/tail/robolimb/dsi_vulpkanin
+	name = "DSI Vulpkanin cybernetic tail"
+	icon = 'icons/mob/human_races/cyberlimbs/DSIVulpkanin/dsi_vulpkanin.dmi'
+
+/datum/sprite_accessory/tail/robolimb/dsi_akula
+	name = "DSI Akula cybernetic tail"
+	icon = 'icons/mob/human_races/cyberlimbs/DSIAkula/dsi_akula.dmi'
+
+/datum/sprite_accessory/tail/robolimb/dsi_spider
+	name = "DSI Vasilissan cybernetic tail"
+	icon = 'icons/mob/human_races/cyberlimbs/DSISpider/dsi_spider.dmi'
+	icon_state = "tail_s" // Its sprite has this name, so the body never drew it by itself: selectable, not built in.
+
+/datum/sprite_accessory/tail/robolimb/dsi_zorren
+	name = "DSI Zorren cybernetic tail"
+	icon = 'icons/mob/human_races/cyberlimbs/DSIZorren/dsi_zorren.dmi'
+
+/datum/sprite_accessory/tail/robolimb/dsi_fennec
+	name = "DSI Fennec cybernetic tail"
+	icon = 'icons/mob/human_races/cyberlimbs/DSIFennec/dsi_fennec.dmi'
+
+/datum/sprite_accessory/tail/robolimb/kitsuhana
+	name = "Kitsuhana cybernetic tail"
+	icon = 'icons/mob/human_races/cyberlimbs/_fluff/aronai.dmi'
+
+/datum/sprite_accessory/tail/robolimb/white_kryten
+	name = "White Kryten cybernetic tail"
+	icon = 'icons/mob/human_races/cyberlimbs/_fluff/serdykov.dmi'
