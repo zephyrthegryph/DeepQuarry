@@ -1062,6 +1062,54 @@ impl ProcAnalysis<'_> {
                 *vars = merge(vars, &body_vars);
                 false
             }
+            "DMASTProcStatementSwitch" => {
+                // Each case runs on its own copy of the state; the paths that fall out of the switch merge.
+                // Without a default case, the no-match path keeps the state from before the switch.
+                self.branches += 1;
+                self.inspect(field(node, "Value"), vars);
+                let mut outs: Vec<HashMap<String, TypeState>> = Vec::new();
+                let mut has_default = false;
+                for case in field(node, "Cases").as_array().into_iter().flatten() {
+                    if kind(case).contains("Default") {
+                        has_default = true;
+                    }
+                    for value in field(case, "Values").as_array().into_iter().flatten() {
+                        self.inspect(value, vars);
+                    }
+                    let mut case_vars = vars.clone();
+                    if !self.block(field(case, "Body"), &mut case_vars) {
+                        outs.push(case_vars);
+                    }
+                }
+                if !has_default {
+                    outs.push(vars.clone());
+                }
+                let Some(first) = outs.first().cloned() else {
+                    return true;
+                };
+                *vars = outs.iter().skip(1).fold(first, |acc, next| merge(&acc, next));
+                false
+            }
+            "DMASTProcStatementTryCatch" => {
+                // The catch body may start after any statement of the try body: it sees both states merged.
+                self.branches += 1;
+                let mut try_vars = vars.clone();
+                let try_return = self.block(field(node, "TryBody"), &mut try_vars);
+                let mut catch_vars = merge(vars, &try_vars);
+                let catch_return = if field(node, "CatchBody").is_null() {
+                    false
+                } else {
+                    self.block(field(node, "CatchBody"), &mut catch_vars)
+                };
+                *vars = if try_return {
+                    catch_vars
+                } else if catch_return {
+                    try_vars
+                } else {
+                    merge(&try_vars, &catch_vars)
+                };
+                try_return && catch_return
+            }
             _ => {
                 self.inspect(node, vars);
                 false
@@ -1696,6 +1744,43 @@ mod tests {
         let result = value(&expression, &variables, &Symbols::default(), "/datum");
         assert_eq!(result.kind, "unknown");
         assert_eq!(result.null, Nullability::NonNull);
+    }
+    fn deref_a(line: u32) -> String {
+        format!(r#"{{"kind":"DMASTProcStatementExpression","file":"x.dm","line":{line},"fields":{{"Expression":{{"kind":"DMASTDereference","file":"x.dm","line":{line},"fields":{{"Expression":{{"kind":"DMASTIdentifier","fields":{{"Identifier":"A"}}}},"Operations":[{{"kind":"FieldOperation","fields":{{"Identifier":"name","Safe":false}}}}]}}}}}}}}"#)
+    }
+    fn assign_a(line: u32) -> String {
+        format!(r#"{{"kind":"DMASTProcStatementExpression","file":"x.dm","line":{line},"fields":{{"Expression":{{"kind":"DMASTAssign","file":"x.dm","line":{line},"fields":{{"LHS":{{"kind":"DMASTIdentifier","fields":{{"Identifier":"A"}}}},"RHS":{{"kind":"DMASTConstantInteger","fields":{{"Value":1}}}}}}}}}}}}"#)
+    }
+    fn proc_with(statements: &str) -> String {
+        format!(r#"{{"kind":"proc","file":"x.dm","line":1,"parameters":[],"body":{{"kind":"DMASTProcBlockInner","fields":{{"Statements":[{{"kind":"DMASTProcStatementVarDeclaration","file":"x.dm","line":2,"fields":{{"Name":"A","Type":"/mob","Value":{{"kind":"DMASTConstantNull"}}}}}},{statements}]}}}}}}"#)
+    }
+    fn null_derefs(input: &str) -> Vec<usize> {
+        analyze_reader(input.as_bytes(), &[])
+            .unwrap()
+            .into_iter()
+            .filter(|f| f.rule == "null-deref")
+            .map(|f| f.line)
+            .collect()
+    }
+    #[test]
+    fn switch_cases_carry_their_own_assignments() {
+        let case = |body: String| format!(r#"{{"kind":"SwitchCaseValues","fields":{{"Values":[{{"kind":"DMASTConstantInteger","fields":{{"Value":1}}}}],"Body":{{"kind":"DMASTProcBlockInner","fields":{{"Statements":[{body}]}}}}}}}}"#);
+        let switch = format!(
+            r#"{{"kind":"DMASTProcStatementSwitch","file":"x.dm","line":3,"fields":{{"Value":{{"kind":"DMASTConstantInteger","fields":{{"Value":1}}}},"Cases":[{},{}]}}}}"#,
+            case(format!("{},{}", assign_a(4), deref_a(5))),
+            case(deref_a(6)),
+        );
+        // The deref after its own assignment is fine; the case that never assigns still derefs null.
+        assert_eq!(null_derefs(&proc_with(&switch)), vec![6]);
+    }
+    #[test]
+    fn try_body_assignment_reaches_code_after_a_returning_catch() {
+        let try_catch = format!(
+            r#"{{"kind":"DMASTProcStatementTryCatch","file":"x.dm","line":3,"fields":{{"TryBody":{{"kind":"DMASTProcBlockInner","fields":{{"Statements":[{}]}}}},"CatchBody":{{"kind":"DMASTProcBlockInner","fields":{{"Statements":[{{"kind":"DMASTProcStatementReturn","file":"x.dm","line":5,"fields":{{"Value":null}}}}]}}}}}}}},{}"#,
+            assign_a(4),
+            deref_a(6),
+        );
+        assert!(null_derefs(&proc_with(&try_catch)).is_empty());
     }
     #[test]
     fn ast_null_flow() {
