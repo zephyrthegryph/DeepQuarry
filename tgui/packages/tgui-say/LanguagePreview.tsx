@@ -27,6 +27,7 @@ export function renderSegment(segment: Segment, key: number) {
   if (segment.tags.includes('b')) node = <b>{node}</b>;
   if (segment.tags.includes('i')) node = <i>{node}</i>;
   if (segment.tags.includes('u')) node = <u>{node}</u>;
+  if (segment.tags.includes('marker')) node = <span style={{ opacity: 0.4 }}>{node}</span>;
   return <span key={key}>{node}</span>;
 }
 
@@ -68,4 +69,14 @@ export function FormattedText(props: {
       {segments.map(renderSegment)}
     </span>
   );
+}
+
+/** The markers in place (dimmed) and the rest formatted: an editor's backdrop under the text being typed. */
+export function FormattedBackdrop(props: {
+  text: string;
+  markers: Record<string, string>;
+}) {
+  const { text, markers } = props;
+  const [segments] = emphasize([text], { markers } as LanguageRules, true);
+  return <>{segments.map(renderSegment)}</>;
 }

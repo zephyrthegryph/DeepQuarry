@@ -258,11 +258,14 @@ GLOBAL_PROTECT(protected_ranks)
 		message_admins("Failed to connect to database while loading admins. Loading from backup.")
 		log_sql("Failed to connect to database while loading admins. Loading from backup.")
 		dbfail = TRUE
-	//clear the datums references
+	// Detach every live holder the way a deadmin does: verbs removed, the client unlinked and the datum's owner relation dropped
+	// (unlinking the client by hand left each old datum still pointing at it).
+	for(var/admin_ckey in GLOB.admin_datums)
+		var/datum/admins/old = GLOB.admin_datums[admin_ckey]
+		old?.disassociate()
 	GLOB.admin_datums.Cut()
-	for(var/client/current_client in GLOB.admins)
+	for(var/client/current_client in GLOB.admins) // a client admitted without a datum still loses its verbs
 		current_client.remove_admin_verbs()
-		current_client.holder = null
 	GLOB.admins.Cut()
 	GLOB.protected_admins.Cut()
 	GLOB.deadmins.Cut()
