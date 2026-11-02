@@ -235,6 +235,9 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
             secondEarColors={
               (editorData.ear_secondary?.colors ?? []) as string[]
             }
+            secondEarFallback={
+              (editorData.ear_secondary?.fallback ?? []) as string[]
+            }
           />
         );
       case 'markings':
@@ -514,9 +517,16 @@ const PART_ROWS: PartRow[] = [
   },
 ];
 
-const TABLE_COLUMNS =
-  '6em minmax(13em, 1fr) repeat(3, 9.5em) minmax(11em, 1fr)';
-const cellStyle = { minWidth: 0, alignSelf: 'center' } as const;
+/// Part, style, three swatch columns, options: fits the window without a horizontal scrollbar.
+const TABLE_COLUMNS = '5.5em minmax(0, 1.4fr) repeat(3, 2.4em) minmax(0, 1fr)';
+const cellStyle = {
+  minWidth: 0,
+  alignSelf: 'center',
+  minHeight: '1.9em',
+  display: 'flex',
+  alignItems: 'center',
+} as const;
+const swatchCell = { ...cellStyle, justifyContent: 'center' } as const;
 
 /// A colour cell; blank when the style lacks the channel.
 const ChannelCell = ({
@@ -528,9 +538,13 @@ const ChannelCell = ({
   values: Record<string, unknown>;
   shown: boolean;
 }) => (
-  <Box style={cellStyle}>
+  <Box style={swatchCell}>
     {shown && prefKey && (
-      <ColorStrip colors={[{ key: prefKey, label: '' }]} values={values} />
+      <ColorStrip
+        compact
+        colors={[{ key: prefKey, label: '' }]}
+        values={values}
+      />
     )}
   </Box>
 );
@@ -539,20 +553,23 @@ const ChannelCell = ({
 const SecondEarCell = ({
   index,
   color,
+  fallback,
   shown,
 }: {
   index: number;
   color?: string;
+  /// What the channel draws while unset: the first ear's colour.
+  fallback?: string;
   shown: boolean;
 }) => {
   const { act } = useBackend();
   const send = (action: string, params: Record<string, unknown>) =>
     act('dq_editor_action', { editor: 'ear_secondary', action, params });
   return (
-    <Box style={cellStyle}>
+    <Box style={swatchCell}>
       {shown && (
         <ColorSwatch
-          color={color ?? '#ffffff'}
+          color={color ?? fallback ?? '#ffffff'}
           category="ears_color1"
           onPick={(hex) => send('set_color', { index, color: hex })}
           onCustom={() => send('pick_color', { index })}
@@ -570,6 +587,7 @@ const AlphaCell = ({
   values: Record<string, unknown>;
 }) => (
   <ColorStrip
+    compact
     colors={[]}
     alphas={[{ key: alpha, label: 'Opacity' }]}
     values={values}
@@ -612,11 +630,13 @@ const BodyTable = ({
   widgets,
   withValue,
   secondEarColors,
+  secondEarFallback,
 }: {
   values: Record<string, unknown>;
   widgets: Record<string, PrefWidgetItem>;
   withValue: (key: string) => PrefWidgetItem | null;
   secondEarColors: string[];
+  secondEarFallback: string[];
 }) => {
   const tailItem = withValue('tail_style');
   const tailValue = values.tail_style;
@@ -625,31 +645,42 @@ const BodyTable = ({
     !!(tailItem?.thumbnails?.[String(val ?? '')] as StyleThumb | undefined)
       ?.taur;
   const taurNow = isTaur(tailValue);
-  const header = [
-    'Part',
-    'Style',
-    'Primary',
-    'Secondary',
-    'Tertiary',
-    'Options',
+  const header: Array<[string, boolean]> = [
+    ['Part', false],
+    ['Style', false],
+    ['Pri', true],
+    ['Sec', true],
+    ['Ter', true],
+    ['Options', false],
   ];
   return (
     <Section title="Body">
-      <Box style={{ overflowX: 'auto' }}>
+      <Box>
         <Box
           style={{
             display: 'grid',
             gridTemplateColumns: TABLE_COLUMNS,
-            gap: '0.3em 0.5em',
-            minWidth: '60em',
+            gap: '0.3em 0.4em',
+            alignItems: 'center',
           }}
         >
-          {header.map((h) => (
-            <Box key={h} bold color="label">
+          {header.map(([h, centred]) => (
+            <Box
+              key={h}
+              bold
+              color="label"
+              style={{ textAlign: centred ? 'center' : undefined }}
+            >
               {h}
             </Box>
           ))}
-          {PART_ROWS.filter((row) => widgets[row.styleKey]).map((row) => {
+          {PART_ROWS.filter(
+            (row) =>
+              widgets[row.styleKey] &&
+              (row.styleKey !== 'ear_secondary_style' ||
+                !isNoStyle(values.ear_style) ||
+                !isNoStyle(values.ear_secondary_style)),
+          ).map((row) => {
             const isTail = row.styleKey === 'tail_style';
             const value = values[row.styleKey];
             const item = withValue(row.styleKey);
@@ -698,6 +729,7 @@ const BodyTable = ({
                       key={i}
                       index={i + 1}
                       color={secondEarColors[i]}
+                      fallback={secondEarFallback[i]}
                       shown={i < count}
                     />
                   ) : (
@@ -756,6 +788,7 @@ const GradientOption = ({
       <BareField item={item} />
       {!isNoStyle(values.grad_style_name) && widgets.grad_color && (
         <ColorStrip
+          compact
           colors={[{ key: 'grad_color', label: '' }]}
           values={values}
         />

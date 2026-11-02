@@ -99,6 +99,7 @@
 	TEST_ASSERT_EQUAL(editor.write_channel(P, 2, "#123456"), PREF_UPDATE_ACCEPTED, "a channel is written")
 	var/list/colors = P.read_preference(/datum/preference/ear_secondary_colors)
 	TEST_ASSERT_EQUAL(colors[2], "#123456", "in its place")
+	TEST_ASSERT_EQUAL(colors[1], lowertext(P.read_preference(/datum/preference/color/human/ears_color1)), "the channel below starts as the first ear's colour")
 	TEST_ASSERT_EQUAL(editor.write_channel(P, 99, "#123456"), PREF_UPDATE_REJECTED, "a channel past the last is refused")
 	TEST_ASSERT_EQUAL(editor.write_channel(P, 1, "red"), PREF_UPDATE_REJECTED, "a non-colour is refused")
 	var/list/data = editor.build_ui_data(P)
@@ -107,6 +108,21 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
 	pref.apply_to_human(H, colors)
 	TEST_ASSERT_EQUAL(H.ear_secondary_colors[2], "#123456", "and the body takes it")
+	// An unset channel draws the first ear's colour, not the raw sprite.
+	var/mob/living/carbon/human/E = allocate(/mob/living/carbon/human, test_floor())
+	E.set_species(SPECIES_HUMAN)
+	var/datum/sprite_accessory/ears/coloured
+	for(var/path in GLOB.ear_styles_list)
+		var/datum/sprite_accessory/ears/candidate = GLOB.ear_styles_list[path]
+		if(candidate.do_colouration && candidate.name != DEVELOPER_WARNING_NAME)
+			coloured = candidate
+			break
+	rel_set(E, nameof(E.ear_secondary_style), coloured)
+	E.looks.set_ears_color("#ff0000")
+	E.set_ear_secondary_colors(list())
+	var/unset = md5(icon2base64(E.get_ears_overlay(FALSE)))
+	E.set_ear_secondary_colors(list("#ff0000"))
+	TEST_ASSERT_EQUAL(unset, md5(icon2base64(E.get_ears_overlay(FALSE))), "an unset channel draws like the first ear's colour")
 	fdel(P.path)
 
 /// Each model's built-in tail is a style with a sprite; a save migrates once; a mob with no setup gets its parts and a setup's None stands.

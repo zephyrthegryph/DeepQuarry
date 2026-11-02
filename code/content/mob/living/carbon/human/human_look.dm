@@ -499,7 +499,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	if(ear_style)
 		. += "[ear_style.type]|[looks.ears_color]|[looks.ears_color2]|[looks.ears_color3]|[looks.ears_alpha]"
 	if(ear_secondary_style)
-		. += "|2|[ear_secondary_style.type]|[jointext(ear_secondary_colors || list(), ",")]|[looks.ears_alpha2]"
+		. += "|2|[ear_secondary_style.type]|[jointext(ear_secondary_colors || list(), ",")]|[looks.ears_color]|[looks.ears_color2]|[looks.ears_color3]|[looks.ears_alpha2]"
 
 /// Glowing eyes, above the lighting plane. Plain eyes are drawn by the head itself.
 /mob/living/carbon/human/proc/eyes_look(datum/look/look)
@@ -690,18 +690,18 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	if(ear_secondary_style && !block_head_hair)
 		var/icon/ears_s = new/icon("icon" = initial(ear_secondary_style.icon), "icon_state" = initial(ear_secondary_style.icon_state))
 		if(ear_secondary_style.do_colouration)
-			var/color = LAZYACCESS(ear_secondary_colors, 1)
+			var/color = LAZYACCESS(ear_secondary_colors, 1) || looks.ears_color // unset: the first ear's colour
 			if(color)
 				ears_s.Blend(color, ear_secondary_style.color_blend_mode)
 		if(ear_secondary_style.extra_overlay)
 			var/icon/overlay = new/icon("icon" = initial(ear_secondary_style.icon), "icon_state" = ear_secondary_style.extra_overlay)
-			var/color = LAZYACCESS(ear_secondary_colors, 2)
+			var/color = LAZYACCESS(ear_secondary_colors, 2) || looks.ears_color2 // unset: the first ear's colour
 			if(color)
 				overlay.Blend(color, ear_secondary_style.color_blend_mode)
 			ears_s.Blend(overlay, ICON_OVERLAY)
 		if(ear_secondary_style.extra_overlay2) //MORE COLOURS IS BETTERER
 			var/icon/overlay = new/icon("icon" = initial(ear_secondary_style.icon), "icon_state" = ear_secondary_style.extra_overlay2)
-			var/color = LAZYACCESS(ear_secondary_colors, 3)
+			var/color = LAZYACCESS(ear_secondary_colors, 3) || looks.ears_color3 // unset: the first ear's colour
 			if(color)
 				overlay.Blend(color, ear_secondary_style.color_blend_mode)
 			ears_s.Blend(overlay, ICON_OVERLAY)
