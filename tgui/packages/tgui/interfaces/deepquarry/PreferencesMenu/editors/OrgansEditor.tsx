@@ -4,7 +4,7 @@
 // label + button row + (for externals) model dropdown.
 
 import { useBackend } from 'tgui/backend';
-import { Box, Dropdown } from 'tgui-core/components';
+import { Box, Button, Dropdown } from 'tgui-core/components';
 import { ColorChoice } from '../colors';
 import type { EditorProps } from './index';
 
@@ -14,8 +14,15 @@ type ExternalState = {
   /// A robotic limb's own tint, and the palette slot it follows if any.
   color?: string | null;
   link?: string;
+  own_color?: boolean;
+  /// The ancestor this limb is robotic through, while its own setting is Normal.
+  via?: string | null;
 };
 type Data = {
+  /// This species' own limbs are robotic: one colour for the whole body.
+  robotic_body?: boolean | number;
+  body_color?: string;
+  body_link?: string;
   externals: Record<string, ExternalState>;
   internals: Record<string, string>;
   external_labels?: Record<string, string>;
@@ -94,6 +101,25 @@ export const OrgansEditor = ({
         alignItems: 'flex-start',
       }}
     >
+      {!!d.robotic_body && (
+        <Box style={{ flex: '1 1 100%' }}>
+          <Box bold color="label" mb={0.2}>
+            Body colour
+          </Box>
+          <ColorChoice
+            color={d.body_color ?? '#ffffff'}
+            link={d.body_link}
+            category="other"
+            onLink={(slot) =>
+              send('set_limb_color', { limb: 'body', color: slot })
+            }
+            onPick={(hex) =>
+              send('set_limb_color', { limb: 'body', color: hex })
+            }
+            onCustom={() => send('pick_limb_color', { limb: 'body' })}
+          />
+        </Box>
+      )}
       <Box style={LIST_STYLE}>
         <Box bold color="label" mb={0.2}>
           Limbs
@@ -122,10 +148,23 @@ export const OrgansEditor = ({
                   send('set_external_status', { limb, status: String(v) })
                 }
               />
-              {state.status === 'cyborg' && (
+              {!!state.via && (
+                <Box color="label">
+                  Cybernetic via {externalLabels[state.via] ?? state.via}
+                </Box>
+              )}
+              {!!state.via && state.own_color && (
+                <Button
+                  compact
+                  icon="link"
+                  tooltip={`Follow ${externalLabels[state.via] ?? state.via} again`}
+                  onClick={() => send('clear_limb_color', { limb })}
+                />
+              )}
+              {(state.status === 'cyborg' || !!state.via) && (
                 <ColorChoice
                   color={state.color ?? '#ffffff'}
-                  link={state.link}
+                  link={state.via && !state.own_color ? undefined : state.link}
                   category="other"
                   onLink={(slot) =>
                     send('set_limb_color', { limb, color: slot })
