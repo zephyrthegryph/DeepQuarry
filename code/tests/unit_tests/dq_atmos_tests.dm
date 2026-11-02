@@ -2998,6 +2998,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/turf/simulated/floor/T = pair[1]
 	dq_atmos_test_snapshot_air(T)
 	dq_atmos_test_isolate_pair(T, T)
+	dq_atmos_test_fill_standard_air(T) // the isolated floor starts empty and at 0 K: ten moles of oxygen there would not move the reading a tenth of a kilopascal
 	T.air_update_turf(TRUE, FALSE)
 	var/obj/machinery/airlock_sensor/S = new(T)
 	S.sample_pressure()
