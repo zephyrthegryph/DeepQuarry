@@ -131,6 +131,15 @@
 	client.changes()
 	return TRUE
 
+/// The lobby's Guide button: the configured wiki, when there is one.
+/mob/new_player/proc/ui_act_open_guide(datum/act/op/A)
+	var/url = CONFIG_GET(string/wikiurl)
+	if(!url)
+		to_chat(A.actor, span_warning("This server has no guide configured."))
+		return TRUE
+	client << link(url)
+	return TRUE
+
 /mob/new_player/proc/ui_act_keyboard(datum/act/op/A)
 	var/mob/user = A.actor
 	playsound_local(user, get_sfx(SFX_KEYBOARD), vol = 20)
