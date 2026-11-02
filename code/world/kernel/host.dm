@@ -300,6 +300,8 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	// the rest, so the lobby opens without waiting about 45 s for draws nobody is looking at. Test worlds draw everything now, as their
 	// tests read looks right after boot; a bench passes defer_boot_drain=1 to measure the server's way.
 	if(boot_drain_deferred())
+		GLOB.boot_draws_outstanding = length(GLOB.refresh_queue) > 0
+		GLOB.boot_draws_deferred_at = REALTIMEOFDAY
 		log_world("Boot drain deferred: [length(GLOB.refresh_queue)] first draws left to the presentation lane (nearest clients first).")
 	else
 		refresh_boot_drain()
@@ -583,3 +585,19 @@ GLOBAL_LIST_INIT(empty_performance_window, list("samples" = 0, "avg" = 0, "p50" 
 #else
 	return TRUE
 #endif
+
+/// The map's first draws were left to the presentation lane at boot and the refresh queue has not yet been empty since.
+GLOBAL_VAR_INIT(boot_draws_outstanding, FALSE)
+/// REALTIMEOFDAY when the first draws were deferred (for the log line when they finish).
+GLOBAL_VAR_INIT(boot_draws_deferred_at, 0)
+
+/// Whether the map's deferred first draws are still being made: until then no player enters the map (round start, observing, an
+/// admin ghost), so nobody ever sees an atom that has not been drawn. Clears for good the first time the refresh queue is empty.
+/proc/boot_draws_pending()
+	if(!GLOB.boot_draws_outstanding)
+		return FALSE
+	if(length(GLOB.refresh_queue))
+		return TRUE
+	GLOB.boot_draws_outstanding = FALSE
+	log_world("Boot draws finished [(REALTIMEOFDAY - GLOB.boot_draws_deferred_at) / 10]s after init; the map is open.")
+	return FALSE

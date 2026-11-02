@@ -110,6 +110,9 @@
 		return TRUE
 	if(A.step_value("observe") != "Yes")
 		return TRUE
+	if(boot_draws_pending())
+		to_chat(src, span_warning("The map is still being drawn. Please try again in a moment."))
+		return TRUE
 	return observe_apply()
 
 /mob/new_player/proc/ui_act_give_feedback(datum/act/op/A)

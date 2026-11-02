@@ -258,6 +258,7 @@
 #include "dq_heat_api_tests.dm"
 #include "dq_heat_net_tests.dm"
 #include "dq_heat_machines_behaviour.dm"
+#include "dq_boot_draws_gate.dm"
 #include "dq_boot_gate.dm"
 #include "dq_body_heat_behaviour.dm"
 #include "dq_telecomms_drift_tests.dm"
