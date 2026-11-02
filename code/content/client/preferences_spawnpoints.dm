@@ -11,6 +11,7 @@ GLOBAL_LIST_INIT(spawntypes, populate_spawn_points())
 /datum/spawnpoint
 	var/msg          //Message to display on the arrivals computer.
 	var/display_name //Name used in preference setup.
+	var/landing_list //Name of the GLOB list the map's landmarks record into.
 	var/list/restrict_job = null
 	var/list/disallow_job = null
 	var/announce_channel = "Common"
@@ -38,7 +39,7 @@ GLOBAL_LIST_INIT(spawntypes, populate_spawn_points())
 
 /// What the map registered for this spawn point (turfs or landmarks), read when asked: a list held from world setup goes stale.
 /datum/spawnpoint/proc/candidates()
-	return null
+	return landing_list ? GLOB.vars[landing_list] : null
 
 /// The turfs a joiner can actually stand on.
 /datum/spawnpoint/proc/usable_turfs()
@@ -98,8 +99,8 @@ GLOBAL_LIST_INIT(spawntypes, populate_spawn_points())
 /proc/spawnpoint_turf_safe(turf/T)
 	if(!isturf(T) || T.density || istype(T, /turf/space))
 		return FALSE
-	for(var/obj/O in T)
-		if(O.density && !(O.flags & ON_BORDER)) // a border window beside a shuttle seat does not stop anyone standing there
+	for(var/atom/movable/O as anything in contents_of(T))
+		if(isobj(O) && O.density && !(O.flags & ON_BORDER)) // a border window beside a shuttle seat does not stop anyone standing there
 			return FALSE
 	return TRUE
 
@@ -153,37 +154,30 @@ GLOBAL_LIST_INIT(spawntypes, populate_spawn_points())
 	return REGISTRY_MEMBERS(REGISTRY_LATEJOIN)
 
 /datum/spawnpoint/gateway
+	landing_list = "latejoin_gateway"
 	display_name = "Gateway"
 	msg = "has completed translation from offsite gateway"
 
-/datum/spawnpoint/gateway/candidates()
-	return GLOB.latejoin_gateway
 /datum/spawnpoint/cryo
+	landing_list = "latejoin_cryo"
 	display_name = "Cryogenic Storage"
 	msg = "has completed cryogenic revival"
 	allowed_mob_types = JOB_CARBON
 	disallow_job = list(JOB_OUTSIDER)
 
-/datum/spawnpoint/cryo/candidates()
-	return GLOB.latejoin_cryo
-
 /datum/spawnpoint/cyborg
+	landing_list = "latejoin_cyborg"
 	display_name = "Cyborg Storage"
 	msg = "has been activated from storage"
 	allowed_mob_types = JOB_SILICON
 	disallow_job = list(JOB_OUTSIDER)
 
-/datum/spawnpoint/cyborg/candidates()
-	return GLOB.latejoin_cyborg
-
 
 /datum/spawnpoint/tram
+	landing_list = "latejoin_tram"
 	display_name = "Tram Station"
 	msg = "will arrive to the station shortly by shuttle"
 	disallow_job = list(JOB_OUTSIDER)
-
-/datum/spawnpoint/tram/candidates()
-	return GLOB.latejoin_tram
 
 /datum/spawnpoint/vore
 	display_name = "Vorespawn - Prey"
@@ -207,46 +201,36 @@ GLOBAL_LIST_INIT(spawntypes, populate_spawn_points())
 	return length(usable_turfs())
 
 /datum/spawnpoint/stationgateway
+	landing_list = "latejoin_gatewaystation"
 	display_name = "Station gateway"
 	msg = "has completed translation from station gateway"
 	disallow_job = list(JOB_OUTSIDER)
 
-/datum/spawnpoint/stationgateway/candidates()
-	return GLOB.latejoin_gatewaystation
-
 
 /datum/spawnpoint/plainspath
+	landing_list = "latejoin_plainspath"
 	display_name = "Sif plains"
 	msg = "has checked in at the plains gate"
 	restrict_job = list(JOB_OUTSIDER, JOB_ANOMALY)
 
-/datum/spawnpoint/plainspath/candidates()
-	return GLOB.latejoin_plainspath
-
 
 /datum/spawnpoint/fueldepot
+	landing_list = "latejoin_fueldepot"
 	display_name = "Fuel Depot"
 	msg = "woke up in the fuel depot"
 	restrict_job = list(JOB_OUTSIDER)
 
-/datum/spawnpoint/fueldepot/candidates()
-	return GLOB.latejoin_fueldepot
-
 
 /datum/spawnpoint/tyrspawn
+	landing_list = "latejoin_tyrvillage"
 	display_name = "Tyr Wreckage"
 	msg = "woke up in a ruined shuttle"
 	restrict_job = list(JOB_OUTSIDER)
 
-/datum/spawnpoint/tyrspawn/candidates()
-	return GLOB.latejoin_tyrvillage
-
 
 /datum/spawnpoint/darkspawn
+	landing_list = "latejoin_thedark"
 	display_name = "The Dark"
 	msg = "phased into the dark"
 	restrict_job = list(JOB_ANOMALY)
-
-/datum/spawnpoint/darkspawn/candidates()
-	return GLOB.latejoin_thedark
 
