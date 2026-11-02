@@ -37,6 +37,9 @@
 		var/obj/item/organ/external/O = target.organs_by_name[name]
 		if(!O)
 			continue
+		// Lost with its amputated parent: the limb's own saved setting does not apply.
+		if(status != "amputated" && dq_limb_lost_through(pref_organ_data, name))
+			continue
 		if(status == "amputated")
 			O.remove_rejuv()
 		else if(status == "cyborg")

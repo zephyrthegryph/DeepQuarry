@@ -101,7 +101,6 @@ export const PREF_KEY_LABELS: Record<string, string> = {
   secondary_ears_alpha: 'Secondary Ear Opacity',
   preflang: 'Preferred Language',
   uplinklocation: 'Uplink Location',
-  synth_markings: 'Synth Markings',
   preview_loadout: 'Show Loadout in Preview',
   preview_job: 'Show Job in Preview',
   animations_toggle: 'Preview Animations',

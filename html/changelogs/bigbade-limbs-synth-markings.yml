@@ -1,0 +1,5 @@
+author: "bigbade"
+delete-after: true
+changes:
+  - bugfix: "A limb whose parent is amputated is greyed out, and its saved setting no longer applies."
+  - rscdel: "Removed the Synth Markings toggle: markings always draw on robotic limbs."
