@@ -1457,7 +1457,10 @@ async function runTestWorld(
   Juke.rm('data/bench/scenarios.json');
   fs.mkdirSync('data/bench', { recursive: true });
   const sampler = sample ? new ProcessSampler('data/bench/process.json') : null;
-  const params = new URLSearchParams({ 'log-directory': 'ci', ...worldParams }).toString();
+  // launch_tod: the spawn stamp (deciseconds since midnight UTC, as world.timeofday counts), so a sampled bench world can split its
+  // launch into the .dmb load, the global variables and the compiled map (server_phases startup_spawn_to_globals_s and after).
+  const launchTod = sample ? { launch_tod: String(Math.round((Date.now() % 86_400_000) / 100)) } : {};
+  const params = new URLSearchParams({ 'log-directory': 'ci', ...worldParams, ...launchTod }).toString();
   const started = Date.now();
   let killedByWatchdog = false;
   let runtimeError: string | null = null;
