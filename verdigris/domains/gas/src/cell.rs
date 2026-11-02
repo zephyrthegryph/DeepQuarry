@@ -82,6 +82,11 @@ const DIFFUSION_CONDUCTANCE: f32 = DIFFUSION_RATE * CELL_VOLUME / 2.0;
 
 /// An edge sleeps below this difference in any gas, per standard cell (mol).
 pub const SETTLED_MOLES: f32 = 0.05;
+/// The smallest size `relative_change` measures a cell against (moles): the idle stride's tolerance is relative, and a near-empty
+/// cell must not make a trace write look large.
+pub const RELATIVE_FLOOR_MOLES: f32 = 1.0;
+/// Room temperature (K), for the energy of `RELATIVE_FLOOR_MOLES`.
+const ROOM_KELVIN: f32 = 293.15;
 /// ... and below this temperature difference (K), unless a side is nearly empty.
 pub const SETTLED_KELVIN: f32 = 0.5;
 /// Revision bands (as machines' dirty observations: 0.5 kPa, 0.5 K; and
@@ -485,9 +490,13 @@ impl FieldKind for TurfGas {
 	const STRIDE_TOLERANCE: f32 = 5.0e-4;
 
 	fn relative_change(before: &GasCell, after: &GasCell) -> f32 {
-		let size: f32 = before.moles.iter().sum::<f32>().max(1.0e-3);
+		// Measured against at least a mole (and that mole's energy at room temperature): a few millimoles leaking into a near-empty
+		// airless turf is not a large change, and against the cell's own tiny contents every such write woke the field and held its
+		// stride at one (the `small_writes_into_near_vacuum` stride test).
+		let size: f32 = before.moles.iter().sum::<f32>().max(RELATIVE_FLOOR_MOLES);
 		let moved: f32 = before.moles.iter().zip(&after.moles).map(|(&x, &y)| (x - y).abs()).sum();
-		let energy = (before.energy - after.energy).abs() / before.energy.abs().max(after.energy.abs()).max(1.0);
+		let floor_energy = heat_capacity(&[RELATIVE_FLOOR_MOLES; N]) / N as f32 * ROOM_KELVIN;
+		let energy = (before.energy - after.energy).abs() / before.energy.abs().max(after.energy.abs()).max(floor_energy);
 		(moved / size).max(energy)
 	}
 

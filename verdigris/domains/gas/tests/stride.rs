@@ -76,3 +76,34 @@ fn the_stride_stays_within_the_tolerance_of_the_exact_scheme_and_conserves() {
 	eprintln!("gas stride: advances {} skipped {} stride {} changes {}", stats.steps, stats.skipped_steps, stats.stride, stats.stride_changes);
 	assert!(stats.skipped_steps > 0, "the idle stride never skipped a step: {stats:?}");
 }
+
+/// A tiny write into a near-empty cell is not an event: a row of near-vacuum turfs (0.01 mol each, settled) takes 1e-4 mol into one
+/// cell every step, as a vent leaking into an airless room or a hull plate warming a vacuum does. Measured against the cell's own
+/// 0.01 mol that is a 1 % change, so every such write reset the stride and kept the field on single steps forever; against the
+/// floor of a mole it is 1e-4, under the tolerance, and the field strides. The written moles all stay in the field.
+#[test]
+fn small_writes_into_near_vacuum_do_not_hold_the_stride_at_one() {
+	let mut r = room(4);
+	for i in 0..LEN {
+		let mut c = GasCell::new([0.0; N], 293.0);
+		c.moles[GAS_OXYGEN] = 0.01;
+		c.refresh_in(CAPACITY);
+		r.cells.set(i, c);
+	}
+	for _ in 0..20 {
+		r.step();
+	}
+	let before = r.totals()[GAS_OXYGEN];
+	for _ in 0..200 {
+		let mut c = r.cells.get(0).unwrap();
+		c.moles[GAS_OXYGEN] += 1.0e-4;
+		c.refresh_in(CAPACITY);
+		r.cells.set(0, c);
+		r.step();
+	}
+	let added = r.totals()[GAS_OXYGEN] - before;
+	assert!((added - 0.02).abs() <= 1e-4, "the written moles stay in the field: {added}");
+	let stats = r.field.stats();
+	eprintln!("near vacuum: advances {} skipped {} stride {}", stats.steps, stats.skipped_steps, stats.stride);
+	assert!(stats.skipped_steps > 0, "every tiny write reset the stride: {stats:?}");
+}
