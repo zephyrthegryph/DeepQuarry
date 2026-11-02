@@ -1,0 +1,5 @@
+author: "ethan"
+delete-after: true
+changes:
+  - rscadd: "Added a Teleporter spawn point in the second deck teleporter room."
+  - bugfix: "Outsiders spawn at the spawn point they chose, like any other job."
