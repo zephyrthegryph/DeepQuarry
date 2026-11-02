@@ -1,0 +1,5 @@
+author: "Ethan"
+delete-after: true
+changes:
+  - rscadd: "The stat panel is rebuilt in the game UI style, with a verb search box."
+  - qol: "Chat tabs, audio and ping match the rest of the UI; vchatdark chat text is readable."
