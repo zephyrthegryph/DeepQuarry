@@ -291,6 +291,12 @@ pub struct FieldStats {
     pub slow_edges: u32,
     /// Live edges of the last step in all (each counted once, not per sub-step).
     pub edges: u32,
+    /// The cell at the stiffest edge of the last advance and that edge's stiffness in thousandths per second: what sets `substeps` for the whole field.
+    pub stiffest_cell: u32,
+    pub stiffest_milli: u32,
+    /// The chunk with the largest write from outside at the last step and its relative size in millionths: what reset the stride (0 when the field does not stride).
+    pub outside_chunk: u32,
+    pub outside_ppm: u32,
     /// Steps the field takes per advance now (1: every step advances).
     pub stride: u32,
     /// Steps skipped (owed to the next advance) so far.
@@ -626,7 +632,11 @@ impl<K: FieldKind> FieldState<K> {
                     self.active[chunk] = true;
                     self.stats.woke_cells += 1;
                     if self.stride_cap > 1 {
-                        outside = outside.max(self.max_relative_change(cells, last, &[chunk]));
+                        let change = self.max_relative_change(cells, last, &[chunk]);
+                        if !(change <= outside) {
+                            self.stats.outside_chunk = u32::try_from(chunk).unwrap_or(u32::MAX);
+                        }
+                        outside = outside.max(change);
                     }
                 }
             }
@@ -643,6 +653,10 @@ impl<K: FieldKind> FieldState<K> {
                 self.active[chunk] = true;
                 self.stats.woke_geom += 1;
             }
+        }
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        {
+            self.stats.outside_ppm = if outside.is_finite() { (outside * 1.0e6).min(4.0e9) as u32 } else { u32::MAX };
         }
         let woke = self.stats.woke_geom + self.stats.woke_grid > 0
             || self.last_cells.is_none()
@@ -750,6 +764,13 @@ impl<K: FieldKind> FieldState<K> {
         // Multi-rate: the sub-step grid is a power of two, and an edge needing fewer sub-steps than the grid has is computed on a
         // coarser cadence (every `period` sub-steps over that much time), so one stiff edge no longer makes every edge pay for it.
         // Each edge still moves the same flux out of one cell and into the other, so conservation is unchanged.
+        if let Some(worst) = live_edges.iter().flatten().max_by(|x, y| x.stiff.total_cmp(&y.stiff)) {
+            self.stats.stiffest_cell = worst.a;
+            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            {
+                self.stats.stiffest_milli = (worst.stiff * 1000.0).min(4.0e9) as u32;
+            }
+        }
         self.stats.slow_edges = 0;
         self.stats.edges = u32::try_from(live_edges.iter().map(Vec::len).sum::<usize>()).unwrap_or(u32::MAX);
         let substeps = if self.multirate && substeps > 1 {
