@@ -180,6 +180,17 @@ h3 {
   }
 }
 
+.menu-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2em;
+  margin-bottom: 0.2em;
+
+  .Button {
+    margin: 0;
+  }
+}
+
 .mc-dashboard {
   display: flex;
   flex-direction: column;

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DARK_PALETTE } from './palette';
-import { clientThemeWinset, SKIN_BUTTONS, SKIN_PANES } from './themes';
+import { clientThemeWinset, SKIN_PANES } from './themes';
 
 const root = join(import.meta.dir, '../../../..');
 const skin = readFileSync(join(root, 'interface/skin.dmf'), 'utf8');
@@ -48,14 +48,6 @@ describe('native dark palette', () => {
     for (const name of SKIN_PANES) {
       expect(skinElem(name)).toContain(
         `background-color = ${DARK_PALETTE.base}`,
-      );
-    }
-    for (const name of SKIN_BUTTONS) {
-      expect(skinElem(name)).toContain(
-        `background-color = ${DARK_PALETTE.primary}`,
-      );
-      expect(skinElem(name)).toContain(
-        `text-color = ${DARK_PALETTE.buttonText}`,
       );
     }
   });

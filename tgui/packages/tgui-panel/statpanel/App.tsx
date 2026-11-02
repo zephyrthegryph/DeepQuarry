@@ -7,6 +7,7 @@ import {
 } from 'react';
 import { Button, Input, Section } from 'tgui-core/components';
 import { McTab } from './McTab';
+import { MenuPage } from './MenuPage';
 import {
   type State,
   type StatStore,
@@ -269,6 +270,7 @@ export function App(props: {
     displayStore.get,
   );
   const [query, setQuery] = useState('');
+  const [menuOpen, setMenuOpen] = useState(false);
   const { state } = store;
   const found = searchVerbs(state, query);
   return (
@@ -278,15 +280,23 @@ export function App(props: {
           <Button
             key={tab}
             compact={tabsStyle === 'classic'}
-            selected={tab === state.currentTab}
+            selected={!menuOpen && tab === state.currentTab}
             onClick={() => {
               setQuery('');
+              setMenuOpen(false);
               store.setTab(tab);
             }}
           >
             {tab}
           </Button>
         ))}
+        <Button
+          compact={tabsStyle === 'classic'}
+          selected={menuOpen}
+          onClick={() => setMenuOpen(!menuOpen)}
+        >
+          Menu
+        </Button>
         <Input
           className="stat-search"
           placeholder="Search verbs..."
@@ -295,7 +305,9 @@ export function App(props: {
         />
       </div>
       <div className="stat-content">
-        {query.trim() ? (
+        {menuOpen ? (
+          <MenuPage />
+        ) : query.trim() ? (
           found.length ? (
             <VerbGrid verbs={found} />
           ) : (

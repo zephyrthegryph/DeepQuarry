@@ -4,7 +4,6 @@ import { useEffect } from 'react';
 import { highlightsAtom, settingsAtom, settingsLoadedAtom } from './atoms';
 import { generalSettingsHandler } from './helpers';
 import { startSettingsMigration } from './migration';
-import { setDisplayScaling } from './scaling';
 import type { SettingsState } from './types';
 
 /** Custom hook that handles loading and updating settings from storage. */
@@ -32,7 +31,6 @@ export function useSettings() {
       }
     }
 
-    setDisplayScaling();
     fetchSettings();
   }, []);
 
