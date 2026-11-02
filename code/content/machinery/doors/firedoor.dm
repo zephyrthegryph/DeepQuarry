@@ -31,22 +31,14 @@
 	var/list/areas_added
 	/// The mixture ids of the air watches a shut door has armed (null while it has none).
 	var/list/datum/native_watch/gas/air_watches
+	/// One temperature band watch per dependency mixture: Rust compares the reading and DM hears only a move across the hot or cold limit.
+	var/list/datum/native_watch/world/band_watches
 	var/sleeping_signature
 	var/datum/gas_mixture/dependency_air_0
-	var/air_hot_0 = FALSE
-	var/air_cold_0 = FALSE
 	var/datum/gas_mixture/dependency_air_1
-	var/air_hot_1 = FALSE
-	var/air_cold_1 = FALSE
 	var/datum/gas_mixture/dependency_air_2
-	var/air_hot_2 = FALSE
-	var/air_cold_2 = FALSE
 	var/datum/gas_mixture/dependency_air_3
-	var/air_hot_3 = FALSE
-	var/air_cold_3 = FALSE
 	var/datum/gas_mixture/dependency_air_4
-	var/air_hot_4 = FALSE
-	var/air_cold_4 = FALSE
 	/// Lazy list of names who opened this door during an alert.
 	var/list/users_to_open
 
@@ -174,31 +166,12 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 	after_init(0, then(PROC_REF(guard_areas)))
 	configure(uses_power(channel = ENVIRON, idle = 5))
 	owns_many(nameof(air_watches), /datum/native_watch/gas)
+	owns_many(nameof(band_watches), /datum/native_watch/world)
 	ref_one(nameof(dependency_air_0), /datum/gas_mixture)
-	gas_level(into = nameof(air_hot_0), reading = CH_GAS_TEMPERATURE, above = convert_c2k(FIREDOOR_MAX_TEMP - 0.01), hysteresis = 0, air = nameof(dependency_air_0))
-	on_change(nameof(air_hot_0), ANY, then(PROC_REF(temperature_level_changed)))
-	gas_level(into = nameof(air_cold_0), reading = CH_GAS_TEMPERATURE, below = convert_c2k(FIREDOOR_MIN_TEMP + 0.01), hysteresis = 0, air = nameof(dependency_air_0))
-	on_change(nameof(air_cold_0), ANY, then(PROC_REF(temperature_level_changed)))
 	ref_one(nameof(dependency_air_1), /datum/gas_mixture)
-	gas_level(into = nameof(air_hot_1), reading = CH_GAS_TEMPERATURE, above = convert_c2k(FIREDOOR_MAX_TEMP - 0.01), hysteresis = 0, air = nameof(dependency_air_1))
-	on_change(nameof(air_hot_1), ANY, then(PROC_REF(temperature_level_changed)))
-	gas_level(into = nameof(air_cold_1), reading = CH_GAS_TEMPERATURE, below = convert_c2k(FIREDOOR_MIN_TEMP + 0.01), hysteresis = 0, air = nameof(dependency_air_1))
-	on_change(nameof(air_cold_1), ANY, then(PROC_REF(temperature_level_changed)))
 	ref_one(nameof(dependency_air_2), /datum/gas_mixture)
-	gas_level(into = nameof(air_hot_2), reading = CH_GAS_TEMPERATURE, above = convert_c2k(FIREDOOR_MAX_TEMP - 0.01), hysteresis = 0, air = nameof(dependency_air_2))
-	on_change(nameof(air_hot_2), ANY, then(PROC_REF(temperature_level_changed)))
-	gas_level(into = nameof(air_cold_2), reading = CH_GAS_TEMPERATURE, below = convert_c2k(FIREDOOR_MIN_TEMP + 0.01), hysteresis = 0, air = nameof(dependency_air_2))
-	on_change(nameof(air_cold_2), ANY, then(PROC_REF(temperature_level_changed)))
 	ref_one(nameof(dependency_air_3), /datum/gas_mixture)
-	gas_level(into = nameof(air_hot_3), reading = CH_GAS_TEMPERATURE, above = convert_c2k(FIREDOOR_MAX_TEMP - 0.01), hysteresis = 0, air = nameof(dependency_air_3))
-	on_change(nameof(air_hot_3), ANY, then(PROC_REF(temperature_level_changed)))
-	gas_level(into = nameof(air_cold_3), reading = CH_GAS_TEMPERATURE, below = convert_c2k(FIREDOOR_MIN_TEMP + 0.01), hysteresis = 0, air = nameof(dependency_air_3))
-	on_change(nameof(air_cold_3), ANY, then(PROC_REF(temperature_level_changed)))
 	ref_one(nameof(dependency_air_4), /datum/gas_mixture)
-	gas_level(into = nameof(air_hot_4), reading = CH_GAS_TEMPERATURE, above = convert_c2k(FIREDOOR_MAX_TEMP - 0.01), hysteresis = 0, air = nameof(dependency_air_4))
-	on_change(nameof(air_hot_4), ANY, then(PROC_REF(temperature_level_changed)))
-	gas_level(into = nameof(air_cold_4), reading = CH_GAS_TEMPERATURE, below = convert_c2k(FIREDOOR_MIN_TEMP + 0.01), hysteresis = 0, air = nameof(dependency_air_4))
-	on_change(nameof(air_cold_4), ANY, then(PROC_REF(temperature_level_changed)))
 	ref_one(nameof(turbolift_floor), /datum/turbolift_floor)
 	op("busy", inputs(hand(), item(/obj/item)), priority(OP_PRIORITY_CLAW + 8), when(nameof(operating)), wait(0), then(PROC_REF(nothing_done)))
 	op("use", hand(), label("Use"), priority(OP_PRIORITY_PART), wait(0),
@@ -483,26 +456,37 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 	rel_set(src, nameof(dependency_air_4), dependency_4?.return_air())
 	if(dependency_air_4)
 		mixtures += dependency_air_4
-	gas_level_rearm_all(src)
-	// Settle every level before capturing the signature: opening crossings are inert.
 	sleeping_signature = firedoor_atmos_signature()
+	arm_temperature_bands(mixtures)
 	gas_watch_many(src, nameof(air_watches), mixtures, GAS_DEPENDENCY_PRESSURE, PROC_REF(air_heard))
 
 /obj/machinery/door/firedoor/proc/clear_gas_dependencies()
 	gas_watch_many_clear(src, nameof(air_watches))
 	sleeping_signature = null
-	for(var/datum/capability/lib/gas_level/def as anything in table_cap_defs(table_of(src), CAP_GAS_LEVEL))
-		var/datum/cap_data/gas_level/data = gas_level_data(src, def)
-		if(data)
-			rel_clear(data, nameof(data.watch))
-			data.armed_id = null
+	rel_clear(src, nameof(band_watches))
 	rel_clear(src, nameof(dependency_air_0))
 	rel_clear(src, nameof(dependency_air_1))
 	rel_clear(src, nameof(dependency_air_2))
 	rel_clear(src, nameof(dependency_air_3))
 	rel_clear(src, nameof(dependency_air_4))
 
-/obj/machinery/door/firedoor/proc/temperature_level_changed(datum/act/A)
+/// One band watch per distinct mixture, started on the band it reads now so only a move out of that band wakes the door. A shut door's whole air cost
+/// is these and its pressure watches: every firedoor on the station shuts in a large blast's alarm, and they stay shut until someone opens them.
+/obj/machinery/door/firedoor/proc/arm_temperature_bands(list/mixtures)
+	var/list/seen = list()
+	var/cold_limit = convert_c2k(FIREDOOR_MIN_TEMP + 0.01)
+	var/hot_limit = convert_c2k(FIREDOOR_MAX_TEMP - 0.01)
+	for(var/datum/gas_mixture/air as anything in mixtures)
+		var/id = air.arena_id()
+		if(isnull(id) || seen["[id]"])
+			continue
+		seen["[id]"] = TRUE
+		var/temperature = air.return_temperature()
+		var/start = (temperature >= cold_limit) + (temperature >= hot_limit)
+		var/condition = COND_BANDS(list(VG_GAS_HANDLES, list(id)), list(CH_GAS_TEMPERATURE), list(list(cold_limit, hot_limit)), list(start), 0)
+		rel_add(src, nameof(band_watches), world_watch_when(src, condition, PROC_REF(band_heard), LANE_URGENT))
+
+/obj/machinery/door/firedoor/proc/band_heard(datum/native_watch/world/W, reason, source, source_kind)
 	if(density && !isnull(sleeping_signature))
 		reconsider_air_signature()
 
@@ -526,15 +510,15 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 
 /obj/machinery/door/firedoor/proc/firedoor_atmos_signature()
 	var/signature = getOPressureDifferential(src.loc) >= FIREDOOR_MAX_PRESSURE_DIFF
-	var/band_0 = dependency_air_0 ? ((air_hot_0 ? FIREDOOR_ALERT_HOT : 0) | (air_cold_0 ? FIREDOOR_ALERT_COLD : 0)) : 0
+	var/band_0 = dependency_air_0 ? firedoor_temperature_band(dependency_air_0.return_temperature()) : 0
 	signature = (signature << 2) | band_0
-	var/band_1 = dependency_air_1 ? ((air_hot_1 ? FIREDOOR_ALERT_HOT : 0) | (air_cold_1 ? FIREDOOR_ALERT_COLD : 0)) : 0
+	var/band_1 = dependency_air_1 ? firedoor_temperature_band(dependency_air_1.return_temperature()) : 0
 	signature = (signature << 2) | band_1
-	var/band_2 = dependency_air_2 ? ((air_hot_2 ? FIREDOOR_ALERT_HOT : 0) | (air_cold_2 ? FIREDOOR_ALERT_COLD : 0)) : 0
+	var/band_2 = dependency_air_2 ? firedoor_temperature_band(dependency_air_2.return_temperature()) : 0
 	signature = (signature << 2) | band_2
-	var/band_3 = dependency_air_3 ? ((air_hot_3 ? FIREDOOR_ALERT_HOT : 0) | (air_cold_3 ? FIREDOOR_ALERT_COLD : 0)) : 0
+	var/band_3 = dependency_air_3 ? firedoor_temperature_band(dependency_air_3.return_temperature()) : 0
 	signature = (signature << 2) | band_3
-	var/band_4 = dependency_air_4 ? ((air_hot_4 ? FIREDOOR_ALERT_HOT : 0) | (air_cold_4 ? FIREDOOR_ALERT_COLD : 0)) : 0
+	var/band_4 = dependency_air_4 ? firedoor_temperature_band(dependency_air_4.return_temperature()) : 0
 	signature = (signature << 2) | band_4
 	return signature
 

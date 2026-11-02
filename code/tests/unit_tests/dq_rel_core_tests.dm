@@ -58,9 +58,13 @@
 	qdel(B)
 	TEST_ASSERT_EQUAL(length(H.member_set), 0, "a deleted member left the set")
 	TEST_ASSERT(istype(H.member_set, /alist), "an emptied set is still an alist")
+	var/refs_before = refcount(C)
 	rel_add(H, nameof(H.member_set), C)
 	qdel(H)
 	TEST_ASSERT(isnull(C.om_refs_in), "deleting the holder dropped its members' reverse index")
+	// An alist freed with an object key keeps a reference to it for ever (dq_alist_object_key_refs): a set must be emptied before it is freed.
+	TEST_ASSERT_EQUAL(length(H.member_set), 0, "deleting the holder emptied its alist set")
+	TEST_ASSERT_EQUAL(refcount(C), refs_before, "a member of a deleted holder's alist set keeps no extra reference")
 	qdel(A)
 	qdel(C)
 
