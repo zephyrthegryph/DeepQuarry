@@ -8,6 +8,7 @@ tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
 fail=0
 ok() { echo "PASS: $1"; }; bad() { echo "FAIL: $1"; fail=1; }
 land="$here/tools/dq_land.sh"
+export DQ_HEALTH_STATE="$tmp/h" DQ_HEALTH_CMD=true
 git init -q --bare "$tmp/o.git"; git -C "$tmp/o.git" symbolic-ref HEAD refs/heads/master
 mkdir -p "$tmp/lanes"; git init -q "$tmp/lanes/a"; cd "$tmp/lanes/a" || exit 1
 git config user.email t@t; git config user.name t; git remote add origin "$tmp/o.git"

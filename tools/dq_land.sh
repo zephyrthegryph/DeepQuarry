@@ -35,6 +35,8 @@ for round in 1 2 3 4 5 6; do
 		git fetch -q origin
 		git merge-base --is-ancestor "$sha" origin/master || die "the push returned 0 but origin/master does not hold ${sha:0:12}"
 		echo "dq_land: landed $branch as ${sha:0:12} in $(( $(date +%s) - t0 )) s (round $round)"
+		bash "$(dirname "${BASH_SOURCE[0]}")/dq_post_push_check.sh" start 2>/dev/null || true # report only, returns at once
+		cat "${DQ_HEALTH_STATE:-E:/dq-cache/health}/MASTER_BROKEN.txt" 2>/dev/null >&2 || true
 		exit 0
 	fi
 	echo "dq_land: lost a race for master (round $round); merging again"
