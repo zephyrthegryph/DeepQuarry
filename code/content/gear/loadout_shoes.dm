@@ -48,7 +48,7 @@
 
 /datum/gear/shoes/colorboots/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/shoes/jackboots_white
 	display_name = "jackboots, white"
@@ -136,7 +136,7 @@
 
 /datum/gear/shoes/flipflops/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/shoes/athletic
 	display_name = "athletic shoes"
@@ -144,7 +144,7 @@
 
 /datum/gear/shoes/athletic/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/shoes/skater
 	display_name = "skater shoes"
@@ -152,7 +152,7 @@
 
 /datum/gear/shoes/skater/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/shoes/flats
 	display_name = "flats"
@@ -160,7 +160,7 @@
 
 /datum/gear/shoes/flats/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/shoes/cowboy
 	display_name = "cowboy boots selection"
@@ -206,7 +206,7 @@
 
 /datum/gear/shoes/heels/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/shoes/slippers
 	display_name = "bunny slippers"
@@ -265,7 +265,7 @@
 
 /datum/gear/shoes/ballet/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/shoes/halfmoon
 	display_name = "half moon boots"
@@ -277,7 +277,7 @@
 
 /datum/gear/shoes/sandals/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/shoes/toeless
 	display_name = "toe-less jackboots"
@@ -305,7 +305,7 @@
 
 /datum/gear/shoes/sandals_elegant/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/shoes/none
 	display_name = "Adjust - No Shoes"

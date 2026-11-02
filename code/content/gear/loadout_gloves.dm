@@ -49,7 +49,7 @@
 
 /datum/gear/gloves/evening/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/gloves/duty
 	display_name = "gloves, work"
@@ -79,7 +79,7 @@
 		"recolourable, long"=/obj/item/clothing/gloves/fingerless_recolourable/long
 	)
 	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/gloves/ring
 	display_name = "ring selection"
@@ -141,7 +141,7 @@
 
 /datum/gear/gloves/colored/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/gloves/latex/colorable
 	display_name = "gloves, latex, colorable"
@@ -149,7 +149,7 @@
 
 /datum/gear/gloves/latex/colorable/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/gloves/maid_arms
 	display_name = "maid arm covers"

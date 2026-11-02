@@ -80,7 +80,7 @@
 
 /datum/gear/ears/skrell/colored/band/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/ears/skrell/colored/chain
 	display_name = "Colored chain (Skrell)"
@@ -90,7 +90,7 @@
 
 /datum/gear/ears/skrell/colored/chain/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/uniform/smock
 	display_name = "smock selection (Teshari)"
@@ -148,7 +148,7 @@
 
 /datum/gear/shoes/footwraps/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/uniform/cohesionsuits
 	display_name = "cohesion suit selection (Promethean)"
@@ -526,7 +526,7 @@
 
 /datum/gear/uniform/smockcolor/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/suit/beltcloak
 	display_name = "belted cloak selection (Teshari)"
@@ -551,7 +551,7 @@
 
 /datum/gear/suit/beltcloak_color/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/suit/dept/beltcloak
 	whitelisted = SPECIES_TESHARI
@@ -615,7 +615,7 @@
 /datum/gear/uniform/undercoatcolor/New()
 	..()
 	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(list("white grey undercoat" = "white_grey")))
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/suit/cloakcolor
 	display_name = "cloak, recolorable (Teshari)"
@@ -625,7 +625,7 @@
 
 /datum/gear/suit/cloakcolor/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/suit/labcoat_tesh
 	display_name = "labcoat, colorable (Teshari)"
@@ -635,7 +635,7 @@
 
 /datum/gear/suit/labcoat_tesh/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/suit/teshcoat
 	display_name = "small black coat, recolorable stripes (Teshari)"
@@ -645,7 +645,7 @@
 
 /datum/gear/suit/teshcoat/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/suit/teshcoatwhite
 	display_name = "smallcoat, recolorable (Teshari)"
@@ -655,7 +655,7 @@
 
 /datum/gear/suit/teshcoatwhite/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/accessory/teshneckscarf
 	display_name = "neckscarf, recolorable (Teshari)"
@@ -665,7 +665,7 @@
 
 /datum/gear/accessory/teshneckscarf/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 // toelessjack removed — it was a literal duplicate (same name + path) of
 // /datum/gear/shoes/toeless in loadout_shoes.dm, which made GLOB.gear_datums'
@@ -700,7 +700,7 @@
 
 /datum/gear/shoes/teshwrap/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /////
 
@@ -843,7 +843,7 @@
 
 /datum/gear/suit/taur/colorable_skirt/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/suit/zaddat
 	sort_category = "Xenowear"

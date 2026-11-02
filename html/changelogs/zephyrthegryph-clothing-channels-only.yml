@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscdel: "Loadout clothing is recoloured only through its colour channels; the tint, palette-swap, colour-matrix and separate Color options are gone."
+  - code_imp: "Saved loadout colours (colour, tint, palette, matrix) are converted to channel colours when a character loads."

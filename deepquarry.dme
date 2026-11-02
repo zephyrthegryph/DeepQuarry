@@ -2300,7 +2300,6 @@
 #include "code\content\game_masters\_common.dm"
 #include "code\content\gear\_gear.dm"
 #include "code\content\gear\clothing_channels.dm"
-#include "code\content\gear\gear_tweak_recolor.dm"
 #include "code\content\gear\gear_tweaks.dm"
 #include "code\content\gear\loadout_accessories.dm"
 #include "code\content\gear\loadout_cosmetics.dm"
