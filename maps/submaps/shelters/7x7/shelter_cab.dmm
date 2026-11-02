@@ -42,7 +42,6 @@
 /area/survivalpod)
 "w" = (
 /obj/machinery/door/airlock/voidcraft/survival_pod{
-	destroy_hits = 100;
 	glass = 0;
 	id_tag = "shelter_gamma"
 	},

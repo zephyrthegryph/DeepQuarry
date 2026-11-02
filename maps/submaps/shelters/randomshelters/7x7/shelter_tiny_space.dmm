@@ -12,8 +12,7 @@
 /area/survivalpod/redspace)
 "g" = (
 /obj/machinery/light{
-	dir = 1;
-	stat = 0
+	dir = 1
 	},
 /turf/unsimulated/fake_space,
 /area/survivalpod/redspace)
