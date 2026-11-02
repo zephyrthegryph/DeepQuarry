@@ -1,7 +1,7 @@
 // At minimum every mob has a hear_say proc.
 /mob/proc/combine_message(list/message_pieces, verb, mob/speaker, always_stars = FALSE, radio = FALSE)
 	var/iteration_count = 0
-	var/msg = "" // This is to make sure that the pieces have actually added something
+	var/msg = "" // This is to make sure that the pieces have actually added something; each piece has its own speech marks
 	var/raw_msg = ""
 	. = list("formatted" = "[verb], \"", "raw" = "")
 
@@ -36,6 +36,9 @@
 					if(istype(S.say_list) && length(S.say_list.speak))
 						piece = pick(S.say_list.speak)
 
+		if(piece == "")
+			continue
+
 		raw_msg += (piece + " ")
 
 		//HTML formatting
@@ -46,13 +49,13 @@
 		else // SP.speaking == TRUE && radio == FALSE
 			piece = SP.speaking.format_message(piece)
 
-		msg += (piece + " ")
+		msg += ((msg == "" ? "" : "\" \"") + piece)
 
 	if(msg == "")
 		// There is literally no content left in this message, we need to shut this shit down
 		.["formatted"] = "" // hear_say will suppress it
 	else
-		.["formatted"] = trim(.["formatted"] + trim(msg))
+		.["formatted"] = trim(.["formatted"] + msg)
 		.["formatted"] += "\""
 		.["raw"] = trim(raw_msg)
 

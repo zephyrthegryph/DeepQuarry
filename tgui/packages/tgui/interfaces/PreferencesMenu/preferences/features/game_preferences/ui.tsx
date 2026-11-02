@@ -98,6 +98,14 @@ export const TGUI_ENABLE_SPELLCHECK: FeatureToggle = {
   component: CheckboxInput,
 };
 
+export const TGUI_SAY_PREVIEW: FeatureToggle = {
+  name: 'Say: Language and formatting preview',
+  category: 'UI',
+  description:
+    'Shows how a message with languages or formatting will read as you type it.',
+  component: CheckboxInput,
+};
+
 export const tgui_say_height: FeatureNumeric = {
   name: 'Say: TGUI Height (Lines)',
   category: 'UI',

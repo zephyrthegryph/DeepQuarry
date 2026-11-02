@@ -398,9 +398,10 @@
 		return emote(copytext(message, 2))
 
 	var/list/message_pieces = parse_languages(message)
-	for(var/datum/multilingual_say_piece/S in message_pieces)
-		if(S.speaking && S.speaking.flags & HIVEMIND)
-			S.speaking.broadcast(src, trim(copytext(message, 3)), src.true_name)
+	if(istype(message_pieces, /datum/multilingual_say_piece)) // A hivemind or sign language takes the whole message.
+		var/datum/multilingual_say_piece/whole = message_pieces
+		if(whole.speaking.flags & HIVEMIND)
+			whole.speaking.broadcast(src, whole.message, src.true_name)
 			return
 
 	if(!host)

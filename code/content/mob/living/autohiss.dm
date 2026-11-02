@@ -93,9 +93,9 @@
 /datum/species/proc/handle_autohiss(message, datum/language/lang, mode)
 	if(!autohiss_basic_map)
 		return message
-	if(lang.flags & NO_STUTTER)		// Currently prevents EAL, Sign language, and emotes from autohissing
+	if(lang && (lang.flags & NO_STUTTER))		// Currently prevents EAL, Sign language, and emotes from autohissing
 		return message
-	if(autohiss_exempt && (lang.name in autohiss_exempt))
+	if(lang && autohiss_exempt && (lang.name in autohiss_exempt))
 		return message
 
 	var/map = autohiss_basic_map.Copy()

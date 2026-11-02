@@ -81,7 +81,8 @@ CAPABILITIES(/datum/tgui_say)
 		"minimumWidth" = minimum_width,
 		"minimumHeight" = minimum_height,
 		"maxLength" = max_length,
-		"spellcheck" = client()?.prefs?.read_preference(/datum/preference/toggle/tgui_use_spellcheck)
+		"spellcheck" = client()?.prefs?.read_preference(/datum/preference/toggle/tgui_use_spellcheck),
+		"preview" = client()?.prefs?.read_preference(/datum/preference/toggle/tgui_say_preview),
 	))
 
 	stop_thinking()
@@ -99,6 +100,7 @@ CAPABILITIES(/datum/tgui_say)
 	if(!payload?["channel"])
 		CRASH("No channel provided to an open TGUI-Say")
 	window_open = TRUE
+	send_language_rules()
 	if(payload["channel"] != OOC_CHANNEL && payload["channel"] != ADMIN_CHANNEL)
 		start_thinking()
 	return TRUE
