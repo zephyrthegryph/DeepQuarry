@@ -31,6 +31,14 @@ const NATIVE_MENU_COMMANDS = [
 ];
 
 describe('stat panel menu', () => {
+  it('the map split has a default and is never restored from a save', () => {
+    const split = skin
+      .slice(skin.indexOf('elem "mainvsplit"'))
+      .split('\n\n')[0];
+    expect(split).toContain('splitter = 70');
+    expect(split).toContain('saved-params = ""');
+  });
+
   it('reaches every command of the old native menu bar', () => {
     const reachable = allCommands();
     expect(NATIVE_MENU_COMMANDS.filter((c) => !reachable.includes(c))).toEqual(

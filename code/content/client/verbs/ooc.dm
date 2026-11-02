@@ -195,7 +195,7 @@
 /// The map width a viewport fit may ask for: the map and the chat side each keep FIT_VIEWPORT_MIN_SIDE pixels
 /// (or half the window when it is narrower than that).
 /proc/fit_viewport_clamp_width(desired_width, split_width)
-	var/map_floor = min(FIT_VIEWPORT_MIN_SIDE, round(split_width / 2))
+	var/map_floor = round(split_width / 2)
 	return clamp(desired_width, map_floor, max(map_floor, split_width - FIT_VIEWPORT_MIN_SIDE))
 
 /client/verb/fit_viewport()
@@ -236,7 +236,10 @@
 		// If we don't get our expected 2 outputs, let's give some useful error info.
 		if(length(map_size) != 2)
 			CRASH("map_size of incorrect length --- map_size var: [map_size] --- map_size length: [length(map_size)]")
-		var/height = text2num(map_size[2])
+		// The splitter's height, not the map's: the map pane can still be at its skin size or collapsed
+		// during login, and a width from that hands the window to the chat.
+		var/list/split_for_height = splittext(sizes["mainwindow.mainvsplit.size"], "x")
+		var/height = text2num(split_for_height[2])
 		desired_width = round(height * aspect_ratio)
 
 	if (text2num(map_size[1]) == desired_width)
@@ -250,7 +253,7 @@
 		CRASH("fit_viewport: mainvsplit reported width [split_width] (sizes: [size_params])")
 
 	// Keep both sides usable: the chat/statpanel keeps at least FIT_VIEWPORT_MIN_SIDE pixels and the
-	// map at least that or half the window, so a map measured while it was still collapsed can't hand
+	// map at least half the window, so a map measured while it was still collapsed can't hand
 	// the whole window to the chat.
 	desired_width = fit_viewport_clamp_width(desired_width, split_width)
 

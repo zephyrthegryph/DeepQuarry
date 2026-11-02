@@ -80,6 +80,7 @@
 	set_global(nameof(GLOB.status_policies), GLOB.status_policies)
 	var/turf/T = run_loc_floor_bottom_left
 	var/area/A = get_area(T)
+	keep_area_power(A)
 	var/obj/machinery/power/apc/old_apc = A.get_apc()
 	defer_cleanup(null, GLOBAL_PROC_REF(rel_set), A, nameof(A.apc), old_apc)
 	var/obj/machinery/power/apc/APC = allocate(/obj/machinery/power/apc, T)

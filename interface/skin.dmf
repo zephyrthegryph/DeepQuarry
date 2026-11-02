@@ -42,7 +42,8 @@ window "mainwindow"
 		size = 640x440	// DQEdit — was 634x400; expanded to cover the removed bottom bars + left padding
 		anchor1 = 0,0
 		anchor2 = 100,100
-		saved-params = "splitter"
+		saved-params = ""	// not saved: a stale share must not squeeze the map on the next connect
+		splitter = 70
 		right = "rpane"
 		is-vert = true
 	// DQEdit — input, status_bar, and saybutton elements deleted (non-hotkey
