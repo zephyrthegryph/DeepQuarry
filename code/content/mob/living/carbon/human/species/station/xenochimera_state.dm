@@ -23,6 +23,7 @@ CAPABILITIES(/datum/xenochimera)
 		return
 	rel_set(src, nameof(owner), new_owner) // one-sided back view: the mob owns us in xenochimera
 	observe(owner, /datum/notice/human_dna_finalized, src, then(PROC_REF(on_dna_finalized)))
+	observe(owner, /datum/notice/transformed/xenolazarus, src, then(PROC_REF(lazarus_reacted)))
 	if(owner.dna)
 		handle_record()
 	grant(owner, granted_verb(/mob/living/carbon/human/proc/reconstitute_form), src)
@@ -38,6 +39,27 @@ CAPABILITIES(/datum/xenochimera)
 /datum/xenochimera/proc/on_dna_finalized(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
 	handle_record()
+
+/// Discount Lazarus mashes the regenerate button: a dead chimera with nutriment starts reviving, or hatches when it is ready.
+/datum/xenochimera/proc/lazarus_reacted(datum/act/notice/A)
+	var/mob/living/carbon/human/H = owner
+	if(QDELETED(H))
+		return
+	if(H.stat == DEAD)
+		if(H.hasnutriment()) // make sure it actually has the conditions to revive
+			if(revive_ready >= 1) // if it's not reviving, start doing so
+				revive_ready = REVIVING_READY
+				COOLDOWN_RESET(src, revive_cooldown) // overrides the normal cooldown
+				act_message(H, null, others = span_info("%U% shudders briefly, then relaxes, faint movements stirring within."))
+				chimera_regenerate()
+			else if(revive_ready == REVIVING_DONE)// already reviving, check if they're ready to hatch
+				chimera_hatch()
+				act_message(H, null, others = span_danger(span_huge("%U% violently convulses and then bursts open, revealing a new, intact copy in the pool of viscera."))) // Hope you were wearing waterproofs, doc...
+				H.injure(INJURY_NEURAL, 10, source = H) // they're reviving from dead, so take 10 brain damage
+			else //they're already reviving but haven't hatched. Give a little message to tell them to wait.
+				act_message(H, null, others = span_info("%U% stirs faintly, but doesn't appear to be ready to wake up yet."))
+		else
+			act_message(H, null, others = span_info("%U% twitches for a moment, but remains still.")) // no nutriment
 
 /datum/xenochimera/proc/handle_record()
 	if(QDELETED(owner))

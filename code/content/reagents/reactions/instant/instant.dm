@@ -1359,30 +1359,10 @@ CAPABILITIES(/transformation/chem/instant/phenethylamine)
 CAPABILITIES(/transformation/chem/instant/xenolazarus)
 	configure(transformation(name = "Discount Lazarus", id = "discountlazarus",
 		takes = list(reagent(REAGENT_ID_MONSTERTAMER, 5), reagent(REAGENT_ID_CLONEXADONE, 5)),
-		then = TYPE_PROC_REF(/transformation/chem/instant/xenolazarus, on_reaction)))
+		notice = /datum/notice/transformed/xenolazarus))
 
-/transformation/chem/instant/xenolazarus/proc/on_reaction(datum/reagents/holder, created_volume) //literally all this does is mash the regenerate button
-	if(ishuman(holder.my_atom))
-		var/mob/living/carbon/human/H = holder.my_atom
-		var/datum/xenochimera/comp = H.get_xenochimera_state()
-		if(!comp)
-			return
-		else
-			if(H.stat == DEAD)
-				if(H.hasnutriment()) // make sure it actually has the conditions to revive
-					if(comp.revive_ready >= 1) // if it's not reviving, start doing so
-						comp.revive_ready = REVIVING_READY
-						COOLDOWN_RESET(comp, revive_cooldown) // overrides the normal cooldown
-						act_message(H, null, others = span_info("%U% shudders briefly, then relaxes, faint movements stirring within."))
-						comp.chimera_regenerate()
-					else if(comp.revive_ready == REVIVING_DONE)// already reviving, check if they're ready to hatch
-						comp.chimera_hatch()
-						act_message(H, null, others = span_danger(span_huge("%U% violently convulses and then bursts open, revealing a new, intact copy in the pool of viscera."))) // Hope you were wearing waterproofs, doc...
-						H.injure(INJURY_NEURAL, 10, source = holder.my_atom) // they're reviving from dead, so take 10 brain damage
-					else //they're already reviving but haven't hatched. Give a little message to tell them to wait.
-						act_message(H, null, others = span_info("%U% stirs faintly, but doesn't appear to be ready to wake up yet."))
-				else
-					act_message(H, null, others = span_info("%U% twitches for a moment, but remains still.")) // no nutriment
+/// Discount Lazarus settled in a body: a xenochimera's state answers it (xenochimera/lazarus_reacted()).
+/datum/notice/transformed/xenolazarus
 
 
 // === merged from instant_vr.dm during hard-fork de-suffix (verified no override-order change) ===
