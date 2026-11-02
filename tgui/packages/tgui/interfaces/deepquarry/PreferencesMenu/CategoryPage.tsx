@@ -24,7 +24,11 @@ import {
   prefAnchor,
   useSearchHighlight,
 } from './search';
-import { OocPreview, type SwitcherEntry, TextSwitcher } from './TextSwitcher';
+import {
+  renderPlain,
+  type SwitcherEntry,
+  TextSwitcher,
+} from './TextSwitcher';
 import type {
   PrefCategory,
   PrefGroup,
@@ -191,8 +195,8 @@ const SwitcherGroup = ({
     <TextSwitcher
       entries={entries}
       onCommit={(key, value) => act('dq_update_preference', { key, value })}
-      preview={group === 'ooc_notes' ? <OocPreview values={values} /> : undefined}
-      buttonsBelow={group === 'records' || group === 'ooc_notes'}
+      buttonsBelow
+      render={group === 'speech_verbs' ? undefined : renderPlain}
       actions={
         group === 'ooc_notes' ? (
           <Button

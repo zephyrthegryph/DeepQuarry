@@ -600,8 +600,8 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 			rendered_text += "[part]"
 		index++
 	examine_text = replacetext(rendered_text, "\n", "<BR>")
-	// structured TGUI AdminReport.
-	dq_admin_report_html(user, "[name]", examine_text)
+	// The whole text, in chat where the shortened one was.
+	to_chat(user, examine_block(span_infoplain(span_notice(examine_text))))
 	return TRUE
 
 /mob/proc/topic_flavor_change(datum/act/op/A, href_flavor_change)

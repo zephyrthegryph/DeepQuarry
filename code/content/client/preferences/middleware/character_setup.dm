@@ -728,6 +728,11 @@ CAPABILITIES(/datum/preference_middleware/character_setup)
 	var/mob/living/carbon/human/dummy/mannequin/mannequin = get_mannequin(client_ckey)
 	mannequin.delete_inventory(TRUE)
 	dress_preview_mob(mannequin, dq_active_category == "loadout")
+	// OOC notes and their style reach a human only when its client logs in (update_icons.dm); the mannequin has none, so apply them here
+	// through the prefs' own apply_to_living.
+	for(var/datum/preference/preference as anything in get_preferences_in_priority_order())
+		if(preference.savefile_identifier == PREFERENCE_CHARACTER && (istype(preference, /datum/preference/text/living) || istype(preference, /datum/preference/toggle/living)))
+			preference.apply_to_living(mannequin, read_preference(preference.type))
 	return mannequin
 
 /// What examining this character prints below its gear: flavor text, custom link and the OOC notes links, from the examine's own proc.
@@ -742,6 +747,12 @@ CAPABILITIES(/datum/preference_middleware/character_setup)
 
 /// The OOC notes window other players open from examine, for this character.
 /datum/preference_middleware/character_setup/proc/ui_act_dq_inspect_ooc_notes(datum/act/op/A)
-	var/mob/living/carbon/human/mannequin = preferences().dq_inspection_mannequin()
-	mannequin.do_examine_ooc(A.actor)
+	preferences().dq_open_ooc_inspection(A.actor)
 	return FALSE
+
+/// The OOC notes window others open from examine, on this character's preview mannequin, held open for `user` wherever they are (a lobby player
+/// is never near the mannequin, and the default state closed it at once). Returns the panel.
+/datum/preferences/proc/dq_open_ooc_inspection(mob/user)
+	var/mob/living/carbon/human/mannequin = dq_inspection_mannequin()
+	mannequin.ooc_notes_window(user, GLOB.tgui_always_state, TRUE)
+	return resolve_token(LAZYACCESS(GLOB.dq_ooc_notes_panels, ref_token(mannequin)))

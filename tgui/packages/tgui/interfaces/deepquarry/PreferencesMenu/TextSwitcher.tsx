@@ -29,18 +29,20 @@ export const storedText = (typed: string, defaultText?: string) =>
 export const TextSwitcher = ({
   entries,
   onCommit,
-  preview,
   buttonsBelow,
   actions,
+  render,
 }: {
   entries: SwitcherEntry[];
   onCommit: (key: string, value: string) => void;
-  preview?: ReactNode;
   /// The entry buttons as a row under the text box instead of a column beside it.
   buttonsBelow?: boolean;
-  /// Extra controls shown with the preview (e.g. inspect in game).
+  /// Controls under the editor (e.g. inspect in game).
   actions?: ReactNode;
+  /// How the text reads in game; given, a Formatted toggle shows it in place of the box.
+  render?: (text: string) => ReactNode;
 }) => {
+  const [formatted, setFormatted] = useState(false);
   const [picked, setPicked] = useState(entries[0]?.key ?? '');
   const entry = entries.find((e) => e.key === picked) ?? entries[0];
   const shown = entry ? shownText(entry.value, entry.defaultText) : '';
@@ -65,7 +67,26 @@ export const TextSwitcher = ({
       {e.label}
     </Button>
   ));
-  const editor = entry.short ? (
+  const editor = render && formatted ? (
+    <Box
+      p={0.5}
+      style={{
+        minHeight: '10em',
+        border: '1px solid rgba(255,255,255,0.12)',
+        borderRadius: '0.25em',
+        background: 'rgba(0,0,0,0.2)',
+        overflowWrap: 'anywhere',
+      }}
+    >
+      {draft ? (
+        render(draft)
+      ) : (
+        <Box color="label" italic>
+          Nothing written.
+        </Box>
+      )}
+    </Box>
+  ) : entry.short ? (
     <Input
       fluid
       maxLength={entry.maxLength}
@@ -102,40 +123,56 @@ export const TextSwitcher = ({
           <Box style={{ flex: '1 1 0', minWidth: 0 }}>{editor}</Box>
         </Box>
       )}
-      {preview && <TextPreview actions={actions}>{preview}</TextPreview>}
+      {(render || actions) && (
+        <Box mt={0.25} style={{ display: 'flex', gap: '0.25em' }}>
+          {render && (
+            <Button
+              compact
+              icon={formatted ? 'pen' : 'eye'}
+              selected={formatted}
+              tooltip="Show the text the way it reads in game"
+              onClick={() => setFormatted(!formatted)}
+            >
+              {formatted ? 'Edit' : 'Formatted'}
+            </Button>
+          )}
+          {actions}
+        </Box>
+      )}
     </Box>
   );
 };
 
-/// Framed "Preview" block.
-export const TextPreview = ({
-  children,
-  actions,
-}: {
-  children: ReactNode;
-  actions?: ReactNode;
-}) => (
-  <Box
-    mt={0.5}
-    p={0.5}
-    style={{
-      border: '1px solid rgba(255,255,255,0.12)',
-      borderRadius: '0.25em',
-      background: 'rgba(0,0,0,0.2)',
-    }}
-  >
-    <Box
-      mb={0.25}
-      style={{ display: 'flex', alignItems: 'center', gap: '0.5em' }}
-    >
-      <Box color="label" fontSize="0.85em" style={{ flex: '1 1 auto' }}>
-        Preview
-      </Box>
-      {actions}
-    </Box>
-    {children}
+/// Flavor as examine renders it: "||" marks spoilers (hidden until hovered), line breaks kept.
+export const renderFlavor = (text: string): ReactNode => (
+  <Box preserveWhitespace>
+    {splitSpoilers(text).map(([part, spoiler], i) =>
+      spoiler ? (
+        <span
+          key={i}
+          title="Spoiler"
+          style={{ background: '#000', color: '#000', borderRadius: '0.2em' }}
+        >
+          {part}
+        </span>
+      ) : (
+        <span key={i}>{part}</span>
+      ),
+    )}
   </Box>
 );
+
+/// Plain text as the notes and records windows show it: line breaks kept.
+export const renderPlain = (text: string): ReactNode => (
+  <Box preserveWhitespace>{text}</Box>
+);
+
+/// The parts of a flavor text and whether each is a spoiler (between "||" pairs), as topic_flavor_more splits it.
+export const splitSpoilers = (text: string): [string, boolean][] =>
+  text
+    .split('||')
+    .map((part, i): [string, boolean] => [part, i % 2 === 1])
+    .filter(([part]) => part !== '');
 
 /// The flavor text as examine prints it: the entries in order, a blank line apart, "||" stripped.
 export const flavorPreviewText = (
@@ -146,34 +183,3 @@ export const flavorPreviewText = (
     .map((z) => (texts[z] ?? '').replaceAll('||', ''))
     .filter((t) => t)
     .join('\n\n');
-
-/// The OOC notes as the notes window shows them; private notes are nobody else's, so they stay out.
-export const OOC_PREVIEW_SECTIONS: [string, string][] = [
-  ['OOC_Notes_Favs', 'Favourites'],
-  ['OOC_Notes_Likes', 'Likes'],
-  ['OOC_Notes_Maybes', 'Maybes'],
-  ['OOC_Notes_Disikes', 'Dislikes'],
-];
-
-export const OocPreview = ({ values }: { values: Record<string, unknown> }) => {
-  const notes = String(values.OOC_Notes ?? '');
-  const sections = OOC_PREVIEW_SECTIONS.filter(([key]) => values[key]);
-  if (!notes && !sections.length) {
-    return (
-      <Box color="label" italic>
-        Nothing to show yet.
-      </Box>
-    );
-  }
-  return (
-    <Box>
-      {notes && <Box preserveWhitespace>{notes}</Box>}
-      {sections.map(([key, title]) => (
-        <Box key={key} mt={0.5}>
-          <Box bold>{title}</Box>
-          <Box preserveWhitespace>{String(values[key])}</Box>
-        </Box>
-      ))}
-    </Box>
-  );
-};

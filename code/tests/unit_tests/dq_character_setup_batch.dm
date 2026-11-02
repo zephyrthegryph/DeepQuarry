@@ -214,3 +214,32 @@
 	var/datum/preferences/dq_test_stub/P = dq_test_load_character(list("species" = SPECIES_HUMAN, "flavor_texts" = list("general" = "A very tall person.")))
 	var/text = P.dq_examine_profile_text()
 	TEST_ASSERT(findtext(text, "A very tall person."), "the examine text carries the flavor: [text]")
+
+/// The flavor inspection's "More..." link, pressed through the real Topic op by a viewer nowhere near the mannequin, prints the whole text in chat.
+/datum/unit_test/dq_flavor_more_expands_in_chat
+
+/datum/unit_test/dq_flavor_more_expands_in_chat/Run()
+	var/long_text = "A tall person with a long coat, scuffed boots and a scar over one eye. END_OF_TEXT"
+	var/datum/preferences/dq_test_stub/P = dq_test_load_character(list("species" = SPECIES_HUMAN, "flavor_texts" = list("general" = long_text)))
+	var/text = P.dq_examine_profile_text()
+	TEST_ASSERT(findtext(text, "flavor_more=1"), "a long flavor is shortened with a More link: [text]")
+	TEST_ASSERT(!findtext(text, "END_OF_TEXT"), "the shortened text stops early")
+	var/mob/living/carbon/human/viewer = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/mannequin = get_mannequin(P.client_ckey)
+	TEST_ASSERT(topic_dispatch(mannequin, viewer, list("flavor_more" = "1")), "the More link's op answers")
+	var/list/said = test_chat_of(viewer)
+	TEST_ASSERT(length(said) && findtext(said[length(said)], "END_OF_TEXT"), "the whole flavor is in chat: [jointext(said, " | ")]")
+
+/// The OOC inspection opens the real notes panel on the mannequin, held in a state that lets a far-away viewer keep it, even with no notes.
+/datum/unit_test/dq_ooc_inspection_opens_panel
+
+/datum/unit_test/dq_ooc_inspection_opens_panel/Run()
+	var/datum/preferences/dq_test_stub/P = dq_test_load_character(list("species" = SPECIES_HUMAN, "OOC_Notes" = "Likes cats."))
+	var/mob/living/carbon/human/viewer = allocate(/mob/living/carbon/human)
+	var/datum/ooc_notes_panel/panel = P.dq_open_ooc_inspection(viewer)
+	TEST_ASSERT_NOTNULL(panel, "the notes panel exists for the mannequin")
+	TEST_ASSERT_EQUAL(panel.host.identity().ooc_notes, "Likes cats.", "it shows this character's notes")
+	TEST_ASSERT_EQUAL(GLOB.tgui_always_state.can_use_topic(panel, viewer), STATUS_INTERACTIVE, "the state it is opened in keeps a distant viewer")
+	TEST_ASSERT(GLOB.tgui_default_state.can_use_topic(panel, viewer) < STATUS_INTERACTIVE, "where the default state would not (why it never opened)")
+	P = dq_test_load_character(list("species" = SPECIES_HUMAN, "OOC_Notes" = ""))
+	TEST_ASSERT_NOTNULL(P.dq_open_ooc_inspection(viewer), "it opens with no notes too")

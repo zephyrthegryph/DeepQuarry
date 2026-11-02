@@ -4,7 +4,7 @@
 import { useBackend } from 'tgui/backend';
 import { Box, Button } from 'tgui-core/components';
 import {
-  flavorPreviewText,
+  renderFlavor,
   type SwitcherEntry,
   TextSwitcher,
 } from '../TextSwitcher';
@@ -51,7 +51,6 @@ export const FlavorTextEditor = ({ data, staticData }: EditorProps) => {
     label: z.charAt(0).toUpperCase() + z.slice(1),
     value: texts[z] ?? '',
   }));
-  const previewText = flavorPreviewText(robot ? [] : zones, texts);
   return (
     <TextSwitcher
       entries={entries}
@@ -72,17 +71,7 @@ export const FlavorTextEditor = ({ data, staticData }: EditorProps) => {
           </Button>
         )
       }
-      preview={
-        robot ? (
-          <Box preserveWhitespace>{texts.Default ?? ''}</Box>
-        ) : previewText ? (
-          <Box preserveWhitespace>{previewText}</Box>
-        ) : (
-          <Box color="label" italic>
-            Nothing to show yet.
-          </Box>
-        )
-      }
+      render={renderFlavor}
     />
   );
 };
