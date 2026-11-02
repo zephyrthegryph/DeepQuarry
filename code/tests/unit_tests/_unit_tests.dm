@@ -418,6 +418,7 @@
 #include "dq_movement_tests.dm"
 #include "dq_material_science_tests.dm"
 #include "dq_preferences_tests.dm"
+#include "dq_spawnpoint_audit_tests.dm"
 #include "dq_human_draw.dm"
 #include "dq_worn_redraw_tests.dm"
 #include "dq_relation_entries_tests.dm"
@@ -1254,6 +1255,7 @@
 #include "find_reference_fixtures.dm"
 #ifdef REFERENCE_TRACKING_DEBUG //Don't try and parse this file if ref tracking isn't turned on. IE: don't parse ref tracking please mr linter
 #include "find_reference_sanity.dm"
+#include "dq_alist_object_keys.dm"
 #include "dq_fullscreen_no_client.dm"
 #endif
 

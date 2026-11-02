@@ -621,7 +621,9 @@ CAPABILITIES(/obj/machinery/atmospherics)
 		new_set[port_handle] = TRUE
 		var/datum/pipe_port/staying_port = rust_pipe_port_of(port_handle)
 		if(staying_port?.machine)
-			staying_machines[staying_port.machine] = TRUE
+			// Keyed by text, never by the object: BYOND's alist keeps a reference to an object key when the alist is freed (dq_alist_object_key_refs), so
+			// this local leaked one reference per commit to every machine on the line, and they hard-deleted when destroyed.
+			staying_machines[OWN_KEY(staying_port.machine)] = TRUE
 	var/datum/gas_mixture/region_air = network.air
 	var/datum/pipeline/pipeline = network.line_members?[1]
 	var/changed = 0
@@ -631,7 +633,7 @@ CAPABILITIES(/obj/machinery/atmospherics)
 		changed++
 		var/datum/pipe_port/left_port = rust_pipe_port_of(port_handle)
 		var/obj/machinery/atmospherics/left = left_port?.machine
-		if(!left || staying_machines[left])
+		if(!left || staying_machines[OWN_KEY(left)])
 			continue
 		if(istype(left, /obj/machinery/atmospherics/pipe))
 			rel_remove(network, nameof(network.leaks), left)

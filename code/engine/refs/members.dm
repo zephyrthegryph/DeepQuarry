@@ -25,14 +25,21 @@
 		var/list/plain = L
 		return plain.Copy()
 	. = list()
+	// Text keys: an alist freed with an object key keeps a reference to it (dq_alist_object_key_refs).
 	var/alist/seen = alist()
 	for(var/key, value in L)
-		if(isdatum(key) && !seen[key])
-			seen[key] = TRUE
-			. += key
-		if(isdatum(value) && !seen[value])
-			seen[value] = TRUE
-			. += value
+		if(isdatum(key))
+			var/datum/member = key
+			var/member_key = OWN_KEY(member)
+			if(!seen[member_key])
+				seen[member_key] = TRUE
+				. += key
+		if(isdatum(value))
+			var/datum/member = value
+			var/member_key = OWN_KEY(member)
+			if(!seen[member_key])
+				seen[member_key] = TRUE
+				. += value
 
 /// TRUE when holder.var_name's container `L` holds `member` (as a list member, an alist key, or an alist value under some key). A long plain list
 /// asks the member's reverse index, so adding a member to a big ref_many does not scan it.

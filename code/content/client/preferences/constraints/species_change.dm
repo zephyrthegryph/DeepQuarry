@@ -84,3 +84,17 @@
 		return
 	markings &= GLOB.body_marking_styles_list
 	preferences.update_preference_by_type(/datum/preference/body_markings, markings)
+
+
+/// The spawn points on offer follow the species and play mode: the saved choice falls back quietly when it no longer holds, and the setup list is rebuilt.
+/datum/preference_constraint/species_refits_spawnpoint
+	triggers = list("species", "play_mode")
+	affects = list("spawnpoint")
+
+/datum/preference_constraint/species_refits_spawnpoint/apply(datum/preferences/preferences, changed_key, old_value, new_value)
+	var/datum/preference/spawnpoint = GLOB.preference_entries[/datum/preference/choiced/living/spawnpoint]
+	var/current = preferences.read_preference(/datum/preference/choiced/living/spawnpoint)
+	var/fitted = spawnpoint.sanitize(current, preferences)
+	if(fitted != current)
+		preferences.update_preference_by_type(/datum/preference/choiced/living/spawnpoint, fitted)
+	preferences.dq_invalidate_category_cache()
