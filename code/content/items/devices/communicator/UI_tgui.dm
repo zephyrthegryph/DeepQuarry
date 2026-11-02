@@ -573,7 +573,7 @@ CAPABILITIES(/obj/item/communicator)
 /// Hides or shows this communicator in the directory other communicators list.
 /obj/item/communicator/proc/ui_act_toggle_visibility(datum/act/op/A)
 	add_fingerprint(A.actor)
-	network_visibility = !network_visibility
+	set_network_visibility(!network_visibility)
 	return OP_OK
 
 /obj/item/communicator/proc/ui_act_clear_target_address(datum/act/op/A)
