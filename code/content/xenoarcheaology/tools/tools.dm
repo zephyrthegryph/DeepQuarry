@@ -119,7 +119,7 @@ CAPABILITIES(/obj/item/depth_scanner)
 	interface("XenoarchDepthScanner", state = nameof(GLOB.tgui_deep_inventory_state))
 	without("ui_open")
 	op("select", ui_act("select", arg("select", num())), then(PROC_REF(ui_act_select)))
-	op("clear", ui_act("clear", arg("clear", num())), then(PROC_REF(ui_act_clear)))
+	op("clear", ui_act("clear", arg("index", num(), optional = TRUE)), then(PROC_REF(ui_act_clear)))
 	ref_one(nameof(current))
 
 /datum/depth_scan

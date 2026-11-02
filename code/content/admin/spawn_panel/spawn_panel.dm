@@ -65,7 +65,7 @@ CAPABILITIES(/datum/spawnpanel)
 	op("get-icon-states", ui_act("get-icon-states"), then(PROC_REF(ui_act_get_icon_states)))
 	op("selected-atom-changed", ui_act("selected-atom-changed", arg("newObj", schema_path(/datum))), then(PROC_REF(ui_act_selected_atom_changed)))
 	op("create-atom-action", ui_act("create-atom-action", arg("atom_amount", num()), arg("atom_icon_size"), arg("atom_name"), arg("dir", num()), arg("offset"), arg("offset_type"), arg("selected_atom_icon"), arg("selected_atom_icon_state"), arg("where_target_type")), then(PROC_REF(ui_act_create_atom_action)))
-	op("toggle-precise-mode", ui_act("toggle-precise-mode", arg("newPreciseType", schema_text(4096)), arg("where_target_type", schema_text(4096))), then(PROC_REF(ui_act_toggle_precise_mode)))
+	op("toggle-precise-mode", ui_act("toggle-precise-mode", arg("newPreciseType", schema_text(4096)), arg("where_target_type", schema_text(4096), optional = TRUE)), then(PROC_REF(ui_act_toggle_precise_mode)))
 	op("update-settings", ui_act("update-settings", arg("atom_amount", num()), arg("atom_dir", num()), arg("atom_icon_size", num()), arg("atom_name"), arg("offset"), arg("offset_type"), arg("selected_atom_icon"), arg("selected_atom_icon_state"), arg("where_target_type")), then(PROC_REF(ui_act_update_settings)))
 
 /datum/spawnpanel/tgui_close(mob/user)

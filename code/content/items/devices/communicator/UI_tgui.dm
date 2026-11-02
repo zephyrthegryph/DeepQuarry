@@ -60,6 +60,12 @@ CAPABILITIES(/obj/item/communicator)
 	op("message", ui_act("message", arg("message", schema_text(4096))), asks(/datum/prompt/text/communicator/text_message, step = "text"), then(PROC_REF(ui_act_message)))
 	op("disconnect", ui_act("disconnect", arg("disconnect", schema_text(4096))), then(PROC_REF(ui_act_disconnect)))
 	op("startvideo", ui_act("startvideo", arg("startvideo", schema_ref(/obj/item/communicator))), then(PROC_REF(ui_act_startvideo)))
+	// Buttons the window sends that lost their ops in the conversion (it still shows them).
+	op("endvideo", ui_act("endvideo", arg("endvideo", schema_text(4096), optional = TRUE)), then(PROC_REF(ui_act_endvideo)))
+	op("hang_up", ui_act("hang_up"), then(PROC_REF(ui_act_hang_up)))
+	op("toggle_ringer", ui_act("toggle_ringer"), then(PROC_REF(ui_act_toggle_ringer)))
+	op("toggle_visibility", ui_act("toggle_visibility"), then(PROC_REF(ui_act_toggle_visibility)))
+	op("clear_target_address", ui_act("clear_target_address"), then(PROC_REF(ui_act_clear_target_address)))
 	op("copy", ui_act("copy", arg("copy", schema_text(4096))), then(PROC_REF(ui_act_copy)))
 	op("copy_name", ui_act("copy_name", arg("copy_name", schema_text(4096))), then(PROC_REF(ui_act_copy_name)))
 	op("switch_tab", ui_act("switch_tab", arg("switch_tab", num())), then(PROC_REF(ui_act_switch_tab)))
@@ -352,6 +358,7 @@ CAPABILITIES(/obj/item/communicator)
 	data["voice_mobs"] = voices
 	data["communicating"] = connected_communicators
 	data["video_comm"] = video_source ? ref_token(video_source.loc) : null
+	data["phone_video_comm"] = data["video_comm"] // the phone tab's Stop Video button shows on the contact this matches
 	data["imContacts"] = im_contacts_ui
 	data["imList"] = im_list_ui
 	data["time"] = stationtime2text()
@@ -547,3 +554,29 @@ CAPABILITIES(/obj/item/communicator)
 /// Relation view: last camera turf (reads null once it is gone).
 /obj/item/communicator/proc/last_camera_turf() as /turf
 	return last_camera_turf
+
+/// Stop Video: ends the video feed, whichever contact it came from.
+/obj/item/communicator/proc/ui_act_endvideo(datum/act/op/A, endvideo)
+	add_fingerprint(A.actor)
+	if(video_source)
+		end_video("[A.actor] ended the video call")
+	return OP_OK
+
+/// Hang Up: closes every call (ghost callers and other communicators).
+/obj/item/communicator/proc/ui_act_hang_up(datum/act/op/A)
+	add_fingerprint(A.actor)
+	if(video_source)
+		end_video()
+	close_connection(A.actor, null, "[A.actor] hung up")
+	return OP_OK
+
+/// Hides or shows this communicator in the directory other communicators list.
+/obj/item/communicator/proc/ui_act_toggle_visibility(datum/act/op/A)
+	add_fingerprint(A.actor)
+	set_network_visibility(!network_visibility)
+	return OP_OK
+
+/obj/item/communicator/proc/ui_act_clear_target_address(datum/act/op/A)
+	add_fingerprint(A.actor)
+	set_target_address("")
+	return OP_OK
