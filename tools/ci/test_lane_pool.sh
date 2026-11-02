@@ -16,6 +16,8 @@
 set -uo pipefail
 here="$(cd "$(dirname "$0")/../.." && pwd)"
 tmp="$(mktemp -d)"
+# Git for Windows cannot open Git Bash's MSYS paths (/tmp/..., /e/...): hand it mixed ones (C:/.../Temp/..., E:/...).
+if command -v cygpath >/dev/null 2>&1; then tmp="$(cygpath -m "$tmp")"; here="$(cygpath -m "$here")"; fi
 trap 'rm -rf "$tmp" 2>/dev/null' EXIT
 
 # ---- helpers shared by the sections (each section runs in its own subshell, so its counters and environment are its own) ------------------
