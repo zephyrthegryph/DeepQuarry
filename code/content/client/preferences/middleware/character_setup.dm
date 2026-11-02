@@ -27,6 +27,14 @@ GLOBAL_LIST_INIT(dq_category_order, list(
 	"misc",
 ))
 
+/// Tabs only admins see. Their prefs and editors stay, saved and applied as before; players just do not get the tab.
+GLOBAL_LIST_INIT(dq_admin_only_categories, list("antag"))
+
+/// Whether these prefs' player sees the admin-only tabs (any admin rank).
+/proc/dq_sees_admin_categories(datum/preferences/prefs)
+	var/client/C = prefs?.client()
+	return C && check_rights_for(C, R_ADMIN)
+
 // Rarely-changed categories: the window folds them under one "More" tab (in this order,
 // after every other tab). They stay ordinary categories on the wire; only the tab strip groups them.
 GLOBAL_LIST_INIT(dq_more_categories, list(
@@ -215,9 +223,9 @@ GLOBAL_LIST_INIT(dq_group_display_merge, list("gender" = "name", "demographics" 
 // which is type-registration order (not file order), so "Name" wasn't reliably
 // first in Identity even though the metadata file lists it first.
 GLOBAL_LIST_INIT(dq_group_order, list(
-	"identity"    = list("name", "blood", "species", "spawn", "language", "background", "speech_verbs", "flavor", "directory", "records", "ooc_notes"),
+	"identity"    = list("name", "blood", "species", "spawn", "language", "background", "speech_verbs", "voice", "flavor", "directory", "records", "ooc_notes"),
 	"appearance"  = list("palette", "chassis", "body", "hair", "ears", "tail", "wings", "markings", "organs", "preview"),
-	"size_voice"  = list("size", "voice"),
+	"size_voice"  = list("size"),
 	"antag"       = list("antag", "be_special"),
 	"game"        = list("input", "view", "sound", "ui", "chat", "persistence", "roleplay", "nif", "pai"),
 ))
@@ -236,6 +244,7 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	var/play_mode = preferences().read_preference(/datum/preference/text/human/play_mode) || "human"
 	var/playing_as_robot = (play_mode == "robot")
 	var/playing_as_pai = (play_mode == "pai")
+	var/antag_visible = dq_sees_admin_categories(preferences())
 
 	for(var/pref_type in GLOB.preference_entries)
 		var/datum/preference/pref = GLOB.preference_entries[pref_type]
@@ -257,6 +266,8 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 		if(cat == PREFERENCE_CATEGORY_MANUALLY_RENDERED || cat == PREFERENCE_CATEGORY_NON_CONTEXTUAL)
 			continue
 		var/grp = pref.get_group(preferences()) || ""
+		if((cat in GLOB.dq_admin_only_categories) && !antag_visible)
+			continue
 
 		// play-mode gating. play_mode is itself a hidden pref so
 		// no escape hatch needed here; the species_picker editor below is
@@ -320,6 +331,8 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	// Mix editors into their categories/groups.
 	for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
 		if(editor.hidden)
+			continue
+		if((editor.category in GLOB.dq_admin_only_categories) && !antag_visible)
 			continue
 		// same play-mode gating as for prefs. SpeciesPicker is the
 		// always-visible escape hatch (player needs a way to switch modes).
@@ -404,6 +417,8 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	if(!islist(preferences().dq_category_index))
 		var/play_mode = preferences().read_preference(/datum/preference/text/human/play_mode) || "human"
 		preferences().dq_category_index = dq_character_category_index(play_mode)
+		if(!dq_sees_admin_categories(preferences())) // the shared index holds every tab; players lose the admin-only ones
+			preferences().dq_category_index -= GLOB.dq_admin_only_categories
 	if(!category_key || (category_key in preferences().dq_category_static_cache))
 		return
 	var/list/categories_data = dq_build_category_structure(category_key, TRUE)
