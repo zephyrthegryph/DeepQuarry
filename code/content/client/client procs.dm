@@ -310,10 +310,12 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		prefs.selecting_slots = FALSE
 
 	// Initialize stat panel
+	// The React page (tgui/packages/tgui-panel/statpanel). If its bundle never mounts, the inline
+	// script shows this reload link instead of leaving the pane blank.
 	stat_panel.initialize(
-		inline_html = file2text('html/statbrowser.html'),
-		inline_js = file2text('html/statbrowser.js'),
-		inline_css = file2text('html/statbrowser.css'),
+		assets = list(get_asset_datum(/datum/asset/simple/tgui_statpanel)),
+		inline_html = "<div id='statpanel-fallback' style='display:none;padding:1em;color:#B3CCE6;background:#202020;font:12px Verdana,sans-serif'>The stat panel did not load. <a style='color:#6699FF' href='byond://?src=[REF(src)];reload_statbrowser=1'>Reload it</a>, or reconnect if that does not help.</div>",
+		inline_js = "setTimeout(function(){if(window.__statpanelMounted)return;document.getElementById('statpanel-fallback').style.display='block';Byond.winset(Byond.windowId,{'is-visible':true});},10000);",
 	)
 	after(src, 30 SECONDS, PROC_REF(check_panel_loaded))
 
