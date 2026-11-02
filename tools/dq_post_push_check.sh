@@ -87,6 +87,8 @@ run() {
 
 main() {
 	REPO="${DQ_HEALTH_REPO:-$(git rev-parse --show-toplevel 2>/dev/null)}"
+	# the health worktree outlives the lane that started the runner: a released or removed lane must not end its loop
+	[ -n "${DQ_HEALTH_REPO:-}" ] || [ ! -e "$WT/.git" ] || REPO="$WT"
 	case "${1:-status}" in
 		start)
 			mkdir -p "$STATE"
