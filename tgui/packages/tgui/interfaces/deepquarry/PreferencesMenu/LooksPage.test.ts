@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'bun:test';
-import { REGION_CARDS, regionForHighlight } from './LooksPage';
+import {
+  REGION_CARDS,
+  regionForHighlight,
+  withNoneChoice,
+} from './LooksPage';
 
 describe('Looks categories', () => {
   it('shows every card in exactly one category', () => {
@@ -24,5 +28,16 @@ describe('Looks categories', () => {
   it('stays put for the left column, which is always shown', () => {
     expect(regionForHighlight('pref:palette_primary')).toBeNull();
     expect(regionForHighlight('group:appearance/preview')).toBeNull();
+  });
+});
+
+describe('withNoneChoice', () => {
+  it('puts None first and drops the old blank styles', () => {
+    const c = withNoneChoice(['none', 'fox', 'cat']);
+    expect(Object.entries(c)).toEqual([
+      ['', 'None'],
+      ['fox', 'Fox'],
+      ['cat', 'Cat'],
+    ]);
   });
 });

@@ -9,7 +9,7 @@ import { Box, Button, Section } from 'tgui-core/components';
 import { type DollRegion, ZoneDoll } from '../shared/ZoneDoll';
 import { WidgetGrid } from './CategoryPage';
 import { ColorStrip, ColorSwatch, PALETTE_SLOTS, PaletteSlots } from './colors';
-import { SearchableDropdown, Segmented, Switch } from './controls';
+import { Segmented, Switch } from './controls';
 import { getEditor } from './editors';
 import { BodyMarkingsEditor } from './editors/BodyMarkingsEditor';
 import { OrgansEditor } from './editors/OrgansEditor';
@@ -594,32 +594,30 @@ const AlphaCell = ({
   />
 );
 
-/// A style cell: the picker, and None for a part that can be absent.
+/// A part that can be absent offers None first among its styles (as hair offers bald), instead of a separate remove button.
+export const withNoneChoice = (
+  choices: PrefWidgetItem['choices'],
+): Record<string, string> => ({
+  '': 'None',
+  ...Object.fromEntries(
+    normalizeChoices(choices).filter(([v]) => !isNoStyle(v)),
+  ),
+});
+
+/// A style cell: the picker, with None among the styles for a part that can be absent.
 const StyleCell = ({
   item,
   clearable,
-  value,
 }: {
   item: PrefWidgetItem | null;
   clearable?: boolean;
-  value: unknown;
 }) => {
-  const { act } = useBackend();
   if (!item) return <Box style={cellStyle} />;
   return (
-    <Box style={{ ...cellStyle, display: 'flex', gap: '0.3em' }}>
-      <Box style={{ flex: 1, minWidth: 0 }}>
-        <BareField item={item} />
-      </Box>
-      {clearable && !isNoStyle(value) && (
-        <Button
-          icon="xmark"
-          tooltip="None"
-          onClick={() =>
-            act('dq_update_preference', { key: item.key, value: '' })
-          }
-        />
-      )}
+    <Box style={cellStyle}>
+      <BareField
+        item={clearable ? { ...item, choices: withNoneChoice(item.choices) } : item}
+      />
     </Box>
   );
 };
@@ -718,11 +716,7 @@ const BodyTable = ({
                 data-dq-anchor={groupAnchor('appearance', row.group)}
               >
                 <Box style={cellStyle}>{row.label}</Box>
-                <StyleCell
-                  item={shownItem}
-                  clearable={row.clearable}
-                  value={value}
-                />
+                <StyleCell item={shownItem} clearable={row.clearable} />
                 {[0, 1, 2].map((i) =>
                   row.styleKey === 'ear_secondary_style' ? (
                     <SecondEarCell
@@ -785,14 +779,18 @@ const GradientOption = ({
       <Box color="label" fontSize="0.85em">
         Gradient
       </Box>
-      <BareField item={item} />
-      {!isNoStyle(values.grad_style_name) && widgets.grad_color && (
-        <ColorStrip
-          compact
-          colors={[{ key: 'grad_color', label: '' }]}
-          values={values}
-        />
-      )}
+      <Box style={{ display: 'flex', alignItems: 'center', gap: '0.3em' }}>
+        <Box style={{ flex: 1, minWidth: 0 }}>
+          <BareField item={item} />
+        </Box>
+        {!isNoStyle(values.grad_style_name) && widgets.grad_color && (
+          <ColorStrip
+            compact
+            colors={[{ key: 'grad_color', label: '' }]}
+            values={values}
+          />
+        )}
+      </Box>
     </Box>
   );
 };
@@ -848,15 +846,14 @@ const LegsRow = ({
           value={mode}
           onSelect={pick}
         />
-        {showTaur && (
+        {showTaur && tailItem && (
           <Box mt={0.2}>
-            <SearchableDropdown
-              placeholder="Filter taur bodies…"
-              options={taurStyles}
-              value={String(values.tail_style ?? '')}
-              onSelect={(style) => {
-                setChoosingTaur(false);
-                set('tail_style', style);
+            <BareField
+              item={{
+                ...tailItem,
+                value: taurNow ? values.tail_style : '',
+                choices: Object.fromEntries(taurStyles),
+                props: { ...tailItem.props, open: !taurNow },
               }}
             />
           </Box>
