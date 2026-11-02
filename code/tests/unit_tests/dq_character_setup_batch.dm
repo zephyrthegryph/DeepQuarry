@@ -77,24 +77,50 @@
 	TEST_ASSERT_EQUAL(loaded["face"], "Green", "a loaded save is migrated")
 	TEST_ASSERT_EQUAL(loaded["body"], "Strong", "a loaded save is migrated")
 
-/// General always shows; Face and Body leave the examine text while gear hides them.
+/// General always shows; Face hides under a mask; Body hides only when everything worn covers the whole body, with real equipment.
 /datum/unit_test/dq_flavor_hidden_entries
 
 /datum/unit_test/dq_flavor_hidden_entries/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.bio.flavor_texts = list("general" = "GEN", "face" = "FACE", "body" = "BODY")
 	TEST_ASSERT(("face" in H.visible_flavor_zones()) && ("body" in H.visible_flavor_zones()), "a bare body shows every entry")
-	H.print_flavor_text(0)
-	TEST_ASSERT(findtext(H.bio.flavor_text, "BODY") && findtext(H.bio.flavor_text, "FACE"), "both print")
 	var/obj/item/clothing/under/color/grey/uniform = allocate(/obj/item/clothing/under/color/grey)
+	TEST_ASSERT(worn_of(uniform).covers & UPPER_TORSO, "a jumpsuit covers the torso")
 	TEST_ASSERT(H.equip_to_slot(uniform, SLOT_ID_UNIFORM), "the uniform is worn")
-	TEST_ASSERT(!("body" in H.visible_flavor_zones()), "a uniform hides Body")
-	TEST_ASSERT(("general" in H.visible_flavor_zones()), "General always shows")
+	TEST_ASSERT("body" in H.visible_flavor_zones(), "a jumpsuit alone shows Body")
+	var/obj/item/clothing/shoes/black/shoes = allocate(/obj/item/clothing/shoes/black)
+	var/obj/item/clothing/gloves/black/gloves = allocate(/obj/item/clothing/gloves/black)
+	TEST_ASSERT(H.equip_to_slot(shoes, SLOT_ID_SHOES), "shoes are worn")
+	TEST_ASSERT(H.equip_to_slot(gloves, SLOT_ID_GLOVES), "gloves are worn")
+	TEST_ASSERT("body" in H.visible_flavor_zones(), "partial gear shows Body")
+	var/obj/item/clothing/head/helmet/space/helmet = allocate(/obj/item/clothing/head/helmet/space)
+	TEST_ASSERT(H.equip_to_slot(helmet, SLOT_ID_HEAD), "the helmet is worn")
+	TEST_ASSERT(!("body" in H.visible_flavor_zones()), "a head-to-toe outfit hides Body")
+	TEST_ASSERT(!("face" in H.visible_flavor_zones()), "and the helmet hides Face")
+	TEST_ASSERT("general" in H.visible_flavor_zones(), "General always shows")
 	H.print_flavor_text(0)
 	TEST_ASSERT(!findtext(H.bio.flavor_text, "BODY"), "a hidden entry is not printed")
+	TEST_ASSERT(findtext(H.bio.flavor_text, "GEN"), "General prints")
+	TEST_ASSERT(H.drop_from_inventory(gloves), "the gloves come off")
+	TEST_ASSERT("body" in H.visible_flavor_zones(), "bare hands show Body again")
+	TEST_ASSERT(H.equip_to_slot(gloves, SLOT_ID_GLOVES), "the gloves go back on")
+	TEST_ASSERT(!("body" in H.visible_flavor_zones()), "covered again")
+	TEST_ASSERT(H.drop_from_inventory(helmet), "the helmet comes off")
+	TEST_ASSERT("body" in H.visible_flavor_zones(), "a bare head shows Body again")
 	var/obj/item/clothing/mask/gas/mask = allocate(/obj/item/clothing/mask/gas)
 	TEST_ASSERT(H.equip_to_slot(mask, SLOT_ID_MASK), "the mask is worn")
 	TEST_ASSERT(!("face" in H.visible_flavor_zones()), "a gas mask hides Face")
+	TEST_ASSERT("body" in H.visible_flavor_zones(), "a gas mask leaves the head, so Body shows")
+
+/// Uniform coverage: the base declares the torso; what is not worn over it stays off it.
+/datum/unit_test/dq_uniform_coverage
+
+/datum/unit_test/dq_uniform_coverage/Run()
+	TEST_ASSERT_EQUAL(worn_of_type(/obj/item/clothing/under).covers, CHEST|ARMS|LEGS, "the base uniform")
+	TEST_ASSERT_EQUAL(worn_of_type(/obj/item/clothing/under/swimsuit/black).covers, CHEST, "a swimsuit is the torso alone")
+	TEST_ASSERT_EQUAL(worn_of_type(/obj/item/clothing/under/shorts/red).covers, LOWER_TORSO, "shorts keep their own")
+	TEST_ASSERT_EQUAL(worn_of_type(/obj/item/clothing/under/pants/black).covers, LOWER_TORSO|LEGS, "pants keep their own")
+	TEST_ASSERT_EQUAL(worn_of_type(/obj/item/clothing/under/skirt/red).covers, LOWER_TORSO, "skirts keep their own")
 
 /// None and invalid saved dates become real ones; the editor takes only real dates.
 /datum/unit_test/dq_birthday_only_real_dates
