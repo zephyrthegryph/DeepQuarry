@@ -22120,10 +22120,6 @@
 	pixel_x = -4;
 	pixel_y = 3
 	},
-/obj/item/reagent_containers/food/condiment/small/peppergrinder{
-	pixel_x = 5;
-	pixel_y = 2
-	},
 /obj/structure/curtain/open/bed,
 /obj/structure/window/reinforced/survival_pod,
 /obj/effect/floor_decal/corner/green/diagonal,
@@ -24170,10 +24166,6 @@
 	pixel_x = -4;
 	pixel_y = 3
 	},
-/obj/item/reagent_containers/food/condiment/small/peppergrinder{
-	pixel_x = 5;
-	pixel_y = 2
-	},
 /obj/structure/curtain/open/bed,
 /obj/structure/window/reinforced/survival_pod,
 /turf/simulated/floor/tiled/white,
@@ -25156,10 +25148,6 @@
 /obj/item/reagent_containers/food/condiment/small/saltshaker{
 	pixel_x = -4;
 	pixel_y = 3
-	},
-/obj/item/reagent_containers/food/condiment/small/peppergrinder{
-	pixel_x = 5;
-	pixel_y = 2
 	},
 /obj/structure/curtain/open/bed,
 /obj/structure/window/reinforced/survival_pod,
