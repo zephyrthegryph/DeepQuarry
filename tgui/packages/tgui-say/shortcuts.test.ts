@@ -17,13 +17,12 @@ const language = (): LanguageInfo => ({
 });
 
 const rules: LanguageRules = {
-  prefixes: [',', '#', '-'],
   mode: 'Default',
   name: 'Tester',
   defaultLanguage: 'gal',
   gibberish: 'gib',
   noise: 'noise',
-  keys: { g: 'gal', s: 'sol', k: 'siik' },
+  keys: { ',g': 'gal', ',s': 'sol', ',k': 'siik' },
   languages: { gal: language(), sol: language(), siik: language() },
   order: ['gal', 'sol', 'siik'],
   markers: { '|': 'i', '+': 'b', _: 'u' },

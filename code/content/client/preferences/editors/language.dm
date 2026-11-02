@@ -4,8 +4,8 @@
 //   "add_language"    { language }
 //   "remove_language" { language }
 //   "set_preferred"   { language }
-//   "set_key"         { language, key }   one letter or digit; refused when another known language holds it
-//   "reset_key"       { language }        back to the language's own key
+//   "set_key"         { language, key }   the whole prefix; refused when invalid or another known language holds it
+//   "reset_key"       { language }        back to the language's own prefix
 
 /datum/preference_editor/language
 	key = "language"
@@ -41,7 +41,6 @@
 		"alternate_languages" = alt_languages,
 		"language_keys" = preferences.language_key_map(),
 		"known_languages" = preferences.known_language_names(),
-		"language_prefix" = CONFIG_GET(str_list/language_prefixes)[1],
 		"preferred_language" = preferences.read_preference(/datum/preference/text/human/preferred_language),
 		"extra_languages" = extra,
 		"max_alternate_languages" = S ? (S.num_alternate_languages + extra) : extra,
@@ -56,7 +55,7 @@
 			"name" = L.name,
 			"desc" = L.desc,
 			"restricted" = (L.flags & RESTRICTED) ? TRUE : FALSE,
-			"default_key" = (L.flags & NONGLOBAL) ? "" : L.key,
+			"default_key" = (L.flags & NONGLOBAL) ? "" : language_default_prefix(L),
 		)
 	return list("all_languages" = all_languages)
 
@@ -89,7 +88,7 @@
 	var/problem = preferences.set_language_key(params["language"], params["key"])
 	if(problem)
 		if(user)
-			to_chat(user, span_warning("Language key refused: [problem]."))
+			to_chat(user, span_warning("Language prefix refused: [problem]."))
 		return PREF_UPDATE_REJECTED
 	return PREF_UPDATE_ACCEPTED
 

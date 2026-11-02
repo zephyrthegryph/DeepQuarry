@@ -1,5 +1,5 @@
 // DQAdd — Language picker. One list of every language this character can have: known ones in green with their
-// key, typed after the chat prefix to speak it, and a button to make one the default. Languages it can't take aren't listed. A key another known language holds is refused here and again on the server.
+// prefix, typed to speak it, and a button to make one the default. Languages it can't take aren't listed. A key another known language holds is refused here and again on the server.
 
 import { useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
@@ -16,10 +16,9 @@ import type { EditorProps } from './index';
 
 type LangData = {
   alternate_languages: string[];
-  /// Language name -> the key that speaks it for this character.
+  /// Language name -> the prefix that speaks it for this character.
   language_keys: Record<string, string>;
   known_languages: string[];
-  language_prefix: string;
   preferred_language: string | null;
   extra_languages: number;
   max_alternate_languages: number;
@@ -43,13 +42,18 @@ type LangMeta = {
   default_key?: string;
 };
 
-/// Why `key` cannot speak `language`, or null when it can: the rule ui_act_set_key applies on the server.
+/// Why `key` (a whole prefix) cannot speak `language`, or null when it can: the rule of language_prefix_problem and language_key_problem.
 export const languageKeyProblem = (
   key: string,
   language: string,
   keys: Record<string, string>,
 ): string | null => {
-  if (!/^[A-Za-z0-9]$/.test(key)) return 'One letter or digit.';
+  const size = [...key].length;
+  if (size < 2 || size > 4) return '2 to 4 characters.';
+  if (key.includes(' ')) return 'No spaces.';
+  if (/^[A-Za-z0-9;:.!*^+|_<>&"']/.test(key)) {
+    return `Can't start with ${key[0]}.`;
+  }
   for (const [other, held] of Object.entries(keys)) {
     if (other !== language && held === key) return `Already speaks ${other}.`;
   }
@@ -94,7 +98,6 @@ export const LanguagePicker = ({ data, staticData }: EditorProps) => {
   const max = d.max_alternate_languages ?? 0;
   const room = Math.max(0, max - selected.size);
   const keys = d.language_keys ?? {};
-  const prefix = d.language_prefix ?? ',';
 
   // The server names the languages this character may actually pick; anything else (restricted, whitelisted for someone
   // else) is not listed at all. Selected ones come first, then the rest alphabetically; the search narrows both.
@@ -143,11 +146,8 @@ export const LanguagePicker = ({ data, staticData }: EditorProps) => {
               {max}
             </Box>{' '}
             alternate languages your character knows on top of their species
-            default. Green languages are known. To speak another in chat, type{' '}
-            <Box inline bold color="white" style={{ fontFamily: 'monospace' }}>
-              {prefix}
-            </Box>{' '}
-            then its key.
+            default. Green languages are known. To speak another in chat, type
+            its prefix.
           </Box>
           <Input
             fluid
@@ -325,11 +325,11 @@ const LanguageKeyInput = ({
         </Box>
       )}
       <Box inline color="label" mr={0.25}>
-        Key
+        Prefix
       </Box>
       <Input
-        width="2.5em"
-        maxLength={1}
+        width="3.5em"
+        maxLength={4}
         value={draft}
         onChange={setDraft}
         onBlur={() => commit(draft)}
@@ -340,7 +340,7 @@ const LanguageKeyInput = ({
           ml={0.25}
           compact
           icon="rotate-left"
-          tooltip={`Back to its own key (${defaultKey})`}
+          tooltip={`Back to its own prefix (${defaultKey})`}
           onClick={() => send(act, 'reset_key', { language: languageKey })}
         />
       )}

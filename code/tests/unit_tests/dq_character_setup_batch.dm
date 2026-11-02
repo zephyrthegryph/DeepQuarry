@@ -17,18 +17,18 @@
 /datum/unit_test/dq_language_keys_migrate_and_conflict/Run()
 	var/datum/preferences/dq_test_stub/P = dq_test_load_character(list("species" = SPECIES_HUMAN, "language" = list(LANGUAGE_UNATHI), "language_custom_keys" = list("q" = LANGUAGE_UNATHI), "language_prefixes" = list("+", "#", ",")))
 	var/list/map = P.language_key_map()
-	TEST_ASSERT_EQUAL(map[LANGUAGE_UNATHI], "q", "the saved custom key is kept")
+	TEST_ASSERT_EQUAL(map[LANGUAGE_UNATHI], ",q", "the saved custom key is kept, now as a whole prefix")
 	var/species_lang = P.species_language_name()
 	var/datum/language/own = GLOB.all_languages[species_lang]
-	TEST_ASSERT_EQUAL(map[species_lang], own.key, "a language without a saved key uses its own")
-	TEST_ASSERT_NOTNULL(P.language_key_problem(species_lang, "q"), "a held key is a conflict")
-	TEST_ASSERT_NOTNULL(P.language_key_problem(species_lang, "#"), "a symbol is refused")
-	TEST_ASSERT_NOTNULL(P.language_key_problem(species_lang, "ab"), "two characters are refused")
-	TEST_ASSERT_NOTNULL(P.language_key_problem(LANGUAGE_SIIK, "w"), "an unknown language is refused")
-	TEST_ASSERT_NULL(P.set_language_key(LANGUAGE_UNATHI, "7"), "a free digit is taken")
-	TEST_ASSERT_EQUAL(P.language_key_map()[LANGUAGE_UNATHI], "7", "the new key replaces the old")
+	TEST_ASSERT_EQUAL(map[species_lang], language_default_prefix(own), "a language without a saved key uses its own")
+	TEST_ASSERT_NOTNULL(P.language_key_problem(species_lang, ",q"), "a held key is a conflict")
+	TEST_ASSERT_NOTNULL(P.language_key_problem(species_lang, ":x"), "radio syntax is refused")
+	TEST_ASSERT_NOTNULL(P.language_key_problem(species_lang, "ab"), "a word is refused")
+	TEST_ASSERT_NOTNULL(P.language_key_problem(LANGUAGE_SIIK, ",w"), "an unknown language is refused")
+	TEST_ASSERT_NULL(P.set_language_key(LANGUAGE_UNATHI, ",7"), "a free prefix is taken")
+	TEST_ASSERT_EQUAL(P.language_key_map()[LANGUAGE_UNATHI], ",7", "the new key replaces the old")
 	var/list/custom = P.read_preference(/datum/preference/language_custom_keys)
-	TEST_ASSERT(!("q" in custom), "the old key is freed")
+	TEST_ASSERT(!(",q" in custom), "the old key is freed")
 
 /// The old default ("common", not a language) and a language the character does not know resolve to the species language; the editor refuses unknowns.
 /datum/unit_test/dq_preferred_language_rules
@@ -52,12 +52,11 @@
 	H.add_language(LANGUAGE_UNATHI)
 	H.apply_language_prefs(P)
 	var/datum/language/unathi = GLOB.all_languages[LANGUAGE_UNATHI]
-	TEST_ASSERT_EQUAL(H.language_keys["q"], unathi, "the key is bound on the mob")
+	TEST_ASSERT_EQUAL(H.language_keys[",q"], unathi, "the key is bound on the mob")
 	TEST_ASSERT_EQUAL(H.get_default_language(), unathi, "the preferred language is the default")
-	var/prefix = H.get_language_prefix()
-	var/list/pieces = H.parse_languages("[prefix]q hello")
+	var/list/pieces = H.parse_languages(",q hello")
 	var/datum/multilingual_say_piece/piece = pieces[1]
-	TEST_ASSERT_EQUAL(piece.speaking, unathi, "typing the prefix and the key speaks the language")
+	TEST_ASSERT_EQUAL(piece.speaking, unathi, "typing the prefix speaks the language")
 
 /// The nine old zones land in General, Face and Body with no text lost; loading the result again changes nothing.
 /datum/unit_test/dq_flavor_zone_migration

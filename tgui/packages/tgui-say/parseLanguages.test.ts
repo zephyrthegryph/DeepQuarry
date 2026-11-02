@@ -22,16 +22,24 @@ const language = (extra: Partial<LanguageInfo> = {}): LanguageInfo => ({
 
 /** The same setup as inline_language_setup() on the DM side. */
 const rules: LanguageRules = {
-  prefixes: [',', '#', '-'],
   mode: 'Default',
   name: 'Tester',
   defaultLanguage: 'default',
   gibberish: 'gibberish',
   noise: 'n',
-  keys: { s: 's', k: 'k', '5': 'k', q: 'q', n: 'n', h: 'h' },
+  keys: {
+    ',s': 's',
+    ',k': 'k',
+    ',5': 'k',
+    ',q': 'q',
+    ',n': 'n',
+    ',h': 'h',
+    '~lat': 's2',
+  },
   languages: {
     default: language(),
     s: language(),
+    s2: language(),
     k: language(),
     q: language({ spoken: false }),
     n: language({ innate: true }),

@@ -36,8 +36,8 @@
 /mob/proc/say_language_rules()
 	var/list/key_names = list()
 	var/list/infos = list()
-	for(var/key in GLOB.language_keys | language_keys)
-		var/datum/language/L = language_for_key(key)
+	for(var/key in GLOB.language_keys | language_keys) // whole prefixes
+		var/datum/language/L = language_for_prefix(key)
 		if(!L)
 			continue
 		key_names[key] = L.name
@@ -67,7 +67,6 @@
 		radio_keys += radio_key
 
 	return list(
-		"prefixes" = CONFIG_GET(str_list/language_prefixes),
 		"mode" = client?.prefs?.read_preference(/datum/preference/choiced/multilingual_mode) || MULTILINGUAL_DEFAULT,
 		"name" = name,
 		"defaultLanguage" = preferred?.name || "",

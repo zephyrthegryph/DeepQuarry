@@ -259,11 +259,28 @@ DECLARE_SHARED_CACHE(language_scramble_cache, GLOBAL_PROC_REF(build_language_scr
 			return 1
 	return 0
 
-/mob/proc/get_language_prefix()
-	return CONFIG_GET(str_list/language_prefixes)[1]
+/// What a language is spoken with unless a character edits it: the one prefix it has by default.
+/proc/language_default_prefix(datum/language/L)
+	return ",[L.key]"
 
-/mob/proc/is_language_prefix(prefix)
-	return prefix in CONFIG_GET(str_list/language_prefixes)
+/// Why a string can't be a language prefix, or null when it can. A prefix is 2 to 4 characters typed at the start of a word, so it must not
+/// read as a word, a radio key (; : .), a say mode (! * ^) or formatting (+ | _). tgui's languageKeyProblem applies the same rule.
+/proc/language_prefix_problem(prefix)
+	if(!istext(prefix))
+		return "a language prefix is text"
+	var/size = length_char(prefix)
+	if(size < 2 || size > 4)
+		return "a language prefix is 2 to 4 characters"
+	if(findtext(prefix, " "))
+		return "a language prefix has no spaces"
+	var/first = copytext_char(prefix, 1, 2)
+	if(contains_az09(first) || (first in list(";", ":", ".", "!", "*", "^", "+", "|", "_", "<", ">", "&", "\"", "'")))
+		return "a language prefix can't start with a letter, a digit or [first == " " ? "that" : first]"
+	return null
+
+/// A saved key from before prefixes were whole strings is one character: it was typed after a comma.
+/proc/language_migrate_prefix(saved)
+	return length_char(saved) == 1 ? ",[saved]" : saved
 
 /// Re-checked on the answer: the answerer still knows the language.
 /datum/prompt/text/language_key
@@ -280,7 +297,7 @@ CAPABILITIES(/datum/prompt/text/language_key)
 	rel_clear(src, nameof(language))
 	rel_set(src, nameof(language), captured_language)
 	if(captured_language)
-		question = "Input a new key for [captured_language.name]"
+		question = "Input a new prefix for [captured_language.name]"
 		default = text_or_null(get_custom_prefix_by_lang(answerer, captured_language))
 
 /datum/prompt/text/language_key/recheck_extra()

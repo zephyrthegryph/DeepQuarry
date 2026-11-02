@@ -67,8 +67,8 @@
 	TEST_ASSERT_EQUAL(unknown?.outcome, ACT_REFUSED, "a language the mob does not know is refused")
 	// effect: a custom key is asked for and set
 	test_ui(H, panel, "edit_key", list("language" = chosen.name))
-	test_answer(H, "9")
-	TEST_ASSERT_EQUAL(get_custom_prefix_by_lang(H, chosen), "9", "the answered key is the language's custom key")
+	test_answer(H, "~9")
+	TEST_ASSERT_EQUAL(get_custom_prefix_by_lang(H, chosen), "~9", "the answered key is the language's custom key")
 	test_ui(H, panel, "edit_key", list("language" = chosen.name))
 	test_answer(H, " ")
 	TEST_ASSERT_NULL(get_custom_prefix_by_lang(H, chosen), "a blank answer removes the custom key")
