@@ -76,7 +76,7 @@
 	try
 		hook_run_parts(null, T, E.children)
 	catch(var/exception/fault)
-		stack_trace("after_init() on [holder.type]: [fault] ([fault.file]:[fault.line])")
+		dq_report_caught(fault, "after_init() on [holder.type]")
 	GLOB.act_depth = depth
 	T.release()
 	if(!isnull(attr_start))

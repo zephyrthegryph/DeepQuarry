@@ -95,8 +95,6 @@
 	linkable = TRUE
 /datum/preference/color/human/skin_color
 	linkable = TRUE
-/datum/preference/color/human/synth_color
-	linkable = TRUE
 /datum/preference/color/human/ears_color1
 	linkable = TRUE
 /datum/preference/color/human/ears_color2
@@ -241,18 +239,75 @@ GLOBAL_LIST_INIT(dq_palette_fields_table, list(
 	if(islist(save_data))
 		save_data["palette_linked"] = TRUE
 
-/// Robotic limbs always tint from the synth colour, which starts on the skin's own colour (a link follows its slot). The
-/// old "use synth colour" toggle decides once: a save that had it off takes the skin colour, one that had it on keeps its
-/// colour. The old key stays in the save, unread after this.
-/datum/preferences/proc/migrate_synth_color(new_character)
+/// Each robotic limb's tint: organ tag -> a palette slot's name or a hex. Read as hex, like every linked colour.
+/datum/preference/limb_colors
+	savefile_key = "limb_colors"
+	savefile_identifier = PREFERENCE_CHARACTER
+	category = PREFERENCE_CATEGORY_MANUALLY_RENDERED
+	can_randomize = FALSE
+
+/datum/preference/limb_colors/create_default_value()
+	return list()
+
+/datum/preference/limb_colors/pref_deserialize(input, datum/preferences/preferences)
+	return islist(input) ? input : list()
+
+/datum/preference/limb_colors/pref_serialize(input)
+	return islist(input) ? check_list_copy(input) : list()
+
+/datum/preference/limb_colors/is_valid(value)
+	return islist(value)
+
+/datum/preference/limb_colors/resolve_read(list/value, datum/preferences/preferences)
+	if(!islist(value))
+		return value
+	for(var/limb in value)
+		value[limb] = preferences.resolve_color_link(value[limb])
+	return value
+
+/datum/preference/limb_colors/apply_to_human(mob/living/carbon/human/target, value)
+	return // the organs apply hook, once the limbs are robotic
+/datum/preference/limb_colors/apply_to_living(mob/living/target, value)
+	return
+/datum/preference/limb_colors/apply_to_silicon(mob/living/silicon/target, value)
+	return
+/datum/preference/limb_colors/apply_to_animal(mob/living/simple_mob/target, value)
+	return
+
+/// Give each robotic limb its tint. robotize() recurses into children, so a limb with no colour of its own takes its
+/// nearest ancestor's; a Protean's limbs are robotic by species and have no rows, so they fall back on Tertiary.
+/datum/preferences/proc/apply_limb_colors(mob/living/carbon/human/target)
+	var/list/colors = read_preference(/datum/preference/limb_colors)
+	var/fallback = read_preference(/datum/preference/choiced/species) == SPECIES_PROTEAN ? read_preference(/datum/preference/color/human/color_slot/tertiary) : null
+	for(var/name in target.organs_by_name)
+		var/obj/item/organ/external/limb = target.organs_by_name[name]
+		if(!istype(limb) || !limb.is_robotic())
+			continue
+		var/obj/item/organ/external/source = limb
+		var/color
+		while(source && !color)
+			color = colors[source.organ_tag]
+			source = source.parent
+		limb.synth_rgb = color || fallback
+
+/// Once per character. Every robotic limb (for a Protean, every limb) takes the old single synth colour when the old toggle
+/// was on with a colour, otherwise Tertiary. The old keys stay in the save, unread after this.
+/datum/preferences/proc/migrate_limb_colors()
 	var/list/save_data = get_save_data_for_savefile_identifier(PREFERENCE_CHARACTER)
-	if(save_data?["synth_always"])
+	if(save_data?["limb_colors_set"])
 		return
-	if(new_character || !save_data["synth_color"])
-		update_preference_by_type(/datum/preference/color/human/synth_color, read_preference_raw(/datum/preference/color/human/skin_color))
+	var/old_rgb = save_data?["synth_color_rgb"]
+	var/value = (save_data?["synth_color"] && istext(old_rgb) && findtext(old_rgb, GLOB.is_color)) ? lowertext(sanitize_hexcolor(old_rgb)) : "tertiary"
+	var/list/colors = list()
+	var/list/organ_data = read_preference(/datum/preference/organ_data)
+	var/protean = read_preference(/datum/preference/choiced/species) == SPECIES_PROTEAN
+	for(var/limb in list(BP_TORSO, BP_HEAD, BP_GROIN, BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND, BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT))
+		if(protean || organ_data?[limb] == "cyborg")
+			colors[limb] = value
+	update_preference_by_type(/datum/preference/limb_colors, colors)
 	save_data = get_save_data_for_savefile_identifier(PREFERENCE_CHARACTER)
 	if(islist(save_data))
-		save_data["synth_always"] = TRUE
+		save_data["limb_colors_set"] = TRUE
 
 /// The two species that drew from skin tone now draw from skin colour. Every other species ignored the tone. The old key
 /// stays in the save, unread after this.

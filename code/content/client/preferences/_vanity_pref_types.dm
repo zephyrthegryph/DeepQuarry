@@ -21,7 +21,7 @@ GLOBAL_LIST_INIT(vanity_pref_types, list(
 	// Body
 	/datum/preference/color/human/skin_color,
 	/datum/preference/color/human/eyes_color,
-	/datum/preference/color/human/synth_color,
+	/datum/preference/limb_colors,
 	/datum/preference/toggle/human/synth_markings,
 	/datum/preference/toggle/human/digitigrade,
 	/datum/preference/text/human/b_type,
