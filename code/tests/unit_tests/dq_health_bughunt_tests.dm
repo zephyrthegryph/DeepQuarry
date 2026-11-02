@@ -123,3 +123,11 @@
 	var/text = islist(result) ? jointext(result, " ") : "[result]"
 	TEST_ASSERT(!findtext(text, "combat_of"), "examine text leaks code: [text]")
 	TEST_ASSERT(findtext(text, "sharp damage"), "a knife's melee line says sharp: [text]")
+
+/// Program windows theme themselves from the header's PC_device_theme (the header sent only device_theme to the main menu).
+/datum/unit_test/dq_health_bughunt/ntos_header_theme
+
+/datum/unit_test/dq_health_bughunt/ntos_header_theme/Run()
+	var/obj/item/modular_computer/tablet/T = allocate(/obj/item/modular_computer/tablet, test_floor())
+	var/list/header = T.get_header_data()
+	TEST_ASSERT_EQUAL(header["PC_device_theme"], T.device_theme, "the header carries the device theme")

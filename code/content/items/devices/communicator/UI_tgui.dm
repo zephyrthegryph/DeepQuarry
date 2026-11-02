@@ -352,6 +352,7 @@ CAPABILITIES(/obj/item/communicator)
 	data["voice_mobs"] = voices
 	data["communicating"] = connected_communicators
 	data["video_comm"] = video_source ? ref_token(video_source.loc) : null
+	data["phone_video_comm"] = data["video_comm"] // the phone tab's Stop Video button shows on the contact this matches
 	data["imContacts"] = im_contacts_ui
 	data["imList"] = im_list_ui
 	data["time"] = stationtime2text()
