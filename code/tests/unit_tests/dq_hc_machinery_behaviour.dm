@@ -66,6 +66,7 @@
 	var/mob/living/carbon/human/H = person()
 	var/obj/machinery/partyalarm/P = mach(/obj/machinery/partyalarm, tile(3, 2))
 	var/area/A = get_area(P)
+	set_var(A, nameof(A.party), A.party) // the reset button writes 0 over the null an area starts with
 	press(H, P, "time", list("value" = 1))
 	TEST_ASSERT_EQUAL(P.timing, 1, "the timer is switched on")
 	press(H, P, "tp", list("value" = 5))

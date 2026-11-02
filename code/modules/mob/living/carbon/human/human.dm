@@ -1621,41 +1621,35 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 			fail_msg = "There is no exposed flesh or thin material [target_zone == BP_HEAD ? "on their head" : "on their body"] to inject into."
 		to_chat(user, span_warning("[fail_msg]"))
 
-/mob/living/carbon/human/print_flavor_text(shrink = 1)
+/// Which flavor entries show on this body right now. General always does; Face and Body are hidden while gear hides them, by either rule the
+/// examine uses: worn items' `covers` the area (Body: the torso, or arms and legs together), or examine_coverage's "what hides what" (a mask or helmet with HIDEFACE, a suit with HIDEJUMPSUIT).
+/mob/living/carbon/human/proc/visible_flavor_zones()
+	. = list("general")
+	var/list/coverage = examine_coverage()
+	var/skip_body = coverage[2]
+	var/face_exposed = !(skip_body & EXAMINE_SKIPFACE)
+	var/body_exposed = !(skip_body & EXAMINE_SKIPBODY)
 	var/list/equipment = list(get_equipped_item(SLOT_ID_HEAD),get_equipped_item(SLOT_ID_MASK),get_equipped_item(SLOT_ID_EYES),get_equipped_item(SLOT_ID_UNIFORM),get_equipped_item(SLOT_ID_SUIT),get_equipped_item(SLOT_ID_GLOVES),get_equipped_item(SLOT_ID_SHOES))
-	var/head_exposed = 1
-	var/face_exposed = 1
-	var/eyes_exposed = 1
-	var/torso_exposed = 1
-	var/arms_exposed = 1
-	var/legs_exposed = 1
-	var/hands_exposed = 1
-	var/feet_exposed = 1
-
+	var/covered = 0
 	for(var/obj/item/clothing/C in equipment)
-		if(worn_of(C).covers & HEAD)
-			head_exposed = 0
-		if(worn_of(C).covers & FACE)
-			face_exposed = 0
-		if(worn_of(C).covers & EYES)
-			eyes_exposed = 0
-		if(worn_of(C).covers & UPPER_TORSO)
-			torso_exposed = 0
-		if(worn_of(C).covers & ARMS)
-			arms_exposed = 0
-		if(worn_of(C).covers & HANDS)
-			hands_exposed = 0
-		if(worn_of(C).covers & LEGS)
-			legs_exposed = 0
-		if(worn_of(C).covers & FEET)
-			feet_exposed = 0
+		covered |= worn_of(C).covers
+	if(covered & FACE)
+		face_exposed = FALSE
+	// A plain jumpsuit declares ARMS|LEGS and no torso, so covering both counts as covering the body.
+	if((covered & UPPER_TORSO) || ((covered & ARMS) && (covered & LEGS)))
+		body_exposed = FALSE
+	if(face_exposed)
+		. += "face"
+	if(body_exposed)
+		. += "body"
 
+/mob/living/carbon/human/print_flavor_text(shrink = 1)
 	bio.flavor_text = ""
-	for (var/T in bio.flavor_texts)
-		if(bio.flavor_texts[T] && bio.flavor_texts[T] != "")
-			if((T == "general") || (T == "head" && head_exposed) || (T == "face" && face_exposed) || (T == "eyes" && eyes_exposed) || (T == "torso" && torso_exposed) || (T == "arms" && arms_exposed) || (T == "hands" && hands_exposed) || (T == "legs" && legs_exposed) || (T == "feet" && feet_exposed))
-				bio.flavor_text = bio.flavor_text + (bio.flavor_texts[T])
-				bio.flavor_text = bio.flavor_text + ("\n\n")
+	for(var/T in visible_flavor_zones())
+		var/text = LAZYACCESS(bio.flavor_texts, T)
+		if(text)
+			bio.flavor_text = bio.flavor_text + text
+			bio.flavor_text = bio.flavor_text + ("\n\n")
 	if(!shrink)
 		return bio.flavor_text
 	else

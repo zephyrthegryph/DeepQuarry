@@ -1,4 +1,4 @@
-// Character setup batch: the migrations and rules of the identity tab (language keys, preferred language).
+// Character setup batch: the migrations and rules of the identity tab .
 
 /// Loads the fixture save with character1's keys overridden.
 /proc/dq_test_load_character(list/overrides)
@@ -58,3 +58,100 @@
 	var/list/pieces = H.parse_languages("[prefix]q hello")
 	var/datum/multilingual_say_piece/piece = pieces[1]
 	TEST_ASSERT_EQUAL(piece.speaking, unathi, "typing the prefix and the key speaks the language")
+
+/// The nine old zones land in General, Face and Body with no text lost; loading the result again changes nothing.
+/datum/unit_test/dq_flavor_zone_migration
+
+/datum/unit_test/dq_flavor_zone_migration/Run()
+	var/list/old = list("general" = "G", "head" = "H", "face" = "F", "eyes" = "E", "torso" = "T", "arms" = "A", "hands" = "Ha", "legs" = "L", "feet" = "Fe")
+	var/list/migrated = dq_migrate_flavor_zones(old)
+	TEST_ASSERT_EQUAL(length(migrated), 3, "three entries")
+	TEST_ASSERT_EQUAL(migrated["general"], "G", "general stays")
+	TEST_ASSERT_EQUAL(migrated["face"], "Face: F\n\nHead: H\n\nEyes: E", "face, head and eyes join under labels")
+	TEST_ASSERT_EQUAL(migrated["body"], "Torso: T\n\nArms: A\n\nHands: Ha\n\nLegs: L\n\nFeet: Fe", "the body zones join under labels")
+	var/list/again = dq_migrate_flavor_zones(migrated)
+	TEST_ASSERT_EQUAL(again["face"], migrated["face"], "migrating twice changes nothing")
+	var/list/single = dq_migrate_flavor_zones(list("legs" = "Long legs"))
+	TEST_ASSERT_EQUAL(single["body"], "Long legs", "a lone zone moves without a label")
+	var/datum/preferences/dq_test_stub/P = dq_test_load_character(list("flavor_texts" = list("eyes" = "Green", "arms" = "Strong")))
+	var/list/loaded = P.read_preference(/datum/preference/flavor_texts)
+	TEST_ASSERT_EQUAL(loaded["face"], "Green", "a loaded save is migrated")
+	TEST_ASSERT_EQUAL(loaded["body"], "Strong", "a loaded save is migrated")
+
+/// General always shows; Face and Body leave the examine text while gear hides them.
+/datum/unit_test/dq_flavor_hidden_entries
+
+/datum/unit_test/dq_flavor_hidden_entries/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	H.bio.flavor_texts = list("general" = "GEN", "face" = "FACE", "body" = "BODY")
+	TEST_ASSERT(("face" in H.visible_flavor_zones()) && ("body" in H.visible_flavor_zones()), "a bare body shows every entry")
+	H.print_flavor_text(0)
+	TEST_ASSERT(findtext(H.bio.flavor_text, "BODY") && findtext(H.bio.flavor_text, "FACE"), "both print")
+	var/obj/item/clothing/under/color/grey/uniform = allocate(/obj/item/clothing/under/color/grey)
+	TEST_ASSERT(H.equip_to_slot(uniform, SLOT_ID_UNIFORM), "the uniform is worn")
+	TEST_ASSERT(!("body" in H.visible_flavor_zones()), "a uniform hides Body")
+	TEST_ASSERT(("general" in H.visible_flavor_zones()), "General always shows")
+	H.print_flavor_text(0)
+	TEST_ASSERT(!findtext(H.bio.flavor_text, "BODY"), "a hidden entry is not printed")
+	var/obj/item/clothing/mask/gas/mask = allocate(/obj/item/clothing/mask/gas)
+	TEST_ASSERT(H.equip_to_slot(mask, SLOT_ID_MASK), "the mask is worn")
+	TEST_ASSERT(!("face" in H.visible_flavor_zones()), "a gas mask hides Face")
+
+/// None and invalid saved dates become real ones; the editor takes only real dates.
+/datum/unit_test/dq_birthday_only_real_dates
+
+/datum/unit_test/dq_birthday_only_real_dates/Run()
+	var/datum/preferences/dq_test_stub/P = dq_test_load_character(list("bday_month" = 0, "bday_day" = 0))
+	var/month = P.read_preference(/datum/preference/numeric/human/bday_month)
+	var/day = P.read_preference(/datum/preference/numeric/human/bday_day)
+	TEST_ASSERT(month >= 1 && month <= 12, "an unset month becomes a month ([month])")
+	TEST_ASSERT(day >= 1 && day <= birth_month_days(month), "an unset day becomes a day of it ([day])")
+	P = dq_test_load_character(list("bday_month" = 2, "bday_day" = 31))
+	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/numeric/human/bday_month), 2, "a real month is kept")
+	TEST_ASSERT(P.read_preference(/datum/preference/numeric/human/bday_day) <= 29, "February 31st is not kept")
+	P = dq_test_load_character(list("bday_month" = 3, "bday_day" = 5))
+	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/numeric/human/bday_day), 5, "a real date is kept")
+	var/datum/preference_editor/birthday/editor = GLOB.preference_editors_by_key["birthday"]
+	TEST_ASSERT_EQUAL(editor.handle_action(P, "set_month", list("value" = "0"), null), PREF_UPDATE_REJECTED, "no month is refused")
+	TEST_ASSERT_EQUAL(editor.handle_action(P, "set_day", list("value" = "0"), null), PREF_UPDATE_REJECTED, "no day is refused")
+	TEST_ASSERT_EQUAL(editor.handle_action(P, "set_day", list("value" = "31"), null), PREF_UPDATE_ACCEPTED, "March 31st exists")
+	TEST_ASSERT_EQUAL(editor.handle_action(P, "set_month", list("value" = "2"), null), PREF_UPDATE_ACCEPTED, "February is taken")
+	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/numeric/human/bday_day), 29, "the day follows the shorter month")
+	TEST_ASSERT_EQUAL(editor.handle_action(P, "set_day", list("value" = "30"), null), PREF_UPDATE_REJECTED, "February 30th is refused")
+
+/// Old levels map to Default at that level; a named hiss applies on another species; Default follows the species; tooltips come from the maps.
+/datum/unit_test/dq_autohiss_exact_types
+
+/datum/unit_test/dq_autohiss_exact_types/Run()
+	var/datum/preference/text/human/autohiss/pref = GLOB.preference_entries[/datum/preference/text/human/autohiss]
+	TEST_ASSERT_EQUAL(pref.pref_deserialize("Full", null), "Default (Full)", "old Full")
+	TEST_ASSERT_EQUAL(pref.pref_deserialize("Basic", null), "Default (Basic)", "old Basic")
+	TEST_ASSERT_EQUAL(pref.pref_deserialize("Off", null), "Off", "Off stays")
+	TEST_ASSERT_EQUAL(pref.pref_deserialize("Tajaran r-roll", null), "Tajaran r-roll", "a chosen type stays")
+	TEST_ASSERT_EQUAL(pref.pref_deserialize("junk", null), "Default (Full)", "junk is the default")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/datum/language/common = GLOB.all_languages[LANGUAGE_GALCOM]
+	TEST_ASSERT_EQUAL(H.autohiss_by_choice("sir", common, "Off"), "sir", "Off changes nothing")
+	TEST_ASSERT_EQUAL(H.autohiss_by_choice("sir", common, "Default (Full)"), "sir", "a human has no hiss of its own")
+	TEST_ASSERT(findtext(H.autohiss_by_choice("sir", common, "Unathi hiss (Basic)"), "ss"), "the Unathi hiss applies on a human")
+	TEST_ASSERT(findtext(H.autohiss_by_choice("sir", common, "Tajaran r-roll"), "rr"), "the r-roll applies on a human")
+	TEST_ASSERT_EQUAL(H.autohiss_by_choice("sir", GLOB.all_languages[LANGUAGE_UNATHI], "Unathi hiss (Basic)"), "sir", "its own language is exempt")
+	TEST_ASSERT_EQUAL(H.autohiss_by_choice("x", common, "Unathi hiss (Basic)"), "x", "Basic leaves the extra map out")
+	TEST_ASSERT(findtext(H.autohiss_by_choice("x", common, "Unathi hiss (Full)"), "ks"), "Full has it")
+	TEST_ASSERT_NOTEQUAL(H.autohiss_by_choice("the", common, "Yingish lisp (Full)"), "the", "a several-letter key applies")
+	TEST_ASSERT_EQUAL(H.autohiss_by_choice("the", common, "Yingish lisp (Full)"), "z", "and replaces all its letters")
+	H.set_species(SPECIES_UNATHI)
+	TEST_ASSERT(findtext(H.autohiss_by_choice("sir", common, "Default (Basic)"), "ss"), "Default is the species' hiss")
+	TEST_ASSERT(findtext(autohiss_choice_tooltips()["Unathi hiss (Basic)"], "s becomes ss, sss or ssss"), "the tooltip is generated from the map")
+	TEST_ASSERT(!GLOB.autohiss_choices["Tajaran r-roll (Full)"], "a hiss without an extra map has one level")
+	for(var/choice in GLOB.autohiss_choices)
+		TEST_ASSERT(autohiss_choice_tooltips()[choice], "[choice] has a tooltip")
+
+/// Name, gender and demographics are one section; robots still lose age and birthday.
+/datum/unit_test/dq_identity_groups_merged
+
+/datum/unit_test/dq_identity_groups_merged/Run()
+	TEST_ASSERT_EQUAL(GLOB.dq_group_display_merge["gender"], "name", "gender joins name")
+	TEST_ASSERT_EQUAL(GLOB.dq_group_display_merge["demographics"], "name", "demographics joins name")
+	TEST_ASSERT("demographics" in GLOB.dq_robot_mode_hidden_groups, "gating still reads the real group")
+	TEST_ASSERT(!("gender" in GLOB.dq_group_order["identity"]), "the merged groups are not ordered separately")

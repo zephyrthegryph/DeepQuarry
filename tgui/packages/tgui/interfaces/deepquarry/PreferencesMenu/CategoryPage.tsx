@@ -11,11 +11,12 @@
 //    (longtext) have been compacted (TextArea height 3em) so they don't
 //    dominate vertical space.
 
+import { useBackend } from 'tgui/backend';
 import { Box, Section } from 'tgui-core/components';
 import { getEditor } from './editors';
 import { LooksPage, looksHasBody } from './LooksPage';
 import { labelForGroup, labelForKey } from './labels';
-import { PrefWidget } from './PrefWidget';
+import { PrefWidget, resolveWidget } from './PrefWidget';
 import {
   editorAnchor,
   groupAnchor,
@@ -23,6 +24,7 @@ import {
   prefAnchor,
   useSearchHighlight,
 } from './search';
+import { OocPreview, type SwitcherEntry, TextSwitcher } from './TextSwitcher';
 import type {
   PrefCategory,
   PrefGroup,
@@ -158,6 +160,42 @@ export const DEPENDENT_ROWS: Record<
   wing_alpha: (v) => !noStyle(v.wing_style),
 };
 
+/// Groups whose text prefs share one editor, chosen from a button list.
+const SWITCHER_GROUPS = new Set(['speech_verbs', 'records', 'ooc_notes']);
+
+const isTextWidget = (item: PrefWidgetItem) =>
+  ['text', 'longtext'].includes(resolveWidget(item));
+
+/// The text prefs of a switcher group as entries of one editor.
+const SwitcherGroup = ({
+  group,
+  widgets,
+  values,
+}: {
+  group: string;
+  widgets: PrefWidgetItem[];
+  values: Record<string, unknown>;
+}) => {
+  const { act } = useBackend();
+  const entries: SwitcherEntry[] = widgets.map((item) => ({
+    key: item.key,
+    label: labelForKey(item.key, item.label),
+    value: String(
+      (Object.hasOwn(values, item.key) ? values[item.key] : item.value) ?? '',
+    ),
+    defaultText: item.props?.default_text as string | undefined,
+    maxLength: item.props?.max_length as number | undefined,
+    short: item.widget === 'text',
+  }));
+  return (
+    <TextSwitcher
+      entries={entries}
+      onCommit={(key, value) => act('dq_update_preference', { key, value })}
+      preview={group === 'ooc_notes' ? <OocPreview values={values} /> : undefined}
+    />
+  );
+};
+
 /// Widget rows inside a single group: a two-column grid (label, control) sized in em so it
 /// follows the theme font and the display scale. The label column fits the longest label up to
 /// a cap and wraps beyond it, so a long label never pushes the control out of the panel.
@@ -244,6 +282,10 @@ const GroupBlock = ({
     (i): i is PrefWidgetItem => i.type === 'widget',
   );
   const editors = group.items.filter((i) => i.type === 'editor');
+  const switched = SWITCHER_GROUPS.has(group.group)
+    ? widgets.filter(isTextWidget)
+    : [];
+  const plain = widgets.filter((w) => !switched.includes(w));
   const hasTitle = !!group.group;
   const anchor = groupAnchor(category, group.group);
   const lit = useSearchHighlight(anchor);
@@ -291,7 +333,14 @@ const GroupBlock = ({
       data-dq-anchor={anchor}
       style={highlightStyle(lit)}
     >
-      {widgets.length > 0 && <WidgetGrid widgets={widgets} values={values} />}
+      {switched.length > 0 && (
+        <SwitcherGroup group={group.group} widgets={switched} values={values} />
+      )}
+      {plain.length > 0 && (
+        <Box mt={switched.length > 0 ? 0.5 : 0}>
+          <WidgetGrid widgets={plain} values={values} />
+        </Box>
+      )}
       {editors.map((item, idx) => (
         <Box
           key={`editor:${item.key}-${idx}`}

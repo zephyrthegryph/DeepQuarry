@@ -7,13 +7,19 @@ describe('Looks categories', () => {
     expect(new Set(cards).size).toBe(cards.length);
   });
   it('lands a search jump on the category holding the setting', () => {
-    expect(regionForHighlight('pref:tail_color2')).toBe('tail');
-    expect(regionForHighlight('pref:hair_style_name')).toBe('hair');
-    expect(regionForHighlight('editor:body_markings')).toBe('markings');
+    for (const target of [
+      'pref:tail_color2',
+      'pref:hair_style_name',
+      'editor:body_markings',
+      'pref:digitigrade',
+      'group:appearance/wings',
+      'group:appearance/markings',
+      'pref:something_unclaimed',
+    ]) {
+      expect(regionForHighlight(target)).toBe('body');
+    }
     expect(regionForHighlight('editor:organs')).toBe('organs');
-    expect(regionForHighlight('pref:digitigrade')).toBe('legs');
-    expect(regionForHighlight('group:appearance/wings')).toBe('wings');
-    expect(regionForHighlight('pref:something_unclaimed')).toBe('body');
+    expect(regionForHighlight('group:appearance/organs')).toBe('organs');
   });
   it('stays put for the left column, which is always shown', () => {
     expect(regionForHighlight('pref:palette_primary')).toBeNull();

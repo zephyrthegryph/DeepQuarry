@@ -588,5 +588,21 @@ GLOBAL_LIST_EMPTY(every_hop_watches)
 	W.unsubscribe()
 	spent(W)
 
+/// `holder` left what its every() entries worked on, and something arms them again if it ever returns (lifecycle_decls_init()): its type-level every() entries stop, parked
+/// or scheduled, and it leaves the watch index. A datum that is kept (a contagion taken out of a body, not deleted) would otherwise stay watched, and alive, for good.
+/proc/type_every_stop(datum/holder)
+	var/datum/rx_state/S = holder.rx
+	if(!S)
+		return
+	var/index = 0
+	for(var/datum/centry/C as anything in compiled_entries(table_of(holder), ENTRY_EVERY))
+		if(isnull(C.owner))
+			index++
+			cancel_after(holder, "every:type:[index]")
+	S.every_parked = null
+	if(S.every_hop_on)
+		every_hop_forget(holder)
+		S.every_hop_on = FALSE
+
 CAPABILITIES(/datum/every_hop_watch)
 	ref_one(nameof(holder))
