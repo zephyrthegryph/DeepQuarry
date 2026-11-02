@@ -119,7 +119,7 @@ SYSTEM_DEF(overlays)
 	STAT_STOP_STOPWATCH
 	SSoverlays.log_stat(type, STAT_TIME)
 
-/atom/proc/copy_overlays(atom/other, cut_old) //copys our_overlays from another atom
+/atom/proc/copy_overlays(atom/other, cut_old) //copies overlays from another atom
 	if(!other)
 		if(cut_old)
 			cut_overlays()

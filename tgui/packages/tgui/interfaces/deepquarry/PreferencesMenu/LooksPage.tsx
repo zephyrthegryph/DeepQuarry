@@ -9,7 +9,7 @@ import { Box, Button, Section } from 'tgui-core/components';
 import { type DollRegion, ZoneDoll } from '../shared/ZoneDoll';
 import { WidgetGrid } from './CategoryPage';
 import { ColorStrip, ColorSwatch, PALETTE_SLOTS, PaletteSlots } from './colors';
-import { SearchableDropdown, Segmented, Switch } from './controls';
+import { Switch } from './controls';
 import { getEditor } from './editors';
 import { BodyMarkingsEditor } from './editors/BodyMarkingsEditor';
 import { OrgansEditor } from './editors/OrgansEditor';
@@ -518,7 +518,7 @@ const PART_ROWS: PartRow[] = [
 ];
 
 /// Part, style, three swatch columns, options: fits the window without a horizontal scrollbar.
-const TABLE_COLUMNS = '5.5em minmax(0, 1.4fr) repeat(3, 2.4em) minmax(0, 1fr)';
+const TABLE_COLUMNS = '5.5em minmax(0, 1.3fr) repeat(3, 2.4em) minmax(10em, 1.2fr)';
 const cellStyle = {
   minWidth: 0,
   alignSelf: 'center',
@@ -594,32 +594,30 @@ const AlphaCell = ({
   />
 );
 
-/// A style cell: the picker, and None for a part that can be absent.
+/// A part that can be absent offers None first among its styles (as hair offers bald), instead of a separate remove button.
+export const withNoneChoice = (
+  choices: PrefWidgetItem['choices'],
+): Record<string, string> => ({
+  '': 'None',
+  ...Object.fromEntries(
+    normalizeChoices(choices).filter(([v]) => !isNoStyle(v)),
+  ),
+});
+
+/// A style cell: the picker, with None among the styles for a part that can be absent.
 const StyleCell = ({
   item,
   clearable,
-  value,
 }: {
   item: PrefWidgetItem | null;
   clearable?: boolean;
-  value: unknown;
 }) => {
-  const { act } = useBackend();
   if (!item) return <Box style={cellStyle} />;
   return (
-    <Box style={{ ...cellStyle, display: 'flex', gap: '0.3em' }}>
-      <Box style={{ flex: 1, minWidth: 0 }}>
-        <BareField item={item} />
-      </Box>
-      {clearable && !isNoStyle(value) && (
-        <Button
-          icon="xmark"
-          tooltip="None"
-          onClick={() =>
-            act('dq_update_preference', { key: item.key, value: '' })
-          }
-        />
-      )}
+    <Box style={cellStyle}>
+      <BareField
+        item={clearable ? { ...item, choices: withNoneChoice(item.choices) } : item}
+      />
     </Box>
   );
 };
@@ -718,11 +716,7 @@ const BodyTable = ({
                 data-dq-anchor={groupAnchor('appearance', row.group)}
               >
                 <Box style={cellStyle}>{row.label}</Box>
-                <StyleCell
-                  item={shownItem}
-                  clearable={row.clearable}
-                  value={value}
-                />
+                <StyleCell item={shownItem} clearable={row.clearable} />
                 {[0, 1, 2].map((i) =>
                   row.styleKey === 'ear_secondary_style' ? (
                     <SecondEarCell
@@ -785,25 +779,33 @@ const GradientOption = ({
       <Box color="label" fontSize="0.85em">
         Gradient
       </Box>
-      <BareField item={item} />
-      {!isNoStyle(values.grad_style_name) && widgets.grad_color && (
-        <ColorStrip
-          compact
-          colors={[{ key: 'grad_color', label: '' }]}
-          values={values}
-        />
-      )}
+      <Box style={{ display: 'flex', alignItems: 'center', gap: '0.3em' }}>
+        <Box style={{ flex: 1, minWidth: 0 }}>
+          <BareField item={item} />
+        </Box>
+        {!isNoStyle(values.grad_style_name) && widgets.grad_color && (
+          <ColorStrip
+            compact
+            colors={[{ key: 'grad_color', label: '' }]}
+            values={values}
+          />
+        )}
+      </Box>
     </Box>
   );
 };
 
-const LEG_OPTIONS: Array<[string, string]> = [
-  ['plantigrade', 'Plantigrade'],
-  ['digitigrade', 'Digitigrade'],
-  ['taur', 'Taur'],
-];
+/// The leg choices: Normal and Digitigrade, then every taur body (saved as the tail style it always was). The server sets the mode.
+export const legChoices = (
+  digitigrade: boolean,
+  taurStyles: Array<[string, string]>,
+): Record<string, string> => ({
+  plantigrade: 'Normal',
+  ...(digitigrade ? { digitigrade: 'Digitigrade' } : {}),
+  ...Object.fromEntries(taurStyles),
+});
 
-/// Plantigrade, digitigrade or a taur body. A taur is saved as the tail style it always was.
+/// Legs: one style picker. Normal, digitigrade or a taur body.
 const LegsRow = ({
   values,
   widgets,
@@ -818,22 +820,21 @@ const LegsRow = ({
   taurNow: boolean;
 }) => {
   const { act } = useBackend();
-  const [choosingTaur, setChoosingTaur] = useState(false);
   if (!widgets.digitigrade && !taurStyles.length) return null;
-  const digi = !!values.digitigrade;
-  const showTaur = taurNow || choosingTaur;
-  const mode = showTaur ? 'taur' : digi ? 'digitigrade' : 'plantigrade';
-  const set = (key: string, value: unknown) =>
-    act('dq_update_preference', { key, value });
-  const pick = (next: string) => {
-    setChoosingTaur(next === 'taur');
-    if (next === 'taur') return;
-    if (taurNow) set('tail_style', '');
-    if (widgets.digitigrade && (next === 'digitigrade') !== digi) {
-      set('digitigrade', next === 'digitigrade');
-    }
-  };
+  const value = taurNow
+    ? String(values.tail_style ?? '')
+    : values.digitigrade
+      ? 'digitigrade'
+      : 'plantigrade';
   const count = taurNow ? channelsOf(tailItem, values.tail_style) : 0;
+  const item: PrefWidgetItem = {
+    ...(tailItem ?? widgets.digitigrade),
+    key: 'legs',
+    widget: 'thumbgrid',
+    value,
+    choices: legChoices(!!widgets.digitigrade, taurStyles),
+    thumbnails: tailItem?.thumbnails ?? {},
+  };
   return (
     <Box
       style={{ display: 'contents' }}
@@ -841,26 +842,16 @@ const LegsRow = ({
     >
       <Box style={cellStyle}>Legs</Box>
       <Box style={cellStyle}>
-        <Segmented
-          options={LEG_OPTIONS.filter(
-            ([v]) => v !== 'taur' || taurStyles.length > 0,
-          )}
-          value={mode}
-          onSelect={pick}
+        <PrefWidget
+          item={item}
+          onPick={(style) =>
+            act('dq_editor_action', {
+              editor: 'legs',
+              action: 'set_leg_style',
+              params: { style },
+            })
+          }
         />
-        {showTaur && (
-          <Box mt={0.2}>
-            <SearchableDropdown
-              placeholder="Filter taur bodies…"
-              options={taurStyles}
-              value={String(values.tail_style ?? '')}
-              onSelect={(style) => {
-                setChoosingTaur(false);
-                set('tail_style', style);
-              }}
-            />
-          </Box>
-        )}
       </Box>
       {['tail_color1', 'tail_color2', 'tail_color3'].map((key, i) => (
         <ChannelCell

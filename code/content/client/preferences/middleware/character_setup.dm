@@ -600,6 +600,7 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 		dq_editor_static_cache -= editor.key
 /datum/preference_middleware/character_setup/get_ui_static_data(mob/user)
 	var/list/data = ..()
+	data["dq_text_markers"] = GLOB.speech_toppings // the chat's emphasis markers: the text boxes format as the say preview does
 	return data
 
 CAPABILITIES(/datum/preference_middleware/character_setup)

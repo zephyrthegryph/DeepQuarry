@@ -21,7 +21,11 @@ import {
 } from './helper_components';
 import type { PrefWidgetItem } from './types';
 
-type Props = { item: PrefWidgetItem };
+type Props = {
+  item: PrefWidgetItem;
+  /// Where a pick goes instead of the pref named by item.key (a picker an editor owns, e.g. Legs).
+  onPick?: (value: string) => void;
+};
 
 const sendUpdate = (
   act: ReturnType<typeof useBackend>['act'],
@@ -141,7 +145,7 @@ export const resolveWidget = (item: PrefWidgetItem): ResolvedWidget => {
   }
 };
 
-export const PrefWidget = ({ item }: Props) => {
+export const PrefWidget = ({ item, onPick }: Props) => {
   const { act } = useBackend();
 
   switch (resolveWidget(item)) {
@@ -296,7 +300,7 @@ export const PrefWidget = ({ item }: Props) => {
       return (
         <ThumbgridPicker
           item={item}
-          onPick={(val) => sendUpdate(act, item.key, val)}
+          onPick={(val) => (onPick ? onPick(val) : sendUpdate(act, item.key, val))}
         />
       );
 

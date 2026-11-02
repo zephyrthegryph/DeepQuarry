@@ -1,6 +1,11 @@
 import { classes } from 'tgui-core/react';
 
-import type { Preview, Segment } from './parseLanguages';
+import {
+  emphasize,
+  type LanguageRules,
+  type Preview,
+  type Segment,
+} from './parseLanguages';
 
 const LINE_HEIGHT = 15;
 const MAX_LINES = 6;
@@ -17,7 +22,7 @@ export function previewHeight(preview: Preview, width: number): number {
   return Math.min(lines, MAX_LINES) * LINE_HEIGHT + 2;
 }
 
-function renderSegment(segment: Segment, key: number) {
+export function renderSegment(segment: Segment, key: number) {
   let node = <>{segment.text}</>;
   if (segment.tags.includes('b')) node = <b>{node}</b>;
   if (segment.tags.includes('i')) node = <i>{node}</i>;
@@ -48,5 +53,19 @@ export function LanguagePreview(props: Props) {
         </span>
       ))}
     </div>
+  );
+}
+
+/** Text with the chat's emphasis markers applied (the same parse and rendering as the say preview); line breaks kept. */
+export function FormattedText(props: {
+  text: string;
+  markers: Record<string, string>;
+}) {
+  const { text, markers } = props;
+  const [segments] = emphasize([text], { markers } as LanguageRules);
+  return (
+    <span style={{ whiteSpace: 'pre-wrap' }}>
+      {segments.map(renderSegment)}
+    </span>
   );
 }

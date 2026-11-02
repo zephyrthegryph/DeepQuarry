@@ -4,7 +4,7 @@
 //  - ColorChoice: a colour field. Five slot dots plus a Custom swatch, the selected one highlighted. A dot links
 //    the field (it saves the slot's name and follows the slot); Custom gives the field its own colour.
 //  - ColorSwatch: a colour with no links (a slot itself, a pref that cannot link): a swatch opening a popover of
-//    in-use and suggested colours and BYOND's picker.
+//    in-use colours and BYOND's picker.
 //  - ColorStrip: a body part's colour fields and opacity.
 //  - PaletteSlots: the slots themselves, each with its paint shortcut: while a slot is the brush, clicking a
 //    field assigns it.
@@ -234,7 +234,6 @@ export const ColorSwatch = ({
   extra?: ReactNode;
 }) => {
   const { inUse } = useColorTools();
-  const suggested = suggestedColors(category ?? label);
   const hex = normalizeHex(color) ?? '#000000';
   return (
     <Floating
@@ -259,12 +258,6 @@ export const ColorSwatch = ({
           <QuickSwatches
             title="In use"
             colors={inUse}
-            current={hex}
-            onPick={onPick}
-          />
-          <QuickSwatches
-            title="Suggested"
-            colors={suggested}
             current={hex}
             onPick={onPick}
           />
@@ -517,14 +510,14 @@ export const ColorStrip = ({
               display: 'flex',
               alignItems: 'center',
               gap: '0.4em',
-              minWidth: compact ? 0 : '12em',
-              flex: compact ? '1 1 0' : '1 1 12em',
+              minWidth: compact ? '9em' : '14em',
+              flex: compact ? '1 1 9em' : '1 1 14em',
             }}
           >
             <Box color="label" fontSize="0.85em" style={{ flex: '0 0 auto' }}>
               {a.label}
             </Box>
-            <Box style={{ flex: 1, minWidth: 0 }}>
+            <Box style={{ flex: 1, minWidth: '6em', fontSize: '1.15em' }}>
               <SliderBox
                 serverValue={Number(values[a.key] ?? 255)}
                 min={0}

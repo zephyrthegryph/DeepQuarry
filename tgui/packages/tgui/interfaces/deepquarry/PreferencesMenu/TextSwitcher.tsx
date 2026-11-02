@@ -2,7 +2,9 @@
 // the texts read. Flavor, speech verbs, records and OOC notes all use it.
 
 import { type ReactNode, useEffect, useState } from 'react';
+import { useBackend } from 'tgui/backend';
 import { Box, Button, Input, TextArea } from 'tgui-core/components';
+import { FormattedText } from 'tgui-say/LanguagePreview';
 
 export type SwitcherEntry = {
   key: string;
@@ -39,10 +41,9 @@ export const TextSwitcher = ({
   buttonsBelow?: boolean;
   /// Controls under the editor (e.g. inspect in game).
   actions?: ReactNode;
-  /// How the text reads in game; given, a Formatted toggle shows it in place of the box.
+  /// How the text reads in game, shown live under the box as it is typed (as the chat input previews a message).
   render?: (text: string) => ReactNode;
 }) => {
-  const [formatted, setFormatted] = useState(false);
   const [picked, setPicked] = useState(entries[0]?.key ?? '');
   const entry = entries.find((e) => e.key === picked) ?? entries[0];
   const shown = entry ? shownText(entry.value, entry.defaultText) : '';
@@ -67,26 +68,7 @@ export const TextSwitcher = ({
       {e.label}
     </Button>
   ));
-  const editor = render && formatted ? (
-    <Box
-      p={0.5}
-      style={{
-        minHeight: '10em',
-        border: '1px solid rgba(255,255,255,0.12)',
-        borderRadius: '0.25em',
-        background: 'rgba(0,0,0,0.2)',
-        overflowWrap: 'anywhere',
-      }}
-    >
-      {draft ? (
-        render(draft)
-      ) : (
-        <Box color="label" italic>
-          Nothing written.
-        </Box>
-      )}
-    </Box>
-  ) : entry.short ? (
+  const editor = entry.short ? (
     <Input
       fluid
       maxLength={entry.maxLength}
@@ -123,19 +105,22 @@ export const TextSwitcher = ({
           <Box style={{ flex: '1 1 0', minWidth: 0 }}>{editor}</Box>
         </Box>
       )}
-      {(render || actions) && (
+      {render && !!draft && (
+        <Box
+          mt={0.25}
+          p={0.5}
+          style={{
+            border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: '0.25em',
+            background: 'rgba(0,0,0,0.2)',
+            overflowWrap: 'anywhere',
+          }}
+        >
+          {render(draft)}
+        </Box>
+      )}
+      {actions && (
         <Box mt={0.25} style={{ display: 'flex', gap: '0.25em' }}>
-          {render && (
-            <Button
-              compact
-              icon={formatted ? 'pen' : 'eye'}
-              selected={formatted}
-              tooltip="Show the text the way it reads in game"
-              onClick={() => setFormatted(!formatted)}
-            >
-              {formatted ? 'Edit' : 'Formatted'}
-            </Button>
-          )}
           {actions}
         </Box>
       )}
@@ -143,9 +128,15 @@ export const TextSwitcher = ({
   );
 };
 
-/// Flavor as examine renders it: "||" marks spoilers (hidden until hovered), line breaks kept.
+/// The chat's emphasis markers, sent with the character setup's static data.
+const LiveFormatted = ({ text }: { text: string }) => {
+  const { data } = useBackend<{ dq_text_markers?: Record<string, string> }>();
+  return <FormattedText text={text} markers={data.dq_text_markers ?? {}} />;
+};
+
+/// Flavor as examine renders it: "||" marks spoilers (blacked out), the chat's emphasis applied, line breaks kept.
 export const renderFlavor = (text: string): ReactNode => (
-  <Box preserveWhitespace>
+  <Box>
     {splitSpoilers(text).map(([part, spoiler], i) =>
       spoiler ? (
         <span
@@ -156,15 +147,15 @@ export const renderFlavor = (text: string): ReactNode => (
           {part}
         </span>
       ) : (
-        <span key={i}>{part}</span>
+        <LiveFormatted key={i} text={part} />
       ),
     )}
   </Box>
 );
 
-/// Plain text as the notes and records windows show it: line breaks kept.
+/// Notes and records: the chat's emphasis applied, line breaks kept.
 export const renderPlain = (text: string): ReactNode => (
-  <Box preserveWhitespace>{text}</Box>
+  <LiveFormatted text={text} />
 );
 
 /// The parts of a flavor text and whether each is a spoiler (between "||" pairs), as topic_flavor_more splits it.
