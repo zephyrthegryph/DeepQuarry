@@ -45,7 +45,6 @@
 		"preferred_language" = preferences.read_preference(/datum/preference/text/human/preferred_language),
 		"extra_languages" = extra,
 		"max_alternate_languages" = S ? (S.num_alternate_languages + extra) : extra,
-		"species_default_language" = S ? S.language : null,
 		"pickable_languages" = pickable_languages(preferences),
 	)
 

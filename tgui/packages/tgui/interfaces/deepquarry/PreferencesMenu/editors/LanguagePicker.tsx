@@ -1,6 +1,5 @@
-// DQAdd — Language picker. One list of the languages the character knows or may learn. Each known one has
-// a preferred-language radio (the language spoken by default) and its own key, typed after the chat prefix
-// to speak it. A key another known language holds is refused here and again on the server.
+// DQAdd — Language picker. One list of every language this character can have: known ones in green with their
+// key, typed after the chat prefix to speak it, and a button to make one the default. Languages it can't take aren't listed. A key another known language holds is refused here and again on the server.
 
 import { useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
@@ -24,16 +23,12 @@ type LangData = {
   preferred_language: string | null;
   extra_languages: number;
   max_alternate_languages: number;
-  species_default_language: string | null;
   /// The languages this character may pick (server rule); undefined while an old payload is cached.
   pickable_languages?: string[];
 };
 
 type LangStatic = {
-  all_languages: Record<
-    string,
-    LangMeta
-  >;
+  all_languages: Record<string, LangMeta>;
 };
 
 type Act = ReturnType<typeof useBackend>['act'];
@@ -148,35 +143,12 @@ export const LanguagePicker = ({ data, staticData }: EditorProps) => {
               {max}
             </Box>{' '}
             alternate languages your character knows on top of their species
-            default. The circle marks the language spoken by default. To speak
-            another in chat, type{' '}
+            default. Green languages are known. To speak another in chat, type{' '}
             <Box inline bold color="white" style={{ fontFamily: 'monospace' }}>
               {prefix}
             </Box>{' '}
             then its key.
           </Box>
-          {d.species_default_language && (
-            <Box
-              mb={1}
-              p={0.5}
-              style={{
-                borderLeft: '0.25em solid rgba(255,255,255,0.3)',
-                paddingLeft: '0.667em',
-                background: 'rgba(255,255,255,0.04)',
-                fontSize: '0.9em',
-              }}
-            >
-              <Icon
-                name="circle-info"
-                mr={0.5}
-                style={{ color: 'rgba(255,255,255,0.5)' }}
-              />
-              Species default:{' '}
-              <Box inline bold>
-                {d.species_default_language}
-              </Box>
-            </Box>
-          )}
           <Input
             fluid
             mb={0.5}
@@ -231,14 +203,8 @@ const LanguageRow = ({
   keys: Record<string, string>;
   act: Act;
 }) => {
-  // tgui sends BooleanLike (0/1) for booleans. `meta.restricted && (…)` with a
-  // 0 would render literal "0" next to the language name. Coerce to a real
-  // boolean before the conditional. (Restricted entries are filtered upstream
-  // in sortedLanguageEntries, but keep the guard so a future caller can render
-  // a single LanguageRow without surprises.)
-  const isRestricted = !!meta.restricted;
   const hasDesc = !!meta.desc;
-  const disabled = isRestricted || (!selected && roomLeft === 0);
+  const disabled = !selected && roomLeft === 0;
   return (
     <Box
       mb={0.25}
@@ -246,37 +212,18 @@ const LanguageRow = ({
       py={0.25}
       style={{
         borderRadius: '0.333em',
-        background: known
-          ? 'rgba(52,152,219,0.08)'
-          : 'rgba(255,255,255,0.03)',
+        background: known ? 'rgba(46,204,113,0.1)' : 'rgba(255,255,255,0.03)',
         border: known
-          ? '1px solid rgba(52,152,219,0.45)'
+          ? '1px solid rgba(46,204,113,0.5)'
           : '1px solid rgba(255,255,255,0.06)',
-        opacity: isRestricted ? 0.55 : 1,
       }}
     >
       <Stack align="center">
-        {known && (
-          <Stack.Item>
-            <Button
-              compact
-              icon={preferred ? 'circle-dot' : 'circle'}
-              selected={preferred}
-              tooltip={
-                preferred
-                  ? 'Spoken by default'
-                  : 'Speak this language by default'
-              }
-              onClick={() =>
-                send(act, 'set_preferred', { language: languageKey })
-              }
-            />
-          </Stack.Item>
-        )}
         <Stack.Item grow>
           <Tooltip content={hasDesc ? meta.desc : meta.name}>
             <Box
               bold
+              color={known ? 'good' : undefined}
               style={{
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
@@ -284,22 +231,6 @@ const LanguageRow = ({
               }}
             >
               {meta.name}
-              {isRestricted && (
-                <Box
-                  inline
-                  ml={1}
-                  style={{
-                    fontSize: '0.72em',
-                    padding: '0 0.5em',
-                    borderRadius: '0.667em',
-                    backgroundColor: 'rgba(231,76,60,0.2)',
-                    color: '#E74C3C',
-                    fontWeight: 'bold',
-                  }}
-                >
-                  RESTRICTED
-                </Box>
-              )}
             </Box>
           </Tooltip>
         </Stack.Item>
@@ -311,6 +242,25 @@ const LanguageRow = ({
               keys={keys}
               act={act}
             />
+          </Stack.Item>
+        )}
+        {known && (
+          <Stack.Item>
+            <Button
+              ml={0.5}
+              compact
+              selected={preferred}
+              tooltip={
+                preferred
+                  ? 'Spoken by default'
+                  : 'Speak this language by default'
+              }
+              onClick={() =>
+                send(act, 'set_preferred', { language: languageKey })
+              }
+            >
+              {preferred ? 'Default' : 'Set default'}
+            </Button>
           </Stack.Item>
         )}
         {(selected || !known) && (
