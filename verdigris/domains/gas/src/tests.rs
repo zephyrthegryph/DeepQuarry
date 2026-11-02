@@ -508,3 +508,19 @@ fn soak_implicit_bulk_memory() {
 		}
 	}
 }
+
+/// Implicit diffusion mixes composition at equal pressure: a plasma cell beside an air cell trade gases (no bulk flow), conserving each.
+#[test]
+fn diffusion_mixes_composition_at_equal_pressure() {
+	let mut r = Rig::new(4, 1);
+	let mut m = [0.0; N];
+	m[GAS_PLASMA] = 103.9;
+	r.register(1, GasCell::new(m, 293.15), false, 0);
+	r.register(2, air(1.0, 293.15), false, 0);
+	r.run(1);
+	let before = r.totals();
+	r.run(4);
+	let (a, b) = (r.read(1).unwrap(), r.read(2).unwrap());
+	assert!(b.moles[GAS_PLASMA] > 0.0 && a.moles[GAS_OXYGEN] > 0.0, "nothing mixed: {a:?} {b:?}");
+	close(&before, &r.totals(), 1e-4).unwrap();
+}
