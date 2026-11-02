@@ -421,6 +421,7 @@
 #include "dq_movement_tests.dm"
 #include "dq_material_science_tests.dm"
 #include "dq_preferences_tests.dm"
+#include "dq_looks_preview_tests.dm"
 #include "dq_spawnpoint_audit_tests.dm"
 #include "dq_human_draw.dm"
 #include "dq_worn_redraw_tests.dm"

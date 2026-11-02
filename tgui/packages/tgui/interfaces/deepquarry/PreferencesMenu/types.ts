@@ -26,20 +26,32 @@ export type PrefWidgetItem = {
   value?: unknown;
   props: Record<string, unknown>;
   choices?: string[] | Record<string, string>;
-  thumbnails?: Record<
-    string,
-    {
-      icon: string;
-      icon_state: string;
-      /// A hair sprite this thumbnail (a hair gradient) is drawn on.
-      hair_icon?: string;
-      hair_state?: string;
-      /// Colour channels this style draws.
-      channels?: number;
-      /// This tail style is a taur body.
-      taur?: number;
-    }
-  >;
+  thumbnails?: Record<string, PrefThumbnail>;
+};
+
+/// One sprite of a layered thumbnail, bottom first. `color` "skin" is the character's skin colour, filled in by the page.
+export type ThumbLayer = {
+  icon: string;
+  icon_state: string;
+  color?: string | null;
+  /// How the colour tints the sprite: "multiply" (the default) or "add", as the species' body does.
+  blend?: 'multiply' | 'add';
+};
+
+export type PrefThumbnail = {
+  icon?: string;
+  icon_state?: string;
+  /// Drawn instead of icon/icon_state: the character's body (None, Normal and Digitigrade legs).
+  layers?: ThumbLayer[];
+  /// On the None entry: its layers sit under every other style's sprite, so each option shows on the body.
+  base?: number | boolean;
+  /// A hair sprite this thumbnail (a hair gradient) is drawn on.
+  hair_icon?: string;
+  hair_state?: string;
+  /// Colour channels this style draws.
+  channels?: number;
+  /// This tail style is a taur body.
+  taur?: number;
 };
 
 export type PrefEditorItem = {

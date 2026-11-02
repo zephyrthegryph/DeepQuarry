@@ -8,7 +8,13 @@ import { useBackend } from 'tgui/backend';
 import { Box, Button, Section } from 'tgui-core/components';
 import { type DollRegion, ZoneDoll } from '../shared/ZoneDoll';
 import { WidgetGrid } from './CategoryPage';
-import { ColorStrip, ColorSwatch, PALETTE_SLOTS, PaletteSlots } from './colors';
+import {
+  ColorStrip,
+  ColorSwatch,
+  normalizeHex,
+  PALETTE_SLOTS,
+  PaletteSlots,
+} from './colors';
 import { Switch } from './controls';
 import { getEditor } from './editors';
 import { BodyMarkingsEditor } from './editors/BodyMarkingsEditor';
@@ -23,7 +29,7 @@ import {
   SearchHighlightContext,
   useSearchHighlight,
 } from './search';
-import type { PrefCategory, PrefWidgetItem } from './types';
+import type { PrefCategory, PrefThumbnail, PrefWidgetItem } from './types';
 
 export type Region = 'body' | 'organs';
 
@@ -478,6 +484,12 @@ const PART_ROWS: PartRow[] = [
     colors: ['hair_color'],
   },
   {
+    label: 'Gradient',
+    group: 'hair',
+    styleKey: 'grad_style_name',
+    colors: ['grad_color'],
+  },
+  {
     label: 'Facial hair',
     group: 'hair',
     styleKey: 'facial_style_name',
@@ -518,7 +530,8 @@ const PART_ROWS: PartRow[] = [
 ];
 
 /// Part, style, three swatch columns, options: fits the window without a horizontal scrollbar.
-const TABLE_COLUMNS = '5.5em minmax(0, 1.3fr) repeat(3, 2.4em) minmax(10em, 1.2fr)';
+const TABLE_COLUMNS =
+  '5.5em minmax(0, 1.3fr) repeat(3, 2.4em) minmax(10em, 1.2fr)';
 const cellStyle = {
   minWidth: 0,
   alignSelf: 'center',
@@ -570,9 +583,7 @@ const SecondEarCell = ({
       {shown && (
         <ColorSwatch
           color={color ?? fallback ?? '#ffffff'}
-          category="ears_color1"
           onPick={(hex) => send('set_color', { index, color: hex })}
-          onCustom={() => send('pick_color', { index })}
         />
       )}
     </Box>
@@ -604,19 +615,45 @@ export const withNoneChoice = (
   ),
 });
 
+/// Body thumbnails name the skin colour "skin": fill in the character's own.
+export const withSkin = (
+  thumbnails: Record<string, PrefThumbnail> | undefined,
+  skin: unknown,
+): Record<string, PrefThumbnail> => {
+  const hex = normalizeHex(skin) ?? '#ffffff';
+  const out: Record<string, PrefThumbnail> = {};
+  for (const [key, thumb] of Object.entries(thumbnails ?? {})) {
+    out[key] = thumb.layers
+      ? {
+          ...thumb,
+          layers: thumb.layers.map((l) =>
+            l.color === 'skin' ? { ...l, color: hex } : l,
+          ),
+        }
+      : thumb;
+  }
+  return out;
+};
+
 /// A style cell: the picker, with None among the styles for a part that can be absent.
 const StyleCell = ({
   item,
   clearable,
+  skin,
 }: {
   item: PrefWidgetItem | null;
   clearable?: boolean;
+  skin: unknown;
 }) => {
   if (!item) return <Box style={cellStyle} />;
   return (
     <Box style={cellStyle}>
       <BareField
-        item={clearable ? { ...item, choices: withNoneChoice(item.choices) } : item}
+        item={{
+          ...item,
+          choices: clearable ? withNoneChoice(item.choices) : item.choices,
+          thumbnails: withSkin(item.thumbnails, skin),
+        }}
       />
     </Box>
   );
@@ -716,7 +753,11 @@ const BodyTable = ({
                 data-dq-anchor={groupAnchor('appearance', row.group)}
               >
                 <Box style={cellStyle}>{row.label}</Box>
-                <StyleCell item={shownItem} clearable={row.clearable} />
+                <StyleCell
+                  item={shownItem}
+                  clearable={row.clearable}
+                  skin={values.skin_color}
+                />
                 {[0, 1, 2].map((i) =>
                   row.styleKey === 'ear_secondary_style' ? (
                     <SecondEarCell
@@ -739,13 +780,6 @@ const BodyTable = ({
                   {row.alpha && !isNoStyle(value) && widgets[row.alpha] && (
                     <AlphaCell alpha={row.alpha} values={values} />
                   )}
-                  {row.styleKey === 'hair_style_name' && (
-                    <GradientOption
-                      values={values}
-                      widgets={widgets}
-                      withValue={withValue}
-                    />
-                  )}
                 </Box>
               </Box>
             );
@@ -760,38 +794,6 @@ const BodyTable = ({
         </Box>
       </Box>
     </Section>
-  );
-};
-
-const GradientOption = ({
-  values,
-  widgets,
-  withValue,
-}: {
-  values: Record<string, unknown>;
-  widgets: Record<string, PrefWidgetItem>;
-  withValue: (key: string) => PrefWidgetItem | null;
-}) => {
-  const item = withValue('grad_style_name');
-  if (!item) return null;
-  return (
-    <Box>
-      <Box color="label" fontSize="0.85em">
-        Gradient
-      </Box>
-      <Box style={{ display: 'flex', alignItems: 'center', gap: '0.3em' }}>
-        <Box style={{ flex: 1, minWidth: 0 }}>
-          <BareField item={item} />
-        </Box>
-        {!isNoStyle(values.grad_style_name) && widgets.grad_color && (
-          <ColorStrip
-            compact
-            colors={[{ key: 'grad_color', label: '' }]}
-            values={values}
-          />
-        )}
-      </Box>
-    </Box>
   );
 };
 
@@ -833,7 +835,7 @@ const LegsRow = ({
     widget: 'thumbgrid',
     value,
     choices: legChoices(!!widgets.digitigrade, taurStyles),
-    thumbnails: tailItem?.thumbnails ?? {},
+    thumbnails: withSkin(tailItem?.thumbnails, values.skin_color),
   };
   return (
     <Box
@@ -842,16 +844,18 @@ const LegsRow = ({
     >
       <Box style={cellStyle}>Legs</Box>
       <Box style={cellStyle}>
-        <PrefWidget
-          item={item}
-          onPick={(style) =>
-            act('dq_editor_action', {
-              editor: 'legs',
-              action: 'set_leg_style',
-              params: { style },
-            })
-          }
-        />
+        <Box style={{ flex: 1, minWidth: 0 }}>
+          <PrefWidget
+            item={item}
+            onPick={(style) =>
+              act('dq_editor_action', {
+                editor: 'legs',
+                action: 'set_leg_style',
+                params: { style },
+              })
+            }
+          />
+        </Box>
       </Box>
       {['tail_color1', 'tail_color2', 'tail_color3'].map((key, i) => (
         <ChannelCell
@@ -874,7 +878,10 @@ const BareField = ({ item }: { item: PrefWidgetItem }) => {
   const anchor = prefAnchor(item.key);
   const lit = useSearchHighlight(anchor);
   return (
-    <Box data-dq-anchor={anchor} style={highlightStyle(lit)}>
+    <Box
+      data-dq-anchor={anchor}
+      style={{ ...highlightStyle(lit), flex: 1, minWidth: 0 }}
+    >
       <PrefWidget item={item} />
     </Box>
   );

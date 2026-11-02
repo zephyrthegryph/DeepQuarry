@@ -273,6 +273,75 @@ export const HairGradientImage = (props: {
   );
 };
 
+/// One sprite of a LayeredImage, bottom first.
+export type ImageLayer = {
+  icon: string;
+  icon_state: string;
+  color?: string | null;
+  blend?: 'multiply' | 'add';
+};
+
+/// Sprites stacked into one picture, each tinted on its own: a body with a part on it. Sprites of different sizes
+/// share one scale (the largest fills the square) and are centred, so a 64-pixel wing sits on a 32-pixel body as in game.
+/// A sprite that fails to load is left out.
+export const LayeredImage = (props: {
+  layers: ImageLayer[];
+  size?: number;
+}) => {
+  const { layers, size } = props;
+  const key = layers
+    .map((l) => `${l.icon}|${l.icon_state}|${l.color ?? ''}|${l.blend ?? ''}`)
+    .join(';');
+  const render = useCallback(
+    async (canvas: OffscreenCanvas, ctx: OffscreenCanvasRenderingContext2D) => {
+      ctx.imageSmoothingEnabled = false;
+      const px = canvas.width;
+      const images = await Promise.all(
+        layers.map((l) =>
+          getImage(`${l.icon}?state=${l.icon_state}&dir=2&frame=1`).catch(
+            () => null,
+          ),
+        ),
+      );
+      const largest = Math.max(
+        1,
+        ...images.map((i) => (i ? Math.max(i.width, i.height) : 0)),
+      );
+      const unit = px / largest;
+      images.forEach((image, index) => {
+        if (!image) return;
+        const w = image.width * unit;
+        const h = image.height * unit;
+        const x = (px - w) / 2;
+        const y = px - h;
+        const layer = new OffscreenCanvas(px, px);
+        const lctx = layer.getContext('2d');
+        if (!lctx) return;
+        lctx.imageSmoothingEnabled = false;
+        lctx.drawImage(image, x, y, w, h);
+        const color = layers[index].color;
+        if (color) {
+          lctx.globalCompositeOperation =
+            layers[index].blend === 'add' ? 'lighter' : 'multiply';
+          lctx.fillStyle = color;
+          lctx.fillRect(0, 0, px, px);
+          lctx.globalCompositeOperation = 'destination-in';
+          lctx.drawImage(image, x, y, w, h);
+        }
+        ctx.drawImage(layer, 0, 0);
+      });
+    },
+    [layers],
+  );
+  return (
+    <CanvasBackedImage
+      render={render}
+      size={size}
+      cacheKey={`layers|${key}|${size ?? 64}`}
+    />
+  );
+};
+
 /// ImageButton wrapper that takes an arbitrary ReactNode as the image. Useful with
 /// ColorizedImage above when the image is computed on the fly.
 export const CustomImageButton = (

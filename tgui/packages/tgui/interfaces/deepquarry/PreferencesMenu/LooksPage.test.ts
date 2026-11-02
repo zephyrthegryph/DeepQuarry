@@ -4,6 +4,7 @@ import {
   REGION_CARDS,
   regionForHighlight,
   withNoneChoice,
+  withSkin,
 } from './LooksPage';
 
 describe('Looks categories', () => {
@@ -51,5 +52,26 @@ describe('legChoices', () => {
       'Horse',
     ]);
     expect(Object.keys(legChoices(false, []))).toEqual(['plantigrade']);
+  });
+});
+
+describe('withSkin', () => {
+  it("tints the body's skin layers with the character's skin colour", () => {
+    const thumbs = withSkin(
+      {
+        '': {
+          layers: [
+            { icon: 'b', icon_state: 'torso_m', color: 'skin', blend: 'add' },
+            { icon: 'b', icon_state: 'eyes', color: null },
+          ],
+          base: 1,
+        },
+        fox: { icon: 'e', icon_state: 'fox' },
+      },
+      '#C8A283',
+    );
+    expect(thumbs[''].layers?.[0].color).toBe('#c8a283');
+    expect(thumbs[''].layers?.[1].color).toBeNull();
+    expect(thumbs.fox).toEqual({ icon: 'e', icon_state: 'fox' });
   });
 });

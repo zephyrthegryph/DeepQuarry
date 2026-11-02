@@ -3,17 +3,18 @@
 //  - The palette is five named slots (Primary ... Extra 2), each its own colour preference.
 //  - ColorChoice: a colour field. Five slot dots plus a Custom swatch, the selected one highlighted. A dot links
 //    the field (it saves the slot's name and follows the slot); Custom gives the field its own colour.
-//  - ColorSwatch: a colour with no links (a slot itself, a pref that cannot link): a swatch opening a popover of
-//    in-use colours and BYOND's picker.
+//  - ColorSwatch: a swatch opening a popover of the palette's colours and Custom, a colour picker in place.
 //  - ColorStrip: a body part's colour fields and opacity.
 //  - PaletteSlots: the slots themselves, each with its paint shortcut: while a slot is the brush, clicking a
 //    field assigns it.
 //
 // The palette reaches every field through ColorToolsContext, which DQCharacterSetup fills from the cached values.
 
-import { createContext, type ReactNode, useContext } from 'react';
+import { createContext, type ReactNode, useContext, useState } from 'react';
 import { useBackend } from 'tgui/backend';
-import { Box, Button, Floating } from 'tgui-core/components';
+import { type HsvaColor, hexToHsva, hsvaToHex } from 'tgui-core/color';
+import { Box, Button, Floating, Input } from 'tgui-core/components';
+import { Hue, SaturationValue } from '../../ColorPickerModal';
 import { SliderBox } from './controls';
 import { highlightStyle, prefAnchor, useSearchHighlight } from './search';
 
@@ -172,73 +173,96 @@ const swatchStyle = (color: string, size = 1.25) => ({
   flex: '0 0 auto',
 });
 
-const QuickSwatches = ({
-  title,
-  colors,
-  current,
-  onPick,
+/// The custom colour, picked in place: saturation and value, hue, and the hex. Apply writes it.
+export const InlineColorPicker = ({
+  initial,
+  onApply,
 }: {
-  title: string;
-  colors: string[];
-  current: string;
-  onPick: (hex: string) => void;
-}) =>
-  colors.length === 0 ? null : (
-    <>
-      <Box color="label" fontSize="0.85em" mb={0.2}>
-        {title}
-      </Box>
+  initial: string;
+  onApply: (hex: string) => void;
+}) => {
+  const [hsva, setHsva] = useState<HsvaColor>(() => hexToHsva(initial));
+  const [hexText, setHexText] = useState(initial);
+  const hex = hsvaToHex(hsva).slice(0, 7).toLowerCase();
+  const change = (params: Partial<HsvaColor>) => {
+    setHsva((current) => {
+      const next = { ...current, ...params };
+      setHexText(hsvaToHex(next).slice(0, 7).toLowerCase());
+      return next;
+    });
+  };
+  return (
+    <Box className="dq-inline-color-picker" mt={0.3}>
+      <div className="react-colorful" style={{ width: '100%', height: '9em' }}>
+        <SaturationValue hsva={hsva} onChange={change} />
+        <Hue
+          hue={hsva.h}
+          onChange={change}
+          className="react-colorful__last-control"
+        />
+      </div>
       <Box
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '0.25em',
-          marginBottom: '0.4em',
-        }}
+        mt={0.4}
+        style={{ display: 'flex', alignItems: 'center', gap: '0.3em' }}
       >
-        {colors.map((c) => (
-          <span
-            key={c}
-            title={c}
-            onClick={() => onPick(c)}
-            style={{
-              ...swatchStyle(c, 1.25),
-              cursor: 'pointer',
-              outline: c === current ? '0.12em solid #fff' : undefined,
-            }}
-          />
-        ))}
+        <span style={swatchStyle(hex)} />
+        <Input
+          fluid
+          value={hexText}
+          onChange={(value) => {
+            setHexText(value);
+            const parsed = normalizeHex(value);
+            if (parsed) setHsva(hexToHsva(parsed));
+          }}
+        />
+        <Button icon="check" onClick={() => onApply(hex)}>
+          Apply
+        </Button>
       </Box>
-    </>
+    </Box>
   );
+};
 
-/// One colour: a swatch that opens the picker popover. `onPick` writes a colour directly;
-/// `onCustom` opens BYOND's own colour picker.
+/// One colour: a swatch that opens its popover. The popover offers the palette's colours and Custom, a picker in
+/// place. `onLink`, for a field that can follow a slot, links it to the slot picked (the slot it follows, `linked`,
+/// is highlighted); without it a slot's colour is copied through `onPick`, which also takes the custom colour.
 export const ColorSwatch = ({
   color,
   label,
   onPick,
-  onCustom,
+  onLink,
+  linked,
   showHex,
   extra,
-  category,
 }: {
   color: string;
   label?: string;
-  /// Name used to pick the curated set (a pref key); defaults to the label.
+  /// Unused: the curated sets are gone.
   category?: string;
   onPick: (hex: string) => void;
-  onCustom: () => void;
+  onLink?: (slot: SlotName) => void;
+  linked?: SlotName | null;
+  /// Unused: Custom picks in place now instead of opening BYOND's picker.
+  onCustom?: () => void;
   showHex?: boolean;
   /// Extra rows for the popover (e.g. a pref's "unset" action).
   extra?: ReactNode;
 }) => {
-  const { inUse } = useColorTools();
+  const { slots } = useColorTools();
   const hex = normalizeHex(color) ?? '#000000';
+  const [open, setOpen] = useState(false);
+  const [custom, setCustom] = useState(false);
+  const setOpenState = (value: boolean) => {
+    setOpen(value);
+    if (!value) setCustom(false);
+  };
+  const pickedSlot = linked ?? null;
+  const customSelected = onLink ? !pickedSlot : true;
   return (
     <Floating
       placement="bottom-start"
-      closeAfterInteract
+      handleOpen={open}
+      onOpenChange={setOpenState}
       contentStyles={{
         zIndex: 60,
         background: 'var(--color-base, #252525)',
@@ -249,21 +273,69 @@ export const ColorSwatch = ({
         width: '13em',
       }}
       content={
-        <Box>
+        <Box
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setOpenState(false);
+          }}
+        >
           {label && (
             <Box bold mb={0.3}>
               {label}
             </Box>
           )}
-          <QuickSwatches
-            title="In use"
-            colors={inUse}
-            current={hex}
-            onPick={onPick}
-          />
-          <Button fluid icon="eye-dropper" onClick={onCustom}>
-            Custom…
+          <Box color="label" fontSize="0.85em" mb={0.2}>
+            Palette
+          </Box>
+          <Box
+            style={{
+              display: 'flex',
+              gap: '0.3em',
+              marginBottom: '0.4em',
+            }}
+          >
+            {PALETTE_SLOTS.map(({ slot, label: slotLabel }) => {
+              const slotHex = slots[slot] ?? '#000000';
+              const selected = onLink
+                ? pickedSlot === slot
+                : normalizeHex(slotHex) === hex;
+              return (
+                <span
+                  key={slot}
+                  className="dq-slot-dot"
+                  title={onLink ? `Link to ${slotLabel}` : slotLabel}
+                  onClick={() => {
+                    if (onLink) onLink(slot);
+                    else onPick(slotHex);
+                    setOpenState(false);
+                  }}
+                  style={{
+                    ...swatchStyle(slotHex, 1.25),
+                    borderRadius: '50%',
+                    cursor: 'pointer',
+                    outline: selected ? '0.15em solid #fff' : undefined,
+                    outlineOffset: '0.08em',
+                  }}
+                />
+              );
+            })}
+          </Box>
+          <Button
+            fluid
+            icon="eye-dropper"
+            selected={custom || (customSelected && !!onLink)}
+            onClick={() => setCustom((v) => !v)}
+          >
+            Custom
           </Button>
+          {custom && (
+            <InlineColorPicker
+              initial={hex}
+              onApply={(picked) => {
+                onPick(picked);
+                setOpenState(false);
+              }}
+            />
+          )}
           {extra}
         </Box>
       }
@@ -312,11 +384,9 @@ export const PrefColorSwatch = ({
       label={label}
       showHex={showHex}
       extra={extra}
-      category={prefKey}
       onPick={(hex) =>
         act('dq_update_preference', { key: prefKey, value: hex })
       }
-      onCustom={() => act('dq_pick_color', { key: prefKey })}
     />
   );
 };
@@ -324,25 +394,25 @@ export const PrefColorSwatch = ({
 export type StripColor = { key: string; label: string };
 
 /// A colour field: the five slot dots plus Custom. `link` is the slot it follows, if any. `onLink` links it,
-/// `onPick` gives it a colour of its own, `onCustom` opens BYOND's picker. While a slot is the brush, a click
+/// `onPick` gives it a colour of its own (Custom picks it in place). While a slot is the brush, a click
 /// anywhere on the field assigns that slot.
 export const ColorChoice = ({
   color,
   link,
   label,
-  category,
   onLink,
   onPick,
-  onCustom,
   compact,
 }: {
   color: string;
   link?: string;
   label?: string;
+  /// Unused: the curated sets are gone.
   category?: string;
   onLink: (slot: SlotName) => void;
   onPick: (hex: string) => void;
-  onCustom: () => void;
+  /// Unused: Custom picks in place now instead of opening BYOND's picker.
+  onCustom?: () => void;
   /// One swatch; the slots move into its popover (a table cell).
   compact?: boolean;
 }) => {
@@ -364,41 +434,14 @@ export const ColorChoice = ({
         style={{
           display: 'inline-flex',
           borderRadius: '0.25em',
-          outline: linked ? '0.12em dashed rgba(255,255,255,0.7)' : undefined,
-          outlineOffset: '0.08em',
           cursor: brush ? 'copy' : undefined,
         }}
       >
         <ColorSwatch
           color={hex}
-          category={category ?? label}
           onPick={onPick}
-          onCustom={onCustom}
-          extra={
-            <Box mt={0.3}>
-              <Box color="label" fontSize="0.85em" mb={0.2}>
-                Link to a palette slot
-              </Box>
-              <Box style={{ display: 'flex', gap: '0.3em' }}>
-                {PALETTE_SLOTS.map(({ slot, label: slotLabel }) => (
-                  <span
-                    key={slot}
-                    className="dq-slot-dot"
-                    title={`Link to ${slotLabel}`}
-                    onClick={() => onLink(slot)}
-                    style={{
-                      ...swatchStyle(slots[slot] ?? '#000000', 1.25),
-                      borderRadius: '50%',
-                      cursor: 'pointer',
-                      outline:
-                        linked === slot ? '0.15em solid #fff' : undefined,
-                      outlineOffset: '0.08em',
-                    }}
-                  />
-                ))}
-              </Box>
-            </Box>
-          }
+          onLink={onLink}
+          linked={linked}
         />
       </span>
     );
@@ -448,13 +491,7 @@ export const ColorChoice = ({
           display: 'inline-flex',
         }}
       >
-        <ColorSwatch
-          color={hex}
-          label="Custom"
-          category={category ?? label}
-          onPick={onPick}
-          onCustom={onCustom}
-        />
+        <ColorSwatch color={hex} label="Custom" onPick={onPick} />
       </span>
     </span>
   );
@@ -491,7 +528,6 @@ export const ColorStrip = ({
             color={String(values[c.key] ?? '#000000')}
             link={links[c.key]}
             label={c.label}
-            category={c.key}
             compact={compact}
             onLink={(slot) =>
               act('dq_update_preference', { key: c.key, value: slot })
@@ -499,7 +535,6 @@ export const ColorStrip = ({
             onPick={(hex) =>
               act('dq_update_preference', { key: c.key, value: hex })
             }
-            onCustom={() => act('dq_pick_color', { key: c.key })}
           />
         </SwatchAnchor>
       ))}
