@@ -62,6 +62,10 @@ COMPILER_SLOTS="${DQ_LANE_POOL_COMPILER:-2}"
 POOL_DIR="${DQ_LANE_POOL_DIR:-E:/projects/dq-wt}"
 STATE_DIR="${DQ_LANE_POOL_STATE:-E:/dq-cache/lane-pool}"
 _o="$PWD"; cd "$_dq_dir/.." && here="$PWD"; cd "$_o"   # builtins only: no $(...) fork
+# Git Bash's $PWD is an MSYS path (/e/projects/...) that Git for Windows cannot open: rewrite it to E:/projects/... (still no fork).
+if [[ "${OSTYPE:-}" == msys* || "${OSTYPE:-}" == cygwin* ]] && [[ "$here" =~ ^/([A-Za-z])(/.*)?$ ]]; then
+	here="${BASH_REMATCH[1]^^}:${BASH_REMATCH[2]:-/}"
+fi
 REPO="${DQ_LANE_POOL_REPO:-$here}"
 case "$POOL_SIZE" in ''|*[!0-9]*) echo "dq_lane_pool: DQ_LANE_POOL_SIZE must be a positive integer" >&2; exit 2 ;; esac
 [ "$POOL_SIZE" -ge 1 ] || { echo "dq_lane_pool: DQ_LANE_POOL_SIZE must be a positive integer" >&2; exit 2; }
