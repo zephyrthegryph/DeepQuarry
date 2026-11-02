@@ -30,6 +30,17 @@ CAPABILITIES(/obj/item/clothing/shoes/dq_test_encumbrance/heavy)
 	var/obj/item/clothing/shoes/dq_test_encumbrance/heavy/other = allocate(/obj/item/clothing/shoes/dq_test_encumbrance/heavy, test_floor())
 	TEST_ASSERT_EQUAL(other.worn_factor(STAT_ITEM_ENCUMBRANCE), 2.5, "changing one item leaves the type's table alone")
 
+/// Entries that differ only inside an alist stay apart: they used to intern as one, so every worn table read the first one declared.
+/datum/unit_test/dq_entry_alist_values_stay_apart
+
+/datum/unit_test/dq_entry_alist_values_stay_apart/Run()
+	var/datum/entry/low = item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 7.25))
+	var/datum/entry/high = item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 8.25))
+	var/datum/entry/other_key = item_worn(worn_factors = alist(STAT_FLYING = 7.25))
+	TEST_ASSERT(low != high, "a different value is a different entry")
+	TEST_ASSERT(low != other_key, "a different key is a different entry")
+	TEST_ASSERT(low == item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 7.25)), "the same table still interns")
+
 /datum/unit_test/dq_item_encumbrance_movement_delay
 
 /// Sets the test item's slowdown through whichever form holds it.
