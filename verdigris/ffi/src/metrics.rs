@@ -114,6 +114,8 @@ pub fn snapshot_json() -> String {
                     ("slow_edges", st.slow_edges),
                     ("edges", st.edges),
                     ("rate_ppm", st.rate_ppm),
+                    ("implicit_sweeps", st.implicit_sweeps),
+                    ("implicit_diffusion_sweeps", st.implicit_diffusion_sweeps),
                     ("stiffest_cell", st.stiffest_cell),
                     ("stiffest_milli", st.stiffest_milli),
                     ("outside_chunk", st.outside_chunk),

@@ -12,6 +12,8 @@
 	var/phase_world_time = 0
 	/// work_counts() when the phase opened.
 	var/list/phase_work
+	/// The Rust field and law task times (task.us.*) when the phase opened, for each phase's per-task ms/s.
+	var/list/phase_tasks
 
 /datum/benchmark/server_phases/proc/sample_field(field, default_value = 0)
 	var/list/process = benchmark_process_memory()
@@ -22,6 +24,7 @@
 /datum/benchmark/server_phases/proc/open_phase()
 	GLOB.churn_census.take()
 	phase_work = work_counts()
+	phase_tasks = rust_task_us()
 	phase_cpu = sample_field("cpu_seconds")
 	phase_real = REALTIMEOFDAY
 	phase_world_time = world.time
@@ -29,6 +32,11 @@
 /// The world's CPU share (100 = one core, all threads), the machine's load and the time dilation since open_phase().
 /datum/benchmark/server_phases/proc/close_phase(prefix)
 	work_metrics(prefix, phase_work)
+	// What the Rust world's tasks (the gas and heat fields, the laws) cost in this phase, ms per second of wall time.
+	var/list/tasks_now = rust_task_us()
+	var/phase_s = max((REALTIMEOFDAY - phase_real) / 10, 0.1)
+	for(var/task in list("field:gas", "field:heat", "gas_pipe_devices", "heat_solid_gas_exchange"))
+		metric("[prefix]_task_[replacetext(task, ":", "_")]_ms_per_s", ((tasks_now[task] || 0) - (phase_tasks?[task] || 0)) / 1000 / phase_s, "ms/s")
 	var/real_ds = max(REALTIMEOFDAY - phase_real, 1)
 	metric("[prefix]_dd_cpu_pct", (sample_field("cpu_seconds") - phase_cpu) * 1000 / real_ds, "%")
 	metric("[prefix]_machine_cpu_pct", sample_field("machine_cpu_pct"), "%", "none")
@@ -209,3 +217,12 @@
 	wait_seconds(param("post", 300))
 	metric("second_retained_mb", sample_field("private_mb") - before_mb, "MB")
 	census_metrics("second_post")
+
+/// The Rust world's cumulative task times (task.us.<task>), microseconds, keyed by task.
+/datum/benchmark/server_phases/proc/rust_task_us()
+	var/list/out = list()
+	var/list/rust = verdigris_metrics_list()
+	for(var/name in rust)
+		if(findtext(name, "task.us.") == 1 && isnum(rust[name]))
+			out[copytext(name, 9)] = rust[name]
+	return out
