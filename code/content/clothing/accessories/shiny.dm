@@ -11,7 +11,7 @@
 
 /obj/item/clothing/accessory/shiny/gloves/poly
 	name = "polychromic shiny gloves"
-	polychromic = TRUE
+	recolourable = TRUE
 
 /obj/item/clothing/accessory/shiny/socks
 	name = "shiny socks"
@@ -19,4 +19,4 @@
 
 /obj/item/clothing/accessory/shiny/socks/poly
 	name = "polychromic shiny socks"
-	polychromic = TRUE
+	recolourable = TRUE

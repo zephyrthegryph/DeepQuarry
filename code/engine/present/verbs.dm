@@ -4,7 +4,7 @@
 //   CAPABILITIES(/mob/living/simple_mob/vore/wolf)
 //       verb_entry(/mob/living/proc/set_size, login = TRUE)           on a mob once a player has had it (the old DECLARE_LOGIN_VERB)
 //       verb_entry(/mob/living/proc/ventcrawl)                         on every instance from init (DECLARE_VERB)
-//       verb_entry(/obj/item/clothing/proc/change_color, when = nameof(polychromic))   while the condition holds (DECLARE_VERB_IF)
+//       verb_entry(/obj/item/clothing/proc/recolour_channels, when = nameof(recolourable))   while the condition holds (DECLARE_VERB_IF)
 //       verb_entry(/mob/verb/toggle_gun_mode, hidden = TRUE)           never on an instance: hides what the type inherits (DECLARE_VERB_HIDE)
 //
 //   grant(M, granted_verb(/mob/living/proc/ventcrawl), source)         a runtime verb: on M while `source` holds it

@@ -56,7 +56,11 @@ CAPABILITIES(/obj/item/clothing)
 	owns_many(nameof(accessories))
 	setup(PROC_REF(take_default_material))
 	setup(PROC_REF(attach_starting_accessories))
-	verb_entry(/obj/item/clothing/proc/change_color, when = nameof(polychromic))
+	verb_entry(/obj/item/clothing/proc/recolour_channels, when = nameof(recolourable))
+	op("recolour_channels", menu(), needs(carried(), req_capable()), label("Recolour"),
+		asks(/datum/prompt/choice, fields = list("question" = "Which colour?", "title" = "Recolour", "choices" = computed(PROC_REF(recolour_channel_names)), "timeout" = 0), step = "channel"),
+		asks(/datum/prompt/color, fields = list("question" = "Pick its new colour", "title" = "Recolour", "timeout" = 0), step = "colour"),
+		then(PROC_REF(recoloured_channel)))
 	drag_onto(PROC_REF(mousedrop_input))
 	param(nameof(default_material), pos = 1)
 	op("clothing_accessory_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 3), label("Use"), then(PROC_REF(clothing_accessory_item)))

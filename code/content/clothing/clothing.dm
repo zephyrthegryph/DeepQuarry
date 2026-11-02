@@ -22,7 +22,8 @@
 
 	var/update_icon_define = null	// Only needed if you've got multiple files for the same type of clothing
 
-	var/polychromic = FALSE
+	/// The carrier may recolour its colour channels (the Recolour verb). Only types with channels (clothing_channels.dm) can be.
+	var/recolourable = FALSE
 
 	var/update_icon_define_orig = null	// temp storage for original update_icon_define (if it exists)
 	var/update_icon_define_digi = null	// dmi used for the digi sprites
@@ -199,24 +200,38 @@ DECLARE_SHARED_CACHE_EX(item_digest_images, GLOBAL_PROC_REF(build_item_digest_im
 	else
 		set_icon(initial(icon))
 
-// start
-/obj/item/clothing/proc/change_color()
-	set name = "Change Color"
+/obj/item/clothing/proc/recolour_channels()
+	set name = "Recolour"
 	set category = VERB_CAT_OBJECT
-	set desc = "Change the color of the clothing."
+	set desc = "Change the colours of the clothing."
 	set src in usr
 
-	if(usr.stat || usr.restrained() || usr.incapacitated())
-		return
+	perform_op(usr, src, "recolour_channels", null, ORIGIN_VERB)
 
-	open_request(src, /datum/prompt/color, PROC_REF(recolor_picked), answerer = usr, title = "Color", question = "Pick a new color", default = color, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
+/// The channels the Recolour op offers, by name.
+/obj/item/clothing/proc/recolour_channel_names(datum/act/op/A)
+	var/static/list/names = list("Primary", "Secondary", "Tertiary")
+	return names.Copy(1, length(clothing_channel_bases(type)) + 1)
 
-/obj/item/clothing/proc/recolor_picked(datum/act/request/A)
-	if(!A.answer)
-		return
-	if(A.answer.value && (A.answer.value != color))
-		set_color(A.answer.value)
-// end
+/// What the item's channels are now: the chosen colours, "" where a channel is as drawn.
+/obj/item/clothing/proc/current_channel_colours()
+	var/list/bases = clothing_channel_bases(type)
+	var/key = sparse_get(src, clothing_channel_colors)
+	var/list/current = key ? splittext(key, "|") : list()
+	while(length(current) < length(bases))
+		current += ""
+	return current
+
+/// The picked colour goes on the picked channel; the channel's own base colour puts it back as drawn.
+/obj/item/clothing/proc/recoloured_channel(datum/act/op/A)
+	var/index = recolour_channel_names(A).Find(A.step_value("channel"))
+	var/picked = clothing_channel_normal_hex(istext(A.step_value("colour")) ? lowertext(A.step_value("colour")) : null)
+	if(!index || !picked)
+		return OP_DECLINE
+	var/list/colours = current_channel_colours()
+	colours[index] = picked == clothing_channel_bases(type)[index] ? "" : picked
+	apply_clothing_channels(colours)
+	return OP_OK
 
 ///////////////////////////////////////////////////////////////////////
 // Ears: headsets, earmuffs and tiny objects
