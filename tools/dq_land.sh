@@ -8,6 +8,8 @@
 # user save data. A conflict is left in the tree for you to resolve and commit; run this again afterwards. --light is accepted and means nothing.
 set -uo pipefail
 die() { echo "dq_land: REFUSED: $*" >&2; exit 1; }
+# The merge drivers (deepquarry.dme, baselines, lint_scopes.toml) are supplied per command; without them a plain merge conflicts on those files.
+. "$(dirname "${BASH_SOURCE[0]}")/dq_git_safe.sh" || die "cannot load dq_git_safe.sh"
 root="$(git rev-parse --show-toplevel 2>/dev/null)" || die "not in a git checkout"
 root="$(cd "$root" && pwd -W 2>/dev/null || pwd)"
 lanes="${DQ_LAND_LANE_ROOT:-E:/projects/dq-wt}"
