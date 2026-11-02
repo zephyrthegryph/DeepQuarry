@@ -56,6 +56,9 @@
 
 /datum/unit_test/dq_docking_end_to_end/Run()
 	// The whole station runs for minutes while the shuttles fly: put back what moves on its own meanwhile (floors, alarms, the latency flag).
+	// The ambient snapshot is taken now, before any time passes: taken lazily at the first declared turf (mid-flight), it recorded an alarm
+	// the drifting server room had already raised and put that back.
+	capture_ambient()
 	set_global(nameof(GLOB.latency_slow_logged), GLOB.latency_slow_logged)
 	if(baseline?["solids"])
 		defer_cleanup(null, GLOBAL_PROC_REF(unit_test_solid_restore), baseline["solids"])
