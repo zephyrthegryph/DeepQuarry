@@ -78,7 +78,7 @@ export const REGION_CARDS: Record<Region, CardId[]> = {
 
 /// The prefs and editors each card owns (anything else lands in "Other").
 const CARD_KEYS: Record<CardId, string[]> = {
-  skin: ['skin_color', 'synth_markings'],
+  skin: ['skin_color'],
   eyes: ['eyes_color'],
   hair: [
     'hair_style_name',
@@ -255,14 +255,6 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
 
   const zones = markingZones?.zones;
   const shownRegion = region;
-  // Synth colour and markings only draw on robotic limbs (organ_icon.dm).
-  const externals = (editorData.organs?.externals ?? {}) as Record<
-    string,
-    { status?: string }
-  >;
-  const hasRoboticLimb =
-    !!editorData.organs?.robotic_body ||
-    Object.values(externals).some((limb) => limb?.status === 'cyborg');
   const cards = REGION_CARDS[shownRegion].filter(cardHasContent);
 
   const renderCard = (card: CardId) => {
@@ -275,9 +267,6 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
                 colors={pick(widgets, [['skin_color', 'Skin']])}
                 values={values}
               />
-            )}
-            {hasRoboticLimb && (
-              <Fields keys={['synth_markings']} withValue={withValue} />
             )}
           </PartCard>
         );

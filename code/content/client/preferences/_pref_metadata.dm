@@ -90,7 +90,6 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	// Body
 	tag_pref(., /datum/preference/color/human/skin_color, "appearance", "body")
 	tag_pref(., /datum/preference/color/human/eyes_color, "appearance", "body")
-	tag_pref(., /datum/preference/toggle/human/synth_markings, "appearance", "body")
 	tag_pref(., /datum/preference/toggle/human/digitigrade, "appearance", "body")
 	// Cyborg chassis — driven by the RobotChassisPicker editor (appearance/chassis).
 	// The two underlying text prefs are hidden from the auto-renderer.

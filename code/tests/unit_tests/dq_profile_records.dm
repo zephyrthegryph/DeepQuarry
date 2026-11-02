@@ -123,7 +123,6 @@
 		"eyes_color" = list("looks", "eyes_color"), "skin_color" = list("looks", "skin_color"), 
 		"hair_style_name" = list("looks", "hair_style"), "facial_style_name" = list("looks", "facial_style"),
 		"grad_style_name" = list("looks", "grad_style"), "digitigrade" = list("looks", "digitigrade"), 
-		"synth_markings" = list("looks", "synth_markings"),
 		"age" = list("bio", "age"), "home_system" = list("bio", "home_system"), "birthplace" = list("bio", "birthplace"),
 		"citizenship" = list("bio", "citizenship"), "religion" = list("bio", "religion"), "med_record" = list("bio", "med_record"),
 		"sec_record" = list("bio", "sec_record"), "gen_record" = list("bio", "gen_record"), "custom_say" = list("bio", "custom_say"),

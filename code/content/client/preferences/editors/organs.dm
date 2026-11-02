@@ -38,13 +38,26 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/organs, internal_organ_labels, list(
 		O_BRAIN     = "Brain", \
 	))
 
+/// Each limb's parent, up to the torso.
+GLOBAL_LIST_INIT(dq_limb_parents, list(BP_L_HAND = BP_L_ARM, BP_R_HAND = BP_R_ARM, BP_L_FOOT = BP_L_LEG, BP_R_FOOT = BP_R_LEG, BP_L_ARM = BP_TORSO, BP_R_ARM = BP_TORSO, BP_L_LEG = BP_GROIN, BP_R_LEG = BP_GROIN, BP_GROIN = BP_TORSO, BP_HEAD = BP_TORSO))
+
+/// The nearest amputated ancestor of a limb in saved organ data, or null. A limb lost with it keeps its saved setting, unapplied, so restoring the parent brings it back.
+/proc/dq_limb_lost_through(list/organ_data, limb)
+	var/list/limb_parents = GLOB.dq_limb_parents
+	var/up = limb_parents[limb]
+	while(up)
+		if(organ_data?[up] == "amputated")
+			return up
+		up = limb_parents[up]
+	return null
+
 /datum/preference_editor/organs/build_ui_data(datum/preferences/preferences)
 	var/list/organ_data = preferences.read_preference(/datum/preference/organ_data) || list()
 	var/list/rlimb_data = preferences.read_preference(/datum/preference/rlimb_data) || list()
 	var/list/colors = preferences.read_preference(/datum/preference/limb_colors) || list()
 	var/list/stored_colors = preferences.read_preference_raw(/datum/preference/limb_colors) || list()
 	var/list/externals = list()
-	var/static/list/limb_parents = list(BP_L_HAND = BP_L_ARM, BP_R_HAND = BP_R_ARM, BP_L_FOOT = BP_L_LEG, BP_R_FOOT = BP_R_LEG, BP_L_ARM = BP_TORSO, BP_R_ARM = BP_TORSO, BP_L_LEG = BP_GROIN, BP_R_LEG = BP_GROIN, BP_GROIN = BP_TORSO, BP_HEAD = BP_TORSO)
+	var/list/limb_parents = GLOB.dq_limb_parents
 	for(var/name in TYPE_TABLE_GET(src, external_limb_labels))
 		// Robotic through a parent: robotize() recurses, so the limb is robotic while its own setting is Normal.
 		var/robotic_parent
@@ -67,6 +80,7 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/organs, internal_organ_labels, list(
 			"color"  = shown_color || null,
 			"own_color" = !!colors[name],
 			"via" = robotic_parent,
+			"lost_via" = dq_limb_lost_through(organ_data, name),
 			"link"   = dq_color_slot_type(stored_colors[name]) ? stored_colors[name] : "",
 		)
 	var/list/internals = list()
@@ -104,6 +118,8 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/organs, internal_organ_labels, list(
 	if(!(limb in TYPE_TABLE_GET(src, external_limb_labels)))
 		return PREF_UPDATE_REJECTED
 	var/list/organ_data = preferences.read_preference(/datum/preference/organ_data) || list()
+	if(dq_limb_lost_through(organ_data, limb))
+		return PREF_UPDATE_REJECTED
 	var/list/rlimb_data = preferences.read_preference(/datum/preference/rlimb_data) || list()
 	var/list/colors = preferences.read_preference_raw(/datum/preference/limb_colors) || list()
 	if(status == "normal")
@@ -179,6 +195,8 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/organs, internal_organ_labels, list(
 	if(!(model in GLOB.all_robolimbs))
 		return PREF_UPDATE_REJECTED
 	var/list/organ_data = preferences.read_preference(/datum/preference/organ_data) || list()
+	if(dq_limb_lost_through(organ_data, limb))
+		return PREF_UPDATE_REJECTED
 	var/list/rlimb_data = preferences.read_preference(/datum/preference/rlimb_data) || list()
 	organ_data[limb] = "cyborg"
 	rlimb_data[limb] = model

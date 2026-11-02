@@ -78,10 +78,6 @@ GLOBAL_LIST_INIT(dq_robot_mode_hidden_pref_keys, list(
 	"skin_color"     = TRUE,
 	"eyes_color"     = TRUE,
 	"digitigrade"    = TRUE,
-	// synth_color / synth_markings live on /mob/living/carbon/human (they
-	// color synth limbs on organic bodies or synth species like Protean).
-	// Cyborgs are /mob/living/silicon/robot — these vars don't exist there.
-	"synth_markings" = TRUE,
 ))
 
 // pAI: holopad with no body. Strip everything physical and most stat configuration.
@@ -120,7 +116,6 @@ GLOBAL_LIST_INIT(dq_pai_mode_hidden_pref_keys, list(
 	"skin_color"     = TRUE,
 	"eyes_color"     = TRUE,
 	"digitigrade"    = TRUE,
-	"synth_markings" = TRUE,
 ))
 
 GLOBAL_LIST_INIT(dq_human_mode_hidden_groups, list(
