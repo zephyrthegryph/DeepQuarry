@@ -104,3 +104,22 @@
 	SSjob.load_camp_lists()
 	TEST_ASSERT(SSjob.restricted_keys["somebody"] == 1, "a good file still loads")
 	SSjob.restricted_keys = before
+
+/// A teppi's carried-over data keeps its nutrition under the key the reader uses (a codemod renamed the key to "nutrition_of(src)").
+/datum/unit_test/dq_health_bughunt/teppi_data_keeps_nutrition
+
+/datum/unit_test/dq_health_bughunt/teppi_data_keeps_nutrition/Run()
+	var/mob/living/simple_mob/vore/alienanimals/teppi/T = allocate(/mob/living/simple_mob/vore/alienanimals/teppi, test_floor())
+	T.set_nutrition(321)
+	var/list/data = T.store_teppi_data(T)
+	TEST_ASSERT_EQUAL(data["nutrition"], 321, "the stored nutrition is read back by its key")
+
+/// The melee line of an item's mechanics examine says "sharp", not the code that decides it.
+/datum/unit_test/dq_health_bughunt/sharp_examine_text
+
+/datum/unit_test/dq_health_bughunt/sharp_examine_text/Run()
+	var/obj/item/material/knife/K = allocate(/obj/item/material/knife, test_floor())
+	var/result = K.get_mechanics_info()
+	var/text = islist(result) ? jointext(result, " ") : "[result]"
+	TEST_ASSERT(!findtext(text, "combat_of"), "examine text leaks code: [text]")
+	TEST_ASSERT(findtext(text, "sharp damage"), "a knife's melee line says sharp: [text]")

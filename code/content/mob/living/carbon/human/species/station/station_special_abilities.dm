@@ -752,7 +752,7 @@ CAPABILITIES(/datum/shred_limb_review)
 	set category = VERB_CAT_ABILITIES_GENERAL
 
 	var/mob/living/carbon/human/C = src
-	if(!C.wing_style) //The species var isn't taken into account here, as it's only purpose is to give this proc to a person.
+	if(!istype(C) || !C.wing_style) //The species var isn't taken into account here, as it's only purpose is to give this proc to a person.
 		to_chat(src, "You cannot fly without wings!!")
 		return
 	if(C.incapacitated(INCAPACITATION_ALL))
@@ -764,9 +764,8 @@ CAPABILITIES(/datum/shred_limb_review)
 
 	set_flying(C, !stat_value(C, STAT_FLYING))
 	update_floating()
-	to_chat(C, span_notice("You have [stat_value(C, STAT_FLYING)?"started":"stopped"] stat_value(src, STAT_FLYING)."))
+	to_chat(C, span_notice("You have [stat_value(C, STAT_FLYING)?"started":"stopped"] flying."))
 
-/mob/living/
 
 /mob/living/proc/flying_vore_toggle()
 	set name = "Toggle Flight Vore"
@@ -786,7 +785,7 @@ CAPABILITIES(/datum/shred_limb_review)
 	set category = VERB_CAT_ABILITIES_GENERAL
 
 	var/mob/living/carbon/human/C = src
-	if(!C.wing_style) //The species var isn't taken into account here, as it's only purpose is to give this proc to a person.
+	if(!istype(C) || !C.wing_style) //The species var isn't taken into account here, as it's only purpose is to give this proc to a person.
 		to_chat(src, "You don't have wings!")
 		return
 	if(!stat_value(C, STAT_FLYING))
