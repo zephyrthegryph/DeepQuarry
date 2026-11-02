@@ -55,6 +55,9 @@ SCHEMA(/obj/item/cell, c_uid, num())
 	var/tmp/recharging = TRUE
 	/// gradual_charge(): one-second charge steps still to run.
 	var/tmp/gradual_charge_left = 0
+	/// The charge overlay's step (0, 25, 50, 75 or 100): what the look reads, so a charge change that keeps the step redraws nothing. An APC's
+	/// cell hears a charge report at every whole percent; drawing on each one redrew every seated cell about 8 times a second station-wide.
+	var/tmp/charge_step = -1
 
 
 // A self-charging cell steps every two seconds while it is below full; a gradual charge steps every second while it has steps left.
@@ -73,6 +76,9 @@ CAPABILITIES(/obj/item/cell)
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(cell_blast_corrupt)))
 	every(2 SECONDS, then(PROC_REF(recharge_step)), when = all_of(nameof(self_recharge), nameof(recharging)))
 	every(1 SECOND, then(PROC_REF(gradual_charge_tick)), when = nameof(gradual_charge_left))
+	setup(PROC_REF(update_charge_step))
+	on_change(nameof(charge), ANY, then(PROC_REF(update_charge_step)))
+	on_change(nameof(maxcharge), ANY, then(PROC_REF(update_charge_step)))
 	ref_one(nameof(gradual_user))
 	setup(PROC_REF(start_up))
 
@@ -158,11 +164,17 @@ GLOBAL_VAR_INIT(cells_ambient_ready, FALSE)
 
 	return use(cell_amt) / CELLRATE
 
-/// The look: the charge-level overlay, a quarter step of the stored charge.
+/// The look: the charge-level overlay, a quarter step of the stored charge (charge_step).
 /obj/item/cell/draw(datum/look/look)
 	..()
 	if(standard_overlays)
-		look.overlay("[initial(icon_state)]_[clamp(round(percent() * 4 / 100, 1), 0, 4) * 25]")
+		look.overlay("[initial(icon_state)]_[charge_step]")
+
+/// Keeps charge_step on the quarter step of the stored charge; it changes, and the cell redraws, only when the step does.
+/obj/item/cell/proc/update_charge_step(datum/act/A)
+	var/step = clamp(round(percent() * 4 / 100, 1), 0, 4) * 25
+	if(step != charge_step)
+		set_charge_step(step)
 
 /obj/item/cell/proc/percent()		// return % charge of cell
 	var/charge_percent = 0

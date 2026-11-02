@@ -83,3 +83,21 @@
 	var/mob/living/carbon/human/person = allocate(/mob/living/carbon/human, locate(at.x + 2, at.y, at.z))
 	person.forceMove(get_step(at, EAST))
 	TEST_ASSERT(turret.mob_near, "a mob coming near did not wake the turret's scan")
+
+/// A cell's look follows its quarter charge step, not every change of charge: a whole-percent report that keeps the step changes nothing it draws.
+/datum/unit_test/dq_cell_draw_follows_its_charge_step
+
+/datum/unit_test/dq_cell_draw_follows_its_charge_step/Run()
+	var/obj/item/cell/C = allocate(/obj/item/cell, run_loc_floor_bottom_left)
+	C.set_charge(C.maxcharge)
+	stat_drain_point()
+	TEST_ASSERT_EQUAL(C.charge_step, 100, "a full cell does not show its full step")
+	C.set_charge(C.maxcharge * 0.99)
+	stat_drain_point()
+	TEST_ASSERT_EQUAL(C.charge_step, 100, "a 1% drop moved the shown step")
+	C.set_charge(C.maxcharge * 0.6)
+	stat_drain_point()
+	TEST_ASSERT_EQUAL(C.charge_step, 50, "crossing a quarter did not move the shown step")
+	C.set_maxcharge(C.maxcharge * 4)
+	stat_drain_point()
+	TEST_ASSERT_EQUAL(C.charge_step, 25, "a larger capacity did not move the shown step")
