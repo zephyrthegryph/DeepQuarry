@@ -473,3 +473,38 @@ fn a_one_kpa_gap_levels_without_ringing() {
 	eprintln!("1 kPa gap: levelled at {levelled:?} frames, max substeps {max_sub}");
 	assert!(levelled.is_some(), "the gap never levelled");
 }
+
+/// Memory soak (ignored; run by hand with --ignored): a breach room and a pumped pair stepped for many frames. The process's working set
+/// is sampled from outside; it must stay flat (no per-step growth in the implicit solve's scratch).
+#[test]
+#[ignore]
+fn soak_implicit_bulk_memory() {
+	const SIZE: u32 = 48;
+	let mut r = Rig::new(SIZE, SIZE);
+	let idx = |x: u32, y: u32| y * SIZE + x;
+	for y in 0..SIZE {
+		for x in 0..SIZE {
+			let wall = x == 0 || y == 0 || x == SIZE - 1 || y == SIZE - 1;
+			if wall && !(x == 0 && y == SIZE / 2) {
+				continue;
+			}
+			if x == 0 {
+				let mut v = GasCell::default();
+				v.flags |= crate::cell::flags::IMMUTABLE;
+				r.register(idx(x, y), v, true, 0);
+			} else {
+				r.register(idx(x, y), air(1.0, 293.15), false, 0);
+			}
+		}
+	}
+	for frame in 0..4000u32 {
+		// Keep it busy: refill a cell each frame (a pump).
+		let mut d = [0.0; Q];
+		d[GAS_OXYGEN] = 50.0;
+		let _ = r.w.submit_cell(r.key, idx(SIZE / 2, SIZE / 2), GasCmd::Delta(d));
+		r.run(1);
+		if frame % 500 == 0 {
+			eprintln!("soak frame {frame}");
+		}
+	}
+}
