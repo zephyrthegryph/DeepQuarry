@@ -391,3 +391,85 @@ fn a_slowly_cooled_room_does_not_ring() {
 		}
 	}
 }
+
+/// A sealed room with one open face to space: how many frames until its far corner falls to half and to a tenth of its moles, and the sub-steps
+/// the field takes meanwhile. The bulk flow's stability scheme must not slow a breach (the test bounds the frames and prints both counts).
+#[test]
+fn a_one_face_breach_decompresses_promptly() {
+	const SIZE: u32 = 12;
+	let mut r = Rig::new(SIZE, SIZE);
+	let idx = |x: u32, y: u32| y * SIZE + x;
+	for y in 0..SIZE {
+		for x in 0..SIZE {
+			let wall = x == 0 || y == 0 || x == SIZE - 1 || y == SIZE - 1;
+			if wall && !(x == 0 && y == SIZE / 2) {
+				continue;
+			}
+			if x == 0 {
+				let mut v = GasCell::default();
+				v.flags |= crate::cell::flags::IMMUTABLE;
+				r.register(idx(x, y), v, true, 0);
+			} else {
+				r.register(idx(x, y), air(1.0, 293.15), false, 0);
+			}
+		}
+	}
+	let probe = idx(SIZE - 2, 1);
+	let start = r.read(probe).unwrap().total_moles();
+	let (mut half, mut tenth, mut max_sub) = (None, None, 0);
+	r.run(1);
+	let before = r.totals();
+	for frame in 1..=400u32 {
+		r.run(1);
+		let state = r.key.state;
+		let sub = r.w.sim_mut().with_idle_world(|res| res.get(state).stats().substeps).unwrap();
+		max_sub = max_sub.max(sub);
+		let n = r.read(probe).unwrap().total_moles();
+		if half.is_none() && n < start * 0.5 {
+			half = Some(frame);
+		}
+		if tenth.is_none() && n < start * 0.1 {
+			tenth = Some(frame);
+			break;
+		}
+	}
+	let after = r.totals();
+	close(&before, &after, 1e-4).unwrap();
+	eprintln!("one-face breach: half at {half:?}, tenth at {tenth:?} frames, max substeps {max_sub}");
+	assert!(tenth.is_some_and(|f| f <= 400), "the room did not decompress: half {half:?} tenth {tenth:?}");
+}
+
+/// A small gap levels promptly and without ringing: a room whose two halves differ by 1 kPa. Prints the frames until every cell is within
+/// 0.2 kPa of the mean (edges sleep near 0.05 mol) and the sub-steps used; the pressure never crosses the mean by more than the remaining gap (no overshoot).
+#[test]
+fn a_one_kpa_gap_levels_without_ringing() {
+	const SIZE: u32 = 10;
+	let mut r = Rig::new(SIZE, SIZE);
+	let idx = |x: u32, y: u32| y * SIZE + x;
+	let one_kpa = 1.0 / 101.325;
+	for y in 0..SIZE {
+		for x in 0..SIZE {
+			let edge = x == 0 || y == 0 || x == SIZE - 1 || y == SIZE - 1;
+			r.register(idx(x, y), air(if x < SIZE / 2 { 1.0 + one_kpa } else { 1.0 }, 293.15), false, if edge { 0b1111 } else { 0 });
+		}
+	}
+	let p = |r: &Rig, c: u32| r.read(c).unwrap().pressure_in(2500.0);
+	r.run(1);
+	let before = r.totals();
+	let (mut levelled, mut max_sub) = (None, 0);
+	let state = r.key.state;
+	for frame in 1..=200u32 {
+		r.run(1);
+		max_sub = max_sub.max(r.w.sim_mut().with_idle_world(|res| res.get(state).stats().substeps).unwrap());
+		let ps: Vec<f32> = (1..SIZE - 1).flat_map(|y| (1..SIZE - 1).map(move |x| (x, y))).map(|(x, y)| p(&r, idx(x, y))).collect();
+		let mean = ps.iter().sum::<f32>() / ps.len() as f32;
+		let worst = ps.iter().map(|v| (v - mean).abs()).fold(0.0f32, f32::max);
+		assert!(worst <= 1.05, "frame {frame}: a cell is {worst} kPa off the mean (overshoot)");
+		if levelled.is_none() && worst < 0.2 {
+			levelled = Some(frame);
+		}
+	}
+	close(&before, &r.totals(), 1e-4).unwrap();
+	eprintln!("1 kPa gap: levelled at {levelled:?} frames, max substeps {max_sub}");
+	assert!(levelled.is_some(), "the gap never levelled");
+}
