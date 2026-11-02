@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import {
+  legChoices,
   REGION_CARDS,
   regionForHighlight,
   withNoneChoice,
@@ -39,5 +40,16 @@ describe('withNoneChoice', () => {
       ['fox', 'Fox'],
       ['cat', 'Cat'],
     ]);
+  });
+});
+
+describe('legChoices', () => {
+  it('offers Normal, Digitigrade and every taur body in one list', () => {
+    expect(Object.keys(legChoices(true, [['Horse', 'Horse']]))).toEqual([
+      'plantigrade',
+      'digitigrade',
+      'Horse',
+    ]);
+    expect(Object.keys(legChoices(false, []))).toEqual(['plantigrade']);
   });
 });

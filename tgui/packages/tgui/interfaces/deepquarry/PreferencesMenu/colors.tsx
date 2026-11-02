@@ -510,14 +510,14 @@ export const ColorStrip = ({
               display: 'flex',
               alignItems: 'center',
               gap: '0.4em',
-              minWidth: compact ? 0 : '12em',
-              flex: compact ? '1 1 0' : '1 1 12em',
+              minWidth: compact ? '9em' : '14em',
+              flex: compact ? '1 1 9em' : '1 1 14em',
             }}
           >
             <Box color="label" fontSize="0.85em" style={{ flex: '0 0 auto' }}>
               {a.label}
             </Box>
-            <Box style={{ flex: 1, minWidth: 0 }}>
+            <Box style={{ flex: 1, minWidth: '6em', fontSize: '1.15em' }}>
               <SliderBox
                 serverValue={Number(values[a.key] ?? 255)}
                 min={0}

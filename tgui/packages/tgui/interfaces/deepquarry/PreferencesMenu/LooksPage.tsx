@@ -9,7 +9,7 @@ import { Box, Button, Section } from 'tgui-core/components';
 import { type DollRegion, ZoneDoll } from '../shared/ZoneDoll';
 import { WidgetGrid } from './CategoryPage';
 import { ColorStrip, ColorSwatch, PALETTE_SLOTS, PaletteSlots } from './colors';
-import { Segmented, Switch } from './controls';
+import { Switch } from './controls';
 import { getEditor } from './editors';
 import { BodyMarkingsEditor } from './editors/BodyMarkingsEditor';
 import { OrgansEditor } from './editors/OrgansEditor';
@@ -518,7 +518,7 @@ const PART_ROWS: PartRow[] = [
 ];
 
 /// Part, style, three swatch columns, options: fits the window without a horizontal scrollbar.
-const TABLE_COLUMNS = '5.5em minmax(0, 1.4fr) repeat(3, 2.4em) minmax(0, 1fr)';
+const TABLE_COLUMNS = '5.5em minmax(0, 1.3fr) repeat(3, 2.4em) minmax(10em, 1.2fr)';
 const cellStyle = {
   minWidth: 0,
   alignSelf: 'center',
@@ -795,13 +795,17 @@ const GradientOption = ({
   );
 };
 
-const LEG_OPTIONS: Array<[string, string]> = [
-  ['plantigrade', 'Plantigrade'],
-  ['digitigrade', 'Digitigrade'],
-  ['taur', 'Taur'],
-];
+/// The leg choices: Normal and Digitigrade, then every taur body (saved as the tail style it always was). The server sets the mode.
+export const legChoices = (
+  digitigrade: boolean,
+  taurStyles: Array<[string, string]>,
+): Record<string, string> => ({
+  plantigrade: 'Normal',
+  ...(digitigrade ? { digitigrade: 'Digitigrade' } : {}),
+  ...Object.fromEntries(taurStyles),
+});
 
-/// Plantigrade, digitigrade or a taur body. A taur is saved as the tail style it always was.
+/// Legs: one style picker. Normal, digitigrade or a taur body.
 const LegsRow = ({
   values,
   widgets,
@@ -816,22 +820,21 @@ const LegsRow = ({
   taurNow: boolean;
 }) => {
   const { act } = useBackend();
-  const [choosingTaur, setChoosingTaur] = useState(false);
   if (!widgets.digitigrade && !taurStyles.length) return null;
-  const digi = !!values.digitigrade;
-  const showTaur = taurNow || choosingTaur;
-  const mode = showTaur ? 'taur' : digi ? 'digitigrade' : 'plantigrade';
-  const set = (key: string, value: unknown) =>
-    act('dq_update_preference', { key, value });
-  const pick = (next: string) => {
-    setChoosingTaur(next === 'taur');
-    if (next === 'taur') return;
-    if (taurNow) set('tail_style', '');
-    if (widgets.digitigrade && (next === 'digitigrade') !== digi) {
-      set('digitigrade', next === 'digitigrade');
-    }
-  };
+  const value = taurNow
+    ? String(values.tail_style ?? '')
+    : values.digitigrade
+      ? 'digitigrade'
+      : 'plantigrade';
   const count = taurNow ? channelsOf(tailItem, values.tail_style) : 0;
+  const item: PrefWidgetItem = {
+    ...(tailItem ?? widgets.digitigrade),
+    key: 'legs',
+    widget: 'thumbgrid',
+    value,
+    choices: legChoices(!!widgets.digitigrade, taurStyles),
+    thumbnails: tailItem?.thumbnails ?? {},
+  };
   return (
     <Box
       style={{ display: 'contents' }}
@@ -839,25 +842,16 @@ const LegsRow = ({
     >
       <Box style={cellStyle}>Legs</Box>
       <Box style={cellStyle}>
-        <Segmented
-          options={LEG_OPTIONS.filter(
-            ([v]) => v !== 'taur' || taurStyles.length > 0,
-          )}
-          value={mode}
-          onSelect={pick}
+        <PrefWidget
+          item={item}
+          onPick={(style) =>
+            act('dq_editor_action', {
+              editor: 'legs',
+              action: 'set_leg_style',
+              params: { style },
+            })
+          }
         />
-        {showTaur && tailItem && (
-          <Box mt={0.2}>
-            <BareField
-              item={{
-                ...tailItem,
-                value: taurNow ? values.tail_style : '',
-                choices: Object.fromEntries(taurStyles),
-                props: { ...tailItem.props, open: !taurNow },
-              }}
-            />
-          </Box>
-        )}
       </Box>
       {['tail_color1', 'tail_color2', 'tail_color3'].map((key, i) => (
         <ChannelCell

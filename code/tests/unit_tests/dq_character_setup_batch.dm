@@ -243,3 +243,27 @@
 	TEST_ASSERT(GLOB.tgui_default_state.can_use_topic(panel, viewer) < STATUS_INTERACTIVE, "where the default state would not (why it never opened)")
 	P = dq_test_load_character(list("species" = SPECIES_HUMAN, "OOC_Notes" = ""))
 	TEST_ASSERT_NOTNULL(P.dq_open_ooc_inspection(viewer), "it opens with no notes too")
+
+/// Legs are one choice: Normal and Digitigrade set the digitigrade pref, a taur body is the tail style; an old digitigrade taur save keeps the taur.
+/datum/unit_test/dq_leg_style_one_choice
+
+/datum/unit_test/dq_leg_style_one_choice/Run()
+	var/taur_name
+	for(var/key in GLOB.tail_styles_list)
+		var/datum/sprite_accessory/S = GLOB.tail_styles_list[key]
+		if(istype(S) && istaurtail(S))
+			taur_name = S.name
+			break
+	TEST_ASSERT_NOTNULL(taur_name, "there is a taur body")
+	var/datum/preferences/dq_test_stub/P = dq_test_load_character(list("species" = SPECIES_HUMAN, "digitigrade" = 1, "tail_style" = taur_name))
+	TEST_ASSERT(P.has_taur_body(), "the saved taur body is kept")
+	TEST_ASSERT(!P.read_preference(/datum/preference/toggle/human/digitigrade), "the old digitigrade flag under a taur body is dropped")
+	var/datum/preference_editor/legs/editor = GLOB.preference_editors_by_key["legs"]
+	TEST_ASSERT_EQUAL(editor.handle_action(P, "set_leg_style", list("style" = "digitigrade"), null), PREF_UPDATE_ACCEPTED, "digitigrade is a choice")
+	TEST_ASSERT(P.read_preference(/datum/preference/toggle/human/digitigrade), "it sets the digitigrade mode")
+	TEST_ASSERT(!P.has_taur_body(), "and leaves the taur body")
+	TEST_ASSERT_EQUAL(editor.handle_action(P, "set_leg_style", list("style" = taur_name), null), PREF_UPDATE_ACCEPTED, "a taur body is a choice")
+	TEST_ASSERT(P.has_taur_body() && !P.read_preference(/datum/preference/toggle/human/digitigrade), "it sets the taur mode")
+	TEST_ASSERT_EQUAL(editor.handle_action(P, "set_leg_style", list("style" = "plantigrade"), null), PREF_UPDATE_ACCEPTED, "normal is a choice")
+	TEST_ASSERT(!P.has_taur_body() && !P.read_preference(/datum/preference/toggle/human/digitigrade), "it sets normal legs")
+	TEST_ASSERT_EQUAL(editor.handle_action(P, "set_leg_style", list("style" = "no such style"), null), PREF_UPDATE_REJECTED, "anything else is refused")
