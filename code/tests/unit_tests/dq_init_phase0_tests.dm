@@ -18,8 +18,8 @@ CAPABILITIES(/obj/item/dq_preset_probe)
 	param(nameof(preset_gate))
 	// Declared before its dependency on purpose: from = orders it after preset_double.
 	preset(nameof(preset_label), PROC_REF(label_from_double), from = list(nameof(preset_double)))
-	preset(nameof(preset_double), PROC_REF(double_of_base))
-	preset(nameof(preset_gated), PROC_REF(gated_value), when = nameof(preset_gate))
+	preset(nameof(preset_double), PROC_REF(double_of_base), default = 0)
+	preset(nameof(preset_gated), PROC_REF(gated_value), when = nameof(preset_gate), default = 0)
 
 /obj/item/dq_preset_probe/proc/double_of_base(target)
 	return preset_base * 2

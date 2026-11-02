@@ -29,7 +29,7 @@ GLOBAL_LIST_INIT(spawntypes, populate_spawn_points())
 	if(!J) // Couldn't find, admin shenanigans? Allow it
 		return 1
 
-	if(J.offmap_spawn && !allow_offmap_spawn && !(job in restrict_job)) // lets offmap jobs use it without restricting it to them
+	if(J.offmap_spawn && !J.any_spawn_point && !allow_offmap_spawn && !(job in restrict_job)) // lets offmap jobs use it without restricting it to them
 		return 0
 
 	if(!(J.mob_type & allowed_mob_types))
@@ -148,7 +148,6 @@ GLOBAL_LIST_INIT(spawntypes, populate_spawn_points())
 /datum/spawnpoint/arrivals
 	display_name = "Arrivals Shuttle"
 	msg = "will arrive to the station shortly by shuttle"
-	disallow_job = list(JOB_OUTSIDER)
 
 /datum/spawnpoint/arrivals/candidates()
 	return REGISTRY_MEMBERS(REGISTRY_LATEJOIN)
@@ -158,26 +157,28 @@ GLOBAL_LIST_INIT(spawntypes, populate_spawn_points())
 	display_name = "Gateway"
 	msg = "has completed translation from offsite gateway"
 
+/datum/spawnpoint/teleporter
+	landing_list = "latejoin_teleporter"
+	display_name = "Teleporter"
+	msg = "has arrived by teleporter"
+
 /datum/spawnpoint/cryo
 	landing_list = "latejoin_cryo"
 	display_name = "Cryogenic Storage"
 	msg = "has completed cryogenic revival"
 	allowed_mob_types = JOB_CARBON
-	disallow_job = list(JOB_OUTSIDER)
 
 /datum/spawnpoint/cyborg
 	landing_list = "latejoin_cyborg"
 	display_name = "Cyborg Storage"
 	msg = "has been activated from storage"
 	allowed_mob_types = JOB_SILICON
-	disallow_job = list(JOB_OUTSIDER)
 
 
 /datum/spawnpoint/tram
 	landing_list = "latejoin_tram"
 	display_name = "Tram Station"
 	msg = "will arrive to the station shortly by shuttle"
-	disallow_job = list(JOB_OUTSIDER)
 
 /datum/spawnpoint/vore
 	display_name = "Vorespawn - Prey"
@@ -204,7 +205,6 @@ GLOBAL_LIST_INIT(spawntypes, populate_spawn_points())
 	landing_list = "latejoin_gatewaystation"
 	display_name = "Station gateway"
 	msg = "has completed translation from station gateway"
-	disallow_job = list(JOB_OUTSIDER)
 
 
 /datum/spawnpoint/plainspath

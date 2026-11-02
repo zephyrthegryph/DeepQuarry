@@ -358,3 +358,63 @@ GLOBAL_LIST_INIT(dq_palette_fields_table, list(
 			return
 		counts -= best
 		update_preference_by_type(slot_type, best)
+
+/// Once per character: the ears a Kitsuhana body used to draw by itself when no ear style was set are now that ear style.
+/datum/preferences/proc/migrate_robotic_ears()
+	var/list/save_data = get_save_data_for_savefile_identifier(PREFERENCE_CHARACTER)
+	if(!islist(save_data) || save_data["robotic_ears_migrated"])
+		return
+	save_data["robotic_ears_migrated"] = TRUE
+	if(read_preference(/datum/preference/text/human/ear_style) || read_preference(/datum/preference/text/human/ear_secondary_style))
+		return
+	var/list/organ_data = read_preference(/datum/preference/organ_data)
+	var/list/rlimb_data = read_preference(/datum/preference/rlimb_data)
+	for(var/limb in list(BP_TORSO, BP_HEAD))
+		if(organ_data?[limb] == "cyborg" && rlimb_data?[limb] == "Kitsuhana")
+			update_preference_by_type(/datum/preference/text/human/ear_style, "Kitsuhana cybernetic ears")
+			log_world("PREFS: [client_ckey] robotic ears became the Kitsuhana ear style")
+			return
+
+/// Skin is always Primary and eyes always Tertiary. A character whose colour differs keeps its look: the slot takes that
+/// colour, and whatever was linked to the slot is pinned to the colour it showed, so no custom colour is lost and nothing else shifts.
+/datum/preferences/proc/link_skin_and_eyes()
+	var/static/list/pairs = list(/datum/preference/color/human/skin_color = "primary", /datum/preference/color/human/eyes_color = "tertiary")
+	for(var/field in pairs)
+		var/slot = pairs[field]
+		if(read_preference_raw(field) == slot)
+			continue
+		var/shown = lowertext(read_preference(field))
+		var/slot_type = dq_color_slot_type(slot)
+		var/old_hex = lowertext(read_preference(slot_type))
+		begin_update_batch()
+		if(shown != old_hex)
+			log_world("PREFS: [client_ckey] [slot] moved from [old_hex] to [shown] to keep the [field] colour; links to it pinned")
+			pin_slot_links(slot, old_hex)
+			update_preference_by_type(slot_type, shown)
+		update_preference_by_type(field, slot)
+		end_update_batch()
+
+/// Everything linked to a palette slot takes this colour as its own.
+/datum/preferences/proc/pin_slot_links(slot, hex)
+	var/list/fields = dq_palette_fields()
+	for(var/field in fields)
+		if(read_preference_raw(field) == slot)
+			update_preference_by_type(field, hex)
+	var/list/colors = read_preference_raw(/datum/preference/limb_colors)
+	for(var/limb in colors)
+		if(colors[limb] == slot)
+			colors[limb] = hex
+	update_preference_by_type(/datum/preference/limb_colors, colors)
+	var/list/markings = read_preference_raw(/datum/preference/body_markings)
+	for(var/marking in markings)
+		var/list/zones = markings[marking]
+		if(!islist(zones))
+			continue
+		for(var/zone in zones)
+			var/list/entry = zones[zone]
+			if(zone == "color")
+				if(entry == slot)
+					zones[zone] = hex
+			else if(islist(entry) && entry["color"] == slot)
+				entry["color"] = hex
+	update_preference_by_type(/datum/preference/body_markings, markings)

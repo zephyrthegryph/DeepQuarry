@@ -99,11 +99,14 @@ export const Segmented = ({
   value,
   onSelect,
   disabled,
+  disabledValues,
 }: {
   options: SegmentedOption[];
   value: string;
   onSelect: (value: string) => void;
   disabled?: boolean;
+  /// Options that cannot be picked while the rest can.
+  disabledValues?: string[];
 }) => (
   <Box
     style={{
@@ -117,7 +120,7 @@ export const Segmented = ({
       <Button
         key={val}
         m={0}
-        disabled={disabled}
+        disabled={disabled || disabledValues?.includes(val)}
         selected={val === value && !color}
         color={val === value ? color : undefined}
         onClick={() => val !== value && onSelect(val)}

@@ -78,10 +78,6 @@ GLOBAL_LIST_INIT(dq_robot_mode_hidden_pref_keys, list(
 	"skin_color"     = TRUE,
 	"eyes_color"     = TRUE,
 	"digitigrade"    = TRUE,
-	// synth_color / synth_markings live on /mob/living/carbon/human (they
-	// color synth limbs on organic bodies or synth species like Protean).
-	// Cyborgs are /mob/living/silicon/robot — these vars don't exist there.
-	"synth_markings" = TRUE,
 ))
 
 // pAI: holopad with no body. Strip everything physical and most stat configuration.
@@ -120,7 +116,6 @@ GLOBAL_LIST_INIT(dq_pai_mode_hidden_pref_keys, list(
 	"skin_color"     = TRUE,
 	"eyes_color"     = TRUE,
 	"digitigrade"    = TRUE,
-	"synth_markings" = TRUE,
 ))
 
 GLOBAL_LIST_INIT(dq_human_mode_hidden_groups, list(
@@ -604,7 +599,10 @@ CAPABILITIES(/datum/preference_middleware/character_setup)
 	var/category_key = category
 	if(!(category_key in preferences().dq_category_index))
 		return FALSE
+	var/was_loadout = preferences().dq_active_category == "loadout"
 	preferences().dq_active_category = category_key
+	if(was_loadout != (category_key == "loadout")) // the loadout tab always dresses the preview
+		preferences().update_preview_icon_lazy()
 	dq_note_category_selected(category_key, ui?.window()?.id || "unpooled", force_catalogs)
 	return TRUE
 

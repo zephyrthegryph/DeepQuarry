@@ -31,7 +31,7 @@
 /datum/unit_test/dq_xform_stack_pin/Run()
 	var/turf/T = test_floor()
 	var/list/rows = list()
-	for(var/stack_type in typesof(/obj/item/stack))
+	for(var/stack_type in typesof(/obj/item/stack) - typesof(/obj/item/stack/material/exotic_feedstock/random)) // it rolls its material at init: its recipes differ per run
 		var/obj/item/stack/S = new stack_type(T)
 		if(!QDELETED(S) && length(S.recipes))
 			var/list/mine = list()

@@ -118,7 +118,7 @@ CAPABILITIES(/obj/item/integrated_circuit/output/video_camera)
 CAPABILITIES(/obj/machinery/camera/intcircuit)
 	param(nameof(network_id), pos = 1, overrides = TRUE)
 	param(nameof(see_dark), pos = 2)
-	preset(nameof(network), PROC_REF(network_of_id))
+	preset(nameof(network), PROC_REF(network_of_id), overrides = TRUE) // its compiled list is empty on purpose: the id always decides
 	rolls(nameof(c_tag), PROC_REF(roll_circuit_tag))
 	setup(PROC_REF(join_camera_net))
 

@@ -720,7 +720,6 @@ GLOBAL_LIST_INIT(dsi_to_species, list(SPECIES_TAJARAN = "DSI - Tajaran", SPECIES
 	icon = 'icons/mob/human_races/cyberlimbs/_fluff/aronai.dmi'
 	blood_color = "#5dd4fc"
 	includes_tail = 1
-	includes_ears = 1
 	lifelike = 1
 	unavailable_to_build = 1
 	suggested_species = SPECIES_VULPKANIN

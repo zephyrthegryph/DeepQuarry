@@ -331,7 +331,7 @@ function humanizeChoice(value: string): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
-function normalizeChoices(
+export function normalizeChoices(
   choices: PrefWidgetItem['choices'],
 ): Array<[string, string]> {
   if (!choices) return [];

@@ -1590,3 +1590,12 @@
 	extra_overlay = "sloog_tips"
 	do_colouration = 1
 	color_blend_mode = ICON_MULTIPLY
+
+/// The ears drawn into Kitsuhana robotic limbs.
+/datum/sprite_accessory/ears/kitsuhana
+	name = "Kitsuhana cybernetic ears"
+	desc = ""
+	icon = 'icons/mob/human_races/cyberlimbs/_fluff/aronai.dmi'
+	icon_state = "ears"
+	do_colouration = 1
+	color_blend_mode = ICON_MULTIPLY

@@ -129,12 +129,3 @@
 	target.looks.set_digitigrade(value)
 
 
-/datum/preference/toggle/human/synth_markings
-	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
-	savefile_key = "synth_markings"
-	default_value = TRUE
-	savefile_identifier = PREFERENCE_CHARACTER
-	can_randomize = FALSE
-
-/datum/preference/toggle/human/synth_markings/apply_to_human(mob/living/carbon/human/target, value)
-	target.looks.set_synth_markings(value)

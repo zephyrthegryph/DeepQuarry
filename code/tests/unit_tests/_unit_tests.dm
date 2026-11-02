@@ -426,6 +426,7 @@
 #include "dq_tail_animation.dm"
 #include "dq_character_setup_batch.dm"
 #include "dq_profile_records.dm"
+#include "dq_amputated_limb_tests.dm"
 #include "dq_hair_gradient_tests.dm"
 #include "dq_ui_capture.dm"
 #include "dq_shuttle_tests.dm"

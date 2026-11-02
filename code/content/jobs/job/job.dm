@@ -35,6 +35,7 @@
 
 	var/outfit_type						  // What outfit datum does this job use in its default title?
 
+	var/any_spawn_point = FALSE // An offmap job that still spawns wherever the player chose, like a normal job.
 	var/offmap_spawn = FALSE			  // Do we require weird and special spawning and datacore handling?
 	var/mob_type = JOB_CARBON 		      // Bitflags representing mob type this job spawns
 
