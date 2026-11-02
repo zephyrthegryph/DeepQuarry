@@ -1350,6 +1350,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 		"vars" = TRUE, "type" = TRUE, "parent_type" = TRUE, "tag" = TRUE, "current_test" = TRUE, "failed_any_test" = TRUE,
 		"total_runtimes" = TRUE, "total_runtimes_skipped" = TRUE, "boot_noise_count" = TRUE, "boot_unclean" = TRUE,
 		"e0_proofs_passed" = TRUE, "e0_proofs_pending" = TRUE, "e0_proofs_failed" = TRUE,
+		"latent_last_refusal" = TRUE, // the text of the latency sweep's last refused collapse, a diagnostic message (the latency tests read it under set_global())
 		"km_attr_a" = TRUE, "km_attr_entry" = TRUE, // the kernel meter's attribution slot: written by a dispatcher, cleared by the timer loop before its next call, read by nothing else
 		"fusion_reactions" = TRUE, // a lazily built cache (the reaction table, made on its first lookup)
 		"word_to_uristrune_table" = TRUE, // a lazily built cache (the rune glyphs, made on their first draw)
