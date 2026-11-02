@@ -66,7 +66,6 @@
 /mob
 /mob/living
 	appearance_flags = TILE_BOUND|PIXEL_SCALE|KEEP_TOGETHER|LONG_GLIDE
-	var/private_notes = null
 
 
 // The mob owns its panel; the panel's host points back, so leaving it set would keep both alive.
