@@ -1,4 +1,22 @@
 //MAP CONVERTED BY dmm2tgm.py THIS HEADER COMMENT PREVENTS RECONVERSION, DO NOT REMOVE
+"aaa" = (
+/obj/effect/landmark{
+	name = "JoinLateGateway"
+	},
+/obj/effect/floor_decal/industrial/warning{
+	dir = 4
+	},
+/turf/simulated/floor/tiled,
+/area/expoutpost/gateway)
+"aab" = (
+/obj/effect/landmark{
+	name = "JoinLateGateway"
+	},
+/obj/effect/floor_decal/industrial/warning{
+	dir = 8
+	},
+/turf/simulated/floor/tiled,
+/area/expoutpost/gateway)
 "aaf" = (
 /obj/machinery/computer/security/engineering{
 	dir = 1
@@ -69327,9 +69345,9 @@ rcx
 tAp
 juR
 sTs
-lKu
-lKu
-lKu
+aaa
+aaa
+aaa
 jyt
 ceR
 hzM
@@ -70359,9 +70377,9 @@ iGn
 tAp
 emn
 sTs
-rcg
-rcg
-rcg
+aab
+aab
+aab
 bos
 ceR
 ceR
