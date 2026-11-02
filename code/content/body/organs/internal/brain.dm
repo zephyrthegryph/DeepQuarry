@@ -229,6 +229,7 @@ CAPABILITIES(/obj/item/organ/internal/brain)
 CAPABILITIES(/obj/item/organ/internal/brain/slime)
 	configure(reagents(volume = 50))
 	after_init(0, then(PROC_REF(match_core_color)))
+	on_notice(/datum/notice/transformed/promethean_revival, then(PROC_REF(revival_reacted)))
 
 /// Matches the core to the Promethean's starting colour, once the body has placed it.
 /obj/item/organ/internal/brain/slime/proc/match_core_color(datum/act/timer/A)
@@ -287,14 +288,16 @@ CAPABILITIES(/obj/item/organ/internal/brain/slime)
 CAPABILITIES(/transformation/chem/instant/promethean_brain_revival)
 	configure(transformation(name = "Promethean Revival", id = "prom_revival", takes = list(reagent(REAGENT_ID_PHORON, 40)), made = 1,
 		holds = subject_is(/obj/item/organ/internal/brain/slime),
-		then = TYPE_PROC_REF(/transformation/chem/instant/promethean_brain_revival, on_reaction)))
+		notice = /datum/notice/transformed/promethean_revival))
 
-/transformation/chem/instant/promethean_brain_revival/proc/on_reaction(datum/reagents/holder)
-	var/obj/item/organ/internal/brain/slime/brain = holder.my_atom
-	if(brain.reviveBody())
-		brain.visible_message(span_notice("[brain] bubbles, surrounding itself with a rapidly expanding mass of slime!"))
+/// Phoron revived a promethean core: the core regrows its body (brain/slime/revival_reacted()).
+/datum/notice/transformed/promethean_revival
+
+/obj/item/organ/internal/brain/slime/proc/revival_reacted(datum/act/notice/A)
+	if(reviveBody())
+		visible_message(span_notice("[src] bubbles, surrounding itself with a rapidly expanding mass of slime!"))
 	else
-		brain.visible_message(span_warning("[brain] shifts strangely, but falls still."))
+		visible_message(span_warning("[src] shifts strangely, but falls still."))
 
 /obj/item/organ/internal/brain/golem
 	name = "chem"
