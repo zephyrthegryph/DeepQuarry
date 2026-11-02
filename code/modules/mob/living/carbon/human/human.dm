@@ -1621,26 +1621,19 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 			fail_msg = "There is no exposed flesh or thin material [target_zone == BP_HEAD ? "on their head" : "on their body"] to inject into."
 		to_chat(user, span_warning("[fail_msg]"))
 
-/// Which flavor entries show on this body right now. General always does; Face and Body are hidden while gear hides them, by either rule the
-/// examine uses: worn items' `covers` the area (Body: the torso, or arms and legs together), or examine_coverage's "what hides what" (a mask or helmet with HIDEFACE, a suit with HIDEJUMPSUIT).
+/// Which flavor entries show on this body right now. General always does. Face hides while gear covers or hides it. Body describes the general
+/// look and coloration, so it hides only under head-to-toe gear: everything worn together covers every part of the body.
 /mob/living/carbon/human/proc/visible_flavor_zones()
 	. = list("general")
 	var/list/coverage = examine_coverage()
-	var/skip_body = coverage[2]
-	var/face_exposed = !(skip_body & EXAMINE_SKIPFACE)
-	var/body_exposed = !(skip_body & EXAMINE_SKIPBODY)
 	var/list/equipment = list(get_equipped_item(SLOT_ID_HEAD),get_equipped_item(SLOT_ID_MASK),get_equipped_item(SLOT_ID_EYES),get_equipped_item(SLOT_ID_UNIFORM),get_equipped_item(SLOT_ID_SUIT),get_equipped_item(SLOT_ID_GLOVES),get_equipped_item(SLOT_ID_SHOES))
 	var/covered = 0
 	for(var/obj/item/clothing/C in equipment)
 		covered |= worn_of(C).covers
-	if(covered & FACE)
-		face_exposed = FALSE
-	// A plain jumpsuit declares ARMS|LEGS and no torso, so covering both counts as covering the body.
-	if((covered & UPPER_TORSO) || ((covered & ARMS) && (covered & LEGS)))
-		body_exposed = FALSE
-	if(face_exposed)
+	if(!(coverage[2] & EXAMINE_SKIPFACE) && !(covered & FACE))
 		. += "face"
-	if(body_exposed)
+	var/whole_body = HEAD|FACE|EYES|CHEST|ARMS|HANDS|LEGS|FEET
+	if((covered & whole_body) != whole_body)
 		. += "body"
 
 /mob/living/carbon/human/print_flavor_text(shrink = 1)

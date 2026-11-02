@@ -17,18 +17,18 @@
 /datum/unit_test/dq_language_keys_migrate_and_conflict/Run()
 	var/datum/preferences/dq_test_stub/P = dq_test_load_character(list("species" = SPECIES_HUMAN, "language" = list(LANGUAGE_UNATHI), "language_custom_keys" = list("q" = LANGUAGE_UNATHI), "language_prefixes" = list("+", "#", ",")))
 	var/list/map = P.language_key_map()
-	TEST_ASSERT_EQUAL(map[LANGUAGE_UNATHI], "q", "the saved custom key is kept")
+	TEST_ASSERT_EQUAL(map[LANGUAGE_UNATHI], ",q", "the saved custom key is kept, now as a whole prefix")
 	var/species_lang = P.species_language_name()
 	var/datum/language/own = GLOB.all_languages[species_lang]
-	TEST_ASSERT_EQUAL(map[species_lang], own.key, "a language without a saved key uses its own")
-	TEST_ASSERT_NOTNULL(P.language_key_problem(species_lang, "q"), "a held key is a conflict")
-	TEST_ASSERT_NOTNULL(P.language_key_problem(species_lang, "#"), "a symbol is refused")
-	TEST_ASSERT_NOTNULL(P.language_key_problem(species_lang, "ab"), "two characters are refused")
-	TEST_ASSERT_NOTNULL(P.language_key_problem(LANGUAGE_SIIK, "w"), "an unknown language is refused")
-	TEST_ASSERT_NULL(P.set_language_key(LANGUAGE_UNATHI, "7"), "a free digit is taken")
-	TEST_ASSERT_EQUAL(P.language_key_map()[LANGUAGE_UNATHI], "7", "the new key replaces the old")
+	TEST_ASSERT_EQUAL(map[species_lang], language_default_prefix(own), "a language without a saved key uses its own")
+	TEST_ASSERT_NOTNULL(P.language_key_problem(species_lang, ",q"), "a held key is a conflict")
+	TEST_ASSERT_NOTNULL(P.language_key_problem(species_lang, ":x"), "radio syntax is refused")
+	TEST_ASSERT_NOTNULL(P.language_key_problem(species_lang, "ab"), "a word is refused")
+	TEST_ASSERT_NOTNULL(P.language_key_problem(LANGUAGE_SIIK, ",w"), "an unknown language is refused")
+	TEST_ASSERT_NULL(P.set_language_key(LANGUAGE_UNATHI, ",7"), "a free prefix is taken")
+	TEST_ASSERT_EQUAL(P.language_key_map()[LANGUAGE_UNATHI], ",7", "the new key replaces the old")
 	var/list/custom = P.read_preference(/datum/preference/language_custom_keys)
-	TEST_ASSERT(!("q" in custom), "the old key is freed")
+	TEST_ASSERT(!(",q" in custom), "the old key is freed")
 
 /// The old default ("common", not a language) and a language the character does not know resolve to the species language; the editor refuses unknowns.
 /datum/unit_test/dq_preferred_language_rules
@@ -52,12 +52,11 @@
 	H.add_language(LANGUAGE_UNATHI)
 	H.apply_language_prefs(P)
 	var/datum/language/unathi = GLOB.all_languages[LANGUAGE_UNATHI]
-	TEST_ASSERT_EQUAL(H.language_keys["q"], unathi, "the key is bound on the mob")
+	TEST_ASSERT_EQUAL(H.language_keys[",q"], unathi, "the key is bound on the mob")
 	TEST_ASSERT_EQUAL(H.get_default_language(), unathi, "the preferred language is the default")
-	var/prefix = H.get_language_prefix()
-	var/list/pieces = H.parse_languages("[prefix]q hello")
+	var/list/pieces = H.parse_languages(",q hello")
 	var/datum/multilingual_say_piece/piece = pieces[1]
-	TEST_ASSERT_EQUAL(piece.speaking, unathi, "typing the prefix and the key speaks the language")
+	TEST_ASSERT_EQUAL(piece.speaking, unathi, "typing the prefix speaks the language")
 
 /// The nine old zones land in General, Face and Body with no text lost; loading the result again changes nothing.
 /datum/unit_test/dq_flavor_zone_migration
@@ -78,24 +77,50 @@
 	TEST_ASSERT_EQUAL(loaded["face"], "Green", "a loaded save is migrated")
 	TEST_ASSERT_EQUAL(loaded["body"], "Strong", "a loaded save is migrated")
 
-/// General always shows; Face and Body leave the examine text while gear hides them.
+/// General always shows; Face hides under a mask; Body hides only when everything worn covers the whole body, with real equipment.
 /datum/unit_test/dq_flavor_hidden_entries
 
 /datum/unit_test/dq_flavor_hidden_entries/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.bio.flavor_texts = list("general" = "GEN", "face" = "FACE", "body" = "BODY")
 	TEST_ASSERT(("face" in H.visible_flavor_zones()) && ("body" in H.visible_flavor_zones()), "a bare body shows every entry")
-	H.print_flavor_text(0)
-	TEST_ASSERT(findtext(H.bio.flavor_text, "BODY") && findtext(H.bio.flavor_text, "FACE"), "both print")
 	var/obj/item/clothing/under/color/grey/uniform = allocate(/obj/item/clothing/under/color/grey)
+	TEST_ASSERT(worn_of(uniform).covers & UPPER_TORSO, "a jumpsuit covers the torso")
 	TEST_ASSERT(H.equip_to_slot(uniform, SLOT_ID_UNIFORM), "the uniform is worn")
-	TEST_ASSERT(!("body" in H.visible_flavor_zones()), "a uniform hides Body")
-	TEST_ASSERT(("general" in H.visible_flavor_zones()), "General always shows")
+	TEST_ASSERT("body" in H.visible_flavor_zones(), "a jumpsuit alone shows Body")
+	var/obj/item/clothing/shoes/black/shoes = allocate(/obj/item/clothing/shoes/black)
+	var/obj/item/clothing/gloves/black/gloves = allocate(/obj/item/clothing/gloves/black)
+	TEST_ASSERT(H.equip_to_slot(shoes, SLOT_ID_SHOES), "shoes are worn")
+	TEST_ASSERT(H.equip_to_slot(gloves, SLOT_ID_GLOVES), "gloves are worn")
+	TEST_ASSERT("body" in H.visible_flavor_zones(), "partial gear shows Body")
+	var/obj/item/clothing/head/helmet/space/helmet = allocate(/obj/item/clothing/head/helmet/space)
+	TEST_ASSERT(H.equip_to_slot(helmet, SLOT_ID_HEAD), "the helmet is worn")
+	TEST_ASSERT(!("body" in H.visible_flavor_zones()), "a head-to-toe outfit hides Body")
+	TEST_ASSERT(!("face" in H.visible_flavor_zones()), "and the helmet hides Face")
+	TEST_ASSERT("general" in H.visible_flavor_zones(), "General always shows")
 	H.print_flavor_text(0)
 	TEST_ASSERT(!findtext(H.bio.flavor_text, "BODY"), "a hidden entry is not printed")
+	TEST_ASSERT(findtext(H.bio.flavor_text, "GEN"), "General prints")
+	TEST_ASSERT(H.drop_from_inventory(gloves), "the gloves come off")
+	TEST_ASSERT("body" in H.visible_flavor_zones(), "bare hands show Body again")
+	TEST_ASSERT(H.equip_to_slot(gloves, SLOT_ID_GLOVES), "the gloves go back on")
+	TEST_ASSERT(!("body" in H.visible_flavor_zones()), "covered again")
+	TEST_ASSERT(H.drop_from_inventory(helmet), "the helmet comes off")
+	TEST_ASSERT("body" in H.visible_flavor_zones(), "a bare head shows Body again")
 	var/obj/item/clothing/mask/gas/mask = allocate(/obj/item/clothing/mask/gas)
 	TEST_ASSERT(H.equip_to_slot(mask, SLOT_ID_MASK), "the mask is worn")
 	TEST_ASSERT(!("face" in H.visible_flavor_zones()), "a gas mask hides Face")
+	TEST_ASSERT("body" in H.visible_flavor_zones(), "a gas mask leaves the head, so Body shows")
+
+/// Uniform coverage: the base declares the torso; what is not worn over it stays off it.
+/datum/unit_test/dq_uniform_coverage
+
+/datum/unit_test/dq_uniform_coverage/Run()
+	TEST_ASSERT_EQUAL(worn_of_type(/obj/item/clothing/under).covers, CHEST|ARMS|LEGS, "the base uniform")
+	TEST_ASSERT_EQUAL(worn_of_type(/obj/item/clothing/under/swimsuit/black).covers, CHEST, "a swimsuit is the torso alone")
+	TEST_ASSERT_EQUAL(worn_of_type(/obj/item/clothing/under/shorts/red).covers, LOWER_TORSO, "shorts keep their own")
+	TEST_ASSERT_EQUAL(worn_of_type(/obj/item/clothing/under/pants/black).covers, LOWER_TORSO|LEGS, "pants keep their own")
+	TEST_ASSERT_EQUAL(worn_of_type(/obj/item/clothing/under/skirt/red).covers, LOWER_TORSO, "skirts keep their own")
 
 /// None and invalid saved dates become real ones; the editor takes only real dates.
 /datum/unit_test/dq_birthday_only_real_dates

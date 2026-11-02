@@ -49,9 +49,15 @@
 	var/datum/species/S = GLOB.all_species[preferences.read_preference(/datum/preference/choiced/species)]
 	var/list/alt = preferences.read_preference(/datum/preference/alternate_languages) || list()
 	var/list/seen = list()
+	for(var/saved in value.Copy()) // old one-character keys become whole prefixes
+		var/prefix = language_migrate_prefix(saved)
+		if(prefix != saved)
+			var/saved_language = value[saved]
+			value.Remove(saved)
+			value[prefix] = saved_language
 	for(var/key in value.Copy()) // iterate copy; .Remove() mid-loop skips entries
 		var/lang = value[key]
-		if(!lang || length(key) != 1 || (lang in seen)) // one key per language: the first stays
+		if(!lang || language_prefix_problem(key) || (lang in seen)) // one prefix per language: the first stays
 			value.Remove(key)
 			continue
 		seen += lang

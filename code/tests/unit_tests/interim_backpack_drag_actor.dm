@@ -7,7 +7,7 @@ CAPABILITIES(/obj/interim_backpack_drag_actor_click)
 
 /// The click the test sends: the body runs as the clicking actor.
 /obj/interim_backpack_drag_actor_click/proc/probe_clicked(datum/act/input/A)
-	device.MouseDrop()
+	device.MouseDrop(A.actor) // a drop with nothing under it never reaches the drag entry (atom/MouseDrop)
 	return TRUE
 
 /datum/unit_test/interim_backpack_drag_actor

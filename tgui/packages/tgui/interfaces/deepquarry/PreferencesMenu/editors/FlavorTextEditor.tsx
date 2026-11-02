@@ -3,7 +3,11 @@
 
 import { useBackend } from 'tgui/backend';
 import { Box } from 'tgui-core/components';
-import { flavorPreviewText, type SwitcherEntry, TextSwitcher } from '../TextSwitcher';
+import {
+  flavorPreviewText,
+  type SwitcherEntry,
+  TextSwitcher,
+} from '../TextSwitcher';
 import type { EditorProps } from './index';
 
 type FlavorData = {
