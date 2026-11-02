@@ -370,7 +370,7 @@
 	H.set_sprite_sheets(list(SPECIES_TESHARI = 'icons/inventory/head/mob_teshari.dmi'))
 	refresh_flush()
 	var/before = H.rx?.look_key
-	H.set_light_on(TRUE)
+	H.set_lamp_lit(TRUE)
 	refresh_flush()
 	TEST_ASSERT(H.rx?.look_key != before, "lighting the lamp redraws the helmet (the lit lamp is a layer of its look)")
 	var/image/worn = H.make_worn_icon(SPECIES_TESHARI, slot_head_str, FALSE, 'icons/inventory/head/mob.dmi', 0)
@@ -409,4 +409,4 @@
 	TEST_ASSERT_EQUAL(MA.plane, PLANE_EMISSIVE, "the shared blocker is on the emissive plane")
 	TEST_ASSERT_EQUAL(MA.dir, A.dir, "and faces the movable's way")
 	var/turned = emissive_blocker_generic(A.icon, A.icon_state, A.alpha, turn(A.dir, 90), A.appearance_flags)
-	TEST_ASSERT(turned != A.priority_overlays, "another dir is another blocker")
+	TEST_ASSERT_EQUAL(turned, A.priority_overlays, "dir only keys the cache: the overlay takes its holder's dir, so the same appearance serves every dir")

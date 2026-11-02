@@ -25,7 +25,7 @@
 	var/datum/inventory_panel/human/panel = source.inventory_panel()
 	TEST_ASSERT(istype(panel) && !QDELETED(panel), "the actual effect constructs the real human inventory panel without claiming client delivery")
 	TEST_ASSERT_EQUAL(panel.host, source, "the real panel constructor retains its exact original living source")
-	TEST_ASSERT_EQUAL(owner_of(panel), source, "the actual source owns its constructed inventory panel")
+	TEST_ASSERT_EQUAL(source.inventory_panel(), panel, "the source links its constructed inventory panel (LK_INVENTORY_PANEL, gone with the mob)")
 	TEST_ASSERT_NULL(viewer.inventory_panel(), "actual viewer selection never constructs a panel on the viewer")
 	TEST_ASSERT_NULL(bystander.inventory_panel(), "actual viewer selection never constructs a panel on the unrelated actor")
 	TEST_ASSERT(!source.inventory_drop_with_actor(viewer, viewer), "repeated real viewer selection retains parent fallback")

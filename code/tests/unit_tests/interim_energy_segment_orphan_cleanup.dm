@@ -45,7 +45,7 @@
 	else if(endpoint == 2)
 		TEST_ASSERT_EQUAL(segment.CanPass(pen, T), 1, "Actual orphan passage cleanup retains its original permissive result")
 	else if(endpoint == 3)
-		TEST_ASSERT_EQUAL(segment.Bumped(pen), 0, "Actual orphan bump cleanup retains its original zero result")
+		pen.bump_into(segment) // the walk-in reaches it through the bump notice; a return value no longer exists
 	else
 		TEST_ASSERT_NULL(segment.flags_updated(), "Actual orphan flag cleanup retains its original null result")
 	TEST_ASSERT(QDELETED(segment), "The actual orphan endpoint consumes the exact original released segment")
