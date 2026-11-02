@@ -599,7 +599,10 @@ CAPABILITIES(/datum/preference_middleware/character_setup)
 	var/category_key = category
 	if(!(category_key in preferences().dq_category_index))
 		return FALSE
+	var/was_loadout = preferences().dq_active_category == "loadout"
 	preferences().dq_active_category = category_key
+	if(was_loadout != (category_key == "loadout")) // the loadout tab always dresses the preview
+		preferences().update_preview_icon_lazy()
 	dq_note_category_selected(category_key, ui?.window()?.id || "unpooled", force_catalogs)
 	return TRUE
 
