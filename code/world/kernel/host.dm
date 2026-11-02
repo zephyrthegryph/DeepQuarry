@@ -26,6 +26,8 @@ GLOBAL_REAL(Kernel, /datum/controller/kernel)
 	var/init_time
 	/// Wall-clock seconds the last full system initialization took.
 	var/initializations_seconds = 0
+	/// Deciseconds each step after the last system took at boot (members ready, settle, boot drain, ambient), for the bench.
+	var/list/boot_tail_ds
 	var/tickdrift = 0
 	/// Tickdrift as of last tick, w no averaging going on
 	var/olddrift = 0
@@ -286,13 +288,20 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 
 	// Every system's members that joined during init get their first evaluation now, in one pass each
 	// (kernel/system.dm on_members_ready(); the machine service arms first wakes here).
+	var/tail_started = REALTIMEOFDAY
 	kernel_members_ready()
+	var/tail_members = REALTIMEOFDAY
 	// The map load queued every fresh atom's first refresh before any type's verdict was in: sample each type once, drop the fresh
 	// atoms of types whose default look is empty (code/engine/change/look_stamp.dm).
 	refresh_settle_created()
+	var/tail_settle = REALTIMEOFDAY
 	// What the settle kept is every first draw the map still owes: they finish now, before "Initializations complete" (code/engine/change/look_stamp.dm).
 	refresh_boot_drain()
+	var/tail_drain = REALTIMEOFDAY
 	cells_ambient_checked() // the air is set up now: cells that sit in air of another temperature start their material service
+	// What the boot does after the last system: logged, and read by the server_phases bench (boot_tail_*).
+	Kernel.boot_tail_ds = list("members_ready" = tail_members - tail_started, "settle_created" = tail_settle - tail_members, "boot_drain" = tail_drain - tail_settle, "ambient" = REALTIMEOFDAY - tail_drain)
+	log_world("Boot tail (s): members ready [boot_tail_ds["members_ready"] / 10], settle created [boot_tail_ds["settle_created"] / 10], boot drain [boot_tail_ds["boot_drain"] / 10], ambient [boot_tail_ds["ambient"] / 10]")
 
 	var/time = (REALTIMEOFDAY - start_timeofday) / 10
 	initializations_seconds = time
