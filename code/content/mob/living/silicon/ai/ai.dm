@@ -127,7 +127,7 @@ CAPABILITIES(/mob/living/silicon/ai)
 	owns_one(nameof(selected_sprite), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	ref_many(nameof(multicam_screens))
 	remote_interface()
-	extend(/datum/act/hit/explosion, instead(then(PROC_REF(core_blast))))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(core_blast)), order = ORDER_EARLY))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(emp_shell_disconnect)))
 	// a dummy (the announcer) carries no PDA or communicator
 	owns_one(nameof(aiCommunicator), /obj/item/communicator, starts = when(not(nameof(is_dummy)), /obj/item/communicator/integrated))

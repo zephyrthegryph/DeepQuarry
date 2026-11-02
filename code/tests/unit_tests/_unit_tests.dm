@@ -1254,6 +1254,7 @@
 #include "find_reference_fixtures.dm"
 #ifdef REFERENCE_TRACKING_DEBUG //Don't try and parse this file if ref tracking isn't turned on. IE: don't parse ref tracking please mr linter
 #include "find_reference_sanity.dm"
+#include "dq_alist_object_keys.dm"
 #include "dq_fullscreen_no_client.dm"
 #endif
 

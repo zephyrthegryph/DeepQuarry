@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - code_imp: "The batch train is gone; a report-only boot check runs on the newest master after each landing"

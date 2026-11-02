@@ -120,3 +120,6 @@
 #define PAI_DEFAULT_EMAGGED_CHASSIS "Syndicate Fox"
 
 #define DEFAULT_LATEJOIN_LOCATION /datum/spawnpoint/arrivals
+
+/// The key of a robotic-by-species body's one colour in the limb_colors preference.
+#define DQ_LIMB_COLOR_BODY "body"

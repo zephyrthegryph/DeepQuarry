@@ -341,7 +341,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp/holographic)
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/carp/puffer)
 	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/carp, /datum/category_item/catalogue/fauna/carp/puffer)))
-	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_kaboom)))) // explode? YOU BETTER BELIEVE THAT'S AN EXPLODE
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_kaboom)), order = ORDER_EARLY)) // explode? YOU BETTER BELIEVE THAT'S AN EXPLODE
 
 /mob/living/simple_mob/animal/space/carp/puffer/proc/blast_kaboom(datum/act/A)
 	kaboom()
