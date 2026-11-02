@@ -51,7 +51,6 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	var/blood_reagents = "iron"
 	var/scale_appearance = 0
 	var/offset_override = 0
-	var/synth_markings = 0
 	var/custom_speech_bubble = "default"
 	var/species_sounds = "None"
 	var/gender_specific_species_sounds = FALSE
@@ -150,7 +149,7 @@ SCHEMA(/datum/dna, base_species, schema_text())
 	// Hairgrad
 	var/grad_style = 0
 	if(character.looks.grad_style)
-		grad_style = GLOB.hair_gradients.Find(character.looks.grad_style)
+		grad_style = hair_gradient_index(character.looks.grad_style)
 
 	// Playerscale (This assumes list is sorted big->small)
 	var/size_multiplier = GLOB.player_sizes_list.len // If fail to find, take smallest
@@ -166,7 +165,6 @@ SCHEMA(/datum/dna, base_species, schema_text())
 	src.blood_reagents = character.species.blood_reagents
 	src.scale_appearance = character.fuzzy
 	src.offset_override = character.offset_override
-	src.synth_markings = character.looks.synth_markings
 	src.custom_speech_bubble = character.bio.custom_speech_bubble
 	src.species_sounds = character.species.species_sounds
 	src.gender_specific_species_sounds = character.species.gender_specific_species_sounds
@@ -368,7 +366,6 @@ SCHEMA(/datum/dna, base_species, schema_text())
 	H.looks.set_digitigrade(digitigrade)
 
 	// If synths have character markings
-	H.looks.set_synth_markings(synth_markings)
 
 	// Scaling style
 	H.set_fuzzy(scale_appearance)

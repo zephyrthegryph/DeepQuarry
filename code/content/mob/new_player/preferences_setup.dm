@@ -163,15 +163,16 @@
 
 	update_preference_by_type(/datum/preference/color/human/skin_color, rgb(red, green, blue))
 
-/datum/preferences/proc/dress_preview_mob(mob/living/carbon/human/mannequin)
+/// show_outfit: job outfit and loadout whatever the preview toggles say, and the job whose loadout is being edited comes first (the loadout tab).
+/datum/preferences/proc/dress_preview_mob(mob/living/carbon/human/mannequin, show_outfit = FALSE)
 	if(!mannequin.dna) // Special handling for preview icons before SSAtoms has initailized.
 		rel_set(mannequin, nameof(mannequin.dna), new /datum/dna(null))
 	copy_to(mannequin, TRUE)
 
 	// equip_preview_mob bitfield replaced by two toggles. Keep the same
 	// boolean shape so the rest of this proc is untouched.
-	var/_preview_loadout = read_preference(/datum/preference/toggle/human/preview_loadout)
-	var/_preview_job     = read_preference(/datum/preference/toggle/human/preview_job)
+	var/_preview_loadout = show_outfit || read_preference(/datum/preference/toggle/human/preview_loadout)
+	var/_preview_job     = show_outfit || read_preference(/datum/preference/toggle/human/preview_job)
 	if(!_preview_loadout && !_preview_job)
 		return
 
@@ -189,7 +190,7 @@
 	var/datum/job/previewJob
 	if(client() && ispAI(client().mob))
 		previewJob = null  // pAI clients get no preview job equip.
-	else if(read_preference(/datum/preference/toggle/human/prefer_visitor_role))
+	else if(read_preference(/datum/preference/toggle/human/prefer_visitor_role) && !(show_outfit && SSjob.get_job(read_preference(/datum/preference/text/human/gear_slot))))
 		previewJob = SSjob.get_job(JOB_ALT_VISITOR)
 	else
 		var/_loadout_key = read_preference(/datum/preference/text/human/gear_slot)
@@ -341,7 +342,7 @@
 	if(!mannequin.dna)
 		rel_set(mannequin, nameof(mannequin.dna), new /datum/dna(null))
 	mannequin.delete_inventory(TRUE)
-	dress_preview_mob(mannequin)
+	dress_preview_mob(mannequin, dq_active_category == "loadout")
 	mannequin.update_transform()
 	var/_animations_toggle = read_preference(/datum/preference/toggle/human/animations_toggle)
 	mannequin.toggle_tail(setting = _animations_toggle)

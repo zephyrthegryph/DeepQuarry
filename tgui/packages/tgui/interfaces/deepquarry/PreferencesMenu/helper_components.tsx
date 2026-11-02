@@ -223,6 +223,56 @@ export const ColorizedImage = (props: {
   return <CanvasBackedImage render={render} size={size} cacheKey={cacheKey} />;
 };
 
+const GRADIENT_THUMB_HAIR = '#5a4a42';
+const GRADIENT_THUMB_TINT = '#ff9a2e';
+
+/// A hair gradient on a hair sprite, composed the way the game does: the hair, then the gradient cut to the hair's shape.
+export const HairGradientImage = (props: {
+  hairRef: string;
+  hairState: string;
+  gradientRef: string;
+  gradientState: string;
+  size?: number;
+}) => {
+  const { hairRef, hairState, gradientRef, gradientState, size } = props;
+  const render = useCallback(
+    async (canvas: OffscreenCanvas, ctx: OffscreenCanvasRenderingContext2D) => {
+      ctx.imageSmoothingEnabled = false;
+      const px = canvas.width;
+      const hair = await getImage(
+        `${hairRef}?state=${hairState}&dir=2&frame=1`,
+      );
+      const gradient = await getImage(
+        `${gradientRef}?state=${gradientState}&dir=2&frame=1`,
+      );
+      ctx.drawImage(hair, 0, 0, px, px);
+      ctx.globalCompositeOperation = 'source-in';
+      ctx.fillStyle = GRADIENT_THUMB_HAIR;
+      ctx.fillRect(0, 0, px, px);
+      const layer = new OffscreenCanvas(px, px);
+      const layerCtx = layer.getContext('2d');
+      if (!layerCtx) return;
+      layerCtx.imageSmoothingEnabled = false;
+      layerCtx.drawImage(gradient, 0, 0, px, px);
+      layerCtx.globalCompositeOperation = 'source-in';
+      layerCtx.fillStyle = GRADIENT_THUMB_TINT;
+      layerCtx.fillRect(0, 0, px, px);
+      layerCtx.globalCompositeOperation = 'destination-in';
+      layerCtx.drawImage(hair, 0, 0, px, px);
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.drawImage(layer, 0, 0);
+    },
+    [hairRef, hairState, gradientRef, gradientState],
+  );
+  return (
+    <CanvasBackedImage
+      render={render}
+      size={size}
+      cacheKey={`gradient|${hairRef}|${hairState}|${gradientState}|${size ?? 64}`}
+    />
+  );
+};
+
 /// ImageButton wrapper that takes an arbitrary ReactNode as the image. Useful with
 /// ColorizedImage above when the image is computed on the fly.
 export const CustomImageButton = (

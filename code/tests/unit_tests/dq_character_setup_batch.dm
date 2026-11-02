@@ -180,3 +180,15 @@
 	TEST_ASSERT_EQUAL(GLOB.dq_group_display_merge["demographics"], "name", "demographics joins name")
 	TEST_ASSERT("demographics" in GLOB.dq_robot_mode_hidden_groups, "gating still reads the real group")
 	TEST_ASSERT(!("gender" in GLOB.dq_group_order["identity"]), "the merged groups are not ordered separately")
+
+/// The loadout tab's preview wears the job outfit with both preview toggles off, and other tabs still honour them; no job set falls back to Intern.
+/datum/unit_test/dq_loadout_tab_preview_dressed
+
+/datum/unit_test/dq_loadout_tab_preview_dressed/Run()
+	var/datum/preferences/dq_test_stub/P = dq_test_load_character(list("species" = SPECIES_HUMAN, "preview_loadout" = 0, "preview_job" = 0))
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	P.dress_preview_mob(H)
+	TEST_ASSERT_NULL(H.get_equipped_item(SLOT_ID_UNIFORM), "with the toggles off another tab shows no outfit")
+	H.delete_inventory(TRUE)
+	P.dress_preview_mob(H, TRUE)
+	TEST_ASSERT_NOTNULL(H.get_equipped_item(SLOT_ID_UNIFORM), "the loadout tab shows the job outfit anyway")

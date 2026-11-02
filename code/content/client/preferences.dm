@@ -21,7 +21,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	// be_special, b_type, blood_reagents, headset, backbag, pdachoice, no_jacket,
 	// h_style, grad_style, f_style, alternate_languages, language_prefixes,
 	// language_custom_keys, gear_list, gear_slot, traits (legacy alias),
-	// synth_markings, digitigrade, antag_faction, antag_vis all migrated to /datum/preference
+	// digitigrade, antag_faction, antag_vis all migrated to /datum/preference
 	// subtypes. species_preview was unused; deleted.
 
 		//Mob preview
@@ -438,7 +438,7 @@ CAPABILITIES(/datum/preferences)
 			var/obj/item/organ/external/O = character.organs_by_name[name]
 			if(!O)
 				continue
-			if(status == "amputated")
+			if(status == "amputated" || dq_limb_lost_through(pref_organ_data, name))
 				continue
 			else if(status == "cyborg")
 				O.robotize(pref_rlimb_data[name])

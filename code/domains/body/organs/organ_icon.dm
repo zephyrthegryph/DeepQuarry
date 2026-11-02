@@ -144,7 +144,7 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 		apply_colouration(mob_icon)
 
 	//Body markings, actually does not include head this time. Done separately above.
-	if((!istype(src,/obj/item/organ/external/head) && !(force_icon && !skip_forced_icon)) || (model && owner && owner.looks.synth_markings))
+	if((!istype(src,/obj/item/organ/external/head) && !(force_icon && !skip_forced_icon)) || (model && owner))
 		for(var/M in markings)
 			if (!markings[M]["on"])
 				continue
