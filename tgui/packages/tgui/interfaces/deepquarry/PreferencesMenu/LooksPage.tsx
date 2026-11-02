@@ -1,6 +1,6 @@
-// The Looks tab: categories in the left column (with the body doll, the preview switches and the palette),
-// one category on the right. Every setting has exactly one category; anything no card claims is listed on
-// Skin & body. Ears, tail and wings always have a category; while absent it is the part's style picker.
+// The Looks tab: two categories in the left column (with the body doll, the preview switches and the palette).
+// Body & markings is one window of sections (skin, hair, ears, tail, wings, legs, anything no card claims), with
+// the markings selector below them; Limbs & organs is its own. Ears, tail and wings show their style picker while absent.
 
 import { type ReactNode, useContext, useEffect, useState } from 'react';
 import { useBackend } from 'tgui/backend';
@@ -29,24 +29,10 @@ import {
 } from './search';
 import type { PrefCategory, PrefWidgetItem } from './types';
 
-export type Region =
-  | 'body'
-  | 'hair'
-  | 'ears'
-  | 'tail'
-  | 'wings'
-  | 'legs'
-  | 'markings'
-  | 'organs';
+export type Region = 'body' | 'organs';
 
 const REGION_LABELS: Record<Region, string> = {
-  body: 'Skin & body',
-  hair: 'Head & hair',
-  ears: 'Ears',
-  tail: 'Tail',
-  wings: 'Wings',
-  legs: 'Legs',
-  markings: 'Markings',
+  body: 'Body & markings',
   organs: 'Limbs & organs',
 };
 
@@ -76,13 +62,17 @@ type CardId =
   | 'chassis';
 
 export const REGION_CARDS: Record<Region, CardId[]> = {
-  body: ['chassis', 'skin', 'eyes'],
-  hair: ['hair'],
-  ears: ['ears'],
-  tail: ['tail'],
-  wings: ['wings'],
-  legs: ['legs'],
-  markings: ['markings'],
+  body: [
+    'chassis',
+    'skin',
+    'eyes',
+    'hair',
+    'ears',
+    'tail',
+    'wings',
+    'legs',
+    'markings',
+  ],
   organs: ['organs'],
 };
 
@@ -155,7 +145,7 @@ export const regionForHighlight = (highlight: string): Region | null => {
   if (highlight.startsWith('group:')) {
     const group = highlight.slice(highlight.indexOf('/') + 1);
     if (LEFT_COLUMN_GROUPS.includes(group)) return null;
-    return group in REGION_LABELS ? (group as Region) : 'body';
+    return group === 'organs' ? 'organs' : 'body';
   }
   const key = highlight.replace(/^(pref|editor):/, '');
   if (LEFT_COLUMN_KEYS.includes(key)) return null;
@@ -239,7 +229,7 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
     if (!highlight) return;
     const target = regionForHighlight(highlight);
     if (!target) return;
-    if (target === 'markings') setMarkingZones(null);
+    if (highlight === 'editor:body_markings') setMarkingZones(null);
     setRegion(target);
   }, [highlight]);
 
@@ -455,11 +445,9 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
         }}
       >
         <BodyDiagram
-          selected={
-            shownRegion === 'markings' ? (markingZones?.zones ?? []) : []
-          }
+          selected={shownRegion === 'body' ? (markingZones?.zones ?? []) : []}
           caption={
-            shownRegion === 'markings'
+            shownRegion === 'body'
               ? (markingZones?.label ?? 'All markings')
               : REGION_LABELS[shownRegion]
           }
@@ -469,7 +457,11 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
             } else {
               const group = zoneGroup(zone);
               setMarkingZones(group === markingZones ? null : group);
-              setRegion('markings');
+              document
+                .querySelector(
+                  `[data-dq-anchor="${editorAnchor('body_markings')}"]`,
+                )
+                ?.scrollIntoView({ block: 'start' });
             }
           }}
           regions={(staticData?.organs?.doll_regions as DollRegion[]) ?? []}
@@ -520,25 +512,30 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
           display: 'grid',
           gridTemplateColumns:
             shownRegion === 'body'
-              ? 'repeat(auto-fit, minmax(min(100%, max(22em, calc(50% - 0.25em))), 1fr))'
+              ? 'repeat(auto-fill, minmax(min(100%, max(22em, calc(50% - 0.25em))), 1fr))'
               : '1fr',
           gap: '0.5em',
           alignItems: 'start',
         }}
       >
-        {cards.map((card) => {
-          const node = renderCard(card);
-          const wide =
-            card === 'markings' ||
-            card === 'organs' ||
-            card === 'legs' ||
-            card === 'chassis';
-          return (
-            <Box key={card} style={wide ? { gridColumn: '1 / -1' } : undefined}>
-              {node}
-            </Box>
-          );
-        })}
+        {cards
+          .filter((card) => card !== 'markings')
+          .map((card) => {
+            const node = renderCard(card);
+            const wide =
+              card === 'hair' ||
+              card === 'organs' ||
+              card === 'legs' ||
+              card === 'chassis';
+            return (
+              <Box
+                key={card}
+                style={wide ? { gridColumn: '1 / -1' } : undefined}
+              >
+                {node}
+              </Box>
+            );
+          })}
         {shownRegion === 'body' &&
           otherGroups.map((group) => (
             <Box key={`other-${group.group}`} style={{ gridColumn: '1 / -1' }}>
@@ -570,6 +567,9 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
               </Section>
             </Box>
           ))}
+        {cards.includes('markings') && (
+          <Box style={{ gridColumn: '1 / -1' }}>{renderCard('markings')}</Box>
+        )}
       </Box>
     </Box>
   );
@@ -688,11 +688,7 @@ const OptionalPart = ({
         <Box color="label" mb={0.3}>
           This character has no {lowerTitle}. Pick a style to add them.
         </Box>
-        {styleItem && (
-          <BareField
-            item={{ ...styleItem, props: { ...styleItem.props, open: true } }}
-          />
-        )}
+        {styleItem && <BareField item={styleItem} />}
       </PartCard>
     );
   }
