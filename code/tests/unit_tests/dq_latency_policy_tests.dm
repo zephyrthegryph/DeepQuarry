@@ -431,6 +431,9 @@ CAPABILITIES(/datum/unit_test/dq_latency_fuzz)
 		rel_add(GLOB, nameof(GLOB.latency_sweep_holders), restored)
 	TEST_ASSERT_EQUAL(L.latent_total, 0, "an item with an outside holder must stay real")
 	TEST_ASSERT_EQUAL(length(box.contents), 1, "the held item is still in the box")
+	// Ineligible is backed off like a refusal: the next turns skip it instead of re-running the check.
+	var/atom/movable/held = outside_holder[1]
+	TEST_ASSERT(cooldown_left(held, latent_refused_until) > 0, "an ineligible item is checked again on the next sweep")
 	outside_holder = null
 	qdel(box)
 

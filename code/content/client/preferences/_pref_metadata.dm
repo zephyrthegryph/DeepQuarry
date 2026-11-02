@@ -44,7 +44,7 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	// Age is a NumberInput (not a slider) — easier to type a specific number,
 	// matches how weight is rendered.
 	tag_pref(., /datum/preference/numeric/human/age, "identity", "demographics", PREF_WIDGET_NUMBER)
-	tag_pref(., /datum/preference/toggle/human/bday_announce, "identity", "demographics")
+	tag_pref(., /datum/preference/toggle/human/bday_announce, "identity", "demographics", PREF_WIDGET_HIDDEN) // on the Birthday editor's row
 	// Species — owned by the species_picker editor; underlying prefs hidden
 	// from the auto-renderer so the popup is the only entry point.
 	tag_pref(., /datum/preference/choiced/species, "identity", "species", PREF_WIDGET_HIDDEN)
@@ -83,7 +83,6 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	tag_pref(., /datum/preference/text/living/ooc_notes_dislikes, "identity", "ooc_notes", PREF_WIDGET_LONGTEXT)
 	tag_pref(., /datum/preference/text/living/ooc_notes_favs, "identity", "ooc_notes", PREF_WIDGET_LONGTEXT)
 	tag_pref(., /datum/preference/text/living/ooc_notes_maybes, "identity", "ooc_notes", PREF_WIDGET_LONGTEXT)
-	tag_pref(., /datum/preference/text/living/private_notes, "identity", "ooc_notes", PREF_WIDGET_LONGTEXT)
 	tag_pref(., /datum/preference/toggle/living/ooc_notes_style, "identity", "ooc_notes")
 
 	//// APPEARANCE ////

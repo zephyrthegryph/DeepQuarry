@@ -113,6 +113,16 @@
 #define CONTAGION_FALTER "falter"
 /// A body effect on every mob within a range of the subject.
 #define XFORM_FX_AREA "area"
+/// Something done to every mob around the subject, scaled by its distance: statuses by distance band, a flash, mends, lingering poison, a line told.
+#define XFORM_FX_WAVE "wave"
+/// A heat wave or a cold snap: the bodies in view pushed toward the extreme past their protection, slimes chilled, the subject's air heated or cooled.
+#define XFORM_FX_THERMAL "thermal"
+#define THERMAL_HEAT "heat"
+#define THERMAL_COLD "cold"
+/// The mobs around the subject thrown to random turfs within a distance.
+#define XFORM_FX_SCATTER "scatter"
+/// The floors around the subject made wet (and frozen).
+#define XFORM_FX_SLICK "slick"
 
 // spawns(): where a product is made, and how many.
 /// At the turf of the subject (the only place built).

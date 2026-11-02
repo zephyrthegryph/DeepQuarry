@@ -236,6 +236,10 @@ GLOBAL_DATUM(atom_initializing, /atom)
 			D.refresh_bits |= channel
 		if(!D.refresh_queued)
 			GLOB.refresh_queue += D
+		// A selective Rust push (a rust_push read changed, native_resync() after a bind) also waits in the push queue, which phase S drains
+		// before the native step: the presentation lane's drain runs after it, so the frame would step on the old settings.
+		if((mask & DEP_PUSH) && mask != DEP_ALL)
+			GLOB.refresh_push_queue[D] = TRUE // keyed: one entry however often it is marked, whatever else it has pending
 		D.refresh_queued = (D.refresh_queued & ~DEP_CREATED) | mask // a real mark: no longer the type's default state
 		// A selective mark reaches an owner only through the look (an owner never reads a child's should_run).
 		if(mask != DEP_ALL && !(mask & DEP_DRAW))
@@ -250,6 +254,30 @@ GLOBAL_DATUM(atom_initializing, /atom)
 			mask = DEP_DRAW
 
 GLOBAL_LIST_EMPTY(refresh_queue)
+/// The entities marked for a Rust push (DEP_PUSH) since the last phase S: refresh_drain_pushes() runs them before the native step.
+GLOBAL_LIST_EMPTY(refresh_push_queue)
+/// Pushes refresh_drain_pushes() has run (tests, the tick meter's census).
+GLOBAL_VAR_INIT(refresh_pushes_drained, 0)
+
+/// Phase S (kernel.dm): every pending Rust push now, so this tick's native step reads the settings DM wrote since the last frame. The push leaves
+/// the entity's other pending outputs (look, UI) queued for the presentation lane; a push already run by a refresh is skipped (its bit is clear).
+/proc/refresh_drain_pushes()
+	var/list/Q = GLOB.refresh_push_queue
+	if(!length(Q))
+		return
+	GLOB.refresh_push_queue = list()
+	for(var/datum/D as anything in Q)
+		if(isnull(D) || !(D.refresh_queued & DEP_PUSH))
+			continue
+		D.refresh_queued &= ~DEP_PUSH
+		if(QDELETED(D))
+			continue
+		GLOB.refresh_pushes_drained++
+		try
+			refresh_one(D, 0, DEP_PUSH)
+		catch(var/exception/e)
+			dq_report_caught(e, "push of [D.type]")
+
 /// Timer fires whose owner's look was not re-run (refresh_dispatched(spare_draw)).
 GLOBAL_VAR_INIT(refresh_dispatched_draws_spared, 0)
 /// state_changed() calls on atoms still waiting for their init during a map load, answered without publishing (the boot bench reads it).

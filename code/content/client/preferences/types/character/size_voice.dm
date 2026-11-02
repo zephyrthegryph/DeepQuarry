@@ -23,11 +23,11 @@
 	category = PREFERENCE_CATEGORY_NON_CONTEXTUAL
 	savefile_key = "weight_vr"
 	display_label = "Body Weight"
-	widget = PREF_WIDGET_NUMBER  // slider over 0–10000 was nonsense precision; use a number input.
+	widget = PREF_WIDGET_NUMBER
 	savefile_identifier = PREFERENCE_CHARACTER
 	can_randomize = FALSE
-	minimum = 0
-	maximum = 10000
+	minimum = WEIGHT_MIN // pounds; saved values outside are clamped on load (numeric pref_deserialize, and the sanitize below)
+	maximum = WEIGHT_MAX
 
 /datum/preference/numeric/human/weight_vr/create_default_value()
 	return 137

@@ -435,7 +435,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 			power_topology_edited(src)
 			if(bind_now)
 				power_bind_now()
-	push_to_rust() // the first push after the bind: the frame's refresh may not have run yet
+	native_resync(src) // the settings follow the bind at phase S, before the next native step (refresh_drain_pushes())
 	seat_cell_charge(TRUE)
 	pushed_demand = null // the new node takes the area's standing load at the next power step
 	area?.power_loads_changed()

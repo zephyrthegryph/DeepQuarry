@@ -294,3 +294,18 @@
 	H.print_ooc_notes_chat(viewer)
 	said = test_chat_of(viewer)
 	TEST_ASSERT(length(said) && findtext(said[length(said)], "cats") && !findtext(said[length(said)], "+cats+"), "OOC notes in chat are formatted: [jointext(said, " | ")]")
+
+/// Private notes are gone from the save; OOC lists read sorted; weight is clamped to a real range; announce is set from the birthday row.
+/datum/unit_test/dq_setup_list_batch
+
+/datum/unit_test/dq_setup_list_batch/Run()
+	var/datum/preferences/dq_test_stub/P = dq_test_load_character(list("species" = SPECIES_HUMAN, "Private_Notes" = "old secret", "weight_vr" = 9000))
+	var/list/save = P.get_save_data_for_savefile_identifier(PREFERENCE_CHARACTER)
+	TEST_ASSERT(!("Private_Notes" in save), "the private notes field is dropped from the save")
+	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/numeric/human/weight_vr), WEIGHT_MAX, "a huge saved weight is clamped")
+	P = dq_test_load_character(list("species" = SPECIES_HUMAN, "weight_vr" = 3))
+	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/numeric/human/weight_vr), WEIGHT_MIN, "a tiny saved weight is clamped")
+	TEST_ASSERT_EQUAL(dq_sorted_note_lines("pears\nApples\n\nbananas\napples"), "Apples\napples\nbananas\npears", "sorted, case ignored, ties in written order")
+	var/datum/preference_editor/birthday/editor = GLOB.preference_editors_by_key["birthday"]
+	TEST_ASSERT_EQUAL(editor.handle_action(P, "set_announce", list("value" = 1), null), PREF_UPDATE_ACCEPTED, "announce is set from the birthday row")
+	TEST_ASSERT(P.read_preference(/datum/preference/toggle/human/bday_announce), "and saved")

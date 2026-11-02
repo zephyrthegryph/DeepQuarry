@@ -100,8 +100,12 @@
 
 // ----- Size / Voice / Sound clamps + defaults -----
 
+/// Out of range is clamped to the nearest real weight, not reset (old saves allowed 0-10000).
 /datum/preference/numeric/human/weight_vr/sanitize(value, datum/preferences/preferences)
-	return sanitize_integer(value, WEIGHT_MIN, WEIGHT_MAX, 137)
+	return isnum(value) ? clamp(round(value), WEIGHT_MIN, WEIGHT_MAX) : 137
+
+/datum/preference/numeric/human/weight_vr/pref_deserialize(input, datum/preferences/preferences)
+	return isnum(input) ? clamp(round(input), WEIGHT_MIN, WEIGHT_MAX) : 137
 
 /datum/preference/numeric/human/weight_gain/sanitize(value, datum/preferences/preferences)
 	return sanitize_integer(value, 0, 100, 100)

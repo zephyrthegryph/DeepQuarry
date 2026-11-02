@@ -84,7 +84,6 @@ export const PREF_KEY_LABELS: Record<string, string> = {
   ooc_notes_dislikes: 'Dislikes',
   ooc_notes_favs: 'Favorites',
   ooc_notes_maybes: 'Maybes',
-  private_notes: 'Private',
   ooc_notes_style: 'Use Stylized Display',
   // The DM savefile_keys for OOC notes use CamelCase and one has a typo
   // ("OOC_Notes_Disikes"). Map every actual key emitted so the UI is consistent.
@@ -94,7 +93,6 @@ export const PREF_KEY_LABELS: Record<string, string> = {
   OOC_Notes_Maybes: 'Maybes',
   OOC_Notes_Favs: 'Favorites',
   OOC_Notes_System: 'Use Stylized Display',
-  Private_Notes: 'Private',
   hair_style_name: 'Hair Style',
   facial_style_name: 'Facial Hair Style',
   grad_style_name: 'Hair Gradient',
