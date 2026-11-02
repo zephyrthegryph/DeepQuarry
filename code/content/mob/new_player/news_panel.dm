@@ -22,6 +22,7 @@ CAPABILITIES(/mob/new_player)
 	op("give_feedback", ui_act("give_feedback"), then(PROC_REF(ui_act_give_feedback)))
 	op("open_station_news", ui_act("open_station_news"), then(PROC_REF(ui_act_open_station_news)))
 	op("open_changelog", ui_act("open_changelog"), then(PROC_REF(ui_act_open_changelog)))
+	op("open_guide", ui_act("open_guide"), then(PROC_REF(ui_act_open_guide)))
 	op("keyboard", ui_act("keyboard"), then(PROC_REF(ui_act_keyboard)))
 	op("start_immediately", ui_act("start_immediately"), then(PROC_REF(ui_act_start_immediately)))
 

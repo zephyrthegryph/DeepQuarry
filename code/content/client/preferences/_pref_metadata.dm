@@ -142,11 +142,11 @@ GLOBAL_LIST_INIT(pref_metadata_table, init_pref_metadata_table())
 	tag_pref(., /datum/preference/numeric/human/weight_loss, "size_voice", "size")
 	tag_pref(., /datum/preference/toggle/human/fuzzy, "size_voice", "size")
 	tag_pref(., /datum/preference/toggle/human/offset_override, "size_voice", "size")
-	tag_pref(., /datum/preference/numeric/human/voice_freq, "size_voice", "voice")
-	tag_pref(., /datum/preference/text/human/voice_sound, "size_voice", "voice")
-	tag_pref(., /datum/preference/text/human/custom_speech_bubble, "size_voice", "voice")
-	tag_pref(., /datum/preference/text/human/custom_footstep, "size_voice", "voice")
-	tag_pref(., /datum/preference/text/human/species_sound, "size_voice", "voice")
+	tag_pref(., /datum/preference/numeric/human/voice_freq, "identity", "voice")
+	tag_pref(., /datum/preference/text/human/voice_sound, "identity", "voice")
+	tag_pref(., /datum/preference/text/human/custom_speech_bubble, "identity", "voice")
+	tag_pref(., /datum/preference/text/human/custom_footstep, "identity", "voice")
+	tag_pref(., /datum/preference/text/human/species_sound, "identity", "voice")
 
 	//// LOADOUT ////
 	// headset/backbag/pdachoice prefs deleted; their variants are loadout gear
