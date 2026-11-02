@@ -8,7 +8,12 @@ GLOBAL_REAL(GLOB, /datum/controller/global_vars)
 	var/list/gvars_datum_in_built_vars
 	var/list/gvars_datum_init_order
 
+/// world.timeofday when global initialisation began and ended (boot timing: the bench reads them against the spawn stamp, launch_tod).
+GLOBAL_REAL_VAR(boot_globals_started_tod)
+GLOBAL_REAL_VAR(boot_globals_done_tod)
+
 /datum/controller/global_vars/New()
+	boot_globals_started_tod = world.timeofday
 	if(GLOB)
 		CRASH("Multiple instances of global variable controller created")
 	GLOB = src
@@ -22,6 +27,7 @@ GLOBAL_REAL(GLOB, /datum/controller/global_vars)
 	gvars_datum_in_built_vars = controller_vars + list(NAMEOF(src, gvars_datum_protected_varlist), NAMEOF(src, gvars_datum_in_built_vars), NAMEOF(src, gvars_datum_init_order))
 
 	Initialize()
+	boot_globals_done_tod = world.timeofday
 
 	// Disposal arms the scheduler, so finish global initialization before it can build the registry.
 	exclude_these.expire(0) //signal logging isn't ready

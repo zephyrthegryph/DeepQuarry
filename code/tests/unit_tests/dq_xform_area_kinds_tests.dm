@@ -45,6 +45,29 @@ CAPABILITIES(/transformation/dq_spawn/spend_all)
 	set_calls++
 	uses = amount
 
+/// A cold snap and a heat wave of the thermal kind.
+/transformation/dq_spawn/snap_cold
+
+CAPABILITIES(/transformation/dq_spawn/snap_cold)
+	configure(transformation(takes = list(reagent(REAGENT_ID_GLYCEROL, 1)), made = 1, effects = sets_off(kind = XFORM_FX_THERMAL, direction = THERMAL_COLD, joules = -1000)))
+
+/transformation/dq_spawn/snap_heat
+
+CAPABILITIES(/transformation/dq_spawn/snap_heat)
+	configure(transformation(takes = list(reagent(REAGENT_ID_AMMONIA, 1)), made = 1, effects = sets_off(kind = XFORM_FX_THERMAL, direction = THERMAL_HEAT, temperature = T0C + 60, joules = 1000)))
+
+/// Mobs next to the vessel are thrown up to 6 tiles away.
+/transformation/dq_spawn/scatter
+
+CAPABILITIES(/transformation/dq_spawn/scatter)
+	configure(transformation(takes = list(reagent(REAGENT_ID_DIETHYLAMINE, 1)), made = 1, effects = sets_off(kind = XFORM_FX_SCATTER, range = 0, distance = 6)))
+
+/// The floors around the vessel made wet.
+/transformation/dq_spawn/slick
+
+CAPABILITIES(/transformation/dq_spawn/slick)
+	configure(transformation(takes = list(reagent(REAGENT_ID_MILK, 1)), made = 1, effects = sets_off(kind = XFORM_FX_SLICK, range = 1)))
+
 /datum/unit_test/dq_xform_wave_statuses_by_distance
 	boot_needs = list()
 
@@ -106,5 +129,58 @@ CAPABILITIES(/transformation/dq_spawn/spend_all)
 	E.reagents.add_reagent(REAGENT_ID_WATER, 5)
 	TEST_ASSERT_EQUAL(E.uses, 0, "the reaction spent it")
 	TEST_ASSERT(findtext(E.name, "inert"), "and the extract went inert ([E.name])")
+
+/// A cold snap chills an unprotected body toward 50 K; a heat wave warms it toward the wave's temperature (it used to chill it too).
+/datum/unit_test/dq_xform_thermal_cold_and_heat
+	boot_needs = list()
+
+/datum/unit_test/dq_xform_thermal_cold_and_heat/Run()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/near = allocate(/mob/living/carbon/human, T)
+	var/before = near.body_temperature()
+	var/datum/reagents/dq_spawn_fixture/H = dq_spawn_holder(T)
+	H.add_reagent(REAGENT_ID_GLYCEROL, 1, safety = 1)
+	xform_settle_reagents(H)
+	var/chilled = near.body_temperature()
+	TEST_ASSERT(chilled < before, "the cold snap chilled the body ([before] -> [chilled])")
+	var/datum/reagents/dq_spawn_fixture/H2 = dq_spawn_holder(T)
+	H2.add_reagent(REAGENT_ID_AMMONIA, 1, safety = 1)
+	xform_settle_reagents(H2)
+	var/warmed = near.body_temperature()
+	TEST_ASSERT(warmed > chilled, "the heat wave warmed it ([chilled] -> [warmed])")
+	TEST_ASSERT(warmed <= T0C + 60, "never past the wave's own temperature ([warmed])")
+	near.set_bodytemperature(before)
+
+/// A scatter throws the mob on the vessel's tile somewhere within its distance.
+/datum/unit_test/dq_xform_scatter_moves_mobs
+	boot_needs = list()
+
+/datum/unit_test/dq_xform_scatter_moves_mobs/Run()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/near = allocate(/mob/living/carbon/human, T)
+	var/datum/reagents/dq_spawn_fixture/H = dq_spawn_holder(T)
+	H.add_reagent(REAGENT_ID_DIETHYLAMINE, 1, safety = 1)
+	xform_settle_reagents(H)
+	var/turf/landed = get_turf(near)
+	TEST_ASSERT_NOTNULL(landed, "the mob landed on a turf")
+	TEST_ASSERT(get_dist(landed, T) <= 6, "within the scatter's distance ([get_dist(landed, T)])")
+	for(var/obj/effect/effect/sparks/S in range(7, T))
+		qdel(S)
+
+/// A slick wets the simulated floors in range.
+/datum/unit_test/dq_xform_slick_wets_floors
+	boot_needs = list()
+
+/datum/unit_test/dq_xform_slick_wets_floors/Run()
+	var/turf/simulated/T = test_floor()
+	TEST_ASSERT(istype(T), "the test floor is simulated")
+	if(!istype(T))
+		return
+	var/datum/reagents/dq_spawn_fixture/H = dq_spawn_holder(T)
+	H.add_reagent(REAGENT_ID_MILK, 1, safety = 1)
+	xform_settle_reagents(H)
+	TEST_ASSERT_EQUAL(T.wet, TURFSLIP_WET, "the vessel's floor is wet")
+	for(var/turf/simulated/W in trange(1, T))
+		W.set_wet(TURFSLIP_DRY)
 
 #endif

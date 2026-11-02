@@ -465,7 +465,7 @@
 	if(row.sfx)
 		xform_play_sfx(subject, row.sfx, row.sfx_volume)
 
-/// XFORM_FX_THERMAL: a heat wave or a cold snap. Each human in view on a simulated floor is pushed toward the extreme by what its protection lets
+/// XFORM_FX_THERMAL: a heat wave or a cold snap. Each human in sight of the subject (unblocked, lit or not) on a simulated floor is pushed toward the extreme by what its protection lets
 /// through, a slime takes the cold, and the subject's air takes `joules`.
 /proc/xform_effect_thermal(atom/subject, datum/xform_effect/row)
 	var/turf/simulated/T = get_turf(subject)
@@ -473,7 +473,7 @@
 		return
 	xform_effect_audit(subject, row)
 	var/cold = row.direction == THERMAL_COLD
-	for(var/mob/living/L in view(T))
+	for(var/mob/living/L in hearers(world.view, T)) // the walls stop the wave, the dark does not
 		if(!istype(get_turf(L), /turf/simulated))
 			continue
 		if(cold && length(row.slime_damage) && istype(L, /mob/living/simple_mob/slime))
@@ -499,9 +499,9 @@
 			else if(row.temperature > now)
 				H.set_bodytemperature(now + (row.temperature - now) * exposure)
 		if(protection < 0.7)
-			to_chat(H, span_danger(cold ? "A chilling wave of cold overwhelms you!" : "A scalding wave of heat overwhelms you!"))
+			to_chat(H, span_danger((cold ? "A chilling wave of cold overwhelms you!" : "A scalding wave of heat overwhelms you!")))
 		else
-			to_chat(H, span_warning(cold ? "A chilling wave of cold passes by you, as your armor protects you from it." : "A scalding wave of heat passes by you, as your armor protects you from it."))
+			to_chat(H, span_warning((cold ? "A chilling wave of cold passes by you, as your armor protects you from it." : "A scalding wave of heat passes by you, as your armor protects you from it.")))
 	var/datum/gas_mixture/env = T.return_air()
 	if(env)
 		heat_add(env, row.joules, HEAT_SOURCE_REACTION)
