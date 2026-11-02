@@ -57,6 +57,7 @@ TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selector
 /datum/unit_test/dq_combat_ai_spatial_sleep_wakes
 
 /datum/unit_test/dq_combat_ai_spatial_sleep_wakes/Run()
+	set_global(nameof(GLOB.ai_pack_perceptions), GLOB.ai_pack_perceptions)
 	var/mob/living/simple_mob/M = allocate(/mob/living/simple_mob)
 	M.forceMove(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
 	var/datum/ai_brain/B = M.ai_brain

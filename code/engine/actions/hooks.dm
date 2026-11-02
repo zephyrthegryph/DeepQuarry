@@ -59,6 +59,10 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 // ---- constructors ----
 
 /// instead(parts..., order = ORDER_NORMAL): the first taker in order ends the action ACT_REPLACED. Side effects allowed; when() and chance() gate it.
+/// instead(then(GLOBAL_PROC_REF(act_absorbed))): takes the action and does nothing with it. An instead() with no then takes nothing: the next hook still runs.
+/proc/act_absorbed(datum/act/A)
+	return OP_OK
+
 /proc/instead(ENTRY_SLOTS, order = ORDER_NORMAL)
 	return entry_make(ENTRY_INSTEAD, null, list("order" = order), entry_flatten(ENTRY_SLOT_LIST))
 

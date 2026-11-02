@@ -214,7 +214,7 @@ TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/
 	tracked_changed(src, nameof(hiding))
 	if(hiding)
 		H.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
-		observe(H, /datum/act/pre_move, src, instead())
+		observe(H, /datum/act/pre_move, src, instead(then(GLOBAL_PROC_REF(act_absorbed))))
 	else
 		H.mouse_opacity = MOUSE_OPACITY_ICON
 		unobserve(H, /datum/act/pre_move, src)

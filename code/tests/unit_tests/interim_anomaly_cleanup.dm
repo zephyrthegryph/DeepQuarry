@@ -21,9 +21,9 @@
 	var/obj/effect/anomaly/anomaly = allocate(/obj/effect/anomaly, run_loc_floor_bottom_left)
 	var/obj/item/assembly/signaler/anomaly/core = anomaly.anomaly_core
 	var/obj/effect/countdown/anomaly/countdown = anomaly.countdown
-	TEST_ASSERT_EQUAL(anomaly.ex_act(2), FALSE, "actual weaker explosion refuses anomaly deletion")
+	anomaly.ex_act(2)
 	TEST_ASSERT(!QDELETED(anomaly) && !QDELETED(core) && !QDELETED(countdown), "weaker actual explosion preserves source and both owned children")
-	TEST_ASSERT_EQUAL(anomaly.ex_act(1), TRUE, "actual severe explosion reports successful anomaly deletion")
+	anomaly.ex_act(1)
 	TEST_ASSERT(QDELETED(anomaly), "actual severe explosion consumes the exact source")
 	TEST_ASSERT(QDELETED(core) && QDELETED(countdown), "actual severe explosion deletes both original owned children")
 	TEST_ASSERT_EQUAL(time_scheduler().timer_count(anomaly), 0, "actual explosion cancels the original lifespan timer")

@@ -222,7 +222,7 @@
 	..()
 	set_severity(AFFLICTION_SEVERITY_TERMINAL)
 	rel_set(src, nameof(held_mob), owner)
-	observe(held_mob, /datum/act/body_status, src, instead())
+	observe(held_mob, /datum/act/body_status, src, instead(then(GLOBAL_PROC_REF(act_absorbed))))
 	// Without a control cluster to work through, the core is repaired on the body itself.
 	observe(held_mob, /datum/act/tool_act, src, instead(then(PROC_REF(on_body_screwdriver))))
 	observe(held_mob, /datum/act/attackby, src, instead(then(PROC_REF(on_body_attackby))))

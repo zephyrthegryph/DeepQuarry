@@ -92,13 +92,14 @@
 		our_hud?.generate_landings(src)
 
 	if(old_object)
-		old_object.MouseExited(over_location, over_control, params)
+		with_actor(user, old_object, "MouseExited", over_location, over_control, params) // the drag is resolved out of the kernel's queue: usr is not the dragger there
 
 	if(over_object)
 		rel_set(src, nameof(last_hovored), over_object)
 	else
 		rel_clear(src, nameof(last_hovored))
-	over_object?.MouseEntered(over_location, over_control, params)
+	if(over_object)
+		with_actor(user, over_object, "MouseEntered", over_location, over_control, params)
 
 CAPABILITIES(/atom/movable/screen/movable/action_button)
 	ref_one(nameof(linked_action))

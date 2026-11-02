@@ -100,6 +100,11 @@ fn cell_arg(v: &ByondValue) -> Result<u32> {
     }
 }
 
+/// The cell of band `i`: the one shared cell, or that band's own. `cells` is empty when one is shared, so it must not be indexed then.
+fn band_cell(single: Option<u32>, cells: &[u32], i: usize) -> u32 {
+    single.unwrap_or_else(|| cells[i])
+}
+
 fn token(e: EntityId) -> ByondValue {
     ByondValue::from(entity_value(e))
 }
@@ -425,7 +430,7 @@ fn world_watch_bands(
     }
     let mut bands = Vec::with_capacity(chs.len());
     for (i, ((ch, list), start)) in chs.iter().zip(&lists).zip(&starts).enumerate() {
-        let cell = single.unwrap_or(cells[i]);
+        let cell = band_cell(single, &cells, i);
         let ch_id = channel(&chans, ch)?;
         let levels = list
             .get_list_values()?
@@ -722,6 +727,17 @@ fn world_rate_remove(model: ByondValue) -> Result<ByondValue> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn band_cell_shared_cell_does_not_index_the_empty_list() {
+        assert_eq!(super::band_cell(Some(7), &[], 0), 7);
+        assert_eq!(super::band_cell(Some(7), &[], 3), 7);
+    }
+
+    #[test]
+    fn band_cell_takes_each_bands_own_cell() {
+        assert_eq!(super::band_cell(None, &[4, 9], 1), 9);
+    }
+
     use super::*;
     use crate::gas::mix::{self, MixRef};
     use vg_gas::cell::gas_ch;
