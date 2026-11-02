@@ -183,7 +183,12 @@
 	if(language_keys[key])
 		return language_keys[key]
 	// This "[]" is probably unnecessary but BYOND will runtime if a number is used
-	return GLOB.language_keys["[key]"]
+	var/datum/language/L = GLOB.language_keys["[key]"]
+	// A language this mob has under another key was rebound: its old key means nothing now. Languages it holds no key for
+	// (mobs without prefs, an unknown language, one learned mid-round) answer to the language's own key.
+	if(L && get_custom_prefix_by_lang(src, L))
+		return null
+	return L
 
 /// Finds the language switches in a raw message: list(list(language, start, text start), ...) in order. The first entry always starts at 1:
 /// text before the first switch is the mob's default language. tgui-say's preview parser (tgui/packages/tgui-say/parseLanguages.ts) follows
@@ -234,11 +239,14 @@
 
 /// The message with its language switches taken out: only what find_valid_prefixes counts as one, so ordinary text is never touched.
 /mob/proc/strip_prefixes(message)
-	. = ""
+	var/list/kept = list()
 	var/list/prefix_locations = find_valid_prefixes(message)
 	for(var/i in 1 to length(prefix_locations))
 		var/list/current = prefix_locations[i]
-		. += copytext(message, current[3], prefix_end(prefix_locations, i))
+		var/slice = trim(copytext(message, current[3], prefix_end(prefix_locations, i)))
+		if(length(slice))
+			kept += slice
+	return jointext(kept, " ")
 
 /// Where the text of switch i ends: the start of the next switch, or 0 (copytext's end of string).
 /mob/proc/prefix_end(list/prefix_locations, i)

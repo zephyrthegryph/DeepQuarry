@@ -137,3 +137,16 @@
 
 	H.direct_say("It is 3,5 credits, friend")
 	TEST_ASSERT_EQUAL(inline_language_pieces_text(H.heard_pieces), "default=It is 3,5 credits, friend", "ordinary commas pass through")
+
+/// A rebound language's old key stops working; a mob with no keys keeps the languages' own.
+/datum/unit_test/inline_language_rebound_key
+
+/datum/unit_test/inline_language_rebound_key/Run()
+	var/mob/living/carbon/human/inline_language_speaker/H = allocate(/mob/living/carbon/human/inline_language_speaker, test_floor())
+	inline_language_setup(H)
+	var/datum/language/siik = GLOB.all_languages[LANGUAGE_SIIK]
+	TEST_ASSERT_EQUAL(H.language_for_key("k"), siik, "the bound key")
+	if(siik.key != "k" && siik.key != "5")
+		TEST_ASSERT_NULL(H.language_for_key(siik.key), "the language's own key was rebound away")
+	H.set_language_keys(list())
+	TEST_ASSERT_EQUAL(H.language_for_key(siik.key), siik, "with no keys, the language's own key answers")
