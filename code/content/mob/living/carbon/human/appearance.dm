@@ -59,7 +59,7 @@
 	if(looks.grad_style == hair_gradient)
 		return
 
-	if(!(hair_gradient in GLOB.hair_gradients))
+	if(!hair_gradient_state(hair_gradient))
 		return
 
 	looks.set_grad_style(hair_gradient)

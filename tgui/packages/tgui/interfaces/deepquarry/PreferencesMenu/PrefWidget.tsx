@@ -13,7 +13,12 @@ import {
 } from 'tgui-core/components';
 import { PrefColorSwatch } from './colors';
 import { SearchableDropdown, Segmented, SliderBox, Switch } from './controls';
-import { ColorizedImage, ColorizedImageButton } from './helper_components';
+import {
+  ColorizedImage,
+  ColorizedImageButton,
+  CustomImageButton,
+  HairGradientImage,
+} from './helper_components';
 import type { PrefWidgetItem } from './types';
 
 type Props = { item: PrefWidgetItem };
@@ -382,12 +387,22 @@ const ThumbgridPicker = ({
                 borderRadius: '0.2em',
               }}
             >
-              <ColorizedImage
-                iconRef={currentThumb.icon}
-                iconState={currentThumb.icon_state}
-                color="#ffffff"
-                size={32}
-              />
+              {currentThumb.hair_icon && currentThumb.hair_state ? (
+                <HairGradientImage
+                  hairRef={currentThumb.hair_icon}
+                  hairState={currentThumb.hair_state}
+                  gradientRef={currentThumb.icon}
+                  gradientState={currentThumb.icon_state}
+                  size={32}
+                />
+              ) : (
+                <ColorizedImage
+                  iconRef={currentThumb.icon}
+                  iconState={currentThumb.icon_state}
+                  color="#ffffff"
+                  size={32}
+                />
+              )}
             </Box>
           </Stack.Item>
         ) : null}
@@ -437,7 +452,26 @@ const ThumbgridPicker = ({
                 const t = thumbs[val];
                 return (
                   <Stack.Item key={val} m={0.25}>
-                    {t ? (
+                    {t?.hair_icon && t.hair_state ? (
+                      <CustomImageButton
+                        image={
+                          <HairGradientImage
+                            hairRef={t.hair_icon}
+                            hairState={t.hair_state}
+                            gradientRef={t.icon}
+                            gradientState={t.icon_state}
+                          />
+                        }
+                        tooltip={label}
+                        selected={val === currentVal}
+                        onClick={() => {
+                          onPick(val);
+                          setOpen(false);
+                        }}
+                      >
+                        {label}
+                      </CustomImageButton>
+                    ) : t ? (
                       <ColorizedImageButton
                         iconRef={t.icon}
                         iconState={t.icon_state}

@@ -1,0 +1,5 @@
+author: "bigbade"
+delete-after: true
+changes:
+  - bugfix: "Hair gradients picked in character setup now draw on the hair."
+  - qol: "The hair gradient selector shows each gradient on a head of hair."

@@ -150,7 +150,7 @@ SCHEMA(/datum/dna, base_species, schema_text())
 	// Hairgrad
 	var/grad_style = 0
 	if(character.looks.grad_style)
-		grad_style = GLOB.hair_gradients.Find(character.looks.grad_style)
+		grad_style = hair_gradient_index(character.looks.grad_style)
 
 	// Playerscale (This assumes list is sorted big->small)
 	var/size_multiplier = GLOB.player_sizes_list.len // If fail to find, take smallest
