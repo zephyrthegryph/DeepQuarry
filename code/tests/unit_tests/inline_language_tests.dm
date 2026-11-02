@@ -34,7 +34,7 @@
 	))
 
 /proc/inline_language_label(datum/language/L)
-	var/static/list/labels = list(LANGUAGE_GALCOM = "default", LANGUAGE_SOL_COMMON = "s", LANGUAGE_SIIK = "k", LANGUAGE_GIBBERISH = "gibberish", LANGUAGE_HIVEMIND = "h")
+	var/static/list/labels = list(LANGUAGE_GALCOM = "default", LANGUAGE_SOL_COMMON = "s", LANGUAGE_SIIK = "k", LANGUAGE_GIBBERISH = "gibberish", LANGUAGE_HIVEMIND = "h", "Noise" = "n")
 	return labels[L?.name] || "?[L?.name]"
 
 /proc/inline_language_pieces_text(list/pieces)
@@ -150,3 +150,21 @@
 		TEST_ASSERT_NULL(H.language_for_key(siik.key), "the language's own key was rebound away")
 	H.set_language_keys(list())
 	TEST_ASSERT_EQUAL(H.language_for_key(siik.key), siik, "with no keys, the language's own key answers")
+
+/// The data tgui-say's preview parses with: the speaker's own keys and only what the server rules say.
+/datum/unit_test/inline_language_preview_rules
+
+/datum/unit_test/inline_language_preview_rules/Run()
+	var/mob/living/carbon/human/inline_language_speaker/H = allocate(/mob/living/carbon/human/inline_language_speaker, test_floor())
+	inline_language_setup(H)
+	var/list/rules = json_decode(json_encode(H.say_language_rules()))
+	TEST_ASSERT_EQUAL(rules["keys"]["s"], LANGUAGE_SOL_COMMON, "a bound key")
+	TEST_ASSERT_EQUAL(rules["defaultLanguage"], LANGUAGE_GALCOM, "the preferred language")
+	TEST_ASSERT(rules["languages"][LANGUAGE_HIVEMIND]["whole"], "a hivemind takes the whole message")
+	TEST_ASSERT(!rules["languages"][LANGUAGE_UNATHI]["spoken"], "an unspoken language is marked")
+	TEST_ASSERT(rules["languages"]["Noise"]["innate"], "noise is innate")
+	TEST_ASSERT_EQUAL(rules["markers"]["+"], "b", "the game's own formatting markers")
+	TEST_ASSERT(LANGUAGE_SOL_COMMON in rules["order"], "a spoken language is in the shortcut order")
+	TEST_ASSERT(!(LANGUAGE_UNATHI in rules["order"]), "an unspoken one is not")
+	TEST_ASSERT(":s" in rules["radioKeys"], "radio keys come along")
+	TEST_ASSERT_NULL(rules["hiss"], "no client, no autohiss")

@@ -92,6 +92,15 @@ TYPE_TABLE(/datum/preference/choiced/tgui_layout, pref_choices, list(TGUI_LAYOUT
 /datum/preference/toggle/tgui_say_light/apply_to_client(client/client, value)
 	client.tgui_say?.load()
 
+/datum/preference/toggle/tgui_say_preview
+	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
+	savefile_key = "TGUI_SAY_PREVIEW"
+	default_value = TRUE
+	savefile_identifier = PREFERENCE_PLAYER
+
+/datum/preference/toggle/tgui_say_preview/apply_to_client(client/client, value)
+	client.tgui_say?.load()
+
 /datum/preference/toggle/tgui_use_spellcheck
 	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
 	savefile_key = "TGUI_ENABLE_SPELLCHECK"

@@ -1,6 +1,6 @@
 import './styles/main.scss';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { dragStartHandler } from 'tgui/drag';
 import { isEscape, KEY } from 'tgui-core/keys';
 import { clamp } from 'tgui-core/math';
@@ -16,6 +16,8 @@ import {
   windowOpen,
   windowSet,
 } from './helpers';
+import { LanguagePreview, previewHeight } from './LanguagePreview';
+import { buildPreview, type LanguageRules } from './parseLanguages';
 import { byondMessages } from './timers';
 
 type ByondOpen = {
@@ -29,6 +31,7 @@ type ByondProps = {
   lightMode: BooleanLike;
   scale: BooleanLike;
   spellcheck: BooleanLike;
+  preview: BooleanLike;
 };
 
 export function TguiSay() {
@@ -51,9 +54,12 @@ export function TguiSay() {
   const [size, setSize] = useState(WindowSize.Small);
   const [lightMode, setLightMode] = useState(false);
   const [value, setValue] = useState('');
+  const [rules, setRules] = useState<LanguageRules | null>(null);
+  const [previewEnabled, setPreviewEnabled] = useState(true);
 
   const position = useRef([window.screenX, window.screenY]);
   const isDragging = useRef(false);
+  const appliedExtra = useRef(0);
 
   function handleArrowKeys(direction: KEY.PageUp | KEY.PageDown): void {
     const chat = chatHistory.current;
@@ -323,6 +329,7 @@ export function TguiSay() {
     minimumHeight.current = data.minimumHeight;
     minimumWidth.current = minWidth;
     spellcheck.current = !!data.spellcheck;
+    setPreviewEnabled(!!data.preview);
     scale.current = !!data.scale;
   }
 
@@ -337,7 +344,18 @@ export function TguiSay() {
     Byond.subscribeTo('props', handleProps);
     Byond.subscribeTo('force', handleForceSay);
     Byond.subscribeTo('open', handleOpen);
+    Byond.subscribeTo('languageRules', setRules);
   }, []);
+
+  // Parsed on the client from the server's rule data: no round trip per keystroke.
+  const iteratorChannel = channelIterator.current.current();
+  const preview = useMemo(() => {
+    if (!rules || !previewEnabled || !value) return null;
+    return buildPreview((currentPrefix ?? '') + value, iteratorChannel, rules);
+  }, [rules, previewEnabled, value, currentPrefix, iteratorChannel]);
+  const extraHeight = preview
+    ? previewHeight(preview, minimumWidth.current)
+    : 0;
 
   /** Value has changed, we need to check if the size of the window is ok */
   useEffect(() => {
@@ -353,11 +371,12 @@ export function TguiSay() {
     }
     newSize = clamp(newSize, minimumHeight.current, WindowSize.Max);
 
-    if (size !== newSize) {
-      windowSet(minimumWidth.current, newSize, scale.current);
+    if (size !== newSize || appliedExtra.current !== extraHeight) {
+      appliedExtra.current = extraHeight;
+      windowSet(minimumWidth.current, newSize + extraHeight, scale.current);
       setSize(newSize);
     }
-  }, [value]);
+  }, [value, extraHeight]);
 
   const theme =
     (lightMode && 'lightMode') ||
@@ -370,6 +389,7 @@ export function TguiSay() {
         className={`window window-${theme} window-${size}`}
         style={{
           zoom: scale.current ? '' : `${100 / window.devicePixelRatio}%`,
+          height: extraHeight ? size + extraHeight : undefined,
         }}
         onMouseDown={dragStartHandler}
       >
@@ -379,6 +399,7 @@ export function TguiSay() {
         className={classes(['content', lightMode && 'content-lightMode'])}
         style={{
           zoom: scale.current ? '' : `${100 / window.devicePixelRatio}%`,
+          bottom: extraHeight ? extraHeight + 2 : undefined,
         }}
       >
         <button
@@ -412,6 +433,14 @@ export function TguiSay() {
           X
         </button>
       </div>
+      {preview && (
+        <LanguagePreview
+          preview={preview}
+          height={extraHeight}
+          lightMode={lightMode}
+          zoom={scale.current ? '' : `${100 / window.devicePixelRatio}%`}
+        />
+      )}
     </>
   );
 }

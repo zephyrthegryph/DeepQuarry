@@ -185,3 +185,34 @@
 .textarea-lightMode {
   color: black;
 }
+
+.preview {
+  background-color: black;
+  bottom: 2px;
+  color: #ddd;
+  font-size: 11px;
+  left: 2px;
+  line-height: 15px;
+  overflow: hidden;
+  padding: 0 4px;
+  position: absolute;
+  right: 2px;
+}
+
+.preview-lightMode {
+  background-color: white;
+  color: black;
+}
+
+.preview-name {
+  font-weight: bold;
+}
+
+.preview-language {
+  border: 1px solid currentColor;
+  border-radius: 0.2rem;
+  font-size: 9px;
+  margin-right: 2px;
+  opacity: 0.75;
+  padding: 0 2px;
+}

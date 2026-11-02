@@ -25,6 +25,7 @@
     { "name": "hivemind key takes the whole message", "message": ",h secret", "whole": "h", "text": "secret" },
     { "name": "hivemind key mid-sentence takes the whole message", "message": "Hello ,h secret", "whole": "h", "text": "Hello secret" },
     { "name": "decimal survives a hivemind message", "message": ",h 3,5 units", "whole": "h", "text": "3,5 units" },
+    { "name": "noise", "message": "!shouts", "pieces": [["n", "shouts"]] },
     { "name": "formatting stays in its piece", "message": ",s +Hello+ ,k |friend|", "pieces": [["s", "+Hello+"], ["k", "|friend|"]] }
   ]
 }
