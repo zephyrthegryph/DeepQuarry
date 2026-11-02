@@ -1,0 +1,5 @@
+author: "DeepQuarry"
+delete-after: true
+changes:
+  - rscadd: "The say box previews messages that use languages or formatting as you type (can be turned off in UI preferences)."
+  - rscadd: "Say box shortcuts: Ctrl+B/I/U toggle formatting, Ctrl+1 to 9 toggle a language for the selection or from the cursor on, with a small indicator of what is active."

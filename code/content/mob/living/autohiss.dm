@@ -160,9 +160,9 @@ GLOBAL_LIST_INIT(autohiss_choices, build_autohiss_choices())
 /proc/apply_autohiss(message, datum/language/lang, mode, list/basic, list/extra, list/exempt)
 	if(!basic)
 		return message
-	if(lang.flags & NO_STUTTER)		// Currently prevents EAL, Sign language, and emotes from autohissing
+	if(lang && (lang.flags & NO_STUTTER))		// Currently prevents EAL, Sign language, and emotes from autohissing
 		return message
-	if(exempt && (lang.name in exempt))
+	if(lang && exempt && (lang.name in exempt))
 		return message
 
 	var/map = basic.Copy()
