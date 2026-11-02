@@ -68,7 +68,8 @@
 /datum/unit_test/dq_mfo_malf/camera_upgrade/run_malf()
 	var/obj/machinery/camera/C = allocate(/obj/machinery/camera, get_step(run_loc_floor_bottom_left, EAST))
 	ai.research.stored_cpu = 250
-	use(/datum/game_mode/malfunction/verb/hack_camera, C)
+	use(/datum/game_mode/malfunction/verb/hack_camera)
+	answer(malf_target_label(C)) // the camera is picked first now
 	answer("Add X-Ray")
 	TEST_ASSERT_EQUAL(cpu(), 150, "the pick costs 100 CPU")
 	use(/datum/game_mode/malfunction/verb/hack_camera, C)

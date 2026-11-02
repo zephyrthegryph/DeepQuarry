@@ -102,7 +102,7 @@
 CAPABILITIES(/obj/effect/dummy/spell_jaunt)
 	setup(PROC_REF(remember_turf))
 	owns_many(nameof(contents), on_destroy = ON_DESTROY_SPILL)
-	extend(/datum/act/hit/projectile, instead())
+	extend(/datum/act/hit/projectile, instead(then(GLOBAL_PROC_REF(act_absorbed))))
 	ref_one(nameof(last_valid_turf))
 
 /obj/effect/dummy/spell_jaunt/relaymove(mob/user, direction)

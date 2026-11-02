@@ -127,7 +127,7 @@
 	CH.emp_act(4)
 	TEST_ASSERT(CH.malfunction, "an EMP makes a chem implant malfunction")
 	test_time(5 SECONDS)
-	TEST_ASSERT(!CH.malfunction, "and it recovers after two seconds")
+	TEST_ASSERT(QDELETED(CH) || !CH.malfunction, "and it recovers after two seconds (the EMP may fire it instead, which uses it up)")
 	var/obj/item/implant/death_alarm/DA = allocate(/obj/item/implant/death_alarm, T)
 	TEST_ASSERT(DA.handle_implant(H), "the death alarm is embedded")
 	DA.emp_act(4)

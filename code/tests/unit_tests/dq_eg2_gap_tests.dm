@@ -259,6 +259,7 @@
 /// Proof site: a mouse (no hands) dragging itself onto a storage climbs in as a held creature; a person of normal size, or somebody dragging another, does not.
 /datum/unit_test/dq_eg2/micro_drag_climbs_into_storage
 /datum/unit_test/dq_eg2/micro_drag_climbs_into_storage/run_gate()
+	set_global(nameof(GLOB.refresh_dispatched_draws_spared), GLOB.refresh_dispatched_draws_spared)
 	var/obj/item/storage/box/B = allocate(/obj/item/storage/box, run_loc_floor_bottom_left)
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse, run_loc_floor_bottom_left)
 	var/mob/living/carbon/human/H = person()

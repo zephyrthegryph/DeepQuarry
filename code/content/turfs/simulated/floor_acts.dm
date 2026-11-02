@@ -44,7 +44,7 @@
 	return 0
 
 CAPABILITIES(/turf/simulated/floor)
-	extend(/datum/act/hit/blob, instead())
+	extend(/datum/act/hit/blob, instead(then(GLOBAL_PROC_REF(act_absorbed))))
 	ref_one(nameof(flooring), /datum/decl/flooring)
 	param(nameof(floortype_at_make), pos = 1)
 	setup(PROC_REF(floor_start))

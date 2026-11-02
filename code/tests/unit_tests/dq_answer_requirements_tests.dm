@@ -227,6 +227,7 @@ CAPABILITIES(/obj/ar_machine)
 	var/datum/op_result/done = test_answer(carrier, TRUE)
 	TEST_ASSERT_EQUAL(done?.outcome, ACT_COMMITTED, "the op goes on after the carrier walked off with the actor")
 	TEST_ASSERT_EQUAL(C.asked_value, TRUE, "and read the answer")
+	M.forceMove(T) // out of the card before the teardown: a box does not let go of a mob it holds in its slots
 
 /datum/unit_test/dq_ar/mine_delay_wire_repulse_keeps_the_earliest_countdown
 

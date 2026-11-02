@@ -410,6 +410,8 @@
 
 /datum/unit_test/dq_material_thermal_buffer_conserves_energy/Run()
 	var/obj/item/cell/cell = new(run_loc_floor_bottom_left)
+	var/datum/material_template/slots = material_template_for_application(MATERIAL_APPLICATION_CELL)
+	TEST_ASSERT(cell.apply_material_construction(list(MATERIAL_ROLE_CONDUCTOR = MAT_SILVER, MATERIAL_ROLE_ELECTRODE = MAT_GOLD, MATERIAL_ROLE_STRUCTURE = MAT_STEEL, MATERIAL_ROLE_INSULATION = MAT_GLASS), slots.type, SHEET_MATERIAL_AMOUNT * 2), "a cell takes a built makeup (a stock one has no material service)")
 	var/datum/material_service/service = material_service_of(cell)
 	// The heat lives in Rust (f64) and reaches DM as f32: compare to a millionth of the energy the assembly holds.
 	var/before = service.temperature() * service.thermal_mass() + service.buffer_energy()

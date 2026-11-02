@@ -87,6 +87,7 @@
 	TEST_ASSERT(sweep.is_off_cooldown(dragon.ai_brain, null), "Refused target never starts a tail sweep")
 
 /datum/unit_test/round2_combat_dragon_auto_supersedes_manual/Run()
+	set_global(nameof(GLOB.ai_pack_perceptions), GLOB.ai_pack_perceptions)
 	test_driver_begin()
 	exercise_auto_target()
 	own_turf_contents(test_floor())
