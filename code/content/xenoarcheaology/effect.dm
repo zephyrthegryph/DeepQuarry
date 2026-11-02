@@ -94,7 +94,7 @@
 					target.underlays.Remove(active_effect)
 
 			var/atom/toplevelholder = target
-			while(!istype(toplevelholder.loc, /turf))
+			while(toplevelholder.loc && !istype(toplevelholder.loc, /turf))
 				toplevelholder = toplevelholder.loc
 			toplevelholder.visible_message(span_filter_notice("[span_red("[icon2html(toplevelholder, viewers(toplevelholder))] [toplevelholder] [display_msg]")]"))
 
