@@ -52,9 +52,7 @@
 /turf/space/transit/east,
 /area/space)
 "ai" = (
-/turf/unsimulated/floor{
-	icon_state = "dark"
-	},
+/turf/simulated/shuttle/floor/black,
 /area/shadekin)
 "aj" = (
 /turf/space/transit/east,
@@ -693,9 +691,7 @@
 /obj/effect/landmark{
 	name = "JoinLateTheDark"
 	},
-/turf/unsimulated/floor{
-	icon_state = "dark"
-	},
+/turf/simulated/shuttle/floor/black,
 /area/shadekin)
 "cj" = (
 /obj/effect/step_trigger/teleporter/landmark{
@@ -1028,9 +1024,7 @@
 /obj/structure/dark_portal/hub{
 	name = "The Dark"
 	},
-/turf/unsimulated/floor{
-	icon_state = "dark"
-	},
+/turf/simulated/shuttle/floor/black,
 /area/shadekin)
 
 (1,1,1) = {"
