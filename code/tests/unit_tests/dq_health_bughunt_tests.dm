@@ -61,21 +61,41 @@
 	TEST_ASSERT(BP_TORSO in zones, "the bolt hits the torso: [jointext(zones, ", ")]")
 	TEST_ASSERT(!H.has_status(STAT_WEAKENED), "a lightning bolt does not stun")
 
-/// Examining an emptied ballistic gun's firepower doesn't index an empty magazine (contents[1] ran out of bounds).
+/// Examining a magazine gun whose magazine is in but empty and whose chamber is empty: the firepower lines read no
+/// projectile instead of indexing the empty magazine (contents[1] ran out of bounds).
 /datum/unit_test/dq_health_bughunt/empty_gun_firepower
 
 /datum/unit_test/dq_health_bughunt/empty_gun_firepower/Run()
-	var/obj/item/gun/projectile/G = allocate(/obj/item/gun/projectile, test_floor())
-	var/list/casings = list()
-	for(var/obj/item/ammo_casing/C in G.contents)
-		casings += C
-	if(G.ammo_magazine)
-		for(var/obj/item/ammo_casing/C in G.ammo_magazine.contents)
-			casings += C
-	for(var/obj/item/ammo_casing/C in casings)
-		C.forceMove(test_floor())
-		own(C)
-	if(!G.chambered)
-		TEST_ASSERT_NULL(G.first_loaded_casing(), "an emptied gun has no casing to read")
-	TEST_ASSERT(istext(G.describe_firepower()), "the firepower line is still written")
-	TEST_ASSERT(istext(G.describe_proj_penetration()), "the penetration line is still written")
+	var/obj/item/gun/projectile/colt/G = allocate(/obj/item/gun/projectile/colt, test_floor())
+	TEST_ASSERT(G.ammo_magazine, "the colt starts with a magazine in")
+	var/obj/item/ammo_magazine/M = G.ammo_magazine
+	while(length(M.stored_ammo))
+		var/obj/item/ammo_casing/C = M.stored_ammo[1]
+		own_remove(M, nameof(M.stored_ammo), C)
+	while(length(G.loaded))
+		var/obj/item/ammo_casing/C = G.loaded[1]
+		own_remove(G, nameof(G.loaded), C)
+	if(G.chambered)
+		rel_set(G, nameof(G.chambered), null)
+	TEST_ASSERT_EQUAL(length(M.stored_ammo), 0, "the magazine is empty")
+	TEST_ASSERT_EQUAL(length(M.contents), 0, "no casing is left in the magazine's contents")
+	TEST_ASSERT_NULL(G.chambered, "nothing is chambered")
+	TEST_ASSERT_NULL(G.first_loaded_casing(), "an empty gun has no casing to read")
+	TEST_ASSERT_EQUAL(G.describe_firepower(), "no", "the firepower line says no")
+	TEST_ASSERT_EQUAL(G.describe_proj_penetration(), "no", "the penetration line says no")
+
+/// A camp-list save cut short by a crash is discarded at boot instead of throwing out of the Job system's init.
+/datum/unit_test/dq_health_bughunt/job_camp_list_truncated
+
+/datum/unit_test/dq_health_bughunt/job_camp_list_truncated/Run()
+	var/list/before = SSjob.restricted_keys
+	var/path = SSjob.savepath
+	TEST_ASSERT(!fexists(path), "no camp list is waiting in the test world")
+	text2file(copytext(json_encode(list("ckey" = list(1, 2))), 1, 10), path) // cut short mid-write
+	SSjob.load_camp_lists()
+	TEST_ASSERT(!fexists(path), "the bad file is removed")
+	TEST_ASSERT(SSjob.restricted_keys == before, "a bad file leaves the list alone")
+	text2file(json_encode(list("somebody" = 1)), path)
+	SSjob.load_camp_lists()
+	TEST_ASSERT(SSjob.restricted_keys["somebody"] == 1, "a good file still loads")
+	SSjob.restricted_keys = before

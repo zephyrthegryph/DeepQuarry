@@ -160,7 +160,7 @@
 /obj/item/gun/projectile/proc/first_loaded_casing()
 	if(istype(chambered))
 		return chambered
-	var/list/pool = ammo_magazine ? ammo_magazine.contents : contents
+	var/list/pool = ammo_magazine ? ammo_magazine.stored_ammo : loaded
 	for(var/obj/item/ammo_casing/casing in pool)
 		return casing
 	return null

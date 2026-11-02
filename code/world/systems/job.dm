@@ -1148,8 +1148,17 @@ CAPABILITIES(/datum/system/job)
 // start
 /datum/system/job/proc/load_camp_lists()
 	if(fexists(savepath))
-		restricted_keys = json_decode(file2text(savepath))
+		var/saved = file2text(savepath)
 		fdel(savepath)
+		// The file is written at shutdown; a crash mid-write leaves it empty or cut short, and json_decode
+		// throws on that at boot. A bad file only loses last round's camp list.
+		if(length(saved))
+			try
+				var/list/decoded = json_decode(saved)
+				if(islist(decoded))
+					restricted_keys = decoded
+			catch(var/exception/error)
+				log_world("Job: discarded an unreadable [savepath]: [error.name]")
 
 /datum/system/job/on_shutdown()
 	. = ..()
