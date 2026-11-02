@@ -148,7 +148,7 @@ function enforceDiskBudget(root: string): void {
     const script = path.join(path.resolve(root), 'tools', 'dq_disk_budget.sh');
     if (!fs.existsSync(script)) return;
     const child = spawn('bash', [script, 'enforce', '--quiet', '--throttle', '10'], { detached: true, stdio: 'ignore', windowsHide: true });
-    child.on('error', () => { /* no bash on PATH: the lease, release and train hooks still enforce */ });
+    child.on('error', () => { /* no bash on PATH: the lease and release hooks still enforce */ });
     child.unref();
   } catch { /* housekeeping only */ }
 }

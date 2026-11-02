@@ -153,15 +153,15 @@ semaphore shared by every worktree on the machine (state under `E:/dq-cache/slot
 | `test_world` | a third of the CPUs, 2 to 6 (5 on 16) | each unit-test world's DreamDaemon launch (`runIsolatedTestWorld()` in `build.ts`: focused, split and sharded worlds) | `DQ_SLOTS_TEST_WORLD` |
 | `cargo` | 1 | every cargo invocation of `build.ts` (analyze, verdigris, dmbc) | `DQ_SLOTS_CARGO` |
 
-`DQ_SLOTS=0` turns all of it off and a class at 0 is unlimited (except `merge_base`, the merge worktree lock of section 9: always exactly one slot). A waiter prints the class, its place in the queue and who holds the slots
-(`worktree 'label' pid, held Ns`) every 30 seconds. The merge worktree (`E:/projects/dq-wt/merge-base`, `DQ_MERGE_WT`) jumps the queue
+`DQ_SLOTS=0` turns all of it off and a class at 0 is unlimited. A waiter prints the class, its place in the queue and who holds the slots
+(`worktree 'label' pid, held Ns`) every 30 seconds. A compiler lane jumps the queue
 (`DQ_SLOT_PRIORITY=0` does the same for another caller); within a priority it is arrival order, and a slot is taken only by the first in the queue.
 A holder that crashes does not block anyone: a slot or queue entry whose pid is gone (the Windows pid of a node or bash holder), or whose heartbeat
 (its `owner` file's mtime, touched every 15 s) is older than `DQ_SLOTS_STALE_SEC` (600), is removed by the next waiter. `dm_compile` and `cargo` are never held while waiting for another class, so they cannot deadlock.
 
 **Fair order and the suite cap.** Queues are oldest first (priority 0, then arrival); only the head takes a slot. A group of test worlds from a
 non-priority caller (full `dm-test`, many-world focused run) takes at most `DQ_SLOTS_SUITE_MAX_WORLDS` worlds: unset = 1 while another run is queued
-when it asks (else all it wants), N = always N, 0 = off. The merge worktree and compiler lanes are exempt. It applies to new acquisitions only (nothing
+when it asks (else all it wants), N = always N, 0 = off. Compiler lanes are exempt. It applies to new acquisitions only (nothing
 held is preempted, so a suite that started on an empty queue keeps both worlds until a shard exits; the freed slot then goes to the oldest waiter). Shards
 past the cap take their own slot in queue order. `dq_machine_slots.sh waiting|holding <worktree>` list a worktree's queue entries / slots; `stats` shows max wait.
 

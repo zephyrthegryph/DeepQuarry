@@ -110,7 +110,7 @@ if (process.env.DQ_PRIORITY !== 'normal') {
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 
 /** `cargo <args>` under the machine-wide cargo slot (lib/machine_slots.ts, tools/dq_machine_slots.sh): by default one cargo build at a
- * time on the machine, the merge worktree first, instead of a dozen worktrees fighting over the cores. DQ_SLOTS_CARGO=N changes it. */
+ * time on the machine, compiler lanes first, instead of a dozen worktrees fighting over the cores. DQ_SLOTS_CARGO=N changes it. */
 const cargoExec = (args: string[], options?: any) =>
   withSlot('cargo', `cargo ${args.slice(0, 2).join(' ')}`, () => cargoWithIceRetry(args, options), (m) => Juke.logger.info(m));
 

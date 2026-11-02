@@ -23,9 +23,8 @@
 # State lives under DQ_SLOTS_DIR (default E:/dq-cache/slots, else ~/.cache/dq/slots), one directory per class:
 #   slot.N/owner        a held slot (an atomic mkdir). key=value lines: pid, winpid, kind (bash|node), worktree, label,
 #                       started. The file's mtime is the holder's heartbeat, touched every 15 s while it holds the slot.
-#   queue/P-T-PID       a waiter. P is 0 for the merge worktree (DQ_MERGE_WT, default E:/projects/dq-wt/merge-base) and 1
-#                       for everyone else, T the arrival time, so the merge worktree jumps the queue and the rest go in
-#                       arrival order. A waiter takes a slot only when it is first. Its mtime is refreshed on every poll.
+#   queue/P-T-PID       a waiter. P is 0 for a compiler lane (or DQ_SLOT_PRIORITY=0) and 1 for everyone else, T the
+#                       arrival time, so priority 0 jumps the queue and the rest go in arrival order. A waiter takes a slot only when it is first. Its mtime is refreshed on every poll.
 #   events.tsv          one line per release: time, class, slot, worktree, label, waited seconds, held seconds.
 #   <worktree>/data/slot-waits.log  the same line for that worktree's own releases, kept to its last 2000 lines.
 # A holder or waiter is dead when its pid is gone (a bash pid is checked with kill -0, a node pid through its Windows
@@ -35,7 +34,7 @@
 # two in sync (the selftest and tools/build/lib/machine_slots.test.ts check they agree).
 #
 # Lane classes (tools/dq_lane_pool.sh): a compiler lane (worktree pool-c1/pool-c2, or DQ_LANE_CLASS=compiler) has first claim on every class
-# above, the way the merge worktree does: priority 0, so it goes to the front of each queue and takes the next slot that frees up; and it
+# above: priority 0, so it goes to the front of each queue and takes the next slot that frees up; and it
 # may hold ONE slot beyond the cargo cap (DQ_SLOTS_COMPILER_EXTRA_CARGO, default 1) so a compiler build never waits for a game lane's
 # cargo. A light lane (pool-light, or DQ_LANE_CLASS=light) never compiles DM or runs a test world: dm_compile and test_world refuse
 # there with exit 64.
@@ -44,14 +43,14 @@
 # run that takes several test worlds as a group (a full `dm-test`, a many-world focused run) would otherwise hold both worlds for its
 # whole run and starve every other lane's focused run, so a non-priority group takes at most DQ_SLOTS_SUITE_MAX_WORLDS worlds: unset
 # means 1 when any other run is queued for a test world at the moment the group asks (else all it wants), a number N always caps it at
-# N, 0 turns the cap off. The merge worktree and compiler lanes (priority 0) are exempt. The cap applies to new acquisitions only: a
+# N, 0 turns the cap off. Compiler lanes (priority 0) are exempt. The cap applies to new acquisitions only: a
 # group already running keeps what it holds (nothing is preempted), and the shards past the cap take their own slot, in queue order,
 # one by one (tools/build/lib/machine_slots.ts acquireSlotGroup; tools/dq_focused_test.sh hands slots on as worlds end).
 # `dq_machine_slots.sh waiting <worktree>` lists the queue entries a worktree has (class, seconds waited): tools/dq_lane_pool.sh status
 # uses it to show which pool slots sit idle while waiting for a machine slot.
 #
 # Waiting prints the class, your place in the queue and who holds the slots every 30 s. DQ_SLOT_PRIORITY=0 forces the
-# front of the queue for a caller that is not the merge worktree.
+# front of the queue for any caller.
 
 slots_dir() {
 	if [ -n "${DQ_SLOTS_DIR:-}" ]; then
@@ -103,8 +102,8 @@ slots_capacity() { # class -> count (0 = off)
 	echo "$val"
 }
 
-# Slots kept free for the merge worktree: a caller that is not the merge worktree (priority 1) may hold only the first
-# (max - reserve) slots of a class, so a gate in the merge worktree never queues behind a full house of lane runs. The reserve is
+# Slots kept free for priority 0 (compiler lanes): a priority 1 caller may hold only the first
+# (max - reserve) slots of a class, so a compiler lane never queues behind a full house of lane runs. The reserve is
 # DQ_SLOTS_MERGE_RESERVE (default 1 for test_world when the class has at least 3 slots, else 0; any class: DQ_SLOTS_MERGE_RESERVE_<CLASS>).
 slots_usable() { # class max prio -> how many slots (counted from 1) this caller may take
 	local cls="$1" max="$2" prio="$3" up var res
@@ -160,11 +159,8 @@ _slots_is_lane() { # <worktree> <compiler|light>: is this worktree a compiler / 
 	return 1
 }
 
-_slots_priority() { # worktree -> 0 (merge worktree or compiler lane, front of the queue) or 1
+_slots_priority() { # worktree -> 0 (compiler lane, front of the queue) or 1
 	if [ -n "${DQ_SLOT_PRIORITY:-}" ]; then echo "$DQ_SLOT_PRIORITY"; return; fi
-	local a
-	_slots_norm_set "$1"; a="$NORM"; _slots_norm_set "${DQ_MERGE_WT:-E:/projects/dq-wt/merge-base}"
-	if [ "$a" = "$NORM" ]; then echo 0; return; fi
 	if _slots_is_lane "$1" compiler; then echo 0; else echo 1; fi
 }
 
@@ -195,13 +191,6 @@ _slots_num() { # file key default -> the key's value when it is a number, else t
 	local v
 	v="$(_slots_field "$1" "$2")"
 	case "$v" in '' | *[!0-9]*) echo "$3" ;; *) echo "$v" ;; esac
-}
-
-_slots_lanes() { # owner file -> " lanes 'a b'" for a merge_base holder
-	local l
-	l="$(_slots_field "$1" lanes)"
-	[ -n "$l" ] && printf " lanes '%s'" "$l"
-	return 0
 }
 
 _slots_mtime() { # file -> epoch seconds (0 when missing)
@@ -281,7 +270,7 @@ _slots_who() { # class dir -> " [slot N: worktree 'label' held 3m] ..."
 	for f in "$d"/slot.*; do
 		[ -f "$f/owner" ] || continue
 		started="$(_slots_field "$f/owner" started)"
-		out="$out [${f##*/}: $(_slots_field "$f/owner" worktree) '$(_slots_field "$f/owner" label)' pid $(_slots_field "$f/owner" pid)$(_slots_lanes "$f/owner"), held $(( now - ${started:-$now} ))s]"
+		out="$out [${f##*/}: $(_slots_field "$f/owner" worktree) '$(_slots_field "$f/owner" label)' pid $(_slots_field "$f/owner" pid), held $(( now - ${started:-$now} ))s]"
 	done
 	echo "${out:- nobody}"
 }
@@ -321,7 +310,7 @@ _slots_acquire() {
 	now="$EPOCHSECONDS"
 	printf -v name '%s-%013d-%s' "$prio" "$now" "$$"
 	SLOTS_QUEUE="$d/queue/$name"
-	printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nqueued=%s\nsession=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$now" "${DQ_MERGE_SESSION:+env:$DQ_MERGE_SESSION}" >"$SLOTS_QUEUE"
+	printf 'kind=bash\npid=%s\nwinpid=%s\nworktree=%s\nlabel=%s\nqueued=%s\n' "$$" "$(_slots_winpid "$$")" "$top" "$label" "$now" >"$SLOTS_QUEUE"
 	SLOTS_T_QUEUED="$now"
 	_slots_mark_waiting
 	while true; do
@@ -350,7 +339,7 @@ _slots_acquire() {
 		if [ "$waited" -eq 0 ] || [ $((waited - last)) -ge 30 ]; then
 			last="$waited"
 			pos="$(ls "$d/queue" 2>/dev/null | sort | grep -n -x -- "$name" | cut -d: -f1)"
-			echo "== machine slots: $cls: waiting ${waited}s, place ${pos:-?} of $(ls "$d/queue" 2>/dev/null | wc -l) in the queue (at most $max at once on this machine; the merge worktree goes first). Held by:$(_slots_who "$d")"
+			echo "== machine slots: $cls: waiting ${waited}s, place ${pos:-?} of $(ls "$d/queue" 2>/dev/null | wc -l) in the queue (at most $max at once on this machine; priority 0 goes first). Held by:$(_slots_who "$d")"
 		fi
 		touch "$SLOTS_QUEUE" 2>/dev/null
 		sleep "${DQ_SLOTS_POLL_SEC:-3}"
@@ -596,7 +585,7 @@ slots_status() { # [class]
 		for f in "$d"/slot.*; do
 			[ -f "$f/owner" ] || continue
 			any=1
-			echo "  ${f##*/}: $(_slots_field "$f/owner" worktree) '$(_slots_field "$f/owner" label)' pid $(_slots_field "$f/owner" pid)$(_slots_lanes "$f/owner"), held $(( now - $(_slots_num "$f/owner" started "$now") ))s, heartbeat $(( now - $(_slots_mtime "$f/owner") ))s ago$(_slots_dead "$f/owner" && echo ' [DEAD, reclaimed by the next waiter]')"
+			echo "  ${f##*/}: $(_slots_field "$f/owner" worktree) '$(_slots_field "$f/owner" label)' pid $(_slots_field "$f/owner" pid), held $(( now - $(_slots_num "$f/owner" started "$now") ))s, heartbeat $(( now - $(_slots_mtime "$f/owner") ))s ago$(_slots_dead "$f/owner" && echo ' [DEAD, reclaimed by the next waiter]')"
 		done
 		for f in "$d"/queue/*; do
 			[ -f "$f" ] || continue
@@ -701,7 +690,7 @@ slots_selftest() {
 	DQ_SLOTS_CARGO=0 bash "$0" run cargo -- echo unlimited | grep -q unlimited || { echo "FAIL: DQ_SLOTS_CARGO=0 should run without a limit"; ok=0; }
 	# 4. env counts.
 	[ "$(DQ_SLOTS_DM_COMPILE=5 slots_capacity dm_compile)" = 5 ] && [ "$(unset DQ_SLOTS_CARGO; slots_capacity cargo)" = 1 ] || { echo "FAIL: capacity env"; ok=0; }
-	# 4b. the merge reserve: with 3 test_world slots a lane caller may use 2, the merge worktree all 3, and a class below 3 reserves nothing.
+	# 4b. the merge reserve: with 3 test_world slots a lane caller may use 2, a priority 0 caller all 3, and a class below 3 reserves nothing.
 	[ "$(DQ_SLOTS_TEST_WORLD=3 DQ_SLOT_PRIORITY=1 slots_group_size test_world 9)" = 2 ] && [ "$(DQ_SLOTS_TEST_WORLD=3 DQ_SLOT_PRIORITY=0 slots_group_size test_world 9)" = 3 ] 		&& [ "$(slots_usable test_world 2 1)" = 2 ] && [ "$(DQ_SLOTS_MERGE_RESERVE=9 slots_usable test_world 3 1)" = 1 ] && [ "$(slots_usable dm_compile 2 1)" = 2 ] 		|| { echo "FAIL: merge reserve"; ok=0; }
 	# 5. a group is clamped to the capacity and starts only when it has all its slots; two groups never run each on part of the budget.
 	export DQ_SLOTS_TEST_WORLD=3 DQ_SLOTS_MERGE_RESERVE=0
