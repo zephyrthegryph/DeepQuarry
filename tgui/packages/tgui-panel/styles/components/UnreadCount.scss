@@ -1,12 +1,16 @@
+// An inline pill after the tab name, so it never covers the label; 99+ past two digits.
 .UnreadCount {
   pointer-events: none;
-  position: absolute;
-  top: calc(-1 * var(--space-s));
-  right: calc(-1 * var(--space-s));
-  font-size: 0.65em;
-  padding: 0 var(--space-s);
-  border-radius: var(--border-radius-small);
-  line-height: 1.25em;
+  display: inline-block;
+  vertical-align: 0.15em;
+  min-width: 1.5em;
+  margin-left: var(--space-sm);
+  padding: 0 var(--space-sm);
+  font-size: 0.7em;
+  font-weight: bold;
+  line-height: 1.5em;
+  text-align: center;
+  border-radius: var(--border-radius-circular);
   background-color: var(--color-red);
   color: var(--color-white);
 }

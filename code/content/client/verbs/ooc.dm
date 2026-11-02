@@ -192,11 +192,13 @@
 		return eyeobj
 	return src
 
-/// The map width a viewport fit may ask for: the map and the chat side each keep FIT_VIEWPORT_MIN_SIDE pixels
-/// (or half the window when it is narrower than that).
+/// The map width a viewport fit may ask for. The chat/stat side keeps the larger of FIT_VIEWPORT_MIN_SIDE pixels
+/// and FIT_VIEWPORT_MIN_SIDE_PCT of the window; the map keeps at least half. When both can't hold (a tiny
+/// window) the sides split evenly. A pure function of the window size, so on-size refits land on one width.
 /proc/fit_viewport_clamp_width(desired_width, split_width)
 	var/map_floor = round(split_width / 2)
-	return clamp(desired_width, map_floor, max(map_floor, split_width - FIT_VIEWPORT_MIN_SIDE))
+	var/chat_min = max(FIT_VIEWPORT_MIN_SIDE, round(split_width * FIT_VIEWPORT_MIN_SIDE_PCT / 100))
+	return clamp(desired_width, map_floor, max(map_floor, split_width - chat_min))
 
 /client/verb/fit_viewport()
 	set name = "Fit Viewport"
@@ -242,20 +244,20 @@
 		var/height = text2num(split_for_height[2])
 		desired_width = round(height * aspect_ratio)
 
-	if (text2num(map_size[1]) == desired_width)
-		// Nothing to do
-		return
-
 	var/split_size = splittext(sizes["mainwindow.mainvsplit.size"], "x")
 	var/split_width = text2num(split_size[1])
 
 	if(split_width <= 0)
 		CRASH("fit_viewport: mainvsplit reported width [split_width] (sizes: [size_params])")
 
-	// Keep both sides usable: the chat/statpanel keeps at least FIT_VIEWPORT_MIN_SIDE pixels and the
-	// map at least half the window, so a map measured while it was still collapsed can't hand
-	// the whole window to the chat.
+	// Keep both sides usable: the chat/statpanel keeps its minimum share and the map at least half
+	// the window, so neither a tall window nor a map measured while collapsed hands one side everything.
 	desired_width = fit_viewport_clamp_width(desired_width, split_width)
+
+	// Compared after the clamp, so a clamped fit that already holds is not redone on every resize.
+	if (text2num(map_size[1]) == desired_width)
+		// Nothing to do
+		return
 
 	// Calculate and apply a best estimate
 	// +4 pixels are for the width of the splitter's handle
