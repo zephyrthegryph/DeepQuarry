@@ -239,6 +239,21 @@ const STATUS_NOTCONNECTED: u8 = 0;
 const STATUS_NOENERGY: u8 = 1;
 const STATUS_GOOD: u8 = 2;
 
+/// The external status an APC shows DM: no supply (or no network); too little (the region overdrew last step, or what is left of it this
+/// step, `avail - load` before this APC draws, cannot carry this APC's own demand, so its cell covers the area); or good. Without the second
+/// test a region whose supply fell below the sum of its APCs read "good" everywhere while the APCs past the supply ran their cells flat: an
+/// APC that cannot draw falls back on its cell and adds no load, so the region never browns out.
+#[must_use]
+pub fn apc_external_status(active: bool, avail: f64, load: f64, brown: bool, demand: f64) -> u8 {
+    if avail <= 0.0 {
+        STATUS_NOTCONNECTED
+    } else if brown || (active && avail - load < demand) {
+        STATUS_NOENERGY
+    } else {
+        STATUS_GOOD
+    }
+}
+
 /// The band key of what an APC shows DM: the three channel settings, the
 /// charging lamp, the alarm, the external status and the whole charge
 /// percent, packed below 2^24 with bit 23 set (0 is "never reported").
@@ -265,11 +280,9 @@ vg_core::law! {
         let demand: [f64; 3] = std::array::from_fn(|i| apc.static_load[i] + apc.oneoff[i]);
         // No network: nothing available, and the load has nowhere to land.
         let mut spare_load = 0.0;
-        // The external status DM shows: no supply (or no network), supply
-        // the region overdraws (last step's brownout), or good.
         let status = match region {
-            Some(r) if r.payload.avail > 0.0 => if r.payload.brown { STATUS_NOENERGY } else { STATUS_GOOD },
-            _ => STATUS_NOTCONNECTED,
+            Some(r) => apc_external_status(apc.active, r.payload.avail, r.payload.load, r.payload.brown, demand.iter().sum()),
+            None => STATUS_NOTCONNECTED,
         };
         let (avail, load) = match region {
             Some(r) => (r.payload.avail, &mut r.payload.load),
@@ -410,6 +423,15 @@ mod tests {
         apc.channels[2] = apc_with(1000.0, 500.0).channels[2];
         assert_ne!(apc_report_key(&apc, STATUS_NOENERGY), key, "a status change is");
         assert!(apc_report_key(&apc, STATUS_GOOD) < (1 << 24), "exact as a BYOND f32");
+    }
+
+    #[test]
+    fn the_external_status_shows_a_supply_too_small_for_this_apc() {
+        assert_eq!(apc_external_status(true, 0.0, 0.0, false, 100.0), STATUS_NOTCONNECTED, "no supply");
+        assert_eq!(apc_external_status(true, 1000.0, 0.0, false, 400.0), STATUS_GOOD, "enough left for this APC");
+        assert_eq!(apc_external_status(true, 1000.0, 800.0, false, 400.0), STATUS_NOENERGY, "the APCs before it took the supply: its cell carries it");
+        assert_eq!(apc_external_status(true, 1000.0, 0.0, true, 400.0), STATUS_NOENERGY, "the region overdrew last step");
+        assert_eq!(apc_external_status(false, 1000.0, 1000.0, false, 400.0), STATUS_GOOD, "a switched-off APC draws nothing");
     }
 
     #[test]
