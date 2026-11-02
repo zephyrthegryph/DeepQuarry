@@ -56,7 +56,7 @@ const LIST_STYLE = {
 const rowStyle = (changed: boolean, focused: boolean) => ({
   display: 'flex',
   alignItems: 'center',
-  flexWrap: 'wrap',
+  flexWrap: 'wrap' as const,
   gap: '0.4em',
   padding: '0.1em 0.3em',
   borderRadius: '0.2em',
