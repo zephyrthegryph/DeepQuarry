@@ -40,8 +40,7 @@
 
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L
-			var/obj/item/organ/external/affected = H.get_organ(check_zone(BP_TORSO))
-			H.electrocute_act(rand(25, 40) * weakness, holder, H.get_siemens_coefficient_organ(affected), affected)
+			H.electrocute_act(rand(25, 40) * weakness, holder, 1.0, BP_TORSO)
 			var/turf/T = get_turf(H)
 			if(istype(T))
 				lightning_strike(T, TRUE)
@@ -85,8 +84,7 @@
 
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L
-			var/obj/item/organ/external/affected = H.get_organ(check_zone(BP_TORSO))
-			H.electrocute_act(rand(1, 10) * weakness, holder, H.get_siemens_coefficient_organ(affected), affected)
+			H.electrocute_act(rand(1, 10) * weakness, holder, 1.0, BP_TORSO)
 			var/turf/T = get_turf(L)
 			if(istype(T))
 				lightning_strike(T, TRUE)
@@ -130,8 +128,7 @@
 
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L
-			var/obj/item/organ/external/affected = H.get_organ(check_zone(BP_TORSO))
-			H.electrocute_act(rand(10, 30) * weakness, holder, H.get_siemens_coefficient_organ(affected), affected)
+			H.electrocute_act(rand(10, 30) * weakness, holder, 1.0, BP_TORSO)
 			var/turf/T = get_turf(L)
 			if(istype(T))
 				lightning_strike(T, TRUE)
