@@ -2,7 +2,7 @@
 // area beside it, and the text as examine prints it below.
 
 import { useBackend } from 'tgui/backend';
-import { Box } from 'tgui-core/components';
+import { Box, Button } from 'tgui-core/components';
 import {
   flavorPreviewText,
   type SwitcherEntry,
@@ -59,6 +59,18 @@ export const FlavorTextEditor = ({ data, staticData }: EditorProps) => {
         robot
           ? send(act, 'set_robot_flavor', { module: zone, text })
           : send(act, 'set_flavor', { zone, text })
+      }
+      actions={
+        robot ? undefined : (
+          <Button
+            compact
+            icon="eye"
+            tooltip="Print it in your chat the way an examining player sees it"
+            onClick={() => act('dq_inspect_flavor')}
+          >
+            Show in chat as examined
+          </Button>
+        )
       }
       preview={
         robot ? (

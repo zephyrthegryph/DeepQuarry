@@ -203,3 +203,14 @@
 	TEST_ASSERT("antag" in GLOB.dq_admin_only_categories, "antag is admin-only")
 	TEST_ASSERT(!dq_sees_admin_categories(new /datum/preferences/dq_test_stub), "a player does not see it")
 	TEST_ASSERT("antag" in dq_character_category_index("human"), "the shared index still holds it for admins")
+
+/// Size is part of Identity, and the flavor inspection is the examine's own text for this character.
+/datum/unit_test/dq_size_in_identity_and_inspection
+
+/datum/unit_test/dq_size_in_identity_and_inspection/Run()
+	var/datum/preference/size = GLOB.preference_entries[/datum/preference/numeric/human/size_multiplier]
+	TEST_ASSERT_EQUAL(size.get_category(null), "identity", "size is in Identity")
+	TEST_ASSERT("size" in GLOB.dq_robot_mode_hidden_groups, "cyborgs still do not get size")
+	var/datum/preferences/dq_test_stub/P = dq_test_load_character(list("species" = SPECIES_HUMAN, "flavor_texts" = list("general" = "A very tall person.")))
+	var/text = P.dq_examine_profile_text()
+	TEST_ASSERT(findtext(text, "A very tall person."), "the examine text carries the flavor: [text]")
