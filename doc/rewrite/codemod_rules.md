@@ -90,7 +90,7 @@ what the listener holds then):
 | protean blob hiding | `movable_pre_move` | `instead()` on `pre_move` | an unconditional refusal while hiding |
 | artifacts | `atom_ex_act`, `atom_bullet_act` | `instead(then())` on `explode`, `shoot` | triggered artifacts cancel the blast and the shot |
 | experiment handler (handheld scanner) | `item_pre_attack` | `instead(then())` on `pre_attack` | cancels the swing when it ran the experiment |
-| tests: containment | `before/slot_pre_insert`, `slot_pre_remove` | `instead(when())` on `check_insert`, `check_remove` | the refusal questions of `dq_ledger_refusal()` |
+| tests: containment | `before/slot_pre_insert`, `slot_pre_remove` | `instead(when())` on `insert`, `remove` | the refusal questions of `dq_ledger_refusal()` |
 
 The after-fact events only unit tests watched (`machinery_broken`, `living_injury_explained`, `slot_inserted`, ...) got a notice twin through `TEST_WATCHED` in `tools/dx/gen_om_notices.py`.
 The `living_status_stun` veto test was deleted: nothing but a test vetoed it.
