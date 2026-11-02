@@ -4,6 +4,9 @@ Everything CI checks can be run locally. On Windows use the `bin/*.cmd` entry
 points or `tools\build\build.bat`; on Linux (and in Git Bash) use
 `tools/build/build.sh`. Both take the same targets and `-D` defines.
 
+
+**What to run before landing is your judgement.** Nothing gates master (`bash tools/dq_land.sh`, `doc/rewrite/agent_workflow.md` section 29): run the focused tests that fit the change, and `bash tools/ci/check_ratchets.sh --changed-only` before a DM change. A UI or docs fix may need neither a compile nor a world. Mentions below of gates, stamps and lane-ready describe tools no longer on the landing path.
+
 ## Quick reference
 
 | Goal | Command | Typical time |

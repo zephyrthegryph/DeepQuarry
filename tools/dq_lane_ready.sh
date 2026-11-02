@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Retired 2026-10-24: the batch train (tools/dq_train.sh) is the only path to master. Per-lane proofs re-ran on every master move,
+# Retired 2026-10-24: tools/dq_land.sh is the path to master. Per-lane proofs re-ran on every master move,
 # queued for the one DM compile slot and took lanes 2-3 h to land. A lane runs its focused tests, enqueues and releases its slot.
 if [ "${DQ_LEGACY_LAND:-0}" != 1 ]; then
-	echo "dq_lane_ready: retired; land with: bash tools/dq_train.sh enqueue --tests \"<your tests>\" (or --light), then release your slot" >&2
+	echo "dq_lane_ready: retired; land with: bash tools/dq_land.sh (or --light), then release your slot" >&2
 	exit 2
 fi
 # A lane runs this when it is finished. It proves the lane on its merge with the current master, once, and stamps the proof, so the
