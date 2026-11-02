@@ -83,6 +83,9 @@ function stripNewLineFlood(text: string): string {
 function createReconnectedNode(): HTMLElement {
   const node = document.createElement('div');
   node.className = 'Chat__reconnected';
+  const label = document.createElement('span');
+  label.textContent = 'Reconnected';
+  node.appendChild(label);
   return node;
 }
 

@@ -18,7 +18,7 @@
 
 /datum/gear/eyes/eyepatchwhite/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/eyes/blindfold
 	display_name = "blindfold"
@@ -30,7 +30,7 @@
 
 /datum/gear/eyes/whiteblindfold/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/eyes/thinblindfold
 	display_name = "blindfold, thin white (recolorable)"
@@ -38,7 +38,7 @@
 
 /datum/gear/eyes/thinblindfold/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/eyes/glasses
 	display_name = "Glasses, prescription"
@@ -208,7 +208,7 @@
 /datum/gear/eyes/arglasses_visor/New()
 	..()
 	rel_clear(src, nameof(gear_tweaks))
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/channels)
 
 /datum/gear/eyes/arglasses_sec
 	display_name = "AR-Security glasses"

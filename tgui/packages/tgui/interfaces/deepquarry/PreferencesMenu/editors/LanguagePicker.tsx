@@ -6,7 +6,6 @@ import { useBackend } from 'tgui/backend';
 import {
   Box,
   Button,
-  Icon,
   Input,
   Section,
   Stack,
@@ -115,10 +114,6 @@ export const LanguagePicker = ({ data, staticData }: EditorProps) => {
         <Section
           title={
             <Stack align="center">
-              <Stack.Item>
-                <Icon name="language" mr={0.5} />
-                Languages
-              </Stack.Item>
               <Stack.Item grow />
               <Stack.Item>
                 <Box

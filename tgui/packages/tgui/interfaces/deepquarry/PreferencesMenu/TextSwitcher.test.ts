@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'bun:test';
-import { flavorPreviewText, shownText, storedText } from './TextSwitcher';
+import {
+  flavorPreviewText,
+  shownText,
+  splitSpoilers,
+  storedText,
+} from './TextSwitcher';
 
 describe('verb defaults', () => {
   it('shows the default for an unset verb and the verb when set', () => {
@@ -26,5 +31,16 @@ describe('flavorPreviewText', () => {
         face: '',
       }),
     ).toBe('A person\n\nTall');
+  });
+});
+
+describe('splitSpoilers', () => {
+  it('marks every second part as a spoiler, like examine', () => {
+    expect(splitSpoilers('a ||secret|| b')).toEqual([
+      ['a ', false],
+      ['secret', true],
+      [' b', false],
+    ]);
+    expect(splitSpoilers('plain')).toEqual([['plain', false]]);
   });
 });

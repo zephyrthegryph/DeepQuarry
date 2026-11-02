@@ -12,7 +12,7 @@
 //    dominate vertical space.
 
 import { useBackend } from 'tgui/backend';
-import { Box, Section } from 'tgui-core/components';
+import { Box, Button, Section } from 'tgui-core/components';
 import { getEditor } from './editors';
 import { LooksPage, looksHasBody } from './LooksPage';
 import { labelForGroup, labelForKey } from './labels';
@@ -24,7 +24,7 @@ import {
   prefAnchor,
   useSearchHighlight,
 } from './search';
-import { OocPreview, type SwitcherEntry, TextSwitcher } from './TextSwitcher';
+import { type SwitcherEntry, TextSwitcher } from './TextSwitcher';
 import type {
   PrefCategory,
   PrefGroup,
@@ -191,7 +191,20 @@ const SwitcherGroup = ({
     <TextSwitcher
       entries={entries}
       onCommit={(key, value) => act('dq_update_preference', { key, value })}
-      preview={group === 'ooc_notes' ? <OocPreview values={values} /> : undefined}
+      buttonsBelow
+      formatted={group === 'ooc_notes'}
+      actions={
+        group === 'ooc_notes' ? (
+          <Button
+            compact
+            icon="up-right-from-square"
+            tooltip="Open the OOC notes window other players see"
+            onClick={() => act('dq_inspect_ooc_notes')}
+          >
+            Open as others see it
+          </Button>
+        ) : undefined
+      }
     />
   );
 };

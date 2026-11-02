@@ -1,8 +1,9 @@
-// DQAdd — A button list choosing which text is edited, one editor beside it, and optionally a preview of how
-// the texts read. Flavor, speech verbs, records and OOC notes all use it.
+// DQAdd — A button list choosing which text is edited and one editor; the editor can show the chat's formatting
+// in place. Flavor, speech verbs, records and OOC notes all use it.
 
 import { type ReactNode, useEffect, useState } from 'react';
 import { Box, Button, Input, TextArea } from 'tgui-core/components';
+import { FormattingTextArea } from './FormattingTextArea';
 
 export type SwitcherEntry = {
   key: string;
@@ -29,11 +30,18 @@ export const storedText = (typed: string, defaultText?: string) =>
 export const TextSwitcher = ({
   entries,
   onCommit,
-  preview,
+  buttonsBelow,
+  actions,
+  formatted,
 }: {
   entries: SwitcherEntry[];
   onCommit: (key: string, value: string) => void;
-  preview?: ReactNode;
+  /// The entry buttons as a row under the text box instead of a column beside it.
+  buttonsBelow?: boolean;
+  /// Controls in the row of entry buttons (e.g. inspect in game).
+  actions?: ReactNode;
+  /// The box shows the chat's emphasis as it is typed, and takes the chat's Ctrl+B/I/U.
+  formatted?: boolean;
 }) => {
   const [picked, setPicked] = useState(entries[0]?.key ?? '');
   const entry = entries.find((e) => e.key === picked) ?? entries[0];
@@ -49,65 +57,71 @@ export const TextSwitcher = ({
     const value = storedText(draft, entry.defaultText);
     if (value !== entry.value) onCommit(entry.key, value);
   };
+  const buttons = entries.map((e) => (
+    <Button
+      key={e.key}
+      fluid={!buttonsBelow}
+      selected={e.key === entry.key}
+      onClick={() => setPicked(e.key)}
+    >
+      {e.label}
+    </Button>
+  ));
+  const editor = entry.short ? (
+    <Input
+      fluid
+      maxLength={entry.maxLength}
+      value={draft}
+      onChange={setDraft}
+      onBlur={commit}
+      onEnter={commit}
+    />
+  ) : formatted ? (
+    <FormattingTextArea
+      maxLength={entry.maxLength}
+      value={draft}
+      onChange={setDraft}
+      onBlur={commit}
+    />
+  ) : (
+    <TextArea
+      fluid
+      height="10em"
+      maxLength={entry.maxLength}
+      value={draft}
+      onChange={setDraft}
+      onBlur={commit}
+    />
+  );
   return (
     <Box>
-      <Box style={{ display: 'flex', gap: '0.5em', alignItems: 'stretch' }}>
-        <Box style={{ flex: '0 0 auto', minWidth: '7em' }}>
-          {entries.map((e) => (
-            <Button
-              key={e.key}
-              fluid
-              selected={e.key === entry.key}
-              onClick={() => setPicked(e.key)}
-            >
-              {e.label}
-            </Button>
-          ))}
+      {buttonsBelow ? (
+        <Box>
+          {editor}
+          <Box
+            mt={0.25}
+            style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25em' }}
+          >
+            {buttons}
+            {actions && <Box style={{ marginLeft: 'auto' }}>{actions}</Box>}
+          </Box>
         </Box>
-        <Box style={{ flex: '1 1 0', minWidth: 0 }}>
-          {entry.short ? (
-            <Input
-              fluid
-              maxLength={entry.maxLength}
-              value={draft}
-              onChange={setDraft}
-              onBlur={commit}
-              onEnter={commit}
-            />
-          ) : (
-            <TextArea
-              fluid
-              height="10em"
-              maxLength={entry.maxLength}
-              value={draft}
-              onChange={setDraft}
-              onBlur={commit}
-            />
-          )}
+      ) : (
+        <Box style={{ display: 'flex', gap: '0.5em', alignItems: 'stretch' }}>
+          <Box style={{ flex: '0 0 auto', minWidth: '7em' }}>{buttons}</Box>
+          <Box style={{ flex: '1 1 0', minWidth: 0 }}>{editor}</Box>
         </Box>
-      </Box>
-      {preview && <TextPreview>{preview}</TextPreview>}
+      )}
     </Box>
   );
 };
 
-/// Framed "Preview" block.
-export const TextPreview = ({ children }: { children: ReactNode }) => (
-  <Box
-    mt={0.5}
-    p={0.5}
-    style={{
-      border: '1px solid rgba(255,255,255,0.12)',
-      borderRadius: '0.25em',
-      background: 'rgba(0,0,0,0.2)',
-    }}
-  >
-    <Box color="label" fontSize="0.85em" mb={0.25}>
-      Preview
-    </Box>
-    {children}
-  </Box>
-);
+/// The parts of a flavor text and whether each is a spoiler (between "||" pairs), as topic_flavor_more splits it.
+export const splitSpoilers = (text: string): [string, boolean][] =>
+  text
+    .split('||')
+    .map((part, i): [string, boolean] => [part, i % 2 === 1])
+    .filter(([part]) => part !== '');
 
 /// The flavor text as examine prints it: the entries in order, a blank line apart, "||" stripped.
 export const flavorPreviewText = (
@@ -118,34 +132,3 @@ export const flavorPreviewText = (
     .map((z) => (texts[z] ?? '').replaceAll('||', ''))
     .filter((t) => t)
     .join('\n\n');
-
-/// The OOC notes as the notes window shows them; private notes are nobody else's, so they stay out.
-export const OOC_PREVIEW_SECTIONS: [string, string][] = [
-  ['OOC_Notes_Favs', 'Favourites'],
-  ['OOC_Notes_Likes', 'Likes'],
-  ['OOC_Notes_Maybes', 'Maybes'],
-  ['OOC_Notes_Disikes', 'Dislikes'],
-];
-
-export const OocPreview = ({ values }: { values: Record<string, unknown> }) => {
-  const notes = String(values.OOC_Notes ?? '');
-  const sections = OOC_PREVIEW_SECTIONS.filter(([key]) => values[key]);
-  if (!notes && !sections.length) {
-    return (
-      <Box color="label" italic>
-        Nothing to show yet.
-      </Box>
-    );
-  }
-  return (
-    <Box>
-      {notes && <Box preserveWhitespace>{notes}</Box>}
-      {sections.map(([key, title]) => (
-        <Box key={key} mt={0.5}>
-          <Box bold>{title}</Box>
-          <Box preserveWhitespace>{String(values[key])}</Box>
-        </Box>
-      ))}
-    </Box>
-  );
-};

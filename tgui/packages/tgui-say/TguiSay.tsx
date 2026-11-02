@@ -14,6 +14,7 @@ import { LanguagePreview, previewHeight } from './LanguagePreview';
 import { buildPreview, type LanguageRules } from './parseLanguages';
 import {
   activeAt,
+  SHORTCUT_MARKERS,
   type TextEdit,
   toggleLanguage,
   toggleMarker,
@@ -241,7 +242,7 @@ export function TguiSay() {
       return false;
     }
     const { selectionStart: start, selectionEnd: end } = event.currentTarget;
-    const marker = { b: '+', i: '|', u: '_' }[event.key.toLowerCase()];
+    const marker = SHORTCUT_MARKERS[event.key.toLowerCase()];
     if (marker) {
       event.preventDefault();
       applyEdit(toggleMarker(value, start, end, marker));

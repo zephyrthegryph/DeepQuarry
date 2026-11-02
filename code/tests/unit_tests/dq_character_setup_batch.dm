@@ -203,3 +203,94 @@
 	TEST_ASSERT("antag" in GLOB.dq_admin_only_categories, "antag is admin-only")
 	TEST_ASSERT(!dq_sees_admin_categories(new /datum/preferences/dq_test_stub), "a player does not see it")
 	TEST_ASSERT("antag" in dq_character_category_index("human"), "the shared index still holds it for admins")
+
+/// Size is part of Identity, and the flavor inspection is the examine's own text for this character.
+/datum/unit_test/dq_size_in_identity_and_inspection
+
+/datum/unit_test/dq_size_in_identity_and_inspection/Run()
+	var/datum/preference/size = GLOB.preference_entries[/datum/preference/numeric/human/size_multiplier]
+	TEST_ASSERT_EQUAL(size.get_category(null), "identity", "size is in Identity")
+	TEST_ASSERT("size" in GLOB.dq_robot_mode_hidden_groups, "cyborgs still do not get size")
+	var/datum/preferences/dq_test_stub/P = dq_test_load_character(list("species" = SPECIES_HUMAN, "flavor_texts" = list("general" = "A very tall person.")))
+	var/text = P.dq_examine_profile_text()
+	TEST_ASSERT(findtext(text, "A very tall person."), "the examine text carries the flavor: [text]")
+
+/// The flavor inspection's "More..." link, pressed through the real Topic op by a viewer nowhere near the mannequin, prints the whole text in chat.
+/datum/unit_test/dq_flavor_more_expands_in_chat
+
+/datum/unit_test/dq_flavor_more_expands_in_chat/Run()
+	var/long_text = "A tall person with a long coat, scuffed boots and a scar over one eye. ENDMARK"
+	var/datum/preferences/dq_test_stub/P = dq_test_load_character(list("species" = SPECIES_HUMAN, "flavor_texts" = list("general" = long_text)))
+	var/text = P.dq_examine_profile_text()
+	TEST_ASSERT(findtext(text, "flavor_more=1"), "a long flavor is shortened with a More link: [text]")
+	TEST_ASSERT(!findtext(text, "ENDMARK"), "the shortened text stops early")
+	var/mob/living/carbon/human/viewer = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/mannequin = get_mannequin(P.client_ckey)
+	TEST_ASSERT(topic_dispatch(mannequin, viewer, list("flavor_more" = "1")), "the More link's op answers")
+	var/list/said = test_chat_of(viewer)
+	TEST_ASSERT(length(said) && findtext(said[length(said)], "ENDMARK"), "the whole flavor is in chat: [jointext(said, " | ")]")
+
+/// The OOC inspection opens the real notes panel on the mannequin, held in a state that lets a far-away viewer keep it, even with no notes.
+/datum/unit_test/dq_ooc_inspection_opens_panel
+
+/datum/unit_test/dq_ooc_inspection_opens_panel/Run()
+	var/datum/preferences/dq_test_stub/P = dq_test_load_character(list("species" = SPECIES_HUMAN, "OOC_Notes" = "Likes cats."))
+	var/mob/living/carbon/human/viewer = allocate(/mob/living/carbon/human)
+	var/datum/ooc_notes_panel/panel = P.dq_open_ooc_inspection(viewer)
+	TEST_ASSERT_NOTNULL(panel, "the notes panel exists for the mannequin")
+	TEST_ASSERT_EQUAL(panel.host.identity().ooc_notes, "Likes cats.", "it shows this character's notes")
+	TEST_ASSERT_EQUAL(GLOB.tgui_always_state.can_use_topic(panel, viewer), STATUS_INTERACTIVE, "the state it is opened in keeps a distant viewer")
+	TEST_ASSERT(GLOB.tgui_default_state.can_use_topic(panel, viewer) < STATUS_INTERACTIVE, "where the default state would not (why it never opened)")
+	P = dq_test_load_character(list("species" = SPECIES_HUMAN, "OOC_Notes" = ""))
+	TEST_ASSERT_NOTNULL(P.dq_open_ooc_inspection(viewer), "it opens with no notes too")
+
+/// Legs are one choice: Normal and Digitigrade set the digitigrade pref, a taur body is the tail style; an old digitigrade taur save keeps the taur.
+/datum/unit_test/dq_leg_style_one_choice
+
+/datum/unit_test/dq_leg_style_one_choice/Run()
+	var/taur_name
+	for(var/key in GLOB.tail_styles_list)
+		var/datum/sprite_accessory/S = GLOB.tail_styles_list[key]
+		if(istype(S) && istaurtail(S))
+			taur_name = S.name
+			break
+	TEST_ASSERT_NOTNULL(taur_name, "there is a taur body")
+	var/datum/preferences/dq_test_stub/P = dq_test_load_character(list("species" = SPECIES_HUMAN, "digitigrade" = 1, "tail_style" = taur_name))
+	TEST_ASSERT(P.has_taur_body(), "the saved taur body is kept")
+	TEST_ASSERT(!P.read_preference(/datum/preference/toggle/human/digitigrade), "the old digitigrade flag under a taur body is dropped")
+	var/datum/preference_editor/legs/editor = GLOB.preference_editors_by_key["legs"]
+	TEST_ASSERT_EQUAL(editor.handle_action(P, "set_leg_style", list("style" = "digitigrade"), null), PREF_UPDATE_ACCEPTED, "digitigrade is a choice")
+	TEST_ASSERT(P.read_preference(/datum/preference/toggle/human/digitigrade), "it sets the digitigrade mode")
+	TEST_ASSERT(!P.has_taur_body(), "and leaves the taur body")
+	TEST_ASSERT_EQUAL(editor.handle_action(P, "set_leg_style", list("style" = taur_name), null), PREF_UPDATE_ACCEPTED, "a taur body is a choice")
+	TEST_ASSERT(P.has_taur_body() && !P.read_preference(/datum/preference/toggle/human/digitigrade), "it sets the taur mode")
+	TEST_ASSERT_EQUAL(editor.handle_action(P, "set_leg_style", list("style" = "plantigrade"), null), PREF_UPDATE_ACCEPTED, "normal is a choice")
+	TEST_ASSERT(!P.has_taur_body() && !P.read_preference(/datum/preference/toggle/human/digitigrade), "it sets normal legs")
+	TEST_ASSERT_EQUAL(editor.handle_action(P, "set_leg_style", list("style" = "no such style"), null), PREF_UPDATE_REJECTED, "anything else is refused")
+
+/// Examine, the More link and the OOC notes in chat style text the way the character setup previews it: emphasis markers and "||" spoilers.
+/datum/unit_test/dq_flavor_and_notes_formatting
+
+/datum/unit_test/dq_flavor_and_notes_formatting/Run()
+	var/rendered = dq_render_flavor("A +bold+ |soft| _under_ ||secret|| end")
+	TEST_ASSERT(findtext(rendered, "<b>bold</b>"), "emphasis: [rendered]")
+	TEST_ASSERT(findtext(rendered, "<i>soft</i>") && findtext(rendered, "<u>under</u>"), "every marker: [rendered]")
+	TEST_ASSERT(findtext(rendered, span_spoiler("secret")), "spoilers: [rendered]")
+	TEST_ASSERT(!findtext(rendered, "||"), "the spoiler marks are gone")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	H.bio.flavor_texts = list("general" = "Short +bold+ ||hid||")
+	H.print_flavor_text(0)
+	var/shown = H.print_flavor_text()
+	TEST_ASSERT(findtext(shown, "<b>bold</b>") && findtext(shown, span_spoiler("hid")), "examine's short text is formatted: [shown]")
+	H.bio.flavor_texts = list("general" = "A long description that runs on and on, +loud+ at the very end.")
+	H.print_flavor_text(0)
+	shown = H.print_flavor_text()
+	TEST_ASSERT(findtext(shown, "flavor_more=1"), "a long text is cut with More")
+	var/mob/living/carbon/human/viewer = allocate(/mob/living/carbon/human)
+	TEST_ASSERT(topic_dispatch(H, viewer, list("flavor_more" = "1")), "the More link answers")
+	var/list/said = test_chat_of(viewer)
+	TEST_ASSERT(length(said) && findtext(said[length(said)], "loud") && !findtext(said[length(said)], "+loud+"), "More prints it formatted: [jointext(said, " | ")]")
+	H.identity().ooc_notes = "Likes +cats+"
+	H.print_ooc_notes_chat(viewer)
+	said = test_chat_of(viewer)
+	TEST_ASSERT(length(said) && findtext(said[length(said)], "cats") && !findtext(said[length(said)], "+cats+"), "OOC notes in chat are formatted: [jointext(said, " | ")]")

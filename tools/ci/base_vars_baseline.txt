@@ -6,7 +6,6 @@ base_var	code/controllers/subsystems/overlays.dm	@/atom::realized_overlays
 base_var	code/controllers/subsystems/overlays.dm	@/atom::realized_underlays
 base_var	code/game/atom/_atom.dm	@/atom::germ_level
 base_var	code/game/atom/_atom.dm	@/atom::simulated
-base_var	code/game/atom/_atom.dm	@/atom::our_overlays
 base_var	code/game/atom/_atom.dm	@/atom::atom_colours
 base_var	code/game/atom/armor.dm	@/atom::armor_spec
 base_var	code/game/atom/atom_defense.dm	@/atom::uses_integrity

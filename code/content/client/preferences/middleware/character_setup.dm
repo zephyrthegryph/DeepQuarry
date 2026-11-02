@@ -20,7 +20,6 @@ GLOBAL_LIST_INIT(dq_category_order, list(
 	"occupation",
 	"traits",
 	"mind_body",
-	"size_voice",
 	"factions",
 	"antag",
 	"game",
@@ -63,6 +62,8 @@ GLOBAL_LIST_INIT(dq_robot_mode_hidden_categories, list(
 ))
 
 GLOBAL_LIST_INIT(dq_robot_mode_hidden_groups, list(
+	"size",     // was the size_voice tab, hidden for cyborgs; now Identity sections
+	"voice",
 	"hair",
 	"ears",
 	"tail",
@@ -91,7 +92,6 @@ GLOBAL_LIST_INIT(dq_robot_mode_hidden_pref_keys, list(
 // pAI: holopad with no body. Strip everything physical and most stat configuration.
 GLOBAL_LIST_INIT(dq_pai_mode_hidden_categories, list(
 	"appearance",
-	"size_voice",
 	"mind_body",
 	"loadout",
 	"traits",
@@ -100,6 +100,8 @@ GLOBAL_LIST_INIT(dq_pai_mode_hidden_categories, list(
 ))
 
 GLOBAL_LIST_INIT(dq_pai_mode_hidden_groups, list(
+	"size",     // was the size_voice tab, hidden for pAIs; now Identity sections
+	"voice",
 	"chassis",
 	"hair",
 	"ears",
@@ -223,9 +225,8 @@ GLOBAL_LIST_INIT(dq_group_display_merge, list("gender" = "name", "demographics" 
 // which is type-registration order (not file order), so "Name" wasn't reliably
 // first in Identity even though the metadata file lists it first.
 GLOBAL_LIST_INIT(dq_group_order, list(
-	"identity"    = list("name", "blood", "species", "spawn", "language", "background", "speech_verbs", "voice", "flavor", "directory", "records", "ooc_notes"),
+	"identity"    = list("name", "blood", "species", "spawn", "language", "background", "speech_verbs", "voice", "size", "flavor", "directory", "records", "ooc_notes"),
 	"appearance"  = list("palette", "chassis", "body", "hair", "ears", "tail", "wings", "markings", "organs", "preview"),
-	"size_voice"  = list("size"),
 	"antag"       = list("antag", "be_special"),
 	"game"        = list("input", "view", "sound", "ui", "chat", "persistence", "roleplay", "nif", "pai"),
 ))
@@ -599,6 +600,7 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 		dq_editor_static_cache -= editor.key
 /datum/preference_middleware/character_setup/get_ui_static_data(mob/user)
 	var/list/data = ..()
+	data["dq_text_markers"] = GLOB.speech_toppings // the chat's emphasis markers: the text boxes format as the say preview does
 	return data
 
 CAPABILITIES(/datum/preference_middleware/character_setup)
@@ -606,6 +608,8 @@ CAPABILITIES(/datum/preference_middleware/character_setup)
 	op("dq_prefetch_categories", ui_act("dq_prefetch_categories"), then(PROC_REF(ui_act_dq_prefetch_categories)))
 	op("dq_update_preference", ui_act("dq_update_preference", arg("key", schema_text(4096)), arg("value")), then(PROC_REF(ui_act_dq_update_preference)))
 	op("dq_pick_color", ui_act("dq_pick_color", arg("key", schema_text(4096))), asks(/datum/prompt/color/prefs/entry, fields = list("title" = "Color", "question" = "Pick a color", "default" = computed(PROC_REF(pick_color_default)), "preferences" = computed(PROC_REF(prefs_of_setup)), "pref_key" = computed(PROC_REF(pick_color_key))), step = "color", when = PROC_REF(pick_color_writable)), then(PROC_REF(ui_act_dq_pick_color)))
+	op("dq_inspect_flavor", ui_act("dq_inspect_flavor"), then(PROC_REF(ui_act_dq_inspect_flavor)))
+	op("dq_inspect_ooc_notes", ui_act("dq_inspect_ooc_notes"), then(PROC_REF(ui_act_dq_inspect_ooc_notes)))
 	op("dq_editor_action", ui_act("dq_editor_action", arg("action", schema_text(128)), arg("editor", schema_text(128)), arg("params")), then(PROC_REF(ui_act_dq_editor_action)))
 /datum/preference_middleware/character_setup/proc/ui_act_dq_select_category(datum/act/op/A, category, force_catalogs)
 	var/mob/user = A.actor
@@ -720,3 +724,36 @@ CAPABILITIES(/datum/preference_middleware/character_setup)
 	if(!pref || !pref.is_accessible(preferences))
 		return "not accessible"
 
+/// The preview mannequin as this character is now: the settings applied and dressed as the preview shows it.
+/datum/preferences/proc/dq_inspection_mannequin()
+	var/mob/living/carbon/human/dummy/mannequin/mannequin = get_mannequin(client_ckey)
+	mannequin.delete_inventory(TRUE)
+	dress_preview_mob(mannequin, dq_active_category == "loadout")
+	// OOC notes and their style reach a human only when its client logs in (update_icons.dm); the mannequin has none, so apply them here
+	// through the prefs' own apply_to_living.
+	for(var/datum/preference/preference as anything in get_preferences_in_priority_order())
+		if(preference.savefile_identifier == PREFERENCE_CHARACTER && (istype(preference, /datum/preference/text/living) || istype(preference, /datum/preference/toggle/living)))
+			preference.apply_to_living(mannequin, read_preference(preference.type))
+	return mannequin
+
+/// What examining this character prints below its gear: flavor text, custom link and the OOC notes links, from the examine's own proc.
+/datum/preferences/proc/dq_examine_profile_text()
+	var/mob/living/carbon/human/mannequin = dq_inspection_mannequin()
+	return examine_block(span_infoplain("[jointext(mannequin.examine_profile_lines(), "<br>")]"))
+
+/// The flavor text in the player's chat, as an examining player sees it.
+/datum/preference_middleware/character_setup/proc/ui_act_dq_inspect_flavor(datum/act/op/A)
+	to_chat(A.actor, preferences().dq_examine_profile_text())
+	return FALSE
+
+/// The OOC notes window other players open from examine, for this character.
+/datum/preference_middleware/character_setup/proc/ui_act_dq_inspect_ooc_notes(datum/act/op/A)
+	preferences().dq_open_ooc_inspection(A.actor)
+	return FALSE
+
+/// The OOC notes window others open from examine, on this character's preview mannequin, held open for `user` wherever they are (a lobby player
+/// is never near the mannequin, and the default state closed it at once). Returns the panel.
+/datum/preferences/proc/dq_open_ooc_inspection(mob/user)
+	var/mob/living/carbon/human/mannequin = dq_inspection_mannequin()
+	mannequin.ooc_notes_window(user, GLOB.tgui_always_state, TRUE)
+	return resolve_token(LAZYACCESS(GLOB.dq_ooc_notes_panels, ref_token(mannequin)))

@@ -420,7 +420,6 @@
 	. = list()
 	var/flavor_text = print_flavor_text()
 	if(flavor_text)
-		flavor_text = replacetext(flavor_text, "||", "")
 		. += "[flavor_text]"
 	if(sparse_get(src, custom_link))
 		. += "Custom link: " + span_linkify("[sparse_get(src, custom_link)]")

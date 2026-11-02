@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button } from 'tgui-core/components';
+import { Tabs } from 'tgui-core/components';
 
 function num(value: any, digits = 1): string {
   const number = Number(value);
@@ -12,6 +12,13 @@ function severity(value: number): string {
   return 'healthy';
 }
 
+/** Time dilation: a few percent is normal jitter, double digits players feel. */
+function tidiSeverity(value: number): string {
+  if (value > 25) return 'critical';
+  if (value > 10) return 'warning';
+  return 'healthy';
+}
+
 function Card(props: {
   label: string;
   value: string;
@@ -19,7 +26,9 @@ function Card(props: {
   level?: string;
 }) {
   return (
-    <div className={`mc-metric-card ${props.level || ''}`}>
+    <div
+      className={`mc-metric-card${props.level && props.level !== 'healthy' ? ` mc-metric-card--${props.level}` : ''}`}
+    >
       <div className="mc-metric-label">{props.label}</div>
       <div className="mc-metric-value">{props.value}</div>
       <div className="mc-metric-detail">{props.detail}</div>
@@ -106,8 +115,34 @@ function Headline({ metrics }: { metrics: any }) {
         label="TiDi"
         value={`${num(metrics.tidi)}%`}
         detail={`avg ${num(metrics.tidi_fast)} / ${num(metrics.tidi_medium)} / ${num(metrics.tidi_slow)}`}
+        level={tidiSeverity(Number(metrics.tidi))}
       />
     </div>
+  );
+}
+
+function TickGraph({ metrics }: { metrics: any }) {
+  return (
+    <section className="mc-panel">
+      <h3>Recent tick budget</h3>
+      <span className="mc-panel-hint">
+        green &lt;75% · amber 75–100% · red overrun
+      </span>
+      <div className="mc-tick-graph">
+        {(metrics.graph || []).map((raw: any, index: number) => {
+          const value = Number(raw) || 0;
+          return (
+            <div
+              key={index}
+              className={`mc-tick-bar ${severity(value)}`}
+              style={{ height: `${Math.max(1, Math.min(value, 200) / 2)}%` }}
+              title={`${num(value)}% (${num((value * metrics.tick_budget_ms) / 100, 2)} ms)`}
+            />
+          );
+        })}
+        <div className="mc-budget-line" />
+      </div>
+    </section>
   );
 }
 
@@ -119,26 +154,7 @@ function Ticks({ metrics }: { metrics: any }) {
   ];
   return (
     <>
-      <section className="mc-panel">
-        <h3>Recent tick budget</h3>
-        <span className="mc-panel-hint">
-          green &lt;75% · amber 75–100% · red overrun
-        </span>
-        <div className="mc-tick-graph">
-          {(metrics.graph || []).map((raw: any, index: number) => {
-            const value = Number(raw) || 0;
-            return (
-              <div
-                key={index}
-                className={`mc-tick-bar ${severity(value)}`}
-                style={{ height: `${Math.max(1, Math.min(value, 200) / 2)}%` }}
-                title={`${num(value)}% (${num((value * metrics.tick_budget_ms) / 100, 2)} ms)`}
-              />
-            );
-          })}
-          <div className="mc-budget-line" />
-        </div>
-      </section>
+      <TickGraph metrics={metrics} />
       <section className="mc-panel">
         <h3>Tick distribution</h3>
         <Table
@@ -375,19 +391,23 @@ export function McTab(props: {
     <>
       {metrics && (
         <div className="mc-dashboard">
-          <div className="mc-navigation">
+          <Tabs className="mc-navigation">
             {VIEWS.map(([id, label]) => (
-              <Button
+              <Tabs.Tab
                 key={id}
-                compact
                 selected={view === id}
                 onClick={() => setView(id)}
               >
                 {label}
-              </Button>
+              </Tabs.Tab>
             ))}
-          </div>
-          {view === 'overview' && <Headline metrics={metrics} />}
+          </Tabs>
+          {view === 'overview' && (
+            <>
+              <Headline metrics={metrics} />
+              <TickGraph metrics={metrics} />
+            </>
+          )}
           {view === 'ticks' && <Ticks metrics={metrics} />}
           {view === 'subsystems' && (
             <Subsystems metrics={metrics} token={token} />

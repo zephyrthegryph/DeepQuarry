@@ -1,6 +1,11 @@
 import { classes } from 'tgui-core/react';
 
-import type { Preview, Segment } from './parseLanguages';
+import {
+  emphasize,
+  type LanguageRules,
+  type Preview,
+  type Segment,
+} from './parseLanguages';
 
 const LINE_HEIGHT = 15;
 const MAX_LINES = 6;
@@ -17,11 +22,12 @@ export function previewHeight(preview: Preview, width: number): number {
   return Math.min(lines, MAX_LINES) * LINE_HEIGHT + 2;
 }
 
-function renderSegment(segment: Segment, key: number) {
+export function renderSegment(segment: Segment, key: number) {
   let node = <>{segment.text}</>;
   if (segment.tags.includes('b')) node = <b>{node}</b>;
   if (segment.tags.includes('i')) node = <i>{node}</i>;
   if (segment.tags.includes('u')) node = <u>{node}</u>;
+  if (segment.tags.includes('marker')) node = <span style={{ opacity: 0.4 }}>{node}</span>;
   return <span key={key}>{node}</span>;
 }
 
@@ -49,4 +55,28 @@ export function LanguagePreview(props: Props) {
       ))}
     </div>
   );
+}
+
+/** Text with the chat's emphasis markers applied (the same parse and rendering as the say preview); line breaks kept. */
+export function FormattedText(props: {
+  text: string;
+  markers: Record<string, string>;
+}) {
+  const { text, markers } = props;
+  const [segments] = emphasize([text], { markers } as LanguageRules);
+  return (
+    <span style={{ whiteSpace: 'pre-wrap' }}>
+      {segments.map(renderSegment)}
+    </span>
+  );
+}
+
+/** The markers in place (dimmed) and the rest formatted: an editor's backdrop under the text being typed. */
+export function FormattedBackdrop(props: {
+  text: string;
+  markers: Record<string, string>;
+}) {
+  const { text, markers } = props;
+  const [segments] = emphasize([text], { markers } as LanguageRules, true);
+  return <>{segments.map(renderSegment)}</>;
 }

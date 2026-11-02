@@ -400,4 +400,4 @@
 		if(pref && entry["category"] && pref.category != entry["category"])
 			untagged += "[pref_type]"
 	TEST_ASSERT(!length(untagged), "tagged prefs lost their category: [jointext(untagged, ", ")]")
-	TEST_ASSERT("size_voice" in dq_character_category_index("human"), "the size_voice tab is missing from the character index")
+	TEST_ASSERT(!("size_voice" in dq_character_category_index("human")), "size settings live in Identity, not their own tab")

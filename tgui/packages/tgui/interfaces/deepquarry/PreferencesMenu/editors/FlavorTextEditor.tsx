@@ -2,12 +2,8 @@
 // area beside it, and the text as examine prints it below.
 
 import { useBackend } from 'tgui/backend';
-import { Box } from 'tgui-core/components';
-import {
-  flavorPreviewText,
-  type SwitcherEntry,
-  TextSwitcher,
-} from '../TextSwitcher';
+import { Box, Button } from 'tgui-core/components';
+import { type SwitcherEntry, TextSwitcher } from '../TextSwitcher';
 import type { EditorProps } from './index';
 
 type FlavorData = {
@@ -51,7 +47,6 @@ export const FlavorTextEditor = ({ data, staticData }: EditorProps) => {
     label: z.charAt(0).toUpperCase() + z.slice(1),
     value: texts[z] ?? '',
   }));
-  const previewText = flavorPreviewText(robot ? [] : zones, texts);
   return (
     <TextSwitcher
       entries={entries}
@@ -60,17 +55,20 @@ export const FlavorTextEditor = ({ data, staticData }: EditorProps) => {
           ? send(act, 'set_robot_flavor', { module: zone, text })
           : send(act, 'set_flavor', { zone, text })
       }
-      preview={
-        robot ? (
-          <Box preserveWhitespace>{texts.Default ?? ''}</Box>
-        ) : previewText ? (
-          <Box preserveWhitespace>{previewText}</Box>
-        ) : (
-          <Box color="label" italic>
-            Nothing to show yet.
-          </Box>
+      actions={
+        robot ? undefined : (
+          <Button
+            compact
+            icon="eye"
+            tooltip="Print it in your chat the way an examining player sees it"
+            onClick={() => act('dq_inspect_flavor')}
+          >
+            Show in chat as examined
+          </Button>
         )
       }
+      formatted
+      buttonsBelow
     />
   );
 };

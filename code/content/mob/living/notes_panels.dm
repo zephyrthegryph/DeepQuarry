@@ -120,6 +120,7 @@ CAPABILITIES(/datum/ooc_notes_panel)
 	data["ooc_favs"] = html_decode(host.identity().ooc_notes_favs || "")
 	data["ooc_maybes"] = html_decode(host.identity().ooc_notes_maybes || "")
 	data["ooc_style"] = !!host.identity().ooc_notes_style
+	data["markers"] = GLOB.speech_toppings // the chat's emphasis markers, applied as the say preview applies them
 	return data
 
 /datum/ooc_notes_panel/proc/ui_gate(datum/act/op/A)
@@ -190,13 +191,15 @@ CAPABILITIES(/datum/ooc_notes_panel)
 		host.set_metainfo_dislikes(host)
 	return TRUE
 
-/mob/living/proc/ooc_notes_window(mob/user)
-	if(!identity().ooc_notes)
+/// custom_state: the state the window is held in (the character setup's inspection opens it from the lobby, where the default state, which
+/// wants the viewer near the mob, always closes it). always: open even without notes, so the owner sees the empty window others would.
+/mob/living/proc/ooc_notes_window(mob/user, datum/tgui_state/custom_state = null, always = FALSE)
+	if(!identity().ooc_notes && !always)
 		return
 	var/key = ref_token(src)
 	var/datum/ooc_notes_panel/panel = resolve_token(LAZYACCESS(GLOB.dq_ooc_notes_panels, key))
 	if(!panel)
 		panel = new(src)
 		GLOB.dq_ooc_notes_panels[key] = ref_token(panel)
-	panel.tgui_interact(user)
+	panel.tgui_interact(user, custom_state = custom_state)
 

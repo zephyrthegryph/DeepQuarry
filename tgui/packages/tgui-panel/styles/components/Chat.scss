@@ -39,25 +39,26 @@
   bottom: 1em;
 }
 
+// A quiet themed divider: a hairline with a pill label, not a red rule.
 .Chat__reconnected {
+  display: flex;
+  align-items: center;
+  gap: var(--space-m);
+  margin: var(--space-l) 0;
   font-size: 0.85em;
-  text-align: center;
-  margin: 1em 0 2em;
+  color: var(--color-label);
 
-  &:before {
-    content: 'Reconnected';
-    display: inline-block;
-    border-radius: 1em;
-    padding: 0 0.7em;
-    color: var(--color-red);
-    background-color: var(--color-section);
-  }
-
+  &:before,
   &:after {
     content: '';
-    display: block;
-    margin-top: -0.75em;
-    border-bottom: math.div(1em, 6) solid var(--color-red);
+    flex: 1;
+    border-bottom: var(--border-thickness-tiny) solid var(--color-border);
+  }
+
+  > span {
+    padding: 0 var(--space-m);
+    border-radius: var(--border-radius-circular);
+    background-color: var(--color-section);
   }
 }
 
@@ -73,6 +74,7 @@
 
 .ChatMessage {
   word-wrap: break-word;
+  padding: 0.1em 0;
 }
 
 .ChatMessage--highlighted {

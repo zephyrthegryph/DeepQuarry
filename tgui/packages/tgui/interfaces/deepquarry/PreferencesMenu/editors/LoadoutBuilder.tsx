@@ -53,27 +53,18 @@ type GearTweakKind =
   | 'choice'
   | 'boolean'
   | 'tf_toggle'
-  | 'modal_button'
-  | 'recolor'
+  | 'channels'
   | 'modal';
-
-type RecolorMeta = {
-  mode: 'off' | 'tint' | 'palette' | 'matrix' | 'channels';
-  value?: string | Record<string, string> | number[] | string[];
-};
 
 type GearTweakDescriptor = {
   key: string; // stable 1-based gear_tweaks index, as a string
   label: string; // e.g. "Color", "Custom Name", "Variant"
   kind: GearTweakKind;
   /// When true, render side-by-side as a compact button at the bottom of the customize
-  /// panel instead of a full-width row. Set on the DM side for boolean/tf_toggle/modal_button.
+  /// panel instead of a full-width row. Set on the DM side for boolean/tf_toggle.
   compact: boolean;
   choices?: string[]; // present for "choice" kind
-  /// For "recolor" kind: the gear's source-icon palette (top N distinct hex colors),
-  /// used to render the palette-swap swatch grid.
-  palette?: string[];
-  /// For "recolor" kind: each colour channel's base colour; empty when the item has no channels.
+  /// For "channels" kind: each colour channel's base colour; empty when the item has no channels.
   channels?: string[];
 };
 
@@ -864,176 +855,65 @@ const MultiSlotCell = ({
 
 const CHANNEL_NAMES = ['Primary', 'Secondary', 'Tertiary'];
 
-/// Recolor widget — three modes in one tweak.
-///   Off — no recoloring; item spawns as-authored.
-///   Tint — single multiplicative color picker. Cheap, can't darken→bright, just shifts hue.
-///   Palette — per-source-color swatch picker. Recolors specific pixel-groups without
-///             changing brightness, anti-aliasing artifacts withstanding.
-///   Matrix — opens the legacy colormatrix modal for full per-channel control. Stays
-///            as a modal because there's no good inline form for 12 sliders.
-const RecolorWidget = ({
+/// Clothing colour channels: one swatch per channel, starting at the channel's own colour. A channel can follow a palette slot.
+/// Clothing is recoloured only this way.
+const ChannelsWidget = ({
   label,
-  palette,
   channels,
-  meta,
+  picked,
   onSet,
-  onPickTint,
-  onPickPaletteSwatch,
-  onOpenMatrixModal,
   onPickChannel,
 }: {
   label: string;
-  palette: string[];
   channels: string[];
-  meta: RecolorMeta;
-  onSet: (next: RecolorMeta) => void;
-  onPickTint: () => void;
-  onPickPaletteSwatch: (originalHex: string) => void;
-  onOpenMatrixModal: () => void;
+  picked: string[];
+  onSet: (next: string[]) => void;
   onPickChannel: (index: number, current: string) => void;
 }) => {
-  const mode = meta.mode;
-  const setMode = (m: RecolorMeta['mode']) => {
-    if (m === 'off') onSet({ mode: 'off' });
-    else if (m === 'tint') onSet({ mode: 'tint', value: '#ffffff' });
-    else if (m === 'palette') onSet({ mode: 'palette', value: {} });
-    else if (m === 'matrix') onSet({ mode: 'matrix', value: [] });
-    else if (m === 'channels') onSet({ mode: 'channels', value: [] });
-  };
-
+  if (!channels.length) {
+    return null;
+  }
   return (
-    <Box mb={0.5}>
-      <Stack mb={0.25} align="center">
-        <Stack.Item width="7em" color="label" fontSize="0.85em">
-          {label}
-        </Stack.Item>
-        <Stack.Item grow>
-          <Stack>
-            {(channels.length
-              ? (['off', 'tint', 'channels', 'palette', 'matrix'] as const)
-              : (['off', 'tint', 'palette', 'matrix'] as const)
-            ).map((m) => (
-              <Stack.Item key={m}>
-                <Button
-                  compact
-                  selected={mode === m}
-                  color={mode === m ? 'good' : undefined}
-                  onClick={() => setMode(m)}
-                >
-                  {m[0].toUpperCase() + m.slice(1)}
-                </Button>
-              </Stack.Item>
-            ))}
-          </Stack>
-        </Stack.Item>
-      </Stack>
-      {mode === 'channels' && (
-        <Stack ml={4} mb={0.25} wrap align="center">
-          {channels.map((base, i) => {
-            const picked = (meta.value as string[] | undefined) ?? [];
-            const stored = picked[i] ?? '';
-            const setChannel = (hex: string) => {
-              const next = channels.map((_, j) => picked[j] ?? '');
-              next[i] = hex;
-              onSet({ mode: 'channels', value: next });
-            };
-            return (
-              <Stack.Item key={CHANNEL_NAMES[i]} mr={1}>
-                <ColorChoice
-                  label={CHANNEL_NAMES[i]}
-                  category="clothing_channel"
-                  color={stored && !isSlotName(stored) ? stored : base}
-                  link={isSlotName(stored) ? stored : undefined}
-                  onLink={setChannel}
-                  onPick={setChannel}
-                  onCustom={() => onPickChannel(i + 1, stored || base)}
-                />
-                {!!picked[i] && (
-                  <Button
-                    compact
-                    icon="undo"
-                    tooltip="Back to the original colour"
-                    onClick={() => setChannel('')}
-                  />
-                )}
-              </Stack.Item>
-            );
-          })}
-        </Stack>
-      )}
-      {mode === 'tint' && (
-        <Stack ml={4} align="center" mb={0.25}>
-          <Stack.Item>
-            <ColorBox color={String(meta.value ?? '#ffffff')} />
+    <Stack mb={0.5} wrap align="center">
+      <Stack.Item width="7em" color="label" fontSize="0.85em">
+        {label}
+      </Stack.Item>
+      {channels.map((base, i) => {
+        const stored = picked[i] ?? '';
+        const setChannel = (hex: string) => {
+          const next = channels.map((_, j) => picked[j] ?? '');
+          next[i] = hex;
+          onSet(next);
+        };
+        return (
+          <Stack.Item key={CHANNEL_NAMES[i]} mr={1}>
+            <ColorChoice
+              label={CHANNEL_NAMES[i]}
+              category="clothing_channel"
+              color={stored && !isSlotName(stored) ? stored : base}
+              link={isSlotName(stored) ? stored : undefined}
+              onLink={setChannel}
+              onPick={setChannel}
+              onCustom={() => onPickChannel(i + 1, stored || base)}
+            />
+            {!!stored && (
+              <Button
+                compact
+                icon="undo"
+                tooltip="Back to the original colour"
+                onClick={() => setChannel('')}
+              />
+            )}
           </Stack.Item>
-          <Stack.Item grow>
-            <Button fluid compact icon="palette" onClick={onPickTint}>
-              {String(meta.value ?? '#ffffff')}
-            </Button>
-          </Stack.Item>
-        </Stack>
-      )}
-      {mode === 'palette' && (
-        <Box ml={4} mb={0.25}>
-          {palette.length === 0 ? (
-            <Box italic color="label" fontSize="0.85em">
-              No distinct colors found in this item's icon.
-            </Box>
-          ) : (
-            <Stack wrap>
-              {palette.map((orig) => {
-                const cur =
-                  (meta.value as Record<string, string> | undefined)?.[orig] ??
-                  orig;
-                const changed = cur !== orig;
-                return (
-                  <Stack.Item key={orig} mr={0.5} mb={0.25}>
-                    <Stack align="center">
-                      <Stack.Item>
-                        <ColorBox color={orig} />
-                      </Stack.Item>
-                      <Stack.Item>→</Stack.Item>
-                      <Stack.Item>
-                        <Button
-                          compact
-                          color={changed ? 'good' : undefined}
-                          tooltip={`Recolor ${orig} → ${cur}`}
-                          onClick={() => onPickPaletteSwatch(orig)}
-                        >
-                          <ColorBox color={cur} />
-                        </Button>
-                      </Stack.Item>
-                    </Stack>
-                  </Stack.Item>
-                );
-              })}
-            </Stack>
-          )}
-        </Box>
-      )}
-      {mode === 'matrix' && (
-        <Box ml={4} mb={0.25}>
-          <Stack align="center">
-            <Stack.Item grow color="label" fontSize="0.85em">
-              {Array.isArray(meta.value) && meta.value.length >= 12
-                ? 'Matrix is set.'
-                : 'No matrix set yet.'}
-            </Stack.Item>
-            <Stack.Item>
-              <Button compact icon="palette" onClick={onOpenMatrixModal}>
-                Open matrix picker
-              </Button>
-            </Stack.Item>
-          </Stack>
-        </Box>
-      )}
-    </Box>
+        );
+      })}
+    </Stack>
   );
 };
 
 /// Inline tweak widget — switches on tweak.kind. For text/textarea/color/choice/boolean,
 /// renders a real input that dispatches `set_tweak_value` directly with the new value.
-/// For "modal" kind (matrix recolor, contents, tablet/laptop, item_tf_spawn) falls back
+/// For "modal" kind (contents, tablet/laptop, item_tf_spawn) falls back
 /// to a Change button that triggers the legacy `set_tweak` flow (opens tgui_input_X).
 const TweakRow = ({
   item,
@@ -1175,70 +1055,28 @@ const TweakRow = ({
         </Button>
       );
     }
-    case 'modal_button': {
-      // Single-click compact button that opens the legacy tgui_input modal. Used for
-      // matrix_recolor — there's no good inline form for a full color matrix.
+    case 'channels': {
+      // rawValue is the saved list of channel choices straight from DM; set_channels cleans it on the way back.
+      const raw = rawValue as unknown;
+      const picked = Array.isArray(raw) ? (raw as string[]) : [];
       return (
-        <Button
-          compact
-          icon="palette"
-          tooltip={`${tweak.label}: opens the picker`}
-          onClick={() =>
-            sendTo(act, 'loadout', 'set_tweak', {
-              gear: item.name,
-              tweak: tweak.key,
-            })
-          }
-        >
-          {tweak.label}
-        </Button>
-      );
-    }
-    case 'recolor': {
-      // Unified recolor widget — mode tabs + per-mode body. rawValue is the {mode, value}
-      // dict straight from DM. The dedicated set_recolor action validates the value-shape
-      // per mode on the way back.
-      const meta = (rawValue as unknown as RecolorMeta | undefined) ?? {
-        mode: 'off',
-      };
-      const setMeta = (next: RecolorMeta) =>
-        sendTo(act, 'loadout', 'set_recolor', {
-          gear: item.name,
-          tweak: tweak.key,
-          value: next,
-        });
-      return (
-        <RecolorWidget
+        <ChannelsWidget
           label={tweak.label}
-          palette={tweak.palette ?? []}
           channels={tweak.channels ?? []}
-          meta={meta}
-          onSet={setMeta}
-          onPickTint={() =>
-            sendTo(act, 'loadout', 'recolor_pick_tint', {
+          picked={picked}
+          onSet={(next) =>
+            sendTo(act, 'loadout', 'set_channels', {
               gear: item.name,
               tweak: tweak.key,
-            })
-          }
-          onPickPaletteSwatch={(orig) =>
-            sendTo(act, 'loadout', 'recolor_pick_palette_swatch', {
-              gear: item.name,
-              tweak: tweak.key,
-              original: orig,
+              value: next,
             })
           }
           onPickChannel={(index, current) =>
-            sendTo(act, 'loadout', 'recolor_pick_channel', {
+            sendTo(act, 'loadout', 'pick_channel', {
               gear: item.name,
               tweak: tweak.key,
               index,
               current: isSlotName(current) ? '' : current,
-            })
-          }
-          onOpenMatrixModal={() =>
-            sendTo(act, 'loadout', 'recolor_pick_matrix', {
-              gear: item.name,
-              tweak: tweak.key,
             })
           }
         />
@@ -1246,8 +1084,8 @@ const TweakRow = ({
     }
     default: {
       // 'modal' (the only explicit kind landing here) plus any unknown kind: keeps the
-      // legacy "Change" button → tgui_input_X modal flow. Complex tweaks (matrix recolor,
-      // contents, tablet/laptop, item_tf_spawn) all route through this path.
+      // legacy "Change" button → tgui_input_X modal flow. Complex tweaks (contents,
+      // tablet/laptop, item_tf_spawn) all route through this path.
       return (
         <Stack mb={0.25} align="center">
           <Stack.Item grow fontSize="0.85em">

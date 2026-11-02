@@ -50,12 +50,20 @@ function setupApp() {
     left: 'output_browser',
   });
 
-  // Resize the panel to match the non-browser output
-  Byond.winget('output').then((output: { size: string }) => {
-    Byond.winset('browseroutput', {
-      size: output.size,
+  // Fill our own pane. Not the legacy `output` control: its pane is hidden,
+  // so its size is stale and pinned the chat to a fraction of the pane.
+  // Once the browser matches the pane, its 0,0-100,100 anchors track
+  // every later resize (window, splitter, viewport fit).
+  // Again after a second: the pane may still be laying out after the swap.
+  const fillPane = () =>
+    Byond.winget('output_browser').then((pane: { size: string }) => {
+      Byond.winset('browseroutput', {
+        pos: '0,0',
+        size: pane.size,
+      });
     });
-  });
+  fillPane();
+  setTimeout(fillPane, 1000);
 
   // Enable hot module reloading
   if (import.meta.webpackHot) {
