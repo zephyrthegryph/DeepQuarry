@@ -57,7 +57,7 @@ fn past_word(w: &str) -> String {
 }
 
 /// `fall` -> `fell`, `z_change` -> `z_changed`, `stumbled_into` kept, `hit/projectile` -> `hit/projectile`.
-fn past_tense(name: &str) -> String {
+pub(crate) fn past_tense(name: &str) -> String {
     let segs: Vec<&str> = name.split('/').collect();
     if segs.len() > 1 {
         let mut out = vec![past_tense(segs[0])];

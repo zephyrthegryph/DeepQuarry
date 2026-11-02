@@ -796,15 +796,6 @@
 	src.researched_design = researched_design
 	src.custom = custom
 
-/// Called when a techweb design is removed (datum/design/removed_design, custom)
-/datum/notice/techweb_remove_design
-	var/removed_design
-	var/custom
-
-/datum/notice/techweb_remove_design/fill(removed_design, custom)
-	src.removed_design = removed_design
-	src.custom = custom
-
 /// From /obj/machinery/computer/telescience/proc/doteleport(mob/user): (list/atom/movable/teleported_things, turf/target_turf, sending )
 /datum/notice/telesci_teleport
 	var/teleported_things

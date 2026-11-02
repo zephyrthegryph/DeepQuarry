@@ -14,6 +14,8 @@
 	var/republish = FALSE
 	/// atom_dir_change handlers publish a read-back examine (and a plain atom_exited) from inside the delivery and read the lines back.
 	var/ask_examine = FALSE
+	/// examine handlers publish another examine from inside the answer.
+	var/recurse_examine = FALSE
 
 /datum/om_notice_fx/reactions()
 	. = ..()
@@ -48,6 +50,8 @@
 /datum/om_notice_fx/proc/on_examine_lines(datum/notice/examine/N)
 	log += "examine:[N.user]"
 	N.texts += "line from [N.user]"
+	if(recurse_examine)
+		PUBLISH_LEGACY(src, /datum/notice/examine, "deeper", N.texts)
 
 /datum/om_notice_fx/proc/on_hitby(datum/notice/hitby/N)
 	log += "hitby:[N.source_]:[N.throwingdatum]"
@@ -115,3 +119,93 @@
 	for(var/read_back_type in list(/datum/notice/examine, /datum/notice/living_shield_injury, /datum/notice/robot_belly_fullness, /datum/notice/turf_change))
 		var/datum/notice/proto = read_back_type
 		TEST_ASSERT(initial(proto.read_back), "[read_back_type] is read back by its sender, so it is declared read_back")
+
+/// Two examine handlers, the first of which throws; a dir change asks for an examine from inside a delivery.
+/datum/om_notice_fault_fx
+	var/answered
+
+/datum/om_notice_fault_fx/reactions()
+	. = ..()
+	. += on_notice(/datum/notice/examine, PROC_REF(faulting))
+	. += on_notice(/datum/notice/examine, PROC_REF(healthy))
+	. += on_notice(/datum/notice/atom_dir_change, PROC_REF(ask))
+
+/datum/om_notice_fault_fx/proc/faulting(datum/notice/examine/N)
+	N.texts += "first"
+	throw EXCEPTION("expected examine handler fault")
+
+/datum/om_notice_fault_fx/proc/healthy(datum/notice/examine/N)
+	N.texts += "second"
+
+/datum/om_notice_fault_fx/proc/ask(datum/notice/atom_dir_change/N)
+	var/list/texts = list()
+	PUBLISH_LEGACY(src, /datum/notice/examine, "inner", texts)
+	answered = jointext(texts, "|")
+
+/// A notice that faults past its handlers, where nothing in the delivery catches it.
+/datum/notice/om_fx_release_fault
+
+/datum/notice/om_fx_release_fault/release()
+	throw EXCEPTION("expected release fault")
+
+/// Clears what a broken delivery left behind so one failure cannot wedge every later test, and returns what it found.
+/proc/om_notice_fx_state_left()
+	. = "delivering=[GLOB.rx_notice_delivering],depth=[GLOB.rx_answer_depth],queued=[length(GLOB.rx_notice_queue)]"
+	GLOB.rx_notice_delivering = FALSE
+	GLOB.rx_answer_depth = 0
+	GLOB.rx_notice_queue.Cut()
+
+/// A throwing examine handler costs its own line only: the next handler still answers, at the top level and nested, and delivery is not left wedged.
+/datum/unit_test/dq_om_notice_delivery_handler_fault/Run()
+	var/datum/om_notice_fault_fx/F = allocate(/datum/om_notice_fault_fx)
+	GLOB.dq_caught_capture = list()
+	var/list/texts = list()
+	var/escaped = null
+	try
+		PUBLISH_LEGACY(F, /datum/notice/examine, "viewer", texts)
+		PUBLISH_LEGACY(F, /datum/notice/atom_dir_change, NORTH, SOUTH)
+	catch(var/exception/e)
+		escaped = e.name
+	var/list/reported = GLOB.dq_caught_capture
+	GLOB.dq_caught_capture = null
+	var/left = om_notice_fx_state_left()
+	TEST_ASSERT_NULL(escaped, "a handler fault stays inside the delivery")
+	TEST_ASSERT_EQUAL(left, "delivering=0,depth=0,queued=0", "a handler fault leaves delivery idle")
+	TEST_ASSERT_EQUAL(jointext(texts, "|"), "first|second", "the handler after the fault still wrote its line (top level)")
+	TEST_ASSERT_EQUAL(F.answered, "first|second", "the handler after the fault still wrote its line (nested)")
+	TEST_ASSERT_EQUAL(length(reported), 2, "each fault is reported")
+
+/// A fault outside any handler's try cannot strand the delivering flag: if it did, every later notice in the world would queue forever.
+/datum/unit_test/dq_om_notice_delivery_fault_not_wedged/Run()
+	var/datum/om_notice_fx/F = allocate(/datum/om_notice_fx)
+	GLOB.dq_caught_capture = list()
+	var/escaped = null
+	try
+		publish(F, take_notice(/datum/notice/om_fx_release_fault))
+	catch(var/exception/e)
+		escaped = e.name
+	GLOB.dq_caught_capture = null
+	var/left = om_notice_fx_state_left()
+	TEST_ASSERT_NULL(escaped, "the fault stays inside publish()")
+	TEST_ASSERT_EQUAL(left, "delivering=0,depth=0,queued=0", "the fault leaves delivery idle")
+	PUBLISH_LEGACY(F, /datum/notice/trait_gained, "after")
+	TEST_ASSERT_EQUAL(jointext(F.log, ","), "trait:after", "the next notice is delivered at once")
+
+/// An examine handler that examines again is cut at RX_ANSWER_DEPTH with one report; every answer that ran keeps its line and the sender keeps going.
+/datum/unit_test/dq_om_notice_delivery_examine_recursion/Run()
+	var/datum/om_notice_fx/F = allocate(/datum/om_notice_fx)
+	F.recurse_examine = TRUE
+	GLOB.dq_caught_capture = list()
+	var/list/texts = list()
+	var/escaped = null
+	try
+		PUBLISH_LEGACY(F, /datum/notice/examine, "viewer", texts)
+	catch(var/exception/e)
+		escaped = e.name
+	var/list/reported = GLOB.dq_caught_capture
+	GLOB.dq_caught_capture = null
+	var/left = om_notice_fx_state_left()
+	TEST_ASSERT_NULL(escaped, "the cut stays inside publish()")
+	TEST_ASSERT_EQUAL(left, "delivering=0,depth=0,queued=0", "the cut leaves delivery idle")
+	TEST_ASSERT_EQUAL(length(texts), RX_ANSWER_DEPTH + 1, "the outer delivery and every answer wrote its line")
+	TEST_ASSERT_EQUAL(length(reported), 1, "the cut is reported once")
