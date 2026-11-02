@@ -7,7 +7,8 @@
 //   "/obj/item/clothing/x": {"channels": ["aabbcc112233", "ddeeff"]}    replace the channels (6 hex digits a colour, the base first)
 //   "/obj/item/clothing/x": {"move": {"aabbcc": 2, "112233": 0}}        move single colours: to channel 1-3, or 0 to lock (never recoloured)
 //
-// An item with chosen colours carries them in the sparse slot clothing_channel_colors. Nothing else changes on it: the sprite is
+// This is the only way clothing is recoloured: the loadout's channels tweak (/datum/gear_tweak/channels) and the in-game Recolour verb
+// both end here. An item with chosen colours carries them in the sparse slot clothing_channel_colors. Nothing else changes on it: the sprite is
 // resolved when it is drawn, so every sheet (species, in-hand, rolled states) works, and only the state in use is ever copied.
 // An item without chosen colours pays one null check when it is drawn.
 
@@ -284,32 +285,38 @@ PROC_SUMMARY(/obj/item/proc/clothing_channel_worn) // the colours are set once, 
 		return null
 	return clothing_channel_icon(type, source_icon, state, sparse_get(src, clothing_channel_colors), addblends)
 
-/// Gear metadata with every channel colour linked to a palette slot replaced by the slot's colour now. The saved metadata is never written to; metadata with no channels comes back as it is.
-/proc/clothing_channel_resolve_links(list/metadata, datum/preferences/prefs)
-	if(!prefs || !islist(metadata))
+/// Gear metadata with every channel colour linked to a palette slot replaced by the slot's colour now. The saved metadata is never
+/// written to; metadata without channel colours comes back as it is.
+/proc/clothing_channel_resolve_links(datum/gear/G, list/metadata, datum/preferences/prefs)
+	if(!prefs || !G || !islist(metadata))
 		return metadata
-	var/list/resolved
-	for(var/key in metadata)
-		var/list/tweak = metadata[key]
-		if(!islist(tweak) || tweak["mode"] != "channels" || !islist(tweak["value"]))
-			continue
-		var/list/colors = list()
-		for(var/stored in tweak["value"])
-			colors += prefs.resolve_color_link(stored)
-		resolved = resolved || metadata.Copy()
-		resolved[key] = list("mode" = "channels", "value" = colors)
-	return resolved || metadata
+	var/index = G.channels_tweak_index()
+	var/list/stored = index ? metadata["[index]"] : null
+	if(!islist(stored))
+		return metadata
+	var/list/colors = list()
+	for(var/entry in stored)
+		colors += prefs.resolve_color_link(entry)
+	var/list/resolved = metadata.Copy()
+	resolved["[index]"] = colors
+	return resolved
 
-/// Puts chosen colours on an item. Empty choices leave it entirely alone.
+/// Puts chosen colours on an item, or with no colour chosen takes them off. The item's own `color` goes: its channels are its colour.
 /obj/item/proc/apply_clothing_channels(list/colors)
 	var/colors_key = clothing_channel_colors_key(colors)
-	if(!colors_key)
-		return FALSE
 	var/list/found = clothing_channels_of(type)
 	if(!found)
 		return FALSE
+	var/had_colours = sparse_has(src, clothing_channel_colors)
+	if(!colors_key)
+		if(had_colours)
+			sparse_set(src, clothing_channel_colors, null)
+			set_icon(initial(icon))
+		return FALSE
 	sparse_set(src, clothing_channel_colors, colors_key)
-	var/source_icon = icon
+	set_color(null)
+	// Recolouring again starts from the type's own sheet: the current icon is already a recoloured copy.
+	var/source_icon = had_colours ? initial(icon) : icon
 	if(istext(source_icon))
 		source_icon = file(source_icon)
 	if(isfile(source_icon) && icon_state)
@@ -319,7 +326,127 @@ PROC_SUMMARY(/obj/item/proc/clothing_channel_worn) // the colours are set once, 
 			var/list/row = data["types"]["[type]"]
 			var/list/family = length(row) > 1 ? row.Copy(2) : null
 			set_icon(CACHED_KEY(clothing_channel_item_sheets, "[found[1]]|[colors_key]|[source_icon]|[icon_state]", source_icon, icon_state, family, swaps))
+		else
+			set_icon(source_icon)
 	return TRUE
+
+// ---------------------------------------------------------------- save migration
+//
+// Loadout clothing used to be coloured four other ways: a colour tweak (a hex string at its own index) and the recolor tweak's "tint",
+// "palette" and "matrix" modes (list("mode" = ..., "value" = ...)). Each becomes the channel colours that reproduce it on each channel's
+// base colour: what the old method did to the pixel the channel is named after. Runs from the gear_list sanitizer on load.
+
+/// `hex` ("#rrggbb") multiplied by a tint, as add_atom_colour() drew it.
+/proc/clothing_channel_tint(hex, tint)
+	var/list/a = rgb2num(hex)
+	var/list/b = rgb2num(tint)
+	return lowertext(rgb(round(a[1] * b[1] / 255 + 0.5), round(a[2] * b[2] / 255 + 0.5), round(a[3] * b[3] / 255 + 0.5)))
+
+/// `hex` through a BYOND colour matrix (12, 16 or 20 numbers), or null for a list that is not one.
+/proc/clothing_channel_matrix(hex, list/m)
+	var/stride
+	var/offset
+	switch(length(m))
+		if(12)
+			stride = 3
+			offset = 9
+		if(16)
+			stride = 4
+		if(20)
+			stride = 4
+			offset = 16
+		else
+			return null
+	var/list/c = rgb2num(hex)
+	var/list/out = list()
+	for(var/k in 1 to 3)
+		var/v = c[1] / 255 * m[k] + c[2] / 255 * m[stride + k] + c[3] / 255 * m[stride * 2 + k]
+		if(offset)
+			v += m[offset + k]
+		out += round(clamp(v, 0, 1) * 255 + 0.5)
+	return lowertext(rgb(out[1], out[2], out[3]))
+
+/// Multiplies each channel (its choice so far, else its base) by `tint`, as the old tint did. FALSE for a tint that is not a colour.
+/proc/clothing_channel_apply_tint(list/targets, list/bases, tint)
+	tint = clothing_channel_normal_hex(istext(tint) ? lowertext(tint) : null)
+	if(!tint)
+		return FALSE
+	if(tint == "#ffffff")
+		return TRUE
+	for(var/i in 1 to length(targets))
+		var/from = clothing_channel_normal_hex(targets[i]) || bases[i]
+		if(from)
+			targets[i] = clothing_channel_tint(from, tint)
+	return TRUE
+
+/// One gear entry's saved metadata with every old colour method turned into channel colours, in place. Returns `meta`. Running it
+/// again changes nothing: what it reads is gone once converted, and a colour is never saved at the removed tweak's index again.
+/proc/clothing_channel_migrate_meta(datum/gear/G, list/meta)
+	if(!G || !islist(meta))
+		return meta
+	var/index = G.channels_tweak_index()
+	var/key = index ? "[index]" : null
+	var/list/bases = clothing_channel_bases(G.path)
+	var/list/targets = list()
+	for(var/base in bases)
+		targets += ""
+	var/changed = FALSE
+	// The recolor tweak's old shape, or a colour saved where the channels tweak now sits (an entry that only had a colour tweak).
+	var/old = key ? meta[key] : null
+	if(istext(old))
+		clothing_channel_apply_tint(targets, bases, old)
+		meta -= key
+		changed = TRUE
+	else if(islist(old) && !isnull(old["mode"]))
+		var/list/value = old["value"]
+		switch(old["mode"])
+			if("channels")
+				if(islist(value))
+					for(var/i in 1 to min(length(value), length(targets)))
+						targets[i] = value[i]
+			if("tint")
+				clothing_channel_apply_tint(targets, bases, value)
+			if("palette")
+				if(islist(value))
+					for(var/i in 1 to length(bases))
+						var/swapped = value[bases[i]] || value[uppertext(bases[i])]
+						if(clothing_channel_normal_hex(istext(swapped) ? lowertext(swapped) : null))
+							targets[i] = lowertext(swapped)
+			if("matrix")
+				if(islist(value))
+					for(var/i in 1 to length(bases))
+						var/mapped = clothing_channel_matrix(bases[i], value)
+						if(mapped)
+							targets[i] = mapped
+		meta -= key
+		changed = TRUE
+	// The removed colour tweak: its saved colour, and every tweak after it one index down.
+	var/legacy = G.legacy_colour_index
+	var/legacy_value = legacy ? meta["[legacy]"] : null
+	if(legacy && legacy != index && istext(legacy_value) && copytext(legacy_value, 1, 2) == "#")
+		clothing_channel_apply_tint(targets, bases, legacy_value)
+		var/last = legacy
+		for(var/k in meta)
+			var/n = text2num(k)
+			if(isnum(n) && n > last)
+				last = n
+		for(var/n in legacy to last - 1)
+			if(isnull(meta["[n + 1]"]))
+				meta -= "[n]"
+			else
+				meta["[n]"] = meta["[n + 1]"]
+		meta -= "[last]"
+		changed = TRUE
+	if(!changed)
+		return meta
+	// A channel left at its base colour is drawn as it is.
+	for(var/i in 1 to length(targets))
+		if(targets[i] == bases[i])
+			targets[i] = ""
+	var/list/cleaned = clothing_channel_clean_choice(targets)
+	if(cleaned && key)
+		meta[key] = cleaned
+	return meta
 
 #undef CLOTHING_CHANNELS_GENERATED
 #undef CLOTHING_CHANNELS_OVERRIDES

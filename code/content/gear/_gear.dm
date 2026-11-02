@@ -71,6 +71,9 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/gear)
 	var/type_category = null
 	var/list/ckeywhitelist	//restricted based on these ckeys?
 	var/list/character_name	//restricted to these character names?
+	/// Save migration: the index the removed colour tweak had in this entry's gear_tweaks, so a saved colour there becomes channel
+	/// colours (clothing_channel_migrate_meta()). Set where that tweak used to be added; null for entries that never had one.
+	var/legacy_colour_index
 
 CAPABILITIES(/datum/gear)
 	owns_many(nameof(gear_tweaks))
@@ -139,14 +142,11 @@ CAPABILITIES(/datum/gear)
 	if(!description)
 		var/obj/O = path
 		description = initial(O.desc)
-	// gear_tweak_free_matrix_recolor swapped for gear_tweak_unified_recolor,
-	// which packs tint / palette-swap / matrix into one mode-selectable tweak (see
-	// code/datums/gear/gear_tweak_recolor.dm).
 	rel_clear(src, nameof(gear_tweaks))
 	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/custom_name)
 	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/custom_desc)
 	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/item_tf_spawn)
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/recolor)
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/channels)
 	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/toggle_digestable)
 
 /datum/gear_data
@@ -159,7 +159,7 @@ CAPABILITIES(/datum/gear)
 
 /// `prefs`: whose palette a channel colour linked to a slot follows; without it a linked channel stays as drawn.
 /datum/gear/proc/spawn_item(location, metadata, datum/preferences/prefs)
-	metadata = clothing_channel_resolve_links(metadata, prefs)
+	metadata = clothing_channel_resolve_links(src, metadata, prefs)
 	var/datum/gear_data/gd = new(path, location)
 	// propagate variant from gear to gear_data so tweaks can override it.
 	gd.variant = variant
@@ -180,3 +180,10 @@ CAPABILITIES(/datum/gear)
 	if(istype(M) && exploitable) //Update exploitable info records for the mob without creating a duplicate object at their feet.
 		M.amend_exploitable(item)
 	return item
+
+/// The index of this entry's channels tweak in gear_tweaks, or 0.
+/datum/gear/proc/channels_tweak_index()
+	for(var/i in 1 to length(gear_tweaks))
+		if(istype(LAZYACCESS(gear_tweaks, i), /datum/gear_tweak/channels))
+			return i
+	return 0

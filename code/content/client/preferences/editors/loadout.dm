@@ -21,7 +21,7 @@
 	if(istype(gt, /datum/gear_tweak/custom_name)) return "Custom Name"
 	if(istype(gt, /datum/gear_tweak/custom_desc)) return "Custom Description"
 	if(istype(gt, /datum/gear_tweak/color))       return "Color"
-	if(istype(gt, /datum/gear_tweak/matrix_recolor)) return "Recolor"
+	if(istype(gt, /datum/gear_tweak/channels))    return "Colours"
 	if(istype(gt, /datum/gear_tweak/path))        return "Variant"
 	if(istype(gt, /datum/gear_tweak/toggle_digestable)) return "Digestable"
 	if(istype(gt, /datum/gear_tweak/contents))    return "Contents"
@@ -41,8 +41,7 @@
 ///   tf_toggle — item_tf_spawn rendered as a binary toggle (Anyone ↔ Not Enabled).
 ///                The 3-state "Only Specific Players" option is dropped from the toggle;
 ///                users who want per-ckey gating can opt back into the modal flow later.
-///   modal_button — renders as a compact bottom-row button that opens the legacy modal
-///                  (currently just matrix_recolor — it has no good inline form).
+///   channels — the clothing colour channels (one swatch per channel).
 ///   modal — full-width legacy Change-button row (contents, tablet, laptop, etc.)
 /proc/dq_gear_tweak_kind(datum/gear_tweak/gt)
 	if(istype(gt, /datum/gear_tweak/custom_name))       return "text"
@@ -54,27 +53,25 @@
 	if(istype(gt, /datum/gear_tweak/implant_location))  return "choice"
 	if(istype(gt, /datum/gear_tweak/collar_tag))        return "text"
 	if(istype(gt, /datum/gear_tweak/item_tf_spawn))     return "tf_toggle"
-	if(istype(gt, /datum/gear_tweak/recolor))           return "recolor"
+	if(istype(gt, /datum/gear_tweak/channels))          return "channels"
 	if(istype(gt, /datum/gear_tweak/pda_ringtone))      return "choice"
-	if(istype(gt, /datum/gear_tweak/matrix_recolor))    return "modal_button"
 	return "modal"
 
 /// Kinds that should render side-by-side as compact buttons in a single bottom row
 /// instead of taking a full-width slot. Mirrors the "bottom four buttons on a single
 /// line" pattern from the original bay-prefs loadout panel.
 /proc/dq_gear_tweak_compact(kind)
-	return (kind in list("boolean", "tf_toggle", "modal_button"))
+	return (kind in list("boolean", "tf_toggle"))
 
 /// Whether changing this tweak's metadata changes the *visual* worn appearance — i.e.
-/// whether a preview rebuild is warranted. Color/recolor/matrix change pixel data,
+/// whether a preview rebuild is warranted. Colour and channel colours change pixel data,
 /// /path/ changes the underlying subtype's icon. Everything else (custom name/desc,
 /// collar tag, reagents, ringtone, implant location, digestable flag, tf spawn) is
 /// metadata-only and a rebuild would burn ~100 ms per keystroke for no visible effect.
 /proc/dq_gear_tweak_affects_preview(datum/gear_tweak/gt)
 	return istype(gt, /datum/gear_tweak/color) \
-		|| istype(gt, /datum/gear_tweak/recolor) \
-		|| istype(gt, /datum/gear_tweak/path) \
-		|| istype(gt, /datum/gear_tweak/matrix_recolor)
+		|| istype(gt, /datum/gear_tweak/channels) \
+		|| istype(gt, /datum/gear_tweak/path)
 
 /// For "choice" tweaks, returns the list of valid choice labels. For others, returns null.
 /proc/dq_gear_tweak_choices(datum/gear_tweak/gt)
@@ -261,13 +258,11 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 				// Raw value — scalar metadata flows directly to React for inline widgets.
 				// For item_tf_spawn the metadata is a list ({state, valid}); derive a
 				// boolean so the tf_toggle widget can show enabled/disabled at a glance.
-				// For the unified recolor tweak the metadata is the {mode, value} dict;
-				// pass it through whole so the React widget can render its mode tabs +
-				// per-mode body without a separate fetch.
+				// For the channels tweak the metadata is the list of channel choices; pass it through whole.
 				if(istype(gt, /datum/gear_tweak/item_tf_spawn))
 					per_tweak_raw["[i]"] = (islist(meta_value) && meta_value["state"] && meta_value["state"] != "Not Enabled") ? TRUE : FALSE
-				else if(istype(gt, /datum/gear_tweak/recolor))
-					per_tweak_raw["[i]"] = islist(meta_value) ? meta_value : list("mode" = "off")
+				else if(istype(gt, /datum/gear_tweak/channels))
+					per_tweak_raw["[i]"] = islist(meta_value) ? meta_value : list()
 				else if(!isnull(meta_value) && !islist(meta_value))
 					per_tweak_raw["[i]"] = meta_value
 			tweak_values_by_item[gear_name] = per_tweak_display
@@ -443,11 +438,8 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 				var/list/choices = dq_gear_tweak_choices(gt)
 				if(choices)
 					desc["choices"] = choices
-				// Recolor tweak: send the gear's source-icon palette so the React widget
-				// can render palette-swap swatches. Cached per gear-type so the scan only
-				// runs once per session per type.
-				if(_kind == "recolor")
-					desc["palette"] = dq_get_gear_palette(G)
+				// Channels tweak: each channel's base colour (empty for an item without channels).
+				if(_kind == "channels")
 					desc["channels"] = clothing_channel_bases(G.path)
 				tweak_descriptors += list(desc)
 			items += list(list(
@@ -596,7 +588,7 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 	var/gear_name
 	var/tweak_idx
 	var/loadout_key
-	/// Palette swatches: the source colour being remapped.
+	/// For a channel colour: the channel (1-3).
 	var/original
 
 /datum/prompt/color/prefs/gear_tweak/recheck_extra()
@@ -632,30 +624,6 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 	var/datum/prompt/color/prefs/gear_tweak/ask = A.answer
 	write_tweak_meta(ask, sanitize_hexcolor(ask.value, default = ask.default))
 
-/datum/preference_editor/loadout/proc/tint_color_picked(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/color/prefs/gear_tweak/ask = A.answer
-	write_tweak_meta(ask, list("mode" = "tint", "value" = sanitize_hexcolor(ask.value, default = ask.default)))
-
-/datum/preference_editor/loadout/proc/swatch_color_picked(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/color/prefs/gear_tweak/ask = A.answer
-	var/list/gear_list = ask.preferences.read_preference(/datum/preference/gear_list) || list()
-	var/list/active = gear_list[ask.loadout_key] || list()
-	var/list/item_meta = active[ask.gear_name]
-	var/list/cur_meta = islist(item_meta) ? item_meta["[ask.tweak_idx]"] : null
-	var/list/cur_swaps = (islist(cur_meta) && cur_meta["mode"] == "palette" && islist(cur_meta["value"])) ? cur_meta["value"] : null
-	var/list/swaps = cur_swaps ? cur_swaps.Copy() : list()
-	var/original = ask.original
-	var/sanitized = sanitize_hexcolor(ask.value, default = original)
-	if(sanitized == original)
-		swaps -= original  // identity entry — strip rather than persist
-	else
-		swaps[original] = sanitized
-	write_tweak_meta(ask, list("mode" = "palette", "value" = swaps))
-
 /datum/preference_editor/loadout/proc/channel_color_picked(datum/act/request/A)
 	if(!A.answer)
 		return
@@ -664,12 +632,11 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 	var/list/active = gear_list[ask.loadout_key] || list()
 	var/list/item_meta = active[ask.gear_name]
 	var/list/cur_meta = islist(item_meta) ? item_meta["[ask.tweak_idx]"] : null
-	var/list/cur = (islist(cur_meta) && cur_meta["mode"] == "channels" && islist(cur_meta["value"])) ? cur_meta["value"] : list()
-	var/list/colors = cur.Copy()
+	var/list/colors = islist(cur_meta) ? cur_meta.Copy() : list()
 	while(length(colors) < ask.original)
 		colors += ""
 	colors[ask.original] = lowertext(sanitize_hexcolor(ask.value, default = ask.default))
-	write_tweak_meta(ask, list("mode" = "channels", "value" = colors))
+	write_tweak_meta(ask, clothing_channel_clean_choice(colors))
 
 /datum/preference_editor/loadout/before_action(datum/preferences/preferences, mob/user, action)
 	_validate_and_persist_slot(preferences)
@@ -824,67 +791,15 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 	open_request(src, /datum/prompt/color/prefs/gear_tweak, PROC_REF(tweak_color_picked), answerer = user, title = "[G.display_name]", question = "Pick a color", default = cur, preferences = preferences, gear_name = gear_name, tweak_idx = tweak_idx, loadout_key = loadout_key)
 	return PREF_UPDATE_UNCHANGED
 
-/datum/preference_editor/loadout/proc/ui_act_recolor_pick_tint(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
-	// opens tgui_color_picker for the unified recolor tweak's tint mode.
-	var/gear_name = params["gear"]
-	var/tweak_idx = params["tweak"]
-	var/datum/gear/G = GLOB.gear_datums[gear_name]
-	if(!G || !isnum(tweak_idx) || tweak_idx < 1 || tweak_idx > length(G.gear_tweaks))
-		return PREF_UPDATE_REJECTED
-	var/datum/gear_tweak/gt = LAZYACCESS(G.gear_tweaks, tweak_idx)
-	if(!istype(gt, /datum/gear_tweak/recolor))
-		return PREF_UPDATE_REJECTED
-	var/loadout_key = _current_slot(preferences)
-	var/list/gear_list = preferences.read_preference(/datum/preference/gear_list) || list()
-	var/list/active = gear_list[loadout_key] || list()
-	if(!(gear_name in active))
-		return PREF_UPDATE_REJECTED
-	var/list/item_meta = active[gear_name]
-	if(!islist(item_meta))
-		item_meta = list()
-	var/list/cur_meta = item_meta["[tweak_idx]"]
-	var/cur = (islist(cur_meta) && cur_meta["mode"] == "tint") ? cur_meta["value"] : "#ffffff"
-	open_request(src, /datum/prompt/color/prefs/gear_tweak, PROC_REF(tint_color_picked), answerer = user, title = "[G.display_name]", question = "Tint color", default = cur, preferences = preferences, gear_name = gear_name, tweak_idx = tweak_idx, loadout_key = loadout_key)
-	return PREF_UPDATE_UNCHANGED
-
-/datum/preference_editor/loadout/proc/ui_act_recolor_pick_palette_swatch(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
-	// palette-mode swatch picker. Takes `original` hex; opens tgui_color_picker
-	// and updates the `original → new` mapping inside the recolor metadata's value dict.
-	var/gear_name = params["gear"]
-	var/tweak_idx = params["tweak"]
-	var/original = params["original"]
-	if(!istext(original))
-		return PREF_UPDATE_REJECTED
-	var/datum/gear/G = GLOB.gear_datums[gear_name]
-	if(!G || !isnum(tweak_idx) || tweak_idx < 1 || tweak_idx > length(G.gear_tweaks))
-		return PREF_UPDATE_REJECTED
-	var/datum/gear_tweak/gt = LAZYACCESS(G.gear_tweaks, tweak_idx)
-	if(!istype(gt, /datum/gear_tweak/recolor))
-		return PREF_UPDATE_REJECTED
-	var/loadout_key = _current_slot(preferences)
-	var/list/gear_list = preferences.read_preference(/datum/preference/gear_list) || list()
-	var/list/active = gear_list[loadout_key] || list()
-	if(!(gear_name in active))
-		return PREF_UPDATE_REJECTED
-	var/list/item_meta = active[gear_name]
-	if(!islist(item_meta))
-		item_meta = list()
-	var/list/cur_meta = item_meta["[tweak_idx]"]
-	var/list/cur_swaps = (islist(cur_meta) && cur_meta["mode"] == "palette" && islist(cur_meta["value"])) ? cur_meta["value"] : null
-	var/list/swaps = cur_swaps ? cur_swaps.Copy() : list()
-	var/cur_value = swaps[original] || original
-	open_request(src, /datum/prompt/color/prefs/gear_tweak, PROC_REF(swatch_color_picked), answerer = user, title = "[G.display_name]", question = "Recolor source [original]", default = cur_value, preferences = preferences, gear_name = gear_name, tweak_idx = tweak_idx, loadout_key = loadout_key, original = original)
-	return PREF_UPDATE_UNCHANGED
-
-/datum/preference_editor/loadout/proc/ui_act_recolor_pick_channel(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
-	// BYOND's colour picker for one colour channel of the unified recolor tweak.
+/datum/preference_editor/loadout/proc/ui_act_pick_channel(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
+	// BYOND's colour picker for one colour channel of the channels tweak.
 	var/gear_name = params["gear"]
 	var/tweak_idx = params["tweak"]
 	var/index = params["index"]
 	var/datum/gear/G = GLOB.gear_datums[gear_name]
 	if(!G || !isnum(tweak_idx) || tweak_idx < 1 || tweak_idx > length(G.gear_tweaks) || !isnum(index) || index < 1 || index > 3)
 		return PREF_UPDATE_REJECTED
-	if(!istype(LAZYACCESS(G.gear_tweaks, tweak_idx), /datum/gear_tweak/recolor))
+	if(!istype(LAZYACCESS(G.gear_tweaks, tweak_idx), /datum/gear_tweak/channels))
 		return PREF_UPDATE_REJECTED
 	var/loadout_key = _current_slot(preferences)
 	var/list/gear_list = preferences.read_preference(/datum/preference/gear_list) || list()
@@ -895,135 +810,17 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 	open_request(src, /datum/prompt/color/prefs/gear_tweak, PROC_REF(channel_color_picked), answerer = user, title = "[G.display_name]", question = "Channel [index] colour", default = clothing_channel_normal_hex(current) || "#ffffff", preferences = preferences, gear_name = gear_name, tweak_idx = tweak_idx, loadout_key = loadout_key, original = index)
 	return PREF_UPDATE_UNCHANGED
 
-/datum/preference_editor/loadout/proc/ui_act_recolor_pick_matrix(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
-	// opens the matrix colormatrix picker for the unified recolor tweak.
-	var/gear_name = params["gear"]
-	var/tweak_idx = params["tweak"]
-	var/datum/gear/G = GLOB.gear_datums[gear_name]
-	if(!G || !isnum(tweak_idx) || tweak_idx < 1 || tweak_idx > length(G.gear_tweaks))
-		return PREF_UPDATE_REJECTED
-	var/datum/gear_tweak/gt = LAZYACCESS(G.gear_tweaks, tweak_idx)
-	if(!istype(gt, /datum/gear_tweak/recolor))
-		return PREF_UPDATE_REJECTED
-	var/loadout_key = _current_slot(preferences)
-	var/list/gear_list = preferences.read_preference(/datum/preference/gear_list) || list()
-	var/list/active = gear_list[loadout_key] || list()
-	if(!(gear_name in active))
-		return PREF_UPDATE_REJECTED
-	var/list/item_meta = active[gear_name]
-	if(!islist(item_meta))
-		item_meta = list()
-	var/list/cur_meta = item_meta["[tweak_idx]"]
-	var/list/cur_matrix = (islist(cur_meta) && cur_meta["mode"] == "matrix") ? cur_meta["value"] : null
-	open_request(src, /datum/prompt/colormatrix/prefs/gear_tweak, PROC_REF(matrix_picked), answerer = user, question = "Pick a color matrix for this item", title = "Matrix Recolor", preview = G.path, default = cur_matrix, matrix_only = TRUE, timeout = 0, preferences = preferences, gear_name = gear_name, tweak_idx = tweak_idx, loadout_key = loadout_key)
-	return PREF_UPDATE_UNCHANGED
-
-/// A colour matrix for one of an equipped gear's tweaks. Re-checked on the answer like the colour pickers: the same prefs, loadout
-/// slot and gear still equipped in it.
-/datum/prompt/colormatrix/prefs/gear_tweak
-	var/datum/preferences/preferences
-	var/gear_name
-	var/tweak_idx
-	var/loadout_key
-
-CAPABILITIES(/datum/prompt/colormatrix/prefs/gear_tweak)
-	ref_one(nameof(preferences), /datum/preferences)
-
-/datum/prompt/colormatrix/prefs/gear_tweak/prepare(datum/act/A)
-	..()
-	var/datum/preferences/captured_preferences = preferences
-	rel_clear(src, nameof(preferences))
-	rel_set(src, nameof(preferences), captured_preferences)
-
-/datum/prompt/colormatrix/prefs/gear_tweak/recheck_extra()
-	if(QDELETED(preferences) || !answerer.client?.prefs || answerer.client.prefs != preferences)
-		return "prefs changed"
-	var/datum/preference_editor/loadout/editor = GLOB.preference_editors_by_key["loadout"]
-	if(editor && editor._current_slot(preferences) != loadout_key)
-		return "slot changed"
-	var/list/gear_list = preferences.read_preference(/datum/preference/gear_list) || list()
-	var/list/active = gear_list[loadout_key] || list()
-	if(!(gear_name in active))
-		return "not equipped"
-
-/// The matrix picked for a gear tweak (what ui_act_recolor_pick_matrix did after its question).
-/datum/preference_editor/loadout/proc/matrix_picked(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/colormatrix/prefs/gear_tweak/ask = A.answer
-	var/list/new_matrix = ask.value
-	if(!islist(new_matrix) || length(new_matrix) < 12)
-		return
-	var/datum/preferences/preferences = ask.preferences
-	var/list/gear_list = preferences.read_preference(/datum/preference/gear_list) || list()
-	var/list/active = gear_list[ask.loadout_key] || list()
-	var/list/item_meta = active[ask.gear_name]
-	if(!islist(item_meta))
-		item_meta = list()
-	item_meta["[ask.tweak_idx]"] = list("mode" = "matrix", "value" = new_matrix)
-	active[ask.gear_name] = item_meta
-	gear_list[ask.loadout_key] = active
-	preferences.update_preference_by_type(/datum/preference/gear_list, gear_list)
-	preferences.update_preview_icon()
-	SStgui.update_uis(preferences)
-
-/datum/preference_editor/loadout/proc/ui_act_set_recolor(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
-	// direct write for the unified recolor tweak. value is a dict:
-	//   {mode: "off"|"tint"|"palette"|"matrix"|"channels", value: <mode-specific>}
+/datum/preference_editor/loadout/proc/ui_act_set_channels(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
+	// Direct write for the channels tweak: value is a list of up to 3 entries, each a colour, a palette slot name (the channel follows the
+	// slot) or "" (the channel stays as drawn); anything else reads as "".
 	var/gear_name = params["gear"]
 	var/tweak_idx = params["tweak"]
 	var/list/value = params["value"]
 	var/datum/gear/G = GLOB.gear_datums[gear_name]
 	if(!G || !isnum(tweak_idx) || tweak_idx < 1 || tweak_idx > length(G.gear_tweaks))
 		return PREF_UPDATE_REJECTED
-	var/datum/gear_tweak/gt = LAZYACCESS(G.gear_tweaks, tweak_idx)
-	if(!istype(gt, /datum/gear_tweak/recolor))
+	if(!istype(LAZYACCESS(G.gear_tweaks, tweak_idx), /datum/gear_tweak/channels) || !islist(value))
 		return PREF_UPDATE_REJECTED
-	if(!islist(value))
-		return PREF_UPDATE_REJECTED
-	var/mode = value["mode"]
-	if(!(mode in list("off", "tint", "palette", "matrix", "channels")))
-		return PREF_UPDATE_REJECTED
-	// Validate-and-reconstruct: never persist the caller's dict directly — it may
-	// carry stray params keys, and writing back the same reference would mutate the
-	// React-supplied object visible to anything holding it. Always assemble a fresh
-	// {mode, value} pair.
-	switch(mode)
-		if("off")
-			value = list("mode" = "off")
-		if("tint")
-			var/c = value["value"]
-			if(!istext(c) || length(c) < 4 || copytext(c, 1, 2) != "#")
-				return PREF_UPDATE_REJECTED
-			value = list("mode" = "tint", "value" = c)
-		if("palette")
-			var/list/swaps = value["value"]
-			if(!islist(swaps))
-				return PREF_UPDATE_REJECTED
-			// Strip identity entries (no point persisting "red→red").
-			var/list/cleaned = list()
-			for(var/orig in swaps)
-				var/new_color = swaps[orig]
-				if(istext(orig) && istext(new_color) && orig != new_color)
-					cleaned[orig] = new_color
-			value = list("mode" = "palette", "value" = cleaned)
-		if("channels")
-			// At most 3 entries, each a colour, a palette slot name (it follows the slot) or "" (that channel stays as drawn); anything else reads as "".
-			var/list/picked = value["value"]
-			if(!islist(picked))
-				return PREF_UPDATE_REJECTED
-			var/list/cleaned = list()
-			for(var/i in 1 to min(length(picked), 3))
-				cleaned += dq_color_slot_type(picked[i]) ? picked[i] : (clothing_channel_normal_hex(picked[i]) || "")
-			value = list("mode" = "channels", "value" = cleaned)
-		if("matrix")
-			// Initial switch to matrix mode sends an empty list — that's fine, the
-			// matrix picker fills it. Only reject if value is *set* but malformed
-			// (something other than null/empty or a 12+ element list).
-			var/list/m = value["value"]
-			if(islist(m) && length(m) > 0 && length(m) < 12)
-				return PREF_UPDATE_REJECTED
-			value = list("mode" = "matrix", "value" = islist(m) ? m : list())
 	var/loadout_key = _current_slot(preferences)
 	var/list/gear_list = preferences.read_preference(/datum/preference/gear_list) || list()
 	var/list/active = gear_list[loadout_key] || list()
@@ -1032,7 +829,11 @@ CAPABILITIES(/datum/prompt/colormatrix/prefs/gear_tweak)
 	var/list/item_meta = active[gear_name]
 	if(!islist(item_meta))
 		item_meta = list()
-	item_meta["[tweak_idx]"] = value
+	var/list/cleaned = clothing_channel_clean_choice(value)
+	if(cleaned)
+		item_meta["[tweak_idx]"] = cleaned
+	else
+		item_meta -= "[tweak_idx]"
 	active[gear_name] = item_meta
 	gear_list[loadout_key] = active
 	preferences.update_preference_by_type(/datum/preference/gear_list, gear_list)
@@ -1110,36 +911,18 @@ CAPABILITIES(/datum/prompt/colormatrix/prefs/gear_tweak)
 				return PREF_UPDATE_REJECTED
 			before_action(preferences, user, action)
 			return ui_act_pick_tweak_color(user, typed, preferences, null, action)
-		if("recolor_pick_tint")
-			typed = payload_args(src, params, list("gear" = null, "tweak" = num()))
-			if(!typed)
-				return PREF_UPDATE_REJECTED
-			before_action(preferences, user, action)
-			return ui_act_recolor_pick_tint(user, typed, preferences, null, action)
-		if("recolor_pick_palette_swatch")
-			typed = payload_args(src, params, list("gear" = null, "original" = schema_text(4096), "tweak" = num()))
-			if(!typed)
-				return PREF_UPDATE_REJECTED
-			before_action(preferences, user, action)
-			return ui_act_recolor_pick_palette_swatch(user, typed, preferences, null, action)
-		if("recolor_pick_channel")
+		if("pick_channel")
 			typed = payload_args(src, params, list("gear" = null, "tweak" = num(), "index" = num(), "current" = schema_text(16)))
 			if(!typed)
 				return PREF_UPDATE_REJECTED
 			before_action(preferences, user, action)
-			return ui_act_recolor_pick_channel(user, typed, preferences, null, action)
-		if("recolor_pick_matrix")
-			typed = payload_args(src, params, list("gear" = null, "tweak" = num()))
-			if(!typed)
-				return PREF_UPDATE_REJECTED
-			before_action(preferences, user, action)
-			return ui_act_recolor_pick_matrix(user, typed, preferences, null, action)
-		if("set_recolor")
+			return ui_act_pick_channel(user, typed, preferences, null, action)
+		if("set_channels")
 			typed = payload_args(src, params, list("gear" = null, "tweak" = num(), "value" = null))
 			if(!typed)
 				return PREF_UPDATE_REJECTED
 			before_action(preferences, user, action)
-			return ui_act_set_recolor(user, typed, preferences, null, action)
+			return ui_act_set_channels(user, typed, preferences, null, action)
 		if("reset_tweaks")
 			typed = payload_args(src, params, list("gear" = null))
 			if(!typed)

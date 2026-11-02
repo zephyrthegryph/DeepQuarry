@@ -89,7 +89,7 @@
 
 /datum/gear/mask/lace/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/mask/half
 	display_name = "black half-mask"
@@ -101,7 +101,7 @@
 
 /datum/gear/mask/wrestling/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/mask/masquerade
 	display_name = "masquerade mask selection"

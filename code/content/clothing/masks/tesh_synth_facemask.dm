@@ -67,7 +67,7 @@ CAPABILITIES(/obj/item/clothing/mask/synthfacemask)
 
 /datum/gear/mask/synthface/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /// the maskmaster this refers to (a relation view: null once it is deleted).
 /obj/item/clothing/mask/synthfacemask/proc/maskmaster() as /mob/living/carbon

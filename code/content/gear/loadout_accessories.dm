@@ -28,7 +28,7 @@
 
 /datum/gear/accessory/armband/colored/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/accessory/wallet
 	display_name = "wallet, orange"
@@ -64,7 +64,7 @@
 
 /datum/gear/accessory/purse/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/accessory/wcoat
 	display_name = "waistcoat selection"
@@ -143,7 +143,7 @@
 
 /datum/gear/accessory/scarfcolor/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/accessory/jacket
 	display_name = "jacket selection (accessory)"
@@ -225,7 +225,7 @@
 
 /datum/gear/accessory/virginkiller/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/accessory/bracelet/material
 	display_name = "bracelet selection"
@@ -273,7 +273,7 @@
 
 /datum/gear/accessory/sash/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/accessory/asym
 	display_name = "asymmetric jacket selection"
@@ -359,7 +359,7 @@
 
 /datum/gear/accessory/wristband/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/accessory/wristband_collection
 	display_name = "wristbands (selection)"
@@ -388,7 +388,7 @@
 
 /datum/gear/choker/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/collar
 	display_name = "collar, silver"
@@ -443,7 +443,7 @@
 
 /datum/gear/accessory/flops/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/accessory/dosimeter
 	display_name = "Dosimeter"
@@ -556,7 +556,7 @@ Talon pin
 	"Studded Belt" = /obj/item/clothing/accessory/belt/studded
 	)
 	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(wristband_lists))
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/accessory/bunny_tail
 	display_name = "bunny tail, colorable"
@@ -564,7 +564,7 @@ Talon pin
 
 /datum/gear/accessory/bunny_tail/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/accessory/legwarmer_selection
 	display_name = "legwarmers (selection, colorable)"
@@ -578,4 +578,4 @@ Talon pin
 	"Legwarmers, short" = /obj/item/clothing/accessory/legwarmersshort
 	)
 	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(legwarmer_lists))
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1

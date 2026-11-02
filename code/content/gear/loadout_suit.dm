@@ -12,7 +12,7 @@
 
 /datum/gear/suit/apron_white/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/suit/greatcoat
 	display_name = "greatcoat"
@@ -97,7 +97,7 @@
 
 /datum/gear/suit/duster/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/suit/duster_sleeveless
 	display_name = "cowboy duster, colorable, sleeveless"
@@ -105,7 +105,7 @@
 
 /datum/gear/suit/duster_sleeveless/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/suit/hazard_vest
 	display_name = "hazard vest selection"
@@ -329,7 +329,7 @@
 
 /datum/gear/suit/cloak_custom/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/suit/ranger_poncho
 	display_name = "ranger poncho selection"
@@ -358,7 +358,7 @@
 
 /datum/gear/suit/neo_ranger/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/suit/unathi_robe
 	display_name = "roughspun robe"
@@ -617,7 +617,7 @@
 
 /datum/gear/suit/flannelrecolour/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/suit/denim_jacket
 	display_name = "denim jacket and vest selection"
@@ -667,7 +667,7 @@
 
 /datum/gear/suit/miscellaneous/peacoat/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/suit/snowsuit
 	display_name = "snowsuit"
@@ -715,7 +715,7 @@
 
 /datum/gear/suit/miscellaneous/cardigan/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/suit/cmddressjacket
 	display_name = "command dress jacket"
@@ -729,7 +729,7 @@
 
 /datum/gear/suit/miscellaneous/kimono/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/suit/miscellaneous/kamishimo
 	display_name = "traditional kamishimo, colorable"
@@ -737,7 +737,7 @@
 
 /datum/gear/suit/miscellaneous/kamishimo/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/suit/miscellaneous/kimono_select
 	display_name = "kimono selection"
@@ -771,7 +771,7 @@
 		"very high cropped hoodie"=/obj/item/clothing/suit/storage/croppedhoodie/croppierer,
 		"super high cropped hoodie"=/obj/item/clothing/suit/storage/croppedhoodie/croppiest
 	)
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(croppedhoodies))
 
 /datum/gear/suit/drive
@@ -828,7 +828,7 @@
 
 /datum/gear/suit/labcoat_colorable/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/suit/labcoat_old
 	display_name = "labcoat, old-school"
@@ -918,7 +918,7 @@
 
 /datum/gear/suit/oversize/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /*
 Talon winter coat
@@ -950,7 +950,7 @@ Talon winter coat
 		var/obj/item/clothing/suit/storage/toggle/hoodie/hoodie = hoodie_style
 		hoodies[initial(hoodie.name)] = hoodie
 	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(sortAssoc(hoodies)))
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/suit/cyberpunk_recolorable
 	display_name = "cyberpunk jacket (recolorable)"
@@ -959,7 +959,7 @@ Talon winter coat
 
 /datum/gear/suit/cyberpunk_recolorable/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/suit/shrine_maiden
 	display_name = "shrine maiden costume"
@@ -990,7 +990,7 @@ Talon winter coat
 
 /datum/gear/suit/cloak_half/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 //Shoulder cloak
 /datum/gear/suit/cloak_shoulder
@@ -1000,7 +1000,7 @@ Talon winter coat
 
 /datum/gear/suit/cloak_shoulder/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/suit/cloak_shoulder_right
 	display_name = "cloak, shoulder right"
@@ -1009,7 +1009,7 @@ Talon winter coat
 
 /datum/gear/suit/cloak_shoulder_right/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 //Mantles, mostly for heads of staff
 /datum/gear/suit/roles/mantle
@@ -1019,7 +1019,7 @@ Talon winter coat
 
 /datum/gear/suit/roles/mantle/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/suit/roles/mantles
 	display_name = "mantle selection"
@@ -1047,7 +1047,7 @@ Talon winter coat
 
 /datum/gear/suit/roles/boatcloak/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/suit/roles/capboatcloak
 	display_name = "boat cloak, site manager"
@@ -1088,7 +1088,7 @@ Talon winter coat
 
 /datum/gear/suit/roles/shroud/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/suit/roles/capshroud
 	display_name = "shroud, site manager"
@@ -1154,7 +1154,7 @@ Talon winter coat
 		"cropped hoodie"=/obj/item/clothing/suit/storage/hooded/toggle/colorable/cropped,
 		"shortsleeve hoodie"=/obj/item/clothing/suit/storage/hooded/toggle/colorable/shortsleeve
 	)
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(choodies))
 
 //ABOUT TIME SOMEONE ADDED THIS TO A LOADOUT

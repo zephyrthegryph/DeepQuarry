@@ -67,7 +67,7 @@
 
 /datum/gear/uniform/qipao_colorable/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/uniform/qipao2_colorable
 	display_name = "qipao, colorable, slim"
@@ -75,7 +75,7 @@
 
 /datum/gear/uniform/qipao2_colorable/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/uniform/skirt
 	display_name = "skirt selection"
@@ -201,7 +201,7 @@
 
 /datum/gear/uniform/shortplaindress/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/uniform/longdress
 	display_name = "long dress"
@@ -209,7 +209,7 @@
 
 /datum/gear/uniform/longdress/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/uniform/longwidedress
 	display_name = "long wide dress"
@@ -217,7 +217,7 @@
 
 /datum/gear/uniform/longwidedress/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/uniform/loincloth
 	display_name = "loincloth"
@@ -225,7 +225,7 @@
 
 /datum/gear/uniform/loincloth/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/uniform/reddress
 	display_name = "red dress with belt"
@@ -272,7 +272,7 @@
 
 /datum/gear/uniform/yogapants/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/uniform/black_corset
 	display_name = "black corset"
@@ -339,7 +339,7 @@
 
 /datum/gear/uniform/pleated/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/uniform/lilacdress
 	display_name = "lilac dress"
@@ -431,7 +431,7 @@
 
 /datum/gear/uniform/floofdress/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/uniform/blackngold
 	display_name = "black and gold gown"
@@ -483,7 +483,7 @@
 
 /datum/gear/uniform/flowerskirt/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/uniform/countess
 	display_name = "countess dress"
@@ -499,7 +499,7 @@
 
 /datum/gear/uniform/fashionminiskirt/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/uniform/tourist_1
 	display_name = "tourist outfit, white"
@@ -559,7 +559,7 @@
 
 /datum/gear/uniform/leotardcolor/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 //skinsuits
 /datum/gear/uniform/skinsuits
@@ -617,7 +617,7 @@
 	"keyhole sweater"=/obj/item/clothing/under/bigsweater/keyhole
 	)
 	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(bigsweaters))
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 //half-moon outfit
 /datum/gear/uniform/halfmoon
@@ -663,7 +663,7 @@
 	"maid reverse bunnysuit, no legs"=/obj/item/clothing/under/reverse_bunnytop_maid
 	)
 	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(bunnysuit))
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/uniform/suit/permit
 	display_name = "nudity permit"
@@ -709,7 +709,7 @@ Qipao
 
 /datum/gear/uniform/qipao_colorable_alt/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /*
 Bluespace jumpsuit
@@ -809,7 +809,7 @@ Talon jumpsuit
 	"short skirt (split)"=/obj/item/clothing/under/skirt/colorable/short_split
 	)
 	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(skirts))
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 // gwen beedells clown clothes
 
@@ -825,7 +825,7 @@ Talon jumpsuit
 
 /datum/gear/uniform/cdress_fire/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 // recolorable yellow dress
 /datum/gear/uniform/cbridesmaid
@@ -834,7 +834,7 @@ Talon jumpsuit
 
 /datum/gear/uniform/cbridesmaid/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 // recolorable orange swoop dress
 /datum/gear/uniform/cswoopdress
@@ -843,7 +843,7 @@ Talon jumpsuit
 
 /datum/gear/uniform/cswoopdress/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 // waiter's outfit, this should probably be in a selector with all the other service uniforms.
 /datum/gear/uniform/waiter

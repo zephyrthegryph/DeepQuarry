@@ -63,9 +63,6 @@ CAPABILITIES(/datum/ask_sequence/gear_tweak)
 /proc/gear_ask_text(key, title, message, default, max_length = MAX_MESSAGE_LEN, multiline = FALSE)
 	return question_step(key, /datum/prompt/text, title = title, question = message, default = default, max_len = max_length, multiline = multiline, name_text = (max_length <= MAX_NAME_LEN))
 
-/proc/gear_ask_colormatrix(key, title, message, preview, list/default, matrix_only = FALSE)
-	return question_step(key, /datum/prompt/colormatrix, title = title, question = message, preview = preview, default = default, matrix_only = matrix_only)
-
 /datum/gear_tweak/proc/get_default()
 	return
 
@@ -98,7 +95,8 @@ CAPABILITIES(/datum/ask_sequence/gear_tweak)
 	return PREF_UPDATE_REJECTED
 
 /*
-* Color adjustment
+* Colour of a non-clothing item (a towel, nail polish, a wheelchair). Clothing is recoloured only through its colour channels
+* (/datum/gear_tweak/channels); dq_clothing_gear_has_no_colour_tweak keeps this off anything with channels.
 */
 
 /datum/gear_tweak/color
@@ -129,46 +127,36 @@ CAPABILITIES(/datum/ask_sequence/gear_tweak)
 	else
 		I.set_color(metadata)
 
+/*
+* Clothing colour channels (clothing_channels.dm). Metadata: a list of up to 3 entries, one per channel, each "#rrggbb", a palette
+* slot name (the channel follows that slot) or "" (the channel stays as drawn). spawn_item() resolves slot names before tweak_item().
+*/
 
-/datum/gear_tweak/matrix_recolor
+/datum/gear_tweak/channels
 
-/datum/gear_tweak/matrix_recolor/get_contents(metadata)
-	if(islist(metadata) && length(metadata))
-		return "Matrix Recolor: [english_list(metadata)]"
-	return "Matrix Recolor"
-
-/datum/gear_tweak/matrix_recolor/get_default()
+/datum/gear_tweak/channels/get_default()
 	return null
 
-/datum/gear_tweak/matrix_recolor/metadata_steps(mob/user, metadata, datum/gear/gear, title = "Character Preference")
-	if(!istype(gear))
-		CRASH("Matrix metadata called by [user] without gear!")
-	return list(gear_ask_colormatrix("value", "Matrix Recolor", "Pick a color matrix for this item", gear.path, metadata, TRUE))
+/datum/gear_tweak/channels/get_contents(metadata)
+	if(!islist(metadata) || !length(metadata))
+		return "Colours: as drawn"
+	return "Colours: [jointext(metadata, ", ")]"
 
-/datum/gear_tweak/matrix_recolor/metadata_answered(datum/ask_sequence/gear_tweak/seq)
-	var/list/returned = seq.value
-	if(!islist(returned))
+/datum/gear_tweak/channels/tweak_item(obj/item/I, metadata)
+	if(islist(metadata) && istype(I))
+		I.apply_clothing_channels(metadata)
+
+/// A choice from the loadout window cleaned for saving: at most 3 entries, each a colour, a palette slot name or "". Null when nothing is chosen.
+/proc/clothing_channel_clean_choice(list/picked)
+	if(!islist(picked))
 		return null
-	var/identity = TRUE
-	var/static/list/ones = list(1, 5, 9)
-	var/static/list/offsets = list(10, 11, 12)
-	for(var/i in 1 to length(returned))
-		if(returned[i] != ((i in ones) ? 1 : 0))
-			identity = FALSE
-			break
-		if(returned[i] != ((i in offsets) ? 0 : 1))
-			identity = FALSE
-			break
-	return identity ? list() : returned
-
-/datum/gear_tweak/matrix_recolor/tweak_item(obj/item/I, metadata)
-	. = ..()
-	if(!islist(metadata) || (length(metadata) < 12))
-		return
-	if(istype(I))
-		I.add_atom_colour(metadata, FIXED_COLOUR_PRIORITY)
-	else
-		I.set_color(metadata)
+	var/list/cleaned = list()
+	var/any = FALSE
+	for(var/i in 1 to min(length(picked), CLOTHING_CHANNELS_MAX))
+		var/entry = dq_color_slot_type(picked[i]) ? picked[i] : (clothing_channel_normal_hex(picked[i]) || "")
+		cleaned += entry
+		any = any || length(entry)
+	return any ? cleaned : null
 
 /*
 * Path adjustment
@@ -276,10 +264,7 @@ CAPABILITIES(/datum/ask_sequence/gear_tweak)
 		. = valid_reagents[metadata]
 	I.reagents.add_reagent(., I.reagents.get_free_space())
 
-//Custom name and desciption code
-//note to devs downstream: where 'gear_tweaks = list(GLOB.gear_tweak_free_color_choice)' was used before for color selection
-//in the loadout, now an owned color tweak must be added to gear_tweaks (see _gear.dm), otherwise the item will not
-// be able to be given a custom name or description
+//Custom name and description code
 /*
 Custom Name
 */

@@ -228,4 +228,6 @@
 				active_gear_list -= gear_name
 				continue
 			total_cost += G.cost
+			// Old clothing colours (colour tweak, tint, palette, matrix) become channel colours.
+			clothing_channel_migrate_meta(G, active_gear_list[gear_name])
 	return value

@@ -78,7 +78,7 @@
 
 /datum/gear/head/cap/white/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/head/halo
 	display_name = "halo (colorable)"
@@ -86,7 +86,7 @@
 
 /datum/gear/head/halo/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/head/cap/sol
 	display_name = "cap, sol"
@@ -134,7 +134,7 @@
 
 /datum/gear/head/hairflower/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/head/pin
 	display_name = "pin selection"
@@ -205,7 +205,7 @@
 
 /datum/gear/head/hijab/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/head/kippa
 	display_name = "kippa"
@@ -213,7 +213,7 @@
 
 /datum/gear/head/kippa/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/head/turban
 	display_name = "turban"
@@ -221,7 +221,7 @@
 
 /datum/gear/head/turban/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/head/taqiyah
 	display_name = "taqiyah"
@@ -229,7 +229,7 @@
 
 /datum/gear/head/taqiyah/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/head/kitty
 	display_name = "kitty ears"
@@ -244,7 +244,7 @@
 
 /datum/gear/head/rabbit/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/head/beanie
 	display_name = "beanie"
@@ -252,7 +252,7 @@
 
 /datum/gear/head/beanie/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/head/loose_beanie
 	display_name = "loose beanie"
@@ -260,7 +260,7 @@
 
 /datum/gear/head/loose_beanie/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/head/beretg
 	display_name = "beret"
@@ -268,7 +268,7 @@
 
 /datum/gear/head/beretg/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/head/sombrero
 	display_name = "sombrero"
@@ -280,7 +280,7 @@
 
 /datum/gear/head/flatcapg/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/head/bow/small
 	display_name = "hair bow, small (colorable)"
@@ -288,7 +288,7 @@
 
 /datum/gear/head/bow/small/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/head/welding
 	display_name = "welding mask selection"
@@ -416,7 +416,7 @@
 
 /datum/gear/head/giantbow/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/head/bows
 	display_name = "hair bow selection, colorable"
@@ -431,7 +431,7 @@
 	"sweet bow"=/obj/item/clothing/head/bow/sweet
 	)
 	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/path(bows))
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/head/pilot
 	display_name = "pilot helmets selection"
@@ -455,7 +455,7 @@
 
 /datum/gear/head/headbando/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/head/maid
 	display_name = "maid headband selection"
@@ -497,7 +497,7 @@
 
 /datum/gear/head/magic_hat/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/head/wedding
 	display_name = "wedding veil"
@@ -505,7 +505,7 @@
 
 /datum/gear/head/wedding/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/head/halo/alt
 	display_name = "halo, alt"
@@ -517,7 +517,7 @@
 
 /datum/gear/head/buckethat/New()
 	..()
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
 
 /datum/gear/head/nonla
 	display_name = "hat, non la"

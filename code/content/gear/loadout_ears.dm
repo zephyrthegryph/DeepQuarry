@@ -59,4 +59,4 @@
 	earringscolour["dangle"] = /obj/item/clothing/ears/earring/dangle
 
 	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/path(earringscolour))
-	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	legacy_colour_index = length(gear_tweaks) + 1
