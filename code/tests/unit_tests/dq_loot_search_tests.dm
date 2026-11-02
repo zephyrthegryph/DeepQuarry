@@ -121,6 +121,8 @@
 		TEST_ASSERT(!said(user, "You found"), "and nothing was rolled ([chat])")
 		TEST_ASSERT(isturf(hider.loc), "the hider is out on the floor ([hider.loc])")
 		TEST_ASSERT_NULL(loot_search_keys(P, STAT_LOOT_SEARCHED)["pinsearcher"], "and the searcher was not marked")
+	for(var/mob/living/simple_mob/animal/passive/raccoon/woken in range(10, run_loc_floor_bottom_left))
+		qdel(woken) // the search's 5 percent wake
 	for(var/atom/movable/AM as anything in found_on_floor())
 		qdel(AM)
 	forget_keys()

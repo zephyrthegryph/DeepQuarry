@@ -1011,6 +1011,8 @@
 /datum/unit_test/dq_p2_smes/load_discharges_the_unit/run_gate()
 	var/obj/machinery/power/smes/S = p2_network(supply_watts = 0)
 	var/area/load_area = get_area(p2_load_spot())
+	capture_ambient() // its power steps run every APC on the map: one with nothing feeding it goes flat and its area dark (the Strange Location)
+	keep_area_power(load_area)
 	var/requires = load_area.requires_power
 	load_area.set_requires_power(TRUE)
 	load_area.power_change() // the machines of the area learn of it, as a holodeck switch does

@@ -784,7 +784,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 	for(var/obj/machinery/M as anything in machine_state)
 		if(istype(M, /obj/machinery/alarm) || istype(M, /obj/machinery/atmospherics/unary/freezer) || istype(M, /obj/machinery/atmospherics/unary/heater))
 			var/list/row = list()
-			for(var/name in list("use_power", "regulating_temperature", "pumping"))
+			for(var/name in list("use_power", "regulating_temperature", "pumping", "mode", "danger_level"))
 				if(name in machine_state[M])
 					row[name] = machine_state[M][name]
 			thermostats[M] = row
@@ -792,7 +792,11 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 	for(var/obj/machinery/power/apc/A in REGISTRY_MEMBERS(REGISTRY_APCS))
 		if(A.cell && A.area)
 			apcs[A] = list(A.cell.charge, A.area.power_equip, A.area.power_light, A.area.power_environ)
-	ambient = list("air" = all, "only" = only, "solids" = baseline?["solids"] || unit_test_solid_snapshot(), "apcs" = apcs, "machine_areas" = machine_areas, "thermostats" = thermostats)
+	// An air alarm trips on the room's drift and its area sounds and shuts its firedoors: same cause, same cleanup.
+	var/list/alarmed = list()
+	for(var/area/room as anything in machine_areas)
+		alarmed[room] = list(room.atmosalm, room.firedoors_closed)
+	ambient = list("air" = all, "only" = only, "solids" = baseline?["solids"] || unit_test_solid_snapshot(), "apcs" = apcs, "machine_areas" = machine_areas, "thermostats" = thermostats, "alarmed" = alarmed)
 
 /// restore_ambient_after() once, at the first moment a test claims a shared world floor (dq_atmos_test_snapshot_air()): the put-back then covers the floors the
 /// test declares afterwards, which the end-of-test restore would leave to the leak guard, and a test needs no call of its own.
@@ -838,6 +842,14 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 		A.cell.set_charge(row[1])
 		room.set_channels(row[2], row[3], row[4])
 		A.push_to_rust()
+	var/list/alarmed = was["alarmed"]
+	for(var/area/room as anything in alarmed)
+		var/list/row = alarmed[room]
+		if(room.atmosalm != row[1])
+			log_test("AMBIENT RESTORE:   [room]: air alarm level [room.atmosalm] -> [row[1]]")
+			room.set_atmosalm(row[1])
+		if(room.firedoors_closed && !row[2])
+			room.firedoors_open()
 	// No world step after the floors: a floor write reads back at once, and a step would cool the telecomms plating a few kelvin more (it loses about 3.4 K a step to the
 	// cryogenic rooms beside it) before the guard reads. The air goes last for the same reason: the map's vent pumps move gas on every step.
 	// Not the turfs this test wrote to: a leak there is the test's own.
@@ -850,6 +862,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 		log_test("AMBIENT RESTORE: [type] put back the air of [by_area[area_name]] turf(s) in [area_name]")
 	for(var/line in diff["lines"])
 		log_test("AMBIENT RESTORE:   air [line]")
+
+/// The test's own load or APC on `room` flips its power channels: they go back as they were when it ends.
+/datum/unit_test/proc/keep_area_power(area/room)
+	defer_cleanup(room, TYPE_PROC_REF(/area, set_channels), room.power_equip, room.power_light, room.power_environ) // through the setter: what reads them hears of it
 
 /// Remembers the guarded settings of every watched machine standing in the area of `T` (the alarms an alarm test trips there) and puts them back when the test ends
 /// (a deferred cleanup), through each var's tracked setter, logging each var it changes ("MACHINE RESTORE").

@@ -173,8 +173,7 @@
 	TEST_ASSERT_NULL(running(two), "the second rummager starts nothing")
 	test_time(6 SECONDS)
 	TEST_ASSERT(LAZYACCESS(B.ckeys_that_took, "pinrummager"), "the first rummager finds a costume")
-	for(var/obj/item/storage/box/halloween/X in run_loc_floor_bottom_left)
-		qdel(X)
+	own_turf_contents(run_loc_floor_bottom_left) // the costume box and whatever it spilled
 	forget_ghosts()
 
 /datum/unit_test/dq_timed_pin_w6/boxpile_cancel_on_move
