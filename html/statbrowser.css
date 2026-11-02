@@ -194,18 +194,26 @@ img {
  * MARK: Dark theme colors
  */
 .dark:root {
-  --color-base: #151515;
-  --scrollbar-base: #151515;
-  --scrollbar-thumb: #363636;
+  /* tgui-panel/settings/palette.ts; palette.test.ts holds these to it. */
+  --dark-base: #202020;
+  --dark-section: #151515;
+  --dark-selected: #1FAD4E;
+  --dark-text: #B3CCE6;
+  --dark-link: #6699FF;
+  --dark-hover: rgba(128, 128, 128, 0.25);
+  --dark-active: rgba(128, 128, 128, 0.3);
+  --color-base: var(--dark-base);
+  --scrollbar-base: var(--dark-section);
+  --scrollbar-thumb: #373737;
 }
 
-body.dark {
-  background-color: #151515;
-  color: #b2c4dd;
+.dark body {
+  background-color: var(--dark-base);
+  color: var(--dark-text);
 }
 
 .dark a {
-  color: #6699ff;
+  color: var(--dark-link);
 }
 
 .dark a:hover,
@@ -215,11 +223,11 @@ body.dark {
 }
 
 .dark #menu {
-  background-color: #151515;
+  background-color: var(--dark-section);
 }
 
 .dark #menu.tabs-classic .button.active {
-  background-color: #20b142;
+  background-color: var(--dark-selected);
 }
 
 .dark .button {
@@ -227,30 +235,30 @@ body.dark {
 }
 
 .dark .button:hover {
-  background-color: #252525;
+  background-color: var(--dark-hover);
 }
 
 .dark .button.active {
-  background-color: #313131;
-  color: #d4dfec;
-  border-bottom-color: #d4dfec;
+  background-color: var(--dark-selected);
+  color: white;
+  border-bottom-color: var(--dark-selected);
 }
 
 .dark #under-menu,
 .dark #under-content {
-  background-color: #202020;
+  background-color: var(--dark-section);
 }
 
 .dark .grid-item {
-  color: #b2c4dd;
+  color: var(--dark-text);
 }
 
 .dark .grid-item:hover .grid-item-text {
-  background-color: #252525;
+  background-color: var(--dark-hover);
 }
 
 .dark .grid-item:active .grid-item-text {
-  background-color: #313131;
+  background-color: var(--dark-active);
 }
 
 /* required for alt click menu */
@@ -357,7 +365,7 @@ body.dark {
 .dark .mc-runtime-item { border-color: #3a4652; }
 .dark .mc-runtime-item span { color: #8fa1b5; }
 .dark .mc-subsystem-track { background: #35404a; }
-.dark .mc-navigation { background: #151515; }
+.dark .mc-navigation { background: var(--dark-base); }
 .dark .mc-nav-button { background: #2b333c; border-color: #4b5967; color: #b2c4dd; }
 .dark .mc-nav-button.active { background: #376e9f; color: white; }
 .dark .mc-breakdown-track { background: #35404a; }
