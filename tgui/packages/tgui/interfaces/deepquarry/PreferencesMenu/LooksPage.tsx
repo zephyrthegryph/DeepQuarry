@@ -88,7 +88,7 @@ export const REGION_CARDS: Record<Region, CardId[]> = {
 
 /// The prefs and editors each card owns (anything else lands in "Other").
 const CARD_KEYS: Record<CardId, string[]> = {
-  skin: ['skin_color', 'synth_color_rgb', 'synth_markings'],
+  skin: ['skin_color', 'synth_markings'],
   eyes: ['eyes_color'],
   hair: [
     'hair_style_name',
@@ -288,14 +288,6 @@ export const LooksPage = ({ page, staticData, values, editorData }: Props) => {
             )}
             {hasRoboticLimb && (
               <Fields keys={['synth_markings']} withValue={withValue} />
-            )}
-            {hasRoboticLimb && (
-              <Box mt={0.3}>
-                <ColorStrip
-                  colors={pick(widgets, [['synth_color_rgb', 'Synth']])}
-                  values={values}
-                />
-              </Box>
             )}
           </PartCard>
         );

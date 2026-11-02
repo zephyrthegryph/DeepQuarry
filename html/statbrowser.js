@@ -1104,6 +1104,9 @@ function draw_verbs(cat) {
   }
 }
 
+// Dark until the chat panel reports the player's stored theme.
+document.documentElement.className = 'dark';
+
 function set_theme(which) {
   if (which === 'light' || which === 'vchatlight') {
     document.body.className = '';

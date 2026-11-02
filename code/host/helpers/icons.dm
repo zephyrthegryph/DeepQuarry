@@ -429,7 +429,7 @@ GLOBAL_LIST_EMPTY(icon_state_lists)
 	catch(var/exception/error)
 		// if we failed to create a dummy once, try again; maybe someone slept somewhere they shouldnt have
 		if(from_failure) // this *is* the retry, something fucked up
-			CRASH("get_dummy_savefile failed to create a dummy savefile: '[error]'")
+			throw EXCEPTION("get_dummy_savefile failed to create a dummy savefile: '[error]'")
 		return get_dummy_savefile(from_failure = TRUE)
 
 /// Generate a filename for this asset

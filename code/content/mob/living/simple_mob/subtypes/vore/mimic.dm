@@ -50,7 +50,7 @@
 
 CAPABILITIES(/obj/structure/closet/crate/mimic)
 	ref_one(nameof(nest), /obj/structure/mob_spawner)
-	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_consume))))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_consume)), order = ORDER_EARLY))
 
 /// A blast makes the mimic swallow what it held and vanish (its subtypes store the contents for later).
 /obj/structure/closet/crate/mimic/proc/blast_consume(datum/act/A)
@@ -375,7 +375,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic/closet)
 
 CAPABILITIES(/obj/effect/floormimic)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_by)))
-	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blasted_away))))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blasted_away)), order = ORDER_EARLY))
 	op("floormimic_awaken_item", item(/obj/item), then(PROC_REF(floormimic_awaken_item)))
 
 /// Any blast destroys the mimic outright.

@@ -157,7 +157,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/rabbit)
 
 CAPABILITIES(/mob/living/simple_mob/vore/rabbit/killer)
 	configure(living_rules(say_list_type = /datum/say_list/rabbit))
-	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_gib))))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_gib)), order = ORDER_EARLY))
 
 /mob/living/simple_mob/vore/rabbit/killer/proc/blast_gib(datum/act/A)
 	gib()

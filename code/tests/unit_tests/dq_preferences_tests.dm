@@ -354,30 +354,70 @@
 	fdel(P.path)
 
 
-/// The synth colour starts on the skin's unless the old toggle was on, once; robotic limbs always tint from it.
-/datum/unit_test/dq_pref_synth_color_always
+/// A robotic limb starts on Tertiary with its own colour across a save and load, two limbs differ, a child follows its
+/// parent, and a slot change reaches a linked limb.
+/datum/unit_test/dq_pref_limb_colors
 
-/datum/unit_test/dq_pref_synth_color_always/Run()
-	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs(list("synth_color" = 0))
-	TEST_ASSERT_EQUAL(P.read_preference_raw(/datum/preference/color/human/synth_color), "primary", "toggle off: takes the skin's link")
-	P.update_preference_by_type(/datum/preference/color/human/synth_color, "#123456")
+/datum/unit_test/dq_pref_limb_colors/Run()
+	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs()
+	var/datum/preference_editor/organs/editor = GLOB.preference_editors_by_key["organs"]
+	TEST_ASSERT_EQUAL(editor.handle_action(P, "set_external_status", list("limb" = BP_L_ARM, "status" = "cyborg"), null), PREF_UPDATE_ACCEPTED, "the left arm goes robotic")
+	TEST_ASSERT_EQUAL(editor.handle_action(P, "set_external_status", list("limb" = BP_R_ARM, "status" = "cyborg"), null), PREF_UPDATE_ACCEPTED, "the right arm goes robotic")
+	var/list/stored = P.read_preference_raw(/datum/preference/limb_colors)
+	TEST_ASSERT_EQUAL(stored[BP_L_ARM], "tertiary", "a new robotic limb links to Tertiary")
+	TEST_ASSERT_EQUAL(editor.handle_action(P, "set_limb_color", list("limb" = BP_R_ARM, "color" = "#123456"), null), PREF_UPDATE_ACCEPTED, "a limb takes its own colour")
+	TEST_ASSERT_EQUAL(editor.handle_action(P, "set_limb_color", list("limb" = BP_R_ARM, "color" = "red; drop"), null), PREF_UPDATE_REJECTED, "a malformed colour is refused")
 	P.save_character()
 	P.savefile.save()
 	var/datum/preferences/dq_test_stub/Q = allocate(/datum/preferences/dq_test_stub)
 	Q.path = P.path
 	Q.load_savefile()
 	TEST_ASSERT(Q.load_character(1), "the character loads again")
-	TEST_ASSERT_EQUAL(lowertext(Q.read_preference(/datum/preference/color/human/synth_color)), "#123456", "a later choice survives the reload")
+	stored = Q.read_preference_raw(/datum/preference/limb_colors)
+	TEST_ASSERT_EQUAL(stored[BP_L_ARM], "tertiary", "the link is saved")
+	TEST_ASSERT_EQUAL(stored[BP_R_ARM], "#123456", "and the hex")
+	Q.update_preference_by_type(/datum/preference/color/human/color_slot/tertiary, "#223344")
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	Q.copy_to(H)
-	TEST_ASSERT_EQUAL(lowertext(H.looks.synth_color_rgb), "#123456", "the mob has the colour")
-	var/obj/item/organ/external/arm = H.organs_by_name[BP_L_ARM]
-	arm.robotize()
-	arm.sync_colour_to_human(H)
-	TEST_ASSERT_EQUAL(json_encode(arm.s_col), json_encode(hex2rgb("#123456")), "a robotic limb tints from it with no toggle")
+	var/obj/item/organ/external/left = H.organs_by_name[BP_L_ARM]
+	var/obj/item/organ/external/right = H.organs_by_name[BP_R_ARM]
+	var/obj/item/organ/external/hand = H.organs_by_name[BP_L_HAND]
+	left.sync_colour_to_human(H)
+	right.sync_colour_to_human(H)
+	TEST_ASSERT_EQUAL(json_encode(left.s_col), json_encode(hex2rgb("#223344")), "the left arm renders the slot's colour")
+	TEST_ASSERT_EQUAL(json_encode(right.s_col), json_encode(hex2rgb("#123456")), "the right arm renders its own")
+	TEST_ASSERT(hand.is_robotic(), "the hand went robotic with its arm")
+	TEST_ASSERT_EQUAL(lowertext(hand.synth_rgb), "#223344", "and takes its arm's colour")
+	Q.update_preference_by_type(/datum/preference/color/human/color_slot/tertiary, "#556677")
+	Q.copy_to(H)
+	left = H.organs_by_name[BP_L_ARM]
+	TEST_ASSERT_EQUAL(lowertext(left.synth_rgb), "#556677", "a slot change reaches the linked limb")
+	var/list/ui = editor.build_ui_data(Q)
+	TEST_ASSERT_EQUAL(ui["externals"][BP_L_ARM]["link"], "tertiary", "the window knows the link")
+	TEST_ASSERT_EQUAL(lowertext(ui["externals"][BP_L_ARM]["color"]), "#556677", "and the colour")
 	fdel(P.path)
-	P = dq_palette_test_prefs(list("synth_color" = 1, "synth_color_rgb" = "#abcdef"))
-	TEST_ASSERT_EQUAL(lowertext(P.read_preference(/datum/preference/color/human/synth_color)), "#abcdef", "toggle on: keeps its colour")
+
+/// Robotic limbs in an old save: the old colour when the toggle was on, otherwise Tertiary; once.
+/datum/unit_test/dq_pref_limb_colors_migration
+
+/datum/unit_test/dq_pref_limb_colors_migration/Run()
+	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs(list("synth_color" = 1, "synth_color_rgb" = "#abcdef", "organ_data" = list(BP_L_ARM = "cyborg")))
+	var/list/stored = P.read_preference_raw(/datum/preference/limb_colors)
+	TEST_ASSERT_EQUAL(stored[BP_L_ARM], "#abcdef", "toggle on keeps its colour")
+	TEST_ASSERT(!stored[BP_R_ARM], "a normal limb has no entry")
+	P.update_preference_by_type(/datum/preference/limb_colors, list(BP_L_ARM = "#010203"))
+	P.save_character()
+	P.savefile.save()
+	var/datum/preferences/dq_test_stub/Q = allocate(/datum/preferences/dq_test_stub)
+	Q.path = P.path
+	Q.load_savefile()
+	Q.load_character(1)
+	stored = Q.read_preference_raw(/datum/preference/limb_colors)
+	TEST_ASSERT_EQUAL(stored[BP_L_ARM], "#010203", "the migration runs once")
+	fdel(P.path)
+	P = dq_palette_test_prefs(list("synth_color" = 0, "synth_color_rgb" = "#abcdef", "organ_data" = list(BP_L_ARM = "cyborg")))
+	stored = P.read_preference_raw(/datum/preference/limb_colors)
+	TEST_ASSERT_EQUAL(stored[BP_L_ARM], "tertiary", "toggle off takes Tertiary")
 	fdel(P.path)
 
 
