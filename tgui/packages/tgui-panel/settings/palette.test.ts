@@ -2,11 +2,14 @@ import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DARK_PALETTE } from './palette';
-import { clientThemeWinset, SKIN_BUTTONS, SKIN_PANES } from './themes';
+import { clientThemeWinset, SKIN_PANES } from './themes';
 
 const root = join(import.meta.dir, '../../../..');
 const skin = readFileSync(join(root, 'interface/skin.dmf'), 'utf8');
-const statCss = readFileSync(join(root, 'html/statbrowser.css'), 'utf8');
+const statCss = readFileSync(
+  join(import.meta.dir, '../statpanel/statpanel.scss'),
+  'utf8',
+);
 const chatDark = readFileSync(
   join(import.meta.dir, '../styles/tgchat/chat-dark.scss'),
   'utf8',
@@ -47,14 +50,6 @@ describe('native dark palette', () => {
         `background-color = ${DARK_PALETTE.base}`,
       );
     }
-    for (const name of SKIN_BUTTONS) {
-      expect(skinElem(name)).toContain(
-        `background-color = ${DARK_PALETTE.primary}`,
-      );
-      expect(skinElem(name)).toContain(
-        `text-color = ${DARK_PALETTE.buttonText}`,
-      );
-    }
   });
 
   it('the light theme undoes every colour the dark theme sets', () => {
@@ -64,11 +59,36 @@ describe('native dark palette', () => {
   });
 
   it('the stat panel reads the palette', () => {
-    expect(statCss).toContain(`--dark-base: ${DARK_PALETTE.base}`);
-    expect(statCss).toContain(`--dark-section: ${DARK_PALETTE.section}`);
-    expect(statCss).toContain(`--dark-selected: ${DARK_PALETTE.selected}`);
-    expect(statCss).toContain(`--dark-text: ${DARK_PALETTE.text}`);
-    expect(statCss).toContain(`--dark-link: ${DARK_PALETTE.hyperlink}`);
+    const hex = (value: string) => value.toLowerCase();
+    expect(statCss).toContain(`--stat-base: ${hex(DARK_PALETTE.base)}`);
+    expect(statCss).toContain(`--stat-section: ${hex(DARK_PALETTE.section)}`);
+    expect(statCss).toContain(`--stat-text: ${hex(DARK_PALETTE.text)}`);
+    expect(statCss).toContain(`--stat-link: ${hex(DARK_PALETTE.hyperlink)}`);
+  });
+});
+
+describe('vchatdark chat colours', () => {
+  const vchatDark = readFileSync(
+    join(import.meta.dir, '../styles/tgchat/chat-vchatdark.scss'),
+    'utf8',
+  );
+
+  it('every text colour on the bare chat background is readable', () => {
+    const background = luminance(hslToRgb(0, 0, 12.5));
+    const unreadable: string[] = [];
+    for (const rule of vchatDark.matchAll(/([^{};]+)\{([^{}]*)\}/g)) {
+      if (rule[2].includes('background')) continue;
+      const color = rule[2].match(
+        /(?:^|\s)color:\s*hsl\(([\d.]+),\s*([\d.]+)%,\s*([\d.]+)%\)/,
+      );
+      if (!color) continue;
+      const [h, s, l] = color.slice(1).map(Number);
+      const text = luminance(hslToRgb(h, s, l));
+      if ((text + 0.05) / (background + 0.05) < 4.5) {
+        unreadable.push(rule[1].trim());
+      }
+    }
+    expect(unreadable).toEqual([]);
   });
 });
 

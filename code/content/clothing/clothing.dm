@@ -1071,7 +1071,7 @@ MSG_DEF_SELF(under/no_roll_sleeves, "Its sleeves can't be rolled.")
 
 CAPABILITIES(/obj/item/clothing/under)
 	configure(obj_rules(show_messages = 1))
-	configure(item_worn(covers = ARMS|LEGS|ARMS, slots = SLOT_ICLOTHING))
+	configure(item_worn(covers = CHEST|ARMS|LEGS, slots = SLOT_ICLOTHING))
 	configure(item_protection(permeability = 0.90, heat_parts = ARMS|LEGS|CHEST, cold_parts = ARMS|LEGS|CHEST))
 	configure(item_sounds(equip = SFX_ITEMS_JUMPSUIT_EQUIP))
 	op("under_worn_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Under worn hand"), then(PROC_REF(under_worn_hand)))

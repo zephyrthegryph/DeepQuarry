@@ -108,6 +108,8 @@ export const resolveWidget = (item: PrefWidgetItem): ResolvedWidget => {
       return 'number';
     case 'radio':
     case 'dropdown': {
+      // Options that explain themselves need the list whose rows take a tooltip.
+      if (item.props?.option_tooltips) return 'search_dropdown';
       const choices = normalizeChoices(item.choices);
       const chars = choices.reduce((n, [, label]) => n + label.length, 0);
       if (
@@ -232,6 +234,9 @@ export const PrefWidget = ({ item }: Props) => {
           options={normalizeChoices(item.choices)}
           value={String(item.value ?? '')}
           onSelect={(val) => sendUpdate(act, item.key, val)}
+          tooltips={
+            item.props?.option_tooltips as Record<string, string> | undefined
+          }
         />
       );
 

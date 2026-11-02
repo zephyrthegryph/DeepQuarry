@@ -211,13 +211,16 @@ GLOBAL_LIST_INIT(dq_editor_static_invalidators_by_key, dq_build_editor_static_in
 		for(var/k in editor.static_invalidator_keys)
 			LAZYADD(.[k], editor)
 
+/// Groups shown as one section: gating still reads the real group (robots and pAIs lose demographics, not the name), the page shows the merged one.
+GLOBAL_LIST_INIT(dq_group_display_merge, list("gender" = "name", "demographics" = "name"))
+
 // Explicit per-category group order. Groups within a category render in
 // this order in the React grid; groups not listed fall to the end alphabetically.
 // Without this, group order followed first-encounter of GLOB.preference_entries
 // which is type-registration order (not file order), so "Name" wasn't reliably
 // first in Identity even though the metadata file lists it first.
 GLOBAL_LIST_INIT(dq_group_order, list(
-	"identity"    = list("name", "gender", "demographics", "blood", "species", "spawn", "language", "background", "speech_verbs", "flavor", "directory", "records", "ooc_notes"),
+	"identity"    = list("name", "blood", "species", "spawn", "language", "background", "speech_verbs", "flavor", "directory", "records", "ooc_notes"),
 	"appearance"  = list("palette", "chassis", "body", "hair", "ears", "tail", "wings", "markings", "organs", "preview"),
 	"size_voice"  = list("size", "voice"),
 	"antag"       = list("antag", "be_special"),
@@ -291,6 +294,7 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 			categories_by_name[cat] = category_entry
 			categories_data += list(category_entry)
 
+		grp = GLOB.dq_group_display_merge[grp] || grp
 		var/list/groups = category_entry["groups"]
 		var/list/group_entry
 		for(var/list/g as anything in groups)
@@ -346,14 +350,15 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 			categories_by_name[editor.category] = category_entry
 			categories_data += list(category_entry)
 
+		var/editor_group = GLOB.dq_group_display_merge[editor.group] || editor.group || ""
 		var/list/groups = category_entry["groups"]
 		var/list/group_entry
 		for(var/list/g as anything in groups)
-			if(g["group"] == (editor.group || ""))
+			if(g["group"] == editor_group)
 				group_entry = g
 				break
 		if(!group_entry)
-			group_entry = list("group" = editor.group || "", "items" = list())
+			group_entry = list("group" = editor_group, "items" = list())
 			groups += list(group_entry)
 
 		group_entry["items"] += list(list(

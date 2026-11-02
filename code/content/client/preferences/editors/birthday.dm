@@ -1,5 +1,4 @@
-// Birthday picker. bday_month + bday_day are numeric 1-12 / 1-31 fields that need
-// month-name and day-number dropdowns, not 0-12 / 0-31 sliders.
+// Birthday picker: month-name and day-number dropdowns over bday_month + bday_day. Only real dates exist.
 
 /datum/preference_editor/birthday
 	key = "birthday"
@@ -14,20 +13,12 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/birthday, get_months, list( \
 		"July", "August", "September", "October", "November", "December", \
 	))
 
-/datum/preference_editor/birthday/proc/days_in_month(month_idx)
-	switch(month_idx)
-		if(1, 3, 5, 7, 8, 10, 12) return 31
-		if(4, 6, 9, 11)           return 30
-		if(2)                     return 29  // leap-year-tolerant
-	return 31
-
 /datum/preference_editor/birthday/build_ui_data(datum/preferences/preferences)
-	var/month = preferences.read_preference(/datum/preference/numeric/human/bday_month) || 0
-	var/day   = preferences.read_preference(/datum/preference/numeric/human/bday_day)   || 0
+	var/month = preferences.read_preference(/datum/preference/numeric/human/bday_month)
 	return list(
 		"month" = month,
-		"day"   = day,
-		"max_day_for_month" = month > 0 ? days_in_month(month) : 31,
+		"day"   = preferences.read_preference(/datum/preference/numeric/human/bday_day),
+		"max_day_for_month" = birth_month_days(month),
 	)
 
 /datum/preference_editor/birthday/build_ui_static_data(datum/preferences/preferences)
@@ -37,18 +28,17 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/birthday, get_months, list( \
 
 /datum/preference_editor/birthday/proc/ui_act_set_month(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/value = params["value"]
-	if(isnull(value) || value < 0 || value > 12)
+	if(!birth_month_days(value))
 		return PREF_UPDATE_REJECTED
 	preferences.update_preference_by_type(/datum/preference/numeric/human/bday_month, value)
 	// Clamp day to new month's max
-	var/day = preferences.read_preference(/datum/preference/numeric/human/bday_day)
-	if(value > 0 && day > days_in_month(value))
-		preferences.update_preference_by_type(/datum/preference/numeric/human/bday_day, days_in_month(value))
+	if(preferences.read_preference(/datum/preference/numeric/human/bday_day) > birth_month_days(value))
+		preferences.update_preference_by_type(/datum/preference/numeric/human/bday_day, birth_month_days(value))
 	return PREF_UPDATE_ACCEPTED
 
 /datum/preference_editor/birthday/proc/ui_act_set_day(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/value = params["value"]
-	if(isnull(value) || value < 0 || value > 31)
+	if(!isnum(value) || value < 1 || value != round(value) || value > birth_month_days(preferences.read_preference(/datum/preference/numeric/human/bday_month)))
 		return PREF_UPDATE_REJECTED
 	preferences.update_preference_by_type(/datum/preference/numeric/human/bday_day, value)
 	return PREF_UPDATE_ACCEPTED

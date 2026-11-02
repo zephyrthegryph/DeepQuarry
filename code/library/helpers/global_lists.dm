@@ -162,12 +162,13 @@ GLOBAL_ALIST_EMPTY(mannequins)
 	for (var/language_name in GLOB.all_languages)
 		var/datum/language/L = GLOB.all_languages[language_name]
 		if(!(L.flags & NONGLOBAL))
-			if(isnull(GLOB.language_keys[L.key]))
-				GLOB.language_keys[L.key] = L
+			var/default_prefix = language_default_prefix(L)
+			if(isnull(GLOB.language_keys[default_prefix]))
+				GLOB.language_keys[default_prefix] = L
 			else
-				if(isnull(GLOB.language_key_conflicts[L.key]))
-					GLOB.language_key_conflicts[L.key] = list(GLOB.language_keys[L.key])
-				GLOB.language_key_conflicts[L.key] += L
+				if(isnull(GLOB.language_key_conflicts[default_prefix]))
+					GLOB.language_key_conflicts[default_prefix] = list(GLOB.language_keys[default_prefix])
+				GLOB.language_key_conflicts[default_prefix] += L
 
 	//Species
 	var/rkey = 0

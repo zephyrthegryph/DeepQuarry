@@ -21,20 +21,22 @@
 	H.add_language(LANGUAGE_GALCOM)
 	H.add_language(LANGUAGE_SOL_COMMON)
 	H.add_language(LANGUAGE_SIIK)
+	H.add_language(LANGUAGE_AKHANI)
 	H.add_language(LANGUAGE_HIVEMIND)
 	H.remove_language(LANGUAGE_UNATHI)
 	H.apply_default_language(GLOB.all_languages[LANGUAGE_GALCOM])
 	H.set_language_keys(list(
-		"s" = GLOB.all_languages[LANGUAGE_SOL_COMMON],
-		"k" = GLOB.all_languages[LANGUAGE_SIIK],
-		"5" = GLOB.all_languages[LANGUAGE_SIIK],
-		"q" = GLOB.all_languages[LANGUAGE_UNATHI],
-		"n" = GLOB.all_languages["Noise"],
-		"h" = GLOB.all_languages[LANGUAGE_HIVEMIND],
+		",s" = GLOB.all_languages[LANGUAGE_SOL_COMMON],
+		",k" = GLOB.all_languages[LANGUAGE_SIIK],
+		",5" = GLOB.all_languages[LANGUAGE_SIIK],
+		",q" = GLOB.all_languages[LANGUAGE_UNATHI],
+		",n" = GLOB.all_languages["Noise"],
+		",h" = GLOB.all_languages[LANGUAGE_HIVEMIND],
+		"~lat" = GLOB.all_languages[LANGUAGE_AKHANI],
 	))
 
 /proc/inline_language_label(datum/language/L)
-	var/static/list/labels = list(LANGUAGE_GALCOM = "default", LANGUAGE_SOL_COMMON = "s", LANGUAGE_SIIK = "k", LANGUAGE_GIBBERISH = "gibberish", LANGUAGE_HIVEMIND = "h")
+	var/static/list/labels = list(LANGUAGE_GALCOM = "default", LANGUAGE_SOL_COMMON = "s", LANGUAGE_SIIK = "k", LANGUAGE_AKHANI = "s2", LANGUAGE_GIBBERISH = "gibberish", LANGUAGE_HIVEMIND = "h", "Noise" = "n")
 	return labels[L?.name] || "?[L?.name]"
 
 /proc/inline_language_pieces_text(list/pieces)
@@ -145,8 +147,48 @@
 	var/mob/living/carbon/human/inline_language_speaker/H = allocate(/mob/living/carbon/human/inline_language_speaker, test_floor())
 	inline_language_setup(H)
 	var/datum/language/siik = GLOB.all_languages[LANGUAGE_SIIK]
-	TEST_ASSERT_EQUAL(H.language_for_key("k"), siik, "the bound key")
-	if(siik.key != "k" && siik.key != "5")
-		TEST_ASSERT_NULL(H.language_for_key(siik.key), "the language's own key was rebound away")
+	TEST_ASSERT_EQUAL(H.language_for_prefix(",k"), siik, "the bound key")
+	var/own_prefix = language_default_prefix(siik)
+	if(own_prefix != ",k" && own_prefix != ",5")
+		TEST_ASSERT_NULL(H.language_for_prefix(own_prefix), "the language's own prefix was rebound away")
 	H.set_language_keys(list())
-	TEST_ASSERT_EQUAL(H.language_for_key(siik.key), siik, "with no keys, the language's own key answers")
+	TEST_ASSERT_EQUAL(H.language_for_prefix(language_default_prefix(siik)), siik, "with no keys, the language's own key answers")
+
+/// The data tgui-say's preview parses with: the speaker's own keys and only what the server rules say.
+/datum/unit_test/inline_language_preview_rules
+
+/datum/unit_test/inline_language_preview_rules/Run()
+	var/mob/living/carbon/human/inline_language_speaker/H = allocate(/mob/living/carbon/human/inline_language_speaker, test_floor())
+	inline_language_setup(H)
+	var/list/rules = json_decode(json_encode(H.say_language_rules()))
+	TEST_ASSERT_EQUAL(rules["keys"][",s"], LANGUAGE_SOL_COMMON, "a bound key")
+	TEST_ASSERT_EQUAL(rules["defaultLanguage"], LANGUAGE_GALCOM, "the preferred language")
+	TEST_ASSERT(rules["languages"][LANGUAGE_HIVEMIND]["whole"], "a hivemind takes the whole message")
+	TEST_ASSERT(!rules["languages"][LANGUAGE_UNATHI]["spoken"], "an unspoken language is marked")
+	TEST_ASSERT(rules["languages"]["Noise"]["innate"], "noise is innate")
+	TEST_ASSERT_EQUAL(rules["markers"]["+"], "b", "the game's own formatting markers")
+	TEST_ASSERT(LANGUAGE_SOL_COMMON in rules["order"], "a spoken language is in the shortcut order")
+	TEST_ASSERT(!(LANGUAGE_UNATHI in rules["order"]), "an unspoken one is not")
+	TEST_ASSERT(":s" in rules["radioKeys"], "radio keys come along")
+	TEST_ASSERT_NULL(rules["hiss"], "no client, no autohiss")
+
+/// One prefix per language: only the comma defaults remain, an edited prefix is the whole string, and syntax the say path owns is refused.
+/datum/unit_test/inline_language_prefix_rules
+
+/datum/unit_test/inline_language_prefix_rules/Run()
+	for(var/bad in list("", ",", ";x", ":x", ".x", "!x", "*x", "^x", "+x", "|x", "_x", "ab", "1x", ", x", ",abcd"))
+		TEST_ASSERT_NOTNULL(language_prefix_problem(bad), "[bad] is refused")
+	for(var/good in list(",q", "#q", "-q", "@@", "~lat"))
+		TEST_ASSERT_NULL(language_prefix_problem(good), "[good] is allowed")
+	TEST_ASSERT_EQUAL(language_migrate_prefix("q"), ",q", "an old key keeps working")
+	TEST_ASSERT_EQUAL(language_migrate_prefix("~lat"), "~lat", "a whole prefix stays")
+	var/mob/living/carbon/human/inline_language_speaker/H = allocate(/mob/living/carbon/human/inline_language_speaker, test_floor())
+	var/datum/language/galcom = GLOB.all_languages[LANGUAGE_GALCOM]
+	H.add_language(LANGUAGE_GALCOM)
+	H.set_language_keys(list())
+	TEST_ASSERT_EQUAL(H.language_for_prefix(language_default_prefix(galcom)), galcom, "a mob with no prefs uses the default prefix")
+	TEST_ASSERT_NULL(H.language_for_prefix("#[galcom.key]"), "the # form is gone")
+	TEST_ASSERT_NULL(H.language_for_prefix("-[galcom.key]"), "the - form is gone")
+	H.set_language_keys(list("~lat" = galcom))
+	TEST_ASSERT_EQUAL(H.language_for_prefix("~lat"), galcom, "an edited prefix works")
+	TEST_ASSERT_NULL(H.language_for_prefix(language_default_prefix(galcom)), "and frees the default")

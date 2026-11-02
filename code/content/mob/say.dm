@@ -176,53 +176,60 @@
 	if(new_message)
 		message = new_message
 
-/// The language a typed key names for this mob, or null if the key names none. Every key lookup of the say path goes through here.
-/mob/proc/language_for_key(key)
-	if(!length(key) || key == " ")
-		return null
-	if(language_keys[key])
-		return language_keys[key]
-	// This "[]" is probably unnecessary but BYOND will runtime if a number is used
-	var/datum/language/L = GLOB.language_keys["[key]"]
-	// A language this mob has under another key was rebound: its old key means nothing now. Languages it holds no key for
-	// (mobs without prefs, an unknown language, one learned mid-round) answer to the language's own key.
+/// The language a typed prefix names for this mob, or null if it names none. Every prefix lookup of the say path goes through here.
+/mob/proc/language_for_prefix(prefix)
+	if(language_keys[prefix])
+		return language_keys[prefix]
+	var/datum/language/L = GLOB.language_keys[prefix]
+	// A language this mob has under another prefix was rebound: its old prefix means nothing now. Languages it holds no prefix for
+	// (mobs without prefs, an unknown language, one learned mid-round) answer to the language's default prefix.
 	if(L && get_custom_prefix_by_lang(src, L))
 		return null
 	return L
 
+/// The longest language prefix at byte position i of a message: list(prefix, language), or null. Prefixes are 2 to 4 characters.
+/mob/proc/language_prefix_at(message, i)
+	var/chunk = copytext(message, i, i + 16)
+	for(var/size in 4 to 2 step -1)
+		if(length_char(chunk) < size)
+			continue
+		var/candidate = copytext_char(chunk, 1, size + 1)
+		var/datum/language/L = language_for_prefix(candidate)
+		if(L)
+			return list(candidate, L)
+	return null
+
 /// Finds the language switches in a raw message: list(list(language, start, text start), ...) in order. The first entry always starts at 1:
 /// text before the first switch is the mob's default language. tgui-say's preview parser (tgui/packages/tgui-say/parseLanguages.ts) follows
 /// these same rules; code/tests/unit_tests/data/language_parse_cases.json is run over both.
-/// - A switch is a language prefix and key at the message start or right after a space, so "3,5" and "well,no" stay text.
-/// - A key naming no language is literal text.
-/// - Past the message start, so is a key for a language the mob can't speak and a key for a language that replaces the whole line (noise):
-///   a stray ",q" mid-sentence must not garble the rest of it. At the start such a key speaks gibberish.
+/// - A switch is a language's prefix at the message start or right after a space, so "3,5" and "well,no" stay text.
+/// - A string that is no language's prefix is literal text.
+/// - Past the message start, so is the prefix of a language the mob can't speak or one that replaces the whole line (noise):
+///   a stray ",q" mid-sentence must not garble the rest of it. At the start such a prefix speaks gibberish.
 /mob/proc/find_valid_prefixes(message)
 	var/list/prefixes = list()
 	var/multilingual_mode = client?.prefs?.read_preference(/datum/preference/choiced/multilingual_mode)
 	for(var/i in 1 to length(message))
 		if(i > 1)
-			if(multilingual_mode == MULTILINGUAL_OFF) // Single language: only the message start can hold a key.
+			if(multilingual_mode == MULTILINGUAL_OFF) // Single language: only the message start can hold a prefix.
 				break
 			if(text2ascii(message, i - 1) != 32)
 				continue
-		if(!is_language_prefix(copytext(message, i, i + 1)))
+		var/list/found = language_prefix_at(message, i)
+		if(!found)
 			continue
-		// A key is one character, which may be several bytes.
-		var/language_key = copytext_char(copytext(message, i + 1, i + 5), 1, 2)
-		var/text_start = i + 1 + length(language_key)
-		// MULTILINGUAL_SPACE enforces a space after the language key
+		var/prefix = found[1]
+		var/text_start = i + length(prefix)
+		// MULTILINGUAL_SPACE enforces a space after the prefix
 		if(multilingual_mode == MULTILINGUAL_SPACE && text2ascii(message, text_start) != 32)
 			continue
-		// MULTILINGUAL_DOUBLE_DELIMITER enforces a delimiter (valid prefix) after the language key
+		// MULTILINGUAL_DOUBLE_DELIMITER enforces the prefix's first character again after it
 		if(multilingual_mode == MULTILINGUAL_DOUBLE_DELIMITER)
-			if(!is_language_prefix(copytext(message, text_start, text_start + 1)))
+			if(copytext(message, text_start, text_start + 1) != copytext(prefix, 1, 2))
 				continue
 			text_start++
 
-		var/datum/language/L = language_for_key(language_key)
-		if(!L)
-			continue
+		var/datum/language/L = found[2]
 		if(can_speak(L))
 			if(i > 1 && (L.flags & INNATE))
 				continue

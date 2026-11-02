@@ -47,8 +47,9 @@ export function ChatTabs(props) {
       </Stack.Item>
       <Stack.Item ml={1}>
         <Button
-          color="transparent"
           icon="plus"
+          tooltip="Add a chat tab"
+          tooltipPosition="bottom"
           onClick={() => {
             addChatPage();
             setSettingsVisible(true);

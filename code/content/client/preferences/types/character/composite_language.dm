@@ -32,8 +32,7 @@
 	return
 
 
-// language_prefixes (three shared prefix characters) is gone: its save key is no longer read. Every player uses the configured prefixes
-// (/datum/config_entry/str_list/language_prefixes) and each language has its own key after the prefix.
+// Each language has one prefix of its own, the whole string the player types. A save from before that holds one-character keys, read as "," + key.
 
 /datum/preference/language_custom_keys
 	savefile_key = "language_custom_keys"
@@ -47,7 +46,10 @@
 /datum/preference/language_custom_keys/pref_deserialize(input, datum/preferences/preferences)
 	if(!islist(input))
 		return list()
-	return input
+	var/list/migrated = list()
+	for(var/saved in input)
+		migrated[language_migrate_prefix(saved)] = input[saved]
+	return migrated
 
 /datum/preference/language_custom_keys/pref_serialize(input)
 	if(!islist(input))
@@ -85,32 +87,37 @@
 	if(!length(.))
 		. += LANGUAGE_GALCOM
 
-/// Language name -> the key that speaks it for this character: the saved key, else the language's own (when it has one and no earlier
+/// Language name -> the prefix that speaks it for this character: the saved one, else the language's own (when it has one and no earlier
 /// language holds it). What the character setup shows and what apply_language_prefs gives the mob.
 /datum/preferences/proc/language_key_map()
 	. = list()
 	var/list/custom = read_preference(/datum/preference/language_custom_keys)
 	var/list/taken = list()
 	var/list/known = known_language_names()
-	for(var/key in custom)
-		if(custom[key] in known)
-			.[custom[key]] = key
-			taken[key] = TRUE
+	for(var/saved in custom)
+		if(custom[saved] in known)
+			var/prefix = language_migrate_prefix(saved)
+			.[custom[saved]] = prefix
+			taken[prefix] = TRUE
 	for(var/name in known)
 		if(.[name])
 			continue
 		var/datum/language/L = GLOB.all_languages[name]
-		if(!L.key || (L.flags & NONGLOBAL) || taken[L.key])
+		if(!L.key || (L.flags & NONGLOBAL))
 			continue
-		.[name] = L.key
-		taken[L.key] = TRUE
+		var/own = language_default_prefix(L)
+		if(taken[own])
+			continue
+		.[name] = own
+		taken[own] = TRUE
 
-/// Why `key` cannot speak language `name` for this character, or null when it can.
+/// Why `key` (a whole prefix) cannot speak language `name` for this character, or null when it can.
 /datum/preferences/proc/language_key_problem(name, key)
 	if(!(name in known_language_names()))
 		return "this character does not know [name]"
-	if(!istext(key) || length(key) != 1 || !(contains_az09(key) || (text2ascii(key) in 48 to 57)))
-		return "a language key is one letter or digit"
+	var/problem = language_prefix_problem(key)
+	if(problem)
+		return problem
 	var/list/map = language_key_map()
 	for(var/other in map)
 		if(other != name && map[other] == key)

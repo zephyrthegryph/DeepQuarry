@@ -592,11 +592,6 @@
 
 /datum/config_entry/flag/aggressive_changelog
 
-/// Default language prefixes
-/// Only single character keys are supported. If unset, defaults to , # and -
-/datum/config_entry/str_list/language_prefixes
-	default = list(",", "#", "-")
-
 /// If true, submaps loaded automatically can be rotated.
 /datum/config_entry/flag/random_submap_orientation
 

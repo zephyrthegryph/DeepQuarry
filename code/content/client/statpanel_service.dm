@@ -73,11 +73,11 @@ SYSTEM_DEF(statpanels)
 			set_status_tab(target)
 
 		if(!admin_can(target, 0))
-			target.stat_panel.send_message("remove_admin_tabs")
+			// Once, on losing rights: not every fire to every player.
+			if(("MC" in target.panel_tabs) || ("Tickets" in target.panel_tabs) || ("SDQL2" in target.panel_tabs))
+				target.stat_panel.send_message("remove_admin_tabs")
 		else
-			target.stat_panel.send_message("update_split_admin_tabs", FALSE)
-
-			if(check_rights_for(target, R_MENTOR))
+			if(check_rights_for(target, R_MENTOR) && !("Tickets" in target.panel_tabs))
 				target.stat_panel.send_message("add_tickets_tabs", admin_href_token(target))
 			if(check_rights_for(target, R_HOLDER) && (!("MC" in target.panel_tabs) || !("Tickets" in target.panel_tabs)))
 				target.stat_panel.send_message("add_admin_tabs", admin_href_token(target))

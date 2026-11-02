@@ -5734,6 +5734,7 @@
 #include "code\content\tgui_input\matrix.dm"
 #include "code\content\tgui_input\number.dm"
 #include "code\content\tgui_input\text.dm"
+#include "code\content\tgui_input\say_modal\language_rules.dm"
 #include "code\content\tgui_input\say_modal\modal.dm"
 #include "code\content\tgui_input\say_modal\speech.dm"
 #include "code\content\tgui_input\say_modal\typing.dm"

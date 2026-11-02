@@ -134,11 +134,14 @@ export const SearchableDropdown = ({
   value,
   onSelect,
   placeholder,
+  tooltips,
 }: {
   options: Array<[string, string]>;
   value: string;
   onSelect: (value: string) => void;
   placeholder?: string;
+  /// What an option does, by value: shown when hovering its row.
+  tooltips?: Record<string, string>;
 }) => {
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState('');
@@ -198,6 +201,7 @@ export const SearchableDropdown = ({
                 fluid
                 color="transparent"
                 selected={val === value}
+                tooltip={tooltips?.[val]}
                 onClick={() => onSelect(val)}
               >
                 {label}

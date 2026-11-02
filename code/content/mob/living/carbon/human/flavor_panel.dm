@@ -36,18 +36,12 @@ CAPABILITIES(/datum/flavor_panel)
 		return FALSE
 	return TRUE
 
-TYPE_TABLE_DECLARE(/datum/flavor_panel, get_flavor_keys, list("general", "head", "face", "eyes", "torso", "arms", "hands", "legs", "feet"))
+TYPE_TABLE_DECLARE(/datum/flavor_panel, get_flavor_keys, list("general", "face", "body"))
 
 TYPE_TABLE_DECLARE(/datum/flavor_panel, get_flavor_labels, list( \
 		"general" = "General", \
-		"head" = "Head", \
 		"face" = "Face", \
-		"eyes" = "Eyes", \
-		"torso" = "Body", \
-		"arms" = "Arms", \
-		"hands" = "Hands", \
-		"legs" = "Legs", \
-		"feet" = "Feet", \
+		"body" = "Body", \
 	))
 
 /// /datum/flavor_panel's window data.
