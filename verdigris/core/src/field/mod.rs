@@ -111,11 +111,6 @@ impl Geom {
 
     /// `1 / capacity`, 0 for a reservoir.
     #[must_use]
-    /// `1 / capacity`, or 0 for a cell with no capacity (a concentration of nothing).
-    pub fn inv_capacity_or_zero(&self) -> f32 {
-        if self.capacity > 0.0 { 1.0 / self.capacity } else { 0.0 }
-    }
-
     pub fn inv_capacity(&self) -> f32 {
         if self.reservoir {
             0.0
@@ -263,22 +258,6 @@ pub trait FieldKind: Domain {
     fn bulk_conductance(_gap: f32) -> f32 {
         0.0
     }
-    /// Implicit diffusion ([`FieldState::implicit_diffusion`]): each of [`QUANTITIES`](Self::QUANTITIES) relaxes by its concentration
-    /// (amount over capacity) with conductance [`diffusion_conductance`](Self::diffusion_conductance), solved backward in time once per
-    /// advance. A field that turns it on returns no diffusion from [`flux`](Self::flux) and leaves it out of the stiffness.
-    const IMPLICIT_DIFFUSION: bool = false;
-    /// Capacity-units per second exchanged per unit concentration difference.
-    fn diffusion_conductance() -> f32 {
-        0.0
-    }
-    /// The cell's amount of quantity `i` (0 ..= QUANTITIES).
-    fn quantity(_cell: &Self::Value, _i: usize) -> f32 {
-        0.0
-    }
-    /// A flux carrying `amounts` (QUANTITIES long) from `a` to `b`.
-    fn flux_of(_amounts: &[f32]) -> Self::Flux {
-        Self::Flux::default()
-    }
     /// What a cell holds of the moved amount (its moles): the most its edges together may give in one advance.
     fn bulk_held(_cell: &Self::Value) -> f32 {
         0.0
@@ -342,8 +321,6 @@ pub struct FieldStats {
     pub outside_ppm: u32,
     /// Gauss-Seidel sweeps the last implicit bulk solve took ([`FieldKind::IMPLICIT_BULK`]).
     pub implicit_sweeps: u32,
-    /// Gauss-Seidel sweeps the last implicit diffusion solve took, summed over the quantities solved.
-    pub implicit_diffusion_sweeps: u32,
     /// Steps the field takes per advance now (1: every step advances).
     pub stride: u32,
     /// Steps skipped (owed to the next advance) so far.
@@ -851,9 +828,6 @@ impl<K: FieldKind> FieldState<K> {
         if K::IMPLICIT_BULK {
             self.implicit_bulk(cells, &live_edges, dt);
         }
-        if K::IMPLICIT_DIFFUSION {
-            self.implicit_diffusion(cells, &live_edges, dt);
-        }
         let mut next = vec![false; chunks];
         self.times.setup += take(&mut lap);
         for s in 0..substeps {
@@ -1120,99 +1094,6 @@ impl<K: FieldKind> FieldState<K> {
             if let Some(mut v) = cells.get(c) {
                 K::apply_flux(&mut v, net[k]);
                 cells.set(c, v);
-            }
-        }
-    }
-
-    /// Implicit diffusion over this advance's live edges ([`FieldKind::IMPLICIT_DIFFUSION`]): for every quantity some cell holds, the
-    /// end concentrations solve `x' = x + (D dt / V) sum(x_nb' - x')` (Gauss-Seidel, fixed order, as [`implicit_bulk`](Self::implicit_bulk));
-    /// each edge then moves `D dt (x_a' - x_b')` of it, the same out of one cell and into the other. Backward Euler on a diffusion
-    /// operator never overshoots and never drives a cell below zero, so no limiter is needed and a frame needs no sub-steps for it.
-    #[allow(clippy::cast_possible_truncation, clippy::too_many_lines)]
-    fn implicit_diffusion(&mut self, cells: &mut CowStore<K::Value>, live_edges: &[Vec<LiveEdge>], dt: f32) {
-        let d = K::diffusion_conductance() * dt;
-        let mut ids: Vec<u32> = live_edges.iter().flatten().flat_map(|e| [e.a, e.b]).collect();
-        if ids.is_empty() || d <= 0.0 {
-            return;
-        }
-        ids.sort_unstable();
-        ids.dedup();
-        let pos = |c: u32| ids.binary_search(&c).expect("an edge's cell is listed");
-        let n = ids.len();
-        let mut geoms = vec![Geom::default(); n];
-        for e in live_edges.iter().flatten() {
-            geoms[pos(e.a)] = e.ga;
-            geoms[pos(e.b)] = e.gb;
-        }
-        let q = K::QUANTITIES;
-        let edges: Vec<(usize, usize)> = live_edges.iter().flatten().map(|e| (pos(e.a), pos(e.b))).collect();
-        let mut adj: Vec<Vec<u32>> = vec![Vec::new(); n];
-        for &(a, b) in &edges {
-            adj[a].push(u32::try_from(b).expect("cell count fits u32"));
-            adj[b].push(u32::try_from(a).expect("cell count fits u32"));
-        }
-        // A reservoir's concentration is fixed (weight 0); a cell's weight is D dt / V.
-        let w: Vec<f32> = (0..n).map(|k| if geoms[k].reservoir { 0.0 } else { d * geoms[k].inv_capacity() }).collect();
-        // One quantity at a time, so the scratch is a few floats per cell (a first frame lists every cell of the grid). The moves are
-        // kept only for the cells that change.
-        let mut net: std::collections::BTreeMap<usize, Vec<f32>> = std::collections::BTreeMap::new();
-        let (mut x0, mut x) = (vec![0.0f32; n], vec![0.0f32; n]);
-        let mut sweeps = 0u32;
-        for i in 0..q {
-            for (k, &c) in ids.iter().enumerate() {
-                x0[k] = cells.with(c, |v| K::quantity(v, i)).unwrap_or(0.0) * geoms[k].inv_capacity_or_zero();
-            }
-            let (lo, hi) = x0.iter().fold((f32::INFINITY, f32::NEG_INFINITY), |(lo, hi), &v| (lo.min(v), hi.max(v)));
-            if !(hi - lo > 0.0) {
-                continue;
-            }
-            x.copy_from_slice(&x0);
-            let floor = hi.abs().max(lo.abs()) * 1.0e-3;
-            for _ in 0..IMPLICIT_SWEEPS {
-                sweeps += 1;
-                let mut moved = 0.0f32;
-                for k in 0..n {
-                    if w[k] <= 0.0 || adj[k].is_empty() {
-                        continue;
-                    }
-                    let sum: f32 = adj[k].iter().map(|&j| x[j as usize]).sum();
-                    #[allow(clippy::cast_precision_loss)]
-                    let next = (x0[k] + w[k] * sum) / (1.0 + w[k] * adj[k].len() as f32);
-                    moved = moved.max((next - x[k]).abs() / x[k].abs().max(floor).max(f32::MIN_POSITIVE));
-                    x[k] = next;
-                }
-                if moved < IMPLICIT_TOLERANCE {
-                    break;
-                }
-            }
-            let mut ledger_in = 0.0f32;
-            for (e, &(a, b)) in live_edges.iter().flatten().zip(&edges) {
-                let m = d * (x[a] - x[b]);
-                if m == 0.0 || !m.is_finite() {
-                    continue;
-                }
-                net.entry(a).or_insert_with(|| vec![0.0; q])[i] -= m;
-                net.entry(b).or_insert_with(|| vec![0.0; q])[i] += m;
-                if e.gb.reservoir {
-                    ledger_in += m;
-                } else if e.ga.reservoir {
-                    ledger_in -= m;
-                }
-            }
-            if ledger_in != 0.0 {
-                let mut one = vec![0.0; q];
-                one[i] = ledger_in;
-                K::flux_totals(&K::flux_of(&one), &mut self.ledger);
-            }
-        }
-        self.stats.implicit_diffusion_sweeps = sweeps;
-        for (k, moves) in net {
-            if geoms[k].reservoir {
-                continue;
-            }
-            if let Some(mut v) = cells.get(ids[k]) {
-                K::apply_flux(&mut v, K::flux_of(&moves));
-                cells.set(ids[k], v);
             }
         }
     }

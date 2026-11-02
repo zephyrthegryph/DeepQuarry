@@ -29,7 +29,7 @@
 //! more than half the donor's `share` (the framework's positivity bound),
 //! so all edges together never overdraw a cell even before sub-stepping.
 
-use vg_core::field::kernel::{Amounts, Operand};
+use vg_core::field::kernel::{self, Amounts, Operand};
 use vg_core::field::{FieldKind, Side};
 use vg_core::owner::{Applied, Domain};
 
@@ -389,9 +389,8 @@ impl FieldKind for TurfGas {
 	fn flux(a: Side<'_, GasCell>, b: Side<'_, GasCell>, dt: f32) -> Amounts<Q> {
 		let (xa, xb) = (a.cell.amounts(), b.cell.amounts());
 		let (op_a, op_b) = (operand(&a, &xa), operand(&b, &xb));
-		// Bulk flow and diffusion are both solved implicitly once per advance (`FieldState::implicit_bulk`, `implicit_diffusion`).
-		let _ = (op_a, op_b, dt);
-		Amounts::default()
+		// The bulk flow is solved implicitly once per advance (`IMPLICIT_BULK`, `FieldState::implicit_bulk`); only diffusion is explicit.
+		kernel::diffusion(op_a, op_b, DIFFUSION_CONDUCTANCE, dt)
 	}
 
 	fn apply_flux(cell: &mut GasCell, flux: Amounts<Q>) {
@@ -416,23 +415,8 @@ impl FieldKind for TurfGas {
 	}
 
 	fn stiffness(a: Side<'_, GasCell>, b: Side<'_, GasCell>) -> f32 {
-		// Both bulk flow and diffusion are implicit (stable at any step): nothing here needs sub-steps.
-		let _ = (a, b);
-		0.0
-	}
-
-	const IMPLICIT_DIFFUSION: bool = true;
-
-	fn diffusion_conductance() -> f32 {
-		DIFFUSION_CONDUCTANCE
-	}
-
-	fn quantity(cell: &GasCell, i: usize) -> f32 {
-		cell.amounts()[i]
-	}
-
-	fn flux_of(amounts: &[f32]) -> Amounts<Q> {
-		Amounts(std::array::from_fn(|i| amounts.get(i).copied().unwrap_or(0.0)))
+		// Diffusion only: the bulk flow is the implicit solve's (stable at any gap and step).
+		kernel::exchange_stiffness(DIFFUSION_CONDUCTANCE, a.inv_capacity, b.inv_capacity)
 	}
 
 	const IMPLICIT_BULK: bool = true;
@@ -619,25 +603,28 @@ mod tests {
 	}
 
 	#[test]
-	fn vacuum_drains_through_the_bulk_move() {
+	fn vacuum_drains_exponentially() {
 		let x = air(1.0, 293.0);
 		let space = GasCell::default();
-		// The implicit solve decides the amount; the move takes it in the giver's proportions and nothing comes out of vacuum.
-		let f = TurfGas::bulk_move(side(&x, 2500.0, false), side(&space, 2500.0, true), 10.0);
+		let f = TurfGas::flux(side(&x, 2500.0, false), side(&space, 2500.0, true), 0.5);
 		let moved: f32 = f.0[..N].iter().sum();
-		assert!((moved - 10.0).abs() < 1e-3, "{moved}");
-		let back = TurfGas::bulk_move(side(&x, 2500.0, false), side(&space, 2500.0, true), -10.0);
-		assert!(back.0[..N].iter().all(|v| *v == 0.0), "vacuum gave gas: {back:?}");
+		// At most half the donor's share per kernel pair, and a real amount.
+		assert!(
+			moved > 0.0 && moved <= x.total_moles() / 6.0 + 1e-3,
+			"{moved}"
+		);
+		// Nothing flows out of vacuum.
+		let back = TurfGas::flux(side(&space, 2500.0, true), side(&x, 2500.0, false), 0.5);
+		assert!(back.0[..N].iter().all(|v| *v <= 0.0));
 	}
 
 	#[test]
-	fn the_explicit_flux_is_empty_and_settling_still_judges_composition() {
+	fn diffusion_mixes_composition_at_equal_pressure() {
 		let mut m = [0.0; N];
 		m[GAS_PLASMA] = 103.9;
 		let (x, y) = (GasCell::new(m, 293.0), air(1.0, 293.0));
-		// Bulk flow and diffusion are both implicit (`FieldState::implicit_bulk`, `implicit_diffusion`): the per-edge flux is empty.
 		let f = TurfGas::flux(side(&x, 2500.0, false), side(&y, 2500.0, false), 0.5);
-		assert!(f.0.iter().all(|v| *v == 0.0));
+		assert!(f.0[GAS_PLASMA] > 0.0 && f.0[GAS_OXYGEN] < 0.0);
 		assert!(!TurfGas::settled(
 			side(&x, 2500.0, false),
 			side(&y, 2500.0, false)
