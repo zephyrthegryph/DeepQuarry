@@ -144,6 +144,7 @@
 #include "font_awesome_icons.dm"
 #include "genetics_tests.dm"
 #include "interaction_tests.dm"
+#include "inline_language_tests.dm"
 #include "language_tests.dm"
 #include "dq_clothing_channels.dm"
 #include "loadout_tests.dm"
