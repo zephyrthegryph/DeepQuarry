@@ -19,7 +19,9 @@
 #define SKIN_SAY_BROWSER "tgui_say.browser"
 #define SKIN_COMMANDBAR_SPY "commandbar_spy"
 
-// Viewport fit (client/verb/fit_viewport): pixels the chat side and the map each keep, and the splitter share the fit may pick.
-#define FIT_VIEWPORT_MIN_SIDE 300
+// Viewport fit (client/verb/fit_viewport): the chat/stat side keeps the larger of these pixels and this share of
+// the window (unless the window is too narrow, then the two sides split evenly), and the splitter share the fit may pick.
+#define FIT_VIEWPORT_MIN_SIDE 480
+#define FIT_VIEWPORT_MIN_SIDE_PCT 30
 #define FIT_VIEWPORT_MIN_PCT 10
 #define FIT_VIEWPORT_MAX_PCT 90

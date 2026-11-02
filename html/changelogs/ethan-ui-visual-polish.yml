@@ -1,0 +1,4 @@
+author: "Ethan"
+delete-after: true
+changes:
+  - bugfix: "Fit Viewport keeps the chat and stat side at a usable width (30% or 480 px) instead of squeezing it on tall windows."
