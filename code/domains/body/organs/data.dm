@@ -15,7 +15,6 @@
 	var/b_type
 	var/body_gender
 	var/digitigrade
-	var/skin_tone
 	var/list/skin_color
 	var/list/hair_color
 
@@ -32,8 +31,6 @@
 	b_type = dna.b_type
 	unique_enzymes = dna.unique_enzymes
 	set_body_gender(dna.GetUIState(DNA_UI_GENDER))
-	if(!isnull(dna.GetUIValue(DNA_UI_SKIN_TONE)))
-		skin_tone = dna.GetUIValue(DNA_UI_SKIN_TONE)
 	skin_color = list(dna.GetUIValue(DNA_UI_SKIN_R), dna.GetUIValue(DNA_UI_SKIN_G), dna.GetUIValue(DNA_UI_SKIN_B))
 	hair_color = list(dna.GetUIValue(DNA_UI_HAIR_R), dna.GetUIValue(DNA_UI_HAIR_G), dna.GetUIValue(DNA_UI_HAIR_B))
 	digitigrade = dna.digitigrade
@@ -107,4 +104,3 @@
 
 CAPABILITIES(/datum/organ_data)
 	ref_one(nameof(species))
-SCHEMA(/datum/organ_data, skin_tone, num())

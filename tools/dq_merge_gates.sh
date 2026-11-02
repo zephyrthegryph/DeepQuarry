@@ -402,6 +402,7 @@ else
 	gate prepare tools/build/build.sh icon-repack validate-dme verdigris-bindings-check verdigris map-bounds
 fi
 [ -z "${early_prep_done:-}" ] || rm -f "$early_prep_log" "$early_prep_log.rc"
+export DQ_GATE_PREPARED="$(git rev-parse HEAD)"   # the test job's dm-test does not repeat the prepare on this commit (tools/build/lib/gate_prepared.ts)
 if [ -n "$tools_pid" ]; then
 	# the compiler is in the shared cache now: the test job's dq_focused_test.sh need not prepare it again (~30 s of Bun start-up and a
 	# cache probe on a loaded machine, 28 October)

@@ -88,7 +88,8 @@ Variables you may want to make use of are:
 	siemens_coefficient = 0.9
 
 	spawn_flags = SPECIES_IS_RESTRICTED
-	appearance_flags = HAS_SKIN_TONE | HAS_EYE_COLOR
+	appearance_flags = HAS_SKIN_COLOR | HAS_EYE_COLOR
+	color_mult = 1
 
 	//Far more organs, due to the issues with adding them and their respective verbs mid round, I'll include them here.
 	//Colormatch organs will change to match the blood color of the species.

@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - code_imp: "A lane landing after a tgui or docs landing keeps its precheck proof instead of paying for another full compile"

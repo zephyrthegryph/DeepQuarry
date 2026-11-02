@@ -151,6 +151,8 @@ menu "menu"
 window "mainwindow"
 	elem "mainwindow"
 		type = MAIN
+		background-color = #202020
+		text-color = #B3CCE6
 		pos = 281,0
 		size = 640x440
 		anchor1 = -1,-1
@@ -182,6 +184,8 @@ window "mainwindow"
 	// DQEdit — hotkey_toggle element deleted; non-hotkey mode is disabled.
 	elem "mainvsplit"
 		type = CHILD
+		background-color = #202020
+		text-color = #B3CCE6
 		pos = 0,0	// DQEdit — was 3,0; removed left padding
 		size = 640x440	// DQEdit — was 634x400; expanded to cover the removed bottom bars + left padding
 		anchor1 = 0,0
@@ -267,15 +271,18 @@ window "mapwindow"
 window "outputwindow"
 	elem "outputwindow"
 		type = MAIN
+		background-color = #202020
+		text-color = #B3CCE6
 		pos = 0,0
 		size = 640x480
 		anchor1 = -1,-1
 		anchor2 = -1,-1
-		background-color = none
 		saved-params = "pos;size;is-minimized;is-maximized"
 		is-pane = true
 	elem "legacy_output_selector"
 		type = CHILD
+		background-color = #202020
+		text-color = #B3CCE6
 		pos = 0,0
 		size = 640x480
 		anchor1 = 0,0
@@ -287,11 +294,12 @@ window "outputwindow"
 window "output_legacy"
 	elem "output_legacy"
 		type = MAIN
+		background-color = #202020
+		text-color = #B3CCE6
 		pos = 0,0
 		size = 640x480
 		anchor1 = -1,-1
 		anchor2 = -1,-1
-		background-color = none
 		saved-params = "pos;size;is-minimized;is-maximized"
 		is-pane = true
 	elem "output"
@@ -308,22 +316,24 @@ window "output_legacy"
 window "output_browser"
 	elem "output_browser"
 		type = MAIN
+		background-color = #202020
+		text-color = #B3CCE6
 		pos = 0,0
 		size = 640x480
 		anchor1 = -1,-1
 		anchor2 = -1,-1
-		background-color = none
 		saved-params = "pos;size;is-minimized;is-maximized"
 		is-pane = true
 		//outer-size = 656x538
 		//inner-size = 640x499
 	elem "browseroutput"
 		type = BROWSER
+		background-color = #202020
+		text-color = #B3CCE6
 		pos = 0,0
 		size = 640x480
 		anchor1 = 0,0
 		anchor2 = 100,100
-		background-color = none
 		saved-params = ""
 
 window "popupwindow"
@@ -393,6 +403,8 @@ window "prefs_markings_subwindow"
 window "rpane"
 	elem "rpane"
 		type = MAIN
+		background-color = #202020
+		text-color = #B3CCE6
 		pos = 281,0
 		size = 640x480
 		anchor1 = -1,-1
@@ -401,11 +413,12 @@ window "rpane"
 		is-pane = true
 	elem "rpanewindow"
 		type = CHILD
+		background-color = #202020
+		text-color = #B3CCE6
 		pos = 0,30
 		size = 640x445
 		anchor1 = 0,0
 		anchor2 = 100,100
-		background-color = none
 		saved-params = "splitter"
 		left = "statwindow"
 		right = "outputwindow"
@@ -424,66 +437,72 @@ window "rpane"
 		group = "rpanemode"
 	elem "discord"
 		type = BUTTON
+		background-color = #48739E
+		text-color = #FFFFFF
 		pos = 428,0
 		size = 60x16
 		anchor1 = -1,-1
 		anchor2 = -1,-1
-		background-color = none
 		saved-params = "is-checked"
 		text = "Discord"
 		command = "discord"
 		group = "rpanemode"
 	elem "github"
 		type = BUTTON
+		background-color = #48739E
+		text-color = #FFFFFF
 		pos = 368,0
 		size = 60x16
 		anchor1 = -1,-1
 		anchor2 = -1,-1
-		background-color = none
 		saved-params = "is-checked"
 		text = "GitHub"
 		command = "github"
 		group = "rpanemode"
 	elem "mapb"
 		type = BUTTON
+		background-color = #48739E
+		text-color = #FFFFFF
 		pos = 308,0
 		size = 60x16
 		anchor1 = -1,-1
 		anchor2 = -1,-1
-		background-color = none
 		saved-params = "is-checked"
 		text = "Map"
 		command = "map"
 		group = "rpanemode"
 	elem "rulesb"
 		type = BUTTON
+		background-color = #48739E
+		text-color = #FFFFFF
 		pos = 248,0
 		size = 60x16
 		anchor1 = -1,-1
 		anchor2 = -1,-1
-		background-color = none
 		saved-params = "is-checked"
 		text = "Rules"
 		command = "rules"
 		group = "rpanemode"
 	elem "forumb"
 		type = BUTTON
+		background-color = #48739E
+		text-color = #FFFFFF
 		pos = 188,0
 		size = 60x16
 		anchor1 = -1,-1
 		anchor2 = -1,-1
-		background-color = none
 		saved-params = "is-checked"
 		text = "Forum"
 		command = "forum"
 		group = "rpanemode"
 	elem "wikib"
 		type = BUTTON
+		background-color = #48739E
+		text-color = #FFFFFF
 		pos = 128,0
 		size = 60x16
 		anchor1 = -1,-1
 		anchor2 = -1,-1
-		background-color = none
 		saved-params = "is-checked"
 		text = "Wiki"
 		command = "wiki"
@@ -596,6 +615,8 @@ window "text_editor"
 window "statwindow"
 	elem "statwindow"
 		type = MAIN
+		background-color = #202020
+		text-color = #B3CCE6
 		pos = 281,0
 		size = 640x480
 		anchor1 = -1,-1
@@ -604,6 +625,8 @@ window "statwindow"
 		is-pane = true
 	elem "statbrowser"
 		type = BROWSER
+		background-color = #202020
+		text-color = #B3CCE6
 		pos = 0,0
 		size = 638x477
 		anchor1 = 0,0
@@ -632,6 +655,8 @@ window "tgui_say"
 window "statwindow"
 	elem "statwindow"
 		type = MAIN
+		background-color = #202020
+		text-color = #B3CCE6
 		pos = 281,0
 		size = 640x480
 		anchor1 = -1,-1
@@ -640,6 +665,8 @@ window "statwindow"
 		is-pane = true
 	elem "statbrowser"
 		type = BROWSER
+		background-color = #202020
+		text-color = #B3CCE6
 		pos = 0,0
 		size = 638x477
 		anchor1 = 0,0

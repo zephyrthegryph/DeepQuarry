@@ -108,14 +108,12 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 /obj/machinery/mecha_part_fabricator_tg/proc/connect_techweb(datum/techweb/new_techweb)
 	if(stored_research())
 		unobserve(stored_research(), /datum/notice/techweb_add_design, src)
-		unobserve(stored_research(), /datum/notice/techweb_remove_design, src)
 	stored_research_static = new_techweb
 	if(!isnull(stored_research()))
 		on_connected_techweb()
 
 /obj/machinery/mecha_part_fabricator_tg/proc/on_connected_techweb()
 	observe(stored_research(), /datum/notice/techweb_add_design, src, then(PROC_REF(on_techweb_update)))
-	observe(stored_research(), /datum/notice/techweb_remove_design, src, then(PROC_REF(on_techweb_update)))
 	update_menu_tech()
 
 /// Designs come and go in bursts: one refresh two seconds after the first of them.

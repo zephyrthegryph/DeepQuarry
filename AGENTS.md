@@ -151,14 +151,15 @@ Target tree (doc §22):
 
 | Path | Holds |
 |---|---|
+| `code/host/` | The neutral layer below the engine: helpers the engine calls, the act context, adjacency. Held to the engine boundary (`engine_layering`); what needs content is a virtual proc here, implemented in `code/content/`. |
 | `code/engine/{kernel,time,state,stats,refs,change,actions,parts,hooks,present,io,_generated}` | The framework, one folder per doc section. `_generated` is build output, never hand-edited. |
 | `code/library/` | Shared capabilities and bundles (machine, access, containers, reagents, items, structures, construction, providers, mobs). |
 | `code/domains/{body,damage,atmos,power,life,ai,verdigris}` | Large systems with their own model. |
 | `code/content/<domain>/` | Ordinary content: one type, one file (its capabilities, procs, messages, tests beside it). |
-| `code/world/` | Systems, map glue, round flow. |
+| `code/world/` | The scheduling kernel (`code/world/kernel/`; `code/engine/kernel/` holds only input, requests and jobs), systems, map glue, round flow. |
 | `code/defines/` | Defines, split per module; replaces `__defines/`. |
 
-Layering: engine may not reference library or content; library may not reference content;
+Layering: host and engine may not reference library or content; library may not reference content;
 nothing in the new tree may use an old form.
 
 **A file moves into the new tree only when it is fully migrated** (zero old forms). The old
@@ -330,13 +331,7 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   12 GB of RAM free (`DQ_SLOTS_DM_COMPILE`, `DQ_SLOTS_TEST_WORLD`,
   `DQ_SLOTS_CARGO`); a waiter prints who holds them, the merge worktree goes first, a crashed
   holder is reclaimed. `bash tools/dq_machine_slots.sh status` shows the table.
-- **A lane lands only through the batch train** (`tools/dq_train.sh`, `doc/rewrite/agent_workflow.md` section 29): after its focused
-  tests and `bash tools/ci/check_ratchets.sh --changed-only`, it runs `bash tools/dq_merge_master.sh`, then
-  `bash tools/dq_train.sh enqueue --tests "<its tests>"` (`--light` for a change with no DM), and releases its slot. One integrator
-  merges the ready lanes, runs one gate (test build only; CI keeps the production compile cross-check), pushes, and bisects to bounce
-  only a culprit. `dq_land.sh` and `dq_lane_ready.sh` are retired (they refuse): per-lane proofs re-ran on every master move and took
-  lanes hours. At most `DQ_LANE_POOL_SIZE` general lanes run at once (5 here): one DM compile slot serves them plus the train,
-  and the train's dmbc session is kept resident (`DQ_DMBC_KEEP_ROOTS`) so its gate compiles stay incremental.
+- **Land with `bash tools/dq_land.sh`** from the lane's worktree, everything committed: it merges origin/master and pushes, in seconds. Nothing gates master. Run the tests you judge reasonable, and `bash tools/ci/check_ratchets.sh --changed-only` before a DM change. After a landing `tools/dq_post_push_check.sh` boots the newest master in the background (report only); while master fails, `E:/dq-cache/health/MASTER_BROKEN.txt` names the first bad range and `dq_land.sh` prints it. Details: `doc/rewrite/agent_workflow.md` section 29.
 
 ### 4a. Testing (full reference: `doc/testing.md`)
 

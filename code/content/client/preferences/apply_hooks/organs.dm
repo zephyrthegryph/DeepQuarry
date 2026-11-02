@@ -19,6 +19,7 @@
 	var/list/pref_organ_data = preferences.read_preference(/datum/preference/organ_data)
 	var/list/pref_rlimb_data = preferences.read_preference(/datum/preference/rlimb_data)
 	if(!pref_organ_data)
+		preferences.apply_limb_colors(target)
 		return
 
 	// Process external organs in an order that respects parent-organ relationships.
@@ -43,6 +44,8 @@
 				O.robotize(pref_rlimb_data[name])
 			else
 				O.robotize()
+
+	preferences.apply_limb_colors(target)
 
 	// Internal organ FBP states.
 	for(var/name in list(O_HEART, O_EYES, O_VOICE, O_LUNGS, O_LIVER, O_KIDNEYS, O_SPLEEN, O_STOMACH, O_INTESTINE, O_BRAIN))

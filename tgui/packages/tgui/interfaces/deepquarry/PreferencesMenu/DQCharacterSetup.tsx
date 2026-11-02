@@ -14,16 +14,15 @@ import { Box, Button, Section, Stack, Tabs } from 'tgui-core/components';
 import { CategoryPage } from './CategoryPage';
 import {
   ColorToolsContext,
-  normalizeHex,
-  PALETTE_KEY,
   colorsInUse,
-  paletteFromValue,
+  type SlotName,
+  slotColors,
 } from './colors';
 import { labelForCategory } from './labels';
 import {
   buildSearchIndex,
-  type SearchHit,
   SearchHighlightContext,
+  type SearchHit,
   SettingsSearch,
 } from './search';
 import type {
@@ -41,6 +40,7 @@ const editorDataCache: Record<string, Record<string, unknown>> = {};
 /// Widget values and preview frames persist across updates: the server sends values for
 /// the categories it is answering for, and the preview only when it changed.
 const valuesCache: Record<string, unknown> = {};
+const colorLinksCache: Record<string, string> = {};
 let previewCache: CharacterPreviewAssets = {};
 /// The owner (prefs + slot) whose every-tab prefetch has been requested.
 let prefetchedOwner = '';
@@ -168,6 +168,7 @@ export const DQCharacterSetup = () => {
     clearRecord(editorStaticVersions);
     clearRecord(editorDataCache);
     clearRecord(valuesCache);
+    clearRecord(colorLinksCache);
   }
   const structureVersion = data.dq_structure_version ?? 1;
   if (cachedStructureVersion !== structureVersion) {
@@ -186,6 +187,7 @@ export const DQCharacterSetup = () => {
   }
   Object.assign(editorDataCache, data.dq_editor_data ?? {});
   Object.assign(valuesCache, data.dq_values ?? {});
+  Object.assign(colorLinksCache, data.dq_color_links ?? {});
   if (data.character_preview_assets) {
     previewCache = data.character_preview_assets;
   }
@@ -201,21 +203,13 @@ export const DQCharacterSetup = () => {
     (c) => !moreCategories.includes(c),
   );
   const [highlight, setHighlight] = useState<string | null>(null);
-  const [colorClipboard, setColorClipboard] = useState<string[] | null>(null);
-  const references: Record<string, string> = {};
-  for (const [name, key] of [
-    ['Skin', 'skin_color'],
-    ['Hair', 'hair_color'],
-  ]) {
-    const hex = normalizeHex(values[key]);
-    if (hex) references[name] = hex;
-  }
+  const [brush, setBrush] = useState<SlotName | null>(null);
   const colorTools = {
-    palette: paletteFromValue(values[PALETTE_KEY]),
+    slots: slotColors(values),
+    links: colorLinksCache,
     inUse: colorsInUse(values),
-    clipboard: colorClipboard,
-    setClipboard: setColorClipboard,
-    references,
+    brush,
+    setBrush,
   };
   const [pendingAnchor, setPendingAnchor] = useState<string | null>(null);
   // Rebuilt when a category structure arrives (the prefetch fills every tab).

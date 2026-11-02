@@ -22,7 +22,7 @@
 		result = IS_GLOBAL_PROC_REF(proc_ref) ? call(proc_ref)(D) : call(D, proc_ref)()
 	catch(var/exception/e)
 		// Surface it and don't cache an empty list: the next instance tries again (and fails loudly).
-		CRASH("type_list: [D.type].[proc_ref] failed while building: [e] ([e.file]:[e.line])")
+		throw EXCEPTION("type_list: [D.type].[proc_ref] failed while building: [e] ([e.file]:[e.line])")
 	if(isnull(result))
 		result = list()
 	else if(!islist(result))

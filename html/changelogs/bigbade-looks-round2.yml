@@ -1,0 +1,6 @@
+author: "bigbade"
+delete-after: true
+changes:
+  - bugfix: "Selected hair and beard styles are visible: their near-black sprites now sit on a light backing."
+  - bugfix: "Number settings show one horizontal slider, not a slider and a vertical drag bar."
+  - qol: "Looks: Ears, Tail, Wings and Legs are always categories; limbs and organs are two full lists; synth options show only with a robotic limb."

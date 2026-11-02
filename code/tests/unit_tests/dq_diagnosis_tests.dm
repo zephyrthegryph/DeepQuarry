@@ -190,7 +190,7 @@
 		"code/content/mob/living/silicon/robot/dogborg/dog_sleeper.dm",
 		"code/content/mob/mob_grab_specials.dm",
 		"code/content/pda/utilities.dm",
-		"code/game/objects/items/weapons/medigun/medigun_backpack_ui.dm",
+		"code/content/items/weapons/medigun/medigun_backpack_ui.dm",
 		"code/content/mecha/equipment/tools/sleeper.dm",
 		"code/content/integrated_electronics/subtypes/input.dm",
 		"code/content/integrated_electronics/subtypes/z_mixed.dm",

@@ -50,7 +50,7 @@ GENERAL_PROTECT_DATUM(/datum/json_savefile)
 		set_tree(json_decode(rustg_file_read(path)))
 		return TRUE
 	catch(var/exception/err)
-		stack_trace("failed to load json savefile at '[path]': [err]")
+		dq_report_caught(err, "failed to load json savefile at '[path]'")
 		return FALSE
 
 /datum/json_savefile/proc/save()

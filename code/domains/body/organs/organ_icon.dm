@@ -20,33 +20,29 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 	set_shown_layers(layers)
 
 /obj/item/organ/external/proc/sync_colour_to_human(mob/living/carbon/human/human)
-	set_s_tone(null)
 	set_s_col(null)
 	set_h_col(null)
 	if(is_robotic())
 		var/datum/robolimb/franchise = GLOB.all_robolimbs[model]
-		if(!(franchise && franchise.skin_tone) && !(franchise && franchise.skin_color))
-			if(human.looks.synth_color)
-				set_s_col(hex2rgb(human.looks.synth_color_rgb))
+		if(!(franchise && franchise.skin_color))
+			if(synth_rgb)
+				set_s_col(hex2rgb(synth_rgb))
 			return
 	if(human.species && data.get_species_name() != human.species.name)
 		return
-	if(!isnull(human.looks.skin_tone) && (human.species.appearance_flags & HAS_SKIN_TONE))
-		set_s_tone(human.looks.skin_tone)
 	if(human.species.appearance_flags & HAS_SKIN_COLOR)
 		set_s_col(hex2rgb(human.looks.skin_color))
 	set_h_col(hex2rgb(human.looks.hair_color))
 
 /obj/item/organ/external/proc/sync_colour_to_dna()
-	set_s_tone(null)
 	set_s_col(null)
 	set_h_col(null)
 	if(is_robotic())
 		var/datum/robolimb/franchise = GLOB.all_robolimbs[model]
-		if(!(franchise && franchise.skin_tone) && !(franchise && franchise.skin_color))
+		if(!(franchise && franchise.skin_color))
+			if(synth_rgb)
+				set_s_col(hex2rgb(synth_rgb))
 			return
-	if(!isnull(data.skin_tone) && (data.get_species_appearance_flags() & HAS_SKIN_TONE))
-		set_s_tone(data.skin_tone)
 	if(data.get_species_appearance_flags() & HAS_SKIN_COLOR)
 		set_s_col(data.skin_color.Copy())
 	set_h_col(data.hair_color.Copy())
@@ -197,14 +193,10 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 		applying.ColorTone(rgb(10,50,0))
 		applying.SetIntensity(0.7)
 
-	if(!isnull(s_tone))
-		if(s_tone >= 0)
-			applying.Blend(rgb(s_tone, s_tone, s_tone), ICON_ADD)
-		else
-			applying.Blend(rgb(-s_tone,  -s_tone,  -s_tone), ICON_SUBTRACT)
-		icon_cache_key += "_tone_[s_tone]"
-	else if(s_col && s_col.len >= 3)
-		if(data.get_species_color_mult())
+	if(s_col && s_col.len >= 3)
+		// Plain robotic art is tinted, never added to: an added skin colour washes metal out to white.
+		var/datum/robolimb/franchise = is_robotic() ? GLOB.all_robolimbs[model] : null
+		if(data.get_species_color_mult() || (is_robotic() && !franchise?.skin_color))
 			applying.Blend(rgb(s_col[1], s_col[2], s_col[3]), ICON_MULTIPLY)
 			icon_cache_key += "_color_[s_col[1]]_[s_col[2]]_[s_col[3]]_[ICON_MULTIPLY]"
 		else

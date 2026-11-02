@@ -11,7 +11,7 @@
 	return null
 
 /datum/preference/text/human/ear_style/get_pref_choices(datum/preferences/preferences)
-	return GLOB.ear_styles_list ? assoc_to_keys(GLOB.ear_styles_list) : null
+	return sprite_accessory_names(GLOB.ear_styles_list)
 
 /datum/preference/text/human/ear_style/get_pref_thumbnails(datum/preferences/preferences)
 	return sprite_accessory_thumbs(GLOB.ear_styles_list)
@@ -31,7 +31,7 @@
 	return null
 
 /datum/preference/text/human/ear_secondary_style/get_pref_choices(datum/preferences/preferences)
-	return GLOB.ear_styles_list ? assoc_to_keys(GLOB.ear_styles_list) : null
+	return sprite_accessory_names(GLOB.ear_styles_list)
 
 /datum/preference/text/human/ear_secondary_style/get_pref_thumbnails(datum/preferences/preferences)
 	return sprite_accessory_thumbs(GLOB.ear_styles_list)
@@ -51,7 +51,7 @@
 	return null
 
 /datum/preference/text/human/tail_style/get_pref_choices(datum/preferences/preferences)
-	return GLOB.tail_styles_list ? assoc_to_keys(GLOB.tail_styles_list) : null
+	return sprite_accessory_names(GLOB.tail_styles_list)
 
 /datum/preference/text/human/tail_style/get_pref_thumbnails(datum/preferences/preferences)
 	return sprite_accessory_thumbs(GLOB.tail_styles_list)
@@ -71,7 +71,7 @@
 	return null
 
 /datum/preference/text/human/wing_style/get_pref_choices(datum/preferences/preferences)
-	return GLOB.wing_styles_list ? assoc_to_keys(GLOB.wing_styles_list) : null
+	return sprite_accessory_names(GLOB.wing_styles_list)
 
 /datum/preference/text/human/wing_style/get_pref_thumbnails(datum/preferences/preferences)
 	return sprite_accessory_thumbs(GLOB.wing_styles_list)
@@ -79,9 +79,21 @@
 /datum/preference/text/human/wing_style/apply_to_human(mob/living/carbon/human/target, value)
 	return
 
+/// The style choices of a sprite_accessory global: instance names, what a saved style holds and the apply hook looks up.
+/proc/sprite_accessory_names(list/accessory_list)
+	if(!accessory_list)
+		return null
+	var/list/out = list()
+	for(var/key in accessory_list)
+		var/datum/sprite_accessory/S = accessory_list[key]
+		if(istype(S))
+			out += S.name
+	return out
+
 // / Shared helper: build a {style_name -> {icon, icon_state}} payload from a
 /// sprite_accessory global. Lives on /datum/preferences so any subtype can call it.
-/proc/sprite_accessory_thumbs(list/accessory_list)
+/// `state_suffix`: what the drawing code appends to icon_state (hair and beards are drawn from "<state>_s").
+/proc/sprite_accessory_thumbs(list/accessory_list, state_suffix = "")
 	if(!accessory_list)
 		return null
 	var/list/out = list()
@@ -89,9 +101,9 @@
 		var/datum/sprite_accessory/S = accessory_list[key]
 		if(!istype(S) || !S.icon)
 			continue
-		out[key] = list(
+		out[S.name] = list(
 			"icon" = "[REF(S.icon)]",
-			"icon_state" = S.icon_state,
+			"icon_state" = "[S.icon_state][state_suffix]",
 		)
 	return out
 

@@ -5278,12 +5278,15 @@ code/contracts/{ids,acts,accessors}
     // and SYSTEM_ACCESSOR declarations. Never procs: DM resolves a proc by name across the whole tree whatever the file order, so a proc stays in its
     // module with no forward declaration here, and the module_deps lint, not the compile order, enforces who may call it. Low in compile order, so library,
     // domains and content depend on contracts, not on each other's internals.</span>
-code/host/{helpers,globals,click,client,admin,tgui,assets,config,vendor}
+code/host/{helpers,acts,datum,adjacent}
+    <span class="c">// the neutral layer the engine calls, held to the engine boundary by engine_layering. Still to come: </span>
+code/host/{globals,click,client,admin,tgui,assets,config,vendor}
     <span class="c">// glue every layer needs: helpers, global vars, click and HUD glue, client and admin plumbing,
     // the tgui backend, assets, config. vendor/ is third-party code (TGS), exempt from lints.</span>
 code/base/{atom,area,turf,obj,mob}
     <span class="c">// the root types /atom /atom/movable /obj /obj/item /obj/machinery /obj/structure /mob /mob/living /turf /area:
     // their vars, base procs and base STAT and TRACKED declarations.</span>
+code/world/kernel the scheduling kernel (code/engine/kernel holds input, requests and jobs)
 code/engine/{declare,kernel,time,state,stats,refs,change,actions,parts,hooks,present,io,_generated}
     <span class="c">// the framework, one folder per concept. _generated holds the analysis engine's output
     // (reads tables, STAT ids, ACTION types) and is never hand-edited.</span>

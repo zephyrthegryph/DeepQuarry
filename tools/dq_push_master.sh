@@ -108,11 +108,21 @@ fi
 strict=0
 if [ "${DQ_PUSH_STRICT:-}" = "1" ] || { [ "${DQ_PUSH_STRICT:-}" != "0" ] && [ "$(git rev-parse --abbrev-ref HEAD)" = "rewrite/integ-current" ]; }; then strict=1; fi
 fetched_at=0
+neutral_over=""
 if [ "$strict" -eq 1 ] && [ -n "$start_base" ]; then
 	git fetch -q origin || die "git fetch failed"
 	fetched_at=$(date +%s)
 	now_master="$(git rev-parse origin/master)"
-	[ "$now_master" = "$start_base" ] || die "origin/master moved since the gates started (${start_base:0:12} -> ${now_master:0:12}): re-run tools/dq_merge_worktree.sh, the merges and tools/dq_merge_gates.sh, then push again"
+	# DQ_PUSH_NEUTRAL_OK=1 (the train's heavy push): what landed since the gated HEAD's base is only what a gate does not read
+	# (tools/dq_light_paths.sh light_gate_neutral), so the proof holds on the merge of the two: re-merged below, not re-gated.
+	if [ "${DQ_PUSH_NEUTRAL_OK:-0}" = 1 ] && ! git merge-base --is-ancestor "$now_master" HEAD; then
+		. tools/dq_light_paths.sh
+		_nn="$(light_gate_unneutral_in HEAD "$now_master" light_gate_compile_neutral | head -n 3 | tr '\n' ' ')"
+		[ -z "$_nn" ] || die "origin/master moved since the gates started (${start_base:0:12} -> ${now_master:0:12}) and changed what a gate reads ($_nn): re-run them"
+		neutral_over="$(git rev-parse HEAD)"
+		echo "== dq_push_master: origin/master moved since the gates started (${start_base:0:12} -> ${now_master:0:12}), only by what a gate does not read: the proof on ${neutral_over:0:12} carries across the merge"
+	fi
+	[ -n "$neutral_over" ] || [ "$now_master" = "$start_base" ] || die "origin/master moved since the gates started (${start_base:0:12} -> ${now_master:0:12}): re-run tools/dq_merge_worktree.sh, the merges and tools/dq_merge_gates.sh, then push again"
 fi
 
 # After a push: origin/master must contain what was pushed and every expected lane tip. A no-op push exits 0 in git; this does not.
@@ -163,8 +173,23 @@ for round in 1 2 3; do
 	# lane, the compile and checks rerun only when master's changes since the lane's base touch DM code (tools/dq_light_paths.sh heavy paths).
 	fast_skip=""
 	stamp_of "$sha" >/dev/null; lap "stamp verdict"
+	# The gated commit's proof across a merge of neutral paths: every difference from it is one a gate does not read, or nothing here is trusted.
+	# Refused as "master moved", so the train keeps the lanes queued for a fresh gate and never blames them.
+	if [ -n "$neutral_over" ] && [ "$sha" != "$neutral_over" ]; then
+		. tools/dq_light_paths.sh
+		_nn="$(git diff --name-only "$neutral_over" "$sha" | while IFS= read -r _f; do light_gate_compile_neutral "$_f" || echo "$_f"; done | head -n 3 | tr '\n' ' ')"
+		[ -z "$_nn" ] || die "origin/master moved and the merge onto it differs from the gated ${neutral_over:0:12} in what a gate reads ($_nn): re-run the gates"
+		[ "$_stamp_rc" -eq 0 ] || die "origin/master moved and the gate's stamp does not carry across the merge: ${_stamp_out:0:300}"
+	fi
 	if [ "$light" -eq 0 ] && [ "${DQ_PUSH_FULL:-0}" != "1" ]; then
-		if git notes --ref=lane-ready show "$sha" 2>/dev/null | grep -q '"ok":true' && git merge-base --is-ancestor origin/master "$sha"; then
+		if [ -n "$neutral_over" ] && [ "$sha" != "$neutral_over" ]; then
+			fast_skip="the gates passed on ${neutral_over:0:12} and this merge differs from it only in what a gate does not read"
+			# master's TGUI interfaces are what the lints read beside the DM: the ratchets run on the merge, the compile does not
+			if git diff --name-only "$neutral_over" "$sha" | while IFS= read -r _f; do light_gate_lint_read "$_f" && echo "$_f"; done | grep -q .; then
+				echo "== check_ratchets.sh: master changed what the lints read (log $log.ratchets.log)"
+				bash tools/ci/check_ratchets.sh >"$log.ratchets.log" 2>&1 || { tail -30 "$log.ratchets.log"; die "check_ratchets.sh failed"; }
+			fi
+		elif git notes --ref=lane-ready show "$sha" 2>/dev/null | grep -q '"ok":true' && git merge-base --is-ancestor origin/master "$sha"; then
 			fast_skip="a lane-ready stamp is on exactly this commit and it contains origin/master (fast-forward): the gates already ran on this tree"
 		elif stamp_of "$sha" >/dev/null 2>&1; then
 			read -r -a _par <<<"$(git rev-list --parents -n 1 "$sha" | cut -d' ' -f2-)"

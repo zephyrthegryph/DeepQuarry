@@ -1,4 +1,3 @@
-GLOBAL_REAL(logger, /datum/log_holder)
 /**
  * Main datum to manage logging actions
  */
@@ -266,7 +265,7 @@ GLOBAL_TABLE(log_category_tree, GLOBAL_PROC_REF(build_log_category_tree))
 /// Adds an entry to the given category, if the category is disabled it will not be logged.
 /// If the category does not exist, we will CRASH and log to the error category.
 /// the data list is optional and will be recursively json serialized.
-/datum/log_holder/proc/Log(category, message, list/data)
+/datum/log_holder/Log(category, message, list/data)
 	// This is Log because log is a byond internal proc
 
 	// do not include the message because these go into the runtime log and we might be secret!

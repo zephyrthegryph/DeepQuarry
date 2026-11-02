@@ -1,0 +1,4 @@
+author: "bigbade"
+delete-after: true
+changes:
+  - qol: "Character setup pickers load sprites as they scroll into view instead of all at once."

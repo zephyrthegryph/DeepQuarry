@@ -186,7 +186,7 @@
 
 CAPABILITIES(/mob/living/simple_mob/slime/xenobio/dark_purple)
 	configure(living_rules(fire_reaction = FIRE_REACTION_TRIGGER, fire_trigger_proc = TYPE_PROC_REF(/mob/living/simple_mob/slime/xenobio/dark_purple, ignite)))
-	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_ignite))))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_ignite)), order = ORDER_EARLY))
 	op("darkpurple_slime_item", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(darkpurple_slime_interaction_item)))
 
 /mob/living/simple_mob/slime/xenobio/dark_purple/proc/blast_ignite(datum/act/A)
@@ -665,7 +665,7 @@ CAPABILITIES(/mob/living/simple_mob/slime/xenobio/ruby)
 
 CAPABILITIES(/mob/living/simple_mob/slime/xenobio/oil)
 	configure(living_rules(fire_reaction = FIRE_REACTION_TRIGGER, fire_trigger_proc = TYPE_PROC_REF(/mob/living/simple_mob/slime/xenobio/oil, explode), fire_trigger_verb = "exploded"))
-	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_explode))))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_explode)), order = ORDER_EARLY))
 	op("oilslime_item", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(oilslime_interaction_item)))
 
 /mob/living/simple_mob/slime/xenobio/oil/proc/blast_explode(datum/act/A)

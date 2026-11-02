@@ -192,7 +192,7 @@ GLOBAL_VAR_INIT(rx_draining, FALSE)
 							rx_call(L.listener, L.handler, E, keys)
 							attr.note(KA_KIND_REACTION, KM_SYS_OM_APPEARANCE, L.listener.type, L.handler, TICK_USAGE_TO_MS(attr_start))
 				catch(var/exception/e)
-					stack_trace("rx_drain: [E.type]: [e] ([e.file]:[e.line])")
+					dq_report_caught(e, "rx_drain: [E.type]")
 	GLOB.rx_draining = FALSE
 
 /// A change reaction of `E` kept re-queueing itself past RX_DRAIN_PASSES deliveries in one drain: names the pair (the rest
@@ -444,12 +444,12 @@ GLOBAL_VAR_INIT(rx_answer_depth, 0)
 		return
 	GLOB.rx_notice_delivering = TRUE
 	var/delivered = 0
-	rx_deliver_notice(E, N)
+	rx_deliver_guarded(E, N)
 	while(length(GLOB.rx_notice_queue))
 		var/list/next = GLOB.rx_notice_queue[1]
 		GLOB.rx_notice_queue.Cut(1, 2)
 		if(++delivered > RX_NOTICE_LIMIT)
-			stack_trace("publish: more than [RX_NOTICE_LIMIT] notices chained from one delivery (a handler republishes what it hears?); dropping [length(GLOB.rx_notice_queue) + 1]")
+			dq_report_caught(EXCEPTION("more than [RX_NOTICE_LIMIT] notices chained from one delivery (a handler republishes what it hears?); dropping [length(GLOB.rx_notice_queue) + 1]"), "publish")
 			for(var/list/rest as anything in GLOB.rx_notice_queue)
 				var/datum/notice/dropped = rest[2]
 				dropped.release()
@@ -457,7 +457,7 @@ GLOBAL_VAR_INIT(rx_answer_depth, 0)
 			var/datum/notice/cut = next[2]
 			cut.release()
 			break
-		rx_deliver_notice(next[1], next[2])
+		rx_deliver_guarded(next[1], next[2])
 	GLOB.rx_notice_delivering = FALSE
 
 /**
@@ -467,15 +467,23 @@ GLOBAL_VAR_INIT(rx_answer_depth, 0)
  */
 /proc/rx_answer_notice(datum/E, datum/notice/N)
 	if(GLOB.rx_answer_depth >= RX_ANSWER_DEPTH)
-		stack_trace("publish: read-back notice [N.type] on [E?.type] nested more than [RX_ANSWER_DEPTH] answers deep; not delivered")
+		dq_report_caught(EXCEPTION("read-back notice [N.type] on [E?.type] nested more than [RX_ANSWER_DEPTH] answers deep; not delivered"), "publish")
 		N.release()
 		return
 	GLOB.rx_answer_depth++
+	rx_deliver_guarded(E, N)
+	GLOB.rx_answer_depth--
+
+/**
+ * One delivery that cannot throw into publish(): a fault there would skip the end of publish() and leave rx_notice_delivering set, and every later notice in
+ * the world would queue forever. Faults are reported with dq_report_caught(), never stack_trace(): that one is a CRASH, which leaves a catch block as a new
+ * exception and aborts the handlers after the one that faulted. A faulted notice is not released (its state is unknown), so the pool never reuses it.
+ */
+/proc/rx_deliver_guarded(datum/E, datum/notice/N)
 	try
 		rx_deliver_notice(E, N)
 	catch(var/exception/e)
-		stack_trace("publish: answering [N.type] on [E?.type]: [e] ([e.file]:[e.line])")
-	GLOB.rx_answer_depth--
+		dq_report_caught(e, "publish [N?.type] on [E?.type]")
 
 /proc/rx_deliver_notice(datum/E, datum/notice/N)
 	rx_deliver_notice_to(E, N)
@@ -496,7 +504,7 @@ GLOBAL_VAR_INIT(rx_answer_depth, 0)
 					rx_call_reaction(E, R, N)
 				catch(var/exception/e)
 					faulted = TRUE
-					stack_trace("notice [N.type] handler [R.handler] on [E.type]: [e] ([e.file]:[e.line])")
+					dq_report_caught(e, "notice [N.type] handler [R.handler] on [E.type]")
 				R.work?.account(TICK_USAGE_TO_MS(started), faulted) // per-reaction cost; delivery stays synchronous and in order
 		for(var/datum/rx_listener/L as anything in E.rx?.listeners?.Copy())
 			var/datum/reaction/R = L.trigger
@@ -505,4 +513,4 @@ GLOBAL_VAR_INIT(rx_answer_depth, 0)
 			try
 				rx_call(L.listener, L.handler, E, N)
 			catch(var/exception/e2)
-				stack_trace("notice [N.type] observer [L.handler] on [L.listener.type]: [e2] ([e2.file]:[e2.line])")
+				dq_report_caught(e2, "notice [N.type] observer [L.handler] on [L.listener.type]")

@@ -57,7 +57,7 @@
 #define DNA_UI_BEARD_R     4
 #define DNA_UI_BEARD_G     5
 #define DNA_UI_BEARD_B     6
-#define DNA_UI_SKIN_TONE   7
+// 7 was skin tone: left unused so stored DNA keeps its block positions.
 #define DNA_UI_SKIN_R      8
 #define DNA_UI_SKIN_G      9
 #define DNA_UI_SKIN_B      10

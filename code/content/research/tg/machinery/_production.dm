@@ -92,13 +92,11 @@ CAPABILITIES(/obj/machinery/rnd/production)
 /obj/machinery/rnd/production/connect_techweb(datum/techweb/new_techweb)
 	if(stored_research)
 		unobserve(stored_research, /datum/notice/techweb_add_design, src)
-		unobserve(stored_research, /datum/notice/techweb_remove_design, src)
 	return ..()
 
 /obj/machinery/rnd/production/on_connected_techweb()
 	. = ..()
 	observe(stored_research, /datum/notice/techweb_add_design, src, then(TYPE_PROC_REF(/obj/machinery/rnd/production, on_techweb_update)))
-	observe(stored_research, /datum/notice/techweb_remove_design, src, then(TYPE_PROC_REF(/obj/machinery/rnd/production, on_techweb_update)))
 	update_designs()
 
 /// Updates the list of designs this fabricator can print.

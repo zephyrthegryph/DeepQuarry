@@ -11,8 +11,8 @@ import {
   Stack,
   TextArea,
 } from 'tgui-core/components';
+import { PrefColorSwatch } from './colors';
 import { SearchableDropdown, Segmented, SliderBox, Switch } from './controls';
-import { PaletteEditor, PrefColorSwatch } from './colors';
 import { ColorizedImage, ColorizedImageButton } from './helper_components';
 import type { PrefWidgetItem } from './types';
 
@@ -217,9 +217,6 @@ export const PrefWidget = ({ item }: Props) => {
       );
     }
 
-    case 'palette':
-      return <PaletteEditor value={item.value} />;
-
     case 'segmented':
       return (
         <Segmented
@@ -338,6 +335,8 @@ function normalizeChoices(
 /// inline below the trigger row, scoped to the widget's grid cell — no
 /// full-window Dimmer overlay. The panel has its own scroll for long lists
 /// of thumbnails (hair/marking catalogs run into the hundreds of entries).
+const THUMB_BACKING = '#9a9a9a';
+
 const ThumbgridPicker = ({
   item,
   onPick,
@@ -370,12 +369,21 @@ const ThumbgridPicker = ({
       <Stack align="center">
         {currentThumb ? (
           <Stack.Item>
-            <ColorizedImage
-              iconRef={currentThumb.icon}
-              iconState={currentThumb.icon_state}
-              color="#ffffff"
-              size={32}
-            />
+            {/* Hair and beard art is near-black (the colour is added in game): it needs a light backing. */}
+            <Box
+              style={{
+                display: 'flex',
+                background: THUMB_BACKING,
+                borderRadius: '0.2em',
+              }}
+            >
+              <ColorizedImage
+                iconRef={currentThumb.icon}
+                iconState={currentThumb.icon_state}
+                color="#ffffff"
+                size={32}
+              />
+            </Box>
           </Stack.Item>
         ) : null}
         <Stack.Item grow style={{ minWidth: 0 }}>

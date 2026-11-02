@@ -19,8 +19,8 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	var/lastchangelog = "" // Saved changlog filesize to detect if there was a change //
 
 	// be_special, b_type, blood_reagents, headset, backbag, pdachoice, no_jacket,
-	// h_style, grad_style, f_style, s_tone, alternate_languages, language_prefixes,
-	// language_custom_keys, gear_list, gear_slot, traits (legacy alias), synth_color,
+	// h_style, grad_style, f_style, alternate_languages, language_prefixes,
+	// language_custom_keys, gear_list, gear_slot, traits (legacy alias),
 	// synth_markings, digitigrade, antag_faction, antag_vis all migrated to /datum/preference
 	// subtypes. species_preview was unused; deleted.
 

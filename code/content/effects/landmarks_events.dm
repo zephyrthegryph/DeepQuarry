@@ -55,7 +55,7 @@ CAPABILITIES(/obj/effect/landmark/event_trigger)
 		try
 			discard_setup()
 		catch(var/exception/cleanup_fault)
-			stack_trace("Event trigger setup cleanup: [cleanup_fault]")
+			dq_report_caught(cleanup_fault, "Event trigger setup cleanup")
 		throw fault
 
 /obj/effect/landmark/event_trigger/proc/setup_answered(datum/act/request/A)

@@ -61,7 +61,7 @@
 		try
 			call(A, handler)()
 		catch(var/exception/e)
-			stack_trace("setup([handler], early = TRUE) on [A.type]: [e] ([e.file]:[e.line])")
+			dq_report_caught(e, "setup([handler], early = TRUE) on [A.type]")
 		if(QDELETED(A))
 			break
 	return TRUE

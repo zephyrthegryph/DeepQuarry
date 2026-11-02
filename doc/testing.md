@@ -4,6 +4,9 @@ Everything CI checks can be run locally. On Windows use the `bin/*.cmd` entry
 points or `tools\build\build.bat`; on Linux (and in Git Bash) use
 `tools/build/build.sh`. Both take the same targets and `-D` defines.
 
+
+**What to run before landing is your judgement.** Nothing gates master (`bash tools/dq_land.sh`, `doc/rewrite/agent_workflow.md` section 29): run the focused tests that fit the change, and `bash tools/ci/check_ratchets.sh --changed-only` before a DM change. A UI or docs fix may need neither a compile nor a world. Mentions below of gates, stamps and lane-ready describe tools no longer on the landing path.
+
 ## Quick reference
 
 | Goal | Command | Typical time |
@@ -116,7 +119,7 @@ them can hide a failure in the full suite, which still does all of them:
 
 | Skipped in focused runs | Full suite | Why it is safe |
 |---|---|---|
-| Round-start settle before the first test: 1 s instead of 10 s (0 s for `--boot`) (`HandleTestRun`, `code/content/game/world.dm`) | 10 s | Nothing is skipped, only started sooner. A test that fails only when focused depends on round-start settling and should wait for what it needs itself. |
+| Round-start settle before the first test: 0 s instead of 10 s (`HandleTestRun`, `code/content/game/world.dm`) | 10 s | Nothing is skipped, only started sooner. A test that fails only when focused depends on round-start settling and should wait for what it needs itself. |
 | Round-end report delay: 0 s instead of 5 s (`declare_completion`, `code/_helpers/roundend.dm`) | 5 s | The delay lets players read the report; a test world has none. |
 | Generating every asset and spritesheet at boot, about 2.3 s (`SSassets.Initialize`) | all generated | `get_asset_datum()` builds an asset on first use, and the `spritesheets` and `test_asset_smart_cache` tests call it, so focusing those still generates and checks every sheet. |
 

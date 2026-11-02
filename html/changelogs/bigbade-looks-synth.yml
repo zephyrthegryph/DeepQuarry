@@ -1,0 +1,5 @@
+author: "bigbade"
+delete-after: true
+changes:
+  - rscadd: "Each robotic limb has its own colour on Limbs & organs, linked to Tertiary by default."
+  - balance: "Robotic limbs always tint; the Use Synth Color toggle and the single synth colour are gone."

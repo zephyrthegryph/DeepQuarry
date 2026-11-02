@@ -1,0 +1,4 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "A runtime in one background handler no longer cuts short the rest of that tick's work, or stops later state-change reactions from running."

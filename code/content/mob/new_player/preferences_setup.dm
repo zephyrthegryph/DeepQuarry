@@ -242,7 +242,7 @@
 						if(existing)
 							consume(existing, mannequin)
 					var/metadata = active_gear_list[G.display_name]
-					if(mannequin.equip_to_slot_or_del(G.spawn_item(mannequin, metadata), G.slot))
+					if(mannequin.equip_to_slot_or_del(G.spawn_item(mannequin, metadata, src), G.slot))
 						if(G.slot != SLOT_ID_TIE)
 							equipped_slots += G.slot
 
@@ -297,7 +297,7 @@
 	try
 		dq_render_preview(south_only)
 	catch(var/exception/e)
-		stack_trace("update_preview_icon runtimed: [e.name] at [e.file]:[e.line]")
+		dq_report_caught(e, "update_preview_icon runtimed")
 	updating_preview_icon = FALSE
 	set_dq_last_preview_render_ms(TICK_DELTA_TO_MS(TICK_USAGE_REAL - profile_started))
 	dq_schedule_data_push()

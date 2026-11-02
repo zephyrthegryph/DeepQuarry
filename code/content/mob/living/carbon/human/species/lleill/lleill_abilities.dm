@@ -84,7 +84,6 @@
 /mob/living/carbon/human/proc/lleill_set_colour(new_skin)
 
 	looks.set_skin_color(new_skin)
-	looks.set_synth_color_rgb(looks.skin_color)
 
 	for(var/obj/item/organ/external/E in organs)
 		E.sync_colour_to_human(src)

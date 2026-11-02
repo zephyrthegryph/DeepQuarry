@@ -49,7 +49,7 @@
 					continue
 				var/by = E.args["by"]
 				var/on_deleted = E.args["on_other_deleted"] == OTHER_DELETE_ME ? DELETE_ME : CLEAR
-				. += _rel_decl(E.args["var"], E.kind == ENTRY_REF_MANY, E.args["type"], null, on_deleted, E.args["on_unlink"], by, by ? E.args["type"] : null, null, FALSE, FALSE, FALSE)
+				. += _rel_decl(E.args["var"], E.kind == ENTRY_REF_MANY, E.args["type"], null, on_deleted, E.args["on_unlink"], by, by ? E.args["type"] : null, null, FALSE, FALSE, FALSE, E.args["unindexed"])
 				if(E.kind == ENTRY_REF_ONE && !isnull(E.args["starts"]))
 					. += _own_entry(E.args["var"], null, FALSE, FALSE, FALSE, relation_starts(E))
 				if(by)

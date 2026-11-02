@@ -183,6 +183,9 @@
 /mob/living/silicon/ai/proc/track_interval(datum/act/A)
 	return track_delay
 
+/// The mob an AI's follow-camera mode is tracking: null once the target is deleted.
+/mob/living/silicon/ai/var/mob/living/cameraFollow = null
+
 /// Follow camera mode: keeps the eye on `cameraFollow` every second (every ten while it is out of
 /// camera coverage) while tracking (its every() in CAPABILITIES(/mob/living/silicon/ai)).
 /mob/living/silicon/ai/proc/ai_track_step(datum/act/A)

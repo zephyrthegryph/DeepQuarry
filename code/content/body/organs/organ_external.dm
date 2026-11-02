@@ -51,7 +51,6 @@
 	var/force_icon                     // Used to force override of species-specific limb icons (for prosthetics). Also used for any limbs chopped from a simple mob, and then attached to humans.
 	var/icon/mob_icon                  // Cached icon for use in mob overlays.
 	var/gendered_icon = 0              // Whether or not the icon state appends a gender.
-	var/s_tone                         // Skin tone.
 	var/list/s_col                     // skin colour
 	var/list/h_col                     // hair colour
 	var/body_hair                      // Icon blend for body hair if any.
@@ -63,6 +62,8 @@
 	// Wound and structural data.
 	// Wounds are /datum/affliction/wound located on this limb: see get_wounds() (body/parts/limb.dm).
 	var/obj/item/organ/external/parent // Master-limb.
+	/// This robotic limb's tint: its own colour from the character, or its parent's (a hand made robotic with its arm).
+	var/synth_rgb
 	var/list/children                  // Sub-limbs.
 	var/sabotaged = 0                  // If a prosthetic limb is emagged, it will detonate when it fails.
 	var/list/implants                  // Currently implanted objects.
