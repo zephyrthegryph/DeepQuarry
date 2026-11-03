@@ -99,7 +99,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/fennec)
 	movement_cooldown = -1
 	melee_miss_chance = 10
 
-	old_x = -32
 	pixel_x = -32
 	default_pixel_x = -32
 

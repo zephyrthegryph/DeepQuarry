@@ -89,8 +89,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/wolf)
 	icon_living = "direwolf"
 	icon_state = "direwolf"
 	icon_rest = "direwolf_rest"
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0

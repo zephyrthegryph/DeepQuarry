@@ -7,8 +7,6 @@
 	icon_living = "raptorpurple"
 	icon_state = "raptorpurple"
 	icon_rest = "raptorpurple"
-	old_x = -48
-	old_y = 0
 	vis_height = 92
 	friendly = list("nudges", "sniffs on", "rumbles softly at", "slobberlicks")
 	default_pixel_x = -48

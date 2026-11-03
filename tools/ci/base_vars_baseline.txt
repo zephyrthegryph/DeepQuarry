@@ -12,5 +12,3 @@ base_var	code/game/atom/atom_defense.dm	@/atom::integrity_failure
 base_var	code/game/atom/atom_type_table.dm	@/atom::init_from_table
 base_var	code/game/atoms_movable.dm	@/atom/movable::last_move
 base_var	code/game/atoms_movable.dm	@/atom/movable::move_speed
-base_var	code/game/atoms_movable.dm	@/atom/movable::old_x
-base_var	code/game/atoms_movable.dm	@/atom/movable::old_y

@@ -7,8 +7,6 @@
 	icon_living = "leopardmander"
 	icon_state = "leopardmander"
 	icon_rest = "leopardmander-rest"
-	old_x = -48
-	old_y = 0
 	vis_height = 92
 	melee_damage_lower = 10
 	melee_damage_upper = 25

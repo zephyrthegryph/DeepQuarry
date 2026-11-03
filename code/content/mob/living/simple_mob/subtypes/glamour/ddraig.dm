@@ -8,8 +8,6 @@
 	icon_living = "ddraig"
 	icon_state = "ddraig"
 	icon_rest = "ddraig_rest"
-	old_x = -32
-	old_y = 0
 	vis_height = 92
 	melee_damage_lower = 20
 	melee_damage_upper = 15

@@ -348,8 +348,8 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/gamma)
 
 	pixel_x = -16
 	pixel_y = -16
-	old_x = -16
-	old_y = -16
+	default_pixel_x = -16
+	default_pixel_y = -16
 	evo_point = 1200
 	evo_limit = 1500
 	next = "/mob/living/simple_mob/metroid/juvenile/omega"
@@ -428,8 +428,6 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/zeta)
 	max_n2 = 0
 	unsuitable_atoms_damage = 0
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -515,8 +513,8 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/omega)
 
 	pixel_x = -16
 	pixel_y = -16
-	old_x = -16
-	old_y = -16
+	default_pixel_x = -16
+	default_pixel_y = -16
 	evo_point = 1200
 	evo_limit = INFINITY
 	next = null

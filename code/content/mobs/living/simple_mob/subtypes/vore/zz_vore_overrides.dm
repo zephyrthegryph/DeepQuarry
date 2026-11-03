@@ -12,8 +12,8 @@
  *
  *	vore_active = 1
  *	icon = 'icons/mob/vore64x64.dmi'
- *	old_x = -16
- *	old_y = -16
+ *	default_pixel_x = -16
+ *	default_pixel_y = -16
  *	pixel_x = -16
  *	pixel_y = -16
  *	vore_pounce_chance = 50
@@ -69,8 +69,6 @@
 	icon_living = "queen_s"
 	icon_dead = "queen_dead"
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0

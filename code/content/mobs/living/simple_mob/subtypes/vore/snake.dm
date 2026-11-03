@@ -40,8 +40,6 @@
 	response_disarm = "tries to shove"
 	response_harm = "hits"
 
-	old_x = -16
-	old_y = -16
 	default_pixel_x = -16
 	default_pixel_y = -16
 	pixel_x = -16

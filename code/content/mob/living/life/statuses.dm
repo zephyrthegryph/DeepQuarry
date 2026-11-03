@@ -60,8 +60,8 @@
 /mob/proc/status_jittery_ended()
 	set_jittery_shaking(FALSE)
 	// The jittering mob's pixel offsets reset.
-	set_pixel_x(old_x)
-	set_pixel_y(old_y)
+	set_pixel_x(default_pixel_x)
+	set_pixel_y(MOB_REST_PIXEL_Y(src))
 
 // --- Presentation, rates and scaling ---------------------------------------------------------
 

@@ -51,7 +51,6 @@
 	if(default_pixel_x != sprite_datum.pixel_x)
 		set_default_pixel_x(sprite_datum.pixel_x)
 		set_pixel_x(sprite_datum.pixel_x)
-		old_x = sprite_datum.pixel_x
 	if(!(rest_style in sprite_datum.rest_sprite_options))
 		set_rest_style("Default")
 

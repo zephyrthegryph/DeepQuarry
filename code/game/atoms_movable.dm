@@ -17,8 +17,6 @@
 	var/icon_scale_y = DEFAULT_ICON_SCALE_Y // Used to scale icons up or down vertically in update_transform().
 	// icon_rotation (rotates icons in update_transform()) lives in code/datums/sparse_vars/movable_misc.dm
 	var/icon_expected_width = 32
-	var/old_x = 0
-	var/old_y = 0
 	var/datum/riding/riding_datum = null
 	var/movement_type = NONE
 

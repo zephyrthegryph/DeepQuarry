@@ -27,8 +27,6 @@ CAPABILITIES(/mob/living/simple_mob/clowns)
 	icon_gib = "generic_gib"
 	vis_height = 64
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -82,8 +80,6 @@ CAPABILITIES(/mob/living/simple_mob/clowns)
 	icon_gib = "generic_gib"
 	vis_height = 64
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -100,8 +96,6 @@ CAPABILITIES(/mob/living/simple_mob/clowns)
 	icon_gib = "generic_gib"
 	vis_height = 64
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -118,8 +112,6 @@ CAPABILITIES(/mob/living/simple_mob/clowns)
 	icon_gib = "generic_gib"
 	vis_height = 64
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -136,8 +128,6 @@ CAPABILITIES(/mob/living/simple_mob/clowns)
 	icon_gib = "generic_gib"
 	vis_height = 64
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -166,8 +156,6 @@ CAPABILITIES(/mob/living/simple_mob/clowns)
 	icon_gib = "generic_gib"
 	vis_height = 64
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -184,8 +172,6 @@ CAPABILITIES(/mob/living/simple_mob/clowns)
 	icon_gib = "generic_gib"
 	vis_height = 64
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -214,8 +200,6 @@ CAPABILITIES(/mob/living/simple_mob/clowns)
 	icon_gib = "generic_gib"
 	vis_height = 64
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -232,8 +216,6 @@ CAPABILITIES(/mob/living/simple_mob/clowns)
 	icon_gib = "generic_gib"
 	vis_height = 64
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -274,8 +256,6 @@ CAPABILITIES(/mob/living/simple_mob/clowns)
 	icon_gib = "generic_gib"
 	vis_height = 64
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -292,8 +272,6 @@ CAPABILITIES(/mob/living/simple_mob/clowns)
 	icon_gib = "generic_gib"
 	vis_height = 64
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -310,8 +288,6 @@ CAPABILITIES(/mob/living/simple_mob/clowns)
 	icon_gib = "generic_gib"
 	vis_height = 64
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -328,8 +304,6 @@ CAPABILITIES(/mob/living/simple_mob/clowns)
 	icon_gib = "generic_gib"
 	vis_height = 96
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0

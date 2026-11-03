@@ -19,8 +19,6 @@
 	maxbodytemp = 99999
 	min_oxy = 0
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0

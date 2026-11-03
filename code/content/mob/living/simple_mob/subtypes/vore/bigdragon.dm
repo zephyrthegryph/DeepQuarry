@@ -60,8 +60,6 @@ I think I covered everything.
 	player_msg = "You can perform a charge attack by disarm intent clicking somewhere. Grab intent clicking will perform a tail sweep and fling any nearby mobs. You can fire breath with harm intent. Your attacks have cooldowns associated with them. You can heal slowly by resting. Check your abilities tab for other functions!"
 	pixel_x = -48
 	default_pixel_x = -48
-	old_x = -48
-	old_y = 0
 	vis_height = 92
 	melee_damage_lower = 35
 	melee_damage_upper = 25

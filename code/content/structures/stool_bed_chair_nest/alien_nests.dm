@@ -20,7 +20,7 @@
 					MSG_OTHERS(span_notice("[user.name] pulls [buckled_mob.name] free from the sticky nest!")), \
 					MSG_BLIND(span_notice("You hear squelching...")))
 				buckled_mob.set_pixel_y(0)
-				buckled_mob.old_y = 0
+				sparse_set_or(buckled_mob, buckle_pixel_y, 0, 0)
 				unbuckle_mob(buckled_mob)
 			else
 				if(!cooldown_ready(buckled_mob, last_special))
@@ -38,7 +38,7 @@
 	if(user?.buckled_to() == src)
 		cooldown_start(buckled_mob, last_special, NEST_RESIST_TIME)
 		buckled_mob.set_pixel_y(0)
-		buckled_mob.old_y = 0
+		sparse_set_or(buckled_mob, buckle_pixel_y, 0, 0)
 		unbuckle_mob(buckled_mob)
 
 #undef NEST_RESIST_TIME
@@ -67,7 +67,7 @@
 	M.forceMove(src.loc)
 	buckle_mob(M, authority = GLOB.authority_forced)
 	M.set_pixel_y(6)
-	M.old_y = 6
+	sparse_set_or(M, buckle_pixel_y, 6, 0)
 	src.add_fingerprint(user)
 	return
 
