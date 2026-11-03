@@ -129,12 +129,9 @@
 	TEST_ASSERT(!program.airlock_program.needs_processing(), "the port's airlock is cycling with nobody about")
 	TEST_ASSERT(!program.needs_processing(), "a docked airlock port kept stepping")
 
-/// An empty cryopod's despawn watch stops, and an everburn candle has no burn step.
-/datum/unit_test/dq_idle_cryopod_and_everburn_rest
+/// An empty cryopod's despawn watch stops.
+/datum/unit_test/dq_idle_cryopod_rests
 
-/datum/unit_test/dq_idle_cryopod_and_everburn_rest/Run()
+/datum/unit_test/dq_idle_cryopod_rests/Run()
 	var/obj/machinery/cryopod/pod = allocate(/obj/machinery/cryopod, test_floor())
 	TEST_ASSERT_EQUAL(pod.work_step(null), PROCESS_KILL, "an empty cryopod kept its despawn watch running")
-	var/obj/item/flame/candle/everburn/candle = allocate(/obj/item/flame/candle/everburn, test_floor())
-	TEST_ASSERT(candle.lit, "the everburn candle is not lit")
-	TEST_ASSERT(!candle.burns_fuel, "the everburn candle still burns fuel every 2 s")

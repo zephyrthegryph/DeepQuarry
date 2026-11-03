@@ -1,4 +1,4 @@
 author: "zephyrthegryph"
 delete-after: true
 changes:
-  - code_imp: "An idle server does less: turrets beside mobs they will not shoot, docked airlock ports, empty cryopods, everburn candles and the waiting arrivals shuttle stop polling, and the latency sweep backs off atoms it keeps refusing."
+  - code_imp: "An idle server does less: turrets beside mobs they will not shoot, docked airlock ports, empty cryopods and the waiting arrivals shuttle stop polling, and the latency sweep backs off atoms it keeps refusing."

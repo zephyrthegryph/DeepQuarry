@@ -130,11 +130,8 @@ CAPABILITIES(/obj/item/flame/candle)
 /obj/item/flame/candle/candelabra/look_state()
 	return "candelabra[appearance_candelabra_suffix()]"
 
-// The permanent light has no fuel state to advance, so it has no burn step: burning as a lit candle
-// exposed its turf as a 700 K hotspot forever, keeping whole atmos regions awake.
 /obj/item/flame/candle/everburn
 	wax = 99999
-	burns_fuel = FALSE
 
 /// Declared setup: light everburn, after its parents initialize.
 /obj/item/flame/candle/everburn/proc/light_everburn()
@@ -142,11 +139,18 @@ CAPABILITIES(/obj/item/flame/candle)
 
 /obj/item/flame/candle/candelabra/everburn
 	wax = 99999
-	burns_fuel = FALSE
 
 /// Declared setup: light everburn, after its parents initialize.
 /obj/item/flame/candle/candelabra/everburn/proc/light_everburn()
 	light(span_notice("\The [src] mysteriously lights itself!."))
+
+/obj/item/flame/candle/everburn/flame_step(datum/act/timer/A)
+	// The permanent light has no fuel state to advance. Burning its step as a lit candle
+	// exposed its turf as a 700 K hotspot forever, keeping whole atmos regions awake.
+	return
+
+/obj/item/flame/candle/candelabra/everburn/flame_step(datum/act/timer/A)
+	return
 
 CAPABILITIES(/obj/item/flame/candle/everburn)
 	setup(PROC_REF(light_everburn))

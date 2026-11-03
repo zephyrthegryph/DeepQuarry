@@ -16,11 +16,9 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 
 /// Burns (flame_step) every 2 s while lit.
 /obj/item/flame/var/lit = 0
-/// It has fuel to burn: FALSE for a flame that never burns down (an everburn candle), whose lit state needs no step.
-/obj/item/flame/var/burns_fuel = TRUE
 
 CAPABILITIES(/obj/item/flame)
-	every(2 SECONDS, then(PROC_REF(flame_step)), when = all_of(nameof(lit), nameof(burns_fuel)))
+	every(2 SECONDS, then(PROC_REF(flame_step)), when = nameof(lit))
 
 /// One burn step of a lit flame; each kind of flame overrides it with what it burns.
 /obj/item/flame/proc/flame_step(datum/act/timer/A)
