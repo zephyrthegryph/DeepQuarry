@@ -1,0 +1,4 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "Heat, cold, fire, pressure and body-temperature hazards (and animals' air limits) now take effect the moment the air changes or you step into it, instead of up to 6 seconds later."

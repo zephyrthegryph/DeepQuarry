@@ -431,6 +431,7 @@
 	if(QDELETED(src) || W != src.body?.body_heat_watch)
 		return
 	body_heat_changed()
+	air_hazard_now("its body temperature crossed a level", breath = FALSE)
 
 /// The body temperature moved into another band: the steps that read it are due again.
 /mob/living/proc/body_heat_changed()
