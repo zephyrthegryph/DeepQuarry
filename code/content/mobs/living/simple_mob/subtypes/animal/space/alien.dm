@@ -64,7 +64,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/alien)
 	endurance = 200
 
 	pixel_x = -16
-	old_x = -16
+	default_pixel_x = -16
 	icon_expected_width = 64
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/alien/sentinel/praetorian)
@@ -96,7 +96,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/alien/sentinel/praetorian)
 	endurance = 400
 
 	pixel_x = -16
-	old_x = -16
 	icon_expected_width = 64
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/alien/queen/empress)
@@ -116,7 +115,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/alien/queen/empress)
 	melee_damage_upper = 25
 
 	pixel_x = -32
-	old_x = -32
+	default_pixel_x = -32
 	icon_expected_width = 96
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/alien/queen/empress/mother)

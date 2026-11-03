@@ -1165,16 +1165,16 @@ CAPABILITIES(/mob/living/carbon/human/dq_test_status_probe)
 /datum/unit_test/life_om/germs_catch_up_on_bio_time/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
-	H.germ_level = 0
+	H.set_germs(0)
 	sparse_set(H, germs_rolled_at, clock_now(H, CLOCK_BIO) - 20 * LIFE_CYCLE)
 	H.life_germs()
-	TEST_ASSERT(H.germ_level >= 5 && H.germ_level <= 7, "20 cycles at 30% should give 6 germs, gave [H.germ_level]")
+	TEST_ASSERT(H.germs() >= 5 && H.germs() <= 7, "20 cycles at 30% should give 6 germs, gave [H.germs()]")
 	var/datum/stasis_source = new
 	hold(H, STAT_CLOCK_RATE_BIO, 0, stasis_source, clock = HOLD_CLOCK_WORLD)
-	var/level = H.germ_level
+	var/level = H.germs()
 	life_test_advance(LIFE_CYCLE_SECONDS * 20)
 	H.life_germs()
-	TEST_ASSERT(H.germ_level - level <= 1, "a stopped biology clock charges at most the one roll, gained [H.germ_level - level]")
+	TEST_ASSERT(H.germs() - level <= 1, "a stopped biology clock charges at most the one roll, gained [H.germs() - level]")
 	qdel(stasis_source)
 
 #undef LIFE_SEQ

@@ -13,7 +13,7 @@
 	life_test_advance(0.5)
 	TEST_ASSERT(!H.has_status(STAT_JITTERY), "the dead stop jittering")
 	TEST_ASSERT(!H.jittery_shaking, "and the shake parks")
-	TEST_ASSERT_EQUAL(H.pixel_x, H.old_x, "with the offset reset")
+	TEST_ASSERT_EQUAL(H.pixel_x, H.default_pixel_x, "with the offset reset")
 
 /// The transform animation plays its drill sounds 0.8 s apart, then ends the lockdown it started.
 /datum/unit_test/life_om/robot_transform_sounds_end_the_lockdown

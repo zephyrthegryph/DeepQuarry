@@ -28,7 +28,7 @@
 /obj/structure/vehiclecage/proc/gather_mapped_vehicle()
 	if(my_vehicle_type)
 		for(var/obj/I in get_turf(src))
-			if(I.density || I.anchored || I == src || !I.simulated || !istype(I, my_vehicle_type))
+			if(I.density || I.anchored || I == src || !atom_rules_of(I).simulated || !istype(I, my_vehicle_type))
 				continue
 			load_vehicle(I)
 
@@ -91,7 +91,7 @@ CAPABILITIES(/obj/structure/vehiclecage)
 	new /obj/item/stack/material/steel(src.loc, 5)
 
 	for(var/atom/movable/AM in slot_contents(CONTAINER_SLOT_VEHICLE_CAGE))
-		if(AM.simulated)
+		if(atom_rules_of(AM).simulated)
 			AM.forceMove(T)
 
 	rel_take(src, nameof(my_vehicle)) // released, not deleted: it was moved out above

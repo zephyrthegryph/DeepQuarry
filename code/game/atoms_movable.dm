@@ -6,7 +6,6 @@
 	var/tmp/last_move = null //The direction the atom last moved
 	var/anchored = FALSE
 	var/tmp/moving_diagonally
-	var/tmp/move_speed = 10
 	var/tmp/l_move_time = 0
 	l_move_time = 1
 	var/datum/thrownthing/throwing // running: set only mid-throw
@@ -17,8 +16,6 @@
 	var/icon_scale_y = DEFAULT_ICON_SCALE_Y // Used to scale icons up or down vertically in update_transform().
 	// icon_rotation (rotates icons in update_transform()) lives in code/datums/sparse_vars/movable_misc.dm
 	var/icon_expected_width = 32
-	var/old_x = 0
-	var/old_y = 0
 	var/datum/riding/riding_datum = null
 	var/movement_type = NONE
 
@@ -297,7 +294,6 @@
 		Moved(oldloc, direct, FALSE, movetime ? movetime : MOVE_GLIDE_CALC(glide_size, moving_diagonally) )
 
 	// Update timers/cooldown stuff
-	move_speed = world.time - l_move_time
 	STAMP(src, l_move_time, CLOCK_WORLD)
 	last_move = direct // The direction you last moved
 	// set_dir(direct) //Don't think this is necessary

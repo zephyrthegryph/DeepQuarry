@@ -137,7 +137,7 @@
 		H.mend(TREAT_TISSUE_REPAIR, H.injury_load(INJURY_CATEGORY_PHYSICAL) * 0.75)
 		H.mend(TREAT_ANTITOXIN, H.injury_load(INJURY_CATEGORY_TOXIC) * 0.75)
 		H.mend(TREAT_GENETIC_REPAIR, H.injury_load(INJURY_CATEGORY_GENETIC) * 0.75)
-		H.germ_level = 0 //Take away the germs, or we'll die AGAIN
+		H.set_germs(0) //Take away the germs, or we'll die AGAIN
 		H.vessel.add_reagent(REAGENT_ID_BLOOD,blood_volume-H.vessel.total_volume)
 		for(var/obj/item/organ/external/bp in H.organs)
 			bp.bandage()

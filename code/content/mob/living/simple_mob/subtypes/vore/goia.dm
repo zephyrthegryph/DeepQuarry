@@ -19,8 +19,6 @@
 	friendly = list("nuzzles", "noses softly at", "noseboops", "headbumps against", "nibbles affectionately on")
 	has_eye_glow = TRUE //(evil)
 
-	old_x = 0
-	old_y = 0
 	default_pixel_x = 0
 	pixel_x = 0
 	pixel_y = 0

@@ -25,8 +25,6 @@
 	friendly = list("nuzzles", "slobberlicks", "noses softly at", "noseboops", "headbumps against", "leans on", "nibbles affectionately on")
 	movement_cooldown = -2.5
 	melee_attack_delay = 0
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -123,8 +121,6 @@
 	response_harm = "bites"
 	attacktext = list("punched","clawed")
 	vore_active = 0
-	old_x = 0
-	old_y = 0
 	default_pixel_x = 0
 	pixel_x = 0
 	pixel_y = 0
@@ -298,8 +294,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/ranged/lmg)
 	response_disarm = "shoves"
 	response_harm = "bites"
 	attacktext = list("punched","clawed")
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -391,8 +385,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur/ranged/hmg)
 	response_disarm = "shoves"
 	response_harm = "bites"
 	attacktext = list("punched","clawed")
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -437,8 +429,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur/ranged/hmg)
 	icon_living = "trooper_rpg"
 	icon_state = "trooper_rpg"
 	icon_rest = "trooper_rpg"
-	old_x = 0
-	old_y = 0
 	default_pixel_x = 0
 	pixel_x = 0
 	pixel_y = 0
@@ -475,8 +465,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur/ranged/hmg)
 	response_harm = "bites"
 	attacktext = list("hit","struck")
 	vore_active = 0
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -617,8 +605,6 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 	var/scent_strength = 5 //How much can a hungry pitcher confuse nearby people?
 	COOLDOWN_DECLARE(lifechecks_cooldown) //Throttle to limit vore/hungry proc calls
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -648,8 +634,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole_obelisk)
 	icon_living = "monolith"
 	icon_dead = "monolith-dead"
 	icon = 'icons/blackhole/blackhole32x96.dmi'
-	old_x = 0
-	old_y = 0
 	default_pixel_x = 0
 	pixel_x = 0
 	pixel_y = 0

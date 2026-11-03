@@ -25,8 +25,6 @@
 	melee_damage_lower = 7
 	attack_injury_kind = INJURY_PIERCE
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0

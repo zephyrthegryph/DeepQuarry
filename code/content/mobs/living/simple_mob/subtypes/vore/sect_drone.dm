@@ -62,8 +62,6 @@
 	attacktext = list("slashed")
 	friendly = list("nuzzles", "caresses", "headbumps against", "leans against", "nibbles affectionately on", "antennae tickles") // D'awww
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0

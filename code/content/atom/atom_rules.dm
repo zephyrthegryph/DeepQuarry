@@ -6,12 +6,13 @@
 //   emp_integrity_factor / emp_protection   how an EMP treats it
 //   conflict_id   the element that excludes a second of its kind
 //   light_system   which light system it uses
+//   simulated   the world acts on it (FALSE: an abstract marker, overlay or helper that moves, explosions, shuttles and the rest skip)
 
 STATIC_ENTRY(atom_rules)
 
-/proc/atom_rules(bubble_icon = null, throwpass = null, emp_integrity_factor = null, emp_protection = null, conflict_id = null, light_system = null, description_antag = null, description_fluff = null, price_tag = null, catalogue_data = null)
+/proc/atom_rules(bubble_icon = null, throwpass = null, emp_integrity_factor = null, emp_protection = null, conflict_id = null, light_system = null, description_antag = null, description_fluff = null, price_tag = null, catalogue_data = null, simulated = null)
 	RETURN_TYPE(/datum/entry)
-	return entry_make(ENTRY_ATOM_RULES, null, list("bubble_icon" = bubble_icon, "throwpass" = throwpass, "emp_integrity_factor" = emp_integrity_factor, "emp_protection" = emp_protection, "conflict_id" = conflict_id, "light_system" = light_system, "description_antag" = description_antag, "description_fluff" = description_fluff, "price_tag" = price_tag, "catalogue_data" = catalogue_data))
+	return entry_make(ENTRY_ATOM_RULES, null, list("bubble_icon" = bubble_icon, "throwpass" = throwpass, "emp_integrity_factor" = emp_integrity_factor, "emp_protection" = emp_protection, "conflict_id" = conflict_id, "light_system" = light_system, "description_antag" = description_antag, "description_fluff" = description_fluff, "price_tag" = price_tag, "catalogue_data" = catalogue_data, "simulated" = simulated))
 
 /datum/type_trait/atom_rules
 	var/catalogue_data = null
@@ -24,6 +25,7 @@ STATIC_ENTRY(atom_rules)
 	var/description_antag = null
 	var/description_fluff = null
 	var/price_tag = null
+	var/simulated = TRUE
 
 /datum/type_trait/atom_rules/copy_values(datum/type_trait/atom_rules/into)
 	into.catalogue_data = catalogue_data
@@ -36,13 +38,14 @@ STATIC_ENTRY(atom_rules)
 	into.description_antag = description_antag
 	into.description_fluff = description_fluff
 	into.price_tag = price_tag
+	into.simulated = simulated
 
 /datum/entry_engine/type_trait/atom_rules
 	kind = ENTRY_ATOM_RULES
 	trait_type = /datum/type_trait/atom_rules
 	publish_key = ATOM_RULES_KEY
 	base_type = /atom
-	var_names = list("catalogue_data" = "catalogue_data", "bubble_icon" = "bubble_icon", "throwpass" = "throwpass", "emp_integrity_factor" = "emp_integrity_factor", "emp_protection_flags" = "emp_protection", "conflict_id" = "conflict_id", "light_system" = "light_system", "description_antag" = "description_antag", "description_fluff" = "description_fluff", "price_tag" = "price_tag")
+	var_names = list("catalogue_data" = "catalogue_data", "bubble_icon" = "bubble_icon", "throwpass" = "throwpass", "emp_integrity_factor" = "emp_integrity_factor", "emp_protection_flags" = "emp_protection", "conflict_id" = "conflict_id", "light_system" = "light_system", "description_antag" = "description_antag", "description_fluff" = "description_fluff", "price_tag" = "price_tag", "simulated" = "simulated")
 
 /// The holder's atom_rules values (its own once one was set at run time). Read only.
 READS_AS(/proc/atom_rules_of, ATOM_RULES_KEY)
@@ -95,3 +98,13 @@ CAPABILITIES(/obj/machinery/computer/power_monitor/throwpass)
 
 /atom/proc/set_catalogue_data(value)
 	return set_trait(src, ENTRY_ATOM_RULES, "catalogue_data", value)
+
+/atom/proc/set_simulated(value)
+	return set_trait(src, ENTRY_ATOM_RULES, "simulated", value)
+
+// Abstract helpers with no block of their own elsewhere: the view dummy (code/host, which may not name atom_rules) and the skybox.
+CAPABILITIES(/mob/dview)
+	configure(atom_rules(simulated = FALSE))
+
+CAPABILITIES(/atom/movable/screen/skybox)
+	configure(atom_rules(simulated = FALSE))

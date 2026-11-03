@@ -10,8 +10,6 @@
 	icon_living = "scel_orange"
 	icon_state = "scel_orange"
 	icon_rest = "scel_orange-rest"
-	old_x = -48
-	old_y = 0
 	vis_height = 92
 	friendly = list("nudges", "sniffs on", "rumbles softly at", "nuzzles")
 	default_pixel_x = -48

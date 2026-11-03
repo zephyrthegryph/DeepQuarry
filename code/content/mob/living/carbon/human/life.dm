@@ -1419,8 +1419,8 @@
 			src.status_at_least(STAT_PARALYZED, 5)
 	// If you're dirty, your gloves will become dirty, too.
 	var/obj/item/gloves = src.get_equipped_item(SLOT_ID_GLOVES)
-	if(gloves && src.germ_level > gloves.germ_level && prob(10))
-		gloves.germ_level += 1
+	if(gloves && prob(10) && germs() > gloves.germs())
+		gloves.adjust_germ_level(1)
 
 
 /// A24: nothing for others to see (no hud_updateflag) and nothing on our own screen that moves
@@ -2292,8 +2292,11 @@
 			adjust_nutrition(hunger_rate_of(src)/-10)
 
 	// Moving around increases germ_level faster
-	if(germ_level < GERM_LEVEL_MOVE_CAP && prob(8))
-		germ_level++
+	// The roll first: the slot read stays off most moves.
+	if(prob(8))
+		var/germs = germs()
+		if(germs < GERM_LEVEL_MOVE_CAP)
+			set_germs(germs + 1)
 
 
 /mob/living/carbon

@@ -39,7 +39,7 @@
 	play_sfx(src, SFX_EFFECTS_COSMIC_ENERGY)
 	COOLDOWN_START(src, pulse_cooldown, pulse_delay)
 	for(var/mob/living/carbon/human/person in viewers(5, src))
-		person.germ_level += rand(5, 10)
+		person.adjust_germ_level(rand(5, 10))
 		if(HAS_SYNTHETIC_BIOLOGY(person))
 			continue
 		if(person.is_mouth_covered())

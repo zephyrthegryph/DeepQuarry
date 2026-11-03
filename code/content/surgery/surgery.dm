@@ -360,7 +360,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/surgical_step)
 /proc/spread_germs_to_organ(obj/item/organ/external/E, mob/living/carbon/human/user)
 	if(!istype(user) || !istype(E))
 		return
-	var/germ_level = user.germ_level
+	var/germ_level = user.germs()
 	if(user.get_equipped_item(SLOT_ID_GLOVES))
-		germ_level = user.get_equipped_item(SLOT_ID_GLOVES).germ_level
+		germ_level = user.get_equipped_item(SLOT_ID_GLOVES).germs()
 	E.germ_level = max(germ_level, E.germ_level)

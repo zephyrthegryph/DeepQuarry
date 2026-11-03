@@ -927,7 +927,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 	var/list/current_wounds = get_wounds()
 	for(var/datum/affliction/wound/W as anything in current_wounds)
 		//Open wounds can become infected
-		if(owner.germ_level > W.germ_level && W.infection_check())
+		if(owner.germs() > W.germ_level && W.infection_check())
 			W.germ_level += cycles
 
 	if(!antibiotics)

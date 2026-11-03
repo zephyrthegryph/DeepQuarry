@@ -263,7 +263,7 @@ CAPABILITIES(/obj/singularity)
 
 /obj/singularity/proc/eat()
 	for(var/atom/X as anything in orange(grav_pull, src))
-		if(!X.simulated)
+		if(!atom_rules_of(X).simulated)
 			continue
 		var/dist = get_dist(X, src)
 		if(dist > consume_range)

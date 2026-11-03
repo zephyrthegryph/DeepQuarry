@@ -59,7 +59,7 @@
 /// Queue `AM` for a blast packet this epoch. Each atom is hit once, at the
 /// strongest severity that reached it. Bomb-proof atoms are never queued.
 /datum/system/explosions/proc/queue_blast(atom/movable/AM, severity)
-	if(!AM || QDELETED(AM) || !AM.simulated)
+	if(!AM || QDELETED(AM) || !atom_rules_of(AM).simulated)
 		return
 	if(isobj(AM))
 		var/obj/O = AM

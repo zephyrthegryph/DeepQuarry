@@ -255,7 +255,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 		return
 	if(material.antimicrobial_activity > 0)
 		affected.germ_level = max(0, affected.germ_level - material.antimicrobial_activity * 2)
-		target.germ_level = max(0, target.germ_level - material.antimicrobial_activity)
+		target.adjust_germ_level(-material.antimicrobial_activity)
 	if(material.hemostatic_activity >= 50)
 		affected.organ_clamp()
 		for(var/datum/affliction/wound/internal_bleeding/wound in affected.get_wounds())

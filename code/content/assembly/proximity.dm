@@ -36,7 +36,8 @@ MATERIAL_MIX(/obj/item/assembly/prox_sensor, list(MAT_STEEL = 800, MAT_GLASS = 2
 		return
 	if (istype(AM, /obj/effect/beam))
 		return
-	if (!isobserver(AM) && AM.move_speed < 12)
+	// Moved() runs before the mover restamps l_move_time, so this is the gap since its previous step.
+	if (!isobserver(AM) && ELAPSED(AM, l_move_time, CLOCK_WORLD) < 1.2 SECONDS)
 		sense()
 
 /obj/item/assembly/prox_sensor/proc/sense()
@@ -50,9 +51,10 @@ MATERIAL_MIX(/obj/item/assembly/prox_sensor, list(MAT_STEEL = 800, MAT_GLASS = 2
 /obj/item/assembly/prox_sensor/proc/prox_sensor_step(datum/act/timer/A)
 	if(scanning)
 		var/turf/mainloc = get_turf(src)
+		// Any living mob in range (the old per-mob move_speed gate, the gap between its last two steps, passed for anything at walking pace or that never moved).
 		for(var/mob/living/L in range(range,mainloc))
-			if (L.move_speed < 12)
-				sense()
+			sense()
+			break
 
 	if(timing && (time >= 0))
 		set_time(time - 1)

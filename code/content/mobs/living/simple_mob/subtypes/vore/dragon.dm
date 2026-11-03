@@ -32,8 +32,6 @@
 	response_disarm = "tries to shove"
 	response_harm = "hits"
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -147,8 +145,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dragon/space)
 	icon = 'icons/mob/vore_grayscale_drake.dmi'
 	vis_height = 115
 
-	old_x = -57
-	old_y = 0
 	default_pixel_x = -57
 	pixel_x = -57
 	pixel_y = 0

@@ -3,7 +3,6 @@
 	icon = 'icons/mob/screen1.dmi'
 	icon_state = "x2"
 	anchored = TRUE
-	simulated = FALSE
 	invisibility = INVISIBILITY_ABSTRACT
 	var/delete_me = FALSE
 	/// The first part of its tag (landmark_tag()).
@@ -15,6 +14,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/landmark, REGISTRY_LATEJOIN)
 
 CAPABILITIES(/obj/effect/landmark)
 	configure(movable_motion(unacidable = TRUE))
+	configure(atom_rules(simulated = FALSE))
 	setup(PROC_REF(simulate_latejoin))
 	setup(PROC_REF(record_named_coordinate))
 	setup(PROC_REF(record_special_coordinates))
@@ -96,7 +96,7 @@ CAPABILITIES(/obj/effect/landmark)
 /// The latejoin landmark is simulated, since its spawn point has to move (setup hook; always use the registry with get_turf).
 /obj/effect/landmark/proc/simulate_latejoin()
 	if(name == "JoinLate")
-		simulated = TRUE
+		set_simulated(TRUE)
 
 // Landmarks survive deletion unless flagged delete_me or forced.
 /obj/effect/landmark/lifecycle_keep(force)

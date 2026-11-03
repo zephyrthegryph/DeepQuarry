@@ -21,8 +21,6 @@
 	friendly = list("nuzzles", "slobberlicks", "noses softly at", "noseboops", "headbumps against", "leans on", "nibbles affectionately on")
 	movement_cooldown = -2.5
 	melee_attack_delay = 0
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -134,8 +132,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/otie/syndicate/chubby)
 	icon_living = "synddog_wht"
 	icon_state = "synddog_wht"
 	icon_rest = "synddog_wht_rest"
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -188,8 +184,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/wolf/direwolf/syndicate/black)
 	response_harm = "bites"
 	attacktext = list("punched","clawed")
 	random_skin = 0
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0

@@ -219,3 +219,6 @@ sparse(/mob, accumulated_rads, type = num)
 
 /mob/proc/set_accumulated_rads(amount)
 	return sparse_set_or(src, accumulated_rads, amount, 0)
+
+// A bed or nest raising its buckled mob (the old /atom/movable old_y): added to default_pixel_y as the offset a shake or float returns to.
+sparse(/mob, buckle_pixel_y, type = num)

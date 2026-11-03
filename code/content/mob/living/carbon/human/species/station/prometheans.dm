@@ -292,7 +292,7 @@
 		sparse_set_or(H, bloody_hands, 0, 0)
 		gained += rand(3, 10)
 	// Prometheans themselves aren't very safe places for other biota.
-	H.germ_level = 0
+	H.set_germs(0)
 	if(gained)
 		H.adjust_nutrition(gained)
 
