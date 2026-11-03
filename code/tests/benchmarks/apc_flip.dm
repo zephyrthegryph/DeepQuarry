@@ -14,9 +14,9 @@
 	if(!set_powered(on))
 		return FALSE
 	if(power_lost())
-		PUBLISH_LEGACY(src, /datum/notice/machinery_power_lost)
+		PUBLISH(src, machinery_power_lost)
 	else
-		PUBLISH_LEGACY(src, /datum/notice/machinery_power_restored)
+		PUBLISH(src, machinery_power_restored)
 	update_heat_output()
 	return TRUE
 

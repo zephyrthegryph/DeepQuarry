@@ -369,8 +369,8 @@ CAPABILITIES(/obj/belly)
 			cycle_sloshed = TRUE
 	if(dq_get_belly_cycles(thing)) // Reset only a count that exists: no component per eaten thing.
 		dq_set_belly_cycles(thing, 0) //reset cycle count
-	if(istype(thing, /mob/observer)) //Ports CHOMPStation PR#3072
-		if(desc) //Ports CHOMPStation PR#4772
+	if(istype(thing, /mob/observer))
+		if(desc)
 			//Allow ghosts see where they are if they're still getting squished along inside.
 			to_chat(thing, span_vnotice(span_bold("[belly_format_string(desc, thing)]")))
 

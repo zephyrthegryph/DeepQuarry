@@ -1,7 +1,7 @@
 /obj/machinery/maint_vendor
 	name = "\improper Large Decrepit Machine"
 	desc = "A long since abandoned \"trash 4 cash\" rewards kiosk. Now featuring a state of the art, monochrome holographic tube display!"
-	icon = 'code/modules/maint_recycler/icons/maint_vendor.dmi'
+	icon = 'code/content/maint_recycler/icons/maint_vendor.dmi'
 	icon_state = "default"
 
 	anchored = TRUE

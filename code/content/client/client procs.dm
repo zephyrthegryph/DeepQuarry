@@ -894,7 +894,7 @@ GLOBAL_VAR_INIT(login_seq, 0)
 	spawn (10) //removing this spawn causes all clients to not get verbs. // ALLOW(scheduler): login-ordering hack: the delay lets the client's verb delivery finish first, and without it no client gets its verbs (a login hook replaces it)
 
 		//load info on what assets the client has
-		src << browse('code/modules/asset_cache/validate_assets.html', "window=asset_cache_browser")
+		src << browse('code/content/asset_cache/validate_assets.html', "window=asset_cache_browser")
 
 		//Precache the client with all other assets slowly, so as to not block other browse() calls
 		if (CONFIG_GET(flag/asset_simple_preload))

@@ -144,6 +144,9 @@ CAPABILITIES(/obj/e4_fixture/switch)
 /obj/e4_fixture/switch/proc/op_heard(datum/act/A)
 	ops_heard++
 
+/// A plain one-payload occurrence (was the old atom/Bumped() echo; walk-ins are /datum/notice/bumped now). The e4 twin-delivery test drives it.
+ACTION(atom_bumped, bumped, FIXED, notice = /datum/notice/atom_bumped)
+
 /// The twin pair of the bridge test: an entity that listens for the notice of an om event.
 /datum/om_test_entity/e4_twin
 	var/notices_heard = 0

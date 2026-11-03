@@ -151,7 +151,7 @@ SETTER(/atom, opacity)
 		return
 	. = glow_of(src).power
 	set_trait(src, ENTRY_LIGHT_GLOW, "power", new_power)
-	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_power, .)
+	PUBLISH(src, atom_update_light_power, old_power = .)
 	light_changed()
 
 /// Setter for the light range of this atom.
@@ -160,7 +160,7 @@ SETTER(/atom, opacity)
 		return
 	. = glow_of(src).range
 	set_trait(src, ENTRY_LIGHT_GLOW, "range", new_range)
-	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_range, .)
+	PUBLISH(src, atom_update_light_range, old_range = .)
 	light_changed()
 
 /// Setter for the light color of this atom.
@@ -169,7 +169,7 @@ SETTER(/atom, opacity)
 		return
 	. = glow_of(src).color
 	set_trait(src, ENTRY_LIGHT_GLOW, "color", new_color)
-	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_color, .)
+	PUBLISH(src, atom_update_light_color, old_color = .)
 	light_changed()
 
 /// Setter for whether or not this atom's light is on.
@@ -179,7 +179,7 @@ SETTER(/atom, opacity)
 	. = light_on
 	light_on = new_value
 	tracked_changed(src, nameof(light_on)) // a drawn thing that shows its lamp redraws
-	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_on, .)
+	PUBLISH(src, atom_update_light_on, old_value = .)
 	light_changed()
 SETTER(/atom, light_on)
 
@@ -193,7 +193,7 @@ sparse(/atom, light_flags, type = num)
 		return
 	. = old_value
 	sparse_set(src, light_flags, new_value || null)
-	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_flags, .)
+	PUBLISH(src, atom_update_light_flags, old_flags = .)
 
 ///Keeps track of the sources of dynamic luminosity and updates our visibility with the highest.
 /atom/movable/proc/update_dynamic_luminosity()

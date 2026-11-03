@@ -72,7 +72,7 @@ CAPABILITIES(/obj/machinery/power/fusion_core)
 		Shutdown() // clears owned_field through own_clear(): the declaration stops the work
 		return
 
-	PUBLISH_LEGACY(src, /datum/notice/hose_forcepump)
+	PUBLISH(src, hose_forcepump)
 
 	set_strength(target_field_strength)
 	process_material_sample()

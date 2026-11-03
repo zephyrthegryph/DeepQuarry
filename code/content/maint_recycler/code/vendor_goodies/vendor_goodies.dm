@@ -2,10 +2,10 @@
 /obj/item/healthanalyzer/bling
 	name = "Health Scamalyzer"
 	desc = "A fancy, gem-encrusted hand-held body scanner able to distinguish vital signs of the subject, and provide handy (and egregious) cost estimates. There's a worn warning sticker on the back stating it doesn't work on poor or ugly people."
-	icon = 'code/modules/maint_recycler/icons/goodies/recycler_goodies.dmi'
+	icon = 'code/content/maint_recycler/icons/goodies/recycler_goodies.dmi'
 	icon_state = "scamalizer"
 	item_state = "scamalizer" //
-	item_icons = list(slot_l_hand_str = 'code/modules/maint_recycler/icons/goodies/goodies_lefthand.dmi', slot_r_hand_str = 'code/modules/maint_recycler/icons/goodies/goodies_righthand.dmi')
+	item_icons = list(slot_l_hand_str = 'code/content/maint_recycler/icons/goodies/goodies_lefthand.dmi', slot_r_hand_str = 'code/content/maint_recycler/icons/goodies/goodies_righthand.dmi')
 
 #define POOR_PERSON_THRESHOLD 1000 //below this and it's over.
 /obj/item/healthanalyzer/bling/scan_mob(mob/living/M, mob/living/user)
@@ -71,8 +71,8 @@ CAPABILITIES(/obj/random/fromList/TFGuns)
 /obj/item/clothing/suit/recycling_shirt
 	name = "recycling shirt"
 	desc = "A shirt with a recycling symbol on it. This person recycles things! So ecological!"
-	icon_override = 'code/modules/maint_recycler/icons/goodies/recyclingshirt.dmi'
-	icon = 'code/modules/maint_recycler/icons/goodies/recyclingshirt.dmi'
+	icon_override = 'code/content/maint_recycler/icons/goodies/recyclingshirt.dmi'
+	icon = 'code/content/maint_recycler/icons/goodies/recyclingshirt.dmi'
 	item_state = "recycle_mob"
 	icon_state = "recycle"
 

@@ -1397,6 +1397,8 @@ banned = [
   "topic_rerun_ask = asks(/datum/prompt/kind, fields = list(...), step = \"name\") on the topic op; read the answer with A.step_value(\"name\")",
   "ban_topic_ask = asks(/datum/prompt/kind, fields = list(...), step = \"name\") on the op; repeat a step with repeats = PROC_REF(x)",
   "om_after = after(owner, delay, PROC_REF(handler), with = list(args)) (code/engine/time/after.dm)",
+  "om_changed = state is tracked setters and generated reads; watch it with on_change(nameof(v), ...)",
+  "om_raise_change = a write publishes through its tracked var; a key that is not one var is PUBLISH_CHANGE(E, key)",
   "om_after_realtime = after(null, delay, GLOBAL_PROC_REF(handler), clock = CLOCK_WORLD, with = list(args))",
   "grant_hold = grant(holder, capability, source) for a capability, ability or verb; hold(E, STAT_X, 1, source, key = K) for a keyed set",
   "grant_release = revoke(holder, capability, source); release(E, STAT_X, source, K) for a keyed set",

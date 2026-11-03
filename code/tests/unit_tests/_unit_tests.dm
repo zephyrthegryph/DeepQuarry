@@ -582,6 +582,7 @@
 #include "dq_om_core_fix_tests.dm"
 #include "dq_om_relations_tests.dm"
 #include "dq_om_notice_delivery_tests.dm"
+#include "dq_publish_notice_tests.dm"
 #include "dq_report_in_catch_tests.dm"
 #include "dq_ref_text_handles_tests.dm"
 #include "dq_item_trait_fields_tests.dm"

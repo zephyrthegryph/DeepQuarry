@@ -193,7 +193,7 @@
 	//we can not afford to runtime, since we are going to be doing sound channel reservations and if we runtime it means we have a channel allocation leak.
 	//wrap the rest of the stuff to ensure stop_playing() is called.
 	do_hearcheck()
-	PUBLISH_LEGACY(parent(), /datum/notice/instrument_start, src, user)
+	PUBLISH(parent(), instrument_start, starting_song = src, player = user)
 	elapsed_delay = 0
 	delay_by = 0
 	current_chord = 1
@@ -239,7 +239,7 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 	set_playing(FALSE)
 	if(!debug_mode)
 		compiled_chords = null
-	PUBLISH_LEGACY(parent(), /datum/notice/instrument_end, finished)
+	PUBLISH(parent(), instrument_end, finished = finished)
 	terminate_all_sounds(TRUE)
 	rel_clear(src, nameof(hearing_mobs))
 	rel_clear(src, nameof(music_player))

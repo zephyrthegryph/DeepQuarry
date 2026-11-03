@@ -241,7 +241,7 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 				new_character.add_language(lang)
 	new_character.apply_language_prefs(prey.prefs)
 
-	PUBLISH_LEGACY(new_character, /datum/notice/human_dna_finalized)
+	PUBLISH(new_character, human_dna_finalized)
 
 
 	new_character.update_transform()

@@ -86,7 +86,7 @@
   --scaling-amount: 1;
 }
 
-// DQEdit — disable tgui-core's Button transition on background-color/color/opacity.
+// disable tgui-core's Button transition on background-color/color/opacity.
 // On BYOND's embedded Chromium the transition triggers a compositor-layer promotion
 // for the button every time the cursor enters/exits. With ~30 buttons per prefs
 // window the compositor thrash makes the system cursor flicker between pointer and

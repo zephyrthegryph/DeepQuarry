@@ -12,7 +12,7 @@
 
 	// A listener of the alt-click (an experiment handler's configuration panel) handles it.
 	if(notice_wanted(target, /datum/notice/click_alt))
-		PUBLISH_LEGACY(target, /datum/notice/click_alt, src)
+		PUBLISH(target, click_alt, mob = src)
 		return TRUE
 	// If it has a custom click_alt that returns success/block, done.
 	return target.click_alt(src) & CLICK_ACTION_ANY

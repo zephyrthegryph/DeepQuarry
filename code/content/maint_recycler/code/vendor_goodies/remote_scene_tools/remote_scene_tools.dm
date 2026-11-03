@@ -14,8 +14,8 @@ why aren't these accessories?
 
 /obj/item/remote_scene_tool
 	var/tmp/obj/item/remote_scene_tool/linked
-	icon = 'code/modules/maint_recycler/icons/goodies/remote_scene_tools.dmi'
-	icon_override = 'code/modules/maint_recycler/icons/goodies/remote_scene_tools.dmi'
+	icon = 'code/content/maint_recycler/icons/goodies/remote_scene_tools.dmi'
+	icon_override = 'code/content/maint_recycler/icons/goodies/remote_scene_tools.dmi'
 	item_state = "InvalidState" //so it defaults to the empty icon
 	var/icon_root = "sticker"
 	icon_state = "sticker_inactive"
@@ -167,7 +167,7 @@ why aren't these accessories?
 		. += span_warning("\The [src]'s counterpart isn't being worn or carried by anyone!")
 
 /obj/item/storage/box/remote_scene_tools
-	icon = 'code/modules/maint_recycler/icons/goodies/remote_scene_tools.dmi'
+	icon = 'code/content/maint_recycler/icons/goodies/remote_scene_tools.dmi'
 	icon_state = "stickerbox"
 	name = "box of bluespace stickers"
 	desc = "A box containing a few bluespace stickers. Moderately obsolete, limited range dimensional bypass technology that enables remote \"things\" and \"stuff\" as if there were no distance at all between them!"

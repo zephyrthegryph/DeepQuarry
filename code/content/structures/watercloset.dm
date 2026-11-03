@@ -82,7 +82,7 @@ CAPABILITIES(/obj/structure/toilet)
 	var/obj/structure/disposalpipe/trunk/trunk = locate_on(get_turf(src), /obj/structure/disposalpipe/trunk)
 	add_disposal_connection(FALSE) //Dont show our disposal connection, and we want to handle failed flushes on our own.
 	if(trunk)
-		PUBLISH_LEGACY(src, /datum/notice/disposal_link, trunk)
+		PUBLISH(src, disposal_link, trunk = trunk)
 
 // non-basic bins, the teleplumb crystal and flushed objects drop out
 // (before phase 4 deletes the owned bin).

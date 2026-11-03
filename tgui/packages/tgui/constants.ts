@@ -12,10 +12,8 @@ type Gas = {
   color: string;
 };
 
-// VOREStation Addition start
 /** 0.0 Degrees Celsius in Kelvin */
 export const T0C = 273.15;
-// VOREStation Addition end
 
 // UI states, which are mirrored from the BYOND code.
 export const UI_INTERACTIVE = 2;
@@ -37,7 +35,6 @@ export const COLORS = {
     centcom: '#00c100',
     other: '#c38312',
   },
-  // VOREStation Addition begin
   manifest: {
     command: '#3333FF',
     security: '#8e0000',
@@ -50,7 +47,6 @@ export const COLORS = {
     miscellaneous: '#666666',
     silicon: '#222222',
   },
-  // VOREStation Addition end
   // Damage type colors
   damageType: {
     oxy: '#3498db',
@@ -91,7 +87,6 @@ export const CSS_COLORS = [
   'yellow',
 ];
 
-// VOREStation Edit Start
 // If you ever add a new radio channel, you can either manually update this, or
 // go use /client/verb/generate_tgui_radio_constants() in communications.dm.
 export const RADIO_CHANNELS = [
@@ -253,7 +248,6 @@ const GASES = [
   },
 ] as const;
 
-// VOREStation Edit End
 
 // Returns gas label based on gasId
 // Checks GASES for both id (all chars lowercase)
