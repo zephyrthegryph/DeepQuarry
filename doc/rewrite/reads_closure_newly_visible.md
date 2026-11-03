@@ -95,7 +95,7 @@ Of the 345 newly visible sites, **15** sit in engine-internal files (the directo
 | `code/modules/shuttles/emergency_shuttle_api.dm` | 3 |
 | `code/_helpers/stack_trace.dm` | 2 |
 | `code/_onclick/adjacent.dm` | 2 |
-| `code/controllers/subsystems/overlays.dm` | 2 |
+| `code/world/systems/overlays.dm` | 2 |
 
 ## Constructs the walk cannot resolve inside the engine (want a `PROC_SUMMARY`)
 
@@ -338,8 +338,8 @@ Verdigris FFI procs a handler or draw reaches (5): `vg_component_get`, `vg_entit
 - stat_input_untracked | code/controllers/subsystems/job.dm:116 | `SSjob.department_datums` | 3
 - stat_input_untracked | code/controllers/subsystems/job.dm:143 | `SSjob.department_datums` | 1
 - stat_input_untracked | code/controllers/subsystems/job.dm:148 | `SSjob.department_datums` | 1
-- stat_input_untracked | code/controllers/subsystems/overlays.dm:90 | `SSoverlays.stats` | 4
-- stat_input_untracked | code/controllers/subsystems/overlays.dm:111 | `SSoverlays.stats` | 4
+- stat_input_untracked | code/world/systems/overlays.dm:90 | `SSoverlays.stats` | 4
+- stat_input_untracked | code/world/systems/overlays.dm:111 | `SSoverlays.stats` | 4
 - stat_input_untracked | code/controllers/subsystems/tgui.dm:494 | `open_tguis` | 1
 - stat_input_untracked | code/controllers/subsystems/tgui.dm:498 | `open_tguis[].user` | 1
 - stat_input_untracked | code/datums/containment/latency_policy.dm:24 | `flags` | 4
@@ -354,7 +354,7 @@ Verdigris FFI procs a handler or draw reaches (5): `vg_component_get`, `vg_entit
 - stat_input_untracked | code/engine/refs/containment/ledger.dm:53 | `contents` | 4
 - stat_input_untracked | code/engine/refs/containment/ledger.dm:53 | `loc.contents` | 2
 - stat_input_untracked | code/engine/refs/containment/spatial.dm:115 | `contents` | 1
-- stat_input_untracked | code/game/atom/_atom.dm:509 | `?hop_not_relation` | 4
+- stat_input_untracked | code/content/atom/_atom.dm:509 | `?hop_not_relation` | 4
 - stat_input_untracked | code/game/gamemodes/technomancer/catalog.dm:280 | `using_map.player_levels` | 1
 - stat_input_untracked | code/game/jobs/whitelist.dm:154 | `GLOB.whitelist` | 10
 - stat_input_untracked | code/game/jobs/whitelist.dm:156 | `GLOB.whitelist` | 10
@@ -380,8 +380,8 @@ Verdigris FFI procs a handler or draw reaches (5): `vg_component_get`, `vg_entit
 - stat_input_untracked | code/game/objects/items/weapons/RCD.dm:220 | `?hop_not_relation` | 1
 - stat_input_untracked | code/content/items/weapons/scrolls.dm:32 | `GLOB.wizards` | 1
 - stat_input_untracked | code/game/objects/items/weapons/storage/wallets.dm:162 | `?hop_not_relation` | 8
-- stat_input_untracked | code/game/turfs/simulated/floor.dm:124 | `?hop_not_relation` | 1
-- stat_input_untracked | code/game/turfs/simulated/floor.dm:124 | `flooring.can_engrave` | 1
+- stat_input_untracked | code/content/turfs/simulated/floor.dm:124 | `?hop_not_relation` | 1
+- stat_input_untracked | code/content/turfs/simulated/floor.dm:124 | `flooring.can_engrave` | 1
 - stat_input_untracked | code/game/turfs/simulated/walls.dm:368 | `?hop_not_relation` | 1
 - stat_input_untracked | code/game/turfs/simulated/walls.dm:368 | `material.hardness` | 1
 - stat_input_untracked | code/library/mob/silicon.dm:55 | `?hop_not_relation` | 1

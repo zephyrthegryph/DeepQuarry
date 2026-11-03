@@ -443,7 +443,7 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
   baths, coatings and exotic feedstocks; engineered materials change assembly behaviour.
   See `doc/material_engineering_implementation.md`. Lathe designs can set
   `material_selectable` for a material picker.
-- **Damage.** Damageable `/obj` use the TG integrity model (`code/game/atom/atom_defense.dm`,
+- **Damage.** Damageable `/obj` use the TG integrity model (`code/content/atom/atom_defense.dm`,
   `damage_packet.dm`): set `max_integrity`, route hits through `receive_damage()`/`take_damage()`.
   The old `health`/`maxhealth` model is gone. Final shape: doc §14.
 - **Health.** Every `/mob/living` has a `/datum/body`; there are no health pools. Harm is

@@ -1,4 +1,4 @@
-// Fixtures of the client-proximity tracker (code/controllers/subsystems/proximity.dm). Compiled under UNIT_TESTS only; code/tests/unit_tests/dq_proximity_tests.dm drives them.
+// Fixtures of the client-proximity tracker (code/world/systems/proximity.dm). Compiled under UNIT_TESTS only; code/tests/unit_tests/dq_proximity_tests.dm drives them.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 

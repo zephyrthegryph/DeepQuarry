@@ -179,7 +179,7 @@ becomes a relation end declared **once, in the engine, on the base type**, using
 teardown around it). Each end is declared with its inverse where BYOND has one, and its teardown is generated into the destroy transaction (phase 5, with `client.screen` release), so the holder or the held thing leaving always removes the entry.
 Writes go only through `rel_*` verbs or an engine choke point; a raw `+=`, `-=`, `=` or `.Add()` on one of these built-ins outside the engine is a lint finding (`native_ref_write`, seeded baseline in its own commit, ratchet then hard ban).
 
-Master today: a dying **movable's** own `vis_contents` is cleared and it is removed from its `vis_locs` holders (`code/game/atoms_movable.dm:140-143`); nothing declares the rest. The reference finder and leak check skip `vis_*`
+Master today: a dying **movable's** own `vis_contents` is cleared and it is removed from its `vis_locs` holders (`code/content/atom/atoms_movable.dm:140-143`); nothing declares the rest. The reference finder and leak check skip `vis_*`
 (`code/modules/admin/view_variables/reference_tracking.dm:162-163`, `code/datums/lifecycle/leak_check.dm:40`), and `/image` is in `NOT_REFS`.
 
 **Inventory** (grep counts approximate; every row is covered before the wave closes):

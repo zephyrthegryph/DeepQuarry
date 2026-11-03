@@ -91,7 +91,7 @@ pub fn parts() -> Vec<Part> {
             line(r"^/[A-Za-z0-9_/]*/fire_act\("),
         )
         // The entry-point adapters (atom, obj, mob/living) are where fire exposure lands and is published; they are not overrides.
-        .flt(vec![Flt::DropLit("code/game/atom/_atom.dm"), Flt::DropLit("code/content/objects/obj_defense.dm"), Flt::DropLit("code/content/mob/living/living_fire.dm")]),
+        .flt(vec![Flt::DropLit("code/content/atom/_atom.dm"), Flt::DropLit("code/content/objects/obj_defense.dm"), Flt::DropLit("code/content/mob/living/living_fire.dm")]),
         // Hard ban (temperature and energy writes outside code/domains): DM outside the gas and heat domains never writes a gas's or a solid's temperature or energy.
         Part::new(
             "heat_raw_temperature_writes",
@@ -110,7 +110,7 @@ pub fn parts() -> Vec<Part> {
             line(r"^/(atom|obj|mob|area)[A-Za-z0-9_/]*/ex_act\("),
         )
         // The entry-point adapters (atom, obj, mob/living) start the explosion action and deliver the packet; they are not overrides.
-        .flt(vec![Flt::DropLit("code/game/atom/_atom.dm"), Flt::DropLit("code/content/objects/obj_defense.dm"), Flt::DropLit("code/content/mob/living/living_defense.dm")]),
+        .flt(vec![Flt::DropLit("code/content/atom/_atom.dm"), Flt::DropLit("code/content/objects/obj_defense.dm"), Flt::DropLit("code/content/mob/living/living_defense.dm")]),
         Part::new(
             "damage_ratchet_on_atom_break_set_broken_overrides_d4",
             "damage: ratchet on atom_break()/set_broken() overrides (D4)",
@@ -119,7 +119,7 @@ pub fn parts() -> Vec<Part> {
             line(r"^/[A-Za-z0-9_/]*/(atom_break|set_broken)\("),
         )
         // The entry-point adapters (atom, obj, machinery) are the one place the break is written and published; they are not overrides.
-        .flt(vec![Flt::DropLit("code/game/atom/atom_defense.dm"), Flt::DropLit("code/content/objects/obj_defense.dm"), Flt::DropLit("code/game/machinery/machinery.dm")]),
+        .flt(vec![Flt::DropLit("code/content/atom/atom_defense.dm"), Flt::DropLit("code/content/objects/obj_defense.dm"), Flt::DropLit("code/content/machinery/machinery.dm")]),
         Part::new(
             "generic_hit_ratchet_on_attack_generic_overrides",
             "generic hit: ratchet on attack_generic() overrides",
@@ -322,7 +322,7 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "interned_armour",
             "interned armour",
-            "an armour list detected. Declare armor_spec = \"key=value;...\" and read get_armor().value(key) (code/game/atom/armor.dm).",
+            "an armour list detected. Declare armor_spec = \"key=value;...\" and read get_armor().value(key) (code/content/atom/armor.dm).",
             Files::Code,
             line(r"(^\s*(var/(list/)?)?armor\s*=\s*list\s*\(|\barmor\??\[|\.armor\b\s*(=|\[|\?)|\b(own_armor|roll_armor_variance)\b)"),
         )

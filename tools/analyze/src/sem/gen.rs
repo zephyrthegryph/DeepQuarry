@@ -541,7 +541,7 @@ mod tests {
     fn unit_test_files_are_test_only() {
         assert!(test_only("code/tests/engine/fixtures.dm"));
         assert!(test_only("code/tests/unit_tests/clothing_tests.dm"));
-        assert!(!test_only("code/game/objects/items.dm"));
+        assert!(!test_only("code/content/items/items.dm"));
         // the benchmark scenarios sit under code/tests/ but generate as ordinary code
         assert!(!test_only("code/tests/benchmarks/dx_refresh.dm"));
         assert!(test_only("code/tests/unit_tests/x.dm"));

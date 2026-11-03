@@ -6,9 +6,9 @@
 //   emp_integrity_factor / emp_protection   how an EMP treats it
 //   conflict_id   the element that excludes a second of its kind
 //   light_system   which light system it uses
-//   armor_spec   its innate armour: a params string of points per key (code/game/atom/armor.dm), read through get_armor()
-//   integrity_failure   the integrity fraction at or below which it breaks (0: never; code/game/atom/atom_defense.dm)
-//   uses_integrity   it has integrity (take_damage() and the break/destroy points, code/game/atom/atom_defense.dm)
+//   armor_spec   its innate armour: a params string of points per key (code/content/atom/armor.dm), read through get_armor()
+//   integrity_failure   the integrity fraction at or below which it breaks (0: never; code/content/atom/atom_defense.dm)
+//   uses_integrity   it has integrity (take_damage() and the break/destroy points, code/content/atom/atom_defense.dm)
 //   simulated   the world acts on it (FALSE: an abstract marker, overlay or helper that moves, explosions, shuttles and the rest skip)
 
 STATIC_ENTRY(atom_rules)

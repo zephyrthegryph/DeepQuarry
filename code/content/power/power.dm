@@ -28,7 +28,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 /// machine's turf is a world registration (a network join, exactly the
 /// class `atom_materialize.dm` documents), and needs `vg_entity` bound --
 /// `vg_bind()` runs earlier in the same `on_materialize()` chain
-/// (`/atom/movable/on_materialize()`, `code/game/atoms_movable.dm`),
+/// (`/atom/movable/on_materialize()`, `code/content/atom/atoms_movable.dm`),
 /// `Initialize()` runs strictly before either. Calling this from
 /// `Initialize()` sent every anchored power machine's node with
 /// `vg_entity` still `0` -- `vg_power_bind_machine` correctly refused it

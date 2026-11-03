@@ -3,7 +3,7 @@
 // sec 3.1): SSatoms.InitAtom() runs table_initialize() instead of the proc chain.
 // A type that gains an Initialize() override fails the init lint
 // (`table_init_overrides`); rerun the tool to drop it from this list.
-// Read by build_init_from_table_types() (code/game/atom/atom_type_table.dm).
+// Read by build_init_from_table_types() (code/content/atom/atom_type_table.dm).
 
 GLOBAL_LIST_INIT(init_from_table_generated, list(
 	/obj/effect/abstract/light_spot = TRUE,

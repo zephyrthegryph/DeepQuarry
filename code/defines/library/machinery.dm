@@ -245,13 +245,13 @@ if (!(Datum.datum_flags & DF_ISPROCESSING)) {\
 #define BOMB_TESTER_MODE_DOUBLE 2
 #define BOMB_TESTER_MODE_CANISTER 3
 
-/// The entry kind of item_sounds() (code/game/objects/items.dm) and the key its run-time writes publish.
+/// The entry kind of item_sounds() (code/content/items/items.dm) and the key its run-time writes publish.
 #define ENTRY_ITEM_SOUNDS "item_sounds"
 #define ITEM_SOUNDS_KEY "item_sounds"
 /// The entry kind of light_glow() (code/modules/lighting/glow.dm) and the key its run-time writes publish.
 #define ENTRY_LIGHT_GLOW "light_glow"
 #define LIGHT_GLOW_KEY "light_glow"
-/// The entry kind of passable() (code/game/atom/_atom.dm, by CanPass) and the key its run-time writes publish.
+/// The entry kind of passable() (code/content/atom/_atom.dm, by CanPass) and the key its run-time writes publish.
 #define ENTRY_PASSABLE "passable"
 #define PASSABLE_KEY "passable"
 /// The entry kind of item_combat() (code/game/objects/items/item_combat.dm) and the key its run-time writes publish.
@@ -315,6 +315,6 @@ if (!(Datum.datum_flags & DF_ISPROCESSING)) {\
 #define ENTRY_ITEM_RULES "item_rules"
 #define ITEM_RULES_KEY "item_rules"
 
-/// The entry kind of item_protection() (code/game/objects/items.dm) and the key its run-time writes publish.
+/// The entry kind of item_protection() (code/content/items/items.dm) and the key its run-time writes publish.
 #define ENTRY_ITEM_PROTECTION "item_protection"
 #define ITEM_PROTECTION_KEY "item_protection"

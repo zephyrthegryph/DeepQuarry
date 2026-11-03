@@ -15,7 +15,7 @@
 //!   `GetAbove`, `GetBelow`, `GLOB.`, `START_PROCESSING`): move it to `on_holder_init(A)`, `after_init()` or `membership()`;
 //! * `turf_on_materialize`: a `/turf/.../on_materialize(` override (banned);
 //! * `table_init_overrides`: an `Initialize()` override on a type whose nearest declared ancestor is on the table-init path (banned).
-//!   The declarations are rows `path = TRUE|FALSE` of the `GLOBAL_LIST_INIT(init_from_table_*, list(` tables (code/game/atom/atom_type_table.dm and the
+//!   The declarations are rows `path = TRUE|FALSE` of the `GLOBAL_LIST_INIT(init_from_table_*, list(` tables (code/content/atom/atom_type_table.dm and the
 //!   generated code/content/atom/init_from_table_types.dm); the flag is per-type data, not a var.
 //!
 //! The `// INIT: <reason>` form of the old ratchet is gone: a kept override names its code in the one annotation form.
@@ -69,7 +69,7 @@ static META: Meta = Meta {
         },
         RuleMeta { name: "world_reads", hint: "don't reach outside the instance in Initialize(); do it in on_holder_init(A), after_init() or through membership()" },
         RuleMeta { name: "turf_on_materialize", hint: "turf on_materialize() overrides are skipped by SSatoms; use the type table" },
-        RuleMeta { name: "table_init_overrides", hint: "declare the type `= FALSE` in init_from_table_declared() (code/game/atom/atom_type_table.dm) when it overrides Initialize()" },
+        RuleMeta { name: "table_init_overrides", hint: "declare the type `= FALSE` in init_from_table_declared() (code/content/atom/atom_type_table.dm) when it overrides Initialize()" },
     ],
     allow: &["init"],
     lists: &["init_roots"],

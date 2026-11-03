@@ -8,7 +8,7 @@ hot_ceiling = ["4"]
 record_accessor_prefixes = ["set_", "get_"]
 
 [lint.base_vars.tables.base_var_home_hot]
-"/atom/hot_listed" = "read on every move of every atom in code/game/atoms_movable.dm Move()"
-"/atom/hot_gone" = "read on every move of every atom in code/game/atoms_movable.dm Move()"
+"/atom/hot_listed" = "read on every move of every atom in code/content/atom/atoms_movable.dm Move()"
+"/atom/hot_gone" = "read on every move of every atom in code/content/atom/atoms_movable.dm Move()"
 "/atom/hot_short" = "hot"
-"/mob/hot_tracked" = "read on every move of every atom in code/game/atoms_movable.dm Move()"
+"/mob/hot_tracked" = "read on every move of every atom in code/content/atom/atoms_movable.dm Move()"

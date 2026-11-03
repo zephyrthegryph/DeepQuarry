@@ -1,4 +1,4 @@
-// Client proximity relevance (code/controllers/subsystems/proximity.dm): a tracked thing holds STAT_RELEVANCE while a client eye is in its cell or
+// Client proximity relevance (code/world/systems/proximity.dm): a tracked thing holds STAT_RELEVANCE while a client eye is in its cell or
 // the eight around it, and an every(when = STAT_RELEVANCE) parks while it is none. Eyes are /datum/proximity_eye records, so the tests need no client.
 // Cells are 8 turfs a side: x = 30 and x = 34 are neighbours, x = 60 is far.
 

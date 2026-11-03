@@ -64,16 +64,16 @@ Readers are on `origin/master`; "writer" names the per-move writer where the var
 | `/atom::flags_1` | `code/ATMOSPHERICS/atom_flags_1.dm:10` (`var/tmp`) | `SSair.add_to_active` (`code/ATMOSPHERICS/SSair.dm:343`) and the LINDA signal gates read `INITIALIZED_1` per activation; `/atom/Initialize()` sets it (`atoms_initializing_EXPENSIVE.dm:79`) |
 | `/atom::can_atmos_pass` | `code/ATMOSPHERICS/environmental/LINDA_system.dm:3` | the air-block mask folds every object's value per adjacency (`LINDA_system.dm:58`, `can_atmos_pass()` at `:5`) each time a turf's mask is recomputed |
 | `/atom/movable::pressure_resistance` | `code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm:330` | the pressure-displacement step divides by it for every movable in an active turf (`:338-339`) |
-| `/atom::flags` | `code/game/atom/_atom.dm` (declaration in the atom block) | the bitfield (`OPENCONTAINER`, `ATOM_INITIALIZED`, ...) read across `reagents`, `Initialize` and the container checks (`_atom.dm:126-135`); its lifecycle bits are written while an atom is materialized, which can happen inside a draw (`exclude_memo` in `lint_scopes.toml` already says so) |
-| `/atom::pass_flags` | `code/game/atom/_atom.dm:12` | `pass_flags & passflag` on every `CanPass()` / projectile pass test (`_atom.dm:439`) |
-| `/atom/movable::movement_type` | `code/game/atoms_movable.dm:24` | `Enter()` and `CanPass()` per move (`code/game/turfs/turf.dm:335, :345`, `CHECK_BITFIELD(mover.movement_type, UNSTOPPABLE)`) |
-| `/atom/movable::last_move` | `code/game/atoms_movable.dm:6` | written by every `Move()` (`:286`); read by pushing, buckling and inertia |
-| `/atom/movable::move_speed` | `code/game/atoms_movable.dm:9` | written by every `Move()` (`:294`, `world.time - l_move_time`) |
-| `/atom/movable::l_move_time` | `code/game/atoms_movable.dm:10` (`EXPIRY_TMP_DECLARE`) | the baseline of `move_speed`, every move (`:294`) |
-| `/atom/movable::moving_diagonally` | `code/game/atoms_movable.dm` | the diagonal-step state machine in `Move()` (`:232-245`) |
-| `/atom/movable::throwing` | `code/game/atoms_movable.dm:12` | `Bump()` finalizes a flight (`:376-377`); lava and turf `Enter` read it per entering movable (`code/game/turfs/simulated/lava.dm:88`) |
-| `/atom::our_overlays` | `code/game/atom/_atom.dm:29` (`var/tmp`) | the overlay queue (`code/controllers/subsystems/overlays.dm`): every `add_overlay` / `cut_overlays` / flush reads and rewrites it |
-| `/atom::light_sources` | `code/modules/lighting/lighting_atom.dm:10` (`var/tmp`) | `Moved()` walks every light source on the mover (`code/game/atoms_movable.dm:322`) |
+| `/atom::flags` | `code/content/atom/_atom.dm` (declaration in the atom block) | the bitfield (`OPENCONTAINER`, `ATOM_INITIALIZED`, ...) read across `reagents`, `Initialize` and the container checks (`_atom.dm:126-135`); its lifecycle bits are written while an atom is materialized, which can happen inside a draw (`exclude_memo` in `lint_scopes.toml` already says so) |
+| `/atom::pass_flags` | `code/content/atom/_atom.dm:12` | `pass_flags & passflag` on every `CanPass()` / projectile pass test (`_atom.dm:439`) |
+| `/atom/movable::movement_type` | `code/content/atom/atoms_movable.dm:24` | `Enter()` and `CanPass()` per move (`code/game/turfs/turf.dm:335, :345`, `CHECK_BITFIELD(mover.movement_type, UNSTOPPABLE)`) |
+| `/atom/movable::last_move` | `code/content/atom/atoms_movable.dm:6` | written by every `Move()` (`:286`); read by pushing, buckling and inertia |
+| `/atom/movable::move_speed` | `code/content/atom/atoms_movable.dm:9` | written by every `Move()` (`:294`, `world.time - l_move_time`) |
+| `/atom/movable::l_move_time` | `code/content/atom/atoms_movable.dm:10` (`EXPIRY_TMP_DECLARE`) | the baseline of `move_speed`, every move (`:294`) |
+| `/atom/movable::moving_diagonally` | `code/content/atom/atoms_movable.dm` | the diagonal-step state machine in `Move()` (`:232-245`) |
+| `/atom/movable::throwing` | `code/content/atom/atoms_movable.dm:12` | `Bump()` finalizes a flight (`:376-377`); lava and turf `Enter` read it per entering movable (`code/game/turfs/simulated/lava.dm:88`) |
+| `/atom::our_overlays` | `code/content/atom/_atom.dm:29` (`var/tmp`) | the overlay queue (`code/world/systems/overlays.dm`): every `add_overlay` / `cut_overlays` / flush reads and rewrites it |
+| `/atom::light_sources` | `code/modules/lighting/lighting_atom.dm:10` (`var/tmp`) | `Moved()` walks every light source on the mover (`code/content/atom/atoms_movable.dm:322`) |
 | `/atom/movable::blocks_emissive` | `code/modules/lighting/lighting_atom.dm:17` | the emissive blocker overlay build on every overlay update (`code/modules/lighting/emissive_blocker_overlays.dm:13`) |
 | `/mob::m_intent` | `code/modules/mob/mob_defines.dm:80` | every step: `living_movement.dm:20` (walk vs run delay), `mob_movement.dm:21`, `carbon.dm:51-54` (hunger cost of running per step) |
 | `/mob/living::now_pushing` | `code/modules/mob/living/living_defines.dm:14` | every bump: `living_movement.dm:51-53`, `carbon.dm:382` |

@@ -39,13 +39,13 @@ SPECS = {
     "power": dict(
         base="/obj/machinery", ctor="uses_power", reader="power_of", type_reader="power_of_type",
         fields={"idle_power_usage": "idle", "active_power_usage": "active", "power_channel": "channel"},
-        skip={"code/game/machinery/machinery.dm", "code/content/machinery/machinery_power.dm"},
+        skip={"code/content/machinery/machinery.dm", "code/content/machinery/machinery_power.dm"},
     ),
     "item_sounds": dict(
         base="/obj/item", ctor="item_sounds", reader="sounds_of", type_reader="sounds_of_type",
         fields={"hitsound": "hit", "usesound": "use", "mob_throw_hit_sound": "throw_hit", "equip_sound": "equip",
                 "pickup_sound": "pickup", "drop_sound": "drop"},
-        skip={"code/game/objects/items.dm"},
+        skip={"code/content/items/items.dm"},
     ),
     "protection": dict(
         base="/obj/item", ctor="item_protection", reader="protection_of", type_reader="protection_of_type",
@@ -53,7 +53,7 @@ SPECS = {
                 "min_cold_protection_temperature": "min_cold", "max_pressure_protection": "max_pressure",
                 "min_pressure_protection": "min_pressure", "gas_transfer_coefficient": "gas_transfer",
                 "permeability_coefficient": "permeability", "siemens_coefficient": "siemens"},
-        skip={"code/game/objects/items.dm"},
+        skip={"code/content/items/items.dm"},
         skip_refs=r"(^|\.)species$",  # a species' own siemens_coefficient
     ),
     "item_thrown": dict(

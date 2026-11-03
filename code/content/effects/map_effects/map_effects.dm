@@ -6,7 +6,7 @@
 	invisibility = INVISIBILITY_BADMIN // So a badmin can go view these by changing their see_invisible.
 	icon = 'icons/effects/map_effects.dmi'
 
-	// Map effects are ambient: the proximity tracker (code/controllers/subsystems/proximity.dm) holds them relevant while a client eye is near.
+	// Map effects are ambient: the proximity tracker (code/world/systems/proximity.dm) holds them relevant while a client eye is near.
 	proximity_tracked = TRUE
 	/// If true, the effect is held relevant everywhere: it runs even with nobody around to see it.
 	var/always_run = FALSE

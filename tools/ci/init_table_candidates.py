@@ -9,7 +9,7 @@ table_initialize() in place of the proc chain and its arglist.
 The tool reports the maximal qualifying types (those whose parent does not
 qualify) and, with --write, regenerates code/content/atom/init_from_table_types.dm,
 which declares them on the table-init path (GLOB.init_from_table_generated, read by
-build_init_from_table_types() in code/game/atom/atom_type_table.dm). A type that later gains an override is
+build_init_from_table_types() in code/content/atom/atom_type_table.dm). A type that later gains an override is
 caught by tools/ci/init_lint.py (`table_init_overrides`, ceiling 0); rerun
 --write to drop it from the list.
 
@@ -156,7 +156,7 @@ def render(maximal):
         "// sec 3.1): SSatoms.InitAtom() runs table_initialize() instead of the proc chain.",
         "// A type that gains an Initialize() override fails the init lint",
         "// (`table_init_overrides`); rerun the tool to drop it from this list.",
-        "// Read by build_init_from_table_types() (code/game/atom/atom_type_table.dm).",
+        "// Read by build_init_from_table_types() (code/content/atom/atom_type_table.dm).",
         "",
         "GLOBAL_LIST_INIT(init_from_table_generated, list(",
     ]

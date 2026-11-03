@@ -64,8 +64,8 @@ stat_helper	code/modules/a/machines.dm	67
 stat_helper	code/modules/a/machines.dm	68
 stat_helper	code/modules/a/machines.dm	69
 stat_helper	maps/map_code.dm	5
-stat_owned	code/game/machinery/machinery.dm	9
-stat_owned	code/game/machinery/machinery.dm	12
+stat_owned	code/content/machinery/machinery.dm	9
+stat_owned	code/content/machinery/machinery.dm	12
 stat_owned	code/content/machinery/machinery_fields.dm	7
 stat_owned	code/content/machinery/machinery_fields.dm	8
 stat_owned	code/content/machinery/machinery_fields.dm	9

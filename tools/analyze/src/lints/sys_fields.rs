@@ -27,8 +27,8 @@ const RUNTIME: &[&str] = &["code/content/machinery/machinery_fields.dm", "code/d
 /// (file, proc name) of the owners allowed to write the owned bits.
 const OWNED_WRITERS: &[(&str, &str)] = &[
     ("code/content/machinery/machinery_power.dm", "set_powered"),
-    ("code/game/machinery/machinery.dm", "atom_break"),
-    ("code/game/machinery/machinery.dm", "atom_fix"),
+    ("code/content/machinery/machinery.dm", "atom_break"),
+    ("code/content/machinery/machinery.dm", "atom_fix"),
 ];
 
 fn scan_one(index: &FwlIndex, fields: &crate::dm::field_write::Fields, f: &SourceFile) -> Vec<(&'static str, usize)> {

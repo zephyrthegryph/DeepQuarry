@@ -544,7 +544,7 @@ pub fn analyse(tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String,
             }
         }
     }
-    // `dir` is a tracked read of every drawn atom: /atom/set_dir() publishes its change (code/game/atom/_atom.dm), so a draw
+    // `dir` is a tracked read of every drawn atom: /atom/set_dir() publishes its change (code/content/atom/_atom.dm), so a draw
     // reading `dir` (its own or a watched neighbour's) redraws.
     ctx.tracked.insert("dir".to_string());
     let needs_names: HashSet<String> = ctx.needs.iter().cloned().collect();

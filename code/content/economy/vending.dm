@@ -114,7 +114,7 @@ STAT(/obj/machinery/vending, scan_id, TOP, base = TRUE)
 /// Fire items at customers! The throw wire cut, a pulse, a brand intelligence (item_throw()).
 STAT(/obj/machinery/vending, shoot_inventory, ANY)
 
-// Its slogans are ambient: they run only while a player is near (STAT_RELEVANCE, code/controllers/subsystems/proximity.dm).
+// Its slogans are ambient: they run only while a player is near (STAT_RELEVANCE, code/world/systems/proximity.dm).
 /obj/machinery/vending/proximity_tracked = TRUE
 
 CAPABILITIES(/obj/machinery/vending)

@@ -7,7 +7,7 @@
  * leaves in that frame's outbox.
  *
  * `bound` and `entities_by_index` (which atom a `vg_entity` belongs to) are maintained by
- * `on_materialize()`/`on_dematerialize()` (`code/game/atoms_movable.dm`), not by generated code:
+ * `on_materialize()`/`on_dematerialize()` (`code/content/atom/atoms_movable.dm`), not by generated code:
  * they track "this atom currently has a live vg_entity", independent of which components it holds.
  * A component event is resolved to its bound atom by `entity_lookup()` and checked against
  * `atom.vg_entity` before its handler is called, so a component detached between the event firing
@@ -38,7 +38,7 @@ GLOBAL_REAL(SSvg, /datum/system/native)
 	return ..()
 
 /// `register`/`unregister`: called from on_materialize()/on_dematerialize()
-/// (code/game/atoms_movable.dm), not generated code.
+/// (code/content/atom/atoms_movable.dm), not generated code.
 /datum/system/native/proc/register(atom/movable/mover)
 	if(!(mover in bound))
 		add_bound(mover)

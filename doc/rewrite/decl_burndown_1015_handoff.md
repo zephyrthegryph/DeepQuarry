@@ -26,7 +26,7 @@ Three targeted Rust regressions cover manual datum classification, initializatio
 | Baseline site | Why it remains |
 |---|---|
 | `destroy_drop`, `code/game/objects/objs.dm`: generic `/obj/on_destroy` spill | Must retain LINKS ordering; a generic GUARD ending would run before descendant cleanup that inspects contents. |
-| `destroy_drop`, `code/game/machinery/machinery.dm`: human/camera cleanup | Same LINKS ordering requirement; no global `/obj` or machinery ending was added. |
+| `destroy_drop`, `code/content/machinery/machinery.dm`: human/camera cleanup | Same LINKS ordering requirement; no global `/obj` or machinery ending was added. |
 | `destroy_drop`, `code/modules/ventcrawl/ventcrawl_atmospherics.dm`: ventcrawler cleanup | Same requirement for descendant callbacks inspecting occupants. Concrete converted types have their own native endings. |
 | `init_visuals`, `code/modules/overmap/sectors.dm`: unknown-sector concealment | Concealment must remain between overmap registration and the ship registration tail. Earlier setup changes registration; completion setup exposes the real name to vessel identity. |
 | `init_new_child`, `code/modules/body/body.dm`: living body | Robot components are constructed before the living parent boundary. Starting body earlier exposes partial components and caused real power/movement runtimes. Original initializer and ownership remain. |

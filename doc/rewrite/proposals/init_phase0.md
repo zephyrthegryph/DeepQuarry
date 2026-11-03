@@ -33,7 +33,7 @@ Row counts are `init_lines` rows unless marked `w` (`world_reads`). `A` = file:l
 
 | Owner (rows) | Where | What it sets | Who reads it | Home (section 3) |
 |---|---|---|---|---|
-| `/atom` (17) | `code/game/atom/atoms_initializing_EXPENSIVE.dm:68` | 2 proc pragmas (`SHOULD_NOT_SLEEP`, `SHOULD_CALL_PARENT`); the double-init guard, `flags`/`flags_1` bits, the `lifecycle_decls_init`/`caps_init` calls; `add_atom_colour` and `atom_integrity = max_integrity`; a **commented-out** light block (3 rows: `if`, `update_light`, `expr`) | everything | pragmas to S1; dead block deleted (3); colour and integrity to F5 (4); the other 8 are the chain itself: roots (R1) |
+| `/atom` (17) | `code/content/atom/atoms_initializing_EXPENSIVE.dm:68` | 2 proc pragmas (`SHOULD_NOT_SLEEP`, `SHOULD_CALL_PARENT`); the double-init guard, `flags`/`flags_1` bits, the `lifecycle_decls_init`/`caps_init` calls; `add_atom_colour` and `atom_integrity = max_integrity`; a **commented-out** light block (3 rows: `if`, `update_light`, `expr`) | everything | pragmas to S1; dead block deleted (3); colour and integrity to F5 (4); the other 8 are the chain itself: roots (R1) |
 | `/atom/movable`, `/obj`, `/turf` (1 each) | `atoms_movable.dm:34`, `micro_structures.dm:399`, `turf.dm:107` | `*_instance_setup()`, one call shared with the `table_initialize()` path | the instance | roots (R1) |
 | `/datum/controller/global_vars` (13) | `code/controllers/globals.dm:45` | the global-init walk (`call(src, I)()`), the benchmark `#if` notes, WARNINGs | boot | root (R1): it is the boot step that makes `GLOB`, it runs before any type table exists |
 | `/datum/decl` (2) | `code/datums/repositories/decls.dm:66` | `SHOULD_CALL_PARENT`, `SHOULD_NOT_SLEEP` | none | pragmas (S1) |

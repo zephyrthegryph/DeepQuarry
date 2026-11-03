@@ -100,7 +100,7 @@ Source: 2b059f9a2b; requirement_bool baseline **193 fingerprints across 131 file
 | `code/game/gamemodes/technomancer/catalog.dm` | 1 |
 | `code/game/machinery/computer/security.dm` | 1 |
 | `code/game/machinery/computer/skills.dm` | 1 |
-| `code/game/machinery/machinery.dm` | 3 |
+| `code/content/machinery/machinery.dm` | 3 |
 | `code/game/machinery/syndicatebeacon.dm` | 2 |
 | `code/game/mecha/mecha_control_console.dm` | 1 |
 | `code/game/objects/effects/anomalies/_anomalies.dm` | 1 |
@@ -140,7 +140,7 @@ Source: 2b059f9a2b; requirement_bool baseline **193 fingerprints across 131 file
 | `code/content/items/weapons/storage/bible.dm` | 2 |
 | `code/content/items/weapons/traps.dm` | 2 |
 | `code/game/objects/mail.dm` | 3 |
-| `code/game/objects/micro_structures.dm` | 1 |
+| `code/content/objects/micro_structures.dm` | 1 |
 | `code/game/objects/structures/artstuff.dm` | 1 |
 | `code/game/objects/structures/barricades.dm` | 1 |
 | `code/game/objects/structures/bedsheet_bin.dm` | 1 |

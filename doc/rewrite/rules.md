@@ -56,7 +56,7 @@ The ledger's `can_insert` (both sides), equipping and interaction availability a
 | `allowed = list(…)` lists (suit storage and similar) | 287 |
 | `slot_flags` assignments | 425 |
 | `max_w_class` values | 83 |
-| `mob_can_equip` (`code/game/objects/items.dm`) | 1 proc: 88 lines, 39 conditionals, 40 callers |
+| `mob_can_equip` (`code/content/items/items.dm`) | 1 proc: 88 lines, 39 conditionals, 40 callers |
 | Storage `can_be_inserted`, which re-adds every item already inside on each call | 1 proc |
 | `slot_in_backpack`, which skips storage insertion entirely | 1 path |
 
