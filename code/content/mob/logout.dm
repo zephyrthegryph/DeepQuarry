@@ -1,6 +1,9 @@
+/// From base of /mob/Logout(): ()
+ACTION(mob_logout, FIXED, notice = /datum/notice/mob_logout)
+
 /mob/Logout()
 	mob_state_set_played(!!client)
-	PUBLISH_LEGACY(src, /datum/notice/mob_logout)
+	PUBLISH(src, mob_logout)
 	ckey_changed()
 	SStgui.on_logout(src) // Cleanup any TGUIs the user has open
 	registry_leave(REGISTRY_PLAYERS, src)

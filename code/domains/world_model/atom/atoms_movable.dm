@@ -124,7 +124,7 @@
 
 	// Any mobs buckled to us were already unbuckled in the destroy
 	// transaction's phase 5 teardown, before Destroy() ran: the buckled_to
-	// relation (code/datums/om/library.dm) unlinks its edges -- and runs its
+	// relation (code/engine/library.dm) unlinks its edges -- and runs its
 	// on_unlink() cleanup -- for both ends of a deleted entity automatically.
 
 	// Snapshot: each member's Destroy() pulls it out of contents mid-iteration
@@ -305,7 +305,7 @@
 		tracked_changed(src, nameof(dir))
 	if(sparse_get_or(src, blocks_light, FALSE))
 		light_blocking_moved(old_loc)
-	PUBLISH_LEGACY(src, /datum/notice/moved, old_loc, direction, forced)
+	PUBLISH(src, move, old_loc = old_loc, direction = direction, forced = forced)
 	// A window watching this thing as its host re-checks its status (code/modules/tgui/ui_status.dm); nobody else reads this key.
 	if(rx?.observed)
 		PUBLISH_CHANGE(src, ATOM_KEY_LOC)
@@ -370,6 +370,9 @@
 			. = TRUE
 	return .
 
+/// From base of atom/movable/Bump(): (/atom)
+ACTION(movable_bump, atom/bumped_into, FIXED, notice = /datum/notice/movable_bump)
+
 /atom/movable/Bump(atom/A)
 	if(!A)
 		CRASH("Bump was called with no argument.")
@@ -379,7 +382,7 @@
 		if(QDELETED(A))
 			return
 
-	PUBLISH_LEGACY(src, /datum/notice/movable_bump, A)
+	PUBLISH(src, movable_bump, bumped_into = A)
 
 	bump_into(A)
 
@@ -486,7 +489,7 @@
 			// Call our thingy to inform everyone we moved
 			Moved(oldloc, NONE, TRUE)
 
-		// The pulling relation's holds_while = in_range(1) (code/datums/om/library.dm)
+		// The pulling relation's holds_while = in_range(1) (code/engine/library.dm)
 		// unlinks pulling/pulledby on its own once the live scheduler re-checks
 		// it, replacing the hand-rolled distance/z check that used to live here.
 
@@ -534,8 +537,11 @@
 	// The turf and area hops: what reads get_turf(src).x or get_area(src).x, here or on anything inside this (refs/hops.dm).
 	hop_moved(src, old_loc)
 
+/// From base of atom/movable/on_changed_z_level(): (turf/old_turf, turf/new_turf, same_z_layer)
+ACTION(movable_z_changed, old_z, new_z, FIXED, notice = /datum/notice/movable_z_changed)
+
 /atom/movable/proc/onTransitZ(old_z,new_z)
-	PUBLISH_LEGACY(src, /datum/notice/movable_z_changed, old_z, new_z)
+	PUBLISH(src, movable_z_changed, old_z = old_z, new_z = new_z)
 	for(var/atom/movable/AM as anything in contents_of(src)) // Notify contents of Z-transition. This can be overridden IF we know the items contents do not care.
 		AM.onTransitZ(old_z,new_z)
 
@@ -563,9 +569,12 @@ SETTER(/atom/movable, anchored)
 
 /////////////////////////////////////////////////////////////////
 
+/// From base of atom/movable/throw_impact() after confirming a hit: (/atom/hit_atom, /datum/thrownthing/throwingdatum)
+ACTION(movable_impact, atom/hit_atom, datum/throwingdatum, FIXED, notice = /datum/notice/movable_impact)
+
 //called when src is thrown into hit_atom
 /atom/movable/proc/throw_impact(atom/hit_atom, datum/thrownthing/throwingdatum)
-	PUBLISH_LEGACY(src, /datum/notice/movable_impact, hit_atom, throwingdatum)
+	PUBLISH(src, movable_impact, hit_atom = hit_atom, throwingdatum = throwingdatum)
 	if(isliving(hit_atom))
 		var/mob/living/M = hit_atom
 		if(M?.buckled_to() == src)

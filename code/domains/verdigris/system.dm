@@ -19,7 +19,7 @@
  * the entity) do not.
  *
  * The three `native_*` delivery procs are the seam to the reaction framework (`publish_change`,
- * `PUBLISH` and `on_cross`): today they raise the OM's channels/events and call the watch's own
+ * `PUBLISH` and `on_cross`): today they raise the scheduler's channels/events and call the watch's own
  * callback; integration points them at the new machinery.
  */
 /datum/system/native
@@ -108,7 +108,7 @@
 	return TRUE
 
 /// Logs a frame that took NATIVE_SLOW_FRAME_MS or more with the Rust phases (`frame.us.<phase>`, microseconds) that grew since the
-/// previous slow frame: a multi-second frame names its phase here instead of showing as an anonymous om_native overrun.
+/// previous slow frame: a multi-second frame names its phase here instead of showing as an anonymous native_step overrun.
 /datum/system/native/proc/report_slow_frame(vg_ms = 0)
 	slow_frames++
 	if(abs(REALTIMEOFDAY - slow_log_minute_start) >= 1 MINUTES)
@@ -269,7 +269,7 @@
 // ---------------------------------------------------------------- delivery seam
 
 /// NATIVE_KEY / channel value -> the name `native("...")` specs use for it. Register a Rust-owned value once
-/// with native_key_name_add(); a key without a name publishes to no reaction (only the OM bridge sees it).
+/// with native_key_name_add(); a key without a name publishes to no reaction (only the bridge sees it).
 GLOBAL_LIST_EMPTY(native_key_names)
 
 /// Names the Rust key `key` (a NATIVE_KEY or a channel mask) `name`, the text `native(name)` reads.
@@ -282,8 +282,8 @@ GLOBAL_LIST_EMPTY(native_key_names)
 
 /// `E`'s value under `key` (a Rust channel mask) changed. Reactions hear it through
 /// publish_change() under the key's `native("...")` name (READERS demand-gates it). The entity_raise_change() call is
-/// the bridge for OM-era readers that key on channel bits: om_listen listeners, declared appearances, caches
-/// and periodic work (code/datums/om/entity.dm om_dispatch_change).
+/// the bridge for old readers that key on channel bits: change_listen listeners, declared appearances, caches
+/// and periodic work (code/engine/entity.dm dispatch_change).
 /proc/native_publish_change(datum/E, key)
 	if(QDELETED(E) || !key)
 		return FALSE
@@ -299,7 +299,7 @@ GLOBAL_LIST_EMPTY(native_key_names)
 /proc/native_publish_notice(datum/E, kind, list/args)
 	if(QDELETED(E))
 		return FALSE
-	PUBLISH_LEGACY(E, /datum/notice/native, kind, args)
+	PUBLISH(E, native, kind = kind, record = args)
 	return TRUE
 
 /// A native watch crossed `band` with `detail` (the record's numbers). A watch declared by a reaction
@@ -328,18 +328,8 @@ GLOBAL_LIST_EMPTY(native_key_names)
 	watch.rx_listener = L
 	return watch
 
-/// A native notice: the event header and the record's fields.
-/datum/notice/native
-	/// The NATIVE_NOTICE_* header (or generated event code).
-	var/kind
-
-/datum/notice/native/fill(kind, list/args)
-	src.kind = kind
-	data = args
-
-/datum/notice/native/reset()
-	..()
-	kind = null
+/// A native notice: the event header (`kind`, a NATIVE_NOTICE_* or generated event code) and the record's fields (`record`).
+ACTION(native, kind, record, FIXED, notice = /datum/notice/native)
 
 // ---------------------------------------------------------------- declared pushes
 
@@ -402,7 +392,7 @@ GLOBAL_LIST_EMPTY(native_key_names)
 	if(entity && N.read_cache)
 		N.read_cache -= num2text(entity, 12)
 
-// ---- the step length (cadence holds reach Rust here; the grant holder is code/datums/om/cadence.dm) ----
+// ---- the step length (cadence holds reach Rust here; the grant holder is code/engine/cadence.dm) ----
 
 /// The step length last handed to Rust (vg_world_set_dt), seconds.
 /datum/system/native/var/current_dt = CADENCE_BASE_DT

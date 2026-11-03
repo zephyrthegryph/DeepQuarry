@@ -1,11 +1,11 @@
-/// The OM scheduler's pass as kernel work items (doc/rewrite/final_api.html, section 19 "E6": the scheduler and pipelines are
+/// The scheduler's pass as kernel work items (doc/rewrite/final_api.html, section 19 "E6": the scheduler and pipelines are
 /// re-hosted as kernel items until phases 4 and 5 delete them).
 ///
 /// The kernel tick no longer calls the scheduler's passes itself. Each piece of a pass is a work item of SSbehaviours in the
 /// phase it ran in, first in that phase's list (`first`), so the phase walk runs it ahead of every other item (the missed-wake
 /// audit, SSbehaviours' own item, is in subsystems/behaviours.dm):
 ///
-///   D   sched_deadlines   the deadline wheel, within OM_DEADLINE_SHARE of the pass
+///   D   sched_deadlines   the deadline wheel, within SCHED_DEADLINE_SHARE of the pass
 ///   P   sched_borrow      the borrow pass for rings near their staleness bound (lane 1, before sched_lane)
 ///   P   sched_lane        one lane's share of the pass: its queued wakes, derived values and rings (one item per lane)
 ///   R   sched_leftovers   what is left of the tick
@@ -71,7 +71,7 @@
 	var/owner = /datum/system/behaviours
 	K.register_work(owner, new /datum/work_item/sched_piece(SCHED_PIECE_DEADLINES, KERNEL_PHASE_D))
 	K.register_work(owner, new /datum/work_item/sched_piece(SCHED_PIECE_BORROW, KERNEL_PHASE_P, LANE_URGENT))
-	for(var/lane in 1 to OM_LANE_COUNT)
+	for(var/lane in 1 to LANE_COUNT)
 		var/list/after = (lane == LANE_URGENT) ? list("[owner]:sched_borrow") : null
 		K.register_work(owner, new /datum/work_item/sched_piece(SCHED_PIECE_LANE, KERNEL_PHASE_P, lane, after))
 	K.register_work(owner, new /datum/work_item/sched_piece(SCHED_PIECE_LEFTOVERS, KERNEL_PHASE_R))

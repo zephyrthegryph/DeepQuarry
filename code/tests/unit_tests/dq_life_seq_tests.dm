@@ -1,4 +1,4 @@
-// Mob Life on the kernel's Life sequence (doc/rewrite/life_sequences.md, doc/rewrite/om_retirement.md L1): content
+// Mob Life on the kernel's Life sequence (doc/rewrite/life_sequences.md, doc/rewrite/archive/retirement_log.md L1): content
 // (tables, overrides, conditions) and the scheduling the sequence owns for Life: cadence and catch-up, sleep and wake
 // by channel, once steps, parking, rewakes, suspension, relevance, stasis, statuses, the canmove/HUD/sight reactions,
 // and one test per bug the Codex prototype had.
@@ -109,7 +109,7 @@
 		if(!seq_step_asleep(L, LIFE_SEQ, S.key))
 			. += S.key
 
-/// The test clock: the kernel on its injected clock (test_time()), the OM test scheduler current; the Life sweep runs on it.
+/// The test clock: the kernel on its injected clock (test_time()), the test scheduler current; the Life sweep runs on it.
 /proc/life_test_clock_begin()
 	RETURN_TYPE(/datum/time_scheduler)
 	test_driver_begin()
@@ -196,11 +196,11 @@
 
 // --- Base: every scheduling test runs on the test clock --------------------------------------------------------------
 
-/datum/unit_test/life_om
-	abstract_type = /datum/unit_test/life_om
+/datum/unit_test/life_seq
+	abstract_type = /datum/unit_test/life_seq
 	var/datum/time_scheduler/sched
 
-/datum/unit_test/life_om/Run()
+/datum/unit_test/life_seq/Run()
 	rel_set(src, nameof(sched), life_test_clock_begin())
 	try
 		run_life()
@@ -208,7 +208,7 @@
 		TEST_FAIL("runtime in life test: [e] ([e.file]:[e.line])")
 	life_test_clock_end()
 
-/datum/unit_test/life_om/proc/run_life()
+/datum/unit_test/life_seq/proc/run_life()
 	return
 
 /// The handlers (as text) of `L`'s on_change() reactions.
@@ -437,9 +437,9 @@
 // --- Scheduling ----------------------------------------------------------------------------
 
 /// One frame per LIFE_CYCLE, carrying LIFE_CYCLE_SECONDS of dt-scaled time.
-/datum/unit_test/life_om/cadence
+/datum/unit_test/life_seq/cadence
 
-/datum/unit_test/life_om/cadence/run_life()
+/datum/unit_test/life_seq/cadence/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	TEST_ASSERT_NOTNULL(life_test_state(H), "a living mob runs the Life sequence")
@@ -453,9 +453,9 @@
 
 /// Skipped ticks: after a long gap the frame runs at most LIFE_MAX_CATCHUP times in one pass, never skips the mob,
 /// and counts the dropped frames as breaches.
-/datum/unit_test/life_om/catch_up_is_bounded
+/datum/unit_test/life_seq/catch_up_is_bounded
 
-/datum/unit_test/life_om/catch_up_is_bounded/run_life()
+/datum/unit_test/life_seq/catch_up_is_bounded/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	life_test_add(H, /datum/life_test_step/counter)
@@ -477,9 +477,9 @@
 
 /// A healthy idle mob parks (out of the sweep); a change wakes the steps that read it and brings it back; the frame
 /// after a long nap covers at most one cycle (Codex bug: the whole nap was passed as seconds).
-/datum/unit_test/life_om/parking
+/datum/unit_test/life_seq/parking
 
-/datum/unit_test/life_om/parking/run_life()
+/datum/unit_test/life_seq/parking/run_life()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
 	TEST_ASSERT(life_test_idle_mouse(M), "no floor to place the test mouse on")
 	TEST_ASSERT(life_test_settle(M), "an idle healthy mouse should park; still busy: [life_test_busy(M)]")
@@ -500,9 +500,9 @@
 
 /// A sleeping step wakes only on its own reads; a once step runs once per wake; a change raised during a frame wakes
 /// a later step back.
-/datum/unit_test/life_om/channels_wake_stages
+/datum/unit_test/life_seq/channels_wake_stages
 
-/datum/unit_test/life_om/channels_wake_stages/run_life()
+/datum/unit_test/life_seq/channels_wake_stages/run_life()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
 	TEST_ASSERT(life_test_idle_mouse(M), "no floor to place the test mouse on")
 	var/datum/life_test_step/sleeper/S = life_test_add(M, /datum/life_test_step/sleeper)
@@ -525,9 +525,9 @@
 	TEST_ASSERT_EQUAL(S.runs_on(M), runs + 1, "the later step runs after the change raised earlier in the frame")
 
 /// A rewake brings a parked mob back partially: only the step whose rewake is due.
-/datum/unit_test/life_om/rewake_unparks_partially
+/datum/unit_test/life_seq/rewake_unparks_partially
 
-/datum/unit_test/life_om/rewake_unparks_partially/run_life()
+/datum/unit_test/life_seq/rewake_unparks_partially/run_life()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
 	TEST_ASSERT(life_test_idle_mouse(M), "no floor to place the test mouse on")
 	life_test_add(M, /datum/life_test_step/timer)
@@ -543,9 +543,9 @@
 
 /// A rewake wakes a sleeping step by its timer and never runs an extra frame on an awake mob (Codex bug: +20-30%
 /// frames).
-/datum/unit_test/life_om/rewakes_do_not_run_frames
+/datum/unit_test/life_seq/rewakes_do_not_run_frames
 
-/datum/unit_test/life_om/rewakes_do_not_run_frames/run_life()
+/datum/unit_test/life_seq/rewakes_do_not_run_frames/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	life_test_add(H, /datum/life_test_step/timer)
@@ -562,9 +562,9 @@
 	TEST_ASSERT(life_test_frames(H) - frames <= 1, "the rewake ran no extra frame")
 
 /// Deleting a mob during its frame stops the frame at once; its rewakes go with it.
-/datum/unit_test/life_om/deletion_mid_frame
+/datum/unit_test/life_seq/deletion_mid_frame
 
-/datum/unit_test/life_om/deletion_mid_frame/run_life()
+/datum/unit_test/life_seq/deletion_mid_frame/run_life()
 	var/mob/living/carbon/human/H = new(run_loc_floor_bottom_left)
 	life_test_add(H, /datum/life_test_step/timer)
 	life_test_add(H, /datum/life_test_step/deleter)
@@ -576,9 +576,9 @@
 	TEST_ASSERT_EQUAL(length(sched.errors), 0, "no scheduler errors after deleting a mob with a pending rewake: [jointext(sched.errors, "; ")]")
 
 /// Death wakes the steps that read stat; a dead mob parks too; revival brings it back.
-/datum/unit_test/life_om/death_and_revive
+/datum/unit_test/life_seq/death_and_revive
 
-/datum/unit_test/life_om/death_and_revive/run_life()
+/datum/unit_test/life_seq/death_and_revive/run_life()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
 	TEST_ASSERT(life_test_idle_mouse(M), "no floor to place the test mouse on")
 	TEST_ASSERT(life_test_settle(M), "the mouse should park first; still busy: [life_test_busy(M)]")
@@ -593,9 +593,9 @@
 	TEST_ASSERT_NOTEQUAL(M.stat, DEAD, "the mouse is alive again")
 
 /// Suspension (absorbed prey, bodies kept for reforming) runs no frame until resumed.
-/datum/unit_test/life_om/suspension
+/datum/unit_test/life_seq/suspension
 
-/datum/unit_test/life_om/suspension/run_life()
+/datum/unit_test/life_seq/suspension/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	life_test_add(H, /datum/life_test_step/counter)
@@ -611,9 +611,9 @@
 
 /// Relevance replaces the per-frame z-level test: a low-priority mob on a z-level without living players leaves the
 /// sweep; one that isn't low priority holds its own relevance.
-/datum/unit_test/life_om/relevance_parks_low_priority
+/datum/unit_test/life_seq/relevance_parks_low_priority
 
-/datum/unit_test/life_om/relevance_parks_low_priority/run_life()
+/datum/unit_test/life_seq/relevance_parks_low_priority/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	life_test_add(H, /datum/life_test_step/counter)
@@ -644,9 +644,9 @@
 
 /// Stasis slows biology, not the frame: deep stasis (0.9) runs biology one frame in ten, total stasis never; the frame
 /// itself keeps running.
-/datum/unit_test/life_om/stasis_clock
+/datum/unit_test/life_seq/stasis_clock
 
-/datum/unit_test/life_om/stasis_clock/run_life()
+/datum/unit_test/life_seq/stasis_clock/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	H.set_stasis(/datum/body_effect/stasis/deep, src)
@@ -674,9 +674,9 @@
 
 /// Stun, weaken and paralysis are status stats: durations in LIFE_CYCLE units of biological time, exact set and adjust
 /// semantics, and canmove follows at once.
-/datum/unit_test/life_om/statuses_are_contributions
+/datum/unit_test/life_seq/statuses_are_contributions
 
-/datum/unit_test/life_om/statuses_are_contributions/run_life()
+/datum/unit_test/life_seq/statuses_are_contributions/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	// Statuses end on their own on the biology clock: no frame is needed (or wanted: a test human's own frames can knock it
@@ -709,9 +709,9 @@
 
 /// canmove is a reaction: a status change derives it at the drain, with no Life frame. A clientless mob's HUD
 /// reaction opens no window (its `when` gate).
-/datum/unit_test/life_om/derive_and_present
+/datum/unit_test/life_seq/derive_and_present
 
-/datum/unit_test/life_om/derive_and_present/run_life()
+/datum/unit_test/life_seq/derive_and_present/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	var/frames = life_test_frames(H)
@@ -738,9 +738,9 @@
 	return ..()
 
 /// The HUD reaction's `when` is the has_client gate: without one a HUD key runs nothing; with one the next drain draws it.
-/datum/unit_test/life_om/hud_gate_has_client
+/datum/unit_test/life_seq/hud_gate_has_client
 
-/datum/unit_test/life_om/hud_gate_has_client/run_life()
+/datum/unit_test/life_seq/hud_gate_has_client/run_life()
 	var/mob/living/carbon/human/dq_test_hud_probe/H = allocate(/mob/living/carbon/human/dq_test_hud_probe)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	life_test_drain()
@@ -757,9 +757,9 @@
 
 /// coalesce(LIFE_PRESENT_MIN_INTERVAL, leading = TRUE): a walking player raises a location change most ticks; the HUD draws
 /// once, then the changes inside the window are held and drawn once when it ends.
-/datum/unit_test/life_om/hud_at_most_coalesces
+/datum/unit_test/life_seq/hud_at_most_coalesces
 
-/datum/unit_test/life_om/hud_at_most_coalesces/run_life()
+/datum/unit_test/life_seq/hud_at_most_coalesces/run_life()
 	var/mob/living/carbon/human/dq_test_hud_probe/H = allocate(/mob/living/carbon/human/dq_test_hud_probe)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	H.pretend_client = TRUE
@@ -784,16 +784,16 @@
 
 /// The step profiler samples by a sequence-wide frame counter, so every mob is sampled at the same rate (Codex bug:
 /// sampling bias from a run list that restarted each cycle), and a sampled frame records the steps it ran.
-/datum/unit_test/life_om/profiler_is_uniform
+/datum/unit_test/life_seq/profiler_is_uniform
 
-/datum/unit_test/life_om/profiler_is_uniform/run_life()
+/datum/unit_test/life_seq/profiler_is_uniform/run_life()
 	var/mob/living/carbon/human/A = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/B = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(A) && life_test_place(B), "no floor to place the test humans on")
 	var/datum/sequence/seq = sequence_def(LIFE_SEQ)
 	var/stride = seq.profile_stride
 	if(!stride)
-		TEST_NOTICE(src, "built without the step profiler (OM_NO_STAGE_PROFILE)")
+		TEST_NOTICE(src, "built without the step profiler (NO_STAGE_PROFILE)")
 		return
 	life_test_add(A, /datum/life_test_step/counter)
 	life_test_add(B, /datum/life_test_step/counter)
@@ -815,9 +815,9 @@
 // --- Producers and the audit -----------------------------------------------------------------
 
 /// A reagent entering a parked mob wakes it.
-/datum/unit_test/life_om/reagent_wakes
+/datum/unit_test/life_seq/reagent_wakes
 
-/datum/unit_test/life_om/reagent_wakes/run_life()
+/datum/unit_test/life_seq/reagent_wakes/run_life()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
 	TEST_ASSERT(life_test_idle_mouse(M), "no floor to place the test mouse on")
 	if(!M.reagents)
@@ -828,9 +828,9 @@
 	TEST_ASSERT(!life_test_parked(M), "adding a reagent should wake a parked mob")
 
 /// A stun wakes the mob; once it wears off the mob parks again.
-/datum/unit_test/life_om/stun_wakes_then_parks
+/datum/unit_test/life_seq/stun_wakes_then_parks
 
-/datum/unit_test/life_om/stun_wakes_then_parks/run_life()
+/datum/unit_test/life_seq/stun_wakes_then_parks/run_life()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
 	TEST_ASSERT(life_test_idle_mouse(M), "no floor to place the test mouse on")
 	TEST_ASSERT(life_test_settle(M), "the mouse should park first; still busy: [life_test_busy(M)]")
@@ -843,9 +843,9 @@
 	TEST_ASSERT(life_test_parked(M), "the mouse should park again once the stun wears off; still busy: [life_test_busy(M)]")
 
 /// A client logging in wakes the whole mob.
-/datum/unit_test/life_om/client_login_wakes
+/datum/unit_test/life_seq/client_login_wakes
 
-/datum/unit_test/life_om/client_login_wakes/run_life()
+/datum/unit_test/life_seq/client_login_wakes/run_life()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
 	TEST_ASSERT(life_test_idle_mouse(M), "no floor to place the test mouse on")
 	TEST_ASSERT(life_test_settle(M), "the mouse should park first; still busy: [life_test_busy(M)]")
@@ -855,9 +855,9 @@
 	TEST_ASSERT(!life_test_state(M).asleep, "a login wakes every step (MOB_KEY_CLIENT is one of the sequence's wake_keys)")
 
 /// The missed-wake audit finds a change made without raising its channel, logs it and wakes the mob.
-/datum/unit_test/life_om/audit_catches_missed_wake
+/datum/unit_test/life_seq/audit_catches_missed_wake
 
-/datum/unit_test/life_om/audit_catches_missed_wake/run_life()
+/datum/unit_test/life_seq/audit_catches_missed_wake/run_life()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
 	TEST_ASSERT(life_test_idle_mouse(M), "no floor to place the test mouse on")
 	TEST_ASSERT(life_test_settle(M), "the mouse should park first; still busy: [life_test_busy(M)]")
@@ -874,13 +874,13 @@
 	TEST_ASSERT(!life_test_parked(M), "the audit should wake the mob")
 	M.set_ear_damage(0)
 
-// --- Statuses, immunity and the frame's own changes (doc/rewrite/archive/life_on_om.md §7) ---------------------------
+// --- Statuses, immunity and the frame's own changes (doc/rewrite/archive/life_sequence_origin.md §7) ---------------------------
 
 /// Every former counter is a timed status: it ends by deadline, in its own units per cycle, with no frame running;
 /// the magnitude statuses read back in points.
-/datum/unit_test/life_om/statuses_expire_by_deadline
+/datum/unit_test/life_seq/statuses_expire_by_deadline
 
-/datum/unit_test/life_om/statuses_expire_by_deadline/run_life()
+/datum/unit_test/life_seq/statuses_expire_by_deadline/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	seq_stop(H, LIFE_SEQ) // no frames: the statuses below run on their own
@@ -905,7 +905,6 @@
 	// Dizziness: 3 points per cycle, 15 while resting, capped at 1000.
 	H.status_adjust(STAT_DIZZY, 5000)
 	TEST_ASSERT_EQUAL(H.status_units(STAT_DIZZY), 1000, "dizziness is capped at 1000 points")
-	TEST_ASSERT(H.dizzy_shaking, "the shake follows the status (its on_start hook)")
 	H.status_set(STAT_DIZZY, 30)
 	life_test_advance(LIFE_CYCLE_SECONDS + 0.1)
 	TEST_ASSERT_EQUAL(H.status_units(STAT_DIZZY), 27, "dizziness: 3 points per cycle")
@@ -916,7 +915,7 @@
 	TEST_ASSERT_EQUAL(H.status_units(STAT_DIZZY), 12, "dizziness: 15 points per cycle while resting")
 	H.set_resting(FALSE)
 	H.status_end(STAT_DIZZY)
-	TEST_ASSERT(!H.dizzy_shaking, "the shake ends with the status (its on_end hook)")
+	TEST_ASSERT(!H.has_status(STAT_DIZZY), "the status (the shake's gate) ends")
 
 	// Alerts follow the status, with no step maintaining them.
 	H.status_at_least(STAT_CONFUSED, 1)
@@ -926,9 +925,9 @@
 
 /// Immunity is a stat: it blocks the statuses that name it, gaining it zeroes them, and every source holds its own (mob type
 /// declarations, mutations, godmode).
-/datum/unit_test/life_om/status_immunity
+/datum/unit_test/life_seq/status_immunity
 
-/datum/unit_test/life_om/status_immunity/run_life()
+/datum/unit_test/life_seq/status_immunity/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	seq_stop(H, LIFE_SEQ) // no frames: the statuses below run on their own
@@ -981,9 +980,9 @@
 	TEST_ASSERT(robot.status_immune(STAT_DIZZY) && !robot.status_immune(STAT_STUNNED), "silicons don't get dizzy, and can be stunned")
 
 /// Godmode is a stat: code asks in_godmode(), and harm is cancelled.
-/datum/unit_test/life_om/godmode_effect
+/datum/unit_test/life_seq/godmode_effect
 
-/datum/unit_test/life_om/godmode_effect/run_life()
+/datum/unit_test/life_seq/godmode_effect/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	seq_stop(H, LIFE_SEQ) // no frames: the statuses below run on their own
@@ -998,9 +997,9 @@
 
 /// Voluntary sleep is a hold: no dose wearing off or ending wakes the mob; choosing to wake does. A hold has no
 /// duration: status_units() and status_remaining() read the timed doses only.
-/datum/unit_test/life_om/voluntary_sleep
+/datum/unit_test/life_seq/voluntary_sleep
 
-/datum/unit_test/life_om/voluntary_sleep/run_life()
+/datum/unit_test/life_seq/voluntary_sleep/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	seq_stop(H, LIFE_SEQ) // no frames: the statuses below run on their own
@@ -1029,9 +1028,9 @@ CAPABILITIES(/mob/living/carbon/human/dq_test_status_probe)
 	status_deliveries++
 
 /// A status change publishes MOB_KEY_STATUS, and a change that doesn't change the value publishes nothing.
-/datum/unit_test/life_om/status_raises_once
+/datum/unit_test/life_seq/status_raises_once
 
-/datum/unit_test/life_om/status_raises_once/run_life()
+/datum/unit_test/life_seq/status_raises_once/run_life()
 	var/mob/living/carbon/human/dq_test_status_probe/H = allocate(/mob/living/carbon/human/dq_test_status_probe)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	hold(H, STAT_SUSPENDED, TRUE, H) // no frames
@@ -1055,9 +1054,9 @@ CAPABILITIES(/mob/living/carbon/human/dq_test_status_probe)
 
 /// Life never wakes itself: a frame on a mob with running statuses raises no status change, so a sleeping mouse
 /// parks like an idle one.
-/datum/unit_test/life_om/no_self_wake
+/datum/unit_test/life_seq/no_self_wake
 
-/datum/unit_test/life_om/no_self_wake/run_life()
+/datum/unit_test/life_seq/no_self_wake/run_life()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
 	TEST_ASSERT(life_test_idle_mouse(M), "no floor to place the test mouse on")
 	M.status_set(STAT_SLEEPING, 100)
@@ -1074,9 +1073,9 @@ CAPABILITIES(/mob/living/carbon/human/dq_test_status_probe)
 
 /// Parking hysteresis: a mob parks only after LIFE_PARK_AFTER frames in a row end with every step asleep; a wake in
 /// between starts the count again.
-/datum/unit_test/life_om/park_hysteresis
+/datum/unit_test/life_seq/park_hysteresis
 
-/datum/unit_test/life_om/park_hysteresis/run_life()
+/datum/unit_test/life_seq/park_hysteresis/run_life()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
 	TEST_ASSERT(life_test_idle_mouse(M), "no floor to place the test mouse on")
 	TEST_ASSERT(life_test_settle(M), "the mouse should park first; still busy: [life_test_busy(M)]")
@@ -1096,9 +1095,9 @@ CAPABILITIES(/mob/living/carbon/human/dq_test_status_probe)
 
 /// Clientless mobs get correct sight flags: the vision reaction runs for every mob when an input changes (a mutation,
 /// stat), not per frame and not on movement.
-/datum/unit_test/life_om/npc_vision_follows_inputs
+/datum/unit_test/life_seq/npc_vision_follows_inputs
 
-/datum/unit_test/life_om/npc_vision_follows_inputs/run_life()
+/datum/unit_test/life_seq/npc_vision_follows_inputs/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	TEST_ASSERT(!H.client, "a clientless mob")
@@ -1124,9 +1123,9 @@ CAPABILITIES(/mob/living/carbon/human/dq_test_status_probe)
 	TEST_ASSERT(H.sight & SEE_TURFS, "the dead see everything (stat raises the vision channel)")
 
 /// Relevance follows every loc change: nullspace, forceMove, and moves inside containers.
-/datum/unit_test/life_om/relevance_follows_loc
+/datum/unit_test/life_seq/relevance_follows_loc
 
-/datum/unit_test/life_om/relevance_follows_loc/run_life()
+/datum/unit_test/life_seq/relevance_follows_loc/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	var/turf/T = H.loc
@@ -1148,9 +1147,9 @@ CAPABILITIES(/mob/living/carbon/human/dq_test_status_probe)
 
 /// A healthy, placed human's event-driven steps have nothing to do: they sleep after a frame until their reads or
 /// rewakes.
-/datum/unit_test/life_om/human_idle_rules
+/datum/unit_test/life_seq/human_idle_rules
 
-/datum/unit_test/life_om/human_idle_rules/run_life()
+/datum/unit_test/life_seq/human_idle_rules/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	seq_run_frame_now(H, LIFE_SEQ)
@@ -1160,9 +1159,9 @@ CAPABILITIES(/mob/living/carbon/human/dq_test_status_probe)
 
 /// Germ creep is charged for the biological time since the last roll, so sleeping between rolls loses nothing; stasis
 /// (a stopped biology clock) charges nothing.
-/datum/unit_test/life_om/germs_catch_up_on_bio_time
+/datum/unit_test/life_seq/germs_catch_up_on_bio_time
 
-/datum/unit_test/life_om/germs_catch_up_on_bio_time/run_life()
+/datum/unit_test/life_seq/germs_catch_up_on_bio_time/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	H.set_germs(0)
@@ -1188,5 +1187,5 @@ CAPABILITIES(/mob/living/carbon/human/dq_test_status_probe)
 	GLOB.living_players_by_zlevel[z] -= H
 	life_z_occupancy_changed(z)
 
-CAPABILITIES(/datum/unit_test/life_om)
+CAPABILITIES(/datum/unit_test/life_seq)
 	ref_one(nameof(sched))

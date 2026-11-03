@@ -3,12 +3,12 @@
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
-/datum/unit_test/life_om/status_wake
-	abstract_type = /datum/unit_test/life_om/status_wake
+/datum/unit_test/life_seq/status_wake
+	abstract_type = /datum/unit_test/life_seq/status_wake
 	var/mob/living/carbon/human/H
 
 /// A human on a floor whose life_status step has fallen asleep. FALSE (and a failure saying why) when it never does.
-/datum/unit_test/life_om/status_wake/proc/sleeper()
+/datum/unit_test/life_seq/status_wake/proc/sleeper()
 	H = allocate(/mob/living/carbon/human)
 	// A clientless human counts as SSD, which keeps the status step awake; a teleoperated one is awake as a player's is.
 	sparse_ref_set(H, teleop, H)
@@ -24,18 +24,18 @@
 	return FALSE
 
 /// Lying down wakes the status step (resting is one of its reads).
-/datum/unit_test/life_om/status_wake/resting
+/datum/unit_test/life_seq/status_wake/resting
 
-/datum/unit_test/life_om/status_wake/resting/run_life()
+/datum/unit_test/life_seq/status_wake/resting/run_life()
 	if(!sleeper())
 		return
 	H.set_resting(TRUE)
 	TEST_ASSERT(!life_test_asleep(H, "life_status"), "lying down woke the status step")
 
 /// An object lodging in the body wakes it (embedded_flag is one of its reads).
-/datum/unit_test/life_om/status_wake/embedded_object
+/datum/unit_test/life_seq/status_wake/embedded_object
 
-/datum/unit_test/life_om/status_wake/embedded_object/run_life()
+/datum/unit_test/life_seq/status_wake/embedded_object/run_life()
 	if(!sleeper())
 		return
 	H.set_embedded_flag(1)

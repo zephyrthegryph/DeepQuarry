@@ -13,7 +13,7 @@
 /datum/var/tmp/own_key_text
 
 /// D's weak key, by which weak indexes name it (owner stamps, relation reverse indexes, keyed
-/// links, OM handle slots): a string own_locate() turns back into D, which never keeps D alive.
+/// links, handle slots): a string own_locate() turns back into D, which never keeps D alive.
 /// It is D's ref in decimal, "<scramble>:<id>:<type>" ("3245:1200005:33" for [0x21124f85]),
 /// computed once and cached on D. A turf's is its position ("<scramble>t<x>:<y>:<z>": ChangeTurf
 /// keeps the position and resets vars, and a turf needs no ref at all). A key is unique among

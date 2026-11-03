@@ -1,6 +1,6 @@
 // Shared (doc/rewrite/ownership.md §2): immortal registry singletons and DEFs.
 //
-// REGISTRY_TYPE(path, getter) replaces the fiat OM_STATIC_TYPE list: membership is proven at
+// REGISTRY_TYPE(path, getter) replaces the fiat the static type list list: membership is proven at
 // runtime by the getter, which returns the registered instance D stands for. The registry
 // declarations themselves live next to each registry (grep REGISTRY_TYPE); the ones for types
 // with no better home are in registry_types.dm.
@@ -34,7 +34,7 @@
 /proc/def_freeze_digest(datum/D)
 	. = list()
 	for(var/name in D.vars)
-		if(name in list("vars", "gc_destroyed", "om_rec", "om_listen", "om_hid", "om_refs_in", "datum_flags", "tag", "own_holder_ref", "own_slot", "own_key_text", "cached_ref"))
+		if(name in list("vars", "gc_destroyed", "sched_rec", "change_listen", "handle_slot", "refs_in", "datum_flags", "tag", "own_holder_ref", "own_slot", "own_key_text", "cached_ref"))
 			continue
 		var/value = D.vars[name]
 		if(!issaved(value) && !islist(value))

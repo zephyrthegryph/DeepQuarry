@@ -17,7 +17,7 @@
 
 
 /// Updates the client side stored json file used to keep track of what assets the client has between restarts/reconnects.
-/// A json update is queued (om_after_realtime), so a burst of sends writes the file once.
+/// A json update is queued (after()), so a burst of sends writes the file once.
 /client/var/tmp/asset_json_update_queued = FALSE
 
 /client/proc/asset_cache_update_json()

@@ -1,4 +1,4 @@
-# Proposal: docking and airlocks on the OM core
+# Proposal: docking and airlocks on the scheduler core
 
 Status: approved by the task (2026-11-02), implemented in slices on `rewrite/docking-om`.
 

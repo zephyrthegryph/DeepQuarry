@@ -57,18 +57,24 @@
 // --- The death pipeline ----------------------------------------------------------------------
 // death() is the one way a mob dies, and it is sealed: subtypes contribute through the hooks
 // below (replace_death, death_message, death_links, play_death_sound, on_death) and listeners
-// through /datum/notice/mob_death / /datum/notice/world_mob_death (OM_EMIT_WORLD). The order is fixed:
+// through /datum/notice/mob_death / /datum/notice/world_mob_death (world notices). The order is fixed:
 //   1. guard       - already dead or deleted: return FALSE with no side effects;
 //   2. replace     - replace_death() lets a mob end some other way (vanish, split, retreat);
 //   3. transition  - the one set_stat(DEAD), time of death, the living/dead lists;
 //   4. effects     - message, soul links / nests / vore flags, sound, senses, drops, diseases,
 //                    mind memory, respawn timer;
-//   5. signals     - /datum/notice/mob_death, then /datum/notice/world_mob_death (OM_EMIT_WORLD);
+//   5. signals     - /datum/notice/mob_death, then /datum/notice/world_mob_death (world notices);
 //   6. on_death()  - subtype contributions (loot, remains, verbs, qdel);
 //   7. refresh     - HUD, icon and vision (skipped when on_death() deleted the mob);
 //   8. antag       - the game mode's win check;
 //   9. final       - /datum/notice/living_death_final, once, after everything above.
 // The way back is /mob/living/proc/return_from_death() (code/domains/body/revival.dm).
+
+/// Mob died somewhere : (mob/living, gibbed)
+ACTION(world_mob_death, mob/living/living, gibbed, FIXED, notice = /datum/notice/world_mob_death)
+
+/// From base of mob/death(): (gibbed)
+ACTION(mob_death, gibbed, FIXED, notice = /datum/notice/mob_death)
 
 /// Kill this mob. Returns TRUE if it went from alive to dead, FALSE otherwise (already dead,
 /// deleted, or replace_death() took over). `deathmessage` overrides get_death_message(gibbed).
@@ -128,8 +134,8 @@
 	set_respawn_timer()
 
 	// 5. Signals.
-	PUBLISH_LEGACY(src, /datum/notice/mob_death, gibbed)
-	PUBLISH_LEGACY(OM_WORLD, /datum/notice/world_mob_death, src, gibbed)
+	PUBLISH(src, mob_death, gibbed = gibbed)
+	PUBLISH(WORLD_NOTICE_BUS, world_mob_death, living = src, gibbed = gibbed)
 
 	// 6. Subtype contributions.
 	on_death(gibbed)

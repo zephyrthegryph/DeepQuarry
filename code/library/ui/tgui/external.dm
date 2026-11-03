@@ -86,6 +86,9 @@
 	for (var/datum/tgui/window as anything in open_tguis)
 		window.send_full_update()
 
+/// From datum ui_act (usr, action)
+ACTION(ui_act, mob/usr_, action, FIXED, notice = /datum/notice/ui_act)
+
 /**
  * public
  *
@@ -99,7 +102,7 @@
  */
 /datum/proc/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	SHOULD_CALL_PARENT(TRUE)
-	PUBLISH_LEGACY(src, /datum/notice/ui_act, ui.user, action)
+	PUBLISH(src, ui_act, usr_ = ui.user, action = action)
 	// If UI is not interactive or usr calling Topic is not the UI user, bail.
 	if(!ui || ui.status != STATUS_INTERACTIVE)
 		if(ui && isobserver(ui.user))

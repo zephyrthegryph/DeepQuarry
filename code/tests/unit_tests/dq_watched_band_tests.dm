@@ -110,13 +110,13 @@
 	var/list/levels = list(S.capacity / 100)
 	TEST_ASSERT(watched_armed(S, WATCH_CHARGE, levels), "the read armed a charge band watch after it")
 	var/wakes = SSwatched.charge_wakes
-	OM_TEST_WAIT_UNTIL(SSwatched.charge_wakes > wakes, 60) // the starting band is reported once
+	TEST_WAIT_UNTIL(SSwatched.charge_wakes > wakes, 60) // the starting band is reported once
 	dq_test_ticks(5) // the registration's own reports settle
 	wakes = SSwatched.charge_wakes
 	dq_test_ticks(3)
 	TEST_ASSERT_EQUAL(SSwatched.charge_wakes, wakes, "no crossing, no wake (charge [S.stored_charge()] of [S.capacity], band [watched(S, WATCH_CHARGE, list(S.capacity / 100))])")
 	S.set_stored_charge(S.capacity / 2)
-	OM_TEST_WAIT_UNTIL(SSwatched.charge_wakes > wakes, 60)
+	TEST_WAIT_UNTIL(SSwatched.charge_wakes > wakes, 60)
 	TEST_ASSERT(SSwatched.charge_wakes > wakes, "the charge crossing the level woke the watch (charge [S.stored_charge()], wakes [SSwatched.charge_wakes] from [wakes], armed [watched_armed(S, WATCH_CHARGE, levels)])")
 	TEST_ASSERT_EQUAL(S.modify_refusal(null), /datum/msg/smes/safety_circuit, "a charged unit with its safeties on refuses")
 	TEST_ASSERT(S.hybrid_has_room(null), "an empty unit has room")

@@ -22,8 +22,6 @@ SYSTEM_DEF(ticker)
 	var/hide_mode = FALSE
 	var/datum/game_mode/mode = null
 
-	var/round_end_sound_sent = TRUE //If all clients have loaded it
-
 	var/list/datum/mind/minds = list() //The characters in the game. Used for objective tracking.
 
 	var/delay_end = FALSE //if set true, the round will not restart on it's own
@@ -66,8 +64,6 @@ SYSTEM_DEF(ticker)
 	var/restart_timeleft
 	/// world.time of last restart warning.
 	var/last_restart_notify = 0
-	/// When Reboot() began waiting for the round-end sound.
-	var/tmp/reboot_wait_started = 0
 
 /// Time left until a scheduled reboot; announce_countdown() counts it down while it is above zero.
 /datum/system/ticker/var/tmp/reboot_countdown_left = 0
@@ -448,7 +444,6 @@ SYSTEM_DEF(ticker)
 				Kernel.SetRunLevel(RUNLEVEL_POSTGAME)
 
 /datum/system/ticker/proc/Reboot(reason, end_string, delay, client/admin)
-	set waitfor = FALSE // ALLOW(scheduler): UNTIL waits on the round-end sound before arming the reboot timer
 	if(admin && !admin_require(admin, R_SERVER, "ticker.reboot"))
 		return
 
@@ -464,9 +459,7 @@ SYSTEM_DEF(ticker)
 
 	to_chat(world, span_boldannounce("Rebooting World in [DisplayTimeText(delay)]. [reason]"))
 
-	STAMP(src, reboot_wait_started, CLOCK_WORLD)
-	UNTIL(round_end_sound_sent || ELAPSED(src, reboot_wait_started, CLOCK_WORLD) > (delay * 2)) //don't wait forever
-	after(src, delay - ELAPSED(src, reboot_wait_started, CLOCK_WORLD), PROC_REF(reboot_callback), key = "reboot_timer", with = list(reason, end_string))
+	after(src, delay, PROC_REF(reboot_callback), key = "reboot_timer", with = list(reason, end_string))
 
 /// The wait before the next countdown step: a minute, or what is left of the last one.
 /datum/system/ticker/proc/reboot_countdown_delay()

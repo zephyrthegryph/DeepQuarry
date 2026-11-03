@@ -627,8 +627,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/sequence)
 	if(!state)
 		return FALSE
 	seq_drop(E, state)
-	if(E.om_rec)
-		entity_recompute_listen(E.om_rec)
+	if(E.sched_rec)
+		entity_recompute_listen(E.sched_rec)
 	return TRUE
 
 /// The state's end: memberships left, rewakes cancelled, the slot emptied.
@@ -861,7 +861,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/sequence)
 
 /// The time rewakes are reckoned in: the member's own timer clock (what its after() timers run on).
 /proc/seq_rewake_now(datum/E)
-	return E.om_rec ? E.om_rec.sched.now() : time_scheduler().now()
+	return E.sched_rec ? E.sched_rec.sched.now() : time_scheduler().now()
 
 /// Arms step `S`'s rewake on `E` (it fell asleep). Each step keeps a due time on the member's state; the member has one
 /// timer, for the soonest (a TIMER relation keyed by entity and sequence), on its own clock. Falling asleep again moves

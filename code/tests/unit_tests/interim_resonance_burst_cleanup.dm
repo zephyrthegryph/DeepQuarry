@@ -1,12 +1,12 @@
 /// The actual resonator weapon constructs its real delayed field; ordinary floor bursting injures real victims and consumes only that original source.
-/datum/unit_test/om/interim_resonance_burst_cleanup
+/datum/unit_test/engine/interim_resonance_burst_cleanup
 	parent_type = /datum/unit_test/dq_p2_engine
 	var/with_victim = TRUE
 
-/datum/unit_test/om/interim_resonance_burst_cleanup/empty
+/datum/unit_test/engine/interim_resonance_burst_cleanup/empty
 	with_victim = FALSE
 
-/datum/unit_test/om/interim_resonance_burst_cleanup/run_gate()
+/datum/unit_test/engine/interim_resonance_burst_cleanup/run_gate()
 	var/turf/T = test_floor()
 	var/turf/actor_floor = get_step(T, EAST)
 	TEST_ASSERT(actor_floor && !actor_floor.density, "The real creator has an adjacent floor outside the actual resonance impact")

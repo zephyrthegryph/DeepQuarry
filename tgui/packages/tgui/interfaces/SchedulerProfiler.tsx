@@ -99,7 +99,7 @@ type Data = {
 
 type SortKey = 'ms' | 'runs' | 'us_per_run' | 'errors';
 
-export const OmProfiler = (props) => {
+export const SchedulerProfiler = (props) => {
   const { act, data } = useBackend<Data>();
   const { elapsed_s, last_run_ms, error_count, behind, shared_bucket } = data;
   const [tab, setTab] = useState(0);

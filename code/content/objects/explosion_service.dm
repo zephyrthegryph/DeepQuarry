@@ -100,6 +100,9 @@ SYSTEM_DEF(explosions)
 		return STEP_YIELD
 	return has_work() ? STEP_DONE : STEP_PARK
 
+/// Called after an explosion happened : (epicenter, devastation_range, heavy_impact_range, light_impact_range, took, orig_dev_range, orig_heavy_range, orig_light_range)
+ACTION(world_explosion, turf/epicenter, devastation_range, heavy_impact_range, light_impact_range, took, FIXED, notice = /datum/notice/world_explosion)
+
 /// Returns FALSE when a phase ran over the tick budget (the step resumes next tick), TRUE otherwise.
 /datum/system/explosions/proc/step_epoch(resumed)
 	// Build both queues. The first one gets the explosion power in each turf
@@ -188,7 +191,7 @@ SYSTEM_DEF(explosions)
 		var/heavy_impact_range 	= time_dat[5]
 		var/light_impact_range 	= time_dat[6]
 		var/took 				= (world.time - time_dat[7]) / (1 SECOND) // Horrifyingly, this has always been server performance dependant. Should really only be used for cosmetic stuff.
-		PUBLISH_LEGACY(OM_WORLD, /datum/notice/world_explosion, epicenter, devastation_range, heavy_impact_range, light_impact_range, took)
+		PUBLISH(WORLD_NOTICE_BUS, world_explosion, epicenter = epicenter, devastation_range = devastation_range, heavy_impact_range = heavy_impact_range, light_impact_range = light_impact_range, took = took)
 		if(TICK_CHECK)
 			return FALSE
 	currentsignals.Cut()

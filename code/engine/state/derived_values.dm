@@ -1,5 +1,5 @@
-// Object-model core: derived values and aggregates
-// (doc/rewrite/object_model_core.md section C).
+// engine core: derived values and aggregates
+// (doc/rewrite/archive/object_model_core.md section C).
 //
 // A derived value is stored on the entity's record, indexed by the derived
 // type's small integer id (never by path or string at runtime). It is lazy:
@@ -31,7 +31,7 @@
 		k = derived_dv_create(rec, D)
 	else if(rec.dv[k + DV_DIRTY] || (D.max_age && rec.sched.now() - rec.dv[k + DV_AT] > D.max_age))
 		derived_dv_full(rec, k, D)
-#ifdef OM_DERIVED_AUDIT
+#ifdef DERIVED_AUDIT
 	else if(D.aggregate)
 		var/incremental = rec.dv[k + DV_VALUE]
 		derived_dv_full(rec, k, D)
@@ -190,7 +190,7 @@
 	LAZYADD(edge.cache, list(didx, value))
 
 /proc/derived_agg_edge_added(datum/relation_edge/edge)
-	var/datum/scheduler_record/rec = edge.target?.om_rec
+	var/datum/scheduler_record/rec = edge.target?.sched_rec
 	if(!rec?.dv)
 		return
 	var/list/defs = definition_registry().derived
@@ -214,7 +214,7 @@
 
 /// A forwarded change from `member` (aggregate member or related input) to `origin`'s derived `didx`.
 /proc/derived_agg_member_changed(datum/origin, didx, datum/member)
-	var/datum/scheduler_record/rec = origin?.om_rec
+	var/datum/scheduler_record/rec = origin?.sched_rec
 	if(!rec?.dv)
 		return
 	var/k = derived_dv_find(rec, didx)

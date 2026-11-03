@@ -539,27 +539,27 @@ GLOBAL_TABLE(global_hud_overlays, GLOBAL_PROC_REF(build_global_hud_overlays))
 /mob/living/proc/life_vision_rewake_delay()
 	return src.client ? 5 SECONDS : 0
 
-// ---------------------------------------------------------------- declared fields (code/datums/om/fields.dm)
-// What Life stages read to decide there is work, and the channel each raises. Written only through
-// the generated set_<name>() setters; stages that read them wake on them.
+// ---------------------------------------------------------------- Life state
+// Live simulation state Life stages read to decide there is work (LIFE_CONDITION_READS). Tracked in place: written only through
+// the generated set_<name>() setters, and the stages that read them wake on them.
 
 /// Technomancer instability.
-/mob/living/var/instability = 0 // ALLOW(base_vars): was a declared field on this type; moved, not added
+/mob/living/var/instability = 0
 /// Gross boolean for keeping VR mobs in VR.
-/mob/living/var/virtual_reality_mob = FALSE // ALLOW(base_vars): was a declared field on this type; moved, not added
+/mob/living/var/virtual_reality_mob = FALSE
 /// If they're glowing!
-/mob/living/var/glow_toggle = FALSE // ALLOW(base_vars): was a declared field on this type; moved, not added
+/mob/living/var/glow_toggle = FALSE
 /// Ignore the manual toggle.
-/mob/living/var/glow_override = FALSE // ALLOW(base_vars): was a declared field on this type; moved, not added
-/mob/living/var/glow_range = 2 // ALLOW(base_vars): was a declared field on this type; moved, not added
-/mob/living/var/glow_intensity = null // ALLOW(base_vars): was a declared field on this type; moved, not added
+/mob/living/var/glow_override = FALSE
+/mob/living/var/glow_range = 2
+/mob/living/var/glow_intensity = null
 /// The color they're glowing!
-/mob/living/var/glow_color = "#FFFFFF" // ALLOW(base_vars): was a declared field on this type; moved, not added
+/mob/living/var/glow_color = "#FFFFFF"
 /// The mob this one was transformed from (vore/mob_tf.dm).
-/mob/living/var/mob/living/tf_mob_holder = null // ALLOW(base_vars): was a declared field on this type; moved, not added
+/mob/living/var/mob/living/tf_mob_holder = null
 /// sdisabilities and ear_damage are /mob vars (every mob type writes them); Life reads them.
-/mob/var/sdisabilities = 0 // ALLOW(base_vars): was a declared field on this type; moved, not added
-/mob/var/ear_damage = 0 // ALLOW(base_vars): was a declared field on this type; moved, not added
+/mob/var/sdisabilities = 0
+/mob/var/ear_damage = 0
 /// Cult stuff.
 /mob/living/simple_mob/var/purge = 0
 

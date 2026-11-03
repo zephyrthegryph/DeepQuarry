@@ -174,6 +174,9 @@ CAPABILITIES(/datum/techweb)
 /datum/techweb/proc/add_design_by_id(id, custom = FALSE, list/add_to)
 	return add_design(SSresearch.techweb_design_by_id(id), custom, add_to)
 
+/// Called when a techweb design is researched (datum/design/researched_design, custom)
+ACTION(techweb_add_design, datum/design/researched_design, custom, FIXED, notice = /datum/notice/techweb_add_design)
+
 /datum/techweb/proc/add_design(datum/design_techweb/design, custom = FALSE, list/add_to)
 	if(!istype(design))
 		return FALSE
@@ -181,7 +184,7 @@ CAPABILITIES(/datum/techweb)
 	// An unregistered design ID means SSresearch state is inconsistent with what is being unlocked.
 	if(design.id != DESIGN_ID_IGNORE && !SSresearch.techweb_designs[design.id])
 		CRASH("add_design called with unregistered design ID '[design.id]' ([design.type]) on techweb '[id]' — design is not in SSresearch.techweb_designs")
-	PUBLISH_LEGACY(src, /datum/notice/techweb_add_design, design, custom)
+	PUBLISH(src, techweb_add_design, researched_design = design, custom = custom)
 	if(custom)
 		LAZYSET(custom_designs, design.id, TRUE)
 

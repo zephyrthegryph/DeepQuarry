@@ -11,7 +11,7 @@
 	ship.MouseDrop(eater)
 	return TRUE
 
-/datum/unit_test/om/interim_ship_ingestion_prompt_actor/run_om(list/made)
+/datum/unit_test/engine/interim_ship_ingestion_prompt_actor/run_engine(list/made)
 	test_prompts_reset()
 	var/turf/start = run_loc_floor_bottom_left
 	var/turf/far = get_step(get_step(get_step(start, EAST), EAST), EAST)
@@ -56,7 +56,7 @@
 	TEST_ASSERT(!QDELETED(ship), "actual refusal and cancellation preserve the original live ship")
 
 /// Release the actual newly registered destination before ship teardown clears its relation view.
-/datum/unit_test/om/interim_ship_ingestion_prompt_actor/proc/cleanup_ship(obj/effect/overmap/visitable/ship/ship)
+/datum/unit_test/engine/interim_ship_ingestion_prompt_actor/proc/cleanup_ship(obj/effect/overmap/visitable/ship/ship)
 	if(QDELETED(ship))
 		return
 	var/datum/flight_destination/destination = SSflight.destination_for_target(ship)

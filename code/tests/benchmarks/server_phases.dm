@@ -124,7 +124,7 @@
 	close_phase("idle")
 	if(attribute)
 		GLOB.census_on = FALSE
-		var/list/km_report = km_diagnostics(GLOB.om_live_sched)
+		var/list/km_report = km_diagnostics(GLOB.live_scheduler)
 		km_report["elapsed_s"] = km_meter().live.elapsed_seconds()
 		detail("idle_km_systems", km_report["systems"])
 		detail("idle_km_elapsed_s", km_report["elapsed_s"])

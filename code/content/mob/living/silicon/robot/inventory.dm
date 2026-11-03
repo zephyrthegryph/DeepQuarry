@@ -262,6 +262,9 @@
 		return
 	to_chat(src, span_notice("You need to disable a module first!"))
 
+/// From /mob/living/silicon/robot/proc/after_equip(): (obj/item/equipped_or_null)
+ACTION(robot_equipment_changed, obj/item/item, FIXED, notice = /datum/notice/robot_equipment_changed)
+
 /// Equipment changed: power demand is recomputed and modules/components react
 /// through /datum/notice/robot_equipment_changed (the belly component handles its ore
 /// bag and pounce there).
@@ -273,7 +276,7 @@
 			tracker.toggle_tracking()
 	recompute_power_demand()
 	update_items()
-	PUBLISH_LEGACY(src, /datum/notice/robot_equipment_changed, O)
+	PUBLISH(src, robot_equipment_changed, item = O)
 	if(O)
 		for(var/datum/action/A as anything in O.actions)
 			A.Grant(src)

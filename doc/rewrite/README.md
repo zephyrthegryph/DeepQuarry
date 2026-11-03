@@ -9,7 +9,7 @@ background and detail: the foundation design that fed into it, and the archived 
 This folder describes the architecture DeepQuarry is moving to and the plan for getting there.
 The current design is the **foundation design**: three table procs per type (`capabilities()`,
 `relations()`, `reactions()`), one reactive change graph, operations and actions for player input,
-a kernel host loop, and one Rust frame. It replaces the earlier object-model (OM) API; the old
+a kernel host loop, and one Rust frame. It replaces the earlier engine (OM) API; the old
 docs are kept in [archive/](archive/) with a header saying what replaced each.
 
 Status legend used throughout: **[built]** merged on `rewrite/dx-framework`; **[in progress]**
@@ -91,7 +91,7 @@ These stay where they are. Where a foundation chapter overrides part of one, the
 | Kind | Files |
 |---|---|
 | **Superseded by the foundation design** (still accurate for code not yet converted) | `object_model.md`, `object_model_core.md`, `om_in_10_minutes.md`, `time_mechanisms.md`, `ownership.md`, `interactions.md`, `systems.md`, `life_on_om.md`, `migration_plan.md`, `declarative_lifecycle.md` |
-| **Historical records** (audits, reports, briefs) | `fixes.md`, `framework_fixes.md`, `memory_lists_audit.md`, `om_framework_report.md`, `life_on_om_benchmark.md`, `object_model_medical_review.md`, `reconciliation.md`, `signal_migration_map.md`, `systems_worker_brief.md`, `health_system_review.md` |
+| **Historical records** (audits, reports, briefs) | `fixes.md`, `framework_fixes.md`, `memory_lists_audit.md`, `framework_report.md`, `life_sequence_benchmark.md`, `object_model_medical_review.md`, `reconciliation.md`, `signal_migration_map.md`, `systems_worker_brief.md`, `health_system_review.md` |
 | **Design source** | `unified_operations_work.md` (the operations proposal, verbatim) |
 
 Until the f-* branches merge, most code still uses the OM forms, so `AGENTS.md` section 9 points

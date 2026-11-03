@@ -4127,7 +4127,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		if(A.scanning)
 			break
 	TEST_ASSERT(A.scanning, "the gas watch did not wake the alarm when the room's air changed")
-	OM_TEST_WAIT_UNTIL(A.danger_level > 0, 200)
+	TEST_WAIT_UNTIL(A.danger_level > 0, 200)
 	TEST_ASSERT(A.danger_level > 0, "the woken alarm's own scan did not raise the danger level")
 	refresh_flush()
 	TEST_ASSERT_NOTEQUAL(A.icon_state, "alarm_0", "the alarm's sprite did not follow the danger the scan found")
@@ -4172,7 +4172,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		if(second.scanning)
 			break
 	TEST_ASSERT(second.scanning, "the second alarm's gas watch did not wake it")
-	OM_TEST_WAIT_UNTIL(second.danger_level > 0, 200)
+	TEST_WAIT_UNTIL(second.danger_level > 0, 200)
 	TEST_ASSERT(second.danger_level > 0, "the second alarm did not raise its own danger level")
 	refresh_flush()
 	TEST_ASSERT_NOTEQUAL(second.icon_state, "alarm_0", "the second alarm's sprite did not follow its own air")
@@ -6015,7 +6015,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 			settled = TRUE
 			break
 	TEST_ASSERT(settled, "open pipe leak did not converge and hibernate within 100 cycles")
-	// A sleeping leak watches both faces with gas_watch_many() (hibernate_stable_leak(), pipe_base.dm), not an OM watch.
+	// A sleeping leak watches both faces with gas_watch_many() (hibernate_stable_leak(), pipe_base.dm), not an watch.
 	TEST_ASSERT(length(P.leak_watches), "equilibrated open pipe did not subscribe before sleeping")
 	T.air.adjust_moles(/datum/gas/oxygen, 1)
 	SSmachines.wake_dirty_gas_subscribers()

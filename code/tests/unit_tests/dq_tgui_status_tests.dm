@@ -40,8 +40,8 @@
 	rx_drain()
 	ui_push_flush()
 
-/datum/unit_test/om/tgui_status_user_leaving_range_closes
-/datum/unit_test/om/tgui_status_user_leaving_range_closes/run_om(list/made)
+/datum/unit_test/engine/tgui_status_user_leaving_range_closes
+/datum/unit_test/engine/tgui_status_user_leaving_range_closes/run_engine(list/made)
 	var/turf/start = run_loc_floor_bottom_left
 	var/turf/far = locate(start.x + 4, start.y, start.z)
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, start)
@@ -55,8 +55,8 @@
 	TEST_ASSERT_EQUAL(ui.probe_closed, 1, "walking out of range closes the window without any poll")
 	qdel(ui)
 
-/datum/unit_test/om/tgui_status_host_moving_closes
-/datum/unit_test/om/tgui_status_host_moving_closes/run_om(list/made)
+/datum/unit_test/engine/tgui_status_host_moving_closes
+/datum/unit_test/engine/tgui_status_host_moving_closes/run_engine(list/made)
 	var/turf/start = run_loc_floor_bottom_left
 	var/turf/far = locate(start.x + 4, start.y, start.z)
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, start)
@@ -68,8 +68,8 @@
 	TEST_ASSERT_EQUAL(ui.probe_closed, 1, "the host being carried away closes the window")
 	qdel(ui)
 
-/datum/unit_test/om/tgui_status_unconscious_user_is_told
-/datum/unit_test/om/tgui_status_unconscious_user_is_told/run_om(list/made)
+/datum/unit_test/engine/tgui_status_unconscious_user_is_told
+/datum/unit_test/engine/tgui_status_unconscious_user_is_told/run_engine(list/made)
 	var/turf/start = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, start)
 	var/obj/item/host = allocate(/obj/item, start)
@@ -85,8 +85,8 @@
 	TEST_ASSERT_EQUAL(ui.probe_sent, 1, "and not again while it holds")
 	qdel(ui)
 
-/datum/unit_test/om/tgui_status_deleted_user_closes
-/datum/unit_test/om/tgui_status_deleted_user_closes/run_om(list/made)
+/datum/unit_test/engine/tgui_status_deleted_user_closes
+/datum/unit_test/engine/tgui_status_deleted_user_closes/run_engine(list/made)
 	var/turf/start = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, start)
 	var/obj/item/host = allocate(/obj/item, start)
@@ -97,8 +97,8 @@
 	TEST_ASSERT_EQUAL(ui.probe_closed, 1, "deleting the user closes the window")
 	qdel(ui)
 
-/datum/unit_test/om/tgui_ping_timeout_closes_zombie
-/datum/unit_test/om/tgui_ping_timeout_closes_zombie/run_om(list/made)
+/datum/unit_test/engine/tgui_ping_timeout_closes_zombie
+/datum/unit_test/engine/tgui_ping_timeout_closes_zombie/run_engine(list/made)
 	var/turf/start = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, start)
 	var/obj/item/host = allocate(/obj/item, start)

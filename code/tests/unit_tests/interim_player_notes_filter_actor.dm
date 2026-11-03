@@ -19,9 +19,9 @@
 	return TRUE
 
 /// This exercises the links as the admin authority (the op, its prompt and its report boundary), not native privileged topic dispatch or report delivery.
-/datum/unit_test/om/interim_player_notes_filter_actor
+/datum/unit_test/engine/interim_player_notes_filter_actor
 
-/datum/unit_test/om/interim_player_notes_filter_actor/run_om(list/made)
+/datum/unit_test/engine/interim_player_notes_filter_actor/run_engine(list/made)
 	test_prompts_reset()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/mob/living/carbon/human/bystander = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)

@@ -21,7 +21,7 @@ per tick, in fixed phases:
 | **R** | Leftovers, in lane order | whatever is left |
 | **G** | Garbage (kernel subsystem) | leftover with a per-second floor |
 
-`SSbehaviours` dissolves into the kernel; the OM scheduler is the engine of phases D, P and R. Host
+`SSbehaviours` dissolves into the kernel; the scheduler is the engine of phases D, P and R. Host
 services (garbage, input, verb_manager, tgui transport, dbcore, sqlite, assets, early_assets,
 atoms, overlays, profiler) stay kernel subsystems. Boot/shutdown and direct commands are system
 behaviour but are not scheduled work. BYOND callbacks (`Move`, `Login`, `Topic`, verbs) stay thin
@@ -107,7 +107,7 @@ measured separately, and a short safety resample remains for critical occupied s
 | kernel.md: work units are cadence, deadline, wake | work items are `every`/`on_cross`/`on_notice` reactions; timers are `TIMER` relations |
 | kernel.md: `member_should_run`/`member_step` | `every(..., members = <capability>)` |
 | kernel.md: rosters and `world_services()` | `MEMBER` relations |
-| `archive/systems.md`, `archive/life_on_om.md` | this chapter; Life detail stays in `doc/mob_life_architecture.md` |
+| `archive/systems.md`, `archive/life_sequence_origin.md` | this chapter; Life detail stays in `doc/mob_life_architecture.md` |
 
 ## 7. Where it stands (branch rewrite/g3-kernel)
 
@@ -158,9 +158,9 @@ replaces `idle`, parking is membership and wakes come through `publish_change()`
 `pipeline.dm` is deleted.
 
 **Stages.** The 13 periodic stages and the 2 hotspot stages moved. The 228 life stage definitions and 23 machine stage
-definitions (plus the test and bench fixtures) still run on the object-model engine: a frame is per entity (shared
+definitions (plus the test and bench fixtures) still run on the engine engine: a frame is per entity (shared
 facts, `F.abort()`, plans per entity type and variant, idle bits, parking, relevance, the missed-wake audit,
 `om_stage_run_now()`), which a stage-major work item does not reproduce. `kernel_stage_adapter_graph` adapts every one of
 them with `stage_work_item()` and validates their after-edges in one graph, which is the gate before a pipeline moves.
 Stages will move when a pipeline can keep its frame (facts, abort, parking) on the kernel side; until then
-`code/datums/om/pipeline.dm` stays.
+`code/engine/pipeline.dm` stays.

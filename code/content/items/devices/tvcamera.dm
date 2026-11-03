@@ -109,7 +109,7 @@ DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
 
 /obj/item/tvcamera/proc/update_feed()
 	if(camera.status)
-		PUBLISH_LEGACY(camera, /datum/notice/movable_attempted_move, null, null)
+		PUBLISH(camera, movable_attempted_move, old_loc = null, new_loc = null)
 
 // Bodycam
 // Security Bodycam
@@ -205,7 +205,7 @@ DECLARE_REGISTRY(/obj/item/clothing/accessory/bodycam, REGISTRY_LISTENING_OBJECT
 
 /obj/item/clothing/accessory/bodycam/proc/update_feed()
 	if(bcamera.status)
-		PUBLISH_LEGACY(bcamera, /datum/notice/movable_attempted_move, null, null)
+		PUBLISH(bcamera, movable_attempted_move, old_loc = null, new_loc = null)
 
 /obj/item/clothing/accessory/bodycam/draw(datum/look/look)
 	..()

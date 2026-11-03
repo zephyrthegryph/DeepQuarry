@@ -530,6 +530,9 @@ CAPABILITIES(/datum/remote_view/viewer_managed)
 		log_runtime("REMOTE_VIEW: Turf search hit recursion limit. ([host_mob]) ([host_mob.type])")
 	return null
 
+/// /datum/remote_view event that can be sent from the mob remote viewing, the viewed mob, or object being used to view to forcibly end all related remote viewing components
+ACTION(remote_view_clear, FIXED, notice = /datum/notice/remote_view_clear)
+
 /// Makes a new remote view focused on the release_turf argument. This remote view ends as soon as any movement happens. Even if we are inside many levels of objects due to our recursive_move listener
 /datum/remote_view/mob_holding_item/proc/decouple_view_to_turf(mob/cache_mob, turf/release_turf)
 	if(needs_to_decouple)
@@ -539,9 +542,9 @@ CAPABILITIES(/datum/remote_view/viewer_managed)
 		// Yes, two loops is faster. Because we skip typechecking byondcode side and instead do it engine side when getting the contents of the mob,
 		// we also skip typechecking every /obj in the mob on the byondcode side... Evil wizard knowledge.
 		for(var/obj/belly/check_belly in contents_of(cache_mob))
-			PUBLISH_LEGACY(check_belly, /datum/notice/remote_view_clear)
+			PUBLISH(check_belly, remote_view_clear)
 		for(var/obj/item/dogborg/sleeper/check_sleeper in contents_of(cache_mob))
-			PUBLISH_LEGACY(check_sleeper, /datum/notice/remote_view_clear)
+			PUBLISH(check_sleeper, remote_view_clear)
 	spent(src)
 
 /// We were forcibly disconnected, this situation is probably a recursive hellscape, so just decouple entirely and fix it when someone moves.

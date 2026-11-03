@@ -344,6 +344,9 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 	var/dest_y = src_y + distance*cos(rotation);
 	return new /datum/projectile_data(src_x, src_y, time, distance, 0, 0, dest_x, dest_y)
 
+/// From /obj/machinery/computer/telescience/proc/doteleport(mob/user): (list/atom/movable/teleported_things, turf/target_turf, sending )
+ACTION(telesci_teleport, teleported_things, turf/target_turf, sending, FIXED, notice = /datum/notice/telesci_teleport)
+
 /obj/machinery/computer/telescience/proc/finish_teleport(mob/user, trueDistance, spawn_time, turf/target, trueX, trueY)
 	var/area/A = get_area(target)
 	if(!telepad())
@@ -422,8 +425,8 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 		sent_atoms += ROI
 		do_teleport(ROI, dest)
 	// Either works for the experiment scan, so fire signals on both
-	PUBLISH_LEGACY(src, /datum/notice/telesci_teleport, sent_atoms, target, sending)
-	PUBLISH_LEGACY(telepad(), /datum/notice/telesci_teleport, sent_atoms, target, sending)
+	PUBLISH(src, telesci_teleport, teleported_things = sent_atoms, target_turf = target, sending = sending)
+	PUBLISH(telepad(), telesci_teleport, teleported_things = sent_atoms, target_turf = target, sending = sending)
 
 	if (!dd_hassuffix(log_msg, ", "))
 		log_msg += "nothing"

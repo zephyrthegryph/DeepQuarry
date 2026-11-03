@@ -31,13 +31,13 @@
 	var/window_start_ffi_calls = 0
 	var/list/window_subsystem_fires
 	var/list/window_system_fires
-	/// The OM scheduler's world wakes when the window began.
+	/// The scheduler's world wakes when the window began.
 	var/window_world_wakes = 0
 	/// The machine world service's cumulative step time at the window start (it is no subsystem).
 	var/window_machines_ms = 0
 	var/window_stat_evals = 0
 	var/window_stat_read_computes = 0
-	var/window_om_deadlines = 0
+	var/window_sched_deadlines = 0
 
 /// The scenario body. Call fail() to abort with a reason.
 /datum/benchmark/proc/Run()
@@ -104,13 +104,13 @@
 	window_start_time = REALTIMEOFDAY
 	window_start_ffi_calls = __verdigris_ffi_calls
 	window_subsystem_fires = list()
-	window_world_wakes = GLOB.om_live_sched?.world_wakes
+	window_world_wakes = GLOB.live_scheduler?.world_wakes
 	window_machines_ms = kernel().work_cost_of(/datum/system/machines)["total_ms"]
 	window_stat_evals = GLOB.stat_evals
 	window_stat_read_computes = GLOB.stat_read_computes
 	GLOB.stat_read_compute_by = list()
 
-	window_om_deadlines = benchmark_om_deadline_count()
+	window_sched_deadlines = benchmark_deadline_count()
 	window_system_fires = kernel_system_fire_counts()
 	if(profiling)
 		world.Profile(PROFILE_CLEAR) // each window's dump covers only that window
@@ -174,10 +174,10 @@
 	var/list/world_step = world_diagnostics()
 	world_step["window_wakes"] = world_step["total_wakes"] - window_world_wakes
 	count_metric("[prefix]_world_wakes", world_step["window_wakes"], "wakes", "lower")
-	// OM deadline wheel entries (timers, task steps, throttles) at the window's ends: a boot
+	// deadline wheel entries (timers, task steps, throttles) at the window's ends: a boot
 	// backlog still draining shows as a large start count falling over the window.
-	count_metric("[prefix]_wheel_deadlines_start", window_om_deadlines, "entries")
-	count_metric("[prefix]_wheel_deadlines_end", benchmark_om_deadline_count(), "entries")
+	count_metric("[prefix]_wheel_deadlines_start", window_sched_deadlines, "entries")
+	count_metric("[prefix]_wheel_deadlines_end", benchmark_deadline_count(), "entries")
 	detail("[prefix]_world_step", world_step)
 	detail("[prefix]_outliers", Kernel.perf_outliers.Copy())
 	detail("[prefix]_worst_tick", LAZYCOPY(Kernel.perf_worst_tick))
@@ -186,8 +186,8 @@
 		SSprofiler.DumpFile(allow_yield = FALSE)
 	return tick
 
-/// Entries on the OM scheduler's deadline wheel right now.
-/proc/benchmark_om_deadline_count()
+/// Entries on the scheduler's deadline wheel right now.
+/proc/benchmark_deadline_count()
 	. = 0
 	var/datum/time_scheduler/sched = time_scheduler()
 	for(var/list/L as anything in sched?.buckets)
@@ -391,7 +391,7 @@
 			var/start = REALTIMEOFDAY
 			log_test("Benchmark [scenario_id]: running")
 			// Every scenario reports the same kernel numbers over its whole run (kernel_metrics.dm).
-			var/datum/km_stats_set/kernel_run = km_meter().open_set(GLOB.om_live_sched)
+			var/datum/km_stats_set/kernel_run = km_meter().open_set(GLOB.live_scheduler)
 			var/kernel_start_position = Kernel.perf_samples_total + 1
 			try
 				scenario.Run()

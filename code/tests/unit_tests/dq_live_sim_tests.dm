@@ -1,5 +1,5 @@
 // Live simulation: timed cadence grants, the world step length, and gas threshold watches
-// (code/datums/om/cadence.dm, code/controllers/subsystems/vg.dm, code/engine/time/world_watches.dm),
+// (code/engine/cadence.dm, code/controllers/subsystems/vg.dm, code/engine/time/world_watches.dm),
 // and the null-safety helpers (code/_helpers/null_safety.dm).
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
@@ -14,13 +14,13 @@
 	changes++
 	LAZYADD(seen, dt_seconds())
 
-/datum/unit_test/om/livesim_cadence_grants_stack_and_lapse
+/datum/unit_test/engine/livesim_cadence_grants_stack_and_lapse
 
-/datum/unit_test/om/livesim_cadence_grants_stack_and_lapse/run_om(list/made)
+/datum/unit_test/engine/livesim_cadence_grants_stack_and_lapse/run_engine(list/made)
 	var/datum/step_cadence/test/C = new
 	made += C
-	var/datum/om_test_entity/rupture = entity(made)
-	var/datum/om_test_entity/breach = entity(made)
+	var/datum/engine_test_entity/rupture = entity(made)
+	var/datum/engine_test_entity/breach = entity(made)
 	TEST_ASSERT_EQUAL(C.dt_seconds(), CADENCE_BASE_DT, "no grant: the base step")
 	hold(C, STAT_CADENCE_HOLDS, 1, rupture, lasts = 3 SECONDS, key = CADENCE_GAS_BRISK)
 	act_drain_point() // the holder's on_change reaction runs at the next drain point
@@ -37,12 +37,12 @@
 	TEST_ASSERT_EQUAL(C.changes, 4, "the holder heard each change (grant, grant, lapse, lapse)")
 	TEST_ASSERT_EQUAL(jointext(C.seen, ","), "0.25,0.1,0.25,0.5", "and read the new step from the store when told")
 
-/datum/unit_test/om/livesim_cadence_grant_dies_with_its_source
+/datum/unit_test/engine/livesim_cadence_grant_dies_with_its_source
 
-/datum/unit_test/om/livesim_cadence_grant_dies_with_its_source/run_om(list/made)
+/datum/unit_test/engine/livesim_cadence_grant_dies_with_its_source/run_engine(list/made)
 	var/datum/step_cadence/test/C = new
 	made += C
-	var/datum/om_test_entity/source = entity(made)
+	var/datum/engine_test_entity/source = entity(made)
 	hold(C, STAT_CADENCE_HOLDS, 1, source, lasts = 60 SECONDS, key = CADENCE_GAS_FAST)
 	TEST_ASSERT_EQUAL(C.dt_seconds(), 0.1, "granted")
 	qdel(source)
@@ -166,7 +166,7 @@ CAPABILITIES(/obj/test_gas_holder)
 	TEST_ASSERT_EQUAL(holder.crossings, 0, "quiet while the pressure is below the level")
 	first.adjust_gas(/datum/gas/nitrogen, 200)
 	SSair.run_gas_frames(1)
-	OM_TEST_WAIT_UNTIL(holder.crowded, 60)
+	TEST_WAIT_UNTIL(holder.crowded, 60)
 	kernel_drain_now()
 	TEST_ASSERT(holder.crowded, "the crossing turned the var ([first.return_pressure()] kPa, watch [state.watch] live [state.watch?.is_live()], armed [state.armed_id])")
 	TEST_ASSERT_EQUAL(holder.crossings, 1, "and the holder's on_change ran once")

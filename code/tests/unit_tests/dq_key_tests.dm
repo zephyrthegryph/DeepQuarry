@@ -4,9 +4,9 @@
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
-/datum/unit_test/dq_om_keys_wake_turret
+/datum/unit_test/dq_keys_wake_turret
 
-/datum/unit_test/dq_om_keys_wake_turret/Run()
+/datum/unit_test/dq_keys_wake_turret/Run()
 	var/turf/T = locate(1, 1, 1)
 	var/obj/machinery/porta_turret/turret = allocate(/obj/machinery/porta_turret, T)
 	dq_machine_clear(turret)
@@ -15,9 +15,9 @@
 	turret.set_enabled(TRUE)
 	TEST_ASSERT(turret.armed, "switching it on arms it again (its scan wakes)")
 
-/datum/unit_test/dq_om_keys_wake_calm_brain
+/datum/unit_test/dq_keys_wake_calm_brain
 
-/datum/unit_test/dq_om_keys_wake_calm_brain/Run()
+/datum/unit_test/dq_keys_wake_calm_brain/Run()
 	set_global(nameof(GLOB.ai_pack_perceptions), GLOB.ai_pack_perceptions)
 	var/turf/T = run_loc_floor_bottom_left || locate(1, 1, 1)
 	var/mob/living/simple_mob/M = allocate(/mob/living/simple_mob, T)
@@ -38,14 +38,14 @@
 	rel_clear(B, nameof(B.primary_threat))
 
 /// One mob chunk key, two mask bits: a mob without a client wakes any-mob subscribers only.
-/datum/unit_test/dq_om_keys_mob_chunk_masks
+/datum/unit_test/dq_keys_mob_chunk_masks
 
-/datum/unit_test/dq_om_keys_mob_chunk_masks/Run()
+/datum/unit_test/dq_keys_mob_chunk_masks/Run()
 	var/turf/T = run_loc_floor_bottom_left || locate(1, 1, 1)
-	var/datum/om_wake_test_subscriber/players = allocate(/datum/om_wake_test_subscriber)
-	var/datum/om_wake_test_subscriber/anyone = allocate(/datum/om_wake_test_subscriber)
-	var/list/player_tokens = watch_mob_chunks(players, mob_chunks_around(T, 0), MOB_CHUNK_WATCH_PLAYER, TYPE_PROC_REF(/datum/om_wake_test_subscriber, chunk_woke))
-	var/list/any_tokens = watch_mob_chunks(anyone, list(mob_chunk(mob_chunk_id(T))), MOB_CHUNK_WATCH_ANY_MOB, TYPE_PROC_REF(/datum/om_wake_test_subscriber, chunk_woke))
+	var/datum/wake_test_subscriber/players = allocate(/datum/wake_test_subscriber)
+	var/datum/wake_test_subscriber/anyone = allocate(/datum/wake_test_subscriber)
+	var/list/player_tokens = watch_mob_chunks(players, mob_chunks_around(T, 0), MOB_CHUNK_WATCH_PLAYER, TYPE_PROC_REF(/datum/wake_test_subscriber, chunk_woke))
+	var/list/any_tokens = watch_mob_chunks(anyone, list(mob_chunk(mob_chunk_id(T))), MOB_CHUNK_WATCH_ANY_MOB, TYPE_PROC_REF(/datum/wake_test_subscriber, chunk_woke))
 	var/mob/living/npc = allocate(/mob/living, locate(world.maxx, world.maxy, T.z))
 	npc.forceMove(T)
 	TEST_ASSERT(length(anyone.wakes), "a mob moving into the chunk did not wake an any-mob subscriber")

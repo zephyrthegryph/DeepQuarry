@@ -1,5 +1,5 @@
-// Rust world subscriptions on the OM scheduler (code/engine/time/world_watches.dm,
-// doc/rewrite/object_model_core.md §4.8). The numeric registry (WORLD_REASON_*,
+// Rust world subscriptions on the scheduler (code/engine/time/world_watches.dm,
+// doc/rewrite/archive/object_model_core.md §4.8). The numeric registry (WORLD_REASON_*,
 // WORLD_WAKE_STRIDE) is generated from the Rust sources into verdigris/_bindings.dm.
 
 // --- Comparisons for conditions and rate watches.

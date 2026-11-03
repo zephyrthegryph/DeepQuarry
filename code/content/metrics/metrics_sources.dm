@@ -85,25 +85,25 @@
 		if(!isnull(ms_per_s))
 			M.gauge("service/[system.name]/ms_per_s", ms_per_s, METRICS_CAT_SERVICE, system.name, "ms/s")
 
-// ---------------------------------------------------------------- OM lanes and behaviours
+// ---------------------------------------------------------------- lanes and behaviours
 
-/// Each OM lane's cost and wake backlog, and each behaviour busy enough to matter
+/// Each lane's cost and wake backlog, and each behaviour busy enough to matter
 /// (METRICS_BEHAVIOUR_MIN_MS_PER_S), filed under its lane.
 /datum/metrics_source/om
-	/// Each behaviour's last OM_STAT_MS total, by behaviour id (a flat list: this runs over every behaviour
+	/// Each behaviour's last SCHED_STAT_MS total, by behaviour id (a flat list: this runs over every behaviour
 	/// each sample, so no string keys).
 	var/list/last_behaviour_ms
 	/// Each behaviour's metric name, by behaviour id, built once.
 	var/list/behaviour_metric
 
 /datum/metrics_source/om/collect(datum/system/server_metrics/M, dt)
-	var/datum/time_scheduler/sched = GLOB.om_live_sched
+	var/datum/time_scheduler/sched = GLOB.live_scheduler
 	var/datum/definition_registry/reg = definition_registry()
 	if(!sched || !reg)
 		return
 	var/static/list/lane_names = list("urgent", "simulation", "derived", "presentation", "background", "world")
-	var/list/lane_ms = new /list(OM_LANE_COUNT)
-	for(var/i in 1 to OM_LANE_COUNT)
+	var/list/lane_ms = new /list(LANE_COUNT)
+	for(var/i in 1 to LANE_COUNT)
 		lane_ms[i] = 0
 	var/list/stats = sched.stats
 	var/stat_count = length(stats)
@@ -116,11 +116,11 @@
 		var/id = B?.id
 		if(!id || id > stat_count)
 			continue
-		var/list/S = stats[min(id, OM_MAX_STAT_TYPES)]
+		var/list/S = stats[min(id, SCHED_MAX_STAT_TYPES)]
 		if(!S)
 			continue
-		var/lane = clamp(B.lane || LANE_SIMULATION, 1, OM_LANE_COUNT)
-		var/total = S[OM_STAT_MS]
+		var/lane = clamp(B.lane || LANE_SIMULATION, 1, LANE_COUNT)
+		var/total = S[SCHED_STAT_MS]
 		lane_ms[lane] += total
 		var/previous = last_behaviour_ms[id]
 		last_behaviour_ms[id] = total
@@ -134,7 +134,7 @@
 			metric = "behaviour/[B.name || B.type]/ms_per_s"
 			behaviour_metric[id] = metric
 		M.gauge(metric, ms_per_s, METRICS_CAT_BEHAVIOUR, lane_names[lane], "ms/s")
-	for(var/i in 1 to OM_LANE_COUNT)
+	for(var/i in 1 to LANE_COUNT)
 		var/ms_per_s = rate(lane_names[i], lane_ms[i], dt)
 		if(!isnull(ms_per_s))
 			M.gauge("lane/[lane_names[i]]/ms_per_s", ms_per_s, METRICS_CAT_LANE, lane_names[i], "ms/s")
@@ -161,9 +161,9 @@
 
 // ---------------------------------------------------------------- native frame
 
-/// Where the Rust frame (vg_frame, charged to the om_native system) spends its time: each phase's
+/// Where the Rust frame (vg_frame, charged to the native_step system) spends its time: each phase's
 /// microseconds per second (`frame.us.<phase>` counters, verdigris/ffi/src/frame.rs) and the world's
-/// awake law items, so a change in om_native names the phase and the law that moved.
+/// awake law items, so a change in native_step names the phase and the law that moved.
 /datum/metrics_source/native
 
 /datum/metrics_source/native/collect(datum/system/server_metrics/M, dt)

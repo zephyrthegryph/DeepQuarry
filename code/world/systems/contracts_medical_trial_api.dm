@@ -48,4 +48,4 @@
 	if(A.contract_eligibility_qualifying || A.contract_rare_eligibility_qualifying)
 		A.contract_eligibility_qualifying = FALSE
 		A.contract_rare_eligibility_qualifying = FALSE
-		PUBLISH_LEGACY(patient, /datum/notice/mob_medical_issues_changed)
+		PUBLISH(patient, mob_medical_issues_changed)

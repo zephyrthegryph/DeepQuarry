@@ -1,8 +1,8 @@
 /// A real windoor's declared emag opens through its actual delayed animation and leaves the mechanism disabled, while unpowered/open refusals spend no card uses.
-/datum/unit_test/om/interim_windoor_emag_disabled_open
+/datum/unit_test/engine/interim_windoor_emag_disabled_open
 	parent_type = /datum/unit_test/dq_p2_reagents
 
-/datum/unit_test/om/interim_windoor_emag_disabled_open/run_gate()
+/datum/unit_test/engine/interim_windoor_emag_disabled_open/run_gate()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/user = rc_actor(T)
 	var/obj/machinery/door/window/door = allocate(/obj/machinery/door/window, T)

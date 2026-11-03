@@ -41,9 +41,9 @@
 				return tgui_text_name_filter(stripped_input(user, message, title, default, PREVENT_CHARACTER_TRIM_LOSS(max_length)), max_length)
 		else
 			if(multiline)
-				return input(user, message, title, default) as message|null // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
+				return input(user, message, title, default) as message|null // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback of asks() never uses it)
 			else
-				return tgui_text_name_filter(input(user, message, title, default) as text|null, max_length) // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
+				return tgui_text_name_filter(input(user, message, title, default) as text|null, max_length) // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback of asks() never uses it)
 
 	var/datum/tgui_input_text/text_input = new(user, message, title, default, max_length, multiline, encode, timeout, ui_state)
 	text_input.tgui_interact(user)

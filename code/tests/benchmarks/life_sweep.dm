@@ -1,4 +1,4 @@
-// Mob Life scheduler cost across mob counts (doc/rewrite/life_on_om_benchmark.md).
+// Mob Life scheduler cost across mob counts (doc/rewrite/archive/life_sequence_benchmark.md).
 //
 // The same file runs on both schedulers being compared; each branch supplies the three
 // adapter procs in life_sweep_adapter.dm:
@@ -6,7 +6,7 @@
 //   life_bench_ms()      milliseconds spent so far in the subsystem that runs Life
 //   life_bench_scheduler() a label
 // One boot measures every configuration in turn: spawn, settle, measure a window, delete.
-// <cfg>_life_ms_per_s is the OM scheduler pass alone (what SSbehaviours.fire() measured before the kernel), so it
+// <cfg>_life_ms_per_s is the scheduler pass alone (what SSbehaviours.fire() measured before the kernel), so it
 // compares across that change; <cfg>_phase_ms_per_s is the kernel's whole N..R span (native frame and work items too).
 //   tools/build/build.sh bench --scenario=life_sweep -DOM_NO_STAGE_PROFILE [--arg=seconds=40] [--arg=configs=h32,mix]
 
@@ -59,7 +59,7 @@
 		M.set_low_priority(FALSE)
 		if(i <= busy_mice)
 			// A long sleep kept the old scheduler's status systems (and so its Life) running; on the
-			// object model it is a timed contribution nothing ticks (life_on_om_benchmark.md).
+			// engine it is a timed contribution nothing ticks (life_sequence_benchmark.md).
 			M.status_set(STAT_SLEEPING, 100000)
 		mobs += M
 		CHECK_TICK

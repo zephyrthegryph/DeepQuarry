@@ -36,7 +36,7 @@
 		var/mob/living/carbon/human/H = source
 		affected = H.get_organ(target_zone)
 	if(affected)
-		// The implant site slot (organ_external.dm, OM relations step 2) is
+		// The implant site slot (organ_external.dm, relations step 2) is
 		// the implanted_in relation: this move sets part/imp_in and the
 		// organ's implants membership, same as the physical placement.
 		move_into(affected, ORGAN_SLOT_IMPLANTS, src)

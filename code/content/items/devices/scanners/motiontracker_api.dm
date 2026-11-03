@@ -3,6 +3,9 @@
 //   SSmotiontracker.ping(source, hear_chance)                 anything loud enough to echo: raises movable_motiontracker for every listener
 //   SSmotiontracker.queue_echo(root_turf, at_turf, count, client)   a listener queues an echo to draw for one client
 
+/// From /datum/controller/subsystem/motion_tracker/notice() (source_atom,/turf/echo_turf_location)
+ACTION(movable_motiontracker, atom/movable/source_, turf/echo_turf_location, FIXED, notice = /datum/notice/movable_motiontracker)
+
 // We get this from anything in the world that would cause a motion tracker ping
 // From sounds to motions, to mob attacks. This then sends a signal to anyone listening.
 /datum/system/motiontracker/proc/ping(atom/source, hear_chance = 30)
@@ -21,7 +24,7 @@
 	if(queued_echo_turfs[ref_token(T)]) // Already echoing
 		return
 	all_pings_round++
-	PUBLISH_LEGACY(src, /datum/notice/movable_motiontracker, source, T)
+	PUBLISH(src, movable_motiontracker, source_ = source, echo_turf_location = T)
 
 // We get this back from anything that handles the signal, and queues up a turf to draw the echo on
 // The logic is in the SIGNAL HANDLER for if it does anything at all with the signal instead of assuming

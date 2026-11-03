@@ -29,7 +29,7 @@ window starts right after init, so it includes the post-boot backlog. New scenar
 | idle tick avg / p50 | 94.3 % / 84 % | 36.6 % / 10 % |
 | idle TPS | 27.5 | 39.6 |
 | overruns in window | 1042 | 124 |
-| om_appearance ms/s | 368 | 165 |
+| appearance_drain ms/s | 368 | 165 |
 | REF() self time | 23.9 s | not in top |
 | APC_REPORT after init settles | 20-30/min continuing | 207 in the first 4 min, then none |
 | last 1200 ticks avg usage | 22 % (powerless) | 18.9 % |

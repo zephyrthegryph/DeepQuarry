@@ -80,9 +80,9 @@
 		TEST_ASSERT(vision in index[key], "the human sight hook reads [key]")
 
 /// Each HUD input changed through its setter (or its producer) runs the HUD pass with no manual call, once per drain.
-/datum/unit_test/life_om/dq_b4_hud_follows_each_input
+/datum/unit_test/life_seq/dq_b4_hud_follows_each_input
 
-/datum/unit_test/life_om/dq_b4_hud_follows_each_input/run_life()
+/datum/unit_test/life_seq/dq_b4_hud_follows_each_input/run_life()
 	var/mob/living/carbon/human/dq_test_hud_probe/H = allocate(/mob/living/carbon/human/dq_test_hud_probe)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	H.pretend_client = TRUE
@@ -129,7 +129,7 @@
 /// Waits out the HUD's coalesce window and drains (twice: a trailing pass whose window ends in the wait runs in it), so the next
 /// change draws at once.
 /// For the HUD probe it waits until a whole window passes with no pass (Life frames drain fear and tiredness).
-/datum/unit_test/life_om/proc/dq_b4_settle(mob/living/L)
+/datum/unit_test/life_seq/proc/dq_b4_settle(mob/living/L)
 	var/mob/living/carbon/human/dq_test_hud_probe/P = istype(L, /mob/living/carbon/human/dq_test_hud_probe) ? L : null
 	for(var/i in 1 to 8)
 		life_test_drain()
@@ -140,9 +140,9 @@
 			break
 
 /// Coalescing holds for generated reads: many inputs changed inside the coalesce window draw once when it ends.
-/datum/unit_test/life_om/dq_b4_hud_generated_reads_coalesce
+/datum/unit_test/life_seq/dq_b4_hud_generated_reads_coalesce
 
-/datum/unit_test/life_om/dq_b4_hud_generated_reads_coalesce/run_life()
+/datum/unit_test/life_seq/dq_b4_hud_generated_reads_coalesce/run_life()
 	var/mob/living/carbon/human/dq_test_hud_probe/H = allocate(/mob/living/carbon/human/dq_test_hud_probe)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	H.pretend_client = TRUE
@@ -164,9 +164,9 @@
 	H.pretend_client = FALSE
 
 /// Sight follows its inputs on a clientless mob with no refresh call: see_invisible_default and seedarkness.
-/datum/unit_test/life_om/dq_b4_vision_follows_inputs
+/datum/unit_test/life_seq/dq_b4_vision_follows_inputs
 
-/datum/unit_test/life_om/dq_b4_vision_follows_inputs/run_life()
+/datum/unit_test/life_seq/dq_b4_vision_follows_inputs/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	dq_b4_settle(H)
@@ -182,9 +182,9 @@
 	TEST_ASSERT(H.see_invisible != SEE_INVISIBLE_NOLIGHTING, "turning it back on restores it")
 
 /// canmove follows resting through its setter: no update_canmove() call.
-/datum/unit_test/life_om/dq_b4_canmove_follows_resting
+/datum/unit_test/life_seq/dq_b4_canmove_follows_resting
 
-/datum/unit_test/life_om/dq_b4_canmove_follows_resting/run_life()
+/datum/unit_test/life_seq/dq_b4_canmove_follows_resting/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	H.set_resting(FALSE)

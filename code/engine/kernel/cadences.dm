@@ -11,7 +11,7 @@
 // cigarette, arming a grenade, a mob stepping on a trap) starts it; the work itself says when it
 // is done.
 //
-// A cadence used to be an object-model pipeline with one stage. It is a plain definition now: the work item
+// A cadence used to be an engine pipeline with one stage. It is a plain definition now: the work item
 // (/datum/work_item/cadence, the stage adapter's successor) carries the old stage body in perform(), and
 // membership replaces the ring, parking and the idle bits. The rule stays exact: a member is stepped iff its
 // entity is started on that cadence (E.periodic_pipe).

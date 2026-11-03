@@ -184,13 +184,13 @@ GLOBAL_VAR_INIT(rx_draining, FALSE)
 							continue
 						var/attr_start = TICK_USAGE
 						rx_call_reaction(E, R, keys)
-						attr.note(KA_KIND_REACTION, KM_SYS_OM_APPEARANCE, E.type, R.handler, TICK_USAGE_TO_MS(attr_start))
+						attr.note(KA_KIND_REACTION, KM_SYS_APPEARANCE, E.type, R.handler, TICK_USAGE_TO_MS(attr_start))
 					else
 						var/datum/rx_listener/L = target
 						if(L.source && L.listener && !QDELETED(L.listener))
 							var/attr_start = TICK_USAGE
 							rx_call(L.listener, L.handler, E, keys)
-							attr.note(KA_KIND_REACTION, KM_SYS_OM_APPEARANCE, L.listener.type, L.handler, TICK_USAGE_TO_MS(attr_start))
+							attr.note(KA_KIND_REACTION, KM_SYS_APPEARANCE, L.listener.type, L.handler, TICK_USAGE_TO_MS(attr_start))
 				catch(var/exception/e)
 					dq_report_caught(e, "rx_drain: [E.type]")
 	GLOB.rx_draining = FALSE

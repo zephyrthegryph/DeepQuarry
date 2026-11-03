@@ -52,7 +52,7 @@ CAPABILITIES(/mob/living)
 	// Prone posture composes density rather than overwriting the stat's served value.
 	when(nameof(lying), contributes(STAT_DENSITY, FALSE, priority = PRIORITY_FORCE))
 	living_abilities()
-	every(PROC_REF(autofire_interval), then(PROC_REF(autofire_tick)), when = nameof(autofire_on))
+	every(PROC_REF(autofire_interval), then(PROC_REF(autofire_tick)), when = STAT_AUTOFIRE_ON)
 	ref_many(nameof(shared_soul_links))
 	// The attached limbs (rel_add() in body/parts/attach.dm): a look follows them attaching and leaving.
 	ref_many(nameof(organs), /obj/item/organ/external)

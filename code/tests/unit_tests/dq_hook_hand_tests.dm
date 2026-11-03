@@ -1,5 +1,5 @@
-// Hand-converted om_hook sites: each test drives the real trigger of a hook that became observe() and checks what the handler did.
-// The handlers take (datum/act/notice/N); the notices of the before/ events that only watch are twins of the event (om_event_map.json).
+// Hand-converted hook sites: each test drives the real trigger of a hook that became observe() and checks what the handler did.
+// The handlers take (datum/act/notice/N); the notices of the before/ events that only watch are twins of the event (event_map.json).
 
 /// A receiver that counts HasProximity calls.
 /obj/dq_hook_hand_receiver

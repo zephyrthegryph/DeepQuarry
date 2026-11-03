@@ -58,7 +58,7 @@
 		return "[D.type] woke while its input held steady"
 	deferred_run(change)
 	// Positive: wait for the wake itself (bounded), not a guessed tick count.
-	OM_TEST_WAIT_UNTIL(world_wake_traced(D) != before, max(ticks, 30))
+	TEST_WAIT_UNTIL(world_wake_traced(D) != before, max(ticks, 30))
 	var/after = world_wake_traced(D)
 	world_wake_untrace(D)
 	if(after == before)
@@ -80,7 +80,7 @@
 	var/republish_cell
 
 /datum/world_test_subscriber/proc/on_world_wake(datum/native_watch/world/watch, reason, source, source_kind)
-	var/datum/time_scheduler/sched = GLOB.om_live_sched
+	var/datum/time_scheduler/sched = GLOB.live_scheduler
 	wakes += list(list(reason, source, source_kind, sched.world_step_tick, sched.world_previous_step_tick, watch.lane))
 	if(republish > 0)
 		republish--
@@ -98,7 +98,7 @@
 	world_test_probe_set(70, 110, 293)
 	world_test_probe_set(70, 120, 293)
 	world_test_probe_set(70, 130, 293)
-	OM_TEST_WAIT_UNTIL(length(S.wakes) >= 1, 60)
+	TEST_WAIT_UNTIL(length(S.wakes) >= 1, 60)
 	dq_test_ticks(3) // a wake that failed to merge would be a second one
 	TEST_ASSERT_EQUAL(length(S.wakes), 1, "merged wakes")
 	var/list/wake = S.wakes[1]
@@ -117,7 +117,7 @@
 	var/datum/native_watch/world/W = world_watch_changed(S, WORLD_PROBE(71), CH_BIT(CH_PROBE_PRESSURE), WORLD_TEST_WAKE)
 	dq_test_ticks(2)
 	world_test_probe_set(71, 200, 293)
-	OM_TEST_WAIT_UNTIL(length(S.wakes) >= 4, 80)
+	TEST_WAIT_UNTIL(length(S.wakes) >= 4, 80)
 	dq_test_ticks(3) // a fifth wake would be a double wake
 	TEST_ASSERT_EQUAL(length(S.wakes), 4, "one wake per change round")
 	var/list/ticks = list()
@@ -154,7 +154,7 @@
 	dq_test_ticks(2)
 	qdel(S)
 	world_test_probe_set(73, 200, 293)
-	OM_TEST_WAIT_UNTIL(!W.handle, 60) // the watch is dropped when its wake is delivered
+	TEST_WAIT_UNTIL(!W.handle, 60) // the watch is dropped when its wake is delivered
 	dq_test_ticks(2)
 	TEST_ASSERT_EQUAL(length(S.wakes), 0, "a deleted owner was woken")
 	TEST_ASSERT(!W.handle, "a watch whose owner is gone was kept")
@@ -164,7 +164,7 @@
 /datum/unit_test/dq_world_lanes_and_budget
 
 /datum/unit_test/dq_world_lanes_and_budget/Run()
-	var/datum/time_scheduler/sched = GLOB.om_live_sched
+	var/datum/time_scheduler/sched = GLOB.live_scheduler
 	world_test_probe_set(74, 100, 293)
 	dq_test_ticks(2)
 	var/old_budget = sched.world_budget
@@ -183,7 +183,7 @@
 	dq_test_ticks(2)
 	world_test_probe_set(74, 200, 293)
 	// Six normal wakes at two per tick take three ticks; wait for all ten deliveries (bounded).
-	OM_TEST_WAIT_UNTIL(dq_test_all_woken(normal) && dq_test_all_woken(urgent), 80)
+	TEST_WAIT_UNTIL(dq_test_all_woken(normal) && dq_test_all_woken(urgent), 80)
 	sched.world_budget = old_budget
 	var/first_urgent_tick
 	for(var/datum/world_test_subscriber/S as anything in urgent)
@@ -227,7 +227,7 @@
 		world_watch_when(band, COND_BAND(WORLD_PROBE(52), CH_PROBE_PRESSURE, list(50, 150)), WORLD_TEST_WAKE),
 		world_watch_when(door, COND_DIFFERENCE(WORLD_PROBE(53), WORLD_PROBE(54), CH_PROBE_PRESSURE, 50), WORLD_TEST_WAKE),
 	)
-	OM_TEST_WAIT_UNTIL(length(band.wakes) >= 1, 60) // the starting band is the delivery to wait for
+	TEST_WAIT_UNTIL(length(band.wakes) >= 1, 60) // the starting band is the delivery to wait for
 	dq_test_ticks(3) // the others must stay quiet over the same span
 	TEST_ASSERT_EQUAL(length(changed.wakes), 0, "Changed fired at registration")
 	TEST_ASSERT_EQUAL(length(hot.wakes), 0, "Threshold fired while below")
@@ -240,7 +240,7 @@
 	world_test_probe_set(51, 100, 500)
 	world_test_probe_set(52, 200, 293)
 	world_test_probe_set(54, 200, 293)
-	OM_TEST_WAIT_UNTIL(length(changed.wakes) >= 1 && length(hot.wakes) >= 1 && length(band.wakes) >= 2 && length(door.wakes) >= 1, 60)
+	TEST_WAIT_UNTIL(length(changed.wakes) >= 1 && length(hot.wakes) >= 1 && length(band.wakes) >= 2 && length(door.wakes) >= 1, 60)
 	TEST_ASSERT_EQUAL(length(changed.wakes), 1, "Changed wakes")
 	var/list/wake = changed.wakes[1]
 	TEST_ASSERT(wake[1] & CH_BIT(CH_PROBE_PRESSURE), "Changed reason [wake[1]] lacks the pressure bit")
@@ -267,14 +267,14 @@
 /datum/unit_test/dq_world_diagnostics
 
 /datum/unit_test/dq_world_diagnostics/Run()
-	var/datum/time_scheduler/sched = GLOB.om_live_sched
+	var/datum/time_scheduler/sched = GLOB.live_scheduler
 	var/datum/world_test_subscriber/S = allocate(/datum/world_test_subscriber)
 	world_test_probe_set(75, 100, 293)
 	dq_test_ticks(2)
 	var/datum/native_watch/world/W = world_watch_changed(S, WORLD_PROBE(75), CH_BIT(CH_PROBE_PRESSURE), WORLD_TEST_WAKE)
 	dq_test_ticks(2)
 	world_test_probe_set(75, 200, 293)
-	OM_TEST_WAIT_UNTIL(length(S.wakes) >= 1, 60)
+	TEST_WAIT_UNTIL(length(S.wakes) >= 1, 60)
 	qdel(W)
 	var/list/diagnostics = world_diagnostics()
 	var/list/by_type = diagnostics["wakes_by_type"]
@@ -285,7 +285,7 @@
 	// Bounded: once full, new types count under "other".
 	var/list/saved = sched.world_wakes_by_type
 	var/list/full = list()
-	for(var/i in 1 to OM_MAX_STAT_TYPES)
+	for(var/i in 1 to SCHED_MAX_STAT_TYPES)
 		full["filler [i]"] = 1
 	sched.world_wakes_by_type = full
 	sched.world_count(/datum/unit_test)

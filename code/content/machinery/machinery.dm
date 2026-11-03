@@ -108,8 +108,6 @@ Class Procs:
 	var/tmp/area/power_area // ALLOW(base_vars): the relation to the area every machine contributes its draw to and reads its channels from, a link not a flag
 	/// The has_power reading power_change() last acted on: a flip is a difference from it (power_change()'s result).
 	var/tmp/power_seen = TRUE // ALLOW(base_vars): the has_power reading power_change() last acted on, one bit of per-machine memory for flip detection
-	/// A caller forced the machine's power on by hand (stat_remove(NOPOWER) while its area is dark): area_gives_power() says yes. The shim's, not the grid's.
-	var/power_forced = FALSE // ALLOW(base_vars): the manual override of the grid's reading that the stat_remove(NOPOWER) shim writes
 	/// Cache of the real part objects once materialize_parts() has pulled
 	/// them out of the CONTAINER_SLOT_INTERNALS latent entries (roadmap C6):
 	/// null until then. The circuit board is not in this list; see `circuit`.
@@ -138,7 +136,7 @@ CAPABILITIES(/obj/machinery)
 	// The grid's reading: the machine has power while its area's channel is energized (the area's tracked channel vars, one hop through power_area).
 	// The area's channel flip reaches every machine through this read (its generated deps invalidate it). A type that runs on its own supply, or
 	// delays its loss, drops this entry by its key and says its own.
-	contributes(STAT_HAS_POWER, TYPE_PROC_REF(/obj/machinery, area_gives_power), key = "area_power", reason = MSG(power/unpowered), reads = list("power_forced", USES_POWER_KEY, "power_area.requires_power", "power_area.power_equip", "power_area.power_light", "power_area.power_environ"))
+	contributes(STAT_HAS_POWER, TYPE_PROC_REF(/obj/machinery, area_gives_power), key = "area_power", reason = MSG(power/unpowered), reads = list(USES_POWER_KEY, "power_area.requires_power", "power_area.power_equip", "power_area.power_light", "power_area.power_environ"))
 	contributes(STAT_OPERABLE, STAT_HAS_POWER, key = "power_operable")
 	// A flip of has_power, whatever wrote it (the area's channel, an override's contribution, a hold): the machine acts on it. The stat reads the
 	// area's tracked channel vars, so a channel write reaches every machine on it through this hook at the next drain; nothing walks the area.
@@ -573,8 +571,11 @@ MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor
 		to_chat(A.actor, span_notice("You disconnect the monitor."))
 	return dismantle() ? OP_OK : OP_DECLINE
 
+/// /obj signals from base of obj/deconstruct(): (disassembled)
+ACTION(obj_deconstruct, disassembled, FIXED, notice = /datum/notice/obj_deconstruct)
+
 /obj/machinery/proc/dismantle()
-	PUBLISH_LEGACY(src, /datum/notice/obj_deconstruct, FALSE)
+	PUBLISH(src, obj_deconstruct, disassembled = FALSE)
 	play_sfx(src, SFX_ITEMS_CROWBAR)
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/I in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects

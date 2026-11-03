@@ -1,17 +1,17 @@
 /// Real outcrop mining preserves its four-second wait, exact ore family, bounded yield and original actor/tool identities.
-/datum/unit_test/om/interim_outcrop_mining_cleanup
+/datum/unit_test/engine/interim_outcrop_mining_cleanup
 	var/outcrop_type = /obj/structure/outcrop
 	var/ore_type = /obj/item/ore/glass
 	var/minimum = 5
 	var/maximum = 10
 
-/datum/unit_test/om/interim_outcrop_mining_cleanup/diamond
+/datum/unit_test/engine/interim_outcrop_mining_cleanup/diamond
 	outcrop_type = /obj/structure/outcrop/diamond
 	ore_type = /obj/item/ore/diamond
 	minimum = 2
 	maximum = 4
 
-/datum/unit_test/om/interim_outcrop_mining_cleanup/run_om(list/made)
+/datum/unit_test/engine/interim_outcrop_mining_cleanup/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	actor.enable_godmode()
@@ -37,7 +37,7 @@
 	TEST_ASSERT(!QDELETED(actor) && actor.loc == T && !actor.incapacitated(), "The actual completed mining preserves the original capable actor")
 	TEST_ASSERT_EQUAL(actor.get_active_hand(), tool, "Actual completed mining preserves the original held pickaxe")
 
-/datum/unit_test/om/interim_outcrop_maul_cleanup/run_om(list/made)
+/datum/unit_test/engine/interim_outcrop_maul_cleanup/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	actor.enable_godmode()

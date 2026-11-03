@@ -1,5 +1,5 @@
 /// The actual floor item's wrench action refunds one wood sheet only after its real scaled tool task consumes the original marker.
-/datum/unit_test/om/interim_gravemarker_item_timed_dismantle/run_om(list/made)
+/datum/unit_test/engine/interim_gravemarker_item_timed_dismantle/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/item/material/gravemarker/marker = allocate(/obj/item/material/gravemarker, T, MAT_WOOD)
@@ -27,7 +27,7 @@
 	TEST_ASSERT_EQUAL(user.get_active_hand(), wrench, "actual timed dismantling preserves the exact held wrench")
 
 /// A real sticky item marker in the actor's other hand cannot be consumed or refunded when its actual wrench task completes.
-/datum/unit_test/om/interim_gravemarker_item_sticky_refusal/run_om(list/made)
+/datum/unit_test/engine/interim_gravemarker_item_sticky_refusal/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/item/material/gravemarker/marker = allocate(/obj/item/material/gravemarker, T, MAT_WOOD)

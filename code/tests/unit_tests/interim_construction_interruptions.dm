@@ -63,12 +63,12 @@
 	catch(var/exception/e)
 		TEST_FAIL("Timed frame runtime during [stage]: [e] ([e.file]:[e.line])\n[e.desc]")
 
-/datum/unit_test/om/interim_frame_wiring_actor_interruption
+/datum/unit_test/engine/interim_frame_wiring_actor_interruption
 	parent_type = /datum/unit_test/dq_round3_frame_construction
-/datum/unit_test/om/interim_frame_wiring_actor_interruption/run_gate()
+/datum/unit_test/engine/interim_frame_wiring_actor_interruption/run_gate()
 	interim_frame_interruption(FALSE)
 
-/datum/unit_test/om/interim_frame_wiring_cable_interruption
+/datum/unit_test/engine/interim_frame_wiring_cable_interruption
 	parent_type = /datum/unit_test/dq_round3_frame_construction
-/datum/unit_test/om/interim_frame_wiring_cable_interruption/run_gate()
+/datum/unit_test/engine/interim_frame_wiring_cable_interruption/run_gate()
 	interim_frame_interruption(TRUE)

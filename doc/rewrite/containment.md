@@ -181,7 +181,7 @@ text.
 
 A slot is a relation (`/datum/om/relation/slot`, `archive/object_model_core.md` §7) that
 also owns loc: linking a thing into a slot is a ledger move, and it is also an
-`om_link` to the holder, so a slot gets a relation's `changes` channels and
+`link` to the holder, so a slot gets a relation's `changes` channels and
 `contributes`/`grants` rows for free, on top of what a container needs. There
 are no view fields: a relation or slot IS the state, and nothing mirrors it
 into a var. The old mirrors are deleted -- a machine's or mech's `occupant`,
@@ -195,13 +195,13 @@ plus the named ones (`BUCKLED`, `BUCKLED_MOBS`, `PULLING`, `PULLED_BY`,
 `GRABBED_BY`, `GRAB_TARGET`, `GRAB_ASSAILANT`, `EYE_OWNER`, `EYES_OF`, `ACTIVE_EYE`, `ORBIT_TARGET`,
 `ORBITERS`, `FOLLOWING`, `FOLLOWERS`, `BORER_HOST`, `BORER_OF`, `LEASH_PET`,
 `LEASH_MASTER`, `LEASH_OF`, `TETHERED_HANDHELD`, `TETHER_HOST`). Writers go
-through `move_into()`/`slot_remove()` for a slot and `om_link()`/`om_unlink()`
+through `move_into()`/`slot_remove()` for a slot and `link()`/`om_unlink()`
 for a relation; a relation's `on_link()`/`on_unlink()` hold only real side
 effects (alerts, animations, signal registration). The macros expand to proc
 calls, so DM will not take `BUCKLED(M).x` or `BUCKLED(M)?.x`: read into a
 typed local first. A slot decl subclasses `/datum/om/relation/slot` and declares
 `holder` (a holder type, or list of them) instead of overriding a per-holder
-proc; the registry (`code/datums/om/registry.dm`,
+proc; the registry (`code/engine/registry.dm`,
 `build_slot_holders()`/`slot_group_for()`) builds each holder's slot list once,
 picking the most-derived declared holder type a holder's key
 (`slot_holder_key()`, its own type unless overridden -- a mob's is its body
@@ -639,7 +639,7 @@ These are interactions that perform ledger moves, so each one is a single atomic
 
 **As built (C7).** Code: `code/modules/vore/eating/belly_slot.dm`, `belly_shared_lists.dm`, `vore_consent.dm`; tests in `code/tests/unit_tests/dq_vore_slot_tests.dm`.
 - **Slot.** `/datum/slot_def/belly_interior` (`BELLY_SLOT_INTERIOR`): sealed, `reaches_mobs`, no heat or damage share from outside (the belly's own modes act on its contents). Eating, releasing, transfers, absorbing, egging and in-belly spawning go through `belly_insert()` (`move_into`), `belly_release_to()` (`slot_remove`, falling back to the turf when a full holder refuses) and `slot_transfer()`. The ledger is made on first use.
-- **Scheduling.** SSbellies is deleted. `belly_reschedule()` arms one OM deadline (`/datum/om/behaviour/belly_cycle`, 6 s, 2 s in turbo) when something enters and re-arms it each cycle until the belly empties; an empty belly that makes liquid from nutrition waits on the same deadline for its next batch. Callers: `Initialize`, `Entered`/`Exited`, `state_post_apply`, the vore panel's attribute setters and the belly preview.
+- **Scheduling.** SSbellies is deleted. `belly_reschedule()` arms one deadline (`/datum/om/behaviour/belly_cycle`, 6 s, 2 s in turbo) when something enters and re-arms it each cycle until the belly empties; an empty belly that makes liquid from nutrition waits on the same deadline for its next batch. Callers: `Initialize`, `Entered`/`Exited`, `state_post_apply`, the vore panel's attribute setters and the belly preview.
 - **Rates.** `belly_cycle(seconds)` replaces `process()`. Every mode's per-cycle amount is a rate per `BELLY_BASELINE_TICK`, scaled by the elapsed seconds, so late and turbo cycles give the same totals (drain and resize exactly). Digestion damage goes through `injure()` as continuous harm (`INJURE_CONTINUOUS`): it grows an existing wound or lesion additively, with no per-hit rounding, thresholds or rolls, so turbo and normal digestion land the same injury over the same time. The belly's interior is the predator's body temperature (`/obj/belly/get_interior_temperature()`); prey who allow temperature play feel `bellytemperature` instead.
 - **Modes as rules.** A mode is trigger (the cycle), condition (its `consent` predicate) and effect (`process_mob()`). The mode datums stay: they do not fit P4's compiled watches, which need channel-backed properties.
 - **Consent.** `/datum/predicate/vore_devour`, `vore_digest`, `vore_absorb`, `vore_heal`, `vore_strip`, `vore_affect_worn`, with reasons. `vore_sanity_checks()` shows the devour reason; a prey who refuses the belly's mode is held, and the predator is told why on entry.
@@ -647,7 +647,7 @@ These are interactions that perform ledger moves, so each one is a single atomic
 
 ## 10. Occupants and mechs (C8, with the body rewrite)
 
-- **Occupant slots** are internal and sealed, and they define the occupant's environment (breathing and temperature). Landed (OM relations step 3), each its own `/datum/om/relation/slot/occupant` subtype with `move_into()`/`slot_remove()` replacing raw `forceMove()`:
+- **Occupant slots** are internal and sealed, and they define the occupant's environment (breathing and temperature). Landed (relations step 3), each its own `/datum/om/relation/slot/occupant` subtype with `move_into()`/`slot_remove()` replacing raw `forceMove()`:
   - Sleepers (`Sleeper.dm`, also the mech-mounted sleeper equipment), scanners (`adv_med.dm`'s body scanner, VR pods in `vr_console.dm`), cryo (`cryo.dm`), cryopods (`cryopod.dm`), the DNA modifier (`dna_modifier.dm`, landed earlier as C8a), the cloning pod (`cloning.dm`), recharge stations (`rechargestation.dm`), resleevers, the suit storage unit (`suit_storage.dm`) and cycler (`suit_cycler.dm`), the implant chair (`implantchair.dm`), the gibber (`gibber.dm`), the transport pod (`transportpod.dm`) and the mech passenger compartment (`passenger.dm`) all use them.
   - There is no separate occupant relation: the slot is the relation, and the machine has no `occupant` var.
   - The old "eject everything except a hand-kept exclude list" loops (sleeper, VR pod) are gone along with the sleeper's partial-eject bug: everything but the occupant lives in its own default `machine_internals` slot now, so `slot_remove()` on the occupant slot is the only thing that ever leaves on eject.

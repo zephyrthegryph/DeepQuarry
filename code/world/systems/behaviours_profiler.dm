@@ -1,20 +1,20 @@
-/// OM profiling panel (completion_plan sec 3.6, K2): per-behaviour and per-lane cost
+/// scheduler profiling panel (completion_plan sec 3.6, K2): per-behaviour and per-lane cost
 /// from the scheduler's own counters (run_slot() measures TICK_USAGE per slot and
 /// behaviour; profiled pipeline frames time each stage). Opened by the admin verb
-/// "OM Profiler" (Debug); tgui interface OmProfiler.tsx.
+/// "Scheduler Profiler" (Debug); tgui interface SchedulerProfiler.tsx.
 
 /datum/system/behaviours
 	/// world.time the profiler counters were last cleared (0: since boot).
 	var/profile_reset_time = 0
 
 CAPABILITIES(/datum/system/behaviours)
-	interface("OmProfiler", title = "Object Model Profiler", rights = R_DEBUG)
+	interface("SchedulerProfiler", title = "Scheduler Profiler", rights = R_DEBUG)
 	op("reset", ui_act("reset"), then(PROC_REF(ui_act_reset)))
 
 /// /datum/system/behaviours's window data.
 /datum/system/behaviours/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	var/datum/time_scheduler/sched = GLOB.om_live_sched
+	var/datum/time_scheduler/sched = GLOB.live_scheduler
 	var/datum/definition_registry/reg = definition_registry()
 	var/static/list/lane_names = list("Urgent", "Simulation", "Derived", "Presentation", "Background", "World")
 	var/elapsed = max(world.time - profile_reset_time, 1) / (1 SECONDS)
@@ -23,10 +23,10 @@ CAPABILITIES(/datum/system/behaviours)
 	data["error_count"] = sched ? length(sched.errors) : 0
 	data["behind"] = !last_done
 	var/list/behaviours = list()
-	var/list/lane_ms = new /list(OM_LANE_COUNT)
-	var/list/lane_runs = new /list(OM_LANE_COUNT)
-	var/list/lane_count = new /list(OM_LANE_COUNT)
-	for(var/i in 1 to OM_LANE_COUNT)
+	var/list/lane_ms = new /list(LANE_COUNT)
+	var/list/lane_runs = new /list(LANE_COUNT)
+	var/list/lane_count = new /list(LANE_COUNT)
+	for(var/i in 1 to LANE_COUNT)
 		lane_ms[i] = 0
 		lane_runs[i] = 0
 		lane_count[i] = 0
@@ -35,12 +35,12 @@ CAPABILITIES(/datum/system/behaviours)
 		for(var/datum/scheduled_behaviour/B as anything in reg.behaviours)
 			if(!B?.id)
 				continue
-			if(B.id >= OM_MAX_STAT_TYPES)
+			if(B.id >= SCHED_MAX_STAT_TYPES)
 				shared_bucket = TRUE
-			var/list/S = (length(sched.stats) >= min(B.id, OM_MAX_STAT_TYPES)) ? sched.stats[min(B.id, OM_MAX_STAT_TYPES)] : null
-			var/ms = S ? S[OM_STAT_MS] : 0
-			var/runs = S ? S[OM_STAT_RUNS] : 0
-			var/lane = clamp(B.lane || LANE_SIMULATION, 1, OM_LANE_COUNT)
+			var/list/S = (length(sched.stats) >= min(B.id, SCHED_MAX_STAT_TYPES)) ? sched.stats[min(B.id, SCHED_MAX_STAT_TYPES)] : null
+			var/ms = S ? S[SCHED_STAT_MS] : 0
+			var/runs = S ? S[SCHED_STAT_RUNS] : 0
+			var/lane = clamp(B.lane || LANE_SIMULATION, 1, LANE_COUNT)
 			var/population = 0
 			if(B.id <= length(sched.rings))
 				for(var/datum/cadence_ring/R as anything in sched.rings[B.id])
@@ -60,13 +60,13 @@ CAPABILITIES(/datum/system/behaviours)
 				"ms" = round(ms, 0.001),
 				"ms_per_s" = round(ms / elapsed, 0.001),
 				"us_per_run" = runs ? round(ms * 1000 / runs, 0.01) : 0,
-				"call_max_ms" = S ? round(S[OM_STAT_CALL_MAX], 0.001) : 0,
-				"late_max" = S ? S[OM_STAT_LATE_MAX] : 0,
-				"deferrals" = S ? S[OM_STAT_DEFERRALS] : 0,
-				"breaches" = S ? S[OM_STAT_BREACHES] : 0,
-				"errors" = S ? S[OM_STAT_ERRORS] : 0,
-				"wakes" = S ? S[OM_STAT_WAKES] : 0,
-				"parks" = S ? S[OM_STAT_PARKS] : 0,
+				"call_max_ms" = S ? round(S[SCHED_STAT_CALL_MAX], 0.001) : 0,
+				"late_max" = S ? S[SCHED_STAT_LATE_MAX] : 0,
+				"deferrals" = S ? S[SCHED_STAT_DEFERRALS] : 0,
+				"breaches" = S ? S[SCHED_STAT_BREACHES] : 0,
+				"errors" = S ? S[SCHED_STAT_ERRORS] : 0,
+				"wakes" = S ? S[SCHED_STAT_WAKES] : 0,
+				"parks" = S ? S[SCHED_STAT_PARKS] : 0,
 				"population" = population,
 				"parked" = parked,
 			))
@@ -75,7 +75,7 @@ CAPABILITIES(/datum/system/behaviours)
 	var/list/world_diag = sched ? world_diagnostics(sched) : null
 	var/list/world_queued = world_diag?["queued"]
 	var/list/lanes = list()
-	for(var/i in 1 to OM_LANE_COUNT)
+	for(var/i in 1 to LANE_COUNT)
 		lanes += list(list(
 			"name" = lane_names[i],
 			"share" = sched ? sched.lane_share[i] : 0,
@@ -121,7 +121,7 @@ CAPABILITIES(/datum/system/behaviours)
 	var/mob/user = A.actor
 	if(!ui_gate(A))
 		return FALSE
-	var/datum/time_scheduler/sched = GLOB.om_live_sched
+	var/datum/time_scheduler/sched = GLOB.live_scheduler
 	if(sched)
 		sched.stats = list()
 		sched.stage_cost = list()
@@ -129,9 +129,9 @@ CAPABILITIES(/datum/system/behaviours)
 	// The per-system record (histograms, overrun share, input latency) restarts with it; the flight recorder stays.
 	km_meter().live.reset()
 	STAMP(src, profile_reset_time, CLOCK_WORLD)
-	log_admin("[key_name(user)] reset the OM profiler counters.")
+	log_admin("[key_name(user)] reset the scheduler profiler counters.")
 	return TRUE
 
-ADMIN_VERB(om_profiler, R_DEBUG, "OM Profiler", "Opens the object-model profiler: cost per behaviour, per lane and per pipeline stage.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
+ADMIN_VERB(scheduler_profiler, R_DEBUG, "Scheduler Profiler", "Opens the engine profiler: cost per behaviour, per lane and per pipeline stage.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
 	SSbehaviours.tgui_interact(user.mob)
 	feedback_add_details("admin_verb","OMPROF") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!

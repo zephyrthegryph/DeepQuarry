@@ -13,7 +13,7 @@
 #define CONTAINER_SLOT_INTERNALS "internals"
 /// A storage item's interior (/obj/item/storage, C4).
 #define CONTAINER_SLOT_STORAGE "storage"
-/// An organ's implant site: keyed by implant type (OM relations step 2).
+/// An organ's implant site: keyed by implant type (relations step 2).
 #define ORGAN_SLOT_IMPLANTS "implants"
 /// A disposal bin's or in-transit holder's contents (C11).
 #define CONTAINER_SLOT_DISPOSAL "disposal"
@@ -205,7 +205,7 @@
 
 // ---- slot_remove() flags (J2) ----
 /// Skip the removal refusal, the acceptance refusal and both pre signals.
-/// The commit bookkeeping (note_exit/note_enter, the slot_* OM events, on_slotted/
+/// The commit bookkeeping (note_exit/note_enter, the slot_* events, on_slotted/
 /// on_unslotted) still runs. Used to spill or transfer a holder's contents
 /// while it is being destroyed (dq_lifecycle_resolve_contents(), L1), where
 /// the move must not be refusable.

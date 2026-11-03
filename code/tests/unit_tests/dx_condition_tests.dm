@@ -3,9 +3,9 @@
 /datum/capability/condition/dx_jam
 	layer_name = "dx_jam_layer"
 
-/datum/unit_test/om/dx_condition_timed_grant
+/datum/unit_test/engine/dx_condition_timed_grant
 
-/datum/unit_test/om/dx_condition_timed_grant/run_om(list/made)
+/datum/unit_test/engine/dx_condition_timed_grant/run_engine(list/made)
 	var/obj/cap_fixture/dx_core/F = new
 	made += F
 	var/datum/src_a = new
@@ -25,9 +25,9 @@
 	TEST_ASSERT(!cap_of_all(F, /datum/capability/condition/dx_jam), "detached on expiry")
 	TEST_ASSERT(!findtext(F.rx?.look_key, "dx_jam_layer"), "redrawn without the layer: [F.rx?.look_key]")
 
-/datum/unit_test/om/dx_condition_sources
+/datum/unit_test/engine/dx_condition_sources
 
-/datum/unit_test/om/dx_condition_sources/run_om(list/made)
+/datum/unit_test/engine/dx_condition_sources/run_engine(list/made)
 	var/obj/cap_fixture/dx_core/F = new
 	made += F
 	var/datum/src_a = new

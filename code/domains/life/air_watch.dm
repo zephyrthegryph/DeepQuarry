@@ -1,4 +1,4 @@
-// What wakes a mob's sleeping Life steps when its surroundings or its body change (doc/rewrite/life_on_om.md §5).
+// What wakes a mob's sleeping Life steps when its surroundings or its body change (doc/rewrite/archive/life_sequence_origin.md §5).
 //
 // The air watch: breathing and environment sleep in steady air. Rust holds one band watch per mob on the air of the turf
 // it stands on (COND_BANDS, verdigris/ffi/src/sched.rs world_watch_bands): the partial pressures of the gases its lungs

@@ -44,7 +44,7 @@ GLOBAL_VAR(latent_last_refusal)
 	var/slot
 	/// Unique per holder, like a real thing's entry serial.
 	var/serial
-	/// Parked OM handle slots of collapsed things in this entry (entity_handle_park()): each one
+	/// Parked handle slots of collapsed things in this entry (entity_handle_park()): each one
 	/// re-materializes into its old slot, so handles and relation views to it survive the round trip.
 	var/list/handles
 	/// Bumped on every change, so a stale id is refused (invariant 1).

@@ -369,7 +369,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_ip, "0.0.0.0")
 			"ticker_state" = round_game_state(), "ticker_last_fire" = SSticker?.last_fire, "profiler_last_sample" = SSprofiler?.last_fire,
 		)
 		return json_encode(d)
-	// Localhost-only census of the OM deadline wheel: entries per bucket, how many are still live
+	// Localhost-only census of the deadline wheel: entries per bucket, how many are still live
 	// (their generation matches the rec's armed deadline) and which owner types/behaviours hold them.
 	if (diag == "omdeadlines")
 		var/datum/time_scheduler/sched = time_scheduler()
@@ -386,7 +386,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_ip, "0.0.0.0")
 			for(var/i in 1 to length(L) step 4)
 				var/datum/scheduler_record/rec = L[i]
 				var/dl_key = L[i + 1]
-				var/bid = dl_key % OM_DL_SUB
+				var/bid = dl_key % DEADLINE_SUB
 				var/datum/scheduled_behaviour/B = (bid >= 1 && bid <= length(reg.behaviours)) ? reg.behaviours[bid] : null
 				var/bname = B ? "[B.type]" : "bid [bid]"
 				var/is_live = FALSE
@@ -550,7 +550,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_ip, "0.0.0.0")
 	// `reset=1` clears the set afterwards so the next read covers one benchmark phase.
 	if (diag == "kmsystems")
 		var/datum/tick_meter/meter = km_meter()
-		var/list/report = km_diagnostics(GLOB.om_live_sched)
+		var/list/report = km_diagnostics(GLOB.live_scheduler)
 		var/list/rows = report["systems"]
 		if(length(rows) > 40)
 			rows.Cut(41)

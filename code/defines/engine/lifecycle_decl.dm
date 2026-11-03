@@ -10,7 +10,7 @@
 //                  (starting occupants: owns_one / owns_many with starts =, made first)
 //                  1. gas contents     DECLARE_GAS
 //                  (reagents: reagents() in CAPABILITIES, code/library/reagents/reagents.dm)
-//   materialize  (/atom/on_materialize(), after registries, rules and OM start):
+//   materialize  (/atom/on_materialize(), after registries, rules and scheduler start):
 //                  4. registries       DECLARE_REGISTRY (conditional ones are joined here)
 //                  5. service members  DECLARE_SERVICE_MEMBER
 //                  6. binds            DECLARE_BIND (batched per SSatoms batch)

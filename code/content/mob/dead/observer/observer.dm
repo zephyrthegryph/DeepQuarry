@@ -566,7 +566,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	update_following()
 
 /// Observer upkeep, run by the observer_upkeep behaviour every OBSERVER_UPKEEP_INTERVAL
-/// (code/modules/mob/living/life/life_om.dm). Living mobs do the same in their upkeep system.
+/// (code/modules/mob/living/life/life_membership.dm). Living mobs do the same in their upkeep system.
 /mob/observer/proc/upkeep()
 	// to catch teleports etc which directly set loc
 	update_following()

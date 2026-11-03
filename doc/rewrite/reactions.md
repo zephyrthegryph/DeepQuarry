@@ -5,7 +5,7 @@ Status: everything here is **[in progress]** on `rewrite/f-reactions` (owner W1)
 
 ## 1. One mechanism
 
-"When X, run Y" is one thing. It replaces `om_hook`/`om_hooked`, `om_after` users that meant
+"When X, run Y" is one thing. It replaces `hook`/`om_hooked`, `om_after` users that meant
 "react", the event layer, `DAMAGE_REACTION`, `derived()` blocks, `DECLARE_PERIODIC_WHILE`,
 pipelines, and `update_rust_device` pushes. A reaction has a **trigger**, a **handler** and a
 delivery contract.
@@ -152,9 +152,9 @@ tracked `nightshift_lights` is read by its area's `derive(lights_nightshift, rel
 
 The notices that replaced the om events are hand-written in `code/datums/reactions/legacy_notices.dm` (each carries the
 event's doc comment) and published with `PUBLISH_LEGACY(E, /datum/notice/x, fields...)` in `fill()` order until an `ACTION()`
-declaration replaces it. The om event layer itself (`code/datums/om_events/`, `/datum/definition_event`, the registry's event
+declaration replaces it. The om event layer itself (`code/engine/`, `/datum/definition_event`, the registry's event
 tables and the behaviours' `handles`) is deleted, and `definition_event` is a hard ban in `[lint.legacy_forms.lists] banned`.
-`dq_om_notice_delivery_tests.dm` pins the delivery of a representative set (section 7).
+`dq_notice_delivery_tests.dm` pins the delivery of a representative set (section 7).
 Worked conversions: dry galoshes hear `/datum/notice/shoes_step` (published by the wearer's step); squeaky shoes
 `observe()` the same notice on their owner.
 
@@ -225,17 +225,17 @@ safety fact but must not recursively run a whole Life frame.
 The om events are deleted (October 2026); this audit is kept as the record of what each was. Their notices are delivered by
 `publish()`: synchronously and in order at the top level, never coalesced, and a notice published from a handler is queued behind
 the current delivery and delivered before the outermost publish returns (it is not delivered "at once" inside another delivery as
-a `sync` event was). Pinned by `dq_om_notice_delivery_sync`, `_not_coalesced` and `_order`.
+a `sync` event was). Pinned by `dq_notice_delivery_sync`, `_not_coalesced` and `_order`.
 
 `/datum/om/event` used to coalesce by default (`coalesce = TRUE`); it is now `FALSE` (an event is an
-occurrence), and `skip_in_bulk` is `FALSE` as before (no event sets it). `om_emit()` consults
+occurrence), and `skip_in_bulk` is `FALSE` as before (no event sets it). `emit()` consults
 `coalesce` only for an event that is neither `sync` nor `before`, and only while another delivery is in
 progress, so the audit covers exactly the events that are queued. Compared with
 `rewrite/dx-framework`, where the default was TRUE, each event type was classified:
 
 | Event type | Decision | Reason |
 |---|---|---|
-| `material_facts_changed` (`material_composites.dm`) | `coalesce = TRUE` (set explicitly); `skip_in_bulk` stays FALSE | State invalidation: "facts read from a material are stale, recompute", emitted on `GLOB.om_world` in bursts (`material_facts_changed()` from `processed_material.dm`). Only the latest matters. Its shared-cache listeners also clear before the queue, so the flag only merges queued deliveries. |
+| `material_facts_changed` (`material_composites.dm`) | `coalesce = TRUE` (set explicitly); `skip_in_bulk` stays FALSE | State invalidation: "facts read from a material are stale, recompute", emitted on `GLOB.world_notice_bus` in bursts (`material_facts_changed()` from `processed_material.dm`). Only the latest matters. Its shared-cache listeners also clear before the queue, so the flag only merges queued deliveries. |
 | `carry_slip`, `moved_down_stairs`, `picked_up_item`, `stun_effect` (`omen.dm`) | stays `coalesce = FALSE` | Occurrences (a slip, a fall, an item taken, a stun landed). |
 | `climb_start`, `climb_shake` (`climbable.dm`) | stays `coalesce = FALSE` | Occurrences. |
 | `closet_closed` (`bluespace_connection.dm`) | stays `coalesce = FALSE` | Occurrence. |

@@ -18,8 +18,8 @@
 	return TRUE
 
 /// Public VV dispatch refuses a clientless actor before its effect and rejects a missing actor at the transport boundary.
-/datum/unit_test/om/interim_gear_pack_actor_refusal
-/datum/unit_test/om/interim_gear_pack_actor_refusal/run_om(list/made)
+/datum/unit_test/engine/interim_gear_pack_actor_refusal
+/datum/unit_test/engine/interim_gear_pack_actor_refusal/run_engine(list/made)
 	set_global(nameof(GLOB.test_prompts), list())
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)

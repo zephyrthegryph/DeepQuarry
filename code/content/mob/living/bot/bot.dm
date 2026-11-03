@@ -204,7 +204,7 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 		return
 	after(src, delay, PROC_REF(bot_step), with = list(count, delay, step_proc))
 
-/// OM callback: a step can path (calcTargetPath/startPatrol sleep on the pathfinder), so it runs detached.
+/// callback: a step can path (calcTargetPath/startPatrol sleep on the pathfinder), so it runs detached.
 /mob/living/bot/proc/bot_step(count, delay, step_proc)
 	INVOKE_ASYNC(src, PROC_REF(run_bot_step), count, delay, step_proc) // ALLOW(scheduler): a bot step can sleep on the pathfinder, which scheduler callbacks must not
 
@@ -212,7 +212,7 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 	call(src, step_proc)()
 	bot_steps(count - 1, delay, step_proc)
 
-/// OM callback for one AI tick. handleAI() can legitimately sleep (pathfinding waits on the
+/// callback for one AI tick. handleAI() can legitimately sleep (pathfinding waits on the
 /// pathfinder mutex and CHECK_TICKs through its search), and scheduler callbacks must not
 /// sleep, so the tick runs detached. `ai_running` keeps a slow tick from overlapping the next.
 /mob/living/bot/proc/start_ai()

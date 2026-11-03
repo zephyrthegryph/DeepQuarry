@@ -212,7 +212,7 @@ connector's ledger slot (class 1), not from `anchored` (class 5).
 
 ## 8. Events
 
-Rust records events in each domain's outbox. The OM scheduler's world step drains each domain
+Rust records events in each domain's outbox. The scheduler's world step drains each domain
 once per tick (one FFI call per domain), and the generated dispatcher calls the
 named handler on the atom after checking `atom.vg_entity == handle`. There are
 no per-object callbacks each tick and no pushed display values: a display
@@ -220,7 +220,7 @@ value is a `state` field read when it's shown.
 
 ### 8.1 Watches
 
-A watch on Rust state is a native watch (`code/datums/om/native.dm`): the
+A watch on Rust state is a native watch (`code/engine/native.dm`): the
 owner declares what to watch and the proc to call, and gets back a
 `/datum/native_watch` that is its own handle. The handle is an SSvg entity,
 and Rust reports it as the wake's subscriber, so the domain drain finds the

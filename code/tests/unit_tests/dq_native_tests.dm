@@ -159,7 +159,7 @@
 	changes += list(keys.Copy())
 
 /datum/native_rx_fx/proc/on_native_notice(datum/notice/native/N)
-	notes += list(list(N.kind, N.data))
+	notes += list(list(N.kind, N.record))
 
 /datum/native_rx_fx/proc/on_level(band, previous)
 	crossings += list(list(band, previous))
@@ -168,7 +168,7 @@
 /datum/native_rx_deaf
 
 /// A CHANGED record's key, named for `native()`, reaches on_change handlers through publish_change; an entity that
-/// nobody reads is not published; the OM bridge still raises the channel.
+/// nobody reads is not published; the bridge still raises the channel.
 /datum/unit_test/dq_native_change_publishes_through_reactions
 
 /datum/unit_test/dq_native_change_publishes_through_reactions/Run()

@@ -132,7 +132,7 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache()) // ALLOW(cache): constant 
 	return vg_read_mixtures(mixtures)
 
 /**
- * A gas dependency watch (code/datums/om/native.dm): `mixture_id` changing
+ * A gas dependency watch (code/engine/native.dm): `mixture_id` changing
  * in any GAS_DEPENDENCY_* bit of `mask` calls `callback` on the owner as
  * (watch, mixture_id, change_mask, list/observation, observation_index); the
  * observation record (from the mixture id on) is `drain_observations()` in

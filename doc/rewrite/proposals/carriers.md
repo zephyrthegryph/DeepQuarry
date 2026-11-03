@@ -4,14 +4,14 @@ Status: proposal (rewrite/small-forms). Recommendation at the end.
 
 ## What is left
 
-`code/datums/om/` holds typed carriers that forward to the engine (`parent_type = /datum/time_scheduler` and so on). After the world-watch conversion
+`code/engine/` holds typed carriers that forward to the engine (`parent_type = /datum/time_scheduler` and so on). After the world-watch conversion
 (`world_watch.dm` is gone) these are still live:
 
 | Carrier | Live users |
 |---|---|
 | `/datum/om/scheduler` | `Kernel.sched`, `km_*` reports, `tick_meter`, the profilers, `SSbehaviours`, the kernel host and native phases (about 15 files) |
 | `/datum/om/relation/slot/*` | about 100 containment slot declarations: `code/datums/containment/*`, `code/modules/body/slots.dm` (50), `part_slots.dm` (8), the machine occupant slots (cryopod, clonepod, dna scanner, recharge station, gibber, ...) |
-| `/datum/om/edge`, `/datum/om/behaviour`, `/datum/om/check`, `/datum/om/type_table`, `/datum/om/derived`, `/datum/om/clock_def` | the registry (`code/datums/om/registry.dm` maps each to its engine type), the legacy pipelines and tests |
+| `/datum/om/edge`, `/datum/om/behaviour`, `/datum/om/check`, `/datum/om/type_table`, `/datum/om/derived`, `/datum/om/clock_def` | the registry (`code/engine/registry.dm` maps each to its engine type), the legacy pipelines and tests |
 | `global_owner`, `behaviour/internal/timers` | the timer path under `after()` |
 
 ## The choice
@@ -27,4 +27,4 @@ Status: proposal (rewrite/small-forms). Recommendation at the end.
 Do (1) first as a pure alias sweep with a hard ban per carrier name as its last reference goes (the ban list in `lint_scopes.toml` already does this per
 name). For (2), extend `slot()` with `drops = PROC_REF(x)`, `successor = PROC_REF(x)`, `keeps_with = ...`, `roles = ...` and an `on_change = PUBLISH(OCCUPANT_KEY)`
 default for sealed single-occupant slots (`slot(..., sealed_occupant = TRUE)`), convert machine slots first (they carry the least), then the body and part slots
-with the body lane. Delete `code/datums/om/` when `registry.dm` has no row left.
+with the body lane. Delete `code/engine/` when `registry.dm` has no row left.

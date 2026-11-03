@@ -124,6 +124,6 @@
 			. *= sealed_mult
 
 /// Trait system: photosynthesis. Paused stasis frames and dead bodies skip it (P2-S6).
-/// One Life step per cycle while attached (doc/rewrite/om_retirement.md L1).
+/// One Life step per cycle while attached (doc/rewrite/archive/retirement_log.md L1).
 /datum/trait_state/photosynth/life_steps()
 	return list(seq_step(PROC_REF(life_tick), after = list(LIFE_INPUT, "life_type_pre"), key = "life_trait_photosynth", when = list("!in_stasis", "alive")))

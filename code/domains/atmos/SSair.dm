@@ -219,7 +219,7 @@ SYSTEM_DEF(air)
 
 	// === Turf gas (the TurfGas field on the shared Rust World) ===
 	// The world is stepped by the native system's frame (once a tick, from the
-	// OM scheduler); its reaction, visual and spacewind notifications are typed
+	// scheduler); its reaction, visual and spacewind notifications are typed
 	// events, dispatched to SSvg's on_gas_cell_*() overrides below.
 	if(currentpart == SSAIR_TURFS)
 		timer = TICK_USAGE_REAL

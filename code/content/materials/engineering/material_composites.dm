@@ -18,13 +18,16 @@ PROC_SUMMARY(/proc/material_cache_id) // a never-reused id for a material, memoi
 		return M.shared_cache_uid
 	return shared_cache_assign_uid(M)
 
+/// A material's physical vars changed after facts were read from it: every shared cache of material-derived facts clears.
+ACTION(material_facts_changed, FIXED, notice = /datum/notice/material_facts_changed)
+
 /// A material's physical vars changed after facts were read from it: every shared cache of
 /// material-derived facts clears (SC_ON_NOTICE; changes are rare). A material that was not yet
 /// registered when it got its cache id takes its registry id from now on.
 /datum/material/proc/material_facts_changed()
 	shared_cache_uid = null
 	shared_cache_notice(/datum/notice/material_facts_changed)
-	PUBLISH_LEGACY(OM_WORLD, /datum/notice/material_facts_changed)
+	PUBLISH(WORLD_NOTICE_BUS, material_facts_changed)
 
 /// Environmental load exerted by a gas mixture on an exposed material.  This
 /// is deliberately composition-based: no infrastructure class owns its own

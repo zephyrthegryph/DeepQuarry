@@ -1,4 +1,4 @@
-// Life steps (doc/rewrite/life_sequences.md, doc/rewrite/om_retirement.md L1).
+// Life steps (doc/rewrite/life_sequences.md, doc/rewrite/archive/retirement_log.md L1).
 //
 // Each mob type declares the Life steps it runs. A step is a proc on the mob type (life_<step>(F)), overridden by
 // subtypes; `after =` edges reproduce the old stage order (derived by tools/dx/codemods/life_stage_steps.py; the
@@ -6,7 +6,7 @@
 // change channels that wake a sleeping step, `should_run =` says it has work, `rewake =` wakes it anyway after a
 // delay. `woken_by =` lists, for each read, who raises it (read key = producers): a step that sleeps is woken the
 // moment an input changes, and a rewake under LIFE_SAFETY_RESAMPLE is allowed only for work that drifts with time
-// (LIFE_WOKEN_BY_TIME, with the reason): life_om/steps_declare_their_wakes checks it. A step whose work runs every frame
+// (LIFE_WOKEN_BY_TIME, with the reason): life_seq/steps_declare_their_wakes checks it. A step whose work runs every frame
 // (an aura, regeneration, a type's pre work) declares no should_run: it never sleeps. A later declaration of the same step on a subtype replaces the parent's. A step runs only for the Life set
 // (life_set) it serves: preview dummies and delisted mobs keep none of the living steps.
 

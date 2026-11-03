@@ -22,11 +22,11 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/atom/movable/pathfinding_predicate)
  */
 /datum/pathfinding
 	//* basics
-	/// thing trying to get a path: an OM handle, read with search_actor()
+	/// thing trying to get a path: an handle, read with search_actor()
 	var/atom/movable/actor
-	/// start turf: an OM handle, read with search_start()
+	/// start turf: an handle, read with search_start()
 	var/turf/start
-	/// goal turf: an OM handle, read with search_goal()
+	/// goal turf: an handle, read with search_goal()
 	var/turf/goal
 
 	/// when the pathfinder service took this search (the wait for its mutex and the search's total are read from it)
@@ -48,7 +48,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/atom/movable/pathfinding_predicate)
 	/// different algorithms respond differently to this.
 	var/max_path_length
 	/// context to call adjacency/distance call on
-	/// null = global proc. An OM handle, read with search_context().
+	/// null = global proc. An handle, read with search_context().
 	var/datum/context
 	/// checks if we can go to a turf
 	/// defaults to default density / canpass / etc checks

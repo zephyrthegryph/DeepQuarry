@@ -1,8 +1,8 @@
 /// The actual airlock control-wire pulse respects an intact ID scanner, bypasses it only while that wire is cut, and returns to access-gated behavior after mending.
-/datum/unit_test/om/interim_airlock_id_wire_pulse
+/datum/unit_test/engine/interim_airlock_id_wire_pulse
 	parent_type = /datum/unit_test/dq_p2_door
 
-/datum/unit_test/om/interim_airlock_id_wire_pulse/run_gate()
+/datum/unit_test/engine/interim_airlock_id_wire_pulse/run_gate()
 	var/turf/T = tile(2, 2)
 	var/mob/living/carbon/human/user = make_person(null, tile(3, 2))
 	var/obj/machinery/door/airlock/door = allocate(/obj/machinery/door/airlock, T)

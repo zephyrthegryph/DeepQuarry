@@ -144,16 +144,16 @@ READS_AS(/obj/machinery/proc/has_condition, MACHINE_KEY_STAT)
 	state_changed(src)
 
 /// COMPATIBILITY SHIM (tests, the benchmark's old path): forces a machine's power by hand. The grid does not write has_power: it is the area's channel
-/// read (area_gives_power(), machinery_power.dm). Forcing it dark is a SRC_GRID hold; forcing it on a machine whose area is dark sets `power_forced`.
+/// read (area_gives_power(), machinery_power.dm). Forcing it dark is a SRC_GRID hold; forcing it on a machine whose area is dark is a SRC_GRID override of the stat.
 /// TRUE when the machine's power changed.
 /obj/machinery/proc/set_grid_power(powered)
 	var/was = power_lost()
 	if(powered)
 		condition_hold(STAT_HAS_POWER, SRC_GRID, FALSE)
 		if(power_lost())
-			set_power_forced(TRUE)
+			hold_override(src, STAT_HAS_POWER, TRUE, SRC_GRID)
 	else
-		set_power_forced(FALSE)
+		release(src, STAT_HAS_POWER, SRC_GRID)
 		condition_hold(STAT_HAS_POWER, SRC_GRID, TRUE)
 	var/flipped = was != power_lost()
 	if(flipped)

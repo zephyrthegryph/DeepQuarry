@@ -50,7 +50,7 @@
 // ---- materialize / dematerialize ----
 
 /// Runs the materialize declarations. /atom/on_materialize() calls it last, after the
-/// core registries, rules and OM start.
+/// core registries, rules and scheduler start.
 /proc/lifecycle_decls_materialize(atom/A, datum/lifecycle_decls/decls)
 	for(var/id in decls.registries)
 		registry_join(id, A)

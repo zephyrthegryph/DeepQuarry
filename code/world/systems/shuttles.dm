@@ -191,13 +191,16 @@ SYSTEM_DEF(shuttles)
 			given_sector.add_landmark(landmark, shuttle_name)
 			. = 1
 
+/// A shuttle was created and registered with the shuttles system.
+ACTION(observer_shuttle_added, datum/shuttle/shuttle, FIXED, notice = /datum/notice/observer_shuttle_added)
+
 /datum/system/shuttles/proc/initialize_shuttle(shuttle_type)
 	var/datum/shuttle/shuttle = shuttle_type
 	if(initial(shuttle.category) != shuttle_type) // Skip if its an "abstract class" datum
 		shuttle = new shuttle()
 		shuttle_areas |= shuttle.shuttle_area
 		log_world("Initialized shuttle [shuttle] ([shuttle.type])")
-		PUBLISH_LEGACY(src, /datum/notice/observer_shuttle_added, shuttle)
+		PUBLISH(src, observer_shuttle_added, shuttle = shuttle)
 		return shuttle
 		// Historical note:  No need to call shuttle.init_docking_controllers(), controllers register themselves
 		// and shuttles fetch refs in New().  Shuttles also dock() themselves in new if they want.

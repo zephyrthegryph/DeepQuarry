@@ -115,13 +115,13 @@
 		ordered = head + rest
 	for(var/i in 1 to KERNEL_PHASE_COUNT)
 		phase_items[i] = list()
-	phase_lane_items = new /list(OM_LANE_COUNT)
-	for(var/lane in 1 to OM_LANE_COUNT)
+	phase_lane_items = new /list(LANE_COUNT)
+	for(var/lane in 1 to LANE_COUNT)
 		phase_lane_items[lane] = list()
 	for(var/datum/work_item/W as anything in ordered)
 		if(W.phase >= KERNEL_PHASE_K && W.phase <= KERNEL_PHASE_G)
 			phase_items[W.phase] += W
-			if(W.phase == KERNEL_PHASE_P && W.lane >= 1 && W.lane <= OM_LANE_COUNT)
+			if(W.phase == KERNEL_PHASE_P && W.lane >= 1 && W.lane <= LANE_COUNT)
 				phase_lane_items[W.lane] += W
 
 /// Runs the due items of `phase`, in order. `lane` (phase P) restricts the run to that lane. `limit_abs` is the
@@ -179,10 +179,10 @@
 /// or rescheduled from outside the walk.
 /datum/controller/kernel/proc/work_due_reset()
 	// In place: the live graph and a test's graph each keep their list, and both forget.
-	if(length(phase_due) != KERNEL_PHASE_COUNT + OM_LANE_COUNT)
-		phase_due = new /list(KERNEL_PHASE_COUNT + OM_LANE_COUNT)
-	if(length(test_due) != KERNEL_PHASE_COUNT + OM_LANE_COUNT)
-		test_due = new /list(KERNEL_PHASE_COUNT + OM_LANE_COUNT)
+	if(length(phase_due) != KERNEL_PHASE_COUNT + LANE_COUNT)
+		phase_due = new /list(KERNEL_PHASE_COUNT + LANE_COUNT)
+	if(length(test_due) != KERNEL_PHASE_COUNT + LANE_COUNT)
+		test_due = new /list(KERNEL_PHASE_COUNT + LANE_COUNT)
 	for(var/i in 1 to length(phase_due))
 		phase_due[i] = 0
 		test_due[i] = 0

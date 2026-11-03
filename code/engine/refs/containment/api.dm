@@ -183,7 +183,7 @@
 /// no pre signal sent on either side. If `destination` has slots, `thing`
 /// lands in `slot_id` (null: its default slot); otherwise this is a plain
 /// forced forceMove. Either way doMove()'s bookkeeping (note_exit/note_enter,
-/// the slot_* OM events, on_unslotted()/on_slotted()) runs as normal, carrying
+/// the slot_* events, on_unslotted()/on_slotted()) runs as normal, carrying
 /// `flags` to the hooks. L1's contents phase (lifecycle.dm) is the only
 /// caller that ever names an explicit `slot_id` (KEEP_WITH).
 /proc/dq_ledger_force_move(atom/movable/thing, atom/destination, flags = 0, slot_id = null)

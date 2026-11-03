@@ -737,7 +737,7 @@ to carry `go_over_slot` and the authority, which the generated act arguments do 
   `trans_to` reagent inserts (needs D2f quantity slots for beakers), and a lint for a flag-only `CanPass` body.
 - *Wave 8 landed in part:* the `req_acceptance_*` leaves lost their prefix (`req_type`, `req_tag`, `req_max_size`, ...; the old names
   banned; the unused `cond.dm` `req_tag` merged into the leaf); the `CHECK()` and `FACT()` macros are deleted (no content used them; the
-  OM pipeline's spec lists stay as the engine form). **D10 landed (coordinator's call, 18 Oct):** forced deletes don't
+  pipeline's spec lists stay as the engine form). **D10 landed (coordinator's call, 18 Oct):** forced deletes don't
   spill, unforced ones do. Storage and folder slots are SPILL; the destroy transaction passes `force` to the contents phase, which deletes
   the contents of a SPILL slot on a forced delete.
 - *Wave 8, the interim channels:* the **equip** channel is gone: its 30 declarations are `extend(/datum/act/equip, needs(...))` (the equip act's

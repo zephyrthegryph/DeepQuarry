@@ -382,6 +382,9 @@ CAPABILITIES(/obj/structure/stairs/top)
 		use_stairs_instant(AM)
 		return
 
+/// A thing was brought down the stairs by use_stairs() (from old_loc, null when it came from elsewhere).
+ACTION(moved_down_stairs, atom/old_loc, FIXED, notice = /datum/notice/moved_down_stairs)
+
 /obj/structure/stairs/top/use_stairs(atom/movable/AM, atom/oldloc)
 	// If we're coming from the bottom of the stairs, don't trap us in an infinite staircase
 	// Or if we climb up the middle
@@ -433,7 +436,7 @@ CAPABILITIES(/obj/structure/stairs/top)
 				var/mob/living/L = P
 				if(L.client)
 					L.client.Process_Grab() // Update any miscellanous grabs, possibly break grab-chains
-		PUBLISH_LEGACY(AM, /datum/notice/moved_down_stairs, oldloc)
+		PUBLISH(AM, moved_down_stairs, old_loc = oldloc)
 	return TRUE
 
 /obj/structure/stairs/top/use_stairs_instant(atom/movable/AM)
@@ -473,7 +476,7 @@ CAPABILITIES(/obj/structure/stairs/top)
 			L.client.Process_Grab()
 	else
 		AM.forceMove(get_turf(bottom))
-	PUBLISH_LEGACY(AM, /datum/notice/moved_down_stairs, null)
+	PUBLISH(AM, moved_down_stairs, old_loc = null)
 
 // Mapping pieces, placed at the bottommost part of the stairs
 /obj/structure/stairs/spawner

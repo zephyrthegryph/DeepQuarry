@@ -1,7 +1,7 @@
 // Mech body model (damage.md §5, "Body model for mechs").
 //
 // A mech is not a /mob/living, so it cannot own a /datum/body: that datum is typed to a living
-// owner and reaches into physiology, reagents and OM events. Instead a mech is a *body host*:
+// owner and reaches into physiology, reagents and events. Instead a mech is a *body host*:
 // it hands its hits to a stateless machine body plan, `/datum/mech_body_plan`, which is a
 // flyweight shared by every mech (all state already lives on the mech and its components).
 //

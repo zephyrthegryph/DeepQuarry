@@ -1,11 +1,11 @@
 /// The read-only target-family table is shared while real hacking state and random capacity remain per instance.
-/datum/unit_test/om/interim_hacktool_supported_table
+/datum/unit_test/engine/interim_hacktool_supported_table
 	var/tool_type = /obj/item/multitool/hacktool
 
-/datum/unit_test/om/interim_hacktool_supported_table/override_tool
+/datum/unit_test/engine/interim_hacktool_supported_table/override_tool
 	tool_type = /obj/item/multitool/hacktool/override
 
-/datum/unit_test/om/interim_hacktool_supported_table/run_om(list/made)
+/datum/unit_test/engine/interim_hacktool_supported_table/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	actor.enable_godmode()

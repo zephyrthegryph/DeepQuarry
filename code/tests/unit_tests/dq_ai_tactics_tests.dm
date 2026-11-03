@@ -1,5 +1,5 @@
 // Per-tactic behaviour tests for the combat AI: each tactic's evaluate/start/tick/stop is driven directly on a brain, so the
-// tests pin what a tactic decides and does, not how the brain schedules it (dq_ai_om_tests.dm does that). They are written on the
+// tests pin what a tactic decides and does, not how the brain schedules it (dq_ai_tests.dm does that). They are written on the
 // flyweight behaviour forms first and stay green as the tactics move onto ops.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)

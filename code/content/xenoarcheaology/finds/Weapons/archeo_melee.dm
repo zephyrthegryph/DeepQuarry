@@ -24,7 +24,7 @@
 	var/consecration_cost = 10 //Ten stored_blood per use!
 	var/empowered = FALSE //If our next atack is empowered (2x damage)
 
-//The last human that touched us (an OM handle): the blade works on them while it has one.
+//The last human that touched us (an handle): the blade works on them while it has one.
 /obj/item/melee/artifact_blade/var/tmp/mob/living/carbon/human/last_touched
 
 CAPABILITIES(/obj/item/melee/artifact_blade)

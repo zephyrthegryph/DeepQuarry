@@ -1,4 +1,4 @@
-/datum/unit_test/om/interim_ghost_hud_jump_actor/run_om(list/made)
+/datum/unit_test/engine/interim_ghost_hud_jump_actor/run_engine(list/made)
 	test_prompts_reset()
 	var/turf/start = run_loc_floor_bottom_left
 	var/turf/destination = get_step(start, EAST)
@@ -35,7 +35,7 @@
 	TEST_ASSERT_EQUAL(get_turf(bystander), start, "cancelling the actual jump choice leaves the observer in place")
 	TEST_ASSERT_EQUAL(get_turf(actor), destination, "cancellation does not affect the first observer")
 
-/datum/unit_test/om/interim_ghost_hud_actor_refusal/run_om(list/made)
+/datum/unit_test/engine/interim_ghost_hud_actor_refusal/run_engine(list/made)
 	test_prompts_reset()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/turf/original = get_turf(actor)

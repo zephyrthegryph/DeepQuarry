@@ -1,13 +1,13 @@
 # Admin viewer
 
 A small web app for staff: server performance over time (broken down by MC subsystem, world
-service, OM lane and behaviour, with outliers flagged against recent rounds), runtimes, tick
+service, lane and behaviour, with outliers flagged against recent rounds), runtimes, tick
 overruns, tickets and admin activity, and unit-test and benchmark history. It reads the game
 database; it adds no services beyond the MariaDB the server already uses, and needs only Bun
 (already used by the build).
 
 ```
-game (code/modules/metrics/)  --om_io batched writes-->  MariaDB metric_* tables
+game (code/modules/metrics/)  --io batched writes-->  MariaDB metric_* tables
 tools/admin-viewer/ingest.ts  --data/test-runs, data/bench/runs-->  test_* / bench_* tables
 tools/admin-viewer/server.ts  <--reads--  MariaDB;  rolls rounds up, prunes old samples
 staff  --Admin Viewer verb (signed link)-->  viewer (in a game window or their browser)
@@ -59,15 +59,15 @@ loaded yet. Run it after `dm-test`, `test-repeat` or `bench`, or as the last CI 
 ## How it works
 
 * **Recording** (`code/modules/metrics/`): `GLOB.metrics_service` samples every
-  `/datum/metrics_source` every 10 s and flushes once a minute through `om_io`, so the game never
+  `/datum/metrics_source` every 10 s and flushes once a minute through `io`, so the game never
   waits on the database. Runtimes and overruns are counted in memory and written once per flush
   (grouped by signature, with the proc and a trimmed call stack; the worst overrun ticks keep their full
-  breakdown and a cause: a subsystem, an object-model system, or "Outside MC" when time before or after the
+  breakdown and a cause: a subsystem, an engine system, or "Outside MC" when time before or after the
   MC's own run dominates, with the slowest single entity step when one took over a tick). The tick is
   also split at the MC every tick from `/world/Tick` (`frame/*` metrics), and the server profiles the
   first minute of each round, 30 s of steady play five minutes in and every 30 minutes after, and a few
   seconds after any tick over 300% (`profile` events, on the Overruns page). Idle cost spread over many
-  small repeats is counted by kind (`churn/*`: redraws by type, OM timers by owner and proc, radio signals
+  small repeats is counted by kind (`churn/*`: redraws by type, timers by owner and proc, radio signals
   by frequency and sender, light updates by source), and the sampler reports its own cost per source
   (`metrics/*`, the "Metrics & I/O" category); it yields between sources and between flush statements, so
   it never makes a tick run over. Events (`METRICS_EVENT`)

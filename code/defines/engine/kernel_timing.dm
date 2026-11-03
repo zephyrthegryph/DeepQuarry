@@ -29,7 +29,7 @@
 
 #define KERNEL_AVG_SECONDS(average, current, current_duration) (KERNEL_AVG_OVER_TIME(average, current, 1 SECONDS, current_duration))
 
-// START_PROCESSING/STOP_PROCESSING are gone (roadmap S4): periodic work runs on object-model
+// START_PROCESSING/STOP_PROCESSING are gone (roadmap S4): periodic work runs on engine
 // pipelines, cadence_start()/cadence_stop() (code/engine/kernel/cadences.dm).
 
 /// Returns true if the kernel is initialized and running.

@@ -1,6 +1,6 @@
 // Fold wave F3 (doc/rewrite/completion_plan.md §3.6): SSchemistry, SSradiation, SSinstruments,
 // SSthrowing, SSsounds, SSmotiontracker, SSreflector, SSpai, SScircuit, SSxenoarch, SSlooting,
-// SSmail and SSevents are gone. World-level work runs as lanes on the OM global owner, per-object
+// SSmail and SSevents are gone. World-level work runs as lanes on the world owner, per-object
 // work as periodic behaviours on the objects, data-only services initialize lazily, and the
 // global object lists are registries. These tests pin each of those down.
 

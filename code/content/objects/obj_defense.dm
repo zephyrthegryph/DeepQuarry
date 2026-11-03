@@ -96,7 +96,7 @@
 	handle_deconstruct(disassembled)
 
 	//inform objects we were deconstructed
-	PUBLISH_LEGACY(src, /datum/notice/obj_deconstruct, disassembled)
+	PUBLISH(src, obj_deconstruct, disassembled = disassembled)
 
 	// Destroyed: each slot's drop policy decides what survives (damage.md §6,
 	// doc/rewrite/lifecycle.md §3). Only what is left outside a slot falls
