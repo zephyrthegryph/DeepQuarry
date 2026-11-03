@@ -101,3 +101,37 @@
 	C.set_maxcharge(C.maxcharge * 4)
 	stat_drain_point()
 	TEST_ASSERT_EQUAL(C.charge_step, 25, "a larger capacity did not move the shown step")
+
+/// A turret that sees only a mob it will not shoot (and no player) stops scanning until a mob stirs; a control panel's settings wake it.
+/datum/unit_test/dq_turret_parks_beside_a_non_target
+
+/datum/unit_test/dq_turret_parks_beside_a_non_target/Run()
+	var/turf/at = run_loc_floor_bottom_left
+	var/obj/machinery/porta_turret/turret = allocate(/obj/machinery/porta_turret, at)
+	turret.set_check_anomalies(FALSE) // an animal is then no target
+	turret.set_check_all(FALSE)
+	allocate(/mob/living/simple_mob/animal/passive/mouse, locate(at.x + 2, at.y, at.z))
+	TEST_ASSERT(turret.mob_nearby(world.view + 1), "the mouse is not near the turret")
+	turret.scan(null)
+	TEST_ASSERT(!turret.mob_near, "a scan that found only a mouse it will not shoot kept the turret scanning")
+	turret.setState(new /datum/turret_checks)
+	TEST_ASSERT(turret.mob_near, "new settings from a control panel did not wake the turret's scan")
+
+/// A docked airlock port rests like a door-only one: its handshake is over and the airlock is not cycling.
+/datum/unit_test/dq_docked_airlock_port_rests
+
+/datum/unit_test/dq_docked_airlock_port_rests/Run()
+	var/obj/machinery/embedded_controller/radio/airlock/docking_port/port = allocate(/obj/machinery/embedded_controller/radio/airlock/docking_port, test_floor())
+	var/datum/embedded_program/docking/airlock/program = port.program
+	TEST_ASSERT_NOTNULL(program, "the port has its program")
+	program.control_mode = 2 // MODE_CLIENT
+	program.set_dock_state(3) // STATE_DOCKED
+	TEST_ASSERT(!program.airlock_program.needs_processing(), "the port's airlock is cycling with nobody about")
+	TEST_ASSERT(!program.needs_processing(), "a docked airlock port kept stepping")
+
+/// An empty cryopod's despawn watch stops.
+/datum/unit_test/dq_idle_cryopod_rests
+
+/datum/unit_test/dq_idle_cryopod_rests/Run()
+	var/obj/machinery/cryopod/pod = allocate(/obj/machinery/cryopod, test_floor())
+	TEST_ASSERT_EQUAL(pod.work_step(null), PROCESS_KILL, "an empty cryopod kept its despawn watch running")

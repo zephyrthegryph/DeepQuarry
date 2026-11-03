@@ -10,6 +10,7 @@
 CAPABILITIES(/datum/system/shuttles)
 	owns_many(nameof(specops_announcers))
 	ref_many(nameof(process_shuttles), /datum/shuttle)
+	ref_many(nameof(waiting_for_passengers), /datum/shuttle)
 	ref_many(nameof(landmarks_awaiting_sector), /obj/effect/shuttle_landmark/automatic)
 
 SYSTEM_DEF(shuttles)
@@ -49,6 +50,8 @@ SYSTEM_DEF(shuttles)
 	var/profile_bad_entries = 0
 	var/profile_yields = 0
 	var/list/profile_type_cost_ms = list()
+	/// Shuttles waiting for passengers (arrivals: await_passengers()): a mob entering one of their areas wakes them (/area/Entered()).
+	var/list/waiting_for_passengers
 	var/list/profile_type_calls = list()
 
 /datum/system/shuttles/initialize()
@@ -219,3 +222,16 @@ SYSTEM_DEF(shuttles)
 /datum/system/shuttles/stat_entry(msg)
 	msg = "Shuttles:[length(process_shuttles)]/[length(shuttles)], Ships:[REGISTRY_COUNT(REGISTRY_OVERMAP_SHIPS)], L:[length(registered_shuttle_landmarks)][overmap_halted ? ", HALT" : ""]"
 	return ..()
+
+/// `shuttle` waits for a mob to enter one of its areas (FALSE: it stops waiting).
+/datum/system/shuttles/proc/watch_for_passengers(datum/shuttle/shuttle, waiting)
+	if(waiting)
+		rel_add(src, nameof(waiting_for_passengers), shuttle)
+	else
+		rel_remove(src, nameof(waiting_for_passengers), shuttle)
+
+/// `AM` entered `A`: a shuttle waiting for passengers there wakes when it is a mob or carries one.
+/datum/system/shuttles/proc/area_entered(area/A, atom/movable/AM)
+	for(var/datum/shuttle/autodock/ferry/arrivals/S as anything in waiting_for_passengers)
+		if((A in S.shuttle_area) && (isliving(AM) || locate_within(AM, /mob/living)))
+			S.passenger_entered()

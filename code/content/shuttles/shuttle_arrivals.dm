@@ -7,6 +7,8 @@
 	warmup_time = 25 // Warmup takes 5 seconds, so 30 total.
 	always_process = TRUE
 	var/launch_delay = 3
+	/// Idle off-station with nobody aboard: it takes no step until a mob enters one of its areas (passenger_entered()).
+	var/tmp/awaiting_passengers = FALSE
 
 	// Maps must implement their own subtype for their arrivals shuttle, and define at least:
 	// shuttle_area
@@ -41,7 +43,9 @@
 	if(process_state == IDLE_STATE)
 
 		if(location) // If we're off-station (space).
-			if(check_for_passengers()) // No point arriving with an empty shuttle.
+			if(!check_for_passengers())
+				await_passengers()
+			else // No point arriving with an empty shuttle.
 				warmup_time = initial(warmup_time)
 				launch()
 				message_passengers("Arriving at [using_map.station_name] in thirty seconds...")
@@ -59,3 +63,21 @@
 
 	..() // Do everything else
 
+
+/// Waiting off-station: its step stops (shuttle_working()) and its areas wake it when a mob comes aboard. It used to search its areas for
+/// passengers every 2 s for the whole round (2.3 ms a look on Southern Cross, with no players at all).
+/datum/shuttle/autodock/ferry/arrivals/proc/await_passengers()
+	awaiting_passengers = TRUE
+	SSshuttles.watch_for_passengers(src, TRUE)
+	refresh_working()
+
+/// A mob (or something carrying one) entered one of its areas: it steps again and looks for passengers.
+/datum/shuttle/autodock/ferry/arrivals/proc/passenger_entered()
+	if(!awaiting_passengers)
+		return
+	awaiting_passengers = FALSE
+	SSshuttles.watch_for_passengers(src, FALSE)
+	refresh_working()
+
+/datum/shuttle/autodock/ferry/arrivals/shuttle_working()
+	return !awaiting_passengers && ..()
