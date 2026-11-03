@@ -67,7 +67,7 @@
 
 /// Where a packet lands. The default sink is object integrity; /mob/living overrides it with injure().
 /atom/proc/damage_sink(datum/damage_packet/packet)
-	if(!uses_integrity || QDELETED(src))
+	if(!atom_rules_of(src).uses_integrity || QDELETED(src))
 		return 0
 	var/list/amounts = packet.amounts
 	// §4 step 1 (shields): holders with a shield block before the hit lands
@@ -92,7 +92,7 @@
 		GLOB.incoming_damage_kind = 0
 		sound = FALSE
 		// A destroyed wall becomes a floor in place (same turf, no integrity).
-		if(QDELETED(src) || !uses_integrity)
+		if(QDELETED(src) || !atom_rules_of(src).uses_integrity)
 			return
 	// What the shell let through reaches the holder's contents (containment
 	// paths, C2). A holder destroyed above has already spilled them.
@@ -217,7 +217,7 @@
 /atom/proc/receive_explosion(severity)
 	if(resistance_flags & BOMB_PROOF)
 		return 0
-	if(!uses_integrity)
+	if(!atom_rules_of(src).uses_integrity)
 		react_to_entry(DAMAGE_ENTRY_EXPLOSION, severity)
 		return 0
 	var/datum/damage_packet/packet = damage_packet(null, null, null, null, DAMAGE_PACKET_SILENT, 0, 0, null, DAMAGE_ENTRY_EXPLOSION, severity)

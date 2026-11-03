@@ -11,7 +11,6 @@
 	melee_attack_delay = 1 SECOND
 	attacktext = list("punched", "slammed", "uppercutted", "pummeled")
 
-	armor_spec = "melee=30;bullet=30;laser=15;bomb=20;bio=100;rad=100"
 
 	var/weaken_amount = 2 // Be careful with this number. High values can equal a permastun.
 
@@ -30,3 +29,6 @@
 			to_chat(L, span_warning("\The [src] punches you with incredible force, but you remain in place."))
 			act_message(src, L, null, MSG_OTHERS(span_danger("%U% slams it's mechanized fist into %T% with incredible force, to no visible effect!")))
 			play_sfx(src, SFX_PUNCH)
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat)
+	configure(atom_rules(armor_spec = "melee=30;bullet=30;laser=15;bomb=20;bio=100;rad=100"))

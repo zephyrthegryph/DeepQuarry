@@ -13,7 +13,6 @@
 	circuit = /obj/item/circuitboard/station_map
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	flags = ON_BORDER|WALL_ITEM
-	integrity_failure = 0.5
 
 	// TODO - Port use_auto_lights from /vg - for now declare here
 	var/light_power_on = 1
@@ -31,6 +30,7 @@
 
 
 CAPABILITIES(/obj/machinery/station_map)
+	configure(atom_rules(integrity_failure = 0.5))
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
 	setup(PROC_REF(prepare_initial_holomap))
 	configure(light_glow(color = "#64C864"))

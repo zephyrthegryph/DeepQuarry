@@ -464,7 +464,7 @@
 	third.take_damage(10, BRUTE, MELEE, FALSE)
 	TEST_ASSERT(third.destroyed, "10 damage breaks it")
 	third.repair_damage(10)
-	TEST_ASSERT(third.get_integrity() > third.integrity_failure * third.max_integrity, "repaired above the breaking point (atom_fix ran on the native path)")
+	TEST_ASSERT(third.get_integrity() > atom_rules_of(third).integrity_failure * third.max_integrity, "repaired above the breaking point (atom_fix ran on the native path)")
 	for(var/obj/item/stack/rods/R in turf_contents_of_type(T, /obj/item/stack/rods))
 		qdel(R)
 

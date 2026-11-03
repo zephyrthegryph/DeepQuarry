@@ -3,10 +3,10 @@
 // Armour is an immutable /datum/armor shared by every atom with the same
 // values: one datum per distinct set of numbers, not one list per instance.
 //
-// Declaring it: a type sets `armor_spec`, a params string of armour points
-// (percent) and optional flat soak per key:
-//     armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=25"
-//     armor_spec = "melee=20;melee_flat=3"
+// Declaring it: a type's CAPABILITIES block names `armor_spec`, a params string of armour
+// points (percent) and optional flat soak per key:
+//     configure(atom_rules(armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=25"))
+//     configure(atom_rules(armor_spec = "melee=20;melee_flat=3"))
 // Keys: GLOB.armor_keys. Missing keys are 0. An empty string clears inherited armour.
 // Per-type `armor = list(...)` declarations are gone (tools/ci/check_grep.sh,
 // "interned armour", rejects them).
@@ -236,21 +236,18 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/armor)
 
 // ---- Atoms ----
 
-/atom
-	/// This type's innate armour: a params string of points per key (see
-	/// code/game/atom/armor.dm). Read it through get_armor().
-	var/armor_spec
-	// This instance's armour when it differs from its type's (set_armor()) is the weak armor_override slot below.
+// A type's innate armour is atom_rules(armor_spec = "...") in its CAPABILITIES block (code/content/atom/atom_rules.dm).
+// This instance's armour when it differs from its type's (set_armor()) is the weak armor_override slot below.
 
 /// This atom's armour. The one accessor: never read armour any other way.
 /atom/proc/get_armor()
 	RETURN_TYPE(/datum/armor)
-	return atom_armor_override(src) || dq_armor_from_spec(armor_spec)
+	return atom_armor_override(src) || dq_armor_from_spec(atom_rules_of_type(type).armor_spec)
 
 /// Give this instance armour `new_armor` (an interned datum); null restores
 /// its type's.
 /atom/proc/set_armor(datum/armor/new_armor)
-	var/datum/armor/type_armor = dq_armor_from_spec(armor_spec)
+	var/datum/armor/type_armor = dq_armor_from_spec(atom_rules_of_type(type).armor_spec)
 	sparse_ref_set(src, armor_override, (!new_armor || new_armor == type_armor) ? null : new_armor)
 	armor_changed()
 

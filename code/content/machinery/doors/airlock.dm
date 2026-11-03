@@ -197,7 +197,6 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	extend(/datum/act/op, instead(when(STAT_ELECTRIFIED, req_on_origin(ORIGIN_CLICK)), then(PROC_REF(shock_toucher)), order = ORDER_EARLY))
 	// Walking into a live door shocks you instead of opening it; a mech reports to the cycling controller.
 	extend(/datum/act/bump, instead(then(PROC_REF(bump_shocks)), order = ORDER_EARLY))
-	on_notice(/datum/notice/bumped, then(PROC_REF(mech_bumped_status)))
 
 	section(ctrl_click, "The ctrl-click on the door: hammer on it (combat), hold it open (grab), ring the bell (anything else)")
 	// A silicon's ctrl-click is its bolt button over the link (below), never a hand on the door.
@@ -894,13 +893,6 @@ CAPABILITIES(/obj/machinery/door/airlock)
 		return TRUE
 	return FALSE
 
-/// A mech whose pilot may use the door asks its controller to report the door's state (a cycling airlock's sensors).
-/obj/machinery/door/airlock/proc/mech_bumped_status(datum/act/A)
-	var/datum/notice/bumped/N = A
-	var/obj/mecha/mecha = N.bumper
-	if(istype(mecha) && density && radio_connection() && mecha.slot_item(MECHA_SLOT_PILOT) && (allowed(mecha.slot_item(MECHA_SLOT_PILOT)) || check_access_list(mecha.operation_req_access)))
-		send_status(1)
-
 /// A simple mob that smashes an airlock which has lost its power: through bolts or a weld it breaks into the internals (an op, so it takes its time),
 /// otherwise it forces the door open or shut at once. A door that works takes the smash as damage.
 /obj/machinery/door/airlock/smashed_by(datum/act/hit/generic/A)
@@ -1277,7 +1269,7 @@ CAPABILITIES(/datum/cap_data/wires/airlock)
 	var/obj/machinery/door/airlock/door = owner
 	var/datum/prompt/R = A.answer
 	if(istype(door) && R?.value)
-		keyed_set_id(door, nameof(/datum/embedded_program::id_tag), R.value) // re-links the keyed relations matching on it
+		keyed_set_id(door, nameof(door.id_tag), R.value) // re-links the keyed relations matching on it
 	return OP_OK
 
 /datum/cap_data/wires/airlock/proc/frequency_set(datum/act/op/A, freq)

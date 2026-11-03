@@ -25,13 +25,11 @@
 
 /// The docking state of `C`'s program as its text.
 /datum/unit_test/dq_docking_controller_work/proc/status(obj/machinery/embedded_controller/C)
-	var/datum/embedded_program/docking/D = C.program
-	return D.get_docking_status()
+	return C.port.get_docking_status()
 
 /// Docks the client with the server and lets time pass until both report docked.
 /datum/unit_test/dq_docking_controller_work/proc/dock()
-	var/datum/embedded_program/docking/client_program = client.program
-	client_program.initiate_docking(server.program.id_tag)
+	client.port.initiate_docking(server.port.id_tag)
 	test_time(30 SECONDS)
 
 /datum/unit_test/dq_docking_controller_work/docks_to_completion
@@ -46,8 +44,7 @@
 /datum/unit_test/dq_docking_controller_work/undocks_to_completion/run_docking()
 	dock()
 	TEST_ASSERT_EQUAL(status(client), "docked", "docked before undocking")
-	var/datum/embedded_program/docking/client_program = client.program
-	client_program.initiate_undocking()
+	client.port.initiate_undocking()
 	test_time(30 SECONDS)
 	TEST_ASSERT_EQUAL(status(client), "undocked", "the client finished undocking")
 	TEST_ASSERT_EQUAL(status(server), "undocked", "the server finished undocking")
@@ -123,12 +120,10 @@
 	return
 
 /datum/unit_test/dq_airlock_docking_ports/proc/status(obj/machinery/embedded_controller/C)
-	var/datum/embedded_program/docking/D = C.program
-	return D.get_docking_status()
+	return C.port.get_docking_status()
 
 /datum/unit_test/dq_airlock_docking_ports/proc/dock()
-	var/datum/embedded_program/docking/client_program = client.program
-	client_program.initiate_docking("dq_air_server")
+	client.port.initiate_docking("dq_air_server")
 	test_time(60 SECONDS)
 
 /datum/unit_test/dq_airlock_docking_ports/docks_and_undocks
@@ -139,8 +134,7 @@
 	TEST_ASSERT_EQUAL(status(server), "docked", "the server port finished docking")
 	for(var/obj/machinery/door/airlock/D as anything in doors)
 		TEST_ASSERT(!D.density, "[D.id_tag] opened when docking finished")
-	var/datum/embedded_program/docking/client_program = client.program
-	client_program.initiate_undocking()
+	client.port.initiate_undocking()
 	test_time(60 SECONDS)
 	TEST_ASSERT_EQUAL(status(client), "undocked", "the client port finished undocking")
 	TEST_ASSERT_EQUAL(status(server), "undocked", "the server port finished undocking")

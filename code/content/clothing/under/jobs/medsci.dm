@@ -5,22 +5,20 @@
 	desc = "It's a jumpsuit worn by those with the know-how to achieve the position of \"" + JOB_RESEARCH_DIRECTOR + "\". Its fabric provides minor protection from biological contaminants."
 	name = "research director's jumpsuit"
 	icon_state = "director"
-	armor_spec = "bio=10"
 
 /obj/item/clothing/under/rank/research_director/rdalt
 	desc = "A dress suit and slacks stained with hard work and dedication to science. Perhaps other things as well, but mostly hard work and dedication."
 	name = "head researcher uniform"
 	icon_state = "rdalt"
 	item_state_slots = list(slot_r_hand_str = "director", slot_l_hand_str = "director")
-	armor_spec = "bio=10"
 
 /obj/item/clothing/under/rank/research_director/dress_rd
 	name = "research director dress uniform"
 	desc = "Feminine fashion for the style conscious RD. Its fabric provides minor protection from biological contaminants."
 	icon_state = "dress_rd"
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/research_director/dress_rd)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_worn(covers = CHEST|ARMS))
 
 /obj/item/clothing/under/rank/scientist
@@ -28,10 +26,10 @@ CAPABILITIES(/obj/item/clothing/under/rank/research_director/dress_rd)
 	name = "scientist's jumpsuit"
 	icon_state = "science"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
-	armor_spec = "bomb=10"
 	rolled_sleeves = 0
 
 CAPABILITIES(/obj/item/clothing/under/rank/scientist)
+	configure(atom_rules(armor_spec = "bomb=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/scientist/turtleneck
@@ -47,10 +45,10 @@ CAPABILITIES(/obj/item/clothing/under/rank/scientist)
 	name = "chemist's jumpsuit"
 	icon_state = "chemistry"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
-	armor_spec = "bio=10"
 	rolled_sleeves = 0
 
 CAPABILITIES(/obj/item/clothing/under/rank/chemist)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /*
@@ -61,10 +59,10 @@ CAPABILITIES(/obj/item/clothing/under/rank/chemist)
 	name = "chief medical officer's jumpsuit"
 	icon_state = "cmo"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
-	armor_spec = "bio=10"
 	rolled_sleeves = 0
 
 CAPABILITIES(/obj/item/clothing/under/rank/chief_medical_officer)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/geneticist
@@ -72,10 +70,10 @@ CAPABILITIES(/obj/item/clothing/under/rank/chief_medical_officer)
 	name = "geneticist's jumpsuit"
 	icon_state = "genetics"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
-	armor_spec = "bio=10"
 	rolled_sleeves = 0
 
 CAPABILITIES(/obj/item/clothing/under/rank/geneticist)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/virologist
@@ -83,20 +81,20 @@ CAPABILITIES(/obj/item/clothing/under/rank/geneticist)
 	name = "virologist's jumpsuit"
 	icon_state = "virology"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
-	armor_spec = "bio=10"
 	rolled_sleeves = 0
 
 CAPABILITIES(/obj/item/clothing/under/rank/virologist)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/nursesuit
 	desc = "It's a jumpsuit commonly worn by nursing staff in the medical department."
 	name = "nurse's suit"
 	icon_state = "nursesuit"
-	armor_spec = "bio=10"
 	rolled_sleeves = -1
 
 CAPABILITIES(/obj/item/clothing/under/rank/nursesuit)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_worn(covers = CHEST))
 	configure(item_protection(permeability = 0.50))
 
@@ -105,10 +103,10 @@ CAPABILITIES(/obj/item/clothing/under/rank/nursesuit)
 	name = "nurse's dress"
 	icon_state = "nurse"
 	item_state_slots = list(slot_r_hand_str = "nursesuit", slot_l_hand_str = "nursesuit")
-	armor_spec = "bio=10"
 	rolled_sleeves = -1
 
 CAPABILITIES(/obj/item/clothing/under/rank/nurse)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_worn(covers = CHEST))
 	configure(item_protection(permeability = 0.50))
 
@@ -117,10 +115,10 @@ CAPABILITIES(/obj/item/clothing/under/rank/nurse)
 	name = "orderly's uniform"
 	icon_state = "orderly"
 	item_state_slots = list(slot_r_hand_str = "nursesuit", slot_l_hand_str = "nursesuit")
-	armor_spec = "bio=10"
 	rolled_sleeves = 0
 
 CAPABILITIES(/obj/item/clothing/under/rank/orderly)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/medical
@@ -128,10 +126,10 @@ CAPABILITIES(/obj/item/clothing/under/rank/orderly)
 	name = "medical doctor's jumpsuit"
 	icon_state = "medical"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
-	armor_spec = "bio=10"
 	rolled_sleeves = 0
 
 CAPABILITIES(/obj/item/clothing/under/rank/medical)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/medical/turtleneck
@@ -246,10 +244,10 @@ CAPABILITIES(/obj/item/clothing/under/rank/medical/paramedic_alt)
 	name = "geneticist's jumpsuit"
 	icon_state = "genetics_new"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
-	armor_spec = "bio=10"
 	rolled_sleeves = 0
 
 CAPABILITIES(/obj/item/clothing/under/rank/geneticist_new)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/chemist_new
@@ -257,10 +255,10 @@ CAPABILITIES(/obj/item/clothing/under/rank/geneticist_new)
 	name = "chemist's jumpsuit"
 	icon_state = "chemist_new"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
-	armor_spec = "bio=10"
 	rolled_sleeves = 0
 
 CAPABILITIES(/obj/item/clothing/under/rank/chemist_new)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/scientist_new
@@ -268,10 +266,10 @@ CAPABILITIES(/obj/item/clothing/under/rank/chemist_new)
 	name = "scientist's jumpsuit"
 	icon_state = "scientist_new"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
-	armor_spec = "bomb=10"
 	rolled_sleeves = 0
 
 CAPABILITIES(/obj/item/clothing/under/rank/scientist_new)
+	configure(atom_rules(armor_spec = "bomb=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/virologist_new
@@ -279,8 +277,14 @@ CAPABILITIES(/obj/item/clothing/under/rank/scientist_new)
 	name = "virologist's jumpsuit"
 	icon_state = "virologist_new"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
-	armor_spec = "bio=10"
 	rolled_sleeves = 0
 
 CAPABILITIES(/obj/item/clothing/under/rank/virologist_new)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
+
+CAPABILITIES(/obj/item/clothing/under/rank/research_director)
+	configure(atom_rules(armor_spec = "bio=10"))
+
+CAPABILITIES(/obj/item/clothing/under/rank/research_director/rdalt)
+	configure(atom_rules(armor_spec = "bio=10"))

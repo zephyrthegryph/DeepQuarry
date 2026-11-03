@@ -325,24 +325,17 @@
 	test_driver_end()
 	qdel(poll)
 
-/// A door-only docking port steps while a handshake is in flight and rests once docked; a docked port in an invalid state, or with a message waiting, keeps stepping.
+/// A door-only docking port steps while a handshake is in flight and rests once docked or undocked.
 /datum/unit_test/dq_docked_simple_port_rests
 
 /datum/unit_test/dq_docked_simple_port_rests/Run()
-	var/obj/machinery/embedded_controller/radio/simple_docking_controller/port = allocate(/obj/machinery/embedded_controller/radio/simple_docking_controller, test_floor())
-	var/datum/embedded_program/docking/simple/program = port.program
-	TEST_ASSERT_NOTNULL(program, "the port has its program")
-	TEST_ASSERT(!program.needs_processing(), "an undocked port has nothing to step")
-	program.set_dock_state(1) // STATE_DOCKING (the program's defines end with its file)
-	TEST_ASSERT(program.needs_processing(), "a port that is docking steps")
-	program.control_mode = 2 // MODE_CLIENT
-	program.set_dock_state(3) // STATE_DOCKED
-	TEST_ASSERT(!program.needs_processing(), "a docked client port rests")
-	program.resend_counter = 2
-	TEST_ASSERT(program.needs_processing(), "a docked port with a message waiting steps")
-	program.resend_counter = 0
-	program.control_mode = 0 // MODE_NONE
-	TEST_ASSERT(program.needs_processing(), "a docked port in an invalid state steps (it resets itself)")
-	program.control_mode = 2
-	program.set_dock_state(2) // STATE_UNDOCKING
-	TEST_ASSERT(program.needs_processing(), "a port that is undocking steps")
+	var/obj/machinery/embedded_controller/radio/simple_docking_controller/console = allocate(/obj/machinery/embedded_controller/radio/simple_docking_controller, test_floor())
+	var/datum/docking_port/port = console.port
+	TEST_ASSERT_NOTNULL(port, "the console has its port")
+	TEST_ASSERT(!port.needs_step(), "an undocked port has nothing to step")
+	port.set_dock_state(1) // DOCKING (the port's defines end with its file)
+	TEST_ASSERT(port.needs_step(), "a port that is docking steps")
+	port.set_dock_state(3) // DOCKED
+	TEST_ASSERT(!port.needs_step(), "a docked port rests")
+	port.set_dock_state(2) // UNDOCKING
+	TEST_ASSERT(port.needs_step(), "a port that is undocking steps")

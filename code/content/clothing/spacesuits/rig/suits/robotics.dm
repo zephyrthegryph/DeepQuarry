@@ -4,7 +4,6 @@
 	suit_type = "advanced"
 	desc = "A lightweight suit combining the utility of a RIG with the wearability of a voidsuit."
 	icon_state = "void_explorer2"
-	armor_spec = "melee=40;bullet=30;laser=20;energy=15;bomb=30;bio=100;rad=50"
 	offline_slowdown = 1
 	offline_vision_restriction = 0
 	emp_protection = -20
@@ -21,6 +20,7 @@
 	req_one_access = list()
 
 CAPABILITIES(/obj/item/rig/robotics)
+	configure(atom_rules(armor_spec = "melee=40;bullet=30;laser=20;energy=15;bomb=30;bio=100;rad=50"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/storage/box, /obj/item/storage/belt, /obj/item/defib_kit/compact))
 	configure(item_worn(slots = SLOT_BELT))

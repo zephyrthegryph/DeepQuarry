@@ -141,9 +141,9 @@ CAPABILITIES(/obj/item/clothing/suit/security/navyhos)
 	desc = "A rugged canvas trenchcoat, designed and created by TX Fabrication Corp. The coat is externally impact resistant - perfect for your next act of autodefenestration!"
 	icon_state = "detective"
 	blood_overlay_type = "coat"
-	armor_spec = "melee=10;bullet=10;laser=15;energy=10"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/det_trench)
+	configure(atom_rules(armor_spec = "melee=10;bullet=10;laser=15;energy=10"))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE))
 	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 
@@ -160,9 +160,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/det_trench/grey)
 /obj/item/clothing/suit/storage/forensics
 	name = DEVELOPER_WARNING_NAME
 	desc = "A forensics technician jacket."
-	armor_spec = "melee=10;bullet=10;laser=15;energy=10"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/forensics)
+	configure(atom_rules(armor_spec = "melee=10;bullet=10;laser=15;energy=10"))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE))
 	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 
@@ -195,9 +195,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/forensics)
 	desc = "A high-visibility vest used in work zones."
 	icon_state = "hazard"
 	blood_overlay_type = "armor"
-	armor_spec = "rad=20"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hazardvest)
+	configure(atom_rules(armor_spec = "rad=20"))
 	suit_storage(list (/obj/item/analyzer, /obj/item/flashlight, /obj/item/multitool, /obj/item/pipe_painter, /obj/item/radio, /obj/item/t_scanner,   	/obj/item/tool/crowbar, /obj/item/tool/screwdriver, /obj/item/weldingtool, /obj/item/tool/wirecutters, /obj/item/tool/wrench, /obj/item/tank/emergency,   	/obj/item/clothing/mask/gas, /obj/item/taperoll/engineering, /obj/item/taperoll/atmos, /obj/item/analyzer, /obj/item/extinguisher/mini) /* . Few more tools that can be put on vests */)
 	configure(item_worn(covers = UPPER_TORSO))
 

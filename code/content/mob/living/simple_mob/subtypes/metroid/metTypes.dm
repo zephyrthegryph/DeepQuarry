@@ -13,7 +13,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	melee_damage_upper = 0
 	movement_cooldown = 6
 	harm_intent_damage = 2
-	armor_spec = "melee=50;bullet=-90;energy=-50;bomb=-100;bio=100;rad=100"
 	vore_active = 1
 	vore_bump_chance = 25
 	vore_icons = SA_ICON_LIVING
@@ -25,6 +24,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	vore_escape_chance = 2		//Chance to escape if resisted.
 
 CAPABILITIES(/mob/living/simple_mob/metroid/jellybrig)
+	configure(atom_rules(armor_spec = "melee=50;bullet=-90;energy=-50;bomb=-100;bio=100;rad=100"))
 	configure(mob_rules(faction = "notmetroid"))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/metroid))
 
@@ -76,7 +76,6 @@ CAPABILITIES(/mob/living/simple_mob/metroid/jellybrig)
 	melee_damage_lower = 1
 	melee_damage_upper = 5
 	melee_miss_chance = 0
-	armor_spec = "bullet=-60;laser=60;energy=10;bomb=-100;bio=100;rad=100"
 	gender = NEUTER
 
 	//Metroids aren't affected by most atmospheres except cold.
@@ -103,6 +102,7 @@ CAPABILITIES(/mob/living/simple_mob/metroid/jellybrig)
 	is_juvenile = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/baby)
+	configure(atom_rules(armor_spec = "bullet=-60;laser=60;energy=10;bomb=-100;bio=100;rad=100"))
 	configure(mob_rules(faction = "metroids"))
 	configure(living_rules(say_list_type = /datum/say_list/metroid, max_nutrition = 2200))
 
@@ -128,7 +128,6 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/baby)
 	melee_damage_lower = 2
 	melee_damage_upper = 9
 	melee_miss_chance = 0
-	armor_spec = "bullet=-50;laser=70;energy=10;bomb=-100;bio=100;rad=100"
 	gender = NEUTER
 
 	//Metroids aren't affected by most atmospheres except cold.
@@ -165,6 +164,7 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/baby)
 	is_juvenile = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/super)
+	configure(atom_rules(armor_spec = "bullet=-50;laser=70;energy=10;bomb=-100;bio=100;rad=100"))
 	configure(mob_rules(faction = "metroids"))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/metroid, max_nutrition = 2200))
 
@@ -187,7 +187,6 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/super)
 	melee_damage_upper = 15
 	melee_miss_chance = 5
 	attacktext = list("rammed")
-	armor_spec = "melee=40;bullet=15;laser=50;energy=60;bomb=10;bio=100;rad=100"
 	gender = NEUTER
 
 	//Alphas lose their vulnerability to cold.
@@ -207,6 +206,7 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/super)
 	next = "/mob/living/simple_mob/metroid/juvenile/gamma"
 
 CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/alpha)
+	configure(atom_rules(armor_spec = "melee=40;bullet=15;laser=50;energy=60;bomb=10;bio=100;rad=100"))
 	configure(mob_rules(faction = "metroids"))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/metroid, max_nutrition = 2200))
 
@@ -248,7 +248,6 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/alpha)
 	melee_damage_upper = 20
 	melee_miss_chance = 5
 	attacktext = list("rammed")
-	armor_spec = "melee=55;bullet=15;laser=50;energy=90;bomb=10;bio=100;rad=100"
 	gender = NEUTER
 	ranged_cooldown_time = 5 SECOND
 	projectilesound = SFX_WEAPONS_TASER2
@@ -271,6 +270,7 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/alpha)
 	next = "/mob/living/simple_mob/metroid/juvenile/zeta"
 
 CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/gamma)
+	configure(atom_rules(armor_spec = "melee=55;bullet=15;laser=50;energy=90;bomb=10;bio=100;rad=100"))
 	configure(mob_rules(faction = "metroids"))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/metroid, max_nutrition = 2200))
 
@@ -327,7 +327,6 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/gamma)
 	ranged_cooldown_time = 5 SECOND
 	attack_armor_pen = 10
 	attacktext = list("slashed")
-	armor_spec = "melee=70;laser=50;energy=60;bomb=10;bio=100;rad=100"
 	gender = NEUTER
 
 	projectiletype	= /obj/item/projectile/energy/metroidacid	//The projectiles I shoot
@@ -355,6 +354,7 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/gamma)
 	next = "/mob/living/simple_mob/metroid/juvenile/omega"
 
 CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/zeta)
+	configure(atom_rules(armor_spec = "melee=70;laser=50;energy=60;bomb=10;bio=100;rad=100"))
 	configure(mob_rules(faction = "metroids"))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/metroid/zeta, max_nutrition = 2200))
 	configure(mob_movement(makes_dirt = TRUE))
@@ -411,7 +411,6 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/zeta)
 	ranged_cooldown_time = 2.5 SECOND
 	attack_armor_pen = 20
 	attacktext = list("slashed")
-	armor_spec = "melee=75;bullet=20;laser=55;energy=60;bomb=10;bio=100;rad=100"
 	gender = NEUTER
 	projectiletype	= /obj/item/projectile/energy/mob/smalllaser
 	projectilesound = SFX_WEAPONS_FLAMER // The sound I make when I do it
@@ -437,6 +436,7 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/zeta)
 
 
 CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/omega)
+	configure(atom_rules(armor_spec = "melee=75;bullet=20;laser=55;energy=60;bomb=10;bio=100;rad=100"))
 	configure(mob_rules(faction = "metroids"))
 	configure(living_rules(vore_capacity = 2, say_list_type = /datum/say_list/metroid/omega, max_nutrition = 2200))
 	configure(mob_nature(death_sound = SFX_METROID_METROIDOMEGADEATH))
@@ -493,7 +493,6 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/omega)
 	melee_miss_chance = 5
 	attack_armor_pen = 20
 	attacktext = list("gnashed")
-	armor_spec = "melee=75;bullet=40;laser=60;energy=90;bomb=10;bio=100;rad=100"
 	gender = NEUTER
 	ranged_cooldown_time = 1.5 SECOND
 	projectiletype	= /obj/item/projectile/energy/metroidacid	// The projectiles I shoot
@@ -522,6 +521,7 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/omega)
 
 
 CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/queen)
+	configure(atom_rules(armor_spec = "melee=75;bullet=40;laser=60;energy=90;bomb=10;bio=100;rad=100"))
 	configure(mob_rules(faction = "metroids"))
 	configure(living_rules(vore_capacity = 4, say_list_type = /datum/say_list/metroid/queen, max_nutrition = 2200))
 	configure(mob_nature(death_sound = SFX_METROID_METROIDQUEENDEATH))

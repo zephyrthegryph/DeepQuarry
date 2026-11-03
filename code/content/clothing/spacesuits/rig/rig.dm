@@ -16,7 +16,6 @@
 	w_class = ITEMSIZE_HUGE
 
 	// These values are passed on to all component pieces.
-	armor_spec = "melee=40;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=20"
 
 	var/default_mob_icon = 'icons/mob/rig_back.dmi'
 
@@ -99,6 +98,7 @@
 SCHEMA(/obj/item/rig, offline_slowdown, num())
 
 CAPABILITIES(/obj/item/rig)
+	configure(atom_rules(armor_spec = "melee=40;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=20"))
 	configure(item_rules(actions_types = list(/datum/action/item_action/hardsuit_interface, /datum/action/item_action/toggle_heatsink)))
 	configure(movable_motion(unacidable = TRUE))
 	configure(item_handling(preserve = 1))

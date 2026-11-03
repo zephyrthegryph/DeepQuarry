@@ -12,7 +12,6 @@
 	var/light_range_on = 2
 	var/light_power_on = 1
 
-	integrity_failure = 0.5
 
 MSG_DEF(computer/gripper_use, "You use the gripper's tool with %T%.", "")
 MSG_DEF_SELF(computer/gripper_empty, "The gripper is not holding anything.")
@@ -22,6 +21,7 @@ MSG_DEF_SELF(computer/gripper_empty, "The gripper is not holding anything.")
 // (one time in five over severity), a blob hits it as a medium blast, a screwdriver disconnects the monitor into a frame with its board (a
 // broken one drops its glass), and any other item is the hand's use of it.
 CAPABILITIES(/obj/machinery/computer)
+	configure(atom_rules(integrity_failure = 0.5))
 	configure(movable_motion(blocks_emissive = EMISSIVE_BLOCK_NONE, unacidable = TRUE))
 	configure(machine_usage(interface_sound = SFX_KEYBOARD))
 	configure(uses_power(idle = 300, active = 300))

@@ -2,7 +2,7 @@
 	projectiletype = /obj/item/projectile/energy/mob/heavylaser
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/durand)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/durand)))
+	configure(atom_rules(armor_spec = "melee=50;bullet=35;laser=15;energy=10;bomb=20;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/technology/durand)))
 	op("toggle_defense_mode", menu(desc = "Toggles a special mode which makes you immobile and much more resilient."), label("Toggle Defense Mode"), needs(req_self()), then(PROC_REF(toggle_defense_mode_op)))
 	configure(mob_kind(attack_cooldown = 2 SECONDS))
 
@@ -10,7 +10,7 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/durand)
 	projectiletype = /obj/item/projectile/energy/mob/heavylaser
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/marauder)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/marauder)))
+	configure(atom_rules(armor_spec = "melee=50;bullet=55;laser=40;energy=30;bomb=30;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/technology/marauder)))
 	configure(mob_kind(attack_cooldown = 2 SECONDS))
 
 /mob/living/simple_mob/mechanical/mecha/hoverpod

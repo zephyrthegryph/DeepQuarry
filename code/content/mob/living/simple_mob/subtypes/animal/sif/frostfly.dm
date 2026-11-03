@@ -51,7 +51,6 @@
 	special_attack_min_range = 0
 	special_attack_max_range = 4
 
-	armor_spec = "melee=20;bullet=10;laser=5;bomb=10;bio=100;rad=100"
 
 	var/datum/effect/effect/system/smoke_spread/frost/smoke_special
 
@@ -114,7 +113,7 @@
 TYPE_TABLE(/datum/decl/mob_organ_names/frostfly, mob_organ_hit_zones, list("head", "thorax", "abdomen", "left vestigal wing", "right vestigal wing", "left legs", "right legs"))
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/frostfly)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/frostfly)))
+	configure(atom_rules(armor_spec = "melee=20;bullet=10;laser=5;bomb=10;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/frostfly)))
 	configure(mob_rules(faction = FACTION_DIYAAB))
 	configure(living_rules(say_list_type = /datum/say_list/frostfly))
 	configure(mob_kind(attack_cooldown = 1.5 SECONDS))

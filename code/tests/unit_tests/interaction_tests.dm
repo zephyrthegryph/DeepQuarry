@@ -117,7 +117,6 @@ CAPABILITIES(/atom/movable/unit_test_interaction_target)
 
 /obj/machinery/unit_test_integrity_lifecycle
 	max_integrity = 100
-	integrity_failure = 0.5
 	var/break_calls = 0
 	var/fix_calls = 0
 
@@ -125,6 +124,7 @@ CAPABILITIES(/atom/movable/unit_test_interaction_target)
 	break_calls++
 
 CAPABILITIES(/obj/machinery/unit_test_integrity_lifecycle)
+	configure(atom_rules(integrity_failure = 0.5))
 	on_notice(/datum/notice/atom_broken, then(PROC_REF(count_break)))
 
 /obj/machinery/unit_test_integrity_lifecycle/atom_fix()

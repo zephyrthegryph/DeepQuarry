@@ -24,7 +24,6 @@
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
 	projectile_dispersion = 0
-	armor_spec = "melee=20;bullet=20;laser=20;energy=60;bomb=20;bio=100;rad=100" // Simple mob immunuties plus minour armor
 
 	pass_flags = PASSTABLE //mostly for the melee mobs.
 
@@ -486,7 +485,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective/mind/gravity)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis). Each member is one experiment: its effect, and its size with it.
 CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/astralcollective)))
+	configure(atom_rules(armor_spec = "melee=20;bullet=20;laser=20;energy=60;bomb=20;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/astralcollective)))
 	configure(mob_rules(faction = FACTION_ECLIPSE))
 	configure(living_rules(vore_capacity = 1))
 	configure(movable_motion(unacidable = TRUE))

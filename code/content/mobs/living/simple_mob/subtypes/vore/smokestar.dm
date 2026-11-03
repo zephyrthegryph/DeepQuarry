@@ -18,9 +18,9 @@
 	melee_damage_lower = 8
 	melee_damage_upper = 15
 	damage_fatigue_mult = 0
-	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=30;bio=100;rad=100"
 
 CAPABILITIES(/mob/living/simple_mob/vore/smokestar)
+	configure(atom_rules(armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=30;bio=100;rad=100"))
 	configure(mob_rules(faction = "smokestar"))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
 	configure(mob_movement(hovering = TRUE))

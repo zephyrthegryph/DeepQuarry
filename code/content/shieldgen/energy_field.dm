@@ -28,7 +28,6 @@
 	can_atmos_pass = ATMOS_PASS_DENSITY
 	var/tmp/obj/machinery/shield_gen/my_gen
 	var/ticks_recovering = 10
-	uses_integrity = TRUE
 	max_integrity = 10 * FIELD_INTEGRITY_PER_RENWICK
 	resistance_flags = FIRE_PROOF | ACID_PROOF | LAVA_PROOF
 
@@ -57,6 +56,7 @@
 	adjust_strength(-Proj.get_structure_damage() / 10)
 
 CAPABILITIES(/obj/effect/energy_field)
+	configure(atom_rules(uses_integrity = TRUE))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_by)))
 	op("hit_energy_field", item(/obj/item), then(PROC_REF(interaction_hit_energy_field)))

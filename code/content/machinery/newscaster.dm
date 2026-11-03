@@ -125,7 +125,6 @@ CAPABILITIES(/datum/feed_network)
 	layer = ABOVE_WINDOW_LAYER
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	flags = WALL_ITEM
-	integrity_failure = 0.5
 	var/ispowered = 1 //starts powered, changes with power_change()
 	//var/list/datum/feed_channel/channel_list = list() //This list will contain the names of the feed channels. Each name will refer to a data region where the messages of the feed channels are stored.
 	//OBSOLETE: We're now using a global news network
@@ -158,6 +157,7 @@ CAPABILITIES(/datum/feed_network)
 	var/list/temp = null
 
 CAPABILITIES(/obj/machinery/newscaster)
+	configure(atom_rules(integrity_failure = 0.5))
 	configure(movable_motion(blocks_emissive = NONE))
 	setup(PROC_REF(allocate_unit_number))
 	after_init(0, then(PROC_REF(connect_exonet)))

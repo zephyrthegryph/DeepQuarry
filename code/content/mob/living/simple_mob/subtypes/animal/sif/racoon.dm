@@ -36,7 +36,6 @@
 	melee_damage_upper = 15
 	attacktext = list("nipped", "bit", "cut", "clawed")
 
-	armor_spec = "melee=15;bullet=5;laser=5;bomb=10;bio=100;rad=100"
 
 
 	var/obj/item/clothing/head/hat = null // The hat the Sakimm may be wearing.
@@ -98,7 +97,7 @@
 	emote_hear = list("chitters", "clicks")
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/sakimm)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/sakimm)))
+	configure(atom_rules(armor_spec = "melee=15;bullet=5;laser=5;bomb=10;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/sakimm)))
 	op("remove_hat", menu(desc = "Remove the animal's hat. You monster."), label("Remove Hat"), needs(req_adjacent()), then(PROC_REF(remove_hat_op)))
 	op("give_hat", menu(desc = "Give the animal a hat. You hero."), label("Give Hat"), needs(req_adjacent()), then(PROC_REF(give_hat_op)))
 	configure(mob_rules(faction = FACTION_SAKIMM))

@@ -121,6 +121,7 @@ TYPE_TABLE(/mob/living/simple_mob/mechanical/mecha/eclipse, get_ai_target_select
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse)
+	configure(atom_rules(armor_spec = "melee=50;bullet=50;laser=50;energy=50;bomb=50;bio=100;rad=100"))
 	configure(mob_rules(faction = FACTION_ECLIPSE))
 	configure(living_rules(use_modern_ai = TRUE))
 	ref_one(nameof(volley_target), /atom)

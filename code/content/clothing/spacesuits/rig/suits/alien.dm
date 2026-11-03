@@ -9,7 +9,6 @@
 	desc = "A cheap NT knock-off of an Unathi battle-rig. Uses softer, but lighter, armour plating, producing a still-useful suit"
 	suit_type = "\improper NT breacher"
 	icon_state = "breacher_rig_cheap"
-	armor_spec = "melee=60;bullet=45;laser=45;energy=10;bomb=50;bio=100;rad=20"
 	emp_protection = -20
 	offline_slowdown = 5
 	vision_restriction = 0  //This is dumb as hell and should be 0 if we want the suit to be even vaguely useful.
@@ -19,6 +18,7 @@
 	boot_type = /obj/item/clothing/shoes/magboots/rig/breacher
 
 CAPABILITIES(/obj/item/rig/breacher)
+	configure(atom_rules(armor_spec = "melee=60;bullet=45;laser=45;energy=10;bomb=50;bio=100;rad=20"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 3)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_STORAGE))
 	configure(item_protection(siemens = 0.75))
@@ -30,11 +30,11 @@ CAPABILITIES(/obj/item/rig/breacher)
 	desc = "An authentic Unathi breacher chassis. Huge, bulky and absurdly heavy. It must be like wearing a tank."
 	suit_type = "breacher chassis"
 	icon_state = "breacher_rig"
-	armor_spec = "melee=85;bullet=80;laser=80;energy=40;bomb=80;bio=100;rad=60" //Still a tank just not indestructable
 	vision_restriction = 0
 	offline_slowdown = 10
 
 CAPABILITIES(/obj/item/rig/breacher/fancy)
+	configure(atom_rules(armor_spec = "melee=85;bullet=80;laser=80;energy=40;bomb=80;bio=100;rad=60"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 6)))
 	configure(item_protection(siemens = 0.2))
 
@@ -66,7 +66,6 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/breacher)
 	desc = "This metal box writhes and squirms as if it were alive..."
 	suit_type = "alien"
 	icon_state = "vox_rig"
-	armor_spec = "melee=60;bullet=50;laser=40;energy=15;bomb=30;bio=100;rad=50"
 	flags = PHORONGUARD
 	offline_slowdown = 2.5
 
@@ -78,6 +77,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/breacher)
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/vox
 
 CAPABILITIES(/obj/item/rig/vox)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=40;energy=15;bomb=30;bio=100;rad=50"))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, POCKET_BAYSUIT))
 	configure(item_worn(flags = THICKMATERIAL))
 	configure(item_protection(siemens = 0.2))
@@ -120,7 +120,6 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/vox)
 /obj/item/rig/vox/carapace
 	name = "dense alien control module"
 	suit_type = "dense alien"
-	armor_spec = "melee=60;bullet=50;laser=40;energy=15;bomb=30;bio=100;rad=50"
 	emp_protection = 40 //change this to 30 if too high.
 
 	req_access = list(ACCESS_SYNDICATE)
@@ -140,7 +139,6 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/vox)
 	name = "sinister alien control module"
 	suit_type = "sinister alien"
 	icon_state = "voxstealth_rig"
-	armor_spec = "melee=40;bullet=30;laser=30;energy=15;bomb=30;bio=100;rad=50"
 	emp_protection = 40 //change this to 30 if too high.
 
 	req_access = list(ACCESS_SYNDICATE)
@@ -189,7 +187,6 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/vox)
 	suit_type = "\improper industrial alien"
 	icon_state = "vox_engineer_rig"
 	desc = "A lightweight, alien rig dedicated for construction and engineering tasks. Not reccomended for hostile engagement."
-	armor_spec = "melee=25;bullet=5;laser=40;energy=45;bomb=50;bio=100;rad=100" //CE suit values but shuffled to a tighter focus on the job hazards
 	flags = PHORONGUARD
 	offline_slowdown = 2.5
 	emp_protection = 40 //change this to 30 if too high.
@@ -216,6 +213,7 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/vox)
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/vox/ch
 
 CAPABILITIES(/obj/item/rig/vox/engineering)
+	configure(atom_rules(armor_spec = "melee=25;bullet=5;laser=40;energy=45;bomb=50;bio=100;rad=100"))
 	configure(item_worn(worn_factors = TRAIT_NONE))
 	suit_storage(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS))
 	configure(item_worn(flags = THICKMATERIAL))
@@ -228,7 +226,6 @@ CAPABILITIES(/obj/item/rig/vox/engineering)
 	suit_type = "\improper sturdy alien"
 	icon_state = "vox_sec_rig"
 	desc = "A medium weight, alien control module. Built sturdy for security engagements."
-	armor_spec = "melee=60;bullet=50;laser=40;energy=10;bomb=20;bio=100;rad=50" //CE suit values but shuffled to a tighter focus on the job hazards
 	flags = PHORONGUARD
 	offline_slowdown = 5
 	emp_protection = 40 //change this to 30 if too high.
@@ -248,6 +245,7 @@ CAPABILITIES(/obj/item/rig/vox/engineering)
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/vox/ch
 
 CAPABILITIES(/obj/item/rig/vox/security)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=40;energy=10;bomb=20;bio=100;rad=50"))
 	configure(item_worn(worn_factors = TRAIT_NONE))
 	suit_storage(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS))
 	configure(item_worn(flags = THICKMATERIAL))
@@ -266,3 +264,9 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots/rig/vox)
 
 CAPABILITIES(/obj/item/clothing/suit/space/rig/vox)
 	fits_as(FIT_VOX)
+
+CAPABILITIES(/obj/item/rig/vox/carapace)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=40;energy=15;bomb=30;bio=100;rad=50"))
+
+CAPABILITIES(/obj/item/rig/vox/stealth)
+	configure(atom_rules(armor_spec = "melee=40;bullet=30;laser=30;energy=15;bomb=30;bio=100;rad=50"))

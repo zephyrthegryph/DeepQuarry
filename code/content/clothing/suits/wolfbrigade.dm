@@ -7,9 +7,9 @@
 	icon_state = "wbsuit"
 	item_state = "wbsuit-mob"
 	blood_overlay_type = "suit"
-	armor_spec = "melee=80;bullet=70;laser=50;energy=50;bomb=100;rad=10"
 
 CAPABILITIES(/obj/item/clothing/suit/armor/wolfbrigade)
+	configure(atom_rules(armor_spec = "melee=80;bullet=70;laser=50;energy=50;bomb=100;rad=10"))
 	configure(item_worn(covers = UPPER_TORSO))
 
 /obj/item/clothing/suit/storage/armor/wolfbrigade2
@@ -20,9 +20,9 @@ CAPABILITIES(/obj/item/clothing/suit/armor/wolfbrigade)
 	icon_state = "wbsuit2"
 	item_state = "wbsuit2-mob"
 	blood_overlay_type = "suit"
-	armor_spec = "melee=80;bullet=70;laser=50;energy=50;bomb=100;rad=10"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/armor/wolfbrigade2)
+	configure(atom_rules(armor_spec = "melee=80;bullet=70;laser=50;energy=50;bomb=100;rad=10"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	configure(item_worn(covers = UPPER_TORSO))
 
@@ -34,9 +34,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/armor/wolfbrigade2)
 	icon_state = "wbmask-mob"
 	item_state = "wbmask-mob"
 	item_state_slots = list(slot_r_hand_str = "gas", slot_l_hand_str = "gas")
-	armor_spec = "melee=60;bullet=50;laser=30;energy=30;bomb=80;bio=20;rad=10"
 
 CAPABILITIES(/obj/item/clothing/mask/gas/wolfbrigade)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=30;energy=30;bomb=80;bio=20;rad=10"))
 	configure(item_worn(covers = HEAD|FACE|EYES))
 
 /obj/item/clothing/head/helmet/wolfbrigade
@@ -46,7 +46,6 @@ CAPABILITIES(/obj/item/clothing/mask/gas/wolfbrigade)
 	icon_override = 'icons/obj/clothing/wolfbrigade.dmi'
 	icon_state = "wbhelmet"
 	item_state = "wbhelmet-mob"
-	armor_spec = "melee=60;bullet=50;laser=30;energy=30;bomb=80;rad=10"
 
 /obj/item/clothing/shoes/combat/wolfbrigade
 	name = "Protect Gear boots"
@@ -55,9 +54,9 @@ CAPABILITIES(/obj/item/clothing/mask/gas/wolfbrigade)
 	icon_override = 'icons/obj/clothing/wolfbrigade.dmi'
 	icon_state = "wbboots-mob"
 	item_state = "wbboots-mob"
-	armor_spec = "melee=60;bullet=60;laser=40;energy=30;bomb=50;rad=10"
 
 CAPABILITIES(/obj/item/clothing/shoes/combat/wolfbrigade)
+	configure(atom_rules(armor_spec = "melee=60;bullet=60;laser=40;energy=30;bomb=50;rad=10"))
 	configure(item_worn(flags = NOSLIP))
 	configure(item_combat(force = 5))
 	configure(item_protection(siemens = 0.6, cold_parts = FEET, min_cold = SHOE_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = FEET, max_heat = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE))
@@ -69,3 +68,6 @@ CAPABILITIES(/obj/item/clothing/shoes/combat/wolfbrigade)
 /obj/item/clothing/under/acj/wolfbrigade //Because never OP enough when you want to adminbuse
 	name = "Kerberos uniform"
 	desc = "Fürchte die Wölfe"
+
+CAPABILITIES(/obj/item/clothing/head/helmet/wolfbrigade)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=30;energy=30;bomb=80;rad=10"))

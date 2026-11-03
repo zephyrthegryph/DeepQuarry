@@ -12,11 +12,11 @@ MSG_DEF_SELF(custom_clothes/you_need_a_wolf_taur, "you need a wolf-taur half to 
 	desc = "It's made of a slightly sturdier material than standard jumpsuits, to allow for robust protection."
 	icon_state = "swatunder"
 	item_state_slots = list(slot_r_hand_str = "green", slot_l_hand_str = "green")
-	armor_spec = "melee=10"
 	rolled_sleeves = 0
 	rolled_down = 0
 
 CAPABILITIES(/obj/item/clothing/under/sec_flight_suit)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 
@@ -30,9 +30,9 @@ CAPABILITIES(/obj/item/clothing/under/sec_flight_suit)
 	desc = "The uniform worn by operations officers of the mid 2260s. It comes with extra security padding, but you feel strangely vulnerable just seeing this..."
 	icon_state = "trek_engsec"
 	item_state = "trek_engsec"
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/trek/sec)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 //TNG
@@ -70,7 +70,6 @@ CAPABILITIES(/obj/item/clothing/under/rank/trek/sec)
 	icon_state = "nullsuit_civ" //Default
 	item_state = "nullsuit_civ"
 	worn_state = "nullsuit_civ"
-	armor_spec = ""
 
 /obj/item/clothing/under/rank/nullsuit/civ
 	name = "civilian nullsuit"
@@ -81,7 +80,6 @@ CAPABILITIES(/obj/item/clothing/under/rank/trek/sec)
 	icon_state = "nullsuit_civ"
 	item_state = "nullsuit_civ"
 	worn_state = "nullsuit_civ"
-	armor_spec = ""
 
 /obj/item/clothing/under/rank/nullsuit/cmd //Command version
 	name = "command nullsuit"
@@ -96,7 +94,6 @@ CAPABILITIES(/obj/item/clothing/under/rank/trek/sec)
 	icon_state = "nullsuit_sec"
 	item_state = "nullsuit_sec"
 	worn_state = "nullsuit_sec"
-	armor_spec = "melee=10"
 
 /obj/item/clothing/under/rank/nullsuit/sec/hos //HoS version
 	name = "head of security nullsuit"
@@ -111,7 +108,6 @@ CAPABILITIES(/obj/item/clothing/under/rank/trek/sec)
 	icon_state = "nullsuit_med"
 	item_state = "nullsuit_med"
 	worn_state = "nullsuit_med"
-	armor_spec = "bio=10"
 
 /obj/item/clothing/under/rank/nullsuit/med/cmo //Chief Medical Officer version
 	name = "Chief Medical Officer nullsuit"
@@ -126,7 +122,6 @@ CAPABILITIES(/obj/item/clothing/under/rank/trek/sec)
 	icon_state = "nullsuit_eng"
 	item_state = "nullsuit_eng"
 	worn_state = "nullsuit_eng"
-	armor_spec = "rad=10"
 
 /obj/item/clothing/under/rank/nullsuit/eng/ce //Chief Engineer version
 	name = "chief engineer nullsuit"
@@ -141,7 +136,6 @@ CAPABILITIES(/obj/item/clothing/under/rank/trek/sec)
 	icon_state = "nullsuit_sci"
 	item_state = "nullsuit_sci"
 	worn_state = "nullsuit_sci"
-	armor_spec = "bomb=10"
 
 /obj/item/clothing/under/rank/nullsuit/sci/rd //Research Director version
 	name = "research director nullsuit"
@@ -357,9 +351,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/vest/hoscoat/ancient_greatcoat)
 	icon_state = "russofurcoat"
 
 
-	armor_spec = ""
 
 CAPABILITIES(/obj/item/clothing/suit/storage/vest/hoscoat/russofurcoat)
+	configure(atom_rules(armor_spec = ""))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY))
 
 	configure(item_worn(worn_icon = 'icons/inventory/suit/mob.dmi', hides = HIDETIE|HIDEHOLSTER))
@@ -375,12 +369,12 @@ CAPABILITIES(/obj/item/clothing/suit/storage/vest/hoscoat/russofurcoat)
 	icon_state = "fedcoat"
 
 	blood_overlay_type = "coat"
-	armor_spec = "melee=10;bullet=20;laser=10" //As much armor as the cyberpunk jacket. Also priced the same.
 	var/unbuttoned = FALSE
 
 
 
 CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
+	configure(atom_rules(armor_spec = "melee=10;bullet=20;laser=10"))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE))
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = CHEST|ARMS))
 	op("fedcoat_toggle_verb", menu(), label("Toggle coat buttons"), needs(carried()), then(PROC_REF(fedcoat_toggle_verb)))
@@ -407,19 +401,16 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
 	name = "Federation Uniform Jacket (Blue)"
 	desc = "A uniform jacket from the United Federation. Starfleet still uses this uniform and there are variations of it. Wearing this may make you feel all scientific."
 	icon_state = "fedblue"
-	armor_spec = "bio=50" //As much armor as a normal labcoat.
 
 /obj/item/clothing/suit/storage/fluff/fedcoat/fedeng
 	name = "Federation Uniform Jacket (Yellow)"
 	desc = "A uniform jacket from the United Federation. Starfleet still uses this uniform and there are variations of it.Wearing it may make you feel like checking a warp core, whatever that is."
 	icon_state = "fedeng"
-	armor_spec = "rad=20" //I was going to say 'as much as a hazard vest' but then I checked and found that hazard vests either never HAD rad resistance or had it removed... Whatever. I gave the hazard vest it's rad resistance back as well.
 
 /obj/item/clothing/suit/storage/fluff/fedcoat/fedcapt
 	name = "Federation Uniform Jacket (Command)"
 	desc = "A uniform jacket from the United Federation. Starfleet still uses this uniform and there are variations of it. You feel like a commanding officer of Starfleet."
 	icon_state = "fedcapt"
-	armor_spec = "melee=10;bullet=20;laser=10"
 
 /obj/item/clothing/suit/storage/fluff/modernfedcoat
 	name = "Modern Federation Uniform Jacket (Command)"
@@ -430,11 +421,11 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
 
 
 	blood_overlay_type = "coat"
-	armor_spec = "melee=10;bullet=20;laser=10"
 
 	//Variants
 
 CAPABILITIES(/obj/item/clothing/suit/storage/fluff/modernfedcoat)
+	configure(atom_rules(armor_spec = "melee=10;bullet=20;laser=10"))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE))
 
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = CHEST|ARMS))
@@ -443,19 +434,16 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/modernfedcoat)
 	name = "Modern Federation Uniform Jacket (Blue)"
 	desc = "A modern uniform jacket from the United Federation. Their Starfleet had recently started using these uniforms. Wearing this makes you feel like a scientist or a pilot."
 	icon_state = "fedmodernblue"
-	armor_spec = "bio=50"
 
 /obj/item/clothing/suit/storage/fluff/modernfedcoat/modernfedeng
 	name = "Modern Federation Uniform Jacket (Yellow)"
 	desc = "A modern uniform jacket from the United Federation. Their Starfleet had recently started using these uniforms. You feel like you can handle any type of technical engineering problems."
 	icon_state = "fedmoderneng"
-	armor_spec = "rad=20"
 
 /obj/item/clothing/suit/storage/fluff/modernfedcoat/modernfedsec
 	name = "Modern Federation Uniform Jacket (Red)"
 	desc = "A modern uniform jacket from the United Federation. Their Starfleet had recently started using these uniforms. This uniform makes you want to protect and serve as an officer."
 	icon_state = "fedmodernsec"
-	armor_spec = "melee=10;bullet=20;laser=10"
 
 /obj/item/clothing/head/caphat/formal/fedcover
 	name = "Federation Officer's Cap"
@@ -626,9 +614,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/captain/fluff/harmuniform)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "tasaldsuit"
 
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/det/fluff/tasald)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 // bwoincognito:Tasald Corlethian
@@ -641,9 +629,9 @@ CAPABILITIES(/obj/item/clothing/under/det/fluff/tasald)
 
 
 	blood_overlay_type = "coat"
-	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/det_suit/fluff/tasald)
+	configure(atom_rules(armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"))
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = CHEST|LEGS|ARMS))
 
 //Event Costumes Below
@@ -654,11 +642,11 @@ CAPABILITIES(/obj/item/clothing/suit/storage/det_suit/fluff/tasald)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "freddyhead"
 
-	armor_spec = ""
 
 	//Bonnie Head
 
 CAPABILITIES(/obj/item/clothing/head/helmet/fluff/freddy)
+	configure(atom_rules(armor_spec = ""))
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', hides = HIDEMASK|HIDEEARS))
 	configure(item_protection(permeability = 0.01, cold_parts = HEAD, siemens = 0.9))
 /obj/item/clothing/head/helmet/fluff/freddy/bonnie
@@ -688,11 +676,11 @@ CAPABILITIES(/obj/item/clothing/head/helmet/fluff/freddy)
 	icon_state = "freddysuit"
 
 
-	armor_spec = ""
 
 	//Bonnie Suit
 
 CAPABILITIES(/obj/item/clothing/suit/fluff/freddy)
+	configure(atom_rules(armor_spec = ""))
 	suit_storage(list(POCKET_GENERIC, POCKET_ALL_TANKS))
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = CHEST|LEGS|FEET|ARMS|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT))
 	configure(item_protection(gas_transfer = 0.01, permeability = 0.02, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, siemens = 0.9))
@@ -846,12 +834,12 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/security/fluff/hos)
 /obj/item/clothing/head/helmet/hos/fluff/lethe
 	name = "Lethe's Hat"
 	desc = " This is Lethe's Hat! A little tag attached inside reads: 'If found please return to Lethe! Or else!' It looks rather worn in. It also lacks armor."
-	armor_spec = ""
 
 	icon = 'icons/inventory/head/item.dmi'
 	icon_state = "hoscap"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/hos/fluff/lethe)
+	configure(atom_rules(armor_spec = ""))
 	configure(item_worn(worn_icon = 'icons/inventory/head/mob.dmi'))
 
 
@@ -969,12 +957,12 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/fluff/joan)
 	where the suit is softer is a rectangular name-tag with the name 'Joan' on it. There are indications that the \
 	suit has seen combat."
 
-	armor_spec = "melee=50;bullet=40;laser=45;energy=25;bomb=50;bio=100;rad=50;cold=60" //These values were taken from the combat rigs and adjusted to be weaker than said rigs.
 
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "joansuit"
 
 CAPABILITIES(/obj/item/clothing/suit/space/fluff/joan)
+	configure(atom_rules(armor_spec = "melee=50;bullet=40;laser=45;energy=25;bomb=50;bio=100;rad=50;cold=60"))
 	configure(item_worn(worn_factors = TRAIT_NONE))
 	extend(/datum/act/equip, needs(req_wearer_ckey("joanrisu", because = MSG(custom_clothes/it_doesnt_fit))))
 	suit_storage(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS))
@@ -1020,43 +1008,36 @@ CAPABILITIES(/obj/item/clothing/under/rank/internalaffairs/fluff/joan)
 	name = "GE command suit" // Change to GE
 	desc = "Gilthari Exports uniform. An extra-comfortable command one, at that."
 	icon_state = "khi_uniform_cmd"
-	armor_spec = ""
 
 /obj/item/clothing/under/rank/khi/sec //Security version
 	name = "GE security suit" // Change to GE
 	desc = "Gilthari Exports uniform. This one has angry red security stripes. Keepin' the peace in style."
 	icon_state = "khi_uniform_sec"
-	armor_spec = "melee=10"
 
 /obj/item/clothing/under/rank/khi/med //Medical version
 	name = "GE medical suit" // Change to GE
 	desc = "Gilthari Exports uniform. The medical version. Why not just get a new body, anyway?"
 	icon_state = "khi_uniform_med"
-	armor_spec = "bio=10"
 
 /obj/item/clothing/under/rank/khi/eng //Engineering version
 	name = "GE engineering suit" // Change to GE
 	desc = "Gilthari Exports uniform. One fit for an engineer, by the looks of it. Building the future, one disaster at a time."
 	icon_state = "khi_uniform_eng"
-	armor_spec = "rad=10"
 
 /obj/item/clothing/under/rank/khi/sci //Science version
 	name = "GE science suit" // Change to GE
 	desc = "Gilthari Exports uniform. For performing science in, based on the color! Only SCIENCE can save us now."
 	icon_state = "khi_uniform_sci"
-	armor_spec = "bomb=10"
 
 /obj/item/clothing/under/rank/khi/crg //Cargo version
 	name = "GE cargo suit" // Change to GE
 	desc = "A sleek cargo uniform from Gilthari Exports."
 	icon_state = "khi_uniform_crg"
-	armor_spec = ""
 
 /obj/item/clothing/under/rank/khi/civ //Science version
 	name = "GE civilian suit" // Change to GE
 	desc = "A sleek civilian uniform from Gilthari Exports."
 	icon_state = "khi_uniform_civ"
-	armor_spec = ""
 
 /obj/item/clothing/under/rank/khi/fluff
 	name = DEVELOPER_WARNING_NAME
@@ -1065,7 +1046,6 @@ CAPABILITIES(/obj/item/clothing/under/rank/internalaffairs/fluff/joan)
 	name = "KHI meditech suit"
 	desc = "An outdated uniform of some sort. You get the sense that whoever wore this must've been very full of themselves"
 	icon_state = "khi_uniform_aro"
-	armor_spec = "bio=10"
 
 //jacobdragon:Earthen Breath
 /obj/item/clothing/under/fluff/earthenbreath
@@ -1130,9 +1110,9 @@ CAPABILITIES(/obj/item/clothing/head/fedora/fluff/bowler)
 	item_icons = list(
 		slot_wear_mask_str = 'icons/vore/custom_clothes_mob.dmi'
 		)
-	armor_spec = "laser=2;energy=2;bio=90"
 
 CAPABILITIES(/obj/item/clothing/mask/gas/plaguedoctor/fluff/octaviousmask)
+	configure(atom_rules(armor_spec = "laser=2;energy=2;bio=90"))
 	configure(item_worn(covers = HEAD|FACE|EYES))
 
 //bwoincognito:Octavious Ward
@@ -1191,18 +1171,17 @@ CAPABILITIES(/obj/item/clothing/head/fedora/fluff/jemli)
 /obj/item/clothing/suit/storage/hazardvest/fluff/verin
 	name = "Green Haz-coat"
 	desc = "A well-worn green, long coat made with lightweight materials, it has a radioactive hazard icon on it's right sleeve. Smells faintly like sergal."
-	armor_spec = "rad=20"
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "verin"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hazardvest/fluff/verin)
+	configure(atom_rules(armor_spec = "rad=20"))
 	configure(item_worn(covers = UPPER_TORSO|ARMS, worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //whiskyrose:Vinjj
 /obj/item/clothing/head/welding/fluff/vinjj
 	name = "Vinjj's Stylish Bandana"
 	desc = "A lovely blue and purple bandanna with a refined topaz hanging from its tail end, a pair of goggles are hidden underneath its fabric. Although for some strange reason, wearing this seems to inspire lewd thoughts."
-	armor_spec = ""
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	item_icons = list(
 		slot_l_hand_str = 'icons/vore/custom_clothes_mob.dmi',
@@ -1212,6 +1191,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hazardvest/fluff/verin)
 	item_state_slots = list(slot_r_hand_str = "vinjjdana_r", slot_l_hand_str = "vinjjdana_l")
 
 CAPABILITIES(/obj/item/clothing/head/welding/fluff/vinjj)
+	configure(atom_rules(armor_spec = ""))
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', hides = (HIDEEYES), covers = HEAD|EYES))
 
 /// Overrides the "Adjust welding mask" interaction: it only conceals the eyes - it's a hat, not a mask.
@@ -1308,21 +1288,19 @@ CAPABILITIES(/obj/item/clothing/under/swimsuit/fluff)
 	name = "Command Uniform"
 	desc = "The uniform worn by command officers in the mid 2260s."
 	icon_state = "trek_command"
-	armor_spec = "" // Considering only staff heads get to pick it
 
 /obj/item/clothing/under/rank/trek/eng // Engineering only
 	name = "Operations Uniform"
 	desc = "The uniform worn by operations officers of the mid 2260s. You feel strangely vulnerable just seeing this..."
 	icon_state = "trek_engsec"
-	armor_spec = "" // since they're shared between jobs and kinda moot. // I'll tell you what, the armor values are NOT shared. Removed melee bonus.
 
 /obj/item/clothing/under/rank/trek/medsci
 	name = "MedSci Uniform"
 	desc = "The uniform worn by medsci officers in the mid 2260s."
 	icon_state = "trek_medsci"
-	armor_spec = "bio=10" // basically a copy of vanilla sci/med
 
 CAPABILITIES(/obj/item/clothing/under/rank/trek/medsci)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 //TNG
@@ -1369,9 +1347,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/trek/medsci)
 	name = "Padded Overcoat"
 	desc = "The overcoat worn by all officers of the 2380s."
 	icon_state = "trek_ds9_coat"
-	armor_spec = ""
 
 CAPABILITIES(/obj/item/clothing/suit/storage/trek/ds9)
+	configure(atom_rules(armor_spec = ""))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_MEDICAL))
 	configure(item_worn(worn_icon = 'icons/inventory/suit/mob.dmi', covers = CHEST|ARMS))
 	configure(item_protection(permeability = 0.50))
@@ -1382,7 +1360,6 @@ CAPABILITIES(/obj/item/clothing/suit/storage/trek/ds9)
 	name = "Admiral Overcoat"
 	desc = "Admirality specialty coat to keep flag officers fashionable and protected."
 	icon_state = "trek_ds9_coat_adm"
-	armor_spec = "melee=45;bullet=35;laser=35;energy=20;bio=40;rad=55"
 
 /obj/item/clothing/under/rank/trek/command/ds9
 	desc = "The uniform worn by command officers of the 2380s."
@@ -1437,7 +1414,6 @@ CAPABILITIES(/obj/item/clothing/under/batter)
 	speed to compensate for custom padding and armor Kateryna made herself."
 	icon = 'icons/mob/taursuits_wolf.dmi'
 	icon_state = "lilithsuit"
-	armor_spec = "melee=40;bullet=20;laser=20;energy=5;bomb=35;bio=100;rad=20;cold=60"
 
 //samanthafyre:Kateryna Petrovitch
 
@@ -1635,11 +1611,11 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/loincloth)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "kilanocoat"
 	item_state_slots = list(slot_r_hand_str = "kilanocoat", slot_l_hand_str = "kilanocoat")
-	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10;cold=40"
 
 	has_hood_sprite = TRUE
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/kilanocoat)
+	configure(atom_rules(armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10;cold=40"))
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
@@ -1649,9 +1625,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/kilanocoat)
 	desc = "A black and gold patterned silky dress, with some kind of inlined, heavier material lining the skirt and chest area."
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "kilanosuit"
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/fluff/kilanosuit)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 	configure(item_protection(siemens = 0.9))
 
@@ -1690,9 +1666,9 @@ CAPABILITIES(/obj/item/clothing/gloves/fluff/kilano/netra)
 	desc = "Some Fur lined black and gold heavy duty winter bots."
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "kilanoboots"
-	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20"
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/fluff/kilano)
+	configure(atom_rules(armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20"))
 	fits_anyone()
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 	configure(item_protection(cold_parts = FEET|LEGS, min_cold = SHOE_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = FEET|LEGS, max_heat = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE))
@@ -1840,7 +1816,6 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/security/hasd)
 
 /obj/item/clothing/suit/space/void/security/hasd
 	name = "HASD EVA bodyplates"
-	armor_spec = "cold=60"
 	desc = "A series of armor plates painted black, deployed from a back-mounted module. They fit smoothly over the unit's armor plates and projects a skintight bubble shield over the unit's uncovered parts. Faceplate and coolant unit not included."
 	icon = 'icons/mob/taursuits_lizard.dmi'
 	icon_state = "hasd_suit"
@@ -2139,11 +2114,11 @@ CAPABILITIES(/obj/item/clothing/shoes/fluff/nikki)
 	name = "cape"
 	desc = "Snazzy!"
 	flags = NONE
-	armor_spec = "" // It's not armor, it's a dorky frickin cape
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "nikkicape"
 
 CAPABILITIES(/obj/item/clothing/suit/fluff/nikki)
+	configure(atom_rules(armor_spec = ""))
 	configure(item_worn(covers = TRAIT_NONE, worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 	configure(item_protection(cold_parts = CHEST|ARMS))
 
@@ -2475,10 +2450,12 @@ CAPABILITIES(/obj/item/clothing/head/hood/purple_robes)
 
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/kate)
+	configure(atom_rules(armor_spec = "melee=40;bullet=20;laser=20;energy=5;bomb=35;bio=100;rad=20;cold=60"))
 	fits_anyone()
 
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/security/hasd)
+	configure(atom_rules(armor_spec = "cold=60"))
 	extend(/datum/act/equip, needs(req_wearer_ckey("silencedmp5a5", because = MSG(custom_clothes/this_suit_is_not_designed))))
 	fits_anyone()
 
@@ -2499,3 +2476,72 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/jessie)
 		set_item_state(initial(src.item_state))
 	else //if not, just use a generic icon
 		set_item_state("avidahatnoears")
+
+CAPABILITIES(/obj/item/clothing/under/rank/nullsuit)
+	configure(atom_rules(armor_spec = ""))
+
+CAPABILITIES(/obj/item/clothing/under/rank/nullsuit/civ)
+	configure(atom_rules(armor_spec = ""))
+
+CAPABILITIES(/obj/item/clothing/under/rank/nullsuit/sec)
+	configure(atom_rules(armor_spec = "melee=10"))
+
+CAPABILITIES(/obj/item/clothing/under/rank/nullsuit/med)
+	configure(atom_rules(armor_spec = "bio=10"))
+
+CAPABILITIES(/obj/item/clothing/under/rank/nullsuit/eng)
+	configure(atom_rules(armor_spec = "rad=10"))
+
+CAPABILITIES(/obj/item/clothing/under/rank/nullsuit/sci)
+	configure(atom_rules(armor_spec = "bomb=10"))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat/fedblue)
+	configure(atom_rules(armor_spec = "bio=50"))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat/fedeng)
+	configure(atom_rules(armor_spec = "rad=20"))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat/fedcapt)
+	configure(atom_rules(armor_spec = "melee=10;bullet=20;laser=10"))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/fluff/modernfedcoat/modernfedblue)
+	configure(atom_rules(armor_spec = "bio=50"))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/fluff/modernfedcoat/modernfedeng)
+	configure(atom_rules(armor_spec = "rad=20"))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/fluff/modernfedcoat/modernfedsec)
+	configure(atom_rules(armor_spec = "melee=10;bullet=20;laser=10"))
+
+CAPABILITIES(/obj/item/clothing/under/rank/khi/cmd)
+	configure(atom_rules(armor_spec = ""))
+
+CAPABILITIES(/obj/item/clothing/under/rank/khi/sec)
+	configure(atom_rules(armor_spec = "melee=10"))
+
+CAPABILITIES(/obj/item/clothing/under/rank/khi/med)
+	configure(atom_rules(armor_spec = "bio=10"))
+
+CAPABILITIES(/obj/item/clothing/under/rank/khi/eng)
+	configure(atom_rules(armor_spec = "rad=10"))
+
+CAPABILITIES(/obj/item/clothing/under/rank/khi/sci)
+	configure(atom_rules(armor_spec = "bomb=10"))
+
+CAPABILITIES(/obj/item/clothing/under/rank/khi/crg)
+	configure(atom_rules(armor_spec = ""))
+
+CAPABILITIES(/obj/item/clothing/under/rank/khi/civ)
+	configure(atom_rules(armor_spec = ""))
+
+CAPABILITIES(/obj/item/clothing/under/rank/khi/fluff/aronai)
+	configure(atom_rules(armor_spec = "bio=10"))
+
+CAPABILITIES(/obj/item/clothing/under/rank/trek/command)
+	configure(atom_rules(armor_spec = ""))
+
+CAPABILITIES(/obj/item/clothing/under/rank/trek/eng)
+	configure(atom_rules(armor_spec = ""))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/trek/ds9/admiral)
+	configure(atom_rules(armor_spec = "melee=45;bullet=35;laser=35;energy=20;bio=40;rad=55"))

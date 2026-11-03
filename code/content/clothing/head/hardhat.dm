@@ -14,12 +14,12 @@
 	desc = "A piece of headgear used in dangerous working conditions to protect the head. Comes with a built-in flashlight."
 	icon_state = "hardhat0_yellow"
 	light_overlay = "hardhat_light"
-	armor_spec = "melee=30;bullet=5;laser=20;energy=10;bomb=20;bio=10;rad=20"
 	w_class = ITEMSIZE_NORMAL
 	ear_protection = 1
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/head/hardhat)
+	configure(atom_rules(armor_spec = "melee=30;bullet=5;laser=20;energy=10;bomb=20;bio=10;rad=20"))
 	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_head_light)))
 	configure(movable_motion(cone_y = 14))
 	configure(light_glow(range = 4))

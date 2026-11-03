@@ -34,7 +34,6 @@ CAPABILITIES(/obj/item/clothing/mask/muzzle)
 	icon_state = "sterile"
 	item_state_slots = list(slot_r_hand_str = "sterile", slot_l_hand_str = "sterile")
 	w_class = ITEMSIZE_SMALL
-	armor_spec = "bio=60"
 	var/hanging = 0
 
 /obj/item/clothing/mask/surgical/proc/adjust_mask(mob/user)
@@ -55,6 +54,7 @@ CAPABILITIES(/obj/item/clothing/mask/muzzle)
 		worn_protection_changed()
 
 CAPABILITIES(/obj/item/clothing/mask/surgical)
+	configure(atom_rules(armor_spec = "bio=60"))
 	configure(item_worn(covers = FACE, flags = FLEXIBLEMATERIAL))
 	configure(item_protection(gas_transfer = 0.90, permeability = 0.01))
 	op("surgical_toggle_verb", menu(), label("Adjust mask"), needs(carried()), then(PROC_REF(surgical_toggle_verb)))
@@ -73,14 +73,12 @@ CAPABILITIES(/obj/item/clothing/mask/surgical)
 	desc = "A dust mask designed to protect the wearer against construction and/or custodial particulate."
 	icon_state = "dust"
 	item_state_slots = list(slot_r_hand_str = "dust", slot_l_hand_str = "dust")
-	armor_spec = "bio=30"
 
 /obj/item/clothing/mask/surgical/cloth
 	name = "cloth mask"
 	desc = "A cloth mask designed to protect the wearer against allergens, illnesses, and social interaction."
 	icon_state = "cloth"
 	item_state_slots = list(slot_r_hand_str = "cloth", slot_l_hand_str = "cloth")
-	armor_spec = "bio=20"
 
 /obj/item/clothing/mask/fakemoustache
 	name = "fake moustache"
@@ -482,3 +480,9 @@ CAPABILITIES(/obj/item/clothing/mask/lacemask)
 
 CAPABILITIES(/obj/item/clothing/mask/costume/ghost)
 	configure(item_worn(covers = HEAD|FACE, flags = FLEXIBLEMATERIAL, hides = HIDEFACE|BLOCKHAIR))
+
+CAPABILITIES(/obj/item/clothing/mask/surgical/dust)
+	configure(atom_rules(armor_spec = "bio=30"))
+
+CAPABILITIES(/obj/item/clothing/mask/surgical/cloth)
+	configure(atom_rules(armor_spec = "bio=20"))

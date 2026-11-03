@@ -9,7 +9,6 @@
 	anchored = TRUE
 	mouse_opacity = 2
 
-	uses_integrity = TRUE
 	max_integrity = 30
 	var/brute_resist = 4
 	var/fire_resist = 1
@@ -135,6 +134,7 @@
 	return blob_damage(P.damage, damage_type)
 
 CAPABILITIES(/obj/effect/blob)
+	configure(atom_rules(uses_integrity = TRUE))
 	configure(light_glow(range = 2, color = "#b5ff5b"))
 	op("hit_blob", item(/obj/item), then(PROC_REF(interaction_hit_blob)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blob_blast_damage))))

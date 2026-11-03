@@ -19,7 +19,6 @@
 	attacktext = list("headbutted")
 	minbodytemp = 80
 	vore_icons = SA_ICON_LIVING
-	armor_spec = "melee=98;laser=-50;energy=-50;rad=100" //Relatively harmless but agonizing to kill with melee.
 
 	glow_toggle = TRUE
 	glow_range = 1.3 //This seems to be the minimum range which makes glow visible.
@@ -41,7 +40,7 @@
 	vore_default_mode = DM_DIGEST
 
 CAPABILITIES(/mob/living/simple_mob/vore/slug)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/slug)))
+	configure(atom_rules(armor_spec = "melee=98;laser=-50;energy=-50;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/slug)))
 	configure(mob_rules(faction = "slug"))
 	configure(living_rules(vore_capacity = 1))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat))

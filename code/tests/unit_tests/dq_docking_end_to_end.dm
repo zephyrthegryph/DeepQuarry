@@ -9,38 +9,35 @@
 /// it nothing mapped would ever step (doc/testing.md "The kernel clock").
 #define DQ_DOCK_E2E_FLIGHT_LIMIT (150 SECONDS)
 
-/// The text state of a docking program, its airlock's cycle and what it last heard from its doors, for a failure message.
-/proc/dq_dock_e2e_describe(datum/embedded_program/docking/D)
+/// The text state of a docking port and its airlocks' cycles, for a failure message.
+/proc/dq_dock_e2e_describe(datum/docking_port/D)
 	if(!D)
 		return "no controller"
-	. = "[D.id_tag]: [D.get_docking_status()] mode [D.control_mode] target [D.tag_target || "none"] confirm [D.received_confirm] sent [D.response_sent]"
-	var/obj/machinery/embedded_controller/C = D.master
+	. = "[D.id_tag]: [D.get_docking_status()] mode [D.control_mode] peer [D.peer?.id_tag || "none"] ready [D.ready_reported]"
+	var/obj/machinery/embedded_controller/C = D.console
 	if(C)
 		. += " step [C.processing_shown ? "on" : "off"] work [work_started(C) ? "started" : "stopped"] operable [C.operable()] area [get_area(C)] at [C.x],[C.y],[C.z]"
-	if(istype(D, /datum/embedded_program/docking/airlock))
-		var/datum/embedded_program/docking/airlock/A = D
-		var/datum/embedded_program/airlock/P = A.airlock_program
-		. += " | airlock state [P.state] -> [P.target_state], chamber [P.memory["chamber_sensor_pressure"]] target [P.memory["target_pressure"]] pump [P.memory["pump_status"]] ext [json_encode(P.memory["exterior_status"])] int [json_encode(P.memory["interior_status"])]"
-	if(istype(D, /datum/embedded_program/docking/multi))
-		. += " | [dq_docking_diagnostics(D)]"
+	. += " | [dq_docking_diagnostics(D)]"
 
-/// The mapped doors a docking program opens when it docks (an airlock port's two doors, a simple port's one), found by tag.
-/proc/dq_dock_e2e_doors(datum/embedded_program/docking/D)
+/// The mapped airlock consoles a docking port docks, found by the map's tags (not through the port's relations): the port's own console
+/// when it is an airlock, or the consoles whose master_tag names it.
+/proc/dq_dock_e2e_airlocks(datum/docking_port/D)
+	. = list()
+	if(istype(D.console, /obj/machinery/embedded_controller/radio/airlock))
+		. += D.console
+	for(var/obj/machinery/embedded_controller/radio/airlock/docking_port_multi/C in world)
+		if(C.master_tag && C.master_tag == D.id_tag)
+			. += C
+
+/// The mapped doors a docking port opens when it docks (an airlock port's two doors, a simple port's hatch), found by tag.
+/proc/dq_dock_e2e_doors(datum/docking_port/D)
 	. = list()
 	var/list/tags = list()
-	if(istype(D, /datum/embedded_program/docking/airlock))
-		var/datum/embedded_program/docking/airlock/A = D
-		tags += A.airlock_program.tag_interior_door
-		tags += A.airlock_program.tag_exterior_door
-	else if(istype(D, /datum/embedded_program/docking/multi))
-		var/datum/embedded_program/docking/multi/M = D
-		for(var/obj/machinery/embedded_controller/radio/airlock/docking_port_multi/C in world)
-			var/datum/embedded_program/airlock/multi_docking/child = C.program
-			if(child && (child.id_tag in M.children_tags))
-				tags += child.tag_interior_door
-				tags += child.tag_exterior_door
-	else if(istype(D, /datum/embedded_program/docking/simple))
-		var/datum/embedded_program/docking/simple/S = D
+	for(var/obj/machinery/embedded_controller/radio/airlock/C as anything in dq_dock_e2e_airlocks(D))
+		tags += C.tag_interior_door
+		tags += C.tag_exterior_door
+	if(istype(D.console, /obj/machinery/embedded_controller/radio/simple_docking_controller))
+		var/obj/machinery/embedded_controller/radio/simple_docking_controller/S = D.console
 		tags += S.tag_door
 	for(var/obj/machinery/door/airlock/door in world)
 		if(door.id_tag && (door.id_tag in tags))
@@ -122,7 +119,7 @@
 /datum/unit_test/dq_docking_end_to_end/proc/check_docked(datum/shuttle/autodock/S, where)
 	var/list/ports = list(S.shuttle_docking_controller, S.active_docking_controller())
 	var/list/doors = list()
-	for(var/datum/embedded_program/docking/D in ports)
+	for(var/datum/docking_port/D in ports)
 		TEST_ASSERT_EQUAL(D.get_docking_status(), "docked", "[S.name] at [where]: [D.id_tag] finished docking")
 		var/list/own = dq_dock_e2e_doors(D)
 		TEST_ASSERT(length(own), "[S.name] at [where]: [D.id_tag] drives a mapped door")
@@ -231,7 +228,7 @@
 	TEST_ASSERT(!failure, "arrivals: [failure]")
 	check_docked(S, "the station")
 	// The passenger steps off and the empty shuttle undocks and goes back on its own (the shuttle's own automation), as after every arrival.
-	actor.forceMove(get_turf(S.active_docking_controller().master))
+	actor.forceMove(get_turf(S.active_docking_controller().console))
 	var/waited = 0
 	while(waited < DQ_DOCK_E2E_FLIGHT_LIMIT && !(S.location == FERRY_LOCATION_OFFSITE && S.moving_status == SHUTTLE_IDLE && S.process_state == IDLE_STATE))
 		wait_real(2 SECONDS)

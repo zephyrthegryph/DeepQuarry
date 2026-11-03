@@ -20,7 +20,6 @@
 	wreckage = /obj/structure/loot_pile/mecha/gygax
 
 	endurance = 300
-	armor_spec = "melee=25;bullet=20;laser=30;energy=15;bio=100;rad=100"
 
 	projectile_dispersion = 8
 	projectiletype = /obj/item/projectile/beam/midlaser
@@ -53,7 +52,6 @@
 	endurance = 400
 	deflect_chance = 25
 	has_repair_droid = TRUE
-	armor_spec = "melee=40;bullet=40;laser=50;energy=35;bomb=20;bio=100;rad=100"
 
 /mob/living/simple_mob/mechanical/mecha/combat/gygax/medgax
 	name = "medgax"
@@ -94,7 +92,7 @@
 	stand_down_sound = 'sound/mob/robots/gygaxdanger.ogg'
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/gygax)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/gygax)))
+	configure(atom_rules(armor_spec = "melee=25;bullet=20;laser=30;energy=15;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/technology/gygax)))
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/dark_gygax)))
+	configure(atom_rules(armor_spec = "melee=40;bullet=40;laser=50;energy=35;bomb=20;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/technology/dark_gygax)))

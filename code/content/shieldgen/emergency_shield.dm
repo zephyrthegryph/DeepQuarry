@@ -99,7 +99,6 @@ CAPABILITIES(/obj/machinery/shield)
 	pressure_resistance = 2*ONE_ATMOSPHERE
 	req_access = list(ACCESS_ENGINE)
 	max_integrity = 100
-	integrity_failure = 0.3 // starts malfunctioning at 30% integrity
 	var/obj/item/cell/cell
 	var/cell_type = /obj/item/cell/high
 	active = 0
@@ -118,7 +117,7 @@ MSG_DEF_SELF(shieldgen/rewiring, span_notice("You begin to replace the wires."))
 
 CAPABILITIES(/obj/machinery/shieldgen)
 	on_notice(/datum/notice/machinery_broken, then(PROC_REF(shieldgen_broken)))
-	configure(atom_rules(emp_integrity_factor = 1))
+	configure(atom_rules(integrity_failure = 0.3, emp_integrity_factor = 1))
 	configure(uses_power(idle = 0))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active)))
 	owns_many(nameof(deployed_shields))

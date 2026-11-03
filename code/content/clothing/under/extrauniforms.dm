@@ -17,7 +17,6 @@
 	icon_state = "blueshield2"
 	icon_override = 'icons/mob/uniform_yw.dmi'
 	item_state = "blueshield2"
-	armor_spec = "melee=15;bullet=10;laser=10;energy=5;bomb=15"
 
 /obj/item/clothing/accessory/storage/webbing/combatpilot //redefined to change the name and keep it loaded in the event the sc files are disabled in future
 	name = "combat pilot harness"
@@ -30,7 +29,6 @@
 /obj/item/clothing/under/rank/khi/sec/pilot //yes, we're inheriting from the khi version; that one has full rolldown sprites
 	name = "security pilot uniform"
 	desc = "A lightweight uniform intended for vehicle and powersuit operators, designed to allow free movement and maximum comfort in hot, cramped cockpits. Comes prefitted with a harness and webbing for gear."
-	armor_spec = "bullet=10;laser=10;bomb=10"
 	//we probably won't get hit by melee attacks as a pilot, but logically you'd want protection against anything that might penetrate the armor
 	starting_accessories = list(/obj/item/clothing/accessory/storage/webbing/combatpilot)
 	//come prefitted with some snappy extra webbing
@@ -42,7 +40,6 @@
 	icon_state = "securityformal"
 	icon_override = 'icons/mob/uniform_yw.dmi'
 	item_state = "securityformal"
-	armor_spec = "melee=10"
 
 /obj/item/clothing/under/yw/rank/warden/formal
 	name = "warden's suit"
@@ -51,7 +48,6 @@
 	icon_state = "wardenformal"
 	icon_override = 'icons/mob/uniform_yw.dmi'
 	item_state = "wardenformal"
-	armor_spec = "melee=10;bullet=5;laser=5"
 
 /obj/item/clothing/under/yw/rank/head_of_security/formal
 	name = "head of security's suit"
@@ -60,7 +56,6 @@
 	icon_state = "hosformal"
 	icon_override = 'icons/mob/uniform_yw.dmi'
 	item_state = "hosformal"
-	armor_spec = "melee=10;bullet=10;laser=10;energy=5"
 
 //Brig Physician
 /obj/item/clothing/under/yw/rank/security/brigphys
@@ -70,9 +65,9 @@
 	icon_state = "brigphysician"
 	icon_override = 'icons/mob/uniform_yw.dmi'
 	item_state = "brigphysician"
-	armor_spec = "melee=10;bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/yw/rank/security/brigphys)
+	configure(atom_rules(armor_spec = "melee=10;bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/yw/rank/security/brigphys/skirt
@@ -82,9 +77,9 @@ CAPABILITIES(/obj/item/clothing/under/yw/rank/security/brigphys)
 	icon_state = "brigphysicianf"
 	icon_override = 'icons/mob/uniform_yw.dmi'
 	item_state = "brigphysicianf"
-	armor_spec = "melee=10;bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/yw/rank/security/brigphys/skirt)
+	configure(atom_rules(armor_spec = "melee=10;bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 
@@ -103,7 +98,6 @@ CAPABILITIES(/obj/item/clothing/under/yw/rank/security/brigphys/skirt)
 	icon = 'icons/obj/clothing/uniforms_yw.dmi'
 	icon_state = "blackutility_crew"
 	icon_override = 'icons/mob/uniform_yw.dmi'
-	armor_spec = "bio=10;rad=10"
 
 /obj/item/clothing/under/explorer/utility/command
 	name = "\improper explorer command uniform"
@@ -133,7 +127,6 @@ CAPABILITIES(/obj/item/clothing/under/yw/rank/security/brigphys/skirt)
 	icon = 'icons/obj/clothing/uniforms_yw.dmi'
 	icon_state = "navyutility"
 	icon_override = 'icons/mob/uniform_yw.dmi'
-	armor_spec = "melee=10;bullet=10;laser=10;energy=5"
 
 /obj/item/clothing/under/away/patrol/medical
 	name = "\improper nanotrasen fleet medical uniform"
@@ -175,7 +168,6 @@ CAPABILITIES(/obj/item/clothing/under/yw/rank/security/brigphys/skirt)
 	icon_state = "greyutility"
 	worn_state = "greyutility"
 	icon_override = 'icons/mob/uniform_yw.dmi'
-	armor_spec = "melee=10;bullet=10;laser=10;energy=5"
 
 /obj/item/clothing/under/away/daedalus/engineering
 	name = "\improper daedalus engineering uniform"
@@ -252,3 +244,24 @@ CAPABILITIES(/obj/item/clothing/under/yw/victsuit)
 	if(body_type == SPECIES_GREY_YW && !inhands)
 		return 'icons/mob/species/grey/uniform.dmi'
 	return ..()
+
+CAPABILITIES(/obj/item/clothing/under/yw/blueshield2)
+	configure(atom_rules(armor_spec = "melee=15;bullet=10;laser=10;energy=5;bomb=15"))
+
+CAPABILITIES(/obj/item/clothing/under/rank/khi/sec/pilot)
+	configure(atom_rules(armor_spec = "bullet=10;laser=10;bomb=10"))
+
+CAPABILITIES(/obj/item/clothing/under/yw/rank/security/formal)
+	configure(atom_rules(armor_spec = "melee=10"))
+
+CAPABILITIES(/obj/item/clothing/under/yw/rank/warden/formal)
+	configure(atom_rules(armor_spec = "melee=10;bullet=5;laser=5"))
+
+CAPABILITIES(/obj/item/clothing/under/yw/rank/head_of_security/formal)
+	configure(atom_rules(armor_spec = "melee=10;bullet=10;laser=10;energy=5"))
+
+CAPABILITIES(/obj/item/clothing/under/away/patrol)
+	configure(atom_rules(armor_spec = "melee=10;bullet=10;laser=10;energy=5"))
+
+CAPABILITIES(/obj/item/clothing/under/away/daedalus)
+	configure(atom_rules(armor_spec = "melee=10;bullet=10;laser=10;energy=5"))

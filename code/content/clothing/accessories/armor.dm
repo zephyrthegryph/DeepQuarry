@@ -87,10 +87,10 @@
 	name = "light armor plate"
 	desc = "A basic armor plate made of steel-reinforced synthetic fibers. Attaches to a plate carrier."
 	icon_state = "armor_light"
-	armor_spec = "melee=30;bullet=15;laser=40;energy=10;bomb=25"
 	slot = ACCESSORY_SLOT_ARMOR_C
 
 CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate)
+	configure(atom_rules(armor_spec = "melee=30;bullet=15;laser=40;energy=10;bomb=25"))
 	configure(item_worn(covers = CHEST))
 	configure(item_protection(heat_parts = CHEST, cold_parts = CHEST))
 
@@ -98,45 +98,39 @@ CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate)
 	name = "explorer armor plate"
 	desc = "A flexible plate made of synthetic fibers, designed to protect from the Sivian fauna. Attaches to a plate carrier."
 	icon_state = "armor_light"
-	armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=35;bio=75;rad=35"
 
 /obj/item/clothing/accessory/armor/armorplate/stab
 	name = "mesh armor plate"
 	desc = "A mesh armor plate made of steel-reinforced synthetic fibers, great for dealing with small blades. Attaches to a plate carrier."
 	icon_state = "armor_stab"
-	armor_spec = "melee=30;bullet=5;laser=20;energy=10;bomb=15"
 
 /obj/item/clothing/accessory/armor/armorplate/blast
 	name = "gel armor plate"
 	desc = "A gel armor plate made of high-grade polymers, great for dealing with localized blasts. Attaches to a plate carrier."
 	icon_state = "armor_blast"
-	armor_spec = "melee=25;bullet=25;laser=10;bomb=30"
 
 /obj/item/clothing/accessory/armor/armorplate/medium
 	name = "medium armor plate"
 	desc = "A plasteel-reinforced synthetic armor plate, providing good protection. Attaches to a plate carrier."
 	icon_state = "armor_medium"
-	armor_spec = "melee=40;bullet=40;laser=40;energy=25;bomb=30"
 
 /obj/item/clothing/accessory/armor/armorplate/tactical
 	name = "tactical armor plate"
 	desc = "A medium armor plate with additional ablative coating. Attaches to a plate carrier."
 	icon_state = "armor_tactical"
-	armor_spec = "melee=40;bullet=40;laser=60;energy=35;bomb=30"
 
 /obj/item/clothing/accessory/armor/armorplate/merc
 	name = "heavy armor plate"
 	desc = "A ceramics-reinforced synthetic armor plate, providing state of of the art protection. Attaches to a plate carrier."
 	icon_state = "armor_merc"
-	armor_spec = "melee=60;bullet=60;laser=60;energy=40;bomb=40"
 
 /obj/item/clothing/accessory/armor/armorplate/bulletproof
 	name = "ballistic armor plate"
 	desc = "A woven armor plate with additional plating, providing good protection against high-velocity trauma. Attaches to a plate carrier."
 	icon_state = "armor_ballistic"
-	armor_spec = "melee=10;bullet=70;laser=10;energy=10"
 
 CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/bulletproof)
+	configure(atom_rules(armor_spec = "melee=10;bullet=70;laser=10;energy=10"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	configure(item_protection(siemens = 0.7))
 
@@ -144,9 +138,9 @@ CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/bulletproof)
 	name = "riot armor plate"
 	desc = "A thick armor plate with additional padding, providing good protection against low-velocity trauma. Attaches to a plate carrier."
 	icon_state = "armor_riot"
-	armor_spec = "melee=70;bullet=10;laser=10;energy=10"
 
 CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/riot)
+	configure(atom_rules(armor_spec = "melee=70;bullet=10;laser=10;energy=10"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	configure(item_protection(siemens = 0.7))
 
@@ -154,9 +148,9 @@ CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/riot)
 	name = "ablative armor plate"
 	desc = "A durasteel-scaled synthetic armor plate, providing good protection against lasers. Attaches to a plate carrier."
 	icon_state = "armor_ablative"
-	armor_spec = "melee=10;bullet=10;laser=70;energy=50"
 
 CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/laserproof)
+	configure(atom_rules(armor_spec = "melee=10;bullet=10;laser=70;energy=50"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	configure(item_protection(siemens = 0.1))
 
@@ -191,10 +185,10 @@ CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/laserproof)
 //	accessory_icons = list(slot_tie_str = 'icons/mob/modular_armor.dmi', slot_wear_suit_str = 'icons/mob/modular_armor.dmi')
 	icon_state = "armguards"
 	gender = PLURAL
-	armor_spec = "melee=40;bullet=40;laser=40;energy=25;bomb=30"
 	slot = ACCESSORY_SLOT_ARMOR_A
 
 CAPABILITIES(/obj/item/clothing/accessory/armor/armguards)
+	configure(atom_rules(armor_spec = "melee=40;bullet=40;laser=40;energy=25;bomb=30"))
 	configure(item_worn(covers = ARMS))
 	configure(item_protection(heat_parts = ARMS, cold_parts = ARMS))
 
@@ -218,22 +212,20 @@ CAPABILITIES(/obj/item/clothing/accessory/armor/armguards)
 	name = "explorer arm guards"
 	desc = "A pair of green arm pads reinforced with armor plating. Attaches to a plate carrier."
 	icon_state = "armguards_green"
-	armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=35;bio=75;rad=35"
 
 /obj/item/clothing/accessory/armor/armguards/merc
 	name = "heavy arm guards"
 	desc = "A pair of red-trimmed black arm pads reinforced with heavy armor plating. Attaches to a plate carrier."
 	icon_state = "armguards_merc"
-	armor_spec = "melee=60;bullet=60;laser=60;energy=40;bomb=40"
 
 /obj/item/clothing/accessory/armor/armguards/laserproof
 	name = "ablative arm guards"
 	desc = "These arm guards will protect your arms from energy weapons."
 	icon_state = "armguards_ablative"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
-	armor_spec = "melee=10;bullet=10;laser=80;energy=50"
 
 CAPABILITIES(/obj/item/clothing/accessory/armor/armguards/laserproof)
+	configure(atom_rules(armor_spec = "melee=10;bullet=10;laser=80;energy=50"))
 	configure(item_protection(siemens = 0.1))
 
 /obj/item/clothing/accessory/armor/armguards/bulletproof
@@ -241,9 +233,9 @@ CAPABILITIES(/obj/item/clothing/accessory/armor/armguards/laserproof)
 	desc = "These arm guards will protect your arms from ballistic weapons."
 	icon_state = "armguards_ballistic"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
-	armor_spec = "melee=10;bullet=80;laser=10;energy=50"
 
 CAPABILITIES(/obj/item/clothing/accessory/armor/armguards/bulletproof)
+	configure(atom_rules(armor_spec = "melee=10;bullet=80;laser=10;energy=50"))
 	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/accessory/armor/armguards/riot
@@ -251,9 +243,9 @@ CAPABILITIES(/obj/item/clothing/accessory/armor/armguards/bulletproof)
 	desc = "These arm guards will protect your arms from close combat weapons."
 	icon_state = "armguards_riot"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
-	armor_spec = "melee=80;bullet=10;laser=10;energy=50"
 
 CAPABILITIES(/obj/item/clothing/accessory/armor/armguards/riot)
+	configure(atom_rules(armor_spec = "melee=80;bullet=10;laser=10;energy=50"))
 	configure(item_protection(siemens = 0.5))
 
 /obj/item/clothing/accessory/armor/armguards/security
@@ -265,7 +257,6 @@ CAPABILITIES(/obj/item/clothing/accessory/armor/armguards/riot)
 	name = "security combat arm guards"
 	desc = "A pair of black, red and white arm pads up-armored with combat-grade plating. Attaches to a plate carrier."
 	icon_state = "armguards_sec_white"
-	armor_spec = "melee=60;bullet=60;laser=60;energy=40;bomb=40"
 
 //////////////
 //Leg guards
@@ -276,10 +267,10 @@ CAPABILITIES(/obj/item/clothing/accessory/armor/armguards/riot)
 //	accessory_icons = list(slot_tie_str = 'icons/mob/modular_armor.dmi', slot_wear_suit_str = 'icons/mob/modular_armor.dmi')
 	icon_state = "legguards"
 	gender = PLURAL
-	armor_spec = "melee=40;bullet=40;laser=40;energy=25;bomb=30"
 	slot = ACCESSORY_SLOT_ARMOR_L
 
 CAPABILITIES(/obj/item/clothing/accessory/armor/legguards)
+	configure(atom_rules(armor_spec = "melee=40;bullet=40;laser=40;energy=25;bomb=30"))
 	configure(item_worn(covers = LEGS))
 	configure(item_protection(heat_parts = LEGS, cold_parts = LEGS))
 
@@ -303,22 +294,20 @@ CAPABILITIES(/obj/item/clothing/accessory/armor/legguards)
 	name = "explorer leg guards"
 	desc = "A pair of armored leg pads in green. Attaches to a plate carrier."
 	icon_state = "legguards_green"
-	armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=35;bio=75;rad=35"
 
 /obj/item/clothing/accessory/armor/legguards/merc
 	name = "heavy leg guards"
 	desc = "A pair of heavily armored leg pads in red-trimmed black. Attaches to a plate carrier."
 	icon_state = "legguards_merc"
-	armor_spec = "melee=60;bullet=60;laser=60;energy=40;bomb=40"
 
 /obj/item/clothing/accessory/armor/legguards/laserproof
 	name = "ablative leg guards"
 	desc = "These will protect your legs from energy weapons."
 	icon_state = "legguards_ablative"
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
-	armor_spec = "melee=10;bullet=10;laser=80;energy=50"
 
 CAPABILITIES(/obj/item/clothing/accessory/armor/legguards/laserproof)
+	configure(atom_rules(armor_spec = "melee=10;bullet=10;laser=80;energy=50"))
 	configure(item_protection(siemens = 0.1))
 
 /obj/item/clothing/accessory/armor/legguards/bulletproof
@@ -326,9 +315,9 @@ CAPABILITIES(/obj/item/clothing/accessory/armor/legguards/laserproof)
 	desc = "These will protect your legs from ballistic weapons."
 	icon_state = "legguards_ballistic"
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
-	armor_spec = "melee=10;bullet=80;laser=10;energy=10"
 
 CAPABILITIES(/obj/item/clothing/accessory/armor/legguards/bulletproof)
+	configure(atom_rules(armor_spec = "melee=10;bullet=80;laser=10;energy=10"))
 	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/accessory/armor/legguards/riot
@@ -336,9 +325,9 @@ CAPABILITIES(/obj/item/clothing/accessory/armor/legguards/bulletproof)
 	desc = "These will protect your legs from close combat weapons."
 	icon_state = "legguards_riot"
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
-	armor_spec = "melee=80;bullet=10;laser=10;energy=10"
 
 CAPABILITIES(/obj/item/clothing/accessory/armor/legguards/riot)
+	configure(atom_rules(armor_spec = "melee=80;bullet=10;laser=10;energy=10"))
 	configure(item_protection(siemens = 0.5))
 
 /obj/item/clothing/accessory/armor/legguards/security
@@ -350,7 +339,6 @@ CAPABILITIES(/obj/item/clothing/accessory/armor/legguards/riot)
 	name = "security combat leg guards"
 	desc = "A pair of black, red and white leg pads up-armored with combat-grade plating. Attaches to a plate carrier."
 	icon_state = "legguards_sec_white"
-	armor_spec = "melee=60;bullet=60;laser=60;energy=40;bomb=40"
 
 //////////////////////////
 //Decorative attachments
@@ -483,3 +471,39 @@ CAPABILITIES(/obj/item/clothing/accessory/armor/legguards/riot)
 	name = "\improper NanoTrasen black helmet cover"
 	desc = "A fabric cover for armored helmets. This one has a simple red NanoTrasen highlight."
 	icon_state = "helmcover_ntblack"
+
+CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/explorer)
+	configure(atom_rules(armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=35;bio=75;rad=35"))
+
+CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/stab)
+	configure(atom_rules(armor_spec = "melee=30;bullet=5;laser=20;energy=10;bomb=15"))
+
+CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/blast)
+	configure(atom_rules(armor_spec = "melee=25;bullet=25;laser=10;bomb=30"))
+
+CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/medium)
+	configure(atom_rules(armor_spec = "melee=40;bullet=40;laser=40;energy=25;bomb=30"))
+
+CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/tactical)
+	configure(atom_rules(armor_spec = "melee=40;bullet=40;laser=60;energy=35;bomb=30"))
+
+CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/merc)
+	configure(atom_rules(armor_spec = "melee=60;bullet=60;laser=60;energy=40;bomb=40"))
+
+CAPABILITIES(/obj/item/clothing/accessory/armor/armguards/explorer)
+	configure(atom_rules(armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=35;bio=75;rad=35"))
+
+CAPABILITIES(/obj/item/clothing/accessory/armor/armguards/merc)
+	configure(atom_rules(armor_spec = "melee=60;bullet=60;laser=60;energy=40;bomb=40"))
+
+CAPABILITIES(/obj/item/clothing/accessory/armor/armguards/security/white)
+	configure(atom_rules(armor_spec = "melee=60;bullet=60;laser=60;energy=40;bomb=40"))
+
+CAPABILITIES(/obj/item/clothing/accessory/armor/legguards/explorer)
+	configure(atom_rules(armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=35;bio=75;rad=35"))
+
+CAPABILITIES(/obj/item/clothing/accessory/armor/legguards/merc)
+	configure(atom_rules(armor_spec = "melee=60;bullet=60;laser=60;energy=40;bomb=40"))
+
+CAPABILITIES(/obj/item/clothing/accessory/armor/legguards/security/white)
+	configure(atom_rules(armor_spec = "melee=60;bullet=60;laser=60;energy=40;bomb=40"))

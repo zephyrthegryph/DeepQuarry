@@ -8,11 +8,11 @@
 	var/last_dock_attempt_time = 0
 
 	var/docking_controller_tag = null // ID of the controller on the shuttle (If multiple, this is the default one)
-	var/datum/embedded_program/docking/shuttle_docking_controller // Controller on the shuttle (the one in use)
+	var/datum/docking_port/shuttle_docking_controller // Controller on the shuttle (the one in use)
 	var/docking_codes
 
 	var/tmp/obj/effect/shuttle_landmark/next_location	//This is only used internally.
-	var/tmp/datum/embedded_program/docking/active_docking_controller	// Controller we are docked with (or trying to)
+	var/tmp/datum/docking_port/active_docking_controller	// Controller we are docked with (or trying to)
 
 	var/tmp/obj/effect/shuttle_landmark/landmark_transition	// the landmark (set the _tag var, New() resolves it)
 	var/landmark_transition_tag	// the tag it starts as; resolved into landmark_transition at init
@@ -64,11 +64,11 @@
 		current_dock_target = location.special_dock_targets[name]
 	else
 		current_dock_target = docking_controller_tag
-	set_shuttle_docking_controller(SSshuttles.docking_program(current_dock_target))
+	set_shuttle_docking_controller(SSshuttles.docking_port(current_dock_target))
 	if(current_dock_target && !shuttle_docking_controller)
 		log_shuttle(span_danger("warning: shuttle [src] can't find its controller with tag [current_dock_target]!")) // No toggle because this is an error message that needs to be seen
 
-/datum/shuttle/autodock/proc/set_shuttle_docking_controller(datum/embedded_program/docking/controller)
+/datum/shuttle/autodock/proc/set_shuttle_docking_controller(datum/docking_port/controller)
 	if(shuttle_docking_controller == controller)
 		return
 	if(shuttle_docking_controller)
@@ -80,7 +80,7 @@ SETTER(/datum/shuttle/autodock, shuttle_docking_controller)
 
 /// The active controller is a relation view: it reads null once the controller is deleted, so it
 /// needs no qdeleting hook.
-/datum/shuttle/autodock/proc/set_active_docking_controller(datum/embedded_program/docking/controller)
+/datum/shuttle/autodock/proc/set_active_docking_controller(datum/docking_port/controller)
 	rel_set(src, nameof(active_docking_controller), controller)
 
 /datum/shuttle/autodock/proc/docking_controller_deleted(datum/act/notice/A)
@@ -244,7 +244,7 @@ SETTER(/datum/shuttle/autodock, shuttle_docking_controller)
 	return next_location
 
 /// Controller we are docked with (or trying to)
-/datum/shuttle/autodock/proc/active_docking_controller() as /datum/embedded_program/docking
+/datum/shuttle/autodock/proc/active_docking_controller() as /datum/docking_port
 	return active_docking_controller
 
 /// the landmark resolved from the _tag var

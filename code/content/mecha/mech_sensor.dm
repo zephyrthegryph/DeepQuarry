@@ -10,15 +10,11 @@
 	on = 0
 	var/id_tag = null
 
-	var/frequency = AIRLOCK_FREQ
-	var/datum/radio_frequency/radio_connection
 	/// Without it the feedback becomes horribly spammy.
 	COOLDOWN_DECLARE(feedback_cooldown)
 
 CAPABILITIES(/obj/machinery/mech_sensor)
 	configure(atom_rules(throwpass = 1))
-	ref_one(nameof(radio_connection), /datum/radio_frequency)
-	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	configure(uses_power(channel = EQUIP))
 
 /obj/machinery/mech_sensor/CanPass(atom/movable/mover, turf/target)
@@ -64,27 +60,3 @@ CAPABILITIES(/obj/machinery/mech_sensor)
 /obj/machinery/mech_sensor/draw(datum/look/look)
 	..()
 	look.state("airlock_sensor_[enabled() ? "standby" : "off"]")
-
-/obj/machinery/mech_sensor/proc/set_frequency(new_frequency)
-	if(radio_connection())
-		SSradio.remove_object(src, frequency)
-	frequency = new_frequency
-	if(frequency)
-		rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency))
-
-/obj/machinery/mech_sensor/receive_signal(datum/signal/signal)
-	if(power_lost())
-		return
-
-	if(!signal.data["tag"] || (signal.data["tag"] != id_tag))
-		return
-
-	if(signal.data["command"] == "enable")
-		set_on(1)
-	else if (signal.data["command"] == "disable")
-		set_on(0)
-
-
-/// radio connection
-/obj/machinery/mech_sensor/proc/radio_connection() as /datum/radio_frequency
-	return radio_connection

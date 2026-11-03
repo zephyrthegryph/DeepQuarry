@@ -1,5 +1,5 @@
 /datum/shuttle/autodock/ferry/escape_pod
-	var/tmp/datum/embedded_program/docking/simple/escape_pod_berth/arming_controller
+	var/tmp/datum/docking_port/escape_pod_berth/arming_controller
 	category = /datum/shuttle/autodock/ferry/escape_pod
 
 /datum/shuttle/autodock/ferry/escape_pod/New()
@@ -20,15 +20,15 @@
 	var/arming_controller_tag = arming_controller()
 	if(!arming_controller() && active_docking_controller())
 		arming_controller_tag = active_docking_controller().id_tag
-	rel_set(src, nameof(arming_controller), SSshuttles.docking_program(arming_controller_tag))
-	if(!istype(arming_controller(), /datum/embedded_program/docking/simple/escape_pod_berth))
+	rel_set(src, nameof(arming_controller), SSshuttles.docking_port(arming_controller_tag))
+	if(!istype(arming_controller(), /datum/docking_port/escape_pod_berth))
 		CRASH("Could not find arming controller for escape pod \"[name]\", tag was '[arming_controller_tag]'.")
-	// Every pod names the shared berth program through a relation view, cleared when the
-	// program is deleted: no QDELETING registration.
+	// Every pod names the shared berth port through a relation view, cleared when the
+	// port is deleted: no QDELETING registration.
 
 	//find the pod's own controller
-	var/datum/embedded_program/docking/simple/prog = SSshuttles.docking_program(docking_controller_tag)
-	var/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod/controller_master = prog.master
+	var/datum/docking_port/own_port = SSshuttles.docking_port(docking_controller_tag)
+	var/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod/controller_master = own_port?.console
 	if(!istype(controller_master))
 		CRASH("Escape pod \"[name]\" could not find it's controller master! docking_controller_tag=[docking_controller_tag]")
 	rel_set(controller_master, nameof(controller_master.pod), src)
@@ -51,18 +51,15 @@
 //This controller goes on the escape pod itself
 /obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod
 	name = "escape pod controller"
-	program = /datum/embedded_program/docking/simple
 	var/tmp/datum/shuttle/autodock/ferry/escape_pod/pod
 	valid_actions = list("toggle_override", "force_door")
 
 /// The window's data.
 /obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod/ui_data(datum/act/eval/A)
-	var/datum/embedded_program/docking/simple/docking_program = program // Cast to proper type
-
 	. = list(
-		"docking_status" = docking_program.get_docking_status(),
-		"override_enabled" = docking_program.override_enabled,
-		"exterior_status" =	docking_program.memory["door_status"],								// TGUI DATA fails silently when there's no linked pod, leading to UI crashes
+		"docking_status" = port.get_docking_status(),
+		"override_enabled" = port.override_enabled,
+		"exterior_status" =	port.hatch_status(),								// TGUI DATA fails silently when there's no linked pod, leading to UI crashes
 		"can_force" = pod()?.can_force() || (SSemergency_shuttle.departed && pod()?.can_launch()),	//allow players to manually launch ahead of time if the shuttle leaves
 		"armed" = pod()?.arming_controller().armed,
 		"internalTemplateName" = "EscapePodConsole",
@@ -88,23 +85,17 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/simple_docking_controller/
 //This controller is for the escape pod berth (station side)
 /obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod_berth
 	name = "escape pod berth controller"
-	program = /datum/embedded_program/docking/simple/escape_pod_berth
+	port = /datum/docking_port/escape_pod_berth
 	valid_actions = list("toggle_override", "force_door")
 
 /// The window's data.
 /obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod_berth/ui_data(datum/act/eval/A)
-	var/datum/embedded_program/docking/simple/docking_program = program // Cast to proper type
-
-	var/armed = null
-	if(istype(docking_program, /datum/embedded_program/docking/simple/escape_pod_berth))
-		var/datum/embedded_program/docking/simple/escape_pod_berth/P = docking_program
-		armed = P.armed
-
+	var/datum/docking_port/escape_pod_berth/berth = port
 	. = list(
-		"docking_status" = docking_program.get_docking_status(),
-		"override_enabled" = docking_program.override_enabled,
-		"exterior_status" =	docking_program.memory["door_status"],
-		"armed" = armed,
+		"docking_status" = port.get_docking_status(),
+		"override_enabled" = port.override_enabled,
+		"exterior_status" =	port.hatch_status(),
+		"armed" = istype(berth) ? berth.armed : null,
 		"internalTemplateName" = "EscapePodBerthConsole",
 	)
 
@@ -115,50 +106,53 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/simple_docking_controller/
 	var/mob/user = A.actor
 	to_chat(user, span_notice("You emag the [src], arming the escape pod!"))
 	set_emagged(1)
-	if (istype(program, /datum/embedded_program/docking/simple/escape_pod_berth))
-		var/datum/embedded_program/docking/simple/escape_pod_berth/P = program
-		if (!P.armed)
-			P.arm()
+	var/datum/docking_port/escape_pod_berth/berth = port
+	if(istype(berth) && !berth.armed)
+		berth.arm()
 	return OP_OK
 
-//A docking controller program for a simple door based docking port
-/datum/embedded_program/docking/simple/escape_pod_berth
+// The berth's port: its hatch opens only when the pod is armed, and the launch (the undock) closes it after a grace for latecomers.
+/datum/docking_port/escape_pod_berth
 	var/armed = 0
 	var/eject_delay = 10	//give latecomers some time to get out of the way if they don't make it onto the pod
 	COOLDOWN_DECLARE(eject_time)
 	var/closing = 0
 
-/datum/embedded_program/docking/simple/escape_pod_berth/proc/arm()
+/datum/docking_port/escape_pod_berth/proc/arm()
 	if(!armed)
 		set_armed(1)
-		open_door()
+		open_hatches()
 
-/datum/embedded_program/docking/simple/escape_pod_berth/receive_user_command(command)
+/datum/docking_port/escape_pod_berth/user_command(command)
 	if (!armed)
 		return TRUE // Eat all commands.
 	return ..(command)
 
 /// after() callback from prepare_for_undocking(): the latecomers' grace is over.
-/datum/embedded_program/docking/simple/escape_pod_berth/proc/eject_timer_fired()
+/datum/docking_port/escape_pod_berth/proc/eject_timer_fired()
 	if(!closing)
-		close_door()
+		close_hatches()
 		closing = 1
 
-/datum/embedded_program/docking/simple/escape_pod_berth/prepare_for_docking()
+/datum/docking_port/escape_pod_berth/prepare_for_docking()
 	return
 
-/datum/embedded_program/docking/simple/escape_pod_berth/ready_for_docking()
-	return 1
+/datum/docking_port/escape_pod_berth/ready_for_docking()
+	return TRUE
 
-/datum/embedded_program/docking/simple/escape_pod_berth/finish_docking()
+/datum/docking_port/escape_pod_berth/finish_docking()
 	return		//don't do anything - the doors only open when the pod is armed.
 
-/datum/embedded_program/docking/simple/escape_pod_berth/prepare_for_undocking()
+/datum/docking_port/escape_pod_berth/prepare_for_undocking()
 	COOLDOWN_START(src, eject_time, eject_delay*10)
 	after(src, eject_delay*10, PROC_REF(eject_timer_fired))
 
+/// The berth closes its hatch after the grace (eject_timer_fired()), not the moment it undocks.
+/datum/docking_port/escape_pod_berth/keep_hatches_closing()
+	return
+
 /// Accessor for the arming_controller var.
-/datum/shuttle/autodock/ferry/escape_pod/proc/arming_controller() as /datum/embedded_program/docking/simple/escape_pod_berth
+/datum/shuttle/autodock/ferry/escape_pod/proc/arming_controller() as /datum/docking_port/escape_pod_berth
 	return arming_controller
 
 /// Accessor for the pod var.

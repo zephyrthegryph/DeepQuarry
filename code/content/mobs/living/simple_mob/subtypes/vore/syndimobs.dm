@@ -29,7 +29,6 @@
 	mount_offset_y = 10
 	tame_chance = 0
 
-	armor_spec = "melee=20;bullet=10;laser=20;energy=5;bio=100;rad=100" // Values read by injury_armor()
 
 	// Leaping is a special attack, so these values determine when leap can happen.
 	// Leaping won't occur if its on cooldown.
@@ -46,6 +45,7 @@
 	In addition, you will do more damage to incapacitated opponents."
 
 CAPABILITIES(/mob/living/simple_mob/vore/otie/syndicate)
+	configure(atom_rules(armor_spec = "melee=20;bullet=10;laser=20;energy=5;bio=100;rad=100"))
 	configure(mob_rules(faction = "syndicate"))
 	configure(living_rules(say_list_type = /datum/say_list/otie))
 	configure(butchery_rules(meat_amount = 6))
@@ -67,9 +67,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/otie/syndicate)
 	special_attack_max_range = 3
 	special_attack_cooldown = 30 SECONDS
 
-	armor_spec = "melee=30;bullet=30;laser=30;energy=15;bio=100;rad=100" // Values read by injury_armor()
 
 CAPABILITIES(/mob/living/simple_mob/vore/otie/syndicate/chubby)
+	configure(atom_rules(armor_spec = "melee=30;bullet=30;laser=30;energy=15;bio=100;rad=100"))
 	configure(butchery_rules(meat_amount = 12))
 
 /mob/living/simple_mob/vore/otie/syndicate/apply_bonus_melee_damage(atom/A, damage_amount)
@@ -147,9 +147,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/otie/syndicate/chubby)
 	mount_offset_x = 2
 	can_buckle = TRUE
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
-	armor_spec = "melee=40;bullet=20;laser=20;energy=15;bio=100;rad=100" // Values read by injury_armor()
 
 CAPABILITIES(/mob/living/simple_mob/vore/wolf/direwolf/syndicate)
+	configure(atom_rules(armor_spec = "melee=40;bullet=20;laser=20;energy=15;bio=100;rad=100"))
 	configure(mob_rules(faction = "syndicate"))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))
 
@@ -207,9 +207,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/wolf/direwolf/syndicate/black)
 	reload_max = 30
 
 
-	armor_spec = "melee=40;bullet=30;laser=20;energy=5;bomb=50;bio=100;rad=100" // Values read by injury_armor()
 
 CAPABILITIES(/mob/living/simple_mob/vore/wolftaur/syndicate)
+	configure(atom_rules(armor_spec = "melee=40;bullet=30;laser=20;energy=5;bomb=50;bio=100;rad=100"))
 	configure(mob_rules(faction = "syndicate"))
 	configure(living_rules(say_list_type = /datum/say_list/merc))
 	configure(mob_kind(attack_cooldown = 8))

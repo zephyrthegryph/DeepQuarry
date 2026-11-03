@@ -3,9 +3,9 @@
 	desc = "A Hegemony-designed utilitarian environment suit helmet, still common among the Spacer Zaddat."
 	icon_state = "zaddat_hegemony"
 	item_state_slots = list(slot_r_hand_str = "syndicate", slot_l_hand_str = "syndicate")
-	armor_spec = "bio=100;rad=70;cold=60" //realistically would have some armor but balance.
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/zaddat)
+	configure(atom_rules(armor_spec = "bio=100;rad=70;cold=60"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	fits_as(FIT_ZADDAT_PROMETHEAN)
 	configure(item_worn(covers = HEAD|FACE|EYES))
@@ -15,7 +15,6 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/zaddat)
 /obj/item/clothing/suit/space/void/zaddat
 	name = "\improper Hegemony Shroud"
 	desc = "A Hegemony environment suit, still favored by the Spacer Zaddat because of its durability and ease of manufacture."
-	armor_spec = "bio=100;rad=70;cold=60"
 	icon_state = "zaddat_hegemony"
 	hood = new/obj/item/clothing/head/helmet/space/void/zaddat //shrouds come with helmets built-in
 	var/has_been_customized = FALSE
@@ -27,6 +26,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/zaddat)
 MSG_DEF_SELF(zaddat/has_been_customized, "This shroud has already been customized.")
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
+	configure(atom_rules(armor_spec = "bio=100;rad=70;cold=60"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS))
 	fits_as(FIT_ZADDAT_PROMETHEAN)
@@ -130,7 +130,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 /obj/item/clothing/suit/space/void/zaddat/engineer
 	name = "\improper Engineer's Guild Shroud"
 	desc = "This rugged Shroud was created by the Xozi Engineering Guild."
-	armor_spec = "bio=100;rad=100;cold=60"
 	icon_state = "zaddat_engie"
 	item_state = "zaddat_engie"
 	hood = new/obj/item/clothing/head/helmet/space/void/zaddat/engineer
@@ -141,12 +140,10 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 	desc = "A Shroud helmet designed for good visibility in low-light environments."
 	icon_state = "zaddat_engie"
 	item_state = "zaddat_engie"
-	armor_spec = "bio=100;rad=100;cold=60"
 
 /obj/item/clothing/suit/space/void/zaddat/security
 	name = "\improper Security Knight's Shroud"
 	desc = "This distinctive steel-plated Shroud was popularized by the Noble Guild."
-	armor_spec = "melee=30;bullet=20;laser=20;energy=10;bomb=10;bio=100;rad=30;cold=60"
 	icon_state = "zaddat_knight"
 	item_state = "zaddat_knight"
 	hood = new/obj/item/clothing/head/helmet/space/void/zaddat/security
@@ -156,7 +153,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 	desc = "This spaceworthy helmet was patterned after the knight's helmets used by Zaddat before their discovery by the Unathi."
 	icon_state = "zaddat_knight"
 	item_state = "zaddat_knight"
-	armor_spec = "melee=30;bullet=20;laser=20;energy=10;bomb=10;bio=100;rad=30;cold=60"
 
 
 
@@ -351,3 +347,15 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
 	if(original_client_ckey && !GLOB.directory[original_client_ckey])
 		return "gone"
 	return null
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat/engineer)
+	configure(atom_rules(armor_spec = "bio=100;rad=100;cold=60"))
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/zaddat/engineer)
+	configure(atom_rules(armor_spec = "bio=100;rad=100;cold=60"))
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat/security)
+	configure(atom_rules(armor_spec = "melee=30;bullet=20;laser=20;energy=10;bomb=10;bio=100;rad=30;cold=60"))
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/zaddat/security)
+	configure(atom_rules(armor_spec = "melee=30;bullet=20;laser=20;energy=10;bomb=10;bio=100;rad=30;cold=60"))

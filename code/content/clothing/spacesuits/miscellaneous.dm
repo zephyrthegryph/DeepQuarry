@@ -3,9 +3,9 @@
 	name = "space helmet"
 	icon_state = "capspace"
 	desc = "A special helmet designed for work in a hazardous, low-pressure environment. Only for the most fashionable of military figureheads."
-	armor_spec = "melee=65;bullet=50;laser=50;energy=25;bomb=50;bio=100;rad=50;cold=60"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/capspace)
+	configure(atom_rules(armor_spec = "melee=65;bullet=50;laser=50;energy=25;bomb=50;bio=100;rad=50;cold=60"))
 	configure(item_worn(flags = 0, hides = HIDEFACE|BLOCKHAIR))
 	configure(item_protection(permeability = 0.01))
 
@@ -15,9 +15,9 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/capspace)
 	desc = "A bulky, heavy-duty piece of exclusive corporate armor. YOU are in charge!"
 	icon_state = "caparmor"
 	w_class = ITEMSIZE_HUGE
-	armor_spec = "melee=65;bullet=50;laser=50;energy=25;bomb=50;bio=100;rad=50"
 
 CAPABILITIES(/obj/item/clothing/suit/armor/captain)
+	configure(atom_rules(armor_spec = "melee=65;bullet=50;laser=50;energy=25;bomb=50;bio=100;rad=50"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))
 	configure(item_worn(flags = 0, covers = CHEST|LEGS|FEET|ARMS|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL))
@@ -31,9 +31,9 @@ CAPABILITIES(/obj/item/clothing/suit/armor/captain)
 	desc = "That's not red paint. That's real blood."
 	icon_state = "deathsquad"
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black-red", slot_l_hand_str = "syndicate-helm-black-red")
-	armor_spec = "melee=65;bullet=55;laser=35;energy=20;bomb=30;bio=100;rad=60;cold=60"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/deathsquad)
+	configure(atom_rules(armor_spec = "melee=65;bullet=55;laser=35;energy=20;bomb=30;bio=100;rad=60;cold=60"))
 	configure(item_worn(flags = THICKMATERIAL, hides = BLOCKHAIR))
 	configure(item_protection(siemens = 0.6))
 
@@ -43,9 +43,9 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/deathsquad)
 	desc = "An armored beret commonly used by special operations officers."
 	icon_state = "beret_black_security" //old sprite was lost, this is the next closest.
 	item_state_slots = list(slot_r_hand_str = "beret", slot_l_hand_str = "beret")
-	armor_spec = "melee=65;bullet=55;laser=35;energy=20;bomb=30;bio=30;rad=30;cold=60"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/deathsquad/beret)
+	configure(atom_rules(armor_spec = "melee=65;bullet=55;laser=35;energy=20;bomb=30;bio=30;rad=30;cold=60"))
 	configure(item_worn(flags = 0, hides = BLOCKHAIR))
 	configure(item_protection(siemens = 0.9))
 
@@ -75,9 +75,9 @@ CAPABILITIES(/obj/item/clothing/suit/space/santa)
 	name = "pirate hat"
 	desc = "Yarr."
 	icon_state = "pirate"
-	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=30;rad=30;cold=60"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/pirate)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=30;rad=30;cold=60"))
 	configure(item_worn(flags = 0, hides = BLOCKHAIR, covers = 0))
 	configure(item_protection(siemens = 0.9))
 
@@ -86,9 +86,9 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/pirate)
 	desc = "Yarr."
 	icon_state = "pirate"
 	w_class = ITEMSIZE_NORMAL
-	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=30;rad=30;cold=60"
 
 CAPABILITIES(/obj/item/clothing/suit/space/pirate)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=30;rad=30;cold=60"))
 	configure(item_worn(worn_factors = TRAIT_NONE))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO))
 	configure(item_worn(hides = HIDETAIL|HIDEHOLSTER, covers = UPPER_TORSO|ARMS))

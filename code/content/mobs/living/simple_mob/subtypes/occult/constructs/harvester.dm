@@ -20,7 +20,6 @@
 
 	attack_sound = SFX_WEAPONS_PIERCE
 
-	armor_spec = "melee=10;bullet=20;laser=20;energy=20;bomb=20;bio=100;rad=100"
 
 	construct_spells = list(
 			/datum/spell/aoe_turf/knock/harvester,
@@ -54,3 +53,6 @@ TYPE_TABLE(/datum/decl/mob_organ_names/harvester, mob_organ_hit_zones, list("cep
 
 
 	attack_sound = SFX_WEAPONS_PIERCE
+
+CAPABILITIES(/mob/living/simple_mob/construct/harvester)
+	configure(atom_rules(armor_spec = "melee=10;bullet=20;laser=20;energy=20;bomb=20;bio=100;rad=100"))

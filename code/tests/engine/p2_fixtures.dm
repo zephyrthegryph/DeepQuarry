@@ -9,7 +9,6 @@
 /// A damageable object nothing hooks: it takes the damage as it always did.
 /obj/p2_hit
 	name = "p2 hit target"
-	uses_integrity = TRUE
 	max_integrity = 100
 	/// What the hooks and reactions counted.
 	var/took = 0

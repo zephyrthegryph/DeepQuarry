@@ -33,9 +33,9 @@ CAPABILITIES(/obj/item/clothing/shoes/leg_guard)
 	desc = "These will protect your legs and feet from energy weapons."
 	icon_state = "leg_guards_laser"
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
-	armor_spec = "melee=10;bullet=10;laser=80;energy=50"
 
 CAPABILITIES(/obj/item/clothing/shoes/leg_guard/laserproof)
+	configure(atom_rules(armor_spec = "melee=10;bullet=10;laser=80;energy=50"))
 	configure(item_protection(siemens = 0.1))
 
 /obj/item/clothing/shoes/leg_guard/bulletproof
@@ -43,9 +43,9 @@ CAPABILITIES(/obj/item/clothing/shoes/leg_guard/laserproof)
 	desc = "These will protect your legs and feet from ballistic weapons."
 	icon_state = "leg_guards_bullet"
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
-	armor_spec = "melee=10;bullet=80;laser=10;energy=10"
 
 CAPABILITIES(/obj/item/clothing/shoes/leg_guard/bulletproof)
+	configure(atom_rules(armor_spec = "melee=10;bullet=80;laser=10;energy=10"))
 	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/shoes/leg_guard/riot
@@ -53,9 +53,9 @@ CAPABILITIES(/obj/item/clothing/shoes/leg_guard/bulletproof)
 	desc = "These will protect your legs and feet from close combat weapons."
 	icon_state = "leg_guards_riot"
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
-	armor_spec = "melee=80;bullet=10;laser=10;energy=10"
 
 CAPABILITIES(/obj/item/clothing/shoes/leg_guard/riot)
+	configure(atom_rules(armor_spec = "melee=80;bullet=10;laser=10;energy=10"))
 	configure(item_protection(siemens = 0.5))
 
 /obj/item/clothing/shoes/leg_guard/combat
@@ -63,9 +63,9 @@ CAPABILITIES(/obj/item/clothing/shoes/leg_guard/riot)
 	desc = "These will protect your legs and feet from a variety of weapons."
 	icon_state = "leg_guards_combat"
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
-	armor_spec = "melee=50;bullet=50;laser=50;energy=30;bomb=30"
 
 CAPABILITIES(/obj/item/clothing/shoes/leg_guard/combat)
+	configure(atom_rules(armor_spec = "melee=50;bullet=50;laser=50;energy=30;bomb=30"))
 	configure(item_protection(siemens = 0.6))
 
 /obj/item/clothing/shoes/leg_guard/flexitac
@@ -73,9 +73,9 @@ CAPABILITIES(/obj/item/clothing/shoes/leg_guard/combat)
 	desc = "These will protect your legs and feet from a variety of weapons while still allowing mobility."
 	icon_state = "leg_guards_flexitac"
 	item_state_slots = list(slot_r_hand_str = "jackboots", slot_l_hand_str = "jackboots")
-	armor_spec = "melee=40;bullet=40;laser=60;energy=35;bomb=30"
 
 CAPABILITIES(/obj/item/clothing/shoes/leg_guard/flexitac)
+	configure(atom_rules(armor_spec = "melee=40;bullet=40;laser=60;energy=35;bomb=30"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = SHOES_SLOWDOWN+0.5)))
 	configure(item_protection(siemens = 0.6, min_cold = T0C - 20, cold_parts = LEGS))
 

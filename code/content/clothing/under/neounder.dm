@@ -347,9 +347,9 @@ this file deals with uniforms/under. */
 	icon_state = "neo_sec_red"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_red)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_sec_red_skirt
@@ -358,9 +358,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_red)
 	icon_state = "neo_sec_red_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_red_skirt)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_warden_red
@@ -369,9 +369,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_red_skirt)
 	icon_state = "neo_warden_red"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_warden_red)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_warden_red_skirt
@@ -380,9 +380,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_warden_red)
 	icon_state = "neo_warden_red_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_warden_red_skirt)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_red
@@ -391,9 +391,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_warden_red_skirt)
 	icon_state = "neo_hos_red"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_red)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_red_skirt
@@ -402,9 +402,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_red)
 	icon_state = "neo_hos_red_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_red_skirt)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_blackred
@@ -413,9 +413,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_red_skirt)
 	icon_state = "neo_hos_blackred"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_blackred)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_blackred_skirt
@@ -424,9 +424,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_blackred)
 	icon_state = "neo_hos_blackred_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_blackred_skirt)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_parade
@@ -435,9 +435,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_blackred_skirt)
 	icon_state = "neo_hos_parade"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_parade)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_parade_fem
@@ -446,9 +446,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_parade)
 	icon_state = "neo_hos_parade_fem"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_parade_fem)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_sec_blue
@@ -457,9 +457,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_parade_fem)
 	icon_state = "neo_sec_blue"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_blue)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_sec_suit
@@ -468,9 +468,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_blue)
 	icon_state = "neo_sec_suit"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_suit)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_sec_suit_blue
@@ -479,9 +479,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_suit)
 	icon_state = "neo_sec_suit_blue"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_suit_blue)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_warden_blue
@@ -490,9 +490,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_suit_blue)
 	icon_state = "neo_warden_blue"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_warden_blue)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_blue
@@ -501,9 +501,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_warden_blue)
 	icon_state = "neo_hos_blue"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_blue)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_blackblue
@@ -512,9 +512,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_blue)
 	icon_state = "neo_hos_blackblue"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_blackblue)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_blackblue_skirt
@@ -523,9 +523,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_blackblue)
 	icon_state = "neo_hos_blackblue_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_blackblue_skirt)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_parade_blue
@@ -534,9 +534,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_blackblue_skirt)
 	icon_state = "neo_hos_parade_blue"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_parade_blue)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_parade_blue_fem
@@ -545,9 +545,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_parade_blue)
 	icon_state = "neo_hos_parade_blue_fem"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_parade_blue_fem)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_sec_turtle_red
@@ -556,9 +556,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_parade_blue_fem)
 	icon_state = "neo_sec_turtle_red"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_turtle_red)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_sec_turtle_red_skirt
@@ -567,9 +567,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_turtle_red)
 	icon_state = "neo_sec_turtle_red_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_turtle_red_skirt)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_sec_turtle_blue
@@ -578,9 +578,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_turtle_red_skirt)
 	icon_state = "neo_sec_turtle_blue"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_turtle_blue)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_sec_turtle_blue_skirt
@@ -589,9 +589,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_turtle_blue)
 	icon_state = "neo_sec_turtle_blue_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_turtle_blue_skirt)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_corrections
@@ -600,9 +600,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_turtle_blue_skirt)
 	icon_state = "neo_corrections"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_corrections)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_corrections_skirt
@@ -611,9 +611,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_corrections)
 	icon_state = "neo_corrections_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_corrections_skirt)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_runner
@@ -622,9 +622,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_corrections_skirt)
 	icon_state = "neo_runner"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_runner)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 // Cargo
@@ -765,7 +765,6 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_runner)
 	icon_state = "neo_engi"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "rad=10"
 
 /obj/item/clothing/under/rank/neo_engi_skirt
 	name = "engineer's jumpskirt"
@@ -773,7 +772,6 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_runner)
 	icon_state = "neo_engi_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "rad=10"
 
 /obj/item/clothing/under/rank/neo_atmos
 	name = "atmos tech's jumpsuit"
@@ -795,7 +793,6 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_runner)
 	icon_state = "neo_chiefengi"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "rad=10"
 
 /obj/item/clothing/under/rank/neo_chiefengi_skirt
 	name = "chief engineer's jumpskirt"
@@ -803,7 +800,6 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_runner)
 	icon_state = "neo_chiefengi_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "rad=10"
 
 // Sci
 
@@ -892,9 +888,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_runner)
 	icon_state = "neo_med"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_med)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_med_skirt
@@ -903,9 +899,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_med)
 	icon_state = "neo_med_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_med_skirt)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_cmo
@@ -914,9 +910,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_med_skirt)
 	icon_state = "neo_cmo"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_cmo)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_cmo_skirt
@@ -925,9 +921,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_cmo)
 	icon_state = "neo_cmo_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_cmo_skirt)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_cmo_turtle
@@ -936,9 +932,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_cmo_skirt)
 	icon_state = "neo_cmo_turtle"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_cmo_turtle)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_cmo_turtle_skirt
@@ -947,9 +943,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_cmo_turtle)
 	icon_state = "neo_cmo_turtle_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_cmo_turtle_skirt)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_viro
@@ -958,9 +954,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_cmo_turtle_skirt)
 	icon_state = "neo_viro"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_viro)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_viro_skirt
@@ -969,9 +965,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_viro)
 	icon_state = "neo_viro_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_viro_skirt)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_chem
@@ -980,9 +976,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_viro_skirt)
 	icon_state = "neo_chem"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_chem)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_chem_skirt
@@ -991,9 +987,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_chem)
 	icon_state = "neo_chem_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_chem_skirt)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_para
@@ -1002,9 +998,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_chem_skirt)
 	icon_state = "neo_para"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_para)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_para_skirt
@@ -1013,9 +1009,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_para)
 	icon_state = "neo_para_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_para_skirt)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_para_light
@@ -1024,9 +1020,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_para_skirt)
 	icon_state = "neo_para_light"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_para_light)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_para_light_skirt
@@ -1035,9 +1031,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_para_light)
 	icon_state = "neo_para_light_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_para_light_skirt)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_pharma
@@ -1046,9 +1042,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_para_light_skirt)
 	icon_state = "neo_pharma"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_pharma)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_pharma_skirt
@@ -1057,9 +1053,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_pharma)
 	icon_state = "neo_pharma_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_pharma_skirt)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_med_dark
@@ -1068,9 +1064,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_pharma_skirt)
 	icon_state = "neo_med_dark"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_med_dark)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_med_dark_skirt
@@ -1079,9 +1075,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_med_dark)
 	icon_state = "neo_med_dark_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	armor_spec = "bio=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_med_dark_skirt)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 // Neo Gorkas
@@ -1126,19 +1122,19 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_med_dark_skirt)
 /obj/item/clothing/under/rank/neo_gorka/sec
 	name = "security officer's gorka"
 	desc = "A rugged weather-resistant uniform made of ripstop fabric. For officers who expect to be patrolling in harsh conditions. It has a tag denoting it's made by Total Gear & Co."
-	armor_spec = "melee=10"
 	starting_accessories = list(/obj/item/clothing/accessory/gorka/department/sec)
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_gorka/sec)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_gorka/hos
 	name = "head of security's gorka"
 	desc = "A rugged weather-resistant uniform made of ripstop fabric. Favoured by the Head of Security who wants to stay dry no matter what. It has a tag denoting it's made by Total Gear & Co."
-	armor_spec = "melee=10"
 	starting_accessories = list(/obj/item/clothing/accessory/gorka/department/sec,/obj/item/clothing/accessory/gorka/rank)
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_gorka/hos)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_gorka/cargo
@@ -1154,13 +1150,11 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_gorka/hos)
 /obj/item/clothing/under/rank/neo_gorka/engi
 	name = "engineer's gorka"
 	desc = "A rugged weather-resistant uniform made of ripstop fabric. Not rated for high-power electrical shocks. It has a tag denoting it's made by Total Gear & Co."
-	armor_spec = "rad=10"
 	starting_accessories = list(/obj/item/clothing/accessory/gorka/department/engi)
 
 /obj/item/clothing/under/rank/neo_gorka/ce
 	name = "chief engineer's gorka"
 	desc = "A rugged weather-resistant uniform made of ripstop fabric. For the chief engineer who values style <i>and</i> safety. It has a tag denoting it's made by Total Gear & Co."
-	armor_spec = "rad=10"
 	starting_accessories = list(/obj/item/clothing/accessory/gorka/department/engi,/obj/item/clothing/accessory/gorka/rank)
 
 /obj/item/clothing/under/rank/neo_gorka/sci
@@ -1176,17 +1170,35 @@ CAPABILITIES(/obj/item/clothing/under/rank/neo_gorka/hos)
 /obj/item/clothing/under/rank/neo_gorka/med
 	name = "medical staff gorka"
 	desc = "A rugged weather-resistant uniform made of ripstop fabric. A popular choice among paramedical personnel. It has a tag denoting it's made by Total Gear & Co."
-	armor_spec = "bio=10"
 	starting_accessories = list(/obj/item/clothing/accessory/gorka/department/med)
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_gorka/med)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_gorka/cmo
 	name = "chief medical officer's gorka"
 	desc = "A rugged weather-resistant uniform made of ripstop fabric. Why worry about stains when everything slides right off? It has a tag denoting it's made by Total Gear & Co."
-	armor_spec = "bio=10"
 	starting_accessories = list(/obj/item/clothing/accessory/gorka/department/med,/obj/item/clothing/accessory/gorka/rank)
 
 CAPABILITIES(/obj/item/clothing/under/rank/neo_gorka/cmo)
+	configure(atom_rules(armor_spec = "bio=10"))
 	configure(item_protection(permeability = 0.50))
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_engi)
+	configure(atom_rules(armor_spec = "rad=10"))
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_engi_skirt)
+	configure(atom_rules(armor_spec = "rad=10"))
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_chiefengi)
+	configure(atom_rules(armor_spec = "rad=10"))
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_chiefengi_skirt)
+	configure(atom_rules(armor_spec = "rad=10"))
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_gorka/engi)
+	configure(atom_rules(armor_spec = "rad=10"))
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_gorka/ce)
+	configure(atom_rules(armor_spec = "rad=10"))

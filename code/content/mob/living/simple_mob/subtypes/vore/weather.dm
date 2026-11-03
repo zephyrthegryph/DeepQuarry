@@ -2,7 +2,6 @@
 	name = "rolling crematorium"
 	desc = "A large metal tank."
 	endurance = 200
-	armor_spec = "melee=60;bullet=60;laser=60;energy=60;bomb=80;bio=100;rad=100" //High armor, relativly low HP
 	icon_state = "rex"
 	melee_attack_delay = 2.5 SECONDS
 	melee_damage_lower = 50
@@ -37,6 +36,7 @@
 		)
 
 CAPABILITIES(/mob/living/simple_mob/vore/fossiltank)
+	configure(atom_rules(armor_spec = "melee=60;bullet=60;laser=60;energy=60;bomb=80;bio=100;rad=100"))
 	configure(mob_rules(faction = FACTION_ECLIPSE))
 	configure(living_rules(vore_capacity = 1))
 	configure(movable_motion(unacidable = TRUE))
@@ -92,7 +92,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/fossiltank)
 	name = "expirmental jellyfish"
 	desc = "A glowing green jellyfish"
 	endurance = 600
-	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=50;bio=100;rad=100" //So, it's made of jelly. Bullets and melee bounces off of it. The 20 laser and energy are for a smidge extra tankny because I savour endurance fights
 	icon = 'icons/mob/tyr.dmi'
 	icon_state = "jellyfish"
 	icon_living = "jellyfish"
@@ -137,6 +136,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/fossiltank)
 /mob/living/simple_mob/vore/boss_jellyfish/var/atom/chain_target
 
 CAPABILITIES(/mob/living/simple_mob/vore/boss_jellyfish)
+	configure(atom_rules(armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=50;bio=100;rad=100"))
 	configure(mob_rules(faction = FACTION_TYR_ANT))
 	configure(living_rules(vore_capacity = 1, delete_on_death = TRUE))
 	configure(movable_motion(unacidable = TRUE))

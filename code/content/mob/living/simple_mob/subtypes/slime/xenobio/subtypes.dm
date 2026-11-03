@@ -92,7 +92,6 @@
 
 	// The sloped armor.
 	// It's resistant to most weapons (but a spraybottle still kills it rather fast).
-	armor_spec = "melee=25;bullet=25;laser=25;energy=50;bomb=80;bio=100;rad=100"
 
 	slime_mutation = list(
 			/mob/living/simple_mob/slime/xenobio/silver,
@@ -816,3 +815,6 @@ CAPABILITIES(/mob/living/simple_mob/slime/xenobio/pink/sana)
 	harmless = TRUE
 	melee_damage_upper = 0
 	melee_damage_lower = 0
+
+CAPABILITIES(/mob/living/simple_mob/slime/xenobio/metal)
+	configure(atom_rules(armor_spec = "melee=25;bullet=25;laser=25;energy=50;bomb=80;bio=100;rad=100"))

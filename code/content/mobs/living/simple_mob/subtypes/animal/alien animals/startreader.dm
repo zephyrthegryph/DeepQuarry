@@ -44,7 +44,6 @@
 
 	loot_list = list(/obj/random/underdark/uncertain = 25)
 
-	armor_spec = "melee=100;bullet=100;laser=100;energy=100;bio=100;rad=100"
 
 	speak_emote = list("rumbles")
 
@@ -63,7 +62,7 @@
 	var/flip_cooldown = 0
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/startreader)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/startreader)))
+	configure(atom_rules(armor_spec = "melee=100;bullet=100;laser=100;energy=100;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/startreader)))
 	configure(mob_rules(faction = FACTION_SPACE_TURTLE))
 	configure(living_rules(vore_capacity = 2, say_list_type = /datum/say_list/startreader))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))

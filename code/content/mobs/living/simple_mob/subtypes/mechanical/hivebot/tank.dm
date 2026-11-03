@@ -51,25 +51,21 @@
 	// Note that armor effectively makes lasers do about 9 damage instead of 30,
 	// so it has an effective health of ~16.6 LASERS_TO_KILL if regular lasers are used.
 	// Xrays will do much better against this.
-	armor_spec = "melee=40;bullet=40;laser=40;energy=30;bomb=30;bio=100;rad=100"
 
 /mob/living/simple_mob/mechanical/hivebot/tank/armored/anti_melee
 	name = "riot hivebot"
 	desc = "A robot specialized in close quarters combat."
 	player_msg = "You are heavily armored against close quarters combat."
-	armor_spec = "melee=70;bio=100;rad=100"
 
 /mob/living/simple_mob/mechanical/hivebot/tank/armored/anti_bullet
 	name = "bulletproof hivebot"
 	desc = "A robot specialized in ballistic defense."
 	player_msg = "You are heavily armored against ballistic weapons."
-	armor_spec = "bullet=70;bio=100;rad=100"
 
 /mob/living/simple_mob/mechanical/hivebot/tank/armored/anti_laser
 	name = "ablative hivebot"
 	desc = "A robot specialized in photonic defense."
 	player_msg = "You are heavily armored against laser weapons."
-	armor_spec = "laser=70;bio=100;rad=100"
 	var/reflect_chance = 40 // Same as regular ablative.
 
 // Ablative Hivebots can reflect lasers just like humans.
@@ -105,3 +101,15 @@ TYPE_TABLE(/datum/decl/mob_organ_names/hivebottank, mob_organ_hit_zones, list("c
 	icon = 'icons/mob/hivebot.dmi'
 	icon_state = "blue"
 	icon_living = "blue"
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot/tank/armored)
+	configure(atom_rules(armor_spec = "melee=40;bullet=40;laser=40;energy=30;bomb=30;bio=100;rad=100"))
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot/tank/armored/anti_melee)
+	configure(atom_rules(armor_spec = "melee=70;bio=100;rad=100"))
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot/tank/armored/anti_bullet)
+	configure(atom_rules(armor_spec = "bullet=70;bio=100;rad=100"))
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot/tank/armored/anti_laser)
+	configure(atom_rules(armor_spec = "laser=70;bio=100;rad=100"))

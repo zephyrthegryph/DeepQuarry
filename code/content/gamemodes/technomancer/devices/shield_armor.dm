@@ -16,7 +16,6 @@
 	require a very potent supply of an energy of some kind in order to function."
 	icon_state = "reactive"
 	blood_overlay_type = "armor"
-	armor_spec = ""
 	var/active = 0
 	var/damage_to_energy_multiplier = 50.0 //Determines how much energy to charge for blocking, e.g. 20 damage attack = 750 energy cost
 	var/block_percentage = 75
@@ -60,6 +59,7 @@
 	return 0 // This shield does not block all damage, so returning 0 is needed to tell the game to apply the new damage.
 
 CAPABILITIES(/obj/item/clothing/suit/armor/shield)
+	configure(atom_rules(armor_spec = ""))
 	configure(item_worn(worn_factors = TRAIT_NONE))
 	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_shield_projector)))
 	op("shield_armor_toggle_self", in_hand(), label("Toggle"), then(PROC_REF(shield_armor_toggle_self)))

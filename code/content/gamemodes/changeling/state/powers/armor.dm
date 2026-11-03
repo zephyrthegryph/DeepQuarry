@@ -38,10 +38,10 @@
 	desc = "A huge, bulky mass of pressure and temperature-resistant organic tissue, evolved to facilitate space travel."
 	flags = NONE	//Not THICKMATERIAL because it's organic tissue, so if somebody tries to inject something into it,
 				//it still ends up in your blood. (also balance but muh fluff)
-	armor_spec = "cold=60" //No armor at all.
 	canremove = FALSE
 
 CAPABILITIES(/obj/item/clothing/suit/space/changeling)
+	configure(atom_rules(armor_spec = "cold=60"))
 	suit_storage(list(POCKET_GENERIC, POCKET_ALL_TANKS))
 	setup(PROC_REF(form_initial_suit))
 	configure(item_worn(flags = THICKMATERIAL | DROPDEL | NOSTRIP))
@@ -58,10 +58,10 @@ CAPABILITIES(/obj/item/clothing/suit/space/changeling)
 	icon_state = "lingspacehelmet"
 	desc = "A covering of pressure and temperature-resistant organic tissue with a glass-like chitin front."
 	flags = BLOCKHAIR //Again, no THICKMATERIAL.
-	armor_spec = "cold=60"
 	canremove = FALSE
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/changeling)
+	configure(atom_rules(armor_spec = "cold=60"))
 	configure(item_worn(covers = HEAD|FACE|EYES, flags = THICKMATERIAL | AIRTIGHT | FLEXIBLEMATERIAL | DROPDEL | NOSTRIP))
 
 /obj/item/clothing/shoes/magboots/changeling
@@ -103,9 +103,9 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots/changeling)
 	name = "chitinous mass"
 	desc = "A tough, hard covering of black chitin."
 	icon_state = "lingarmor"
-	armor_spec = "melee=75;bullet=60;laser=60;energy=60;bomb=60;cold=60" //It costs 3 points, so it should be very protective.
 
 CAPABILITIES(/obj/item/clothing/suit/space/changeling/armored)
+	configure(atom_rules(armor_spec = "melee=75;bullet=60;laser=60;energy=60;bomb=60;cold=60"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)))
 	setup(PROC_REF(form_initial_armor))
 	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS))
@@ -121,9 +121,9 @@ CAPABILITIES(/obj/item/clothing/suit/space/changeling/armored)
 	name = "chitinous mass"
 	desc = "A tough, hard covering of black chitin with transparent chitin in front."
 	icon_state = "lingarmorhelmet"
-	armor_spec = "melee=75;bullet=60;laser=60;energy=60;bomb=60;cold=60"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/changeling/armored)
+	configure(atom_rules(armor_spec = "melee=75;bullet=60;laser=60;energy=60;bomb=60;cold=60"))
 	configure(item_protection(siemens = 0.3, max_heat = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/shoes/magboots/changeling/armored
@@ -138,9 +138,9 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots/changeling/armored)
 	name = "chitinous gauntlets"
 	desc = "Very resilient gauntlets made out of black chitin.  It looks very durable, and can probably resist electrical shock in addition to the elements."
 	icon_state = "ling"
-	armor_spec = "melee=75;bullet=60;laser=60;energy=60;bomb=60" //No idea if glove armor gets checked
 
 CAPABILITIES(/obj/item/clothing/gloves/combat/changeling)
+	configure(atom_rules(armor_spec = "melee=75;bullet=60;laser=60;energy=60;bomb=60"))
 	configure(item_protection(siemens = 0))
 
 /obj/item/clothing/shoes/boots/combat/changeling //Noslips
@@ -148,7 +148,7 @@ CAPABILITIES(/obj/item/clothing/gloves/combat/changeling)
 	desc = "Footwear made out of a hard, black chitinous material.  The bottoms of these appear to have spikes that can protrude or extract itself into and out \
 	of the floor at will, granting the wearer stability."
 	icon_state = "lingarmor"
-	armor_spec = "melee=75;bullet=60;laser=70;energy=60;bomb=60"
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/combat/changeling)
+	configure(atom_rules(armor_spec = "melee=75;bullet=60;laser=70;energy=60;bomb=60"))
 	configure(item_protection(siemens = 0.3, min_cold = SHOE_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE))

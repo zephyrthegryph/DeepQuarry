@@ -65,7 +65,6 @@
 	movement_cooldown = 6
 	see_in_dark = 6
 	grab_resist = 2 //slippery. %  grabwill not work. Should be 10-20%. -Lo
-	armor_spec = "bio=50;rad=100" // will be determined //Changed from 20.They don't have scales or armor. -LO //Same as above. -LO //Nerfed from 100. They should have some protection against these things, but 100 is pushing it. -Lo //Keeping 100 rad armor as mobs cannot easily get radiation storm announcements. If this is reduced it'd be a good idea to make it 100 for the ai types.
 	has_hands = 1
 	pass_flags = PASSTABLE
 
@@ -823,7 +822,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/holo)
 	biology = BIOLOGY_SYNTHETIC // Metally
 	player_msg = "All systems nominal."
 	/////////////////////ARMOR
-	armor_spec = "melee=50;bullet=50;laser=-50;energy=-50;bomb=50;bio=100;rad=100"
 	////////////////////////////MED INJECTOR
 	poison_type = REAGENT_ID_OXYCODONE //OD effects, eye_blurry | Confuse + for slimes | stuttering
 	poison_chance = 77 //high but not guranteed.
@@ -833,6 +831,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/holo)
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/greed/synth)
+	configure(atom_rules(armor_spec = "melee=50;bullet=50;laser=-50;energy=-50;bomb=50;bio=100;rad=100"))
 	rolls(nameof(name), PROC_REF(roll_name))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
@@ -987,6 +986,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx/scp)
 	name = realname
 
 CAPABILITIES(/mob/living/simple_mob/animal/synx)
+	configure(atom_rules(armor_spec = "bio=50;rad=100"))
 	configure(mob_rules(faction = "Synx"))
 	configure(living_rules(vore_capacity = 2, parasitic = TRUE))
 	configure(mob_movement(bump = SIMPLE_ANIMAL))

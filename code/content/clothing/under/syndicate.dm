@@ -5,9 +5,9 @@
 	icon_state = "syndicate"
 	item_state_slots = list(slot_r_hand_str = "black", slot_l_hand_str = "black")
 	has_sensor = 0
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/syndicate)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/syndicate/combat //ERT tactleneck
@@ -16,9 +16,9 @@ CAPABILITIES(/obj/item/clothing/under/syndicate)
 	icon_state = "combat"
 	item_state_slots = list(slot_r_hand_str = "black", slot_l_hand_str = "black")
 	has_sensor = 1
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/syndicate/combat)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/syndicate/tacticool
@@ -34,4 +34,6 @@ CAPABILITIES(/obj/item/clothing/under/syndicate/tacticool)
 
 /obj/item/clothing/under/syndicate/tacticool/loadout //loadout tacticool option. No armor, but has sensors
 	has_sensor = 1
-	armor_spec = ""
+
+CAPABILITIES(/obj/item/clothing/under/syndicate/tacticool/loadout)
+	configure(atom_rules(armor_spec = ""))

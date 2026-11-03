@@ -1,110 +1,30 @@
-//a docking port that uses a single door
+// A docking port with a single hatch door: its port (/datum/docking_port) opens and bolts the hatch when docked, and closes and bolts it
+// to undock. The hatch is the door the map tags `tag_door` ("<id_tag>_hatch" by default), a keyed relation linked when the map loads.
 /obj/machinery/embedded_controller/radio/simple_docking_controller
 	name = "docking hatch controller"
-	program = /datum/embedded_program/docking/simple
+	port = /datum/docking_port
 	var/tag_door
+	/// The hatch door(s) carrying `tag_door`.
+	var/list/obj/machinery/door/airlock/hatches
 	valid_actions = list("force_door", "toggle_override")
+
+CAPABILITIES(/obj/machinery/embedded_controller/radio/simple_docking_controller)
+	setup(PROC_REF(default_hatch_tag))
+	ref_many(nameof(hatches), /obj/machinery/door/airlock, by = nameof(tag_door), target_key = nameof(/obj/machinery/door/airlock::id_tag))
+
+/// The map's hatch tag, or the default one, before the keyed relation links.
+/obj/machinery/embedded_controller/radio/simple_docking_controller/proc/default_hatch_tag()
+	if(!tag_door)
+		tag_door = "[id_tag]_hatch"
+
+/obj/machinery/embedded_controller/radio/simple_docking_controller/port_hatches()
+	return hatches ? hatches.Copy() : list()
 
 /// The window's data.
 /obj/machinery/embedded_controller/radio/simple_docking_controller/ui_data(datum/act/eval/A)
-	var/datum/embedded_program/docking/simple/docking_program = program // Cast to proper type
-
 	. = list(
-		"docking_status" = docking_program.get_docking_status(),
-		"override_enabled" = docking_program.override_enabled,
-		"exterior_status" =	docking_program.memory["door_status"],
+		"docking_status" = port.get_docking_status(),
+		"override_enabled" = port.override_enabled,
+		"exterior_status" = port.hatch_status(),
 		"internalTemplateName" = "DockingConsoleSimple",
 	)
-
-//A docking controller program for a simple door based docking port
-/datum/embedded_program/docking/simple
-	var/tag_door
-
-/datum/embedded_program/docking/simple/New(obj/machinery/embedded_controller/M)
-	..(M)
-	memory["door_status"] = list(state = "closed", lock = "locked")		//assume closed and locked in case the doors dont report in
-
-	if (istype(M, /obj/machinery/embedded_controller/radio/simple_docking_controller))
-		var/obj/machinery/embedded_controller/radio/simple_docking_controller/controller = M
-
-		tag_door = controller.tag_door? controller.tag_door : "[id_tag]_hatch"
-
-		signal_door("update")		//signals connected doors to update their status
-
-
-/datum/embedded_program/docking/simple/receive_signal(datum/signal/signal, receive_method, receive_param)
-	var/receive_tag = signal.data["tag"]
-
-	if(!receive_tag) return
-
-	if(receive_tag==tag_door)
-		memory["door_status"]["state"] = signal.data["door_status"]
-		memory["door_status"]["lock"] = signal.data["lock_status"]
-
-	..(signal, receive_method, receive_param)
-
-/datum/embedded_program/docking/simple/receive_user_command(command)
-	. = TRUE
-	switch(command)
-		if("force_door")
-			if (override_enabled)
-				if(memory["door_status"]["state"] == "open")
-					close_door()
-				else
-					open_door()
-		if("toggle_override")
-			if (override_enabled)
-				disable_override()
-			else
-				enable_override()
-		else
-			. = FALSE
-
-/datum/embedded_program/docking/simple/proc/signal_door(command)
-	var/datum/signal/signal = new
-	signal.data["tag"] = tag_door
-	signal.data["command"] = command
-	post_signal(signal)
-
-///datum/embedded_program/docking/simple/proc/signal_mech_sensor(command)
-
-/datum/embedded_program/docking/simple/proc/open_door()
-	if(memory["door_status"]["state"] == "closed")
-		signal_door("secure_open")
-	else if(memory["door_status"]["lock"] == "unlocked")
-		signal_door("lock")
-
-/datum/embedded_program/docking/simple/proc/close_door()
-	if(memory["door_status"]["state"] == "open")
-		signal_door("secure_close")
-	else if(memory["door_status"]["lock"] == "unlocked")
-		signal_door("lock")
-
-//tell the docking port to start getting ready for docking - e.g. pressurize
-/datum/embedded_program/docking/simple/prepare_for_docking()
-	return		//don't need to do anything
-
-//are we ready for docking?
-/datum/embedded_program/docking/simple/ready_for_docking()
-	return 1	//don't need to do anything
-
-//we are docked, open the doors or whatever.
-/datum/embedded_program/docking/simple/finish_docking()
-	open_door()
-
-/// An undock asked while the hatch was still swinging open (a pilot launching right after docking): prepare_for_undocking()'s
-/// close_door() read the "closed" the door last reported and sent nothing, the hatch then reported open, and ready_for_undocking()
-/// waited for a closed hatch forever with the shuttle stuck at "undocking". While undocking, an open hatch is closed again.
-/datum/embedded_program/docking/simple/periodic_step()
-	if(!override_enabled && get_docking_status() == "undocking" && memory["door_status"]["state"] == "open")
-		close_door()
-	..()
-
-//tell the docking port to start getting ready for undocking - e.g. close those doors.
-/datum/embedded_program/docking/simple/prepare_for_undocking()
-	close_door()
-
-//are we ready for undocking?
-/datum/embedded_program/docking/simple/ready_for_undocking()
-	return (memory["door_status"]["state"] == "closed" && memory["door_status"]["lock"] == "locked")
-

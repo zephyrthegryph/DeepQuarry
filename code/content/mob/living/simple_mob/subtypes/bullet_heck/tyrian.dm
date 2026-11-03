@@ -47,10 +47,10 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses)
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments
 	endurance = 2100
-	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=30;bio=100;rad=100"
 	movement_cooldown = 40
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments)
+	configure(atom_rules(armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=30;bio=100;rad=100"))
 	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 
 //Watch the ground. No seriously, 2/3s of it is glowing red

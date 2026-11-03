@@ -7,7 +7,6 @@
 	icon_state = "space"
 	desc = "A special helmet designed for work in a hazardous, low-pressure environment."
 	flags = PHORONGUARD
-	armor_spec = "bio=100;rad=50;cold=60"
 	flash_protection = FLASH_PROTECTION_MAJOR
 	valid_accessory_slots = null
 	resistance_flags = FIRE_PROOF | ACID_PROOF
@@ -18,6 +17,7 @@
 	light_overlay = "helmet_light"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space)
+	configure(atom_rules(armor_spec = "bio=100;rad=50;cold=60"))
 	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_helmet_light)))
 	configure(item_handling(randpixel = 0, center_x = 0, center_y = 0, preserve = 1))
 	fits_as(FIT_NO_DIONA)
@@ -66,7 +66,6 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space)
 	icon_state = "space"
 	w_class = ITEMSIZE_HUGE // So you can't fit this in your bag and be prepared at all times.
 	flags = PHORONGUARD
-	armor_spec = "bio=100;rad=50;cold=60"
 	valid_accessory_slots = (ACCESSORY_SLOT_OVER | ACCESSORY_SLOT_ARMBAND | ACCESSORY_SLOT_DECOR)
 	var/supports_limbs = FALSE //If TRUE, automatically splints breaks. Checked when removing the suit.
 	var/list/supporting_limbs //The limbs it is splinting now (a relation list: a deleted limb leaves it).

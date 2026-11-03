@@ -65,7 +65,7 @@
 /atom/proc/table_initialize()
 	SHOULD_CALL_PARENT(TRUE)
 	flags |= ATOM_INITIALIZED
-	if(uses_integrity)
+	if(atom_rules_of_type(type).uses_integrity)
 		atom_integrity = max_integrity
 	BOOT_PHASE_BEGIN(bp_decls)
 	lifecycle_decls_init(src, TRUE)

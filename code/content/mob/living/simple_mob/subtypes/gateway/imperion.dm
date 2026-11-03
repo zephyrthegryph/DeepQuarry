@@ -27,7 +27,6 @@
 	wreckage = null
 	pilot_type = null
 
-	armor_spec = "melee=35;bullet=35;laser=35;energy=35;bomb=35;bio=100;rad=100"
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase1/do_special_attack(atom/A, stance)
 	. = TRUE // So we don't fire a bolt as well.
@@ -281,7 +280,6 @@
 	pilot_type = null
 	var/obj/item/shield_projector/shields = null
 
-	armor_spec = "melee=-500;bullet=75;laser=75;energy=75;bomb=75;bio=100;rad=100"
 
 	loot_list = list(/obj/item/clothing/suit/armor/alien = 60,
 			/obj/item/clothing/suit/armor/alien/tank = 60,
@@ -354,6 +352,7 @@
 	B.launch_projectile(target, BP_TORSO, src)
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/imperion/phase5)
+	configure(atom_rules(armor_spec = "melee=-500;bullet=75;laser=75;energy=75;bomb=75;bio=100;rad=100"))
 	owns_one(nameof(shields), starts = /obj/item/shield_projector/rectangle/automatic/imperion)
 
 /obj/item/shield_projector/rectangle/automatic/imperion
@@ -475,6 +474,7 @@ TYPE_TABLE(/obj/item/grenade/shooter/laserpellet, shooter_grenade_projectiles, l
 	factors = alist(STAT_DISABLE_DURATION = 0)
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/imperion)
+	configure(atom_rules(armor_spec = "melee=35;bullet=35;laser=35;energy=35;bomb=35;bio=100;rad=100"))
 	body_effect(/datum/body_effect/bossbuff)
 
 /datum/body_effect/aura/despair

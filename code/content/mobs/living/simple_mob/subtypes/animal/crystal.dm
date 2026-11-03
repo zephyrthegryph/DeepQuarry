@@ -13,7 +13,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/crystalbeast)
 	icon_state = "crystal"
 	icon_dead = "crystal_dead"
 
-	armor_spec = "melee=80;bullet=80;laser=80;energy=80;bio=100;rad=100"
 
 	min_oxy = 0
 	max_oxy = 0
@@ -39,3 +38,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/crystalbeast)
 	*/
 
 //Note to self, make the angel here when energy is gained
+
+CAPABILITIES(/mob/living/simple_mob/animal/crystalbeast/snail)
+	configure(atom_rules(armor_spec = "melee=80;bullet=80;laser=80;energy=80;bio=100;rad=100"))

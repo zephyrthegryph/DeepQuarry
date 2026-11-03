@@ -141,7 +141,7 @@
 		var/turf/Be = get_step(src, DOWN)
 		Be?.multiz_turf_new(src, UP)
 
-	if(uses_integrity)
+	if(atom_rules_of(src).uses_integrity)
 		atom_integrity = max_integrity
 
 REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
