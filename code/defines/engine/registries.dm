@@ -139,6 +139,7 @@
 #define REGISTRY_RANDOM_MAPS "random_maps"
 #define REGISTRY_PLAYERS "player_list"
 #define REGISTRY_POINTDEFENSE_CONTROLLERS "pointdefense_controllers"
+#define REGISTRY_POWER_MONITORS "power_monitors"
 #define REGISTRY_POINTDEFENSE_TURRETS "pointdefense_turrets"
 #define REGISTRY_TURRETS "porta_turrets"
 #define REGISTRY_COMPUTERS "computers"

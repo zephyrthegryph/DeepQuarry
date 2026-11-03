@@ -16,6 +16,18 @@ READ_LOOKUP(/proc/power_grid_lookup, registry = GLOBAL_PROC_REF(power_grid_regis
 
 CAPABILITIES(/datum/power_grid)
 	ref_many(nameof(nodes), /obj/machinery/power)
+	on_change(any_of(nameof(problem_timed), nameof(material_problem)), ENTER | EXIT, then(PROC_REF(warning_changed)))
+	on_change(nameof(avail), ANY, then(PROC_REF(reading_changed)))
+	on_change(nameof(load), ANY, then(PROC_REF(reading_changed)))
+
+/// The grid's warning (power_problem()) turned on or off: the power monitors recheck their sensors.
+/datum/power_grid/proc/warning_changed(datum/act/A)
+	power_monitors_recheck()
+
+/// Its supply or load changed: its sensors close their history up to now on the old reading and hold the new one.
+/datum/power_grid/proc/reading_changed(datum/act/A)
+	for(var/obj/machinery/power/sensor/S in nodes)
+		S.reading_changed()
 
 /datum/power_grid/lifecycle_unbind()
 	var/datum/power_grid_registry/registry = owner_of(src)

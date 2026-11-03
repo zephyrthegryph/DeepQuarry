@@ -213,6 +213,7 @@
 #include "dq_mob_init_forms_tests.dm"
 #include "dq_idle_cost_tests.dm"
 #include "dq_idle_cost2_tests.dm"
+#include "dq_idle_cost3_tests.dm"
 #include "dq_global_guard_tests.dm"
 #include "dq_init_plan_tests.dm"
 #include "dq_stat_hop_tests.dm"

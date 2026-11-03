@@ -16,17 +16,25 @@
 	use_power = USE_POWER_IDLE
 	var/datum/tgui_module/power_monitor/power_monitor
 
-/// Checks the sensors for alerts every machine service interval; a change (alerts cleared or detected) redraws it.
-/obj/machinery/computer/power_monitor/proc/monitor_step(datum/act/timer/A)
-	set_alerting(check_warnings()) // the screen follows (screen_state())
+/// Rechecks its sensors for alerts: a grid's warning turned on or off (power_monitors_recheck()), or its sensor list was rebuilt. The screen follows
+/// (screen_state()). It used to ask every sensor every machine service interval (7 consoles, 0.9 ms a second on an idle station).
+/obj/machinery/computer/power_monitor/proc/recheck_alerting()
+	set_alerting(check_warnings())
+
+/// A grid's warning changed: every power monitor rechecks its sensors.
+/proc/power_monitors_recheck()
+	for(var/obj/machinery/computer/power_monitor/PM as anything in REGISTRY_MEMBERS(REGISTRY_POWER_MONITORS))
+		if(!QDELETED(PM))
+			PM.recheck_alerting()
 // On creation automatically connects to active sensors. This is delayed to ensure sensors already exist.
 // The power monitoring console: its window is its monitor module's (an empty hand on a working console), and it watches its sensors for alerts
-// (monitor_step()).
+// (recheck_alerting(), on a grid's warning edge).
+REGISTRY_MEMBERSHIP(/obj/machinery/computer/power_monitor, REGISTRY_POWER_MONITORS)
+
 CAPABILITIES(/obj/machinery/computer/power_monitor)
 	configure(light_glow(color = "#ffcc33"))
 	configure(uses_power(idle = 300, active = 300))
 	owns_one(nameof(power_monitor), starts = /datum/tgui_module/power_monitor)
-	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(monitor_step)))
 	op("use", hand(), label("Use"), ungated(), wait(0), when(req_empty_hand()), needs(req_operable()), then(PROC_REF(used)))
 
 
@@ -45,7 +53,7 @@ CAPABILITIES(/obj/machinery/computer/power_monitor)
 
 // Verifies if any warnings were registered by connected sensors.
 /obj/machinery/computer/power_monitor/proc/check_warnings()
-	for(var/obj/machinery/power/sensor/S in LAZYCOPY(power_monitor.grid_sensors))
+	for(var/obj/machinery/power/sensor/S in LAZYCOPY(power_monitor?.grid_sensors))
 		if(S.check_grid_warning())
 			return 1
 	return 0
