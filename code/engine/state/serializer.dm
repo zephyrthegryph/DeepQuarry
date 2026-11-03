@@ -282,13 +282,12 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	probe_ctx.ids = list()
 	var/datum/state_schema/schema = state_schema_for(probe)
 	for(var/name in schema.saved_vars)
-		// These lists can vary per instance at Initialize(): atom_colours by a
-		// flavour colour promoted by /atom/Initialize() (C5), and whatever a type
+		// These lists can vary per instance at Initialize(): whatever a type
 		// declares in state_nondeterministic_list_vars() (random scrap
 		// composition, generated sprite-state tables). A baseline sampled from
 		// one instance would swallow every other instance that matched it, and a
 		// restored copy would then re-roll. Skipping falls back to "matches if empty".
-		if(name == OP_KEY_CAP_STATE || name == "atom_colours" || (name in schema.nondeterministic_list_vars))
+		if(name == OP_KEY_CAP_STATE || (name in schema.nondeterministic_list_vars))
 			continue
 		var/value = probe.vars[name]
 		if(!islist(value))
