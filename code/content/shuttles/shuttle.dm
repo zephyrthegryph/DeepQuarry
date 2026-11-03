@@ -383,7 +383,7 @@ SETTER(/datum/shuttle, process_state)
 				//if(AM.movable_flags & MOVABLE_FLAG_DEL_SHUTTLE)
 				//	qdel(AM)
 				//	continue
-				if(!AM.simulated)
+				if(!atom_rules_of(AM).simulated)
 					continue
 				if(isobserver(AM) || isEye(AM))
 					continue

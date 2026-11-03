@@ -615,7 +615,7 @@ CAPABILITIES(/datum/system/supply)
 				continue
 			var/occupied = 0
 			for(var/atom/A in contents_of(T))
-				if(!A.simulated)
+				if(!atom_rules_of(A).simulated)
 					continue
 				occupied = 1
 				break

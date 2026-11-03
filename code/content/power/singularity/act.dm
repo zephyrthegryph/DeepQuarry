@@ -38,7 +38,7 @@
 	..()
 
 /obj/singularity_act()
-	if(simulated)
+	if(atom_rules_of(src).simulated)
 		ex_act(1)
 		if(src)
 			spent(src)

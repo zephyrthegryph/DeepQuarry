@@ -402,7 +402,7 @@ CAPABILITIES(/datum/reagents)
 
 	if (istype(target, /atom))
 		var/atom/A = target
-		if (!A.reagents || !A.simulated)
+		if (!A.reagents || !atom_rules_of(A).simulated)
 			return
 
 	amount = min(amount, transfering_reagent.volume)

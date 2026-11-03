@@ -115,7 +115,7 @@
 	// Splatter anything under us that survived the explosion.
 	if(value != SD_EMPTY_TILE && contents_count(T))
 		for(var/atom/movable/AM in turf_contents_of_type(T, /atom/movable))
-			if(AM.simulated && !istype(AM, /mob/observer))
+			if(atom_rules_of(AM).simulated && !istype(AM, /mob/observer))
 				spent(AM)
 
 	// Also spawn doors and loot.

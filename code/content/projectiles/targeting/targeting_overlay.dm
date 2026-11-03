@@ -7,7 +7,6 @@
 	density = FALSE
 	opacity = 0
 	plane = ABOVE_PLANE
-	simulated = FALSE
 	mouse_opacity = 0
 
 	var/mob/living/aiming_at   // Who are we currently targeting, if anyone?
@@ -20,6 +19,7 @@
 /// What are we targeting with? Set while aiming; the aim is tracked every slow tick while it is.
 /obj/aiming_overlay/var/obj/item/aiming_with
 CAPABILITIES(/obj/aiming_overlay)
+	configure(atom_rules(simulated = FALSE))
 	keeps_if(PROC_REF(placed_on_mob))
 	setup(PROC_REF(obj_aiming_overlay_setup))
 	links(/obj/aiming_overlay::aiming_at, /mob/living::aimed, b_many = TRUE)

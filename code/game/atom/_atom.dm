@@ -10,7 +10,6 @@
 	var/flags = NONE
 	// was_bloodied, blood_color, fluorescent are the forensic_* vars (code/datums/sparse_vars/forensics.dm)
 	var/pass_flags = 0
-	var/simulated = TRUE //filter for actions - used by lighting overlays
 	// atom_say_verb removed (no subtype ever overrode it; inlined to "says" in atom_say)
 	var/datum/forensics_crime/forensic_data
 

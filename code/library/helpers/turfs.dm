@@ -24,7 +24,7 @@
 
 /proc/turf_clear(turf/T)
 	for(var/atom/A in turf_contents_of_type(T, /atom))
-		if(A.simulated)
+		if(atom_rules_of(A).simulated)
 			return 0
 	return 1
 
@@ -167,7 +167,7 @@
 
 	//Move the objects. Not forceMove because the object isn't "moving" really, it's supposed to be on the "same" turf.
 	for(var/obj/O in turf_contents_of_type(T, /obj))
-		if(O.simulated)
+		if(atom_rules_of(O).simulated)
 			O.forceMove(X)
 			if(atom_rules_of(O).light_system == STATIC_LIGHT)
 				O.update_light()

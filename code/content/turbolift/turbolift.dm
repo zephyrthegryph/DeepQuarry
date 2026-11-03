@@ -200,7 +200,7 @@ CAPABILITIES(/datum/turbolift)
 			if(isliving(AM) && !(AM.is_incorporeal()))
 				var/mob/living/M = AM
 				M.gib()
-			else if(AM.simulated && !(istype(AM, /mob/observer)) && !(AM.is_incorporeal()))
+			else if(atom_rules_of(AM).simulated && !(istype(AM, /mob/observer)) && !(AM.is_incorporeal()))
 				spent(AM)
 
 	origin.move_contents_to(destination)

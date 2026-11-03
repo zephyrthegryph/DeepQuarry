@@ -176,7 +176,7 @@ CAPABILITIES(/obj/turbolift_map_holder)
 
 				// Clear out contents.
 				for(var/atom/movable/thing in turf_contents_of_type(checking, /atom/movable))
-					if(thing.simulated)
+					if(atom_rules_of(thing).simulated)
 						spent(thing)
 
 				if(tx >= ux && tx <= ex && ty >= uy && ty <= ey)
@@ -193,7 +193,7 @@ CAPABILITIES(/obj/turbolift_map_holder)
 						checking.ChangeTurf(floor_type)
 						checking = locate(tx,ty,cz)
 					for(var/atom/movable/thing in turf_contents_of_type(checking, /atom/movable))
-						if(thing.simulated)
+						if(atom_rules_of(thing).simulated)
 							spent(thing)
 				if(checking.type == floor_type) // Don't build over empty space on lower levels.
 					var/obj/machinery/door/airlock/lift/newdoor = new door_type(checking)

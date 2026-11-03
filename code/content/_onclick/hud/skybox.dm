@@ -10,7 +10,6 @@
 	appearance_flags = TILE_BOUND|PIXEL_SCALE
 	mouse_opacity = 0
 	anchored = TRUE
-	simulated = FALSE
 	screen_loc = "CENTER,CENTER"
 	layer = BACKGROUND_LAYER
 	plane = SKYBOX_PLANE

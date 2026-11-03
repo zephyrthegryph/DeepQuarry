@@ -458,7 +458,6 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 	density = FALSE
 
 	anchored = TRUE
-	simulated = FALSE
 
 	see_in_dark = 1e6
 
