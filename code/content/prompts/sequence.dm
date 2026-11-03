@@ -1,5 +1,5 @@
 // Question sequences on native requests: a list of prompts asked one after another (doc/rewrite/final_api.html section 13). Moved off
-// the object model's flows when it was retired; an op asks the same thing with several asks() steps.
+// the engine's flows when it was retired; an op asks the same thing with several asks() steps.
 //
 //	start_ask_sequence(/datum/ask_sequence/pin_value, user, null, list(question_step("type_name", /datum/prompt/choice, question = "Type?", choices = types), PROC_REF(value_ask)), PROC_REF(value_entered), pin = src)
 //

@@ -191,7 +191,7 @@ ACTION(world_explosion, turf/epicenter, devastation_range, heavy_impact_range, l
 		var/heavy_impact_range 	= time_dat[5]
 		var/light_impact_range 	= time_dat[6]
 		var/took 				= (world.time - time_dat[7]) / (1 SECOND) // Horrifyingly, this has always been server performance dependant. Should really only be used for cosmetic stuff.
-		PUBLISH(OM_WORLD, world_explosion, epicenter = epicenter, devastation_range = devastation_range, heavy_impact_range = heavy_impact_range, light_impact_range = light_impact_range, took = took)
+		PUBLISH(WORLD_NOTICE_BUS, world_explosion, epicenter = epicenter, devastation_range = devastation_range, heavy_impact_range = heavy_impact_range, light_impact_range = light_impact_range, took = took)
 		if(TICK_CHECK)
 			return FALSE
 	currentsignals.Cut()

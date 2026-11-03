@@ -65,7 +65,7 @@ MSG_DEF_SELF(input/flood, "You are sending input faster than the server can take
 /datum/input_event/New(mob/user)
 	..()
 	if(user)
-		actor = user // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
+		actor = user // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an scheduler record per input
 		sender = user.client
 
 /// What the inbox files this event's queue under: the client, or the actor for an input with no client (a driver-built event).
@@ -121,7 +121,7 @@ MSG_DEF_SELF(input/flood, "You are sending input faster than the server can take
 /datum/input_event/click/New(mob/user, atom/clicked, location, control, params)
 	..(user)
 	if(clicked)
-		target = clicked // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
+		target = clicked // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an scheduler record per input
 	src.location = location
 	src.control = control
 	src.params = params
@@ -164,9 +164,9 @@ MSG_DEF_SELF(input/flood, "You are sending input faster than the server can take
 	..(user)
 	native = native_drop
 	if(dragged_atom)
-		dragged = dragged_atom // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
+		dragged = dragged_atom // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an scheduler record per input
 	if(dropped_on)
-		over = dropped_on // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
+		over = dropped_on // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an scheduler record per input
 	native_drag = drag_args
 
 /datum/input_event/drag/subject()
@@ -287,7 +287,7 @@ MSG_DEF_SELF(input/flood, "You are sending input faster than the server can take
 		max_wait = INPUT_MAX_WAIT_FEEDBACK
 		silent_expiry = TRUE
 	if(dragged_over)
-		over = dragged_over // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
+		over = dragged_over // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an scheduler record per input
 
 /// A drag keeps only its latest position; a press and a release never coalesce.
 /datum/input_event/click/client_mouse/coalesce_key()
@@ -325,10 +325,10 @@ MSG_DEF_SELF(input/flood, "You are sending input faster than the server can take
 /datum/input_event/menu/New(mob/user, atom/picked, key, atom/movable/in_hand)
 	..(user)
 	if(picked)
-		target = picked // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
+		target = picked // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an scheduler record per input
 	op_key = key
 	if(in_hand)
-		held = in_hand // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
+		held = in_hand // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an scheduler record per input
 
 /datum/input_event/menu/subject()
 	return target
@@ -356,7 +356,7 @@ CAPABILITIES(/datum/input_event/ui_act)
 /datum/input_event/ui_act/New(mob/user, datum/window_ui, act_type, list/act_payload, datum/act_state)
 	..(user)
 	if(window_ui)
-		ui = window_ui // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
+		ui = window_ui // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an scheduler record per input
 	action = act_type
 	payload = act_payload
 	rel_set(src, nameof(state), act_state)
@@ -392,7 +392,7 @@ CAPABILITIES(/datum/input_event/ui_act)
 	..(user)
 	at_datum = reached_datum
 	if(source)
-		hsrc = source // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
+		hsrc = source // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an scheduler record per input
 	href = link
 	href_list = link_list
 
@@ -440,7 +440,7 @@ CAPABILITIES(/datum/input_event/ui_act)
 /datum/input_event/point/New(mob/user, atom/target)
 	..(user)
 	if(target)
-		pointing_at = target // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
+		pointing_at = target // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an scheduler record per input
 
 /datum/input_event/point/coalesce_key()
 	return "point"
@@ -663,7 +663,7 @@ SYSTEM_DEF(input)
 	var/entry_time = world.time
 	var/dispatch_usage = E.metered_as_click ? meter.click_dispatched(E.arrived_time, E.arrived_usage) : 0
 	try
-		E.result = world.input_run(E.actor, E) // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
+		E.result = world.input_run(E.actor, E) // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an scheduler record per input
 	catch(var/exception/fault) // ALLOW(silent_catch): the inbox is the kernel's own isolation point: one input's runtime must not stop the drain
 		faults++
 		kernel().report_fault(fault, "input event [E.type] runtime: [fault] ([fault.file]:[fault.line])")
@@ -904,7 +904,7 @@ SYSTEM_DEF(input)
 	E.driven = TRUE
 	E.origin = origin || ORIGIN_CLICK
 	E.gesture = gesture
-	E.held = held // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
+	E.held = held // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an scheduler record per input
 	input_submit(E)
 	return E.result
 
@@ -921,7 +921,7 @@ SYSTEM_DEF(input)
 	RETURN_TYPE(/datum/op_result)
 	var/datum/input_event/ui_act/E = new(actor, null, action, args)
 	E.driven = TRUE
-	E.window = window // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
+	E.window = window // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an scheduler record per input
 	input_submit(E)
 	return E.result
 

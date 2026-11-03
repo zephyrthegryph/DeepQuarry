@@ -1,4 +1,4 @@
-// Object-model core: DEF types (doc/rewrite/object_model_core.md).
+// engine core: DEF types (doc/rewrite/archive/object_model_core.md).
 //
 // Every DEF is a singleton built once by the registry (registry.dm). Its
 // declaration vars are read-only after boot; the registry writes the
@@ -42,7 +42,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/scheduled_behaviour)
 	/// Behaviour types this one runs after (topological, compiled at boot).
 	var/list/order_after
 	/// Interval per relevance level: list(NONE, NEAR, VISIBLE, WATCHED), each
-	/// deciseconds, OM_PARK, or null for `every`. Null list: `every` always.
+	/// deciseconds, RELEVANCE_PARK, or null for `every`. Null list: `every` always.
 	var/list/relevance
 	/// Channels on the entity that wake this behaviour (on_wake).
 	var/wake_on = 0
@@ -110,7 +110,7 @@ SCHEMA(/datum/scheduled_behaviour, system_key, schema_text())
 	SHOULD_NOT_SLEEP(TRUE)
 	return
 
-/// A deadline set with a sub-key (deadline_deadline(E, delay, B, sub)), sub >= OM_DL_STAGE.
+/// A deadline set with a sub-key (deadline_deadline(E, delay, B, sub)), sub >= DEADLINE_SUB_STAGE.
 /datum/scheduled_behaviour/proc/on_keyed_deadline(datum/E, sub)
 	SHOULD_NOT_SLEEP(TRUE)
 	return
@@ -164,11 +164,11 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/relation_definition)
 	var/source_single = FALSE
 	/// A target has at most one edge of this relation.
 	var/target_single = FALSE
-	/// OM_REL_REPLACE or OM_REL_REFUSE when a single end is already taken.
-	var/conflict = OM_REL_REPLACE
-	/// OM_END_UNLINK or OM_END_DELETE_OTHER when that end is deleted.
-	var/on_source_delete = OM_END_UNLINK
-	var/on_target_delete = OM_END_UNLINK
+	/// REL_REPLACE or REL_REFUSE when a single end is already taken.
+	var/conflict = REL_REPLACE
+	/// REL_END_UNLINK or REL_END_DELETE_OTHER when that end is deleted.
+	var/on_source_delete = REL_END_UNLINK
+	var/on_target_delete = REL_END_UNLINK
 	/// Check spec (actor = source, target = target); the edge counts as active only while it passes.
 	var/active_if
 	/// Check spec (actor = source, target = target): the edge holds only while it passes and is

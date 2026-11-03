@@ -1,5 +1,5 @@
 /// The actual admin fax logo prompt belongs to its supplied actor and refuses a clientless actor without admin rights.
-/datum/unit_test/om/interim_adminpaper_logo_actor/run_om(list/made)
+/datum/unit_test/engine/interim_adminpaper_logo_actor/run_engine(list/made)
 	test_prompts_reset()
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/obj/item/paper/admin/paper = allocate(/obj/item/paper/admin, run_loc_floor_bottom_left)

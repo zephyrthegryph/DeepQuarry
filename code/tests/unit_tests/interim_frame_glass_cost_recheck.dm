@@ -1,8 +1,8 @@
 /// The real delayed glass-panel construction rechecks a shrinking held stack before paying its two-sheet cost.
-/datum/unit_test/om/interim_frame_glass_cost_recheck
+/datum/unit_test/engine/interim_frame_glass_cost_recheck
 	parent_type = /datum/unit_test/dq_round3_frame_construction
 
-/datum/unit_test/om/interim_frame_glass_cost_recheck/run_gate()
+/datum/unit_test/engine/interim_frame_glass_cost_recheck/run_gate()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	user.enable_godmode()

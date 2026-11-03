@@ -56,7 +56,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 
 /datum/permissions_panel
 	var/tmp/datum/admins/holder
-	/// The database rows the pages show, by query key (om_sql_view); a missing key is loading.
+	/// The database rows the pages show, by query key (an sql_ask() answer); a missing key is loading.
 	var/list/db_rows
 
 /// Fetches the current page's database rows (io_job: nothing waits); tgui_data shows what has

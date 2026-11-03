@@ -1,4 +1,4 @@
-// Rust world subscriptions (doc/rewrite/object_model_core.md §4.8).
+// Rust world subscriptions (doc/rewrite/archive/object_model_core.md §4.8).
 //
 // The Rust world (verdigris/ffi/src/sched.rs) holds the watches on Rust-owned state (gas, heat, probe cells). It holds no DM timers and no DM-owned
 // keys: a DM timer is the kernel's after() (a rule's hold_for is one), and a DM-owned fact is a tracked var or a rule key (code/datums/rules/world_adapter.dm).
@@ -83,12 +83,12 @@
 
 /// World-wake counters for the profiler and the benchmarks: the scheduler's delivery counters and Rust's own.
 /proc/world_diagnostics(datum/time_scheduler/sched)
-	sched = sched || GLOB.om_live_sched || time_scheduler()
+	sched = sched || GLOB.live_scheduler || time_scheduler()
 	var/list/by_type = list()
 	for(var/type in sched.world_wakes_by_type)
 		by_type["[type]"] = sched.world_wakes_by_type[type]
 	var/list/queued = list()
-	for(var/lane in 1 to OM_LANE_COUNT)
+	for(var/lane in 1 to LANE_COUNT)
 		queued += length(sched.world_q?[lane]) / 4
 	return list(
 		"total_wakes" = sched.world_wakes,

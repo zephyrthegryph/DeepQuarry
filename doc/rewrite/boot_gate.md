@@ -45,5 +45,5 @@ the change under test runs at boot.
 - `load_jobwhitelist()` warned on every `#` comment line of `config/jobwhitelist.txt` (11 warnings).
 - `default_use_hicell()` created the high-capacity cell inside the machine and then moved it in again
   ("MOVE_INTO ... refused: it is already there", every recharge station and fluid pump).
-- The suite itself started as a scheduler callback that slept ("OM: SLEPT /proc/RunUnitTests"); it now
+- The suite itself started as a scheduler callback that slept ("scheduler: SLEPT /proc/RunUnitTests"); it now
   starts through `start_unit_tests()`, which returns at once.

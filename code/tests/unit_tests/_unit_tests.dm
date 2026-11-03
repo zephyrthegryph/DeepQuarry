@@ -40,8 +40,8 @@
 
 /// Waits, a tick at a time and for at most `max_ticks`, until `cond` holds. A positive assertion waits for the
 /// condition itself (a loaded world skips kernel phases for several ticks); negative assertions keep a fixed wait.
-#define OM_TEST_WAIT_UNTIL(cond, max_ticks) \
-	for(var/om_wait_i in 1 to max_ticks) { \
+#define TEST_WAIT_UNTIL(cond, max_ticks) \
+	for(var/wait_i in 1 to max_ticks) { \
 		if(cond) { \
 			break; \
 		} \
@@ -274,7 +274,7 @@
 #include "dq_bodyscanner_tests.dm"
 #include "dq_diagnosis_tests.dm"
 #include "dq_combat_ai_tests.dm"
-#include "dq_ai_om_tests.dm"
+#include "dq_ai_tests.dm"
 #include "dq_ai_tactics_tests.dm"
 #include "dq_ai_cadence_tests.dm"
 #include "dq_ai_pack_tests.dm"
@@ -401,7 +401,7 @@
 #include "dq_b4_tracking_tests.dm"
 #include "dq_phase0_tests.dm"
 #include "dq_breath_hazard_tests.dm"
-#include "dq_life_om_tests.dm"
+#include "dq_life_seq_tests.dm"
 #include "dq_mob_every_tests.dm"
 #include "dq_respawn_never_tests.dm"
 #include "dq_medical_damage_model_tests.dm"
@@ -457,15 +457,15 @@
 #include "dq_wires_behaviour.dm"
 #include "dq_wires_tests.dm"
 #include "dq_quick_fix_tests.dm"
-#include "dq_om_world_watch_tests.dm"
+#include "dq_world_watch_tests.dm"
 #include "dq_live_sim_tests.dm"
 #include "dq_fields_tasks_tests.dm"
 #include "dx_ui_validators_tests.dm"
-#include "dq_om_key_tests.dm"
+#include "dq_key_tests.dm"
 #include "dq_admin_dead_topic_tests.dm"
 #include "dq_ref_text_admin_tests.dm"
 #include "dq_ref_text_stored_tests.dm"
-#include "dq_om_periodic_tests.dm"
+#include "dq_periodic_tests.dm"
 #include "dq_machine_state_tests.dm"
 #include "dq_world_lanes_tests.dm"
 #include "dq_world_lanes_f3_tests.dm"
@@ -478,7 +478,7 @@
 #include "dq_rust_push_phase_s_tests.dm"
 #include "dq_power_plants_behaviour.dm"
 #include "dq_system_moves_ctor_tests.dm"
-#include "dq_om_wake_tests.dm"
+#include "dq_wake_tests.dm"
 #include "dq_actor_adapter_tests.dm"
 #include "dq_combat_mode_tests.dm"
 #include "dq_interact_cleanup_tests.dm"
@@ -556,7 +556,7 @@
 #include "dq_automation_tests.dm"
 #include "xgm_total_moles_test.dm"
 #include "dq_w6_critical_tests.dm"
-#include "dq_om_core_tests.dm"
+#include "dq_core_tests.dm"
 #include "dq_tgui_client_tests.dm"
 #include "dq_tgui_status_tests.dm"
 #include "dq_shared_cache_tests.dm"
@@ -579,9 +579,9 @@
 #include "dq_topic_token_strict_tests.dm"
 #include "dq_sys_messages_tests.dm"
 #include "dq_untyped_wave3_tests.dm"
-#include "dq_om_core_fix_tests.dm"
-#include "dq_om_relations_tests.dm"
-#include "dq_om_notice_delivery_tests.dm"
+#include "dq_core_fix_tests.dm"
+#include "dq_relation_edge_tests.dm"
+#include "dq_notice_delivery_tests.dm"
 #include "dq_publish_notice_tests.dm"
 #include "dq_report_in_catch_tests.dm"
 #include "dq_ref_text_handles_tests.dm"
@@ -591,8 +591,8 @@
 #include "dq_entity_handle_keys_tests.dm"
 #include "dq_rel_lifecycle_pins.dm"
 #include "dq_links_hit_pins.dm"
-#include "dq_om_scheduler_tests.dm"
-#include "dq_om_io_tests.dm"
+#include "dq_scheduler_tests.dm"
+#include "dq_io_tests.dm"
 #include "dq_sys_damage_reactions_tests.dm"
 #include "dq_sys_expiry_tests.dm"
 #include "dq_periodic_autoclear_tests.dm"
@@ -607,9 +607,9 @@
 #include "dq_harm_time_invariance_tests.dm"
 #include "dq_w5_loose_tests.dm"
 #include "dq_vital_lifecycle_tests.dm"
-#include "../../content/balance/_balance_harness.dm"
+#include "../balance/_balance_harness.dm"
 #include "dq_balance_scenario_declaration.dm"
-#include "../../content/balance/balance_scenarios.dm"
+#include "../balance/balance_scenarios.dm"
 #include "dq_balance_harness_tests.dm"
 #include "dq_part_lifecycle_tests.dm"
 #include "dq_organ_slot_tests.dm"
@@ -1268,7 +1268,7 @@
 #include "../benchmarks/mapload_init.dm"
 #include "../benchmarks/soak.dm"
 #include "../benchmarks/kernel_metrics.dm"
-#include "../../content/balance/balance_benchmark.dm"
+#include "../balance/balance_benchmark.dm"
 #endif
 #include "find_reference_fixtures.dm"
 #ifdef REFERENCE_TRACKING_DEBUG //Don't try and parse this file if ref tracking isn't turned on. IE: don't parse ref tracking please mr linter

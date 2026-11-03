@@ -52,9 +52,9 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 	return hint
 
 /// What an aborted destroy transaction still owes: declared refs scrubbed, the
-/// datum out of the live world and its registries, its object-model state torn
+/// datum out of the live world and its registries, its engine state torn
 /// down (timers, hooks, tasks, behaviours: an atom's dematerialize() does this,
-/// any other datum needs dq_lifecycle_om_teardown()), OM handles released, and
+/// any other datum needs dq_lifecycle_release_records()), handles released, and
 /// a movable's contents deleted (as /atom/movable/Destroy() would have).
 /proc/dq_lifecycle_finish_aborted(datum/D)
 	try
@@ -73,7 +73,7 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 		dq_report_caught(e, "finishing the aborted destroy of [D.type]")
 	// Mandatory runtime cleanup must still run if a child or registry hook faulted.
 	try
-		dq_lifecycle_om_teardown(D)
+		dq_lifecycle_release_records(D)
 	catch(var/exception/runtime_error)
 		dq_report_caught(runtime_error, "tearing down runtime state after the aborted destroy of [D.type]")
 	try
@@ -120,7 +120,7 @@ GLOBAL_LIST_INIT(destroy_step_sequence, list(
 	DESTROY_STEP_CONTENTS_SPILL, // phase 3: OWN_SPILL movables drop out
 	DESTROY_STEP_CONTENTS_CHECK_RELEASED, // phase 3: the check that it did, while the ledger exists
 	DESTROY_STEP_LINKS, // phase 4: prerelease, on_destroy, owned values by policy, relations
-	DESTROY_STEP_TEARDOWN, // phase 5: periodic work, screens, OM timers/hooks/tasks, handles
+	DESTROY_STEP_TEARDOWN, // phase 5: periodic work, screens, timers/hooks/tasks, handles
 	DESTROY_STEP_EFFECTS, // phase 6: declared destroy effects
 	DESTROY_STEP_DESTROY, // phase 7: the core Destroy() chain
 	DESTROY_STEP_EFFECTS_AFTER, // phase 6's second half: neighbours that smooth against D
@@ -206,15 +206,15 @@ GLOBAL_VAR_INIT(destroy_transaction_forced_depth, 0)
 				// both ends (doc/rewrite/ownership.md, code/datums/ownership/).
 				D.lifecycle_prerelease() // teardown that still reads the declared vars (links.dm)
 				D.on_destroy(force) // the type's destroy hook: back-vars, partners and handles still live
-				if(D.om_rec)
+				if(D.sched_rec)
 					entity_behaviours_on_destroy(D) // each attached behaviour's on_entity_destroy(E)
 				if(ismovable(D))
 					dq_lifecycle_leave_own_slot(D) // slot-exit hooks see live back-refs
 				dq_lifecycle_clear_links(D)
 			if(DESTROY_STEP_TEARDOWN)
 				// Periodic work (cadence_start()), client screens, walk() loops, then the
-				// object-model teardown: OM timers, hooks, tasks, deadlines, grants and
-				// behaviours (entity_teardown_rest()) and OM handles. /datum/Destroy() (phase 7) only
+				// engine teardown: timers, hooks, tasks, deadlines, grants and
+				// behaviours (entity_teardown_rest()) and handles. /datum/Destroy() (phase 7) only
 				// clears the tag, closes tgui windows and does reference-tracking bookkeeping.
 				dq_lifecycle_teardown(D)
 			if(DESTROY_STEP_EFFECTS)
@@ -293,8 +293,8 @@ GLOBAL_VAR_INIT(destroy_transaction_forced_depth, 0)
 /// refusal overrides this. Must not sleep or change state.
 /// The type's destroy hook, run at the start of phase 4, right after
 /// lifecycle_prerelease() and before the links clear: contents are resolved
-/// (phase 3), but BACK/BACKLIST/PAIR vars, owned children and OM handles
-/// (om_handle_is) are all still live, so teardown can reach its owner and
+/// (phase 3), but BACK/BACKLIST/PAIR vars, owned children and handles
+/// (handle_is) are all still live, so teardown can reach its owner and
 /// partners. The core Destroy() chain runs later, in phase 7. The place for domain consequences only:
 /// anything a DECLARE_REF line, lifecycle_unbind(), lifecycle_dematerialize(),
 /// lifecycle_prerelease() or destroy_effects() expresses goes there instead.
@@ -311,14 +311,14 @@ GLOBAL_VAR_INIT(destroy_transaction_forced_depth, 0)
 // ---- Phase 2: dematerialize (hook point) ----
 
 /// Phase 2, for every datum, before a movable is released from its holder: the
-/// hook for a type's own indexes that are not OM registries (registries are
+/// hook for a type's own indexes that are not definition registries (registries are
 /// left by dq_lifecycle_leave_registries() / an atom's dematerialize()). No
 /// type overrides it today; the default does nothing. Must not sleep.
 // ---- Phase 5: teardown ----
 
 /// Ends any periodic work (cadence_start(), code/engine/kernel/cadences.dm),
 /// releases HUD/screen objects from any client they're shown to, stops walk()
-/// loops, and tears down the datum's object-model state.
+/// loops, and tears down the datum's engine state.
 /proc/dq_lifecycle_teardown(datum/D)
 	if(D.periodic_pipe)
 		cadence_stop(D)
@@ -328,7 +328,7 @@ GLOBAL_VAR_INIT(destroy_transaction_forced_depth, 0)
 		// A walk_towards()/walk() loop keeps an internal BYOND reference.
 		if(ismovable(AT))
 			walk(AT, 0)
-	dq_lifecycle_om_teardown(D)
+	dq_lifecycle_release_records(D)
 
 /// Removes `src` from any client's `screen` list it is shown on. Default: a
 /// plain atom shows on nobody's screen. /obj/screen overrides this to leave
@@ -336,17 +336,17 @@ GLOBAL_VAR_INIT(destroy_transaction_forced_depth, 0)
 /atom/proc/dq_lifecycle_release_screen()
 	return
 
-/// The object-model teardown (phase 5, and an aborted transaction): every OM
+/// The engine teardown (phase 5, and an aborted transaction): every OM
 /// timer, deadline, hook, task, grant and behaviour `D` has
-/// (entity_teardown_rest(), code/datums/om/entity.dm), then its OM handles stop
+/// (entity_teardown_rest(), code/engine/entity.dm), then its handles stop
 /// resolving. Safe to call twice: both halves check their own state.
-/proc/dq_lifecycle_om_teardown(datum/D)
-	// Object model (code/datums/om/entity.dm): contributions and grants this
+/proc/dq_lifecycle_release_records(datum/D)
+	// engine (code/engine/entity.dm): contributions and grants this
 	// datum holds anywhere, its own store, behaviours (on_stop), deadlines, tasks.
-	if(D.om_rec)
+	if(D.sched_rec)
 		entity_teardown_rest(D)
-	// OM handles to D stop resolving (object_model_core.md §4.11).
-	if(D.om_hid)
+	// handles to D stop resolving (object_model_core.md §4.11).
+	if(D.handle_slot)
 		entity_handle_release(D)
 	// Phase 4 may have aborted before native runtime ownership was disposed.
 	if(D.rx)

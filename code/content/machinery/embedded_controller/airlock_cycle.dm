@@ -1,4 +1,4 @@
-// The airlock cycle (doc/rewrite/proposals/docking_om.md section 3): a state on the airlock console itself, which holds its doors, pumps,
+// The airlock cycle (doc/rewrite/proposals/docking_port.md section 3): a state on the airlock console itself, which holds its doors, pumps,
 // sensors and mech sensors by relation (keyed views of the map's tags, linked when the map loads and re-linked on a retag). It reads
 // them directly (a door's density and bolts, a vent's power) and commands them directly (a door's airlock_command(), a vent's setters):
 // nothing is remembered from a radio report, so nothing can go stale.

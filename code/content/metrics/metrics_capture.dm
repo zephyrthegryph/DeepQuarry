@@ -77,7 +77,7 @@
 	profile_capture = list("reason" = reason, "from_t" = now_t(), "spike" = spike)
 	world.Profile(PROFILE_CLEAR)
 	world.Profile(PROFILE_START)
-	var/datum/time_scheduler/sched = GLOB.om_live_sched
+	var/datum/time_scheduler/sched = GLOB.live_scheduler
 	if(sched)
 		sched.type_costs = list()
 	after(null, duration, GLOBAL_PROC_REF(metrics_finish_profile_capture))
@@ -95,7 +95,7 @@
 	if(!CONFIG_GET(flag/auto_profile))
 		world.Profile(PROFILE_STOP)
 	var/list/top = metrics_profile_top(rows, METRICS_PROFILE_TOP)
-	var/datum/time_scheduler/sched = GLOB.om_live_sched
+	var/datum/time_scheduler/sched = GLOB.live_scheduler
 	var/list/type_costs = sched?.type_costs
 	if(sched)
 		sched.type_costs = null
@@ -111,8 +111,8 @@
 		"self_total" = round(self_total * 1000, 0.1),
 		"procs" = length(rows),
 		"top" = top,
-		// The object-model steps, wakes and deadlines behind those procs: behaviour and entity type, by time.
-		"om_types" = metrics_type_costs_top(type_costs, METRICS_PROFILE_TOP),
+		// The engine steps, wakes and deadlines behind those procs: behaviour and entity type, by time.
+		"scheduler_types" = metrics_type_costs_top(type_costs, METRICS_PROFILE_TOP),
 	)
 	var/message = "[capture["reason"]] profile, [now_t() - capture["from_t"]] s"
 	if(spike)
@@ -268,9 +268,9 @@ GLOBAL_DATUM_INIT(tick_frame, /datum/tick_frame, new)
 	if(world.time == started_time)
 		GLOB.tick_frame.topic += max(TICK_USAGE - started, 0)
 
-/// Each tick-meter system's cost in ms per second (code/controllers/measure/): every OM behaviour group, the
-/// scheduler core (om_core), the appearance drain (om_appearance), the Rust world step (om_native) and clicks (input). Unlike the lane and
-/// behaviour sources this includes om_core and om_native, which no behaviour owns.
+/// Each tick-meter system's cost in ms per second (code/controllers/measure/): every behaviour group, the
+/// scheduler core (sched_core), the appearance drain (appearance_drain), the Rust world step (native_step) and clicks (input). Unlike the lane and
+/// behaviour sources this includes sched_core and native_step, which no behaviour owns.
 /datum/metrics_source/systems
 
 /datum/metrics_source/systems/collect(datum/system/server_metrics/M, dt)

@@ -510,7 +510,7 @@ CAPABILITIES(/datum/system/tgui)
  *
  * Update all UIs attached to src_object.
  *
- * Pushes are coalesced (one per UI per OM_UI_THROTTLE window). `now_ui` is the UI
+ * Pushes are coalesced (one per UI per UI_PUSH_THROTTLE window). `now_ui` is the UI
  * whose user just acted: it is pushed inline so the click feels instant.
  *
  * required src_object datum The object/datum which owns the UIs.

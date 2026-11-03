@@ -1,14 +1,14 @@
 // Expiry (code/defines/engine/time_now.dm) and FOR_REAL_CONTENTS (code/defines/engine/containment.dm),
 // doc/rewrite/systems.md sections 17 and 18.
 
-/datum/om_test_entity/var/test_until = 0
-/datum/om_test_entity/var/test_started = 0
+/datum/engine_test_entity/var/test_until = 0
+/datum/engine_test_entity/var/test_started = 0
 
 /// World-clock expiry: set, left, active, extend, clear, elapsed.
 /datum/unit_test/sys_expiry_world_clock
 
 /datum/unit_test/sys_expiry_world_clock/Run()
-	var/datum/om_test_entity/E = new
+	var/datum/engine_test_entity/E = new
 	TEST_ASSERT(!COOLDOWN_RUNNING(E, test_until), "a never-set expiry is not active")
 	TEST_ASSERT_EQUAL(COOLDOWN_TIMELEFT(E, test_until), 0, "a never-set expiry has nothing left")
 	COOLDOWN_START(E, test_until, 5 SECONDS)
@@ -26,11 +26,11 @@
 	TEST_ASSERT_EQUAL(ELAPSED(E, test_started, CLOCK_WORLD), 3 SECONDS, "ELAPSED reads time since the stamp")
 	qdel(E)
 
-/// Own-clock expiry follows the datum's OM timer clock: it stops while suspended.
-/datum/unit_test/om/sys_expiry_own_clock
+/// Own-clock expiry follows the datum's timer clock: it stops while suspended.
+/datum/unit_test/engine/sys_expiry_own_clock
 
-/datum/unit_test/om/sys_expiry_own_clock/run_om(list/made)
-	var/datum/om_test_entity/bio/E = entity(made, /datum/om_test_entity/bio)
+/datum/unit_test/engine/sys_expiry_own_clock/run_engine(list/made)
+	var/datum/engine_test_entity/bio/E = entity(made, /datum/engine_test_entity/bio)
 	COOLDOWN_START_OWN(E, test_until, 4 SECONDS)
 	STAMP(E, test_started, CLOCK_OWN)
 	TEST_ASSERT_EQUAL(COOLDOWN_TIMELEFT_OWN(E, test_until), 4 SECONDS, "own-clock expiry starts full")
@@ -61,13 +61,13 @@
 	for(var/atom/movable/AM as anything in seen)
 		TEST_ASSERT_EQUAL(AM.loc, B, "only direct, real contents are walked")
 
-/datum/om_test_entity/var/list/test_keyed
+/datum/engine_test_entity/var/list/test_keyed
 
 /// TIME_NOW is the one clock read; the strict pair differs from FINISHED only at the tick the end is reached; keyed cooldowns prune themselves.
 /datum/unit_test/sys_time_now_and_keyed_cooldowns
 
 /datum/unit_test/sys_time_now_and_keyed_cooldowns/Run()
-	var/datum/om_test_entity/E = new
+	var/datum/engine_test_entity/E = new
 	TEST_ASSERT_EQUAL(TIME_NOW(CLOCK_WORLD), world.time, "TIME_NOW on the world clock is world.time")
 	TEST_ASSERT_EQUAL(TIME_NOW(CLOCK_OWN, E), own_clock_now(E), "TIME_NOW on the own clock reads the owner's timer clock")
 	E.test_until = world.time

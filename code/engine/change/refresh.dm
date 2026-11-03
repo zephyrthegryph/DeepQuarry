@@ -93,8 +93,8 @@ GLOBAL_DATUM(atom_initializing, /atom)
 	// The stat layer: a var some stat reads recomputes it before this write's next line (code/engine/stats/recompute.dm).
 	if(var_name && (GLOB.stat_input_keys?[var_name] || IS_LOOKUP_READ_KEY(var_name)) && var_name != GLOB.stat_writing)
 		stat_inputs_changed(E, var_name)
-	// OM observers only: entity_raise_change()'s own refresh hook would mark every output, undoing the mask below.
-	if(E.om_listen & channel)
+	// observers only: entity_raise_change()'s own refresh hook would mark every output, undoing the mask below.
+	if(E.change_listen & channel)
 		entity_dispatch_change(E, channel)
 	// The look applying itself (set_light, vis_contents) is presentation, not a state change.
 	if(E == GLOB.refresh_applying)
@@ -201,7 +201,7 @@ GLOBAL_DATUM(atom_initializing, /atom)
 	refresh_mark(owner, mask == DEP_ALL ? DEP_ALL : DEP_DRAW, channel)
 
 /// A dispatched call on E finished (a timer, a periodic step): its derived procs re-run, as state_changed(E) does, but
-/// no OM channel is raised. Nothing a dispatch can change is unannounced: what it writes through setters raises
+/// no channel is raised. Nothing a dispatch can change is unannounced: what it writes through setters raises
 /// its own channels. A blanket CHANGE_EXPLICIT here woke every pipeline that wakes on it (each life frame of a mob
 /// and each machine frame) once per timer, for nothing it reads.
 ///
@@ -471,7 +471,7 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 				sched.report_caught(e, "refresh of [D.type]: [e] ([e.file]:[e.line])")
 			else
 				dq_report_caught(e, "refresh of [D.type]")
-		attr.note(KA_KIND_DRAW, KM_SYS_OM_APPEARANCE, D.type, km_attr_reason(pending | fresh), TICK_USAGE_TO_MS(attr_start))
+		attr.note(KA_KIND_DRAW, KM_SYS_APPEARANCE, D.type, km_attr_reason(pending | fresh), TICK_USAGE_TO_MS(attr_start))
 		if(sched?.out_of_budget() && i < length(Q))
 			Q.Cut(1, i + 1)
 			if(deferred)

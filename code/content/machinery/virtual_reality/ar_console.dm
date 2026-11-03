@@ -100,7 +100,7 @@ CAPABILITIES(/obj/machinery/vr_sleeper/alien)
 	if(occupant.stat == DEAD && !occupant.client)
 		return
 
-	if(QDELETED(avatar())) //This REALLY needs to be changed to an OM handle
+	if(QDELETED(avatar())) //This REALLY needs to be changed to an handle
 		rel_clear(src, nameof(avatar))
 
 	if(avatar() && !occupant.stat)

@@ -1,9 +1,9 @@
 // The "Enter Passenger Compartment" search reads each compartment's own slot (OCCUPANT_SLOT_MECHA_PASSENGER), so an occupied compartment is
 // skipped and the next free one is boarded.
 
-/datum/unit_test/om/dq_mecha_passenger_slot
+/datum/unit_test/engine/dq_mecha_passenger_slot
 
-/datum/unit_test/om/dq_mecha_passenger_slot/run_om(list/made)
+/datum/unit_test/engine/dq_mecha_passenger_slot/run_engine(list/made)
 	var/turf/T = run_loc_floor_bottom_left
 	var/obj/mecha/working/ripley/mech = allocate(/obj/mecha/working/ripley, T)
 	var/obj/item/mecha_parts/mecha_equipment/tool/passenger/first = allocate(/obj/item/mecha_parts/mecha_equipment/tool/passenger, T)

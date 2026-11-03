@@ -46,10 +46,10 @@
 	return TRUE
 
 /// A SYSTEM_DEF constructor points its SS global at whatever it builds, and the probe is a subtype: the running owner is put back after the test.
-/datum/unit_test/om/interim_media_track_actor_refusal/proc/restore_media_tracks_owner(datum/system/media_tracks/owner)
+/datum/unit_test/engine/interim_media_track_actor_refusal/proc/restore_media_tracks_owner(datum/system/media_tracks/owner)
 	SSmedia_tracks = owner
 
-/datum/unit_test/om/interim_media_track_actor_refusal/run_om(list/made)
+/datum/unit_test/engine/interim_media_track_actor_refusal/run_engine(list/made)
 	defer_cleanup(src, PROC_REF(restore_media_tracks_owner), SSmedia_tracks)
 	set_global(nameof(GLOB.test_prompts), GLOB.test_prompts)
 	test_prompts_reset()
@@ -78,10 +78,10 @@
 	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 0, "an absent actor opens no media prompt")
 	TEST_ASSERT_EQUAL(tracks.all_tracks[1], retained, "absent actor refusal preserves the actual catalog member")
 
-/datum/unit_test/om/interim_ghost_jukebox_track_actor_refusal
+/datum/unit_test/engine/interim_ghost_jukebox_track_actor_refusal
 
 /// Real native VV admission preserves the supplied actor under an unrelated ambient caller.
-/datum/unit_test/om/interim_ghost_jukebox_track_actor_refusal/run_om(list/made)
+/datum/unit_test/engine/interim_ghost_jukebox_track_actor_refusal/run_engine(list/made)
 	set_global(nameof(GLOB.test_prompts), GLOB.test_prompts)
 	test_prompts_reset()
 	var/turf/T = run_loc_floor_bottom_left

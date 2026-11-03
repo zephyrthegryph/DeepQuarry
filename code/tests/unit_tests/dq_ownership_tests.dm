@@ -156,7 +156,7 @@ CAPABILITIES(/datum/own_test_child)
 	// The source's death clears its partners' sides.
 	qdel(H)
 	TEST_ASSERT(isnull(P2.holder) && isnull(M2.group) && !(H in Q.peers), "the source's death clears every partner side")
-	TEST_ASSERT(!length(P2.om_refs_in) && !length(Q.om_refs_in), "and every reverse index entry")
+	TEST_ASSERT(!length(P2.refs_in) && !length(Q.refs_in), "and every reverse index entry")
 	// Linking to a dying entity is refused.
 	var/datum/own_test_holder/H3 = new
 	var/datum/own_test_child/dying = new
@@ -198,7 +198,7 @@ CAPABILITIES(/datum/own_test_child)
 	TEST_ASSERT_EQUAL(resolve_token(h), T, "a turf handle resolves on a live z-level")
 	relation_z_generation_bump(T.z)
 	TEST_ASSERT(isnull(resolve_token(h)), "a turf handle stops resolving once its z-level generation moves on")
-	GLOB.om_z_generations[T.z]-- // the test map's z-level was not really released
+	GLOB.z_generations[T.z]-- // the test map's z-level was not really released
 	TEST_ASSERT_EQUAL(resolve_token(h), T, "and resolves again once the generation is back")
 	qdel(H)
 
@@ -343,7 +343,7 @@ CAPABILITIES(/datum/own_test_child)
 	for(var/line in lines)
 		if(findtext(line, "dropped with a rec") && findtext(line, "/datum/own_test_child"))
 			found = TRUE
-	TEST_ASSERT(found, "an entity held only by its own OM record (a live timer) is found and torn down: [json_encode(lines)]")
+	TEST_ASSERT(found, "an entity held only by its own scheduler record (a live timer) is found and torn down: [json_encode(lines)]")
 
 /// Makes an entity nothing owns or references except its own record (a pending timer).
 /proc/own_rec_audit_make_dropped()

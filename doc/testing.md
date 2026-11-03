@@ -287,7 +287,7 @@ proof never asserts on a null. When an engine replaces its stubs the gate goes q
 
 A test that makes time pass or sends an input starts with `test_driver_begin()` (code/tests/driver/driver.dm) and ends with
 `test_driver_end()`. Begin gives the kernel an injected clock (`kernel().test_now`, in deciseconds, from 0) and makes a fresh test
-OM scheduler current, so every entity the test creates afterwards reads that clock. `test_time(t)` then steps it one slot (one
+scheduler current, so every entity the test creates afterwards reads that clock. `test_time(t)` then steps it one slot (one
 decisecond) at a time, running the phases K, S, N, D, P, R, G of each slot in order through the same phase procs the live tick
 calls, with a drain at the start of S, D, P and R; `test_phase(P)` runs one phase at the current time and moves nothing;
 `test_drain()` is one marked drain. Native frames and the host services (tgui transport, dbcore, assets) are not stepped.
@@ -784,7 +784,7 @@ moved:
 | Metric | Meaning |
 |---|---|
 | `tick_p50`, `tick_p95`, `tick_p99`, `overruns`, `overrun_ratio` | Whole-tick usage (%) and the ticks over 100%. |
-| `system.<id>.ms_per_s`, `.p99_ms`, `.late_max`, `.breaches` | Per system (OM behaviour families such as `life` and `machines`, and `mc_<subsystem>`): ms of work per second, p99 of ms per tick over the ticks it ran, worst slot lateness in deciseconds, and slots that started past their max interval. Ids are `code/world/kernel/measure/systems.dm` keys. |
+| `system.<id>.ms_per_s`, `.p99_ms`, `.late_max`, `.breaches` | Per system (behaviour families such as `life` and `machines`, and `mc_<subsystem>`): ms of work per second, p99 of ms per tick over the ticks it ran, worst slot lateness in deciseconds, and slots that started past their max interval. Ids are `code/world/kernel/measure/systems.dm` keys. |
 | `input_p99`, `input_p99_ticks`, `input_p50`, `click_wait_p99_ms`, `verb_queue_p99_ms`, `input_queue_hwm`, `input_run_depth_p95` | How long clicks and queued verbs waited before being handled (ms and ticks), how deep the verb queue got, and how far into the tick input ran. |
 
 `bench-compare` gates on these regardless of the generic threshold: `input_p99`
@@ -792,7 +792,7 @@ and every `.breaches` may not rise (beyond the runs' own noise, and beyond the
 metric's resolution for input), and a system's `.p99_ms` rising over 20% is named.
 A gated row reads `regression (gate: ...)`. The same records are in the stat
 panel's Kernel view, the "Tick Report" admin verb (the flight recorder of the last
-minute) and `om_diagnostics()["kernel"]`; each `bench` also keeps the per-tick
+minute) and `km_diagnostics()["kernel"]`; each `bench` also keeps the per-tick
 series of every scenario under `data/bench/profiles/<run>/`.
 
 **Report.** `data/bench/report.html` is regenerated after every `bench`. It

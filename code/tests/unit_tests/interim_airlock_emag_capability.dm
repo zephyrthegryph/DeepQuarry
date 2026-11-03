@@ -1,8 +1,8 @@
 /// The actual airlock emag capability spends only after its mechanism accepts and opens through the real delayed door reaction without cutting wires or changing access lists.
-/datum/unit_test/om/interim_airlock_emag_capability
+/datum/unit_test/engine/interim_airlock_emag_capability
 	parent_type = /datum/unit_test/dq_p2_door
 
-/datum/unit_test/om/interim_airlock_emag_capability/run_gate()
+/datum/unit_test/engine/interim_airlock_emag_capability/run_gate()
 	var/turf/T = tile(2, 2)
 	var/mob/living/carbon/human/user = make_person(null, tile(3, 2))
 	var/obj/machinery/door/airlock/door = allocate(/obj/machinery/door/airlock, T)

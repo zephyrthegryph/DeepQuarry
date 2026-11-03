@@ -364,9 +364,9 @@ CAPABILITIES(/obj/cap_fixture/dx_core)
 
 // ---------------------------------------------------------------- 11. timed_set
 
-/datum/unit_test/om/dx_core_timed_set
+/datum/unit_test/engine/dx_core_timed_set
 
-/datum/unit_test/om/dx_core_timed_set/run_om(list/made)
+/datum/unit_test/engine/dx_core_timed_set/run_engine(list/made)
 	var/obj/cap_fixture/dx_core/F = new
 	made += F
 	refresh_flush()
@@ -456,9 +456,9 @@ CAPABILITIES(/obj/cap_fixture/dx_core)
 	TEST_ASSERT(!F.refresh_queued, "the next refresh ran")
 
 /// M5: a var written through its setter while a timed revert is pending keeps the newer value.
-/datum/unit_test/om/dx_core_timed_newer_write_wins
+/datum/unit_test/engine/dx_core_timed_newer_write_wins
 
-/datum/unit_test/om/dx_core_timed_newer_write_wins/run_om(list/made)
+/datum/unit_test/engine/dx_core_timed_newer_write_wins/run_engine(list/made)
 	var/obj/cap_fixture/dx_core/F = new
 	made += F
 	timed_set(F, nameof(F.power_level), 7, for_time = 1 SECONDS)

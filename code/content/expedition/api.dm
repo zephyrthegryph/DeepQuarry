@@ -160,7 +160,7 @@
 		return TRUE
 	plan.generation_progress = 5
 	plan.generation_stage = "Allocating planetary survey area"
-	INVOKE_ASYNC(src, PROC_REF(materialize_site_async), site, plan) // ALLOW(scheduler): site generation allocates/wipes z-levels and yields (stoplag); callers run on the non-sleeping flight lane
+	materialize_site_async(site, plan)
 	return TRUE
 
 /datum/system/expedition/proc/release_site(datum/expedition_site/site, reason = "unspecified")

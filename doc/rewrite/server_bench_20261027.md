@@ -12,8 +12,8 @@ round that auto-starts at 2 min).
 |---|---|---|---|
 | TPS / TiDi | 37.7 / 5.7 % | 38.6 / 3.4 % | 38.5 / 3.8 % |
 | tick usage mean / p50 / p95 / p99 | 19.6 / 5.0 / 81.4 / 85.9 % | 11.9 / 4.4 / 50.0 / 82.2 % | 12.9 / 4.5 / 59.4 / 82.5 % |
-| scheduler core (om_core) | 93 ms/s | 41 ms/s | 43 ms/s |
-| presentation (om_appearance) | 32 ms/s | 16 ms/s | 13 ms/s |
+| scheduler core (sched_core) | 93 ms/s | 41 ms/s | 43 ms/s |
+| presentation (appearance_drain) | 32 ms/s | 16 ms/s | 13 ms/s |
 | timers fired / 10 min | 125.8 k | 46.6 k | 46.3 k |
 | refreshes (draw drain) / 10 min | 152.8 k | 133.3 k | 21.3 k |
 | dd.exe CPU (% of one core) | 69 | 59 | 63 (machine 66 % busy) |
@@ -58,10 +58,10 @@ Idle steady window (0 players, about 12 min after 2000 settle ticks), machine 58
 | | first table (idle1) | merged master (soak2) | merged master (soak4) |
 |---|---|---|---|
 | tick usage mean / p50 / p95 / p99 | 17.9 / 6.2 / 72 / 91 % | 15.0 / 4.4 / 40 / 82 % | 17.5 / 4.8 / 45 / 86 % |
-| om_core ms/s | 60.2 | 34.5 | 32.4 |
-| om_appearance ms/s | 11.0 | 4.5 | 3.4 |
-| om_native ms/s | 32.8 | 42.6 | 66.7 (stalls) |
+| sched_core ms/s | 60.2 | 34.5 | 32.4 |
+| appearance_drain ms/s | 11.0 | 4.5 | 3.4 |
+| native_step ms/s | 32.8 | 42.6 | 66.7 (stalls) |
 
-om_native rose because of the stalls below, not because of work. Awake material services 266 -> 1, timer fires 10,357 -> 5,240 per 133 s (perf/idle-1).
+native_step rose because of the stalls below, not because of work. Awake material services 266 -> 1, timer fires 10,357 -> 5,240 per 133 s (perf/idle-1).
 
 Multi-second native frames, measured with the CPU-time split (`frame.slow_us.on_cpu` / `off_cpu`, per slow frame, microseconds the thread was running against waiting): in soak4, 11,844 ms of the 11,954 ms Rust spent in slow frames (99 %) was off the CPU; 109 ms was computing. The phases named (`pace_stage`, `pace_apply`, `pace_step`) take about 0.16 ms when the thread runs, so a 200 ms to 2.5 s `pace_stage` is the thread not running, not slow work. The stalls fall in the windows where the machine is at 100 % CPU, and the world runs at BelowNormal priority (`Get-Process dd`): the local stalls are scheduler starvation of a below-normal process by other agents' builds. Two more stalls (a 1.0 s `vg_frame` where Rust saw no frame over 100 ms, and DM-side `deliver` taking 1.4 s and 5.1 s for 27 records) are outside Rust and are not explained by the CPU split. Whether the live GCP server stalls is unmeasured here: run it with this build and read NATIVE_SLOW_FRAME's `off_cpu` and `on_cpu`.

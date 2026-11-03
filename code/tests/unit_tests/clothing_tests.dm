@@ -99,7 +99,7 @@ CAPABILITIES(/datum/unit_test/all_clothing_shall_be_valid)
 	#ifdef UNIT_TESTS
 	// Dress the shared per-species test humans with this item and check they get worn art.
 	// An entire signal just for unittests had to be made for this (/datum/notice/unittest_data, emitted from
-	// /obj/item/proc/get_worn_icon_state in code/content/items/items.dm under #ifdef UNIT_TESTS).
+	// /obj/item/proc/get_worn_icon_state in code/domains/world_model/obj/items.dm under #ifdef UNIT_TESTS).
 	//
 	// This exercises set_species (done once, up-front in Run) + equip-to-slot + the worn-icon signal
 	// path for real on every clothing item across a representative spread of species. It is falsifiable:

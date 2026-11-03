@@ -1,5 +1,5 @@
 /// The real cistern opening and insertion routes respect held-item release and refund their original occupancy on removal.
-/datum/unit_test/om/interim_toilet_cistern_sticky_item/run_om(list/made)
+/datum/unit_test/engine/interim_toilet_cistern_sticky_item/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/structure/toilet/toilet = allocate(/obj/structure/toilet, T)

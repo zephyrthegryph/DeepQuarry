@@ -37,25 +37,25 @@ Residue: `extra_args` (`user =`, `into =`, `slot =`, `force =`, `log =`: a trans
 `unresolved_receiver` (the holder's type is unknown), `unknown_var`, `untyped_var` (no entity type, a value type, or declared in the vendored TGS API or the defines),
 `list_var` (`own_set` on a list var), `scalar_var` (`own_add` on a scalar). Evidence: `rel_*` in the SMES, chargers and vending conversions.
 
-## om_hook / om_unhook -> observe / unobserve
+## hook / om_unhook -> observe / unobserve
 
 | Old | New |
 |---|---|
-| `om_hook(source, /datum/om/event/x, listener, PROC_REF(h))` | `observe(source, /datum/notice/x, listener, then(PROC_REF(h)))` (`global.observe` in a type that has an `observe` proc, the mob verb) |
-| `om_hook(..., list(e1, e2), ...)` as a statement | one `observe` per event |
+| `hook(source, /datum/om/event/x, listener, PROC_REF(h))` | `observe(source, /datum/notice/x, listener, then(PROC_REF(h)))` (`global.observe` in a type that has an `observe` proc, the mob verb) |
+| `hook(..., list(e1, e2), ...)` as a statement | one `observe` per event |
 | `om_unhook(source, event, listener)` | `unobserve(source, notice, listener)` |
 | handler `h(datum/source, datum/om/event/x/event)` | `h(datum/act/notice/A)`; `var/datum/source = A.target` if `source` is used; `var/datum/notice/x/event = A` if `event` is used; `event.f` becomes the notice's field name (`source` -> `source_`, `target` -> `target_`) |
 
-The notice twin of each event is `tools/dx/codemods/om_event_map.json`: only a row whose target is a `/datum/notice/` and that does not read `event.result` converts.
-`observe` is a runtime hook, as `om_hook` was, so a hook is never turned into a static `on_notice`. Evidence: the autoclose blocker of `door.dm` (`a31c4eeb38`).
+The notice twin of each event is `tools/dx/codemods/event_map.json`: only a row whose target is a `/datum/notice/` and that does not read `event.result` converts.
+`observe` is a runtime hook, as `hook` was, so a hook is never turned into a static `on_notice`. Evidence: the autoclose blocker of `door.dm` (`a31c4eeb38`).
 
 Residue: `argc`, `event_not_literal`, `event_unmapped` (a `before/` guard, `review`, `delete`, `op`, or a result reader), `list_value_used`, `listener_not_src`
 (`PROC_REF` names a proc of the listener), `handler_expr`, `handler_blocked` (another caller, a hook of it that does not convert, an unexpected signature,
 the event used whole or by a field the notice lacks, a local named `A`), `unhook_unpaired`, `unhook_all`.
 
-## om_hook residue (by hand: the veto form)
+## hook residue (by hand: the veto form)
 
-`om_hook`, `om_unhook`, `om_unhook_all` and `om_hooked` are deleted. The sites the codemod left (a `before/` guard, a result reader) were converted by hand to the
+`hook`, `om_unhook`, `om_unhook_all` and `om_hooked` are deleted. The sites the codemod left (a `before/` guard, a result reader) were converted by hand to the
 runtime form of `extend()`: `observe(source, /datum/act/x, listener, parts...)`. The parts are the hook forms of doc section 10 and run on the listener (`A.holder` is the
 listener for the hook, `A.target` the observed entity); the hook ends with `unobserve()`, with `unobserve_all(listener)`, or with either end's deletion, through the activation machinery.
 
@@ -67,7 +67,7 @@ listener for the hook, `A.target` the observed entity); the hook ends with `unob
 | ORed flags into `event.result` or changed a payload list in place (several listeners may) | `adjusts_with(PROC_REF(h))`: `h(datum/act/A)` writes the act's typed fields (`A.protection \|= ...`); it never takes the action over and every one runs, in order | `x = ACT_FINAL(F, field, local)` after the `ACT_ATTEMPT` |
 | only watched (an after-fact event) | `observe(source, /datum/notice/x, listener, then(PROC_REF(h)))`, the existing form | none |
 
-`om_wants(E, event)` on a hot path becomes `act_wanted(E, /datum/act/x)`. A pure question (`draw_hud`, `body_status`, `geiger_scan`, `relay_movement`, the names) ends `act_cancel(F)` when
+`wants(E, event)` on a hot path becomes `act_wanted(E, /datum/act/x)`. A pure question (`draw_hud`, `body_status`, `geiger_scan`, `relay_movement`, the names) ends `act_cancel(F)` when
 nothing took it over: it never publishes a committed notice for an action that did not happen; an action that does go on (`injure`, `attackby`, `attack_hand`, `explode`, `shoot`, `emp`,
 `play_cinematic`, `pre_attack`) ends `act_done(F)` once the gates passed, so its notice (`/datum/notice/attacked_by`, `hand_attacked`, `pre_attacked`, ...) is what an observer hears.
 A before/ event that behaviours still handle (`attackby`, `attack_hand`) is still emitted after the action's gate; the other 17 are deleted.
@@ -85,14 +85,14 @@ what the listener holds then):
 | remote view | `mob_relay_movement`, `mob_handle_hud`, `mob_handle_hud_health_icon` | `instead(then())` on `relay_movement`, `draw_hud`, `draw_health_icon` | the settings object answers whether it handled it |
 | radiation effects | `handle_radiation`, `living_irradiate_effect`, `geiger_counter_scan` | `instead(then())` on `live_radiation`, `irradiate`, `geiger_scan` | the handler acts (purges, reports) and answers whether it blocked |
 | disposal connection | `disposal_flush`, `disposal_send` | `instead(then())` on `flush_disposal`, `send_disposal` | takes the packet over, declines when no trunk is linked |
-| cinematic | `world_play_cinematic` | `instead(then())` on `play_cinematic` of `OM_WORLD` | a playing cinematic blocks the next one, or yields to a global one |
+| cinematic | `world_play_cinematic` | `instead(then())` on `play_cinematic` of `WORLD_NOTICE_BUS` | a playing cinematic blocks the next one, or yields to a global one |
 | EMP: robot cell shield, material response | `atom_pre_emp_act` | `adjusts_with` on `emp` | a flag word several listeners OR into; the material's depends on its temperature when the pulse arrives, so a held stat would be stale |
 | protean blob hiding | `movable_pre_move` | `instead()` on `pre_move` | an unconditional refusal while hiding |
 | artifacts | `atom_ex_act`, `atom_bullet_act` | `instead(then())` on `explode`, `shoot` | triggered artifacts cancel the blast and the shot |
 | experiment handler (handheld scanner) | `item_pre_attack` | `instead(then())` on `pre_attack` | cancels the swing when it ran the experiment |
 | tests: containment | `before/slot_pre_insert`, `slot_pre_remove` | `instead(when())` on `insert`, `remove` | the refusal questions of `dq_ledger_refusal()` |
 
-The after-fact events only unit tests watched (`machinery_broken`, `living_injury_explained`, `slot_inserted`, ...) got a notice twin through `TEST_WATCHED` in `tools/dx/gen_om_notices.py`.
+The after-fact events only unit tests watched (`machinery_broken`, `living_injury_explained`, `slot_inserted`, ...) got a notice twin through `TEST_WATCHED` in `the notice generator`.
 The `living_status_stun` veto test was deleted: nothing but a test vetoed it.
 
 ## range observers
@@ -101,11 +101,11 @@ The `living_status_stun` veto test was deleted: nothing but a test vetoed it.
 enters, leaves or is created on reads its own bucket (`RANGE_WATCH()`, behind one read of `GLOB.range_watch_count`) and each watcher in it checks the square. Its listener procs take
 `(turf, thing, other)` for `RANGE_ENTERED`, `RANGE_EXITED`, `RANGE_INITIALIZED`.
 
-## om_ask -> open_request (generic prompts)
+## ask -> open_request (generic prompts)
 
 | Old | New |
 |---|---|
-| `om_ask(M, /datum/om/prompt/confirm, PROC_REF(h), message = m)` | `open_request(src, /datum/prompt/yes_no, PROC_REF(h), answerer = M, question = m, timeout = 0)` |
+| `ask(M, /datum/om/prompt/confirm, PROC_REF(h), message = m)` | `open_request(src, /datum/prompt/yes_no, PROC_REF(h), answerer = M, question = m, timeout = 0)` |
 | `.../text` (`default`, `max_length`, `multiline`, `encode`, `name_text`) | `/datum/prompt/text` (`default`, `max_len`, `multiline`, `encode`, `name_text`) |
 | `.../number` (`default`, `min`, `max`) | `/datum/prompt/number` (`default`, `min_value`, `max_value`) |
 | `.../choice` (`choices`, `default`, `buttons`) | `/datum/prompt/choice` (same names) |
@@ -174,7 +174,7 @@ Tests: `dq_gap/ask_a_refused_answer_asks_again`, `ask_fields_are_literal_var_or_
 | `var/x = rerun_ask(user, "k", PROC_REF(self), args, /datum/om/prompt/K, message = m, title = t, ...)` (also `list(user)` as the arguments) then `if(isnull(x))` / `return [value]` | `asks(/datum/prompt/K, fields = list("question" = m, "title" = t, ..., "timeout" = 0), step = "k")` before `then(PROC_REF(self))`; the guard goes; the handler starts `var/x = A.step_value("k")` (when `x` is used) |
 | `act_ask(ui.user, action, params, ui, "k", /datum/om/prompt/K, ...)` in a `UI_ACT_PROC` | the same step on the button's op |
 | `if(isnull(x) \|\| rest)` | the guard becomes `if(rest)` (the answer is never null now) |
-| kinds `text`, `number`, `choice`, `choice/alert` (`buttons = TRUE`), `color`, `confirm` (`yes_text`/`no_text`: "Yes/no labels") | `/datum/prompt/text`, `number`, `choice`, `color`, `yes_no`; the fields are renamed as in the om_ask table (`message` to `question`, `max_length` to `max_len` (with `name_text = TRUE` for `MAX_NAME_LEN`), `min`/`max` to `min_value`/`max_value`) |
+| kinds `text`, `number`, `choice`, `choice/alert` (`buttons = TRUE`), `color`, `confirm` (`yes_text`/`no_text`: "Yes/no labels") | `/datum/prompt/text`, `number`, `choice`, `color`, `yes_no`; the fields are renamed as in the ask table (`message` to `question`, `max_length` to `max_len` (with `name_text = TRUE` for `MAX_NAME_LEN`), `min`/`max` to `min_value`/`max_value`) |
 | a field that is a literal | written as it is |
 | a field that is a var of the holder (`choices = possible_transfer_amounts`) | `nameof(var)`: read from the capture when the question opens |
 | a field that is any other expression (`choices = GLOB.x`, `title = "[src]"`) | `computed(PROC_REF(<handler>_<key>_<field>))`, a generated proc `x(datum/act/op/A)` returning the expression (`var/mob/user = A.actor` and the held item are declared when it reads them) |
@@ -227,7 +227,7 @@ One modal per window at a time, as before: opening another ends the first questi
 
 `/datum/prompt/yes_no` has `yes_text` and `no_text` ("Yes" / "No"): `asks(/datum/prompt/yes_no, fields = list("question" = ..., "yes_text" = "Confirm", "no_text" = "Cancel"))`, `open_request(src, /datum/prompt/yes_no, PROC_REF(h), yes_text = "Launch", no_text = "Cancel", ...)`, or a kind
 with the labels as its defaults (`/datum/prompt/yes_no/x` with `yes_text = "Launch"`). A label that depends on the asker is `computed(PROC_REF(x))`. The labels are the alert window's buttons, the inline modal's `yes_text` / `no_text`, and what `answer_of_button()` calls a yes. The old
-`om_ask(..., yes_text = ..., no_text = ...)` is residue `roles_or_checks` of the om_ask codemod (analyze); the labels the hand conversions dropped were restored: the newscaster ("Confirm" / "Cancel"), the records "Delete", the shuttle "Launch", the toilet crystal, the trash pile, the canvas.
+`ask(..., yes_text = ..., no_text = ...)` is residue `roles_or_checks` of the ask codemod (analyze); the labels the hand conversions dropped were restored: the newscaster ("Confirm" / "Cancel"), the records "Delete", the shuttle "Launch", the toilet crystal, the trash pile, the canvas.
 Test: `dq_gap/yes_no_carries_its_labels`.
 
 ## DECLARE_INTERACTIONS -> op()
@@ -332,7 +332,7 @@ The target (doc section 3, section 7): the vars the work is gated on are `TRACKE
 | `OM_FIELD(T, f, D, CHANGE_EXPLICIT)` (also `OM_FIELD_TYPED`) | `T/var/f = D` and `TRACKED(T, f)` (`TRACKED_BRIDGED(T, f, CHANNEL)` for a channel other than `CHANGE_EXPLICIT`) |
 | `DECLARE_PERIODIC_WHILE(T, PERIODIC_SLOW, "f")` | `every(2 SECONDS, then(PROC_REF(<type>_step)), when = nameof(f))`; `PERIODIC_SECOND` is `1 SECOND`, `PERIODIC_FAST` `0.2 SECONDS` (the cadence's own interval) |
 | `DECLARE_PERIODIC_WHILE_ALL(T, C, list("a", "!b"))` | `when = cond_all(nameof(a), cond_not(nameof(b)))` |
-| a derived field `OM_DERIVE_FIELD(T, d, list(a, b))` whose proc is one `return a \|\| !b && c` | the expression inlined as `cond_any` / `cond_all` / `cond_not` of `nameof()`; the derive line goes (the proc stays for its other callers) |
+| a derived field `DERIVE_FIELD(T, d, list(a, b))` whose proc is one `return a \|\| !b && c` | the expression inlined as `cond_any` / `cond_all` / `cond_not` of `nameof()`; the derive line goes (the proc stays for its other callers) |
 | `/T/periodic_step(delta)` and every override below T | `/T/proc/<type>_step(datum/act/timer/A)`, overrides `/U/<type>_step(datum/act/timer/A)` (no `proc/` on an override); a body that reads `delta` gets `var/delta = <the interval>` as its first line (written as the constant: the `handlers/context_field` lint does not model an every() context, so `A.dt` is not read) |
 | `DECLARE_REPEAT(T, 0.5 SECONDS, proc, "f")` | `every(0.5 SECONDS, then(PROC_REF(proc)), when = nameof(f))`; `proc` keeps its name and takes `(datum/act/timer/A)`; a `null` field has no `when` |
 | `DECLARE_REPEAT(T, "delay_proc", proc, ...)` where `delay_proc` is a proc of T | `every(PROC_REF(delay_proc), ...)`; `delay_proc` takes `(datum/act/A)` |
@@ -355,7 +355,7 @@ Evidence: the hand conversions of the chargers, airlock and light flicker (`7bce
 
 ## DECLARE_VERB and GRANT_VERB -> verb_entry() and granted_verb()
 
-The target (doc section 13): a verb a type has is `verb_entry(path, login =, when =, hidden =)` in its `CAPABILITIES(T)` block; a verb granted at run time is `grant(E, granted_verb(path), source)` (the activation ends with `revoke()`, with the source or with the capability that brought it). The engine is code/engine/present/verbs.dm; the verb store (code/datums/om/grant_verbs.dm) stays the only writer of a `verbs` list, and a granted verb shows under the verb's own `set category` tab in the client's stat panel because the store tells the panel on every add and remove. `tools/dx/codemods/verb_decl.py`.
+The target (doc section 13): a verb a type has is `verb_entry(path, login =, when =, hidden =)` in its `CAPABILITIES(T)` block; a verb granted at run time is `grant(E, granted_verb(path), source)` (the activation ends with `revoke()`, with the source or with the capability that brought it). The engine is code/engine/present/verbs.dm; the verb store (code/engine/grant_verbs.dm) stays the only writer of a `verbs` list, and a granted verb shows under the verb's own `set category` tab in the client's stat panel because the store tells the panel on every add and remove. `tools/dx/codemods/verb_decl.py`.
 
 | Old | New |
 |---|---|

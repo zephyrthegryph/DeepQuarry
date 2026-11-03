@@ -69,10 +69,10 @@
 	go_out()
 	..()
 
-/// Sealed occupant slot (C8, containment.md §10, OM relations step 3): the
+/// Sealed occupant slot (C8, containment.md §10, relations step 3): the
 /// pod grows and displays the clone through this, same as before the ledger
 /// tracked the move. Not a target_ref_field slot -- like the DNA scanner and
-/// resleever, this machine already tracked its occupant through an OM handle
+/// resleever, this machine already tracked its occupant through an handle
 /// (set_occupant()/get_occupant()) rather than a bare var, so on_link() below
 /// is what keeps it current instead.
 /datum/relation_definition/slot/occupant/clonepod
@@ -213,7 +213,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 	// internal_producebody()), so it landed in the pod's default slot
 	// (machine_internals) rather than its occupant slot -- move it to the
 	// right one now. set_occupant() itself now happens through the slot's
-	// own on_link() (OM relations step 3).
+	// own on_link() (relations step 3).
 	move_into(src, OCCUPANT_SLOT_CLONEPOD, H)
 	attempting = 0
 

@@ -1,5 +1,5 @@
 // A Life-shaped kernel sequence against a fixed reference runner (doc/rewrite/life_sequences.md, "Measured";
-// doc/rewrite/om_retirement.md L2). The sequence runs 30 steps over five bands, gated like Life's (placed; placed and
+// doc/rewrite/archive/retirement_log.md L2). The sequence runs 30 steps over five bands, gated like Life's (placed; placed and
 // alive; placed and the status step's result), with a frame begin() hook, a fixed 1 s step and no parking (so every frame
 // is paid for). Three shapes:
 //   awake   every step has work every frame (a human: the body never settles)
@@ -8,7 +8,7 @@
 // For each, the runner alone (one frame per mob, called directly) and the scheduled path (the sequence's spread sweep on
 // a test kernel), in ns per mob-frame, best of `rounds`.
 //
-// The gate. It was `sequence <= 1.05 x the object-model pipeline runner`, measured side by side. The pipeline is gone, so
+// The gate. It was `sequence <= 1.05 x the engine pipeline runner`, measured side by side. The pipeline is gone, so
 // the bench keeps a reference runner (the pipeline's shape with nothing around it) and the pipeline's cost relative to it,
 // measured on both while both existed (October 2026, two runs averaged): LB_PIPE_OVER_REF_*. The gate is
 // `sequence <= LB_GATE x pinned ratio x reference`, the same bound expressed without the pipeline. The idle shape

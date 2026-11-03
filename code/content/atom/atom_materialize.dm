@@ -78,9 +78,9 @@
 	if(table & TYPE_TABLE_HAS_RULES)
 		dq_rules_on_materialize(src)
 	BOOT_PHASE_END(bp_rules, "materialize: rule bindings" + BOOT_KIND(src), src)
-	// Object model: attach the type's declared behaviours (code/datums/om/entity.dm).
+	// engine: attach the type's declared behaviours (code/engine/entity.dm).
 	BOOT_PHASE_BEGIN(bp_ent)
-	if(table & TYPE_TABLE_HAS_OM)
+	if(table & TYPE_TABLE_HAS_SCHED)
 		entity_start(src)
 	BOOT_PHASE_END(bp_ent, "materialize: entity_start" + BOOT_KIND(src), src)
 	// Declared registries, service members, binds, behaviours, periodic work, timers
@@ -108,7 +108,7 @@
 		leave_registries() // L3: code/__defines/registries.dm
 	if(rule_binding)
 		dq_rules_on_dematerialize(src)
-	if(om_rec)
+	if(sched_rec)
 		entity_teardown_rest(src)
 
 /// Creates `path` at `loc` and runs its Initialize() without materializing it.

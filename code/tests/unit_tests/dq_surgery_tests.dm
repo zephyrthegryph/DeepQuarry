@@ -11,7 +11,7 @@
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
-#include "../../content/medical/_defines.dm"
+#include "../../defines/content/medical.dm"
 
 /// Perform `step_type` on `H` at `zone` as `surgeon`, on `work_target`
 /// (default: the limb).

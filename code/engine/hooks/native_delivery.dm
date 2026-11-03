@@ -5,7 +5,7 @@
 // calls here, so what reaches capabilities, looks and UI pushes is fed one way:
 //
 //   native_changed(target, channel, source)  the drain raises `channel` on `target`
-//                                            (om_changed) and counts the delivery.
+//                                            (changed) and counts the delivery.
 //   native_fired(source)                     the drain delivered a watch callback that
 //                                            runs owner code; counted, nothing raised.
 //

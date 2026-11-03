@@ -1,5 +1,5 @@
 /// Ending a live beam destroys its actual segments and cancels its declared repeat.
-/datum/unit_test/om/interim_beam_end_lifecycle/run_om(list/made)
+/datum/unit_test/engine/interim_beam_end_lifecycle/run_engine(list/made)
 	var/turf/T = run_loc_floor_bottom_left
 	var/obj/item/pen/origin = allocate(/obj/item/pen, T)
 	var/obj/item/pen/target = allocate(/obj/item/pen, get_step(T, EAST))
@@ -22,7 +22,7 @@
 	TEST_ASSERT_EQUAL(time_scheduler().timer_count(beam), 0, "terminal teardown cancels the pending repeat timer")
 
 /// Draw() can terminate a beam before Start() reaches its state setter.
-/datum/unit_test/om/interim_beam_invalid_start/run_om(list/made)
+/datum/unit_test/engine/interim_beam_invalid_start/run_engine(list/made)
 	var/turf/T = run_loc_floor_bottom_left
 	var/obj/item/pen/origin = allocate(/obj/item/pen, T)
 	var/obj/item/pen/target = allocate(/obj/item/pen, get_step(T, EAST))

@@ -1,4 +1,4 @@
-// Object-model core: the registry (doc/rewrite/object_model_core.md, "Boot").
+// engine core: the registry (doc/rewrite/archive/object_model_core.md, "Boot").
 //
 // Built once, on first use (SSbehaviours.Initialize() forces it at boot).
 // It instantiates every DEF, parses every table row, compiles run order,
@@ -6,14 +6,14 @@
 // declaration error in `errors` (each also a stack_trace unless `quiet`).
 // Unit tests build private registries from a named set of decls.
 
-GLOBAL_DATUM(om_reg, /datum/definition_registry)
+GLOBAL_DATUM(definition_store, /datum/definition_registry)
 
 /proc/definition_registry()
 	RETURN_TYPE(/datum/definition_registry)
-	if(!GLOB.om_reg)
-		GLOB.om_reg = new /datum/definition_registry
-		GLOB.om_reg.build()
-	return GLOB.om_reg
+	if(!GLOB.definition_store)
+		GLOB.definition_store = new /datum/definition_registry
+		GLOB.definition_store.build()
+	return GLOB.definition_store
 
 /// Compiled once from the declarations and never deleted in a round: a reference to one cannot pin a deleted object (relations proposal D8).
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
@@ -488,10 +488,10 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 			P.variants[T.family] = list()
 		P.variants[T.family] += T
 	for(var/root in P.variants)
-		P.variants[root] = sortTim(P.variants[root], GLOBAL_PROC_REF(cmp_om_stage_variant))
+		P.variants[root] = sortTim(P.variants[root], GLOBAL_PROC_REF(cmp_stage_variant))
 	// Order: after/before between families, then `order`, then path; deterministic.
 	var/n = length(nodes)
-	nodes = sortTim(nodes, GLOBAL_PROC_REF(cmp_om_stage_order))
+	nodes = sortTim(nodes, GLOBAL_PROC_REF(cmp_stage_order))
 	var/list/index_of = list()
 	for(var/i in 1 to n)
 		index_of[nodes[i]] = i
@@ -542,17 +542,17 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 		compile_run_if(P, T)
 		T.gated = !isnull(T.run_if) || T.min_interval > 0
 	P.wake_on |= wake
-	P.run_mode = (P.frame_hooks ? OM_PIPE_MODE_HOOKS : 0) | (length(P.fact_procs) ? OM_PIPE_MODE_FACTS : 0) \
-		| (P.profile_stride ? OM_PIPE_MODE_PROFILING : 0) | (P.reactive ? OM_PIPE_MODE_REACTIVE : 0) \
-		| (!P.reactive && P.park_after ? OM_PIPE_MODE_PARKS : 0)
+	P.run_mode = (P.frame_hooks ? PIPE_MODE_HOOKS : 0) | (length(P.fact_procs) ? PIPE_MODE_FACTS : 0) \
+		| (P.profile_stride ? PIPE_MODE_PROFILING : 0) | (P.reactive ? PIPE_MODE_REACTIVE : 0) \
+		| (!P.reactive && P.park_after ? PIPE_MODE_PARKS : 0)
 
 /// Deepest `of` first; between equal depths, the least derived stage type.
-/proc/cmp_om_stage_variant(datum/work_stage/a, datum/work_stage/b)
+/proc/cmp_stage_variant(datum/work_stage/a, datum/work_stage/b)
 	if(a.depth != b.depth)
 		return b.depth - a.depth
 	return definition_type_depth(a.type) - definition_type_depth(b.type)
 
-/proc/cmp_om_stage_order(datum/work_stage/a, datum/work_stage/b)
+/proc/cmp_stage_order(datum/work_stage/a, datum/work_stage/b)
 	if(a.order != b.order)
 		return a.order - b.order
 	return sorttext(b.type, a.type)
@@ -638,7 +638,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 			error("[B.name]: unknown clock [B.clock]")
 		else
 			B.clock_idx = C.idx
-	if(!(B.lane in 1 to OM_LANE_COUNT))
+	if(!(B.lane in 1 to LANE_COUNT))
 		error("[B.name]: bad lane [B.lane]")
 		B.lane = LANE_SIMULATION
 	if(B.wake_if)
@@ -735,7 +735,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 /proc/definition_topo_order(list/nodes, datum/definition_registry/reg)
 	var/n = length(nodes)
 	var/list/index_of = list()
-	var/list/sorted_nodes = sortTim(nodes.Copy(), GLOBAL_PROC_REF(cmp_om_behaviour_name))
+	var/list/sorted_nodes = sortTim(nodes.Copy(), GLOBAL_PROC_REF(cmp_behaviour_name))
 	for(var/i in 1 to n)
 		var/datum/scheduled_behaviour/B = sorted_nodes[i]
 		index_of[B] = i
@@ -817,7 +817,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 			stack += j
 	return FALSE
 
-/proc/cmp_om_behaviour_name(datum/scheduled_behaviour/a, datum/scheduled_behaviour/b)
+/proc/cmp_behaviour_name(datum/scheduled_behaviour/a, datum/scheduled_behaviour/b)
 	return sorttext(b.name, a.name)
 
 // ---------------------------------------------------------------- derived
@@ -1021,7 +1021,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 				T.stages |= stage_path
 			for(var/row in B.ui)
 				T.ui += list(row)
-	T.behaviours = sortTim(behaviour_set, GLOBAL_PROC_REF(cmp_om_behaviour_id))
+	T.behaviours = sortTim(behaviour_set, GLOBAL_PROC_REF(cmp_behaviour_id))
 	for(var/datum/service_definition/S as anything in services)
 		var/mine = 0
 		for(var/observed in S.wake_on_any)
@@ -1036,7 +1036,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/definition_registry)
 		T.relay_mask |= scheduler_field_field_table(path)[T.derived_relays[i]]
 	return T
 
-/proc/cmp_om_behaviour_id(datum/scheduled_behaviour/a, datum/scheduled_behaviour/b)
+/proc/cmp_behaviour_id(datum/scheduled_behaviour/a, datum/scheduled_behaviour/b)
 	return a.id - b.id
 
 /datum/definition_registry/proc/behaviour(path_or_def)

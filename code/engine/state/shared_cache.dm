@@ -255,7 +255,7 @@ PROC_SUMMARY(/datum/shared_cache/proc/miss) // vars[] / call() dispatcher: the w
 /datum/proc/shared_cache_stable_identity()
 	return FALSE
 
-// ---- OM hooks (called from om_wants/om_emit/om_dispatch_change) ----
+// ---- hooks (called from wants/emit/dispatch_change) ----
 
 /// The world notice `notice_type` is about to be published: every cache whose SC_ON_NOTICE names it (or a parent) clears.
 /proc/shared_cache_notice(notice_type)
@@ -264,7 +264,7 @@ PROC_SUMMARY(/datum/shared_cache/proc/miss) // vars[] / call() dispatcher: the w
 	for(var/datum/shared_cache/C as anything in shared_cache_notice_types[notice_type])
 		C.invalidate()
 
-/// Rows for the OM profiler panel.
+/// Rows for the scheduler profiler panel.
 /proc/shared_cache_stats()
 	. = list()
 	for(var/datum/shared_cache/C as anything in shared_cache_registry)

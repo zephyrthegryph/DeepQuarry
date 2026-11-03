@@ -69,17 +69,17 @@ that is not a registered singleton (a fetched decl or a registered material).
 | Policy | Cleared when |
 |---|---|
 | `SC_NEVER` | never (static data: icons, types, constant configuration) |
-| `SC_ON_EVENT(path)` | an event of `path` or a subtype is emitted on `GLOB.om_world` (`om_wants()` answers TRUE for it, so `OM_EMIT_WORLD` allocates it) |
-| `SC_ON_WORLD_CHANGE(bits)` | `om_changed(GLOB.om_world, bits)` raises one of `bits` |
+| `SC_ON_EVENT(path)` | an event of `path` or a subtype is emitted on `GLOB.world_notice_bus` (`wants()` answers TRUE for it, so `world notices` allocates it) |
+| `SC_ON_WORLD_CHANGE(bits)` | `changed(GLOB.world_notice_bus, bits)` raises one of `bits` |
 | `SC_EXPLICIT` | only `INVALIDATE_SHARED_CACHE(name)` |
 
 Material-derived caches (`material_radiation_transmission`, `wall_material_facts`,
 `wall_overlay_sets`) use `SC_ON_EVENT(/datum/om/event/material_facts_changed)`, which
-`material_facts_changed()` emits on `GLOB.om_world`.
+`material_facts_changed()` emits on `GLOB.world_notice_bus`.
 
 Policy hooks are registered on the cache's first build, so a cache nobody reads costs nothing.
-The hooks are a null check in `om_emit()`/`om_wants()` and a mask test in
-`om_dispatch_change()`.
+The hooks are a null check in `emit()`/`wants()` and a mask test in
+`dispatch_change()`.
 
 ## 3. Cost
 
@@ -123,7 +123,7 @@ keys, per lookup including the loop:
   evictions). A hit in the old generation promotes the entry. Hits in the young generation cost
   nothing extra, so bounded caches keep the fast path. Use a bound for unbounded key spaces:
   colours, free text, per-mob appearance strings, JSON.
-- The OM Profiler (Debug, "OM Profiler") has a **Caches** tab: hits, misses, hit rate, entries,
+- The Scheduler Profiler (Debug, "Scheduler Profiler") has a **Caches** tab: hits, misses, hit rate, entries,
   evictions, clears and an approximate size (24 bytes per entry plus a 64-entry sample of the
   values).
 

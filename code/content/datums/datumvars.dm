@@ -79,9 +79,9 @@
 	VV_DROPDOWN_OPTION(VV_HK_TAG, "Tag Datum")
 	VV_DROPDOWN_OPTION(VV_HK_DELETE, "Delete")
 	VV_DROPDOWN_OPTION(VV_HK_EXPOSE, "Show VV To Player")
-	VV_DROPDOWN_OPTION(VV_HK_ADDCOMPONENT, "Attach OM Behaviour")
-	VV_DROPDOWN_OPTION(VV_HK_REMOVECOMPONENT, "Detach OM Behaviour")
-	VV_DROPDOWN_OPTION(VV_HK_MASS_REMOVECOMPONENT, "Mass Detach OM Behaviour")
+	VV_DROPDOWN_OPTION(VV_HK_ADDCOMPONENT, "Attach Behaviour")
+	VV_DROPDOWN_OPTION(VV_HK_REMOVECOMPONENT, "Detach Behaviour")
+	VV_DROPDOWN_OPTION(VV_HK_MASS_REMOVECOMPONENT, "Mass Detach Behaviour")
 
 // The dropdown's "high level" actions (admin heal, set species, ...) are topic_in(VV_TOPIC, key) ops on
 // the type (code/defines/host/vv.dm); the low level ones are the admin holder's ops in

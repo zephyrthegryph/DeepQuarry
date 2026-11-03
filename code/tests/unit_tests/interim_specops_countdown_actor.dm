@@ -25,10 +25,10 @@
 	specops_countdown(list(), announcer, GLOBAL_PROC_REF(interim_specops_actor_arrived), user)
 	return TRUE
 
-/datum/unit_test/om/interim_specops_actor
-	abstract_type = /datum/unit_test/om/interim_specops_actor
+/datum/unit_test/engine/interim_specops_actor
+	abstract_type = /datum/unit_test/engine/interim_specops_actor
 
-/datum/unit_test/om/interim_specops_actor/proc/prepare_refusal()
+/datum/unit_test/engine/interim_specops_actor/proc/prepare_refusal()
 	set_global("specops_shuttle_moving_to_station", 0)
 	set_global("specops_shuttle_moving_to_centcom", 0)
 	set_global("specops_shuttle_at_station", 0)
@@ -39,7 +39,7 @@
 	TEST_ASSERT(!specops_can_move(), "the actual registered console's real reset deadline refuses shuttle movement")
 	return console
 
-/datum/unit_test/om/interim_specops_actor/countdown/run_om(list/made)
+/datum/unit_test/engine/interim_specops_actor/countdown/run_engine(list/made)
 	var/obj/machinery/computer/specops_shuttle/console = prepare_refusal()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/mob/living/carbon/human/bystander = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
@@ -75,7 +75,7 @@
 	TEST_ASSERT_EQUAL(GLOB.specops_shuttle_moving_to_station, 0, "the actual blocked callback preserves existing moving-state cleanup")
 	TEST_ASSERT_EQUAL(GLOB.specops_shuttle_moving_to_centcom, 0, "the actual blocked callback clears both existing moving flags")
 
-/datum/unit_test/om/interim_specops_actor/deleted_actor/run_om(list/made)
+/datum/unit_test/engine/interim_specops_actor/deleted_actor/run_engine(list/made)
 	var/obj/machinery/computer/specops_shuttle/console = prepare_refusal()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/datum/interim_specops_actor_witness/witness = allocate(/datum/interim_specops_actor_witness)

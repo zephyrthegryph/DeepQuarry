@@ -111,7 +111,7 @@ CAPABILITIES(/datum/trait_state/gargoyle)
 	to_chat(owner, span_notice("You have [round(energy,0.01)] energy remaining. It is currently [paused ? "stable" : (transformed ? "increasing" : "decreasing")]."))
 
 /// Trait system: gargoyle energy.
-/// One Life step per cycle while attached (doc/rewrite/om_retirement.md L1).
+/// One Life step per cycle while attached (doc/rewrite/archive/retirement_log.md L1).
 /datum/trait_state/gargoyle/life_steps()
 	return list(seq_step(PROC_REF(life_tick), after = list(LIFE_INPUT, "life_type_pre"), key = "life_trait_gargoyle"))
 

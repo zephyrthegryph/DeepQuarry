@@ -313,7 +313,7 @@
 
 /datum/unit_test/dq_preview_poll_cadence/Run()
 	test_driver_begin()
-	set_global(nameof(GLOB.om_rec), GLOB.om_rec) // the first every() of a round makes the scheduler's record: restored with the rest
+	set_global(nameof(GLOB.sched_rec), GLOB.sched_rec) // the first every() of a round makes the scheduler's record: restored with the rest
 	var/datum/dq_preview_poll/poll = new
 	poll.state = list(1, list(), list(), 1, 1, FALSE, list())
 	COOLDOWN_START(poll, timeout_at, 10 SECONDS)

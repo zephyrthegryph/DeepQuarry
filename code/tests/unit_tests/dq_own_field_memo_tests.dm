@@ -26,8 +26,8 @@
 			TEST_ASSERT(!READERS(A, var_name), "[A.type].[var_name]: the fast path skips a write that READERS() says is read")
 			TEST_ASSERT(!GLOB.stat_input_keys[var_name], "[A.type].[var_name]: skipped, but a stat reads it")
 			TEST_ASSERT(!draw_hop_reads_var(var_name), "[A.type].[var_name]: skipped, but a draw reads it a hop away")
-			var/list/fields = GLOB.om_reg.fields_of(A.type)
-			TEST_ASSERT(!fields[var_name], "[A.type].[var_name]: skipped, but it raises an OM channel")
+			var/list/fields = GLOB.definition_store.fields_of(A.type)
+			TEST_ASSERT(!fields[var_name], "[A.type].[var_name]: skipped, but it raises an channel")
 		if(length(seen) >= 400)
 			break
 	TEST_ASSERT(pairs > 100, "relation vars checked ([pairs])")

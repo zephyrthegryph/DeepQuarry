@@ -26,6 +26,6 @@
 		living_guy.status_set(STAT_DROWSY, min(100,living_guy.status_units(STAT_DROWSY)+30))
 
 /// Trait system: low blood sugar.
-/// One Life step per cycle while attached (doc/rewrite/om_retirement.md L1).
+/// One Life step per cycle while attached (doc/rewrite/archive/retirement_log.md L1).
 /datum/trait_state/diabetic/life_steps()
 	return list(seq_step(PROC_REF(life_tick), after = list(LIFE_INPUT, "life_type_pre"), key = "life_trait_diabetic"))

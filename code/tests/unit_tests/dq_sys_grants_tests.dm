@@ -1,4 +1,4 @@
-// The verb store (doc/rewrite/systems.md §19, code/datums/om/grant_verbs.dm): a verb is on an atom
+// The verb store (doc/rewrite/systems.md §19, code/engine/grant_verbs.dm): a verb is on an atom
 // while it is not hidden and something (a grant, the type) gives it; the store is the only writer.
 
 /mob/living/proc/dq_sys_grants_test_verb()
@@ -34,7 +34,7 @@ CAPABILITIES(/obj/item/dq_grants_declared/hiding)
 /datum/unit_test/dq_sys_grants_verb_follows_sources
 
 /datum/unit_test/dq_sys_grants_verb_follows_sources/Run()
-	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
+	set_global("handle_resolve_nulled", GLOB.handle_resolve_nulled)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
 	var/obj/item/first = allocate(/obj/item, test_floor())
 	var/obj/item/second = allocate(/obj/item, test_floor())
@@ -54,7 +54,7 @@ CAPABILITIES(/obj/item/dq_grants_declared/hiding)
 /datum/unit_test/dq_sys_grants_objects_and_sources
 
 /datum/unit_test/dq_sys_grants_objects_and_sources/Run()
-	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
+	set_global("handle_resolve_nulled", GLOB.handle_resolve_nulled)
 	var/obj/item/source = allocate(/obj/item, test_floor())
 	var/obj/item/target = allocate(/obj/item, test_floor())
 	var/obj_verb = /obj/proc/dq_sys_grants_test_obj_verb
@@ -71,7 +71,7 @@ CAPABILITIES(/obj/item/dq_grants_declared/hiding)
 /datum/unit_test/dq_sys_grants_hide_and_mixed_sources
 
 /datum/unit_test/dq_sys_grants_hide_and_mixed_sources/Run()
-	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
+	set_global("handle_resolve_nulled", GLOB.handle_resolve_nulled)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
 	var/obj/item/granter = allocate(/obj/item, test_floor())
 	var/obj/item/hider = allocate(/obj/item, test_floor())
@@ -102,7 +102,7 @@ CAPABILITIES(/obj/item/dq_grants_declared/hiding)
 /datum/unit_test/dq_sys_grants_declared_verbs
 
 /datum/unit_test/dq_sys_grants_declared_verbs/Run()
-	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
+	set_global("handle_resolve_nulled", GLOB.handle_resolve_nulled)
 	test_driver_begin()
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
 	set_global("dview_mob", GLOB.dview_mob)
@@ -134,7 +134,7 @@ CAPABILITIES(/obj/item/dq_grants_declared/hiding)
 /datum/unit_test/dq_sys_grants_turf_declared
 
 /datum/unit_test/dq_sys_grants_turf_declared/Run()
-	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
+	set_global("handle_resolve_nulled", GLOB.handle_resolve_nulled)
 	var/turf/simulated/T = test_floor()
 	TEST_ASSERT(istype(T), "the test floor is simulated")
 	var/was = T.climbable
@@ -151,7 +151,7 @@ TYPE_TABLE(/datum/form/dq_grant_test, get_form_verbs, list(/mob/living/proc/dq_s
 /datum/unit_test/dq_retire_form_verbs
 
 /datum/unit_test/dq_retire_form_verbs/Run()
-	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
+	set_global("handle_resolve_nulled", GLOB.handle_resolve_nulled)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
 	var/datum/form/dq_grant_test/F = allocate(/datum/form/dq_grant_test)
 	var/datum/form/dq_grant_test/other = allocate(/datum/form/dq_grant_test)
@@ -169,7 +169,7 @@ TYPE_TABLE(/datum/form/dq_grant_test, get_form_verbs, list(/mob/living/proc/dq_s
 	TEST_ASSERT(!(path in H.verbs), "deleting the granting form removes its verb")
 /datum/unit_test/retire_alien_evolve_without_adult_hides_verb
 /datum/unit_test/retire_alien_evolve_without_adult_hides_verb/Run()
-	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
+	set_global("handle_resolve_nulled", GLOB.handle_resolve_nulled)
 	var/mob/living/carbon/alien/A = allocate(/mob/living/carbon/alien, test_floor())
 	TEST_ASSERT_EQUAL(A.stat, CONSCIOUS, "the real base alien is conscious")
 	TEST_ASSERT(isnull(A.adult_form), "the actual base alien has no adult form")
@@ -181,7 +181,7 @@ TYPE_TABLE(/datum/form/dq_grant_test, get_form_verbs, list(/mob/living/proc/dq_s
 
 /datum/unit_test/retire_robot_default_and_subsystem_verbs
 /datum/unit_test/retire_robot_default_and_subsystem_verbs/Run()
-	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
+	set_global("handle_resolve_nulled", GLOB.handle_resolve_nulled)
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, test_floor())
 	R.add_robot_verbs()
 	TEST_ASSERT(/mob/living/silicon/robot/proc/robot_checklaws in R.verbs, "actual default laws proc is granted")
@@ -197,7 +197,7 @@ TYPE_TABLE(/datum/form/dq_grant_test, get_form_verbs, list(/mob/living/proc/dq_s
 /datum/unit_test/retire_malf_source_verbs
 
 /datum/unit_test/retire_malf_source_verbs/Run()
-	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
+	set_global("handle_resolve_nulled", GLOB.handle_resolve_nulled)
 	test_driver_begin()
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
 	set_global("dview_mob", GLOB.dview_mob)
@@ -220,7 +220,7 @@ TYPE_TABLE(/datum/form/dq_grant_test, get_form_verbs, list(/mob/living/proc/dq_s
 /datum/unit_test/retire_timed_hidden_verb
 
 /datum/unit_test/retire_timed_hidden_verb/Run()
-	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
+	set_global("handle_resolve_nulled", GLOB.handle_resolve_nulled)
 	test_driver_begin()
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())

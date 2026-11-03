@@ -1,5 +1,5 @@
 /// Actual timed pAI cell repair consumes its original part only at completion.
-/datum/unit_test/om/interim_paicard_cell_repair_consumption/run_om(list/made)
+/datum/unit_test/engine/interim_paicard_cell_repair_consumption/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/item/paicard/device = allocate(/obj/item/paicard, T)

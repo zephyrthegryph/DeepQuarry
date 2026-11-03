@@ -34,7 +34,7 @@ CAPABILITIES(/atom/movable)
 	owns_many(nameof(hose_connectors))
 	// What a mob is buckled to, what a puller pulls, what a grab holds and what an orbiter circles: sparse pairs, because a base type takes no var for them (code/engine/declare/link_state.dm).
 	// Their writers are buckle_link(), pull_link() and the grab's grab_made(); their readers are buckled_to(), buckled_mob_list(), pulling_target(), pulled_by_mob(),
-	// grab_target() and grabbed_by_list() (code/datums/om/relation.dm).
+	// grab_target() and grabbed_by_list() (code/engine/relation.dm).
 	links(LINK_END(/mob/living, LK_BUCKLED_TO), LINK_END(/atom/movable, LK_BUCKLED_MOBS), sparse = TRUE, b_many = TRUE, holds_while = PROC_REF(link_stays_seated), a_contributes = list(STAT_BUCKLED, TRUE), a_on_unlink = TYPE_PROC_REF(/mob/living, buckle_released), b_on_unlink = PROC_REF(buckle_vacated))
 	links(LINK_END(/atom/movable, LK_PULLING), LINK_END(/atom/movable, LK_PULLED_BY), sparse = TRUE, holds_while = PROC_REF(link_stays_in_pull_range), a_on_unlink = PROC_REF(pull_released))
 	links(LINK_END(/atom/movable, LK_ORBITING), LINK_END(/atom, LK_ORBITERS), sparse = TRUE, b_many = TRUE, a_on_unlink = PROC_REF(orbit_released))

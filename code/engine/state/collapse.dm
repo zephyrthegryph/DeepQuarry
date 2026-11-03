@@ -163,18 +163,18 @@ GLOBAL_LIST_INIT(state_refscan_flat, list("vis_contents"))
 			var/datum/ledger/L = movable.loc.containment_ledger()
 			if(L && !(movable.loc in internal))
 				. += L.refs_to(movable)
-		. += state_om_slot_refs(movable, internal)
+		. += state_slot_refs(movable, internal)
 	if(isatom(node))
 		var/atom/A = node
 		. += STATE_REFS_PER_CONTENT * length(A.contents)
 
-/// References to `movable` held by the object model for its containment: its
+/// References to `movable` held by the engine for its containment: its
 /// own record (when the owned-part scan did not already count it) and the slot
-/// relation edge linking it to its loc (om_slot_entered()), which the loc's
+/// relation edge linking it to its loc (slot_entered()), which the loc's
 /// record holds from outside the subtree. Other edges stay outside holders.
-/proc/state_om_slot_refs(atom/movable/movable, list/internal)
+/proc/state_slot_refs(atom/movable/movable, list/internal)
 	. = 0
-	var/datum/scheduler_record/rec = movable.om_rec
+	var/datum/scheduler_record/rec = movable.sched_rec
 	if(!rec)
 		return
 	if(!(rec in internal))

@@ -16,7 +16,7 @@ STAT(/obj/machinery, intact, ALL, base = TRUE, virtual = TRUE)
 STAT(/mob/living, body_effect_counts, SUM_PER_KEY, virtual = TRUE)
 /// Trait -> the number of sources holding it: hold(E, STAT_TRAIT_HOLDS, 1, source, key = trait) (code/_helpers/traits.dm).
 STAT(/datum, trait_holds, SUM_PER_KEY, virtual = TRUE)
-/// Cadence id -> holds on a publication step cadence (code/datums/om/cadence.dm).
+/// Cadence id -> holds on a publication step cadence (code/engine/cadence.dm).
 STAT(/datum, cadence_holds, SUM_PER_KEY, virtual = TRUE)
 STAT(/mob/living, can_act, ALL)
 STAT(/mob/living, can_move, ALL)

@@ -1,5 +1,5 @@
 // Stages and per-entity loops on the kernel: the periodic cadences and the hotspot burn are kernel work now, and every
-// stage still on the object-model engine can be adapted into a work item the kernel's graph validator accepts.
+// stage still on the engine engine can be adapted into a work item the kernel's graph validator accepts.
 
 /// How far from the burning tile the hotspot test restores air and floor heat (the burn's hot gas and fire spread past the first few tiles).
 #define KERNEL_HOTSPOT_TEST_REACH 8
@@ -50,7 +50,7 @@
 	qdel(H)
 	T.active_hotspot = null
 
-/// Every stage still on the object-model engine adapts into a kernel work item, and the adapted graph (the stages'
+/// Every stage still on the engine engine adapts into a kernel work item, and the adapted graph (the stages'
 /// after-edges within a phase) passes the same validator the boot DAG and the live work graph use: nothing missing,
 /// no cycle, no edge into a later phase. This is the gate a pipeline passes before its stages move off the engine.
 /datum/unit_test/kernel_stage_adapter_graph

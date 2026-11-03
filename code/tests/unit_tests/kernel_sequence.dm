@@ -1,5 +1,5 @@
 /// Kernel sequences (code/controllers/kernel/sequence*.dm): the semantics of the pipeline runner's tests
-/// (dq_om_pipeline_tests.dm) on a test sequence, plus the Life order lock and on_change(at_most =).
+/// (dq_pipeline_tests.dm) on a test sequence, plus the Life order lock and on_change(at_most =).
 
 // ---------------------------------------------------------------- fixtures
 

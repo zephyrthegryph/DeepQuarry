@@ -1,5 +1,5 @@
-// Object-model core: relations and relation forwarding
-// (doc/rewrite/object_model_core.md sections D and B.4).
+// engine core: relations and relation forwarding
+// (doc/rewrite/archive/object_model_core.md sections D and B.4).
 
 /// Links `source` to `target` by relation `rel_path`. Returns the edge, or a
 /// text reason when a single end is taken and the relation refuses.
@@ -19,13 +19,13 @@
 	if(R.source_single)
 		var/datum/relation_edge/old = relation_edge_from(srec, R, TRUE)
 		if(old)
-			if(R.conflict == OM_REL_REFUSE)
+			if(R.conflict == REL_REFUSE)
 				return "[source] already has \a [R.name || "link"]"
 			relation_unlink_edge(old)
 	if(R.target_single)
 		var/datum/relation_edge/old = relation_edge_from(trec, R, FALSE)
 		if(old)
-			if(R.conflict == OM_REL_REFUSE)
+			if(R.conflict == REL_REFUSE)
 				return "[target] is in use"
 			old.unlink_reason = RELATION_REPLACED
 			relation_unlink_edge(old)
@@ -50,7 +50,7 @@
 
 /proc/relation_unlink(datum/source, datum/target, rel_path)
 	var/datum/relation_definition/R = definition_registry().relation(rel_path)
-	var/datum/scheduler_record/srec = source?.om_rec
+	var/datum/scheduler_record/srec = source?.sched_rec
 	for(var/datum/relation_edge/edge as anything in srec?.edges)
 		if(edge.rel == R && edge.source == source && edge.target == target)
 			relation_unlink_edge(edge)
@@ -65,8 +65,8 @@
 	var/datum/target = edge.target
 	if(!source || !target)
 		return
-	var/datum/scheduler_record/srec = source.om_rec
-	var/datum/scheduler_record/trec = target.om_rec
+	var/datum/scheduler_record/srec = source.sched_rec
+	var/datum/scheduler_record/trec = target.sched_rec
 	if(srec)
 		LAZYREMOVE(srec.edges, edge)
 	if(trec)
@@ -96,9 +96,9 @@
 	if(R.derived_view)
 		if(!QDELETED(source) && hascall(source, R.derived_view))
 			call(source, R.derived_view)()
-	if(deleting == source && R.on_source_delete == OM_END_DELETE_OTHER && !QDELETED(target))
+	if(deleting == source && R.on_source_delete == REL_END_DELETE_OTHER && !QDELETED(target))
 		spent(target)
-	else if(deleting == target && R.on_target_delete == OM_END_DELETE_OTHER && !QDELETED(source))
+	else if(deleting == target && R.on_target_delete == REL_END_DELETE_OTHER && !QDELETED(source))
 		spent(source)
 
 /// Framework-maintained view vars and the list-undo list, on link.
@@ -143,24 +143,24 @@
 	. = rel_drop_z(z)
 	for(var/turf/T as anything in block(locate(1, 1, z), locate(world.maxx, world.maxy, z)))
 		if(T.own_key_text)
-			GLOB.om_turf_pos -= T.own_key_text // the level's plain turf handles stop resolving (its generation moved on): drop their cached positions
-		for(var/datum/relation_edge/edge as anything in T.om_rec?.edges?.Copy())
+			GLOB.handle_turf_pos -= T.own_key_text // the level's plain turf handles stop resolving (its generation moved on): drop their cached positions
+		for(var/datum/relation_edge/edge as anything in T.sched_rec?.edges?.Copy())
 			edge.unlink_reason = RELATION_Z_RELEASED
 			relation_unlink_edge(edge)
 			.++
 
 /// Per z-level: bumped each time the level is released (relation_drop_z()), carried in turf handles.
-GLOBAL_LIST_EMPTY(om_z_generations)
+GLOBAL_LIST_EMPTY(z_generations)
 
 /proc/relation_z_generation(z)
-	var/list/gens = GLOB.om_z_generations
+	var/list/gens = GLOB.z_generations
 	// A level never released reads 0, also where a bump of a higher level grew the list over it: a null entry compares unequal to the 0 a handle without a generation carries, and every turf handle of that level stopped resolving.
 	return (z > 0 && z <= length(gens)) ? (gens[z] || 0) : 0
 
 /proc/relation_z_generation_bump(z)
 	if(z <= 0)
 		return
-	var/list/gens = GLOB.om_z_generations
+	var/list/gens = GLOB.z_generations
 	if(length(gens) < z)
 		gens.len = z
 	gens[z] = (gens[z] || 0) + 1
@@ -175,14 +175,14 @@ GLOBAL_LIST_EMPTY(om_z_generations)
 /proc/linked(datum/E, rel_path)
 	. = list()
 	var/datum/relation_definition/R = definition_registry().relation(rel_path)
-	for(var/datum/relation_edge/edge as anything in E?.om_rec?.edges)
+	for(var/datum/relation_edge/edge as anything in E?.sched_rec?.edges)
 		if(edge.rel == R && edge.source == E)
 			. += edge.target
 
 /// The single target of `E`'s edge of this relation, or null.
 /proc/link_of(datum/E, rel_path)
 	var/datum/relation_definition/R = definition_registry().relation(rel_path)
-	for(var/datum/relation_edge/edge as anything in E?.om_rec?.edges)
+	for(var/datum/relation_edge/edge as anything in E?.sched_rec?.edges)
 		if(edge.rel == R && edge.source == E)
 			return edge.target
 	return null
@@ -208,7 +208,7 @@ GLOBAL_LIST_EMPTY(om_z_generations)
 	relation_edge_refresh(edge)
 
 /proc/relation_edge_teardown(datum/relation_edge/edge)
-	if(edge.om_rec)
+	if(edge.sched_rec)
 		entity_teardown_rest(edge)
 	edge.active = FALSE
 
@@ -252,8 +252,8 @@ GLOBAL_LIST_EMPTY(om_z_generations)
 			if(rec.fwd_in[j + 3])
 				origins |= rec.fwd_in[j]
 		for(var/datum/origin as anything in origins)
-			if(origin.om_rec)
-				relation_rebuild_fwd(origin.om_rec)
+			if(origin.sched_rec)
+				relation_rebuild_fwd(origin.sched_rec)
 
 /proc/relation_has_related(datum/scheduler_record/rec)
 	for(var/datum/scheduled_behaviour/B as anything in rec.att)
@@ -270,7 +270,7 @@ GLOBAL_LIST_EMPTY(om_z_generations)
 /// Every entity one hop along relation `rel_id` from `E`, either direction.
 /proc/relation_neighbours(datum/E, rel_id)
 	. = list()
-	for(var/datum/relation_edge/edge as anything in E.om_rec?.edges)
+	for(var/datum/relation_edge/edge as anything in E.sched_rec?.edges)
 		if(edge.rel.id != rel_id)
 			continue
 		. |= (edge.source == E) ? edge.target : edge.source
@@ -316,12 +316,12 @@ GLOBAL_LIST_EMPTY(om_z_generations)
 	nrec.fwd_in = nrec.fwd_in ? nrec.fwd_in + entry : entry
 	LAZYOR(rec.fwd_out, N)
 	if(mask)
-		N.om_listen |= mask
+		N.change_listen |= mask
 
 /proc/relation_clear_fwd_out(datum/scheduler_record/rec)
 	var/datum/origin = rec.owner
 	for(var/datum/N as anything in rec.fwd_out)
-		var/datum/scheduler_record/nrec = N.om_rec
+		var/datum/scheduler_record/nrec = N.sched_rec
 		if(!nrec?.fwd_in)
 			continue
 		// Copy-on-write (see relation_fwd_add()).

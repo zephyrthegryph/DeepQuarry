@@ -148,14 +148,14 @@ CAPABILITIES(/obj/e4_fixture/switch)
 ACTION(atom_bumped, bumped, FIXED, notice = /datum/notice/atom_bumped)
 
 /// The twin pair of the bridge test: an entity that listens for the notice of an om event.
-/datum/om_test_entity/e4_twin
+/datum/engine_test_entity/e4_twin
 	var/notices_heard = 0
 	var/last_bumped
 
-CAPABILITIES(/datum/om_test_entity/e4_twin)
+CAPABILITIES(/datum/engine_test_entity/e4_twin)
 	on_notice(/datum/notice/atom_bumped, then(PROC_REF(notice_heard)))
 
-/datum/om_test_entity/e4_twin/proc/notice_heard(datum/act/A)
+/datum/engine_test_entity/e4_twin/proc/notice_heard(datum/act/A)
 	var/datum/notice/atom_bumped/N = A
 	notices_heard++
 	last_bumped = N.bumped

@@ -66,7 +66,7 @@ ACTION(name_visible, notice = /datum/notice/visibly_named)
 ACTION(op, datum/op_plan/op, provider, notice = /datum/notice/op_done)
 
 // Mob Life (code/library/mob/statuses.dm, code/modules/mob/living/life/living_systems.dm). Nothing refuses these; their notices keep the names
-// the OM events' twins had, which remote view observes.
+// the events' twins had, which remote view observes.
 ACTION(living_status_stun, amount, FIXED, notice = /datum/notice/living_status_stun)
 ACTION(living_status_weaken, amount, FIXED, notice = /datum/notice/living_status_weaken)
 ACTION(living_status_paralyze, amount, FIXED, notice = /datum/notice/living_status_paralyze)

@@ -509,11 +509,11 @@
 	TEST_ASSERT(!granted(wearer, /datum/capability/e1_beacon), "and when the item is deleted")
 	qdel(C)
 
-/datum/unit_test/om/dq_e1_activation_lasts
+/datum/unit_test/engine/dq_e1_activation_lasts
 
-/datum/unit_test/om/dq_e1_activation_lasts/run_om(list/made)
-	var/datum/om_test_entity/H = entity(made)
-	var/datum/om_test_entity/source = entity(made)
+/datum/unit_test/engine/dq_e1_activation_lasts/run_engine(list/made)
+	var/datum/engine_test_entity/H = entity(made)
+	var/datum/engine_test_entity/source = entity(made)
 	GLOB.declare_report_capture = list()
 	var/datum/activation/A = grant(H, e1_widget("t", power = 1), source = source, lasts = 5 SECONDS)
 	TEST_ASSERT_NOTNULL(A, "a timed grant")

@@ -1,11 +1,11 @@
 /// Real girder plating spends two sheets at completion and wall dismantling refunds the same material allowance.
-/datum/unit_test/om/interim_girder_timed_wall_plating
+/datum/unit_test/engine/interim_girder_timed_wall_plating
 	var/deplete_while_waiting = FALSE
 
-/datum/unit_test/om/interim_girder_timed_wall_plating/depleted
+/datum/unit_test/engine/interim_girder_timed_wall_plating/depleted
 	deplete_while_waiting = TRUE
 
-/datum/unit_test/om/interim_girder_timed_wall_plating/run_om(list/made)
+/datum/unit_test/engine/interim_girder_timed_wall_plating/run_engine(list/made)
 	var/turf/T = run_loc_floor_bottom_left
 	var/original_floor_type = T.type
 	var/tile_x = T.x

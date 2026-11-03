@@ -12,8 +12,8 @@ it yet), `on_change(at_most =)`, the Life edge generator, focused tests and a be
 A work item ([scheduling_and_kernel.md](scheduling_and_kernel.md) section 2) runs one handler per member. That is
 stage-major: every member runs step A, then every member runs step B. Mob Life is entity-major: one mob breathes,
 metabolises, takes its body's status, then runs the steps that read that status, all sharing one frame (its gates,
-its environment, what an earlier step decided), before the next mob starts. The object-model pipeline runner
-(`code/datums/om/pipeline.dm`) did that with stage flyweights, families, variants, plans and facts. A sequence is
+its environment, what an earlier step decided), before the next mob starts. The engine pipeline runner
+(`code/engine/pipeline.dm`) did that with stage flyweights, families, variants, plans and facts. A sequence is
 the kernel's version of it, built from the kernel's own parts: membership, the one timer, `READERS`/`publish_change`,
 the shared graph validator and the spread sweep.
 
@@ -97,8 +97,8 @@ Wakes:
   setters, `timed_set` and the ownership accessors publish them. `publish_change(E, key)` ends in
   `seq_publish(E, key)`: the key maps to the positions that read it, their sleep bits clear, a parked member rejoins.
 - **Channels.** `changed(E, channel)` (and `om_raise_change()`, the `OM_CHANGED()` setters) reach
-  `om_dispatch_change()`, which calls `seq_channels(E, bits)` first: the steps whose reads include one of the bits
-  wake. `E.om_listen` carries its sequences' channels (`seq_listen_mask()`, folded into `om_recompute_listen()`), so
+  `dispatch_change()`, which calls `seq_channels(E, bits)` first: the steps whose reads include one of the bits
+  wake. `E.change_listen` carries its sequences' channels (`seq_listen_mask()`, folded into `om_recompute_listen()`), so
   the ~290 producer sites stay unchanged. `wake_all` channels wake every step. `seq_wake(E, path)` is the explicit
   wake.
 - A wake that arrives while that entity's frame runs waits in `pending` and is applied when the frame ends (a step
@@ -126,7 +126,7 @@ of a sweep. The sweep reuses one frame member after member; `run_step_now()`, th
 a scratch one.
 
 `STEP_ABORT` (`return F.abort()`) stops the frame: the steps after it don't run and nothing sleeps this frame (the
-pipeline's `OM_ABORT_FRAME`; `OM_ABORT_REST` has no user and no equivalent). `admit(E)` is the whole-frame guard.
+pipeline's `ABORT_FRAME`; `ABORT_REST` has no user and no equivalent). `admit(E)` is the whole-frame guard.
 
 ## 5. Parking, relevance, time, the audit, cost
 
@@ -140,7 +140,7 @@ pipeline's `OM_ABORT_FRAME`; `OM_ABORT_REST` has no user and no equivalent). `ad
   stretches the frames (at rate 0.1 a frame every ten cycles, at 0 none). Outside its run levels nothing runs and
   nothing accumulates; resuming is not a catch-up.
 - **Missed-wake audit.** `seq_audit()` runs with the pipeline audit (SSbehaviours' `audit_step` work item: same interval, the
-  `OM_PIPELINE_AUDIT` config flag, the "Toggle Pipeline Audit" verb, always on in test builds). A sleeping step whose
+  `PIPELINE_AUDIT` config flag, the "Toggle Pipeline Audit" verb, always on in test builds). A sleeping step whose
   `should_run()` holds, with its conditions passing and no rewake pending, is a missed wake: it logs
   `MOB_HIBERNATE_AUDIT: MISSED WAKE ...`, fails the unit test run, and wakes the step. Test builds snapshot a step's
   var-backed reads when it falls asleep and name the ones that changed without a publish.
@@ -168,14 +168,14 @@ handler with more to do schedules it with `after()`.
 | **S1** | The machine pipeline dissolves: each machine stage becomes a reaction on the machine (`on_change`, `every`), `machine_active` becomes membership (a machine is in the sweep only while it has work), `drawn_from` declares its power reads | `/datum/om/pipeline/machine` and its stages |
 | **S2** [built] | `life_derive` (canmove), `life_present` (HUD) and `life_vision` become `on_channel` reactions on `/mob/living` with `at_most = LIFE_PRESENT_MIN_INTERVAL`; `refresh_hud()` / `refresh_vision()` call the handler | the three reactive Life pipelines (deleted) |
 | **S3** | The main Life stages become procs on `/mob/living` and subtypes, declared in `life_steps()` with the edges `life_sequence_edges()` derives (keep `kernel_sequence_life_order` green); `idle()` becomes `should_run()` returning `!(old body)`; `rewake_delay()` becomes `rewake`; run_if facts become `when`; `ctx.set_fact("status_ok")` becomes `F.status_ok`; `ctx.fact("environment")` becomes `F.environment()`; trait stages become contributors (`seq_extra_add()`); mobs `seq_start()` Life where they attached the pipeline; `recompose_life()` calls `seq_replan()` | `/datum/om/pipeline/life`, `/datum/om/stage/life/*` |
-| **S4** | Docs; `check_grep.sh` rejects `/datum/om/stage` | `code/datums/om/pipeline.dm`, the OM plan/variant/fact code, the stage adapter, `life_sequence_plans()`/`life_sequence_edges()` |
+| **S4** | Docs; `check_grep.sh` rejects `/datum/om/stage` | `code/engine/pipeline.dm`, the OM plan/variant/fact code, the stage adapter, `life_sequence_plans()`/`life_sequence_edges()` |
 
 ### 7a. S2 as built
 
 - **Channels as change keys.** Life's producers call `changed(src, CHANGE_MOB_*)`: they raise channel bits, not var
   keys. `on_channel(bits, handler, at_most =, when =)` (`code/datums/reactions/reactions.dm`) is `on_change()` over
   `CHANNEL_KEY(bit)` keys; the type table keeps `chan_mask` / `chan_reactions`, `om_recompute_listen()` folds
-  `chan_mask` into `om_listen`, and `om_dispatch_change()` calls `rx_channels()` (`reactions/delivery.dm`), which
+  `chan_mask` into `change_listen`, and `dispatch_change()` calls `rx_channels()` (`reactions/delivery.dm`), which
   queues the reaction for the drain with a key per raised bit. No producer changed.
 - **The three reactions** (`living_systems.dm`, "Reactive output"): canmove on `CHANGE_MOB_STATUS | STAT | EXPLICIT`
   (no `at_most`: the derive pipeline had no `min_interval`); HUD on `HEALTH | STATUS | LOC | EQUIPMENT |
@@ -192,8 +192,8 @@ handler with more to do schedules it with `after()`.
   `life_hud()` / `life_vision()` directly and arm nothing, as `om_stage_run_now()` did.
 - **One behaviour change:** the reactive pipelines shared `/datum/om/frame/life`, whose `begin()` advances the stasis
   clock, so every HUD, sight or canmove frame advanced it as well; the reactions take no frame, so only Life frames do.
-- Tests: `life_om/derive_and_present`, `life_om/hud_gate_has_client`, `life_om/hud_at_most_coalesces`,
-  `life_om/npc_vision_follows_inputs` (`dq_life_om_tests.dm`).
+- Tests: `life_seq/derive_and_present`, `life_seq/hud_gate_has_client`, `life_seq/hud_at_most_coalesces`,
+  `life_seq/npc_vision_follows_inputs` (`dq_life_seq_tests.dm`).
 
 S3 decision points:
 

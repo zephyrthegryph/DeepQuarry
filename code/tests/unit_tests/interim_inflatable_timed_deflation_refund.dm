@@ -1,5 +1,5 @@
 /// Actual hand deflation refunds one folded wall only after its real timer and does not restart when requested twice.
-/datum/unit_test/om/interim_inflatable_timed_deflation_refund/run_om(list/made)
+/datum/unit_test/engine/interim_inflatable_timed_deflation_refund/run_engine(list/made)
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	user.enable_godmode()

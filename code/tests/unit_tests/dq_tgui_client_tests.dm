@@ -8,13 +8,13 @@
 /datum/tgui/dq_test_probe/process(force = FALSE)
 	probe_pushes++
 
-/datum/om_test_entity/proc/asset_cb(amount)
+/datum/engine_test_entity/proc/asset_cb(amount)
 	ticks += amount
 
-/datum/unit_test/om/tgui_update_uis_coalesces
-/datum/unit_test/om/tgui_update_uis_coalesces/run_om(list/made)
+/datum/unit_test/engine/tgui_update_uis_coalesces
+/datum/unit_test/engine/tgui_update_uis_coalesces/run_engine(list/made)
 	test_driver_begin()
-	var/datum/om_test_entity/host = entity(made)
+	var/datum/engine_test_entity/host = entity(made)
 	var/mob/user = new /mob
 	var/datum/tgui/dq_test_probe/ui = new(user, host, "Probe")
 	SStgui.on_open(ui)
@@ -37,9 +37,9 @@
 	qdel(user)
 	test_driver_end()
 
-/datum/unit_test/om/tgui_data_push_uses_slim_config
-/datum/unit_test/om/tgui_data_push_uses_slim_config/run_om(list/made)
-	var/datum/om_test_entity/host = entity(made)
+/datum/unit_test/engine/tgui_data_push_uses_slim_config
+/datum/unit_test/engine/tgui_data_push_uses_slim_config/run_engine(list/made)
+	var/datum/engine_test_entity/host = entity(made)
 	var/mob/user = new /mob
 	var/datum/tgui/ui = new(user, host, "Probe", "Probe title")
 	var/list/payload = ui.get_payload(with_data = TRUE)
@@ -52,11 +52,11 @@
 	qdel(ui)
 	qdel(user)
 
-/datum/unit_test/om/client_session_ack_releases_waiter
-/datum/unit_test/om/client_session_ack_releases_waiter/run_om(list/made)
-	var/datum/om_test_entity/E = entity(made)
+/datum/unit_test/engine/client_session_ack_releases_waiter
+/datum/unit_test/engine/client_session_ack_releases_waiter/run_engine(list/made)
+	var/datum/engine_test_entity/E = entity(made)
 	var/datum/client_session/session = new(null)
-	var/job = session.flush_assets(E, TYPE_PROC_REF(/datum/om_test_entity, asset_cb), 5)
+	var/job = session.flush_assets(E, TYPE_PROC_REF(/datum/engine_test_entity, asset_cb), 5)
 	TEST_ASSERT_EQUAL(E.ticks, 0, "the waiter does not run before the ack")
 	TEST_ASSERT_NULL(session.confirm_asset_arrival("[job]"), "a valid ack is consumed")
 	TEST_ASSERT_EQUAL(E.ticks, 5, "the ack runs the waiter")
@@ -67,11 +67,11 @@
 	TEST_ASSERT_EQUAL(E.ticks, 5, "the timeout of an acked job does nothing")
 	qdel(session)
 
-/datum/unit_test/om/client_session_timeout_releases_waiter
-/datum/unit_test/om/client_session_timeout_releases_waiter/run_om(list/made)
-	var/datum/om_test_entity/E = entity(made)
+/datum/unit_test/engine/client_session_timeout_releases_waiter
+/datum/unit_test/engine/client_session_timeout_releases_waiter/run_engine(list/made)
+	var/datum/engine_test_entity/E = entity(made)
 	var/datum/client_session/session = new(null)
-	session.flush_assets(E, TYPE_PROC_REF(/datum/om_test_entity, asset_cb), 3)
+	session.flush_assets(E, TYPE_PROC_REF(/datum/engine_test_entity, asset_cb), 3)
 	scheduler_advance(4)
 	TEST_ASSERT_EQUAL(E.ticks, 0, "still waiting inside the timeout")
 	scheduler_advance(2)

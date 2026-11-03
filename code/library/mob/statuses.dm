@@ -1,4 +1,4 @@
-// Mob statuses on the stat layer (doc/rewrite/final_api.html section 5 "Statuses"; doc/rewrite/om_retirement.md L3).
+// Mob statuses on the stat layer (doc/rewrite/final_api.html section 5 "Statuses"; doc/rewrite/archive/retirement_log.md L3).
 //
 // Every timed impairment a mob can suffer (stun, sleep, blindness, stutter, dizziness, ...) is a status stat: STAT(..., units =), its value the
 // strongest hold. A mob's own dose is its SRC_STATUS hold, timed on the mob's biology clock (stasis pauses it); anything else that keeps a

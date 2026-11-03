@@ -204,11 +204,16 @@ CAPABILITIES(/datum/controller/rogue)
 
 	if(length(clean_zones) <= 1) //Need to clean the oldest one, too.
 		GLOB.rm_controller.dbg("RMC(pnz): Cleaning up oldest zone.")
-		spawn(0) //Detatch it so we can return the new zone for now. // ALLOW(scheduler): clean_zone() sleeps between deletions: a long loop that has to yield to the tick
-			var/datum/rogue/zonemaster/ZM_oldest = get_oldest_zone()
-			if(ZM_oldest) ZM_oldest.clean_zone()
+		// Next tick, so the new zone is returned first; clean_zone() itself never sleeps (its objects are cleaned one per timer step).
+		after(src, 0, PROC_REF(clean_oldest_zone))
 
 	return ZM_target
+
+/// Cleans the oldest zone (its objects one per timer step, zonemaster.dm clean_atom()).
+/datum/controller/rogue/proc/clean_oldest_zone()
+	var/datum/rogue/zonemaster/ZM_oldest = get_oldest_zone()
+	if(ZM_oldest)
+		ZM_oldest.clean_zone()
 
 /// Accessor for the current_zone var.
 /datum/controller/rogue/proc/current_zone() as /datum/rogue/zonemaster

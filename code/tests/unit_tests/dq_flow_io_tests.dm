@@ -94,9 +94,9 @@
 	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "size:800x600,ctx:x,ctx via", "a deleted context drops the answer without calling the live owner")
 	TEST_ASSERT(!dx_winget(E, null, "mapwindow", "size", TYPE_PROC_REF(/datum/io_test_entity, dx_done)), "a round trip needs a client")
 
-/datum/unit_test/om/rainbow_crayon_asks_colours
+/datum/unit_test/engine/rainbow_crayon_asks_colours
 
-/datum/unit_test/om/rainbow_crayon_asks_colours/Run()
+/datum/unit_test/engine/rainbow_crayon_asks_colours/Run()
 	test_driver_begin()
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)

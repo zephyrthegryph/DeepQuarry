@@ -54,7 +54,7 @@ STAT(/obj/machinery/suit_cycler, electrified, TOP, base = 0)
 	var/obj/item/clothing/suit/space/void/suit = null
 	var/obj/item/clothing/head/helmet/space/helmet = null
 
-/// Sealed occupant slot (C8, containment.md §10, OM relations step 3). The
+/// Sealed occupant slot (C8, containment.md §10, relations step 3). The
 /// suit and helmet stay their own typed vars in raw contents, same as the
 /// suit storage unit -- only the person inside is a slot.
 /datum/relation_definition/slot/occupant/suit_cycler
