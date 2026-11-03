@@ -38,7 +38,7 @@ STATIC_ENTRY(atom_rules)
 	into.description_antag = description_antag
 	into.description_fluff = description_fluff
 	into.price_tag = price_tag
-	atom_rules_of(into).simulated = simulated
+	into.simulated = simulated
 
 /datum/entry_engine/type_trait/atom_rules
 	kind = ENTRY_ATOM_RULES
