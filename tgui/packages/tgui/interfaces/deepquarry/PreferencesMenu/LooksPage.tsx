@@ -720,7 +720,11 @@ const BodyTable = ({
             const value = values[row.styleKey];
             const item = withValue(row.styleKey);
             const count = isNoStyle(value) ? 0 : channelsOf(item, value);
+            // Under a taur body the Tail row greys out and shows the tail it keeps; the taur's removal brings it back.
             if (isTail && taurNow) {
+              const kept = String(item?.props?.under_taur ?? '');
+              const keptLabel =
+                allTails.find(([v]) => v === kept)?.[1] ?? (kept || 'None');
               return (
                 <Box
                   key={row.label}
@@ -729,10 +733,11 @@ const BodyTable = ({
                 >
                   <Box style={cellStyle}>{row.label}</Box>
                   <Box
+                    className="dq-tail-under-taur"
                     color="label"
-                    style={{ ...cellStyle, gridColumn: '2 / -1' }}
+                    style={{ ...cellStyle, gridColumn: '2 / -1', opacity: 0.5 }}
                   >
-                    The taur body in Legs takes the place of a tail.
+                    <span title="Hidden by the taur body">{keptLabel}</span>
                   </Box>
                 </Box>
               );

@@ -86,7 +86,8 @@ MSG_DEF_SELF(light/wrong_kind, "This type of light requires another kind.")
 	var/overlay_color = LIGHT_COLOR_INCANDESCENT_TUBE
 	var/flickering = FALSE
 	var/overlay_above_everything = TRUE
-	/// The area's lights power state the fixture last acted on (so a channel change that changes nothing here does nothing).
+	/// The area's lights power state the fixture last acted on (so a channel change that changes nothing here does nothing). Null: a fixture
+	/// the map load left unpowered, which has lost no power: its emergency cell stays off until power has reached it and gone again.
 	var/tmp/last_area_power = null
 
 
@@ -117,7 +118,7 @@ CAPABILITIES(/obj/machinery/light)
 	every(PROC_REF(flicker_delay), then(PROC_REF(do_flicker)), when = nameof(flickering))
 	every(2 SECONDS, then(PROC_REF(auto_flicker_check)), when = PROC_REF(flicker_watching))
 	param(nameof(construct_at_make), pos = 1, keep = FALSE, overrides = TRUE)
-	setup(PROC_REF(start_up_fixture))
+	setup(PROC_REF(start_up_fixture), mapload = TRUE)
 
 /// The area's night shift reaches a fixture through its area (the area's stat is fed by its APC); a fixture that does not allow it ignores it.
 /obj/machinery/light/proc/wants_nightshift(datum/act/A)
@@ -359,7 +360,7 @@ CAPABILITIES(/obj/machinery/light)
 				set_overlay_color(correct_overlay)
 		if(cell?.charge < cell?.maxcharge)
 			schedule_emergency_recharge()
-	else if(has_emergency_power(LIGHT_EMERGENCY_POWER_USE) && !turned_off())
+	else if(!isnull(last_area_power) && has_emergency_power(LIGHT_EMERGENCY_POWER_USE) && !turned_off()) // not on a fixture that never had power (start_up_fixture())
 		set_use_power(USE_POWER_IDLE)
 		set_emergency_mode(TRUE)
 		begin_emergency_discharge()
@@ -747,7 +748,9 @@ CAPABILITIES(/obj/machinery/light)
 /// The area's power_change() ran: act only if this light's power actually changed.
 /obj/machinery/light/proc/area_power_changed()
 	var/powered_now = !!has_power()
-	if(powered_now == last_area_power)
+	// A fixture the map load left unpowered (null, start_up_fixture()) has lost nothing: its first has_power reading, drained after the load,
+	// says what it already knew. Only power arriving settles it; the emergency cell answers a loss after that.
+	if(powered_now == last_area_power || (!powered_now && isnull(last_area_power)))
 		return
 	last_area_power = powered_now
 	if(powered_now)
@@ -1222,7 +1225,7 @@ CAPABILITIES(/obj/item/light)
 
 // create a new lighting fixture
 /// A light built from a frame starts empty and faces the frame's way; a mapped one carries its bulb as data, and every light powers up.
-/obj/machinery/light/proc/start_up_fixture()
+/obj/machinery/light/proc/start_up_fixture(mapload)
 	if(start_with_cell && !no_emergency)
 		declare_emergency_cell()
 	var/obj/machinery/light_construct/construct = construct_at_make
@@ -1239,9 +1242,12 @@ CAPABILITIES(/obj/item/light)
 		if(prob(L.broken_chance))
 			broken(1)
 
-	set_on(powered())
-	last_area_power = !!has_power()
 	rel_set(src, nameof(power_area), get_area(src))
+	set_on(powered())
+	// Map load: a fixture with no power at load has lost none. It stays dark and keeps its cell (null: no power seen yet) until power reaches
+	// it; the emergency cell starts on a loss after that (area_power_changed(): an APC failing, a cut, the area's after-load settle taking
+	// the power an APC-less area started with). A fixture built later in a dark room has lost its power to its builder: it lights from its cell.
+	last_area_power = (mapload && !on) ? null : !!has_power()
 	refresh_light(0)
 	// ition, so large mobs stop looking stupid in front of lights.
 	if (dir == SOUTH) // Lights are backwards, SOUTH lights face north (they are on south wall)

@@ -102,10 +102,6 @@
 	else
 		return null
 
-/atom/proc/Bumped(AM as mob|obj)
-
-	PUBLISH_LEGACY(src, /datum/notice/atom_bumped, AM)
-
 // Convenience proc to see if a container is open for chemistry handling
 // returns true if open
 // false if closed

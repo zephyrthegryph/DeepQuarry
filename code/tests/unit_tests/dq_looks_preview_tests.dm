@@ -99,3 +99,112 @@
 	TEST_ASSERT_NOTNULL(P.ui_data_datum_preferences(null, null, null)["character_preview_assets"], "a reopened window gets them again")
 	fdel(P.path)
 	qdel(P, TRUE)
+
+/// Waits for the preview render a change started (the south one and every direction) to land. Returns the frames.
+/proc/dq_test_wait_preview(datum/preferences/P, generation)
+	var/deadline = world.time + 15 SECONDS
+	UNTIL((P.dq_preview_generation > generation + 1 && !P.dq_preview_jobs_in_flight) || world.time > deadline)
+	return P.character_preview_b64?.Copy()
+
+/// The wings in the preview frames follow the wing style and the wing colour (the rendered frames, through the real async path).
+/datum/unit_test/dq_preview_frames_follow_wings
+
+/datum/unit_test/dq_preview_frames_follow_wings/Run()
+	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs()
+	// Animated: the preview flaps wings that can (the live setting most players have on), so pick wings that animate.
+	P.update_preference(GLOB.preference_entries_by_key["animations_toggle"], TRUE)
+	var/list/animated = list()
+	var/list/available = P.get_available_styles(GLOB.wing_styles_list)
+	for(var/name in available)
+		var/datum/sprite_accessory/wing/W = available[name]
+		if(istype(W) && W.do_colouration && W.ani_state)
+			animated += name
+	log_world("dq_preview_frames_follow_wings: animated coloured wings: [jointext(animated, ", ")]")
+	var/first = length(animated) ? animated[1] : dq_test_wearable_style(P, GLOB.wing_styles_list)
+	var/second = length(animated) >= 2 ? animated[2] : dq_test_wearable_style(P, GLOB.wing_styles_list, first)
+	TEST_ASSERT_NOTNULL(second, "two coloured wing styles to choose between")
+	var/list/steps = list(
+		list("wing_style", first),
+		list("wing_style", second),
+		list("wing_color1", "#ff2200"),
+		list("wing_color1", "#0022ff"),
+		list("wing_style", ""),
+	)
+	var/list/frames = dq_test_wait_preview(P, P.dq_preview_generation - 2)
+	for(var/list/step in steps)
+		var/generation = P.dq_preview_generation
+		TEST_ASSERT(P.update_preference(GLOB.preference_entries_by_key[step[1]], step[2]), "[step[1]] = [step[2]] accepted")
+		var/list/now = dq_test_wait_preview(P, generation)
+		var/mob/living/carbon/human/M = get_mannequin(P.client_ckey)
+		log_world("dq_preview_frames_follow_wings: [step[1]] = [step[2]]: wing_style [M.wing_style?.name] hidden [M.wings_hidden] flapping [M.flapping] colour [M.looks.wing_color] fallback [P.dq_last_preview_fallback]")
+		for(var/dir in list("south", "north"))
+			TEST_ASSERT_NOTEQUAL(now?[dir], frames?[dir], "[step[1]] = [step[2]] changed the [dir] frame")
+		frames = now
+	fdel(P.path)
+	qdel(P, TRUE)
+
+/// The playtester's setup (animated preview, no outfit, Cyber dragon wings on the palette): wing changes reach the frames.
+/datum/unit_test/dq_preview_frames_follow_linked_wings
+
+/datum/unit_test/dq_preview_frames_follow_linked_wings/Run()
+	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs(list("animations_toggle" = 1, "preview_job" = 0, "preview_loadout" = 0, "wing_style" = "Cyber dragon wing (colorable)", "wing_color1" = "primary", "wing_color2" = "secondary", "wing_color3" = "tertiary"))
+	var/list/steps = list(
+		list("wing_color1", "secondary"),
+		list("palette_secondary", "#ff2200"),
+		list("wing_color1", "#00ff22"),
+		list("wing_style", "Cyber doe wing"),
+		list("wing_style", "Cyber dragon wing (colorable)"),
+		list("wing_style", ""),
+	)
+	var/list/frames = dq_test_wait_preview(P, P.dq_preview_generation - 2)
+	P.update_preview_icon()
+	frames = dq_test_wait_preview(P, P.dq_preview_generation - 1)
+	for(var/list/step in steps)
+		var/generation = P.dq_preview_generation
+		var/mob/living/carbon/human/M = get_mannequin(P.client_ckey)
+		var/sig_before = dq_test_preview_signature(P)
+		var/colour_before = M.looks.wing_color
+		TEST_ASSERT(P.update_preference(GLOB.preference_entries_by_key[step[1]], step[2]), "[step[1]] = [step[2]] accepted")
+		var/list/now = dq_test_wait_preview(P, generation)
+		var/sig_after = dq_test_preview_signature(P)
+		log_world("dq_preview_frames_follow_linked_wings: [step[1]] = [step[2]]: colour [colour_before] -> [M.looks.wing_color]; signature changed [sig_before != sig_after]; south changed [now?["south"] != frames?["south"]]; generation [generation] -> [P.dq_preview_generation]; fallback [P.dq_last_preview_fallback]; wing key [look_part_key(M.wing_look(FALSE))]; overlays [length(M.overlays)]; rx key [length(M.rx?.look_key)]")
+		if(now?["south"] == frames?["south"])
+			TEST_FAIL("[step[1]] = [step[2]] left the south frame as it was")
+		frames = now
+	fdel(P.path)
+	qdel(P, TRUE)
+
+/// A taur body keeps the tail it replaces: the Tail row shows it greyed, only the taur is worn, and removing the taur wears the tail again.
+/datum/unit_test/dq_taur_keeps_tail
+
+/datum/unit_test/dq_taur_keeps_tail/Run()
+	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs()
+	var/datum/preference_editor/legs/legs = GLOB.preference_editors_by_key["legs"]
+	var/tail = dq_test_wearable_style(P, GLOB.tail_styles_list)
+	var/taur
+	for(var/key in GLOB.tail_styles_list)
+		var/datum/sprite_accessory/S = GLOB.tail_styles_list[key]
+		if(istype(S) && istaurtail(S) && (S.name in P.get_available_styles(GLOB.tail_styles_list)))
+			taur = S.name
+			break
+	TEST_ASSERT_NOTNULL(tail, "a tail to keep")
+	TEST_ASSERT_NOTNULL(taur, "a taur body to wear")
+	P.update_preference(GLOB.preference_entries_by_key["tail_style"], tail)
+	var/datum/preference/tail_pref = GLOB.preference_entries_by_key["tail_style"]
+
+	TEST_ASSERT_EQUAL(legs.handle_action(P, "set_leg_style", list("style" = taur), null), PREF_UPDATE_ACCEPTED, "the taur is accepted")
+	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/text/human/tail_style), taur, "the taur body is worn as the tail style")
+	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/text/human/tail_style_under_taur), tail, "the tail is kept, not cleared")
+	TEST_ASSERT_EQUAL(tail_pref.get_widget_props(P)["under_taur"], tail, "the greyed Tail row is told which tail it shows")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	P.copy_to(H)
+	TEST_ASSERT_EQUAL(H.tail_style?.name, taur, "only the taur is drawn while it is worn")
+
+	TEST_ASSERT_EQUAL(legs.handle_action(P, "set_leg_style", list("style" = "plantigrade"), null), PREF_UPDATE_ACCEPTED, "Normal legs are accepted")
+	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/text/human/tail_style), tail, "removing the taur wears the kept tail again")
+	TEST_ASSERT(!P.read_preference(/datum/preference/text/human/tail_style_under_taur), "and nothing is kept any more")
+	P.copy_to(H)
+	TEST_ASSERT_EQUAL(H.tail_style?.name, tail, "the tail is drawn again")
+	cancel_after(P, "preferences_preview_full")
+	fdel(P.path)
+	qdel(P, TRUE)

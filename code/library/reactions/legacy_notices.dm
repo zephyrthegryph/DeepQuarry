@@ -27,7 +27,7 @@
 	src.created = created
 	src.mapload = mapload
 
-/// From base of atom/Bumped(): (/atom/movable) (the one that gets bumped)
+/// A plain one-payload notice (was the old atom/Bumped() echo; walk-ins are /datum/notice/bumped now). The e4 twin-delivery test drives it.
 /datum/notice/atom_bumped
 	var/bumped
 

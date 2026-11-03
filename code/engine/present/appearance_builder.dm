@@ -652,6 +652,10 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 /// runtime icons never share a key (their text is "/icon" for every one) and the same cached icon always has the same key.
 /proc/look_icon_key(icon)
 	READS_FROM()
+	if(isfile(icon) && !length("[icon]"))
+		// A runtime icon put on an image (image(icon)) becomes a cache resource whose text is empty: every one would share the key "", so a
+		// wing or tail redrawn in another style or colour kept the first one's look. Its reference names that resource.
+		return REF(icon)
 	if(isnull(icon) || isfile(icon) || istext(icon))
 		return "[icon]"
 	if(istype(icon, /icon))

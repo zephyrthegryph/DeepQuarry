@@ -42,7 +42,7 @@ CAPABILITIES(/obj/structure/anomaly_container)
 /// An anomaly dragged onto the container: it bumps the dragger, then goes in.
 /obj/structure/anomaly_container/proc/anomaly_contained(datum/act/op/A)
 	var/obj/machinery/artifact/dragged = A.held
-	dragged.Bumped(A.actor)
+	A.actor.bump_into(dragged)
 	contain(dragged)
 	return OP_OK
 

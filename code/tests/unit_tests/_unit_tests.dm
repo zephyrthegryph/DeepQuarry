@@ -128,6 +128,7 @@
 #include "dx_condition_tests.dm"
 #include "decl_tests.dm"
 #include "disease_tests.dm"
+#include "dq_no_placeholder_choices.dm"
 #include "dx_cap_b2_library_tests.dm"
 #include "dx_cap_checks_tests.dm"
 #include "dq_factor_oracle.dm"

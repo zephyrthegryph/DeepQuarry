@@ -60,10 +60,10 @@ export const FlavorTextEditor = ({ data, staticData }: EditorProps) => {
           <Button
             compact
             icon="eye"
-            tooltip="Print it in your chat the way an examining player sees it"
+            tooltip="As examined"
             onClick={() => act('dq_inspect_flavor')}
           >
-            Show in chat as examined
+            Preview in chat
           </Button>
         )
       }
