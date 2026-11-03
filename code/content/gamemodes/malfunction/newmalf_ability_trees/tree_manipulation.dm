@@ -181,8 +181,8 @@ CAPABILITIES(/datum/malf_research_ability/manipulation/emergency_forcefield)
 			return
 		else if (istype(N, /obj/machinery/power/apc)) // APC. Explosion is increased by available cell power.
 			var/obj/machinery/power/apc/A = N
-			if(A.cell && A.cell.charge)
-				explosion_intensity = 4 + round(A.cell.charge / 2000) // Explosion is increased by 1 for every 2k charge in cell
+			if(A.charge_now())
+				explosion_intensity = 4 + round(A.charge_now() / 2000) // Explosion is increased by 1 for every 2k charge in cell
 			else
 				to_chat(user, span_notice("ERROR: APC Malfunction - Cell depleted or removed. Unable to overload."))
 				return

@@ -4,8 +4,6 @@
 	var/frequency
 	var/list/shockedby
 	var/datum/radio_frequency/radio_connection
-	var/last_reported_density = -1
-	var/last_reported_locked = -1
 	/// The command the door is currently attempting to complete; command_step() retries it every second while set (airlock.dm declares the every()).
 	var/cur_command
 
@@ -24,6 +22,14 @@
 	if (!power_systems_on()) return //no power
 
 	set_cur_command(signal.data["command"])
+	execute_current_command()
+
+/// A command from the controller that holds this door by relation (the radio commands' set: "open", "secure_close", "lock", ...): the
+/// door works on it until it is done, as for a radio command, without the radio.
+/obj/machinery/door/airlock/proc/airlock_command(command)
+	if(!command || !power_systems_on())
+		return
+	set_cur_command(command)
 	execute_current_command()
 
 /obj/machinery/door/airlock/proc/execute_current_command()
@@ -49,10 +55,8 @@
 	if(delayed_status)
 		after(src, 0.2 SECONDS, PROC_REF(check_completion))
 		return
-	var/completed_command = cur_command
-	if(command_completed(completed_command))
+	if(command_completed(cur_command))
 		set_cur_command(null)
-	send_status(force = completed_command == "update")
 
 /obj/machinery/door/airlock/proc/do_command(command)
 	switch(command)
@@ -111,43 +115,15 @@
 			return (is_bolted(src) && density)
 
 		if("update")
-			return TRUE // We just want the send_status() call from check_completion()
+			return TRUE // nothing to do: its controllers read the door itself
 
 	return 1	//Unknown command. Just assume it's completed.
 
-/obj/machinery/door/airlock/proc/send_status(bumped = FALSE, force = FALSE)
-	if(radio_connection())
-		if(!force && !bumped && density == last_reported_density && is_bolted(src) == last_reported_locked)
-			return
-		var/datum/signal/signal = new
-		signal.transmission_method = TRANSMISSION_RADIO //radio signal
-		signal.data["tag"] = id_tag
-		signal.data["timestamp"] = TIME_NOW(CLOCK_WORLD)
-
-		signal.data["door_status"] = density?("closed"):("open")
-		signal.data["lock_status"] = is_bolted(src) ? "locked" : "unlocked"
-
-		if (bumped)
-			signal.data["bumped_with_access"] = 1
-
-		radio_connection().post_signal(src, signal, range = AIRLOCK_CONTROL_RANGE, radio_filter = RADIO_AIRLOCK)
-		last_reported_density = density
-		last_reported_locked = is_bolted(src)
-
-/obj/machinery/door/airlock/open(surpress_send)
-	. = ..()
-	if(!surpress_send) send_status()
-
-/obj/machinery/door/airlock/close(forced= FALSE, ignore_safties = FALSE, crush_damage)
-	. = ..()
-	if(!forced) send_status()
 
 /obj/machinery/door/airlock/proc/set_frequency(new_frequency)
 	rel_clear(src, nameof(radio_connection))
 	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
-	last_reported_density = -1
-	last_reported_locked = -1
 
 	if(new_frequency)
 		rel_set(src, nameof(radio_connection), SSradio.add_object(src, new_frequency, RADIO_AIRLOCK))
@@ -176,8 +152,8 @@
 
 // ---- what an airlock sensor is, declared ----
 //
-// It reads the pressure where it stands and sends it to its airlock controller whenever the reading (to a tenth of a kilopascal) changes: it waits on a gas
-// watch (woken only when the reading would differ) and never polls. A hand on it asks the controller to cycle the airlock (the master tag and the command it is set to). A multitool sets its tags, its frequency and its command.
+// It marks the chamber its airlock console reads (the console holds it by relation and reads the air itself) and lights its alert when the
+// pressure here (to a tenth of a kilopascal) falls low: it waits on a gas watch (woken only when the reading would differ) and never polls. A hand on it asks the controller to cycle the airlock (the master tag and the command it is set to). A multitool sets its tags, its frequency and its command.
 
 CAPABILITIES(/obj/machinery/airlock_sensor)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
@@ -234,7 +210,7 @@ CAPABILITIES(/obj/machinery/airlock_sensor)
 	. = ..()
 	sample_pressure()
 
-/// Reads the pressure here: a reading that differs from the last (to a tenth of a kilopascal) is sent to the controller, and below 80% of an
+/// Reads the pressure here: a reading that differs from the last (to a tenth of a kilopascal) is kept, and below 80% of an
 /// atmosphere the sensor shows its alert.
 /obj/machinery/airlock_sensor/proc/sample_pressure()
 	if(!on)
@@ -245,14 +221,6 @@ CAPABILITIES(/obj/machinery/airlock_sensor)
 	var/pressure = round(air_sample.return_pressure(), 0.1)
 
 	if(abs(pressure - previousPressure) > 0.001 || previousPressure == null)
-		var/datum/signal/signal = new
-		signal.transmission_method = TRANSMISSION_RADIO //radio signal
-		signal.data["tag"] = id_tag
-		signal.data["timestamp"] = TIME_NOW(CLOCK_WORLD)
-		signal.data["pressure"] = num2text(pressure)
-
-		radio_connection().post_signal(src, signal, range = AIRLOCK_CONTROL_RANGE, radio_filter = RADIO_AIRLOCK)
-
 		previousPressure = pressure
 
 		set_alert(pressure < ONE_ATMOSPHERE*0.8)
@@ -402,4 +370,3 @@ CAPABILITIES(/obj/machinery/access_button)
 	return radio_connection
 
 // Remote door buttons find airlocks by id_tag (REL_KEYED sources).
-SCHEMA(/obj/machinery/door/airlock, last_reported_locked, num())

@@ -129,7 +129,7 @@ CAPABILITIES(/obj/machinery/power/sensor)
 					if(!A.cell)
 						cell_charge = 0
 					else
-						cell_charge = A.cell.percent()
+						cell_charge = A.charge_percent_now()
 					// This list is sent every TGUI tick and can contain hundreds of
 					// APCs. A positional tuple avoids repeating seven JSON field names
 					// per row, cutting Power Monitor bridge traffic substantially.
@@ -210,7 +210,7 @@ CAPABILITIES(/obj/machinery/power/sensor)
 			out += "<tr><td>\The [A.area]" 															// Add area name
 			out += "<td>[S[A.equipment+1]]<td>[S[A.lighting+1]]<td>[S[A.environ+1]]" 				// Show status of channels
 			if(A.cell)
-				out += "<td>[round(A.cell.percent())]% - [chg[A.charging+1]]"
+				out += "<td>[round(A.charge_percent_now())]% - [chg[A.charging+1]]"
 			else
 				out += "<td>NO CELL"
 			var/load = A.channel_load_total() // Load.
@@ -256,7 +256,7 @@ CAPABILITIES(/obj/machinery/power/sensor)
 			APC_entry["s_lighting"] = S[A.lighting+1]
 			APC_entry["s_environment"] = S[A.environ+1]
 			// Cell Status
-			APC_entry["cell_charge"] = A.cell ? round(A.cell.percent()) : "NO CELL"
+			APC_entry["cell_charge"] = A.cell ? round(A.charge_percent_now()) : "NO CELL"
 			APC_entry["cell_status"] = A.cell ? chg[A.charging+1] : "N"
 			// Location
 			APC_entry["x"] = A.x

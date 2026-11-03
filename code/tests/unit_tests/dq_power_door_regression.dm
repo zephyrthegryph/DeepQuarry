@@ -11,7 +11,7 @@
 	text += "; area requires [A?.requires_power] equip/light/environ [A?.power_equip]/[A?.power_light]/[A?.power_environ]"
 	if(apc)
 		text += "; apc operating [apc.operating] supplying [apc.supplying] shorted [apc.shorted] grid_check [apc.grid_check]"
-		text += " channels [apc.equipment]/[apc.lighting]/[apc.environ] cell [apc.cell?.charge]/[apc.cell?.maxcharge] area [apc.area?.type]"
+		text += " channels [apc.equipment]/[apc.lighting]/[apc.environ] cell [apc.charge_now()]/[apc.cell?.maxcharge] area [apc.area?.type]"
 	else
 		text += "; no apc"
 	text += "; has_power [stat_value(door, STAT_HAS_POWER)] power_lost [door.power_lost()]"
@@ -44,7 +44,7 @@
 	for(var/obj/machinery/door/airlock/door in world)
 		var/area/A = get_area(door)
 		var/obj/machinery/power/apc/apc = A?.apc
-		if(!A?.requires_power || A.always_unpowered || !apc?.cell || apc.cell.charge <= 0 || !apc.operating)
+		if(!A?.requires_power || A.always_unpowered || !apc?.cell || apc.charge_now() <= 0 || !apc.operating)
 			continue
 		checked++
 		if(door.power_lost())

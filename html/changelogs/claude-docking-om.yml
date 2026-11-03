@@ -1,0 +1,4 @@
+author: "Claude"
+delete-after: true
+changes:
+  - refactor: "Docking ports and airlocks run on the OM core: ports dock by talking to each other directly, airlocks command their own doors and vents and judge the whole chamber's pressure instead of one sensor tile."

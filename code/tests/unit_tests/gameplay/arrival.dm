@@ -29,7 +29,7 @@
 	for(var/obj/machinery/door/airlock/door in range(radius, T))
 		var/area/A = get_area(door)
 		var/obj/machinery/power/apc/apc = A?.apc
-		if(!A?.requires_power || A.always_unpowered || !apc?.cell || apc.cell.charge <= 0 || !apc.operating)
+		if(!A?.requires_power || A.always_unpowered || !apc?.cell || apc.charge_now() <= 0 || !apc.operating)
 			continue
 		.["checked"]++
 		if(door.power_lost())

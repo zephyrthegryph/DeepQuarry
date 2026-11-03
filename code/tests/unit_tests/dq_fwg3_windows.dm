@@ -19,23 +19,23 @@
 	H.enable_godmode()
 	return H
 
-/// A docking controller's program commands are the window's fallback: a listed command reaches the program, an unlisted one does nothing.
+/// A docking controller's port commands are the window's fallback: a listed command reaches the port, an unlisted one does nothing.
 /datum/unit_test/dq_fwg3_ui/docking_controller
 /datum/unit_test/dq_fwg3_ui/docking_controller/run_fwg3()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/H = person(T)
 	var/obj/machinery/embedded_controller/radio/simple_docking_controller/C = allocate(/obj/machinery/embedded_controller/radio/simple_docking_controller, T)
-	var/datum/embedded_program/docking/simple/P = C.program
+	var/datum/docking_port/P = C.port
 	TEST_ASSERT(!P.override_enabled, "the override starts off")
 	hc_ui(H, C, "toggle_override")
-	TEST_ASSERT(P.override_enabled, "toggle_override reaches the program through the fallback")
+	TEST_ASSERT(P.override_enabled, "toggle_override reaches the port through the fallback")
 	hc_ui(H, C, "no_such_command")
 	TEST_ASSERT(P.override_enabled, "an unlisted command does nothing")
 	hc_ui(H, C, "toggle_override")
 	TEST_ASSERT(!P.override_enabled, "and the listed one toggles it back")
 	var/list/data = hc_data(C, H)
 	TEST_ASSERT_EQUAL(data["internalTemplateName"], "DockingConsoleSimple", "the subtype's own window data")
-	TEST_ASSERT_EQUAL(data["override_enabled"], P.override_enabled, "with the program's override")
+	TEST_ASSERT_EQUAL(data["override_enabled"], P.override_enabled, "with the port's override")
 	var/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod/pod = allocate(/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod, T)
 	data = hc_data(pod, H)
 	TEST_ASSERT_EQUAL(data["internalTemplateName"], "EscapePodConsole", "an escape pod's data replaces the docking controller's")
@@ -57,7 +57,7 @@
 	plain.set_panel_open(TRUE)
 	TEST_ASSERT_EQUAL(hc_data(plain, H)["panel_open"], TRUE, "a plain airlock controller's window shows its panel")
 	C.set_panel_open(FALSE)
-	var/datum/embedded_program/docking/airlock/P = C.program
+	var/datum/docking_port/P = C.port
 	var/before = P.override_enabled
 	hc_ui(H, C, "toggle_override")
 	TEST_ASSERT(P.override_enabled != before, "a program command works with the panel shut (the window's fallback is not behind the panel)")
