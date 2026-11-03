@@ -154,8 +154,12 @@
 		return TRUE
 	return dock_state != STATE_UNDOCKED || response_sent || resend_counter > 0
 
-/// A docking handshake in flight (or a message awaiting its resend window) keeps the controller stepping.
+/// A docking handshake in flight (or a message awaiting its resend window) keeps the controller stepping. A settled dock has nothing left to step:
+/// periodic_step() does nothing in the docked state, and every change out of it (a request to undock, a stray state) goes through set_dock_state() or a
+/// signal addressed to the port, which wake the controller. A docked airlock port also steps while its airlock cycles (docking/airlock).
 /datum/embedded_program/docking/needs_processing()
+	if(dock_state == STATE_DOCKED && !response_sent && resend_counter <= 0 && control_mode != MODE_NONE)
+		return FALSE
 	return dock_state != STATE_UNDOCKED || response_sent || resend_counter > 0
 
 /datum/embedded_program/docking/proc/set_dock_state(value)
@@ -319,14 +323,6 @@ SETTER(/datum/embedded_program/docking, dock_state)
 
 /datum/embedded_program/docking/proc/get_name()
 	return display_name ? display_name : "[get_area(master)] ([master.x], [master.y])"
-
-/// A docked door-only port has nothing left to step: the handshake is over and its program does nothing in the docked state. Every change out of it (a request
-/// to undock, a stray state) goes through set_dock_state() or a signal addressed to the port, which wake the controller. It stepped every two seconds for
-/// as long as the ship stayed docked: 6 controllers of the station's 35, 0.5-1.8 ms a step with the profiler on, the biggest idle cost after the turrets.
-/datum/embedded_program/docking/simple/needs_processing()
-	if(dock_state == STATE_DOCKED && !response_sent && resend_counter <= 0 && control_mode != MODE_NONE)
-		return FALSE
-	return ..()
 
 #undef STATE_UNDOCKED
 #undef STATE_DOCKING

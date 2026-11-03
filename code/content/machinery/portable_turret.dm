@@ -451,7 +451,7 @@ CAPABILITIES(/obj/machinery/porta_turret)
 	set_mob_near(TRUE)
 
 /// One look around while armed: it fires at the best target it sees (the cover comes down `timeout` frames after its last shot). With nobody
-/// near and nothing engaged it stops scanning until a mob stirs its chunks.
+/// near and nothing engaged, or only mobs it will not shoot and no player among them, it stops scanning until a mob stirs its chunks.
 /obj/machinery/porta_turret/proc/scan(datum/act/timer/A)
 	if(!engaging && !mob_nearby(world.view + 1))
 		set_mob_near(FALSE)
@@ -459,10 +459,15 @@ CAPABILITIES(/obj/machinery/porta_turret)
 	if(!last_fired) // We cannot fire anyway until our cooldown ends.
 		var/list/targets = list()			//list of primary targets
 		var/list/secondarytargets = list()	//targets that are least important
+		var/player_seen = FALSE
 		for(var/mob/M in scan_candidates())
 			assess_and_assign(M, targets, secondarytargets)
-		if(!tryToShootAt(targets))
-			tryToShootAt(secondarytargets)
+			if(M.client)
+				player_seen = TRUE
+		if(!tryToShootAt(targets) && !tryToShootAt(secondarytargets) && !engaging && !player_seen)
+			// Only mobs it will not shoot (a silicon, a friend, an animal), none of them a player who could draw a weapon where they stand:
+			// it looks again when a mob stirs its chunks or its settings change.
+			set_mob_near(FALSE)
 
 /// Nothing was left to shoot for `timeout` frames: the cover goes down.
 /obj/machinery/porta_turret/proc/stand_down()
@@ -906,6 +911,7 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 /obj/machinery/porta_turret/proc/setState(datum/turret_checks/TC)
 	if(controllock)
 		return
+	set_mob_near(TRUE) // what it would shoot may have changed
 	set_enabled(TC.enabled)
 	set_lethal(TC.lethal)
 	set_check_synth(TC.check_synth)
