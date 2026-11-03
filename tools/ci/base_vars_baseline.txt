@@ -2,7 +2,6 @@
 # tools/ci/base_vars_lint.py fails on a site not listed here. A site with
 # `// ALLOW(base_vars): <reason>` doesn't count.
 # Shrink-only: after a sweep, `python tools/ci/base_vars_lint.py --update`.
-base_var	code/game/atom/_atom.dm	@/atom::germ_level
 base_var	code/game/atom/_atom.dm	@/atom::simulated
 base_var	code/game/atom/_atom.dm	@/atom::atom_colours
 base_var	code/game/atom/armor.dm	@/atom::armor_spec
@@ -11,4 +10,3 @@ base_var	code/game/atom/atom_defense.dm	@/atom::atom_integrity
 base_var	code/game/atom/atom_defense.dm	@/atom::integrity_failure
 base_var	code/game/atom/atom_type_table.dm	@/atom::init_from_table
 base_var	code/game/atoms_movable.dm	@/atom/movable::last_move
-base_var	code/game/atoms_movable.dm	@/atom/movable::move_speed
