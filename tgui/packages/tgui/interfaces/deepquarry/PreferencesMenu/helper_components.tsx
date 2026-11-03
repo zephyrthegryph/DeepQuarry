@@ -281,8 +281,29 @@ export type ImageLayer = {
   blend?: 'multiply' | 'add';
 };
 
-/// Sprites stacked into one picture, each tinted on its own: a body with a part on it. Sprites of different sizes
-/// share one scale (the largest fills the square) and are centred, so a 64-pixel wing sits on a 32-pixel body as in game.
+/// Where each sprite of a LayeredImage lands on a `px` square: every sprite shares one scale, set by the smallest
+/// sprite (the body's 32-pixel tile) filling the square, centred horizontally and standing on the bottom edge, as
+/// BYOND draws an oversized sprite over its tile. A 64-pixel wing or taur overhangs the square and is clipped; the
+/// body is never shrunk to make room for it.
+export const layerPlacements = (
+  px: number,
+  sizes: ({ width: number; height: number } | null)[],
+) => {
+  const loaded = sizes.filter((s): s is { width: number; height: number } => !!s);
+  const tile = Math.max(
+    1,
+    loaded.length ? Math.min(...loaded.map((s) => Math.max(s.width, s.height))) : 1,
+  );
+  const unit = px / tile;
+  return sizes.map((s) => {
+    if (!s) return null;
+    const w = s.width * unit;
+    const h = s.height * unit;
+    return { x: (px - w) / 2, y: px - h, w, h };
+  });
+};
+
+/// Sprites stacked into one picture, each tinted on its own: a body with a part on it, placed by layerPlacements.
 /// A sprite that fails to load is left out.
 export const LayeredImage = (props: {
   layers: ImageLayer[];
@@ -303,17 +324,11 @@ export const LayeredImage = (props: {
           ),
         ),
       );
-      const largest = Math.max(
-        1,
-        ...images.map((i) => (i ? Math.max(i.width, i.height) : 0)),
-      );
-      const unit = px / largest;
+      const placements = layerPlacements(px, images);
       images.forEach((image, index) => {
-        if (!image) return;
-        const w = image.width * unit;
-        const h = image.height * unit;
-        const x = (px - w) / 2;
-        const y = px - h;
+        const place = placements[index];
+        if (!image || !place) return;
+        const { x, y, w, h } = place;
         const layer = new OffscreenCanvas(px, px);
         const lctx = layer.getContext('2d');
         if (!lctx) return;
