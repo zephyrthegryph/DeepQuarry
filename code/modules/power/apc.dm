@@ -567,9 +567,10 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	if(!force && seated_ref == pushed_cell_ref)
 		return
 	if(vg_entity && pushed_cell_ref && seated_ref != pushed_cell_ref)
-		// The cell Rust charged left: it takes the exact charge with it (reports carry only charge bands, apc_charge_band()).
+		// The cell Rust charged left: it takes the exact charge with it (reports carry only charge bands, apc_charge_band()), unless something
+		// wrote the cell itself since DM last mirrored it (that write is the newer).
 		var/obj/item/cell/gone = locate(pushed_cell_ref)
-		if(istype(gone) && !QDELETED(gone))
+		if(istype(gone) && !QDELETED(gone) && gone.charge == cell_charge_mirror)
 			gone.set_charge(clamp(get_charge(), 0, gone.maxcharge))
 	set_pushed_cell_ref(seated_ref)
 	cell_charge_mirror = null
