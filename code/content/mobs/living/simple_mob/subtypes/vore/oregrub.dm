@@ -60,12 +60,11 @@
 	poison_resist = 1.0
 
 	//these things are resilient, on account of being infused with all the minerals they eat
-	armor_spec = "melee=25;bullet=15;laser=15;bomb=25;bio=100;rad=100"
 
 	glow_override = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/vore/oregrub)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/oregrub)))
+	configure(atom_rules(armor_spec = "melee=25;bullet=15;laser=15;bomb=25;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/oregrub)))
 	configure(mob_rules(faction = FACTION_GRUBS))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/oregrub))
 	configure(butchery_rules(meat_type = /obj/item/ore/coal))
@@ -83,7 +82,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/oregrub)
 	vore_pounce_chance = 80 // Full-grown grubs should pounce. More homf opportunities if you're dumb enough to poke it.
 	vore_pounce_maxhealth = 100 // They won't pounce by default, as they're passive. This is just so the nom check succeeds (and allows it to try and eat you) once you poke the damn thing. :u
 	//lavagrubs have even more armor than oregrubs
-	armor_spec = "melee=50;bullet=25;laser=25;bomb=50;bio=100;rad=100"
 
 	var/lava_min_ore = 6
 	var/lava_max_ore = 10
@@ -92,7 +90,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/oregrub)
 	poison_chance = 66
 
 CAPABILITIES(/mob/living/simple_mob/vore/oregrub/lava)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/lavagrub)))
+	configure(atom_rules(armor_spec = "melee=50;bullet=25;laser=25;bomb=50;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/lavagrub)))
 
 /datum/say_list/oregrub
 	emote_see = list("burbles", "chitters", "snuffles around for fresh ore")

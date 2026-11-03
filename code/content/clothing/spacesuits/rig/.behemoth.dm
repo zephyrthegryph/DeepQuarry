@@ -4,7 +4,6 @@
 	suit_type = "aegis hardsuit"
 	icon = 'icons/obj/rig_modules_ch.dmi'
 	icon_state = "aegis_rig"
-	armor_spec = "melee=60;bullet=60;laser=60;energy=30;bomb=10;bio=100;rad=100"
 
 
 	chest_type = /obj/item/clothing/suit/space/rig/ch/aegis
@@ -13,6 +12,7 @@
 	boot_type = /obj/item/clothing/shoes/magboots/rig/ch/aegis
 
 CAPABILITIES(/obj/item/rig/ch/aegis)
+	configure(atom_rules(armor_spec = "melee=60;bullet=60;laser=60;energy=30;bomb=10;bio=100;rad=100"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 6)))
 
 /obj/item/clothing/suit/space/rig/ch/aegis

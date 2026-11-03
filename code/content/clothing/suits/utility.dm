@@ -10,7 +10,6 @@
  */
 
 /obj/item/clothing/suit/fire
-	armor_spec = "fire=100"
 	name = "emergency firesuit"
 	desc = "A suit that protects against fire and heat."
 	icon_state = "firesuit"
@@ -19,6 +18,7 @@
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/suit/fire)
+	configure(atom_rules(armor_spec = "fire=100"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.0)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/extinguisher))
 	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER, flags = 0))
@@ -48,10 +48,10 @@ CAPABILITIES(/obj/item/clothing/suit/fire/heavy)
 	name = "bomb hood"
 	desc = "Use in case of bomb."
 	icon_state = "bombsuit"
-	armor_spec = "bomb=100"
 	resistance_flags = BOMB_PROOF
 
 CAPABILITIES(/obj/item/clothing/head/bomb_hood)
+	configure(atom_rules(armor_spec = "bomb=100"))
 	configure(item_worn(hides = HIDEMASK|HIDEEARS|HIDEEYES|BLOCKHAIR, covers = HEAD|FACE|EYES))
 	configure(item_protection(siemens = 0))
 
@@ -60,10 +60,10 @@ CAPABILITIES(/obj/item/clothing/head/bomb_hood)
 	desc = "A suit designed for safety when handling explosives."
 	icon_state = "bombsuit"
 	w_class = ITEMSIZE_LARGE//bulky item
-	armor_spec = "bomb=100"
 	resistance_flags = BOMB_PROOF
 
 CAPABILITIES(/obj/item/clothing/suit/bomb_suit)
+	configure(atom_rules(armor_spec = "bomb=100"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 2)))
 	configure(item_worn(hides = HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER))
 	configure(item_protection(gas_transfer = 0.01, permeability = 0.01, heat_parts = CHEST|LEGS|FEET|ARMS|HANDS, cold_parts = CHEST|LEGS|FEET|ARMS|HANDS, max_heat = ARMOR_MAX_HEAT_PROTECTION_TEMPERATURE, siemens = 0))
@@ -90,9 +90,9 @@ CAPABILITIES(/obj/item/clothing/suit/bomb_suit/security)
 	name = "Radiation hood"
 	icon_state = "rad"
 	desc = "A hood with radiation protective properties. Label: Made with lead, do not eat insulation"
-	armor_spec = "bio=60;rad=100"
 
 CAPABILITIES(/obj/item/clothing/head/radiation)
+	configure(atom_rules(armor_spec = "bio=60;rad=100"))
 	configure(item_worn(hides = BLOCKHAIR, flags = THICKMATERIAL, covers = HEAD|FACE|EYES))
 	trait(TRAIT_RADIATION_PROTECTED_CLOTHING, examine = RADIATION_CLOTHING_EXAMINE)
 
@@ -101,10 +101,10 @@ CAPABILITIES(/obj/item/clothing/head/radiation)
 	desc = "A suit that protects against radiation. Label: Made with lead, do not eat insulation."
 	icon_state = "rad"
 	w_class = ITEMSIZE_LARGE//bulky item
-	armor_spec = "bio=60;rad=100"
 
 
 CAPABILITIES(/obj/item/clothing/suit/radiation)
+	configure(atom_rules(armor_spec = "bio=60;rad=100"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/radiation))
 	configure(item_worn(covers = CHEST|LEGS|ARMS|HANDS|FEET, hides = HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER, flags = THICKMATERIAL))
@@ -137,9 +137,9 @@ CAPABILITIES(/obj/item/clothing/suit/radiation)
 	item_state = "paramedic-vest"
 	item_state_slots = list(slot_r_hand_str = "blue_labcoat", slot_l_hand_str = "blue_labcoat")
 	blood_overlay_type = "coat"
-	armor_spec = "bio=50"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle/paramedic)
+	configure(atom_rules(armor_spec = "bio=50"))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL))
 	configure(item_worn(covers = UPPER_TORSO, hides = HIDEHOLSTER))
 

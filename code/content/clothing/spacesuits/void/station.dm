@@ -5,10 +5,10 @@
 	desc = "A special helmet designed for work in a hazardous, low-pressure environment. Has moderate radiation and pressure shielding."
 	icon_state = "rig0-engineering"
 	item_state_slots = list(slot_r_hand_str = "eng_helm", slot_l_hand_str = "eng_helm")
-	armor_spec = "melee=30;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=70;cold=60"
 	camera_networks = list(NETWORK_ENGINEERING)
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/engineering)
+	configure(atom_rules(armor_spec = "melee=30;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=70;cold=60"))
 	configure(item_protection(min_pressure = 0  * ONE_ATMOSPHERE, max_pressure = 15 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+5000))
 
 /obj/item/clothing/suit/space/void/engineering
@@ -16,10 +16,10 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/engineering)
 	desc = "A special suit that protects against hazardous, low pressure environments. Has moderate radiation and pressure shielding."
 	icon_state = "rig-engineering"
 	item_state_slots = list(slot_r_hand_str = "eng_voidsuit", slot_l_hand_str = "eng_voidsuit")
-	armor_spec = "melee=30;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=70;cold=60"
 	breach_threshold = 14 //These are kinda thicc
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/engineering)
+	configure(atom_rules(armor_spec = "melee=30;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=70;cold=60"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MINING, POCKET_ENGINEERING, POCKET_CE))
 	configure(item_protection(min_pressure = 0  * ONE_ATMOSPHERE, max_pressure = 15 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+5000))
@@ -33,9 +33,9 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/engineering)
 	desc = "A engineering helmet designed for work in a low-pressure environment. Extra radiation shielding appears to have been installed at the price of comfort."
 	icon_state = "rig0-engineering_rad"
 	item_state_slots = list(slot_r_hand_str = "eng_helm_rad", slot_l_hand_str = "eng_helm_rad")
-	armor_spec = "melee=25;bullet=5;laser=20;energy=5;bomb=50;bio=100;rad=100;cold=60"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/engineering/hazmat)
+	configure(atom_rules(armor_spec = "melee=25;bullet=5;laser=20;energy=5;bomb=50;bio=100;rad=100;cold=60"))
 	configure(item_protection(min_pressure = 0  * ONE_ATMOSPHERE, max_pressure = 10 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/suit/space/void/engineering/hazmat
@@ -43,9 +43,9 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/engineering/hazmat)
 	desc = "A engineering voidsuit that protects against hazardous, low pressure environments. Has enhanced radiation shielding compared to regular engineering voidsuits."
 	icon_state = "rig-engineering_rad"
 	item_state_slots = list(slot_r_hand_str = "eng_voidsuit_rad", slot_l_hand_str = "eng_voidsuit_rad")
-	armor_spec = "melee=25;bullet=5;laser=20;energy=5;bomb=50;bio=100;rad=100;cold=60"
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/hazmat)
+	configure(atom_rules(armor_spec = "melee=25;bullet=5;laser=20;energy=5;bomb=50;bio=100;rad=100;cold=60"))
 	configure(item_protection(min_pressure = 0  * ONE_ATMOSPHERE, max_pressure = 10 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 //Engineering Construction Voidsuit
@@ -55,9 +55,9 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/hazmat)
 	desc = "A special helmet designed for work in a hazardous, low-pressure environment. Exchanges radiation shielding for extra armor and maneuverability for field projects."
 	icon_state = "rig0-engineering_con"
 	item_state_slots = list(slot_r_hand_str = "eng_helm_con", slot_l_hand_str = "eng_helm_con")
-	armor_spec = "melee=40;bullet=15;laser=25;energy=15;bomb=35;bio=100;rad=50;cold=60"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/engineering/construction)
+	configure(atom_rules(armor_spec = "melee=40;bullet=15;laser=25;energy=15;bomb=35;bio=100;rad=50;cold=60"))
 	configure(item_protection(min_pressure = 0  * ONE_ATMOSPHERE, max_pressure = 10 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/suit/space/void/engineering/construction
@@ -65,9 +65,9 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/engineering/construction)
 	desc = "A special suit that protects against hazardous, low pressure environments. Exchanges radiation shielding for extra armor and maneuverability for field projects."
 	icon_state = "rig-engineering_con"
 	item_state_slots = list(slot_r_hand_str = "eng_voidsuit_con", slot_l_hand_str = "eng_voidsuit_con")
-	armor_spec = "melee=40;bullet=15;laser=25;energy=15;bomb=35;bio=100;rad=50;cold=60"
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/construction)
+	configure(atom_rules(armor_spec = "melee=40;bullet=15;laser=25;energy=15;bomb=35;bio=100;rad=50;cold=60"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	configure(item_protection(min_pressure = 0  * ONE_ATMOSPHERE, max_pressure = 10 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
@@ -77,16 +77,15 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/construction)
 	name = "reinforced engineering voidsuit helmet"
 	desc = "A heavy, radiation-shielded voidsuit helmet with a surprisingly comfortable interior."
 	icon_state = "rig0-engineeringalt"
-	armor_spec = "melee=50;bullet=15;laser=25;energy=5;bomb=45;bio=100;rad=100;cold=60"
 	light_overlay = "helmet_light_dual"
 
 /obj/item/clothing/suit/space/void/engineering/alt
 	name = "reinforced engineering voidsuit"
 	desc = "A bulky industrial voidsuit. It's a few generations old, but a reliable design and radiation shielding make up for the lack of climate control."
 	icon_state = "rig-engineeringalt"
-	armor_spec = "melee=50;bullet=15;laser=25;energy=15;bomb=45;bio=100;rad=100;cold=60"
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/alt)
+	configure(atom_rules(armor_spec = "melee=50;bullet=15;laser=25;energy=15;bomb=45;bio=100;rad=100;cold=60"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 
 /obj/item/clothing/head/helmet/space/void/engineering/salvage
@@ -97,13 +96,11 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/alt)
 		slot_l_hand_str = "eng_helm",
 		slot_r_hand_str = "eng_helm",
 		)
-	armor_spec = "melee=50;bullet=15;laser=25;energy=15;bomb=45;bio=100;rad=100;cold=60"
 
 /obj/item/clothing/suit/space/void/engineering/salvage
 	name = "salvage voidsuit"
 	desc = "A hand-me-down salvage voidsuit. It has obviously had a lot of repair work done to its radiation shielding."
 	icon_state = "rig-engineeringsav"
-	armor_spec = "melee=50;bullet=15;laser=25;energy=15;bomb=45;bio=100;rad=100;cold=60"
 
 //Mining
 
@@ -113,7 +110,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/alt)
 	desc = "A special helmet designed for work in a hazardous, low pressure environment. Has reinforced plating."
 	icon_state = "rig0-mining"
 	item_state_slots = list(slot_r_hand_str = "mining_helm", slot_l_hand_str = "mining_helm")
-	armor_spec = "melee=50;bullet=15;laser=25;energy=15;bomb=55;bio=100;rad=50;cold=60"
 	light_overlay = "helmet_light_dual"
 	camera_networks = list(NETWORK_CARGO)
 
@@ -122,7 +118,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/alt)
 	desc = "A special suit that protects against hazardous, low pressure environments. Has reinforced plating."
 	icon_state = "rig-mining"
 	item_state_slots = list(slot_r_hand_str = "mining_voidsuit", slot_l_hand_str = "mining_voidsuit")
-	armor_spec = "melee=50;bullet=15;laser=25;energy=15;bomb=55;bio=100;rad=50;cold=60"
 	breach_threshold = 14 //These are kinda thicc
 	resilience = 0.15 //Armored
 
@@ -149,7 +144,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/mining/alt)
 	desc = "A special helmet designed for work in a hazardous, low pressure environment. Has minor radiation shielding."
 	icon_state = "rig0-medical"
 	item_state_slots = list(slot_r_hand_str = "medical_helm", slot_l_hand_str = "medical_helm")
-	armor_spec = "melee=30;bullet=5;laser=20;energy=5;bomb=25;bio=100;rad=80;cold=60"
 	camera_networks = list(NETWORK_MEDICAL)
 
 /obj/item/clothing/suit/space/void/medical
@@ -157,7 +151,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/mining/alt)
 	desc = "A special suit that protects against hazardous, low pressure environments. Has minor radiation shielding."
 	icon_state = "rig-medical"
 	item_state_slots = list(slot_r_hand_str = "medical_voidsuit", slot_l_hand_str = "medical_voidsuit")
-	armor_spec = "melee=30;bullet=5;laser=20;energy=5;bomb=25;bio=100;rad=80;cold=60"
 
 //Medical EMT Voidsuit
 
@@ -168,14 +161,12 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/mining/alt)
 	desc = "A special helmet designed for work in a hazardous, low pressure environment. Exchanges radiation shielding for some additional protection."
 	icon_state = "rig0-medical_emt"
 	item_state_slots = list(slot_r_hand_str = "medical_helm_emt", slot_l_hand_str = "medical_helm_emt")
-	armor_spec = "melee=40;bullet=15;laser=30;energy=15;bomb=35;bio=100;rad=50;cold=60"
 
 /obj/item/clothing/suit/space/void/medical/emt
 	name = "emergency medical response voidsuit"
 	desc = "A special suit that protects against hazardous, low pressure environments. Exchanges radiation shielding for some additional protection."
 	icon_state = "rig-medical_emt"
 	item_state_slots = list(slot_r_hand_str = "medical_voidsuit_emt", slot_l_hand_str = "medical_voidsuit_emt")
-	armor_spec = "melee=40;bullet=15;laser=30;energy=15;bomb=35;bio=100;rad=50;cold=60"
 	breach_threshold = 14 //These are kinda thicc
 
 //Medical Biohazard Voidsuit
@@ -185,9 +176,9 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/mining/alt)
 	desc = "A special suit designed to protect the user in hazardous environments on the field. It feels heavier than the standard suit with extra protection around the joints."
 	icon_state = "rig0-medical_bio"
 	item_state_slots = list(slot_r_hand_str = "medical_helm_bio", slot_l_hand_str = "medical_helm_bio")
-	armor_spec = "melee=55;bullet=15;laser=20;energy=15;bomb=15;bio=100;rad=75;cold=60"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/medical/bio)
+	configure(atom_rules(armor_spec = "melee=55;bullet=15;laser=20;energy=15;bomb=15;bio=100;rad=75;cold=60"))
 	configure(item_protection(max_heat = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE, min_pressure = 0  * ONE_ATMOSPHERE, max_pressure = 15 * ONE_ATMOSPHERE))
 
 /obj/item/clothing/suit/space/void/medical/bio
@@ -195,10 +186,10 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/medical/bio)
 	desc = "A special suit designed to protect the user in hazardous environments on the field. It feels heavier than the standard suit with extra protection around the joints."
 	icon_state = "rig-medical_bio"
 	item_state_slots = list(slot_r_hand_str = "medical_voidsuit_bio", slot_l_hand_str = "medical_voidsuit_bio")
-	armor_spec = "melee=55;bullet=15;laser=20;energy=15;bomb=15;bio=100;rad=75;cold=60"
 	breach_threshold = 16 //Extra Thicc
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/medical/bio)
+	configure(atom_rules(armor_spec = "melee=55;bullet=15;laser=20;energy=15;bomb=15;bio=100;rad=75;cold=60"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)))
 	configure(item_protection(max_heat = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE, min_pressure = 0  * ONE_ATMOSPHERE, max_pressure = 15 * ONE_ATMOSPHERE))
 
@@ -207,7 +198,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/medical/bio)
 	name = "lightweight medical voidsuit helmet"
 	desc = "A trendy, lightly radiation-shielded voidsuit helmet trimmed in a sleek blue. It possesses advanced autoadaptive systems and doesn't need to be cycled to change species fit for most large humanoids."
 	icon_state = "rig0-medicalalt"
-	armor_spec = "melee=20;bullet=5;laser=20;energy=5;bomb=15;bio=100;rad=30;cold=60"
 	light_overlay = "helmet_light_dual_blue"
 	no_cycle = TRUE
 
@@ -217,7 +207,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/medical/bio)
 	name = "lightweight medical voidsuit"
 	desc = "A more recent model of Vey-Med voidsuit, exchanging physical protection for fully unencumbered movement and a complete range of motion. It possesses advanced autoadaptive systems and doesn't need to be cycled to change species fit for most large humanoids."
 	icon_state = "rig-medicalalt"
-	armor_spec = "melee=20;bullet=5;laser=20;energy=5;bomb=15;bio=100;rad=30;cold=60"
 	no_cycle = TRUE
 
 
@@ -226,16 +215,15 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/medical/bio)
 	name = "nonadaptive lightweight medical voidsuit helmet"
 	desc = "A trendy, lightly radiation-shielded voidsuit helmet trimmed in a sleek blue. This specific model lacks the autoadaption feature as a cost-saving measure."
 	icon_state = "rig0-medicalalt"
-	armor_spec = "melee=20;bullet=5;laser=20;energy=5;bomb=15;bio=100;rad=30;cold=60"
 	light_overlay = "helmet_light_dual_blue"
 
 /obj/item/clothing/suit/space/void/medical/veymed_static
 	name = "nonadaptive lightweight medical voidsuit"
 	desc = "A more recent model of Vey-Med voidsuit, exchanging physical protection for fully unencumbered movement and a complete range of motion. This specific model lacks the autoadaption feature as a cost-saving measure."
 	icon_state = "rig-medicalalt"
-	armor_spec = "melee=20;bullet=5;laser=20;energy=5;bomb=15;bio=100;rad=30;cold=60"
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/medical/veymed_static)
+	configure(atom_rules(armor_spec = "melee=20;bullet=5;laser=20;energy=5;bomb=15;bio=100;rad=30;cold=60"))
 	configure(item_worn(worn_factors = TRAIT_NONE))
 
 //Security
@@ -244,11 +232,11 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/medical/veymed_static)
 	desc = "A special helmet designed for work in a hazardous, low pressure environment. Has an additional layer of armor."
 	icon_state = "rig0-sec"
 	item_state_slots = list(slot_r_hand_str = "sec_helm", slot_l_hand_str = "sec_helm")
-	armor_spec = "melee=50;bullet=25;laser=25;energy=15;bomb=45;bio=100;rad=10;cold=60"
 	light_overlay = "helmet_light_dual"
 	camera_networks = list(NETWORK_SECURITY)
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/security)
+	configure(atom_rules(armor_spec = "melee=50;bullet=25;laser=25;energy=15;bomb=45;bio=100;rad=10;cold=60"))
 	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/suit/space/void/security
@@ -256,11 +244,11 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/security)
 	desc = "A special suit that protects against hazardous, low pressure environments. Has an additional layer of armor."
 	icon_state = "rig-sec"
 	item_state_slots = list(slot_r_hand_str = "sec_voidsuit", slot_l_hand_str = "sec_voidsuit")
-	armor_spec = "melee=50;bullet=25;laser=25;energy=15;bomb=45;bio=100;rad=10;cold=60"
 	breach_threshold = 14 //These are kinda thicc
 	resilience = 0.15 //Armored
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/security)
+	configure(atom_rules(armor_spec = "melee=50;bullet=25;laser=25;energy=15;bomb=45;bio=100;rad=10;cold=60"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_EXPLO))
 	configure(item_protection(siemens = 0.7))
@@ -273,14 +261,12 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/security)
 	name = "crowd control voidsuit helmet"
 	desc = "A heavy-set and ominous looking crowd control suit helmet. Fitted with state of the art shock absorbing materials, to disperse blunt force trauma."
 	icon_state = "rig0-sec_riot"
-	armor_spec = "melee=70;bullet=15;laser=15;energy=15;bomb=60;bio=100;rad=10;cold=60"
 	item_state_slots = list(slot_r_hand_str = "sec_helm_riot", slot_l_hand_str = "sec_helm_riot")
 
 /obj/item/clothing/suit/space/void/security/riot
 	name = "crowd control voidsuit"
 	desc = "A heavy-set and ominous looking crowd control suit. Fitted with state of the art shock absorbing materials, to disperse blunt force trauma."
 	icon_state = "rig-sec_riot"
-	armor_spec = "melee=70;bullet=15;laser=15;energy=15;bomb=60;bio=100;rad=10;cold=60"
 	breach_threshold = 16 //Extra Thicc
 	resilience = 0.1 //Heavily Armored
 	item_state_slots = list(slot_r_hand_str = "sec_voidsuit_riot", slot_l_hand_str = "sec_voidsuit_riot")
@@ -289,13 +275,11 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/security)
 /obj/item/clothing/head/helmet/space/void/security/alt
 	name = "security EVA voidsuit helmet"
 	desc = "A grey-black voidsuit helmet with red highlights. A little tacky, but it offers better protection against modern firearms and radiation than standard-issue security voidsuit helmets."
-	armor_spec = "melee=40;bullet=40;laser=40;energy=25;bomb=40;bio=100;rad=50;cold=60"
 	icon_state = "rig0-secalt"
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black", slot_l_hand_str = "syndicate-helm-black")
 /obj/item/clothing/suit/space/void/security/alt
 	name = "security EVA voidsuit"
 	desc = "A grey-black voidsuit with red highlights. A little tacky, but it offers better protection against modern firearms and radiation than standard-issue security voidsuits."
-	armor_spec = "melee=40;bullet=40;laser=40;energy=25;bomb=40;bio=100;rad=50;cold=60"
 	breach_threshold = 16 //Extra Thicc
 	resilience = 0.1 //Heavily Armored
 	icon_state = "rig-secalt"
@@ -307,11 +291,11 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/security)
 	name = "atmospherics voidsuit helmet"
 	icon_state = "rig0-atmos"
 	item_state_slots = list(slot_r_hand_str = "atmos_helm", slot_l_hand_str = "atmos_helm")
-	armor_spec = "melee=40;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=50;fire=80"
 	light_overlay = "helmet_light_dual"
 	camera_networks = list(NETWORK_ENGINEERING)
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/atmos)
+	configure(atom_rules(armor_spec = "melee=40;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=50;fire=80"))
 	configure(item_protection(max_heat = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE+15000, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 20* ONE_ATMOSPHERE))
 
 /obj/item/clothing/suit/space/void/atmos
@@ -319,10 +303,10 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/atmos)
 	desc = "A special suit that protects against hazardous, low pressure environments. Has improved thermal protection and minor radiation shielding."
 	icon_state = "rig-atmos"
 	item_state_slots = list(slot_r_hand_str = "atmos_voidsuit", slot_l_hand_str = "atmos_voidsuit")
-	armor_spec = "melee=40;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=50;fire=80"
 	breach_threshold = 16 //Extra Thicc
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/atmos)
+	configure(atom_rules(armor_spec = "melee=40;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=50;fire=80"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)))
 	configure(item_protection(max_heat = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE+15000, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 20* ONE_ATMOSPHERE))
 
@@ -332,16 +316,15 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/atmos)
 	desc = "A special voidsuit helmet designed for work in hazardous, low pressure environments.This one has been plated with an expensive heat and radiation resistant ceramic."
 	name = "heavy duty atmospherics voidsuit helmet"
 	icon_state = "rig0-atmosalt"
-	armor_spec = "melee=40;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=70;fire=80"
 	light_overlay = "hardhat_light"
 
 /obj/item/clothing/suit/space/void/atmos/alt
 	desc = "A special suit that protects against hazardous, low pressure environments. Fits better than the standard atmospheric voidsuit while still rated to withstand extreme heat and even minor radiation."
 	icon_state = "rig-atmosalt"
 	name = "heavy duty atmos voidsuit"
-	armor_spec = "melee=40;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=70;fire=80"
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/atmos/alt)
+	configure(atom_rules(armor_spec = "melee=40;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=70;fire=80"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)))
 
 //Exploration
@@ -351,7 +334,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/atmos/alt)
 	icon_state = "helm_explorer"
 	item_state = "helm_explorer"
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black", slot_l_hand_str = "syndicate-helm-black")
-	armor_spec = "melee=50;bullet=15;laser=35;energy=25;bomb=30;bio=100;rad=70;cold=60"
 	camera_networks = list(NETWORK_EXPLORATION)
 	light_overlay = "helmet_light_dual" //explorer_light
 
@@ -360,7 +342,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/atmos/alt)
 	desc = "A hazard and radiation resistant voidsuit, featuring the " + JOB_EXPLORER + " emblem on its chest plate. Designed for exploring unknown planetary environments."
 	icon_state = "void_explorer"
 	item_state_slots = list(slot_r_hand_str = "skrell_suit_black", slot_l_hand_str = "skrell_suit_black")
-	armor_spec = "melee=50;bullet=15;laser=35;energy=25;bomb=30;bio=100;rad=70;cold=60"
 	breach_threshold = 14 //These are kinda thicc
 	resilience = 0.15 //Armored
 
@@ -373,10 +354,10 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/atmos/alt)
 	icon_state = "helm_exp_medic"
 	item_state = "helm_exp_medic"
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black", slot_l_hand_str = "syndicate-helm-black")
-	armor_spec = "melee=50;bullet=15;laser=25;energy=15;bomb=30;bio=100;rad=90;cold=60"
 	light_overlay = "helmet_light_dual" //explorer_light
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/expedition_medical)
+	configure(atom_rules(armor_spec = "melee=50;bullet=15;laser=25;energy=15;bomb=30;bio=100;rad=90;cold=60"))
 	configure(item_protection(max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+5000))
 
 /obj/item/clothing/suit/space/void/expedition_medical
@@ -384,11 +365,11 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/expedition_medical)
 	desc = "A hazard and radiation resistant voidsuit, featuring the " + JOB_EXPLORER + " emblem and a green cross on its chest plate. Seems to be a little lighter and more flexible than the regular explorer issue."
 	icon_state = "void_exp_medic"
 	item_state_slots = list(slot_r_hand_str = "skrell_suit_black", slot_l_hand_str = "skrell_suit_black")
-	armor_spec = "melee=50;bullet=15;laser=25;energy=15;bomb=30;bio=100;rad=90;cold=60"
 	breach_threshold = 14 //These are kinda thicc
 	resilience = 0.15 //Armored
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/expedition_medical)
+	configure(atom_rules(armor_spec = "melee=50;bullet=15;laser=25;energy=15;bomb=30;bio=100;rad=90;cold=60"))
 	suit_storage(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_MEDICAL, POCKET_EXPLO))
 	configure(item_protection(max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+5000))
 
@@ -412,7 +393,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/expedition_medical)
 	icon_state = "rig0_pilot"
 	item_state = "pilot_helm"
 	item_state_slots = list(slot_r_hand_str = "atmos_helm", slot_l_hand_str = "atmos_helm")
-	armor_spec = "melee=40;bullet=10;laser=25;energy=15;bomb=25;bio=100;rad=60;cold=60"
 	light_overlay = "helmet_light_dual"
 	camera_networks = list(NETWORK_CIVILIAN)
 
@@ -421,7 +401,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/expedition_medical)
 	icon_state = "rig-pilot"
 	item_state_slots = list(slot_r_hand_str = "atmos_voidsuit", slot_l_hand_str = "atmos_voidsuit")
 	name = "pilot voidsuit"
-	armor_spec = "melee=40;bullet=10;laser=25;energy=15;bomb=25;bio=100;rad=60;cold=60"
 
 
 
@@ -586,25 +565,74 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/captain/alt)
 
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/salvage)
+	configure(atom_rules(armor_spec = "melee=50;bullet=15;laser=25;energy=15;bomb=45;bio=100;rad=100;cold=60"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_ENGINEERING, POCKET_CE))
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/mining)
+	configure(atom_rules(armor_spec = "melee=50;bullet=15;laser=25;energy=15;bomb=55;bio=100;rad=50;cold=60"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MINING))
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/medical)
+	configure(atom_rules(armor_spec = "melee=30;bullet=5;laser=20;energy=5;bomb=25;bio=100;rad=80;cold=60"))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MEDICAL))
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/medical/veymed)
+	configure(atom_rules(armor_spec = "melee=20;bullet=5;laser=20;energy=5;bomb=15;bio=100;rad=30;cold=60"))
 	fits_as(FIT_NO_DIONA_VOX)
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/medical/veymed)
+	configure(atom_rules(armor_spec = "melee=20;bullet=5;laser=20;energy=5;bomb=15;bio=100;rad=30;cold=60"))
 	configure(item_worn(worn_factors = TRAIT_NONE))
 	fits_as(FIT_NO_DIONA_VOX)
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/exploration)
+	configure(atom_rules(armor_spec = "melee=50;bullet=15;laser=35;energy=25;bomb=30;bio=100;rad=70;cold=60"))
 	suit_storage(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_MEDICAL, POCKET_EXPLO))
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/pilot)
+	configure(atom_rules(armor_spec = "melee=40;bullet=10;laser=25;energy=15;bomb=25;bio=100;rad=60;cold=60"))
 	suit_storage(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, /obj/item/storage/toolbox, /obj/item/storage/briefcase/inflatable))
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/engineering/alt)
+	configure(atom_rules(armor_spec = "melee=50;bullet=15;laser=25;energy=5;bomb=45;bio=100;rad=100;cold=60"))
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/engineering/salvage)
+	configure(atom_rules(armor_spec = "melee=50;bullet=15;laser=25;energy=15;bomb=45;bio=100;rad=100;cold=60"))
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/mining)
+	configure(atom_rules(armor_spec = "melee=50;bullet=15;laser=25;energy=15;bomb=55;bio=100;rad=50;cold=60"))
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/medical)
+	configure(atom_rules(armor_spec = "melee=30;bullet=5;laser=20;energy=5;bomb=25;bio=100;rad=80;cold=60"))
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/medical/emt)
+	configure(atom_rules(armor_spec = "melee=40;bullet=15;laser=30;energy=15;bomb=35;bio=100;rad=50;cold=60"))
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/medical/emt)
+	configure(atom_rules(armor_spec = "melee=40;bullet=15;laser=30;energy=15;bomb=35;bio=100;rad=50;cold=60"))
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/medical/veymed_static)
+	configure(atom_rules(armor_spec = "melee=20;bullet=5;laser=20;energy=5;bomb=15;bio=100;rad=30;cold=60"))
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/security/riot)
+	configure(atom_rules(armor_spec = "melee=70;bullet=15;laser=15;energy=15;bomb=60;bio=100;rad=10;cold=60"))
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/security/riot)
+	configure(atom_rules(armor_spec = "melee=70;bullet=15;laser=15;energy=15;bomb=60;bio=100;rad=10;cold=60"))
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/security/alt)
+	configure(atom_rules(armor_spec = "melee=40;bullet=40;laser=40;energy=25;bomb=40;bio=100;rad=50;cold=60"))
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/security/alt)
+	configure(atom_rules(armor_spec = "melee=40;bullet=40;laser=40;energy=25;bomb=40;bio=100;rad=50;cold=60"))
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/atmos/alt)
+	configure(atom_rules(armor_spec = "melee=40;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=70;fire=80"))
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/exploration)
+	configure(atom_rules(armor_spec = "melee=50;bullet=15;laser=35;energy=25;bomb=30;bio=100;rad=70;cold=60"))
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/pilot)
+	configure(atom_rules(armor_spec = "melee=40;bullet=10;laser=25;energy=15;bomb=25;bio=100;rad=60;cold=60"))

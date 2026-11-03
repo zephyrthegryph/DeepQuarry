@@ -9,7 +9,6 @@
 	desc = "A refurbished early contact era voidsuit helmet of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. The visor has a bad habit of fogging up and collecting condensation, but it beats sucking hard vacuum. This one is devoid of any identifying markings or rank indicators."
 	icon_state = "rig0-vintagecrew"
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black", slot_l_hand_str = "syndicate-helm-black")
-	armor_spec = "melee=30;bullet=15;laser=15;energy=5;bomb=20;bio=100;rad=50;cold=60"
 	light_overlay = "helmet_light"
 
 /obj/item/clothing/suit/space/void/refurb
@@ -17,7 +16,6 @@
 	desc = "A refurbished early contact era voidsuit of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. Many old-timer spacers swear by these old things, even if new powered hardsuits have more features and better armor. This one is devoid of any identifying markings or rank indicators."
 	icon_state = "rig-vintagecrew"
 	item_state_slots = list(slot_r_hand_str = "sec_voidsuitTG", slot_l_hand_str = "sec_voidsuitTG")
-	armor_spec = "melee=30;bullet=15;laser=15;energy=5;bomb=20;bio=100;rad=50;cold=60"
 
 //Engineering Crewsuit (ORANGE, RING)
 //This is probably the most appealing to get your hands on for basic protection and the specialist stuff
@@ -29,9 +27,9 @@
 	desc = "A refurbished early contact era voidsuit helmet of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. This one in particular seems to be an ode to the Ship of Theseus, but the insulation and radiation proofing are top-notch, and it has several oily stains that seem to be impossible to scrub off."
 	icon_state = "rig0-vintageengi"
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black", slot_l_hand_str = "syndicate-helm-black")
-	armor_spec = "melee=40;bullet=20;laser=20;energy=5;bomb=35;bio=100;rad=100;cold=60"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/engineering)
+	configure(atom_rules(armor_spec = "melee=40;bullet=20;laser=20;energy=5;bomb=35;bio=100;rad=100;cold=60"))
 	configure(item_protection(min_pressure = 0  * ONE_ATMOSPHERE, max_pressure = 15 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000))
 
 /obj/item/clothing/suit/space/void/refurb/engineering
@@ -39,10 +37,10 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/engineering)
 	desc = "A refurbished early contact era voidsuit of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. This one in particular seems to be an ode to the Ship of Theseus, but the insulation and radiation proofing are top-notch. The chestplate bears the logo of an old shipyard - though you don't recognize the name."
 	icon_state = "rig-vintageengi"
 	item_state_slots = list(slot_r_hand_str = "sec_voidsuitTG", slot_l_hand_str = "sec_voidsuitTG")
-	armor_spec = "melee=40;bullet=20;laser=20;energy=5;bomb=35;bio=100;rad=100;cold=60"
 	breach_threshold = 14 //These are kinda thicc
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/engineering)
+	configure(atom_rules(armor_spec = "melee=40;bullet=20;laser=20;energy=5;bomb=35;bio=100;rad=100;cold=60"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_CE, POCKET_MINING, POCKET_HEAVYTOOLS))
 	configure(item_protection(min_pressure = 0  * ONE_ATMOSPHERE, max_pressure = 15 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000))
@@ -57,7 +55,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/engineering)
 	desc = "A refurbished early contact era voidsuit helmet of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. The visor has a bad habit of fogging up and collecting condensation, but it beats sucking hard vacuum. The green and white markings indicate this as a medic's suit."
 	icon_state = "rig0-vintagemedic"
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black", slot_l_hand_str = "syndicate-helm-black")
-	armor_spec = "melee=30;bullet=15;laser=15;energy=5;bomb=25;bio=100;rad=75;cold=60"
 
 /obj/item/clothing/head/helmet/space/void/refurb/medical/alt
 	name = "vintage medical voidsuit bubble helmet"
@@ -69,7 +66,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/engineering)
 	desc = "A refurbished early contact era voidsuit of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. Many old-timer spacers swear by these old things, even if new powered hardsuits have more features and better armor. The green and white markings indicate this as a medic's suit."
 	icon_state = "rig-vintagemedic"
 	item_state_slots = list(slot_r_hand_str = "sec_voidsuitTG", slot_l_hand_str = "sec_voidsuitTG")
-	armor_spec = "melee=30;bullet=15;laser=15;energy=5;bomb=25;bio=100;rad=75;cold=60"
 
 //Marine Crewsuit (BLUE, SHIELD)
 //Really solid, balance between Sec and Sec EVA, but it has slightly worse shock protection
@@ -80,9 +76,9 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/engineering)
 	desc = "A refurbished early contact era voidsuit helmet of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. The visor has a bad habit of fogging up and collecting condensation, but it beats sucking hard vacuum. The blue markings indicate this as the marine/guard variant, likely from a merchant ship."
 	icon_state = "rig0-vintagemarine"
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black", slot_l_hand_str = "syndicate-helm-black")
-	armor_spec = "melee=40;bullet=35;laser=35;energy=5;bomb=40;bio=100;rad=50;cold=60"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/marine)
+	configure(atom_rules(armor_spec = "melee=40;bullet=35;laser=35;energy=5;bomb=40;bio=100;rad=50;cold=60"))
 	configure(item_protection(siemens = 0.8))
 
 /obj/item/clothing/suit/space/void/refurb/marine
@@ -90,11 +86,11 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/marine)
 	desc = "A refurbished early contact era voidsuit of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. Many old-timer marines swear by these old things, even if new powered hardsuits have more features and better armor. The blue markings indicate this as the marine/guard variant, likely from a merchant ship."
 	icon_state = "rig-vintagemarine"
 	item_state_slots = list(slot_r_hand_str = "sec_voidsuitTG", slot_l_hand_str = "sec_voidsuitTG")
-	armor_spec = "melee=40;bullet=35;laser=35;energy=5;bomb=40;bio=100;rad=50;cold=60"
 	breach_threshold = 14 //These are kinda thicc
 	resilience = 0.15 //Armored
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/marine)
+	configure(atom_rules(armor_spec = "melee=40;bullet=35;laser=35;energy=5;bomb=40;bio=100;rad=50;cold=60"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY))
 	configure(item_protection(siemens = 0.8))
@@ -109,9 +105,9 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/marine)
 	desc = "A refurbished early contact era voidsuit helmet of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. The visor has a bad habit of fogging up and collecting condensation, but it beats sucking hard vacuum. This variant appears to be an officer's, and has the best protection of all the old models."
 	icon_state = "rig0-vintageofficer"
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black", slot_l_hand_str = "syndicate-helm-black")
-	armor_spec = "melee=50;bullet=45;laser=45;energy=10;bomb=30;bio=100;rad=60;cold=60"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/officer)
+	configure(atom_rules(armor_spec = "melee=50;bullet=45;laser=45;energy=10;bomb=30;bio=100;rad=60;cold=60"))
 	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/suit/space/void/refurb/officer
@@ -119,11 +115,11 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/officer)
 	desc = "A refurbished early contact era voidsuit of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. Many old-timer spacers swear by these old things, even if new powered hardsuits have more features and better armor. This variant appears to be an officer's, and has the best protection of all the old models."
 	icon_state = "rig-vintageofficer"
 	item_state_slots = list(slot_r_hand_str = "sec_voidsuitTG", slot_l_hand_str = "sec_voidsuitTG")
-	armor_spec = "melee=50;bullet=45;laser=45;energy=10;bomb=30;bio=100;rad=60;cold=60"
 	breach_threshold = 16 //Extra Thicc
 	resilience = 0.1 //Heavily Armored
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/officer)
+	configure(atom_rules(armor_spec = "melee=50;bullet=45;laser=45;energy=10;bomb=30;bio=100;rad=60;cold=60"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY))
 	configure(item_protection(siemens = 0.7))
@@ -137,9 +133,9 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/officer)
 	desc = "A refurbished early contact era voidsuit helmet of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. The standard pilot model has a nice clear bubble helmet that doesn't fog up easily and has much better visibility, at the cost of relatively poor protection."
 	icon_state = "rig0-vintagepilot"
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black", slot_l_hand_str = "syndicate-helm-black")
-	armor_spec = "melee=25;bullet=20;laser=20;energy=5;bomb=20;bio=100;rad=50;cold=60"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/pilot)
+	configure(atom_rules(armor_spec = "melee=25;bullet=20;laser=20;energy=5;bomb=20;bio=100;rad=50;cold=60"))
 	configure(item_protection(siemens = 0.9))
 
 //fluff alt-variant helmet, no changes to protection or anything despite the desc (and it wouldn't matter unless you found a base-type since armor values aren't transferred during refits)
@@ -153,9 +149,9 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/pilot)
 	desc = "A refurbished early contact era voidsuit of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. Many old-timer spacers swear by these old things, even if new powered hardsuits have more features and better armor. The royal blue markings indicate this is the pilot's variant; low protection but ultra-lightweight."
 	icon_state = "rig-vintagepilot"
 	item_state_slots = list(slot_r_hand_str = "sec_voidsuitTG", slot_l_hand_str = "sec_voidsuitTG")
-	armor_spec = "melee=25;bullet=20;laser=20;energy=5;bomb=20;bio=100;rad=50;cold=60"
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/pilot)
+	configure(atom_rules(armor_spec = "melee=25;bullet=20;laser=20;energy=5;bomb=20;bio=100;rad=50;cold=60"))
 	configure(item_worn(worn_factors = TRAIT_NONE))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MINING))
 	configure(item_protection(siemens = 0.9))
@@ -169,9 +165,9 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/pilot)
 	desc = "A refurbished early contact era voidsuit helmet of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. The visor has a bad habit of fogging up and collecting condensation, but it beats sucking hard vacuum. The purple markings indicate this as a scientist's helmet. Got your crowbar handy?"
 	icon_state = "rig0-vintagescientist"
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black", slot_l_hand_str = "syndicate-helm-black")
-	armor_spec = "melee=25;bullet=10;laser=10;energy=50;bomb=10;bio=100;rad=100;cold=60"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/research)
+	configure(atom_rules(armor_spec = "melee=25;bullet=10;laser=10;energy=50;bomb=10;bio=100;rad=100;cold=60"))
 	configure(item_protection(siemens = 0.8))
 
 /obj/item/clothing/head/helmet/space/void/refurb/research/alt
@@ -184,9 +180,9 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/research)
 	desc = "A refurbished early contact era voidsuit of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. Many old-timer spacers swear by these old things, even if new powered hardsuits have more features and better armor. The purple markings indicate this as a scientist's suit. Keep your eyes open for ropes."
 	icon_state = "rig-vintagescientist"
 	item_state_slots = list(slot_r_hand_str = "sec_voidsuitTG", slot_l_hand_str = "sec_voidsuitTG")
-	armor_spec = "melee=25;bullet=10;laser=10;energy=50;bomb=10;bio=100;rad=100;cold=60"
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/research)
+	configure(atom_rules(armor_spec = "melee=25;bullet=10;laser=10;energy=50;bomb=10;bio=100;rad=100;cold=60"))
 	suit_storage(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_XENOARC, /obj/item/storage/firstaid))
 	configure(item_protection(siemens = 0.8))
 
@@ -199,7 +195,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/research)
 	desc = "A refurbished early contact era voidsuit helmet of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. The visor has a bad habit of fogging up and collecting condensation, but it beats sucking hard vacuum. This one has brown markings, denoting it as a miner's helmet."
 	icon_state = "rig0-vintageminer"
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black", slot_l_hand_str = "syndicate-helm-black")
-	armor_spec = "melee=30;bullet=15;laser=15;energy=5;bomb=20;bio=100;rad=50;cold=60"
 	light_overlay = "helmet_light"
 
 /obj/item/clothing/suit/space/void/refurb/mining
@@ -207,7 +202,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/research)
 	desc = "A refurbished early contact era voidsuit of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. Many old-timer spacers swear by these old things, even if new powered hardsuits have more features and better armor. This one has brown markings, denoting it as a miner's suit."
 	icon_state = "rig-vintageminer"
 	item_state_slots = list(slot_r_hand_str = "sec_voidsuitTG", slot_l_hand_str = "sec_voidsuitTG")
-	armor_spec = "melee=30;bullet=15;laser=15;energy=5;bomb=20;bio=100;rad=50;cold=60"
 
 //Mercenary Crewsuit (RED, CROSS)
 //The best of the best, this should be ultra-rare
@@ -218,9 +212,9 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/research)
 	desc = "A refurbished early contact era voidsuit helmet of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. The visor has a bad habit of fogging up and collecting condensation, but it beats sucking hard vacuum. The red markings indicate this as the mercenary variant. The company ID has been scratched off."
 	icon_state = "rig0-vintagemerc"
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black", slot_l_hand_str = "syndicate-helm-black")
-	armor_spec = "melee=55;bullet=45;laser=45;energy=25;bomb=50;bio=100;rad=50;cold=60"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/mercenary)
+	configure(atom_rules(armor_spec = "melee=55;bullet=45;laser=45;energy=25;bomb=50;bio=100;rad=50;cold=60"))
 	configure(item_protection(siemens = 0.6))
 
 /obj/item/clothing/suit/space/void/refurb/mercenary
@@ -228,11 +222,11 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/mercenary)
 	desc = "A refurbished early contact era voidsuit of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. Many old-timer mercs swear by these old things, even if new powered hardsuits have more features and better armor. The red markings indicate this as the mercenary variant. The company ID has been scratched off."
 	icon_state = "rig-vintagemerc"
 	item_state_slots = list(slot_r_hand_str = "sec_voidsuitTG", slot_l_hand_str = "sec_voidsuitTG")
-	armor_spec = "melee=55;bullet=45;laser=45;energy=25;bomb=50;bio=100;rad=50;cold=60"
 	breach_threshold = 16 //Extra Thicc
 	resilience = 0.05 //Military Armor
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/mercenary)
+	configure(atom_rules(armor_spec = "melee=55;bullet=45;laser=45;energy=25;bomb=50;bio=100;rad=50;cold=60"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)))
 	suit_storage(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_SECURITY))
 	configure(item_protection(siemens = 0.6))
@@ -351,14 +345,12 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/mercenary)
 	desc = "This is not something you should use if you have other options, but it's better than nothing!"
 	icon_state = "makeshift_void"
 
-	armor_spec = "bio=100;cold=60"
 
 /obj/item/clothing/head/helmet/space/void/makeshift
 	name = "makeshift voidsuit helmet"
 	desc = "This is not something you should use if you have other options, but it's better than nothing!"
 	icon_state = "makeshift_void"
 
-	armor_spec = "bio=100;cold=60"
 
 // 'Custodian' armor
 /obj/item/clothing/suit/space/void/custodian
@@ -366,14 +358,12 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/mercenary)
 	desc = "Vacuum-capable armor for a Custodian to do their duty."
 	icon_state = "custodian"
 
-	armor_spec = "melee=70;bullet=70;laser=70;energy=50;bomb=40;rad=20;cold=60"
 
 /obj/item/clothing/head/helmet/space/void/custodian
 	name = "custodian helmet"
 	desc = "Vacuum-capable helmet for a Custodian to do their duty."
 	icon_state = "custodian"
 
-	armor_spec = "melee=70;bullet=70;laser=70;energy=50;bomb=40;rad=20;cold=60"
 
 // 'Moebius' armor
 /obj/item/clothing/suit/space/void/aether
@@ -381,16 +371,15 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/mercenary)
 	desc = "This suit seems rather high-end for a standard voidsuit. The air in it has a hint of 'new car smell', courtesy of Aether Atmospherics."
 	icon_state = "moebiussuit"
 
-	armor_spec = "melee=30;bullet=30;laser=30;energy=20;bomb=20;bio=100;rad=20;cold=60"
 
 /obj/item/clothing/head/helmet/space/void/aether
 	name = "\improper Aether voidsuit helmet"
 	desc = "Aether Atmospherics thought that giving this helmet selectable colored lighting would improve market penetration. Very comfortable, regardless."
 	icon_state = "moebiushelm_White"
 
-	armor_spec = "melee=30;bullet=30;laser=30;energy=20;bomb=20;bio=100;rad=20;cold=60"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/aether)
+	configure(atom_rules(armor_spec = "melee=30;bullet=30;laser=30;energy=20;bomb=20;bio=100;rad=20;cold=60"))
 	op("aether_select_color_verb", menu(), label("Helmet Color"), needs(carried()), asks(/datum/prompt/choice, fields = list("question" = "Select a new color:", "title" = computed(PROC_REF(aether_select_color_verb_a1_title)), "choices" = list("White", "Blue", "Purple", "Yellow", "Red", "Green"), "timeout" = 0), step = "a1"), then(PROC_REF(aether_select_color_verb)))
 
 /// Old verb "Helmet Color".
@@ -423,11 +412,11 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/aether)
 	icon = 'icons/inventory/suit/item_altevian.dmi'
 	icon_state = "rig-heartbreaker"
 
-	armor_spec = "melee=70;bullet=70;laser=70;energy=30;bomb=80;bio=100;rad=40;cold=60"
 
 	no_cycle = TRUE
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/altevian_heartbreaker)
+	configure(atom_rules(armor_spec = "melee=70;bullet=70;laser=70;energy=30;bomb=80;bio=100;rad=40;cold=60"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 2.5)))
 	fits_as(FIT_ALTEVIAN)
 
@@ -441,11 +430,11 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/altevian_heartbreaker)
 	icon = 'icons/inventory/head/item_altevian.dmi'
 	icon_state = "rig0-heartbreaker"
 
-	armor_spec = "melee=70;bullet=70;laser=70;energy=30;bomb=80;bio=100;rad=40;cold=60"
 
 	no_cycle = TRUE
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/altevian_heartbreaker)
+	configure(atom_rules(armor_spec = "melee=70;bullet=70;laser=70;energy=30;bomb=80;bio=100;rad=40;cold=60"))
 	fits_as(FIT_ALTEVIAN)
 
 	configure(item_worn(worn_icon = 'icons/inventory/head/mob_altevian.dmi'))
@@ -456,7 +445,6 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/altevian_heartbreaker)
 	desc = "A heavy-duty Kirillov-Y771 voidsuit intended for use in hazardous shipbreaking, salvage, and industrial operations, manufactured (or more likely refurbished) by the Coyote Salvage Corporation. It's slow and awkward if used outside of microgravity, but it offers good protection for what is technically a civilian-legal voidsuit."
 	icon_state = "breaker_suit"
 
-	armor_spec = "melee=50;bullet=15;laser=15;energy=25;bomb=45;bio=100;rad=80;cold=60"
 	breach_threshold = 14
 
 
@@ -466,18 +454,48 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/altevian_heartbreaker)
 	desc = "A dome/bubble style helmet for use with the Kirillov-Y771 voidsuit. It offers surprisingly good protection and visibility, though wearers are still advised to avoid face-on collisions. Sadly, this one doesn't seem to have the (in)famous 0PTIK3WL cross-spectrum imaging visor installed..."
 	icon_state = "breaker_helmet"
 
-	armor_spec = "melee=50;bullet=15;laser=15;energy=25;bomb=45;bio=100;rad=80;cold=60"
 
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/refurb)
+	configure(atom_rules(armor_spec = "melee=30;bullet=15;laser=15;energy=5;bomb=20;bio=100;rad=50;cold=60"))
 	suit_storage(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_MINING))
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/medical)
+	configure(atom_rules(armor_spec = "melee=30;bullet=15;laser=15;energy=5;bomb=25;bio=100;rad=75;cold=60"))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MEDICAL))
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/mining)
+	configure(atom_rules(armor_spec = "melee=30;bullet=15;laser=15;energy=5;bomb=20;bio=100;rad=50;cold=60"))
 	suit_storage(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MINING))
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/salvagecorp_shipbreaker)
+	configure(atom_rules(armor_spec = "melee=50;bullet=15;laser=15;energy=25;bomb=45;bio=100;rad=80;cold=60"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING))
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb)
+	configure(atom_rules(armor_spec = "melee=30;bullet=15;laser=15;energy=5;bomb=20;bio=100;rad=50;cold=60"))
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/medical)
+	configure(atom_rules(armor_spec = "melee=30;bullet=15;laser=15;energy=5;bomb=25;bio=100;rad=75;cold=60"))
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/mining)
+	configure(atom_rules(armor_spec = "melee=30;bullet=15;laser=15;energy=5;bomb=20;bio=100;rad=50;cold=60"))
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/makeshift)
+	configure(atom_rules(armor_spec = "bio=100;cold=60"))
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/makeshift)
+	configure(atom_rules(armor_spec = "bio=100;cold=60"))
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/custodian)
+	configure(atom_rules(armor_spec = "melee=70;bullet=70;laser=70;energy=50;bomb=40;rad=20;cold=60"))
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/custodian)
+	configure(atom_rules(armor_spec = "melee=70;bullet=70;laser=70;energy=50;bomb=40;rad=20;cold=60"))
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/aether)
+	configure(atom_rules(armor_spec = "melee=30;bullet=30;laser=30;energy=20;bomb=20;bio=100;rad=20;cold=60"))
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/salvagecorp_shipbreaker)
+	configure(atom_rules(armor_spec = "melee=50;bullet=15;laser=15;energy=25;bomb=45;bio=100;rad=80;cold=60"))

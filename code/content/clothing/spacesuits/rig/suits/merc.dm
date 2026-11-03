@@ -7,7 +7,6 @@
 	desc = "A blood-red hardsuit featuring some fairly illegal technology."
 	icon_state = "merc_rig"
 	suit_type = "crimson hardsuit"
-	armor_spec = "melee=80;bullet=65;laser=50;energy=15;bomb=80;bio=100;rad=60"
 	offline_slowdown = 1.5
 	offline_vision_restriction = 1
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/eva
@@ -25,6 +24,7 @@
 		)
 
 CAPABILITIES(/obj/item/rig/merc)
+	configure(atom_rules(armor_spec = "melee=80;bullet=65;laser=50;energy=15;bomb=80;bio=100;rad=60"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY, POCKET_BAYSUIT))
 	configure(item_protection(siemens = 0.3))

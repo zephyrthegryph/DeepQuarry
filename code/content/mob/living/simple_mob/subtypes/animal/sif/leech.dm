@@ -69,7 +69,6 @@
 
 	organ_names = /datum/decl/mob_organ_names/leech
 
-	armor_spec = "melee=10;bullet=15;laser=-10;bomb=10;bio=100;rad=100"
 
 
 /mob/living/simple_mob/animal/sif/leech/IIsAlly(mob/living/L)
@@ -95,7 +94,7 @@
 	emote_hear = list("chitters", "clicks", "gurgles")
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/iceleech)))
+	configure(atom_rules(armor_spec = "melee=10;bullet=15;laser=-10;bomb=10;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/iceleech)))
 	op("feed_on_organ", menu(desc = "Extend probosci to feed on a piece of your host's organs."), label("Feed on Organ"), needs(req_self(), req(PROC_REF(awake_ready))), then(PROC_REF(feed_on_organ_op)))
 	op("medicate_host", menu(desc = "Inject your host with possibly beneficial chemicals, to keep the blood flowing."), label("Produce Chemicals (50)"), needs(req_self(), req(PROC_REF(medicate_host_ready))), then(PROC_REF(medicate_host_op)))
 	op("inject_victim", menu(desc = "Inject an organic host with an incredibly painful mixture of chemicals."), label("Incapacitate Potential Host"), needs(req_self(), req(PROC_REF(awake_ready))), then(PROC_REF(inject_victim_op)))

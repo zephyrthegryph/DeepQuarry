@@ -51,7 +51,6 @@
 	shiny = TRUE
 	coretype = /obj/item/slime_extract/metal
 	endurance = 250
-	armor_spec = "melee=35;bullet=35;laser=35;energy=50;bomb=80;bio=100;rad=100"
 
 /mob/living/simple_mob/slime/feral/yellow
 	desc = "This slime is very conductive, and is known to use electricity as a means of defense moreso than usual for slimes."
@@ -273,3 +272,6 @@ CAPABILITIES(/mob/living/simple_mob/slime/feral/ruby)
 		if(L.stat == DEAD || !IIsAlly(L))
 			continue
 		L.apply_body_effect(/datum/body_effect/technomancer/haste, 5 SECONDS, src)
+
+CAPABILITIES(/mob/living/simple_mob/slime/feral/metal)
+	configure(atom_rules(armor_spec = "melee=35;bullet=35;laser=35;energy=50;bomb=80;bio=100;rad=100"))

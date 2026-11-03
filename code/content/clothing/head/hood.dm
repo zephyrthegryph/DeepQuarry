@@ -8,19 +8,18 @@ CAPABILITIES(/obj/item/clothing/head/hood)
 
 // Winter coats
 /obj/item/clothing/head/hood/winter
-	armor_spec = "cold=40"
 	name = "winter hood"
 	desc = "A hood attached to a heavy winter jacket."
 	icon_state = "winterhood"
 
 CAPABILITIES(/obj/item/clothing/head/hood/winter)
+	configure(atom_rules(armor_spec = "cold=40"))
 	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/head/hood/winter/captain
 	name = "site manager's winter hood"
 	desc = "A blue and yellow hood attached to a heavy winter jacket."
 	icon_state = "winterhood_captain"
-	armor_spec = "melee=20;bullet=15;laser=20;energy=10;bomb=15;cold=40"
 
 /obj/item/clothing/head/hood/winter/hop
 	name = "head of personnel's winter hood"
@@ -31,86 +30,72 @@ CAPABILITIES(/obj/item/clothing/head/hood/winter)
 	name = "security winter hood"
 	desc = "A red, armor-padded winter hood."
 	icon_state = "winterhood_security"
-	armor_spec = "melee=25;bullet=20;laser=20;energy=15;bomb=20;cold=40"
 
 /obj/item/clothing/head/hood/winter/security/hos
 	name = "head of security's winter hood"
 	desc = "A red, armor-padded winter hood, lovingly woven with a Kevlar interleave. Definitely not bulletproof, especially not the part where your face goes."
 	icon_state = "winterhood_hos"
-	armor_spec = "melee=25;bullet=20;laser=20;energy=15;bomb=20;cold=40"
 
 /obj/item/clothing/head/hood/winter/medical
 	name = "medical winter hood"
 	desc = "A white winter coat hood."
 	icon_state = "winterhood_medical"
-	armor_spec = "bio=50;cold=40"
 
 /obj/item/clothing/head/hood/winter/medical/alt
 	name = "medical winter hood, alt"
 	desc = "A white winter coat hood. It's warm."
 	icon_state = "winterhood_medicalalt"
-	armor_spec = "bio=50;cold=40"
 
 /obj/item/clothing/head/hood/winter/medical/viro
 	name = "virologist winter hood"
 	desc = "A white winter coat hood with green markings."
 	icon_state = "winterhood_viro"
-	armor_spec = "bio=50;cold=40"
 
 /obj/item/clothing/head/hood/winter/medical/para
 	name = "paramedic winter hood"
 	desc = "A white winter coat hood with blue markings."
 	icon_state = "winterhood_medicalalt" //winterhood_para didn't exist, so...Sorry, paramedic.
-	armor_spec = "bio=50;cold=40"
 
 /obj/item/clothing/head/hood/winter/medical/chemist
 	name = "chemist winter hood"
 	desc = "A white winter coat hood."
 	icon_state = "winterhood_chemist"
-	armor_spec = "bio=50;cold=40"
 
 /obj/item/clothing/head/hood/winter/medical/cmo
 	name = "chief medical officer's winter hood"
 	desc = "A white winter coat hood."
 	icon_state = "winterhood_cmo"
-	armor_spec = "bio=50;cold=40"
 
 /obj/item/clothing/head/hood/winter/science
 	name = "science winter hood"
 	desc = "A white winter coat hood. This one will keep your brain warm. About as much as the others, really."
 	icon_state = "winterhood_science"
-	armor_spec = "bomb=10;cold=40"
 
 /obj/item/clothing/head/hood/winter/science/robotics
 	name = "science winter hood"
 	desc = "A black winter coat hood. You can pull it down over your eyes and pretend that you're an outdated, late 1980s interpretation of a futuristic mechanized police force. They'll fix you. They fix everything."
 	icon_state = "winterhood_robotics"
-	armor_spec = "bomb=10;cold=40"
 
 /obj/item/clothing/head/hood/winter/science/rd
 	name = "research director's winter hood"
 	desc = "A white winter coat hood. It smells faintly of slightly unethical ideas."
 	icon_state = "winterhood_rd"
-	armor_spec = "bomb=10;cold=40"
 
 
 /obj/item/clothing/head/hood/winter/engineering
 	name = "engineering winter hood"
 	desc = "A yellow winter coat hood. Definitely not a replacement for a hard hat."
 	icon_state = "winterhood_engineer"
-	armor_spec = "rad=20;cold=40"
 
 /obj/item/clothing/head/hood/winter/engineering/atmos
 	name = "atmospherics winter hood"
 	desc = "A yellow and blue winter coat hood."
 	icon_state = "winterhood_atmos"
-	armor_spec = "rad=20;cold=40"
 
 /obj/item/clothing/head/hood/winter/engineering/ce
 	name = "chief engineer's winter hood"
 	desc = "A white winter coat hood. Feels surprisingly heavy. The tag says that it's not child safe."
 	icon_state = "winterhood_ce"
-	armor_spec = "rad=20;cold=40"
 
 /obj/item/clothing/head/hood/winter/hydro
 	name = "hydroponics winter hood"
@@ -126,7 +111,6 @@ CAPABILITIES(/obj/item/clothing/head/hood/winter)
 	name = "mining winter hood"
 	desc = "A dusty winter coat hood."
 	icon_state = "winterhood_miner"
-	armor_spec = "melee=10;cold=40"
 
 /obj/item/clothing/head/hood/winter/cargo/qm
 	name = "quartermaster's winter hood"
@@ -183,9 +167,9 @@ CAPABILITIES(/obj/item/clothing/head/hood/winter/ratvar)
 	desc = "An armoured hood for exploring harsh environments."
 	icon_state = "explorer"
 	flags = THICKMATERIAL
-	armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=35;bio=75;rad=35"
 
 CAPABILITIES(/obj/item/clothing/head/hood/explorer)
+	configure(atom_rules(armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=35;bio=75;rad=35"))
 	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0.9))
 
 // Costumes
@@ -253,35 +237,34 @@ CAPABILITIES(/obj/item/clothing/head/hood/cloak)
 
 /obj/item/clothing/head/hood/techpriest
 	name = "techpriest hood"
-	armor_spec = "melee=20;bullet=10;laser=10;energy=10;bomb=25;bio=50;rad=25"
 
 // Armor versions here
 /obj/item/clothing/head/hood/galahad
 	name = "galahad hood"
-	armor_spec = "melee=80;bullet=10;laser=10"
 
 CAPABILITIES(/obj/item/clothing/head/hood/galahad)
+	configure(atom_rules(armor_spec = "melee=80;bullet=10;laser=10"))
 	configure(item_protection(siemens = 2))
 
 /obj/item/clothing/head/hood/lancelot
 	name = "lancelot hood"
-	armor_spec = "melee=80;bullet=10;laser=10"
 
 CAPABILITIES(/obj/item/clothing/head/hood/lancelot)
+	configure(atom_rules(armor_spec = "melee=80;bullet=10;laser=10"))
 	configure(item_protection(siemens = 2))
 
 /obj/item/clothing/head/hood/robin
 	name = "robin hood"
-	armor_spec = "melee=80;bullet=10;laser=10"
 
 CAPABILITIES(/obj/item/clothing/head/hood/robin)
+	configure(atom_rules(armor_spec = "melee=80;bullet=10;laser=10"))
 	configure(item_protection(siemens = 3))
 
 /obj/item/clothing/head/hood/chain
 	name = "robin hood"
-	armor_spec = "melee=60;bullet=10;laser=10"
 
 CAPABILITIES(/obj/item/clothing/head/hood/chain)
+	configure(atom_rules(armor_spec = "melee=60;bullet=10;laser=10"))
 	configure(item_protection(siemens = 3))
 
 // Costume Versions Here
@@ -314,14 +297,12 @@ CAPABILITIES(/obj/item/clothing/head/hood/winter/talon/refreshed)
 	name = "centcom winter hood"
 	desc = "A cozy winter hood attached to a heavy winter jacket."
 	icon_state = "winterhood_centcom"
-	armor_spec = "melee=40;bullet=45;laser=45;energy=35;bomb=40;bio=25;rad=25;fire=35;acid=50;cold=40"
 
 // SAR Winter Hood
 /obj/item/clothing/head/hood/winter/medical/sar
 	name = "search and rescue winter hood"
 	desc = "A cozy winter hood attached to a heavy winter jacket."
 	icon_state = "winterhood_sar"
-	armor_spec = "melee=15;bio=50;rad=5;cold=40"
 
 //Food costumes
 // Hotdog suit hood
@@ -366,25 +347,94 @@ CAPABILITIES(/obj/item/clothing/head/hood_vr/turnip_hood)
 
 /obj/item/clothing/head/hood/winter/snowsuit/command
 	name = "colony director's winter hood"
-	armor_spec = "melee=20;bullet=15;laser=20;energy=10;bomb=15;cold=40"
 	icon_state = "commandhood"
 /obj/item/clothing/head/hood/winter/snowsuit/security
 	name = "security winter hood"
-	armor_spec = "melee=25;bullet=20;laser=20;energy=15;bomb=20;cold=40"
 	icon_state = "sechood"
 /obj/item/clothing/head/hood/winter/snowsuit/medical
 	name = "medical winter hood"
-	armor_spec = "bio=50;cold=40"
 	icon_state = "medihood"
 /obj/item/clothing/head/hood/winter/snowsuit/science
 	name = "science winter hood"
-	armor_spec = "bomb=10;cold=40"
 	icon_state = "scihood"
 /obj/item/clothing/head/hood/winter/snowsuit/engineering
 	name = "engineering winter hood"
-	armor_spec = "rad=20;cold=40"
 	icon_state = "engihood"
 /obj/item/clothing/head/hood/winter/snowsuit/cargo
 	name = "cargo winter hood"
-	armor_spec = "melee=10;cold=40"
 	icon_state = "cargohood"
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter/captain)
+	configure(atom_rules(armor_spec = "melee=20;bullet=15;laser=20;energy=10;bomb=15;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter/security)
+	configure(atom_rules(armor_spec = "melee=25;bullet=20;laser=20;energy=15;bomb=20;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter/security/hos)
+	configure(atom_rules(armor_spec = "melee=25;bullet=20;laser=20;energy=15;bomb=20;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter/medical)
+	configure(atom_rules(armor_spec = "bio=50;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter/medical/alt)
+	configure(atom_rules(armor_spec = "bio=50;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter/medical/viro)
+	configure(atom_rules(armor_spec = "bio=50;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter/medical/para)
+	configure(atom_rules(armor_spec = "bio=50;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter/medical/chemist)
+	configure(atom_rules(armor_spec = "bio=50;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter/medical/cmo)
+	configure(atom_rules(armor_spec = "bio=50;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter/science)
+	configure(atom_rules(armor_spec = "bomb=10;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter/science/robotics)
+	configure(atom_rules(armor_spec = "bomb=10;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter/science/rd)
+	configure(atom_rules(armor_spec = "bomb=10;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter/engineering)
+	configure(atom_rules(armor_spec = "rad=20;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter/engineering/atmos)
+	configure(atom_rules(armor_spec = "rad=20;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter/engineering/ce)
+	configure(atom_rules(armor_spec = "rad=20;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter/cargo/miner)
+	configure(atom_rules(armor_spec = "melee=10;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/head/hood/techpriest)
+	configure(atom_rules(armor_spec = "melee=20;bullet=10;laser=10;energy=10;bomb=25;bio=50;rad=25"))
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter/centcom)
+	configure(atom_rules(armor_spec = "melee=40;bullet=45;laser=45;energy=35;bomb=40;bio=25;rad=25;fire=35;acid=50;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter/medical/sar)
+	configure(atom_rules(armor_spec = "melee=15;bio=50;rad=5;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter/snowsuit/command)
+	configure(atom_rules(armor_spec = "melee=20;bullet=15;laser=20;energy=10;bomb=15;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter/snowsuit/security)
+	configure(atom_rules(armor_spec = "melee=25;bullet=20;laser=20;energy=15;bomb=20;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter/snowsuit/medical)
+	configure(atom_rules(armor_spec = "bio=50;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter/snowsuit/science)
+	configure(atom_rules(armor_spec = "bomb=10;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter/snowsuit/engineering)
+	configure(atom_rules(armor_spec = "rad=20;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter/snowsuit/cargo)
+	configure(atom_rules(armor_spec = "melee=10;cold=40"))

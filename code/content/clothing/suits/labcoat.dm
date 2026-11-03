@@ -4,9 +4,9 @@
 	icon_state = "labcoat"
 	item_state_slots = list(slot_r_hand_str = "labcoat", slot_l_hand_str = "labcoat")
 	blood_overlay_type = "coat"
-	armor_spec = "bio=50"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle/labcoat)
+	configure(atom_rules(armor_spec = "bio=50"))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL))
 	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 
@@ -88,7 +88,6 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/labcoat)
 	desc = "A suit that protects against minor chemical spills. Offers slightly more protection against biohazards than the standard model. Has a green stripe on the shoulder."
 	icon_state = "labcoat_vir"
 	item_state_slots = list(slot_r_hand_str = "virologist_labcoat", slot_l_hand_str = "virologist_labcoat")
-	armor_spec = "bio=60"
 
 /obj/item/clothing/suit/storage/toggle/labcoat/roboticist
 	name = JOB_ROBOTICIST + " labcoat"
@@ -176,3 +175,6 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/labcoat/talon)
 /obj/item/clothing/suit/storage/toggle/labcoat/old/cmo
 	name = "old-school CMO's labcoat"
 	icon_state = "labcoat_old_cmo"
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/labcoat/virologist)
+	configure(atom_rules(armor_spec = "bio=60"))

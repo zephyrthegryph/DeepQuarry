@@ -881,7 +881,6 @@ CAPABILITIES(/obj/item/clothing/shoes)
 		SPECIES_TESHARI = 'icons/inventory/suit/mob_teshari.dmi',
 		SPECIES_VOX = 'icons/inventory/suit/mob_vox.dmi',
 		SPECIES_WEREBEAST = 'icons/inventory/suit/mob_werebeast.dmi')
-	armor_spec = ""
 	var/blood_overlay_type = "suit"
 	blood_sprite_state = "suitblood" //Defaults to the suit's blood overlay, so that some blood renders instead of no blood.
 
@@ -909,6 +908,7 @@ CAPABILITIES(/obj/item/clothing/shoes)
 
 
 CAPABILITIES(/obj/item/clothing/suit)
+	configure(atom_rules(armor_spec = ""))
 	configure(item_rules(actions_types = list()))
 	configure(item_handling(preserve = 1))
 	extend(/datum/act/equip, needs(req(PROC_REF(limb_clearance))))
@@ -1028,7 +1028,6 @@ CAPABILITIES(/obj/item/clothing/suit)
 		slot_r_hand_str = 'icons/mob/items/righthand_uniforms.dmi',
 		)
 	name = "under"
-	armor_spec = ""
 	w_class = ITEMSIZE_NORMAL
 	blood_sprite_state = "uniformblood"
 
@@ -1085,6 +1084,7 @@ MSG_DEF_SELF(under/no_roll_down, "It can't be rolled down.")
 MSG_DEF_SELF(under/no_roll_sleeves, "Its sleeves can't be rolled.")
 
 CAPABILITIES(/obj/item/clothing/under)
+	configure(atom_rules(armor_spec = ""))
 	configure(obj_rules(show_messages = 1))
 	configure(item_worn(covers = CHEST|ARMS|LEGS, slots = SLOT_ICLOTHING))
 	configure(item_protection(permeability = 0.90, heat_parts = ARMS|LEGS|CHEST, cold_parts = ARMS|LEGS|CHEST))

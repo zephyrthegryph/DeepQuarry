@@ -27,7 +27,6 @@
 	attack_armor_pen = 20
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
-	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10;bio=100;rad=100" // Same armor values as the vest they drop, plus simple mob immunities
 
 	corpse = /obj/effect/landmark/mobcorpse/syndicatesoldier
 	loot_list = list(/obj/item/material/knife/tacknife = 100)	// Might as well give it the knife
@@ -383,7 +382,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/grenadier)
 
 	movement_cooldown = -1
 
-	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=35;bio=100;rad=100" // Same armor as their voidsuit
 
 	min_oxy = 0
 	max_oxy = 0
@@ -398,7 +396,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/grenadier)
 	corpse = /obj/effect/landmark/mobcorpse/syndicatecommando
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/merc/melee/sword/space)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/human/space)))
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=35;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/human/space)))
 
 /mob/living/simple_mob/humanoid/merc/melee/sword/space/Process_Spacemove(check_drift = 0)
 	return
@@ -409,7 +407,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/melee/sword/space)
 	desc = "A tough looking individual, armed with a submachine gun."
 	icon_state = "syndicatespace-ranged"
 	icon_living = "syndicatespace-ranged"
-	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=35;bio=100;rad=100" // Same armor as their voidsuit.
 	reload_max = 20
 	loot_list = list(/obj/item/gun/projectile/automatic/c20r = 100)
 
@@ -431,6 +428,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/melee/sword/space)
 	corpse = /obj/effect/landmark/mobcorpse/syndicatecommando
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/space)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=35;bio=100;rad=100"))
 	configure(mob_kind(attack_cooldown = 5))
 
 //Combat Shotgun Merc
@@ -506,7 +504,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/space/tommylas)
 	desc = "Geeze, weren't shotgun ops bad enough? At least when you fade these jerks you get a flashbang to the face."
 	icon_state = "syndi-ranged-space-sup"
 	icon_living = "syndi-ranged-space-sup"
-	armor_spec = "melee=80;bullet=65;laser=50;energy=15;bomb=80;bio=100;rad=100" // this is the merc rig's stats
 	projectiletype = /obj/item/projectile/bullet/pistol/medium/ap/suppressor // it's high velocity
 	projectilesound = SFX_WEAPONS_DOOMPISTOL // converted from .wavs extracted from doom 2
 	reload_max = 30 // extended mags
@@ -519,14 +516,13 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/space/tommylas)
 	desc = "Geeze, weren't normal suppressors bad enough? At least if you fade this jerk, you'll have an awful time anyway."
 	icon_state = "syndi-ranged-space-sup-elite"
 	icon_living = "syndi-ranged-space-sup-elite"
-	armor_spec = "melee=80;bullet=70;laser=55;energy=15;bomb=80;bio=100;rad=100" // see code for military hardsuit
 	projectiletype = /obj/item/projectile/bullet/pistol/medium/ap/suppressor/turbo // fuck it, fast bullets
 	grenade_type = /obj/item/grenade/shooter/rubber // don't group up
 	grenade_timer = 30 // well, look what you've done, you've grouped up
 
 // being Actual Professionals, they have better (read: player-level) blocking chances
 CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/space/suppressor)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/human/space/suppressor)))
+	configure(atom_rules(armor_spec = "melee=80;bullet=65;laser=50;energy=15;bomb=80;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/human/space/suppressor)))
 	configure(living_rules(say_list_type = /datum/say_list/merc/elite))
 	configure(mob_kind(attack_cooldown = 3))
 	op("suppressor_item", item(/obj/item), then(PROC_REF(suppressor_interaction_item)))
@@ -627,3 +623,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/space/suppressor)
 /mob/living/simple_mob/humanoid/merc/ranged/technician/poi/guard_limit
 
 /mob/living/simple_mob/humanoid/merc/ranged/sniper/guard_limit
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/space/suppressor/elite)
+	configure(atom_rules(armor_spec = "melee=80;bullet=70;laser=55;energy=15;bomb=80;bio=100;rad=100"))

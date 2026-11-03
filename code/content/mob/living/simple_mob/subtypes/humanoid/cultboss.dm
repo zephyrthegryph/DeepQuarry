@@ -2,7 +2,6 @@
 	drag_buckle = FALSE
 	name = "Rift Magus"
 	endurance = 450 //Boss Mobs should be tanky. //Old 225
-	armor_spec = "melee=70;bullet=60;laser=60;energy=90;bomb=30;bio=100;rad=100"
 
 	melee_damage_lower = 30 //Old 15
 	melee_damage_upper = 45 //Old 22
@@ -130,6 +129,7 @@ CAPABILITIES(/obj/item/projectile/energy/plasma/vepr/inversion)
 
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus/rift)
+	configure(atom_rules(armor_spec = "melee=70;bullet=60;laser=60;energy=90;bomb=30;bio=100;rad=100"))
 	configure(mob_rules(faction = "demon"))
 	configure(living_rules(vore_capacity = 6))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
@@ -166,25 +166,25 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus/rift)
 /obj/item/clothing/head/culthood/void
 	name = "void magnus hood"
 	color = "#1C1C1C"
-	armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=10;rad=10"
 
 CAPABILITIES(/obj/item/clothing/head/culthood/void)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=10;rad=10"))
 	configure(item_protection(cold_parts = HEAD, heat_parts = HEAD))
 
 /obj/item/clothing/suit/cultrobes/void
 	name = "void magnus robes"
 	color = "#1C1C1C"
-	armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=10;rad=10"
 
 CAPABILITIES(/obj/item/clothing/suit/cultrobes/void)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=10;rad=10"))
 	configure(item_protection(cold_parts = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS, heat_parts = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
 
 /obj/item/clothing/shoes/boots/cult/void
 	name = "void magnus boots"
 	color = "#1C1C1C"
-	armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=10;rad=10"
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/cult/void)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=10;rad=10"))
 	configure(item_protection(cold_parts = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS, heat_parts = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
 
 /obj/item/clothing/gloves/tactical/void
@@ -194,9 +194,9 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/cult/void)
 	icon_state = "work"
 	item_state = "wgloves"
 	punch_force = 8
-	armor_spec = "melee=30;bullet=25;laser=25;energy=40;bomb=30;bio=10;rad=10"
 
 CAPABILITIES(/obj/item/clothing/gloves/tactical/void)
+	configure(atom_rules(armor_spec = "melee=30;bullet=25;laser=25;energy=40;bomb=30;bio=10;rad=10"))
 	configure(item_combat(force = 10))
 
 /obj/item/melee/voidblade

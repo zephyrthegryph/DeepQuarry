@@ -16,7 +16,6 @@
 
 	organ_names = /datum/decl/mob_organ_names/mecha
 
-	armor_spec = "melee=20;bullet=10;bio=100;rad=100"
 
 	response_help = "taps on"
 	response_disarm = "knocks on"
@@ -98,6 +97,7 @@
 	set_deflecting(FALSE)
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha)
+	configure(atom_rules(armor_spec = "melee=20;bullet=10;bio=100;rad=100"))
 	configure(mob_rules(faction = FACTION_SYNDICATE))
 	configure(living_rules(say_list_type = /datum/say_list/malf_drone, delete_on_death = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0))

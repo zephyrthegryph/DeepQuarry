@@ -73,7 +73,6 @@
 	melee_damage_lower = 25 //Old 12
 	melee_damage_upper = 25
 
-	armor_spec = "melee=20;bullet=20;laser=20;energy=10;bomb=10;bio=100;rad=100"
 
 	wreckage = null
 	pilot_type = null
@@ -88,6 +87,7 @@
 			)
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/vistor/vistorblue)
+	configure(atom_rules(armor_spec = "melee=20;bullet=20;laser=20;energy=10;bomb=10;bio=100;rad=100"))
 	configure(mob_rules(faction = "vistor"))
 	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 
@@ -205,7 +205,6 @@ TYPE_TABLE(/obj/item/grenade/shooter/energy/homing, shooter_grenade_projectiles,
 
 	var/obj/item/shield_projector/shields = null
 
-	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=30;bio=100;rad=100"
 
 	wreckage = null
 	pilot_type = null
@@ -218,6 +217,7 @@ TYPE_TABLE(/obj/item/grenade/shooter/energy/homing, shooter_grenade_projectiles,
 			)
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/vistor/vistororange)
+	configure(atom_rules(armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=30;bio=100;rad=100"))
 	owns_one(nameof(shields), starts = /obj/item/shield_projector/rectangle/automatic/orange)
 
 /obj/item/shield_projector/rectangle/automatic/orange
@@ -245,7 +245,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/vistor/vistororange)
 	damage_fatigue_mult = 0
 	alpha = 175
 
-	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=30;bio=100;rad=100"
 
 	wreckage = /obj/structure/loot_pile/mecha/phazon/forgotten
 	pilot_type = null
@@ -281,3 +280,5 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/vistor)
 	desc = "The ruins of some unfortunate forgoten mecha type. Perhaps something is salvageable."
 	icon_state = "mime-broken"
 
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/forgotten)
+	configure(atom_rules(armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=30;bio=100;rad=100"))

@@ -42,7 +42,6 @@
 	shock_resist = 0.1 //Electricity isn't very effective on stone, especially that from hell.
 	poison_resist = 1.0
 
-	armor_spec = "melee=10;bullet=10;laser=10;energy=10;bomb=10;bio=100;rad=100"
 
 
 	supernatural = TRUE
@@ -88,6 +87,7 @@
 
 // Each construct is numbered.
 CAPABILITIES(/mob/living/simple_mob/construct)
+	configure(atom_rules(armor_spec = "melee=10;bullet=10;laser=10;energy=10;bomb=10;bio=100;rad=100"))
 	configure(mob_rules(faction = FACTION_CULT))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_nature(can_pain_emote = FALSE))

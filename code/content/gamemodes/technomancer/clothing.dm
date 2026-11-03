@@ -2,9 +2,9 @@
 	name = "chrome manipulation suit"
 	desc = "It's a very shiny and somewhat protective suit, built to help carry cores on the user's back."
 	icon_state = "technomancer"
-	armor_spec = "melee=50;bullet=20;laser=30;energy=30;bomb=10;rad=40"
 
 CAPABILITIES(/obj/item/clothing/suit/technomancer)
+	configure(atom_rules(armor_spec = "melee=50;bullet=20;laser=30;energy=30;bomb=10;rad=40"))
 	suit_storage(list(POCKET_ALL_TANKS))
 	configure(item_worn(covers = CHEST|ARMS|LEGS|FEET|HANDS))
 	configure(item_protection(siemens = 0.75))
@@ -15,9 +15,9 @@ CAPABILITIES(/obj/item/clothing/suit/technomancer)
 	desc = "It's a blue colored jumpsuit.  There appears to be light-weight armor padding underneath, providing some protection.  \
 	There is also a healthy amount of insulation underneath."
 	icon_state = "initiate"
-	armor_spec = "melee=10;bullet=5;laser=5"
 
 CAPABILITIES(/obj/item/clothing/under/technomancer)
+	configure(atom_rules(armor_spec = "melee=10;bullet=5;laser=5"))
 	configure(item_protection(siemens = 0.3))
 
 /obj/item/clothing/under/technomancer/apprentice
@@ -36,9 +36,9 @@ CAPABILITIES(/obj/item/clothing/under/technomancer)
 	name = "initiate's hat"
 	desc = "It's a somewhat silly looking blue pointed hat."
 	icon_state = "initiate"
-	armor_spec = "melee=10;bullet=5;laser=5"
 
 CAPABILITIES(/obj/item/clothing/head/technomancer)
+	configure(atom_rules(armor_spec = "melee=10;bullet=5;laser=5"))
 	configure(item_protection(siemens = 0.3))
 
 /obj/item/clothing/head/technomancer/apprentice

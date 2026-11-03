@@ -9,7 +9,6 @@
 	default_mob_icon = null	//Actually having a forced sprite for Proteans is ugly af. I'm not gonna make this a toggle
 	icon_state = "nanomachine_rig"
 	interface_intro = "Protean"
-	armor_spec = "bio=100;rad=100"
 	offline_slowdown = 0
 	seal_delay = 0
 	/// The protean character this cluster belongs to. While folded, it is inside us.
@@ -146,6 +145,7 @@ MSG_DEF_SELF(protean_rig/module_class, "The hardsuit already has a module of tha
 MSG_DEF_SELF(protean_rig/installing, "You begin installing %I% into %T%.")
 
 CAPABILITIES(/obj/item/rig/protean)
+	configure(atom_rules(armor_spec = "bio=100;rad=100"))
 	configure(item_worn(worn_factors = TRAIT_NONE))
 	extend(/datum/act/hit/explosion, instead(when(PROC_REF(rig_has_protean)), then(PROC_REF(rig_blast))))
 	ref_one(nameof(soaking_wearer), /mob/living/carbon/human)

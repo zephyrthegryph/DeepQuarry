@@ -206,7 +206,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/icebass)
 	icon_dead = "rockfish-dead"
 
 
-	armor_spec = "melee=90;bullet=50;laser=-15;energy=30;bomb=30;bio=100;rad=100"
 
 	var/max_red = 255
 	var/min_red = 50
@@ -221,7 +220,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/icebass)
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/rockfish)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/rockfish)))
+	configure(atom_rules(armor_spec = "melee=90;bullet=50;laser=-15;energy=30;bomb=30;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/rockfish)))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/fish/sif))
 	rolls(nameof(head_color), PROC_REF(roll_colour))
 

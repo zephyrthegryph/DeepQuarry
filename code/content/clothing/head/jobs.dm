@@ -168,10 +168,10 @@ CAPABILITIES(/obj/item/clothing/head/helmet/dermal)
 	desc = "A specially designed fedora that is woven with protective fibers. It also makes you look cool."
 	icon_state = "fedora_brown"
 	item_state_slots = list(slot_r_hand_str = "detective", slot_l_hand_str = "detective")
-	armor_spec = "melee=10;bullet=10;laser=15;energy=10"
 	valid_accessory_slots = null
 
 CAPABILITIES(/obj/item/clothing/head/det)
+	configure(atom_rules(armor_spec = "melee=10;bullet=10;laser=15;energy=10"))
 	configure(obj_rules(show_examine = FALSE))
 	suit_storage(list(POCKET_SLEUTH))
 	configure(item_protection(siemens = 0.9))

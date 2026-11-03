@@ -128,12 +128,12 @@ CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/agate)
 	name = "quartz metal ant"
 	icon_state = "quartz_ant"
 	icon_living = "quartz_ant"
-	armor_spec = "melee=80;bullet=80;bio=100;rad=100"
 	harvest_results = list(
 		/obj/item/stack/material/quartz = 10
 		)
 
 CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/quartz)
+	configure(atom_rules(armor_spec = "melee=80;bullet=80;bio=100;rad=100"))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/tyrant_radiation, butchery_loot = list( /obj/item/stack/material/quartz = 18 ), meat_amount = 3))
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/diamond //slower, tankier, more damage

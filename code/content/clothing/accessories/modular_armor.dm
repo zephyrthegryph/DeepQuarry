@@ -3,7 +3,6 @@
 /obj/item/clothing/suit/armor/pcarrier/modarm
 	name = "modular plate carrier"
 	desc = "A lightweight, modular plate carrier vest made from armor grade UHMWPE. It can be equipped with armor plates, but provides very little protection of its own."
-	armor_spec = "melee=5;bullet=5"
 	icon = 'icons/obj/modular_armor.dmi'
 	icon_override = 'icons/obj/modular_armor.dmi'
 	item_icons = 'icons/obj/modular_armor.dmi'
@@ -49,9 +48,9 @@
 	name = "security armor plate"
 	desc = "A plasteel-reinforced synthetic armor plate designed for Nanotrasen security forces. Attaches to a plate carrier."
 	icon_state = "armor_medium"
-	armor_spec = "melee=30;bullet=30;laser=45;energy=25;bomb=10"
 
 CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/security)
+	configure(atom_rules(armor_spec = "melee=30;bullet=30;laser=45;energy=25;bomb=10"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.1)))
 	configure(item_protection(siemens = 0.7))
 
@@ -59,9 +58,9 @@ CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/security)
 	name = "heavy security armor plate"
 	desc = "A plastitanium-reinforced armor plate designed for Nanotrasen security forces. Attaches to a plate carrier."
 	icon_state = "armor_medium"
-	armor_spec = "melee=50;bullet=50;laser=55;energy=35;bomb=30;rad=15"
 
 CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/security/heavy)
+	configure(atom_rules(armor_spec = "melee=50;bullet=50;laser=55;energy=35;bomb=30;rad=15"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	configure(item_protection(siemens = 0.5))
 
@@ -77,9 +76,9 @@ CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/security/heavy)
 	overgloves = 1
 	punch_force = 3
 	w_class = ITEMSIZE_NORMAL
-	armor_spec = "melee=30;bullet=30;laser=45;energy=25;bomb=10"
 
 CAPABILITIES(/obj/item/clothing/gloves/handguards_modarm)
+	configure(atom_rules(armor_spec = "melee=30;bullet=30;laser=45;energy=25;bomb=10"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.1)))
 	configure(item_worn(worn_icon = "handguards", covers = HANDS))
 	configure(item_protection(heat_parts = HANDS, cold_parts = HANDS))
@@ -94,7 +93,6 @@ CAPABILITIES(/obj/item/clothing/gloves/handguards_modarm)
 	icon_override = 'icons/obj/modular_armor.dmi'
 	icon_state = "footguards_item"
 	item_state = "footguards"
-	armor_spec = "melee=30;bullet=30;laser=45;energy=25;bomb=10"
 	w_class = ITEMSIZE_NORMAL
 	step_volume_mod = 1.3
 	overshoes = 1
@@ -103,6 +101,7 @@ CAPABILITIES(/obj/item/clothing/gloves/handguards_modarm)
 	update_icon_define_digi = 'icons/obj/modular_armor_digi.dmi' ///this doesn't work, not sure why
 
 CAPABILITIES(/obj/item/clothing/shoes/footguards_modarm)
+	configure(atom_rules(armor_spec = "melee=30;bullet=30;laser=45;energy=25;bomb=10"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.1)))
 	configure(item_worn(worn_icon = "footguards", covers = FEET))
 	configure(item_protection(heat_parts = FEET, cold_parts = FEET))
@@ -118,11 +117,11 @@ CAPABILITIES(/obj/item/clothing/shoes/footguards_modarm)
 	icon_state = "legguards"
 	item_state = "legguards"
 	gender = PLURAL
-	armor_spec = "melee=40;bullet=40;laser=40;energy=25;bomb=30"
 	slot = ACCESSORY_SLOT_ARMOR_L
 	update_icon_define_digi = 'icons/obj/modular_armor_digi.dmi' ///this doesn't work, not sure why
 
 CAPABILITIES(/obj/item/clothing/accessory/armor/legguards/modarm)
+	configure(atom_rules(armor_spec = "melee=40;bullet=40;laser=40;energy=25;bomb=30"))
 	configure(item_worn(worn_icon = "legguards", covers = LEGS))
 	configure(item_protection(heat_parts = LEGS, cold_parts = LEGS))
 
@@ -164,10 +163,10 @@ CAPABILITIES(/obj/item/clothing/accessory/armor/legguards/modarm/lightblue)
 	icon_state = "armguards"
 	item_state = "armguards"
 	gender = PLURAL
-	armor_spec = "melee=40;bullet=40;laser=40;energy=25;bomb=30"
 	slot = ACCESSORY_SLOT_ARMOR_A
 
 CAPABILITIES(/obj/item/clothing/accessory/armor/armguards/modarm)
+	configure(atom_rules(armor_spec = "melee=40;bullet=40;laser=40;energy=25;bomb=30"))
 	configure(item_worn(worn_icon = "armguards", covers = ARMS))
 	configure(item_protection(heat_parts = ARMS, cold_parts = ARMS))
 
@@ -210,11 +209,11 @@ CAPABILITIES(/obj/item/clothing/accessory/armor/armguards/modarm/lightblue)
 	icon_state = "groinpad"
 	item_state = "groinpad"
 	gender = PLURAL
-	armor_spec = ""
 	slot = ACCESSORY_SLOT_ARMOR_M
 	///slot = ACCESSORY_SLOT_ARMOR_G ///too lazy to move this upstream
 
 CAPABILITIES(/obj/item/clothing/accessory/armor/groinpad)
+	configure(atom_rules(armor_spec = ""))
 	configure(item_worn(worn_icon = "groinpad"))
 
 /obj/item/clothing/accessory/armor/groinpad/green
@@ -265,3 +264,6 @@ CAPABILITIES(/obj/item/clothing/accessory/armor/groinpad/lightblue)
 
 /obj/item/clothing/suit/armor/pcarrier/modarm/full/sec
 	starting_accessories = list(/obj/item/clothing/accessory/armor/armorplate/security, /obj/item/clothing/accessory/armor/armguards/modarm, /obj/item/clothing/accessory/armor/legguards/modarm, /obj/item/clothing/accessory/armor/groinpad, /obj/item/clothing/accessory/storage/pouches/large)
+
+CAPABILITIES(/obj/item/clothing/suit/armor/pcarrier/modarm)
+	configure(atom_rules(armor_spec = "melee=5;bullet=5"))

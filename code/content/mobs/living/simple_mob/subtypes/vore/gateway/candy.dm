@@ -423,7 +423,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/marshmellowserpent)
 	icon_dead = "slainouroboros"
 
 	endurance = 200
-	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=20;bio=100;rad=100" //armor cause boss
 	movement_cooldown = 0
 	melee_attack_delay = 1 SECOND
 	unsuitable_atoms_damage = 0
@@ -438,7 +437,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/marshmellowserpent)
 	special_attack_cooldown = 7 SECONDS
 
 CAPABILITIES(/mob/living/simple_mob/vore/candy/ouroboros)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/livingcandy)))
+	configure(atom_rules(armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=20;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/livingcandy)))
 	configure(mob_rules(faction = "candy"))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
 	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))

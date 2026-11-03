@@ -13,10 +13,10 @@
 	name = "warden's jumpsuit"
 	icon_state = "warden"
 	item_state_slots = list(slot_r_hand_str = "red", slot_l_hand_str = "red")
-	armor_spec = "melee=10"
 	rolled_sleeves = 0
 
 CAPABILITIES(/obj/item/clothing/under/rank/warden)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/security
@@ -24,10 +24,10 @@ CAPABILITIES(/obj/item/clothing/under/rank/warden)
 	desc = "It's made of a slightly sturdier material than standard jumpsuits, to allow for robust protection."
 	icon_state = "security"
 	item_state_slots = list(slot_r_hand_str = "red", slot_l_hand_str = "red")
-	armor_spec = "melee=10"
 	rolled_sleeves = 0
 
 CAPABILITIES(/obj/item/clothing/under/rank/security)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/security/aces
@@ -35,11 +35,11 @@ CAPABILITIES(/obj/item/clothing/under/rank/security)
 	desc = "A snug but comfortable undersuit with removable arm sleeves, originally developed for the ACE Security Group. Includes a wrist-mounted minicomp."
 	icon_state = "aces_undersuit"
 	item_state_slots = list(slot_r_hand_str = "black", slot_l_hand_str = "black")
-	armor_spec = "melee=10"
 	rolled_sleeves = 0	//sleeves can be removed, but this disables the minicomp
 	rolled_down = -1	//can't be rolled down
 
 CAPABILITIES(/obj/item/clothing/under/rank/security/aces)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/security/aces/examine(mob/user)
@@ -75,9 +75,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/security/aces)
 	desc = "A dress shirt and khakis with a security patch sewn on."
 	icon_state = "dispatch"
 	item_state_slots = list(slot_r_hand_str = "detective", slot_l_hand_str = "detective")
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/dispatch)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_worn(covers = CHEST|LEGS))
 	configure(item_protection(siemens = 0.9))
 
@@ -86,10 +86,10 @@ CAPABILITIES(/obj/item/clothing/under/rank/dispatch)
 	desc = "It's made of a slightly sturdier material, to allow for robust protection."
 	icon_state = "redshirt2"
 	item_state_slots = list(slot_r_hand_str = "red", slot_l_hand_str = "red")
-	armor_spec = "melee=10"
 	rolled_sleeves = 0
 
 CAPABILITIES(/obj/item/clothing/under/rank/security2)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/security/corp
@@ -107,11 +107,11 @@ CAPABILITIES(/obj/item/clothing/under/rank/security2)
 	desc = "It's made of a slightly sturdier material than standard jumpsuits, to allow for robust protection."
 	icon_state = "swatunder"
 	item_state_slots = list(slot_r_hand_str = "green", slot_l_hand_str = "green")
-	armor_spec = "melee=10;bullet=5;laser=5"
 	rolled_sleeves = 0
 	rolled_down = 0
 
 CAPABILITIES(/obj/item/clothing/under/tactical)
+	configure(atom_rules(armor_spec = "melee=10;bullet=5;laser=5"))
 	configure(item_protection(siemens = 0.9))
 
 /*
@@ -121,11 +121,11 @@ CAPABILITIES(/obj/item/clothing/under/tactical)
 	name = "detective's suit"
 	desc = "A rumpled white dress shirt paired with well-worn grey slacks."
 	icon_state = "detective"
-	armor_spec = "melee=10"
 	rolled_sleeves = 0
 	starting_accessories = list(/obj/item/clothing/accessory/tie/blue_clip)
 
 CAPABILITIES(/obj/item/clothing/under/det)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/det/grey
@@ -174,10 +174,10 @@ CAPABILITIES(/obj/item/clothing/under/det)
 	name = "head of security's jumpsuit"
 	icon_state = "hos"
 	item_state_slots = list(slot_r_hand_str = "red", slot_l_hand_str = "red")
-	armor_spec = "melee=10"
 	rolled_sleeves = 0
 
 CAPABILITIES(/obj/item/clothing/under/rank/head_of_security)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/head_of_security/corp

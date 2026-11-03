@@ -41,7 +41,6 @@
 	movement_shake_radius = 5
 
 	taser_kill = FALSE
-	armor_spec = "melee=40;bullet=20;laser=10"
 
 	mob_size = MOB_LARGE
 
@@ -65,7 +64,7 @@
 	var/weaken_amount = 2 // Be careful with this number. High values will equal a permastun.
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/hooligan_crab)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/hooligan_crab)))
+	configure(atom_rules(armor_spec = "melee=40;bullet=20;laser=10", catalogue_data = list(/datum/category_item/catalogue/fauna/hooligan_crab)))
 	configure(mob_rules(faction = FACTION_CRABS))
 	configure(living_rules(say_list_type = /datum/say_list/crab))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/crabmeat, meat_amount = 6))

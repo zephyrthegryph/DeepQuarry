@@ -3,7 +3,6 @@
 	desc = "A strange robotic creature."
 	endurance = 900
 
-	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=30;bio=100;rad=100"
 
 	pilot_type = /mob/living/simple_mob/humanoid/cultist/tesh
 	wreckage = /obj/item/cell/device/weapon/recharge/cult
@@ -28,6 +27,7 @@
 		)
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse/occult)
+	configure(atom_rules(armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=30;bio=100;rad=100"))
 	configure(mob_rules(faction = FACTION_CULT))
 	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 

@@ -3,12 +3,12 @@
 	desc = "Utilizing cutting edge tech from Hephaestus, the Mark VII is the latest and greatest in semi-powered personal protection systems; like the civilian AutoLok suit, the Mark VII can automatically adapt to fit most species without issue via RFID tags. This significantly reduces the time required for response teams to suit up, as it eliminates the need for dedicated cycler units. It also has an integrated, unremovable helmet. Standard air tanks, suit coolers, and magboots may be installed and removed as needed."
 	icon_state = "ertsuit"
 	item_state = "ertsuit"
-	armor_spec = "melee=65;bullet=55;laser=55;energy=15;bomb=50;bio=100;rad=100;cold=60"
 	w_class = ITEMSIZE_NORMAL //the mark vii packs itself down when not in use, thanks future-materials
 	breach_threshold = 16 //Extra Thicc
 	resilience = 0.05 //Military Armor
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/responseteam)
+	configure(atom_rules(armor_spec = "melee=65;bullet=55;laser=55;energy=15;bomb=50;bio=100;rad=100;cold=60"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	configure(item_rules(sprite_sheets_obj = list( SPECIES_TAJARAN = 'icons/inventory/suit/item.dmi', SPECIES_SKRELL = 'icons/inventory/suit/item.dmi', SPECIES_UNATHI = 'icons/inventory/suit/item.dmi', SPECIES_XENOHYBRID = 'icons/inventory/suit/item.dmi', SPECIES_AKULA = 'icons/inventory/suit/item.dmi', SPECIES_SERGAL = 'icons/inventory/suit/item.dmi', SPECIES_VULPKANIN = 'icons/inventory/suit/item.dmi', SPECIES_ZORREN_HIGH = 'icons/inventory/suit/item.dmi', SPECIES_FENNEC = 'icons/inventory/suit/item.dmi', SPECIES_SHADEKIN = 'icons/inventory/suit/item.dmi', SPECIES_VASILISSAN = 'icons/inventory/suit/item.dmi', SPECIES_NEVREAN = 'icons/inventory/suit/item.dmi', SPECIES_RAPALA = 'icons/inventory/suit/item.dmi', SPECIES_ALRAUNE = 'icons/inventory/suit/item.dmi', SPECIES_ZADDAT = 'icons/inventory/suit/item.dmi', SPECIES_LLEILL = 'icons/inventory/suit/item.dmi' )))
 	fits_as(FIT_NO_DIONA_VOX_TESHARI_ALTEVIAN)
@@ -47,9 +47,9 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/responseteam)
 	name = "Mark VII-J Emergency Cleanup Response Suit"
 	icon_state = "ertsuit_j"
 	item_state = "ertsuit_j"
-	armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=20;bio=100;rad=100;cold=60" //awful armor
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/responseteam/janitor)
+	configure(atom_rules(armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=20;bio=100;rad=100;cold=60"))
 	configure(item_worn(worn_factors = TRAIT_NONE))
 	configure(item_worn(flags = NOSLIP))
 
@@ -70,7 +70,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/responseteam/janitor)
 	desc = "As a vital part of the Mark VII suit, the integral helmet cannot be removed - so don't try."
 	icon_state = "erthelmet"
 	item_state = "erthelmet"
-	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=100;rad=100;cold=60"
 	enables_planes = list(VIS_CH_ID,VIS_CH_HEALTH_VR,VIS_AUGMENTED)
 	var/away_planes = null
 	plane_slots = list(SLOT_ID_HEAD)
@@ -80,6 +79,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/responseteam/janitor)
 
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/responseteam)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=100;rad=100;cold=60"))
 	configure(item_rules(sprite_sheets_obj = list( SPECIES_TAJARAN = 'icons/inventory/head/item.dmi', SPECIES_SKRELL = 'icons/inventory/head/item.dmi', SPECIES_UNATHI = 'icons/inventory/head/item.dmi', SPECIES_XENOHYBRID = 'icons/inventory/head/item.dmi', SPECIES_AKULA = 'icons/inventory/head/item.dmi', SPECIES_SERGAL = 'icons/inventory/head/item.dmi', SPECIES_VULPKANIN = 'icons/inventory/head/item.dmi', SPECIES_ZORREN_HIGH = 'icons/inventory/head/item.dmi', SPECIES_FENNEC = 'icons/inventory/head/item.dmi', SPECIES_SHADEKIN = 'icons/inventory/head/item.dmi', SPECIES_VASILISSAN = 'icons/inventory/head/item.dmi', SPECIES_NEVREAN = 'icons/inventory/head/item.dmi', SPECIES_RAPALA = 'icons/inventory/head/item.dmi', SPECIES_ALRAUNE = 'icons/inventory/head/item.dmi', SPECIES_ZADDAT = 'icons/inventory/head/item.dmi', SPECIES_LLEILL = 'icons/inventory/suit/item.dmi' )))
 	fits_as(FIT_NO_DIONA_VOX_TESHARI_ALTEVIAN)
 	configure(item_protection(siemens = 0.5, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 15* ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000))

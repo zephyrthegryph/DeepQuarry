@@ -35,7 +35,6 @@
 							/datum/spell/targeted/construct_advanced/slam
 							)
 
-	armor_spec = "melee=70;bullet=30;laser=30;energy=30;bomb=10;bio=100;rad=100"
 
 /mob/living/simple_mob/construct/juggernaut/bullet_act(obj/item/projectile/P)
 	var/reflectchance = 100 - round(P.damage*2) // We have lower damage values now
@@ -98,7 +97,6 @@
 	icon_scale_y = 2
 	var/energy = 0
 	var/max_energy = 1000
-	armor_spec = "melee=60;bullet=60;laser=60;energy=30;bomb=10;bio=100;rad=100"
 	construct_spells = list(/datum/spell/aoe_turf/conjure/forcewall/lesser,
 							/datum/spell/targeted/fortify,
 							/datum/spell/targeted/construct_advanced/slam
@@ -172,4 +170,8 @@ CAPABILITIES(/obj/item/projectile/energy/electrode/cult)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/construct/juggernaut)
+	configure(atom_rules(armor_spec = "melee=70;bullet=30;laser=30;energy=30;bomb=10;bio=100;rad=100"))
 	immune_to_incapacitation()
+
+CAPABILITIES(/mob/living/simple_mob/construct/juggernaut/behemoth)
+	configure(atom_rules(armor_spec = "melee=60;bullet=60;laser=60;energy=30;bomb=10;bio=100;rad=100"))

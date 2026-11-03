@@ -6,7 +6,6 @@
 	desc = "A sleek and dangerous hardsuit for active combat."
 	icon_state = "security_rig"
 	suit_type = "combat hardsuit"
-	armor_spec = "melee=80;bullet=70;laser=60;energy=15;bomb=80;bio=100;rad=60"
 	offline_slowdown = 1.5
 	offline_vision_restriction = 1
 
@@ -37,7 +36,6 @@
 	desc = "An austere hardsuit used by paramilitary groups and real soldiers alike."
 	icon_state = "military_rig"
 	suit_type = "military hardsuit"
-	armor_spec = "melee=80;bullet=75;laser=65;energy=15;bomb=80;bio=100;rad=40"
 	offline_slowdown = 1.5
 	offline_vision_restriction = 1
 
@@ -83,10 +81,12 @@
 		)
 
 CAPABILITIES(/obj/item/rig/combat)
+	configure(atom_rules(armor_spec = "melee=80;bullet=70;laser=60;energy=15;bomb=80;bio=100;rad=60"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, POCKET_BAYSUIT))
 
 CAPABILITIES(/obj/item/rig/military)
+	configure(atom_rules(armor_spec = "melee=80;bullet=75;laser=65;energy=15;bomb=80;bio=100;rad=40"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_CE, POCKET_SECURITY, POCKET_MEDICAL, POCKET_HEAVYTOOLS, POCKET_BAYSUIT))
 

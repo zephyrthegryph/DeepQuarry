@@ -10,6 +10,7 @@ GLOBAL_LIST_INIT(dq_variants_suit_storage_snowsuit, list(
 ))
 
 CAPABILITIES(/obj/item/clothing/suit/storage/snowsuit)
+	configure(atom_rules(armor_spec = "bio=10"))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY))
 	configure(item_worn(covers = CHEST|ARMS, hides = HIDEHOLSTER))
 	configure(item_protection(cold_parts = CHEST|ARMS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE))

@@ -32,9 +32,9 @@ CAPABILITIES(/obj/item/dq_path_probe)
 /// A probe that also covers what is under it: half insulation, half armour.
 /obj/item/dq_path_probe/padded
 	name = "padded path probe"
-	armor_spec = "melee=50;bullet=50;laser=50;energy=50;bomb=50;bio=50;rad=50"
 
 CAPABILITIES(/obj/item/dq_path_probe/padded)
+	configure(atom_rules(armor_spec = "melee=50;bullet=50;laser=50;energy=50;bomb=50;bio=50;rad=50"))
 	configure(obj_rules(insulation = 0.5))
 
 /// A bag: one internal slot with the default damage shares.
@@ -50,7 +50,6 @@ CAPABILITIES(/obj/item/dq_path_probe/padded)
 
 /// The same bag lined with armour.
 /obj/item/dq_path_bag/armored
-	armor_spec = "melee=50;bullet=50;laser=50;energy=50;bomb=50;bio=50;rad=50"
 
 /// A canister-like holder with a sealed slot and an internal one.
 /obj/item/dq_path_sealed
@@ -289,3 +288,6 @@ CAPABILITIES(/obj/structure/closet/dq_path_freezer)
 	TEST_ASSERT(DQ_PATH_CLOSE(dq_path_step(wearer, uniform, PATH_EFFECT_HEAT), 1), "the uniform is outermost again")
 
 #undef DQ_PATH_CLOSE
+
+CAPABILITIES(/obj/item/dq_path_bag/armored)
+	configure(atom_rules(armor_spec = "melee=50;bullet=50;laser=50;energy=50;bomb=50;bio=50;rad=50"))

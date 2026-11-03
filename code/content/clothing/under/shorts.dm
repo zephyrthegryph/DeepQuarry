@@ -187,7 +187,6 @@ CAPABILITIES(/obj/item/clothing/under/skirt/outfit)
 	desc = "It's an orange high visibility jumpskirt worn by engineers. It has minor radiation shielding."
 	name = "engineer's jumpskirt"
 	icon_state = "enginef"
-	armor_spec = "rad=10"
 	item_state_slots = list(slot_r_hand_str = "engine", slot_l_hand_str = "engine")
 
 /obj/item/clothing/under/rank/chief_engineer/skirt
@@ -211,9 +210,9 @@ CAPABILITIES(/obj/item/clothing/under/skirt/outfit)
 /obj/item/clothing/under/rank/scientist/skirt
 	name = "scientist's jumpskirt"
 	icon_state = "sciencef"
-	armor_spec = "bomb=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/scientist/skirt)
+	configure(atom_rules(armor_spec = "bomb=10"))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/medical/skirt
@@ -241,9 +240,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/scientist/skirt)
 	name = "security officer's jumpskirt"
 	desc = "Standard feminine fashion for Security Officers.  It's made of sturdier material than the standard jumpskirts."
 	icon_state = "securityf"
-	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/rank/security/skirt)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/warden/skirt
@@ -269,3 +268,6 @@ CAPABILITIES(/obj/item/clothing/under/rank/security/skirt)
 
 /obj/item/clothing/under/shorts/cshorts/khaki
 	icon_state = "cshorts_khaki"
+
+CAPABILITIES(/obj/item/clothing/under/rank/engineer/skirt)
+	configure(atom_rules(armor_spec = "rad=10"))

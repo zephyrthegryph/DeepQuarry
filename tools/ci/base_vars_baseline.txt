@@ -3,7 +3,6 @@
 # `// ALLOW(base_vars): <reason>` doesn't count.
 # Shrink-only: after a sweep, `python tools/ci/base_vars_lint.py --update`.
 base_var	code/game/atom/_atom.dm	@/atom::atom_colours
-base_var	code/game/atom/armor.dm	@/atom::armor_spec
 base_var	code/game/atom/atom_defense.dm	@/atom::uses_integrity
 base_var	code/game/atom/atom_defense.dm	@/atom::atom_integrity
 base_var	code/game/atom/atom_defense.dm	@/atom::integrity_failure

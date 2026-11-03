@@ -50,9 +50,9 @@ CAPABILITIES(/obj/item/melee/cultblade)
 	name = "cult hood"
 	icon_state = "culthood"
 	desc = "A hood worn by the followers of Nar-Sie."
-	armor_spec = "melee=50;bullet=30;laser=50;energy=80;bomb=25;bio=10"
 
 CAPABILITIES(/obj/item/clothing/head/culthood)
+	configure(atom_rules(armor_spec = "melee=50;bullet=30;laser=50;energy=80;bomb=25;bio=10"))
 	configure(item_worn(hides = HIDEFACE))
 	configure(item_protection(min_cold = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0))
 
@@ -74,9 +74,9 @@ CAPABILITIES(/obj/item/clothing/head/culthood/magus)
 	name = "cult robes"
 	desc = "A set of armored robes worn by the followers of Nar-Sie."
 	icon_state = "cultrobes"
-	armor_spec = "melee=50;bullet=30;laser=50;energy=80;bomb=25;bio=10"
 
 CAPABILITIES(/obj/item/clothing/suit/cultrobes)
+	configure(atom_rules(armor_spec = "melee=50;bullet=30;laser=50;energy=80;bomb=25;bio=10"))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_CULT))
 	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS, hides = HIDEJUMPSUIT))
 	configure(item_protection(siemens = 0))
@@ -100,9 +100,9 @@ CAPABILITIES(/obj/item/clothing/suit/cultrobes/magusred)
 	name = "cult helmet"
 	desc = "A space worthy helmet used by the followers of Nar-Sie."
 	icon_state = "cult_helmet"
-	armor_spec = "melee=60;bullet=50;laser=30;energy=80;bomb=30;bio=30;rad=30;cold=60"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/cult)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=30;energy=80;bomb=30;bio=30;rad=30;cold=60"))
 	configure(item_protection(siemens = 0))
 
 /obj/item/clothing/head/helmet/space/cult/cultify()
@@ -113,9 +113,9 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/cult)
 	icon_state = "cult_armour"
 	desc = "A bulky suit of armour, bristling with spikes. It looks space-worthy."
 	w_class = ITEMSIZE_NORMAL
-	armor_spec = "melee=60;bullet=50;laser=30;energy=80;bomb=30;bio=30;rad=30;cold=60"
 
 CAPABILITIES(/obj/item/clothing/suit/space/cult)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=30;energy=80;bomb=30;bio=30;rad=30;cold=60"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	suit_storage(list(POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_CULT))
 	configure(item_worn(hides = HIDEGLOVES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER))

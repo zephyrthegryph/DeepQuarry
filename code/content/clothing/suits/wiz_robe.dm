@@ -75,10 +75,10 @@ CAPABILITIES(/obj/item/clothing/head/wizard/cap)
 	name = "wizard robe"
 	desc = "A magnificant, gem-lined robe that seems to radiate power."
 	icon_state = "wizard"
-	armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=20;bio=20;rad=20"
 	wizard_garb = 1
 
 CAPABILITIES(/obj/item/clothing/suit/wizrobe)
+	configure(atom_rules(armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=20;bio=20;rad=20"))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_WIZARD))
 	configure(item_worn(hides = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
 	configure(item_protection(gas_transfer = 0.01, permeability = 0.01, siemens = 0.8))
@@ -129,26 +129,26 @@ CAPABILITIES(/obj/item/clothing/suit/wizrobe/gentlecoat)
 	desc = "A rather dull, blue robe meant to mimick real wizard robes."
 	icon_state = "wizard-fake"
 	item_state_slots = list(slot_r_hand_str = "wizard", slot_l_hand_str = "wizard")
-	armor_spec = ""
 
 CAPABILITIES(/obj/item/clothing/suit/wizrobe/fake)
+	configure(atom_rules(armor_spec = ""))
 	configure(item_protection(siemens = 1.0))
 
 /obj/item/clothing/head/wizard/marisa/fake
 	name = "Witch Hat"
 	desc = "Strange-looking hat-wear, makes you want to cast fireballs."
 	icon_state = "marisa"
-	armor_spec = ""
 
 CAPABILITIES(/obj/item/clothing/head/wizard/marisa/fake)
+	configure(atom_rules(armor_spec = ""))
 	configure(item_protection(siemens = 1.0))
 
 /obj/item/clothing/suit/wizrobe/marisa/fake
 	name = "Witch Robe"
 	desc = "Magic is all about the spell power, ZE!"
 	icon_state = "marisa"
-	armor_spec = ""
 
 CAPABILITIES(/obj/item/clothing/suit/wizrobe/marisa/fake)
+	configure(atom_rules(armor_spec = ""))
 	configure(item_worn(covers = CHEST|ARMS|LEGS))
 	configure(item_protection(siemens = 1.0))

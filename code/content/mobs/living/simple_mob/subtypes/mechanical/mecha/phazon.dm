@@ -9,7 +9,6 @@
 
 	endurance = 200
 	deflect_chance = 30
-	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=30;bio=100;rad=100"
 	projectiletype = /obj/item/projectile/energy/declone
 
 
@@ -98,3 +97,6 @@
 /obj/item/projectile/arc/explosive_rocket/spread/on_impact(turf/T)
 	new /obj/effect/explosion(T) // Weak explosions don't produce this on their own, apparently.
 	explosion(T, 0, 0, 2, adminlog = FALSE)
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/phazon)
+	configure(atom_rules(armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=30;bio=100;rad=100"))

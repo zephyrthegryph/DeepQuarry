@@ -67,7 +67,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 	harm_intent_damage = 5
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
-	armor_spec = "melee=60;bullet=50;laser=30;energy=80;bomb=30;bio=100;rad=100" // Same armor are cult armor, may nerf since DAMN THAT IS GOOD ARMOR
 	attack_sound = SFX_WEAPONS_BLADESLICE
 
 
@@ -238,7 +237,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 	attack_armor_pen = 25
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
-	armor_spec = "melee=45;bullet=40;laser=30;energy=80;bomb=20;bio=100;rad=100" // Reduced Resistance to Approximate increased Tesh damage.
 	attack_sound = SFX_WEAPONS_BLADESLICE
 
 
@@ -283,7 +281,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 	melee_damage_upper = 15
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
-	armor_spec = "melee=70;bullet=60;laser=30;energy=80;bomb=35;bio=100;rad=100" // Better Armor to match lizard brute resist
 	attack_sound = SFX_WEAPONS_RAPIDSLICE
 	movement_cooldown = 4
 
@@ -327,7 +324,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 	harm_intent_damage = 5
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
-	armor_spec = "melee=50;bullet=30;laser=50;energy=80;bomb=25;bio=100;rad=100" //Armor Rebalanced for Cult Robes.
 	attack_sound = SFX_WEAPONS_RAPIDSLICE
 	projectilesound = SFX_WEAPONS_SPIDERLUNGE
 
@@ -372,7 +368,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 	melee_damage_upper = 15
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
-	armor_spec = "melee=50;bullet=30;laser=50;energy=80;bomb=25;bio=100;rad=100" //Armor Rebalanced for Cult Robes.
 	attack_sound = SFX_WEAPONS_RAPIDSLICE
 	movement_cooldown = 4
 
@@ -414,7 +409,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 	harm_intent_damage = 5
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
-	armor_spec = "melee=35;bullet=20;laser=35;energy=60;bomb=20;bio=100;rad=100" //Rebalanced for Robes and Tesh damage
 	attack_sound = SFX_WEAPONS_RAPIDSLICE
 	projectilesound = SFX_WEAPONS_SPIDERLUNGE
 
@@ -456,12 +450,11 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
 	harm_intent_damage = 5
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
-	armor_spec = "melee=60;bullet=50;laser=30;energy=80;bomb=30;bio=100;rad=100" // Same armor are cult armor, may nerf since DAMN THAT IS GOOD ARMOR
 	attack_sound = SFX_WEAPONS_BLADESLICE
 
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/elite)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/elite)))
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=30;energy=80;bomb=30;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/elite)))
 	configure(mob_rules(faction = "cult"))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(death_message = "shatters into bone and blood like pieces like the now shattered mirror."))
@@ -535,7 +528,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/elite)
 	harm_intent_damage = 5
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
-	armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=100;rad=100" //Super Armor since Boss Mob
 	attack_sound = SFX_WEAPONS_BLADESLICE
 
 	projectilesound = SFX_WEAPONS_SPIDERLUNGE
@@ -550,7 +542,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/elite)
 	ghostize()
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/magus)))
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/magus)))
 	configure(mob_rules(faction = "cult"))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(attack_cooldown = 5, death_message = "let's out a dark laugh as it collapses into a puddle of blood."))
@@ -588,7 +580,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus)
 	harm_intent_damage = 5
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
-	armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=100;rad=100" //Super Armor since Boss Mob
 	attack_sound = SFX_WEAPONS_BLADESLICE
 
 	projectiletype = /obj/item/projectile/bullet/pellet/shotgun
@@ -708,7 +699,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus)
 	melee_damage_upper = 25 //old 15
 	attack_injury_kind = INJURY_CUT
 	attacktext = list("slashed", "stabbed")
-	armor_spec = "melee=60;bullet=40;laser=60;energy=80;bomb=25;bio=100;rad=100"
 	attack_sound = SFX_WEAPONS_RAPIDSLICE
 	projectiletype = /obj/item/projectile/energy/plasma/vepr
 	projectilesound = SFX_WEAPONS_SPIDERLUNGE
@@ -778,6 +768,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball)
 
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/noodle)
+	configure(atom_rules(armor_spec = "melee=60;bullet=40;laser=60;energy=80;bomb=25;bio=100;rad=100"))
 	configure(mob_rules(faction = "cult"))
 	configure(living_rules(vore_capacity = 6))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
@@ -820,7 +811,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/noodle)
 
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/tesh)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/tesh)))
+	configure(atom_rules(armor_spec = "melee=45;bullet=40;laser=30;energy=80;bomb=20;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/tesh)))
 	configure(mob_rules(faction = "cult"))
 	configure(living_rules(vore_capacity = 6, delete_on_death = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
@@ -863,7 +854,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/tesh)
 
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/castertesh)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/castertesh)))
+	configure(atom_rules(armor_spec = "melee=35;bullet=20;laser=35;energy=60;bomb=20;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/castertesh)))
 	configure(mob_rules(faction = "cult"))
 	configure(living_rules(vore_capacity = 6, delete_on_death = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
@@ -898,14 +889,14 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/castertesh)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/human)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/human)))
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=30;energy=80;bomb=30;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/human)))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(death_message = "let's out a maddening laugh as his body crumbles away."))
 	immune_to_incapacitation()
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/lizard)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/lizard)))
+	configure(atom_rules(armor_spec = "melee=70;bullet=60;laser=30;energy=80;bomb=35;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/lizard)))
 	configure(mob_rules(faction = "cult"))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(attack_cooldown = 7.5, death_message = "hisses as he collapses into a pile of bones."))
@@ -913,7 +904,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/lizard)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/caster)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/caster)))
+	configure(atom_rules(armor_spec = "melee=50;bullet=30;laser=50;energy=80;bomb=25;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/caster)))
 	configure(mob_rules(faction = "cult"))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(death_message = "melts into a pile of blood and bones."))
@@ -921,7 +912,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/caster)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/initiate)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/initiate)))
+	configure(atom_rules(armor_spec = "melee=50;bullet=30;laser=50;energy=80;bomb=25;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/initiate)))
 	configure(mob_rules(faction = "cult"))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(death_message = "lets out a horrified scream as his body crumbles away."))
@@ -931,7 +922,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/initiate)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/hunter)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/hunter)))
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/cultist/hunter)))
 	configure(mob_rules(faction = "cult"))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_kind(attack_cooldown = 7.5, death_message = "laughs as he melts away. His laughs echo through the air even after only a dense red goo remains."))

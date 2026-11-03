@@ -45,7 +45,6 @@
 
 	endurance = 250
 	heat_resist = 1
-	armor_spec = "bullet=20;laser=50;bomb=50;bio=100;rad=100"
 
 /mob/living/simple_mob/mechanical/mecha/ripley/firefighter/manned
 	pilot_type = /mob/living/simple_mob/humanoid/merc/ranged
@@ -66,3 +65,6 @@
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/ripley)
 	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/ripley)))
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/ripley/firefighter)
+	configure(atom_rules(armor_spec = "bullet=20;laser=50;bomb=50;bio=100;rad=100"))

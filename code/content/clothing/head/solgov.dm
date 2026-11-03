@@ -68,16 +68,15 @@ CAPABILITIES(/obj/item/clothing/head/utility)
 	name = "fleet utility cover"
 	desc = "A navy blue utility cover bearing the crest of a USDF Fleet."
 	icon_state = "navyutility"
-	armor_spec = "energy=10"
 
 CAPABILITIES(/obj/item/clothing/head/utility/fleet)
+	configure(atom_rules(armor_spec = "energy=10"))
 	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/head/utility/army
 	name = "marine utility cover"
 	desc = "A green utility cover bearing the crest of the USDF Marines."
 	icon_state = "greenutility"
-	armor_spec = "melee=10;laser=10"
 
 /obj/item/clothing/head/utility/army/tan
 	name = "tan utility cover"
@@ -387,3 +386,6 @@ CAPABILITIES(/obj/item/clothing/head/almach)
 	desc = "A service uniform cover, worn by high-ranking crew within the Ares Confederation Navy."
 	icon_state = "beret_navy_service"
 	item_state = "almachhat_comm"
+
+CAPABILITIES(/obj/item/clothing/head/utility/army)
+	configure(atom_rules(armor_spec = "melee=10;laser=10"))

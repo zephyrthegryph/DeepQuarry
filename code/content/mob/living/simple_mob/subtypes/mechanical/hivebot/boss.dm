@@ -22,7 +22,6 @@
 	water_resist = 3
 	attack_armor_pen = -50
 
-	armor_spec = "melee=-150;bullet=60;laser=60;energy=60;bomb=40;bio=100;rad=100"
 
 	loot_list = list(/obj/item/clothing/suit/armor/alien = 30,
 			/obj/item/clothing/suit/armor/alien/tank = 30,
@@ -106,3 +105,6 @@
 /obj/item/grenade/spawnboss/hivebot
 	spawner_type = /mob/living/simple_mob/mechanical/hivebot/swarm
 	deliveryamt = 3
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot/precusor/chrono)
+	configure(atom_rules(armor_spec = "melee=-150;bullet=60;laser=60;energy=60;bomb=40;bio=100;rad=100"))

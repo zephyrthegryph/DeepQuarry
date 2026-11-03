@@ -19,12 +19,12 @@
 	melee_damage_upper = 0
 	attacktext = list("honked")
 
-	armor_spec = "melee=80;bullet=20"
 
 	has_langs = list(LANGUAGE_ANIMAL)
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/honkpet)
+	configure(atom_rules(armor_spec = "melee=80;bullet=20"))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	op("honkpet_interaction_hand", hand(), ungated(), stance(I_DISARM), label("Swap costume"), then(PROC_REF(honkpet_interaction_hand)))
 
@@ -55,9 +55,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/honkpet)
 	melee_damage_upper = 0
 	attacktext = list("...")
 
-	armor_spec = "melee=80;bullet=20"
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/mimepet)
+	configure(atom_rules(armor_spec = "melee=80;bullet=20"))
 	op("mimepet_interaction_hand", hand(), ungated(), stance(I_DISARM), label("Shuffle"), then(PROC_REF(mimepet_interaction_hand)))
 
 /// Old attack_hand: disarm reshuffles Dave's sprite, then the normal touch follows.

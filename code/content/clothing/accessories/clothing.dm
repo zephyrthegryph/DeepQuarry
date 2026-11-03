@@ -67,11 +67,11 @@
 	name = "hawaiian shirt"
 	desc = "You probably need some welder googles to look at this."
 	icon_state = "hawaiian_cyan"
-	armor_spec = ""
 	w_class = ITEMSIZE_NORMAL
 	slot = ACCESSORY_SLOT_OVER
 
 CAPABILITIES(/obj/item/clothing/accessory/hawaiian)
+	configure(atom_rules(armor_spec = ""))
 	configure(item_worn(slots = SLOT_OCLOTHING | SLOT_TIE, covers = CHEST))
 	configure(item_protection(heat_parts = CHEST, cold_parts = CHEST, siemens = 0.9))
 
@@ -125,11 +125,11 @@ CAPABILITIES(/obj/item/clothing/accessory/hawaiian/random_flower)
 	name = "black tropical shirt"
 	desc = "A classic themed neosilk tropical shirt. This one makes you feel like an animal."
 	icon_state = "animalstyle"
-	armor_spec = ""
 	w_class = ITEMSIZE_NORMAL
 	slot = ACCESSORY_SLOT_OVER
 
 CAPABILITIES(/obj/item/clothing/accessory/tropical)
+	configure(atom_rules(armor_spec = ""))
 	configure(item_worn(slots = SLOT_OCLOTHING | SLOT_TIE, covers = CHEST))
 	configure(item_protection(heat_parts = CHEST, cold_parts = CHEST, siemens = 0.9))
 
@@ -182,7 +182,6 @@ CAPABILITIES(/obj/item/clothing/accessory/tropical_random)
 	icon_state = "classicponcho"
 	item_state = "classicponcho"
 	icon_override = 'icons/inventory/accessory/mob.dmi'
-	armor_spec = ""
 	w_class = ITEMSIZE_NORMAL
 	slot = ACCESSORY_SLOT_OVER
 	sprite_sheets = list(
@@ -190,6 +189,7 @@ CAPABILITIES(/obj/item/clothing/accessory/tropical_random)
 	)
 
 CAPABILITIES(/obj/item/clothing/accessory/poncho)
+	configure(atom_rules(armor_spec = ""))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY))
 	configure(item_worn(slots = SLOT_OCLOTHING | SLOT_TIE, covers = CHEST|ARMS|LEGS))
 	configure(item_protection(max_heat = T0C+100, heat_parts = CHEST|ARMS|LEGS, cold_parts = CHEST|ARMS|LEGS, siemens = 0.9))
@@ -382,11 +382,11 @@ CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak)
 	item_state = "vest"
 	icon_override = 'icons/inventory/accessory/mob.dmi'
 	item_state_slots = list(slot_r_hand_str = "wcoat", slot_l_hand_str = "wcoat")
-	armor_spec = ""
 	w_class = ITEMSIZE_NORMAL
 	slot = ACCESSORY_SLOT_OVER
 
 CAPABILITIES(/obj/item/clothing/accessory/wcoat)
+	configure(atom_rules(armor_spec = ""))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY))
 	configure(item_worn(slots = SLOT_OCLOTHING | SLOT_TIE, covers = CHEST))
 	configure(item_protection(heat_parts = CHEST, cold_parts = CHEST, siemens = 0.9))

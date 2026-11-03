@@ -3,11 +3,11 @@
 	name = "bio hood"
 	icon_state = "bio"
 	desc = "A hood that protects the head and face from biological comtaminants."
-	armor_spec = "bio=100;rad=20;acid=60"
 	flags = PHORONGUARD
 	resistance_flags = UNACIDABLE
 
 CAPABILITIES(/obj/item/clothing/head/bio_hood)
+	configure(atom_rules(armor_spec = "bio=100;rad=20;acid=60"))
 	configure(item_handling(randpixel = 0, center_x = 0, center_y = 0))
 	configure(item_worn(hides = HIDEMASK|HIDEEARS|HIDEEYES|BLOCKHAIR, covers = HEAD|FACE|EYES, flags = THICKMATERIAL | ALLOW_SURVIVALFOOD))
 	configure(item_protection(permeability = 0.01, siemens = 0.9))
@@ -17,11 +17,11 @@ CAPABILITIES(/obj/item/clothing/head/bio_hood)
 	desc = "A suit that protects against biological contamination."
 	icon_state = "bio"
 	w_class = ITEMSIZE_LARGE//bulky item
-	armor_spec = "bio=100;rad=20;acid=60"
 	flags = PHORONGUARD
 	resistance_flags = UNACIDABLE
 
 CAPABILITIES(/obj/item/clothing/suit/bio_suit)
+	configure(atom_rules(armor_spec = "bio=100;rad=20;acid=60"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.0)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY))
 	configure(item_worn(covers = CHEST|LEGS|ARMS|HANDS|FEET, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER, flags = THICKMATERIAL))

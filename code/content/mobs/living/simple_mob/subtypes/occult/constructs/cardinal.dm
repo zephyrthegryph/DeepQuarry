@@ -30,7 +30,6 @@
 							)
 
 
-	armor_spec = "melee=70;bullet=30;laser=30;energy=30;bomb=10;bio=100;rad=100"
 
 /mob/living/simple_mob/construct/cardinal/bullet_act(obj/item/projectile/P)
 	var/reflectchance = 100 - round(P.damage)
@@ -78,5 +77,6 @@ TYPE_TABLE(/datum/decl/mob_organ_names/juggernaut, mob_organ_hit_zones, list("bo
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/construct/cardinal)
+	configure(atom_rules(armor_spec = "melee=70;bullet=30;laser=30;energy=30;bomb=10;bio=100;rad=100"))
 	configure(mob_rules(faction = "purity"))
 	immune_to_incapacitation()

@@ -368,7 +368,6 @@ CAPABILITIES(/obj/item/clothing/shoes/bhop)
 	desc = "A pair of olde knight boots."
 	icon_state = "knight_boots1"
 	item_state = "knight_boots1"
-	armor_spec = "melee=80;bullet=50;laser=10"
 
 /obj/item/clothing/shoes/knight/black
 	name = "knight boots"
@@ -414,10 +413,10 @@ CAPABILITIES(/obj/item/clothing/shoes/bhop)
 	desc = "Thud thud."
 	icon = 'icons/effects/effects.dmi' //This is to make the unit test happy. These are invisible which are... Less than ideal. This should probably be moved to a trait or sound selector, but I digress. Outside scope of this PR.
 	icon_state = "nothing" // Horribly illegal and shouldn't be a thing, but whatever.
-	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20" // Same as loadout jackboots.
 	can_hold_knife = 1
 
 CAPABILITIES(/obj/item/clothing/shoes/mech_shoes)
+	configure(atom_rules(armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20"))
 	fits_anyone()
 	configure(item_combat(force = 2))
 	configure(item_protection(siemens = 0.7))
@@ -497,3 +496,6 @@ CAPABILITIES(/obj/item/clothing/shoes/dry_galoshes)
 	..()
 	if(look.state_so_far(src) == "ranger_boots")
 		look.state("[bootcolor]_ranger_boots")
+
+CAPABILITIES(/obj/item/clothing/shoes/knight)
+	configure(atom_rules(armor_spec = "melee=80;bullet=50;laser=10"))

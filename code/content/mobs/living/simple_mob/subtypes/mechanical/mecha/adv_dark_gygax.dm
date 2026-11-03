@@ -82,7 +82,6 @@
 	endurance = 450
 	deflect_chance = 25
 	has_repair_droid = TRUE
-	armor_spec = "melee=50;bullet=50;laser=50;energy=30;bomb=30;bio=100;rad=100"
 
 	special_attack_min_range = 1
 	special_attack_max_range = 7
@@ -92,7 +91,7 @@
 	var/obj/effect/overlay/energy_ball/energy_ball = null
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/adv_dark_gygax)))
+	configure(atom_rules(armor_spec = "melee=50;bullet=50;laser=50;energy=30;bomb=30;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/technology/adv_dark_gygax)))
 	owns_one(nameof(energy_ball), /obj/effect/overlay/energy_ball)
 
 

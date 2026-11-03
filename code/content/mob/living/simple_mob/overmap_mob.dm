@@ -109,7 +109,6 @@ CAPABILITIES(/obj/effect/overmap/visitable/simplemob)
 
 	loot_list = list(/obj/random/underdark/uncertain)
 
-	armor_spec = "melee=1000;bullet=1000;laser=1000;energy=1000;bomb=1000;bio=1000;rad=1000"
 
 	var/scanner_desc
 	var/obj/effect/overmap/visitable/child_om_marker
@@ -117,6 +116,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/simplemob)
 	var/shipvore = FALSE	//Enable this to allow the mob to eat spaceships by dragging them onto its sprite.
 
 CAPABILITIES(/mob/living/simple_mob/vore/overmap)
+	configure(atom_rules(armor_spec = "melee=1000;bullet=1000;laser=1000;energy=1000;bomb=1000;bio=1000;rad=1000"))
 	configure(mob_rules(faction = FACTION_OVERMAP))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE, "digestable" = FALSE))
 	owns_one(nameof(child_om_marker), /obj/effect/overmap/visitable)

@@ -498,12 +498,12 @@ CAPABILITIES(/obj/item/clothing/suit/armor/vest/wolftaur/serdy)
 	valid_accessory_slots = (ACCESSORY_SLOT_HELM_C)
 	restricted_accessory_slots = (ACCESSORY_SLOT_HELM_C)
 	flags = THICKMATERIAL
-	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"
 	icon_override = 'icons/vore/custom_clothes_vr.dmi'
 	w_class = ITEMSIZE_NORMAL
 	ear_protection = 1
 
 CAPABILITIES(/obj/item/clothing/head/serdyhelmet)
+	configure(atom_rules(armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"))
 	configure(item_protection(min_cold = HELMET_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = HELMET_MAX_HEAT_PROTECTION_TEMPERATURE, siemens = 0.7))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HELM))
 
@@ -1216,7 +1216,6 @@ CAPABILITIES(/obj/item/clothing/glasses/welding/tiemgogs)
 	suit_type = "probably not magical"
 	icon_state = "nikkicape"
 	w_class = ITEMSIZE_SMALL // It is after all only a necklace
-	armor_spec = "" // this isn't armor, it's a dorky frickin cape
 	offline_slowdown = 0
 	offline_vision_restriction = 0
 	chest_type = /obj/item/clothing/suit/fluff/nikki
@@ -1230,6 +1229,7 @@ CAPABILITIES(/obj/item/clothing/glasses/welding/tiemgogs)
 
 
 CAPABILITIES(/obj/item/rig/nikki)
+	configure(atom_rules(armor_spec = ""))
 	configure(item_worn(worn_factors = TRAIT_NONE))
 	extend(/datum/act/equip, needs(req_wearer_ckey("ryumi", because = MSG(custom_items/the_necklace_never_quite_gets))))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_STORAGE))

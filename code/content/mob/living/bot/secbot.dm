@@ -405,6 +405,7 @@ CAPABILITIES(/mob/living/bot/secbot)
 //Secbot Construction
 
 CAPABILITIES(/obj/item/clothing/head/helmet)
+	configure(atom_rules(armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"))
 	configure(item_worn(hides = HIDEEARS|BLOCKHEADHAIR))
 	configure(item_protection(min_cold = HELMET_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = HELMET_MAX_HEAT_PROTECTION_TEMPERATURE, siemens = 0.7))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HELM, pickup = SFX_ITEMS_PICKUP_HELM))

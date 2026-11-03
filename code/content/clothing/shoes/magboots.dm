@@ -121,7 +121,6 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots)
 	mag_disable = "You relax your deathgrip on the flooring."
 	unremovable_when_enabled = TRUE
 	flags = PHORONGUARD
-	armor_spec = "melee=40;bullet=10;laser=10;energy=20;bomb=20;bio=10;rad=20" // values of workboots and heavy duty engineering gloves, it's the only option that will ever be taken so may as well give the turkeys some protection //
 
 
 
@@ -145,6 +144,7 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots)
 		. += "It would be hard to take these off without relaxing your grip first." // Theoretically this message should only be seen by the wearer when the claws are equipped.
 
 CAPABILITIES(/obj/item/clothing/shoes/magboots/vox)
+	configure(atom_rules(armor_spec = "melee=40;bullet=10;laser=10;energy=20;bomb=20;bio=10;rad=20"))
 	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_magclaws)))
 	fits_as(FIT_VOX)
 

@@ -29,7 +29,6 @@ CAPABILITIES(/obj/item/clothing/suit/armor)
 	desc = "An armored vest that protects against some damage."
 	icon_state = "armor"
 	blood_overlay_type = "armor"
-	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"
 
 /obj/item/clothing/suit/armor/vest/alt
 	name = "security armor"
@@ -48,9 +47,9 @@ CAPABILITIES(/obj/item/clothing/suit/armor)
 	desc = "A vest with heavy padding to protect against melee attacks."
 	icon_state = "riot"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
-	armor_spec = "melee=80;bullet=10;laser=10;energy=10"
 
 CAPABILITIES(/obj/item/clothing/suit/armor/riot)
+	configure(atom_rules(armor_spec = "melee=80;bullet=10;laser=10;energy=10"))
 	configure(item_protection(siemens = 0.5))
 
 /obj/item/clothing/suit/armor/riot/alt
@@ -63,9 +62,9 @@ CAPABILITIES(/obj/item/clothing/suit/armor/riot)
 	icon_state = "bulletproof"
 	item_state_slots = list(slot_r_hand_str = "armor", slot_l_hand_str = "armor")
 	blood_overlay_type = "armor"
-	armor_spec = "melee=10;bullet=80;laser=10;energy=10"
 
 CAPABILITIES(/obj/item/clothing/suit/armor/bulletproof)
+	configure(atom_rules(armor_spec = "melee=10;bullet=80;laser=10;energy=10"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	configure(item_protection(siemens = 0.7))
 
@@ -79,9 +78,9 @@ CAPABILITIES(/obj/item/clothing/suit/armor/bulletproof)
 	desc = "A vest that excels in protecting the wearer against energy projectiles."
 	icon_state = "armor_reflec"
 	blood_overlay_type = "armor"
-	armor_spec = "melee=10;bullet=10;laser=80;energy=50"
 
 CAPABILITIES(/obj/item/clothing/suit/armor/laserproof)
+	configure(atom_rules(armor_spec = "melee=10;bullet=10;laser=80;energy=50"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	configure(item_protection(siemens = 0.1))
 
@@ -114,9 +113,9 @@ CAPABILITIES(/obj/item/clothing/suit/armor/laserproof)
 	desc = "A vest that protects the wearer from several common types of weaponry."
 	icon_state = "combat"
 	blood_overlay_type = "armor"
-	armor_spec = "melee=50;bullet=50;laser=50;energy=30;bomb=30"
 
 CAPABILITIES(/obj/item/clothing/suit/armor/combat)
+	configure(atom_rules(armor_spec = "melee=50;bullet=50;laser=50;energy=30;bomb=30"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	configure(item_protection(siemens = 0.6))
 
@@ -125,9 +124,9 @@ CAPABILITIES(/obj/item/clothing/suit/armor/combat)
 	desc = "A suit of armor most often used by Special Weapons and Tactics squads. Includes padded vest with pockets along with shoulder and kneeguards."
 	icon_state = "swatarmor"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
-	armor_spec = "melee=60;bullet=60;laser=60;energy=40;bomb=40"
 
 CAPABILITIES(/obj/item/clothing/suit/armor/tactical)
+	configure(atom_rules(armor_spec = "melee=60;bullet=60;laser=60;energy=40;bomb=40"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)))
 	configure(item_worn(covers = CHEST|LEGS|ARMS, hides = HIDETIE|HIDEHOLSTER))
 	configure(item_protection(siemens = 0.7))
@@ -138,9 +137,9 @@ CAPABILITIES(/obj/item/clothing/suit/armor/tactical)
 	icon_state = "deathsquad"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
 	w_class = ITEMSIZE_HUGE
-	armor_spec = "melee=80;bullet=60;laser=50;energy=25;bomb=50;bio=100;rad=100"
 
 CAPABILITIES(/obj/item/clothing/suit/armor/swat)
+	configure(atom_rules(armor_spec = "melee=80;bullet=60;laser=50;energy=25;bomb=50;bio=100;rad=100"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))
 	configure(item_worn(flags = THICKMATERIAL, covers = CHEST|LEGS|FEET|ARMS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
@@ -163,9 +162,9 @@ CAPABILITIES(/obj/item/clothing/suit/armor/swat/officer)
 	icon_state = "detective-armor"
 	item_state_slots = list(slot_r_hand_str = "armor", slot_l_hand_str = "armor")
 	blood_overlay_type = "armor"
-	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"
 
 CAPABILITIES(/obj/item/clothing/suit/armor/det_suit)
+	configure(atom_rules(armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"))
 	configure(item_worn(covers = CHEST))
 
 // Ooold, old reactive armor.
@@ -179,10 +178,10 @@ CAPABILITIES(/obj/item/clothing/suit/armor/det_suit)
 	icon_state = "alien_speed"
 	blood_overlay_type = "armor"
 	item_state_slots = list(slot_r_hand_str = "armor", slot_l_hand_str = "armor")
-	armor_spec = "melee=50;bullet=50;laser=50;energy=50;bomb=50;rad=40"
 	var/block_chance = 20
 
 CAPABILITIES(/obj/item/clothing/suit/armor/alien)
+	configure(atom_rules(armor_spec = "melee=50;bullet=50;laser=50;energy=50;bomb=50;rad=40"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = -1)))
 	configure(item_worn(covers = CHEST))
 	configure(item_protection(siemens = 0.4))
@@ -194,10 +193,10 @@ CAPABILITIES(/obj/item/clothing/suit/armor/alien)
 	name = "alien protection suit"
 	desc = "It's really resilient yet lightweight, so it's probably meant to be armor. Strangely enough it seems to have been designed for a humanoid shape."
 	icon_state = "alien_tank"
-	armor_spec = "melee=70;bullet=70;laser=70;energy=70;bomb=70;rad=40"
 	block_chance = 40
 
 CAPABILITIES(/obj/item/clothing/suit/armor/alien/tank)
+	configure(atom_rules(armor_spec = "melee=70;bullet=70;laser=70;energy=70;bomb=70;rad=40"))
 	configure(item_worn(worn_factors = TRAIT_NONE))
 	configure(item_worn(covers = CHEST|LEGS|ARMS))
 
@@ -213,9 +212,9 @@ CAPABILITIES(/obj/item/clothing/suit/armor/alien/tank)
 	desc = "A set of armor worn by members of the Emergency Response Team."
 	icon_state = "ertarmor_cmd"
 	item_state_slots = list(slot_r_hand_str = "armor", slot_l_hand_str = "armor")
-	armor_spec = "melee=60;bullet=60;laser=60;energy=40;bomb=20"
 
 CAPABILITIES(/obj/item/clothing/suit/armor/vest/ert)
+	configure(atom_rules(armor_spec = "melee=60;bullet=60;laser=60;energy=40;bomb=20"))
 	configure(item_worn(covers = CHEST|ARMS))
 
 //Commander
@@ -248,7 +247,6 @@ CAPABILITIES(/obj/item/clothing/suit/armor/vest/ert)
 	icon_state = "kvest"
 	blood_overlay_type = "armor"
 	item_state_slots = list(slot_r_hand_str = "armor", slot_l_hand_str = "armor")
-	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"
 
 
 
@@ -310,6 +308,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/vest/wardencoat/alt)
 	blood_overlay_type = "suit"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/vest/hoscoat)
+	configure(atom_rules(armor_spec = "melee=50;bullet=40;laser=40;energy=25;bomb=25"))
 	configure(item_worn(covers = CHEST|ARMS|LEGS, hides = HIDETIE|HIDEHOLSTER))
 
 //Jensen cosplay gear
@@ -336,7 +335,6 @@ CAPABILITIES(/obj/item/clothing/suit/storage/vest/hoscoat/jensen)
 
 /obj/item/clothing/suit/storage/vest/solgov
 	icon_state = "solvest"
-	armor_spec = "melee=40;bullet=40;laser=40;energy=25;bomb=30"
 
 /obj/item/clothing/suit/storage/vest/solgov/heavy
 	icon_state = "solwebvest"
@@ -349,16 +347,15 @@ CAPABILITIES(/obj/item/clothing/suit/storage/vest/hoscoat/jensen)
 	desc = "A heavy armored vest in a fetching tan. It is surprisingly flexible and light, even with the extra webbing and advanced ceramic plates."
 	icon_state = "tacwebvest"
 	item_state = "tacwebvest"
-	armor_spec = "melee=40;bullet=40;laser=60;energy=35;bomb=30"
 
 /obj/item/clothing/suit/storage/vest/heavy/flexitac //a reskin of the above to have a matching armor set
 	name = "tactical light vest"
 	desc = "An armored vest made from advanced flexible ceramic plates. It's surprisingly mobile, if a little unfashionable."
 	icon_state = "flexitac"
 	item_state = "flexitac"
-	armor_spec = "melee=40;bullet=40;laser=60;energy=35;bomb=30"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/vest/heavy/flexitac)
+	configure(atom_rules(armor_spec = "melee=40;bullet=40;laser=60;energy=35;bomb=30"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	configure(item_protection(cold_parts = CHEST, min_cold = T0C - 20))
 
@@ -382,7 +379,6 @@ CAPABILITIES(/obj/item/clothing/suit/storage/vest/heavy/flexitac)
 	desc = "A heavy kevlar plate carrier with webbing attached."
 	icon_state = "webvest"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
-	armor_spec = "melee=50;bullet=40;laser=40;energy=25;bomb=25"
 
 /obj/item/clothing/suit/storage/vest/heavy/officer
 	name = "officer heavy armor vest"
@@ -422,9 +418,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/vest/heavy/flexitac)
 	desc = "A high-quality heavy kevlar plate carrier in a fetching tan. The vest is surprisingly flexible, and possibly made of an advanced material."
 	icon_state = "mercwebvest"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
-	armor_spec = "melee=60;bullet=60;laser=60;energy=40;bomb=40"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/vest/heavy/merc)
+	configure(atom_rules(armor_spec = "melee=60;bullet=60;laser=60;energy=40;bomb=40"))
 	configure(item_worn(worn_factors = TRAIT_NONE))
 
 //All of the armor below is mostly unused
@@ -447,19 +443,19 @@ CAPABILITIES(/obj/item/clothing/suit/armor/centcomm)
 	desc = "An old military-grade suit of armor. Incredibly robust against brute force damage! However, it offers little protection from energy-based weapons, which, combined with its bulk, makes it woefully obsolete."
 	icon_state = "heavy"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
-	armor_spec = "melee=90;bullet=80;laser=10;energy=10;bomb=80"
 	w_class = ITEMSIZE_HUGE // Very bulky, very heavy.
 
 CAPABILITIES(/obj/item/clothing/suit/armor/heavy)
+	configure(atom_rules(armor_spec = "melee=90;bullet=80;laser=10;energy=10;bomb=80"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 5)))
 	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
 	configure(item_protection(gas_transfer = 0.90, siemens = 0))
 
 /obj/item/clothing/suit/armor/tdome
 	name = DEVELOPER_WARNING_NAME
-	armor_spec = "melee=60;bullet=60;laser=60;energy=40;bomb=40"
 
 CAPABILITIES(/obj/item/clothing/suit/armor/tdome)
+	configure(atom_rules(armor_spec = "melee=60;bullet=60;laser=60;energy=40;bomb=40"))
 	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT))
 
 /obj/item/clothing/suit/armor/tdome/red
@@ -586,21 +582,18 @@ CAPABILITIES(/obj/item/clothing/suit/armor/pcarrier/explorer)
 	name = "ablative plate carrier"
 	desc = "A specialist laser resistant plate carrier. It can be equipped with armour plates, but provides very little protection of its own."
 	icon_state = "ablative"
-	armor_spec = "laser=5;energy=5"
 	starting_accessories = list(/obj/item/clothing/accessory/armor/armorplate/laserproof)
 
 /obj/item/clothing/suit/armor/pcarrier/bulletproof
 	name = "ballistic plate carrier"
 	desc = "A specialist bullet resistant plate carrier. It can be equipped with armour plates, but provides very little protection of its own."
 	icon_state = "ballistic"
-	armor_spec = "bullet=5;bomb=5"
 	starting_accessories = list(/obj/item/clothing/accessory/armor/armorplate/bulletproof)
 
 /obj/item/clothing/suit/armor/pcarrier/riot
 	name = "riot plate carrier"
 	desc = "A specialist melee resistant plate carrier. It can be equipped with armour plates, but provides very little protection of its own."
 	icon_state = "riot"
-	armor_spec = "melee=5"
 	starting_accessories = list(/obj/item/clothing/accessory/armor/armorplate/riot)
 
 /obj/item/clothing/suit/armor/pcarrier/explorer/light
@@ -635,10 +628,8 @@ CAPABILITIES(/obj/item/clothing/suit/armor/pcarrier/explorer)
 
 // HoS armor improved by to be slightly better than normal security stuff.
 /obj/item/clothing/suit/storage/vest/hoscoat
-	armor_spec = "melee=50;bullet=40;laser=40;energy=25;bomb=25"
 
 /obj/item/clothing/suit/storage/vest/hos
-	armor_spec = "melee=50;bullet=40;laser=40;energy=25;bomb=25"
 
 // Override Polaris's "confederate" naming convention. I hate it.
 /obj/item/clothing/suit/storage/vest/solgov
@@ -691,9 +682,9 @@ CAPABILITIES(/obj/item/clothing/suit/armor/combat/imperial)
 	icon_state = "crusader"
 	icon = 'icons/obj/clothing/knights_vr.dmi'
 	icon_override = 'icons/obj/clothing/knights_vr.dmi'
-	armor_spec = "melee=80;bullet=50;laser=10"
 
 CAPABILITIES(/obj/item/clothing/suit/armor/combat/crusader)
+	configure(atom_rules(armor_spec = "melee=80;bullet=50;laser=10"))
 	configure(item_worn(covers = CHEST))
 	configure(item_protection(siemens = 2))
 
@@ -709,13 +700,11 @@ CAPABILITIES(/obj/item/clothing/suit/armor/combat/crusader/bedevere)
 	name = "knight's armor"
 	desc = "ye olde knight, risen again."
 	icon_state = "quizzler"
-	armor_spec = "melee=60;bullet=10;laser=10"
 
 /obj/item/clothing/suit/armor/combat/crusader/pink
 	name = "knight's armor"
 	desc = "ye olde knight, risen again."
 	icon_state = "pink"
-	armor_spec = "melee=60;bullet=10;laser=10"
 
 // Costume Versions Here
 /obj/item/clothing/suit/armor/combat/crusader_costume
@@ -724,9 +713,9 @@ CAPABILITIES(/obj/item/clothing/suit/armor/combat/crusader/bedevere)
 	icon_state = "crusader"
 	icon = 'icons/obj/clothing/knights_vr.dmi'
 	icon_override = 'icons/obj/clothing/knights_vr.dmi'
-	armor_spec = ""
 
 CAPABILITIES(/obj/item/clothing/suit/armor/combat/crusader_costume)
+	configure(atom_rules(armor_spec = ""))
 	configure(item_worn(covers = CHEST))
 	configure(item_protection(siemens = 1))
 
@@ -747,13 +736,11 @@ CAPABILITIES(/obj/item/clothing/suit/armor/combat/crusader_costume/bedevere)
 /obj/item/clothing/suit/armor/crusader
 	name = "crusader armor"
 	desc = "God will protect those who defend his faith."
-	armor_spec = "melee=50;bullet=50;laser=50;energy=25;bomb=30"
 	icon_state = "crusader_suit"
 
 /obj/item/clothing/head/helmet/crusader
 	name = "crusader helmet"
 	desc = "God will protect those who defend his faith."
-	armor_spec = "melee=50;bullet=50;laser=50;energy=25;bomb=30"
 	icon_state = "crusader_head"
 
 /obj/item/clothing/suit/armor/combat/crusader_explo
@@ -763,9 +750,9 @@ CAPABILITIES(/obj/item/clothing/suit/armor/combat/crusader_costume/bedevere)
 	icon = 'icons/obj/clothing/knights_vr.dmi'
 	icon_override = 'icons/obj/clothing/knights_vr.dmi'
 	flags = THICKMATERIAL
-	armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=35;bio=75;rad=35" // Inferior to sec vests in bullet/laser but better for environmental protection.
 
 CAPABILITIES(/obj/item/clothing/suit/armor/combat/crusader_explo)
+	configure(atom_rules(armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=35;bio=75;rad=35"))
 	configure(item_worn(worn_factors = TRAIT_NONE))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO, POCKET_ALL_TANKS, POCKET_MINING))
 	configure(item_worn(covers = CHEST|LEGS|ARMS))
@@ -785,7 +772,6 @@ CAPABILITIES(/obj/item/clothing/suit/armor/combat/crusader_explo)
 /obj/item/clothing/suit/storage/vest/martian_miner/reinforced
 	name = "reinforced martian miner's coat"
 	desc = "A sturdy, rugged coat once favoured by miners on Mars. These coats became strongly associated with early Martian Independence movements as a result, and so remain moderately popular amongst members of the Third Ares Confederation to this day. This one appears to have been discreetly lined with a hardened polymesh substrate, rendering it more resilient to physical damage."
-	armor_spec = "melee=25;bullet=15;laser=15;bomb=25"
 
 /obj/item/clothing/suit/storage/vest/officer
 	sprite_sheets = list(
@@ -803,7 +789,6 @@ CAPABILITIES(/obj/item/clothing/suit/armor/pcarrier/primative)
 	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, cold_parts = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
 
 /obj/item/clothing/suit/storage/vest/martian_miner/unarmored
-	armor_spec = "bomb=25"
 
 /obj/item/clothing/suit/storage/vest/viper_suit // Still WIP but functional.
 	name = "viper combat suit"
@@ -811,9 +796,9 @@ CAPABILITIES(/obj/item/clothing/suit/armor/pcarrier/primative)
 	icon = 'icons/mob/viper_suit_ch.dmi'
 	icon_override = 'icons/mob/viper_suit_ch.dmi'
 	icon_state = "viper_suit"
-	armor_spec = "melee=35;bullet=35;laser=35;energy=35;bomb=25;bio=20;rad=20"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/vest/viper_suit)
+	configure(atom_rules(armor_spec = "melee=35;bullet=35;laser=35;energy=35;bomb=25;bio=20;rad=20"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.2)))
 	configure(item_worn(covers = HEAD|UPPER_TORSO|LOWER_TORSO|LEGS|FEET|ARMS|HANDS))
 
@@ -825,7 +810,6 @@ CAPABILITIES(/obj/item/clothing/suit/storage/vest/viper_suit)
 	icon_override = 'icons/mob/suit_yw.dmi'
 	item_state = "blueshield_s"
 	blood_overlay_type = "armor"
-	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"
 
 /obj/item/clothing/suit/storage/toggle/yw/secjacket
 	name = "security jacket"
@@ -834,10 +818,10 @@ CAPABILITIES(/obj/item/clothing/suit/storage/vest/viper_suit)
 	icon_state = "secjacket_open"
 	icon_override = 'icons/mob/suit_yw.dmi'
 	item_state = "secjacket_open_s"
-	armor_spec = "melee=15;bullet=10;laser=15;energy=5;bomb=15"
 	open = 1
 
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle/yw/secjacket)
+	configure(atom_rules(armor_spec = "melee=15;bullet=10;laser=15;energy=5;bomb=15"))
 	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO|ARMS, hides = HIDEHOLSTER))
 	configure(item_protection(cold_parts = UPPER_TORSO|LOWER_TORSO|ARMS, heat_parts = UPPER_TORSO|LOWER_TORSO|ARMS))
 
@@ -871,9 +855,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/yw/secjacket)
 	icon_override = 'icons/mob/suit_yw.dmi'
 	item_state = "blueshieldcoat_s"
 	blood_overlay_type = "armor"
-	armor_spec = "melee=20;bullet=15;laser=15;energy=10;bomb=10"
 
 CAPABILITIES(/obj/item/clothing/suit/armor/yw/blueshieldcoat)
+	configure(atom_rules(armor_spec = "melee=20;bullet=15;laser=15;energy=10;bomb=10"))
 	configure(item_protection(cold_parts = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS, heat_parts = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
 
 /obj/item/clothing/suit/storage/hazardvest/yw/brigphysician
@@ -883,7 +867,6 @@ CAPABILITIES(/obj/item/clothing/suit/armor/yw/blueshieldcoat)
 	icon_state = "brigphysician-vest"
 	icon_override = 'icons/mob/suit_yw.dmi'
 	item_state = "brigphysician-vest_s"
-	armor_spec = "melee=15;bullet=10;laser=10;energy=10;bomb=10;bio=50;rad=15"
 
 /obj/item/clothing/suit/storage/hazardvest/yw/Paramedic
 	name = "Paramedic Vest"
@@ -892,7 +875,6 @@ CAPABILITIES(/obj/item/clothing/suit/armor/yw/blueshieldcoat)
 	icon_state = "paramedic-vest"
 	icon_override = 'icons/mob/suit_yw.dmi'
 	item_state = "paramedic-vest_s"
-	armor_spec = "bomb=15;bio=50;rad=50"
 
 
 CAPABILITIES(/obj/item/clothing/suit/storage/vest/press)
@@ -906,3 +888,51 @@ CAPABILITIES(/obj/item/clothing/suit/armor/vest/wolftaur)
 
 CAPABILITIES(/obj/item/clothing/suit/armor/pcarrier)
 	extend(/datum/act/equip, needs(req(PROC_REF(plate_clearance))))
+
+CAPABILITIES(/obj/item/clothing/suit/armor/vest)
+	configure(atom_rules(armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/vest/solgov)
+	configure(atom_rules(armor_spec = "melee=40;bullet=40;laser=40;energy=25;bomb=30"))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/vest/tactical)
+	configure(atom_rules(armor_spec = "melee=40;bullet=40;laser=60;energy=35;bomb=30"))
+
+CAPABILITIES(/obj/item/clothing/suit/armor/pcarrier/laserproof)
+	configure(atom_rules(armor_spec = "laser=5;energy=5"))
+
+CAPABILITIES(/obj/item/clothing/suit/armor/pcarrier/bulletproof)
+	configure(atom_rules(armor_spec = "bullet=5;bomb=5"))
+
+CAPABILITIES(/obj/item/clothing/suit/armor/pcarrier/riot)
+	configure(atom_rules(armor_spec = "melee=5"))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/vest/hos)
+	configure(atom_rules(armor_spec = "melee=50;bullet=40;laser=40;energy=25;bomb=25"))
+
+CAPABILITIES(/obj/item/clothing/suit/armor/combat/crusader/quizzler)
+	configure(atom_rules(armor_spec = "melee=60;bullet=10;laser=10"))
+
+CAPABILITIES(/obj/item/clothing/suit/armor/combat/crusader/pink)
+	configure(atom_rules(armor_spec = "melee=60;bullet=10;laser=10"))
+
+CAPABILITIES(/obj/item/clothing/suit/armor/crusader)
+	configure(atom_rules(armor_spec = "melee=50;bullet=50;laser=50;energy=25;bomb=30"))
+
+CAPABILITIES(/obj/item/clothing/head/helmet/crusader)
+	configure(atom_rules(armor_spec = "melee=50;bullet=50;laser=50;energy=25;bomb=30"))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/vest/martian_miner/reinforced)
+	configure(atom_rules(armor_spec = "melee=25;bullet=15;laser=15;bomb=25"))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/vest/martian_miner/unarmored)
+	configure(atom_rules(armor_spec = "bomb=25"))
+
+CAPABILITIES(/obj/item/clothing/suit/armor/yw/blueshield)
+	configure(atom_rules(armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hazardvest/yw/brigphysician)
+	configure(atom_rules(armor_spec = "melee=15;bullet=10;laser=10;energy=10;bomb=10;bio=50;rad=15"))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hazardvest/yw/Paramedic)
+	configure(atom_rules(armor_spec = "bomb=15;bio=50;rad=50"))

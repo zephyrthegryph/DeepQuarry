@@ -25,7 +25,6 @@
 
 	attack_sound = SFX_WEAPONS_PIERCE
 
-	armor_spec = "melee=20;bullet=10;laser=10;energy=10;bomb=10;bio=100;rad=100"
 
 	construct_spells = list(
 			/datum/spell/aoe_turf/knock/harvester,
@@ -34,6 +33,7 @@
 		)
 
 CAPABILITIES(/mob/living/simple_mob/construct/deacon)
+	configure(atom_rules(armor_spec = "melee=20;bullet=10;laser=10;energy=10;bomb=10;bio=100;rad=100"))
 	configure(mob_rules(faction = "purity"))
 
 /datum/decl/mob_organ_names/harvester

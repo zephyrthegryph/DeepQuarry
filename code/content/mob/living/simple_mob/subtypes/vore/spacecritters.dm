@@ -276,7 +276,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/dreameel)
 	icon_living = "gravityshell"
 	icon_dead = "gravityshell-dead"
 	movement_cooldown = 5			// Lower is faster.
-	armor_spec = "melee=14;bullet=14;laser=14;energy=14;bio=100;rad=100"
 	var/artifact_master_type = /datum/artifact_master/gravity
 
 	evolve = "/mob/living/simple_mob/vore/spacecritter/gravityshell/cleanse"
@@ -285,6 +284,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/dreameel)
 	copy = "/mob/living/simple_mob/vore/spacecritter/gravityshell"
 
 CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/gravityshell)
+	configure(atom_rules(armor_spec = "melee=14;bullet=14;laser=14;energy=14;bio=100;rad=100"))
 	configure(living_rules(vore_capacity = 1))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat/gravityshell, meat_amount = 8, butchery_loot = list( /obj/item/stack/material/shellchitin = 3 )))
 

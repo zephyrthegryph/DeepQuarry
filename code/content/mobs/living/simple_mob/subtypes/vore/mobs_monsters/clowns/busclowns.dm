@@ -202,7 +202,6 @@
 	movement_sound = SFX_WEAPONS_HEAVYSMASH
 	movement_shake_radius = 5
 
-	armor_spec = "melee=40;bullet=20;laser=10"
 
 
 /mob/living/simple_mob/clowns/big/c_shift/chlown
@@ -319,3 +318,6 @@
 	icon_dead = "honkling_dead"
 	icon_gib = "generic_gib"
 	vis_height = 32
+
+CAPABILITIES(/mob/living/simple_mob/clowns/big/c_shift/destroyer)
+	configure(atom_rules(armor_spec = "melee=40;bullet=20;laser=10"))

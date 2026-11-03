@@ -161,10 +161,10 @@ CAPABILITIES(/obj/item/melee/agate_hammer)
 	icon = 'icons/mob/tribal_gear.dmi'
 	icon_override = 'icons/mob/tribal_gear.dmi'
 	icon_state = "lilly_cloak"
-	armor_spec = "melee=20;bullet=20;laser=20;energy=20;bio=60;rad=60" //Seemingly medicore, but tack on the 20% chance to completly negate something and you get something that is average.
 	var/block_chance = 20
 
 CAPABILITIES(/obj/item/clothing/suit/armor/tyrtribalcloak)
+	configure(atom_rules(armor_spec = "melee=20;bullet=20;laser=20;energy=20;bio=60;rad=60"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.2)))
 	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO|LEGS|FEET|ARMS|HANDS))
 
