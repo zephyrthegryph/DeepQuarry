@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Regenerates strings/clothing_channels/generated.json from the analyzer's view of the tree. See generate.py.
 set -euo pipefail
+# Below normal priority, for this script and everything it starts (cargo and rustc, the analyzer, git): the machine is also the user's desktop.
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../dq_below_normal.sh"
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 out=E:/dq-cache/clothing-channels/out
 mkdir -p "$out"

@@ -7,6 +7,8 @@
 # DQ_ANALYZE_PROFILE picks the cargo profile: release (the default in CI and the push gate) or dev-fast (the local default). DQ_ANALYZE_NO_BUILD=1 reuses an
 # existing binary without asking cargo (a CI step that already built it). CARGO_TARGET_DIR is honoured.
 set -euo pipefail
+# Below normal priority, for this script and everything it starts (cargo and rustc, the analyzer, git): the machine is also the user's desktop.
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../dq_below_normal.sh"
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 manifest="$root/tools/analyze/Cargo.toml"
 # Default profile matches tools/build/build.ts: release in CI, else dev-fast (incremental, no LTO).
