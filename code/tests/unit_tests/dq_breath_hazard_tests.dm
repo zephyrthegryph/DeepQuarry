@@ -527,6 +527,97 @@
 	life_test_drain()
 	TEST_ASSERT_EQUAL(H.loc, N, "the human stepped onto the vacuum tile")
 	TEST_ASSERT(H.alerts?["oxy"], "no oxygen alert one tick after walking into vacuum (awake: [jointext(life_test_awake(H), ", ")])")
+	TEST_ASSERT(H.alerts?["pressure"], "no pressure alert one tick after walking into vacuum")
+
+/// The first effect of a change to the human's air or body shows one tick after it, not on the next Life frame
+/// (air_hazard_now()): the air watch's or body heat watch's crossing runs the steps that read them at once.
+/datum/unit_test/life_om/breath_hazard/proc/assert_at_once(check_proc, what)
+	one_frame()
+	TEST_ASSERT(call(src, check_proc)(), "[what] one tick after the change (awake: [jointext(life_test_awake(H), ", ")]; air watch key [H.body?.air_watch_key])")
+	TEST_ASSERT_EQUAL(H.loc, container || T, "the human stayed where it was (no move woke it)")
+
+/// Fire in the room (the tile's air at 1000 K): the environment exchange couples the body to it at once.
+/datum/unit_test/life_om/breath_hazard/fire_at_once
+	sleepers = list("life_breathing", "life_environment")
+
+/datum/unit_test/life_om/breath_hazard/fire_at_once/run_life()
+	if(!setup_breather())
+		return
+	heat_set(T.air, 1000, HEAT_SOURCE_OTHER)
+	assert_at_once(PROC_REF(body_coupled), "the environment exchange coupled the body to 1000 K air")
+
+/// The room freezing: coupled at once.
+/datum/unit_test/life_om/breath_hazard/cold_at_once
+	sleepers = list("life_breathing", "life_environment")
+
+/datum/unit_test/life_om/breath_hazard/cold_at_once/run_life()
+	if(!setup_breather())
+		return
+	heat_set(T.air, 150, HEAT_SOURCE_OTHER)
+	assert_at_once(PROC_REF(body_coupled), "the environment exchange coupled the body to 150 K air")
+
+/// Low pressure: the pressure alert at once.
+/datum/unit_test/life_om/breath_hazard/low_pressure_at_once
+	sleepers = list("life_breathing", "life_environment")
+
+/datum/unit_test/life_om/breath_hazard/low_pressure_at_once/run_life()
+	if(!setup_breather())
+		return
+	set_pressure(HAZARD_LOW_PRESSURE / 2)
+	assert_at_once(PROC_REF(pressure_alert), "a pressure alert at [HAZARD_LOW_PRESSURE / 2] kPa")
+
+/// High pressure: the pressure alert at once.
+/datum/unit_test/life_om/breath_hazard/high_pressure_at_once
+	sleepers = list("life_breathing", "life_environment")
+
+/datum/unit_test/life_om/breath_hazard/high_pressure_at_once/run_life()
+	if(!setup_breather())
+		return
+	set_pressure(HAZARD_HIGH_PRESSURE * 1.5)
+	assert_at_once(PROC_REF(pressure_alert), "a pressure alert at [HAZARD_HIGH_PRESSURE * 1.5] kPa")
+
+/// The body overheating past the species' first heat level: the body temperature alert at once (the body heat watch).
+/datum/unit_test/life_om/breath_hazard/body_heat_alert_at_once
+	sleepers = list("life_environment")
+
+/datum/unit_test/life_om/breath_hazard/body_heat_alert_at_once/run_life()
+	if(!setup_breather())
+		return
+	H.set_bodytemperature(H.species.heat_level_1 + 5)
+	assert_at_once(PROC_REF(temperature_alert), "a body temperature alert at [H.species.heat_level_1 + 5] K")
+
+/// A simple mob (a cat) walking from steady air into vacuum: its oxygen alert is up within one tick of the step (its
+/// environment step reads its gas limits; the move compares the new air against its watch's bands).
+/datum/unit_test/life_om/breath_hazard/simple_mob_walk_into_vacuum
+
+/datum/unit_test/life_om/breath_hazard/simple_mob_walk_into_vacuum/run_life()
+	var/list/run = dq_atmos_test_find_clear_pipe_run(2)
+	if(!run)
+		TEST_FAIL("no clear floor for the test")
+		return
+	T = run[1]
+	N = run[2]
+	dq_atmos_test_snapshot_air(T)
+	dq_atmos_test_snapshot_air(N)
+	dq_atmos_test_isolate_pair(T, N)
+	dq_atmos_test_fill_standard_air(T)
+	dq_atmos_test_fill_standard_air(N)
+	T.air_update_turf(TRUE, FALSE)
+	N.air_update_turf(TRUE, FALSE)
+	var/mob/living/simple_mob/animal/passive/cat/C = allocate(/mob/living/simple_mob/animal/passive/cat, T)
+	life_test_place(C)
+	C.forceMove(T)
+	for(var/i in 1 to 10)
+		life_test_advance(LIFE_CYCLE_SECONDS)
+	TEST_ASSERT(C.body?.air_watch_own, "the cat has an air watch")
+	// The cat wanders: put it back on its own tile (no gas frame runs between here and the step, so both tiles keep their air).
+	C.forceMove(T)
+	TEST_ASSERT(!C.alerts?["oxy"], "no oxygen alert in steady air")
+	pump_to_vacuum(N)
+	C.forceMove(N)
+	test_time(world.tick_lag)
+	life_test_drain()
+	TEST_ASSERT(C.alerts?["oxy"], "no oxygen alert on the cat one tick after it walked into vacuum (min_oxy [C.min_oxy]; on the vacuum tile [C.loc == N]; its O2 [N.air.get_moles(/datum/gas/oxygen)] mol; watch bands [json_encode(C.body?.air_watch_own)]; air steps last ran at [sparse_get_or(C, air_hazard_at, -1)]; env step asleep [life_test_asleep(C, "life_environment")])")
 
 #undef LIFE_HAZARD_LIMIT
 
