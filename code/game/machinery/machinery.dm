@@ -449,7 +449,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 		return FALSE
 	var/integrity_factor = clamp((total_integrity / part_count) / 150, 0.5, 2.5)
 	set_max_integrity(max(1, round(initial(max_integrity) * integrity_factor)))
-	if(uses_integrity)
+	if(atom_rules_of(src).uses_integrity)
 		update_integrity(max_integrity)
 	sparse_set_or(src, material_emp_resistance, clamp(round(total_dielectric / part_count * 0.6), 0, 75), 0)
 	return TRUE

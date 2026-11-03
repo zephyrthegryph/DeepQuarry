@@ -27,6 +27,7 @@ CAPABILITY_TYPE(burning, CAP_BURNING, /datum/capability/burning, key = NONE)
 	)
 
 CAPABILITIES(/obj)
+	configure(atom_rules(uses_integrity = TRUE))
 	configure(movable_motion(unacidable = FALSE))
 	obj_rules(tk_reach = TRUE, redgate_allowed = TRUE, micro_target = FALSE, surgery_cleanliness = 0) // its per-type rules: a type trait (code/game/objects/obj_rules.dm)
 	extend(TAG_TOPIC, needs(req(PROC_REF(topic_usable), because = MSG(op/topic_gate), id = "topic_usable")))
@@ -47,7 +48,7 @@ CAPABILITIES(/obj)
 /obj/proc/start_burning(fire_overlay = GLOB.fire_overlay, fire_particles = /particles/smoke/burning)
 	if(is_burning())
 		return TRUE
-	if(!uses_integrity)
+	if(!atom_rules_of(src).uses_integrity)
 		stack_trace("Tried to start burning an atom ([type]) that does not use atom_integrity!")
 		return FALSE
 	// only flammable atoms should burn, but it's not really an error if we try
@@ -142,7 +143,7 @@ CAPABILITIES(/obj)
 	// <=0-integrity atom (atom_defense.dm), so stop burning it — put the fire out
 	// instead of re-damaging a wreck every tick (this was crashing repeatedly on
 	// benches/furniture caught in a sustained hotspot once atmos fires actually run).
-	if(uses_integrity && get_integrity() <= 0)
+	if(atom_rules_of(src).uses_integrity && get_integrity() <= 0)
 		extinguish()
 		return
 	// Check if the object somehow became fireproof, put it out if so

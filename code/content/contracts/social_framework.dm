@@ -566,7 +566,7 @@ CAPABILITIES(/datum/contract/social)
 	contract.contributor_share = 0.25
 
 /proc/contract_atom_is_station_infrastructure(atom/source)
-	return source?.uses_integrity && source.z && (source.z in using_map.station_levels) && (isstructure(source) || ismachinery(source))
+	return (source && atom_rules_of(source).uses_integrity) && source.z && (source.z in using_map.station_levels) && (isstructure(source) || ismachinery(source))
 
 /proc/contract_report_station_damage(atom/source, amount)
 	if(!SScontracts || !isnum(amount) || amount <= 0)

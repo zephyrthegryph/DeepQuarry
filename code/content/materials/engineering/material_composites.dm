@@ -74,7 +74,7 @@ PROC_SUMMARY(/proc/material_cache_id) // a never-reused id for a material, memoi
 	return FALSE
 
 /obj/proc/material_environment_rupture()
-	if(uses_integrity && max_integrity > 0)
+	if(atom_rules_of(src).uses_integrity && max_integrity > 0)
 		take_damage(max_integrity, BRUTE)
 	else
 		spent(src)
@@ -168,7 +168,7 @@ PROC_SUMMARY(/proc/material_cache_id) // a never-reused id for a material, memoi
 	var/datum/material_assembly/wear = material_assembly(src)
 	wear.exterior_integrity = max(0, wear.exterior_integrity - corrosion)
 	if(wear.exterior_integrity <= 0)
-		if(uses_integrity && max_integrity > 0)
+		if(atom_rules_of(src).uses_integrity && max_integrity > 0)
 			take_damage(max_integrity, BURN)
 		else
 			spent(src)

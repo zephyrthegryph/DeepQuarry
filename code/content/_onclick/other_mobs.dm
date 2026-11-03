@@ -16,7 +16,7 @@
 
 // Generic damage proc (slimes and monkeys): the default a generic hit lands when no hook takes it over. Reached only through generic_hit().
 /atom/proc/attack_generic(mob/user, damage, attack_verb)
-	if(!damage || !uses_integrity)
+	if(!damage || !atom_rules_of(src).uses_integrity)
 		react_to_entry(DAMAGE_ENTRY_GENERIC, 0, user, user)
 		return 0
 	user.do_attack_animation(src)
