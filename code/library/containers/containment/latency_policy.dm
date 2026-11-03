@@ -14,18 +14,6 @@ GLOBAL_VAR_INIT(latency_slow_logged, 0)
 #define LATENCY_SWEEP_FRAME_REFS 2
 /// Shortest wait before the sweep re-offers an atom latent_collapse() refused.
 #define LATENCY_REFUSAL_BACKOFF_MIN (1 MINUTES)
-/// Longest wait: an atom refused again and again (pinned by a reference that never goes) is re-offered this often at most.
-#define LATENCY_REFUSAL_BACKOFF_MAX (30 MINUTES)
-
-/// How long the sweep leaves `A` alone after a refusal: the holder's idle delay at first, then as long as `A` has been refused for (so the wait
-/// doubles with each refusal in a row), up to LATENCY_REFUSAL_BACKOFF_MAX. Re-offering every pinned atom each minute kept an idle station's sweep
-/// at its frame budget for the whole round (2.6 ms a second on Southern Cross, 5 ms a frame).
-/proc/latency_refusal_backoff(atom/movable/A, atom/holder)
-	var/base = max(holder?.latent_idle_delay_value(), LATENCY_REFUSAL_BACKOFF_MIN)
-	if(!stamp_has(A, latent_refused_since))
-		stamp_now(A, latent_refused_since, CLOCK_WORLD)
-		return base
-	return clamp(stamp_elapsed(A, latent_refused_since, CLOCK_WORLD), base, LATENCY_REFUSAL_BACKOFF_MAX)
 
 /// Holders with latent contents that the sweep should look at. Populated by
 /// dq_latency_sweep_register() the first time a holder's ledger is built
@@ -105,7 +93,7 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 			catch(var/exception/e)
 				// One bad atom must not end the whole frame (and with it every
 				// other holder's turn): log it with context and back it off.
-				cooldown_start(A, latent_refused_until, latency_refusal_backoff(A, holder))
+				cooldown_start(A, latent_refused_until, max(holder?.latent_idle_delay_value(), LATENCY_REFUSAL_BACKOFF_MIN))
 				dq_report_caught(e, "LATENCY_SWEEP: can_be_latent([A.type] in [holder.type]) runtimed")
 				continue
 			var/check_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - check_start)
@@ -115,14 +103,14 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 			if(!eligible)
 				// Not latent yet: back off like a refusal. Without it an ineligible atom is checked again on every turn of its holder,
 				// and one check can cost tens of ms (a first-aid kit in a wall locker: 25-76 ms, every few seconds on Southern Cross).
-				cooldown_start(A, latent_refused_until, latency_refusal_backoff(A, holder))
+				cooldown_start(A, latent_refused_until, max(holder?.latent_idle_delay_value(), LATENCY_REFUSAL_BACKOFF_MIN))
 				continue
 			// Through dq_latent_attempt_collapse(): its frame is part of the calibrated held_refs.
 			if(dq_latent_attempt_collapse(A, LATENCY_SWEEP_FRAME_REFS))
 				break // holder.contents changed; the rest wait for next turn
 			// Refused by latent_collapse() itself: back off for the holder's idle
 			// delay instead of re-offering it (and re-running its refusal) every frame.
-			cooldown_start(A, latent_refused_until, latency_refusal_backoff(A, holder))
+			cooldown_start(A, latent_refused_until, max(holder?.latent_idle_delay_value(), LATENCY_REFUSAL_BACKOFF_MIN))
 			log_runtime("LATENCY_SWEEP: [A.type] in [holder.type] refused collapse, retry after [DisplayTimeText(cooldown_left(A, latent_refused_until))]: [GLOB.latent_last_refusal]")
 	for(var/atom/gone as anything in dead)
 		rel_remove(GLOB, nameof(GLOB.latency_sweep_holders), gone)
@@ -131,7 +119,6 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 #undef LATENCY_SWEEP_BUDGET
 #undef LATENCY_SWEEP_MS_BUDGET
 #undef LATENCY_REFUSAL_BACKOFF_MIN
-#undef LATENCY_REFUSAL_BACKOFF_MAX
 #undef LATENCY_SWEEP_FRAME_REFS
 #undef LATENCY_SWEEP_SLOW_MS
 
