@@ -66,18 +66,18 @@ Readers are on `origin/master`; "writer" names the per-move writer where the var
 | `/atom/movable::pressure_resistance` | `code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm:330` | the pressure-displacement step divides by it for every movable in an active turf (`:338-339`) |
 | `/atom::flags` | `code/content/atom/_atom.dm` (declaration in the atom block) | the bitfield (`OPENCONTAINER`, `ATOM_INITIALIZED`, ...) read across `reagents`, `Initialize` and the container checks (`_atom.dm:126-135`); its lifecycle bits are written while an atom is materialized, which can happen inside a draw (`exclude_memo` in `lint_scopes.toml` already says so) |
 | `/atom::pass_flags` | `code/content/atom/_atom.dm:12` | `pass_flags & passflag` on every `CanPass()` / projectile pass test (`_atom.dm:439`) |
-| `/atom/movable::movement_type` | `code/content/atom/atoms_movable.dm:24` | `Enter()` and `CanPass()` per move (`code/game/turfs/turf.dm:335, :345`, `CHECK_BITFIELD(mover.movement_type, UNSTOPPABLE)`) |
-| `/atom/movable::last_move` | `code/content/atom/atoms_movable.dm:6` | written by every `Move()` (`:286`); read by pushing, buckling and inertia |
-| `/atom/movable::move_speed` | `code/content/atom/atoms_movable.dm:9` | written by every `Move()` (`:294`, `world.time - l_move_time`) |
-| `/atom/movable::l_move_time` | `code/content/atom/atoms_movable.dm:10` (`EXPIRY_TMP_DECLARE`) | the baseline of `move_speed`, every move (`:294`) |
-| `/atom/movable::moving_diagonally` | `code/content/atom/atoms_movable.dm` | the diagonal-step state machine in `Move()` (`:232-245`) |
-| `/atom/movable::throwing` | `code/content/atom/atoms_movable.dm:12` | `Bump()` finalizes a flight (`:376-377`); lava and turf `Enter` read it per entering movable (`code/game/turfs/simulated/lava.dm:88`) |
+| `/atom/movable::movement_type` | `code/domains/world_model/atom/atoms_movable.dm:24` | `Enter()` and `CanPass()` per move (`code/game/turfs/turf.dm:335, :345`, `CHECK_BITFIELD(mover.movement_type, UNSTOPPABLE)`) |
+| `/atom/movable::last_move` | `code/domains/world_model/atom/atoms_movable.dm:6` | written by every `Move()` (`:286`); read by pushing, buckling and inertia |
+| `/atom/movable::move_speed` | `code/domains/world_model/atom/atoms_movable.dm:9` | written by every `Move()` (`:294`, `world.time - l_move_time`) |
+| `/atom/movable::l_move_time` | `code/domains/world_model/atom/atoms_movable.dm:10` (`EXPIRY_TMP_DECLARE`) | the baseline of `move_speed`, every move (`:294`) |
+| `/atom/movable::moving_diagonally` | `code/domains/world_model/atom/atoms_movable.dm` | the diagonal-step state machine in `Move()` (`:232-245`) |
+| `/atom/movable::throwing` | `code/domains/world_model/atom/atoms_movable.dm:12` | `Bump()` finalizes a flight (`:376-377`); lava and turf `Enter` read it per entering movable (`code/game/turfs/simulated/lava.dm:88`) |
 | `/atom::our_overlays` | `code/content/atom/_atom.dm:29` (`var/tmp`) | the overlay queue (`code/world/systems/overlays.dm`): every `add_overlay` / `cut_overlays` / flush reads and rewrites it |
-| `/atom::light_sources` | `code/modules/lighting/lighting_atom.dm:10` (`var/tmp`) | `Moved()` walks every light source on the mover (`code/content/atom/atoms_movable.dm:322`) |
+| `/atom::light_sources` | `code/modules/lighting/lighting_atom.dm:10` (`var/tmp`) | `Moved()` walks every light source on the mover (`code/domains/world_model/atom/atoms_movable.dm:322`) |
 | `/atom/movable::blocks_emissive` | `code/modules/lighting/lighting_atom.dm:17` | the emissive blocker overlay build on every overlay update (`code/modules/lighting/emissive_blocker_overlays.dm:13`) |
 | `/mob::m_intent` | `code/modules/mob/mob_defines.dm:80` | every step: `living_movement.dm:20` (walk vs run delay), `mob_movement.dm:21`, `carbon.dm:51-54` (hunger cost of running per step) |
 | `/mob/living::now_pushing` | `code/modules/mob/living/living_defines.dm:14` | every bump: `living_movement.dm:51-53`, `carbon.dm:382` |
-| `/mob::track_blood` | `code/modules/detectivework/tools/rag.dm:5` (and `:13`) | every step onto a simulated turf: `code/content/turfs/simulated.dm:108-116` (`H.track_blood`, `S.track_blood--`) |
+| `/mob::track_blood` | `code/modules/detectivework/tools/rag.dm:5` (and `:13`) | every step onto a simulated turf: `code/domains/world_model/turf/simulated.dm:108-116` (`H.track_blood`, `S.track_blood--`) |
 
 **17 vars** of 238 rows (7%). `hot_ceiling = 17`.
 

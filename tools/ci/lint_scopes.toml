@@ -75,7 +75,7 @@ input_stance_readers = [
     "code/content/mob/living/living_movement.dm",
     "code/content/vore/eating/belly_obj_resist.dm",
     "code/modules/combat_ai/",
-    "code/content/ai/",
+    "code/domains/ai/",
     "code/domains/ai/",
     "code/tests/unit_tests/",
     "code/tests/unit_tests/",
@@ -181,14 +181,14 @@ record_accessor_prefixes = ["set_", "get_"]
 # least 40 characters and names the hot reader (a .dm file and the proc); a row whose var no longer exists fails (`hot_home`).
 "/atom/can_atmos_pass" = "read per turf update for each object on the turf: air_block_mask folds it (code/domains/atmos/environmental/LINDA_system.dm:58)"
 "/atom/movable/pressure_resistance" = "read per spacewind move: experience_pressure_difference move_prob (code/domains/atmos/environmental/LINDA_turf_tile.dm:338)"
-"/atom/flags" = "read on every move and bump scan: ON_BORDER tests in /turf/Enter and contains_dense_objects (code/content/turfs/turf.dm:349), held by all atoms"
+"/atom/flags" = "read on every move and bump scan: ON_BORDER tests in /turf/Enter and contains_dense_objects (code/domains/world_model/turf/turf.dm:349), held by all atoms"
 "/atom/pass_flags" = "read on every CanPass test of every move and projectile pass: pass_flags & passflag (code/content/atom/_atom.dm:439), held by all atoms"
-"/atom/movable/movement_type" = "read per entering mover: CHECK_BITFIELD(mover.movement_type, UNSTOPPABLE) in /turf/Enter (code/content/turfs/turf.dm:335)"
-"/atom/movable/moving_diagonally" = "read and written on every diagonal step: the state machine in Move() (code/content/atom/atoms_movable.dm:232-250), held by all movables"
-"/atom/movable/l_move_time" = "read on every Move(): move_speed = world.time - l_move_time (code/content/atom/atoms_movable.dm:294), held by all movables"
+"/atom/movable/movement_type" = "read per entering mover: CHECK_BITFIELD(mover.movement_type, UNSTOPPABLE) in /turf/Enter (code/domains/world_model/turf/turf.dm:335)"
+"/atom/movable/moving_diagonally" = "read and written on every diagonal step: the state machine in Move() (code/domains/world_model/atom/atoms_movable.dm:232-250), held by all movables"
+"/atom/movable/l_move_time" = "read on every Move(): move_speed = world.time - l_move_time (code/domains/world_model/atom/atoms_movable.dm:294), held by all movables"
 "/mob/m_intent" = "read on every step: walk-versus-run delay in living_movement.dm (code/content/mob/living/living_movement.dm:20) and mob_movement.dm:21"
 "/mob/living/now_pushing" = "read on every bump into a movable: the push guard in living_movement.dm (code/content/mob/living/living_movement.dm:51) and carbon.dm:382"
-"/mob/track_blood" = "read on every human footstep: blood tracking in /turf/simulated/Entered (code/content/turfs/simulated.dm:108-116), held by all mobs"
+"/mob/track_blood" = "read on every human footstep: blood tracking in /turf/simulated/Entered (code/domains/world_model/turf/simulated.dm:108-116), held by all mobs"
 
 [lint.decl]
 # decl_lint.py EXEMPT: tests and benchmarks build the forbidden things on purpose. (No TGS exemption here:
@@ -382,7 +382,7 @@ legacy_forms_converted = [
   "code/content/power/",
   "code/domains/power/",
   "code/ATMOSPHERICS/",
-  "code/content/atmos/",
+  "code/domains/atmos/",
   "code/domains/atmos/",
   "code/_global_vars/",
   "code/content/_global_vars/",
@@ -542,12 +542,11 @@ legacy_forms_converted = [
   "code/modules/assembly/",
   "code/content/assembly/",
   "code/modules/asset_cache/",
-  "code/content/asset_cache/",
+  "code/library/ui/asset_cache/",
   "code/modules/autowiki/",
   "code/content/autowiki/",
   "code/content/awaymissions/",
-  "code/modules/balance/",
-  "code/content/balance/",
+  "code/tests/balance/",
   "code/content/balloon_alert/",
   "code/modules/belly_overlay/",
   "code/content/belly_overlay/",
@@ -590,9 +589,7 @@ legacy_forms_converted = [
   "code/modules/error_handler/",
   "code/content/error_handler/",
   "code/modules/event/",
-  "code/content/event/",
   "code/modules/eventkit/",
-  "code/content/eventkit/",
   "code/content/events/",
   "code/content/events/",
   "code/content/examine/",
@@ -623,13 +620,13 @@ legacy_forms_converted = [
   "code/modules/halloween/",
   "code/content/halloween/",
   "code/domains/heat/",
-  "code/content/heat/",
+  "code/domains/heat/",
   "code/domains/heat/",
   "code/content/holodeck/",
   "code/content/holodeck/",
   "code/modules/holomap/",
   "code/content/holomap/",
-  "code/content/hydro/",
+  "code/content/hydroponics/",
   "code/modules/hydroponics/",
   "code/content/hydroponics/",
   "code/modules/identification/",
@@ -712,52 +709,52 @@ legacy_forms_converted = [
   "code/content/mob/living/silicon/robot/sprites/",
   "code/content/mob/living/silicon/robot/subtypes/exploration/",
   "code/content/mob/living/simple_mob/subtypes/animal/borer/",
-  "code/content/mobs/living/simple_mob/subtypes/animal/borer/",
+  "code/content/mob/living/simple_mob/subtypes/animal/borer/",
   "code/content/mob/living/simple_mob/subtypes/animal/farm animals/",
-  "code/content/mobs/living/simple_mob/subtypes/animal/farm animals/",
+  "code/content/mob/living/simple_mob/subtypes/animal/farm animals/",
   "code/content/mob/living/simple_mob/subtypes/animal/giant_spider/",
   "code/content/mob/living/simple_mob/subtypes/animal/giant_spider/",
-  "code/content/mobs/living/simple_mob/subtypes/animal/giant_spider/",
+  "code/content/mob/living/simple_mob/subtypes/animal/giant_spider/",
   "code/content/mob/living/simple_mob/subtypes/animal/hyena/",
-  "code/content/mobs/living/simple_mob/subtypes/animal/hyena/",
+  "code/content/mob/living/simple_mob/subtypes/animal/hyena/",
   "code/content/mob/living/simple_mob/subtypes/animal/passive/",
   "code/content/mob/living/simple_mob/subtypes/animal/passive/",
-  "code/content/mobs/living/simple_mob/subtypes/animal/passive/",
+  "code/content/mob/living/simple_mob/subtypes/animal/passive/",
   "code/content/mob/living/simple_mob/subtypes/animal/sif/",
   "code/content/mob/living/simple_mob/subtypes/animal/sif/",
-  "code/content/mobs/living/simple_mob/subtypes/animal/sif/",
+  "code/content/mob/living/simple_mob/subtypes/animal/sif/",
   "code/content/mob/living/simple_mob/subtypes/animal/space/",
   "code/content/mob/living/simple_mob/subtypes/animal/space/",
-  "code/content/mobs/living/simple_mob/subtypes/animal/space/",
+  "code/content/mob/living/simple_mob/subtypes/animal/space/",
   "code/content/mob/living/simple_mob/subtypes/animal/tyr/",
-  "code/content/mobs/living/simple_mob/subtypes/animal/tyr/",
+  "code/content/mob/living/simple_mob/subtypes/animal/tyr/",
   "code/modules/mob/living/simple_mob/subtypes/blob/",
   "code/content/mob/living/simple_mob/subtypes/blob/",
   "code/content/mob/living/simple_mob/subtypes/bullet_heck/",
-  "code/content/mobs/living/simple_mob/subtypes/bullet_heck/",
+  "code/content/mob/living/simple_mob/subtypes/bullet_heck/",
   "code/modules/mob/living/simple_mob/subtypes/gateway/",
   "code/content/mob/living/simple_mob/subtypes/gateway/",
   "code/modules/mob/living/simple_mob/subtypes/glamour/",
   "code/content/mob/living/simple_mob/subtypes/glamour/",
   "code/modules/mob/living/simple_mob/subtypes/horror/",
-  "code/content/mobs/living/simple_mob/subtypes/horror/",
+  "code/content/mob/living/simple_mob/subtypes/horror/",
   "code/content/mob/living/simple_mob/subtypes/humanoid/",
-  "code/content/mobs/living/simple_mob/subtypes/humanoid/",
+  "code/content/mob/living/simple_mob/subtypes/humanoid/",
   "code/content/mob/living/simple_mob/subtypes/illusion/",
   "code/modules/mob/living/simple_mob/subtypes/mechanical/",
   "code/content/mob/living/simple_mob/subtypes/mechanical/",
-  "code/content/mobs/living/simple_mob/subtypes/mechanical/",
+  "code/content/mob/living/simple_mob/subtypes/mechanical/",
   "code/modules/mob/living/simple_mob/subtypes/metroid/",
   "code/content/mob/living/simple_mob/subtypes/metroid/",
   "code/content/mob/living/simple_mob/subtypes/occult/",
-  "code/content/mobs/living/simple_mob/subtypes/occult/",
+  "code/content/mob/living/simple_mob/subtypes/occult/",
   "code/content/mob/living/simple_mob/subtypes/plant/",
   "code/content/mob/living/simple_mob/subtypes/slime/feral/",
   "code/modules/mob/living/simple_mob/subtypes/slimess/",
   "code/content/mob/living/simple_mob/subtypes/slimess/",
   "code/modules/mob/living/simple_mob/subtypes/vore/",
   "code/content/mob/living/simple_mob/subtypes/vore/",
-  "code/content/mobs/living/simple_mob/subtypes/vore/",
+  "code/content/mob/living/simple_mob/subtypes/vore/",
   "code/content/mob/living/voice/",
   "code/content/mob/new_player/",
   "code/content/mob/new_player/",
@@ -832,7 +829,7 @@ legacy_forms_converted = [
   "code/content/telesci/",
   "code/content/tension/",
   "code/modules/tgchat/",
-  "code/content/tgchat/",
+  "code/library/ui/tgchat/",
   "code/content/tgs_commands/",
   "code/library/ui/tgui/",
   "code/content/tgui/modules/",
@@ -840,7 +837,7 @@ legacy_forms_converted = [
   "code/library/ui/tgui_input/",
   "code/content/tgui_input/",
   "code/library/ui/tgui_panel/",
-  "code/content/tgui_panel/",
+  "code/library/ui/tgui_panel/",
   "code/modules/tickets/",
   "code/content/tickets/",
   "code/modules/tooltip/",
@@ -929,11 +926,11 @@ i7_verb_allow = [
   "code/content/mob/living/silicon/robot/subtypes/thinktank/thinktank_module.dm",
   "code/content/pda/ai.dm",
 ]
-bodytemp_allow = ["code/content/heat/heat_mobs.dm"]
+bodytemp_allow = ["code/domains/heat/heat_mobs.dm"]
 # the heat and gas domains own every temperature and energy write
 heat_writes_allow = ["code/domains/", "code/__defines/verdigris/_bindings.dm"]
 weapon_damage_type_allow = ["code/content/medical/conditions/wounds.dm"]
-organ_damage_allow = ["code/modules/body/", "code/content/body/"]
+organ_damage_allow = ["code/domains/body/", "code/content/body/"]
 rust_state_allow = ["code/__defines/verdigris/_bindings.dm"]
 slot_flags_allow = ["code/datums/properties/", "code/content/properties/"]
 # the volatile abductor RTG's asplod lifecycle; the generic machinery explosion damage itself

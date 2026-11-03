@@ -1,4 +1,4 @@
-// The balance harness (code/modules/balance): every scenario runs without a
+// The balance harness (code/tests/balance): every scenario runs without a
 // runtime and records every key it promises. The run also writes the baseline
 // results to data/balance/results.json.
 

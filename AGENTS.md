@@ -152,11 +152,12 @@ Target tree (doc §22):
 |---|---|
 | `code/host/` | The neutral layer below the engine: helpers the engine calls, the act context, adjacency. Held to the engine boundary (`engine_layering`); what needs content is a virtual proc here, implemented in `code/content/`. |
 | `code/engine/{kernel,time,state,stats,refs,change,actions,parts,hooks,present,io,_generated}` | The framework, one folder per doc section. `_generated` is build output, never hand-edited. |
-| `code/library/` | Shared capabilities and bundles (machine, access, containers, reagents, items, structures, construction, providers, mobs). |
-| `code/domains/{body,damage,atmos,power,life,ai,verdigris}` | Large systems with their own model. |
+| `code/library/` | Shared capabilities and bundles (machine, access, containers, reagents, items, structures, construction, providers, mobs), and the UI framework in `code/library/ui/` (tgui, tgui panel, chat, asset cache). |
+| `code/domains/{world_model,body,damage,atmos,heat,power,life,ai,verdigris}` | Large systems with their own model. `world_model` holds the base type declarations and their vars (`/atom/movable`, `/obj`, `/obj/item`, `/obj/structure`, `/turf`, `/area`, `/mob` down to `/mob/living/simple_mob`, `/datum/reagent`, `/datum/reagents`, the HUD screen). `damage` is the damage packet and impact model, `life` the life steps. Files whose path an analyzer lint or dm-health still pins stay in `code/content/` until that tool follows (`code/content/atom/_atom.dm`, `atom_defense.dm`, `armor.dm`, `code/content/machinery/machinery.dm`, `code/content/body/affliction.dm`). |
 | `code/content/<domain>/` | Ordinary content: one type, one file (its capabilities, procs, messages, tests beside it). |
-| `code/world/` | The scheduling kernel (`code/world/kernel/`; `code/engine/kernel/` holds only input, requests and jobs), systems, map glue, round flow. |
-| `code/defines/` | Defines, split per module; replaces `__defines/`. |
+| `code/world/` | The scheduling kernel (`code/world/kernel/`; `code/engine/kernel/` holds only input, requests and jobs), systems, map glue, round flow. A feature's own `/datum/system` stays in that feature's folder: the `system_boundary` lint takes the system's folder as its boundary, so moving one into `code/world/systems/` breaks every in-folder use. |
+| `code/defines/` | Defines, split per module (`content/`, `domains/`, `library/`, `engine/`, `host/`); replaces `__defines/`. A file that holds only macros lives here. |
+| `code/tests/` | Unit tests (`unit_tests/`, one aggregator), benchmarks, fixtures and the balance harness (`balance/`). Tests do not sit beside their type. |
 
 Layering: host and engine may not reference library or content; library may not reference content;
 nothing in the new tree may use an old form.
@@ -398,7 +399,7 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
 
 - `doc/rewrite/final_api.html`: the design (forms §1-§16, old to new §17, kept forms §18, migration §19, decisions §21, layout §22).
 - `doc/rewrite/README.md`: index of the rest of the rewrite docs; `doc/rewrite/archive/`: docs of the retired layers (history only).
-- `doc/testing.md`, `doc/body_architecture.md`, `code/ATMOSPHERICS/README.md`, `verdigris/README.md`.
+- `doc/testing.md`, `doc/body_architecture.md`, `code/domains/atmos/README.md`, `verdigris/README.md`.
 - Linter rules: `SpacemanDMM.toml`, `code/__odlint.dm`, `code/__pragmas.dm`. Icons: `tools/dq_icons/`. Changelog format: `html/changelogs/example.yml`.
 
 ---
@@ -455,7 +456,7 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
   the live map does not use sectors. The dynamic overmap POI system and the ATC subsystem are
   deleted; restore from git only if asked.
 - **Variants.** Subtypes that differ only in data are collapsed into one type plus a registry
-  (`code/datums/variants/README.md`).
+  (`code/content/variants/README.md`).
 - **Loot and map resolvers.** A spawn table is a `loot(table = list(...), ...)` entry in the spawner's
   CAPABILITIES block (a pure table is an abstract `/loot/...` type with its own block; a subtype writes
   `configure(loot(...))`), rolled by `loot_spawn()`; a searchable pile names its table with
