@@ -163,6 +163,7 @@ first code/defines/content/**
 first code/defines/host/**
 first code/defines/engine/**
 first code/defines/library/**
+first code/defines/domains/**
 first code/defines/host/**
 first code/defines/base/**
 first code/defines/content/**
