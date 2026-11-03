@@ -232,8 +232,8 @@ before code/domains/heat/heat_bind_batch.dm code/domains/atmos/pipes/universal.d
 before code/domains/heat/heat_bind_batch.dm code/content/rules/world_adapter.dm
 before code/domains/heat/heat_bind_batch.dm code/domains/heat/**
 before code/domains/heat/heat_bind_batch.dm code/domains/heat/heat.dm
-before code/game/atom/atom_type_table.dm code/world/systems/atoms_init.dm   # TYPE_TABLE_*
-before code/game/atom/atom_type_table.dm code/content/atom/atom_materialize.dm
+before code/content/atom/atom_type_table.dm code/world/systems/atoms_init.dm   # TYPE_TABLE_*
+before code/content/atom/atom_type_table.dm code/content/atom/atom_materialize.dm
 before code/engine/declare/entries.dm code/engine/actions/**                  # ENTRY_SLOTS, ENTRY_SLOT_LIST
 before code/engine/stats/contributes.dm code/engine/change/staleness.dm       # CV_PROC, CV_VAR
 before code/engine/stats/tables.dm code/engine/stats/recompute.dm             # TABLE_KEY
