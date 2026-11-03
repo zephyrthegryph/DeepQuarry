@@ -33,3 +33,20 @@
 	var/mob/living/simple_mob/dq_bump_probe/mob = allocate(/mob/living/simple_mob/dq_bump_probe, T)
 	walker.bump_into(mob)
 	TEST_ASSERT_EQUAL(mob.offered, walker, "the bumped simple mob is offered the walker")
+
+/// An artifact master that records who walked into its holder instead of running effects.
+/datum/artifact_master/dq_bump_probe
+	var/atom/movable/bumped_by_whom
+
+/datum/artifact_master/dq_bump_probe/bumped_by(atom/movable/M)
+	bumped_by_whom = M
+
+/// Walking into an artifact reaches its master through the bump notice (was the atom/Bumped() echo, now deleted).
+/datum/unit_test/dq_bumped_notice_artifact/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/walker = allocate(/mob/living/carbon/human, T)
+	var/obj/item/tool/wrench/held = allocate(/obj/item/tool/wrench, T)
+	var/datum/artifact_master/dq_bump_probe/master = allocate(/datum/artifact_master/dq_bump_probe, held)
+	TEST_ASSERT_EQUAL(held.artifact_master, master, "the probe master is the wrench's artifact master")
+	walker.bump_into(held)
+	TEST_ASSERT_EQUAL(master.bumped_by_whom, walker, "the walker reached the artifact master's bumped_by")

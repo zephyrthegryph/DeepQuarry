@@ -126,7 +126,7 @@ CAPABILITIES(/obj/vehicle/train/engine)
 	var/obj/machinery/door/D = Obstacle
 	var/mob/living/carbon/human/H = load
 	if(istype(D) && istype(H))
-		D.Bumped(H)		//a little hacky, but hey, it works, and respects access rights
+		H.bump_into(D)		// the rider walks into the door: the bump action asks the door's access
 
 	..()
 

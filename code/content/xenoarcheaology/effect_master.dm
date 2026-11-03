@@ -111,7 +111,7 @@ CAPABILITIES(/datum/artifact_master)
 	observe(H, /datum/act/shoot, src, instead(then(PROC_REF(on_bullet))))
 	observe(H, /datum/notice/hand_attacked, src, then(PROC_REF(on_attack_hand)))
 	observe(H, /datum/notice/movable_bump, src, then(PROC_REF(on_bump)))
-	observe(H, /datum/notice/atom_bumped, src, then(PROC_REF(on_bumped)))
+	observe(H, /datum/notice/bumped, src, then(PROC_REF(on_bumped)))
 	observe(H, /datum/notice/moved, src, then(PROC_REF(on_moved)))
 	observe(H, /datum/notice/reagent_expose_obj, src, then(PROC_REF(on_reagent)))
 
@@ -302,8 +302,8 @@ CAPABILITIES(/datum/artifact_master)
 
 /datum/artifact_master/proc/on_bumped(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
-	var/datum/notice/atom_bumped/event = A
-	bumped_by(event.bumped)
+	var/datum/notice/bumped/event = A
+	bumped_by(event.bumper)
 
 /// Something bumped (or is pulling) the holder.
 /datum/artifact_master/proc/bumped_by(atom/movable/M)
