@@ -674,6 +674,7 @@
 #include "dq_veto_sites_tests.dm"
 #include "dq_dying_observers_tests.dm"
 #include "dq_hook_hand_tests.dm"
+#include "dq_published_notices_tests.dm"
 #include "dq_e2_parts_tests.dm"
 #include "dq_lib_tests.dm"
 #include "dq_lib_structures_tests.dm"

@@ -474,6 +474,9 @@ SCHEMA(/datum/affliction, contract_rare_eligibility_qualifying, bool())
 /proc/affliction_reports_clinical_outcomes(datum/affliction/A)
 	return !istype(A, /datum/affliction/wound) && !istype(A, /datum/affliction/lesion) && !istype(A, /datum/affliction/load)
 
+/// A condition was attached, removed, or crossed a clinically meaningful threshold.
+ACTION(mob_medical_issues_changed, FIXED, notice = /datum/notice/mob_medical_issues_changed)
+
 /datum/affliction/proc/update_contract_eligibility()
 	var/family = medical_trial_condition_family(src)
 	var/qualifying = !!family && severity >= MEDICAL_TRIAL_MINIMUM_BASELINE
@@ -484,7 +487,7 @@ SCHEMA(/datum/affliction, contract_rare_eligibility_qualifying, bool())
 	contract_eligibility_qualifying = qualifying
 	contract_rare_eligibility_qualifying = rare_qualifying
 	if(owner)
-		PUBLISH_LEGACY(owner, /datum/notice/mob_medical_issues_changed)
+		PUBLISH(owner, mob_medical_issues_changed)
 
 /// The medical indication families this human currently qualifies for (sparse slot contract_medical_indications, a list of family names).
 sparse(/mob/living/carbon/human, contract_medical_indications, type = list)

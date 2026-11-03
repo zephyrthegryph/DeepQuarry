@@ -479,6 +479,9 @@
 		log_tgui(client(), "Prewarmed shell became visible; forcing it hidden.", window = src)
 		winshow(client(), id, FALSE)
 
+/// Window is fully visible and we can make fragile calls
+ACTION(tgui_window_visible, client, FIXED, notice = /datum/notice/tgui_window_visible)
+
 /**
  * private
  *
@@ -558,7 +561,7 @@
 							safe_geometry["pos"] = reported_pos
 					var/client/geometry_client = client()
 					LAZYSET(geometry_client.tgui_resolved_geometries, locked_by().interface, safe_geometry)
-			PUBLISH_LEGACY(src, /datum/notice/tgui_window_visible, client())
+			PUBLISH(src, tgui_window_visible, client = client())
 		if("perf/flicker")
 			if(!accept_perf_telemetry())
 				return

@@ -338,16 +338,19 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/surgical_step)
 /obj/item/proc/use_on_patient(mob/living/carbon/M, mob/living/user, stance = I_HELP)
 	return FALSE
 
+/// A surgical step with this tool finished on the patient's zone: whether it succeeded.
+ACTION(material_surgery, mob/living/carbon/human/patient, zone, success, FIXED, notice = /datum/notice/material_surgery)
+
 /mob/living/carbon/human/proc/surgical_step_ended(success, obj/item/tool, datum/surgical_step/step, mob/living/user, zone, cleanliness, obj/item/organ/external/part, atom/work_target, chance)
 	if(success)
 		step.perform(user, src, part, tool, work_target)
 		step.finish_message(user, src, part, tool, work_target)
-		PUBLISH_LEGACY(tool, /datum/notice/material_surgery, src, zone, TRUE)
+		PUBLISH(tool, material_surgery, patient = src, zone = zone, success = TRUE)
 		if(user != src && department_for_mob(user) == DEPARTMENT_MEDICAL)
 			charge_mob_for_department_service(src, DEPARTMENT_MEDICAL, 5, "Surgical care: [step.name]", user.real_name)
 	else
 		step.complicate(user, src, part, tool, work_target)
-		PUBLISH_LEGACY(tool, /datum/notice/material_surgery, src, zone, FALSE)
+		PUBLISH(tool, material_surgery, patient = src, zone = zone, success = FALSE)
 		user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	log_game("SURGERY: [key_name(user)] [success ? "completed" : "failed"] [step.name] on [key_name(src)] at [zone] (chance [chance]%, surface [cleanliness])")
 

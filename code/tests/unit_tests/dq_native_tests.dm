@@ -159,7 +159,7 @@
 	changes += list(keys.Copy())
 
 /datum/native_rx_fx/proc/on_native_notice(datum/notice/native/N)
-	notes += list(list(N.kind, N.data))
+	notes += list(list(N.kind, N.record))
 
 /datum/native_rx_fx/proc/on_level(band, previous)
 	crossings += list(list(band, previous))

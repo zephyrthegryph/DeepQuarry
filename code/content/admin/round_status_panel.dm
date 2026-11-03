@@ -2,8 +2,8 @@
 //
 // Replaces the legacy `/datum/admins/proc/check_antagonists` HTML page +
 // `/datum/admins/Topic` href dispatch. The DM side ships *structured*
-// tgui_data (shuttle state machine, round timer, delay flag, antag
-// blocks) and tgui_act handles each action natively. There are no
+// ui_data (shuttle state machine, round timer, delay flag, antag
+// blocks) and ui_act ops handle each action natively. There are no
 // embedded byond:// hrefs; clicks become structured `act()` calls.
 //
 // This is the architectural exemplar for the rest of the admin panels
@@ -25,18 +25,20 @@
 
 // The admin holder owns this panel (round_status_panel); owner_admin is a plain relation back.
 
+/// The window (code/content/admin/topic/admin_topic_panels.dm has the same shuttle and delay ops for the legacy hrefs). Each action keeps its
+/// right: call/recall need R_ADMIN|R_EVENT, the timer and delay actions R_SERVER; the window's rights are the union.
 CAPABILITIES(/datum/round_status_panel)
 	ref_one(nameof(owner_admin))
-
-// Foundation UI (doc/rewrite/operations_and_actions.md "UI"): tgui_id opens the window, ui_rights is the union of every
-// action's rights (call/recall need R_ADMIN|R_EVENT, the timer and delay actions R_SERVER) and each action narrows with
-// admin_require(). Nothing here pushes the window by hand: an act_<x>() that returns TRUE updates it.
-/datum/round_status_panel
-	tgui_id = "RoundStatusPanel"
-	ui_rights = R_ADMIN | R_EVENT | R_SERVER
-
-/datum/round_status_panel/ui_title(mob/user)
-	return "Round Status"
+	extend(TAG_UI, needs(req(PROC_REF(ui_gate), silent = TRUE)))
+	interface("RoundStatusPanel", title = "Round Status", rights = R_ADMIN|R_EVENT|R_SERVER)
+	op("refresh_antags", ui_act("refresh_antags"), then(PROC_REF(ui_act_refresh_antags)))
+	op("call_shuttle", ui_act("call_shuttle"), needs(req_rights(R_ADMIN|R_EVENT), req(PROC_REF(shuttle_not_blob))), then(PROC_REF(ui_act_call_shuttle)))
+	op("recall_shuttle", ui_act("recall_shuttle"), needs(req_rights(R_ADMIN|R_EVENT)), then(PROC_REF(ui_act_recall_shuttle)))
+	op("edit_shuttle_time", ui_act("edit_shuttle_time"), needs(req_rights(R_SERVER), req(PROC_REF(shuttle_counting))), asks(/datum/prompt/number, fields = list("question" = "Enter new shuttle launch countdown (seconds):", "title" = "Edit Shuttle Launch Time", "default" = computed(PROC_REF(shuttle_launch_default)), "min_value" = 0, "timeout" = 0), step = "launch", when = PROC_REF(shuttle_is_launching)), asks(/datum/prompt/number, fields = list("question" = "Enter new shuttle arrival time (seconds):", "title" = "Edit Shuttle Arrival Time", "default" = computed(PROC_REF(shuttle_arrival_default)), "min_value" = 0, "timeout" = 0), step = "arrive", when = PROC_REF(shuttle_is_arriving)), then(PROC_REF(ui_act_edit_shuttle_time)))
+	op("toggle_delay_end", ui_act("toggle_delay_end"), needs(req_rights(R_SERVER)), then(PROC_REF(ui_act_toggle_delay_end)))
+	op("antag_pp", ui_act("antag_pp", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_antag_pp)))
+	op("antag_pm", ui_act("antag_pm", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_antag_pm)))
+	op("antag_tp", ui_act("antag_tp", arg("ref", schema_text(4096))), needs(req(PROC_REF(round_in_progress))), then(PROC_REF(ui_act_antag_tp)))
 
 /datum/round_status_panel/ui_opening(mob/user, datum/tgui/ui)
 	snapshot_antag_blocks()
@@ -55,12 +57,12 @@ CAPABILITIES(/datum/round_status_panel)
 	SStgui.close_uis(src)
 	spent(src, user)
 
-// ALLOW(sys_tgui_data_override): the foundation UI form: a tgui_data override on purpose, like the APC and the vendor
-/datum/round_status_panel/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	.["mode_name"] = ticker_mode()?.name || "(none)"
-	.["round_duration"] = roundduration2text()
-	.["delay_end"] = !!SSticker?.delay_end
+/// /datum/round_status_panel's window data.
+/datum/round_status_panel/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["mode_name"] = ticker_mode()?.name || "(none)"
+	data["round_duration"] = roundduration2text()
+	data["delay_end"] = !!SSticker?.delay_end
 
 	var/list/shuttle_data = list()
 	if(!SSemergency_shuttle.online())
@@ -80,95 +82,123 @@ CAPABILITIES(/datum/round_status_panel)
 		shuttle_data["state"] = SHUTTLE_STATE_WARMUP
 	else
 		shuttle_data["state"] = SHUTTLE_STATE_IDLE
-	.["shuttle"] = shuttle_data
+	data["shuttle"] = shuttle_data
 
-	.["antag_blocks"] = shown_antag_blocks || list()
+	data["antag_blocks"] = shown_antag_blocks || list()
+	return data
 
 /datum/round_status_panel/proc/format_shuttle_timer(seconds)
 	return "[(seconds / 60) % 60]:[add_zero(num2text(seconds % 60), 2)]"
 
-/// The panel works only while the admin holder it belongs to exists.
-/datum/round_status_panel/ui_allowed(mob/user, action)
-	return !!owner_admin
+MSG_DEF_SELF(round_status/blob, "You can't call the shuttle during blob!")
+MSG_DEF_SELF(round_status/not_counting, "The shuttle is neither counting down to launch nor is it in transit. Please try again when it is.")
+MSG_DEF_SELF(round_status/not_started, "The game hasn't started yet!")
 
-/datum/round_status_panel/proc/act_refresh_antags(mob/user)
+/// The panel works only while the admin holder it belongs to exists (an answer to nobody is dropped silently).
+/datum/round_status_panel/proc/ui_gate(datum/act/op/A)
+	return owner_admin ? null : /datum/msg/req_silent
+
+/// req: no calling the shuttle during blob.
+/datum/round_status_panel/proc/shuttle_not_blob(datum/act/op/A)
+	return (ticker_mode()?.name == "blob") ? MSG(round_status/blob) : null
+
+/// req: the round has a game mode running.
+/datum/round_status_panel/proc/round_in_progress(datum/act/op/A)
+	return (SSticker && ticker_mode()) ? null : MSG(round_status/not_started)
+
+/// What the shuttle is counting down to: "launch", "arrive", or null while it is neither.
+/datum/round_status_panel/proc/shuttle_countdown_kind()
+	if(emergency_shuttle_wait_for_launch())
+		return "launch"
+	if(read_once(SSemergency_shuttle.has_arrival_countdown()))
+		return "arrive"
+	return null
+
+/// req: the shuttle is counting down to launch or arrival.
+/datum/round_status_panel/proc/shuttle_counting(datum/act/op/A)
+	return shuttle_countdown_kind() ? null : MSG(round_status/not_counting)
+
+/// when: the shuttle is counting down to launch.
+/datum/round_status_panel/proc/shuttle_is_launching(datum/act/op/A)
+	return shuttle_countdown_kind() == "launch"
+
+/// when: the shuttle is in transit with an arrival time.
+/datum/round_status_panel/proc/shuttle_is_arriving(datum/act/op/A)
+	return shuttle_countdown_kind() == "arrive"
+
+/datum/round_status_panel/proc/shuttle_launch_default(datum/act/op/A)
+	return SSemergency_shuttle.estimate_launch_time()
+
+/datum/round_status_panel/proc/shuttle_arrival_default(datum/act/op/A)
+	return SSemergency_shuttle.estimate_arrival_time()
+
+/datum/round_status_panel/proc/ui_act_refresh_antags(datum/act/op/A)
 	snapshot_antag_blocks()
 	return TRUE
 
-/datum/round_status_panel/proc/act_call_shuttle(mob/user)
-	if(!admin_require(user.client, R_ADMIN|R_EVENT, "round_status_panel:call_shuttle"))
-		return FALSE
-	if(ticker_mode()?.name == "blob")
-		return refuse(user, "You can't call the shuttle during blob!")
+/datum/round_status_panel/proc/ui_act_call_shuttle(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!SSticker || !SSemergency_shuttle.location())
 		return FALSE
 	if(SSemergency_shuttle.can_call())
 		SSemergency_shuttle.call_evac()
-		// ALLOW(sys_dx_manual_fingerprint_log): the admin broadcast names the outcome; the dispatcher records only the action, and on every TRUE return
 		log_and_message_admins("called the Emergency Shuttle to the station.", user)
 	return TRUE
 
-/datum/round_status_panel/proc/act_recall_shuttle(mob/user)
-	if(!admin_require(user.client, R_ADMIN|R_EVENT, "round_status_panel:recall_shuttle"))
-		return FALSE
+/datum/round_status_panel/proc/ui_act_recall_shuttle(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!SSticker || !SSemergency_shuttle.location())
 		return FALSE
 	if(SSemergency_shuttle.can_recall())
 		SSemergency_shuttle.recall()
-		// ALLOW(sys_dx_manual_fingerprint_log): the admin broadcast names the outcome; the dispatcher records only the action, and on every TRUE return
 		log_and_message_admins("sent the Emergency Shuttle back.", user)
 	return TRUE
 
-/datum/round_status_panel/proc/act_edit_shuttle_time(mob/user)
-	if(!admin_require(user.client, R_SERVER, "round_status_panel:edit_shuttle_time"))
-		return FALSE
-	if(emergency_shuttle_wait_for_launch())
-		var/new_time_left = ask_number(user, "Enter new shuttle launch countdown (seconds):", 0, INFINITY, "Edit Shuttle Launch Time", SSemergency_shuttle.estimate_launch_time())
+/datum/round_status_panel/proc/ui_act_edit_shuttle_time(datum/act/op/A)
+	var/mob/user = A.actor
+	var/kind = shuttle_countdown_kind()
+	if(kind == "launch")
+		var/new_time_left = A.step_value("launch")
 		if(isnull(new_time_left))
 			return FALSE
 		SSemergency_shuttle.edit_launch_countdown(new_time_left)
-		// ALLOW(sys_dx_manual_fingerprint_log): the admin broadcast names the outcome; the dispatcher records only the action, and on every TRUE return
 		log_and_message_admins("edited the Emergency Shuttle's launch time to [new_time_left] seconds.", user)
-	else if(SSemergency_shuttle.has_arrival_countdown())
-		var/new_time_left = ask_number(user, "Enter new shuttle arrival time (seconds):", 0, INFINITY, "Edit Shuttle Arrival Time", SSemergency_shuttle.estimate_arrival_time())
+	else if(kind == "arrive")
+		var/new_time_left = A.step_value("arrive")
 		if(isnull(new_time_left))
 			return FALSE
 		SSemergency_shuttle.edit_arrival_countdown(new_time_left)
-		// ALLOW(sys_dx_manual_fingerprint_log): the admin broadcast names the outcome; the dispatcher records only the action, and on every TRUE return
 		log_and_message_admins("edited the Emergency Shuttle's arrival time to [new_time_left] seconds.", user)
 	else
-		return refuse(user, "The shuttle is neither counting down to launch nor is it in transit. Please try again when it is.")
+		return FALSE
 	return TRUE
 
-/datum/round_status_panel/proc/act_toggle_delay_end(mob/user)
-	if(!admin_require(user.client, R_SERVER, "round_status_panel:toggle_delay_end"))
-		return FALSE
+/datum/round_status_panel/proc/ui_act_toggle_delay_end(datum/act/op/A)
+	var/mob/user = A.actor
 	SSticker.toggle_round_end_delay()
-	// ALLOW(sys_dx_manual_fingerprint_log): the admin broadcast names the outcome; the dispatcher records only the action, and on every TRUE return
 	log_and_message_admins("[ticker_delay_end() ? "delayed the round end" : "has made the round end normally"].", user)
 	return TRUE
 
 // Antag-row actions: PP / PM / TP for an antagonist's mob.
 
-/datum/round_status_panel/proc/act_antag_pp(mob/user, ref)
+/datum/round_status_panel/proc/ui_act_antag_pp(datum/act/op/A, ref)
+	var/mob/user = A.actor
 	var/mob/M = ui_token(ref, null, /mob)
 	if(M && user.client)
 		SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/show_player_panel, M)
 	return TRUE
 
-/datum/round_status_panel/proc/act_antag_pm(mob/user, ref)
+/datum/round_status_panel/proc/ui_act_antag_pm(datum/act/op/A, ref)
+	var/mob/user = A.actor
 	var/mob/M = ui_token(ref, null, /mob)
 	if(M && user.client)
 		user.client.cmd_admin_pm(M)
 	return TRUE
 
-/datum/round_status_panel/proc/act_antag_tp(mob/user, ref)
+/datum/round_status_panel/proc/ui_act_antag_tp(datum/act/op/A, ref)
+	var/mob/user = A.actor
 	var/mob/M = ui_token(ref, null, /mob)
-	if(!M)
-		return TRUE
-	if(!SSticker || !ticker_mode())
-		return refuse(user, "The game hasn't started yet!")
-	if(user.client)
+	if(M && user.client)
 		SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/show_traitor_panel, M)
 	return TRUE
 

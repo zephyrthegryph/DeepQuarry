@@ -299,7 +299,7 @@ GLOBAL_LIST_EMPTY(native_key_names)
 /proc/native_publish_notice(datum/E, kind, list/args)
 	if(QDELETED(E))
 		return FALSE
-	PUBLISH_LEGACY(E, /datum/notice/native, kind, args)
+	PUBLISH(E, native, kind = kind, record = args)
 	return TRUE
 
 /// A native watch crossed `band` with `detail` (the record's numbers). A watch declared by a reaction
@@ -328,18 +328,8 @@ GLOBAL_LIST_EMPTY(native_key_names)
 	watch.rx_listener = L
 	return watch
 
-/// A native notice: the event header and the record's fields.
-/datum/notice/native
-	/// The NATIVE_NOTICE_* header (or generated event code).
-	var/kind
-
-/datum/notice/native/fill(kind, list/args)
-	src.kind = kind
-	data = args
-
-/datum/notice/native/reset()
-	..()
-	kind = null
+/// A native notice: the event header (`kind`, a NATIVE_NOTICE_* or generated event code) and the record's fields (`record`).
+ACTION(native, kind, record, FIXED, notice = /datum/notice/native)
 
 // ---------------------------------------------------------------- declared pushes
 

@@ -240,6 +240,9 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	look.overlay(look_cached_image("spoiler_obfuscation", 'icons/misc/static.dmi', null, null, PLANE_MESONS), when = flag_check(AREA_NO_SPOILERS))
 
 
+/// An area's channel state flipped (its APC, or the area itself): the things watching the area's power re-check it.
+ACTION(observer_apc, FIXED, notice = /datum/notice/observer_apc)
+
 /// The one writer of the area's channel state (is each channel energized): its APC, an event that darkens the area, the area's own setup. The
 /// vars are tracked: every machine's has_power reads them (generated deps), so a flip reaches the machines through that stat's on_change hook,
 /// and `notify` publishes the area's own observer_apc notice. Returns TRUE when a channel flipped.
@@ -252,7 +255,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	if(set_power_environ(!!environ_on))
 		flipped = TRUE
 	if(flipped && notify)
-		PUBLISH_LEGACY(src, /datum/notice/observer_apc)
+		PUBLISH(src, observer_apc)
 	return flipped
 
 /area/proc/powered(chan)		// return true if the area has power to given channel

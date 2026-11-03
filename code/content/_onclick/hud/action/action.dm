@@ -86,6 +86,9 @@ CAPABILITIES(/datum/action)
 			return button
 	return null
 
+/// From /datum/action/Grant(): (datum/action)
+ACTION(mob_granted_action, datum/action/action, FIXED, notice = /datum/notice/mob_granted_action)
+
 /// Grants the action to the passed mob, making it the owner
 /datum/action/proc/Grant(mob/grant_to)
 	if(!grant_to)
@@ -97,10 +100,13 @@ CAPABILITIES(/datum/action)
 			return
 		Remove(owner)
 
-	PUBLISH_LEGACY(grant_to, /datum/notice/mob_granted_action, src)
+	PUBLISH(grant_to, mob_granted_action, action = src)
 	rel_set(src, nameof(granted_to), grant_to)
 
 	GiveAction(grant_to)
+
+/// From /datum/action/Remove(): (datum/action)
+ACTION(mob_removed_action, datum/action/action, FIXED, notice = /datum/notice/mob_removed_action)
 
 /// Remove the passed mob from being owner of our action
 /datum/action/proc/Remove(mob/remove_from)
@@ -119,7 +125,7 @@ CAPABILITIES(/datum/action)
 	// While the owner relation is being torn down (either end deleted) the edge is already gone.
 	var/mob/owner = action_owner() || remove_from
 	if(owner)
-		PUBLISH_LEGACY(owner, /datum/notice/mob_removed_action, src)
+		PUBLISH(owner, mob_removed_action, action = src)
 		rel_set(src, nameof(granted_to), null)
 
 /// Actually triggers the effects of the action.

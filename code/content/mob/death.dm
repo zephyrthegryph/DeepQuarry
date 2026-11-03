@@ -70,6 +70,12 @@
 //   9. final       - /datum/notice/living_death_final, once, after everything above.
 // The way back is /mob/living/proc/return_from_death() (code/domains/body/revival.dm).
 
+/// Mob died somewhere : (mob/living, gibbed)
+ACTION(world_mob_death, mob/living/living, gibbed, FIXED, notice = /datum/notice/world_mob_death)
+
+/// From base of mob/death(): (gibbed)
+ACTION(mob_death, gibbed, FIXED, notice = /datum/notice/mob_death)
+
 /// Kill this mob. Returns TRUE if it went from alive to dead, FALSE otherwise (already dead,
 /// deleted, or replace_death() took over). `deathmessage` overrides get_death_message(gibbed).
 /mob/proc/death(gibbed, deathmessage)
@@ -128,8 +134,8 @@
 	set_respawn_timer()
 
 	// 5. Signals.
-	PUBLISH_LEGACY(src, /datum/notice/mob_death, gibbed)
-	PUBLISH_LEGACY(WORLD_NOTICE_BUS, /datum/notice/world_mob_death, src, gibbed)
+	PUBLISH(src, mob_death, gibbed = gibbed)
+	PUBLISH(WORLD_NOTICE_BUS, world_mob_death, living = src, gibbed = gibbed)
 
 	// 6. Subtype contributions.
 	on_death(gibbed)

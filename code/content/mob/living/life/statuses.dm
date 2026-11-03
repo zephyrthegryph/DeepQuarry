@@ -44,10 +44,8 @@
 
 /mob/proc/status_dizzy_started()
 	sparse_set(src, dizzy_was_resting, resting)
-	set_dizzy_shaking(TRUE)
 
 /mob/proc/status_dizzy_ended()
-	set_dizzy_shaking(FALSE)
 	// The shaken client's view offset resets.
 	if(client)
 		client.pixel_x = 0
@@ -55,10 +53,8 @@
 
 /mob/proc/status_jittery_started()
 	sparse_set(src, jittery_was_resting, resting)
-	set_jittery_shaking(TRUE)
 
 /mob/proc/status_jittery_ended()
-	set_jittery_shaking(FALSE)
 	// The jittering mob's pixel offsets reset.
 	set_pixel_x(default_pixel_x)
 	set_pixel_y(MOB_REST_PIXEL_Y(src))

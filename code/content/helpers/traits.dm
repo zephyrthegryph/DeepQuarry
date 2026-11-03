@@ -70,6 +70,10 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/trait_source)
 		if(per_key[trait] > 0)
 			. += trait
 
+/// Was SIGNAL_ADDTRAIT(trait): `trait` was gained (its first source added). Hook it and
+/// test event.trait (hooks key on the event type, not the trait).
+ACTION(trait_gained, trait, FIXED, notice = /datum/notice/trait_gained)
+
 /// Grants `target` `trait` from `source` (a datum or a text key).
 /proc/add_trait(datum/target, trait, source)
 	if(QDELETED(target) || isnull(trait))
@@ -81,8 +85,11 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/trait_source)
 	if(QDELETED(holder) || !hold(target, STAT_TRAIT_HOLDS, 1, holder, key = trait))
 		return FALSE
 	if(!had)
-		PUBLISH_LEGACY(target, /datum/notice/trait_gained, trait)
+		PUBLISH(target, trait_gained, trait = trait)
 	return TRUE
+
+/// Was SIGNAL_REMOVETRAIT(trait): `trait` was lost (its last source removed).
+ACTION(trait_lost, trait, FIXED, notice = /datum/notice/trait_lost)
 
 /// Releases `trait` on `target` from `sources` (one source or a list). Null sources release
 /// every source except ROUNDSTART_TRAIT.
@@ -102,7 +109,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/trait_source)
 	for(var/datum/holder as anything in holders)
 		release(target, STAT_TRAIT_HOLDS, holder, trait)
 	if(!has_trait(target, trait))
-		PUBLISH_LEGACY(target, /datum/notice/trait_lost, trait)
+		PUBLISH(target, trait_lost, trait = trait)
 
 /// Releases every trait `target` holds from `sources` (one source or a list).
 /proc/remove_traits_in(datum/target, sources)

@@ -156,6 +156,9 @@
 	winshow(src, popup, 0)
 	handle_popup_close(popup)
 
+/// From /client/proc/handle_popup_close() : (window_id)
+ACTION(popup_cleared, window_id, FIXED, notice = /datum/notice/popup_cleared)
+
 /**
  * When the popup closes in any way (player or proc call) it calls this.
  */
@@ -164,4 +167,4 @@
 	clear_map("[window_id]_map")
 	// Clients cannot be hooked: the event is emitted on the client's mob.
 	if(mob)
-		PUBLISH_LEGACY(mob, /datum/notice/popup_cleared, window_id)
+		PUBLISH(mob, popup_cleared, window_id = window_id)

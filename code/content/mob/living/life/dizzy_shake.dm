@@ -2,14 +2,12 @@
 dizzy shake - wiggles the client's pixel offset while the mob is dizzy.
 
 Dizziness itself is the STAT_DIZZY status (0-1000 points, below 100 is not dizzy), which wears
-off on its own: 3 points per LIFE_CYCLE, 15 while resting. The status row's on_start/on_end hooks set
-dizzy_shaking, and the shake runs as an every() on /mob while it holds.
+off on its own: 3 points per LIFE_CYCLE, 15 while resting. The shake runs as an every() on /mob gated on the status
+itself (when = STAT_DIZZY), so it runs from the status's first hold to its end.
 (Was /datum/component/dizzy_shake; its state lives on the mob.)
 */
 
-/// Set while STAT_DIZZY is in effect: dizzy_shake_tick() runs every decisecond (its every() in CAPABILITIES(/mob)), parked otherwise.
-/mob/var/tmp/dizzy_shaking = FALSE // ALLOW(base_vars): was a declared field on this type; moved, not added
-
+/// Runs every decisecond while STAT_DIZZY is in effect (its every() in CAPABILITIES(/mob)), parked otherwise.
 /mob/proc/dizzy_shake_tick(datum/act/A)
 	// The dead stop shaking: the status ends (its on_end hook parks this).
 	if(stat == DEAD)

@@ -35,7 +35,6 @@ CAPABILITIES(/datum/robot_belly)
 		rel_set(R, nameof(R.riding_datum), new /datum/riding/dogborg(R))
 	observe(R, /datum/notice/mob_death, src, then(PROC_REF(on_death)))
 	observe(R, /datum/notice/robot_equipment_changed, src, then(PROC_REF(on_equipment_changed)))
-	observe(R, /datum/notice/robot_belly_fullness, src, then(PROC_REF(on_belly_fullness)))
 
 // owned state datum (was a component): its riders and ore bags are let go.
 /datum/robot_belly/on_destroy(force)
@@ -101,28 +100,24 @@ CAPABILITIES(/datum/robot_belly)
 		pounce.desc = initial(pounce.desc)
 		pounce.bluespace = initial(pounce.bluespace)
 
-/// The "sleeper" belly class shows the sleeper's contents per the owner's
-/// overlay preference.
-/datum/robot_belly/proc/on_belly_fullness(datum/act/notice/A)
+/// The fullness a belly class shows (`fullness` is what the chassis' own bellies hold). The "sleeper" class shows the sleeper's
+/// contents per the owner's overlay preference.
+/datum/robot_belly/proc/display_fullness(belly_class, fullness)
 	SHOULD_NOT_SLEEP(TRUE)
-	var/datum/notice/robot_belly_fullness/event = A
-	var/belly_class = event.belly_class
-	var/list/fullness_ref = event.fullness_ref
 	var/mob/living/silicon/robot/R = owner
 	if(belly_class != "sleeper" || !vore_selected_of(R))
-		return
+		return fullness
 	var/preference = vore_selected_of(R).silicon_belly_overlay_preference
 	if(sleeper_state == SLEEPER_STATE_EMPTY)
-		if(preference == "Sleeper")
-			fullness_ref[1] = 0
-		return
+		return preference == "Sleeper" ? 0 : fullness
 	var/capacity = living_rules_of(R).vore_capacity_ex[belly_class]
-	if(fullness_ref[1] + 1 > capacity)
-		return
+	if(fullness + 1 > capacity)
+		return fullness
 	if(preference == "Sleeper")
-		fullness_ref[1] = capacity
-	else if(preference == "Both")
-		fullness_ref[1] += 1
+		return capacity
+	if(preference == "Both")
+		return fullness + 1
+	return fullness
 
 // --- Riding ------------------------------------------------------------------------------------
 

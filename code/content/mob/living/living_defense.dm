@@ -89,10 +89,13 @@
 		return 0
 
 
+/// A stun weapon hit this mob: its stun and agony amounts, the zone it hit, the weapon, and whether it was electric.
+ACTION(stun_effect, stun_amount, agony_amount, def_zone, atom/used_weapon, electric, FIXED, notice = /datum/notice/stun_effect)
+
 //Handles the effects of "stun" weapons
 /mob/living/proc/stun_effect_act(stun_amount, agony_amount, def_zone, used_weapon=null, electric = FALSE)
 	flash_pain()
-	PUBLISH_LEGACY(src, /datum/notice/stun_effect, stun_amount, agony_amount, def_zone, used_weapon, electric)
+	PUBLISH(src, stun_effect, stun_amount = stun_amount, agony_amount = agony_amount, def_zone = def_zone, used_weapon = used_weapon, electric = electric)
 
 	if (stun_amount)
 		status_at_least(STAT_STUNNED, stun_amount)

@@ -22,6 +22,13 @@
 /proc/has_valid_atmos_zone(turf/simulated/T)
 	return istype(T)
 
+/// From base of turf/ChangeTurf(): (path, list/new_baseturfs, flags, list/post_change_callbacks). `post_change_callbacks` is a list that handlers append rows list(owner, PROC_REF, with) to; each runs as after(owner, 0, PROC_REF, with = with + the new turf) after the turf has changed.
+ACTION(turf_change, path, new_baseturfs, flags, post_change_callbacks, FIXED, notice = /datum/notice/turf_change)
+
+/// The handlers write into the notice and ChangeTurf() reads the callbacks they appended once PUBLISH returns (the read_back lint).
+/datum/notice/turf_change
+	read_back = TRUE
+
 //Creates a new turf
 /turf/proc/ChangeTurf(turf/N, tell_universe=1, force_lighting_update = 0, preserve_outdoors = FALSE)
 	if (!N)
@@ -82,7 +89,7 @@
 	var/list/post_change_callbacks
 	if(WANTS(src, /datum/notice/turf_change))
 		post_change_callbacks = list()
-		PUBLISH_LEGACY(src, /datum/notice/turf_change, N, null, NONE, post_change_callbacks)
+		PUBLISH(src, turf_change, path = N, new_baseturfs = null, flags = NONE, post_change_callbacks = post_change_callbacks)
 
 	unmake_z_transparent()
 	changing_turf = TRUE

@@ -106,7 +106,7 @@
 	var/obj/item/clothing/shoes/S = allocate(/obj/item/clothing/shoes)
 	var/datum/squeak/Q = allocate(/datum/squeak, S, null, null, 0, 100)
 	TEST_ASSERT_EQUAL(Q.steps, 0, "no steps yet")
-	PUBLISH_LEGACY(S, /datum/notice/shoes_step, null, I_WALK)
+	PUBLISH(S, shoes_step, wearer = null, m_intent = I_WALK)
 	TEST_ASSERT_EQUAL(Q.steps, 1, "a step reaches the squeak")
 
 /// Dry galoshes hear a shoes_step notice (no om behaviour); squeaky shoes observe the same notice.
@@ -116,5 +116,5 @@
 	var/turf/simulated/T = get_turf(G)
 	if(istype(T))
 		T.wet_floor(1)
-		PUBLISH_LEGACY(G, /datum/notice/shoes_step, null, I_WALK)
+		PUBLISH(G, shoes_step, wearer = null, m_intent = I_WALK)
 		TEST_ASSERT(!T.wet, "a step dries the floor")

@@ -106,8 +106,6 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
 
 /// STAT_HAS_POWER's reading of the grid: the machine's area has its channel energized. A machine with no area has power (nothing darkens it).
 /obj/machinery/proc/area_gives_power(datum/act/A)
-	if(power_forced)
-		return TRUE
 	var/area/served = power_area
 	return !served || served.powered(power_of(src).channel)
 

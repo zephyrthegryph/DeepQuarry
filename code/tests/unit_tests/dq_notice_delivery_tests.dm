@@ -1,8 +1,8 @@
 // Delivery pins for PUBLISH_LEGACY, the delivery of the notices that replaced the old events of code/engine/events (signal_events.dm,
 // atom_events.dm), written before those declarations were deleted. The notices below are fixtures that stand in for the real ones
-// (atom_dir_change, atom_entered, atom_exited, examine, hitby, in_range_of_irradiation): those are ACTION() notices now, published with
+// (atom_dir_change, atom_entered, atom_exited, examine, hitby, in_range_of_irradiation, trait_gained): those are ACTION() notices now, published with
 // PUBLISH() and delivered synchronously (dq_publish_notice_tests.dm), and the fixtures keep the legacy queue, read-back and fault rules
-// pinned for as long as PUBLISH_LEGACY has a caller (trait_gained is still a real notice).
+// pinned for as long as PUBLISH_LEGACY has a caller.
 // Pinned: a publish is delivered before PUBLISH_LEGACY returns, the type's own on_notice() reactions hear it before an
 // observe() hook does, two publishes of one type are both delivered (never coalesced), a handler that appends to a payload
 // list has appended when the sender reads it back, and a notice published from inside a delivery is delivered after the
@@ -43,6 +43,12 @@
 	src.user = user
 	src.texts = texts
 
+/datum/notice/fx_trait
+	var/trait
+
+/datum/notice/fx_trait/fill(trait)
+	src.trait = trait
+
 /datum/notice/fx_hitby
 	var/source_
 	var/throwingdatum
@@ -75,7 +81,7 @@
 	. += on_notice(/datum/notice/fx_dir_change, PROC_REF(on_dir))
 	. += on_notice(/datum/notice/fx_entered, PROC_REF(on_entered))
 	. += on_notice(/datum/notice/fx_exited, PROC_REF(on_exited))
-	. += on_notice(/datum/notice/trait_gained, PROC_REF(on_trait))
+	. += on_notice(/datum/notice/fx_trait, PROC_REF(on_trait))
 	. += on_notice(/datum/notice/fx_examine, PROC_REF(on_examine_lines))
 	. += on_notice(/datum/notice/fx_hitby, PROC_REF(on_hitby))
 	. += on_notice(/datum/notice/fx_irradiation, PROC_REF(on_irradiation))
@@ -97,7 +103,7 @@
 /datum/notice_fx/proc/on_exited(datum/notice/fx_exited/N)
 	log += "exited:[N.gone]>[N.new_loc]"
 
-/datum/notice_fx/proc/on_trait(datum/notice/trait_gained/N)
+/datum/notice_fx/proc/on_trait(datum/notice/fx_trait/N)
 	log += "trait:[N.trait]"
 
 /datum/notice_fx/proc/on_examine_lines(datum/notice/fx_examine/N)
@@ -127,7 +133,7 @@
 	var/datum/notice_fx/F = allocate(/datum/notice_fx)
 	PUBLISH_LEGACY(F, /datum/notice/fx_dir_change, NORTH, SOUTH)
 	TEST_ASSERT_EQUAL(jointext(F.log, ","), "dir:[NORTH]>[SOUTH]", "delivered before PUBLISH_LEGACY returned")
-	PUBLISH_LEGACY(F, /datum/notice/trait_gained, "fx_trait")
+	PUBLISH_LEGACY(F, /datum/notice/fx_trait, "fx_trait")
 	PUBLISH_LEGACY(F, /datum/notice/fx_hitby, "rock", "throw")
 	PUBLISH_LEGACY(F, /datum/notice/fx_irradiation, "pulse", 0.5)
 	TEST_ASSERT_EQUAL(jointext(F.log, ","), "dir:[NORTH]>[SOUTH],trait:fx_trait,hitby:rock:throw,rad:pulse:0.5", "each delivered at once, fields in fill() order")
@@ -169,7 +175,7 @@
 	F.ask_examine = TRUE
 	PUBLISH_LEGACY(F, /datum/notice/fx_dir_change, NORTH, SOUTH)
 	TEST_ASSERT_EQUAL(jointext(F.log, ","), "dir:[NORTH]>[SOUTH],examine:inner,read:base|line from inner,exited:plain>nested", "the nested examine was answered before its sender read the list; the plain notice still queued behind the delivery")
-	for(var/read_back_type in list(/datum/notice/fx_examine, /datum/notice/robot_belly_fullness, /datum/notice/turf_change))
+	for(var/read_back_type in list(/datum/notice/fx_examine, /datum/notice/turf_change))
 		var/datum/notice/proto = read_back_type
 		TEST_ASSERT(initial(proto.read_back), "[read_back_type] is read back by its sender, so it is declared read_back")
 
@@ -241,7 +247,7 @@
 	var/left = notice_fx_state_left()
 	TEST_ASSERT_NULL(escaped, "the fault stays inside publish()")
 	TEST_ASSERT_EQUAL(left, "delivering=0,depth=0,queued=0", "the fault leaves delivery idle")
-	PUBLISH_LEGACY(F, /datum/notice/trait_gained, "after")
+	PUBLISH_LEGACY(F, /datum/notice/fx_trait, "after")
 	TEST_ASSERT_EQUAL(jointext(F.log, ","), "trait:after", "the next notice is delivered at once")
 
 /// An examine handler that examines again is cut at RX_ANSWER_DEPTH with one report; every answer that ran keeps its line and the sender keeps going.

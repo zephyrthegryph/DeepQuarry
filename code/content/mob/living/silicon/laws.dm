@@ -85,9 +85,12 @@
 	if(!silent)
 		log_and_message_admins("cleared the supplied laws of [src]", actor)
 
+/// From /mob/living/silicon/proc/laws_changed(): ()
+ACTION(silicon_laws_changed, FIXED, notice = /datum/notice/silicon_laws_changed)
+
 /// Tell subscribers (slaved cyborgs) that this unit's laws changed.
 /mob/living/silicon/proc/laws_changed()
-	PUBLISH_LEGACY(src, /datum/notice/silicon_laws_changed)
+	PUBLISH(src, silicon_laws_changed)
 
 /mob/living/silicon/proc/notify_of_law_change(message)
 	throw_alert("newlaw", /atom/movable/screen/alert/newlaw)

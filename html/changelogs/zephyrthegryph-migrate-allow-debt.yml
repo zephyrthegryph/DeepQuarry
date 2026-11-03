@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The round status panel and the supply console use ops and ui_data instead of the old tgui_data and act_ procs; their buttons keep their names"
+  - refactor: "Scheduler and base_vars keeps converted: dizzy and jittery shakes follow their statuses, autofire and dreaming are stats, a machine's forced power is an override of its power stat"

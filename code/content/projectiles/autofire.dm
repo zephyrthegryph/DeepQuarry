@@ -26,8 +26,8 @@
 // Per-mob autofire state + loop
 // ---------------------------------------------------------------------------
 
-/// TRUE while a hold-to-fire session runs: autofire_tick() repeats every autofire_delay (its every() in CAPABILITIES(/mob/living)).
-/mob/living/var/tmp/autofire_on = FALSE // ALLOW(base_vars): was a declared field on this type; moved, not added
+/// TRUE while a hold-to-fire session runs (the mob holds it on itself): autofire_tick() repeats every autofire_delay (its every() in CAPABILITIES(/mob/living)).
+STAT(/mob/living, autofire_on, ANY)
 
 /// The every() interval of autofire_tick(): the wait the last tick set.
 /mob/living/proc/autofire_interval(datum/act/A)
@@ -42,7 +42,7 @@
 	sparse_set(src, autofire_params, params)
 	if(!autofire_on)
 		sparse_set(src, autofire_delay, 0) // the first trigger pull comes right away
-		set_autofire_on(TRUE)
+		hold(src, STAT_AUTOFIRE_ON, null, src)
 
 /// Update the target/params of an in-progress session (mouse dragged onto a new
 /// tile while the button is still held).  No-op if not autofiring.
@@ -53,7 +53,7 @@
 
 /// End any autofire session and clear all held state.  Safe to call when idle.
 /mob/living/proc/stop_autofire()
-	set_autofire_on(FALSE)
+	release(src, STAT_AUTOFIRE_ON, src)
 	link_break(src, LK_AUTOFIRE_GUN)
 	sparse_ref_set(src, autofire_target, null)
 	sparse_set(src, autofire_params, null)

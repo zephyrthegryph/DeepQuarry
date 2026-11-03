@@ -54,9 +54,12 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 /mob/proc/start_focus(current, mapload)
 	return src
 
+/// Called from base of /mob/Initialise : (mob)
+ACTION(world_mob_created, mob/mob, FIXED, notice = /datum/notice/world_mob_created)
+
 /// The world hears of it, then its size, mob chunk and creation log, once its Initialize() chain has returned (a setup() hook of /mob): a rolled size_multiplier or icon scale (rolls()) is in place by then.
 /mob/proc/finish_mob_setup()
-	PUBLISH_LEGACY(WORLD_NOTICE_BUS, /datum/notice/world_mob_created, src)
+	PUBLISH(WORLD_NOTICE_BUS, world_mob_created, mob = src)
 	update_transform() // Some mobs may start bigger or smaller than normal.
 	publish_mob_chunk(src, TRUE)
 	log_mob_tag(src, "TAG: [tag] CREATED: [key_name(src)] \[[type]\]")
@@ -234,6 +237,9 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 /mob/proc/restrained()
 	return
 
+/// From base of /mob/proc/reset_perspective() : ()
+ACTION(mob_reset_perspective, FIXED, notice = /datum/notice/mob_reset_perspective)
+
 /**
  * Reset the attached clients perspective (viewpoint)
  *
@@ -279,7 +285,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 			client.perspective = EYE_PERSPECTIVE
 			client.set_eye(loc)
 	/// Signal sent after the eye has been successfully updated, with the client existing.
-	PUBLISH_LEGACY(src, /datum/notice/mob_reset_perspective)
+	PUBLISH(src, mob_reset_perspective)
 	return TRUE
 
 /// Reapplies remote views based on object type and flags. Returns true if the view was assigned.

@@ -539,10 +539,13 @@ CAPABILITIES(/datum/system/supply)
 		if(.(B))
 			return 1
 
+/// Shuttle Comsigs Supply shuttle selling, before all items are sold, called by /datum/controller/subsystem/supply/proc/sell() : (/list/area/supply_shuttle_areas)
+ACTION(world_supply_shuttle_depart, supply_shuttle_areas, FIXED, notice = /datum/notice/world_supply_shuttle_depart)
+
 //Selling
 /datum/system/supply/proc/sell()
 	// Loop over each area in the supply shuttle
-	PUBLISH_LEGACY(WORLD_NOTICE_BUS, /datum/notice/world_supply_shuttle_depart, shuttle.shuttle_area)
+	PUBLISH(WORLD_NOTICE_BUS, world_supply_shuttle_depart, supply_shuttle_areas = shuttle.shuttle_area)
 	for(var/area/subarea in shuttle.shuttle_area)
 		for(var/atom/movable/MA in subarea)
 			if(MA.anchored)
