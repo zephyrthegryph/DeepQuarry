@@ -173,14 +173,6 @@ SYSTEM_DEF(overlays)
 
 // Debug procs
 
-/atom
-	/// List of overlay "keys" (info about the appearance) -> mutable versions of static appearances
-	/// Drawn from the overlays list
-	var/tmp/list/realized_overlays
-	/// List of underlay "keys" (info about the appearance) -> mutable versions of static appearances
-	/// Drawn from the underlays list
-	var/tmp/list/realized_underlays
-
 /image
 	/// List of overlay "keys" (info about the appearance) -> mutable versions of static appearances
 	/// Drawn from the overlays list
@@ -188,11 +180,6 @@ SYSTEM_DEF(overlays)
 	/// List of underlay "keys" (info about the appearance) -> mutable versions of static appearances
 	/// Drawn from the underlays list
 	var/list/realized_underlays
-
-/// Takes the atoms's existing overlays and underlays, and makes them mutable so they can be properly vv'd in the realized_overlays/underlays list
-/atom/proc/realize_overlays()
-	realized_overlays = realize_appearance_queue(overlays)
-	realized_underlays = realize_appearance_queue(underlays)
 
 /// Takes the image's existing overlays, and makes them mutable so they can be properly vv'd in the realized_overlays list
 /image/proc/realize_overlays()
@@ -251,8 +238,9 @@ SYSTEM_DEF(overlays)
 			first.realize_overlays()
 			second.realize_overlays()
 			var/overlays_differ = FALSE
-			for(var/i in 1 to length(first.realized_overlays))
-				if(diff_appearances(first.realized_overlays[i], second.realized_overlays[i], iter + 1))
+			// realized_overlays is keyed (appearance key -> mutable copy): compare the copies in order, not the keys
+			for(var/i in 1 to min(length(first.realized_overlays), length(second.realized_overlays)))
+				if(diff_appearances(first.realized_overlays[first.realized_overlays[i]], second.realized_overlays[second.realized_overlays[i]], iter + 1))
 					overlays_differ = TRUE
 
 			if(!overlays_differ)

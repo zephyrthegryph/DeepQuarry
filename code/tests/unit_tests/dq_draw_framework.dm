@@ -410,3 +410,12 @@
 	TEST_ASSERT_EQUAL(MA.dir, A.dir, "and faces the movable's way")
 	var/turned = emissive_blocker_generic(A.icon, A.icon_state, A.alpha, turn(A.dir, 90), A.appearance_flags)
 	TEST_ASSERT_EQUAL(turned, A.priority_overlays, "dir only keys the cache: the overlay takes its holder's dir, so the same appearance serves every dir")
+
+/// diff_appearances() compares two appearances through their realized overlays (the debug path the /image realized_* lists serve).
+/datum/unit_test/dq_diff_appearances_overlays/Run()
+	var/mutable_appearance/first = mutable_appearance('icons/effects/effects.dmi', "nothing")
+	var/mutable_appearance/second = mutable_appearance('icons/effects/effects.dmi', "nothing")
+	TEST_ASSERT(!diff_appearances(first, second), "two identical appearances do not differ")
+	first.overlays += mutable_appearance('icons/effects/effects.dmi', "nothing")
+	second.overlays += mutable_appearance('icons/effects/effects.dmi', "nothing", alpha = 128)
+	TEST_ASSERT(diff_appearances(first, second), "an overlay that differs makes the appearances differ")
