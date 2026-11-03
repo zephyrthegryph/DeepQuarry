@@ -100,11 +100,30 @@
 /// Moves a record to `sched`, the scheduler that is current now. An entity first touched under one clock (the live one, a test's) and used under
 /// another (a test driver's injected clock began or ended since) would otherwise keep its timers and ring slots on a wheel nothing steps: a door
 /// whose auto-close or animation timer sits on the live wheel never fires under test_time(). Local clocks keep their values (settled to now, then
-/// re-based on the new scheduler's time), its ring slots move, and its pending timers are re-armed there. Deadlines other than the timer
-/// behaviour's carry no due time that can be moved and are re-derived by the behaviours when they next wake; they are logged.
+/// re-based on the new scheduler's time), its ring slots move, and its pending timers are re-armed there. Every other deadline (throttle
+/// releases, pipeline stage rewakes) moves with its remaining time, read from the old wheel entry; nothing is dropped.
 /proc/scheduler_rehome(datum/scheduler_record/rec, datum/time_scheduler/sched)
 	var/datum/time_scheduler/old = rec.sched
-	var/dropped = length(rec.deadlines) / 3
+	var/list/D = rec.deadlines
+	var/moved = length(D) / 3
+	var/list/remaining = list()
+	var/old_t = old.now()
+	for(var/i in 1 to length(D) step 3)
+		if(!isnull(D[i + 2]))
+			continue
+		// An unclocked deadline's due time lives only in its wheel entry; find it (a rehome is rare).
+		var/found = FALSE
+		for(var/list/L as anything in old.buckets)
+			for(var/j in 1 to length(L) step 4)
+				if(L[j] == rec && L[j + 1] == D[i] && L[j + 2] == D[i + 1])
+					remaining[D[i]] = max(L[j + 3] - old_t, 0)
+					found = TRUE
+					break
+			if(found)
+				break
+		if(!found)
+			remaining[D[i]] = 0
+			log_world("OM: rehome of [rec.owner] ([rec.owner?.type]) found no wheel entry for deadline key [D[i]]; it fires at once")
 	var/list/K = rec.tclock
 	if(K)
 		K[1] = timer_local(rec)
@@ -116,7 +135,6 @@
 		if(current)
 			current.remove(rec.owner, rec.phase)
 			rec.att_ring[i] = null
-	rec.deadlines = null
 	rec.queued = 0
 	rec.sched = sched
 	rec.phase = sched.next_phase()
@@ -125,11 +143,24 @@
 		K[2] = t
 	for(var/i in 1 to length(C) step 4)
 		C[i + 3] = t
+	// Every pending deadline (the timer wake, min_interval throttle releases, pipeline stage rewakes) moves
+	// with its remaining time on the new wheel, under a fresh generation; the old wheel's entries go stale.
+	for(var/i in 1 to length(D) step 3)
+		var/gen = ++sched.gen
+		D[i + 1] = gen
+		var/local_target = D[i + 2]
+		if(isnull(local_target))
+			sched.insert_deadline(rec, D[i], gen, t + remaining[D[i]])
+			continue
+		var/datum/scheduled_behaviour/B = definition_registry().behaviours[D[i] % OM_DL_SUB]
+		var/rate = clock_rate(rec, B.clock_idx)
+		if(rate > 0)
+			sched.insert_deadline(rec, D[i], gen, t + max(local_target - clock_local(rec, B.clock_idx), 0) / rate)
 	entity_sync_all(rec)
 	if(rec.timers)
 		timers_recompute_soonest(rec)
 		timers_arm(rec)
-	log_world("OM: rehomed [rec.owner] ([rec.owner?.type]) to another scheduler ([length(rec.timers) / OM_TIMER_STRIDE] timers re-armed, [dropped] other deadlines dropped, was on [old == GLOB.om_live_sched ? "live" : "test"] clock)")
+	log_world("OM: rehomed [rec.owner] ([rec.owner?.type]) to another scheduler ([length(rec.timers) / OM_TIMER_STRIDE] timers re-armed, [moved] deadlines moved, was on [old == GLOB.om_live_sched ? "live" : "test"] clock)")
 
 // ---------------------------------------------------------------- start / attach
 

@@ -93,7 +93,10 @@
 
 /// A person with an ID that opens every station and CentCom door, standing at `T`.
 /datum/unit_test/dq_docking_end_to_end/proc/make_actor(turf/T)
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	// A mob created in place never enters its area; the walk-in that wakes a shuttle waiting for passengers (area/Entered) is a move from outside.
+	var/turf/outside = locate(world.maxx, world.maxy, T.z)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, get_area(outside) == get_area(T) ? get_step(T, NORTH) : outside)
+	H.forceMove(T)
 	H.enable_godmode()
 	var/obj/item/card/id/I = allocate(/obj/item/card/id, T)
 	I.set_access(SSaccess.get_all_accesses() | SSaccess.get_all_centcom_access())
@@ -223,7 +226,7 @@
 	declare_flight_air(S, S.landmark_station())
 	actor = make_actor(seat)
 	wait_real(2 SECONDS)
-	log_test("arrivals: passenger at [seat.x],[seat.y],[seat.z] in [get_area(seat)]; sees passengers [S.check_for_passengers()], working [S.working], flags [S.shuttle_flags], process [S.process_state], moving [S.moving_status]")
+	log_test("arrivals: passenger at [seat.x],[seat.y],[seat.z] in [get_area(seat)]; sees passengers [S.check_for_passengers()], working [S.working], flags [S.shuttle_flags], process [S.process_state], moving [S.moving_status], awaiting passengers [S.awaiting_passengers]")
 	var/failure = await_docked(S, S.landmark_station())
 	TEST_ASSERT(!failure, "arrivals: [failure]")
 	check_docked(S, "the station")
