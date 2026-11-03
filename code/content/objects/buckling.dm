@@ -213,8 +213,9 @@ STAT(/mob/living, buckled, ANY, virtual = TRUE)
 	for(var/mob/living/L as anything in src?.buckled_mob_list())
 		if(!L.Move(loc, direct, movetime))
 			L.forceMove(loc, direct, movetime)
-			L.last_move = last_move
-			sparse_set_or(L, inertia_dir, last_move, 0)
+			var/carried_dir = sparse_get_or(src, last_move, 0)
+			sparse_set_or(L, last_move, carried_dir, 0)
+			sparse_set_or(L, inertia_dir, carried_dir, 0)
 
 		if(!buckle_of(src).dir)
 			L.set_dir(dir)

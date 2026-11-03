@@ -3,6 +3,10 @@
 // Read and write them through sparse_get() / sparse_get_or() / sparse_set(), never through a var of the same name.
 
 // /atom
+// Integrity, set only while the atom is below max_integrity (an intact atom holds nothing): get_integrity() / update_integrity() in atom_defense.dm.
+sparse(/atom, atom_integrity, type = num)
+// Direction of the last step (the old /atom/movable last_move), written by Move()/doMove(); a stopped mover holds nothing.
+sparse(/atom/movable, last_move, type = num)
 sparse(/atom, examine_icon_snapshot)
 sparse(/atom, tf_offset_x, type = num)
 sparse(/atom, tf_offset_y, type = num)

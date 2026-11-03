@@ -10,12 +10,6 @@
 		"artifact_master" = /datum/state_codec/pinned,
 	)
 
-/// Integrity starts at max_integrity (set by Initialize()), so it is only state once it differs.
-/atom/state_exclude()
-	. = ..()
-	if(atom_integrity == max_integrity)
-		. += "atom_integrity"
-
 // constraint_overrides holds immutable native acceptance plans shared by
 // declaration, not children owned by this item. Excluding these runtime plans
 // keeps a refitted suit or exact-fit box serializable under the existing policy.

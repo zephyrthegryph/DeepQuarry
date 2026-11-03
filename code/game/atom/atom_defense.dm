@@ -1,7 +1,6 @@
 /atom
 	///any atom that uses integrity and can be damaged must set this to true, otherwise the integrity procs will throw an error
 
-	VAR_PRIVATE/atom_integrity //defaults to max_integrity
 	var/max_integrity = 500
 
 	var/resistance_flags = NONE // INDESTRUCTIBLE | LAVA_PROOF | FIRE_PROOF | ON_FIRE | UNACIDABLE | ACID_PROOF
@@ -15,7 +14,7 @@
 		// when the first one deletes their target. The target is gone; there is no
 		// state left to damage and turning that race into a runtime only adds lag.
 		return
-	if(atom_integrity <= 0)
+	if(get_integrity() <= 0)
 		// Already at zero integrity: destruction has already fired (or another
 		// damage source reached here first this same tick). Further damage is a
 		// harmless no-op — update_integrity() clamps at 0 and the `previous > 0`
@@ -36,14 +35,14 @@
 
 	. = damage_amount
 
-	var/previous_atom_integrity = atom_integrity
+	var/previous_atom_integrity = get_integrity()
 
-	update_integrity(atom_integrity - damage_amount)
+	update_integrity(get_integrity() - damage_amount)
 	PUBLISH_LEGACY(src, /datum/notice/atom_take_damage, damage_amount, damage_type, damage_flag, sound_effect, attack_dir, armour_penetration)
-	contract_report_station_damage(src, previous_atom_integrity - atom_integrity)
+	contract_report_station_damage(src, previous_atom_integrity - get_integrity())
 	if(isobj(src) && max_integrity > 0)
 		var/obj/damaged_object = src
-		damaged_object.material_service_event(MATERIAL_EVENT_DAMAGE, 1 - atom_integrity / max_integrity)
+		damaged_object.material_service_event(MATERIAL_EVENT_DAMAGE, 1 - get_integrity() / max_integrity)
 
 	settle_integrity_crossings(previous_atom_integrity, damage_flag)
 
@@ -54,11 +53,11 @@
 	var/integrity_failure = atom_rules_of(src).integrity_failure
 	var/integrity_failure_amount = integrity_failure * max_integrity
 	//BREAKING FIRST
-	if(integrity_failure && previous_atom_integrity > integrity_failure_amount && atom_integrity <= integrity_failure_amount)
+	if(integrity_failure && previous_atom_integrity > integrity_failure_amount && get_integrity() <= integrity_failure_amount)
 		atom_break(damage_flag)
 
 	//DESTROYING SECOND
-	if(atom_integrity <= 0 && previous_atom_integrity > 0)
+	if(get_integrity() <= 0 && previous_atom_integrity > 0)
 		atom_destruction(damage_flag)
 
 ///the sound played when the atom is damaged.
@@ -77,24 +76,24 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!atom_rules_of(src).uses_integrity)
 		CRASH("/atom/proc/update_integrity() was called on [src] when it doesn't use integrity!")
-	var/old_value = atom_integrity
+	var/old_value = get_integrity()
 	new_value = max(0, new_value)
-	if(atom_integrity == new_value)
+	if(old_value == new_value)
 		return
-	atom_integrity = new_value
+	sparse_set_or(src, atom_integrity, new_value, max_integrity)
 	on_update_integrity(old_value, new_value)
 	dq_rules_publish(src, RULE_KEY_INTEGRITY)
 	PUBLISH_CHANGE(src, ATOM_INTEGRITY_KEY)
 	return new_value
 
-/// Returns the atom's current integrity. Use this instead of reading atom_integrity (which is private).
+/// Returns the atom's current integrity. Use this instead of reading atom_integrity (a sparse slot, unset while the atom is intact).
 /atom/proc/get_integrity()
-	return atom_integrity
+	return sparse_get_or(src, atom_integrity, max_integrity)
 READS_AS(/atom/proc/get_integrity, ATOM_INTEGRITY_KEY)
 
 /// How much integrity the atom is missing (0 when intact). A condition may read it: it stands for ATOM_INTEGRITY_KEY.
 /atom/proc/get_integrity_damage()
-	return max(0, max_integrity - atom_integrity)
+	return max(0, max_integrity - get_integrity())
 READS_AS(/atom/proc/get_integrity_damage, ATOM_INTEGRITY_KEY)
 
 /// Repairs the atom by repair_amount, clamped to max_integrity. Fires atom_fix() when crossing
@@ -103,15 +102,15 @@ READS_AS(/atom/proc/get_integrity_damage, ATOM_INTEGRITY_KEY)
 	if(!atom_rules_of(src).uses_integrity)
 		CRASH("/atom/proc/repair_damage() was called on [src] when it doesn't use integrity!")
 	if(repair_amount <= 0)
-		return atom_integrity
+		return get_integrity()
 	var/integrity_failure = atom_rules_of(src).integrity_failure
 	var/integrity_failure_amount = integrity_failure * max_integrity
-	var/previous_atom_integrity = atom_integrity
-	update_integrity(min(max_integrity, atom_integrity + repair_amount))
-	contract_report_station_repair(src, atom_integrity - previous_atom_integrity)
-	if(integrity_failure && previous_atom_integrity <= integrity_failure_amount && atom_integrity > integrity_failure_amount)
+	var/previous_atom_integrity = get_integrity()
+	update_integrity(min(max_integrity, get_integrity() + repair_amount))
+	contract_report_station_repair(src, get_integrity() - previous_atom_integrity)
+	if(integrity_failure && previous_atom_integrity <= integrity_failure_amount && get_integrity() > integrity_failure_amount)
 		atom_fix()
-	return atom_integrity
+	return get_integrity()
 
 /// Handle updates to your atom's integrity
 /atom/proc/on_update_integrity(old_value, new_value)

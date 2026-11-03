@@ -141,9 +141,6 @@
 		var/turf/Be = get_step(src, DOWN)
 		Be?.multiz_turf_new(src, UP)
 
-	if(atom_rules_of(src).uses_integrity)
-		atom_integrity = max_integrity
-
 REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
 
 /turf
@@ -424,7 +421,7 @@ CAPABILITIES(/turf)
 		return
 
 	if(!get_gravity(source)) //Checked a different codebase for reference. Turns out it's only supposed to happen in no-gravity
-		source.drift(turn(source.last_move, 180), 1, 0.2 SECONDS) //This makes it float away after hitting a wall in 0G
+		source.drift(turn(sparse_get_or(source, last_move, 0), 180), 1, 0.2 SECONDS) //This makes it float away after hitting a wall in 0G
 	if(isliving(source))
 		var/mob/living/M = source
 		M.turf_collision(src, throwingdatum?.speed)

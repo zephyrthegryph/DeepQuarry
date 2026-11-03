@@ -108,8 +108,6 @@ GLOBAL_LIST_INIT(init_from_table_types, build_init_from_table_types())
 /atom/proc/table_initialize()
 	SHOULD_CALL_PARENT(TRUE)
 	flags |= ATOM_INITIALIZED
-	if(atom_rules_of_type(type).uses_integrity)
-		atom_integrity = max_integrity
 	BOOT_PHASE_BEGIN(bp_decls)
 	lifecycle_decls_init(src, TRUE)
 	BOOT_PHASE_END(bp_decls, "lifecycle_decls_init" + BOOT_KIND(src), src)
