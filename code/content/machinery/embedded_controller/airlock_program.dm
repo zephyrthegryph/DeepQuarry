@@ -259,6 +259,8 @@
 					state = STATE_IDLE
 					target_state = TARGET_NONE
 					playsound(master, announcer_airlock_message(AIRLOCK_MSG_END_IN), 100, 0)
+			else if(memory["pump_status"] == "off")
+				resume_pumping(TRUE) // filled, switched off, then lost gas again before the doors cycled
 
 
 		if(STATE_DEPRESSURIZE)
@@ -279,11 +281,34 @@
 					state = STATE_IDLE
 					target_state = TARGET_NONE
 					playsound(master, announcer_airlock_message(AIRLOCK_MSG_END_OUT), 100, 0)
+			else if(memory["pump_status"] == "off")
+				resume_pumping(FALSE) // pumped down, switched off, then gas came back before the doors cycled
 
 
 	set_memory_at("processing", (state != target_state))
 
 	return 1
+
+/// A cycle whose chamber left the target band after the pump stopped (it pumped down, was switched off, and gas came back: the user's
+/// "pressure creeps back up") waited for a pressure it would never reach again, with the pump off, forever. It pumps again, with the
+/// same commands the prepare step gives: `pressurize` TRUE fills toward the target, FALSE drains toward it. The vent is aimed past the band the
+/// cycle ends in (it stops at its bound on its own tile, and the sensor's tile settles a little short of it): aimed at the target itself, it idled
+/// at its bound with the reading just outside the band.
+/datum/embedded_program/airlock/proc/resume_pumping(pressurize)
+	var/target_pressure = memory["purge"] ? 0 : memory["target_pressure"] * (pressurize ? 1.1 : 0.9)
+	log_game("Airlock [id_tag] resumes [pressurize ? "pressurizing" : "depressurizing"]: chamber [memory["chamber_sensor_pressure"]] kPa, target [memory["target_pressure"]] kPa, pump off")
+	if(pressurize)
+		if(!cycle_to_external_air || target_state == TARGET_INOPEN)
+			signalPump(tag_airpump, 1, 1, target_pressure)
+		else
+			signalPump(tag_pump_out_internal, 1, 1, target_pressure)
+			signalPump(tag_pump_out_external, 1, 0, 0)
+		return
+	if(!cycle_to_external_air || target_state == TARGET_OUTOPEN)
+		signalPump(tag_airpump, 1, 0, target_pressure)
+	else
+		signalPump(tag_pump_out_internal, 1, 0, target_pressure)
+		signalPump(tag_pump_out_external, 1, 1, 15000)
 
 //these are here so that other types don't have to make so many assuptions about our implementation
 

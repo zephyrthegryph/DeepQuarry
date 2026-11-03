@@ -8,6 +8,8 @@
 # State under E:/dq-cache/health (DQ_HEALTH_STATE): verdict.txt (status=pass|FAIL|unknown, sha, last_good, range, log, time), history.tsv, and MASTER_BROKEN.txt, present
 # only while master fails, naming the first bad range. dq_land.sh prints it on every landing. An infrastructure failure (no result) is status=unknown, never MASTER_BROKEN.
 set -uo pipefail
+# Below normal priority, for this script and everything it starts (cargo and rustc, the analyzer, git): the machine is also the user's desktop.
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/dq_below_normal.sh"
 # Everything is in functions and main runs on the last line: bash has read the whole file before the checkout may change under it.
 export DQ_NATIVE_NO_DAEMON=1 DMB_DAEMON_AUTOSTART=0
 STATE="${DQ_HEALTH_STATE:-E:/dq-cache/health}"

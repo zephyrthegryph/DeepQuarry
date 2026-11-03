@@ -25,6 +25,8 @@
 # DQ_DISK_EXCLUDE_WT ("pool-1 play": worktree names whose growth dirs and cargo targets are never touched), DQ_DISK_BUDGET=off
 # (do nothing), DQ_DISK_FREE_GB (tests: pretend this many GB are free), DQ_DISK_TOOLS=0 (skip the dmbc cache pass).
 set -uo pipefail
+# Below normal priority, for this script and everything it starts (cargo and rustc, the analyzer, git): the machine is also the user's desktop.
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/dq_below_normal.sh"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MANIFEST="${DQ_DISK_MANIFEST:-$HERE/ci/disk_budget.toml}"
 CACHE="${DQ_CACHE_ROOT:-E:/dq-cache}"; CACHE="${CACHE%/}"

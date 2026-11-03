@@ -7,6 +7,8 @@
 # Refuses only: a checkout that is not a lane (the main checkout, test-server, play worktrees, master itself), a dirty tree, a merge conflict, and committing
 # user save data. A conflict is left in the tree for you to resolve and commit; run this again afterwards. --light is accepted and means nothing.
 set -uo pipefail
+# Below normal priority, for this script and everything it starts (cargo and rustc, the analyzer, git): the machine is also the user's desktop.
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/dq_below_normal.sh"
 die() { echo "dq_land: REFUSED: $*" >&2; exit 1; }
 # The merge drivers (deepquarry.dme, baselines, lint_scopes.toml) are supplied per command; without them a plain merge conflicts on those files.
 . "$(dirname "${BASH_SOURCE[0]}")/dq_git_safe.sh" || die "cannot load dq_git_safe.sh"
