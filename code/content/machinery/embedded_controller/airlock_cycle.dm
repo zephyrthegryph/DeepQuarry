@@ -519,12 +519,13 @@ SETTER(/obj/machinery/embedded_controller/radio/airlock, secure)
 		set_external_pressure_bound(clamp(pressure, 0, ONE_ATMOSPHERE * 50))
 	area_air_status_soon(src)
 
-/// The airlock console's command (it holds this vent by relation). As its radio took them, a zero direction or bound changes nothing.
+/// The airlock console's command (it holds this vent by relation): on with a direction and a bound, or off. Direction 0 (siphon) and a
+/// bound of 0 (vacuum) are commands like any other: a depressurizing cycle needs both.
 /obj/machinery/atmospherics/binary/dp_vent_pump/proc/airlock_pump(power, direction, pressure)
 	set_use_power(power)
-	if(direction)
+	if(!isnull(direction))
 		set_pump_direction(direction)
-	if(pressure)
+	if(!isnull(pressure))
 		set_external_pressure_bound(between(0, pressure, ONE_ATMOSPHERE * 50))
 
 #undef AIRLOCK_STATE_IDLE
