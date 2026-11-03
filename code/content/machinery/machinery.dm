@@ -660,7 +660,7 @@ MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor
 	..()
 	if(!flipped)
 		return FALSE
-	PUBLISH_LEGACY(src, /datum/notice/machinery_broken, damage_flag)
+	PUBLISH(src, machinery_broken, damage_flag = damage_flag)
 	return TRUE
 
 /// The inverse of atom_break(), the other writer of BROKEN. Returns TRUE if the machine was broken.

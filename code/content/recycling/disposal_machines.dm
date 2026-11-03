@@ -100,7 +100,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	add_disposal_connection()
 	face(dir)
 	if(trunk)
-		PUBLISH_LEGACY(src, /datum/notice/disposal_link, trunk)
+		PUBLISH(src, disposal_link, trunk = trunk)
 
 	// air_contents is declared (DECLARE_GAS). Map-loaded bins are installed infrastructure, not freshly constructed
 	// empty vessels. Prime their tiny reservoir from the mapped room atmosphere
@@ -120,7 +120,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 // it unlinks and ejects its contents.
 /obj/machinery/disposal/on_destroy(force)
 	clear_gas_dependency()
-	PUBLISH_LEGACY(src, /datum/notice/disposal_unlink)
+	PUBLISH(src, disposal_unlink)
 	eject()
 	..()
 
@@ -812,7 +812,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	for(var/atom/movable/AM in slot_contents(CONTAINER_SLOT_DISPOSAL))
 		AM.forceMove(T)
 	//..() //*cough
-	PUBLISH_LEGACY(src, /datum/notice/disposal_unlink)
+	PUBLISH(src, disposal_unlink)
 	destroyed(src, null, "deconstructed") //Parent above should do this, but that's not a thing as of writing this.
 
 /obj/machinery/disposal/proc/clean_items()

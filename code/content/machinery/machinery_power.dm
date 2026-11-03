@@ -94,9 +94,9 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
 	power_seen = now
 	condition_announce() // the `stat` publish: gates and layers that read the machine's power hear the flip
 	if(power_lost())
-		PUBLISH_LEGACY(src, /datum/notice/machinery_power_lost)
+		PUBLISH(src, machinery_power_lost)
 	else
-		PUBLISH_LEGACY(src, /datum/notice/machinery_power_restored)
+		PUBLISH(src, machinery_power_restored)
 	update_heat_output()
 	return TRUE
 

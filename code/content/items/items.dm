@@ -359,7 +359,7 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 		action_item_has.Remove(user)
 
 	if(!equipping) //We ONLY send these signals when we ACTUALLY drop the item. Because our item code is stupid, swapping items between your hand is 'dropping' them.
-		PUBLISH_LEGACY(src, /datum/notice/item_dropped, user)
+		PUBLISH(src, item_dropped, user = user)
 		if((worn_of(src).flags & DROPDEL) && loc != user && !QDELETED(src))
 			spent(src, user)
 
@@ -368,8 +368,8 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 
 // called just as an item is picked up (loc is not yet changed)
 /obj/item/proc/pickup(mob/user)
-	PUBLISH_LEGACY(src, /datum/notice/item_pickup, user)
-	PUBLISH_LEGACY(user, /datum/notice/item_pickup, src)
+	PUBLISH(src, item_pickup, taker = user)
+	PUBLISH(user, item_pickup, taker = src)
 	PUBLISH_LEGACY(user, /datum/notice/picked_up_item, src)
 	set_pixel_x(0)
 	set_pixel_y(0)
@@ -413,7 +413,7 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 	else if(slot == SLOT_ID_HAND_L || slot == SLOT_ID_HAND_R)
 		if(!muffled_by_belly(user))
 			playsound(src, sounds_of(src).pickup, 20, preference = /datum/preference/toggle/pickup_sounds)
-	PUBLISH_LEGACY(src, /datum/notice/item_equipped, user, slot)
+	PUBLISH(src, item_equipped, equipper = user, slot = slot)
 	PUBLISH_LEGACY(user, /datum/notice/mob_equipped_item, src, slot)
 	user.on_equipment_changed()
 	var/mob/living/M = loc

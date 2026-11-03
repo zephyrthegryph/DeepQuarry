@@ -33,7 +33,7 @@
 	var/datum/notice/living_revived/event = N
 	revivals++
 	rel_set(src, nameof(last_revive_source), event.source_)
-	last_revive_reason = event.reason
+	last_revive_reason = event.revive_reason
 
 // --- Death pipeline ------------------------------------------------------------------------
 

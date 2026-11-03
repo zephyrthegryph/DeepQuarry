@@ -143,7 +143,7 @@
 		var/atom/location = A.loc
 		if(location)
 			/// Emits that the new atom `src`, has been created at `loc`
-			PUBLISH_LEGACY(location, /datum/notice/atom_after_successful_initialized_on, A, arguments[1])
+			PUBLISH(location, atom_after_successful_initialized_on, created = A, mapload = arguments[1])
 			RANGE_WATCH(location, RANGE_INITIALIZED, A, arguments[1])
 			// Created straight into a holder with a ledger: record it now (containment C1).
 			location.containment_ledger()?.note_enter(A)

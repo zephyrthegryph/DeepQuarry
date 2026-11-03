@@ -392,7 +392,7 @@ MSG_DEF(pat_out/begin, span_warning("You try to pat out %T%'s flames! Hot!"), sp
 	return
 
 /mob/living/carbon/slip(slipped_on,stun_duration=8)
-	PUBLISH_LEGACY(src, /datum/notice/carbon_slip, slipped_on, stun_duration)
+	PUBLISH(src, carbon_slip, slipped_on = slipped_on, stun_duration = stun_duration)
 	if(src?.buckled_to())
 		return FALSE
 	stop_pulling()

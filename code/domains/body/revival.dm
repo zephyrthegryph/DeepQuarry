@@ -143,7 +143,7 @@
 	on_revived(reason, source)
 	// The HUD and sight redraw by themselves: set_stat() published nameof(stat), flag_hud_update() MOB_KEY_HUD_FLAGS.
 	// set_stat() publishes the stat key, which wakes every Life step (LIFE_WAKE_KEYS).
-	PUBLISH_LEGACY(src, /datum/notice/living_revived, source, reason)
+	PUBLISH(src, living_revived, source_ = source, revive_reason = reason)
 	log_game("REVIVE: [key_name(src)] by [source ? "[source] ([source.type])" : "nothing"] ([reason]) at [AREACOORD(src)].")
 	return TRUE
 

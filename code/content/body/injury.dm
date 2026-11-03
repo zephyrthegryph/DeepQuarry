@@ -91,7 +91,7 @@
 		if(WANTS(src, /datum/notice/living_shield_injury))
 			before = amount
 			var/list/amount_ref = list(amount)
-			PUBLISH_LEGACY(src, /datum/notice/living_shield_injury, kind, amount_ref, zone, source, flags)
+			PUBLISH(src, living_shield_injury, kind = kind, amount_ref = amount_ref, zone = zone, source_ = source, flags = flags)
 			amount = max(0, amount_ref[1])
 			if(explain)
 				explain += list(list(INJURY_STAGE_SHIELD, before, amount, "energy shield"))
@@ -120,7 +120,7 @@
 	if(!(flags & (INJURE_SILENT | INJURE_CONTINUOUS)))
 		flash_weak_pain()
 	body.on_status_changed()
-	PUBLISH_LEGACY(src, /datum/notice/living_injured, kind, ., zone, source, flags)
+	PUBLISH(src, living_injured, kind = kind, applied = ., zone = zone, source_ = source, flags = flags)
 
 /// Apply several kinds at once: alist(INJURY_BLUNT = 10, INJURY_BURN = 5).
 /// (alist, because DM forbids numeric keys in a plain list literal.)
@@ -154,7 +154,7 @@
 /// breakdown and shows it to the admins tracing this mob.
 /// `stages` is a list of list(INJURY_STAGE_*, amount_in, amount_out, detail).
 /mob/living/proc/explain_injury_stages(incoming_kind, kind, list/stages, zone, atom/source, flags)
-	PUBLISH_LEGACY(src, /datum/notice/living_injury_explained, incoming_kind, kind, stages, zone, source, flags)
+	PUBLISH(src, living_injury_explained, incoming_kind = incoming_kind, landed_kind = kind, stages = stages, zone = zone, source_ = source, flags = flags)
 	var/list/tracers = sparse_get(src, injury_trace)
 	if(!tracers)
 		return

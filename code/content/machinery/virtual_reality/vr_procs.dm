@@ -86,7 +86,7 @@
 			if(is_lang_whitelisted(avatar, chosen_language) || (avatar.species && (chosen_language.name in avatar.species.secondary_langs)))
 				avatar.add_language(lang)
 
-	PUBLISH_LEGACY(avatar, /datum/notice/human_dna_finalized)
+	PUBLISH(avatar, human_dna_finalized)
 
 	avatar.update_transform()
 	SSjob.equip_rank(avatar,JOB_VR, 1, FALSE)

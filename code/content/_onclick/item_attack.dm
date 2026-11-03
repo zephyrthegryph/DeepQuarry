@@ -128,7 +128,7 @@ avoid code duplication. This includes items that may sometimes act as a standard
 		var/result = tool_act(user, tool, tool_quality, secondary)
 		if(result & ITEM_INTERACT_SUCCESS)
 			if(!secondary)
-				PUBLISH_LEGACY(tool, /datum/notice/item_tool_acted, src, user, tool_quality, modifiers)
+				PUBLISH(tool, item_tool_acted, target_ = src, user = user, tool_quality = tool_quality, modifiers = modifiers)
 			PUBLISH_LEGACY(tool, /datum/notice/tool_atom_acted, tool_quality, secondary, src, user, modifiers)
 		if(result & (ITEM_INTERACT_SUCCESS | ITEM_INTERACT_BLOCKING | ITEM_INTERACT_SKIP_TO_ATTACK))
 			return result
@@ -290,7 +290,7 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 		return ITEM_INTERACT_FAILURE
 	if(M.is_incorporeal()) // No attacking phased entities :)
 		return ITEM_INTERACT_FAILURE
-	PUBLISH_LEGACY(src, /datum/notice/item_attack, M, user, target_zone)
+	PUBLISH(src, item_attack, target_ = M, user = user, target_zone = target_zone)
 
 	/////////////////////////
 	M.note_attacker(user)

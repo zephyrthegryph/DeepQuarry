@@ -38,7 +38,7 @@
 	var/previous_atom_integrity = get_integrity()
 
 	update_integrity(get_integrity() - damage_amount)
-	PUBLISH_LEGACY(src, /datum/notice/atom_take_damage, damage_amount, damage_type, damage_flag, sound_effect, attack_dir, armour_penetration)
+	PUBLISH(src, atom_take_damage, damage_amount = damage_amount, damage_type = damage_type, damage_flag = damage_flag, sound_effect = sound_effect, attack_dir = attack_dir, aurmor_penetration = armour_penetration)
 	contract_report_station_damage(src, previous_atom_integrity - get_integrity())
 	if(isobj(src) && max_integrity > 0)
 		var/obj/damaged_object = src
@@ -123,7 +123,7 @@ READS_AS(/atom/proc/get_integrity_damage, ATOM_INTEGRITY_KEY)
 /atom/proc/atom_break(damage_flag)
 	SHOULD_CALL_PARENT(TRUE)
 	PUBLISH_CHANGE(src, INTEGRITY_KEY_BROKEN) // the integrity state (G8): readers of "broken" re-run
-	PUBLISH_LEGACY(src, /datum/notice/atom_broken, damage_flag) // on_notice(/datum/notice/atom_broken, ...) is how a type reacts to breaking
+	PUBLISH(src, atom_broken, damage_flag = damage_flag) // on_notice(/datum/notice/atom_broken, ...) is how a type reacts to breaking
 
 /// Called when integrity is repaired above the breaking point having been broken before
 /atom/proc/atom_fix()
