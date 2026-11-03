@@ -29,10 +29,10 @@ CAPABILITIES(/obj/item/clothing/gloves/forensic)
 	name = "\improper SWAT Gloves"
 	icon_state = "swat"
 	item_state = "swat"
-	armor_spec = "melee=15;bullet=10;laser=10;energy=10;bomb=5" // Now protective.
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/gloves/swat)
+	configure(atom_rules(armor_spec = "melee=15;bullet=10;laser=10;energy=10;bomb=5"))
 	configure(item_protection(siemens = 0.50, permeability = 0.05, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/gloves/combat // Combined effect of SWAT gloves and insulated gloves, with better protective stats.
@@ -40,10 +40,10 @@ CAPABILITIES(/obj/item/clothing/gloves/swat)
 	name = "combat gloves"
 	icon_state = "swat"
 	item_state = "swat"
-	armor_spec = "melee=20;bullet=15;laser=15;energy=15;bomb=10" // Now protective.
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/gloves/combat)
+	configure(atom_rules(armor_spec = "melee=20;bullet=15;laser=15;energy=15;bomb=10"))
 	configure(item_protection(siemens = 0, permeability = 0.05, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/gloves/sterile
@@ -51,8 +51,14 @@ CAPABILITIES(/obj/item/clothing/gloves/combat)
 	desc = "Sterile gloves."
 	icon_state = "latex"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
-	germ_level = 0
 	fingerprint_chance = 25
+
+/// Sterile gloves start clean: their surface germs read 0 while unset, not GERM_LEVEL_AMBIENT.
+/obj/item/clothing/gloves/sterile/germs()
+	return sparse_get_or(src, surface_germs, 0)
+
+/obj/item/clothing/gloves/sterile/set_germs(value)
+	sparse_set_or(src, surface_germs, value, 0)
 
 CAPABILITIES(/obj/item/clothing/gloves/sterile)
 	configure(item_protection(siemens = 1.0, permeability = 0.01))
@@ -88,9 +94,9 @@ CAPABILITIES(/obj/item/clothing/gloves/botanic_leather)
 	name = "work gloves"
 	icon_state = "work"
 	item_state = "wgloves"
-	armor_spec = "melee=10;bullet=10;laser=10;energy=5"
 
 CAPABILITIES(/obj/item/clothing/gloves/duty)
+	configure(atom_rules(armor_spec = "melee=10;bullet=10;laser=10;energy=5"))
 	configure(item_protection(cold_parts = HANDS, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = HANDS, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
 // If they resist lasers and energy they should help inulate against heat and cold.
 /obj/item/clothing/gloves/tactical
@@ -99,9 +105,9 @@ CAPABILITIES(/obj/item/clothing/gloves/duty)
 	icon_state = "work"
 	item_state = "wgloves"
 	punch_force = 3
-	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20"
 
 CAPABILITIES(/obj/item/clothing/gloves/tactical)
+	configure(atom_rules(armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20"))
 	configure(item_combat(force = 5))
 	configure(item_protection(siemens = 0.75, permeability = 0.05))
 
@@ -111,11 +117,11 @@ CAPABILITIES(/obj/item/clothing/gloves/tactical)
 	icon_state = "gloves-vox"
 	item_state = "gloves-vox"
 	flags = PHORONGUARD
-	armor_spec = "melee=20;bullet=15;laser=10;energy=10;bomb=5;bio=30;rad=30" // gently bumped up Heavy engineering gloves value for protection //
 
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/gloves/vox)
+	configure(atom_rules(armor_spec = "melee=20;bullet=15;laser=10;energy=10;bomb=5;bio=30;rad=30"))
 	fits_as(FIT_VOX)
 	configure(item_protection(siemens = 0, permeability = 0.05, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_METALBOOTS, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
@@ -195,9 +201,9 @@ CAPABILITIES(/obj/item/clothing/gloves/weddingring)
 	name = "knight gauntlets"
 	icon_state = "black"
 	item_state = "black"
-	armor_spec = "melee=80;bullet=50;laser=10"
 
 CAPABILITIES(/obj/item/clothing/gloves/combat/knight)
+	configure(atom_rules(armor_spec = "melee=80;bullet=50;laser=10"))
 	configure(item_protection(siemens = 2, permeability = 0.05, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/gloves/combat/knight/brown
@@ -212,9 +218,9 @@ CAPABILITIES(/obj/item/clothing/gloves/combat/knight)
 	name = "knight gauntlets"
 	icon_state = "black"
 	item_state = "black"
-	armor_spec = ""
 
 CAPABILITIES(/obj/item/clothing/gloves/combat/knight_costume)
+	configure(atom_rules(armor_spec = ""))
 	configure(item_protection(siemens = 2, permeability = 0.05, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/gloves/combat/knight_costume/brown
@@ -229,13 +235,13 @@ CAPABILITIES(/obj/item/clothing/gloves/combat/knight_costume)
 	icon_state = "heavy_engi"
 	item_state = "heavy_engi"
 	flags = THICKMATERIAL
-	armor_spec = "melee=10;bullet=10;laser=10;energy=5;bio=30;rad=30"
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/hands/mob_teshari.dmi',
 		SPECIES_VOX = 'icons/inventory/hands/mob_vox.dmi',
 		SPECIES_WEREBEAST = 'icons/inventory/hands/mob_werebeast.dmi')
 
 CAPABILITIES(/obj/item/clothing/gloves/heavy_engineer)
+	configure(atom_rules(armor_spec = "melee=10;bullet=10;laser=10;energy=5;bio=30;rad=30"))
 	configure(item_protection(siemens = 0, permeability = 0.05, heat_parts = HANDS|ARMS, cold_parts = HANDS|ARMS, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 

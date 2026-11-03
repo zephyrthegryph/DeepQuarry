@@ -7,7 +7,6 @@
 	opacity = FALSE
 	density = FALSE
 	use_power = USE_POWER_IDLE
-	integrity_failure = 0.5
 	var/ispowered = TRUE
 	var/isactive = FALSE
 	var/wasactive = FALSE		//controls automatic reboot after power-loss
@@ -106,6 +105,7 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator/perma/impassable)
 		disable_field()
 
 CAPABILITIES(/obj/machinery/atmospheric_field_generator)
+	configure(atom_rules(integrity_failure = 0.5))
 	on_notice(/datum/notice/machinery_broken, then(PROC_REF(field_broken)))
 	keeps_if(PROC_REF(no_duplicate_generator))
 	configure(uses_power(channel = ENVIRON, idle = 10, active = 2500))

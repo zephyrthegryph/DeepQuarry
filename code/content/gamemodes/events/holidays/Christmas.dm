@@ -53,7 +53,7 @@
 	name = "festive paper hat"
 	icon_state = "xmashat"
 	desc = "A crappy paper hat that you are REQUIRED to wear."
-	armor_spec = ""
 
 CAPABILITIES(/obj/item/clothing/head/festive)
+	configure(atom_rules(armor_spec = ""))
 	configure(item_worn(hides = 0, covers = 0))

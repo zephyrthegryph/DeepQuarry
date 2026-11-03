@@ -3,7 +3,6 @@
 	desc = "A strange robotic creature."
 	endurance = 700
 
-	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=30;bio=100;rad=100"
 
 	pilot_type = /mob/living/simple_mob/humanoid/merc/melee/sword/space
 	wreckage = /obj/structure/loot_pile/mecha/gygax/dark/adv
@@ -30,6 +29,7 @@
 		)
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse/bomb_mauler)
+	configure(atom_rules(armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=30;bio=100;rad=100"))
 	configure(mob_rules(faction = FACTION_SYNDICATE))
 
 

@@ -2,9 +2,9 @@
 /obj/item/clothing/head/helmet/space/skrell
 	name = "Skrellian helmet"
 	desc = "Smoothly contoured and polished to a shine. Still looks like a fishbowl."
-	armor_spec = "melee=20;bullet=20;laser=20;energy=50;bomb=50;bio=100;rad=50;cold=60"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/skrell)
+	configure(atom_rules(armor_spec = "melee=20;bullet=20;laser=20;energy=50;bomb=50;bio=100;rad=50;cold=60"))
 	fits_as(FIT_HUMAN_SKRELL)
 	configure(item_protection(max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
@@ -19,9 +19,9 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/skrell)
 /obj/item/clothing/suit/space/skrell
 	name = "Skrellian voidsuit"
 	desc = "Seems like a wetsuit with reinforced plating seamlessly attached to it. Very chic."
-	armor_spec = "melee=20;bullet=20;laser=20;energy=50;bomb=50;bio=100;rad=50;cold=60"
 
 CAPABILITIES(/obj/item/clothing/suit/space/skrell)
+	configure(atom_rules(armor_spec = "melee=20;bullet=20;laser=20;energy=50;bomb=50;bio=100;rad=50;cold=60"))
 	fits_as(FIT_HUMAN_SKRELL)
 	suit_storage(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_MINING, /obj/item/t_scanner, /obj/item/rcd))
 	configure(item_protection(max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
@@ -41,9 +41,9 @@ CAPABILITIES(/obj/item/clothing/suit/space/skrell)
 /obj/item/clothing/suit/space/vox
 	w_class = ITEMSIZE_NORMAL
 	flags = PHORONGUARD
-	armor_spec = "melee=60;bullet=50;laser=40;energy=15;bomb=30;bio=100;rad=50;cold=60"
 
 CAPABILITIES(/obj/item/clothing/suit/space/vox)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=40;energy=15;bomb=30;bio=100;rad=50;cold=60"))
 	fits_as(FIT_VOX)
 	suit_storage(list(POCKET_GENERIC, POCKET_EXPLO, POCKET_ALL_TANKS, /obj/item/melee/energy/sword))
 	configure(item_worn(flags = THICKMATERIAL))
@@ -54,10 +54,10 @@ CAPABILITIES(/obj/item/clothing/suit/space/vox)
 
 
 /obj/item/clothing/head/helmet/space/vox
-	armor_spec = "melee=60;bullet=50;laser=40;energy=15;bomb=30;bio=100;rad=50;cold=60"
 	flags = PHORONGUARD
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/vox)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=40;energy=15;bomb=30;bio=100;rad=50;cold=60"))
 	fits_as(FIT_VOX)
 	configure(item_worn(flags = THICKMATERIAL | AIRTIGHT, hides = 0))
 	configure(item_protection(siemens = 0.2))

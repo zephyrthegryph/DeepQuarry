@@ -18,7 +18,7 @@
 
 /// Below integrity_failure the computer ceases to operate.
 /obj/item/modular_computer/proc/computer_broken()
-	return get_integrity() < max_integrity * integrity_failure
+	return get_integrity() < max_integrity * atom_rules_of(src).integrity_failure
 
 /obj/item/modular_computer/proc/chassis_broken(datum/act/A)
 	if(enabled)

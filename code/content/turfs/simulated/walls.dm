@@ -12,7 +12,6 @@
 	var/wall_masks = 'icons/turf/wall_masks.dmi'
 	// Walls use integrity (damage.md §5): max_integrity is the material cap,
 	// set by update_material().
-	uses_integrity = TRUE
 	max_integrity = 150
 	var/global/damage_overlays[16]
 	var/active
@@ -35,6 +34,7 @@
 TYPE_TABLE_DECLARE(/turf/simulated/wall, wall_forced_materials, null)
 
 CAPABILITIES(/turf/simulated/wall)
+	configure(atom_rules(uses_integrity = TRUE))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	every(2 SECONDS, then(PROC_REF(wall_step)), when = nameof(radioactive))
 	op("wall_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), then(PROC_REF(wall_item)))

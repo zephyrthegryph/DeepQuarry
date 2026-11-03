@@ -107,6 +107,36 @@ GLOBAL_ALIST_EMPTY(mannequins)
 		ckey = "NULL"
 	rel_add(GLOB, nameof(GLOB.mannequins), null, ckey)
 
+/// TRUE when a sprite accessory is a real choice: not an abstract base, whose name is
+/// DEVELOPER_WARNING_NAME (or empty). Every offered accessory list is built through
+/// offerable_accessories(), so a placeholder is never offered, and never saved.
+/proc/is_offerable_accessory(datum/sprite_accessory/S)
+	return istype(S) && S.name && !is_placeholder_choice(S)
+
+/// TRUE for a value no picker may offer or save: the placeholder name itself, or a type
+/// or datum whose name is the placeholder (an abstract base type).
+/proc/is_placeholder_choice(value)
+	if(istext(value))
+		return value == DEVELOPER_WARNING_NAME
+	if(ispath(value, /datum/sprite_accessory))
+		var/datum/sprite_accessory/A = value
+		return initial(A.name) == DEVELOPER_WARNING_NAME
+	if(ispath(value, /atom))
+		var/atom/T = value
+		return initial(T.name) == DEVELOPER_WARNING_NAME
+	if(isdatum(value))
+		var/datum/D = value
+		return ("name" in D.vars) && D.vars["name"] == DEVELOPER_WARNING_NAME
+	return FALSE
+
+/// One instance of every offerable subtype of `base` (the abstract bases are dropped).
+/proc/offerable_accessories(base)
+	. = list()
+	for(var/path in subtypesof(base))
+		var/datum/sprite_accessory/S = new path()
+		if(is_offerable_accessory(S))
+			. += S
+
 //////////////////////////
 /////Initial Building/////
 //////////////////////////
@@ -117,9 +147,7 @@ GLOBAL_ALIST_EMPTY(mannequins)
 	chameleon_choices_build()
 
 	//Hair - Initialise all /datum/sprite_accessory/hair into an list indexed by hair-style name
-	paths = subtypesof(/datum/sprite_accessory/hair)
-	for(var/path in paths)
-		var/datum/sprite_accessory/hair/H = new path()
+	for(var/datum/sprite_accessory/hair/H as anything in offerable_accessories(/datum/sprite_accessory/hair))
 		GLOB.hair_styles_list[H.name] = H
 		switch(H.gender)
 			if(MALE)	GLOB.hair_styles_male_list += H.name
@@ -129,9 +157,7 @@ GLOBAL_ALIST_EMPTY(mannequins)
 				GLOB.hair_styles_female_list += H.name
 
 	//Facial Hair - Initialise all /datum/sprite_accessory/facial_hair into an list indexed by facialhair-style name
-	paths = subtypesof(/datum/sprite_accessory/facial_hair)
-	for(var/path in paths)
-		var/datum/sprite_accessory/facial_hair/H = new path()
+	for(var/datum/sprite_accessory/facial_hair/H as anything in offerable_accessories(/datum/sprite_accessory/facial_hair))
 		GLOB.facial_hair_styles_list[H.name] = H
 		switch(H.gender)
 			if(MALE)	GLOB.facial_hair_styles_male_list += H.name
@@ -141,9 +167,7 @@ GLOBAL_ALIST_EMPTY(mannequins)
 				GLOB.facial_hair_styles_female_list += H.name
 
 	//Body markings - Initialise all /datum/sprite_accessory/marking into an list indexed by marking name
-	paths = subtypesof(/datum/sprite_accessory/marking)
-	for(var/path in paths)
-		var/datum/sprite_accessory/marking/M = new path()
+	for(var/datum/sprite_accessory/marking/M as anything in offerable_accessories(/datum/sprite_accessory/marking))
 		GLOB.body_marking_styles_list[M.name] = M
 		if(!M.genetic)
 			GLOB.body_marking_nopersist_list[M.name] = M
@@ -222,22 +246,16 @@ GLOBAL_ALIST_EMPTY(mannequins)
 	//Closet appearances
 	GLOB.closet_appearances = GLOB.decls_repository.get_decls_of_type(/datum/decl/closet_appearance)
 
-	paths = subtypesof(/datum/sprite_accessory/ears)
-	for(var/path in paths)
-		var/obj/item/clothing/head/instance = new path()
-		GLOB.ear_styles_list[path] = instance
+	for(var/datum/sprite_accessory/ears/instance as anything in offerable_accessories(/datum/sprite_accessory/ears))
+		GLOB.ear_styles_list[instance.type] = instance
 
 	// Custom Tails
-	paths = subtypesof(/datum/sprite_accessory/tail) - /datum/sprite_accessory/tail/taur
-	for(var/path in paths)
-		var/datum/sprite_accessory/tail/instance = new path()
-		GLOB.tail_styles_list[path] = instance
+	for(var/datum/sprite_accessory/tail/instance as anything in offerable_accessories(/datum/sprite_accessory/tail))
+		GLOB.tail_styles_list[instance.type] = instance
 
 	// Custom Wings
-	paths = subtypesof(/datum/sprite_accessory/wing)
-	for(var/path in paths)
-		var/datum/sprite_accessory/wing/instance = new path()
-		GLOB.wing_styles_list[path] = instance
+	for(var/datum/sprite_accessory/wing/instance as anything in offerable_accessories(/datum/sprite_accessory/wing))
+		GLOB.wing_styles_list[instance.type] = instance
 
 	paths = typesof(/datum/digest_mode)
 	for(var/path in paths)
@@ -2170,10 +2188,8 @@ GLOBAL_LIST_INIT(alt_titles_with_icons, list(
 	var/paths
 
 	// Custom Hair Accessories
-	paths = subtypesof(/datum/sprite_accessory/hair_accessory)
-	for(var/path in paths)
-		var/datum/sprite_accessory/hair_accessory/instance = new path()
-		GLOB.hair_accesories_list[path] = instance
+	for(var/datum/sprite_accessory/hair_accessory/instance as anything in offerable_accessories(/datum/sprite_accessory/hair_accessory))
+		GLOB.hair_accesories_list[instance.type] = instance
 
 	// Custom species traits
 	paths = typesof(/datum/trait) - /datum/trait - /datum/trait/negative - /datum/trait/neutral - /datum/trait/positive

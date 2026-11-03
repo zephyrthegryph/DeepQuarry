@@ -8,6 +8,7 @@ GLOBAL_LIST_INIT(dq_variants_under_explorer_utility, list(
 ))
 
 CAPABILITIES(/obj/item/clothing/under/explorer/utility)
+	configure(atom_rules(armor_spec = "bio=10;rad=10"))
 	variants(nameof(variant), PROC_REF(variant_table))
 
 /// The variant rows (variants(), code/engine/lifeforms/variants.dm).

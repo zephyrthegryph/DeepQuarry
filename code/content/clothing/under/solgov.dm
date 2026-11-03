@@ -8,9 +8,9 @@
 	item_icons = list(slot_w_uniform_str = 'icons/inventory/uniform/mob.dmi')
 	rolled_down = 0
 	rolled_sleeves = 0
-	armor_spec = "melee=5;laser=5;energy=5;bio=5;rad=5"
 
 CAPABILITIES(/obj/item/clothing/under/solgov)
+	configure(atom_rules(armor_spec = "melee=5;laser=5;energy=5;bio=5;rad=5"))
 	configure(item_protection(siemens = 0.8))
 
 //PT
@@ -19,9 +19,9 @@ CAPABILITIES(/obj/item/clothing/under/solgov)
 	desc = "Shorts! Shirt! Miami! Sexy!"
 	icon_state = "miami"
 	worn_state = "miami"
-	armor_spec = ""
 
 CAPABILITIES(/obj/item/clothing/under/solgov/pt)
+	configure(atom_rules(armor_spec = ""))
 	configure(item_worn(covers = CHEST))
 	configure(item_protection(siemens = 0.9))
 
@@ -52,9 +52,9 @@ CAPABILITIES(/obj/item/clothing/under/solgov/pt)
 	icon_state = "blackutility"
 	worn_state = "blackutility"
 	rolled_sleeves = 0
-	armor_spec = ""
 
 CAPABILITIES(/obj/item/clothing/under/utility)
+	configure(atom_rules(armor_spec = ""))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/utility/blue
@@ -87,14 +87,12 @@ CAPABILITIES(/obj/item/clothing/under/utility)
 	desc = "The utility uniform of the Nanotrasen Defense Force, made from biohazard resistant material. This one has silver trim."
 	icon_state = "blackutility_crew"
 	worn_state = "blackutility_crew"
-	armor_spec = "bio=10;rad=10"
 
 /obj/item/clothing/under/sifcop
 	name = "\improper SifGuard law enforcement uniform"
 	desc = "A sturdy law enforcement uniform typical of Vir's civilian law enforcement officers."
 	icon_state = "sifcop"
 	worn_state = "sifcop"
-	armor_spec = "melee=10" //Equivalent to security officer's jumpsuit
 	rolled_sleeves = 0
 
 /obj/item/clothing/under/solgov/utility/sifguard_skirt
@@ -168,9 +166,9 @@ CAPABILITIES(/obj/item/clothing/under/utility)
 	desc = "The utility uniform of the USDF Fleet, made from an insulated material."
 	icon_state = "navyutility"
 	worn_state = "navyutility"
-	armor_spec = "energy=10"
 
 CAPABILITIES(/obj/item/clothing/under/solgov/utility/fleet)
+	configure(atom_rules(armor_spec = "energy=10"))
 	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/under/solgov/utility/fleet/command
@@ -294,9 +292,9 @@ CAPABILITIES(/obj/item/clothing/under/solgov/utility/fleet)
 	desc = "A service uniform of some kind."
 	icon_state = "whiteservice"
 	worn_state = "whiteservice"
-	armor_spec = "melee=5;bio=5"
 
 CAPABILITIES(/obj/item/clothing/under/solgov/service)
+	configure(atom_rules(armor_spec = "melee=5;bio=5"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/solgov/service/sifguard
@@ -507,9 +505,9 @@ CAPABILITIES(/obj/item/clothing/under/solgov/service)
 	desc = "A high visibility jumpsuit made from heat and radiation resistant materials."
 	icon_state = "hazard"
 	worn_state = "hazard"
-	armor_spec = "bomb=20;rad=20"
 
 CAPABILITIES(/obj/item/clothing/under/hazard)
+	configure(atom_rules(armor_spec = "bomb=20;rad=20"))
 	configure(item_protection(siemens = 0.8, max_heat = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/under/sterile
@@ -517,9 +515,9 @@ CAPABILITIES(/obj/item/clothing/under/hazard)
 	desc = "A sterile white jumpsuit with medical markings. Protects against all manner of biohazards."
 	icon_state = "sterile"
 	worn_state = "sterile"
-	armor_spec = "bio=30"
 
 CAPABILITIES(/obj/item/clothing/under/sterile)
+	configure(atom_rules(armor_spec = "bio=30"))
 	configure(item_protection(permeability = 0.50))
 
 //SAARE
@@ -529,9 +527,9 @@ CAPABILITIES(/obj/item/clothing/under/sterile)
 	desc = "You shouldn't be seeing this."
 	icon = 'icons/inventory/uniform/item.dmi'
 	item_icons = list(slot_w_uniform_str = 'icons/inventory/uniform/mob.dmi')
-	armor_spec = "melee=5;laser=5;energy=5;bio=5;rad=5"
 
 CAPABILITIES(/obj/item/clothing/under/saare)
+	configure(atom_rules(armor_spec = "melee=5;laser=5;energy=5;bio=5;rad=5"))
 	configure(item_protection(siemens = 0.8))
 
 /obj/item/clothing/under/saare/utility
@@ -545,9 +543,9 @@ CAPABILITIES(/obj/item/clothing/under/saare)
 	desc = "The service uniform of Stealth Assault Enterprises, for low-ranking mercenaries."
 	icon_state = "terranservice"
 	worn_state = "terranservice"
-	armor_spec = "melee=5;bio=5"
 
 CAPABILITIES(/obj/item/clothing/under/saare/service)
+	configure(atom_rules(armor_spec = "melee=5;bio=5"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/saare/service/command
@@ -570,5 +568,13 @@ CAPABILITIES(/obj/item/clothing/under/saare/service)
 	desc = "A padded work suit belonging to the Galactic Survey Administration, SolGov's scientific exploration division. It has minor radiation shielding."
 	icon_state = "gsa_work"
 	worn_state = "gsa_work"
-	armor_spec = "rad=10"
 	rolled_sleeves = 0
+
+CAPABILITIES(/obj/item/clothing/under/solgov/utility/sifguard)
+	configure(atom_rules(armor_spec = "bio=10;rad=10"))
+
+CAPABILITIES(/obj/item/clothing/under/sifcop)
+	configure(atom_rules(armor_spec = "melee=10"))
+
+CAPABILITIES(/obj/item/clothing/under/gsa_work)
+	configure(atom_rules(armor_spec = "rad=10"))

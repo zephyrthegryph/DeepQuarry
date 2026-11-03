@@ -4,7 +4,6 @@
 	desc = "A high-tech dark red space suit helmet. Used for AI satellite maintenance."
 	icon_state = "void"
 	item_state_slots = list(slot_r_hand_str = "syndicate", slot_l_hand_str = "syndicate")
-	armor_spec = "melee=30;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=20;cold=60"
 
 
 	//Species-specific stuff.
@@ -20,7 +19,6 @@
 	icon_state = "void"
 	item_state_slots = list(slot_r_hand_str = "space_suit_syndicate", slot_l_hand_str = "space_suit_syndicate")
 	desc = "A high-tech dark red space suit. Used for AI satellite maintenance."
-	armor_spec = "melee=30;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=20;cold=60"
 	special_hood_handling = TRUE
 	sprite_sheets = ALL_SPRITE_SHEETS_SUIT_MOB
 
@@ -52,6 +50,7 @@ MSG_DEF_SELF(void/nothing_to_eject, "There is no tank or cooling unit inserted."
 MSG_DEF_SELF(void/no_helmet, "There is no helmet installed.")
 
 CAPABILITIES(/obj/item/clothing/suit/space/void)
+	configure(atom_rules(armor_spec = "melee=30;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=20;cold=60"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	configure(item_rules(actions_types = list(/datum/action/item_action/toggle_helmet), sprite_sheets_obj = SPECIES_SPRITE_SHEETS_SUIT_ITEM))
 	suit_storage(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS))
@@ -299,7 +298,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/void)
 	desc = "Hostile Environiment Cross-Kinetic Helmet: A helmet designed to withstand the wide variety of hazards from \[REDACTED\]. It wasn't enough for its last owner."
 	icon_state = "hostile_env"
 	item_state = "hostile_env"
-	armor_spec = "melee=60;bullet=35;laser=35;energy=15;bomb=55;bio=100;rad=20;cold=60"
 
 
 /obj/item/clothing/head/helmet/space/void/heck/apply_accessories(image/standing)
@@ -313,9 +311,9 @@ CAPABILITIES(/obj/item/clothing/suit/space/void)
 	desc = "Hostile Environment Cross-Kinetic Suit: A suit designed to withstand the wide variety of hazards from \[REDACTED\]. It wasn't enough for its last owner."
 	icon_state = "hostile_env"
 	item_state = "hostile_env"
-	armor_spec = "melee=60;bullet=35;laser=35;energy=15;bomb=55;bio=100;rad=20;cold=60"
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/heck)
+	configure(atom_rules(armor_spec = "melee=60;bullet=35;laser=35;energy=15;bomb=55;bio=100;rad=20;cold=60"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)))
 
 /obj/item/clothing/head/helmet/space/void/syndicate_contract
@@ -323,10 +321,10 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/heck)
 	desc = "A free helmet, gifted you by your new not-quite-corporate master!"
 	icon_state = "syndicate-contract"
 	item_state = "syndicate-contract"
-	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=35;bio=100;rad=60;cold=60"
 	camera_networks = list(NETWORK_MERCENARY)
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/syndicate_contract)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=35;bio=100;rad=60;cold=60"))
 	configure(item_protection(siemens = 0.6))
 
 /obj/item/clothing/suit/space/void/syndicate_contract
@@ -334,9 +332,9 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/syndicate_contract)
 	desc = "A free suit, gifted you by your new not-quite-corporate master!"
 	icon_state = "syndicate-contract"
 	item_state = "syndicate-contract"
-	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=35;bio=100;rad=60;cold=60"
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/syndicate_contract)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=35;bio=100;rad=60;cold=60"))
 	configure(item_protection(siemens = 0.6))
 
 /obj/item/clothing/head/helmet/space/void/chrono
@@ -357,13 +355,13 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/syndicate_contract)
 	icon_state = "autoloksuit"
 	item_state = "autoloksuit"
 	item_state_slots = list(slot_r_hand_str = "space_suit_syndicate", slot_l_hand_str = "space_suit_syndicate")
-	armor_spec = "melee=15;bullet=5;laser=5;energy=5;bomb=5;bio=100;rad=80;cold=60"
 	breach_threshold = 6 //this thing is basically tissue paper
 	w_class = ITEMSIZE_NORMAL //if it's snug, high-tech, and made of relatively soft materials, it should be much easier to store!
 	sprite_sheets = ALL_SPRITE_SHEETS_SUIT_MOB
 	hood = /obj/item/clothing/head/helmet/space/void/autolok // autoinstall the helmet
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/autolok)
+	configure(atom_rules(armor_spec = "melee=15;bullet=5;laser=5;energy=5;bomb=5;bio=100;rad=80;cold=60"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	configure(item_rules(sprite_sheets_obj = TRAIT_NONE))
 	fits_as(FIT_NO_DIONA_VOX)
@@ -445,7 +443,6 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/autolok)
 
 
 /obj/item/clothing/suit/space
-	armor_spec = "cold=60"
 
 	can_breach = 0 //disabling breaching as a general mechanic
 
@@ -459,3 +456,6 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/autolok)
 /obj/item/clothing/head/helmet/space/void/heck/draw(datum/look/look)
 	..()
 	look.overlay(look_overlay_image(icon, "hostile_env_glass", appearance_flags = RESET_COLOR))
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/heck)
+	configure(atom_rules(armor_spec = "melee=60;bullet=35;laser=35;energy=15;bomb=55;bio=100;rad=20;cold=60"))

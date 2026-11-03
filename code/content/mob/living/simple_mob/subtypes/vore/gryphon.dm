@@ -23,8 +23,6 @@
 	friendly = list("beak-nudges", "purrs towards", "slobberlicks")
 	vore_bump_emote = "tries to quickly devour"
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0

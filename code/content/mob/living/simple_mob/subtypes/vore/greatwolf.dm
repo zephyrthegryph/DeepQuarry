@@ -9,8 +9,6 @@
 	icon_state = "whitewolf"
 	icon_rest = "whitewolf-rest"
 	has_eye_glow = TRUE
-	old_x = -48
-	old_y = 0
 	vis_height = 92
 	melee_damage_lower = 20
 	melee_damage_upper = 15

@@ -4,7 +4,6 @@
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "energynet"
 	anchored = TRUE
-	simulated = FALSE
 	invisibility = INVISIBILITY_ABSTRACT
 	flags = SLANDMARK_FLAG_AUTOSET // We generally want to use current area/turf as base.
 
@@ -48,6 +47,7 @@
 
 CAPABILITIES(/obj/effect/shuttle_landmark)
 	configure(movable_motion(unacidable = TRUE))
+	configure(atom_rules(simulated = FALSE))
 	setup(PROC_REF(register_landing))
 	after_init(0, then(PROC_REF(find_docking_controller)))
 	ref_one(nameof(docking_controller))

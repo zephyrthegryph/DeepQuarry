@@ -15,7 +15,7 @@
 	for(var/obj/machinery/camera/cam in range(severity_range,C))
 		if(is_valid_camera(cam))
 			if(prob(2*severity))
-				cam.take_damage(cam.max_integrity * (1 - cam.integrity_failure) + DAMAGE_PRECISION, BRUTE, MELEE)
+				cam.take_damage(cam.max_integrity * (1 - atom_rules_of(cam).integrity_failure) + DAMAGE_PRECISION, BRUTE, MELEE)
 			else
 				wires_cut(cam, WIRE_MAIN_POWER1)
 				if(prob(5*severity))

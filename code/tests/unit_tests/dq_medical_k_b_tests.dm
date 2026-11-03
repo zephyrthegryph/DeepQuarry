@@ -176,14 +176,14 @@
 
 /datum/unit_test/dq_k_b_k5_germ_writer/Run()
 	var/obj/item/I = allocate(/obj/item)
-	I.germ_level = 10
+	I.set_germs(10)
 	var/datum/reagent/R = SSchemistry.ready().chemical_reagents[REAGENT_ID_STERILIZINE]
 	TEST_ASSERT_NOTNULL(R, "setup: sterilizine exists")
 	var/old_volume = R.volume
 	R.set_volume(1)
 	R.touch_obj(I)
 	R.set_volume(old_volume)
-	TEST_ASSERT_EQUAL(I.germ_level, 0, "sterilizine cleans an object to zero, never below")
+	TEST_ASSERT_EQUAL(I.germs(), 0, "sterilizine cleans an object to zero, never below")
 	var/obj/item/organ/internal/heart/O = allocate(/obj/item/organ/internal/heart)
 	O.germ_level = 0
 	O.adjust_germ_level(INFECTION_LEVEL_MAX * 2)

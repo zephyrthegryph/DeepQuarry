@@ -519,6 +519,8 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 // itself rather than scattered across is_valid overrides on every list-shaped pref.
 /datum/preference/proc/validate(datum/preferences/preferences, value)
 	SHOULD_NOT_SLEEP(TRUE)
+	if(is_placeholder_choice(value)) // an abstract base type's placeholder is never a saved value
+		return FALSE
 	return is_valid(value)
 
 /// Returns data to be sent to users in the menu

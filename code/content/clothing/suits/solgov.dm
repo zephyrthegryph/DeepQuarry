@@ -12,11 +12,11 @@
 	icon_state = "blackservice"
 	item_state = "blackservice"
 	item_state_slots = list(slot_r_hand_str = "suit_black", slot_l_hand_str = "suit_black")
-	armor_spec = ""
 	valid_accessory_slots = (ACCESSORY_SLOT_ARMBAND|ACCESSORY_SLOT_MEDAL|ACCESSORY_SLOT_INSIGNIA|ACCESSORY_SLOT_RANK|ACCESSORY_SLOT_DEPT)
 	restricted_accessory_slots = (ACCESSORY_SLOT_ARMBAND)
 
 CAPABILITIES(/obj/item/clothing/suit/storage/solgov/service)
+	configure(atom_rules(armor_spec = ""))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_DETECTIVE, /obj/item/clothing/head/beret))
 	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 	configure(item_protection(siemens = 0.9))
@@ -185,11 +185,11 @@ CAPABILITIES(/obj/item/clothing/suit/storage/solgov/service)
 	desc = "A uniform dress jacket, fancy."
 	icon_state = "sgdress_xpl"
 	item_state = "sgdress_xpl"
-	armor_spec = ""
 	valid_accessory_slots = (ACCESSORY_SLOT_MEDAL|ACCESSORY_SLOT_RANK)
 	restricted_accessory_slots = (ACCESSORY_SLOT_ARMBAND)
 
 CAPABILITIES(/obj/item/clothing/suit/storage/solgov/dress)
+	configure(atom_rules(armor_spec = ""))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret))
 	configure(item_worn(covers = UPPER_TORSO|ARMS))
 	configure(item_protection(siemens = 0.9))
@@ -245,10 +245,10 @@ CAPABILITIES(/obj/item/clothing/suit/storage/solgov/dress)
 	item_state = "blackdress"
 	icon = 'icons/inventory/suit/item.dmi'
 	icon_override = 'icons/inventory/suit/mob.dmi'
-	armor_spec = ""
 	valid_accessory_slots = (ACCESSORY_SLOT_MEDAL|ACCESSORY_SLOT_RANK)
 
 CAPABILITIES(/obj/item/clothing/suit/dress/solgov)
+	configure(atom_rules(armor_spec = ""))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret))
 	configure(item_worn(covers = UPPER_TORSO|ARMS))
 	configure(item_protection(siemens = 0.9))
@@ -279,19 +279,16 @@ CAPABILITIES(/obj/item/clothing/suit/dress/solgov)
 	icon_state = "coatec"
 	icon = 'icons/inventory/suit/item.dmi'
 	icon_override = 'icons/inventory/suit/mob.dmi'
-	armor_spec = "melee=25;bullet=10;laser=5;energy=10;bomb=20;rad=10;cold=40"
 	valid_accessory_slots = (ACCESSORY_SLOT_INSIGNIA|ACCESSORY_SLOT_RANK)
 
 /obj/item/clothing/suit/storage/hooded/wintercoat/solgov/army
 	name = "marine winter coat"
 	icon_state = "coatar"
-	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20;cold=40"
 	valid_accessory_slots = (ACCESSORY_SLOT_INSIGNIA|ACCESSORY_SLOT_RANK)
 
 /obj/item/clothing/suit/storage/hooded/wintercoat/solgov/fleet
 	name = "fleet winter coat"
 	icon_state = "coatfl"
-	armor_spec = "melee=20;bullet=10;laser=10;energy=20;bomb=20;rad=10;cold=40"
 	valid_accessory_slots = (ACCESSORY_SLOT_INSIGNIA)
 
 /obj/item/clothing/suit/storage/toggle/dress
@@ -359,10 +356,10 @@ CAPABILITIES(/obj/item/clothing/suit/storage/eio_jacket)
 	item_state = "terrandress"
 	icon = 'icons/inventory/suit/item.dmi'
 	icon_override = 'icons/inventory/suit/mob.dmi'
-	armor_spec = ""
 	valid_accessory_slots = (ACCESSORY_SLOT_MEDAL|ACCESSORY_SLOT_RANK)
 
 CAPABILITIES(/obj/item/clothing/suit/dress/saare)
+	configure(atom_rules(armor_spec = ""))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret))
 	configure(item_worn(covers = UPPER_TORSO|ARMS))
 	configure(item_protection(siemens = 0.9))
@@ -385,3 +382,12 @@ CAPABILITIES(/obj/item/clothing/suit/dress/saare)
 	desc = "A black Ares Navy dress cloak with royal detailing. Smells like ceremony."
 	icon_state = "terrandress_comm"
 	item_state = "terrandress_comm"
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/solgov)
+	configure(atom_rules(armor_spec = "melee=25;bullet=10;laser=5;energy=10;bomb=20;rad=10;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/solgov/army)
+	configure(atom_rules(armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20;cold=40"))
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/solgov/fleet)
+	configure(atom_rules(armor_spec = "melee=20;bullet=10;laser=10;energy=20;bomb=20;rad=10;cold=40"))

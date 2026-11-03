@@ -3,18 +3,17 @@
 	desc = "A special helmet designed for work in a hazardous, low pressure environment. This model sacrifices mobility for even more armor."
 	icon_state = "capvoid"
 	item_state_slots = list(slot_r_hand_str = "sec_helm", slot_l_hand_str = "sec_helm")
-	armor_spec = "melee=60;bullet=35;laser=35;energy=15;bomb=55;bio=100;rad=20;cold=60"
 
 /obj/item/clothing/suit/space/void/captain
 	name = "\improper manager armor"
 	desc = "A special suit that protects against hazardous, low pressure environments. This model sacrifices mobility for even more armor."
 	icon_state = "capsuit_void"
 	item_state_slots = list(slot_r_hand_str = "sec_voidsuit", slot_l_hand_str = "sec_voidsuit")
-	armor_spec = "melee=60;bullet=35;laser=35;energy=15;bomb=55;bio=100;rad=20;cold=60"
 	breach_threshold = 14 //These are kinda thicc
 	resilience = 0.15 //Armored
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/captain)
+	configure(atom_rules(armor_spec = "melee=60;bullet=35;laser=35;energy=15;bomb=55;bio=100;rad=20;cold=60"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1.5)))
 
 /obj/item/clothing/head/helmet/space/void/security/prototype
@@ -53,3 +52,6 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/merc/odst)
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/merc/odst)
 	fits_anyone()
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/captain)
+	configure(atom_rules(armor_spec = "melee=60;bullet=35;laser=35;energy=15;bomb=55;bio=100;rad=20;cold=60"))

@@ -25,7 +25,6 @@
 	suit_type = "augmented suit"
 	desc = "The last suit you'll ever wear."
 	icon_state = "internalaffairs_rig"
-	armor_spec = ""
 	offline_slowdown = 0
 	offline_vision_restriction = 0
 
@@ -37,6 +36,7 @@
 	boot_type = null
 
 CAPABILITIES(/obj/item/rig/internalaffairs)
+	configure(atom_rules(armor_spec = ""))
 	configure(item_worn(worn_factors = TRAIT_NONE))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, /obj/item/storage))
 	configure(item_protection(siemens = 0.9))
@@ -65,7 +65,6 @@ CAPABILITIES(/obj/item/rig/internalaffairs)
 	suit_type = "industrial hardsuit"
 	desc = "A heavy, powerful hardsuit used by construction crews and mining corporations."
 	icon_state = "engineering_rig"
-	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=100;rad=50"
 	offline_slowdown = 5
 	offline_vision_restriction = 2
 	emp_protection = -20
@@ -78,6 +77,7 @@ CAPABILITIES(/obj/item/rig/internalaffairs)
 	req_one_access = list()
 
 CAPABILITIES(/obj/item/rig/industrial)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=100;rad=50"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_BAYSUIT))
 	configure(item_protection(siemens = 0.75))
@@ -100,7 +100,6 @@ CAPABILITIES(/obj/item/rig/industrial)
 	suit_type = "EVA hardsuit"
 	desc = "A light hardsuit for repairs and maintenance to the outside of habitats and vessels."
 	icon_state = "eva_rig"
-	armor_spec = "melee=30;bullet=10;laser=20;energy=25;bomb=20;bio=100;rad=100"
 	offline_slowdown = 0.5
 	offline_vision_restriction = 1
 
@@ -111,6 +110,7 @@ CAPABILITIES(/obj/item/rig/industrial)
 	req_one_access = list()
 
 CAPABILITIES(/obj/item/rig/eva)
+	configure(atom_rules(armor_spec = "melee=30;bullet=10;laser=20;energy=25;bomb=20;bio=100;rad=100"))
 	configure(item_worn(worn_factors = TRAIT_NONE))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_CE, /obj/item/storage))
 	configure(item_protection(siemens = 0.75, max_heat = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE))
@@ -141,7 +141,6 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/eva)
 	suit_type = "advanced hardsuit" // Hardsuit
 	desc = "An advanced hardsuit that protects against hazardous, low pressure environments. Shines with a high polish." // Hardsuit
 	icon_state = "ce_rig"
-	armor_spec = "melee=40;bullet=10;laser=30;energy=25;bomb=40;bio=100;rad=100"
 	offline_slowdown = 0
 	offline_vision_restriction = 0
 	rigsuit_max_pressure = 20 * ONE_ATMOSPHERE			  // Max pressure the rig protects against when sealed
@@ -155,6 +154,7 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/eva)
 	req_one_access = list()
 
 CAPABILITIES(/obj/item/rig/ce)
+	configure(atom_rules(armor_spec = "melee=40;bullet=10;laser=30;energy=25;bomb=40;bio=100;rad=100"))
 	configure(item_worn(worn_factors = TRAIT_NONE))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_ENGINEERING, POCKET_CE, POCKET_BAYSUIT))
 	configure(item_protection(siemens = 0.75, max_heat = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE))
@@ -196,7 +196,6 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/ce)
 	suit_type = "hazmat hardsuit"
 	desc = "An Anomalous Material Interaction hardsuit that protects against the strangest energies the universe can throw at it."
 	icon_state = "science_rig"
-	armor_spec = "melee=45;bullet=5;laser=45;energy=80;bomb=100;bio=100;rad=100"
 	offline_vision_restriction = 1
 
 	helm_type = /obj/item/clothing/head/helmet/space/rig/hazmat
@@ -207,6 +206,7 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/ce)
 	req_one_access = list()
 
 CAPABILITIES(/obj/item/rig/hazmat)
+	configure(atom_rules(armor_spec = "melee=45;bullet=5;laser=45;energy=80;bomb=100;bio=100;rad=100"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_XENOARC, POCKET_BAYSUIT))
 	configure(item_protection(siemens = 0.75))
@@ -238,7 +238,6 @@ CAPABILITIES(/obj/item/rig/hazmat)
 	suit_type = "rescue hardsuit"
 	desc = "A durable suit designed for medical rescue in high risk areas."
 	icon_state = "medical_rig"
-	armor_spec = "melee=30;bullet=15;laser=20;energy=60;bomb=30;bio=100;rad=100"
 	offline_vision_restriction = 1
 	seal_delay = 5
 
@@ -248,6 +247,7 @@ CAPABILITIES(/obj/item/rig/hazmat)
 	req_one_access = list()
 
 CAPABILITIES(/obj/item/rig/medical)
+	configure(atom_rules(armor_spec = "melee=30;bullet=15;laser=20;energy=60;bomb=30;bio=100;rad=100"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MEDICAL, POCKET_BAYSUIT, /obj/item/roller, /obj/item/storage/firstaid))
 	configure(item_protection(siemens = 0.75))
@@ -272,7 +272,6 @@ CAPABILITIES(/obj/item/rig/medical)
 	suit_type = "hazard hardsuit"
 	desc = "A Security hardsuit designed for prolonged EVA in dangerous environments."
 	icon_state = "hazard_rig"
-	armor_spec = "melee=60;bullet=40;laser=30;energy=15;bomb=60;bio=100;rad=30"
 	offline_slowdown = 1.5
 	offline_vision_restriction = 1
 
@@ -282,6 +281,7 @@ CAPABILITIES(/obj/item/rig/medical)
 	req_one_access = list()
 
 CAPABILITIES(/obj/item/rig/hazard)
+	configure(atom_rules(armor_spec = "melee=60;bullet=40;laser=30;energy=15;bomb=60;bio=100;rad=30"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, POCKET_BAYSUIT))
 	configure(item_protection(siemens = 0.7))
@@ -314,13 +314,13 @@ CAPABILITIES(/obj/item/rig/hazard)
 	offline_vision_restriction = 0
 	rigsuit_max_pressure = 20 * ONE_ATMOSPHERE			  // Max pressure the rig protects against when sealed
 	rigsuit_min_pressure = 0							  // Min pressure the rig protects against when sealed
-	armor_spec = "melee=40;bullet=10;laser=30;energy=55;bomb=70;bio=100;rad=100"
 	chest_type = /obj/item/clothing/suit/space/rig/focalpoint
 	helm_type = /obj/item/clothing/head/helmet/space/rig/focalpoint
 	boot_type = /obj/item/clothing/shoes/magboots/rig/ce/focalpoint
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/focalpoint
 
 CAPABILITIES(/obj/item/rig/focalpoint)
+	configure(atom_rules(armor_spec = "melee=40;bullet=10;laser=30;energy=55;bomb=70;bio=100;rad=100"))
 	configure(item_worn(worn_factors = TRAIT_NONE))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, /obj/item/storage/backpack))
 	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
@@ -378,7 +378,6 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/focalpoint)
 	suit_type = "\improper Hephaestus hardsuit"
 	cell_type = /obj/item/cell/super
 
-	armor_spec = "melee=70;bullet=70;laser=70;energy=50;bomb=60;bio=100;rad=20"
 
 	chest_type = /obj/item/clothing/suit/space/rig/hephaestus
 	helm_type = /obj/item/clothing/head/helmet/space/rig/hephaestus
@@ -441,7 +440,6 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/focalpoint)
 
 	offline_slowdown = 1
 	offline_vision_restriction = 2
-	armor_spec = "melee=20;bullet=5;laser=10;energy=5;bomb=35;bio=100;rad=20"
 
 
 
@@ -487,7 +485,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/rig/zero)
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/baymed
 
 	// speedy paper
-	armor_spec = "melee=10;bullet=5;laser=10;energy=5;bomb=25;bio=100;rad=20"
 
 
 
@@ -552,7 +549,6 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/baymed)
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/bayeng
 
 	offline_slowdown = 5 // very bulky
-	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=100;rad=50"
 
 
 
@@ -619,9 +615,9 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/bayeng)
 
 	offline_slowdown = 4 // bulky
 	offline_vision_restriction = 2 // doesn't even have a way to see out without power
-	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=100;rad=50"
 
 CAPABILITIES(/obj/item/rig/pathfinder)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=100;rad=50"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 
 /obj/item/rig/pathfinder//equipped
@@ -667,7 +663,6 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/pathfinder)
 /obj/item/rig/industrial/vendor
 	name = "discount industrial suit control module"
 	desc = "A heavy, powerful hardsuit used by construction crews and mining corporations. This is a mass production model with reduced armor."
-	armor_spec = "melee=50;bullet=10;laser=20;energy=15;bomb=30;bio=100;rad=50"
 
 
 //Hardsuits
@@ -720,7 +715,6 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots/rig/ch)
 	icon_state = "pursuit_rig"
 	suit_type = "pursuit hardsuit"
 	desc = "A Security hardsuit designed for chasing down the grey tide."
-	armor_spec = "melee=60;bullet=40;laser=40;energy=25;bomb=50;bio=100;rad=30"
 	offline_slowdown = 3
 	offline_vision_restriction = 1
 	helm_type = /obj/item/clothing/head/helmet/space/rig/ch/pursuit
@@ -729,6 +723,7 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots/rig/ch)
 	req_one_access = list()
 
 CAPABILITIES(/obj/item/rig/ch/pursuit)
+	configure(atom_rules(armor_spec = "melee=60;bullet=40;laser=40;energy=25;bomb=50;bio=100;rad=30"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_STORAGE, POCKET_EXPLO))
 	configure(item_protection(siemens = 0.7))
@@ -854,6 +849,7 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots/rig/ce/focalpoint)
 	fits_as(FIT_STANDARD)
 
 CAPABILITIES(/obj/item/rig/hephaestus)
+	configure(atom_rules(armor_spec = "melee=70;bullet=70;laser=70;energy=50;bomb=60;bio=100;rad=20"))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_ENGINEERING, POCKET_BAYSUIT, /obj/item/storage/firstaid, /obj/item/roller))
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/hephaestus)
@@ -869,13 +865,19 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/hephaestus)
 	fits_as(FIT_STANDARD)
 
 CAPABILITIES(/obj/item/rig/zero)
+	configure(atom_rules(armor_spec = "melee=20;bullet=5;laser=10;energy=5;bomb=35;bio=100;rad=20"))
 	configure(item_worn(worn_factors = TRAIT_NONE))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_BAYSUIT))
 
 CAPABILITIES(/obj/item/rig/baymed)
+	configure(atom_rules(armor_spec = "melee=10;bullet=5;laser=10;energy=5;bomb=25;bio=100;rad=20"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = -0.5)))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MEDICAL, POCKET_BAYSUIT, /obj/item/roller))
 
 CAPABILITIES(/obj/item/rig/bayeng)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=100;rad=50"))
 	configure(item_worn(worn_factors = TRAIT_NONE))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ALL_TANKS, POCKET_MINING, POCKET_CE, POCKET_BAYSUIT))
+
+CAPABILITIES(/obj/item/rig/industrial/vendor)
+	configure(atom_rules(armor_spec = "melee=50;bullet=10;laser=20;energy=15;bomb=30;bio=100;rad=50"))

@@ -10,7 +10,6 @@
 	// 16 integrity with a 6-point "broken" buffer: 10 damage to break it into a passable
 	// stub (integrity_failure), then 6 more to clear it entirely (atom_destruction).
 	max_integrity = 16
-	integrity_failure = 0.375
 	var/destroyed = FALSE
 
 /// The look (the draw sweep: from its template).
@@ -19,6 +18,7 @@
 	look.state("[initial(icon_state)][destroyed ? "-b" : ""]")
 
 CAPABILITIES(/obj/structure/grille)
+	configure(atom_rules(integrity_failure = 0.375))
 	on_notice(/datum/notice/atom_broken, then(PROC_REF(grille_broken)))
 	configure(obj_rules(explosion_resistance = 1))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
@@ -257,7 +257,6 @@ CAPABILITIES(/obj/structure/grille/broken)
 	desc = "A matrice built out of an unknown material, with some sort of force field blocking air around it."
 	icon_state = "grillecult"
 	max_integrity = 46 // Strong enough to avoid people breaking in too easily (40 + 6 broken buffer).
-	integrity_failure = 0.13
 	can_atmos_pass = ATMOS_PASS_NO // Make sure air doesn't drain.
 
 /obj/structure/grille/broken/cult
@@ -274,3 +273,6 @@ CAPABILITIES(/obj/structure/grille/broken)
 /obj/structure/grille/occult_act(mob/living/user)
 	replace_with(src, /obj/structure/grille/cult)
 	return TRUE
+
+CAPABILITIES(/obj/structure/grille/cult)
+	configure(atom_rules(integrity_failure = 0.13))

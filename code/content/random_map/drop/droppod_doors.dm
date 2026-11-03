@@ -70,11 +70,11 @@ CAPABILITIES(/obj/structure/droppod_door)
 
 	// Destroy turf contents.
 	for(var/obj/O in turf_contents_of_type(origin, /obj))
-		if(!O.simulated)
+		if(!atom_rules_of(O).simulated)
 			continue
 		spent(O) //crunch
 	for(var/obj/O in turf_contents_of_type(T, /obj))
-		if(!O.simulated)
+		if(!atom_rules_of(O).simulated)
 			continue
 		spent(O) //crunch
 

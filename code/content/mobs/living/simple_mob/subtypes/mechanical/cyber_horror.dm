@@ -16,7 +16,6 @@
 	movement_cooldown = 3
 	movement_sound = SFX_EFFECTS_HOUNDSTEP
 	// To promote a more diverse weapon selection.
-	armor_spec = "melee=25;bullet=25;laser=-20;bio=100;rad=100"
 
 
 	response_help = "pokes"
@@ -29,6 +28,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror)
+	configure(atom_rules(armor_spec = "melee=25;bullet=25;laser=-20;bio=100;rad=100"))
 	configure(mob_rules(faction = "synthtide"))
 	configure(living_rules(say_list_type = /datum/say_list/cyber_horror))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
@@ -54,7 +54,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror)
 	icon_state = "plasma_cyber_horror"
 	icon_dead = "plasma_cyber_horror_dead"
 
-	armor_spec = "melee=40;bullet=-10;laser=40;bio=100;rad=100"
 	endurance = 75
 
 	melee_damage_lower = 5
@@ -68,6 +67,7 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror)
 	var/poison_type = "neurophage_nanites"
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/plasma_cyber_horror)
+	configure(atom_rules(armor_spec = "melee=40;bullet=-10;laser=40;bio=100;rad=100"))
 	configure(living_rules(say_list_type = /datum/say_list/cyber_horror/plasma))
 
 /datum/say_list/cyber_horror/plasma
@@ -109,7 +109,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/plasma_cyber_horror)
 
 
 // You do NOT Want to get in touchy range of this thing.
-	armor_spec = "melee=75;bullet=-10;laser=-25;bio=100;rad=100"
 
 
 // Leaping is a special attack, so these values determine when leap can happen.
@@ -122,6 +121,7 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/plasma_cyber_horror)
 	var/leap_sound = SFX_MOB_ROBOTS_CYBER_HORROR_CHANGELINGLEAP
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/ling_cyber_horror)
+	configure(atom_rules(armor_spec = "melee=75;bullet=-10;laser=-25;bio=100;rad=100"))
 	configure(living_rules(say_list_type = /datum/say_list/cyber_horror/ling))
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 2.5))
@@ -196,9 +196,9 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/ling_cyber_horror)
 	icon_state = "vox_cyber_horror"
 	icon_dead = "vox_cyber_horror_dead"
 
-	armor_spec = "melee=40;bullet=30;laser=30;bio=100;rad=100"
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/vox)
+	configure(atom_rules(armor_spec = "melee=40;bullet=30;laser=30;bio=100;rad=100"))
 	configure(living_rules(say_list_type = /datum/say_list/cyber_horror/vox))
 
 /datum/say_list/cyber_horror/vox
@@ -290,9 +290,9 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/tajaran)
 	projectiletype = /obj/item/projectile/arc/blue_energy
 	projectilesound = SFX_WEAPONS_PLASMANEW
 
-	armor_spec = "melee=-30;bullet=10;laser=10;bio=100;rad=100"
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/grey)
+	configure(atom_rules(armor_spec = "melee=-30;bullet=10;laser=10;bio=100;rad=100"))
 	configure(living_rules(say_list_type = /datum/say_list/cyber_horror/grey))
 
 /datum/say_list/cyber_horror/grey

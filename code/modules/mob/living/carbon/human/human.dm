@@ -839,24 +839,9 @@ CAPABILITIES(/datum/prompt/text/hud_comment)
 		revoke(src, granted_verb(/mob/living/carbon/human/proc/morph), verb_source(VERB_SOURCE_ADMIN)) // only an admin hand grants it
 		return
 
-	// hair
-	var/list/all_hairs = subtypesof(/datum/sprite_accessory/hair)
-	var/list/hairs = list()
-
-	// loop through potential hairs
-	for(var/x in all_hairs)
-		var/datum/sprite_accessory/hair/H = new x // create new hair datum based on type x
-		hairs.Add(H.name) // add hair name to hairs
-		spent(H) // delete the hair after it's all done
-
-	// facial hair
-	var/list/all_fhairs = subtypesof(/datum/sprite_accessory/facial_hair)
-	var/list/fhairs = list()
-
-	for(var/x in all_fhairs)
-		var/datum/sprite_accessory/facial_hair/H = new x
-		fhairs.Add(H.name)
-		spent(H)
+	// Offered from the built style lists, which hold no abstract placeholder styles.
+	var/list/hairs = assoc_to_keys(GLOB.hair_styles_list)
+	var/list/fhairs = assoc_to_keys(GLOB.facial_hair_styles_list)
 
 	// Every question can be skipped (cancel keeps what you have).
 	var/datum/morph_review/review = new
@@ -1165,9 +1150,9 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 
 /mob/living/carbon/human/proc/increase_germ_level(n)
 	if(get_equipped_item(SLOT_ID_GLOVES))
-		get_equipped_item(SLOT_ID_GLOVES).germ_level += n
+		get_equipped_item(SLOT_ID_GLOVES).adjust_germ_level(n)
 	else
-		germ_level += n
+		adjust_germ_level(n)
 
 /mob/living/carbon/human/revive()
 
@@ -1275,14 +1260,14 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 	//Always do hands (or whatever's on our hands)
 	if(get_equipped_item(SLOT_ID_GLOVES))
 		get_equipped_item(SLOT_ID_GLOVES).wash(clean_types)
-		get_equipped_item(SLOT_ID_GLOVES).germ_level = 0
+		get_equipped_item(SLOT_ID_GLOVES).set_germs(0)
 	else
 		sparse_set_or(src, bloody_hands, 0, 0)
-		germ_level = 0
+		set_germs(0)
 
 	if(get_equipped_item(SLOT_ID_SHOES))
 		get_equipped_item(SLOT_ID_SHOES).wash(clean_types)
-		get_equipped_item(SLOT_ID_SHOES).germ_level = 0
+		get_equipped_item(SLOT_ID_SHOES).set_germs(0)
 	else if(feet_blood_color || LAZYLEN(feet_blood_DNA))
 		clear_feet_blood_DNA()
 		set_feet_blood_DNA(null)

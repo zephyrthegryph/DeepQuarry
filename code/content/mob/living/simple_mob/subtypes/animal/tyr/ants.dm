@@ -128,12 +128,12 @@ CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/agate)
 	name = "quartz metal ant"
 	icon_state = "quartz_ant"
 	icon_living = "quartz_ant"
-	armor_spec = "melee=80;bullet=80;bio=100;rad=100"
 	harvest_results = list(
 		/obj/item/stack/material/quartz = 10
 		)
 
 CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants/quartz)
+	configure(atom_rules(armor_spec = "melee=80;bullet=80;bio=100;rad=100"))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/tyrant_radiation, butchery_loot = list( /obj/item/stack/material/quartz = 18 ), meat_amount = 3))
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/diamond //slower, tankier, more damage
@@ -377,7 +377,6 @@ TYPE_TABLE(/obj/structure/mob_spawner/ant_hill, mob_spawner_types, list( \
 	simultaneous_spawns = 2
 
 /obj/effect/ant_structure
-	uses_integrity = TRUE
 	name = "organic structure"
 	desc = "A creation of metal ants."
 	icon = 'icons/obj/tribal_gear.dmi'
@@ -387,6 +386,7 @@ TYPE_TABLE(/obj/structure/mob_spawner/ant_hill, mob_spawner_types, list( \
 	max_integrity = 15 //1 thwack with sword, 2 with spear
 
 CAPABILITIES(/obj/effect/ant_structure)
+	configure(atom_rules(uses_integrity = TRUE))
 	op("hit_ant_structure", item(/obj/item), label("Interaction hit ant structure"), then(PROC_REF(interaction_hit_ant_structure)))
 
 /// Old attackby: any item hits the structure, welders burn it (afterattack still follows, as before).

@@ -5,7 +5,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/laser)
 	configure(mob_kind(attack_cooldown = 2 SECONDS))
 
 /mob/living/simple_mob/humanoid/merc
-	armor_spec = "melee=20;bullet=30;laser=30;energy=10;bomb=10;bio=100;rad=100" //Leave the 150 health value to reflect carbon players, slightly reduced melee armor because fuck it.
 
 /mob/living/simple_mob/humanoid/merc/melee/sword
 	attack_sound = SFX_WEAPONS_BLADE1 //Use the proper sword noise
@@ -33,11 +32,12 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/rifle)
 	reload_max = 20
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/merc/voxpirate/ranged/suppressor)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/vox/suppressor)))
+	configure(atom_rules(armor_spec = "melee=30;bullet=50;laser=60;energy=30;bomb=35;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/vox/suppressor)))
 	configure(mob_kind(attack_cooldown = 5))
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/humanoid/merc)
+	configure(atom_rules(armor_spec = "melee=20;bullet=30;laser=30;energy=10;bomb=10;bio=100;rad=100"))
 	configure(mob_rules(faction = FACTION_SYNDICATE))
 	configure(living_rules(say_list_type = /datum/say_list/merc))
 	immune_to_incapacitation()

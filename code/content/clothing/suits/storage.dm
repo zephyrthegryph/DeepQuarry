@@ -96,6 +96,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/toggle)
 	var/icon_nobadge
 
 CAPABILITIES(/obj/item/clothing/suit/storage/vest)
+	configure(atom_rules(armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))
 	configure(item_worn(covers = CHEST, flags = THICKMATERIAL))
 	configure(item_protection(cold_parts = CHEST, min_cold = ARMOR_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = CHEST, max_heat = ARMOR_MAX_HEAT_PROTECTION_TEMPERATURE, siemens = 0.6))
@@ -132,6 +133,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/vest)
 	icon_state = "ladiesredvictoriancoat"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/vest/heavy)
+	configure(atom_rules(armor_spec = "melee=50;bullet=40;laser=40;energy=25;bomb=25"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
 	owns_one(nameof(pockets), starts = /obj/item/storage/internal, starts_set = list("max_storage_space" = ITEMSIZE_COST_SMALL * 4)) // four pockets
 

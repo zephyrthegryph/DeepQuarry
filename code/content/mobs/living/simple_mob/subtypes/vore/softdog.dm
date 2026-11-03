@@ -181,7 +181,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/woof)
 
 /mob/living/simple_mob/vore/woof/hostile/horrible
 
-	armor_spec = "melee=75;bullet=75;laser=75;energy=75;bomb=75;bio=75;rad=75"
 
 	projectiletype = /obj/item/projectile/awoo_missile/heavy
 	projectilesound = SFX_VOICE_LONG_AWOO
@@ -296,3 +295,6 @@ GLOBAL_VAR_INIT(woof_current, 0)
 CAPABILITIES(/mob/living/simple_mob/vore/woof/hostile/aweful)
 	configure(living_rules(delete_on_death = TRUE))
 	setup(PROC_REF(join_woof_population))
+
+CAPABILITIES(/mob/living/simple_mob/vore/woof/hostile/horrible)
+	configure(atom_rules(armor_spec = "melee=75;bullet=75;laser=75;energy=75;bomb=75;bio=75;rad=75"))

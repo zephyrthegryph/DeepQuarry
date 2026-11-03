@@ -57,7 +57,6 @@
 	icon_state_closed = "ruggedplus-closed"
 
 	max_integrity = 300
-	integrity_failure = 1/3 // Stops working below 100 integrity.
 
 /obj/item/modular_computer/laptop/preset/custom_loadout/rugged/install_default_hardware()
 	..()
@@ -96,3 +95,6 @@
 	rel_set(src, nameof(card_slot), new/obj/item/computer_hardware/card_slot(src))
 	rel_set(src, nameof(battery_module), new/obj/item/computer_hardware/battery_module/lambda(src))
 	battery_module.charge_to_full()
+
+CAPABILITIES(/obj/item/modular_computer/laptop/preset/custom_loadout/rugged)
+	configure(atom_rules(integrity_failure = 1/3))

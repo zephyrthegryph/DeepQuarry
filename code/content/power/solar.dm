@@ -19,7 +19,6 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	// 12 integrity with a 2-point "broken" buffer: ~10 damage cracks it (atom_break),
 	// then any further hit shatters it into shards (atom_destruction).
 	max_integrity = 12
-	integrity_failure = 0.167
 	var/obscured = 0
 	var/sunfrac = 0
 	var/adir = SOUTH // actual dir
@@ -37,6 +36,7 @@ MSG_DEF(solar/glass_off, "You take the glass off the solar panel.", "%U% takes t
 // its exposure (cos^2 of its angle off the sun, 0 past 90 degrees, 0 obscured), summed by the controller into one persistent supply. A crowbar
 // takes the glass off; a hostile swing with anything strikes it.
 CAPABILITIES(/obj/machinery/power/solar)
+	configure(atom_rules(integrity_failure = 0.167))
 	on_notice(/datum/notice/machinery_broken, then(PROC_REF(solar_broken)))
 	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(prepare_reinforced_integrity))
@@ -269,7 +269,6 @@ CAPABILITIES(/obj/item/solar_assembly)
 	anchored = TRUE
 	density = TRUE
 	use_power = USE_POWER_IDLE
-	integrity_failure = 0.5
 	var/id = 0
 	var/cdir = 0
 	var/targetdir = 0		// target angle in manual tracking (since it updates every game minute)
@@ -406,6 +405,7 @@ CAPABILITIES(/obj/item/solar_assembly)
 // every machine service interval the controller keeps its links honest and steps a manual rotation (control_step()). A screwdriver takes it
 // apart into its frame.
 CAPABILITIES(/obj/machinery/power/solar_control)
+	configure(atom_rules(integrity_failure = 0.5))
 	setup(PROC_REF(prepare_panel_direction))
 	configure(uses_power(idle = 250))
 	membership(joins = REGISTRY_SOLAR_CONTROLS)

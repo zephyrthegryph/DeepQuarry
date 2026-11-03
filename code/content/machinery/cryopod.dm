@@ -296,7 +296,7 @@ CAPABILITIES(/obj/machinery/computer/cryopod)
 CAPABILITIES(/obj/machinery/cryopod)
 	configure(movable_motion(unacidable = TRUE))
 	setup(PROC_REF(find_control_computer))
-	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(cryopod_occupied))
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(cryopod_occupied))
 	op("cryopod_insert_grab", inputs(item(/obj/item/grab), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Put grabbed victim in"), needs(req(PROC_REF(can_take_occupant))), needs(req(PROC_REF(loading_passenger_allowed), silent = TRUE)), asks(/datum/prompt/yes_no, list("title" = "Cryopod", "question" = "Would you like to enter long-term storage?"), answerer = PROC_REF(loading_passenger), when = PROC_REF(loading_needs_consent), ends_on_no = TRUE), begins(PROC_REF(loading_message)), wait(2 SECONDS), then(PROC_REF(loading_done)))
 	op("cryopod_eject", menu(), label("Eject Pod"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_eject)))
 	op("cryopod_enter", menu(), label("Enter Pod"), needs(req_adjacent(), req_capable(), req(PROC_REF(self_entry_allowed), silent = TRUE), req(PROC_REF(can_enter))), starts(PROC_REF(self_entry_started)), wait(2 SECONDS), then(PROC_REF(interaction_enter)))
@@ -304,8 +304,11 @@ CAPABILITIES(/obj/machinery/cryopod)
 	ref_one(nameof(control_computer), /obj/machinery/computer/cryopod)
 	owns_one(nameof(announce), starts = /obj/item/radio/intercom, on_destroy = ON_DESTROY_CONTAINED)
 
+/// The despawn watch over an occupant: it stops once the pod is empty, and an occupant moving in starts it again (work_start() beside each time_entered stamp).
 /obj/machinery/cryopod/proc/work_step(datum/act/timer/A)
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
+	if(!occupant)
+		return PROCESS_KILL
 	if(occupant)
 		if(occupant.loc != src)
 			go_out(TRUE)
@@ -599,6 +602,7 @@ CAPABILITIES(/obj/machinery/cryopod)
 	to_chat(user, span_boldnotice("If you ghost, log out or close your client now, your character will shortly be permanently removed from the round."))
 
 	STAMP(src, time_entered, CLOCK_WORLD)
+	work_start(src) // the despawn watch runs while it is occupied
 
 	add_fingerprint(user)
 
@@ -667,6 +671,7 @@ CAPABILITIES(/obj/machinery/cryopod)
 	to_chat(M, span_boldnotice("If you ghost, log out or close your client now, your character will shortly be permanently removed from the round."))
 	set_occupant(M)
 	STAMP(src, time_entered, CLOCK_WORLD)
+	work_start(src) // the despawn watch runs while it is occupied
 	if(isliving(M) && applies_stasis)
 		var/mob/living/L = M
 		L.set_stasis(/datum/body_effect/stasis/total, src)

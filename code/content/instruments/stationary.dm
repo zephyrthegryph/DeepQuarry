@@ -58,9 +58,9 @@ CAPABILITIES(/obj/structure/musician)
 	icon_state = "minimoog"
 	anchored = TRUE
 	density = TRUE
-	integrity_failure = 0.25
 
 CAPABILITIES(/obj/structure/musician/piano)
+	configure(atom_rules(integrity_failure = 0.25))
 	configure(obj_rules(broken_icon = "pianobroken"))
 	climb()
 

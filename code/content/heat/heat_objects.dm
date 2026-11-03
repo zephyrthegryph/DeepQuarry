@@ -125,7 +125,7 @@
 
 /// One step of the overheating damage stream, through the damage pipeline.
 /obj/proc/apply_heat_damage(amount)
-	if(!uses_integrity || get_integrity() <= 0)
+	if(!atom_rules_of(src).uses_integrity || get_integrity() <= 0)
 		return
 	deal_damage(DAMAGE_THERMAL, amount, FIRE, flags = DAMAGE_PACKET_SILENT)
 

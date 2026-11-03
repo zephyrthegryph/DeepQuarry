@@ -135,9 +135,9 @@
 	icon = 'icons/inventory/accessory/item.dmi'
 	icon_state = "seccloak"
 	color = "#F13C00"
-	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"
 
 CAPABILITIES(/obj/item/clothing/suit/armor/firecloak)
+	configure(atom_rules(armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"))
 	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
 	configure(item_protection(cold_parts = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
 
@@ -236,10 +236,10 @@ CAPABILITIES(/obj/item/material/twohanded/sledgehammer/gravity)
 	desc = "A strange cloak, something about it feels off."
 	icon = 'icons/inventory/accessory/item.dmi'
 	icon_state = "seccloak" //custom sprite for this for sure.
-	armor_spec = ""
 	block_chance = 35
 
 CAPABILITIES(/obj/item/clothing/suit/armor/alien/dreamercloak)
+	configure(atom_rules(armor_spec = ""))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = -0.5)))
 
 //uggg, why isnt this apart of the base material melee weapons

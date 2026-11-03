@@ -335,6 +335,8 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	. = ..()
 	if(enter_message && isliving(AM))
 		to_chat(AM, enter_message)
+	if(length(SSshuttles?.waiting_for_passengers))
+		SSshuttles.area_entered(src, AM)
 
 	var/mob/M = AM
 	if(!ismob(M) || !M.ckey)

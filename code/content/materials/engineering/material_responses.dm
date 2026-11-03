@@ -124,7 +124,8 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/examine/event = N
 	var/list/examine_text = event.texts
-	settle_cell_energy()
+	// Examine is a read: no settle_cell_energy() here. Settling charges the cell (set_charge() publishes, a rigged cell explodes),
+	// which nested a publish inside the examine delivery and made looking at a cell bank energy. Use settles it (material_cell_use_cost()).
 	var/datum/material/material = material()
 	if(!material)
 		return
@@ -254,7 +255,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 		return
 	if(material.antimicrobial_activity > 0)
 		affected.germ_level = max(0, affected.germ_level - material.antimicrobial_activity * 2)
-		target.germ_level = max(0, target.germ_level - material.antimicrobial_activity)
+		target.adjust_germ_level(-material.antimicrobial_activity)
 	if(material.hemostatic_activity >= 50)
 		affected.organ_clamp()
 		for(var/datum/affliction/wound/internal_bleeding/wound in affected.get_wounds())

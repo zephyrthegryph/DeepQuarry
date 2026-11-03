@@ -33,7 +33,7 @@
 		worn_protection_changed()
 	var/datum/material/structure = material_for_role(MATERIAL_ROLE_STRUCTURE) || material_for_role(MATERIAL_ROLE_FRAME) || material_for_role(MATERIAL_ROLE_BODY) || primary
 	if(max_integrity > 0 && total_amount > 0)
-		var/condition = uses_integrity ? get_integrity() / max_integrity : 1
+		var/condition = atom_rules_of(src).uses_integrity ? get_integrity() / max_integrity : 1
 		var/datum/material_template/reference_template = material_template_for_application(application_profile)
 		var/reference_id = MAT_STEEL
 		for(var/role in list(MATERIAL_ROLE_STRUCTURE, MATERIAL_ROLE_FRAME, MATERIAL_ROLE_BODY))
@@ -44,7 +44,7 @@
 		var/datum/material/reference = get_material_by_name(reference_id)
 		var/integrity_factor = clamp(structure.integrity / max(reference.integrity, 1), 0.2, 4)
 		set_max_integrity(max(1, round(initial(max_integrity) * integrity_factor)))
-		if(uses_integrity)
+		if(atom_rules_of(src).uses_integrity)
 			update_integrity(max_integrity * condition)
 	primary.dq_apply_material_behaviors(src)
 	switch(application_profile)

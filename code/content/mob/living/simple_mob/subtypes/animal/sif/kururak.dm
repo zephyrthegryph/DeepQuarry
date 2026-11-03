@@ -44,7 +44,6 @@
 
 	organ_names = /datum/decl/mob_organ_names/kururak
 
-	armor_spec = "melee=30;bullet=15;laser=5;bomb=10;bio=100;rad=100"
 
 
 	special_attack_min_range = 0
@@ -87,7 +86,7 @@
 	instinct = 50
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/kururak)))
+	configure(atom_rules(armor_spec = "melee=30;bullet=15;laser=5;bomb=10;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/kururak)))
 	op("do_strike", menu(desc = "Strike viciously at an entity within range."), label("Rending Strike"), needs(req_self(), req(PROC_REF(do_strike_ready))), then(PROC_REF(do_strike_op)))
 	op("rally_pack", menu(desc = "Tries to command your fellow pack members to follow you."), label("Rally Pack"), needs(req_self(), req(PROC_REF(rally_pack_ready))), then(PROC_REF(rally_pack_op)))
 	op("do_flash", menu(desc = "Disorient a creature within range."), label("Tail Blind"), needs(req_self(), req(PROC_REF(do_flash_ready))), then(PROC_REF(do_flash_op)))

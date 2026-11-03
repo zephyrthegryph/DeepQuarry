@@ -71,7 +71,7 @@
 		appearance = sky.speedspace_cache["EW_[transit_state]"]
 
 	for(var/atom/movable/AM in turf_contents_of_type(src, /atom/movable))
-		if (!AM.simulated)
+		if (!atom_rules_of(AM).simulated)
 			continue
 
 		if(!AM.anchored)

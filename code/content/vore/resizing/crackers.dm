@@ -169,9 +169,9 @@ CAPABILITIES(/obj/item/cracker)
 	item_state = "paper_crown_blue"
 	item_icons = list(slot_head_str = 'icons/inventory/head/mob.dmi')
 	desc = "A paper crown so thin that you can see through it."
-	armor_spec = ""
 
 CAPABILITIES(/obj/item/clothing/head/paper_crown)
+	configure(atom_rules(armor_spec = ""))
 	configure(item_worn(hides = 0, covers = 0))
 	rolls(nameof(icon_state), PROC_REF(roll_look))
 

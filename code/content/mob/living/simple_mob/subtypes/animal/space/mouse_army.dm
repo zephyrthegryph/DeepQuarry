@@ -36,7 +36,6 @@
 
 	//Damage resistances
 	shock_resist = 1
-	armor_spec = "melee=30;bullet=20;laser=20;energy=10;bomb=10" //Standard armor vest stats, slightly dropped due to scale.
 
 	has_langs = list("Mouse")
 
@@ -48,6 +47,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
+	configure(atom_rules(armor_spec = "melee=30;bullet=20;laser=20;energy=10;bomb=10"))
 	configure(mob_rules(faction = FACTION_MOUSE_ARMY))
 	configure(living_rules(species_sounds = "Mouse"))
 	configure(living_rules(say_list_type = /datum/say_list/mouse))
@@ -100,7 +100,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
 	rank = "operative"
 
 	shock_resist = 1
-	armor_spec = "melee=40;bullet=40;laser=30;energy=15;bomb=35;bio=100;rad=100" //Mercenary Voidsuit Resistances, slightly downscaled, due to size.
 
 //Pyro Mouse
 /mob/living/simple_mob/animal/space/mouse_army/pyro
@@ -118,13 +117,13 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
 
 	//Damage resistances
 	shock_resist = 0.6
-	armor_spec = "melee=20;bullet=20;laser=20;energy=20;bomb=90;bio=100;rad=100"
 
 	projectiletype = /obj/item/projectile/bullet/incendiary/flamethrower
 
 	var/ruptured = 0
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/pyro)
+	configure(atom_rules(armor_spec = "melee=20;bullet=20;laser=20;energy=20;bomb=90;bio=100;rad=100"))
 	configure(mob_kind(attack_cooldown = 10))
 
 /mob/living/simple_mob/animal/space/mouse_army/pyro/on_death(gibbed)
@@ -151,7 +150,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/pyro)
 
 	//Damage resistances
 	shock_resist = 0.6
-	armor_spec = "melee=40;bullet=30;laser=10;energy=10;bomb=15;bio=100;rad=100"
 
 	var/exploded = FALSE
 	var/explosion_dev_range		= 0
@@ -183,7 +181,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/pyro)
 
 	//Damage resistances
 	shock_resist = 0.6
-	armor_spec = "melee=50;bullet=10;laser=10;energy=10;bomb=10;bio=100;rad=100"
 
 	player_msg = "You have an imperfect, but automatic stealth. If you attack something while 'hidden', then \
 	you will do bonus damage, stun the target, and unstealth for a period of time.<br>\
@@ -239,6 +236,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/pyro)
 	..()
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/stealth)
+	configure(atom_rules(armor_spec = "melee=50;bullet=10;laser=10;energy=10;bomb=10;bio=100;rad=100"))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(hit_breaks_cloak)))
 	op("cloak", ai(), claims(NONE), wait(1 SECOND, keeps = TARGET_PRESENT | ALIVE), then(PROC_REF(cloak_done)), on_interrupt(PROC_REF(cloak_interrupted)))
 
@@ -283,14 +281,13 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/stealth)
 	wreckage = /obj/structure/loot_pile/mecha/mouse_tank
 
 	endurance = 150
-	armor_spec = "melee=25;bullet=20;laser=30;energy=15;bio=100;rad=100"
 
 	projectiletype = /obj/item/projectile/bullet/pistol/medium
 
 	movement_cooldown = 2
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/mouse_tank)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/mouse_tank)))
+	configure(atom_rules(armor_spec = "melee=25;bullet=20;laser=30;energy=15;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/technology/mouse_tank)))
 	configure(mob_rules(faction = FACTION_MOUSE_ARMY))
 	configure(mob_kind(attack_cooldown = 8))
 
@@ -316,14 +313,13 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/mouse_tank)
 
 	endurance = 200
 	heat_resist = 1
-	armor_spec = "bullet=20;laser=50;bomb=50;bio=100;rad=100"
 
 	projectiletype = /obj/item/projectile/bullet/incendiary/dragonflame
 
 	movement_cooldown = 3
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/mouse_tank/livewire)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/mouse_tank/livewire)))
+	configure(atom_rules(armor_spec = "bullet=20;laser=50;bomb=50;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/technology/mouse_tank/livewire)))
 	configure(mob_kind(attack_cooldown = 15))
 
 
@@ -347,14 +343,13 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/mouse_tank/livewire)
 
 	endurance = 300
 	heat_resist = 1
-	armor_spec = "melee=20;bullet=50;laser=50;energy=20;bomb=80;bio=100;rad=100"
 
 	projectiletype = /obj/item/projectile/bullet/gyro
 
 	movement_cooldown = 5
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/mouse_tank/eraticator)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/mouse_tank/eraticator)))
+	configure(atom_rules(armor_spec = "melee=20;bullet=50;laser=50;energy=20;bomb=80;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/technology/mouse_tank/eraticator)))
 	configure(mob_kind(attack_cooldown = 15))
 
 
@@ -446,3 +441,9 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/mouse_tank/eraticator)
 	. = list()
 	for(var/i = 1 to steps)
 		. += (i % 2 == 0) ? "#000000" : "#FF0000"
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/operative)
+	configure(atom_rules(armor_spec = "melee=40;bullet=40;laser=30;energy=15;bomb=35;bio=100;rad=100"))
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/ammo)
+	configure(atom_rules(armor_spec = "melee=40;bullet=30;laser=10;energy=10;bomb=15;bio=100;rad=100"))

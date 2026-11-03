@@ -14,7 +14,6 @@
 	movement_cooldown = 1.5
 	see_in_dark = 3
 
-	armor_spec = "melee=15;bullet=15;laser=15" //They thick as fuck boi
 
 	response_help = "pets"
 	response_disarm = "gently pushes aside"
@@ -25,8 +24,6 @@
 	melee_damage_lower = 7
 	attack_injury_kind = INJURY_PIERCE
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -53,6 +50,7 @@
 	vore_icons = SA_ICON_LIVING
 
 CAPABILITIES(/mob/living/simple_mob/vore/hippo)
+	configure(atom_rules(armor_spec = "melee=15;bullet=15;laser=15"))
 	configure(living_rules(vore_capacity = 1, say_list_type = /datum/say_list/hippo))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/meat, meat_amount = 15))
 	configure(buckle_rules(max_mobs = 1, movable = TRUE, lying = FALSE))

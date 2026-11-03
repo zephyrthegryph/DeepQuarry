@@ -25,8 +25,6 @@
 	friendly = list("nuzzles", "slobberlicks", "noses softly at", "noseboops", "headbumps against", "leans on", "nibbles affectionately on")
 	movement_cooldown = -2.5
 	melee_attack_delay = 0
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -36,7 +34,6 @@
 	tame_chance = 0
 	has_eye_glow = TRUE
 
-	armor_spec = "melee=20;bullet=10;laser=20;energy=5;bio=100;rad=100" // Values read by injury_armor()
 	var/exploded = FALSE
 	var/explosion_dev_range		= 0
 	var/explosion_heavy_range	= 0
@@ -123,8 +120,6 @@
 	response_harm = "bites"
 	attacktext = list("punched","clawed")
 	vore_active = 0
-	old_x = 0
-	old_y = 0
 	default_pixel_x = 0
 	pixel_x = 0
 	pixel_y = 0
@@ -149,7 +144,6 @@
 	var/explosion_delay_upper	= 3 SECONDS	// Upper bound.
 
 
-	armor_spec = "melee=40;bullet=30;laser=20;energy=5;bomb=50;bio=100;rad=100" // Values read by injury_armor()
 
 /mob/living/simple_mob/vore/blackhole/shield
 	name = "Black Hole bulwark"
@@ -167,9 +161,9 @@
 	melee_damage_lower = 25
 	melee_damage_upper = 30
 	attack_sound = SFX_WEAPONS_BLADE1
-	armor_spec = "melee=60;bullet=50;laser=40;energy=35;bomb=70;bio=100;rad=100" // Values read by injury_armor()
 
 CAPABILITIES(/mob/living/simple_mob/vore/blackhole/shield)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=40;energy=35;bomb=70;bio=100;rad=100"))
 	configure(mob_rules(faction = FACTION_BLACKHOLE))
 
 /mob/living/simple_mob/vore/blackhole/grotesque
@@ -298,8 +292,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/ranged/lmg)
 	response_disarm = "shoves"
 	response_harm = "bites"
 	attacktext = list("punched","clawed")
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -315,9 +307,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/ranged/lmg)
 	minbodytemp = 0
 
 
-	armor_spec = "melee=40;bullet=30;laser=20;energy=5;bomb=50;bio=100;rad=100" // Values read by injury_armor()
 
 CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur)
+	configure(atom_rules(armor_spec = "melee=40;bullet=30;laser=20;energy=5;bomb=50;bio=100;rad=100"))
 	configure(mob_rules(faction = FACTION_BLACKHOLE))
 	configure(living_rules(say_list_type = /datum/say_list/merc/blackhole))
 
@@ -335,7 +327,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur)
 	melee_damage_upper = 30
 	attacktext = list("stabbed","slashed","impaled")
 	attack_sound = SFX_WEAPONS_BLADE1
-	armor_spec = "melee=60;bullet=50;laser=40;energy=35;bomb=70;bio=100;rad=100" // Values read by injury_armor()
 
 /mob/living/simple_mob/vore/blackhole/taur/ranged
 	name = "Black Hole machinegunner"
@@ -391,8 +382,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur/ranged/hmg)
 	response_disarm = "shoves"
 	response_harm = "bites"
 	attacktext = list("punched","clawed")
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -418,7 +407,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur/ranged/hmg)
 	var/explosion_delay_lower	= 0 SECOND	// Lower bound for explosion delay.
 	var/explosion_delay_upper	= 1 SECONDS	// Upper bound.
 
-	armor_spec = "melee=40;bullet=30;laser=20;energy=5;bomb=50;bio=100;rad=100" // Values read by injury_armor()
 
 	projectile_accuracy = 75
 
@@ -437,8 +425,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur/ranged/hmg)
 	icon_living = "trooper_rpg"
 	icon_state = "trooper_rpg"
 	icon_rest = "trooper_rpg"
-	old_x = 0
-	old_y = 0
 	default_pixel_x = 0
 	pixel_x = 0
 	pixel_y = 0
@@ -475,8 +461,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur/ranged/hmg)
 	response_harm = "bites"
 	attacktext = list("hit","struck")
 	vore_active = 0
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -494,7 +478,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur/ranged/hmg)
 	minbodytemp = 0
 
 
-	armor_spec = "melee=40;bullet=30;laser=20;energy=5;bomb=50;bio=100;rad=100" // Values read by injury_armor()
 
 	projectiletype = /obj/item/projectile/bullet/pistol/bh3
 	projectilesound = SFX_WEAPONS_SERDY_AK74
@@ -524,10 +507,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur/ranged/hmg)
 	endurance = 450
 	deflect_chance = 25
 	has_repair_droid = FALSE
-	armor_spec = "melee=50;bullet=50;laser=50;energy=30;bomb=30;bio=100;rad=100"
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/blackhole)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/blackhole)))
+	configure(atom_rules(armor_spec = "melee=50;bullet=50;laser=50;energy=30;bomb=30;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/blackhole)))
 	configure(mob_rules(faction = FACTION_BLACKHOLE))
 
 /obj/structure/loot_pile/mecha/gygax/dark/adv/blackhole
@@ -548,7 +530,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/
 	icon_scale_y = 2
 	endurance = 400
 	deflect_chance = 20
-	armor_spec = "melee=50;bullet=50;laser=50;energy=30;bomb=30;bio=100;rad=100"
 	melee_damage_lower = 40
 	melee_damage_upper = 90
 
@@ -558,7 +539,7 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/
 	projectile_accuracy = -25
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/durand/blackhole)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/blackhole)))
+	configure(atom_rules(armor_spec = "melee=50;bullet=50;laser=50;energy=30;bomb=30;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/blackhole)))
 	configure(mob_rules(faction = FACTION_BLACKHOLE))
 	configure(mob_kind(attack_cooldown = 12))
 
@@ -617,8 +598,6 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 	var/scent_strength = 5 //How much can a hungry pitcher confuse nearby people?
 	COOLDOWN_DECLARE(lifechecks_cooldown) //Throttle to limit vore/hungry proc calls
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -631,10 +610,10 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 	var/explosion_delay_lower	= 5 SECOND	// Lower bound for explosion delay.
 	var/explosion_delay_upper	= 8 SECONDS	// Upper bound.
 
-	armor_spec = "melee=100;bullet=80;laser=80;energy=97;bio=100;rad=100"
 	var/datum/looping_sound/obelisk/loopy = 1
 
 CAPABILITIES(/mob/living/simple_mob/vore/blackhole_obelisk)
+	configure(atom_rules(armor_spec = "melee=100;bullet=80;laser=80;energy=97;bio=100;rad=100"))
 	configure(mob_rules(faction = FACTION_BLACKHOLE))
 	configure(mob_movement(bump = HEAVY, swap = HEAVY, push = HEAVY))
 	owns_one(nameof(loopy), /datum/looping_sound/obelisk, starts = /datum/looping_sound/obelisk, starts_args = list(TRUE)) // started as it is made
@@ -648,8 +627,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole_obelisk)
 	icon_living = "monolith"
 	icon_dead = "monolith-dead"
 	icon = 'icons/blackhole/blackhole32x96.dmi'
-	old_x = 0
-	old_y = 0
 	default_pixel_x = 0
 	pixel_x = 0
 	pixel_y = 0
@@ -731,11 +708,13 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole_obelisk)
 ///-------------------------------------------------------------------------------------------------------------------------------------------------------------///
 
 CAPABILITIES(/mob/living/simple_mob/vore/blackhole)
+	configure(atom_rules(armor_spec = "melee=40;bullet=30;laser=20;energy=5;bomb=50;bio=100;rad=100"))
 	configure(mob_rules(faction = FACTION_BLACKHOLE))
 	configure(living_rules(say_list_type = /datum/say_list/merc/blackhole))
 	rolls(nameof(size_multiplier), range_of(0.9, 1.5, 0.01))
 
 CAPABILITIES(/mob/living/simple_mob/vore/blackhole/bikers)
+	configure(atom_rules(armor_spec = "melee=40;bullet=30;laser=20;energy=5;bomb=50;bio=100;rad=100"))
 	configure(mob_rules(faction = FACTION_BLACKHOLE))
 	configure(living_rules(say_list_type = /datum/say_list/merc/blackhole))
 	configure(mob_kind(attack_cooldown = 4))
@@ -745,6 +724,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/bikers)
 	resize(1) // Scale them back down
 
 CAPABILITIES(/mob/living/simple_mob/vore/otie/syndicate/blackhole)
+	configure(atom_rules(armor_spec = "melee=20;bullet=10;laser=20;energy=5;bio=100;rad=100"))
 	configure(mob_rules(faction = FACTION_BLACKHOLE))
 	configure(living_rules(say_list_type = /datum/say_list/otie))
 	configure(butchery_rules(meat_amount = 6))
@@ -752,6 +732,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/otie/syndicate/blackhole)
 	rolls(nameof(size_multiplier), range_of(1, 1.8, 0.01))
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/sniper/blackhole)
+	configure(atom_rules(armor_spec = "melee=40;bullet=30;laser=20;energy=5;bomb=50;bio=100;rad=100"))
 	configure(mob_rules(faction = FACTION_BLACKHOLE))
 	configure(living_rules(say_list_type = /datum/say_list/merc/blackhole))
 	rolls(nameof(size_multiplier), range_of(1, 1.8, 0.01))
@@ -930,3 +911,6 @@ CAPABILITIES(/obj/item/projectile/explosive_rocket/blackhole)
 /obj/item/projectile/explosive_rocket/blackhole/on_impact(turf/T)
 	new /obj/effect/explosion(T) // Weak explosions don't produce this on their own, apparently.
 	explosion(T, 0, 0, 3, adminlog = FALSE)
+
+CAPABILITIES(/mob/living/simple_mob/vore/blackhole/taur/shield)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=40;energy=35;bomb=70;bio=100;rad=100"))

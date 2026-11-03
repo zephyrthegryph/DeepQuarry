@@ -7,6 +7,8 @@ sparse(/atom, examine_icon_snapshot)
 sparse(/atom, tf_offset_x, type = num)
 sparse(/atom, tf_offset_y, type = num)
 sparse(/atom, tf_rotation, type = num)
+// Surface germs (the old /atom germ_level): GERM_LEVEL_AMBIENT while unset, read and written through germs() / set_germs() (organs keep a var).
+sparse(/atom, surface_germs, type = num)
 sparse(/atom, tf_scale_x, type = num)
 sparse(/atom, tf_scale_y, type = num)
 

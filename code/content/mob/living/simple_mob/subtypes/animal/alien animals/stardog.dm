@@ -40,7 +40,6 @@
 
 	loot_list = list(/obj/random/underdark/uncertain)
 
-	armor_spec = "melee=1000;bullet=1000;laser=1000;energy=1000;bomb=1000;bio=1000;rad=1000"
 
 	movement_cooldown = 5
 	copy_prefs_to_mob = FALSE
@@ -53,7 +52,7 @@
 	var/list/weather_areas = list()	//We'll call a proc on these areas when we eat, don't worry!
 
 CAPABILITIES(/mob/living/simple_mob/vore/overmap/stardog)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/stardog)))
+	configure(atom_rules(armor_spec = "melee=1000;bullet=1000;laser=1000;energy=1000;bomb=1000;bio=1000;rad=1000", catalogue_data = list(/datum/category_item/catalogue/fauna/stardog)))
 	op("transition", menu(desc = "Attempt to go to the location you have arrived at, or return to space!"), label("Transition"), needs(req_self(), req(PROC_REF(transition_ready))), asks(/datum/prompt/choice/stardog_transition, fields = list("choices" = computed(PROC_REF(transition_destinations))), step = "destination", when = PROC_REF(transition_on_map)), then(PROC_REF(transition_op)))
 	op("eat_space_weather", menu(desc = "Eat carp or rocks!"), label("Eat Space Weather"), needs(req_self()), then(PROC_REF(eat_space_weather_op)))
 	op("eject", menu(desc = "Stop controlling the dog and return to your own body."), label("Eject"), needs(req_self()), then(PROC_REF(eject_op)))

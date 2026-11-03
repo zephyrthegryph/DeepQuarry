@@ -339,19 +339,19 @@ CAPABILITIES(/obj/item/uav)
 		var/amplitude = 2 //maximum displacement from original position
 		var/period = 36 //time taken for the mob to go up >> down >> original position, in deciseconds. Should be multiple of 4
 
-		var/top = old_y + amplitude
-		var/bottom = old_y - amplitude
+		var/top = amplitude
+		var/bottom = -amplitude
 		var/half_period = period / 2
 		var/quarter_period = period / 4
 
 		animate(src, pixel_y = top, time = quarter_period, easing = SINE_EASING | EASE_OUT, loop = -1)		//up
 		animate(pixel_y = bottom, time = half_period, easing = SINE_EASING, loop = -1)						//down
-		animate(pixel_y = old_y, time = quarter_period, easing = SINE_EASING | EASE_IN, loop = -1)			//back
+		animate(pixel_y = 0, time = quarter_period, easing = SINE_EASING | EASE_IN, loop = -1)			//back
 
 /obj/item/uav/proc/stop_hover()
 	if(ion_trail.on)
 		ion_trail.stop()
-		animate(src, pixel_y = old_y, time = 5, easing = SINE_EASING | EASE_IN) //halt animation
+		animate(src, pixel_y = 0, time = 5, easing = SINE_EASING | EASE_IN) //halt animation
 
 /obj/item/uav/hear_talk(mob/M, list/message_pieces, verb)
 	var/name_used = M.GetVoice()

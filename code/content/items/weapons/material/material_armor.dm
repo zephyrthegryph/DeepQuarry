@@ -395,13 +395,13 @@ CAPABILITIES(/obj/item/material/armor_plating/insert)
 	name = "bucket"
 	desc = "It's a bucket with a large hole cut into it.  You could wear it on your head and look really stupid."
 	icon_state = "bucket"
-	armor_spec = "melee=5"
 
 /obj/item/clothing/head/helmet/bucket/wood
 	name = "wooden bucket"
 	icon_state = "woodbucket"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/bucket)
+	configure(atom_rules(armor_spec = "melee=5"))
 	configure(item_worn(hides = HIDEEARS|HIDEEYES|BLOCKHAIR))
 	op("bucket_helmet_material", item(/obj/item/stack/material), label("Reinforce"), then(PROC_REF(bucket_helmet_material)))
 

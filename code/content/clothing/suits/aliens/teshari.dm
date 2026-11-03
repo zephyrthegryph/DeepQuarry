@@ -204,9 +204,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/teshari/cloak)
 	name = "head of security cloak"
 	desc = "A soft Teshari cloak made for the " + JOB_HEAD_OF_SECURITY + ". This one is made with stronger fibers." //CHOMPedot
 	icon_state = "tesh_cloak_hos"
-	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10" // end
 
 CAPABILITIES(/obj/item/clothing/suit/storage/teshari/cloak/jobs/hos)
+	configure(atom_rules(armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"))
 	suit_storage(list(POCKET_GENERIC, POCKET_SECURITY))
 	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO, flags = THICKMATERIAL))
 	configure(item_protection(siemens = 0.6))
@@ -216,9 +216,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/teshari/cloak/jobs/hos)
 	name = "security cloak"
 	desc = "A soft Teshari cloak made for the Security department. This one is made with stronger fibers."
 	icon_state = "tesh_cloak_sec"
-	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10" // end
 
 CAPABILITIES(/obj/item/clothing/suit/storage/teshari/cloak/jobs/sec)
+	configure(atom_rules(armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"))
 	suit_storage(list(POCKET_GENERIC, POCKET_SECURITY))
 	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO, flags = THICKMATERIAL))
 	configure(item_protection(siemens = 0.6))
@@ -509,9 +509,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/teshari/beltcloak)
 	name = "security belted cloak"
 	desc = "A soft Teshari cloak made for the Security department. This one is made with stronger fibers."
 	icon_state = "tesh_beltcloak_sec"
-	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10" // end
 
 CAPABILITIES(/obj/item/clothing/suit/storage/teshari/beltcloak/jobs/sec)
+	configure(atom_rules(armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"))
 	suit_storage(list(POCKET_GENERIC, POCKET_SECURITY))
 	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO, flags = THICKMATERIAL))
 	configure(item_protection(siemens = 0.6))
@@ -541,9 +541,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/teshari/beltcloak/jobs/sec)
 	name = "security chief belted cloak"
 	desc = "A soft Teshari cloak made for the " + JOB_HEAD_OF_SECURITY + ". This one is made with stronger fibers."
 	icon_state = "tesh_beltcloak_hos"
-	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10" // end
 
 CAPABILITIES(/obj/item/clothing/suit/storage/teshari/beltcloak/jobs/hos)
+	configure(atom_rules(armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"))
 	suit_storage(list(POCKET_GENERIC, POCKET_SECURITY))
 	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO, flags = THICKMATERIAL))
 	configure(item_protection(siemens = 0.6))

@@ -35,7 +35,6 @@
 	name = "nanoweave barrier hivebot"
 	icon_state = "yellow"
 	icon_living = "yellow"
-	armor_spec = "melee=80;bullet=80;laser=80;energy=80;bio=100;rad=100"
 
 
 /mob/living/simple_mob/mechanical/hivebot/nanoevent/orange //knockback
@@ -134,10 +133,10 @@ CAPABILITIES(/obj/item/projectile/metalball)
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/hivebot
 	icon = 'icons/mob/hivebot.dmi'
-	armor_spec = "melee=20;bullet=20;laser=20;energy=20;bomb=20;bio=100;rad=100"
 	size_multiplier = 2
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse/hivebot)
+	configure(atom_rules(armor_spec = "melee=20;bullet=20;laser=20;energy=20;bomb=20;bio=100;rad=100"))
 	configure(mob_rules(faction = FACTION_HIVEBOT))
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/boss
@@ -465,3 +464,6 @@ CAPABILITIES(/obj/item/prop/nanoweave/terraformers)
 			else if(attackcycle == 2)
 
 */
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot/nanoevent/yellow)
+	configure(atom_rules(armor_spec = "melee=80;bullet=80;laser=80;energy=80;bio=100;rad=100"))

@@ -399,7 +399,7 @@
 			var/turf/T = I
 			T.ChangeTurf(/turf/space)
 			continue
-		else if(!I.simulated)
+		else if(!atom_rules_of(I).simulated)
 			continue
 		else if(I.type in ignored)
 			continue

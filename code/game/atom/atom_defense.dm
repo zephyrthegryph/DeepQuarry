@@ -1,16 +1,14 @@
 /atom
 	///any atom that uses integrity and can be damaged must set this to true, otherwise the integrity procs will throw an error
-	var/uses_integrity = FALSE
 
 	VAR_PRIVATE/atom_integrity //defaults to max_integrity
 	var/max_integrity = 500
-	var/integrity_failure = 0 //0 if we have no special broken behavior, otherwise is a percentage of at what point the atom breaks. 0.5 being 50%
 
 	var/resistance_flags = NONE // INDESTRUCTIBLE | LAVA_PROOF | FIRE_PROOF | ON_FIRE | UNACIDABLE | ACID_PROOF
 
 /// The essential proc to call when an atom must receive damage of any kind.
 /atom/proc/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
-	if(!uses_integrity)
+	if(!atom_rules_of(src).uses_integrity)
 		CRASH("[src] had /atom/proc/take_damage() called on it without it being a type that has uses_integrity = TRUE!")
 	if(QDELETED(src))
 		// Hitscan projectiles and explosions can already have queued a second hit
@@ -53,6 +51,7 @@
 /// Breaks when integrity falls to integrity_failure (a fraction of max_integrity; 0 declares no breaking point), then destroys at 0,
 /// each only on the crossing, so one hit that does both breaks first. Per-object rule bindings exist only for types that declare extra rules.
 /atom/proc/settle_integrity_crossings(previous_atom_integrity, damage_flag)
+	var/integrity_failure = atom_rules_of(src).integrity_failure
 	var/integrity_failure_amount = integrity_failure * max_integrity
 	//BREAKING FIRST
 	if(integrity_failure && previous_atom_integrity > integrity_failure_amount && atom_integrity <= integrity_failure_amount)
@@ -76,7 +75,7 @@
 /// Handles the integrity of an atom changing. This must be called instead of changing integrity directly.
 /atom/proc/update_integrity(new_value)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	if(!uses_integrity)
+	if(!atom_rules_of(src).uses_integrity)
 		CRASH("/atom/proc/update_integrity() was called on [src] when it doesn't use integrity!")
 	var/old_value = atom_integrity
 	new_value = max(0, new_value)
@@ -101,10 +100,11 @@ READS_AS(/atom/proc/get_integrity_damage, ATOM_INTEGRITY_KEY)
 /// Repairs the atom by repair_amount, clamped to max_integrity. Fires atom_fix() when crossing
 /// back above the integrity_failure threshold. Returns the new integrity.
 /atom/proc/repair_damage(repair_amount)
-	if(!uses_integrity)
+	if(!atom_rules_of(src).uses_integrity)
 		CRASH("/atom/proc/repair_damage() was called on [src] when it doesn't use integrity!")
 	if(repair_amount <= 0)
 		return atom_integrity
+	var/integrity_failure = atom_rules_of(src).integrity_failure
 	var/integrity_failure_amount = integrity_failure * max_integrity
 	var/previous_atom_integrity = atom_integrity
 	update_integrity(min(max_integrity, atom_integrity + repair_amount))
@@ -143,7 +143,7 @@ READS_AS(/atom/proc/get_integrity_damage, ATOM_INTEGRITY_KEY)
 /atom/proc/run_atom_armor(damage_amount, damage_type, damage_flag = 0, attack_dir, armour_penetration = 0)
 	var/kind = GLOB.incoming_damage_kind || dq_damage_kind_for_flag(damage_flag)
 	GLOB.incoming_damage_kind = 0
-	if(!uses_integrity)
+	if(!atom_rules_of(src).uses_integrity)
 		CRASH("/atom/proc/run_atom_armor was called on [src] without being implemented as a type that uses integrity!")
 	if(damage_flag == MELEE && damage_amount < shielding_of(src).deflection)
 		return 0

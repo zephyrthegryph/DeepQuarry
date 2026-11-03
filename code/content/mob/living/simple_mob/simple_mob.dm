@@ -122,7 +122,6 @@
 	//Damage resistances
 	var/grab_resist = 0				// Chance for a grab attempt to fail. Note that this is not a true resist and is just a prob() of failure.
 	var/resistance = 0				// Damage reduction for all types
-	armor_spec = "bio=100;rad=100" // Innate armour, read by injury_armor() through get_armor().
 	// Protection against heat/cold/electric/water effects.
 	// 0 is no protection, 1 is total protection. Negative numbers increase vulnerability.
 	var/heat_resist = 0.0
@@ -159,6 +158,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob)
+	configure(atom_rules(armor_spec = "bio=100;rad=100"))
 	op("toggle_vore_icons", menu(desc = "Toggle visibility of changed mob sprite when you have eaten other things."), label("Toggle Vore Sprite"), needs(req_self()), then(PROC_REF(toggle_vore_icons_op)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(simple_mob_blast))))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_by)))

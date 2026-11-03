@@ -125,7 +125,6 @@ CAPABILITIES(/obj/item/clothing/under/rank/hydroponics)
 	desc = "It's the official uniform of the station's janitor. It has minor protection from biohazards."
 	name = "janitor's jumpsuit"
 	icon_state = "janitor"
-	armor_spec = "bio=10"
 	rolled_sleeves = 0
 
 /obj/item/clothing/under/rank/janitor/alt
@@ -225,3 +224,6 @@ CAPABILITIES(/obj/item/clothing/under/rank/hydroponics)
 
 CAPABILITIES(/obj/item/clothing/under/rank/mailman2)
 	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO|ARMS))
+
+CAPABILITIES(/obj/item/clothing/under/rank/janitor)
+	configure(atom_rules(armor_spec = "bio=10"))

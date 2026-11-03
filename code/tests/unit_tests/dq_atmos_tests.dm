@@ -153,7 +153,7 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 	// A grille is a simple /obj (uses_integrity = TRUE via the /obj base) with no
 	// material/gas dependencies, so it's a clean fixture.
 	var/obj/structure/grille/G = new(T)
-	TEST_ASSERT(G.uses_integrity, "test fixture doesn't use integrity — pick another type")
+	TEST_ASSERT(atom_rules_of(G).uses_integrity, "test fixture doesn't use integrity — pick another type")
 
 	// Force integrity to 0 WITHOUT going through take_damage's destruction path
 	// (update_integrity clamps + doesn't qdel), reproducing the real "at 0 but still

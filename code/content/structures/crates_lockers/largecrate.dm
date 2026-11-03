@@ -8,7 +8,7 @@
 
 /obj/structure/largecrate/proc/gather_loose_contents()
 	for(var/obj/I in src.loc)
-		if(I.density || I.anchored || I == src || !I.simulated)
+		if(I.density || I.anchored || I == src || !atom_rules_of(I).simulated)
 			continue
 		I.forceMove(src)
 
@@ -32,7 +32,7 @@ CAPABILITIES(/obj/structure/largecrate)
 	new /obj/item/stack/material/wood(src)
 
 	for(var/atom/movable/AM in contents)
-		if(AM.simulated)
+		if(atom_rules_of(AM).simulated)
 			AM.forceMove(T)
 		if(isanimal(AM))
 			var/mob/living/simple_mob/AMBLINAL = AM
@@ -177,7 +177,7 @@ CAPABILITIES(/obj/structure/largecrate)
 	new /mob/living/simple_mob/animal/passive/bird/parrot/pink_cockatoo(src)
 	var/turf/T = get_turf(src)
 	for(var/atom/movable/AM in contents)
-		if(AM.simulated)
+		if(atom_rules_of(AM).simulated)
 			AM.forceMove(T)
 	act_message(user, src, MSG_SELF(span_notice("You pry open %T%.")), \
 		MSG_OTHERS(span_notice("%U% pries %T% open.")), \

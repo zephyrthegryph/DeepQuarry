@@ -5,7 +5,6 @@ MATERIAL_MIX(/obj/item/rig/ch/precursor, list(MAT_PLASTEEL = 1200, MAT_GOLD = 50
 	suit_type = "precursor hardsuit"
 	icon = 'icons/obj/rig_modules_ch.dmi'
 	icon_state = "precursor_rig"
-	armor_spec = "melee=50;bullet=50;laser=70;energy=70;bomb=60;bio=100;rad=80"
 	var/block_chance = 15
 
 	chest_type = /obj/item/clothing/suit/space/rig/ch/precursor
@@ -17,6 +16,7 @@ MATERIAL_MIX(/obj/item/rig/ch/precursor, list(MAT_PLASTEEL = 1200, MAT_GOLD = 50
 	req_one_access = list()
 
 CAPABILITIES(/obj/item/rig/ch/precursor)
+	configure(atom_rules(armor_spec = "melee=50;bullet=50;laser=70;energy=70;bomb=60;bio=100;rad=80"))
 	configure(item_worn(worn_factors = TRAIT_NONE))
 
 /obj/item/clothing/suit/space/rig/ch/precursor

@@ -8,7 +8,6 @@
 	desc = "Sterile gloves."
 	icon_state = "latex"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
-	germ_level = 0
 	fingerprint_chance = 10 // They're thieves' gloves. What do you think?
 
 // Pickpocketing is a chain of waits run as one op: a second's rummage, then by the touch's stance either opening their bag (help) or swapping a

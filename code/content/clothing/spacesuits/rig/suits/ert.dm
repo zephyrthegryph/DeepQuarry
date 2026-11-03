@@ -12,7 +12,6 @@
 
 	req_access = list(ACCESS_CENT_SPECOPS)
 
-	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=100;rad=100"
 
 	initial_modules = list(
 		/obj/item/rig_module/ai_container,
@@ -21,6 +20,7 @@
 		)
 
 CAPABILITIES(/obj/item/rig/ert)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=100;rad=100"))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_CE, POCKET_SECURITY, POCKET_MEDICAL, POCKET_HEAVYTOOLS, POCKET_BAYSUIT))
 	configure(item_protection(siemens = 0.5))
 
@@ -31,7 +31,6 @@ CAPABILITIES(/obj/item/rig/ert)
 	desc = "A suit worn by the engineering division of an Emergency Response Team. Has orange highlights. Armoured and space ready."
 	suit_type = "ERT engineer"
 	icon_state = "ert_engineer_rig"
-	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=100;rad=100"
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/eva
 
 	initial_modules = list(
@@ -72,7 +71,6 @@ CAPABILITIES(/obj/item/rig/ert)
 	desc = "A heavy suit worn by the highest level of Asset Protection, don't mess with the person wearing this. Armoured and space ready."
 	suit_type = "heavy asset protection"
 	icon_state = "asset_protection_rig"
-	armor_spec = "melee=80;bullet=70;laser=60;energy=15;bomb=80;bio=100;rad=60"
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/eva
 	rigsuit_max_pressure = 20 * ONE_ATMOSPHERE
 	rigsuit_min_pressure = 0
@@ -90,6 +88,7 @@ CAPABILITIES(/obj/item/rig/ert)
 		)
 
 CAPABILITIES(/obj/item/rig/ert/assetprotection)
+	configure(atom_rules(armor_spec = "melee=80;bullet=70;laser=60;energy=15;bomb=80;bio=100;rad=60"))
 	configure(item_protection(siemens = 0.3, max_heat = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 /obj/item/rig/ert/janitor
@@ -102,3 +101,6 @@ CAPABILITIES(/obj/item/rig/ert/assetprotection)
 		/obj/item/rig_module/maneuvering_jets,
 		/obj/item/rig_module/cleaner_launcher,
 		)
+
+CAPABILITIES(/obj/item/rig/ert/engineer)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=100;rad=100"))

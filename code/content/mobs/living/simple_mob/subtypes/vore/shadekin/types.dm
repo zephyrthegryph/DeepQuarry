@@ -2,7 +2,6 @@
 /mob/living/simple_mob/shadekin/red
 	name = "red-eyed shadekin"
 	eye_state = RED_EYES
-	armor_spec = "melee=30;bullet=20;laser=20;energy=50;bomb=10;bio=100;rad=100"
 
 	eye_desc = "red eyes"
 
@@ -36,7 +35,6 @@
 	swallowTime = 4 SECONDS //A little longer to compensate for the above
 	vore_ignores_undigestable = FALSE
 	attacktext = list("shoved")
-	armor_spec = "melee=5;bullet=5;laser=5;energy=5;bio=100;rad=100"
 
 	eye_desc = "blue eyes"
 	shy_approach = TRUE
@@ -69,7 +67,6 @@
 	vore_default_mode = DM_HOLD
 	vore_digest_chance = 25
 	vore_absorb_chance = 25
-	armor_spec = "melee=15;bullet=15;laser=15;energy=15;bomb=15;bio=100;rad=100"
 
 	eye_desc = "purple eyes"
 	shy_approach = TRUE
@@ -102,7 +99,6 @@
 	vore_default_mode = DM_DRAIN
 	vore_digest_chance = 5
 	vore_ignores_undigestable = FALSE
-	armor_spec = "melee=5;bullet=5;laser=5;energy=5;bio=100;rad=100"
 
 	eye_desc = "yellow eyes"
 	stalker = FALSE
@@ -145,7 +141,6 @@
 	vore_default_mode = DM_DRAIN
 	vore_digest_chance = 0
 	vore_ignores_undigestable = FALSE
-	armor_spec = "melee=5;bullet=5;laser=5;energy=5;bio=100;rad=100"
 
 	eye_desc = "green eyes"
 	stalker = TRUE
@@ -174,7 +169,6 @@
 /mob/living/simple_mob/shadekin/orange
 	name = "orange-eyed shadekin"
 	eye_state = ORANGE_EYES
-	armor_spec = "melee=20;bullet=15;laser=15;energy=25;bomb=10;bio=100;rad=100"
 
 	eye_desc = "orange eyes"
 
@@ -339,3 +333,21 @@
 	icon_state = "yrmir"
 	eye_desc = "glimmering orange eyes"
 	player_msg = "You are Yrmir, an orange shadekin with interest in revelry, trickery and pleasures. Mostly for you but to a degree to the willing and unwilling that interest you."
+
+CAPABILITIES(/mob/living/simple_mob/shadekin/red)
+	configure(atom_rules(armor_spec = "melee=30;bullet=20;laser=20;energy=50;bomb=10;bio=100;rad=100"))
+
+CAPABILITIES(/mob/living/simple_mob/shadekin/blue)
+	configure(atom_rules(armor_spec = "melee=5;bullet=5;laser=5;energy=5;bio=100;rad=100"))
+
+CAPABILITIES(/mob/living/simple_mob/shadekin/purple)
+	configure(atom_rules(armor_spec = "melee=15;bullet=15;laser=15;energy=15;bomb=15;bio=100;rad=100"))
+
+CAPABILITIES(/mob/living/simple_mob/shadekin/yellow)
+	configure(atom_rules(armor_spec = "melee=5;bullet=5;laser=5;energy=5;bio=100;rad=100"))
+
+CAPABILITIES(/mob/living/simple_mob/shadekin/green)
+	configure(atom_rules(armor_spec = "melee=5;bullet=5;laser=5;energy=5;bio=100;rad=100"))
+
+CAPABILITIES(/mob/living/simple_mob/shadekin/orange)
+	configure(atom_rules(armor_spec = "melee=20;bullet=15;laser=15;energy=25;bomb=10;bio=100;rad=100"))

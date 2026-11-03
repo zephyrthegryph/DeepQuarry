@@ -40,7 +40,6 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 	melee_damage_upper = 0 //This shouldn't attack people but if it does (admemes) no damage can be dealt.
 	melee_damage_lower = 0
 
-	armor_spec = "laser=-50;bio=-100;rad=100" // Okay fine fire type beats plant type // Poison kills the plant good.
 
 	var/fruit = FALSE //Has the pitcher produced a fruit?
 	var/meat = 0 //How many units of meat is the plant digesting? Separate from actual vore mechanics.
@@ -170,6 +169,7 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 				adjust_nutrition(-NUTRITION_PITCHER)
 
 CAPABILITIES(/mob/living/simple_mob/vore/pitcher_plant)
+	configure(atom_rules(armor_spec = "laser=-50;bio=-100;rad=100"))
 	configure(mob_rules(faction = FACTION_PLANTS))
 	configure(living_rules(vore_capacity = 1))
 	configure(butchery_rules(meat_type = /obj/item/reagent_containers/food/snacks/pitcher_fruit, meat_amount = 1))

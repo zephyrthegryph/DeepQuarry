@@ -1,0 +1,4 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "Lights placed by the map in unpowered areas no longer drain their emergency cells before they have ever had power."

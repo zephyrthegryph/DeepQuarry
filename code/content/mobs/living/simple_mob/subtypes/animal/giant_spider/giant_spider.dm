@@ -43,8 +43,6 @@
 	pixel_x = -16
 	pixel_y = 0
 	default_pixel_x = -16
-	old_x = -16
-	old_y = 0
 
 	egg_type = /obj/effect/spider/eggcluster/royal
 

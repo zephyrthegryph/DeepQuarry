@@ -35,7 +35,7 @@ CAPABILITIES(/obj/item/hoist_kit)
 
 /// Why the dragged thing can't be clamped on, or null (admission.md D6: a pure reason).
 /obj/effect/hoist_hook/proc/attach_refusal(atom/movable/held)
-	if(!istype(held) || !held.simulated || held.anchored)
+	if(!istype(held) || !atom_rules_of(held).simulated || held.anchored)
 		return msg_reason("you can't do that")
 	if(source_hoist().hoistee())
 		return msg_reason("[source_hoist().hoistee()] is already attached")

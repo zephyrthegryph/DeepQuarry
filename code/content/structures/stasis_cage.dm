@@ -29,7 +29,7 @@ MSG_DEF_SELF(stasis_cage/needs_net, "It's going to be difficult to convince the 
 	if(QDELETED(animal) || !istype(animal.buckled_to(), /obj/effect/energy_net))
 		return /datum/msg/stasis_cage/needs_net
 	if(!animal.tryBumpNom(A.actor))
-		animal.Bumped(A.actor)
+		A.actor.bump_into(animal)
 
 /obj/structure/stasis_cage/proc/stuffing_begins(datum/act/op/A)
 	return msg_text("You begin stuffing [A.held] into \the [src].", "%U% begins stuffing [A.held] into \the [src].")

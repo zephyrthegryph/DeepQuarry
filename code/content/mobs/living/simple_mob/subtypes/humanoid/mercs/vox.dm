@@ -32,7 +32,6 @@
 	melee_damage_lower = 20		//Vox Hunting rifle blade damage
 	melee_damage_upper = 20
 	attacktext = list("slashed", "stabbed")
-	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=35;bio=100;rad=100" // Matching Merc voidsuit stats to represent toughness.
 
 	min_oxy = 0 //Vox are spaceproof.
 	max_oxy = 0
@@ -51,6 +50,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/merc/voxpirate)
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=35;bio=100;rad=100"))
 	configure(mob_rules(faction = "voxpirate"))
 	configure(living_rules(say_list_type = /datum/say_list/merc/voxpirate))
 
@@ -186,7 +186,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/voxpirate/technician)
 	icon_living = "voxsuppressor"
 	icon_dead = "voxsuppresor_dead"
 
-	armor_spec = "melee=30;bullet=50;laser=60;energy=30;bomb=35;bio=100;rad=100" // Boosted armor to represent Tank role.
 
 	projectiletype = /obj/item/projectile/sonic/weak
 	projectilesound = SFX_EFFECTS_BASSCANNON
@@ -215,7 +214,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/voxpirate/technician)
 	icon_living = "voxcaptain"
 	icon_dead = "voxcaptain_dead"
 
-	armor_spec = "melee=60;bullet=50;laser=40;energy=15;bomb=30;bio=100;rad=100" // Vox RIG armor values.
 
 	projectiletype = /obj/item/projectile/beam/darkmatter
 	projectilesound = SFX_WEAPONS_ELUGER
@@ -227,4 +225,4 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/voxpirate/technician)
 	reload_max = 15 //Other Vox should be carrying ammo.
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/merc/voxpirate/ranged/captain)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/vox/captain)))
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=40;energy=15;bomb=30;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/vox/captain)))

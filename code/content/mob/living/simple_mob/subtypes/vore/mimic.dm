@@ -223,7 +223,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic)
 	melee_damage_upper = 8
 	attack_armor_pen = 0
 
-	armor_spec = "melee=10;bullet=10;laser=10;energy=10;bomb=10;bio=100;rad=100" //Its an airlock.
 
 /mob/living/simple_mob/vore/aggressive/mimic/airlock/will_show_tooltip()
 	return FALSE
@@ -306,7 +305,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic)
 	melee_damage_upper = 8
 	attack_armor_pen =  25 // NOM NOM
 
-	armor_spec = "melee=10;bullet=20;laser=20;energy=20;bomb=20;bio=100;rad=100"
 
 /mob/living/simple_mob/vore/aggressive/mimic/closet/will_show_tooltip()
 	return FALSE
@@ -314,6 +312,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic)
 /mob/living/simple_mob/vore/aggressive/mimic/closet
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic/closet)
+	configure(atom_rules(armor_spec = "melee=10;bullet=20;laser=20;energy=20;bomb=20;bio=100;rad=100"))
 	configure(living_rules(delete_on_death = TRUE))
 
 /mob/living/simple_mob/vore/aggressive/mimic/closet/on_death(gibbed)
@@ -504,3 +503,5 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic/floor/plating)
 	configure(mob_rules(faction = "mimic"))
 	configure(mob_kind(attack_cooldown = 10))
 
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic/airlock)
+	configure(atom_rules(armor_spec = "melee=10;bullet=10;laser=10;energy=10;bomb=10;bio=100;rad=100"))

@@ -1151,7 +1151,6 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/greengov)
 	desc = "A suit made to keep you nice and toasty on cold winter days. Or at least alive."
 	icon_state = "snowsuit"
 	item_state_slots = list(slot_r_hand_str = "labcoat", slot_l_hand_str = "labcoat")
-	armor_spec = "bio=10"
 
 
 
@@ -1160,11 +1159,10 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/greengov)
 	desc = "Caution! Wet Floor!"
 	icon_state = "caution"
 	w_class = ITEMSIZE_SMALL
-	armor_spec = "melee=5"
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/suit/caution)
-	configure(atom_rules(description_fluff = "Used by the janitor to passive-aggressively point at when you eventually slip on one of their mopped floors."))
+	configure(atom_rules(armor_spec = "melee=5", description_fluff = "Used by the janitor to passive-aggressively point at when you eventually slip on one of their mopped floors."))
 	configure(movable_motion(throw_range = 5, throw_speed = 2))
 	configure(item_worn(covers = CHEST))
 	configure(item_thrown(force = 3))
@@ -1333,9 +1331,9 @@ CAPABILITIES(/obj/item/clothing/suit/drake_cloak)
 	icon = 'icons/mob/taursuits_horse.dmi'
 	item_state_slots = list(slot_r_hand_str = "capjacket", slot_l_hand_str = "capjacket")
 	pixel_x = -16
-	armor_spec = "melee=5;bullet=5;laser=5;energy=5;bomb=5" //Minor armor for fluff.
 
 CAPABILITIES(/obj/item/clothing/suit/barding)
+	configure(atom_rules(armor_spec = "melee=5;bullet=5;laser=5;energy=5;bomb=5"))
 	extend(/datum/act/equip, needs(req_taur_shape(/datum/sprite_accessory/tail/taur/horse, because = MSG(miscellaneous/you_need_a_horse_taur))))
 	configure(item_worn(covers = UPPER_TORSO|ARMS|LOWER_TORSO|LEGS))
 
@@ -1417,7 +1415,6 @@ CAPABILITIES(/obj/item/clothing/suit/taur/skirt)
 	name = "cyberpunk vest"
 	desc = "A red vest with golden streaks. It's made out of tough materials, and can protect fairly well against bullets. Wake the fuck up, Samurai."
 	icon_state = "cyberpunk"
-	armor_spec = "melee=10;bullet=20;laser=10"
 
 // Cyberpunk recolorable vest
 /obj/item/clothing/suit/cyberpunk/recolorable
@@ -1438,3 +1435,6 @@ CAPABILITIES(/obj/item/clothing/suit/taur/skirt)
 
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle/track)
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY))
+
+CAPABILITIES(/obj/item/clothing/suit/cyberpunk)
+	configure(atom_rules(armor_spec = "melee=10;bullet=20;laser=10"))

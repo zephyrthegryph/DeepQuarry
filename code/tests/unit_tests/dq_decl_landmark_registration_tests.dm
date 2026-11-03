@@ -13,7 +13,7 @@
 	var/obj/effect/landmark/dq_decl_other/O = allocate(/obj/effect/landmark/dq_decl_other, T)
 	TEST_ASSERT(L in REGISTRY_MEMBERS(REGISTRY_LATEJOIN), "a real JoinLate marker is a moving spawn point")
 	TEST_ASSERT(L in registry_all(REGISTRY_LATEJOIN), "the declared registry indexes the moving marker")
-	TEST_ASSERT(L.simulated, "the moving spawn marker keeps its instance configuration")
+	TEST_ASSERT(atom_rules_of(L).simulated, "the moving spawn marker keeps its instance configuration")
 	TEST_ASSERT(!(O in REGISTRY_MEMBERS(REGISTRY_LATEJOIN)), "an ordinary marker never becomes a spawn point")
 	set_var(L, nameof(L.name), "renamed spawn")
 	set_var(O, nameof(O.name), "JoinLate")

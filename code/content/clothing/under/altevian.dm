@@ -19,31 +19,28 @@ CAPABILITIES(/obj/item/clothing/under/pants/altevian)
 	name = "Altevian Hegemony Security Pants"
 	icon_state = "altevian-pants-sec"
 	worn_state = "altevian-pants-sec"
-	armor_spec = "melee=10"
 	starting_accessories = list(/obj/item/clothing/accessory/jacket/altevian/security)
 
 CAPABILITIES(/obj/item/clothing/under/pants/altevian/security)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/pants/altevian/engineering
 	name = "Altevian Hegemony Engineering Pants"
 	icon_state = "altevian-pants-eng"
 	worn_state = "altevian-pants-eng"
-	armor_spec = "rad=10"
 	starting_accessories = list(/obj/item/clothing/accessory/jacket/altevian/engineering)
 
 /obj/item/clothing/under/pants/altevian/medical
 	name = "Altevian Hegemony Medical Pants"
 	icon_state = "altevian-pants-med"
 	worn_state = "altevian-pants-med"
-	armor_spec = "bio=10"
 	starting_accessories = list(/obj/item/clothing/accessory/jacket/altevian/medical)
 
 /obj/item/clothing/under/pants/altevian/science
 	name = "Altevian Hegemony Science Pants"
 	icon_state = "altevian-pants-sci"
 	worn_state = "altevian-pants-sci"
-	armor_spec = "bomb=10"
 	starting_accessories = list(/obj/item/clothing/accessory/jacket/altevian/science)
 
 /obj/item/clothing/under/pants/altevian/cargo
@@ -60,27 +57,42 @@ CAPABILITIES(/obj/item/clothing/under/pants/altevian/security)
 
 /obj/item/clothing/under/altevian/sci
 	name = "Altevian Science Duty Jumpsuit"
-	armor_spec = "bomb=10"
 	icon_state = "altevian-specialist-sci"
 	worn_state = "altevian-specialist-sci"
 
 /obj/item/clothing/under/altevian/med
 	name = "Altevian Medical Duty Jumpsuit"
-	armor_spec = "bio=10"
 	icon_state = "altevian-specialist-med"
 	worn_state = "altevian-specialist-med"
 
 /obj/item/clothing/under/altevian/sec
 	name = "Altevian Security Duty Jumpsuit"
-	armor_spec = "melee=10"
 	icon_state = "altevian-specialist-sec"
 	worn_state = "altevian-specialist-sec"
 
 CAPABILITIES(/obj/item/clothing/under/altevian/sec)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/altevian/eng
 	name = "Altevian Engineering Duty Jumpsuit"
-	armor_spec = "rad=10"
 	icon_state = "altevian-specialist-eng"
 	worn_state = "altevian-specialist-eng"
+
+CAPABILITIES(/obj/item/clothing/under/pants/altevian/engineering)
+	configure(atom_rules(armor_spec = "rad=10"))
+
+CAPABILITIES(/obj/item/clothing/under/pants/altevian/medical)
+	configure(atom_rules(armor_spec = "bio=10"))
+
+CAPABILITIES(/obj/item/clothing/under/pants/altevian/science)
+	configure(atom_rules(armor_spec = "bomb=10"))
+
+CAPABILITIES(/obj/item/clothing/under/altevian/sci)
+	configure(atom_rules(armor_spec = "bomb=10"))
+
+CAPABILITIES(/obj/item/clothing/under/altevian/med)
+	configure(atom_rules(armor_spec = "bio=10"))
+
+CAPABILITIES(/obj/item/clothing/under/altevian/eng)
+	configure(atom_rules(armor_spec = "rad=10"))

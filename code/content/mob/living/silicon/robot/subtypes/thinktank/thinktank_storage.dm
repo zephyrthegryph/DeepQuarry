@@ -29,7 +29,7 @@
 	if(!isturf(storing.loc))
 		return FALSE
 
-	if(storing.anchored || !storing.simulated)
+	if(storing.anchored || !atom_rules_of(storing).simulated)
 		to_chat(user, span_warning("\The [storing] won't budge!"))
 		return FALSE
 
@@ -136,7 +136,7 @@ CAPABILITY_DEF(platform_cargo, CAP_PLATFORM_CARGO, key = NONE)
 	return read_once(istype(user) && istype(dropping) && !user.incapacitated() && can_mouse_drop(dropping, user) && can_store_quiet(dropping))
 
 /mob/living/silicon/robot/platform/proc/can_store_quiet(atom/movable/storing)
-	if(!istype(storing) || !isturf(storing.loc) || storing.anchored || !storing.simulated || storing == src)
+	if(!istype(storing) || !isturf(storing.loc) || storing.anchored || !atom_rules_of(storing).simulated || storing == src)
 		return FALSE
 	if(length(stored_atoms) >= max_stored_atoms)
 		return FALSE

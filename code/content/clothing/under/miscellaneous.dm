@@ -149,9 +149,9 @@ CAPABILITIES(/obj/item/clothing/under/space)
 	icon_state = "syndicate"
 	item_state_slots = list(slot_r_hand_str = "black", slot_l_hand_str = "black")
 	desc = "it's a cybernetically enhanced jumpsuit used for administrative duties."
-	armor_spec = "melee=100;bullet=100;laser=100;energy=100;bomb=100;bio=100;rad=100"
 
 CAPABILITIES(/obj/item/clothing/under/acj)
+	configure(atom_rules(armor_spec = "melee=100;bullet=100;laser=100;energy=100;bomb=100;bio=100;rad=100"))
 	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS))
 	configure(item_protection(gas_transfer = 0.01, permeability = 0.01, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0))
 
@@ -1249,7 +1249,6 @@ CAPABILITIES(/obj/item/clothing/under/medigown)
 
 /obj/item/clothing/under/explorer/armored
 	desc = "A green uniform for operating in hazardous environments. This one looks like it's been modified."
-	armor_spec = "melee=10;bullet=10;laser=10;energy=10;bomb=10;bio=10;rad=30"
 
 /obj/item/clothing/under/cohesion
 	name = "black cohesion suit"
@@ -1590,7 +1589,6 @@ CAPABILITIES(/obj/item/clothing/under/mbill_flight)
 	desc = "A sturdy civilian law enforcement uniform belonging to the Hedberg-Hammarstrom private security corporation."
 	icon_state = "hedberg"
 	worn_state = "hedberg"
-	armor_spec = "melee=10" //Equivalent to security officer's jumpsuit
 	rolled_sleeves = 0
 
 /obj/item/clothing/under/corp/hedbergtech
@@ -1598,7 +1596,6 @@ CAPABILITIES(/obj/item/clothing/under/mbill_flight)
 	desc = "A technician's uniform belonging to the Hedberg-Hammarstrom private security corporation. It is lightly shielded against radiation."
 	icon_state = "hedberg_tech"
 	worn_state = "hedberg_tech"
-	armor_spec = "rad=10" // Equivalent to engineer's jumpsuit.
 	rolled_sleeves = 0
 
 //christmas stuff
@@ -2058,7 +2055,6 @@ CAPABILITIES(/obj/item/clothing/gloves/bluespace/deluxe)
 
 //Same as Nanotrasen Security Uniforms
 /obj/item/clothing/under/ert
-	armor_spec = "melee=5;bullet=10;laser=10;energy=5;bomb=5"
 
 /obj/item/clothing/under/qipao
 	name = "black qipao"
@@ -2638,3 +2634,15 @@ CAPABILITIES(/obj/item/clothing/under/gestalt/sleeveless)
 
 CAPABILITIES(/obj/item/clothing/under/color/ranger)
 	setup(PROC_REF(apply_ranger_uniform_name))
+
+CAPABILITIES(/obj/item/clothing/under/explorer/armored)
+	configure(atom_rules(armor_spec = "melee=10;bullet=10;laser=10;energy=10;bomb=10;bio=10;rad=30"))
+
+CAPABILITIES(/obj/item/clothing/under/corp/hedberg)
+	configure(atom_rules(armor_spec = "melee=10"))
+
+CAPABILITIES(/obj/item/clothing/under/corp/hedbergtech)
+	configure(atom_rules(armor_spec = "rad=10"))
+
+CAPABILITIES(/obj/item/clothing/under/ert)
+	configure(atom_rules(armor_spec = "melee=5;bullet=10;laser=10;energy=5;bomb=5"))

@@ -99,7 +99,7 @@
 //
 // Assoc-shaped choice lists (value -> label) are handled by checking against the keys.
 /datum/preference/text/validate(datum/preferences/preferences, value)
-	if(!is_valid(value))
+	if(!is_valid(value) || is_placeholder_choice(value))
 		return FALSE
 	var/list/choices = get_pref_choices(preferences)
 	if(isnull(choices))

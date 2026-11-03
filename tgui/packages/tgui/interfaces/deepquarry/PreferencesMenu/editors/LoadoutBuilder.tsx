@@ -384,9 +384,6 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
             }}
           />
         </Stack.Item>
-        <Stack.Item color="label" fontSize="0.78em" italic>
-          Default applies to any role you didn't customize.
-        </Stack.Item>
       </Stack>
       {/* Budget + clear. PDA-related settings (ringtone, comm-visible) live in the PDA
           slot's catalog header now (see below); no_jacket lives in the suit slot. */}

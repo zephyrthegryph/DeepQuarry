@@ -21,8 +21,6 @@
 	icon_gib = "generic_gib"
 	vis_height = 64
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -75,8 +73,6 @@
 	icon_gib = "generic_gib"
 	vis_height = 64
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -93,8 +89,6 @@
 	icon_gib = "generic_gib"
 	vis_height = 64
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -111,8 +105,6 @@
 	icon_gib = "generic_gib"
 	vis_height = 64
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -129,8 +121,6 @@
 	icon_gib = "generic_gib"
 	vis_height = 64
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -160,8 +150,6 @@
 	vis_height = 64
 	endurance = 350
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -178,8 +166,6 @@
 	icon_gib = "generic_gib"
 	vis_height = 64
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -208,8 +194,6 @@
 	icon_gib = "generic_gib"
 	vis_height = 64
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -218,7 +202,6 @@
 	movement_sound = SFX_WEAPONS_HEAVYSMASH
 	movement_shake_radius = 5
 
-	armor_spec = "melee=40;bullet=20;laser=10"
 
 
 /mob/living/simple_mob/clowns/big/c_shift/chlown
@@ -232,8 +215,6 @@
 	icon_gib = "generic_gib"
 	vis_height = 64
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -274,8 +255,6 @@
 	icon_gib = "generic_gib"
 	vis_height = 64
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -292,8 +271,6 @@
 	icon_gib = "generic_gib"
 	vis_height = 64
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -310,8 +287,6 @@
 	icon_gib = "generic_gib"
 	vis_height = 64
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -328,8 +303,6 @@
 	icon_gib = "generic_gib"
 	vis_height = 96
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
@@ -345,3 +318,6 @@
 	icon_dead = "honkling_dead"
 	icon_gib = "generic_gib"
 	vis_height = 32
+
+CAPABILITIES(/mob/living/simple_mob/clowns/big/c_shift/destroyer)
+	configure(atom_rules(armor_spec = "melee=40;bullet=20;laser=10"))

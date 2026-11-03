@@ -44,8 +44,6 @@
 	friendly = list("nuzzles", "licks", "noses softly at", "noseboops", "headbumps against", "leans on", "nibbles affectionately on")
 
 
-	old_x = -16
-	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0

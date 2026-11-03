@@ -2,7 +2,8 @@
 /obj/item/organ
 	name = "organ"
 	icon = 'icons/obj/surgery.dmi'
-	germ_level = 0
+	/// Infection: the organ's own germ count (surface germs on other atoms are a sparse slot, /atom/proc/germs()).
+	var/germ_level = 0
 
 	// Strings.
 	var/organ_tag = "organ"				// Unique identifier.
@@ -166,6 +167,12 @@
 /// with a necrosis lesion (see organ_integrity.dm).
 /obj/item/organ/proc/saturate_damage()
 	set_damage(max_damage)
+
+/obj/item/organ/germs()
+	return germ_level
+
+/obj/item/organ/set_germs(value)
+	germ_level = value
 
 /obj/item/organ/adjust_germ_level(amount)		// Unless you're setting germ level directly to 0, use this proc instead
 	germ_level = CLAMP(germ_level + amount, 0, INFECTION_LEVEL_MAX)

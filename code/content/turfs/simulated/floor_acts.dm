@@ -3,9 +3,7 @@
 // the tile is torn up to plating, and plating torn up again opens to the base
 // turf. `broken`/`burnt` stay as the icon state of that condition only.
 /turf/simulated/floor
-	uses_integrity = TRUE
 	max_integrity = FLOOR_INTEGRITY
-	integrity_failure = FLOOR_INTEGRITY_FAILURE
 
 /// Floors take blast on their own ladder so a heavy blast still breaches the
 /// deck: the epicentre opens it to the base turf outright, the rest is a
@@ -44,6 +42,7 @@
 	return 0
 
 CAPABILITIES(/turf/simulated/floor)
+	configure(atom_rules(uses_integrity = TRUE, integrity_failure = FLOOR_INTEGRITY_FAILURE))
 	extend(/datum/act/hit/blob, instead(then(GLOBAL_PROC_REF(act_absorbed))))
 	ref_one(nameof(flooring), /datum/decl/flooring)
 	param(nameof(floortype_at_make), pos = 1)
@@ -67,7 +66,7 @@ CAPABILITIES(/turf/simulated/floor)
 /// The tile breaks as its condition crosses the failure fraction.
 /turf/simulated/floor/on_update_integrity(old_value, new_value)
 	. = ..()
-	var/failure_amount = integrity_failure * max_integrity
+	var/failure_amount = atom_rules_of(src).integrity_failure * max_integrity
 	if(old_value > failure_amount && new_value <= failure_amount && new_value > 0)
 		break_tile()
 
@@ -85,11 +84,11 @@ CAPABILITIES(/turf/simulated/floor)
 		new /obj/item/stack/material/steel(src)
 	// The torn-up tile leaves damaged plating with a fresh condition.
 	break_tile_to_plating()
-	update_integrity(max_integrity * integrity_failure)
+	update_integrity(max_integrity * atom_rules_of(src).integrity_failure)
 
 /// Restore the tile's condition (new flooring, welded dents).
 /turf/simulated/floor/proc/restore_floor_integrity()
-	if(uses_integrity)
+	if(atom_rules_of(src).uses_integrity)
 		repair_damage(max_integrity)
 
 /// Flame contact on a simulated turf (the atom_fire_act notice): its declared heat damage (floor tiles

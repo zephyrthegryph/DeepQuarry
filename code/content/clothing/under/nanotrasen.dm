@@ -8,9 +8,9 @@
 	item_icons = list(slot_w_uniform_str = 'icons/inventory/uniform/mob.dmi', slot_r_hand_str = "black", slot_l_hand_str = "black")
 	icon_state = "blackutility"
 	worn_state = "blackutility"
-	armor_spec = ""
 
 CAPABILITIES(/obj/item/clothing/under/nanotrasen)
+	configure(atom_rules(armor_spec = ""))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/nanotrasen/security
@@ -18,7 +18,6 @@ CAPABILITIES(/obj/item/clothing/under/nanotrasen)
 	desc = "The security uniform of NanoTrasen's security. It looks sturdy and well padded"
 	icon_state = "blackutility_crew"
 	worn_state = "blackutility_crew"
-	armor_spec = "melee=10;bullet=5;laser=5;energy=5;bomb=5"
 
 /obj/item/clothing/under/nanotrasen/security/warden
 	name = "NanoTrasen warden uniform"
@@ -42,7 +41,6 @@ CAPABILITIES(/obj/item/clothing/under/nanotrasen)
 		slot_l_hand_str = "darkbluesoft",
 		slot_r_hand_str = "darkbluesoft",
 		)
-	armor_spec = "melee=10;bullet=5;laser=5;energy=5;bomb=5"
 
 /obj/item/clothing/head/beret/nanotrasen
 	name = "NanoTrasen security beret"
@@ -56,7 +54,13 @@ CAPABILITIES(/obj/item/clothing/under/nanotrasen)
 	desc = "A Sturdy kevlar plate carrier with webbing attached."
 	icon_state = "webvest"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
-	armor_spec = "melee=50;bullet=40;laser=40;energy=25;bomb=25"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/vest/nanotrasen)
+	configure(atom_rules(armor_spec = "melee=50;bullet=40;laser=40;energy=25;bomb=25"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 0.5)))
+
+CAPABILITIES(/obj/item/clothing/under/nanotrasen/security)
+	configure(atom_rules(armor_spec = "melee=10;bullet=5;laser=5;energy=5;bomb=5"))
+
+CAPABILITIES(/obj/item/clothing/head/soft/nanotrasen)
+	configure(atom_rules(armor_spec = "melee=10;bullet=5;laser=5;energy=5;bomb=5"))

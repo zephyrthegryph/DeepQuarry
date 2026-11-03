@@ -526,11 +526,10 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/engislug)
 	melee_damage_lower = 5
 	melee_damage_upper = 10		//"Trained" security member, so they can hit that little bit harder
 	taser_kill = 0		//Shouldn't be weak to accidental friendly fire from other officers
-	armor_spec = "melee=15" //Similarly, \some\ armour values for a smidge more survivability compared to other catslugs.
 	myid_access = list(ACCESS_SECURITY, ACCESS_SEC_DOORS, ACCESS_FORENSICS_LOCKERS, ACCESS_MAINT_TUNNELS)
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/gatslug)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/catslug/custom/gatslug)))
+	configure(atom_rules(armor_spec = "melee=15", catalogue_data = list(/datum/category_item/catalogue/fauna/catslug/custom/gatslug)))
 	configure(living_rules(say_list_type = /datum/say_list/catslug/custom/gatslug))
 
 /datum/say_list/catslug/custom/gatslug
@@ -709,7 +708,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/cargoslug)
 	taser_kill = 0
 	mob_size = MOB_MEDIUM		//As funny as picking up deathslugs & throwing them at people to be merked would be, I'm not willing to sprite their holders. Something something hardsuit heavy can be the "IC" reason for this.
 	siemens_coefficient = 0
-	armor_spec = "melee=60;bullet=50;laser=50;energy=40;bomb=40;bio=100;rad=100"
 
 	minbodytemp = 0
 	maxbodytemp = 5000
@@ -732,7 +730,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/cargoslug)
 	melee_damage_upper = 20
 	mob_size = MOB_MEDIUM		//Something something hardsuits are heavy.
 	siemens_coefficient = 0
-	armor_spec = "melee=80;bullet=65;laser=50;energy=15;bomb=80;bio=100;rad=60"
 
 	minbodytemp = 0
 	maxbodytemp = 5000
@@ -753,7 +750,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/cargoslug)
 	taser_kill = 0
 	mob_size = MOB_MEDIUM		//Something something hardsuits are heavy.
 	siemens_coefficient = 0
-	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=100;rad=100"
 
 	minbodytemp = 0
 	maxbodytemp = 5000
@@ -1115,18 +1111,18 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/capslug)
 	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset/capslug)
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/catslug)))
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=50;energy=40;bomb=40;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/catslug)))
 	configure(living_rules(say_list_type = /datum/say_list/catslug))
 	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset/deathslug)
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/catslug)))
+	configure(atom_rules(armor_spec = "melee=80;bullet=65;laser=50;energy=15;bomb=80;bio=100;rad=60", catalogue_data = list(/datum/category_item/catalogue/fauna/catslug)))
 	configure(mob_rules(faction = FACTION_SYNDICATE))
 	configure(living_rules(say_list_type = /datum/say_list/catslug))
 	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset/syndislug)
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/catslug)))
+	configure(atom_rules(armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/catslug)))
 	configure(living_rules(say_list_type = /datum/say_list/catslug))
 	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset/responseslug)
 

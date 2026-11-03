@@ -20,7 +20,6 @@ MATERIAL_MIX(/obj/item/clothing/head/welding, list(MAT_STEEL = 3000, MAT_GLASS =
 	icon_state = "welding"
 	item_state_slots = list(slot_r_hand_str = "welding", slot_l_hand_str = "welding")
 	var/up = 0
-	armor_spec = "melee=10"
 	w_class = ITEMSIZE_NORMAL
 	var/base_state
 	flash_protection = FLASH_PROTECTION_MAJOR
@@ -29,6 +28,7 @@ MATERIAL_MIX(/obj/item/clothing/head/welding, list(MAT_STEEL = 3000, MAT_GLASS =
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/head/welding)
+	configure(atom_rules(armor_spec = "melee=10"))
 	configure(item_rules(actions_types = list(/datum/action/item_action/flip_welding_mask)))
 	configure(item_worn(hides = (HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE), covers = HEAD|FACE|EYES))
 	configure(item_protection(siemens = 0.9))
@@ -343,9 +343,9 @@ CAPABILITIES(/obj/item/clothing/head/psy_crown)
 	icon_state = "cone"
 	item_state = "cone"
 	w_class = ITEMSIZE_SMALL
-	armor_spec = "melee=5"
 
 CAPABILITIES(/obj/item/clothing/head/cone)
+	configure(atom_rules(armor_spec = "melee=5"))
 	configure(movable_motion(throw_range = 5, throw_speed = 2))
 	configure(item_worn(covers = HEAD))
 	configure(item_thrown(force = 3))

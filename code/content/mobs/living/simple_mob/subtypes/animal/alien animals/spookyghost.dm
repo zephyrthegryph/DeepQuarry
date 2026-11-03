@@ -46,7 +46,6 @@
 	minbodytemp = 0
 	maxbodytemp = 999999
 
-	armor_spec = "melee=100;bullet=100;rad=100"
 
 	loot_list = list(/obj/item/ore/diamond = 100, /obj/item/ectoplasm = 3)
 
@@ -66,7 +65,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_ghost)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/space_ghost)))
+	configure(atom_rules(armor_spec = "melee=100;bullet=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/space_ghost)))
 	configure(mob_rules(faction = FACTION_SPACE_GHOST))
 	configure(living_rules(delete_on_death = TRUE))
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
@@ -139,7 +138,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_ghost)
 	minbodytemp = 0
 	maxbodytemp = 999999
 
-	armor_spec = "melee=100;bullet=100;rad=100"
 
 	speak_emote = list("rumbles")
 
@@ -169,7 +167,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_ghost)
 		src.injure(INJURY_BURN, 1, source = T) // Light sears it.
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/spooky_ghost)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/fauna/space_ghost)))
+	configure(atom_rules(armor_spec = "melee=100;bullet=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/fauna/space_ghost)))
 	configure(mob_rules(faction = FACTION_SPACE_GHOST))
 	configure(living_rules(delete_on_death = TRUE))
 	configure(mob_movement(hovering = TRUE))

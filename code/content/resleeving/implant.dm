@@ -67,12 +67,12 @@ CAPABILITIES(/obj/item/backup_implanter)
 	for(var/i = 1 to max_implants)
 		var/obj/item/implant/backup/imp = new(src, db_key)
 		rel_add(src, nameof(imps), imp)
-		imp.germ_level = 0
+		imp.set_germs(0)
 	update()
 
 /obj/item/backup_implanter/proc/update()
 	set_icon_state("[initial(icon_state)][LAZYLEN(imps)]")
-	germ_level = 0
+	set_germs(0)
 
 /// Old attack_self.
 /obj/item/backup_implanter/proc/backup_implanter_interaction_eject(datum/act/op/A)
@@ -99,7 +99,7 @@ CAPABILITIES(/obj/item/backup_implanter)
 	if(LAZYLEN(imps) < max_implants)
 		if(!move_into(src, nameof(src.imps), W, user))
 			return OP_PASS
-		W.germ_level = 0
+		W.set_germs(0)
 		update()
 		to_chat(user, span_notice("You load \the [W] into \the [src]."))
 	else
@@ -176,7 +176,6 @@ CAPABILITIES(/obj/item/implantcase/backup)
 	icon_state = "laptop-gun"
 	desc = "After discovering clients constantly lacked staff to replace implants, Vey-Medical designed this version capable of creating implants on demand."
 	anchored = TRUE
-	germ_level = 0
 
 //Click to get implant.
 MSG_DEF(backup_implanter/injecting, null, "%U% is injecting a backup implant into %U%.")
@@ -194,7 +193,7 @@ CAPABILITIES(/obj/structure/backup_implanter_ch)
 	var/mob/user = A.actor
 	//Create the actual implant.
 	var/obj/item/implant/backup/imp = new(src.contents)
-	imp.germ_level = 0
+	imp.set_germs(0)
 
 	//Implant the implant.
 	if(imp.handle_implant(user, hud_of(user)?.zone_sel?.selecting))

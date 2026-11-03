@@ -5,10 +5,10 @@
 	w_class = ITEMSIZE_NORMAL
 	item_state_slots = list(slot_r_hand_str = "gas_alt", slot_l_hand_str = "gas_alt")
 	var/gas_filter_strength = 1			//For gas mask filters
-	armor_spec = "bio=75"
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/mask/gas)
+	configure(atom_rules(armor_spec = "bio=75"))
 	configure(item_worn(flags = BLOCK_GAS_SMOKE_EFFECT | AIRTIGHT | ALLOW_SURVIVALFOOD, hides = HIDEEARS|HIDEEYES|HIDEFACE, covers = FACE|EYES))
 	configure(item_protection(gas_transfer = 0.01, permeability = 0.01, siemens = 0.9))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_RUBBER))
@@ -43,10 +43,10 @@ CAPABILITIES(/obj/item/clothing/mask/gas/clear)
 	desc = "A compact, durable gas mask that can be connected to an air supply."
 	icon_state = "halfgas"
 	w_class = ITEMSIZE_SMALL
-	armor_spec = "melee=10;bullet=10;laser=10;bio=55"
 
 //Turn it into a hailer mask
 CAPABILITIES(/obj/item/clothing/mask/gas/half)
+	configure(atom_rules(armor_spec = "melee=10;bullet=10;laser=10;bio=55"))
 	configure(item_worn(covers = FACE))
 	configure(item_protection(siemens = 0.7))
 	op("half_mask_add_hailer_item", item(/obj/item), label("Half mask add hailer item"), then(PROC_REF(half_mask_add_hailer_item)))
@@ -94,9 +94,9 @@ CAPABILITIES(/obj/item/clothing/mask/gas/half)
 	desc = "A modernised version of the classic design, this mask will not only filter out phoron but it can also be connected to an air supply."
 	icon_state = "plaguedoctor"
 	item_state_slots = list(slot_r_hand_str = "gas", slot_l_hand_str = "gas")
-	armor_spec = "laser=2;energy=2;bio=90"
 
 CAPABILITIES(/obj/item/clothing/mask/gas/plaguedoctor)
+	configure(atom_rules(armor_spec = "laser=2;energy=2;bio=90"))
 	configure(item_worn(covers = HEAD|FACE|EYES))
 	configure(item_protection(heat_parts = HEAD, cold_parts = HEAD))
 
@@ -178,9 +178,9 @@ CAPABILITIES(/obj/item/clothing/mask/gas/syndicate)
 	desc = "A military-grade gas mask that can be connected to an air supply."
 	icon_state = "explorer"
 	item_state_slots = list(slot_r_hand_str = "gas", slot_l_hand_str = "gas")
-	armor_spec = "melee=10;bullet=5;laser=5;energy=5;bio=50"
 
 CAPABILITIES(/obj/item/clothing/mask/gas/explorer)
+	configure(atom_rules(armor_spec = "melee=10;bullet=5;laser=5;energy=5;bio=50"))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/mask/gas/clown_hat

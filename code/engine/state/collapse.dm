@@ -149,6 +149,11 @@ GLOBAL_LIST_INIT(state_refscan_flat, list("vis_contents"))
 	// skips a collapsed entity, not an outside holder.
 	if(node.refresh_queued)
 		.++
+	// A queued Rust push (refresh_mark() with DEP_PUSH and not DEP_ALL: a rust_push read, a bind, or a write the plan spares the draw
+	// of, which marks everything but the look) holds it in GLOB.refresh_push_queue until phase S: the same bookkeeping, and the drain
+	// skips a deleted (collapsed) entity.
+	if(GLOB.refresh_push_queue[node])
+		.++
 	if(ismovable(node))
 		var/atom/movable/movable = node
 		if(movable.loc)

@@ -64,7 +64,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/alien)
 	endurance = 200
 
 	pixel_x = -16
-	old_x = -16
+	default_pixel_x = -16
 	icon_expected_width = 64
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/alien/sentinel/praetorian)
@@ -96,7 +96,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/alien/sentinel/praetorian)
 	endurance = 400
 
 	pixel_x = -16
-	old_x = -16
 	icon_expected_width = 64
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/alien/queen/empress)
@@ -116,7 +115,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/alien/queen/empress)
 	melee_damage_upper = 25
 
 	pixel_x = -32
-	old_x = -32
+	default_pixel_x = -32
 	icon_expected_width = 96
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/alien/queen/empress/mother)
@@ -143,7 +142,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/alien/queen/empress/mother)
 /mob/living/simple_mob/animal/space/alien/sentinel/praetorian/ion
 	name = "alien Ionic praetorian"
 	color = "#004cff"
-	armor_spec = "bullet=25;bio=100;rad=100"
 	endurance = 350
 	needs_reload = 1
 	projectiletype = /obj/item/projectile/arc/emp_blast
@@ -154,7 +152,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/alien/queen/empress/mother)
 /mob/living/simple_mob/animal/space/alien/sentinel/praetorian/blaze
 	name = "alien blazing praetorian"
 	color = "Red"
-	armor_spec = "laser=25;bio=100;rad=100"
 	endurance = 450
 	needs_reload = 1
 	projectiletype = /obj/item/projectile/energy/fireball
@@ -172,7 +169,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/alien/queen/empress/mother)
 
 /mob/living/simple_mob/animal/space/alien/sentinel/praetorian/tank
 	name = "alien Tankerling"
-	armor_spec = "melee=-25;bullet=20;laser=20"
 	color = "#ff8214"
 	endurance = 700
 	melee_damage_lower = 25
@@ -184,6 +180,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/alien/queen/empress/mother)
 	size_multiplier = 2
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/alien/sentinel/praetorian/tank)
+	configure(atom_rules(armor_spec = "melee=-25;bullet=20;laser=20"))
 	configure(mob_kind(attack_cooldown = 25))
 
 /mob/living/simple_mob/animal/space/alien/sentinel/praetorian/acid
@@ -193,7 +190,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/alien/sentinel/praetorian/tank)
 	name = "alien Staticlisk"
 	color = "#38b9ff"
 	endurance = 500
-	armor_spec = "melee=-20;bullet=20;laser=10"
 	melee_damage_lower = 25
 	melee_damage_upper = 30
 	movement_cooldown = 12
@@ -206,13 +202,13 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/alien/sentinel/praetorian/tank)
 	size_multiplier = 1.5
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/alien/queen/empress/star)
+	configure(atom_rules(armor_spec = "melee=-20;bullet=20;laser=10"))
 	configure(mob_kind(attack_cooldown = 15))
 
 /mob/living/simple_mob/animal/space/alien/queen/empress/tank
 	name = "alien tankerlisk"
 	color = "#4a4a4a"
 	endurance = 1250
-	armor_spec = "melee=-20;bullet=20;laser=10"
 	melee_damage_lower = 25
 	melee_damage_upper = 30
 	movement_cooldown = 12
@@ -223,13 +219,13 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/alien/queen/empress/star)
 	size_multiplier = 3
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/alien/queen/empress/tank)
+	configure(atom_rules(armor_spec = "melee=-20;bullet=20;laser=10"))
 	configure(mob_kind(attack_cooldown = 25))
 
 /mob/living/simple_mob/animal/space/alien/sentinel/electro
 	name = "alien Electrosentinel"
 	color = "#ccff4a"
 	endurance = 200
-	armor_spec = "bullet=10;laser=10"
 	needs_reload = 1
 	projectiletype = /obj/item/projectile/beam/stun/electric_spider
 	reload_max = 5
@@ -238,7 +234,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/alien/queen/empress/tank)
 
 /mob/living/simple_mob/animal/space/alien/sentinel/pyro
 	name = "alien Pyrosentinel"
-	armor_spec = "laser=15;bio=100;rad=100"
 	color = "#ff7373"
 	endurance = 250
 	needs_reload = 1
@@ -247,11 +242,11 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/alien/queen/empress/tank)
 	reload_time = 150
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/alien/sentinel/pyro)
+	configure(atom_rules(armor_spec = "laser=15;bio=100;rad=100"))
 	configure(mob_kind(attack_cooldown = 15))
 
 /mob/living/simple_mob/animal/space/alien/sentinel/cyro
 	name = "alien cryosentinel"
-	armor_spec = "bullet=15;bio=100;rad=100"
 	color = "#4f83ff"
 	endurance = 200
 	needs_reload = 1
@@ -296,3 +291,15 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/alien/hunterlisk)
 	reload_max = 5
 	reload_time = 150
 	size_multiplier = 2
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/alien/sentinel/praetorian/ion)
+	configure(atom_rules(armor_spec = "bullet=25;bio=100;rad=100"))
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/alien/sentinel/praetorian/blaze)
+	configure(atom_rules(armor_spec = "laser=25;bio=100;rad=100"))
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/alien/sentinel/electro)
+	configure(atom_rules(armor_spec = "bullet=10;laser=10"))
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/alien/sentinel/cyro)
+	configure(atom_rules(armor_spec = "bullet=15;bio=100;rad=100"))

@@ -6,7 +6,6 @@
 	var/tmp/last_move = null //The direction the atom last moved
 	var/anchored = FALSE
 	var/tmp/moving_diagonally
-	var/tmp/move_speed = 10
 	var/tmp/l_move_time = 0
 	l_move_time = 1
 	var/datum/thrownthing/throwing // running: set only mid-throw
@@ -17,8 +16,6 @@
 	var/icon_scale_y = DEFAULT_ICON_SCALE_Y // Used to scale icons up or down vertically in update_transform().
 	// icon_rotation (rotates icons in update_transform()) lives in code/datums/sparse_vars/movable_misc.dm
 	var/icon_expected_width = 32
-	var/old_x = 0
-	var/old_y = 0
 	var/datum/riding/riding_datum = null
 	var/movement_type = NONE
 
@@ -297,7 +294,6 @@
 		Moved(oldloc, direct, FALSE, movetime ? movetime : MOVE_GLIDE_CALC(glide_size, moving_diagonally) )
 
 	// Update timers/cooldown stuff
-	move_speed = world.time - l_move_time
 	STAMP(src, l_move_time, CLOCK_WORLD)
 	last_move = direct // The direction you last moved
 	// set_dir(direct) //Don't think this is necessary
@@ -390,7 +386,7 @@
 
 /// The bump action (doc/rewrite/final_api.html, section 8 "World actions"): `src` walked into `A`. The one emitter of /datum/act/bump: the
 /// action runs on the bumped atom, whose hooks (extend(/datum/act/bump, ...), on_notice(/datum/notice/bumped, ...)) answer it; a refused or
-/// taken-over bump stops there. A type not converted yet still answers through its legacy Bumped(), which runs after the notice.
+/// taken-over bump stops there.
 /atom/movable/proc/bump_into(atom/A)
 	var/datum/act/bump/B = ACT_ATTEMPT(A, bump, src, A, get_dir(src, A))
 	if(ACT_REFUSED_BY(B))
@@ -398,7 +394,6 @@
 	act_done(B)
 	if(QDELETED(A))
 		return
-	A.Bumped(src)
 	stamp_now(A, last_bumped, CLOCK_WORLD)
 
 /atom/movable/proc/forceMove(atom/destination, direction, movetime)

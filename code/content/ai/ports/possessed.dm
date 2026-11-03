@@ -8,6 +8,7 @@
 /mob/living/simple_mob/humanoid/possessed
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/possessed)
+	configure(atom_rules(armor_spec = "melee=30;bullet=10;laser=20;energy=25;bomb=20;bio=100;rad=100"))
 	configure(mob_rules(faction = "Possessed"))
 	configure(living_rules(say_list_type = /datum/say_list/possessed, use_modern_ai = TRUE))
 	configure(mob_nature(can_pain_emote = FALSE))

@@ -12,7 +12,6 @@ CAPABILITIES(/datum/breach)
 	ref_one(nameof(holder), /obj/item/clothing/suit/space)
 
 /obj/item/clothing/suit/space
-	armor_spec = "cold=60"
 
 	var/can_breach = 1                      // Set to 0 to disregard all breaching.
 	var/list/breaches                       // Breach datum container (lazylist; empty for an undamaged suit).
@@ -25,6 +24,7 @@ CAPABILITIES(/datum/breach)
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
 CAPABILITIES(/obj/item/clothing/suit/space)
+	configure(atom_rules(armor_spec = "cold=60"))
 	configure(item_worn(worn_factors = alist(STAT_ITEM_ENCUMBRANCE = 1)))
 	configure(item_handling(preserve = 1))
 	suit_storage(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS))

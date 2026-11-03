@@ -299,7 +299,7 @@ TYPE_TABLE_DECLARE(/obj/effect/fusion_em_field, fusion_catcher_layout, list(
 		var/empsev = max(1, min(3, CEILING(size/2, 1)))
 		for(var/atom/movable/AM in range(max(1,FLOOR(size/2, 1)), loc))
 
-			if(AM == src || AM == owned_core || !AM.simulated)
+			if(AM == src || AM == owned_core || !atom_rules_of(AM).simulated)
 				continue
 
 			var/skip_obstacle

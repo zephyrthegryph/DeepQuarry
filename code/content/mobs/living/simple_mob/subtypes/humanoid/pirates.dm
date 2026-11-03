@@ -66,7 +66,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/pirate)
 	icon_state = "piratemelee-armor"
 	icon_living = "piratemelee-armor"
 	movement_cooldown = 4
-	armor_spec = "melee=30;bullet=20;laser=20;energy=5;bomb=5;bio=100;rad=100"
 	loot_list = list(/obj/item/material/knife/tacknife = 100, /obj/item/clothing/suit/armor/material/makeshift = 100)
 
 ///////////////////////////////
@@ -104,7 +103,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/pirate)
 	icon_state = "piratemelee-machete-armor"
 	icon_living = "piratemelee-machete-armor"
 	movement_cooldown = 3
-	armor_spec = "melee=30;bullet=20;laser=20;energy=5;bomb=5;bio=100;rad=100"
 	loot_list = list(/obj/item/material/knife/machete = 100, /obj/item/clothing/suit/armor/material/makeshift = 100)
 
 ///////////////////////////////
@@ -135,7 +133,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/pirate)
 	icon_state = "piratemelee-las-armor"
 	icon_living = "piratemelee-las-armor"
 	movement_cooldown = 4
-	armor_spec = "melee=30;bullet=20;laser=20;energy=5;bomb=5;bio=100;rad=100"
 	loot_list = list(/obj/item/melee/energy/sword/pirate = 100, /obj/item/clothing/suit/armor/material/makeshift = 100)
 
 
@@ -186,7 +183,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/shield)
 	icon_state = "piratemelee-shield-armor"
 	icon_living = "piratemelee-shield-armor"
 	movement_cooldown = 3
-	armor_spec = "melee=30;bullet=20;laser=20;energy=5;bomb=5;bio=100;rad=100"
 	loot_list = list(/obj/item/material/knife/tacknife = 100, /obj/item/clothing/suit/armor/material/makeshift = 100)
 
 ///////////////////////////////
@@ -220,7 +216,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/shield)
 	icon_state = "piratemelee-shield-machete-armor"
 	icon_living = "piratemelee-shield-machete-armor"
 	movement_cooldown = 4
-	armor_spec = "melee=30;bullet=20;laser=20;energy=5;bomb=5;bio=100;rad=100"
 	loot_list = list(/obj/item/material/knife/machete = 100, /obj/item/clothing/suit/armor/material/makeshift = 100)
 
 
@@ -256,7 +251,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/shield)
 	icon_state = "pirateranged-armor"
 	icon_living = "pirateranged-armor"
 	movement_cooldown = 4
-	armor_spec = "melee=30;bullet=20;laser=20;energy=5;bomb=5;bio=100;rad=100"
 	loot_list = list(/obj/item/material/knife/tacknife = 100, /obj/item/gun/projectile/pirate = 100, /obj/item/clothing/suit/armor/material/makeshift = 100)
 
 ///////////////////////////////
@@ -287,7 +281,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/shield)
 	icon_state = "pirateranged-blunder-armor"
 	icon_living = "pirateranged-blunder-armor"
 	movement_cooldown = 4
-	armor_spec = "melee=30;bullet=20;laser=20;energy=5;bomb=5;bio=100;rad=100"
 	loot_list = list(/obj/item/material/knife/tacknife = 100, /obj/item/gun/projectile/shotgun/doublebarrel/sawn = 100, /obj/item/clothing/suit/armor/material/makeshift = 100)
 
 ///////////////////////////////
@@ -318,7 +311,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/shield)
 	icon_state = "pirateranged-handcannon-armor"
 	icon_living = "pirateranged-handcannon-armor"
 	movement_cooldown = 4
-	armor_spec = "melee=30;bullet=20;laser=20;energy=5;bomb=5;bio=100;rad=100"
 	loot_list = list(/obj/item/material/knife/tacknife = 100, /obj/item/gun/energy/zip = 100, /obj/item/clothing/suit/armor/material/makeshift = 100)
 
 ///////////////////////////////
@@ -338,7 +330,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/shield)
 
 	attack_sound = SFX_WEAPONS_BLADE1
 
-	armor_spec = "melee=30;bullet=20;laser=20;energy=5;bomb=5;bio=100;rad=100"
 
 	loot_list = list(/obj/item/melee/energy/sword/pirate = 100, /obj/item/clothing/suit/pirate = 100)
 
@@ -484,7 +475,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/captain)
 
 	endurance = 250
 	heat_resist = 1
-	armor_spec = "melee=30;bullet=40;laser=50;energy=5;bomb=50;bio=100;rad=100"
 
 	projectiletype = /obj/item/projectile/bullet/pistol
 	needs_reload = TRUE
@@ -504,4 +494,31 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/captain)
 	movement_shake_radius = 5
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/ripley/pirate)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/technology/ripley)))
+	configure(atom_rules(armor_spec = "melee=30;bullet=40;laser=50;energy=5;bomb=50;bio=100;rad=100", catalogue_data = list(/datum/category_item/catalogue/technology/ripley)))
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/armored)
+	configure(atom_rules(armor_spec = "melee=30;bullet=20;laser=20;energy=5;bomb=5;bio=100;rad=100"))
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/machete/armored)
+	configure(atom_rules(armor_spec = "melee=30;bullet=20;laser=20;energy=5;bomb=5;bio=100;rad=100"))
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/las/armored)
+	configure(atom_rules(armor_spec = "melee=30;bullet=20;laser=20;energy=5;bomb=5;bio=100;rad=100"))
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/shield/armored)
+	configure(atom_rules(armor_spec = "melee=30;bullet=20;laser=20;energy=5;bomb=5;bio=100;rad=100"))
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/shield/machete/armored)
+	configure(atom_rules(armor_spec = "melee=30;bullet=20;laser=20;energy=5;bomb=5;bio=100;rad=100"))
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/ranged/armored)
+	configure(atom_rules(armor_spec = "melee=30;bullet=20;laser=20;energy=5;bomb=5;bio=100;rad=100"))
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/ranged/shotgun/armored)
+	configure(atom_rules(armor_spec = "melee=30;bullet=20;laser=20;energy=5;bomb=5;bio=100;rad=100"))
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/ranged/handcannon/armored)
+	configure(atom_rules(armor_spec = "melee=30;bullet=20;laser=20;energy=5;bomb=5;bio=100;rad=100"))
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/mate)
+	configure(atom_rules(armor_spec = "melee=30;bullet=20;laser=20;energy=5;bomb=5;bio=100;rad=100"))
