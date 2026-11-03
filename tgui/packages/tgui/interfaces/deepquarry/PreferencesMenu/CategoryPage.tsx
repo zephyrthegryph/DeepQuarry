@@ -198,10 +198,10 @@ const SwitcherGroup = ({
           <Button
             compact
             icon="up-right-from-square"
-            tooltip="Open the OOC notes window other players see"
+            tooltip="As others see it"
             onClick={() => act('dq_inspect_ooc_notes')}
           >
-            Open as others see it
+            Preview
           </Button>
         ) : undefined
       }

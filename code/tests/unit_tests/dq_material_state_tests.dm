@@ -160,3 +160,25 @@
 		if(overlay_image.icon_state == "thermite")
 			count++
 	return count
+
+/// Examining an electrogenic cell is a read: its examine handler does not settle the generated charge (a publish nested in the
+/// examine delivery, and energy banked by looking). Use still settles it.
+/datum/unit_test/dq_material_examine_does_not_charge
+
+/datum/unit_test/dq_material_examine_does_not_charge/Run()
+	var/obj/item/cell/cell = allocate(/obj/item/cell, test_floor())
+	var/mob/living/carbon/human/viewer = allocate(/mob/living/carbon/human, test_floor())
+	var/datum/material/steel = get_material_by_name(MAT_STEEL)
+	var/old_rate = steel.electrogenic_rate
+	steel.electrogenic_rate = 10
+	var/datum/material_response/response = new /datum/material_response(cell, steel, TRUE, FALSE, FALSE, FALSE)
+	TEST_ASSERT_EQUAL(material_build_view(cell).response, response, "the cell has an electrical response")
+	cell.set_charge(0)
+	response.last_energy_settlement = world.time - 60 SECONDS
+	cell.examine(viewer)
+	var/after_examine = cell.charge
+	cell.material_cell_use_cost(1)
+	var/after_use = cell.charge
+	steel.electrogenic_rate = old_rate
+	TEST_ASSERT_EQUAL(after_examine, 0, "examining the cell leaves its charge alone")
+	TEST_ASSERT(after_use > 0, "using the cell settles the generated charge ([after_use])")

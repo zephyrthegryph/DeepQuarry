@@ -103,10 +103,6 @@ export const RobotChassisPicker = ({ data, staticData }: EditorProps) => {
           </Stack>
         </LabeledList.Item>
       </LabeledList>
-      <Box mt={0.5} italic fontSize="0.82em" color="label">
-        Picking these in chargen skips the popup that normally appears when you
-        spawn as a cyborg.
-      </Box>
       {open && (
         <ChassisPickerModal
           allModules={allModules}
@@ -198,7 +194,7 @@ const ChassisPickerModal = ({
           fontSize: '1em',
         }}
       >
-        Pick a module above to see the chassis options.
+        Pick a module first.
       </Box>
     ) : (
       <Box

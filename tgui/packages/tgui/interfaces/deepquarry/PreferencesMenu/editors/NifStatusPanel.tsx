@@ -23,9 +23,6 @@ export const NifStatusPanel = ({ data }: EditorProps) => {
       <Box>
         Durability: <b>{d.durability ?? '—'}</b>
       </Box>
-      <Box italic mt={1}>
-        Configure NIFsoft via the NIF item's own interface in-game.
-      </Box>
     </Box>
   );
 };
