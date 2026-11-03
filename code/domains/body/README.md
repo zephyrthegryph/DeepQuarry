@@ -1,7 +1,7 @@
 # Body and afflictions
 
 This module owns body plans, organs, injury and affliction state, symptoms, and
-body factor calculations. Medical treatments in `code/modules/medical` consume
+body factor calculations. Medical treatments in `code/content/medical` consume
 these models; body types define the contracts they use.
 
 The DM health analyzer treats this directory as a module boundary. Collection

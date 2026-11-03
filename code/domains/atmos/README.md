@@ -1,4 +1,4 @@
-# code/ATMOSPHERICS/
+# code/domains/atmos/
 
 The **live and only** atmospherics engine: LINDA, vendored from /tg/ and adapted
 to DeepQuarry. The old CHOMP/ZAS/XGM engine is gone, and there is no

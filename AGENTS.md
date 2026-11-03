@@ -399,7 +399,7 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
 
 - `doc/rewrite/final_api.html`: the design (forms §1-§16, old to new §17, kept forms §18, migration §19, decisions §21, layout §22).
 - `doc/rewrite/README.md`: index of the rest of the rewrite docs; `doc/rewrite/archive/`: old OM docs (history only).
-- `doc/testing.md`, `doc/body_architecture.md`, `code/ATMOSPHERICS/README.md`, `verdigris/README.md`.
+- `doc/testing.md`, `doc/body_architecture.md`, `code/domains/atmos/README.md`, `verdigris/README.md`.
 - Linter rules: `SpacemanDMM.toml`, `code/__odlint.dm`, `code/__pragmas.dm`. Icons: `tools/dq_icons/`. Changelog format: `html/changelogs/example.yml`.
 
 ---
@@ -456,7 +456,7 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
   the live map does not use sectors. The dynamic overmap POI system and the ATC subsystem are
   deleted; restore from git only if asked.
 - **Variants.** Subtypes that differ only in data are collapsed into one type plus a registry
-  (`code/datums/variants/README.md`).
+  (`code/content/variants/README.md`).
 - **Loot and map resolvers.** A spawn table is a `loot(table = list(...), ...)` entry in the spawner's
   CAPABILITIES block (a pure table is an abstract `/loot/...` type with its own block; a subtype writes
   `configure(loot(...))`), rolled by `loot_spawn()`; a searchable pile names its table with
