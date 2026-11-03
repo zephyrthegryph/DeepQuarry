@@ -8,7 +8,8 @@ table_initialize() in place of the proc chain and its arglist.
 
 The tool reports the maximal qualifying types (those whose parent does not
 qualify) and, with --write, regenerates code/content/atom/init_from_table_types.dm,
-which turns init_from_table on for them. A type that later gains an override is
+which declares them on the table-init path (GLOB.init_from_table_generated, read by
+build_init_from_table_types() in code/game/atom/atom_type_table.dm). A type that later gains an override is
 caught by tools/ci/init_lint.py (`table_init_overrides`, ceiling 0); rerun
 --write to drop it from the list.
 
@@ -24,7 +25,7 @@ import re
 import sys
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
-OUT = os.path.join(ROOT, "code", "game", "atom", "init_from_table_types.dm")
+OUT = os.path.join(ROOT, "code", "content", "atom", "init_from_table_types.dm")
 OUT_REL = "code/content/atom/init_from_table_types.dm"
 
 # Types whose Initialize() override has a table_initialize() mirror running the same setup.
@@ -35,7 +36,9 @@ ROOTS = ("/obj/effect", "/obj/structure")
 TYPE_BLOCK = re.compile(r"^(/[\w/]+?)\s*(//.*)?$")
 PROC_DEF = re.compile(r"^(/[\w/]+?)/(?:(?:proc|verb)/)?(\w+)\s*\(")
 VAR_DEF = re.compile(r"^(/[\w/]+?)/var/")
-TABLE_FLAG = re.compile(r"^\s+init_from_table\s*=\s*(TRUE|FALSE|1|0)\b")
+# A row of a GLOBAL_LIST_INIT(init_from_table_*, list( declaration table (atom_type_table.dm, the generated file): `path = TRUE|FALSE`.
+TABLE_PROC = re.compile(r"^GLOBAL_LIST_INIT\(init_from_table_\w+, list\(")
+TABLE_ROW = re.compile(r"^\s+(/[\w/]+)\s*=\s*(TRUE|FALSE|1|0)\b")
 INIT_PROCS = ("Initialize", "LateInitialize")
 
 
@@ -71,8 +74,20 @@ def scan():
         eligible = rel in built
         with open(path, encoding="utf-8", errors="replace") as handle:
             block = None
+            in_table = False
             for line in handle:
                 line = line.rstrip("\n")
+                if TABLE_PROC.match(line):
+                    in_table = True
+                    continue
+                if in_table:
+                    if line and not line[0].isspace():
+                        in_table = False
+                    else:
+                        row = TABLE_ROW.match(line)
+                        if row:
+                            explicit[row.group(1)] = row.group(2) in ("TRUE", "1")
+                        continue
                 proc = PROC_DEF.match(line)
                 if proc:
                     block = None
@@ -95,9 +110,6 @@ def scan():
                     continue
                 if line and not line[0].isspace():
                     block = None
-                flag = TABLE_FLAG.match(line)
-                if flag and block:
-                    explicit[block] = flag.group(1) in ("TRUE", "1")
     return types, overrides, explicit
 
 
@@ -144,12 +156,14 @@ def render(maximal):
         "// sec 3.1): SSatoms.InitAtom() runs table_initialize() instead of the proc chain.",
         "// A type that gains an Initialize() override fails the init lint",
         "// (`table_init_overrides`); rerun the tool to drop it from this list.",
+        "// Read by build_init_from_table_types() (code/game/atom/atom_type_table.dm).",
         "",
+        "GLOBAL_LIST_INIT(init_from_table_generated, list(",
     ]
-    for path in maximal:
-        lines.append(path)
-        lines.append("\tinit_from_table = TRUE")
-        lines.append("")
+    for i, path in enumerate(maximal):
+        lines.append("\t%s = TRUE%s" % (path, "," if i + 1 < len(maximal) else ""))
+    lines.append("))")
+    lines.append("")
     return "\n".join(lines)
 
 

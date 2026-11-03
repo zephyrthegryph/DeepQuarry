@@ -15,7 +15,6 @@
 	name = "Water"
 	icon_state = "water"
 	skip_init = FALSE
-	init_from_table = FALSE
 	movement_cost = 4 // Water should slow you down, just like simulated turf.
 
 /turf/simulated/floor/beach

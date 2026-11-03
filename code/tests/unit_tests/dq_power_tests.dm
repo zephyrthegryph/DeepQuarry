@@ -135,7 +135,7 @@
 	if(!A)
 		return
 	var/obj/machinery/power/terminal/T = A.terminal
-	var/old_charge = A.cell.charge
+	var/old_charge = A.charge_now()
 	var/obj/machinery/M = allocate(/obj/machinery, get_turf(A))
 	observe(M, /datum/notice/machinery_power_lost, src, then(PROC_REF(on_lost)))
 	observe(M, /datum/notice/machinery_power_restored, src, then(PROC_REF(on_restored)))
@@ -166,7 +166,7 @@
 	TEST_ASSERT(M.power_lost(), "a machine in the dark area still has power")
 	TEST_ASSERT(lost_signals, "the machine never heard machinery_power_lost")
 	TEST_ASSERT(A.charging == 0, "an isolated APC claims to charge")
-	var/low = A.cell.charge
+	var/low = A.charge_now()
 
 	// Supply returns.
 	A.connect_to_network()
@@ -181,7 +181,7 @@
 	TEST_ASSERT(!M.power_lost(), "the machine did not get its power back")
 	TEST_ASSERT(restored_signals, "the machine never heard machinery_power_restored")
 	dq_power_test_step()
-	TEST_ASSERT(A.cell.charge > low, "the cell did not charge ([A.cell.charge] after [low])")
+	TEST_ASSERT(A.charge_now() > low, "the cell did not charge ([A.charge_now()] after [low])")
 	TEST_ASSERT(!machine_stepping(A), "the APC polled during the cycle")
 
 	T.set_power_supply(0)
