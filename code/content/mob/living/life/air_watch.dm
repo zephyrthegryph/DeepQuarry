@@ -22,6 +22,9 @@
 	var/tmp/datum/native_watch/world/air_watch
 	/// What `air_watch` was armed for (the mixture and the levels), so an unchanged watch is not re-armed.
 	var/tmp/air_watch_key
+	/// The watch's own-air bands as armed: list(list(ch, levels, band), ...). A move compares the new air against them
+	/// (/mob/living/proc/air_check_moved()): a band that differs is a crossing the watch never sees (it watches the old air).
+	var/tmp/list/air_watch_own
 	/// The Rust band watch on its mob's body temperature (/mob/living/proc/body_heat_watch_arm()).
 	var/tmp/datum/native_watch/heat/body_heat_watch
 	/// The levels `body_heat_watch` was armed with.
@@ -89,6 +92,7 @@
 	var/list/cuts = list()
 	var/list/starts = list()
 	var/list/cells = list()
+	var/list/own = list()
 	for(var/ch_text in levels)
 		var/ch = text2num(ch_text)
 		var/list/normal = air_watch_normalise(levels[ch_text], air_watch_spacing(ch))
@@ -96,8 +100,10 @@
 			continue
 		chs += ch
 		cuts += list(normal)
-		starts += air_watch_band_of(air_watch_reading(air, ch), normal)
+		var/band = air_watch_band_of(air_watch_reading(air, ch), normal)
+		starts += band
 		cells += id
+		own += list(list(ch, normal, band))
 	// The plume: each neighbour's temperature at the levels of this mob's own air temperature. While every one of them is
 	// inside a band, so is their mean (what the environment exchange reads); a mean that leaves it moves one of them out.
 	var/list/temperature_levels = levels["[CH_GAS_TEMPERATURE]"]
@@ -110,6 +116,7 @@
 			cells += other.arena_id()
 	if(!length(chs))
 		return
+	B.air_watch_own = own
 	rel_set(B, nameof(B.air_watch), world_watch_when(src, COND_BANDS(list(VG_GAS_HANDLES, cells), chs, cuts, starts, -1), PROC_REF(air_watch_heard), LANE_URGENT))
 
 /// The air around this mob that its steps read besides its own (mixtures with an arena id), or an empty list.
@@ -168,6 +175,7 @@
 	if(!B)
 		return
 	B.air_watch_key = null
+	B.air_watch_own = null
 	if(B.air_watch)
 		own_clear(B, nameof(B.air_watch), OWN_DELETE)
 
@@ -176,9 +184,60 @@
 	if(QDELETED(src) || W != src.body?.air_watch)
 		return
 	air_changed_here()
-	if(iscarbon(src))
-		var/mob/living/carbon/C = src
-		C.breath_soon("its air crossed a breath level")
+	air_watch_own_refresh()
+	air_hazard_now("its air crossed a level")
+
+// ---------------------------------------------------------------- at once
+
+/// The air this mob stands in crossed a level its steps act on (its air watch, delivered on the urgent lane the frame
+/// after the gas changed), or it moved into air in another band (air_check_moved()), or its body temperature crossed a
+/// level (the body heat watch): the steps that read the air run now instead of on the next Life frame (up to
+/// LIFE_CYCLE away), so the first alert and the first damage tick come at once. Damage pacing stays on the Life
+/// cycle: this is one extra run at the change. One per tick: several crossings in the same tick run them once.
+/mob/living/proc/air_hazard_now(reason, breath = TRUE)
+	if(QDELETED(src) || !src.loc || src.transforming)
+		return
+	if(src.clock_rate_bio < 1)
+		return // in stasis the scheduled frames pace these steps (when = "!in_stasis")
+	var/now = TIME_NOW(CLOCK_OWN, src)
+	var/environment = sparse_get_or(src, air_hazard_at, -1) != now
+	breath = breath && sparse_get_or(src, air_hazard_breath_at, -1) != now
+	if(!environment && !breath)
+		return
+	sparse_set(src, air_hazard_at, now)
+	if(breath)
+		sparse_set(src, air_hazard_breath_at, now)
+	log_game("AIR_HAZARD_NOW: [src] ([src.type]) runs its air steps at once ([breath ? "breath, " : ""][environment ? "environment" : ""]): [reason]")
+	air_hazard_steps(reason, breath, environment)
+
+/// The steps air_hazard_now() runs: the environment exchange (temperature, pressure, a simple mob's gas limits), unless
+/// it already ran this tick. A breather's breath is its own (a body heat crossing earlier in the tick takes none).
+/mob/living/proc/air_hazard_steps(reason, breath, environment)
+	if(environment)
+		run_step_now(src, PROC_REF(life_environment), /datum/sequence/life)
+
+/// The watch crossed a level in place: the own bands a move compares against follow the air they watch.
+/mob/living/proc/air_watch_own_refresh()
+	var/list/own = src.body?.air_watch_own
+	var/datum/gas_mixture/air = own && src.loc?.air_watch_source(src)
+	if(!air)
+		return
+	for(var/list/entry as anything in own)
+		entry[3] = air_watch_band_of(air_watch_reading(air, entry[1]), entry[2])
+
+/// A move: the air here against the bands the watch was armed with on the air it left. Any band that differs runs the
+/// air steps at once (air_hazard_now()). A mob with no watch (no levels, or none to watch where it was) has nothing to
+/// compare: its air steps are awake and run on its next frame.
+/mob/living/proc/air_check_moved()
+	var/list/own = src.body?.air_watch_own
+	if(!own || !src.loc || isbelly(src.loc))
+		return
+	var/datum/gas_mixture/air = src.loc.air_watch_source(src) || src.loc.return_air()
+	for(var/list/entry as anything in own)
+		var/band = air ? air_watch_band_of(air_watch_reading(air, entry[1]), entry[2]) : 0
+		if(band != entry[3])
+			air_hazard_now("moved into air in another band")
+			return
 
 /// The band of `value` among ascending `levels`: how many are at or under it (Rust's band index).
 /proc/air_watch_band_of(value, list/levels)
@@ -196,6 +255,19 @@
 		var/total = air.total_moles()
 		return total > 0 ? air.get_moles(gas) / total * air.return_pressure() : 0
 	switch(ch)
+		// Read off the mixture itself, not Rust's level cache: a move compares air no gas frame has stepped yet.
+		if(CH_GAS_PRESSURE)
+			return air.return_pressure()
+		if(CH_GAS_TEMPERATURE)
+			return air.return_temperature()
+		if(CH_GAS_MOLES)
+			return air.total_moles()
+		if(CH_GAS_OXYGEN)
+			return air.get_moles(/datum/gas/oxygen)
+		if(CH_GAS_PLASMA)
+			return air.get_moles(/datum/gas/plasma)
+		if(CH_GAS_CARBON_DIOXIDE)
+			return air.get_moles(/datum/gas/carbon_dioxide)
 		if(CH_GAS_O2_CO2_KPA)
 			return air_watch_reading(air, CH_GAS_O2_KPA) + air_watch_reading(air, CH_GAS_CO2_KPA)
 		if(CH_GAS_NITROGEN)

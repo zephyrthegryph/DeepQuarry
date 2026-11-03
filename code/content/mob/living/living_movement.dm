@@ -278,6 +278,7 @@ default behaviour is:
 /mob/living/Moved(atom/oldloc, direct, forced, movetime)
 	. = ..()
 	PUBLISH_CHANGE(src, MOB_KEY_LOC)
+	air_check_moved()
 	// A low-priority mob placed after it was made in nullspace joins its z-level's presence
 	// (z-level changes after that come through onTransitZ()).
 	if(low_priority && !sparse_get_or(src, life_z, 0))

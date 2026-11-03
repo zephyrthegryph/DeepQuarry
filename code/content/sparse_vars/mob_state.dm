@@ -68,12 +68,13 @@ sparse(/mob/living, holder_default, type = text)
 sparse(/mob/living, custom_link, type = text)
 sparse(/mob/living, eggs, type = num)
 sparse(/mob/living, failed_last_breath, type = num)
+sparse(/mob/living, air_hazard_at, type = num)
+sparse(/mob/living, air_hazard_breath_at, type = num)
 sparse(/mob/living, summoned, type = bool)
 
 // /mob/living/carbon
 sparse(/mob/living/carbon, last_taste_text, type = text)
 sparse(/mob/living/carbon, germs_rolled_at, type = num)
-sparse(/mob/living/carbon, breath_now_at, type = num)
 sparse(/mob/living/carbon, synth_reag_processing, type = bool)
 sparse(/mob/living/carbon, breath_cycle, type = num)
 

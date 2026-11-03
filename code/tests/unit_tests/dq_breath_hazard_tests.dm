@@ -528,6 +528,39 @@
 	TEST_ASSERT_EQUAL(H.loc, N, "the human stepped onto the vacuum tile")
 	TEST_ASSERT(H.alerts?["oxy"], "no oxygen alert one tick after walking into vacuum (awake: [jointext(life_test_awake(H), ", ")])")
 
+/// A simple mob (a cat) walking from steady air into vacuum: its oxygen alert is up within one tick of the step (its
+/// environment step reads its gas limits; the move compares the new air against its watch's bands).
+/datum/unit_test/life_om/breath_hazard/simple_mob_walk_into_vacuum
+
+/datum/unit_test/life_om/breath_hazard/simple_mob_walk_into_vacuum/run_life()
+	var/list/run = dq_atmos_test_find_clear_pipe_run(2)
+	if(!run)
+		TEST_FAIL("no clear floor for the test")
+		return
+	T = run[1]
+	N = run[2]
+	dq_atmos_test_snapshot_air(T)
+	dq_atmos_test_snapshot_air(N)
+	dq_atmos_test_isolate_pair(T, N)
+	dq_atmos_test_fill_standard_air(T)
+	dq_atmos_test_fill_standard_air(N)
+	T.air_update_turf(TRUE, FALSE)
+	N.air_update_turf(TRUE, FALSE)
+	var/mob/living/simple_mob/animal/passive/cat/C = allocate(/mob/living/simple_mob/animal/passive/cat, T)
+	life_test_place(C)
+	C.forceMove(T)
+	for(var/i in 1 to 10)
+		life_test_advance(LIFE_CYCLE_SECONDS)
+	TEST_ASSERT(C.body?.air_watch_own, "the cat has an air watch")
+	// The cat wanders: put it back on its own tile (no gas frame runs between here and the step, so both tiles keep their air).
+	C.forceMove(T)
+	TEST_ASSERT(!C.alerts?["oxy"], "no oxygen alert in steady air")
+	pump_to_vacuum(N)
+	C.forceMove(N)
+	test_time(world.tick_lag)
+	life_test_drain()
+	TEST_ASSERT(C.alerts?["oxy"], "no oxygen alert on the cat one tick after it walked into vacuum (min_oxy [C.min_oxy]; on the vacuum tile [C.loc == N]; its O2 [N.air.get_moles(/datum/gas/oxygen)] mol; watch bands [json_encode(C.body?.air_watch_own)]; air steps last ran at [sparse_get_or(C, air_hazard_at, -1)]; env step asleep [life_test_asleep(C, "life_environment")])")
+
 #undef LIFE_HAZARD_LIMIT
 
 #endif
