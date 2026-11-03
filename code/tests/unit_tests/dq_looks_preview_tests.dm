@@ -74,3 +74,28 @@
 	TEST_ASSERT(!P.dq_data_push_pending, "and its push to the windows went out")
 	fdel(P.path)
 	qdel(P, TRUE)
+
+/// New preview frames reach every open window: each window's push carries them (two windows here, as dq_flush_data_push() pushes
+/// each open one), and once that push ran the frames stop riding along. They were once versioned per window by the user's first
+/// window, so a second window never got them.
+/datum/unit_test/dq_preview_frames_reach_every_window
+
+/datum/unit_test/dq_preview_frames_reach_every_window/Run()
+	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs()
+	var/version = P.dq_preview_version
+	P.update_preference(GLOB.preference_entries_by_key["eyes_color"], "#2e6f9e")
+	var/deadline = world.time + 15 SECONDS
+	UNTIL((P.dq_preview_version > version && !P.dq_preview_jobs_in_flight) || world.time > deadline)
+	TEST_ASSERT(P.dq_preview_version > version, "the Looks change rendered new frames")
+	TEST_ASSERT(P.dq_preview_unsent, "with no window open yet the frames wait for one")
+	var/list/first_window = P.ui_data_datum_preferences(null, null, null)
+	var/list/second_window = P.ui_data_datum_preferences(null, null, null)
+	TEST_ASSERT_NOTNULL(first_window["character_preview_assets"], "the first window's push carries the new frames")
+	TEST_ASSERT_NOTNULL(second_window["character_preview_assets"], "and so does the second window's")
+	TEST_ASSERT_EQUAL(second_window["character_preview_assets"]["south"], P.character_preview_b64["south"], "the new south frame")
+	P.set_dq_preview_unsent(FALSE) // what dq_flush_data_push() does once every open window had its push
+	TEST_ASSERT_NULL(P.ui_data_datum_preferences(null, null, null)["character_preview_assets"], "a later push does not resend them")
+	P.tgui_close(null)
+	TEST_ASSERT_NOTNULL(P.ui_data_datum_preferences(null, null, null)["character_preview_assets"], "a reopened window gets them again")
+	fdel(P.path)
+	qdel(P, TRUE)
