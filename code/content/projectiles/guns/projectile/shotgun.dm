@@ -12,7 +12,7 @@
 	the shotgun to apprehend criminals. Because it's quick, clean and effective as fuck. Why in the seven hells would I fuck around \
 	with the disabler shots, which take half a clip just to bring someone down, or with the tazer bolts which are slow as balls, \
 	impossible to aim and do about next to jack shit, fuck all. The shotgun is the superior law enforcement weapon. Because it stops crime. \
-	And it stops crime by reducing the number of criminals roaming the fucking halls." //CHOMP Add
+	And it stops crime by reducing the number of criminals roaming the fucking halls."
 	icon_state = "shotgun"
 	item_state = "shotgun"
 	max_shells = 4

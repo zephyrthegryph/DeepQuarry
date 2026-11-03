@@ -7,7 +7,7 @@
 
 	//icon etc are self contained because it's dumb that they not to begin with.
 	//it's not a MODULE if everything required for it to work is thrown everywhere. grr.
-	icon = 'code/modules/maint_recycler/icons/maint_recycler.dmi'
+	icon = 'code/content/maint_recycler/icons/maint_recycler.dmi'
 	icon_state = "default"
 
 	desc = "A long since abandoned recycling kiosk. Now featuring a state of the art, monochrome holographic tube display!"
@@ -95,9 +95,9 @@
 	) //an active list of things that'll make the machine mad at you. Will refuse service, make an annoucement over sec comms (akin to the tipped medibot over med comms), and blast with a stun or two. no recycling scugs. Think of this as a super high priority no-touchy list.
 
 	var/static/list/success_sounds = list(
-		'code/modules/maint_recycler/sfx/voice/thankyou/reduce-reuse-recycle.ogg',
-		'code/modules/maint_recycler/sfx/voice/thankyou/thankyouforkeepingclean.ogg',
-		'code/modules/maint_recycler/sfx/voice/thankyou/the-ecosystem-thanks-you.ogg'
+		'code/content/maint_recycler/sfx/voice/thankyou/reduce-reuse-recycle.ogg',
+		'code/content/maint_recycler/sfx/voice/thankyou/thankyouforkeepingclean.ogg',
+		'code/content/maint_recycler/sfx/voice/thankyou/the-ecosystem-thanks-you.ogg'
 	)
 
 	var/static/angry_sounds = SFX_RECYCLER_DENIED_MIX
@@ -133,7 +133,7 @@ CAPABILITIES(/obj/machinery/maint_recycler)
 
 /obj/machinery/maint_recycler/proc/init_hatch()
 	//init hatch
-	hatch.icon = 'code/modules/maint_recycler/icons/maint_recycler.dmi'
+	hatch.icon = 'code/content/maint_recycler/icons/maint_recycler.dmi'
 	hatch.icon_state = "door closed"
 	hatch.layer = src.layer+0.1
 

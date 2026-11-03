@@ -36,8 +36,6 @@ export const Farmbot = (props) => {
     refills_water,
     uproots_weeds,
     replaces_nutriment,
-    collects_produce,
-    removes_dead,
   } = data;
 
   return (
@@ -117,28 +115,6 @@ export const Farmbot = (props) => {
                 </LabeledList.Item>
               </LabeledList>
             </Section>
-            {/* VOREStation Edit: No automatic hydroponics with the lagbot */}
-            {/* <Section title="Plant controls">
-              <LabeledList>
-                <LabeledList.Item label="Collect produce">
-                  <Button
-                    icon={collects_produce ? "toggle-on" : "toggle-off"}
-                    selected={collects_produce}
-                    onClick={() => act("collect")}>
-                    {collects_produce ? "Yes" : "No"}
-                  </Button>
-                </LabeledList.Item>
-                <LabeledList.Item label="Remove dead plants">
-                  <Button
-                    icon={removes_dead ? "toggle-on" : "toggle-off"}
-                    selected={removes_dead}
-                    onClick={() => act("removedead")}>
-                    {removes_dead ? "Yes" : "No"}
-                  </Button>
-                </LabeledList.Item>
-              </LabeledList>
-            </Section> */}
-            {/* VOREStation Edit End */}
           </Section>
         )) ||
           null}

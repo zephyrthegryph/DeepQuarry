@@ -12,10 +12,10 @@ window "mainwindow"
 		anchor2 = -1,-1
 		is-default = true
 		saved-params = "pos;size;is-minimized;is-maximized"
-		title = "CHOMPStation" // CHOMP Edit
+		title = "CHOMPStation"
 		is-maximized = true
 		statusbar = false
-		icon = 'icons/ss13_64.png' // CHOMP Edit
+		icon = 'icons/ss13_64.png'
 		macro = "default"	// bindings are added per client with winset (code/modules/keybindings)
 	elem "asset_cache_browser"
 		type = BROWSER
@@ -33,20 +33,20 @@ window "mainwindow"
 		anchor2 = -1,-1
 		is-visible = false
 		saved-params = ""
-	// DQEdit — hotkey_toggle element deleted; non-hotkey mode is disabled.
+	// hotkey_toggle element deleted; non-hotkey mode is disabled.
 	elem "mainvsplit"
 		type = CHILD
 		background-color = #202020
 		text-color = #B3CCE6
-		pos = 0,0	// DQEdit — was 3,0; removed left padding
-		size = 640x440	// DQEdit — was 634x400; expanded to cover the removed bottom bars + left padding
+		pos = 0,0	// was 3,0; removed left padding
+		size = 640x440	// was 634x400; expanded to cover the removed bottom bars + left padding
 		anchor1 = 0,0
 		anchor2 = 100,100
 		saved-params = ""	// not saved: a stale share must not squeeze the map on the next connect
 		splitter = 70
 		right = "rpane"
 		is-vert = true
-	// DQEdit — input, status_bar, and saybutton elements deleted (non-hotkey
+	// input, status_bar, and saybutton elements deleted (non-hotkey
 	// mode is disabled in this fork; the input + status row served only that).
 	// is-visible = false left them taking layout space; full deletion gives
 	// us the freed pixels back. mainvsplit was already resized to 634x440
@@ -290,7 +290,7 @@ window "ooc_notes"
 	elem "ooc_notes"
 		type = MAIN
 		pos = 25,25
-		size = 700x600 // CHOMP Edit
+		size = 700x600
 		anchor1 = -1,-1
 		anchor2 = -1,-1
 		is-visible = false
@@ -299,7 +299,7 @@ window "ooc_notes"
 	elem "ooc_notes_panel"
 		type = BROWSER
 		pos = 0,0
-		size = 700x600 // CHOMP Edit
+		size = 700x600
 		anchor1 = 0,0
 		anchor2 = 80,100
 		saved-params = ""

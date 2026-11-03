@@ -6,7 +6,7 @@
 /obj/item/remote_scene_tool/voodoo_doll
 	name = "voodoo doll"
 	desc = "A dubiously cursed-esq Voodoo doll that mimics whoever is wearing its matching necklace via built in hardlight projection."
-	icon = 'code/modules/maint_recycler/icons/goodies/remote_scene_tools.dmi'
+	icon = 'code/content/maint_recycler/icons/goodies/remote_scene_tools.dmi'
 	icon_state = "voodoo_doll_inactive"
 	icon_root = "voodoo_doll"
 
