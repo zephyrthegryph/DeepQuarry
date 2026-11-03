@@ -47,3 +47,18 @@ init_from_table = TRUE
 /obj/tbl/proc/Initialize(mapload) // INIT: path ends in proc, the ancestor is /obj/tbl/proc
 /obj/tbl/child/sub/Initialize(mapload) // INIT: two levels below the flagged type
 	init_from_table = TRUE
+// The table-init declarations (the old per-type flag lines above are ignored now)
+GLOBAL_LIST_INIT(init_from_table_fixture, list(
+	/obj/tbl = TRUE,
+	/obj/tbl/off = FALSE,
+	/obj/tbl2 = 1,
+	/obj/tbl4 = TRUE,
+	/obj/tbl5 = 0,
+	/obj/tbl6 = TRUE,
+	/obj/tbl8 = TRUE,
+	/obj/tbl8 = FALSE,
+	/obj/tbl9 = FALSE,
+	/obj/tbl9 = TRUE,
+	/datum/tbl10 = TRUE,
+	/datum/tbl10/sub = FALSE
+))

@@ -285,7 +285,7 @@
 	TEST_ASSERT_EQUAL(p2_apc_stage(A), "secured", "a finished frame")
 	TEST_ASSERT(A.coverlocked, "the cover lock starts on")
 	TEST_ASSERT_NOTNULL(A.cell, "it starts with a cell")
-	TEST_ASSERT_EQUAL(round(A.cell.percent()), 90, "charged to the start level")
+	TEST_ASSERT_EQUAL(round(A.charge_percent_now()), 90, "charged to the start level")
 	TEST_ASSERT_NOTNULL(A.terminal, "it has a terminal")
 	TEST_ASSERT_EQUAL(A.terminal.master, A, "which answers to the APC")
 	TEST_ASSERT(A.operating, "the breaker is on")
@@ -420,7 +420,7 @@
 /datum/unit_test/dq_p2_apc/flat_cell_lets_the_cover_open/run_gate()
 	var/obj/machinery/power/apc/A = p2_apc()
 	var/mob/living/carbon/human/H = p2_actor()
-	A.cell.set_charge(A.cell.maxcharge * (CELL_BAY_LOW_PERCENT - 5) / 100)
+	A.set_cell_charge(A.cell.maxcharge * (CELL_BAY_LOW_PERCENT - 5) / 100)
 	TEST_ASSERT(A.coverlocked, "the cover lock is on")
 	touch(H, A, tool(/obj/item/tool/crowbar))
 	TEST_ASSERT(p2_apc_cover_open(A), "a nearly flat cell lets the cover go")
@@ -834,7 +834,7 @@
 	press(H, A, "lock", list())
 	TEST_ASSERT(p2_apc_locked(A), "a person cannot press the lock button")
 	press(H, A, "overload", list())
-	TEST_ASSERT(A.cell.charge >= A.cell.maxcharge * 0.9 - 1, "and cannot overload the lights")
+	TEST_ASSERT(A.charge_now() >= A.cell.maxcharge * 0.9 - 1, "and cannot overload the lights")
 
 /// A cyborg works a locked APC's buttons, including the lock itself; a person cannot press the lock button even unlocked.
 /datum/unit_test/dq_p2_apc/ui_silicon_works_a_locked_apc
@@ -1047,7 +1047,7 @@
 			break
 	TEST_ASSERT(drained, "an empty cell under load browns the area out")
 	TEST_ASSERT_EQUAL(A.charging, 0, "an unsupplied APC is not charging")
-	var/low = A.cell.charge
+	var/low = A.charge_now()
 	A.connect_to_network()
 	Tm.set_power_supply(1000000)
 	var/restored = FALSE
@@ -1058,7 +1058,7 @@
 			break
 	TEST_ASSERT(restored, "with supply the area comes back and the cell charges")
 	p2_apc_power_step()
-	TEST_ASSERT(A.cell.charge > low, "the cell took charge")
+	TEST_ASSERT(A.charge_now() > low, "the cell took charge")
 	TEST_ASSERT_EQUAL(A.main_status, APC_EXTERNAL_POWER_GOOD, "external power reads good")
 	Tm.set_power_supply(0)
 	p2_apc_load(A, -2000)
@@ -1117,16 +1117,16 @@
 	unlock(H, A)
 	press(H, A, "charge", list())
 	TEST_ASSERT(!A.chargemode, "charging switched off")
-	var/before = A.cell.charge
+	var/before = A.charge_now()
 	for(var/i in 1 to 10)
 		p2_apc_power_step()
-	TEST_ASSERT(A.cell.charge <= before, "the cell takes no charge")
+	TEST_ASSERT(A.charge_now() <= before, "the cell takes no charge")
 	TEST_ASSERT_EQUAL(A.charging, 0, "and the APC says it is not charging")
 	press(H, A, "charge", list())
 	TEST_ASSERT(A.chargemode, "charging back on")
 	for(var/i in 1 to 40)
 		p2_apc_power_step()
-	TEST_ASSERT(A.cell.charge > before, "the cell charges again")
+	TEST_ASSERT(A.charge_now() > before, "the cell charges again")
 	Tm.set_power_supply(0)
 
 /// A shorted APC raises the power alarm once the power domain has stepped; mending it clears the alarm.
@@ -1422,9 +1422,9 @@
 		L.fix()
 	p2_settle()
 	TEST_ASSERT(L in p2_apc_area_lights(A), "the light is one of the area's")
-	var/charge = A.cell.charge
+	var/charge = A.charge_now()
 	press(R, A, "overload", list())
-	TEST_ASSERT(A.cell.charge <= charge - 19, "the overload spent the cell's charge")
+	TEST_ASSERT(A.charge_now() <= charge - 19, "the overload spent the cell's charge")
 	TEST_ASSERT_EQUAL(L.status, LIGHT_BROKEN, "and burst the light")
 	TEST_ASSERT(!p2_apc_failed(A), "it does not fail the APC")
 
@@ -1437,13 +1437,13 @@
 		A.overload(null)
 		TEST_ASSERT(!p2_apc_failed(A), "a surge does not fail the APC")
 	var/obj/machinery/power/apc/C = p2_apc(run_loc_floor_top_right, /obj/machinery/power/apc/p2_test/critical)
-	var/charge = C.cell.charge
+	var/charge = C.charge_now()
 	for(var/i in 1 to 30)
 		C.overload(null)
 	p2_settle()
 	TEST_ASSERT(!p2_apc_failed(C), "a critical APC is not failed")
 	TEST_ASSERT(!p2_apc_emagged(C) && p2_apc_locked(C), "nor subverted")
-	TEST_ASSERT_EQUAL(C.cell.charge, charge, "nor its cell touched")
+	TEST_ASSERT_EQUAL(C.charge_now(), charge, "nor its cell touched")
 	TEST_ASSERT(!C.broken_now(), "nor broken")
 
 // ---------------------------------------------------------------------------------------------------------------------

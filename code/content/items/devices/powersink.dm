@@ -108,9 +108,9 @@ CAPABILITIES(/obj/item/powersink)
 			if(istype(T.master(), /obj/machinery/power/apc))
 				var/obj/machinery/power/apc/A = T.master()
 				if(A.operating && A.cell)
-					var/cur_charge = A.cell.charge / CELLRATE
+					var/cur_charge = A.charge_now() / CELLRATE
 					var/drain_val = min(apc_drain_rate, cur_charge)
-					A.set_cell_charge(A.cell.charge - drain_val * CELLRATE) // the cell and the power domain's charge together: a bare cell write is handed back by the next poll
+					A.set_cell_charge(A.charge_now() - drain_val * CELLRATE) // the cell and the power domain's charge together: a bare cell write is handed back by the next poll
 					drained += drain_val
 	power_drained += drained
 	return 1

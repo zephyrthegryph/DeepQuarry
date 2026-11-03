@@ -1,6 +1,5 @@
 //generic procs copied from obj/effect/alien
 /obj/effect/spider
-	uses_integrity = TRUE
 	name = "web"
 	desc = "it's stringy and sticky"
 	icon = 'icons/effects/effects.dmi'
@@ -16,6 +15,7 @@
 	return TRUE
 
 CAPABILITIES(/obj/effect/spider)
+	configure(atom_rules(uses_integrity = TRUE))
 	op("melee_hit", item(/obj/item), hostile(), priority(OP_PRIORITY_DEFAULT - 9), label("Hit"), then(PROC_REF(melee_hit)))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 

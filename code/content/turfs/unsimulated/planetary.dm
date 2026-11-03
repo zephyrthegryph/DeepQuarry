@@ -17,7 +17,6 @@
 	phoron = 0
 	initial_temperature = T20C
 	skip_init = FALSE
-	init_from_table = FALSE
 
 /turf/unsimulated/wall/planetary/proc/register_planetary_turf()
 	SSplanets.addTurf(src)

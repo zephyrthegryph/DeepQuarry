@@ -63,7 +63,7 @@ CAPABILITIES(/obj/machinery/dq_breakpoint_probe)
 	var/list/sample = list(/obj/structure/window, /obj/structure/railing, /obj/structure/table, /obj/structure/grille, /obj/machinery/computer, /obj/machinery/door/airlock, /obj/machinery/dq_breakpoint_probe)
 	for(var/path in sample)
 		var/obj/subject = allocate(path, T)
-		if(!subject.uses_integrity)
+		if(!atom_rules_of(subject).uses_integrity)
 			continue
 		var/failure_amount = atom_rules_of(subject).integrity_failure * subject.max_integrity
 		var/expect_breaks = atom_rules_of(subject).integrity_failure > 0 ? 1 : 0

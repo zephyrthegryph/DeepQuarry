@@ -45,7 +45,7 @@
 
 /// The damage band `A` is in, derived from its integrity: nothing is stored or bound.
 /proc/dq_damage_band_for(atom/A)
-	if(!A.uses_integrity || A.max_integrity <= 0)
+	if(!atom_rules_of(A).uses_integrity || A.max_integrity <= 0)
 		return DAMAGE_BAND_NONE
 	return dq_damage_band_at(A.get_integrity() / A.max_integrity)
 
@@ -57,7 +57,7 @@ DECLARE_SHARED_CACHE(damage_flavour_declared, GLOBAL_PROC_REF(build_damage_flavo
 
 /proc/build_damage_flavour_declared(path)
 	var/atom/A = path
-	if(!initial(A.uses_integrity) || initial(A.max_integrity) <= 0)
+	if(!atom_rules_of_type(A).uses_integrity || initial(A.max_integrity) <= 0)
 		return FALSE
 	var/static/list/roots = list(
 		/obj/structure/window,

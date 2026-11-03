@@ -791,7 +791,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 	var/list/apcs = list()
 	for(var/obj/machinery/power/apc/A in REGISTRY_MEMBERS(REGISTRY_APCS))
 		if(A.cell && A.area)
-			apcs[A] = list(A.cell.charge, A.area.power_equip, A.area.power_light, A.area.power_environ)
+			apcs[A] = list(A.charge_now(), A.area.power_equip, A.area.power_light, A.area.power_environ)
 	// An air alarm trips on the room's drift and its area sounds and shuts its firedoors: same cause, same cleanup.
 	var/list/alarmed = list()
 	for(var/area/room as anything in machine_areas)
@@ -836,10 +836,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_declared)
 			continue
 		var/list/row = apcs[A]
 		var/area/room = A.area
-		if(A.cell.charge == row[1] && room.power_equip == row[2] && room.power_light == row[3] && room.power_environ == row[4])
+		if(A.charge_now() == row[1] && room.power_equip == row[2] && room.power_light == row[3] && room.power_environ == row[4])
 			continue
-		log_test("AMBIENT RESTORE:   APC [A] in [room]: cell charge [round(row[1], 1)] -> now [round(A.cell.charge, 1)] J, channels equip/light/environ [row[2]]/[row[3]]/[row[4]] -> now [room.power_equip]/[room.power_light]/[room.power_environ]; put back")
-		A.cell.set_charge(row[1])
+		log_test("AMBIENT RESTORE:   APC [A] in [room]: cell charge [round(row[1], 1)] -> now [round(A.charge_now(), 1)] J, channels equip/light/environ [row[2]]/[row[3]]/[row[4]] -> now [room.power_equip]/[room.power_light]/[room.power_environ]; put back")
+		A.set_cell_charge(row[1])
 		room.set_channels(row[2], row[3], row[4])
 		A.push_to_rust()
 	var/list/alarmed = was["alarmed"]

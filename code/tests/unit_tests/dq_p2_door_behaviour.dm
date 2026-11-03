@@ -2315,9 +2315,9 @@
 	TEST_ASSERT_EQUAL(LAZYLEN(L.heard), 1, "an ID swiped on it presses it")
 	SSradio.remove_object(L, AIRLOCK_FREQ)
 
-/datum/unit_test/dq_p2_door/airlock_sensor_cycles_by_hand_and_reports_pressure
+/datum/unit_test/dq_p2_door/airlock_sensor_cycles_by_hand
 
-/datum/unit_test/dq_p2_door/airlock_sensor_cycles_by_hand_and_reports_pressure/run_gate()
+/datum/unit_test/dq_p2_door/airlock_sensor_cycles_by_hand/run_gate()
 	var/obj/p2_radio_listener/L = radio_listener()
 	var/obj/machinery/airlock_sensor/sensor = allocate(/obj/machinery/airlock_sensor/airlock_interior, tile(2, 2))
 	p2_door_set_power(sensor, TRUE)
@@ -2332,10 +2332,10 @@
 	for(var/list/signal in L.heard)
 		if(signal["command"] == "cycle_interior" && signal["tag"] == "p2_controller")
 			cycled = TRUE
-		if(signal["tag"] == "p2_sensor" && !isnull(signal["pressure"]))
+		if(!isnull(signal["pressure"]))
 			reported = TRUE
 	TEST_ASSERT(cycled, "a hand on it asks the controller to cycle")
-	TEST_ASSERT(reported, "and it reports the pressure under its id tag")
+	TEST_ASSERT(!reported, "and it puts no pressure on the radio (its airlock reads the chamber itself)")
 	SSradio.remove_object(L, AIRLOCK_FREQ)
 
 /datum/unit_test/dq_p2_door/access_button_is_set_with_a_multitool

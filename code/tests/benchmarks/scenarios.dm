@@ -1127,5 +1127,5 @@
 		apcs++
 		by_status["[A.main_status]"]++
 		by_channels["[A.equipment]/[A.lighting]/[A.environ]"]++
-		cell_total += A.cell ? A.cell.charge : 0
+		cell_total += A.charge_now()
 	log_world("POWER_PROBE [label] apcs [apcs] cell_total [round(cell_total)] status [json_encode(by_status)] channels [json_encode(by_channels)]")

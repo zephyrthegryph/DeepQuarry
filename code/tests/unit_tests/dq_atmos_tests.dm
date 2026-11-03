@@ -153,7 +153,7 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 	// A grille is a simple /obj (uses_integrity = TRUE via the /obj base) with no
 	// material/gas dependencies, so it's a clean fixture.
 	var/obj/structure/grille/G = new(T)
-	TEST_ASSERT(G.uses_integrity, "test fixture doesn't use integrity — pick another type")
+	TEST_ASSERT(atom_rules_of(G).uses_integrity, "test fixture doesn't use integrity — pick another type")
 
 	// Force integrity to 0 WITHOUT going through take_damage's destruction path
 	// (update_integrity clamps + doesn't qdel), reproducing the real "at 0 but still
@@ -7494,31 +7494,31 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	qdel(vent)
 	qdel(alarm)
 
+/// An airlock console hears only commands addressed to its own id_tag: other traffic neither moves nor wakes it, a "cycle_exterior" starts a cycle.
 /datum/unit_test/dq_airlock_controller_ignores_unrelated_radio
 
 /datum/unit_test/dq_airlock_controller_ignores_unrelated_radio/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left
 	var/obj/machinery/embedded_controller/radio/airlock/airlock_controller/controller = new(test_turf)
-	var/datum/embedded_program/airlock/program = controller.program
+	keyed_set_id(controller, nameof(controller.id_tag), "dq_radio_airlock")
 	var/datum/signal/unrelated = new
-	unrelated.data["tag"] = "another_airlock_sensor"
-	TEST_ASSERT(!program.signal_requires_processing(unrelated), "airlock controller accepted an unrelated station-wide radio update")
-	var/datum/signal/relevant = new
-	relevant.data["tag"] = program.tag_chamber_sensor
-	relevant.data["pressure"] = 42
-	program.receive_signal(relevant)
-	TEST_ASSERT_EQUAL(program.memory["chamber_sensor_pressure"], 42, "idle airlock controller did not retain its chamber pressure update")
-	TEST_ASSERT(!program.signal_requires_processing(relevant), "idle airlock controller scheduled work for a passive sensor update")
-	program.begin_cycle_in()
-	TEST_ASSERT(program.signal_requires_processing(relevant), "cycling airlock controller rejected its chamber sensor update")
-	program.stop_cycling()
-	var/datum/signal/running_pump = new
-	running_pump.data = list("tag" = program.tag_airpump, "power" = 1, "direction" = 1)
-	program.receive_signal(running_pump)
-	TEST_ASSERT(program.signal_requires_processing(running_pump), "idle airlock controller did not wake for an unexpectedly running pump")
+	unrelated.data = list("tag" = "another_airlock", "command" = "cycle_exterior")
+	controller.receive_signal(unrelated)
+	TEST_ASSERT(controller.done_cycling(), "an airlock console moved for another console's command")
+	TEST_ASSERT(!controller.needs_step(), "an idle airlock console has nothing to step")
+	var/datum/signal/report = new
+	report.data = list("tag" = controller.tag_chamber_sensor, "pressure" = 42)
+	controller.receive_signal(report)
+	TEST_ASSERT(controller.done_cycling(), "a sensor-style report moved the console")
+	var/datum/signal/addressed = new
+	addressed.data = list("tag" = "dq_radio_airlock", "command" = "cycle_exterior")
+	controller.receive_signal(addressed)
+	TEST_ASSERT(controller.cycling(), "a cycle command addressed to the console did not start a cycle")
+	TEST_ASSERT(controller.needs_step(), "a cycling console does not step")
+	controller.user_command("abort")
 	qdel(unrelated)
-	qdel(relevant)
-	qdel(running_pump)
+	qdel(report)
+	qdel(addressed)
 	qdel(controller)
 
 /datum/unit_test/dq_pda_multicaster_hibernates_between_state_changes

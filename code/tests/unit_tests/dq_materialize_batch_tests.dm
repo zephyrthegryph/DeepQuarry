@@ -166,8 +166,7 @@ CAPABILITIES(/obj/effect/dq_batch_probe)
 /datum/unit_test/dq_materialize_batch/table_init_parity/Run()
 	var/checked = 0
 	for(var/path in subtypesof(/obj/structure/sign) + subtypesof(/obj/effect/decal))
-		var/obj/sample = path
-		if(!initial(sample.init_from_table))
+		if(!GLOB.init_from_table_types[path])
 			continue
 		var/obj/table = allocate(path, test_floor())
 		var/obj/chain = allocate(path, test_floor(), TRUE)

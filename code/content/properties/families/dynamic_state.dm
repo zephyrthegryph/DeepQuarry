@@ -88,17 +88,17 @@
 
 /datum/property_provider/integrity_ratio/type_value(path, list/variant_vars)
 	var/atom/A = path
-	return (initial(A.uses_integrity) && initial(A.max_integrity) > 0) ? 1 : null
+	return (atom_rules_of_type(A).uses_integrity && initial(A.max_integrity) > 0) ? 1 : null
 
 /datum/property_provider/integrity_ratio/instance_value(datum/D)
 	var/atom/A = D
-	if(!A.uses_integrity || A.max_integrity <= 0)
+	if(!atom_rules_of(A).uses_integrity || A.max_integrity <= 0)
 		return null
 	return A.get_integrity() / A.max_integrity
 
 /datum/property_provider/integrity_ratio/test_write(datum/D, value)
 	var/atom/A = D
-	if(!A.uses_integrity || A.max_integrity <= 0)
+	if(!atom_rules_of(A).uses_integrity || A.max_integrity <= 0)
 		return FALSE
 	A.update_integrity(value * A.max_integrity)
 	return TRUE

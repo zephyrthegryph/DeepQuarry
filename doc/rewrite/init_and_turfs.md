@@ -867,11 +867,13 @@ turf whose row needs none of the three as materialized without the call chain
 their dust appearance from a flat index and share one immutable-air lookup;
 `/turf/Initialize` checks multi-z neighbours without `GetAbove`/`GetBelow`.
 **l-boot2:**
-- **Skipping Initialize.** A type that sets `init_from_table = TRUE` has no
+- **Skipping Initialize.** A type on the table-init path (its nearest row in
+  `init_from_table_declared()` or the generated `init_from_table_generated()` is
+  TRUE, read through `GLOB.init_from_table_types`; it is no longer an /atom var) has no
   per-instance `Initialize()` state. `InitAtom()` calls its
   `table_initialize()` instead of the Initialize chain and its arglist.
   - `/turf/space` and plain `/turf/unsimulated` use it. The subtypes that
-    override Initialize turn the flag off.
+    override Initialize are declared FALSE.
   - The lint's `table_init_overrides` count (ceiling 0) catches a subtype
     that forgets to.
 - **Forwarding overrides removed.** 41 overrides whose body was only
@@ -893,7 +895,7 @@ their dust appearance from a flat index and share one immutable-air lookup;
   `table_initialize()` also runs. `tools/ci/init_table_candidates.py` finds
   every effect or structure type whose whole Initialize chain is one of those
   (no override on it, its subtypes, or any other ancestor) and generates
-  `code/game/atom/init_from_table_types.dm`: 295 types, 822 with subtypes
+  `code/content/atom/init_from_table_types.dm` (`init_from_table_generated()`): 295 types, 822 with subtypes
   (signs, props, decals, overlays, step triggers, salvage, ...). Rerun it with
   `--write` after adding or removing overrides; the lint's
   `table_init_overrides` ceiling of 0 catches a listed type that gains one.

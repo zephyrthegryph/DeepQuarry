@@ -71,10 +71,12 @@ An escape pod berth is a port subtype that overrides the hatch rows (doors open 
 The cycle states are the old ones (idle, prepare, depressurize, pressurize; targets none, inner open, outer open). What changes is where
 the readings come from and how commands go out:
 
-- **Chamber pressure** is the mean pressure of the chamber region: the turfs atmos-connected to the chamber sensor's turf (the pump's when
-  there is no sensor) once both doors are shut, at most 40. While the chamber pumps, the airlock holds one gas watch per region mixture
-  (`gas_watch_many(chamber_watches, GAS_DEPENDENCY_PRESSURE)`); a reported change wakes its step. Out of a pumping state the watches are
-  dropped. The region replaces the one sensor tile: the vent drains the tiles nearest it first, and the mean is what the chamber settles at.
+- **Chamber pressure** is the median pressure of the chamber region: the turfs atmos-connected to the chamber sensor's turf (the pump's
+  when there is no sensor), never crossing the airlock's own doors, at most 40. While the chamber pumps, the airlock holds one gas watch per
+  region mixture (`gas_watch_many(chamber_watches, GAS_DEPENDENCY_PRESSURE)`); a reported change wakes its step, and the step after the
+  pumps start judges once without waiting (a chamber already in its band never changes). Out of a pumping state the watches are dropped.
+  The region replaces the one sensor tile: the vent drains the tiles nearest it first. The median, not the mean: the atmos sim can leave a
+  static pocket of a tile or two beside vacuum (21 kPa on the AEG stern airlocks), which held a mean out of the band forever.
 - **Inside and outside pressure** are read from the interior and exterior sensors' air when a cycle starts (the shuttle exterior sensor still
   reads the turf in front of it); with no sensor, outside is vacuum and inside one atmosphere, as before.
 - **Door and pump state** are read from the doors and vents themselves (`density`, bolted, `use_power`, `pump_direction`). There is no

@@ -11,7 +11,7 @@
 	var/original_type = T.type
 	var/turf/simulated/floor/F = T.ChangeTurf(/turf/simulated/floor/tiled)
 	TEST_ASSERT(istype(F), "ChangeTurf to a tiled floor produced [F?.type]")
-	TEST_ASSERT(F.uses_integrity, "floors use integrity")
+	TEST_ASSERT(atom_rules_of(F).uses_integrity, "floors use integrity")
 	TEST_ASSERT_EQUAL(F.get_integrity(), F.max_integrity, "a fresh floor starts intact")
 
 	// A blast packet below the failure fraction breaks the tile.
