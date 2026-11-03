@@ -22,6 +22,7 @@
 	var/usage_flags = PROGRAM_ALL
 
 CAPABILITIES(/obj/item/computer_hardware)
+	configure(atom_rules(integrity_failure = 0.5))
 	setup(PROC_REF(link_holder))
 	derives(nameof(w_class), PROC_REF(initial_hardware_size))
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
@@ -123,6 +124,3 @@ CAPABILITIES(/obj/item/computer_hardware)
 
 /obj/item/computer_hardware/proc/initial_hardware_size()
 	return hardware_size
-
-CAPABILITIES(/obj/item/computer_hardware/)
-	configure(atom_rules(integrity_failure = 0.5))
