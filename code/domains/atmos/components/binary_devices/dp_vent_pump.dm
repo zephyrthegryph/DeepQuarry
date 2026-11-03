@@ -211,16 +211,16 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/dp_vent_pump)
 /obj/machinery/atmospherics/binary/dp_vent_pump/receive_signal(datum/signal/signal)
 	if(!signal.data["tag"] || (signal.data["tag"] != id) || (signal.data["sigtype"]!="command"))
 		return 0
-	if(signal.data["power"])
+	if(!isnull(signal.data["power"]))
 		set_use_power(text2num(signal.data["power"]))
 
 	if(signal.data["power_toggle"])
 		set_use_power(!use_power)
 
-	if(signal.data["direction"])
+	if(!isnull(signal.data["direction"]))
 		set_pump_direction(text2num(signal.data["direction"]))
 
-	if(signal.data["checks"])
+	if(!isnull(signal.data["checks"]))
 		set_pressure_checks(text2num(signal.data["checks"]))
 
 	if(signal.data["purge"])
@@ -231,13 +231,13 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/dp_vent_pump)
 		set_pressure_checks(pressure_checks | 1)
 		set_pump_direction(1)
 
-	if(signal.data["set_input_pressure"])
+	if(!isnull(signal.data["set_input_pressure"]))
 		set_input_pressure_min(between(0, text2num(signal.data["set_input_pressure"]), ONE_ATMOSPHERE*50))
 
-	if(signal.data["set_output_pressure"])
+	if(!isnull(signal.data["set_output_pressure"]))
 		set_output_pressure_max(between(0, text2num(signal.data["set_output_pressure"]), ONE_ATMOSPHERE*50))
 
-	if(signal.data["set_external_pressure"])
+	if(!isnull(signal.data["set_external_pressure"]))
 		set_external_pressure_bound(between(0, text2num(signal.data["set_external_pressure"]), ONE_ATMOSPHERE*50))
 
 	if(signal.data["status"])
