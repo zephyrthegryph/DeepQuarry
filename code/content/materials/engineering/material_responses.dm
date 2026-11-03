@@ -124,7 +124,8 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/examine/event = N
 	var/list/examine_text = event.texts
-	settle_cell_energy()
+	// Examine is a read: no settle_cell_energy() here. Settling charges the cell (set_charge() publishes, a rigged cell explodes),
+	// which nested a publish inside the examine delivery and made looking at a cell bank energy. Use settles it (material_cell_use_cost()).
 	var/datum/material/material = material()
 	if(!material)
 		return
