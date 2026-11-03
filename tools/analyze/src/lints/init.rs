@@ -14,14 +14,16 @@
 //! * `world_reads`: a line in an `Initialize()` body that reaches outside the instance (`range(`, `orange(`, `view(`,
 //!   `GetAbove`, `GetBelow`, `GLOB.`, `START_PROCESSING`): move it to `on_holder_init(A)`, `after_init()` or `membership()`;
 //! * `turf_on_materialize`: a `/turf/.../on_materialize(` override (banned);
-//! * `table_init_overrides`: an `Initialize()` override on a type that inherits `init_from_table = TRUE` (banned).
+//! * `table_init_overrides`: an `Initialize()` override on a type whose nearest declared ancestor is on the table-init path (banned).
+//!   The declarations are rows `path = TRUE|FALSE` of the `GLOBAL_LIST_INIT(init_from_table_*, list(` tables (code/game/atom/atom_type_table.dm and the
+//!   generated code/content/atom/init_from_table_types.dm); the flag is per-type data, not a var.
 //!
 //! The `// INIT: <reason>` form of the old ratchet is gone: a kept override names its code in the one annotation form.
 //!
 //! Quirks kept from the Python port: files are read with `read().splitlines()` over an `os.walk` of `code/` then `maps/`
 //! (dot-files included); the unit-test/benchmark exemption (`[lint.init]` in `tools/ci/lint_scopes.toml`) applies to the
 //! per-file rules only: `table_init_overrides` reads every file and asks the ALLOW question about every header it meets;
-//! the `init_from_table` flags are one global dict (last file in walk order wins; nearest flagged ancestor).
+//! the declared rows are one global dict (last file in walk order wins; nearest declared ancestor).
 
 use std::collections::HashMap;
 
@@ -67,13 +69,13 @@ static META: Meta = Meta {
         },
         RuleMeta { name: "world_reads", hint: "don't reach outside the instance in Initialize(); do it in on_holder_init(A), after_init() or through membership()" },
         RuleMeta { name: "turf_on_materialize", hint: "turf on_materialize() overrides are skipped by SSatoms; use the type table" },
-        RuleMeta { name: "table_init_overrides", hint: "set init_from_table = FALSE on a type that overrides Initialize()" },
+        RuleMeta { name: "table_init_overrides", hint: "declare the type `= FALSE` in init_from_table_declared() (code/game/atom/atom_type_table.dm) when it overrides Initialize()" },
     ],
     allow: &["init"],
     lists: &["init_roots"],
 };
 
-/// One file's part of the table-init pass: its `init_from_table` flags `(type, on)` in file order,
+/// One file's part of the table-init pass: its declared table-init rows `(type, on)` in file order,
 /// and its `Initialize()` / `LateInitialize()` headers `(line, type)` that no ALLOW(init) kept.
 #[derive(Serialize, Deserialize, Default, PartialEq)]
 struct TableFacts {
@@ -84,26 +86,26 @@ struct TableFacts {
 fn table_facts(f: &SourceFile) -> TableFacts {
     let init_header = pat_match!(r"^(/[\w/]+)/Initialize\s*\(");
     let late_header = pat_match!(r"^(/[\w/]+)/LateInitialize\s*\(");
-    let type_block = pat_match!(r"^(/[\w/]+)\s*(//.*)?$");
-    let table_flag = pat_match!(r"^\s+init_from_table\s*=\s*(TRUE|FALSE|1|0)\b");
+    let table_proc = pat_match!(r"^GLOBAL_LIST_INIT\(init_from_table_\w+, list\(");
+    let table_row = pat_match!(r"^\s+(/[\w/]+)\s*=\s*(TRUE|FALSE|1|0)\b");
+    let mut in_table = false;
     let mut out = TableFacts::default();
     let lines = py_splitlines(f.text());
-    let mut block: Option<String> = None;
     for (i, line) in lines.iter().enumerate() {
         let number = i + 1;
         let line = *line;
-        if let Some(head) = type_block.captures(line) {
-            if !line.contains('(') {
-                block = Some(head.s(1).to_string());
+        if table_proc.is_match(line) {
+            in_table = true;
+            continue;
+        }
+        if in_table {
+            if col0(line) {
+                in_table = false;
+            } else {
+                if let Some(row) = table_row.captures(line) {
+                    out.flags.push((row.s(1).to_string(), matches!(row.s(2), "TRUE" | "1")));
+                }
                 continue;
-            }
-        }
-        if col0(line) {
-            block = None;
-        }
-        if let Some(flag) = table_flag.captures(line) {
-            if let Some(b) = &block {
-                out.flags.push((b.clone(), matches!(flag.s(1), "TRUE" | "1")));
             }
         }
         let header = init_header.captures(line).or_else(|| late_header.captures(line));

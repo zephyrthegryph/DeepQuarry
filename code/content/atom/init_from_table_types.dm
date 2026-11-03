@@ -3,913 +3,302 @@
 // sec 3.1): SSatoms.InitAtom() runs table_initialize() instead of the proc chain.
 // A type that gains an Initialize() override fails the init lint
 // (`table_init_overrides`); rerun the tool to drop it from this list.
-
-/obj/effect/abstract/light_spot
-	init_from_table = TRUE
-
-/obj/effect/ant_structure
-	init_from_table = TRUE
-
-/obj/effect/begin
-	init_from_table = TRUE
-
-/obj/effect/blocker
-	init_from_table = TRUE
-
-CAPABILITIES(/obj/effect/blocker)
-	configure(movable_motion(unacidable = TRUE))
-
-/obj/effect/bmode
-	init_from_table = TRUE
-
-/obj/effect/bump_teleporter
-	init_from_table = TRUE
-
-/obj/effect/ceiling
-	init_from_table = TRUE
-
-/obj/effect/dead_plant
-	init_from_table = TRUE
-
-/obj/effect/debugging/marker
-	init_from_table = TRUE
-
-/obj/effect/decal/mecha_wreckage/allure
-	init_from_table = TRUE
-
-/obj/effect/decal/mecha_wreckage/baron
-	init_from_table = TRUE
-
-/obj/effect/decal/mecha_wreckage/gorilla
-	init_from_table = TRUE
-
-/obj/effect/decal/mecha_wreckage/gunpod
-	init_from_table = TRUE
-
-/obj/effect/decal/mecha_wreckage/hades
-	init_from_table = TRUE
-
-/obj/effect/decal/mecha_wreckage/hoverpod
-	init_from_table = TRUE
-
-/obj/effect/decal/mecha_wreckage/janus
-	init_from_table = TRUE
-
-/obj/effect/decal/mecha_wreckage/marauder
-	init_from_table = TRUE
-
-/obj/effect/decal/mecha_wreckage/mauler
-	init_from_table = TRUE
-
-/obj/effect/decal/mecha_wreckage/micro
-	init_from_table = TRUE
-
-/obj/effect/decal/mecha_wreckage/phazon
-	init_from_table = TRUE
-
-/obj/effect/decal/mecha_wreckage/pinnace
-	init_from_table = TRUE
-
-/obj/effect/decal/mecha_wreckage/scarab
-	init_from_table = TRUE
-
-/obj/effect/decal/mecha_wreckage/scoralis
-	init_from_table = TRUE
-
-/obj/effect/decal/mecha_wreckage/seraph
-	init_from_table = TRUE
-
-/obj/effect/decal/mecha_wreckage/shuttlecraft
-	init_from_table = TRUE
-
-/obj/effect/decal/remains
-	init_from_table = TRUE
-
-/obj/effect/decal/spraystill
-	init_from_table = TRUE
-
-/obj/effect/dog_nose
-	init_from_table = TRUE
-
-/obj/effect/dummy/chameleon
-	init_from_table = TRUE
-
-/obj/effect/ebeam/deadly
-	init_from_table = TRUE
-
-/obj/effect/ebeam/hose
-	init_from_table = TRUE
-
-/obj/effect/effect/ion_trails
-	init_from_table = TRUE
-
-/obj/effect/effect/snow
-	init_from_table = TRUE
-
-/obj/effect/effect/steam
-	init_from_table = TRUE
-
-/obj/effect/engine_setup
-	init_from_table = TRUE
-
-/obj/effect/extraction_holder
-	init_from_table = TRUE
-
-/obj/effect/floormimic
-	init_from_table = TRUE
-
-/obj/effect/forcefield
-	init_from_table = TRUE
-
-CAPABILITIES(/obj/effect/forcefield)
-	configure(movable_motion(unacidable = TRUE))
-
-/obj/effect/fusion_particle_catcher
-	init_from_table = TRUE
-
-/obj/effect/hoist_hook
-	init_from_table = TRUE
-
-/obj/effect/immovablerod
-	init_from_table = TRUE
-
-/obj/effect/laser
-	init_from_table = TRUE
-
-/obj/effect/map_effect/perma_light
-	init_from_table = TRUE
-
-CAPABILITIES(/obj/effect/map_effect/perma_light)
-	configure(light_glow(range = 3, power = 1, color = "#FFFFFF"))
-
-/obj/effect/map_effect/portal/line
-	init_from_table = TRUE
-
-/obj/effect/mark
-	init_from_table = TRUE
-
-/obj/effect/mist
-	init_from_table = TRUE
-
-/obj/effect/mobblocker
-	init_from_table = TRUE
-
-/obj/effect/overlay/aiholo
-	init_from_table = TRUE
-
-/obj/effect/overlay/atmos_excited
-	init_from_table = TRUE
-
-/obj/effect/overlay/bluespacify
-	init_from_table = TRUE
-
-/obj/effect/overlay/closet_door
-	init_from_table = TRUE
-
-/obj/effect/overlay/coconut
-	init_from_table = TRUE
-
-/obj/effect/overlay/energy_ball
-	init_from_table = TRUE
-
-/obj/effect/overlay/holographic
-	init_from_table = TRUE
-
-/obj/effect/overlay/light_visible
-	init_from_table = TRUE
-
-/obj/effect/overlay/palmtree_l
-	init_from_table = TRUE
-
-/obj/effect/overlay/palmtree_r
-	init_from_table = TRUE
-
-/obj/effect/overlay/recycler
-	init_from_table = TRUE
-
-/obj/effect/overlay/snow
-	init_from_table = TRUE
-
-/obj/effect/overlay/vis
-	init_from_table = TRUE
-
-/obj/effect/overlay/zone_sel
-	init_from_table = TRUE
-
-/obj/effect/projectile_shadow
-	init_from_table = TRUE
-
-/obj/effect/projection
-	init_from_table = TRUE
-
-/obj/effect/shield
-	init_from_table = TRUE
-
-/obj/effect/shut_controller
-	init_from_table = TRUE
-
-/obj/effect/simple_portal/coords
-	init_from_table = TRUE
-
-/obj/effect/space_dust
-	init_from_table = TRUE
-
-/obj/effect/speech_bubble
-	init_from_table = TRUE
-
-/obj/effect/spresent
-	init_from_table = TRUE
-
-/obj/effect/step_trigger/death
-	init_from_table = TRUE
-
-/obj/effect/step_trigger/stopper
-	init_from_table = TRUE
-
-/obj/effect/step_trigger/teleporter/offset
-	init_from_table = TRUE
-
-/obj/effect/step_trigger/teleporter/planetary_fall
-	init_from_table = TRUE
-
-/obj/effect/step_trigger/teleporter/random
-	init_from_table = TRUE
-
-/obj/effect/step_trigger/thrower
-	init_from_table = TRUE
-
-/obj/effect/step_trigger/warning
-	init_from_table = TRUE
-
-/obj/effect/suspension_field
-	init_from_table = TRUE
-
-/obj/effect/vac_visual
-	init_from_table = TRUE
-
-/obj/effect/weaversilk/trap
-	init_from_table = TRUE
-
-/obj/effect/zone_divider
-	init_from_table = TRUE
-
-/obj/structure/alien
-	init_from_table = TRUE
-
-/obj/structure/backup_implanter_ch
-	init_from_table = TRUE
-
-/obj/structure/balloon
-	init_from_table = TRUE
-
-/obj/structure/bedsheetbin
-	init_from_table = TRUE
-
-/obj/structure/bigDelivery
-	init_from_table = TRUE
-
-/obj/structure/boxingrope
-	init_from_table = TRUE
-
-/obj/structure/boxingropeenter
-	init_from_table = TRUE
-
-/obj/structure/c_tray
-	init_from_table = TRUE
-
-/obj/structure/chaoscake
-	init_from_table = TRUE
-
-/obj/structure/coatrack
-	init_from_table = TRUE
-
-/obj/structure/constructshell
-	init_from_table = TRUE
-
-/obj/structure/cryofeed
-	init_from_table = TRUE
-
-/obj/structure/cult/forge
-	init_from_table = TRUE
-
-/obj/structure/cult/talisman
-	init_from_table = TRUE
-
-/obj/structure/cult/tome
-	init_from_table = TRUE
-
-/obj/structure/curtain
-	init_from_table = TRUE
-
-/obj/structure/dancepole
-	init_from_table = TRUE
-
-/obj/structure/dark_portal/minion
-	init_from_table = TRUE
-
-/obj/structure/dirtybed
-	init_from_table = TRUE
-
-/obj/structure/displaycase
-	init_from_table = TRUE
-
-/obj/structure/disposalholder
-	init_from_table = TRUE
-
-/obj/structure/dogbed
-	init_from_table = TRUE
-
-CAPABILITIES(/obj/structure/dogbed)
-	configure(buckle_rules(dir = SOUTH, lying = 1))
-
-/obj/structure/dummystairs
-	init_from_table = TRUE
-
-/obj/structure/event/santa_sack
-	init_from_table = TRUE
-
-/obj/structure/event/stage
-	init_from_table = TRUE
-
-/obj/structure/event_collector
-	init_from_table = TRUE
-
-/obj/structure/expedition_demo_target
-	init_from_table = TRUE
-
-/obj/structure/expedition_marker
-	init_from_table = TRUE
-
-/obj/structure/expedition_survey_beacon
-	init_from_table = TRUE
-
-/obj/structure/expedition_survivor_pod
-	init_from_table = TRUE
-
-/obj/structure/firedoor_assembly
-	init_from_table = TRUE
-
-/obj/structure/fireplace
-	init_from_table = TRUE
-
-/obj/structure/fitness/punchingbag
-	init_from_table = TRUE
-
-/obj/structure/fitness/weightlifter
-	init_from_table = TRUE
-
-/obj/structure/flag_base
-	init_from_table = TRUE
-
-/obj/structure/flag_decor
-	init_from_table = TRUE
-
-/obj/structure/flight_left
-	init_from_table = TRUE
-
-/obj/structure/flight_right
-	init_from_table = TRUE
-
-/obj/structure/generic_structure
-	init_from_table = TRUE
-
-/obj/structure/ghost_pod/manual/clegg
-	init_from_table = TRUE
-
-/obj/structure/ghost_pod/manual/corgi
-	init_from_table = TRUE
-
-/obj/structure/ghost_pod/manual/cursedblade
-	init_from_table = TRUE
-
-/obj/structure/ghost_pod/manual/lost_drone
-	init_from_table = TRUE
-
-/obj/structure/grille/cult
-	init_from_table = TRUE
-
-/obj/structure/grille/rustic
-	init_from_table = TRUE
-
-/obj/structure/handrail
-	init_from_table = TRUE
-
-/obj/structure/holohoop
-	init_from_table = TRUE
-
-/obj/structure/holostool
-	init_from_table = TRUE
-
-CAPABILITIES(/obj/structure/holostool)
-	configure(movable_motion(unacidable = TRUE))
-
-/obj/structure/hyperball_goal
-	init_from_table = TRUE
-
-/obj/structure/hyperball_pedestal
-	init_from_table = TRUE
-
-/obj/structure/kitchenspike
-	init_from_table = TRUE
-
-/obj/structure/ladder_assembly
-	init_from_table = TRUE
-
-/obj/structure/m_tray
-	init_from_table = TRUE
-
-/obj/structure/material_anvil
-	init_from_table = TRUE
-
-/obj/structure/morgue
-	init_from_table = TRUE
-
-/obj/structure/panic_button
-	init_from_table = TRUE
-
-/obj/structure/plasticflaps
-	init_from_table = TRUE
-
-/obj/structure/plushie
-	init_from_table = TRUE
-
-/obj/structure/portal_event
-	init_from_table = TRUE
-
-/obj/structure/portal_gateway
-	init_from_table = TRUE
-
-CAPABILITIES(/obj/structure/portal_gateway)
-	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_by)))
-	configure(movable_motion(unacidable = TRUE))
-
-/obj/structure/portal_target
-	init_from_table = TRUE
-
-/obj/structure/prop/alien
-	init_from_table = TRUE
-
-/obj/structure/prop/altevian_generator_wrecked
-	init_from_table = TRUE
-
-/obj/structure/prop/big_skeleton
-	init_from_table = TRUE
-
-/obj/structure/prop/blackbox
-	init_from_table = TRUE
-
-/obj/structure/prop/cryopod
-	init_from_table = TRUE
-
-/obj/structure/prop/desert_planet160x160
-	init_from_table = TRUE
-
-/obj/structure/prop/desert_planet64x64
-	init_from_table = TRUE
-
-/obj/structure/prop/dna_vault
-	init_from_table = TRUE
-
-/obj/structure/prop/dominator
-	init_from_table = TRUE
-
-/obj/structure/prop/esoteric
-	init_from_table = TRUE
-
-/obj/structure/prop/fake_ai
-	init_from_table = TRUE
-
-/obj/structure/prop/fantasy
-	init_from_table = TRUE
-
-/obj/structure/prop/fence
-	init_from_table = TRUE
-
-/obj/structure/prop/grid_checker
-	init_from_table = TRUE
-
-/obj/structure/prop/lock
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/alien_tank
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/biosyphon
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/bsb_off
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/bsb_on
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/centrifuge
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/comm_tower
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/complicator
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/conduit
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/core
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/disease_analyser
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/gravygen
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/green_egg
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/incubator
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/isolator
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/last_shelter
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/nt_biocan
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/nt_cruciforge
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/nt_obelisk
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/nt_optable
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/random_radio
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/smelter
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/solifier
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/sorter
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/tgmc_console1
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/tgmc_console2
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/tgmc_console3
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/tgmc_console4
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/tgmc_console5
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/tradebeacon
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/tradebeacon2
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/tube
-	init_from_table = TRUE
-
-/obj/structure/prop/machine/von_krabin
-	init_from_table = TRUE
-
-/obj/structure/prop/mainframe
-	init_from_table = TRUE
-
-/obj/structure/prop/memorial
-	init_from_table = TRUE
-
-/obj/structure/prop/poicanister
-	init_from_table = TRUE
-
-CAPABILITIES(/obj/structure/prop/poicanister)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/objects/growthcanister)))
-
-/obj/structure/prop/rock
-	init_from_table = TRUE
-
-/obj/structure/prop/statue/angel
-	init_from_table = TRUE
-
-/obj/structure/prop/statue/lion
-	init_from_table = TRUE
-
-/obj/structure/prop/statue/pillar
-	init_from_table = TRUE
-
-/obj/structure/prop/statue/statue1
-	init_from_table = TRUE
-
-/obj/structure/prop/statue/statue2
-	init_from_table = TRUE
-
-/obj/structure/prop/statue/statue3
-	init_from_table = TRUE
-
-/obj/structure/prop/statue/statue4
-	init_from_table = TRUE
-
-/obj/structure/prop/statue/statue5
-	init_from_table = TRUE
-
-/obj/structure/prop/statue/stump_plaque
-	init_from_table = TRUE
-
-/obj/structure/prop/statue/sunkensail
-	init_from_table = TRUE
-
-/obj/structure/prop/statue/venus
-	init_from_table = TRUE
-
-/obj/structure/prop/tyr_elevator
-	init_from_table = TRUE
-
-/obj/structure/prop/war
-	init_from_table = TRUE
-
-/obj/structure/prop/warmrocks
-	init_from_table = TRUE
-
-/obj/structure/salvageable/autolathe
-	init_from_table = TRUE
-
-/obj/structure/salvageable/computer_os
-	init_from_table = TRUE
-
-/obj/structure/salvageable/console_broken_os
-	init_from_table = TRUE
-
-/obj/structure/salvageable/console_os
-	init_from_table = TRUE
-
-/obj/structure/salvageable/data_os
-	init_from_table = TRUE
-
-/obj/structure/salvageable/implant_container_os
-	init_from_table = TRUE
-
-/obj/structure/salvageable/machine_os
-	init_from_table = TRUE
-
-/obj/structure/salvageable/server_os
-	init_from_table = TRUE
-
-/obj/structure/salvageable/shuttle_console
-	init_from_table = TRUE
-
-/obj/structure/salvageable/slotmachine1
-	init_from_table = TRUE
-
-/obj/structure/salvageable/slotmachine2
-	init_from_table = TRUE
-
-/obj/structure/ship_munition
-	init_from_table = TRUE
-
-/obj/structure/showcase
-	init_from_table = TRUE
-
-/obj/structure/shuttle/engine
-	init_from_table = TRUE
-
-/obj/structure/sign/atmos
-	init_from_table = TRUE
-
-/obj/structure/sign/atmos_air
-	init_from_table = TRUE
-
-/obj/structure/sign/atmos_ch4
-	init_from_table = TRUE
-
-/obj/structure/sign/atmos_co2
-	init_from_table = TRUE
-
-/obj/structure/sign/atmos_n2
-	init_from_table = TRUE
-
-/obj/structure/sign/atmos_n2o
-	init_from_table = TRUE
-
-/obj/structure/sign/atmos_o2
-	init_from_table = TRUE
-
-/obj/structure/sign/atmos_plasma
-	init_from_table = TRUE
-
-/obj/structure/sign/atmos_waste
-	init_from_table = TRUE
-
-/obj/structure/sign/atmosplaque
-	init_from_table = TRUE
-
-/obj/structure/sign/bigname
-	init_from_table = TRUE
-
-/obj/structure/sign/biohazard
-	init_from_table = TRUE
-
-/obj/structure/sign/botany
-	init_from_table = TRUE
-
-/obj/structure/sign/calendar
-	init_from_table = TRUE
-
-/obj/structure/sign/chemdiamond
-	init_from_table = TRUE
-
-/obj/structure/sign/chemistry
-	init_from_table = TRUE
-
-/obj/structure/sign/christmas
-	init_from_table = TRUE
-
-/obj/structure/sign/clock
-	init_from_table = TRUE
-
-/obj/structure/sign/coffee_shop_library
-	init_from_table = TRUE
-
-/obj/structure/sign/deathsposal
-	init_from_table = TRUE
-
-/obj/structure/sign/deck
-	init_from_table = TRUE
-
-/obj/structure/sign/deck1
-	init_from_table = TRUE
-
-/obj/structure/sign/deck2
-	init_from_table = TRUE
-
-/obj/structure/sign/deck3
-	init_from_table = TRUE
-
-/obj/structure/sign/deck4
-	init_from_table = TRUE
-
-/obj/structure/sign/department
-	init_from_table = TRUE
-
-/obj/structure/sign/double/maltesefalcon
-	init_from_table = TRUE
-
-/obj/structure/sign/electricshock
-	init_from_table = TRUE
-
-/obj/structure/sign/examroom
-	init_from_table = TRUE
-
-/obj/structure/sign/explosive
-	init_from_table = TRUE
-
-/obj/structure/sign/fire
-	init_from_table = TRUE
-
-/obj/structure/sign/flag
-	init_from_table = TRUE
-
-/obj/structure/sign/goldenplaque
-	init_from_table = TRUE
-
-/obj/structure/sign/graffiti
-	init_from_table = TRUE
-
-/obj/structure/sign/greencross
-	init_from_table = TRUE
-
-/obj/structure/sign/hangar
-	init_from_table = TRUE
-
-/obj/structure/sign/hostilefauna
-	init_from_table = TRUE
-
-/obj/structure/sign/hydro
-	init_from_table = TRUE
-
-/obj/structure/sign/hydrostorage
-	init_from_table = TRUE
-
-/obj/structure/sign/ironhammer
-	init_from_table = TRUE
-
-/obj/structure/sign/itg
-	init_from_table = TRUE
-
-/obj/structure/sign/kiddieplaque
-	init_from_table = TRUE
-
-/obj/structure/sign/level
-	init_from_table = TRUE
-
-/obj/structure/sign/levels
-	init_from_table = TRUE
-
-/obj/structure/sign/mining
-	init_from_table = TRUE
-
-/obj/structure/sign/nanotrasen
-	init_from_table = TRUE
-
-CAPABILITIES(/obj/structure/sign/nanotrasen)
-	configure(atom_rules(catalogue_data = list(/datum/category_item/catalogue/information/organization/nanotrasen)))
-
-/obj/structure/sign/nosmoking_1
-	init_from_table = TRUE
-
-/obj/structure/sign/nosmoking_2
-	init_from_table = TRUE
-
-/obj/structure/sign/periodic
-	init_from_table = TRUE
-
-/obj/structure/sign/pods
-	init_from_table = TRUE
-
-/obj/structure/sign/redcross
-	init_from_table = TRUE
-
-/obj/structure/sign/scenery
-	init_from_table = TRUE
-
-/obj/structure/sign/science
-	init_from_table = TRUE
-
-/obj/structure/sign/sec1
-	init_from_table = TRUE
-
-/obj/structure/sign/sec2
-	init_from_table = TRUE
-
-/obj/structure/sign/sec3
-	init_from_table = TRUE
-
-/obj/structure/sign/sec4
-	init_from_table = TRUE
-
-/obj/structure/sign/securearea
-	init_from_table = TRUE
-
-/obj/structure/sign/signnew
-	init_from_table = TRUE
-
-/obj/structure/sign/small
-	init_from_table = TRUE
-
-/obj/structure/sign/vacuum
-	init_from_table = TRUE
-
-/obj/structure/sign/xenobio
-	init_from_table = TRUE
-
-/obj/structure/signevent
-	init_from_table = TRUE
-
-/obj/structure/signpost
-	init_from_table = TRUE
-
-/obj/structure/signpost_fake
-	init_from_table = TRUE
-
-/obj/structure/signpostwood
-	init_from_table = TRUE
-
-/obj/structure/smolebuilding
-	init_from_table = TRUE
-
-/obj/structure/smoleruins
-	init_from_table = TRUE
-
-/obj/structure/snowman
-	init_from_table = TRUE
-
-/obj/structure/stripper_pole
-	init_from_table = TRUE
-
-/obj/structure/target_stake
-	init_from_table = TRUE
-
-/obj/structure/thecake
-	init_from_table = TRUE
-
-/obj/structure/theonepizza
-	init_from_table = TRUE
-
-/obj/structure/tubes
-	init_from_table = TRUE
-
-/obj/structure/urinal
-	init_from_table = TRUE
+// Read by build_init_from_table_types() (code/game/atom/atom_type_table.dm).
+
+GLOBAL_LIST_INIT(init_from_table_generated, list(
+	/obj/effect/abstract/light_spot = TRUE,
+	/obj/effect/ant_structure = TRUE,
+	/obj/effect/begin = TRUE,
+	/obj/effect/blocker = TRUE,
+	/obj/effect/bmode = TRUE,
+	/obj/effect/bump_teleporter = TRUE,
+	/obj/effect/ceiling = TRUE,
+	/obj/effect/dead_plant = TRUE,
+	/obj/effect/debugging/marker = TRUE,
+	/obj/effect/decal/mecha_wreckage/allure = TRUE,
+	/obj/effect/decal/mecha_wreckage/baron = TRUE,
+	/obj/effect/decal/mecha_wreckage/gorilla = TRUE,
+	/obj/effect/decal/mecha_wreckage/gunpod = TRUE,
+	/obj/effect/decal/mecha_wreckage/hades = TRUE,
+	/obj/effect/decal/mecha_wreckage/hoverpod = TRUE,
+	/obj/effect/decal/mecha_wreckage/janus = TRUE,
+	/obj/effect/decal/mecha_wreckage/marauder = TRUE,
+	/obj/effect/decal/mecha_wreckage/mauler = TRUE,
+	/obj/effect/decal/mecha_wreckage/micro = TRUE,
+	/obj/effect/decal/mecha_wreckage/phazon = TRUE,
+	/obj/effect/decal/mecha_wreckage/pinnace = TRUE,
+	/obj/effect/decal/mecha_wreckage/scarab = TRUE,
+	/obj/effect/decal/mecha_wreckage/scoralis = TRUE,
+	/obj/effect/decal/mecha_wreckage/seraph = TRUE,
+	/obj/effect/decal/mecha_wreckage/shuttlecraft = TRUE,
+	/obj/effect/decal/remains = TRUE,
+	/obj/effect/decal/spraystill = TRUE,
+	/obj/effect/dog_nose = TRUE,
+	/obj/effect/dummy/chameleon = TRUE,
+	/obj/effect/ebeam/deadly = TRUE,
+	/obj/effect/ebeam/hose = TRUE,
+	/obj/effect/effect/ion_trails = TRUE,
+	/obj/effect/effect/snow = TRUE,
+	/obj/effect/effect/steam = TRUE,
+	/obj/effect/engine_setup = TRUE,
+	/obj/effect/extraction_holder = TRUE,
+	/obj/effect/floormimic = TRUE,
+	/obj/effect/forcefield = TRUE,
+	/obj/effect/fusion_particle_catcher = TRUE,
+	/obj/effect/hoist_hook = TRUE,
+	/obj/effect/immovablerod = TRUE,
+	/obj/effect/laser = TRUE,
+	/obj/effect/map_effect/perma_light = TRUE,
+	/obj/effect/map_effect/portal/line = TRUE,
+	/obj/effect/mark = TRUE,
+	/obj/effect/mist = TRUE,
+	/obj/effect/mobblocker = TRUE,
+	/obj/effect/overlay/aiholo = TRUE,
+	/obj/effect/overlay/atmos_excited = TRUE,
+	/obj/effect/overlay/bluespacify = TRUE,
+	/obj/effect/overlay/closet_door = TRUE,
+	/obj/effect/overlay/coconut = TRUE,
+	/obj/effect/overlay/energy_ball = TRUE,
+	/obj/effect/overlay/holographic = TRUE,
+	/obj/effect/overlay/light_visible = TRUE,
+	/obj/effect/overlay/palmtree_l = TRUE,
+	/obj/effect/overlay/palmtree_r = TRUE,
+	/obj/effect/overlay/recycler = TRUE,
+	/obj/effect/overlay/snow = TRUE,
+	/obj/effect/overlay/vis = TRUE,
+	/obj/effect/overlay/zone_sel = TRUE,
+	/obj/effect/projectile_shadow = TRUE,
+	/obj/effect/projection = TRUE,
+	/obj/effect/shield = TRUE,
+	/obj/effect/shut_controller = TRUE,
+	/obj/effect/simple_portal/coords = TRUE,
+	/obj/effect/space_dust = TRUE,
+	/obj/effect/speech_bubble = TRUE,
+	/obj/effect/spresent = TRUE,
+	/obj/effect/step_trigger/death = TRUE,
+	/obj/effect/step_trigger/stopper = TRUE,
+	/obj/effect/step_trigger/teleporter/offset = TRUE,
+	/obj/effect/step_trigger/teleporter/planetary_fall = TRUE,
+	/obj/effect/step_trigger/teleporter/random = TRUE,
+	/obj/effect/step_trigger/thrower = TRUE,
+	/obj/effect/step_trigger/warning = TRUE,
+	/obj/effect/suspension_field = TRUE,
+	/obj/effect/vac_visual = TRUE,
+	/obj/effect/weaversilk/trap = TRUE,
+	/obj/effect/zone_divider = TRUE,
+	/obj/structure/alien = TRUE,
+	/obj/structure/backup_implanter_ch = TRUE,
+	/obj/structure/balloon = TRUE,
+	/obj/structure/bedsheetbin = TRUE,
+	/obj/structure/bigDelivery = TRUE,
+	/obj/structure/boxingrope = TRUE,
+	/obj/structure/boxingropeenter = TRUE,
+	/obj/structure/c_tray = TRUE,
+	/obj/structure/chaoscake = TRUE,
+	/obj/structure/coatrack = TRUE,
+	/obj/structure/constructshell = TRUE,
+	/obj/structure/cryofeed = TRUE,
+	/obj/structure/cult/forge = TRUE,
+	/obj/structure/cult/talisman = TRUE,
+	/obj/structure/cult/tome = TRUE,
+	/obj/structure/curtain = TRUE,
+	/obj/structure/dancepole = TRUE,
+	/obj/structure/dark_portal/minion = TRUE,
+	/obj/structure/dirtybed = TRUE,
+	/obj/structure/displaycase = TRUE,
+	/obj/structure/disposalholder = TRUE,
+	/obj/structure/dogbed = TRUE,
+	/obj/structure/dummystairs = TRUE,
+	/obj/structure/event/santa_sack = TRUE,
+	/obj/structure/event/stage = TRUE,
+	/obj/structure/event_collector = TRUE,
+	/obj/structure/expedition_demo_target = TRUE,
+	/obj/structure/expedition_marker = TRUE,
+	/obj/structure/expedition_survey_beacon = TRUE,
+	/obj/structure/expedition_survivor_pod = TRUE,
+	/obj/structure/firedoor_assembly = TRUE,
+	/obj/structure/fireplace = TRUE,
+	/obj/structure/fitness/punchingbag = TRUE,
+	/obj/structure/fitness/weightlifter = TRUE,
+	/obj/structure/flag_base = TRUE,
+	/obj/structure/flag_decor = TRUE,
+	/obj/structure/flight_left = TRUE,
+	/obj/structure/flight_right = TRUE,
+	/obj/structure/generic_structure = TRUE,
+	/obj/structure/ghost_pod/manual/clegg = TRUE,
+	/obj/structure/ghost_pod/manual/corgi = TRUE,
+	/obj/structure/ghost_pod/manual/cursedblade = TRUE,
+	/obj/structure/ghost_pod/manual/lost_drone = TRUE,
+	/obj/structure/grille/cult = TRUE,
+	/obj/structure/grille/rustic = TRUE,
+	/obj/structure/handrail = TRUE,
+	/obj/structure/holohoop = TRUE,
+	/obj/structure/holostool = TRUE,
+	/obj/structure/hyperball_goal = TRUE,
+	/obj/structure/hyperball_pedestal = TRUE,
+	/obj/structure/kitchenspike = TRUE,
+	/obj/structure/ladder_assembly = TRUE,
+	/obj/structure/m_tray = TRUE,
+	/obj/structure/material_anvil = TRUE,
+	/obj/structure/morgue = TRUE,
+	/obj/structure/panic_button = TRUE,
+	/obj/structure/plasticflaps = TRUE,
+	/obj/structure/plushie = TRUE,
+	/obj/structure/portal_event = TRUE,
+	/obj/structure/portal_gateway = TRUE,
+	/obj/structure/portal_target = TRUE,
+	/obj/structure/prop/alien = TRUE,
+	/obj/structure/prop/altevian_generator_wrecked = TRUE,
+	/obj/structure/prop/big_skeleton = TRUE,
+	/obj/structure/prop/blackbox = TRUE,
+	/obj/structure/prop/cryopod = TRUE,
+	/obj/structure/prop/desert_planet160x160 = TRUE,
+	/obj/structure/prop/desert_planet64x64 = TRUE,
+	/obj/structure/prop/dna_vault = TRUE,
+	/obj/structure/prop/dominator = TRUE,
+	/obj/structure/prop/esoteric = TRUE,
+	/obj/structure/prop/fake_ai = TRUE,
+	/obj/structure/prop/fantasy = TRUE,
+	/obj/structure/prop/fence = TRUE,
+	/obj/structure/prop/grid_checker = TRUE,
+	/obj/structure/prop/lock = TRUE,
+	/obj/structure/prop/machine/alien_tank = TRUE,
+	/obj/structure/prop/machine/biosyphon = TRUE,
+	/obj/structure/prop/machine/bsb_off = TRUE,
+	/obj/structure/prop/machine/bsb_on = TRUE,
+	/obj/structure/prop/machine/centrifuge = TRUE,
+	/obj/structure/prop/machine/comm_tower = TRUE,
+	/obj/structure/prop/machine/complicator = TRUE,
+	/obj/structure/prop/machine/conduit = TRUE,
+	/obj/structure/prop/machine/core = TRUE,
+	/obj/structure/prop/machine/disease_analyser = TRUE,
+	/obj/structure/prop/machine/gravygen = TRUE,
+	/obj/structure/prop/machine/green_egg = TRUE,
+	/obj/structure/prop/machine/incubator = TRUE,
+	/obj/structure/prop/machine/isolator = TRUE,
+	/obj/structure/prop/machine/last_shelter = TRUE,
+	/obj/structure/prop/machine/nt_biocan = TRUE,
+	/obj/structure/prop/machine/nt_cruciforge = TRUE,
+	/obj/structure/prop/machine/nt_obelisk = TRUE,
+	/obj/structure/prop/machine/nt_optable = TRUE,
+	/obj/structure/prop/machine/random_radio = TRUE,
+	/obj/structure/prop/machine/smelter = TRUE,
+	/obj/structure/prop/machine/solifier = TRUE,
+	/obj/structure/prop/machine/sorter = TRUE,
+	/obj/structure/prop/machine/tgmc_console1 = TRUE,
+	/obj/structure/prop/machine/tgmc_console2 = TRUE,
+	/obj/structure/prop/machine/tgmc_console3 = TRUE,
+	/obj/structure/prop/machine/tgmc_console4 = TRUE,
+	/obj/structure/prop/machine/tgmc_console5 = TRUE,
+	/obj/structure/prop/machine/tradebeacon = TRUE,
+	/obj/structure/prop/machine/tradebeacon2 = TRUE,
+	/obj/structure/prop/machine/tube = TRUE,
+	/obj/structure/prop/machine/von_krabin = TRUE,
+	/obj/structure/prop/mainframe = TRUE,
+	/obj/structure/prop/memorial = TRUE,
+	/obj/structure/prop/poicanister = TRUE,
+	/obj/structure/prop/rock = TRUE,
+	/obj/structure/prop/statue/angel = TRUE,
+	/obj/structure/prop/statue/lion = TRUE,
+	/obj/structure/prop/statue/pillar = TRUE,
+	/obj/structure/prop/statue/statue1 = TRUE,
+	/obj/structure/prop/statue/statue2 = TRUE,
+	/obj/structure/prop/statue/statue3 = TRUE,
+	/obj/structure/prop/statue/statue4 = TRUE,
+	/obj/structure/prop/statue/statue5 = TRUE,
+	/obj/structure/prop/statue/stump_plaque = TRUE,
+	/obj/structure/prop/statue/sunkensail = TRUE,
+	/obj/structure/prop/statue/venus = TRUE,
+	/obj/structure/prop/tyr_elevator = TRUE,
+	/obj/structure/prop/war = TRUE,
+	/obj/structure/prop/warmrocks = TRUE,
+	/obj/structure/salvageable/autolathe = TRUE,
+	/obj/structure/salvageable/computer_os = TRUE,
+	/obj/structure/salvageable/console_broken_os = TRUE,
+	/obj/structure/salvageable/console_os = TRUE,
+	/obj/structure/salvageable/data_os = TRUE,
+	/obj/structure/salvageable/implant_container_os = TRUE,
+	/obj/structure/salvageable/machine_os = TRUE,
+	/obj/structure/salvageable/server_os = TRUE,
+	/obj/structure/salvageable/shuttle_console = TRUE,
+	/obj/structure/salvageable/slotmachine1 = TRUE,
+	/obj/structure/salvageable/slotmachine2 = TRUE,
+	/obj/structure/ship_munition = TRUE,
+	/obj/structure/showcase = TRUE,
+	/obj/structure/shuttle/engine = TRUE,
+	/obj/structure/sign/atmos = TRUE,
+	/obj/structure/sign/atmos_air = TRUE,
+	/obj/structure/sign/atmos_ch4 = TRUE,
+	/obj/structure/sign/atmos_co2 = TRUE,
+	/obj/structure/sign/atmos_n2 = TRUE,
+	/obj/structure/sign/atmos_n2o = TRUE,
+	/obj/structure/sign/atmos_o2 = TRUE,
+	/obj/structure/sign/atmos_plasma = TRUE,
+	/obj/structure/sign/atmos_waste = TRUE,
+	/obj/structure/sign/atmosplaque = TRUE,
+	/obj/structure/sign/bigname = TRUE,
+	/obj/structure/sign/biohazard = TRUE,
+	/obj/structure/sign/botany = TRUE,
+	/obj/structure/sign/calendar = TRUE,
+	/obj/structure/sign/chemdiamond = TRUE,
+	/obj/structure/sign/chemistry = TRUE,
+	/obj/structure/sign/christmas = TRUE,
+	/obj/structure/sign/clock = TRUE,
+	/obj/structure/sign/coffee_shop_library = TRUE,
+	/obj/structure/sign/deathsposal = TRUE,
+	/obj/structure/sign/deck = TRUE,
+	/obj/structure/sign/deck1 = TRUE,
+	/obj/structure/sign/deck2 = TRUE,
+	/obj/structure/sign/deck3 = TRUE,
+	/obj/structure/sign/deck4 = TRUE,
+	/obj/structure/sign/department = TRUE,
+	/obj/structure/sign/double/maltesefalcon = TRUE,
+	/obj/structure/sign/electricshock = TRUE,
+	/obj/structure/sign/examroom = TRUE,
+	/obj/structure/sign/explosive = TRUE,
+	/obj/structure/sign/fire = TRUE,
+	/obj/structure/sign/flag = TRUE,
+	/obj/structure/sign/goldenplaque = TRUE,
+	/obj/structure/sign/graffiti = TRUE,
+	/obj/structure/sign/greencross = TRUE,
+	/obj/structure/sign/hangar = TRUE,
+	/obj/structure/sign/hostilefauna = TRUE,
+	/obj/structure/sign/hydro = TRUE,
+	/obj/structure/sign/hydrostorage = TRUE,
+	/obj/structure/sign/ironhammer = TRUE,
+	/obj/structure/sign/itg = TRUE,
+	/obj/structure/sign/kiddieplaque = TRUE,
+	/obj/structure/sign/level = TRUE,
+	/obj/structure/sign/levels = TRUE,
+	/obj/structure/sign/mining = TRUE,
+	/obj/structure/sign/nanotrasen = TRUE,
+	/obj/structure/sign/nosmoking_1 = TRUE,
+	/obj/structure/sign/nosmoking_2 = TRUE,
+	/obj/structure/sign/periodic = TRUE,
+	/obj/structure/sign/pods = TRUE,
+	/obj/structure/sign/redcross = TRUE,
+	/obj/structure/sign/scenery = TRUE,
+	/obj/structure/sign/science = TRUE,
+	/obj/structure/sign/sec1 = TRUE,
+	/obj/structure/sign/sec2 = TRUE,
+	/obj/structure/sign/sec3 = TRUE,
+	/obj/structure/sign/sec4 = TRUE,
+	/obj/structure/sign/securearea = TRUE,
+	/obj/structure/sign/signnew = TRUE,
+	/obj/structure/sign/small = TRUE,
+	/obj/structure/sign/vacuum = TRUE,
+	/obj/structure/sign/xenobio = TRUE,
+	/obj/structure/signevent = TRUE,
+	/obj/structure/signpost = TRUE,
+	/obj/structure/signpost_fake = TRUE,
+	/obj/structure/signpostwood = TRUE,
+	/obj/structure/smolebuilding = TRUE,
+	/obj/structure/smoleruins = TRUE,
+	/obj/structure/snowman = TRUE,
+	/obj/structure/stripper_pole = TRUE,
+	/obj/structure/target_stake = TRUE,
+	/obj/structure/thecake = TRUE,
+	/obj/structure/theonepizza = TRUE,
+	/obj/structure/tubes = TRUE,
+	/obj/structure/urinal = TRUE
+))

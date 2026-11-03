@@ -12,7 +12,6 @@ GLOBAL_ALIST_EMPTY(map_sectors)
 	icon_state = "map"
 	alpha = 200
 	vis_flags = VIS_INHERIT_ID // disable VIS_INHERIT_PLANE
-	init_from_table = FALSE
 
 /turf/unsimulated/map/edge
 	opacity = 1

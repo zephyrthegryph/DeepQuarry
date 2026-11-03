@@ -57,7 +57,7 @@
 	// Its own writes inside Initialize() publish nothing: nothing has seen it yet, and caps_init() queues its first full refresh (state_changed()).
 	var/atom/outer_initializing = GLOB.atom_initializing
 	GLOB.atom_initializing = A
-	if(A.init_from_table && length(arguments) == 1 && !A.color)
+	if(GLOB.init_from_table_types[A.type] && length(arguments) == 1 && !A.color)
 		A.table_initialize()
 		result = INITIALIZE_HINT_NORMAL
 	else

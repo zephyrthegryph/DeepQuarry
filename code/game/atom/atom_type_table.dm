@@ -55,11 +55,54 @@
 // init_from_table; SSatoms.InitAtom() then calls table_initialize() in place of the whole
 // Initialize() chain (and its arglist). table_initialize() applies the type's facts with the
 // fewest writes it can. Space (~310 k turfs on Southern Cross) and plain unsimulated turfs use it.
-// A subtype that overrides Initialize() must set init_from_table = FALSE, or the override would
-// never run: tools/ci/init_lint.py counts violations (`table_init_overrides`, ceiling 0).
-/atom
-	/// Type-table fact: no per-instance Initialize() state; InitAtom() calls table_initialize().
-	var/init_from_table = FALSE
+// A type is on the path when its nearest declared ancestor (itself included) is declared TRUE: rows of
+// GLOB.init_from_table_declared below (hand-written) and GLOB.init_from_table_generated (code/content/atom/init_from_table_types.dm,
+// tools/ci/init_table_candidates.py --write). A hand row wins over a generated one for the same path. A subtype that overrides
+// Initialize() must be declared FALSE, or the override would never run: the init lint's `table_init_overrides` (ceiling 0).
+// The flags are per-type data, so they live in one table, not as a var on /atom.
+
+/// Hand-declared init_from_table rows (`path = TRUE|FALSE`, one per line: the init lint and the generator read them).
+GLOBAL_LIST_INIT(init_from_table_declared, list(
+	/turf/space = TRUE,
+	/turf/space/transit = FALSE,
+	/turf/unsimulated = TRUE,
+	/turf/unsimulated/fake_space = FALSE,
+	/turf/unsimulated/map = FALSE,
+	/turf/unsimulated/beach/water = FALSE,
+	/turf/unsimulated/wall/planetary = FALSE,
+	/turf/unsimulated/floor/sky = FALSE
+))
+
+/// type -> TRUE for every type on the table-init path (built once, nearest declared ancestor wins).
+GLOBAL_LIST_INIT(init_from_table_types, build_init_from_table_types())
+
+/proc/build_init_from_table_types()
+	// The two declaration tables may come later in the global init order: initialize them here if so.
+	if(!GLOB.init_from_table_generated)
+		GLOB.InitGlobalinit_from_table_generated()
+	if(!GLOB.init_from_table_declared)
+		GLOB.InitGlobalinit_from_table_declared()
+	var/list/rows = GLOB.init_from_table_generated.Copy()
+	var/list/declared = GLOB.init_from_table_declared
+	for(var/path in declared)
+		rows[path] = declared[path]
+	// Shallow paths first, so a deeper row overrides its ancestors' subtree.
+	var/list/by_depth = list()
+	for(var/path in rows)
+		var/depth = length(splittext("[path]", "/"))
+		while(length(by_depth) < depth)
+			by_depth += list(list())
+		by_depth[depth] += path
+	var/list/out = list()
+	for(var/list/level as anything in by_depth)
+		for(var/path in level)
+			var/on = rows[path]
+			for(var/type in typesof(path))
+				if(on)
+					out[type] = TRUE
+				else
+					out -= type
+	return out
 
 /// What /atom/Initialize() does, for an init_from_table type. Overrides must not call Initialize().
 /atom/proc/table_initialize()

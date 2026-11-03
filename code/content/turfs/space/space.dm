@@ -18,7 +18,6 @@
 	var/keep_sprite = FALSE
 	var/edge = FALSE //If we're an edge
 	var/forced_dirs = 0 //Force this one to pretend it's an overedge turf
-	init_from_table = TRUE
 
 /// Starlight and the edge/dust sprite, picked from the turf's position.
 /turf/space/proc/space_appearance()
