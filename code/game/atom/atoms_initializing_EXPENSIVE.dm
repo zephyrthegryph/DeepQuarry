@@ -77,9 +77,6 @@
 	if(color)
 		add_atom_colour(color, FIXED_COLOUR_PRIORITY)
 
-	if(atom_rules_of_type(type).uses_integrity)
-		atom_integrity = max_integrity
-
 	// Declared instance state (code/datums/lifecycle/declarations.dm): children, gas, reagents,
 	// appearance. Here, at the root of the chain, so a subtype's code after `. = ..()` sees it.
 	BOOT_PHASE_BEGIN(bp_decls)

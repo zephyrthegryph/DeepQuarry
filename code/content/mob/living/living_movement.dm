@@ -348,7 +348,7 @@ default behaviour is:
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!anchored && !src?.pulled_by_mob() && loc == locthen)
-		var/stepdir = sparse_get_or(src, inertia_dir, 0) || last_move
+		var/stepdir = sparse_get_or(src, inertia_dir, 0) || sparse_get_or(src, last_move, 0)
 		if(!stepdir)
 			return
 		var/turf/T = get_step(src, stepdir)

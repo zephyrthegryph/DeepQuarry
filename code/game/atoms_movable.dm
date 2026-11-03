@@ -3,7 +3,6 @@
 	glide_size = 8
 	appearance_flags = TILE_BOUND|PIXEL_SCALE|KEEP_TOGETHER|LONG_GLIDE
 
-	var/tmp/last_move = null //The direction the atom last moved
 	var/anchored = FALSE
 	var/tmp/moving_diagonally
 	var/tmp/l_move_time = 0
@@ -286,7 +285,7 @@
 			return
 
 	else if(!loc || (loc == oldloc))
-		last_move = 0
+		sparse_set_or(src, last_move, 0, 0)
 		return
 
 	// If we moved, call Moved() on ourselves
@@ -295,7 +294,7 @@
 
 	// Update timers/cooldown stuff
 	STAMP(src, l_move_time, CLOCK_WORLD)
-	last_move = direct // The direction you last moved
+	sparse_set_or(src, last_move, direct, 0) // The direction you last moved
 	// set_dir(direct) //Don't think this is necessary
 
 ///Called after a successful Move(). By this point, we've already moved
@@ -421,7 +420,7 @@
 
 		// Do The Move
 		glide_for(movetime)
-		last_move = isnull(direction) ? 0 : direction
+		sparse_set_or(src, last_move, isnull(direction) ? 0 : direction, 0)
 		loc = destination // ALLOW(containment): doMove()'s commit point; note_exit/note_enter follow
 		// The containment ledger's commit point: account for the move before
 		// anything else can react to it.
@@ -576,7 +575,7 @@ SETTER(/atom/movable, anchored)
 	else if(isobj(hit_atom))
 		var/obj/O = hit_atom
 		if(!O.anchored)
-			step(O, src.last_move)
+			step(O, sparse_get_or(src, last_move, 0))
 		O.hitby(src, throwingdatum)
 
 	else if(isturf(hit_atom))
