@@ -106,7 +106,8 @@
 	var/datum/time_scheduler/old = rec.sched
 	var/list/D = rec.deadlines
 	var/moved = length(D) / 3
-	var/list/remaining = list()
+	// Remaining deciseconds of each unclocked deadline, by its position in D (a number key would index the list, not key it).
+	var/list/remaining = new /list(length(D) / 3)
 	var/old_t = old.now()
 	for(var/i in 1 to length(D) step 3)
 		if(!isnull(D[i + 2]))
@@ -116,13 +117,13 @@
 		for(var/list/L as anything in old.buckets)
 			for(var/j in 1 to length(L) step 4)
 				if(L[j] == rec && L[j + 1] == D[i] && L[j + 2] == D[i + 1])
-					remaining[D[i]] = max(L[j + 3] - old_t, 0)
+					remaining[(i + 2) / 3] = max(L[j + 3] - old_t, 0)
 					found = TRUE
 					break
 			if(found)
 				break
 		if(!found)
-			remaining[D[i]] = 0
+			remaining[(i + 2) / 3] = 0
 			log_world("OM: rehome of [rec.owner] ([rec.owner?.type]) found no wheel entry for deadline key [D[i]]; it fires at once")
 	var/list/K = rec.tclock
 	if(K)
@@ -143,6 +144,17 @@
 		K[2] = t
 	for(var/i in 1 to length(C) step 4)
 		C[i + 3] = t
+	// Times stamped on the old scheduler's clock keep their age: a throttle's last wake and a pipeline stage's last run
+	// (read as `now - last` by the min_interval gates). Left as they were they sit far in the new clock's future (the
+	// live clock is world.time, a test's starts at 0) and hold the behaviour back for as long as the gap.
+	var/list/throttled = rec.throttle
+	for(var/i in 1 to length(throttled) step 2)
+		throttled[i + 1] = t - (old_t - throttled[i + 1])
+	for(var/datum/work_frame/frame in rec.pipes)
+		var/list/last_runs = frame.last_run
+		for(var/i in 1 to length(last_runs))
+			if(!isnull(last_runs[i]))
+				last_runs[i] = t - (old_t - last_runs[i])
 	// Every pending deadline (the timer wake, min_interval throttle releases, pipeline stage rewakes) moves
 	// with its remaining time on the new wheel, under a fresh generation; the old wheel's entries go stale.
 	for(var/i in 1 to length(D) step 3)
@@ -150,7 +162,7 @@
 		D[i + 1] = gen
 		var/local_target = D[i + 2]
 		if(isnull(local_target))
-			sched.insert_deadline(rec, D[i], gen, t + remaining[D[i]])
+			sched.insert_deadline(rec, D[i], gen, t + remaining[(i + 2) / 3])
 			continue
 		var/datum/scheduled_behaviour/B = definition_registry().behaviours[D[i] % OM_DL_SUB]
 		var/rate = clock_rate(rec, B.clock_idx)

@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - code_imp: "Rehoming an entity between schedulers now keeps its deadlines' remaining times and its throttle and stage last-run ages, with a test covering it"
