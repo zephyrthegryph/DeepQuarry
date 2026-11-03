@@ -607,9 +607,9 @@
 #include "dq_harm_time_invariance_tests.dm"
 #include "dq_w5_loose_tests.dm"
 #include "dq_vital_lifecycle_tests.dm"
-#include "../../content/balance/_balance_harness.dm"
+#include "../balance/_balance_harness.dm"
 #include "dq_balance_scenario_declaration.dm"
-#include "../../content/balance/balance_scenarios.dm"
+#include "../balance/balance_scenarios.dm"
 #include "dq_balance_harness_tests.dm"
 #include "dq_part_lifecycle_tests.dm"
 #include "dq_organ_slot_tests.dm"
@@ -1267,7 +1267,7 @@
 #include "../benchmarks/mapload_init.dm"
 #include "../benchmarks/soak.dm"
 #include "../benchmarks/kernel_metrics.dm"
-#include "../../content/balance/balance_benchmark.dm"
+#include "../balance/balance_benchmark.dm"
 #endif
 #include "find_reference_fixtures.dm"
 #ifdef REFERENCE_TRACKING_DEBUG //Don't try and parse this file if ref tracking isn't turned on. IE: don't parse ref tracking please mr linter

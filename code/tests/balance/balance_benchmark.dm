@@ -5,7 +5,7 @@
 
 /datum/benchmark/balance
 	id = "balance"
-	description = "Medical and combat balance harness (code/modules/balance)"
+	description = "Medical and combat balance harness (code/tests/balance)"
 
 /datum/benchmark/balance/Run()
 	wait_for_assets()

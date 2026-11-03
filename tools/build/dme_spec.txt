@@ -129,9 +129,6 @@ file code/tests/_tests.dm
 optional code/tests/engine/test_only_defs.dm                 # included directly, after the game (see the `last` rules)
 optional code/tests/unit_tests/_test_build_overrides.dm   # likewise
 skip code/tests/benchmarks/**   # code/tests/unit_tests/_unit_tests.dm includes them
-skip code/content/balance/**   # likewise
-skip code/content/balance/**   # likewise
-skip code/content/balance/**   # likewise
 
 # Generated files (gitignored, so the scan never includes them; analyze gen and the Verdigris bindings step write them before every
 # compile, and a clean checkout lacks them: `file` includes them anyway).

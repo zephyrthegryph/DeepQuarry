@@ -3295,7 +3295,7 @@ export const BenchReportTarget = new Juke.Target({
 });
 
 /**
- * Runs the medical and combat balance harness (code/modules/balance) in a
+ * Runs the medical and combat balance harness (code/tests/balance) in a
  * -DBENCHMARK world, stores the results in data/balance/runs/ and lists what
  * changed since the previous run. `--arg scenarios=ttk,bleedout` runs a subset.
  * doc/balance_baseline.md explains the numbers.
