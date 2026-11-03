@@ -2,5 +2,4 @@ author: "zephyrthegryph"
 delete-after: true
 changes:
   - bugfix: "The character preview shows a new wing style or wing colour (and any other layer drawn from a composed sprite) instead of keeping the first one."
-  - qol: "Looks: picking a taur body hides the Tail row."
   - spellcheck: "Character setup: shorter labels and fewer explanatory blurbs."

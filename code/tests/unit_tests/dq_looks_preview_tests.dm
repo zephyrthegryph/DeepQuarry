@@ -173,3 +173,38 @@
 		frames = now
 	fdel(P.path)
 	qdel(P, TRUE)
+
+/// A taur body keeps the tail it replaces: the Tail row shows it greyed, only the taur is worn, and removing the taur wears the tail again.
+/datum/unit_test/dq_taur_keeps_tail
+
+/datum/unit_test/dq_taur_keeps_tail/Run()
+	var/datum/preferences/dq_test_stub/P = dq_palette_test_prefs()
+	var/datum/preference_editor/legs/legs = GLOB.preference_editors_by_key["legs"]
+	var/tail = dq_test_wearable_style(P, GLOB.tail_styles_list)
+	var/taur
+	for(var/key in GLOB.tail_styles_list)
+		var/datum/sprite_accessory/S = GLOB.tail_styles_list[key]
+		if(istype(S) && istaurtail(S) && (S.name in P.get_available_styles(GLOB.tail_styles_list)))
+			taur = S.name
+			break
+	TEST_ASSERT_NOTNULL(tail, "a tail to keep")
+	TEST_ASSERT_NOTNULL(taur, "a taur body to wear")
+	P.update_preference(GLOB.preference_entries_by_key["tail_style"], tail)
+	var/datum/preference/tail_pref = GLOB.preference_entries_by_key["tail_style"]
+
+	TEST_ASSERT_EQUAL(legs.handle_action(P, "set_leg_style", list("style" = taur), null), PREF_UPDATE_ACCEPTED, "the taur is accepted")
+	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/text/human/tail_style), taur, "the taur body is worn as the tail style")
+	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/text/human/tail_style_under_taur), tail, "the tail is kept, not cleared")
+	TEST_ASSERT_EQUAL(tail_pref.get_widget_props(P)["under_taur"], tail, "the greyed Tail row is told which tail it shows")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	P.copy_to(H)
+	TEST_ASSERT_EQUAL(H.tail_style?.name, taur, "only the taur is drawn while it is worn")
+
+	TEST_ASSERT_EQUAL(legs.handle_action(P, "set_leg_style", list("style" = "plantigrade"), null), PREF_UPDATE_ACCEPTED, "Normal legs are accepted")
+	TEST_ASSERT_EQUAL(P.read_preference(/datum/preference/text/human/tail_style), tail, "removing the taur wears the kept tail again")
+	TEST_ASSERT(!P.read_preference(/datum/preference/text/human/tail_style_under_taur), "and nothing is kept any more")
+	P.copy_to(H)
+	TEST_ASSERT_EQUAL(H.tail_style?.name, tail, "the tail is drawn again")
+	cancel_after(P, "preferences_preview_full")
+	fdel(P.path)
+	qdel(P, TRUE)
