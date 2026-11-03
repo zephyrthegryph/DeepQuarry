@@ -839,24 +839,9 @@ CAPABILITIES(/datum/prompt/text/hud_comment)
 		revoke(src, granted_verb(/mob/living/carbon/human/proc/morph), verb_source(VERB_SOURCE_ADMIN)) // only an admin hand grants it
 		return
 
-	// hair
-	var/list/all_hairs = subtypesof(/datum/sprite_accessory/hair)
-	var/list/hairs = list()
-
-	// loop through potential hairs
-	for(var/x in all_hairs)
-		var/datum/sprite_accessory/hair/H = new x // create new hair datum based on type x
-		hairs.Add(H.name) // add hair name to hairs
-		spent(H) // delete the hair after it's all done
-
-	// facial hair
-	var/list/all_fhairs = subtypesof(/datum/sprite_accessory/facial_hair)
-	var/list/fhairs = list()
-
-	for(var/x in all_fhairs)
-		var/datum/sprite_accessory/facial_hair/H = new x
-		fhairs.Add(H.name)
-		spent(H)
+	// Offered from the built style lists, which hold no abstract placeholder styles.
+	var/list/hairs = assoc_to_keys(GLOB.hair_styles_list)
+	var/list/fhairs = assoc_to_keys(GLOB.facial_hair_styles_list)
 
 	// Every question can be skipped (cancel keeps what you have).
 	var/datum/morph_review/review = new

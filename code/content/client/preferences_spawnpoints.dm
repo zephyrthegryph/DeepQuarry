@@ -4,6 +4,8 @@ GLOBAL_LIST_INIT(spawntypes, populate_spawn_points())
 	var/list/spawns = list()
 	for(var/type in subtypesof(/datum/spawnpoint))
 		var/datum/spawnpoint/spawn_point = new type()
+		if(!spawn_point.display_name) // an abstract base, not a place to offer
+			continue
 		spawns[spawn_point.display_name] = spawn_point
 	return spawns
 
