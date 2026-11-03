@@ -190,7 +190,7 @@ READS_AS(/atom/proc/open_by_flag, REAGENT_OPEN_FLAG_KEY)
 		for(var/atom/A in contents)
 			A.emp_act(severity, recursive)
 
-	PUBLISH_LEGACY(src, /datum/notice/atom_emp_act, severity, protection)
+	PUBLISH(src, atom_emp_act, severity = severity, protection = protection)
 	return protection
 
 /atom/proc/bullet_act(obj/item/projectile/P, def_zone)
@@ -284,7 +284,7 @@ READS_AS(/atom/proc/open_by_flag, REAGENT_OPEN_FLAG_KEY)
 			output += damage_flavour_text(band)
 
 	output += examine_lines(user)
-	PUBLISH_LEGACY(src, /datum/notice/examine, user, output)
+	PUBLISH(src, examine, user = user, texts = output)
 	return output
 
 // Don't make these call bicon or anything, these are what bicon uses. They need to return an icon.
@@ -299,7 +299,7 @@ READS_AS(/atom/proc/open_by_flag, REAGENT_OPEN_FLAG_KEY)
 //called to set the atom's dir and used to add behaviour to dir-changes
 /atom/proc/set_dir(new_dir)
 	SHOULD_CALL_PARENT(TRUE)
-	PUBLISH_LEGACY(src, /datum/notice/atom_dir_change, dir, new_dir)
+	PUBLISH(src, atom_dir_change, old_dir = dir, new_dir = new_dir)
 	var/old_dir = dir
 	dir = new_dir
 	// A drawn type that reads dir redraws, and so does a look that watches this atom (dir is a tracked read of every look), and so does a stat, an
@@ -357,7 +357,7 @@ SETTER(/atom, invisibility)
  * Default behaviour is to publish /datum/notice/atom_fire_act and return
  */
 /atom/proc/fire_act(exposed_temperature, exposed_volume)
-	PUBLISH_LEGACY(src, /datum/notice/atom_fire_act, exposed_temperature, exposed_volume)
+	PUBLISH(src, atom_fire_act, exposed_temperature = exposed_temperature, exposed_volume = exposed_volume)
 	return FALSE
 
 /**
@@ -365,7 +365,7 @@ SETTER(/atom, invisibility)
  */
 /atom/proc/extinguish()
 	SHOULD_CALL_PARENT(TRUE)
-	PUBLISH_LEGACY(src, /datum/notice/atom_extinguish)
+	PUBLISH(src, atom_extinguish)
 	return NONE
 
 // Returns an assoc list of RCD information.
@@ -384,7 +384,7 @@ SETTER(/atom, invisibility)
 	return
 
 /atom/proc/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
-	PUBLISH_LEGACY(src, /datum/notice/hitby, source, throwingdatum)
+	PUBLISH(src, hitby, source_ = source, throwingdatum = throwingdatum)
 	thrown_damage(source, throwingdatum)
 
 /// The thrown-impact adapter. Types whose shape changes how hard a throw lands
@@ -558,11 +558,11 @@ SETTER(/atom, invisibility)
 /atom/Entered(atom/movable/AM, atom/old_loc)
 	. = ..()
 	op_moved(AM, src)
-	PUBLISH_LEGACY(AM, /datum/notice/movable_attempted_move, old_loc, AM.loc)
-	PUBLISH_LEGACY(src, /datum/notice/atom_entered, AM, old_loc)
+	PUBLISH(AM, movable_attempted_move, old_loc = old_loc, new_loc = AM.loc)
+	PUBLISH(src, atom_entered, arrived = AM, old_loc = old_loc)
 	if(rel_watchers)
 		look_neighbour_moved(src, AM)
-	PUBLISH_LEGACY(AM, /datum/notice/atom_entering, src, old_loc)
+	PUBLISH(AM, atom_entering, destination = src, old_loc = old_loc)
 	RANGE_WATCH(src, RANGE_ENTERED, AM, old_loc)
 
 /atom/Exit(atom/movable/AM, atom/new_loc)
@@ -571,7 +571,7 @@ SETTER(/atom, invisibility)
 /atom/Exited(atom/movable/AM, atom/new_loc)
 	. = ..()
 	op_moved(AM, src)
-	PUBLISH_LEGACY(src, /datum/notice/atom_exited, AM, new_loc)
+	PUBLISH(src, atom_exited, gone = AM, new_loc = new_loc)
 	if(rel_watchers)
 		look_neighbour_moved(src, AM)
 	RANGE_WATCH(src, RANGE_EXITED, AM, new_loc)

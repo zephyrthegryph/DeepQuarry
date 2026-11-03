@@ -60,9 +60,8 @@
 
 /// Fullness a belly class shows. Components (the sleeper belly) may adjust it.
 /mob/living/silicon/robot/proc/belly_display_fullness(belly_class)
-	var/list/fullness_ref = list(vore_fullness_ex[belly_class] || 0)
-	PUBLISH_LEGACY(src, /datum/notice/robot_belly_fullness, belly_class, fullness_ref)
-	return fullness_ref[1]
+	var/fullness = vore_fullness_ex[belly_class] || 0
+	return robot_belly ? robot_belly.display_fullness(belly_class, fullness) : fullness
 
 /// The belly overlays now shown, from the tracked fullness and belly lights.
 /mob/living/silicon/robot/proc/belly_look_states()

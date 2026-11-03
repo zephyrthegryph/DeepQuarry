@@ -111,7 +111,7 @@
 	var/datum/gas_mixture/gas = new()
 	gas.copy_from(packet.gas)
 	spent(packet)
-	PUBLISH_LEGACY(disposal_owner(), /datum/notice/disposal_receive, expelled_items, gas)
+	PUBLISH(disposal_owner(), disposal_receive, items = expelled_items, gas = gas)
 	return TRUE
 
 /// The connected machine (our owner).

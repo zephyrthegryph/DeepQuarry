@@ -20,4 +20,4 @@ GLOBAL_DATUM_INIT(apc_event, /datum/decl/observ/area_power_change, new)
 
 /area/power_change()
 	. = ..()
-	PUBLISH_LEGACY(src, /datum/notice/observer_apc)
+	PUBLISH(src, observer_apc)

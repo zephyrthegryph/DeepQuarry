@@ -259,8 +259,8 @@
 	if(ai_brain) // AI gets told to sleep when killed. Since they're not dead anymore, wake it up.
 		ai_brain.go_wake()
 
-	PUBLISH_LEGACY(src, /datum/notice/human_dna_finalized)
-	PUBLISH_LEGACY(src, /datum/notice/living_aheal)
+	PUBLISH(src, human_dna_finalized)
+	PUBLISH(src, living_aheal)
 
 /mob/living/proc/rejuvenate()
 	if(reagents)

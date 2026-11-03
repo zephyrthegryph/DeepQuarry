@@ -181,7 +181,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 	if(!H)
 		attempting = 0
 		return
-	PUBLISH_LEGACY(H, /datum/notice/human_dna_finalized)
+	PUBLISH(H, human_dna_finalized)
 
 	//Get the clone body ready: a fresh clone is saturated with genetic damage and
 	// the pod grows it out. Seeded directly (not injure()) so the fresh body

@@ -27,6 +27,12 @@
 						message_admins("[span_red(span_bold("Notice:"))] [span_blue("[key_name_admin(source)] has the same [matches] as [key_name_admin(M)] (no longer logged in). ")]", 1)
 						log_admin_private("Notice: [key_name(source)] has the same [matches] as [key_name(M)] (no longer logged in).")
 
+/// Sent when a mob/login() finishes: (client)
+ACTION(mob_client_login, client, FIXED, notice = /datum/notice/mob_client_login)
+
+/// From base of /mob/Login(): ()
+ACTION(mob_login, FIXED, notice = /datum/notice/mob_login)
+
 /mob/Login()
 	if(!client)
 		return FALSE
@@ -52,7 +58,7 @@
 	sight |= SEE_SELF
 	..()
 	verb_store_login(src) // DECLARE_LOGIN_VERB (code/datums/om/grant_verbs.dm)
-	PUBLISH_LEGACY(src, /datum/notice/mob_login)
+	PUBLISH(src, mob_login)
 	ckey_changed()
 
 	client.perspective = MOB_PERSPECTIVE
@@ -102,7 +108,7 @@
 			CB.Invoke()
 
 	log_mob_tag(src, "TAG: [tag] NEW OWNER: [key_name(src)]")
-	PUBLISH_LEGACY(src, /datum/notice/mob_client_login, client)
+	PUBLISH(src, mob_client_login, client = client)
 	client.init_verbs()
 
 	set_recursive_listening(LISTENING_PLAYER)

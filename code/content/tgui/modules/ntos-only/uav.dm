@@ -94,7 +94,7 @@ CAPABILITIES(/datum/tgui_module/uav)
 	if(!current_uav())
 		return FALSE
 	else if(current_uav().toggle_power())
-		PUBLISH_LEGACY(src, /datum/notice/remote_view_clear)
+		PUBLISH(src, remote_view_clear)
 		return TRUE
 
 /datum/tgui_module/uav/proc/set_current(obj/item/uav/U)
@@ -107,7 +107,7 @@ CAPABILITIES(/datum/tgui_module/uav)
 	rel_set(src, nameof(current_uav), U)
 	if(U)
 		observe(U, /datum/notice/movable_z_changed, src, then(PROC_REF(current_uav_changed_z)))
-	PUBLISH_LEGACY(src, /datum/notice/remote_view_clear)
+	PUBLISH(src, remote_view_clear)
 
 /datum/tgui_module/uav/proc/clear_current()
 	if(!current_uav())
@@ -116,7 +116,7 @@ CAPABILITIES(/datum/tgui_module/uav)
 	unobserve(current_uav(), /datum/notice/movable_z_changed, src)
 	set_signal_strength(0)
 	rel_clear(src, nameof(current_uav))
-	PUBLISH_LEGACY(src, /datum/notice/remote_view_clear)
+	PUBLISH(src, remote_view_clear)
 
 /datum/tgui_module/uav/proc/current_uav_changed_z(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)

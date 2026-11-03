@@ -571,8 +571,11 @@ MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor
 		to_chat(A.actor, span_notice("You disconnect the monitor."))
 	return dismantle() ? OP_OK : OP_DECLINE
 
+/// /obj signals from base of obj/deconstruct(): (disassembled)
+ACTION(obj_deconstruct, disassembled, FIXED, notice = /datum/notice/obj_deconstruct)
+
 /obj/machinery/proc/dismantle()
-	PUBLISH_LEGACY(src, /datum/notice/obj_deconstruct, FALSE)
+	PUBLISH(src, obj_deconstruct, disassembled = FALSE)
 	play_sfx(src, SFX_ITEMS_CROWBAR)
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/I in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
@@ -658,7 +661,7 @@ MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor
 	..()
 	if(!flipped)
 		return FALSE
-	PUBLISH_LEGACY(src, /datum/notice/machinery_broken, damage_flag)
+	PUBLISH(src, machinery_broken, damage_flag = damage_flag)
 	return TRUE
 
 /// The inverse of atom_break(), the other writer of BROKEN. Returns TRUE if the machine was broken.

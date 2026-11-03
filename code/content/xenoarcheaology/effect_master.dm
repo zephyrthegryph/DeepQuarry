@@ -278,7 +278,7 @@ CAPABILITIES(/datum/artifact_master)
 /datum/artifact_master/proc/on_bump(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/movable_bump/event = N
-	var/atom/bumped = event.atom
+	var/atom/bumped = event.bumped_into
 	var/warn = FALSE
 	for(var/datum/artifact_effect/my_effect in my_effects)
 		if(isitem(bumped))

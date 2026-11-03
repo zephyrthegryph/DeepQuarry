@@ -808,7 +808,7 @@ CAPABILITIES(/datum/respawn_review)
 			if(is_lang_whitelisted(src,chosen_language) || (new_character.species && (chosen_language.name in new_character.species.secondary_langs)))
 				new_character.add_language(lang)
 
-	PUBLISH_LEGACY(new_character, /datum/notice/human_dna_finalized)
+	PUBLISH(new_character, human_dna_finalized)
 
 	//If desired, apply equipment.
 	if(equipment)

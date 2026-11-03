@@ -23,11 +23,11 @@
 	add_disposal_connection()
 	observe(src, /datum/notice/disposal_receive, src, then(PROC_REF(on_disposal_receive)))
 	if(trunk)
-		PUBLISH_LEGACY(src, /datum/notice/disposal_link, trunk)
+		PUBLISH(src, disposal_link, trunk = trunk)
 
 // it unlinks from its trunk.
 /obj/structure/disposaloutlet/on_destroy(force)
-	PUBLISH_LEGACY(src, /datum/notice/disposal_unlink)
+	PUBLISH(src, disposal_unlink)
 	..()
 
 CAPABILITIES(/obj/structure/disposaloutlet)
@@ -72,7 +72,7 @@ CAPABILITIES(/obj/structure/disposaloutlet)
 	if(!src)
 		return OP_OK
 	to_chat(user, "You sliced the floorweld off the disposal outlet.")
-	PUBLISH_LEGACY(src, /datum/notice/disposal_unlink)
+	PUBLISH(src, disposal_unlink)
 	var/obj/structure/disposalconstruct/C = new(src.loc)
 	transfer_fingerprints_to(C)
 	C.set_dir(dir)

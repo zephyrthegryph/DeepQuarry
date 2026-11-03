@@ -269,7 +269,7 @@ CAPABILITIES(/obj/machinery/transhuman/autoresleever)
 
 	apply_resleeve_languages(new_character, ghost, ghost_client)
 
-	PUBLISH_LEGACY(new_character, /datum/notice/human_dna_finalized)
+	PUBLISH(new_character, human_dna_finalized)
 	return new_character
 
 /// The character's whitelisted languages, custom language keys and preferred language.

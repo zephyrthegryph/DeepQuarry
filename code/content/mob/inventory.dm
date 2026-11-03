@@ -475,6 +475,9 @@ READS_AS(/mob/proc/get_equipped_item, SLOT_OCCUPANCY_KEY)
 		return
 	I.forceMove(destination)
 
+/// A mob has just unequipped an item.
+ACTION(mob_unequipped_item, obj/item/item, atom/target_, FIXED, notice = /datum/notice/mob_unequipped_item)
+
 //Attemps to remove an object on a mob.
 /mob/proc/remove_from_mob(obj/item_dropping, atom/target)
 	if(!item_dropping) // Nothing to remove, so we succeed.
@@ -489,7 +492,7 @@ READS_AS(/mob/proc/get_equipped_item, SLOT_OCCUPANCY_KEY)
 		if(id)
 			slot_vacated(id, item_dropping)
 		has_unequipped(item_dropping, FALSE)
-	PUBLISH_LEGACY(src, /datum/notice/mob_unequipped_item, item_dropping, target)
+	PUBLISH(src, mob_unequipped_item, item = item_dropping, target_ = target)
 	on_equipment_changed()
 	return TRUE
 

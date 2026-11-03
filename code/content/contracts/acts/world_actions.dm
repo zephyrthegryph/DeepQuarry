@@ -8,7 +8,8 @@
 //   - the op action's act type is the op context (context.dm); only its notice, /datum/notice/op_done, is generated.
 //   - an item used on the holder with no answer is the attackby action's notice, /datum/notice/attacked_by.
 
-ACTION(move, turf/origin, turf/destination, direction)
+// A movable has moved (atom/movable/proc/Moved(), after the move): nothing refuses it. `direction` is the way it went, `forced` whether a forceMove did it.
+ACTION(move, old_loc, direction, forced, FIXED, notice = /datum/notice/moved)
 ACTION(cross, atom/movable/crosser)
 // bump is published on the BUMPED atom (the door, the pod, the wall): `bumper` walked into it heading `direction`. One emitter,
 // /atom/movable/proc/bump_into() (atoms_movable.dm), which the movement path's Bump() and a mech's push both call.

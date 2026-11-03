@@ -120,6 +120,10 @@ avoid code duplication. This includes items that may sometimes act as a standard
 		return TRUE
 	return attackby(W, user)
 
+/// Was COMSIG_TOOL_ATOM_ACTED_PRIMARY(quality) / _SECONDARY(quality), sent on the tool
+/// after it acted on `target`.
+ACTION(tool_atom_acted, tool_quality, secondary, atom/target_, mob/user, modifiers, FIXED, notice = /datum/notice/tool_atom_acted)
+
 /// Dispatches all qualities on a tool in their declared order.
 /atom/proc/tool_interaction(mob/user, obj/item/tool, list/modifiers, secondary = FALSE)
 	if(!LAZYLEN(tool.tool_qualities))
@@ -128,8 +132,8 @@ avoid code duplication. This includes items that may sometimes act as a standard
 		var/result = tool_act(user, tool, tool_quality, secondary)
 		if(result & ITEM_INTERACT_SUCCESS)
 			if(!secondary)
-				PUBLISH_LEGACY(tool, /datum/notice/item_tool_acted, src, user, tool_quality, modifiers)
-			PUBLISH_LEGACY(tool, /datum/notice/tool_atom_acted, tool_quality, secondary, src, user, modifiers)
+				PUBLISH(tool, item_tool_acted, target_ = src, user = user, tool_quality = tool_quality, modifiers = modifiers)
+			PUBLISH(tool, tool_atom_acted, tool_quality = tool_quality, secondary = secondary, target_ = src, user = user, modifiers = modifiers)
 		if(result & (ITEM_INTERACT_SUCCESS | ITEM_INTERACT_BLOCKING | ITEM_INTERACT_SKIP_TO_ATTACK))
 			return result
 	return NONE
@@ -290,7 +294,7 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 		return ITEM_INTERACT_FAILURE
 	if(M.is_incorporeal()) // No attacking phased entities :)
 		return ITEM_INTERACT_FAILURE
-	PUBLISH_LEGACY(src, /datum/notice/item_attack, M, user, target_zone)
+	PUBLISH(src, item_attack, target_ = M, user = user, target_zone = target_zone)
 
 	/////////////////////////
 	M.note_attacker(user)

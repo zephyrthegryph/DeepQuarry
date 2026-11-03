@@ -428,6 +428,9 @@ TYPE_TABLE(/datum/input_adapter/ai, adapter_click_table, list( \
 		return FALSE
 	return TRUE
 
+/// Non TG signals: from the base of /mob/living/silicon/robot/ClickOn(): (var/atom/A, var/params)
+ACTION(robot_item_attack, obj/item/item, mob/living/silicon/robot/user, params, FIXED, notice = /datum/notice/robot_item_attack)
+
 /*
 	Cyborgs have no range restriction on empty-gripper Use, because it is basically an
 	AI click. They do have a range restriction on item use.
@@ -480,7 +483,7 @@ TYPE_TABLE(/datum/input_adapter/ai, adapter_click_table, list( \
 	var/sdepth = A.storage_depth_turf()
 	if(isturf(A) || isturf(A.loc) || (sdepth <= MAX_STORAGE_REACH))
 		if(A.Adjacent(user) || (W && W.attack_can_reach(user, A, combat_of(W).reach))) // see adjacent.dm, allows robots to use ranged melee weapons
-			PUBLISH_LEGACY(user, /datum/notice/robot_item_attack, W, user, params)
+			PUBLISH(user, robot_item_attack, item = W, user = user, params = params)
 			var/resolved = W.resolve_attackby(A, user, click_parameters = params)
 			if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)
 				after_click(W, A, user, 1, params, user.input_stance())
