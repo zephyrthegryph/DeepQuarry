@@ -234,7 +234,7 @@ SETTER(/obj/item/organ, organ_tag)
 	dq_part_cache(owner, part)
 	attach_part(part)
 	part.joined_body(owner)
-	PUBLISH_LEGACY(owner, /datum/notice/body_part_attached, part)
+	PUBLISH(owner, body_part_attached, part = part)
 
 /// `root` and its subtree left this body. Children first. `destroying`: the
 /// holder is being destroyed, so only the derived state is cleared (see the
@@ -289,7 +289,7 @@ SETTER(/obj/item/organ, organ_tag)
 		part.left_body(owner)
 	rel_clear(part, nameof(part.owner))
 	part.recalc_integrity()
-	PUBLISH_LEGACY(owner, /datum/notice/body_part_detached, part)
+	PUBLISH(owner, body_part_detached, part = part)
 
 // ---- Per-type reactions ----
 

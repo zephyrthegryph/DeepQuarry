@@ -355,7 +355,7 @@ CAPABILITIES(/obj/machinery/vr_sleeper)
 		avatar().sync_organ_dna()
 		avatar().initialize_vessel()
 
-	PUBLISH_LEGACY(avatar(), /datum/notice/human_dna_finalized)
+	PUBLISH(avatar(), human_dna_finalized)
 
 	if(tf)
 		var/mob/living/new_form = avatar().transform_into_mob(tf, TRUE) // No need to check prefs when the occupant already chose to transform.

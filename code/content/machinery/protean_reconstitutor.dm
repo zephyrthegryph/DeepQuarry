@@ -306,7 +306,7 @@ MSG_DEF_SELF(protean_reconstitutor/no_components, "%T% does not have any protean
 		// Languages come with the character's identity when the mind moves in.
 		P.apply_language_prefs(posibrain_client.prefs)
 
-		PUBLISH_LEGACY(P, /datum/notice/human_dna_finalized)
+		PUBLISH(P, human_dna_finalized)
 
 		var/datum/mind_host/core_host = get_mind_host(salvaged_brain)
 		core_host.release_mind(P, "protean reconstitution")

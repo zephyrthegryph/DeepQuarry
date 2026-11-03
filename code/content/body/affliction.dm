@@ -205,7 +205,7 @@
 	tracked_changed(src, nameof(severity)) // the factors() entry follows the exact severity: its table is held again before the next line
 	body?.invalidate(BODY_DIRTY_VITALS)
 	if(owner)
-		PUBLISH_LEGACY(owner, /datum/notice/affliction_severity_changed, src, old_severity)
+		PUBLISH(owner, affliction_severity_changed, affliction = src, old_severity = old_severity)
 	return TRUE
 
 SETTER(/datum/affliction, severity)

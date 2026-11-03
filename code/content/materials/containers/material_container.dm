@@ -160,7 +160,7 @@ CAPABILITIES(/datum/material_container)
 		mats_consumed[MAT] = mat_amount
 		material_amount += mat_amount
 	if(length(mats_consumed))
-		PUBLISH_LEGACY(src, /datum/notice/matcontainer_item_consumed, source, primary_mat, mats_consumed, material_amount, context)
+		PUBLISH(src, matcontainer_item_consumed, item = source, primary_mat = primary_mat, mats_consumed = mats_consumed, material_amount = material_amount, context = context)
 
 	return primary_mat
 //===================================================================================
@@ -702,7 +702,7 @@ CAPABILITIES(/datum/prompt/number/material_insert)
 		use_amount_mat(new_sheets.amount * SHEET_MATERIAL_AMOUNT, material)
 		sheet_amt -= new_sheets.amount
 		//send signal
-		PUBLISH_LEGACY(src, /datum/notice/matcontainer_stack_retrieved, new_sheets, context)
+		PUBLISH(src, matcontainer_stack_retrieved, new_stack = new_sheets, context = context)
 		//no point merging anything into an already full stack
 		if(new_sheets.amount == new_sheets.max_amount)
 			continue

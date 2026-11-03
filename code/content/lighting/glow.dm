@@ -88,15 +88,15 @@ READS_AS(/proc/glow_of, LIGHT_GLOW_KEY)
 			own.color = color
 		tracked_changed(A, LIGHT_GLOW_KEY)
 		if(power_moves)
-			PUBLISH_LEGACY(A, /datum/notice/atom_update_light_power, old_power)
+			PUBLISH(A, atom_update_light_power, old_power = old_power)
 			if(!isnull(old_power))
 				changed = TRUE
 		if(range_moves)
-			PUBLISH_LEGACY(A, /datum/notice/atom_update_light_range, old_range)
+			PUBLISH(A, atom_update_light_range, old_range = old_range)
 			if(!isnull(old_range))
 				changed = TRUE
 		if(color_moves)
-			PUBLISH_LEGACY(A, /datum/notice/atom_update_light_color, old_color)
+			PUBLISH(A, atom_update_light_color, old_color = old_color)
 			if(!isnull(old_color))
 				changed = TRUE
 	var/switched = !isnull(on) && !isnull(A.set_light_on(on)) // set_light_on() reconciles the source itself

@@ -84,8 +84,7 @@ CAPABILITIES(/obj/machinery/pump)
 		return
 	T.pump_reagents(reagents, reagents_per_cycle)
 
-	if(notice_wanted(src, /datum/notice/hose_forcepump))
-		notice_publish(src, notice_take(/datum/notice/hose_forcepump))
+	PUBLISH(src, hose_forcepump)
 
 // Sets the power state, if possible.
 // Returns TRUE/FALSE on power state changing

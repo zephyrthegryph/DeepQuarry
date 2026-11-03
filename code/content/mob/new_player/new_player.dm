@@ -394,7 +394,7 @@ MSG_DEF_SELF(join/wrong_play_mode, "Your play mode doesn't allow that job.")
 	// And uncomment this, too.
 	//new_character.dna.UpdateSE()
 
-	PUBLISH_LEGACY(new_character, /datum/notice/human_dna_finalized)
+	PUBLISH(new_character, human_dna_finalized)
 
 	// Do the initial caching of the player's body icons.
 	new_character.force_update_limbs()

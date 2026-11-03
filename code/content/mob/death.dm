@@ -152,7 +152,7 @@ ACTION(mob_death, gibbed, FIXED, notice = /datum/notice/mob_death)
 
 	// 9. Final: every side effect is done. The destroy framework's delete_on_death hangs here
 	// (lifecycle_on_death_finalized(), code/datums/lifecycle/verbs.dm), after the listeners.
-	PUBLISH_LEGACY(src, /datum/notice/living_death_final, gibbed)
+	PUBLISH(src, living_death_final, gibbed = gibbed)
 	if(isliving(src) && !QDELETED(src))
 		var/mob/living/finalized = src
 		finalized.lifecycle_on_death_finalized()
