@@ -4816,7 +4816,7 @@
 #include "code\domains\life\dizzy_shake.dm"
 #include "code\domains\life\jittery_shake.dm"
 #include "code\domains\life\life_dispatch.dm"
-#include "code\domains\life\life_om.dm"
+#include "code\domains\life\life_membership.dm"
 #include "code\domains\life\life_sequence.dm"
 #include "code\domains\life\life_steps.dm"
 #include "code\domains\life\living_systems.dm"
