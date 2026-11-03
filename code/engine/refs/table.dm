@@ -406,7 +406,7 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 /// A framework write changed holder.var_name. When the var is also a declared (tracked)
 /// field, its channel is raised exactly as the field's setter would, so stages, watches and
 /// while-declarations gated on it see the change (a relation view cleared because its target died,
-/// an owned child disposed of, a proto swapped). Before the OM registry exists nothing listens.
+/// an owned child disposed of, a proto swapped). Before the registry exists nothing listens.
 /// This is the one path a relation write marks what reads it: a list view written in place (a member added or removed) and a single ref come here alike, so a reader
 /// is marked once per write and a var nothing reads marks nothing (a bookkeeping list stays free to be written from anywhere).
 /proc/own_field_changed(datum/holder, var_name)
@@ -453,7 +453,7 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 		BOOT_PHASE_BEGIN(bp_hop)
 		draw_hop_published(holder, var_name)
 		BOOT_PHASE_END(bp_hop, "ofc draw_hop_published: [var_name]", holder)
-	var/datum/definition_registry/R = GLOB?.om_reg
+	var/datum/definition_registry/R = GLOB?.definition_store
 	if(!R || !holder)
 		BOOT_PHASE_END(bp_all, "ofc full path total: [var_name]", holder)
 		return
@@ -477,7 +477,7 @@ GLOBAL_VAR_INIT(own_field_memo_spared, 0)
 	var/static/list/memo = list() // ALLOW(sys_static_getter): relation writes run while the globals are being made; the memo is a per-type fact table
 	return memo
 
-/// TRUE when something that never changes for holder's type reads var_name: a stat input, a draw one hop away, an OM field channel, a reaction
+/// TRUE when something that never changes for holder's type reads var_name: a stat input, a draw one hop away, an field channel, a reaction
 /// of the type, a lifecycle form or a type-level on_change. Memoized per (type, var) once every table it folds is built; before that it is
 /// asked fresh every time (an unbuilt table answers "nothing yet" without caching).
 /proc/own_field_static_work(datum/holder, var_name)
@@ -488,7 +488,7 @@ GLOBAL_VAR_INIT(own_field_memo_spared, 0)
 		if(!isnull(known))
 			return known
 	. = own_field_static_readers(holder, var_name)
-	if(!GLOB?.draw_hop_vars_built || !islist(GLOB.rx_tables) || !islist(GLOB.change_index_by_type) || !GLOB.om_reg || table_of(holder) == table_empty())
+	if(!GLOB?.draw_hop_vars_built || !islist(GLOB.rx_tables) || !islist(GLOB.change_index_by_type) || !GLOB.definition_store || table_of(holder) == table_empty())
 		return
 	if(!by_var)
 		by_var = list()
@@ -501,7 +501,7 @@ GLOBAL_VAR_INIT(own_field_memo_spared, 0)
 		return TRUE
 	if(draw_hop_reads_var(var_name))
 		return TRUE
-	var/datum/definition_registry/R = GLOB?.om_reg
+	var/datum/definition_registry/R = GLOB?.definition_store
 	if(R && (R.fields_by_type[holder.type] || R.fields_of(holder.type))[var_name])
 		return TRUE
 	var/bits = plan_reader_bits(var_name, holder.type)

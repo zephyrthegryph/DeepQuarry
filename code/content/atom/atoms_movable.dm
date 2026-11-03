@@ -124,7 +124,7 @@
 
 	// Any mobs buckled to us were already unbuckled in the destroy
 	// transaction's phase 5 teardown, before Destroy() ran: the buckled_to
-	// relation (code/datums/om/library.dm) unlinks its edges -- and runs its
+	// relation (code/engine/library.dm) unlinks its edges -- and runs its
 	// on_unlink() cleanup -- for both ends of a deleted entity automatically.
 
 	// Snapshot: each member's Destroy() pulls it out of contents mid-iteration
@@ -486,7 +486,7 @@
 			// Call our thingy to inform everyone we moved
 			Moved(oldloc, NONE, TRUE)
 
-		// The pulling relation's holds_while = in_range(1) (code/datums/om/library.dm)
+		// The pulling relation's holds_while = in_range(1) (code/engine/library.dm)
 		// unlinks pulling/pulledby on its own once the live scheduler re-checks
 		// it, replacing the hand-rolled distance/z check that used to live here.
 

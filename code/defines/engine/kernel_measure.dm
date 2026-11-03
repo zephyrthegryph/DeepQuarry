@@ -38,38 +38,38 @@
 #define KM_MAP_PEAK_DECAY 0.98
 
 // Pseudo systems, registered first so hot paths use the constant instead of a lookup (see /datum/km_systems/New()).
-/// Object-model scheduler work no behaviour owns: the derived-value queue, services, and the remainder of a
+/// engine scheduler work no behaviour owns: the derived-value queue, services, and the remainder of a
 /// Behaviours fire (deadline wheel walking, audits, bookkeeping).
-#define KM_SYS_OM_CORE 1
+#define KM_SYS_SCHED_CORE 1
 /// The Rust world step and its native wake delivery.
-#define KM_SYS_OM_NATIVE 2
+#define KM_SYS_NATIVE_STEP 2
 /// Clicks handled outside the MC (atom/Click), charged where they run.
 #define KM_SYS_INPUT 3
 /// Work charged to a behaviour or subsystem with no system bound, and overflow past KM_MAX_SYSTEMS.
 #define KM_SYS_OTHER 4
 /// The presentation lane's declared-appearance and refresh drain, change reactions included, and the
 /// refresh drift audit (strict on every frame in test builds).
-#define KM_SYS_OM_APPEARANCE 5
+#define KM_SYS_APPEARANCE 5
 #define KM_SYS_PSEUDO_COUNT 5
 /// A subsystem whose own cost is decomposed into other systems (SSbehaviours) and so is not charged as one.
 #define KM_SYS_DECOMPOSED -1
 
-#define KM_KEY_OM_CORE "om_core"
-#define KM_KEY_OM_NATIVE "om_native"
+#define KM_KEY_SCHED_CORE "sched_core"
+#define KM_KEY_NATIVE_STEP "native_step"
 #define KM_KEY_INPUT "input"
 #define KM_KEY_OTHER "other"
-#define KM_KEY_OM_APPEARANCE "om_appearance"
+#define KM_KEY_APPEARANCE "appearance_drain"
 
 /// What a system is.
 #define KM_KIND_PSEUDO 0
-#define KM_KIND_OM 1
+#define KM_KIND_SCHED 1
 #define KM_KIND_MC 2
 
 /// Kinds of player input the latency record separates.
 #define KM_INPUT_CLICK 1
 #define KM_INPUT_VERB 2
 
-// Attribution inside om_core and om_appearance (code/controllers/measure/attribution.dm).
+// Attribution inside sched_core and appearance_drain (code/controllers/measure/attribution.dm).
 /// Rows the attribution table holds; a key past it lands on a per-kind overflow row and the cheaper half is dropped at the end of the tick.
 #define KA_MAX_ROWS 4096
 /// What a row is: a timer callback and a change reaction (both reported as callbacks), or a redraw of an atom type.

@@ -6,7 +6,7 @@
 // /datum/target_selector singletons. State that can't be class-level lives in
 // the world model (per-tick perception) or behavior_state (per-mob cooldowns).
 //
-// Scheduled by two OM behaviours on the mob (scheduling.dm): a strategic loop (2 s) and a
+// Scheduled by two behaviours on the mob (scheduling.dm): a strategic loop (2 s) and a
 // tactical loop (0.25 s, only while it has a combat target). They park by the mob's relevance
 // and clock; a calm brain hibernates on mob chunks until something moves near it.
 
@@ -17,7 +17,7 @@
 
 /datum/ai_brain
 	// --- Scheduling ---
-	var/mob/living/holder = null    // the mob this brain drives; its OM behaviours run the loops.
+	var/mob/living/holder = null    // the mob this brain drives; its behaviours run the loops.
 	var/process_flags = 0           // loops asked for: DQAI_PROCESSING / DQAI_FASTPROCESSING.
 
 	// --- Configuration ---

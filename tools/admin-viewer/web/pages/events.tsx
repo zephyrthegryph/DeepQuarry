@@ -192,7 +192,7 @@ type Profile = {
     calls: number;
   }[];
   spike?: { t: number; usage: number; cause: string };
-  om_types?: { behaviour: string; type: string; ms: number }[];
+  scheduler_types?: { behaviour: string; type: string; ms: number }[];
 };
 
 export function OverrunsPage({ params }: PageProps) {
@@ -220,7 +220,7 @@ export function OverrunsPage({ params }: PageProps) {
         <div className="grid cols-2">
           <Card
             title="What was running"
-            sub="What took most of each recorded overrun tick: a subsystem, an object-model system, or Outside MC (time before or after the MC's own run: resumed sleeping procs, verbs, Topic). The worst few per minute are kept in full."
+            sub="What took most of each recorded overrun tick: a subsystem, an engine system, or Outside MC (time before or after the MC's own run: resumed sleeping procs, verbs, Topic). The worst few per minute are kept in full."
           >
             <BarList
               rows={data.data.by_top.map((t) => ({
@@ -302,7 +302,7 @@ export function OverrunsPage({ params }: PageProps) {
           </Card>
           <Card
             title="Profiles"
-            sub="BYOND proc profiles the server took: the first minute of each round, 30 s of steady play, and a few seconds after a tick far over budget. Procs by self time, then the object-model work by behaviour and entity type."
+            sub="BYOND proc profiles the server took: the first minute of each round, 30 s of steady play, and a few seconds after a tick far over budget. Procs by self time, then the engine work by behaviour and entity type."
           >
             {!data.data.profiles.length ? (
               <div className="empty">No profiles in this period.</div>
@@ -346,7 +346,7 @@ export function OverrunsPage({ params }: PageProps) {
                       </table>
                     </div>
                   )}
-                  {openProfile === i && p.om_types?.length ? (
+                  {openProfile === i && p.scheduler_types?.length ? (
                     <div className="table-wrap">
                       <table>
                         <thead>
@@ -357,7 +357,7 @@ export function OverrunsPage({ params }: PageProps) {
                           </tr>
                         </thead>
                         <tbody>
-                          {p.om_types.map((r) => (
+                          {p.scheduler_types.map((r) => (
                             <tr key={`${r.behaviour}|${r.type}`}>
                               <td>{r.behaviour}</td>
                               <td className="mono">{r.type}</td>

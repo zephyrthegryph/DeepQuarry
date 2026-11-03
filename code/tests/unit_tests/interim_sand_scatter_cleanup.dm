@@ -1,11 +1,11 @@
 /// Actual thrown sand blinds a real eyed human and scatters on its original deadline only while still on a floor.
-/datum/unit_test/om/interim_sand_scatter_cleanup
+/datum/unit_test/engine/interim_sand_scatter_cleanup
 	var/pick_up_before_deadline = FALSE
 
-/datum/unit_test/om/interim_sand_scatter_cleanup/picked_up
+/datum/unit_test/engine/interim_sand_scatter_cleanup/picked_up
 	pick_up_before_deadline = TRUE
 
-/datum/unit_test/om/interim_sand_scatter_cleanup/run_om(list/made)
+/datum/unit_test/engine/interim_sand_scatter_cleanup/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human, T)
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)

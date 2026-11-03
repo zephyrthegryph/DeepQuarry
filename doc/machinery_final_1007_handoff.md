@@ -58,14 +58,14 @@ Baseline fingerprints versus master `eac3bc655d`: base_vars 981→912; instance_
 - `/datum/unit_test/interim_airlock_wire_electrify_actor`
 - `/datum/unit_test/round2_robot_fabricator_consumption`
 - `/datum/unit_test/round2_robot_fabricator_consumption/stale`
-- `/datum/unit_test/dq_om_wake_status_display`
+- `/datum/unit_test/dq_wake_status_display`
 - `/datum/unit_test/interim_large_parcel_unwrap`
 - `/datum/unit_test/dq_eg2/interim_domination_native_cancel`
 - `/datum/unit_test/dq_e2/input_kinds`
 - `/datum/unit_test/dq_pp/gravgen_spin_up`
 - `/datum/unit_test/dq_pp/gravgen_spin_down`
 - `/datum/unit_test/dq_pp/gravgen_breaker`
-- `/datum/unit_test/om/interim_gear_pack_actor_refusal`
+- `/datum/unit_test/engine/interim_gear_pack_actor_refusal`
 - `/datum/unit_test/read_once_machinery_admission/floor_light_custody`
 - `/datum/unit_test/dq_hc_struct/shuttle_authorize_menu_parity`
 - `/datum/unit_test/dq_hc_struct/cycler_missing_item_menu_parity`

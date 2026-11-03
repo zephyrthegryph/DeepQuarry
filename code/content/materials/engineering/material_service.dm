@@ -572,7 +572,7 @@ SCHEMA(/datum/material_service, electrical_reference_temperature, num())
 	timer = null
 	advance()
 
-/// Material exposure work: one keyed after() per service (was SSmaterial_services' heap, then an OM deadline).
+/// Material exposure work: one keyed after() per service (was SSmaterial_services' heap, then an deadline).
 /// Setting it again moves it; deletion cancels it with the entity.
 /datum/material_service/proc/service_due()
 	if(QDELETED(src))

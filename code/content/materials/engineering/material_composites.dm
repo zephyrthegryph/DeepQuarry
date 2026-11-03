@@ -24,7 +24,7 @@ PROC_SUMMARY(/proc/material_cache_id) // a never-reused id for a material, memoi
 /datum/material/proc/material_facts_changed()
 	shared_cache_uid = null
 	shared_cache_notice(/datum/notice/material_facts_changed)
-	PUBLISH_LEGACY(OM_WORLD, /datum/notice/material_facts_changed)
+	PUBLISH_LEGACY(WORLD_NOTICE_BUS, /datum/notice/material_facts_changed)
 
 /// Environmental load exerted by a gas mixture on an exposed material.  This
 /// is deliberately composition-based: no infrastructure class owns its own

@@ -42,7 +42,7 @@ CAPABILITIES(/datum/kernel_job)
 	SSkernel_jobs.start(J)
 	return J
 
-/// A cursor job (what the OM's lane slices were): `slice`, a PROC_REF on the owner called as slice(cursor), does one bounded slice and
+/// A cursor job (what the scheduler's lane slices were): `slice`, a PROC_REF on the owner called as slice(cursor), does one bounded slice and
 /// returns the next cursor (lists pass as they are), or null when the work is done; then `on_done` (a PROC_REF on the owner, called with `done_with`)
 /// runs. Slices run back to back while the job's budget lasts. Before the kernel runs (world init), or with `now`, every slice runs
 /// at once. Deleting the owner drops the rest.

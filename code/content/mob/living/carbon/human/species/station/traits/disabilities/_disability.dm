@@ -1,4 +1,4 @@
-/// Base for the trait-granted disabilities (were /datum/component/*_disability, then OM behaviours on the disabilities life
+/// Base for the trait-granted disabilities (were /datum/component/*_disability, then behaviours on the disabilities life
 /// stage). A disability is a capability the trait grants with itself as the source (trait.dm apply()/unapply()): its every()
 /// runs once a Life cycle on the mob's own clock while the trait lasts. State lives on the mob.
 /datum/capability/disability

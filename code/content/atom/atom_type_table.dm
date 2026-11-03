@@ -4,7 +4,7 @@
 // type and kept here, instead of being looked up again by every instance on
 // every materialize/dematerialize. Today that is what on_materialize() has to
 // do for a type: join unconditional registries, subscribe rules, start the
-// object model. Map load materializes ~490 k atoms, most of them turfs whose
+// engine. Map load materializes ~490 k atoms, most of them turfs whose
 // type needs none of the three, so one lookup here replaces three lookups and
 // a registry walk per atom.
 //
@@ -18,12 +18,12 @@
 #define TYPE_TABLE_HAS_REGISTRIES (1<<1)
 /// The type has rules (code/datums/rules/).
 #define TYPE_TABLE_HAS_RULES (1<<2)
-/// The type has object-model declarations (code/datums/om/).
-#define TYPE_TABLE_HAS_OM (1<<3)
+/// The type has engine declarations (code/engine/).
+#define TYPE_TABLE_HAS_SCHED (1<<3)
 /// The type has materialize-time lifecycle declarations (code/datums/lifecycle/declarations.dm).
 #define TYPE_TABLE_HAS_DECLS (1<<4)
 /// Any of these means on_materialize() has work for the type.
-#define TYPE_TABLE_MATERIALIZE_WORK (TYPE_TABLE_JOINS_REGISTRIES|TYPE_TABLE_HAS_RULES|TYPE_TABLE_HAS_OM|TYPE_TABLE_HAS_DECLS)
+#define TYPE_TABLE_MATERIALIZE_WORK (TYPE_TABLE_JOINS_REGISTRIES|TYPE_TABLE_HAS_RULES|TYPE_TABLE_HAS_SCHED|TYPE_TABLE_HAS_DECLS)
 /// Set on every built row, so a type with no facts is still cached.
 #define TYPE_TABLE_BUILT (1<<23)
 
@@ -44,7 +44,7 @@
 	if(dq_rules_for_type(thing.type))
 		bits |= TYPE_TABLE_HAS_RULES
 	if(entity_type_has_decl(thing.type))
-		bits |= TYPE_TABLE_HAS_OM
+		bits |= TYPE_TABLE_HAS_SCHED
 	var/datum/lifecycle_decls/decls = lifecycle_decls_of(thing)
 	if(decls && (decls.work & DECL_WORK_MATERIALIZE))
 		bits |= TYPE_TABLE_HAS_DECLS

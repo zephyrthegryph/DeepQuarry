@@ -1,4 +1,4 @@
-// Object-model core: checks (doc/rewrite/object_model_core.md section H).
+// engine core: checks (doc/rewrite/archive/object_model_core.md section H).
 //
 // A check spec is any of:
 //   /datum/requirement_definition/powered                   a check type, no parameter

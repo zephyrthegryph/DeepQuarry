@@ -1,7 +1,7 @@
 /// Local HUD questions belong to the AI and clicked screen, not its wireless provider.
-/datum/unit_test/om/silicon_hud_local_cancellation
+/datum/unit_test/engine/silicon_hud_local_cancellation
 
-/datum/unit_test/om/silicon_hud_local_cancellation/run_om(list/made)
+/datum/unit_test/engine/silicon_hud_local_cancellation/run_engine(list/made)
 	test_prompts_reset()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/silicon/ai/actor = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE)

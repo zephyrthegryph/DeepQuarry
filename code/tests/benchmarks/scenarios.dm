@@ -86,26 +86,26 @@
 	if(length(matter_owners) > 20)
 		matter_owners.Cut(21)
 	detail("item_matter_owner_types", matter_owners)
-	// OM handle slots: one per datum that was ever handed out a handle, freed when it is
+	// handle slots: one per datum that was ever handed out a handle, freed when it is
 	// deleted (or found collected on resolve). Count the live ones by target type.
 	var/list/handle_targets = list()
-	var/handle_slots = length(GLOB.om_handle_slots)
+	var/handle_slots = length(GLOB.handle_slots)
 	var/live_handles = 0
 	for(var/id in 1 to handle_slots)
-		var/ref = GLOB.om_handle_slots[id]
+		var/ref = GLOB.handle_slots[id]
 		if(!ref)
 			continue
 		var/datum/target = locate(ref)
-		if(isdatum(target) && target.om_hid == id)
+		if(isdatum(target) && target.handle_slot == id)
 			live_handles++
 			handle_targets["[target.type]"]++
 		CHECK_TICK
-	count_metric("om_handle_slots", handle_slots, "slots")
-	count_metric("om_handles_live", live_handles, "instances")
+	count_metric("handle_slots", handle_slots, "slots")
+	count_metric("handles_live", live_handles, "instances")
 	handle_targets = sortTim(handle_targets, GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
 	if(length(handle_targets) > 20)
 		handle_targets.Cut(21)
-	detail("om_handle_targets", handle_targets)
+	detail("handle_targets", handle_targets)
 
 /// A quiet round: steady-state tick cost with nobody playing.
 /datum/benchmark/idle

@@ -45,7 +45,7 @@
 		rel_set(src, nameof(landmark_transition), SSshuttles.get_landmark(landmark_transition_tag))
 
 // Its docking controllers are relation views (cleared by the framework); the qdeleting hook goes
-// with the OM teardown.
+// with the teardown.
 
 /datum/shuttle/autodock/proc/set_docking_codes(code)
 	docking_codes = code

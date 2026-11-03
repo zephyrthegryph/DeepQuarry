@@ -18,7 +18,7 @@
 	metric("[pre]tick_p99", tick["p99"], "%")
 	metric("[pre]overruns", tick["overruns"], "ticks")
 	metric("[pre]overrun_ratio", tick["samples"] ? tick["overruns"] / tick["samples"] : 0, "ratio")
-	var/list/systems = km_report_systems(stats_set, GLOB.om_live_sched)
+	var/list/systems = km_report_systems(stats_set, GLOB.live_scheduler)
 	for(var/list/row as anything in systems)
 		if(!row["ticks"] && !row["runs"])
 			continue
@@ -85,7 +85,7 @@
 /datum/benchmark/kernel_overhead/Run()
 	var/calls = param("calls", 200000)
 	var/datum/tick_meter/meter = new(KM_RING_LEN)
-	var/idx = km_systems().index_for("km_overhead_bench", KM_KIND_OM, LANE_SIMULATION)
+	var/idx = km_systems().index_for("km_overhead_bench", KM_KIND_SCHED, LANE_SIMULATION)
 	var/timer_id = "km-overhead-bench"
 
 	rustg_time_reset(timer_id)

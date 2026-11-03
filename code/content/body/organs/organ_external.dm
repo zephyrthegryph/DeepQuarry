@@ -110,13 +110,13 @@
 
 	// The detach hook (body/parts/attach.dm) keeps the owner's organ caches; the
 	// implant site slot's own teardown (destroy transaction phase 5, before
-	// Destroy(), OM relations step 2) already unlinked every implant here --
+	// Destroy(), relations step 2) already unlinked every implant here --
 	// clearing its part/imp_in and this organ's implants list. The real
 	// objects themselves are then deleted below, by drop_policy.
 
 	..()
 
-/// An organ's implant site (OM relations step 2, doc/rewrite/containment.md
+/// An organ's implant site (relations step 2, doc/rewrite/containment.md
 /// §3): a keyed internal slot, replacing the old bare implanted_in relation
 /// plus a hand-managed forceMove(). Keyed by implant type, so re-implanting
 /// the same kind refuses rather than stacking duplicates. Deleted with the
@@ -133,7 +133,7 @@
 	keyed = TRUE
 	drop_policy = SLOT_DROP_DELETE
 
-/// No view fields (OM relations step 3): `part` (the implant's own var) and
+/// No view fields (relations step 3): `part` (the implant's own var) and
 /// `implants` (the organ's list) are still ordinary vars every reader here
 /// uses, but this slot's own on_link()/on_unlink() are their only writer now.
 /// `imp_in` (the host mob) has no reverse list of its own to double-check

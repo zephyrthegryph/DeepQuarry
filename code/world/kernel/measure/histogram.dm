@@ -104,7 +104,7 @@
 /// Everything one set of accumulators records about one system.
 /datum/system_stats
 	var/key
-	var/kind = KM_KIND_OM
+	var/kind = KM_KIND_SCHED
 	/// ms charged per tick, over the ticks the system was charged in (an idle tick is not a 0 sample).
 	var/datum/km_hist/hist
 	/// Ticks the system was charged in.
@@ -116,7 +116,7 @@
 	var/overrun_ms = 0
 	/// Ticks the system was among the top KM_TOP_N of an overrun tick.
 	var/overrun_top_ticks = 0
-	/// Worst lateness (ds) any of its OM slots started with.
+	/// Worst lateness (ds) any of its scheduler slots started with.
 	var/late_max = 0
 
 CAPABILITIES(/datum/system_stats)

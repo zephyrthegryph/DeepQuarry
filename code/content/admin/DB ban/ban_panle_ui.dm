@@ -7,7 +7,7 @@
 	var/playercid
 	var/dbbantype
 	var/min_search = FALSE
-	/// The last search's rows (om_sql_view: they arrive after the search is made).
+	/// The last search's rows (an sql_ask() answer).
 	var/list/db_records
 
 /datum/tgui_ban_panel/New(user, pckey, datum/admins/admind)//user can either be a client or a mob due to byondcode(tm)

@@ -542,7 +542,7 @@ CAPABILITIES(/datum/system/supply)
 //Selling
 /datum/system/supply/proc/sell()
 	// Loop over each area in the supply shuttle
-	PUBLISH_LEGACY(OM_WORLD, /datum/notice/world_supply_shuttle_depart, shuttle.shuttle_area)
+	PUBLISH_LEGACY(WORLD_NOTICE_BUS, /datum/notice/world_supply_shuttle_depart, shuttle.shuttle_area)
 	for(var/area/subarea in shuttle.shuttle_area)
 		for(var/atom/movable/MA in subarea)
 			if(MA.anchored)

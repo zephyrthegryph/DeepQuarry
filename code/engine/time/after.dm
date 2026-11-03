@@ -58,7 +58,7 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 			return 0 // the owner is already gone
 		id = timer_schedule_list(null, delay, GLOBAL_PROC_REF(rx_timer_fire_ref), list(holder_handle, handler, key, token, handler_args, watched), TRUE)
 	else
-		// The holder is the timer's owner: passed first when it fires (OM_TIMER_OWNER_FIRST), not captured as an argument.
+		// The holder is the timer's owner: passed first when it fires (SCHED_TIMER_OWNER_FIRST), not captured as an argument.
 		id = timer_schedule_list(holder, delay, GLOBAL_PROC_REF(rx_timer_fire), list(handler, key, token, handler_args, watched), TRUE, owner_first = TRUE)
 	if(id && !isnull(key))
 		rx_ledger_add(holder, RELK_TIMER, key, token)
@@ -90,7 +90,7 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 /proc/rx_timer_fire_ref(holder_handle, handler, key, token, list/handler_args, list/watched)
 	var/datum/holder = resolve_token(holder_handle)
 	if(!isdatum(holder))
-		log_qdel("OM: world timer [handler] dropped: its owner [holder_handle] no longer exists")
+		log_qdel("scheduler: world timer [handler] dropped: its owner [holder_handle] no longer exists")
 		return
 	rx_timer_fire(holder, handler, key, token, handler_args, watched)
 
@@ -109,7 +109,7 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 		rx_ledger_remove(holder, RELK_TIMER, key, token)
 	for(var/position in watched)
 		if(isnull(handler_args[position]))
-			log_qdel("OM: timer [handler] dropped: argument [position] no longer exists")
+			log_qdel("scheduler: timer [handler] dropped: argument [position] no longer exists")
 			return
 	var/census_start = GLOB.census_on ? TICK_USAGE_REAL : null
 	GLOB.km_attr_a = holder.type // attribution: the handler this keyed timer carries, not this dispatcher
@@ -163,13 +163,13 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 /// TRUE while a call made by after_unique(owner, ..., handler, with) is pending.
 /proc/after_unique_pending(datum/owner, handler, list/with = null)
 	var/datum/holder = owner || timer_global_owner()
-	var/datum/scheduler_record/rec = holder.om_rec
+	var/datum/scheduler_record/rec = holder.sched_rec
 	return !!rec && !!time_scheduler().timer_find(rec, handler, with || list())
 
 /// Cancels the pending call of after_unique(owner, ..., handler, with). TRUE when one was pending.
 /proc/cancel_after_unique(datum/owner, handler, list/with = null)
 	var/datum/holder = owner || timer_global_owner()
-	var/datum/scheduler_record/rec = holder.om_rec
+	var/datum/scheduler_record/rec = holder.sched_rec
 	if(!rec)
 		return FALSE
 	var/i = time_scheduler().timer_find(rec, handler, with || list())

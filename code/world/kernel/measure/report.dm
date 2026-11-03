@@ -18,14 +18,14 @@
 
 /// The scheduler's per-behaviour counters rolled up to their systems: a list indexed by system index whose entries
 /// are KM_ROLL_* rows (null for a system with no behaviours). Counters are cumulative since the scheduler's stats
-/// were last cleared; a stats set subtracts the roll-up it opened with. Behaviours past OM_MAX_STAT_TYPES share one
+/// were last cleared; a stats set subtracts the roll-up it opened with. Behaviours past SCHED_MAX_STAT_TYPES share one
 /// counter bucket in the scheduler, so they cannot be attributed and are left out (km_unrolled_behaviours()).
 /proc/km_rollup(datum/time_scheduler/sched)
 	var/list/rows = new /list(KM_MAX_SYSTEMS)
 	var/datum/definition_registry/reg = definition_registry()
 	var/list/stats = sched.stats
 	for(var/datum/scheduled_behaviour/B as anything in reg.behaviours)
-		if(!B || B.id >= OM_MAX_STAT_TYPES)
+		if(!B || B.id >= SCHED_MAX_STAT_TYPES)
 			continue
 		var/idx = B.system_idx || KM_SYS_OTHER
 		var/list/row = rows[idx]
@@ -38,21 +38,21 @@
 		var/list/S = B.id <= length(stats) ? stats[B.id] : null
 		if(!S)
 			continue
-		row[KM_ROLL_RUNS] += S[OM_STAT_RUNS]
-		row[KM_ROLL_SLOT_MS] += S[OM_STAT_MS]
-		row[KM_ROLL_LATE_MAX] = max(row[KM_ROLL_LATE_MAX], S[OM_STAT_LATE_MAX])
-		row[KM_ROLL_DEFERRALS] += S[OM_STAT_DEFERRALS]
-		row[KM_ROLL_BREACHES] += S[OM_STAT_BREACHES]
-		row[KM_ROLL_WAKES] += S[OM_STAT_WAKES]
-		row[KM_ROLL_DEADLINES] += S[OM_STAT_DEADLINES]
-		row[KM_ROLL_ERRORS] += S[OM_STAT_ERRORS]
+		row[KM_ROLL_RUNS] += S[SCHED_STAT_RUNS]
+		row[KM_ROLL_SLOT_MS] += S[SCHED_STAT_MS]
+		row[KM_ROLL_LATE_MAX] = max(row[KM_ROLL_LATE_MAX], S[SCHED_STAT_LATE_MAX])
+		row[KM_ROLL_DEFERRALS] += S[SCHED_STAT_DEFERRALS]
+		row[KM_ROLL_BREACHES] += S[SCHED_STAT_BREACHES]
+		row[KM_ROLL_WAKES] += S[SCHED_STAT_WAKES]
+		row[KM_ROLL_DEADLINES] += S[SCHED_STAT_DEADLINES]
+		row[KM_ROLL_ERRORS] += S[SCHED_STAT_ERRORS]
 	return rows
 
 /// How many registered behaviours km_rollup() cannot attribute (ids past the scheduler's stat table).
 /proc/km_unrolled_behaviours()
 	. = 0
 	for(var/datum/scheduled_behaviour/B as anything in definition_registry().behaviours)
-		if(B && B.id >= OM_MAX_STAT_TYPES)
+		if(B && B.id >= SCHED_MAX_STAT_TYPES)
 			.++
 
 /// Sorts report rows by overrun share, then total ms, both descending.
@@ -62,7 +62,7 @@
 		return by_share
 	return b["ms_total"] - a["ms_total"]
 
-/// One row per system charged in `stats_set` (ordered by overrun share, then ms). With `sched`, the OM counters
+/// One row per system charged in `stats_set` (ordered by overrun share, then ms). With `sched`, the scheduler counters
 /// (runs, breaches, deferrals, ...) come from the behaviours rolled up since the set opened.
 /proc/km_report_systems(datum/km_stats_set/stats_set, datum/time_scheduler/sched)
 	var/datum/km_systems/registry = km_systems()
@@ -82,7 +82,7 @@
 			continue
 		var/list/row = list(
 			"key" = registry.keys[idx],
-			"kind" = registry.kinds[idx] == KM_KIND_MC ? "mc" : (registry.kinds[idx] == KM_KIND_OM ? "om" : "pseudo"),
+			"kind" = registry.kinds[idx] == KM_KIND_MC ? "mc" : (registry.kinds[idx] == KM_KIND_SCHED ? "om" : "pseudo"),
 			"lane" = registry.lane_label(idx),
 			"ticks" = S?.ticks || 0,
 			"ms_total" = S ? round(S.ms_total(), 0.001) : 0,
@@ -136,7 +136,7 @@
 /proc/km_panel_data(top_n = 14)
 	var/datum/tick_meter/meter = km_meter()
 	var/datum/km_stats_set/stats_set = meter.live
-	var/list/systems = km_report_systems(stats_set, GLOB.om_live_sched)
+	var/list/systems = km_report_systems(stats_set, GLOB.live_scheduler)
 	if(length(systems) > top_n)
 		systems.Cut(top_n + 1)
 	return list(

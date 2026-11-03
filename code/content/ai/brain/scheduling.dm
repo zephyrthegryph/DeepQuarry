@@ -2,7 +2,7 @@
 #define DQ_AI_SLOW_TICK_MS 5
 // AI brain scheduling (doc/rewrite/final_api.html section 14: the brain's loops are keyed every() entries of a capability on
 // the mob's own clock). This replaces SSai (strategic, 2 s), SSaifast (tactical, 0.25 s), the init-only SSdq_combat_ai and
-// the OM behaviours that ran them.
+// the behaviours that ran them.
 //
 // Each loop is a capability the brain grants to its mob (start_loop()) and revokes (stop_loop()):
 // - relevance: a low-priority mob on a z-level with no living player is at RELEVANCE_NONE (life_update_relevance()) and its

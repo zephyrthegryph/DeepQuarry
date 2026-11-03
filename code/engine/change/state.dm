@@ -96,7 +96,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 	return FALSE
 
 /// The tracked var `var_name` of E state_changed (TRACKED setters, a hand-written SETTER): its key is published when
-/// someone reads it (READERS) and the outputs that read it re-derive (state_changed(), refresh.dm). No OM channel is raised.
+/// someone reads it (READERS) and the outputs that read it re-derive (state_changed(), refresh.dm). No channel is raised.
 /proc/tracked_changed(datum/E, var_name)
 	READS_FROM()
 	state_changed(E, 0, var_name)

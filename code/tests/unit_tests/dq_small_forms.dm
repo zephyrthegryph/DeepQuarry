@@ -1,5 +1,5 @@
 // The last small forms (lane small-forms): look parts for a transform and a maptext, the hop read of another atom's look (look.watch_look()),
-// the slot release a gibber's remains use, and the engine world watches that replaced the om_world_* procs.
+// the slot release a gibber's remains use, and the engine world watches that replaced the world_* procs.
 
 // ---- look_part_key(): transform and maptext ----
 

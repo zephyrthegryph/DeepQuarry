@@ -184,7 +184,7 @@ GLOBAL_LIST_INIT(kernel_test_systems, list(/datum/system/input, /datum/system/re
 		else
 			CRASH("kernel test: [phase] is not a kernel phase")
 
-/// Runs the scheduler-backed phases of one slot under a pass: the OM scheduler's own pieces sit inside N..R.
+/// Runs the scheduler-backed phases of one slot under a pass: the scheduler's own pieces sit inside N..R.
 /datum/controller/kernel/proc/test_slot(now)
 	var/datum/time_scheduler/S = test_sched()
 	var/datum/time_scheduler/saved = sched
@@ -205,7 +205,7 @@ GLOBAL_LIST_INIT(kernel_test_systems, list(/datum/system/input, /datum/system/re
 
 // ---- the forms the driver calls ----
 
-/// Advances the kernel clock by `t` deciseconds, a slot at a time (OM_SLOT_DS), running every phase and every drain that falls due.
+/// Advances the kernel clock by `t` deciseconds, a slot at a time (SCHED_SLOT_DS), running every phase and every drain that falls due.
 /proc/kernel_time_advance(t)
 	var/datum/controller/kernel/K = kernel()
 	var/datum/time_scheduler/S = K.test_sched()
@@ -214,9 +214,9 @@ GLOBAL_LIST_INIT(kernel_test_systems, list(/datum/system/input, /datum/system/re
 	K.test_arm(K.test_now)
 	var/target = K.test_now + t
 	while(K.test_now < target)
-		K.test_now = min(K.test_now + OM_SLOT_DS, target)
+		K.test_now = min(K.test_now + SCHED_SLOT_DS, target)
 		K.test_slot(K.test_now)
-		vg_heat_net_advance(OM_SLOT_DS / (1 SECONDS)) // the test clock does not pace the native world: the heat network's edges advance with it
+		vg_heat_net_advance(SCHED_SLOT_DS / (1 SECONDS)) // the test clock does not pace the native world: the heat network's edges advance with it
 		// Gas watches: Rust reports a mixture's change at the next drain and the machine service (a live item, not stepped here) hands
 		// each to its watch. Without this a test's gas watches only fired when it drained them by hand.
 		SSmachines.wake_dirty_gas_subscribers()

@@ -1,6 +1,6 @@
 # Medical frameworks: clocks, ownership, nullspace, exposure
 
-> **Status after the reconciliation (2026-09-27, `rewrite/reconcile`).** The object-model core
+> **Status after the reconciliation (2026-09-27, `rewrite/reconcile`).** The engine core
 > ([rewrite/object_model_core.md](rewrite/archive/object_model_core.md)) is authoritative where this
 > document overlaps it:
 > - **§1 Holder-provided clocks is superseded.** There is one clock system: OM clock domains

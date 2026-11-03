@@ -56,7 +56,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 /// The world hears of it, then its size, mob chunk and creation log, once its Initialize() chain has returned (a setup() hook of /mob): a rolled size_multiplier or icon scale (rolls()) is in place by then.
 /mob/proc/finish_mob_setup()
-	PUBLISH_LEGACY(OM_WORLD, /datum/notice/world_mob_created, src)
+	PUBLISH_LEGACY(WORLD_NOTICE_BUS, /datum/notice/world_mob_created, src)
 	update_transform() // Some mobs may start bigger or smaller than normal.
 	publish_mob_chunk(src, TRUE)
 	log_mob_tag(src, "TAG: [tag] CREATED: [key_name(src)] \[[type]\]")

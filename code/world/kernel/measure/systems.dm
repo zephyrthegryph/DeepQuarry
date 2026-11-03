@@ -1,11 +1,11 @@
 // Kernel measurement: the systems every measured cost is charged to.
 //
 // A "system" is a named owner of work. There are three kinds:
-//  - KM_KIND_OM: an object-model behaviour family (life, machines, ai_brain, lighting, ...). Every
+//  - KM_KIND_SCHED: an engine behaviour family (life, machines, ai_brain, lighting, ...). Every
 //    /datum/scheduled_behaviour and /datum/work_pipeline maps to one, bound once at boot by km_bind_behaviours().
 //  - KM_KIND_MC: a firing MC subsystem ("mc_air", "mc_lighting"), bound when it first fires. SSbehaviours is
-//    not one: its cost is decomposed into the OM systems it runs (its remainder is "om_core").
-//  - KM_KIND_PSEUDO: work no behaviour or subsystem owns (om_core, om_native, input, other).
+//    not one: its cost is decomposed into the scheduler systems it runs (its remainder is "sched_core").
+//  - KM_KIND_PSEUDO: work no behaviour or subsystem owns (sched_core, native_step, input, other).
 //
 // HOW A BEHAVIOUR GETS ITS SYSTEM (the whole rule; nothing else decides):
 //  1. `system_key` on the behaviour type, when set. Inline behaviours (rows of a bundle's reacts / ticks /
@@ -14,7 +14,7 @@
 //     ownership is written down: the row for a folder lists that folder's behaviour types, so a new behaviour
 //     joins its folder's system by adding its type to the row (or by setting `system_key`).
 //  3. Otherwise the family rule: `/datum/scheduled_behaviour/world/<x>` and `/datum/scheduled_behaviour/sleeper/<x>` -> "<x>",
-//     `/datum/scheduled_behaviour/internal/<x>` -> "om_core", any other `/datum/scheduled_behaviour/<x>[/...]` or
+//     `/datum/scheduled_behaviour/internal/<x>` -> "sched_core", any other `/datum/scheduled_behaviour/<x>[/...]` or
 //     `/datum/work_pipeline/<x>[/...]` -> "<x>". A behaviour therefore always has a system, and a system nobody
 //     named shows up under the behaviour's own name, which is what an overrun report needs to point at.
 // A unit test (dq_km_*) checks every registered behaviour resolves and that the folder rows name real types.
@@ -23,7 +23,7 @@
 // system's index means the same thing in a test meter and the live one.
 
 // The two singletons (the systems table and the live meter) are made on first use through km_systems() and
-// km_meter(), not as GLOBAL_DATUM_INIT: the OM registry builds inside the global variable controller's New(),
+// km_meter(), not as GLOBAL_DATUM_INIT: the registry builds inside the global variable controller's New(),
 // before any global initialiser has run, and binds every behaviour to a system as it goes.
 
 /// Holds the singletons. Tests replace `meter` with a probe for a few statements.
@@ -66,7 +66,7 @@ CAPABILITIES(/datum/km_holder)
 	var/list/index_by_key
 	/// Index -> KM_KIND_*.
 	var/list/kinds
-	/// Index -> bitmask of (1 << lane) for the OM lanes the system's behaviours run in.
+	/// Index -> bitmask of (1 << lane) for the lanes the system's behaviours run in.
 	var/list/lane_masks
 
 /datum/km_systems/New()
@@ -75,16 +75,16 @@ CAPABILITIES(/datum/km_holder)
 	kinds = list()
 	lane_masks = list()
 	// The pseudo systems take fixed indices: hot paths charge them by constant.
-	index_for(KM_KEY_OM_CORE, KM_KIND_PSEUDO)
-	index_for(KM_KEY_OM_NATIVE, KM_KIND_PSEUDO)
+	index_for(KM_KEY_SCHED_CORE, KM_KIND_PSEUDO)
+	index_for(KM_KEY_NATIVE_STEP, KM_KIND_PSEUDO)
 	index_for(KM_KEY_INPUT, KM_KIND_PSEUDO)
 	index_for(KM_KEY_OTHER, KM_KIND_PSEUDO)
-	index_for(KM_KEY_OM_APPEARANCE, KM_KIND_PSEUDO)
-	if(length(keys) != KM_SYS_PSEUDO_COUNT || keys[KM_SYS_OM_CORE] != KM_KEY_OM_CORE || keys[KM_SYS_OM_NATIVE] != KM_KEY_OM_NATIVE || keys[KM_SYS_INPUT] != KM_KEY_INPUT || keys[KM_SYS_OTHER] != KM_KEY_OTHER || keys[KM_SYS_OM_APPEARANCE] != KM_KEY_OM_APPEARANCE)
+	index_for(KM_KEY_APPEARANCE, KM_KIND_PSEUDO)
+	if(length(keys) != KM_SYS_PSEUDO_COUNT || keys[KM_SYS_SCHED_CORE] != KM_KEY_SCHED_CORE || keys[KM_SYS_NATIVE_STEP] != KM_KEY_NATIVE_STEP || keys[KM_SYS_INPUT] != KM_KEY_INPUT || keys[KM_SYS_OTHER] != KM_KEY_OTHER || keys[KM_SYS_APPEARANCE] != KM_KEY_APPEARANCE)
 		CRASH("km: the pseudo system indices no longer match their KM_SYS_* constants")
 
 /// The index of `key`, registering it first if it is new. Past KM_MAX_SYSTEMS the overflow is KM_SYS_OTHER.
-/datum/km_systems/proc/index_for(key, kind = KM_KIND_OM, lane = 0)
+/datum/km_systems/proc/index_for(key, kind = KM_KIND_SCHED, lane = 0)
 	var/idx = index_by_key[key]
 	if(!idx)
 		if(length(keys) >= KM_MAX_SYSTEMS)
@@ -105,7 +105,7 @@ CAPABILITIES(/datum/km_holder)
 /datum/km_systems/proc/count()
 	return length(keys)
 
-/// "urgent+sim" style label of the OM lanes a system runs in; the kind name for MC and pseudo systems.
+/// "urgent+sim" style label of the lanes a system runs in; the kind name for MC and pseudo systems.
 /datum/km_systems/proc/lane_label(idx)
 	var/kind = kinds[idx]
 	if(kind == KM_KIND_MC)
@@ -115,7 +115,7 @@ CAPABILITIES(/datum/km_holder)
 	var/static/list/lane_names = list("urgent", "sim", "derived", "present", "bg", "world")
 	var/list/parts = list()
 	var/mask = lane_masks[idx]
-	for(var/lane in 1 to OM_LANE_COUNT)
+	for(var/lane in 1 to LANE_COUNT)
 		if(mask & (1 << lane))
 			parts += lane_names[lane]
 	return length(parts) ? jointext(parts, "+") : "om"
@@ -125,12 +125,12 @@ CAPABILITIES(/datum/km_holder)
 /// Code-folder ownership of behaviour types: key -> the type paths (prefixes) whose behaviours it owns.
 /// First match wins, so list a specific type before a broader prefix. Keep a row's comment naming its folder.
 /proc/km_system_rows()
-	// Not a static: this runs while the OM registry builds inside the global variable controller's New(), before
+	// Not a static: this runs while the registry builds inside the global variable controller's New(), before
 	// proc statics holding type paths are set up (a static here read as null and the table came out empty).
 	var/list/rows = list(
-		// code/datums/om/: the scheduler's own behaviours (expiry, rates, timers, tasks, io, ui pushes, edges) and
+		// code/engine/: the scheduler's own behaviours (expiry, rates, timers, tasks, io, ui pushes, edges) and
 		// the sleeper/timed bases in pipeline.dm.
-		"om_core" = list(/datum/scheduled_behaviour/internal, /datum/scheduled_behaviour/sleeper/timed),
+		"sched_core" = list(/datum/scheduled_behaviour/internal, /datum/scheduled_behaviour/sleeper/timed),
 	)
 	return rows
 
@@ -172,7 +172,7 @@ CAPABILITIES(/datum/km_holder)
 		return KM_KEY_OTHER
 	var/first = segments[1]
 	if(first == "internal")
-		return KM_KEY_OM_CORE
+		return KM_KEY_SCHED_CORE
 	if((first == "world" || first == "sleeper") && length(segments) >= 2)
 		return segments[2]
 	return first
@@ -183,8 +183,8 @@ CAPABILITIES(/datum/km_holder)
 	var/list/segments = splittext("[bundle.type]", "/")
 	return segments[length(segments)]
 
-/// Binds every behaviour of a freshly built OM registry to its system (called at the end of build_behaviours()).
+/// Binds every behaviour of a freshly built registry to its system (called at the end of build_behaviours()).
 /proc/km_bind_behaviours(list/behaviours)
 	var/datum/km_systems/systems = km_systems()
 	for(var/datum/scheduled_behaviour/B as anything in behaviours)
-		B.system_idx = systems.index_for(B.system_key || km_system_key_for_path(B.type), KM_KIND_OM, B.lane)
+		B.system_idx = systems.index_for(B.system_key || km_system_key_for_path(B.type), KM_KIND_SCHED, B.lane)

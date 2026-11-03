@@ -1,7 +1,7 @@
 // Light relation edges: REF views (doc/rewrite/ownership.md §4.1).
 //
 // A REF var holds a direct reference (reads are free). The target keeps a lazy reverse index,
-// `om_refs_in`: the source's key (own_key()) -> the var name (or a list of var names) naming it. The
+// `refs_in`: the source's key (own_key()) -> the var name (or a list of var names) naming it. The
 // index is weak (keys, not references), so source and target never form a reference cycle. When either end
 // dies the framework clears its side; nothing is kept by hand.
 //
@@ -10,12 +10,12 @@
 // the z-level is released.
 
 /// Reverse index: source key (own_key()) -> var name, or a list of var names.
-/datum/var/tmp/list/om_refs_in
+/datum/var/tmp/list/refs_in
 /// Watching sources (rel_one/rel_many(watch = ...)): source key (own_key()) -> how many watched views of
 /// that source name us. state_changed() on this datum marks each of them changed.
 /datum/var/tmp/list/rel_watchers
 
-/// z (text) -> turf key (own_key()) -> that turf's reverse index (as om_refs_in). A turf keeps no index of
+/// z (text) -> turf key (own_key()) -> that turf's reverse index (as refs_in). A turf keeps no index of
 /// its own: ChangeTurf() resets its vars, while its ref (its position) stays.
 GLOBAL_LIST_EMPTY(rel_turf_index)
 /// Handle id (text) -> flat list, stride 2: source key (own_key()), var name. Edges to an entity that
@@ -49,13 +49,13 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 			index = alist()
 			by_turf[tkey] = index
 		return index
-	var/list/index = target.om_refs_in
+	var/list/index = target.refs_in
 	if(!index && create)
 		// An alist, like every ref-keyed index here: inserting a new key into a plain assoc list
 		// is linear in its length, so a target named by thousands of sources (a pipe network's
 		// members, a z-level's turfs) made boot quadratic. An alist inserts in constant time.
 		index = alist()
-		target.om_refs_in = index
+		target.refs_in = index
 	return index
 
 /// Drops `target`'s empty index.
@@ -67,7 +67,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		var/list/by_turf = GLOB.rel_turf_index["[where.z]"]
 		by_turf?.Remove(own_key(where))
 	else
-		target.om_refs_in = null
+		target.refs_in = null
 
 /// Reverse index writes so far: load-independent, the benchmarks report it.
 GLOBAL_VAR_INIT(rel_index_writes, 0)
@@ -563,9 +563,9 @@ GLOBAL_VAR_INIT(rel_index_writes, 0)
 	// D is a target no hop can follow any more (its sources are cleared below).
 	if(D.own_key_text && GLOB?.derived_watch?[D.own_key_text])
 		GLOB.derived_watch -= D.own_key_text
-	var/list/index = D.om_refs_in
+	var/list/index = D.refs_in
 	if(index)
-		D.om_refs_in = null
+		D.refs_in = null
 		for(var/source_ref in index)
 			var/datum/S = own_locate(source_ref)
 			if(!isdatum(S) || S == D)
@@ -656,8 +656,8 @@ GLOBAL_VAR_INIT(rel_index_writes, 0)
 /// `D` is collapsing into latent data but keeps its handle slot: every view naming it goes
 /// dormant under that handle instead of being lost, and re-links in rel_wake().
 /proc/rel_go_dormant(datum/D)
-	var/list/index = D.om_refs_in
-	var/h = D.om_hid
+	var/list/index = D.refs_in
+	var/h = D.handle_slot
 	if(!index || !h)
 		return
 	var/list/dormant = GLOB.rel_dormant["[h]"]
@@ -722,16 +722,16 @@ GLOBAL_VAR_INIT(rel_index_writes, 0)
 			log_world("LIFECYCLE_TRACE: [original.type] [ref(original)] replace_with: successor [successor.type] is outside family [rel_forward_family(original)]; handle and views end with the original")
 		rel_forward_state(original, successor)
 		return
-	var/id = original.om_hid
-	if(id && !successor.om_hid)
-		var/list/slots = GLOB.om_handle_slots
+	var/id = original.handle_slot
+	if(id && !successor.handle_slot)
+		var/list/slots = GLOB.handle_slots
 		if(id <= length(slots) && slots[id] == own_key(original))
 			entity_handle_slot_bind(id, successor)
-			var/list/types = GLOB.om_handle_types
+			var/list/types = GLOB.handle_types
 			if(length(types) >= id)
 				types[id] = successor.type
-			successor.om_hid = id
-			original.om_hid = 0
+			successor.handle_slot = id
+			original.handle_slot = 0
 	for(var/list/pair as anything in rel_sources(original))
 		var/datum/S = pair[1]
 		var/name = pair[2]

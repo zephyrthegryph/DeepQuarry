@@ -1,5 +1,5 @@
-// Park/wake tests for the pollers moved onto object-model pipelines (roadmap S3-S5,
-// code/datums/om/periodic.dm, code/game/machinery/machine_pipeline.dm): periodic work runs only
+// Park/wake tests for the pollers moved onto engine pipelines (roadmap S3-S5,
+// code/engine/periodic.dm, code/game/machinery/machine_pipeline.dm): periodic work runs only
 // between its start and its end, parks in between, and the missed-wake audit finds nothing.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
@@ -19,9 +19,9 @@
 /// cadence_start() puts the entity on a cadence and the kernel steps it until periodic_step() returns
 /// PROCESS_KILL; the entity then leaves the cadence (it costs nothing), cadence_start() starts it again,
 /// cadence_stop() ends the work early, and moving to another cadence leaves the first.
-/datum/unit_test/dq_om_periodic_park_wake
+/datum/unit_test/dq_periodic_park_wake
 
-/datum/unit_test/dq_om_periodic_park_wake/Run()
+/datum/unit_test/dq_periodic_park_wake/Run()
 	var/datum/dq_periodic_probe/D = allocate(/datum/dq_periodic_probe)
 	var/P = PERIODIC_SLOW
 	D.work = 2
@@ -75,9 +75,9 @@
 	TEST_ASSERT(!length(pipeline_pipeline_audit(null, 400, 100, TRUE)), "the audit reported a missed wake")
 
 /// A member that stops itself during its sweep does not make the member swapped into its slot miss the sweep.
-/datum/unit_test/dq_om_periodic_sweep_survives_leaving_members
+/datum/unit_test/dq_periodic_sweep_survives_leaving_members
 
-/datum/unit_test/dq_om_periodic_sweep_survives_leaving_members/Run()
+/datum/unit_test/dq_periodic_sweep_survives_leaving_members/Run()
 	var/list/probes = list()
 	for(var/i in 1 to 5)
 		var/datum/dq_periodic_probe/D = allocate(/datum/dq_periodic_probe)
@@ -119,9 +119,9 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 
 /// work_start() runs the step every interval until it returns PROCESS_KILL; the machine then parks, a power change alone doesn't restart it,
 /// and work_start()/work_stop() start and end it.
-/datum/unit_test/dq_om_machine_step_park_wake
+/datum/unit_test/dq_machine_step_park_wake
 
-/datum/unit_test/dq_om_machine_step_park_wake/Run()
+/datum/unit_test/dq_machine_step_park_wake/Run()
 	test_driver_begin()
 	var/obj/machinery/dq_step_probe/M = allocate(/obj/machinery/dq_step_probe, test_floor())
 	M.set_powered(TRUE)
@@ -147,7 +147,7 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 	TEST_ASSERT_EQUAL(M.steps, 3, "work_stop() ended its work")
 	test_driver_end()
 
-/datum/proc/dq_om_test_timer_hit()
+/datum/proc/dq_test_timer_hit()
 	return
 
 #endif
@@ -156,9 +156,9 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 
 /// Machines that used to poll forever (roadmap S5): idle, each one's step says it has nothing to
 /// do, and its producer gives it work again.
-/datum/unit_test/dq_om_idle_machines_sleep
+/datum/unit_test/dq_idle_machines_sleep
 
-/datum/unit_test/dq_om_idle_machines_sleep/Run()
+/datum/unit_test/dq_idle_machines_sleep/Run()
 	var/turf/T = test_floor()
 
 	var/obj/machinery/igniter/igniter = allocate(/obj/machinery/igniter, T)
@@ -221,9 +221,9 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 
 /// A type-level every() gated on a capability key (the sleeper's treatment, when = all_of(STAT_OPERABLE, OCCUPANT_POD_OCCUPIED)) parks while the
 /// pod is empty and wakes when someone gets in: the key publishes every change, so nothing polls an empty pod.
-/datum/unit_test/dq_om_pod_every_parks_on_capability_key
+/datum/unit_test/dq_pod_every_parks_on_capability_key
 
-/datum/unit_test/dq_om_pod_every_parks_on_capability_key/Run()
+/datum/unit_test/dq_pod_every_parks_on_capability_key/Run()
 	var/turf/T = test_floor()
 	var/obj/machinery/sleeper/sleeper = allocate(/obj/machinery/sleeper, T)
 	sleeper.set_grid_power(TRUE)
@@ -266,9 +266,9 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 
 /// Alarm handlers (was SSalarm): a raised alarm starts its handler on the slow lane; with no alarm
 /// left it stops, and an idle handler never runs.
-/datum/unit_test/dq_om_alarm_handler_park_wake
+/datum/unit_test/dq_alarm_handler_park_wake
 
-/datum/unit_test/dq_om_alarm_handler_park_wake/Run()
+/datum/unit_test/dq_alarm_handler_park_wake/Run()
 	var/datum/alarm_handler/AH = GLOB.power_alarm
 	var/obj/item/origin = allocate(/obj/item, test_floor())
 	if(!length(AH.alarms))
@@ -286,9 +286,9 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 
 /// The missed-wake audits find nothing on the test map: every parked pipeline entity is idle by its
 /// own rule, and every sleeper on timers and keys is asleep for a reason.
-/datum/unit_test/dq_om_audit_finds_no_missed_wakes
+/datum/unit_test/dq_audit_finds_no_missed_wakes
 
-/datum/unit_test/dq_om_audit_finds_no_missed_wakes/Run()
+/datum/unit_test/dq_audit_finds_no_missed_wakes/Run()
 	dq_test_ticks(10)
 	var/list/missed = pipeline_pipeline_audit(null, 100000, 100000, TRUE)
 	var/list/names = list()
@@ -299,9 +299,9 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 	TEST_ASSERT(!length(woken), "the timer/key audit found sleepers with work: [jointext(woken, "; ")]")
 
 /// Tanning racks and modular computers sleep when idle and wake on their producer.
-/datum/unit_test/dq_om_idle_items_sleep
+/datum/unit_test/dq_idle_items_sleep
 
-/datum/unit_test/dq_om_idle_items_sleep/Run()
+/datum/unit_test/dq_idle_items_sleep/Run()
 	var/obj/structure/tanning_rack/rack = allocate(/obj/structure/tanning_rack, test_floor())
 	TEST_ASSERT_NULL(rack.periodic_pipe, "an empty tanning rack kept stepping")
 	var/obj/item/modular_computer/tablet/T = allocate(/obj/item/modular_computer/tablet, test_floor())
@@ -316,9 +316,9 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
 /// A mob holder dropped on a turf lets its mob go right after the move, with no polling.
-/datum/unit_test/dq_om_holder_cleans_up_on_drop
+/datum/unit_test/dq_holder_cleans_up_on_drop
 
-/datum/unit_test/dq_om_holder_cleans_up_on_drop/Run()
+/datum/unit_test/dq_holder_cleans_up_on_drop/Run()
 	var/turf/T = test_floor()
 	var/mob/living/M = allocate(/mob/living, T)
 	var/obj/item/holder/H = new(T, M)
@@ -336,9 +336,9 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 
 /// Random events (was SSevents' fire loop, now the event service): an active event steps on the slow lane until it is
 /// killed; the event containers keep the random-event clock there.
-/datum/unit_test/dq_om_events_on_lanes
+/datum/unit_test/dq_events_on_lanes
 
-/datum/unit_test/dq_om_events_on_lanes/Run()
+/datum/unit_test/dq_events_on_lanes/Run()
 	test_driver_begin()
 	var/datum/event_meta/EM = new(EVENT_LEVEL_MUNDANE, "Lane test", /datum/event/nothing, 0, add_to_queue = FALSE)
 	var/datum/event/E = new /datum/event/nothing(EM)
@@ -354,9 +354,9 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 	test_driver_end()
 
 /// Shuttles (was SSshuttles' fire loop): a shuttle with work is on the slow lane, an idle one is not.
-/datum/unit_test/dq_om_shuttles_on_lanes
+/datum/unit_test/dq_shuttles_on_lanes
 
-/datum/unit_test/dq_om_shuttles_on_lanes/Run()
+/datum/unit_test/dq_shuttles_on_lanes/Run()
 	for(var/name in SSshuttles.shuttles)
 		var/datum/shuttle/S = SSshuttles.shuttles[name]
 		if(!(S.shuttle_flags & SHUTTLE_FLAGS_PROCESS))
@@ -369,9 +369,9 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
 /// Planets (was SSplanets' per-planet loop): each planet keeps its clock and weather on its own every().
-/datum/unit_test/dq_om_planets_on_lanes
+/datum/unit_test/dq_planets_on_lanes
 
-/datum/unit_test/dq_om_planets_on_lanes/Run()
+/datum/unit_test/dq_planets_on_lanes/Run()
 	for(var/datum/planet/P as anything in SSplanets.planets)
 		TEST_ASSERT(P.clock_running, "planet [P.name] is not keeping its clock")
 
@@ -380,9 +380,9 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
 /// Spreading plants (was SSplants' loop) grow on their own every() from add_plant() to remove_plant(): the interval is 7.5 s.
-/datum/unit_test/dq_om_plants_on_lane
+/datum/unit_test/dq_plants_on_lane
 
-/datum/unit_test/dq_om_plants_on_lane/Run()
+/datum/unit_test/dq_plants_on_lane/Run()
 	var/list/entries = compiled_entries(table_of_type(/obj/effect/plant), ENTRY_EVERY)
 	TEST_ASSERT_EQUAL(length(entries), 1, "the plant type lost its growth every()")
 	var/datum/centry/C = entries[1]
@@ -404,9 +404,9 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 
 /// Machines never start work by default: a freshly materialized machine with no work is never stepped; one whose declared start condition
 /// holds starts once the world is up.
-/datum/unit_test/dq_om_fresh_machine_never_steps
+/datum/unit_test/dq_fresh_machine_never_steps
 
-/datum/unit_test/dq_om_fresh_machine_never_steps/Run()
+/datum/unit_test/dq_fresh_machine_never_steps/Run()
 	test_driver_begin()
 	var/obj/machinery/dq_step_probe/mapped/idle = allocate(/obj/machinery/dq_step_probe/mapped, test_floor())
 	idle.work = 5
@@ -426,9 +426,9 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 
 /// Started items and effects run only when they can act: idle ones say so, radiation sources
 /// sleep with nobody near and wake when a mob comes, timed ones sleep on one timer.
-/datum/unit_test/dq_om_items_run_only_when_they_can_act
+/datum/unit_test/dq_items_run_only_when_they_can_act
 
-/datum/unit_test/dq_om_items_run_only_when_they_can_act/Run()
+/datum/unit_test/dq_items_run_only_when_they_can_act/Run()
 	var/turf/T = locate(world.maxx - 2, world.maxy - 2, test_floor().z)
 	// Start and stop conditions.
 	var/obj/item/chainsaw/saw = allocate(/obj/item/chainsaw, test_floor())
@@ -445,15 +445,15 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 	TEST_ASSERT(!door.periodic_pipe, "a timer door polls")
 	var/obj/effect/spider/eggcluster/eggs = allocate(/obj/effect/spider/eggcluster, test_floor())
 	TEST_ASSERT(!eggs.periodic_pipe, "an egg cluster polls its growth")
-	TEST_ASSERT(length(eggs.om_rec?.timers), "an egg cluster has no hatch timer")
+	TEST_ASSERT(length(eggs.sched_rec?.timers), "an egg cluster has no hatch timer")
 
 #endif
 
 /// A spread cadence sweep keeps each member's phase: one pass runs only the share of members due by then, a later pass
 /// the rest, and a pass that fell behind catches up by a bounded share.
-/datum/unit_test/dq_om_periodic_sweep_is_spread
+/datum/unit_test/dq_periodic_sweep_is_spread
 
-/datum/unit_test/dq_om_periodic_sweep_is_spread/Run()
+/datum/unit_test/dq_periodic_sweep_is_spread/Run()
 	var/datum/controller/kernel/K = kernel()
 	var/datum/work_item/W = K.cadence_items[PERIODIC_SLOW]
 	TEST_ASSERT(W.spread, "a cadence slower than the tick spreads its sweep")

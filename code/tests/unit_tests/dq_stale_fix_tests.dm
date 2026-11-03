@@ -108,9 +108,9 @@
 	assert_fresh(H, STAT_BLINDED, "sighted human, released again")
 
 /// A dose of blindness lapses on the Life clock and the stat follows it down.
-/datum/unit_test/life_om/dq_stale_fix_blinded_dose_lapses
+/datum/unit_test/life_seq/dq_stale_fix_blinded_dose_lapses
 
-/datum/unit_test/life_om/dq_stale_fix_blinded_dose_lapses/run_life()
+/datum/unit_test/life_seq/dq_stale_fix_blinded_dose_lapses/run_life()
 	var/mob/living/carbon/human/H = stale_fix_sighted_human(src)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	H.status_set(STAT_BLINDED, 2)
@@ -124,9 +124,9 @@
 	TEST_ASSERT(!difference, difference)
 
 /// A blindfold's hold is released when it comes off, and a visor's with it: the human is sighted again.
-/datum/unit_test/life_om/dq_stale_fix_blindfold_hold_released
+/datum/unit_test/life_seq/dq_stale_fix_blindfold_hold_released
 
-/datum/unit_test/life_om/dq_stale_fix_blindfold_hold_released/run_life()
+/datum/unit_test/life_seq/dq_stale_fix_blindfold_hold_released/run_life()
 	var/mob/living/carbon/human/H = stale_fix_sighted_human(src)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	life_disability_hold(H, STAT_BLINDED, SRC_BLINDFOLD, TRUE)

@@ -177,7 +177,7 @@ CAPABILITIES(/atom/movable/screen/movable/spell_master)
 	var/spell_base = "wiz"
 	var/last_charge = 0 //not a time, but the last remembered charge value
 
-	/// OM handle of the spell this button casts; read with spell().
+	/// handle of the spell this button casts; read with spell().
 	var/datum/spell/spell
 	var/handle_icon_updates = 0
 	/// The master this button is listed on: one end of a link, the master's button_list the other. Read with spell_master_of().

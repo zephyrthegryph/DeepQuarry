@@ -245,7 +245,7 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 /atom/var/tmp/list/heat_watches
 
 /**
- * A heat watch (code/datums/om/native.dm): a threshold, band or ThresholdSet
+ * A heat watch (code/engine/native.dm): a threshold, band or ThresholdSet
  * on a turf's solid or an atom's heat body. Threshold and band watches call
  * `callback` on the owner as (watch, reason, source); a set calls it once
  * per crossed entry as (watch, payload, entered, generation).

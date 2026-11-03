@@ -11,7 +11,7 @@
 #define LIFE_OUTPUT "LIFE_OUTPUT"
 #define LIFE_TAIL "LIFE_TAIL"
 
-// --- Wakes (doc/rewrite/life_on_om.md §5) ----------------------------------------------------
+// --- Wakes (doc/rewrite/archive/life_sequence_origin.md §5) ----------------------------------------------------
 /// Keys that wake every Life step: set_stat() and a client logging in or out.
 #define LIFE_WAKE_KEYS list(nameof(/mob::stat), MOB_KEY_CLIENT)
 
@@ -76,7 +76,7 @@
 /// Mobs whose Life() only removes them from the mob lists (dummies, announcers).
 #define LIFE_SET_DELIST (1<<5)
 
-// --- Cadence (doc/rewrite/life_on_om.md §3) -----------------------------------------------------
+// --- Cadence (doc/rewrite/archive/life_sequence_origin.md §3) -----------------------------------------------------
 // One Life frame per LIFE_CYCLE of real time. Almost all life content is written per frame (a stun
 // unit, a hunger tick, one organ pass), so this sets its per-second balance. 6 s is what the old
 // SSmobs actually delivered at a normal population (its per-fire quota shrank as its run list
@@ -92,12 +92,12 @@
 #define LIFE_MAX_CATCHUP 2
 /// Frames in a row that must end with every step asleep before a mob parks.
 #define LIFE_PARK_AFTER 2
-// --- Wakes first, resampling only as a fallback (doc/rewrite/life_on_om.md §5) ------------------
+// --- Wakes first, resampling only as a fallback (doc/rewrite/archive/life_sequence_origin.md §5) ------------------
 // A sleeping step is woken by the change of what it reads (its `reads`, listed with their producers in `woken_by`).
 // A rewake no shorter than LIFE_SAFETY_RESAMPLE is only a safety net behind those wakes; a shorter one is allowed only
 // for work that drifts with time itself (hunger, germs, a timer), declared with LIFE_WOKEN_BY_TIME in woken_by. There
 // is no polling: every input is tracked state, a published key or a declared relation
-// (life_om/steps_declare_their_wakes checks it).
+// (life_seq/steps_declare_their_wakes checks it).
 /// The safety re-check behind a step's wakes: a missed wake costs at most this long.
 #define LIFE_SAFETY_RESAMPLE (2 MINUTES)
 /// The woken_by entry of a step whose rewake is its work (it drifts with time), not a stand-in for a missing wake.
@@ -119,7 +119,7 @@
 /// Observer upkeep (ghosts, AI eyes, blob overmind) runs this often.
 #define OBSERVER_UPKEEP_INTERVAL (LIFE_CYCLE)
 /// Every Nth Life frame is timed per step (the mob service's two-minute profile).
-#ifndef OM_NO_STAGE_PROFILE
+#ifndef NO_STAGE_PROFILE
 #define LIFE_PROFILE_STRIDE 16
 #else
 #define LIFE_PROFILE_STRIDE 0

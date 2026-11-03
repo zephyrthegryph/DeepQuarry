@@ -47,8 +47,7 @@ one and compares the worlds with dmb-equiv. Test files are listed in `code/tests
 
 ## 3. Writing code: the migration
 
-The approved design is `doc/rewrite/final_api.html` ("the doc"). It replaces the object model
-(OM), the `sys` layer, interactions and every legacy declaration form. Section numbers below
+The approved design is `doc/rewrite/final_api.html` ("the doc"). It replaces the old per-entity scheduler layer, the `sys` layer, interactions and every legacy declaration form. Section numbers below
 are the doc's. Section 17 maps **every** old form to its replacement.
 
 **The rule: write what exists on master today.** Most of the doc's forms are on master now (doc §19
@@ -398,7 +397,7 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
 ## 8. Where to look
 
 - `doc/rewrite/final_api.html`: the design (forms §1-§16, old to new §17, kept forms §18, migration §19, decisions §21, layout §22).
-- `doc/rewrite/README.md`: index of the rest of the rewrite docs; `doc/rewrite/archive/`: old OM docs (history only).
+- `doc/rewrite/README.md`: index of the rest of the rewrite docs; `doc/rewrite/archive/`: docs of the retired layers (history only).
 - `doc/testing.md`, `doc/body_architecture.md`, `code/ATMOSPHERICS/README.md`, `verdigris/README.md`.
 - Linter rules: `SpacemanDMM.toml`, `code/__odlint.dm`, `code/__pragmas.dm`. Icons: `tools/dq_icons/`. Changelog format: `html/changelogs/example.yml`.
 
@@ -468,7 +467,7 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
   hand-rolled spawn code. Tests: `dq_loot_roll_yields_table_item`, `dq_loot_search_yields_once_per_searcher`,
   `dq_map_resolver_inherited` (`code/tests/unit_tests/dq_loot_behaviour.dm`).
 - **Server metrics and the admin viewer.** `GLOB.metrics_service` (`code/modules/metrics/`) samples
-  every `/datum/metrics_source` every 10 s and flushes through `om_io` into the `metric_*` tables
+  every `/datum/metrics_source` every 10 s and flushes through `sql_write()` into the `metric_*` tables
   (`SQL/metrics_schema.sql`, `METRICS_ENABLED`). Events come from single framework points through
   `METRICS_EVENT()`; overruns are attributed to the tick meter's systems and to time outside the MC,
   and tick spikes capture a short profile. To measure something new, add a `/datum/metrics_source`;

@@ -1,5 +1,5 @@
 /// The actual delayed biomass-container load must not move a bottle whose inventory refuses release.
-/datum/unit_test/om/interim_clonepod_sticky_container/run_om(list/made)
+/datum/unit_test/engine/interim_clonepod_sticky_container/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/machinery/clonepod/pod = allocate(/obj/machinery/clonepod, T)

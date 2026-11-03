@@ -208,7 +208,7 @@ CAPABILITIES(/mob/living/simple_mob)
 		then(PROC_REF(reply_ghost_join)))
 	ref_many(nameof(friends))
 
-// Verbs every simple mob has, or doesn't, by what it is (code/datums/om/grant_verbs.dm).
+// Verbs every simple mob has, or doesn't, by what it is (code/engine/grant_verbs.dm).
 
 /// Its ID card, when its type gives it one (owns_one(starts =)), with the type's access.
 /mob/living/simple_mob/proc/start_id(current, mapload)

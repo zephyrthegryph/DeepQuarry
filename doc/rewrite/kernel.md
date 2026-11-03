@@ -30,7 +30,7 @@ Where the numbers differ from b17 by a few lines, the dx tree wins.
 
 - the MC (`master.dm` `Loop`/`CheckQueue`/`RunQueue`, 1,207 lines), which serves 11 firing
   subsystems;
-- one of those subsystems, SSbehaviours, which runs the OM scheduler;
+- one of those subsystems, SSbehaviours, which runs the scheduler;
 - inside the scheduler, 5 lanes, a deadline wheel, cadence rings, 22 pipelines and 34
   world-service lanes;
 - the Rust world, stepped from 4 places.
@@ -63,7 +63,7 @@ field pokes:
 
 **Target:**
 
-1. **One kernel scheduler.** It is the OM scheduler, promoted. The MC becomes a thin host that
+1. **One kernel scheduler.** It is the scheduler, promoted. The MC becomes a thin host that
    keeps only the tick budget, the failsafe, runlevels and a 5-item kernel allowlist (garbage,
    input, verb_manager, dbcore, tgui transport).
 2. **Three time primitives and one sleep rule.** Everything that runs does so because of one of:
@@ -101,12 +101,12 @@ field pokes:
 | Machine step | `machine_step()`, `MACHINE_WAKE/SLEEP`, `step_active` | `game/machinery/machine_pipeline.dm:300-315` | 227 / 130 |
 | World lanes | `/datum/om/behaviour/world/X` → `service_step(resumed)` | `datums/om/world_lanes.dm:155-190` | 34 |
 | Timers | `om_after*`, `om_after_slot`, `om_deadline` (DM deadline wheel) | `engine/time/timers.dm` (was `datums/om/timer.dm`), `deadline.dm` | about 1,560 + 59 + 31 |
-| Rust wheel | `om_world_at/on_key/on_change/when/on_rate` → `vg_world_step` | `datums/om/world_watch.dm:196-230` | 35 |
+| Rust wheel | `world_at/on_key/on_change/when/on_rate` → `vg_world_step` | `datums/om/world_watch.dm:196-230` | 35 |
 | Rust pacers | `vg_world_tick` (SSvg), `vg_heat_tick` (SSair), event drains in 2 places | `vg.dm:75-77`, `SSair.dm:215`, `heat.dm:365-369` | 4 drivers |
 | DX refresh | `changed()` → `refresh_queue` → `refresh_one()` (draw, verbs, UIs, `should_run`) plus a sweep | `datums/capabilities/refresh.dm:24-205` | presentation lane |
 | Misc | `/world/Tick` callbacks, `om_task_slices`, `speed_process` fast lane | `game/world.dm:692`, `datums/om/timed_action.dm:364` | - |
 
-**What the OM scheduler already gets right, and the kernel therefore keeps:**
+**What the scheduler already gets right, and the kernel therefore keeps:**
 - one budgeted pass per tick;
 - lanes with guaranteed shares;
 - a deadline wheel with no datum per timer;
@@ -124,7 +124,7 @@ field pokes:
 
 ### 1.2 The kernel
 
-The kernel is the OM scheduler plus the host loop that the MC does today. It lives in
+The kernel is the scheduler plus the host loop that the MC does today. It lives in
 `code/controllers/kernel/`:
 
 | File | Contents | Replaces |
@@ -134,7 +134,7 @@ The kernel is the OM scheduler plus the host loop that the MC does today. It liv
 | `kernel_subsystems.dm` | the 5 kernel subsystems, unchanged tg code | - |
 | `failsafe.dm` | moved as is | - |
 
-`code/datums/om/scheduler.dm` stays the engine.
+`code/engine/scheduler.dm` stays the engine.
 
 **One pass per tick, in fixed phases:**
 
@@ -210,11 +210,11 @@ The kernel makes these the only way to repeat:
     replaces stage `rewake_delay()`.
 - **Hibernation, generalised.** A mob, machine, service or item is asleep when every cadence it has
   is parked. The two audits merge into one:
-  - The OM missed-wake audit (`om_pipeline_audit`) and the refresh sweep's `should_run()` drift
+  - The OM missed-wake audit (`pipeline_audit`) and the refresh sweep's `should_run()` drift
     check (`refresh.dm:262-280`) are the same check. The sweep is kept.
   - In test builds a drift is a failure (`REFRESH DRIFT`), exactly as today.
 - **Relevance and clocks** stay cadence properties, so there is no new mechanism. Examples:
-  - Life's `relevance = list(OM_PARK, …)` parks mobs on empty z-levels.
+  - Life's `relevance = list(RELEVANCE_PARK, …)` parks mobs on empty z-levels.
   - `clock = CLOCK_BIO` pauses in stasis.
 
 **Stages** (Life has 232 and machines 52) remain the way a system orders work inside one member's
@@ -240,7 +240,7 @@ whether each mask earns its place.
 | `world_next_tick(spec)` (`/world/Tick`) | kept for world procs only | it has to run after the MC shuts down, so it cannot be a deadline |
 | `om_task_slices`, a yielding `service_step` | a system `periodic_step()` returning `STEP_YIELD` | the kernel resumes it on the next tick, as world lanes do today (`world_lanes.dm:170-186`) |
 | `INVOKE_ASYNC` / `set waitfor` in handlers | the dispatcher (DX) | already banned outside the allowlist |
-| `om_world_at` (Rust wheel) | deleted in E6 | a DM time is the kernel's `after()`; the Rust wheel keeps only rate crossings |
+| `world_at` (Rust wheel) | deleted in E6 | a DM time is the kernel's `after()`; the Rust wheel keeps only rate crossings |
 
 That leaves exactly two wheels:
 - the DM deadline wheel, for DM work on entity clocks;
@@ -324,13 +324,13 @@ and the build stays green. See §6.
   This is simpler than per-subsystem `Recover()` copying vars (`SSair.dm:259-271` copies 11
   lists).
 - **Profiling.** Cost is accounted per **system** (step, member steps, event handlers, deadlines
-  owned). The OM Profiler groups by system, and `metrics()` feeds the stat panel. SSprofiler
+  owned). The Scheduler Profiler groups by system, and `metrics()` feeds the stat panel. SSprofiler
   becomes the `profiler` system and reads `metrics()` only.
 
 ### 1.7 I/O and waiting: nothing outside the kernel sleeps
 
-**What already exists (b17).** The object model already has non-sleeping I/O:
-- `om_io(E, /datum/om/io/<kind>, request..., PROC_REF(on_done), context...)` (`datums/om/io.dm:184`). It returns a job id at once and calls `on_done(result, error, context...)` later. The job is owned by E and cancelled when E is deleted. E and the context are weak handles, and the result is dropped if either is gone. Jobs are polled on the scheduler's I/O lane within budget, which parks when nothing is pending. It has timeouts and per-kind stats. Kinds: `sql`, `http` (plus `test`). 17 files use it.
+**What already exists (b17).** The engine already has non-sleeping I/O:
+- `io(E, /datum/om/io/<kind>, request..., PROC_REF(on_done), context...)` (`datums/om/io.dm:184`). It returns a job id at once and calls `on_done(result, error, context...)` later. The job is owned by E and cancelled when E is deleted. E and the context are weak handles, and the result is dropped if either is gone. Jobs are polled on the scheduler's I/O lane within budget, which parks when nothing is pending. It has timeouts and per-kind stats. Kinds: `sql`, `http` (plus `test`). 17 files use it.
 - `prompt_flow()` / `flow_execute()` (`datums/om/flow_io.dm`). SQL and HTTP inside a prompt flow re-run the entry proc with stored answers instead of waiting. 48 uses.
 - `Execute(async = TRUE)` outside a flow is already an error. The blocking `Execute(async = FALSE)` is allowlisted for boot and shutdown only.
 - `Destroy()` is already gone from gameplay code. The 9 overrides left are the framework's own teardown engine (`/datum`, `/atom`, `/atom/movable`), the controllers (MC, subsystem, failsafe, config, globals) and `/client`.
@@ -341,7 +341,7 @@ and the build stays green. See §6.
 |---|---|---|
 | Kernel internals: `stoplag()`, `CHECK_TICK`, the MC and failsafe loops | ~15 | These become the kernel's own code, the only place `sleep` is allowed |
 | Player waits: 10 tgui_input modal `wait()` loops (`tgui_input/text.dm:106` and so on), plus 58 legacy callers (18 `tgui_input_*`, 9 `tgui_alert`, 23 `input()`, 8 `alert()`) | 68 | `ask_*` only. The modal resolves a waiter instead of polling |
-| I/O not covered by `om_io`: rust-g iconforge jobs (`batched_spritesheet.dm:103,202,262`), the asset-cache client round trip and send pacing | 5 | A new `/datum/om/io/rustg_job` kind. Asset sends become a slice |
+| I/O not covered by `io`: rust-g iconforge jobs (`batched_spritesheet.dm:103,202,262`), the asset-cache client round trip and send pacing | 5 | A new `/datum/om/io/rustg_job` kind. Asset sends become a slice |
 | Long work: map reader chunks (`maps/reader.dm:333,336`), the atoms batch, the pathfinder mutex, rogueminer `clean_zone`, POI loads | 7 | A system `periodic_step()` returning `STEP_YIELD` (§1.4) |
 | Gameplay leftovers: reflector `UNTIL(!bullet_act_in_progress)` (`reflectors.dm:64,308`; `periodic_step` already has the non-waiting path), ticker `UNTIL(round_end_sound_sent…)` (`ticker.dm:483`), `spawn()` around `animal_nom` (`simple_mob.dm:760`) | 4 | Delete, `om_after_slot`, or a timed action |
 | Admin verbs `spawn(N)` | 9 | `om_after()` |
@@ -375,7 +375,7 @@ The unit tests also have about 60 raw `sleep()` calls. They become one harness h
 	return query
 
 // After: systems never wait on I/O; they get a callback
-om_io(src, /datum/om/io/sql, sql, arguments, PROC_REF(on_rows), ckey)
+io(src, /datum/om/io/sql, sql, arguments, PROC_REF(on_rows), ckey)
 
 /datum/system/library/proc/on_rows(list/result, error, ckey)
 	if(error)
@@ -385,8 +385,8 @@ om_io(src, /datum/om/io/sql, sql, arguments, PROC_REF(on_rows), ckey)
 // Before (batched_spritesheet.dm:103): polls a rust-g job on the caller's stack
 UNTIL((data_out = rustg_iconforge_check(cache_job_id)) != RUSTG_JOB_NO_RESULTS_YET)
 
-// After: the job is an om_io kind; the sheet continues in the callback
-om_io(src, /datum/om/io/rustg_job, rustg_iconforge_cache_valid_async(hash, dmis, entries), PROC_REF(on_cache_checked))
+// After: the job is an io kind; the sheet continues in the callback
+io(src, /datum/om/io/rustg_job, rustg_iconforge_cache_valid_async(hash, dmis, entries), PROC_REF(on_cache_checked))
 ```
 
 **Migration position.** This is step 2b of §6: after the kernel exists and before the system conversions. It is small (about 90 sites plus the tests), and it lets the `scheduler` lint go to "kernel folder only" early.
@@ -448,7 +448,7 @@ om_io(src, /datum/om/io/rustg_job, rustg_iconforge_cache_valid_async(hash, dmis,
 - **No macros.** A system is a subtype with vars and overrides. The registry finds it through
   `subtypesof(/datum/system)`, the way `build_sys_periodic_defs()` already finds its defs.
 - **`events()` is a table-returning proc**, in the DX style. The kernel hooks each entry on
-  `OM_WORLD`, or on the members for member events, at boot. It replaces `om_hook(OM_WORLD, …)`
+  `WORLD_NOTICE_BUS`, or on the members for member events, at boot. It replaces `hook(WORLD_NOTICE_BUS, …)`
   calls scattered through `initialize()`.
 - **The same `should_run()`/`periodic_step()` names** as every other datum: a system *is* a datum
   on a cadence. The world-lane subclass per service (`/datum/om/behaviour/world/X`, 34 of them)
@@ -480,7 +480,7 @@ A system has three kinds of code:
    API or command instead (for example `is_locked(A)` / `cap_set(A, CAP_LOCKED, …)` through the
    lock capability's own procs);
 5. poll another system's state on a cadence. It handles that system's event, or reads a published
-   world key (`om_world_on_key`);
+   world key (`world_on_key`);
 6. `OM_EMIT` an event type that is not in its `emits`. This is a test-build runtime.
 
 Gameplay atoms follow the same rules toward systems: they call `api.dm` procs and nothing else.
@@ -494,9 +494,9 @@ which ones are legal.
 |---|---|---|---|
 | **Query** | you need another system's current answer now | its `api.dm` proc | `flight.destination_busy(id)` |
 | **Command** | you want another system to change its state | its `api.dm` proc; it validates and owns the write | `round.request_delay_end(user)` |
-| **Event** | something happened; zero or more systems may care | `OM_EMIT_WORLD(/datum/om/event/x, args…)`; receivers list it in `events()`; `before/` events can veto | `world_site_released(site)` |
+| **Event** | something happened; zero or more systems may care | `world notices(/datum/om/event/x, args…)`; receivers list it in `events()`; `before/` events can veto | `world_site_released(site)` |
 | *(change)* | a member's state changed | `changed(A, channel)` (DX): the kernel re-evaluates `member_should_run(A)` for every system A is in | a machine's `on` toggles and the power system wakes it |
-| *(published key)* | world-wide state many systems read and react to (round state, security level, sun per z) | a query to read; `om_world_publish(kind, id, mask)` / `om_world_on_key` to react (`world_watch.dm:88-97`) | `KEY_ROUND_STATE` |
+| *(published key)* | world-wide state many systems read and react to (round state, security level, sun per z) | a query to read; `world_publish(kind, id, mask)` / `world_on_key` to react (`world_watch.dm:88-97`) | `KEY_ROUND_STATE` |
 
 **Rules of thumb:**
 
@@ -548,7 +548,7 @@ The DX stub already does most of this:
    `cap_join_systems()` / `cap_leave_systems()` call `S.kernel_join(A)` / `S.kernel_leave(A)`.
 2. **Membership storage.** `members |= A` / `members -= A` are O(n) on lists of 10k+ machines.
    The kernel keeps, per system, a `members` list plus an `alist` of member → index, and removes by
-   swap-remove in O(1). Each entity's OM record keeps the ids of the systems it is in, so a
+   swap-remove in O(1). Each entity's scheduler record keeps the ids of the systems it is in, so a
    `changed(A)` knows which `member_should_run()` to re-evaluate. The destroy transaction calls
    `caps_destroy()`, so leaving is automatic, as it is today.
 3. **Per-type tables.** `systems()` is static data, collected once per type:
@@ -569,7 +569,7 @@ The DX stub already does most of this:
    system keeps its own owned list (`VAR_PRIVATE`). Capabilities are for atoms.
 6. **Mobs.** Mobs get `capabilities()` like any atom: `/mob/living/capabilities()` returns
    `list(living_body())`, and `living_body()` is a preset whose capability `joins` Life,
-   ai_brain and so on. This retires `/datum/om/decl/living` (`life_om.dm:7-14`). The Life stage
+   ai_brain and so on. This retires `/datum/om/decl/living` (`life_membership.dm:7-14`). The Life stage
    variants still resolve per mob type, as today.
 7. **Hand-maintained rosters disappear.** `/datum/om/decl/pipeline_machines` (`machine_pipeline.dm:14-160`)
    is a hand list of about 150 machine types, checked complete by `pollers_lint.py`. It becomes
@@ -667,7 +667,7 @@ are abridged with `...`, but the kept lines are unchanged. The "after" blocks ar
 ```dm
 // controllers/subsystems/behaviours.dm:29-34 — the real scheduler, as ONE of the MC's subsystems
 /datum/controller/subsystem/behaviours/fire(resumed)
-	var/datum/om/scheduler/sched = GLOB.om_live_sched
+	var/datum/om/scheduler/sched = GLOB.live_scheduler
 	if(!sched)
 		return
 	var/start = TICK_USAGE
@@ -821,7 +821,7 @@ Current implementation excerpt ([code/controllers/kernel/host.dm](../../code/con
 ```
 
 ```dm before
-// datums/om/world_watch.dm:196-209 — driver #3: the OM scheduler steps the Rust wheel every tick
+// datums/om/world_watch.dm:196-209 — driver #3: the scheduler steps the Rust wheel every tick
 /datum/om/scheduler/proc/world_step()
 	...
 	var/list/wakes = vg_world_step(tick, world_budget * elapsed)
@@ -974,7 +974,7 @@ Current implementation excerpt ([code/game/machinery/machine_service.dm](../../c
 **Before:**
 
 ```dm
-// modules/mob/living/life/life_om.dm:7-14, 22-35
+// modules/mob/living/life/life_membership.dm:7-14, 22-35
 /datum/om/decl/living
 	of = /mob/living
 	behaviours = list(
@@ -991,7 +991,7 @@ Current implementation excerpt ([code/game/machinery/machine_service.dm](../../c
 	max_catchup = LIFE_MAX_CATCHUP
 	lane = LANE_SIMULATION
 	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
-	relevance = list(OM_PARK, null, null, null)
+	relevance = list(RELEVANCE_PARK, null, null, null)
 	stages = list(/datum/om/stage/life)
 ```
 
@@ -1290,8 +1290,8 @@ events (emitter -> handlers, no dependency):
 | Events instead of direct calls | `OM_EMIT` allocates nothing without listeners; one proc call per handler | new `system_dispatch` scenario |
 | `system(path)` lookup instead of the `SSx` global | one alist access; hot paths cache it in a local | `om_dispatch` |
 | `should_run()` re-evaluation on every `changed()` for every system the entity is in | the main new cost; bounded by per-stage `wake_on` masks and per-type `systems()` tables | `life_sweep`, `idle_mobs` |
-| Periodic declarations (216 defs, `sys_periodic_mask`) replaced by `should_run()` | removes the per-change mask dispatch in `om_dispatch_change`; adds one proc call per change | `life_sweep`, `om_dispatch` |
-| World-lane trampolines (34 behaviour subclasses) become system rings | neutral | OM Profiler per system |
+| Periodic declarations (216 defs, `sys_periodic_mask`) replaced by `should_run()` | removes the per-change mask dispatch in `dispatch_change`; adds one proc call per change | `life_sweep`, `om_dispatch` |
+| World-lane trampolines (34 behaviour subclasses) become system rings | neutral | Scheduler Profiler per system |
 
 **Hard gates.** No scenario may regress more than 5% on median tick cost. `life_sweep` and
 `atmos_large` may not regress more than 3%. Each stage's PR runs
@@ -1409,9 +1409,9 @@ duplication. Steps 6–8 carry the correctness risk.
    real risk is a scheduler whose rings are corrupt. `Recreate_kernel()` rebuilds the rings from
    system membership, and the `kernel_isolation` test covers a faulting system.
 5. **Tracing events is harder than tracing calls.**
-   - `emits`/`events()` are static declarations, so the OM Profiler renders the graph and
+   - `emits`/`events()` are static declarations, so the Scheduler Profiler renders the graph and
      `system_boundary_lint --graph` prints it in CI.
-   - The existing `om_world_trace` gives the runtime view.
+   - The existing `world_trace` gives the runtime view.
    - Ban events used as RPC: an event with exactly one handler that returns a value is a lint
      warning, and should be an API command.
 6. **Over-declaration drift.** `uses` and `emits` go stale if nothing checks them. They are checked:

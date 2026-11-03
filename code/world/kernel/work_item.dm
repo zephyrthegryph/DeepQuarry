@@ -42,7 +42,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/work_item)
 	var/lane = LANE_SIMULATION
 	/// TRUE when kernel_urgent() may pull one member's run forward.
 	var/urgent = FALSE
-	/// TRUE for an item that runs ahead of the rest of its phase (or lane) list: the OM scheduler's pieces (sched_items.dm).
+	/// TRUE for an item that runs ahead of the rest of its phase (or lane) list: the scheduler's pieces (sched_items.dm).
 	var/first = FALSE
 	/// TRUE for an item that belongs to the live graph and to a test's alike (the scheduler's pieces: a test slot runs them on its own scheduler).
 	var/shared_graph = FALSE

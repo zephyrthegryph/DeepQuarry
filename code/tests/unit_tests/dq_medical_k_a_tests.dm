@@ -100,9 +100,9 @@
 	TEST_ASSERT(A.get_trait_state(/datum/trait_state/photosynth), "alraunes photosynthesise through the shared trait")
 
 /// P2-S6: a paused (total stasis) frame skips breathing through run_if: no breath cycle advances.
-/datum/unit_test/life_om/dq_k_a_stasis_skips_breathing
+/datum/unit_test/life_seq/dq_k_a_stasis_skips_breathing
 
-/datum/unit_test/life_om/dq_k_a_stasis_skips_breathing/run_life()
+/datum/unit_test/life_seq/dq_k_a_stasis_skips_breathing/run_life()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	H.set_stasis(/datum/body_effect/stasis/total, src)

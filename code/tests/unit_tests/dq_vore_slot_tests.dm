@@ -1,5 +1,5 @@
 // C7: vore on slots (doc/rewrite/containment.md §9). Bellies are sealed slots,
-// cycle on an object-model clock only while occupied, scale every mode by elapsed time,
+// cycle on an engine clock only while occupied, scale every mode by elapsed time,
 // check consent through predicates and share their message lists.
 
 /// A pred and a prey on the same floor, with vore set up.

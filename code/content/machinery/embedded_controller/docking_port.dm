@@ -1,4 +1,4 @@
-// A docking port (doc/rewrite/proposals/docking_om.md): one entity per docking console, holding the port's airlocks and hatches by
+// A docking port (doc/rewrite/proposals/docking_port.md): one entity per docking console, holding the port's airlocks and hatches by
 // relation (its console's keyed views of the map's tags) and linked to the port it docks with (`peer`). The handshake is direct calls
 // between the two linked ports: nothing is broadcast, resent or filtered, so nothing can be missed.
 //

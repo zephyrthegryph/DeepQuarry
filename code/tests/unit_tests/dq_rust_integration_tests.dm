@@ -54,7 +54,7 @@
 	TEST_ASSERT_EQUAL(net.volume(), 90, "volume() lagged a Rust volume change")
 	qdel(net)
 
-/// native_changed raises the channel through om_changed and counts by source; the counters and
+/// native_changed raises the channel through changed and counts by source; the counters and
 /// the per-bind FFI call counts ride along in verdigris_metrics_list().
 /datum/unit_test/dq_rust_native_adapter_and_ffi_counter
 

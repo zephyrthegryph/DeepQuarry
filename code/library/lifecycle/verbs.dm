@@ -109,7 +109,7 @@
 /// now, cancelling any previous one. `expire(after)` with no
 /// `lifecycle_lifetime` set is how a one-off timed delete (a thrown effect,
 /// a spawner) declares it without a type-level lifetime var. The timer is
-/// owned by this atom (an OM timer on src, not on the global qdel proc), so
+/// owned by this atom (an timer on src, not on the global qdel proc), so
 /// deleting it first cancels the timer instead of leaving a queued strong
 /// reference behind -- the hard-delete trap QDEL_IN() works around with a
 /// handle. expire(null) only disarms (a ghost whose player came back).

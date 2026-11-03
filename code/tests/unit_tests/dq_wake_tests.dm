@@ -1,4 +1,4 @@
-// S3 wake tests: every sleeper on after() timers and om_watch()ed change channels wakes
+// S3 wake tests: every sleeper on after() timers and watch()ed change channels wakes
 // when its input changes and stays asleep while the input is held steady, and its
 // sleep_violation() holds while it sleeps.
 
@@ -36,7 +36,7 @@
 /// TRUE while `D` has a wake queued or pending delivery, or an after() timer already due
 /// (a spawn-time materialize_wakes(), say): work raised before now that hasn't landed yet.
 /proc/dq_wakes_pending(datum/D)
-	var/datum/scheduler_record/rec = D.om_rec
+	var/datum/scheduler_record/rec = D.sched_rec
 	if(!rec)
 		return FALSE
 	if(rec.queued)
@@ -47,7 +47,7 @@
 	var/list/T = rec.timers
 	if(length(T))
 		var/local = timer_local(rec)
-		for(var/i in 1 to length(T) step OM_TIMER_STRIDE)
+		for(var/i in 1 to length(T) step SCHED_TIMER_STRIDE)
 			if(T[i + 1] <= local)
 				return TRUE
 	return FALSE
@@ -70,17 +70,17 @@
 	return FALSE
 
 /// Records every wake (the channels it arrived with).
-/datum/om_wake_test_subscriber
+/datum/wake_test_subscriber
 	var/list/wakes = list()
 
 /// A mob chunk watch's handler (watch_mob_chunks(watcher, chunks, mask, handler) calls handler(chunk, bits) on the watcher).
-/datum/om_wake_test_subscriber/proc/chunk_woke(datum/mob_chunk/C, bits)
+/datum/wake_test_subscriber/proc/chunk_woke(datum/mob_chunk/C, bits)
 	wakes += bits
 
 /// Deadline wakes: a door's autoclose runs on one after() timer; power and electrification restore through timed_set().
-/datum/unit_test/dq_om_wake_airlock_deadlines
+/datum/unit_test/dq_wake_airlock_deadlines
 
-/datum/unit_test/dq_om_wake_airlock_deadlines/Run()
+/datum/unit_test/dq_wake_airlock_deadlines/Run()
 	var/obj/machinery/door/airlock/A = allocate(/obj/machinery/door/airlock, test_floor())
 	A.set_autoclose(TRUE)
 	TEST_ASSERT(!A.autoclose_pending(), "a fresh airlock has an autoclose pending")
@@ -109,15 +109,15 @@
 
 
 /// Cameras: EMP recovery and the motion alarm are timers; losing a target is a signal.
-/datum/unit_test/dq_om_wake_camera_timers
+/datum/unit_test/dq_wake_camera_timers
 
-/datum/unit_test/dq_om_wake_camera_timers/Run()
+/datum/unit_test/dq_wake_camera_timers/Run()
 	var/obj/machinery/camera/C = allocate(/obj/machinery/camera, test_floor())
 	TEST_ASSERT(!after_pending(C, "camera_timer_token"), "an idle camera has a timer")
 	TEST_ASSERT_NULL(C.sleep_violation(), "an idle camera is not asleep")
 	var/failure = dq_wake_test(C, deferred_call(src, PROC_REF(emp_camera_briefly), C), 20)
 	TEST_ASSERT(!failure, failure)
-	OM_TEST_WAIT_UNTIL(!C.emp_held(), 80)
+	TEST_WAIT_UNTIL(!C.emp_held(), 80)
 	TEST_ASSERT(!C.emp_held(), "the camera did not recover at the end of its EMP")
 
 	C.upgradeMotion()
@@ -128,13 +128,13 @@
 	C.newTarget(H)
 	TEST_ASSERT(after_pending(C, "camera_timer_token"), "a motion target did not schedule the alarm")
 	TEST_ASSERT_NULL(C.sleep_violation(), "a tracking camera's audit failed")
-	OM_TEST_WAIT_UNTIL(C.detectTime == -1, 120)
+	TEST_WAIT_UNTIL(C.detectTime == -1, 120)
 	TEST_ASSERT_EQUAL(C.detectTime, -1, "the motion alarm did not fire at its deadline")
 	H.set_stat(DEAD)
 	TEST_ASSERT(!(H in C.motionTargets), "a dead target was not dropped")
 	TEST_ASSERT_EQUAL(C.detectTime, 0, "the alarm was not cancelled after losing its last target")
 
-/datum/unit_test/dq_om_wake_camera_timers/proc/emp_camera_briefly(obj/machinery/camera/C)
+/datum/unit_test/dq_wake_camera_timers/proc/emp_camera_briefly(obj/machinery/camera/C)
 	hold(C, STAT_OPERABLE, FALSE, SRC_EMP, 30 SECONDS)
 	C.affected_by_emp_until = world.time + 1
 	C.schedule_camera_timer()
@@ -147,10 +147,10 @@
 	shuttle_wakes++
 	..()
 
-/datum/unit_test/dq_om_wake_status_display
+/datum/unit_test/dq_wake_status_display
 	parent_type = /datum/unit_test/dq_p2_engine
 
-/datum/unit_test/dq_om_wake_status_display/run_gate()
+/datum/unit_test/dq_wake_status_display/run_gate()
 	var/obj/machinery/status_display/dq_wake_notice_probe/D = allocate(/obj/machinery/status_display/dq_wake_notice_probe, test_floor())
 	D.set_grid_power(TRUE)
 	var/datum/signal/S = new
@@ -193,9 +193,9 @@
 	mid_length = 1 SECONDS
 
 /// Looping sounds: with nobody to hear, a loop parks on the player chunk keys around it.
-/datum/unit_test/dq_om_wake_looping_sound_dormancy
+/datum/unit_test/dq_wake_looping_sound_dormancy
 
-/datum/unit_test/dq_om_wake_looping_sound_dormancy/Run()
+/datum/unit_test/dq_wake_looping_sound_dormancy/Run()
 	var/turf/T = test_floor()
 	var/obj/item/source = allocate(/obj/item, T)
 	var/datum/looping_sound/dq_test/loop = new(list(source))
@@ -210,7 +210,7 @@
 	TEST_ASSERT(loop.dormant_chunk_tokens, "a loop nobody can hear did not go dormant")
 	TEST_ASSERT(GLOB.player_chunk_watches > 0, "a dormant loop left no chunk subscriptions")
 	TEST_ASSERT_NULL(loop.sleep_violation(), "a dormant loop's audit failed")
-	// The chunk watch calls the loop's chunk_woke() (watch_mob_chunks() takes a proc, not an OM behaviour).
+	// The chunk watch calls the loop's chunk_woke() (watch_mob_chunks() takes a proc, not an behaviour).
 	publish_player_chunk(T)
 	dq_test_ticks(4)
 	TEST_ASSERT(loop.dormant_chunk_tokens, "a chunk wake with nobody in range left dormancy")
@@ -219,12 +219,12 @@
 	qdel(loop)
 
 /// Player chunk keys: a player's chunk wakes subscribers; a mob without a client does not.
-/datum/unit_test/dq_om_wake_player_chunk_keys
+/datum/unit_test/dq_wake_player_chunk_keys
 
-/datum/unit_test/dq_om_wake_player_chunk_keys/Run()
+/datum/unit_test/dq_wake_player_chunk_keys/Run()
 	var/turf/T = test_floor()
-	var/datum/om_wake_test_subscriber/players = allocate(/datum/om_wake_test_subscriber)
-	var/list/tokens = watch_mob_chunks(players, mob_chunks_around(T, 0), MOB_CHUNK_WATCH_PLAYER, TYPE_PROC_REF(/datum/om_wake_test_subscriber, chunk_woke))
+	var/datum/wake_test_subscriber/players = allocate(/datum/wake_test_subscriber)
+	var/list/tokens = watch_mob_chunks(players, mob_chunks_around(T, 0), MOB_CHUNK_WATCH_PLAYER, TYPE_PROC_REF(/datum/wake_test_subscriber, chunk_woke))
 	TEST_ASSERT(length(tokens), "watch_mob_chunks returned no chunks")
 	TEST_ASSERT(GLOB.player_chunk_watches > 0, "a player chunk subscription was not counted")
 	var/mob/living/npc = allocate(/mob/living, T)

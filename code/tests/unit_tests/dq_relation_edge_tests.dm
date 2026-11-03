@@ -1,18 +1,18 @@
-// Unit tests for entity-to-entity OM relations that replaced hand-rolled
-// two-sided reference/cleanup code (doc/rewrite/om_framework_report.md,
-// doc/rewrite/object_model_core.md "relations"). One file per relation
+// Unit tests for entity-to-entity relations that replaced hand-rolled
+// two-sided reference/cleanup code (doc/rewrite/framework_report.md,
+// doc/rewrite/archive/object_model_core.md "relations"). One file per relation
 // family; each relation gets: establishing the link, the link breaking with
 // no dangling refs when either end is hard-deleted, and (where the relation
 // declares a range/holds_while check) the link breaking when the sides move
 // apart, again with no dangling refs left over.
 
 /// White-box helper: the edge of relation `rel_path` directly between `source`
-/// and `target`, or null. Tests use this to drive om_edge_refresh() directly
+/// and `target`, or null. Tests use this to drive edge_refresh() directly
 /// instead of waiting on the live scheduler's next lane pass.
 /proc/dq_test_find_edge(datum/source, datum/target, rel_path)
 	RETURN_TYPE(/datum/relation_edge)
 	var/datum/relation_definition/R = definition_registry().relation(rel_path)
-	for(var/datum/relation_edge/edge as anything in source?.om_rec?.edges)
+	for(var/datum/relation_edge/edge as anything in source?.sched_rec?.edges)
 		if(edge.rel == R && edge.source == source && edge.target == target)
 			return edge
 	return null
@@ -22,9 +22,9 @@
 /// Buckling a mob to an object establishes the buckled_to relation: the
 /// declared view fields (buckled/buckled_mobs) and the direct relation lookup
 /// agree, and the EFFECT_BUCKLED contribution is live.
-/datum/unit_test/dq_om_relation_buckling_establishes
+/datum/unit_test/dq_relation_buckling_establishes
 
-/datum/unit_test/dq_om_relation_buckling_establishes/Run()
+/datum/unit_test/dq_relation_buckling_establishes/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/structure/bed/chair/C = allocate(/obj/structure/bed/chair, get_turf(H))
 	TEST_ASSERT(C.buckle_mob(H, authority = GLOB.authority_forced), "buckle_mob should succeed on a fresh chair")
@@ -34,9 +34,9 @@
 
 /// Hard-deleting the object a mob is buckled to unbuckles it, with no dangling
 /// reference left on either side.
-/datum/unit_test/dq_om_relation_buckling_breaks_on_target_delete
+/datum/unit_test/dq_relation_buckling_breaks_on_target_delete
 
-/datum/unit_test/dq_om_relation_buckling_breaks_on_target_delete/Run()
+/datum/unit_test/dq_relation_buckling_breaks_on_target_delete/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/structure/bed/chair/C = allocate(/obj/structure/bed/chair, get_turf(H))
 	TEST_ASSERT(C.buckle_mob(H, authority = GLOB.authority_forced), "setup: buckle_mob should succeed")
@@ -47,9 +47,9 @@
 
 /// Hard-deleting a buckled mob removes it from the object's buckled_mobs, with
 /// no dangling reference left behind.
-/datum/unit_test/dq_om_relation_buckling_breaks_on_source_delete
+/datum/unit_test/dq_relation_buckling_breaks_on_source_delete
 
-/datum/unit_test/dq_om_relation_buckling_breaks_on_source_delete/Run()
+/datum/unit_test/dq_relation_buckling_breaks_on_source_delete/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/structure/bed/chair/C = allocate(/obj/structure/bed/chair, get_turf(H))
 	TEST_ASSERT(C.buckle_mob(H, authority = GLOB.authority_forced), "setup: buckle_mob should succeed")
@@ -61,9 +61,9 @@
 /// holds_while = in_range(0) (library.dm) unlinks the edge outright -- not just
 /// its contribution -- the instant the mob ends up off the chair's tile, e.g.
 /// a forceMove() that bypassed handle_buckled_mob_movement().
-/datum/unit_test/dq_om_relation_buckling_breaks_on_range
+/datum/unit_test/dq_relation_buckling_breaks_on_range
 
-/datum/unit_test/dq_om_relation_buckling_breaks_on_range/Run()
+/datum/unit_test/dq_relation_buckling_breaks_on_range/Run()
 	test_driver_begin()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/structure/bed/chair/C = allocate(/obj/structure/bed/chair, get_turf(H))
@@ -89,9 +89,9 @@
 /// GRABBED_BY(victim) agree with the direct lookup. No view fields (OM
 /// relations step 6): the grab item's `affecting` and the victim's
 /// `grabbed_by` fields are gone -- both are pure graph reads now.
-/datum/unit_test/dq_om_relation_grabbing_establishes
+/datum/unit_test/dq_relation_grabbing_establishes
 
-/datum/unit_test/dq_om_relation_grabbing_establishes/Run()
+/datum/unit_test/dq_relation_grabbing_establishes/Run()
 	var/mob/living/carbon/human/assailant = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human)
 	var/obj/item/grab/G = allocate(/obj/item/grab, assailant, victim)
@@ -101,9 +101,9 @@
 
 /// Hard-deleting a grab removes it from the victim's GRABBED_BY, with no
 /// dangling reference left behind.
-/datum/unit_test/dq_om_relation_grabbing_breaks_on_source_delete
+/datum/unit_test/dq_relation_grabbing_breaks_on_source_delete
 
-/datum/unit_test/dq_om_relation_grabbing_breaks_on_source_delete/Run()
+/datum/unit_test/dq_relation_grabbing_breaks_on_source_delete/Run()
 	var/mob/living/carbon/human/assailant = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human)
 	var/obj/item/grab/G = allocate(/obj/item/grab, assailant, victim)
@@ -114,13 +114,13 @@
 	TEST_ASSERT(!(G in victim?.grabbed_by_list()), "the deleted grab should not still be listed")
 
 /// Hard-deleting the grabbed mob deletes the grab item too (on_target_delete
-/// = OM_END_DELETE_OTHER): the item has nothing left to grab, and previously
+/// = REL_END_DELETE_OTHER): the item has nothing left to grab, and previously
 /// this left a dangling `affecting` reference to a QDELETED mob forever,
 /// since the grab item lives in the assailant's hand, not the victim's
 /// contents, so ordinary contents-destroy never reached it.
-/datum/unit_test/dq_om_relation_grabbing_breaks_on_target_delete
+/datum/unit_test/dq_relation_grabbing_breaks_on_target_delete
 
-/datum/unit_test/dq_om_relation_grabbing_breaks_on_target_delete/Run()
+/datum/unit_test/dq_relation_grabbing_breaks_on_target_delete/Run()
 	var/mob/living/carbon/human/assailant = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human)
 	var/obj/item/grab/G = allocate(/obj/item/grab, assailant, victim)
@@ -132,11 +132,11 @@
 // ---------------------------------------------------------------- pulling
 
 /// Pulling something establishes the pulling relation: PULLING()/PULLED_BY()
-/// agree with the direct relation lookup. No view fields (OM relations step
+/// agree with the direct relation lookup. No view fields (relations step
 /// 6): pulling/pulledby are gone entirely, pure graph reads.
-/datum/unit_test/dq_om_relation_pulling_establishes
+/datum/unit_test/dq_relation_pulling_establishes
 
-/datum/unit_test/dq_om_relation_pulling_establishes/Run()
+/datum/unit_test/dq_relation_pulling_establishes/Run()
 	var/mob/living/carbon/human/puller = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/pulled = allocate(/mob/living/carbon/human)
 	puller.start_pulling(pulled)
@@ -145,9 +145,9 @@
 
 /// Hard-deleting the puller clears the pulled mob's pulledby, with no
 /// dangling reference left behind.
-/datum/unit_test/dq_om_relation_pulling_breaks_on_source_delete
+/datum/unit_test/dq_relation_pulling_breaks_on_source_delete
 
-/datum/unit_test/dq_om_relation_pulling_breaks_on_source_delete/Run()
+/datum/unit_test/dq_relation_pulling_breaks_on_source_delete/Run()
 	var/mob/living/carbon/human/puller = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/pulled = allocate(/mob/living/carbon/human)
 	puller.start_pulling(pulled)
@@ -158,9 +158,9 @@
 
 /// Hard-deleting the pulled atom clears the puller's pulling var, with no
 /// dangling reference left behind.
-/datum/unit_test/dq_om_relation_pulling_breaks_on_target_delete
+/datum/unit_test/dq_relation_pulling_breaks_on_target_delete
 
-/datum/unit_test/dq_om_relation_pulling_breaks_on_target_delete/Run()
+/datum/unit_test/dq_relation_pulling_breaks_on_target_delete/Run()
 	var/mob/living/carbon/human/puller = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/pulled = allocate(/mob/living/carbon/human)
 	puller.start_pulling(pulled)
@@ -172,9 +172,9 @@
 /// holds_while = in_range(1) unlinks the edge outright once puller and pulled
 /// end up more than one tile apart, replacing the hand-rolled distance check
 /// that used to live in /atom/movable/Move() (atoms_movable.dm).
-/datum/unit_test/dq_om_relation_pulling_breaks_on_range
+/datum/unit_test/dq_relation_pulling_breaks_on_range
 
-/datum/unit_test/dq_om_relation_pulling_breaks_on_range/Run()
+/datum/unit_test/dq_relation_pulling_breaks_on_range/Run()
 	test_driver_begin()
 	var/mob/living/carbon/human/puller = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/pulled = allocate(/mob/living/carbon/human)
@@ -198,22 +198,22 @@
 /// Exercised through the sleeper, one of several machines (also cryo,
 /// cryopod, mecha, rechargestation, the implant chair and the gibber, adv_med
 /// and the clone pod) built on a sealed occupant slot (the sleeper's is occupant_pod()'s declared one).
-/datum/unit_test/dq_om_relation_occupant_slot_establishes
+/datum/unit_test/dq_relation_occupant_slot_establishes
 
-/datum/unit_test/dq_om_relation_occupant_slot_establishes/Run()
+/datum/unit_test/dq_relation_occupant_slot_establishes/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/machinery/sleeper/S = allocate(/obj/machinery/sleeper, get_turf(H))
 	TEST_ASSERT(move_into(S, OCCUPANT_SLOT_SLEEPER, H), "setup: move_into should succeed")
 	TEST_ASSERT_EQUAL(occupant_of(S), H, "the sleeper's occupant slot should hold H")
-	TEST_ASSERT_EQUAL(link_of(H, /datum/relation_definition/slot/declared/sealed), S, "om_relation_of should agree with the slot")
+	TEST_ASSERT_EQUAL(link_of(H, /datum/relation_definition/slot/declared/sealed), S, "relation_of should agree with the slot")
 	TEST_ASSERT_NOTNULL(dq_test_find_edge(H, S, /datum/relation_definition/slot/declared/sealed), "an edge should exist between H and S")
 	S.slot_remove(H, get_turf(S))
 
 /// Hard-deleting the machine clears the occupant mob's relation lookup, with
 /// no dangling reference left behind.
-/datum/unit_test/dq_om_relation_occupant_slot_breaks_on_target_delete
+/datum/unit_test/dq_relation_occupant_slot_breaks_on_target_delete
 
-/datum/unit_test/dq_om_relation_occupant_slot_breaks_on_target_delete/Run()
+/datum/unit_test/dq_relation_occupant_slot_breaks_on_target_delete/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/machinery/sleeper/S = allocate(/obj/machinery/sleeper, get_turf(H))
 	TEST_ASSERT(move_into(S, OCCUPANT_SLOT_SLEEPER, H), "setup: move_into should succeed")
@@ -226,9 +226,9 @@
 /// grabbing relation fixed: these machines used to hand-set `occupant = M` on
 /// entry with no /datum/notice/qdeleting hook, so hard-deleting the occupant
 /// mid-occupancy left `occupant` pointing at a QDELETED mob indefinitely.
-/datum/unit_test/dq_om_relation_occupant_slot_breaks_on_source_delete
+/datum/unit_test/dq_relation_occupant_slot_breaks_on_source_delete
 
-/datum/unit_test/dq_om_relation_occupant_slot_breaks_on_source_delete/Run()
+/datum/unit_test/dq_relation_occupant_slot_breaks_on_source_delete/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/machinery/sleeper/S = allocate(/obj/machinery/sleeper, get_turf(H))
 	TEST_ASSERT(move_into(S, OCCUPANT_SLOT_SLEEPER, H), "setup: move_into should succeed")
@@ -240,9 +240,9 @@
 
 /// Implanting a human establishes implanted_in: the implant's `part`/`imp_in`
 /// and the organ's `implants` list agree with the direct relation lookup.
-/datum/unit_test/dq_om_relation_implanted_in_establishes
+/datum/unit_test/dq_relation_implanted_in_establishes
 
-/datum/unit_test/dq_om_relation_implanted_in_establishes/Run()
+/datum/unit_test/dq_relation_implanted_in_establishes/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
 	TEST_ASSERT_NOTNULL(torso, "setup: H should have a torso")
@@ -251,13 +251,13 @@
 	TEST_ASSERT_EQUAL(I.part, torso, "I.part should be the torso")
 	TEST_ASSERT_EQUAL(I.imp_in(), H, "I.imp_in should be H")
 	TEST_ASSERT(I in torso.implants, "I should be in the torso's implants list")
-	TEST_ASSERT_EQUAL(link_of(I, /datum/relation_definition/slot/implant_site), torso, "om_relation_of should agree with the part var")
+	TEST_ASSERT_EQUAL(link_of(I, /datum/relation_definition/slot/implant_site), torso, "relation_of should agree with the part var")
 
 /// Hard-deleting the organ clears the implant's part/imp_in, with no
 /// dangling reference left behind.
-/datum/unit_test/dq_om_relation_implanted_in_breaks_on_target_delete
+/datum/unit_test/dq_relation_implanted_in_breaks_on_target_delete
 
-/datum/unit_test/dq_om_relation_implanted_in_breaks_on_target_delete/Run()
+/datum/unit_test/dq_relation_implanted_in_breaks_on_target_delete/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
 	var/obj/item/implant/I = allocate(/obj/item/implant)
@@ -270,9 +270,9 @@
 
 /// Hard-deleting the implant removes it from the organ's implants list, with
 /// no dangling reference left behind.
-/datum/unit_test/dq_om_relation_implanted_in_breaks_on_source_delete
+/datum/unit_test/dq_relation_implanted_in_breaks_on_source_delete
 
-/datum/unit_test/dq_om_relation_implanted_in_breaks_on_source_delete/Run()
+/datum/unit_test/dq_relation_implanted_in_breaks_on_source_delete/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
 	var/obj/item/implant/I = allocate(/obj/item/implant)
@@ -285,9 +285,9 @@
 /// The implant site is keyed by implant type (organ_external.dm, OM
 /// relations step 2): a second implant of the same type is refused, and a
 /// different type still fits.
-/datum/unit_test/dq_om_relation_implanted_in_keyed_by_type
+/datum/unit_test/dq_relation_implanted_in_keyed_by_type
 
-/datum/unit_test/dq_om_relation_implanted_in_keyed_by_type/Run()
+/datum/unit_test/dq_relation_implanted_in_keyed_by_type/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
 	var/obj/item/implant/I1 = allocate(/obj/item/implant)
@@ -302,9 +302,9 @@
 
 /// Destroying the organ deletes its implants (SLOT_DROP_DELETE), same as the
 /// raw contents this slot replaced.
-/datum/unit_test/dq_om_relation_implanted_in_drop_policy_deletes
+/datum/unit_test/dq_relation_implanted_in_drop_policy_deletes
 
-/datum/unit_test/dq_om_relation_implanted_in_drop_policy_deletes/Run()
+/datum/unit_test/dq_relation_implanted_in_drop_policy_deletes/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
 	var/obj/item/implant/I = allocate(/obj/item/implant)
@@ -320,9 +320,9 @@
 // allocate() doesn't stand up.
 
 /// take_eye() links eye_of and active_eye: EYE_OWNER, EYES_OF and ACTIVE_EYE agree.
-/datum/unit_test/dq_om_relation_eye_establishes
+/datum/unit_test/dq_relation_eye_establishes
 
-/datum/unit_test/dq_om_relation_eye_establishes/Run()
+/datum/unit_test/dq_relation_eye_establishes/Run()
 	var/mob/living/silicon/ai/A = allocate(/mob/living/silicon/ai, null, null, null, null, TRUE)
 	var/mob/observer/eye/aiEye/E = allocate(/mob/observer/eye/aiEye)
 	TEST_ASSERT(A.take_eye(E), "take_eye() should succeed")
@@ -331,9 +331,9 @@
 	TEST_ASSERT_EQUAL(A?.active_eye(), E, "A?.active_eye() should be E")
 
 /// A second eye linked with eye_of only (a multicam eye) is listed but not active.
-/datum/unit_test/dq_om_relation_eye_secondary
+/datum/unit_test/dq_relation_eye_secondary
 
-/datum/unit_test/dq_om_relation_eye_secondary/Run()
+/datum/unit_test/dq_relation_eye_secondary/Run()
 	var/mob/living/silicon/ai/A = allocate(/mob/living/silicon/ai, null, null, null, null, TRUE)
 	var/mob/observer/eye/aiEye/E = allocate(/mob/observer/eye/aiEye)
 	var/mob/observer/eye/aiEye/P = allocate(/mob/observer/eye/aiEye)
@@ -347,9 +347,9 @@
 	TEST_ASSERT_EQUAL(P?.eye_owner(), A, "drop_eye() should leave the secondary eye alone")
 
 /// Deleting the owner unlinks the eye.
-/datum/unit_test/dq_om_relation_eye_breaks_on_target_delete
+/datum/unit_test/dq_relation_eye_breaks_on_target_delete
 
-/datum/unit_test/dq_om_relation_eye_breaks_on_target_delete/Run()
+/datum/unit_test/dq_relation_eye_breaks_on_target_delete/Run()
 	var/mob/living/silicon/ai/A = allocate(/mob/living/silicon/ai, null, null, null, null, TRUE)
 	var/mob/observer/eye/aiEye/E = allocate(/mob/observer/eye/aiEye)
 	A.take_eye(E)
@@ -358,9 +358,9 @@
 	TEST_ASSERT_NULL(E?.eye_owner(), "E?.eye_owner() should be cleared once the AI is deleted")
 
 /// Deleting the eye clears the owner's active eye and eye list entry.
-/datum/unit_test/dq_om_relation_eye_breaks_on_source_delete
+/datum/unit_test/dq_relation_eye_breaks_on_source_delete
 
-/datum/unit_test/dq_om_relation_eye_breaks_on_source_delete/Run()
+/datum/unit_test/dq_relation_eye_breaks_on_source_delete/Run()
 	var/mob/living/silicon/ai/A = allocate(/mob/living/silicon/ai, null, null, null, null, TRUE)
 	var/mob/observer/eye/aiEye/E = allocate(/mob/observer/eye/aiEye)
 	A.take_eye(E)
@@ -373,9 +373,9 @@
 
 /// Infesting a host establishes host_of: the borer's `host` var and the
 /// host's head organ's `implants` list agree with the direct relation lookup.
-/datum/unit_test/dq_om_relation_host_of_establishes
+/datum/unit_test/dq_relation_host_of_establishes
 
-/datum/unit_test/dq_om_relation_host_of_establishes/Run()
+/datum/unit_test/dq_relation_host_of_establishes/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/mob/living/simple_mob/animal/borer/B = allocate(/mob/living/simple_mob/animal/borer)
 	var/obj/item/organ/external/head = H.get_organ(BP_HEAD)
@@ -392,9 +392,9 @@
 /// reference left behind -- this is the desync detatch()/leave_host() used to
 /// risk when only one of the two was called (the organ-removal path,
 /// misc.dm, only ever called leave_host()).
-/datum/unit_test/dq_om_relation_host_of_breaks_on_target_delete
+/datum/unit_test/dq_relation_host_of_breaks_on_target_delete
 
-/datum/unit_test/dq_om_relation_host_of_breaks_on_target_delete/Run()
+/datum/unit_test/dq_relation_host_of_breaks_on_target_delete/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/mob/living/simple_mob/animal/borer/B = allocate(/mob/living/simple_mob/animal/borer)
 	B.take_host(H)
@@ -406,9 +406,9 @@
 
 /// Following a target establishes the following relation: FOLLOWING() and
 /// FOLLOWERS() agree with the direct relation lookup.
-/datum/unit_test/dq_om_relation_following_establishes
+/datum/unit_test/dq_relation_following_establishes
 
-/datum/unit_test/dq_om_relation_following_establishes/Run()
+/datum/unit_test/dq_relation_following_establishes/Run()
 	var/mob/observer/dead/G = allocate(/mob/observer/dead)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	rel_set(G, nameof(G.following), H)
@@ -420,9 +420,9 @@
 
 /// Hard-deleting the followed target ends the ghost's follow, with no
 /// dangling reference left behind.
-/datum/unit_test/dq_om_relation_following_breaks_on_target_delete
+/datum/unit_test/dq_relation_following_breaks_on_target_delete
 
-/datum/unit_test/dq_om_relation_following_breaks_on_target_delete/Run()
+/datum/unit_test/dq_relation_following_breaks_on_target_delete/Run()
 	var/mob/observer/dead/G = allocate(/mob/observer/dead)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	rel_set(G, nameof(G.following), H)
@@ -435,9 +435,9 @@
 /// orbit() links the orbiting relation (ORBIT_TARGET/ORBITERS), puts the
 /// orbiter on the center's turf, keeps it there when the center moves, and
 /// stop_orbit() ends it.
-/datum/unit_test/dq_om_relation_orbiting_follows_center
+/datum/unit_test/dq_relation_orbiting_follows_center
 
-/datum/unit_test/dq_om_relation_orbiting_follows_center/Run()
+/datum/unit_test/dq_relation_orbiting_follows_center/Run()
 	var/mob/living/carbon/human/center = allocate(/mob/living/carbon/human)
 	var/obj/item/dq_containment_test/orbiter = allocate(/obj/item/dq_containment_test)
 	orbiter.orbit(center, 16)
@@ -455,9 +455,9 @@
 
 /// An orbiter that leaves the center's turf on its own stops orbiting, and
 /// deleting the center ends every orbit around it.
-/datum/unit_test/dq_om_relation_orbiting_breaks
+/datum/unit_test/dq_relation_orbiting_breaks
 
-/datum/unit_test/dq_om_relation_orbiting_breaks/Run()
+/datum/unit_test/dq_relation_orbiting_breaks/Run()
 	var/mob/living/carbon/human/center = allocate(/mob/living/carbon/human)
 	var/obj/item/dq_containment_test/orbiter = allocate(/obj/item/dq_containment_test)
 	orbiter.orbit(center, 16)
@@ -470,9 +470,9 @@
 	TEST_ASSERT_NULL(orbiter?.orbit_target(), "deleting the center should end the orbit")
 
 /// The centre can be a turf, and the orbiter's transform comes back when the orbit ends (it was saved on the link).
-/datum/unit_test/dq_om_relation_orbiting_turf_centre
+/datum/unit_test/dq_relation_orbiting_turf_centre
 
-/datum/unit_test/dq_om_relation_orbiting_turf_centre/Run()
+/datum/unit_test/dq_relation_orbiting_turf_centre/Run()
 	var/turf/centre = get_turf(run_loc_floor_bottom_left)
 	var/obj/item/dq_containment_test/orbiter = allocate(/obj/item/dq_containment_test, centre)
 	var/matrix/before = matrix(orbiter.transform)
@@ -489,9 +489,9 @@
 
 /// A leash is two edges (pet -> leash, leash -> holder). Deleting the holder
 /// drops the holder edge, which frees the pet as well.
-/datum/unit_test/dq_om_relation_leash_breaks_with_holder
+/datum/unit_test/dq_relation_leash_breaks_with_holder
 
-/datum/unit_test/dq_om_relation_leash_breaks_with_holder/Run()
+/datum/unit_test/dq_relation_leash_breaks_with_holder/Run()
 	var/mob/living/carbon/human/pet = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/master = allocate(/mob/living/carbon/human)
 	var/obj/item/leash/L = allocate(/obj/item/leash)
@@ -509,9 +509,9 @@
 
 /// A tethered-item host links its handheld on creation, remakes it if the
 /// handheld is deleted, and takes it down with it when deleted.
-/datum/unit_test/dq_om_relation_tether
+/datum/unit_test/dq_relation_tether
 
-/datum/unit_test/dq_om_relation_tether/Run()
+/datum/unit_test/dq_relation_tether/Run()
 	var/obj/item/defib_kit/kit = allocate(/obj/item/defib_kit)
 	var/obj/item/paddles = kit?.tethered_handheld()
 	TEST_ASSERT_NOTNULL(paddles, "the kit should have tethered paddles")

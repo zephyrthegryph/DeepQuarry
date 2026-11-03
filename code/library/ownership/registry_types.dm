@@ -1,5 +1,5 @@
 // Registry types (doc/rewrite/ownership.md §2): each getter returns the registered instance D
-// stands for, so D is shared iff getter(D) == D. This replaced the fiat OM_STATIC_TYPE list:
+// stands for, so D is shared iff getter(D) == D. This replaced the fiat the static type list list:
 // a per-holder copy of a registry type (a mob's species copy, a mutated seed, a holder's
 // reagent) is not registered and must be owned (or PROTO) by its holder.
 
@@ -13,8 +13,8 @@ REGISTRY_TYPE(/datum/planet, GLOBAL_PROC_REF(registry_planet))
 REGISTRY_TYPE(/datum/asset, GLOBAL_PROC_REF(registry_asset))
 REGISTRY_TYPE(/datum/log_category, GLOBAL_PROC_REF(registry_log_category))
 REGISTRY_TYPE(/datum/decl, GLOBAL_PROC_REF(registry_decl))
-REGISTRY_TYPE(/datum/definition_decl, GLOBAL_PROC_REF(registry_om_decl))
-REGISTRY_TYPE(/datum/work_stage, GLOBAL_PROC_REF(registry_om_stage))
+REGISTRY_TYPE(/datum/definition_decl, GLOBAL_PROC_REF(registry_definition_decl))
+REGISTRY_TYPE(/datum/work_stage, GLOBAL_PROC_REF(registry_stage))
 REGISTRY_TYPE(/datum/material, GLOBAL_PROC_REF(registry_material))
 REGISTRY_TYPE(/datum/body_effect, GLOBAL_PROC_REF(registry_body_effect))
 REGISTRY_TYPE(/datum/body_factor_def, GLOBAL_PROC_REF(registry_body_factor_def))
@@ -93,10 +93,10 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 /proc/registry_decl(datum/D)
 	return GET_DECL(D.type)
 
-/proc/registry_om_decl(datum/D)
+/proc/registry_definition_decl(datum/D)
 	return (D in definition_registry().decls) ? D : null
 
-/proc/registry_om_stage(datum/D)
+/proc/registry_stage(datum/D)
 	return definition_registry().stage_by_type[D.type]
 
 /proc/registry_material(datum/material/D)

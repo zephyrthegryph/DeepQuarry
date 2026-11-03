@@ -1,5 +1,5 @@
-// Notices that replaced the OM events and are still published with PUBLISH_LEGACY(E, /datum/notice/x, fields...) in fill() order
-// (doc/rewrite/reactions.md section 3). Written by hand: the generator (tools/dx/gen_om_notices.py) went with the events. A notice
+// Notices that replaced the events and are still published with PUBLISH_LEGACY(E, /datum/notice/x, fields...) in fill() order
+// (doc/rewrite/reactions.md section 3). Written by hand: the generator (the notice generator) went with the events. A notice
 // leaves this file when its ACTION() declaration replaces it (the declaration generates the notice type with the same fields).
 
 /// examine and living_shield_injury: their fields come from ACTION(examine) and ACTION(living_shield_injury) (PUBLISH delivers at once, so a sender always reads what

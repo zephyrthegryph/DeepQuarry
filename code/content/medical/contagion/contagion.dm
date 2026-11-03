@@ -113,7 +113,7 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 	..(null)
 	// Its declared spread work starts when it joins a body (on_added()), not here: a contagion is
 	// also a template that is copied into a body and dropped, and a declaration started on the
-	// template would give it an OM record that keeps it alive (an ownership-audit orphan). The
+	// template would give it an scheduler record that keeps it alive (an ownership-audit orphan). The
 	// plain-datum new has already parked the spread every() behind its hop gate: that parks it in
 	// the watch index, which would pin every dropped template and cached proto for the round.
 	type_every_stop(src)

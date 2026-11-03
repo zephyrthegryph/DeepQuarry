@@ -11,7 +11,7 @@ returns a list. A var that other code depends on is **tracked**.
 | API | Meaning | Status |
 |---|---|---|
 | `TRACKED(type, var)` | Generates `set_<var>()`. The setter compares, commits, and **publishes `(src, key)` only when `READERS(src, key)` is non-empty** (`tracked_changed()`). CI rejects writes outside the setter. | [built, A1] |
-| `TRACKED_BRIDGED(type, var, CHANNEL)` | Bridge: TRACKED that also raises an OM channel, only for a var an OM stage `wake_on` or `om_watch()` still reads (the machine pipeline's CHANGE_MACHINE_SETTINGS). Removed with S4. | [built, A1] |
+| `TRACKED_BRIDGED(type, var, CHANNEL)` | Bridge: TRACKED that also raises an channel, only for a var an OM stage `wake_on` or `watch()` still reads (the machine pipeline's CHANGE_MACHINE_SETTINGS). Removed with S4. | [built, A1] |
 | `PUBLISH_CHANGE(E, key)` | Publishes a change key that is not one var (a mob's `MOB_KEY_STATUS`, `MOB_KEY_HEALTH`, ...: the Life presentation reactions read them) when someone reads it. `OM_FIELD` setters publish their var key the same way. | [built, A1] |
 | `SETTER(type, var)` | Registers a hand-written setter with side effects. | [built] |
 | Tracked base vars | `anchored`, `density`, `opacity` (`set_anchored` / `set_density` / `set_opacity`, hand-written SETTERs). A change publishes the var key; `tracked_bridged_changed()` also raises the channel the type's declared field names (machine / mob) until S4. | [built, B4] |

@@ -51,7 +51,7 @@
 	sparse_set(src, disconnect_time, null) // ition: clear the disconnect time
 	sight |= SEE_SELF
 	..()
-	verb_store_login(src) // DECLARE_LOGIN_VERB (code/datums/om/grant_verbs.dm)
+	verb_store_login(src) // DECLARE_LOGIN_VERB (code/engine/grant_verbs.dm)
 	PUBLISH_LEGACY(src, /datum/notice/mob_login)
 	ckey_changed()
 

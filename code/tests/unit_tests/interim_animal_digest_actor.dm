@@ -9,7 +9,7 @@
 	animal.toggle_digestion()
 	return TRUE
 
-/datum/unit_test/om/interim_animal_digest_actor/run_om(list/made)
+/datum/unit_test/engine/interim_animal_digest_actor/run_engine(list/made)
 	test_prompts_reset()
 	var/mob/living/simple_mob/animal = allocate(/mob/living/simple_mob/interim_digest_actor, run_loc_floor_bottom_left)
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
@@ -31,8 +31,8 @@
 	test_prompt_answer(enable, "Enable")
 	TEST_ASSERT_EQUAL(belly.digest_mode, DM_DIGEST, "the actual answer reenters the helper with its actor and enables digestion")
 	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 1, "the resumed helper consumes its answer without reopening a prompt")
-	var/list/timers = belly.om_rec?.timers
-	TEST_ASSERT(timers && length(timers) == OM_TIMER_STRIDE, "actual enable schedules exactly one real reset timer on the selected belly")
+	var/list/timers = belly.sched_rec?.timers
+	TEST_ASSERT(timers && length(timers) == SCHED_TIMER_STRIDE, "actual enable schedules exactly one real reset timer on the selected belly")
 	TEST_ASSERT_EQUAL(timers[3], TYPE_PROC_REF(/obj/belly, reset_digest_mode), "the actual timer invokes the existing reset proc")
 	var/list/timer_args = timers[4]
 	TEST_ASSERT_EQUAL(timer_args[1], animal.vore_default_mode, "the actual scheduled reset captures the animal's original mode")

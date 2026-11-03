@@ -493,7 +493,7 @@ Pinned by `code/tests/unit_tests/dq_hc_machinery_behaviour.dm` (written on the l
 
 * **Atmospherics control consoles** (`atmo_control.dm`): the console family (general, large tank, supermatter core, fuel injection) converts as one unit: `interface()` on the parent, each subtype adds its own ops and extends `ui_data` with `data = ..()`. The six tank-command buttons share one handler that reads the op's key (`A.key`). The multitool menus are `open_request()`s with the multitool kept on the question (`ref_one`); the gas sensor's menu re-checks `can_see(answerer, sensor, 5)` as before. The generated `GeneralAtmoControl.d.ts` describes only the parent's shape (the window's TSX does not import it).
 * **Telecommunications.** The multitool window of every node is `interface()` plus ops on the base type (the base's one `CAPABILITIES` block), with the relay, bus, broadcaster and receiver ops in their own blocks. The old `ui_act_allowed` (a fingerprint) is an early `then`. The four node questions re-check `canAccess()` on the answer; the bus's frequency question treats a cancel as "turn frequency changing off", as `cancelled()` did. The log browser, machine monitor and traffic console take the library `emag()`.
-* **Questions.** About 30 `om_ask`s across `code/game/machinery` (cable layer, thermoregulator, meter, bioprinter, mob spawner button, cryopod consent, cutout painting, doorbell, Christmas sack, food replicator, gear dispenser, holopad, holoposter, magnet controller, mass driver, medical kiosk, pipe layer, protean reconstitutor, syndicate beacon, teleporter, transport pod, frames, wish granter, distillery, VR pods, camera assembly, circuit board) are `open_request()`s. `PROMPT_ADJACENT` is `ASK_ADJACENT | ASK_CAPABLE`, `PROMPT_USABLE` is `ASK_CAPABLE`, `inside_target` is `ASK_INSIDE`. A confirmation with custom button text (the bioprinter's "Print Limbs", the spawner's "Normal"/"Neutral", the beacon's offer) is a `buttons = TRUE` choice so the labels stay; a plain `Yes`/`No` confirmation loses its custom labels (the newscaster's "Confirm"/"Cancel").
+* **Questions.** About 30 `ask`s across `code/game/machinery` (cable layer, thermoregulator, meter, bioprinter, mob spawner button, cryopod consent, cutout painting, doorbell, Christmas sack, food replicator, gear dispenser, holopad, holoposter, magnet controller, mass driver, medical kiosk, pipe layer, protean reconstitutor, syndicate beacon, teleporter, transport pod, frames, wish granter, distillery, VR pods, camera assembly, circuit board) are `open_request()`s. `PROMPT_ADJACENT` is `ASK_ADJACENT | ASK_CAPABLE`, `PROMPT_USABLE` is `ASK_CAPABLE`, `inside_target` is `ASK_INSIDE`. A confirmation with custom button text (the bioprinter's "Print Limbs", the spawner's "Normal"/"Neutral", the beacon's offer) is a `buttons = TRUE` choice so the labels stay; a plain `Yes`/`No` confirmation loses its custom labels (the newscaster's "Confirm"/"Cancel").
 * **VR pods and the camera assembly.** The avatar choice (location, creature) and the camera assembly's name and direction chains keep their answers so far on the prompt subtype.
 * **Area atmos console** is an `interface()` window; its data proc still prunes lost scrubbers as it did.
 * **Left on the legacy forms, and why.** `UI_ACT_FALLBACK` (the embedded controller base and every docking controller below it), `UI_ACT_OVERRIDE` (the telecrystal storage), `UI_ACT_FORWARD` (the sleeper), `rerun_ask`/`verb_ask` (the injector maker, cartridge spawn, reagent tank), the tgui modal system (`act_ask`: chem master, synthesizer, dispenser2, atmos filters), the air alarm and petrification (above), and the `REQ_*`-gated `INTERACT_*` entries that `interact_declare.py` rejects (`requires`, `body_uses`, `interaction_forms`, `interaction_kind` residue, 33 types).
@@ -1416,7 +1416,7 @@ Pinned by `dq_atmos_m/pipes/trinary_*` and `dq_atmos_m/pipes/omni_*`.
   the thermal domain's `heat_pump` entry, as before. Their RPED is `part_replacement()`; the window opened by a hand is `interface()` alone (the
   legacy ungated `open_ui` interaction is gone).
 - **The unary base** loses `register_gas_dependencies()`/`gas_wake_condition()`/`wake_from_gas()`/`invalidate_gas_dependencies()`, its
-  `set_use_power`/`Moved` overrides, `step_has_work()`/`arm_wakes()` and the OM_FIELD_VIEW on `node` (now a plain `ref_one` relation);
+  `set_use_power`/`Moved` overrides, `step_has_work()`/`arm_wakes()` and the a field view on `node` (now a plain `ref_one` relation);
   `piped()` is its one reader. No unary device is DM-stepped any more.
 - `dq_hc_struct/cryo_cell_is_switched_through_the_window` read the cryo cell's old `on` var; it reads `cooling` (the cryo migration's state).
 
@@ -1592,7 +1592,7 @@ The stance is derived when a limb changes (`code/modules/body/limb_state.dm`); t
 Pinned by `dq_atmos_m/pipes/algae_farm_converts` and the generated pin.
 
 - It works on `every(when = working)`; `working` (tracked) is reconsidered when its switch, its power, its stores (loading, ejecting) or its
-  input's gas change (a gas watch on `air1`, composition). The OM derived field, the periodic declaration, the OM watch and MACHINE_WAKE are gone.
+  input's gas change (a gas watch on `air1`, composition). The OM derived field, the periodic declaration, the watch and MACHINE_WAKE are gone.
 - Its RPED is `part_replacement()`, loading materials an op. The "you cannot insert this item" catch-all is gone: an op answering any held item
   would take the screwdriver and the crowbar from the machine core's panel and deconstruction (ops answer before the legacy interactions), so
   another item is now what the machine core does with it.
@@ -1601,7 +1601,7 @@ Pinned by `dq_atmos_m/pipes/algae_farm_converts` and the generated pin.
 
 - **The TEG works on `every(when = generating)`.** `generating` (tracked) is reconsidered when its bolts, its circulators, its power or its loops
   change; asleep, it holds native gas watches on its circulators' four mixtures (pressure) and wakes when either loop has a head worth turning.
-  The periodic declaration, the OM watch, MACHINE_WAKE and `SSmachines.hibernate_generator()` are gone; it left the machine pipeline roster.
+  The periodic declaration, the watch, MACHINE_WAKE and `SSmachines.hibernate_generator()` are gone; it left the machine pipeline roster.
 - Its window is `interface()` with a requirement (bolted down and working), so a hand on a loose or dead TEG is refused with a reason instead of
   doing nothing; it no longer reconnects its circulators when the window opens (the wrenches and the map load do). Its look is `draw(look)` from
   a tracked `lastgenlev`; the circulators' hot/cold overlays are set when the level changes, not from inside the TEG's appearance proc.
@@ -1707,7 +1707,7 @@ Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
 ## The thermoregulator (rewrite/pipenet-full)
 
 - It works on `every(when = regulating)`: on, bolted, on the grid and its room a degree or more off its target. A gas watch on its room's air
-  (temperature), its switch, its target (tracked `target_temp`) and moving it reconsider; the OM watch, the periodic declaration and MACHINE_WAKE
+  (temperature), its switch, its target (tracked `target_temp`) and moving it reconsider; the watch, the periodic declaration and MACHINE_WAKE
   are gone, and it left the machine pipeline roster. The heat itself stays the thermal domain's `heat_pump`.
 - Its hand switch (empty hand), wrench and multitool target (an `asks()` number in degrees C) are ops; a hand on an unbolted one is refused with a
   reason (it did nothing). The Southern Cross and Cryogaia regulators keep their own step and wrench (the Cryogaia one's message is the shared
@@ -1717,7 +1717,7 @@ Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
 
 - An HE pipe's DM work is only what Rust does not do: a body lying on it (heat equalize and the burn) and its glow. It works on
   `every(when = tending)` (a body on it, or its glow more than 10 K behind its gas above 500 K); asleep, it watches its pipeline's gas with
-  `gas_watch_many()`. Its pipeline joining, a buckle, a move and a disconnect reconsider. The OM watch, the machine step and its roster entry are
+  `gas_watch_many()`. Its pipeline joining, a buckle, a move and a disconnect reconsider. The watch, the machine step and its roster entry are
   gone; the dead leak branch in the step is gone (HE pipes cannot leak). The exchange itself stays the shell's heat body and the sky link.
 - Its watch is on every change of the gas, not temperature alone: a heat-domain write to a pipe region (`heat_set`) does not report a
   temperature-only change to a gas dependency watch (reported to the thermal owner).
@@ -1828,7 +1828,7 @@ is `pain_step()` on an `every(LIFE_CYCLE)` gated by `STAT_PAIN_FELT` (held while
 * **Chemical traces** on limbs fade 0.1 a cycle (was 1 every tenth Life tick).
 * **The clocks integrate at most one step**: a body clock that was parked and starts again does not integrate the time it slept (fixes a
   first-step overshoot found while pinning).
-* `life_om/derive_and_present` and `life_om/npc_vision_follows_inputs` fail on master before this branch's first body change; not touched here.
+* `life_seq/derive_and_present` and `life_seq/npc_vision_follows_inputs` fail on master before this branch's first body change; not touched here.
 - Board games: UI_SUBACT rows are plain procs; each game routes its "game_action"/"setup_action" message with a `game_subaction()`/`setup_subaction()` dispatcher whose arguments go through schemas (`payload_args()` in code/engine/parts/inputs.dm). "Invite player" is an `asks()` step whose choices are the players the inviter sees. Pinned by interim_board_game_subactions.
 - Schemas: at the input boundary, `num()`/`int()` read numeric text ("3") as a number, as the legacy UI_ARG_NUM did. NaN is refused.
 - Preferences: the window is `interface(... forwards = nameof(middleware))`. Each preference editor routes its own actions with a `handle_action()` override whose arguments go through schemas (`payload_args()`), replacing the UI_ACT/UI_ACT_PREF_PROC table. "Reset slot" asks its two questions as `asks()` steps (the second only after a "Yes"). The colour pickers ("set_color_preference", the setup's "dq_pick_color") are `asks()` steps whose answer the handler writes. A preference the client may not write still refuses after the picker answers. The middleware's window data reads its window with `SStgui.get_open_ui()`. Pinned by interim_preference_editor_actions and the loadout tests.
@@ -1840,7 +1840,7 @@ is `pain_step()` on an `every(LIFE_CYCLE)` gated by `STAT_PAIN_FELT` (held while
 
 ## Mob Life on the kernel's Life sequence (rewrite/om-life, L1)
 
-Pinned by `code/tests/unit_tests/dq_life_om_tests.dm` (ported from the pipeline to the sequence in the same commit) and the medical, body,
+Pinned by `code/tests/unit_tests/dq_life_seq_tests.dm` (ported from the pipeline to the sequence in the same commit) and the medical, body,
 form, robot and vore tests that run Life frames.
 
 * **A wake wakes the steps that read it, not the whole mob.** The pipeline's unpark woke every stage of a parked mob; the sequence clears the sleep
@@ -1944,7 +1944,7 @@ target a step less rpm^2 / (500000 * efficiency)); unchanged.
 
 ## Statuses, immunities and godmode on the stat layer (rewrite/om-life, L3)
 
-Pinned by `dq_life_om_tests.dm` (statuses, immunity, godmode, voluntary sleep) and every focused test that applies a status.
+Pinned by `dq_life_seq_tests.dm` (statuses, immunity, godmode, voluntary sleep) and every focused test that applies a status.
 
 * **Statuses run on the mob's biology clock.** A status is a status stat (`code/library/mob/statuses.dm`) whose dose is a hold on
   `HOLD_CLOCK_BIO`: stasis and suspension pause it (the OM statuses ran on the mob's timer clock). A stun taken into a stasis bed lasts until
@@ -1958,7 +1958,7 @@ Pinned by `dq_life_om_tests.dm` (statuses, immunity, godmode, voluntary sleep) a
   stat, so two activations with the same source share one hold (none exist today).
 * `EFFECT_CAN_MOVE` and `EFFECT_CAN_ACT`, OM composites nothing outside tests read, are gone. Feeding `STAT_CAN_ACT` from the statuses ("one stun
   path") is a separate step: it changes what ops refuse.
-* Life frames run under the kernel test clock again (`test_time()` drives the Life sweep, as the OM test scheduler ran the pipeline).
+* Life frames run under the kernel test clock again (`test_time()` drives the Life sweep, as the test scheduler ran the pipeline).
 /^## Body migration, slice 5: surgery steps are ops (rewrite/body-full)
 
 Pinned by `dq_body_pin_surgery_incision` (a scalpel click on a lying patient on an operating table runs the incision to an outcome; green on the old
@@ -1979,7 +1979,7 @@ steps' `choose_target()`/`confirm()` are gone (steps declare `target_choices()` 
 ## Body migration, slice 6: loose organs (rewrite/body-full)
 
 Pinned by `dq_body_pin/loose_organ_ticks`. A part out of a body ticks every 2 s on an `every()` gated by `STAT_TICKS_LOOSE`, which the organ holds
-from `left_body()` and drops when it joins a body, dies or is ruined; `OM_FIELD left_body_loose`, `OM_DERIVE_FIELD organ_ticks_loose` and the
+from `left_body()` and drops when it joins a body, dies or is ruined; `OM_FIELD left_body_loose`, `DERIVE_FIELD organ_ticks_loose` and the
 `DECLARE_PERIODIC_WHILE` are gone. A dead prosthetic repaired on the bench no longer resumes ticking (it had nothing to tick for).
 
 
@@ -2024,7 +2024,7 @@ entries gated on a tracked var; the drift and stagger helpers are after() steps.
   ident tag (`key = nameof(id_tag)`, now tracked): their consoles read `registry_all(REGISTRY_X, tag)` instead of scanning every member.
   Pinned by `dq_pp/plant_registries`.
 - **Trait disabilities are granted capabilities.** Coughing, epilepsy, coprolalia, tourettes, nervousness, pollen, rotting
-  and gibbing were OM behaviours fed by the Life disabilities step's event; each is now a capability its trait grants
+  and gibbing were behaviours fed by the Life disabilities step's event; each is now a capability its trait grants
   (source: the trait) with an `every(LIFE_CYCLE)` on the mob's own clock. They no longer wait on the Life frame's gates
   (placed, status ok), so a mob in nullspace still ticks; each disability's own checks (conscious, not in a belly, not
   transforming) are unchanged.
@@ -2136,7 +2136,7 @@ Pinned by `dq_leftovers/*` (tray growth and freezing, cell self-charge and gradu
 analyzer, the smasher and the cell.
 
 - **A tray's growth is started work** (`started_work(step = work_step, starts = has_seed, gate = not_frozen, wakes_on = frozen)`, was
-  `DECLARE_PERIODIC_WHILE` on the machine pipeline over an `OM_DERIVE_FIELD`); `frozen` is `TRACKED` (was an `OM_FIELD`). The growth timer is a
+  `DECLARE_PERIODIC_WHILE` on the machine pipeline over an `DERIVE_FIELD`); `frozen` is `TRACKED` (was an `OM_FIELD`). The growth timer is a
   keyed `after()` read with `after_pending()` / `cancel_after()` (was `om_timer_slot_*`). **An empty tray no longer runs a frame when it is placed
   and no longer re-arms a growth timer while nothing grows**: planting, a reagent or the freezer starts it.
 - **The tray's interactions are ops**: the item use (one effect, as before: only an injecting syringe over a plant goes on to what else the click
@@ -2158,7 +2158,7 @@ analyzer, the smasher and the cell.
 are `hold()`/`release()`/`stat_value()`. Same levels, same sources (a datum source deleted drops its hold, as before); the OM
 cadences still follow it through `relevance_changed()` until the framework goes. No behaviour change intended.
 - **Suspension is a stat too.** `EFFECT_SUSPENDED` is `STAT_SUSPENDED` (ANY, on `/datum`): `om_suspend`/`om_unsuspend` are
-  `hold(E, STAT_SUSPENDED, TRUE, source)`/`release()`. Life's admit guard, the OM timers and cadences read the stat;
+  `hold(E, STAT_SUSPENDED, TRUE, source)`/`release()`. Life's admit guard, the timers and cadences read the stat;
   `suspended_changed()` resumes them. No behaviour change intended. `life_sweep` after both: h512 149.8 ms/s for 3413
   frames, mix 33.4 ms/s.
 - **The bio clock is the `clock_rate_bio` stat.** `EFFECT_CLOCK_BIO_INHIBIT`/`_MULT` are gone: stasis holds
@@ -2257,9 +2257,9 @@ code), then converted by the codemods: `tools/codemods/tool_act.py` (tool procs 
   shared handlers, key clashes), 55 tool procs (handlers that open a request, call `..()` or return an expression), and the ten machines whose
   conversion would have opened a request from an op effect (cable layer, floor layer, holoposter, mass driver, point defence, protean
   reconstitutor, requests console, fax machine, conveyor and its switch).
-## Life's OM events are actions (rewrite/om-life)
+## Life's events are actions (rewrite/om-life)
 
-- The status increase events (stun, weaken, paralyze, sleep, blind) were refusable OM events no handler ever refused;
+- The status increase events (stun, weaken, paralyze, sleep, blind) were refusable events no handler ever refused;
   they are FIXED actions whose notices keep their names (remote view ends on them). The never-used veto
   (`COMPONENT_NO_STUN`) is gone. The vision and darksight events are `PUBLISH`es; the mutations veto, which nothing
   listened to, is deleted (`COMPONENT_BLOCK_LIVING_MUTATIONS`).
@@ -2288,14 +2288,14 @@ code), then converted by the codemods: `tools/codemods/tool_act.py` (tool procs 
   `max_storage_space` tracked), service fabricator (a radial step), barbed wire, the electric welder's cell. The material subtypes' own
   item uses come before the material's repair, as their EXTEND did.
 
-## The OM framework retired (rewrite/om-retire-2)
+## The engine framework retired (rewrite/om-retire-2)
 
 Pinned by `code/tests/unit_tests/dq_retired_behaviour_pins.dm` and the existing AI, tether, burning, vore and property tests.
 
 - **The AI brain loops run on the mob's own clock** (CLOCK_OWN), as final_api.html section 14 specifies: suspension pauses them,
   stasis (CLOCK_BIO) no longer does. Out of relevance (RELEVANCE_NONE) or outside RUNLEVEL_GAME/POSTGAME a loop's timer still fires and
   skips its run; the OM ring parked it instead. A calm brain still hibernates on its chunk watches.
-- **The material service and a belly's digestion cycle are keyed `after()` timers** on their own clock, not OM deadlines on the
+- **The material service and a belly's digestion cycle are keyed `after()` timers** on their own clock, not deadlines on the
   background lane. The cadence and the per-entity cancel are unchanged.
 - **The turf_prepare_step_sound veto is gone**: nothing handled it, so a footstep on a turf without a footstep sound stays silent as before.
 - **The dqai_target_changed / dqai_target_lost events are gone**: nothing listened to them.
@@ -2641,7 +2641,7 @@ Each changed pin row is one of these classes; nothing else was blessed. `dq_inte
 * **A rights refusal reads "You do not have sufficient rights to do that."** (`req_rights`'s own message from rewrite/op-topic) on the ghost-only rows of the bluespace rift, modular computers and the event portal.
 * **A SMES's crowbar click is "Deconstruct"** (hatch tools answer before the window, integ-4): the sweep's "Ui open" row is gone.
 * **The shield projector's regeneration is one `every()` with a tracked `regenerating`** (the master conversion replaced the sweep's periodic): hit rows read `regenerating: 0 -> 1` where the legacy `periodic_pipe` row was.
-* **A machine's break and EMP are stat holds, not a write to `stat`** (machine-stats): the `stat: 0 -> 1` rows of four computers and the shield generator are gone. An EMP's timed hold (and a shield's `after()` flash) owns a timer on the machine, so the machine's `om_rec` appears after the hit (seed storage emp, shield emag, projectile and thrown rows).
+* **A machine's break and EMP are stat holds, not a write to `stat`** (machine-stats): the `stat: 0 -> 1` rows of four computers and the shield generator are gone. An EMP's timed hold (and a shield's `after()` flash) owns a timer on the machine, so the machine's `sched_rec` appears after the hit (seed storage emp, shield emag, projectile and thrown rows).
 
 ## Gaps batch J (rewrite/gaps-j): datum periodics, questions asked from handlers, void suits, labels, sector registry
 
@@ -3345,7 +3345,7 @@ The final capture differs in 40 hit classes / 468 rows. All 62 master `emp 1 / r
 
 ## Relations conversion (rewrite/relations)
 
-Pinned by `code/tests/unit_tests/dq_rel_lifecycle_pins.dm` and the `dq_om_relation_*` tests, written green on the legacy relations first.
+Pinned by `code/tests/unit_tests/dq_rel_lifecycle_pins.dm` and the `dq_relation_*` tests, written green on the legacy relations first.
 
 * **A leash that outlives its pet's step stops on the next slow step** instead of stopping its periodic work in the unlink: `periodic_step()` returns `PROCESS_KILL` when it clears the leash. A leash on nobody does nothing in between.
 * **An overmap mob's marker deleting on its own expires the mob** through the marker's `on_destroy` (its `parent`) instead of the relation hook; a marker supplied to a mob without setting its own `parent` no longer takes the mob with it.
@@ -3566,7 +3566,7 @@ Merging machinery-click-intent with ui-outputs and timed-tasks changed these pin
 Merging om-leftovers into master changed these pins; the rows were reviewed and blessed by class.
 
 * **`hit_pins/` machinery, computers and shield generators (`refresh_bits: 9 -> 0` becomes `1 -> 0`, `73 -> 0` becomes `65 -> 0`, `8 -> 0` row gone).** Bit 8 is `CHANGE_EFFECTS`: the OM effect store marked a machine's first draw with it when the machine's self-effect hold was made at init. The effect store is deleted, so only the explicit bit stays. Same cause as the draw-sweep class above.
-* **`hit_pins/obj.structure.reagent_dispensers.coolanttank` (four `om_rec: null -> /datum/scheduler_record` rows).** The tank no longer gets a scheduler record from an init-time effect hold; the record is created lazily by the first explosion or projectile hit that needs one.
+* **`hit_pins/obj.structure.reagent_dispensers.coolanttank` (four `sched_rec: null -> /datum/scheduler_record` rows).** The tank no longer gets a scheduler record from an init-time effect hold; the record is created lazily by the first explosion or projectile hit that needs one.
 * **`hit_pins/obj.structure.smoleruins` (`emag`: deleted and two bricks -> nothing).** An emag swipe is a non-harm item click; the smole "Smash" op is gated by `harm_click_only` (see the destructive held-item class above).
 * **`pins/mob.living.simple_mob.vore.overmap.stardog` (`Nutrition heal` menu rows, keys `nutrition_heal` and `reload`).** The branch re-recorded this file before master's timed-tasks gave every simple mob the `nutrition_heal` op; the merge needs both.
 
@@ -3652,7 +3652,7 @@ Merging master-fails-2 and draw-mobs changed these pins; the rows were reviewed 
 * **`look_trees/obj.item.assembly.electronic_assembly.txt`: the `op_clash` runtime row is replaced by the real look rows** (`new_assemblies.dmi:setup_device`, its dir and emissive blocker). master-fails-2 removed the clash (the device drops the parent's `attach`) but did not commit the pin; the look is now recorded.
 * **`look_trees/obj.structure.blob.txt`: the four `blob/core` colours are the seeded values of the merged tree.** The core rolls its blob type in `Initialize()` (master-fails-2) and a core now takes its overmind with it (draw-mobs), which moves where the seeded RNG lands; the values are deterministic per run (rerun checked).
 * **`dq_e2/explain_click_golden`:** the `simple_mob.dm` capability lines moved by 7 (the simple mob's tracked list grew); the rows are otherwise unchanged.
-* **`interim_target_zone_hud_actor`** had no `/datum/unit_test/om/` declaration, so it never ran; it is declared and runs.
+* **`interim_target_zone_hud_actor`** had no `/datum/unit_test/engine/` declaration, so it never ran; it is declared and runs.
 * **Known, not run:** the full-directory `dq_look_state_pin` (slowdown handled in another lane; the test has no root filter).
 ### Machinery audit: card dispatch, topic gates and record arguments (2026-10-08)
 
@@ -4046,7 +4046,7 @@ Re-blessed rows of `obj.item.ghost_trap`, `obj.item.paicard`, `obj.item.tank` (a
   * `icon_state`, `light_*`, `color`, `disguise_state` rows on `energy_field` (`shield` -> `shield_broken`), `plant` (`bush4-1` -> `mushroom7-0`), `gun.energy` (`energy` -> `energy50/75/100`) and `gun.energy.chameleon`
     (`null` -> `deagle`): the same first flush draws the type's look for the first time; the old rows were recorded after a draw that had already landed (`energy100` -> `energy50`), now the base is the undrawn `energy`.
     The values drawn are the type's initial look, unchanged.
-  * `plant` emag: `periodic_pipe: null -> /datum/cadence/plants` is now `growing: 0 -> 1` and `om_rec` (the growth `every()` is keyed on the tracked `growing`, the periodic pipe being retired).
+  * `plant` emag: `periodic_pipe: null -> /datum/cadence/plants` is now `growing: 0 -> 1` and `sched_rec` (the growth `every()` is keyed on the tracked `growing`, the periodic pipe being retired).
   * Nothing in these rows is a change in what a hit does. `dq_hit_pin` leaves `tools/ci/known_failures.txt`.
 * **Projectile hit action.** A projectile's hit action (the `/datum/act/hit/projectile` hooks) now starts in `bullet_act()` before the round's effects (stun, embed, autopsy, reagents), so an `instead()` hook
   stops all of them, a zero-damage round (a taser dart) reaches the hook, and the hook runs once per hit (the damage packet reuses the open action: `projectile_hit_begin()` / `projectile_hit_end()`).

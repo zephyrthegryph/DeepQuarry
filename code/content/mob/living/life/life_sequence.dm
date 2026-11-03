@@ -1,6 +1,6 @@
-// Mob Life as a kernel sequence (doc/rewrite/life_sequences.md, doc/rewrite/om_retirement.md L1).
+// Mob Life as a kernel sequence (doc/rewrite/life_sequences.md, doc/rewrite/archive/retirement_log.md L1).
 //
-// Every living mob runs this sequence while it is in the world (life_om.dm). Its steps are procs on the mob types,
+// Every living mob runs this sequence while it is in the world (life_membership.dm). Its steps are procs on the mob types,
 // declared in life_steps() (life_steps.dm) with the edges that keep the old stage order; canmove, HUD and sight are
 // on_change() reactions (living_systems.dm), not steps.
 

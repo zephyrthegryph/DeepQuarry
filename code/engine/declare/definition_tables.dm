@@ -1,4 +1,4 @@
-// Table-first declarations (doc/rewrite/object_model_core.md, "Tables").
+// Table-first declarations (doc/rewrite/archive/object_model_core.md, "Tables").
 //
 // DM cannot read a type's list vars without an instance, so entity tables live
 // on small singleton datums instead of on the entity type itself:

@@ -9,7 +9,7 @@ human-draw marks (below).
 | Old form | Now |
 |---|---|
 | `TRACKED_BRIDGED(T, v, CHANGE_MACHINE_*)` (95 sites) | `TRACKED(T, v)`. Nothing waits on a machine channel: the machine pipeline (`machine_step()`, `MACHINE_WAKE()`) was deleted in F7, and no type declares a `scheduled_behaviour`, `work_stage` or `work_pipeline`. |
-| `/datum/scheduler_field_definition/...` rows with a channel (machinery_fields.dm and six machines) | deleted. `OM_DERIVE_FIELD` (derived fields) is the only form left of that table. |
+| `/datum/scheduler_field_definition/...` rows with a channel (machinery_fields.dm and six machines) | deleted. `DERIVE_FIELD` (derived fields) is the only form left of that table. |
 | `changed(E, CHANNEL, var)` and every `changed(E)` of the machinery, power, reagent, recycling, atmos and framework files | gone: a write publishes through its setter; a key that is not one var is `PUBLISH_CHANGE(E, key)`. `changed(E)` itself stays as a four-line proc (`code/datums/capabilities/refresh.dm`, no channel, no var name) was a worn-or-held-look mark; it is deleted now; the hard ban `hand_changed_marks_banned` leaves none. The engine's own mark `state_changed(E)` is banned outside the engine, the capability framework, `machinery_fields.dm`, tests and benchmarks (`banned_outside`). |
 | `condition_announce(channel)` | `condition_announce()`: publishes `MACHINE_KEY_STAT` and re-derives every output of the machine. A draw reads a condition through an accessor (`power_lost()`, `operable()`, `broken_now()`) that no derived read binds to the key yet, so the full mark stays (it was `changed(src, channel)`). |
 | the dispatcher's `changed(target)` after every handler | `refresh_dispatched(target)`: the same re-derive, without the `CHANGE_EXPLICIT` wake of every sequence on the target. |
@@ -29,7 +29,7 @@ human-draw marks (below).
   `on_state_changed(bits)` stay. They are the engine's own: the legacy scheduler layer (`code/engine/time/{pipelines,records,scheduler}.dm`,
   `code/engine/state/{field_tables,derived_values}.dm`, `code/engine/refs/edges.dm`, the behaviour registry) and the Rust change delivery
   (`entity_raise_change()`, `NATIVE_SRC_*`) still carry channel masks. Nothing in game code declares a behaviour, stage or pipeline any more, so
-  that layer is dead weight with unit tests (`kernel_stages`, `kernel_work`, `dq_state_batch_tests`, `dq_om_periodic_tests`); deleting it is the
+  that layer is dead weight with unit tests (`kernel_stages`, `kernel_work`, `dq_state_batch_tests`, `dq_periodic_tests`); deleting it is the
   OM retirement, not a sweep. The 150 `refresh_bits: CHANGE_EXPLICIT -> 0` rows of the hit pins record it.
 * The hit, conversion and machinery pins and `dx_menu_order`, `dx_deps_drift_names_read`, `dx_deps_output_writes_state` fail on origin/master
   (785d51e138) before this lane: checked in a clean worktree. They are not blessed here.

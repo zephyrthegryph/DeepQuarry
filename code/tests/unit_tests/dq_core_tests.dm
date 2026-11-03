@@ -1,10 +1,10 @@
-// Object-model core (doc/rewrite/object_model_core.md): one test per
+// engine core (doc/rewrite/archive/object_model_core.md): one test per
 // primitive, and one regression test per bug class the design removes.
 // Every test runs on its own deterministic scheduler (scheduler_test_begin()).
 
 // ---------------------------------------------------------------- fixtures
 
-/datum/om_test_entity
+/datum/engine_test_entity
 	var/ticks = 0
 	var/list/dts
 	var/wakes = 0
@@ -23,31 +23,31 @@
 	/// Set by on_destroy(): how many om edges were still present then.
 	var/edges_at_destroy = -1
 
-/datum/om_test_entity/on_destroy(force)
-	edges_at_destroy = length(om_rec?.edges)
+/datum/engine_test_entity/on_destroy(force)
+	edges_at_destroy = length(sched_rec?.edges)
 	..()
 
-/datum/om_test_entity/proc/inline_tick(dt)
+/datum/engine_test_entity/proc/inline_tick(dt)
 	ticks++
 	LAZYADD(dts, dt)
 
-/datum/om_test_entity/proc/inline_react(changes)
+/datum/engine_test_entity/proc/inline_react(changes)
 	wakes++
 	last_changes = changes
 
-/datum/om_test_entity/decl_host
+/datum/engine_test_entity/decl_host
 
 // ---------------------------------------------------------------- base
 
-/datum/unit_test/om
-	abstract_type = /datum/unit_test/om
+/datum/unit_test/engine
+	abstract_type = /datum/unit_test/engine
 	var/datum/time_scheduler/sched
 
-/datum/unit_test/om/Run()
+/datum/unit_test/engine/Run()
 	rel_set(src, nameof(sched), scheduler_test_begin())
 	var/list/made = list()
 	try
-		run_om(made)
+		run_engine(made)
 	catch(var/exception/e)
 		TEST_FAIL("runtime in om test: [e] ([e.file]:[e.line])")
 	for(var/datum/D as anything in made)
@@ -55,17 +55,17 @@
 			qdel(D)
 	scheduler_test_end()
 
-/datum/unit_test/om/proc/run_om(list/made)
+/datum/unit_test/engine/proc/run_engine(list/made)
 	return
 
-/datum/unit_test/om/proc/entity(list/made, path = /datum/om_test_entity)
-	var/datum/om_test_entity/E = new path
+/datum/unit_test/engine/proc/entity(list/made, path = /datum/engine_test_entity)
+	var/datum/engine_test_entity/E = new path
 	made += E
 	return E
 
 // ---------------------------------------------------------------- A: scheduling
 
-/datum/om_test_entity/var/list/log_targets
+/datum/engine_test_entity/var/list/log_targets
 
 // ---------------------------------------------------------------- B: change tracking
 
@@ -84,9 +84,9 @@
 
 // ---------------------------------------------------------------- K: helpers
 
-/datum/unit_test/om/dt_helpers
+/datum/unit_test/engine/dt_helpers
 
-/datum/unit_test/om/dt_helpers/run_om(list/made)
+/datum/unit_test/engine/dt_helpers/run_engine(list/made)
 	var/one = approach(0, 10, 0.5, 2)
 	var/two = approach(approach(0, 10, 0.5, 1), 10, 0.5, 1)
 	TEST_ASSERT(abs(one - two) < 0.0001, "approach() is dt-exact")
@@ -97,5 +97,5 @@
 
 // ---------------------------------------------------------------- tables
 
-CAPABILITIES(/datum/unit_test/om)
+CAPABILITIES(/datum/unit_test/engine)
 	ref_one(nameof(sched))

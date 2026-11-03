@@ -24,16 +24,16 @@
 		TEST_ASSERT_EQUAL(mob_state_knows_language(M), length(M.languages) > 0, "removing [L.name] keeps the key in step")
 	TEST_ASSERT_EQUAL(mob_state_knows_language(M), FALSE, "a mob that knows nothing has the key off")
 
-/datum/unit_test/om/dq_topic_guards
+/datum/unit_test/engine/dq_topic_guards
 
 /// Performs `key` on `target` as `actor` (an admin) and returns the result; the questions it opened are in GLOB.test_prompts.
-/datum/unit_test/om/dq_topic_guards/proc/perform(mob/actor, atom/target, key, list/arg_values = null, origin = ORIGIN_UI, authority = AUTH_ADMIN)
+/datum/unit_test/engine/dq_topic_guards/proc/perform(mob/actor, atom/target, key, list/arg_values = null, origin = ORIGIN_UI, authority = AUTH_ADMIN)
 	test_prompts_reset()
 	arg_values = arg_values ? arg_values.Copy() : list()
 	arg_values[OP_TOPIC_HREF] = list("admin_token" = "test") // the href a link click arrives by: the admin panel's token requirement refuses an op with none
 	return op_perform_by_key(actor, target, null, key, origin, authority, FALSE, arg_values)
 
-/datum/unit_test/om/dq_topic_guards/proc/refused_without_question(datum/op_result/R, reason_type, what)
+/datum/unit_test/engine/dq_topic_guards/proc/refused_without_question(datum/op_result/R, reason_type, what)
 	if(R?.outcome != ACT_REFUSED)
 		return "[what]: expected a refusal, got [R?.outcome]"
 	if(length(GLOB.test_prompts))
@@ -42,7 +42,7 @@
 		return "[what]: expected reason [reason_type], got [R.reason]"
 	return null
 
-/datum/unit_test/om/dq_topic_guards/proc/asks_question(datum/op_result/R, list/made, what)
+/datum/unit_test/engine/dq_topic_guards/proc/asks_question(datum/op_result/R, list/made, what)
 	if(R?.outcome == ACT_REFUSED)
 		return "[what]: refused ([R.reason])"
 	if(length(GLOB.test_prompts) != 1)
@@ -50,17 +50,17 @@
 	made += GLOB.test_prompts[1]
 	return null
 
-/datum/unit_test/om/dq_topic_guards
+/datum/unit_test/engine/dq_topic_guards
 	/// The section being run, named in a runtime's failure.
 	var/step = "start"
 
-/datum/unit_test/om/dq_topic_guards/run_om(list/made)
+/datum/unit_test/engine/dq_topic_guards/run_engine(list/made)
 	try
 		guard_checks(made)
 	catch(var/exception/e)
 		TEST_FAIL("runtime in [step]: [e] [e.desc]")
 
-/datum/unit_test/om/dq_topic_guards/proc/guard_checks(list/made)
+/datum/unit_test/engine/dq_topic_guards/proc/guard_checks(list/made)
 	test_prompts_reset()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)

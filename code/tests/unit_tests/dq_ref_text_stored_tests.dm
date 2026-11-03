@@ -23,9 +23,9 @@
 
 /datum/unit_test/dq_ref_text_chunk_watcher_removal/Run()
 	var/turf/T = run_loc_floor_bottom_left || locate(1, 1, 1)
-	var/datum/om_wake_test_subscriber/watcher = new
+	var/datum/wake_test_subscriber/watcher = new
 	var/list/chunks = mob_chunks_around(T, 0)
-	watch_mob_chunks(watcher, chunks, MOB_CHUNK_WATCH_ANY_MOB, TYPE_PROC_REF(/datum/om_wake_test_subscriber, chunk_woke))
+	watch_mob_chunks(watcher, chunks, MOB_CHUNK_WATCH_ANY_MOB, TYPE_PROC_REF(/datum/wake_test_subscriber, chunk_woke))
 	var/datum/mob_chunk/C = chunks[1]
 	TEST_ASSERT(C.watchers[ref_token(watcher)], "the watch is filed under the watcher's token")
 	unwatch_mob_chunks(watcher, chunks, MOB_CHUNK_WATCH_ANY_MOB)

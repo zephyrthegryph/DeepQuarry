@@ -1,4 +1,4 @@
-// The sites that were om_hook() and became observe() on an action (doc/rewrite/codemod_rules.md "om_hook residue"): each test drives the real emit site of one
+// The sites that were hook() and became observe() on an action (doc/rewrite/codemod_rules.md "hook residue"): each test drives the real emit site of one
 // group and checks that the hook vetoes, answers or adjusts what the legacy hook did. The engine form itself is dq_veto_tests.dm.
 
 /// A listener for the plain acts a test observes: it counts what it was asked and answers `answer`.

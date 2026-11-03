@@ -1,5 +1,5 @@
-// Object-model core: DX-exec, the one executor for BYOND's blocking built-ins
-// (doc/rewrite/object_model_core.md §4.12).
+// engine core: DX-exec, the one executor for BYOND's blocking built-ins
+// (doc/rewrite/archive/object_model_core.md §4.12).
 //
 // winget() and client.MeasureText() are round trips to a player's client, and shell() waits on
 // an OS process. Each suspends whatever proc calls it. Gameplay never waits, so callers don't
@@ -12,7 +12,7 @@
 //	dx_shelleo(E, command, on_done, context...)	// world.shelleo(): list(errorlevel, stdout, stderr)
 //	// on_done(result, context...) runs later, on E
 //
-// E and every datum context arg are held weakly (OM handles; a client by its ckey), as after()
+// E and every datum context arg are held weakly (handles; a client by its ckey), as after()
 // holds them: the callback is dropped if any is gone when the answer arrives. E null means the
 // global owner. The call itself runs in dx_exec_run(), the only proc here that may be
 // suspended, so the only `set waitfor` for these built-ins in the codebase is in this file.
@@ -25,7 +25,7 @@
 #define DX_SHELL "shell"
 #define DX_SHELLEO "shelleo"
 
-/// Per-op counts for om_diagnostics(): started, answered, dropped.
+/// Per-op counts for km_diagnostics(): started, answered, dropped.
 GLOBAL_LIST_EMPTY(dx_exec_stats)
 
 /// winget(client, control_id, params) for a callback: on_done(value, context...).

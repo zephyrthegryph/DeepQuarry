@@ -36,7 +36,7 @@
 // keeps the fire() switch identifiers stable if a future merge re-introduces it.
 // SSAIR_ACTIVETURFS (3) deleted — the DM active-turf loop is gone; turf sharing
 // is the auxmos Rust FDM (SSAIR_TURFS below). Value kept vacant.
-// SSAIR_HOTSPOTS (4) deleted: hotspots burn on their own OM pipeline (LINDA_fire.dm).
+// SSAIR_HOTSPOTS (4) deleted: hotspots burn on their own pipeline (LINDA_fire.dm).
 #define SSAIR_EXCITEDGROUPS 5
 #define SSAIR_HIGHPRESSURE 6
 #define SSAIR_SUPERCONDUCTIVITY 7 // process_turf_heat (Rust auxmos heat conduction)

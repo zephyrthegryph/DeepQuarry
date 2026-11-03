@@ -15,7 +15,7 @@
 /// Life support is engaged on a loaded occupant.
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/var/sustaining = FALSE
 
-/// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
+/// Sealed occupant slot (C8, containment.md §10, relations step 3).
 /datum/relation_definition/slot/occupant/mecha_sleeper
 	holder = /obj/item/mecha_parts/mecha_equipment/tool/sleeper
 	slot_id = OCCUPANT_SLOT_MECHA_SLEEPER

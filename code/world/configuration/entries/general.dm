@@ -828,9 +828,9 @@
 /datum/config_entry/flag/allow_tracy_queue
 	protection = CONFIG_ENTRY_LOCKED
 
-/// Run the missed-wake audit of object-model pipelines and kernel sequences every 30 s. Debugging aid; always
+/// Run the missed-wake audit of engine pipelines and kernel sequences every 30 s. Debugging aid; always
 /// on in unit test builds. Admins can also turn it on for a round with "Toggle Pipeline Audit".
-/datum/config_entry/flag/om_pipeline_audit
+/datum/config_entry/flag/pipeline_audit
 
 /// log vore interactions
 /datum/config_entry/flag/log_vore

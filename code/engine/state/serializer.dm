@@ -112,9 +112,9 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	var/flags = NONE
 	/// Reasons the call failed; null when it succeeded.
 	var/list/errors
-	/// Serialize: the datum's OM handle -> child ID for every atom in the subtree.
+	/// Serialize: the datum's handle -> child ID for every atom in the subtree.
 	var/list/ids
-	/// Materialize: child ID -> the atom's OM handle.
+	/// Materialize: child ID -> the atom's handle.
 	var/list/by_id
 	/// Materialize: list(target, blob) pairs whose vars are applied once the tree exists.
 	var/list/pending

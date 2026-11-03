@@ -1,4 +1,4 @@
-// Lifecycle diagnostics (doc/rewrite/object_model_core.md, lifecycle section):
+// Lifecycle diagnostics (doc/rewrite/archive/object_model_core.md, lifecycle section):
 // a caught exception is reported, mutual ownership tears down cleanly, and the
 // destroy postcondition names a cycle between deleted objects. Each check
 // raises a runtime in normal use; these tests switch on the capture lists
@@ -53,7 +53,7 @@ CAPABILITIES(/datum/dq_diag_owner_b)
 // ---- Tests ----
 
 /// dq_report_caught() reports (captured here instead of world/Error), the
-/// scheduler's report_caught() goes through it, and the OM trampoline reports
+/// scheduler's report_caught() goes through it, and the scheduler trampoline reports
 /// a runtime raised after its callee slept instead of dropping it.
 /datum/unit_test/dq_lifecycle_diag_catch_reports
 
@@ -70,18 +70,18 @@ CAPABILITIES(/datum/dq_diag_owner_b)
 	catch(var/exception/e2)
 		sched.report_caught(e2, "dq_diag scheduler catch")
 
-	set_global("om_expect_sleep", TRUE)
+	set_global("timer_expect_sleep", TRUE)
 	deferred_guarded_call(null, /proc/dq_diag_sleep_then_throw, list())
-	set_global("om_expect_sleep", FALSE)
+	set_global("timer_expect_sleep", FALSE)
 	for(var/i in 1 to 20)
-		if(dq_diag_capture_has(GLOB.dq_caught_capture, "OM trampoline"))
+		if(dq_diag_capture_has(GLOB.dq_caught_capture, "scheduler trampoline"))
 			break
 		sleep(world.tick_lag)
 	var/list/capture = GLOB.dq_caught_capture
 	set_global("dq_caught_capture", null)
 	TEST_ASSERT(dq_diag_capture_has(capture, "dq_diag direct catch: dq_diag direct"), "dq_report_caught() reported the direct catch: [json_encode(capture)]")
 	TEST_ASSERT(dq_diag_capture_has(capture, "dq_diag scheduler catch"), "scheduler report_caught() went through dq_report_caught(): [json_encode(capture)]")
-	TEST_ASSERT(dq_diag_capture_has(capture, "OM trampoline (after sleep)"), "the trampoline reported a runtime raised after its callee slept: [json_encode(capture)]")
+	TEST_ASSERT(dq_diag_capture_has(capture, "scheduler trampoline (after sleep)"), "the trampoline reported a runtime raised after its callee slept: [json_encode(capture)]")
 
 /// Two types that own each other: destroying one deletes both exactly once. The dying
 /// end leaves its owner's var first (phase 2), so the owned end's disposal never
@@ -180,7 +180,7 @@ CAPABILITIES(/datum/dq_diag_owner_b)
 	TEST_ASSERT(dq_diag_capture_has(capture, "destroy transaction of /obj/item/dq_diag_init_refuser/fragile"), "the runtime in its Destroy() was reported: [json_encode(capture)]")
 
 /// A plain (non-atom) datum whose destroy hook runtimes: the transaction aborts
-/// before phase 5, so only dq_lifecycle_finish_aborted() can tear down its OM state.
+/// before phase 5, so only dq_lifecycle_finish_aborted() can tear down its scheduler state.
 /datum/dq_diag_aborted_plain
 
 /datum/dq_diag_aborted_plain/on_destroy(force)
@@ -193,15 +193,15 @@ CAPABILITIES(/datum/dq_diag_owner_b)
 GLOBAL_VAR_INIT(dq_diag_aborted_timer_fired, FALSE)
 
 /// Regression: an aborted destroy of a non-atom datum used to skip
-/// entity_teardown_rest(), leaving live OM timers (and hooks, tasks) on a dead datum.
+/// entity_teardown_rest(), leaving live timers (and hooks, tasks) on a dead datum.
 /datum/unit_test/dq_lifecycle_diag_aborted_plain_teardown
 
 /datum/unit_test/dq_lifecycle_diag_aborted_plain_teardown/Run()
 	set_global("dq_diag_aborted_timer_fired", FALSE)
 	var/datum/dq_diag_aborted_plain/D = new
 	var/id = after(D, 1 SECONDS, TYPE_PROC_REF(/datum/dq_diag_aborted_plain, never_fires))
-	TEST_ASSERT(id, "the fixture has an OM timer")
-	var/datum/scheduler_record/rec = D.om_rec
+	TEST_ASSERT(id, "the fixture has an timer")
+	var/datum/scheduler_record/rec = D.sched_rec
 	TEST_ASSERT(rec && length(rec.timers), "the timer lives on the datum's record")
 	set_global("dq_caught_capture", list())
 	qdel(D)
@@ -209,7 +209,7 @@ GLOBAL_VAR_INIT(dq_diag_aborted_timer_fired, FALSE)
 	set_global("dq_caught_capture", null)
 	TEST_ASSERT(dq_diag_capture_has(capture, "destroy transaction of /datum/dq_diag_aborted_plain"), "the runtime aborted the transaction: [json_encode(capture)]")
 	TEST_ASSERT(QDELETED(D), "the datum is still deleted")
-	TEST_ASSERT_NULL(D.om_rec, "its OM record was torn down")
+	TEST_ASSERT_NULL(D.sched_rec, "its scheduler record was torn down")
 	TEST_ASSERT(rec.torn_down, "the record is marked torn down")
 	TEST_ASSERT(!length(rec.timers), "no timer survives on the dead datum")
 

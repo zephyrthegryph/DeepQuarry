@@ -230,9 +230,9 @@
 	steps++
 
 /// periodic_interval: a custom-interval step that runs while should_run() holds (the DECLARE_REPEAT replacement).
-/datum/unit_test/om/dx_review_periodic_interval
+/datum/unit_test/engine/dx_review_periodic_interval
 
-/datum/unit_test/om/dx_review_periodic_interval/run_om(list/made)
+/datum/unit_test/engine/dx_review_periodic_interval/run_engine(list/made)
 	var/obj/cap_fixture/dx_review_interval/F = new
 	made += F
 	refresh_flush()

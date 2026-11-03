@@ -63,13 +63,13 @@ CAPABILITIES(/datum/cinematic)
 
 /// Actually goes through the process of showing the cinematic to the list of watchers.
 /datum/cinematic/proc/start_cinematic(list/watchers)
-	var/datum/act/play_cinematic/play = ACT_ATTEMPT(OM_WORLD, play_cinematic, src)
+	var/datum/act/play_cinematic/play = ACT_ATTEMPT(WORLD_NOTICE_BUS, play_cinematic, src)
 	if(ACT_REFUSED_BY(play))
 		return
 	act_done(play)
 
 	// Hook the world's play action to handle what happens when a different cinematic tries to play over us.
-	observe(OM_WORLD, /datum/act/play_cinematic, src, instead(then(PROC_REF(handle_replacement_cinematics))))
+	observe(WORLD_NOTICE_BUS, /datum/act/play_cinematic, src, instead(then(PROC_REF(handle_replacement_cinematics))))
 
 	// Pause OOC
 	// NOT IMPLEMENTED

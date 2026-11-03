@@ -25,7 +25,7 @@
 /// player writes can start with it and forge a reference.
 #define IC_REF_PREFIX "<ic-ref "
 
-/// An IC ref: the OM handle of `D` in that wrapper. Null for a deleted datum.
+/// An IC ref: the handle of `D` in that wrapper. Null for a deleted datum.
 /proc/ic_ref(datum/D)
 	var/h = ref_token(D)
 	return h && "[IC_REF_PREFIX][h]>"

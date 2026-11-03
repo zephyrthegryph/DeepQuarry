@@ -1,8 +1,8 @@
 /// Cutting the timing wire disables automatic closing; actual repair of that wire immediately starts closing an already-open powered airlock.
-/datum/unit_test/om/interim_airlock_timing_wire_repair
+/datum/unit_test/engine/interim_airlock_timing_wire_repair
 	parent_type = /datum/unit_test/dq_p2_door
 
-/datum/unit_test/om/interim_airlock_timing_wire_repair/run_gate()
+/datum/unit_test/engine/interim_airlock_timing_wire_repair/run_gate()
 	var/turf/T = tile(2, 2)
 	var/obj/machinery/door/airlock/door = allocate(/obj/machinery/door/airlock, T)
 	p2_door_set_power(door, TRUE)

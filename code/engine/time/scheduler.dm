@@ -1,4 +1,4 @@
-// Object-model core: the scheduler (doc/rewrite/object_model_core.md section A).
+// engine core: the scheduler (doc/rewrite/archive/object_model_core.md section A).
 //
 // One instance runs live (SSbehaviours). Unit tests make their own with
 // scheduler_test_begin(): same code, injectable time, call caps instead of tick
@@ -6,7 +6,7 @@
 //
 // Per run, in order:
 //   0. the Rust world step (world_watches.dm), once per tick: its wakes queue on their lanes
-//   1. deadlines (bucketed wheel, guaranteed OM_DEADLINE_SHARE of the budget)
+//   1. deadlines (bucketed wheel, guaranteed SCHED_DEADLINE_SHARE of the budget)
 //   2. borrow pass: rings about to breach their max_interval, from the whole budget
 //   3. each lane in order with its guaranteed share: eager derived values
 //      (LANE_DERIVED), services (LANE_DERIVED), wakes, then cadence rings
@@ -14,16 +14,16 @@
 // Every call site checks the budget after each entity, so each phase makes
 // progress every run and none can starve the others.
 
-GLOBAL_DATUM(om_sched, /datum/time_scheduler)
-GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
+GLOBAL_DATUM(home_scheduler, /datum/time_scheduler)
+GLOBAL_DATUM(live_scheduler, /datum/time_scheduler)
 
 /proc/time_scheduler()
 	RETURN_TYPE(/datum/time_scheduler)
-	if(!GLOB.om_sched)
-		if(!GLOB.om_live_sched)
-			GLOB.om_live_sched = time_scheduler_factory().make()
-		GLOB.om_sched = GLOB.om_live_sched
-	return GLOB.om_sched
+	if(!GLOB.home_scheduler)
+		if(!GLOB.live_scheduler)
+			GLOB.live_scheduler = time_scheduler_factory().make()
+		GLOB.home_scheduler = GLOB.live_scheduler
+	return GLOB.home_scheduler
 
 /// Starts a deterministic test scheduler (time 0, fixed phases). Entities
 /// that join while it is current belong to it.
@@ -33,18 +33,18 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 	var/datum/time_scheduler/sched = time_scheduler_factory().make()
 	sched.manual_time = 0
 	sched.deterministic = TRUE
-	sched.slot_ds = OM_SLOT_DS
+	sched.slot_ds = SCHED_SLOT_DS
 	sched.phase_seed = 0
 	sched.dl_cursor = 0
 	// Its own meter: a test pass must not charge the live one. A short ring, since tests never read a long one.
 	sched.meter = new /datum/tick_meter(32)
-	GLOB.om_sched = sched
+	GLOB.home_scheduler = sched
 	return sched
 
 /proc/scheduler_test_end()
-	if(!GLOB.om_live_sched)
-		GLOB.om_live_sched = time_scheduler_factory().make()
-	GLOB.om_sched = GLOB.om_live_sched
+	if(!GLOB.live_scheduler)
+		GLOB.live_scheduler = time_scheduler_factory().make()
+	GLOB.home_scheduler = GLOB.live_scheduler
 
 /// Advances the current (test) scheduler by `seconds`, one slot at a time.
 /proc/scheduler_advance(seconds)
@@ -64,8 +64,8 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 	/// together spreads evenly over a ring's slots instead of clumping by chance.
 	var/phase_seed = 0
 	/// Width of one cadence slot, deciseconds. Live: one world tick, so a ring's work is spread
-	/// over every tick of its interval rather than landing on every Nth tick. Tests: OM_SLOT_DS.
-	var/slot_ds = OM_SLOT_DS
+	/// over every tick of its interval rather than landing on every Nth tick. Tests: SCHED_SLOT_DS.
+	var/slot_ds = SCHED_SLOT_DS
 	var/gen = 0
 
 	/// behaviour id -> list of rings (one per interval in use).
@@ -87,7 +87,7 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 	var/bulk_depth = 0
 	var/list/bulk_list
 
-	/// Deadline wheel: OM_DEADLINE_BUCKETS lists of (rec, bid, gen, due) entries.
+	/// Deadline wheel: SCHED_DEADLINE_BUCKETS lists of (rec, bid, gen, due) entries.
 	var/list/buckets
 	/// Next unprocessed decisecond.
 	var/dl_cursor = 0
@@ -127,7 +127,7 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 	/// Frames run by profiling pipelines (the stage profiler samples every Nth).
 	var/pipe_frames = 0
 
-	/// behaviour id -> list(OM_STAT_LEN) counters.
+	/// behaviour id -> list(SCHED_STAT_LEN) counters.
 	var/list/stats
 	var/list/errors
 	/// Tests expecting an error: recorded, no stack trace.
@@ -165,18 +165,18 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 		stats = list()
 	if(!errors)
 		errors = list()
-	lane_rings = new /list(OM_LANE_COUNT)
-	wake_q = new /list(OM_LANE_COUNT)
-	wake_spare = new /list(OM_LANE_COUNT)
-	for(var/lane in 1 to OM_LANE_COUNT)
+	lane_rings = new /list(LANE_COUNT)
+	wake_q = new /list(LANE_COUNT)
+	wake_spare = new /list(LANE_COUNT)
+	for(var/lane in 1 to LANE_COUNT)
 		lane_rings[lane] = list()
 		wake_q[lane] = list()
 		wake_spare[lane] = list()
-	buckets = new /list(OM_DEADLINE_BUCKETS)
-	for(var/i in 1 to OM_DEADLINE_BUCKETS)
+	buckets = new /list(SCHED_DEADLINE_BUCKETS)
+	for(var/i in 1 to SCHED_DEADLINE_BUCKETS)
 		buckets[i] = list()
 	dl_cursor = round(now())
-	slot_ds = world.tick_lag > 0 ? world.tick_lag : OM_SLOT_DS
+	slot_ds = world.tick_lag > 0 ? world.tick_lag : SCHED_SLOT_DS
 	phase_seed = rand(0, 65535)
 	meter = km_meter()
 
@@ -209,13 +209,13 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 
 /datum/time_scheduler/proc/stat_for(bid)
 	RETURN_TYPE(/list)
-	var/key = min(bid, OM_MAX_STAT_TYPES)
+	var/key = min(bid, SCHED_MAX_STAT_TYPES)
 	if(length(stats) < key)
 		stats.len = key
 	var/list/S = stats[key]
 	if(!S)
-		S = new /list(OM_STAT_LEN)
-		for(var/i in 1 to OM_STAT_LEN)
+		S = new /list(SCHED_STAT_LEN)
+		for(var/i in 1 to SCHED_STAT_LEN)
 			S[i] = 0
 		stats[key] = S
 	return S
@@ -227,7 +227,7 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 	var/behaviour_id
 	var/interval
 	/// Slot width, deciseconds (the scheduler's slot_ds when the ring was made).
-	var/slot_ds = OM_SLOT_DS
+	var/slot_ds = SCHED_SLOT_DS
 	var/size
 	var/list/slots
 	/// Per slot: time (ds) the slot last began running.
@@ -248,7 +248,7 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 	/// so none runs twice in one slot (leave and rejoin mid-slot).
 	var/list/pending_adds
 
-/datum/cadence_ring/New(datum/scheduled_behaviour/B, interval, now, slot_ds = OM_SLOT_DS)
+/datum/cadence_ring/New(datum/scheduled_behaviour/B, interval, now, slot_ds = SCHED_SLOT_DS)
 	behaviour_id = B.id
 	src.interval = interval
 	src.slot_ds = slot_ds
@@ -350,12 +350,12 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 	pass_avail = max(tick_limit - pass_start, 0)
 	pass_done = TRUE
 	if(world_pass_delivered)
-		for(var/lane in 1 to OM_LANE_COUNT)
+		for(var/lane in 1 to LANE_COUNT)
 			world_pass_delivered[lane] = 0
 
-/// 1. Deadlines, within OM_DEADLINE_SHARE of the pass's budget.
+/// 1. Deadlines, within SCHED_DEADLINE_SHARE of the pass's budget.
 /datum/time_scheduler/proc/pass_deadlines(tick_limit)
-	limit = pass_start + pass_avail * OM_DEADLINE_SHARE
+	limit = pass_start + pass_avail * SCHED_DEADLINE_SHARE
 	cap = harness_deadline_cap
 	calls = 0
 	if(!run_deadlines(pass_t))
@@ -364,7 +364,7 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 /// 2. Borrow pass for rings near their staleness bound.
 /datum/time_scheduler/proc/pass_borrow(tick_limit)
 	limit = tick_limit
-	for(var/lane in 1 to OM_LANE_COUNT)
+	for(var/lane in 1 to LANE_COUNT)
 		cap = harness_caps ? harness_caps[lane] : 0
 		calls = 0
 		for(var/datum/cadence_ring/R as anything in lane_rings[lane])
@@ -376,7 +376,7 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 
 /// 3. Lanes with guaranteed shares.
 /datum/time_scheduler/proc/pass_lanes(tick_limit)
-	for(var/lane in 1 to OM_LANE_COUNT)
+	for(var/lane in 1 to LANE_COUNT)
 		pass_lane(lane, tick_limit)
 
 /// One lane's share of the pass.
@@ -400,7 +400,7 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 		if(!run_deadlines(pass_t))
 			pass_done = FALSE
 		var/datum/kernel_latency/latency = kernel_latency()
-		for(var/lane in 1 to OM_LANE_COUNT)
+		for(var/lane in 1 to LANE_COUNT)
 			if(latency.shedding && latency.sheds_lane(lane))
 				continue
 			if(!run_lane_guarded(lane, pass_t))
@@ -442,20 +442,20 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 	if(length(derived_queue))
 		var/derived_start = TICK_USAGE
 		var/derived_done = run_derived_queue()
-		meter.charge(KM_SYS_OM_CORE, TICK_USAGE_TO_MS(derived_start))
+		meter.charge(KM_SYS_SCHED_CORE, TICK_USAGE_TO_MS(derived_start))
 		if(!derived_done)
 			return FALSE
 	if(lane == LANE_DERIVED)
 		if(length(service_queue))
 			var/services_start = TICK_USAGE
 			var/services_done = run_services()
-			meter.charge(KM_SYS_OM_CORE, TICK_USAGE_TO_MS(services_start))
+			meter.charge(KM_SYS_SCHED_CORE, TICK_USAGE_TO_MS(services_start))
 			if(!services_done)
 				return FALSE
 	if(length(world_q?[lane]))
 		var/native_start = TICK_USAGE
 		var/native_done = run_world_wakes(lane)
-		meter.charge(KM_SYS_OM_NATIVE, TICK_USAGE_TO_MS(native_start))
+		meter.charge(KM_SYS_NATIVE_STEP, TICK_USAGE_TO_MS(native_start))
 		if(!native_done)
 			return FALSE
 	// The refresh queue is the world's (a global), not this scheduler's: only the live scheduler drains it. A test
@@ -465,12 +465,12 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 		// The draw pass: the refresh queue and sweep (code/engine/change/refresh.dm).
 		var/appearance_start = TICK_USAGE
 		var/appearance_done = drain_presentation()
-		meter.charge(KM_SYS_OM_APPEARANCE, TICK_USAGE_TO_MS(appearance_start))
+		meter.charge(KM_SYS_APPEARANCE, TICK_USAGE_TO_MS(appearance_start))
 		if(!appearance_done)
 			return FALSE
 	var/world_start = TICK_USAGE
 	var/world_done = run_world_wakes(lane)
-	meter.charge(KM_SYS_OM_NATIVE, TICK_USAGE_TO_MS(world_start))
+	meter.charge(KM_SYS_NATIVE_STEP, TICK_USAGE_TO_MS(world_start))
 	if(!world_done)
 		return FALSE
 	if(!run_wakes(lane))
@@ -523,14 +523,14 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 			R.last_run[s] = t
 			var/list/S = stat_for(B.id)
 			var/late = t - R.next_abs * R.slot_ds
-			if(late > S[OM_STAT_LATE_MAX])
-				S[OM_STAT_LATE_MAX] = late
+			if(late > S[SCHED_STAT_LATE_MAX])
+				S[SCHED_STAT_LATE_MAX] = late
 			if(late > 0)
 				meter.note_late(B.system_idx, late)
 			if(dt_ds > B.compiled_max_interval)
-				S[OM_STAT_BREACHES]++
+				S[SCHED_STAT_BREACHES]++
 		if(!run_slot(R, L))
-			stat_inc(B.id, OM_STAT_DEFERRALS)
+			stat_inc(B.id, SCHED_STAT_DEFERRALS)
 			return FALSE
 		R.cur_slot = 0
 		if(R.tombstones)
@@ -542,7 +542,7 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 /// The index is a local: an entity leaving the slot mid-run leaves a null
 /// tombstone (ring.remove()), so positions never shift under the loop, and
 /// the per-entity cost is one list read, one proc call and one budget check.
-/// An entity whose step alone takes over OM_SLOW_STEP_USAGE is noted (note_slow_step()).
+/// An entity whose step alone takes over SCHED_SLOW_STEP_USAGE is noted (note_slow_step()).
 ///
 /// Three loops: plain cadence (tick), fixed-step (the accumulator at the
 /// behaviour's step_idx, on_step called directly; hooks go through call_hook
@@ -550,12 +550,12 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 /datum/time_scheduler/proc/run_slot(datum/cadence_ring/R, list/L)
 	var/datum/scheduled_behaviour/B = R.behaviour()
 	var/dt = R.cur_dt
-	var/mode = OM_SLOT_SLOW
+	var/mode = SCHED_LOOP_SLOW
 	if(!(B.clock_idx || B.max_dt))
 		if(B.step_interval)
-			mode = OM_SLOT_STEP
+			mode = SCHED_LOOP_STEP
 		else
-			mode = OM_SLOT_FAST
+			mode = SCHED_LOOP_FAST
 	// Pipelines are called straight into their runner (one dispatch per entity).
 	var/datum/work_pipeline/pipe = istype(B, /datum/work_pipeline) ? B : null
 	var/lim = limit
@@ -569,33 +569,33 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 	while(TRUE)
 		try
 			switch(mode)
-				if(OM_SLOT_FAST)
+				if(SCHED_LOOP_FAST)
 					while(i <= length(L))
 						var/datum/E = L[i++]
 						if(!E)
 							continue
-#ifdef OM_PROFILE_CALLS
+#ifdef SCHED_PROFILE_CALLS
 						var/c0 = TICK_USAGE
 #endif
 						if(pipe)
 							pipe.run_frame(E, dt)
 						else
 							B.tick(E, dt)
-#ifdef OM_PROFILE_CALLS
+#ifdef SCHED_PROFILE_CALLS
 						var/list/PS = stat_for(B.id)
-						PS[OM_STAT_CALL_MAX] = max(PS[OM_STAT_CALL_MAX], TICK_USAGE_TO_MS(c0))
+						PS[SCHED_STAT_CALL_MAX] = max(PS[SCHED_STAT_CALL_MAX], TICK_USAGE_TO_MS(c0))
 #endif
 						ran++
 						var/now = TICK_USAGE
 						if(type_costs)
 							note_type_cost(B, E, now - prev)
-						if(now - prev > OM_SLOW_STEP_USAGE)
+						if(now - prev > SCHED_SLOW_STEP_USAGE)
 							note_slow_step(B, E, now - prev)
 						prev = now
 						if(now > lim || (cp && ++n_calls >= cp))
 							out = TRUE
 							break
-				if(OM_SLOT_STEP)
+				if(SCHED_LOOP_STEP)
 					var/si = B.step_idx
 					var/step = B.step_interval
 					var/catchup = B.max_catchup
@@ -603,7 +603,7 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 						var/datum/E = L[i++]
 						if(!E)
 							continue
-						var/datum/scheduler_record/rec = E.om_rec
+						var/datum/scheduler_record/rec = E.sched_rec
 						if(!rec)
 							continue
 						var/list/A = rec.steps
@@ -615,7 +615,7 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 						var/acc = A[si] + dt
 						var/n = round(acc / step)
 						if(n > catchup)
-							stat_inc(B.id, OM_STAT_BREACHES)
+							stat_inc(B.id, SCHED_STAT_BREACHES)
 							n = catchup
 							acc = n * step
 						A[si] = acc - n * step
@@ -630,7 +630,7 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 						var/now = TICK_USAGE
 						if(type_costs)
 							note_type_cost(B, E, now - prev)
-						if(now - prev > OM_SLOW_STEP_USAGE)
+						if(now - prev > SCHED_SLOW_STEP_USAGE)
 							note_slow_step(B, E, now - prev)
 						prev = now
 						if(now > lim || (cp && ++n_calls >= cp))
@@ -646,7 +646,7 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 						var/now = TICK_USAGE
 						if(type_costs)
 							note_type_cost(B, E, now - prev)
-						if(now - prev > OM_SLOW_STEP_USAGE)
+						if(now - prev > SCHED_SLOW_STEP_USAGE)
 							note_slow_step(B, E, now - prev)
 						prev = now
 						if(now > lim || (cp && ++n_calls >= cp))
@@ -658,23 +658,23 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 			// i is past the entity that raised; name it, so a runtime says which thing failed.
 			var/datum/failed = (i > 1 && i - 1 <= length(L)) ? L[i - 1] : null
 			report_caught(e, "[B.name] tick ([failed?.type]): [e] ([e.file]:[e.line])")
-			stat_inc(B.id, OM_STAT_ERRORS)
+			stat_inc(B.id, SCHED_STAT_ERRORS)
 	R.cur_i = i
 	calls = n_calls
 	var/list/S = stat_for(B.id)
-	S[OM_STAT_RUNS] += ran
+	S[SCHED_STAT_RUNS] += ran
 	var/slot_usage = TICK_USAGE - t0
 	var/spent = TICK_DELTA_TO_MS(slot_usage)
-	S[OM_STAT_MS] += spent
+	S[SCHED_STAT_MS] += spent
 	meter.charge(B.system_idx, spent)
 	// A pass that ran far over without any one entity being slow: name the pass and how many it ran.
-	if(slot_usage > OM_SLOW_STEP_USAGE * 4 && (!slow_step || slow_step["world_time"] != world.time))
+	if(slot_usage > SCHED_SLOW_STEP_USAGE * 4 && (!slow_step || slow_step["world_time"] != world.time))
 		note_slow_step(B, src, slot_usage, "pass of [ran] entities")
 	return !(out && i <= length(L))
 
 /// Clocked, substepped, or holding behaviours (fixed-step ones only when clocked).
 /datum/time_scheduler/proc/tick_slow(datum/scheduled_behaviour/B, datum/E, dt)
-	var/datum/scheduler_record/rec = E.om_rec
+	var/datum/scheduler_record/rec = E.sched_rec
 	if(!rec)
 		return
 	if(B.clock_idx)
@@ -690,22 +690,22 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 		var/acc = A[si] + dt
 		var/n = round(acc / B.step_interval)
 		if(n > B.max_catchup)
-			stat_inc(B.id, OM_STAT_BREACHES)
+			stat_inc(B.id, SCHED_STAT_BREACHES)
 			n = B.max_catchup
 			acc = n * B.step_interval
 		A[si] = acc - n * B.step_interval
 		for(var/i in 1 to n)
-			call_hook(rec, B, OM_HOOK_STEP)
+			call_hook(rec, B, SCHED_HOOK_STEP)
 			if(rec.torn_down)
 				return
 		return
 	if(B.max_dt && dt > B.max_dt)
-		var/n = min(CEILING(dt / B.max_dt, 1), OM_MAX_SUBSTEPS)
+		var/n = min(CEILING(dt / B.max_dt, 1), SCHED_MAX_SUBSTEPS)
 		var/sub = dt / n
 		for(var/i in 1 to n)
-			call_hook(rec, B, OM_HOOK_TICK, sub)
+			call_hook(rec, B, SCHED_HOOK_TICK, sub)
 		return
-	call_hook(rec, B, OM_HOOK_TICK, dt)
+	call_hook(rec, B, SCHED_HOOK_TICK, dt)
 
 /// Every hook except the fast cadence path goes through here: runtimes are
 /// caught (no flag or depth can stick) and return values are ignored.
@@ -715,32 +715,32 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 		return
 	try
 		switch(kind)
-			if(OM_HOOK_TICK)
+			if(SCHED_HOOK_TICK)
 				B.tick(E, arg)
-			if(OM_HOOK_WAKE)
+			if(SCHED_HOOK_WAKE)
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
-				if(GLOB.om_traced[E])
-					GLOB.om_traced[E]++
-					GLOB.om_traced_bits[E] |= arg
+				if(GLOB.pipeline_traced[E])
+					GLOB.pipeline_traced[E]++
+					GLOB.pipeline_traced_bits[E] |= arg
 #endif
 				B.on_wake(E, arg)
-			if(OM_HOOK_DEADLINE)
+			if(SCHED_HOOK_DEADLINE)
 				B.on_deadline(E)
-			if(OM_HOOK_STEP)
+			if(SCHED_HOOK_STEP)
 				B.on_step(E)
-			if(OM_HOOK_START)
+			if(SCHED_HOOK_START)
 				B.on_start(E)
-			if(OM_HOOK_STOP)
+			if(SCHED_HOOK_STOP)
 				B.on_stop(E)
-			if(OM_HOOK_NATIVE)
+			if(SCHED_HOOK_NATIVE)
 				B.on_native(E, arg)
-			if(OM_HOOK_KEYED)
+			if(SCHED_HOOK_KEYED)
 				B.on_keyed_deadline(E, arg)
-			if(OM_HOOK_DESTROY)
+			if(SCHED_HOOK_DESTROY)
 				B.on_entity_destroy(E)
 	catch(var/exception/e)
 		report_caught(e, "[B.name] hook [kind]: [e] ([e.file]:[e.line])")
-		stat_inc(B.id, OM_STAT_ERRORS)
+		stat_inc(B.id, SCHED_STAT_ERRORS)
 
 // ---------------------------------------------------------------- wakes
 
@@ -794,19 +794,19 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 			catch(var/exception/gate_e)
 				gated = TRUE
 				report_caught(gate_e, "[B.name] wake gate ([rec.owner?.type]): [gate_e] ([gate_e.file]:[gate_e.line])")
-				stat_inc(B.id, OM_STAT_ERRORS)
+				stat_inc(B.id, SCHED_STAT_ERRORS)
 			if(gated)
 				i++
 				continue
-			stat_inc(B.id, OM_STAT_WAKES)
+			stat_inc(B.id, SCHED_STAT_WAKES)
 			var/ver = rec.att_ver
 			var/wake_start = TICK_USAGE
-			call_hook(rec, B, OM_HOOK_WAKE, bits)
+			call_hook(rec, B, SCHED_HOOK_WAKE, bits)
 			var/wake_usage = TICK_USAGE - wake_start
 			meter.charge(B.system_idx, TICK_DELTA_TO_MS(wake_usage))
 			if(type_costs)
 				note_type_cost(B, rec.owner, wake_usage)
-			if(wake_usage > OM_SLOW_STEP_USAGE)
+			if(wake_usage > SCHED_SLOW_STEP_USAGE)
 				note_slow_step(B, rec.owner, wake_usage, "wake")
 			if(rec.torn_down)
 				break
@@ -876,7 +876,7 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 	var/floor_ds = dl_processing ? dl_cursor + 1 : dl_cursor
 	if(ds < floor_ds)
 		ds = floor_ds
-	var/list/L = buckets[(ds % OM_DEADLINE_BUCKETS) + 1]
+	var/list/L = buckets[(ds % SCHED_DEADLINE_BUCKETS) + 1]
 	L.Add(rec, bid, gen, due)
 
 /datum/time_scheduler/proc/run_deadlines(t)
@@ -886,9 +886,9 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 	. = TRUE
 	dl_processing = TRUE
 	try
-		if(now_ds - dl_cursor >= OM_DEADLINE_BUCKETS)
+		if(now_ds - dl_cursor >= SCHED_DEADLINE_BUCKETS)
 			// Far behind (a test jumping hours): one sweep of every bucket.
-			for(var/b in 1 to OM_DEADLINE_BUCKETS)
+			for(var/b in 1 to SCHED_DEADLINE_BUCKETS)
 				if(!run_bucket(b, t))
 					. = FALSE
 					break
@@ -896,7 +896,7 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 				dl_cursor = now_ds + 1
 		else
 			while(dl_cursor <= now_ds)
-				if(!run_bucket((dl_cursor % OM_DEADLINE_BUCKETS) + 1, t))
+				if(!run_bucket((dl_cursor % SCHED_DEADLINE_BUCKETS) + 1, t))
 					. = FALSE
 					break
 				dl_cursor++
@@ -954,8 +954,8 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 			break
 	if(!k || D[k + 1] != gen_i)
 		return
-	var/bid = key % OM_DL_SUB
-	var/sub = (key - bid) / OM_DL_SUB
+	var/bid = key % DEADLINE_SUB
+	var/sub = (key - bid) / DEADLINE_SUB
 	var/datum/scheduled_behaviour/B = reg.behaviours[bid]
 	var/local_target = D[k + 2]
 	if(!isnull(local_target))
@@ -968,20 +968,20 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 	D.Cut(k, k + 3)
 	if(!length(D))
 		rec.deadlines = null
-	stat_inc(bid, OM_STAT_DEADLINES)
+	stat_inc(bid, SCHED_STAT_DEADLINES)
 	var/deadline_start = TICK_USAGE
 	switch(sub)
 		if(0)
-			call_hook(rec, B, OM_HOOK_DEADLINE)
-		if(OM_DL_THROTTLE)
+			call_hook(rec, B, SCHED_HOOK_DEADLINE)
+		if(DEADLINE_SUB_THROTTLE)
 			scheduler_throttle_release(rec, B)
 		else
-			call_hook(rec, B, OM_HOOK_KEYED, sub)
+			call_hook(rec, B, SCHED_HOOK_KEYED, sub)
 	var/deadline_usage = TICK_USAGE - deadline_start
 	meter.charge(B.system_idx, TICK_DELTA_TO_MS(deadline_usage))
 	if(type_costs)
 		note_type_cost(B, rec.owner, deadline_usage)
-	if(deadline_usage > OM_SLOW_STEP_USAGE)
+	if(deadline_usage > SCHED_SLOW_STEP_USAGE)
 		note_slow_step(B, rec.owner, deadline_usage, "deadline")
 
 // ---------------------------------------------------------------- min_interval throttle
@@ -1005,8 +1005,8 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 			// the bits. Counting these there made a later change skip behaviours that had
 			// already taken their wake (a stage raising mid-frame never woke the later stage).
 			rec.att_pend[i] |= bits
-			if(!deadline_deadline_pending(rec.owner, B, OM_DL_THROTTLE))
-				deadline_deadline(rec.owner, wait, B, OM_DL_THROTTLE)
+			if(!deadline_deadline_pending(rec.owner, B, DEADLINE_SUB_THROTTLE))
+				deadline_deadline(rec.owner, wait, B, DEADLINE_SUB_THROTTLE)
 			return TRUE
 		T[k + 1] = t
 	else
@@ -1016,7 +1016,7 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 /// The throttle interval ended: queue the coalesced wake.
 /proc/scheduler_throttle_release(datum/scheduler_record/rec, datum/scheduled_behaviour/B)
 	var/i = rec.att.Find(B)
-	if(i && rec.att_pend[i] && (rec.att_state[i] & OM_ATT_STARTED))
+	if(i && rec.att_pend[i] && (rec.att_state[i] & ATT_STARTED))
 		rec.sched.enqueue(rec, B.lane)
 
 // ---------------------------------------------------------------- harness
@@ -1027,7 +1027,7 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 		CRASH("om: advance() on the live scheduler")
 	var/target = manual_time + seconds * 10
 	while(manual_time < target)
-		manual_time = min(manual_time + OM_SLOT_DS, target)
+		manual_time = min(manual_time + SCHED_SLOT_DS, target)
 		run_pass(1e9)
 
 /// Test harness: jump time without running (simulates skipped ticks).
@@ -1038,7 +1038,7 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 
 /// Admin-readable snapshot: per behaviour type counters, ring sizes, queue lengths.
 /proc/scheduler_diagnostics(datum/time_scheduler/sched)
-	sched = sched || GLOB.om_live_sched || time_scheduler()
+	sched = sched || GLOB.live_scheduler || time_scheduler()
 	var/datum/definition_registry/reg = definition_registry()
 	. = list()
 	var/list/types = list()
@@ -1052,20 +1052,20 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 			for(var/datum/cadence_ring/R as anything in sched.rings[bid])
 				population += R.population()
 		types[B ? B.name : "other"] = list(
-			"runs" = S[OM_STAT_RUNS],
-			"ms" = round(S[OM_STAT_MS], 0.001),
-			"late_max_ds" = S[OM_STAT_LATE_MAX],
-			"deferrals" = S[OM_STAT_DEFERRALS],
-			"breaches" = S[OM_STAT_BREACHES],
-			"wakes" = S[OM_STAT_WAKES],
-			"deadlines" = S[OM_STAT_DEADLINES],
-			"errors" = S[OM_STAT_ERRORS],
-			"call_max_ms" = S[OM_STAT_CALL_MAX],
+			"runs" = S[SCHED_STAT_RUNS],
+			"ms" = round(S[SCHED_STAT_MS], 0.001),
+			"late_max_ds" = S[SCHED_STAT_LATE_MAX],
+			"deferrals" = S[SCHED_STAT_DEFERRALS],
+			"breaches" = S[SCHED_STAT_BREACHES],
+			"wakes" = S[SCHED_STAT_WAKES],
+			"deadlines" = S[SCHED_STAT_DEADLINES],
+			"errors" = S[SCHED_STAT_ERRORS],
+			"call_max_ms" = S[SCHED_STAT_CALL_MAX],
 			"population" = population,
 		)
 	.["types"] = types
 	var/list/queues = list()
-	for(var/lane in 1 to OM_LANE_COUNT)
+	for(var/lane in 1 to LANE_COUNT)
 		queues += length(sched.wake_q[lane])
 	.["wake_queues"] = queues
 	.["last_run_ms"] = sched.last_run_ms
@@ -1080,7 +1080,7 @@ GLOBAL_DATUM(om_live_sched, /datum/time_scheduler)
 /datum/cadence_ring/proc/behaviour() as /datum/scheduled_behaviour
 	return definition_registry().behaviours[behaviour_id]
 
-/// One entity's step (or wake, or deadline: `kind`) took `usage` percent of a tick (over OM_SLOW_STEP_USAGE): kept as the tick's slowest step,
+/// One entity's step (or wake, or deadline: `kind`) took `usage` percent of a tick (over SCHED_SLOW_STEP_USAGE): kept as the tick's slowest step,
 /// which the MC's overrun record reports (Kernel.record_performance_tick()). Rare, so it may allocate.
 /// Adds `usage` (tick usage) to `B`'s cost for entities of E's type, while a profile capture collects type_costs.
 /datum/time_scheduler/proc/note_type_cost(datum/scheduled_behaviour/B, datum/E, usage)

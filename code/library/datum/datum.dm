@@ -62,7 +62,7 @@
  * only the core chain (/datum, /atom, /atom/movable, /client, the MC). A type
  * declares its references with DECLARE_REF (links, phase 4), puts domain
  * consequences in on_destroy(), and sets destroy_hint for a different GC hint.
- * Declared links and OM timers, hooks, tasks and behaviours are already gone
+ * Declared links and timers, hooks, tasks and behaviours are already gone
  * by now (phases 4 and 5).
  *
  * This base clears the tag, closes the datum's tgui windows and, under

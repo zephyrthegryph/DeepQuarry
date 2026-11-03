@@ -33,13 +33,13 @@
 	TEST_ASSERT(istype(inline_callback, /datum/scheduled_behaviour/inline), "A synthesized callback still passes existing profiler inline identity checks")
 	qdel(inline_callback, TRUE) // a compiled behaviour is kept unless forced (LIFECYCLE_KEEP_UNLESS_FORCED)
 
-/datum/unit_test/om/dq_time_foundation_clock_callback
+/datum/unit_test/engine/dq_time_foundation_clock_callback
 
-/datum/unit_test/om/dq_time_foundation_clock_callback/run_om(list/made)
-	var/datum/om_test_entity/bio/owner = entity(made, /datum/om_test_entity/bio)
+/datum/unit_test/engine/dq_time_foundation_clock_callback/run_engine(list/made)
+	var/datum/engine_test_entity/bio/owner = entity(made, /datum/engine_test_entity/bio)
 	TEST_ASSERT_EQUAL(owner.timer_clock(), CLOCK_BIO, "The migrated virtual callback selects the owner's biological clock")
 	TEST_ASSERT_EQUAL(owner.timer_clock(), owner.timer_clock(), "The old callback entry point forwards to the actual overridden clock")
-	var/id = after(owner, 2 SECONDS, TYPE_PROC_REF(/datum/om_test_entity, timer_hit), with = list("foundation-clock"))
+	var/id = after(owner, 2 SECONDS, TYPE_PROC_REF(/datum/engine_test_entity, timer_hit), with = list("foundation-clock"))
 	TEST_ASSERT(timer_pending(owner, id), "The callback timer is actually armed")
 	scheduler_advance(1)
 	hold(owner, STAT_SUSPENDED, TRUE, owner)

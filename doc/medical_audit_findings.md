@@ -23,7 +23,7 @@ P0 list status: all five items are closed. P2-D4 and A8 were already fixed by th
 `death()` pipeline (guard first, `on_revived` restores simple mobs); a regression test for the
 double call was added anyway. A25 is fixed but an empty view may still tick (see A19).
 P2-F12 is half fixed (`is_lethal()` exists; `isSynthetic()` still reads robolimbs).
-C11/C13 changed shape: `invalidate()` now raises `om_changed` on every call.
+C11/C13 changed shape: `invalidate()` now raises `changed` on every call.
 
 ## MED-3 / MED-5 / MED-6 (2026-09-27, `rewrite/e-medical`)
 

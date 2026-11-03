@@ -1,10 +1,10 @@
 // scheduler_rehome() (code/engine/time/records.dm) moves a record's non-timer deadlines to the scheduler that is current now: a min_interval
-// throttle release and a keyed (pipeline stage style, OM_DL_STAGE + n) rewake. An entity first touched on the live clock and then used under a test
+// throttle release and a keyed (pipeline stage style, DEADLINE_SUB_STAGE + n) rewake. An entity first touched on the live clock and then used under a test
 // driver's injected clock must see both fire once, at the remaining time, and not before.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
-/datum/om_test_entity/rehome_probe
+/datum/engine_test_entity/rehome_probe
 	var/list/wake_times
 	var/list/keyed_times
 
@@ -14,17 +14,17 @@
 	min_interval = 3 SECONDS
 
 /datum/scheduled_behaviour/dq_rehome_probe/on_wake(datum/E, changes)
-	var/datum/om_test_entity/rehome_probe/P = E
+	var/datum/engine_test_entity/rehome_probe/P = E
 	if(istype(P))
 		LAZYADD(P.wake_times, time_scheduler().now())
 
 /datum/scheduled_behaviour/dq_rehome_probe/on_keyed_deadline(datum/E, sub)
-	var/datum/om_test_entity/rehome_probe/P = E
-	if(istype(P) && sub == OM_DL_STAGE)
+	var/datum/engine_test_entity/rehome_probe/P = E
+	if(istype(P) && sub == DEADLINE_SUB_STAGE)
 		LAZYADD(P.keyed_times, time_scheduler().now())
 
 /datum/unit_test/dq_rehome_moves_throttle_and_keyed_deadlines/Run()
-	var/datum/om_test_entity/rehome_probe/E = allocate(/datum/om_test_entity/rehome_probe)
+	var/datum/engine_test_entity/rehome_probe/E = allocate(/datum/engine_test_entity/rehome_probe)
 	var/datum/scheduled_behaviour/dq_rehome_probe/B = definition_registry().behaviour(/datum/scheduled_behaviour/dq_rehome_probe)
 	TEST_ASSERT(B, "The probe behaviour is registered")
 	var/datum/scheduler_record/rec = scheduler_record_of(E)
@@ -37,9 +37,9 @@
 	// A wake, then a second inside the interval: the second is held behind a throttle deadline.
 	TEST_ASSERT(!scheduler_throttled(rec, B, i, CHANGE_EXPLICIT), "The first wake is not throttled")
 	TEST_ASSERT(scheduler_throttled(rec, B, i, CHANGE_EXPLICIT), "A wake inside the interval is deferred")
-	TEST_ASSERT(deadline_deadline_pending(E, B, OM_DL_THROTTLE), "The throttle release is a pending deadline")
-	TEST_ASSERT(deadline_deadline(E, 5 SECONDS, B, OM_DL_STAGE), "A keyed rewake is armed")
-	TEST_ASSERT(deadline_deadline_pending(E, B, OM_DL_STAGE), "The keyed rewake is pending")
+	TEST_ASSERT(deadline_deadline_pending(E, B, DEADLINE_SUB_THROTTLE), "The throttle release is a pending deadline")
+	TEST_ASSERT(deadline_deadline(E, 5 SECONDS, B, DEADLINE_SUB_STAGE), "A keyed rewake is armed")
+	TEST_ASSERT(deadline_deadline_pending(E, B, DEADLINE_SUB_STAGE), "The keyed rewake is pending")
 
 	kernel_test_begin()
 	var/datum/time_scheduler/test_sched = time_scheduler()
@@ -47,8 +47,8 @@
 	// Touching the entity rehomes its record onto the test scheduler.
 	TEST_ASSERT_EQUAL(scheduler_record_of(E), rec, "The record is the same one")
 	TEST_ASSERT_EQUAL(rec.sched, test_sched, "The touch rehomed the record onto the test scheduler")
-	TEST_ASSERT(deadline_deadline_pending(E, B, OM_DL_THROTTLE), "The throttle release survived the rehome")
-	TEST_ASSERT(deadline_deadline_pending(E, B, OM_DL_STAGE), "The keyed rewake survived the rehome")
+	TEST_ASSERT(deadline_deadline_pending(E, B, DEADLINE_SUB_THROTTLE), "The throttle release survived the rehome")
+	TEST_ASSERT(deadline_deadline_pending(E, B, DEADLINE_SUB_STAGE), "The keyed rewake survived the rehome")
 
 	test_time(2 SECONDS)
 	TEST_ASSERT_EQUAL(length(E.wake_times), 0, "The throttled wake has not fired before its remaining time")

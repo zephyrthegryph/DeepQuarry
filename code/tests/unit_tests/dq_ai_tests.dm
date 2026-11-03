@@ -9,9 +9,9 @@
 
 /// A new brain runs the strategic loop only; a combat target adds the tactical loop, losing it
 /// removes it again.
-/datum/unit_test/dq_ai_om_loops_follow_target
+/datum/unit_test/dq_ai_loops_follow_target
 
-/datum/unit_test/dq_ai_om_loops_follow_target/Run()
+/datum/unit_test/dq_ai_loops_follow_target/Run()
 	var/mob/living/simple_mob/combat_ai_test_subject/hunter = allocate(/mob/living/simple_mob/combat_ai_test_subject)
 	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human)
 	var/datum/ai_brain/B = hunter.ai_brain
@@ -28,9 +28,9 @@
 
 /// A low-priority AI mob on a z-level with no living player is at RELEVANCE_NONE and its loops
 /// skip their runs (the old SSai process_z skip); an observer at NEAR puts them back.
-/datum/unit_test/dq_ai_om_parks_without_players
+/datum/unit_test/dq_ai_parks_without_players
 
-/datum/unit_test/dq_ai_om_parks_without_players/Run()
+/datum/unit_test/dq_ai_parks_without_players/Run()
 	var/mob/living/simple_mob/combat_ai_test_subject/hunter = allocate(/mob/living/simple_mob/combat_ai_test_subject, run_loc_floor_bottom_left)
 	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, run_loc_floor_top_right)
 	hunter.set_low_priority(TRUE)
@@ -49,9 +49,9 @@
 
 /// Hibernating calm brains leave the strategic loop; being attacked wakes them and gives them
 /// the attacker as their target.
-/datum/unit_test/dq_ai_om_attack_wakes_and_acquires
+/datum/unit_test/dq_ai_attack_wakes_and_acquires
 
-/datum/unit_test/dq_ai_om_attack_wakes_and_acquires/Run()
+/datum/unit_test/dq_ai_attack_wakes_and_acquires/Run()
 	var/mob/living/simple_mob/combat_ai_test_subject/victim = allocate(/mob/living/simple_mob/combat_ai_test_subject, run_loc_floor_bottom_left)
 	var/mob/living/carbon/human/attacker = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/datum/ai_brain/B = victim.ai_brain
@@ -65,9 +65,9 @@
 	TEST_ASSERT_NULL(B.sleep_violation(), "a woken brain reported a sleep violation")
 
 /// Driven through its loops, a brain with a target walks to it and attacks it.
-/datum/unit_test/dq_ai_om_moves_and_attacks
+/datum/unit_test/dq_ai_moves_and_attacks
 
-/datum/unit_test/dq_ai_om_moves_and_attacks/Run()
+/datum/unit_test/dq_ai_moves_and_attacks/Run()
 	var/turf/start = run_loc_floor_bottom_left
 	var/turf/goal = locate(start.x + 3, start.y, start.z)
 	TEST_ASSERT(goal && !goal.density, "no open floor three tiles from the test origin")
@@ -99,9 +99,9 @@
 
 /// Mauling a downed target is an attack too: it stamps last_attack_at like a plain strike.
 /// (A slam can knock the target out, and then maul outscores melee_attack.)
-/datum/unit_test/dq_ai_om_maul_counts_as_attack
+/datum/unit_test/dq_ai_maul_counts_as_attack
 
-/datum/unit_test/dq_ai_om_maul_counts_as_attack/Run()
+/datum/unit_test/dq_ai_maul_counts_as_attack/Run()
 	var/turf/start = run_loc_floor_bottom_left
 	var/turf/next = locate(start.x + 1, start.y, start.z)
 	TEST_ASSERT(next && !next.density, "no open floor next to the test origin")

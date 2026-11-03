@@ -239,14 +239,14 @@ SYSTEM_DEF(machines)
 	pending_pump_transfers.Cut()
 
 /// Hands this batch of gas dependency observations (from the frame's outbox) to their native watches
-/// (/datum/native_watch/gas, code/datums/om/native.dm). The OM watch layer owns one
-/// native watch per watched mixture (code/datums/om/watch.dm), which fans the record
+/// (/datum/native_watch/gas, code/engine/native.dm). The watch layer owns one
+/// native watch per watched mixture (code/engine/watch.dm), which fans the record
 /// directly to each surviving native gas subscription.
 /datum/system/machines/proc/wake_dirty_gas_subscribers(budgeted = FALSE)
 	var/scan_started = TICK_USAGE
 	if(!pending_dirty_gas_mixtures)
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
-		// Tests drive Rust by hand, not through OM ticks: what the next frame would have delivered is delivered now.
+		// Tests drive Rust by hand, not through ticks: what the next frame would have delivered is delivered now.
 		native_system().drain()
 #endif
 		pending_dirty_gas_mixtures = native_system().take_gas_changes() || list()

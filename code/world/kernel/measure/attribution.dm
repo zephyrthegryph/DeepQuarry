@@ -1,13 +1,13 @@
-// Kernel measurement: attribution inside om_core and om_appearance, and the post-init settle record.
+// Kernel measurement: attribution inside sched_core and appearance_drain, and the post-init settle record.
 //
-// The tick meter (meter.dm) says WHICH system a tick went to. om_core (timers, after(), every(), after_init(), the
-// scheduler's own work) and om_appearance (the redraw drain and change reactions) are each one lump, and the lumps
+// The tick meter (meter.dm) says WHICH system a tick went to. sched_core (timers, after(), every(), after_init(), the
+// scheduler's own work) and appearance_drain (the redraw drain and change reactions) are each one lump, and the lumps
 // are where a heavy tick usually hides. This table names what is inside them:
 //  - KA_KIND_CALLBACK: one timer callback (after() / every() / after_init() / a keyed timer), keyed by the owner's
-//    type and the proc it ran, or the declared entry for an every() / after_init() fire. Charged to om_core.
+//    type and the proc it ran, or the declared entry for an every() / after_init() fire. Charged to sched_core.
 //  - KA_KIND_REACTION: one change reaction (on_change / observe), keyed by the holder's type and its handler.
 //  - KA_KIND_DRAW: one queued redraw, keyed by the atom's type and why it was queued (a class of the DEP_* bits).
-// The last two are charged to om_appearance, where the drain runs them.
+// The last two are charged to appearance_drain, where the drain runs them.
 //
 // A row is a fixed-length list (KA_* indices) found through rows[owner type][proc or reason]. The hot call, note(),
 // does two lookups and a handful of additions: keys are type paths, proc-name texts, interned entries and constant
@@ -53,9 +53,9 @@ GLOBAL_VAR_INIT(km_attr_depth, 0)
 	rows = list()
 	touched = new /list(KA_MAX_ROWS + 8)
 	overflow = list(
-		km_attr_new_row(KA_KIND_CALLBACK, KM_SYS_OM_CORE, "(overflow)", "(overflow)"),
-		km_attr_new_row(KA_KIND_REACTION, KM_SYS_OM_APPEARANCE, "(overflow)", "(overflow)"),
-		km_attr_new_row(KA_KIND_DRAW, KM_SYS_OM_APPEARANCE, "(overflow)", "(overflow)"),
+		km_attr_new_row(KA_KIND_CALLBACK, KM_SYS_SCHED_CORE, "(overflow)", "(overflow)"),
+		km_attr_new_row(KA_KIND_REACTION, KM_SYS_APPEARANCE, "(overflow)", "(overflow)"),
+		km_attr_new_row(KA_KIND_DRAW, KM_SYS_APPEARANCE, "(overflow)", "(overflow)"),
 	)
 
 /proc/km_attr_new_row(kind, sys, a, b)
@@ -163,10 +163,10 @@ GLOBAL_VAR_INIT(km_attr_depth, 0)
 	if(next_settle && REALTIMEOFDAY >= next_settle)
 		settle_due()
 
-/// The overrun line's tail: the top KM_TOP_N callbacks behind om_core and the top redrawn types / reactions behind om_appearance this tick.
+/// The overrun line's tail: the top KM_TOP_N callbacks behind sched_core and the top redrawn types / reactions behind appearance_drain this tick.
 /datum/km_attr/proc/tick_text()
 	var/list/parts = list()
-	for(var/sys in list(KM_SYS_OM_CORE, KM_SYS_OM_APPEARANCE))
+	for(var/sys in list(KM_SYS_SCHED_CORE, KM_SYS_APPEARANCE))
 		var/list/top = select_top(KM_TOP_N, KA_BY_TICK, sys)
 		if(!length(top))
 			continue

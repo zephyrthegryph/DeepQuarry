@@ -579,7 +579,7 @@ GLOBAL_VAR(dq_test_select_names)
 	// Run() starts inside RunUnitTest()'s own call stack (INVOKE_ASYNC only
 	// detaches at the first sleep). Uncaught, a runtime before that sleep
 	// unwinds RunUnitTest() and RunUnitTests() too -- and RunUnitTests() runs
-	// under the OM sleep-guard trampoline, whose try/catch swallows it, so the
+	// under the scheduler sleep-guard trampoline, whose try/catch swallows it, so the
 	// whole suite silently stops and the watchdog kills the world with no
 	// results. Catch it here: the test fails with the runtime, the suite goes on.
 	try
@@ -598,7 +598,7 @@ GLOBAL_VAR(dq_test_select_names)
 	if(succeeded)
 		factor_oracle_audit(src)
 	// End the test's world in the tick Run() returns. RunUnitTest() only notices run_finished
-	// on its next poll and then restores atmos before deleting the test, and OM work still
+	// on its next poll and then restores atmos before deleting the test, and scheduler work still
 	// pending on the test's entities (a mob's telegraphed strike is an after() on its clock)
 	// would otherwise fire in that gap, with nothing left to own what it makes.
 	end_test_world()
@@ -1913,7 +1913,7 @@ GLOBAL_VAR(boot_unclean)
 		log_test("  boot warning: [line]")
 
 /// The round-start callback that starts the suite. The suite sleeps between tests (it waits on the kernel), and a
-/// scheduler callback that sleeps is reported as "OM: SLEPT" and stalls its caller; this returns at once and the suite
+/// scheduler callback that sleeps is reported as "scheduler: SLEPT" and stalls its caller; this returns at once and the suite
 /// runs on its own.
 /proc/start_unit_tests()
 	set waitfor = FALSE
@@ -2123,7 +2123,7 @@ GLOBAL_VAR(boot_unclean)
 				log_test("OWNERSHIP periodic audit raised: [audit_e.name] at [audit_e.file]:[audit_e.line] -- [audit_e.desc]")
 		// A runtime anywhere in RunUnitTest() outside the test's own Run()
 		// (block release, cleanup of what the test left behind) would otherwise
-		// unwind this loop into the OM trampoline's try/catch and stop the
+		// unwind this loop into the scheduler trampoline's try/catch and stop the
 		// suite silently. Fail the run and carry on with the next test.
 		unit_test_supervised(unit_path, test_results, current_test_index, total_tests)
 	SSticker.delay_end = FALSE

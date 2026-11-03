@@ -1,5 +1,5 @@
 /// A real large pouch delays removal and preserves its ledger until the actual task completes.
-/datum/unit_test/om/interim_pouch_delayed_removal/run_om(list/made)
+/datum/unit_test/engine/interim_pouch_delayed_removal/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/item/storage/pouch/large/pouch = allocate(/obj/item/storage/pouch/large, T)
@@ -23,7 +23,7 @@
 	TEST_ASSERT(!pouch.stall_passed, "the actual completion restores the pouch's delay gate")
 
 /// Moving the real actor cancels delayed removal without losing the stored item or its capacity accounting.
-/datum/unit_test/om/interim_pouch_removal_movement_cancel/run_om(list/made)
+/datum/unit_test/engine/interim_pouch_removal_movement_cancel/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/turf/other = get_step(T, EAST)
 	TEST_ASSERT_NOTNULL(other, "the actual actor has a neighboring turf for movement cancellation")

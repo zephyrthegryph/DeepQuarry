@@ -1,10 +1,10 @@
 // Kernel measurement (unified plan step 2, code/controllers/measure/): the system rule, the roll-up of a
 // behaviour's cost to its system, the histogram percentiles, overrun attribution, the flight recorder's ring and
-// the input latency record. Tests that need a scheduler use the OM harness (scheduler_test_begin(), scheduler_advance()),
+// the input latency record. Tests that need a scheduler use the scheduler test harness (scheduler_test_begin(), scheduler_advance()),
 // whose scheduler charges its own meter; the rest build meters directly, so nothing here touches the live one
 // except where a test swaps it in on purpose and puts it back before asserting.
 
-/datum/om_test_entity/var/km_ticks = 0
+/datum/engine_test_entity/var/km_ticks = 0
 
 /// The row of a km_report_systems() list for `key`, or null.
 /proc/km_test_row(list/rows, key)
@@ -13,7 +13,7 @@
 			return row
 
 /// Registers a test system and returns its index.
-/proc/km_test_system(key, kind = KM_KIND_OM, lane = LANE_SIMULATION)
+/proc/km_test_system(key, kind = KM_KIND_SCHED, lane = LANE_SIMULATION)
 	return km_systems().index_for(key, kind, lane)
 
 // ---------------------------------------------------------------- the system rule
@@ -127,7 +127,7 @@
 /datum/unit_test/dq_km_system_stats_totals
 
 /datum/unit_test/dq_km_system_stats_totals/Run()
-	var/datum/system_stats/S = new("km_totals", KM_KIND_OM)
+	var/datum/system_stats/S = new("km_totals", KM_KIND_SCHED)
 	for(var/i in 1 to 50)
 		S.record(30, FALSE, 0)
 	TEST_ASSERT_EQUAL(S.ticks, 50, "50 ticks recorded")
@@ -245,7 +245,7 @@
 	// A small ring first, where the arithmetic is easy to follow.
 	var/datum/tick_meter/small = new(8)
 	for(var/i in 1 to 13)
-		small.charge(KM_SYS_OM_CORE, i)
+		small.charge(KM_SYS_SCHED_CORE, i)
 		small.end_tick(i * 10, i)
 	TEST_ASSERT_EQUAL(small.ring_count, 8, "a full ring holds its length")
 	TEST_ASSERT_EQUAL(small.ring_pos, 5, "13 writes into 8 slots leave the write position at 5")
@@ -257,7 +257,7 @@
 		TEST_ASSERT_EQUAL(entries[n][3], (n + 5) * 10, "entry [n] is in write order across the wrap")
 		TEST_ASSERT_EQUAL(entries[n][4], n + 5, "with its own maptick")
 		var/list/keys = entries[n][7]
-		TEST_ASSERT_EQUAL(keys[1], KM_KEY_OM_CORE, "and its top system")
+		TEST_ASSERT_EQUAL(keys[1], KM_KEY_SCHED_CORE, "and its top system")
 		var/list/mss = entries[n][8]
 		TEST_ASSERT_EQUAL(mss[1], n + 5, "and that system's ms")
 	qdel(small)
@@ -413,7 +413,7 @@
 	TEST_ASSERT(!isnull(panel["streak"]) && !isnull(panel["overruns"]), "and the tick counters")
 	var/list/diag = km_diagnostics(null)
 	TEST_ASSERT(islist(diag["systems"]) && islist(diag["input"]), "diagnostics carry the same records")
-	var/list/om = scheduler_diagnostics(GLOB.om_live_sched)
+	var/list/om = scheduler_diagnostics(GLOB.live_scheduler)
 	TEST_ASSERT(islist(om["kernel"]), "scheduler_diagnostics() exposes them")
 	TEST_ASSERT(islist(om["kernel"]["systems"]), "with the per-system rows")
 	var/datum/tick_meter/M = new(8)
@@ -430,7 +430,7 @@
 	qdel(M)
 	return
 
-// ---------------------------------------------------------------- attribution inside om_core / om_appearance (attribution.dm)
+// ---------------------------------------------------------------- attribution inside sched_core / appearance_drain (attribution.dm)
 
 /// The row of `attr` for (a, b), or null.
 /proc/km_attr_test_row(datum/km_attr/attr, a, b)
@@ -442,24 +442,24 @@
 /datum/unit_test/dq_km_attr_names_the_timer_callback/Run()
 	var/datum/time_scheduler/sched = scheduler_test_begin()
 	var/datum/km_attr/attr = sched.meter.attr
-	var/datum/om_test_entity/E = new
-	var/datum/om_test_entity/F = new
-	after(E, 1 SECONDS, TYPE_PROC_REF(/datum/om_test_entity, timer_hit), with = list("a"))
-	after(E, 1 SECONDS, TYPE_PROC_REF(/datum/om_test_entity, timer_hit), with = list("b"))
+	var/datum/engine_test_entity/E = new
+	var/datum/engine_test_entity/F = new
+	after(E, 1 SECONDS, TYPE_PROC_REF(/datum/engine_test_entity, timer_hit), with = list("a"))
+	after(E, 1 SECONDS, TYPE_PROC_REF(/datum/engine_test_entity, timer_hit), with = list("b"))
 	// A keyed timer goes through rx_timer_fire(): the row still names the handler, not the dispatcher.
-	after(F, 1 SECONDS, TYPE_PROC_REF(/datum/om_test_entity, inline_react), key = "km_attr_keyed", with = list(0))
+	after(F, 1 SECONDS, TYPE_PROC_REF(/datum/engine_test_entity, inline_react), key = "km_attr_keyed", with = list(0))
 	scheduler_advance(2)
-	var/handler = TYPE_PROC_REF(/datum/om_test_entity, timer_hit)
-	var/list/plain = km_attr_test_row(attr, /datum/om_test_entity, handler)
+	var/handler = TYPE_PROC_REF(/datum/engine_test_entity, timer_hit)
+	var/list/plain = km_attr_test_row(attr, /datum/engine_test_entity, handler)
 	TEST_ASSERT_NOTNULL(plain, "the callback has a row keyed by owner type and proc")
 	TEST_ASSERT_EQUAL(plain[KA_COUNT], 2, "both calls of the callback are counted on its row")
-	TEST_ASSERT_EQUAL(plain[KA_SYS], KM_SYS_OM_CORE, "timer callbacks are charged inside om_core")
+	TEST_ASSERT_EQUAL(plain[KA_SYS], KM_SYS_SCHED_CORE, "timer callbacks are charged inside sched_core")
 	TEST_ASSERT_EQUAL(plain[KA_KIND], KA_KIND_CALLBACK, "as callbacks")
-	var/list/keyed = km_attr_test_row(attr, /datum/om_test_entity, TYPE_PROC_REF(/datum/om_test_entity, inline_react))
+	var/list/keyed = km_attr_test_row(attr, /datum/engine_test_entity, TYPE_PROC_REF(/datum/engine_test_entity, inline_react))
 	TEST_ASSERT_NOTNULL(keyed, "a keyed timer is attributed to the proc it ran")
 	TEST_ASSERT_EQUAL(keyed[KA_COUNT], 1, "once")
-	TEST_ASSERT_NULL(km_attr_test_row(attr, /datum/om_test_entity, GLOBAL_PROC_REF(rx_timer_fire)), "and not to the dispatcher")
-	TEST_ASSERT_EQUAL(km_attr_describe(plain), "/datum/om_test_entity -> [handler]", "its name is the owner type and the proc")
+	TEST_ASSERT_NULL(km_attr_test_row(attr, /datum/engine_test_entity, GLOBAL_PROC_REF(rx_timer_fire)), "and not to the dispatcher")
+	TEST_ASSERT_EQUAL(km_attr_describe(plain), "/datum/engine_test_entity -> [handler]", "its name is the owner type and the proc")
 	qdel(E)
 	qdel(F)
 	scheduler_test_end()
@@ -491,28 +491,28 @@
 	var/datum/tick_meter/M = new(16)
 	var/datum/km_attr/attr = M.attr
 	// Out of order, across two systems: the line names the top three of each by this tick's ms.
-	attr.note(KA_KIND_CALLBACK, KM_SYS_OM_CORE, /obj/machinery/light, "slow_a", 2)
-	attr.note(KA_KIND_CALLBACK, KM_SYS_OM_CORE, /obj/machinery/light, "slow_b", 30)
-	attr.note(KA_KIND_CALLBACK, KM_SYS_OM_CORE, /obj/item/gun, "slow_c", 12)
-	attr.note(KA_KIND_CALLBACK, KM_SYS_OM_CORE, /obj/item/gun, "slow_d", 1)
-	attr.note(KA_KIND_CALLBACK, KM_SYS_OM_CORE, /obj/machinery/light, "slow_b", 5)
-	attr.note(KA_KIND_CALLBACK, KM_SYS_OM_CORE, /obj/item/gun, "slow_e", 8)
-	attr.note(KA_KIND_DRAW, KM_SYS_OM_APPEARANCE, /obj/structure/table, km_attr_reason(DEP_DRAW), 9)
-	attr.note(KA_KIND_REACTION, KM_SYS_OM_APPEARANCE, /obj/machinery/door, "on_open", 14)
-	M.charge(KM_SYS_OM_CORE, 58)
+	attr.note(KA_KIND_CALLBACK, KM_SYS_SCHED_CORE, /obj/machinery/light, "slow_a", 2)
+	attr.note(KA_KIND_CALLBACK, KM_SYS_SCHED_CORE, /obj/machinery/light, "slow_b", 30)
+	attr.note(KA_KIND_CALLBACK, KM_SYS_SCHED_CORE, /obj/item/gun, "slow_c", 12)
+	attr.note(KA_KIND_CALLBACK, KM_SYS_SCHED_CORE, /obj/item/gun, "slow_d", 1)
+	attr.note(KA_KIND_CALLBACK, KM_SYS_SCHED_CORE, /obj/machinery/light, "slow_b", 5)
+	attr.note(KA_KIND_CALLBACK, KM_SYS_SCHED_CORE, /obj/item/gun, "slow_e", 8)
+	attr.note(KA_KIND_DRAW, KM_SYS_APPEARANCE, /obj/structure/table, km_attr_reason(DEP_DRAW), 9)
+	attr.note(KA_KIND_REACTION, KM_SYS_APPEARANCE, /obj/machinery/door, "on_open", 14)
+	M.charge(KM_SYS_SCHED_CORE, 58)
 	M.end_tick(160, 0)
 	var/line = M.last_overrun_line
-	TEST_ASSERT(findtext(line, "om_core top: /obj/machinery/light -> slow_b 35ms; /obj/item/gun -> slow_c 12ms; /obj/item/gun -> slow_e 8ms"), "the tick line names the top three callbacks, summed per row: [line]")
+	TEST_ASSERT(findtext(line, "sched_core top: /obj/machinery/light -> slow_b 35ms; /obj/item/gun -> slow_c 12ms; /obj/item/gun -> slow_e 8ms"), "the tick line names the top three callbacks, summed per row: [line]")
 	TEST_ASSERT(!findtext(line, "slow_d") && !findtext(line, "slow_a"), "and not the rest: [line]")
-	TEST_ASSERT(findtext(line, "om_appearance top: /obj/machinery/door on_change -> on_open 14ms; /obj/structure/table draw (draw) 9ms"), "and the redraw / reaction rows behind om_appearance: [line]")
+	TEST_ASSERT(findtext(line, "appearance_drain top: /obj/machinery/door on_change -> on_open 14ms; /obj/structure/table draw (draw) 9ms"), "and the redraw / reaction rows behind appearance_drain: [line]")
 	TEST_ASSERT_EQUAL(attr.n_touched, 0, "the per-tick accumulators reset")
 	// The next tick starts from zero: a row's tick ms does not carry over.
-	attr.note(KA_KIND_CALLBACK, KM_SYS_OM_CORE, /obj/item/gun, "slow_d", 3)
+	attr.note(KA_KIND_CALLBACK, KM_SYS_SCHED_CORE, /obj/item/gun, "slow_d", 3)
 	M.end_tick(150, 0)
 	line = M.last_overrun_line
-	TEST_ASSERT(findtext(line, "om_core top: /obj/item/gun -> slow_d 3ms"), "the second tick names only what ran in it: [line]")
+	TEST_ASSERT(findtext(line, "sched_core top: /obj/item/gun -> slow_d 3ms"), "the second tick names only what ran in it: [line]")
 	TEST_ASSERT(!findtext(line, "slow_b"), "slow_b did not carry over: [line]")
-	TEST_ASSERT(!findtext(line, "om_appearance top"), "and nothing ran behind om_appearance: [line]")
+	TEST_ASSERT(!findtext(line, "appearance_drain top"), "and nothing ran behind appearance_drain: [line]")
 	var/list/by_total = attr.select_top(1, KA_BY_TOTAL)
 	TEST_ASSERT_EQUAL(by_total[1][KA_B], "slow_b", "the totals pick the heaviest row over both ticks")
 	qdel(M)
@@ -541,7 +541,7 @@
 	for(var/b in by_a)
 		var/list/row = by_a[b]
 		TEST_ASSERT_EQUAL(row[KA_KIND], KA_KIND_DRAW, "redraw rows are draws")
-		TEST_ASSERT_EQUAL(row[KA_SYS], KM_SYS_OM_APPEARANCE, "charged inside om_appearance")
+		TEST_ASSERT_EQUAL(row[KA_SYS], KM_SYS_APPEARANCE, "charged inside appearance_drain")
 		count += row[KA_COUNT]
 	TEST_ASSERT(count >= 5, "two creates plus three changes are all counted on the type (got [count])")
 	var/list/mine
@@ -559,13 +559,13 @@
 
 /datum/unit_test/dq_km_attr_records_post_init_settle/Run()
 	var/datum/km_attr/attr = new
-	attr.note(KA_KIND_CALLBACK, KM_SYS_OM_CORE, /obj/machinery/light, "before_init", 1)
+	attr.note(KA_KIND_CALLBACK, KM_SYS_SCHED_CORE, /obj/machinery/light, "before_init", 1)
 	TEST_ASSERT_EQUAL(length(attr.select_top(5, KA_BY_POST)), 0, "nothing counts as post-init before init completes")
 	attr.init_complete()
 	TEST_ASSERT(attr.next_settle > attr.init_real, "the first SETTLE is scheduled")
-	attr.note(KA_KIND_CALLBACK, KM_SYS_OM_CORE, /obj/machinery/light, "before_init", 2)
-	attr.note(KA_KIND_CALLBACK, KM_SYS_OM_CORE, /obj/machinery/power/apc, "settle_x", 6)
-	attr.note(KA_KIND_CALLBACK, KM_SYS_OM_CORE, /obj/machinery/power/apc, "settle_x", 4)
+	attr.note(KA_KIND_CALLBACK, KM_SYS_SCHED_CORE, /obj/machinery/light, "before_init", 2)
+	attr.note(KA_KIND_CALLBACK, KM_SYS_SCHED_CORE, /obj/machinery/power/apc, "settle_x", 6)
+	attr.note(KA_KIND_CALLBACK, KM_SYS_SCHED_CORE, /obj/machinery/power/apc, "settle_x", 4)
 	var/list/post = attr.select_top(5, KA_BY_POST)
 	TEST_ASSERT_EQUAL(length(post), 2, "both sources that ran after init are in the settle table")
 	TEST_ASSERT_EQUAL(post[1][KA_B], "settle_x", "heaviest first")
@@ -577,7 +577,7 @@
 	TEST_ASSERT_EQUAL(before[KA_LATE_COUNT], 0, "and none of it ran past +2min yet")
 	// Time passes: a run past KA_SETTLE_FIRST is counted as late and "last ran" moves with it.
 	attr.init_real -= KA_SETTLE_FIRST + 50
-	attr.note(KA_KIND_CALLBACK, KM_SYS_OM_CORE, /obj/machinery/power/apc, "settle_x", 3)
+	attr.note(KA_KIND_CALLBACK, KM_SYS_SCHED_CORE, /obj/machinery/power/apc, "settle_x", 3)
 	var/list/apc = km_attr_test_row(attr, /obj/machinery/power/apc, "settle_x")
 	TEST_ASSERT_EQUAL(apc[KA_LATE_COUNT], 1, "work past +2min is counted late")
 	TEST_ASSERT(abs(apc[KA_LATE_MS] - 3) < 0.01, "with its ms")
@@ -604,9 +604,9 @@
 /datum/unit_test/dq_km_attr_table_is_bounded/Run()
 	var/datum/km_attr/attr = new
 	// A heavy key first, then more keys than the table holds: the overflow row takes the excess and a prune keeps the heavy one.
-	attr.note(KA_KIND_CALLBACK, KM_SYS_OM_CORE, /obj/machinery/light, "heavy", 500)
+	attr.note(KA_KIND_CALLBACK, KM_SYS_SCHED_CORE, /obj/machinery/light, "heavy", 500)
 	for(var/i in 1 to KA_MAX_ROWS + 50)
-		attr.note(KA_KIND_CALLBACK, KM_SYS_OM_CORE, /obj/machinery/light, "key[i]", 0.01)
+		attr.note(KA_KIND_CALLBACK, KM_SYS_SCHED_CORE, /obj/machinery/light, "key[i]", 0.01)
 	TEST_ASSERT_EQUAL(attr.n_rows, KA_MAX_ROWS, "the table stops at its bound")
 	TEST_ASSERT(attr.overflowed > 0, "and counts what overflowed")
 	TEST_ASSERT(attr.overflow[KA_KIND_CALLBACK][KA_COUNT] > 0, "which landed on the overflow row")
@@ -638,7 +638,7 @@
 	// Warm up: make every row, then count them.
 	for(var/t in types)
 		for(var/k in keys)
-			attr.note(KA_KIND_CALLBACK, KM_SYS_OM_CORE, t, k, 0.01)
+			attr.note(KA_KIND_CALLBACK, KM_SYS_SCHED_CORE, t, k, 0.01)
 	var/rows_before = attr.n_rows
 	var/runs = 200000
 	var/bare_start = REALTIMEOFDAY
@@ -650,7 +650,7 @@
 	var/start = REALTIMEOFDAY
 	for(var/i in 1 to runs)
 		var/started = TICK_USAGE
-		attr.note(KA_KIND_CALLBACK, KM_SYS_OM_CORE, types[1 + (i % 4)], keys[1 + (i % 64)], TICK_USAGE_TO_MS(started))
+		attr.note(KA_KIND_CALLBACK, KM_SYS_SCHED_CORE, types[1 + (i % 4)], keys[1 + (i % 64)], TICK_USAGE_TO_MS(started))
 		if(!(i % 500))
 			attr.end_tick(FALSE) // ticks pass: the touched list resets
 	var/with_ds = REALTIMEOFDAY - start

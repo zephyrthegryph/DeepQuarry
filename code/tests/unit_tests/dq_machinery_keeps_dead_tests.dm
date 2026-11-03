@@ -3,7 +3,7 @@
 	abstract_type = /datum/unit_test/machinery_keeps_dead
 
 /datum/unit_test/machinery_keeps_dead/Run()
-	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
+	set_global("handle_resolve_nulled", GLOB.handle_resolve_nulled)
 	set_global("dview_mob", GLOB.dview_mob)
 	set_global(nameof(GLOB.test_prompts), list())
 	test_driver_begin()
@@ -178,7 +178,7 @@
 
 /datum/unit_test/machinery_keeps_dead/transport_destination_generation
 /datum/unit_test/machinery_keeps_dead/transport_destination_generation/run_cleanup()
-	set_global("om_z_generations", GLOB.om_z_generations.Copy())
+	set_global("z_generations", GLOB.z_generations.Copy())
 	var/turf/surface = test_floor()
 	var/turf/destination = locate(1, 1, surface.z == 1 ? 2 : 1)
 	TEST_ASSERT(destination && destination.z != surface.z, "the independent destination is on a different level from the live pod")

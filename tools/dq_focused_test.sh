@@ -294,7 +294,7 @@ test_types() {
 			i = index($0, ":"); file = substr($0, 1, i - 1); name = substr($0, i + 1)
 			if (!(file in inc)) next
 			if (name ~ /\/proc\/[A-Za-z0-9_]+\(/) next # a helper proc on a parent (dq_eg2/proc/run_gate()), not a test type
-			sub(/^\/datum\/unit_test\//, "", name); sub(/[[:space:]]+$/, "", name); sub(/\/(Run|run_[A-Za-z0-9_]+)\([^)]*\)$/, "", name) # a type may be declared only by its Run() or, under /datum/unit_test/om, its run_om(list/made)
+			sub(/^\/datum\/unit_test\//, "", name); sub(/[[:space:]]+$/, "", name); sub(/\/(Run|run_[A-Za-z0-9_]+)\([^)]*\)$/, "", name) # a type may be declared only by its Run() or, under /datum/unit_test/engine, its run_engine(list/made)
 			if (!seen[name]++) print name
 		}'
 }

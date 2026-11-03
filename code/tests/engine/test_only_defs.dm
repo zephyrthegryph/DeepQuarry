@@ -274,17 +274,17 @@ GLOBAL_VAR_INIT(dq_refsearch_spent_ds, 0)
 // from code/engine/time/world_watches.dm
 /// Tests: start counting world wakes delivered to `owner`.
 /proc/world_wake_trace(datum/owner)
-	var/datum/time_scheduler/sched = GLOB.om_live_sched
+	var/datum/time_scheduler/sched = GLOB.live_scheduler
 	LAZYINITLIST(sched.world_traced)
 	if(!sched.world_traced[owner])
 		sched.world_traced[owner] = 1
 
 /proc/world_wake_traced(datum/owner)
-	var/datum/time_scheduler/sched = GLOB.om_live_sched
+	var/datum/time_scheduler/sched = GLOB.live_scheduler
 	return (sched.world_traced && sched.world_traced[owner]) ? sched.world_traced[owner] - 1 : 0
 
 /proc/world_wake_untrace(datum/owner)
-	var/datum/time_scheduler/sched = GLOB.om_live_sched
+	var/datum/time_scheduler/sched = GLOB.live_scheduler
 	if(sched.world_traced)
 		sched.world_traced -= owner
 		if(!length(sched.world_traced))

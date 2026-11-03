@@ -1,4 +1,4 @@
-/datum/unit_test/om/interim_fulton_landing_release/run_om(list/made)
+/datum/unit_test/engine/interim_fulton_landing_release/run_engine(list/made)
 	var/turf/T = test_floor()
 	var/obj/effect/extraction_holder/holder = allocate(/obj/effect/extraction_holder, T)
 	var/obj/item/storage/box/cargo = allocate(/obj/item/storage/box, T)

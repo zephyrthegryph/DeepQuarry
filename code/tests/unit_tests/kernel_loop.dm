@@ -33,7 +33,7 @@
 	unit_test_solid_restore(solid)
 	TEST_ASSERT(SSgarbage.times_fired > host_before, "a host system on a longer wait runs from the kernel")
 
-/// The OM scheduler's pass is made of kernel work items: one per piece, first in their phase (and lane) lists, and the audit.
+/// The scheduler's pass is made of kernel work items: one per piece, first in their phase (and lane) lists, and the audit.
 /datum/unit_test/kernel_scheduler_is_work_items
 
 /datum/unit_test/kernel_scheduler_is_work_items/Run()
@@ -45,7 +45,7 @@
 		"[owner]:sched_leftovers" = KERNEL_PHASE_R,
 		"[owner]:audit_step" = KERNEL_PHASE_G,
 	)
-	for(var/lane in 1 to OM_LANE_COUNT)
+	for(var/lane in 1 to LANE_COUNT)
 		keys["[owner]:sched_lane_[lane]"] = KERNEL_PHASE_P
 	for(var/key in keys)
 		var/datum/work_item/W = K.work_by_key[key]
@@ -58,7 +58,7 @@
 	var/list/leftovers = K.items_of_phase(KERNEL_PHASE_R)
 	var/datum/work_item/tail_head = leftovers[1]
 	TEST_ASSERT_EQUAL(tail_head.key, "[owner]:sched_leftovers", "the leftover pass runs ahead of the phase's other items")
-	for(var/lane in 1 to OM_LANE_COUNT)
+	for(var/lane in 1 to LANE_COUNT)
 		var/list/lane_items = K.phase_lane_items[lane]
 		var/datum/work_item/first_of_lane = lane_items[1]
 		var/want = (lane == LANE_URGENT) ? "[owner]:sched_borrow" : "[owner]:sched_lane_[lane]"

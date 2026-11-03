@@ -1,4 +1,4 @@
-/// Sale profiles (was /datum/element/sellable). Object state, not an OM behaviour:
+/// Sale profiles (was /datum/element/sellable). Object state, not an behaviour:
 /// an object's `sellable_type` names a shared profile singleton (get_sellable_profile())
 /// and the cargo shuttle / retail scanner ask the object directly through
 /// export_sale() and scan_profit(). Subtypes override the valuation procs.

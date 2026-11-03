@@ -124,7 +124,7 @@ SYSTEM_DEF(profiler)
 	subsystems["shuttles"] += SSshuttles.performance_diagnostics()
 	subsystems["radiation"] += SSradiation.performance_diagnostics()
 	subsystems["explosions"] += SSexplosions.performance_diagnostics()
-	// Rust world wakes (timers, keys, rate crossings, native watches) on the OM scheduler.
+	// Rust world wakes (timers, keys, rate crossings, native watches) on the scheduler.
 	subsystems["world_step"] = world_diagnostics()
 	var/list/profile = list(
 		"sequence" = ++diagnostic_sequence,
@@ -143,7 +143,7 @@ SYSTEM_DEF(profiler)
 		"atmos_arena" = atmos_arena,
 		"rust_allocator" = rust_allocator,
 		"rust_metrics" = rust_metrics,
-		// Inside om_core / om_appearance: top 20 callbacks, top 20 redrawn types, and the post-init settle table (attribution.dm).
+		// Inside sched_core / appearance_drain: top 20 callbacks, top 20 redrawn types, and the post-init settle table (attribution.dm).
 		"attribution" = km_meter().attr.report(20),
 	)
 	log_runtime("PERF_PROFILE [json_encode(profile)]")

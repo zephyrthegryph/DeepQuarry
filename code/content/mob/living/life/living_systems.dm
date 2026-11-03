@@ -539,7 +539,7 @@ GLOBAL_TABLE(global_hud_overlays, GLOBAL_PROC_REF(build_global_hud_overlays))
 /mob/living/proc/life_vision_rewake_delay()
 	return src.client ? 5 SECONDS : 0
 
-// ---------------------------------------------------------------- declared fields (code/datums/om/fields.dm)
+// ---------------------------------------------------------------- declared fields (code/engine/fields.dm)
 // What Life stages read to decide there is work, and the channel each raises. Written only through
 // the generated set_<name>() setters; stages that read them wake on them.
 

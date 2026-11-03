@@ -1,28 +1,28 @@
 // I/O jobs (code/engine/io/jobs.dm). A fake backend stands in for rust-g: its jobs answer when the test says so, so the lane,
 // ownership, weak capture, queueing and diagnostics are tested without a database or network.
 
-/// Fake I/O kind: one request arg (the answer). Jobs finish when GLOB.om_io_test_ready says.
+/// Fake I/O kind: one request arg (the answer). Jobs finish when GLOB.io_test_ready says.
 /datum/io_backend/test
 	name = "test"
 	arg_count = 1
 	max_active = 2
 
-GLOBAL_LIST_EMPTY(om_io_test_ready)
-GLOBAL_VAR_INIT(om_io_test_seq, 0)
+GLOBAL_LIST_EMPTY(io_test_ready)
+GLOBAL_VAR_INIT(io_test_seq, 0)
 
 /datum/io_backend/test/start(datum/io_job/J)
 	if(J.request[1] == "refuse")
 		J.preset_error = "refused"
 		return null
-	var/id = "[++GLOB.om_io_test_seq]"
-	GLOB.om_io_test_ready[id] = J.request[1]
+	var/id = "[++GLOB.io_test_seq]"
+	GLOB.io_test_ready[id] = J.request[1]
 	return id
 
 /datum/io_backend/test/check(job_id)
-	var/answer = GLOB.om_io_test_ready[job_id]
+	var/answer = GLOB.io_test_ready[job_id]
 	if(answer == "wait")
 		return RUSTG_JOB_NO_RESULTS_YET
-	GLOB.om_io_test_ready -= job_id
+	GLOB.io_test_ready -= job_id
 	return answer
 
 /datum/io_backend/test/decode(raw)
@@ -30,7 +30,7 @@ GLOBAL_VAR_INIT(om_io_test_seq, 0)
 		return list(null, "failed")
 	return list(raw, null)
 
-/// A plain callback owner; these tests do not depend on an OM record or scheduler.
+/// A plain callback owner; these tests do not depend on an scheduler record or scheduler.
 /datum/io_test_entity
 	var/list/log
 
@@ -44,11 +44,11 @@ GLOBAL_VAR_INIT(om_io_test_seq, 0)
 /datum/unit_test/io_transport/Run()
 	test_driver_begin()
 	saved_lane = GLOB.io_lane
-	saved_ready = GLOB.om_io_test_ready
-	saved_seq = GLOB.om_io_test_seq
+	saved_ready = GLOB.io_test_ready
+	saved_seq = GLOB.io_test_seq
 	set_global("io_lane", new /datum/io_lane)
-	set_global("om_io_test_ready", list())
-	set_global("om_io_test_seq", 0)
+	set_global("io_test_ready", list())
+	set_global("io_test_seq", 0)
 	set_global("dx_exec_stats", list())
 	set_global("dview_mob", GLOB.dview_mob)
 	defer_cleanup(src, PROC_REF(finish_io_test))
@@ -60,8 +60,8 @@ GLOBAL_VAR_INIT(om_io_test_seq, 0)
 		qdel(J)
 	qdel(GLOB.io_lane, force = TRUE)
 	set_global("io_lane", saved_lane)
-	set_global("om_io_test_ready", saved_ready)
-	set_global("om_io_test_seq", saved_seq)
+	set_global("io_test_ready", saved_ready)
+	set_global("io_test_seq", saved_seq)
 	saved_lane = null
 	saved_ready = null
 	test_driver_end()
@@ -124,8 +124,8 @@ GLOBAL_VAR_INIT(om_io_test_seq, 0)
 	TEST_ASSERT(diag["test"]?["pending"] == 2 && diag["test"]?["queued"] == 1, "jobs over the kind's limit queue")
 	test_time(0.1 SECONDS)
 	TEST_ASSERT(!length(E.log), "queued jobs wait while the in-flight ones are unanswered")
-	for(var/id in GLOB.om_io_test_ready)
-		GLOB.om_io_test_ready[id] = "done"
+	for(var/id in GLOB.io_test_ready)
+		GLOB.io_test_ready[id] = "done"
 	test_time(0.1 SECONDS)
 	TEST_ASSERT(("1:done:" in E.log) && ("2:done:" in E.log), "in-flight jobs deliver")
 	test_time(0.1 SECONDS)
