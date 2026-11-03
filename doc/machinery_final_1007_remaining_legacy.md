@@ -112,8 +112,8 @@ Ownership helper compatibility path; separate ownership/containment conversion, 
 
 ## `own_move` — 7
 Ownership helper compatibility path; separate ownership/containment conversion, preserves release/delete/move policy.
-- `code/content/machinery/machinery.dm:552` — `own_move(B, src, nameof(component_parts))`
-- `code/content/machinery/machinery.dm:603` — `own_move(M, A, nameof(A.circuit)) // the board moves from the machine to the frame (CONTAINED there)`
+- `code/domains/world_model/obj/machinery.dm:552` — `own_move(B, src, nameof(component_parts))`
+- `code/domains/world_model/obj/machinery.dm:603` — `own_move(M, A, nameof(A.circuit)) // the board moves from the machine to the frame (CONTAINED there)`
 - `code/game/machinery/protean_reconstitutor.dm:292` — `own_move(salvaged_brain, BR, nameof(BR.stored_mmi)) //...and implant the salvaged mmi in its place (from our protean_brain)`
 - `code/game/machinery/computer/cloning.dm:90` — `own_move(BR, pod, nameof(pod.growing_record))`
 - `code/game/machinery/computer/cloning.dm:386` — `own_move(C, pod, nameof(/obj/machinery/clonepod::growing_record))`
@@ -130,8 +130,8 @@ Ownership helper compatibility path; separate ownership/containment conversion, 
 ## `own_take_member` — 7
 Ownership helper compatibility path; separate ownership/containment conversion, preserves release/delete/move policy.
 - `code/game/machinery/cloning.dm:485` — `own_take_member(src, nameof(containers), G)`
-- `code/content/machinery/machinery.dm:518` — `own_take_member(src, nameof(component_parts), C)`
-- `code/content/machinery/machinery.dm:550` — `own_take_member(src, nameof(component_parts), A)`
+- `code/domains/world_model/obj/machinery.dm:518` — `own_take_member(src, nameof(component_parts), C)`
+- `code/domains/world_model/obj/machinery.dm:550` — `own_take_member(src, nameof(component_parts), A)`
 - `code/game/machinery/telecrystal_storage.dm:19` — `own_take_member(src, nameof(item_records), I)`
 - `code/game/machinery/washing_machine.dm:89` — `own_take_member(src, nameof(washing), HH)`
 - `code/modules/power/batteryrack.dm:170` — `own_take_member(src, nameof(/obj/machinery/power/smes/batteryrack::internal_cells), C)`

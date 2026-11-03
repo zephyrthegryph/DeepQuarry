@@ -181,14 +181,14 @@ record_accessor_prefixes = ["set_", "get_"]
 # least 40 characters and names the hot reader (a .dm file and the proc); a row whose var no longer exists fails (`hot_home`).
 "/atom/can_atmos_pass" = "read per turf update for each object on the turf: air_block_mask folds it (code/domains/atmos/environmental/LINDA_system.dm:58)"
 "/atom/movable/pressure_resistance" = "read per spacewind move: experience_pressure_difference move_prob (code/domains/atmos/environmental/LINDA_turf_tile.dm:338)"
-"/atom/flags" = "read on every move and bump scan: ON_BORDER tests in /turf/Enter and contains_dense_objects (code/content/turfs/turf.dm:349), held by all atoms"
+"/atom/flags" = "read on every move and bump scan: ON_BORDER tests in /turf/Enter and contains_dense_objects (code/domains/world_model/turf/turf.dm:349), held by all atoms"
 "/atom/pass_flags" = "read on every CanPass test of every move and projectile pass: pass_flags & passflag (code/content/atom/_atom.dm:439), held by all atoms"
-"/atom/movable/movement_type" = "read per entering mover: CHECK_BITFIELD(mover.movement_type, UNSTOPPABLE) in /turf/Enter (code/content/turfs/turf.dm:335)"
-"/atom/movable/moving_diagonally" = "read and written on every diagonal step: the state machine in Move() (code/content/atom/atoms_movable.dm:232-250), held by all movables"
-"/atom/movable/l_move_time" = "read on every Move(): move_speed = world.time - l_move_time (code/content/atom/atoms_movable.dm:294), held by all movables"
+"/atom/movable/movement_type" = "read per entering mover: CHECK_BITFIELD(mover.movement_type, UNSTOPPABLE) in /turf/Enter (code/domains/world_model/turf/turf.dm:335)"
+"/atom/movable/moving_diagonally" = "read and written on every diagonal step: the state machine in Move() (code/domains/world_model/atom/atoms_movable.dm:232-250), held by all movables"
+"/atom/movable/l_move_time" = "read on every Move(): move_speed = world.time - l_move_time (code/domains/world_model/atom/atoms_movable.dm:294), held by all movables"
 "/mob/m_intent" = "read on every step: walk-versus-run delay in living_movement.dm (code/content/mob/living/living_movement.dm:20) and mob_movement.dm:21"
 "/mob/living/now_pushing" = "read on every bump into a movable: the push guard in living_movement.dm (code/content/mob/living/living_movement.dm:51) and carbon.dm:382"
-"/mob/track_blood" = "read on every human footstep: blood tracking in /turf/simulated/Entered (code/content/turfs/simulated.dm:108-116), held by all mobs"
+"/mob/track_blood" = "read on every human footstep: blood tracking in /turf/simulated/Entered (code/domains/world_model/turf/simulated.dm:108-116), held by all mobs"
 
 [lint.decl]
 # decl_lint.py EXEMPT: tests and benchmarks build the forbidden things on purpose. (No TGS exemption here:
@@ -938,7 +938,7 @@ rust_state_allow = ["code/__defines/verdigris/_bindings.dm"]
 slot_flags_allow = ["code/datums/properties/", "code/content/properties/"]
 # the volatile abductor RTG's asplod lifecycle; the generic machinery explosion damage itself
 machinery_qdel_allow = ["code/content/power/port_gen.dm"]
-machinery_ex_act_allow = ["code/content/machinery/machinery.dm"]
+machinery_ex_act_allow = ["code/domains/world_model/obj/machinery.dm"]
 
 # The count ratchets of check_grep.sh: a rule over its ceiling fails (`analyze baseline --update`
 # lowers a ceiling, never raises it). The colour-macro count is MACRO_COUNT in dependencies.sh.
