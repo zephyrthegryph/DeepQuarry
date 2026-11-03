@@ -2885,7 +2885,7 @@
 #include "code\content\machinery\hologram.dm"
 #include "code\content\machinery\iv_drip.dm"
 #include "code\content\machinery\jukebox.dm"
-#include "code\domains\world_model\obj\machinery.dm"
+#include "code\content\machinery\machinery.dm"
 #include "code\content\machinery\machinery_power.dm"
 #include "code\content\machinery\medical_kiosk.dm"
 #include "code\content\machinery\newscaster.dm"

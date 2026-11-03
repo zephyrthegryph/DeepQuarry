@@ -4594,3 +4594,4 @@ code/content/eventkit/gm_interfaces/fake_pda_conversations.dm	code/content/event
 code/content/eventkit/gm_interfaces/mob_spawner.dm	code/content/events/eventkit/gm_interfaces/mob_spawner.dm
 code/content/eventkit/medical_issues.dm	code/content/events/eventkit/medical_issues.dm
 code/content/game_masters/_common.dm	code/content/gamemaster/game_master.dm
+code/domains/world_model/obj/machinery.dm	code/content/machinery/machinery.dm

@@ -937,7 +937,7 @@ rust_state_allow = ["code/__defines/verdigris/_bindings.dm"]
 slot_flags_allow = ["code/datums/properties/", "code/content/properties/"]
 # the volatile abductor RTG's asplod lifecycle; the generic machinery explosion damage itself
 machinery_qdel_allow = ["code/content/power/port_gen.dm"]
-machinery_ex_act_allow = ["code/domains/world_model/obj/machinery.dm"]
+machinery_ex_act_allow = ["code/content/machinery/machinery.dm"]
 
 # The count ratchets of check_grep.sh: a rule over its ceiling fails (`analyze baseline --update`
 # lowers a ceiling, never raises it). The colour-macro count is MACRO_COUNT in dependencies.sh.
