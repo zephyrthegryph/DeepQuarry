@@ -305,7 +305,8 @@
 		tracked_changed(src, nameof(dir))
 	if(sparse_get_or(src, blocks_light, FALSE))
 		light_blocking_moved(old_loc)
-	PUBLISH(src, move, old_loc = old_loc, direction = direction, forced = forced)
+	if(WANTS(src, /datum/notice/moved))
+		PUBLISH(src, move, old_loc = old_loc, direction = direction, forced = forced)
 	// A window watching this thing as its host re-checks its status (code/modules/tgui/ui_status.dm); nobody else reads this key.
 	if(rx?.observed)
 		PUBLISH_CHANGE(src, ATOM_KEY_LOC)
