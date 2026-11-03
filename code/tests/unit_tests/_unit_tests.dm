@@ -1260,6 +1260,7 @@
 #include "../benchmarks/apc_flip.dm"
 #include "../benchmarks/station_explosion.dm"
 #include "../benchmarks/server_phases.dm"
+#include "../benchmarks/move_integrity.dm"
 #include "../benchmarks/shuttle_landing.dm"
 #include "../benchmarks/join_cost.dm"
 #include "../benchmarks/mapload_init.dm"

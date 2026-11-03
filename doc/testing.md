@@ -752,6 +752,7 @@ Juke options take `=`: write `--scenario=a,b`, not `--scenario a,b`.
 | `generation` | Expedition station generation and release; `cycles` > 1 is a leak soak. | `cycles`, `seed` |
 | `sm_soak` | Repeated supermatter-scale blasts plus five minutes of recovery. Use the full map. | `blasts` (4), `profile_types` |
 | `kernel_overhead` | What the kernel measurement itself costs: a charge, a tick usage read pair, a histogram add, and a closed tick with every registered system charged. | `calls` (200000) |
+| `move_integrity` | Per-call cost of a mover's `Move()`/`forceMove()`, the sparse `last_move` set and get, `get_integrity()`, `update_integrity()` and a damage/repair pair, against plain var access in the same loop (best of `rounds`). | `steps` (50000), `rounds` (5) |
 | `rustg_dispatch` | Per-call cost of rust-g `hash_string`, `json_is_valid` and `log_write` through a cached `load_ext()` handle against by-name `call_ext`. On 2026-09-23 (loaded machine, three boots) the handle showed no consistent gain, so `code/__defines/rust_g.dm` still calls by name. | `calls` (20000), `rounds` (5) |
 
 **What gets recorded.** Each invocation is one file in `data/bench/runs/`
