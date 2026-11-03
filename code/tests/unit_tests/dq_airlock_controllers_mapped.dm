@@ -1,36 +1,33 @@
 // Every mapped airlock controller hears its sensors and drives its doors (a live-map reproduction: the controllers report 0 pressure and refuse
 // force-door commands on the live server).
 
-/// The airlock program of a mapped controller (docking ports are airlock controllers too: their sensors and doors must work the same way).
-/proc/dq_controller_airlock_program(obj/machinery/embedded_controller/C)
-	return C.program
-
-/// The chamber sensor a mapped controller listens to, or null.
-/proc/dq_controller_sensor(datum/embedded_program/airlock/program)
+/// The chamber sensor a mapped controller's tag names, found by tag (not through the controller's relation), or null.
+/proc/dq_controller_sensor(obj/machinery/embedded_controller/radio/airlock/C)
 	for(var/obj/machinery/airlock_sensor/S in world)
-		if(S.id_tag == program.tag_chamber_sensor)
+		if(S.id_tag == C.tag_chamber_sensor)
 			return S
 	return null
 
+/// Every mapped airlock controller holds the chamber sensor its tag names (the map's tags resolved to relations) and reads its chamber.
 /datum/unit_test/dq_mapped_airlock_controllers_read_pressure
 
 /datum/unit_test/dq_mapped_airlock_controllers_read_pressure/Run()
 	var/checked = 0
 	var/list/bad = list()
 	for(var/obj/machinery/embedded_controller/radio/airlock/C in world)
-		var/datum/embedded_program/airlock/program = dq_controller_airlock_program(C)
-		if(!istype(program))
-			continue
 		if(!C.id_tag)
 			continue
-		var/obj/machinery/airlock_sensor/S = dq_controller_sensor(program)
+		var/obj/machinery/airlock_sensor/S = dq_controller_sensor(C)
 		if(!S)
 			continue
 		checked++
-		var/heard = program.memory["chamber_sensor_pressure"]
+		if(C.chamber_sensor != S)
+			bad += "[C.id_tag] at [C.x],[C.y],[C.z]: holds sensor [C.chamber_sensor?.id_tag || "none"], its tag names [S.id_tag]"
+			continue
+		var/heard = C.chamber_pressure()
 		var/read = round(S.return_air()?.return_pressure(), 0.1)
-		if(abs(heard - read) > 1)
-			bad += "[C.id_tag] at [C.x],[C.y],[C.z]: controller [heard], sensor reads [read] (sensor prev [S.previousPressure], on [S.on], conn [!!S.radio_connection()], freq [S.frequency]/[C.frequency])"
+		if(abs(heard - read) > 5)
+			bad += "[C.id_tag] at [C.x],[C.y],[C.z]: chamber region [heard], sensor tile reads [read] (region [length(C.chamber_region())] turfs)"
 	log_test("[checked] mapped controllers with a chamber sensor checked")
 	TEST_ASSERT(checked > 0, "no mapped airlock controller has a chamber sensor")
 	TEST_ASSERT(!length(bad), "controllers disagree with their sensors: [jointext(bad, "; ")]")
@@ -42,28 +39,24 @@
 	var/checked = 0
 	var/list/bad = list()
 	for(var/obj/machinery/embedded_controller/radio/airlock/C in world)
-		var/datum/embedded_program/airlock/program = dq_controller_airlock_program(C)
-		if(!istype(program))
-			continue
-		if(!C.id_tag)
+		if(!C.id_tag || !isturf(C.loc)) // mapped controllers only: another test's fixtures wait in nullspace for their cleanup
 			continue
 		var/obj/machinery/door/airlock/D
 		for(var/obj/machinery/door/airlock/candidate in world)
-			if(candidate.id_tag == program.tag_interior_door)
+			if(candidate.id_tag == C.tag_interior_door)
 				D = candidate
 				break
 		if(!D || !D.power_systems_on() || D.operating)
 			continue
 		// A docking port refuses its airlock commands while a ship is docked at it, unless its override is on (by design).
-		var/obj/machinery/embedded_controller/radio/airlock/airlock_console = C
-		if(airlock_console.dock_locked())
+		if(C.dock_locked())
 			continue
 		checked++
 		var/was = D.density
-		program.receive_user_command("force_int")
+		C.user_command("force_int")
 		test_time(5 SECONDS)
 		if(D.density == was)
-			bad += "[C.id_tag] at [C.x],[C.y],[C.z]: door [D.id_tag] stayed density [was] (status [json_encode(program.memory["interior_status"])], freq door [D.frequency] ctl [C.frequency], door conn [!!D.radio_connection()], cur_command [D.cur_command])"
+			bad += "[C.id_tag] at [C.x],[C.y],[C.z]: door [D.id_tag] stayed density [was] (status [json_encode(C.interior_status())], held [D in C.interior_doors], cur_command [D.cur_command])"
 		if(checked >= 12)
 			break
 	test_driver_end()

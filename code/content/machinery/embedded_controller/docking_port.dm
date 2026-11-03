@@ -301,7 +301,7 @@ SETTER(/datum/docking_port, dock_state)
 /datum/docking_port/proc/user_command(command)
 	switch(command)
 		if("toggle_override")
-			override_enabled = !override_enabled
+			set_override_enabled(!override_enabled)
 			return TRUE
 		if("force_door")
 			if(override_enabled)

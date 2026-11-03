@@ -3,59 +3,55 @@
 	layer = ABOVE_WINDOW_LAYER
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	var/datum/embedded_program/program	//the currently executing program
 	/// The docking port this console runs (a docking console's type sets it to the port type it makes), or null.
 	var/datum/docking_port/port
 	var/list/valid_actions
 	on = 1
 
-/// TRUE while the program is cycling (its memory's "processing"): work_step() writes it each step, the display shows it.
+/// TRUE while the controller has work (a cycle, a docking handshake): work_step() writes it each step, the display shows it.
 /obj/machinery/embedded_controller/var/processing_shown = FALSE
 
 CAPABILITIES(/obj/machinery/embedded_controller)
 	configure(uses_power(idle = 10))
 	silicon_ui()
 	started_work(step = PROC_REF(work_step))
-	owns_one(nameof(program), /datum/embedded_program, starts = nameof(program))
 	owns_one(nameof(port), /datum/docking_port, starts = nameof(port))
 	interface("EmbeddedController")
-	// the window's buttons are its program's commands (the old UI_ACT_FALLBACK): every action no other op names, if the type lists it
+	// the window's buttons are its commands (the old UI_ACT_FALLBACK): every action no other op names, if the type lists it
 	op("program_command", ui_act("*"), needs(req(PROC_REF(command_listed), silent = TRUE)), then(PROC_REF(ui_act_program_command)))
 	op("embedded_controller_open_ui", hand(), ungated(), then(PROC_REF(interaction_open_ui_impl)))
 
-/obj/machinery/embedded_controller/examine(mob/user, infix, suffix)
-	. = ..()
-	if(in_range(src, user))
-		. += "It has an ID tag of \"[program?.id_tag]\""
-
-/obj/machinery/embedded_controller/proc/post_signal(datum/signal/signal, comm_line)
-	return 0
-
-/obj/machinery/embedded_controller/receive_signal(datum/signal/signal, receive_method, receive_param)
-	if(!signal || signal.encryption) return
-
-	if(program)
-		program.receive_signal(signal, receive_method, receive_param)
-		if(program.signal_requires_processing(signal, receive_method, receive_param))
-			work_start(src)
 
 
-/// The controller's actions are its program's commands, listed per type in valid_actions.
+
+/// The controller's actions are its commands, listed per type in valid_actions.
 /obj/machinery/embedded_controller/proc/command_listed(datum/act/op/A)
 	return ((A.window_action() in valid_actions)) ? null : MSG(req_failed)
 
-/// A program command from the window.
+/// A command from the window.
 /obj/machinery/embedded_controller/proc/ui_act_program_command(datum/act/op/A)
 	add_fingerprint(A.actor)
 	work_start(src)
 	run_command(A.window_action())
 	return TRUE
 
-/// A command from the window: the docking port takes its own, the program the rest.
+/// A command from the window: the docking port takes its own, the console the rest.
 /obj/machinery/embedded_controller/proc/run_command(command)
 	if(port?.user_command(command))
 		return TRUE
-	return program?.receive_user_command(command)
+	return user_command(command)
+
+/// The console's own commands (an airlock's cycle buttons); TRUE when it took the command.
+/obj/machinery/embedded_controller/proc/user_command(command)
+	return FALSE
+
+/// The console's own step (an airlock's cycle).
+/obj/machinery/embedded_controller/proc/controller_step()
+	return
+
+/// Whether the console's own work keeps it stepping.
+/obj/machinery/embedded_controller/proc/needs_step()
+	return FALSE
 
 /// The airlocks a docking port on this console cycles (its relations; none by default).
 /obj/machinery/embedded_controller/proc/port_airlocks()
@@ -66,11 +62,10 @@ CAPABILITIES(/obj/machinery/embedded_controller)
 	return list()
 
 /obj/machinery/embedded_controller/proc/work_step(datum/act/timer/A)
-	if(program)
-		program.periodic_step()
+	controller_step()
 	port?.handshake_step()
 
-	var/working = !!program?.needs_processing() || !!port?.needs_step()
+	var/working = !!needs_step() || !!port?.needs_step()
 	set_processing_shown(working)
 	if(!working)
 		return PROCESS_KILL
@@ -106,27 +101,25 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio)
 	configure(movable_motion(unacidable = TRUE))
 	configure(uses_power(channel = ENVIRON))
 	ref_one(nameof(radio_connection), /datum/radio_frequency)
-	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // tuned from init (a program reads no radio at construction)
+	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // tuned from init: an airlock hears its buttons' commands (airlock_cycle.dm receive_signal())
 
 /// The state names of the controller's display ("<base>_off", "_standby", "_process").
 /obj/machinery/embedded_controller/radio/var/display_base = "airlock_control"
 
-/// What the controller shows: off without a program or while switched off, else standing by or cycling.
+/// What the controller shows: off while switched off, else standing by or working.
 /obj/machinery/embedded_controller/radio/draw(datum/look/look)
 	..()
-	if(!on || !program)
+	if(!on)
 		look.state("[display_base]_off")
 	else
 		look.state("[display_base]_[processing_shown ? "process" : "standby"]")
 
 
-/obj/machinery/embedded_controller/radio/post_signal(datum/signal/signal, radio_filter = null)
-	signal.transmission_method = TRANSMISSION_RADIO
-	if(radio_connection())
-		//use_power(radio_power_use)	//neat idea, but causes way too much lag.
-		return radio_connection().post_signal(src, signal, radio_filter)
-	else
-		spent(signal)
+/obj/machinery/embedded_controller/radio/examine(mob/user, infix, suffix)
+	. = ..()
+	if(in_range(src, user))
+		. += "It has an ID tag of \"[id_tag]\""
+
 
 /obj/machinery/embedded_controller/radio/proc/set_frequency(new_frequency)
 	SSradio.remove_object(src, frequency)

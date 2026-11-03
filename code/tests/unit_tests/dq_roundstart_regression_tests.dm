@@ -62,7 +62,5 @@
 	if(M)
 		out += "controller [M.type] on [M.on] power [M.powered()]"
 	for(var/obj/machinery/embedded_controller/radio/airlock/A as anything in D.airlocks())
-		var/datum/embedded_program/airlock/P = A.program
-		if(P)
-			out += "airlock [A.id_tag] on [A.on] power [A.powered()] docked [!!A.docked_port] override [A.override_enabled]: cycle state [P.state] target [P.target_state] done [P.done_cycling()] processing [P.memory["processing"]] pressure [P.memory["chamber_sensor_pressure"]] target_pressure [P.memory["target_pressure"]] int [P.memory["interior_status"]?["state"]] ext [P.memory["exterior_status"]?["state"]]"
+		out += "airlock [A.id_tag] on [A.on] power [A.powered()] docked [!!A.docked_port] override [A.override_enabled]: cycle state [A.cycle_state] target [A.target_state] done [A.done_cycling()] pressure [A.chamber_pressure()] target_pressure [A.target_pressure] pumps [A.pumps_running()] int [A.interior_status()["state"]] ext [A.exterior_status()["state"]]"
 	return jointext(out, "; ")

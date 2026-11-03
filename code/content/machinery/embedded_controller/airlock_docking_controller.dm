@@ -1,4 +1,4 @@
-// A docking port that is one airlock: the controller is the airlock (its cycle program, doors and pump) and also runs the port
+// A docking port that is one airlock: the controller is the airlock (its cycle, doors and pump) and also runs the port
 // (/datum/docking_port), whose one airlock is itself. While a ship is docked the airlock refuses its own commands unless the port's
 // override is on.
 /obj/machinery/embedded_controller/radio/airlock/docking_port
@@ -30,10 +30,10 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock/docking_port)
 /// The window's data.
 /obj/machinery/embedded_controller/radio/airlock/docking_port/ui_data(datum/act/eval/A)
 	. = list(
-		"chamber_pressure" = round(program.memory["chamber_sensor_pressure"]),
-		"exterior_status" = program.memory["exterior_status"],
-		"interior_status" = program.memory["interior_status"],
-		"processing" = program.memory["processing"],
+		"chamber_pressure" = round(chamber_pressure()),
+		"exterior_status" = exterior_status(),
+		"interior_status" = interior_status(),
+		"processing" = cycling(),
 		"docking_status" = port.get_docking_status(),
 		"airlock_disabled" = !(port.undocked() || port.override_enabled),
 		"override_enabled" = port.override_enabled,

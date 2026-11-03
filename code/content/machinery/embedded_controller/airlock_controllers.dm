@@ -1,8 +1,7 @@
-//base type for controllers of two-door systems
+//base type for controllers of two-door systems: the airlock itself (its cycle is in airlock_cycle.dm)
 /obj/machinery/embedded_controller/radio/airlock
-	// Setup parameters only
 	radio_filter = RADIO_AIRLOCK
-	program = /datum/embedded_program/airlock
+	// The map's device tags: each one is the keyed relation it names (airlock_cycle.dm), defaulted from id_tag at setup.
 	var/tag_exterior_door
 	var/tag_interior_door
 	var/tag_airpump
@@ -17,52 +16,45 @@
 	layer = ABOVE_WINDOW_LAYER
 
 	var/deconstructable = FALSE
+	/// The docking port that has this airlock docked (from its prepare until the undock finishes), or null.
+	var/datum/docking_port/docked_port
+	/// This airlock's own override: its port leaves it to the crew when docking (a multi-airlock port's children).
+	var/override_enabled = FALSE
 
-/// The docking port that has this airlock docked (from its prepare until the undock finishes), or null.
-/obj/machinery/embedded_controller/radio/airlock/var/datum/docking_port/docked_port
-/// This airlock's own override: its port leaves it to the crew when docking (a multi-airlock port's children).
-/obj/machinery/embedded_controller/radio/airlock/var/override_enabled = FALSE
+/// The tags an airlock console's panel edits: each is a var of the console, and a keyed relation re-links when it changes.
+GLOBAL_LIST_INIT(airlock_editable_tags, list("id_tag", "tag_exterior_door", "tag_interior_door", "tag_airpump", "tag_chamber_sensor", "tag_exterior_sensor", "tag_interior_sensor", "tag_airlock_mech_sensor", "tag_shuttle_mech_sensor"))
+
+/obj/machinery/embedded_controller/radio/airlock/proc/editable_tags()
+	return GLOB.airlock_editable_tags
 
 /// While docked, the airlock refuses its own cycle and door commands unless an override is on.
 /obj/machinery/embedded_controller/radio/airlock/proc/dock_locked()
 	return docked_port && !docked_port.override_enabled && !override_enabled
 
-/// Whether the port's commands leave this airlock alone (its own override; the port skips every command under its own).
-/obj/machinery/embedded_controller/radio/airlock/proc/dock_overridden()
-	return override_enabled
-
 // ---- what its docking port asks of it (direct calls: the airlock steps at once, nothing to wake for) ----
 
 /obj/machinery/embedded_controller/radio/airlock/proc/dock_prepare(datum/docking_port/P)
 	rel_set(src, nameof(docked_port), P)
-	if(!dock_overridden())
-		var/datum/embedded_program/airlock/A = program
-		A?.begin_dock_cycle()
-	work_start(src)
+	if(!override_enabled)
+		begin_dock_cycle()
 
 /obj/machinery/embedded_controller/radio/airlock/proc/dock_ready()
-	var/datum/embedded_program/airlock/A = program
-	return !A || A.done_cycling()
+	return done_cycling()
 
 /obj/machinery/embedded_controller/radio/airlock/proc/dock_finish()
-	if(!dock_overridden())
-		var/datum/embedded_program/airlock/A = program
-		A?.enable_mech_regulation()
-		A?.open_doors()
-	work_start(src)
+	if(!override_enabled)
+		set_mech_regulation(TRUE)
+		open_doors()
 
 /obj/machinery/embedded_controller/radio/airlock/proc/undock_prepare()
-	if(!dock_overridden())
-		var/datum/embedded_program/airlock/A = program
-		A?.stop_cycling()
-		A?.close_doors()
-		A?.disable_mech_regulation()
-	work_start(src)
+	if(!override_enabled)
+		stop_cycling()
+		close_doors()
+		set_mech_regulation(FALSE)
 
-/// Ready to leave: either door shut and bolted.
+/// Ready to leave: either door shut and bolted (read from the doors).
 /obj/machinery/embedded_controller/radio/airlock/proc/undock_ready()
-	var/datum/embedded_program/airlock/A = program
-	return !A || A.check_exterior_door_secured() || A.check_interior_door_secured()
+	return check_exterior_door_secured() || check_interior_door_secured()
 
 /obj/machinery/embedded_controller/radio/airlock/proc/undock_finish()
 	rel_set(src, nameof(docked_port), null)
@@ -95,8 +87,10 @@
 	data["max_freq"] = null
 
 	if(panel_open)
-		var/datum/embedded_program/airlock/airlock_program = program
-		data["tags"] = airlock_program.get_all_tags()
+		var/list/tags = list()
+		for(var/tag_name in editable_tags())
+			tags[tag_name] = vars[tag_name]
+		data["tags"] = tags
 
 		data["frequency"] = frequency
 		data["min_freq"] = RADIO_LOW_FREQ
@@ -104,9 +98,22 @@
 
 	return data
 
-// The tag and frequency settings are behind the maintenance panel (the program's commands are not: the old tgui_act() ran them before its panel check).
+// The tag and frequency settings are behind the maintenance panel (the console's commands are not: the old tgui_act() ran them before its panel check).
 CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock)
 	ref_one(nameof(docked_port), /datum/docking_port)
+	setup(PROC_REF(default_device_tags))
+	ref_many(nameof(exterior_doors), /obj/machinery/door/airlock, by = nameof(tag_exterior_door), target_key = nameof(/obj/machinery/door/airlock::id_tag))
+	ref_many(nameof(interior_doors), /obj/machinery/door/airlock, by = nameof(tag_interior_door), target_key = nameof(/obj/machinery/door/airlock::id_tag))
+	ref_many(nameof(chamber_pumps), /obj/machinery/atmospherics/unary/vent_pump, by = nameof(tag_airpump), target_key = nameof(/obj/machinery/atmospherics/unary/vent_pump::id_tag))
+	ref_many(nameof(chamber_dp_pumps), /obj/machinery/atmospherics/binary/dp_vent_pump, by = nameof(tag_airpump), target_key = nameof(/obj/machinery/atmospherics/binary/dp_vent_pump::id))
+	ref_many(nameof(pumps_out_internal), /obj/machinery/atmospherics/unary/vent_pump, by = nameof(tag_pump_out_internal), target_key = nameof(/obj/machinery/atmospherics/unary/vent_pump::id_tag))
+	ref_many(nameof(pumps_out_external), /obj/machinery/atmospherics/unary/vent_pump, by = nameof(tag_pump_out_external), target_key = nameof(/obj/machinery/atmospherics/unary/vent_pump::id_tag))
+	ref_one(nameof(chamber_sensor), /obj/machinery/airlock_sensor, by = nameof(tag_chamber_sensor), target_key = nameof(/obj/machinery/airlock_sensor::id_tag))
+	ref_one(nameof(exterior_sensor), /obj/machinery/airlock_sensor, by = nameof(tag_exterior_sensor), target_key = nameof(/obj/machinery/airlock_sensor::id_tag))
+	ref_one(nameof(interior_sensor), /obj/machinery/airlock_sensor, by = nameof(tag_interior_sensor), target_key = nameof(/obj/machinery/airlock_sensor::id_tag))
+	ref_many(nameof(airlock_mech_sensors), /obj/machinery/mech_sensor, by = nameof(tag_airlock_mech_sensor), target_key = nameof(/obj/machinery/mech_sensor::id_tag))
+	ref_many(nameof(shuttle_mech_sensors), /obj/machinery/mech_sensor, by = nameof(tag_shuttle_mech_sensor), target_key = nameof(/obj/machinery/mech_sensor::id_tag))
+	owns_many(nameof(chamber_watches), /datum/native_watch/gas)
 	configure(machine_rules(maintenance_flags = MACHINE_MAINT_STANDARD))
 	space(SPACE_PANEL, door = nameof(panel_open))
 	op("edit_tag", ui_act("edit_tag", arg("tag", schema_text(4096))), at(SPACE_PANEL),
@@ -124,15 +131,14 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock)
 	return "New [A.args["tag"]]?"
 
 /obj/machinery/embedded_controller/radio/airlock/proc/edit_tag_default(datum/act/op/A)
-	var/datum/embedded_program/airlock/airlock_program = program
-	return airlock_program?.get_tag(A.args["tag"])
+	var/tag_name = A.args["tag"]
+	return (tag_name in editable_tags()) ? vars[tag_name] : null
 
-/// The answered tag is set on the program.
+/// The answered tag is set: its keyed relation drops the old devices and links the new ones.
 /obj/machinery/embedded_controller/radio/airlock/proc/ui_act_edit_tag(datum/act/op/A, tag)
 	var/new_tag = A.step_value("tag")
-	var/datum/embedded_program/airlock/airlock_program = program
-	if(new_tag && airlock_program)
-		airlock_program.set_tag(tag, new_tag)
+	if(new_tag && (tag in editable_tags()))
+		keyed_set_id(src, tag, new_tag)
 	return TRUE
 
 /obj/machinery/embedded_controller/radio/airlock/proc/ui_act_set_frequency(datum/act/op/A, freq)
@@ -178,33 +184,29 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock)
 	look.hide("airlock_control_open")
 
 // Each controller's window picks its console by internalTemplateName (tgui/packages/tgui/interfaces/EmbeddedController/index.tsx throws
-// without one) and reads its program's state. The UI_DATA conversion (8039c1eb9f) dropped these three overrides, so every station airlock
-// controller's window opened blank; dq_ops_menu_airlock_controller_window pins them.
+// without one) and reads the airlock's state. dq_ops_menu_airlock_controller_window pins them.
 
 /obj/machinery/embedded_controller/radio/airlock/advanced_airlock_controller/ui_data(datum/act/eval/A)
 	. = ..()
-	var/list/memory = program?.memory
-	.["chamber_pressure"] = round(memory?["chamber_sensor_pressure"])
-	.["external_pressure"] = round(memory?["external_sensor_pressure"])
-	.["internal_pressure"] = round(memory?["internal_sensor_pressure"])
-	.["processing"] = memory?["processing"]
-	.["purge"] = memory?["purge"]
-	.["secure"] = memory?["secure"]
+	.["chamber_pressure"] = round(chamber_pressure())
+	.["external_pressure"] = round(external_pressure())
+	.["internal_pressure"] = round(internal_pressure())
+	.["processing"] = cycling()
+	.["purge"] = purge
+	.["secure"] = secure
 	.["internalTemplateName"] = "AirlockConsoleAdvanced"
 
 /obj/machinery/embedded_controller/radio/airlock/airlock_controller/ui_data(datum/act/eval/A)
 	. = ..()
-	var/list/memory = program?.memory
-	.["chamber_pressure"] = round(memory?["chamber_sensor_pressure"])
-	.["exterior_status"] = memory?["exterior_status"]
-	.["interior_status"] = memory?["interior_status"]
-	.["processing"] = memory?["processing"]
+	.["chamber_pressure"] = round(chamber_pressure())
+	.["exterior_status"] = exterior_status()
+	.["interior_status"] = interior_status()
+	.["processing"] = cycling()
 	.["internalTemplateName"] = "AirlockConsoleSimple"
 
 /obj/machinery/embedded_controller/radio/airlock/access_controller/ui_data(datum/act/eval/A)
 	. = ..()
-	var/list/memory = program?.memory
-	.["exterior_status"] = memory?["exterior_status"]
-	.["interior_status"] = memory?["interior_status"]
-	.["processing"] = memory?["processing"]
+	.["exterior_status"] = exterior_status()
+	.["interior_status"] = interior_status()
+	.["processing"] = cycling()
 	.["internalTemplateName"] = "DoorAccessConsole"

@@ -78,10 +78,11 @@ CAPABILITIES(/obj/effect/map_helper/airlock)
 	else if(istype(device, /obj/machinery/atmospherics/unary/vent_pump))
 		var/obj/machinery/atmospherics/unary/vent_pump/my_pump = device
 		my_pump.set_frequency(controller.frequency) // the setters re-tune it and re-key it in its area
-		my_pump.set_id_tag(controller.id_tag + tag_addon)
+		keyed_set_id(my_pump, nameof(my_pump.id_tag), controller.id_tag + tag_addon) // vents are keyed targets of their airlock by id_tag: a raw or setter write leaves the airlock's relation on the old tag
+		area_air_rekey(my_pump) // and its area's air alarms find it under the new one
 	else if(istype(device, /obj/machinery/airlock_sensor))
 		var/obj/machinery/airlock_sensor/my_sensor = device
-		my_sensor.id_tag = controller.id_tag + tag_addon
+		keyed_set_id(my_sensor, nameof(my_sensor.id_tag), controller.id_tag + tag_addon) // sensors are keyed targets of their airlock by id_tag
 		my_sensor.master_tag = controller.id_tag
 		my_sensor.frequency = controller.frequency
 		my_sensor.set_frequency(controller.frequency)

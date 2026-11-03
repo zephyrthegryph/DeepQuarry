@@ -52,10 +52,10 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/docking_port_multi)
 /// The window's data.
 /obj/machinery/embedded_controller/radio/airlock/docking_port_multi/ui_data(datum/act/eval/A)
 	. = list(
-		"chamber_pressure" = round(program.memory["chamber_sensor_pressure"]),
-		"exterior_status" = program.memory["exterior_status"],
-		"interior_status" = program.memory["interior_status"],
-		"processing" = program.memory["processing"],
+		"chamber_pressure" = round(chamber_pressure()),
+		"exterior_status" = exterior_status(),
+		"interior_status" = interior_status(),
+		"processing" = cycling(),
 		"docking_status" = docked_port ? docked_port.get_docking_status() : "undocked",
 		"airlock_disabled" = dock_locked(),
 		"override_enabled" = override_enabled,

@@ -34,9 +34,8 @@
 	. = list()
 	var/list/tags = list()
 	for(var/obj/machinery/embedded_controller/radio/airlock/C as anything in dq_dock_e2e_airlocks(D))
-		var/datum/embedded_program/airlock/P = C.program
-		tags += P.tag_interior_door
-		tags += P.tag_exterior_door
+		tags += C.tag_interior_door
+		tags += C.tag_exterior_door
 	if(istype(D.console, /obj/machinery/embedded_controller/radio/simple_docking_controller))
 		var/obj/machinery/embedded_controller/radio/simple_docking_controller/S = D.console
 		tags += S.tag_door
