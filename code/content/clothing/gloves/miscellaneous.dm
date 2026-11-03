@@ -51,8 +51,14 @@ CAPABILITIES(/obj/item/clothing/gloves/combat)
 	desc = "Sterile gloves."
 	icon_state = "latex"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
-	germ_level = 0
 	fingerprint_chance = 25
+
+/// Sterile gloves start clean: their surface germs read 0 while unset, not GERM_LEVEL_AMBIENT.
+/obj/item/clothing/gloves/sterile/germs()
+	return sparse_get_or(src, surface_germs, 0)
+
+/obj/item/clothing/gloves/sterile/set_germs(value)
+	sparse_set_or(src, surface_germs, value, 0)
 
 CAPABILITIES(/obj/item/clothing/gloves/sterile)
 	configure(item_protection(siemens = 1.0, permeability = 0.01))

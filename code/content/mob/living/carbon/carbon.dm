@@ -24,17 +24,18 @@
 	// frame while the clock is stopped by stasis) charges nothing, so re-runs cannot add creep.
 	var/cycles = !isnull(sparse_get(src, germs_rolled_at)) ? clamp((now - sparse_get(src, germs_rolled_at)) / LIFE_CYCLE, 0, GERM_CATCHUP_CYCLES) : 1
 	sparse_set(src, germs_rolled_at, now)
-	if(src.germ_level >= GERM_LEVEL_AMBIENT)	//if you're just standing there, you shouldn't get more germs beyond an ambient level
+	var/germs = germs()
+	if(germs >= GERM_LEVEL_AMBIENT)	//if you're just standing there, you shouldn't get more germs beyond an ambient level
 		return
 	var/expected = cycles * 0.3
 	var/gain = round(expected) + (prob((expected - round(expected)) * 100) ? 1 : 0)
 	if(gain)
-		src.germ_level = min(GERM_LEVEL_AMBIENT, src.germ_level + gain)
+		set_germs(min(GERM_LEVEL_AMBIENT, germs + gain))
 
 /// Lazy: germs creep up on the rewake; washing lowers them, and the next roll resumes the creep.
 
 /mob/living/carbon/proc/life_germs_rewake()
-	return src.germ_level < GERM_LEVEL_AMBIENT ? GERM_RESAMPLE : 0
+	return germs() < GERM_LEVEL_AMBIENT ? GERM_RESAMPLE : 0
 
 
 /mob/living/carbon/rejuvenate()
@@ -54,8 +55,8 @@
 		src.adjust_bodytemperature(2)
 
 	// Moving around increases germ_level faster
-	if(germ_level < GERM_LEVEL_MOVE_CAP && prob(8))
-		germ_level++
+	if(prob(8) && germs() < GERM_LEVEL_MOVE_CAP)
+		set_germs(germs() + 1)
 */
 /mob/living/carbon/gib()
 	for(var/mob/M in contents_of(src))

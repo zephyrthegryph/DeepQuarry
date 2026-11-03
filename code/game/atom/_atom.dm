@@ -10,7 +10,6 @@
 	var/flags = NONE
 	// was_bloodied, blood_color, fluorescent are the forensic_* vars (code/datums/sparse_vars/forensics.dm)
 	var/pass_flags = 0
-	var/germ_level = GERM_LEVEL_AMBIENT // The higher the germ level, the more germ on the atom.
 	var/simulated = TRUE //filter for actions - used by lighting overlays
 	// atom_say_verb removed (no subtype ever overrode it; inlined to "says" in atom_say)
 	var/datum/forensics_crime/forensic_data
@@ -82,10 +81,18 @@
 		rel_clear(src, nameof(managed_vis_overlays))
 	return ..()
 
+/// An atom's surface germ count: a sparse slot (code/content/sparse_vars/atom_state.dm), GERM_LEVEL_AMBIENT while unset.
+/// Organs keep their own infection var and override germs() and set_germs().
+/atom/proc/germs()
+	return sparse_get_or(src, surface_germs, GERM_LEVEL_AMBIENT)
+
+/atom/proc/set_germs(value)
+	sparse_set_or(src, surface_germs, value, GERM_LEVEL_AMBIENT)
+
 /// Shift this atom's surface germ count (never below 0). Organs override it
 /// with their infection clamp. The one writer for reagents and cleaning (P2-K5).
 /atom/proc/adjust_germ_level(amount)
-	germ_level = max(0, germ_level + amount)
+	set_germs(max(0, germs() + amount))
 
 /atom/proc/reveal_blood()
 	return
@@ -767,7 +774,7 @@ PROC_SUMMARY(/atom/proc/get_oversized_icon_offsets) // sampled: where a message 
 
 	forensic_data?.wash(clean_types)
 	dq_set_blood_color(src, null)
-	germ_level = 0
+	set_germs(0)
 	dq_set_fluorescent(src, 0)
 
 /// Its icon state (after() target for a state that reverts, like a flash of a sprite).

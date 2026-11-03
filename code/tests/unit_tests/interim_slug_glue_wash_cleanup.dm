@@ -19,10 +19,10 @@
 	TEST_ASSERT(glue.buckle_mob(actor), "the real glue buckles the actual actor through the public restraint API")
 	TEST_ASSERT_EQUAL(actor.buckled_to(), glue, "the actual actor's restraint relation references the exact original glue")
 	TEST_ASSERT(glue.has_buckled_mobs(), "the real glue records its actual restrained occupant")
-	glue.germ_level = 7
+	glue.set_germs(7)
 	TEST_ASSERT(!glue.wash(CLEAN_RAD), "real radiation-only cleaning does not satisfy the existing scrub mask")
 	TEST_ASSERT(!QDELETED(glue), "unsupported cleaning preserves the exact original glue")
-	TEST_ASSERT_EQUAL(glue.germ_level, 0, "unsupported cleaning still runs the original parent wash consequences")
+	TEST_ASSERT_EQUAL(glue.germs(), 0, "unsupported cleaning still runs the original parent wash consequences")
 	TEST_ASSERT_EQUAL(glue.owner_slug, slug, "unsupported cleaning preserves the original owner relation")
 	TEST_ASSERT_EQUAL(slug.slime_count, 1, "unsupported cleaning preserves the exact owner registration count")
 	TEST_ASSERT_EQUAL(actor.buckled_to(), glue, "unsupported cleaning preserves the original actual restraint")

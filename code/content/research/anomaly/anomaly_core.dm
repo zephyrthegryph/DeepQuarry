@@ -221,7 +221,7 @@ CAPABILITIES(/obj/item/assembly/signaler/anomaly)
 		return
 	new /obj/effect/temp_visual/circle_wave/dirt(get_turf(src))
 	for(var/mob/living/carbon/human/person in view(get_turf(src), 2))
-		person.germ_level += rand(5, 10)
+		person.adjust_germ_level(rand(5, 10))
 		if(HAS_SYNTHETIC_BIOLOGY(person))
 			continue
 		if(person.is_mouth_covered())
