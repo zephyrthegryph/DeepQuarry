@@ -33,12 +33,8 @@
 
 	// chat_color, chat_color_name, chat_color_darkened moved to GLOB sparse maps in atom_var_components.dm
 	//! Colors
-	/**
-	 * used to store the different colors on an atom
-	 *
-	 * its inherent color, the colored paint applied on it, special color effect etc...
-	 */
-	var/list/atom_colours
+	// The colours stacked on an atom by priority (its inherent colour, paint, a special effect...) are the sparse slot atom_colours
+	// (code/content/sparse_vars/atom_state.dm): most atoms never get one.
 	// update_on_z moved to GLOB.update_on_z_by_atom (sparse map).
 	// Saves the var entry from every /atom subtype's init table.
 	// Use SET_UPDATE_ON_Z / GET_UPDATE_ON_Z macros (see observer_listener helpers).
@@ -644,31 +640,33 @@ READS_AS(/proc/passable_of, PASSABLE_KEY)
 		return
 	if(colour_priority > COLOUR_PRIORITY_AMOUNT)
 		return
-	var/list/new_colours = length(atom_colours) ? atom_colours.Copy() : list()
+	var/list/colours = sparse_get(src, atom_colours)
+	var/list/new_colours = length(colours) ? colours.Copy() : list()
 	if(new_colours.len < COLOUR_PRIORITY_AMOUNT)
 		new_colours.len = COLOUR_PRIORITY_AMOUNT //four priority levels currently.
 	new_colours[colour_priority] = coloration
-	atom_colours = intern_list(new_colours)
+	sparse_set(src, atom_colours, intern_list(new_colours))
 	update_atom_colour()
 
 /// Removes an instance of colour_type from the atom's atom_colours list
 /atom/proc/remove_atom_colour(colour_priority, coloration)
-	if(!atom_colours) // Nothing to remove; don't allocate the priority list just to find that out.
+	var/list/colours = sparse_get(src, atom_colours)
+	if(!colours) // Nothing to remove; don't allocate the priority list just to find that out.
 		update_atom_colour()
 		return
-	if(colour_priority > atom_colours.len)
+	if(colour_priority > colours.len)
 		return
-	if(coloration && atom_colours[colour_priority] != coloration)
+	if(coloration && colours[colour_priority] != coloration)
 		return //if we don't have the expected color (for a specific priority) to remove, do nothing
-	var/list/new_colours = atom_colours.Copy()
+	var/list/new_colours = colours.Copy()
 	new_colours[colour_priority] = null
-	atom_colours = intern_list(new_colours)
+	sparse_set(src, atom_colours, intern_list(new_colours))
 	update_atom_colour()
 
 /// Resets the atom's color to null, and then sets it to the highest priority colour available
 /atom/proc/update_atom_colour()
 	set_color(null)
-	for(var/C in atom_colours)
+	for(var/C in sparse_get(src, atom_colours))
 		if(islist(C))
 			var/list/L = C
 			if(L.len)
@@ -768,7 +766,8 @@ PROC_SUMMARY(/atom/proc/get_oversized_icon_offsets) // sampled: where a message 
 	. = FALSE
 
 	// Basically "if has washable coloration"
-	if(length(atom_colours) >= WASHABLE_COLOUR_PRIORITY && atom_colours[WASHABLE_COLOUR_PRIORITY])
+	var/list/colours = sparse_get(src, atom_colours)
+	if(length(colours) >= WASHABLE_COLOUR_PRIORITY && colours[WASHABLE_COLOUR_PRIORITY])
 		remove_atom_colour(WASHABLE_COLOUR_PRIORITY)
 
 	forensic_data?.wash(clean_types)
