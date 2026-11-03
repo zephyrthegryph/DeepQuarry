@@ -23,8 +23,8 @@ const DEFINES: &str = "code/__defines/verb_categories.dm";
 const HINT: &str = "use a VERB_CAT_* define from code/__defines/verb_categories.dm";
 
 static META: Meta = Meta {
-    name: "verb_category",
-    group: "",
+    name: crate::allow_registry_fields::verb_category::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::verb_category::SCOPE_META_0.group,
     label: "verb_category",
     legacy: "tools/ci/verb_category_lint.py",
     select: Select::dm(&[("code", "dm"), ("interface", "dm")]),
@@ -39,7 +39,7 @@ static META: Meta = Meta {
     },
     rules: &[RuleMeta { name: "raw_category", hint: HINT }, RuleMeta { name: "duplicate_define", hint: HINT }],
     allow: crate::allow_registry_fields::verb_category::ALLOW_0,
-    lists: &[],
+    lists: crate::allow_registry_fields::verb_category::SCOPE_META_0.lists,
 };
 
 struct VerbCategory;

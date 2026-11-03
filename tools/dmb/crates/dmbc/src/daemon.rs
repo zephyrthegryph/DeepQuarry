@@ -19,6 +19,7 @@ pub(crate) mod prepare_deadline;
 #[cfg(windows)]
 mod windows_spawn;
 mod protocol;
+mod retained_rejection;
 pub mod query;
 pub mod generation;
 pub mod analyze;
@@ -388,3 +389,8 @@ mod output_tests {
         assert!(std::panic::catch_unwind(|| crate::daemon_eprintln!("diagnostic")).is_err());
     }
 }
+
+/// Serialize only an actual retained native preparation failure. False means
+/// the caller must keep its existing ordinary error transport. No raw text or
+/// caller-supplied status can obtain a native source/diagnostic grant here.
+pub fn write_retained_preparation_rejection(output:&mut impl std::io::Write,error:&(dyn std::error::Error+'static))->std::io::Result<bool>{match crate::diagnostics::retained_preparation_failure_parts(error){Some((kind,message))=>{retained_rejection::send_rejected_text(output,kind,message)?;Ok(true)},None=>Ok(false)}}

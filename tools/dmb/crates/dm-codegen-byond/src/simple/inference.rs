@@ -179,7 +179,7 @@ impl Compiler<'_> {
                 // A bare word before `=` is the name as text, `null` included (`list(null = x)` has the key "null").
                 let name = match &lhs.kind {
                     ExprKind::Ident(name) => Some(name.as_str()),
-                    ExprKind::Literal(value) if value == "null" => Some("null"),
+                    ExprKind::Literal(value) if value.original_value().is_none() && value == "null" => Some("null"),
                     _ => None,
                 };
                 if let Some(name) = name {
@@ -191,7 +191,7 @@ impl Compiler<'_> {
                 } else {
                     self.expression(lhs, statement)?;
                 }
-                if matches!(&rhs.kind, ExprKind::Literal(value) if value == "null") {
+                if matches!(&rhs.kind, ExprKind::Literal(value) if value.original_value().is_none() && value == "null") {
                     self.emit(opcode::GET_VAR, vec![Word::Variable(VariableWord::Null)]);
                 } else {
                     self.expression(rhs, statement)?;
@@ -340,7 +340,7 @@ impl Compiler<'_> {
                         else {
                             continue;
                         };
-                        let Some(radius) = text.parse::<u32>().ok().filter(|value| *value <= 127)
+                        let Some(radius) = literal_selection_radius(text)
                         else {
                             continue;
                         };
@@ -368,7 +368,7 @@ impl Compiler<'_> {
                     } else {
                         match &args[0].kind {
                             ExprKind::Literal(text) => {
-                                text.parse::<u32>().ok().filter(|value| *value <= 127)
+                                literal_selection_radius(text)
                             }
                             _ => None,
                         }
@@ -442,4 +442,20 @@ impl Compiler<'_> {
         }
         labels
     }
+}
+
+/// Original values are issued scalar facts, never reparsed display/raw spelling.
+/// Ordinary input retains its exact existing u32-spelling optimization boundary.
+fn literal_selection_radius(text:&dm_syntax::LiteralText)->Option<u32>{
+ match text.original_value(){
+  Some(dm_syntax::OriginalTokenValue::Int(value))=>u32::try_from(value).ok().filter(|value|*value<=127),
+  Some(dm_syntax::OriginalTokenValue::Float(value))=>if value.is_finite()&&value>=0.0&&value<=127.0&&value.fract()==0.0{Some(value as u32)}else{None},
+  Some(_)=>None,
+  None=>text.parse::<u32>().ok().filter(|value|*value<=127),
+ }
+}
+#[cfg(test)]mod original_selection_radius_tests{
+ use super::*;use dm_syntax::{LiteralText,OriginalTokenValue as V,SettingAdmission};use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ #[test]fn original_view_radius_uses_actual_numeric_facts_not_raw_or_rounded_display(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));for (value,wanted) in [(V::Int(0),Some(0)),(V::Int(127),Some(127)),(V::Int(-1),None),(V::Int(128),None),(V::Float(1.0),Some(1)),(V::Float(-0.0),Some(0)),(V::Float(1.5),None),(V::Float(f32::NAN),None),(V::Float(f32::INFINITY),None),(V::String("7"),None),(V::Resource("7"),None)]{let text=LiteralText::from_original_value_data("0177".into(),0,value,&a).unwrap();assert_eq!(literal_selection_radius(&text),wanted);}assert_eq!(used.load(Ordering::Acquire),0);}
+ #[test]fn ordinary_view_radius_spelling_boundary_remains_unchanged(){for(raw,wanted)in[("0",Some(0)),("127",Some(127)),("128",None),("1.0",None),("1e0",None),("-1",None),("0x7",None)]{let text:dm_syntax::LiteralText=raw.into();assert_eq!(literal_selection_radius(&text),wanted);}}
 }

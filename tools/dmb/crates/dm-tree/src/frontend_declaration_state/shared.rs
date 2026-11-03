@@ -131,6 +131,10 @@ impl DeclarationValues {
         current.stored = true;
         Some(())
     }
+    pub(super) fn visit_claimed_body_candidates(&self,index:&mut super::super::relative_declarations::BodyCodeCandidates,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{
+        let lease=match self{Self::Local(_,lease)|Self::Shared(_,lease)=>lease};
+        lease.try_visit_claimed_values(&||checked_status(a),&mut|value|index.capture(&value.syntax,a))
+    }
     pub(super) fn visit_storage(&self, mut visit: impl FnMut(DeclarationStorageView<'_>)) {
         match self {
             Self::Local(_, lease) | Self::Shared(_, lease) => {

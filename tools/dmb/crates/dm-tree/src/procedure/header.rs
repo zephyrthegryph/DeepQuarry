@@ -37,6 +37,9 @@ pub(crate) struct HeaderView<'a> {
 impl<'a> HeaderView<'a> {
     // Only the sibling original-input producer calls this constructor. A view
     // never claims filesystem/current-frame authority by itself.
+    /// The real primary event already proves the source/token/header boundary.
+    /// No lexical replay or second token validation walk is needed.
+    pub(super) fn from_primary_header(event:&dm_syntax::OriginalPrimaryHeader<'a>)->Self{Self{source:event.source(),tokens:event.tokens(),range:event.span()}}
     pub(super) fn original(
         source: &'a str,
         tokens: &'a [SpanToken],
@@ -57,19 +60,8 @@ impl<'a> HeaderView<'a> {
             range,
         })
     }
-    pub(super) fn parameter_markers(
-        self,
-    ) -> Result<(Option<usize>, Option<Span>, Option<Span>), String> {
-        let parts = dm_syntax::parameter_clause_spans(self.source, self.tokens, self.range)
-            .map_err(str::to_owned)?;
-        let relative =
-            |span: Span| Span::new(span.start - self.range.start, span.end - self.range.start);
-        Ok((
-            parts.assignment.map(|s| s.start - self.range.start),
-            parts.annotation.map(relative),
-            parts.source.map(relative),
-        ))
-    }
+    pub(super) fn parameter_markers(self)->Result<(Option<usize>,Option<Span>,Option<Span>),String>{let(a,b,c,_)=self.parameter_markers_full()?;Ok((a,b,c))}
+    pub(super) fn parameter_markers_full(self)->Result<(Option<usize>,Option<Span>,Option<Span>,Option<Span>),String>{let parts=dm_syntax::parameter_clause_spans(self.source,self.tokens,self.range).map_err(str::to_owned)?;let relative=|span:Span|Span::new(span.start-self.range.start,span.end-self.range.start);Ok((parts.assignment.map(|span|span.start-self.range.start),parts.annotation.map(relative),parts.source.map(relative),parts.post_source_annotation.map(relative)))}
     pub(super) fn span(self) -> Span {
         self.range
     }

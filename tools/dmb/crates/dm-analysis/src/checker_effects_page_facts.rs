@@ -38,15 +38,24 @@ impl EffectPageFacts{
  pub fn compute_checked(source:&EffectSource<'_>,start:usize,width:usize,resolver:&(impl Resolver+?Sized),admission:&ExecutionAdmission,checkpoint:&mut impl FnMut()->io::Result<()>,body:&dyn Fn(&Arc<BodySyntaxInput>,&ExecutionAdmission)->Result<Arc<BodySyntax>,BodySyntaxFailure>)->Result<Self,PolicyFailure>{
   let mut built=None;
   source.with_page_checked(start,width,resolver,admission,checkpoint,body,|page|{
+   built=Some(Self::from_original_page(source,admission,&page)?);Ok(())
+  })?;
+  built.ok_or_else(||"effect page factory omitted original contribution".into())
+ }
+ fn from_original_page(source:&EffectSource<'_>,admission:&ExecutionAdmission,page:&EffectSourcePage<'_>)->Result<Self,PolicyFailure>{
    let budget=ReportBudget::for_operation(admission);budget.charge(page.live_charge()).map_err(|_|resource(&budget,"effect page retained overlap exhausted"))?;
    let owner=source.archive.original_owner_witness();let fixed=owner.fixed_retention_capacity().and_then(|n|n.checked_add(size_of::<Self>())).ok_or_else(||resource(&budget,"effect page witness capacity overflow"))?;budget.charge(fixed).map_err(|_|resource(&budget,"effect page witness admission exhausted"))?;
    let count=(0..page.len()).try_fold(0usize,|count,index|{let row=page.contribution(index)?.ok_or("effect page contribution missing")?;count.checked_add(row.source_call_count()).ok_or_else(||resource(&budget,"effect page calls overflow"))})?;
    let mut rows=allocate(page.len(),&budget)?;let mut calls=allocate(count,&budget)?;
    for index in 0..page.len(){let row=page.contribution(index)?.ok_or("effect page contribution missing")?;let begin=calls.len();row.try_source_calls(|id|{calls.push(id);Ok::<_,PolicyFailure>(())})?;let original=page.retain_contribution(index)?.ok_or("effect page original contribution missing")?;rows.push(Row{original,ordinal:row.ordinal(),id:row.procedure(),parent:row.parent(),direct:row.has_direct_effect(),builtin:row.has_builtin_effect_call(),start:begin,end:calls.len()});}
-   built=Some(Self{owner,profile:source.profile,start:page.start(),total:page.total(),rows,calls});Ok(())
-  })?;
-  built.ok_or_else(||"effect page factory omitted original contribution".into())
+   Ok(Self{owner,profile:source.profile,start:page.start(),total:page.total(),rows,calls})
  }
+
+ pub fn compute_from_original_bodies<E>(source:&EffectSource<'_>,input:&Arc<EffectInput>,start:usize,width:usize,admission:&ExecutionAdmission,checkpoint:&mut impl FnMut()->io::Result<()>,obtain:&mut impl FnMut(usize,&ExecutionAdmission)->Result<Arc<BodyEffects>,E>)->Result<Self,source_pages::OriginalBodyReadFailure<E>>{
+  let mut built=None;source.with_original_body_page_checked(input,start,width,admission,checkpoint,obtain,|page|{built=Some(Self::from_original_page(source,admission,&page)?);Ok(())})?;built.ok_or_else(||source_pages::OriginalBodyReadFailure::Policy("cached original page omitted its real contribution".into()))
+ }
+ pub fn with_original_body<T>(&self,index:usize,input:&Arc<EffectInput>,consume:impl FnOnce(&BodyEffects)->T)->Result<T,PolicyFailure>{if !input.is_original_checker_source(){return Err("ordinary page input cannot issue original checker body observations".into())}let body=&self.rows.get(index).ok_or("original page body index absent")?.original;body.validate(input)?;if body.original_evaluations!=1{return Err("original page body was not evaluated exactly once".into())}Ok(consume(body))}
+
 }
 fn resource(b:&ReportBudget,message:&'static str)->PolicyFailure{b.deny();PolicyFailure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message))}
 fn allocate<T>(count:usize,b:&ReportBudget)->Result<Vec<T>,PolicyFailure>{let bound=count.checked_mul(size_of::<T>()).and_then(|n|n.checked_mul(4)).and_then(|n|n.checked_add(size_of::<Vec<T>>()));b.charge(bound.ok_or_else(||resource(b,"effect page retained array overflow"))?).map_err(|_|resource(b,"effect page retained array admission exhausted"))?;let mut rows=Vec::new();rows.try_reserve_exact(count).map_err(|actual|{b.deny();PolicyFailure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,actual))})?;if rows.capacity()>count.saturating_mul(4){return Err(resource(b,"effect page retained array exposed excess"))}Ok(rows)}

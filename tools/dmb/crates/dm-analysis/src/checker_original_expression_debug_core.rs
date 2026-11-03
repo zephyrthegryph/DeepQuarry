@@ -24,7 +24,7 @@ fn binary(op:&str)->Option<(&'static str,&'static str)>{Some(match op{
  "=="=>("BinaryOp","Eq"),"!="=>("BinaryOp","NotEq"),"<"=>("BinaryOp","Less"),">"=>("BinaryOp","Greater"),"<="=>("BinaryOp","LessEq"),">="=>("BinaryOp","GreaterEq"),"<=>"=>("BinaryOp","LessOrGreater"),"~="=>("BinaryOp","Equiv"),"~!"=>("BinaryOp","NotEquiv"),
  "&"=>("BinaryOp","BitAnd"),"^"=>("BinaryOp","BitXor"),"|"=>("BinaryOp","BitOr"),"<<"=>("BinaryOp","LShift"),">>"=>("BinaryOp","RShift"),"&&"=>("BinaryOp","And"),"||"=>("BinaryOp","Or"),"in"=>("BinaryOp","In"),"to"=>("BinaryOp","To"),
  "="=>("AssignOp","Assign"),"+="=>("AssignOp","AddAssign"),"-="=>("AssignOp","SubAssign"),"*="=>("AssignOp","MulAssign"),"/="=>("AssignOp","DivAssign"),"%="=>("AssignOp","ModAssign"),"%%="=>("AssignOp","FloatModAssign"),":="=>("AssignOp","AssignInto"),"&="=>("AssignOp","BitAndAssign"),"&&="=>("AssignOp","AndAssign"),"|="=>("AssignOp","BitOrAssign"),"||="=>("AssignOp","OrAssign"),"^="=>("AssignOp","BitXorAssign"),"<<="=>("AssignOp","LShiftAssign"),">>="=>("AssignOp","RShiftAssign"),_=>return None})}
-fn unary(op:&str)->Option<&'static str>{Some(match op{"-"=>"Neg","!"=>"Not","~"=>"BitNot","pre++"=>"PreIncr","post++"=>"PostIncr","pre--"=>"PreDecr","post--"=>"PostDecr","&"=>"Reference","*"=>"Dereference",_=>return None})}
+use crate::original_base_terms::{base_child,unary};
 
 /// DATA-only adapters must answer from authenticated original token geometry.
 /// The production adapter borrows the actual archive/mapping and SAME SettingAdmission.
@@ -44,10 +44,6 @@ pub(super) trait Source{
  fn fragment_expression(&self,fragment:&dm_syntax::literal::PinnedLiteralFragment<'_>,out:&mut DebugSink<'_>)->Result<(),Self::Error>;
  fn literal(&self,value:&dm_syntax::LiteralText,out:&mut DebugSink<'_>)->Result<(),Self::Error> where Self:Sized {literal_debug(self,value,out)}
 }
-fn base_child(expr:&Expr)->Option<&Expr>{match &expr.kind{
- ExprKind::Unary{op,value}if unary(op).is_some()=>Some(value),
- ExprKind::Member{object,..}|ExprKind::SafeMember{object,..}|ExprKind::StaticMember{object,..}|ExprKind::Index{object,..}|ExprKind::SafeIndex{object,..}=>Some(object),
- ExprKind::Call{callee,..}if matches!(callee.kind,ExprKind::Member{..}|ExprKind::SafeMember{..}|ExprKind::StaticMember{..})=>Some(callee),_=>None}}
 fn leaf<'a,S:Source>(source:&S,mut node:&'a Expr)->Result<&'a Expr,S::Error>{while let Some(next)=base_child(node){let _frame=source.frame()?;node=next}Ok(node)}
 fn spanned<S:Source>(source:&S,offset:usize,out:&mut DebugSink<'_>,emit:impl FnOnce(&mut DebugSink<'_>)->Result<(),S::Error>)->Result<(),S::Error>{out.push_str("Spanned { location: ");source.location(offset,out)?;out.push_str(", elem: ");emit(out)?;out.push_str(" }");Ok(())}
 pub(super) fn expression<S:Source>(source:&S,expr:&Expr,out:&mut DebugSink<'_>)->Result<(),S::Error>{
@@ -106,6 +102,15 @@ impl<'a,'buffer,S:Source> Quoted<'a,'buffer,S>{fn new(output:&'a mut DebugSink<'
 impl<S:Source> Write for Quoted<'_,'_,S>{fn write_str(&mut self,text:&str)->std::fmt::Result{for ch in text.chars(){self.until_poll=self.until_poll.saturating_sub(ch.len_utf8());if self.until_poll==0{self.source.literal_checkpoint()?;self.until_poll=1024;}if ch=='\''{self.output.push(ch)}else{for escaped in ch.escape_debug(){self.output.push(escaped)}}}Ok(())}}
 fn literal_debug<S:Source>(source:&S,value:&dm_syntax::LiteralText,out:&mut DebugSink<'_>)->Result<(),S::Error>{
  use dm_syntax::numeric_form::{numeric_form,NumericForm};
+ if let Some(typed)=value.original_value(){
+  match typed{
+   dm_syntax::OriginalTokenValue::Int(n)=>write!(out,"Int({n})").map_err(|_|S::Error::from("Debug output failed"))?,
+   dm_syntax::OriginalTokenValue::Float(n)=>write!(out,"Float({n:?})").map_err(|_|S::Error::from("Debug output failed"))?,
+   dm_syntax::OriginalTokenValue::String(_)=>{out.push_str("String(\"");if !value.write_pinned_static_text(&mut Quoted::new(out,source)).map_err(|_|S::Error::from("original static VALUE text unavailable"))?{return Err("original static VALUE changed".into())}out.push_str("\")");},
+   dm_syntax::OriginalTokenValue::Resource(_)=>{out.push_str("Resource(\"");if !value.write_pinned_resource_text(&mut Quoted::new(out,source)).map_err(|_|S::Error::from("original resource VALUE unavailable"))?{return Err("original resource VALUE changed".into())}out.push_str("\")");},
+   _=>return Err("unsupported original literal VALUE".into()),
+  }return Ok(())
+ }
  let raw=value.as_str();
  if raw=="null"{out.push_str("Null");return Ok(())}
  if raw.as_bytes().first().is_some_and(|b|b.is_ascii_digit()||*b==b'.'){
@@ -179,7 +184,7 @@ pub(super) fn constant_debug<S:Source>(source:&S,value:Option<ConstantView<'_>>,
  ConstantView::Null=>out.push_str("Null(None)"),
  ConstantView::Procedure{owner,kind,name}=>{out.push_str("Prefab(Pop { path: [");let mut first=true;for part in owner.split('/').filter(|part|!part.is_empty()).chain(kind).chain(std::iter::once(name)){let _frame=source.frame()?;if !first{out.push_str(", ")}first=false;write!(out,"{part:?}").map_err(|_|S::Error::from("Debug output failed"))?;}out.push_str("], vars: {} })");},
  ConstantView::Prefab(path)=>{out.push_str("Prefab(Pop { path: [");let mut first=true;for part in path.split('/').filter(|part|!part.is_empty()){let _frame=source.frame()?;if !first{out.push_str(", ")}first=false;write!(out,"{part:?}").map_err(|_|S::Error::from("Debug output failed"))?;}out.push_str("], vars: {} })");},
- ConstantView::Literal(value)=>{let raw=value.as_str();if raw=="null"{out.push_str("Null(None)")}else if raw.starts_with('\''){literal_debug(source,value,out)?;}else if raw.as_bytes().first().is_some_and(|b|b.is_ascii_digit()||*b==b'.'){
+ ConstantView::Literal(value)=>{let raw=value.as_str();if typed_constant_debug(source,value,out)?{}else if raw=="null"{out.push_str("Null(None)")}else if raw.starts_with('\''){literal_debug(source,value,out)?;}else if raw.as_bytes().first().is_some_and(|b|b.is_ascii_digit()||*b==b'.'){
  let _scratch=source.scratch(raw.len().checked_mul(4).and_then(|n|n.checked_add(64)).ok_or("constant numeric scratch overflow")?)?;
  let value=match dm_syntax::numeric_form::numeric_form(raw).map_err(|_|S::Error::from("invalid original numeric constant"))?{dm_syntax::numeric_form::NumericForm::Integer(value)=>value as f32,dm_syntax::numeric_form::NumericForm::Float=>{let normalized:String=raw.chars().filter(|ch|*ch!='_').collect();if normalized.ends_with("#INF"){f32::INFINITY}else if normalized.ends_with("#IND"){f32::NAN}else{normalized.parse::<f32>().map_err(|_|S::Error::from("invalid original float constant"))?}}};write!(out,"Float({value:?})").map_err(|_|S::Error::from("Debug output failed"))?;
  }else{out.push_str("String(\"");if !value.write_pinned_static_text(&mut Quoted::new(out,source)).map_err(|_|S::Error::from("original constant static text unavailable"))?{return Err("original constant has non-static lexical text".into())}out.push_str("\")");}}
@@ -187,12 +192,80 @@ pub(super) fn constant_debug<S:Source>(source:&S,value:Option<ConstantView<'_>>,
 }
 
 /// Pinned lexer::FormatFloat, shared scalar formatting without a Constant model.
-fn display_float(n:f32,out:&mut DebugSink<'_>)->std::fmt::Result{if n.is_nan(){out.write_str(if n.is_sign_negative(){"-1.#IND"}else{"1.#IND"})}else if n.is_infinite(){out.write_str(if n.is_sign_negative(){"-1.#INF"}else{"1.#INF"})}else if n==0.0{out.write_str("0")}else{let exp=n.abs().log10().floor();let factor=10.0f32.powf(5.0-exp);if exp>=6.0||exp<=-5.0{let n2=(n*factor).round()*1.0e-5;let mut precision=0;while precision<5&&(n2*10.0f32.powi(precision))!=(n2*10.0f32.powi(precision)).round(){precision+=1;}write!(out,"{:.*}e{:+04}",precision as usize,n2,exp)}else{let n2=(n*factor).round()/factor;write!(out,"{n2}")}}}
+fn display_float(n:f32,out:&mut DebugSink<'_>)->std::fmt::Result{dm_syntax::numeric_form::write_original_float(n,out)}
 struct TextFlags<'a,S:Source>{source:&'a S,remaining:usize,quote:bool,newline:bool,terminator:bool,last_quote:bool}
 impl<S:Source> Write for TextFlags<'_,S>{fn write_str(&mut self,text:&str)->std::fmt::Result{for ch in text.chars(){self.remaining=self.remaining.saturating_sub(ch.len_utf8());if self.remaining==0{self.source.literal_checkpoint()?;self.remaining=1024;}self.terminator|=self.last_quote&&ch=='}';self.last_quote=ch=='"';self.quote|=ch=='"';self.newline|=ch=='\n';}Ok(())}}
 struct Plain<'a,'b,S:Source>{out:&'a mut DebugSink<'b>,source:&'a S}
 impl<S:Source> Write for Plain<'_,'_,S>{fn write_str(&mut self,text:&str)->std::fmt::Result{for part in text.as_bytes().chunks(1024){self.source.literal_checkpoint()?;let _=part;}self.out.write_str(text)}}
 pub(super) fn constant_display<S:Source>(source:&S,value:ConstantView<'_>,out:&mut DebugSink<'_>)->Result<(),S::Error>{let _frame=source.frame()?;match value{
  ConstantView::Null=>out.push_str("null"),ConstantView::Prefab(path)=>{for part in path.split('/').filter(|part|!part.is_empty()){let _frame=source.frame()?;out.push('/');out.push_str(part)}},ConstantView::Procedure{owner,kind,name}=>{for part in owner.split('/').filter(|part|!part.is_empty()).chain(kind).chain(std::iter::once(name)){let _frame=source.frame()?;out.push('/');out.push_str(part)}},
- ConstantView::Literal(value)=>{let raw=value.as_str();if raw=="null"{out.push_str("null")}else if raw.starts_with('\''){out.push('\'');if !value.write_pinned_resource_text(&mut Plain{out,source}).map_err(|_|S::Error::from("original resource display unavailable"))?{return Err("resource primary value unavailable".into())}out.push('\'');}else if raw.as_bytes().first().is_some_and(|b|b.is_ascii_digit()||*b==b'.'){let _scratch=source.scratch(raw.len().checked_mul(4).and_then(|n|n.checked_add(64)).ok_or("original numeric display scratch overflow")?)?;let number=match dm_syntax::numeric_form::numeric_form(raw).map_err(|_|S::Error::from("invalid original numeric display"))?{dm_syntax::numeric_form::NumericForm::Integer(n)=>n as f32,dm_syntax::numeric_form::NumericForm::Float=>{let normalized:String=raw.chars().filter(|ch|*ch!='_').collect();if normalized.ends_with("#INF"){f32::INFINITY}else if normalized.ends_with("#IND"){f32::NAN}else{normalized.parse::<f32>().map_err(|_|S::Error::from("invalid original float display"))?}}};display_float(number,out).map_err(|_|S::Error::from("original numeric display output failed"))?;}else{let mut flags=TextFlags{source,remaining:1024,quote:false,newline:false,terminator:false,last_quote:false};if !value.write_pinned_static_text(&mut flags).map_err(|_|S::Error::from("original static display unavailable"))?{return Err("original static display has runtime interpolation".into())}let(open,close)=if flags.terminator{("@@","@")}else if flags.quote||flags.newline{("{\"","\"}")}else{("\"","\"")};out.push_str(open);if !value.write_pinned_static_text(&mut Plain{out,source}).map_err(|_|S::Error::from("original static display unavailable"))?{return Err("original static display changed".into())}out.push_str(close);}}
+ ConstantView::Literal(value)=>{let raw=value.as_str();if typed_constant_display(source,value,out)?{}else if raw=="null"{out.push_str("null")}else if raw.starts_with('\''){out.push('\'');if !value.write_pinned_resource_text(&mut Plain{out,source}).map_err(|_|S::Error::from("original resource display unavailable"))?{return Err("resource primary value unavailable".into())}out.push('\'');}else if raw.as_bytes().first().is_some_and(|b|b.is_ascii_digit()||*b==b'.'){let _scratch=source.scratch(raw.len().checked_mul(4).and_then(|n|n.checked_add(64)).ok_or("original numeric display scratch overflow")?)?;let number=match dm_syntax::numeric_form::numeric_form(raw).map_err(|_|S::Error::from("invalid original numeric display"))?{dm_syntax::numeric_form::NumericForm::Integer(n)=>n as f32,dm_syntax::numeric_form::NumericForm::Float=>{let normalized:String=raw.chars().filter(|ch|*ch!='_').collect();if normalized.ends_with("#INF"){f32::INFINITY}else if normalized.ends_with("#IND"){f32::NAN}else{normalized.parse::<f32>().map_err(|_|S::Error::from("invalid original float display"))?}}};display_float(number,out).map_err(|_|S::Error::from("original numeric display output failed"))?;}else{let mut flags=TextFlags{source,remaining:1024,quote:false,newline:false,terminator:false,last_quote:false};if !value.write_pinned_static_text(&mut flags).map_err(|_|S::Error::from("original static display unavailable"))?{return Err("original static display has runtime interpolation".into())}let(open,close)=if flags.terminator{("@@","@")}else if flags.quote||flags.newline{("{\"","\"}")}else{("\"","\"")};out.push_str(open);if !value.write_pinned_static_text(&mut Plain{out,source}).map_err(|_|S::Error::from("original static display unavailable"))?{return Err("original static display changed".into())}out.push_str(close);}}
  }Ok(())}
+
+/// Render exactly the one original Follow enum used by type_expr's failure.
+/// No Spanned wrapper: TypeExprCompiler receives `&each.elem` there.
+pub(super) fn type_follow<S:Source>(source:&S,expr:&Expr,out:&mut DebugSink<'_>)->Result<(),S::Error>{
+ let _frame=source.frame()?;
+ match &expr.kind{
+  ExprKind::Member{selector,via_colon,..}|ExprKind::SafeMember{selector,via_colon,..}=>{let kind=match(matches!(expr.kind,ExprKind::SafeMember{..}),*via_colon){(false,false)=>"Dot",(false,true)=>"Colon",(true,false)=>"SafeDot",(true,true)=>"SafeColon"};write!(out,"Field({kind}, {selector:?})").map_err(|_|S::Error::from("original type-follow output failed"))?;},
+  ExprKind::StaticMember{selector,..}=>{write!(out,"StaticField({selector:?})").map_err(|_|S::Error::from("original type-follow output failed"))?;},
+  ExprKind::Index{index,..}|ExprKind::SafeIndex{index,..}=>{out.push_str(if matches!(expr.kind,ExprKind::SafeIndex{..}){"Index(Safe, "}else{"Index(Normal, "});expression(source,index,out)?;out.push(')');},
+  ExprKind::Unary{op,..}=>{write!(out,"Unary({})",unary(op).ok_or("original type-follow unary unavailable")?).map_err(|_|S::Error::from("original type-follow output failed"))?;},
+  ExprKind::Call{callee,args}=>match &callee.kind{
+   ExprKind::Member{selector,via_colon,..}|ExprKind::SafeMember{selector,via_colon,..}=>{let kind=match(matches!(callee.kind,ExprKind::SafeMember{..}),*via_colon){(false,false)=>"Dot",(false,true)=>"Colon",(true,false)=>"SafeDot",(true,true)=>"SafeColon"};write!(out,"Call({kind}, {selector:?}, ").map_err(|_|S::Error::from("original type-follow output failed"))?;arguments(source,args,out)?;out.push(')');},
+   ExprKind::StaticMember{selector,..}=>{write!(out,"ProcReference({selector:?})").map_err(|_|S::Error::from("original type-follow output failed"))?;},
+   _=>return Err("actual original type-follow call is not represented".into()),
+  },
+  _=>return Err("actual original type-follow node is not represented".into()),
+ }Ok(())
+}
+
+// These projections borrow the SAME issued neutral VALUE. They never parse
+// rounded grammar spelling and do not confer a source/compatibility grant.
+fn typed_constant_debug<S:Source>(source:&S,value:&dm_syntax::LiteralText,out:&mut DebugSink<'_>)->Result<bool,S::Error>{
+ let Some(typed)=value.original_value()else{return Ok(false)};
+ match typed{
+  dm_syntax::OriginalTokenValue::Int(n)=>write!(out,"Float({:?})",n as f32).map_err(|_|S::Error::from("constant Debug output failed"))?,
+  dm_syntax::OriginalTokenValue::Float(n)=>write!(out,"Float({n:?})").map_err(|_|S::Error::from("constant Debug output failed"))?,
+  dm_syntax::OriginalTokenValue::String(_)=>{out.push_str("String(\"");if !value.write_pinned_static_text(&mut Quoted::new(out,source)).map_err(|_|S::Error::from("constant static VALUE unavailable"))?{return Err("constant static VALUE changed".into())}out.push_str("\")");},
+  dm_syntax::OriginalTokenValue::Resource(_)=>literal_debug(source,value,out)?,
+  _=>return Err("unsupported original constant VALUE".into()),
+ }Ok(true)
+}
+fn typed_constant_display<S:Source>(source:&S,value:&dm_syntax::LiteralText,out:&mut DebugSink<'_>)->Result<bool,S::Error>{
+ let Some(typed)=value.original_value()else{return Ok(false)};
+ match typed{
+  dm_syntax::OriginalTokenValue::Int(n)=>display_float(n as f32,out).map_err(|_|S::Error::from("constant display output failed"))?,
+  dm_syntax::OriginalTokenValue::Float(n)=>display_float(n,out).map_err(|_|S::Error::from("constant display output failed"))?,
+  dm_syntax::OriginalTokenValue::Resource(_)=>{out.push('\'');if !value.write_pinned_resource_text(&mut Plain{out,source}).map_err(|_|S::Error::from("resource VALUE display unavailable"))?{return Err("resource VALUE display changed".into())}out.push('\'');},
+  dm_syntax::OriginalTokenValue::String(_)=>{
+   let mut flags=TextFlags{source,remaining:1024,quote:false,newline:false,terminator:false,last_quote:false};
+   if !value.write_pinned_static_text(&mut flags).map_err(|_|S::Error::from("static VALUE display unavailable"))?{return Err("static VALUE display changed".into())}
+   let(open,close)=if flags.terminator{("@@","@")}else if flags.quote||flags.newline{("{\"","\"}")}else{("\"","\"")};
+   out.push_str(open);if !value.write_pinned_static_text(&mut Plain{out,source}).map_err(|_|S::Error::from("static VALUE display unavailable"))?{return Err("static VALUE display changed".into())}out.push_str(close);
+  }
+  _=>return Err("unsupported original constant VALUE display".into()),
+ }Ok(true)
+}
+
+#[cfg(test)]mod typed_original_literal_projection_tests{
+ use super::*;
+ struct ScalarSource;
+ impl Source for ScalarSource{
+  type Error=String;type Frame<'a>=();type Scratch<'a>=();
+  fn frame(&self)->Result<(),String>{Ok(())}fn scratch(&self,_:usize)->Result<(),String>{Ok(())}
+  fn location(&self,_:usize,_:&mut DebugSink<'_>)->Result<(),String>{panic!("scalar projection has no source location")}
+  fn punctuation(&self,_:Span,_:&str)->Result<usize,String>{panic!("scalar projection has no punctuation lookup")}
+  fn path(&self,_:&Expr,_:&mut DebugSink<'_>)->Result<(),String>{panic!("scalar projection has no path lookup")}
+  fn fragment_expression(&self,_:&dm_syntax::literal::PinnedLiteralFragment<'_>,_:&mut DebugSink<'_>)->Result<(),String>{panic!("static VALUE must not parse bracket interpolation")}
+ }
+ fn output(run:impl FnOnce(&mut DebugSink<'_>)->Result<(),String>)->String{let mut text=String::with_capacity(256);let mut out=DebugSink::fixed(&mut text,256);run(&mut out).unwrap();assert!(!out.denied());text}
+ #[test]fn typed_original_literal_debug_and_display_never_reparse_rounded_or_generated_text(){
+  use dm_syntax::{LiteralText,OriginalTokenValue as V,SettingAdmission};use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+  let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);let source=ScalarSource;
+  for(raw,value,term,constant,display)in[("garbage",V::Int(0),"Int(0)","Some(Float(0.0))","0"),("1",V::Float(-0.0),"Float(-0.0)","Some(Float(-0.0))","0"),("\"[missing.field]\"",V::String("[missing.field]"),"String(\"[missing.field]\")","Some(String(\"[missing.field]\"))","\"[missing.field]\"")]{
+   let text=LiteralText::from_original_value_data(raw.into(),0,value,&a).unwrap();assert_eq!(output(|out|literal_debug(&source,&text,out)),term);assert_eq!(output(|out|constant_debug(&source,Some(ConstantView::Literal(&text)),out)),constant);assert_eq!(output(|out|constant_display(&source,ConstantView::Literal(&text),out)),display);
+  }
+  let text=LiteralText::from_original_value_data("1.23457".into(),0,V::Float(f32::from_bits(0x3f9e0651)),&a).unwrap();let exact=f32::from_bits(0x3f9e0651);assert_eq!(output(|out|literal_debug(&source,&text,out)),format!("Float({exact:?})"));drop(text);assert_eq!(counter.load(Ordering::Acquire),0);
+ }
+}

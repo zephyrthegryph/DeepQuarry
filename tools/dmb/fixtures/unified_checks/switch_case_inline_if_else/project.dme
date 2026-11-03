@@ -1,0 +1,10 @@
+/proc/probe(value)
+    switch(value)
+        if(1 || 2) if(value)
+            return 0
+        else if(value == 2)
+            return 1
+        else
+            return 2
+        if(3)
+            return 3

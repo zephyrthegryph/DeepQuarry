@@ -16,8 +16,12 @@ struct Probe {
     entered: usize,
     left: usize,
     leaves: usize,
+    chronology:Vec<&'static str>,
+    refuse_switch:bool,
 }
 impl<'a> EvaluatedObserver<'a> for Probe {
+    fn switch_started(&mut self,_selector:&'a Expr,_cases:&'a [dm_syntax::SwitchCase],_default_present:bool,_at:Span)->Result<(),String>{self.chronology.push("switch");if self.refuse_switch{Err("actual early switch refusal".into())}else{Ok(())}}
+    fn control_event(&mut self,_event:Event<'a>)->Result<bool,String>{self.chronology.push("control");Ok(false)}
     fn admit_storage(&mut self, bytes: usize) -> Result<bool, String> {
         if self.denied || bytes > self.limit {
             self.denied = true;
@@ -41,6 +45,7 @@ impl<'a> EvaluatedObserver<'a> for Probe {
         Ok(())
     }
     fn expression(&mut self, _: &'a Expr) -> Result<(), String> {
+        self.chronology.push("expression");
         Ok(())
     }
     fn statement_expression(&mut self, _: &'a Expr) -> Result<(), String> {
@@ -97,3 +102,7 @@ fn void_scope_denial_is_checked_immediately_and_preserves_the_paired_leave() {
         (1, 1, 0)
     );
 }
+
+struct EarlySwitchSource;impl dm_preprocess::SourceProvider for EarlySwitchSource{fn read(&self,_:&Path)->Result<String,String>{Ok("/proc/probe()\n    switch(rand(1,3))\n        if(1)\n            return 0\n".into())}}
+fn walk_early_switch(observer:&mut Probe)->Result<(),String>{let frontend=build(Path::new("early-switch.dme"),&EarlySwitchSource,&Default::default(),1).map_err(|e|format!("{e:?}"))?;let arena=BodyArena::new_typed(&frontend,|_|true);arena.with_parsed(&frontend.bodies[0],|body|{let view=BodyView::new(&frontend,body)?;analyze_with_observer(&view,observer).map(|_|())}).map_err(|e|e.message)?}
+#[test]fn switch_start_precedes_control_condition_and_main_selector_evaluation(){let mut observer=Probe{limit:1<<20,..Default::default()};walk_early_switch(&mut observer).unwrap();assert_eq!(&observer.chronology[..3],["switch","control","expression"]);let mut refused=Probe{limit:1<<20,refuse_switch:true,..Default::default()};assert!(walk_early_switch(&mut refused).unwrap_err().contains("actual early switch refusal"));assert_eq!(refused.chronology,["switch"]);assert_eq!((refused.entered,refused.leaves),(0,0));}

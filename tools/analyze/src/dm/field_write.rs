@@ -20,14 +20,14 @@
 //!     post-check that is exactly equivalent (see [`write_matches`]).
 
 use std::collections::{BTreeMap, HashMap};
-use std::sync::Arc;
+#[cfg(feature="legacy-sem")]use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 
-use crate::incr;
+#[cfg(feature="legacy-sem")]use crate::incr;
 use crate::pat::{Caps, Pat};
 use crate::pat;
-use crate::tree::{SourceFile, Tree, CODE_DM};
+#[cfg(feature="legacy-sem")]use crate::tree::{SourceFile, Tree, CODE_DM};
 use crate::util::{is_py_space, py_rstrip};
 
 /// Python `locals_`: local/param name -> declared type path, `None` for an untyped one.
@@ -215,10 +215,10 @@ pub struct FwlIndex {
 }
 
 #[derive(Serialize, Deserialize, Default, PartialEq)]
-struct PerFile {
-    fields: Vec<(String, String)>,
-    members: Vec<(String, String, String)>,
-    globals: Vec<(String, String)>,
+pub struct PerFile {
+    pub fields: Vec<(String, String)>,
+    pub members: Vec<(String, String, String)>,
+    pub globals: Vec<(String, String)>,
 }
 
 fn scan_member_types(code: &str, out: &mut Vec<(String, String, String)>) {
@@ -255,10 +255,9 @@ fn scan_member_types(code: &str, out: &mut Vec<(String, String, String)>) {
 }
 
 impl FwlIndex {
-    pub fn build(files: &[&SourceFile]) -> FwlIndex {
-        let per: Vec<PerFile> = incr::facts("fwl-facts", files, |f| {
+    /// Same unique lexical facts from callback-local original views.
+    pub fn facts_from_views(raw:&crate::tree::View,code:&crate::tree::View)->PerFile{
             let mut p = PerFile { fields: Vec::new(), members: Vec::new(), globals: Vec::new() };
-            let raw = f.raw();
             for line in raw.lines() {
                 if !line.starts_with("OM_") {
                     continue;
@@ -270,7 +269,7 @@ impl FwlIndex {
                     p.fields.push((c.s(2).to_string(), c.s(1).to_string()));
                 }
             }
-            scan_member_types(&f.code().text, &mut p.members);
+            scan_member_types(&code.text, &mut p.members);
             let text = &raw.text;
             if text.contains("GLOBAL_DATUM") {
                 for c in pat!(r"GLOBAL_DATUM(?:_INIT)?\(\s*(\w+)\s*,\s*(/[\w/]+)").captures_iter(text) {
@@ -278,7 +277,17 @@ impl FwlIndex {
                 }
             }
             p
+    }
+    #[cfg(feature="legacy-sem")]
+    pub fn build(files: &[&SourceFile]) -> FwlIndex {
+        let per: Vec<PerFile> = incr::facts("fwl-facts", files, |f| {
+            Self::facts_from_views(f.raw(),f.code())
         });
+        Self::merge_facts(per)
+    }
+
+    /// Same first-field/last-member/global merge; no source owner is issued.
+    pub fn merge_facts(per:impl IntoIterator<Item=PerFile>)->Self{
         let mut fields: Vec<(String, Vec<String>)> = Vec::new();
         let mut at: HashMap<String, usize> = HashMap::new();
         let mut members: BTreeMap<String, BTreeMap<String, String>> = BTreeMap::new();
@@ -304,6 +313,7 @@ impl FwlIndex {
     }
 
     /// The index for this tree, built once and shared (memoized on the tree).
+    #[cfg(feature="legacy-sem")]
     pub fn get(tree: &Tree) -> Arc<FwlIndex> {
         tree.memo("field_write_index", || {
             let files = tree.select(&CODE_DM);
@@ -313,6 +323,7 @@ impl FwlIndex {
 
     /// A key of everything a judge can read from this index: the declared fields named in `only`
     /// (all when `None`), the typed members and the `GLOBAL_DATUM` types. Deterministic.
+    #[cfg(feature="legacy-sem")]
     pub fn ctx_key(&self, only: Option<&[&str]>) -> crate::tree::Hash {
         let fields: Vec<&(String, Vec<String>)> = self.fields.iter().filter(|(n, _)| only.map(|o| o.contains(&n.as_str())).unwrap_or(true)).collect();
         incr::ctx_key(&(fields, &self.members, &self.globals))

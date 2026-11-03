@@ -21,6 +21,8 @@ impl TextBacking {
 struct Backing {
     text: TextBacking,
     fingerprints: OnceLock<Mutex<Vec<SpanFingerprint>>>,
+    // Last: actual text/fingerprint allocations drop before their resource root.
+    _source_arena_payload: Option<crate::source_arena_credit::SourceArenaCredit>,
 }
 #[derive(Clone, Copy)]
 struct SpanFingerprint {
@@ -36,12 +38,15 @@ impl Backing {
 pub struct SourceText {
     backing: Arc<Backing>,
     range: Range<usize>,
+    _source_arena_control:Option<crate::source_arena_credit::SourceArenaControlCredit>,
 }
 /// Weak storage lifetime observation; it carries no compiler issuance authority.
 #[derive(Clone)]
 pub struct WeakSourceText {
     backing: Weak<Backing>,
     range: Range<usize>,
+    // Only resource credit, never source payload/identity/model authority.
+    _source_arena_control:Option<crate::source_arena_credit::SourceArenaControlCredit>,
 }
 impl WeakSourceText {
     /// Inventory the actual fixed backing allocation retained by this Weak,
@@ -51,10 +56,14 @@ impl WeakSourceText {
         let bytes=std::mem::size_of::<Backing>();
         visit(self.backing.as_ptr() as usize,if self.backing.strong_count()>0{bytes}else{0},bytes);
     }
+    /// Resource-control metadata only; observes no source payload and never
+    /// upgrades a dead backing or issues a source/currentness grant.
+    pub fn visit_derived_resource_storage(&self,mut visit:impl FnMut(usize,usize)){if let Some(credit)=&self._source_arena_control{credit.visit_storage(&mut visit)}}
     pub fn upgrade(&self) -> Option<SourceText> {
         Some(SourceText {
             backing: self.backing.upgrade()?,
             range: self.range.clone(),
+            _source_arena_control:self._source_arena_control.clone(),
         })
     }
 }
@@ -65,6 +74,27 @@ pub enum SourceTextStorage<'a> {
     Transformed(&'a String),
 }
 impl SourceText {
+    pub fn source_arena_control_bytes()->std::io::Result<usize>{std::mem::size_of::<Backing>().checked_add(2*std::mem::size_of::<usize>()).ok_or_else(||std::io::ErrorKind::OutOfMemory.into())}
+    /// Adopt the SAME transformed source allocation under the existing shared
+    /// input/source family. Neither credit carries acquisition/model authority.
+    /// String payload and last-weak control metadata have distinct lifetimes.
+    pub fn from_source_arena(text:String,payload:crate::source_arena_credit::SourceArenaCredit,control:crate::source_arena_credit::SourceArenaControlCredit)->std::io::Result<Self>{
+      // This guard fixes failure drop order too: physical String before either
+      // credit even when capacity/metadata validation returns immediately.
+      struct Pending{ text:Option<String>,payload:Option<crate::source_arena_credit::SourceArenaCredit>,control:Option<crate::source_arena_credit::SourceArenaControlCredit> }
+      let mut pending=Pending{text:Some(text),payload:Some(payload),control:Some(control)};
+      let metadata=Self::source_arena_control_bytes()?;
+      if pending.payload.as_ref().unwrap().reserved_bytes()<pending.text.as_ref().unwrap().capacity()||pending.control.as_ref().unwrap().reserved_bytes()<metadata{return Err(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"transformed source adoption exceeds its actual input-family allocation credit"))}
+      let length=pending.text.as_ref().unwrap().len();let backing=Backing{text:TextBacking::Transformed(pending.text.take().unwrap()),fingerprints:OnceLock::new(),_source_arena_payload:pending.payload.take()};
+      Ok(Self{backing:Arc::new(backing),range:0..length,_source_arena_control:pending.control.take()})
+    }
+    pub fn source_arena_payload_credit(&self)->Option<&crate::source_arena_credit::SourceArenaCredit>{self.backing._source_arena_payload.as_ref()}
+    pub fn source_arena_control_credit(&self)->Option<&crate::source_arena_credit::SourceArenaControlCredit>{self._source_arena_control.as_ref()}
+    /// Real resource owner/control allocations only, never duplicate reserved
+    /// bytes as a second copy of the source payload.
+    pub fn visit_derived_resource_storage(&self,mut visit:impl FnMut(usize,usize)){
+      if let Some(credit)=self.source_arena_payload_credit(){credit.visit_storage(&mut visit)}if let Some(credit)=self.source_arena_control_credit(){credit.visit_storage(&mut visit)}
+    }
     /// SAME historical Analyze display-line projection of compiler-decoded
     /// original text. Bare CR adds display rows; CRLF adds only its LF row.
     pub fn analyze_display_line(&self,native_line:usize)->Option<usize>{
@@ -75,6 +105,7 @@ impl SourceText {
         WeakSourceText {
             backing: Arc::downgrade(&self.backing),
             range: self.range.clone(),
+            _source_arena_control:self._source_arena_control.clone(),
         }
     }
     pub fn as_str(&self) -> &str {
@@ -152,6 +183,7 @@ impl SourceText {
             backing: Arc::clone(&self.backing),
             range: self.range.start.checked_add(range.start)?
                 ..self.range.start.checked_add(range.end)?,
+            _source_arena_control:self._source_arena_control.clone(),
         })
     }
     /// Borrow an existing full string owner for compatibility consumers. A
@@ -172,6 +204,7 @@ impl SourceText {
         Self {
             backing: Arc::clone(&self.backing),
             range: (self.range.start + range.start)..(self.range.start + range.end),
+            _source_arena_control:self._source_arena_control.clone(),
         }
     }
 }
@@ -187,8 +220,10 @@ impl From<Arc<str>> for SourceText {
             backing: Arc::new(Backing {
                 text: TextBacking::Original(text),
                 fingerprints: OnceLock::new(),
+                _source_arena_payload: None,
             }),
             range: 0..length,
+            _source_arena_control:None,
         }
     }
 }
@@ -199,8 +234,10 @@ impl From<String> for SourceText {
             backing: Arc::new(Backing {
                 text: TextBacking::Transformed(text),
                 fingerprints: OnceLock::new(),
+                _source_arena_payload: None,
             }),
             range: 0..length,
+            _source_arena_control:None,
         }
     }
 }
@@ -402,4 +439,18 @@ mod tests {
             assert!(matches!(storage, SourceTextStorage::Transformed(_)));
         });
     }
+}
+
+#[cfg(test)]mod actual_source_arena_credit_tests{
+ use super::*;use crate::source_arena_credit::{SourceArenaCredit,SourceArenaCreditOwner};use std::sync::atomic::{AtomicUsize,Ordering};
+ struct Credit{bytes:usize,used:Arc<AtomicUsize>}
+ impl Drop for Credit{fn drop(&mut self){self.used.fetch_sub(self.bytes,Ordering::AcqRel);}}
+ impl SourceArenaCreditOwner for Credit{fn as_any(&self)->&dyn std::any::Any{self}fn reserved_bytes(&self)->usize{self.bytes}fn visit_storage(&self,visit:&mut dyn FnMut(usize,usize)){visit(self as*const Self as usize,std::mem::size_of::<Self>()+2*std::mem::size_of::<usize>());}}
+ fn credit(bytes:usize,used:&Arc<AtomicUsize>)->SourceArenaCredit{used.fetch_add(bytes,Ordering::AcqRel);SourceArenaCredit::from_resource_owner(Arc::new(Credit{bytes,used:Arc::clone(used)}))}
+ #[test]fn actual_source_arena_moves_string_and_payload_refunds_at_last_strong_while_control_waits_for_last_weak(){
+  let used=Arc::new(AtomicUsize::new(0));let text=String::from("α native source arena\n");let pointer=text.as_ptr();let capacity=text.capacity();let metadata=std::mem::size_of::<Backing>()+2*std::mem::size_of::<usize>();let source=SourceText::from_source_arena(text,credit(capacity,&used),credit(metadata,&used).into_control()).unwrap();assert_eq!(source.as_str().as_ptr(),pointer);let view=source.checked_view(3..source.len()).unwrap();let weak=source.downgrade();let last_weak=weak.clone();drop(source);assert_eq!(used.load(Ordering::Acquire),capacity+metadata);assert!(weak.upgrade().is_some());drop(view);assert!(weak.upgrade().is_none());assert_eq!(used.load(Ordering::Acquire),metadata,"String payload is actually gone; weak aliases retain only control credit");let mut observed=Vec::new();weak.visit_derived_resource_storage(|address,bytes|observed.push((address,bytes)));assert!(!observed.is_empty());assert!(observed.iter().all(|(_,bytes)|*bytes>0));assert!(weak.upgrade().is_none(),"resource census did not revive a dead source");drop(weak);assert_eq!(used.load(Ordering::Acquire),metadata);drop(last_weak);assert_eq!(used.load(Ordering::Acquire),0);
+ }
+ #[test]fn actual_source_arena_rejects_unfunded_payload_or_control_before_backing_adoption_and_keeps_ordinary_sources_unmarked(){
+  let used=Arc::new(AtomicUsize::new(0));let text=String::from("actual allocation");let capacity=text.capacity();let metadata=std::mem::size_of::<Backing>()+2*std::mem::size_of::<usize>();assert_eq!(SourceText::from_source_arena(text,credit(capacity-1,&used),credit(metadata,&used).into_control()).err().unwrap().kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(used.load(Ordering::Acquire),0);let text=String::from("actual allocation");assert_eq!(SourceText::from_source_arena(text,credit(capacity,&used),credit(metadata-1,&used).into_control()).err().unwrap().kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(used.load(Ordering::Acquire),0);let ordinary:SourceText="same ordinary Native source".into();assert!(ordinary.source_arena_payload_credit().is_none());assert!(ordinary.source_arena_control_credit().is_none());
+ }
 }

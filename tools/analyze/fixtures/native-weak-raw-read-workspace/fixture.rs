@@ -1,0 +1,12 @@
+//! Authored sources only, preserving both original declaration/body domains.
+pub const CASES:&[&str]=&["basic","shadow","returns","noncode","macro","exempt_decl","settings","noncode_decl","order"];
+pub fn files(case:&str)->Vec<(&'static str,Vec<u8>)>{assert!(CASES.contains(&case));let header="#define CAPABILITIES(T) T/proc/capabilities()\n#define TRUE 1\n";let core="/datum/owner\n    var/datum/target\n    var/datum/target_\n    var/datum/owner/next\n/datum/child\n    parent_type = /datum/owner\n";let declaration="CAPABILITIES(/datum/owner)\n    ref_one(nameof(target), weak = TRUE)\n    ref_many(nameof(target_), weak = TRUE)\n";let types=format!("{header}{core}{}",if case=="noncode_decl"{""}else{declaration});
+ let basic="/datum/owner/proc/read(datum/owner/H,list/datum/owner/L,U)\n    target\n    src.target\n    H.target\n    L[1].target\n    U.target\n    nameof(target)\n    nameof(list(H.target,H.target.child))\n    target()\n    H.target()\n    target.child()\n    H.target = null\n";
+ let source=match case{
+ "order"=>"/datum/owner/proc/read(datum/owner/H)\n    H.target; H.target_\n",
+ "shadow"=>"/datum/owner/proc/read(datum/owner/H)\n    target\n    var/target\n    H.target\n    H.next.target\n",
+ "returns"=>"/proc/owner_result() as /datum/owner\n    return null\n/datum/owner/proc/method() as /datum/owner\n    return null\n/datum/owner/proc/read(datum/owner/H,datum/child/C)\n    owner_result().target\n    H.method().target\n    C.target\n",
+ "macro"=>"#define READ_TARGET(H) H.target\n/datum/owner/proc/read(datum/owner/H)\n    READ_TARGET(H)\n    H.target\n",
+ "settings"=>"/datum/owner/proc/read(datum/owner/H)\n    set name = H.target\n    set desc = nameof(H.target)\n    H.target\n",
+ _=>basic};let config=if case=="exempt_decl"{"[lint.weak_raw_read]\nexempt_files=['code/types.dm']\n"}else{""};let mut out=vec![("deepquarry.dme",b"#include \"code/types.dm\"\n#include \"code/main.dm\"\n".to_vec()),("code/types.dm",types.into_bytes()),("code/main.dm",source.as_bytes().to_vec()),("tools/ci/lint_scopes.toml",config.as_bytes().to_vec())];if case=="noncode"{out[0].1.extend_from_slice(b"#include \"maps/weak.dm\"\n");out.push(("maps/weak.dm",b"/datum/owner/proc/map_read()\n    target\n".to_vec()));}if case=="noncode_decl"{out[0].1.extend_from_slice(b"#include \"maps/weak.dm\"\n");out.push(("maps/weak.dm",format!("{declaration}/datum/owner/proc/map_read()\n    target\n").into_bytes()));}out
+}

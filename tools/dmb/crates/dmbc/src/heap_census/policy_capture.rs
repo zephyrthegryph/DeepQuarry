@@ -8,6 +8,7 @@ impl HeapCensus {
         if !self.arc_object("query_snapshot.policy_inputs", capture) {
             return;
         }
+        if let Some(subject)=capture.original_analysis_subject(){subject.census(self);}
         let folders = capture.explicit_search_folders();
         self.slice(
             "query_snapshot.policy_inputs.explicit_search_folders",

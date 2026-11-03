@@ -48,6 +48,8 @@ pub trait SnapshotProvider {
     fn read_policy_bounded(&self, _: &Path, _: usize) -> io::Result<Option<CapturedInputRead>> {
         Ok(None)
     }
+    /// Unsupported providers cannot allocate first and claim admission later.
+    fn read_policy_bounded_admitted(&self, _: &Path, _: usize, _: &mut dyn FnMut(usize) -> io::Result<()>) -> io::Result<Option<CapturedInputRead>> { Ok(None) }
     fn policy_directory(
         &self,
         _: &Path,
@@ -90,6 +92,9 @@ impl<T: SnapshotProvider + ?Sized> SnapshotProvider for &T {
         limit: usize,
     ) -> io::Result<Option<CapturedInputRead>> {
         (**self).read_policy_bounded(path, limit)
+    }
+    fn read_policy_bounded_admitted(&self, path: &Path, limit: usize, before_allocate: &mut dyn FnMut(usize) -> io::Result<()>) -> io::Result<Option<CapturedInputRead>> {
+        (**self).read_policy_bounded_admitted(path, limit, before_allocate)
     }
     fn policy_directory(
         &self,
@@ -161,6 +166,9 @@ impl SnapshotProvider for FileSystemInputs {
         limit: usize,
     ) -> io::Result<Option<CapturedInputRead>> {
         policy_read::filesystem_bounded_read(path, limit).map(Some)
+    }
+    fn read_policy_bounded_admitted(&self, path: &Path, limit: usize, before_allocate: &mut dyn FnMut(usize) -> io::Result<()>) -> io::Result<Option<CapturedInputRead>> {
+        policy_read::filesystem_bounded_read_admitted(path, limit, before_allocate).map(Some)
     }
     fn policy_directory(
         &self,
@@ -312,9 +320,12 @@ mod source_original;
 pub(crate) use source_acquisition::recorded_source_receipt_storage;
 pub(crate) use source_acquisition::SemanticSourceEvidence;
 pub(crate) use source_acquisition::{
-    recorded_source_original, recorded_source_receipt_original, RecordedSourceOriginal, normalize_recorded_policy_original,
+    visit_raw_source_backing, recorded_source_original, recorded_source_receipt_original, RecordedSourceOriginal, normalize_recorded_policy_original,
 };
+#[path="input_analysis_subject.rs"]mod analysis_subject;
+pub(crate) use analysis_subject::OriginalAnalysisSubject;
 pub struct RecordingInputs<P = FileSystemInputs> {
+    analysis_subject:Option<std::sync::Arc<OriginalAnalysisSubject>>,
     initial_environment:dm_preprocess::InitialEnvironment,
     source_issuer: std::sync::Arc<()>,
     source_acquisitions: Mutex<BTreeMap<PathBuf, dm_preprocess::AcquiredSource>>,
@@ -335,6 +346,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         // Merged retained parts narrow this (`InputSnapshot::merge`).
         snapshot.watch.replace(created);
         Self {
+            analysis_subject:None,
             initial_environment:dm_preprocess::InitialEnvironment::Native5161687,
             source_issuer: std::sync::Arc::new(()),
             source_acquisitions: Mutex::new(BTreeMap::new()),
@@ -466,11 +478,40 @@ fn decode_owned_source(bytes: Vec<u8>) -> String {
 }
 impl<P: SnapshotProvider> dm_preprocess::SourceProvider for RecordingInputs<P> {
     fn initial_environment(&self)->dm_preprocess::InitialEnvironment{self.initial_environment}
+    fn original_raw_source_checked(&self,path:&Path,max_bytes:usize,before_decode:&mut dyn FnMut(usize,bool,bool)->io::Result<()>)->io::Result<Option<dm_preprocess::SourceAcquisitionLease>>{
+        if self.initial_environment!=dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(invalid("Original raw source requires its actual Original pipeline context"))}
+        crate::daemon::control::checkpoint()?;
+        if let Some(source)=self.analysis_subject.as_ref().and_then(|subject|subject.source_for(path)){
+            // SAME already-issued/prepaid subject owner; no new read/decode or
+            // preparation occurs. Retention is still charged by the consumer.
+            before_decode(0, matches!(source.encoding(),dm_preprocess::SourceEncoding::Utf8Bom|dm_preprocess::SourceEncoding::IncompatibleOriginal),false)?;
+            return Ok(Some(source.lease().clone()));
+        }
+        self.read_raw_source(path,max_bytes,None,|capacity,exceptional,needs_decode|before_decode(capacity,exceptional,needs_decode))
+    }
+    fn original_raw_source_admitted(&self,path:&Path,max_bytes:usize,before_read:&mut dyn FnMut(usize)->io::Result<()>,before_decode:&mut dyn FnMut(dm_preprocess::OriginalRawAllocationPlan<'_>)->io::Result<()>,acquired:&mut dyn FnMut(&dm_preprocess::SourceAcquisitionLease)->io::Result<()>)->io::Result<Option<dm_preprocess::SourceAcquisitionLease>>{
+        if self.initial_environment!=dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(invalid("Original raw source requires its actual Original pipeline context"))}
+        crate::daemon::control::checkpoint()?;
+        if let Some(source)=self.analysis_subject.as_ref().and_then(|subject|subject.source_for(path)){
+            before_decode(dm_preprocess::OriginalRawAllocationPlan::new(&[],0,0,0,matches!(source.encoding(),dm_preprocess::SourceEncoding::Utf8Bom|dm_preprocess::SourceEncoding::IncompatibleOriginal),false))?;
+            acquired(source.lease())?;
+            return Ok(Some(source.lease().clone()));
+        }
+        let Some(bytes)=self.read_policy_vec_admitted(path,max_bytes,before_read)?else{return Ok(None)};
+        self.finish_raw_source_read_admitted(path,bytes,before_decode,acquired).map(Some)
+    }
+    fn original_source_bytes<'a>(&'a self,lease:&'a dm_preprocess::SourceAcquisitionLease)->io::Result<Option<&'a[u8]>>{
+        self.original_bytes_checked(lease).map(Some)
+    }
+
+
+
 
     fn acquired_source(
         &self,
         path: &Path,
     ) -> Result<Option<dm_preprocess::AcquiredSource>, String> {
+        if let Some(header)=self.analysis_subject.as_ref().and_then(|subject|subject.source_for(path)){return Ok(Some(header.clone()))}
         if let Some(source) = self.prepared_impl(path).map_err(|e| e.to_string())? {
             return Ok(self.current_source_acquisition(path, source.original()));
         }
@@ -484,15 +525,18 @@ impl<P: SnapshotProvider> dm_preprocess::SourceProvider for RecordingInputs<P> {
         path: &Path,
         text: &dm_preprocess::SourceText,
     ) -> Option<dm_preprocess::AcquiredSource> {
+        if let Some(header)=self.analysis_subject.as_ref().and_then(|subject|subject.source_for(path)){return header.prepared().original().same_view(text).then(||header.clone())}
         self.current_source_acquisition(path, text)
     }
     fn prepared_source(
         &self,
         path: &Path,
     ) -> Option<std::sync::Arc<dm_preprocess::regions::prepared_source::PreparedSource>> {
+        if let Some(header)=self.analysis_subject.as_ref().and_then(|subject|subject.source_for(path)){return Some(std::sync::Arc::clone(header.prepared()))}
         self.prepared_impl(path).ok().flatten()
     }
     fn read(&self, path: &Path) -> Result<String, String> {
+        if let Some(header)=self.analysis_subject.as_ref().and_then(|subject|subject.source_for(path)){return Ok(header.prepared().original().as_str().to_owned())}
         self.read_recorded(path)
             .and_then(|bytes| self.decode_recorded_source(path, bytes))
             .map_err(|error| error.to_string())

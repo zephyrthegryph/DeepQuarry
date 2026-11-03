@@ -26,8 +26,10 @@ pub fn rows(
     walk: Walk<'_>,
     severity: Severity,
 ) -> Result<Vec<Diagnostic>, String> {
-    let mut rows = Vec::new();
-    for event in walk.events {
+    let mut rows=Vec::new();visit_events(archive,severity,walk.events,|row|{rows.push(row);Ok::<(),String>(())})?;Ok(rows)
+}
+pub(crate) fn visit_events<'a,E:From<String>+for<'e>From<&'e str>>(archive:&BodyArchive,severity:Severity,events:impl IntoIterator<Item=Event<'a>>,mut emit:impl FnMut(Diagnostic)->Result<(),E>)->Result<(),E>{
+    for event in events {
         let Event::FieldWithoutStaticType {
             expression,
             at,
@@ -38,16 +40,16 @@ pub fn rows(
             continue;
         };
         let notes = crate::checker_static_type_notes::notes(archive, at, hint)?;
-        rows.push(Diagnostic {
+        emit(Diagnostic {
             family: "field_access_static_type",
             severity,
             span: at,
             expression_span: expression.span,
             message: format!("field access requires static type: {name:?}"),
             notes,
-        });
+        })?;
     }
-    Ok(rows)
+    Ok(())
 }
 // Source locations are compiler-issued scalar facts, not serialized models.
 // Note::legacy_text retains existing string notes for old fixture consumers:

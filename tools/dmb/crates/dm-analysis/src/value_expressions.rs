@@ -8,6 +8,8 @@ use std::collections::BTreeSet;
 
 pub trait ValueHost<K> {
     type Error;
+    fn checkpoint(&self)->Result<(),Self::Error>{Ok(())}
+    fn admit_entries(&self,_:usize)->Result<(),Self::Error>{Ok(())}
     /// Locals/parameters and mutable fields resolve through the same native
     /// binding/receiver queries as compilation. Field proofs include all writes.
     fn read(&self, expression: &Expr) -> Result<Equation<K>, Self::Error>;
@@ -38,6 +40,7 @@ fn both<K: Ord>(mut left: Equation<K>, right: Equation<K>) -> Equation<K> {
 /// produces a value even if its operands do not; `&&`/`||` can return an operand
 /// and require both operands. A ternary requires both values, not its condition.
 pub fn expression<K: Ord, H: ValueHost<K>>(node: &Expr, host: &H) -> Result<Equation<K>, H::Error> {
+    host.checkpoint()?;
     Ok(match &node.kind {
         ExprKind::Literal(_) | ExprKind::TypePath(_) => constant(true),
         ExprKind::Ident(name) if name == "." => constant(true),
@@ -49,7 +52,7 @@ pub fn expression<K: Ord, H: ValueHost<K>>(node: &Expr, host: &H) -> Result<Equa
         | ExprKind::ObjectInitializer { .. } => host.read(node)?,
         ExprKind::Unary { op, .. } => constant(!matches!(op.as_str(), "new" | "&" | "*")),
         ExprKind::Binary { op, lhs, rhs } => match op.as_str() {
-            "&&" | "||" => both(expression(lhs, host)?, expression(rhs, host)?),
+            "&&" | "||" => {let left=expression(lhs,host)?;let right=expression(rhs,host)?;host.admit_entries(left.requires.len().saturating_add(right.requires.len()))?;both(left,right)},
             "=" | ":=" | "&&=" | "||=" => expression(rhs, host)?,
             _ => constant(true),
         },
@@ -57,7 +60,7 @@ pub fn expression<K: Ord, H: ValueHost<K>>(node: &Expr, host: &H) -> Result<Equa
             then_value,
             else_value,
             ..
-        } => both(expression(then_value, host)?, expression(else_value, host)?),
+        } => {let left=expression(then_value,host)?;let right=expression(else_value,host)?;host.admit_entries(left.requires.len().saturating_add(right.requires.len()))?;both(left,right)},
         ExprKind::Call { .. } => host.call(node)?,
         ExprKind::Group(inner) => expression(inner, host)?,
         ExprKind::Index { .. } | ExprKind::SafeIndex { .. } => constant(false),

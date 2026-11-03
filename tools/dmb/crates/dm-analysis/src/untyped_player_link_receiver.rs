@@ -6,11 +6,13 @@
 //! primary-qualified hints still use the original owner/resolver providers.
 use super::*;
 impl<'a, R: Resolver + ?Sized> Walker<'a, R> {
-    pub(crate) fn player_link_receiver_type(
-        &self,
-        expression: &Expr,
-    ) -> Result<Option<String>, Unsupported> {
-        let node = ungroup(expression);
+    pub(crate) fn player_link_receiver_type(&self,expression:&Expr)->Result<Option<String>,Unsupported>{
+        self.player_link_receiver_type_using(expression,&mut||Ok::<(),Unsupported>(()))
+    }
+    /// Same old receiver lookup; only operation control is lent by the caller.
+    pub(crate) fn player_link_receiver_type_using<E:From<Unsupported>+From<String>>(&self,expression:&Expr,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<Option<String>,E>{
+        checkpoint()?;
+        let node = ungroup_using(expression,checkpoint)?;
         if let Some(ctor) =
             dm_syntax::native_special_forms::constructor(node).map_err(|e| Unsupported(e.into()))?
         {
@@ -34,14 +36,15 @@ impl<'a, R: Resolver + ?Sized> Walker<'a, R> {
                 } else if let Some(ty) = self.locals.get(name) {
                     Some(ty.clone())
                 } else {
+                    checkpoint()?;
                     let own = if self.owner != SymbolId::of("/") {
-                        self.field_type(self.owner, name)?
+                        self.field_type_using(self.owner,name,checkpoint)?
                     } else {
                         None
                     };
                     match own {
                         Some(ty) => Some(ty),
-                        None => self.field_type(SymbolId::of("/"), name)?,
+                        None => {checkpoint()?;self.field_type_using(SymbolId::of("/"),name,checkpoint)?},
                     }
                 }
             }
@@ -50,35 +53,38 @@ impl<'a, R: Resolver + ?Sized> Walker<'a, R> {
             }
             | ExprKind::SafeMember {
                 object, selector, ..
-            } => match self.player_link_receiver_type(object)? {
+            } => match self.player_link_receiver_type_using(object,checkpoint)? {
                 Some(owner) if !owner.is_empty() => {
-                    self.field_type(SymbolId::of(&owner), selector)?
+                    checkpoint()?;
+                    self.field_type_using(SymbolId::of(&owner),selector,checkpoint)?
                 }
                 _ => None,
             },
             ExprKind::Index { object, .. } | ExprKind::SafeIndex { object, .. } => {
-                self.player_link_receiver_type(object)?.and_then(|path| {
+                self.player_link_receiver_type_using(object,checkpoint)?.and_then(|path| {
                     path.strip_prefix("/list")
                         .filter(|tail| tail.starts_with('/'))
                         .map(str::to_owned)
                 })
             }
             ExprKind::Call { callee, .. } => match dm_syntax::call_target(callee) {
-                dm_syntax::CallTarget::Named(name) => match self.return_type(self.owner, name)? {
+                dm_syntax::CallTarget::Named(name) => {checkpoint()?;match self.return_type_using(self.owner,name,checkpoint)? {
                     some @ Some(_) => some,
                     None if self.owner != SymbolId::of("/") => {
-                        self.return_type(SymbolId::of("/"), name)?
+                        checkpoint()?;
+                        self.return_type_using(SymbolId::of("/"),name,checkpoint)?
                     }
                     None => None,
-                },
+                }},
                 dm_syntax::CallTarget::GlobalNamed(name) => {
-                    self.return_type(SymbolId::of("/"), name)?
+                    checkpoint()?;
+                    self.return_type_using(SymbolId::of("/"),name,checkpoint)?
                 }
                 dm_syntax::CallTarget::Member { object, selector }
                 | dm_syntax::CallTarget::SafeMember {
                     object, selector, ..
                 } => {
-                    if let Some(owner) = self.player_link_receiver_type(object)? {
+                    if let Some(owner) = self.player_link_receiver_type_using(object,checkpoint)? {
                         // The original stored_refs Walker passes even an empty
                         // declared local type to Sem.ty(), which selects the
                         // ORIGINAL root for proc-return lookup. Field lookup
@@ -93,6 +99,7 @@ impl<'a, R: Resolver + ?Sized> Walker<'a, R> {
                             name: SymbolId::of(selector),
                             verb: false,
                         };
+                        checkpoint()?;
                         match self.resolver.resolve(q) {
                             M::Missing => {
                                 // Pinned get_proc_declaration traverses the type's
@@ -106,23 +113,25 @@ impl<'a, R: Resolver + ?Sized> Walker<'a, R> {
                                     // method absent. Its old root fallback also
                                     // requires a checker/source receiver type;
                                     // runtime-only seed types do not qualify.
+                                    checkpoint()?;
                                     let profile=self.tree.checker_builtin_profile().ok_or_else(||Unsupported("player-link source type roster lacks certified checker hierarchy".into()))?;
                                     if self
                                         .tree
                                         .checker_source_type_presence(profile, &owner)
                                         .map_err(|e| Unsupported(format!("{e:?}")))?
                                     {
+                                        checkpoint()?;
                                         self.return_type(SymbolId::of("/"), selector)?
                                     } else {
                                         None
                                     }
                                 }
                             }
-                            M::Members(_) => self.return_type(SymbolId::of(&owner), selector)?,
+                            M::Members(_) => {checkpoint()?;self.return_type_using(SymbolId::of(&owner),selector,checkpoint)?},
                             _ => {
                                 return Err(Unsupported(
                                     "player-link method declaration is incomplete".into(),
-                                ))
+                                ).into())
                             }
                         }
                     } else {
@@ -135,9 +144,9 @@ impl<'a, R: Resolver + ?Sized> Walker<'a, R> {
                 then_value,
                 else_value,
                 ..
-            } => match self.player_link_receiver_type(then_value)? {
-                Some(ty) if self.is_ref(&ty)? => Some(ty),
-                _ => self.player_link_receiver_type(else_value)?,
+            } => match self.player_link_receiver_type_using(then_value,checkpoint)? {
+                Some(ty) if {checkpoint()?;self.is_ref_using(&ty,checkpoint)?} => Some(ty),
+                _ => self.player_link_receiver_type_using(else_value,checkpoint)?,
             },
             _ => None,
         })

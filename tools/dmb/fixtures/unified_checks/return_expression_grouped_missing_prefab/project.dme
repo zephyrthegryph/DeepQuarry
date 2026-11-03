@@ -1,0 +1,3 @@
+/proc/probe()
+    set SpacemanDMM_return_type=(/datum/missing)
+    return 0

@@ -7,40 +7,9 @@ impl SourceProvider for Source {
     fn acquired_source(&self,_:&Path)->Result<Option<dm_preprocess::AcquiredSource>,String>{Ok(Some(self.0.clone()))}
     fn source_acquisition(&self,_:&Path,text:&dm_preprocess::SourceText)->Option<dm_preprocess::AcquiredSource>{self.0.lease().source_text().same_view(text).then(||self.0.clone())}
 }
-#[derive(Debug)]
-struct Host {
-    counter:Arc<AtomicUsize>,
-    limit:AtomicUsize,
-    fail:AtomicBool,
-    entries:AtomicUsize,
-}
-impl Host {
-    fn new()->Arc<Self>{Arc::new(Self{counter:Arc::new(AtomicUsize::new(0)),limit:AtomicUsize::new(128*1024*1024),fail:AtomicBool::new(false),entries:AtomicUsize::new(0)})}
-    fn checkpoint(&self)->std::io::Result<()>{if self.fail.load(Ordering::Acquire){Err(std::io::Error::from_raw_os_error(1450))}else{Ok(())}}
-}
-impl SettingExpressionQueries for Host {
-    fn expression(&self,input:&SettingExpressionInput<'_>)->Result<dm_syntax::SettingExpression,BodySyntaxFailure>{
-        let checkpoint=||self.checkpoint();
-        input.prepare(&dm_syntax::SettingAdmission::new(&self.counter,self.limit.load(Ordering::Acquire),&checkpoint))
-    }
-    fn initializer<'source>(&self,input:&OriginalInitializerExpressionInput<'source>)->Result<OriginalInitializerExpression<'source>,BodySyntaxFailure>{
-        let checkpoint=||self.checkpoint();
-        input.prepare(&dm_syntax::SettingAdmission::new(&self.counter,self.limit.load(Ordering::Acquire),&checkpoint))
-    }
-    fn with_declaration_admission(&self,operation:&mut dyn FnMut(&dm_syntax::SettingAdmission<'_>)->Result<(),BodySyntaxFailure>)->Result<(),BodySyntaxFailure>{
-        self.entries.fetch_add(1,Ordering::Relaxed);
-        let checkpoint=||self.checkpoint();
-        let a=dm_syntax::SettingAdmission::new(&self.counter,self.limit.load(Ordering::Acquire),&checkpoint);
-        let before=a.checkpoint();
-        if let Some(actual)=a.take_operational_error(){return Err(BodySyntaxFailure::Operational(actual))}
-        before.map_err(BodySyntaxFailure::Operational)?;
-        let result=operation(&a);
-        if matches!(&result,Err(BodySyntaxFailure::Operational(_))){return result}
-        let after=a.checkpoint();
-        if let Some(actual)=a.take_operational_error(){return Err(BodySyntaxFailure::Operational(actual))}
-        after.map_err(BodySyntaxFailure::Operational)?;result
-    }
-}
+#[path="../../../shared/original_analysis_test_host.rs"]mod original_host;
+use original_host::Host;
+
 const TEXT:&str="/datum/probe\n    var/const/value=1+2\n/proc/probe()\n    return 1\n";
 fn source(text:&str)->Source{Source(dm_preprocess::AcquiredSource::from_original_bytes(text.as_bytes().to_vec(),()))}
 fn checked(src:&Source,state:&mut RetainedSemanticTree,host:&Arc<dyn SettingExpressionQueries>)->Result<ColdFrontend,FrontendBuildFailure>{
@@ -108,3 +77,6 @@ fn checked_frontend_invalid_rhs_keeps_original_eager_fold_source_policy_and_empt
     let error=checked(&source(""),&mut RetainedSemanticTree::default(),&host).err().expect("empty checked source must still enter control");
     assert!(matches!(error,FrontendBuildFailure::Operational(ref actual)if actual.raw_os_error()==Some(1450)));
 }
+
+/// Reuse the existing checked native fixture host; never manufacture a successful model.
+pub(super) fn original_test_host()->Arc<dyn SettingExpressionQueries>{Host::new()}

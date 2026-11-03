@@ -341,7 +341,7 @@ impl<V: TypedVisitor> Walk<'_, V> {
             StatementKind::Switch {
                 selector,
                 cases,
-                else_branch,
+                else_branch, ..
             } => {
                 self.root_expression(0, selector);
                 for (index, case) in cases.iter().enumerate() {

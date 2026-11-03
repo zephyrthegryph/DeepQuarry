@@ -11,8 +11,8 @@ use crate::tree::{SourceFile, CODE_DM};
 const HINT: &str = "The DCS is gone: use OM events, om_hook() and behaviours (object_model_core.md sec 10, 16)";
 
 static META: Meta = Meta {
-    name: "dcs",
-    group: "",
+    name: crate::allow_registry_fields::dcs::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::dcs::SCOPE_META_0.group,
     label: "dcs",
     legacy: "tools/ci/dcs_lints.py",
     select: CODE_DM,
@@ -26,7 +26,7 @@ static META: Meta = Meta {
         RuleMeta { name: "comsig", hint: HINT },
     ],
     allow: crate::allow_registry_fields::dcs::ALLOW_0,
-    lists: &[],
+    lists: crate::allow_registry_fields::dcs::SCOPE_META_0.lists,
 };
 
 struct Dcs {

@@ -69,7 +69,7 @@ impl<'source> EffectSource<'source>{
                 let mut rows=Vec::new();rows.try_reserve_exact(count).map_err(|_|resource(&budget,"effect page order allocation refused"))?;
                 if rows.capacity()>count.saturating_mul(4){return Err(resource(&budget,"effect page order exposed excess capacity"))}
                 for &ordinal in &order[start..end]{checkpoint().map_err(PolicyFailure::Operational)?;rows.push((ordinal,identity(self.archive,ordinal)?));}
-                let input=Arc::new(EffectInput{key:next_input_key()?,archive:Arc::clone(self.archive),profile:self.profile,order:rows.into(),whole_roster:false});
+                let input=Arc::new(EffectInput{purpose:BodyPurpose::Effects,original_receipt:None,key:next_input_key()?,archive:Arc::clone(self.archive),profile:self.profile,order:rows.into(),whole_roster:false});
                 let mut values=Vec::new();values.try_reserve_exact(count).map_err(|_|resource(&budget,"effect page contributions allocation refused"))?;
                 if values.capacity()>count.saturating_mul(4){return Err(resource(&budget,"effect page contributions exposed excess capacity"))}
                 let mut events=0usize;
@@ -132,4 +132,25 @@ impl EffectContribution<'_>{
 }
 impl BodyEffects{
     pub fn source_contribution(&self)->EffectContribution<'_>{EffectContribution{body:self}}
+}
+
+/// Preserve the actual child query error without mapping it into policy text.
+pub enum OriginalBodyReadFailure<E>{Policy(PolicyFailure),Body(E)}
+impl<'source> EffectSource<'source>{
+ pub fn with_original_body_page_checked<E>(
+  &self,input:&Arc<EffectInput>,start:usize,width:usize,admission:&ExecutionAdmission,checkpoint:&mut impl FnMut()->io::Result<()>,
+  obtain:&mut impl FnMut(usize,&ExecutionAdmission)->Result<Arc<BodyEffects>,E>,mut consume:impl FnMut(EffectSourcePage<'_>)->Result<(),PolicyFailure>
+ )->Result<(),OriginalBodyReadFailure<E>>{
+  use OriginalBodyReadFailure::{Policy,Body};
+  checkpoint().map_err(|e|Policy(PolicyFailure::Operational(e)))?;require_admission(admission).map_err(Policy)?;
+  if !input.is_original_checker_source()||!Arc::ptr_eq(input.archive(),self.archive)||input.profile()!=self.profile{return Err(Policy("cached original page input is not this actual source purpose".into()))}
+  let pending=(||{
+   if width==0||width>MAX_EVENTS||start>=self.len(){return Err(Policy("cached original page range is outside its actual roster".into()))}
+   let end=start.checked_add(width).unwrap_or(usize::MAX).min(self.len());let count=end-start;let budget=ReportBudget::for_operation(admission);let bound=count.checked_mul(4).ok_or_else(||Policy(resource(&budget,"cached body pointer capacity overflow")))?;budget.charge(bound.checked_mul(size_of::<Arc<BodyEffects>>()).and_then(|n|n.checked_add(size_of::<Vec<Arc<BodyEffects>>>()+256)).ok_or_else(||Policy(resource(&budget,"cached body page backing overflow")))?).map_err(|_|Policy(resource(&budget,"cached body page admission exhausted")))?;
+   let mut values=Vec::new();values.try_reserve_exact(count).map_err(|_|Policy(resource(&budget,"cached body pointer allocation refused")))?;if values.capacity()>bound{return Err(Policy(resource(&budget,"cached body pointers exposed excess capacity")))}let mut events=0usize;
+   for rank in start..end{checkpoint().map_err(|e|Policy(PolicyFailure::Operational(e)))?;let ordinal=self.original_ordinal(rank).ok_or_else(||Policy(PolicyFailure::from("cached body ordinal absent")))?;let live=budget.admission_view();let original=obtain(ordinal,&live).map_err(Body)?;original.validate(input).map_err(|e|Policy(PolicyFailure::from(e)))?;if original.ordinal!=ordinal||original.procedure!=identity(self.archive,ordinal).map_err(|e|Policy(PolicyFailure::from(e)))?||original.original_evaluations!=1{return Err(Policy("cached original contribution does not represent this exact once-evaluated body".into()))}let added=original.direct.len().checked_add(original.calls.len()).and_then(|n|n.checked_add(original.blocking.len())).and_then(|n|n.checked_add(original.immediate_len())).ok_or_else(||Policy(resource(&budget,"cached original events overflow")))?;events=events.checked_add(added).ok_or_else(||Policy(resource(&budget,"cached original events overflow")))?;budget.charge(original.charge()).map_err(|_|Policy(resource(&budget,"cached original live overlap admission exhausted")))?;values.push(original);}
+   checkpoint().map_err(|e|Policy(PolicyFailure::Operational(e)))?;consume(EffectSourcePage{input,bodies:&values,start,total:self.len(),events,live_charge:budget.used()}).map_err(Policy)
+  })();
+  match pending{Err(Body(error))=>Err(Body(error)),Err(Policy(PolicyFailure::Operational(actual)))=>Err(Policy(PolicyFailure::Operational(actual))),other=>{require_admission(admission).map_err(Policy)?;checkpoint().map_err(|e|Policy(PolicyFailure::Operational(e)))?;other}}
+ }
 }

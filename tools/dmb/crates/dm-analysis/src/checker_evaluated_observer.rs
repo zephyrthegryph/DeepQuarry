@@ -19,6 +19,12 @@ pub enum ScopeKind {
 /// succeeds. Scope exit is delivered even when a nested hook returns Err.
 /// Binding strings are already issued by primary syntax, never reparsed bodies.
 pub trait EvaluatedObserver<'a,E=String> {
+    /// True means the actual event was consumed synchronously by the union.
+    fn control_event(&mut self,_event:crate::checker_reachable::Event<'a>)->Result<bool,E>{Ok(false)}
+    fn do_while_unreachable(&mut self,_at:Span,_condition:Span)->Result<(),E>{Ok(())}
+    /// Original numeric switch checks run before condition/selector evaluation.
+    fn switch_started(&mut self,_selector:&'a Expr,_cases:&'a [dm_syntax::SwitchCase],_default_present:bool,_at:Span)->Result<(),E>{Ok(())}
+    fn switch_case(&mut self,_case:&'a dm_syntax::SwitchCase)->Result<(),E>{Ok(())}
     /// Optional operation-scoped storage admission. Existing observers keep
     /// their original allocation behavior; only an explicitly bounded observer
     /// returns true. A zero-byte call also checks a sticky void-hook refusal.
@@ -44,6 +50,9 @@ pub trait EvaluatedObserver<'a,E=String> {
         always_untyped: bool,
         at: Span,
     ) -> Result<(), E>;
+    /// One iterable evaluation; observers may consume its actual static result.
+    fn iterable(&mut self,expression:&'a Expr,_at:Span)->Result<(),E>{self.expression(expression)}
+    fn invalid_range(&mut self,_at:Span)->Result<(),E>{Ok(())}
     fn catch_parameters(&mut self,_count:usize,_try_header:Span,_catch_header:Span)->Result<(),E>{Ok(())}
     fn catch_binding(&mut self, binding: Option<&'a str>, at: Span) -> Result<(), E>;
 }

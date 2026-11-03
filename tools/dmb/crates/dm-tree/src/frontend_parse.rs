@@ -267,6 +267,7 @@ pub(super) fn parse_declarations_with_demand_profile<D:super::declaration_demand
                         let profile_facts = dm_profile::item("frontend.fresh_declaration_facts");
                         let mut facts = if let Err(message) = &original_headers {
                             Err(vec![crate::AdapterError {
+                                            original_fatal: None,
                                 kind: dm_syntax::DiagnosticKind::Unsupported,
                                 span: dm_ir::Span {
                                     file: FileId(0),
@@ -290,6 +291,7 @@ pub(super) fn parse_declarations_with_demand_profile<D:super::declaration_demand
                                     .map(|ledger| (adapted, ledger))
                                     .map_err(|error| {
                                         vec![crate::AdapterError {
+                                            original_fatal: None,
                                             kind: dm_syntax::DiagnosticKind::Unsupported,
                                             span: dm_ir::Span {
                                                 file: FileId(0),
@@ -329,6 +331,7 @@ pub(super) fn parse_declarations_with_demand_profile<D:super::declaration_demand
                                     Ok(bytes) => Some(Arc::<[u8]>::from(bytes)),
                                     Err(message) => {
                                         facts = Err(vec![crate::AdapterError {
+                                            original_fatal: None,
                                             kind: dm_syntax::DiagnosticKind::Unsupported,
                                             span: dm_ir::Span {
                                                 file: FileId(0),
@@ -376,6 +379,7 @@ pub(super) fn parse_declarations_with_demand_profile<D:super::declaration_demand
                             };
                             current.ok_or_else(|| {
                                 vec![crate::AdapterError {
+                                            original_fatal: None,
                                     kind: dm_syntax::DiagnosticKind::Unsupported,
                                     span: dm_ir::Span {
                                         file: FileId(0),

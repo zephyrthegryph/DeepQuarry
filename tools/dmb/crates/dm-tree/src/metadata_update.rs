@@ -355,17 +355,15 @@ pub(crate) fn dependency_order(
     }
     order
 }
-pub(crate) fn apply_opaque_base<M: crate::member_binding::MemberWrite + ?Sized>(
-    tree: &SemanticTree,
-    members: &mut M,
-    index: usize,
-) {
+pub(crate) fn apply_opaque_base<M:crate::member_binding::MemberWrite+?Sized>(tree:&SemanticTree,members:&mut M,index:usize){let _=apply_variable_base(tree,members,index,None);}
+pub(crate) fn apply_original_variable_base<M:crate::member_binding::MemberWrite+?Sized>(tree:&SemanticTree,members:&mut M,index:usize,variables:&crate::checker_builtins::OriginalVariableDeclarations)->bool{apply_variable_base(tree,members,index,Some(variables))}
+fn apply_variable_base<M:crate::member_binding::MemberWrite+?Sized>(tree:&SemanticTree,members:&mut M,index:usize,variables:Option<&crate::checker_builtins::OriginalVariableDeclarations>)->bool{
     let member = members.member(index);
     if member.definition != DefinitionMode::Override
         || member.previous.is_some()
         || member.kind != MemberKind::Var
     {
-        return;
+        return false;
     }
     let mut owner = Some(member.owner);
     while let Some(current) = owner {
@@ -381,16 +379,31 @@ pub(crate) fn apply_opaque_base<M: crate::member_binding::MemberWrite + ?Sized>(
             if member.metadata.declared_type == declared_type
                 && member.metadata.inherited_opaque.as_ref() == Some(opaque)
             {
-                return;
+                return false;
             }
             let mut metadata = member.metadata.as_ref().clone();
             metadata.declared_type = declared_type;
             metadata.inherited_opaque = Some(opaque.clone());
             members.set_metadata(index, Arc::new(metadata));
-            return;
+            return false;
+        }
+        if let Some(base)=variables.and_then(|permit|permit.variable(tree,tree.types[current.index()].path,member.name)){
+            // The authored initializer/constant remains this source override.
+            // Only genuine formal declaration properties come from the catalog.
+            let mut metadata=member.metadata.as_ref().clone();
+            metadata.declared_type=base.declared_type;
+            metadata.list_element_type=base.list_element_type;
+            metadata.display_name=base.display_name;
+            metadata.flags=base.flags;
+            metadata.array=base.array.clone();
+            metadata.declared_initializer=base.declared_initializer.clone();
+            metadata.inherited_opaque=None;
+            members.set_metadata(index,Arc::new(metadata));
+            return true;
         }
         owner = tree.parent(current);
     }
+    false
 }
 pub(crate) fn resolve_metadata<M: crate::member_binding::MemberWrite + ?Sized>(
     tree: &SemanticTree,

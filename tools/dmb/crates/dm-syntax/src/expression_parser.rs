@@ -15,6 +15,7 @@ pub(crate) fn parse_expression_with_admission(
 ) -> ParsedExpr {
     if admission.checkpoint().is_err() {
         return ParsedExpr {
+            original_simple_expression:None,original_input_notices:None,original_input_failure:None,
             expr: None,
             diagnostics: Vec::new(),
         };
@@ -49,11 +50,19 @@ pub(crate) fn parse_expression_span_tokens_with_admission(
     tokens: &[SpanToken],
     current_offset: usize,
     admission: &crate::SettingAdmission<'_>,
-) -> ParsedExpr {
+) -> ParsedExpr {parse_expression_span_tokens_with_original_literals(source,tokens,current_offset,admission,None)}
+pub(crate) fn parse_expression_span_tokens_with_original_literals(
+ source:&str,tokens:&[SpanToken],current_offset:usize,admission:&crate::SettingAdmission<'_>,facts:Option<crate::OriginalLiteralFactsView<'_>>,
+)->ParsedExpr {parse_expression_span_tokens_with_literal_origin(source,tokens,current_offset,0,admission,facts)}
+/// SAME parser and original native tokens, normalized to one snippet's local
+/// expression coordinates BEFORE parsing. No prior absolute AST is rebound.
+pub(crate) fn parse_expression_span_tokens_with_literal_origin(source:&str,tokens:&[SpanToken],current_offset:usize,source_origin:usize,admission:&crate::SettingAdmission<'_>,facts:Option<crate::OriginalLiteralFactsView<'_>>)->ParsedExpr{let original=facts.is_some();parse_span_tokens_profile(source,tokens,current_offset,source_origin,admission,facts,original)}
+fn parse_span_tokens_profile(source:&str,tokens:&[SpanToken],current_offset:usize,source_origin:usize,admission:&crate::SettingAdmission<'_>,facts:Option<crate::OriginalLiteralFactsView<'_>>,original_profile:bool)->ParsedExpr{
     let mut owned = Vec::new();
     for token in tokens {
         if admission.checkpoint().is_err() {
             return ParsedExpr {
+                original_simple_expression:None,original_input_notices:None,original_input_failure:None,
                 expr: None,
                 diagnostics: Vec::new(),
             };
@@ -64,26 +73,29 @@ pub(crate) fn parse_expression_span_tokens_with_admission(
                 "original setting token range unavailable",
             ));
             return ParsedExpr {
+                original_simple_expression:None,original_input_notices:None,original_input_failure:None,
                 expr: None,
                 diagnostics: Vec::new(),
             };
         };
-        let Some(start) = token.span.start.checked_add(current_offset) else {
+        let Some(start) = token.span.start.checked_sub(source_origin).and_then(|n|n.checked_add(current_offset)) else {
             admission.record_operational_error(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
                 "current setting token offset overflow",
             ));
             return ParsedExpr {
+                original_simple_expression:None,original_input_notices:None,original_input_failure:None,
                 expr: None,
                 diagnostics: Vec::new(),
             };
         };
-        let Some(end) = token.span.end.checked_add(current_offset) else {
+        let Some(end) = token.span.end.checked_sub(source_origin).and_then(|n|n.checked_add(current_offset)) else {
             admission.record_operational_error(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
                 "current setting token end overflow",
             ));
             return ParsedExpr {
+                original_simple_expression:None,original_input_notices:None,original_input_failure:None,
                 expr: None,
                 diagnostics: Vec::new(),
             };
@@ -94,7 +106,7 @@ pub(crate) fn parse_expression_span_tokens_with_admission(
             text: text.to_owned(),
         });
     }
-    finish_expression_with_admission(owned, Vec::new(), Some(admission))
+    finish_expression_with_literal_facts(owned,Vec::new(),Some(admission),facts.map(|view|{let(rows,origin)=view.raw_parts();(rows,origin,current_offset,source_origin)}),original_profile)
 }
 fn finish_expression(tokens: Vec<Token>, diagnostics: Vec<Diagnostic>) -> ParsedExpr {
     finish_expression_with_admission(tokens, diagnostics, None)
@@ -103,11 +115,18 @@ fn finish_expression_with_admission(
     tokens: Vec<Token>,
     diagnostics: Vec<Diagnostic>,
     admission: Option<&crate::SettingAdmission<'_>>,
-) -> ParsedExpr {
+) -> ParsedExpr {finish_expression_with_literal_facts(tokens,diagnostics,admission,None,false)}
+fn finish_expression_with_literal_facts<'facts>(tokens:Vec<Token>,diagnostics:Vec<Diagnostic>,admission:Option<&crate::SettingAdmission<'_>>,literal_facts:Option<(&'facts[(Span,crate::OriginalLiteralData)],usize,usize,usize)>,original_profile:bool)->ParsedExpr {
     let mut parser = ExprParser {
         tokens: expression_tokens(tokens),
         index: 0,
         ternary_then_depth: 0,
+        original_simple_incomplete:None,
+        original_profile,
+        input_notices:crate::original_input_notices::Builder::default(),input_failure:None,
+        expected_term:None,
+        demand:None,
+        literal_facts,
         diagnostics,
         admission,
     };
@@ -120,50 +139,113 @@ fn finish_expression_with_admission(
             crate::setting_drop::drop_expression(expression, None);
         }
         return ParsedExpr {
+            original_simple_expression:None,original_input_notices:None,original_input_failure:None,
             expr: None,
             diagnostics: Vec::new(),
         };
     }
-    if let Some(token) = parser.peek() {
-        parser.diagnostics.push(Diagnostic {
-            span: token.span,
-            kind: DiagnosticKind::Expression,
-            message: format!("unexpected token in expression: {}", token.text),
-        });
-    }
+    let trailing=parser.peek().map(|token|(token.span,format!("unexpected token in expression: {}",token.text)));
+    if let Some((span,message))=trailing{parser.error(span,message);}
+    let original_simple_expression=if parser.diagnostics.is_empty(){expr.as_ref().and_then(|expr|original_simple_complete(expr,&parser.tokens))}else{parser.original_simple_incomplete};
     ParsedExpr {
+        original_simple_expression,
+        original_input_failure:parser.input_failure,original_input_notices:parser.original_profile.then(||parser.input_notices.finish()),
         expr,
         diagnostics: parser.diagnostics,
     }
 }
 
 /// Project the existing lossless tokens to primary expression punctuation.
-/// Scope is maximal-munch BEFORE conditional/member parsing consumes colons.
-/// Trivia is discarded but original byte adjacency is still authoritative.
-fn expression_tokens(tokens: Vec<Token>) -> Vec<Token> {
-    let mut input = tokens
-        .into_iter()
-        .filter(|token| {
-            !matches!(
-                token.kind,
-                TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment
-            )
-        })
-        .peekable();
-    let mut output = Vec::new();
-    while let Some(mut token) = input.next() {
-        if token.text == ":"
-            && input
-                .peek()
-                .is_some_and(|next| next.text == ":" && token.span.end == next.span.start)
-        {
-            let next = input.next().unwrap();
-            token.text.push(':');
-            token.span.end = next.span.end;
-        }
-        output.push(token);
-    }
-    output
+/// Whole and demanded routes use the SAME normalizer and actual adjacency.
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub struct NativeExpressionTokenOccurrence{ordinal:usize,span:Span}
+impl NativeExpressionTokenOccurrence{pub fn ordinal(self)->usize{self.ordinal}pub fn span(self)->Span{self.span}}
+struct OriginalDemandToken{token:Token,occurrence:NativeExpressionTokenOccurrence,credit:Option<crate::SettingRootLease>}
+struct NativeExpressionTokenCursor<'a>{source:&'a mut dyn NativeExpressionTokenDemand,pending:Option<OriginalDemandToken>,next_ordinal:usize}
+impl NativeExpressionTokenCursor<'_>{
+ fn significant(&mut self)->std::io::Result<Option<OriginalDemandToken>>{loop{let next=match self.pending.take(){Some(token)=>Some(token),None=>match self.source.next_token()?{None=>None,Some(token)=>{let ordinal=self.next_ordinal;self.next_ordinal=ordinal.checked_add(1).ok_or_else(||std::io::Error::new(std::io::ErrorKind::OutOfMemory,"native expression source-token ordinal overflow"))?;let span=token.span;{let occurrence=NativeExpressionTokenOccurrence{ordinal,span};let credit=self.source.take_token_credit(occurrence)?;Some(OriginalDemandToken{token,occurrence,credit})}}}};match next{Some(token)if matches!(token.token.kind,TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment)=>continue,other=>return Ok(other)}}}
+ fn next(&mut self,a:Option<&crate::SettingAdmission<'_>>)->std::io::Result<Option<OriginalDemandToken>>{let Some(mut token)=self.significant()?else{return Ok(None)};
+ // Actual final-token VALUE/kind is already the lossless lexer decision.
+ // In particular ':' must not request a future token merely to reconstruct
+ // punctuation which that producer has already issued.
+ let typed=self.source.original_value(token.occurrence)?.is_some();
+ if typed{return Ok(Some(token))}
+ if self.source.requires_original_values(){return Err(std::io::Error::new(std::io::ErrorKind::Unsupported,"actual original punctuation VALUE occurrence is unissued"))}
+ if token.token.text==":"{if let Some(next)=self.significant()?{if next.token.text==":"&&token.token.span.end==next.token.span.start{
+  if let Some(a)=a{
+   if token.credit.is_none(){token.credit=Some(a.reserve(token.token.text.capacity())?)}
+   let credit=token.credit.as_mut().unwrap();if !a.matches_lease_domain(credit)||credit.bytes()<token.token.text.capacity(){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"native punctuation token lacks its actual same-domain raw credit"))}
+   if token.token.text.capacity()<2{let bound=8usize;let extra=bound.saturating_sub(credit.bytes());a.grow(credit,extra)?;token.token.text.try_reserve_exact(2-token.token.text.len()).map_err(|e|std::io::Error::new(std::io::ErrorKind::OutOfMemory,e))?;if token.token.text.capacity()>bound{return Err(std::io::ErrorKind::OutOfMemory.into())}}
+  }
+  token.token.text.push(':');token.token.span.end=next.token.span.end;
+ }else{self.pending=Some(next)}}}Ok(Some(token))}
+}
+/// Owned primary token spelling/kind/span only. A preprocessor driver retains
+/// its SAME typed literal VALUE/origin ledger separately; no parse result here
+/// grants Original literal meaning, source acquisition or declaration authority.
+/// None must be a genuine expression delimiter/end in that driver's state,
+/// never a temporary physical pause or a fabricated prefix EOF.
+/// DATA-only permission while the SAME Pratt primitive consumes its clauses.
+#[derive(Clone,Copy,Debug,Default,Eq,PartialEq)]pub struct NativePrimitiveClauseMode{pub as_clause:bool,pub in_clause:bool}
+pub trait NativeExpressionTokenDemand{fn begin_expression(&mut self)->std::io::Result<()>{Ok(())}fn next_token(&mut self)->std::io::Result<Option<Token>>;
+ /// Move the actual owned spelling credit immediately after this occurrence
+ /// was returned. None keeps the ordinary caller-funded fallback. This moves
+ /// only resource DATA, never literal/source/compatibility authority.
+ fn take_token_credit(&mut self,_occurrence:NativeExpressionTokenOccurrence)->std::io::Result<Option<crate::SettingRootLease>>{Ok(None)}
+ fn original_value(&self,_occurrence:NativeExpressionTokenOccurrence)->std::io::Result<Option<crate::OriginalTokenValue<&str>>>{Ok(None)}fn original_literal_data(&self,_occurrence:NativeExpressionTokenOccurrence)->std::io::Result<Option<&crate::OriginalLiteralData>>{Ok(None)}fn requires_original_values(&self)->bool{false}
+ fn set_original_primitive_clause_mode(&mut self,_mode:NativePrimitiveClauseMode)->std::io::Result<NativePrimitiveClauseMode>{Ok(NativePrimitiveClauseMode::default())}}
+impl<F:FnMut()->std::io::Result<Option<Token>>> NativeExpressionTokenDemand for F{fn next_token(&mut self)->std::io::Result<Option<Token>>{self()}}
+struct WholeExpressionTokens(std::vec::IntoIter<Token>);
+impl NativeExpressionTokenDemand for WholeExpressionTokens{fn next_token(&mut self)->std::io::Result<Option<Token>>{Ok(self.0.next())}}
+fn expression_tokens(tokens:Vec<Token>)->Vec<Token>{let mut source=WholeExpressionTokens(tokens.into_iter());let mut cursor=NativeExpressionTokenCursor{source:&mut source,pending:None,next_ordinal:0};let mut output=Vec::new();while let Some(token)=cursor.next(None).expect("owned whole token iterator cannot fail"){output.push(token.token)}output}
+struct ExpressionDemandInput<'a>{cursor:NativeExpressionTokenCursor<'a>,exhausted:bool,stopped:bool,failure:Option<std::io::Error>,occurrences:Vec<NativeExpressionTokenOccurrence>,lease:crate::SettingRootLease}
+impl ExpressionDemandInput<'_>{
+ fn next(&mut self,a:&crate::SettingAdmission<'_>)->std::io::Result<Option<OriginalDemandToken>>{self.cursor.next(Some(a))}
+ fn admit_token(&mut self,a:&crate::SettingAdmission<'_>,tokens:&mut Vec<Token>,incoming:&mut OriginalDemandToken)->std::io::Result<()>{
+  a.checkpoint()?;
+  let token=&incoming.token;
+  let adopted=if let Some(credit)=incoming.credit.as_mut(){
+   if !a.matches_lease_domain(credit)||credit.bytes()<token.text.capacity(){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"native expression token lacks its actual same-domain raw capacity credit"))}
+   a.absorb(&mut self.lease,credit)?;true
+  }else{false};
+  // Actual demanded token geometry bounds the SAME grammar's transient AST,
+  // copied token spelling, branches and error-unwind live storage. This is a
+  // conservative node coordination envelope, not exact allocator/RSS evidence.
+  // No unseen source/header/body bytes participate in this admission.
+  let nodes=std::mem::size_of::<Expr>().checked_mul(16).and_then(|n|n.checked_add(std::mem::size_of::<Diagnostic>()*4+512)).and_then(|n|n.checked_add(token.text.capacity().checked_mul(16)?)).ok_or_else(||std::io::Error::new(std::io::ErrorKind::OutOfMemory,"demanded expression token geometry overflow"))?;
+  // The existing envelope includes the original spelling once as well as
+  // native grammar copies. Adopt that one real allocation instead of charging
+  // it a second time; the rest of the envelope is unchanged.
+  let nodes=if adopted{nodes.checked_sub(token.text.capacity()).ok_or_else(||std::io::Error::from(std::io::ErrorKind::OutOfMemory))?}else{nodes};
+  a.grow(&mut self.lease,nodes)?;
+  if tokens.len()==tokens.capacity(){let capacity=tokens.len().checked_add(1).and_then(usize::checked_next_power_of_two).ok_or_else(||std::io::Error::from(std::io::ErrorKind::OutOfMemory))?;let bound=capacity.checked_mul(4).ok_or_else(||std::io::Error::from(std::io::ErrorKind::OutOfMemory))?;a.grow(&mut self.lease,bound.checked_mul(std::mem::size_of::<Token>()).and_then(|n|n.checked_add(128)).ok_or_else(||std::io::Error::from(std::io::ErrorKind::OutOfMemory))?)?;a.grow(&mut self.lease,bound.checked_mul(std::mem::size_of::<NativeExpressionTokenOccurrence>()).ok_or_else(||std::io::Error::from(std::io::ErrorKind::OutOfMemory))?)?;self.occurrences.try_reserve_exact(capacity-self.occurrences.len()).map_err(|actual|std::io::Error::new(std::io::ErrorKind::OutOfMemory,actual))?;tokens.try_reserve_exact(capacity-tokens.len()).map_err(|actual|std::io::Error::new(std::io::ErrorKind::OutOfMemory,actual))?;if self.occurrences.capacity()>bound||tokens.capacity()>bound{return Err(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"demanded expression token capacity exceeded funded geometry"))}}
+  Ok(())
+ }
+}
+/// One actual Pratt result plus the same produced token facts and storage
+/// owner. No declaration/model/Original compatibility grant is issued here.
+/// Field order makes roots/tokens drop before their operation credit.
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub struct NativeTermExpectation{token:Option<Span>}
+impl NativeTermExpectation{pub fn token_span(self)->Option<Span>{self.token}}
+pub struct DemandedExpression{parsed:ParsedExpr,tokens:Vec<Token>,expected_term:Option<NativeTermExpectation>,lease:crate::SettingRootLease}
+impl DemandedExpression{pub fn expected_term(&self)->Option<NativeTermExpectation>{self.expected_term}pub fn parsed(&self)->&ParsedExpr{&self.parsed}pub fn tokens(&self)->&[Token]{&self.tokens}pub fn into_parts(self)->(ParsedExpr,Vec<Token>,crate::SettingRootLease){(self.parsed,self.tokens,self.lease)}}
+pub fn parse_expression_demanded(source:&mut dyn NativeExpressionTokenDemand,admission:&crate::SettingAdmission<'_>)->std::io::Result<DemandedExpression>{parse_demanded_profile(source,admission,false)}
+pub fn parse_original_expression_demanded(source:&mut dyn NativeExpressionTokenDemand,admission:&crate::SettingAdmission<'_>)->std::io::Result<DemandedExpression>{parse_demanded_profile(source,admission,true)}
+fn parse_demanded_profile(source:&mut dyn NativeExpressionTokenDemand,admission:&crate::SettingAdmission<'_>,original_profile:bool)->std::io::Result<DemandedExpression>{
+ source.begin_expression()?;
+ let lease=admission.reserve(0).map_err(|proxy|admission.take_operational_error().unwrap_or(proxy))?;
+ let input=ExpressionDemandInput{cursor:NativeExpressionTokenCursor{source,pending:None,next_ordinal:0},exhausted:false,stopped:false,failure:None,occurrences:Vec::new(),lease};
+ let mut parser=ExprParser{admission:Some(admission),tokens:Vec::new(),index:0,ternary_then_depth:0,original_simple_incomplete:None,original_profile,input_notices:crate::original_input_notices::Builder::default(),input_failure:None,expected_term:None,diagnostics:Vec::new(),literal_facts:None,demand:Some(input)};
+ let expr=parser.expression(0);
+ // Demand-mode recovery never requests a token after the first actual native
+ // syntax failure. Ordinary whole expression recovery remains unchanged.
+ if parser.diagnostics.is_empty(){let extra=parser.peek().map(|token|(token.span,format!("unexpected token in expression: {}",token.text)));if let Some((span,message))=extra{parser.error(span,message)}}
+ let input=parser.demand.take().expect("same demanded parser owner");
+ if let Some(actual)=input.failure.or_else(||admission.take_operational_error()){
+  if let Some(expression)=expr{crate::setting_drop::drop_expression(expression,None)}return Err(actual)
+ }
+ if admission.is_stopped(){if let Some(expression)=expr{crate::setting_drop::drop_expression(expression,None)}return Err(admission.checkpoint().err().unwrap_or_else(||std::io::Error::new(std::io::ErrorKind::Other,"native expression operation stopped without a current failure")))}
+ let original_simple_expression=if parser.diagnostics.is_empty(){expr.as_ref().and_then(|expr|original_simple_complete(expr,&parser.tokens))}else{parser.original_simple_incomplete};
+ Ok(DemandedExpression{parsed:ParsedExpr{expr,diagnostics:parser.diagnostics,original_simple_expression,original_input_failure:parser.input_failure,original_input_notices:parser.original_profile.then(||parser.input_notices.finish())},tokens:parser.tokens,expected_term:parser.expected_term,lease:input.lease})
 }
 
 // Pratt's left fold can create a deep AST WITHOUT deep parser recursion.
@@ -220,18 +302,74 @@ enum PostfixMode {
     ConstructorMini,
 }
 
-struct ExprParser<'op> {
+struct ExprParser<'op,'input> {
     admission: Option<&'op crate::SettingAdmission<'op>>,
     tokens: Vec<Token>,
     index: usize,
     ternary_then_depth: usize,
+    original_simple_incomplete:Option<OriginalSimpleExpression>,
+    original_profile:bool,
+    input_notices:crate::original_input_notices::Builder,
+    input_failure:Option<crate::OriginalInputFailure>,
+    expected_term:Option<NativeTermExpectation>,
     diagnostics: Vec<Diagnostic>,
+    demand:Option<ExpressionDemandInput<'input>>,
+    literal_facts:Option<(&'input[(Span,crate::OriginalLiteralData)],usize,usize,usize)>,
 }
 
-impl ExprParser<'_> {
-    pub(super) fn peek(&self) -> Option<&Token> {
-        self.tokens.get(self.index)
+impl ExprParser<'_,'_> {
+    fn original_operational(&mut self,error:std::io::Error){if let Some(input)=&mut self.demand{if input.failure.is_none(){input.failure=Some(error)}input.stopped=true;}else if let Some(a)=self.admission{a.record_operational_error(error);}}
+    fn primitive_mode(&mut self,mode:NativePrimitiveClauseMode)->Option<NativePrimitiveClauseMode>{match self.demand.as_mut(){Some(input)=>match input.cursor.source.set_original_primitive_clause_mode(mode){Ok(previous)=>Some(previous),Err(error)=>{self.original_operational(error);None}},None=>Some(NativePrimitiveClauseMode::default())}}
+    fn primitive_notice(&mut self,at:Span,kind:crate::OriginalInputNoticeKind)->Option<()>{let Some(a)=self.admission else{self.original_operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"Original primitive parser event lacks native admission"));return None};match self.input_notices.push(at,kind,a){Ok(())=>Some(()),Err(error)=>{self.original_operational(error);None}}}
+    // SAME consuming union/empty producer as actual formal input clauses.
+    fn original_input_types(&mut self,allow_in:bool,outer:NativePrimitiveClauseMode)->Option<(Vec<String>,usize)>{
+      self.primitive_mode(NativePrimitiveClauseMode{as_clause:outer.as_clause,in_clause:allow_in||outer.in_clause})?;
+      let Some(a)=self.admission else{self.original_operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"Original input type parser lacks native admission"));return None};
+      let mut cursor=match crate::ParameterInputCursor::new(a,false){Ok(cursor)=>cursor,Err(error)=>{self.original_operational(error);return None}};let mut types=Vec::new();
+      loop{let flow=match self.peek(){Some(token)=>cursor.feed(token.kind,token.span,&token.text),None=>break};match flow{
+        Ok(crate::ParameterInputFlow::Boundary)=>break,
+        Ok(crate::ParameterInputFlow::ConsumedIdentifier)=>{let token=self.take()?;if crate::original_input_type_name(&token.text){types.push(token.text)}else{self.primitive_notice(token.span,crate::OriginalInputNoticeKind::BadInputType)?;}},
+        Ok(crate::ParameterInputFlow::Consumed)=>{self.take()?;},
+        Err(crate::ParameterInputFailure::Operational(error))=>{self.original_operational(error);return None},
+        Err(crate::ParameterInputFailure::Syntax{at,receipt,..})=>{self.input_failure=Some(receipt);self.error(at,"invalid native Original input annotation");return None},
+      }if cursor.completed_empty(){break}}
+      let input=match cursor.finish(){Ok(input)=>input,Err(crate::ParameterInputFailure::Operational(error))=>{self.original_operational(error);return None},Err(crate::ParameterInputFailure::Syntax{at,receipt,..})=>{self.input_failure=Some(receipt);self.error(at,"incomplete native Original input annotation");return None}};
+      let end=match &*input{crate::ParameterInputSyntax::EmptyParens{span,..}|crate::ParameterInputSyntax::Union{span,..}=>span.end};Some((types,end))
     }
+    fn original_primitive_clauses(&mut self,mut lhs:Expr,closing:Span)->Option<Expr>{
+      let(input,locate,start,argument_in,too_many)=match &lhs.kind{ExprKind::Call{callee,args}=>match &callee.kind{ExprKind::Ident(name)if name=="input"=>(true,false,callee.span,false,false),ExprKind::Ident(name)if name=="locate"=>(false,true,callee.span,args.first().is_some_and(|arg|matches!(&arg.kind,ExprKind::Binary{op,..}if op=="in")),args.len()>1),_=>return Some(lhs)},_=>return Some(lhs)};
+      let previous=self.primitive_mode(NativePrimitiveClauseMode{as_clause:input,in_clause:true})?;
+      let result=(||{
+       if locate&&argument_in{self.primitive_notice(closing,crate::OriginalInputNoticeKind::LocateInArgument)?;}
+       if input&&self.take_text("as").is_some(){let(types,end)=self.original_input_types(true,previous)?;lhs=Expr{span:Span::new(lhs.span.start,end),kind:ExprKind::TypeFilter{value:Box::new(lhs),types}};}
+       self.primitive_mode(NativePrimitiveClauseMode{as_clause:previous.as_clause,in_clause:true})?;
+       if self.take_text("in").is_some(){
+        if locate&&too_many{self.primitive_notice(start,crate::OriginalInputNoticeKind::LocateTupleIn)?;}
+        self.primitive_mode(NativePrimitiveClauseMode{as_clause:input,in_clause:true})?;
+        let container=self.expression(0)?;lhs=Expr{span:Span::new(lhs.span.start,container.span.end),kind:ExprKind::Binary{op:"in".into(),lhs:Box::new(lhs),rhs:Box::new(container)}};
+        if input{if let Some(marker)=self.take_text("as"){self.primitive_notice(marker.span,crate::OriginalInputNoticeKind::InPrecedesAs)?;let(_,end)=self.original_input_types(false,previous)?;lhs.span.end=end;}}
+       }
+       Some(lhs)
+      })();
+      if self.primitive_mode(previous).is_none(){return None}result
+    }
+
+    fn ensure(&mut self,index:usize)->bool{
+        if self.demand.is_none(){return index<self.tokens.len()}
+        if !self.diagnostics.is_empty(){return false}
+        while self.tokens.len()<=index{
+            let Some(input)=self.demand.as_mut()else{unreachable!()};
+            if input.stopped||input.exhausted||self.admission.is_some_and(|a|a.is_stopped()){return false}
+            let Some(a)=self.admission else{input.failure=Some(std::io::Error::new(std::io::ErrorKind::InvalidInput,"native expression demand lacks its actual operation admission"));input.stopped=true;return false};
+            let result=input.next(a);
+            let mut incoming=match result{Ok(Some(token))=>token,Ok(None)=>{input.exhausted=true;return false},Err(actual)=>{input.failure=Some(actual);input.stopped=true;return false}};
+            if let Err(actual)=input.admit_token(a,&mut self.tokens,&mut incoming){input.failure=Some(a.take_operational_error().unwrap_or(actual));input.stopped=true;return false}
+            input.occurrences.push(incoming.occurrence);self.tokens.push(incoming.token);
+        }
+        true
+    }
+    fn peek_at(&mut self,index:usize)->Option<&Token>{if self.ensure(index){self.tokens.get(index)}else{None}}
+    pub(super) fn peek(&mut self) -> Option<&Token> {self.peek_at(self.index)}
     pub(super) fn take(&mut self) -> Option<Token> {
         let token = self.peek()?.clone();
         self.index += 1;
@@ -321,6 +459,7 @@ impl ExprParser<'_> {
                     };
                     continue;
                 }
+                if self.peek().is_some_and(|first|matches!(first.text.as_str(),"+"|"-")){self.ensure(self.index+1);}
                 if let (Some(first), Some(second)) =
                     (self.tokens.get(self.index), self.tokens.get(self.index + 1))
                 {
@@ -346,12 +485,13 @@ impl ExprParser<'_> {
                         continue;
                     }
                 }
-                if self.peek().is_some_and(|token| token.text == "?")
-                    && self.tokens.get(self.index + 1).is_some_and(|token| {
+                let question_end=self.peek().filter(|token|token.text=="?").map(|token|token.span.end);
+                if question_end.is_some()
+                    && self.peek_at(self.index + 1).is_some_and(|token| {
                         matches!(token.text.as_str(), "." | ":" | "[")
                             && mode != PostfixMode::ConstructorPrefab
                             && (mode == PostfixMode::Expression || token.text != "[")
-                            && self.tokens[self.index].span.end == token.span.start
+                            && question_end==Some(token.span.start)
                     })
                 {
                     self.take();
@@ -434,7 +574,9 @@ impl ExprParser<'_> {
                             }
                         }
                     }
-                    let end = self.take_text(")").map_or_else(
+                    let closing_token=self.take_text(")");
+                    let closing_span=closing_token.as_ref().map(|token|token.span);
+                    let end = closing_token.map_or_else(
                         || {
                             self.error(open.span, "unclosed call");
                             lhs.span.end
@@ -451,6 +593,7 @@ impl ExprParser<'_> {
                     if mode != PostfixMode::Expression {
                         break;
                     }
+                    if self.original_profile{lhs=self.original_primitive_clauses(lhs,closing_span?)?;continue;}
                     // `in` is an optional locate clause, so it belongs inside
                     // an enclosing prefix operator (`!locate(T) in L`).
                     if matches!(&lhs.kind, ExprKind::Call { callee, args }
@@ -527,7 +670,7 @@ impl ExprParser<'_> {
             if mode != PostfixMode::Expression {
                 break;
             }
-            if min_bp <= 8 && self.take_text("as").is_some() {
+            if !self.original_profile && min_bp <= 8 && self.take_text("as").is_some() {
                 let mut types = Vec::new();
                 let mut end = lhs.span.end;
                 loop {
@@ -580,8 +723,15 @@ impl ExprParser<'_> {
             if left_bp < min_bp {
                 break;
             }
+            let original_operator=self.index;
             self.index += width;
             if self.peek().is_none() && self.diagnostics.is_empty() {
+                if self.expected_term.is_none(){self.expected_term=Some(NativeTermExpectation{token:None});}
+                // Actual selected Pratt operator exhausted its required RHS.
+                // This is not a classification of an error string/diagnostic.
+                if width==1&&original_operator==1&&self.tokens.len()==2&&simple_arithmetic(&op)&&simple_term(&lhs,&self.tokens[0]){
+                    self.original_simple_incomplete=Some(OriginalSimpleExpression{kind:OriginalSimpleKind::MissingArithmeticOperand,span:Span::new(lhs.span.start,self.tokens[original_operator].span.end),operator:Some(self.tokens[original_operator].span)});
+                }
                 self.diagnostics.push(Diagnostic {
                     span: Span::new(lhs.span.end, lhs.span.end),
                     kind: DiagnosticKind::IncompleteExpression,
@@ -608,29 +758,14 @@ impl ExprParser<'_> {
         Some(lhs)
     }
 
-    fn colon_member_before_ternary_separator(&self, lhs: &Expr) -> bool {
-        let Some(colon) = self.tokens.get(self.index) else {
-            return false;
-        };
-        let Some(member) = self.tokens.get(self.index + 1) else {
-            return false;
-        };
-        if lhs.span.end != colon.span.start
-            || colon.span.end != member.span.start
-            || member.kind != TokenKind::Ident
-        {
-            return false;
-        }
-        let mut nesting = 0usize;
-        for token in self.tokens.iter().skip(self.index + 2) {
-            match token.text.as_str() {
-                "(" | "[" | "{" => nesting += 1,
-                ")" | "]" | "}" if nesting == 0 => break,
-                ")" | "]" | "}" => nesting -= 1,
-                "," | ";" if nesting == 0 => break,
-                ":" if nesting == 0 => return true,
-                _ => {}
-            }
+    fn colon_member_before_ternary_separator(&mut self, lhs: &Expr) -> bool {
+        let Some(colon)=self.peek_at(self.index).map(|token|token.span)else{return false};
+        let Some((member_span,member_kind))=self.peek_at(self.index+1).map(|token|(token.span,token.kind))else{return false};
+        if lhs.span.end!=colon.start||colon.end!=member_span.start||member_kind!=TokenKind::Ident{return false}
+        let mut nesting=0usize;let mut cursor=self.index+2;
+        while let Some(token)=self.peek_at(cursor){
+            match token.text.as_str(){"("|"["|"{"=>nesting+=1,")"|"]"|"}" if nesting==0=>break,")"|"]"|"}"=>nesting-=1,","|";" if nesting==0=>break,":" if nesting==0=>return true,_=>{}}
+            cursor+=1;
         }
         false
     }
@@ -645,12 +780,36 @@ impl ExprParser<'_> {
 
     fn original_prefab_tail(&mut self,start:&str,span:Span,namespace_dot:bool)->Option<Expr>{
         let mut path=String::from(start);let mut end=span.end;
-        while let Some(next)=self.peek(){if next.span.start!=end{break}if next.kind==TokenKind::Ident||next.text=="/"{path.push_str(&next.text);end=next.span.end;self.index+=1;}else if namespace_dot&&next.text=="."&&self.tokens.get(self.index+1).is_some_and(|kind|matches!(kind.text.as_str(),"proc"|"verb"|"var"))&&self.tokens.get(self.index+2).is_some_and(|slash|slash.text=="/"){path.push('.');path.push_str(&self.tokens[self.index+1].text);end=self.tokens[self.index+1].span.end;self.index+=2;}else{break}}
+        while let Some(next)=self.peek(){if next.span.start!=end{break}if next.kind==TokenKind::Ident||next.text=="/"{path.push_str(&next.text);end=next.span.end;self.index+=1;}else if namespace_dot&&next.text=="."&&self.peek_at(self.index+1).is_some_and(|kind|matches!(kind.text.as_str(),"proc"|"verb"|"var"))&&self.peek_at(self.index+2).is_some_and(|slash|slash.text=="/"){path.push('.');path.push_str(&self.tokens[self.index+1].text);end=self.tokens[self.index+1].span.end;self.index+=2;}else{break}}
         if path==start{self.error(span,format!("expected type path after {start}"));None}else{path.truncate(path.trim_end_matches('/').len());Some(Expr{span:Span::new(span.start,end),kind:ExprKind::TypePath(path)})}
     }
 
+    fn original_value_for(&self,index:usize)->std::io::Result<Option<crate::OriginalTokenValue<&str>>>{let Some(input)=self.demand.as_ref()else{return Ok(None)};let occurrence=input.occurrences.get(index).copied().ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidData,"native expression token lacks its actual pull occurrence"))?;input.cursor.source.original_value(occurrence)}
+    fn literal_from_token(&mut self,token:Token)->Option<crate::LiteralText>{
+        let span=token.span;let admission=self.admission;let index=self.index.checked_sub(1)?;
+        let outcome=(||{
+         if let Some((rows,origin,current_offset,source_origin))=self.literal_facts{
+          let relative=Span::new(span.start.checked_sub(current_offset).ok_or_else(||std::io::Error::from(std::io::ErrorKind::InvalidInput))?,span.end.checked_sub(current_offset).ok_or_else(||std::io::Error::from(std::io::ErrorKind::InvalidInput))?);
+          let actual=Span::new(relative.start.checked_add(source_origin).and_then(|n|n.checked_add(origin)).ok_or_else(||std::io::Error::from(std::io::ErrorKind::InvalidInput))?,relative.end.checked_add(source_origin).and_then(|n|n.checked_add(origin)).ok_or_else(||std::io::Error::from(std::io::ErrorKind::InvalidInput))?);
+          let at=rows.partition_point(|(candidate,_)|candidate.start<actual.start);
+          let(_,data)=rows.get(at).filter(|(candidate,_)|*candidate==actual).ok_or_else(||std::io::Error::new(std::io::ErrorKind::Unsupported,"actual Original full-slice literal occurrence is unissued"))?;
+          let kind=matches!((token.kind,data.value()),(TokenKind::Number,crate::OriginalTokenValue::Int(_)|crate::OriginalTokenValue::Float(_))|(TokenKind::String,crate::OriginalTokenValue::String(_))|(TokenKind::Resource,crate::OriginalTokenValue::Resource(_)));
+          if !kind||data.raw()!=token.text{return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"Original full-slice literal DATA differs from its exact primary occurrence"))}
+          let a=admission.ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidInput,"Original full-slice literal lacks its actual native operation admission"))?;
+          return crate::LiteralText::from_original_data(data,span.start,a)
+         }
+         if let Some(input)=self.demand.as_ref(){let occurrence=input.occurrences.get(index).copied().ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidData,"native literal lacks actual pull occurrence"))?;
+          if let Some(data)=input.cursor.source.original_literal_data(occurrence)?{let admission=admission.ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidInput,"original literal DATA lacks SAME native expression admission"))?;if data.raw()!=token.text{return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"borrowed original literal DATA differs from actual token spelling occurrence"))}return crate::LiteralText::from_original_data(data,span.start,admission)}
+         }
+         match self.original_value_for(index)?{
+            Some(value)=>{let admission=admission.ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidInput,"original literal data lacks SAME native expression admission"))?;crate::LiteralText::from_original_value_data(token.text,span.start,value,admission)},
+            None if self.demand.as_ref().is_some_and(|input|input.cursor.source.requires_original_values())=>Err(std::io::Error::new(std::io::ErrorKind::Unsupported,"actual original literal VALUE occurrence is unissued")),
+            None=>Ok(crate::LiteralText::at(token.text,span.start)),
+        }})();
+        match outcome{Ok(value)=>Some(value),Err(actual)=>{if let Some(input)=self.demand.as_mut(){if input.failure.is_none(){input.failure=Some(actual)}input.stopped=true;}else if let Some(a)=admission{a.record_operational_error(actual)}None}}
+    }
     pub(super) fn prefix(&mut self) -> Option<Expr> {
-        let token = self.take()?;
+        let token=match self.take(){Some(token)=>token,None=>{if self.expected_term.is_none(){self.expected_term=Some(NativeTermExpectation{token:None});}return None}};
         let span = token.span;
         match token.kind {
             TokenKind::Punctuation | TokenKind::Operator if token.text == "::" => {
@@ -681,10 +840,10 @@ impl ExprParser<'_> {
             // as(()) as well as an absent type in as(). Keep this ONLY in
             // the contextual as primitive; ordinary empty groups stay invalid.
             TokenKind::Ident if token.text == "as"
-                && self.tokens.get(self.index).is_some_and(|t|t.text=="(")
-                && self.tokens.get(self.index+1).is_some_and(|t|t.text=="(")
-                && self.tokens.get(self.index+2).is_some_and(|t|t.text==")")
-                && self.tokens.get(self.index+3).is_some_and(|t|t.text==")") =>
+                && self.peek_at(self.index).is_some_and(|t|t.text=="(")
+                && self.peek_at(self.index+1).is_some_and(|t|t.text=="(")
+                && self.peek_at(self.index+2).is_some_and(|t|t.text==")")
+                && self.peek_at(self.index+3).is_some_and(|t|t.text==")") =>
             {
                 let end=self.tokens[self.index+3].span.end;
                 self.index+=4;
@@ -802,10 +961,7 @@ impl ExprParser<'_> {
                 span,
                 kind: ExprKind::Ident(token.text),
             }),
-            TokenKind::Number | TokenKind::String | TokenKind::Resource => Some(Expr {
-                span,
-                kind: ExprKind::Literal(crate::LiteralText::at(token.text, span.start)),
-            }),
+            TokenKind::Number | TokenKind::String | TokenKind::Resource => self.literal_from_token(token).map(|value|Expr {span,kind:ExprKind::Literal(value)}),
             TokenKind::Operator if matches!(token.text.as_str(), "-" | "+" | "!" | "~" | "*" | "&") => {
                 if matches!(token.text.as_str(), "-" | "+")
                     && self.peek().is_some_and(|next| {
@@ -814,6 +970,7 @@ impl ExprParser<'_> {
                 {
                     self.take();
                     if self.peek().is_none() && self.diagnostics.is_empty() {
+                    if self.expected_term.is_none(){self.expected_term=Some(NativeTermExpectation{token:None});}
                         self.diagnostics.push(Diagnostic {
                             span,
                             kind: DiagnosticKind::IncompleteExpression,
@@ -838,6 +995,7 @@ impl ExprParser<'_> {
                     });
                 }
                 if self.peek().is_none() && self.diagnostics.is_empty() {
+                    if self.expected_term.is_none(){self.expected_term=Some(NativeTermExpectation{token:None});}
                     self.diagnostics.push(Diagnostic {
                         span,
                         kind: DiagnosticKind::IncompleteExpression,
@@ -895,13 +1053,14 @@ impl ExprParser<'_> {
                 }
             }
             _ => {
+                if self.expected_term.is_none(){self.expected_term=Some(NativeTermExpectation{token:Some(span)});}
                 self.error(span, format!("unexpected expression token: {}", token.text));
                 None
             }
         }
     }
 
-    fn operator(&self) -> Option<(String, usize, u8, u8)> {
+    fn operator(&mut self) -> Option<(String, usize, u8, u8)> {
         const OPS: &[(&str, u8, u8)] = &[
             ("=", 1, 1),
             ("+=", 1, 1),
@@ -946,9 +1105,9 @@ impl ExprParser<'_> {
             ("%", 21, 22),
             ("**", 25, 26),
         ];
-        let first = self.peek()?;
+        let (first_kind,first_start)=self.peek().map(|token|(token.kind,token.span.start))?;
         if !matches!(
-            first.kind,
+            first_kind,
             TokenKind::Operator | TokenKind::Punctuation | TokenKind::Ident
         ) {
             return None;
@@ -957,17 +1116,12 @@ impl ExprParser<'_> {
         for (op, l, r) in OPS {
             let mut width = 0;
             let mut assembled = String::new();
-            for token in self.tokens.iter().skip(self.index) {
-                if assembled.len() >= op.len()
-                    || token.span.start != first.span.start + assembled.len()
-                {
-                    break;
-                }
-                assembled.push_str(&token.text);
-                width += 1;
-                if assembled == *op && best.as_ref().is_none_or(|b| op.len() > b.0.len()) {
-                    best = Some(((*op).into(), width, *l, *r));
-                }
+            while assembled.len()<op.len(){
+                let Some(token)=self.peek_at(self.index+width)else{break};
+                if token.span.start!=first_start+assembled.len(){break}
+                assembled.push_str(&token.text);width+=1;
+                if assembled==*op&&best.as_ref().is_none_or(|b|op.len()>b.0.len()){best=Some(((*op).into(),width,*l,*r));}
+                if !op.starts_with(&assembled){break}
             }
         }
         // `<>` is DreamMaker's spelling of `!=`.
@@ -1193,4 +1347,87 @@ pub(crate) fn parse_expression_with_primary_tokens(source:&str,admission:Option<
 #[cfg(test)]mod original_colon_prefab_primary{
  use super::*;
  #[test]fn primary_colon_prefab_preserves_original_node_and_call_arguments_without_changing_ternary(){for text in[":child",":child/type",":proc/run"]{let parsed=parse_expression(text);assert!(parsed.diagnostics.is_empty(),"{text}: {:?}",parsed.diagnostics);let value=parsed.expr.unwrap();assert_eq!(value.span,Span::new(0,text.len()));assert!(matches!(value.kind,ExprKind::TypePath(ref path)if path==text));}let call=parse_expression("filter(type=:child)");assert!(call.diagnostics.is_empty(),"{:?}",call.diagnostics);let ternary=parse_expression("a ? b : c");assert!(ternary.diagnostics.is_empty());assert!(matches!(ternary.expr.unwrap().kind,ExprKind::Conditional{..}));for text in[":",":(child)"]{assert!(!parse_expression(text).diagnostics.is_empty(),"invalid colon prefab {text}");}}
+}
+
+/// Source-neutral private grammar provenance. A caller cannot construct this
+/// from diagnostics, an empty parse, a source hash or a semantic-model option.
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub(crate) struct OriginalSimpleExpression{kind:OriginalSimpleKind,span:Span,operator:Option<Span>}
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub(crate) enum OriginalSimpleKind{Complete,MissingArithmeticOperand}
+impl OriginalSimpleExpression{
+ pub(crate) fn kind(self)->OriginalSimpleKind{self.kind}
+ pub(crate) fn span(self)->Span{self.span}
+ pub(crate) fn operator(self)->Option<Span>{self.operator}
+}
+fn simple_arithmetic(op:&str)->bool{matches!(op,"+"|"-"|"*"|"/"|"%")}
+pub(crate) fn original_ascii_identifier(name:&str)->bool{let mut bytes=name.bytes();bytes.next().is_some_and(|first|first==b'_'||first.is_ascii_alphabetic())&&bytes.all(|byte|byte==b'_'||byte.is_ascii_alphanumeric())}
+pub(crate) fn original_decimal(text:&str)->bool{!text.is_empty()&&text.bytes().all(|byte|byte.is_ascii_digit())}
+fn simple_term(expr:&Expr,token:&Token)->bool{expr.span==token.span&&match(&expr.kind,token.kind){(ExprKind::Ident(name),TokenKind::Ident)=>name==&token.text&&original_ascii_identifier(name),(ExprKind::Literal(text),TokenKind::Number)=>text.as_str()==token.text.as_str()&&original_decimal(text.as_str()),(ExprKind::Literal(text),TokenKind::Ident)=>text.as_str()=="null"&&token.text=="null",_=>false}}
+fn original_zero_call(expr:&Expr,tokens:&[Token])->bool{let[left,open,close]=tokens else{return false};matches!(&expr.kind,ExprKind::Call{callee,args}if args.is_empty()&&matches!(&callee.kind,ExprKind::Ident(name)if original_ascii_identifier(name))&&left.kind==TokenKind::Ident&&simple_term(callee,left)&&open.text=="("&&close.text==")")}
+
+fn original_simple_complete(expr:&Expr,tokens:&[Token])->Option<OriginalSimpleExpression>{
+ let complete=match tokens{
+  [only]=>simple_term(expr,only),
+  [left,op,right]=>match &expr.kind{ExprKind::Binary{op:actual,lhs,rhs}=>simple_arithmetic(actual)&&op.text.as_str()==actual.as_str()&&simple_term(lhs,left)&&simple_term(rhs,right),ExprKind::Member{object,selector,via_colon:false}=>left.kind==TokenKind::Ident&&op.text=="."&&right.kind==TokenKind::Ident&&selector.as_str()==right.text.as_str()&&original_ascii_identifier(selector)&&matches!(&object.kind,ExprKind::Ident(name)if original_ascii_identifier(name))&&simple_term(object,left),ExprKind::Call{..}=>original_zero_call(expr,tokens),_=>false},
+  [_,_,_,dot,selector]=>matches!(&expr.kind,ExprKind::Member{object,selector:name,via_colon:false}if dot.text=="."&&selector.kind==TokenKind::Ident&&name==&selector.text&&original_ascii_identifier(name)&&original_zero_call(object,&tokens[..3])),
+  _=>false,
+ };
+ complete.then_some(OriginalSimpleExpression{kind:OriginalSimpleKind::Complete,span:expr.span,operator:None})
+}
+
+#[cfg(test)]mod demanded_expression_tests{
+ use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ struct Feed{tokens:std::vec::IntoIter<Token>,pulls:usize,forbid:Option<&'static str>,fail:Option<usize>}
+ impl NativeExpressionTokenDemand for Feed{fn next_token(&mut self)->std::io::Result<Option<Token>>{self.pulls+=1;if self.fail==Some(self.pulls){return Err(std::io::Error::from_raw_os_error(1450))}let token=self.tokens.next();if let Some(token)=&token{assert_ne!(Some(token.text.as_str()),self.forbid,"parser requested a token beyond its first genuine native syntax failure");}Ok(token)}}
+ fn feed(text:&str)->Feed{Feed{tokens:lex(text).tokens.into_iter(),pulls:0,forbid:None,fail:None}}
+ #[test]fn same_native_pratt_demand_matches_complete_native_grammar_without_prefix_replay(){
+  for text in["1+2*3","a=b in c","a?b:c","a::member","::global_proc(1,2)","new /datum/item(1).field","as(())","a?.field","a?[1]","(a+b)**2","list(1,key=2)","\"α literal\""]{
+   let old=parse_expression(text);let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,1<<24,&||Ok(()));let mut input=feed(text);let actual=parse_expression_demanded(&mut input,&a).unwrap();assert_eq!(format!("{:?}",actual.parsed()),format!("{old:?}"),"{text}");assert!(used.load(Ordering::Acquire)>0||actual.tokens().is_empty());drop(actual);assert_eq!(used.load(Ordering::Acquire),0);
+  }
+ }
+ #[test]fn actual_native_pratt_stops_demand_at_first_unexpected_term_without_requesting_later_tokens(){
+  for text in["; BAD(1)","1 bad BAD(1)","(1+) BAD(1)"]{let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,1<<24,&||Ok(()));let mut input=feed(text);input.forbid=Some("BAD");let actual=parse_expression_demanded(&mut input,&a).unwrap();assert!(!actual.parsed().diagnostics.is_empty(),"{text}");if text.starts_with(';'){assert_eq!(actual.expected_term().unwrap().token_span(),Some(Span::new(0,1)));}drop(actual);assert_eq!(used.load(Ordering::Acquire),0);}
+ }
+ #[test]fn actual_native_pratt_demand_keeps_first_source_io_and_same_budget_oom_without_partial_success(){
+  let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,1<<24,&||Ok(()));let mut input=feed("1+2");input.fail=Some(2);let error=parse_expression_demanded(&mut input,&a).err().unwrap();assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(input.pulls,2);assert_eq!(used.load(Ordering::Acquire),0);
+  let used=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&used,1,&||Ok(()));let mut input=feed("1+2");assert_eq!(parse_expression_demanded(&mut input,&a).err().unwrap().kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(used.load(Ordering::Acquire),0);
+ }
+}
+
+#[cfg(test)]mod demanded_token_credit_tests{
+ use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ struct Feed{token:Option<Token>,credit:Option<crate::SettingRootLease>,fault:bool}
+ impl NativeExpressionTokenDemand for Feed{
+  fn next_token(&mut self)->std::io::Result<Option<Token>>{Ok(self.token.take())}
+  fn take_token_credit(&mut self,occurrence:NativeExpressionTokenOccurrence)->std::io::Result<Option<crate::SettingRootLease>>{assert_eq!(occurrence.ordinal(),0);if self.fault{return Err(std::io::Error::from_raw_os_error(1450))}Ok(self.credit.take())}
+ }
+ fn feed(a:&crate::SettingAdmission<'_>,credit:bool)->Feed{
+  // Fixture allocation is admitted before the real raw String is allocated.
+  let root=a.reserve(1).unwrap();let mut text=String::with_capacity(1);text.push('1');assert_eq!(text.capacity(),1);
+  Feed{token:Some(Token{kind:TokenKind::Number,span:Span::new(0,1),text}),credit:credit.then_some(root),fault:false}
+ }
+ #[test]fn actual_native_demand_adopts_one_spelling_credit_without_duplicate_charge_and_retains_it_with_result(){
+  let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=crate::SettingAdmission::new(&counter,1<<20,&poll);
+  let mut prepaid=feed(&a,true);let parsed=parse_expression_demanded(&mut prepaid,&a).unwrap();let adopted=counter.load(Ordering::Acquire);assert!(adopted>0);assert!(prepaid.credit.is_none());assert!(parsed.parsed().diagnostics.is_empty());drop(parsed);assert_eq!(counter.load(Ordering::Acquire),0);
+  let mut ordinary=feed(&a,false);let parsed=parse_expression_demanded(&mut ordinary,&a).unwrap();assert_eq!(counter.load(Ordering::Acquire),adopted);drop(parsed);assert_eq!(counter.load(Ordering::Acquire),0);
+ }
+ #[test]fn actual_native_demand_credit_foreign_root_and_first_io_never_issue_partial_success(){
+  let one=Arc::new(AtomicUsize::new(0));let two=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=crate::SettingAdmission::new(&one,1<<20,&poll);let b=crate::SettingAdmission::new(&two,1<<20,&poll);
+  let mut foreign=feed(&b,true);let error=parse_expression_demanded(&mut foreign,&a).err().expect("foreign token must refuse");assert_eq!(error.kind(),std::io::ErrorKind::InvalidInput);drop(foreign);assert_eq!(one.load(Ordering::Acquire),0);assert_eq!(two.load(Ordering::Acquire),0);
+  let mut fault=feed(&a,true);fault.fault=true;let error=parse_expression_demanded(&mut fault,&a).err().expect("genuine source IO must refuse");assert_eq!(error.raw_os_error(),Some(1450));drop(fault);assert_eq!(one.load(Ordering::Acquire),0);
+ }
+}
+
+/// Raw syntax DATA over the SAME original token occurrence view. The caller
+/// must authenticate current source/header ownership before lending facts.
+pub fn parse_expression_original_token_view(source:&str,tokens:&[SpanToken],source_origin:usize,a:&crate::SettingAdmission<'_>,facts:Option<crate::OriginalLiteralFactsView<'_>>)->ParsedExpr{parse_span_tokens_profile(source,tokens,0,source_origin,a,facts,true)}
+
+#[cfg(test)]mod typed_punctuation_demand_control{
+ use super::*;
+ struct Typed{pulls:usize}
+ impl NativeExpressionTokenDemand for Typed{
+  fn next_token(&mut self)->std::io::Result<Option<Token>>{self.pulls+=1;assert_eq!(self.pulls,1,"actual typed colon requested a future token");Ok(Some(Token{kind:TokenKind::Punctuation,span:Span::new(0,1),text:":".into()}))}
+  fn original_value(&self,_occurrence:NativeExpressionTokenOccurrence)->std::io::Result<Option<crate::OriginalTokenValue<&str>>>{Ok(Some(crate::OriginalTokenValue::Punct(":")))}
+  fn requires_original_values(&self)->bool{true}
+ }
+ #[test]fn actual_typed_colon_is_not_reconstructed_by_requesting_a_future_raw_token(){let mut source=Typed{pulls:0};let mut cursor=NativeExpressionTokenCursor{source:&mut source,pending:None,next_ordinal:0};let actual=cursor.next(None).unwrap().unwrap();assert_eq!(actual.token.text,":");assert_eq!(actual.token.span,Span::new(0,1));drop(cursor);assert_eq!(source.pulls,1);}
 }

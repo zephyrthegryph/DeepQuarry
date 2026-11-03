@@ -70,9 +70,13 @@ pub fn with_global_question(provider:&dyn GlobalProvider,inputs:&PolicyInputs,ch
  match answer{Some(actual)if actual==returned=>Ok(actual),_=>Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"global provider omitted or replaced original checked answer")))}
 }
 impl GlobalAdapter<'_,'_>{
- fn question(&self,action:&mut dyn FnMut(&GlobalResult)->Result<bool,Failure>)->Result<bool,Failure>{with_global_question(self.provider,self.source.inputs(),&||self.source.checkpoint(),action)}
+ fn question(&self,action:&mut dyn FnMut(&GlobalResult)->Result<bool,Failure>)->Result<bool,Failure>{budgeted_action(self.source.budget(),||with_global_question(self.provider,self.source.inputs(),&||self.source.checkpoint(),&mut|result|budgeted_action(self.source.budget(),||action(result))))}
  fn check(&self,result:&GlobalResult)->Result<(),Failure>{if !result.matches(self.source.inputs()){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"reactive globals belong to another original source owner tuple")))}self.source.checkpoint()?;Ok(())}}
 
+
+// Classify SAME-budget denial inside the child callback, before a provider can
+// perform its final cancellation poll. A returned actual IO remains first.
+fn budgeted_action<T>(budget:&Budget,action:impl FnOnce()->Result<T,Failure>)->Result<T,Failure>{let require=||budget.require().map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)));require()?;let pending=action();if matches!(&pending,Err(Failure::Operational(_))){return pending}require()?;pending}
 /// Exact query subject, privately minted by the successful original factory.
 /// Fact/source equality never substitutes a different requested root.
 struct ReadIdentity{receiver:String,procedure:String,context:Option<String>,flavor:Flavor}
@@ -398,4 +402,52 @@ impl DependencyResult{
  let produced:Result<crate::sparse_slots_policy::Output,Failure>=(||{let source=ReadSource::capture(raw,inputs,&scratch)?.with_checkpoint(checkpoint);let mut rendered=crate::reactive_plans_generator_native::generate(&source,crate::reactive_dependency_view::Analysis::Frozen(&self.facts))?;let mut output=crate::sparse_slots_policy::Output::default();output.body=std::mem::take(&mut rendered.body);output.diags=std::mem::take(&mut rendered.diags);Ok(output)})();
  let funded=match produced{Ok(output)=>{let bytes=output.diags.capacity().checked_mul(std::mem::size_of::<crate::sparse_slots_policy::Diagnostic>()).and_then(|rows|output.body.capacity().checked_add(rows)).and_then(|n|n.checked_add(std::mem::size_of::<crate::sparse_slots_policy::Output>())).and_then(|initial|output.diags.iter().try_fold(initial,|n,d|n.checked_add(d.rel.capacity())?.checked_add(d.msg.capacity())));match bytes.ok_or_else(||{budget.deny();Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"Plans retained output overflow"))}).and_then(|bytes|budget.charge(bytes).map_err(|actual|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,actual)))){Ok(())=>Ok(output),Err(actual)=>{drop(output);Err(actual)}}},Err(actual)=>Err(actual)};if funded.is_err(){scratch.keep_failed_scratch()}drop(scratch);if matches!(&funded,Err(Failure::Operational(_))){return funded}checkpoint()?;if budget.denied(){return Err(Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"Plans aggregate admission refused")))}if !self.matches(inputs){return Err(Failure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"Plans dependency source owner changed")))}raw.validate_current_raw_roster(inputs)?;funded
  }
+}
+
+/// Unsealed semantic-read policy data over actual current canonical policy/read
+/// child loans. The host, not these callbacks, owns full CODE source completion
+/// and the selected original analysis context. No model/facts clone is retained.
+pub fn sem_reads_data_from_pages(inputs:&PolicyInputs,root:&std::path::Path,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,budget:&Arc<Budget>,globals:&dyn GlobalProvider,reads:&dyn RawPolicyReadProvider,policy:&dyn PolicyFactsProvider,poll:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>)->Result<crate::captured_sem_reads::SemReadData,Failure>{
+ budget.require().map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;let produced=with_policy_data(policy,inputs,poll,|data|{budget.require().map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;let source=ReadSource::native(inputs,root,budget)?.with_raw_policy_pages(pages,order).with_checkpoint(poll).with_body_borrower(body);let globals=GlobalAdapter{source:&source,provider:globals};crate::captured_sem_reads::collect_source(&source,&data.facts,&globals,&crate::reactive_dependency_native::ReadQuestions::RawData(reads),order,poll)});finish_page_data(produced,budget,poll)
+}
+
+/// Lazy SAME-Db dependency result DATA. Arbitrary callback success does not
+/// issue a result or whole-source completion; actual original-owner checks are mandatory.
+pub trait DependencyDataProvider{fn with_dependency_data(&self,consume:&mut dyn FnMut(&UnsealedDependencyData)->Result<(),Failure>)->Result<(),Failure>;}
+impl<F> DependencyDataProvider for F where F:Fn(&mut dyn FnMut(&UnsealedDependencyData)->Result<(),Failure>)->Result<(),Failure>{fn with_dependency_data(&self,consume:&mut dyn FnMut(&UnsealedDependencyData)->Result<(),Failure>)->Result<(),Failure>{self(consume)}}
+impl QuestionValue for UnsealedDependencyData{type Facts=Self;fn question_matches(&self,inputs:&PolicyInputs,receiver:&str,procedure:&str,context:Option<&str>,flavor:Flavor)->bool{receiver=="<dependencies>"&&procedure=="<all>"&&context.is_none()&&flavor==Flavor::Closed&&self.matches_compiled(inputs)}fn question_facts(&self)->&Self{self}}
+pub fn with_dependency_data<T>(provider:&dyn DependencyDataProvider,inputs:&PolicyInputs,poll:&dyn Fn()->io::Result<()>,consume:impl FnOnce(&UnsealedDependencyData)->Result<T,Failure>)->Result<T,Failure>{with_read_question(|visit|provider.with_dependency_data(visit),inputs,"<dependencies>","<all>",None,Flavor::Closed,poll,consume)}
+/// No body demand is introduced by this consumer: existing complete dependency
+/// rows carry its facts; original header identifiers/ALLOW borrow current files.
+pub fn untracked_inputs_data_from_pages(inputs:&PolicyInputs,root:&std::path::Path,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,configuration:&crate::captured_raw_file::Config,budget:&Arc<Budget>,dependencies:&dyn DependencyDataProvider,poll:&dyn Fn()->io::Result<()>)->Result<crate::captured_sem_reads::SemanticPolicyData,Failure>{
+ budget.require().map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;let produced=with_dependency_data(dependencies,inputs,poll,|data|{budget.require().map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;let source=ReadSource::native(inputs,root,budget)?.with_raw_policy_pages(pages,order).with_checkpoint(poll);crate::captured_untracked_inputs::collect_source(&source,crate::reactive_dependency_view::Analysis::Frozen(&data.value.facts),configuration,poll)});finish_page_data(produced,budget,poll)
+}
+
+#[cfg(test)]mod semantic_callback_budget_tests{use super::*;
+ #[test]fn denial_is_typed_before_provider_final_cancel_and_actual_io_stays_first(){
+ let budget=Budget::new(1024).unwrap();let mut final_poll=false;let pending:Result<(),Failure>=budgeted_action(&budget,||{assert!(budget.charge(2048).is_err());Err(Failure::Unsupported("semantic child refusal".into()))});let result:Result<(),io::Error>=match pending{Err(Failure::Operational(actual))=>Err(actual),other=>{final_poll=true;drop(other);Err(io::Error::new(io::ErrorKind::Interrupted,"late provider cancellation"))}};assert_eq!(result.unwrap_err().kind(),io::ErrorKind::OutOfMemory);assert!(!final_poll);let mut called=false;let denied:Result<(),Failure>=budgeted_action(&budget,||{called=true;Ok(())});assert!(matches!(denied,Err(Failure::Operational(ref actual))if actual.kind()==io::ErrorKind::OutOfMemory));assert!(!called);
+ let budget=Budget::new(1024).unwrap();let pending:Result<(),Failure>=budgeted_action(&budget,||{assert!(budget.charge(2048).is_err());Err(Failure::Operational(io::Error::from_raw_os_error(1450)))});assert!(matches!(pending,Err(Failure::Operational(ref actual))if actual.raw_os_error()==Some(1450)));
+ let fresh=Budget::new(1024).unwrap();assert_eq!(budgeted_action(&fresh,||Ok(7)).unwrap(),7);
+ }
+}
+
+/// Owned include-order DATA from an authenticated caller's fixed-original loan.
+/// Option::None means the host proved this requested fixed file absent; this
+/// helper itself grants no source/completion role. Exact old read_to_string
+/// policy yields empty order for observed invalid UTF8, while preserving a BOM.
+pub fn scoped_original_include_order_bytes(original:Option<&[u8]>,budget:&Arc<Budget>,poll:&dyn Fn()->io::Result<()>)->Result<ScopedOriginalIncludeOrder,Failure>{
+ budget.require().map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;poll()?;let scratch=Budget::scoped_temporaries(budget).map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;
+ let produced=(||{let text=original.and_then(|bytes|std::str::from_utf8(bytes).ok()).unwrap_or("");let mut control=crate::captured_allow_annotations::Operation{budget:&scratch,poll};let order=crate::raw_marker_policy::dme_include_order_controlled(text,false,&mut control)?;scratch.require().map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;poll()?;scratch.require().map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;Ok(order)})();
+ match produced{Ok(order)=>Ok(ScopedOriginalIncludeOrder{order:Some(order),_scratch:scratch}),Err(actual)=>{scratch.keep_failed_scratch();Err(actual)}}
+}
+#[cfg(test)]mod fixed_manifest_order_data_tests{
+ use super::*;
+ #[test]fn fixed_manifest_bytes_preserve_original_bom_invalid_negative_duplicates_and_slash_policy(){for bytes in [None,Some(b"#include \"code\\z.dm\"\n#include \"code/a.dm\"\n#include \"code\\z.dm\"\n".as_slice()),Some(b"\xef\xbb\xbf#include \"code/first.dm\"\n#include \"code/second.dm\"\n".as_slice()),Some(b"#include \"code/valid.dm\"\n// invalid \xff\n".as_slice())]{let budget=Budget::new(1<<20).unwrap();let expected=bytes.and_then(|bytes|std::str::from_utf8(bytes).ok()).map(crate::raw_marker_policy::dme_include_order).unwrap_or_default();let actual=scoped_original_include_order_bytes(bytes,&budget,&||Ok(())).unwrap();assert_eq!(&*actual,&expected);}}
+ #[test]fn fixed_manifest_data_keeps_first_io_and_real_denial_before_later_interrupted_poll_then_fresh_retry(){let budget=Budget::new(1<<20).unwrap();let actual=scoped_original_include_order_bytes(None,&budget,&||Err(io::Error::from_raw_os_error(1450)));assert!(matches!(actual,Err(Failure::Operational(ref actual))if actual.raw_os_error()==Some(1450)));let tiny=Budget::new(256).unwrap();let poll=||if tiny.denied(){Err(io::Error::new(io::ErrorKind::Interrupted,"later cancellation after real manifest denial"))}else{Ok(())};let actual=scoped_original_include_order_bytes(Some(b"#include \"code/actual.dm\"\n"),&tiny,&poll);assert!(matches!(actual,Err(Failure::Operational(ref actual))if actual.kind()==io::ErrorKind::OutOfMemory));let fresh=Budget::new(1<<20).unwrap();let actual=scoped_original_include_order_bytes(Some(b"#include \"code/actual.dm\"\n"),&fresh,&||Ok(())).unwrap();assert_eq!(actual.get("code/actual.dm"),Some(&0));}
+}
+
+/// Exact SetterPublishes route shares the existing globals/read/dependency graph.
+/// No second globals/reads walk, parser/model or cache is created by this fold.
+pub fn setter_publishes_data_from_pages(inputs:&PolicyInputs,root:&std::path::Path,pages:&dyn crate::reactive_raw_policy_pages::RawPolicyPages,order:&std::collections::HashMap<String,usize>,configuration:&crate::captured_raw_file::Config,budget:&Arc<Budget>,dependencies:&dyn DependencyDataProvider,policy:&dyn PolicyFactsProvider,poll:&dyn Fn()->io::Result<()>,body:&BodyBorrower<'_>)->Result<crate::captured_sem_reads::SemanticPolicyData,Failure>{
+ let produced=with_dependency_data(dependencies,inputs,poll,|data|with_policy_data(policy,inputs,poll,|facts|{let source=ReadSource::native(inputs,root,budget)?.with_raw_policy_pages(pages,order).with_checkpoint(poll).with_body_borrower(body);let set=configuration.with_auto_tracked_lists(|includes,excludes|auto_decisions(&source,&data.value.facts,includes,excludes,poll))?;crate::captured_setter_publishes::collect_source(&source,&set,&facts.facts,poll)}));finish_page_data(produced,budget,poll)
 }

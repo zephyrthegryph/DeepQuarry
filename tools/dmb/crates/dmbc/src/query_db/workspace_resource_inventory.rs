@@ -93,6 +93,7 @@ impl ResourceInventory {
 }
 impl QueryDb {
     pub(super) fn workspace_resource_inventory_locked(&self) -> io::Result<ResourceInventory> {
+        self.refresh_raw_source_inputs_locked()?;
         // Existing bounded census performs one original preflight and one walk.
         // No allocation/content address authorizes a source or a cache read.
         let owners = self.workspace_owners_with_fixed_locked(&[], 0)?;

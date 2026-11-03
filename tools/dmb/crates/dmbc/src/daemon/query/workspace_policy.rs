@@ -106,6 +106,11 @@ pub(super) fn validate_request(request: &QueryRequest) -> io::Result<()> {
     for question in &request.source_queries {
         if let SourceQuery::NativeWorkspaceHygieneReportPage{root,configuration,lints,limit,..}=question{if !root.is_absolute()||!configuration.is_absolute()||request.expected_policy_revision.is_none()||!(1..=128).contains(limit)||lints.len()!=1||lints[0]!="sys/hygiene"{return Err(invalid("exact completed Hygiene domain request required"))}continue;}
         if let SourceQuery::NativeWorkspaceSysReportPage{root,configuration,lints,limit,..}=question{if !root.is_absolute()||!configuration.is_absolute()||request.expected_policy_revision.is_none()||!(1..=128).contains(limit)||lints.len()!=1||!["sys/resolvers","sys/tables","system_boundary"].contains(&lints[0].as_str()){return Err(invalid("exact completed Sys-family domain request required"))}continue;}
+        if let SourceQuery::NativeWorkspaceCheckGrepReportPage{root,configuration,lints,limit,..}=question{if !root.is_absolute()||!configuration.is_absolute()||request.expected_policy_revision.is_none()||!(1..=128).contains(limit)||lints.len()!=1||lints[0]!="check_grep"{return Err(invalid("exact completed CheckGrep domain request required"))}continue;}
+        if let SourceQuery::NativeWorkspaceCheckGrepBaselineReportPage{root,configuration,lints,limit,..}=question{if !root.is_absolute()||!configuration.is_absolute()||request.expected_policy_revision.is_none()||!(1..=128).contains(limit)||lints.len()!=1||lints[0]!="check_grep"{return Err(invalid("exact completed CheckGrep domain request required"))}continue;}
+        if let SourceQuery::NativeWorkspaceSemanticReportPage{root,configuration,lints,limit,..}=question{if !root.is_absolute()||!configuration.is_absolute()||request.expected_policy_revision.is_none()||!(1..=128).contains(limit)||lints.len()!=1||!matches!(lints[0].as_str(),"sem/reads"|"untracked_inputs"|"setter_publishes"|"sys/dx_reactive"|"lifeforms"|"decl"|"init"|"base_vars"|"requirement_bool"|"player_link"|"untyped_member"|"weak_raw_read"|"rel_write_undeclared"|"untyped"|"stored_refs"|"engine_layering"){return Err(invalid("exact completed semantic domain request required"))}continue;}
+        if let SourceQuery::NativeWorkspacePolicyReportPage{root,configuration,lints,limit,..}=question{if !root.is_absolute()||!configuration.is_absolute()||request.expected_policy_revision.is_none()||!(1..=128).contains(limit)||lints.len()!=1||dq_analyze::workspace_fold_policy::Policy::from_name(&lints[0]).is_none(){return Err(invalid("exact completed policy domain request required"))}continue;}
+        if let SourceQuery::NativeWorkspaceRawTreeReportPage{root,configuration,lints,limit,..}=question{if !root.is_absolute()||!configuration.is_absolute()||request.expected_policy_revision.is_none()||!(1..=128).contains(limit)||lints.len()!=1||dq_analyze::captured_raw_tree_pages::Policy::from_name(&lints[0]).is_none(){return Err(invalid("exact completed raw tree domain request required"))}continue;}
         if let SourceQuery::NativeWorkspaceKeysReportPage{root,configuration,lints,limit,..}=question{if !root.is_absolute()||!configuration.is_absolute()||request.expected_policy_revision.is_none()||!(1..=128).contains(limit)||lints.len()!=1||lints[0]!="sem/keys"{return Err(invalid("exact completed Keys domain request required"))}continue;}
         if let SourceQuery::NativeWorkspaceRawPolicy {
             root,
@@ -147,25 +152,27 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
                 lints,
                 cursor,
                 limit,
-            } | SourceQuery::NativeWorkspaceRawReportPage{root,configuration,lints,cursor,limit} | SourceQuery::NativeWorkspaceHygieneReportPage{root,configuration,lints,cursor,limit} | SourceQuery::NativeWorkspaceSysReportPage{root,configuration,lints,cursor,limit} | SourceQuery::NativeWorkspaceKeysReportPage{root,configuration,lints,cursor,limit} => Some((root, configuration, lints, cursor, limit,matches!(q,SourceQuery::NativeWorkspaceRawReportPage{..}),matches!(q,SourceQuery::NativeWorkspaceHygieneReportPage{..}),matches!(q,SourceQuery::NativeWorkspaceSysReportPage{..}),matches!(q,SourceQuery::NativeWorkspaceKeysReportPage{..}))),
+            } | SourceQuery::NativeWorkspaceRawReportPage{root,configuration,lints,cursor,limit} | SourceQuery::NativeWorkspaceHygieneReportPage{root,configuration,lints,cursor,limit} | SourceQuery::NativeWorkspaceSysReportPage{root,configuration,lints,cursor,limit} | SourceQuery::NativeWorkspaceSemanticReportPage{root,configuration,lints,cursor,limit} | SourceQuery::NativeWorkspaceRawTreeReportPage{root,configuration,lints,cursor,limit} | SourceQuery::NativeWorkspacePolicyReportPage{root,configuration,lints,cursor,limit} | SourceQuery::NativeWorkspaceKeysReportPage{root,configuration,lints,cursor,limit} | SourceQuery::NativeWorkspaceCheckGrepReportPage{root,configuration,lints,cursor,limit} | SourceQuery::NativeWorkspaceCheckGrepBaselineReportPage{root,configuration,lints,cursor,limit} => Some((root, configuration, lints, cursor, limit,matches!(q,SourceQuery::NativeWorkspaceRawReportPage{..}),matches!(q,SourceQuery::NativeWorkspaceHygieneReportPage{..}),matches!(q,SourceQuery::NativeWorkspaceSysReportPage{..}),matches!(q,SourceQuery::NativeWorkspaceKeysReportPage{..}),matches!(q,SourceQuery::NativeWorkspaceCheckGrepReportPage{..}),matches!(q,SourceQuery::NativeWorkspaceCheckGrepBaselineReportPage{..}),matches!(q,SourceQuery::NativeWorkspaceSemanticReportPage{..}),matches!(q,SourceQuery::NativeWorkspaceRawTreeReportPage{..}),matches!(q,SourceQuery::NativeWorkspacePolicyReportPage{..}))),
             _ => None,
         })
         .collect::<Vec<_>>();
     let mut observed = 0;
     for line in reply.jsonl.lines() {
         let row: Value = serde_json::from_str(line).map_err(|_| invalid("invalid JSONL"))?;
-        if row["row"] != "source_native_workspace_raw_policy" && row["row"] != "source_native_workspace_raw_report" && row["row"]!="source_native_workspace_hygiene_report" && row["row"]!="source_native_workspace_sys_report" && row["row"]!="source_native_workspace_keys_report" {
+        if row["row"] != "source_native_workspace_raw_policy" && row["row"] != "source_native_workspace_raw_report" && row["row"]!="source_native_workspace_hygiene_report" && row["row"]!="source_native_workspace_policy_report" && row["row"]!="source_native_workspace_raw_tree_report" && row["row"]!="source_native_workspace_sys_report" && row["row"]!="source_native_workspace_semantic_report" && row["row"]!="source_native_workspace_keys_report" && row["row"]!="source_native_workspace_check_grep_report" && row["row"]!="source_native_workspace_check_grep_baseline_report" {
             continue;
         }
-        let (root, configuration, lints, cursor, limit,complete,hygiene,sys,keys) = wanted
+        let (root, configuration, lints, cursor, limit,complete,hygiene,sys,keys,grep,bgrep,semantic,raw_tree,complete_policy) = wanted
             .get(observed)
             .ok_or_else(|| invalid("unrequested page"))?;
+        if *complete_policy&&(lints.len()!=1||dq_analyze::workspace_fold_policy::Policy::from_name(&lints[0]).is_none()){return Err(invalid("complete policy request differs from actual issuer"))}
+        if *raw_tree&&(lints.len()!=1||dq_analyze::captured_raw_tree_pages::Policy::from_name(&lints[0]).is_none()){return Err(invalid("raw tree request differs from actual issuer"))}
         if *hygiene&&(lints.len()!=1||lints[0]!="sys/hygiene"){return Err(invalid("Hygiene request names differ from actual issuer"))}
         if *sys&&(lints.len()!=1||!["sys/resolvers","sys/tables","system_boundary"].contains(&lints[0].as_str())){return Err(invalid("Sys request name differs from actual issuer"))}
+        if *semantic&&(lints.len()!=1||!matches!(lints[0].as_str(),"sem/reads"|"untracked_inputs"|"setter_publishes"|"sys/dx_reactive"|"lifeforms"|"decl"|"init"|"base_vars"|"requirement_bool"|"player_link"|"untyped_member"|"weak_raw_read"|"rel_write_undeclared"|"untyped"|"stored_refs"|"engine_layering")){return Err(invalid("semantic request differs from actual issuer"))}
         if *keys&&(lints.len()!=1||lints[0]!="sem/keys"){return Err(invalid("Keys request name differs from actual issuer"))}
-        exact(
-            &row,
-            &[
+        if (*grep||*bgrep)&&(lints.len()!=1||lints[0]!="check_grep"||(*grep&&row["macro_ceiling"].as_i64().filter(|n|*n>=0).is_none())){return Err(invalid("CheckGrep request or actual macro ceiling differs"))}
+        let allowed_keys=[
                 "row",
                 "schema",
                 "source_revision",
@@ -188,9 +195,8 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
                 "total_items",
                 "next_cursor",
                 "items",
-                "policy_scopes",
-            ],
-        )?;
+                "policy_scopes","macro_ceiling",
+            ];exact(&row,if *grep{&allowed_keys[..]}else{&allowed_keys[..allowed_keys.len()-1]})?;
         if row["schema"] != "dm-session-source-query-v1"
             || row["snapshot_as_of"] != "policy_revision"
             || reply.policy_revision.is_none()
@@ -203,13 +209,13 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
                 != serde_json::to_value(configuration).map_err(io::Error::other)?
             || row["requested_lints"] != serde_json::to_value(lints).map_err(io::Error::other)?
             || row["lint_whitelist"]
-                != (if *hygiene||*sys||*keys{serde_json::to_value([lints[0].as_str()])}else{serde_json::to_value(dq_analyze::captured_raw_policy::RAW_FILE_LINTS)})
+                != (if *complete_policy||*raw_tree||*hygiene||*sys||*keys||*semantic||*grep||*bgrep{serde_json::to_value([lints[0].as_str()])}else{serde_json::to_value(dq_analyze::captured_raw_policy::RAW_FILE_LINTS)})
                     .map_err(io::Error::other)?
-            || row["scope"] != if *keys{"typed_discovery_complete_keys"}else if *hygiene{"typed_discovery_complete_hygiene"}else if *sys{"typed_discovery_complete_sys_family"}else{"typed_discovery_raw_files"}
+            || row["scope"] != if *bgrep{"typed_discovery_complete_check_grep_baseline"}else if *grep{"typed_discovery_complete_check_grep"}else if *complete_policy{"typed_discovery_complete_policy"}else if *raw_tree{"typed_discovery_complete_raw_tree"}else if *semantic{"typed_discovery_complete_semantic"}else if *keys{"typed_discovery_complete_keys"}else if *hygiene{"typed_discovery_complete_hygiene"}else if *sys{"typed_discovery_complete_sys_family"}else{"typed_discovery_raw_files"}
             || row["full_policy_parity"] != false
             || row["baseline_applied"] != false
-            || row["admission"] != if *keys{"complete_selected_keys_findings"}else if *hygiene{"complete_selected_hygiene_findings"}else if *sys{"complete_selected_sys_findings"}else if *complete{"complete_selected_raw_policy_findings"}else{"raw_findings"}
-            || row["row"] != if *keys{"source_native_workspace_keys_report"}else if *hygiene{"source_native_workspace_hygiene_report"}else if *sys{"source_native_workspace_sys_report"}else if *complete{"source_native_workspace_raw_report"}else{"source_native_workspace_raw_policy"}
+            || row["admission"] != if *bgrep{"complete_selected_check_grep_baseline_findings"}else if *grep{"complete_selected_check_grep_findings"}else if *complete_policy{"complete_selected_policy_findings"}else if *raw_tree{"complete_selected_raw_tree_findings"}else if *semantic{"complete_selected_semantic_findings"}else if *keys{"complete_selected_keys_findings"}else if *hygiene{"complete_selected_hygiene_findings"}else if *sys{"complete_selected_sys_findings"}else if *complete{"complete_selected_raw_policy_findings"}else{"raw_findings"}
+            || row["row"] != if *bgrep{"source_native_workspace_check_grep_baseline_report"}else if *grep{"source_native_workspace_check_grep_report"}else if *complete_policy{"source_native_workspace_policy_report"}else if *raw_tree{"source_native_workspace_raw_tree_report"}else if *semantic{"source_native_workspace_semantic_report"}else if *keys{"source_native_workspace_keys_report"}else if *hygiene{"source_native_workspace_hygiene_report"}else if *sys{"source_native_workspace_sys_report"}else if *complete{"source_native_workspace_raw_report"}else{"source_native_workspace_raw_policy"}
             || !matches!(
                 row["configuration_scope"].as_str(),
                 Some("captured_configuration_bytes" | "proven_missing_configuration")
@@ -218,7 +224,7 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
             return Err(invalid("policy/request scope mismatch"));
         }
         let scopes=row["policy_scopes"].as_array().ok_or_else(||invalid("missing interpreted policy scopes"))?;
-        let raw_order;let folded_order;let ordered:&[&str]=if *hygiene||*sys||*keys{folded_order=[lints.first().ok_or_else(||invalid("folded name absent"))?.as_str()];&folded_order}else{raw_order=dq_analyze::captured_raw_file::ordered_names(lints).map_err(|_|invalid("unadmitted policy scope names"))?;&raw_order};
+        let raw_order;let folded_order;let ordered:&[&str]=if *complete_policy||*raw_tree||*hygiene||*sys||*keys||*semantic||*grep||*bgrep{folded_order=[lints.first().ok_or_else(||invalid("folded name absent"))?.as_str()];&folded_order}else{raw_order=dq_analyze::captured_raw_file::ordered_names(lints).map_err(|_|invalid("unadmitted policy scope names"))?;&raw_order};
         if scopes.len()!=ordered.len(){return Err(invalid("interpreted policy scope count mismatch"))}
         let outer_live=reply.jsonl.capacity().checked_add(std::mem::size_of::<Value>()).and_then(|n|n.checked_add(report_value_backing(&row)?)).and_then(|n|n.checked_add(16*1024)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"workspace report validation accounting overflow"))?;
         for(scope,name)in scopes.iter().zip(ordered){
@@ -279,10 +285,14 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
             if !lints.iter().any(|n| n == lint) {
                 return Err(invalid("unrequested lint record"));
             }
-            let meta=if *keys{dq_analyze::keys_policy::metadata()}else if *hygiene{dq_analyze::captured_sys_hygiene_pages::metadata()}else if *sys{match lint{"sys/resolvers"=>dq_analyze::captured_sys_resolvers_pages::metadata(),"sys/tables"=>dq_analyze::captured_sys_tables_pages::metadata(),"system_boundary"=>dq_analyze::captured_system_boundary_pages::metadata(),_=>return Err(invalid("unissued Sys metadata"))}}else{dq_analyze::captured_raw_policy::metadata(lint).ok_or_else(||invalid("unknown raw lint"))?};
+            let meta=if *complete_policy{dq_analyze::workspace_fold_policy::Policy::from_name(lint).ok_or_else(||invalid("unissued complete policy metadata"))?.metadata()}else if *raw_tree{dq_analyze::captured_raw_tree_pages::Policy::from_name(lint).ok_or_else(||invalid("unissued raw tree metadata"))?.metadata()}else if *grep||*bgrep{dq_analyze::lints::check_grep::native::metadata()}else if *semantic{match lint{"lifeforms"=>dq_analyze::lifeforms_policy::metadata(),"sys/dx_reactive"=>dq_analyze::sys_reactive_policy::metadata(),"sem/reads"=>dq_analyze::sem_reads_policy::metadata(),"untracked_inputs"=>dq_analyze::untracked_inputs_policy::metadata(),"setter_publishes"=>dq_analyze::setter_publication_policy::metadata(),"decl"=>dq_analyze::captured_decl_pages::metadata(),"init"=>dq_analyze::captured_init_pages::metadata(),"base_vars"=>dq_analyze::captured_base_vars_pages::metadata(),"requirement_bool"=>dq_analyze::captured_requirement_bool_pages::metadata(),"player_link"=>dq_analyze::player_link_policy::metadata(),"untyped_member"=>dq_analyze::untyped_member_policy::metadata(),"weak_raw_read"=>dq_analyze::weak_relation_policy::metadata(),"rel_write_undeclared"=>dq_analyze::rel_write_policy::metadata(),"untyped"=>dq_analyze::untyped_policy_metadata::metadata(),"stored_refs"=>dq_analyze::stored_refs_policy::metadata(),"engine_layering"=>dq_analyze::engine_layering_policy::metadata(),_=>return Err(invalid("unissued semantic metadata"))}}else if *keys{dq_analyze::keys_policy::metadata()}else if *hygiene{dq_analyze::captured_sys_hygiene_pages::metadata()}else if *sys{match lint{"sys/resolvers"=>dq_analyze::captured_sys_resolvers_pages::metadata(),"sys/tables"=>dq_analyze::captured_sys_tables_pages::metadata(),"system_boundary"=>dq_analyze::captured_system_boundary_pages::metadata(),_=>return Err(invalid("unissued Sys metadata"))}}else{dq_analyze::captured_raw_policy::metadata(lint).ok_or_else(||invalid("unknown raw lint"))?};
             match text(item, "kind", true)? {
+                "doc_block"=>{
+                    if !*raw_tree||lint!="doc_snippets"{return Err(invalid("unissued doc block role"))}exact(item,&["lint","kind","block"])?;let block=&item["block"];exact(block,&["kind","rel","first"])?;let kind=text(block,"kind",true)?;if !matches!(kind,"complete"|"fragment"|"before")||!dq_analyze::doc_snippets_policy::is_doc_path(text(block,"rel",true)?){return Err(invalid("invalid original doc block summary"))}text(block,"first",false)?;
+                }
+                "doc_complete"=>{if !*raw_tree||lint!="doc_snippets"{return Err(invalid("unissued doc completion role"))}exact(item,&["lint","kind","count"])?;number(item,"count")?;}
                 "hard_site" => {
-                    if !*keys||!matches!(meta.policy,dq_analyze::lint::Policy::Hard){return Err(invalid("unissued message-only finding"))}
+                    if !(*keys||*semantic||(*complete_policy&&dq_analyze::workspace_fold_policy::Policy::from_name(lint).is_some_and(|p|p.message_only()))||(*raw_tree&&dq_analyze::captured_raw_tree_pages::Policy::from_name(lint).is_some_and(|p|p.message_only())))||!matches!(meta.policy,dq_analyze::lint::Policy::Hard){return Err(invalid("unissued message-only finding"))}
                     exact(item,&["lint","kind","site"])?;
                     let site=&item["site"];exact(site,&["rule","rel","line","msg","key","ident"])?;
                     if meta.rule(text(site,"rule",true)?).is_none(){return Err(invalid("unknown hard site rule"))}
@@ -290,9 +300,9 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
                     if number(site,"line")?==0||number(site,"line")?>u32::MAX as usize{return Err(invalid("invalid hard site line"))}
                 }
                 "site" => {
-                    if *keys{return Err(invalid("Keys must use its actual message-only report contract"))}
+                    if *keys||(*semantic&&matches!(meta.policy,dq_analyze::lint::Policy::Hard))||(*complete_policy&&dq_analyze::workspace_fold_policy::Policy::from_name(lint).is_some_and(|p|p.message_only()))||(*raw_tree&&dq_analyze::captured_raw_tree_pages::Policy::from_name(lint).is_some_and(|p|p.message_only())){return Err(invalid("actual Hard family must use its message-only report contract"))}
                     exact(item, &["lint", "kind", "site", "source_text"])?;
-                    text(item,"source_text",false)?;
+                    let message_only=(*grep||*bgrep)&&item["site"]["msg"].as_str().is_some_and(|s|!s.is_empty());if message_only{if !item["source_text"].is_null(){return Err(invalid("CheckGrep message row must not claim an unused source-text observation"))}}else{text(item,"source_text",false)?;}
                     let s = &item["site"];
                     exact(s, &["rule", "rel", "line", "msg", "key", "ident"])?;
                     if meta.rule(text(s, "rule", true)?).is_none() {
@@ -314,7 +324,8 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
                     exact(a, &["rel", "line", "name", "code"])?;
                     text(a, "rel", true)?;
                     text(a, "code", false)?;
-                    if !meta.allow.contains(&text(a, "name", true)?)
+                    let used_name=text(a,"name",true)?;let permitted=if *raw_tree{dq_analyze::captured_raw_tree_pages::Policy::from_name(lint).is_some_and(|policy|policy.permits_used_allow(used_name))}else{meta.allow.contains(&used_name)};
+                    if !permitted
                         || number(a, "line")? == 0
                         || number(a, "line")? > u32::MAX as usize
                     {
@@ -322,6 +333,7 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
                     }
                 }
                 "note" => {
+                    if *hygiene||*sys||*keys||(*semantic&&lint!="base_vars")||(*complete_policy&&!dq_analyze::workspace_fold_policy::Policy::from_name(lint).is_some_and(|p|p.emits_notes())){return Err(invalid("notes are not issued by this report role"))}
                     exact(item, &["lint", "kind", "text"])?;
                     text(item, "text", false)?;
                 }

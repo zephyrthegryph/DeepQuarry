@@ -302,7 +302,11 @@ impl Sem {
     }
 
     /// The file a location is in, without recording it in the footprint.
-    pub(crate) fn file_of(&self, loc: Location) -> Option<&str> {
+    #[cfg(not(feature="unified-oracle"))]
+    pub(crate) fn file_of(&self,loc:Location)->Option<&str>{self.file_of_inner(loc)}
+    #[cfg(feature="unified-oracle")]
+    pub fn file_of(&self,loc:Location)->Option<&str>{self.file_of_inner(loc)}
+    fn file_of_inner(&self, loc: Location) -> Option<&str> {
         if loc.is_builtins() {
             return None;
         }
@@ -613,58 +617,7 @@ pub(crate) fn parse_source(dme_path: &Path, preregister: &[PathBuf], source: Sou
     Ok(model_store::Parsed { objtree, files: ctx.clone_file_list(), errors, env: None, structure: None, defines })
 }
 
-/// One line of a file as the layering index reads it (see `Sem::build_with`).
-#[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
-enum LayerEvent {
-    /// `/type/var/x`: the type owns a field (if the model has the type).
-    Owner(String),
-    /// A `CAPABILITY_TYPE` / `CAPABILITY_DEF` marker's type.
-    Type(String),
-    /// A non-empty line's indent (pops the header stack).
-    Indent(u32),
-    /// A bare type header at an indent.
-    Header(u32, String),
-}
-
-fn layering_events(code: &str, capability_type: &regex::Regex, capability_def: &regex::Regex) -> Vec<LayerEvent> {
-    let mut out = Vec::new();
-    let mut headers: Vec<usize> = Vec::new();
-    for raw in code.lines() {
-        let text = raw.trim();
-        if text.is_empty() { continue; }
-        // An uninitialized absolute field declaration can carry no
-        // useful value/declaration location in ObjectTree. Its explicit
-        // owner is still an actual definition, not a typed reference.
-        let declaration = text.split_whitespace().next().unwrap_or("");
-        if declaration.starts_with('/') {
-            if let Some((owner, member)) = declaration.split_once("/var/") {
-                if !member.is_empty() {
-                    out.push(LayerEvent::Owner(owner.to_string()));
-                }
-            }
-        }
-        if let Some(cap) = capability_type.captures(text) {
-            out.push(LayerEvent::Type(cap[1].to_string()));
-        }
-        if let Some(cap) = capability_def.captures(text) {
-            out.push(LayerEvent::Type(format!("/datum/capability/def/{}", &cap[1])));
-        }
-        let indent = raw.len() - raw.trim_start().len();
-        // An indent can only pop a header stack entry at or past it: kept only while some earlier header could be on the stack.
-        if headers.last().is_some_and(|n| *n >= indent) {
-            while headers.last().is_some_and(|n| *n >= indent) { headers.pop(); }
-            out.push(LayerEvent::Indent(indent as u32));
-        }
-        // A bare type header is a definition. Typed arguments, locals,
-        // member declarations and proc definitions are only references.
-        let header = text.trim_end_matches('{').trim();
-        if !header.is_empty() && header.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '/') {
-            out.push(LayerEvent::Header(indent as u32, header.to_string()));
-            headers.push(indent);
-        }
-    }
-    out
-}
+use crate::layering_raw_policy::{Event as LayerEvent,events as layering_events};
 
 fn tempfile_dir(root: &Path) -> PathBuf {
     static SEQ: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);

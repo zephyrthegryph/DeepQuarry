@@ -43,8 +43,8 @@ const H_UI_UNTRACKED: &str = "make the var TRACKED / SETTER (and write it throug
 const H_EXACT: &str = "use push_to_rust() with rust_push(...): an exact type is not woken for on_state_changed";
 
 static META: Meta = Meta {
-    name: "derived_reads",
-    group: "",
+    name: crate::allow_registry_fields::derived_reads::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::derived_reads::SCOPE_META_0.group,
     label: "derived_reads",
     legacy: "tools/ci/derived_reads_lint.py",
     select: CODE_DM,
@@ -66,7 +66,7 @@ static META: Meta = Meta {
         RuleMeta { name: "exact_on_state_changed", hint: H_EXACT },
     ],
     allow: crate::allow_registry_fields::derived_reads::ALLOW_0,
-    lists: &[],
+    lists: crate::allow_registry_fields::derived_reads::SCOPE_META_0.lists,
 };
 
 // ---- small mappings ---------------------------------------------------------------------------

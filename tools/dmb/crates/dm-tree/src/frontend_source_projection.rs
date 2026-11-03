@@ -153,3 +153,21 @@ mod tests {
         assert!(mapping.expansion_stack(&trace).is_err());
     }
 }
+
+impl Mapping<'_>{
+ /// The SAME projection cache and source_location_in producer, with actual
+ /// include-chain/cache growth funded before the fatal report can retain it.
+ pub(super) fn output_for_retained_report(&self,offset:usize,a:&dm_syntax::SettingAdmission<'_>,credit:&mut dm_syntax::SettingRootLease)->std::io::Result<SourceLocation>{
+  let poll=||{let result=a.checkpoint();if let Some(error)=a.take_operational_error(){return Err(error)}result};poll()?;
+  let origin=self.origin(offset).ok_or(std::io::ErrorKind::InvalidInput)?;let region=self.plan.regions.get(origin.region).ok_or(std::io::ErrorKind::InvalidInput)?;let occurrence=region.occurrence;let row=self.plan.occurrences.get(occurrence).ok_or(std::io::ErrorKind::InvalidInput)?;
+  let cached=self.projection.chains.borrow().get(&occurrence).cloned();
+  let chain=match cached{Some(chain)=>chain,None=>{
+   let mut count=1usize;let mut at=occurrence;while let Some(parent)=self.plan.occurrences.get(at).ok_or(std::io::ErrorKind::InvalidInput)?.parent{poll()?;count=count.checked_add(1).ok_or(std::io::ErrorKind::OutOfMemory)?;if count>self.plan.occurrences.len(){return Err(std::io::ErrorKind::InvalidData.into())}at=parent;}
+   let peak=count.checked_mul(4).and_then(|n|n.checked_mul(std::mem::size_of::<usize>())).and_then(|n|n.checked_add(2*std::mem::size_of::<usize>())).ok_or(std::io::ErrorKind::OutOfMemory)?;a.grow(credit,peak).map_err(|error|a.take_operational_error().unwrap_or(error))?;
+   let mut chain=Vec::new();chain.try_reserve_exact(count).map_err(|error|std::io::Error::new(std::io::ErrorKind::OutOfMemory,error))?;if chain.capacity()>count.checked_mul(2).ok_or(std::io::ErrorKind::OutOfMemory)?{return Err(std::io::ErrorKind::OutOfMemory.into())}let mut at=occurrence;loop{poll()?;chain.push(at);match self.plan.occurrences.get(at).ok_or(std::io::ErrorKind::InvalidInput)?.parent{Some(parent)=>at=parent,None=>break}}chain.reverse();let chain:Arc<[usize]>=chain.into();
+   let mut cache=self.projection.chains.borrow_mut();if cache.len()==cache.capacity(){let target=cache.capacity().max(2).checked_mul(2).ok_or(std::io::ErrorKind::OutOfMemory)?;let unit=std::mem::size_of::<(usize,Arc<[usize]>)>()+2*std::mem::size_of::<usize>();let peak=target.checked_mul(4).and_then(|n|n.checked_mul(unit)).ok_or(std::io::ErrorKind::OutOfMemory)?;a.grow(credit,peak).map_err(|error|a.take_operational_error().unwrap_or(error))?;let extra=target-cache.len();cache.try_reserve(extra).map_err(|error|std::io::Error::new(std::io::ErrorKind::OutOfMemory,error))?;if cache.capacity()>target.checked_mul(4).ok_or(std::io::ErrorKind::OutOfMemory)?{return Err(std::io::ErrorKind::OutOfMemory.into())}}
+   cache.insert(occurrence,Arc::clone(&chain));chain
+  }};
+  source_export_mapping::source_location_in(self.file_of(origin.origin.path).ok_or(std::io::ErrorKind::InvalidInput)?,origin,&row.path,&row.semantic_path,region.encounter_ordinal,occurrence,chain).ok_or_else(||std::io::ErrorKind::InvalidInput.into())
+ }
+}

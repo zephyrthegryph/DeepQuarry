@@ -55,6 +55,7 @@ pub(crate) fn resolve_previous_diagnostic<M: crate::member_binding::MemberWrite 
     indices: impl IntoIterator<Item = usize>,
     mut diagnostics: Option<&mut crate::diagnostic_declarations::DiagnosticDeclarationReceipt>,
 ) -> Result<(), TreeError> {
+    let original_variables=diagnostics.as_deref().and_then(|receipt|receipt.original_variables);
     for i in indices {
         callable_namespace::validate_explicit(
             tree,
@@ -121,11 +122,12 @@ pub(crate) fn resolve_previous_diagnostic<M: crate::member_binding::MemberWrite 
                 }
             }
             members.set_previous(i, previous);
-            metadata_update::apply_opaque_base(tree, members, i);
+            let original_base=if let Some(variables)=original_variables.as_ref(){metadata_update::apply_original_variable_base(tree,members,i,variables)}else{metadata_update::apply_opaque_base(tree,members,i);false};
             let node = members.member(i);
             if modes[i] == DefinitionMode::Override
                 && previous.is_none()
                 && node.metadata.inherited_opaque.is_none()
+                && !original_base
             {
                 let mut ancestry = Vec::new();
                 let mut cursor = Some(node.owner);

@@ -2,13 +2,23 @@
 use std::{fs::File, io, path::Path};
 
 pub(super) fn read_file(path: &Path) -> io::Result<File> {
+    open_regular(path, io::ErrorKind::NotFound)
+}
+
+/// Policy reads distinguish genuine absence from an existing non-file. Treating
+/// a directory as absent would certify an empty optional policy input.
+pub(super) fn read_policy_file(path: &Path) -> io::Result<File> {
+    open_regular(path, io::ErrorKind::InvalidInput)
+}
+
+fn open_regular(path: &Path, non_file_kind: io::ErrorKind) -> io::Result<File> {
     // Unix special files may block in open(), so preserve the regular-file
     // precheck there. Windows ordinary files need no separate attributes query:
     // stamp_handle checks the opened object before any bytes are consumed.
     #[cfg(not(windows))]
     {
         if !std::fs::metadata(path)?.is_file() {
-            return Err(not_regular());
+            return Err(not_regular(non_file_kind));
         }
         File::open(path)
     }
@@ -20,7 +30,7 @@ pub(super) fn read_file(path: &Path) -> io::Result<File> {
                 // File::open rejects directories on Windows. Preserve the old
                 // directory/missing/attributes error precedence on this path.
                 match std::fs::metadata(path) {
-                    Ok(metadata) if !metadata.is_file() => Err(not_regular()),
+                    Ok(metadata) if !metadata.is_file() => Err(not_regular(non_file_kind)),
                     Ok(_) => Err(open_error),
                     Err(metadata_error) => Err(metadata_error),
                 }
@@ -29,8 +39,8 @@ pub(super) fn read_file(path: &Path) -> io::Result<File> {
     }
 }
 
-fn not_regular() -> io::Error {
-    io::Error::new(io::ErrorKind::NotFound, "candidate is not a regular file")
+fn not_regular(kind: io::ErrorKind) -> io::Error {
+    io::Error::new(kind, "candidate is not a regular file")
 }
 
 #[cfg(test)]
@@ -61,7 +71,12 @@ mod tests {
             FileSystemInputs.read(&directory).unwrap_err().kind(),
             io::ErrorKind::NotFound
         );
+        assert_eq!(
+            read_policy_file(&directory).unwrap_err().kind(),
+            io::ErrorKind::InvalidInput
+        );
         let missing = directory.join("missing.dm");
+        assert_eq!(read_policy_file(&missing).unwrap_err().kind(), io::ErrorKind::NotFound);
         assert_eq!(
             FileSystemInputs.read(&missing).unwrap_err().kind(),
             std::fs::metadata(&missing).unwrap_err().kind()

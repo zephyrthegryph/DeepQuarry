@@ -474,7 +474,7 @@ impl Compiler<'_> {
         statement: &str,
     ) -> Result<(), LowerError> {
         let clobbers = !matches!(&value.kind, ExprKind::Ident(_) | ExprKind::TypePath(_))
-            && !matches!(&value.kind, ExprKind::Literal(text) if !text.contains('['));
+            && !matches!(&value.kind, ExprKind::Literal(text) if literal_preserves_assignment_cache(text));
         let receiver =
             clobbers && matches!(variable, VariableWord::CacheIndex | VariableWord::Field(_));
         let index = clobbers && matches!(variable, VariableWord::CacheIndex);
@@ -804,7 +804,7 @@ impl Compiler<'_> {
             self.local_initializer(then_value, declaration, statement)?;
             self.emit(opcode::JMP, vec![Word::Branch(end_label)]);
             self.result.code.items.push(CodeItem::Label(else_label));
-            if matches!(&else_value.kind, ExprKind::Literal(value) if value == "null") {
+            if matches!(&else_value.kind, ExprKind::Literal(value) if value.original_value().is_none() && value == "null") {
                 self.emit(opcode::GET_VAR, vec![Word::Variable(VariableWord::Null)]);
             } else {
                 self.local_initializer(else_value, declaration, statement)?;
@@ -923,9 +923,11 @@ fn path_like_target(statement: &str) -> bool {
 /// so a shared (`global`) variable behind it can be read or written without evaluating it.
 pub(super) fn is_reference_chain(expr: &Expr) -> bool {
     match &expr.kind {
-        ExprKind::Literal(text) => text
-            .parts()
-            .is_ok_and(|parts| parts.is_none_or(|parts| parts.expressions.is_empty())),
+        ExprKind::Literal(text) => match text.original_value(){
+            Some(dm_syntax::OriginalTokenValue::Int(_)|dm_syntax::OriginalTokenValue::Float(_)|dm_syntax::OriginalTokenValue::String(_)|dm_syntax::OriginalTokenValue::Resource(_))=>true,
+            Some(_)=>false,
+            None=>text.parts().is_ok_and(|parts|parts.is_none_or(|parts|parts.expressions.is_empty())),
+        },
         ExprKind::Ident(_) | ExprKind::TypePath(_) => true,
         ExprKind::Group(inner) => is_reference_chain(inner),
         ExprKind::Member { object, .. } => is_reference_chain(object),
@@ -1039,4 +1041,17 @@ fn safe_member_chain(target: &Expr) -> Option<SafeChain> {
             .map(|node| selector_of(node))
             .collect(),
     })
+}
+
+fn literal_preserves_assignment_cache(text:&dm_syntax::LiteralText)->bool{
+ match text.original_value(){
+  Some(dm_syntax::OriginalTokenValue::Int(_)|dm_syntax::OriginalTokenValue::Float(_)|dm_syntax::OriginalTokenValue::String(_)|dm_syntax::OriginalTokenValue::Resource(_))=>true,
+  Some(_)=>false,
+  None=>!text.contains('['),
+ }
+}
+#[cfg(test)]mod original_assignment_literal_effect_tests{
+ use super::*;use dm_syntax::{LiteralText,OriginalTokenValue as V,SettingAdmission,Span};use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ #[test]fn actual_static_original_values_are_pure_reference_receivers_and_do_not_clobber_cache(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));for value in [V::Int(0),V::Float(3.0),V::String("[static]"),V::Resource("[path]")]{let text=LiteralText::from_original_value_data("\"looks[effect()]\"".into(),0,value,&a).unwrap();assert!(literal_preserves_assignment_cache(&text));let expr=Expr{span:Span::new(0,text.len()),kind:ExprKind::Literal(text)};assert!(is_reference_chain(&expr));let grouped=Expr{span:expr.span,kind:ExprKind::Group(Box::new(expr))};assert!(is_reference_chain(&grouped));}assert_eq!(used.load(Ordering::Acquire),0);}
+ #[test]fn ordinary_interpolation_and_call_effect_paths_remain_unchanged(){for raw in ["1","\"static\"","'path.dmi'"]{let expr=dm_syntax::parse_expression(raw).expr.unwrap();assert!(is_reference_chain(&expr));if let ExprKind::Literal(text)=expr.kind{assert!(literal_preserves_assignment_cache(&text));}}let expr=dm_syntax::parse_expression("\"x[effect()]\"").expr.unwrap();assert!(!is_reference_chain(&expr));if let ExprKind::Literal(text)=expr.kind{assert!(!literal_preserves_assignment_cache(&text));}assert!(!is_reference_chain(&dm_syntax::parse_expression("effect()").expr.unwrap()));}
 }

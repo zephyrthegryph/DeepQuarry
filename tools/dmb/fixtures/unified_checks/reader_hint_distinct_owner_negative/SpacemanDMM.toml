@@ -1,0 +1,2 @@
+[diagnostics]
+override_precedes_definition="warning"

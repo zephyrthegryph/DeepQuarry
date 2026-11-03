@@ -62,10 +62,10 @@ pub(crate) fn purity<A:ReportAccess>(access:&A,resolver:&(impl Resolver+?Sized),
         let mut targets = Vec::new();
         for rank in access.target_range(){let marker=access.group_mark()?;let marked_used=budget.used();let before=budget.output_bound(&output)?.checked_add(coordinate_charge::<_,A::Error>(&targets)?).ok_or("effect report retained coordinate overflow")?;let pending=(||->Result<(),A::Error>{let i=access.ordered_node(rank)?;let loan=access.body(i,&budget.admission_view())?;let body=&*loan;
             checkpoint()?;
-            for row in body.immediate.iter() {
+            for row in body.immediate_diagnostics() {
                 emit(
                     &mut output,
-                    input,
+                    input,ProducedPhase::BodyImmediate,
                     None,
                     budget.diagnostic(row)?,
                     report_source_note(input,row.span.start,&budget)?,
@@ -107,7 +107,7 @@ Ok(())})();if pending.is_ok(){let after=budget.output_bound(&output)?.checked_ad
                 effect_notes(input, &body.direct, false, &mut notes, &budget)?;
                 emit(
                     &mut output,
-                    input,
+                    input,ProducedPhase::PurityGraph,
                     Some("must_be_pure"),
                     diagnostic(
                         header,
@@ -153,7 +153,7 @@ Ok(())})();if pending.is_ok(){let after=budget.output_bound(&output)?.checked_ad
                         })?;
                         call_notes(input,&path,&mut notes,&budget,&mut||access.checkpoint())?;
                         effect_notes(input, &child.direct, true, &mut notes, &budget)?;
-                        emit(&mut output,input,Some("must_be_pure"),diagnostic(header,budget.format(format_args!("{target_display} calls {called} which has override child proc that does impure operations {}",display(input,child.procedure, &budget,&mut||access.checkpoint())?))?,notes),budget.point(&origin)?,policy, &budget)?;
+                        emit(&mut output,input,ProducedPhase::PurityGraph,Some("must_be_pure"),diagnostic(header,budget.format(format_args!("{target_display} calls {called} which has override child proc that does impure operations {}",display(input,child.procedure, &budget,&mut||access.checkpoint())?))?,notes),budget.point(&origin)?,policy, &budget)?;
                     }
                     continue;
                 }
@@ -167,7 +167,7 @@ Ok(())})();if pending.is_ok(){let after=budget.output_bound(&output)?.checked_ad
                     let mut notes = budget.annotation(&annotation_note)?;
                     call_notes(input,&path,&mut notes,&budget,&mut||access.checkpoint())?;
                     effect_notes(input, &callee.direct, false, &mut notes, &budget)?;
-                    emit(&mut output,input,Some("must_be_pure"),diagnostic(header,budget.format(format_args!("{target_display} sets SpacemanDMM_should_be_pure but calls a {called} that does impure operations"))?,notes),budget.point(&origin)?,policy, &budget)?;
+                    emit(&mut output,input,ProducedPhase::PurityGraph,Some("must_be_pure"),diagnostic(header,budget.format(format_args!("{target_display} sets SpacemanDMM_should_be_pure but calls a {called} that does impure operations"))?,notes),budget.point(&origin)?,policy, &budget)?;
                 } else {
                     let override_children=access.override_children(index,&budget)?;for &child_index in override_children.iter(){let child_loan=access.body(child_index,&budget.admission_view())?;let child=&*child_loan;
                         if is_subtype(resolver, body.procedure.owner, id.owner)?
@@ -182,7 +182,7 @@ Ok(())})();if pending.is_ok(){let after=budget.output_bound(&output)?.checked_ad
                         })?;
                         call_notes(input,&path,&mut notes,&budget,&mut||access.checkpoint())?;
                         effect_notes(input, &child.direct, true, &mut notes, &budget)?;
-                        emit(&mut output,input,Some("must_be_pure"),diagnostic(header,budget.format(format_args!("{target_display} calls {called} which has override child proc that does impure operations {}",display(input,child.procedure, &budget,&mut||access.checkpoint())?))?,notes),budget.point(&origin)?,policy, &budget)?;
+                        emit(&mut output,input,ProducedPhase::PurityGraph,Some("must_be_pure"),diagnostic(header,budget.format(format_args!("{target_display} calls {called} which has override child proc that does impure operations {}",display(input,child.procedure, &budget,&mut||access.checkpoint())?))?,notes),budget.point(&origin)?,policy, &budget)?;
                     }
                 }
                 for edge in callee.calls.iter() {
@@ -245,7 +245,7 @@ Ok(())})();if pending.is_ok(){let after=0usize.checked_add(coordinate_charge::<_
             if !body.blocking.is_empty() {
                 let mut notes = budget.annotation(&annotation_note)?;
                 effect_notes(input, &body.blocking, true, &mut notes, &budget)?;
-                emit(&mut output,input,Some("must_not_sleep"),sleep::row(header,
+                emit(&mut output,input,ProducedPhase::SleepGraph,Some("must_not_sleep"),sleep::row(header,
                     budget.format(format_args!("{name} sets SpacemanDMM_should_not_sleep but calls blocking built-in(s)"))?,notes),budget.point(&origin)?,policy, &budget)?;
             }
             let mut queue = output::initial_queue(&body.calls, &budget)?;
@@ -282,7 +282,7 @@ Ok(())})();if pending.is_ok(){let after=0usize.checked_add(coordinate_charge::<_
                         let mut notes = budget.annotation(&annotation_note)?;
                         call_notes(input,&path,&mut notes,&budget,&mut||access.checkpoint())?;
                         effect_notes(input, &child.blocking, true, &mut notes, &budget)?;
-                        emit(&mut output,input,Some("must_not_sleep"),sleep::row(header,budget.format(format_args!("{name} calls {called} which has override child proc that sleeps {}",display(input,child.procedure, &budget,&mut||access.checkpoint())?))?,notes),budget.point(&origin)?,policy, &budget)?;
+                        emit(&mut output,input,ProducedPhase::SleepGraph,Some("must_not_sleep"),sleep::row(header,budget.format(format_args!("{name} calls {called} which has override child proc that sleeps {}",display(input,child.procedure, &budget,&mut||access.checkpoint())?))?,notes),budget.point(&origin)?,policy, &budget)?;
                     }
                     continue;
                 }
@@ -302,7 +302,7 @@ Ok(())})();if pending.is_ok(){let after=0usize.checked_add(coordinate_charge::<_
                     let mut notes = budget.annotation(&annotation_note)?;
                     call_notes(input,&path,&mut notes,&budget,&mut||access.checkpoint())?;
                     effect_notes(input, &callee.blocking, true, &mut notes, &budget)?;
-                    emit(&mut output,input,Some("must_not_sleep"),sleep::row(header,
+                    emit(&mut output,input,ProducedPhase::SleepGraph,Some("must_not_sleep"),sleep::row(header,
                         budget.format(format_args!("{name} sets SpacemanDMM_should_not_sleep but calls blocking proc {called}"))?,notes),budget.point(&origin)?,policy, &budget)?;
                 } else {
                     // Derive the direct-only override relation by BORROWING the
@@ -324,7 +324,7 @@ Ok(())})();if pending.is_ok(){let after=0usize.checked_add(coordinate_charge::<_
                         let mut notes = budget.annotation(&annotation_note)?;
                         call_notes(input,&path,&mut notes,&budget,&mut||access.checkpoint())?;
                         effect_notes(input, &child.blocking, true, &mut notes, &budget)?;
-                        emit(&mut output,input,Some("must_not_sleep"),sleep::row(header,
+                        emit(&mut output,input,ProducedPhase::SleepGraph,Some("must_not_sleep"),sleep::row(header,
                             budget.format(format_args!("{name} calls {called} which has override child proc that sleeps {}",display(input,child.procedure, &budget,&mut||access.checkpoint())?))?,notes),budget.point(&origin)?,policy, &budget)?;
                     }
                 }

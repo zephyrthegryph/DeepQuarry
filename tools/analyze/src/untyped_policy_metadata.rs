@@ -8,8 +8,8 @@ const HINT_SCHEMA: &str = "the var's SCHEMA says it holds a path under a base (s
 doc/rewrite/proposals/typed_values.md section 5";
 
 pub(crate) static META: Meta = Meta {
-    name: "untyped",
-    group: "",
+    name: crate::allow_registry_fields::untyped_refs::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::untyped_refs::SCOPE_META_0.group,
     label: "untyped",
     legacy: "",
     select: CODE_DM,
@@ -24,7 +24,7 @@ pub(crate) static META: Meta = Meta {
     },
     rules: &[RuleMeta { name: "typed", hint: HINT }, RuleMeta { name: "call", hint: HINT }, RuleMeta { name: "schema", hint: HINT_SCHEMA }],
     allow: &[],
-    lists: &["exempt_types"],
+    lists: crate::allow_registry_fields::untyped_refs::SCOPE_META_0.lists,
 };
 
 pub fn metadata() -> &'static Meta {

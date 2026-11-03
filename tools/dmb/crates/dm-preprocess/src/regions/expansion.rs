@@ -1,7 +1,7 @@
 use super::prepared_source::PreparedLineView;
 use super::*;
 use crate::{expand_traced, DiagnosticKind, ExpandLocation};
-use dm_syntax::{lex_spans, SpanToken};
+use dm_syntax::lex_spans;
 use std::borrow::Cow;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Mutex;
@@ -14,7 +14,7 @@ pub struct ExpandedRegions {
     pub text: crate::SourceText,
     /// Lex the joined stream once: declarations and expressions may cross
     /// include boundaries and cannot be parsed as independent file programs.
-    pub tokens: Vec<SpanToken>,
+    pub tokens: dm_syntax::SpanTokenStorage,
     pub origins: ExpandedOriginArena,
     /// Declaration ordering projection; grammar is always parsed in encounter order.
     pub emission_regions: Vec<usize>,
@@ -190,7 +190,7 @@ fn expand_regions_inner(
     result.text = text;
     if retain_tokens {
         let lexed = lex_spans(&result.text);
-        result.tokens = lexed.tokens;
+        result.tokens = lexed.tokens.into();
         result.lexical_diagnostics = lexed.diagnostics;
     }
     result

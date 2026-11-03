@@ -77,7 +77,7 @@ impl<'a> BorrowedRelWrite<'a> {
         }
         // Exact old second pass: text path form, first pair only, no private verbs.
         let pattern = crate::pat!(
-            r"\b(rel_(?:set|add|remove|clear|take|take_all|move))\(\s*[^,]+,\s*nameof\(\s*(/[\w/]+?)/?::(\w+)\s*\)"
+            crate::rel_write_policy::PATH_FORM
         );
         for f in files {
             checkpoint()?;

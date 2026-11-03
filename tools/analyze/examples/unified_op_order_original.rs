@@ -1,0 +1,6 @@
+//! Independent whole pre-port registration over immutable INPUT-only fixtures.
+pub use dq_analyze::{lint,sem,tree,pat,pat_match};pub use dq_analyze::original_policy_descriptors as allow_registry_fields;
+#[path="../fixtures/original_policies/op_order.rs"]mod original;
+#[path="../fixtures/native-op-order/fixture.rs"]mod fixture;
+#[path="../../dmb/shared/test_scratch.rs"]mod scratch;
+fn main()->Result<(),Box<dyn std::error::Error>>{for(case,body,_)in fixture::CASES{let root=scratch::dir(&format!("op-order-original-{case}"));for(path,text)in fixture::files(case,body){let p=root.join(path);std::fs::create_dir_all(p.parent().unwrap())?;std::fs::write(p,text)?;}let mut registry=lint::Registry::default();original::register(&mut registry);let engine=dq_analyze::run::Engine::new(registry,dq_analyze::run::Options{root:root.clone(),lints:vec!["op_order".into()],no_cache:true,raw:true,..Default::default()})?;let result=engine.run_one(engine.reg.lints[0].as_ref());println!("OP_ORDER_WHOLE_ORIGINAL={}",serde_json::json!({"case":case,"sites":result.run.sites,"allow_used":result.allow_used,"notes":result.run.notes,"text":result.text,"failed":result.failed,"internal_error":result.internal_error}));}Ok(())}

@@ -123,19 +123,7 @@ impl Engine {
     }
 
     /// Fail fast on a lint whose scope section lacks a list it declares.
-    pub fn validate_scopes(&self) -> Vec<String> {
-        let mut problems = Vec::new();
-        for l in &self.reg.lints {
-            let m = l.meta();
-            let scope = self.scopes.for_lint(m.name, m.group);
-            for key in m.lists {
-                if !scope.lists.contains_key(*key) {
-                    problems.push(format!("lint_scopes.toml: [lint.{}.lists] is missing `{}`", m.name, key));
-                }
-            }
-        }
-        problems
-    }
+    pub fn validate_scopes(&self)->Vec<String>{crate::required_scope_policy::validate_using(self.reg.lints.iter().map(|lint|{let meta=lint.meta();crate::required_scope_policy::Requirement{name:meta.name,group:meta.group,lists:meta.lists}}),&self.scopes,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{})}
 
     /// Scans one lint (cached) and returns its raw sites.
     pub fn scan(&self, lint: &dyn Lint) -> (Run, Vec<AllowUse>, Timing) {

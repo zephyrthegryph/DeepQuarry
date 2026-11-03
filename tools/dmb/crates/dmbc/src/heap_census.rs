@@ -401,7 +401,7 @@ impl HeapCensus {
             self.slice(owner, &file.line_starts, true);
         }
         self.source_text("frontend.expanded_text", &frontend.expanded.text);
-        self.vec_payload("frontend.expanded_tokens", &frontend.expanded.tokens);
+        frontend.expanded.tokens.visit_storage(|pointer,logical,capacity|{self.exposed_buffer("frontend.expanded_tokens",pointer,logical,capacity);});
         frontend
             .expanded
             .origins
@@ -546,6 +546,7 @@ impl HeapCensus {
         let owner = "semantic_tree";
         if self.arc_object(owner, &snapshot.tree) {
             let tree = &snapshot.tree;
+            tree.visit_original_input_retention(|address,bytes,_|{self.buffer("semantic_tree.original_primary",address,bytes,bytes);});
             effective_metadata::selections(self, tree);
             self.slice(owner, tree.types(), true);
             for node in tree.types() {

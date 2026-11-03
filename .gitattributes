@@ -231,3 +231,155 @@ tools/dmb/fixtures/unified_checks/filter_static_reference/project.dme -text
 tools/dmb/fixtures/unified_checks/filter_static_builtin_reference/project.dme -text
 
 tools/dmb/fixtures/unified_checks/static_modified_prefab/project.dme -text
+# Immutable pre-port semantic-read policy and shared initial source fixtures.
+tools/analyze/fixtures/original_policies/sem_reads.rs -text whitespace=cr-at-eol
+tools/analyze/fixtures/native-sem-reads/** -text whitespace=cr-at-eol,-indent-with-non-tab
+tools/analyze/fixtures/original_policies/untracked_inputs.rs -text whitespace=cr-at-eol
+tools/analyze/fixtures/native-untracked-inputs/** -text whitespace=cr-at-eol,-indent-with-non-tab
+
+tools/dmb/fixtures/unified_checks/statement_type_errors/project.dme -text
+tools/dmb/fixtures/unified_checks/iteration_range_errors/project.dme -text
+tools/dmb/fixtures/unified_checks/iteration_parent_types/project.dme -text
+
+tools/dmb/fixtures/unified_checks/undefined_declared_type/project.dme -text
+
+tools/dmb/fixtures/unified_checks/undefined_recursive_modifiers/project.dme -text
+
+tools/dmb/fixtures/unified_checks/switch_case_next/* -text
+
+tools/dmb/fixtures/unified_checks/switch_case_dedent/* -text
+
+tools/dmb/fixtures/unified_checks/switch_case_explicit/* -text
+
+tools/dmb/fixtures/unified_checks/switch_case_included/* -text
+
+tools/dmb/fixtures/unified_checks/switch_case_include_then_proc/* -text
+tools/dmb/fixtures/unified_checks/switch_case_mixed_unit/project.dme -text
+tools/dmb/fixtures/unified_checks/switch_case_explicit_indented/project.dme -text
+tools/dmb/fixtures/unified_checks/switch_case_inline_simple/project.dme -text
+tools/dmb/fixtures/unified_checks/switch_case_inline_if/project.dme -text
+tools/dmb/fixtures/unified_checks/switch_case_inline_while/project.dme -text
+tools/dmb/fixtures/unified_checks/switch_case_inline_if_else/project.dme -text
+tools/dmb/fixtures/unified_checks/switch_case_inline_if_default/project.dme -text
+tools/dmb/fixtures/unified_checks/switch_case_inline_try/project.dme -text
+tools/dmb/fixtures/unified_checks/switch_case_inline_do/project.dme -text
+
+tools/analyze/fixtures/original_policies/required_scope_validation.rs -text
+
+tools/analyze/fixtures/original_policies/required_scope_registry_preport.json -text
+
+tools/analyze/fixtures/native-check-grep/original_context.dm -text
+
+tools/dmb/fixtures/unified_checks/switch_case_inline_do_error/* -text
+# Exact complete original tracked/tracked_tests policy and shared initial source fixtures.
+tools/analyze/fixtures/original_policies/tracked.rs -text whitespace=cr-at-eol,-blank-at-eof
+tools/analyze/fixtures/native-tracked/** -text whitespace=cr-at-eol,-indent-with-non-tab
+# Frozen original state-schema judgment and lexical scanner.
+tools/analyze/fixtures/original_policies/state_schema.rs -text whitespace=cr-at-eol
+tools/analyze/fixtures/original_policies/state_schema_data.rs -text whitespace=cr-at-eol
+tools/analyze/fixtures/native-state-schema/** -text whitespace=cr-at-eol,-indent-with-non-tab
+tools/analyze/fixtures/original_policies/ownership_parents.rs -text whitespace=cr-at-eol
+
+tools/analyze/fixtures/original_policies/lifecycle.rs -text
+tools/analyze/fixtures/native-lifecycle/fixture.rs -text
+
+tools/analyze/fixtures/original_policies/sys_loot.rs -text
+tools/analyze/fixtures/native-sys-loot/fixture.rs -text
+
+/tools/analyze/fixtures/original_policies/instance_list.rs -text
+/tools/analyze/fixtures/original_policies/walk_order.rs -text
+/tools/analyze/fixtures/native-instance-list/fixture.rs -text
+
+/tools/analyze/fixtures/original_policies/cache.rs -text
+/tools/analyze/fixtures/native-cache/fixture.rs -text
+
+/tools/analyze/fixtures/original_policies/sys_dx_ownership_forms.rs -text
+/tools/analyze/fixtures/native-sys-ownership-forms/fixture.rs -text
+
+# Immutable original API policy and lexical field-index oracle.
+tools/analyze/fixtures/original_policies/api.rs -text
+tools/analyze/fixtures/original_policies/api_field_write.rs -text
+
+tools/analyze/fixtures/original_policies/sys_fields.rs -text
+tools/analyze/fixtures/original_policies/sys_fields_field_write.rs -text
+
+tools/analyze/fixtures/original_policies/sys_appearance.rs -text
+tools/analyze/fixtures/original_policies/sys_appearance_field_write.rs -text
+
+# Immutable original raw Tree policies and paired source fixture.
+tools/analyze/fixtures/original_policies/raw_eight_cooldown.rs -text whitespace=cr-at-eol,-blank-at-eof
+tools/analyze/fixtures/original_policies/raw_eight_declaration_block.rs -text whitespace=cr-at-eol,-blank-at-eof
+tools/analyze/fixtures/original_policies/raw_eight_duplicate_input_key.rs -text whitespace=cr-at-eol,-blank-at-eof
+tools/analyze/fixtures/original_policies/raw_eight_interactions.rs -text whitespace=cr-at-eol,-blank-at-eof
+tools/analyze/fixtures/original_policies/raw_eight_latent.rs -text whitespace=cr-at-eol,-blank-at-eof
+tools/analyze/fixtures/original_policies/raw_eight_pollers.rs -text whitespace=cr-at-eol,-blank-at-eof
+tools/analyze/fixtures/original_policies/raw_eight_read_back.rs -text whitespace=cr-at-eol,-blank-at-eof
+tools/analyze/fixtures/original_policies/raw_eight_cap_bits.rs -text whitespace=cr-at-eol,-blank-at-eof
+tools/analyze/fixtures/original_policies/raw_eight_raw_name_match.rs -text whitespace=cr-at-eol,-blank-at-eof
+tools/analyze/fixtures/native-raw-eight/fixture.rs -text whitespace=cr-at-eol,-blank-at-eof
+
+tools/analyze/fixtures/native-workspace-fold/fixture.rs -text
+tools/analyze/fixtures/original_policies/decl_workspace.rs -text
+
+tools/analyze/fixtures/original_policies/init_workspace.rs -text
+
+tools/analyze/fixtures/original_policies/base_vars_workspace.rs -text
+tools/analyze/fixtures/native-base-vars-workspace/fixture.rs -text
+
+tools/analyze/fixtures/native-base-vars-report/fixture.rs -text
+
+tools/analyze/fixtures/original_policies/requirement_bool_workspace.rs -text
+tools/analyze/fixtures/native-requirement-bool-workspace/fixture.rs -text
+
+tools/analyze/fixtures/native-requirement-bool-report/fixture.rs -text
+
+/tools/analyze/fixtures/original_policies/manual_log_original.rs -text
+tools/analyze/fixtures/original_policies/pool_workspace.rs -text
+tools/analyze/fixtures/original_policies/pool_workspace_policy.rs -text
+
+/tools/analyze/fixtures/original_policies/sfx_original.rs -text
+
+/tools/analyze/fixtures/original_policies/cross_sys_requirements.rs -text
+/tools/analyze/fixtures/original_policies/cross_sys_dx_string_names.rs -text
+tools/analyze/fixtures/original_policies/player_link_workspace.rs -text
+
+tools/analyze/fixtures/original_policies/untyped_member_workspace.rs -text
+
+tools/analyze/fixtures/original_policies/weak_raw_read_workspace.rs -text
+tools/analyze/fixtures/original_policies/weak_relation_workspace.rs -text
+tools/analyze/fixtures/original_policies/weak_raw_read_workspace_oracle.rs -text
+
+/tools/analyze/fixtures/original_policies/shadow_look_dx_constructor_shadow.rs -text
+/tools/analyze/fixtures/original_policies/shadow_look_dx_look_side_effects.rs -text
+/tools/analyze/fixtures/original_policies/shadow_look_dx_reactive.rs -text
+
+/tools/analyze/fixtures/original_policies/expiry_workspace.rs -text
+
+tools/analyze/fixtures/original_policies/rel_write_undeclared_workspace.rs -text
+tools/analyze/fixtures/original_policies/rel_write_original_raw_events.rs -text
+
+/tools/analyze/fixtures/original_policies/sys_ui_workspace.rs -text
+
+/tools/analyze/fixtures/original_policies/untyped_workspace.rs -text
+
+/tools/analyze/fixtures/original_policies/doc_snippets_workspace.rs -text
+
+/tools/analyze/fixtures/original_policies/stored_refs_workspace.rs -text
+
+/tools/analyze/fixtures/original_policies/doc_snippets_dx.rs -text
+
+/tools/analyze/fixtures/original_policies/setter_publishes.rs -text
+
+# Immutable complete pre-port op-order authority.
+tools/analyze/fixtures/original_policies/op_order.rs -text
+
+tools/analyze/fixtures/original_policies/dx_reactive.rs -text
+tools/analyze/fixtures/original_policies/sys_dx_reactive.rs -text
+
+tools/analyze/fixtures/original_policies/lifeforms.rs -text
+tools/analyze/fixtures/original_policies/ctor_args.rs -text
+tools/analyze/fixtures/original_policies/lifeform_source_policy.rs -text
+
+/tools/analyze/fixtures/original_policies/sem_handlers.rs -text
+/tools/analyze/fixtures/original_policies/handler_checks.rs -text
+/tools/analyze/fixtures/original_policies/handler_analysis.rs -text

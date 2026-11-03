@@ -34,6 +34,7 @@ impl HeapCensus {
         text: &'a dm_syntax::LiteralText,
         pending: &mut Vec<Node<'a>>,
     ) {
+        text.visit_original_literal_storage(|pointer,payload,capacity|{self.buffer(owner,pointer,payload,capacity);});
         dm_syntax::visit_setting_literal_retention(text, |pointer, payload| {
             let bytes = payload.saturating_add(2 * size_of::<usize>());
             self.buffer(owner, pointer, bytes, bytes);
@@ -231,7 +232,7 @@ impl HeapCensus {
                         StatementKind::Switch {
                             selector,
                             cases,
-                            else_branch,
+                            else_branch, ..
                         } => {
                             pending.push(Node::Expr(selector));
                             statements(self, owner, else_branch, &mut pending);
@@ -362,6 +363,7 @@ mod tests {
             span: dm_syntax::Span::new(0, 7),
         });
         let parsed = dm_syntax::ParsedBody {
+            original_grammar:None,
             statements: vec![Statement {
                 kind: StatementKind::Return(Some(Expr {
                     kind: ExprKind::Group(inner),

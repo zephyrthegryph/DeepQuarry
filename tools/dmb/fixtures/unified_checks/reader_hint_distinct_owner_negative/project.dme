@@ -1,0 +1,4 @@
+/datum/base/proc/work()
+    return 1
+/datum/other/proc/work()
+    return 2

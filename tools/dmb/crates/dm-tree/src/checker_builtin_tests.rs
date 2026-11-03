@@ -367,3 +367,11 @@ fn borrowed_validated_profile_reuses_only_exact_immutable_tree_and_original_buil
  for _ in 0..6000{validated.require(&original,profile).unwrap();for(query,expected)in queries.iter().zip(&expected){assert_eq!(Resolver::resolve(&validated,*query),*expected);}}
  assert_eq!(PROFILE_VALIDATIONS.with(|count|count.get()),1,"same original profile query core must not rescan catalog per repeated call");assert!(validated.require(&foreign,profile).is_err());assert!(validated.require(&original,other).is_err());assert!(validated.reborrow(&foreign,profile).is_err());assert!(original.validated_checker_profile(other).is_err());assert_eq!(validated.source_owner(),Resolver::source_owner(&original));assert!(!validated.observes_reads());
 }
+
+#[test]
+fn original_builtin_type_probe_is_roster_complete_and_cannot_be_widened_by_source_or_foreign_proof(){
+ let tree=seeded("/datum/content_only\n");let profile=tree.checker_builtin_profile().unwrap();let proof=tree.validated_checker_profile(profile).unwrap();
+ for(ty,_)in data::PARENTS{assert_eq!(tree.checker_builtin_type_presence_validated(profile,ty,&proof).unwrap(),*ty!="/","actual Original root path differs from normalized native catalog; all other builtin types include memberless entries: {ty}");}assert!(tree.checker_builtin_type_presence_validated(profile,"",&proof).unwrap());
+ assert!(tree.checker_source_type_presence_validated(profile,"/datum/content_only",&proof).unwrap());assert!(!tree.checker_builtin_type_presence_validated(profile,"/datum/content_only",&proof).unwrap());assert!(!tree.checker_builtin_type_presence_validated(profile,"/not_declared_anywhere",&proof).unwrap());
+ let foreign=seeded("/datum/content_only\n");assert!(foreign.checker_builtin_type_presence_validated(profile,"/datum",&proof).is_err());assert!(tree.checker_builtin_type_presence_validated(PackedU128::new(profile.get()^1),"/datum",&proof).is_err());
+}

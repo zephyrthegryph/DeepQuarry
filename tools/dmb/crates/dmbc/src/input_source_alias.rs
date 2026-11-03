@@ -8,9 +8,10 @@ pub(crate) struct SourceAliasRecord {
 }
 struct Challenge {
     primary: FileInput,
-    lease: dm_preprocess::SourceAcquisitionLease,
+    lease: Option<dm_preprocess::SourceAcquisitionLease>,
 }
-/// Only RecordingInputs can issue this from a genuine current primary lease.
+/// Only RecordingInputs can issue this from a genuine current positive file
+/// observation. Acquired-source use additionally carries its actual lease.
 #[derive(Clone)]
 pub struct SourceAliasChallenge(Arc<Challenge>);
 impl SourceAliasChallenge {
@@ -124,10 +125,24 @@ impl AcquiredSourceAlias {
         );
     }
     pub(crate) fn lease(&self) -> &dm_preprocess::SourceAcquisitionLease {
-        &self.proof.challenge.0.lease
+        self.proof.challenge.0.lease.as_ref().expect("acquired alias constructor requires an actual source lease")
     }
 }
 impl<P: SnapshotProvider> RecordingInputs<P> {
+    /// Record a supported provider-certified alias of an actual positive file
+    /// observation. This creates no source acquisition, decoded view or role.
+    pub(super) fn record_observed_file_alias(&self,requested:&Path,primary:&Path)->io::Result<()>{
+        let requested=canonical_path(requested);let primary=canonical_path(primary);
+        if requested==primary{return Ok(())}
+        let fact=self.recorded_file_fact(&primary)?;
+        let challenge=SourceAliasChallenge(Arc::new(Challenge{primary:fact.clone(),lease:None}));
+        let proof=self.provider.source_alias(&requested,&challenge)?.ok_or_else(||invalid("provider cannot certify actual observed file alias"))?;
+        if !Arc::ptr_eq(&proof.challenge.0,&challenge.0)||proof.primary()!=&fact||proof.alias().path!=requested||proof.alias().stamp!=fact.stamp||proof.alias().content!=fact.content{return Err(invalid("observed file alias proof differs"))}
+        let mut current=self.snapshot.lock().map_err(|_|invalid("input mutex poisoned"))?;
+        if current.files.get(&primary)!=Some(&fact){return Err(invalid("observed alias primary changed"))}
+        current.record_verified_digest(&requested,proof.alias().stamp.clone(),proof.alias().content)
+    }
+
     pub(crate) fn acquire_source_alias(
         &self,
         requested: &Path,
@@ -149,7 +164,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             .ok_or_else(|| invalid("acquired alias primary fact unavailable"))?;
         let challenge = SourceAliasChallenge(Arc::new(Challenge {
             primary: fact.clone(),
-            lease: acquired.lease().clone(),
+            lease: Some(acquired.lease().clone()),
         }));
         let Some(proof) = self.provider.source_alias(&requested, &challenge)? else {
             return Ok(None);

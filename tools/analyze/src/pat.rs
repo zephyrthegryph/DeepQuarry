@@ -323,20 +323,24 @@ impl Pat {
     }
 
     /// All non-overlapping matches (Python `finditer`).
-    pub fn find_iter<'h>(&self, hay: &'h str) -> Vec<M<'h>> {
-        let mut out = Vec::new();
+    pub fn find_iter<'h>(&self,hay:&'h str)->Vec<M<'h>>{let mut out=Vec::new();let result=self.try_for_each_match(hay,&mut out,|_|Ok::<(),std::convert::Infallible>(()),|out,m|{out.push(m);Ok(())});match result{Ok(())=>out,Err(never)=>match never{}}}
+    /// SAME nonoverlapping match progression with operation admission before
+    /// each real find_at call. Private regex scratch keeps its prior qualification.
+    pub fn try_for_each_match<'h,State,E>(&self,hay:&'h str,state:&mut State,mut admit:impl FnMut(&mut State)->Result<(),E>,mut visit:impl FnMut(&mut State,M<'h>)->Result<(),E>)->Result<(),E>{
         let mut pos = 0;
         while pos <= hay.len() {
+            admit(state)?;
             let Some(m) = self.find_at(hay, pos) else { break };
             pos = if m.end == m.start {
                 m.end + hay[m.end..].chars().next().map(|c| c.len_utf8()).unwrap_or(1)
             } else {
                 m.end
             };
-            out.push(m);
+            visit(state,m)?;
         }
-        out
+        Ok(())
     }
+
 
     /// Captures of the first match at or after `pos`.
     pub fn captures_at<'h>(&self, hay: &'h str, pos: usize) -> Option<Caps<'h>> {

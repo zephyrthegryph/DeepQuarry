@@ -82,3 +82,17 @@ impl Demand for Checked {
         })
     }
 }
+
+/// Synchronous full-workspace policy work lent by the actual current source
+/// host. This carries operation control/storage only, never source authority.
+pub trait WorkspaceWork{
+ type Error:From<Unsupported>+From<String>+for<'a>From<&'a str>;
+ const CHECKED:bool;
+ fn checkpoint(&mut self)->Result<(),Self::Error>;
+ fn retain(&mut self,bytes:usize)->Result<(),Self::Error>;
+ /// A maximum of live temporary backing, scoped to this synchronous fold.
+ fn temporary(&mut self,bytes:usize)->Result<(),Self::Error>;
+ fn overflow(&mut self)->Self::Error;
+ fn allocation_failed(&mut self)->Self::Error;
+ fn body<'a>(&mut self,archive:&'a BodyArchive,ordinal:usize)->Result<ArchivedBody<'a>,Self::Error>;
+}

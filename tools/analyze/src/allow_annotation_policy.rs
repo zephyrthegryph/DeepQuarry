@@ -109,8 +109,8 @@ fn insert_use<C:Control>(used:&mut Usage,name:&str,relative:&str,line:u32,contro
 }
 
 static META: Meta = Meta {
-    name: "allow_annotations",
-    group: "",
+    name: crate::allow_registry_fields::allow_annotations::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::allow_annotations::SCOPE_META_0.group,
     label: "allow_annotations",
     legacy: "tools/ci/allow_annotations.py",
     select: CODE_MAPS_DM,
@@ -124,7 +124,7 @@ static META: Meta = Meta {
         RuleMeta { name: "weak_reason", hint: "" },
     ],
     allow: crate::allow_registry_fields::allow_annotations::ALLOW_0,
-    lists: &[],
+    lists: crate::allow_registry_fields::allow_annotations::SCOPE_META_0.lists,
 };
 /// SAME original descriptor for source-selection and reporting metadata.
 pub fn metadata()->&'static Meta{&META}

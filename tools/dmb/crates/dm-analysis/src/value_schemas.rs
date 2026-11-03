@@ -153,11 +153,16 @@ impl Schemas {
         owner: SymbolId,
         name: SymbolId,
     ) -> Option<&'a Kind> {
+        match self.find_using(tree,owner,name,&mut||Ok::<(),std::convert::Infallible>(())){Ok(v)=>v,Err(e)=>match e{}}
+    }
+    pub fn find_using<'a,E>(&'a self,tree:&SemanticTree,owner:SymbolId,name:SymbolId,poll:&mut impl FnMut()->Result<(),E>)->Result<Option<&'a Kind>,E>{
+        poll()?;
         let mut current = tree.lookup_type(owner);
         let mut depth = 0;
         while let Some(id) = current {
-            if let Some(kind) = self.values.get(&(tree.type_node(id)?.path, name)) {
-                return Some(kind);
+            poll()?;
+            if let Some(kind) = self.values.get(&(match tree.type_node(id){Some(n)=>n,None=>return Ok(None)}.path,name)) {
+                return Ok(Some(kind));
             }
             depth += 1;
             if depth > 64 {
@@ -165,24 +170,29 @@ impl Schemas {
             } // Reference policy's guard, not an inferred hierarchy limit.
             current = tree.parent(id);
         }
-        None
+        Ok(None)
     }
     pub fn accepts_path(tree: &SemanticTree, kind: &Kind, path: &str) -> bool {
+        match Self::accepts_path_using(tree,kind,path,&mut||Ok::<(),std::convert::Infallible>(())){Ok(v)=>v,Err(e)=>match e{}}
+    }
+    pub fn accepts_path_using<E>(tree:&SemanticTree,kind:&Kind,path:&str,poll:&mut impl FnMut()->Result<(),E>)->Result<bool,E>{
+        poll()?;
         let base = match kind {
-            Kind::Path(base) if base.is_empty() => return true,
+            Kind::Path(base) if base.is_empty() => return Ok(true),
             Kind::Path(base) => base.as_str(),
             Kind::Msg => "/datum/msg",
-            Kind::Plain => return false,
-            Kind::Any | Kind::Many => return true,
+            Kind::Plain => return Ok(false),
+            Kind::Any | Kind::Many => return Ok(true),
         };
         let mut current = tree.lookup_type(SymbolId::of(path));
         while let Some(id) = current {
+            poll()?;
             if tree.type_node(id).unwrap().path == SymbolId::of(base) {
-                return true;
+                return Ok(true);
             }
             current = tree.parent(id);
         }
-        false
+        Ok(false)
     }
 }
 

@@ -16,121 +16,33 @@
 //!
 //! Nothing here parses the tree until a declaration names a handler.
 
-use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
+use crate::lint::{Cx,Lint,Meta,Registry,Sink};
 use crate::sem::handlers;
-use crate::tree::CODE_DM;
-
-const H_UNKNOWN: &str = "make it tracked, add a relation, add READS_FROM(arg) to the global proc it came through, or add READS_AS(proc, key)";
-const H_GLOBAL: &str = "move the state into a system's tracked vars (SYSTEM_DEF) and read it through its accessor, or write it only while the world boots: reactive code cannot read a global that changes and nothing publishes";
-const H_DYNAMIC: &str = "read a declared var; nothing uses vars[] or call() in a handler";
-const H_HOP: &str = "declare the link var a relation (REL/OWN or rel_one in relations()); a hop only follows a declared relation";
-const H_FIELD: &str = "read a var the type declares (the build checks each read against the receiver's type)";
-const H_CYCLE: &str = "break the cycle: a derived value cannot read itself through its own dependencies";
-const H_COVER: &str = "publish the key where the state changes (PUBLISH_CHANGE(E, KEY)), or make the vars tracked";
-
-static META: Meta = Meta {
-    name: "sem/reads",
-    group: "sem",
-    label: "reads",
-    legacy: "",
-    select: CODE_DM,
-    scan: ScanKind::Tree,
-    policy: Policy::Hard,
-    rules: &[
-        RuleMeta { name: "unknown_read", hint: H_UNKNOWN },
-        RuleMeta { name: "untracked_global", hint: H_GLOBAL },
-        RuleMeta { name: "dynamic_read", hint: H_DYNAMIC },
-        RuleMeta { name: "hop_not_relation", hint: H_HOP },
-        RuleMeta { name: "unknown_field", hint: H_FIELD },
-        RuleMeta { name: "condition_cycle", hint: H_CYCLE },
-        RuleMeta { name: "reads_as_uncovered", hint: H_COVER },
-    ],
-    allow: crate::allow_registry_fields::sem_reads::ALLOW_0,
-    lists: &[],
-};
 
 struct SemReads;
 
 impl Lint for SemReads {
     fn meta(&self) -> &Meta {
-        &META
+        crate::sem_reads_policy::metadata()
     }
 
-    fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
-        // The stored result of a run whose inputs are unchanged (or changed only where the model
-        // cannot tell): no parse.
-        if let Some(rec) = crate::sem::incremental::lookup(cx.tree) {
-            if let Some(s) = rec.sinks.get("sem/reads") {
-                out.sites.extend(s.sites.iter().cloned());
-                out.allow_used.extend(s.allow_used.iter().cloned());
-                out.notes.extend(s.notes.iter().cloned());
-                return;
-            }
-        }
-        let Some(an) = handlers::analyzed(cx.tree) else { return };
-        let allowed = |out: &mut Sink, rel: &str, line: u32| -> bool {
-            match cx.tree.get(rel) {
-                Some(f) => out.allowed(f, line as usize, "reads"),
-                None => false,
-            }
-        };
-        // A site is one finding however many handlers reach it: the key leaves the handler out of the message.
-        let mut seen: std::collections::HashSet<(String, String, u32, String)> = std::collections::HashSet::new();
-        let sem = crate::sem::sem_for(cx.tree);
-        let reader = |rel: &str, line: u32| -> String { sem.as_ref().map(|s| s.reader_ident(rel, line)).unwrap_or_else(|| "?".to_string()) };
-        let mut put = |out: &mut Sink, rule: &'static str, rel: &str, line: u32, key: String, ident: String, msg: String| {
-            if rel.is_empty() || !seen.insert((rule.to_string(), rel.to_string(), line, key)) {
-                return;
-            }
-            if allowed(out, rel, line) {
-                return;
-            }
-            out.site_decl(rule, rel, line as usize, msg, ident);
-        };
-        for a in &an.handlers {
-            if !a.h.role.reads_covered() {
-                continue;
-            }
-            let Some(set) = &a.closed else { continue };
-            let who = format!("{}::{} ({}())", a.on, a.h.proc, a.h.form);
-            for (key, var, owner, rel, line) in &a.unknown {
-                put(out, "unknown_read", rel, *line, format!("{key}|{var}|{owner}"), format!("{} reads {}::{}", reader(rel, *line), owner, key), format!("{} reads `{}`: {} on {} is not tracked, a relation, a stat, derived or constant", who, key, var, owner));
-            }
-            for d in &set.diags {
-                match d.rule {
-                    "untracked_global" | "dynamic_read" | "hop_not_relation" | "unknown_field" => {
-                        let rule: &'static str = match d.rule {
-                            "untracked_global" => "untracked_global",
-                            "dynamic_read" => "dynamic_read",
-                            "hop_not_relation" => "hop_not_relation",
-                            _ => "unknown_field",
-                        };
-                        put(out, rule, &d.rel, d.line, d.msg.clone(), format!("{} reads {}", reader(&d.rel, d.line), d.msg), format!("{}: {}", who, d.msg));
-                    }
-                    _ => {}
-                }
-            }
-        }
-        for c in &an.cycles {
-            let first = an.graph.as_ref().and_then(|g| g.nodes.get(&c[0]));
-            let (rel, line) = first.map(|n| (n.rel.clone(), n.line)).unwrap_or_default();
-            put(out, "condition_cycle", &rel, line, c.join(">"), format!("cycle {}", c.join(">")), format!("cycle in the condition and stat graph: {} -> {}", c.join(" -> "), c[0]));
-        }
-        for g in &an.accessor_gaps {
-            put(
-                out,
-                "reads_as_uncovered",
-                &g.rel,
-                g.line,
-                format!("{}|{}", g.proc, g.key),
-                format!("{}::{} publishes {}", g.ty, g.proc, g.key),
-                format!("READS_AS({}, {}) on {} reads {} which are not tracked and nothing publishes {}", g.proc, g.key, g.ty, g.vars.join(", "), g.key),
-            );
-        }
-        crate::sem::incremental::store(cx.tree, "sem/reads", out);
+    fn scan_tree(&self,cx:&Cx,out:&mut Sink){
+        if let Some(rec)=crate::sem::incremental::lookup(cx.tree){if let Some(saved)=rec.sinks.get("sem/reads"){out.sites.extend(saved.sites.iter().cloned());out.allow_used.extend(saved.allow_used.iter().cloned());out.notes.extend(saved.notes.iter().cloned());return}}
+        let Some(an)=handlers::analyzed(cx.tree)else{return};let sem=crate::sem::sem_for(cx.tree);let mut report=Legacy{cx,sem:sem.as_deref(),out,seen:Default::default()};let mut control=crate::key_policy_control::Compatibility;
+        for a in &an.handlers{if !a.h.role.reads_covered(){continue}let Some(set)=&a.closed else{continue};for(key,var,owner,rel,line)in &a.unknown{crate::sem_reads_policy::unknown(&mut report,crate::sem_reads_policy::Handler{owner:&a.on,procedure:&a.h.proc,form:a.h.form},key,var,owner,rel,*line,&mut control).unwrap();}for diagnostic in &set.diags{crate::sem_reads_policy::diagnostic(&mut report,crate::sem_reads_policy::Handler{owner:&a.on,procedure:&a.h.proc,form:a.h.form},diagnostic.rule,&diagnostic.rel,diagnostic.line,&diagnostic.msg,&mut control).unwrap();}}
+        for cycle in &an.cycles{let first=an.graph.as_ref().and_then(|graph|graph.nodes.get(&cycle[0]));let(rel,line)=first.map(|node|(node.rel.as_str(),node.line)).unwrap_or(("",0));crate::sem_reads_policy::cycle(&mut report,cycle,rel,line,&mut control).unwrap();}
+        for gap in &an.accessor_gaps{crate::sem_reads_policy::accessor_gap(&mut report,&gap.ty,&gap.proc,&gap.key,&gap.vars,&gap.rel,gap.line,&mut control).unwrap();}
+        crate::sem::incremental::store(cx.tree,"sem/reads",report.out);
     }
+
 }
 
 pub fn register(reg: &mut Registry) {
     reg.add(SemReads);
+}
+
+struct Legacy<'cx,'tree,'out>{cx:&'cx Cx<'tree>,sem:Option<&'cx crate::sem::Sem>,out:&'out mut Sink,seen:std::collections::HashSet<(String,String,u32,String)>}
+impl crate::sem_reads_policy::Reporter<crate::key_policy_control::Compatibility> for Legacy<'_,'_,'_>{
+ fn reader(&mut self,rel:&str,line:u32,_:&mut crate::key_policy_control::Compatibility)->Result<String,std::convert::Infallible>{Ok(self.sem.map(|sem|sem.reader_ident(rel,line)).unwrap_or_else(||"?".to_owned()))}
+ fn put(&mut self,rule:&'static str,rel:&str,line:u32,key:String,ident:String,message:String,_:&mut crate::key_policy_control::Compatibility)->Result<(),std::convert::Infallible>{if rel.is_empty()||!self.seen.insert((rule.to_owned(),rel.to_owned(),line,key)){return Ok(())}if self.cx.tree.get(rel).is_some_and(|file|self.out.allowed(file,line as usize,"reads")){return Ok(())}self.out.site_decl(rule,rel,line as usize,message,ident);Ok(())}
 }

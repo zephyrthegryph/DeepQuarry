@@ -5,6 +5,9 @@ use crate::{
     tree::SourceFile,
 };
 use std::collections::HashSet;
+use crate::key_policy_control::Control;
+struct LegacySchemaControl<'a>{poll:&'a mut dyn FnMut()->Result<(),String>}
+impl Control for LegacySchemaControl<'_>{type Error=String;const CHECKED:bool=false;fn checkpoint(&mut self)->Result<(),String>{(self.poll)()}fn reserve(&mut self,_:usize)->Result<(),String>{Ok(())}fn overflow(&mut self)->String{"schema accounting overflow".into()}fn allocation_failed(&mut self)->String{"schema allocation refused".into()}}
 /// What a value-schema var holds.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ValueKind {
@@ -23,37 +26,38 @@ pub enum ValueKind {
 
 /// The schema expression's kind, or None for one that holds entities or containers (and for text that is no schema call).
 pub fn kind_of(expr: &str) -> Option<ValueKind> {
-    kind_of_observed(expr, 0, None).expect("unbounded original schema kind policy")
+    kind_of_observed::<LegacySchemaControl<'_>>(expr,0,None).expect("unbounded original schema kind policy")
 }
 /// Captured admission only; legacy callers keep the original unbounded policy.
 /// Every recursive temporary is reserved BEFORE split_args clones its input.
-struct SchemaBudget<'a> {
+struct SchemaBudget<'a,C:Control> {
     remaining: &'a mut usize,
-    checkpoint: &'a mut dyn FnMut() -> Result<(), String>,
+    control: &'a mut C,
 }
 const MAX_CAPTURED_SCHEMA_DEPTH: usize = 128;
-impl SchemaBudget<'_> {
-    fn admit(&mut self, depth: usize, bytes: usize) -> Result<(), String> {
-        (self.checkpoint)()?;
+impl<C:Control> SchemaBudget<'_,C> where C::Error:From<String>{
+    fn admit(&mut self,depth:usize,bytes:usize)->Result<(),C::Error>{
+        self.control.checkpoint()?;
         if depth > MAX_CAPTURED_SCHEMA_DEPTH {
-            return Err("captured schema nesting exceeds bounded policy admission".into());
+            return Err(String::from("captured schema nesting exceeds bounded policy admission").into());
         }
         let charge = bytes
             .checked_mul(16)
             .and_then(|n| n.checked_add(4096))
-            .ok_or("schema recursive temporary accounting overflow")?;
+            .ok_or_else(||C::Error::from(String::from("schema recursive temporary accounting overflow")))?;
         *self.remaining = self
             .remaining
             .checked_sub(charge)
-            .ok_or("schema recursive temporary exceeds admission before allocation")?;
+            .ok_or_else(||C::Error::from(String::from("schema recursive temporary exceeds admission before allocation")))?;
+        if C::CHECKED{self.control.reserve(charge)?;}
         Ok(())
     }
 }
-fn kind_of_observed(
+fn kind_of_observed<C:Control>(
     expr: &str,
     depth: usize,
-    mut budget: Option<&mut SchemaBudget<'_>>,
-) -> Result<Option<ValueKind>, String> {
+    mut budget: Option<&mut SchemaBudget<'_,C>>,
+)->Result<Option<ValueKind>,C::Error> where C::Error:From<String>{
     if let Some(budget) = budget.as_deref_mut() {
         budget.admit(depth, expr.len())?;
     }
@@ -92,7 +96,7 @@ fn kind_of_observed(
                         .chars()
                         .take_while(|c| c.is_alphanumeric() || *c == '_');
                     if prefix.clone().count() != prefix.map(char::len_utf8).sum::<usize>() {
-                        return Err("captured schema Unicode option-name policy is unissued".into());
+                        return Err(String::from("captured schema Unicode option-name policy is unissued").into());
                     }
                     if !is_named(arg) {
                         selected = Some(arg);
@@ -144,27 +148,24 @@ impl SchemaHints {
     ) -> Result<(), String> {
         self.read_internal(file, remaining, true, checkpoint)
     }
-    fn read_internal(
-        &mut self,
-        file: &SourceFile,
-        remaining: &mut usize,
-        bounded: bool,
-        checkpoint: &mut dyn FnMut() -> Result<(), String>,
-    ) -> Result<(), String> {
+    fn read_internal(&mut self,file:&SourceFile,remaining:&mut usize,bounded:bool,checkpoint:&mut dyn FnMut()->Result<(),String>)->Result<(),String>{self.read_using_internal(file,remaining,bounded,&mut LegacySchemaControl{poll:checkpoint})}
+    pub fn read_with_control<C:Control>(&mut self,file:&SourceFile,control:&mut C)->Result<(),C::Error> where C::Error:From<String>{self.read_using_internal(file,&mut usize::MAX,true,control)}
+    fn read_using_internal<C:Control>(&mut self,file:&SourceFile,remaining:&mut usize,bounded:bool,control:&mut C)->Result<(),C::Error> where C::Error:From<String>{
         let text = file.marker().as_str();
         let mut offset = 0;
         for line in text.split('\n') {
-            checkpoint()?;
+            control.checkpoint()?;
             if let Some(marker) =
                 statement_marker(text, offset, line, &["SCHEMA", "TRACKED_SCHEMA"])
             {
                 let temporary = (marker.close - marker.open)
                     .checked_mul(16)
                     .and_then(|n| n.checked_add(4096))
-                    .ok_or("schema temporary admission overflow")?;
+                    .ok_or_else(||C::Error::from(String::from("schema temporary admission overflow")))?;
                 let mut room = remaining
                     .checked_sub(temporary)
-                    .ok_or("schema hint arguments exceed admission before allocation")?;
+                    .ok_or_else(||C::Error::from(String::from("schema hint arguments exceed admission before allocation")))?;
+                if C::CHECKED{control.reserve(temporary)?;}
                 let args = split_args(&text[marker.open + 1..marker.close]);
                 if let [owner, var, expression, ..] = args.as_slice() {
                     let recognized = if bounded {
@@ -173,7 +174,7 @@ impl SchemaHints {
                             0,
                             Some(&mut SchemaBudget {
                                 remaining: &mut room,
-                                checkpoint,
+                                control:&mut *control,
                             }),
                         )?
                     } else {
@@ -185,10 +186,11 @@ impl SchemaHints {
                             .checked_add(var.len())
                             .and_then(|n| n.checked_mul(4))
                             .and_then(|n| n.checked_add(256))
-                            .ok_or("schema hint retention overflow")?;
+                            .ok_or_else(||C::Error::from(String::from("schema hint retention overflow")))?;
                         if charge > room {
-                            return Err("schema hint row exceeds admission before retention".into());
+                            return Err(String::from("schema hint row exceeds admission before retention").into());
                         }
+                        if C::CHECKED{control.reserve(charge)?;}
                         *remaining -= charge;
                         self.recognized
                             .insert((owner.trim().to_string(), var.trim().to_string()));
@@ -203,16 +205,13 @@ impl SchemaHints {
         self.recognized
             .contains(&(owner.to_string(), var.to_string()))
     }
+    pub fn has_with_control<C:Control>(&self,owner:&str,var:&str,control:&mut C)->Result<bool,C::Error>{for(found_owner,found_var)in &self.recognized{control.checkpoint()?;if found_owner==owner&&found_var==var{return Ok(true)}}Ok(false)}
     pub fn visit_storage(&self, visit: impl FnOnce(&HashSet<(String, String)>)) {
         visit(&self.recognized)
     }
 }
-pub fn hint_message(ident: &str) -> String {
-    format!(
-        "{} carries a value schema: move it to the trait field or sparse slot that schema types",
-        ident
-    )
-}
+pub fn hint_message(ident:&str)->String{hint_message_with_control(ident,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{})}
+pub fn hint_message_with_control<C:Control>(ident:&str,control:&mut C)->Result<String,C::Error>{crate::key_policy_control::format(control,format_args!("{} carries a value schema: move it to the trait field or sparse slot that schema types",ident))}
 
 #[cfg(all(test, feature = "native-policy"))]
 mod captured_admission_tests {

@@ -7,17 +7,30 @@ use dm_syntax::{Item, ItemKind, Span, SpanToken, TokenKind};
 use std::sync::{Arc, OnceLock};
 #[path = "setting_input.rs"]
 mod setting_input;
+#[path="original_default_roots.rs"]mod default_roots;
+pub(crate) use default_roots::OriginalDefaultRoots;
 pub(crate) use setting_input::SettingFootprint;
+struct HeaderParameterSignatures{rows:Vec<dm_syntax::SharedParameterSignature>,_credit:dm_syntax::SettingRootLease}
+impl std::fmt::Debug for HeaderParameterSignatures{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("HeaderParameterSignatures").field("rows",&self.rows).finish_non_exhaustive()}}
+struct HeaderLiteralSourceHold(Option<dm_preprocess::regions::OriginalLiteralSourceView>);
+impl std::fmt::Debug for HeaderLiteralSourceHold{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.write_str(if self.0.is_some(){"issued neutral primary literal view"}else{"unissued neutral primary literal view"})}}
 #[derive(Debug)]
 pub(crate) struct OriginalProcedureHeaders {
     source: SourceText,
     headers: Vec<Span>,
-    tokens: Vec<SpanToken>,
+    first_outer_block: Option<usize>,
+    tokens: dm_syntax::SpanTokenStorage,
     settings: OnceLock<Vec<setting_input::OriginalSettingsBody>>,
     checker_diagnostic_settings: bool,
     initializer_coordinates: Option<OriginalInitializerCoordinates>,
     initializer_roots: dm_syntax::SettingExpressionSlots,
     initializer_facts: OnceLock<OriginalInitializerFactsAdmission>,
+    demanded_defaults:OnceLock<OriginalDefaultRoots>,
+    parameter_signatures:OnceLock<HeaderParameterSignatures>,
+    formal_notices:OnceLock<(super::original_formal_notices::FormalNotices,bool)>,
+    original_literal_source:OnceLock<HeaderLiteralSourceHold>,
+    // Last: actual token/header payload drops before its SAME resource credit.
+    original_primary_resource:OnceLock<OriginalPrimaryResourceHold>,
 }
 fn reserve<T>(v: &mut Vec<T>, n: usize) -> Result<(), OriginalHeaderFailure> {
     n.checked_mul(std::mem::size_of::<T>()).ok_or_else(|| {
@@ -47,6 +60,7 @@ impl std::error::Error for HeaderAllocationRefusal {
 }
 /// Early declaration resource refusal is operational, never an AdapterError.
 /// The existing compatibility constructor continues returning its original text.
+#[derive(Debug)]
 pub(crate) enum OriginalHeaderFailure {
     Source(String),
     Operational(std::io::Error),
@@ -115,7 +129,8 @@ impl OriginalInitializerCoordinates {
             spans: Vec::new(),
             lease: a.reserve(
                 std::mem::size_of::<Self>()
-                    + std::mem::size_of::<OnceLock<OriginalInitializerFactsAdmission>>(),
+                    + std::mem::size_of::<OnceLock<OriginalInitializerFactsAdmission>>()
+                    + std::mem::size_of::<OnceLock<OriginalPrimaryResourceHold>>(),
             )?,
         })
     }
@@ -289,6 +304,7 @@ impl IssuedVariableParts<'_, '_> {
         finish_original_admission(result, a)
     }
 }
+#[cfg(test)]thread_local!{static OUTER_PRIMARY_REISSUES:std::cell::Cell<usize>=const{std::cell::Cell::new(0)};}
 impl OriginalProcedureHeaders {
     /// Move the ORIGINAL cold lexer Vec into the EXISTING declaration input.
     /// Header and body consumers borrow ranges; no separate per-body token owner.
@@ -298,7 +314,7 @@ impl OriginalProcedureHeaders {
         offset: usize,
         tokens: Vec<SpanToken>,
     ) -> Result<Arc<Self>, String> {
-        Self::from_primary_inner(source, items, offset, tokens, None, false).map_err(|failure| {
+        Self::from_primary_inner(source, items, offset, tokens.into(), None, false).map_err(|failure| {
             match failure {
                 OriginalHeaderFailure::Source(message) => message,
                 OriginalHeaderFailure::Operational(actual) => actual.to_string(),
@@ -316,14 +332,14 @@ impl OriginalProcedureHeaders {
         tokens: Vec<SpanToken>,
         admission: &dm_syntax::SettingAdmission<'_>,
     ) -> Result<Arc<Self>, OriginalHeaderFailure> {
-        let result = Self::from_primary_inner(source, items, offset, tokens, Some(admission), false);
+        let result = Self::from_primary_inner(source, items, offset, tokens.into(), Some(admission), false);
         finish_original_admission(result, admission)
     }
     fn from_primary_inner(
         source: SourceText,
         items: &[Item],
         offset: usize,
-        tokens: Vec<SpanToken>,
+        tokens: dm_syntax::SpanTokenStorage,
         admission: Option<&dm_syntax::SettingAdmission<'_>>,
         checker_diagnostic_settings: bool,
     ) -> Result<Arc<Self>, OriginalHeaderFailure> {
@@ -332,6 +348,14 @@ impl OriginalProcedureHeaders {
         {
             return Err("original declaration token ranges differ".into());
         }
+        // Cold primary Items own genuine events before BODY compaction. Portable
+        // descriptors are UNKNOWN and must reissue through the SAME primary
+        // lexical/layout routine over this exact current source/token lease.
+        fn events(items:&[Item],offset:usize,known:&mut bool,first:&mut Option<usize>,a:Option<&dm_syntax::SettingAdmission<'_>>)->Result<(),OriginalHeaderFailure>{
+         for item in items{if let Some(a)=a{original_checkpoint(a)?;}if matches!(item.kind,ItemKind::Proc|ItemKind::Verb){match item.original_outer_terminator{Some(true)=>{let at=item.header_span.end.checked_sub(offset).ok_or("outer terminator header before current source")?;*first=Some(first.map_or(at,|old|old.min(at)));},Some(false)=>{},None=>*known=false}}else{events(&item.children,offset,known,first,a)?;}}
+         Ok(())
+        }
+        let mut events_known=true;let mut first_outer_block=None;events(items,offset,&mut events_known,&mut first_outer_block,admission)?;
         let mut headers = Vec::new();
         let mut coordinates = admission
             .map(OriginalInitializerCoordinates::new)
@@ -356,20 +380,40 @@ impl OriginalProcedureHeaders {
                 return Err("original declaration header coordinates overlap".into());
             }
         }
+        if !events_known{
+         #[cfg(test)]OUTER_PRIMARY_REISSUES.with(|count|count.set(count.get()+1));
+         let geometry_bytes=source.len().checked_mul(512).and_then(|n|n.checked_add(8192)).ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"outer terminator geometry peak overflow")))?;
+         let geometry_lease=admission.map(|a|a.reserve(geometry_bytes)).transpose()?;
+         let checkpoint=||match admission{Some(a)=>original_checkpoint(a),None=>Ok(())};
+         let observation=dm_syntax::original_outer_terminator_observation_using(&source,&tokens,&headers,&checkpoint)??;
+         first_outer_block=observation.first_block_probe();drop(geometry_lease);
+        }
         if let Some(a) = admission {
             a.checkpoint()?;
         }
         Ok(Arc::new(Self {
             source,
             headers,
+            first_outer_block,
             tokens,
             settings: OnceLock::new(),
             checker_diagnostic_settings,
             initializer_coordinates: coordinates,
             initializer_roots: Default::default(),
             initializer_facts: OnceLock::new(),
+            demanded_defaults:OnceLock::new(),parameter_signatures:OnceLock::new(),formal_notices:OnceLock::new(),
+            original_literal_source:OnceLock::new(),
+            original_primary_resource:OnceLock::new(),
         }))
     }
+    /// Final Original ownership handoff, no lexical/grammar reissue. All
+    /// geometry validation is the SAME constructor over the borrowed slice.
+    pub(crate) fn for_declaration_profile_tokens(source:SourceText,items:&[Item],offset:usize,tokens:dm_syntax::SpanTokenStorage,a:&dm_syntax::SettingAdmission<'_>,checker:bool)->Result<Arc<Self>,OriginalHeaderFailure>{
+        if tokens.shared().is_some_and(|shared|!shared.admitted_by(a)){return Err(OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"shared header tokens use another resource owner")))}
+        let result=Self::from_primary_inner(source,items,offset,tokens,Some(a),checker);finish_original_admission(result,a)
+    }
+    pub(crate) fn shared_span_tokens(&self)->Option<&dm_syntax::SharedSpanTokens>{self.tokens.shared()}
+    pub(crate) fn first_outer_block(&self)->Option<usize>{self.first_outer_block}
     pub(crate) fn initializer_coordinate(
         &self,
         header: Span,
@@ -595,8 +639,24 @@ impl OriginalProcedureHeaders {
         }
         Ok((ordinal, row.spans.len()))
     }
+    pub(crate) fn checker_body_profile(&self)->bool{self.checker_diagnostic_settings}
     pub(crate) fn initializer_slots(&self) -> &dm_syntax::SettingExpressionSlots {
         &self.initializer_roots
+    }
+    pub(super) fn install_original_formal_notices(&self,notices:super::original_formal_notices::FormalNotices,complete:bool,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{original_checkpoint(a)?;if !notices.is_admitted_by(a){return Err(std::io::ErrorKind::InvalidInput.into())}self.formal_notices.set((notices,complete)).map_err(|_|std::io::Error::new(std::io::ErrorKind::AlreadyExists,"actual formal parser notices were already installed"))}
+    pub(crate) fn formal_notices_for(&self,header:Span)->Result<impl Iterator<Item=super::OriginalFormalNotice>+'_,&'static str>{let(notices,complete)=self.formal_notices.get().ok_or("actual original formal parser notice coverage is unissued")?;if !complete{return Err("actual original formal clause notice coverage is unissued")}Ok(notices.for_header(header.start).iter().map(|entry|entry.notice))}
+    pub(crate) fn formal_source_matches(&self,parent:&SourceText,offset:usize)->bool{offset.checked_add(self.source.len()).and_then(|end|parent.checked_view(offset..end)).is_some_and(|view|view.same_view(&self.source))}
+    pub(crate) fn all_formal_notices(&self)->Result<impl Iterator<Item=super::OriginalFormalNotice>+'_,&'static str>{let(notices,complete)=self.formal_notices.get().ok_or("actual original formal parser notice coverage is unissued")?;if !complete{return Err("actual original formal clause notice coverage is unissued")}Ok(notices.all().iter().map(|entry|entry.notice))}
+    pub(crate) fn formal_notice_text(&self,notice:super::OriginalFormalNotice)->Result<Option<&str>,&'static str>{notice.value_span().map(|span|self.source.get(span.range()).ok_or("actual formal notice value escaped its producer source")).transpose()}
+    pub(crate) fn visit_default_roots(&self,visit:impl FnMut(&dm_syntax::SettingExpression)){if let Some(roots)=self.demanded_defaults.get(){roots.visit_roots(visit)}}
+    pub(crate) fn new_default_roots(&self,count:usize,binding:&dm_preprocess::regions::OriginalLiteralSourceBinding,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<OriginalDefaultRoots>{
+     let roots=OriginalDefaultRoots::new(count,binding,a)?;if !roots.matches(self,a){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"default roots belong to another actual primary/source owner"))}Ok(roots)
+    }
+    pub(crate) fn add_default_root(&self,roots:&mut OriginalDefaultRoots,header:Span,argument_offset:usize,parameter:&dm_ir::Parameter,symbols:&SymbolTable,root:super::DemandedFormalRoot,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{if !roots.matches(self,a){return Err(std::io::ErrorKind::InvalidInput.into())}roots.add(self,header,argument_offset,parameter,symbols,root,a)}
+    pub(crate) fn add_produced_clauses(&self,roots:&mut OriginalDefaultRoots,header:Span,argument_offset:usize,parameters:&[dm_ir::Parameter],clauses:Vec<dm_syntax::ParameterClauseSpans>,lease:Arc<dm_syntax::SettingRootLease>,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{if !roots.matches(self,a){return Err(std::io::ErrorKind::InvalidInput.into())}roots.add_clauses(self,header,argument_offset,parameters,clauses,lease,a)}
+    pub(crate) fn add_input_root(&self,roots:&mut OriginalDefaultRoots,header:Span,argument_offset:usize,parameter:&dm_ir::Parameter,symbols:&SymbolTable,ordinal:usize,marker:Span,input:dm_syntax::RetainedParameterInput,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{if !roots.matches(self,a){return Err(std::io::ErrorKind::InvalidInput.into())}roots.add_input(self,header,argument_offset,parameter,symbols,ordinal,marker,input,a)}
+    pub(crate) fn install_default_roots(&self,roots:OriginalDefaultRoots,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{
+      original_checkpoint(a)?;if !roots.matches(self,a){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"cannot publish foreign actual default root cohort"))}self.demanded_defaults.set(roots).map_err(|_|std::io::Error::new(std::io::ErrorKind::AlreadyExists,"actual default roots were already published"))
     }
     pub(crate) fn visit_initializer_roots(&self, visit: impl FnMut(&dm_syntax::SettingExpression)) {
         self.initializer_roots.visit_storage(|_, _, _| {}, visit);
@@ -621,7 +681,7 @@ impl OriginalProcedureHeaders {
         let (source, tokens, value) =
             self.initializer_tokens(relative, variable, expression, symbols)?;
         match self.initializer_roots.obtain(ordinal, count, a, || {
-            dm_syntax::prepare_setting_expression(source, tokens, value, a)
+            dm_syntax::prepare_setting_expression_with_original_literal_facts(source,tokens,value,a,self.original_literal_facts().map_err(dm_syntax::SettingSyntaxFailure::Operational)?)
         }) {
             Ok(root) => Ok(Ok(root)),
             Err(dm_syntax::SettingSyntaxFailure::Syntax(error)) => Ok(Err(error)),
@@ -689,12 +749,66 @@ impl OriginalProcedureHeaders {
         if actual!=count{return Err("dimension source count differs from original metadata".into())}
         self.original_expression_tokens(selected.ok_or("original dimension ordinal unavailable")?,expression,symbols)
     }
+    /// Borrow actual primary occurrences from this SAME installed source view.
+    /// The scalar facts remain with their neutral owner; only AST-local inline
+    /// origins are produced by the one native parser invocation.
+    pub(crate) fn original_body_expression(&self,source:&str,original_start:usize,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<dm_syntax::ParsedExpr>>{
+      let Some(facts)=self.original_literal_facts()?else{return Ok(None)};
+      let end=original_start.checked_add(source.len()).ok_or(std::io::ErrorKind::InvalidInput)?;
+      if self.source.get(original_start..end)!=Some(source){return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"current BODY expression differs from actual original source view"))}
+      let first=self.tokens.partition_point(|token|token.span.end<=original_start);let last=self.tokens.partition_point(|token|token.span.start<end);
+      if first>last||self.tokens[first..last].iter().any(|token|token.span.start<original_start||token.span.end>end){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"current BODY expression cuts actual primary token occurrence"))}
+      Ok(Some(dm_syntax::parse_expression_original_token_view(&self.source,&self.tokens[first..last],original_start,a,Some(facts))))
+    }
+    /// Publish header DATA after the genuine streaming observer has installed
+    /// its actual default/source/dimension/input roots and clause partitions.
+    pub(crate) fn install_parameter_signatures(&self,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{
+      original_checkpoint(a)?;
+      if !self.checker_diagnostic_settings{return Ok(())}
+      let Some(roots)=self.demanded_defaults.get()else{return Ok(())};
+      if self.parameter_signatures.get().is_some(){return Err(std::io::Error::new(std::io::ErrorKind::AlreadyExists,"actual parameter metadata was already published"))}
+      let bytes=self.headers.len().checked_mul(std::mem::size_of::<dm_syntax::SharedParameterSignature>()).ok_or(std::io::ErrorKind::OutOfMemory)?;
+      let credit=a.reserve(bytes)?;let mut rows=Vec::new();rows.try_reserve_exact(self.headers.len()).map_err(|actual|std::io::Error::new(std::io::ErrorKind::OutOfMemory,actual))?;
+      for &header in &self.headers{
+       original_checkpoint(a)?;let width=header.end.checked_sub(header.start).ok_or(std::io::ErrorKind::InvalidData)?;
+       let allowance=width.checked_mul(128).and_then(|n|n.checked_add(1024)).ok_or(std::io::ErrorKind::OutOfMemory)?;
+       // One conservative envelope precedes all metadata vectors and scratch.
+       // Existing root aliases retain their own original shared root credit.
+       let envelope=width.checked_mul(512).and_then(|n|n.checked_add(8192)).and_then(|n|n.checked_add(dm_syntax::SharedParameterSignature::retention_envelope())).ok_or(std::io::ErrorKind::OutOfMemory)?;
+       let lease=a.reserve(envelope)?;
+       let first=self.tokens.partition_point(|token|token.span.end<=header.start);let end=self.tokens.partition_point(|token|token.span.start<header.end);
+       for _ in self.tokens[first..end].chunks(64){original_checkpoint(a)?;}
+       let mut loan=roots.loan(header,self.formal_notices.get().filter(|(_,complete)|*complete).map(|(notices,_)|notices));
+       let mut signature=dm_syntax::parameter_signature_original_with_default_roots(&self.source,&self.tokens[first..end],header,0,&mut Some(&mut loan));
+       original_checkpoint(a)?;signature.admit_optional_expressions(allowance);
+       if signature.retained_bytes()>allowance{return Err(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"actual header metadata exceeded its original allowance"))}
+       rows.push(dm_syntax::SharedParameterSignature::retained_using(signature,lease,a)?);
+      }
+      original_checkpoint(a)?;
+      self.parameter_signatures.set(HeaderParameterSignatures{rows,_credit:credit}).map_err(|_|std::io::Error::new(std::io::ErrorKind::AlreadyExists,"actual parameter metadata was already published"))
+    }
+    pub(crate) fn parameter_signature(&self,body:Span)->Result<&dm_syntax::SharedParameterSignature,&'static str>{
+      let index=self.headers.binary_search_by_key(&body.start,|header|header.start).map_err(|_|"actual original header is absent")?;
+      self.parameter_signatures.get().and_then(|cohort|cohort.rows.get(index)).ok_or("actual original parameter metadata is unissued")
+    }
     pub(crate) fn parse_body(
         &self,
         span: Span,
         offset: usize,
     ) -> Result<dm_syntax::ProcedureWithOrigins, dm_syntax::Diagnostic> {
-        dm_syntax::parse_proc_with_origins_from_spans(&self.source, span, &self.tokens, offset)
+        if self.parameter_signatures.get().is_some(){
+          if offset!=0{return Err(dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:"shared parameter metadata requires its canonical original source window".into()})}
+          let signature=self.parameter_signature(span).map_err(|message|dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:message.into()})?;
+          return dm_syntax::parse_original_proc_with_shared_parameters_from_spans(&self.source,span,&self.tokens,offset,signature.clone())
+        }
+        if let Some(roots)=self.demanded_defaults.get(){
+          // Genuine joined Original stream inputs own the zero-based source
+          // view. Current reuse then goes through the existing CodeID binder;
+          // it never copies/rebases an old absolute default AST by equal bytes.
+          if offset!=0{return Err(dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:"streamed default root requires its canonical original source window".into()})}
+          let at=self.headers.binary_search_by_key(&span.start,|header|header.start).map_err(|_|dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:"actual default header owner is absent".into()})?;
+          let mut loan=roots.loan(self.headers[at],self.formal_notices.get().filter(|(_,complete)|*complete).map(|(notices,_)|notices));if self.checker_diagnostic_settings{dm_syntax::parse_original_proc_with_origins_and_default_roots_from_spans(&self.source,span,&self.tokens,offset,Some(&mut loan))}else{dm_syntax::parse_proc_with_origins_and_default_roots_from_spans(&self.source,span,&self.tokens,offset,Some(&mut loan))}
+        }else if self.checker_diagnostic_settings{dm_syntax::parse_original_proc_with_origins_and_default_roots_from_spans(&self.source,span,&self.tokens,offset,None)}else{dm_syntax::parse_proc_with_origins_from_spans(&self.source,span,&self.tokens,offset)}
     }
     pub(crate) fn visit_source(&self, mut visit: impl FnMut(&SourceText)) {
         visit(&self.source)
@@ -703,6 +817,16 @@ impl OriginalProcedureHeaders {
         self.source.same_view(source)
     }
     pub(crate) fn visit_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
+        if let Some(HeaderLiteralSourceHold(Some(facts)))=self.original_literal_source.get(){facts.visit_storage(&mut visit);}
+        if let Some(roots)=self.demanded_defaults.get(){roots.visit_storage(&mut visit);}
+        if let Some((notices,_))=self.formal_notices.get(){notices.visit_storage(&mut visit);}
+        if let Some(root)=self.original_primary_resource.get(){let bytes=std::mem::size_of::<dm_syntax::SettingRootLease>()+2*std::mem::size_of::<usize>();visit(Arc::as_ptr(&root.0)as usize,bytes,bytes);root.0.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));}
+
+        if let Some(cohort)=self.parameter_signatures.get(){
+         let bytes=cohort.rows.capacity()*std::mem::size_of::<dm_syntax::SharedParameterSignature>();if bytes!=0{visit(cohort.rows.as_ptr()as usize,cohort.rows.len()*std::mem::size_of::<dm_syntax::SharedParameterSignature>(),bytes)}
+         cohort._credit.visit_counter_storage(|p,n|visit(p,n,n));
+         for signature in &cohort.rows{signature.visit_owner_storage(&mut visit);signature.visit_storage(|p,n|visit(p,n,n));}
+        }
         self.initializer_roots.visit_storage(&mut visit, |_| {});
         if let Some(row) = &self.initializer_coordinates {
             visit(
@@ -718,13 +842,8 @@ impl OriginalProcedureHeaders {
             std::mem::size_of::<Self>() + 2 * std::mem::size_of::<usize>(),
             std::mem::size_of::<Self>() + 2 * std::mem::size_of::<usize>(),
         );
+        self.tokens.visit_storage(&mut visit);
         for (p, n, c, size) in [
-            (
-                self.tokens.as_ptr() as usize,
-                self.tokens.len(),
-                self.tokens.capacity(),
-                std::mem::size_of::<SpanToken>(),
-            ),
             (
                 self.headers.as_ptr() as usize,
                 self.headers.len(),
@@ -783,13 +902,33 @@ impl OriginalProcedureHeaders {
             .ok_or("callable original opening token absent")?;
         token.span.start.checked_add(offset).ok_or_else(||"callable current header projection overflow".into())
     }
-    pub(crate) fn parts<'a, 'n>(
+    pub(crate) fn parts<'a,'n>(&'a self,header:Span,offset:usize,normalized:&'n str)->Result<IssuedHeaderParts<'a,'n>,String>{
+        parts_from_primary_view(self.original(header,offset)?,offset,normalized,self.first_outer_block)
+    }
+
+    pub(crate) fn prefix<'a>(
         &'a self,
         header: Span,
         offset: usize,
-        normalized: &'n str,
-    ) -> Result<IssuedHeaderParts<'a, 'n>, String> {
+    ) -> Result<impl Iterator<Item = &'a str> + 'a, String> {
         let view = self.original(header, offset)?;
+        let end = view
+            .tokens()
+            .iter()
+            .position(|t| view.spelling(t) == "(")
+            .ok_or("original signature opening missing")?;
+        Ok(view.tokens()[..end]
+            .iter()
+            .filter(|t| {
+                !matches!(
+                    t.kind,
+                    TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment
+                )
+            })
+            .map(move |t| view.spelling(t)))
+    }
+}
+pub(super) fn parts_from_primary_view<'a,'n>(view:HeaderView<'a>,offset:usize,normalized:&'n str,first_outer_block:Option<usize>)->Result<IssuedHeaderParts<'a,'n>,String>{
         let mut depth = 0usize;
         let mut open = None;
         for token in view.tokens() {
@@ -816,6 +955,9 @@ impl OriginalProcedureHeaders {
                             arguments: view.slice(open + 1, close.start),
                             trailing: view.slice(close.end, view.text().len()),
                             argument_offset: open + 1,
+                            closing: *token,
+                            first_outer_block,
+                            offset,
                         });
                     }
                 }
@@ -823,43 +965,33 @@ impl OriginalProcedureHeaders {
             }
         }
         Err("unterminated original procedure signature".into())
-    }
-    pub(crate) fn prefix<'a>(
-        &'a self,
-        header: Span,
-        offset: usize,
-    ) -> Result<impl Iterator<Item = &'a str> + 'a, String> {
-        let view = self.original(header, offset)?;
-        let end = view
-            .tokens()
-            .iter()
-            .position(|t| view.spelling(t) == "(")
-            .ok_or("original signature opening missing")?;
-        Ok(view.tokens()[..end]
-            .iter()
-            .filter(|t| {
-                !matches!(
-                    t.kind,
-                    TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment
-                )
-            })
-            .map(move |t| view.spelling(t)))
-    }
-}
+ }
 pub(crate) struct IssuedHeaderParts<'a, 'n> {
     pub(crate) prefix: &'n str,
     arguments: HeaderView<'a>,
     trailing: HeaderView<'a>,
     pub(crate) argument_offset: usize,
+    closing: SpanToken,
+    first_outer_block: Option<usize>,
+    offset: usize,
 }
 impl IssuedHeaderParts<'_, '_> {
-    pub(crate) fn parse(
-        &self,
-        symbols: &mut SymbolTable,
-    ) -> Result<ParsedSignature, SignatureError> {
-        super::parse_signature_views(self.arguments, self.trailing, symbols)
+    pub(crate) fn closing_span(&self)->Span{self.closing.span}
+    pub(crate) fn parse_formals(&self,symbols:&mut SymbolTable)->Result<super::ParsedFormalParameters,SignatureError>{
+      self.parse_formals_with_dialect(symbols,false)
     }
+    fn parse_formals_with_dialect(&self,symbols:&mut SymbolTable,original:bool)->Result<super::ParsedFormalParameters,SignatureError>{
+      let result=if original{super::parse_original_formal_parameters_views(self.arguments,symbols)}else{super::parse_formal_parameters_views(self.arguments,symbols)};
+      result.map_err(|mut error|{
+            if let Some(end)=error.missing_default_end{if let Some(at)=self.arguments.span().start.checked_add(end){let following=self.arguments.tokens().iter().find(|token|token.span.start>=at&&!matches!(token.kind,TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment)).copied().unwrap_or(self.closing);let spelling=self.arguments.spelling(&following);if matches!(spelling,")"|","){if let(Some(start),Some(end))=(following.span.start.checked_add(self.offset),following.span.end.checked_add(self.offset)){error.original_fatal=Some(super::OriginalParameterFatal{head:None,at:Span::new(start,end),following:if spelling==")"{')'}else{','},prior_outer_block:self.first_outer_block.is_some_and(|at|at<following.span.start)});}}}}
+       error
+      })
+    }
+    pub(crate) fn finish_formals(&self,formals:super::ParsedFormalParameters,symbols:&mut SymbolTable)->Result<ParsedSignature,SignatureError>{super::finish_signature_views(formals,self.trailing,symbols)}
+    pub(crate) fn parse(&self,symbols:&mut SymbolTable)->Result<ParsedSignature,SignatureError>{let formals=self.parse_formals(symbols)?;self.finish_formals(formals,symbols)}
+    pub(super) fn parse_original(&self,symbols:&mut SymbolTable)->Result<ParsedSignature,SignatureError>{let formals=self.parse_formals_with_dialect(symbols,true)?;self.finish_formals(formals,symbols)}
 }
+
 /// Temporary consuming adapter-to-ledger bridge, never retained or serialized.
 pub(crate) struct HeaderAllocationReceipt<'a> {
     items: &'a [Item],
@@ -1258,7 +1390,7 @@ mod initializer_first_root_tests {
 
 impl OriginalProcedureHeaders{
  pub(crate) fn for_declaration_profile(source:SourceText,items:&[Item],offset:usize,tokens:Option<Vec<SpanToken>>,admission:Option<&dm_syntax::SettingAdmission<'_>>,checker:bool)->Result<Arc<Self>,OriginalHeaderFailure>{
-  let result=(||{if let Some(a)=admission{original_checkpoint(a)?;}let tokens=if let Some(tokens)=tokens{tokens}else{let parsed=dm_syntax::lex_spans(&source);if let Some(a)=admission{original_checkpoint(a)?;}if !parsed.diagnostics.is_empty(){return Err("original cached declaration token reissue failed".into())}parsed.tokens};Self::from_primary_inner(source,items,offset,tokens,admission,checker)})();if let Some(a)=admission{finish_original_admission(result,a)}else{result}
+  let result=(||{if let Some(a)=admission{original_checkpoint(a)?;}let tokens=if let Some(tokens)=tokens{tokens}else{let parsed=dm_syntax::lex_spans(&source);if let Some(a)=admission{original_checkpoint(a)?;}if !parsed.diagnostics.is_empty(){return Err("original cached declaration token reissue failed".into())}parsed.tokens};Self::from_primary_inner(source,items,offset,tokens.into(),admission,checker)})();if let Some(a)=admission{finish_original_admission(result,a)}else{result}
  }
 }
 
@@ -1292,5 +1424,164 @@ impl<'source> OriginalBodyTokens<'source>{
    let ast=dm_syntax::parse_declaration_skeleton(source);assert!(ast.diagnostics.is_empty(),"{:?}",ast.diagnostics);
    let owner=OriginalProcedureHeaders::from_primary(source.into(),&ast.items,0,ast.tokens).unwrap();assert_eq!(owner.headers.len(),1,"namespace is not a callable header");let span=owner.headers[0];assert!(source[span.range()].ends_with("()"));assert!(owner.original(span,0).is_ok());assert!(owner.headers.iter().all(|span|source[span.range()].contains('(')));
   }
+ }
+}
+
+#[derive(Clone,Copy,Eq,PartialEq)]enum OriginalCaseContinuation{Block,If,Try,Do}
+impl OriginalBodyTokens<'_>{
+
+ // Project only layout delimiters from the retained primary tokens. This is the
+ // original indentation state machine; it does not lex or parse expressions.
+ // The pinned checker CLI leaves parser annotations disabled, so block-local
+ // annotation replay cannot move this cursor after the consumed delimiter.
+ fn original_case_block_cursor_using<E:From<&'static str>>(&self,after:usize,continuation_mode:OriginalCaseContinuation,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<Option<dm_syntax::OriginalCaseCursor>,E>{
+  let mut current:Option<(usize,usize)>=None;let mut spaces:Option<usize>=None;let mut parentheses=0usize;let mut eol:Option<Span>=None;let active=std::cell::Cell::new(false);let mut depth=0usize;let decided=std::cell::Cell::new(false);let waiting=std::cell::Cell::new(false);let else_mode=std::cell::Cell::new(0u8);let else_parens=std::cell::Cell::new(0usize);let else_if=std::cell::Cell::new(false);let final_else=std::cell::Cell::new(false);let continuation=std::cell::Cell::new(0u8);let continuation_depth=std::cell::Cell::new(0usize);
+  let mut emit=|text:&str,at:Span,terminal:bool|->Result<Option<dm_syntax::OriginalCaseCursor>,E>{
+   match continuation.get(){
+    10=>{if text==";"{return Ok(None)}if text!="catch"{return Err("inline try continuation lacks actual catch".into())}continuation.set(11);return Ok(None)},
+    11=>{if text=="("{continuation.set(12);continuation_depth.set(1);return Ok(None)}if text=="{"{continuation.set(13);active.set(true);depth=1;return Ok(None)}if !matches!(text,";"|"}"){return Err("inline catch simple statement continuation unavailable".into())}},
+    12=>{match text{"("=>continuation_depth.set(continuation_depth.get().checked_add(1).ok_or("catch header depth overflow")?),")"=>{let n=continuation_depth.get().checked_sub(1).ok_or("catch header opening unavailable")?;continuation_depth.set(n);if n==0{continuation.set(11)}},_=>()}return Ok(None)},
+    20=>{if text==";"{return Ok(None)}if text!="while"{return Err("inline do continuation lacks actual while".into())}continuation.set(21);return Ok(None)},
+    21=>{if text!="("{return Err("inline do condition opening unavailable".into())}continuation.set(22);continuation_depth.set(1);return Ok(None)},
+    22=>{match text{"("=>continuation_depth.set(continuation_depth.get().checked_add(1).ok_or("do condition depth overflow")?),")"=>{let n=continuation_depth.get().checked_sub(1).ok_or("do condition opening unavailable")?;continuation_depth.set(n);if n==0{continuation.set(23)}},_=>()}return Ok(None)},
+    23=>{if !matches!(text,";"|"}"){return Err("inline do condition terminator unavailable".into())}},_=>()
+   }
+   if continuation.get()==11||continuation.get()==23{return Ok(Some(if terminal{dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.source.len().checked_add(self.offset).ok_or("case terminal cursor overflow")?,fallback:Span::new(at.start+self.offset,at.end+self.offset)}}else{dm_syntax::OriginalCaseCursor::Token(Span::new(at.start+self.offset,at.end+self.offset))}))}
+   if else_mode.get()==2{match text{"("=>else_parens.set(else_parens.get().checked_add(1).ok_or("inline else-if depth overflow")?),")"=>{let n=else_parens.get().checked_sub(1).ok_or("inline else-if opening unavailable")?;else_parens.set(n);if n==0{else_mode.set(1)}},_=>()}return Ok(None)}
+   if else_mode.get()==1{match text{"if"=>{else_if.set(true);else_mode.set(2);return Ok(None)},"{"=>{else_mode.set(0);active.set(true);depth=1;final_else.set(!else_if.get());return Ok(None)},_=>return Err("inline else simple statement continuation unavailable".into())}}
+   if waiting.get(){if text=="else"{waiting.set(false);else_if.set(false);else_mode.set(1);return Ok(None)}if text==";"{return Ok(None)}return Ok(Some(if terminal{dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.source.len().checked_add(self.offset).ok_or("case terminal cursor overflow")?,fallback:Span::new(at.start+self.offset,at.end+self.offset)}}else{dm_syntax::OriginalCaseCursor::Token(Span::new(at.start+self.offset,at.end+self.offset))}))}
+   if !active.get() {if at.start<after{return Ok(None)}if text==";"{return Ok(None)}decided.set(true);if text!="{"{return Ok(None)}active.set(true);depth=1;return Ok(None)}
+   if text=="{"{depth=depth.checked_add(1).ok_or("case layout depth overflow")?;}else if text=="}"{depth=depth.checked_sub(1).ok_or("case layout close underflow")?;if depth==0{if continuation_mode==OriginalCaseContinuation::Try&&continuation.get()==0{continuation.set(10);return Ok(None)}if continuation_mode==OriginalCaseContinuation::Do&&continuation.get()==0{continuation.set(20);return Ok(None)}if continuation_mode==OriginalCaseContinuation::If&&!final_else.get(){waiting.set(true);return Ok(None)}return Ok(Some(if terminal{dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.source.len().checked_add(self.offset).ok_or("case terminal cursor overflow")?,fallback:Span::new(at.start+self.offset,at.end+self.offset)}}else{dm_syntax::OriginalCaseCursor::Token(Span::new(at.start+self.offset,at.end+self.offset))}))}}Ok(None)
+  };
+  let source=self.owner.source.as_str();let mut last=Span::new(0,0);
+  for token in &self.owner.tokens {checkpoint()?;let text=token.text(source);last=token.span;
+   let documentation=token.kind==TokenKind::Comment&&(text.starts_with("///")||text.starts_with("//!")||text.starts_with("/**")||text.starts_with("/*!"));if token.kind==TokenKind::Comment&&!documentation{continue}
+   if token.kind==TokenKind::Newline{if parentheses==0{spaces=Some(0)}if eol.is_none(){eol=Some(token.span)}continue}
+   if token.kind==TokenKind::Whitespace{if let Some(width)=spaces.as_mut(){*width=width.checked_add(text.len()).ok_or("case indentation width overflow")?}continue}
+   if matches!(text,"{"|"}"){spaces=None}
+   if let Some(width)=spaces.take(){let(old,new)=match current{None=>{if width==0{current=None;(0,0)}else{current=Some((width,1));(0,1)}},Some((unit,count))=>{if width==0{current=None;(count,0)}else{if width%unit!=0{return Err("case original indentation is inconsistent".into())}let new=width/unit;current=Some((unit,new));(count,new)}}};let at=eol.unwrap_or(token.span);if old<new{for _ in old..new{checkpoint()?;if let Some(point)=emit("{",at,false)?{return Ok(Some(point))}}}else if old>new{for _ in new..old{checkpoint()?;if let Some(point)=emit("}",at,false)?{return Ok(Some(point))}}}else if let Some(point)=emit(";",at,false)?{return Ok(Some(point))}}
+   match text{"{"=>current=Some(match current{None=>(1,1),Some((unit,count))=>(unit,count.checked_add(1).ok_or("case layout indentation overflow")?)}),"}"=>current=match current{None=>return Err("case original unmatched right brace".into()),Some((_,1))=>None,Some((unit,count))=>Some((unit,count-1))},"("=>parentheses=parentheses.checked_add(1).ok_or("case parentheses overflow")?,")"=>parentheses=parentheses.saturating_sub(1),_=>()}
+   eol=None;if documentation{continue}if let Some(point)=emit(text,token.span,false)?{return Ok(Some(point))}if decided.get()&&!active.get(){return Ok(None)}
+  }
+  if active.get(){if let Some((_,count))=current{let at=eol.unwrap_or(last);for _ in 0..count{checkpoint()?;if let Some(point)=emit("}",at,true)?{return Ok(Some(point))}}}if waiting.get(){let at=eol.unwrap_or(last);return Ok(Some(dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.source.len().checked_add(self.offset).ok_or("case terminal cursor overflow")?,fallback:Span::new(at.start+self.offset,at.end+self.offset)}))}return Err("case original block close unavailable".into())}Ok(None)
+ }
+
+ pub(crate) fn switch_case_cursor_using<E:From<&'static str>>(&self,header:Span,case:Span,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<dm_syntax::OriginalCaseCursor,E>{
+  checkpoint()?;let start=header.start.checked_sub(self.offset).ok_or("case header before current source")?;let end=header.end.checked_sub(self.offset).ok_or("case header end before current source")?;let case_end=case.end.checked_sub(self.offset).ok_or("case body before current source")?;if start<self.body.start||start>=end||end>case_end||case_end>self.body.end||case_end>self.owner.source.len(){return Err("case cursor escapes original body/header".into())}
+  let tokens=&self.owner.tokens;let source=self.owner.source.as_str();let mut i=tokens.partition_point(|token|token.span.end<=start);let trivia=|token:&SpanToken|matches!(token.kind,TokenKind::Whitespace|TokenKind::Newline|TokenKind::Comment);while tokens.get(i).is_some_and(trivia){checkpoint()?;i+=1;}if tokens.get(i).is_none_or(|token|token.span.start!=start||token.text(source)!="if"){return Err("case cursor lacks original if token".into())}i+=1;while tokens.get(i).is_some_and(trivia){checkpoint()?;i+=1;}if tokens.get(i).is_none_or(|token|token.text(source)!="("){return Err("case cursor lacks original opening token".into())}let mut depth=1usize;i+=1;while let Some(token)=tokens.get(i){checkpoint()?;if token.span.end>end{return Err("case condition escapes original header".into())}match token.text(source){"("=>depth=depth.checked_add(1).ok_or("case condition depth overflow")?,")"=>{depth-=1;if depth==0{break}},_=>()}i+=1;}if depth!=0{return Err("case condition close unavailable".into())}let condition_end=tokens.get(i).ok_or("case condition close unavailable")?.span.end;i+=1;let mut newline=false;while let Some(token)=tokens.get(i){checkpoint()?;if token.kind==TokenKind::Newline{newline=true;}if !trivia(token){break}i+=1;}
+  if let Some(cursor)=self.original_case_block_cursor_using(condition_end,OriginalCaseContinuation::Block,checkpoint)?{return Ok(cursor)}
+  if !newline&&tokens.get(i).is_some_and(|token|matches!(token.text(source),"if"|"for"|"while"|"switch"|"spawn")){
+   let follow=tokens[i].text(source)=="if";i+=1;while tokens.get(i).is_some_and(trivia){checkpoint()?;i+=1;}if tokens.get(i).is_none_or(|token|token.text(source)!="("){return Err("inline compound case opening condition unavailable".into())}let mut nested=1usize;i+=1;while let Some(token)=tokens.get(i){checkpoint()?;if token.span.end>case_end{return Err("inline compound condition escapes case".into())}match token.text(source){"("=>nested=nested.checked_add(1).ok_or("inline condition depth overflow")?,")"=>{nested-=1;if nested==0{break}},_=>()}i+=1;}if nested!=0{return Err("inline compound close unavailable".into())}let after=tokens.get(i).ok_or("inline compound close unavailable")?.span.end;if let Some(cursor)=self.original_case_block_cursor_using(after,if follow{OriginalCaseContinuation::If}else{OriginalCaseContinuation::Block},checkpoint)?{return Ok(cursor)}return Err("inline compound simple statement continuation unavailable".into())
+  }
+  if !newline&&tokens.get(i).is_some_and(|token|matches!(token.text(source),"do"|"try")){let token=tokens.get(i).ok_or("inline compound keyword unavailable")?;let mode=if token.text(source)=="try"{OriginalCaseContinuation::Try}else{OriginalCaseContinuation::Do};if let Some(cursor)=self.original_case_block_cursor_using(token.span.end,mode,checkpoint)?{return Ok(cursor)}return Err("inline try/do simple statement continuation unavailable".into())}
+  // Inline primary items end before their delimiter. Recover only the real
+  // following semicolon of this body. Its final Item (and enclosing body)
+  // excludes that delimiter; never cross a physical newline/other statement.
+  if !newline{let after=tokens.partition_point(|token|token.span.end<=case_end);for token in &tokens[after..]{checkpoint()?;if (token.span.start>=self.body.end&&case_end!=self.body.end)||token.kind==TokenKind::Newline{break}if matches!(token.kind,TokenKind::Whitespace|TokenKind::Comment){if token.text(source).contains(['\r','\n']){break}continue}if token.span.start>=case_end&&token.text(source)==";"{let at=token.span;let start=at.start.checked_add(self.offset).ok_or("case terminator cursor overflow")?;let end=at.end.checked_add(self.offset).ok_or("case terminator cursor overflow")?;return Ok(dm_syntax::OriginalCaseCursor::Token(Span::new(start,end)))}break}}
+  if !newline{let before=tokens.partition_point(|token|token.span.start<case_end);let mut significant=None;for token in tokens[..before].iter().rev(){checkpoint()?;if !trivia(token){significant=Some(token);break}}if let Some(token)=significant{if token.text(source)==";"{let at=token.span;return Ok(dm_syntax::OriginalCaseCursor::Token(Span::new(at.start+self.offset,at.end+self.offset)))}}}
+  let after=tokens.partition_point(|token|token.span.end<=case_end);let mut has_after=false;for token in &tokens[after..]{checkpoint()?;if !trivia(token){has_after=true;break}}if !has_after{let before=tokens.partition_point(|token|token.span.start<case_end);let mut newline=None;for token in tokens[..before].iter().rev(){checkpoint()?;if token.span.start<start{break}if token.kind==TokenKind::Newline{newline=Some(token.span);break}}let newline=newline.ok_or("case terminal newline token unavailable")?;return Ok(dm_syntax::OriginalCaseCursor::SourceEnd{offset:self.owner.source.len().checked_add(self.offset).ok_or("case terminal cursor overflow")?,fallback:Span::new(newline.start+self.offset,newline.end+self.offset)})}
+  let before=tokens.partition_point(|token|token.span.start<case_end);let mut last=None;for token in tokens[..before].iter().rev(){checkpoint()?;if token.span.end<=start{break}if token.kind==TokenKind::Newline{let at=token.span;return Ok(dm_syntax::OriginalCaseCursor::Token(Span::new(at.start+self.offset,at.end+self.offset)))}if !trivia(token)&&last.is_none(){last=Some(token);if !newline&&token.text(source)==";"{let at=token.span;return Ok(dm_syntax::OriginalCaseCursor::Token(Span::new(at.start+self.offset,at.end+self.offset)))}}}Err("case original line boundary unavailable".into())
+ }
+}
+
+#[cfg(test)]mod original_switch_case_cursor_tests{
+ use super::*;
+ #[test]fn original_case_cursor_uses_primary_newline_explicit_close_and_terminal_marker(){
+  for(source,expected)in[("/proc/probe(value)\n    switch(value)\n        if(1 || 2)\n            return 0\n        if(3)\n            return 0\n",Some((4,21))),("/proc/probe(value)\n    switch(value)\n        if(1 || 2)\n            return 0\n    return 1\n",Some((4,21))),("/proc/probe(value) { switch(value) { if(1 || 2) { return 0; } } }\n",Some((1,61))),("/proc/probe(value) {\n switch(value) {\n  if(1 || 2)\n   return 0\n }\n}\n",Some((5,2))),("/proc/probe(value)\n    switch(value)\n        if(1 || 2) {\n            return 0\n        }\n",Some((5,9))),("/proc/probe(value) { switch(value) { if(1 || 2) return 0; } }\n",Some((1,57))),("/proc/probe(value)\n    switch(value)\n        if(1 || 2) if(value)\n            return 0\n        if(3)\n            return 1\n",Some((5,9))),("/proc/probe(value)\n    switch(value)\n        if(1 || 2) while(value)\n            return 0\n        if(3)\n            return 1\n",Some((4,21))),("/proc/probe(value)\n    switch(value)\n        if(1 || 2) if(value)\n            return 0\n        else if(value == 2)\n            return 1\n        else\n            return 2\n        if(3)\n            return 3\n",Some((8,21))),("/proc/probe(value)\n    switch(value)\n        if(1 || 2) if(value)\n            return 0\n        else\n            return 1\n        else\n            return 2\n",Some((6,21))),("/proc/probe(value)\n    switch(value)\n        if(1 || 2) try\n            return 0\n        catch(var/error)\n            return 1\n        if(3)\n            return 2\n",Some((6,21))),("/proc/probe(value)\n    switch(value)\n        if(1 || 2) do\n            return 0\n        while(value)\n        if(3)\n            return 2\n",Some((5,21))),("/proc/probe(value)\n    switch(value)\n        if(1 || 2)\n            return 0\n",None)]{
+   let ast=dm_syntax::parse(source);assert!(ast.diagnostics.is_empty(),"{:?}",ast.diagnostics);let procedure=&ast.items[0];let case=&procedure.children[0].children[0];let owner=OriginalProcedureHeaders::from_primary(source.into(),&ast.items,0,ast.tokens.iter().map(|token|SpanToken{kind:token.kind,span:token.span}).collect()).unwrap();let tokens=owner.body_tokens(procedure.span,0).unwrap();let cursor=tokens.switch_case_cursor_using(case.header_span,case.span,&mut||Ok::<(),&'static str>(())).unwrap();match(cursor,expected){(dm_syntax::OriginalCaseCursor::Token(at),Some(expected))=>{let prefix=&source[..at.start];let line=prefix.bytes().filter(|byte|*byte==b'\n').count()+1;let column=prefix.rsplit('\n').next().unwrap().len()+1;assert_eq!((line,column),expected);},(dm_syntax::OriginalCaseCursor::SourceEnd{offset,fallback},None)=>{assert_eq!(offset,source.len());assert_eq!(&source[fallback.range()],"\n");},_=>panic!("unexpected actual cursor {cursor:?}")}
+  }
+ }
+}
+
+#[cfg(test)]mod original_switch_cursor_control_tests{use super::*;#[derive(Debug)]enum Failure{Source(&'static str),Io(std::io::Error)}impl From<&'static str>for Failure{fn from(value:&'static str)->Self{Self::Source(value)}}#[test]fn actual_primary_case_cursor_propagates_first_typed_io_inside_its_token_walk(){let source="/proc/probe(value)\n    switch(value)\n        if(1 || 2)\n            return 0\n    return 1\n";let ast=dm_syntax::parse(source);let procedure=&ast.items[0];let case=&procedure.children[0].children[0];let owner=OriginalProcedureHeaders::from_primary(source.into(),&ast.items,0,ast.tokens.iter().map(|token|SpanToken{kind:token.kind,span:token.span}).collect()).unwrap();let tokens=owner.body_tokens(procedure.span,0).unwrap();let mut calls=0;let result=tokens.switch_case_cursor_using(case.header_span,case.span,&mut||{calls+=1;if calls==3{Err(Failure::Io(std::io::Error::from_raw_os_error(1450)))}else{Ok(())}});match result{Err(Failure::Io(actual))=>assert_eq!(actual.raw_os_error(),Some(1450)),other=>panic!("first actual token-walk IO lost: {other:?}")};assert_eq!(calls,3);}}
+
+#[cfg(test)]mod original_inline_case_terminator_tests{
+ use super::*;
+ #[test]fn original_inline_case_uses_actual_following_primary_semicolon(){
+  for source in ["/proc/probe(value) { switch(value) { if(1 || 2) return 0; } }\n","/proc/probe(value) { switch(value) { if(1 || 2) return 0   ; } }\n"]{
+   let ast=dm_syntax::parse(source);assert!(ast.diagnostics.is_empty(),"{:?}",ast.diagnostics);let procedure=&ast.items[0];let case=&procedure.children[0].children[0];
+   let semicolon=ast.tokens.iter().find(|token|token.text==";").unwrap();assert_eq!(procedure.span.end,case.span.end,"actual last primary item trims the enclosing body too");assert!(case.span.end<=semicolon.span.start);assert_eq!(&source[case.span.end..semicolon.span.start].trim(),&"");assert!(case.header_span.end<=case.span.end);
+   let owner=OriginalProcedureHeaders::from_primary(source.into(),&ast.items,0,ast.tokens.iter().map(|token|SpanToken{kind:token.kind,span:token.span}).collect()).unwrap();let tokens=owner.body_tokens(procedure.span,0).unwrap();
+   let cursor=tokens.switch_case_cursor_using(case.header_span,case.span,&mut||Ok::<(),&'static str>(())).unwrap();assert!(matches!(cursor,dm_syntax::OriginalCaseCursor::Token(at)if at==semicolon.span));
+   let mut polls=0;let failed=tokens.switch_case_cursor_using(case.header_span,case.span,&mut||{polls+=1;Err::<(),&'static str>("actual cancellation")});assert!(matches!(failed,Err("actual cancellation")));assert_eq!(polls,1);
+   let offset=usize::MAX-procedure.span.end;let shifted=owner.body_tokens(procedure.span,offset).unwrap();let header=Span::new(case.header_span.start+offset,case.header_span.end+offset);let case=Span::new(case.span.start+offset,case.span.end+offset);assert!(matches!(shifted.switch_case_cursor_using(header,case,&mut||Ok::<(),&'static str>(())),Err("case terminator cursor overflow")),"the real trailing token must not escape the admitted offset envelope");
+  }
+ }
+}
+
+#[cfg(test)]mod outer_terminator_primary_reissue_tests{
+ use super::*;
+ #[test]fn actual_primary_outer_events_survive_cold_retained_and_portable_unknown_reissue(){
+  for(source,expected)in[("/proc/early()\n    return 1\n/proc/later(value=)\n    return 2\n",true),("/proc/early(){}\n/proc/later(value=)\n    return 2\n",true),("/proc/early() return 1\n/proc/later(value=)\n    return 2\n",false),("/proc/early()\n/proc/later(value=)\n    return 2\n",false)]{
+   let before=OUTER_PRIMARY_REISSUES.with(|count|count.get());let parsed=dm_syntax::parse_declaration_skeleton(source);assert!(parsed.diagnostics.is_empty());let owner=OriginalProcedureHeaders::from_primary(source.into(),&parsed.items,0,parsed.tokens).unwrap();let fatal=source.find("value=").unwrap()+"value=".len();assert_eq!(owner.first_outer_block().is_some_and(|at|at<fatal),expected);let retained=owner.clone();assert_eq!(retained.first_outer_block(),owner.first_outer_block());assert_eq!(OUTER_PRIMARY_REISSUES.with(|count|count.get()),before,"cold/retained native primary events must not replay lexical/layout work");
+   fn unissue(items:&mut[Item]){for item in items{item.original_outer_terminator=None;unissue(&mut item.children)}}let mut portable=parsed.items;unissue(&mut portable);let reissued=OriginalProcedureHeaders::reissue(source.into(),&portable,0).unwrap();assert_eq!(reissued.first_outer_block().is_some_and(|at|at<fatal),expected,"actual current primary geometry reissued; decoded bool is never trusted");assert_eq!(OUTER_PRIMARY_REISSUES.with(|count|count.get()),before+1,"portable unknown metadata reissues exactly once through existing owner");
+  }
+ }
+ #[test]fn actual_portable_outer_geometry_reserves_peak_before_reissue_and_keeps_oom_identity(){
+  let source="/proc/early(){}\n/proc/later(value=)\n    return 2\n";let mut parsed=dm_syntax::parse_declaration_skeleton(source);fn unissue(items:&mut[Item]){for item in items{item.original_outer_terminator=None;unissue(&mut item.children)}}unissue(&mut parsed.items);let counter=std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&counter,16384,&||Ok(()));let failure=OriginalProcedureHeaders::from_primary_admitted(source.into(),&parsed.items,0,parsed.tokens,&a).unwrap_err();assert!(matches!(failure,OriginalHeaderFailure::Operational(ref actual)if actual.kind()==std::io::ErrorKind::OutOfMemory));assert_eq!(counter.load(std::sync::atomic::Ordering::Relaxed),0,"real failed geometry leaves no root admission outstanding");
+ }
+
+ #[test]fn real_outer_primary_event_reissue_keeps_typed_operational_error(){
+  let source="/proc/early(){}\n/proc/later(value=)\n    return 2\n";let parsed=dm_syntax::parse_declaration_skeleton(source);let headers=parsed.items.iter().filter(|item|matches!(item.kind,ItemKind::Proc|ItemKind::Verb)).map(|item|item.header_span).collect::<Vec<_>>();let calls=std::cell::Cell::new(0);let result=dm_syntax::original_outer_terminator_observation_using(source,&parsed.tokens,&headers,&||{let n=calls.get()+1;calls.set(n);if n==3{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(())}});assert_eq!(result.unwrap_err().raw_os_error(),Some(1450));assert_eq!(calls.get(),3);
+ }
+}
+
+/// Reservation only. This cannot retain a graph/header/source owner, so no
+/// DiagnosticFrontend -> mapping/header -> graph cycle can be constructed.
+struct OriginalPrimaryResourceHold(Arc<dm_syntax::SettingRootLease>);
+impl std::fmt::Debug for OriginalPrimaryResourceHold{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("OriginalPrimaryResourceHold").field("reserved_bytes",&self.0.bytes()).finish()}}
+impl OriginalProcedureHeaders{
+ pub(crate) fn retain_original_primary_resource(&self,root:Arc<dm_syntax::SettingRootLease>,a:&dm_syntax::SettingAdmission<'_>)->Result<(),OriginalHeaderFailure>{
+  original_checkpoint(a)?;let coordinates=self.initializer_coordinates.as_ref().ok_or_else(||OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"unadmitted header cannot acquire a completed primary resource root")))?;if !a.matches_lease_domain(&coordinates.lease){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"primary header coordinate owner uses another native counter").into())}if !a.matches_lease_domain(&root){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"actual primary header resource root uses another native counter").into())}
+  if let Some(held)=self.original_primary_resource.get(){return if Arc::ptr_eq(&held.0,&root){Ok(())}else{Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"actual primary header resource root was already issued").into())}}
+  self.original_primary_resource.set(OriginalPrimaryResourceHold(root)).map_err(|_|OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"actual primary resource publication raced")))?;original_checkpoint(a)?;Ok(())
+ }
+}
+
+impl OriginalProcedureHeaders{
+ /// Installation happens once while the genuine primary outcome is being
+ /// joined, before publication. The independent expected binding is carried by
+ /// that actual outcome, never obtained from this numeric view or raw text.
+ pub(crate) fn retain_original_literal_facts(&self,view:Option<dm_preprocess::regions::OriginalLiteralSourceView>,actual_primary:Option<&dm_preprocess::regions::OriginalLiteralSourceBinding>,a:&dm_syntax::SettingAdmission<'_>)->Result<(),OriginalHeaderFailure>{
+  original_checkpoint(a)?;
+  let checked=match(view,actual_primary){
+   (None,None)=>None,
+   (Some(view),Some(actual))=>{
+    if !view.same_producer(actual){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"header literal facts belong to another actual primary outcome").into())}
+    let facts=view.checked_facts(&self.source)?;let(_,origin)=facts.raw_parts();let end=origin.checked_add(self.source.as_str().len()).ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidInput,"actual header source window overflow"))?;
+    // Recheck the SAME binding's resource domain and actual checked source
+    // view. This clones only its sealed no-Weak Arc, never the fact roster.
+    Some(actual.checked_view(&self.source,Span::new(origin,end),actual,a)?)
+   },
+   _=>return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"actual header literal outcome binding is missing").into()),
+  };
+  self.original_literal_source.set(HeaderLiteralSourceHold(checked)).map_err(|_|OriginalHeaderFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"actual header literal facts were already published")))?;
+  original_checkpoint(a)?;Ok(())
+ }
+ /// Returned row spans are in the sealed primary/TU coordinate frame. The
+ /// view's TUorigin is subtracted for THIS exact header source view; no silent
+ /// TU-global/chunk-local comparison or copied/rebased tuple Vec is possible.
+ /// None is unissued, while any actual binding/cut error remains Err.
+ pub(crate) fn original_literal_facts(&self)->std::io::Result<Option<dm_syntax::OriginalLiteralFactsView<'_>>>{
+  match self.original_literal_source.get(){Some(HeaderLiteralSourceHold(Some(view)))=>view.checked_facts(&self.source).map(Some),Some(HeaderLiteralSourceHold(None))|None=>Ok(None)}
+ }
+}
+
+#[cfg(test)]mod original_literal_header_state_tests{
+ use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
+ #[test]fn header_literal_fact_unissued_state_is_not_a_completed_empty_roster_or_late_mutable_publication(){
+  let source:SourceText="/proc/probe()\n    return 1\n".to_owned().into();let ast=dm_syntax::parse_declaration_skeleton(&source);let used=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&used,1<<24,&||Ok(()));let headers=OriginalProcedureHeaders::from_primary_admitted(source,&ast.items,0,ast.tokens,&a).ok().unwrap();assert!(headers.original_literal_facts().unwrap().is_none(),"old/portable unissued parse never fabricates typed empty facts");headers.retain_original_literal_facts(None,None,&a).ok().unwrap();assert!(headers.original_literal_facts().unwrap().is_none());let error=headers.retain_original_literal_facts(None,None,&a).err().unwrap();assert!(matches!(error,OriginalHeaderFailure::Operational(actual)if actual.kind()==std::io::ErrorKind::InvalidInput));drop(headers);assert_eq!(used.load(Ordering::Acquire),0);
+ }
+}
+
+#[cfg(test)]mod actual_shared_primary_header_tests{
+ use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
+ #[test]fn genuine_final_primary_expanded_and_header_alias_the_same_immutable_token_allocation_and_lease(){let used=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&used,1<<24,&||Ok(()));let source:SourceText="/proc/probe()\n    return 1\n".into();let primary=dm_syntax::parse_original_declaration_skeleton_using(&source,&a).unwrap();let ptr=primary.syntax().tokens.as_ptr();let(primary,shared)=primary.into_shared_tokens_using(&a).unwrap();let expanded=dm_preprocess::regions::ExpandedRegions{text:source.clone(),tokens:shared.clone().into(),..Default::default()};let headers=OriginalProcedureHeaders::for_declaration_profile_tokens(source.clone(),&primary.syntax().items,0,shared.clone().into(),&a,true).unwrap();assert_eq!(primary.syntax().tokens.as_ptr(),ptr);assert_eq!(expanded.tokens.as_ptr(),ptr);assert_eq!(headers.tokens.as_ptr(),ptr);assert!(headers.shared_span_tokens().unwrap().same_owner(expanded.tokens.shared().unwrap()));drop((shared,primary,source));assert!(used.load(Ordering::Acquire)>0);assert_eq!(headers.tokens.len(),expanded.tokens.len());drop(expanded);assert!(used.load(Ordering::Acquire)>0);drop(headers);assert_eq!(used.load(Ordering::Acquire),0);}
+}
+
+#[cfg(test)]mod unissued_header_parameter_tests{
+ use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
+ #[test]fn unissued_final_literal_default_owner_cannot_fabricate_valid_header_metadata(){
+  let text:SourceText="/proc/p(datum/act/A)\n    return (1 + )\n".into();let ast=dm_syntax::parse_declaration_skeleton(&text);assert!(ast.diagnostics.is_empty());let header=ast.items[0].span;let used=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&used,1<<20,&||Ok(()));let owner=OriginalProcedureHeaders::for_declaration_profile_tokens(text,&ast.items,0,ast.tokens.into(),&a,true).unwrap();owner.install_parameter_signatures(&a).unwrap();assert_eq!(owner.parameter_signature(header).err(),Some("actual original parameter metadata is unissued"));drop(owner);assert_eq!(used.load(Ordering::Acquire),0);
  }
 }

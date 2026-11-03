@@ -88,12 +88,12 @@ pub(crate) fn collect_file_admitted<E>(relative:&str,marker:&str,budget:&Arc<Bud
 }
 
 /// Source-neutral actual-growth collection; no fixture count becomes coverage.
-pub(crate) fn collect_file_funded<E>(relative:&str,marker:&str,budget:&Arc<Budget>,temporary:&Budget,names:&[&str],include_entries:bool,include_capabilities:bool,include_runtime:bool,rows:&mut Vec<OwnedMarker>,count:&mut usize,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<(),E> where E:From<String>+for<'error>From<&'error str>{
+pub(crate) fn collect_file_funded<E>(relative:&str,marker:&str,budget:&Budget,temporary:&Budget,names:&[&str],include_entries:bool,include_capabilities:bool,include_runtime:bool,rows:&mut Vec<OwnedMarker>,count:&mut usize,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<(),E> where E:From<String>+for<'error>From<&'error str>{
     collect_file_using(relative,marker,budget,names,include_entries,include_capabilities,include_runtime,rows,count,None,Some(temporary),checkpoint)
 }
 
-fn collect_file_using<E>(relative:&str,marker:&str,budget:&Arc<Budget>,names:&[&str],include_entries:bool,include_capabilities:bool,include_runtime:bool,rows:&mut Vec<OwnedMarker>,count:&mut usize,ceiling:Option<usize>,temporary:Option<&Budget>,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<(),E> where E:From<String>+for<'error>From<&'error str>{
-        let line_budget=temporary.unwrap_or(budget.as_ref());let initial_rows=rows.len();
+fn collect_file_using<E>(relative:&str,marker:&str,budget:&Budget,names:&[&str],include_entries:bool,include_capabilities:bool,include_runtime:bool,rows:&mut Vec<OwnedMarker>,count:&mut usize,ceiling:Option<usize>,temporary:Option<&Budget>,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<(),E> where E:From<String>+for<'error>From<&'error str>{
+        let line_budget=temporary.unwrap_or(budget);let initial_rows=rows.len();
         let line_count = marker.bytes().filter(|b| *b == b'\n').count();
         line_budget.charge(
             line_count
@@ -280,7 +280,7 @@ fn collect_file_using<E>(relative:&str,marker:&str,budget:&Arc<Budget>,names:&[&
         }
 
         if include_runtime{
-            struct RuntimeControl<'b,E,F>{budget:&'b Arc<Budget>,poll:&'b mut F,_error:std::marker::PhantomData<E>}
+            struct RuntimeControl<'b,E,F>{budget:&'b Budget,poll:&'b mut F,_error:std::marker::PhantomData<E>}
             impl<E,F> crate::key_policy_control::Control for RuntimeControl<'_,E,F> where E:From<String>+for<'e>From<&'e str>,F:FnMut()->Result<(),E>{
                 type Error=E;const CHECKED:bool=true;
                 fn checkpoint(&mut self)->Result<(),E>{(self.poll)()?;self.budget.require().map_err(E::from)}

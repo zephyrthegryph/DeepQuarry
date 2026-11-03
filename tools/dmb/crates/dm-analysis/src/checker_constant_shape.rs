@@ -44,6 +44,8 @@ fn static_term(expression: &Expr) -> Result<bool, String> {
             }
         }
         ExprKind::Literal(text) => {
+            // The actual lexer/macro VALUE is independent of its grammar spelling.
+            if let Some(value)=text.original_value(){return Ok(matches!(value,dm_syntax::OriginalTokenValue::Int(_)|dm_syntax::OriginalTokenValue::Float(_)|dm_syntax::OriginalTokenValue::String(_)))}
             let raw = text.as_str();
             if raw == "null" {
                 return Ok(true);

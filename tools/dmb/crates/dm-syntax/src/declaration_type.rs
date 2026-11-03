@@ -99,3 +99,7 @@ mod checker_qualifier_classification_tests {
         }
     }
 }
+
+/// Exact existing VarTypeBuilder modifier vocabulary used at each original
+/// static_type recursion; this classifies an already-issued component only.
+pub fn is_original_static_type_modifier(component:&str)->bool{crate::local_variable_syntax::source_modifier(component).is_some()}

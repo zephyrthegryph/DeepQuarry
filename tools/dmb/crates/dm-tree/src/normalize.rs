@@ -30,6 +30,7 @@ fn projected_item(item: &Item, kind: ItemKind, header: String, children: Vec<Ite
         header_span: item.header_span,
         declaration_cursor: item.declaration_cursor,
         checker_qualifiers: item.checker_qualifiers,
+        original_outer_terminator: item.original_outer_terminator,
         indent: item.indent,
         children,
     }
@@ -185,6 +186,7 @@ mod tests {
                 header_span: item.header_span,
                 declaration_cursor: item.declaration_cursor,
                 checker_qualifiers: item.checker_qualifiers,
+        original_outer_terminator: item.original_outer_terminator,
                 indent: item.indent,
                 children,
             }

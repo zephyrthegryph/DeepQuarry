@@ -1,6 +1,7 @@
 //! One parser-free roster shared by build module admission and policy dispatch.
 //! The policies themselves remain their existing modules; no scanner is copied.
-pub const RAW_FILE_COUNT: usize = 42;
+pub const RAW_FILE_COUNT: usize = 43;
+const RAW_FILE_PREFIX_COUNT: usize = 42;
 pub const MODULES: [(&str, &str); 51] = [
     ("actor_forwarding", "actor_forwarding"),
     ("breakpoint", "breakpoint"),
@@ -66,15 +67,25 @@ pub const LINT_NAMES: [&str; 51] = {
 /// Per-file/workspace admission remains the audited per-file policies.
 pub const RAW_FILE_LINT_NAMES: [&str; RAW_FILE_COUNT] = {
     let mut names = [""; RAW_FILE_COUNT];
-    let mut index = 0;
-    while index < RAW_FILE_COUNT { names[index] = MODULES[index].1; index += 1; }
+    let mut source = 0;
+    let mut target = 0;
+    while source < MODULES.len() {
+        // MODULES[45] is the unchanged entry_slots File-only policy.
+        if source < RAW_FILE_PREFIX_COUNT || source == 45 {
+            names[target] = MODULES[source].1;
+            target += 1;
+        }
+        source += 1;
+    }
+    assert!(target == RAW_FILE_COUNT);
     names
 };
+// EntrySlots retains its separately bounded existing Kind10 fixture role.
 /// Whole-cohort Kind10 policies; these never acquire File/RAW27 semantics.
 pub const RAW_COHORT_LINT_NAMES: [&str; 9] = {
     let mut names = [""; 9];
     let mut index = 0;
-    while index < names.len() { names[index] = MODULES[RAW_FILE_COUNT + index].1; index += 1; }
+    while index < names.len() { names[index] = MODULES[RAW_FILE_PREFIX_COUNT + index].1; index += 1; }
     names
 };
 #[cfg(test)]
@@ -99,7 +110,8 @@ mod tests {
             super::MODULES.len()
         );
         assert_eq!(super::LINT_NAMES[26], "sys/sync_sql");
-        assert_eq!(super::RAW_FILE_LINT_NAMES.as_slice(), &super::LINT_NAMES[..42]);
+        assert_eq!(&super::RAW_FILE_LINT_NAMES[..42], &super::LINT_NAMES[..42]);
+        assert_eq!(super::RAW_FILE_LINT_NAMES[42], "entry_slots");
         assert_eq!(super::RAW_COHORT_LINT_NAMES.as_slice(), &super::LINT_NAMES[42..]);
         assert_eq!(super::RAW_COHORT_LINT_NAMES[0], "cooldown");
         assert_eq!(super::RAW_COHORT_LINT_NAMES[8], "cap_bits");

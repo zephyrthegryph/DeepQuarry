@@ -171,6 +171,7 @@ impl HeapCensus {
         if !self.arc_object(owner, mapping) {
             return;
         }
+        mapping.visit_original_input_retention(|address,bytes,_|{self.buffer("query_snapshot.original_primary",address,bytes,bytes);});
         let acquisitions = mapping.source_acquisition_storage();
         self.slice("source_acquisition.occurrences", acquisitions, true);
         for value in acquisitions.iter().flatten() {

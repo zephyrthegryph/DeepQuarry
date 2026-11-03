@@ -688,3 +688,18 @@ fn definition_sites_are_reported_relative_to_the_project_directory() {
  assert_eq!(next.occurrences[0].original_entry_path().unwrap().as_os_str(),Path::new("./project.dme").as_os_str());
  assert_eq!(first.occurrences[0].path,next.occurrences[0].path);assert!(next.diagnostics.is_empty());
 }
+
+#[cfg(windows)]
+#[test]fn synthetic_include_rendering_preserves_actual_windows_drive_prefix_kind(){
+ use std::path::{Component,Prefix};
+ // Use the real source path on this checkout, not a manufactured provider or
+ // Python approximation of Windows path semantics. This is only a path-kind
+ // control; it grants no source membership or file acquisition authority.
+ let root=std::fs::canonicalize(env!("CARGO_MANIFEST_DIR")).unwrap();let actual=std::fs::canonicalize(root.join("src/regions/tests.rs")).unwrap();
+ assert!(matches!(actual.components().next(),Some(Component::Prefix(prefix))if matches!(prefix.kind(),Prefix::VerbatimDisk(_))),"actual Windows canonical source must exercise the verbatim disk prefix: {actual:?}");
+ let old=actual.to_str().unwrap().replace('\\',"/");let old_operand=format!("\"{old}\"");let decoded_old=literal_include_path(&old_operand).unwrap();
+ assert!(matches!(decoded_old.components().next(),Some(Component::Prefix(prefix))if matches!(prefix.kind(),Prefix::UNC(server,_)if server==std::ffi::OsStr::new("?"))),"slash-folding verbatim disk creates actual UNC authority: {decoded_old:?}");assert!(relative_filesystem_path(&decoded_old,&root).is_none());
+ let ordinary=filesystem_comparison_key(&actual);let fixed=ordinary.to_str().unwrap().replace('\\',"/");let fixed_operand=format!("\"{fixed}\"");let decoded_fixed=literal_include_path(&fixed_operand).unwrap();
+ assert!(matches!(decoded_fixed.components().next(),Some(Component::Prefix(prefix))if matches!(prefix.kind(),Prefix::Disk(_))),"the corrected include retains ordinary disk kind: {decoded_fixed:?}");assert_eq!(relative_filesystem_path(&decoded_fixed,&root).as_deref(),Some(Path::new("src/regions/tests.rs")));assert_eq!(filesystem_comparison_key(&decoded_fixed),filesystem_comparison_key(&actual));
+ println!("ACTUAL_SYNTHETIC_INCLUDE_PATH_KIND={}",serde_json::json!({"actual":actual,"old_operand":old_operand,"old_prefix":format!("{:?}",decoded_old.components().next().unwrap()),"old_contained":false,"fixed_operand":fixed_operand,"fixed_prefix":format!("{:?}",decoded_fixed.components().next().unwrap()),"fixed_relative":"src/regions/tests.rs"}));
+}

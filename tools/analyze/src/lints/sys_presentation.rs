@@ -40,5 +40,5 @@ fn scan_file(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
 }
 
 pub fn register(reg: &mut Registry) {
-    register_module(reg, SysModule { name: "presentation", rules: RULES, file_scan: Some(scan_file), ..SysModule::DEFAULT });
+    register_module(reg, SysModule { name: crate::allow_registry_fields::sys_presentation::SCOPE_MODULE_NAME, rules: RULES, file_scan: Some(scan_file), ..SysModule::DEFAULT });
 }

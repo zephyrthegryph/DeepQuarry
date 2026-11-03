@@ -2,6 +2,8 @@
 //! There is intentionally no CLI/public cutover until all effect categories
 //! have independent old-checker coverage. Never reconstruct a policy from disk.
 use super::SourceSnapshot;
+#[cfg(test)]thread_local!{static ORIGINAL_SCOPE_LOADS:std::cell::Cell<usize>=const{std::cell::Cell::new(0)};}
+#[cfg(test)]pub(super) fn original_scope_loads_on_current_thread()->usize{ORIGINAL_SCOPE_LOADS.with(|count|count.get())}
 use dm_analysis::{
     check_policy::{CheckerPolicy, WarningLevel},
     checker_effects::{EffectInput, Produced},
@@ -141,6 +143,7 @@ impl SourceSnapshot {
             ));
         }
         let loaded = super::named_policy::configuration(capture, environment, explicit)?;
+        #[cfg(test)]ORIGINAL_SCOPE_LOADS.with(|count|count.set(count.get()+1));
         let frame = self
             .policy_revision
             .ok_or_else(|| std::io::Error::other("purity frame unissued"))?;
@@ -169,15 +172,101 @@ mod tests;
 /// EffectInput owns the existing archive; its body provider points weakly to Db.
 pub(super) struct EffectRequestInput{input:Option<Arc<EffectInput>>,_lease:crate::query_db::EffectRequestInputLease}
 impl Drop for EffectRequestInput{fn drop(&mut self){drop(self.input.take());}}
-impl EffectRequestInput{pub(super) fn census(&self,census:&mut crate::heap_census::HeapCensus){if let Some(input)=&self.input{census.arc_object("query_snapshot.effect_request_input",input);}}}
+impl EffectRequestInput{pub(super) fn input(&self)->&Arc<EffectInput>{self.input.as_ref().expect("sealed actual request input")}pub(super) fn census(&self,census:&mut crate::heap_census::HeapCensus){if let Some(input)=&self.input{if census.arc_object("query_snapshot.effect_request_input",input){input.visit_storage(&mut|view|match view{dm_analysis::checker_effects::Storage::Buffer{owner,address,logical,capacity}=>{census.exposed_buffer(owner,address,logical,capacity);},dm_analysis::checker_effects::Storage::Unknown{owner,items}=>{census.observe_items(owner,items);census.unknown(owner,"effect input storage capacity unexposed");}});}}}}
 impl SourceSnapshot{
- fn effect_request_input(&self,tree:&dm_tree::SemanticTree)->std::io::Result<&EffectRequestInput>{
+ fn effect_request_input(&self,tree:&dm_tree::SemanticTree)->std::io::Result<&EffectRequestInput>{self.issued_effect_request_input(tree,false)}
+ /// Must be selected before any mixed full-checker/effect question executes.
+ /// This uses the SAME existing retained input slot, never a parallel BODY owner.
+ pub(super) fn original_checker_request_input(&self,tree:&dm_tree::SemanticTree)->std::io::Result<&EffectRequestInput>{self.issued_effect_request_input(tree,true)}
+ fn issued_effect_request_input(&self,tree:&dm_tree::SemanticTree,original:bool)->std::io::Result<&EffectRequestInput>{
   crate::daemon::control::checkpoint()?;let capture=self.named_policy_capture(tree)?;let db=self.native_raw_queries.as_ref().ok_or_else(||std::io::Error::new(std::io::ErrorKind::NotConnected,"effect request current query database unavailable"))?;let profile=tree.checker_builtin_profile().ok_or_else(||std::io::Error::other("effect request builtin profile unavailable"))?;
-  if self.native_effect_request_input.get().is_none(){let bytes=std::mem::size_of::<std::sync::OnceLock<EffectRequestInput>>().checked_add(std::mem::size_of::<EffectInput>()).and_then(|n|n.checked_add(2*std::mem::size_of::<usize>()+128)).ok_or_else(||std::io::Error::new(std::io::ErrorKind::OutOfMemory,"effect request fixed input capacity overflow"))?;let lease=db.reserve_effect_request_input(bytes)?;let input=EffectInput::source_pages(Arc::clone(capture.policy().archive()),profile).map_err(std::io::Error::other)?;input.validate_current(capture.policy().archive(),db.as_ref()).map_err(std::io::Error::other)?;let owner=EffectRequestInput{input:Some(input),_lease:lease};let _=self.native_effect_request_input.set(owner);}
-  let owner=self.native_effect_request_input.get().expect("actual retained request input initialized");let input=owner.input.as_ref().expect("sealed request input remains owned");if input.profile()!=profile{return Err(std::io::Error::other("effect request cached profile differs"))}input.validate_current(capture.policy().archive(),db.as_ref()).map_err(std::io::Error::other)?;
+  if self.native_effect_request_input.get().is_none(){let bytes=std::mem::size_of::<std::sync::OnceLock<EffectRequestInput>>().checked_add(std::mem::size_of::<EffectInput>()).and_then(|n|n.checked_add(2*std::mem::size_of::<usize>()+128)).and_then(|n|n.checked_add(if original{std::mem::size_of::<dm_tree::diagnostic_declarations::DiagnosticDeclarationReceipt>()+2*std::mem::size_of::<usize>()}else{0})).ok_or_else(||std::io::Error::new(std::io::ErrorKind::OutOfMemory,"effect request fixed input capacity overflow"))?;let lease=db.reserve_effect_request_input(bytes)?;let input=if original{let receipt=self.diagnostic_declarations.as_ref().ok_or_else(||std::io::Error::other("whole checker input requires authentic diagnostic declaration receipt"))?;EffectInput::original_checker_source(Arc::clone(capture.policy().archive()),profile,receipt,db.as_ref())}else{EffectInput::source_pages(Arc::clone(capture.policy().archive()),profile)}.map_err(std::io::Error::other)?;input.validate_current(capture.policy().archive(),db.as_ref()).map_err(std::io::Error::other)?;let owner=EffectRequestInput{input:Some(input),_lease:lease};let _=self.native_effect_request_input.set(owner);}
+  let owner=self.native_effect_request_input.get().expect("actual retained request input initialized");let input=owner.input.as_ref().expect("sealed request input remains owned");if input.profile()!=profile{return Err(std::io::Error::other("effect request cached profile differs"))}if original&&!input.is_original_checker_source(){return Err(std::io::Error::other("whole checker purpose must be bound before ordinary effect contribution evaluation"))}if input.is_original_checker_source(){input.require_original_checker_source().map_err(std::io::Error::other)?;}input.validate_current(capture.policy().archive(),db.as_ref()).map_err(std::io::Error::other)?;
   Ok(owner)
  }
  pub(crate) fn write_native_effect_request(&self,width:usize,target_window:usize,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree,output:&mut impl std::io::Write)->std::io::Result<()>{let owner=self.effect_request_input(tree)?;let input=owner.input.as_ref().expect("sealed actual input");
   self.write_native_effect_reports_exhausted(input,width,target_window,environment,explicit,tree,output)
+ }
+}
+
+impl SourceSnapshot{
+ /// The checker observes the exact BODY outcome also consumed by PAGE/effects.
+ /// Callers cannot supply another input or promote an ordinary selected frame.
+ pub(super) fn with_original_checker_body<T>(&self,ordinal:usize,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree,consume:impl FnOnce(&dm_analysis::checker_effects::BodyEffects)->std::io::Result<T>)->std::io::Result<T>{
+  let owner=self.original_checker_request_input(tree)?;let input=owner.input();
+  let source=dm_analysis::checker_effects::EffectSource::new(input.archive(),input.profile()).map_err(|failure|match failure{dm_analysis::policy_body_demand::PolicyFailure::Operational(actual)=>actual,dm_analysis::policy_body_demand::PolicyFailure::Unsupported(message)=>std::io::Error::other(message.0)})?;
+  let mut rank=None;for index in 0..source.len(){crate::daemon::control::checkpoint()?;if source.original_ordinal(index)==Some(ordinal){rank=Some(index);break}}
+  let rank=rank.ok_or_else(||std::io::Error::other("checker ordinal is not an actual original source body"))?;
+  let page=self.native_effect_source_page(input,rank,1,environment,explicit,tree)?;
+  let pending=page.with_original_body(0,input,consume);match pending{Ok(Err(actual))|Err(dm_analysis::policy_body_demand::PolicyFailure::Operational(actual))=>Err(actual),other=>{crate::daemon::control::checkpoint()?;input.validate_current(input.archive(),self.native_raw_queries.as_ref().ok_or_else(||std::io::Error::other("checker Db absent"))?.as_ref()).map_err(std::io::Error::other)?;match other{Ok(Ok(value))=>Ok(value),Err(dm_analysis::policy_body_demand::PolicyFailure::Operational(actual))=>Err(actual),Err(dm_analysis::policy_body_demand::PolicyFailure::Unsupported(message))=>Err(std::io::Error::other(message.0)),_=>unreachable!()}}}
+ }
+ /// Ordered BODY prelude/body phases over the SAME actual cached contributions.
+ /// Global declaration/frontend and final graph/keyword phases remain separate.
+ pub(super) fn visit_original_body_diagnostics(&self,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree,consume:impl FnMut(usize,&dm_analysis::checker_effects::OriginalBodyDiagnostic)->std::io::Result<()>)->std::io::Result<()>{let owner=self.original_checker_request_input(tree)?;let input=owner.input();self.with_effect_scope(input,environment,explicit,tree,|db,scope|db.visit_cached_original_diagnostics(input,||scope.validate(db,input).map_err(std::io::Error::other),consume))}
+
+}
+
+/// Real phases borrow ONE actual current configuration/scope. Public private
+/// wrappers preserve their existing API; no scope, model or BODY cache is added.
+pub(super) enum OriginalDeclarationAndBody<'a>{Declaration(&'a dm_analysis::checks_variable_visibility::Produced),Body{ordinal:usize,row:&'a dm_analysis::checker_effects::OriginalBodyDiagnostic}}
+pub(super) enum OriginalThroughKeywords<'a>{Source(OriginalDeclarationAndBody<'a>),Keyword{findings:&'a dm_analysis::checks_keyword_overrides::Findings<'a>,row:&'a dm_analysis::checks_keyword_overrides::Finding}}
+pub(super) enum OriginalThroughGraph<'a>{Source(OriginalThroughKeywords<'a>),Graph(&'a dm_analysis::checker_effects::Produced)}
+pub(super) enum OriginalThroughReaderDeclarations<'a>{Declaration(dm_analysis::checks_proc_visibility::Finding<'a>),Semantic(OriginalThroughGraph<'a>)}
+impl SourceSnapshot{
+ fn visit_original_declarations_and_bodies_in_scope(&self,input:&Arc<EffectInput>,tree:&dm_tree::SemanticTree,db:&crate::query_db::QueryDb,scope:&PurityScope<'_>,mut consume:impl FnMut(OriginalDeclarationAndBody<'_>)->std::io::Result<()>)->std::io::Result<()>{
+  db.with_original_declarations(input,tree,||scope.validate(db,input).map_err(std::io::Error::other),|findings|{for row in findings.rows(){crate::daemon::control::checkpoint()?;consume(OriginalDeclarationAndBody::Declaration(row))?;}Ok(())})?;
+  db.visit_cached_original_diagnostics(input,||scope.validate(db,input).map_err(std::io::Error::other),|ordinal,row|consume(OriginalDeclarationAndBody::Body{ordinal,row}))
+ }
+ fn visit_original_through_keywords_in_scope(&self,input:&Arc<EffectInput>,tree:&dm_tree::SemanticTree,db:&crate::query_db::QueryDb,scope:&PurityScope<'_>,mut consume:impl FnMut(OriginalThroughKeywords<'_>)->std::io::Result<()>)->std::io::Result<()>{
+  self.visit_original_declarations_and_bodies_in_scope(input,tree,db,scope,|row|consume(OriginalThroughKeywords::Source(row)))?;
+  db.with_cached_original_keyword_overrides(input,tree,||scope.validate(db,input).map_err(std::io::Error::other),|findings|{if !findings.belongs_to(input.archive()){return Err(std::io::Error::other("keyword finalization result belongs to another archive"))}for row in findings.rows(){crate::daemon::control::checkpoint()?;consume(OriginalThroughKeywords::Keyword{findings,row})?;}Ok(())})
+ }
+ fn visit_original_through_graph_in_scope(&self,input:&Arc<EffectInput>,tree:&dm_tree::SemanticTree,db:&crate::query_db::QueryDb,scope:&PurityScope<'_>,mut consume:impl FnMut(OriginalThroughGraph<'_>)->std::io::Result<()>)->std::io::Result<()>{
+  self.visit_original_through_keywords_in_scope(input,tree,db,scope,|row|consume(OriginalThroughGraph::Source(row)))?;
+  use dm_analysis::checker_effects::{EffectReportPhase,ProducedPhase};let total=input.archive().callables().source_order().len();
+  for(phase,issued)in[(EffectReportPhase::Sleep,ProducedPhase::SleepGraph),(EffectReportPhase::Purity,ProducedPhase::PurityGraph)]{
+   let mut start=0;while start<total{crate::daemon::control::checkpoint()?;let count=256usize.min(total-start);let rows=db.native_effect_source_report_window(input,scope,32,phase,start,count)?;for row in rows.iter(){crate::daemon::control::checkpoint()?;if row.phase()==issued{consume(OriginalThroughGraph::Graph(row))?;}}drop(rows);scope.validate(db,input).map_err(std::io::Error::other)?;start=start.checked_add(count).ok_or_else(||std::io::Error::new(std::io::ErrorKind::OutOfMemory,"original graph delivery progress overflow"))?;}
+  }
+  scope.validate(db,input).map_err(std::io::Error::other)
+ }
+ fn visit_original_through_reader_declarations_in_scope(&self,input:&Arc<EffectInput>,tree:&dm_tree::SemanticTree,db:&crate::query_db::QueryDb,scope:&PurityScope<'_>,mut consume:impl FnMut(OriginalThroughReaderDeclarations<'_>)->std::io::Result<()>)->std::io::Result<()>{
+  db.visit_original_reader_declarations(input,||scope.validate(db,input).map_err(std::io::Error::other),|row|consume(OriginalThroughReaderDeclarations::Declaration(row)))?;
+  self.visit_original_through_graph_in_scope(input,tree,db,scope,|row|consume(OriginalThroughReaderDeclarations::Semantic(row)))
+ }
+ pub(super) fn visit_original_declarations_and_bodies(&self,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree,consume:impl FnMut(OriginalDeclarationAndBody<'_>)->std::io::Result<()>)->std::io::Result<()>{let owner=self.original_checker_request_input(tree)?;let input=owner.input();self.with_effect_scope(input,environment,explicit,tree,|db,scope|self.visit_original_declarations_and_bodies_in_scope(input,tree,db,scope,consume))}
+ pub(super) fn visit_original_through_keywords(&self,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree,consume:impl FnMut(OriginalThroughKeywords<'_>)->std::io::Result<()>)->std::io::Result<()>{let owner=self.original_checker_request_input(tree)?;let input=owner.input();self.with_effect_scope(input,environment,explicit,tree,|db,scope|self.visit_original_through_keywords_in_scope(input,tree,db,scope,consume))}
+ pub(super) fn visit_original_through_graph(&self,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree,consume:impl FnMut(OriginalThroughGraph<'_>)->std::io::Result<()>)->std::io::Result<()>{let owner=self.original_checker_request_input(tree)?;let input=owner.input();self.with_effect_scope(input,environment,explicit,tree,|db,scope|self.visit_original_through_graph_in_scope(input,tree,db,scope,consume))}
+ pub(super) fn visit_original_through_reader_declarations(&self,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree,consume:impl FnMut(OriginalThroughReaderDeclarations<'_>)->std::io::Result<()>)->std::io::Result<()>{let owner=self.original_checker_request_input(tree)?;let input=owner.input();self.with_effect_scope(input,environment,explicit,tree,|db,scope|self.visit_original_through_reader_declarations_in_scope(input,tree,db,scope,consume))}
+ /// Old CLI visibility follows each real producer's registration. Graph rows
+ /// already registered their levels; raw context still retains all real Hints.
+ pub(super) fn visit_original_cli_diagnostics(&self,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree,mut consume:impl FnMut(OriginalThroughReaderDeclarations<'_>,dm_analysis::check_policy::DiagnosticSeverity)->std::io::Result<()>)->std::io::Result<()>{
+  let owner=self.original_checker_request_input(tree)?;let input=owner.input();self.with_effect_scope(input,environment,explicit,tree,|db,scope|{
+   self.visit_original_through_reader_declarations_in_scope(input,tree,db,scope,|row|{use dm_analysis::check_policy::DiagnosticSeverity as S;let level=match &row{
+    OriginalThroughReaderDeclarations::Declaration(finding)=>scope.policy().register(finding.registration_tag(),finding.original_fixed_level().ok_or_else(||std::io::Error::other("original reader diagnostic lacks genuine default severity"))?),
+    OriginalThroughReaderDeclarations::Semantic(OriginalThroughGraph::Source(OriginalThroughKeywords::Source(OriginalDeclarationAndBody::Declaration(finding))))=>scope.policy().register(finding.registration_tag(),finding.default_severity()),
+    OriginalThroughReaderDeclarations::Semantic(OriginalThroughGraph::Source(OriginalThroughKeywords::Source(OriginalDeclarationAndBody::Body{row,..})))=>scope.policy().register(row.registration_tag(),row.default_level()),
+    OriginalThroughReaderDeclarations::Semantic(OriginalThroughGraph::Source(OriginalThroughKeywords::Keyword{..}))=>scope.policy().register(None,S::Error),
+    OriginalThroughReaderDeclarations::Semantic(OriginalThroughGraph::Graph(row))=>Some(row.severity),
+   };if let Some(level)=level.filter(|level|*level<=S::Info){consume(row,level)?;}Ok(())})?;scope.validate(db,input).map_err(std::io::Error::other)
+  })
+ }
+}
+
+// Selected authentic current semantic producer, not a default checker cutover.
+impl SourceSnapshot{
+ pub(super) fn visit_current_variable_diagnostics(&self,ordinal:usize,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree,consume:impl FnMut(dm_analysis::checks_undefined_variable::CurrentUndefinedRow<'_>)->std::io::Result<()>)->std::io::Result<dm_analysis::checks_undefined_variable::CurrentUndefinedDisposition>{
+  let owner=self.original_checker_request_input(tree)?;let input=owner.input();self.with_effect_scope(input,environment,explicit,tree,|db,scope|db.visit_current_variable_diagnostics(input,scope,ordinal,consume))
+ }
+}
+#[cfg(test)]#[path="runner_query_current_variables_tests.rs"]mod current_variables_tests;
+
+#[cfg(test)]#[path="runner_query_current_prefix_tests.rs"]mod current_prefix_tests;
+
+#[cfg(test)]#[path="runner_query_current_callable_tests.rs"]mod current_callable_tests;
+
+
+impl SourceSnapshot{
+ pub(super) fn visit_current_selected_diagnostics(&self,ordinal:usize,environment:&Path,explicit:Option<&Path>,tree:&dm_tree::SemanticTree,consume:impl FnMut(crate::query_db::CurrentSelectedDiagnostic<'_>)->std::io::Result<()>)->std::io::Result<dm_analysis::checks_undefined_variable::CurrentUndefinedDisposition>{
+  let owner=self.original_checker_request_input(tree)?;let input=owner.input();self.with_effect_scope(input,environment,explicit,tree,|db,scope|db.visit_current_selected_diagnostics(input,scope,ordinal,consume))
  }
 }

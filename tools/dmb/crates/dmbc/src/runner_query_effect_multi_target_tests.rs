@@ -57,10 +57,10 @@ fn native_transcript(snapshot: &SourceSnapshot, input: &Arc<EffectInput>, family
     // Original whole-checker phase order, not whichever report was requested first.
     if family == "both" {
         let pure=snapshot.native_purity_report(input,&env(),None,&snapshot.tree).unwrap();
-        for row in pure.iter().filter(|r|r.registration_tag.is_none()) { text.push_str(&render(std::slice::from_ref(row))); }
+        for row in pure.iter().filter(|r|r.phase()==dm_analysis::checker_effects::ProducedPhase::BodyImmediate) { text.push_str(&render(std::slice::from_ref(row))); }
         let sleep=snapshot.native_sleep_report(input,&env(),None,&snapshot.tree).unwrap();
         text.push_str(&render(&sleep));
-        for row in pure.iter().filter(|r|r.registration_tag.is_some()) { text.push_str(&render(std::slice::from_ref(row))); }
+        for row in pure.iter().filter(|r|r.phase()==dm_analysis::checker_effects::ProducedPhase::PurityGraph) { text.push_str(&render(std::slice::from_ref(row))); }
     } else if family=="sleep" {
         text.push_str(&render(&snapshot.native_sleep_report(input,&env(),None,&snapshot.tree).unwrap()));
     } else { text.push_str(&render(&snapshot.native_purity_report(input,&env(),None,&snapshot.tree).unwrap())); }

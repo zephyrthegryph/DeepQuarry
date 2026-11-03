@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::io::{self, Read, Write};
-pub(super) const MAX_FRAME: usize = 4 * 1024 * 1024;
+pub(super) use super::retained_rejection::{MAX_FRAME,send_rejected_text};
 pub(super) const VERSION: u32 = 5;
 #[derive(Serialize, Deserialize)]
 pub(super) enum Request {
@@ -30,18 +30,7 @@ pub(super) enum Reply {
     GenerationFinished(super::generation::GenerationTerminal),
     GenerationAborted(super::generation::GenerationAbort),
 }
-pub(super) fn send(stream: &mut impl Write, value: &impl Serialize) -> io::Result<()> {
-    let bytes = serde_json::to_vec(value)?;
-    if bytes.len() > MAX_FRAME {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidData,
-            "daemon frame too large",
-        ));
-    }
-    stream.write_all(&(bytes.len() as u32).to_le_bytes())?;
-    stream.write_all(&bytes)?;
-    stream.flush()
-}
+pub(super) fn send(stream:&mut impl Write,value:&impl Serialize)->io::Result<()>{super::retained_rejection::send_frame(stream,value)}
 pub(super) fn receive<T: serde::de::DeserializeOwned>(stream: &mut impl Read) -> io::Result<T> {
     receive_bounded(stream, MAX_FRAME)
 }
@@ -168,3 +157,12 @@ mod tests {
         assert!(input.is_empty());
     }
 }
+
+#[cfg(test)]mod borrowed_rejection_tests{
+ use super::*;
+ #[test]fn borrowed_funded_rejection_has_byte_exact_existing_wire_shape_including_escaped_utf8(){for kind in[crate::request_failure::FailureKind::Source,crate::request_failure::FailureKind::Infrastructure]{for text in["got ')', expected expression","unicode \u{03b1} \n quote \" null \0"]{let mut old=Vec::new();send(&mut old,&Reply::Rejected(crate::request_failure::RequestFailure{kind,message:text.into()})).unwrap();let mut current=Vec::new();send_rejected_text(&mut current,kind,text).unwrap();assert_eq!(current,old);let Reply::Rejected(actual)=receive::<Reply>(&mut &current[..]).unwrap()else{panic!("same reply variant")};assert_eq!(actual.kind,kind);assert_eq!(actual.message,text);}}}
+ #[test]fn borrowed_rejection_denies_actual_oversize_before_any_stream_write(){struct Untouched;impl Write for Untouched{fn write(&mut self,_:&[u8])->io::Result<usize>{panic!("oversize must fail before frame prefix") }fn flush(&mut self)->io::Result<()>{panic!("no flush")}}let text="x".repeat(MAX_FRAME);let error=send_rejected_text(&mut Untouched,crate::request_failure::FailureKind::Source,&text).unwrap_err();assert_eq!(error.kind(),io::ErrorKind::InvalidData);}
+ #[test]fn borrowed_rejection_preserves_actual_downstream_os_error_after_frame_prefix(){struct Fault{writes:usize}impl Write for Fault{fn write(&mut self,bytes:&[u8])->io::Result<usize>{self.writes+=1;if self.writes==1{Ok(bytes.len())}else{Err(io::Error::from_raw_os_error(1450))}}fn flush(&mut self)->io::Result<()>{Ok(())}}let mut out=Fault{writes:0};let error=send_rejected_text(&mut out,crate::request_failure::FailureKind::Source,"real error").unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(out.writes,2);}
+}
+
+#[cfg(test)]mod borrowed_rejection_cancellation_control{use super::*;#[test]fn borrowed_rejection_keeps_actual_interrupted_writer_and_exit_seventy_five(){struct Cancel{writes:usize}impl Write for Cancel{fn write(&mut self,bytes:&[u8])->io::Result<usize>{self.writes+=1;if self.writes==1{Ok(bytes.len())}else{Err(io::Error::new(io::ErrorKind::Interrupted,"actual cancellation"))}}fn flush(&mut self)->io::Result<()>{Ok(())}}let mut out=Cancel{writes:0};let error=send_rejected_text(&mut out,crate::request_failure::FailureKind::Source,"actual source error").unwrap_err();assert_eq!(error.kind(),io::ErrorKind::Interrupted);assert_eq!(crate::request_failure::exit_code(&error),75);assert_eq!(out.writes,2);}}

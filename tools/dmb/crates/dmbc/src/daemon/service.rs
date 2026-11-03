@@ -995,7 +995,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                     ));
                 }
                 let key = SessionKey {
-                    manifest: session_root(std::fs::canonicalize(&request.project)?),
+                    manifest: session_root(crate::policy_request::canonical_analysis_project(&request.project,request.analysis_context)?),
                     engine: request.engine_template.as_deref().map(EngineIdentity::of),
                     bootstrap: request.bootstrap_catalog,
                 };
@@ -1022,6 +1022,11 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                             | super::query::SourceQuery::NativeWorkspaceRawReportPage { .. }
                             | super::query::SourceQuery::NativeWorkspaceHygieneReportPage { .. }
                             | super::query::SourceQuery::NativeWorkspaceSysReportPage { .. }
+                            | super::query::SourceQuery::NativeWorkspaceCheckGrepReportPage { .. }
+                            | super::query::SourceQuery::NativeWorkspaceCheckGrepBaselineReportPage { .. }
+                            | super::query::SourceQuery::NativeWorkspaceSemanticReportPage { .. }
+                            | super::query::SourceQuery::NativeWorkspaceRawTreeReportPage { .. }
+                            | super::query::SourceQuery::NativeWorkspacePolicyReportPage { .. }
                             | super::query::SourceQuery::NativeWorkspaceKeysReportPage { .. }
                             | super::query::SourceQuery::NativeDeadlinePollingEvidence { .. }
                             | super::query::SourceQuery::NativeAnalyzePolicyFixture { .. }
@@ -1052,6 +1057,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                 }
                 let state = host.query_state();
                 let state = state.lock().unwrap_or_else(|error| error.into_inner());
+                if let Some(raw)=state.raw_snapshot.as_ref(){let reply=super::query::evaluate_raw_snapshot(&request,raw,&state)?;control::checkpoint()?;return Ok(reply)}
                 let tree = state
                     .snapshot
                     .as_ref()
@@ -1140,7 +1146,7 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                 }
             };
             transport::set_timeout(&mut stream, transport::BUILD_DEADLINE)?;
-            let path = std::fs::canonicalize(&request.project)?;
+            let path = crate::policy_request::canonical_analysis_project(&request.project,request.policy_inputs.as_ref().and_then(|intent|intent.analysis_context))?;
             let accepted = match shared.accept_request() {
                 Ok(accepted) => accepted,
                 Err(error) => {
@@ -1264,7 +1270,7 @@ fn handle_build(mut stream:transport::Stream,shared:&Arc<Shared>,discovery:bool,
                 Ok(Ok(super::generation::Executed::Generated(report)))=>{let mut output=stream.lock().unwrap_or_else(|error|error.into_inner());match super::generation::send_report(&mut *output,&report,generation_cache.as_deref().unwrap()){Ok(())=>Ok(()),Err(error)=>super::generation::send_abort(&mut *output,&error,report.committed,report.committed)}},
                 Ok(Ok(super::generation::Executed::Build(outcome)))=>protocol::send(&mut *stream.lock().unwrap_or_else(|error|error.into_inner()),&Reply::Completed(outcome)),
                 Ok(Err(error))if generation.is_some()=>{let mut output=stream.lock().unwrap_or_else(|error|error.into_inner());match super::generation::send_error(&mut *output,error.as_ref(),generation_cache.as_deref().unwrap()){Ok(())=>Ok(()),Err(_wire)=>super::generation::send_abort(&mut *output,error.as_ref(),super::generation::committed(error.as_ref()),super::generation::may_have_changed(error.as_ref()))}},
-                Ok(Err(error))=>protocol::send(&mut *stream.lock().unwrap_or_else(|error|error.into_inner()),&Reply::Rejected(crate::request_failure::RequestFailure::from_error(error.as_ref()))),
+                Ok(Err(error))=>{let mut output=stream.lock().unwrap_or_else(|error|error.into_inner());if super::write_retained_preparation_rejection(&mut *output,error.as_ref())?{Ok(())}else{protocol::send(&mut *output,&Reply::Rejected(crate::request_failure::RequestFailure::from_error(error.as_ref())))}},
                 Err(_)=>{shared.reset_host(&mut host);let failure=crate::request_failure::RequestFailure::internal("internal compiler panic; retained session cleared");if generation.is_some(){super::generation::send_abort(&mut *stream.lock().unwrap_or_else(|error|error.into_inner()),&failure,false,true)}else{protocol::send(&mut *stream.lock().unwrap_or_else(|error|error.into_inner()),&Reply::Rejected(failure))}},
             };
             dm_profile::request_marks_end("daemon.replied");

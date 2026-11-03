@@ -16,6 +16,7 @@ pub(crate) struct SourceFrameCapture {
     policy: Option<Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>>,
     policy_role: SnapshotPolicyRole,
     workspace_generator_selection: Option<WorkspaceGeneratorSelection>,
+    workspace_semantic_selection: Option<WorkspaceSemanticSelection>,
     source_revision: u128,
     facts: InputSnapshot,
     query_request: u64,
@@ -69,10 +70,11 @@ impl SourceFrameCapture {
     // workspace revision remains None until actual WorkspacePolicyAdmission.
     fn policy_matches(snapshot:&SourceSnapshot)->bool{
         match (&snapshot.native_policy_inputs,snapshot.policy_role){
-            (Some(policy),SnapshotPolicyRole::ExplicitSubset)=>snapshot.workspace_generator_selection.is_none()&&policy.policy_revision().is_some()&&snapshot.policy_revision==policy.policy_revision(),
-            (Some(policy),SnapshotPolicyRole::WorkspaceGeneratorChild)=>snapshot.workspace_generator_selection.is_some()&&policy.policy_revision().is_some()&&snapshot.policy_revision.is_none(),
-            (None,SnapshotPolicyRole::ExplicitSubset)=>snapshot.workspace_generator_selection.is_none()&&snapshot.policy_revision.is_none(),
-            (None,SnapshotPolicyRole::WorkspaceGeneratorChild)=>false,
+            (Some(policy),SnapshotPolicyRole::ExplicitSubset)=>snapshot.workspace_semantic_selection.is_none()&&snapshot.workspace_generator_selection.is_none()&&policy.policy_revision().is_some()&&snapshot.policy_revision==policy.policy_revision(),
+            (Some(policy),SnapshotPolicyRole::WorkspaceGeneratorChild)=>snapshot.workspace_semantic_selection.is_none()&&snapshot.workspace_generator_selection.is_some()&&policy.policy_revision().is_some()&&snapshot.policy_revision.is_none(),
+            (None,SnapshotPolicyRole::ExplicitSubset)=>snapshot.workspace_semantic_selection.is_none()&&snapshot.workspace_generator_selection.is_none()&&snapshot.policy_revision.is_none(),
+            (Some(policy),SnapshotPolicyRole::WorkspaceSemanticChild)=>snapshot.workspace_generator_selection.is_none()&&snapshot.workspace_semantic_selection.is_some()&&policy.policy_revision().is_some()&&snapshot.policy_revision.is_none(),
+            (None,SnapshotPolicyRole::WorkspaceGeneratorChild|SnapshotPolicyRole::WorkspaceSemanticChild)=>false,
         }
     }
     // Constructor intentionally private to this child of the snapshot owner.
@@ -125,6 +127,7 @@ impl SourceFrameCapture {
             policy: snapshot.native_policy_inputs.as_ref().map(Arc::clone),
             policy_role: snapshot.policy_role,
             workspace_generator_selection: snapshot.workspace_generator_selection,
+            workspace_semantic_selection: snapshot.workspace_semantic_selection,
             source_revision: snapshot.source_revision,
             facts,
             query_request: queries.source_answer_request(),
@@ -156,6 +159,7 @@ impl SourceFrameCapture {
             || snapshot.source_revision != self.source_revision
             || snapshot.policy_role != self.policy_role
             || snapshot.workspace_generator_selection != self.workspace_generator_selection
+            || snapshot.workspace_semantic_selection != self.workspace_semantic_selection
             || !Self::policy_matches(snapshot)
             || !match (&self.policy, &snapshot.native_policy_inputs) {
                 (Some(a), Some(b)) => {

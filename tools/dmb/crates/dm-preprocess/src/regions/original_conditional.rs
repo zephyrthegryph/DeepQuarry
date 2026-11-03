@@ -1,0 +1,67 @@
+//! Exact Original Ifdef transition/evaluation-order kernel. SAME Conditional
+//! payload as native planner, but its native prepared transition path is untouched.
+//! No expression parser, source/EOF/model grant, cache or parallel dictionary.
+use crate::{Conditional,macro_expansion::{OriginalMacroRows as Rows,OriginalMacroOrigin as Origin}};
+use dm_syntax::SettingAdmission;
+use std::io;
+#[derive(Clone,Copy,Debug)]pub(super) struct Frame{pub(super) conditional:Conditional,pub(super) origin:Origin}
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub(super) enum Directive{If,Ifdef,Ifndef,Elif,Else,Endif}
+#[derive(Clone,Copy,Debug)]pub(super) struct History{pub(super) from:Origin,pub(super) to:Origin,pub(super) active:bool}
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub(super) enum Instruction{
+ /// ALWAYS raw-expand/register notices first, even under an inactive parent or
+ /// previously taken branch. Recheck actual global disabled AFTER expansion;
+ /// only then clear output/skip Pratt or evaluate the SAME retained expression.
+ Expression,
+ /// Read actual unexpanded Ident + newline and query actual is_defined. Parent
+ /// inactivity does not skip that lookup. __MAIN__ belongs to the actual owner.
+ DefinedName{negated:bool},
+}
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub(super) enum Outcome{Value(bool),DisabledAfterExpansion,ExpressionSourceFailure,InvalidRawName}
+enum PendingKind{IfExpression,ElifExpression(Frame),DefinedName{negated:bool,origin:Origin}}
+pub(super) struct Pending{kind:PendingKind}
+pub(super) enum Action{Done{history:Option<History>},Evaluate{history:Option<History>,pending:Pending},SourceFailure{origin:Origin,message:&'static str}}
+fn poll(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
+/// Original uses ANY inactive own frame, not native last-frame/composed active.
+pub(super) fn is_disabled_using(frames:&[Frame],a:&SettingAdmission<'_>)->io::Result<bool>{poll(a)?;for frame in frames{poll(a)?;if !frame.conditional.active{return Ok(true)}}Ok(false)}
+fn history(frame:Frame,to:Origin)->History{History{from:frame.origin,to,active:frame.conditional.active}}
+fn new_frame(origin:Origin,active:bool,parent_active:bool)->Frame{Frame{origin,conditional:Conditional{parent_active,branch_taken:active,active,else_seen:false}}}
+impl Pending{
+ pub(super) fn instruction(&self)->Instruction{match self.kind{PendingKind::IfExpression|PendingKind::ElifExpression(_)=>Instruction::Expression,PendingKind::DefinedName{negated,..}=>Instruction::DefinedName{negated}}}
+ /// Owner supplies actual last_input_loc AFTER raw condition evaluation. It may
+ /// differ from initial hash location or even its source include occurrence.
+ /// Operational IO/quota/cancel is NEVER a source-recovery Outcome: do not call
+ /// finish after that failure; the actual driver poisons its retained assembly.
+ pub(super) fn finish_using(self,frames:&mut Rows<Frame>,outcome:Outcome,completed_origin:Origin,a:&SettingAdmission<'_>)->io::Result<()>{
+  poll(a)?;let enabled=match (&self.kind,outcome){(_,Outcome::Value(value))=>value,(PendingKind::IfExpression|PendingKind::ElifExpression(_),Outcome::DisabledAfterExpansion|Outcome::ExpressionSourceFailure)=>false,(PendingKind::DefinedName{..},Outcome::InvalidRawName)=>return Ok(()),_=>return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original conditional owner supplied an outcome from another evaluation instruction"))};
+  let parent_active=!is_disabled_using(frames.as_slice(),a)?;
+  let frame=match self.kind{PendingKind::IfExpression=>new_frame(completed_origin,enabled,parent_active),PendingKind::DefinedName{negated,origin}=>new_frame(origin,enabled!=negated,parent_active),PendingKind::ElifExpression(old)=>Frame{origin:completed_origin,conditional:Conditional{parent_active:old.conditional.parent_active,branch_taken:old.conditional.branch_taken||enabled,active:!old.conditional.branch_taken&&enabled,else_seen:old.conditional.else_seen}}};frames.push(frame,a)
+ }
+}
+/// Elif pops/history occurs BEFORE asking actual macro/Pratt owner for ANY
+/// evaluation, including an already taken branch. Else never rejects repeats.
+pub(super) fn begin_using(frames:&mut Rows<Frame>,directive:Directive,origin:Origin,a:&SettingAdmission<'_>)->io::Result<Action>{
+ poll(a)?;match directive{
+  Directive::If=>Ok(Action::Evaluate{history:None,pending:Pending{kind:PendingKind::IfExpression}}),
+  Directive::Ifdef|Directive::Ifndef=>Ok(Action::Evaluate{history:None,pending:Pending{kind:PendingKind::DefinedName{negated:directive==Directive::Ifndef,origin}}}),
+  Directive::Elif=>match frames.pop(){Some(old)=>Ok(Action::Evaluate{history:Some(history(old,origin)),pending:Pending{kind:PendingKind::ElifExpression(old)}}),None=>Ok(Action::SourceFailure{origin,message:"unmatched #elif"})},
+  Directive::Else=>match frames.last_mut(){Some(slot)=>{let old=*slot;let h=history(old,origin);*slot=Frame{origin,conditional:Conditional{parent_active:old.conditional.parent_active,branch_taken:true,active:!old.conditional.branch_taken,else_seen:true}};Ok(Action::Done{history:Some(h)})},None=>Ok(Action::SourceFailure{origin,message:"unmatched #else"})},
+  Directive::Endif=>match frames.pop(){Some(old)=>Ok(Action::Done{history:Some(history(old,origin))}),None=>Ok(Action::SourceFailure{origin,message:"unmatched #endif"})},
+ }
+}
+#[derive(Clone,Copy,Debug)]pub(super) struct Unterminated{pub(super) history:History,pub(super) origin:Origin,pub(super) message:&'static str}
+/// Actual source owner calls this only after its genuine lexer/include EOF.
+/// Empty stack is DATA, never proof of EOF or permission to finish a model.
+pub(super) fn pop_at_actual_eof_using(frames:&mut Rows<Frame>,last_input:Origin,a:&SettingAdmission<'_>)->io::Result<Option<Unterminated>>{poll(a)?;Ok(frames.pop().map(|frame|Unterminated{history:history(frame,last_input),origin:frame.origin,message:"unterminated #if/#ifdef"}))}
+
+#[cfg(test)]#[path="../../../../fixtures/original_conditional.rs"]mod immutable_original;
+#[cfg(test)]mod tests{
+ use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ fn origin(at:usize)->Origin{Origin{physical:dm_syntax::Span::new(at,at+1),line:at+1,byte_column:None,occurrence:at%3,invocation:false}}
+ fn snapshot(frames:&Rows<Frame>)->Vec<(usize,bool,bool)>{frames.as_slice().iter().map(|f|(f.origin.physical.start,f.conditional.active,f.conditional.branch_taken)).collect()}
+ fn pending(action:Action)->(Option<History>,Pending){match action{Action::Evaluate{history,pending}=>(history,pending),_=>panic!("actual evaluation must be requested")}}
+ #[test]fn same_conditional_payload_matches_entire_literal_old_frame_transitions_and_global_disabled_scan(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut actual=Rows::new(&a).unwrap();let mut old=Vec::new();let steps=[(Directive::If,false),(Directive::Ifdef,true),(Directive::Elif,true),(Directive::Else,false),(Directive::Else,false),(Directive::Elif,true),(Directive::Endif,false),(Directive::Else,false),(Directive::Endif,false)];for(index,(command,value))in steps.into_iter().enumerate(){let begin=origin(10*index);let end=origin(10*index+5);let result=begin_using(&mut actual,command,begin,&a).unwrap();match command{Directive::If|Directive::Ifdef|Directive::Ifndef=>{let(_,work)=pending(result);work.finish_using(&mut actual,Outcome::Value(value),end,&a).unwrap();old.push(immutable_original::new_frame(if command==Directive::If{end.physical.start}else{begin.physical.start},if command==Directive::Ifndef{!value}else{value}));},Directive::Elif=>{let prior=old.pop().unwrap();let(h,work)=pending(result);let h=h.unwrap();assert_eq!((h.from.physical.start,h.to.physical.start,h.active),(prior.0,begin.physical.start,prior.1));assert_eq!(work.instruction(),Instruction::Expression);assert_eq!(snapshot(&actual),old,"elif popped BEFORE any evaluation");work.finish_using(&mut actual,Outcome::Value(value),end,&a).unwrap();old.push(immutable_original::elif_frame(prior,end.physical.start,value));},Directive::Else=>{let prior=old.pop().unwrap();assert!(matches!(result,Action::Done{history:Some(_)}));old.push(immutable_original::else_frame(prior,begin.physical.start));},Directive::Endif=>{old.pop().unwrap();assert!(matches!(result,Action::Done{history:Some(_)}));}}assert_eq!(snapshot(&actual),old);assert_eq!(is_disabled_using(actual.as_slice(),&a).unwrap(),immutable_original::disabled(&old));}drop(actual);assert_eq!(used.load(Ordering::Acquire),0);}
+ #[test]fn inactive_parent_still_requests_raw_expression_expansion_before_global_discard_and_always_reads_ifdef_name(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut frames=Rows::new(&a).unwrap();let(_,outer)=pending(begin_using(&mut frames,Directive::If,origin(0),&a).unwrap());outer.finish_using(&mut frames,Outcome::Value(false),origin(1),&a).unwrap();let(_,child)=pending(begin_using(&mut frames,Directive::If,origin(2),&a).unwrap());assert_eq!(child.instruction(),Instruction::Expression,"real BAD(1) macro notice must not be skipped under inactive parent");assert!(is_disabled_using(frames.as_slice(),&a).unwrap());child.finish_using(&mut frames,Outcome::DisabledAfterExpansion,origin(3),&a).unwrap();begin_using(&mut frames,Directive::Endif,origin(4),&a).unwrap();let(_,name)=pending(begin_using(&mut frames,Directive::Ifdef,origin(5),&a).unwrap());assert_eq!(name.instruction(),Instruction::DefinedName{negated:false});name.finish_using(&mut frames,Outcome::Value(true),origin(99),&a).unwrap();assert!(frames.as_slice().last().unwrap().conditional.active,"own active is not folded with parent");assert_eq!(frames.as_slice().last().unwrap().origin,origin(5),"raw name/newline reads do not replace outer last_input_loc");assert!(is_disabled_using(frames.as_slice(),&a).unwrap());drop(frames);assert_eq!(used.load(Ordering::Acquire),0);}
+ #[test]fn taken_elif_still_evaluates_after_pop_and_source_recovery_kinds_preserve_old_push_rules(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut frames=Rows::new(&a).unwrap();let(_,first)=pending(begin_using(&mut frames,Directive::If,origin(0),&a).unwrap());first.finish_using(&mut frames,Outcome::Value(true),origin(1),&a).unwrap();let(_,elif)=pending(begin_using(&mut frames,Directive::Elif,origin(2),&a).unwrap());assert_eq!(frames.len(),0);assert_eq!(elif.instruction(),Instruction::Expression);assert!(!is_disabled_using(frames.as_slice(),&a).unwrap());elif.finish_using(&mut frames,Outcome::ExpressionSourceFailure,origin(3),&a).unwrap();assert!(!frames.as_slice()[0].conditional.active);assert!(frames.as_slice()[0].conditional.branch_taken);let(_,name)=pending(begin_using(&mut frames,Directive::Ifndef,origin(4),&a).unwrap());name.finish_using(&mut frames,Outcome::InvalidRawName,origin(5),&a).unwrap();assert_eq!(frames.len(),1,"invalid named operand did not push a false ifdef");drop(frames);assert_eq!(used.load(Ordering::Acquire),0);}
+ #[test]fn unmatched_and_actual_eof_preserve_exact_old_messages_origins_history_and_lifo_order(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut frames=Rows::new(&a).unwrap();for(command,message)in[(Directive::Else,"unmatched #else"),(Directive::Elif,"unmatched #elif"),(Directive::Endif,"unmatched #endif")]{assert!(matches!(begin_using(&mut frames,command,origin(7),&a).unwrap(),Action::SourceFailure{origin:o,message:m}if o==origin(7)&&m==message));}for at in [1,2]{let(_,work)=pending(begin_using(&mut frames,Directive::If,origin(at),&a).unwrap());work.finish_using(&mut frames,Outcome::Value(at==1),origin(at+10),&a).unwrap();}for at in [12,11]{let missing=pop_at_actual_eof_using(&mut frames,origin(99),&a).unwrap().unwrap();assert_eq!(missing.origin,origin(at));assert_eq!(missing.history.to,origin(99));assert_eq!(missing.message,"unterminated #if/#ifdef");}assert!(pop_at_actual_eof_using(&mut frames,origin(99),&a).unwrap().is_none());drop(frames);assert_eq!(used.load(Ordering::Acquire),0);}
+ #[test]fn typed_first_io_is_not_a_conditional_source_error_or_false_branch_and_new_owner_recovers(){let used=Arc::new(AtomicUsize::new(0));let good=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut frames=Rows::new(&good).unwrap();let(_,first)=pending(begin_using(&mut frames,Directive::If,origin(0),&good).unwrap());first.finish_using(&mut frames,Outcome::Value(true),origin(1),&good).unwrap();let before=snapshot(&frames);let fail=||Err(io::Error::from_raw_os_error(1450));let bad=SettingAdmission::new(&used,1<<20,&fail);assert_eq!(begin_using(&mut frames,Directive::Elif,origin(2),&bad).err().unwrap().raw_os_error(),Some(1450));assert_eq!(snapshot(&frames),before);assert!(is_disabled_using(frames.as_slice(),&bad).is_err());let(_,elif)=pending(begin_using(&mut frames,Directive::Elif,origin(2),&good).unwrap());elif.finish_using(&mut frames,Outcome::Value(false),origin(3),&good).unwrap();assert_eq!(frames.len(),1);drop(frames);assert_eq!(used.load(Ordering::Acquire),0);}
+}

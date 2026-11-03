@@ -27,8 +27,10 @@ fn rows(
     walk: Walk<'_>,
     severity: Severity,
 ) -> Result<Vec<Diagnostic>, String> {
-    let mut out = Vec::new();
-    for event in walk.events {
+    let mut out=Vec::new();visit_events(archive,severity,walk.events,|row|{out.push(row);Ok::<(),String>(())})?;Ok(out)
+}
+pub(crate) fn visit_events<'a,E:From<String>+for<'e>From<&'e str>>(archive:&BodyArchive,severity:Severity,events:impl IntoIterator<Item=Event<'a>>,mut emit:impl FnMut(Diagnostic)->Result<(),E>)->Result<(),E>{
+    for event in events {
         let Event::UnknownReceiverCall {
             expression,
             at,
@@ -40,14 +42,14 @@ fn rows(
         };
         let hint = hint.map_err(str::to_owned)?;
         let notes = crate::checker_static_type_notes::notes(archive, at, hint)?;
-        out.push(Diagnostic {
+        emit(Diagnostic {
             family: "proc_call_static_type",
             severity,
             span: at,
             expression_span: expression.span,
             message: format!("proc call requires static type: {name:?}"),
             notes,
-        });
+        })?;
     }
-    Ok(out)
+    Ok(())
 }

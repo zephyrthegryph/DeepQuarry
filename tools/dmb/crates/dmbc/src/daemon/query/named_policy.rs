@@ -67,7 +67,7 @@ pub(super) fn validate_request(request: &QueryRequest) -> io::Result<()> {
                             | "undefined_variable"
                             | "field_access_static_type"
                             | "no_typehint_implicit_new"
-                            | "proc_call_static_type" | "private_proc" | "protected_proc" | "must_call_parent" | "must_not_override" | "redefined_proc" | "call_arguments" | "filter_call" | "catch_parameter_count" | "static_reference"
+                            | "proc_call_static_type" | "private_proc" | "protected_proc" | "must_call_parent" | "must_not_override" | "redefined_proc" | "call_arguments" | "filter_call" | "catch_parameter_count" | "static_reference" | "iteration_range" | "undefined_type" | "switch_case"
                     )
             }
             SourceQuery::NativeKeywordOverrides{environment,configuration}=>environment.is_absolute()&&configuration.as_ref().is_none_or(|p|p.is_absolute()),
@@ -179,9 +179,9 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
                 environment,
                 configuration,
             } => {
-                let access=matches!(family.as_str(),"private_proc"|"protected_proc"|"must_call_parent"|"must_not_override"|"redefined_proc"|"call_arguments"|"filter_call"|"catch_parameter_count"|"static_reference");
+                let access=matches!(family.as_str(),"private_proc"|"protected_proc"|"must_call_parent"|"must_not_override"|"redefined_proc"|"call_arguments"|"filter_call"|"catch_parameter_count"|"static_reference"|"iteration_range"|"undefined_type"|"switch_case");
                 let mut keys=vec!["row","schema","semantic_revision","source_revision","policy_revision","ordinal","family","environment","configuration","configuration_explicit","configuration_present","configuration_schema","full_checker_parity","diagnostics"];
-                if access{keys.extend(["declaration_profile","native_declaration_error_count"]);}if family=="redefined_proc"{keys.push("untagged_companions");}
+                if access{keys.extend(["declaration_profile","native_declaration_error_count"]);}if matches!(family.as_str(),"redefined_proc"|"switch_case"){keys.push("untagged_companions");}
                 exact(&row,&keys)?;
                 if access {match(row["declaration_profile"].as_str(),row["native_declaration_error_count"].as_u64()){
                   (Some("strict-native-declarations"),Some(0))=>{},
@@ -189,6 +189,7 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
                   (Some("native-diagnostic-source-declarations-v2"|"native-diagnostic-procedure-versions-v3"),Some(count)) if count>0=>{},
                   _=>return Err(invalid("procedure declaration profile")),
                 }}
+                if family=="switch_case"&&row["untagged_companions"]!=serde_json::json!(["do_while_unreachable"]){return Err(invalid("switch fixed flow companion contract"))}
                 if family=="redefined_proc"&&row["untagged_companions"]!=serde_json::json!(["procedure_redeclaration"]){return Err(invalid("redefined procedure companion contract"))}
                 let selected =
                     dm_analysis::check_configuration::select(environment, configuration.as_deref());
@@ -210,7 +211,7 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
                     .as_array()
                     .ok_or_else(|| invalid("diagnostics"))?
                 {
-                    let access=matches!(family.as_str(),"private_proc"|"protected_proc"|"must_call_parent"|"must_not_override"|"redefined_proc"|"call_arguments"|"filter_call"|"catch_parameter_count"|"static_reference");
+                    let access=matches!(family.as_str(),"private_proc"|"protected_proc"|"must_call_parent"|"must_not_override"|"redefined_proc"|"call_arguments"|"filter_call"|"catch_parameter_count"|"static_reference"|"iteration_range"|"undefined_type"|"switch_case");
                     if family=="redefined_proc"{exact(d,&["family","severity","file","line","column","location_kind","expanded_span","expression_span","message","notes","registration_tag"])?;}else if access{exact(d,&["family","severity","file","line","column","location_kind","expanded_span","expression_span","message","notes"])?;}else{
                     exact(
                         d,
@@ -227,13 +228,17 @@ pub(super) fn validate_requested(reply: &QueryReply, questions: &[SourceQuery]) 
                     )?;
                     }
                     let synthetic=matches!(family.as_str(),"private_proc"|"protected_proc"|"call_arguments")&&d["location_kind"]=="parser_synthetic";
-                    let valid_location=if synthetic{d["file"]=="(unknown)"&&d["line"]==0&&d["column"]==0&&d["expanded_span"].is_null()&&d["expression_span"].is_null()}else{(!access||(d["location_kind"]=="source"&&d["column"].as_u64().is_some_and(|n|n>0)))&&d["line"].as_u64().is_some_and(|n|n>0)&&span(&d["expanded_span"])&&span(&d["expression_span"])};
+                    let reader=family=="switch_case"&&d["location_kind"]=="reader_cursor";
+                    let valid_location=if reader{d["line"].as_u64().is_some_and(|n|n>0)&&d["column"].as_u64().is_some_and(|n|n>0)&&d["expanded_span"].is_null()&&span(&d["expression_span"])}else if synthetic{d["file"]=="(unknown)"&&d["line"]==0&&d["column"]==0&&d["expanded_span"].is_null()&&d["expression_span"].is_null()}else{(!access||(d["location_kind"]=="source"&&d["column"].as_u64().is_some_and(|n|n>0)))&&d["line"].as_u64().is_some_and(|n|n>0)&&span(&d["expanded_span"])&&span(&d["expression_span"])};
                     let structural=family=="redefined_proc"&&d["family"]=="procedure_redeclaration"&&d["registration_tag"].is_null()&&d["severity"]=="error";
-                    let tagged=!matches!(family.as_str(),"call_arguments"|"filter_call"|"catch_parameter_count"|"static_reference")&&d["family"]==family.as_str()&&(family!="redefined_proc"||d["registration_tag"]==family.as_str());
+                    let tagged=!matches!(family.as_str(),"call_arguments"|"filter_call"|"catch_parameter_count"|"static_reference"|"iteration_range"|"undefined_type"|"switch_case")&&d["family"]==family.as_str()&&(family!="redefined_proc"||d["registration_tag"]==family.as_str());
                     let argument=matches!(family.as_str(),"call_arguments"|"filter_call")&&(matches!(d["family"].as_str(),Some("bad_keyword_argument"|"non_keyword_after_keyword"))||family=="filter_call"&&d["family"]=="filter_call")&&d["severity"]=="error";
                     let catch=family=="catch_parameter_count"&&d["family"]=="catch_parameter_count"&&d["severity"]=="warning";
                     let static_reference=family=="static_reference"&&d["family"]=="static_reference"&&d["severity"]=="error";
-                    if !(structural||tagged||argument||catch||static_reference)
+                    let undefined_type=family=="undefined_type"&&d["family"]=="undefined_type"&&d["severity"]=="error";
+                    let switch_case=family=="switch_case"&&((d["family"]=="switch_case_or"&&d["severity"]=="warning")||(d["family"]=="do_while_unreachable"&&d["severity"]=="error"&&!reader&&!synthetic));
+                    let iteration=family=="iteration_range"&&((d["family"]=="iteration_maybe_atom"&&d["severity"]=="hint")||(matches!(d["family"].as_str(),Some("iteration_noniterable_type"|"iteration_procpath"|"invalid_for_range"))&&d["severity"]=="error"));
+                    if !(structural||tagged||argument||catch||static_reference||iteration||undefined_type||switch_case)
                         || !matches!(
                             d["severity"].as_str(),
                             Some("error" | "warning" | "info" | "hint")

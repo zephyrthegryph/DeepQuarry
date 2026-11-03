@@ -1,0 +1,4 @@
+//! Same shared sources with actual whole-registry CLI configuration.
+#[path="../native-init-workspace/fixture.rs"]mod source;
+pub use source::CASES;
+pub fn files(case:&str)->Vec<(&'static str,Vec<u8>)>{let mut files=source::files(case);let index=files.iter().position(|(relative,_)|*relative=="tools/ci/lint_scopes.toml").unwrap();let(_,overlay)=files.remove(index);let mut config=String::new();let mut keep=true;for line in include_str!("../../../ci/lint_scopes.toml").split_inclusive('\n'){let head=line.trim_start();if head.starts_with('['){let plain=head.starts_with("[lint.init")&&head.as_bytes().get(10).is_some_and(|b|matches!(*b,b'.'|b']'));let quoted=head.starts_with("[lint.\"init\"");keep=!(plain||quoted);}if keep{config.push_str(line)}}config.push('\n');config.push_str(std::str::from_utf8(&overlay).unwrap());files.push(("tools/ci/lint_scopes.toml",config.into_bytes()));files}

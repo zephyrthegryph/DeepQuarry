@@ -8,8 +8,8 @@ its type: a typed local (`var/obj/belly/B = x`, assigned after `istype`) or a ty
 doc/rewrite/native_compiler_issues.md, untyped receiver";
 
 pub(crate) static META: Meta = Meta {
-    name: "untyped_member",
-    group: "",
+    name: crate::allow_registry_fields::untyped_member::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::untyped_member::SCOPE_META_0.group,
     label: "untyped_member",
     legacy: "",
     select: CODE_DM,
@@ -20,7 +20,7 @@ pub(crate) static META: Meta = Meta {
         hint: HINT,
     }],
     allow: &[],
-    lists: &[],
+    lists: crate::allow_registry_fields::untyped_member::SCOPE_META_0.lists,
 };
 
 pub fn metadata() -> &'static Meta {

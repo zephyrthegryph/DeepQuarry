@@ -165,6 +165,6 @@ fn selftest() -> Result<String, String> {
 pub fn register(reg: &mut Registry) {
     register_module(
         reg,
-        SysModule { name: "dx_raw_delay", rules: RULES, file_scan: Some(scan_file), selftest: Some(selftest), py_selftest: true, ..SysModule::DEFAULT },
+        SysModule { name: crate::allow_registry_fields::sys_dx_raw_delay::SCOPE_MODULE_NAME, rules: RULES, file_scan: Some(scan_file), selftest: Some(selftest), py_selftest: true, ..SysModule::DEFAULT },
     );
 }

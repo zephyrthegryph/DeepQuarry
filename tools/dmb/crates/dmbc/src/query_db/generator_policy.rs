@@ -184,22 +184,43 @@ struct Params {
     name: GeneratorName,
     result: Key,
 }
-pub(super) fn manifest(capture: &CapturedPolicyInputs, root: &Path) -> io::Result<()> {
-    if !matches!(
-        capture.untyped_manifest(root)?,
-        dq_analyze::captured_untyped::ManifestRead::CompiledOriginalBytes(_)
-    ) {
-        return Err(invalid(
-            "generator requires original compiled manifest acquisition",
-        ));
-    }
-    let path = root.join("deepquarry.dme");
-    let file = capture.policy().file(&path).ok_or_else(|| {
-        invalid("generator manifest requires explicit current AnalyzeRaw capture")
-    })?;
-    file.view(TextView::AnalyzeRaw)
-        .map_err(|e| invalid(e.to_string()))?;
-    Ok(())
+/// Physical manifest membership requires the SAME current acquisition and an
+/// actual AnalyzeRaw view. A private generated header has no such authority.
+fn physical_manifest(capture:&CapturedPolicyInputs,path:&Path,lease:&dm_preprocess::SourceAcquisitionLease)->io::Result<()>{
+ let file=capture.policy().file_exact(path).ok_or_else(||invalid("actual generator root has no exact captured manifest"))?;
+ let decoded=file.view(TextView::CompilerDecoded).map_err(|error|invalid(error.to_string()))?;
+ if !file.is_compiled()||file.role()!=dm_analysis::policy_inputs::PolicyRole::DmSource||!decoded.same_view(lease.source_text()){return Err(invalid("generator captured manifest differs from the actual root acquisition"))}
+ file.view(TextView::AnalyzeRaw).map_err(|error|invalid(error.to_string()))?;Ok(())
+}
+pub(super) fn manifest(capture:&CapturedPolicyInputs,root:&Path)->io::Result<()>{
+ use dq_analyze::captured_untyped::ManifestRead;
+ if let Some(subject)=capture.original_analysis_subject(){
+  // Authored spelling controls output placement. The complete subject, SAME
+  // mapping and actual issued root lease alone select the fixed-manifest fact.
+  let mapping=capture.policy().mapping();subject.require_bound_mapping(mapping)?;
+  enum Stop{Source(&'static str),Operational(io::Error)}
+  impl From<&'static str> for Stop{fn from(message:&'static str)->Self{Self::Source(message)}}
+  let(_,entry,path,lease)=mapping.original_root_acquisition_using(&mut||crate::daemon::control::checkpoint().map_err(Stop::Operational)).map_err(|failure|match failure{Stop::Source(message)=>invalid(message),Stop::Operational(actual)=>actual})?;
+  if subject.generation_workspace_root(entry,lease)?!=root{return Err(invalid("generator authored root differs from its actual Original subject"))}
+  // Keep the captured intent/evidence preflight. It lends the SAME subject's
+  // fixed original bytes or exact absence; no filesystem reopen is permitted.
+  let captured=capture.untyped_manifest(root)?;let actual=subject.generation_manifest(root,entry,lease)?;
+  if subject.synthetic(){
+   if path!=entry||!subject.authenticates_header(entry,lease){return Err(invalid("generator synthetic root lacks its actual private header receipt"))}
+   return match(actual,captured){
+    (ManifestRead::ProvenUnavailable,ManifestRead::ProvenUnavailable)=>Ok(()),
+    (ManifestRead::OriginalBytes(expected),ManifestRead::OriginalBytes(current))if std::ptr::eq(expected,current)=>Ok(()),
+    _=>Err(invalid("generator synthetic subject cannot mint physical compiled-manifest authority")),
+   }
+  }
+  if !matches!((actual,captured),(ManifestRead::CompiledOriginalBytes(expected),ManifestRead::CompiledOriginalBytes(current))if std::ptr::eq(expected,current)){return Err(invalid("generator requires original compiled manifest acquisition"))}
+  return physical_manifest(capture,path,lease)
+ }
+ // Existing bounded/non-Original contract is unchanged: absence or a fixed
+ // noncompiled file never grants permission for a compiler-manifest request.
+ if !matches!(capture.untyped_manifest(root)?,ManifestRead::CompiledOriginalBytes(_)){return Err(invalid("generator requires original compiled manifest acquisition"))}
+ let path=root.join("deepquarry.dme");let file=capture.policy().file(&path).ok_or_else(||invalid("generator manifest requires explicit current AnalyzeRaw capture"))?;
+ file.view(TextView::AnalyzeRaw).map_err(|error|invalid(error.to_string()))?;Ok(())
 }
 pub(super) fn register(db: &Db, charge: Arc<AtomicUsize>, admission: Arc<Admission>) {
     db.define(
@@ -628,3 +649,7 @@ impl super::QueryDb {
   Ok(())
  }
 }
+
+#[cfg(test)]impl QueryDb{pub(crate) fn require_actual_generator_manifest_for_test(capture:&CapturedPolicyInputs,root:&Path)->io::Result<()>{manifest(capture,root)}}
+
+#[cfg(test)]impl QueryDb{pub(crate) fn require_physical_generator_manifest_for_test(capture:&CapturedPolicyInputs,path:&Path,lease:&dm_preprocess::SourceAcquisitionLease)->io::Result<()>{physical_manifest(capture,path,lease)}}

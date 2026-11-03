@@ -45,6 +45,7 @@ impl ParameterToken for SpanToken {
 pub struct ParameterSyntax {
     ordinal: usize,
     name: Span,
+    declaration_cursor:Span,
     variadic: bool,
     type_components: Box<[Span]>,
     source_modifiers: u8,
@@ -65,6 +66,8 @@ impl ParameterSyntax {
     pub fn name(&self) -> Span {
         self.name
     }
+    /// Actual following primary token after the parameter path, before suffix/default.
+    pub fn declaration_cursor(&self)->Span{self.declaration_cursor}
     pub fn variadic(&self) -> bool {
         self.variadic
     }
@@ -78,6 +81,11 @@ impl ParameterSyntax {
         &self.array_brackets
     }
     pub fn type_path(&self, source: &str) -> Result<Option<String>, &'static str> {
+        self.type_path_using(|span|source.get(span.range()).ok_or("original parameter component outside arena"))
+    }
+    /// One type-path algorithm over the caller's authenticated source view.
+    /// The callback projects coordinates; it does not supply a second syntax tree.
+    pub fn type_path_using<'s>(&self, mut source:impl FnMut(Span)->Result<&'s str,&'static str>) -> Result<Option<String>, &'static str> {
         if self.variadic {
             return Ok(None);
         }
@@ -89,9 +97,7 @@ impl ParameterSyntax {
         for span in &self.type_components {
             out.push('/');
             out.push_str(
-                source
-                    .get(span.range())
-                    .ok_or("original parameter component outside arena")?,
+                source(*span)?,
             )
         }
         Ok((!out.is_empty()).then_some(out))
@@ -117,7 +123,7 @@ impl HeaderTypeDeclarationSyntax {
             .ok_or("absolute header declaration outside original source")
     }
 }
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct ParameterSignature {
     header: Span,
     entries: Box<[ParameterSyntax]>,
@@ -205,11 +211,15 @@ pub(crate) fn trivia<T: ParameterToken>(t: &T) -> bool {
         TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment
     )
 }
+#[derive(Clone,Copy,Eq,PartialEq)]enum FormalPathProfile{Compiler,Original0290}
 fn one<T: ParameterToken>(
     source: &str,
     tokens: &[T],
     ordinal: usize,
     base: usize,
+    following:Span,
+    defaults:&mut Option<&mut dyn crate::ParameterDefaultSyntaxProvider>,
+    profile:FormalPathProfile,
 ) -> Result<ParameterSyntax, &'static str> {
     let mut significant = tokens
         .iter()
@@ -222,7 +232,8 @@ fn one<T: ParameterToken>(
         .peek()
         .is_some_and(|(_, t)| t.text(source) == "/")
     {
-        return Err("absolute parameter-header declaration is outside pinned parameter issuance");
+        if profile==FormalPathProfile::Compiler{return Err("absolute parameter-header declaration is outside pinned parameter issuance");}
+        significant.next();
     }
     // Primary lexing retains punctuation one byte at a time. The pinned
     // ellipsis requires the three ORIGINAL dots to be byte-adjacent.
@@ -248,6 +259,7 @@ fn one<T: ParameterToken>(
         return Ok(ParameterSyntax {
             ordinal,
             name: shift(Span::new(first.span().start, third.span().end), base)?,
+            declaration_cursor:shift(third.span(),base)?,
             variadic: true,
             type_components: Box::default(),
             source_modifiers: 0,
@@ -265,6 +277,7 @@ fn one<T: ParameterToken>(
             return Ok(ParameterSyntax {
                 ordinal,
                 name: shift(t.span(), base)?,
+                declaration_cursor:shift(t.span(),base)?,
                 variadic: true,
                 type_components: Box::default(),
                 source_modifiers: 0,
@@ -290,6 +303,7 @@ fn one<T: ParameterToken>(
         }
         break;
     }
+    let declaration_cursor=shift(significant.peek().map_or(following,|(_,token)|token.span()),base)?;
     let name = path.pop().ok_or("parameter original name missing")?;
     if path
         .first()
@@ -345,7 +359,7 @@ fn one<T: ParameterToken>(
             return Err("parameter type path has an unissued following cursor");
         }
     }
-    let expressions = crate::parameter_expressions::issue(source, tokens, &brackets, base);
+    let expressions = if profile==FormalPathProfile::Original0290{crate::parameter_expressions::issue_original_with_default_provider(source,tokens,&brackets,base,ordinal,defaults)}else{crate::parameter_expressions::issue_with_default_provider(source,tokens,&brackets,base,ordinal,defaults)};
     let components = path[prefix..]
         .iter()
         .map(|s| shift(*s, base))
@@ -357,6 +371,7 @@ fn one<T: ParameterToken>(
     Ok(ParameterSyntax {
         ordinal,
         name: shift(name, base)?,
+        declaration_cursor,
         variadic: false,
         type_components: components,
         source_modifiers: flags,
@@ -410,18 +425,21 @@ fn append<T: ParameterToken>(
     base: usize,
     rows: &mut Vec<ParameterSyntax>,
     declarations: &mut Vec<HeaderTypeDeclarationSyntax>,
+    following:Span,
+    defaults:&mut Option<&mut dyn crate::ParameterDefaultSyntaxProvider>,
+    profile:FormalPathProfile,
 ) -> Result<(), &'static str> {
     if rows.iter().any(ParameterSyntax::variadic) {
         return Err("original header entry follows variadic marker");
     }
-    if tokens
+    if profile==FormalPathProfile::Compiler && tokens
         .iter()
         .find(|t| !trivia(*t))
         .is_some_and(|t| t.text(source) == "/")
     {
         declarations.push(absolute(source, tokens, declarations.len(), base)?);
     } else {
-        rows.push(one(source, tokens, rows.len(), base)?);
+        rows.push(one(source,tokens,rows.len(),base,following,defaults,profile)?);
     }
     Ok(())
 }
@@ -456,7 +474,16 @@ fn issue_tokens<T: ParameterToken>(
     tokens: &[T],
     header: Span,
     base: usize,
-) -> ParameterSignature {
+) -> ParameterSignature {issue_tokens_with_defaults(source,tokens,header,base,&mut None,FormalPathProfile::Compiler)}
+/// SAME native parameter/path/annotation producer with already-owned default
+/// roots. Missing provider data is a refusal; it never calls the default parser.
+pub fn parameter_signature_with_default_roots(source:&str,tokens:&[SpanToken],header:Span,base:usize,defaults:&mut dyn crate::ParameterDefaultSyntaxProvider)->ParameterSignature{issue_tokens_with_defaults(source,tokens,header,base,&mut Some(defaults),FormalPathProfile::Compiler)}
+/// Original syntax DATA only. The current genuine frontend/header owner must
+/// independently select and authenticate its role; this issues no model grant.
+pub fn parameter_signature_original_with_default_roots(source:&str,tokens:&[SpanToken],header:Span,base:usize,defaults:&mut Option<&mut dyn crate::ParameterDefaultSyntaxProvider>)->ParameterSignature{issue_tokens_with_defaults(source,tokens,header,base,defaults,FormalPathProfile::Original0290)}
+#[cfg(test)]thread_local!{pub(crate) static PARAMETER_SIGNATURE_ISSUANCES:std::cell::Cell<usize>=const{std::cell::Cell::new(0)};}
+fn issue_tokens_with_defaults<T:ParameterToken>(source:&str,tokens:&[T],header:Span,base:usize,defaults:&mut Option<&mut dyn crate::ParameterDefaultSyntaxProvider>,profile:FormalPathProfile)->ParameterSignature{
+    #[cfg(test)]PARAMETER_SIGNATURE_ISSUANCES.with(|counter|counter.set(counter.get()+1));
     let result = (|| -> Result<(Box<[ParameterSyntax]>,Box<[HeaderTypeDeclarationSyntax]>), &'static str> {
         let first = tokens
             .iter()
@@ -488,7 +515,7 @@ fn issue_tokens<T: ParameterToken>(
                     }
                     if stack.is_empty() {
                         if tokens[begin..i].iter().any(|t| !trivia(t)) {
-                            append(source,&tokens[begin..i],base,&mut rows,&mut declarations)?
+                            append(source,&tokens[begin..i],base,&mut rows,&mut declarations,t.span(),defaults,profile)?
                         }
                         return Ok((rows.into_boxed_slice(),declarations.into_boxed_slice()));
                     }
@@ -497,7 +524,7 @@ fn issue_tokens<T: ParameterToken>(
                     if tokens[begin..i].iter().all(trivia) {
                         return Err("empty original parameter between separators");
                     }
-                    append(source,&tokens[begin..i],base,&mut rows,&mut declarations)?;
+                    append(source,&tokens[begin..i],base,&mut rows,&mut declarations,t.span(),defaults,profile)?;
                     begin = i + 1;
                 }
                 _ => (),
@@ -573,4 +600,13 @@ mod aggregate_optional_admission_tests {
         assert_eq!(exact.retained_bytes(), metadata);
         assert!(exact.entries().unwrap()[0].expressions().is_err());
     }
+}
+
+#[cfg(test)]mod original_absolute_parameter_profile_tests{
+ use super::*;
+ #[test]fn same_actual_span_tokens_issue_original_absolute_parameters_without_compiler_declaration_rows(){
+  let source="/proc/p(/datum/a/value, /foo)\n    return\n";let primary=crate::parse_declaration_skeleton(source);assert!(primary.diagnostics.is_empty());let header=primary.items[0].header_span;
+  let original=parameter_signature_original_with_default_roots(source,&primary.tokens,header,0,&mut None);let entries=original.entries().unwrap();assert_eq!(entries.len(),2);assert_eq!(&source[entries[0].name().range()],"value");assert_eq!(&source[entries[1].name().range()],"foo");assert!(original.absolute_declarations().unwrap().is_empty());
+  let compiler=issue_spans(source,&primary.tokens,header,0);assert!(compiler.entries().unwrap().is_empty());assert_eq!(compiler.absolute_declarations().unwrap().len(),2);
+ }
 }

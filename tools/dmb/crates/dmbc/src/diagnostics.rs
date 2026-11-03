@@ -167,7 +167,8 @@ fn write_one(
     message: &str,
 ) -> io::Result<()> {
     let classification = match kind {
-        DiagnosticKind::SourceError => "error",
+        DiagnosticKind::SourceError | DiagnosticKind::OriginalFatalInput{..} | DiagnosticKind::OriginalFatalParameter{..} | DiagnosticKind::OriginalFatalDeclaration{..} => "error",
+        DiagnosticKind::OriginalFormalNotice{notice,..} => match notice.registration().1{dm_tree::OriginalFormalNoticeLevel::Error=>"error",dm_tree::OriginalFormalNoticeLevel::Warning=>"warning",dm_tree::OriginalFormalNoticeLevel::Hint=>"hint"},
         DiagnosticKind::UnsupportedModel => "native unsupported",
         DiagnosticKind::Internal => "internal compiler error",
     };
@@ -190,7 +191,14 @@ fn write_one(
                 location.line + shift
             )?;
         }
-        count_error();
+        match kind {
+            DiagnosticKind::OriginalFormalNotice{notice,..}=>match notice.registration().1{
+                dm_tree::OriginalFormalNoticeLevel::Error=>count_error(),
+                dm_tree::OriginalFormalNoticeLevel::Warning=>count_warning(notice.registration().0),
+                dm_tree::OriginalFormalNoticeLevel::Hint=>(),
+            },
+            _=>count_error(),
+        }
         // DreamMaker prints no space before a goto label diagnostic.
         if kind == DiagnosticKind::SourceError && line.starts_with("goto ") {
             writeln!(output, "{classification}:{line}")?;
@@ -268,3 +276,24 @@ pub fn refine(diagnostics: &mut [Diagnostic]) {
         diagnostic.message = message;
     }
 }
+
+#[cfg(test)]
+#[path="diagnostics_original_fatal_tests.rs"]
+mod original_fatal_tests;
+
+/// The native public error borrows its actual funded source message from the
+/// returned report. No Vec/String extraction can outlive the report credit.
+struct RetainedPreparationFailure{report:dm_tree::frontend::FrontendDiagnostics,classification:crate::request_failure::RequestFailure,source_message:bool,fallback:&'static str,_credit:dm_syntax::SettingRootLease}
+impl std::fmt::Debug for RetainedPreparationFailure{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("RetainedPreparationFailure").field("report",&self.report).field("classification",&self.classification).finish()}}
+impl RetainedPreparationFailure{fn actual_message(&self)->&str{if self.source_message&&self.classification.kind==crate::request_failure::FailureKind::Source{if let Some(row)=self.report.iter().find(|row|row.kind.is_source_error()){return &row.message}}self.fallback}}
+impl std::fmt::Display for RetainedPreparationFailure{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{self.actual_message().fmt(f)}}
+impl std::error::Error for RetainedPreparationFailure{fn source(&self)->Option<&(dyn std::error::Error+'static)>{Some(&self.classification)}}
+pub fn retained_preparation_failure(report:dm_tree::frontend::FrontendDiagnostics,kind:crate::request_failure::FailureKind,source_message:bool,fallback:&'static str,host:&dyn dm_tree::frontend::SettingExpressionQueries)->Result<Box<dyn std::error::Error+Send+Sync>,dm_tree::frontend::BodySyntaxFailure>{
+ let mut credit=None;host.with_declaration_admission(&mut|a|{if credit.is_some()||!report.is_admitted_by(a){return Err(dm_tree::frontend::BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"returned diagnostic report belongs to another actual native output domain")))}let actual=a.reserve(std::mem::size_of::<RetainedPreparationFailure>()).map_err(|error|dm_tree::frontend::BodySyntaxFailure::Operational(a.take_operational_error().unwrap_or(error)))?;credit=Some(actual);Ok(())})?;
+ let credit=credit.ok_or_else(||dm_tree::frontend::BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual terminal report admission callback was omitted")))?;
+ Ok(Box::new(RetainedPreparationFailure{report,classification:crate::request_failure::RequestFailure{kind,message:String::new()},source_message,fallback,_credit:credit}))
+}
+
+/// Borrow only the concrete retained public failure's actual display fields.
+/// Other error types keep their existing presentation/transport path.
+pub(crate) fn retained_preparation_failure_parts<'a>(error:&'a(dyn std::error::Error+'static))->Option<(crate::request_failure::FailureKind,&'a str)>{let actual=error.downcast_ref::<RetainedPreparationFailure>()?;Some((actual.classification.kind,actual.actual_message()))}

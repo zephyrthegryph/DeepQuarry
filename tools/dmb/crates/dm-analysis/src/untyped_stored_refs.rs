@@ -48,6 +48,8 @@ fn maximum_spelling(table: &dm_ir::SymbolTable) -> usize {
     }
     longest
 }
+fn maximum_spelling_using<E>(table:&dm_ir::SymbolTable,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<usize,E>{checkpoint()?;let mut longest=0;let mut failure=None;let storage=table.visit_storage(|_,word|{if failure.is_none(){match checkpoint(){Ok(())=>longest=longest.max(word.len()),Err(actual)=>failure=Some(actual)}}});if let Some(actual)=failure{return Err(actual)}if let Some(parent)=storage.parent{longest=longest.max(maximum_spelling_using(parent,checkpoint)?);}Ok(longest)}
+
 /// Scalar census over ORIGINAL issued header spans and provider path widths.
 /// No source spelling allocation, second parser, or retained declaration table.
 fn maximum_policy_temporary_width(
@@ -56,17 +58,20 @@ fn maximum_policy_temporary_width(
     root: &Path,
     mut checkpoint: impl FnMut() -> Result<(), String>,
 ) -> Result<usize, Unsupported> {
-    fn header_width(
+    maximum_policy_temporary_width_using(archive,inputs,root,&mut||checkpoint().map_err(Unsupported),false)
+}
+fn maximum_policy_temporary_width_using<E:From<Unsupported>>(archive:&dm_tree::frontend::BodyArchive,inputs:&PolicyInputs,root:&Path,mut checkpoint:impl FnMut()->Result<(),E>,checked:bool)->Result<usize,E>{
+    fn header_width<E:From<Unsupported>>(
         item: dm_tree::frontend::ItemView<'_>,
         depth: usize,
         ancestor_width: usize,
-        checkpoint: &mut dyn FnMut() -> Result<(), String>,
-    ) -> Result<usize, Unsupported> {
-        checkpoint().map_err(Unsupported)?;
-        if depth > 128 {
+        checkpoint: &mut dyn FnMut() -> Result<(), E>,checked:bool,
+    ) -> Result<usize, E> {
+        checkpoint()?;
+        if !checked&&depth > 128 {
             return Err(Unsupported(
                 "stored original header census exceeds bounded nesting admission".into(),
-            ));
+            ).into());
         }
         let span = item.header_span();
         let own_width = span
@@ -89,16 +94,16 @@ fn maximum_policy_temporary_width(
             dm_syntax::ItemKind::Proc | dm_syntax::ItemKind::Verb
         ) {
             for child in item.children() {
-                widest = widest.max(header_width(child, depth + 1, current_width, checkpoint)?);
+                widest = widest.max(header_width(child,depth+1,current_width,checkpoint,checked)?);
             }
         }
         Ok(widest)
     }
-    let mut widest = maximum_spelling(archive.tree().symbols());
+    let mut widest = maximum_spelling_using(archive.tree().symbols(),&mut checkpoint)?;
     // OsStr::len is its encoded platform width. UTF8-lossy replacement can
     // expand an invalid byte to three bytes; reserve that without formatting.
     for path in std::iter::once(root).chain(inputs.files().map(|f| f.path().as_path())) {
-        checkpoint().map_err(Unsupported)?;
+        checkpoint()?;
         widest = widest.max(
             path.as_os_str()
                 .len()
@@ -106,10 +111,11 @@ fn maximum_policy_temporary_width(
                 .ok_or_else(|| Unsupported("stored provider path expansion overflow".into()))?,
         );
     }
-    let mut headers: Result<usize, Unsupported> = Ok(0usize);
+    let mut headers: Result<usize, E> = Ok(0usize);
     archive.visit_storage(|_, syntax, _| {
+        if headers.is_err(){return;}
         headers = syntax.items().try_fold(0usize, |wide, item| {
-            Ok(wide.max(header_width(item, 0, 0, &mut checkpoint)?))
+            Ok(wide.max(header_width(item,0,0,&mut checkpoint,checked)?))
         });
     });
     Ok(widest.max(headers?))
@@ -125,17 +131,21 @@ fn ancestry(
     profile: PackedU128,
     path: &str,
 ) -> Result<std::sync::Arc<[SymbolId]>, Unsupported> {
+    ancestry_using(tree,profile,path,&mut||Ok::<(),Unsupported>(()))
+}
+fn ancestry_using<E:From<Unsupported>+From<String>>(tree:&SemanticTree,profile:PackedU128,path:&str,poll:&mut impl FnMut()->Result<(),E>)->Result<std::sync::Arc<[SymbolId]>,E>{
+    poll()?;
     if !tree
         .checker_source_type_presence(profile, path)
         .map_err(|e| Unsupported(format!("{e:?}")))?
     {
         return Ok(std::sync::Arc::from([]));
     }
-    match Resolver::resolve(tree, Q::Ancestry(SymbolId::of(path))) {
+    poll()?;match Resolver::resolve(tree, Q::Ancestry(SymbolId::of(path))) {
         M::Symbols(xs) => Ok(xs),
         _ => Err(Unsupported(
             "stored-reference original ancestry unavailable".into(),
-        )),
+        ).into()),
     }
 }
 fn subtype(
@@ -144,10 +154,14 @@ fn subtype(
     child: &str,
     parent: &str,
 ) -> Result<bool, Unsupported> {
+    subtype_using(tree,profile,child,parent,&mut||Ok::<(),Unsupported>(()))
+}
+fn subtype_using<E:From<Unsupported>+From<String>>(tree:&SemanticTree,profile:PackedU128,child:&str,parent:&str,poll:&mut impl FnMut()->Result<(),E>)->Result<bool,E>{
+    poll()?;
     if child == parent {
         return Ok(true);
     }
-    Ok(ancestry(tree, profile, child)?.contains(&SymbolId::of(parent)))
+    Ok(ancestry_using(tree,profile,child,poll)?.contains(&SymbolId::of(parent)))
 }
 fn compatible(
     tree: &SemanticTree,
@@ -155,7 +169,10 @@ fn compatible(
     a: &str,
     b: &str,
 ) -> Result<bool, Unsupported> {
-    Ok(a == b || subtype(tree, profile, a, b)? || subtype(tree, profile, b, a)?)
+    compatible_using(tree,profile,a,b,&mut||Ok::<(),Unsupported>(()))
+}
+fn compatible_using<E:From<Unsupported>+From<String>>(tree:&SemanticTree,profile:PackedU128,a:&str,b:&str,poll:&mut impl FnMut()->Result<(),E>)->Result<bool,E>{
+    Ok(a == b || subtype_using(tree,profile,a,b,poll)? || subtype_using(tree,profile,b,a,poll)?)
 }
 fn holder_exempt(
     tree: &SemanticTree,
@@ -163,11 +180,14 @@ fn holder_exempt(
     p: &StoredPolicy<'_>,
     owner: &str,
 ) -> Result<bool, Unsupported> {
-    if owner != "/datum/pooled" && subtype(tree, profile, owner, "/datum/pooled")? {
+    holder_exempt_using(tree,profile,p,owner,&mut||Ok::<(),Unsupported>(()))
+}
+fn holder_exempt_using<E:From<Unsupported>+From<String>>(tree:&SemanticTree,profile:PackedU128,p:&StoredPolicy<'_>,owner:&str,poll:&mut impl FnMut()->Result<(),E>)->Result<bool,E>{
+    if owner != "/datum/pooled" && subtype_using(tree,profile,owner,"/datum/pooled",poll)? {
         return Ok(true);
     }
-    for ty in p.transient_types {
-        if subtype(tree, profile, owner, ty)? {
+    for ty in p.transient_types {poll()?;
+        if subtype_using(tree,profile,owner,ty,poll)? {
             return Ok(true);
         }
     }
@@ -180,9 +200,12 @@ fn related(
     owner: &str,
     name: &str,
 ) -> Result<bool, Unsupported> {
+    related_using(tree,profile,p,owner,name,&mut||Ok::<(),Unsupported>(()))
+}
+fn related_using<E:From<Unsupported>+From<String>>(tree:&SemanticTree,profile:PackedU128,p:&StoredPolicy<'_>,owner:&str,name:&str,poll:&mut impl FnMut()->Result<(),E>)->Result<bool,E>{
     if let Some(types) = p.relations.get(name) {
-        for ty in types {
-            if compatible(tree, profile, owner, ty)? {
+        for ty in types {poll()?;
+            if compatible_using(tree,profile,owner,ty,poll)? {
                 return Ok(true);
             }
         }
@@ -225,24 +248,27 @@ fn method_chain<'a>(e: &'a Expr, out: &mut Vec<(&'a Expr, &'a Expr, &'a str, &'a
     }
 }
 fn stored_ref(w: &Walker<'_, SemanticTree>, e: &Expr) -> Result<bool, Unsupported> {
-    if let Some(args) = literal(e) {
-        for arg in args {
-            if let ExprKind::Binary { op, lhs, rhs } = &node(arg).kind {
+    stored_ref_using(w,e,&mut||Ok::<(),Unsupported>(()))
+}
+fn stored_ref_using<E:From<Unsupported>+From<String>>(w:&Walker<'_,SemanticTree>,e:&Expr,poll:&mut impl FnMut()->Result<(),E>)->Result<bool,E>{
+    poll()?;if let Some(args)=literal_using(e,poll)?{
+        for arg in args {poll()?;
+            if let ExprKind::Binary { op, lhs, rhs } = &ungroup_using(arg,poll)?.kind {
                 if op == "=" {
-                    if stored_ref(w, lhs)? || stored_ref(w, rhs)? {
+                    if stored_ref_using(w,lhs,poll)? || stored_ref_using(w,rhs,poll)? {
                         return Ok(true);
                     }
                     continue;
                 }
             }
-            if stored_ref(w, arg)? {
+            if stored_ref_using(w,arg,poll)? {
                 return Ok(true);
             }
         }
         return Ok(false);
     }
-    match w.player_link_receiver_type(e)? {
-        Some(t) => w.is_ref(&t),
+    match w.player_link_receiver_type_using(e,poll)? {
+        Some(t) => w.is_ref_using(&t,poll),
         None => Ok(false),
     }
 }
@@ -251,6 +277,10 @@ fn member_place(
     owner: &str,
     name: &str,
 ) -> Result<Option<Place>, Unsupported> {
+    member_place_using(w,owner,name,&mut||Ok::<(),Unsupported>(()))
+}
+fn member_place_using<E:From<Unsupported>+From<String>>(w:&Walker<'_,SemanticTree>,owner:&str,name:&str,poll:&mut impl FnMut()->Result<(),E>)->Result<Option<Place>,E>{
+    poll()?;
     if owner.is_empty() {
         return Ok(None);
     }
@@ -265,15 +295,14 @@ fn member_place(
     {
         return Ok(None);
     }
-    Ok(crate::checker_variable_facts::variable(
+    Ok(crate::checker_variable_facts::variable_using(
         w.tree,
         w.tree,
         profile,
         SymbolId::of(owner),
-        SymbolId::of(name),
-    )
-    .map_err(Unsupported)?
-    .map(|v| text(w.tree, v.owner).map(|o| Place::Member(o.into(), name.into())))
+        SymbolId::of(name),poll,
+    )?
+    .map(|v| text(w.tree,v.owner).map(|o|Place::Member(o.into(),name.into())).map_err(E::from))
     .transpose()?)
 }
 fn place_of(
@@ -283,10 +312,14 @@ fn place_of(
     e: &Expr,
     inputs: &PolicyInputs,
 ) -> Result<Option<Place>, Unsupported> {
+    place_of_using(sc,root,rel,e,inputs,&mut||Ok::<(),Unsupported>(()))
+}
+fn place_of_using<E:From<Unsupported>+From<String>>(sc:&stored_refs_scope::StoredScope<'_>,root:&Path,rel:&str,e:&Expr,inputs:&PolicyInputs,poll:&mut impl FnMut()->Result<(),E>)->Result<Option<Place>,E>{
+    poll()?;
     let w = &sc.walker;
     // Shape-only expression lookup. Static-list origins below come from SAME
     // current SourceLocalView declaration facts, not this Expr's coordinates.
-    match &node(e).kind {
+    match &ungroup_using(e,poll)?.kind {
         ExprKind::Ident(n) => {
             if w.locals.contains_key(n) {
                 return sc
@@ -302,21 +335,25 @@ fn place_of(
                     })
                     .transpose();
             }
-            member_place(w, text(w.tree, w.owner)?, n)
+            member_place_using(w,text(w.tree,w.owner)?,n,poll)
         }
         ExprKind::Member {
             object, selector, ..
         }
         | ExprKind::SafeMember {
             object, selector, ..
-        } => match w.player_link_receiver_type(object)? {
-            Some(t) => member_place(w, &t, selector),
+        } => match w.player_link_receiver_type_using(object,poll)? {
+            Some(t) => member_place_using(w,&t,selector,poll),
             None => Ok(None),
         },
         _ => Ok(None),
     }
 }
 fn list_place(w: &Walker<'_, SemanticTree>, p: &Place) -> Result<bool, Unsupported> {
+    list_place_using(w,p,&mut||Ok::<(),Unsupported>(()))
+}
+fn list_place_using<E:From<Unsupported>+From<String>>(w:&Walker<'_,SemanticTree>,p:&Place,poll:&mut impl FnMut()->Result<(),E>)->Result<bool,E>{
+    poll()?;
     let Place::Member(owner, name) = p else {
         return Ok(true);
     };
@@ -324,14 +361,13 @@ fn list_place(w: &Walker<'_, SemanticTree>, p: &Place) -> Result<bool, Unsupport
         .tree
         .checker_builtin_profile()
         .ok_or_else(|| Unsupported("stored list profile unavailable".into()))?;
-    let Some(fact) = crate::checker_variable_facts::variable(
+    let Some(fact) = crate::checker_variable_facts::variable_using(
         w.tree,
         w.tree,
         profile,
         SymbolId::of(owner),
-        SymbolId::of(name),
-    )
-    .map_err(Unsupported)?
+        SymbolId::of(name),poll,
+    )?
     else {
         return Ok(false);
     };
@@ -372,6 +408,13 @@ fn point(
             .map_err(|e| Unsupported(e.to_string()))?,
     ))
 }
+fn literal_using<'a,E>(e:&'a Expr,poll:&mut impl FnMut()->Result<(),E>)->Result<Option<&'a[Expr]>,E>{let ExprKind::Call{callee,args}=&ungroup_using(e,poll)?.kind else{return Ok(None)};Ok(matches!(&callee.kind,ExprKind::Ident(n)if n=="list").then_some(args.as_ref()))}
+fn method_chain_using<'a,W:crate::policy_body_demand::WorkspaceWork>(e:&'a Expr,out:&mut Vec<(&'a Expr,&'a Expr,&'a str,&'a[Expr])>,work:&mut W)->Result<(),W::Error>{work.checkpoint()?;match &e.kind{ExprKind::Call{callee,args}=>match &callee.kind{ExprKind::Member{object,selector,..}|ExprKind::SafeMember{object,selector,..}=>{method_chain_using(object,out,work)?;if W::CHECKED{work.retain(256)?;out.try_reserve(1).map_err(|_|work.allocation_failed())?;}out.push((e,object,selector,args));},_=>()},ExprKind::Member{object,..}|ExprKind::SafeMember{object,..}|ExprKind::Index{object,..}|ExprKind::SafeIndex{object,..}=>method_chain_using(object,out,work)?,_=>()}Ok(())}
+fn charge_using<W:crate::policy_body_demand::WorkspaceWork>(remaining:&mut usize,n:usize,work:&mut W)->Result<(),W::Error>{work.checkpoint()?;if W::CHECKED{work.retain(n)}else{charge(remaining,n).map_err(W::Error::from)}}
+fn strings_charge_using<W:crate::policy_body_demand::WorkspaceWork>(parts:&[&str],remaining:&mut usize,work:&mut W)->Result<(),W::Error>{let n=parts.iter().try_fold(512usize,|n,p|n.checked_add(p.len().checked_mul(8)?)).ok_or_else(||work.overflow())?;charge_using(remaining,n,work)}
+struct ExistingStoredDemand<'a,D:crate::policy_body_demand::Demand>{poll:&'a mut dyn FnMut()->Result<(),String>,d:std::marker::PhantomData<D>}
+impl<D:crate::policy_body_demand::Demand> crate::policy_body_demand::WorkspaceWork for ExistingStoredDemand<'_,D>{type Error=D::Error;const CHECKED:bool=false;fn checkpoint(&mut self)->Result<(),D::Error>{(self.poll)().map_err(|e|Unsupported(e).into())}fn retain(&mut self,_:usize)->Result<(),D::Error>{Ok(())}fn temporary(&mut self,_:usize)->Result<(),D::Error>{Ok(())}fn overflow(&mut self)->D::Error{Unsupported("stored-reference geometry overflow".into()).into()}fn allocation_failed(&mut self)->D::Error{Unsupported("stored-reference allocation refused".into()).into()}fn body<'a>(&mut self,a:&'a dm_tree::frontend::BodyArchive,n:usize)->Result<ArchivedBody<'a>,D::Error>{D::parse(a,n)}}
+
 /// Complete legacy observations on supported ORIGINAL primary domains. Qualified
 /// parameter receipts are mandatory; unissued local-array traversal REFUSES.
 pub fn stored_findings(
@@ -406,8 +449,11 @@ pub fn stored_findings_with<D: crate::policy_body_demand::Demand>(
     remaining: &mut usize,
     checkpoint: impl FnMut() -> Result<(), String>,
 ) -> Result<Vec<StoredFinding>, D::Error> {
-    let checkpoint = std::cell::RefCell::new(checkpoint);
-    (checkpoint.borrow_mut())().map_err(Unsupported)?;
+    let mut checkpoint=checkpoint;let mut work=ExistingStoredDemand::<D>{poll:&mut checkpoint,d:std::marker::PhantomData};stored_findings_workspace_using(inputs,root,p,exempt,remaining,&mut work,&mut|owner,name,_|Ok((p.has_schema)(owner,name)))
+}
+pub fn stored_findings_workspace_using<W:crate::policy_body_demand::WorkspaceWork>(inputs:&PolicyInputs,root:&Path,p:&StoredPolicy<'_>,exempt:impl Fn(&str)->bool,remaining:&mut usize,work:&mut W,has_schema:&mut impl FnMut(&str,&str,&mut W)->Result<bool,W::Error>)->Result<Vec<StoredFinding>,W::Error>{
+    let work=std::cell::RefCell::new(work);let checkpoint=std::cell::RefCell::new(||work.borrow_mut().checkpoint());
+    (checkpoint.borrow_mut())()?;
     let archive = inputs.archive();
     let tree = archive.tree();
     let profile = tree
@@ -417,26 +463,26 @@ pub fn stored_findings_with<D: crate::policy_body_demand::Demand>(
     // symbol spellings. Reserve its peak before the first such helper call;
     // the original shared symbol owners themselves are not copied or recharged.
     let property_temporary =
-        maximum_policy_temporary_width(archive, inputs, root, || (checkpoint.borrow_mut())())?
+        maximum_policy_temporary_width_using(archive,inputs,root,||work.borrow_mut().checkpoint(),W::CHECKED)?
             .checked_mul(64)
             .and_then(|n| n.checked_add(4096))
             .ok_or_else(|| Unsupported("stored property temporary accounting overflow".into()))?;
-    charge(remaining, property_temporary)?;
+    if W::CHECKED{work.borrow_mut().temporary(property_temporary)?;}else{charge(remaining,property_temporary)?;}
     let mut excluded = Vec::new();
     for t in p.exempt_types.iter().chain(p.registry) {
-        strings_charge(&[t], remaining)?;
+        strings_charge_using(&[t],remaining,&mut **work.borrow_mut())?;
         excluded.push(t.clone());
     }
     // Own formal variables, retaining the ORIGINAL first name encounter order.
     let mut seen = HashSet::new();
     let mut vars = Vec::new();
     let mut seeds = Vec::new();
-    charge(
+    charge_using(
         remaining,
         tree.members()
             .len()
             .checked_mul(64)
-            .ok_or_else(|| Unsupported("stored declaration-order accounting overflow".into()))?,
+            .ok_or_else(|| Unsupported("stored declaration-order accounting overflow".into()))?,&mut **work.borrow_mut(),
     )?;
     let mut declarations = tree
         .members()
@@ -444,15 +490,15 @@ pub fn stored_findings_with<D: crate::policy_body_demand::Demand>(
         .enumerate()
         .filter(|(_, m)| m.kind == MemberKind::Var && m.definition == DefinitionMode::Declare)
         .collect::<Vec<_>>();
-    declarations.sort_by_key(|(index, m)| (m.owner.index(), *index));
+    crate::checker_order::sort_source_order(&mut declarations,&mut|a,b|->Result<std::cmp::Ordering,W::Error>{work.borrow_mut().checkpoint()?;Ok((a.1.owner.index(),a.0).cmp(&(b.1.owner.index(),b.0)))})?;
     for (_, m) in declarations {
-        (checkpoint.borrow_mut())().map_err(Unsupported)?;
+        (checkpoint.borrow_mut())()?;
         let owner = tree
             .type_node(m.owner)
             .ok_or_else(|| Unsupported("stored own owner missing".into()))?
             .path;
         if !seen.contains(&(owner, m.name)) {
-            charge(remaining, 128)?;
+            charge_using(remaining,128,&mut **work.borrow_mut())?;
             seen.insert((owner, m.name));
         } else {
             continue;
@@ -491,33 +537,33 @@ pub fn stored_findings_with<D: crate::policy_body_demand::Demand>(
             .strip_prefix("/list")
             .filter(|t| t.starts_with('/'))
         {
-            if dummy.is_ref(element)? {
-                strings_charge(&[owner, name, &rel], remaining)?;
+            if dummy.is_ref_using(element,&mut||work.borrow_mut().checkpoint())? {
+                strings_charge_using(&[owner, name, &rel],remaining,&mut **work.borrow_mut())?;
                 seeds.push((Place::Member(owner.into(), name.into()), rel, line));
             }
             continue;
         }
-        if dummy.is_ref(declared)? {
-            strings_charge(&[owner, name, declared, &rel], remaining)?;
-            vars.push((
+        if dummy.is_ref_using(declared,&mut||work.borrow_mut().checkpoint())? {
+            strings_charge_using(&[owner, name, declared, &rel],remaining,&mut **work.borrow_mut())?;
+            let encounter=vars.len();vars.push((
                 owner.to_owned(),
                 name.to_owned(),
                 declared.to_owned(),
                 rel,
-                line,
+                line,encounter,
             ));
         }
     }
-    vars.sort_by(|a, b| (&a.3, a.4).cmp(&(&b.3, b.4)));
+    crate::checker_order::sort_source_order(&mut vars,&mut|a,b|->Result<std::cmp::Ordering,W::Error>{work.borrow_mut().checkpoint()?;Ok((&a.3,a.4,a.5).cmp(&(&b.3,b.4,b.5)))})?;
     let mut rows = Vec::new();
-    for (owner, name, declared, rel, line) in vars {
-        (checkpoint.borrow_mut())().map_err(Unsupported)?;
-        if holder_exempt(tree, profile, p, &owner)? || related(tree, profile, p, &owner, &name)? {
+    for (owner,name,declared,rel,line,_)in vars {
+        (checkpoint.borrow_mut())()?;
+        if holder_exempt_using(tree,profile,p,&owner,&mut||work.borrow_mut().checkpoint())? || related_using(tree,profile,p,&owner,&name,&mut||work.borrow_mut().checkpoint())? {
             continue;
         }
         let mut init = false;
-        for (t, v) in p.init_only {
-            if v == &name && compatible(tree, profile, &owner, t)? {
+        for (t, v) in p.init_only {work.borrow_mut().checkpoint()?;
+            if v == &name && compatible_using(tree,profile,&owner,t,&mut||work.borrow_mut().checkpoint())? {
                 init = true;
                 break;
             }
@@ -525,10 +571,11 @@ pub fn stored_findings_with<D: crate::policy_body_demand::Demand>(
         if init {
             continue;
         }
-        strings_charge(&[&owner, &name, &declared, &rel], remaining)?;
-        if rows.len() >= 10000 {
+        strings_charge_using(&[&owner, &name, &declared, &rel],remaining,&mut **work.borrow_mut())?;
+        if !W::CHECKED&&rows.len() >= 10000 {
             return Err(Unsupported("stored finding limit exceeded".into()).into());
         }
+        if W::CHECKED{rows.try_reserve(1).map_err(|_|work.borrow_mut().allocation_failed())?;}
         rows.push(StoredFinding {
             rule: "var",
             rel,
@@ -542,10 +589,11 @@ pub fn stored_findings_with<D: crate::policy_body_demand::Demand>(
             ident: format!("{owner}::{name}"),
         });
     }
+    let order_temporary=archive.len().checked_mul(128).and_then(|n|n.checked_add(property_temporary)).ok_or_else(||work.borrow_mut().overflow())?;if W::CHECKED{work.borrow_mut().temporary(order_temporary)?;}
     let mut found = BTreeMap::new();
-    for (ordinal, occurrence) in crate::untyped_native::ordered_bodies(tree, archive.occurrences())?
+    for (ordinal, occurrence) in crate::untyped_native::ordered_bodies_using(tree,archive.occurrences(),&mut||work.borrow_mut().checkpoint())?
     {
-        (checkpoint.borrow_mut())().map_err(Unsupported)?;
+        (checkpoint.borrow_mut())()?;
         let rel = dm_preprocess::regions::relative_filesystem_path(&occurrence.source.path, root)
             .ok_or_else(|| Unsupported("stored procedure outside root".into()))?
             .to_string_lossy()
@@ -553,7 +601,7 @@ pub fn stored_findings_with<D: crate::policy_body_demand::Demand>(
         if exempt(&rel) {
             continue;
         }
-        let body = D::parse(archive, ordinal)?;
+        let body = work.borrow_mut().body(archive,ordinal)?;if !body.belongs_to(archive)||!std::ptr::eq(body.occurrence(),occurrence){return Err(Unsupported("stored host returned foreign original body loan".into()).into())}
         // Primary local scope allocations get conservative pre-admission, and
         // expire with this body; findings remain charged independently below.
         let transient = body
@@ -589,38 +637,32 @@ pub fn stored_findings_with<D: crate::policy_body_demand::Demand>(
             .ok_or_else(|| {
                 Unsupported("stored original parameter scope admission overflow".into())
             })?;
-        charge(remaining, transient)?;
-        let sc = archived_stored_scope(&body, &excluded, local_source)?;
+        if W::CHECKED{let bytes=transient.checked_add(order_temporary).ok_or_else(||work.borrow_mut().overflow())?;work.borrow_mut().temporary(bytes)?;}else{charge(remaining,transient)?;}
+        let sc = stored_refs_scope::archived_stored_scope_using(&body,&excluded,local_source,&mut **work.borrow_mut())?;
         let observed_calls = std::cell::RefCell::new(HashSet::new());
-        let error = std::cell::RefCell::new(None);
         let writes = std::cell::RefCell::new(Vec::new());
-        let retain = std::cell::RefCell::new(|place: Place, at: Span| -> Result<(), Unsupported> {
+        let retain = std::cell::RefCell::new(|place: Place, at: Span| -> Result<(), W::Error> {
             let (owner, name) = match &place {
                 Place::Member(owner, name) => (owner.as_str(), name.as_str()),
                 Place::Static(path, _) => (path.as_str(), ""),
             };
-            strings_charge(&[&rel, owner, name], remaining)?;
-            if writes.borrow().len() >= 10000 {
+            strings_charge_using(&[&rel, owner, name],remaining,&mut **work.borrow_mut())?;
+            if !W::CHECKED&&writes.borrow().len() >= 10000 {
                 return Err(Unsupported("stored write-coordinate limit exceeded".into()).into());
             }
+            if W::CHECKED{writes.borrow_mut().try_reserve(1).map_err(|_|work.borrow_mut().allocation_failed())?;}
             writes.borrow_mut().push((place, at));
             Ok(())
         });
-        crate::untyped_order::stored_events_current(
-            body.statement_body().view(),
-            &mut |observed, at| {
+        let observed=crate::untyped_order::try_stored_events_current(
+            body.statement_body().view(),&mut(),&mut|_|work.borrow_mut().checkpoint(),
+            &mut |_,observed, at| {
                 let e = observed.original();
-                if error.borrow().is_some() {
-                    return;
-                }
-                if let Err(cancelled) = (checkpoint.borrow_mut())() {
-                    *error.borrow_mut() = Some(Unsupported(cancelled));
-                    return;
-                }
-                let r = (|| -> Result<(), Unsupported> {
+                work.borrow_mut().checkpoint()?;
+                let r = (|| -> Result<(), W::Error> {
                     let mut chain = Vec::new();
-                    method_chain(e, &mut chain);
-                    for (call, object, selector, args) in chain {
+                    method_chain_using(e,&mut chain,&mut **work.borrow_mut())?;
+                    for (call, object, selector, args) in chain {work.borrow_mut().checkpoint()?;if W::CHECKED{work.borrow_mut().retain(256)?;observed_calls.borrow_mut().try_reserve(1).map_err(|_|work.borrow_mut().allocation_failed())?;}
                         if !observed_calls
                             .borrow_mut()
                             .insert(call as *const Expr as usize)
@@ -633,15 +675,15 @@ pub fn stored_findings_with<D: crate::policy_body_demand::Demand>(
                             _ => continue,
                         };
                         let mut stores = false;
-                        for a in args.iter().skip(skip) {
-                            if stored_ref(&sc.walker, a)? {
+                        for a in args.iter().skip(skip) {work.borrow_mut().checkpoint()?;
+                            if stored_ref_using(&sc.walker,a,&mut||work.borrow_mut().checkpoint())? {
                                 stores = true;
                                 break;
                             }
                         }
                         if stores {
-                            if let Some(place) = place_of(&sc, root, &rel, object, inputs)? {
-                                if list_place(&sc.walker, &place)? {
+                            if let Some(place) = place_of_using(&sc,root,&rel,object,inputs,&mut||work.borrow_mut().checkpoint())? {
+                                if list_place_using(&sc.walker,&place,&mut||work.borrow_mut().checkpoint())? {
                                     (retain.borrow_mut())(place, at)?
                                 }
                             }
@@ -649,54 +691,39 @@ pub fn stored_findings_with<D: crate::policy_body_demand::Demand>(
                     }
                     Ok(())
                 })();
-                if let Err(e) = r {
-                    *error.borrow_mut() = Some(e)
-                }
+                r
             },
-            &mut |lhs, op, rhs, at| {
-                if error.borrow().is_some() {
-                    return;
-                }
-                if let Err(cancelled) = (checkpoint.borrow_mut())() {
-                    *error.borrow_mut() = Some(Unsupported(cancelled));
-                    return;
-                }
-                let r = (|| -> Result<(), Unsupported> {
+            &mut |_,lhs, op, rhs, at| {
+                work.borrow_mut().checkpoint()?;
+                let r = (|| -> Result<(), W::Error> {
                     if let ExprKind::Index { object, index, .. }
-                    | ExprKind::SafeIndex { object, index, .. } = &node(lhs).kind
+                    | ExprKind::SafeIndex { object, index, .. } = &ungroup_using(lhs,&mut||work.borrow_mut().checkpoint())?.kind
                     {
                         if op == "="
-                            && (stored_ref(&sc.walker, index)? || stored_ref(&sc.walker, rhs)?)
+                            && (stored_ref_using(&sc.walker,index,&mut||work.borrow_mut().checkpoint())? || stored_ref_using(&sc.walker,rhs,&mut||work.borrow_mut().checkpoint())?)
                         {
-                            if let Some(place) = place_of(&sc, root, &rel, object, inputs)? {
+                            if let Some(place) = place_of_using(&sc,root,&rel,object,inputs,&mut||work.borrow_mut().checkpoint())? {
                                 (retain.borrow_mut())(place, at)?
                             }
                         }
                         return Ok(());
                     }
-                    if (matches!(op, "+=" | "|=" | "||=") || (op == "=" && literal(rhs).is_some()))
-                        && stored_ref(&sc.walker, rhs)?
+                    if (matches!(op, "+=" | "|=" | "||=") || (op == "=" && literal_using(rhs,&mut||work.borrow_mut().checkpoint())?.is_some()))
+                        && stored_ref_using(&sc.walker,rhs,&mut||work.borrow_mut().checkpoint())?
                     {
-                        if let Some(place) = place_of(&sc, root, &rel, lhs, inputs)? {
-                            if list_place(&sc.walker, &place)? {
+                        if let Some(place) = place_of_using(&sc,root,&rel,lhs,inputs,&mut||work.borrow_mut().checkpoint())? {
+                            if list_place_using(&sc.walker,&place,&mut||work.borrow_mut().checkpoint())? {
                                 (retain.borrow_mut())(place, at)?
                             }
                         }
                     }
                     Ok(())
                 })();
-                if let Err(e) = r {
-                    *error.borrow_mut() = Some(e)
-                }
+                r
             },
-        )
-        .map_err(|e| Unsupported(e.into()))?;
-        drop(retain);
-        if let Some(e) = error.into_inner() {
-            return Err(e.into());
-        }
+        );drop(retain);match observed{Ok(())=>(),Err(crate::untyped_order::PolicyVisitFailure::Callback(actual))=>return Err(actual),Err(crate::untyped_order::PolicyVisitFailure::Unsupported(message))=>return Err(Unsupported(message.into()).into())}
         for (place, at) in writes.into_inner() {
-            (checkpoint.borrow_mut())().map_err(Unsupported)?;
+            (checkpoint.borrow_mut())()?;
             if found.contains_key(&place) {
                 continue;
             }
@@ -710,52 +737,43 @@ pub fn stored_findings_with<D: crate::policy_body_demand::Demand>(
                 .into());
             }
             let (wrel, line) = point(inputs, root, &origin.path, origin.line)?;
-            strings_charge(&[&wrel], remaining)?;
-            if found.len() >= 10000 {
+            strings_charge_using(&[&wrel],remaining,&mut **work.borrow_mut())?;
+            if !W::CHECKED&&found.len() >= 10000 {
                 return Err(Unsupported("stored list-place limit exceeded".into()).into());
             }
             found.insert(place, (wrel, line));
         }
-        *remaining = remaining
-            .checked_add(transient)
-            .ok_or_else(|| Unsupported("stored scope refund overflow".into()))?;
+        if !W::CHECKED{*remaining=remaining.checked_add(transient).ok_or_else(||Unsupported("stored scope refund overflow".into()))?;}
     }
     for (place, rel, line) in seeds {
-        (checkpoint.borrow_mut())().map_err(Unsupported)?;
-        if !found.contains_key(&place) && found.len() >= 10000 {
+        (checkpoint.borrow_mut())()?;
+        if !found.contains_key(&place) && !W::CHECKED&&found.len() >= 10000 {
             return Err(Unsupported("stored list-place limit exceeded".into()).into());
         }
         found.entry(place).or_insert((rel, line));
     }
     let mut lists = Vec::new();
     for (place, (wrel, wline)) in found {
-        (checkpoint.borrow_mut())().map_err(Unsupported)?;
+        (checkpoint.borrow_mut())()?;
         match place {
             Place::Member(owner, name) => {
                 let mut schema = false;
-                for ancestor in ancestry(tree, profile, &owner)?.iter().copied().take(65) {
-                    if (p.has_schema)(text(tree, ancestor)?, &name) {
+                for ancestor in ancestry_using(tree,profile,&owner,&mut||work.borrow_mut().checkpoint())?.iter().copied().take(65) {work.borrow_mut().checkpoint()?;
+                    if has_schema(text(tree,ancestor)?,&name,&mut **work.borrow_mut())? {
                         schema = true;
                         break;
                     }
                 }
-                if schema
-                    || holder_exempt(tree, profile, p, &owner)?
-                    || related(tree, profile, p, &owner, &name)?
-                    || p.work_queues
-                        .iter()
-                        .any(|q| q == &format!("{owner}::{name}"))
-                {
+                let mut skip=schema||holder_exempt_using(tree,profile,p,&owner,&mut||work.borrow_mut().checkpoint())?||related_using(tree,profile,p,&owner,&name,&mut||work.borrow_mut().checkpoint())?;if !skip{for q in p.work_queues{work.borrow_mut().checkpoint()?;if q==&format!("{owner}::{name}"){skip=true;break}}}if skip {
                     continue;
                 }
-                let Some(fact) = crate::checker_variable_facts::variable(
+                let Some(fact) = crate::checker_variable_facts::variable_using(
                     tree,
                     tree,
                     profile,
                     SymbolId::of(&owner),
-                    SymbolId::of(&name),
-                )
-                .map_err(Unsupported)?
+                    SymbolId::of(&name),&mut||work.borrow_mut().checkpoint(),
+                )?
                 else {
                     continue;
                 };
@@ -768,7 +786,7 @@ pub fn stored_findings_with<D: crate::policy_body_demand::Demand>(
                 }
                 let origin = archive.member_policy_line(formal).map_err(Unsupported)?;
                 let (rel, line) = point(inputs, root, &origin.path, origin.line)?;
-                strings_charge(&[&rel, &owner, &name, &wrel], remaining)?;
+                strings_charge_using(&[&rel, &owner, &name, &wrel],remaining,&mut **work.borrow_mut())?;
                 lists.push((
                     rel,
                     line,
@@ -783,7 +801,7 @@ pub fn stored_findings_with<D: crate::policy_body_demand::Demand>(
                 ));
             }
             Place::Static(rel, line) => {
-                strings_charge(&[&rel, &wrel], remaining)?;
+                strings_charge_using(&[&rel, &wrel],remaining,&mut **work.borrow_mut())?;
                 lists.push((
                     rel,
                     line,
@@ -793,12 +811,13 @@ pub fn stored_findings_with<D: crate::policy_body_demand::Demand>(
             }
         }
     }
-    lists.sort();
+    crate::checker_order::sort_source_order(&mut lists,&mut|a,b|->Result<std::cmp::Ordering,W::Error>{work.borrow_mut().checkpoint()?;Ok(a.cmp(b))})?;
     for (rel, line, message, ident) in lists {
-        (checkpoint.borrow_mut())().map_err(Unsupported)?;
-        if rows.len() >= 10000 {
+        (checkpoint.borrow_mut())()?;
+        if !W::CHECKED&&rows.len() >= 10000 {
             return Err(Unsupported("stored finding limit exceeded".into()).into());
         }
+        if W::CHECKED{rows.try_reserve(1).map_err(|_|work.borrow_mut().allocation_failed())?;}
         rows.push(StoredFinding {
             rule: "list",
             rel,
@@ -807,7 +826,7 @@ pub fn stored_findings_with<D: crate::policy_body_demand::Demand>(
             ident,
         });
     }
-    (checkpoint.borrow_mut())().map_err(Unsupported)?;
+    (checkpoint.borrow_mut())()?;
     Ok(rows)
 }
 

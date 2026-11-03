@@ -61,6 +61,9 @@ fn main() {
         writeln!(full_metadata,"{}::collect(names,control)?;",module).unwrap();
     }
     full_metadata.push_str("control.checkpoint()\n}\n");
+    full_metadata.push_str("#[cfg(feature=\"native-policy\")]\n pub(crate) fn visit_all_scopes<C:crate::key_policy_control::Control>(control:&mut C,visit:&mut dyn FnMut(crate::required_scope_policy::Requirement<'_>,&mut C)->Result<(),C::Error>)->Result<(),C::Error>{\n");
+    for module in &full_metadata_modules {if matches!(module.as_str(),"lifeform_allows"|"escape_hatches"){continue}writeln!(full_metadata,"{}::visit_scopes(control,visit)?;",module).unwrap();}
+    full_metadata.push_str("control.checkpoint()\n}\n");
     fs::write(out_dir.join("allow_registry_fields_gen.rs"),full_metadata).unwrap();
 
     let mut native_registry = String::from("{\n");
@@ -105,6 +108,8 @@ fn main() {
                     "pylines".to_string(),
                     "walk".to_string(),
                     "deadline".to_string(),
+                    "field_write".to_string(),
+                    "ownership_index".to_string(),
                 ],
                 _ => continue,
             }

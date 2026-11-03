@@ -20,8 +20,8 @@ const H_MACRO: &str = "a \\ref[] text is built and resolved inside one request (
 doc/rewrite/proposals/relations.md D9";
 
 static META: Meta = Meta {
-    name: "ref_text",
-    group: "",
+    name: crate::allow_registry_fields::ref_text::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::ref_text::SCOPE_META_0.group,
     label: "ref_text",
     legacy: "",
     select: CODE_DM,
@@ -36,7 +36,7 @@ static META: Meta = Meta {
     },
     rules: &[RuleMeta { name: "stored", hint: H_STORED }, RuleMeta { name: "ref_macro", hint: H_MACRO }],
     allow: crate::allow_registry_fields::ref_text::ALLOW_0,
-    lists: &[],
+    lists: crate::allow_registry_fields::ref_text::SCOPE_META_0.lists,
 };
 
 struct RefText {

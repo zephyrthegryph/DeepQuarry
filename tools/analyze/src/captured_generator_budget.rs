@@ -82,6 +82,7 @@ impl Budget {
     pub fn denied(&self) -> bool {
         self.denied.load(Ordering::Acquire) || self.temporary_parent.as_ref().is_some_and(|parent|parent.denied())
     }
+    pub fn remaining(&self)->usize{self.limit.saturating_sub(self.used())}
     pub fn used(&self) -> usize {
         self.used.load(Ordering::Acquire)
     }
@@ -152,7 +153,12 @@ impl Budget {
             .ok_or("generator argument temporary overflow")?;
         self.charge(bytes)
     }
-    pub(crate) fn row<T>(&self, rows: &mut Vec<T>) -> bool {
+    #[cfg(not(feature = "unified-oracle"))]
+    pub(crate) fn row<T>(&self, rows: &mut Vec<T>) -> bool { self.row_inner(rows) }
+    /// Frozen external oracle code only; ordinary builds retain crate visibility.
+    #[cfg(feature = "unified-oracle")]
+    pub fn row<T>(&self, rows: &mut Vec<T>) -> bool { self.row_inner(rows) }
+    fn row_inner<T>(&self, rows: &mut Vec<T>) -> bool {
         if self.require().is_err() {
             return false;
         }

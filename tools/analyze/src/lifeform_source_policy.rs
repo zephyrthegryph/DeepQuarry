@@ -4,8 +4,8 @@ use crate::lint::{Cx,Lint,Meta,Policy,Registry,RuleMeta,ScanKind,Sink};
 use crate::tree::{SourceFile,CODE_DM};
 
 static ALLOWS: Meta = Meta {
-    name: "lifeform_allows",
-    group: "",
+    name: crate::allow_registry_fields::lifeform_allows::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::lifeform_allows::SCOPE_META_0.group,
     label: "lifeform_allows",
     legacy: "",
     select: CODE_DM,
@@ -20,12 +20,12 @@ static ALLOWS: Meta = Meta {
     },
     rules: &[RuleMeta { name: "allow_matches_form", hint: "the reason names what a lifecycle form declares: convert the site (rolls(), param()/make(), expire()/spent()/consumed()/destroyed()/dissolved()/replace_with(), lives_while(), tooltip()/click_on()/drag_onto(), with_actor()) instead of keeping it" }],
     allow: &[],
-    lists: &[],
+    lists: crate::allow_registry_fields::lifeform_allows::SCOPE_META_0.lists,
 };
 
 static HATCHES: Meta = Meta {
-    name: "escape_hatches",
-    group: "",
+    name: crate::allow_registry_fields::escape_hatches::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::escape_hatches::SCOPE_META_0.group,
     label: "escape_hatches",
     legacy: "",
     select: CODE_DM,
@@ -45,7 +45,7 @@ static HATCHES: Meta = Meta {
         RuleMeta { name: "usr_content", hint: "usr is the engine's: content takes its actor as an argument (click_on()/drag_onto()/hover()/tooltip() hand it one)" },
     ],
     allow: &[],
-    lists: &[],
+    lists: crate::allow_registry_fields::escape_hatches::SCOPE_META_0.lists,
 };
 
 /// The engine and the paths whose qdel and usr are the mechanism: they do not count against content.

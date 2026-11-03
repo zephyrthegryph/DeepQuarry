@@ -1,0 +1,12 @@
+var/global_value=0
+/datum/base/proc/work(flag)
+    global_value=1
+    sleep(1)
+/datum/base/child/work()
+    return
+/proc/probe(datum/base/target)
+    set mystery_probe=1
+    set SpacemanDMM_should_be_pure=1
+    set SpacemanDMM_should_not_sleep=1
+    missing_probe
+    target.work(flag=1)

@@ -1,0 +1,9 @@
+/datum/base
+    var/value=0
+/datum/base/middle
+    var/value=1
+/datum/base/middle/child
+    var/value=2
+/proc/probe()
+    set mystery=1
+    return missing_variable

@@ -39,6 +39,7 @@ pub mod checker_builtins;
 pub mod non_text;
 mod normalize;
 mod procedure;
+pub use procedure::{OriginalInputParameterFatal,OriginalParameterFatal,OriginalFormalNotice,OriginalFormalNoticeLevel};
 pub mod procedure_statics;
 mod resolver;
 pub use certified_hierarchy::{HierarchyAnswer, HierarchyAnswerKind, HierarchyView};
@@ -133,6 +134,7 @@ pub enum Target {
 }
 #[derive(Clone, Debug)]
 pub struct SemanticTree {
+    original_input_retention:Option<Arc<crate::frontend::original_declaration_input::OriginalPrimaryRetention>>,
     symbols: Arc<SymbolTable>,
     types: Arc<[TypeNode]>,
     members: MemberArena,
@@ -222,6 +224,9 @@ pub enum TreeError {
     ConflictingParent(SymbolId),
     InheritanceCycle(SymbolId),
     MissingParent(SymbolId),
+    /// Original diagnostic preparation only: unresolved authored parent, with
+    /// the original reader root fallback. Never compiler admission.
+    OriginalMissingParent { owner: SymbolId, parent: SymbolId },
     Duplicate {
         owner: SymbolId,
         name: SymbolId,
@@ -609,11 +614,13 @@ fn build_with_intrinsic_members_structural_mode(
         {
             declared.insert(*path);
             if let Some(parent) = explicit_parent {
-                if !by_path.contains_key(parent) {
-                    return Err(TreeError::MissingParent(*parent));
-                }
-                if let Some(previous) = explicit.insert(*path, *parent) {
-                    if previous != *parent {
+                let effective_parent=if !by_path.contains_key(parent) {
+                    let Some(receipt)=diagnostics.as_deref_mut() else{return Err(TreeError::MissingParent(*parent))};
+                    receipt.accept_original_missing_parent(*path,*parent)?;
+                    root // Pinned objtree.rs: bad parent type falls back to the root.
+                }else{*parent};
+                if let Some(previous) = explicit.insert(*path, effective_parent) {
+                    if previous != effective_parent {
                         return Err(TreeError::ConflictingParent(*path));
                     }
                 }
@@ -668,6 +675,7 @@ fn build_with_intrinsic_members_structural_mode(
         }
     }
     let mut tree = SemanticTree {
+        original_input_retention:None,
         symbols: Arc::new(symbols),
         types: types.into(),
         members: MemberArena::default(),
@@ -1021,3 +1029,11 @@ mod shared_indexes_tests;
 
 #[cfg(test)]
 mod declaration_chain_tests;
+
+impl SemanticTree{
+ /// Resource-only traversal of the same actual parser/signature ownership.
+ /// This never creates source/model authority or changes semantic identity.
+ pub fn visit_original_input_retention(&self,mut visit:impl FnMut(usize,usize,usize)){
+  if let Some(owner)=&self.original_input_retention{visit(Arc::as_ptr(owner)as usize,std::mem::size_of_val(owner.as_ref()),std::mem::align_of_val(owner.as_ref()));owner.visit_resource_storage(&mut visit);}
+ }
+}

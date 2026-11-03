@@ -19,7 +19,7 @@ impl ExhaustiveReports<'_,'_>{
   for(phase,label,immediate)in[(EffectReportPhase::Purity,"body_immediate",true),(EffectReportPhase::Sleep,"must_not_sleep",false),(EffectReportPhase::Purity,"must_be_pure",false)]{
    #[cfg(test)]self.db.trace_effect_phase_for_test(label,0,total);
    let mut start=0;while start<total{crate::daemon::control::checkpoint()?;let count=self.window.min(total-start);let rows=self.db.native_effect_source_report_window_locked(self.input,self.scope,self.width,phase,start,count,true)?;
-    for row in rows.iter(){crate::daemon::control::checkpoint()?;if phase==EffectReportPhase::Sleep||(row.registration_tag.is_none()==immediate){consume(label,row)?;}}
+    for row in rows.iter(){crate::daemon::control::checkpoint()?;if row.phase()==if phase==EffectReportPhase::Sleep{dm_analysis::checker_effects::ProducedPhase::SleepGraph}else if immediate{dm_analysis::checker_effects::ProducedPhase::BodyImmediate}else{dm_analysis::checker_effects::ProducedPhase::PurityGraph}{consume(label,row)?;}}
     // The exact cached Outcome was evicted before this loan. Its physical
     // messages/notes free here before the next bounded target window begins.
     drop(rows);start=start.checked_add(count).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"effect target progress overflow"))?;

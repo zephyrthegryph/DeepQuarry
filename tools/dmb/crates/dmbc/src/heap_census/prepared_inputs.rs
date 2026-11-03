@@ -33,25 +33,7 @@ impl HeapCensus {
                     if census.arc_object(owner,bytes.shared_owner()){census.vec_payload(owner,bytes.shared_owner().bytes());}
                 }
                 let source=value.source();
-                if census.arc_object("prepared_inputs.source",source) {
-                    census.source_text("prepared_inputs.text",source.original());
-                    census.slice("prepared_inputs.line_starts",source.line_starts(),true);
-                    for line in source.lines() {
-                        census.source_text("prepared_inputs.logical_text",line.text);
-                    }
-                    source.visit_storage(|view| {
-                        use dm_preprocess::regions::prepared_source::PreparedSourceStorage as Storage;
-                        match view {
-                            Storage::Buffer { address, bytes } => { census.buffer("prepared_inputs.lexical_buffers", address, bytes, bytes); }
-                            Storage::String(value) => census.string("prepared_inputs.directive_strings", value),
-                            Storage::Macro(value) => {
-                                census.string("prepared_inputs.directive_strings", &value.replacement);
-                                if let Some(parameters) = &value.parameters { census.strings("prepared_inputs.directive_strings", parameters); }
-                            }
-                        }
-                    });
-                    census.unknown("prepared_inputs.source", "shared Arc control blocks excluded; immutable line and directive array backing counted exactly");
-                }
+                census.prepared_source(source);
                 let proof=value.inputs();
                 census.owner("prepared_inputs.proof").observed_items+=proof.files().count() as u64;
                 for file in proof.files() { census.path("prepared_inputs.proof_paths", &file.path); }
@@ -60,4 +42,29 @@ impl HeapCensus {
         }
     });
     }
+}
+
+impl HeapCensus {
+ pub(crate) fn prepared_source(&mut self,source:&std::sync::Arc<dm_preprocess::regions::prepared_source::PreparedSource>){
+        if self.arc_object("prepared_inputs.source",source) {
+                    self.source_text("prepared_inputs.text",source.original());
+                    self.slice("prepared_inputs.line_starts",source.line_starts(),true);
+                    for line in source.lines() {
+                        self.source_text("prepared_inputs.logical_text",line.text);
+                    }
+                    source.visit_storage(|view| {
+                        use dm_preprocess::regions::prepared_source::PreparedSourceStorage as Storage;
+                        match view {
+                            Storage::Buffer { address, bytes } => { self.buffer("prepared_inputs.lexical_buffers", address, bytes, bytes); }
+                            Storage::String(value) => self.string("prepared_inputs.directive_strings", value),
+                            Storage::Macro(value) => {
+                                self.string("prepared_inputs.directive_strings", &value.replacement);
+                                if let Some(parameters) = &value.parameters { self.strings("prepared_inputs.directive_strings", parameters); }
+                            }
+                        }
+                    });
+                    self.unknown("prepared_inputs.source", "shared Arc control blocks excluded; immutable line and directive array backing counted exactly");
+                }
+
+ }
 }

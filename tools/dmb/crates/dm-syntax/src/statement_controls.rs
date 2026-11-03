@@ -45,7 +45,7 @@ pub(super) fn split_case_alternatives_with_tokens(
 
 pub(super) fn parse_for(
     item: &Item,
-    diagnostics: &mut Vec<Diagnostic>,
+    diagnostics: &mut BodyDiagnostics<'_>,
     origins: &mut BodyOrigins<'_>,
 ) -> Option<ForControl> {
     let (clause, _, lexical, clause_base) = control_clause_origin_tokens(item, "for", diagnostics)?;
@@ -288,7 +288,7 @@ fn parse_range_control(
     remainder: &str,
     clause: &str,
     base: usize,
-    diagnostics: &mut Vec<Diagnostic>,
+    diagnostics: &mut BodyDiagnostics<'_>,
 ) -> Option<ForControl> {
     let start_source = start_source.trim();
     let start = parse_expr(
@@ -309,7 +309,7 @@ fn parse_range_tail(
     remainder: &str,
     clause: &str,
     base: usize,
-    diagnostics: &mut Vec<Diagnostic>,
+    diagnostics: &mut BodyDiagnostics<'_>,
 ) -> Option<(Expr, Option<Expr>)> {
     let (end_source, step_source) = remainder
         .split_once(" step ")
@@ -360,28 +360,22 @@ fn control_close_tokens(rest: &str, tokens: &[crate::SpanToken]) -> Option<usize
     None
 }
 
+/// Borrow the same inline tail used by the unique control-body parser.
+pub(super) fn control_inline<'a>(item:&'a Item,keyword:&str)->Option<&'a str>{let rest=item.header.trim().strip_prefix(keyword)?.trim_start();let close=control_close(rest)?;let inline=rest[close+1..].trim().trim_end_matches(';').trim();(!inline.is_empty()).then_some(inline)}
 pub(super) fn control_body(
     item: &Item,
     keyword: &str,
-    diagnostics: &mut Vec<Diagnostic>,
+    diagnostics: &mut BodyDiagnostics<'_>,
     origins: &mut BodyOrigins<'_>,
 ) -> Vec<Statement> {
-    let rest = item
-        .header
-        .trim()
-        .strip_prefix(keyword)
-        .unwrap_or("")
-        .trim_start();
-    let Some(close) = control_close(rest) else {
-        return parse_sequence(&item.children, diagnostics, origins);
-    };
-    let inline = rest[close + 1..].trim().trim_end_matches(';').trim();
-    if inline.is_empty() {
-        return parse_sequence(&item.children, diagnostics, origins);
-    }
+    control_body_from_inline(item,control_inline(item,keyword),diagnostics,origins)
+}
+pub(super) fn control_body_from_inline(item:&Item,inline:Option<&str>,diagnostics:&mut BodyDiagnostics<'_>,origins:&mut BodyOrigins<'_>)->Vec<Statement>{
+    let Some(inline)=inline else{return parse_sequence(&item.children,diagnostics,origins)};
     let mut nested = item.clone();
     nested.header = inline.into();
-    nested.header_span.start += item.header.find(inline).unwrap_or(0);
+    nested.header_span.start += inline.as_ptr() as usize-item.header.as_ptr() as usize;
+    nested.span.start=nested.header_span.start;
     parse_sequence(&[nested], diagnostics, origins)
 }
 
@@ -407,7 +401,7 @@ fn split_for_clauses(clause: &str) -> Vec<&str> {
 pub(super) fn parse_control_condition(
     item: &Item,
     keyword: &str,
-    diagnostics: &mut Vec<Diagnostic>,
+    diagnostics: &mut BodyDiagnostics<'_>,
 ) -> Option<Expr> {
     let clause = control_clause(item, keyword, diagnostics)?;
     parse_expr(
@@ -420,14 +414,15 @@ pub(super) fn parse_control_condition(
 pub(super) fn parse_control_condition_origin(
     item: &Item,
     keyword: &str,
-    diagnostics: &mut Vec<Diagnostic>,
+    diagnostics: &mut BodyDiagnostics<'_>,
     origins: &mut BodyOrigins<'_>,
 ) -> Option<Expr> {
     let (clause, opening) = control_clause_origin(item, keyword, diagnostics)?;
-    let condition = parse_expr(
+    let condition = parse_expr_observed(
         clause,
         item.header_span.start + item.header.find(clause).unwrap_or(0),
         diagnostics,
+        &mut|parsed|{origins.original_compound_complete&=parsed.original_simple_expression.is_some_and(|value|value.kind()==crate::expression_parser::OriginalSimpleKind::Complete);},
     )?;
     origins.push(ControlOrigin {
         condition: condition.span,
@@ -439,7 +434,7 @@ pub(super) fn parse_control_condition_origin(
 pub(super) fn control_clause<'a>(
     item: &'a Item,
     keyword: &str,
-    diagnostics: &mut Vec<Diagnostic>,
+    diagnostics: &mut BodyDiagnostics<'_>,
 ) -> Option<&'a str> {
     control_clause_origin(item, keyword, diagnostics).map(|(clause, _)| clause)
 }
@@ -447,7 +442,7 @@ pub(super) fn control_clause<'a>(
 fn control_clause_origin<'a>(
     item: &'a Item,
     keyword: &str,
-    diagnostics: &mut Vec<Diagnostic>,
+    diagnostics: &mut BodyDiagnostics<'_>,
 ) -> Option<(&'a str, Span)> {
     control_clause_origin_tokens(item, keyword, diagnostics)
         .map(|(clause, opening, _, _)| (clause, opening))
@@ -455,7 +450,7 @@ fn control_clause_origin<'a>(
 fn control_clause_origin_tokens<'a>(
     item: &'a Item,
     keyword: &str,
-    diagnostics: &mut Vec<Diagnostic>,
+    diagnostics: &mut BodyDiagnostics<'_>,
 ) -> Option<(&'a str, Span, crate::SpannedLexed, usize)> {
     let header = item.header.trim();
     let after_keyword = header.strip_prefix(keyword)?;
@@ -495,8 +490,11 @@ fn control_clause_origin_tokens<'a>(
 pub(super) fn parse_expr(
     source: &str,
     offset: usize,
-    diagnostics: &mut Vec<Diagnostic>,
+    diagnostics: &mut BodyDiagnostics<'_>,
 ) -> Option<Expr> {
+    parse_expr_observed(source,offset,diagnostics,&mut |_|{})
+}
+pub(super) fn parse_expr_observed(source:&str,offset:usize,diagnostics:&mut BodyDiagnostics<'_>,observe:&mut dyn FnMut(&crate::ParsedExpr))->Option<Expr>{
     if source.trim().is_empty() {
         diagnostics.push(Diagnostic {
             span: Span::new(offset, offset),
@@ -505,7 +503,11 @@ pub(super) fn parse_expr(
         });
         return None;
     }
-    let mut parsed = parse_expression(source);
+    let original=match diagnostics.settings{
+      Some(provider)=>match provider.original_expression(source,offset){Ok(value)=>value,Err(actual)=>{if let Some(a)=diagnostics.admission{a.record_operational_error(actual);}return None}},None=>None,
+    };
+    let mut parsed = match original{Some(parsed)=>parsed,None=>parse_expression(source)};
+    observe(&parsed);
     for diagnostic in &mut parsed.diagnostics {
         diagnostic.span.start += offset;
         diagnostic.span.end += offset;

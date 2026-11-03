@@ -14,8 +14,8 @@ use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::tree::{SourceFile, CODE_DM};
 
 static META: Meta = Meta {
-    name: "in_precedence",
-    group: "",
+    name: crate::allow_registry_fields::in_precedence::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::in_precedence::SCOPE_META_0.group,
     label: "in_precedence",
     legacy: "",
     select: CODE_DM,
@@ -26,7 +26,7 @@ static META: Meta = Meta {
         hint: "`in` is the loosest DM operator: `!x in L` is `(!x) in L`, `x in L || y` is `x in (L || y)`, `var/v = x in L` stores x. Write `(x in L)` and combine that",
     }],
     allow: crate::allow_registry_fields::in_precedence::ALLOW_0,
-    lists: &[],
+    lists: crate::allow_registry_fields::in_precedence::SCOPE_META_0.lists,
 };
 
 #[derive(Clone, Copy, PartialEq)]

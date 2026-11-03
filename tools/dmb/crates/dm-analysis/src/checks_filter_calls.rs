@@ -2,7 +2,7 @@
 use super::*;
 use crate::checker_expression_visit::{ArgumentObserver,NamedArguments,OriginalArguments,OriginalValue};
 use crate::checker_original_expression_debug::{CallDebug,with_call_debug};
-struct Filter<'archive,'body,'loan,'work,W,R:?Sized>{inner:Arguments<'archive,'work,W,R>,body:&'loan ArchivedBody<'body>}
+pub(super) struct Filter<'archive,'body,'loan,'work,W,R:?Sized>{pub(super) inner:Arguments<'archive,'work,W,R>,pub(super) body:&'loan ArchivedBody<'body>}
 fn allowed(kind:&str)->Option<&'static [&'static str]>{Some(match kind{
  "alpha"=>&["x","y","icon","render_source","flags"],"angular_blur"=>&["x","y","size"],"bloom"=>&["threshold","size","offset","alpha"],"color"=>&["color","space"],"displace"=>&["x","y","size","icon","render_source"],"drop_shadow"=>&["x","y","size","offset","color"],"blur"=>&["size"],"layer"=>&["x","y","icon","render_source","flags","color","transform","blend_mode"],"motion_blur"=>&["x","y"],"outline"=>&["size","color","flags"],"radial_blur"=>&["x","y","size"],"rays"=>&["x","y","size","color","offset","density","threshold","factor","flags"],"ripple"=>&["x","y","size","repeat","radius","falloff","flags"],"wave"=>&["x","y","size","offset","flags"],_=>return None})}
 fn flags(kind:&str)->Option<(&'static str,bool,bool,&'static [&'static str])>{Some(match kind{
@@ -18,7 +18,7 @@ impl<W:EffectReportWork,R:Resolver+?Sized> Filter<'_,'_,'_,'_,W,R>{
    if follows(expr){let message=text(self.inner.work,format_args!("filter() flag fields cannot have unary ops or field accesses"))?;self.emit(at,expression,message,None)?;continue}
    if matches!(expr.kind,ExprKind::Binary{..}|ExprKind::Conditional{..}){let message=text(self.inner.work,format_args!("filter(type=\"{kind}\"), extremely invalid value passed to '{field}' field"))?;self.emit(at,expression,message,Some(kind))?;continue}
    if let ExprKind::Ident(name)=&expr.kind{if !matches!(name.as_str(),"null"|"__TYPE__"|"__PROC__"|"__IMPLIED_TYPE__"){if !valid.contains(&name.as_str()){let message=text(self.inner.work,format_args!("filter(type=\"{kind}\") called with invalid '{field}' flag '{name}'"))?;self.emit(at,expression,message,Some(kind))?;}continue}}
-   if zero&&matches!(&expr.kind,ExprKind::Literal(value)if matches!(dm_syntax::numeric_form::numeric_form(value.as_str()),Ok(dm_syntax::numeric_form::NumericForm::Integer(0)))){continue}
+   if zero&&matches!(&expr.kind,ExprKind::Literal(value)if match value.original_value(){Some(value)=>matches!(value,dm_syntax::OriginalTokenValue::Int(0)),None=>matches!(dm_syntax::numeric_form::numeric_form(value.as_str()),Ok(dm_syntax::numeric_form::NumericForm::Integer(0)))}){continue}
    let body=self.body;let checkpoint=self.inner.checkpoint;with_call_debug(body,CallDebug::Term(expr),checkpoint,|word|{let message=text(self.inner.work,format_args!("filter(type=\"{kind}\") called with invalid '{field}' value '{word}'"))?;self.emit(at,expression,message,Some(kind))})?;
   }Ok(())
  }

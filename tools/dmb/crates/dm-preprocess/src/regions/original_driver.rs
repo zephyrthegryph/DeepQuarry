@@ -1,0 +1,282 @@
+//! The actual owned raw/macro/logical continuation. It never prepares a source,
+//! rescans an expanded String, manufactures source EOF or grants model success.
+//! The directive owner handles a real Hash event before this continuation may
+//! pull again; callable parsing loans this same continuation synchronously.
+use super::{environment::OriginalEnvironment,original_raw_inputs::{OriginalRawInputs,OriginalRawNoticeSink},original_output_queue::OriginalOutputQueue,original_macro_source::{OriginalBorrowedMacroSource,OriginalMacroHost},original_token_pump::{OriginalTokenPump,PumpEvent},original_conditional::Frame};
+use crate::{SourceProvider,SourceAcquisitionLease,InitialEnvironment,macro_expansion::{OriginalMacroRows as Rows,OriginalMacroToken as Token,OriginalMacroOrigin as Origin,OriginalMacroNotice as MacroNotice,OriginalMacroDefinition as Definition}};
+use dm_syntax::{SettingAdmission,SettingRootLease,NativeIndentTransition,NativeIndentEmission,NativeIndentNotice};
+use std::{io,collections::BTreeMap,mem};
+
+/// One output from the genuine indentation producer. A synthetic delimiter has
+/// its saved actual token location; an empty input keeps the old nonphysical
+/// default location explicit instead of inventing a physical line/column.
+pub(super) enum LogicalToken{Actual(Token<'static>),Delimiter{spelling:&'static str,location:Option<Origin>}}
+pub(super) enum ConditionResult{Value(bool),DisabledAfterExpansion,SourceFailure(crate::macro_expansion::OriginalMacroText)}
+pub(super) struct ConditionEvaluation{pub(super) last_input:Origin,pub(super) outcome:ConditionResult}
+/// defined() is an ordinary lookup in the SAME current map. Unlike #ifdef,
+/// it never substitutes the nearest file's __MAIN__ special case.
+struct OriginalConditionLookup<'a>{environment:&'a super::environment::MacroEnvironment}
+impl crate::MacroLookup for OriginalConditionLookup<'_>{
+ fn initial_environment(&self)->InitialEnvironment{InitialEnvironment::OriginalChecker0290}
+ fn get_key_value(&self,name:&str)->Option<(&str,&crate::Macro)>{crate::MacroLookup::get_key_value(self.environment,name)}
+ fn contains_key(&self,name:&str)->bool{crate::MacroLookup::contains_key(self.environment,name)}
+}
+/// Productive definition result DATA; warning/history registration stays on
+/// the same controller. FILE_DIR has ordinary replacement, only no warning.
+pub(super) enum DefinitionInstallation{IgnoredDebugOutsideEnvironment,Installed{origin:Origin,replaced:bool,previous_name:Option<Origin>,warn_redefinition:bool}}
+pub(super) struct Undefinition{pub(super) found:bool,pub(super) previous_name:Option<Origin>}
+pub(super) enum NamedConditionResult{Completed,SourceFailure(crate::macro_expansion::OriginalMacroText)}
+pub(super) enum DriverEvent{Token(LogicalToken),Directive{hash:Origin},MacroNotice(MacroNotice),IndentNotice{kind:NativeIndentNotice,location:Option<Origin>},NeedInput,ActualEnd,Stopped}
+/// Fields are ordered so all physical payloads die before the fixed allowance.
+/// Raw backings remain under their genuine acquisition/weak-ledger owners when
+/// a frame retires; this allowance pays only the live controller's fixed bytes.
+pub(super) struct RawSourceDriver{
+ environment:OriginalEnvironment,inputs:OriginalRawInputs,pump:OriginalTokenPump,
+ queue:OriginalOutputQueue<'static>,conditionals:Rows<Frame>,
+ held:Option<Token<'static>>,indent:NativeIndentTransition<Option<Origin>>,
+ raw_end:bool,failed:bool,stopped:bool,env_file:Option<super::original_file_path::OriginalFilePath>,credit:SettingRootLease,
+}
+fn poll(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
+impl RawSourceDriver{
+ pub(super) fn new(initial:InitialEnvironment,caller:&BTreeMap<String,String>,a:&SettingAdmission<'_>,factory:&mut dyn FnMut(crate::initial_environment::OriginalInitialDefinition<'_>,&SettingAdmission<'_>)->io::Result<Definition<'static>>)->io::Result<Self>{
+  poll(a)?;let credit=a.reserve(mem::size_of::<Self>()).map_err(|e|a.take_operational_error().unwrap_or(e))?;
+  let mut environment=OriginalEnvironment::new(a)?;environment.install_initial_definitions_using(initial,caller,a,factory)?;
+  Ok(Self{environment,inputs:OriginalRawInputs::new(a)?,pump:OriginalTokenPump::new(a)?,queue:OriginalOutputQueue::new(a)?,conditionals:Rows::new(a)?,held:None,indent:NativeIndentTransition::original_0290(None),raw_end:false,failed:false,stopped:false,env_file:None,credit})
+ }
+ /// The productive controller supplies the constructor's exact env_file
+ /// spelling, matching pinned Preprocessor::new; no canonicalization guessed.
+ pub(super) fn new_for_project(initial:InitialEnvironment,caller:&BTreeMap<String,String>,env_file:&std::path::Path,a:&SettingAdmission<'_>,factory:&mut dyn FnMut(crate::initial_environment::OriginalInitialDefinition<'_>,&SettingAdmission<'_>)->io::Result<Definition<'static>>)->io::Result<Self>{
+  let mut actual=Self::new(initial,caller,a,factory)?;actual.env_file=Some(super::original_file_path::OriginalFilePath::new(env_file,a)?);Ok(actual)
+ }
+ /// #ifdef/__MAIN__ uses the nearest active physical file, not the macro
+ /// definition/invocation occurrence. Ordinary defined() does not call this.
+ pub(super) fn in_environment_using(&mut self,a:&SettingAdmission<'_>)->io::Result<bool>{
+  self.check(a)?;let result=(||{let env=self.env_file.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual constructor environment file is unissued"))?;if !env.is_admitted_by(a){return Err(io::ErrorKind::InvalidInput.into())}Ok(self.inputs.current_physical_path(a)?.is_some_and(|path|path==env.path()))})();if result.is_err(){self.failed=true}result
+ }
+ pub(super) fn is_defined_using(&mut self,name:&str,a:&SettingAdmission<'_>)->io::Result<bool>{
+  self.check(a)?;if name=="__MAIN__"{return self.in_environment_using(a)}let result=self.environment.environment().actual_original_product(name).map(|actual|actual.is_some());if result.is_err(){self.failed=true}result
+ }
+ /// Adopt the SAME actual acquired input registered by the directive owner,
+ /// with the spelling used by that actual source read. Private DATA only.
+ pub(super) fn push_opened_at(&mut self,provider:&dyn SourceProvider,lease:SourceAcquisitionLease,occurrence:usize,path:&std::path::Path,a:&SettingAdmission<'_>)->io::Result<()>{
+  self.check(a)?;if self.raw_end||self.stopped{return Err(io::ErrorKind::InvalidInput.into())}let result=self.inputs.push_opened_at(provider,lease,occurrence,self.pump.expansion_depth(),path,a);if result.is_err(){self.failed=true}result
+ }
+ fn check(&mut self,a:&SettingAdmission<'_>)->io::Result<()>{if self.failed{return Err(io::Error::new(io::ErrorKind::InvalidInput,"failed raw source continuation cannot resume or seal"))}let result=if !a.matches_lease_domain(&self.credit){Err(io::Error::new(io::ErrorKind::InvalidInput,"raw source continuation belongs to another admission"))}else{poll(a)};if result.is_err(){self.failed=true}result}
+ pub(super) fn stop(&mut self){self.stopped=true;self.pump.stop()}
+ /// Called only with the lease returned by the existing admitted read/adopt
+ /// operation, and the occurrence installed by the actual directive owner.
+ pub(super) fn push_opened(&mut self,provider:&dyn SourceProvider,lease:SourceAcquisitionLease,occurrence:usize,a:&SettingAdmission<'_>)->io::Result<()>{
+  self.check(a)?;if self.raw_end||self.stopped{return Err(io::ErrorKind::InvalidInput.into())}
+  let result=self.inputs.push_opened(provider,lease,occurrence,self.pump.expansion_depth(),a);if result.is_err(){self.failed=true}result
+ }
+ /// Actual physical read opens through the shared input-family kernel; no
+ /// raw gate is retained during lexical/directive/formal work. Ok(false) is
+ /// the issuer's recorded bounded negative read, never an unissued fallback.
+ pub(super) fn read_and_push_using(&mut self,provider:&dyn SourceProvider,path:&std::path::Path,occurrence:usize,max_raw_bytes:usize,work:&dyn crate::source_arena_credit::SourceArenaWork,a:&SettingAdmission<'_>)->io::Result<bool>{
+  self.check(a)?;if self.raw_end||self.stopped{return Err(io::ErrorKind::InvalidInput.into())}
+  let result=(||{let Some(lease)=crate::source_arena_credit::read_original_source_using(provider,path,max_raw_bytes,work)?else{return Ok(false)};self.inputs.push_opened_at(provider,lease,occurrence,self.pump.expansion_depth(),path,a)?;Ok(true)})();if result.is_err(){self.failed=true}result
+ }
+ pub(super) fn next_logical_using(&mut self,provider:&dyn SourceProvider,notices:&mut dyn OriginalRawNoticeSink,host:&mut dyn OriginalMacroHost,a:&SettingAdmission<'_>)->io::Result<DriverEvent>{
+  self.check(a)?;if self.stopped{return Ok(DriverEvent::Stopped)}let result=self.next_inner(provider,notices,host,a);if result.is_err(){self.failed=true}result
+ }
+ fn next_inner(&mut self,provider:&dyn SourceProvider,notices:&mut dyn OriginalRawNoticeSink,host:&mut dyn OriginalMacroHost,a:&SettingAdmission<'_>)->io::Result<DriverEvent>{
+  loop{poll(a)?;
+   // Drain every output/notice of the already processed raw token BEFORE
+   // requesting another macro/source token. A long closing-brace run can pause
+   // at any logical batch boundary without advancing the input frontier.
+   if let Some(event)=self.indent.next_using(a)?{return match event{
+    NativeIndentEmission::Notice{kind,location}=>Ok(DriverEvent::IndentNotice{kind,location}),
+    NativeIndentEmission::Punctuation{spelling,location}=>Ok(DriverEvent::Token(LogicalToken::Delimiter{spelling,location})),
+    NativeIndentEmission::Keep{location}=>{let token=self.held.take().ok_or(io::ErrorKind::InvalidData)?;if location!=Some(token.origin){return Err(io::ErrorKind::InvalidData.into())}Ok(DriverEvent::Token(LogicalToken::Actual(token)))},
+   }}
+   // Whitespace skipped by the SAME transition is physically retired only
+   // after that transition has no remaining output; Keep already moved it.
+   self.held.take();
+   if self.raw_end{return Ok(DriverEvent::ActualEnd)}
+   let mut source=OriginalBorrowedMacroSource{inputs:&mut self.inputs,environment:self.environment.environment(),queue:&mut self.queue,provider,notices,host};
+   match self.pump.next_using(&mut source,self.conditionals.as_slice(),a)?{
+    PumpEvent::Token(token)=>{self.indent.begin_using(&token.value,Some(token.origin),a)?;self.held=Some(token);},
+    PumpEvent::Directive{hash}=>return Ok(DriverEvent::Directive{hash}),
+    PumpEvent::Notice(notice)=>return Ok(DriverEvent::MacroNotice(notice)),
+    PumpEvent::NeedInput=>return Ok(DriverEvent::NeedInput),
+    PumpEvent::Stopped=>{self.stopped=true;return Ok(DriverEvent::Stopped)},
+    PumpEvent::ActualInputEnd=>{
+     if self.conditionals.len()!=0{return Err(io::Error::new(io::ErrorKind::Unsupported,"actual conditional EOF diagnostic/history join is not issued"))}
+     self.raw_end=true;self.indent.end_input_using(a)?;
+    },
+   }
+  }
+ }
+ /// The actual directive controller borrows this SAME cursor/raw stack. No
+ /// expanded next(), new dictionary or physical-only definition scanner.
+ pub(super) fn next_directive_raw_using(&mut self,provider:&dyn SourceProvider,notices:&mut dyn OriginalRawNoticeSink,host:&mut dyn OriginalMacroHost,a:&SettingAdmission<'_>)->io::Result<crate::macro_expansion::OriginalMacroRawStep<'static>>{
+  self.check(a)?;let result=(||{let cursor=self.pump.cursor_for_directive()?;let mut source=OriginalBorrowedMacroSource{inputs:&mut self.inputs,environment:self.environment.environment(),queue:&mut self.queue,provider,notices,host};cursor.next_undispatched_using(&mut source,a)})();if result.is_err(){self.failed=true}result
+ }
+ pub(super) fn finish_directive_using(&mut self,success:bool,provider:&dyn SourceProvider,notices:&mut dyn OriginalRawNoticeSink,host:&mut dyn OriginalMacroHost,a:&SettingAdmission<'_>)->io::Result<()>{
+  self.check(a)?;let result={let mut source=OriginalBorrowedMacroSource{inputs:&mut self.inputs,environment:self.environment.environment(),queue:&mut self.queue,provider,notices,host};self.pump.finish_directive(success,&mut source,a)};if result.is_err(){self.failed=true}result
+ }
+ pub(super) fn with_directive_source_using<T>(&mut self,provider:&dyn SourceProvider,notices:&mut dyn OriginalRawNoticeSink,host:&mut dyn OriginalMacroHost,a:&SettingAdmission<'_>,run:impl FnOnce(&mut crate::macro_expansion::OriginalMacroCursor<'static>,&mut OriginalBorrowedMacroSource<'_>)->io::Result<T>)->io::Result<T>{
+  self.check(a)?;let result=(||{let cursor=self.pump.cursor_for_directive()?;let mut source=OriginalBorrowedMacroSource{inputs:&mut self.inputs,environment:self.environment.environment(),queue:&mut self.queue,provider,notices,host};run(cursor,&mut source)})();if result.is_err(){self.failed=true}result
+ }
+ pub(super) fn directive_request_using(&mut self,provider:&dyn SourceProvider,notices:&mut dyn OriginalRawNoticeSink,host:&mut dyn OriginalMacroHost,a:&SettingAdmission<'_>,hint:&mut dyn FnMut(&mut RawSourceDriver,Origin,&'static str)->io::Result<()>)->io::Result<super::original_directive_dispatch::DirectiveRequest>{
+  self.check(a)?;let result=super::original_directive_dispatch::read_using(self,provider,notices,host,a,hint);if result.is_err(){self.failed=true}result
+ }
+ pub(super) fn advance_define_using(&mut self,demand:&mut super::original_define_demand::OriginalDefineDemand,provider:&dyn SourceProvider,notices:&mut dyn OriginalRawNoticeSink,host:&mut dyn OriginalMacroHost,a:&SettingAdmission<'_>)->io::Result<super::original_define_demand::DefineDemandProgress>{
+  self.with_directive_source_using(provider,notices,host,a,|cursor,source|demand.advance(cursor,source,a))
+ }
+ /// Definition tokens and docs move directly into the SAME current Binding.
+ /// The separately funded native metadata mirror preserves genuine spelling;
+ /// it is never consulted by the Original expansion cursor.
+ pub(super) fn install_defined_using(&mut self,defined:crate::macro_expansion::OriginalDefinedMacro<'static>,provider:&dyn SourceProvider,origin:Option<super::DefinitionOrigin>,a:&SettingAdmission<'_>)->io::Result<DefinitionInstallation>{
+  self.check(a)?;let result=(||{let crate::macro_expansion::OriginalDefinedMacro{name,definition,docs}=defined;let crate::macro_expansion::OriginalMacroValue::Ident{spelling:ref name_text,..}=name.value else{return Err(io::ErrorKind::InvalidData.into())};
+   if name_text.get()=="DEBUG"&&!self.in_environment_using(a)?{return Ok(DefinitionInstallation::IgnoredDebugOutsideEnvironment)}
+   let previous=self.environment.environment().actual_original_product(name_text.get())?;let replaced=previous.is_some();let previous_name=previous.and_then(|p|p.definition_name()).map(|token|token.origin);let warn_redefinition=name_text.get()!="FILE_DIR";
+   let mut mirror=crate::macro_expansion::OriginalMacroText::new(a)?;for token in definition.replacement.as_slice(){poll(a)?;let spelling=super::original_literal_owner::actual_grammar_spelling_using(token,provider,a)?;if !mirror.as_str().is_empty(){mirror.push_str(" ",a)?;}mirror.push_str(spelling.as_str(),a)?;}
+   let name_origin=name.origin;let product=super::environment::OriginalDefinitionProduct::from_named_actual_product_using(name,definition,docs,a)?;let name=match &product.definition_name().ok_or(io::ErrorKind::InvalidData)?.value{crate::macro_expansion::OriginalMacroValue::Ident{spelling,..}=>spelling.get(),_=>return Err(io::ErrorKind::InvalidData.into())};self.environment.insert_product_using(name,mirror.as_str(),origin,std::sync::Arc::clone(&product),a)?;Ok(DefinitionInstallation::Installed{origin:name_origin,replaced,previous_name,warn_redefinition})})();if result.is_err(){self.failed=true}result
+ }
+ pub(super) fn undefine_using(&mut self,name:&str,a:&SettingAdmission<'_>)->io::Result<Undefinition>{
+  self.check(a)?;let result=(||{let prior=self.environment.environment().actual_original_product(name)?;let found=prior.is_some();let previous_name=prior.and_then(|p|p.definition_name()).map(|t|t.origin);self.environment.remove_using(name,a)?;Ok(Undefinition{found,previous_name})})();if result.is_err(){self.failed=true}result
+ }
+ pub(super) fn directive_disabled_using(&mut self,a:&SettingAdmission<'_>)->io::Result<bool>{self.check(a)?;let result=super::original_conditional::is_disabled_using(self.conditionals.as_slice(),a);if result.is_err(){self.failed=true}result}
+ pub(super) fn begin_conditional_using(&mut self,directive:super::original_conditional::Directive,hash:Origin,a:&SettingAdmission<'_>)->io::Result<super::original_conditional::Action>{self.check(a)?;let result=super::original_conditional::begin_using(&mut self.conditionals,directive,hash,a);if result.is_err(){self.failed=true}result}
+ pub(super) fn finish_conditional_using(&mut self,pending:super::original_conditional::Pending,outcome:super::original_conditional::Outcome,completed:Origin,a:&SettingAdmission<'_>)->io::Result<()>{self.check(a)?;let result=pending.finish_using(&mut self.conditionals,outcome,completed,a);if result.is_err(){self.failed=true}result}
+ /// Same raw identifier + newline expectations, then actual nearest-file
+ /// special case. Both reads occur even under an inactive parent, as old.
+ pub(super) fn finish_named_condition_using(&mut self,pending:super::original_conditional::Pending,provider:&dyn SourceProvider,notices:&mut dyn OriginalRawNoticeSink,host:&mut dyn OriginalMacroHost,a:&SettingAdmission<'_>)->io::Result<NamedConditionResult>{
+  self.check(a)?;let result=(||{if !matches!(pending.instruction(),super::original_conditional::Instruction::DefinedName{..}){return Err(io::ErrorKind::InvalidInput.into())}
+   let read=|kind,pattern,self_:&mut RawSourceDriver,notices:&mut dyn OriginalRawNoticeSink,host:&mut dyn OriginalMacroHost|self_.with_directive_source_using(provider,notices,host,a,|cursor,source|super::original_directive_arguments::expect_using(cursor,source,kind,Some(pattern),a));
+   let name=match read(super::original_directive_arguments::Expected::Identifier,"Token::Ident(define_name, _)",self,notices,host)?{super::original_directive_arguments::ExpectProgress::Token(token)=>token,super::original_directive_arguments::ExpectProgress::SourceFailure(message)=>{self.finish_conditional_using(pending,super::original_conditional::Outcome::InvalidRawName,self.pump.last_outer().ok_or(io::ErrorKind::InvalidData)?,a)?;return Ok(NamedConditionResult::SourceFailure(message))},super::original_directive_arguments::ExpectProgress::NeedInput=>return Err(io::ErrorKind::WouldBlock.into())};
+   match read(super::original_directive_arguments::Expected::Newline,"Token::Punct(Punctuation::Newline)",self,notices,host)?{super::original_directive_arguments::ExpectProgress::Token(_)=>(),super::original_directive_arguments::ExpectProgress::SourceFailure(message)=>{self.finish_conditional_using(pending,super::original_conditional::Outcome::InvalidRawName,self.pump.last_outer().ok_or(io::ErrorKind::InvalidData)?,a)?;return Ok(NamedConditionResult::SourceFailure(message))},super::original_directive_arguments::ExpectProgress::NeedInput=>return Err(io::ErrorKind::WouldBlock.into())};
+   let crate::macro_expansion::OriginalMacroValue::Ident{spelling,..}=&name.value else{return Err(io::ErrorKind::InvalidData.into())};let enabled=self.is_defined_using(spelling.get(),a)?;self.finish_conditional_using(pending,super::original_conditional::Outcome::Value(enabled),self.pump.last_outer().ok_or(io::ErrorKind::InvalidData)?,a)?;Ok(NamedConditionResult::Completed)
+  })();if result.is_err(){self.failed=true}result
+ }
+ pub(super) fn evaluate_condition_using(&mut self,hash:Origin,provider:&dyn SourceProvider,notices:&mut dyn OriginalRawNoticeSink,host:&mut dyn OriginalMacroHost,a:&SettingAdmission<'_>,notice:&mut dyn FnMut(&mut RawSourceDriver,MacroNotice)->io::Result<()>)->io::Result<ConditionEvaluation>{
+  self.check(a)?;let result=(||{
+   let mut pump=super::original_conditional_pump::OriginalConditionPump::new(hash);
+   loop{
+    let progress=self.with_directive_source_using(provider,notices,host,a,|cursor,source|pump.advance(cursor,source,a))?;
+    self.pump.record_conditional_outer(pump.last_input());
+    match progress{
+     super::original_conditional_pump::ConditionPumpProgress::Complete=>break,
+     super::original_conditional_pump::ConditionPumpProgress::Notice(actual)=>notice(self,actual)?,
+     super::original_conditional_pump::ConditionPumpProgress::NeedInput=>return Err(io::Error::new(io::ErrorKind::WouldBlock,"actual synchronous conditional source is unavailable")),
+     super::original_conditional_pump::ConditionPumpProgress::Directive{..}=>return Err(io::Error::new(io::ErrorKind::Unsupported,"nested actual directive condition continuation is unissued")),
+    }
+   }
+   let completed=pump.into_completed()?;let last_input=completed.last_input();
+   if super::original_conditional::is_disabled_using(self.conditionals.as_slice(),a)?{self.queue.discard_values();return Ok(ConditionEvaluation{last_input,outcome:ConditionResult::DisabledAfterExpansion})}
+   let syntax={let mut tokens=super::original_condition_tokens::OriginalConditionTokens::new(&mut self.queue,provider,a,completed)?;dm_syntax::parse_expression_demanded(&mut tokens,a)?};
+   // Native syntax recovery alone is not an old condition diagnostic receipt.
+   // Refuse explicitly until the SAME parser branch/typed notice join exists.
+   if !syntax.parsed().diagnostics.is_empty(){return Err(io::Error::new(io::ErrorKind::Unsupported,"actual Original malformed condition diagnostic branch is unissued"))}
+   let expression=syntax.parsed().expr.as_ref().ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual Original empty condition diagnostic branch is unissued"))?;
+   let macros=OriginalConditionLookup{environment:self.environment.environment()};
+   let evaluated=super::original_condition_value::evaluate(expression,&macros,a)?;
+   let outcome=match evaluated{super::original_condition_value::Outcome::Value(value)=>ConditionResult::Value(value),super::original_condition_value::Outcome::SourceFailure(message)=>ConditionResult::SourceFailure(message),super::original_condition_value::Outcome::Unissued(reason)=>return Err(io::Error::new(io::ErrorKind::Unsupported,reason))};
+   Ok(ConditionEvaluation{last_input,outcome})
+  })();if result.is_err(){self.failed=true}result
+ }
+ pub(super) fn physical_row_using(&mut self,origin:Origin,lease:&SourceAcquisitionLease,provider:&dyn SourceProvider,a:&SettingAdmission<'_>)->io::Result<super::original_raw_inputs::OriginalPhysicalRow>{self.check(a)?;let result=self.inputs.physical_row_using(origin,lease,provider,a);if result.is_err(){self.failed=true}result}
+ pub(super) fn environment(&self)->&OriginalEnvironment{&self.environment}
+ pub(super) fn environment_mut(&mut self)->&mut OriginalEnvironment{&mut self.environment}
+
+}
+
+#[cfg(test)]mod tests{
+ use super::*;use std::{path::Path,sync::{Arc,atomic::{AtomicUsize,Ordering}}};
+ use crate::macro_expansion::{OriginalMacroValue as V,OriginalMacroTextValue as _};
+ struct File{raw:Vec<u8>,lease:SourceAcquisitionLease}
+ impl File{fn new(raw:&str)->Self{Self{raw:raw.as_bytes().to_vec(),lease:SourceAcquisitionLease::from_raw_original_bytes(raw.as_bytes().to_vec(),17u64)}}}
+ impl SourceProvider for File{
+  fn initial_environment(&self)->InitialEnvironment{InitialEnvironment::OriginalChecker0290}
+  fn read(&self,_:&Path)->Result<String,String>{panic!("actual raw driver must never use prepared/read fallback")}
+  fn original_source_bytes<'a>(&'a self,lease:&'a SourceAcquisitionLease)->io::Result<Option<&'a[u8]>>{if !lease.same_original_acquisition(&self.lease){return Err(io::ErrorKind::InvalidInput.into())}Ok(Some(&self.raw))}
+ }
+ struct Notices{lexical:usize,numeric:usize}
+ impl OriginalRawNoticeSink for Notices{
+  fn lexical(&mut self,_:&super::super::OriginalLexicalFrameIdentity,_:usize,_:super::super::original_raw_points::OriginalRawPoint,_:super::super::original_raw_frame::OriginalRawNotice,_:&SettingAdmission<'_>)->io::Result<()>{self.lexical+=1;Ok(())}
+  fn numeric(&mut self,_:&super::super::OriginalLexicalFrameIdentity,_:usize,_:super::super::original_raw_points::OriginalRawPoint,_:dm_syntax::OriginalLexicalNoticePoint,_:dm_syntax::numeric_form::OriginalNumberNotice<'_>,_:&SettingAdmission<'_>)->io::Result<()>{self.numeric+=1;Ok(())}
+ }
+ struct Host{ordinary:super::super::original_ordinary_output::OriginalOrdinaryOutput,fail:bool}
+ impl Host{fn new(a:&SettingAdmission<'_>)->Self{Self{ordinary:super::super::original_ordinary_output::OriginalOrdinaryOutput::new(a).unwrap(),fail:false}}}
+ impl OriginalMacroHost for Host{
+  fn take_docs_for_define(&mut self,a:&SettingAdmission<'_>)->io::Result<crate::macro_expansion::OriginalMacroRows<crate::macro_expansion::OriginalMacroDoc<'static>>>{self.ordinary.take_docs_for_define(a)}
+
+  fn before_identifier(&mut self,name:&str,origin:Origin,queue:&mut OriginalOutputQueue<'static>,a:&SettingAdmission<'_>)->io::Result<()>{if self.fail{return Err(io::Error::from_raw_os_error(1450))}self.ordinary.before_identifier(name,origin,queue,a)}
+  fn ordinary_token(&mut self,token:Token<'static>,queue:&mut OriginalOutputQueue<'static>,a:&SettingAdmission<'_>)->io::Result<()>{self.ordinary.ordinary_token(token,queue,a)}
+  fn direct_noncall_output(&mut self,token:&Token<'static>,a:&SettingAdmission<'_>)->io::Result<()>{self.ordinary.direct_noncall_output(token,a)}
+  fn dynamic(&mut self,_:bool,_:Origin,_:Option<usize>,_:Option<Origin>,_:&SettingAdmission<'_>)->io::Result<Token<'static>>{panic!("fixture uses no dynamic macro")}
+  fn invocation(&mut self,_:&str,_:Origin,_:&SettingAdmission<'_>)->io::Result<()>{Ok(())}
+ }
+ fn driver(a:&SettingAdmission<'_>)->RawSourceDriver{RawSourceDriver::new(InitialEnvironment::OriginalChecker0290,&BTreeMap::new(),a,&mut|input,a|super::super::original_token_factory::initial_definition_using(input,a,&mut|_|panic!("fixed defaults have no lexical notice"),&mut|_,_|panic!("fixed defaults have no numeric notice"))).unwrap()}
+ fn rendered(token:LogicalToken)->String{match token{LogicalToken::Delimiter{spelling,..}=>spelling.into(),LogicalToken::Actual(token)=>match token.value{V::Ident{spelling,..}=>spelling.get().into(),V::Punct(p)=>p.into(),V::Int(n)=>n.to_string(),_=>panic!("fixture scalar kind")}}}
+ #[test]fn same_raw_macro_indent_path_counts_logical_units_not_twelve_thousand_physical_blank_lines(){
+  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,16<<20,&||Ok(()));let text=format!("var/a=1\n{}var/b=2\n","\n".repeat(12000));let file=File::new(&text);let mut driver=driver(&a);driver.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host::new(&a);let mut notices=Notices{lexical:0,numeric:0};let mut output=Vec::new();
+  loop{match driver.next_logical_using(&file,&mut notices,&mut host,&a).unwrap(){DriverEvent::Token(token)=>output.push(rendered(token)),DriverEvent::ActualEnd=>break,DriverEvent::NeedInput=>continue,_=>panic!("unexpected valid raw stream event")}}
+  assert_eq!(output,["var","/","a","=","1",";","var","/","b","=","2",";"]);assert_eq!((notices.lexical,notices.numeric),(0,0));drop((driver,host));assert_eq!(used.load(Ordering::Acquire),0);
+ }
+ #[test]fn genuine_lazy_stop_never_reads_later_bad_quote_or_publishes_source_end(){
+  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,16<<20,&||Ok(()));let file=File::new("var/a=1\n\"unterminated");let mut driver=driver(&a);driver.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host::new(&a);let mut notices=Notices{lexical:0,numeric:0};let DriverEvent::Token(token)=driver.next_logical_using(&file,&mut notices,&mut host,&a).unwrap()else{panic!("real first token")};assert_eq!(rendered(token),"var");assert!(!driver.raw_end);assert_eq!(notices.lexical,0);driver.stop();assert!(matches!(driver.next_logical_using(&file,&mut notices,&mut host,&a).unwrap(),DriverEvent::Stopped));assert!(!driver.raw_end);assert_eq!(notices.lexical,0);drop((driver,host));assert_eq!(used.load(Ordering::Acquire),0);
+ }
+ #[test]fn first_real_host_io_poisons_same_controller_and_fresh_owner_can_recover(){
+  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,16<<20,&||Ok(()));let file=File::new("var/a=1\n");let mut source=driver(&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host::new(&a);host.fail=true;let mut notices=Notices{lexical:0,numeric:0};assert_eq!(source.next_logical_using(&file,&mut notices,&mut host,&a).err().unwrap().raw_os_error(),Some(1450));host.fail=false;assert_eq!(source.next_logical_using(&file,&mut notices,&mut host,&a).err().unwrap().kind(),io::ErrorKind::InvalidInput);assert!(!source.raw_end);drop(source);let mut source=driver(&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();assert!(matches!(source.next_logical_using(&file,&mut notices,&mut host,&a).unwrap(),DriverEvent::Token(_)));drop((source,host));assert_eq!(used.load(Ordering::Acquire),0);
+ }
+ fn project_driver(project:&Path,a:&SettingAdmission<'_>)->RawSourceDriver{RawSourceDriver::new_for_project(InitialEnvironment::OriginalChecker0290,&BTreeMap::new(),project,a,&mut|input,a|super::super::original_token_factory::initial_definition_using(input,a,&mut|_|panic!("fixed default lexical notice"),&mut|_,_|panic!("fixed default numeric notice"))).unwrap()}
+ struct Pair{root:File,child:File}
+ impl SourceProvider for Pair{
+  fn initial_environment(&self)->InitialEnvironment{InitialEnvironment::OriginalChecker0290}
+  fn read(&self,_:&Path)->Result<String,String>{panic!("actual path fixture never prepares another source")}
+  fn original_source_bytes<'a>(&'a self,lease:&'a SourceAcquisitionLease)->io::Result<Option<&'a[u8]>>{if lease.same_original_acquisition(&self.root.lease){Ok(Some(&self.root.raw))}else if lease.same_original_acquisition(&self.child.lease){Ok(Some(&self.child.raw))}else{Err(io::ErrorKind::InvalidInput.into())}}
+ }
+ #[test]fn actual_physical_file_context_returns_to_root_after_child_end_without_guessing_from_token_origin(){
+  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let files=Pair{root:File::new("root\n"),child:File::new("child\n")};let mut source=project_driver(Path::new("project.dme"),&a);source.push_opened_at(&files,files.root.lease.clone(),0,Path::new("project.dme"),&a).unwrap();assert!(source.is_defined_using("__MAIN__",&a).unwrap());assert!(!crate::MacroLookup::contains_key(source.environment.environment(),"__MAIN__"),"defined() uses only the ordinary map, never #ifdef's file special case");source.push_opened_at(&files,files.child.lease.clone(),1,Path::new("child.dm"),&a).unwrap();assert!(!source.is_defined_using("__MAIN__",&a).unwrap());
+  let mut notices=Notices{lexical:0,numeric:0};let mut host=Host::new(&a);let mut child_seen=false;let mut returned=false;loop{let event=source.next_logical_using(&files,&mut notices,&mut host,&a).unwrap();if source.inputs.current_occurrence()==Some(0){assert!(source.in_environment_using(&a).unwrap());returned=true;break}match event{DriverEvent::Token(LogicalToken::Actual(Token{value:V::Ident{spelling,..},..}))if spelling.get()=="child"=>child_seen=true,DriverEvent::Token(_)|DriverEvent::NeedInput=>(),_=>panic!("must return from actual child before global end")}}
+  assert!(child_seen&&returned);source.stop();assert!(!source.raw_end,"querying file context/pausing is not source EOF");assert_eq!((notices.lexical,notices.numeric),(0,0));drop((source,host));assert_eq!(used.load(Ordering::Acquire),0);
+ }
+ #[test]fn missing_actual_file_context_is_unissued_and_first_io_cannot_become_false_main(){
+  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,16<<20,&||Ok(()));let file=File::new("value\n");let mut source=project_driver(Path::new("project.dme"),&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();assert_eq!(source.is_defined_using("__MAIN__",&a).unwrap_err().kind(),io::ErrorKind::Unsupported);assert_eq!(source.in_environment_using(&a).unwrap_err().kind(),io::ErrorKind::InvalidInput);drop(source);
+  let mut source=project_driver(Path::new("project.dme"),&a);source.push_opened_at(&file,file.lease.clone(),0,Path::new("project.dme"),&a).unwrap();let first=||Err(io::Error::from_raw_os_error(1450));let failed=SettingAdmission::new(&used,16<<20,&first);assert_eq!(source.is_defined_using("__MAIN__",&failed).unwrap_err().raw_os_error(),Some(1450));assert_eq!(source.in_environment_using(&a).unwrap_err().kind(),io::ErrorKind::InvalidInput);drop(source);let mut fresh=project_driver(Path::new("project.dme"),&a);fresh.push_opened_at(&file,file.lease.clone(),0,Path::new("project.dme"),&a).unwrap();assert!(fresh.is_defined_using("__MAIN__",&a).unwrap());drop(fresh);assert_eq!(used.load(Ordering::Acquire),0);
+ }
+
+
+ #[test]fn actual_file_dir_redefinition_and_undef_keep_last_value_then_remove_without_native_restoration(){
+  use super::super::{original_directive_dispatch::DirectiveRequest as Request,original_conditional::Action};let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let file=File::new("#define FILE_DIR \"one\"\n#define FILE_DIR \"two\"\nFILE_DIR\n#undef FILE_DIR\n#ifdef FILE_DIR\nUNREACHABLE\n#endif\nFILE_DIR\n");let mut source=project_driver(Path::new("project.dme"),&a);source.push_opened_at(&file,file.lease.clone(),0,Path::new("project.dme"),&a).unwrap();let mut host=Host::new(&a);let mut notices=Notices{lexical:0,numeric:0};let mut installed=0;let mut last_value=false;let mut ordinary_after_undef=false;
+  loop{match source.next_logical_using(&file,&mut notices,&mut host,&a).unwrap(){DriverEvent::Directive{hash}=>{match source.directive_request_using(&file,&mut notices,&mut host,&a,&mut|_,_,_|panic!("valid definition has no hint")).unwrap(){Request::Define(defined)=>{match source.install_defined_using(defined,&file,None,&a).unwrap(){DefinitionInstallation::Installed{replaced,warn_redefinition,..}=>{assert_eq!(replaced,installed!=0);assert!(!warn_redefinition);installed+=1},_=>panic!("FILE_DIR must install as ordinary definition")}},Request::Undef{name}=>{let V::Ident{spelling,..}=&name.value else{panic!("actual undef name")};assert!(source.undefine_using(spelling.get(),&a).unwrap().found);assert!(!source.is_defined_using("FILE_DIR",&a).unwrap());},Request::Conditional(command)=>match source.begin_conditional_using(command,hash,&a).unwrap(){Action::Done{..}=>(),Action::Evaluate{pending,..}=>assert!(matches!(source.finish_named_condition_using(pending,&file,&mut notices,&mut host,&a).unwrap(),NamedConditionResult::Completed)),_=>panic!("matched conditional")},_=>panic!("only define/undef/named conditional in fixture")};source.finish_directive_using(true,&file,&mut notices,&mut host,&a).unwrap();},DriverEvent::Token(LogicalToken::Actual(Token{value:V::String(text),..}))=>{assert_eq!(text.get(),"two");last_value=true},DriverEvent::Token(LogicalToken::Actual(Token{value:V::Ident{spelling,..},..}))=>{assert_ne!(spelling.get(),"UNREACHABLE");if spelling.get()=="FILE_DIR"{ordinary_after_undef=true}},DriverEvent::Token(_)|DriverEvent::NeedInput=>(),DriverEvent::ActualEnd=>break,_=>panic!("no source notice expected")}}
+  assert_eq!(installed,2);assert!(last_value&&ordinary_after_undef);assert!(source.environment.environment().actual_original_product("FILE_DIR").unwrap().is_none());drop((source,host));assert_eq!(used.load(Ordering::Acquire),0);
+ }
+ #[test]fn actual_nested_source_main_checks_and_debug_definition_use_nearest_physical_file(){
+  use super::super::{original_directive_dispatch::DirectiveRequest as Request,original_conditional::Action};let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let files=Pair{root:File::new("#define DEBUG 1\n#ifdef __MAIN__\nroot_yes\n#endif\n#include \"child.dm\"\nDEBUG\n"),child:File::new("#define DEBUG 2\n#ifndef __MAIN__\nchild_yes\n#endif\n")};let mut source=project_driver(Path::new("project.dme"),&a);source.push_opened_at(&files,files.root.lease.clone(),0,Path::new("project.dme"),&a).unwrap();let mut host=Host::new(&a);let mut notices=Notices{lexical:0,numeric:0};let(mut root,mut child,mut debug,mut ignored)=(false,false,false,false);
+  loop{match source.next_logical_using(&files,&mut notices,&mut host,&a).unwrap(){DriverEvent::Directive{hash}=>{match source.directive_request_using(&files,&mut notices,&mut host,&a,&mut|_,_,_|panic!("valid definition has no hint")).unwrap(){Request::Define(defined)=>match source.install_defined_using(defined,&files,None,&a).unwrap(){DefinitionInstallation::IgnoredDebugOutsideEnvironment=>ignored=true,DefinitionInstallation::Installed{..}=>()},Request::Include{path}=>{assert!(matches!(&path.value,V::String(text)if text.get()=="child.dm"));source.push_opened_at(&files,files.child.lease.clone(),1,Path::new("child.dm"),&a).unwrap();},Request::Conditional(command)=>match source.begin_conditional_using(command,hash,&a).unwrap(){Action::Done{..}=>(),Action::Evaluate{pending,..}=>assert!(matches!(source.finish_named_condition_using(pending,&files,&mut notices,&mut host,&a).unwrap(),NamedConditionResult::Completed)),_=>panic!("matched conditional")},_=>panic!("only defined and named conditions in fixture")};source.finish_directive_using(true,&files,&mut notices,&mut host,&a).unwrap();},DriverEvent::Token(LogicalToken::Actual(Token{value:V::Ident{spelling,..},..}))=>{root|=spelling.get()=="root_yes";child|=spelling.get()=="child_yes"},DriverEvent::Token(LogicalToken::Actual(Token{value:V::Int(value),..}))=>{assert_eq!(value,1,"child DEBUG must not replace root's actual binding");debug=true},DriverEvent::Token(_)|DriverEvent::NeedInput=>(),DriverEvent::ActualEnd=>break,_=>panic!("no source notice expected")}}
+  assert!(root&&child&&debug&&ignored);drop((source,host));assert_eq!(used.load(Ordering::Acquire),0);
+ }
+
+ #[test]fn actual_inactive_parent_still_expands_bad_arity_condition_before_global_queue_discard(){
+  use super::super::{original_directive_dispatch::DirectiveRequest as Request,original_conditional::{Action,Instruction,Outcome}};
+  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let file=File::new("#define BAD(a,b) a\n#if 0\n#if BAD(1)\nvar/ignored=9\n#endif\n#endif\nvar/value=7\n");let mut source=driver(&a);source.push_opened(&file,file.lease.clone(),0,&a).unwrap();let mut host=Host::new(&a);let mut notices=Notices{lexical:0,numeric:0};let mut arity=0;let mut skipped=false;let mut value=false;
+  loop{match source.next_logical_using(&file,&mut notices,&mut host,&a).unwrap(){
+   DriverEvent::Directive{hash}=>{
+    match source.directive_request_using(&file,&mut notices,&mut host,&a,&mut|_,_,_|panic!("valid macro definition has no hint")).unwrap(){
+     Request::Define(defined)=>{source.install_defined_using(defined,&file,None,&a).unwrap();},
+     Request::Conditional(command)=>match source.begin_conditional_using(command,hash,&a).unwrap(){
+      Action::Done{..}=>(),
+      Action::Evaluate{pending,..}=>{assert_eq!(pending.instruction(),Instruction::Expression);let evaluated=source.evaluate_condition_using(hash,&file,&mut notices,&mut host,&a,&mut|_,actual|{assert!(matches!(actual.kind,crate::macro_expansion::OriginalMacroNoticeKind::WrongArity));arity+=1;Ok(())}).unwrap();let outcome=match evaluated.outcome{ConditionResult::Value(value)=>Outcome::Value(value),ConditionResult::DisabledAfterExpansion=>{skipped=true;Outcome::DisabledAfterExpansion},ConditionResult::SourceFailure(_)=>panic!("valid active condition has no constant judge error")};source.finish_conditional_using(pending,outcome,evaluated.last_input,&a).unwrap();},
+      Action::SourceFailure{..}=>panic!("matched actual conditional stack"),
+     },_=>panic!("fixture has only actual define/conditional directives"),
+    }
+    source.finish_directive_using(true,&file,&mut notices,&mut host,&a).unwrap();
+   },
+   DriverEvent::Token(LogicalToken::Actual(Token{value:V::Int(7),..}))=>value=true,
+   DriverEvent::Token(LogicalToken::Actual(Token{value:V::Ident{spelling,..},..}))if spelling.get()=="ignored"=>panic!("inactive ordinary source cannot reach logical output"),
+   DriverEvent::Token(_)=>(),DriverEvent::ActualEnd=>break,_=>panic!("unexpected valid outer stream event"),
+  }}assert_eq!(arity,1);assert!(skipped&&value);assert!(source.conditionals.as_slice().is_empty());drop((source,host));assert_eq!(used.load(Ordering::Acquire),0);
+ }
+
+
+
+ #[test]fn actual_defined_main_expression_is_ordinary_map_while_ifdef_main_uses_current_file(){
+  use super::super::{original_directive_dispatch::DirectiveRequest as Request,original_conditional::{Action,Instruction,Outcome}};let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,32<<20,&||Ok(()));let file=File::new("#if defined(__MAIN__)\nWRONG\n#endif\n#ifdef __MAIN__\nROOT\n#endif\n#if !defined(__MAIN__)\nEXPRESSION\n#endif\n");let mut source=project_driver(Path::new("project.dme"),&a);source.push_opened_at(&file,file.lease.clone(),0,Path::new("project.dme"),&a).unwrap();let mut notices=Notices{lexical:0,numeric:0};let mut host=Host::new(&a);let(mut root,mut expression)=(false,false);
+  loop{match source.next_logical_using(&file,&mut notices,&mut host,&a).unwrap(){DriverEvent::Directive{hash}=>{let Request::Conditional(command)=source.directive_request_using(&file,&mut notices,&mut host,&a,&mut|_,_,_|panic!("no definition hint")).unwrap()else{panic!("conditional fixture")};match source.begin_conditional_using(command,hash,&a).unwrap(){Action::Done{..}=>(),Action::Evaluate{pending,..}=>match pending.instruction(){Instruction::DefinedName{..}=>assert!(matches!(source.finish_named_condition_using(pending,&file,&mut notices,&mut host,&a).unwrap(),NamedConditionResult::Completed)),Instruction::Expression=>{let actual=source.evaluate_condition_using(hash,&file,&mut notices,&mut host,&a,&mut|_,_|panic!("valid condition has no macro notice")).unwrap();let ConditionResult::Value(value)=actual.outcome else{panic!("valid top-level conditional must evaluate normally")};source.finish_conditional_using(pending,Outcome::Value(value),actual.last_input,&a).unwrap();}},_=>panic!("matched condition")};source.finish_directive_using(true,&file,&mut notices,&mut host,&a).unwrap();},DriverEvent::Token(LogicalToken::Actual(Token{value:V::Ident{spelling,..},..}))=>{assert_ne!(spelling.get(),"WRONG");root|=spelling.get()=="ROOT";expression|=spelling.get()=="EXPRESSION"},DriverEvent::Token(_)|DriverEvent::NeedInput=>(),DriverEvent::ActualEnd=>break,_=>panic!("valid fixture has no notices")}}
+  assert!(root&&expression);drop((source,host));assert_eq!(used.load(Ordering::Acquire),0);
+ }
+
+}

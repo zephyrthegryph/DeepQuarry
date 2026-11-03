@@ -103,6 +103,7 @@ pub enum Command {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum BuildOutcome {
+    RawQueryPrepared { query_revision:String,source_revision:String,policy_revision:String,retained:bool },
     QueryPrepared {
         semantic_revision: String,
         source_revision: String,

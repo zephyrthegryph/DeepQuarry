@@ -27,6 +27,7 @@ pub(crate) use source_question_roster::SourceQuestionRoster;
 mod native_arc_allocation;
 mod no_weak_arc_owner;
 mod purity;
+pub(crate) use purity::current_variables::CurrentSelectedDiagnostic;
 mod raw_policy;
 pub use raw_policy::GeneratorName;
 pub(crate) use raw_policy::GeneratorArtifact;
@@ -38,6 +39,7 @@ const SOURCE_ANSWERS_BUDGET: usize = 64 * 1024 * 1024;
 type AnswerMap<K, V> = hashbrown::HashMap<K, V, RandomState, SourceAllocator>;
 type AnswerStamps = allocator_api2::vec::Vec<(u128, u128), SourceAllocator>;
 pub use raw_policy::workspace::{WorkspaceCursor, WorkspacePageReader, WorkspacePageView};
+pub(crate) use raw_policy::workspace::RawInputCredits;
 mod value_proofs;
 pub(crate) use raw_policy::workspace::{
     CurrentFile as CurrentWorkspaceRawFile, SourceProof as WorkspaceRawSourceProof,
@@ -79,6 +81,7 @@ pub struct QueryDb {
     id: u64,
     db: Db,
     body_charge: Arc<std::sync::atomic::AtomicUsize>,
+    original_signature_aliases:Mutex<dm_tree::frontend::OriginalSignatureAliasCensus>,
     value_charge: Arc<std::sync::atomic::AtomicUsize>,
     raw_policy: raw_policy::State,
     purity: purity::State,
@@ -140,6 +143,7 @@ impl Default for QueryDb {
         static NEXT_ID: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
         Self {
             body_charge,
+            original_signature_aliases:Mutex::new(Default::default()),
             value_charge,
             raw_policy,
             purity,

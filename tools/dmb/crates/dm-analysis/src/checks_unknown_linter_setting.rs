@@ -16,13 +16,13 @@ fn archived_family_checked(body:&ArchivedBody<'_>,severity:Severity,family:Famil
 fn syntax_using<E:From<String>>(syntax:&StatementBody,severity:Severity,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<Vec<Diagnostic>,E>{syntax_family_using(syntax,severity,Family::Linter,checkpoint)}
 fn syntax_family_using<E:From<String>>(syntax:&StatementBody,severity:Severity,family:Family,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<Vec<Diagnostic>,E>{
  checkpoint()?;if !syntax.syntax_complete(){return Err("body has unsupported or malformed native syntax".to_owned().into())}if severity==Severity::Disabled{return Ok(Vec::new())}let mut rows=Vec::new();
- for statement in &syntax.parsed().statements{checkpoint()?;let Some(setting)=statement.setting()else{break};let name=setting.attribute;if name=="SpacemanDMM_return_type"{continue}
-  let (family,message)=match family{
-   Family::Linter if name.starts_with("SpacemanDMM_")&&!KNOWN.contains(&name)=>("unknown_linter_setting",format!("unknown linter setting {name:?}")),
-   Family::Ordinary if !name.starts_with("SpacemanDMM_")&&!KNOWN_ORDINARY.contains(&name)=>("unknown_setting",format!("unknown setting {name:?}")),
-   _=>continue,
-  };
-  rows.push(Diagnostic{family,severity,span:statement.header_span,expression_span:setting.value.current_span(),message,notes:Vec::new()});
+ for statement in &syntax.parsed().statements{checkpoint()?;if statement.setting().is_none(){break}if let Some(row)=diagnostic_for_setting(statement,family,severity){rows.push(row)}
  }checkpoint()?;Ok(rows)
 }
 #[cfg(test)]#[path="checks_unknown_linter_setting_tests.rs"]mod tests;
+
+fn diagnostic_for_setting(statement:&dm_syntax::Statement,family:Family,severity:Severity)->Option<Diagnostic>{let setting=statement.setting()?;let name=setting.attribute;if name=="SpacemanDMM_return_type"{return None}let(family,prefix)=classify_name(name,family)?;let message=format!("{prefix} {name:?}");Some(Diagnostic{family,severity,span:statement.header_span,expression_span:setting.value.current_span(),message,notes:Vec::new()})}
+pub(crate) fn original_prefix_diagnostic(statement:&dm_syntax::Statement)->Option<Diagnostic>{let setting=statement.setting()?;diagnostic_for_setting(statement,if setting.attribute.starts_with("SpacemanDMM_"){Family::Linter}else{Family::Ordinary},Severity::Warning)}
+
+fn classify_name(name:&str,family:Family)->Option<(&'static str,&'static str)>{match family{Family::Linter if name.starts_with("SpacemanDMM_")&&!KNOWN.contains(&name)=>Some(("unknown_linter_setting","unknown linter setting")),Family::Ordinary if !name.starts_with("SpacemanDMM_")&&!KNOWN_ORDINARY.contains(&name)=>Some(("unknown_setting","unknown setting")),_=>None}}
+pub(crate) fn original_prefix_is_unknown(statement:&dm_syntax::Statement)->bool{let Some(setting)=statement.setting()else{return false};setting.attribute!="SpacemanDMM_return_type"&&classify_name(setting.attribute,if setting.attribute.starts_with("SpacemanDMM_"){Family::Linter}else{Family::Ordinary}).is_some()}

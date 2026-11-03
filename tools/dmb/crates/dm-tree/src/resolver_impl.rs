@@ -368,57 +368,28 @@ impl dm_ir::Resolver for SemanticTree {
 }
 
 impl SemanticTree {
-    fn source_declaration_chain(
-        &self,
-        owner: SymbolId,
-        name: SymbolId,
-        verb: bool,
-        query: dm_ir::ResolveQuery,
-    ) -> dm_ir::ResolvedMeaning {
+    fn source_declaration_chain(&self,owner:SymbolId,name:SymbolId,verb:bool,query:dm_ir::ResolveQuery)->dm_ir::ResolvedMeaning {
+        self.source_declaration_chain_using(owner,name,verb,query,None).expect("ordinary native declaration chain allocation failed")
+    }
+    fn source_declaration_chain_using(&self,owner:SymbolId,name:SymbolId,verb:bool,query:dm_ir::ResolveQuery,mut work:Option<&mut dyn dm_ir::CanonicalWork>)->std::io::Result<dm_ir::ResolvedMeaning> {
         use dm_ir::ResolvedMeaning as M;
-        let kind = if verb {
-            MemberKind::Verb
-        } else {
-            MemberKind::Proc
-        };
-        let identity = |id: MemberId| -> Option<dm_ir::ProcedureIdentity> {
-            let node = self.member(id)?;
-            Some(dm_ir::ProcedureIdentity {
-                owner: self.types[node.owner.index()].path,
-                name: node.name,
-                verb: node.kind == MemberKind::Verb,
-                occurrence: self.member_occurrence(id)?,
-            })
-        };
-        self.lookup_type(owner)
-            .and_then(|id| self.resolve(id, name, kind))
-            .map(|id| {
-                let declarations = self
-                    .override_chain(id)
-                    .iter()
-                    .map(|&id| {
-                        let node = self.member(id)?;
-                        Some(M::Declaration {
-                            identity: identity(id)?,
-                            definition: match node.definition {
-                                DefinitionMode::Declare => dm_ir::ProcedureDefinition::Declare,
-                                DefinitionMode::Override => dm_ir::ProcedureDefinition::Override,
-                                DefinitionMode::Reopen => dm_ir::ProcedureDefinition::Reopen,
-                                DefinitionMode::Implicit => dm_ir::ProcedureDefinition::Implicit,
-                            },
-                            previous: match node.previous {
-                                Some(previous) => Some(Box::new(identity(previous)?)),
-                                None => None,
-                            },
-                            data: Arc::clone(&node.metadata),
-                        })
-                    })
-                    .collect::<Option<Vec<_>>>();
-                declarations
-                    .map(|rows| M::Members(rows.into()))
-                    .unwrap_or(M::Unsupported(query))
-            })
-            .unwrap_or(M::Missing)
+        let kind=if verb{MemberKind::Verb}else{MemberKind::Proc};
+        let identity=|id:MemberId|->Option<dm_ir::ProcedureIdentity>{let node=self.member(id)?;Some(dm_ir::ProcedureIdentity{owner:self.types[node.owner.index()].path,name:node.name,verb:node.kind==MemberKind::Verb,occurrence:self.member_occurrence(id)?})};
+        let Some(head)=self.lookup_type(owner).and_then(|id|self.resolve(id,name,kind))else{return Ok(M::Missing)};
+        let mut count=0usize;
+        for _ in self.override_chain_iter(head){if let Some(work)=&mut work{work.poll()?;}count=count.checked_add(1).filter(|n|*n<=self.members().len()).ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidData,"native declaration chain is cyclic"))?;}
+        let bound=count.checked_mul(4).ok_or_else(||std::io::Error::new(std::io::ErrorKind::OutOfMemory,"native declaration chain capacity overflow"))?;
+        if let Some(work)=&mut work{work.reserve(bound.checked_mul(std::mem::size_of::<M>()+std::mem::size_of::<dm_ir::ProcedureIdentity>()).and_then(|n|n.checked_add(256)).ok_or_else(||std::io::Error::new(std::io::ErrorKind::OutOfMemory,"native declaration chain allocation geometry overflow"))?)?;}
+        let mut rows=Vec::new();rows.try_reserve_exact(count).map_err(|e|std::io::Error::new(std::io::ErrorKind::OutOfMemory,e))?;
+        if rows.capacity()>bound{return Err(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"native declaration chain allocator exposed excess capacity"))}
+        for id in self.override_chain_iter(head){
+            if let Some(work)=&mut work{work.poll()?;}
+            let Some(node)=self.member(id)else{return Ok(M::Unsupported(query))};
+            let Some(actual_identity)=identity(id)else{return Ok(M::Unsupported(query))};
+            let previous=match node.previous{Some(previous)=>{let Some(previous)=identity(previous)else{return Ok(M::Unsupported(query))};Some(Box::new(previous))},None=>None};
+            rows.push(M::Declaration{identity:actual_identity,definition:match node.definition{DefinitionMode::Declare=>dm_ir::ProcedureDefinition::Declare,DefinitionMode::Override=>dm_ir::ProcedureDefinition::Override,DefinitionMode::Reopen=>dm_ir::ProcedureDefinition::Reopen,DefinitionMode::Implicit=>dm_ir::ProcedureDefinition::Implicit},previous,data:Arc::clone(&node.metadata)});
+        }
+        Ok(M::Members(rows.into()))
     }
 }
 
@@ -480,14 +451,13 @@ impl SemanticTree {
             id = previous;
         }
     }
-    fn source_var_declaration(
-        &self,
-        owner: SymbolId,
-        name: SymbolId,
-        query: dm_ir::ResolveQuery,
-    ) -> dm_ir::ResolvedMeaning {
+    fn source_var_declaration(&self,owner:SymbolId,name:SymbolId,query:dm_ir::ResolveQuery)->dm_ir::ResolvedMeaning {
+        self.source_var_declaration_using(owner,name,query,&mut|data|Ok(xxhash_rust::xxh3::xxh3_128(&data.canonical_bytes()).into()))
+            .expect("ordinary native source declaration encoding failed")
+    }
+    fn source_var_declaration_using(&self,owner:SymbolId,name:SymbolId,query:dm_ir::ResolveQuery,fingerprint:&mut dyn FnMut(&MemberMetadata)->std::io::Result<dm_ir::PackedU128>)->std::io::Result<dm_ir::ResolvedMeaning> {
         use dm_ir::ResolvedMeaning as M;
-        match self.source_formal_variable_member(owner, name) {
+        Ok(match self.source_formal_variable_member(owner, name) {
             Ok(Some(id)) => {
                 let node = self
                     .member(id)
@@ -496,16 +466,37 @@ impl SemanticTree {
                 M::Member {
                     owner: self.types[node.owner.index()].path,
                     name,
-                    fingerprint: xxhash_rust::xxh3::xxh3_128(&data.canonical_bytes()).into(),
+                    fingerprint: fingerprint(&data)?,
                     data,
                 }
             }
             Ok(None) => M::Missing,
             Err(_) => M::Unsupported(query),
-        }
+        })
     }
 }
 
 #[cfg(test)]
 #[path = "source_var_declaration_tests.rs"]
 mod source_var_declaration_tests;
+
+impl SemanticTree {
+    /// Same native resolver selection, with demand-owned canonical allocation.
+    /// This changes neither source provenance nor unsupported-query semantics.
+    pub fn resolve_with_canonical_work(&self,query:dm_ir::ResolveQuery,work:&mut dyn dm_ir::CanonicalWork)->std::io::Result<dm_ir::ResolvedMeaning> {
+        use dm_ir::ResolveQuery as Q;
+        work.poll()?;
+        match query {
+            Q::SourceVarDeclaration{owner,name}=>self.source_var_declaration_using(owner,name,query,&mut|data|Ok(xxhash_rust::xxh3::xxh3_128(&data.canonical_bytes_using(work)?).into())),
+            Q::CheckerBuiltinVar{profile,owner,name}=>self.resolve_checker_builtin_admitted(query,profile,owner,name,MemberKind::Var,false,work),
+            Q::CheckerBuiltinProc{profile,owner,name,verb}=>self.resolve_checker_builtin_admitted(query,profile,owner,name,if verb{MemberKind::Verb}else{MemberKind::Proc},false,work),
+            Q::SourceDeclarationChain{owner,name,verb}=>self.source_declaration_chain_using(owner,name,verb,query,Some(work)),
+            Q::Type(_)=>Ok(dm_ir::Resolver::resolve(self,query)),
+            Q::Ancestry(path)=>{
+                if !self.owner_ancestry.contains_key(&path){let mut next=self.lookup_type(path);let mut count=0usize;while let Some(id)=next{work.poll()?;count=count.checked_add(1).filter(|n|*n<=self.types().len()).ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidData,"native ancestry allocation geometry is cyclic"))?;next=self.parent(id);}work.reserve(count.checked_mul(8*std::mem::size_of::<SymbolId>()).and_then(|n|n.checked_add(256)).ok_or_else(||std::io::Error::new(std::io::ErrorKind::OutOfMemory,"native ancestry allocation geometry overflow"))?)?;}
+                Ok(dm_ir::Resolver::resolve(self,query))
+            },
+            _=>Err(std::io::Error::new(std::io::ErrorKind::Unsupported,"native admitted structural resolver query has not been issued")),
+        }
+    }
+}

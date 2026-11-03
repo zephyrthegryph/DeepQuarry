@@ -1,0 +1,4 @@
+/proc/bad(good="é漢", broken=)
+    missing_bad
+/proc/good()
+    missing_good

@@ -22,8 +22,8 @@ use crate::tree::{SourceFile, CODE_DM};
 const HINT: &str = "Radials ask a typed prompt; traits are grants; diseases are afflictions (tools/ci/leftovers_lints.py)";
 
 static META: Meta = Meta {
-    name: "leftovers",
-    group: "",
+    name: crate::allow_registry_fields::leftovers::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::leftovers::SCOPE_META_0.group,
     label: "leftovers",
     legacy: "tools/ci/leftovers_lints.py",
     select: CODE_DM,
@@ -35,7 +35,7 @@ static META: Meta = Meta {
         RuleMeta { name: "disease", hint: HINT },
     ],
     allow: crate::allow_registry_fields::leftovers::ALLOW_0,
-    lists: &["radial_impl_prefixes"],
+    lists: crate::allow_registry_fields::leftovers::SCOPE_META_0.lists,
 };
 
 struct Leftovers;

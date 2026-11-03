@@ -220,64 +220,7 @@ impl<'a> BorrowedUntyped<'a> {
             &self.raw.tree.root,
             input.exempt_types(),
             |file| scope.exempt(file),
-            |anchor, mut source| {
-                let file = self
-                    .inputs
-                    .file(&source.path)
-                    .ok_or_else(|| Unsupported("untyped origin absent from capture".into()))?;
-                if !file.is_compiled() || file.role() != PolicyRole::DmSource {
-                    return Err(Unsupported("untyped origin not compiled source".into()));
-                }
-                match anchor {
-                    dm_analysis::untyped_native::PolicyAnchor::Assignment(at) => {
-                        let exact = self
-                            .inputs
-                            .archive()
-                            .original_policy_line(at.start)
-                            .map_err(|error| {
-                                Unsupported(format!(
-                                    "untyped assignment {}:{} native@{}: {error}",
-                                    source.path.display(),
-                                    source.line,
-                                    at.start
-                                ))
-                            })?;
-                        if exact.path != source.path {
-                            return Err(Unsupported(
-                                "assignment policy point belongs to another file".into(),
-                            ));
-                        }
-                        source.line = file
-                            .analyze_display_line(exact.line)
-                            .map_err(|e| Unsupported(e.to_string()))?;
-                    }
-                    dm_analysis::untyped_native::PolicyAnchor::Declaration(member) => {
-                        let exact = self
-                            .inputs
-                            .archive()
-                            .member_policy_compatibility_cursor(member)
-                            .map_err(Unsupported)?;
-                        // The original member's compiled raw capture was checked
-                        // above. A planner-issued diagnostic boundary can belong
-                        // to its parent manifest, which the original policy then
-                        // naturally omits through its existing code/ selection.
-                        source.path = exact.path;
-                        source.line = if exact.logical_boundary {
-                            exact.line
-                        } else {
-                            let target = self.inputs.file(&source.path).ok_or_else(|| {
-                                Unsupported("declaration target source absent from capture".into())
-                            })?;
-                            target
-                                .analyze_display_line(exact.line)
-                                .map_err(|e| Unsupported(e.to_string()))?
-                        };
-                    }
-                }
-                // Legacy untyped applies engine_line both to declaration Sites
-                // and to assignment locations embedded in their messages.
-                Ok(source)
-            },
+            |anchor,source|project_origin(self.inputs,anchor,source),
         )?;
         checkpoint()?;
         if rows.len() > MAX_FIXTURE_SITES {
@@ -414,53 +357,66 @@ impl<'a> BorrowedUntyped<'a> {
                 crate::raw_marker_policy::dme_include_order_view(text, bom)
             }
         };
-        let mut files = self.raw.tree.select(&CODE_DM);
-        files.sort_by(|a, b| {
-            (
-                order.get(&a.rel).copied().unwrap_or(usize::MAX),
-                a.rel.as_str(),
-            )
-                .cmp(&(
-                    order.get(&b.rel).copied().unwrap_or(usize::MAX),
-                    b.rel.as_str(),
-                ))
-        });
-        let mut schemas = Schemas::default();
-        for name in ["SCHEMA", "TRACKED_SCHEMA"] {
-            for file in &files {
-                checkpoint()?;
-                let text = file.marker().as_str();
-                let mut offset = 0;
-                for line in text.split('\n') {
-                    if let Some(marker) =
-                        crate::raw_marker_policy::statement_marker(text, offset, line, &[name])
-                    {
-                        let args = crate::raw_marker_policy::split_args(
-                            &text[marker.open + 1..marker.close],
-                        );
-                        if let [owner, var, value, ..] = args.as_slice() {
-                            if let Some(kind) = crate::value_schema_policy::kind_of(value) {
-                                let kind = match kind {
-                                    ValueKind::Path(path) => Kind::Path(path),
-                                    ValueKind::Msg => Kind::Msg,
-                                    ValueKind::Plain => Kind::Plain,
-                                    ValueKind::Many => Kind::Many,
-                                    ValueKind::Any => Kind::Any,
-                                };
-                                schemas.insert_policy_kind(
-                                    SymbolId::of(owner.trim()),
-                                    SymbolId::of(var.trim()),
-                                    kind,
-                                );
-                            }
-                        }
-                    }
-                    offset += line.len() + 1;
-                }
-            }
-        }
-        Ok(schemas)
+        struct Legacy<'a,E>(&'a mut dyn FnMut()->Result<(),E>);impl<E:From<String>+From<&'static str>>crate::key_policy_control::Control for Legacy<'_,E>{type Error=E;const CHECKED:bool=false;fn checkpoint(&mut self)->Result<(),E>{(self.0)()}fn reserve(&mut self,_:usize)->Result<(),E>{Ok(())}fn overflow(&mut self)->E{"untyped schema geometry overflow".into()}fn allocation_failed(&mut self)->E{"untyped schema allocation refused".into()}}
+        let shared=std::cell::RefCell::new(checkpoint);let mut retained_poll=||(*shared.borrow_mut())();let mut temporary_poll=||(*shared.borrow_mut())();let mut retained=Legacy(&mut retained_poll);let mut temporary=Legacy(&mut temporary_poll);let mut events=Vec::new();for file in self.raw.tree.select(&CODE_DM){crate::untyped_policy_schemas::read_file(file,&mut events,&mut retained,&mut temporary)?;}crate::untyped_policy_schemas::finish(events,&order,&mut retained)
     }
+}
+
+/// SAME original assignment/member-policy coordinate selector, shared by complete and bounded producers.
+pub fn project_origin(inputs:&PolicyInputs,anchor:dm_analysis::untyped_native::PolicyAnchor,mut source:dm_tree::frontend::SourceLocation)->Result<dm_tree::frontend::SourceLocation,Unsupported>{
+                let file = inputs
+                    .file(&source.path)
+                    .ok_or_else(|| Unsupported("untyped origin absent from capture".into()))?;
+                if !file.is_compiled() || file.role() != PolicyRole::DmSource {
+                    return Err(Unsupported("untyped origin not compiled source".into()));
+                }
+                match anchor {
+                    dm_analysis::untyped_native::PolicyAnchor::Assignment(at) => {
+                        let exact = inputs
+                            .archive()
+                            .original_policy_line(at.start)
+                            .map_err(|error| {
+                                Unsupported(format!(
+                                    "untyped assignment {}:{} native@{}: {error}",
+                                    source.path.display(),
+                                    source.line,
+                                    at.start
+                                ))
+                            })?;
+                        if exact.path != source.path {
+                            return Err(Unsupported(
+                                "assignment policy point belongs to another file".into(),
+                            ));
+                        }
+                        source.line = file
+                            .analyze_display_line(exact.line)
+                            .map_err(|e| Unsupported(e.to_string()))?;
+                    }
+                    dm_analysis::untyped_native::PolicyAnchor::Declaration(member) => {
+                        let exact = inputs
+                            .archive()
+                            .member_policy_compatibility_cursor(member)
+                            .map_err(Unsupported)?;
+                        // The original member's compiled raw capture was checked
+                        // above. A planner-issued diagnostic boundary can belong
+                        // to its parent manifest, which the original policy then
+                        // naturally omits through its existing code/ selection.
+                        source.path = exact.path;
+                        source.line = if exact.logical_boundary {
+                            exact.line
+                        } else {
+                            let target = inputs.file(&source.path).ok_or_else(|| {
+                                Unsupported("declaration target source absent from capture".into())
+                            })?;
+                            target
+                                .analyze_display_line(exact.line)
+                                .map_err(|e| Unsupported(e.to_string()))?
+                        };
+                    }
+                }
+                // Legacy untyped applies engine_line both to declaration Sites
+                // and to assignment locations embedded in their messages.
+                Ok(source)
 }
 
 #[cfg(test)]

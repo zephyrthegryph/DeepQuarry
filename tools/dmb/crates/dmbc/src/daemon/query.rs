@@ -111,6 +111,12 @@ pub enum SourceQuery {
     NativeWorkspaceHygieneReportPage {root:PathBuf,configuration:PathBuf,lints:Vec<String>,cursor:Option<crate::query_db::WorkspaceCursor>,limit:usize},
     /// One exclusive completed Resolver/Tables/Boundary policy, under its own whole-fold issuer.
     NativeWorkspaceSysReportPage {root:PathBuf,configuration:PathBuf,lints:Vec<String>,cursor:Option<crate::query_db::WorkspaceCursor>,limit:usize},
+    /// Complete selected mixed-source CheckGrep under its genuine auxiliary/body issuer.
+    NativeWorkspaceCheckGrepReportPage {root:PathBuf,configuration:PathBuf,lints:Vec<String>,cursor:Option<crate::query_db::WorkspaceCursor>,limit:usize},
+    NativeWorkspaceCheckGrepBaselineReportPage {root:PathBuf,configuration:PathBuf,lints:Vec<String>,cursor:Option<crate::query_db::WorkspaceCursor>,limit:usize},
+    NativeWorkspaceSemanticReportPage {root:PathBuf,configuration:PathBuf,lints:Vec<String>,cursor:Option<crate::query_db::WorkspaceCursor>,limit:usize},
+    NativeWorkspaceRawTreeReportPage {root:PathBuf,configuration:PathBuf,lints:Vec<String>,cursor:Option<crate::query_db::WorkspaceCursor>,limit:usize},
+    NativeWorkspacePolicyReportPage {root:PathBuf,configuration:PathBuf,lints:Vec<String>,cursor:Option<crate::query_db::WorkspaceCursor>,limit:usize},
     NativeWorkspaceKeysReportPage {root:PathBuf,configuration:PathBuf,lints:Vec<String>,cursor:Option<crate::query_db::WorkspaceCursor>,limit:usize},
     /// One explicitly admitted fixed optional file, bound to current policy pins.
     NativeDeadlinePollingEvidence {root:PathBuf,configuration:PathBuf},
@@ -404,6 +410,11 @@ fn native_row_descriptor(row: &serde_json::Value) -> io::Result<Option<SourceQue
         },
         Some("source_native_workspace_hygiene_report")=>SourceQuery::NativeWorkspaceHygieneReportPage{root:path("root")?,configuration:path("configuration")?,lints:serde_json::from_value(row["requested_lints"].clone()).map_err(io::Error::other)?,cursor:if row["offset"].as_u64().unwrap_or(0)==0{None}else{Some(serde_json::from_value(serde_json::json!({"aggregate_id":row["aggregate_id"],"offset":row["offset"]})).map_err(io::Error::other)?)},limit:128},
         Some("source_native_workspace_sys_report")=>SourceQuery::NativeWorkspaceSysReportPage{root:path("root")?,configuration:path("configuration")?,lints:serde_json::from_value(row["requested_lints"].clone()).map_err(io::Error::other)?,cursor:if row["offset"].as_u64().unwrap_or(0)==0{None}else{Some(serde_json::from_value(serde_json::json!({"aggregate_id":row["aggregate_id"],"offset":row["offset"]})).map_err(io::Error::other)?)},limit:128},
+        Some("source_native_workspace_check_grep_report")=>SourceQuery::NativeWorkspaceCheckGrepReportPage{root:path("root")?,configuration:path("configuration")?,lints:serde_json::from_value(row["requested_lints"].clone()).map_err(io::Error::other)?,cursor:if row["offset"].as_u64().unwrap_or(0)==0{None}else{Some(serde_json::from_value(serde_json::json!({"aggregate_id":row["aggregate_id"],"offset":row["offset"]})).map_err(io::Error::other)?)},limit:128},
+        Some("source_native_workspace_check_grep_baseline_report")=>SourceQuery::NativeWorkspaceCheckGrepBaselineReportPage{root:path("root")?,configuration:path("configuration")?,lints:serde_json::from_value(row["requested_lints"].clone()).map_err(io::Error::other)?,cursor:if row["offset"].as_u64().unwrap_or(0)==0{None}else{Some(serde_json::from_value(serde_json::json!({"aggregate_id":row["aggregate_id"],"offset":row["offset"]})).map_err(io::Error::other)?)},limit:128},
+        Some("source_native_workspace_semantic_report")=>SourceQuery::NativeWorkspaceSemanticReportPage{root:path("root")?,configuration:path("configuration")?,lints:serde_json::from_value(row["requested_lints"].clone()).map_err(io::Error::other)?,cursor:if row["offset"].as_u64().unwrap_or(0)==0{None}else{Some(serde_json::from_value(serde_json::json!({"aggregate_id":row["aggregate_id"],"offset":row["offset"]})).map_err(io::Error::other)?)},limit:128},
+        Some("source_native_workspace_raw_tree_report")=>SourceQuery::NativeWorkspaceRawTreeReportPage{root:path("root")?,configuration:path("configuration")?,lints:serde_json::from_value(row["requested_lints"].clone()).map_err(io::Error::other)?,cursor:if row["offset"].as_u64().unwrap_or(0)==0{None}else{Some(serde_json::from_value(serde_json::json!({"aggregate_id":row["aggregate_id"],"offset":row["offset"]})).map_err(io::Error::other)?)},limit:128},
+        Some("source_native_workspace_policy_report")=>SourceQuery::NativeWorkspacePolicyReportPage{root:path("root")?,configuration:path("configuration")?,lints:serde_json::from_value(row["requested_lints"].clone()).map_err(io::Error::other)?,cursor:if row["offset"].as_u64().unwrap_or(0)==0{None}else{Some(serde_json::from_value(serde_json::json!({"aggregate_id":row["aggregate_id"],"offset":row["offset"]})).map_err(io::Error::other)?)},limit:128},
         Some("source_native_workspace_keys_report")=>SourceQuery::NativeWorkspaceKeysReportPage{root:path("root")?,configuration:path("configuration")?,lints:serde_json::from_value(row["requested_lints"].clone()).map_err(io::Error::other)?,cursor:if row["offset"].as_u64().unwrap_or(0)==0{None}else{Some(serde_json::from_value(serde_json::json!({"aggregate_id":row["aggregate_id"],"offset":row["offset"]})).map_err(io::Error::other)?)},limit:128},
         Some("source_native_deadline_evidence")=>SourceQuery::NativeDeadlinePollingEvidence{root:path("root")?,configuration:path("configuration")?},
         Some("source_native_workspace_raw_report") => SourceQuery::NativeWorkspaceRawReportPage {root:path("root")?,configuration:path("configuration")?,lints:serde_json::from_value(row["requested_lints"].clone()).map_err(io::Error::other)?,cursor:if row["offset"].as_u64().unwrap_or(0)==0{None}else{Some(serde_json::from_value(serde_json::json!({"aggregate_id":row["aggregate_id"],"offset":row["offset"]})).map_err(io::Error::other)?)},limit:128},
@@ -791,6 +802,11 @@ pub(super) fn evaluate(
 ) -> io::Result<QueryReply> {
     evaluate_snapshot(request, tree, &Default::default())
 }
+pub(crate) fn evaluate_raw_snapshot(request:&QueryRequest,raw:&crate::runner_host::query_snapshot::RawWorkspaceSnapshot,state:&crate::runner_host::query_snapshot::QueryState)->io::Result<QueryReply>{
+    request.validate()?;raw.require_request(request)?;if state.snapshot.is_some()||state.raw_snapshot.as_ref().is_none_or(|current|!std::ptr::eq(current,raw)){return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw report frame is not the active actual query state"))}
+    let mut output=BoundedOutput(Vec::new());raw.write_report_page(request,&mut output)?;
+    Ok(QueryReply{schema:"dm-session-query-v2".into(),revision:format!("{:032x}",raw.revision()),complete:false,coverage:"current captured raw source only; no semantic graph, ABI, checker or compiler admission".into(),query_count:0,source_query_count:1,source_revision:Some(format!("{:032x}",raw.source_revision())),policy_revision:Some(format!("{:032x}",raw.policy_revision())),snapshot_outcome:"raw_source_prepared".into(),last_request_outcome:state.last_request_outcome.into(),publication_pair:None,jsonl:String::from_utf8(output.0).map_err(io::Error::other)?})
+}
 pub(crate) fn evaluate_snapshot(
     request: &QueryRequest,
     tree: &dm_tree::SemanticTree,
@@ -810,7 +826,7 @@ pub(crate) fn evaluate_snapshot(
             || request.source_queries.iter().any(|question| {
                 !state.snapshot.as_ref().is_some_and(|snapshot|snapshot.admits_original_analysis_workspace_question(question))
                     && !matches!(question,SourceQuery::NativeConfiguredVariableVisibility{..}|SourceQuery::NativeKeywordOverrides{..})
-                    && !matches!(question,SourceQuery::NativeConfiguredChecker{family,..}if matches!(family.as_str(),"unknown_linter_setting"|"unknown_setting"|"invalid_lint_directive_value"|"directive_at_definition"|"private_proc"|"protected_proc"|"must_call_parent"|"must_not_override"|"redefined_proc"|"call_arguments"|"filter_call"|"catch_parameter_count"|"static_reference"))
+                    && !matches!(question,SourceQuery::NativeConfiguredChecker{family,..}if matches!(family.as_str(),"unknown_linter_setting"|"unknown_setting"|"invalid_lint_directive_value"|"directive_at_definition"|"private_proc"|"protected_proc"|"must_call_parent"|"must_not_override"|"redefined_proc"|"call_arguments"|"filter_call"|"catch_parameter_count"|"static_reference"|"iteration_range"|"undefined_type"|"switch_case"))
             }))
     {
         return Err(io::Error::other("diagnostic declaration frame admits only registered source diagnostic checker questions; no ordinary ABI/model query"));
@@ -936,8 +952,27 @@ pub(crate) fn evaluate_snapshot(
             )?;
             continue;
         }
+        // Complete old CLI scope validation precedes every public policy scan.
+        // This reader operation retires before the policy family takes its gate.
+        match question{
+         SourceQuery::NativeWorkspaceSemanticReportPage{root,configuration,..}|
+         SourceQuery::NativeWorkspaceRawReportPage{root,configuration,..}|
+         SourceQuery::NativeWorkspaceHygieneReportPage{root,configuration,..}|
+         SourceQuery::NativeWorkspaceSysReportPage{root,configuration,..}|
+         SourceQuery::NativeWorkspaceRawTreeReportPage{root,configuration,..}|
+         SourceQuery::NativeWorkspacePolicyReportPage{root,configuration,..}|
+         SourceQuery::NativeWorkspaceKeysReportPage{root,configuration,..}|
+         SourceQuery::NativeWorkspaceCheckGrepReportPage{root,configuration,..}|
+         SourceQuery::NativeWorkspaceCheckGrepBaselineReportPage{root,configuration,..}=>snapshot.require_public_report_configuration(root,configuration,tree)?,
+         _=>{}
+        }
         if let SourceQuery::NativeWorkspaceHygieneReportPage{root,configuration,lints,cursor,limit}=question{snapshot.write_native_workspace_hygiene_report_page(root,configuration,lints,cursor.as_ref(),*limit,tree,&mut output)?;continue;}
         if let SourceQuery::NativeWorkspaceSysReportPage{root,configuration,lints,cursor,limit}=question{snapshot.write_native_workspace_sys_report_page(root,configuration,lints,cursor.as_ref(),*limit,tree,&mut output)?;continue;}
+        if let SourceQuery::NativeWorkspaceCheckGrepReportPage{root,configuration,lints,cursor,limit}=question{snapshot.write_native_workspace_check_grep_report_page(root,configuration,lints,cursor.as_ref(),*limit,tree,&mut output)?;continue;}
+        if let SourceQuery::NativeWorkspaceCheckGrepBaselineReportPage{root,configuration,lints,cursor,limit}=question{snapshot.write_native_workspace_check_grep_baseline_report_page(root,configuration,lints,cursor.as_ref(),*limit,tree,&mut output)?;continue;}
+        if let SourceQuery::NativeWorkspaceSemanticReportPage{root,configuration,lints,cursor,limit}=question{snapshot.write_native_workspace_semantic_report_page(root,configuration,lints,cursor.as_ref(),*limit,tree,&mut output)?;continue;}
+        if let SourceQuery::NativeWorkspaceRawTreeReportPage{root,configuration,lints,cursor,limit}=question{snapshot.write_native_workspace_raw_tree_report_page(root,configuration,lints,cursor.as_ref(),*limit,tree,&mut output)?;continue;}
+        if let SourceQuery::NativeWorkspacePolicyReportPage{root,configuration,lints,cursor,limit}=question{snapshot.write_native_workspace_policy_report_page(root,configuration,lints,cursor.as_ref(),*limit,tree,&mut output)?;continue;}
         if let SourceQuery::NativeWorkspaceKeysReportPage{root,configuration,lints,cursor,limit}=question{snapshot.write_native_workspace_keys_report_page(root,configuration,lints,cursor.as_ref(),*limit,tree,&mut output)?;continue;}
         if let SourceQuery::NativeDeadlinePollingEvidence{root,configuration}=question{snapshot.write_native_deadline_evidence(root,configuration,tree,&mut output)?;continue;}
         if let SourceQuery::NativeWorkspaceRawReportPage{root,configuration,lints,cursor,limit}=question{snapshot.write_native_workspace_raw_report_page(root,configuration,lints,cursor.as_ref(),*limit,tree,&mut output)?;continue;}
@@ -1062,6 +1097,11 @@ pub(crate) fn evaluate_snapshot(
             | SourceQuery::NativeWorkspaceRawReportPage { .. }
             | SourceQuery::NativeWorkspaceHygieneReportPage { .. }
             | SourceQuery::NativeWorkspaceSysReportPage { .. }
+            | SourceQuery::NativeWorkspaceCheckGrepReportPage { .. }
+            | SourceQuery::NativeWorkspaceCheckGrepBaselineReportPage { .. }
+            | SourceQuery::NativeWorkspaceSemanticReportPage { .. }
+            | SourceQuery::NativeWorkspaceRawTreeReportPage { .. }
+            | SourceQuery::NativeWorkspacePolicyReportPage { .. }
             | SourceQuery::NativeWorkspaceKeysReportPage { .. }
             | SourceQuery::NativeDeadlinePollingEvidence { .. }
             | SourceQuery::NativeAnalyzePolicyFixture { .. }

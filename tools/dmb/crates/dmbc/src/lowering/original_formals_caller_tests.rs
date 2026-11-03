@@ -73,7 +73,7 @@ fn actual_lower_one_original_formals_cover_typed_automatic_and_warm() {
         native!(source, |front, host, startup, policy| {
             assert_eq!(front.bodies.len(), 1);
             let occurrence = &front.bodies[0];
-            let original = Arc::clone(front.parse_body(occurrence).unwrap().parameter_storage());
+            let original = front.parse_body(occurrence).unwrap().parameter_storage().clone();
             let mut baseline: Option<LoweredUnit> = None;
             // BodyArena::new selects the actual automatic-body branch. Typed
             // arenas select the original statements branch, with/without refs.
@@ -113,10 +113,7 @@ fn actual_lower_one_original_formals_cover_typed_automatic_and_warm() {
                             "ordinary caller must choose original-root helpers"
                         );
                         assert!(
-                            Arc::ptr_eq(
-                                &original,
-                                front.parse_body(occurrence).unwrap().parameter_storage()
-                            ),
+                            original.same_owner(front.parse_body(occurrence).unwrap().parameter_storage()),
                             "caller/warm lookup must retain SAME original signature owner"
                         );
                         if let Some(expected) = baseline.as_ref() {

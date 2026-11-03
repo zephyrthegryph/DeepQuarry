@@ -98,6 +98,8 @@ fn is_written_on<E>(s:WriteView<'_>,owner:&str,var:&str,var_owner:impl FnOnce(&s
  let at=var_owner(owner,var)?.unwrap_or_else(||owner.to_owned());for d in decls{if d==at||subtype(d,&at)?||subtype(&at,d)?{return Ok(true)}}Ok(false)
 }
 impl WriteRows{
+ pub(crate) fn is_written(&self,name:&str)->bool{WriteView::Ordered(self).written(name)}
+
  pub(crate) fn is_written_on_checked<E>(&self,owner:&str,var:&str,var_owner:impl FnOnce(&str,&str)->Result<Option<String>,E>,subtype:impl FnMut(&str,&str)->Result<bool,E>)->Result<bool,E>{is_written_on(WriteView::Ordered(self),owner,var,var_owner,subtype)}
  pub(crate) fn visit_storage(&self,mut visit:impl FnMut(usize,usize)){
   crate::global_policy::visit_names(&self.written,&mut visit);crate::global_policy::visit_names(&self.untyped,&mut visit);

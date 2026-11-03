@@ -25,6 +25,7 @@ pub(crate) struct RequestedPolicyFile {
 /// `PolicyInputs::revision()` fingerprints text only; consumers must bind these
 /// complete captured facts as well when caching decisions about missing files.
 pub(crate) struct CapturedPolicyInputs {
+    analysis_subject:Option<Arc<crate::input_snapshot::OriginalAnalysisSubject>>,
     semantic_sources: Arc<crate::input_snapshot::SemanticSourceEvidence>,
     source_aliases: BTreeMap<PathBuf, Arc<crate::input_snapshot::AcquiredSourceAlias>>,
     policy: PolicyInputs,
@@ -44,6 +45,7 @@ pub(crate) struct CapturedPolicyInputs {
 /// equal bytes. Metadata remains a conservative admission estimate.
 pub(crate) const MAX_POLICY_CAPTURE_CHARGE: usize = 64 * 1024 * 1024;
 impl CapturedPolicyInputs {
+    pub(crate) fn original_analysis_subject(&self)->Option<&Arc<crate::input_snapshot::OriginalAnalysisSubject>>{self.analysis_subject.as_ref()}
     pub(crate) fn untyped_manifest(
         &self,
         root: &Path,
@@ -54,6 +56,7 @@ impl CapturedPolicyInputs {
             return Err(io::Error::other("manifest needs bound intent"));
         }
         self.semantic_sources.check(self.policy.mapping())?;
+        if let Some(subject)=&self.analysis_subject{return subject.manifest_originals(root,self.policy.mapping())}
         let path = canonical_path(&root.join("deepquarry.dme"));
         let mut compiled: Option<&[u8]> = None;
         for (candidate, lease) in self.policy.mapping().source_acquisitions() {
@@ -415,7 +418,7 @@ impl CapturedPolicyInputs {
     }
     fn budget_charge_base(&self) -> usize {
         let mut owners = owner_charge::Owners::default();
-        let mut charge = 4096usize;
+        let mut charge = 4096usize.saturating_add(self.analysis_subject.as_ref().map_or(0,|subject|subject.charge()));
         let mut header_charge = Ok(());
         self.policy
             .archive()
@@ -551,6 +554,33 @@ pub(crate) fn capture_diagnostic<P: SnapshotProvider>(
 pub(crate) fn capture_workspace_generator<P: SnapshotProvider>(
     frontend: &ColdFrontend, inputs: &RecordingInputs<P>, configuration: &Path,
 ) -> io::Result<CapturedPolicyInputs> {
+    capture_workspace_child(CaptureSource::Compiled(frontend),inputs,configuration)
+}
+/// A separately selected semantic child over the genuine diagnostic source owner.
+/// This does not grant a workspace role; the snapshot issuer joins actual intent,
+/// current workspace capture, archive, and configuration before exposing it.
+pub(crate) fn capture_analysis_semantic<P:SnapshotProvider>(
+    frontend:&dm_tree::frontend::DiagnosticSourceView<'_>,inputs:&RecordingInputs<P>,configuration:&Path,
+)->io::Result<CapturedPolicyInputs>{
+    if frontend.mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290 || !frontend.receipt().authenticates(frontend.tree()) {return Err(io::Error::new(io::ErrorKind::InvalidInput,"analysis semantic child requires its genuine original owner"))}
+    // The same full Original Analyze subject owns the root manifest. Keep its
+    // private binding instead of falling back to a path-spelling approximation.
+    let subject=inputs.original_analysis_subject();
+    if let Some(subject)=subject{subject.require_bound_mapping(frontend.mapping())?;}
+    let mut capture=capture_workspace_child(CaptureSource::Diagnostic(frontend),inputs,configuration)?;
+    if let Some(subject)=subject{capture.analysis_subject=Some(Arc::clone(subject));admit_capture_charge(capture.budget_charge())?;}
+    Ok(capture)
+}
+/// Complete diagnostic source data for the separately admitted generation child.
+/// The caller must still bind actual selected names and the retired input closure.
+pub(crate) fn capture_analysis_generator<P:SnapshotProvider>(frontend:&dm_tree::frontend::DiagnosticSourceView<'_>,inputs:&RecordingInputs<P>,configuration:&Path)->io::Result<CapturedPolicyInputs>{
+ frontend.require_original_analysis_seed().map_err(io::Error::other)?;
+ if !frontend.receipt().errors().is_empty(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original generation requires clean actual source declarations"))}
+ if frontend.mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290||!frontend.original_plan().defines.is_empty(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"generation analysis child lacks actual default context"))}
+ let subject=inputs.original_analysis_subject().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"generation requires actual full Analyze subject"))?;subject.require_bound_mapping(frontend.mapping())?;
+ let mut capture=capture_workspace_child(CaptureSource::Diagnostic(frontend),inputs,configuration)?;capture.analysis_subject=Some(Arc::clone(subject));admit_capture_charge(capture.budget_charge())?;Ok(capture)
+}
+fn capture_workspace_child<P:SnapshotProvider>(source:CaptureSource<'_,'_>,inputs:&RecordingInputs<P>,configuration:&Path)->io::Result<CapturedPolicyInputs>{
     let intent = crate::policy_request::PolicyInputRequest {analysis_context:None,workspace_auxiliary:Vec::new(),workspace_generators:Vec::new(),
         workspace: None,
         files: vec![crate::policy_request::PolicyInputFile {
@@ -560,7 +590,7 @@ pub(crate) fn capture_workspace_generator<P: SnapshotProvider>(
         }],
         search_folders: Vec::new(),
     }.admit()?;
-    capture_source(CaptureSource::Compiled(frontend), inputs,
+    capture_source(source, inputs,
         &intent.capture_files(), &[], CompiledViews::GeneratorManifest)?
         .bind_request(&intent)
 }
@@ -612,6 +642,10 @@ fn capture_source<P: SnapshotProvider>(
     let mut sources = BTreeMap::new();
     let mut requests = BTreeMap::new();
     for file in frontend.files().iter().filter(|file| file.captured) {
+        // Only the exact privately issued root header lacks a physical source fact.
+        // PolicyInputs still retains its genuine frontend CompilerDecoded view;
+        // no AnalyzeRaw/recorded-file authority is minted for generated bytes.
+        if inputs.is_generated_analysis_header(file.path.as_ref(),&file.text){continue}
         let path = canonical_path(file.path.as_ref());
         let content = raw_digests.get(path.as_path()).copied().ok_or_else(|| {
             io::Error::other("policy capture lacks compiler's recorded source fact")
@@ -778,6 +812,7 @@ fn capture_source<P: SnapshotProvider>(
     let policy = frontend.capture_policy(extra).map_err(io::Error::other)?;
     let facts = inputs.snapshot()?;
     let captured = CapturedPolicyInputs {
+        analysis_subject:None,
         semantic_sources: frontend.evidence(inputs)?,
         source_aliases,
         policy,

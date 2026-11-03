@@ -1,0 +1,33 @@
+import json,re,sys
+CASES={'basic','allowed','homes','hot','hidden','record_noncode'}
+def pairs(rows):
+ out={}
+ for key,value in rows:
+  if key in out:raise ValueError('duplicate field '+key)
+  out[key]=value
+ return out
+def load(path,prefix):
+ text=open(path,encoding='utf-8').read()
+ out={}
+ for line in text.splitlines():
+  at=line.find(prefix)
+  if at<0:continue
+  row=json.loads(line[at+len(prefix):],object_pairs_hook=pairs,parse_constant=lambda value:(_ for _ in ()).throw(ValueError(value)))
+  case=row['case']
+  if case not in CASES or case in out:raise ValueError('unexpected/duplicate case')
+  out[case]=row
+ if out.keys()!=CASES:raise ValueError('missing complete case records')
+ return text,out
+old_text,old=load(sys.argv[1],'SHARED_BASE_VARS_WORKSPACE_OLD=')
+native_text,native=load(sys.argv[2],'NATIVE_BASE_VARS_WORKSPACE_FULL=')
+for text,name in [(old_text,'shared_base_vars_policy_preserves_complete_original_sites_records_hot_schema_and_allow_order'),(native_text,'actual_original_base_vars_complete_hidden_code_and_noncode_records_preserve_whole_ordered_report')]:
+ summaries=re.findall(r'test result: (\w+)\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured;',text)
+ if summaries!=[('ok','1','0','0','0')]:raise ValueError('not exactly one successful selected test')
+ statuses=re.findall(r'^test ([^\n]+?) \.\.\. (ok|FAILED|ignored)$',text,re.M)
+ if len(statuses)!=1 or statuses[0][1]!='ok' or statuses[0][0].split('::')[-1]!=name:raise ValueError('wrong selected test')
+for case in sorted(CASES):
+ expected=old[case]['record']
+ for field in ['sites','notes','allow_used']:
+  if expected[field]!=native[case][field]:raise ValueError(case+': entire ordered '+field+' differs')
+ if old[case]['source_text']!=native[case]['source_text']:raise ValueError(case+': complete as-of source text differs')
+print('PASS: all six complete original/native base_vars records, ordered sites/notes/ALLOW/source text')

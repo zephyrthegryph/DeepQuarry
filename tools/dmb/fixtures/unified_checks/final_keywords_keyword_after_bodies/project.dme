@@ -1,0 +1,14 @@
+/datum/base
+    var/SpacemanDMM_final/value=0
+    proc/work(flag)
+        set mystery_work=1
+        return 0
+/datum/base/child
+    value=1
+    work()
+        set mystery_child=1
+        return 0
+/proc/caller(datum/base/B)
+    set mystery_caller=1
+    B.work(flag=1)
+    return missing_caller

@@ -7,8 +7,8 @@ const HINT: &str = "move a player with bind_player(mob, key) (or move_player() /
 persistent client in step. doc/rewrite/proposals/relations.md D13";
 
 pub(crate) static META: Meta = Meta {
-    name: "player_link",
-    group: "",
+    name: crate::allow_registry_fields::player_link::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::player_link::SCOPE_META_0.group,
     label: "player_link",
     legacy: "",
     select: CODE_DM,
@@ -19,7 +19,7 @@ pub(crate) static META: Meta = Meta {
         hint: HINT,
     }],
     allow: &[],
-    lists: &[],
+    lists: crate::allow_registry_fields::player_link::SCOPE_META_0.lists,
 };
 
 pub fn metadata() -> &'static Meta {

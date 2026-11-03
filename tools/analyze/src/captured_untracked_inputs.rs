@@ -1,0 +1,5 @@
+//! Original untracked-input consumer over SAME authenticated dependency rows.
+//! Output is unsealed DATA; context/config/current CODE EOF belongs to host.
+use crate::{reactive_global_source::Source,reactive_dependency_view::Analysis,captured_raw_file::Config,captured_reactive_reads::Failure,captured_allow_annotations::Operation,captured_sem_reads::{RawFacts,Purpose,Report,SemanticPolicyData}};
+use std::io;
+pub(crate) fn collect_source(source:&dyn Source,analysis:Analysis<'_>,config:&Config,poll:&dyn Fn()->io::Result<()>)->Result<SemanticPolicyData,Failure>{let budget=source.budget();let pending=(||{budget.require().map_err(|message|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,message)))?;poll()?;let raw=RawFacts::collect(source,poll,Purpose::UntrackedInputs)?;let mut report=Report::for_untracked_inputs(source,&raw,poll,config);crate::untracked_inputs_policy::scan(analysis,&mut report,&mut Operation{budget,poll})?;Ok(report.into_data())})();crate::captured_sem_reads::finish(pending,budget,poll)}

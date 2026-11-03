@@ -1,0 +1,5 @@
+/proc/bad(a=, b=2)
+    missing_bad
+/proc/good()
+    set mystery_good=1
+    missing_good

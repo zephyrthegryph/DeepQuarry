@@ -313,3 +313,31 @@ mod tests {
         assert_eq!(files.reads.get(), 0);
     }
 }
+
+impl<P:SnapshotProvider> RecordingInputs<P>{
+ pub(super) fn prepare_subject_header<T:std::any::Any+Send+Sync>(&self,root:&Path,text:dm_preprocess::SourceText,receipt:T)->io::Result<dm_preprocess::AcquiredSource>{
+  let Some(owner)=&self.prepared else{return Ok(dm_preprocess::AcquiredSource::synthetic_utf8(text,receipt))};
+  let mut key=Vec::new();key.try_reserve_exact(64+root.as_os_str().len()).map_err(|_|io::Error::new(io::ErrorKind::OutOfMemory,"analysis header key refused"))?;key.extend_from_slice(b"\xfforiginal-analyze-full-subject-v1\0");key.extend_from_slice(root.as_os_str().as_encoded_bytes());let key:Arc<[u8]>=key.into();
+  // Lexical byte cache only: no physical source fact or discovery proof is
+  // retained here. The newly issued subject authenticates its current header.
+  let inputs=InputSnapshot::new(0);let mut previous=None;
+  owner.values.visit_explained(&key,&NoSemanticReads,&mut|payload|{if payload.source.original().as_str()==text.as_str(){previous=payload.acquisition.clone();previous.is_some()}else{false}});
+  self.prepared_keys.lock().map_err(|_|invalid("analysis header keys poisoned"))?.push(Arc::clone(&key));
+  if let Some(previous)=previous{return Ok(previous.reissued(receipt))}
+  let acquisition=dm_preprocess::AcquiredSource::synthetic_utf8(text,receipt);let source=Arc::clone(acquisition.prepared());let retained=acquisition.clone();owner.values.insert_with(key,Vec::new(),0,||PreparedInputPayload{source,acquisition:Some(retained),inputs,original_bytes:None});Ok(acquisition)
+ }
+}
+
+impl<P:SnapshotProvider> RecordingInputs<P>{
+ /// Reuse only lexical bytes proven equal to this newly recorded bounded read.
+ /// The current recorder reissues the physical receipt; the old proof is not authority.
+ pub(super) fn reuse_current_prepared_original(&self,path:&Path,original:&[u8])->io::Result<Option<dm_preprocess::AcquiredSource>>{
+  let Some(owner)=&self.prepared else{return Ok(None)};let key:Arc<[u8]>=canonical_path(path).as_os_str().as_encoded_bytes().into();let mut old=None;
+  owner.values.visit_explained(&key,&NoSemanticReads,&mut|payload|{let Some(acquired)=payload.acquisition.as_ref()else{return false};let Ok(raw)=super::recorded_source_original(acquired.lease())else{return false};let bytes=match raw{super::RecordedSourceOriginal::Utf8(text)=>text.as_bytes(),super::RecordedSourceOriginal::Bytes(bytes)=>bytes.as_slice()};if bytes!=original{return false}old=Some(acquired.clone());true});
+  let Some(old)=old else{return Ok(None)};self.refresh_source_acquisition(path,old.prepared(),Some(&old))
+ }
+ pub(super) fn retain_current_prepared_original(&self,path:&Path,acquisition:&dm_preprocess::AcquiredSource)->io::Result<()>{
+  let Some(owner)=&self.prepared else{return Ok(())};let path=canonical_path(path);let key:Arc<[u8]>=path.as_os_str().as_encoded_bytes().into();self.prepared_keys.lock().map_err(|_|invalid("prepared original roster poisoned"))?.push(Arc::clone(&key));
+  let fact=self.recorded_file_fact(&path)?;let original_bytes=self.exceptional_source_bytes(&path)?;let mut inputs=InputSnapshot::new(0);inputs.files.insert(path,fact);let source=Arc::clone(acquisition.prepared());let acquisition=acquisition.clone();owner.values.insert_with(key,Vec::new(),0,||PreparedInputPayload{source,acquisition:Some(acquisition),inputs,original_bytes});Ok(())
+ }
+}

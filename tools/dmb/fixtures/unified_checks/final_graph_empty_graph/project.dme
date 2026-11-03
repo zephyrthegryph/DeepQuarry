@@ -1,0 +1,6 @@
+/proc/first()
+    set mystery_first=1
+    return
+/proc/second()
+    set mystery_second=1
+    missing_second

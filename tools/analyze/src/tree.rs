@@ -200,8 +200,9 @@ impl SourceFile {
         d.views.code.get_or_init(|| {
             text_probe();
             if let Some(budget) = &d.captured_budget {
+                if !budget.require_general_view(){return captured_budget::empty_view();}
                 let Some(permit) =
-                    budget.reserve(captured_budget::transform_bound(&d.raw.text, 12))
+                    budget.reserve(captured_budget::code_transform_bound(&d.raw.text))
                 else {
                     return captured_budget::empty_view();
                 };
@@ -249,8 +250,9 @@ impl SourceFile {
         let data = self.data();
         data.views.marker.get_or_init(|| {
             if let Some(budget) = &data.captured_budget {
+                if !budget.require_general_view(){return String::new().into();}
                 let Some(permit) =
-                    budget.reserve(captured_budget::transform_bound(&data.raw.text, 4))
+                    budget.reserve(captured_budget::marker_transform_bound(&data.raw.text))
                 else {
                     return String::new().into();
                 };
@@ -365,6 +367,8 @@ impl SourceFile {
     /// Peak for only the existing raw/marker/code views. The source backing
     /// itself is counted by the host's live-original census, not this amount.
     #[cfg(feature="native-policy")]
+    pub(crate) fn restrict_to_raw_clean(&self){if let Some(budget)=&self.data().captured_budget{budget.restrict_to_raw_clean()}}
+    pub(crate) fn raw_clean_view_extra_bound(rel:&str,abs:&Path,text:&str)->Option<usize>{let lines=text.bytes().filter(|b|*b==b'\n').count().checked_add(1)?;std::mem::size_of::<SourceFile>().checked_add(std::mem::size_of::<Data>())?.checked_add(std::mem::size_of::<DerivedViews>())?.checked_add(captured_budget::OWNER_METADATA)?.checked_add(rel.len())?.checked_add(abs.as_os_str().len().checked_mul(4)?)?.checked_add(lines.checked_mul(4)?)?.checked_add(4096)}
     pub(crate) fn raw_policy_clean_bound(text:&str)->Option<usize>{captured_budget::transform_bound(text,6)}
     pub(crate) fn raw_policy_view_extra_bound(rel:&str,abs:&Path,text:&str)->Option<usize>{
         let lines=text.bytes().filter(|b|*b==b'\n').count().checked_add(1)?;
@@ -373,8 +377,8 @@ impl SourceFile {
             .checked_add(captured_budget::OWNER_METADATA)?
             .checked_add(rel.len())?.checked_add(abs.as_os_str().len().checked_mul(4)?)?
             .checked_add(lines.checked_mul(4)?)?
-            .checked_add(captured_budget::transform_bound(text,12)?)?
-            .checked_add(captured_budget::transform_bound(text,4)?)
+            .checked_add(captured_budget::code_transform_bound(text)?)?
+            .checked_add(captured_budget::marker_transform_bound(text)?)
     }
     pub(crate) fn captured_budget_error(&self) -> Option<String> {
         let data = self.data();

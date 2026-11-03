@@ -17,8 +17,8 @@ use crate::tree::{Select, SourceFile};
 use crate::util::py_strip;
 
 static META: Meta = Meta {
-    name: "breakpoint",
-    group: "",
+    name: crate::allow_registry_fields::breakpoint::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::breakpoint::SCOPE_META_0.group,
     label: "breakpoint",
     legacy: "tools/ci/breakpoint_lint.py",
     // os.walk over SCAN_DIRS = ["code", "modular_chomp"]: dot-files included.
@@ -30,7 +30,7 @@ static META: Meta = Meta {
         RuleMeta { name: "flag_only_override", hint: "delete the override: the base /obj/machinery atom_break()/atom_fix() already does that" },
     ],
     allow: crate::allow_registry_fields::breakpoint::ALLOW_0,
-    lists: &[],
+    lists: crate::allow_registry_fields::breakpoint::SCOPE_META_0.lists,
 };
 
 const BASES: &[&str] = &["/atom/proc/atom_break", "/atom/proc/atom_fix", "/obj/machinery/atom_break", "/obj/machinery/atom_fix"];

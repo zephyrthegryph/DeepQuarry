@@ -268,6 +268,8 @@ mod system_boundary_report_tests;
 
 #[cfg(all(test,feature="legacy-sem",feature="native-policy"))]
 mod native_original_expression_debug_oracle;
+#[cfg(all(test,feature="legacy-sem",feature="native-policy"))]
+#[path="../../dmb/crates/dm-analysis/src/original_base_terms.rs"]mod original_base_terms;
 
 mod system_boundary_policy;
 #[cfg(feature="native-policy")]pub mod captured_system_boundary_pages;
@@ -312,3 +314,209 @@ pub mod keys_original_reference;
 #[cfg(any(test,all(feature="legacy-sem",feature="unified-oracle")))]
 #[path="../../dmb/shared/test_scratch.rs"]
 mod test_scratch;
+
+pub mod tracked_policy;
+#[cfg(feature="native-policy")]mod tracked_named_arguments_native;
+#[cfg(feature="native-policy")]pub mod captured_tracked_pages;
+
+#[cfg(all(test,feature="legacy-sem"))]mod tracked_policy_tests;
+
+pub mod sem_reads_policy;
+mod raw_publishers_policy;
+#[cfg(feature="native-policy")]pub mod captured_sem_reads;
+
+#[cfg(all(test,feature="legacy-sem"))]mod sem_reads_policy_tests;
+
+pub mod untracked_inputs_policy;
+#[cfg(feature="native-policy")]pub mod captured_untracked_inputs;
+
+#[cfg(all(test,feature="legacy-sem"))]mod untracked_inputs_policy_tests;
+
+pub mod required_scope_policy;
+#[cfg(all(test,feature="legacy-sem"))]mod required_scope_policy_tests;
+
+#[cfg(feature="native-policy")]pub mod required_scope_registry;
+
+pub mod cli_arguments;
+
+pub mod state_schema_data;
+pub mod state_schema_policy;
+#[cfg(all(test,feature="legacy-sem"))]mod state_schema_policy_tests;
+
+#[cfg(feature="native-policy")]pub mod captured_state_schema_pages;
+
+pub mod lifecycle_policy;
+#[cfg(feature="native-policy")]pub mod captured_lifecycle_pages;
+#[cfg(all(test,feature="legacy-sem"))]mod lifecycle_policy_tests;
+
+pub mod sys_loot_policy;
+#[cfg(feature="native-policy")]pub mod captured_sys_loot_pages;
+#[cfg(all(test,feature="legacy-sem"))]mod sys_loot_policy_tests;
+
+pub mod instance_list_policy;
+#[cfg(feature="native-policy")]pub mod captured_instance_list_pages;
+
+#[cfg(all(test,feature="legacy-sem"))]mod instance_list_policy_tests;
+
+pub mod cache_policy;
+#[cfg(feature="native-policy")]pub mod captured_cache_bytes;
+#[cfg(all(test,feature="legacy-sem"))]mod cache_policy_tests;
+
+pub mod sys_ownership_forms_policy;
+#[cfg(feature="native-policy")]pub mod captured_sys_ownership_forms_pages;
+#[cfg(all(test,feature="legacy-sem"))]mod sys_ownership_forms_policy_tests;
+
+/// Unique API lexical policy over existing original views.
+pub mod api_policy;
+#[cfg(feature="native-policy")]pub mod captured_api_pages;
+
+pub mod sys_fields_policy;
+#[cfg(feature="native-policy")]pub mod captured_sys_fields_pages;
+
+pub mod sys_appearance_policy;
+#[cfg(feature="native-policy")]pub mod captured_sys_appearance_pages;
+
+/// Pure canonical descriptor aliases for frozen external oracle examples only.
+#[cfg(feature="unified-oracle")]pub mod original_policy_descriptors;
+
+pub mod raw_tree_report;
+pub mod raw_tree_cooldown_policy;
+pub mod raw_tree_declaration_block_policy;
+pub mod raw_tree_duplicate_input_key_policy;
+pub mod raw_tree_interactions_policy;
+pub mod raw_tree_latent_policy;
+pub mod raw_tree_pollers_policy;
+pub mod raw_tree_read_back_policy;
+pub mod raw_tree_cap_bits_policy;
+#[cfg(feature="native-policy")]pub mod captured_raw_tree_pages;
+
+/// Pure canonical descriptor aliases for frozen external oracle examples only.
+
+#[cfg(feature="native-policy")]pub mod workspace_fold_policy;
+mod decl_policy;
+#[cfg(feature="native-policy")]pub mod captured_decl_pages;
+
+#[cfg(all(test,feature="legacy-sem"))]#[path="decl_policy_tests.rs"]mod decl_policy_tests;
+
+mod init_policy;
+#[cfg(feature="native-policy")]pub mod captured_init_pages;
+
+#[cfg(all(test,feature="legacy-sem"))]#[path="init_policy_tests.rs"]mod init_policy_tests;
+
+#[cfg(feature="native-policy")]pub mod captured_base_vars_pages;
+
+#[cfg(all(test,feature="legacy-sem"))]
+mod base_vars_workspace_policy_tests;
+
+mod requirement_bool_policy;
+#[cfg(feature="native-policy")]pub mod captured_requirement_bool_pages;
+
+#[cfg(all(test,feature="legacy-sem"))]mod requirement_bool_workspace_tests;
+
+pub mod manual_log_policy;
+
+#[cfg(all(test,feature="legacy-sem",feature="native-policy"))]mod manual_log_policy_tests;
+
+pub mod sfx_policy;
+#[cfg(all(test,feature="legacy-sem",feature="native-policy"))]mod sfx_policy_tests;
+
+pub mod sys_requirements_policy;
+pub mod sys_string_names_policy;
+#[cfg(feature="native-policy")]pub mod captured_sys_cross_pages;
+#[cfg(all(test,feature="legacy-sem",feature="native-policy"))]mod sys_cross_policy_tests;
+#[cfg(feature="native-policy")]pub mod captured_player_link_pages;
+
+#[cfg(all(test,feature="legacy-sem"))]#[path="player_link_workspace_policy_tests.rs"]mod player_link_workspace_policy_tests;
+
+#[cfg(feature="native-policy")]pub mod captured_untyped_member_pages;
+#[cfg(all(test,feature="legacy-sem"))]#[path="untyped_member_workspace_policy_tests.rs"]mod untyped_member_workspace_policy_tests;
+
+#[cfg(feature="native-policy")]pub mod captured_weak_raw_read_pages;
+#[cfg(all(test,feature="legacy-sem"))]#[path="weak_raw_read_workspace_policy_tests.rs"]mod weak_raw_read_workspace_policy_tests;
+
+pub mod sys_look_effects_policy;
+pub mod sys_constructor_shadow_policy;
+#[cfg(feature="native-policy")]pub mod captured_shadow_look_pages;
+
+#[cfg(all(test,feature="legacy-sem",feature="native-policy"))]mod shadow_look_policy_tests;
+
+pub mod expiry_policy;
+#[cfg(feature="native-policy")]pub mod captured_expiry_pages;
+#[cfg(all(test,feature="legacy-sem",feature="native-policy"))]mod expiry_policy_tests;
+
+// One pure writer kernel is shared by native policies and the legacy adapter.
+pub mod reactive_writer_policy;
+
+#[cfg(feature="native-policy")]pub mod captured_rel_write_pages;
+#[cfg(all(test,feature="legacy-sem"))]#[path="rel_write_undeclared_workspace_policy_tests.rs"]mod rel_write_undeclared_workspace_policy_tests;
+
+pub mod sys_ui_policy;
+#[cfg(feature="native-policy")]pub mod captured_sys_ui_pages;
+#[cfg(all(test,feature="legacy-sem",feature="native-policy"))]mod sys_ui_policy_tests;
+
+#[cfg(feature="native-policy")]pub mod untyped_policy_schemas;
+#[cfg(feature="native-policy")]pub mod captured_untyped_pages;
+
+#[cfg(all(test,feature="legacy-sem"))]#[path="untyped_workspace_policy_tests.rs"]mod untyped_workspace_policy_tests;
+
+pub mod doc_snippets_policy;
+#[cfg(feature="native-policy")]pub mod captured_doc_snippets_pages;
+
+#[cfg(all(test,feature="native-policy"))]mod doc_snippets_policy_tests;
+
+#[cfg(feature="native-policy")]pub mod captured_stored_refs_pages;
+
+#[cfg(all(test,feature="legacy-sem"))]#[path="stored_refs_workspace_policy_tests.rs"]mod stored_refs_workspace_policy_tests;
+
+pub mod ownership_policy;
+pub mod op_order_policy;
+pub mod captured_op_order;
+#[cfg(feature="native-policy")]pub mod captured_ownership_pages;
+#[cfg(all(test,feature="legacy-sem",feature="native-policy"))]mod ownership_workspace_policy_tests;
+
+pub mod layering_raw_policy;
+pub mod engine_layering_policy;
+
+#[cfg(feature="native-policy")]pub mod captured_engine_layering_pages;
+
+#[cfg(all(test,feature="legacy-sem",feature="native-policy"))]mod engine_layering_workspace_policy_tests;
+
+pub mod ui_actions_js;
+
+#[cfg(any(feature="legacy-sem",feature="native-policy"))]pub(crate) mod ui_actions_normalizer;
+
+#[cfg(any(feature="legacy-sem",feature="native-policy"))]pub(crate) mod ui_actions_hosts;
+
+#[cfg(any(feature="legacy-sem",feature="native-policy"))]pub(crate) mod ui_actions_c2;
+
+#[cfg(any(feature="legacy-sem",feature="native-policy"))]pub mod ui_actions_policy;
+
+#[cfg(any(feature="legacy-sem",feature="native-policy"))]pub(crate) mod ui_actions_check;
+
+#[cfg(feature="native-policy")]
+pub mod captured_ui_actions;
+
+#[cfg(all(test,feature="native-policy",feature="legacy-sem"))]mod ui_actions_workspace_policy_tests;
+
+pub mod setter_publication_policy;
+#[cfg(feature="native-policy")]pub mod captured_setter_publishes;
+
+#[cfg(all(test,feature="legacy-sem",feature="native-policy"))]mod setter_publishes_workspace_policy_tests;
+
+#[cfg(all(test,feature="legacy-sem",feature="native-policy",feature="unified-oracle"))]
+mod op_order_workspace_policy_tests;
+
+pub mod sys_reactive_policy;
+#[cfg(feature="native-policy")]pub mod captured_sys_reactive;
+#[cfg(all(test,feature="legacy-sem",feature="native-policy"))]mod sys_reactive_workspace_policy_tests;
+
+pub mod lifeforms_policy;
+#[cfg(feature="native-policy")]mod lifeforms_ctor_policy;
+#[cfg(feature="native-policy")]pub mod captured_lifeforms;
+
+#[cfg(all(test,feature="legacy-sem",feature="native-policy"))]mod lifeforms_workspace_policy_tests;
+
+
+pub mod sem_handlers_policy;
+#[cfg(feature="native-policy")]pub(crate) mod sem_handlers_native;
+#[cfg(all(test,feature="legacy-sem",feature="native-policy"))]mod sem_handlers_policy_tests;

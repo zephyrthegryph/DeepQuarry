@@ -5,6 +5,7 @@ pub use dq_analyze::{baseline,lint,parity,scopes,tree,pat,pat_match,util,raw_mar
 #[path="support/check_grep_original/sem.rs"]pub mod sem;
 #[path="support/check_grep_original/mod.rs"]mod original;
 #[path="../fixtures/native-check-grep/fixture.rs"]mod fixture;
+#[path="../fixtures/report_configuration.rs"]mod complete_report_configuration;
 #[path="../../dmb/shared/test_scratch.rs"]mod test_scratch;
 use std::io::Write;
 fn main()->Result<(),Box<dyn std::error::Error>>{
@@ -19,15 +20,25 @@ fn main()->Result<(),Box<dyn std::error::Error>>{
  assert_eq!(<[u8;20]>::from(sha1::Sha1::digest(include_bytes!("support/check_grep_original/semantic_checks.rs"))),[228,2,199,176,44,133,147,67,192,30,185,90,139,65,110,251,99,69,41,152],"immutable original tools/analyze/src/sem/checks.rs changed");
 
  let case=std::env::args().nth(1).ok_or("expected basic, configured or lossy")?;
+ let baseline_mode=std::env::args().nth(2);let public_report=baseline_mode.as_deref()==Some("report");let mode=match baseline_mode.as_deref(){None|Some("report")=>None,Some("seed")=>Some(baseline::Mode::Seed),Some("update")=>Some(baseline::Mode::Update),Some("migrate")=>Some(baseline::Mode::Migrate),Some(_)=>return Err("expected seed, update or migrate".into())};
  let root=test_scratch::dir("immutable-whole-check-grep");
  for(relative,bytes)in fixture::files(&case)?{let path=root.join(relative);std::fs::create_dir_all(path.parent().ok_or("fixture parent absent")?)?;std::fs::write(path,fixture::source_bytes(&case,relative,bytes))?;}
  dq_analyze::sem::incremental::disable_capture();
  let mut registry=lint::Registry::default();original::register(&mut registry);
- let engine=dq_analyze::run::Engine::new(registry,dq_analyze::run::Options{root:root.clone(),lints:vec!["check_grep".into()],no_cache:true,raw:true,..Default::default()})?;
+ if mode.is_some()||public_report{let policy=registry.find("check_grep").ok_or("original policy missing")?;let path=root.join("tools/ci/lint_scopes.toml");let mut config=std::fs::read_to_string(&path)?;config.push_str("\n[lint.check_grep.lists]\n");for key in policy.meta().lists{use std::fmt::Write as _;writeln!(&mut config,"{key:?}=[]")?;}std::fs::write(&path,config)?;complete_report_configuration::complete(&path);}
+ let engine=dq_analyze::run::Engine::new(registry,dq_analyze::run::Options{root:root.clone(),lints:vec!["check_grep".into()],no_cache:true,raw:!public_report,..Default::default()})?;
  let lint=engine.reg.find("check_grep").ok_or("immutable original policy not registered")?;let scope=engine.scopes.for_lint(lint.meta().name,lint.meta().group);let cx=lint::Cx{tree:&engine.tree,meta:lint.meta(),scope:&scope};
  let semantic=cx.sem().ok_or("actual complete original semantic preparation absent")?;
  if !semantic.errors.is_empty(){return Err(format!("actual original semantic preparation failed: {:?}",semantic.errors).into())}
- let(run,allow_used,_timing)=engine.scan(lint);let(failed,report)=engine.judge(lint,&run);
+ let(run,allow_used,_timing)=engine.scan(lint);
+ if let Some(mode)=mode{let note=lint.update_baseline(&cx,&run,mode)?;let configuration=std::fs::read_to_string(root.join("tools/ci/lint_scopes.toml"))?;println!("OLD_CHECK_GREP_BASELINE={}",serde_json::json!({"case":case,"mode":baseline_mode.unwrap(),"text":format!("{note}\n"),"configuration":configuration}));return Ok(())}
+
+ if public_report{
+  let outcome=engine.run_one(lint);if outcome.internal_error.is_some(){return Err(format!("actual old run failed: {:?}",outcome.internal_error).into())}let outcomes=[outcome];let(mut text,failed)=dq_analyze::policy_finish::render(&outcomes,false);text.push_str(&dq_analyze::policy_finish::result_line(&failed));
+  let usage=dq_analyze::policy_finish::allow_usage_rows(&outcomes,|relative|Ok::<_,std::convert::Infallible>(match engine.tree.get(relative){Some(file)=>{let digest=sha1::Sha1::digest(file.text().trim_end_matches('\n').as_bytes());dq_analyze::policy_finish::AllowFileDigest::CapturedOwned(digest.iter().map(|byte|format!("{byte:02x}")).collect())},None=>dq_analyze::policy_finish::AllowFileDigest::ProvenMissing})).unwrap();
+  println!("OLD_PUBLIC_CHECK_GREP_REPORT={}",serde_json::json!({"case":case,"text":text,"clean":failed.is_empty(),"allow_usage":usage}));return Ok(())
+ }
+ let(failed,report)=engine.judge(lint,&run);
  let value=serde_json::json!({"case":case,"report":report,"failed":failed,"sites":run.sites,"notes":run.notes,"allow_used":allow_used});
  let mut output=std::io::stdout().lock();write!(output,"OLD_CHECK_GREP_FULL={value}\n")?;Ok(())
 }

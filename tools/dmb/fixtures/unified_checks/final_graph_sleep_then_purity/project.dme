@@ -1,0 +1,10 @@
+var/global_value=0
+/proc/shared()
+    global_value=1
+    sleep(1)
+/proc/probe()
+    set mystery_probe=1
+    set SpacemanDMM_should_be_pure=1
+    set SpacemanDMM_should_not_sleep=1
+    missing_probe
+    shared()

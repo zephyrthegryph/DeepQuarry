@@ -84,7 +84,10 @@ pub(crate) fn primary_header_qualifiers(
             leading = false;
             continue;
         }
-        if matches!(text, "=" | "[" | "(" | "{" | ";" | "}") {
+        // A top-level comma ends this first declaration path exactly as '='
+        // does. The same primary group's later declarators need their own
+        // native sibling path receipts; this proves no invented sibling flags.
+        if matches!(text, "=" | "[" | "(" | "{" | ";" | "}" | ",") {
             container = false;
             break;
         }
@@ -203,4 +206,23 @@ mod tests {
             UNKNOWN_HEADER_QUALIFIERS
         );
     }
+}
+
+#[cfg(test)]mod primary_comma_qualifier_tests{
+ use super::*;
+ fn actual(source:&str,container:bool)->u8{let tokens=crate::lex_spans(source);assert!(tokens.diagnostics.is_empty());primary_header_qualifiers(source,&tokens.tokens,Span::new(0,source.len()),container)}
+ #[test]fn actual_primary_comma_ends_the_authored_first_variable_path_without_guessing_zero(){
+  assert_eq!(inherit_header_qualifiers(actual("var/datum/first, second",false),None).0,0);
+  assert_eq!(inherit_header_qualifiers(actual("var/SpacemanDMM_private/datum/first, second",false),None).0,CHECKER_VAR_PRIVATE);
+  assert_eq!(inherit_header_qualifiers(actual("var/final/datum/first, second",false),None).0,CHECKER_VAR_FINAL);
+  let namespace=inherit_header_qualifiers(actual("var/SpacemanDMM_protected",true),None).1;
+  assert_eq!(inherit_header_qualifiers(actual("datum/first, second",false),namespace).0,CHECKER_VAR_PROTECTED);
+  assert_eq!(inherit_header_qualifiers(actual("first, second",false),None).0,UNKNOWN_HEADER_QUALIFIERS,"no var context was proved");
+  assert_eq!(inherit_header_qualifiers(actual("var//first, second",false),None).0,UNKNOWN_HEADER_QUALIFIERS);
+ }
+ #[test]fn primary_qualifier_comma_in_default_or_comment_cannot_add_path_flags(){
+  assert_eq!(inherit_header_qualifiers(actual("var/first=list(1,SpacemanDMM_private)",false),None).0,0);
+  assert_eq!(inherit_header_qualifiers(actual("var/first /* ,SpacemanDMM_private */ , second",false),None).0,0);
+  assert_eq!(inherit_header_qualifiers(actual("var/first, SpacemanDMM_private/second",false),None).0,0,"later path is not the first declaration's qualifiers");
+ }
 }

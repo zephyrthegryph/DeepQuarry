@@ -6,7 +6,9 @@ use std::{
     sync::{Arc, Weak},
 };
 pub(crate) struct NativeReadGuard<'a> {
-    mapping: &'a Arc<SourceExportMapping>,
+    model_preparation:Option<dm_tree::frontend::DiagnosticPreparationPurpose>,
+    mapping: Option<&'a Arc<SourceExportMapping>>,
+    raw_source:Option<&'a Arc<crate::runner_host::workspace_capture::RawSourceIdentity>>,
     revision: u128,
     queries: &'a Arc<crate::query_db::QueryDb>,
     workspace: Option<&'a Arc<crate::runner_host::workspace_capture::WorkspaceCapture>>,
@@ -16,6 +18,7 @@ pub(crate) struct NativeReadGuard<'a> {
 /// This carries only weak identities, never a SourceSnapshot, tree or text.
 /// It is not a completed workspace-read witness or an independent issuer.
 pub(crate) struct WorkspaceQueryScope {
+    model_preparation:Option<dm_tree::frontend::DiagnosticPreparationPurpose>,
     mapping: Weak<SourceExportMapping>,
     queries: Weak<crate::query_db::QueryDb>,
     workspace: Weak<crate::runner_host::workspace_capture::WorkspaceCapture>,
@@ -34,12 +37,14 @@ impl SourceSnapshot {
             ));
         }
         Ok(NativeReadGuard {
+            model_preparation:self.model_preparation,
             workspace: self.native_workspace.as_ref(),
             policy_revision: self.policy_revision,
-            mapping: self
+            raw_source:None,
+            mapping: Some(self
                 .source_mapping
                 .as_ref()
-                .ok_or_else(|| io::Error::other("native workspace mapping unavailable"))?,
+                .ok_or_else(|| io::Error::other("native workspace mapping unavailable"))?),
             revision: self.source_revision,
             queries: self
                 .native_raw_queries
@@ -49,11 +54,13 @@ impl SourceSnapshot {
     }
 }
 impl NativeReadGuard<'_> {
+    pub(crate) fn model_preparation(&self)->Option<dm_tree::frontend::DiagnosticPreparationPurpose>{self.model_preparation}
     pub(crate) fn query_receipt(
         &self,
         admit: &mut dyn FnMut(usize) -> io::Result<()>,
     ) -> io::Result<WorkspaceQueryScope> {
         crate::daemon::control::checkpoint()?;
+        let mapping=self.mapping.ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"raw source scope cannot issue a semantic query receipt"))?;
         let workspace = self.workspace.ok_or_else(|| {
             io::Error::other("workspace query scope needs the actual registered capture")
         })?;
@@ -68,7 +75,8 @@ impl NativeReadGuard<'_> {
         })?)?;
         crate::daemon::control::checkpoint()?;
         Ok(WorkspaceQueryScope {
-            mapping: Arc::downgrade(self.mapping),
+            model_preparation:self.model_preparation,
+            mapping: Arc::downgrade(mapping),
             queries: Arc::downgrade(self.queries),
             workspace: Arc::downgrade(workspace),
             revision: self.revision,
@@ -79,10 +87,11 @@ impl NativeReadGuard<'_> {
         &self,
         capture: &crate::runner_host::workspace_capture::WorkspaceCapture,
         origin: &Weak<SourceExportMapping>,
+        raw_origin:Option<&Weak<crate::runner_host::workspace_capture::RawSourceIdentity>>,
         revision: u128,
         policy: u128,
     ) -> bool {
-        self.matches(origin, revision)
+        (match(self.raw_source,raw_origin){(None,None)=>self.matches(origin,revision),(Some(owner),Some(origin))=>revision==self.revision&&owner.revision()==revision&&Weak::ptr_eq(origin,&Arc::downgrade(owner)),_=>false})
             && self.policy_revision == Some(policy)
             && self
                 .workspace
@@ -92,7 +101,7 @@ impl NativeReadGuard<'_> {
         std::ptr::eq(self.queries.as_ref(), queries)
     }
     pub(crate) fn matches(&self, origin: &Weak<SourceExportMapping>, revision: u128) -> bool {
-        revision == self.revision && Weak::ptr_eq(origin, &Arc::downgrade(self.mapping))
+        revision == self.revision && self.mapping.is_some_and(|mapping|Weak::ptr_eq(origin,&Arc::downgrade(mapping)))
     }
     pub(crate) fn original_identity(
         &self,
@@ -100,7 +109,7 @@ impl NativeReadGuard<'_> {
         identity: &dm_preprocess::SourceAcquisitionIdentity,
     ) -> io::Result<dm_preprocess::source_acquisition::OriginalAcquisitionIdentity> {
         let lease = self
-            .mapping
+            .mapping.ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"raw source scope has no compiled acquisition index"))?
             .source_acquisition(index)
             .filter(|lease| identity.matches(lease))
             .ok_or_else(|| io::Error::other("stale/foreign workspace original token"))?;
@@ -112,7 +121,7 @@ impl NativeReadGuard<'_> {
         identity: &dm_preprocess::SourceAcquisitionIdentity,
     ) -> io::Result<crate::input_snapshot::RecordedSourceOriginal<'a>> {
         let lease = self
-            .mapping
+            .mapping.ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"raw source scope has no compiled acquisition index"))?
             .source_acquisition(index)
             .filter(|lease| identity.matches(lease))
             .ok_or_else(|| io::Error::other("stale or foreign native workspace acquisition"))?;
@@ -181,7 +190,8 @@ impl WorkspaceQueryScope {
             return Err(io::Error::other("workspace query scope belongs to another graph/capture"));
         }
         let guard = NativeReadGuard {
-            mapping: &mapping,
+            model_preparation:self.model_preparation,
+            mapping: Some(&mapping),raw_source:None,
             queries: &queries,
             workspace: Some(&workspace),
             revision: self.revision,
@@ -203,4 +213,19 @@ impl WorkspaceQueryScope {
         require()?;
         Ok(value)
     }
+}
+
+impl<'a> NativeReadGuard<'a>{
+ pub(crate) fn raw_owned(capture:&'a Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,owner:&'a Arc<crate::runner_host::workspace_capture::RawSourceIdentity>,queries:&'a Arc<crate::query_db::QueryDb>)->io::Result<Self>{
+  if !capture.matches_raw_source(owner,owner.revision())||!owner.uses_queries(queries.as_ref()){return Err(io::Error::new(io::ErrorKind::InvalidInput,"raw source guard owner/capture/QueryDb differs"))}
+  let guard=Self{model_preparation:None,mapping:None,raw_source:Some(owner),revision:owner.revision(),queries,workspace:Some(capture),policy_revision:Some(capture.policy_revision())};capture.require_scope(&guard)?;Ok(guard)
+ }
+}
+
+impl NativeReadGuard<'_>{
+ /// Narrow control loan for the already-issued UI raw purpose. No model scope.
+ pub(crate) fn ui_raw_operation_owner(&self,capture:&Arc<crate::runner_host::workspace_capture::WorkspaceCapture>)->io::Result<(Arc<crate::runner_host::workspace_capture::RawSourceIdentity>,Arc<crate::query_db::QueryDb>)>{
+  capture.require_scope(self)?;let owner=self.raw_source.filter(|owner|owner.purpose()==crate::runner_host::workspace_capture::RawSourcePurpose::UiActions).ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"UI operation needs its actual raw source identity"))?;
+  if !capture.matches_raw_source(owner,owner.revision())||!owner.uses_queries(self.queries){return Err(io::Error::new(io::ErrorKind::InvalidInput,"UI raw control differs from active source/capture/Db"))}Ok((Arc::clone(owner),Arc::clone(self.queries)))
+ }
 }

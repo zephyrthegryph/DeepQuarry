@@ -62,6 +62,10 @@ impl<'op,E:From<String>+From<&'static str>> ReportBudgetWith<'op,E>{
         }
     }
     pub(super) fn used(&self)->usize{self.used.get()}
+    /// Caller must physically drop all transient backing made since this mark
+    /// before replacing its charge with the still-live retained delta.
+    pub(crate) fn reconcile_after_drop(&self,mark:usize,retained:usize)->Result<(),E>{if self.observer.is_some()||mark>self.used.get(){self.deny();return Err("effect budget reconciliation owner/mark differs".into())}self.used.set(mark);self.charge(retained)}
+
     pub(super) fn remaining(&self)->usize{self.limit.saturating_sub(self.used.get()).saturating_sub(self.admission.external_delta())}
     pub(crate) fn admission_view(&self)->ExecutionAdmission{self.admission.view_with_usage(self.limit,self.used.get())}
     pub(crate) fn deny(&self) {
@@ -356,3 +360,12 @@ mod tests {
  #[test]fn typed_report_observer_failure_precedes_real_vector_and_text_allocation_without_string_transport(){let calls=Cell::new(0);let fail=|_:usize|{calls.set(calls.get()+1);Err(PolicyFailure::Operational(io::Error::from_raw_os_error(1450)))};let a=ExecutionAdmission::default();let budget=ReportBudgetWith::observed(&a,&fail);let mut rows=Vec::<usize>::new();let error=budget.push(&mut rows,7).unwrap_err();assert!(matches!(error,PolicyFailure::Operational(ref e)if e.raw_os_error()==Some(1450)));assert_eq!(rows.capacity(),0);assert_eq!(budget.used(),0);let text=budget.format(format_args!("whole original diagnostic {}",7)).unwrap_err();assert!(matches!(text,PolicyFailure::Operational(ref e)if e.raw_os_error()==Some(1450)));assert_eq!(budget.used(),0);assert_eq!(calls.get(),2);let healthy=|_:usize|Ok::<(),PolicyFailure>(());let retry=ReportBudgetWith::observed(&a,&healthy);retry.push(&mut rows,7).unwrap();assert_eq!(rows,[7]);assert_eq!(retry.format(format_args!("whole original diagnostic {}",7)).unwrap(),"whole original diagnostic 7");}
  #[test]fn typed_report_local_refusal_precedes_external_reservation_and_remains_sticky(){let admission=ExecutionAdmission::with_limit(1);let no=|_:usize|->Result<(),PolicyFailure>{panic!("local headroom must refuse before family observer")};let budget=ReportBudgetWith::observed(&admission,&no);let mut rows=Vec::<usize>::new();assert!(matches!(budget.push(&mut rows,1),Err(PolicyFailure::Unsupported(_))));assert!(admission.is_denied());assert_eq!(rows.capacity(),0);}
 }
+
+/// Resource-only weak job loan of the SAME existing admission control.
+/// It cannot keep an operation alive or issue source/semantic authority.
+#[derive(Clone)]pub struct ExecutionAdmissionLoan{control:std::sync::Weak<AdmissionControl>,limit:usize,external_base:usize}
+impl ExecutionAdmissionLoan{
+ pub fn upgrade_for_job(&self,headroom:usize)->std::io::Result<ExecutionAdmission>{let control=self.control.upgrade().ok_or_else(||std::io::Error::new(std::io::ErrorKind::Interrupted,"parent body operation ended"))?;let parent=ExecutionAdmission{control,limit:self.limit,external_base:self.external_base};if parent.is_denied(){return Err(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"parent body operation already denied"))}Ok(parent.restricted(headroom))}
+ pub fn retained_control_capacity(&self)->usize{ExecutionAdmission::fixed_control_charge()}
+}
+impl ExecutionAdmission{pub fn downgrade_for_job(&self)->ExecutionAdmissionLoan{ExecutionAdmissionLoan{control:Arc::downgrade(&self.control),limit:self.limit,external_base:self.external_base}}}

@@ -17,8 +17,8 @@ use crate::util::before_slashes;
 const HINT: &str = "declare REGISTRY_MEMBERSHIP() instead (code/__defines/registries.dm)";
 
 static META: Meta = Meta {
-    name: "registry",
-    group: "",
+    name: crate::allow_registry_fields::registry::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::registry::SCOPE_META_0.group,
     label: "registry",
     legacy: "tools/ci/registry_lint.py",
     // os.walk: dot-files and dot-directories included.
@@ -27,7 +27,7 @@ static META: Meta = Meta {
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "self_add", hint: HINT }],
     allow: crate::allow_registry_fields::registry::ALLOW_0,
-    lists: &[],
+    lists: crate::allow_registry_fields::registry::SCOPE_META_0.lists,
 };
 
 struct RegistryLint;

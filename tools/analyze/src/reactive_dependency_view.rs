@@ -34,3 +34,13 @@ impl<'a> Analysis<'a>{
  pub fn candidates(self)->PairIter<'a>{match self{Self::Owned(data)=>PairIter::Tree(data.candidates.iter()),#[cfg(feature="native-policy")]Self::Frozen(data)=>PairIter::Rows(data.candidates.iter())}}
  pub fn consumer(self,id:&str)->Option<&'a[Untracked]>{match self{Self::Owned(data)=>data.consumers.get(id).map(Vec::as_slice),#[cfg(feature="native-policy")]Self::Frozen(data)=>data.consumers.binary_search_by(|(key,_)|key.as_str().cmp(id)).ok().map(|at|data.consumers[at].1.as_slice())}}
 }
+
+pub enum Sites<'a>{Tree(&'a BTreeSet<(String,u32)>),Rows(&'a[(String,u32)])}
+pub enum SiteIter<'a>{Tree(std::collections::btree_set::Iter<'a,(String,u32)>),Rows(std::slice::Iter<'a,(String,u32)>)}
+impl<'a> Iterator for SiteIter<'a>{type Item=&'a(String,u32);fn next(&mut self)->Option<Self::Item>{match self{Self::Tree(rows)=>rows.next(),Self::Rows(rows)=>rows.next()}}}
+impl<'a> Sites<'a>{pub fn iter(self)->SiteIter<'a>{match self{Self::Tree(rows)=>SiteIter::Tree(rows.iter()),Self::Rows(rows)=>SiteIter::Rows(rows.iter())}}}
+pub enum SampleIter<'a>{Tree(std::collections::btree_map::Iter<'a,String,BTreeSet<(String,u32)>>),Rows(std::slice::Iter<'a,(String,Vec<(String,u32)>)>)}
+impl<'a> Iterator for SampleIter<'a>{type Item=(&'a String,Sites<'a>);fn next(&mut self)->Option<Self::Item>{match self{Self::Tree(rows)=>rows.next().map(|(id,sites)|(id,Sites::Tree(sites))),Self::Rows(rows)=>rows.next().map(|(id,sites)|(id,Sites::Rows(sites)))}}}
+impl<'a> Analysis<'a>{pub fn sampled(self)->SampleIter<'a>{match self{Self::Owned(data)=>SampleIter::Tree(data.sampled.iter()),#[cfg(feature="native-policy")]Self::Frozen(data)=>SampleIter::Rows(data.sampled.iter())}}}
+
+impl Analysis<'_>{pub fn is_draw(self,id:&str)->bool{match self{Self::Owned(data)=>data.draws.contains(id),#[cfg(feature="native-policy")]Self::Frozen(data)=>data.draws.binary_search_by(|name|name.as_str().cmp(id)).is_ok()}}}

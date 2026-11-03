@@ -6,45 +6,13 @@
 //! their expanded calls in excluded generated files. Macro definitions containing the legacy form
 //! are sites themselves. Never let a successful typed parse suppress source evidence.
 
-use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
+use crate::lint::{Cx, Lint, Meta, Registry, Sink};
 use crate::pat::Pat;
-use crate::tree::{SourceFile, CODE_DM};
+use crate::tree::SourceFile;
 
-static META: Meta = Meta {
-    name: "requirement_bool",
-    group: "",
-    label: "requirement_bool",
-    legacy: "",
-    select: CODE_DM,
-    scan: ScanKind::Tree,
-    policy: Policy::Sites {
-        baseline: "tools/ci/requirement_bool_baseline.txt",
-        header: &[
-            "Transitional boolean requirement callbacks. rule<TAB>file<TAB>normalized line.",
-            "Convert callbacks to null-or-reason req(); analyze baseline --update --lint requirement_bool only shrinks this list.",
-        ],
-        banned: &["boolean_callback", "legacy_macro"],
-    },
-    rules: &[RuleMeta {
-        name: "boolean_callback",
-        hint: "merge the callback and refusal into req(PROC_REF(x)): return null to allow or a reason to refuse",
-    }, RuleMeta {
-        name: "legacy_macro",
-        hint: "the requirement macro compiler was retired: use native null-or-reason requirements in acceptance() or needs()",
-    }],
-    allow: crate::allow_registry_fields::requirement_bool::ALLOW_0,
-    lists: &["retired_macros"],
-};
-
+use crate::requirement_bool_policy::META;
 /// Match a complete retired identifier, not a request outcome or a longer live name.
-fn retired_name_in(code: &str, name: &str) -> bool {
-    let word = |b: u8| b.is_ascii_alphanumeric() || b == b'_';
-    code.match_indices(name).any(|(at, _)| {
-        let end = at + name.len();
-        (at == 0 || !word(code.as_bytes()[at - 1]))
-            && (end == code.len() || !word(code.as_bytes()[end]))
-    })
-}
+fn retired_name_in(code:&str,name:&str)->bool{crate::requirement_bool_policy::retired_name_in(code,name)}
 
 struct RequirementBool {
     call: Pat,
@@ -108,32 +76,16 @@ impl RequirementBool {
         files: &[&SourceFile],
         typed: Option<Vec<(String, u32, String)>>,
     ) -> std::collections::BTreeSet<(String, usize)> {
-        let selected: std::collections::HashSet<&str> =
-            files.iter().map(|f| f.rel.as_str()).collect();
-        let mut sites: std::collections::BTreeSet<(String, usize)> =
-            std::collections::BTreeSet::new();
-        if let Some(typed_sites) = typed {
-            for (rel, line, _) in typed_sites {
-                if selected.contains(rel.as_str()) {
-                    sites.insert((rel, line as usize));
-                }
-            }
-        }
-        for file in files {
-            for (line, code) in file.code().numbered() {
-                if self.call.is_match(code) || self.declaration.is_match(code) {
-                    sites.insert((file.rel.clone(), line));
-                }
-            }
-        }
-        sites
+        let selected:std::collections::HashSet<String>=files.iter().map(|file|file.rel.clone()).collect();let mut sites=crate::requirement_bool_policy::Calls::new();let mut work=crate::key_policy_control::Compatibility;
+        if let Some(typed_sites)=typed{for(relative,line,_)in typed_sites{sites.typed(&relative,line as usize,&selected,&mut work).expect("original requirement union");}}
+        for file in files{for(line,code)in file.code().numbered(){if crate::requirement_bool_policy::matches(&self.call,&self.declaration,code){sites.insert(&file.rel,line,&mut work).expect("original requirement source union");}}}sites.into_rows()
     }
 
     /// The text rule: a `req_bool(` on a code line (the fallback when the model is unavailable).
     #[cfg(test)]
     fn scan_text(&self, file: &SourceFile, out: &mut Sink) {
         for (line, code) in file.code().numbered() {
-            if self.call.is_match(code) || self.declaration.is_match(code) {
+            if crate::requirement_bool_policy::matches(&self.call,&self.declaration,code) {
                 out.site("boolean_callback", line);
             }
         }

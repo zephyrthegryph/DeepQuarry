@@ -1,0 +1,7 @@
+/datum
+    var/base_value=1
+/datum/bad
+    parent_type=/datum/missing
+    proc/probe()
+        set mystery_probe=1
+        return base_value

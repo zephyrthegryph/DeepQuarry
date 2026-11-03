@@ -23,173 +23,8 @@ use crate::tree::{SourceFile, Tree, View};
 use crate::util::under;
 use crate::{pat, pat_match};
 
-pub use crate::raw_declaration_policy::MODIFIERS;
-pub const UNSAVED: &[&str] = &["tmp", "static", "global", "const"];
-/// Object type roots. A declared type under one of these holds a reference.
-pub const REF_ROOTS: &[&str] = &[
-    "/datum",
-    "/atom",
-    "/obj",
-    "/mob",
-    "/turf",
-    "/area",
-    "/image",
-    "/icon",
-    "/client",
-    "/sound",
-    "/matrix",
-    "/mutable_appearance",
-    "/savefile",
-    "/regex",
-    "/database",
-    "/exception",
-    "/callback",
-    "/decl",
-];
-/// Frozen definition / registry types that are never deleted (implicitly SHARED).
-pub const DEF_TYPES: &[&str] = &[
-    "/datum/material",
-    "/datum/decl",
-    "/decl",
-    "/datum/language",
-    "/datum/property_def",
-    "/datum/msg",
-];
-/// Base types whose vars are reported by `--report` (the tmp hygiene pass).
-pub const BASE_TYPES: &[&str] = &[
-    "/datum",
-    "/atom",
-    "/atom/movable",
-    "/obj",
-    "/obj/item",
-    "/obj/machinery",
-    "/mob",
-];
-/// Where `REGISTRY_TYPE(...)` rows live.
-pub const REGISTRY_FILE: &str = "code/datums/ownership/registry_types.dm";
-
-/// A declared var (`class Var`).
-#[derive(Clone, Debug)]
-pub struct Var {
-    pub owner: String,
-    pub name: String,
-    pub mods: BTreeSet<String>,
-    pub vtype: String,
-    pub is_list: bool,
-    /// Repo-relative path of the declaring file.
-    pub path: String,
-    pub line: usize,
-}
-
-impl Var {
-    /// Not `tmp`, `static`, `global` or `const`.
-    pub fn saved(&self) -> bool {
-        !self.mods.iter().any(|m| UNSAVED.contains(&m.as_str()))
-    }
-
-    pub fn holds_ref(&self) -> bool {
-        under(&self.vtype, REF_ROOTS)
-    }
-
-    /// `registry` needs the registry list (`Schema::registry`): the Python read a module global.
-    pub fn registry(&self, registry: &[String]) -> bool {
-        under(&self.vtype, registry)
-    }
-}
-
-/// `ancestors(path)`: the path's prefixes, shortest first, the path included.
-pub fn ancestors(path: &str) -> Vec<String> {
-    let segs: Vec<&str> = path.trim_matches('/').split('/').collect();
-    (1..=segs.len())
-        .map(|i| format!("/{}", segs[..i].join("/")))
-        .collect()
-}
-
-/// The type and its ancestors, root first. Everything inherits /datum, except the built-in roots
-/// that do not (none of ours).
-pub fn chain(path: &str) -> Vec<String> {
-    let mut out = ancestors(path);
-    if out[0] != "/datum" {
-        let first = out[0].as_str();
-        if matches!(first, "/obj" | "/mob" | "/turf" | "/area") {
-            let n = if matches!(first, "/obj" | "/mob") {
-                3
-            } else {
-                2
-            };
-            let mut pre: Vec<String> = ["/datum", "/atom", "/atom/movable"][..n]
-                .iter()
-                .map(|s| s.to_string())
-                .collect();
-            pre.extend(out);
-            out = pre;
-        } else if first == "/atom" {
-            out.insert(0, "/datum".to_string());
-        }
-    }
-    out
-}
-
-/// `split_decl`: `(name, mods, vtype, is_list)` of the path segments of a declaration, or None.
-fn push_var(
-    decls: &mut HashMap<String, Vec<Var>>,
-    owner: &str,
-    d: (String, BTreeSet<String>, String, bool),
-    rel: &str,
-    line: usize,
-) {
-    let (name, mods, vtype, is_list) = d;
-    decls.entry(owner.to_string()).or_default().push(Var {
-        owner: owner.to_string(),
-        name,
-        mods,
-        vtype,
-        is_list,
-        path: rel.to_string(),
-        line,
-    });
-}
-
-/// `parse()` for one file's `code_only` view: appends to `decls` and `latent`.
-pub fn parse_file(
-    rel: &str,
-    code: &View,
-    decls: &mut HashMap<String, Vec<Var>>,
-    latent: &mut HashMap<String, bool>,
-) {
-    crate::raw_declaration_policy::visit_file(
-        rel,
-        code,
-        |owner, parts, rel, line| push_var(decls, owner, parts, rel, line),
-        |owner, value| {
-            latent.insert(owner.to_string(), value);
-        },
-    );
-}
-
-/// `parse_codec_keys` for one file: `state_codecs()` keys are string literals, which `code_only`
-/// blanks, so they are read from the raw text of each `state_codecs()` proc.
-pub fn parse_codec_keys_file(text: &str, codecs: &mut HashMap<String, HashSet<String>>) {
-    let head = pat!(r"(?m)^(/[\w/]+)/state_codecs\(\)");
-    let first_nonspace_line = pat!(r"(?m)^\S");
-    let key = pat!(r#""(\w+)"\s*=\s*/datum/state_codec"#);
-    for m in head.captures_iter(text) {
-        let owner = m.s(1).replace("/proc", "");
-        let end = m.end(0);
-        let rest = &text[end..];
-        let stop = first_nonspace_line
-            .find(rest)
-            .map(|e| e.start)
-            .unwrap_or(rest.len());
-        let body = &rest[..stop];
-        for k in key.captures_iter(body) {
-            codecs
-                .entry(owner.clone())
-                .or_default()
-                .insert(k.s(1).to_string());
-        }
-    }
-}
+pub use crate::state_schema_data::{Var,Schema,ancestors,chain,parse_file,parse_codec_keys_file,MODIFIERS,UNSAVED,REF_ROOTS,DEF_TYPES,BASE_TYPES,REGISTRY_FILE};
+use crate::state_schema_data::push_var;
 
 /// `REGISTRY_TYPES`: every `REGISTRY_TYPE(/path, ...)` row of `registry_types.dm`, then `/decl`.
 pub fn registry_types(tree: &Tree) -> Vec<String> {
@@ -222,19 +57,6 @@ struct KindFacts {
 }
 
 const KIND_NAMES: [&str; 4] = ["OWN", "REL", "PROTO", "SHARED"];
-
-/// The whole parse, built once per run (`Schema::get`).
-#[derive(Debug, Default)]
-pub struct Schema {
-    /// type -> declared vars, in file order then line order
-    pub decls: HashMap<String, Vec<Var>>,
-    /// type -> `latent_safe` as set in that type's own block
-    pub latent: HashMap<String, bool>,
-    /// type -> `state_codecs()` key names
-    pub codecs: HashMap<String, HashSet<String>>,
-    /// `REGISTRY_TYPES`
-    pub registry: Vec<String>,
-}
 
 impl Schema {
     pub fn get(tree: &Tree, files: &[&SourceFile]) -> Arc<Schema> {
@@ -304,36 +126,6 @@ impl Schema {
         s
     }
 
-    /// `effective_latent(path, latent)`: the last `latent_safe` set along the chain.
-    pub fn effective_latent(&self, path: &str) -> bool {
-        let mut val = false;
-        for a in chain(path) {
-            if let Some(v) = self.latent.get(&a) {
-                val = *v;
-            }
-        }
-        val
-    }
-
-    /// `has_codec(owner, name, subject)`: a `state_codecs()` key `name` on `subject` or an ancestor.
-    pub fn has_codec(&self, name: &str, subject: &str) -> bool {
-        chain(subject).iter().any(|a| {
-            self.codecs
-                .get(a)
-                .map(|s| s.contains(name))
-                .unwrap_or(false)
-        })
-    }
-
-    /// Every type that is latent-safe, sorted.
-    pub fn safe_types(&self) -> Vec<String> {
-        let mut all: BTreeSet<&String> = self.decls.keys().collect();
-        all.extend(self.latent.keys());
-        all.into_iter()
-            .filter(|t| self.effective_latent(t))
-            .cloned()
-            .collect()
-    }
 }
 
 /// `ownership_kind(owner, name)`: the declared ownership kind of a var, or the kind inferred from
@@ -392,29 +184,11 @@ impl OwnershipKinds {
         // The declared form: the entries of CAPABILITIES(T) blocks (sem::decls reads the blocks, backslash form and block form alike).
         // hud_element(nameof(x), T) is an owns_one on the hud; hud_element(..., owned = FALSE) a ref_one.
         // profile(nameof(x), /datum/record/T) is an owns_one (code/engine/declare/profiles.dm).
-        let entry = regex::Regex::new(
-            r"\b(owns_one|owns_many|ref_one|ref_many|hud_element|profile)\(\s*nameof\((\w+)\)",
-        )
-        .expect("ownership entry pattern");
+        let entry = crate::state_schema_data::ownership_entry_pattern().expect("ownership entry pattern");
         let mut declared: HashMap<(String, String), &'static str> = HashMap::new();
         for m in crate::sem::decls::Decls::get(tree).markers_named("CAPABILITIES") {
             let Some(ty) = m.args.first() else { continue };
-            for c in entry.captures_iter(&m.body) {
-                // The rest of the entry's line (a block may hold several entries on one line in the backslash form).
-                let rest = m.body[c.get(0).map(|x| x.end()).unwrap_or(0)..]
-                    .split('\n')
-                    .next()
-                    .unwrap_or("");
-                let owned_hud = &c[1] == "hud_element" && !rest.contains("owned = FALSE");
-                let kind = if c[1].starts_with("owns_") || owned_hud || &c[1] == "profile" {
-                    "OWN"
-                } else {
-                    "REL"
-                };
-                declared
-                    .entry((ty.clone(), c[2].to_string()))
-                    .or_insert(kind);
-            }
+            crate::state_schema_data::visit_ownership_entries(&entry,&m.body,|name,kind|{declared.entry((ty.clone(),name.to_owned())).or_insert(kind);});
         }
         OwnershipKinds {
             idx,

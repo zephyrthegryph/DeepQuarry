@@ -8,7 +8,8 @@ pub fn failure_kind(kinds: impl IntoIterator<Item = DiagnosticKind>) -> FailureK
     for kind in kinds {
         match kind {
             DiagnosticKind::Internal => return FailureKind::Internal,
-            DiagnosticKind::SourceError => source = true,
+            DiagnosticKind::SourceError | DiagnosticKind::OriginalFatalInput{..} | DiagnosticKind::OriginalFatalParameter{..} | DiagnosticKind::OriginalFatalDeclaration{..} => source = true,
+            DiagnosticKind::OriginalFormalNotice{notice,..} => {if notice.registration().1==dm_tree::OriginalFormalNoticeLevel::Error{source=true}},
             DiagnosticKind::UnsupportedModel => {}
         }
     }

@@ -205,6 +205,14 @@ impl<T, Q, A, D> ObservedArtifactLease<T, Q, A, D> {
         drop(state);
         drop(detached);
     }
+    /// Borrow only this lease's actually claimed values. This is bookkeeping,
+    /// not a current-source replay or a new artifact admission. Callback errors
+    /// stop the native walk and retain their exact type; no index is allocated.
+    pub fn try_visit_claimed_values<E>(&self, checkpoint:&dyn Fn()->Result<(),E>,visit:&mut dyn FnMut(&Arc<T>)->Result<(),E>)->Result<(),E>{
+        let state=self.store.state.read().unwrap_or_else(|error|error.into_inner());
+        for bucket in state.buckets.values(){checkpoint()?;for entry in bucket{checkpoint()?;if entry.holders.has(self.slot){visit(&entry.value)?;}}}
+        Ok(())
+    }
     /// This visits the shared core, including sibling leases. Addresses identify
     /// actual common allocations; private lease/index nodes remain unreported.
     pub fn visit_storage(&self, visit: impl FnMut(ObservedArtifactStorageView<'_, T, Q, A, D>)) {
@@ -739,3 +747,15 @@ mod tests;
 #[cfg(test)]
 #[path = "leased/fresh_tests.rs"]
 mod fresh_tests;
+
+#[cfg(test)]mod actual_claimed_visitor_tests{
+ use super::*;
+ #[test]fn actual_claimed_values_visitor_excludes_siblings_and_preserves_typed_callback_failure(){
+  let store=ObservedArtifactStore::<u32,u8,u32,u8>::shared_current_rosters();let own=store.lease();let sibling=store.lease();
+  own.insert_with_owned(Arc::from(b"a".as_slice()),Vec::<Observation<u8,u32,u8>>::new(),0,||11).unwrap();
+  sibling.insert_with_owned(Arc::from(b"b".as_slice()),Vec::<Observation<u8,u32,u8>>::new(),0,||22).unwrap();
+  let mut rows=Vec::new();own.try_visit_claimed_values(&||Ok::<_,std::io::Error>(()),&mut|value|{rows.push(**value);Ok(())}).unwrap();assert_eq!(rows,[11]);
+  let error=own.try_visit_claimed_values(&||Ok::<_,std::io::Error>(()),&mut|_|Err(std::io::Error::from_raw_os_error(1450))).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));
+  own.retain_current_keys(std::iter::empty::<&[u8]>());let mut count=0;own.try_visit_claimed_values(&||Ok::<_,std::io::Error>(()),&mut|_|{count+=1;Ok(())}).unwrap();assert_eq!(count,0);
+ }
+}

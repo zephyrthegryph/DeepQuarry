@@ -17,7 +17,6 @@ pub enum BindingError {
 }
 #[derive(Debug)]
 pub struct RelativeSyntax {
-    original_headers: Option<Arc<crate::procedure::OriginalProcedureHeaders>>,
     items: arena::Arena,
     source_len: usize,
     max_end: usize,
@@ -25,6 +24,8 @@ pub struct RelativeSyntax {
     // Source-code facts only. Original-file authority remains per issued mapping.
     primary_headers: OnceLock<Result<Arc<[(usize, Option<usize>, u8)]>, BindingError>>,
     primary_header_reissues: AtomicUsize,
+    // Last: AST/body buffers free before the shared primary parser reservation.
+    original_headers: Option<Arc<crate::procedure::OriginalProcedureHeaders>>,
 }
 /// Exact source-capture capability. Only this parser-owned producer can mint it.
 #[derive(Debug)]
@@ -102,6 +103,9 @@ pub(crate) struct CurrentBodyRecipe<'a> {
     headers: Option<&'a Arc<crate::procedure::OriginalProcedureHeaders>>,
 }
 impl CurrentBodyRecipe<'_> {
+    pub(crate) fn source_window(&self)->Result<Span,&'static str>{let source=self.headers.ok_or("actual original header owner unissued")?;let end=self.offset.checked_add(source.abi_source_len()).ok_or("current original source window overflows")?;Ok(Span::new(self.offset,end))}
+    pub(crate) fn parse_original(&self)->Result<dm_syntax::ProcedureWithOrigins,dm_syntax::Diagnostic>{self.headers.ok_or_else(||dm_syntax::Diagnostic{span:self.span(),kind:dm_syntax::DiagnosticKind::Unsupported,message:"original declaration token input is unissued".into()})?.parse_body(self.relative.span,self.offset)}
+
     pub(crate) fn code_identity(&self) -> Arc<BodyCodeIdentity> {
         Arc::clone(&self.relative.code)
     }
@@ -371,6 +375,7 @@ impl RelativeSyntax {
     pub fn visit_setting_roots(&self, mut visit: impl FnMut(&dm_syntax::SettingExpression)) {
         if let Some(headers) = &self.original_headers {
             headers.visit_initializer_roots(&mut visit);
+            headers.visit_default_roots(&mut visit);
             headers.visit_setting_roots(&mut visit);
         }
     }
@@ -508,6 +513,7 @@ impl<'a> ItemView<'a> {
             header_span: self.header_span(),
             declaration_cursor: self.declaration_cursor(),
             checker_qualifiers: self.item.checker_qualifiers(),
+            original_outer_terminator: self.item.original_outer_terminator(),
             indent: self.item.indent(),
             children: self.children().map(Self::materialize).collect(),
         }
@@ -520,6 +526,7 @@ impl<'a> ItemView<'a> {
 /// Borrowed original token input only. Construction is private to the SAME
 /// current declaration/body-code owner; this is not a copied semantic model.
 pub(crate) struct OriginalSettingTokenInput<'a> {
+    pub(crate) literal_owner:&'a crate::procedure::OriginalProcedureHeaders,
     pub(crate) source: &'a str,
     pub(crate) tokens: &'a [dm_syntax::SpanToken],
     pub(crate) original_owner: &'a Arc<dm_ir::ProcedureMetadata>,
@@ -556,6 +563,7 @@ impl<'source> OriginalInitializerDimensionTokens<'source>{
  }
 }
 pub(crate) struct OriginalReturnTokenInput<'a> {
+    pub(crate) literal_owner:&'a crate::procedure::OriginalProcedureHeaders,
     pub(crate) source: &'a str,
     pub(crate) tokens: &'a [dm_syntax::SpanToken],
     pub(crate) original_value: Span,
@@ -670,7 +678,7 @@ impl DeclarationSyntax {
     }
     /// Native captured-body path: exact current chunk/body/code before borrowing
     /// any original token range. Matching bytes or member IDs are insufficient.
-    fn original_body_recipe<'a>(
+    pub(crate) fn original_body_recipe<'a>(
         &'a self,
         span: Span,
         code: &Arc<BodyCodeIdentity>,
@@ -715,6 +723,19 @@ impl DeclarationSyntax {
         })
     }
     pub(crate) fn original_body_tokens(&self,span:Span,code:&Arc<BodyCodeIdentity>)->Result<crate::procedure::header_input::OriginalBodyTokens<'_>,String>{let recipe=self.original_body_recipe(span,code).map_err(|error|error.message)?;recipe.headers.ok_or("original body primary token owner unissued")?.body_tokens(recipe.relative.span,recipe.offset).map_err(str::to_owned)}
+    pub(crate) fn original_formal_notice_rows<'a>(&'a self,span:Span,code:&Arc<BodyCodeIdentity>)->Result<impl Iterator<Item=Result<(crate::OriginalFormalNotice,Option<&'a str>),String>>+'a,String>{
+        let recipe=self.original_body_recipe(span,code).map_err(|error|error.message)?;let headers=recipe.headers.ok_or("actual original formal header owner unavailable")?;let offset=recipe.offset;let rows=headers.formal_notices_for(recipe.relative.span).map_err(str::to_owned)?;
+        Ok(rows.map(move|notice|{let text=headers.formal_notice_text(notice).map_err(str::to_owned)?;let current=notice.checked_shift(offset).map_err(|error|error.to_string())?;Ok((current,text))}))
+    }
+    pub(super) fn original_header_parameters<'a>(&'a self,span:Span,code:&Arc<BodyCodeIdentity>)->Result<(&'a dm_syntax::SharedParameterSignature,dm_syntax::SyntaxProjection),dm_syntax::Diagnostic>{
+      let recipe=self.original_body_recipe(span,code)?;
+      let fail=|message:&str|dm_syntax::Diagnostic{span,kind:dm_syntax::DiagnosticKind::Unsupported,message:message.into()};
+      let headers=recipe.headers.ok_or_else(||fail("actual parameter header owner is unissued"))?;
+      let parameters=headers.parameter_signature(recipe.relative.span).map_err(fail)?;
+      let original=Span::new(0,headers.abi_source_len());let current=recipe.source_window().map_err(fail)?;
+      let projection=dm_syntax::SyntaxProjection::new(original,current).map_err(|_|fail("actual parameter source projection differs"))?;
+      Ok((parameters,projection))
+    }
     pub(crate) fn original_callable_opening(&self,span:Span,code:&Arc<BodyCodeIdentity>)->Result<usize,String>{
         let recipe=self.original_body_recipe(span,code).map_err(|e|e.message)?;
         let input=recipe.headers.ok_or("callable header original token input unissued")?;
@@ -726,12 +747,7 @@ impl DeclarationSyntax {
         code: &Arc<BodyCodeIdentity>,
     ) -> Result<dm_syntax::ProcedureWithOrigins, dm_syntax::Diagnostic> {
         let recipe = self.original_body_recipe(span, code)?;
-        let input = recipe.headers.ok_or_else(|| dm_syntax::Diagnostic {
-            span,
-            kind: dm_syntax::DiagnosticKind::Unsupported,
-            message: "original declaration token input is unissued".into(),
-        })?;
-        input.parse_body(recipe.relative.span, recipe.offset)
+        recipe.parse_original()
     }
     /// Authenticate original current source inputs without demanding any body or
     /// setting expression grammar. The native frontend still validates its
@@ -743,6 +759,12 @@ impl DeclarationSyntax {
       let headers=recipe.headers.ok_or_else(||fail("ABI original header owner unavailable"))?;let owner=recipe.relative.settings_owner.as_ref().ok_or_else(||fail("ABI original metadata owner unavailable"))?;
       let root=headers.cached_abi_root(recipe.relative.span,owner,ordinal,count,returns,a)?;
       root.project_current(recipe.offset,headers.abi_source_len()).map_err(dm_syntax::SettingSyntaxFailure::Operational)
+    }
+    pub(crate) fn original_body_expression(&self,body:Span,code:&Arc<BodyCodeIdentity>,source:&str,offset:usize,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<dm_syntax::ParsedExpr>>{
+      let recipe=self.original_body_recipe(body,code).map_err(|e|std::io::Error::new(std::io::ErrorKind::InvalidData,e.message))?;
+      let original=offset.checked_sub(recipe.offset).ok_or(std::io::ErrorKind::InvalidInput)?;
+      let headers=recipe.headers.ok_or_else(||std::io::Error::new(std::io::ErrorKind::Unsupported,"original BODY expression header owner is unissued"))?;
+      headers.original_body_expression(source,original,a)
     }
     pub(crate) fn setting_token_input<'a>(
         &'a self,
@@ -785,6 +807,7 @@ impl DeclarationSyntax {
             footprint.value.end + recipe.offset,
         );
         Ok(OriginalSettingTokenInput {
+            literal_owner:input,
             source,
             tokens,
             original_owner: owner,
@@ -827,6 +850,7 @@ impl DeclarationSyntax {
             .return_fragment(recipe.relative.span, owner, fragment, symbols)
             .map_err(fail)?;
         Ok(OriginalReturnTokenInput {
+            literal_owner:headers,
             source,
             tokens,
             original_value: value,
@@ -1008,7 +1032,7 @@ impl DeclarationSyntax {
             .map_err(|e| syntax(&e))?;
         let original = slots
             .obtain(footprint.ordinal, owner.settings.len(), admission, || {
-                dm_syntax::prepare_setting_expression(source, tokens, footprint.value, admission)
+                dm_syntax::prepare_setting_expression_with_original_literal_facts(source,tokens,footprint.value,admission,headers.original_literal_facts().map_err(dm_syntax::SettingSyntaxFailure::Operational)?)
             })
             .map_err(|failure| match failure {
                 dm_syntax::SettingSyntaxFailure::Syntax(mut error) => {
@@ -1077,6 +1101,10 @@ impl DeclarationSyntax {
             len,
             ordered_chunks,
         })
+    }
+    pub(super) fn first_original_outer_block_using<E>(&self,checkpoint:&dyn Fn()->Result<(),E>)->Result<Result<Option<usize>,&'static str>,E>{
+     let mut first=None;for chunk in self.chunks.iter(){checkpoint()?;let Some(headers)=chunk.relative.original_headers.as_ref()else{return Ok(Err("actual original declaration header owner absent"))};if let Some(at)=headers.first_outer_block(){let Some(at)=at.checked_add(chunk.offset)else{return Ok(Err("outer terminator current source projection overflow"))};first=Some(first.map_or(at,|old:usize|old.min(at)));}}
+     checkpoint()?;Ok(Ok(first))
     }
     pub fn chunks(&self) -> &Arc<[CurrentSyntaxChunk]> {
         &self.chunks
@@ -1581,4 +1609,217 @@ mod callable_namespace_recipe_tests {
             assert!(relative.bind(source.len(), 0).is_ok());
         }
     }
+}
+
+/// Request scratch over the existing previous publication's actual claimed
+/// contributions. This is not a source tree, a parser, or a persistent cache.
+pub(super) struct BodyCodeCandidates{rows:Vec<BodyCandidate>,lease:dm_syntax::SettingRootLease}
+struct BodyCandidate{hash:u64,syntax:Arc<RelativeSyntax>,ordinal:usize}
+fn code_io(message:&'static str)->std::io::Error{std::io::Error::new(std::io::ErrorKind::InvalidData,message)}
+fn code_checkpoint(a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{let result=a.checkpoint();if let Some(actual)=a.take_operational_error(){return Err(actual)}result}
+fn code_hash(parts:&[&[u8]],a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<u64>{
+ use std::hash::Hasher;let mut hash=std::collections::hash_map::DefaultHasher::new();
+ for part in parts{code_checkpoint(a)?;hash.write_usize(part.len());for chunk in part.chunks(4096){code_checkpoint(a)?;hash.write(chunk);}}
+ Ok(hash.finish())
+}
+fn code_equal(left:&[u8],right:&[u8],a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<bool>{
+ if left.len()!=right.len(){return Ok(false)}for(x,y)in left.chunks(4096).zip(right.chunks(4096)){code_checkpoint(a)?;if x!=y{return Ok(false)}}Ok(true)
+}
+/// Compare only the actual already-produced sparse facts in this body. None
+/// is unissued, distinct from a completed zero-literal stream. No parse/cache.
+type CodeLiteralFacts<'a>=(&'a[(dm_syntax::Span,dm_syntax::OriginalLiteralData)],usize);
+fn code_literal_rows<'a>(rows:Option<CodeLiteralFacts<'a>>,body:dm_syntax::Span,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<CodeLiteralFacts<'a>>>{
+ let Some((rows,origin))=rows else{return Ok(None)};
+ let start=origin.checked_add(body.start).ok_or_else(||code_io("actual literal body origin overflow"))?;
+ let end=origin.checked_add(body.end).ok_or_else(||code_io("actual literal body end overflow"))?;
+ if start>end{return Err(code_io("actual literal body window is reversed"))}
+ let begin=rows.partition_point(|(span,_)|span.end<=start);
+ let limit=rows.partition_point(|(span,_)|span.start<end);
+ if begin>limit{return Err(code_io("actual literal fact ordering differs"))}
+ let selected=&rows[begin..limit];
+ for(span,_)in selected{code_checkpoint(a)?;if span.start<start||span.end>end||span.end<span.start{return Err(code_io("actual literal fact crosses its body recipe"))}}
+ Ok(Some((selected,start)))
+}
+fn code_literal_hash(rows:Option<CodeLiteralFacts<'_>>,body:dm_syntax::Span,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<u64>{
+ use std::hash::Hasher;let mut hash=std::collections::hash_map::DefaultHasher::new();
+ code_checkpoint(a)?;let rows=code_literal_rows(rows,body,a)?;
+ let Some((rows,base))=rows else{hash.write_u8(0);return Ok(hash.finish())};hash.write_u8(1);hash.write_usize(rows.len());
+ for(span,value)in rows{code_checkpoint(a)?;hash.write_usize(span.start-base);hash.write_usize(span.end-base);
+  fn text(hash:&mut impl Hasher,value:&str,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{hash.write_usize(value.len());for bytes in value.as_bytes().chunks(4096){code_checkpoint(a)?;hash.write(bytes);}Ok(())}
+  text(&mut hash,value.raw(),a)?;hash.write_u8(value.string_mode() as u8);
+  match value.value(){
+   dm_syntax::OriginalTokenValue::Int(value)=>{hash.write_u8(0);hash.write_i32(value)},
+   dm_syntax::OriginalTokenValue::Float(value)=>{hash.write_u8(1);hash.write_u32(value.to_bits())},
+   dm_syntax::OriginalTokenValue::String(value)=>{hash.write_u8(2);text(&mut hash,value,a)?},
+   dm_syntax::OriginalTokenValue::Resource(value)=>{hash.write_u8(3);text(&mut hash,value,a)?},
+   _=>return Err(code_io("unissued literal variant in original code recipe")),
+  }
+ }Ok(hash.finish())
+}
+fn code_literal_equal(left:Option<CodeLiteralFacts<'_>>,left_body:dm_syntax::Span,right:Option<CodeLiteralFacts<'_>>,right_body:dm_syntax::Span,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<bool>{
+ code_checkpoint(a)?;let left=code_literal_rows(left,left_body,a)?;let right=code_literal_rows(right,right_body,a)?;
+ let((left,left_base),(right,right_base))=match(left,right){(None,None)=>return Ok(true),(Some(left),Some(right))=>(left,right),_=>return Ok(false)};
+ if left.len()!=right.len(){return Ok(false)}
+ for((ls,lv),(rs,rv))in left.iter().zip(right){
+  code_checkpoint(a)?;if(ls.start-left_base,ls.end-left_base)!=(rs.start-right_base,rs.end-right_base)||!code_equal(lv.raw().as_bytes(),rv.raw().as_bytes(),a)?||lv.string_mode()!=rv.string_mode(){return Ok(false)}
+  let equal=match(lv.value(),rv.value()){
+   (dm_syntax::OriginalTokenValue::Int(l),dm_syntax::OriginalTokenValue::Int(r))=>l==r,
+   (dm_syntax::OriginalTokenValue::Float(l),dm_syntax::OriginalTokenValue::Float(r))=>l.to_bits()==r.to_bits(),
+   (dm_syntax::OriginalTokenValue::String(l),dm_syntax::OriginalTokenValue::String(r))|(dm_syntax::OriginalTokenValue::Resource(l),dm_syntax::OriginalTokenValue::Resource(r))=>code_equal(l.as_bytes(),r.as_bytes(),a)?,
+   _=>false,
+  };if !equal{return Ok(false)}
+ }Ok(true)
+}
+impl RelativeSyntax{
+ /// The actual fresh primary produced these facts already. Identical rendered
+ /// source text alone cannot authorize reuse of a different typed token stream.
+ pub(crate) fn original_literals_match_headers(&self,headers:&crate::procedure::OriginalProcedureHeaders,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<bool>{
+  let Some(previous)=self.original_headers.as_ref()else{return Ok(false)};
+  code_literal_equal(previous.original_literal_facts()?.map(|view|view.raw_parts()),dm_syntax::Span::new(0,self.source_len),headers.original_literal_facts()?.map(|view|view.raw_parts()),dm_syntax::Span::new(0,self.source_len),a)
+ }
+ fn code_recipe_hash(&self,ordinal:usize,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<u64>{
+  let(bytes,header,profile)=self.code_parts(ordinal)?;let body=self.bodies.get(ordinal).ok_or_else(||code_io("actual relative body absent"))?;
+  let headers=self.original_headers.as_ref().ok_or_else(||code_io("actual original header producer absent"))?;
+  let literals=code_literal_hash(headers.original_literal_facts()?.map(|view|view.raw_parts()),body.span,a)?.to_le_bytes();
+  code_hash(&[bytes,header,&profile,&literals],a)
+ }
+ fn code_recipe_literals_equal(&self,ordinal:usize,other:&Self,other_ordinal:usize,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<bool>{
+  let body=self.bodies.get(ordinal).ok_or_else(||code_io("actual relative body absent"))?;let old=other.bodies.get(other_ordinal).ok_or_else(||code_io("actual previous relative body absent"))?;
+  let headers=self.original_headers.as_ref().ok_or_else(||code_io("actual original header producer absent"))?;let previous=other.original_headers.as_ref().ok_or_else(||code_io("actual previous original header producer absent"))?;
+  code_literal_equal(headers.original_literal_facts()?.map(|view|view.raw_parts()),body.span,previous.original_literal_facts()?.map(|view|view.raw_parts()),old.span,a)
+ }
+ fn code_item(&self,path:&[usize])->Option<arena::Ref<'_>>{
+  let(first,rest)=path.split_first()?;let mut item=self.items.roots().nth(*first)?;
+  for index in rest{item=item.children().nth(*index)?;}Some(item)
+ }
+ fn code_parts(&self,ordinal:usize)->std::io::Result<(&[u8],&[u8],[u8;2])>{
+  let body=self.bodies.get(ordinal).ok_or_else(||code_io("actual relative body absent"))?;
+  let item=self.code_item(&body.path).ok_or_else(||code_io("actual primary body path differs"))?;
+  let bytes=self.shared_source().and_then(|source|source.as_bytes().get(body.span.range())).ok_or_else(||code_io("actual original body source window absent"))?;
+  let profile=self.original_headers.as_ref().ok_or_else(||code_io("actual original header producer absent"))?.checker_body_profile();
+  let kind=match item.kind(){ItemKind::Proc=>0,ItemKind::Verb=>1,_=>return Err(code_io("actual body recipe is not callable"))};
+  Ok((bytes,item.header().as_bytes(),[kind,u8::from(profile)]))
+ }
+ pub(super) fn converge_body_codes(&mut self,previous:&BodyCodeCandidates,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<usize>{
+  code_checkpoint(a)?;if !self.initializer_admission_matches(a)?||self.shared_source().is_none(){return Ok(0)}
+  let mut changed=0;
+  for ordinal in 0..self.bodies.len(){
+   code_checkpoint(a)?;let code={
+    let(bytes,header,profile)=self.code_parts(ordinal)?;let hash=self.code_recipe_hash(ordinal,a)?;
+    let mut begin=0;let mut end=previous.rows.len();while begin<end{code_checkpoint(a)?;let mid=begin+(end-begin)/2;if previous.rows[mid].hash<hash{begin=mid+1}else{end=mid}}
+    let mut found=None;
+    for candidate in &previous.rows[begin..]{code_checkpoint(a)?;if candidate.hash!=hash{break}let(old_bytes,old_header,old_profile)=candidate.syntax.code_parts(candidate.ordinal)?;
+     if profile==old_profile&&code_equal(header,old_header,a)?&&code_equal(bytes,old_bytes,a)?&&self.code_recipe_literals_equal(ordinal,&candidate.syntax,candidate.ordinal,a)?{found=Some(Arc::clone(&candidate.syntax.bodies[candidate.ordinal].code));break}
+    }
+    found
+   };
+   if let Some(code)=code{self.bodies[ordinal].code=code;changed+=1;}
+  }
+  code_checkpoint(a)?;Ok(changed)
+ }
+}
+impl BodyCodeCandidates{
+ pub(super) fn new(a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Self>{let pending=a.reserve(std::mem::size_of::<Self>());if let Some(actual)=a.take_operational_error(){return Err(actual)}Ok(Self{rows:Vec::new(),lease:pending?})}
+ pub(super) fn capture(&mut self,syntax:&Arc<RelativeSyntax>,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{
+  code_checkpoint(a)?;if !syntax.initializer_admission_matches(a)?||syntax.shared_source().is_none(){return Ok(())}
+  for ordinal in 0..syntax.bodies.len(){
+   code_checkpoint(a)?;let hash=syntax.code_recipe_hash(ordinal,a)?;
+   if self.rows.len()==self.rows.capacity(){
+    let count=self.rows.capacity().max(4).checked_mul(2).ok_or_else(||std::io::Error::from(std::io::ErrorKind::OutOfMemory))?;
+    let bytes=count.checked_mul(4).and_then(|n|n.checked_mul(std::mem::size_of::<BodyCandidate>())).and_then(|n|n.checked_add(std::mem::size_of::<Self>()+128)).ok_or_else(||std::io::Error::from(std::io::ErrorKind::OutOfMemory))?;
+    if bytes>self.lease.bytes(){let growth=bytes-self.lease.bytes();a.grow(&mut self.lease,growth)?;}
+    let mut next=Vec::new();next.try_reserve_exact(count).map_err(|error|std::io::Error::new(std::io::ErrorKind::OutOfMemory,error))?;
+    if next.capacity()>count.checked_mul(4).ok_or_else(||std::io::Error::from(std::io::ErrorKind::OutOfMemory))?{return Err(code_io("candidate allocator exceeds admitted peak"))}
+    next.append(&mut self.rows);self.rows=next;
+   }
+   self.rows.push(BodyCandidate{hash,syntax:Arc::clone(syntax),ordinal});
+  }Ok(())
+ }
+ pub(super) fn finish(&mut self,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{
+  // In-place heapsort: no hidden allocation and a real typed checkpoint on
+  // every comparison/sift, including cancellation during ordering.
+  fn sift(rows:&mut[BodyCandidate],mut root:usize,end:usize,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()>{
+   loop{code_checkpoint(a)?;let Some(left)=root.checked_mul(2).and_then(|n|n.checked_add(1)).filter(|n|*n<end)else{return Ok(())};let mut child=left;
+    if left+1<end&&rows[left].hash<rows[left+1].hash{child+=1}if rows[root].hash>=rows[child].hash{return Ok(())}rows.swap(root,child);root=child;
+   }
+  }
+  let len=self.rows.len();for root in(0..len/2).rev(){sift(&mut self.rows,root,len,a)?;}for end in(1..len).rev(){code_checkpoint(a)?;self.rows.swap(0,end);sift(&mut self.rows,0,end,a)?;}code_checkpoint(a)
+ }
+}
+
+#[cfg(test)]mod real_body_convergence_tests{
+ use super::*;
+ use crate::frontend::declaration_state::RetainedDeclarations;
+ fn actual_current(store:&RetainedDeclarations,text:&str,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<crate::frontend::declaration_state::CurrentContribution>{
+  let parsed=dm_syntax::parse_declaration_skeleton(text);assert!(parsed.diagnostics.is_empty(),"{:?}",parsed.diagnostics);
+  let source=dm_preprocess::SourceText::from(text.to_owned());
+  let headers=crate::procedure::OriginalProcedureHeaders::from_primary_admitted(source.clone(),&parsed.items,0,parsed.tokens,a).map_err(|failure|match failure{crate::procedure::header_input::OriginalHeaderFailure::Operational(error)=>error,crate::procedure::header_input::OriginalHeaderFailure::Source(message)=>std::io::Error::new(std::io::ErrorKind::InvalidData,message)})?;
+  let ast=dm_syntax::AstFile{items:parsed.items,..Default::default()};
+  let(mut facts,receipt)=crate::adapter::from_ast_with_source_headers_checked(&ast,dm_ir::SymbolTable::default(),dm_ir::FileId(0),0,0,text,&headers,0,a)?.unwrap();drop(receipt);
+  let ledger=crate::allocation_ledger::capture(&ast.items,"/",&mut facts.symbols).unwrap();
+  let key=RetainedDeclarations::original_header_key(text);store.retain(&[key.clone()]);
+  store.capture_source_headers_checked(&key,source,0,ast.items,facts,ledger,headers,a)?.ok_or_else(||code_io("actual native contribution was not captured"))
+ }
+ fn code(syntax:&RelativeSyntax,name:&str)->Arc<BodyCodeIdentity>{
+  let row=syntax.bodies.iter().find(|body|syntax.code_item(&body.path).unwrap().header().starts_with(&format!("/proc/{name}("))).unwrap();Arc::clone(&row.code)
+ }
+ #[test]fn actual_published_primary_capture_converges_both_unchanged_siblings_after_length_changing_same_chunk_edit(){
+  let counter=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&counter,1<<26,&||Ok(()));let store=RetainedDeclarations::default();
+  let old="/proc/p(value=1)\n    return value\n/proc/q()\n    return 2\n/proc/r()\n    return 3\n";
+  let request=store.begin_request(true);let first=actual_current(&store,old,&a).unwrap();let p=code(&first.syntax.shared_relative(),"p");let q=code(&first.syntax.shared_relative(),"q");let r=code(&first.syntax.shared_relative(),"r");assert!(request.publish_successful());
+  let new="/proc/p(value=1)\n    return value\n/proc/q()\n    return list(222,333,444)\n/proc/r()\n    return 3\n";
+  let request=store.begin_request(true);let second=actual_current(&store,new,&a).unwrap();assert!(Arc::ptr_eq(&p,&code(&second.syntax.shared_relative(),"p")));assert!(!Arc::ptr_eq(&q,&code(&second.syntax.shared_relative(),"q")));assert!(Arc::ptr_eq(&r,&code(&second.syntax.shared_relative(),"r")));assert_ne!(first.syntax.shared_relative().source_len,second.syntax.shared_relative().source_len);assert!(!Arc::ptr_eq(first.syntax.shared_relative().original_headers.as_ref().unwrap(),second.syntax.shared_relative().original_headers.as_ref().unwrap()),"only code data converges; actual current primary/header owner remains distinct");assert!(request.publish_successful());
+  let request=store.begin_request(true);let shifted=actual_current(&store,&format!("// earlier header offset shifts every same-chunk body\n{new}"),&a).unwrap();assert!(Arc::ptr_eq(&p,&code(&shifted.syntax.shared_relative(),"p")));assert!(Arc::ptr_eq(&r,&code(&shifted.syntax.shared_relative(),"r")));assert!(request.publish_successful());
+ }
+ #[test]fn failed_current_capture_does_not_publish_or_erase_the_previous_body_code_candidates(){
+  let counter=Arc::new(AtomicUsize::new(0));let store=RetainedDeclarations::default();let a=dm_syntax::SettingAdmission::new(&counter,1<<26,&||Ok(()));
+  let old="/proc/p()\n    return 1\n/proc/q()\n    return 2\n";let first_request=store.begin_request(true);let original=actual_current(&store,old,&a).unwrap();let p=code(&original.syntax.shared_relative(),"p");assert!(first_request.publish_successful());
+  let failure=||Err(std::io::Error::from_raw_os_error(1450));let denied=dm_syntax::SettingAdmission::new(&counter,1<<26,&failure);let failed_request=store.begin_request(true);let error=actual_current(&store,old,&denied).err().expect("real operational capture failure");assert_eq!(error.raw_os_error(),Some(1450));drop(failed_request);
+  let request=store.begin_request(true);let next=actual_current(&store,"/proc/p()\n    return 1\n/proc/q()\n    return 222222\n",&a).unwrap();assert!(Arc::ptr_eq(&p,&code(&next.syntax.shared_relative(),"p")));assert!(request.publish_successful());
+  let request=store.begin_request(true);let deleted=actual_current(&store,"/proc/q()\n    return 222222\n",&a).unwrap();assert_eq!(deleted.syntax.shared_relative().bodies.len(),1);assert!(request.publish_successful());
+  drop(original);drop(next);
+  let request=store.begin_request(true);let readded=actual_current(&store,old,&a).unwrap();assert!(!Arc::ptr_eq(&p,&code(&readded.syntax.shared_relative(),"p")),"deleted code is not revived from unclaimed global core variants");assert!(request.publish_successful());
+ }
+ #[test]fn native_body_candidate_index_quota_and_checkpoint_failures_keep_exact_operational_identity(){
+  let counter=Arc::new(AtomicUsize::new(0));let failure=||Err(std::io::Error::from_raw_os_error(1450));let a=dm_syntax::SettingAdmission::new(&counter,1<<24,&failure);assert_eq!(BodyCodeCandidates::new(&a).err().unwrap().raw_os_error(),Some(1450));
+  let a=dm_syntax::SettingAdmission::new(&counter,0,&||Ok(()));assert_eq!(BodyCodeCandidates::new(&a).err().unwrap().kind(),std::io::ErrorKind::OutOfMemory);assert_eq!(counter.load(Ordering::Acquire),0);
+ }
+}
+
+#[cfg(test)]mod sparse_original_literal_recipe_data_tests{
+ use super::*;use dm_syntax::{OriginalLiteralData,OriginalTokenValue,Span};use std::sync::atomic::AtomicUsize;
+ #[test]fn same_rendered_numeric_spelling_never_converges_distinct_actual_literal_variants_or_float_bits(){
+  let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,1<<20,&poll);
+  let make=|value|vec![(Span::new(2,3),OriginalLiteralData::from_value_using("0".into(),value,&a).unwrap())];
+  let int=make(OriginalTokenValue::Int(0));let float=make(OriginalTokenValue::Float(0.0));let negative=make(OriginalTokenValue::Float(-0.0));let body=Span::new(0,4);
+  for other in [&float,&negative]{assert!(!code_literal_equal(Some((&int,0)),body,Some((other,0)),body,&a).unwrap());assert_ne!(code_literal_hash(Some((&int,0)),body,&a).unwrap(),code_literal_hash(Some((other,0)),body,&a).unwrap());}
+  assert!(!code_literal_equal(Some((&float,0)),body,Some((&negative,0)),body,&a).unwrap());
+ }
+ #[test]fn body_move_keeps_relative_facts_but_unissued_stream_and_changed_static_value_cannot_alias(){
+  let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=dm_syntax::SettingAdmission::new(&counter,1<<20,&poll);
+  let data=OriginalLiteralData::from_value_using("same displayed token".into(),OriginalTokenValue::String("[static]"),&a).unwrap();
+  let left=vec![(Span::new(2,3),data.clone())];let moved=vec![(Span::new(102,103),data.clone())];let before=Span::new(0,10);let after=Span::new(100,110);
+  assert!(code_literal_equal(Some((&left,0)),before,Some((&moved,0)),after,&a).unwrap());
+  assert!(code_literal_equal(Some((&left,0)),before,Some((&moved,100)),before,&a).unwrap(),"real TU-origin view projects the same chunk-local occurrence without copies");assert_eq!(code_literal_hash(Some((&left,0)),before,&a).unwrap(),code_literal_hash(Some((&moved,0)),after,&a).unwrap());
+  let changed=vec![(Span::new(2,3),OriginalLiteralData::from_value_using("same displayed token".into(),OriginalTokenValue::String("[different]"),&a).unwrap())];assert!(!code_literal_equal(Some((&left,0)),before,Some((&changed,0)),before,&a).unwrap());
+  assert!(!code_literal_equal(None,before,Some((&[],0)),before,&a).unwrap());assert_ne!(code_literal_hash(None,before,&a).unwrap(),code_literal_hash(Some((&[],0)),before,&a).unwrap());
+ }
+ #[test]fn sparse_literal_comparison_preserves_exact_operational_error(){
+  let counter=Arc::new(AtomicUsize::new(0));let poll=||Err(std::io::Error::from_raw_os_error(1450));let a=dm_syntax::SettingAdmission::new(&counter,1<<20,&poll);
+  assert_eq!(code_literal_hash(None,Span::new(0,1),&a).unwrap_err().raw_os_error(),Some(1450));
+  // A stopped operation does not poll again or manufacture a second owned OS
+  // error. Each independent demand starts with its genuine fresh admission.
+  let a=dm_syntax::SettingAdmission::new(&counter,1<<20,&poll);
+  assert_eq!(code_literal_equal(None,Span::new(0,1),None,Span::new(0,1),&a).unwrap_err().raw_os_error(),Some(1450));
+ }
+}
+
+#[cfg(test)]mod sparse_original_literal_poll_controls{
+ use super::*;
+ #[test]fn cancellation_during_selected_row_validation_stops_before_value_hashing_and_fresh_operation_recovers(){
+  let counter=Arc::new(std::sync::atomic::AtomicUsize::new(0));let success=||Ok(());let seed=dm_syntax::SettingAdmission::new(&counter,1<<20,&success);
+  let data=dm_syntax::OriginalLiteralData::from_value_using("0".into(),dm_syntax::OriginalTokenValue::Int(0),&seed).unwrap();let rows=vec![(dm_syntax::Span::new(1,2),data.clone()),(dm_syntax::Span::new(3,4),data)];let calls=std::cell::Cell::new(0);let poll=||{calls.set(calls.get()+1);if calls.get()==3{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(())}};let stopped=dm_syntax::SettingAdmission::new(&counter,1<<20,&poll);
+  assert_eq!(code_literal_hash(Some((&rows,0)),dm_syntax::Span::new(0,5),&stopped).unwrap_err().raw_os_error(),Some(1450));assert_eq!(calls.get(),3);
+  let fresh=dm_syntax::SettingAdmission::new(&counter,1<<20,&success);assert!(code_literal_hash(Some((&rows,0)),dm_syntax::Span::new(0,5),&fresh).is_ok());
+ }
 }

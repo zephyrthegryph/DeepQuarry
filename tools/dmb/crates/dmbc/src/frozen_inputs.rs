@@ -241,12 +241,10 @@ impl Journal {
         ))
     }
 }
-impl SnapshotProvider for Inputs {
-    fn read_policy_bounded(
-        &self,
-        path: &Path,
-        limit: usize,
-    ) -> io::Result<Option<CapturedInputRead>> {
+impl Inputs {
+    // SAME recording/replay state machine; only the real physical read boundary
+    // differs. This never acquires source authority from a path or journal hash.
+    fn read_policy_bounded_with(&self,path:&Path,limit:usize,read:&mut dyn FnMut(&Path,usize)->io::Result<Option<CapturedInputRead>>)->io::Result<Option<CapturedInputRead>>{
         let path = canonical_path(path);
         if let Self::Replay(journal) = self {
             let (stamp, hash) = {
@@ -263,8 +261,7 @@ impl SnapshotProvider for Inputs {
             if stamp.size > limit as u64 {
                 return Err(invalid("recorded original exceeds bounded read admission"));
             }
-            let read = FileSystemInputs
-                .read_policy_bounded(&journal.payload(hash), limit)?
+            let read = read(&journal.payload(hash), limit)?
                 .ok_or_else(|| invalid("bounded journal payload reader unavailable"))?;
             let (_, bytes, actual) = read.into_parts();
             if bytes.len() as u64 != stamp.size || actual != hash {
@@ -272,7 +269,7 @@ impl SnapshotProvider for Inputs {
             }
             return Ok(Some(CapturedInputRead::from_verified(stamp, bytes, hash)));
         }
-        let result = FileSystemInputs.read_policy_bounded(&path, limit);
+        let result = read(&path, limit);
         let Self::Recording(journal) = self else {
             return result;
         };
@@ -304,6 +301,23 @@ impl SnapshotProvider for Inputs {
             }
             other => other,
         }
+    }
+}
+impl SnapshotProvider for Inputs {
+    fn read_policy_bounded(&self,path:&Path,limit:usize)->io::Result<Option<CapturedInputRead>>{
+        self.read_policy_bounded_with(path,limit,&mut |path,limit|FileSystemInputs.read_policy_bounded(path,limit))
+    }
+    fn read_policy_bounded_admitted(&self,path:&Path,limit:usize,before_allocate:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<Option<CapturedInputRead>>{
+        let mut admission_error=None;
+        let result=self.read_policy_bounded_with(path,limit,&mut |path,limit|{
+            FileSystemInputs.read_policy_bounded_admitted(path,limit,&mut |size|{
+                if admission_error.is_some(){return Err(io::ErrorKind::Other.into())}
+                match before_allocate(size){Ok(())=>Ok(()),Err(error)=>{admission_error=Some(error);Err(io::ErrorKind::Other.into())}}
+            })
+        });
+        // A lender NotFound is not a missing journal source. The journal sees
+        // an operational sentinel and cannot publish a false negative fact.
+        if let Some(error)=admission_error{return Err(error)}result
     }
     fn policy_directory(
         &self,
@@ -725,6 +739,9 @@ impl SnapshotProvider for ProofStampedInputs<'_> {
         limit: usize,
     ) -> io::Result<Option<CapturedInputRead>> {
         self.inner.read_policy_bounded(path, limit)
+    }
+    fn read_policy_bounded_admitted(&self,path:&Path,limit:usize,before_allocate:&mut dyn FnMut(usize)->io::Result<()>)->io::Result<Option<CapturedInputRead>>{
+        self.inner.read_policy_bounded_admitted(path,limit,before_allocate)
     }
     fn policy_directory(
         &self,

@@ -147,3 +147,16 @@ fn journal_alias_record_cannot_change_path_identity_or_original_fact() {
     record.primary.content ^= 1;
     assert!(record.replay(&source, challenge).is_err());
 }
+
+struct ObservedFiles{reads:std::cell::Cell<usize>,saved:std::cell::RefCell<Option<SourceAliasProof>>}
+impl SnapshotProvider for ObservedFiles{
+ fn read_policy_bounded(&self,path:&Path,limit:usize)->io::Result<Option<CapturedInputRead>>{self.reads.set(self.reads.get()+1);FileSystemInputs.read_policy_bounded(path,limit)}
+ fn stamp(&self,path:&Path)->io::Result<Stamp>{FileSystemInputs.stamp(path)}
+ fn read(&self,path:&Path)->io::Result<(Stamp,Vec<u8>)>{self.reads.set(self.reads.get()+1);FileSystemInputs.read(path)}
+ fn list(&self,path:&Path)->io::Result<FolderListing>{FileSystemInputs.list(path)}
+ fn source_alias(&self,path:&Path,challenge:&SourceAliasChallenge)->io::Result<Option<SourceAliasProof>>{if let Some(saved)=self.saved.borrow().as_ref(){return Ok(Some(saved.clone()))}let proof=FileSystemInputs.source_alias(path,challenge)?;*self.saved.borrow_mut()=proof.clone();Ok(proof)}
+}
+#[test]fn observed_positive_file_alias_uses_actual_identity_without_payload_reread_or_source_lease(){
+ let(_,ordinary)=files("observed-positive-alias");let canonical=std::fs::canonicalize(&ordinary).unwrap();assert_ne!(ordinary,canonical);let provider=ObservedFiles{reads:std::cell::Cell::new(0),saved:Default::default()};let inputs=RecordingInputs::new(provider,0);let bytes=inputs.read_policy_candidate(&canonical,1<<20).unwrap().unwrap();let before=inputs.provider.reads.get();inputs.record_observed_file_alias(&ordinary,&canonical).unwrap();assert_eq!(inputs.provider.reads.get(),before);let primary=inputs.recorded_file_fact(&canonical).unwrap();let alias=inputs.recorded_file_fact(&ordinary).unwrap();assert_eq!(alias.stamp,primary.stamp);assert_eq!(alias.content,xxhash_rust::xxh3::xxh3_128(bytes.as_slice()));assert!(inputs.source_acquisitions.lock().unwrap().is_empty(),"positive metadata alias does not mint a compiled source acquisition");
+ let saved=inputs.provider.saved.borrow().clone();let foreign=RecordingInputs::new(ObservedFiles{reads:std::cell::Cell::new(0),saved:std::cell::RefCell::new(saved)},1);foreign.read_policy_candidate(&canonical,1<<20).unwrap();assert!(foreign.record_observed_file_alias(&ordinary,&canonical).is_err());assert!(!foreign.snapshot().unwrap().contains_file(&ordinary),"old equal-fact proof cannot answer the new actual challenge");
+}

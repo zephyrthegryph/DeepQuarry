@@ -6,13 +6,16 @@ pub(super) fn with_setting_admission<T>(
     charged: &Arc<std::sync::atomic::AtomicUsize>,
     operation: impl FnOnce(&dm_syntax::SettingAdmission<'_>) -> Result<T, BodySyntaxFailure>,
 ) -> Result<T, BodySyntaxFailure> {
+    with_admission_stack(charged,dm_exec::COMPILER_STACK_BYTES/16,operation)
+}
+fn with_admission_stack<T>(charged:&Arc<std::sync::atomic::AtomicUsize>,stack_allowance:usize,operation:impl FnOnce(&dm_syntax::SettingAdmission<'_>)->Result<T,BodySyntaxFailure>)->Result<T,BodySyntaxFailure>{
     let checkpoint = || setting_checkpoint();
     // Explicit worker-work allowance; not syntax meaning or a qualified
     // SourceScope allocation role. BodySyntax postparse charge stays SOFT.
     let admission = dm_syntax::SettingAdmission::with_stack_allowance(
         charged,
         body_syntax::BUDGET,
-        dm_exec::COMPILER_STACK_BYTES / 16,
+        stack_allowance,
         &checkpoint,
     );
     let result = operation(&admission);
@@ -32,6 +35,12 @@ pub(super) fn with_setting_admission<T>(
     final_status.map_err(BodySyntaxFailure::Operational)?;
     result
 }
+fn with_primary_admission<T>(charged:&Arc<std::sync::atomic::AtomicUsize>,operation:impl FnOnce(&dm_syntax::SettingAdmission<'_>)->Result<T,BodySyntaxFailure>)->Result<T,BodySyntaxFailure>{
+ dm_exec::with_current_compiler_worker_stack(|scope|match scope{
+  Some(scope)=>scope.with_primary_allowance(|allowance|with_admission_stack(charged,allowance,operation)).map_err(BodySyntaxFailure::Operational)?,
+  None=>with_setting_admission(charged,operation), // existing conservative non-worker fallback; never called worker proof
+ })
+}
 impl QueryDb {
     pub(super) fn with_setting_admission<T>(
         &self,
@@ -42,13 +51,16 @@ impl QueryDb {
 }
 
 impl SettingExpressionQueries for QueryDb {
+    fn retain_original_signature_aliases(&self,row:Arc<dm_tree::frontend::OriginalSignatureAliasGroup>,a:&dm_syntax::SettingAdmission<'_>)->Result<(),BodySyntaxFailure>{self.original_signature_aliases.lock().map_err(|_|BodySyntaxFailure::Operational(std::io::Error::other("original signature resource census poisoned")))?.retain(row,a).map_err(BodySyntaxFailure::Operational)}
+
     fn with_declaration_admission(
         &self,
         operation: &mut dyn FnMut(
             &dm_syntax::SettingAdmission<'_>,
         ) -> Result<(), BodySyntaxFailure>,
     ) -> Result<(), BodySyntaxFailure> {
-        self.with_setting_admission(|admission| {
+        with_primary_admission(&self.body_charge,|admission| {
+            self.original_signature_aliases.lock().map_err(|_|BodySyntaxFailure::Operational(std::io::Error::other("original signature resource census poisoned")))?.prune(admission).map_err(BodySyntaxFailure::Operational)?;
             admission
                 .checkpoint()
                 .map_err(BodySyntaxFailure::Operational)?;
@@ -752,4 +764,15 @@ mod early_initializer_actual_caller_tests {
         assert_eq!(db.db().stats(dm_query::Kind(4)).computed,0);drop(binding);
     }
 
+}
+
+#[cfg(test)]mod actual_primary_worker_stack_tests{
+ use super::*;
+ #[test]fn real_existing_worker_primary_admission_handles_deep_executable_indentation_without_a_grammar_cutoff(){
+  let db=Arc::new(QueryDb::default());let executor=dm_exec::BuildExecutor::new(1).unwrap();executor.install(move||{
+   let mut source=String::from("/proc/deep()\n");for depth in 1..80{source.push_str(&" ".repeat(depth*4));source.push_str("if(1)\n");}source.push_str(&" ".repeat(80*4));source.push_str("set name=\"actual\"\n");
+   SettingExpressionQueries::with_declaration_admission(&*db,&mut|a|{let result=dm_syntax::parse_original_declaration_skeleton_using(&source,a).map_err(BodySyntaxFailure::Operational)?;assert!(result.fatal().is_none());assert!(result.syntax().diagnostics.is_empty());let mut children=&result.syntax().items[0].children;let mut depth=0;while let Some(item)=children.first(){depth+=1;children=&item.children;}assert_eq!(depth,80,"real accepted native primary chain retained, not flattened or skipped");Ok(())}).unwrap();
+   assert_eq!(db.body_charge.load(std::sync::atomic::Ordering::Acquire),0);
+  });
+ }
 }

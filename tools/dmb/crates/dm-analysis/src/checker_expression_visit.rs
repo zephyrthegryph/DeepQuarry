@@ -4,6 +4,11 @@
 //! dreamchecker visit_statement/visit_expression/visit_term/visit_call (GPL-3.0).
 //! This borrows primary syntax and native semantic facts. It never reparses DM.
 //! Unsupported evaluation/origin contexts abort the entire event contribution.
+// Debug observation only: counts actual evaluator entries, including selected
+// compatibility paths. It stores no program facts and exposes no reset/setter.
+#[cfg(debug_assertions)]std::thread_local!{static ACTUAL_EVALUATOR_ENTRIES:std::cell::Cell<u64>=const{std::cell::Cell::new(0)};}
+#[cfg(debug_assertions)]pub fn actual_evaluator_entries_on_current_thread()->u64{ACTUAL_EVALUATOR_ENTRIES.with(std::cell::Cell::get)}
+
 use crate::checker_evaluated_observer::{EvaluatedObserver, ScopeKind};
 use crate::{
     checker_call_facts::{self, CallableFact},
@@ -27,6 +32,8 @@ pub enum TypeFact {
     NestedList{depth:usize,element:Option<SymbolId>},
     Unknown,
     Unhinted,
+    /// Actual pinned /callee.proc static result, not a runtime type or value.
+    Proc,
     ReturnHint(crate::checker_return_facts::ReturnFixHint, Span),
     Deferred(&'static str),
 }
@@ -42,7 +49,7 @@ impl TypeFact {
         match self {
             Self::Known(owner) => Ok(Some(owner)),
             Self::List(_) | Self::NestedList{..} => Ok(Some(SymbolId::of("/list"))),
-            Self::Unknown | Self::Unhinted | Self::ReturnHint(..) => Ok(None),
+            Self::Unknown | Self::Unhinted | Self::Proc | Self::ReturnHint(..) => Ok(None),
             Self::Deferred(reason) => Err(reason.into()),
         }
     }
@@ -228,6 +235,9 @@ impl LocalFact<'_> {
 }
 /// Borrowed pre-RHS hook in the existing evaluated call transition.
 /// The callback may retain source metadata, never the temporary CallableFact.
+pub(crate) trait CaseObserver<E>{fn switch_started(&mut self,_selector:&Expr,_cases:&[dm_syntax::SwitchCase],_default_present:bool,_at:Span)->Result<(),E>{Ok(())}fn do_while_unreachable(&mut self,at:Span,condition:Span)->Result<(),E>;fn logical_or(&mut self,cursor:dm_syntax::OriginalCaseCursor,expression:Span)->Result<(),E>;}
+pub(crate) trait TypeIssueObserver<E>{fn undefined_type(&mut self,path:&str,at:Span)->Result<(),E>;}
+pub(crate) trait IterationObserver<E>{fn iterable(&mut self,ty:TypeFact,at:Span)->Result<(),E>;fn invalid_range(&mut self,at:Span)->Result<(),E>;}
 pub(crate) trait StaticObserver<E>{fn failure(&mut self,failure:crate::checker_static_reference::Failure<'_>,name:&str,procedure:bool,at:Span,expression:Span)->Result<(),E>;}
 pub(crate) trait CatchObserver<E>{fn parameters(&mut self,count:usize,at:Span,expression:Span)->Result<(),E>;}
 pub(crate) trait KeywordObserver<E>{fn begin_call(&mut self,tree:&SemanticTree,fact:&CallableFact,name:&str)->Result<(),E>;fn accepted_argument(&mut self,tree:&SemanticTree,fact:&CallableFact,receiver:SymbolId,name:&str,key:&Expr,at:Span)->Result<(),E>;}
@@ -235,17 +245,48 @@ pub(crate) trait KeywordObserver<E>{fn begin_call(&mut self,tree:&SemanticTree,f
 pub(crate) type NamedArguments<'a>=HashMap<Cow<'a,str>,&'a Expr>;
 #[derive(Clone,Copy,Debug,Default)]pub(crate) struct OriginalArguments<'a>{pub(crate) type_present:bool,pub(crate) type_value:Option<OriginalValue<'a>>,pub(crate) first_arglist:bool}
 pub(crate) trait ArgumentObserver<E>{fn reserve(&mut self,bytes:usize)->Result<(),E>;fn original_values(&self)->bool{false}fn finished(&mut self,_tree:&SemanticTree,_fact:&CallableFact,_name:&str,_args:&[Expr],_named:&NamedArguments<'_>,_values:OriginalArguments<'_>,_at:Option<Span>,_expression:Span)->Result<(),E>{Ok(())}fn begin_call(&mut self,tree:&SemanticTree,fact:&CallableFact,name:&str)->Result<(),E>;fn argument(&mut self,tree:&SemanticTree,fact:&CallableFact,name:&str,key:Option<&Expr>,after_keyword:bool,at:Option<Span>,expression:Span)->Result<(),E>;}
+
+/// One synchronous observer union for the actual body evaluation. These loans
+/// are operation-local; no AST, result cache, or retained semantic owner is made.
+pub(crate) trait OriginalObserver<'a>: ArgumentObserver<crate::policy_body_demand::PolicyFailure>+KeywordObserver<crate::policy_body_demand::PolicyFailure>+TypeIssueObserver<crate::policy_body_demand::PolicyFailure>+IterationObserver<crate::policy_body_demand::PolicyFailure>+StaticObserver<crate::policy_body_demand::PolicyFailure>+CatchObserver<crate::policy_body_demand::PolicyFailure>+CaseObserver<crate::policy_body_demand::PolicyFailure>{
+ fn access_levels(&self)->[crate::checks::Severity;5];
+ fn body_started(&mut self)->Result<(),crate::policy_body_demand::PolicyFailure>;
+ fn expression_event(&mut self,event:Event<'a>)->Result<(),crate::policy_body_demand::PolicyFailure>;
+ fn flow_event(&mut self,event:crate::checker_reachable::Event<'a>)->Result<(),crate::policy_body_demand::PolicyFailure>;
+ fn access_row(&mut self,row:crate::checks_proc_visibility::Row<'a>)->Result<(),crate::policy_body_demand::PolicyFailure>;
+ fn immediate_row(&mut self,row:crate::checks::Diagnostic)->Result<(),crate::policy_body_demand::PolicyFailure>;
+}
+trait OriginalEvents<'a,E>{fn expression_event(&mut self,event:Event<'a>)->Result<(),E>;fn flow_event(&mut self,event:crate::checker_reachable::Event<'a>)->Result<(),E>;fn access_row(&mut self,row:crate::checks_proc_visibility::Row<'a>)->Result<(),E>;fn immediate_row(&mut self,row:crate::checks::Diagnostic)->Result<(),E>;}
+#[path="checker_original_union.rs"]mod original_union;
+#[path="checker_current_evaluation.rs"]mod current_evaluation;
+pub(crate) use current_evaluation::{events_using as current_events_using,CurrentEvaluation};
+pub(crate) use original_union::archived_using as original_union_archived_using;
+
 #[derive(Clone,Copy)]struct KeywordCall<'c>{fact:&'c CallableFact,receiver:SymbolId,name:&'c str,at:Option<Span>,expression:Span,exact:bool}
+/// Borrowed coordinate adapter for the SAME evaluator and primary roots.
+/// Current construction requires an actual private archive/body/code binding;
+/// no shifted AST, padded string, copied source or semantic model is built.
+#[derive(Clone,Copy)]struct CodeSource<'a>{source:&'a str,projection:Option<dm_syntax::SyntaxProjection>}
+impl<'a> CodeSource<'a>{
+ fn issued(source:&'a str)->Self{Self{source,projection:None}}
+ fn current(body:&'a dm_tree::frontend::CurrentArchivedBody<'_,'_>)->Self{Self{source:body.archive_owner().expanded_source(),projection:Some(body.syntax().projection())}}
+ fn get(self,range:std::ops::Range<usize>)->Option<&'a str>{let span=Span::new(range.start,range.end);let span=match self.projection{Some(projection)=>projection.span(span)?,None=>span};self.source.get(span.range())}
+ fn canonical_parameter_cursor(self,current:Span)->Result<Span,String>{match self.projection{Some(projection)=>projection.inverse().span(current).ok_or_else(||"current parameter cursor escaped actual canonical body binding".into()),None=>Ok(current)}}
+}
 struct Walker<'a, 'r, R: ?Sized,D:PrefixDemand=PrefixCompatibility> {
     prefix_demand:D,
+    original_events:Option<&'r mut dyn OriginalEvents<'a,D::Error>>,
     keywords:Option<&'r mut dyn KeywordObserver<D::Error>>,
+    case_errors:Option<&'r mut dyn CaseObserver<D::Error>>,
+    type_errors:Option<&'r mut dyn TypeIssueObserver<D::Error>>,
+    iteration_errors:Option<&'r mut dyn IterationObserver<D::Error>>,
     static_errors:Option<&'r mut dyn StaticObserver<D::Error>>,
     catch_errors:Option<&'r mut dyn CatchObserver<D::Error>>,
     argument_errors:Option<&'r mut dyn ArgumentObserver<D::Error>>,
     tree: &'a SemanticTree,
     prefix_archive: Option<&'a BodyArchive>,
     local_syntax: &'a dm_syntax::LocalVariableLedger,
-    source: &'a str,
+    source: CodeSource<'a>,
     member: MemberId,
     resolver: &'r R,
     profile: PackedU128,
@@ -254,10 +295,11 @@ struct Walker<'a, 'r, R: ?Sized,D:PrefixDemand=PrefixCompatibility> {
     events: Vec<Event<'a>>,
     scopes: Vec<BTreeMap<SymbolId, LocalFact<'a>>>,
     in_arguments: bool,
-    effects: Option<crate::checker_effects::Draft>,
+    effects: Option<crate::checker_effects::DraftLoan<'r>>,
     last_impurity: Option<bool>,
     original_value:Option<OriginalValue<'a>>,
     original_values:bool,
+    finite_effect_events:bool,
     new_context: usize,
     evaluation_anchor: Option<crate::checker_effects::CallOrigin>,
     statement_root: Option<&'a Expr>,
@@ -289,6 +331,32 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         profile: PackedU128,
         budget: Option<&crate::checker_effects::output::ReportBudget>, prefix_demand:D
 ) -> Result<Self, D::Error> {
+        Self::new_using_with_type_issues(tree,prefix_archive,local_syntax,source,occurrence,parameters,resolver,profile,budget,prefix_demand,None)
+    }
+    fn new_using_with_type_issues(
+        tree: &'a SemanticTree,
+        prefix_archive: Option<&'a BodyArchive>,
+        local_syntax: &'a dm_syntax::LocalVariableLedger,
+        source: &'a str,
+        occurrence: &dm_tree::frontend::BodyOccurrence,
+        parameters: dm_tree::frontend::SourceParameterView<'_>,
+        resolver: &'r R,
+        profile: PackedU128,
+        budget: Option<&crate::checker_effects::output::ReportBudget>, prefix_demand:D,mut type_errors:Option<&'r mut dyn TypeIssueObserver<D::Error>>
+) -> Result<Self, D::Error> {
+        Self::new_using_with_type_issues_source(tree,prefix_archive,local_syntax,CodeSource::issued(source),occurrence,parameters,resolver,profile,budget,prefix_demand,type_errors)
+    }
+    fn new_using_with_type_issues_source(
+        tree: &'a SemanticTree,
+        prefix_archive: Option<&'a BodyArchive>,
+        local_syntax: &'a dm_syntax::LocalVariableLedger,
+        source: CodeSource<'a>,
+        occurrence: &dm_tree::frontend::BodyOccurrence,
+        parameters: dm_tree::frontend::SourceParameterView<'_>,
+        resolver: &'r R,
+        profile: PackedU128,
+        budget: Option<&crate::checker_effects::output::ReportBudget>, prefix_demand:D,mut type_errors:Option<&'r mut dyn TypeIssueObserver<D::Error>>
+) -> Result<Self, D::Error> {
         parameters.require_for(tree, occurrence)?;
         let entries = parameters.entries()?;
         let member = occurrence.member;
@@ -302,9 +370,8 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         // Map storage and every temporary source type String are admitted
         // before allocation. Normalized runtime signatures are not checker
         // type-path authority (qualifiers and suffix arrays may differ).
-        if let Some(budget) = budget {
-            budget.charge(Self::local_map_bound(entries.len().saturating_add(7)))?;
-        }
+        if let Some(budget)=budget{budget.charge(Self::local_map_bound(entries.len().saturating_add(7)))?;}else{prefix_demand.storage(Self::local_map_bound(entries.len().saturating_add(7)))?;}
+        #[cfg(debug_assertions)]ACTUAL_EVALUATOR_ENTRIES.with(|count|count.set(count.get().saturating_add(1)));
         let mut locals = BTreeMap::new();
         for (name, ty) in [
             (".", TypeFact::Unknown),
@@ -341,17 +408,20 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 // String growth may overlap old/new allocations; do not credit
                 // freed temporaries. Four times final bound covers both owners.
                 budget.charge(bytes.saturating_mul(4).saturating_add(128))?;
-            }
+            }else{let bytes=parameter.type_components().iter().try_fold(5usize,|sum,span|sum.checked_add(span.end.checked_sub(span.start)?).and_then(|n|n.checked_add(1))).and_then(|n|n.checked_mul(4)).and_then(|n|n.checked_add(128)).ok_or_else(||prefix_demand.resource("current parameter path geometry overflow"))?;prefix_demand.storage(bytes)?;}
             let path = parameters.type_path(parameter)?;
-            let ty = checked_parameter_type(tree, resolver, profile, path.as_deref())?;
+            let ty = if let Some(observer)=type_errors.as_deref_mut(){let at=source.canonical_parameter_cursor(parameters.declaration_cursor(parameter)?)?;prefix_demand.checkpoint()?;checked_parameter_type_using(tree,resolver,profile,path.as_deref(),&mut|path|observer.undefined_type(path,at),&mut||prefix_demand.checkpoint())?}else{checked_parameter_type_using(tree,resolver,profile,path.as_deref(),&mut|_|Err(D::Error::from("parameter checker type needs undefined-type diagnostic projection")),&mut||prefix_demand.checkpoint())?};
             let mut fact = LocalFact::unproved(ty);
             fact.impurity = Some(true); // Pinned checker: every parameter is impure.
             locals.insert(SymbolId::of(parameters.name(parameter)?), fact);
         }
         Ok(Walker {
             prefix_demand,
+            original_events:None,
             keywords:None,
-            static_errors:None,catch_errors:None,
+            case_errors:None,
+            type_errors,
+            iteration_errors:None,static_errors:None,catch_errors:None,
             argument_errors:None,
             tree,
             prefix_archive,
@@ -369,12 +439,16 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             last_impurity: None,
             original_value:None,
             original_values:false,
+            finite_effect_events:true,
             new_context: 0,
             evaluation_anchor: None,
             statement_root: None,
             scope_denied_depth: 0,
             access: None,
         })
+    }
+    fn new_current_using(current:&'a dm_tree::frontend::CurrentArchivedBody<'_,'_>,parameters:dm_tree::frontend::SourceParameterView<'_>,resolver:&'r R,profile:PackedU128,demand:D)->Result<Self,D::Error>{
+        Self::new_using_with_type_issues_source(current.tree(),Some(current.archive_owner()),&current.syntax().canonical_statement_storage().parsed().local_variables,CodeSource::current(current),current.occurrence(),parameters,resolver,profile,None,demand,None)
     }
     fn local_entry_bound() -> usize {
         1024usize.saturating_add(std::mem::size_of::<(SymbolId, LocalFact)>().saturating_mul(2))
@@ -387,19 +461,20 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
     }
     fn check_effect_admission(&self) -> Result<(), D::Error> {
         self.prefix_demand.checkpoint()?;
+        if self.scope_denied_depth>0{return Err(self.prefix_demand.resource("native evaluator scope storage was refused"))}
         if let Some(effects) = &self.effects {
             effects.transient.charge(0)?
         }
         Ok(())
     }
     fn insert_local(&mut self, name: SymbolId, fact: LocalFact<'a>) -> Result<(), D::Error> {
-        if let Some(effects) = &self.effects {
-            effects.transient.charge(Self::local_entry_bound())?
-        }
+        if let Some(effects)=&self.effects{effects.transient.charge(Self::local_entry_bound())?}else{self.prefix_demand.storage(Self::local_entry_bound())?;}
         self.locals.insert(name, fact);
         Ok(())
     }
+    fn flush_access_rows(&mut self)->Result<(),D::Error>{if let(Some(access),Some(observer))=(self.access.as_mut(),self.original_events.as_deref_mut()){for row in access.drain_rows(){observer.access_row(row)?;}}Ok(())}
     fn event(&mut self, event: Event<'a>) -> Result<(), D::Error> {
+        if let Some(observer)=self.original_events.as_deref_mut(){observer.expression_event(event)?;return self.prefix_demand.checkpoint()}
         if self.access.is_some(){return self.prefix_demand.checkpoint()}
 
         if let Some(effects) = &self.effects {
@@ -427,10 +502,10 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             if let Some(effects) = &mut self.effects {
                 if setting.attribute == "waitfor"
                     && setting.relation == "="
-                    && (matches!(&value.kind,ExprKind::Literal(n)if n=="0")
+                    && (matches!(&value.kind,ExprKind::Literal(n)if match n.original_value(){Some(value)=>matches!(value,dm_syntax::OriginalTokenValue::Int(0)),None=>n=="0"})
                         || matches!(&value.kind,ExprKind::Ident(n)if n=="FALSE"))
                 {
-                    effects.waitfor_disabled = true;
+                    *effects.waitfor_disabled = true;
                 }
             }
             return Ok(false);
@@ -521,13 +596,8 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             .ok_or("native local name span unavailable")?;
         // The ledger already applied the ORIGINAL leading-only modifier and
         // one-list suffix rules. Never normalize that source path a second time.
-        let source_type = fact.type_path(self.source).map_err(str::to_owned)?;
-        let ty = checked_parameter_type(
-            self.tree,
-            self.resolver,
-            self.profile,
-            source_type.as_deref(),
-        )?;
+        let source_type = fact.type_path_using(|span|self.source.get(span.range()).ok_or("native local component source unavailable")).map_err(str::to_owned)?;
+        let ty=if let Some(observer)=self.type_errors.as_deref_mut(){self.prefix_demand.checkpoint()?;checked_parameter_type_using(self.tree,self.resolver,self.profile,source_type.as_deref(),&mut|path|observer.undefined_type(path,fact.anchor),&mut||self.prefix_demand.checkpoint())?}else{checked_parameter_type_using(self.tree,self.resolver,self.profile,source_type.as_deref(),&mut|_|Err(D::Error::from("parameter checker type needs undefined-type diagnostic projection")),&mut||self.prefix_demand.checkpoint())?};
         if let Some(value) = value {
             self.expression(value, ty.receiver()?)?;
         } else if let Some(initializer) = fact.implicit_list_initializer() {
@@ -567,7 +637,9 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                         .is_some_and(dm_syntax::has_checker_qualifiers)
                 });
             if qualified || fact.metadata.array.is_some() {
-                let properties = archive.checker_variable_properties(formal, self.profile)?;
+                let properties = if self.source.projection.is_some(){
+                    archive.checker_variable_properties_with_work(formal,self.profile,&mut|bytes|self.prefix_demand.storage(bytes),&mut|actual|self.prefix_demand.policy_failure(crate::policy_body_demand::PolicyFailure::Operational(actual)))?
+                }else{archive.checker_variable_properties(formal,self.profile)?};
                 return checked_issued_type(
                     self.tree,
                     self.resolver,
@@ -587,7 +659,8 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         ).map_err(D::Error::from)
     }
     fn arguments(&mut self,args:&'a [Expr])->Result<(),D::Error>{self.arguments_for_call(args,None)}
-    fn arguments_for_call(&mut self,args:&'a [Expr],call:Option<KeywordCall<'_>>)->Result<(),D::Error>{
+    fn arguments_for_call(&mut self,args:&'a [Expr],call:Option<KeywordCall<'_>>)->Result<(),D::Error>{self.arguments_for_call_collect(args,call,None)}
+    fn arguments_for_call_collect(&mut self,args:&'a [Expr],call:Option<KeywordCall<'_>>,mut captured:Option<&mut Vec<crate::checker_return_binding::Argument<'a>>>)->Result<(),D::Error>{
       if let(Some(call),Some(observer))=(call,self.keywords.as_mut()){observer.begin_call(self.tree,call.fact,call.name)?;}
       if let(Some(call),Some(observer))=(call,self.argument_errors.as_mut()){observer.begin_call(self.tree,call.fact,call.name)?;}
       let mut any_keywords=false;
@@ -595,7 +668,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
       let mut values=OriginalArguments::default();
       let mut named=filter.then(NamedArguments::new);
       if filter{let bytes=args.len().checked_mul(std::mem::size_of::<(Cow<'_,str>,&Expr)>()).and_then(|n|n.checked_mul(16)).and_then(|n|n.checked_add(args.len().checked_mul(1024)?)).ok_or_else(||self.prefix_demand.resource("filter argument map capacity overflow"))?;self.argument_errors.as_mut().expect("filter observer selected").reserve(bytes)?;named.as_mut().expect("filter map selected").try_reserve(args.len()).map_err(|_|self.prefix_demand.resource("filter argument map allocation refused"))?;if named.as_ref().expect("filter map selected").capacity()>args.len().saturating_mul(4).saturating_add(3){return Err(self.prefix_demand.resource("filter argument map exceeded admitted capacity"))}}
-      let mut original_index=0usize;for argument in args.iter() {
+      let mut binding_position=0usize;let mut original_index=0usize;for argument in args.iter() {
         if filter&&argument.span.start==argument.span.end&&matches!(&argument.kind,ExprKind::Literal(value)if value.as_str()=="null"){continue}let index=original_index;original_index=original_index.checked_add(1).ok_or("original argument index overflow")?;
         let (key,value)=match &argument.kind{ExprKind::Binary{op,lhs,rhs}if op=="="&&kwarg_key_mode(lhs,self.access.is_some())?=>(Some(lhs.as_ref()),rhs.as_ref()),_=>(None,argument)};
         // Original visit_call records the accepted key BEFORE visiting its
@@ -604,13 +677,24 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         if let(Some(call),Some(observer))=(call,self.argument_errors.as_mut()){observer.argument(self.tree,call.fact,call.name,key,key.is_none()&&any_keywords,call.at,call.expression)?;}
         if let(Some(call),Some(key),Some(observer))=(call.filter(|call|!call.exact),key,self.keywords.as_mut()){observer.accepted_argument(self.tree,call.fact,call.receiver,call.name,key,call.at.ok_or("virtual keyword call lacks original source point")?)?;}
         if filter&&index==0&&key.is_none(){values.first_arglist=matches!(&value.kind,ExprKind::Call{callee,..}if matches!(&callee.kind,ExprKind::Ident(name)if name=="arglist"));}
-        let previous=self.in_arguments;self.in_arguments=true;let result=self.expression(value,None);self.in_arguments=previous;result?;
+        let previous=self.in_arguments;self.in_arguments=true;let result=self.expression(value,None);self.in_arguments=previous;let evaluated_type=result?;
+        if let Some(captured)=captured.as_deref_mut(){
+         // Empty native argument placeholders were omitted by original
+         // arguments(); they do not consume a positional binding index.
+         if !(argument.span.start==argument.span.end&&matches!(&argument.kind,ExprKind::Literal(raw)if raw.as_str()=="null")){
+          let name=if let Some(key)=key{let demand=&self.prefix_demand;let budget=self.effects.as_ref().map(|effects|effects.transient);Some(original_argument_key::<D::Error>(key,&mut|bytes|{if let Some(budget)=budget{budget.charge(bytes).map_err(|_|demand.resource("return argument name admission refused"))?;}else{demand.storage(bytes)?;}Ok(())},&|message|demand.resource(message))?)}else{None};
+          if captured.len()==captured.capacity(){return Err(self.prefix_demand.resource("return argument capture exceeds pre-admitted capacity"))}
+          captured.push(crate::checker_return_binding::Argument{key:name,position:binding_position,ty:evaluated_type,value:self.original_value});
+          if key.is_none(){binding_position=binding_position.checked_add(1).ok_or("return positional argument ordinal overflow")?;}
+         }
+        }
         if filter{if let Some(key)=key{let demand=&self.prefix_demand;let observer=self.argument_errors.as_mut().expect("selected filter observer");let name=original_argument_key::<D::Error>(key,&mut|bytes|observer.reserve(bytes),&|message|demand.resource(message))?;if name=="type"{values.type_present=true;values.type_value=self.original_value;}named.as_mut().expect("filter map selected").insert(name,value);}}
       }
       if filter{if let(Some(call),Some(observer))=(call,self.argument_errors.as_mut()){observer.finished(self.tree,call.fact,call.name,args,named.as_ref().expect("filter map selected"),values,call.at,call.expression)?;}}Ok(())
     }
     fn exact_policy_arguments(&mut self,args:&'a[Expr],at:Span,expression:Span,parent:bool)->Result<(),D::Error>{
         let target=if let Some(access)=self.access.as_mut(){let target=access.explicit_fact(parent,self.resolver,self.profile,&self.prefix_demand)?.ok_or("issued exact source call disappeared")?;access.call(&target,self.owner,false,Some(at),expression,self.resolver,self.profile,&self.prefix_demand)?;Some(target)}else{None};
+        self.flush_access_rows()?;
         if self.argument_errors.is_some(){let target=target.ok_or("argument diagnostic exact call lacks its actual source context")?;let name=match &target{CallableFact::Source{identity,..}=>identity.name,CallableFact::CheckerBuiltin{name,..}=>*name,CallableFact::Missing=>return Err("argument exact target is missing".into())};let actual=crate::checker_effects::callable_target(self.tree,self.profile,&target)?;let catalog=dm_tree::checker_builtins::pinned_catalog().map_err(|e|format!("argument exact catalog: {e:?}"))?;let name=if matches!(actual,crate::checker_effects::EffectTarget::Builtin(_)){catalog.spelling(name)}else{self.tree.symbols().text(name)}.ok_or("argument exact target spelling unavailable")?;self.arguments_for_call(args,Some(KeywordCall{fact:&target,receiver:self.owner,name,at:Some(at),expression,exact:true}))}else{self.arguments(args)}
     }
     fn invalidate_local_name(&mut self, name: SymbolId) {
@@ -651,7 +735,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             .or(self.evaluation_anchor)
             .ok_or("mutation effect needs original enclosing evaluation anchor")?;
         let effects = self.effects.as_mut().unwrap();
-        if effects.direct.len() >= crate::checker_effects::MAX_EVENTS {
+        if self.finite_effect_events && effects.direct.len() >= crate::checker_effects::MAX_EVENTS {
             return Err("native direct effects exceed bounded admission".into());
         }
         effects.transient.push(
@@ -669,7 +753,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         notes: Vec<crate::checks::Note>,
     ) -> Result<(), D::Error> {
         if let Some(effects) = &mut self.effects {
-            if effects.immediate.len() >= crate::checker_effects::MAX_EVENTS {
+            if self.finite_effect_events && effects.immediate.len() >= crate::checker_effects::MAX_EVENTS {
                 return Err("native immediate effects exceed bounded admission".into());
             }
             let message = effects.transient.format(message)?;
@@ -684,19 +768,16 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                     .transient
                     .charge(note.message.capacity().saturating_add(64))?
             }
-            effects.transient.push(
-                &mut effects.immediate,
-                crate::checks::Diagnostic {
-                    family,
-                    severity,
-                    span: at,
-                    expression_span: at,
-                    message,
-                    notes,
-                },
-            )?;
+            let row=crate::checks::Diagnostic{family,severity,span:at,expression_span:at,message,notes};
+            if let Some(observer)=self.original_events.as_deref_mut(){observer.immediate_row(row)?;}else{effects.transient.push(&mut effects.immediate,row)?;}
         }
         Ok(())
+    }
+    // Only a genuine full Original BODY may complete these fixed diagnostics.
+    // Selected/runtime contracts retain their previous explicit refusal.
+    fn original_error(&mut self,family:&'static str,at:Span,message:std::fmt::Arguments<'_>)->Result<(),D::Error>{
+        if self.original_events.is_none(){return Err("fixed original diagnostic needs the actual combined BODY observer".into())}
+        self.immediate_effect(family,crate::checks::Severity::Error,at,message,Vec::new())
     }
     fn arguments_at(&mut self, args: &'a [Expr], at: Span) -> Result<(), D::Error> {
         let previous = self
@@ -770,7 +851,8 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         if let Some(access)=self.access.as_mut(){
             let expression=match site{EvaluationCallSite::Written(expression)=>expression.span,EvaluationCallSite::ImplicitList(_)=>at};
             let origin=match site{EvaluationCallSite::Written(_)=>Some(at),EvaluationCallSite::ImplicitList(_)=>None};
-            if access.call(&fact,receiver,member_follow,origin,expression,self.resolver,self.profile,&self.prefix_demand)?{return Ok(TypeFact::Unknown)}
+            let abort=access.call(&fact,receiver,member_follow,origin,expression,self.resolver,self.profile,&self.prefix_demand)?;
+            self.flush_access_rows()?;if abort{return Ok(TypeFact::Unknown)}
         }
         if member_follow && self.access.is_none() {
             // Pinned Follow::Call checks inherited private directives BEFORE
@@ -807,13 +889,13 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                                         crate::checker_return_facts::PuritySettingsPermit::issue_using(
                                             archive,
                                             self.profile,
-                                            *identity, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|&effects.transient)))?;
-                                    crate::checker_return_facts::validate_source_directives_for_purity_using(self.tree,self.prefix_archive,*identity,&permit, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|&effects.transient)))?;
+                                            *identity, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|effects.transient)))?;
+                                    crate::checker_return_facts::validate_source_directives_for_purity_using(self.tree,self.prefix_archive,*identity,&permit, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|effects.transient)))?;
                                 } else {
                                     crate::checker_return_facts::validate_source_directives_using(
                                         self.tree,
                                         self.prefix_archive,
-                                        *identity, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|&effects.transient)))?;
+                                        *identity, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|effects.transient)))?;
                                 }
                             }
                         }
@@ -837,17 +919,17 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                     let permit = crate::checker_return_facts::PuritySettingsPermit::issue_using(
                         archive,
                         self.profile,
-                        *identity, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|&effects.transient)))?;
+                        *identity, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|effects.transient)))?;
                     crate::checker_return_facts::validate_source_directives_for_purity_using(
                         self.tree,
                         self.prefix_archive,
                         *identity,
-                        &permit, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|&effects.transient)))?;
+                        &permit, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|effects.transient)))?;
                 } else {
                     crate::checker_return_facts::validate_source_directives_using(
                         self.tree,
                         self.prefix_archive,
-                        *identity, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|&effects.transient)))?;
+                        *identity, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|effects.transient)))?;
                 }
             }
         }
@@ -862,7 +944,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                         self.prefix_archive.ok_or("purity source archive absent")?,
                         self.resolver,
                         self.profile,
-                        target, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|&effects.transient)))?;
+                        target, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|effects.transient)))?;
                     if let Some(annotation) = annotation {
                         let statement_at = self.evaluation_anchor.ok_or(
                             "discarded pure return needs original statement evaluation anchor",
@@ -885,7 +967,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 }
             }
             let effects = self.effects.as_mut().unwrap();
-            if effects.calls.len() >= crate::checker_effects::MAX_EVENTS {
+            if self.finite_effect_events && effects.calls.len() >= crate::checker_effects::MAX_EVENTS {
                 return Err("effect call event admission exceeded".into());
             }
             effects.transient.push(
@@ -906,7 +988,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             )?;
             if let EvaluationCallSite::Written(expression) = site {
                 if self.new_context == 0 {
-                    if let Some(reason) = blocking_call_reason_using(
+                    if let Some(reason) = blocking_call_reason_source_using(
                         self.tree,
                         self.profile,
                         self.source,
@@ -916,7 +998,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                         &self.prefix_demand,
                     )? {
                         let effects = self.effects.as_mut().unwrap();
-                        if effects.blocking.len() >= crate::checker_effects::MAX_EVENTS {
+                        if self.finite_effect_events && effects.blocking.len() >= crate::checker_effects::MAX_EVENTS {
                             return Err("blocking event admission exceeded".into());
                         }
                         effects.transient.push(
@@ -944,11 +1026,21 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 })?
             }
         }
+        let mut capture_return=false;
+        if self.original_values&&(self.effects.is_some()||self.source.projection.is_some())&&self.original_events.is_some()&&self.prefix_demand.owns_return_expression_binding(){if let CallableFact::Source{metadata,..}=&fact{for node in metadata.procedure.as_ref().ok_or("return capture source signature absent")?.settings.iter(){self.prefix_demand.checkpoint()?;if matches!(node,dm_ir::ProcedureSettingNode::Setting(setting)if setting.name==SymbolId::of("SpacemanDMM_return_type")){capture_return=true;break}}}}
+
+        let mut return_arguments=Vec::new();
+        if capture_return{
+            let bound=args.len().checked_mul(std::mem::size_of::<crate::checker_return_binding::Argument<'_>>()).and_then(|n|n.checked_mul(4)).and_then(|n|n.checked_add(256)).ok_or_else(||self.prefix_demand.resource("return argument capture capacity overflow"))?;
+            if let Some(effects)=self.effects.as_ref(){effects.transient.charge(bound).map_err(|_|self.prefix_demand.resource("return argument capture admission denied"))?;}else{self.prefix_demand.storage(bound)?;}
+            return_arguments.try_reserve_exact(args.len()).map_err(|_|self.prefix_demand.resource("return argument capture allocation refused"))?;
+            if return_arguments.capacity()>args.len().saturating_mul(4).max(4){return Err(self.prefix_demand.resource("return argument capture exceeded admitted capacity"))}
+        }
         match site {
             EvaluationCallSite::Written(_) => {
                 let previous=self.evaluation_anchor.replace(crate::checker_effects::CallOrigin::Source(at));
                 let expression=match site{EvaluationCallSite::Written(expression)=>expression.span,EvaluationCallSite::ImplicitList(_)=>at};
-                let result=self.arguments_for_call(args,Some(KeywordCall{fact:&fact,receiver,name,at:Some(at),expression,exact}));
+                let result=self.arguments_for_call_collect(args,Some(KeywordCall{fact:&fact,receiver,name,at:Some(at),expression,exact}),capture_return.then_some(&mut return_arguments));
                 self.evaluation_anchor=previous;result?;
             },
             EvaluationCallSite::ImplicitList(initializer) => {
@@ -967,6 +1059,16 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             // source cursor for a return-hint diagnostic.
             return Ok(TypeFact::Unhinted);
         }
+        let mut skip_return_prefix=false;
+        if capture_return{
+            let CallableFact::Source{identity,..}=&fact else{unreachable!()};let archive=self.prefix_archive.ok_or("original return binding archive absent")?;let demand=self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|effects.transient));let observer=&mut self.type_errors;
+            match crate::checker_return_binding::for_call(archive,self.resolver,*identity,&return_arguments,&demand,|path|{if let Some(observer)=observer.as_deref_mut(){observer.undefined_type(path,at)}else{Err("dynamic return needs its actual undefined-type observer".into())}})?{
+                crate::checker_return_binding::Binding::Bound(value)=>return Ok(if matches!(value,TypeFact::Unknown|TypeFact::Unhinted){TypeFact::ReturnHint(crate::checker_return_facts::ReturnFixHint::EvaluatedNone,at)}else{value}),
+                crate::checker_return_binding::Binding::DiagnosedNone=>return Ok(TypeFact::Unknown),
+                crate::checker_return_binding::Binding::InvalidOnly=>skip_return_prefix=true,
+                crate::checker_return_binding::Binding::Absent=>(),
+            }
+        }
         let purity_permit =
             if self.effects.is_some() && matches!(&fact, CallableFact::Source { .. }) {
                 let CallableFact::Source { identity, .. } = &fact else {
@@ -975,11 +1077,13 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 Some(crate::checker_return_facts::PuritySettingsPermit::issue_using(
                     self.prefix_archive.unwrap(),
                     self.profile,
-                    *identity, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|&effects.transient)))?)
+                    *identity, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|effects.transient)))?)
             } else {
                 None
             };
-        let returned = if let Some(permit) = &purity_permit {
+        let returned = if skip_return_prefix {
+            crate::checker_return_facts::return_hint_without_return_prefix_using(self.tree,self.resolver,self.profile,receiver,SymbolId::of(name),self.prefix_archive,purity_permit.as_ref(),&self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|effects.transient)))?
+        } else if let Some(permit) = &purity_permit {
             crate::checker_return_facts::return_hint_with_prefix_for_purity_using(
                 self.tree,
                 self.resolver,
@@ -987,7 +1091,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 receiver,
                 SymbolId::of(name),
                 self.prefix_archive,
-                permit, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|&effects.transient)))?
+                permit, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|effects.transient)))?
         } else {
             crate::checker_return_facts::return_hint_with_prefix_using(
                 self.tree,
@@ -995,7 +1099,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 self.profile,
                 receiver,
                 SymbolId::of(name),
-                self.prefix_archive, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|&effects.transient)))?
+                self.prefix_archive, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|effects.transient)))?
         };
         let ty = checked_type(
             self.tree,
@@ -1006,6 +1110,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         if ty != TypeFact::Unknown {
             return Ok(ty);
         }
+        if skip_return_prefix{let CallableFact::Source{identity,..}=&fact else{unreachable!()};return Ok(TypeFact::ReturnHint(crate::checker_return_facts::ReturnFixHint::UnannotatedSource(*identity),at));}
         let hint = if let Some(permit) = &purity_permit {
             crate::checker_return_facts::return_fix_hint_for_purity_using(
                 self.tree,
@@ -1014,7 +1119,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 receiver,
                 SymbolId::of(name),
                 self.prefix_archive,
-                permit, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|&effects.transient)))?
+                permit, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|effects.transient)))?
         } else {
             crate::checker_return_facts::return_fix_hint_using(
                 self.tree,
@@ -1022,7 +1127,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 self.profile,
                 receiver,
                 SymbolId::of(name),
-                self.prefix_archive, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|&effects.transient)))?
+                self.prefix_archive, &self.prefix_demand.with_budget(self.effects.as_ref().map(|effects|effects.transient)))?
         };
         Ok(match hint {
             crate::checker_return_facts::ReturnFixHint::None => TypeFact::Unhinted,
@@ -1075,10 +1180,15 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 (owner, args)
             }
             Constructor::Static { path, args } => {
-                if !path.starts_with('/') {
-                    return Err("relative constructor path needs primary navigation facts".into());
+                if self.original_events.is_some(){
+                    let Some(owner)=crate::checker_prefab_value::value_using(self.tree,self.resolver,self.profile,self.owner,path,&mut||self.prefix_demand.checkpoint())?else{
+                        self.original_error("unresolved_prefab",expression.span,format_args!("failed to resolve path {path}"))?;
+                        return Ok(TypeFact::Unhinted);
+                    };(owner,args)
+                }else{
+                    if !path.starts_with('/') {return Err("relative constructor path needs primary navigation facts".into());}
+                    (SymbolId::of(path), args)
                 }
-                (SymbolId::of(path), args)
             }
         };
         let _ = checked_type(self.tree, self.resolver, Some(owner), None)?;
@@ -1095,7 +1205,12 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 .iter()
                 .any(|name| owner == SymbolId::of(name))
             {
-                return Ok(TypeFact::Unknown); // intentionally does NOT visit args
+                return Ok(if self.original_events.is_some(){TypeFact::Unhinted}else{TypeFact::Unknown}); // intentionally does NOT visit args
+            }
+            if self.original_events.is_some(){
+                let path=self.tree.symbols().text(owner).ok_or("missing constructor owner spelling unavailable")?;
+                self.original_error("missing_constructor",expression.span,format_args!("couldn't find {path}/proc/New"))?;
+                return Ok(TypeFact::Unhinted);
             }
             return Err("constructor missing-New diagnostic is not yet implemented".into());
         }
@@ -1156,7 +1271,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
         {
             if self.effects.is_some() && self.new_context == 0 {
                 let effects = self.effects.as_mut().unwrap();
-                if effects.blocking.len() >= crate::checker_effects::MAX_EVENTS {
+                if self.finite_effect_events && effects.blocking.len() >= crate::checker_effects::MAX_EVENTS {
                     return Err("input blocking event admission exceeded".into());
                 }
                 effects.transient.push(
@@ -1236,7 +1351,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             }
             ExprKind::Literal(text) => {
                 let mut static_value=true;
-                if let Some(parts) = (if self.access.is_some(){text.syntax_parts()}else{text.parts()}).map_err(str::to_owned)? {
+                if let Some(parts) = (if text.original_value().is_some(){Ok(None)}else if self.access.is_some(){text.syntax_parts()}else{text.parts()}).map_err(str::to_owned)? {
                     static_value=!parts.lexical.map_err(|e|format!("checker literal context unsupported: {e:?}"))?.interpolated;
                     for child in &parts.expressions {
                         self.expression(child, None)?;
@@ -1246,7 +1361,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 self.original_value=static_value.then_some(OriginalValue::Literal(text));
                 Ok(TypeFact::Unknown)
             }
-            ExprKind::TypePath(path) => {if self.original_values{let owner=crate::checker_prefab_value::value_using(self.tree,self.resolver,self.profile,self.owner,path,&mut||self.prefix_demand.checkpoint())?.ok_or("original prefab needs unresolved-path diagnostic projection")?;self.original_value=Some(OriginalValue::PrefabOwner(owner));}Ok(TypeFact::Unknown)},
+            ExprKind::TypePath(path) => {if self.original_values{match crate::checker_prefab_value::value_using(self.tree,self.resolver,self.profile,self.owner,path,&mut||self.prefix_demand.checkpoint())?{Some(owner)=>self.original_value=Some(OriginalValue::PrefabOwner(owner)),None=>{self.original_error("unresolved_prefab",expression.span,format_args!("failed to resolve path {path}"))?;return Ok(TypeFact::Unhinted)}}}Ok(TypeFact::Unknown)},
             ExprKind::Group(value) => {
                 let old = self.evaluation_anchor;
                 if self.effects.is_some() {
@@ -1452,7 +1567,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                     via_colon,
                 } => {
                     let base = self.expression(object, None)?;
-                    let at = member_origin(self.source, callee, object, selector, *via_colon)?;
+                    let at = member_origin_source(self.source, callee, object, selector, *via_colon)?;
                     if *via_colon {
                         self.event(Event::DynamicMemberCall {
                             expression,
@@ -1498,6 +1613,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             } => {
                 let base = self.expression(object, None)?;
                 self.last_impurity = None;
+                if !*via_colon&&base==TypeFact::Proc {if matches!(selector.as_str(),"type"|"name"|"desc"|"category"|"invisibility"){return Ok(TypeFact::Unhinted)}let at=member_origin_source(self.source,expression,object,selector,*via_colon)?;self.original_error("undefined_field_procpath",at,format_args!("undefined field: {selector:?} on procpath"))?;return Ok(TypeFact::Unhinted)}
                 if *via_colon {
                     return Ok(TypeFact::Unknown);
                 }
@@ -1507,7 +1623,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                         TypeFact::ReturnHint(hint,call)=>Some((hint,call)),
                         _=>return Err("unknown-receiver field access needs pinned fix-hint/declaration origins".into()),
                     };
-                    let at = member_origin(self.source, expression, object, selector, false)?;
+                    let at = member_origin_source(self.source, expression, object, selector, false)?;
                     self.event(Event::FieldWithoutStaticType {
                         expression,
                         at,
@@ -1518,12 +1634,8 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                     // fields have no inherited hint, while Index carries hints.
                     return Ok(TypeFact::Unhinted);
                 };
-                if receiver == SymbolId::of("/callee") && selector == "proc" {
-                    return Ok(TypeFact::Deferred(
-                        "call-frame procpath field needs native procpath static context",
-                    ));
-                }
-                let at = member_origin(self.source, expression, object, selector, false)?;
+                let at = member_origin_source(self.source, expression, object, selector, false)?;
+                if receiver == SymbolId::of("/callee") && selector == "proc" {return Ok(TypeFact::Proc); }
                 match crate::checker_variable_facts::variable(
                     self.tree,
                     self.resolver,
@@ -1579,7 +1691,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
             {
                 // The original parser issued this operator + operand shape.
                 // Verify its primary token bytes before evaluating the operand.
-                let _at = increment_origin(self.source, expression, value, op)?;
+                let _at = increment_origin_source(self.source, expression, value, op)?;
                 if self.effects.is_some() || self.access.is_some() {
                     let operand = self.expression(value, None)?;
                     let operator = if op.ends_with("++") {
@@ -1599,7 +1711,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                     }
                     self.last_impurity = None;
                     return match operand {
-                        TypeFact::Unknown | TypeFact::Unhinted | TypeFact::ReturnHint(..) => {
+                        TypeFact::Unknown | TypeFact::Unhinted | TypeFact::Proc | TypeFact::ReturnHint(..) => {
                             Ok(TypeFact::Unhinted)
                         }
                         TypeFact::Known(owner) => {
@@ -1675,7 +1787,7 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
                 // Pinned visit_follow visits the operand first. visit_unary
                 // clears static type, value, fix hint and impurity for these
                 // operators (Not adds assumptions only, not a static type).
-                let _at=prefix_origin(self.source,expression,value,op)?;
+                let _at=prefix_origin_source(self.source,expression,value,op)?;
                 self.expression(value,None)?;self.last_impurity=None;
                 Ok(TypeFact::Unhinted)
             }
@@ -1696,18 +1808,19 @@ impl<'a, 'r, R: Resolver + ?Sized,D:PrefixDemand> Walker<'a, 'r, R,D> {
     }
 }
 impl<'a,R:Resolver+?Sized,D:PrefixDemand> EvaluatedObserver<'a,D::Error> for Walker<'a,'_,R,D> {
+    fn control_event(&mut self,event:crate::checker_reachable::Event<'a>)->Result<bool,D::Error>{if let Some(observer)=self.original_events.as_deref_mut(){observer.flow_event(event)?;Ok(true)}else{Ok(false)}}
     fn admit_storage(&mut self, bytes: usize) -> Result<bool, D::Error> {
         if let Some(effects) = &self.effects {
             effects.transient.charge(bytes)?;
             Ok(true)
-        } else {
+        } else if self.source.projection.is_some(){self.prefix_demand.storage(bytes)?;Ok(true)}else{
             Ok(false)
         }
     }
     fn storage_allocation_failed(&mut self) {
         if let Some(effects) = &self.effects {
             effects.transient.deny()
-        }
+        }else if self.source.projection.is_some(){let _=self.prefix_demand.resource("current evaluator actual allocation refused");}
     }
     fn enter_scope(&mut self, kind: ScopeKind) {
         if kind == ScopeKind::Spawn {
@@ -1729,6 +1842,9 @@ impl<'a,R:Resolver+?Sized,D:PrefixDemand> EvaluatedObserver<'a,D::Error> for Wal
                 self.scope_denied_depth = 1;
                 return;
             }
+        }else{
+            let admitted=(||{self.prefix_demand.storage(Self::local_map_bound(self.locals.len()))?;if self.scopes.len()==self.scopes.capacity(){let count=self.scopes.capacity().max(2).checked_mul(2).ok_or_else(||self.prefix_demand.resource("current evaluator scope count overflow"))?;let bytes=count.checked_mul(std::mem::size_of::<BTreeMap<SymbolId,LocalFact<'a>>>()).and_then(|n|n.checked_mul(4)).ok_or_else(||self.prefix_demand.resource("current evaluator scope geometry overflow"))?;self.prefix_demand.storage(bytes)?;self.scopes.try_reserve_exact(count-self.scopes.len()).map_err(|_|self.prefix_demand.resource("current evaluator scope allocation refused"))?;}Ok::<(),D::Error>(())})();
+            if admitted.is_err(){self.scope_denied_depth=1;return}
         }
         self.scopes.push(self.locals.clone());
     }
@@ -1818,6 +1934,11 @@ impl<'a,R:Resolver+?Sized,D:PrefixDemand> EvaluatedObserver<'a,D::Error> for Wal
         // Existing (nondeclared) range bindings deliberately skip their start.
         Ok(())
     }
+    fn do_while_unreachable(&mut self,at:Span,condition:Span)->Result<(),D::Error>{if let Some(observer)=self.case_errors.as_deref_mut(){self.prefix_demand.checkpoint()?;observer.do_while_unreachable(at,condition)?;}Ok(())}
+    fn switch_started(&mut self,selector:&'a Expr,cases:&'a [dm_syntax::SwitchCase],default_present:bool,at:Span)->Result<(),D::Error>{if let Some(observer)=self.case_errors.as_deref_mut(){self.prefix_demand.checkpoint()?;observer.switch_started(selector,cases,default_present,at)?;}Ok(())}
+    fn switch_case(&mut self,case:&'a dm_syntax::SwitchCase)->Result<(),D::Error>{if let Some(observer)=self.case_errors.as_deref_mut(){self.prefix_demand.checkpoint()?;let cursor=case.original_cursor.map_err(D::Error::from)?;if let [dm_syntax::SwitchAlternative::Exact(value)]=case.alternatives.as_slice(){if matches!(&value.kind,ExprKind::Binary{op,..}if op=="||"){observer.logical_or(cursor,value.span)?;}}}Ok(())}
+    fn iterable(&mut self,expression:&'a Expr,at:Span)->Result<(),D::Error>{let ty=Walker::expression(self,expression,None)?;self.prefix_demand.checkpoint()?;if let Some(observer)=self.iteration_errors.as_mut(){observer.iterable(ty,at)?;}Ok(())}
+    fn invalid_range(&mut self,at:Span)->Result<(),D::Error>{self.prefix_demand.checkpoint()?;if let Some(observer)=self.iteration_errors.as_mut(){observer.invalid_range(at)?;}Ok(())}
     fn catch_parameters(&mut self,count:usize,at:Span,catch_header:Span)->Result<(),D::Error>{self.prefix_demand.checkpoint()?;if let Some(observer)=self.catch_errors.as_mut(){observer.parameters(count,at,catch_header)?;}Ok(())}
     fn catch_binding(&mut self,binding:Option<&'a str>,at:Span)->Result<(),D::Error>{
         let Some(binding)=binding else{return Ok(())};if binding.trim().is_empty(){return Ok(())}
@@ -1828,26 +1949,36 @@ impl<'a,R:Resolver+?Sized,D:PrefixDemand> EvaluatedObserver<'a,D::Error> for Wal
 }
 /// Reuse the privately issued ORIGINAL parameter path, then authenticate every
 /// resolved type against both the certified checker source roster and current
-/// native resolver. Missing checker types require diagnostics not yet produced
-/// by this family, so refuse the whole report instead of erasing the hint.
-fn checked_parameter_type(
+/// native resolver. Only an explicit missing-type observer may emit Unknown;
+/// strict compatibility callbacks still refuse the missing source type.
+fn checked_parameter_type_using<E:From<String>+for<'b>From<&'b str>>(
     tree: &SemanticTree,
     resolver: &(impl Resolver + ?Sized),
     profile: PackedU128,
     path: Option<&str>,
-) -> Result<TypeFact, String> {
+    missing:&mut impl FnMut(&str)->Result<(),E>,
+    checkpoint:&mut impl FnMut()->Result<(),E>,
+) -> Result<TypeFact, E> {
     let Some(path) = path else {
         return Ok(TypeFact::Unknown);
     };
     if path.is_empty(){return Err("parameter checker type spelling is empty".into())}
     // The privately issued path already encodes every leading list layer and
     // the declaration suffix. Decode that shape once; do not flatten it into
-    // an invented /list/subtype node or strip source modifiers again.
+    // an invented /list/subtype node. Each recursive static_type call strips
+    // its own leading modifiers, using the SAME original vocabulary.
     let mut remaining=path;let mut depth=0usize;
-    loop{if remaining=="/list"{depth=depth.checked_add(1).ok_or("recursive list depth overflow")?;remaining="";break}else if remaining.starts_with("/list/"){depth=depth.checked_add(1).ok_or("recursive list depth overflow")?;remaining=&remaining[5..];}else{break}}
+    loop{checkpoint()?;if depth>0{loop{checkpoint()?;let Some(body)=remaining.strip_prefix('/')else{break};let component=body.split('/').next().ok_or("recursive original type component absent")?;if !dm_syntax::is_original_static_type_modifier(component){break}remaining=remaining.get(component.len()+1..).ok_or("recursive original modifier extent differs")?;}}if remaining=="/list"{depth=depth.checked_add(1).ok_or("recursive list depth overflow")?;remaining="";break}else if remaining.starts_with("/list/"){depth=depth.checked_add(1).ok_or("recursive list depth overflow")?;remaining=&remaining[5..];}else{break}}
     let element=(!remaining.is_empty()).then_some(remaining);
     for spelling in (depth>0).then_some("/list").into_iter().chain(element){
-        if !tree.checker_source_type_presence(profile,spelling).map_err(|e|format!("parameter checker source type proof: {e:?}"))?{return Err("parameter checker type needs undefined-type diagnostic projection".into())}
+        if !tree.checker_source_type_presence(profile,spelling).map_err(|e|format!("parameter checker source type proof: {e:?}"))?{
+            // Closed checker-source absence is distinct from native runtime
+            // inventory. Keep the real native answer and observe exactly it.
+            let id=SymbolId::of(spelling);let query=Q::Type(id);let expected=Resolver::resolve(tree,query);let native_present=tree.lookup_type(id).is_some();
+            let consistent=match &expected{M::Missing=>!native_present,M::Unsupported(actual)=>*actual==query&&!native_present&&!tree.intrinsic_inventory_complete(),M::Symbol(actual)=>*actual==id&&native_present,_=>false};
+            if !consistent||resolver.resolve(query)!=expected{return Err("undefined checker type contradicts actual current resolver".into())}
+            missing(spelling)?;return Ok(TypeFact::Unknown)
+        }
         let id=SymbolId::of(spelling);let query=Q::Type(id);let expected=Resolver::resolve(tree,query);if expected!=M::Symbol(id)||resolver.resolve(query)!=expected{return Err("parameter checker type differs from current native resolver".into())}
     }
     Ok(match depth{0=>TypeFact::Known(SymbolId::of(path)),1=>TypeFact::List(element.map(SymbolId::of)),_=>TypeFact::NestedList{depth,element:element.map(SymbolId::of)}})
@@ -1912,6 +2043,7 @@ fn kwarg_key(expression:&Expr)->Result<bool,String>{kwarg_key_mode(expression,fa
 fn kwarg_key_mode(expression: &Expr,original:bool) -> Result<bool, String> {
     Ok(match &expression.kind {
         ExprKind::Ident(_) => true,
+        ExprKind::Literal(text) if original&&text.original_value().is_some()=>matches!(text.original_value(),Some(dm_syntax::OriginalTokenValue::String(_))),
         ExprKind::Literal(text) => match (if original{text.syntax_parts()}else{text.parts()}).map_err(str::to_owned)? {
             Some(parts) => {
                 !parts
@@ -1988,10 +2120,11 @@ pub(crate) fn effects_archived_using<'a,D:PrefixDemand>(
     if !body.belongs_to(archive) {
         return Err("effect body belongs to another archive".into());
     }
-    let draft = crate::checker_effects::Draft {
+    let mut draft = crate::checker_effects::Draft {
         transient: crate::checker_effects::output::ReportBudget::for_operation(admission),
         ..Default::default()
     };
+    let loan=draft.loan();
     let mut walker = Walker::new_using(
         archive.tree(),
         Some(archive),
@@ -2001,19 +2134,20 @@ pub(crate) fn effects_archived_using<'a,D:PrefixDemand>(
         body.checker_parameters(profile)?,
         resolver,
         profile,
-        Some(&draft.transient),
+        Some(loan.transient),
         prefix_demand,
     )?;
-    walker.effects = Some(draft);
+    walker.effects = Some(loan);
     crate::checker_reachable::archived_with_observer_using(body, &mut walker)?;
     walker.check_effect_admission()?;
-    Ok(walker.effects.take().unwrap())
+    drop(walker);Ok(draft)
 }
 /// Native primary literal shape only. No inferred alias purity or evaluation
 /// of an initializer a second time. Unsupported forms stay unproved.
 fn literal_mutation_origin(value: Option<&Expr>) -> Result<bool, String> {
     let Some(value) = value else { return Ok(true) };
     match &value.kind {
+        ExprKind::Literal(text) if text.original_value().is_some()=>Ok(true),
         ExprKind::Literal(text) => match text.parts().map_err(str::to_owned)? {
             Some(parts) => Ok(!parts
                 .lexical
@@ -2031,6 +2165,14 @@ fn literal_mutation_origin(value: Option<&Expr>) -> Result<bool, String> {
 /// inferred source column is used. Non-whitespace gaps remain unsupported.
 fn increment_origin(
     source: &str,
+    expression: &Expr,
+    operand: &Expr,
+    op: &str,
+) -> Result<Span, String> {
+    increment_origin_source(CodeSource::issued(source), expression, operand, op)
+}
+fn increment_origin_source(
+    source: CodeSource<'_>,
     expression: &Expr,
     operand: &Expr,
     op: &str,
@@ -2080,6 +2222,15 @@ fn increment_origin(
 /// column. Comments/other tokens need retained primary origin metadata.
 fn member_origin(
     source: &str,
+    member: &Expr,
+    object: &Expr,
+    selector: &str,
+    colon: bool,
+) -> Result<Span, String> {
+    member_origin_source(CodeSource::issued(source), member, object, selector, colon)
+}
+fn member_origin_source(
+    source: CodeSource<'_>,
     member: &Expr,
     object: &Expr,
     selector: &str,
@@ -2158,6 +2309,17 @@ fn blocking_call_reason_using<D:PrefixDemand>(
     fact: &CallableFact,
     demand:&D,
 ) -> Result<Option<&'static str>, String> {
+    blocking_call_reason_source_using(tree,profile,CodeSource::issued(source),expression,receiver,fact,demand)
+}
+fn blocking_call_reason_source_using<D:PrefixDemand>(
+    tree: &SemanticTree,
+    profile: PackedU128,
+    source: CodeSource<'_>,
+    expression: &Expr,
+    receiver: SymbolId,
+    fact: &CallableFact,
+    demand:&D,
+) -> Result<Option<&'static str>, String> {
     demand.validate_profile(tree,profile)
         .map_err(|e| format!("blocking call profile: {e:?}"))?;
     let (identity_name, source_callable) = match fact {
@@ -2180,7 +2342,7 @@ fn blocking_call_reason_using<D:PrefixDemand>(
     }
     if let ExprKind::Unary { op, value } = &expression.kind {
         if matches!(op.as_str(), "pre++" | "post++" | "pre--" | "post--") {
-            increment_origin(source, expression, value, op)?;
+            increment_origin_source(source, expression, value, op)?;
             let operator = if op.ends_with("++") {
                 "operator++"
             } else {
@@ -2238,7 +2400,7 @@ fn blocking_call_reason_using<D:PrefixDemand>(
 
 /// One evaluated call walk, with the original private/protected checks at its
 /// existing before-argument transition. No second call or statement traversal.
-pub(crate) fn procedure_visibility_archived<'a>(archive:&'a BodyArchive,body:&'a ArchivedBody<'_>,resolver:&(impl Resolver+?Sized),profile:PackedU128,family:crate::checks_proc_visibility::Family,severity:crate::checks::Severity,checkpoint:&dyn Fn()->std::io::Result<()>)->Result<Vec<crate::checks_proc_visibility::Row>,crate::policy_body_demand::PolicyFailure>{
+pub(crate) fn procedure_visibility_archived<'a>(archive:&'a BodyArchive,body:&'a ArchivedBody<'_>,resolver:&(impl Resolver+?Sized),profile:PackedU128,family:crate::checks_proc_visibility::Family,severity:crate::checks::Severity,checkpoint:&dyn Fn()->std::io::Result<()>)->Result<Vec<crate::checks_proc_visibility::Row<'a>>,crate::policy_body_demand::PolicyFailure>{
  if !body.belongs_to(archive)||!body.statement_body().original_literal_syntax_complete(){return Err("procedure visibility body is foreign or incomplete".into())}
  let demand=crate::checker_prefix_demand::Policy{checkpoint};let mut walker=Walker::new_using(archive.tree(),Some(archive),&body.statement_body().parsed().local_variables,archive.expanded_source(),body.occurrence(),body.checker_parameters(profile)?,resolver,profile,None,demand)?;
  walker.access=Some(crate::checks_proc_visibility::Access::new(archive,body,family,severity)?);crate::checker_reachable::archived_original_syntax_with_observer_using(body,&mut walker)?;walker.check_effect_admission()?;walker.access.take().expect("issued procedure visibility policy").finish(resolver,profile,&walker.prefix_demand)
@@ -2261,7 +2423,7 @@ pub(crate) fn call_arguments_archived(archive:&BodyArchive,body:&ArchivedBody<'_
  walker.access=Some(crate::checks_proc_visibility::Access::for_keyword_calls(archive,body)?);walker.original_values=observer.original_values();walker.argument_errors=Some(observer);crate::checker_reachable::archived_original_syntax_with_observer_using(body,&mut walker)?;walker.check_effect_admission()?;Ok(())
 }
 
-fn original_argument_key<'a,E:From<String>+for<'s>From<&'s str>>(key:&'a Expr,reserve:&mut impl FnMut(usize)->Result<(),E>,resource:&impl Fn(&'static str)->E)->Result<Cow<'a,str>,E>{match &key.kind{ExprKind::Ident(name)=>Ok(Cow::Borrowed(name)),ExprKind::Literal(value)=>{let width=value.as_str().len();let bound=width.checked_mul(4).ok_or("original keyword capacity overflow")?;reserve(bound.checked_add(std::mem::size_of::<String>()+128).ok_or("original keyword capacity overflow")?)?;let mut text=String::new();text.try_reserve_exact(width).map_err(|_|resource("original keyword allocation refused"))?;if text.capacity()>bound{return Err(resource("original keyword capacity exceeded"))}struct Fixed<'a>(&'a mut String);impl std::fmt::Write for Fixed<'_>{fn write_str(&mut self,text:&str)->std::fmt::Result{if text.len()>self.0.capacity()-self.0.len(){return Err(std::fmt::Error)}self.0.push_str(text);Ok(())}}if !value.write_pinned_static_text(&mut Fixed(&mut text)).map_err(|error|format!("original argument keyword text: {error:?}"))?{return Err("original keyword is not static text".into())}Ok(Cow::Owned(text))},_=>Err("original argument key is outside the issued keyword grammar".into())}}
+fn original_argument_key<'a,E:From<String>+for<'s>From<&'s str>>(key:&'a Expr,reserve:&mut impl FnMut(usize)->Result<(),E>,resource:&impl Fn(&'static str)->E)->Result<Cow<'a,str>,E>{match &key.kind{ExprKind::Ident(name)=>Ok(Cow::Borrowed(name)),ExprKind::Literal(value)=>{let width=match value.original_value(){Some(dm_syntax::OriginalTokenValue::String(text))=>text.len(),Some(_)=>return Err("original keyword VALUE is not text".into()),None=>value.as_str().len()};let bound=width.checked_mul(4).ok_or("original keyword capacity overflow")?;reserve(bound.checked_add(std::mem::size_of::<String>()+128).ok_or("original keyword capacity overflow")?)?;let mut text=String::new();text.try_reserve_exact(width).map_err(|_|resource("original keyword allocation refused"))?;if text.capacity()>bound{return Err(resource("original keyword capacity exceeded"))}struct Fixed<'a>(&'a mut String);impl std::fmt::Write for Fixed<'_>{fn write_str(&mut self,text:&str)->std::fmt::Result{if text.len()>self.0.capacity()-self.0.len(){return Err(std::fmt::Error)}self.0.push_str(text);Ok(())}}if !value.write_pinned_static_text(&mut Fixed(&mut text)).map_err(|error|format!("original argument keyword text: {error:?}"))?{return Err("original keyword is not static text".into())}Ok(Cow::Owned(text))},_=>Err("original argument key is outside the issued keyword grammar".into())}}
 
 /// Fixed original catch Warning uses this SAME evaluated/ordered catch scope.
 pub(crate) fn catch_parameters_archived(archive:&BodyArchive,body:&ArchivedBody<'_>,resolver:&(impl Resolver+?Sized),profile:PackedU128,checkpoint:&dyn Fn()->std::io::Result<()>,observer:&mut dyn CatchObserver<crate::policy_body_demand::PolicyFailure>)->Result<(),crate::policy_body_demand::PolicyFailure>{
@@ -2272,6 +2434,21 @@ pub(crate) fn catch_parameters_archived(archive:&BodyArchive,body:&ArchivedBody<
 pub(crate) fn static_references_archived(archive:&BodyArchive,body:&ArchivedBody<'_>,resolver:&(impl Resolver+?Sized),profile:PackedU128,checkpoint:&dyn Fn()->std::io::Result<()>,observer:&mut dyn StaticObserver<crate::policy_body_demand::PolicyFailure>)->Result<(),crate::policy_body_demand::PolicyFailure>{if !body.belongs_to(archive)||!body.statement_body().original_literal_syntax_complete(){return Err("static policy body is foreign or incomplete".into())}let demand=crate::checker_prefix_demand::Policy{checkpoint};let mut walker=Walker::new_using(archive.tree(),Some(archive),&body.statement_body().parsed().local_variables,archive.expanded_source(),body.occurrence(),body.checker_parameters(profile)?,resolver,profile,None,demand)?;walker.access=Some(crate::checks_proc_visibility::Access::for_keyword_calls(archive,body)?);walker.original_values=true;walker.static_errors=Some(observer);crate::checker_reachable::archived_original_syntax_with_observer_using(body,&mut walker)?;walker.check_effect_admission()?;Ok(())}
 
 /// Validate the already-parsed prefix span; never lex or parse a new node.
-fn prefix_origin(source:&str,expression:&Expr,operand:&Expr,op:&str)->Result<Span,String>{
+fn prefix_origin(source:&str,expression:&Expr,operand:&Expr,op:&str)->Result<Span,String>{prefix_origin_source(CodeSource::issued(source),expression,operand,op)}
+fn prefix_origin_source(source:CodeSource<'_>,expression:&Expr,operand:&Expr,op:&str)->Result<Span,String>{
  if expression.span.end!=operand.span.end||op.len()!=1{return Err("prefix operand extent differs from primary expression".into())}let start=expression.span.start;let end=start.checked_add(op.len()).ok_or("prefix origin overflow")?;if source.get(start..end)!=Some(op)||source.get(end..operand.span.start).is_none_or(|gap|!gap.chars().all(char::is_whitespace)){return Err("prefix needs retained primary operator origin".into())}Ok(Span::new(start,end))
+}
+
+/// Type/range diagnostics borrow the same evaluator and exact control traversal.
+pub(crate) fn iteration_ranges_archived(archive:&BodyArchive,body:&ArchivedBody<'_>,resolver:&(impl Resolver+?Sized),profile:PackedU128,checkpoint:&dyn Fn()->std::io::Result<()>,observer:&mut dyn IterationObserver<crate::policy_body_demand::PolicyFailure>)->Result<(),crate::policy_body_demand::PolicyFailure>{if !body.belongs_to(archive)||!body.statement_body().original_literal_syntax_complete(){return Err("iteration body is foreign or incomplete".into())}let demand=crate::checker_prefix_demand::Policy{checkpoint};let mut walker=Walker::new_using(archive.tree(),Some(archive),&body.statement_body().parsed().local_variables,archive.expanded_source(),body.occurrence(),body.checker_parameters(profile)?,resolver,profile,None,demand)?;walker.access=Some(crate::checks_proc_visibility::Access::for_keyword_calls(archive,body)?);walker.original_values=true;walker.iteration_errors=Some(observer);crate::checker_reachable::archived_original_syntax_with_observer_using(body,&mut walker)?;walker.check_effect_admission()?;Ok(())}
+
+pub(crate) fn undefined_types_archived(archive:&BodyArchive,body:&ArchivedBody<'_>,resolver:&(impl Resolver+?Sized),profile:PackedU128,checkpoint:&dyn Fn()->std::io::Result<()>,observer:&mut dyn TypeIssueObserver<crate::policy_body_demand::PolicyFailure>)->Result<(),crate::policy_body_demand::PolicyFailure>{if !body.belongs_to(archive)||!body.statement_body().original_literal_syntax_complete(){return Err("type diagnostic body is foreign or incomplete".into())}let demand=crate::checker_prefix_demand::Policy{checkpoint};let mut walker=Walker::new_using_with_type_issues(archive.tree(),Some(archive),&body.statement_body().parsed().local_variables,archive.expanded_source(),body.occurrence(),body.checker_parameters(profile)?,resolver,profile,None,demand,Some(observer))?;walker.access=Some(crate::checks_proc_visibility::Access::for_keyword_calls(archive,body)?);walker.original_values=true;crate::checker_reachable::archived_original_syntax_with_observer_using(body,&mut walker)?;walker.check_effect_admission()?;Ok(())}
+
+pub(crate) fn switch_cases_archived(archive:&BodyArchive,body:&ArchivedBody<'_>,resolver:&(impl Resolver+?Sized),profile:PackedU128,checkpoint:&dyn Fn()->std::io::Result<()>,observer:&mut dyn CaseObserver<crate::policy_body_demand::PolicyFailure>)->Result<(),crate::policy_body_demand::PolicyFailure>{if !body.belongs_to(archive)||!body.statement_body().original_literal_syntax_complete(){return Err("switch body is foreign or incomplete".into())}let demand=crate::checker_prefix_demand::Policy{checkpoint};let mut walker=Walker::new_using(archive.tree(),Some(archive),&body.statement_body().parsed().local_variables,archive.expanded_source(),body.occurrence(),body.checker_parameters(profile)?,resolver,profile,None,demand)?;walker.access=Some(crate::checks_proc_visibility::Access::for_keyword_calls(archive,body)?);walker.original_values=true;walker.case_errors=Some(observer);crate::checker_reachable::archived_original_syntax_with_observer_using(body,&mut walker)?;walker.check_effect_admission()?;Ok(())}
+
+#[cfg(test)]mod declared_type_answer_domain_tests{
+ use super::*;
+ fn source_tree(extra:Option<&str>)->std::sync::Arc<SemanticTree>{let original=dm_tree::checker_builtins::original_analysis_seed().unwrap();let mut seed=original.frontend_seed().clone();if let Some(path)=extra{seed.symbols.intern(path).unwrap();seed.hierarchy.parents.push((SymbolId::of(path),Some(SymbolId::of("/datum"))));let mut identity=xxhash_rust::xxh3::Xxh3::new();identity.update(b"actual-declared-type-engine-hierarchy-control-v1");identity.update(&seed.identity.to_le_bytes());identity.update(path.as_bytes());seed.identity=identity.digest128();seed.hierarchy.schema=seed.identity;}let ast=dm_syntax::parse("/proc/probe()\n    return null\n");dm_tree::from_ast(&ast,seed.symbols.clone(),dm_ir::FileId(0),0,0).unwrap().finish_with_engine(Some(&seed)).unwrap().tree}
+ struct Wrong<'a>{tree:&'a SemanticTree,query:Q}impl Resolver for Wrong<'_>{fn source_owner(&self)->Option<*const ()>{Some(std::ptr::from_ref(self.tree).cast())}fn resolve(&self,query:Q)->M{if query==self.query{M::Presence(false)}else{Resolver::resolve(self.tree,query)}}}
+ #[test]fn actual_checker_absence_preserves_incomplete_and_engine_only_native_type_answers(){for(extra,path,present)in[(None,"/missing",false),(Some("/datum/runtime_only_declared"),"/datum/runtime_only_declared",true)]{let tree=source_tree(extra);let profile=tree.checker_builtin_profile().unwrap();assert!(!tree.checker_source_type_presence(profile,path).unwrap());let query=Q::Type(SymbolId::of(path));assert_eq!(tree.lookup_type(SymbolId::of(path)).is_some(),present);let expected=Resolver::resolve(tree.as_ref(),query);if present{assert_eq!(expected,M::Symbol(SymbolId::of(path)));}else{assert!(!tree.intrinsic_inventory_complete());assert_eq!(expected,M::Unsupported(query));}let mut emitted=Vec::new();let got=checked_parameter_type_using(tree.as_ref(),tree.as_ref(),profile,Some(path),&mut|name|{emitted.push(name.to_owned());Ok::<(),String>(())},&mut||Ok::<(),String>(())).unwrap();assert_eq!(got,TypeFact::Unknown);assert_eq!(emitted,[path]);assert_eq!(Resolver::resolve(tree.as_ref(),query),expected,"diagnostic projection cannot change runtime/native meaning");let strict=checked_parameter_type_using(tree.as_ref(),tree.as_ref(),profile,Some(path),&mut|_|Err::<(),String>("strict parameter still refuses absent checker type".into()),&mut||Ok::<(),String>(())).unwrap_err();assert!(strict.contains("strict parameter still refuses"));let mut called=false;let error=checked_parameter_type_using(tree.as_ref(),&Wrong{tree:tree.as_ref(),query},profile,Some(path),&mut|_|{called=true;Ok::<(),String>(())},&mut||Ok::<(),String>(())).unwrap_err();assert!(error.contains("contradicts actual current resolver"));assert!(!called);}}
 }

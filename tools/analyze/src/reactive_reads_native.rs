@@ -729,7 +729,7 @@ impl<'source,'op> Walk<'source,'op>{
     StatementKind::Spawn{delay,body}=>{if let Some(delay)=delay{self.eval(fr,delay)?;}self.statements(fr,body)?;},
     StatementKind::For{control,body}=>self.iteration(fr,st,control,body)?,
     StatementKind::Label{body,..}=>self.statements(fr,body)?,
-    StatementKind::Switch{selector,cases,else_branch}=>{
+    StatementKind::Switch{selector,cases,else_branch,..}=>{
      self.eval(fr,selector)?;
      for case in cases{for choice in &case.alternatives{match choice{dm_syntax::SwitchAlternative::Exact(e)=>{self.eval(fr,e)?;},dm_syntax::SwitchAlternative::Range(a,b)=>{self.eval(fr,a)?;self.eval(fr,b)?;}}}}
      for case in cases{self.statements(fr,&case.body)?;}self.statements(fr,else_branch)?;

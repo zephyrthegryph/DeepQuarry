@@ -11,6 +11,50 @@ impl InitialEnvironment{
  pub fn original_constants()->&'static[(&'static str,&'static str)]{original::ORIGINAL_DEFAULT_CONSTANTS}
  pub fn original_functions()->&'static[(&'static str,&'static[&'static str],&'static str)]{original::ORIGINAL_DEFAULT_FUNCTIONS}
 }
+/// A borrow of ONE actual final initial-environment configuration entry. Only
+/// the existing configuration table walk issues this DATA. It is nonphysical:
+/// no acquisition, lexical frame, CODE/IO/EOF or semantic role follows from it.
+/// Actual Original token factory consumes this replacement ONCE at initial
+/// issuance, using SAME native lexical/value kernels; lookup never relexes it.
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub(crate) enum OriginalInitialProvenance{FixedDefault,CallerDefinition}
+pub(crate) struct OriginalInitialDefinition<'a>{name:&'a str,definition:&'a Macro,provenance:OriginalInitialProvenance}
+impl<'a>OriginalInitialDefinition<'a>{
+ pub(crate) fn name(&self)->&'a str{self.name}
+ pub(crate) fn metadata(&self)->&'a Macro{self.definition}
+ pub(crate) fn provenance(&self)->OriginalInitialProvenance{self.provenance}
+ pub(crate) fn replacement_text(&self)->&'a str{&self.definition.replacement}
+}
+/// Preserve the current actual configuration precedence: install defaults,
+/// apply caller -D into final_macros, then visit its final entries once. This
+/// walk is neither a new macro dictionary nor an alternate initial table.
+fn original_initial_provenance(name:&str,definition:&Macro,caller_defines:&BTreeMap<String,String>,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<OriginalInitialProvenance>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;Ok(if let Some(replacement)=caller_defines.get(name){if definition.parameters.is_some()||definition.variadic||&definition.replacement!=replacement{return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"actual caller definition metadata differs before token issuance"))}OriginalInitialProvenance::CallerDefinition}else{
+   let constant=original::ORIGINAL_DEFAULT_CONSTANTS.iter().find(|(actual,_)|*actual==name).is_some_and(|(_,replacement)|definition.parameters.is_none()&&!definition.variadic&&definition.replacement==*replacement);
+   let function=original::ORIGINAL_DEFAULT_FUNCTIONS.iter().find(|(actual,_,_)|*actual==name).is_some_and(|(_,parameters,replacement)|!definition.variadic&&definition.replacement==*replacement&&definition.parameters.as_ref().is_some_and(|actual|actual.len()==parameters.len()&&actual.iter().zip(parameters.iter()).all(|(a,b)|a.as_str()==*b)));
+   if !constant&&!function{return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"unissued default or foreign initial binding before token issuance"))}OriginalInitialProvenance::FixedDefault
+  })}
+pub(crate) fn visit_original_bootstrap_using(environment:InitialEnvironment,final_macros:&BTreeMap<String,Macro>,caller_defines:&BTreeMap<String,String>,a:&dm_syntax::SettingAdmission<'_>,visit:&mut dyn FnMut(OriginalInitialDefinition<'_>)->std::io::Result<()>)->std::io::Result<()>{
+ let poll=||a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e));
+ if environment!=InitialEnvironment::OriginalChecker0290{return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"Original bootstrap issuance requires its actual initial environment"))}
+ poll()?;
+ // Authenticate the actual existing final-table recipe, including absence. A
+ // missing default/caller binding is an error, never a silently empty product.
+ for(name,_)in original::ORIGINAL_DEFAULT_CONSTANTS{poll()?;if !final_macros.contains_key(*name){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"actual Original default binding is missing before token issuance"))}}
+ for(name,_,_)in original::ORIGINAL_DEFAULT_FUNCTIONS{poll()?;if !final_macros.contains_key(*name){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"actual Original function binding is missing before token issuance"))}}
+ for name in caller_defines.keys(){poll()?;if !final_macros.contains_key(name){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"actual caller definition is missing before token issuance"))}}
+ for(name,definition)in final_macros{original_initial_provenance(name,definition,caller_defines,a)?;}
+ for(name,definition)in final_macros{poll()?;let provenance=original_initial_provenance(name,definition,caller_defines,a)?;visit(OriginalInitialDefinition{name,definition,provenance})?;}
+ Ok(())
+}
+
+/// Issue one entry of the actual initial recipe, without first allocating a
+/// duplicate final table. The coordination owner funds temporary metadata
+/// before constructing it; this judge is shared with the existing table walk.
+pub(crate) fn with_original_initial_definition_using<R>(environment:InitialEnvironment,name:&str,definition:&Macro,caller:&BTreeMap<String,String>,a:&dm_syntax::SettingAdmission<'_>,visit:impl FnOnce(OriginalInitialDefinition<'_>)->std::io::Result<R>)->std::io::Result<R>{
+ if environment!=InitialEnvironment::OriginalChecker0290{return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"Original bootstrap issuance requires its actual initial environment"))}
+ let provenance=original_initial_provenance(name,definition,caller,a)?;
+ visit(OriginalInitialDefinition{name,definition,provenance})
+}
+
 pub(crate) fn install(environment:InitialEnvironment,macros:&mut BTreeMap<String,Macro>){match environment{
  InitialEnvironment::Native5161687=>{
     for (name, replacement) in [
@@ -267,4 +311,14 @@ impl crate::MacroLookup for ContextLookup<'_> {
   let native=issue_plan(InitialEnvironment::Native5161687,&[("project.dme","#define VALUE 7\n/proc/body_defined()\n    return defined(VALUE)\n")]);assert!(expand_regions_text(&native,1).text.contains("return defined(VALUE)"));
  }
 
+}
+
+#[cfg(test)]mod original_bootstrap_tests{
+ use super::*;use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ #[test]fn actual_final_table_recipe_authenticates_all_defaults_and_caller_provenance_before_factory_demand(){
+  let used=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&used,1<<20,&||Ok(()));let mut finals=BTreeMap::new();install(InitialEnvironment::OriginalChecker0290,&mut finals);let caller=BTreeMap::from([("TRUE".to_owned(),"7".to_owned()),("FROM_CALLER".to_owned(),"1e3".to_owned())]);for(name,replacement)in &caller{finals.insert(name.clone(),Macro{parameters:None,variadic:false,replacement:replacement.clone()});}
+  let mut count=0;visit_original_bootstrap_using(InitialEnvironment::OriginalChecker0290,&finals,&caller,&a,&mut|input|{count+=1;assert_eq!(input.provenance(),if caller.contains_key(input.name()){OriginalInitialProvenance::CallerDefinition}else{OriginalInitialProvenance::FixedDefault});Ok(())}).unwrap();assert_eq!(count,105);
+  for mode in 0..4{let mut bad=finals.clone();match mode{0=>{bad.remove("FALSE");},1=>{bad.get_mut("FALSE").unwrap().replacement="2".into();},2=>{bad.get_mut("TRUE").unwrap().replacement="1".into();},_=>{bad.insert("FOREIGN".into(),Macro{parameters:None,variadic:false,replacement:"1".into()});}}let mut demanded=0;assert_eq!(visit_original_bootstrap_using(InitialEnvironment::OriginalChecker0290,&bad,&caller,&a,&mut|_|{demanded+=1;Ok(())}).unwrap_err().kind(),std::io::ErrorKind::InvalidInput);assert_eq!(demanded,0,"invalid actual recipe must not begin lexical issuance");}
+  assert_eq!(used.load(Ordering::Acquire),0);
+ }
 }

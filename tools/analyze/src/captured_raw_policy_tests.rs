@@ -149,16 +149,21 @@ fn nonwhitelisted_semantic_lints_and_interrupted_scans_discard_all_results() {
     assert!(captured
         .scan(&selected("scheduler"), || Err("cancelled".into()))
         .is_err());
-    assert_eq!(RAW_FILE_LINTS.len(), 42);
+    assert_eq!(RAW_FILE_LINTS.len(), 43);
     for &name in RAW_FILE_LINTS {
         let lint = registry().find(name).expect("every raw-file policy is registered");
         assert!(lint.meta().scan == ScanKind::File, "{name} must remain file-only");
     }
     // The same registry also stores the separately admitted bounded cohort.
-    // Those entries do not become raw-file policies, even when one is File.
+    // Only the audited entry_slots File policy moved; Tree/Both remain separate.
     for &name in crate::captured_raw_cohort::LINTS {
-        assert!(captured.scan(&selected(name), || Ok(())).is_err(),
-            "bounded cohort {name} must not receive raw-file admission");
+        if name == "entry_slots" {
+            assert!(captured.scan(&selected(name), || Ok(())).is_ok(),
+                "unchanged File policy has independent public-file and private-fixture roles");
+        } else {
+            assert!(captured.scan(&selected(name), || Ok(())).is_err(),
+                "bounded Tree/Both cohort {name} must not receive raw-file admission");
+        }
     }
     assert!(registry().lints.iter().all(|lint|
         RAW_FILE_LINTS.contains(&lint.meta().name)

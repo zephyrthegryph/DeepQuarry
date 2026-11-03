@@ -2,7 +2,7 @@
 use crate::{captured_generator_budget::Budget,captured_raw_file::{Config,RawPolicyViews},reactive_raw_policy_pages::RawPolicyPages,reactive_reads_native::Failure,lint::{Site,AllowUse}};
 use std::{io,sync::Arc,collections::BTreeSet};
 /// Original static descriptor from the unique Sys metadata builder.
-pub fn metadata()->&'static crate::lint::Meta{static META:std::sync::OnceLock<crate::lint::Meta>=std::sync::OnceLock::new();META.get_or_init(||crate::dm::sys::module_metadata(&crate::dm::sys::SysModule{name:"tables",rules:crate::sys_tables_policy::RULES,..crate::dm::sys::SysModule::DEFAULT},crate::lint::ScanKind::Tree))}
+pub fn metadata()->&'static crate::lint::Meta{static META:std::sync::OnceLock<crate::lint::Meta>=std::sync::OnceLock::new();META.get_or_init(||crate::dm::sys::module_metadata(&crate::dm::sys::SysModule{name:crate::allow_registry_fields::sys_tables::SCOPE_MODULE_NAME,rules:crate::sys_tables_policy::RULES,..crate::dm::sys::SysModule::DEFAULT},crate::lint::ScanKind::Tree))}
 pub struct TablesData{sites:Vec<Site>,source_text:Vec<String>,allow_used:Vec<AllowUse>,allow_digests:std::collections::BTreeMap<String,[u8;20]>}
 impl TablesData{pub fn sites(&self)->&[Site]{&self.sites}pub fn source_text(&self)->&[String]{&self.source_text}pub fn allow_used(&self)->&[AllowUse]{&self.allow_used}pub fn allow_source_digest(&self,relative:&str)->Option<&[u8;20]>{self.allow_digests.get(relative)}}
 fn oom(s:impl Into<String>)->Failure{Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,s.into()))}

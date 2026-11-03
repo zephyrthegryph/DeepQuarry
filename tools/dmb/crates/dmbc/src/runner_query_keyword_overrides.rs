@@ -18,12 +18,15 @@ impl SourceSnapshot{
   crate::daemon::control::checkpoint()?;let capture=self.named_policy_capture(tree)?;let loaded=super::named_policy::configuration(capture,environment,explicit)?;let archive=capture.policy().archive();let db=self.native_raw_queries.as_ref().ok_or_else(||io::Error::other("keyword fold requires actual source QueryDb"))?;let profile=tree.checker_builtin_profile().ok_or_else(||io::Error::other("keyword fold actual builtin profile absent"))?;
   let resolver:&dyn dm_ir::Resolver=if let Some(receipt)=&self.diagnostic_declarations{if !receipt.authenticates(tree)||!self.matches_tree(tree){return Err(io::Error::other("keyword diagnostic owner is foreign"))}tree}else{self.resolved.as_ref().ok_or_else(||io::Error::other("keyword fold requires actual retained semantic host"))?.checker_resolver(tree)?};
   let level=loaded.policy.register(Some("override_missing_keyword_arg"),DiagnosticSeverity::Error);
-  db.with_original_keyword_overrides(archive,resolver,profile,||{crate::daemon::control::checkpoint()?;self.named_policy_capture(tree)?;Ok(())},|findings|{
+  let deliver=|findings:&Findings<'_>|{
    if !findings.belongs_to(archive){return Err(io::Error::other("keyword fold returned foreign findings"))}for row in findings.rows(){findings.point(row.point).map_err(io::Error::other)?;for note in &row.notes{findings.point(note.point).map_err(io::Error::other)?;}}
    let rendered=Rows{findings,severity:super::named_policy::severity(level.unwrap_or(DiagnosticSeverity::Error)),enabled:level.is_some()};
    let envelope=Envelope{row:"source_native_keyword_override_checker",schema:"dm-session-source-query-v1",semantic_revision:Revision(tree.identity()),source_revision:Revision(self.source_revision),policy_revision:Revision(self.policy_revision.unwrap()),family:"override_missing_keyword_arg",environment,configuration:&loaded.selected.path,configuration_explicit:loaded.selected.explicit,configuration_present:loaded.present,configuration_schema:"complete_pinned_checker_schema",coverage:"whole_original_archive",body_count:archive.len(),complete:true,full_checker_parity:false,declaration_profile:self.diagnostic_declarations.as_ref().map_or("strict-native-declarations",|r|r.profile()),native_declaration_error_count:self.diagnostic_declarations.as_ref().map_or(0,|r|r.errors().len()),diagnostics:rendered};
    // Configured suppression changes delivery, not source/owner authentication.
    serde_json::to_writer(&mut *output,&envelope).map_err(io::Error::from)?;output.write_all(b"\n")?;crate::daemon::control::checkpoint()?;self.named_policy_capture(tree)?;Ok(())
-  })
+  };
+  if let Some(owner)=self.native_effect_request_input.get().filter(|owner|owner.input().is_original_checker_source()){
+   db.with_cached_original_keyword_overrides(owner.input(),resolver,||{crate::daemon::control::checkpoint()?;self.named_policy_capture(tree)?;Ok(())},deliver)
+  }else{db.with_original_keyword_overrides(archive,resolver,profile,||{crate::daemon::control::checkpoint()?;self.named_policy_capture(tree)?;Ok(())},deliver)}
  }
 }

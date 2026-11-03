@@ -711,7 +711,9 @@ pub fn with_original_policy_file(root:&Path,path:&Path,text:dm_preprocess::Sourc
 /// Prepare original DATA inside this SAME file scratch. The producer must
 /// preadmit its real normalization before allocating; no source role is minted.
 #[cfg(feature="native-policy")]
-pub fn with_original_policy_file_prepared(root:&Path,path:&Path,live_page_bytes:usize,budget:&Arc<crate::captured_generator_budget::Budget>,prepare:impl FnOnce(&crate::captured_generator_budget::Budget)->Result<dm_preprocess::SourceText,crate::reactive_reads_native::Failure>,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,crate::reactive_reads_native::Failure>)->Result<bool,crate::reactive_reads_native::Failure>{
+pub fn with_original_policy_file_prepared(root:&Path,path:&Path,live_page_bytes:usize,budget:&Arc<crate::captured_generator_budget::Budget>,prepare:impl FnOnce(&crate::captured_generator_budget::Budget)->Result<dm_preprocess::SourceText,crate::reactive_reads_native::Failure>,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,crate::reactive_reads_native::Failure>)->Result<bool,crate::reactive_reads_native::Failure>{with_original_policy_file_prepared_demand(root,path,live_page_bytes,budget,false,prepare,visit)}
+#[cfg(feature="native-policy")]
+fn with_original_policy_file_prepared_demand(root:&Path,path:&Path,live_page_bytes:usize,budget:&Arc<crate::captured_generator_budget::Budget>,clean_only:bool,prepare:impl FnOnce(&crate::captured_generator_budget::Budget)->Result<dm_preprocess::SourceText,crate::reactive_reads_native::Failure>,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,crate::reactive_reads_native::Failure>)->Result<bool,crate::reactive_reads_native::Failure>{
  use crate::reactive_reads_native::Failure;
  fn refused(budget:&crate::captured_generator_budget::Budget,message:impl Into<String>)->Failure{budget.deny();Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message.into()))}
  let scratch=crate::captured_generator_budget::Budget::scoped_temporaries(budget).map_err(|message|refused(budget,message))?;
@@ -723,7 +725,8 @@ pub fn with_original_policy_file_prepared(root:&Path,path:&Path,live_page_bytes:
  let relative=dm_preprocess::regions::relative_filesystem_path(path,root).ok_or_else(||Failure::from("original code file escapes captured root"))?;
  let rel=relative.to_string_lossy().replace('\\',"/");
  let text=prepare(&scratch)?;
- let extra=SourceFile::raw_policy_view_extra_bound(&rel,path,&text)
+ let raw_credit=if clean_only{let mut bytes=Some(0usize);visit_source_storage(&text,|_,n|bytes=bytes.and_then(|total|total.checked_add(n)));bytes.ok_or_else(||refused(budget,"original backing accounting overflow"))?}else{0};
+ let extra=(if clean_only{SourceFile::raw_clean_view_extra_bound(&rel,path,&text)}else{SourceFile::raw_policy_view_extra_bound(&rel,path,&text)})
     .and_then(|n|n.checked_add(std::mem::size_of::<Tree>()+std::mem::size_of::<File>()+std::mem::size_of::<SourceFile>()+256))
     .and_then(|n|n.checked_add(root.as_os_str().len().checked_mul(4)?))
     .ok_or_else(||refused(budget,"original code view peak overflow"))?;
@@ -734,8 +737,9 @@ pub fn with_original_policy_file_prepared(root:&Path,path:&Path,live_page_bytes:
  // The optional clean getter separately charges its exact transform bound to
  // the selecting operation BEFORE construction. Merely granting local capacity
  // here allocates nothing and does not charge raw-only consumers.
- let local=extra.checked_add(live_page_bytes).and_then(|n|n.checked_add(SourceFile::raw_policy_clean_bound(&text)?)).ok_or_else(||refused(budget,"original code local bound overflow"))?;
+ let local=extra.checked_add(live_page_bytes).and_then(|n|n.checked_add(raw_credit)).and_then(|n|n.checked_add(SourceFile::raw_policy_clean_bound(&text)?)).ok_or_else(||refused(budget,"original code local bound overflow"))?;
  let file=File::capture_budgeted(root,path,text,local).map_err(|message|refused(budget,message))?;
+ if clean_only{file.tree.files[0].restrict_to_raw_clean();}
  let pending=file.with_policy_views_budget(Some(&scratch),visit);drop(file);
  if matches!(&pending,Err(Failure::Operational(_))){return pending}
  budget.require().map_err(|message|refused(budget,message))?;
@@ -777,3 +781,24 @@ pub fn with_original_policy_file_prepared(root:&Path,path:&Path,live_page_bytes:
 pub(crate) fn source_allow_digest(source:&SourceFile)->[u8;20]{source_allow_digest_text(source.text())}
 /// Exact old whole-file annotation digest over an actual borrowed original view.
 pub(crate) fn source_allow_digest_text(text:&str)->[u8;20]{use sha1::{Digest,Sha1};Sha1::digest(text.trim_end_matches('\n').as_bytes()).into()}
+
+impl Config{
+ /// Full original registry metadata against THIS same captured configuration.
+ /// The result is metadata/configuration DATA, never source/execution coverage.
+ pub fn validate_complete_registry_scopes<C:crate::key_policy_control::Control>(&self,control:&mut C)->Result<crate::required_scope_registry::CompleteRequiredScopeValidation,C::Error>{crate::required_scope_registry::validate_complete_registry_scopes(&self.scopes,control)}
+}
+
+/// The selecting Doc operation funds clean separately; code/marker are denied
+/// before any lazy transform. Actual raw owners remain in the input family.
+#[cfg(feature="native-policy")]
+pub fn with_original_policy_file_clean(root:&Path,path:&Path,text:dm_preprocess::SourceText,live_page_bytes:usize,budget:&Arc<crate::captured_generator_budget::Budget>,visit:&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,crate::reactive_reads_native::Failure>)->Result<bool,crate::reactive_reads_native::Failure>{with_original_policy_file_prepared_demand(root,path,live_page_bytes,budget,true,|_|Ok(text),visit)}
+
+#[cfg(all(test,feature="native-policy"))]mod doc_clean_loan_tests{
+ use super::*;use crate::{captured_generator_budget::Budget,captured_reactive_reads::Failure};
+ #[test]fn clean_only_loan_denies_unfunded_code_and_marker_even_through_original_file_handle(){
+  let root=std::env::temp_dir().join("doc-clean-only-negative");let path=root.join("code/a.dm");let text:dm_preprocess::SourceText="/proc/known()\n    return \"value\"\n".into();
+  for marker in [false,true]{let budget=Budget::new(1024*1024).unwrap();let error=with_original_policy_file_clean(&root,&path,text.clone(),0,&budget,&mut|_,views|{let file=views.source_file()?;if marker{file.marker();}else{file.code();}Ok(true)}).unwrap_err();assert!(matches!(error,Failure::Operational(e)if e.kind()==std::io::ErrorKind::OutOfMemory),"existing postcallback require must reject, never publish empty transformed text");}
+  let budget=Budget::new(1024*1024).unwrap();with_original_policy_file_clean(&root,&path,text.clone(),0,&budget,&mut|_,views|{let clean=views.clean(&budget)?;assert!(clean.contains("/proc/known()"));Ok(true)}).unwrap();let budget=Budget::new(1024*1024).unwrap();with_original_policy_file(&root,&path,text,0,&budget,&mut|_,views|{assert!(views.code()?.text.contains("/proc/known()"));Ok(true)}).unwrap();
+ }
+ #[test]fn clean_loan_quota_refuses_before_callback_and_does_not_poison_a_later_operation(){let root=std::env::temp_dir().join("doc-clean-quota");let path=root.join("code/a.dm");let text:dm_preprocess::SourceText="/proc/known()\n    return\n".into();let budget=Budget::new(128).unwrap();let entered=std::cell::Cell::new(false);let error=with_original_policy_file_clean(&root,&path,text.clone(),0,&budget,&mut|_,_|{entered.set(true);Ok(true)}).unwrap_err();assert!(matches!(error,Failure::Operational(e)if e.kind()==std::io::ErrorKind::OutOfMemory));assert!(!entered.get());let budget=Budget::new(1024*1024).unwrap();with_original_policy_file_clean(&root,&path,text,0,&budget,&mut|_,views|{assert!(views.clean(&budget)?.contains("known"));Ok(true)}).unwrap();}
+}

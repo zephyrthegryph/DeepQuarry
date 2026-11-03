@@ -151,7 +151,7 @@ fn statements<'a>(body: &'a [Statement], visit: &mut impl FnMut(&'a Expr)) {
             S::Switch {
                 selector,
                 cases,
-                else_branch,
+                else_branch, ..
             } => {
                 expression(selector, visit);
                 for case in cases {

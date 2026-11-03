@@ -57,7 +57,7 @@ fn collect<'a,'op,'body>(body:&'body ParsedBody,a:&'a SettingAdmission<'op>)->io
      }
     }
    }
-   StatementKind::Switch{selector,cases,else_branch}=>{
+   StatementKind::Switch{selector,cases,else_branch,..}=>{
     root!(selector);vec!(else_branch);charge!(payload(a,cases)?);
     for case in cases{vec!(&case.body);charge!(payload(a,&case.alternatives)?);for alt in &case.alternatives{match alt{SwitchAlternative::Exact(e)=>root!(e),SwitchAlternative::Range(x,y)=>{root!(x);root!(y);}}}}
    }
@@ -117,7 +117,7 @@ pub fn prepare_body_literal_syntax<'a,'op>(body:ParsedBody,cleanup:SettingRootLe
 /// This helper creates no syntax, calls no parser and clones no AST/root/source.
 pub fn drop_body_literal_syntax(body:ParsedBody,admission:Option<BodyLiteralAdmission>){drop_body_inner(body,admission.map(|a|a.anchor));}
 fn drop_body_inner(body:ParsedBody,anchor:Option<SharedSettingRetention>){
- let ParsedBody{mut statements,control_origins,local_variables,diagnostics,pending_bodies}=body;
+ let ParsedBody{mut statements,control_origins,local_variables,diagnostics,pending_bodies,original_grammar:_}=body;
  drop(control_origins);drop(diagnostics);drop(pending_bodies);
  local_variables.drop_dimension_expressions(|e|crate::setting_drop::drop_expression(e,anchor.clone()));
  while let Some(st)=statements.pop(){
@@ -141,7 +141,7 @@ fn drop_body_inner(body:ParsedBody,anchor:Option<SharedSettingRetention>){
      }
     }
    }
-   StatementKind::Switch{selector,cases,mut else_branch}=>{
+   StatementKind::Switch{selector,cases,mut else_branch,..}=>{
     crate::setting_drop::drop_expression(selector,anchor.clone());statements.append(&mut else_branch);
     for mut case in cases{statements.append(&mut case.body);for alt in case.alternatives{match alt{SwitchAlternative::Exact(e)=>crate::setting_drop::drop_expression(e,anchor.clone()),SwitchAlternative::Range(x,y)=>{crate::setting_drop::drop_expression(x,anchor.clone());crate::setting_drop::drop_expression(y,anchor.clone());}}}}
    }

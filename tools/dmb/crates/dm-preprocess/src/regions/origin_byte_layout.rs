@@ -30,7 +30,7 @@ pub struct ByteLayoutLedger {
     classes: Box<[u64]>,
     /// Sparse physical-row layouts and strict first-line prefixes.
     prefixes: Box<[SparseLayout]>,
-    macro_lines: Box<[usize]>,
+    policy_lines: Box<[usize]>,
     rows: usize,
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -44,7 +44,7 @@ pub(super) struct ByteLayoutBuilder {
     regions: Arc<[(usize, usize)]>,
     classes: Vec<u64>,
     prefixes: Vec<SparseLayout>,
-    macro_lines: Vec<usize>,
+    policy_lines: Vec<usize>,
     rows: usize,
 }
 impl ByteLayoutBuilder {
@@ -61,7 +61,7 @@ impl ByteLayoutBuilder {
                 .collect(),
             classes: Vec::new(),
             prefixes: Vec::new(),
-            macro_lines: Vec::new(),
+            policy_lines: Vec::new(),
             rows: 0,
         }
     }
@@ -72,7 +72,7 @@ impl ByteLayoutBuilder {
             regions: vec![(0, 0)].into(),
             classes: Vec::new(),
             prefixes: Vec::new(),
-            macro_lines: Vec::new(),
+            policy_lines: Vec::new(),
             rows: 0,
         }
     }
@@ -170,7 +170,7 @@ impl ByteLayoutBuilder {
     /// PreparedLine. Every raw/prepared physical width must match, preventing a
     /// joined continuation from pretending it is byte-preserving. Comments use
     /// the existing producer's one-byte-per-byte mask; no grammar is rescanned.
-    fn record_macro_line(
+    fn record_policy_line(
         &mut self,
         index: usize,
         region: usize,
@@ -187,9 +187,13 @@ impl ByteLayoutBuilder {
         let Some(line) = line else {
             return;
         };
+        // UTF8 BOM is removed by the SAME acquisition decoder; it changes
+        // no LF count. This LINE-only evidence still checks the actual binding,
+        // PreparedLine source span/line and one-physical-row width. It grants
+        // neither an original raw byte offset nor a column for BOM input.
         if !matches!(
             lease.encoding(),
-            SourceEncoding::Utf8 | SourceEncoding::SyntheticUtf8
+            SourceEncoding::Utf8 | SourceEncoding::Utf8Bom | SourceEncoding::SyntheticUtf8
         ) || line.source_span != source_span
             || line.source_line != source_line
             || line.source_lines != 1
@@ -205,7 +209,7 @@ impl ByteLayoutBuilder {
         {
             return;
         }
-        self.macro_lines.push(index);
+        self.policy_lines.push(index);
     }
     fn physical_layout(
         &self,
@@ -372,7 +376,7 @@ impl ByteLayoutBuilder {
             regions: self.regions,
             classes: self.classes.into_boxed_slice(),
             prefixes: self.prefixes.into_boxed_slice(),
-            macro_lines: self.macro_lines.into_boxed_slice(),
+            policy_lines: self.policy_lines.into_boxed_slice(),
             rows: self.rows,
         }
     }
@@ -468,7 +472,7 @@ impl ByteLayoutLedger {
             source_offset,
         })
     }
-    pub(super) fn locate_macro_line(
+    pub(super) fn locate_policy_line(
         &self,
         index: usize,
         origin: ExpandedOriginView<'_>,
@@ -487,12 +491,11 @@ impl ByteLayoutLedger {
         if !binding.matches(expected) {
             return Err("policy line belongs to another source acquisition binding");
         }
-        if origin.macro_expansions.is_empty()
-            || offset < origin.output_span.start
+        if offset < origin.output_span.start
             || offset >= origin.output_span.end
-            || self.macro_lines.binary_search(&index).is_err()
+            || self.policy_lines.binary_search(&index).is_err()
         {
-            return Err("single-physical macro policy line was not issued");
+            return Err("single-physical policy line was not issued");
         }
         Ok(origin.origin.source_line)
     }
@@ -508,9 +511,9 @@ impl ByteLayoutLedger {
             std::mem::size_of_val(self.classes.as_ref()),
         );
         visit(
-            self.macro_lines.as_ptr() as usize,
-            self.macro_lines.len(),
-            std::mem::size_of_val(self.macro_lines.as_ref()),
+            self.policy_lines.as_ptr() as usize,
+            self.policy_lines.len(),
+            std::mem::size_of_val(self.policy_lines.as_ref()),
         );
         visit(
             self.prefixes.as_ptr() as usize,
@@ -536,7 +539,7 @@ impl ByteLayoutLedger {
         self.rows == other.rows
             && self.classes == other.classes
             && self.prefixes == other.prefixes
-            && self.macro_lines == other.macro_lines
+            && self.policy_lines == other.policy_lines
             && self.regions == other.regions
             && self.bindings.len() == other.bindings.len()
             && self
@@ -612,9 +615,9 @@ pub(super) fn bind_current_layout(
                 })
                 .copied()
         });
-        if origins.single_physical_macro_line(builder.rows()) && !origin.macro_expansions.is_empty()
+        if origin.macro_expansions.is_empty() || origins.single_physical_macro_line(builder.rows())
         {
-            builder.record_macro_line(
+            builder.record_policy_line(
                 builder.rows(),
                 origin.region,
                 prepared,
@@ -1174,6 +1177,54 @@ mod macro_line_receipt_tests {
         assert!(query(&expanded, &plan, foreign.lease()).is_err());
         let reissued = source.0.reissued(());
         assert!(query(&expanded, &plan, reissued.lease()).is_err());
+    }
+    #[test]
+    fn utf8_bom_single_macro_line_keeps_crlf_and_exact_current_line_only_binding() {
+        for newline in ["\n", "\r\n"] {
+            let raw=format!("\u{feff}#define WRAP(x) x{newline}/proc/p(a,b){newline}\tWRAP(!a & b){newline}");
+            let(source,plan)=fixture(&raw);
+            assert_eq!(source.0.encoding(),SourceEncoding::Utf8Bom);
+            assert!(!source.0.lease().source_text().starts_with('\u{feff}'),"actual decoded same acquisition removes BOM");
+            let expanded=crate::regions::expand_regions_text(&plan,1);
+            assert!(expanded.diagnostics.is_empty());
+            assert_eq!(query(&expanded,&plan,source.0.lease()).unwrap(),3);
+            let offset=expanded.text.find("!a").unwrap();let index=expanded.origins.partition_point(|row|row.output_span.end<=offset);let row=expanded.origins.get(index).unwrap();let occurrence=plan.regions[row.region].occurrence;
+            assert!(expanded.origins.original_policy_line(index,occurrence+1,source.0.lease(),offset).is_err(),"foreign include occurrence must not gain a line");
+            assert!(expanded.origins.original_policy_line(index,occurrence,source.0.lease(),row.output_span.end).is_err(),"unowned terminator/end must not gain a line");
+            let equal=AcquiredSource::from_original_bytes(raw.as_bytes().to_vec(),());assert!(query(&expanded,&plan,equal.lease()).is_err(),"same bytes are not source identity");
+            let reissued=source.0.reissued(());assert!(query(&expanded,&plan,reissued.lease()).is_err(),"new actual receipt needs its own issuance");
+            assert!(expanded.origins.original_byte_cursor(index,occurrence,source.0.lease(),offset).is_err(),"line-only BOM receipt must not become raw byte/column evidence");
+        }
+    }
+    #[test]
+    fn utf8_bom_plain_line_has_bound_line_only_receipt_without_byte_authority() {
+        for newline in ["\n", "\r\n"] {
+            let raw=format!("\u{feff}/proc/p(){newline}\treturn 1{newline}");
+            let(source,plan)=fixture(&raw);
+            let expanded=crate::regions::expand_regions_text(&plan,1);
+            assert!(expanded.diagnostics.is_empty());
+            for (needle,line) in [("/proc/p",1),("return",2)] {
+                let offset=expanded.text.find(needle).unwrap();
+                let index=expanded.origins.partition_point(|row|row.output_span.end<=offset);
+                let row=expanded.origins.get(index).unwrap();
+                let occurrence=plan.regions[row.region].occurrence;
+                assert!(row.macro_expansions.is_empty());
+                assert_eq!(expanded.origins.original_policy_line(index,occurrence,source.0.lease(),offset).unwrap(),line);
+                assert!(expanded.origins.original_byte_cursor(index,occurrence,source.0.lease(),offset).is_err());
+                assert!(expanded.origins.original_policy_line(index,occurrence+1,source.0.lease(),offset).is_err());
+                assert!(expanded.origins.original_policy_line(index,occurrence,source.0.lease(),row.output_span.end).is_err());
+                let equal=AcquiredSource::from_original_bytes(raw.as_bytes().to_vec(),());
+                assert!(expanded.origins.original_policy_line(index,occurrence,equal.lease(),offset).is_err());
+            }
+        }
+    }
+    #[test]
+    fn utf8_bom_macro_line_never_certifies_held_multiline_or_unknown_decoder_geometry() {
+        for raw in ["\u{feff}#define WRAP(x) x\r\n/proc/p(a,b)\r\n\tWRAP(\r\n#if 1\r\n\t\t!a & b)\r\n#endif\r\n","\u{feff}#define WRAP(x) x\r\n/proc/p(a,b)\r\n\tWRAP(\r\n\t\t!a & b)\r\n"] {
+            let(source,plan)=fixture(raw);let expanded=crate::regions::expand_regions_text(&plan,1);assert!(expanded.diagnostics.is_empty());assert!(query(&expanded,&plan,source.0.lease()).is_err(),"joined source cannot gain single-physical line evidence");
+        }
+        let source=Source(AcquiredSource::from_original_bytes(b"//\xff\n#define WRAP(x) x\n/proc/p(a,b)\n\tWRAP(!a & b)\n".to_vec(),()));
+        assert_eq!(source.0.encoding(),SourceEncoding::IncompatibleOriginal);let plan=crate::regions::plan_regions(Path::new("macro.dm"),&source,&Default::default());assert!(plan.diagnostics.is_empty());let expanded=crate::regions::expand_regions_text(&plan,1);assert!(expanded.diagnostics.is_empty());assert!(query(&expanded,&plan,source.0.lease()).is_err(),"exceptional byte decoder is not silently covered by BOM-only proof");
     }
     #[test]
     fn held_macro_with_same_first_single_line_span_has_no_receipt() {

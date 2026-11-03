@@ -293,7 +293,7 @@ fn reject_errors(
     }
     if diagnostics
         .iter()
-        .any(|diagnostic| diagnostic.kind == DiagnosticKind::SourceError)
+        .any(|diagnostic| diagnostic.kind.is_source_error())
     {
         writer.flush()?;
         return Err(crate::request_failure::RequestFailure::source(

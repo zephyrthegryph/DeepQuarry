@@ -284,7 +284,7 @@ fn regular_raw_and_workspace_share_node_input_and_result_limits_and_release() {
     q.raw_policy.admission.leases.lock().unwrap().insert(
         Key::new(super::super::RAW_FILE, 999),
         super::super::Lease {
-            owner: Weak::new(),
+            owner: super::super::LeaseOwner::Semantic(Weak::new()),
             bytes: INPUT_BOUND - 1024 - q.workspace_nodes_locked() * 96,
             touched: std::time::Instant::now(),
         },

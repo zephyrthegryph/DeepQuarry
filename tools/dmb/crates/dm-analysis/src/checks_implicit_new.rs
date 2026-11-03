@@ -39,25 +39,16 @@ pub fn archived(
         severity,
     )
 }
-fn diagnostics(walk: Walk<'_>, severity: Severity) -> Result<Vec<Diagnostic>, String> {
-    Ok(walk
-        .events
-        .into_iter()
-        .filter_map(|event| {
-            let Event::MissingImplicitNewHint { expression } = event else {
-                return None;
-            };
-            Some(Diagnostic {
+pub(crate) fn diagnostic(event:Event<'_>,severity:Severity)->Option<Diagnostic>{let Event::MissingImplicitNewHint{expression}=event else{return None};Some(Diagnostic {
                 family: FAMILY,
                 severity,
                 span: expression.span,
                 expression_span: expression.span,
                 message: "no type hint available on implicit new()".into(),
                 notes: Vec::new(),
-            })
-        })
-        .collect())
-}
+            })}
+fn diagnostics(walk:Walk<'_>,severity:Severity)->Result<Vec<Diagnostic>,String>{Ok(walk.events.into_iter().filter_map(|event|diagnostic(event,severity)).collect())}
+
 #[cfg(test)]
 #[path = "checks_implicit_new_tests.rs"]
 mod tests;

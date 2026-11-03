@@ -252,5 +252,5 @@ fn selftest() -> Result<String, String> {
 }
 
 pub fn register(reg: &mut Registry) {
-    register_module(reg, SysModule { name: "dx_review", rules: RULES, file_scan: Some(scan_file), selftest: Some(selftest), ..SysModule::DEFAULT });
+    register_module(reg, SysModule { name: crate::allow_registry_fields::sys_dx_review::SCOPE_MODULE_NAME, rules: RULES, file_scan: Some(scan_file), selftest: Some(selftest), ..SysModule::DEFAULT });
 }

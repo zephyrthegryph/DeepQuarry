@@ -92,6 +92,10 @@ fn return_hint_mode_using<D:PrefixDemand>(
     archive: Option<&dm_tree::frontend::BodyArchive>,
     permit: Option<&PuritySettingsPermit<'_>> , demand:&D
 ) -> Result<ReturnHint , D::Error> {
+    return_hint_mode_controlled_using(tree,resolver,profile,receiver,name,archive,permit,demand,false)
+}
+pub(crate) fn return_hint_without_return_prefix_using<D:PrefixDemand>(tree:&SemanticTree,resolver:&(impl Resolver+?Sized),profile:PackedU128,receiver:SymbolId,name:SymbolId,archive:Option<&dm_tree::frontend::BodyArchive>,permit:Option<&PuritySettingsPermit<'_>>,demand:&D)->Result<ReturnHint,D::Error>{return_hint_mode_controlled_using(tree,resolver,profile,receiver,name,archive,permit,demand,true)}
+fn return_hint_mode_controlled_using<D:PrefixDemand>(tree:&SemanticTree,resolver:&(impl Resolver+?Sized),profile:PackedU128,receiver:SymbolId,name:SymbolId,archive:Option<&dm_tree::frontend::BodyArchive>,permit:Option<&PuritySettingsPermit<'_>>,demand:&D,skip_return_prefix:bool)->Result<ReturnHint,D::Error>{
     if resolver.source_owner() != Resolver::source_owner(tree) {
         return Err("return context lacks original compiled owner provenance".into());
     }
@@ -160,7 +164,7 @@ fn return_hint_mode_using<D:PrefixDemand>(
                 None
             } else {
                 validate_source_directives_mode_using(tree, archive, identity, permit, demand)?;
-                prefix_return_override_mode_using(tree, archive, identity, permit, demand)?
+                if skip_return_prefix{None}else{prefix_return_override_mode_using(tree, archive, identity, permit, demand)?}
             };
             let query = Q::SourceDeclarationChain {
                 owner: identity.owner,
@@ -263,8 +267,18 @@ pub(crate) fn issue_using<D:PrefixDemand>(
         let tree = archive.tree();
         demand.validate_profile(tree,profile)
             .map_err(|e| format!("purity settings profile unavailable: {e:?}"))?;
-        let (own_pure, own_no_sleep, own_sleep_exempt) =
-            demand.prefix(archive,identity, |prefix| -> Result<_, String> {
+        let (own_pure, own_no_sleep, own_sleep_exempt) = if demand.owns_directive_binding(){
+            // The complete checker owns the same insertion policy, including
+            // invalid/unknown/duplicate warnings. Only accepted flags affect
+            // effects; their diagnostic rows remain in the actual BODY prelude.
+            let accepted=crate::checks_directive_binding::accepted_own_using(archive,identity,demand)?;
+            let own=|name:&str|->Result<Option<dm_syntax::Span>,D::Error>{
+                let index=crate::checks_unknown_linter_setting::KNOWN.iter().position(|known|*known==name).ok_or("actual effect directive index absent")?;
+                let Some(value)=accepted[index].filter(|value|value.enabled)else{return Ok(None)};
+                let end=value.at.start.checked_add(3).ok_or("purity accepted set span overflow")?;if end>value.at.end{return Err("purity accepted set token absent".into())}Ok(Some(dm_syntax::Span::new(value.at.start,end)))
+            };
+            (own("SpacemanDMM_should_be_pure")?,own("SpacemanDMM_should_not_sleep")?,own("SpacemanDMM_allowed_to_sleep")?)
+        }else{demand.prefix(archive,identity, |prefix| -> Result<_, String> {
                 let mut pure = None;
                 let mut no_sleep = None;
                 let mut exempt = None;
@@ -301,7 +315,7 @@ pub(crate) fn issue_using<D:PrefixDemand>(
                     // Pinned directive_value_to_truthy accepts a SINGLE Int1 or
                     // TRUE term. False cannot disable this directive; invalid and
                     // grouped/nonliteral forms need their separate warning policy.
-                    let enabled = matches!(&value.kind,dm_syntax::ExprKind::Literal(s) if s=="1")
+                    let enabled = matches!(&value.kind,dm_syntax::ExprKind::Literal(s) if match s.original_value(){Some(value)=>matches!(value,dm_syntax::OriginalTokenValue::Int(1)),None=>s=="1"})
                         || matches!(&value.kind,dm_syntax::ExprKind::Ident(s) if s=="TRUE");
                     if !enabled {
                         return Err(
@@ -323,7 +337,7 @@ pub(crate) fn issue_using<D:PrefixDemand>(
                     });
                 }
                 Ok((pure, no_sleep, exempt))
-            })??;
+            })??};
         if own_pure.is_some() || own_no_sleep.is_some() || own_sleep_exempt.is_some() {
             // Pinned set_at_definition=true: a formal declaration, when present,
             // must name this exact implementation occurrence. An inherited or
@@ -368,9 +382,11 @@ pub(crate) fn issue_using<D:PrefixDemand>(
             own_sleep_exempt,
             validated_profile:demand.profile().map(|proof|proof.reborrow(tree,profile)).transpose().map_err(|e|format!("purity settings profile unavailable: {e:?}"))?,
         };
-        // Reuse the existing return-setting evaluator; allowing purity must not
-        // hide an unsupported return directive in the same prefix.
-        prefix_return_override_mode_using(tree, Some(archive), identity, Some(&permit), demand)?;
+        // Ordinary effects and selected wrappers retain their exact static
+        // return-prefix guard. Only the authenticated complete Original BODY
+        // owns return-expression compile diagnostics and the dynamic binding
+        // consumer, so it must not be rejected by that narrower old guard.
+        if !demand.owns_return_expression_binding(){prefix_return_override_mode_using(tree,Some(archive),identity,Some(&permit),demand)?;}
         Ok(permit)
     }
     pub fn own_pure(&self) -> Option<dm_syntax::Span> {
@@ -531,7 +547,7 @@ fn prefix_return_override_mode_using<D:PrefixDemand>(
                         }
                     }
                     dm_syntax::ExprKind::Ident(name) if name == "null" => ReturnHint::none(),
-                    dm_syntax::ExprKind::Literal(text) if text == "null" => ReturnHint::none(),
+                    dm_syntax::ExprKind::Literal(text) if text.original_value().is_none() && text == "null" => ReturnHint::none(),
                     _ => {
                         return Err(
                             "return prefix TypeExpr requires shared argument value/type facts"

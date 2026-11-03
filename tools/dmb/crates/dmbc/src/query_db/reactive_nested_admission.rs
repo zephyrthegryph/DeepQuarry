@@ -18,7 +18,15 @@ impl Admission{
         let total=leases.iter().filter(|(k,_)|**k!=key).try_fold(bytes,|n,(_,lease)|n.checked_add(lease.bytes));
         let count=leases.len().checked_add(usize::from(!leases.contains_key(&key))).and_then(|n|n.checked_add(self.workspace_nodes.load(Ordering::Acquire)));
         if total.is_none_or(|n|n>INPUT_BUDGET)||count.is_none_or(|n|n>MAX_NODES){self.denied.store(true,Ordering::Release);return Err(QueryError::Missing(key));}
-        leases.insert(key,Lease{owner,bytes,touched:Instant::now()});Ok(())
+        leases.insert(key,Lease{owner:LeaseOwner::Semantic(owner),bytes,touched:Instant::now()});Ok(())
+    }
+    pub(super) fn admit_ui(&self,owner:Weak<crate::runner_host::workspace_capture::WorkspaceCapture>,key:Key,bytes:usize)->Result<(),QueryError>{
+        let bytes=bytes.checked_add(std::mem::size_of::<Lease>()).and_then(|n|n.checked_add(std::mem::size_of::<crate::runner_host::workspace_capture::WorkspaceCapture>())).and_then(|n|n.checked_add(2*std::mem::size_of::<usize>()+128)).ok_or_else(||QueryError::operational(key,io::Error::new(io::ErrorKind::OutOfMemory,"UI lease metadata overflow")))?;
+        let mut leases=self.leases.lock().unwrap_or_else(|e|e.into_inner());
+        let total=leases.iter().filter(|(k,_)|**k!=key).try_fold(bytes,|n,(_,lease)|n.checked_add(lease.bytes));
+        let count=leases.len().checked_add(usize::from(!leases.contains_key(&key))).and_then(|n|n.checked_add(self.workspace_nodes.load(Ordering::Acquire)));
+        if total.is_none_or(|n|n>INPUT_BUDGET)||count.is_none_or(|n|n>MAX_NODES){self.denied.store(true,Ordering::Release);return Err(QueryError::operational(key,io::Error::new(io::ErrorKind::OutOfMemory,"UI raw input/result admission exceeds existing family")))}
+        leases.insert(key,Lease{owner:LeaseOwner::UiRaw(owner),bytes,touched:Instant::now()});Ok(())
     }
     /// Reserve the live parent's temporary envelope BEFORE ctx.get. Child
     /// retained bytes already enter the family charge; only its actual positive

@@ -44,20 +44,10 @@ fn node(mut node: &Expr) -> &Expr {
     }
     node
 }
-fn path_literals(node_: &Expr, out: &mut Vec<String>) {
-    match &node(node_).kind {
-        ExprKind::TypePath(path) => out.push(path.clone()),
-        ExprKind::Conditional {
-            then_value,
-            else_value,
-            ..
-        } => {
-            path_literals(then_value, out);
-            path_literals(else_value, out);
-        }
-        _ => (),
-    }
-}
+fn path_literals(node:&Expr,out:&mut Vec<String>){match path_literals_using(node,out,&mut LegacyWork){Ok(())=>(),Err(_)=>unreachable!("noop legacy work cannot fail")}}
+fn path_literals_using<W:crate::policy_body_demand::WorkspaceWork>(node_:&Expr,out:&mut Vec<String>,work:&mut W)->Result<(),W::Error>{work.checkpoint()?;match &untyped::ungroup_using(node_,&mut||work.checkpoint())?.kind{ExprKind::TypePath(path)=>{if W::CHECKED{let width=path.len().checked_add(128).ok_or_else(||work.overflow())?;work.retain(width)?;out.try_reserve(1).map_err(|_|work.allocation_failed())?;}out.push(path.clone())},ExprKind::Conditional{then_value,else_value,..}=>{path_literals_using(then_value,out,work)?;path_literals_using(else_value,out,work)?;},_=>()}Ok(())}
+struct LegacyWork;impl crate::policy_body_demand::WorkspaceWork for LegacyWork{type Error=Unsupported;const CHECKED:bool=false;fn checkpoint(&mut self)->Result<(),Unsupported>{Ok(())}fn retain(&mut self,_:usize)->Result<(),Unsupported>{Ok(())}fn temporary(&mut self,_:usize)->Result<(),Unsupported>{Ok(())}fn overflow(&mut self)->Unsupported{Unsupported("legacy untyped geometry".into())}fn allocation_failed(&mut self)->Unsupported{Unsupported("legacy untyped allocation".into())}fn body<'a>(&mut self,a:&'a BodyArchive,n:usize)->Result<ArchivedBody<'a>,Unsupported>{a.parse(n).map_err(|e|Unsupported(e.message))}}
+fn evidence_row<W:crate::policy_body_demand::WorkspaceWork>(rows:&mut Vec<Evidence>,work:&mut W)->Result<(),W::Error>{if W::CHECKED&&rows.len()==rows.capacity(){let max=rows.capacity().checked_mul(2).map(|n|n.max(4)).ok_or_else(||work.overflow())?;let bytes=max.checked_mul(std::mem::size_of::<Evidence>()).and_then(|n|n.checked_add(128)).ok_or_else(||work.overflow())?;work.retain(bytes)?;rows.try_reserve_exact(max-rows.len()).map_err(|_|work.allocation_failed())?;if rows.capacity()>max.checked_mul(2).ok_or_else(||work.overflow())?{return Err(work.allocation_failed())}}Ok(())}
 
 enum PolicyBody<'a> {
     Live(&'a ColdFrontend, &'a ParsedBody<'a>),
@@ -93,6 +83,9 @@ impl<'a> PolicyBody<'a> {
             Self::Archive(_, b) => values.archive_call_is_value(b, expression, exempt),
         }
     }
+ fn local_call_using<W:crate::policy_body_demand::WorkspaceWork>(&self,values:&Values<'a>,name:&str,work:&mut W)->Result<bool,W::Error>{work.checkpoint()?;match self{Self::Live(f,b)=>values.local_holds_call(f,b,name).map_err(W::Error::from),Self::Archive(_,b)=>values.archive_local_holds_call_using(b,name,work)}}
+ fn call_value_using<W:crate::policy_body_demand::WorkspaceWork>(&self,values:&Values<'a>,expression:&Expr,exempt:&'a[String],work:&mut W)->Result<bool,W::Error>{work.checkpoint()?;match self{Self::Live(f,b)=>values.call_is_value(f,b,expression,exempt).map_err(W::Error::from),Self::Archive(_,b)=>values.archive_call_is_value_using(b,expression,exempt,work)}}
+
 }
 
 pub fn body_evidence<'a>(
@@ -143,6 +136,8 @@ pub fn archived_body_evidence<'a>(
     )
 }
 
+pub fn archived_body_evidence_using<'a,W:crate::policy_body_demand::WorkspaceWork>(archive:&'a BodyArchive,body:&'a ArchivedBody<'a>,values:&Values<'a>,schemas:&Schemas,exempt_types:&'a[String],work:&mut W)->Result<Vec<Evidence>,W::Error>{work.checkpoint()?;if !body.belongs_to(archive){return Err("policy body belongs to another archive issuance".into())}values.validate_archive(archive)?;values.validate_exempt_types(exempt_types)?;let scope=untyped::archived_scope_using(body,values.resolver(),exempt_types,work)?;evidence_using(PolicyBody::Archive(archive,body),body.statement_body(),scope,values,schemas,exempt_types,work)}
+
 fn evidence<'a, R: Resolver + ?Sized>(
     body: PolicyBody<'a>,
     syntax: &StatementBody,
@@ -151,18 +146,22 @@ fn evidence<'a, R: Resolver + ?Sized>(
     schemas: &Schemas,
     exempt_types: &'a [String],
 ) -> Result<Vec<Evidence>, Unsupported> {
-    struct Scan<'a, 'c, R: ?Sized> {
+    evidence_using(body,syntax,scope,values,schemas,exempt_types,&mut LegacyWork)
+}
+fn evidence_using<'a,R:Resolver+?Sized,W:crate::policy_body_demand::WorkspaceWork>(body:PolicyBody<'a>,syntax:&StatementBody,scope:untyped::Walker<'a,R>,values:&Values<'a>,schemas:&Schemas,exempt_types:&'a[String],work:&mut W)->Result<Vec<Evidence>,W::Error>{
+    struct Scan<'a, 'c, 'w, R: ?Sized,W:crate::policy_body_demand::WorkspaceWork> {
         body: PolicyBody<'a>,
         scope: untyped::Walker<'a, R>,
         values: &'c Values<'a>,
         schemas: &'c Schemas,
         exempt: &'a [String],
         evidence: Vec<Evidence>,
-        error: Option<Unsupported>,
+        work:&'w mut W,
     }
-    impl<R: Resolver + ?Sized> Scan<'_, '_, R> {
-        fn assign(&mut self, target: &Expr, rhs: &Expr, at: Span) -> Result<(), Unsupported> {
-            let name = match &node(target).kind {
+    impl<R: Resolver + ?Sized,W:crate::policy_body_demand::WorkspaceWork> Scan<'_, '_, '_, R,W> {
+        fn assign(&mut self, target: &Expr, rhs: &Expr, at: Span) -> Result<(), W::Error> {
+            self.work.checkpoint()?;
+            let name = match &untyped::ungroup_using(target,&mut||self.work.checkpoint())?.kind {
                 ExprKind::Ident(name) => Some(name.as_str()),
                 ExprKind::Member { selector, .. } | ExprKind::SafeMember { selector, .. } => {
                     Some(selector.as_str())
@@ -174,30 +173,30 @@ fn evidence<'a, R: Resolver + ?Sized>(
                     return Ok(());
                 }
             }
-            let Some((owner, name, metadata)) = self.scope.place(target)? else {
+            let Some((owner, name, metadata)) = self.scope.place_using(target,&mut||self.work.checkpoint())? else {
                 return Ok(());
             };
-            if self.scope.field_is_typed(owner, name, &metadata)? || metadata.flags & 2 != 0 {
+            if self.scope.field_is_typed_using(owner,name,&metadata,&mut||self.work.checkpoint())? || metadata.flags & 2 != 0 {
                 return Ok(());
             }
-            let rhs = node(rhs);
+            let rhs = untyped::ungroup_using(rhs,&mut||self.work.checkpoint())?;
             if matches!(&rhs.kind, ExprKind::Call { callee, .. } if matches!(&callee.kind, ExprKind::Ident(name) if name == "list"))
             {
                 return Ok(());
             }
-            let schema = self.schemas.find(self.body.tree(), owner, name);
+            let schema = self.schemas.find_using(self.body.tree(),owner,name,&mut||self.work.checkpoint())?;
             if let Some(kind) = schema.filter(|kind| **kind != Kind::Any) {
                 let mut paths = Vec::new();
-                path_literals(rhs, &mut paths);
-                if let Some(path) = paths
-                    .into_iter()
-                    .find(|path| !Schemas::accepts_path(self.body.tree(), kind, path))
-                {
+                path_literals_using(rhs,&mut paths,self.work)?;
+                let mut rejected=None;for path in paths{self.work.checkpoint()?;if !Schemas::accepts_path_using(self.body.tree(),kind,&path,&mut||self.work.checkpoint())?{rejected=Some(path);break}}
+                if let Some(path)=rejected {
+                    if W::CHECKED{let width=path.len().checked_add(match kind{Kind::Path(base)=>base.len(),_=>128}).and_then(|n|n.checked_mul(4)).and_then(|n|n.checked_add(128)).ok_or_else(||self.work.overflow())?;self.work.retain(width)?;}
                     let wanted = match kind {
                         Kind::Path(base) => format!("a path under {base}"),
                         Kind::Msg => "a /datum/msg path".into(),
                         _ => "a plain value".into(),
                     };
+                    evidence_row(&mut self.evidence,self.work)?;
                     self.evidence.push(Evidence {
                         owner,
                         name,
@@ -208,17 +207,17 @@ fn evidence<'a, R: Resolver + ?Sized>(
                 }
                 return Ok(());
             }
-            let rule = match self.scope.type_of(rhs)? {
-                Some(path) if self.scope.is_ref(&path)? => Rule::Typed,
+            let rule = match self.scope.type_of_using(rhs,&mut||self.work.checkpoint())? {
+                Some(path) if self.scope.is_ref_using(&path,&mut||self.work.checkpoint())? => Rule::Typed,
                 Some(path)
                     if path.is_empty()
-                        && matches!(&rhs.kind, ExprKind::Ident(local) if self.scope.locals.contains_key(local) && self.body.local_call(self.values, local)?) =>
+                        && matches!(&rhs.kind, ExprKind::Ident(local) if self.scope.locals.contains_key(local) && self.body.local_call_using(self.values,local,self.work)?) =>
                 {
                     Rule::Call
                 }
                 Some(_) => return Ok(()),
                 None if crate::value_program::is_call_result(rhs)
-                    && !self.body.call_value(self.values, rhs, self.exempt)? =>
+                    && !self.body.call_value_using(self.values,rhs,self.exempt,self.work)? =>
                 {
                     Rule::Call
                 }
@@ -227,6 +226,7 @@ fn evidence<'a, R: Resolver + ?Sized>(
             if schema == Some(&Kind::Any) && rule == Rule::Call {
                 return Ok(());
             }
+            evidence_row(&mut self.evidence,self.work)?;
             self.evidence.push(Evidence {
                 owner,
                 name,
@@ -244,21 +244,10 @@ fn evidence<'a, R: Resolver + ?Sized>(
         schemas,
         exempt: exempt_types,
         evidence: Vec::new(),
-        error: None,
+        work,
     };
-    crate::untyped_order::assignments_current(syntax.view(), &mut |target, rhs, at, _| {
-        if scan.error.is_none() {
-            if let Err(error) = scan.assign(target, rhs, at) {
-                scan.error = Some(error);
-            }
-        }
-    })
-    .map_err(|e| Unsupported(e.into()))?;
-    if let Some(error) = scan.error {
-        Err(error)
-    } else {
-        Ok(scan.evidence)
-    }
+    let observed=crate::untyped_order::try_assignments_current(syntax.view(),&mut scan,&mut|scan|scan.work.checkpoint(),&mut|scan,target,rhs,at,_|scan.assign(target,rhs,at));
+    match observed{Ok(())=>Ok(scan.evidence),Err(crate::untyped_order::PolicyVisitFailure::Callback(actual))=>Err(actual),Err(crate::untyped_order::PolicyVisitFailure::Unsupported(message))=>Err(Unsupported(message.into()).into())}
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -329,11 +318,15 @@ pub(crate) fn ordered_bodies<'a>(
     tree: &SemanticTree,
     bodies: &'a [BodyOccurrence],
 ) -> Result<Vec<(usize, &'a BodyOccurrence)>, Unsupported> {
+    ordered_bodies_using(tree,bodies,&mut||Ok::<(),Unsupported>(()))
+}
+pub(crate) fn ordered_bodies_using<'a,E:From<Unsupported>>(tree:&SemanticTree,bodies:&'a [BodyOccurrence],checkpoint:&mut impl FnMut()->Result<(),E>)->Result<Vec<(usize,&'a BodyOccurrence)>,E>{
     // Legacy diagnostics group by type encounter, then first callable-name
     // encounter, with a later authored formal body preceding its overrides.
     // This is report policy, not runtime dispatch or a second semantic model.
     let mut first_name = BTreeMap::new();
     for (at, target) in tree.declarations().iter().enumerate() {
+        checkpoint()?;
         if let dm_tree::Target::Member(id) = target {
             let member = tree
                 .member(*id)
@@ -348,6 +341,7 @@ pub(crate) fn ordered_bodies<'a>(
     }
     let mut ordered = Vec::with_capacity(bodies.len());
     for (ordinal, body) in bodies.iter().enumerate() {
+        checkpoint()?;
         let member = tree
             .member(body.member)
             .ok_or_else(|| Unsupported("report body member absent".into()))?;
@@ -369,7 +363,7 @@ pub(crate) fn ordered_bodies<'a>(
             body,
         ));
     }
-    ordered.sort_by_key(|(key, _)| *key);
+    crate::checker_order::sort_source_order(&mut ordered,&mut|a,b|->Result<std::cmp::Ordering,E>{checkpoint()?;Ok(a.0.cmp(&b.0))})?;
     Ok(ordered
         .into_iter()
         .map(|(key, body)| (key.4, body))
@@ -483,16 +477,30 @@ fn archived_findings_projected_with<'a, D: BodyDemand>(
     .map_err(Into::into)
 }
 
+/// Full authentic archive traversal; the actual host lends each original body.
+pub fn archived_findings_workspace_using<'a,W:crate::policy_body_demand::WorkspaceWork>(archive:&'a BodyArchive,values:&Values<'a>,schemas:&Schemas,root:&std::path::Path,exempt_types:&'a[String],exempt_file:impl Fn(&str)->bool,project:impl Fn(PolicyAnchor,SourceLocation)->Result<SourceLocation,Unsupported>,work:&mut W)->Result<Vec<Finding>,W::Error>{
+ work.checkpoint()?;values.validate_archive(archive)?;values.validate_exempt_types(exempt_types)?;let tree=archive.tree();let mut grouped=Groups::new();let mut width=128usize;let mut max_path=root.as_os_str().len();if W::CHECKED{for ty in tree.types(){work.checkpoint()?;width=width.max(tree.symbols().text(ty.path).ok_or("untyped owner spelling unavailable")?.len());}for body in archive.occurrences(){work.checkpoint()?;max_path=max_path.max(body.source.path.as_os_str().len());}let bytes=tree.members().len().checked_add(tree.types().len()).and_then(|n|n.checked_add(archive.len())).and_then(|n|n.checked_mul(width.checked_add(2048)?)).and_then(|n|n.checked_add(max_path.checked_mul(128)?)).and_then(|n|n.checked_add(16384)).ok_or_else(||work.overflow())?;work.temporary(bytes)?;}
+ for(ordinal,occurrence)in ordered_bodies_using(tree,archive.occurrences(),&mut||work.checkpoint())?{work.checkpoint()?;if exempt_file(&relative(root,&occurrence.source.path)){continue}let body=work.body(archive,ordinal)?;if !body.belongs_to(archive)||!std::ptr::eq(body.occurrence(),occurrence){return Err("untyped host returned foreign original body loan".into())}if W::CHECKED{let locals=body.source_locals().map_err(Unsupported)?.scope_admission().map_err(Unsupported)?;let span=occurrence.expanded_span;let bytes=span.end.checked_sub(span.start).and_then(|n|n.checked_add(1)).and_then(|n|n.checked_mul(width)).and_then(|n|n.checked_mul(32)).and_then(|n|n.checked_add(locals)).and_then(|n|n.checked_add(max_path.checked_mul(128)?)).and_then(|n|n.checked_add(16384)).ok_or_else(||work.overflow())?;work.temporary(bytes)?;}
+  let evidence=archived_body_evidence_using(archive,&body,values,schemas,exempt_types,work)?;for value in evidence{work.checkpoint()?;let source=archive.location(value.at.start).ok_or_else(||Unsupported("assignment has no native source origin".into()))?;let source=project(PolicyAnchor::Assignment(value.at),source)?;record_using(&mut grouped,value,root,source,work)?;}
+ }
+ render_using(tree,grouped,root,&exempt_file,|member|archive.member_location(member).map(|source|project(PolicyAnchor::Declaration(member),source)).transpose(),work)
+}
+
 fn record(
     grouped: &mut Groups,
     evidence: Evidence,
     root: &std::path::Path,
     source: SourceLocation,
 ) {
+    match record_using(grouped,evidence,root,source,&mut LegacyWork){Ok(())=>(),Err(_)=>unreachable!("noop legacy recording cannot fail")}
+}
+fn record_using<W:crate::policy_body_demand::WorkspaceWork>(grouped:&mut Groups,evidence:Evidence,root:&std::path::Path,source:SourceLocation,work:&mut W)->Result<(),W::Error>{
+    work.checkpoint()?;if W::CHECKED{let extra=evidence.rejected_path.as_ref().map_or(Some(0),|(path,wanted)|path.len().checked_add(wanted.len()));let width=source.path.as_os_str().len().checked_add(root.as_os_str().len()).and_then(|n|n.checked_mul(128)).and_then(|n|n.checked_add(extra?)).and_then(|n|n.checked_add(4096)).ok_or_else(||work.overflow())?;work.retain(width)?;}
     let at = format!("{}:{}", relative(root, &source.path), source.line);
     let at = evidence.rejected_path.map_or(at.clone(), |(path, wanted)| {
         format!("{at} ({path} is not {wanted})")
     });
+    if W::CHECKED&&!grouped.contains_key(&(evidence.owner,evidence.name)){work.retain(2048)?;}
     let slot = grouped
         .entry((evidence.owner, evidence.name))
         .or_insert((evidence.rule, Vec::new()));
@@ -500,8 +508,10 @@ fn record(
         slot.0 = Rule::Typed;
     }
     if !slot.1.contains(&at) {
+        if W::CHECKED{slot.1.try_reserve(1).map_err(|_|work.allocation_failed())?;}
         slot.1.push(at);
     }
+    work.checkpoint()
 }
 
 fn render(
@@ -511,9 +521,13 @@ fn render(
     exempt_file: &impl Fn(&str) -> bool,
     member_location: impl Fn(dm_tree::MemberId) -> Result<Option<SourceLocation>, Unsupported>,
 ) -> Result<Vec<Finding>, Unsupported> {
+    render_using(tree,grouped,root,exempt_file,member_location,&mut LegacyWork)
+}
+fn render_using<W:crate::policy_body_demand::WorkspaceWork>(tree:&SemanticTree,grouped:Groups,root:&std::path::Path,exempt_file:&impl Fn(&str)->bool,member_location:impl Fn(dm_tree::MemberId)->Result<Option<SourceLocation>,Unsupported>,work:&mut W)->Result<Vec<Finding>,W::Error>{
     let symbols = tree.symbols();
     let mut findings = Vec::new();
     for ((owner, name), (rule, at)) in grouped {
+        work.checkpoint()?;
         let ty = tree
             .lookup_type(owner)
             .ok_or_else(|| Unsupported("finding owner missing".into()))?;
@@ -547,6 +561,7 @@ fn render(
             Rule::Call => "a call's result",
             Rule::Schema => "a value its SCHEMA refuses",
         };
+        if W::CHECKED{let width=at.iter().take(8).try_fold(0usize,|n,s|n.checked_add(s.len())).and_then(|n|n.checked_add(owner.len())).and_then(|n|n.checked_add(name.len())).and_then(|n|n.checked_add(file.len())).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(2048)).ok_or_else(||work.overflow())?;work.retain(width)?;findings.try_reserve(1).map_err(|_|work.allocation_failed())?;}
         let shown = at.iter().take(8).cloned().collect::<Vec<_>>().join(", ");
         let more = if at.len() > 8 {
             format!(" and {} more", at.len() - 8)
@@ -564,16 +579,8 @@ fn render(
             identity: format!("{owner}::{name}"),
         });
     }
-    findings.sort_by(|a, b| {
-        (&a.file, a.line, a.rule.name(), &a.message, &a.identity).cmp(&(
-            &b.file,
-            b.line,
-            b.rule.name(),
-            &b.message,
-            &b.identity,
-        ))
-    });
-    Ok(findings)
+    crate::checker_order::sort_source_order(&mut findings,&mut|a,b|->Result<std::cmp::Ordering,W::Error>{work.checkpoint()?;Ok((&a.file,a.line,a.rule.name(),&a.message,&a.identity).cmp(&(&b.file,b.line,b.rule.name(),&b.message,&b.identity)))})?;
+    work.checkpoint()?;Ok(findings)
 }
 
 #[cfg(test)]

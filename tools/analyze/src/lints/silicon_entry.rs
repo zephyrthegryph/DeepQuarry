@@ -34,8 +34,8 @@ const H_ACCESS: &str = "use req(PROC_REF(remote_link_allowed)) on the op (librar
 const H_LEGACY: &str = "declare an op with a remote() binding on the type (inputs(remote()), or extend(\"ui_open\", inputs(hand(), remote())))";
 
 static META: Meta = Meta {
-    name: "silicon_entry",
-    group: "",
+    name: crate::allow_registry_fields::silicon_entry::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::silicon_entry::SCOPE_META_0.group,
     label: "silicon_entry",
     legacy: "",
     select: CODE_DM,
@@ -57,7 +57,7 @@ static META: Meta = Meta {
         RuleMeta { name: "legacy_entry", hint: H_LEGACY },
     ],
     allow: crate::allow_registry_fields::silicon_entry::ALLOW_0,
-    lists: &[],
+    lists: crate::allow_registry_fields::silicon_entry::SCOPE_META_0.lists,
 };
 
 struct SiliconEntry;

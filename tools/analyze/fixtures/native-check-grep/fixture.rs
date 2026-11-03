@@ -1,6 +1,6 @@
 //! Exact initial filesystem bytes shared by actual native and immutable old policy tests.
 pub fn files(case:&str)->Result<&'static[(&'static str,&'static[u8])],&'static str>{match case{
-"basic"|"lossy"=>Ok(&[
+"basic"|"lossy"|"original_context"=>Ok(&[
  ("deepquarry.dme",include_bytes!("basic/deepquarry.dme")),
  ("code/probe.dm",include_bytes!("basic/code/probe.dm")),
  ("code/raw.dm",include_bytes!("basic/code/raw.dm")),
@@ -41,6 +41,7 @@ _=>Err("expected basic, configured or lossy check_grep fixture"),}}
 /// Exact shared initial bytes for the uncompiled-invalid-UTF8 control. These
 /// bytes are source data, never native answers; the compiled manifest is unchanged.
 pub fn source_bytes<'a>(case:&str,relative:&str,original:&'a[u8])->std::borrow::Cow<'a,[u8]>{
+ if case=="original_context"&&relative=="code/probe.dm"{let mut bytes=original.to_vec();bytes.extend_from_slice(include_bytes!("original_context.dm"));return std::borrow::Cow::Owned(bytes)}
  if case!="lossy"{return std::borrow::Cow::Borrowed(original)}
  if matches!(relative,"code/__defines/verdigris/_bindings_types.dm"|"code/__defines/verdigris/_bindings.dm"|".gitignore"|"dependencies.sh"){let mut bytes=original.to_vec();bytes.extend_from_slice(b"\r\n// invalid uncompiled source byte: \xff\r");return std::borrow::Cow::Owned(bytes)}
  if relative=="code/raw.dm"{let mut bytes=original.to_vec();bytes.extend_from_slice(b"/proc/dynamic_control()\n    consume(init_fixture_seed)\n    cached = get_fixture_query_probe()\n#define FIXTURE_BINDING 2\n");return std::borrow::Cow::Owned(bytes)}

@@ -1,0 +1,9 @@
+/datum/a
+    var/only_a=1
+/datum/b
+    var/only_b=1
+/proc/choose(x)
+    set SpacemanDMM_return_type=x[_]
+    return null
+/proc/probe()
+    return choose(/datum/b).only_b

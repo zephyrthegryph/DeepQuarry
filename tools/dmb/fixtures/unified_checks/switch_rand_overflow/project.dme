@@ -1,0 +1,4 @@
+/proc/probe()
+    switch(rand(2147483647,2147483647))
+        if(2147483647)
+            return 0

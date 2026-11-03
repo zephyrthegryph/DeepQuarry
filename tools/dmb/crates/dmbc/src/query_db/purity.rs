@@ -109,6 +109,7 @@ impl Ledger {
 }
 #[derive(Clone)]
 struct Params {
+    body_admission:Option<dm_analysis::checker_effects::ExecutionAdmissionLoan>,
     input: Weak<EffectInput>,
     key: Key,
     ordinal: usize,
@@ -204,6 +205,15 @@ fn remember_params<T: Any + Send + Sync>(
     key: Key,
     params: &Arc<T>,
 ) {
+    remember_params_with_backing(ledger,input,key,params,0)
+}
+fn remember_params_with_backing<T: Any + Send + Sync>(
+    ledger: &Arc<Mutex<Ledger>>,
+    input: &Arc<EffectInput>,
+    key: Key,
+    params: &Arc<T>,
+    extra:usize,
+) {
     let erased: Value = params.clone();
     let mut l = ledger.lock().unwrap_or_else(|e| e.into_inner());
     let node = l
@@ -212,7 +222,7 @@ fn remember_params<T: Any + Send + Sync>(
         .expect("Params node was reserved before allocation");
     debug_assert!(node.input.ptr_eq(&Arc::downgrade(input)));
     node.params = Some(Arc::downgrade(&erased));
-    node.param_size = std::mem::size_of::<T>();
+    node.param_size = std::mem::size_of::<T>().saturating_add(extra);
 }
 fn edge(ledger: &Arc<Mutex<Ledger>>, from: Key) -> Result<(), String> {
     let mut l = ledger.lock().unwrap_or_else(|e| e.into_inner());
@@ -234,6 +244,7 @@ fn checked_sources_using<E:From<String>+for<'a>From<&'a str>>(
     sources: &SourceRegistry,
     mut checkpoint:impl FnMut()->Result<(),E>,
 ) -> Result<(), E> {
+    if input.is_original_checker_source(){checkpoint()?;input.require_original_checker_source()?;if !keys.is_empty(){return Err("diagnostic body input cannot claim compiler source-key authority".into())}return Ok(())}
     let current = sources.lock().unwrap_or_else(|e| e.into_inner());
     if current.len() != keys.len() || !current.values().map(|x| x.0).eq(keys.iter().copied()) {
         return Err("purity dependency roster is not the current compiler roster".into());
@@ -265,8 +276,10 @@ fn observe_program(
     ctx: &mut dm_query::Ctx<'_>,
     ledger: &Arc<Mutex<Ledger>>,
     from: Key,
+    input:&EffectInput,
     keys: &Arc<Vec<Key>>,
 ) -> Result<(), QueryError> {
+    if input.is_original_checker_source(){input.require_original_checker_source().map_err(|_|QueryError::Missing(from))?;return publication_checkpoint(ledger,from)}
     edge(ledger, from).map_err(|_| QueryError::Missing(from))?;
     ctx.observe_input(PROJECT_KEY)?;
     edge(ledger, from).map_err(|_| QueryError::Missing(from))?;
@@ -433,12 +446,21 @@ fn get_body(
     parent: &Params,
     ordinal: usize,
 ) -> Result<Arc<BodyEffects>, ReadFailure> {
+    get_body_with_admission(ctx,ledger,parent,ordinal,None)
+}
+fn get_body_with_admission(
+    ctx: &mut dm_query::Ctx<'_>,
+    ledger: &Arc<Mutex<Ledger>>,
+    parent: &Params,
+    ordinal: usize,
+    live:Option<&ExecutionAdmission>,
+) -> Result<Arc<BodyEffects>, ReadFailure> {
     let input = parent.input.upgrade().ok_or("purity input expired")?;
     let k = key(BODY, &input, ordinal as u128);
-    let _reservation = node_admission(ledger, &input, k, std::mem::size_of::<Params>())?;
+    let extra=live.map_or(0,|_|ExecutionAdmission::fixed_control_charge());let bytes=std::mem::size_of::<Params>().checked_add(extra).ok_or("original BODY parameter backing overflow")?;let _reservation=node_admission(ledger,&input,k,bytes)?;
     edge(ledger, parent.key)?;
-    let q = params_for(parent, BODY, ordinal as u128);
-    remember_params(ledger, &input, k, &q);
+    let mut actual=parent.clone();actual.body_admission=live.map(ExecutionAdmission::downgrade_for_job);if let Some(loan)=&actual.body_admission{let headroom=pages::page_execution_headroom(ledger)?;loan.upgrade_for_job(headroom).map_err(|e|ReadFailure::Query(QueryError::operational(k,e)))?;}let q=params_for(&actual,BODY,ordinal as u128);
+    remember_params_with_backing(ledger,&input,k,&q,extra);
     ctx.get::<Result<Arc<BodyEffects>, String>>(k, q)
         .map_err(ReadFailure::Query)?
         .as_ref()
@@ -592,6 +614,7 @@ impl Resolver for Observed<'_, '_> {
     }
 }
 pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, registry: SourceRegistry) {
+    current_variables::register(db,Arc::clone(&ledger));
     pages::register(db,Arc::clone(&ledger),Arc::clone(&registry));
     global_graph::register(db,Arc::clone(&ledger),Arc::clone(&registry));
     global_summary::register(db,Arc::clone(&ledger),Arc::clone(&registry));
@@ -605,7 +628,7 @@ pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, registry: SourceRegi
         job_checkpoint(&l, p.key)?;
         let input = p.input.upgrade().ok_or(QueryError::Missing(p.key))?;
         checked_sources(&input, &p.sources, &sources).map_err(|_| QueryError::Missing(p.key))?;
-        observe_program(ctx, &l, p.key, &p.sources)?;
+        observe_program(ctx, &l, p.key, &input, &p.sources)?;
         let answer = Resolver::resolve(input.archive().tree(), p.query);
         let hash = answer_hash(&answer);
         let outcome = Outcome::new(hash, hash, 16);
@@ -619,7 +642,7 @@ pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, registry: SourceRegi
         job_checkpoint(&l, p.key)?;
         let input = p.input.upgrade().ok_or(QueryError::Missing(p.key))?;
         checked_sources(&input, &p.sources, &sources).map_err(|_| QueryError::Missing(p.key))?;
-        observe_program(ctx, &l, p.key, &p.sources)?;
+        observe_program(ctx, &l, p.key, &input, &p.sources)?;
         let syntax = input
             .archive()
             .syntax_inputs()
@@ -636,7 +659,7 @@ pub(super) fn register(db: &Db, ledger: Arc<Mutex<Ledger>>, registry: SourceRegi
             parent: p.key,
             error: Mutex::new(None),
         };
-        let admission = execution_admission(&l);
+        let admission = match &p.body_admission{Some(loan)=>{let headroom=pages::page_execution_headroom(&l).map_err(|message|QueryError::operational(p.key,std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))?;loan.upgrade_for_job(headroom).map_err(|actual|QueryError::operational(p.key,actual))?},None=>execution_admission(&l)};
         let computed = input.compute_body_checked_controlled(p.ordinal,&resolver,&admission,&||crate::daemon::control::checkpoint());
         let result = resolver
             .finish()
@@ -761,9 +784,14 @@ impl Drop for PolicyWorkingSet {
 impl QueryDb {
     pub(super) fn prune_purity(&self) {
         let _gate = self.purity.gate.lock().unwrap_or_else(|e| e.into_inner());
+        self.prune_purity_under_gate();
+    }
+    // Callers either acquired the family gate here or are the authenticated
+    // current source selection already holding that SAME gate.
+    fn prune_purity_under_gate(&self){
         let mut l = self.purity.ledger.lock().unwrap_or_else(|e| e.into_inner());
         l.nodes.retain(|key, lease| {
-            if lease.input.strong_count() > 0 {
+            if if current_variables::is_current_node(*key){current_variables::retains(*key,lease,&self.db)}else{lease.input.strong_count()>0} {
                 true
             } else {
                 self.db.remove(*key);
@@ -786,7 +814,7 @@ impl QueryDb {
             return Ok(keys);
         }
         let current = self.sources.lock().unwrap_or_else(|e| e.into_inner());
-        let n = current.len();
+        let n = if input.is_original_checker_source(){0}else{current.len()};
         l.admit(
             n.checked_mul(std::mem::size_of::<Key>())
                 .and_then(|n| n.checked_add(CONTEXT_BOUND + std::mem::size_of::<Vec<Key>>()))
@@ -795,7 +823,7 @@ impl QueryDb {
         let mut keys = Vec::new();
         keys.try_reserve_exact(n)
             .map_err(allocation)?;
-        keys.extend(current.values().map(|x| x.0));
+        if !input.is_original_checker_source(){keys.extend(current.values().map(|x| x.0));}
         drop(current);
         let keys = Arc::new(keys);
         check(&keys)?;
@@ -872,8 +900,8 @@ impl QueryDb {
             let policy = Arc::new(scope.policy().clone());
             let _reservation =
                 node_admission(&self.purity.ledger, input, k, std::mem::size_of::<Params>())?;
-            let p = Arc::new(Params {
-                input: Arc::downgrade(input),
+            let p = Arc::new(Params{
+                body_admission:None,input: Arc::downgrade(input),
                 key: k,
                 ordinal: 0,
                 sources,
@@ -952,6 +980,8 @@ impl QueryDb {
             let Some(value) = live.owner.upgrade() else {
                 continue;
             };
+            if live.kind==current_variables::CURRENT_VARIABLES{if let Some(value)=value.downcast_ref::<current_variables::NativeCurrentVariables>(){value.visit_storage(&mut visit);}}
+            if live.kind==current_variables::CURRENT_LOOKUP{if let Some(value)=value.downcast_ref::<current_variables::NativeCurrentLookup>(){value.visit_storage(&mut visit);}}
             if live.error {
                 let error = if live.kind == global_report::PURE||live.kind == global_report::SLEEP {
                     value.downcast_ref::<Result<Arc<global_report::NativeEffectReport>,String>>().and_then(|result|result.as_ref().err())
@@ -1236,3 +1266,5 @@ pub(super) mod pages;
 #[path="purity_global_report.rs"]pub(super) mod global_report;
 
 #[path="purity_report_wire.rs"]pub(super) mod report_wire;
+
+#[path="purity_current_variables.rs"]pub(super) mod current_variables;

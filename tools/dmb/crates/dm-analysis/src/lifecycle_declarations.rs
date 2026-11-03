@@ -155,3 +155,9 @@ pub fn lifecycle_definitions<'a>(
 #[cfg(test)]
 #[path = "lifecycle_declarations_tests.rs"]
 mod tests;
+
+/// Borrow authenticated authored lifecycle rows without constructing a report roster.
+/// The caller supplies its SAME operation control and owns ordering/deduplication.
+pub fn visit_lifecycle_definitions_using<E>(archive:&BodyArchive,policy:LifecyclePolicy,poll:&dyn Fn()->Result<(),E>,unsupported:&dyn Fn(Unsupported)->E,visit:&mut dyn FnMut(LifecycleDefinition<'_>)->Result<(),E>)->Result<(),E>{
+ poll()?;let tree=archive.tree();for occurrence in archive.occurrences(){poll()?;if let Some(value)=row(tree,occurrence,policy).map_err(unsupported)?{visit(value)?;}}poll()
+}

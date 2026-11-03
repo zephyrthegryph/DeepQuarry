@@ -8,3 +8,8 @@ pub(crate) fn sys_name<C:Control>(name:&str,control:&mut C)->Result<String,C::Er
 pub(crate) fn legacy_sys_name(name:&str)->String{match sys_name(name,&mut kc::Compatibility){Ok(value)=>value,Err(never)=>match never{}}}
 pub(crate) fn sys<C:Control>(rules:&[crate::lint::RuleMeta],extra:&[&str],names:&mut BTreeSet<String>,control:&mut C)->Result<(),C::Error>{for name in rules.iter().map(|rule|rule.name).chain(extra.iter().copied()){let name=sys_name(name,control)?;if !names.contains(&name){kc::reserve(control,||Some(2048))?;names.insert(name);}}Ok(())}
 include!(concat!(env!("OUT_DIR"),"/allow_registry_fields_gen.rs"));
+
+// Shared actual Sys metadata fields; no scan/source authority.
+pub const SYS_SCOPE_GROUP:&str="sys";pub const SYS_SCOPE_LISTS:&[&str]=&[];
+pub(crate) fn scope_sys_name<C:crate::key_policy_control::Control>(module:&str,c:&mut C)->Result<String,C::Error>{crate::key_policy_control::format(c,format_args!("sys/{}",module))}
+pub(crate) fn legacy_scope_sys_name(module:&str)->String{scope_sys_name(module,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{})}

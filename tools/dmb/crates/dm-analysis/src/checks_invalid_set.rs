@@ -44,9 +44,7 @@ fn check_prefix(
             "background" | "waitfor" | "hidden" | "instant" | "popup_menu" => {
                 let allowed = match &value.kind {
                     ExprKind::Ident(name) => matches!(name.as_str(), "TRUE" | "FALSE"),
-                    ExprKind::Literal(text) if starts_number(text.as_str()) => {
-                        matches!(numeric_form(text.as_str())?, NumericForm::Integer(0 | 1))
-                    }
+                    ExprKind::Literal(text) => match text.original_value(){Some(value)=>matches!(value,dm_syntax::OriginalTokenValue::Int(0|1)),None=>starts_number(text.as_str())&&matches!(numeric_form(text.as_str())?,NumericForm::Integer(0|1))}
                     _ => false,
                 };
                 (!allowed).then(|| format!("set {attribute} must be 0/1/TRUE/FALSE"))
@@ -54,8 +52,7 @@ fn check_prefix(
             "name" | "category" | "desc" => {
                 let allowed = match &value.kind {
                     ExprKind::Literal(text) => {
-                        is_text(text.as_str())
-                            || (attribute == "category" && text.as_str() == "null")
+                        match text.original_value(){Some(value)=>matches!(value,dm_syntax::OriginalTokenValue::String(_)),None=>is_text(text.as_str())||(attribute=="category"&&text.as_str()=="null")}
                     }
                     ExprKind::Ident(name) => attribute == "category" && name == "null",
                     _ => false,
@@ -65,9 +62,7 @@ fn check_prefix(
             }
             "invisibility" => {
                 let allowed = match &value.kind {
-                    ExprKind::Literal(text) if starts_number(text.as_str()) => {
-                        matches!(numeric_form(text.as_str())?, NumericForm::Integer(0..=100))
-                    }
+                    ExprKind::Literal(text) => match text.original_value(){Some(value)=>matches!(value,dm_syntax::OriginalTokenValue::Int(0..=100)),None=>starts_number(text.as_str())&&matches!(numeric_form(text.as_str())?,NumericForm::Integer(0..=100))}
                     _ => false,
                 };
                 (!allowed).then(|| "set invisibility must be 0-100".into())

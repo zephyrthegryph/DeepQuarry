@@ -125,6 +125,10 @@ impl<'issuer, 'item> SettingStatementsInput<'issuer, 'item> {
     }
 }
 pub trait SettingExpressionQueries: std::fmt::Debug + Send + Sync {
+    /// Resource-only weak alias registration on the SAME native owner. An old
+    /// custom provider must explicitly opt in; no silently unfunded public IR.
+    fn retain_original_signature_aliases(&self,_:Arc<super::original_signature_funding::OriginalSignatureAliasGroup>,_:&dm_syntax::SettingAdmission<'_>)->Result<(),BodySyntaxFailure>{Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"native provider has no original signature alias lifetime census")))}
+
     /// Early declaration work on the already-owned native host's SAME counter.
     /// This grants resource admission only, not any source/declaration proof.
     /// Checked builder owns the original input and keeps the full semantic
@@ -280,12 +284,7 @@ impl ReturnAnnotationInput<'_> {
         let result = input
             .slots
             .obtain(input.ordinal, input.count, a, || {
-                dm_syntax::prepare_setting_expression(
-                    input.source,
-                    input.tokens,
-                    input.original_value,
-                    a,
-                )
+                dm_syntax::prepare_setting_expression_with_original_literal_facts(input.source,input.tokens,input.original_value,a,input.literal_owner.original_literal_facts().map_err(dm_syntax::SettingSyntaxFailure::Operational)?)
             })
             .and_then(|root| {
                 root.project_current(input.offset, input.source.len())

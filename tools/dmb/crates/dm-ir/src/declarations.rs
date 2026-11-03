@@ -3,9 +3,6 @@
 use crate::{SymbolId, SymbolTable};
 use dm_syntax::{Span, TokenKind};
 use std::sync::Arc;
-fn write_byte(write: &mut impl FnMut(&[u8]), byte: u8) {
-    write(&[byte]);
-}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ExpressionToken {
@@ -20,24 +17,34 @@ pub struct SymbolicExpression {
 }
 impl SymbolicExpression {
     pub fn canonical_bytes(&self) -> Vec<u8> {
-        let mut bytes = Vec::new();
-        self.write_canonical(|chunk| bytes.extend_from_slice(chunk));
-        bytes
+        self.canonical_bytes_using(&mut crate::canonical_encoding::Unmetered)
+            .expect("unmetered native canonical allocation failed")
+    }
+    /// SAME byte encoder; transient allocations are funded before growth.
+    pub fn canonical_bytes_using(&self, work: &mut dyn crate::CanonicalWork) -> std::io::Result<Vec<u8>> {
+        crate::canonical_encoding::encode(crate::canonical_encoding::Root::Expression(self), work)
     }
     pub fn canonical_len(&self) -> usize {
         // Each canonical token has adjacency/kind bytes and one u64 SymbolId.
-        b"dm-symbolic-expression-v1\0".len() + self.tokens.len() * 10
+        self.try_canonical_len().expect("canonical symbolic length overflow")
+    }
+    pub(crate) fn try_canonical_len(&self) -> std::io::Result<usize> {
+        self.tokens.len().checked_mul(10).and_then(|n| n.checked_add(b"dm-symbolic-expression-v1\0".len()))
+            .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::OutOfMemory,"canonical symbolic length overflow"))
     }
     pub fn write_canonical(&self, mut write: impl FnMut(&[u8])) {
-        write(b"dm-symbolic-expression-v1\0");
+        self.try_write_canonical(&mut |bytes| { write(bytes); Ok(()) })
+            .expect("infallible canonical token sink failed");
+    }
+    pub(crate) fn try_write_canonical(&self, write: &mut dyn FnMut(&[u8]) -> std::io::Result<()>) -> std::io::Result<()> {
+        write(b"dm-symbolic-expression-v1\0")?;
         let mut previous = None;
         for token in self.tokens.iter() {
             let sensitive =
                 previous.is_some_and(|(kind, _)| {
                     matches!(kind, TokenKind::Operator | TokenKind::Punctuation)
                 }) && matches!(token.kind, TokenKind::Operator | TokenKind::Punctuation);
-            write_byte(
-                &mut write,
+            write(&[
                 if sensitive {
                     if previous.is_some_and(|(_, end)| end == token.relative_span.start) {
                         1
@@ -47,11 +54,12 @@ impl SymbolicExpression {
                 } else {
                     0
                 },
-            );
+            ])?;
             previous = Some((token.kind, token.relative_span.end));
-            write_byte(&mut write, token.kind as u8);
-            write(&token.text.bits().to_le_bytes());
+            write(&[token.kind as u8])?;
+            write(&token.text.bits().to_le_bytes())?;
         }
+            Ok(())
     }
     /// Reconstruct token spelling with equivalent adjacency. Whitespace/comments
     /// need not be retained, but joining operator characters changes DM meaning.
@@ -136,51 +144,15 @@ pub struct ProcedureMetadata {
     /// Source setting order and branch structure, without early guard evaluation.
     pub settings: Arc<[ProcedureSettingNode]>,
 }
-fn append_expression(bytes: &mut Vec<u8>, value: Option<&SymbolicExpression>) {
-    bytes.push(u8::from(value.is_some()));
-    if let Some(value) = value {
-        let data = value.canonical_bytes();
-        bytes.extend_from_slice(&(data.len() as u64).to_le_bytes());
-        bytes.extend_from_slice(&data);
-    }
-}
+
 impl ProcedureSignature {
     pub fn canonical_bytes(&self) -> Vec<u8> {
-        let mut bytes = Vec::new();
-        bytes.extend_from_slice(b"dm-procedure-signature-v2\0");
-        bytes.push(u8::from(self.variadic));
-        bytes.extend_from_slice(&(self.parameters.len() as u64).to_le_bytes());
-        for parameter in self.parameters.iter() {
-            bytes.extend_from_slice(&parameter.name.bits().to_le_bytes());
-            bytes.extend_from_slice(&parameter.flags.to_le_bytes());
-            bytes.push(u8::from(parameter.array.is_some()));
-            if let Some(array) = &parameter.array {
-                let encoded = array.canonical_bytes();
-                bytes.extend_from_slice(&(encoded.len() as u64).to_le_bytes());
-                bytes.extend_from_slice(&encoded);
-            }
-            bytes.push(u8::from(parameter.declared_type.is_some()));
-            bytes.extend_from_slice(
-                &parameter
-                    .declared_type
-                    .map(SymbolId::bits)
-                    .unwrap_or(0)
-                    .to_le_bytes(),
-            );
-            append_expression(&mut bytes, parameter.default.as_ref());
-            bytes.push(u8::from(parameter.list_element_type.is_some()));
-            bytes.extend_from_slice(
-                &parameter
-                    .list_element_type
-                    .map(SymbolId::bits)
-                    .unwrap_or(0)
-                    .to_le_bytes(),
-            );
-            append_expression(&mut bytes, parameter.input_annotation.as_ref());
-            append_expression(&mut bytes, parameter.source_expression.as_ref());
-        }
-        append_expression(&mut bytes, self.return_annotation.as_ref());
-        bytes
+        self.canonical_bytes_using(&mut crate::canonical_encoding::Unmetered)
+            .expect("unmetered native canonical allocation failed")
+    }
+    /// SAME byte encoder; transient allocations are funded before growth.
+    pub fn canonical_bytes_using(&self, work: &mut dyn crate::CanonicalWork) -> std::io::Result<Vec<u8>> {
+        crate::canonical_encoding::encode(crate::canonical_encoding::Root::Signature(self), work)
     }
 }
 impl ProcedureMetadata {
@@ -193,46 +165,15 @@ impl ProcedureMetadata {
         })
     }
     pub fn canonical_bytes(&self) -> Vec<u8> {
-        let mut bytes = Vec::new();
-        bytes.extend_from_slice(b"dm-procedure-metadata-v2\0");
-        let signature = self.signature.canonical_bytes();
-        bytes.extend_from_slice(&(signature.len() as u64).to_le_bytes());
-        bytes.extend_from_slice(&signature);
-        append_settings(&mut bytes, &self.settings);
-        bytes
+        self.canonical_bytes_using(&mut crate::canonical_encoding::Unmetered)
+            .expect("unmetered native canonical allocation failed")
+    }
+    /// SAME byte encoder; transient allocations are funded before growth.
+    pub fn canonical_bytes_using(&self, work: &mut dyn crate::CanonicalWork) -> std::io::Result<Vec<u8>> {
+        crate::canonical_encoding::encode(crate::canonical_encoding::Root::Procedure(self), work)
     }
 }
-fn append_settings(bytes: &mut Vec<u8>, nodes: &[ProcedureSettingNode]) {
-    bytes.extend_from_slice(&(nodes.len() as u64).to_le_bytes());
-    for node in nodes {
-        match node {
-            ProcedureSettingNode::Setting(setting) => {
-                bytes.push(0);
-                bytes.extend_from_slice(&setting.name.bits().to_le_bytes());
-                bytes.push(setting.operation as u8);
-                append_expression(bytes, Some(&setting.value));
-            }
-            ProcedureSettingNode::Conditional {
-                condition,
-                then_branch,
-                else_branch,
-            } => {
-                bytes.push(1);
-                append_expression(bytes, Some(condition));
-                append_settings(bytes, then_branch);
-                append_settings(bytes, else_branch);
-            }
-            ProcedureSettingNode::UnsupportedContext {
-                canonical_header,
-                children,
-            } => {
-                bytes.push(2);
-                append_expression(bytes, Some(canonical_header));
-                append_settings(bytes, children);
-            }
-        }
-    }
-}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ArrayDeclaration {
     /// One None means unsized []; Some expressions must resolve to valid sizes.
@@ -241,9 +182,12 @@ pub struct ArrayDeclaration {
 }
 impl ArrayDeclaration {
     pub fn canonical_bytes(&self) -> Vec<u8> {
-        let mut bytes = Vec::new();
-        self.write_canonical(|chunk| bytes.extend_from_slice(chunk));
-        bytes
+        self.canonical_bytes_using(&mut crate::canonical_encoding::Unmetered)
+            .expect("unmetered native canonical allocation failed")
+    }
+    /// SAME byte encoder; transient allocations are funded before growth.
+    pub fn canonical_bytes_using(&self, work: &mut dyn crate::CanonicalWork) -> std::io::Result<Vec<u8>> {
+        crate::canonical_encoding::encode(crate::canonical_encoding::Root::Array(self), work)
     }
     pub fn canonical_len(&self) -> usize {
         b"dm-array-declaration-v1\0".len()
@@ -261,23 +205,27 @@ impl ArrayDeclaration {
                 .sum::<usize>()
     }
     pub fn write_canonical(&self, mut write: impl FnMut(&[u8])) {
-        write(b"dm-array-declaration-v1\0");
-        write_byte(&mut write, u8::from(self.element_type.is_some()));
+        self.try_write_canonical(&mut|bytes|{write(bytes);Ok(())}).expect("infallible array canonical sink failed");
+    }
+    pub(crate) fn try_write_canonical(&self,write:&mut dyn FnMut(&[u8])->std::io::Result<()>)->std::io::Result<()> {
+        write(b"dm-array-declaration-v1\0")?;
+        write(&[u8::from(self.element_type.is_some())])?;
         write(
             &self
                 .element_type
                 .map(SymbolId::bits)
                 .unwrap_or(0)
                 .to_le_bytes(),
-        );
-        write(&(self.dimensions.len() as u64).to_le_bytes());
+        )?;
+        write(&(self.dimensions.len() as u64).to_le_bytes())?;
         for dimension in self.dimensions.iter() {
-            write_byte(&mut write, u8::from(dimension.is_some()));
+            write(&[u8::from(dimension.is_some())])?;
             if let Some(expression) = dimension {
-                write(&(expression.canonical_len() as u64).to_le_bytes());
-                expression.write_canonical(&mut write);
+                write(&(expression.try_canonical_len()? as u64).to_le_bytes())?;
+                expression.try_write_canonical(write)?;
             }
         }
+            Ok(())
     }
 }
 
@@ -300,56 +248,12 @@ pub enum SemanticValue {
 }
 impl SemanticValue {
     pub fn canonical_bytes(&self) -> Vec<u8> {
-        let mut bytes = Vec::new();
-        match self {
-            Self::Null => bytes.push(0),
-            Self::NumberBits(number) => {
-                bytes.push(1);
-                bytes.extend_from_slice(&number.to_le_bytes());
-            }
-            Self::Text(text) => {
-                bytes.push(2);
-                bytes.extend_from_slice(&(text.len() as u64).to_le_bytes());
-                bytes.extend_from_slice(text);
-            }
-            Self::Type(path) => {
-                bytes.push(3);
-                bytes.extend_from_slice(&path.bits().to_le_bytes());
-            }
-            Self::Procedure(procedure) => {
-                bytes.push(6);
-                bytes.extend_from_slice(&procedure.owner.bits().to_le_bytes());
-                bytes.extend_from_slice(&procedure.name.bits().to_le_bytes());
-                bytes.push(u8::from(procedure.verb));
-                bytes.extend_from_slice(&procedure.occurrence.to_le_bytes());
-            }
-            Self::ModifiedInstance(instance) => {
-                bytes.push(7);
-                let data = instance.canonical_bytes();
-                bytes.extend_from_slice(&(data.len() as u64).to_le_bytes());
-                bytes.extend_from_slice(data);
-            }
-            Self::Resource(path) => {
-                bytes.push(4);
-                bytes.extend_from_slice(&path.bits().to_le_bytes());
-            }
-            Self::List(entries) => {
-                bytes.push(5);
-                bytes.extend_from_slice(&(entries.len() as u64).to_le_bytes());
-                for (key, value) in entries.iter() {
-                    bytes.push(u8::from(key.is_some()));
-                    if let Some(key) = key {
-                        let data = key.canonical_bytes();
-                        bytes.extend_from_slice(&(data.len() as u64).to_le_bytes());
-                        bytes.extend_from_slice(&data);
-                    }
-                    let data = value.canonical_bytes();
-                    bytes.extend_from_slice(&(data.len() as u64).to_le_bytes());
-                    bytes.extend_from_slice(&data);
-                }
-            }
-        }
-        bytes
+        self.canonical_bytes_using(&mut crate::canonical_encoding::Unmetered)
+            .expect("unmetered native canonical allocation failed")
+    }
+    /// SAME byte encoder; transient allocations are funded before growth.
+    pub fn canonical_bytes_using(&self, work: &mut dyn crate::CanonicalWork) -> std::io::Result<Vec<u8>> {
+        crate::canonical_encoding::encode(crate::canonical_encoding::Root::Semantic(self), work)
     }
 }
 /// Metadata is canonical semantic data, not original source text. The adapter
@@ -371,18 +275,12 @@ pub struct OpaqueFieldBase {
 }
 impl OpaqueFieldBase {
     pub fn canonical_bytes(&self) -> Vec<u8> {
-        let mut bytes = b"dm-opaque-intrinsic-field-v1\0".to_vec();
-        bytes.extend_from_slice(&self.owner.bits().to_le_bytes());
-        bytes.extend_from_slice(&self.name.bits().to_le_bytes());
-        match self.declared_type {
-            DeclaredTypeKnowledge::Known(path) => {
-                bytes.push(1);
-                bytes.extend_from_slice(&path.bits().to_le_bytes());
-            }
-            DeclaredTypeKnowledge::Unsupported => bytes.push(0),
-            DeclaredTypeKnowledge::KnownUntyped => bytes.push(2),
-        }
-        bytes
+        self.canonical_bytes_using(&mut crate::canonical_encoding::Unmetered)
+            .expect("unmetered native canonical allocation failed")
+    }
+    /// SAME byte encoder; transient allocations are funded before growth.
+    pub fn canonical_bytes_using(&self, work: &mut dyn crate::CanonicalWork) -> std::io::Result<Vec<u8>> {
+        crate::canonical_encoding::encode(crate::canonical_encoding::Root::Opaque(self), work)
     }
 }
 
@@ -408,50 +306,12 @@ pub struct DeclarationMeaning {
 }
 impl DeclarationMeaning {
     pub fn canonical_bytes(&self) -> Vec<u8> {
-        fn part(out: &mut Vec<u8>, bytes: &[u8]) {
-            out.extend_from_slice(&(bytes.len() as u64).to_le_bytes());
-            out.extend_from_slice(bytes);
-        }
-        fn optional(out: &mut Vec<u8>, bytes: Option<Vec<u8>>) {
-            out.push(u8::from(bytes.is_some()));
-            if let Some(bytes) = bytes {
-                part(out, &bytes);
-            }
-        }
-        let mut out = b"dm-declaration-meaning-v1\0".to_vec();
-        optional(
-            &mut out,
-            self.inherited_opaque.as_ref().map(|v| v.canonical_bytes()),
-        );
-        for value in [
-            self.declared_type,
-            self.list_element_type,
-            self.display_name,
-        ] {
-            optional(&mut out, value.map(|v| v.bits().to_le_bytes().to_vec()));
-        }
-        out.extend_from_slice(&self.flags.to_le_bytes());
-        optional(
-            &mut out,
-            self.procedure.as_ref().map(|v| v.canonical_bytes()),
-        );
-        optional(&mut out, self.array.as_ref().map(|v| v.canonical_bytes()));
-        optional(
-            &mut out,
-            self.initializer.as_ref().map(|v| v.canonical_bytes()),
-        );
-        optional(
-            &mut out,
-            self.declared_initializer
-                .as_ref()
-                .map(|v| v.canonical_bytes()),
-        );
-        optional(
-            &mut out,
-            self.resolved_constant.as_ref().map(|v| v.canonical_bytes()),
-        );
-        part(&mut out, &self.canonical);
-        out
+        self.canonical_bytes_using(&mut crate::canonical_encoding::Unmetered)
+            .expect("unmetered native canonical allocation failed")
+    }
+    /// SAME byte encoder; transient allocations are funded before growth.
+    pub fn canonical_bytes_using(&self, work: &mut dyn crate::CanonicalWork) -> std::io::Result<Vec<u8>> {
+        crate::canonical_encoding::encode(crate::canonical_encoding::Root::Declaration(self), work)
     }
 }
 impl Default for DeclarationMeaning {

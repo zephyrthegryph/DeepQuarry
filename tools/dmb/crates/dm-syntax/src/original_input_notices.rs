@@ -1,0 +1,27 @@
+//! Actual native input-specifier producer events, not complete grammar proof.
+//! SAME ParsedExpr owns this small DATA buffer; no source/model authority,
+//! diagnostic-string parsing, alternate AST or cache is introduced.
+use crate::{Span,SettingAdmission,SettingRootLease};
+use std::{io,mem::size_of,sync::Arc};
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub enum OriginalInputNoticeKind{BadInputType,InPrecedesAs,LocateInArgument,LocateTupleIn}
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub struct OriginalInputNotice{at:Span,kind:OriginalInputNoticeKind}
+impl OriginalInputNotice{pub fn span(self)->Span{self.at}pub fn kind(self)->OriginalInputNoticeKind{self.kind}}
+struct Payload{rows:Vec<OriginalInputNotice>,credit:SettingRootLease}
+#[derive(Default)]pub struct OriginalInputNotices(Option<Arc<Payload>>);
+impl Clone for OriginalInputNotices{fn clone(&self)->Self{Self(self.0.as_ref().map(Arc::clone))}}
+impl Drop for OriginalInputNotices{fn drop(&mut self){if let Some(owner)=self.0.take(){if let Some(payload)=Arc::into_inner(owner){drop(payload)}}}}
+impl std::fmt::Debug for OriginalInputNotices{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{self.as_slice().fmt(f)}}
+impl PartialEq for OriginalInputNotices{fn eq(&self,other:&Self)->bool{self.as_slice()==other.as_slice()}}impl Eq for OriginalInputNotices{}
+impl OriginalInputNotices{pub fn as_slice(&self)->&[OriginalInputNotice]{self.0.as_ref().map_or(&[],|p|p.rows.as_slice())}pub fn is_admitted_by(&self,a:&SettingAdmission<'_>)->bool{self.0.as_ref().is_none_or(|p|a.matches_lease_domain(&p.credit))}pub fn visit_storage(&self,mut visit:impl FnMut(usize,usize,usize)){if let Some(p)=&self.0{let fixed=size_of::<Payload>()+2*size_of::<usize>();visit(Arc::as_ptr(p)as usize,fixed,fixed);if p.rows.capacity()!=0{visit(p.rows.as_ptr()as usize,p.rows.len()*size_of::<OriginalInputNotice>(),p.rows.capacity()*size_of::<OriginalInputNotice>());}p.credit.visit_counter_storage(|address,bytes|visit(address,bytes,bytes));}}}
+#[derive(Default)]pub(crate) struct Builder{rows:Vec<OriginalInputNotice>,credit:Option<SettingRootLease>}
+fn poll(a:&SettingAdmission<'_>)->io::Result<()>{let result=a.checkpoint();if let Some(error)=a.take_operational_error(){return Err(error)}result}
+impl Builder{pub fn push(&mut self,at:Span,kind:OriginalInputNoticeKind,a:&SettingAdmission<'_>)->io::Result<()>{poll(a)?;if at.start>=at.end{return Err(io::ErrorKind::InvalidInput.into())}if self.credit.is_none(){self.credit=Some(a.reserve(size_of::<Payload>()+2*size_of::<usize>()).map_err(|e|a.take_operational_error().unwrap_or(e))?);}let credit=self.credit.as_mut().unwrap();if !a.matches_lease_domain(credit){return Err(io::ErrorKind::InvalidInput.into())}if self.rows.len()==self.rows.capacity(){let count=self.rows.capacity().max(2).checked_mul(2).ok_or(io::ErrorKind::OutOfMemory)?;let peak=count.checked_mul(4).and_then(|n|n.checked_mul(size_of::<OriginalInputNotice>())).ok_or(io::ErrorKind::OutOfMemory)?;let old=self.rows.capacity().checked_mul(size_of::<OriginalInputNotice>()).ok_or(io::ErrorKind::OutOfMemory)?;a.grow(credit,peak).map_err(|e|a.take_operational_error().unwrap_or(e))?;self.rows.try_reserve_exact(count-self.rows.len()).map_err(|e|io::Error::new(io::ErrorKind::OutOfMemory,e))?;let actual=self.rows.capacity().checked_mul(size_of::<OriginalInputNotice>()).ok_or(io::ErrorKind::OutOfMemory)?;if actual>peak{return Err(io::ErrorKind::OutOfMemory.into())}let free=old.checked_add(peak).and_then(|n|n.checked_sub(actual)).ok_or(io::ErrorKind::InvalidData)?;a.shrink(credit,free).map_err(|e|a.take_operational_error().unwrap_or(e))?;}self.rows.push(OriginalInputNotice{at,kind});poll(a)}pub fn finish(self)->OriginalInputNotices{match self.credit{Some(credit)=>OriginalInputNotices(Some(Arc::new(Payload{rows:self.rows,credit}))),None=>OriginalInputNotices(None)}}}
+/// SAME pinned InputType::from_str classification; unknown identifiers recover
+/// with an actual error event, rather than being refused by an acceptance list.
+pub fn original_input_type_name(text:&str)->bool{matches!(text,"mob"|"obj"|"text"|"num"|"file"|"turf"|"key"|"null"|"area"|"icon"|"sound"|"message"|"anything"|"password"|"command_text"|"color"|"movable"|"atom"|"list")}
+
+/// Actual required-input state at the SAME consuming cursor. DATA only: the
+/// current primary/live/source/literal owner must still authenticate its token.
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub enum OriginalInputExpected{ParenOrIdentifier,Identifier,RightParen}
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub struct OriginalInputFailure{at:Option<Span>,expected:OriginalInputExpected}
+impl OriginalInputFailure{pub(crate) fn new(at:Option<Span>,expected:OriginalInputExpected)->Self{Self{at,expected}}pub fn token_span(self)->Option<Span>{self.at}pub fn expected(self)->OriginalInputExpected{self.expected}}

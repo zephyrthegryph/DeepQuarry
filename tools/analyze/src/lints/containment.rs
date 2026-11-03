@@ -20,8 +20,8 @@ use crate::tree::{SourceFile, CODE_DM};
 use crate::util::{py_rstrip, py_strip};
 
 static META: Meta = Meta {
-    name: "containment",
-    group: "",
+    name: crate::allow_registry_fields::containment::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::containment::SCOPE_META_0.group,
     label: "containment",
     legacy: "tools/ci/containment_lint.py",
     select: CODE_DM,
@@ -32,7 +32,7 @@ static META: Meta = Meta {
         hint: "use forceMove(), moveToNullspace(), the slot API (code/datums/containment/api.dm) or image_anchor(); a justified keep takes `// ALLOW(containment): <reason>`",
     }],
     allow: crate::allow_registry_fields::containment::ALLOW_0,
-    lists: &[],
+    lists: crate::allow_registry_fields::containment::SCOPE_META_0.lists,
 };
 
 struct Containment {

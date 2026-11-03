@@ -9,13 +9,13 @@ fn push<T,W:EffectReportWork>(work:&mut W,rows:&mut Vec<T>,value:T)->Result<(),P
 struct Count(usize);impl Write for Count{fn write_str(&mut self,text:&str)->fmt::Result{self.0=self.0.checked_add(text.len()).ok_or(fmt::Error)?;Ok(())}}
 struct Fixed<'a>(&'a mut String);impl Write for Fixed<'_>{fn write_str(&mut self,text:&str)->fmt::Result{if text.len()>self.0.capacity()-self.0.len(){return Err(fmt::Error)}self.0.push_str(text);Ok(())}}
 fn text<W:EffectReportWork>(work:&mut W,args:fmt::Arguments<'_>)->Result<String,PolicyFailure>{let mut count=Count(0);count.write_fmt(args).map_err(|_|oom())?;let bound=count.0.checked_mul(4).ok_or_else(oom)?;reserve(work,bound.checked_add(size_of::<String>()+128).ok_or_else(oom)?)?;let mut out=String::new();out.try_reserve_exact(count.0).map_err(|e|PolicyFailure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,e)))?;if out.capacity()>bound{return Err(oom())}Fixed(&mut out).write_fmt(args).map_err(|_|oom())?;Ok(out)}
-struct Arguments<'a,'w,W,R:?Sized>{resolver:&'w R,archive:&'a BodyArchive,profile:PackedU128,work:&'w mut W,checkpoint:&'w dyn Fn()->io::Result<()>,rows:Vec<Row>}
+struct Arguments<'a,'w,W,R:?Sized>{resolver:&'w R,archive:&'a BodyArchive,profile:PackedU128,work:&'w mut W,checkpoint:&'w dyn Fn()->io::Result<()>,rows:Vec<Row<'a>>}
 impl<'a,W:EffectReportWork,R:Resolver+?Sized> Arguments<'a,'_,W,R>{
  fn poll(&self)->Result<(),PolicyFailure>{(self.checkpoint)().map_err(PolicyFailure::Operational)}
  fn display(&mut self,target:EffectTarget)->Result<String,PolicyFailure>{let tree=self.archive.tree();match target{EffectTarget::Source(id)=>{let value=crate::checker_callable_display::original(tree,id,|_|Ok::<(),PolicyFailure>(()),||self.poll())?;text(self.work,format_args!("{value}"))},EffectTarget::Builtin(id)=>{let value=crate::checker_callable_display::builtin(tree,id,||self.poll())?;text(self.work,format_args!("{value}"))}}}
   fn key<'k>(&mut self,key:&'k Expr)->Result<Cow<'k,str>,PolicyFailure>{match &key.kind{ExprKind::Ident(name)=>Ok(Cow::Borrowed(name)),ExprKind::Literal(value)=>{let count=value.as_str().len();let max=count.checked_mul(4).ok_or_else(oom)?;reserve(self.work,max.checked_add(size_of::<String>()+128).ok_or_else(oom)?)?;let mut text=String::new();text.try_reserve_exact(count).map_err(|e|PolicyFailure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,e)))?;if text.capacity()>max{return Err(oom())}if !value.write_pinned_static_text(&mut Fixed(&mut text)).map_err(|e|format!("argument original key: {e:?}"))?{return Err("argument key is not original static text".into())}Ok(Cow::Owned(text))},_=>Err("argument key is outside the actual original key grammar".into())}}
  fn note(&mut self,source:crate::checker_effects::EffectTarget,current:Option<Span>,message:&str)->Result<Note,PolicyFailure>{self.poll()?;match source{EffectTarget::Source(id)=>{let member=self.archive.callables().members().iter().copied().find(|member|self.archive.callables().identity_for_member(*member)==Some(id)).ok_or("argument child original header absent")?;let headers=self.archive.callable_header_source();let point=headers.reported_point(member)?;let(path,_,_)=point.reported_coordinates();reserve(self.work,path.as_os_str().len().checked_mul(8).and_then(|n|n.checked_add(message.len().checked_mul(4)?)).and_then(|n|n.checked_add(size_of::<Note>()+512)).ok_or_else(oom)?)?;if let Some(current)=current{Ok(crate::checks_directive_binding::original_note_message(point,headers.reported_source_point(current.start)?,message))}else{let(path,line,column)=point.reported_coordinates();Ok(Note{message:text(self.work,format_args!("{}:{line}:{column}: {message}",path.display()))?,source:None})}},EffectTarget::Builtin(_)=>Ok(Note{message:text(self.work,format_args!("(builtins):1:1: {message}"))?,source:None})}}
- fn emit(&mut self,family:&'static str,at:Option<Span>,expression:Span,message:String,notes:Vec<Note>)->Result<(),PolicyFailure>{push(self.work,&mut self.rows,Row{diagnostic:Diagnostic{family,severity:Severity::Error,span:at.unwrap_or_default(),expression_span:expression,message,notes},synthetic:at.is_none()})}
+ fn emit(&mut self,family:&'static str,at:Option<Span>,expression:Span,message:String,notes:Vec<Note>)->Result<(),PolicyFailure>{push(self.work,&mut self.rows,Row{registration:Some((None,crate::check_policy::DiagnosticSeverity::Error)),diagnostic:Diagnostic{family,severity:Severity::Error,span:at.unwrap_or_default(),expression_span:expression,message,notes},synthetic:at.is_none(),reported:None})}
 }
 
 impl<'a,W:EffectReportWork,R:Resolver+?Sized> Arguments<'a, '_,W,R>{
@@ -44,3 +44,16 @@ pub use catch_parameters::with_archived_body as with_catch_parameters_archived_b
 
 #[path="checks_static_references.rs"]mod static_references;
 pub use static_references::with_archived_body as with_static_references_archived_body;
+
+#[path="checks_iteration_ranges.rs"]mod iteration_ranges;
+pub use iteration_ranges::with_archived_body as with_iteration_ranges_archived_body;
+pub(crate) use iteration_ranges::fixed_level as original_iteration_level;
+
+#[path="checks_declared_types.rs"]mod declared_types;
+pub use declared_types::with_archived_body as with_declared_types_archived_body;
+
+#[path="checks_switch_cases.rs"]mod switch_cases;
+pub use switch_cases::with_archived_body as with_switch_cases_archived_body;
+
+#[path="checks_original_union.rs"]mod original_union;
+pub(crate) use original_union::with_body_using as with_original_union_body_using;

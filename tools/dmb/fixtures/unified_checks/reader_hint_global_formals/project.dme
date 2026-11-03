@@ -1,0 +1,4 @@
+/proc/work()
+    return 1
+/proc/work()
+    return 2

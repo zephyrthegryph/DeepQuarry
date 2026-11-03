@@ -12,19 +12,21 @@ use crate::tree::SourceFile;
 use crate::util::py_lstrip;
 
 /// `text.splitlines()`.
-pub fn py_splitlines(text: &str) -> Vec<&str> {
+pub fn py_splitlines(text:&str)->Vec<&str>{py_splitlines_using(text,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{})}
+pub fn py_splitlines_using<'a,C:crate::key_policy_control::Control>(text:&'a str,control:&mut C)->Result<Vec<&'a str>,C::Error>{
     let mut out = Vec::new();
     let mut start = 0;
     for (i, c) in text.char_indices() {
+        control.checkpoint()?;
         if matches!(c, '\n' | '\r' | '\u{0b}' | '\u{0c}' | '\u{1c}' | '\u{1d}' | '\u{1e}' | '\u{85}' | '\u{2028}' | '\u{2029}') {
-            out.push(&text[start..i]);
+            crate::key_policy_control::row(control,&mut out)?;out.push(&text[start..i]);
             start = i + c.len_utf8();
         }
     }
     if start < text.len() {
-        out.push(&text[start..]);
+        crate::key_policy_control::row(control,&mut out)?;out.push(&text[start..]);
     }
-    out
+    Ok(out)
 }
 
 /// `allow_annotations.allowed(lines, number, lint)` over an arbitrary line list: the annotation is on

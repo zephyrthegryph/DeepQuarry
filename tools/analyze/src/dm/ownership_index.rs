@@ -151,19 +151,14 @@ re!(TYPED_NAME, r"(?:var/)?((?:/?\w+)(?:/\w+)+)/(\w+)\b");
 
 /// An accessor's var-name argument: a string literal (banned, `string_name`) or `nameof(v)` /
 /// `nameof(x.v)` / `nameof(/type::v)`. Group: the var name.
-pub const VAR_ARG: &str = r#"(?:"|nameof\((?:/[\w/]+::|\w+\.)?)(\w+)(?:"|\))"#;
+pub use crate::raw_ownership_policy::VAR_ARG;
 // A global declared through a `GLOBAL_*` macro (code/__defines/__globals.dm): `GLOBAL_DATUM(x, /type)`, `GLOBAL_LIST_EMPTY(x)`, ... Groups: 1 = macro
 // suffix, 2 = the var name, 3 = the type argument of the typed forms.
 
 /// The type `GLOB` has; the vars of every `GLOBAL_*` macro are its globals ([`Index::globals`]).
 pub const GLOB_TYPE: &str = "/datum/controller/global_vars";
 
-pub static ACCESSOR: LazyLock<Pat> = LazyLock::new(|| {
-    Pat::new(&format!(
-        r"\b(own_set|own_take|own_add|own_remove|own_put|own_take_member|own_clear|own_transfer|rel_set|rel_add|rel_remove|rel_clear|rel_link|rel_unlink|proto_set|proto_private|shared_set)\(\s*([\w.]+)\s*,\s*{}",
-        VAR_ARG
-    ))
-});
+pub use crate::raw_ownership_policy::ACCESSOR;
 /// Groups: 1 = destination receiver, 2 = destination var (`VAR_ARG` with its first capture
 /// turned non-capturing, exactly as the Python's `.replace`).
 pub static TRANSFER_DEST: LazyLock<Pat> = LazyLock::new(|| {
@@ -221,37 +216,8 @@ pub fn related(a: &str, b: &str) -> bool {
 }
 
 /// `IMPLICIT_ROOTS`: DM's implicit parents of a built-in root.
-fn implicit_roots(root: &str) -> &'static [&'static str] {
-    match root {
-        "/obj" | "/mob" => &["/atom/movable", "/atom", "/datum"],
-        "/turf" | "/area" => &["/atom", "/datum"],
-        "/atom" => &["/datum"],
-        _ => &[],
-    }
-}
-
-/// The type and its ancestors, nearest first, including DM's implicit roots (/obj -> /atom/movable
-/// -> /atom -> /datum).
-pub fn parents(path: &str) -> Vec<String> {
-    let mut out = Vec::new();
-    let mut root: Option<String> = None;
-    let mut p = path.to_string();
-    while !p.is_empty() && p.matches('/').count() >= 1 {
-        out.push(p.clone());
-        if p.matches('/').count() == 1 {
-            root = Some(p);
-            break;
-        }
-        let cut = p.rfind('/').unwrap();
-        p.truncate(cut);
-    }
-    if let Some(r) = root {
-        for imp in implicit_roots(&r) {
-            out.push((*imp).to_string());
-        }
-    }
-    out
-}
+/// Same original nearest-first order; unique borrowed loop shared with native policy.
+pub fn parents(path:&str)->Vec<String>{let mut rows=Vec::new();crate::raw_ownership_policy::visit_parents_using(path,&mut crate::key_policy_control::Compatibility,&mut|path,_|{rows.push(path.to_owned());Ok(())}).unwrap_or_else(|never|match never{});rows}
 
 /// An insertion-ordered string-keyed map (a Python dict).
 #[derive(Debug)]
@@ -410,6 +376,13 @@ fn file_idx(f: &SourceFile) -> FileIdx {
     }
 }
 
+/// Actual collection growth envelopes; no cost is charged for an unchanged map.
+/// A new hash table may double its power-of-two bucket array; the old live table
+/// has already been funded. Strings moved out of an event are not cloned here.
+pub(crate) fn map_room<C:crate::key_policy_control::Control,K,V>(map:&HashMap<K,V>,c:&mut C)->Result<(),C::Error>{if C::CHECKED&&map.len()==map.capacity(){crate::key_policy_control::reserve(c,||map.capacity().checked_add(1)?.checked_next_power_of_two()?.checked_mul(2)?.max(4).checked_mul(std::mem::size_of::<(K,V)>().checked_add(1)?)?.checked_add(64))?;}Ok(())}
+fn vec_room<C:crate::key_policy_control::Control,T>(v:&Vec<T>,c:&mut C)->Result<(),C::Error>{if C::CHECKED&&v.len()==v.capacity(){crate::key_policy_control::reserve(c,||v.capacity().checked_mul(2)?.max(4).checked_mul(std::mem::size_of::<T>())?.checked_add(64))?;}Ok(())}
+pub(crate) fn ord_room<C:crate::key_policy_control::Control,V>(m:&OrdMap<V>,key:&str,c:&mut C)->Result<(),C::Error>{if m.get(key).is_none(){map_room(&m.idx,c)?;vec_room(&m.items,c)?;crate::key_policy_control::reserve(c,||key.len().checked_mul(2)?.checked_add(64))?;}Ok(())}
+
 impl Index {
     pub fn new() -> Index {
         Index {
@@ -455,7 +428,21 @@ impl Index {
         self.apply_owned(ev.clone());
     }
 
-    fn apply_owned(&mut self, ev: IdxEv) {
+    fn apply_owned(&mut self,ev:IdxEv){self.apply_owned_using(ev,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{})}
+    pub(crate) fn apply_owned_using<C:crate::key_policy_control::Control>(&mut self,ev:IdxEv,c:&mut C)->Result<(),C::Error>{
+        c.checkpoint()?;
+        // Fund only allocations this exact event will perform, before the original match.
+        if C::CHECKED{match &ev{
+         IdxEv::Member{owner,vtype,name,..}=>{
+          if let Some(inner)=self.members.get(owner){if !inner.contains_key(name){map_room(inner,c)?;}}
+          else{map_room(&self.members,c)?;map_room(&HashMap::<String,(String,bool)>::new(),c)?;crate::key_policy_control::reserve(c,||owner.len().checked_add(32))?;}
+          crate::key_policy_control::reserve(c,||name.len().checked_add(vtype.len())?.checked_add(64))?;
+          if let Some(rows)=self.name_decls.get(name){vec_room(rows,c)?;}else{map_room(&self.name_decls,c)?;crate::key_policy_control::reserve(c,||std::mem::size_of::<(String,String,bool)>().checked_add(32))?;}
+         },
+         IdxEv::Decl{owner,name,..}=>{ord_room(&self.decls,owner,c)?;if let Some(inner)=self.decls.get(owner){ord_room(inner,name,c)?;}else{ord_room(&OrdMap::<Decl>::new(),name,c)?;}},
+         IdxEv::Registry(_)=>vec_room(&self.registry,c)?,
+         IdxEv::Global{name,..}=>if !self.globals.contains_key(name){map_room(&self.globals,c)?;},
+        }}
         match ev {
             IdxEv::Member {
                 owner,
@@ -508,6 +495,7 @@ impl Index {
                 self.globals.insert(name, (vtype, is_list));
             }
         }
+        c.checkpoint()
     }
 
     pub fn add_member(&mut self, owner: &str, segs: &str, name: &str) {
@@ -541,36 +529,18 @@ impl Index {
     }
 
     /// `(declaring type, vtype, is_list)` for var `name` as seen from type `owner`, or None.
-    pub fn member(&self, owner: &str, name: &str) -> Option<Member> {
-        for p in parents(owner) {
-            if let Some((vtype, is_list)) = self.members.get(&p).and_then(|m| m.get(name)) {
-                return Some(Member {
-                    declared_on: p,
-                    vtype: vtype.clone(),
-                    is_list: *is_list,
-                });
-            }
-        }
-        None
-    }
+    pub fn member(&self,owner:&str,name:&str)->Option<Member>{self.member_using(owner,name,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{})}
+    pub fn member_using<C:crate::key_policy_control::Control>(&self,owner:&str,name:&str,c:&mut C)->Result<Option<Member>,C::Error>{let mut found=None;crate::raw_ownership_policy::visit_parents_until_using(owner,c,&mut|parent,c|{if let Some((vtype,is_list))=self.members.get(parent).and_then(|m|m.get(name)){crate::key_policy_control::temporary(c,4,||parent.len().checked_add(vtype.len())?.checked_mul(16)?.checked_add(1024))?;found=Some(Member{declared_on:parent.to_owned(),vtype:vtype.to_owned(),is_list:*is_list});return Ok(false)}Ok(true)})?;Ok(found)}
 
     /// `(declaring type, declaration)` of `name` as seen from type `owner`, or None.
-    pub fn decl(&self, owner: &str, name: &str) -> Option<(String, &Decl)> {
-        for p in parents(owner) {
-            if let Some(d) = self.decls.get(&p).and_then(|m| m.get(name)) {
-                return Some((p, d));
-            }
-        }
-        None
-    }
+    pub fn decl(&self,owner:&str,name:&str)->Option<(String,&Decl)>{self.decl_using(owner,name,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{})}
+    pub fn decl_using<'a,C:crate::key_policy_control::Control>(&'a self,owner:&str,name:&str,c:&mut C)->Result<Option<(String,&'a Decl)>,C::Error>{let mut found=None;crate::raw_ownership_policy::visit_parents_until_using(owner,c,&mut|parent,c|{if let Some(decl)=self.decls.get(parent).and_then(|m|m.get(name)){crate::key_policy_control::temporary(c,4,||parent.len().checked_mul(16)?.checked_add(1024))?;found=Some((parent.to_owned(),decl));return Ok(false)}Ok(true)})?;Ok(found)}
 
-    pub fn is_registry(&self, vtype: &str) -> bool {
-        under(vtype, &self.registry)
-    }
+    pub fn is_registry(&self,vtype:&str)->bool{self.is_registry_using(vtype,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{})}
+    pub fn is_registry_using<C:crate::key_policy_control::Control>(&self,vtype:&str,c:&mut C)->Result<bool,C::Error>{for root in &self.registry{c.checkpoint()?;if under(vtype,std::slice::from_ref(root)){return Ok(true)}}Ok(false)}
+    pub fn is_entity(&self,vtype:&str)->bool{self.is_entity_using(vtype,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{})}
+    pub fn is_entity_using<C:crate::key_policy_control::Control>(&self,vtype:&str,c:&mut C)->Result<bool,C::Error>{c.checkpoint()?;Ok(under(vtype,ENTITY_ROOTS)&&!self.is_registry_using(vtype,c)?)}
 
-    pub fn is_entity(&self, vtype: &str) -> bool {
-        under(vtype, ENTITY_ROOTS) && !self.is_registry(vtype)
-    }
 }
 
 /// A local variable's declared type: `Some(Some(path))` typed, `Some(None)` declared without a
@@ -580,10 +550,24 @@ pub type LocalTypes = HashMap<String, Option<String>>;
 /// `proc_scopes(code)`: calls `f(line number, line, owner type, proc name, locals)` for every
 /// proc body line (blank lines included, as the generator yielded them).
 pub fn proc_scopes(code: &View, mut f: impl FnMut(usize, &str, &str, &str, &LocalTypes)) {
+    proc_scopes_using(code,&mut crate::key_policy_control::Compatibility,&mut|no,line,owner,proc,locals,_|{f(no,line,owner,proc,locals);Ok(())}).unwrap_or_else(|never|match never{})
+}
+fn scope_local_room<C:crate::key_policy_control::Control>(locals:&LocalTypes,width:&mut usize,name:&str,ty:Option<&str>,replace:bool,c:&mut C)->Result<(),C::Error>{
+ if !C::CHECKED{return Ok(())}
+ let key=name.len().checked_add(32).ok_or_else(||c.overflow())?;
+ let value=ty.map_or(Some(0),|ty|ty.trim_start_matches('/').len().checked_add(33)).ok_or_else(||c.overflow())?;
+ let next=match locals.get(name){Some(old)if replace=>width.checked_sub(old.as_ref().map_or(0,|s|s.len()+32)).and_then(|n|n.checked_add(value)),Some(_)=>Some(*width),None=>width.checked_add(key).and_then(|n|n.checked_add(value))}.ok_or_else(||c.overflow())?;
+ // Existing/new owner+locals, temporary duplicate entry key and replacement type,
+ // plus old/new geometric hash tables coexist until this exact insertion finishes.
+ crate::key_policy_control::temporary(c,1,||locals.capacity().checked_add(1)?.checked_next_power_of_two()?.checked_mul(4)?.checked_mul(std::mem::size_of::<(String,Option<String>)>())?.checked_add((*width).max(next))?.checked_add(key)?.checked_add(value)?.checked_add(1024))?;*width=next;Ok(())
+}
+
+pub fn proc_scopes_using<C:crate::key_policy_control::Control>(code:&View,c:&mut C,f:&mut impl FnMut(usize,&str,&str,&str,&LocalTypes,&mut C)->Result<(),C::Error>)->Result<(),C::Error>{
     let mut owner: Option<String> = None;
     let mut proc_name = String::new();
     let mut local_types: LocalTypes = HashMap::new();
-    for (no, line) in code.numbered() {
+    let mut local_bytes=0usize;
+    for(no,line)in code.numbered(){c.checkpoint()?;
         let first = line.chars().next();
         if matches!(first, Some('"') | Some('\'')) {
             continue; // the tail of a multi-line string
@@ -591,17 +575,19 @@ pub fn proc_scopes(code: &View, mut f: impl FnMut(usize, &str, &str, &str, &Loca
         if first.map(|c| !is_py_space(c)).unwrap_or(false) {
             match PROC_DEF.captures(line) {
                 Some(m) if !line.starts_with('#') => {
+                    crate::key_policy_control::temporary(c,1,||local_bytes.checked_add(m.whole().len().checked_mul(16)?)?.checked_add(1024))?;
                     owner = Some(m.s(1).to_string());
                     proc_name = m.s(2).to_string();
                     local_types = HashMap::new();
+                    if C::CHECKED{local_bytes=m.s(1).len().checked_add(m.s(2).len()).ok_or_else(||c.overflow())?;}
                     let params = m.s(3);
-                    for tm in TYPED_NAME.captures_iter(params) {
+                    for tm in TYPED_NAME.captures_iter(params) {c.checkpoint()?;scope_local_room(&local_types,&mut local_bytes,tm.s(2),Some(tm.s(1)),true,c)?;
                         local_types.insert(
                             tm.s(2).to_string(),
                             Some(format!("/{}", tm.s(1).trim_start_matches('/'))),
                         );
                     }
-                    for am in PARAM_NAME.captures_iter(params) {
+                    for am in PARAM_NAME.captures_iter(params) {c.checkpoint()?;scope_local_room(&local_types,&mut local_bytes,am.s(1),None,false,c)?;
                         local_types.entry(am.s(1).to_string()).or_insert(None);
                     }
                 }
@@ -615,20 +601,22 @@ pub fn proc_scopes(code: &View, mut f: impl FnMut(usize, &str, &str, &str, &Loca
         let Some(own) = owner.as_deref() else {
             continue;
         };
-        for tm in TYPED_NAME.captures_iter(line) {
+        for tm in TYPED_NAME.captures_iter(line) {c.checkpoint()?;
             let start = tm.start(0);
             if line[..start].ends_with("var/") || line[start..].starts_with("var/") {
+                scope_local_room(&local_types,&mut local_bytes,tm.s(2),Some(tm.s(1)),true,c)?;
                 local_types.insert(
                     tm.s(2).to_string(),
                     Some(format!("/{}", tm.s(1).trim_start_matches('/'))),
                 );
             }
         }
-        for lm in LOCAL_DECL.captures_iter(line) {
+        for lm in LOCAL_DECL.captures_iter(line) {c.checkpoint()?;scope_local_room(&local_types,&mut local_bytes,lm.s(1),None,false,c)?;
             local_types.entry(lm.s(1).to_string()).or_insert(None);
         }
-        f(no, line, own, &proc_name, &local_types);
+        f(no,line,own,&proc_name,&local_types,c)?;
     }
+    c.checkpoint()
 }
 
 /// The static type of a `a.b.` receiver chain ("" chain = a bare write -> the owner), or None
@@ -639,8 +627,12 @@ pub fn receiver_type(
     owner: &str,
     local_types: &LocalTypes,
 ) -> Option<String> {
+    receiver_type_using(idx,chain,owner,local_types,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{})
+}
+pub fn receiver_type_using<C:crate::key_policy_control::Control>(idx:&Index,chain:&str,owner:&str,local_types:&LocalTypes,c:&mut C)->Result<Option<String>,C::Error>{
+    c.checkpoint()?;crate::key_policy_control::temporary(c,4,||chain.len().checked_mul(32)?.checked_add(owner.len().checked_mul(16)?)?.checked_add(1024))?;
     if chain.is_empty() {
-        return Some(owner.to_string());
+        return Ok(Some(owner.to_string()));
     }
     let segs: Vec<&str> = chain
         .trim_end_matches('.')
@@ -648,16 +640,16 @@ pub fn receiver_type(
         .map(|s| s.trim_end_matches('?'))
         .collect();
     if segs == ["src"] {
-        return Some(owner.to_string());
+        return Ok(Some(owner.to_string()));
     }
     if segs.len() != 1 {
-        return None;
+        return Ok(None);
     }
     let name = segs[0];
     if let Some(t) = local_types.get(name) {
-        return t.clone();
+        return Ok(t.clone());
     }
-    idx.member(owner, name).map(|m| m.vtype)
+    Ok(idx.member_using(owner,name,c)?.map(|m|m.vtype))
 }
 
 /// True when the assigned value is `new /entity/type(...)` (not a value type such as an image).
@@ -676,27 +668,31 @@ pub fn creates_entity(rhs: &str) -> bool {
 /// local/argument declared with an entity type. `registry_roots` is `REGISTRY_ROOTS` (the index's
 /// registry list, which `main()` assigns before any check).
 pub fn puts_object(rhs: &str, local_types: &LocalTypes, registry_roots: &[String]) -> bool {
+    puts_object_using(rhs,local_types,registry_roots,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{})
+}
+pub fn puts_object_using<C:crate::key_policy_control::Control>(rhs:&str,local_types:&LocalTypes,registry_roots:&[String],c:&mut C)->Result<bool,C::Error>{
+    c.checkpoint()?;crate::key_policy_control::temporary(c,5,||rhs.len().checked_mul(16)?.checked_add(1024))?;
     let mut text = rhs.split("//").next().unwrap_or("").to_string();
     // A proc call's arguments are not the written value: TIME_NOW(src, ...) writes a number.
-    loop {
+    loop {c.checkpoint()?;crate::key_policy_control::temporary(c,5,||text.len().checked_mul(16)?.checked_add(1024))?;
         let next = CALL_ARGS.replace_all(&text, "0");
         if next == text {
             break;
         }
         text = next;
     }
-    for m in OBJ_TOKEN.captures_iter(&text) {
+    for m in OBJ_TOKEN.captures_iter(&text) {c.checkpoint()?;
         let tok = m.s(1);
         if tok == "src" || tok == "new" {
-            return true;
+            return Ok(true);
         }
         if let Some(Some(t)) = local_types.get(tok) {
             if !t.is_empty() && under(t, ENTITY_ROOTS) && !under(t, registry_roots) {
-                return true;
+                return Ok(true);
             }
         }
     }
-    false
+    Ok(false)
 }
 
 #[cfg(test)]

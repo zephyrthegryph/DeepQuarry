@@ -40,8 +40,8 @@ macro_rules! rules {
 }
 
 static META: Meta = Meta {
-    name: "scheduler",
-    group: "",
+    name: crate::allow_registry_fields::scheduler::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::scheduler::SCOPE_META_0.group,
     label: "scheduler",
     legacy: "tools/ci/scheduler_lints.py",
     select: CODE_DM,
@@ -68,7 +68,7 @@ static META: Meta = Meta {
         "blocking_builtins",
     ],
     allow: crate::allow_registry_fields::scheduler::ALLOW_0,
-    lists: &[],
+    lists: crate::allow_registry_fields::scheduler::SCOPE_META_0.lists,
 };
 
 struct Scheduler {

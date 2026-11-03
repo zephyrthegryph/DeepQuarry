@@ -14,8 +14,8 @@ pub(crate) const HEADER: &[&str] = &[
 const HINT: &str = "see tools/ci/system_boundary_lint.py and doc/rewrite/kernel.md sec 2.5";
 
 pub(crate) static META: Meta = Meta {
-    name: "system_boundary",
-    group: "",
+    name: crate::allow_registry_fields::system_boundary::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::system_boundary::SCOPE_META_0.group,
     label: "system_boundary",
     legacy: "tools/ci/system_boundary_lint.py",
     select: CODE_MAPS_DM,
@@ -31,7 +31,7 @@ pub(crate) static META: Meta = Meta {
         RuleMeta { name: "B7", hint: HINT },
     ],
     allow: crate::allow_registry_fields::system_boundary::ALLOW_SHARED_0,
-    lists: &[],
+    lists: crate::allow_registry_fields::system_boundary::SCOPE_META_0.lists,
 };
 
 pub fn judge(run:&Run,base:&BTreeMap<String,i64>,text:&mut String)->bool{

@@ -12,8 +12,8 @@ use crate::util::{before_slashes, py_strip};
 const HINT: &str = "attack_ai/attack_robot/attack_ghost/attack_tk are gone: declare an INTERACT_SILICON / INTERACT_ROBOT / INTERACT_OBSERVER / INTERACT_TK interaction, or set silicon_use";
 
 static META: Meta = Meta {
-    name: "actor_forwarding",
-    group: "",
+    name: crate::allow_registry_fields::actor_forwarding::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::actor_forwarding::SCOPE_META_0.group,
     label: "actor_forwarding",
     legacy: "tools/ci/actor_forwarding_lint.py",
     // os.walk: dot-files and dot-directories included.
@@ -22,7 +22,7 @@ static META: Meta = Meta {
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "attack_proc", hint: HINT }],
     allow: crate::allow_registry_fields::actor_forwarding::ALLOW_0,
-    lists: &[],
+    lists: crate::allow_registry_fields::actor_forwarding::SCOPE_META_0.lists,
 };
 
 struct ActorForwarding;

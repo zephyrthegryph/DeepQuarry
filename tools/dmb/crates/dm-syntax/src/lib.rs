@@ -7,13 +7,15 @@
 use std::ops::Range;
 
 mod audit;
+mod native_indent_transition;
+pub use native_indent_transition::{NativeIndentTransition, NativeIndentEmission, NativeIndentNotice};
 mod boundary_scan;
 mod stable_chunks;
 pub use boundary_scan::{scan_top_level_boundaries, BoundaryCheckpoint, BoundaryScanError};
 pub use stable_chunks::scan_stable_source_chunks_from;
 mod declaration_type;
 pub use declaration_type::{
-    has_checker_qualifiers, normalize_declaration_type, project_declaration_type, DeclarationType,
+    has_checker_qualifiers, is_original_static_type_modifier, normalize_declaration_type, project_declaration_type, DeclarationType,
 };
 pub mod map;
 mod pending_body;
@@ -36,12 +38,12 @@ pub use audit::{
     audit_source_streaming, for_each_parsed_chunk, for_each_source_chunk,
     for_each_source_chunk_with_limits, for_each_stable_source_chunk, parse_proc_at_span,
     parse_proc_with_origins_at_span, parse_proc_with_origins_from_spans, ChunkReport,
-    ProcedureWithOrigins, StreamingAudit,
+    ProcedureWithOrigins, parse_original_proc_with_shared_parameters_from_spans, StreamingAudit,parse_original_proc_with_origins_and_default_roots_from_spans, parse_proc_with_origins_and_default_roots_from_spans,
 };
 pub use statements::{
     parse_body_items, parse_body_items_with_context, parse_body_items_with_source, parse_proc_body,
     ControlOrigin, ForControl, ForInitializer, ParsedBody, Statement, StatementKind,
-    SwitchAlternative, SwitchCase,
+    SwitchAlternative, SwitchCase, OriginalCaseCursor,
 };
 #[cfg(test)]
 mod control_origin_tests;
@@ -162,6 +164,8 @@ pub struct Item {
     pub declaration_cursor: Option<usize>,
     /// Local lexical qualifier fact; portable decoding never issues it.
     pub checker_qualifiers: u8,
+    /// Primary grammar event DATA; portable decoding never grants it.
+    pub original_outer_terminator: Option<bool>,
     pub indent: usize,
     pub children: Vec<Item>,
 }
@@ -237,15 +241,23 @@ pub struct Expr {
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct ParsedExpr {
+    pub(crate) original_simple_expression:Option<expression_parser::OriginalSimpleExpression>,
+    pub(crate) original_input_notices:Option<OriginalInputNotices>,
+    pub(crate) original_input_failure:Option<OriginalInputFailure>,
     pub expr: Option<Expr>,
     pub diagnostics: Vec<Diagnostic>,
 }
 
+impl ParsedExpr{pub fn original_input_notices(&self)->Option<&OriginalInputNotices>{self.original_input_notices.as_ref()}pub fn original_input_failure(&self)->Option<OriginalInputFailure>{self.original_input_failure}}
+mod original_input_notices;
+pub use original_input_notices::{OriginalInputNotice,OriginalInputNoticeKind,OriginalInputNotices,OriginalInputFailure,OriginalInputExpected,original_input_type_name};
 pub mod literal;
 pub use literal::{shift_expression, LiteralText};
 
+pub mod original_token_value;
+pub use original_token_value::OriginalTokenValue;
 mod expression_parser;
-pub use expression_parser::parse_expression;
+pub use expression_parser::{parse_expression,parse_expression_original_token_view,parse_expression_demanded,parse_original_expression_demanded,DemandedExpression,NativePrimitiveClauseMode,NativeExpressionTokenDemand,NativeExpressionTokenOccurrence,NativeTermExpectation};
 mod expression_continuation;
 pub use expression_continuation::splice_expression_continuations;
 
@@ -253,6 +265,7 @@ mod declaration_parser;
 use declaration_parser::*;
 mod declaration_qualifiers;
 pub use declaration_parser::{
+    original_outer_terminator_observation_using, OriginalOuterTerminatorObservation,
     parse, parse_declaration_skeleton, primary_header_cursors, primary_header_facts,
     top_level_assignment_index, top_level_assignment_index_from_span_tokens, DeclarationSkeleton,
     PrimaryHeaderInput,
@@ -293,19 +306,23 @@ pub mod native_special_forms;
 mod procedure_origin_tests;
 
 mod parameter_syntax;
-pub use parameter_syntax::{HeaderTypeDeclarationSyntax, ParameterSignature, ParameterSyntax};
+mod shared_parameter_signature;
+pub use shared_parameter_signature::{SharedParameterSignature,ProcedureParameters};
+pub use parameter_syntax::{HeaderTypeDeclarationSyntax, ParameterSignature, ParameterSyntax,parameter_signature_with_default_roots,parameter_signature_original_with_default_roots};
 
 mod parameter_clauses;
-pub use parameter_clauses::{parameter_clause_spans, ParameterClauseSpans};
+pub use parameter_clauses::{parameter_clause_spans, ParameterClauseSpans,ParameterClauseCursor,ParameterExpressionDemand};
+mod parameter_input_cursor;
+pub use parameter_input_cursor::{ParameterInputCursor,ParameterInputFlow,ParameterInputFailure,RetainedParameterInput};
 mod parameter_expressions;
-pub use parameter_expressions::{ParameterExpressions, ParameterInputSyntax};
+pub use parameter_expressions::{ParameterDefaultSyntaxProvider,ParameterExpressions, ParameterInputSyntax};
 
 mod setting_drop;
 mod setting_prepare;
 mod admitted_worklist;
 mod body_literal_syntax;
 pub use body_literal_syntax::{prepare_body_literal_syntax,PreparedBodyLiteralSyntax,BodyLiteralAdmission,drop_body_literal_syntax};
-pub use setting_prepare::{prepare_setting_expression, SettingSyntaxFailure};
+pub use setting_prepare::{prepare_setting_expression,prepare_setting_expression_with_original_literal_facts,retain_demanded_expression, SettingSyntaxFailure};
 mod setting_expression;
 pub use setting_expression::{
     visit_setting_literal_retention, SettingAdmission, SettingEvaluationFrame, SettingExpression, SettingRootLease,
@@ -315,7 +332,40 @@ mod setting_slots;
 pub use setting_slots::SettingExpressionSlots;
 
 mod setting_projection;
-pub use setting_projection::{ProjectedExprView, SettingValueView, SettingView};
+pub use setting_projection::{ProjectedExprView, SettingValueView, SettingView,SyntaxProjection};
 pub use statements::{
     parse_body_items_with_context_and_settings, parse_body_items_with_admitted_literals, SettingStatement, SettingSyntaxProvider,
 };
+
+mod syntax_ledger_views;
+pub use syntax_ledger_views::{ProjectedSyntaxExpr,ProjectedParameterSignature,ProjectedParameter,ProjectedHeaderTypeDeclaration,ProjectedParameterInput,ProjectedLocalLedger,ProjectedLocal,ProjectedArrayInitializer,ProjectedControlOrigins,ProjectedPendingBodies,ProjectedLiteralFragment,SyntaxViewError,ProjectedStatements,ProjectedStatement,ProjectedStatementKind,ProjectedForControl,ProjectedForInitializer,ProjectedSwitchCases,ProjectedSwitchCase,ProjectedSwitchAlternative};
+
+pub use declaration_parser::{OriginalDeclarationFatal,OriginalDeclarationSkeleton,OriginalPrimaryHeader,OriginalHeaderFlow,OriginalDeclarationHeaderObserver,parse_original_declaration_skeleton_using,parse_original_declaration_skeleton_with_observer_using};
+
+pub use syntax_ledger_views::ProjectedSettingExpression;
+
+pub use statements::{OriginalBodyGrammarOutcome,OriginalBodyGrammarKind};
+
+mod original_literal_data;
+pub use original_literal_data::{OriginalLiteralData,OriginalStringMode};
+
+pub use lexer_items::{NativeLexicalPurpose,OriginalPunctuationFacts,OriginalIdentFacts,OriginalWhitespaceFacts,OriginalResourceFacts,OriginalCommentFacts,OriginalNumberFacts,NativeTokenCursor,OriginalPreparedBoundary,NativeTokenProgress,NativeTokenStep};
+pub use lexer_items::{OriginalQuotedFrame,OriginalQuotedPart,OriginalQuotedPartKind,OriginalQuotedStep};
+
+pub mod original_scalar_transport;
+
+mod original_lexical_point;
+pub use original_lexical_point::{OriginalLexicalNoticePoint,OriginalLexicalPointKind};
+
+pub use declaration_parser::{OriginalPrimaryLiteralFacts,OriginalLiteralFactsView};
+
+pub use original_token_value::OriginalCommentKind;
+
+mod span_token_storage;
+pub use span_token_storage::{SpanTokenStorage,SharedSpanTokens};
+pub use declaration_parser::OriginalDeclarationSyntax;
+
+pub use declaration_parser::{OriginalPrimaryDemand,OriginalPrimaryLiveHeader};
+
+mod admitted_message;
+pub use admitted_message::message_using as admitted_message_using;

@@ -66,6 +66,7 @@ struct Chunk {
 }
 #[derive(Debug)]
 enum Records {
+    Raw(super::origin_raw_rows::OriginalRawOrigins),
     Compact(Box<[Compact]>),
     Wide(Box<[Wide]>),
     /// Rows by region: a session holds one chunk per region, not one row per output line.
@@ -74,18 +75,27 @@ enum Records {
         len: usize,
     },
 }
-#[derive(Debug)]
 struct Inner {
     records: Records,
     paths: Box<[Arc<PathBuf>]>,
     traces: Box<[Arc<Vec<MacroExpansion>>]>,
     /// The chunk the last lookup landed in (lookups mostly move forward a little).
     hint: std::sync::atomic::AtomicUsize,
+    original_credit: Option<dm_syntax::SettingRootLease>,
+    original_metadata: Option<dm_syntax::SharedSettingRetention>,
 }
+// No public Weak/Arc escape exists. On the last arena clone the actual Arc
+// control allocation is freed before the funded Inner payload is destroyed.
+// This keeps its fixed-allocation lease live through physical deallocation.
+#[derive(Clone)]
+struct OriginOwner(Option<Arc<Inner>>);
+impl From<Arc<Inner>> for OriginOwner{fn from(value:Arc<Inner>)->Self{Self(Some(value))}}
+impl std::ops::Deref for OriginOwner{type Target=Arc<Inner>;fn deref(&self)->&Self::Target{self.0.as_ref().expect("live origin arena")}}
+impl Drop for OriginOwner{fn drop(&mut self){if let Some(owner)=self.0.take(){if let Some(inner)=Arc::into_inner(owner){drop(inner)}}}}
 /// Clones share immutable records and the original exact path/trace allocations.
 #[derive(Clone)]
 pub struct ExpandedOriginArena(
-    Arc<Inner>,
+    OriginOwner,
     Option<Arc<super::origin_byte_layout::ByteLayoutLedger>>,
 );
 impl std::fmt::Debug for ExpandedOriginArena {
@@ -96,17 +106,33 @@ impl std::fmt::Debug for ExpandedOriginArena {
 impl Default for ExpandedOriginArena {
     fn default() -> Self {
         Self(
-            Arc::new(Inner {
+            OriginOwner::from(Arc::new(Inner {
                 records: Records::Compact(Box::new([])),
                 paths: Box::new([]),
                 traces: Box::new([]),
                 hint: Default::default(),
-            }),
+                original_credit: None,
+                original_metadata: None,
+            })),
             None,
         )
     }
 }
 impl ExpandedOriginArena {
+    pub(super) fn from_actual_raw_rows_using(rows:super::origin_raw_rows::OriginalRawOrigins,metadata:dm_syntax::SharedSettingRetention,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Self>{
+        a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))?;
+        if !rows.is_admitted_by(a)||!metadata.is_admitted_by(a){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"raw mapping rows belong to another admission"))}
+        let bytes=std::mem::size_of::<Inner>().checked_add(2*std::mem::size_of::<usize>()).ok_or(std::io::ErrorKind::OutOfMemory)?;
+        let credit=a.reserve(bytes).map_err(|e|a.take_operational_error().unwrap_or(e))?;
+        Ok(Self(OriginOwner::from(Arc::new(Inner{records:Records::Raw(rows),paths:Box::new([]),traces:Box::new([]),hint:Default::default(),original_credit:Some(credit),original_metadata:Some(metadata)})),None))
+    }
+    /// None denotes the ordinary native row representation. Raw records return
+    /// an explicit producer-owned terminal-boundary decision, never inference
+    /// from a physical line envelope ending at source_text.len().
+    /// Readonly coordinate DATA for the existing source-map equality recipe.
+    /// No source-role authority follows from these actual producer facts.
+    pub fn original_raw_point_geometry(&self,index:usize)->Option<(usize,super::OriginalByteCursor,Span,Span,bool)>{match &self.0.records{Records::Raw(rows)=>rows.geometry(index),_=>None}}
+    pub fn original_raw_source_end_at(&self,index:usize,offset:usize)->Option<bool>{match &self.0.records{Records::Raw(rows)=>Some(rows.source_end_at(index,offset)),_=>None}}
     /// Physical immutable provenance owner, never a content hash shortcut.
     pub fn same_owner(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.0, &other.0)
@@ -118,6 +144,7 @@ impl ExpandedOriginArena {
     }
     pub fn len(&self) -> usize {
         match &self.0.records {
+            Records::Raw(rows) => rows.len(),
             Records::Compact(v) => v.len(),
             Records::Wide(v) => v.len(),
             Records::Chunked { len, .. } => *len,
@@ -152,6 +179,7 @@ impl ExpandedOriginArena {
     }
     pub fn get(&self, index: usize) -> Option<ExpandedOriginView<'_>> {
         let value = match &self.0.records {
+            Records::Raw(rows) => return rows.get(index),
             Records::Compact(v) => v.get(index)?.wide(index),
             Records::Wide(v) => *v.get(index)?,
             Records::Chunked { chunks, len } => {
@@ -275,6 +303,7 @@ impl ExpandedOriginArena {
             std::mem::size_of::<Inner>(),
         );
         match &self.0.records {
+            Records::Raw(rows) => rows.visit_storage(&mut visit),
             Records::Compact(v) => boxed(v, &mut visit),
             Records::Wide(v) => boxed(v, &mut visit),
             // The rows themselves are the records' shared allocations (census: expansion records).
@@ -290,6 +319,9 @@ impl ExpandedOriginArena {
                 }
             }
         }
+        if let Some(credit)=&self.0.original_credit { credit.visit_counter_storage(|p,n|visit(p,n,n)); }
+        if let Some(metadata)=&self.0.original_metadata{let mut first=true;metadata.visit_storage(|p,n|{let bytes=if first{first=false;n+2*std::mem::size_of::<usize>()}else{n};visit(p,1,bytes);});}
+
         boxed(&self.0.paths, &mut visit);
         boxed(&self.0.traces, &mut visit);
         if let Some(layout) = &self.1 {
@@ -427,12 +459,14 @@ impl ExpandedOriginArena {
                 .collect();
         }
         Some(Self(
-            Arc::new(Inner {
+            OriginOwner::from(Arc::new(Inner {
                 records: Records::Compact(records.into_boxed_slice()),
                 paths: paths.into_boxed_slice(),
                 traces: traces.into_boxed_slice(),
                 hint: Default::default(),
-            }),
+                original_credit: None,
+                original_metadata: None,
+            })),
             None,
         ))
     }
@@ -536,7 +570,7 @@ impl ExpandedOriginArena {
                 .collect();
         }
         Some(Self(
-            Arc::new(Inner {
+            OriginOwner::from(Arc::new(Inner {
                 records: Records::Chunked {
                     chunks: chunks.into_boxed_slice(),
                     len: rows,
@@ -544,7 +578,9 @@ impl ExpandedOriginArena {
                 paths: paths.into_boxed_slice(),
                 traces: Box::new([]),
                 hint: Default::default(),
-            }),
+                original_credit: None,
+                original_metadata: None,
+            })),
             None,
         ))
     }
@@ -752,7 +788,7 @@ impl OriginArenaBuilder {
     }
     pub(super) fn finish(self) -> ExpandedOriginArena {
         ExpandedOriginArena(
-            Arc::new(Inner {
+            OriginOwner::from(Arc::new(Inner {
                 records: match self.wide {
                     Some(v) => Records::Wide(v.into_boxed_slice()),
                     None if !self.chunks.is_empty() => Records::Chunked {
@@ -764,7 +800,9 @@ impl OriginArenaBuilder {
                 paths: self.paths.into_boxed_slice(),
                 traces: self.traces.into_boxed_slice(),
                 hint: Default::default(),
-            }),
+                original_credit: None,
+                original_metadata: None,
+            })),
             None,
         )
     }
@@ -878,6 +916,7 @@ impl ExpandedOriginArena {
         lease: &crate::SourceAcquisitionLease,
         offset: usize,
     ) -> Result<super::origin_byte_layout::OriginalByteCursor, &'static str> {
+        if let Records::Raw(rows)=&self.0.records{return rows.point(index,occurrence,lease,offset)}
         let origin = self
             .get(index)
             .ok_or("native original layout row unavailable")?;
@@ -908,6 +947,7 @@ impl ExpandedOriginArena {
         lease: &crate::SourceAcquisitionLease,
         offset: usize,
     ) -> Result<super::origin_byte_layout::OriginalByteCursor, &'static str> {
+        if let Records::Raw(rows)=&self.0.records{return rows.point(index,occurrence,lease,offset)}
         if let Ok(point) = self.original_byte_cursor(index, occurrence, lease, offset) {
             return Ok(point);
         }
@@ -969,6 +1009,7 @@ impl ExpandedOriginArena {
         })
     }
     pub(super) fn equivalent_byte_layout(&self, other: &Self) -> bool {
+        match (&self.0.records,&other.0.records){(Records::Raw(a),Records::Raw(b))=>return a.equivalent(b),(Records::Raw(_),_)|(_,Records::Raw(_))=>return false,_=>()}
         match (&self.1, &other.1) {
             (Some(a), Some(b)) => a.equivalent(b),
             (None, None) => true,
@@ -996,12 +1037,13 @@ impl ExpandedOriginArena {
         lease: &crate::SourceAcquisitionLease,
         offset: usize,
     ) -> Result<usize, &'static str> {
+        if let Records::Raw(rows)=&self.0.records{return rows.policy_line(index,occurrence,lease,offset)}
         let origin = self
             .get(index)
             .ok_or("native policy-line row unavailable")?;
         self.1
             .as_ref()
             .ok_or("native policy-line layout unavailable")?
-            .locate_macro_line(index, origin, occurrence, lease, offset)
+            .locate_policy_line(index, origin, occurrence, lease, offset)
     }
 }

@@ -13,153 +13,15 @@
 
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
-use serde::{Deserialize, Serialize};
 
-use crate::dm::pylines::{allowed_in_recorded, py_splitlines, recorded_into};
+use crate::dm::pylines::{allowed_in_recorded,recorded_into};
 use crate::incr;
-use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
+use crate::lint::{Cx,Lint,Meta,Registry,Sink};
 use crate::parity::Parity;
-use crate::tree::{SourceFile, Select};
-use crate::util::is_py_space;
 
-const BASELINE: &str = "tools/ci/latent_baseline.txt";
-const HINT: &str = "go through latent_materialize_all()/latent_entries()/slot_contents()";
-
-static META: Meta = Meta {
-    name: "latent",
-    group: "",
-    label: "latent",
-    legacy: "tools/ci/latent_lint.py",
-    // os.walk: dot-files and dot-directories included.
-    select: Select { roots: &[("code", "dm")], hidden: true },
-    scan: ScanKind::Tree,
-    policy: Policy::Sites {
-        baseline: BASELINE,
-        header: &[
-            "Raw contents walks on latent holders (tools/ci/latent_lint.py). rule<TAB>file<TAB>normalized line.",
-            "Shrink-only: fix a site through the ledger API, then `python tools/ci/latent_lint.py --update`.",
-        ],
-        banned: &[],
-    },
-    rules: &[RuleMeta { name: "raw_walks", hint: HINT }],
-    allow: crate::allow_registry_fields::latent::ALLOW_0,
-    lists: &[],
-};
-
+use crate::raw_tree_latent_policy as policy;
+use policy::{META,BASELINE};
 struct Latent;
-
-/// `under`: the longest root that is `path` or a path prefix of it.
-fn under<'a>(path: &str, roots: &'a HashSet<String>) -> Option<&'a str> {
-    let mut best: Option<&str> = None;
-    for root in roots {
-        if path == root || (path.starts_with(root.as_str()) && path.as_bytes().get(root.len()) == Some(&b'/')) {
-            if best.map(|b| root.len() > b.len()).unwrap_or(true) {
-                best = Some(root);
-            }
-        }
-    }
-    best
-}
-
-/// Nearest declaration wins: a subtype set back to FALSE is not a holder.
-fn is_holder(path: &str, holders: &HashSet<String>, eager: &HashSet<String>) -> bool {
-    let latent = under(path, holders);
-    let opted_out = under(path, eager);
-    match latent {
-        Some(l) => opted_out.map(|o| l.len() > o.len()).unwrap_or(true),
-        None => false,
-    }
-}
-
-/// One file's contribution to the holder index, and its count of legacy contents loops.
-#[derive(Serialize, Deserialize, Default, PartialEq)]
-struct Facts {
-    holders: Vec<String>,
-    eager: Vec<String>,
-    legacy: u32,
-}
-
-fn facts_of(f: &SourceFile) -> Facts {
-    let type_header = crate::pat_match!(r"(/[\w/]+)\s*$");
-    let latent_decl = crate::pat_match!(r"\s+latent_contents\s*=\s*(TRUE|FALSE)");
-    let legacy_loop = crate::pat!(r"\bfor\s*\(.*\bin\s+(?:[\w.]+\.)?contents\b");
-    let lines = py_splitlines(f.text());
-    let mut holders: BTreeSet<String> = BTreeSet::new();
-    let mut eager: BTreeSet<String> = BTreeSet::new();
-    let mut legacy = 0u32;
-    let mut current: Option<String> = None;
-    for line in &lines {
-        if let Some(h) = type_header.captures(line) {
-            current = Some(h.s(1).to_string());
-            continue;
-        }
-        if !line.is_empty() && !line.chars().next().map(is_py_space).unwrap_or(false) {
-            current = None;
-        }
-        if let Some(cur) = &current {
-            if let Some(d) = latent_decl.captures(line) {
-                if d.s(1) == "TRUE" {
-                    holders.insert(cur.clone());
-                } else {
-                    eager.insert(cur.clone());
-                }
-            }
-        }
-    }
-    for line in &lines {
-        if legacy_loop.is_match(line) {
-            legacy += 1;
-        }
-    }
-    Facts { holders: holders.into_iter().collect(), eager: eager.into_iter().collect(), legacy }
-}
-
-/// The raw-walk sites of one file (line numbers), given the holder index. ALLOW questions are
-/// recorded (the cache replays them).
-fn judge(f: &SourceFile, holders: &HashSet<String>, eager: &HashSet<String>) -> Vec<u32> {
-    let proc_header = crate::pat_match!(r"(/[\w/]+?)/(?:proc/|verb/)?(\w+)\(");
-    let own_walk = crate::pat!(
-        r"\bin\s+(?:src\.)?contents\b|\bin\s+src\s*\)|(?<![\w.])contents\.len\b|length\(\s*(?:src\.)?contents\s*\)"
-    );
-    let typed_var = crate::pat!(r"var/([\w/]+)/(\w+)");
-    let lines = py_splitlines(f.text());
-    let mut sites: Vec<u32> = Vec::new();
-    let mut owner: Option<String> = None;
-    let mut typed: Vec<String> = Vec::new();
-    for (i, line) in lines.iter().enumerate() {
-        let number = i + 1;
-        if allowed_in_recorded(f, &lines, number, "latent") {
-            continue;
-        }
-        if let Some(h) = proc_header.captures(line) {
-            owner = Some(h.s(1).to_string());
-            typed.clear();
-        } else if !line.is_empty() && !line.chars().next().map(is_py_space).unwrap_or(false) && !line.starts_with("//") {
-            owner = None;
-            typed.clear();
-        }
-        let code = line.split("//").next().unwrap_or("");
-        for m in typed_var.captures_iter(code) {
-            let var_type = format!("/{}", m.s(1).trim_start_matches('/'));
-            if is_holder(&var_type, holders, eager) && !typed.iter().any(|t| t == m.s(2)) {
-                typed.push(m.s(2).to_string());
-            }
-        }
-        if let Some(o) = &owner {
-            if is_holder(o, holders, eager) && own_walk.is_match(code) {
-                sites.push(number as u32);
-                continue;
-            }
-        }
-        for name in &typed {
-            if crate::raw_name_match::contents_walk(code, name) {
-                sites.push(number as u32);
-                break;
-            }
-        }
-    }
-    sites
-}
 
 impl Lint for Latent {
     fn meta(&self) -> &Meta {
@@ -168,7 +30,7 @@ impl Lint for Latent {
 
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
         let files = cx.files();
-        let facts = incr::facts("latent-facts", &files, facts_of);
+        let facts = incr::facts("latent-facts", &files, policy::facts_of);
         let mut holder_set: BTreeSet<String> = BTreeSet::new();
         let mut eager_set: BTreeSet<String> = BTreeSet::new();
         let mut legacy = 0usize;
@@ -180,7 +42,7 @@ impl Lint for Latent {
         let holders: HashSet<String> = holder_set.iter().cloned().collect();
         let eager: HashSet<String> = eager_set.iter().cloned().collect();
         let key = incr::ctx_key(&(&holder_set, &eager_set));
-        let results = recorded_into(out, || incr::keyed("latent-judge", key, &files, |f| judge(f, &holders, &eager)));
+        let results = recorded_into(out, || incr::keyed("latent-judge", key, &files, |f| policy::judge(f,&holders,&eager,|lines,number|allowed_in_recorded(f,lines,number,"latent"))));
 
         let mut where_: BTreeMap<&str, Vec<u32>> = BTreeMap::new();
         for (f, sites) in files.iter().zip(results) {

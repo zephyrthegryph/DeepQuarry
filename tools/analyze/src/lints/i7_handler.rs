@@ -16,8 +16,8 @@ use crate::tree::{Select, SourceFile};
 const HINT: &str = "declare interactions instead (DECLARE_INTERACTIONS / EXTEND_INTERACTIONS, code/__defines/interactions.dm)";
 
 static META: Meta = Meta {
-    name: "i7_handler",
-    group: "",
+    name: crate::allow_registry_fields::i7_handler::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::i7_handler::SCOPE_META_0.group,
     label: "i7_handler",
     legacy: "tools/ci/i7_handler_lint.py",
     // pathlib rglob: dot-files and dot-directories included.
@@ -26,7 +26,7 @@ static META: Meta = Meta {
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "handler_override", hint: HINT }],
     allow: crate::allow_registry_fields::i7_handler::ALLOW_0,
-    lists: &["allowed"],
+    lists: crate::allow_registry_fields::i7_handler::SCOPE_META_0.lists,
 };
 
 struct I7Handler;

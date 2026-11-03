@@ -93,6 +93,7 @@ pub enum UnreachableKind {
 }
 #[derive(Clone, Copy, Debug)]
 pub enum Event<'a> {
+    DoWhileUnreachable{at:Span,condition:Span},
     Unreachable {
         kind: UnreachableKind,
         at: Span,
@@ -176,6 +177,12 @@ fn archived_with_observer_mode<'a,E:From<String>+for<'e>From<&'e str>>(body:&'a 
         events: walker.events,
     })
 }
+/// SAME policy CFG over the canonical roots of an actual current binding.
+/// The caller must first authenticate genuine Original body availability; this
+/// function is syntax traversal only and never turns parse failure into None.
+pub(crate) fn current_original_syntax_with_observer_using<'ast,E:From<String>+for<'e>From<&'e str>>(body:&'ast dm_tree::frontend::CurrentArchivedBody<'_,'_>,observer:&mut impl EvaluatedObserver<'ast,E>)->Result<Walk<'ast>,E>{
+ let syntax=body.syntax().canonical_statement_storage();if !syntax.original_literal_syntax_complete(){return Err("current checker traversal has incomplete native literal syntax".into())}let mut walker=Walker{syntax,events:Vec::new(),observer:Some(observer)};let flow=walker.block(&syntax.parsed().statements,true)?;Ok(Walk{flow,events:walker.events})
+}
 fn walk(syntax: &StatementBody) -> Result<Walk<'_>, String> {
     if !syntax.syntax_complete() {
         return Err("checker traversal has incomplete native syntax".into());
@@ -205,6 +212,7 @@ impl<'a,E:From<String>+for<'e>From<&'e str>> Walker<'a, '_,E> {
     }
     fn event(&mut self, event: Event<'a>) -> Result<(), E> {
         self.check_observer_admission()?;
+        if let Some(observer)=self.observer.as_deref_mut(){if observer.control_event(event)?{return Ok(())}}
         if self.events.len() == self.events.capacity() {
             let cap = self
                 .events
@@ -353,6 +361,8 @@ impl<'a,E:From<String>+for<'e>From<&'e str>> Walker<'a, '_,E> {
             StatementKind::DoWhile { body, condition } => self.scoped(ScopeKind::DoWhile, |this| {
                 let state = this.block(body, false)?;
                 if state.terminates_loop() {
+                    this.event(Event::DoWhileUnreachable{at:statement.header_span,condition:condition.span})?;
+                    if let Some(observer)=this.observer.as_deref_mut(){observer.do_while_unreachable(statement.header_span,condition.span)?;}
                     return Ok(state);
                 }
                 this.evaluated(condition)?;
@@ -384,7 +394,7 @@ impl<'a,E:From<String>+for<'e>From<&'e str>> Walker<'a, '_,E> {
                         }
                     }
                     ForControl::Each { binding, iterable } => {
-                        this.evaluated(iterable)?;
+                        if let Some(observer)=this.observer.as_deref_mut(){observer.iterable(iterable,statement.header_span)?;}
                         this.binding(binding, None, false, statement.header_span)?;
                     }
                     ForControl::Pair {
@@ -392,7 +402,7 @@ impl<'a,E:From<String>+for<'e>From<&'e str>> Walker<'a, '_,E> {
                         value_binding,
                         iterable,
                     } => {
-                        this.evaluated(iterable)?;
+                        if let Some(observer)=this.observer.as_deref_mut(){observer.iterable(iterable,statement.header_span)?;}
                         this.binding(key_binding, None, false, statement.header_span)?;
                         this.binding(value_binding, None, true, statement.header_span)?;
                     }
@@ -424,9 +434,7 @@ impl<'a,E:From<String>+for<'e>From<&'e str>> Walker<'a, '_,E> {
                     start, end, step, ..
                 } = control
                 {
-                    if valid_range(start, end, step.as_ref())? == Some(true) {
-                        return Ok(state);
-                    }
+                    match valid_range(start,end,step.as_ref())?{Some(true)=>return Ok(state),Some(false)=>{if let Some(observer)=this.observer.as_deref_mut(){observer.invalid_range(statement.header_span)?;}},None=>{}}
                 }
                 Ok(ControlFlow::default())
             }),
@@ -434,12 +442,15 @@ impl<'a,E:From<String>+for<'e>From<&'e str>> Walker<'a, '_,E> {
                 selector,
                 cases,
                 else_branch,
+                default_present,
             } => {
+                if let Some(observer)=self.observer.as_deref_mut(){observer.switch_started(selector,cases,*default_present,statement.span)?;}
                 self.condition(ConditionKind::Switch, selector, statement.span)?;
                 self.evaluated(selector)?;
                 let mut all = ControlFlow::all_true();
                 for case in cases {
                     let state = self.scoped(ScopeKind::SwitchCase, |this| {
+                        if let Some(observer)=this.observer.as_deref_mut(){observer.switch_case(case)?;}
                         for alternative in &case.alternatives {
                             match alternative {
                                 dm_syntax::SwitchAlternative::Exact(value) => {
@@ -650,6 +661,7 @@ fn bare_truthy(expression: &Expr) -> Result<Option<bool>, String> {
             Err("prefab truthiness needs a primary term origin".into())
         }
         ExprKind::Literal(text) => {
+            if let Some(value)=text.original_value(){return Ok(match value{dm_syntax::OriginalTokenValue::Int(n)=>Some(n!=0),dm_syntax::OriginalTokenValue::Float(n)=>Some(n!=0.0),dm_syntax::OriginalTokenValue::String(s)=>Some(!s.is_empty()),_=>None})}
             let raw = text.as_str();
             if raw == "null" {
                 return Ok(Some(false));
@@ -694,6 +706,7 @@ fn bare_truthy(expression: &Expr) -> Result<Option<bool>, String> {
 }
 fn integer(expression: &Expr) -> Result<Option<i32>, String> {
     if let ExprKind::Literal(text) = &expression.kind {
+        if let Some(value)=text.original_value(){return Ok(match value{dm_syntax::OriginalTokenValue::Int(n)=>Some(n),_=>None})}
         if text
             .as_bytes()
             .first()

@@ -7,11 +7,11 @@ use crate::procedure::{HeaderAllocationReceipt, OriginalProcedureHeaders};
 
 #[derive(Debug)]
 pub enum FrontendBuildFailure {
-    Diagnostics(Vec<Diagnostic>),
+    Diagnostics(FrontendDiagnostics),
     Operational(std::io::Error),
 }
 impl From<Vec<Diagnostic>> for FrontendBuildFailure {
-    fn from(value: Vec<Diagnostic>) -> Self { Self::Diagnostics(value) }
+    fn from(value: Vec<Diagnostic>) -> Self { Self::Diagnostics(value.into()) }
 }
 impl std::fmt::Display for FrontendBuildFailure {
     fn fmt(&self, f:&mut std::fmt::Formatter<'_>)->std::fmt::Result {
@@ -26,6 +26,9 @@ pub(super) type Chunk = (usize, usize, Vec<dm_syntax::Diagnostic>, Option<(usize
 pub(super) trait Permit {
     type Failure: From<Vec<Diagnostic>> + Send;
     fn checkpoint(&self)->Result<(),Self::Failure>;
+    fn original_primary_admitted(&self)->bool{false}
+    fn original_primary_failure(&self,primary:&super::original_declaration_input::OriginalPrimaryRetention,syntax:&DeclarationSyntax,mapping:&Mapping<'_>)->Result<Self::Failure,Self::Failure>;
+    fn original_analysis_declarations(&self,expanded:&ExpandedRegions,engine:Option<&EngineSeed>,previous:Option<&DeclarationSyntax>)->Result<super::original_declaration_input::PreparedOriginalDeclarations,Self::Failure>;
     fn retain_generation_metadata(&self,bytes:usize)->Result<dm_syntax::SettingRootLease,Self::Failure>;
     fn get(&self,state:&RetainedDeclarations,key:&[u8],text:&str,offset:usize)->Result<Option<CurrentContribution>,Self::Failure>;
     fn headers(&self,source:dm_preprocess::SourceText,items:&[Item],offset:usize,tokens:Option<Vec<dm_syntax::SpanToken>>,checker_settings:bool)->Result<Result<Arc<OriginalProcedureHeaders>,String>,Self::Failure>;
@@ -53,6 +56,8 @@ impl Demand for Compatibility {
 impl Permit for Compatibility {
     type Failure=Vec<Diagnostic>;
     fn checkpoint(&self)->Result<(),Self::Failure>{Ok(())}
+    fn original_primary_failure(&self,_:&super::original_declaration_input::OriginalPrimaryRetention,_:&DeclarationSyntax,_:&Mapping<'_>)->Result<Self::Failure,Self::Failure>{Err(vec![internal("actual original primary fatal reporting requires native checked admission")])}
+    fn original_analysis_declarations(&self,_:&ExpandedRegions,_:Option<&EngineSeed>,_:Option<&DeclarationSyntax>)->Result<super::original_declaration_input::PreparedOriginalDeclarations,Self::Failure>{Err(vec![internal("Original Analyze primary preparation requires the existing checked native host")])}
     fn retain_generation_metadata(&self,_:usize)->Result<dm_syntax::SettingRootLease,Self::Failure>{Err(vec![internal("generation metadata requires checked native admission")])}
     fn get(&self,state:&RetainedDeclarations,key:&[u8],text:&str,offset:usize)->Result<Option<CurrentContribution>,Self::Failure>{Ok(state.get_shared(key,text,offset))}
     fn headers(&self,source:dm_preprocess::SourceText,items:&[Item],offset:usize,tokens:Option<Vec<dm_syntax::SpanToken>>,checker_settings:bool)->Result<Result<Arc<OriginalProcedureHeaders>,String>,Self::Failure>{Ok(if checker_settings{OriginalProcedureHeaders::for_declaration_profile(source,items,offset,tokens,None,true).map_err(|failure|match failure{crate::procedure::header_input::OriginalHeaderFailure::Source(message)=>message,crate::procedure::header_input::OriginalHeaderFailure::Operational(actual)=>actual.to_string()})}else{match tokens{Some(tokens)=>OriginalProcedureHeaders::from_primary(source,items,offset,tokens),None=>OriginalProcedureHeaders::reissue(source,items,offset)}})}
@@ -64,7 +69,7 @@ impl Permit for Compatibility {
 }
 
 pub(super) struct Checked<'a>{pub host:&'a Arc<dyn SettingExpressionQueries>}
-struct CheckedPermit<'a,'op>{admission:&'a dm_syntax::SettingAdmission<'op>}
+struct CheckedPermit<'a,'op>{admission:&'a dm_syntax::SettingAdmission<'op>,host:&'a dyn SettingExpressionQueries}
 fn actual_checkpoint(admission:&dm_syntax::SettingAdmission<'_>)->std::io::Result<()> {
     let result=admission.checkpoint();
     if let Some(actual)=admission.take_operational_error(){return Err(actual)}
@@ -77,14 +82,14 @@ impl Demand for Checked<'_>{
         let mut completed=None;
         let result=self.host.with_declaration_admission(&mut |admission|{
             let operation=operation.take().ok_or_else(||BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"declaration admission callback was repeated")))?;
-            match operation(&CheckedPermit{admission}) {
+            match operation(&CheckedPermit{admission,host:self.host.as_ref()}) {
                 Err(FrontendBuildFailure::Operational(actual))=>Err(BodySyntaxFailure::Operational(actual)),
                 result=>{completed=Some(result);Ok(())},
             }
         });
         match result {
             Err(BodySyntaxFailure::Operational(actual))=>return Err(FrontendBuildFailure::Operational(actual)),
-            Err(BodySyntaxFailure::Syntax(error))=>return Err(FrontendBuildFailure::Diagnostics(vec![error])),
+            Err(BodySyntaxFailure::Syntax(error))=>return Err(FrontendBuildFailure::Diagnostics(vec![error].into())),
             Ok(())=>(),
         }
         completed.ok_or_else(||FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"declaration admission callback was omitted")))?
@@ -105,8 +110,39 @@ impl Demand for Checked<'_>{
     }
 }
 impl Permit for CheckedPermit<'_,'_>{
+    fn original_primary_admitted(&self)->bool{true}
+    fn original_primary_failure(&self,primary:&super::original_declaration_input::OriginalPrimaryRetention,syntax:&DeclarationSyntax,mapping:&Mapping<'_>)->Result<Self::Failure,Self::Failure>{
+      use super::original_declaration_input::OriginalPrimaryFatal as F;
+      self.checkpoint()?;let a=self.admission;let mut credit=a.reserve(0).map_err(FrontendBuildFailure::Operational)?;let mut rows=Vec::new();
+      let(offset,fatal)=primary.frontier().ok_or_else(||FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidInput,"actual original parser did not issue a fatal frontier")))?;
+      let local=match fatal{F::Comma(actual)=>actual.token_span(),F::Parameter(actual)=>actual.token_span(),F::Input(actual)=>actual.token_span()};let at=offset.checked_add(local.start).ok_or_else(||FrontendBuildFailure::Operational(std::io::Error::from(std::io::ErrorKind::OutOfMemory)))?;
+      let source_point=|at|source_export_mapping::original_note_point_in(&mapping.expanded.origins,at,|region|{let include=mapping.plan.regions.get(region).ok_or("formal original region absent")?.occurrence;let acquired=mapping.plan.source_acquisitions.get(&include).ok_or("formal original source acquisition absent")?;Ok((include,acquired))},|include|Ok(&mapping.plan.occurrences.get(include).ok_or("formal original include absent")?.path)).map_err(|reason|std::io::Error::new(std::io::ErrorKind::Unsupported,reason));
+      primary.visit_formal_notices(&||actual_checkpoint(a),|notice,value|{
+        if notice.span().start>at{return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,"actual parser notice follows its consumed fatal frontier"))}
+        let point=source_point(notice.span().start)?;let native=mapping.output_for_retained_report(notice.span().start,a,&mut credit)?;
+        if native.path.as_path()!=point.path.as_path()||native.line!=point.line{return Err(std::io::Error::new(std::io::ErrorKind::Unsupported,"actual formal parser native/source cursor projection differs"))}
+        let message=super::diagnostic_rows::message_using(a,&mut credit,|out|{match notice.static_message(){Some(text)=>out.write_str(text),None=>{use std::fmt::Write;write!(out,"bad input type: '{}'",value.ok_or(std::fmt::Error)?)}}})?;
+        super::diagnostic_rows::push(&mut rows,&mut credit,Diagnostic{kind:DiagnosticKind::OriginalFormalNotice{notice,byte_column:point.byte_column},stage:DiagnosticStage::Declaration,message,location:Some(native)},a)
+      }).map_err(FrontendBuildFailure::Operational)?;
+      let point=source_point(at).map_err(FrontendBuildFailure::Operational)?;let native=mapping.output_for_retained_report(at,a,&mut credit).map_err(FrontendBuildFailure::Operational)?;
+      if native.path.as_path()!=point.path.as_path()||native.line!=point.line{return Err(FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::Unsupported,"actual original fatal native/source cursor projection differs")))}
+      let earlier=syntax.first_original_outer_block_using(&||self.checkpoint())?.map_err(|reason|FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::Unsupported,reason)))?;
+      let indentation=earlier.is_some_and(|before|before<at)||matches!(fatal,F::Parameter(actual)if actual.prior_outer_block())||matches!(fatal,F::Input(actual)if actual.prior_outer_block());
+      let kind=match fatal{F::Comma(reason)=>DiagnosticKind::OriginalFatalDeclaration{reason,byte_column:point.byte_column,indentation},F::Parameter(reason)=>DiagnosticKind::OriginalFatalParameter{reason,byte_column:point.byte_column,indentation},F::Input(reason)=>DiagnosticKind::OriginalFatalInput{reason,byte_column:point.byte_column,indentation}};
+      let retained_input=match fatal{F::Input(reason)=>Some(primary.input_fatal_message(offset,reason).map_err(FrontendBuildFailure::Operational)?),_=>None};
+      let message=super::diagnostic_rows::message_using(a,&mut credit,|out|match fatal{F::Comma(reason)=>out.write_str(reason.message()),F::Parameter(reason)=>reason.write_message(out),F::Input(_)=>out.write_str(retained_input.expect("actual retained input message"))}).map_err(FrontendBuildFailure::Operational)?;
+      super::diagnostic_rows::push(&mut rows,&mut credit,Diagnostic{kind,stage:DiagnosticStage::Declaration,message,location:Some(native)},a).map_err(FrontendBuildFailure::Operational)?;
+      let report=FrontendDiagnostics::admitted(rows,credit,a).map_err(FrontendBuildFailure::Operational)?;self.checkpoint()?;Ok(FrontendBuildFailure::Diagnostics(report))
+    }
+
     type Failure=FrontendBuildFailure;
     fn checkpoint(&self)->Result<(),Self::Failure>{actual_checkpoint(self.admission).map_err(FrontendBuildFailure::Operational)}
+    fn original_analysis_declarations(&self,expanded:&ExpandedRegions,engine:Option<&EngineSeed>,previous:Option<&DeclarationSyntax>)->Result<super::original_declaration_input::PreparedOriginalDeclarations,Self::Failure>{
+      let primary=super::original_declaration_input::OrderedOriginalDeclarations::parse(expanded.text.clone(),self.admission).map_err(FrontendBuildFailure::Operational)?;
+      let current=primary.adapt_for_original_outcome(self.admission).and_then(|products|products.into_current(self.admission)).map_err(FrontendBuildFailure::Operational)?;
+      current.retain_signature_aliases(self.host,self.admission).map_err(|error|match error{BodySyntaxFailure::Operational(actual)=>FrontendBuildFailure::Operational(actual),BodySyntaxFailure::Syntax(actual)=>FrontendBuildFailure::Diagnostics(vec![actual].into())})?;
+      current.converge_previous_code(previous,self.admission).and_then(|current|current.into_prepared(engine,self.admission)).map_err(FrontendBuildFailure::Operational)
+    }
     fn retain_generation_metadata(&self,bytes:usize)->Result<dm_syntax::SettingRootLease,Self::Failure>{
         let result=self.admission.reserve(bytes);
         if let Some(actual)=self.admission.take_operational_error(){return Err(FrontendBuildFailure::Operational(actual))}

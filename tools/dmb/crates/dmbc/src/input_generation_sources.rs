@@ -46,7 +46,8 @@ impl<'a,P:SnapshotProvider> GenerationSourceReader<'a,P>{
  pub(crate) fn capture_questions(frame:&'a GenerationQuestionBootstrap,inputs:&'a RecordingInputs<P>,discovery:&'a Arc<DiscoveryReceipt>,budget:&'a Arc<Budget>)->Result<Self,Failure>{Self::capture_frame(GenerationSourceFrame::Questions(frame),inputs,discovery,budget)}
  pub(crate) fn capture_frame(frame:GenerationSourceFrame<'a>,inputs:&'a RecordingInputs<P>,discovery:&'a Arc<DiscoveryReceipt>,budget:&'a Arc<Budget>)->Result<Self,Failure>{
   frame.require_recording(inputs)?;discovery.validate_recording(inputs)?;
-  let root=frame.root_source().and_then(Path::parent).ok_or_else(||Failure::Operational(io::Error::new(io::ErrorKind::InvalidData,"generation manifest root is absent")))?;
+  let project=frame.root_source().ok_or("generation actual root source absent")?;
+  let root=if let Some(subject)=inputs.original_analysis_subject(){let lease=frame.originals().find_map(|(path,lease)|(path==project).then_some(lease).flatten()).ok_or("generation actual root acquisition absent")?;subject.generation_workspace_root(project,lease)?}else{project.parent().ok_or("generation manifest root absent")?};
   if canonical_path(root)!=discovery.contract().root{return Err("generation source discovery belongs to another root".into())}
   let mut admit=|bytes|budget.charge(bytes).map_err(|message|io::Error::new(io::ErrorKind::OutOfMemory,message));
   if !discovery.covers_code_dm(&mut admit)?||!discovery.covers_generator_cli_tests(&mut admit)?{return Err("generation requires actual full CODE and generator-CLI discovery".into())}
@@ -139,8 +140,9 @@ impl OwnedGenerationFrame{
 pub(crate) struct RetiredGenerationInputs{inputs:InputSnapshot,root:PathBuf,names:[Option<crate::GeneratorName>;13]}
 impl RetiredGenerationInputs{pub(crate) fn into_parts(self)->(InputSnapshot,PathBuf,[Option<crate::GeneratorName>;13]){(self.inputs,self.root,self.names)}}
 impl<P:SnapshotProvider> RecordingInputs<P>{
- fn with_generation_presentation<R>(&self,frame:GenerationSourceFrame<'_>,root:&Path,budget:&Budget,consume:impl FnOnce(dq_analyze::captured_untyped::ManifestRead<'_>)->io::Result<R>)->io::Result<R>{
+ pub(crate) fn with_generation_original_manifest<R>(&self,frame:GenerationSourceFrame<'_>,root:&Path,budget:&Budget,consume:impl FnOnce(dq_analyze::captured_untyped::ManifestRead<'_>)->io::Result<R>)->io::Result<R>{
   let peak=root.as_os_str().len().checked_add("deepquarry.dme".len()).and_then(|n|n.checked_mul(32)).and_then(|n|n.checked_add(4096)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"generation presentation path overflow"))?;budget.charge(peak).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;
+  if let Some(subject)=self.original_analysis_subject(){let project=frame.root_source().ok_or_else(||invalid("generation subject actual root absent"))?;let lease=frame.originals().find_map(|(path,lease)|(path==project).then_some(lease).flatten()).ok_or_else(||invalid("generation subject actual root acquisition absent"))?;return consume(subject.generation_manifest(root,project,lease)?)}
   let path=canonical_path(&root.join("deepquarry.dme"));
   if let Some(lease)=frame.originals().find_map(|(current,lease)|(current==path.as_path()).then_some(lease).flatten()){
    if !self.validate_source_lease(&path,lease){return Err(invalid("generation fixed presentation acquisition differs"))}
@@ -167,7 +169,7 @@ impl crate::query_db::QueryDb{
     if artifact.name()!=name.name(){return Err(invalid("generation producer callback role/order differs"))}
     budget.charge(std::mem::size_of::<crate::generation_journal::StagedJournal>()).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;
     if root.is_none(){budget.charge(discovery.contract().root.as_os_str().len().checked_mul(4).and_then(|n|n.checked_add(std::mem::size_of::<PathBuf>())).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"generation closure root overflow"))?).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;root=Some(discovery.contract().root.clone());}
-    if ordinal==0{recording.with_generation_presentation(borrowed,&discovery.contract().root,budget,|manifest|{for(i,name)in names.iter().enumerate(){use dq_analyze::captured_untyped::ManifestRead;let view=match &manifest{ManifestRead::Compiled=>ManifestRead::Compiled,ManifestRead::CompiledOriginalBytes(bytes)=>ManifestRead::CompiledOriginalBytes(bytes),ManifestRead::OriginalBytes(bytes)=>ManifestRead::OriginalBytes(bytes),ManifestRead::ProvenUnavailable=>ManifestRead::ProvenUnavailable};included[i]=crate::runner_host::query_snapshot::original_manifest_includes(view,*name)?;}Ok(())})?;}
+    if ordinal==0{recording.with_generation_original_manifest(borrowed,&discovery.contract().root,budget,|manifest|{for(i,name)in names.iter().enumerate(){use dq_analyze::captured_untyped::ManifestRead;let view=match &manifest{ManifestRead::Compiled=>ManifestRead::Compiled,ManifestRead::CompiledOriginalBytes(bytes)=>ManifestRead::CompiledOriginalBytes(bytes),ManifestRead::OriginalBytes(bytes)=>ManifestRead::OriginalBytes(bytes),ManifestRead::ProvenUnavailable=>ManifestRead::ProvenUnavailable};included[i]=crate::runner_host::query_snapshot::original_manifest_includes(view,*name)?;}Ok(())})?;}
     journal.append_generator(ordinal as u32,name.name())?;
     if name==crate::GeneratorName::UiTypes{let width=artifact.generated_files().map(|(path,_)|path.len()).max().unwrap_or(0);let peak=discovery.contract().root.as_os_str().len().checked_add(width).and_then(|n|n.checked_mul(8)).and_then(|n|n.checked_add(1024)).ok_or_else(||io::Error::new(io::ErrorKind::OutOfMemory,"generation UI path overflow"))?;if peak>validation_peak{budget.charge(peak-validation_peak).map_err(|m|io::Error::new(io::ErrorKind::OutOfMemory,m))?;validation_peak=peak;}}
     for(path,text)in artifact.generated_files(){

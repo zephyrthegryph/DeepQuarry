@@ -124,7 +124,8 @@ pub fn scan_top_level_boundaries<B>(
         } else if !matches!(ch, ' ' | '\t' | '\r') {
             // Expanded #include directives can leave spaces before the first
             // absolute declaration path of an included file.
-            if at_line_start && delimiter_depth == 0 && (!indented || ch == '/') {
+            if at_line_start && delimiter_depth == 0 && (!indented || ch == '/')
+                && !(indented&&ch=='/'&&indented_prefab_initializer(source,pos)) {
                 let checkpoint = BoundaryCheckpoint {
                     offset: pos,
                     at_line_start,
@@ -145,6 +146,15 @@ pub fn scan_top_level_boundaries<B>(
         pos += ch.len_utf8();
     }
     Ok(ControlFlow::Continue(()))
+}
+
+/// Borrowed grammar shape only. Included ordinary absolute declarations retain
+/// their existing boundary; a modifier-bearing path is an executable prefab.
+/// The ambiguous native-only indented braced type extension is not certified.
+pub(crate) fn indented_prefab_initializer(source:&str,offset:usize)->bool{
+ let rest=&source[offset..];let line=rest.split(['\r','\n']).next().unwrap_or("");let width=line.char_indices().find_map(|(at,ch)|(!(crate::ident_continue(ch)||matches!(ch,'/'|'.'|':'))).then_some(at)).unwrap_or(line.len());if !crate::declaration_parser::bare_prefab(&line[..width]){return false}let mut tail=&line[width..];
+ loop{tail=tail.trim_start();if tail.starts_with('{'){return true}if !tail.starts_with("/*"){return false}let mut at=2;let mut depth=1usize;while at<tail.len()&&depth>0{if tail[at..].starts_with("/*"){depth+=1;at+=2}else if tail[at..].starts_with("*/"){depth-=1;at+=2}else{at+=tail[at..].chars().next().unwrap().len_utf8()}}if depth>0{return false}tail=&tail[at..];}
+
 }
 
 pub(crate) fn after_token_line_start(
@@ -258,4 +268,8 @@ mod tests {
             Err(BoundaryScanError::InvalidOffset)
         );
     }
+    #[test]fn indented_prefab_modifiers_preserve_original_body_and_every_resumed_checkpoint(){
+        let source="/proc/probe()\n    /datum/plain /* nested /* comment */ note */ {value=1}\n                            /var/included_root\n/proc/next()\n    return 2\n";let all=checkpoints(source);assert_eq!(all.iter().map(|state|state.offset()).collect::<Vec<_>>(),[0,source.find("/var/included_root").unwrap(),source.find("/proc/next()").unwrap()]);for(index,state)in all.iter().copied().enumerate(){let mut resumed=Vec::new();let _=scan_top_level_boundaries::<()>(source,state,|point|{resumed.push(point);ControlFlow::Continue(())}).unwrap();assert_eq!(resumed,all[index..]);}
+    }
+
 }

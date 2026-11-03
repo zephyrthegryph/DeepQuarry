@@ -231,7 +231,7 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
             let acquisition = mapping
                 .source_acquisition(occurrence)
                 .filter(|value| {
-                    self.validate_source_lease(path.as_ref(), value)
+                    (self.validate_source_lease(path.as_ref(), value)||self.validate_analysis_subject_lease(path.as_ref(),value))
                         && source.is_some_and(|source| value.source_text().same_view(source))
                 })
                 .cloned();

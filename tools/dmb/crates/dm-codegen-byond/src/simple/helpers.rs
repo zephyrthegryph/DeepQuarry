@@ -235,6 +235,7 @@ pub fn decode_constant_string_literal(raw: &str) -> Result<Option<Vec<u8>>, Stri
 pub fn decode_native_constant_string_literal(
     literal: &dm_syntax::LiteralText,
 ) -> Result<Option<Vec<u8>>, String> {
+    if literal.original_value().is_some(){return literal.decode_original_static_text()}
     Ok(literal
         .parts()
         .map_err(str::to_owned)?
@@ -354,6 +355,16 @@ fn fold_shift_count(number: f32) -> Option<u32> {
 /// non-constant operands) or reports an error (`x % 0.5`, `0 ** -1`, `-1 ** 0.5`). Numbers are 32-bit floats.
 pub(super) fn fold_number(expr: &Expr) -> Option<f32> {
     match &expr.kind {
+        ExprKind::Literal(value) if value.original_value().is_some() => {
+            // Actual Original token VALUE precedes any spelling inference.
+            // Recovered Int0 and exact Float bits must not be reparsed as the
+            // offending/raw token. String/resource never coerce via raw text.
+            match value.original_value().expect("same immutable scalar facts") {
+                dm_syntax::OriginalTokenValue::Int(number)=>Some(number as f32),
+                dm_syntax::OriginalTokenValue::Float(number)=>Some(number),
+                _=>None,
+            }
+        }
         ExprKind::Literal(value) if value == "1.#INF" => Some(f32::INFINITY),
         ExprKind::Literal(value) if value == "TRUE" => Some(1.0),
         ExprKind::Literal(value) if value == "FALSE" => Some(0.0),
@@ -628,4 +639,20 @@ mod native_literal_decode_tests {
             );
         }
     }
+}
+
+#[cfg(test)]mod original_numeric_fact_fold_tests{
+ use super::*;use dm_syntax::{LiteralText,OriginalTokenValue as V,SettingAdmission};use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ fn literal(raw:&str,value:V<&str>,a:&SettingAdmission<'_>)->Expr{Expr{span:dm_syntax::Span::new(0,raw.len()),kind:ExprKind::Literal(LiteralText::from_original_value_data(raw.to_owned(),0,value,a).unwrap())}}
+ #[test]fn actual_original_numeric_facts_precede_raw_overflow_hex_boolean_and_exponent_inference(){
+  let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);
+  for(raw,value,bits)in[("2147483648",V::Int(0),0f32.to_bits()),("0xFFFFFFFF",V::Int(-1),(-1f32).to_bits()),("TRUE",V::Int(0),0f32.to_bits()),("1e3",V::Float(1000.0),1000f32.to_bits()),("0",V::Float(-0.0),(-0f32).to_bits()),("1.#IND",V::Float(f32::from_bits(0x7fc00111)),0x7fc00111)]{let expr=literal(raw,value,&a);assert_eq!(fold_number(&expr).unwrap().to_bits(),bits);}
+  assert_eq!(counter.load(Ordering::Acquire),0);
+ }
+ #[test]fn static_string_and_resource_that_look_numeric_are_not_coerced_or_raw_parsed(){
+  let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);for value in [V::String("1"),V::Resource("1")]{let expr=literal("1",value,&a);assert!(fold_number(&expr).is_none());}assert_eq!(counter.load(Ordering::Acquire),0);
+ }
+ #[test]fn typed_numeric_recursion_keeps_existing_short_circuit_and_native_paths(){
+  let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);let left=literal("overflow text",V::Int(0),&a);let rhs=Expr{span:dm_syntax::Span::new(20,30),kind:ExprKind::Ident("dynamic".into())};let expr=Expr{span:dm_syntax::Span::new(0,30),kind:ExprKind::Binary{op:"&&".into(),lhs:Box::new(left),rhs:Box::new(rhs)}};assert_eq!(fold_number(&expr),Some(0.0));for(raw,expected)in[("1.#INF",f32::INFINITY),("0x10",16.0),("2+3",5.0)]{assert_eq!(fold_number(&parse_expression(raw).expr.unwrap()),Some(expected));}for(raw,expected)in[("TRUE",1.0),("FALSE",0.0)]{let native=Expr{span:dm_syntax::Span::new(0,raw.len()),kind:ExprKind::Literal(raw.into())};assert_eq!(fold_number(&native),Some(expected));}
+ }
 }

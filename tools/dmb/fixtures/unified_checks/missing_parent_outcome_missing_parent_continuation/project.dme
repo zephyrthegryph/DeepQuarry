@@ -1,0 +1,5 @@
+/datum/bad
+    parent_type=/datum/missing
+/proc/probe()
+    set mystery_probe=1
+    missing_probe

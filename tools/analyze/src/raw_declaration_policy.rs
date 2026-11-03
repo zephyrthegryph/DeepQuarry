@@ -1,16 +1,19 @@
 //! Shared original raw declaration policy, emitted as ephemeral callbacks.
 //! This is not a semantic model; native callers retain only annotation lines.
 use std::collections::BTreeSet;
+use crate::key_policy_control::{self as kc,Control};
 use crate::{pat_match,tree::View,util::{py_lstrip,py_rstrip,py_strip}};
 pub const MODIFIERS: &[&str] = &["tmp", "static", "global", "const", "final"];
 pub type DeclarationParts=(String,BTreeSet<String>,String,bool);
-fn split_decl(mut segs: Vec<&str>, block_mods: &BTreeSet<String>) -> Option<(String, BTreeSet<String>, String, bool)> {
+fn split_decl_using<C:Control>(mut segs:Vec<&str>,block_mods:&BTreeSet<String>,control:&mut C)->Result<Option<DeclarationParts>,C::Error>{
+    control.checkpoint()?;
     let mut mods = block_mods.clone();
     while !segs.is_empty() && MODIFIERS.contains(&segs[0]) {
+        control.checkpoint()?;
         mods.insert(segs.remove(0).to_string());
     }
     if segs.is_empty() {
-        return None;
+        return Ok(None);
     }
     let name = segs[segs.len() - 1].to_string();
     let mut tsegs: Vec<&str> = segs[..segs.len() - 1].to_vec();
@@ -20,10 +23,12 @@ fn split_decl(mut segs: Vec<&str>, block_mods: &BTreeSet<String>) -> Option<(Str
         tsegs.remove(0);
     }
     let vtype = if tsegs.is_empty() { String::new() } else { format!("/{}", tsegs.join("/")) };
-    Some((name, mods, vtype, is_list))
+    Ok(Some((name,mods,vtype,is_list)))
 }
 
-pub fn visit_file(rel:&str,code:&View,mut declare:impl FnMut(&str,DeclarationParts,&str,usize),mut latent:impl FnMut(&str,bool)) {
+pub fn visit_file(rel:&str,code:&View,mut declare:impl FnMut(&str,DeclarationParts,&str,usize),mut latent:impl FnMut(&str,bool)){visit_file_using(rel,code,&mut kc::Compatibility,|owner,parts,path,line,_|{declare(owner,parts,path,line);Ok(())},|owner,value,_|{latent(owner,value);Ok(())}).unwrap_or_else(|never|match never{})}
+pub fn visit_file_using<C:Control>(rel:&str,code:&View,control:&mut C,mut declare:impl FnMut(&str,DeclarationParts,&str,usize,&mut C)->Result<(),C::Error>,mut latent:impl FnMut(&str,bool,&mut C)->Result<(),C::Error>)->Result<(),C::Error>{
+ control.checkpoint()?;
     let header = pat_match!(r"^(/?[A-Za-z_][\w/]*)\s*(?:$|=|\()");
     let block_member = pat_match!(r"^((?:[A-Za-z_]\w*/)*[A-Za-z_]\w*)\s*(?:\[[^\]]*\])?\s*(?:=|$)");
     let block_head = pat_match!(r"^var(/(tmp|static|global|const))*\s*$");
@@ -38,6 +43,7 @@ pub fn visit_file(rel:&str,code:&View,mut declare:impl FnMut(&str,DeclarationPar
     let mut block_mods: Option<BTreeSet<String>> = None; // modifiers of an open `var` / `var/tmp` block
     let mut block_indent = 0usize;
     for (no, raw) in code.numbered() {
+        control.checkpoint()?;
         if py_strip(raw).is_empty() {
             continue;
         }
@@ -48,6 +54,7 @@ pub fn visit_file(rel:&str,code:&View,mut declare:impl FnMut(&str,DeclarationPar
             continue;
         }
         if indent == 0 {
+            kc::reserve(control,||text.len().checked_mul(128)?.checked_add(8192))?;
             block_mods = None;
             in_proc = false;
             in_metadata_registration = false;
@@ -77,8 +84,8 @@ pub fn visit_file(rel:&str,code:&View,mut declare:impl FnMut(&str,DeclarationPar
             }
             if let Some(k) = segs.iter().position(|s| *s == "var") {
                 let owner = format!("/{}", segs[..k].join("/"));
-                if let Some(d) = split_decl(segs[k + 1..].to_vec(), &empty) {
-                    declare(&owner,d,rel,no);
+                if let Some(d) = split_decl_using(segs[k + 1..].to_vec(),&empty,control)? {
+                    declare(&owner,d,rel,no,control)?;
                 }
                 continue;
             }
@@ -88,17 +95,18 @@ pub fn visit_file(rel:&str,code:&View,mut declare:impl FnMut(&str,DeclarationPar
         if in_proc {
             if in_metadata_registration {
                 if let Some(m) = latent_registration.captures(text) {
-                    latent(m.s(1),matches!(m.s(2),"TRUE"|"1"));
+                    latent(m.s(1),matches!(m.s(2),"TRUE"|"1"),control)?;
                 }
             }
             continue;
         }
         let Some(cur_t) = cur.as_deref() else { continue };
+        kc::reserve(control,||text.len().checked_mul(128)?.checked_add(8192))?;
         if let Some(bm) = &block_mods {
             if indent > block_indent {
                 if let Some(m) = block_member.captures(text) {
-                    if let Some(d) = split_decl(m.s(1).split('/').collect(), bm) {
-                        declare(cur_t,d,rel,no);
+                    if let Some(d) = split_decl_using(m.s(1).split('/').collect(),bm,control)? {
+                        declare(cur_t,d,rel,no,control)?;
                     }
                 }
                 continue;
@@ -114,13 +122,14 @@ pub fn visit_file(rel:&str,code:&View,mut declare:impl FnMut(&str,DeclarationPar
             continue;
         }
         if let Some(m) = var_decl.captures(text) {
-            if let Some(d) = split_decl(m.s(1).trim_matches('/').split('/').collect(), &empty) {
-                declare(cur_t,d,rel,no);
+            if let Some(d) = split_decl_using(m.s(1).trim_matches('/').split('/').collect(),&empty,control)? {
+                declare(cur_t,d,rel,no,control)?;
             }
             continue;
         }
         if let Some(m) = latent_re.captures(text) {
-            latent(cur_t,matches!(m.s(1),"TRUE"|"1"));
+            latent(cur_t,matches!(m.s(1),"TRUE"|"1"),control)?;
         }
     }
+    Ok(())
 }

@@ -892,7 +892,7 @@ impl Compiler<'_> {
                 StatementKind::Switch {
                     selector,
                     cases,
-                    else_branch,
+                    else_branch, ..
                 } => {
                     if self.native_switch(selector, cases, else_branch, &statement.raw_header)? {
                         continue;

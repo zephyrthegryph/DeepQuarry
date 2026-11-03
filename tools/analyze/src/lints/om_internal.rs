@@ -13,8 +13,8 @@ use crate::tree::{SourceFile, CODE_MAPS_DM};
 use crate::util::before_slashes;
 
 static META: Meta = Meta {
-    name: "om_internal",
-    group: "",
+    name: crate::allow_registry_fields::om_internal::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::om_internal::SCOPE_META_0.group,
     label: "om_internal",
     legacy: "tools/ci/om_internal_lint.py",
     select: CODE_MAPS_DM,
@@ -22,7 +22,7 @@ static META: Meta = Meta {
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "internal", hint: "use om_after / om_deadline / om_task_*" }],
     allow: crate::allow_registry_fields::om_internal::ALLOW_0,
-    lists: &[],
+    lists: crate::allow_registry_fields::om_internal::SCOPE_META_0.lists,
 };
 
 struct OmInternal;

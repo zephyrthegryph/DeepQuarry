@@ -93,6 +93,8 @@ sha1 = "0.10"
 toml = "0.8"
 
 [dev-dependencies]
+# Independent Original observation examples retain source SHA-256 identities.
+sha2 = "0.10"
 # Only explicit native comparison examples/tests create this existing executor.
 dm-exec = { path = "../dmb/crates/dm-exec" }
 tempfile = "3"
@@ -329,3 +331,64 @@ required-features = ["unified-oracle"]
 [[example]]
 name = "unified_check_grep_original"
 required-features = ["legacy-sem", "unified-oracle"]
+
+[[example]]
+name="unified_api_original"
+required-features=["legacy-sem","native-policy","unified-oracle"]
+
+[[example]]
+name="unified_sys_fields_original"
+path="examples/unified_sys_fields_original.rs"
+required-features=["legacy-sem","native-policy","unified-oracle"]
+
+[[example]]
+name="unified_sys_appearance_original"
+path="examples/unified_sys_appearance_original.rs"
+required-features=["legacy-sem","native-policy","unified-oracle"]
+
+[[example]]
+name="unified_analysis_subject_original"
+required-features=["legacy-sem"]
+[[example]]
+name="unified_raw_tree_original"
+required-features=["legacy-sem","native-policy","unified-oracle"]
+
+[[example]]
+name="unified_doc_snippets_original"
+required-features=["legacy-sem","native-policy","unified-oracle"]
+
+[[example]]
+name = "unified_ownership_original"
+required-features = ["legacy-sem", "native-policy"]
+
+[[example]]
+name="unified_original_body_disposition"
+required-features=["legacy-sem"]
+
+[[example]]
+name = "unified_original_preprocess_prefix"
+required-features = ["legacy-sem"]
+
+[[example]]
+name = "unified_ui_actions_original"
+required-features = ["legacy-sem", "native-policy", "unified-oracle"]
+
+[[example]]
+name="unified_setter_publishes_original"
+required-features=["legacy-sem","native-policy","unified-oracle"]
+
+[[example]]
+name="unified_op_order_original"
+required-features=["legacy-sem","native-policy","unified-oracle"]
+
+[[test]]
+name="unified_op_order"
+required-features=["legacy-sem","native-policy","unified-oracle"]
+
+[[example]]
+name="unified_sys_reactive_original"
+required-features=["legacy-sem","native-policy","unified-oracle"]
+
+[[example]]
+name="unified_lifeforms_original"
+required-features=["legacy-sem","native-policy","unified-oracle"]

@@ -84,3 +84,18 @@ pub(crate) fn visit_callable_declarations<E:From<String>>(tree:&SemanticTree,mut
 
 #[path="checker_order_checked.rs"]mod checked;
 pub(crate) use checked::{ArchivedOrder,sort_report_projection};
+
+/// Borrowed DATA view of the EXISTING checked order, with no source role.
+/// The private backing projection dies before its caller's operation credit.
+pub struct ArchivedOrderView<'view,'source>{order:&'view ArchivedOrder<'source>}
+impl ArchivedOrderView<'_,'_>{pub fn len(&self)->usize{self.order.len()}pub fn ordinal(&self,index:usize)->Option<usize>{self.order.ordinal(index)}}
+pub fn with_archived_order_using<W:crate::checker_effects::EffectReportWork,T>(archive:&dm_tree::frontend::BodyArchive,admission:&crate::checker_effects::ExecutionAdmission,work:&mut W,checkpoint:&dyn Fn()->std::io::Result<()>,consume:impl FnOnce(ArchivedOrderView<'_,'_>,&mut W)->Result<T,crate::policy_body_demand::PolicyFailure>)->Result<T,crate::policy_body_demand::PolicyFailure>{
+ use crate::policy_body_demand::PolicyFailure;let order=ArchivedOrder::build(archive,admission,&mut||checkpoint(),&mut|bytes|work.reserve(bytes))?;let pending=consume(ArchivedOrderView{order:&order},work);drop(order);if matches!(&pending,Err(PolicyFailure::Operational(_))){return pending}checkpoint().map_err(PolicyFailure::Operational)?;admission.reserve_external(0).map_err(PolicyFailure::Operational)?;pending
+}
+
+pub(crate) use checked::heapsort as sort_source_order;
+
+/// Stateless DATA-only access to the SAME established fallible in-place sort.
+/// It grants no source, checker or completion role and stops at the first error.
+pub fn sort_policy_data<T,E>(rows:&mut[T],compare:&mut impl FnMut(&T,&T)->Result<std::cmp::Ordering,E>)->Result<(),E>{checked::heapsort(rows,compare)}
+#[cfg(test)]mod policy_data_sort_tests{#[test]fn fallible_policy_data_order_stops_at_actual_io_and_quota_then_recovers(){for limit in [false,true]{let mut values=(0..10000).rev().collect::<Vec<_>>();let mut calls=0;let error=super::sort_policy_data(&mut values,&mut|a,b|{calls+=1;if calls==17{Err(if limit{std::io::ErrorKind::OutOfMemory.into()}else{std::io::Error::from_raw_os_error(1450)})}else{Ok(a.cmp(b))}}).unwrap_err();assert_eq!(calls,17,"no comparisons or callbacks continue after the first typed failure");if limit{assert_eq!(error.kind(),std::io::ErrorKind::OutOfMemory)}else{assert_eq!(error.raw_os_error(),Some(1450))}super::sort_policy_data(&mut values,&mut|a,b|Ok::<_,std::io::Error>(a.cmp(b))).unwrap();assert_eq!(values,(0..10000).collect::<Vec<_>>());}}}

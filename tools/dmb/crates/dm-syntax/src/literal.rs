@@ -49,6 +49,8 @@ pub struct LiteralText(Backing);
 enum Backing {
     Plain(String),
     Text(LiteralOwner),
+    // Scalar/static Original value: no template parser or lazy parts cache.
+    Original { data: crate::OriginalLiteralData, origin: usize },
 }
 /// Sealed standard-Arc owner. No Arc/Weak aliases escape; EVERY drop consumes
 /// Arc::into_inner, so the last owner frees control allocation before payload
@@ -128,6 +130,7 @@ impl LiteralText {
     /// original parts. Escapes remain lexical bytes; only the existing pinned
     /// splice scanner removes escaped newline/indentation. Never parses children.
     pub fn write_pinned_static_text(&self,out:&mut impl fmt::Write)->Result<bool,PinnedStaticTextError>{
+        if let Some(data)=self.original_data(){return match data.value(){crate::OriginalTokenValue::String(value)=>{out.write_str(value).map_err(PinnedStaticTextError::Output)?;Ok(true)},_=>Ok(false)}}
         let Some((is_raw,value))=literal_content(self.as_str())else{
             return if self.as_str().starts_with('@'){Err(PinnedStaticTextError::UnsupportedDelimiter)}else{Ok(false)}
         };
@@ -147,11 +150,60 @@ impl LiteralText {
     /// Backslash quotes exactly the next character; it is not a string escape.
     /// This data writer does not issue source authority.
     pub fn write_pinned_resource_text(&self,out:&mut impl fmt::Write)->Result<bool,PinnedStaticTextError>{
+        if let Some(data)=self.original_data(){return match data.value(){crate::OriginalTokenValue::Resource(value)=>{out.write_str(value).map_err(PinnedStaticTextError::Output)?;Ok(true)},_=>Ok(false)}}
         let raw=self.as_str();if !raw.starts_with('\''){return Ok(false)}
         let body=raw.strip_prefix('\'').and_then(|raw|raw.strip_suffix('\'')).ok_or(PinnedStaticTextError::UnsupportedDelimiter)?;
-        let mut chars=body.chars();while let Some(ch)=chars.next(){let ch=match ch{'\\'=>chars.next().ok_or(PinnedStaticTextError::UnsupportedDelimiter)?,'\''=>return Err(PinnedStaticTextError::UnsupportedDelimiter),other=>other};out.write_char(ch).map_err(PinnedStaticTextError::Output)?;}Ok(true)
+        if !visit_pinned_resource_bytes(body.as_bytes(),false,|part|out.write_str(std::str::from_utf8(part).expect("actual UTF8 resource ranges end at ASCII escape boundaries"))).map_err(PinnedStaticTextError::Output)?{return Err(PinnedStaticTextError::UnsupportedDelimiter)}Ok(true)
     }
 
+    /// Preferred header/code recipe route: share immutable source-free DATA,
+    /// never the AST-specific lazy literal/parts owner. No allocation or credit
+    /// transfer follows a loan (the original data owner keeps its own lease).
+    pub fn from_original_data(data:&crate::OriginalLiteralData,origin:usize,a:&crate::SettingAdmission<'_>)->std::io::Result<Self>{
+        a.checkpoint()?;Ok(Self(Backing::Original{data:data.clone(),origin}))
+    }
+    /// Non-retaining caller fallback. raw is adopted but explicitly funded by
+    /// the actual immutable owner; Token.text scratch is not an escaping lease.
+    pub fn from_original_value_data(raw:String,origin:usize,value:crate::OriginalTokenValue<&str>,a:&crate::SettingAdmission<'_>)->std::io::Result<Self>{
+        let data=crate::OriginalLiteralData::from_value_using(raw,value,a)?;
+        Self::from_original_data(&data,origin,a)
+    }
+    /// Mode is actual producer DATA; no delimiter/value inference.
+    pub fn original_string_mode(&self)->Option<crate::OriginalStringMode>{self.original_data().map(crate::OriginalLiteralData::string_mode)}
+    pub fn from_original_value_with_mode_data(raw:String,origin:usize,value:crate::OriginalTokenValue<&str>,mode:crate::OriginalStringMode,a:&crate::SettingAdmission<'_>)->std::io::Result<Self>{
+        let data=crate::OriginalLiteralData::from_value_with_mode_using(raw,value,mode,a)?;
+        Self::from_original_data(&data,origin,a)
+    }
+    pub fn original_data(&self)->Option<&crate::OriginalLiteralData>{match &self.0{Backing::Original{data,..}=>Some(data),_=>None}}
+    /// Runtime bytes from an actual scalar/static token, never its displayed
+    /// grammar spelling. Unknown producer mode remains an explicit refusal.
+    /// Normal shares the ONE escape/text-macro kernel with templates while
+    /// disabling interpolation grammar; Raw/Generated share its raw byte path.
+    pub fn decode_original_static_text(&self)->Result<Option<Vec<u8>>,String>{
+        let Some(crate::OriginalTokenValue::String(value))=self.original_value()else{return Ok(None)};
+        let mode=self.original_string_mode().unwrap_or(crate::OriginalStringMode::Unknown);
+        let mut parts=match mode{
+            crate::OriginalStringMode::Unknown=>return Err("Original static String runtime decoder entry is not yet issued".into()),
+            crate::OriginalStringMode::Raw|crate::OriginalStringMode::Generated=>raw_static_parts(value,Ok(LiteralLexicalShape{interpolated:false,pinned_segment_nonempty:!value.is_empty()})),
+            crate::OriginalStringMode::Normal=>{
+                if value.contains('\r'){
+                    let(cooked,positions)=without_cr(value);
+                    parse_text_content_clean(&cooked,RawProjection{original:value,positions:Some(&positions),base:0},None,false)?
+                }else{parse_text_content_clean(value,RawProjection::identity(value),None,false)?}
+            },
+        };
+        if let Some(error)=parts.runtime_error.take(){crate::setting_drop::drop_literal_parts(parts,None);return Err(error)}
+        debug_assert!(parts.expressions.is_empty());
+        Ok(Some(std::mem::take(&mut parts.template)))
+    }
+    pub fn original_value(&self)->Option<crate::OriginalTokenValue<&str>>{self.original_data().map(crate::OriginalLiteralData::value)}
+    pub fn original_origin(&self)->Option<usize>{match &self.0{Backing::Original{origin,..}=>Some(*origin),_=>None}}
+    /// Operation-admitted geometry rebind; never clones source, parts or raw.
+    pub fn rebind_original_using(&self,origin:usize,a:&crate::SettingAdmission<'_>)->std::io::Result<Self>{
+        let data=self.original_data().ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidInput,"literal is not issued Original DATA"))?;
+        Self::from_original_data(data,origin,a)
+    }
+    pub fn visit_original_literal_storage(&self,visit:impl FnMut(usize,usize,usize)){if let Some(data)=self.original_data(){data.visit_storage(visit)}}
     pub fn at(raw: String, origin: usize) -> Self {
         if raw.starts_with('"')
             || raw.starts_with("{\"")
@@ -171,6 +223,7 @@ impl LiteralText {
     }
     pub fn raw_storage(&self) -> &String {
         match &self.0 {
+            Backing::Original{data,..} => data.raw_storage(),
             Backing::Plain(raw) => raw,
             Backing::Text(state) => &state.raw,
         }
@@ -181,7 +234,7 @@ impl LiteralText {
     /// Read-only census; never computes or retains additional syntax.
     pub fn shared_storage(&self) -> Option<(usize, usize)> {
         match &self.0 {
-            Backing::Plain(_) => None,
+            Backing::Original{..} | Backing::Plain(_) => None,
             Backing::Text(state) => Some((
                 state.address(),
                 std::mem::size_of::<LiteralState>() + 2 * std::mem::size_of::<usize>(),
@@ -194,15 +247,23 @@ impl LiteralText {
     /// Already-prepared primary syntax DATA, even when native runtime text
     /// decoding explicitly refuses. Never decodes, lexes or parses on demand.
     /// Runtime consumers must keep using parts()/retained_parts().
+    /// Literal grammar ownership, not cache readiness or source authority.
+    pub fn owns_template_syntax(&self)->bool{matches!(&self.0,Backing::Text(_))}
     pub fn prepared_syntax_parts(&self) -> Option<Result<Option<&LiteralParts>, &String>> {
         match &self.0 {
-            Backing::Plain(_) => None,
+            Backing::Original{..} | Backing::Plain(_) => None,
             Backing::Text(state) => state.parts.get().map(|p| p.as_ref().map(Option::as_ref)),
         }
     }
     /// Runtime decoding keeps its original explicit refusal. Syntax consumers
     /// use the SAME cache through syntax_parts/prepared_syntax_parts.
     pub fn parts(&self)->Result<Option<&LiteralParts>,&str>{
+        // Typed lexical String is NOT an already-decoded runtime template.
+        // Until the SAME runtime decoder has an already-static value entry,
+        // refuse explicitly rather than raw-parsing '[' as interpolation or
+        // returning an invented runtime String. Original syntax_parts remains
+        // no children, and pinned static writers use the genuine value above.
+        if matches!(self.original_value(),Some(crate::OriginalTokenValue::String(_))){return Err("Original static String runtime decoder entry is not yet issued")}
         self.syntax_parts().and_then(|parts|match parts{Some(parts)if parts.runtime_error.is_some()=>Err(parts.runtime_error.as_ref().unwrap().as_str()),other=>Ok(other)})
     }
     /// The one original literal parser's child syntax, independent of runtime
@@ -309,6 +370,7 @@ impl LiteralText {
         self,
     ) -> (Option<LiteralParts>, Option<crate::SharedSettingRetention>) {
         match self.0 {
+            Backing::Original{data,..} => {drop(data);(None,None)},
             Backing::Plain(raw) => {
                 drop(raw);
                 (None, None)
@@ -319,6 +381,12 @@ impl LiteralText {
         }
     }
     pub(crate) fn shift(&mut self, offset: usize) {
+        if let Backing::Original{origin,..}=&mut self.0 {
+            // Inline geometry only: SAME immutable data and credit stay owned.
+            // The enclosing geometry operation already admits its actual work.
+            *origin=origin.checked_add(offset).expect("issued Original literal geometry overflow");
+            return;
+        }
         if let Backing::Text(state) = &self.0 {
             if offset != 0 {
                 let anchor = state.retention.get().cloned();
@@ -356,7 +424,11 @@ impl From<&str> for LiteralText {
 }
 impl PartialEq for LiteralText {
     fn eq(&self, other: &Self) -> bool {
-        self.as_str() == other.as_str()
+        match(self.original_data(),other.original_data()){
+            (Some(a),Some(b))=>a==b,
+            (None,None)=>self.as_str()==other.as_str(),
+            _=>false, // equal raw spelling is not equal typed static/template DATA
+        }
     }
 }
 impl Eq for LiteralText {}
@@ -441,7 +513,7 @@ fn string_literal_parts_clean(
 ) -> Result<Option<LiteralParts>, String> {
     let Some((is_raw,value))=literal_content(raw) else{return Ok(None)};
     if is_raw{
-     return Ok(Some(LiteralParts{runtime_error:None,fragments:Vec::new(),template:value.as_bytes().to_vec(),expressions:Vec::new(),lexical:Ok(LiteralLexicalShape{interpolated:false,pinned_segment_nonempty:!projection.segment(value.as_ptr() as usize-raw.as_ptr() as usize,value.len()).is_empty()})}));
+     return Ok(Some(raw_static_parts(value,Ok(LiteralLexicalShape{interpolated:false,pinned_segment_nonempty:!projection.segment(value.as_ptr() as usize-raw.as_ptr() as usize,value.len()).is_empty()}))));
     }
     let offset = value.as_ptr() as usize - raw.as_ptr() as usize;
     let mut parts = parse_interpolated_string_clean(value, projection.offset(offset), admission)?;
@@ -502,7 +574,7 @@ fn observe_segment(raw:&[u8],shape:&mut LiteralLexicalShape,error:&mut Option<Li
  match result{Ok(())=>(),Err(never)=>match never{}}
 }
 
-fn visit_pinned_segment<E>(
+pub(crate) fn visit_pinned_segment<E>(
     raw: &[u8],
     shape: &mut LiteralLexicalShape,
     error: &mut Option<LiteralLexicalError>,
@@ -551,10 +623,21 @@ fn visit_pinned_segment<E>(
     emit(&raw[start..])?;Ok(())
 }
 
+fn raw_static_parts(value:&str,lexical:Result<LiteralLexicalShape,LiteralLexicalError>)->LiteralParts{
+    LiteralParts{runtime_error:None,fragments:Vec::new(),template:value.as_bytes().to_vec(),expressions:Vec::new(),lexical}
+}
 fn parse_interpolated_string_clean(
     value: &str,
     projection: RawProjection<'_>,
     admission: Option<&crate::SettingAdmission<'_>>,
+) -> Result<LiteralParts, String> {
+    parse_text_content_clean(value,projection,admission,true)
+}
+fn parse_text_content_clean(
+    value: &str,
+    projection: RawProjection<'_>,
+    admission: Option<&crate::SettingAdmission<'_>>,
+    allow_interpolation:bool,
 ) -> Result<LiteralParts, String> {
     let mut template = Vec::new();
     let mut runtime_error=None;
@@ -662,7 +745,7 @@ fn parse_interpolated_string_clean(
             at += escape.len_utf8();
             continue;
         }
-        if ch == '[' {
+        if ch == '[' && allow_interpolation {
             if fragments.capacity()==0{
                 let count=value.bytes().filter(|b|*b==b'[').count().checked_add(1).ok_or_else(||{if let Some(a)=admission{a.record_operational_error(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"literal fragment count overflow"));}"literal fragment count overflow".to_owned()})?;
                 fragments.try_reserve_exact(count).map_err(|_|{if let Some(a)=admission{a.record_operational_error(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"literal fragment allocation refused"));}"literal fragment allocation refused".to_owned()})?;
@@ -1444,7 +1527,7 @@ impl LiteralText{
  pub fn pinned_fragments(&self)->Result<Option<impl Iterator<Item=Result<PinnedLiteralFragment<'_>,PinnedStaticTextError>>+'_>,PinnedStaticTextError>{
   let parts=match self.prepared_syntax_parts(){Some(Ok(Some(parts)))=>parts,Some(Err(_))=>return Err(PinnedStaticTextError::DeferredSyntax),_=>return Err(PinnedStaticTextError::Unprepared)};
   let shape=parts.lexical.map_err(PinnedStaticTextError::Lexical)?;if !shape.interpolated{return Ok(None)}if parts.fragments.len()<2{return Err(PinnedStaticTextError::DeferredSyntax)}
-  let origin=match &self.0{Backing::Text(state)=>state.origin,Backing::Plain(_)=>0};
+  let origin=match &self.0{Backing::Text(state)=>state.origin,Backing::Original{origin,..}=>*origin,Backing::Plain(_)=>0};
   Ok(Some(parts.fragments.iter().map(move|row|{let raw=self.as_str().get(row.range.range()).ok_or(PinnedStaticTextError::DeferredSyntax)?;let expression=match row.expression{Some(index)=>Some(parts.expressions.get(index).ok_or(PinnedStaticTextError::DeferredSyntax)?),None=>None};Ok(PinnedLiteralFragment{raw:raw.as_bytes(),expression,tokens:&row.tokens,origin,literal:self.as_str()})})))
  }
  pub fn visit_pinned_fragment_storage(&self,mut visit:impl FnMut(usize,usize,usize)){if let Some(Ok(Some(parts)))=self.prepared_syntax_parts(){visit(parts.fragments.as_ptr()as usize,parts.fragments.len()*std::mem::size_of::<LiteralFragment>(),parts.fragments.capacity()*std::mem::size_of::<LiteralFragment>());for row in &parts.fragments{visit(row.tokens.as_ptr()as usize,row.tokens.len()*std::mem::size_of::<crate::SpanToken>(),row.tokens.capacity()*std::mem::size_of::<crate::SpanToken>());}}}
@@ -1496,4 +1579,44 @@ impl LiteralText{
   }
  }
  #[test]fn runtime_tuple_decoder_stays_refused_and_later_valid_literal_recovers(){assert!(parse_interpolated_string(r#"a\q[value]tail"#).unwrap_err().contains("undefined text macro or escape sequence"));let valid=string_literal_parts(r#""hello\n[value]""#).unwrap().unwrap();assert_eq!(valid.1.len(),1);let early=string_literal_parts(r#""a\q""#).unwrap_err();assert_eq!(string_literal_parts(r#""a\q[1 +]""#).unwrap_err(),early,"later malformed lexical child cannot replace the original runtime refusal");}
+}
+
+#[cfg(test)]mod original_data_literal_tests{
+ use super::*;use crate::{OriginalLiteralData,OriginalTokenValue,SettingAdmission};use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ #[test]fn original_static_string_beginning_bracket_or_quote_never_becomes_template_syntax(){
+  let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);
+  for value in ["[danger()]", "\"[x]\"", "plain\\n"]{
+   let data=OriginalLiteralData::from_value_using("\"looks[like_template]\"".into(),OriginalTokenValue::String(value),&a).unwrap();let before=literal_child_parses_for_test();let text=LiteralText::from_original_data(&data,50,&a).unwrap();assert!(!text.owns_template_syntax());assert_eq!(text.syntax_parts().unwrap(),None);assert!(text.prepared_syntax_parts().is_none());assert_eq!(literal_child_parses_for_test(),before);let mut out=String::new();assert!(text.write_pinned_static_text(&mut out).unwrap());assert_eq!(out,value);assert!(text.parts().unwrap_err().contains("runtime decoder"));let rebound=text.rebind_original_using(200,&a).unwrap();assert!(rebound.original_data().unwrap().same_owner(&data));assert_eq!(rebound.original_origin(),Some(200));
+  }assert_eq!(counter.load(Ordering::Acquire),0);
+ }
+ #[test]fn original_value_fallback_is_funded_resource_is_not_redecoded_and_shift_does_not_clone_raw(){
+  let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);let mut text=LiteralText::from_original_value_data("'raw'".into(),10,OriginalTokenValue::Resource("already\\projected"),&a).unwrap();let pointer=text.raw_storage().as_ptr();let charged=counter.load(Ordering::Acquire);let mut output=String::new();assert!(text.write_pinned_resource_text(&mut output).unwrap());assert_eq!(output,"already\\projected");text.shift(20);assert_eq!(text.original_origin(),Some(30));assert_eq!(text.raw_storage().as_ptr(),pointer);assert_eq!(counter.load(Ordering::Acquire),charged);drop(text);assert_eq!(counter.load(Ordering::Acquire),0);
+ }
+ #[test]fn immutable_header_data_never_retains_a_setting_body_anchor_or_lazy_parts(){
+  let data_counter=Arc::new(AtomicUsize::new(0));let body_counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=SettingAdmission::new(&data_counter,1<<20,&poll);let data=OriginalLiteralData::from_value_using("\"static\"".into(),OriginalTokenValue::String("static"),&a).unwrap();
+  let text=LiteralText::from_original_data(&data,5,&a).unwrap();let body=crate::SharedSettingRetention::new(crate::SettingRootLease::reserve(&body_counter,4096,1024).unwrap());text.attach_setting_retention(&body).unwrap();drop(body);assert_eq!(body_counter.load(Ordering::Acquire),0,"scalar AST must not make header DATA hold a whole body lease");let mut retention=0;text.visit_setting_retention_storage(|_,n|retention+=n);assert_eq!(retention,0);drop(text);assert!(data_counter.load(Ordering::Acquire)>0);assert!(matches!(data.value(),OriginalTokenValue::String("static")));drop(data);assert_eq!(data_counter.load(Ordering::Acquire),0);
+ }
+ #[test]fn ordinary_literal_parser_and_shift_keep_existing_template_cache_path(){let mut text=LiteralText::at("\"a[x]b\"".into(),0);assert!(text.owns_template_syntax());assert_eq!(text.parts().unwrap().unwrap().expressions.len(),1);text.shift(10);assert_eq!(text.parts().unwrap().unwrap().expressions[0].span.start,13);}
+}
+
+// SAME resource value projection: slash quotes exactly one raw byte, with no
+// runtime escape decoding. Only an actual unterminated receipt may authorize
+// dropping its terminal slash during the old lexer's recovering value path.
+pub(crate) fn visit_pinned_resource_bytes<E>(bytes:&[u8],recovering:bool,mut emit:impl FnMut(&[u8])->Result<(),E>)->Result<bool,E>{
+ let(mut at,mut run)=(0,0);while at<bytes.len(){match bytes[at]{b'\\'=>{emit(&bytes[run..at])?;if at+1==bytes.len(){return Ok(recovering)}run=at+1;at+=2;},b'\''=>{emit(&bytes[run..at])?;return Ok(false)},_=>at+=1}}emit(&bytes[run..])?;Ok(true)
+}
+
+#[cfg(test)]mod original_static_runtime_tests{
+ use super::*;use crate::{OriginalTokenValue,OriginalStringMode,SettingAdmission};use std::sync::atomic::AtomicUsize;
+ #[test]fn actual_normal_mode_uses_same_escape_kernel_without_parsing_static_brackets_or_displayed_quotes(){
+  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let before=literal_child_parses_for_test();
+  let value=LiteralText::from_original_value_with_mode_data("misleading displayed grammar".into(),0,OriginalTokenValue::String(r"line\n\[static\]"),OriginalStringMode::Normal,&a).unwrap();assert_eq!(value.decode_original_static_text().unwrap().unwrap(),b"line\n[static]");
+  let value=LiteralText::from_original_value_with_mode_data("another grammar".into(),0,OriginalTokenValue::String("[not an expression]\""),OriginalStringMode::Normal,&a).unwrap();assert_eq!(value.decode_original_static_text().unwrap().unwrap(),b"[not an expression]\"");assert_eq!(literal_child_parses_for_test(),before);
+ }
+ #[test]fn actual_raw_and_generated_modes_keep_escape_bytes_literal_and_unknown_mode_never_guesses(){
+  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));
+  for mode in [OriginalStringMode::Raw,OriginalStringMode::Generated]{let value=LiteralText::from_original_value_with_mode_data("\"looks normal\"".into(),0,OriginalTokenValue::String(r"\n[static]"),mode,&a).unwrap();assert_eq!(value.decode_original_static_text().unwrap().unwrap(),br"\n[static]");}
+  let unknown=LiteralText::from_original_value_data("@\"looks raw\"".into(),0,OriginalTokenValue::String(r"\n[static]"),&a).unwrap();assert!(unknown.decode_original_static_text().unwrap_err().contains("not yet issued"));
+  let number=LiteralText::from_original_value_data("\"looks text\"".into(),0,OriginalTokenValue::Int(7),&a).unwrap();assert_eq!(number.decode_original_static_text().unwrap(),None);
+ }
 }

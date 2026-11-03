@@ -84,7 +84,7 @@ pub fn register_module(reg: &mut Registry, module: SysModule) {
 
 /// Unique original static descriptor builder; no scan callback is invoked.
 pub(crate) fn module_metadata(module:&SysModule,scan:ScanKind)->Meta {
-    let name: &'static str = leak(format!("sys/{}", module.name).into_boxed_str());
+    let name: &'static str = leak(crate::allow_registry_fields::legacy_scope_sys_name(module.name).into_boxed_str());
     let baseline: &'static str = leak(format!("tools/ci/sys_baseline/{}.txt", module.name).into_boxed_str());
     let header: &'static [&'static str] = leak(
         vec![leak(
@@ -103,7 +103,7 @@ pub(crate) fn module_metadata(module:&SysModule,scan:ScanKind)->Meta {
 
     Meta {
         name,
-        group: "sys",
+        group: crate::allow_registry_fields::SYS_SCOPE_GROUP,
         label: name,
         legacy: "tools/ci/sys_lint.py",
         select: policy_selection(),
@@ -111,7 +111,7 @@ pub(crate) fn module_metadata(module:&SysModule,scan:ScanKind)->Meta {
         policy: Policy::Sites { baseline, header, banned: &[] },
         rules: module.rules,
         allow: leak(allow.into_boxed_slice()),
-        lists: &[],
+        lists: crate::allow_registry_fields::SYS_SCOPE_LISTS,
     }
 }
 
@@ -256,16 +256,6 @@ pub fn col0(line: &str) -> bool {
 
 /// `_in_family` / `_resolvable`: `path` or one of its ancestors (cut at the last `/`, stopping at
 /// a cut index <= 0) is in `roots`.
-pub fn in_family(path: &str, roots: &std::collections::HashSet<String>) -> bool {
-    let mut path = path;
-    while !path.is_empty() {
-        if roots.contains(path) {
-            return true;
-        }
-        match path.rfind('/') {
-            Some(cut) if cut > 0 => path = &path[..cut],
-            _ => return false,
-        }
-    }
-    false
-}
+pub fn in_family(path:&str,roots:&std::collections::HashSet<String>)->bool{in_family_using(path,roots,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{})}
+/// Same nearest ancestor membership, with caller's existing typed operation poll.
+pub fn in_family_using<C:crate::key_policy_control::Control>(mut path:&str,roots:&std::collections::HashSet<String>,c:&mut C)->Result<bool,C::Error>{while !path.is_empty(){c.checkpoint()?;if roots.contains(path){return Ok(true)}match path.rfind('/'){Some(cut)if cut>0=>path=&path[..cut],_=>return Ok(false)}}Ok(false)}

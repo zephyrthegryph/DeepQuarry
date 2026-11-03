@@ -1,0 +1,6 @@
+/proc/probe(value)
+    switch(value)
+        if(1 || 2) while(value)
+            return 0
+        if(3)
+            return 1

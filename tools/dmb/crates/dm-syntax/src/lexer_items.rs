@@ -1,4 +1,10 @@
 use super::*;
+#[path="native_raw_literal.rs"]mod raw_literal;
+#[path="original_quoted_transport.rs"]mod original_quoted;
+pub use original_quoted::{OriginalQuotedFrame,OriginalQuotedPart,OriginalQuotedPartKind,OriginalQuotedStep};
+pub use raw_literal::NativeLexicalPurpose;
+#[path="native_demand_lexer.rs"]mod demand;
+pub use demand::{OriginalPunctuationFacts,OriginalIdentFacts,OriginalWhitespaceFacts,OriginalResourceFacts,OriginalCommentFacts,OriginalCommentKind,OriginalNumberFacts,NativeTokenCursor,OriginalPreparedBoundary,NativeTokenProgress,NativeTokenStep};
 
 fn ident_start(c: char) -> bool {
     c == '_' || c.is_alphabetic()
@@ -8,82 +14,7 @@ pub(super) fn ident_continue(c: char) -> bool {
 }
 
 /// End offset of a DM quoted string, including nested interpolation strings.
-pub fn quoted_end(rest: &str, block: bool, raw: bool) -> Option<usize> {
-    let mut iter = rest.char_indices().peekable();
-    if block {
-        iter.next(); // {
-    }
-    iter.next(); // opening quote
-    let mut interpolation_depth = 0usize;
-    let mut escaped = false;
-    while let Some((at, ch)) = iter.next() {
-        if escaped {
-            escaped = false;
-            continue;
-        }
-        // DreamMaker drops CR bytes even inside raw text. A bare CR does
-        // not terminate the literal; LF still terminates a raw single-line
-        // quote (a raw backslash cannot continue it). Keep the original
-        // offsets/text here: runtime decoding removes CR later.
-        if raw && !block && ch == '\n' {
-            return None;
-        }
-        if ch == '\\' && (!raw || interpolation_depth > 0) {
-            escaped = true;
-            continue;
-        }
-        if interpolation_depth > 0 {
-            match ch {
-                '"' => {
-                    // A string inside an interpolation can itself interpolate
-                    // another expression. Skip the complete nested literal;
-                    // a single quote-state would mistake its inner brackets
-                    // and quotes for the enclosing expression's delimiters.
-                    let end = quoted_end(&rest[at..], false, rest[..at].ends_with('@'))?;
-                    while iter.peek().is_some_and(|(next, _)| *next < at + end) {
-                        iter.next();
-                    }
-                }
-                '\'' => {
-                    let mut end = None;
-                    let mut quote_escape = false;
-                    for (offset, current) in rest[at + 1..].char_indices() {
-                        if quote_escape {
-                            quote_escape = false;
-                        } else if current == '\\' && !rest[..at].ends_with('@') {
-                            quote_escape = true;
-                        } else if current == '\'' {
-                            end = Some(at + 1 + offset + 1);
-                            break;
-                        }
-                    }
-                    let end = end?;
-                    while iter.peek().is_some_and(|(next, _)| *next < end) {
-                        iter.next();
-                    }
-                }
-                '[' => interpolation_depth += 1,
-                ']' => interpolation_depth -= 1,
-                _ => {}
-            }
-            continue;
-        }
-        // Raw DM strings preserve regex brackets/backslashes as text. They
-        // cannot enter interpolation: otherwise an escaped regex closing
-        // bracket may leave a fabricated expression open across declarations.
-        if ch == '[' && !raw {
-            interpolation_depth = 1;
-        } else if ch == '"' {
-            if !block {
-                return Some(at + 1);
-            }
-            if iter.peek().is_some_and(|(_, next)| *next == '}') {
-                return Some(at + 2);
-            }
-        }
-    }
-    None
-}
+pub fn quoted_end(rest:&str,block:bool,raw:bool)->Option<usize>{let mut cursor=demand::NativeQuoteCursor::new(block,raw);match cursor.advance(rest,true,None).ok()?{demand::QuoteProgress::Closed(end)=>Some(end),_=>None}}
 
 /// Lex without discarding trivia. Token spans are UTF-8 byte offsets into `source`.
 pub fn lex(source: &str) -> Lexed {
@@ -140,86 +71,13 @@ pub fn visit_tokens(source: &str, mut visitor: impl FnMut(SpanToken)) -> Vec<Dia
 }
 
 /// Same lexer with caller-controlled early completion; no token roster allocation.
-pub fn visit_tokens_while(
-    source: &str,
-    mut visitor: impl FnMut(SpanToken) -> bool,
-) -> Vec<Diagnostic> {
-    let mut diagnostics = Vec::new();
-    let mut pos = 0;
-    while pos < source.len() {
-        let rest = &source[pos..];
-        let c = rest.chars().next().unwrap();
-        let (kind, end, unterminated) = if c == '\n' || c == '\r' {
-            let n = if rest.starts_with("\r\n") {
-                2
-            } else {
-                c.len_utf8()
-            };
-            (TokenKind::Newline, pos + n, false)
-        } else if c == ' ' || c == '\t' {
-            let n = rest
-                .char_indices()
-                .take_while(|(_, c)| *c == ' ' || *c == '\t')
-                .map(|(_, c)| c.len_utf8())
-                .sum::<usize>();
-            (TokenKind::Whitespace, pos + n, false)
-        } else if let Some((kind, length, unterminated)) = literal_or_comment(rest) {
-            (kind, pos + length, unterminated)
-        } else if ident_start(c) {
-            let n = rest
-                .char_indices()
-                .take_while(|(_, c)| ident_continue(*c))
-                .map(|(_, c)| c.len_utf8())
-                .sum::<usize>();
-            (TokenKind::Ident, pos + n, false)
-        } else if c.is_ascii_digit() {
-            let mut n = 0;
-            for (offset, ch) in rest.char_indices() {
-                let exponent_sign = matches!(ch, '+' | '-')
-                    && offset > 0
-                    && matches!(rest.as_bytes()[offset - 1], b'e' | b'E')
-                    && !rest.starts_with("0x")
-                    && !rest.starts_with("0X")
-                    && rest
-                        .as_bytes()
-                        .get(offset + 1)
-                        .is_some_and(u8::is_ascii_digit);
-                if ch.is_ascii_alphanumeric() || matches!(ch, '.' | '_') || exponent_sign {
-                    n = offset + ch.len_utf8();
-                } else {
-                    break;
-                }
-            }
-            if rest[..n].ends_with('.') && (rest[n..].starts_with("#INF") || rest[n..].starts_with("#IND")) {
-                n += "#INF".len();
-            }
-            (TokenKind::Number, pos + n, false)
-        } else {
-            let kind = if "/()[]{}.,:;#?".contains(c) {
-                TokenKind::Punctuation
-            } else if "+-*%=!<>|&^~".contains(c) {
-                TokenKind::Operator
-            } else {
-                TokenKind::Unknown
-            };
-            (kind, pos + c.len_utf8(), false)
-        };
-        if unterminated {
-            diagnostics.push(Diagnostic {
-                span: Span::new(pos, end),
-                kind: DiagnosticKind::Lexical,
-                message: unterminated_message(rest).into(),
-            });
-        }
-        if !visitor(SpanToken {
-            kind,
-            span: Span::new(pos, end),
-        }) {
-            break;
-        }
-        pos = end;
-    }
-    diagnostics
+pub fn visit_tokens_while(source:&str,visitor:impl FnMut(SpanToken)->bool)->Vec<Diagnostic>{
+    let mut diagnostics=Vec::new();visit_tokens_and_diagnostics_while(source,visitor,|span,kind,message|{diagnostics.push(Diagnostic{span,kind,message:message.into()});true});diagnostics
+}
+/// SAME lexical state machine with demand-owned native output sinks. Stopping
+/// either sink never fabricates a completed lexical or declaration result.
+pub(crate) fn visit_tokens_and_diagnostics_while(source:&str,visitor:impl FnMut(SpanToken)->bool,diagnostic:impl FnMut(Span,DiagnosticKind,&str)->bool){
+ let mut cursor=NativeTokenCursor::default();cursor.visit_available(source,true,visitor,diagnostic).expect("fresh final native lexer input has valid scalar geometry");
 }
 
 /// First nontrivia lookahead token after an exact lexer boundary. Lexical errors
@@ -275,94 +133,7 @@ mod cursor_tests {
     }
 }
 
-fn literal_or_comment(rest: &str) -> Option<(TokenKind, usize, bool)> {
-    let c = rest.chars().next()?;
-    let result = if rest.starts_with("//") {
-        (
-            TokenKind::Comment,
-            rest.find(['\r', '\n']).unwrap_or(rest.len()),
-            false,
-        )
-    } else if rest.starts_with("/*") {
-        let mut depth = 1usize;
-        let mut cursor = 2usize;
-        while depth > 0 && cursor + 1 < rest.len() {
-            if rest[cursor..].starts_with("/*") {
-                depth += 1;
-                cursor += 2;
-            } else if rest[cursor..].starts_with("*/") {
-                depth -= 1;
-                cursor += 2;
-            } else {
-                cursor += rest[cursor..].chars().next().unwrap().len_utf8();
-            }
-        }
-        if depth == 0 {
-            (TokenKind::Comment, cursor, false)
-        } else {
-            (TokenKind::Comment, rest.len(), true)
-        }
-    } else if let Some(stripped) = rest.strip_prefix("@'") {
-        let close = stripped.find('\'').map(|at| at + 3);
-        (
-            TokenKind::String,
-            close.unwrap_or(rest.len()),
-            close.is_none(),
-        )
-    } else if rest.starts_with("@{\"") {
-        let close = quoted_end(&rest[1..], true, true);
-        (
-            TokenKind::String,
-            close.map_or(rest.len(), |end| end + 1),
-            close.is_none(),
-        )
-    } else if rest.starts_with("{\"") {
-        let close = quoted_end(rest, true, false);
-        (
-            TokenKind::String,
-            close.unwrap_or(rest.len()),
-            close.is_none(),
-        )
-    } else if rest.starts_with("@\"") {
-        let close = quoted_end(&rest[1..], false, true);
-        (
-            TokenKind::String,
-            close.map_or(rest.len(), |end| end + 1),
-            close.is_none(),
-        )
-    } else if c == '"' || c == '\'' {
-        let mut escape = false;
-        let close = if c == '"' {
-            quoted_end(rest, false, false)
-        } else {
-            let mut close = None;
-            for (offset, ch) in rest.char_indices().skip(1) {
-                if escape {
-                    escape = false;
-                    continue;
-                }
-                if ch == '\\' {
-                    escape = true;
-                    continue;
-                }
-                if ch == c {
-                    close = Some(offset + ch.len_utf8());
-                    break;
-                }
-            }
-            close
-        };
-        let kind = if c == '\'' {
-            TokenKind::Resource
-        } else {
-            TokenKind::String
-        };
-        (kind, close.unwrap_or(rest.len()), close.is_none())
-    } else {
-        return None;
-    };
-    Some(result)
-}
+fn literal_or_comment(rest:&str)->Option<(TokenKind,usize,bool)>{let mut cursor=NativeTokenCursor::default();let mut bad=false;let step=cursor.next_available(rest,true,|_,_,_|{bad=true;true}).ok()?;match step{NativeTokenStep::Token(token)if matches!(token.kind,TokenKind::String|TokenKind::Resource|TokenKind::Comment)=>Some((token.kind,token.span.end,bad)),_=>None}}
 
 /// Visit only comments, sharing exact literal boundaries with the full lexer.
 /// Full lexical diagnostics remain available through `visit_tokens`.
@@ -556,4 +327,277 @@ mod raw_carriage_return_tests {
 #[cfg(test)]mod pinned_ind_literal_tests{
  use super::*;
  #[test]fn primary_nonfinite_ind_is_one_actual_number_token_like_inf(){for text in["1.#IND","1.#INF"]{let parsed=crate::lex_spans(text);assert!(parsed.diagnostics.is_empty());assert_eq!(parsed.tokens.len(),1);assert_eq!(parsed.tokens[0].kind,TokenKind::Number);assert_eq!(parsed.tokens[0].text(text),text);let expression=crate::parse_expression(text);assert!(expression.diagnostics.is_empty(),"{text}: {:?}",expression.diagnostics);}}
+}
+
+#[cfg(test)]mod original_funded_lexical_sink_tests{
+ use super::*;
+ #[test]fn same_native_lexer_sinks_keep_exact_tokens_diagnostic_order_and_utf8_points(){
+  for source in ["// \u{e9}\u{6f22}\n/proc/p(value=1)\n    return \"[value]\"\n","var/a=\"unterminated\nvar/b='unfinished"]{
+   let expected=lex_spans(source);let mut actual=SpannedLexed::default();visit_tokens_and_diagnostics_while(source,|token|{actual.tokens.push(token);true},|span,kind,message|{actual.diagnostics.push(Diagnostic{span,kind,message:message.into()});true});assert_eq!(format!("{:?}",actual.tokens),format!("{:?}",expected.tokens));assert_eq!(format!("{:?}",actual.diagnostics),format!("{:?}",expected.diagnostics));
+  }
+ }
+}
+
+#[cfg(test)]mod actual_native_token_cursor_tests{
+ use super::*;
+ #[test]fn same_native_token_cursor_resumes_at_real_token_boundary_without_replaying_prior_tokens(){
+  let mut source=String::from("/datum/one\n");let mut cursor=NativeTokenCursor::default();let mut tokens=Vec::new();let mut errors=Vec::new();let mut sink=|span,kind,message:&str|{errors.push(Diagnostic{span,kind,message:message.into()});true};assert_eq!(cursor.visit_available(&source,false,|token|{tokens.push(token);true},&mut sink).unwrap(),NativeTokenProgress::NeedInput);let count=tokens.len();let boundary=cursor.position();source.push_str("    var/value=1\n");assert_eq!(cursor.visit_available(&source,false,|token|{assert!(token.span.start>=boundary);tokens.push(token);true},&mut sink).unwrap(),NativeTokenProgress::NeedInput);assert!(tokens.len()>count);assert_eq!(cursor.visit_available(&source,true,|_|panic!("no actual new token"),&mut sink).unwrap(),NativeTokenProgress::Complete);let whole=lex_spans(&source);assert_eq!(tokens,whole.tokens);assert_eq!(errors,whole.diagnostics);
+ }
+ #[test]fn native_token_cursor_pause_is_not_eof_and_unissued_partial_literal_never_becomes_old_none(){
+  let mut cursor=NativeTokenCursor::default();let mut calls=0;let progress=cursor.visit_available("{\"partial",false,|_|{calls+=1;true},|_,_,_|panic!("temporary input boundary is not lexical EOF")).unwrap();assert_eq!(progress,NativeTokenProgress::NeedInput);assert_eq!(calls,0);assert_eq!(cursor.position(),0);
+  let mut cursor=NativeTokenCursor::default();let status=cursor.visit_available("/datum/one\n",false,|_|false,|_,_,_|true).unwrap();assert_eq!(status,NativeTokenProgress::Stopped);assert_eq!(cursor.position(),0,"the same peek token remains unconsumed exactly like native early-stop sink");
+ }
+ #[test]fn temporary_crlf_and_numeric_lookahead_do_not_commit_ambiguous_native_tokens(){for source in["\r","1e+","1.#IN"]{let mut cursor=NativeTokenCursor::default();let mut emitted=0;let progress=cursor.visit_available(source,false,|_|{emitted+=1;true},|_,_,_|panic!("unissued temporary token is not EOF")).unwrap();assert_eq!(progress,NativeTokenProgress::NeedInput);assert_eq!(emitted,0);assert_eq!(cursor.position(),0);}}
+ #[test]fn actual_native_final_lexer_retains_full_token_diagnostic_order_on_utf8_and_unterminated_text(){for source in["α = 1e3\n","/* nested /* comment */ end */\n","{\"block\ntext\"}\n","@\"raw\"\n","\"unfinished","var/a=1.#IND\n"]{let whole=lex_spans(source);let mut cursor=NativeTokenCursor::default();let mut tokens=Vec::new();let mut diagnostics=Vec::new();assert_eq!(cursor.visit_available(source,true,|row|{tokens.push(row);true},|span,kind,message|{diagnostics.push(Diagnostic{span,kind,message:message.into()});true}).unwrap(),NativeTokenProgress::Complete);assert_eq!(tokens,whole.tokens);assert_eq!(diagnostics,whole.diagnostics);}}
+}
+
+#[cfg(test)]mod real_resumable_native_lexer_controls{use super::*;
+pub fn frozen_quoted_end(rest: &str, block: bool, raw: bool) -> Option<usize> {
+    let mut iter = rest.char_indices().peekable();
+    if block {
+        iter.next(); // {
+    }
+    iter.next(); // opening quote
+    let mut interpolation_depth = 0usize;
+    let mut escaped = false;
+    while let Some((at, ch)) = iter.next() {
+        if escaped {
+            escaped = false;
+            continue;
+        }
+        // DreamMaker drops CR bytes even inside raw text. A bare CR does
+        // not terminate the literal; LF still terminates a raw single-line
+        // quote (a raw backslash cannot continue it). Keep the original
+        // offsets/text here: runtime decoding removes CR later.
+        if raw && !block && ch == '\n' {
+            return None;
+        }
+        if ch == '\\' && (!raw || interpolation_depth > 0) {
+            escaped = true;
+            continue;
+        }
+        if interpolation_depth > 0 {
+            match ch {
+                '"' => {
+                    // A string inside an interpolation can itself interpolate
+                    // another expression. Skip the complete nested literal;
+                    // a single quote-state would mistake its inner brackets
+                    // and quotes for the enclosing expression's delimiters.
+                    let end = frozen_quoted_end(&rest[at..], false, rest[..at].ends_with('@'))?;
+                    while iter.peek().is_some_and(|(next, _)| *next < at + end) {
+                        iter.next();
+                    }
+                }
+                '\'' => {
+                    let mut end = None;
+                    let mut quote_escape = false;
+                    for (offset, current) in rest[at + 1..].char_indices() {
+                        if quote_escape {
+                            quote_escape = false;
+                        } else if current == '\\' && !rest[..at].ends_with('@') {
+                            quote_escape = true;
+                        } else if current == '\'' {
+                            end = Some(at + 1 + offset + 1);
+                            break;
+                        }
+                    }
+                    let end = end?;
+                    while iter.peek().is_some_and(|(next, _)| *next < end) {
+                        iter.next();
+                    }
+                }
+                '[' => interpolation_depth += 1,
+                ']' => interpolation_depth -= 1,
+                _ => {}
+            }
+            continue;
+        }
+        // Raw DM strings preserve regex brackets/backslashes as text. They
+        // cannot enter interpolation: otherwise an escaped regex closing
+        // bracket may leave a fabricated expression open across declarations.
+        if ch == '[' && !raw {
+            interpolation_depth = 1;
+        } else if ch == '"' {
+            if !block {
+                return Some(at + 1);
+            }
+            if iter.peek().is_some_and(|(_, next)| *next == '}') {
+                return Some(at + 2);
+            }
+        }
+    }
+    None
+}
+
+fn frozen_literal_or_comment(rest: &str) -> Option<(TokenKind, usize, bool)> {
+    let c = rest.chars().next()?;
+    let result = if rest.starts_with("//") {
+        (
+            TokenKind::Comment,
+            rest.find(['\r', '\n']).unwrap_or(rest.len()),
+            false,
+        )
+    } else if rest.starts_with("/*") {
+        let mut depth = 1usize;
+        let mut cursor = 2usize;
+        while depth > 0 && cursor + 1 < rest.len() {
+            if rest[cursor..].starts_with("/*") {
+                depth += 1;
+                cursor += 2;
+            } else if rest[cursor..].starts_with("*/") {
+                depth -= 1;
+                cursor += 2;
+            } else {
+                cursor += rest[cursor..].chars().next().unwrap().len_utf8();
+            }
+        }
+        if depth == 0 {
+            (TokenKind::Comment, cursor, false)
+        } else {
+            (TokenKind::Comment, rest.len(), true)
+        }
+    } else if let Some(stripped) = rest.strip_prefix("@'") {
+        let close = stripped.find('\'').map(|at| at + 3);
+        (
+            TokenKind::String,
+            close.unwrap_or(rest.len()),
+            close.is_none(),
+        )
+    } else if rest.starts_with("@{\"") {
+        let close = frozen_quoted_end(&rest[1..], true, true);
+        (
+            TokenKind::String,
+            close.map_or(rest.len(), |end| end + 1),
+            close.is_none(),
+        )
+    } else if rest.starts_with("{\"") {
+        let close = frozen_quoted_end(rest, true, false);
+        (
+            TokenKind::String,
+            close.unwrap_or(rest.len()),
+            close.is_none(),
+        )
+    } else if rest.starts_with("@\"") {
+        let close = frozen_quoted_end(&rest[1..], false, true);
+        (
+            TokenKind::String,
+            close.map_or(rest.len(), |end| end + 1),
+            close.is_none(),
+        )
+    } else if c == '"' || c == '\'' {
+        let mut escape = false;
+        let close = if c == '"' {
+            frozen_quoted_end(rest, false, false)
+        } else {
+            let mut close = None;
+            for (offset, ch) in rest.char_indices().skip(1) {
+                if escape {
+                    escape = false;
+                    continue;
+                }
+                if ch == '\\' {
+                    escape = true;
+                    continue;
+                }
+                if ch == c {
+                    close = Some(offset + ch.len_utf8());
+                    break;
+                }
+            }
+            close
+        };
+        let kind = if c == '\'' {
+            TokenKind::Resource
+        } else {
+            TokenKind::String
+        };
+        (kind, close.unwrap_or(rest.len()), close.is_none())
+    } else {
+        return None;
+    };
+    Some(result)
+}
+
+pub(crate) fn frozen_visit(source:&str,mut visitor:impl FnMut(SpanToken)->bool,mut diagnostic:impl FnMut(Span,DiagnosticKind,&str)->bool){
+    let mut pos = 0;
+    while pos < source.len() {
+        let rest = &source[pos..];
+        let c = rest.chars().next().unwrap();
+        let (kind, end, unterminated) = if c == '\n' || c == '\r' {
+            let n = if rest.starts_with("\r\n") {
+                2
+            } else {
+                c.len_utf8()
+            };
+            (TokenKind::Newline, pos + n, false)
+        } else if c == ' ' || c == '\t' {
+            let n = rest
+                .char_indices()
+                .take_while(|(_, c)| *c == ' ' || *c == '\t')
+                .map(|(_, c)| c.len_utf8())
+                .sum::<usize>();
+            (TokenKind::Whitespace, pos + n, false)
+        } else if let Some((kind, length, unterminated)) = frozen_literal_or_comment(rest) {
+            (kind, pos + length, unterminated)
+        } else if ident_start(c) {
+            let n = rest
+                .char_indices()
+                .take_while(|(_, c)| ident_continue(*c))
+                .map(|(_, c)| c.len_utf8())
+                .sum::<usize>();
+            (TokenKind::Ident, pos + n, false)
+        } else if c.is_ascii_digit() {
+            let mut n = 0;
+            for (offset, ch) in rest.char_indices() {
+                let exponent_sign = matches!(ch, '+' | '-')
+                    && offset > 0
+                    && matches!(rest.as_bytes()[offset - 1], b'e' | b'E')
+                    && !rest.starts_with("0x")
+                    && !rest.starts_with("0X")
+                    && rest
+                        .as_bytes()
+                        .get(offset + 1)
+                        .is_some_and(u8::is_ascii_digit);
+                if ch.is_ascii_alphanumeric() || matches!(ch, '.' | '_') || exponent_sign {
+                    n = offset + ch.len_utf8();
+                } else {
+                    break;
+                }
+            }
+            if rest[..n].ends_with('.') && (rest[n..].starts_with("#INF") || rest[n..].starts_with("#IND")) {
+                n += "#INF".len();
+            }
+            (TokenKind::Number, pos + n, false)
+        } else {
+            let kind = if "/()[]{}.,:;#?".contains(c) {
+                TokenKind::Punctuation
+            } else if "+-*%=!<>|&^~".contains(c) {
+                TokenKind::Operator
+            } else {
+                TokenKind::Unknown
+            };
+            (kind, pos + c.len_utf8(), false)
+        };
+        if unterminated {
+            if !diagnostic(Span::new(pos,end),DiagnosticKind::Lexical,unterminated_message(rest)){break}
+        }
+        if !visitor(SpanToken {
+            kind,
+            span: Span::new(pos, end),
+        }) {
+            break;
+        }
+        pos = end;
+    }
+}
+
+ fn frozen(source:&str)->SpannedLexed{let mut out=SpannedLexed::default();frozen_visit(source,|t|{out.tokens.push(t);true},|span,kind,message|{out.diagnostics.push(Diagnostic{span,kind,message:message.into()});true});out}
+ #[test]fn same_native_resumable_kernel_matches_frozen_actual_lexer_at_every_utf8_input_boundary(){
+  for source in ["α=1e+3; value=1.#INF\r\n/* outer /* nested */ text */\n",r#""hello [list("nested ["deep"]", 'resource')] // text" // real"#,r#"@"regex [\] /*literal*/" @'raw/*resource*/' @{"raw // block"} /*yes*/"#, "{\"block\ntext\"}\n/proc/one()\n", "\"unfinished", "@\"raw\nunterminated", "1.#INDsuffix 0x1e+2 1e-2\n"]{
+   let expected=frozen(source);let mut cursor=NativeTokenCursor::default();let mut tokens=Vec::new();let mut diagnostics=Vec::new();for end in source.char_indices().map(|(at,c)|at+c.len_utf8()){
+    let final_input=end==source.len();let progress=cursor.visit_available(&source[..end],final_input,|t|{tokens.push(t);true},|span,kind,message|{diagnostics.push(Diagnostic{span,kind,message:message.into()});true}).unwrap();assert_eq!(progress,if final_input{NativeTokenProgress::Complete}else{NativeTokenProgress::NeedInput});
+   }assert_eq!(tokens,expected.tokens,"source {source:?}");assert_eq!(diagnostics,expected.diagnostics,"source {source:?}");assert_eq!(lex_spans(source),expected);
+  }
+ }
+ #[test]fn one_native_token_step_does_not_lex_following_failure_and_peek_commit_is_exact(){use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};let counter=Arc::new(AtomicUsize::new(0));let a=crate::SettingAdmission::new(&counter,1<<20,&||Ok(()));let source="first \"unterminated";let mut cursor=NativeTokenCursor::default();assert_eq!(cursor.next_available_using(source,true,&a,|_,_,_|panic!("following token was not requested")).unwrap(),NativeTokenStep::Token(SpanToken{kind:TokenKind::Ident,span:Span::new(0,5)}));assert_eq!(cursor.position(),5);let peek=cursor.peek_available_using(source,true,&a,|_,_,_|panic!("following failure is still undemanded")).unwrap();assert_eq!(peek,NativeTokenStep::Token(SpanToken{kind:TokenKind::Whitespace,span:Span::new(5,6)}));assert_eq!(cursor.position(),5);cursor.commit_peek().unwrap();assert_eq!(cursor.position(),6);drop(cursor);assert_eq!(counter.load(Ordering::Acquire),0);}
 }

@@ -94,3 +94,5 @@ impl PolicyFacts{pub(crate) fn fingerprint(&self,poll:&dyn Fn()->io::Result<()>)
 }}
 
 impl PolicyFacts{pub(crate) fn tracked_names(&self)->impl Iterator<Item=&str>{self.tracked.values().flat_map(|names|names.keys().map(String::as_str))}}
+
+impl PolicyFacts{pub(crate) fn explicit_tracked(&self)->impl Iterator<Item=(&str,&str)>{self.tracked.iter().flat_map(|(owner,names)|names.iter().filter(|(_,explicit)|**explicit).map(move|(name,_)|(owner.as_str(),name.as_str())))}}

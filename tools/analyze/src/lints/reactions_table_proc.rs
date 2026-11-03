@@ -13,8 +13,8 @@ use crate::tree::{SourceFile, CODE_DM};
 const HINT: &str = "declare it in the type's CAPABILITIES(T) block: every(interval, then(PROC_REF(x)), when = nameof(v)), on_change(nameof(v), ANY, then(PROC_REF(x))), on_notice(/datum/notice/x, then(PROC_REF(x))), extend(/datum/act/x, instead(then(PROC_REF(x)))); only a /datum/system declares reactions()";
 
 static META: Meta = Meta {
-    name: "reactions_table_proc",
-    group: "",
+    name: crate::allow_registry_fields::reactions_table_proc::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::reactions_table_proc::SCOPE_META_0.group,
     label: "reactions_table_proc",
     legacy: "",
     select: CODE_DM,
@@ -22,7 +22,7 @@ static META: Meta = Meta {
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "table_proc", hint: HINT }],
     allow: crate::allow_registry_fields::reactions_table_proc::ALLOW_0,
-    lists: &[],
+    lists: crate::allow_registry_fields::reactions_table_proc::SCOPE_META_0.lists,
 };
 
 struct ReactionsTableProc;

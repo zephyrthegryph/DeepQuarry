@@ -90,16 +90,16 @@ pub(super) fn eval_condition_at(expr: &str, macros: &dyn MacroLookup, location: 
 // value domain changes: the pinned original constant evaluator uses f32 and
 // masks integer operations to 24 bits; native retains its existing i64 rules.
 #[derive(Clone,Copy)]
-enum ConditionNumber{Native(i64),Original(f32),Null}
+pub(crate) enum ConditionNumber{Native(i64),Original(f32),Null}
 impl ConditionNumber{
- fn truth(self)->bool{match self{Self::Native(n)=>n!=0,Self::Original(n)=>n!=0.0,Self::Null=>false}}
- fn flag(value:bool,original:bool)->Self{if original{Self::Original(u8::from(value) as f32)}else{Self::Native(i64::from(value))}}
- fn unary(self,op:&str)->Result<Self,String>{Ok(match self{
+ pub(crate) fn truth(self)->bool{match self{Self::Native(n)=>n!=0,Self::Original(n)=>n!=0.0,Self::Null=>false}}
+ pub(crate) fn flag(value:bool,original:bool)->Self{if original{Self::Original(u8::from(value) as f32)}else{Self::Native(i64::from(value))}}
+ pub(crate) fn unary(self,op:&str)->Result<Self,String>{Ok(match self{
   Self::Native(n)=>Self::Native(match op{"!"=>i64::from(n==0),"~"=>!n,"-"=>n.wrapping_neg(),"+"=>n,_=>unreachable!()}),
   Self::Original(n)=>match op{"!"=>Self::Original(u8::from(n==0.0) as f32),"~"=>Self::Original((!(n as u32)&0xffffff) as f32),"-"=>Self::Original(-n),_=>return Err("original conditional unary operator has not been issued".into())},
   Self::Null if op=="!"=>Self::Original(1.0),Self::Null=>return Err("non-constant original conditional unary operation on null".into()),
  })}
- fn binary(self,rhs:Self,op:&str)->Result<Self,String>{
+ pub(crate) fn binary(self,rhs:Self,op:&str)->Result<Self,String>{
   if let(Self::Native(lhs),Self::Native(rhs))=(self,rhs){return Ok(Self::Native(match op{
    "||"=>i64::from(lhs!=0||rhs!=0),"&&"=>i64::from(lhs!=0&&rhs!=0),"|"=>lhs|rhs,"^"=>lhs^rhs,"&"=>lhs&rhs,"=="=>i64::from(lhs==rhs),"!="=>i64::from(lhs!=rhs),"<"=>i64::from(lhs<rhs),"<="=>i64::from(lhs<=rhs),">"=>i64::from(lhs>rhs),">="=>i64::from(lhs>=rhs),"<<"=>lhs.wrapping_shl(rhs as u32),">>"=>lhs.wrapping_shr(rhs as u32),"+"=>lhs.wrapping_add(rhs),"-"=>lhs.wrapping_sub(rhs),"*"=>lhs.wrapping_mul(rhs),"/" if rhs!=0=>lhs.wrapping_div(rhs),"%" if rhs!=0=>lhs.wrapping_rem(rhs),"/"|"%"=>return Err("division by zero in #if".into()),_=>unreachable!(),
   }))}
@@ -107,7 +107,7 @@ impl ConditionNumber{
   if matches!(op,"=="|"!="){let equal=match(self,rhs){(Self::Null,Self::Null)=>true,(Self::Original(a),Self::Original(b))=>a==b||(a.is_nan()&&b.is_nan()),_=>false};return Ok(Self::flag(if op=="=="{equal}else{!equal},true))}
   let(Self::Original(a),Self::Original(b))=(self,rhs)else{return Err("non-constant original conditional operation on null".into())};
   Ok(Self::Original(match op{
-   "+"=>a+b,"-"=>a-b,"*"=>a*b,"/"=>a/b,"%"=>a%b,"<"=>u8::from(a<b) as f32,"<="=>u8::from(a<=b) as f32,">"=>u8::from(a>b) as f32,">="=>u8::from(a>=b) as f32,
+   "+"=>a+b,"-"=>a-b,"*"=>a*b,"/"=>a/b,"%"=>a%b,"%%"=>a-((a/b).floor()*b),"**"=>a.powf(b),"<"=>u8::from(a<b) as f32,"<="=>u8::from(a<=b) as f32,">"=>u8::from(a>b) as f32,">="=>u8::from(a>=b) as f32,
    "|"=>((a as u32|b as u32)&0xffffff)as f32,"&"=>((a as u32&b as u32)&0xffffff)as f32,"^"=>((a as u32^b as u32)&0xffffff)as f32,
    "<<"|">>"=>{let shift=b as u32;if shift>=32{return Err("original conditional shift is outside issued u32 width".into())}let n=if op=="<<"{(a as u32)<<shift}else{(a as u32)>>shift};(n&0xffffff)as f32},
    _=>unreachable!(),

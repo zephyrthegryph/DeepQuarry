@@ -397,14 +397,7 @@ fn missing_calls(
     match &expression.kind {
         ExprKind::Call { callee, args } => match &callee.kind {
             ExprKind::Ident(name) if name == ".." => {
-                out.push(Diagnostic {
-                    family: "proc_has_no_parent",
-                    severity,
-                    span: callee.span,
-                    expression_span: expression.span,
-                    message: format!("proc has no parent: {}", fact.display),
-                    notes: Vec::new(),
-                });
+                out.push(missing_parent_diagnostic(callee.span,expression.span,&fact.display,severity));
                 // Exact pinned missing-parent branch does NOT visit its args.
             }
             ExprKind::Ident(name) if matches!(name.as_str(), "list" | "alist" | "CRASH") => {
@@ -614,3 +607,16 @@ fn source_predecessor_mode(
 #[cfg(test)]
 #[path = "checks_parent_source_projection_tests.rs"]
 mod source_projection_tests;
+
+/// Original value predecessor DATA for native policy consumers. The caller
+/// must separately authenticate its archive/body/current-source loan. This
+/// projection cannot issue a builtin identity or source-completion receipt.
+pub fn source_value_predecessor_using<E:From<String>+From<&'static str>>(tree:&SemanticTree,member:MemberId,resolver:&(impl Resolver+?Sized),profile:PackedU128,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<SourcePredecessorProjection,E>{
+ checkpoint()?;if resolver.source_owner()!=Resolver::source_owner(tree){return Err("source value predecessor resolver is foreign".into())}tree.validate_checker_builtin_profile(profile).map_err(|error|format!("source value predecessor profile: {error:?}"))?;let node=tree.member(member).ok_or("source value predecessor member absent")?;if !matches!(node.kind,MemberKind::Proc|MemberKind::Verb){return Err("source value predecessor member is not callable".into())}let owner=tree.type_node(node.owner).ok_or("source value predecessor owner absent")?.path;let identity=ProcedureIdentity{owner,name:node.name,verb:node.kind==MemberKind::Verb,occurrence:tree.member_occurrence(member).ok_or("source value predecessor ordinal absent")?};let target=crate::checker_effects::EffectTarget::Source(identity);
+ if let Some(group)=crate::checker_original_group::Group::for_target_using(tree,profile,target,checkpoint)?{let parent=group.parent_using(target,resolver,checkpoint)?;checkpoint()?;return Ok(match parent{Some(crate::checker_effects::EffectTarget::Source(identity))=>SourcePredecessorProjection::Source(identity),Some(crate::checker_effects::EffectTarget::Builtin(_))=>SourcePredecessorProjection::BuiltinBoundary,None=>SourcePredecessorProjection::NoParent})}
+ // Preserve the existing ordinary-source projection. Its established resolver
+ // allocation geometry remains baseline; no replacement chain/model is built.
+ let pending=source_predecessor_mode(tree,member,resolver,profile,false).map_err(E::from);checkpoint()?;pending
+}
+
+pub(crate) fn missing_parent_diagnostic(at:dm_syntax::Span,expression:dm_syntax::Span,display:&str,severity:Severity)->Diagnostic{Diagnostic{family:"proc_has_no_parent",severity,span:at,expression_span:expression,message:format!("proc has no parent: {display}"),notes:Vec::new()}}

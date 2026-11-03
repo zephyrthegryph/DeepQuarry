@@ -4,14 +4,8 @@ use std::sync::OnceLock;
 use dreammaker::ast::{Block, Expression, Follow, Statement, Term, VarType};
 use super::{Sem, ast::{stmt_blocks, stmt_exprs, walk_expr}};
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Finding { pub rule: &'static str, pub file: String, pub line: u32, pub message: String }
+pub use crate::engine_layering_policy::Finding;
 
-fn engine(file: &str) -> bool { file.starts_with("code/engine/") }
-fn generated(file: &str) -> bool { file.starts_with("code/engine/_generated/") }
-fn external(file: &str) -> bool {
-    ["code/library/", "code/content/", "code/game/", "code/modules/", "code/datums/"].iter().any(|root| file.starts_with(root))
-}
 // Derive exact intrinsic types from DreamMaker's builtin table: reopening a
 // builtin changes its source location, but does not make its type downstream-only.
 fn builtin_type(path: &str) -> bool {
@@ -27,63 +21,29 @@ fn type_path(v: &VarType) -> Option<String> {
     (!v.type_path.is_empty()).then(|| format!("/{}", v.type_path.join("/")))
 }
 
+struct SemFacts<'a>(&'a Sem);
+impl<'a,C:crate::key_policy_control::Control> crate::engine_layering_policy::Facts<C> for SemFacts<'a>{
+ type Call=dreammaker::objtree::ProcRef<'a>;
+ fn type_exists(&self,path:&str,c:&mut C)->Result<bool,C::Error>{c.checkpoint()?;Ok(self.0.ty(path).is_some())}
+ fn def_at(&self,file:&str,line:u32,c:&mut C)->Result<Option<(String,String)>,C::Error>{c.checkpoint()?;Ok(self.0.def_at(file,line))}
+ fn builtin_type(&self,path:&str,c:&mut C)->Result<bool,C::Error>{c.checkpoint()?;Ok(builtin_type(path))}
+ fn type_headers(&self,path:&str)->Option<&[String]>{self.0.layering_type_defs.get(path).map(Vec::as_slice)}
+ fn owner_definitions(&self,path:&str)->Option<&[String]>{self.0.layering_owner_defs.get(path).map(Vec::as_slice)}
+ fn method(&self,owner:&str,name:&str,c:&mut C)->Result<Option<Self::Call>,C::Error>{c.checkpoint()?;Ok(self.0.proc_ref(owner,name))}
+ fn global(&self,name:&str,c:&mut C)->Result<Option<Self::Call>,C::Error>{c.checkpoint()?;Ok(self.0.global_proc(name))}
+ fn builtin_call(&self,call:&Self::Call,c:&mut C)->Result<bool,C::Error>{c.checkpoint()?;Ok(call.is_builtin())}
+ fn callable_file(&self,call:&Self::Call,c:&mut C)->Result<String,C::Error>{c.checkpoint()?;let body=self.0.proc_body(*call);crate::key_policy_control::own(c,&body.file)}
+ fn visit_method_declaration_files(&self,owner:&str,name:&str,c:&mut C,emit:&mut dyn FnMut(&str,&mut C)->Result<bool,C::Error>)->Result<(),C::Error>{let mut ancestor=Some(crate::key_policy_control::own(c,owner)?);while let Some(t)=ancestor{c.checkpoint()?;if let Some(local)=self.0.ty(&t).and_then(|ty|ty.get().procs.get(name)){for value in local.value.iter(){c.checkpoint()?;if !emit(self.0.rel(value.location),c)?{return Ok(())}}}ancestor=self.0.parent_of(&t);}Ok(())}
+}
+
 struct Walker<'a> { sem: &'a Sem, file: String, owner: String, line: u32, locals: BTreeMap<String, String>, found: BTreeSet<Finding> }
 impl Walker<'_> {
-    fn put(&mut self, rule: &'static str, message: String) {
-        self.found.insert(Finding { rule, file: self.file.clone(), line: self.line, message });
-    }
-    fn provenance(&mut self, symbol: &str, file: &str) {
-        if external(file) {
-            self.put("external_dependency", format!("{} is defined in {}", symbol, file));
-        }
-    }
-    fn ty(&mut self, path: &str) {
-        // list/element/type is a collection annotation, not a declared /list subtype.
-        let path = path.strip_prefix("/list/").map(|p| format!("/{}", p)).unwrap_or_else(|| path.to_string());
-        if builtin_type(&path) { return; }
-        let definitions = self.sem.layering_type_defs.get(&path);
-        let genuine_headers: Vec<_> = definitions.into_iter().flatten().filter(|file| !generated(file)).collect();
-        // A generated reopening cannot authorize a downstream type. Where no
-        // genuine bare header exists, actual member definitions establish the
-        // implicit type; typed references never enter this fallback index.
-        let files: Vec<_> = if genuine_headers.is_empty() {
-            self.sem.layering_owner_defs.get(&path).into_iter().flatten().filter(|file| !generated(file)).collect()
-        } else { genuine_headers };
-        // A neutral reopening (for example in code/_helpers) is not engine
-        // ownership and cannot authorize an application-defined type. Only a
-        // genuine, non-generated engine declaration establishes that boundary.
-        if !files.iter().any(|file| engine(file)) {
-            for file in files {
-                if external(file) { self.provenance(&path, file); }
-            }
-        }
-    }
-    // A virtual interface declared in the engine is lawful even if a descendant overrides it downstream.
-    fn method(&mut self, owner: &str, name: &str) {
-        if owner == "/" || owner.is_empty() { self.global(name); return; }
-        let Some(p) = self.sem.proc_ref(owner, name) else { return; };
-        if p.is_builtin() { return; }
-        let mut ancestor = Some(owner.to_string());
-        while let Some(t) = ancestor {
-            if let Some(local) = self.sem.ty(&t).and_then(|ty| ty.get().procs.get(name)) {
-                if local.value.iter().any(|v| {
-                    let f = self.sem.rel(v.location);
-                    engine(f) && !generated(f)
-                }) { return; }
-            }
-            ancestor = self.sem.parent_of(&t);
-        }
-        let body = self.sem.proc_body(p);
-        self.provenance(&format!("{}::{}", owner, name), &body.file);
-    }
-    fn global(&mut self, name: &str) {
-        if let Some(p) = self.sem.global_proc(name) {
-            if !p.is_builtin() {
-                let body = self.sem.proc_body(p);
-                self.provenance(&format!("/proc/{}", name), &body.file);
-            }
-        }
-    }
+    fn ty(&mut self, path: &str) { crate::engine_layering_policy::ty(&SemFacts(self.sem),&mut self.found,&self.file,self.line,path,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{}) }
+
+    fn method(&mut self, owner: &str, name: &str) { crate::engine_layering_policy::method(&SemFacts(self.sem),&mut self.found,&self.file,self.line,owner,name,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{}) }
+
+    fn global(&mut self, name: &str) { crate::engine_layering_policy::global(&SemFacts(self.sem),&mut self.found,&self.file,self.line,name,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{}) }
+
     fn expr(&mut self, e: &Expression) {
         walk_expr(e, &mut |e| self.expr_one(e));
     }
@@ -208,60 +168,9 @@ pub fn scan(sem: &Sem, included: &BTreeSet<String>) -> Vec<Finding> {
 }
 
 /// Source-only markers and explicit type/proc paths lost during macro expansion are resolved against the same model.
-pub fn source_paths(sem: &Sem, file: &str, line: u32, text: &str) -> Vec<Finding> {
-    if !text.contains('/') { return Vec::new(); }
-    let mut w = Walker { sem, file: file.to_string(), owner: "/".to_string(), line, locals: BTreeMap::new(), found: BTreeSet::new() };
-    static RE_PATTERN: OnceLock<regex::Regex> = OnceLock::new();
-    let re = RE_PATTERN.get_or_init(|| regex::Regex::new(r"(?:^|[^\w])(/(?:[A-Za-z_]\w*/)*[A-Za-z_]\w*)").unwrap());
-    for cap in re.captures_iter(text) {
-        let mut path = cap[1].to_string();
-        if let Some((owner, name)) = path.rsplit_once("/proc/") {
-            if owner.is_empty() { w.global(name); } else { w.ty(owner); w.method(owner, name); }
-            continue;
-        }
-        while sem.ty(&path).is_none() {
-            let Some(pos) = path.rfind('/') else { break; };
-            if pos == 0 { break; }
-            path.truncate(pos);
-        }
-        w.ty(&path);
-    }
-    w.found.into_iter().collect()
-}
-
-
-/// Generator entries are erased before parsing. Resolve their direct helper names without guessing name prefixes.
-pub fn marker_calls(sem: &Sem, file: &str, line: u32, text: &str) -> Vec<Finding> {
-    if !text.contains('(') { return Vec::new(); }
-    let mut w = Walker { sem, file: file.to_string(), owner: "/".to_string(), line, locals: BTreeMap::new(), found: BTreeSet::new() };
-    static RE_PATTERN: OnceLock<regex::Regex> = OnceLock::new();
-    let re = RE_PATTERN.get_or_init(|| regex::Regex::new(r"\b([A-Za-z_]\w*)\s*\(").unwrap());
-    for cap in re.captures_iter(text) {
-        let token = cap.get(1).unwrap();
-        if text[..token.start()].chars().next_back().is_some_and(|c| c == '.' || c == '/') { continue; }
-        let name = &cap[1];
-        if let Some((owner, _)) = sem.def_at(file, line) {
-            if sem.proc_ref(&owner, name).is_some() { w.method(&owner, name); continue; }
-        }
-        w.global(name);
-    }
-    w.found.into_iter().collect()
-}
-
-
-/// Statically named callback references are dependencies even though nameof() erases them to strings.
-pub fn source_proc_refs(sem: &Sem, file: &str, line: u32, text: &str, marker_owner: Option<&str>) -> Vec<Finding> {
-    if !text.contains("PROC_REF") { return Vec::new(); }
-    let owner = marker_owner.map(str::to_string).or_else(|| sem.def_at(file, line).map(|(owner, _)| owner)).unwrap_or_else(|| "/".to_string());
-    let mut w = Walker { sem, file: file.to_string(), owner: owner.clone(), line, locals: BTreeMap::new(), found: BTreeSet::new() };
-    static TYPED_PATTERN: OnceLock<regex::Regex> = OnceLock::new();
-    let typed = TYPED_PATTERN.get_or_init(|| regex::Regex::new(r"\bTYPE_PROC_REF\s*\(\s*(/[A-Za-z_][\w/]*)\s*,\s*([A-Za-z_]\w*)\s*\)").unwrap());
-    for cap in typed.captures_iter(text) { w.ty(&cap[1]); w.method(&cap[1], &cap[2]); }
-    static OWN_PATTERN: OnceLock<regex::Regex> = OnceLock::new();
-    let own = OWN_PATTERN.get_or_init(|| regex::Regex::new(r"\bPROC_REF\s*\(\s*([A-Za-z_]\w*)\s*\)").unwrap());
-    for cap in own.captures_iter(text) { w.method(&owner, &cap[1]); }
-    w.found.into_iter().collect()
-}
+pub fn source_paths(sem:&Sem,file:&str,line:u32,text:&str)->Vec<Finding>{let mut found=BTreeSet::new();crate::engine_layering_policy::source_paths(&SemFacts(sem),&mut found,file,line,text,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{});found.into_iter().collect()}
+pub fn marker_calls(sem:&Sem,file:&str,line:u32,text:&str)->Vec<Finding>{let mut found=BTreeSet::new();crate::engine_layering_policy::marker_calls(&SemFacts(sem),&mut found,file,line,text,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{});found.into_iter().collect()}
+pub fn source_proc_refs(sem:&Sem,file:&str,line:u32,text:&str,marker_owner:Option<&str>)->Vec<Finding>{let mut found=BTreeSet::new();crate::engine_layering_policy::source_proc_refs(&SemFacts(sem),&mut found,file,line,text,marker_owner,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{});found.into_iter().collect()}
 
 #[cfg(test)]
 mod tests {

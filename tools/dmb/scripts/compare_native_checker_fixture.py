@@ -39,7 +39,7 @@ def native_rows(text, family="ambiguous_not_bitwise"):
     rows = []
     for line in text.splitlines():
         row = json.loads(line)
-        accepted = {"control_condition_static", "unreachable_code", "loop_condition_determinate", "if_condition_determinate", "set_has_no_effect"} if family == "control_policies" else (({"bad_keyword_argument","non_keyword_after_keyword"}|({"filter_call"} if family=="filter_call" else set())) if family in ("call_arguments","filter_call") else ({"redefined_proc","procedure_redeclaration"} if family=="redefined_proc" else {family}))
+        accepted = {"control_condition_static", "unreachable_code", "loop_condition_determinate", "if_condition_determinate", "set_has_no_effect"} if family == "control_policies" else (({"bad_keyword_argument","non_keyword_after_keyword"}|({"filter_call"} if family=="filter_call" else set())) if family in ("call_arguments","filter_call") else ({"redefined_proc","procedure_redeclaration"} if family=="redefined_proc" else ({"iteration_maybe_atom","iteration_noniterable_type","iteration_procpath","invalid_for_range"} if family=="iteration_range" else ({"switch_case_or","do_while_unreachable"} if family=="switch_case" else {family}))))
         if row.pop("family") not in accepted:
             raise ValueError("fixture includes an unported diagnostic family")
         row["file"] = str(Path(row["file"]).resolve())
@@ -52,7 +52,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--reference", type=Path, required=True)
     parser.add_argument("--native", type=Path, required=True)
-    parser.add_argument("--family", choices=("ambiguous_not_bitwise", "ambiguous_in_lhs", "invalid_set_value", "invalid_lint_directive_value", "directive_at_definition", "unknown_linter_setting", "unknown_setting", "incompatible_directive", "disabled_directive", "sets_directive_twice", "control_condition_static", "unreachable_code", "loop_condition_determinate", "if_condition_determinate", "set_has_no_effect", "control_policies", "proc_has_no_parent", "undefined_proc", "undefined_variable", "field_access_static_type", "no_typehint_implicit_new", "proc_call_static_type", "private_proc", "protected_proc", "must_call_parent", "must_not_override", "redefined_proc", "override_missing_keyword_arg", "call_arguments", "filter_call", "catch_parameter_count", "static_reference"), default="ambiguous_not_bitwise")
+    parser.add_argument("--family", choices=("ambiguous_not_bitwise", "ambiguous_in_lhs", "invalid_set_value", "invalid_lint_directive_value", "directive_at_definition", "unknown_linter_setting", "unknown_setting", "incompatible_directive", "disabled_directive", "sets_directive_twice", "control_condition_static", "unreachable_code", "loop_condition_determinate", "if_condition_determinate", "set_has_no_effect", "control_policies", "proc_has_no_parent", "undefined_proc", "undefined_variable", "field_access_static_type", "no_typehint_implicit_new", "proc_call_static_type", "private_proc", "protected_proc", "must_call_parent", "must_not_override", "redefined_proc", "override_missing_keyword_arg", "call_arguments", "filter_call", "catch_parameter_count", "static_reference", "iteration_range", "undefined_type", "switch_case"), default="ambiguous_not_bitwise")
     parser.add_argument("fixture", type=Path)
     args = parser.parse_args()
     if hashlib.sha256(args.reference.read_bytes()).hexdigest() != PINNED_CHECKER_SHA256:

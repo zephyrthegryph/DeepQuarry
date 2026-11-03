@@ -18,8 +18,8 @@ use crate::pat::Pat;
 use crate::tree::{SourceFile, CODE_DM};
 
 static META: Meta = Meta {
-    name: "door_gates",
-    group: "",
+    name: crate::allow_registry_fields::door_gates::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::door_gates::SCOPE_META_0.group,
     label: "door_gates",
     legacy: "",
     select: CODE_DM,
@@ -49,7 +49,7 @@ static META: Meta = Meta {
         },
     ],
     allow: crate::allow_registry_fields::door_gates::ALLOW_0,
-    lists: &[],
+    lists: crate::allow_registry_fields::door_gates::SCOPE_META_0.lists,
 };
 
 struct DoorGates {

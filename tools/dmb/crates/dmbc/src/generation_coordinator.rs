@@ -113,3 +113,4 @@ fn run_using(host:&mut BuildHost,context:&BuildRequest,names:&[GeneratorName],mo
 #[cfg(test)]
 #[path="generation_cold_tests.rs"]
 mod cold_tests;
+#[cfg(test)]#[path="generation_original_tests.rs"]mod original_tests;

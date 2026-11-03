@@ -800,7 +800,9 @@ impl BuildHost {
         self.serves_variant_context(project,defines,None)
     }
     pub(crate) fn serves_variant_context(&self,project:&std::path::Path,defines:&BTreeMap<String,String>,analysis_context:Option<crate::policy_request::AnalysisContext>)->bool{
-        if self.engine.as_ref().is_some_and(|engine|engine.configuration.analysis_context!=analysis_context){return false}
+        if self.query_state.lock().ok().is_some_and(|state|state.raw_snapshot.as_ref().is_some_and(|raw|raw.matches_context(project,defines,analysis_context))){return true}
+        if self.engine.as_ref().is_some_and(|engine|engine.configuration.analysis_context!=analysis_context.map(|context|context.frontend_context())){return false}
+        if analysis_context==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290){return defines.is_empty()&&self.query_state.lock().ok().and_then(|state|state.snapshot.as_ref().map(|snapshot|snapshot.matches_original_analysis_subject(project))).unwrap_or(false)}
         if analysis_context.is_some(){return defines.is_empty()&&self.engine.as_ref().is_some_and(|engine|engine.configuration.defines.is_empty()&&engine.configuration.project.file_name()==project.file_name())}
         // A build admits the pinned target defines (DM_VERSION, DM_BUILD) before it reaches the host; a query names the
         // caller's defines, so admit them the same way before comparing.
@@ -858,7 +860,7 @@ impl BuildHost {
         analysis_context:Option<crate::policy_request::AnalysisContext>,
     )->Result<Arc<RetainedEngine>,String>{
         let configuration = EngineConfiguration {
-            analysis_context,
+            analysis_context:analysis_context.map(|context|context.frontend_context()),
             project,
             defines,
             bootstrap_catalog,

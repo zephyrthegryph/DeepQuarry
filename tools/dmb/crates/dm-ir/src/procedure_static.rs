@@ -47,46 +47,11 @@ pub struct ProcedureStaticDeclaration {
 }
 impl ProcedureStaticDeclaration {
     pub fn canonical_bytes(&self) -> Vec<u8> {
-        let mut bytes = b"dm-procedure-static-declaration-v2-lexical-locals\0".to_vec();
-        bytes.extend_from_slice(&self.identity.canonical_bytes());
-        bytes.extend_from_slice(&self.modifiers.to_le_bytes());
-        match self.declared_type {
-            None => bytes.push(0),
-            Some(path) => {
-                bytes.push(1);
-                bytes.extend_from_slice(&path.bits().to_le_bytes());
-            }
-        }
-        fn part(bytes: &mut Vec<u8>, value: &[u8]) {
-            bytes.extend_from_slice(&(value.len() as u64).to_le_bytes());
-            bytes.extend_from_slice(value);
-        }
-        match &self.declared_array {
-            None => bytes.push(0),
-            Some(array) => {
-                bytes.push(1);
-                part(&mut bytes, &array.canonical_bytes());
-            }
-        }
-        bytes.extend_from_slice(&(self.lexical_locals.len() as u64).to_le_bytes());
-        for (name, declared_type) in self.lexical_locals.iter() {
-            bytes.extend_from_slice(&name.bits().to_le_bytes());
-            bytes.push(u8::from(declared_type.is_some()));
-            if let Some(path) = declared_type {
-                bytes.extend_from_slice(&path.bits().to_le_bytes());
-            }
-        }
-        match &self.initializer {
-            InitializerValue::NoAuthoredValue => bytes.push(0),
-            InitializerValue::Expression(value) => {
-                bytes.push(1);
-                part(&mut bytes, &value.canonical_bytes());
-            }
-            InitializerValue::ArrayAllocation(value) => {
-                bytes.push(2);
-                part(&mut bytes, &value.canonical_bytes());
-            }
-        }
-        bytes
+        self.canonical_bytes_using(&mut crate::canonical_encoding::Unmetered)
+            .expect("unmetered native canonical allocation failed")
+    }
+    /// SAME byte encoder; transient allocations are funded before growth.
+    pub fn canonical_bytes_using(&self, work: &mut dyn crate::CanonicalWork) -> std::io::Result<Vec<u8>> {
+        crate::canonical_encoding::encode(crate::canonical_encoding::Root::Static(self), work)
     }
 }

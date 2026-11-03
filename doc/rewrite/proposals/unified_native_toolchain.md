@@ -1780,3 +1780,221 @@ ordered checker union are still being implemented. Analyze's default legacy
 Tree/Sem command routes have not yet been retired. Use the existing gate-test
 profile for subsequent Analyze test harnesses; the optimized binary profile used
 for this cohort's test build was unnecessarily expensive.
+
+### 2026-11-01: semantic policies and checker type/range integration
+
+The extracted semantic-read and untracked-input policies now share their unique
+policy logic with the legacy reference route. Their focused whole-report tests
+pass for all six semantic-read and four untracked-input cases, including ordered
+ALLOW consumption. Genuine current-source ownership, manifest handling, bounded
+allocation and failure-ordering controls pass. The loop/range checker family also
+passes all five selected host/dispatch controls, and physical-source, source-value
+predecessor and parameter-cursor controls pass.
+
+The initial batch had 23 passing tests and five failures. The native runtime
+lookup/checker-source absence mismatch and missing original builtin variable
+inheritance (`/atom::name`) were repaired. All declared-type controls, the
+same-query-graph missing-to-declared transition and both builtin declaration
+controls pass. Four independent whole-fixture loop/range and declared-type
+comparisons against the pinned checker also pass exactly.
+
+The next 32-test batch has 28 passes and four failures. Complete native registry
+metadata matches all 101 originally observed descriptors; shared global list
+validation matches the original whole-registry loop. Public rejection of a
+missing unselected list, strict client report families and shared command argument
+controls pass. The remaining failures exposed Windows verbatim-path spelling in
+actual root checks and unnecessary byte-column requests by line-only consumers.
+Those repairs are applied; failure-only verification is pending. Adding the next
+switch family also exposed missing recorded EOF facts in the compact coordinate
+projection, caught by the cheap type check before another test build.
+
+No expected diagnostic, baseline ceiling or fixture source was changed to hide
+these failures. The independent end-to-end ten-case semantic comparison, complete
+checker union, remaining command/policy cutover, main-project proof and performance
+qualification remain open. The production default is still the legacy route.
+
+### 2026-11-01: source-path, switch-cursor and full-subject integration
+
+The three Rust compilation configurations pass with the complete required-list
+metadata and explicit public semantic reports. Nine focused parser/source-mapping
+controls also pass, including real inline trailing semicolons, continued else
+ownership, typed cancellation and completed-reader invalidation.
+
+The strict independent ten-case semantic comparison still failed after the first
+path repair: report paths and annotation usage were corrected, but a reverse
+compiled-file lookup still lost definition identities and READS_AS accessors on
+Windows. The subsequent repair selects only the actual issued compiled-file
+roster; the comparator and original expected records are unchanged. Its runtime
+comparison is pending, not a qualified parity result.
+
+The original Analyze subject issuer is now integrated for actual include-bearing
+manifests and for absent, non-include or invalid-UTF8 manifests. The latter use a
+private generated include header over the genuinely discovered CODE files, with
+physical manifest evidence kept separate. Compilation passes; its four-case
+independent type/parent comparison and current-frame controls are pending.
+
+The once-per-body checker union, remaining policy ports, original-context
+generation, default command cutover and main-project/performance qualification
+remain implementation work. No default routing or full-task completion is claimed.
+
+### November 1 integration checkpoint (not completion)
+
+The genuine Native two-file braced include compatibility control passes after a fresh dm-tree harness build. The previous harness cache had been removed; the first rebuild hit a shared sccache connection reset, and the serial retry succeeded. Eight complete-source lint ports and their public adapters, the switch-range bridge, and the declaration/init/base-vars/requirement-bool complete-source adapters are now integrated with exact preimage/postimage checks. A missed aliased switch destructuring was found by Rust and fixed. Combined configuration checks and runtime qualification are pending; these changes do not establish full 101-policy coverage or activate a new default command path.
+
+### November 1 runtime qualification and repairs
+
+Fresh builds passed the Native, Native-only Analyze, and independent-oracle
+configurations. The bounded parser/analysis/tree controls passed eleven tests;
+the Windows include-prefix control also passed. Complete independent comparisons
+passed for Tracked (seven cases/fourteen records), nine raw policies (eighteen
+basic/configured reports), declarations, init, base vars, and boolean requirements.
+Actual original/direct/thin CLI comparisons passed all nine raw families, all four
+declaration cases, and all six init cases, including baseline/configuration bytes.
+Every owned CLI namespace was retired by the proof runner.
+
+The first large Native batch exposed real report-validation/admission defects and
+incorrect fixture assumptions. After the reviewed repairs, its focused follow-up
+passed nineteen of twenty-two checks. Analyze passed twenty-five of twenty-six.
+Remaining failures concerned synthetic-manifest admission and two fixture setup
+errors; their source repairs are applied but require fresh verification. One deep
+receiver-chain test also needed the primary parser's actual Assign node. No
+expected production output was re-recorded to hide a discrepancy.
+
+A raw-byte audit caught copied Unicode test literals being re-encoded through the
+Windows default codepage. The original Greek controls and multibyte fixture bytes
+are restored, independently checked against raw HEAD/preimages, and have explicit
+regressions. Frozen original reference sources remain byte-exact.
+
+Additional checker phase aggregation and semantic/raw producer packets are in
+progress. These selected-cohort results do not establish complete checker coverage,
+default-command cutover, cross-revision body reuse, or final performance targets.
+
+### November 2 shared literal and acquisition qualification
+
+The shared lexical values now retain their actual integer/float kind and bits,
+resource path, and producer-issued normal/raw/generated string mode. Compiler,
+checker and constant-evaluation consumers consult those values before displayed
+spelling. Raw acquisition admits the physical allocation before reading and adopts
+the same retained buffers into the existing source ledger; original I/O failures
+are preserved rather than recorded as missing files.
+
+All four current metadata configurations pass: core compiler crates, Native,
+native-policy Analyze, and the combined independent comparison configuration.
+The focused core/checker/bytecode batch passes 107 distinct tests. One new test
+incorrectly required an unoptimized numeric instruction; it now compares the
+complete code against the ordinary parser and existing emitter, which also uses
+compact integer instructions. An independent, headless DreamMaker compile confirms
+the three string-mode payloads in its DMB string table. No game world was started.
+
+These results qualify those particular boundaries, not the full task. Genuine
+streamed preprocessing/declaration activation, demanded-default ownership transfer,
+the remaining policy ports, whole-body inference/retraction, default routing and
+duplicate-model retirement still need integration and qualification. Draft-only
+macro-factory tests absent from the real test registry are explicitly unqualified.
+
+### November 2 streamed syntax and resource boundaries
+
+The shared final token buffer now retains one immutable allocation across primary
+and header consumers. Demanded defaults, parameter-source expressions and array
+dimensions can lend their already-parsed expression roots to the existing native
+parameter metadata without a second Pratt parse. Focused tests cover identity,
+foreign-owner rejection, stopping before future formal tokens, nested delimiters,
+and release of admitted storage. The shared-stream cohort passed twenty tests;
+the subsequent dimension/source and macro-stack cohort passed six. These are
+component proofs, not activation of the complete source driver.
+
+The original conditional-value kernel passed six focused tests. A separate
+resource wrapper for the existing macro dictionary passed five tests, including
+quota refusal before cloning, unchanged state after refusal, and release of old
+history before retaining the final metadata map. Its conservative allocation
+envelope is admission credit, not an asserted heap measurement. Driver integration
+must keep the final map and its credit together and must not introduce an
+unfunded deep clone through a public plan.
+
+Independent observations of the pinned parser show that the tools have distinct
+demand frontiers: Analyze's real 8192-token, 64-batch protocol can report a later
+macro-arity error after an earlier parser failure; DreamChecker's lazy path does
+not demand that later input. The batch counts indentation-processor output, not
+raw newlines. A separate include-inside-expansion fixture produces the included
+definition's value in both original profiles. The unified driver must preserve
+these differences rather than flattening the two transcripts.
+
+Complete formal/body diagnostic ordering, the real source-driver joins, remaining
+policy ports and full-model/default routing remain unfinished. Passing the
+component tests above does not qualify those paths.
+
+The setter comparison exposed a real frontend defect: an absolute static-scope
+call inside a procedure was normalized to root indentation and offered to the
+formal-declaration observer. A focused regression failed on the actual current
+source before the correction. The shared structural cursor now preserves a body
+scope whose physical indentation is known; that regression and four dedent,
+namespace and include-prefix controls pass. Ambiguous Original indentation after
+an expanded include remains explicitly unavailable until the genuine indentation
+producer supplies its provenance. Whole-rule qualification is recorded below.
+
+The repaired comparison passes all 27 setter inputs, each with more than
+140 source files. The complete op-order comparison also passes its 30 inputs:
+ordered sites, ALLOW usage, full report text and failure state match the immutable
+original implementation. Seventeen selected policy tests pass, including quota
+and first-I/O-failure controls. These prove the particular DATA folds and report
+contracts; native-host authority checks, complete source-driver activation and
+default routing remain separate unfinished work.
+
+
+### November 2 retained formal diagnostics and raw coordinate controls
+
+The same formal producer retains actual annotation unions, var/static/semicolon
+notices and the ignored post-in annotation. Returned diagnostic rows retain their
+admission credit; the formatter preserves the original integer-token display.
+Eighteen selected syntax/tree tests pass, including the existing static-scope
+regression and the ordinary-compiler annotation partition control. This does not
+cover every default-expression grammar form: intrinsic input/locate clauses and
+binary-in default extents are still being joined to the genuine Pratt producer.
+
+The existing source decoder now supplies allocation-free sparse point geometry.
+The frame must fund the emitted BOM and legacy-byte exception rows and bind them
+to its actual acquired source. Lookups reject BOM and UTF8 interiors and accept
+real EOF; geometry alone grants no source identity. Three focused controls pass.
+Two bootstrap controls pass for the exact default/caller recipe, ordered issuance,
+quota-before-copy, atomic rollback and a real first I/O fault on a fresh operation.
+Those bootstrap controls use a callback stub for token production; they do not
+qualify productive initial lexical expansion or full source-driver activation.
+
+The combined core result is 23 distinct passing selected tests. Eight small public
+native-host tests also pass: strict input-opening errors, genuine source failures,
+retained diagnostic transport, exact escaping, quota bounds and fresh-operation
+recovery. Five selected Analyze tests pass, including the complete setter and
+op-order comparisons. The Sys reactive comparison matches its first ten inputs
+but still exposes a missing plain-line receipt on BOM/CRLF input; its repair is
+under focused verification. No external DreamChecker executable or game world
+was started for this batch.
+
+
+### November 3 joined raw/header primitives
+
+Four actual metadata configurations pass: core library and test targets, native
+host targets, native-only Analyze, and Analyze with independent legacy oracles.
+This is type qualification, not runtime equivalence.
+
+Sixty-one distinct selected core checks pass across the initial run, four
+failure-only repairs, a new punctuation control and two affected regressions.
+They cover default-expression partitions, retained messages, shared parameter
+storage and BODY adoption, raw coordinates, macro replacement, logical cadence,
+conditional transitions, trace callbacks and operational failures. The complete
+workspace controller and default frontend are not activated by those tests.
+
+The run repaired a driver that could resume after failure, incorrect unary
+punctuation classification, and loss of the original retained I/O error. The
+arena test now drops its still-owned emitted token before requiring zero storage.
+
+Sys, Lifeforms and handler fixtures now capture raw and compiler-decoded views
+from the same initial read. The raw view preserves BOM and uses the real Analyze
+newline normalization. Production already follows this contract. Reference
+reports are unchanged. The complete comparisons now pass all 11 Sys, 27 Lifeforms
+and 17 declared-handler inputs, each with more than 140 source files. Sixteen
+distinct selected policy controls pass after failure-only repairs for sibling
+scratch scopes and the shared canonical null-term classification.
+
+Full controller traversal, rich notices and mapping, structural partial-TU
+purpose, remaining policy admission, checker inference, default routing and
+duplicate-model retirement remain unfinished.

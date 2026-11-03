@@ -69,6 +69,6 @@ fn selftest() -> Result<String, String> {
 pub fn register(reg: &mut Registry) {
     register_module(
         reg,
-        SysModule { name: "dx_reactive", rules: RULES, files_scan: Some(scan), selftest: Some(selftest), py_selftest: true, ..SysModule::DEFAULT },
+        SysModule { name: crate::allow_registry_fields::sys_dx_reactive::SCOPE_MODULE_NAME, rules: RULES, files_scan: Some(scan), selftest: Some(selftest), py_selftest: true, ..SysModule::DEFAULT },
     );
 }

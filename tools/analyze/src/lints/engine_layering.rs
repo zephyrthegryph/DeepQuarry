@@ -1,19 +1,12 @@
 //! Hard engine boundary to library/content/game/modules/datums: semantic provenance, not name prefixes.
 //! Dynamic target values and untyped receiver chains have no static provenance and are not prohibited by this lint.
 use std::collections::BTreeSet;
-use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
-use crate::tree::CODE_DM;
+use crate::lint::{Cx,Lint,Meta,Registry,Sink};
 
-const HINT: &str = "move the content-specific implementation downstream; call an actual engine-declared virtual interface, or move the foundational implementation into the engine";
-static META: Meta = Meta {
-    name: "engine_layering", group: "", label: "engine_layering", legacy: "",
-    select: CODE_DM, scan: ScanKind::Tree, policy: Policy::Hard,
-    rules: &[RuleMeta { name: "external_dependency", hint: HINT }, RuleMeta { name: "semantic_model", hint: "repair the parsed environment; engine layering cannot pass without the semantic model" }],
-    allow: crate::allow_registry_fields::engine_layering::ALLOW_0, lists: &[],
-};
+use crate::engine_layering_policy::metadata;
 struct EngineLayering;
 impl Lint for EngineLayering {
-    fn meta(&self) -> &Meta { &META }
+    fn meta(&self) -> &Meta { metadata() }
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
         let files: Vec<_> = cx.files().into_iter().filter(|f| f.rel.starts_with("code/engine/")).collect();
         if files.is_empty() { return; }

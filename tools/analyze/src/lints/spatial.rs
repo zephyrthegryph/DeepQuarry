@@ -21,8 +21,8 @@ use crate::util::{py_strip, starts_with_any};
 const HINT: &str = "use contents_of()/FOR_CONTENTS/is_inside()/locate_within()/contents_count()/locate_in_list() or the ledger read API (doc/rewrite/containment.md section 2a); a justified keep takes `// ALLOW(spatial): <reason>`";
 
 static META: Meta = Meta {
-    name: "spatial",
-    group: "",
+    name: crate::allow_registry_fields::spatial::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::spatial::SCOPE_META_0.group,
     label: "spatial",
     legacy: "tools/ci/spatial_lint.py",
     select: CODE_DM,
@@ -35,7 +35,7 @@ static META: Meta = Meta {
         RuleMeta { name: "locate_in", hint: HINT },
     ],
     allow: crate::allow_registry_fields::spatial::ALLOW_0,
-    lists: &["api_prefixes", "api_files"],
+    lists: crate::allow_registry_fields::spatial::SCOPE_META_0.lists,
 };
 
 const IMPLICIT_IDENTS: &str = r"(?:src|loc|T|H|M|A|AM|holder|container)";

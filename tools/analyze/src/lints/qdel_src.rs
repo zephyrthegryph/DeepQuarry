@@ -16,8 +16,8 @@ use crate::pat::Pat;
 use crate::tree::{SourceFile, CODE_MAPS_DM};
 
 static META: Meta = Meta {
-    name: "qdel_src",
-    group: "",
+    name: crate::allow_registry_fields::qdel_src::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::qdel_src::SCOPE_META_0.group,
     label: "qdel_src",
     legacy: "tools/ci/qdel_src_lint.py",
     select: CODE_MAPS_DM,
@@ -37,7 +37,7 @@ static META: Meta = Meta {
         hint: "say why the thing ends: consume() / replace_with() / expire() / slot_clear() / ledger_empty() (code/datums/lifecycle/verbs.dm); a real destroy-now keeps qdel(src) with `// ALLOW(lifecycle): <reason>`",
     }],
     allow: crate::allow_registry_fields::qdel_src::ALLOW_0,
-    lists: &[],
+    lists: crate::allow_registry_fields::qdel_src::SCOPE_META_0.lists,
 };
 
 struct QdelSrc {

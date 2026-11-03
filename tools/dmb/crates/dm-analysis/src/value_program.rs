@@ -68,6 +68,7 @@ fn literal_text(expression: &Expr) -> Option<String> {
     let ExprKind::Literal(text) = &node(expression).kind else {
         return None;
     };
+    if let Some(value)=text.original_value(){return match value{dm_syntax::OriginalTokenValue::String(value)=>Some(value.to_owned()),_=>None}}
     let parts = text.parts().ok()??;
     if !parts.expressions.is_empty() {
         return None;
@@ -240,11 +241,16 @@ fn parameter_candidate(tree: &SemanticTree, parameter: &Parameter, source_untype
 
 impl<'a> Index<'a> {
     fn new(origin: Origin<'a>, resolver: &impl Resolver) -> Result<Self, Unsupported> {
+        Self::new_using(origin,resolver,&mut NoopValueWork)
+    }
+    fn new_using<W:crate::policy_body_demand::WorkspaceWork>(origin:Origin<'a>,resolver:&impl Resolver,work:&mut W)->Result<Self,W::Error>{
+        work.checkpoint()?;
         let tree = origin.tree();
         let roster = origin.roster()?;
         let mut procedures = BTreeMap::new();
         let mut names: BTreeMap<_, Vec<_>> = BTreeMap::new();
         for (ordinal, &member) in roster.members().iter().enumerate() {
+            work.checkpoint()?;if W::CHECKED{work.retain(4096)?;}
             let identity = roster
                 .identity(ordinal)
                 .ok_or_else(|| Unsupported("missing issued procedure identity".into()))?;
@@ -263,6 +269,7 @@ impl<'a> Index<'a> {
             let mut declaration = Some(member);
             let mut scalar_return = false;
             while let Some(id) = declaration {
+                work.checkpoint()?;
                 let row = tree.member(id).unwrap();
                 if row.definition == DefinitionMode::Declare || row.previous.is_none() {
                     scalar_return = row.metadata.procedure.as_ref().is_some_and(|p| {
@@ -289,11 +296,12 @@ impl<'a> Index<'a> {
             .iter()
             .filter(|member| member.kind == MemberKind::Var)
         {
+            work.checkpoint()?;if W::CHECKED{work.retain(4096)?;}
             let owner = tree.type_node(data.owner).unwrap().path;
-            let storage = resolver.resolve(Q::VarStorage {
+            let storage = resolve_value_using(resolver,Q::VarStorage {
                 owner,
                 name: data.name,
-            });
+            },&mut||work.checkpoint())?;
             let owner = match storage {
                 M::Slot { owner, .. } => owner,
                 M::InstanceField {
@@ -302,7 +310,7 @@ impl<'a> Index<'a> {
                 _ => {
                     return Err(Unsupported(
                         "variable storage coverage is incomplete".into(),
-                    ))
+                    ).into())
                 }
             };
             let init_ok = match (&data.metadata.resolved_constant, &data.metadata.initializer) {
@@ -324,13 +332,13 @@ impl<'a> Index<'a> {
                 Origin::Live(_) => None,
             };
             let untyped = data.metadata.inherited_opaque.is_none()
-                && untyped::field_declared_hint(
+                && untyped::field_declared_hint_using(
                     tree,
                     resolver,
                     archive,
                     owner,
                     data.name,
-                    &data.metadata,
+                    &data.metadata,&mut||work.checkpoint(),
                 )?
                 .is_none();
             let candidate = untyped && init_ok && data.metadata.inherited_opaque.is_none();
@@ -338,6 +346,7 @@ impl<'a> Index<'a> {
         }
         let mut field_names: BTreeMap<_, Vec<_>> = BTreeMap::new();
         for &key in fields.keys() {
+            work.checkpoint()?;if W::CHECKED{work.retain(256)?;}
             field_names.entry(key.1).or_default().push(key);
         }
         Ok(Self {
@@ -356,12 +365,16 @@ impl<'a> Index<'a> {
         child: SymbolId,
         parent: SymbolId,
     ) -> Result<bool, Unsupported> {
+        self.subtype_using(resolver,child,parent,&mut||Ok::<(),Unsupported>(()))
+    }
+    fn subtype_using<E:From<Unsupported>+From<String>>(&self,resolver:&(impl Resolver+?Sized),child:SymbolId,parent:SymbolId,poll:&mut impl FnMut()->Result<(),E>)->Result<bool,E>{
+        poll()?;
         let query = Q::Ancestry(child);
-        match resolver.resolve(query) {
+        match resolve_value_using(resolver,query,poll)? {
             M::Symbols(ancestors) => Ok(ancestors.contains(&parent)),
             _ => Err(Unsupported(format!(
                 "native value ancestry is incomplete: {query:?}"
-            ))),
+            )).into()),
         }
     }
     fn up_chain(&self, id: ProcedureIdentity) -> Vec<ProcedureIdentity> {
@@ -382,13 +395,17 @@ impl<'a> Index<'a> {
         owner: SymbolId,
         name: SymbolId,
     ) -> Result<Vec<ProcedureIdentity>, Unsupported> {
+        self.targets_using(resolver,owner,name,&mut||Ok::<(),Unsupported>(()),&mut|_|Ok(()))
+    }
+    fn targets_using<E:From<Unsupported>+From<String>>(&self,resolver:&(impl Resolver+?Sized),owner:SymbolId,name:SymbolId,poll:&mut impl FnMut()->Result<(),E>,reserve:&mut impl FnMut(usize)->Result<(),E>)->Result<Vec<ProcedureIdentity>,E>{
+        poll()?;
         let mut verb = false;
         let mut query = Q::SourceDeclarationChain { owner, name, verb };
-        let mut answer = resolver.resolve(query);
+        let mut answer = resolve_value_using(resolver,query,poll)?;
         if matches!(answer, M::Missing) {
             verb = true;
             query = Q::SourceDeclarationChain { owner, name, verb };
-            answer = resolver.resolve(query);
+            answer = resolve_value_using(resolver,query,poll)?;
         }
         match answer {
             M::Missing => Ok(Vec::new()),
@@ -396,16 +413,17 @@ impl<'a> Index<'a> {
                 let Some(M::Declaration { identity, .. }) = rows.first() else {
                     return Err(Unsupported(
                         "native source chain has no selected declaration".into(),
-                    ));
+                    ).into());
                 };
-                let mut defs = vec![*identity];
+                reserve(256)?;let mut defs = vec![*identity];
                 if owner != SymbolId::of("/") && identity.owner != SymbolId::of("/") {
                     for &id in self.names.get(&name).map_or(&[][..], Vec::as_slice) {
+                        poll()?;
                         let procedure = &self.procedures[&id];
                         let data = self.tree.member(procedure.member).unwrap();
                         if id.verb == verb
                             && id.owner != identity.owner
-                            && self.subtype(resolver, id.owner, owner)?
+                            && self.subtype_using(resolver,id.owner,owner,poll)?
                             && self.tree.resolve(
                                 data.owner,
                                 name,
@@ -416,17 +434,17 @@ impl<'a> Index<'a> {
                                 },
                             ) == Some(procedure.member)
                         {
-                            defs.push(id);
+                            reserve(256)?;defs.try_reserve(1).map_err(|_|E::from("value definition allocation refused".to_owned()))?;defs.push(id);
                         }
                     }
                 }
-                defs.sort();
+                crate::checker_order::sort_source_order(&mut defs,&mut|a,b|->Result<std::cmp::Ordering,E>{poll()?;Ok(a.cmp(b))})?;
                 defs.dedup();
                 Ok(defs)
             }
             _ => Err(Unsupported(format!(
                 "native source selection is incomplete: {query:?}"
-            ))),
+            )).into()),
         }
     }
 }
@@ -447,10 +465,14 @@ struct Host<'a, 'b, R: ?Sized> {
 }
 impl<R: Resolver + ?Sized> Host<'_, '_, R> {
     fn targets(&self, call: &Expr) -> Result<Targets, Unsupported> {
-        let ExprKind::Call { callee, .. } = &node(call).kind else {
-            return Err(Unsupported("expected native call".into()));
+        self.targets_using(call,&mut||Ok::<(),Unsupported>(()),&mut|_|Ok(()))
+    }
+    fn targets_using<E:From<Unsupported>+From<String>>(&self,call:&Expr,poll:&mut impl FnMut()->Result<(),E>,reserve:&mut impl FnMut(usize)->Result<(),E>)->Result<Targets,E>{
+        poll()?;
+        let ExprKind::Call { callee, .. } = &untyped::ungroup_using(call,poll)?.kind else {
+            return Err(Unsupported("expected native call".into()).into());
         };
-        let (owner, name, bare): (SymbolId, &str, bool) = match &node(callee).kind {
+        let (owner, name, bare): (SymbolId, &str, bool) = match &untyped::ungroup_using(callee,poll)?.kind {
             ExprKind::Ident(name) if name == "." => return Ok(Targets::Source(vec![self.current])),
             ExprKind::Ident(name) if name == ".." => {
                 return Ok(Targets::Source(
@@ -462,9 +484,9 @@ impl<R: Resolver + ?Sized> Host<'_, '_, R> {
             }
             ExprKind::Ident(name) => (self.scope.owner, name, true),
             ExprKind::Unary { op, .. } if op == "::" => {
-                match dm_syntax::call_target(node(callee)) {
+                match dm_syntax::call_target(untyped::ungroup_using(callee,poll)?) {
                     dm_syntax::CallTarget::GlobalNamed(name) => (SymbolId::of("/"), name, true),
-                    _ => return Err(Unsupported("invalid explicit global call target".into())),
+                    _ => return Err(Unsupported("invalid explicit global call target".into()).into()),
                 }
             }
             ExprKind::Member {
@@ -480,7 +502,7 @@ impl<R: Resolver + ?Sized> Host<'_, '_, R> {
                 if *via_colon {
                     return Ok(Targets::Unknown(SymbolId::of(selector)));
                 }
-                let Some(ty) = self.scope.type_of(object)? else {
+                let Some(ty) = self.scope.type_of_using(object,poll)? else {
                     return Ok(Targets::Unknown(SymbolId::of(selector)));
                 };
                 if ty.is_empty() {
@@ -493,11 +515,11 @@ impl<R: Resolver + ?Sized> Host<'_, '_, R> {
         };
         let mut targets = self
             .index
-            .targets(self.resolver, owner, SymbolId::of(name))?;
+            .targets_using(self.resolver,owner,SymbolId::of(name),poll,reserve)?;
         if targets.is_empty() && bare && owner != SymbolId::of("/") {
             targets = self
                 .index
-                .targets(self.resolver, SymbolId::of("/"), SymbolId::of(name))?;
+                .targets_using(self.resolver,SymbolId::of("/"),SymbolId::of(name),poll,reserve)?;
         }
         if targets.is_empty() {
             Ok(Targets::Builtin(
@@ -532,7 +554,10 @@ impl<R: Resolver + ?Sized> Host<'_, '_, R> {
         }
     }
     fn source_field(&self, expression: &Expr) -> Result<Option<(SymbolId, SymbolId)>, Unsupported> {
-        let (receiver, name, bare) = match &node(expression).kind {
+        self.source_field_using(expression,&mut||Ok::<(),Unsupported>(()))
+    }
+    fn source_field_using<E:From<Unsupported>+From<String>>(&self,expression:&Expr,poll:&mut impl FnMut()->Result<(),E>)->Result<Option<(SymbolId,SymbolId)>,E>{
+        let (receiver, name, bare) = match &untyped::ungroup_using(expression,poll)?.kind {
             ExprKind::Ident(name) => (Some(self.scope.owner), name, true),
             ExprKind::Member {
                 object, selector, ..
@@ -541,7 +566,7 @@ impl<R: Resolver + ?Sized> Host<'_, '_, R> {
                 object, selector, ..
             } => (
                 self.scope
-                    .type_of(object)?
+                    .type_of_using(object,poll)?
                     .filter(|path| !path.is_empty())
                     .map(|path| SymbolId::of(&path)),
                 selector,
@@ -556,7 +581,7 @@ impl<R: Resolver + ?Sized> Host<'_, '_, R> {
             owner,
             name: SymbolId::of(name),
         };
-        let slot = match self.resolver.resolve(query) {
+        let slot = match resolve_value_using(self.resolver,query,poll)? {
             M::Slot { owner, name, .. }
             | M::InstanceField {
                 declaring_owner: owner,
@@ -565,28 +590,32 @@ impl<R: Resolver + ?Sized> Host<'_, '_, R> {
             // No value proof is supplied by an incomplete storage answer. Writes
             // with that receiver conservatively reach every field of the name.
             M::Missing | M::Unsupported(_) => None,
-            _ => return Err(Unsupported("invalid native storage answer".into())),
+            _ => return Err(Unsupported("invalid native storage answer".into()).into()),
         };
         if slot.is_some() || owner == SymbolId::of("/") || !bare {
             return Ok(slot);
         }
         Ok(
-            match self.resolver.resolve(Q::VarStorage {
+            match resolve_value_using(self.resolver,Q::VarStorage {
                 owner: SymbolId::of("/"),
                 name: SymbolId::of(name),
-            }) {
+            },poll)? {
                 M::Slot { owner, name, .. } => Some((owner, name)),
                 M::Missing | M::Unsupported(_) => None,
-                _ => return Err(Unsupported("invalid global storage answer".into())),
+                _ => return Err(Unsupported("invalid global storage answer".into()).into()),
             },
         )
     }
 }
 impl<R: Resolver + ?Sized> Host<'_, '_, R> {
     fn pick(&self, args: &[Expr], list_form: bool) -> Result<Proof, Unsupported> {
+        self.pick_using(args,list_form,&mut||Ok::<(),Unsupported>(()),&mut|_|Ok(()))
+    }
+    fn pick_using<E:From<Unsupported>+From<String>>(&self,args:&[Expr],list_form:bool,poll:&mut impl FnMut()->Result<(),E>,reserve:&mut impl FnMut(usize)->Result<(),E>)->Result<Proof,E>{
+        poll()?;
         let items = match args {
-            [one] if list_form => match &node(one).kind {
-                ExprKind::Call { callee, args } if matches!(&node(callee).kind, ExprKind::Ident(name) if name == "list") => {
+            [one] if list_form => match &untyped::ungroup_using(one,poll)?.kind {
+                ExprKind::Call { callee, args } if matches!(&untyped::ungroup_using(callee,poll)?.kind, ExprKind::Ident(name) if name == "list") => {
                     args.as_slice()
                 }
                 _ => return Ok(yes(false)),
@@ -597,25 +626,30 @@ impl<R: Resolver + ?Sized> Host<'_, '_, R> {
         // a single arm. Only pickweight's callable form expands a list literal.
         let mut proof = yes(!list_form || !items.is_empty() || args.len() == 1);
         for item in items {
-            if let ExprKind::Binary { op, lhs, rhs } = &node(item).kind {
+            poll()?;
+            if let ExprKind::Binary { op, lhs, rhs } = &untyped::ungroup_using(item,poll)?.kind {
                 if op == ";" || list_form && op == "=" {
-                    merge(&mut proof, value_expressions::expression(lhs, self)?);
-                    merge(&mut proof, value_expressions::expression(rhs, self)?);
+                    reserve(4096)?;merge(&mut proof, controlled_expression(lhs,self,poll,reserve)?);
+                    reserve(4096)?;merge(&mut proof, controlled_expression(rhs,self,poll,reserve)?);
                     continue;
                 }
             }
-            merge(&mut proof, value_expressions::expression(item, self)?);
+            reserve(4096)?;merge(&mut proof, controlled_expression(item,self,poll,reserve)?);
         }
         Ok(proof)
     }
     fn config_get(&self, receiver: &Expr, args: &[Expr]) -> Result<bool, Unsupported> {
+        self.config_get_using(receiver,args,&mut||Ok::<(),Unsupported>(()))
+    }
+    fn config_get_using<E:From<Unsupported>+From<String>>(&self,receiver:&Expr,args:&[Expr],poll:&mut impl FnMut()->Result<(),E>)->Result<bool,E>{
+        poll()?;
         let [arg] = args else {
             return Ok(false);
         };
-        let ExprKind::TypePath(path) = &node(arg).kind else {
+        let ExprKind::TypePath(path) = &untyped::ungroup_using(arg,poll)?.kind else {
             return Ok(false);
         };
-        if self.scope.type_of(receiver)?.as_deref() != Some("/datum/controller/configuration") {
+        if self.scope.type_of_using(receiver,poll)?.as_deref() != Some("/datum/controller/configuration") {
             return Ok(false);
         }
         let Some(class) = [
@@ -630,6 +664,7 @@ impl<R: Resolver + ?Sized> Host<'_, '_, R> {
         let tree = self.index.tree;
         let mut ty = tree.lookup_type(SymbolId::of(path));
         while let Some(id) = ty {
+            poll()?;
             let data = tree
                 .type_node(id)
                 .ok_or_else(|| Unsupported("missing config type".into()))?;
@@ -645,10 +680,10 @@ impl<R: Resolver + ?Sized> Host<'_, '_, R> {
     }
 }
 
-impl<R: Resolver + ?Sized> ValueHost<Key> for Host<'_, '_, R> {
-    type Error = Unsupported;
-    fn read(&self, expression: &Expr) -> Result<Proof, Unsupported> {
-        match &node(expression).kind {
+impl<R:Resolver+?Sized> ValueHost<Key> for Host<'_,'_,R>{type Error=Unsupported;fn read(&self,expression:&Expr)->Result<Proof,Unsupported>{self.read_using(expression,&mut||Ok::<(),Unsupported>(()),&mut|_|Ok(()))}fn call(&self,expression:&Expr)->Result<Proof,Unsupported>{self.call_using(expression,&mut||Ok::<(),Unsupported>(()),&mut|_|Ok(()))}}
+impl<R:Resolver+?Sized> Host<'_,'_,R>{
+    fn read_using<E:From<Unsupported>+From<String>>(&self,expression:&Expr,poll:&mut impl FnMut()->Result<(),E>,reserve:&mut impl FnMut(usize)->Result<(),E>)->Result<Proof,E>{
+        match &untyped::ungroup_using(expression,poll)?.kind {
             ExprKind::Ident(name) if self.scope.locals.contains_key(name) => {
                 Ok(if self.local_values {
                     depends(Key::Local(self.current, SymbolId::of(name)))
@@ -675,7 +710,7 @@ impl<R: Resolver + ?Sized> ValueHost<Key> for Host<'_, '_, R> {
                 Ok(yes(true))
             }
             ExprKind::Ident(_) | ExprKind::Member { .. } | ExprKind::SafeMember { .. } => {
-                let Some((owner, name)) = self.source_field(expression)? else {
+                let Some((owner, name)) = self.source_field_using(expression,poll)? else {
                     return Ok(yes(false));
                 };
                 Ok(if self.index.fields.contains_key(&(owner, name)) {
@@ -687,11 +722,12 @@ impl<R: Resolver + ?Sized> ValueHost<Key> for Host<'_, '_, R> {
             _ => Ok(yes(false)),
         }
     }
-    fn call(&self, expression: &Expr) -> Result<Proof, Unsupported> {
-        let ExprKind::Call { callee, args } = &node(expression).kind else {
-            return Err(Unsupported("expected call".into()));
+    fn call_using<E:From<Unsupported>+From<String>>(&self,expression:&Expr,poll:&mut impl FnMut()->Result<(),E>,reserve:&mut impl FnMut(usize)->Result<(),E>)->Result<Proof,E>{
+        poll()?;
+        let ExprKind::Call { callee, args } = &untyped::ungroup_using(expression,poll)?.kind else {
+            return Err(Unsupported("expected call".into()).into());
         };
-        if matches!(&node(callee).kind, ExprKind::Call { callee, .. } if matches!(&node(callee).kind, ExprKind::Ident(name) if name == "call_ext"))
+        if matches!(&untyped::ungroup_using(callee,poll)?.kind, ExprKind::Call { callee, .. } if matches!(&untyped::ungroup_using(callee,poll)?.kind, ExprKind::Ident(name) if name == "call_ext"))
         {
             return Ok(yes(true));
         }
@@ -700,33 +736,33 @@ impl<R: Resolver + ?Sized> ValueHost<Key> for Host<'_, '_, R> {
         }
         | ExprKind::SafeMember {
             object, selector, ..
-        } = &node(callee).kind
+        } = &untyped::ungroup_using(callee,poll)?.kind
         {
-            if selector == "Get" && self.config_get(object, args)? {
+            if selector == "Get" && self.config_get_using(object,args,poll)? {
                 return Ok(yes(true));
             }
             if matches!(selector.as_str(), "Find" | "Replace")
-                && self.scope.type_of(object)?.as_deref() == Some("/regex")
+                && self.scope.type_of_using(object,poll)?.as_deref() == Some("/regex")
                 && self
                     .index
-                    .targets(
+                    .targets_using(
                         self.resolver,
                         SymbolId::of("/regex"),
-                        SymbolId::of(selector),
+                        SymbolId::of(selector),poll,reserve,
                     )?
                     .is_empty()
             {
                 return Ok(yes(true));
             }
         }
-        if let Targets::Builtin(name, true) = self.targets(expression)? {
+        if let Targets::Builtin(name, true) = self.targets_using(expression,poll,reserve)? {
             if matches!(name.as_str(), "pick" | "pickweight") {
-                return self.pick(args, name == "pickweight");
+                return self.pick_using(args,name=="pickweight",poll,reserve);
             }
         }
 
-        Ok(match self.targets(expression)? {
-            Targets::Source(defs) => self.proof_for_defs(defs),
+        Ok(match self.targets_using(expression,poll,reserve)? {
+            Targets::Source(defs) => self.proof_for_defs_using(defs,poll,reserve)?,
             Targets::Builtin(name, bare) => yes(bare
                 && builtins::BUILTIN_VALUE_CALLS.contains(&name.as_str())
                 || matches!(name.as_str(), "Find" | "Join" | "Replace")
@@ -740,12 +776,21 @@ impl<R: Resolver + ?Sized> ValueHost<Key> for Host<'_, '_, R> {
                 } else if dm_ir::builtin_names::is_builtin_proc(spelling) {
                     yes(false)
                 } else {
-                    self.proof_for_defs(self.index.names.get(&name).cloned().unwrap_or_default())
+                    {let values=self.index.names.get(&name);reserve(values.map_or(0,|v|v.len()).checked_mul(256).ok_or_else(||E::from("value definitions geometry overflow".to_owned()))?)?;self.proof_for_defs_using(values.cloned().unwrap_or_default(),poll,reserve)?}
                 }
             }
         })
     }
+ fn proof_for_defs_using<E:From<Unsupported>+From<String>>(&self,definitions:Vec<ProcedureIdentity>,poll:&mut impl FnMut()->Result<(),E>,reserve:&mut impl FnMut(usize)->Result<(),E>)->Result<Proof,E>{let mut proof=Proof{admissible:!definitions.is_empty(),requires:BTreeSet::new()};for definition in definitions{poll()?;reserve(2048)?;proof.requires.insert(Key::Return(definition));}Ok(proof)}
 }
+
+// Callback types must be stable across pick -> expression -> host.call -> pick.
+// Only the callback vtables are erased: E, first actual IO, order and policy remain unchanged.
+struct ControlledValueHost<'a,'b,'p,'r,R:?Sized,E>{host:&'b Host<'a,'b,R>,poll:std::cell::RefCell<&'p mut dyn FnMut()->Result<(),E>>,reserve:std::cell::RefCell<&'r mut dyn FnMut(usize)->Result<(),E>>,error:std::marker::PhantomData<fn()->E>}
+impl<R:Resolver+?Sized,E:From<Unsupported>+From<String>> ValueHost<Key> for ControlledValueHost<'_,'_,'_,'_,R,E>{type Error=E;fn checkpoint(&self)->Result<(),E>{(self.poll.borrow_mut())()}fn admit_entries(&self,n:usize)->Result<(),E>{let bytes=n.checked_mul(2048).ok_or_else(||E::from("value requirement geometry overflow".to_owned()))?;(self.reserve.borrow_mut())(bytes)}fn read(&self,e:&Expr)->Result<Proof,E>{self.host.read_using(e,&mut||(self.poll.borrow_mut())(),&mut|n|(self.reserve.borrow_mut())(n))}fn call(&self,e:&Expr)->Result<Proof,E>{self.host.call_using(e,&mut||(self.poll.borrow_mut())(),&mut|n|(self.reserve.borrow_mut())(n))}}
+fn controlled_expression<R:Resolver+?Sized,E:From<Unsupported>+From<String>>(expression:&Expr,host:&Host<'_,'_,R>,poll:&mut dyn FnMut()->Result<(),E>,reserve:&mut dyn FnMut(usize)->Result<(),E>)->Result<Proof,E>{let current=ControlledValueHost{host,poll:std::cell::RefCell::new(poll),reserve:std::cell::RefCell::new(reserve),error:std::marker::PhantomData};value_expressions::expression(expression,&current)}
+fn resolve_value_using<R:Resolver+?Sized,E>(resolver:&R,query:Q,poll:&mut impl FnMut()->Result<(),E>)->Result<M,E>{poll()?;Ok(resolver.resolve(query))}
+struct NoopValueWork;impl crate::policy_body_demand::WorkspaceWork for NoopValueWork{type Error=Unsupported;const CHECKED:bool=false;fn checkpoint(&mut self)->Result<(),Unsupported>{Ok(())}fn retain(&mut self,_:usize)->Result<(),Unsupported>{Ok(())}fn temporary(&mut self,_:usize)->Result<(),Unsupported>{Ok(())}fn overflow(&mut self)->Unsupported{Unsupported("value geometry overflow".into())}fn allocation_failed(&mut self)->Unsupported{Unsupported("value allocation refused".into())}fn body<'a>(&mut self,a:&'a BodyArchive,n:usize)->Result<ArchivedBody<'a>,Unsupported>{a.parse(n).map_err(|e|Unsupported(e.message))}}
 
 struct Updates {
     call_origins: BTreeMap<SymbolId, CallOrigins>,
@@ -1437,11 +1482,15 @@ impl<'a> Values<'a> {
         input: &'a Arc<crate::value_query::ArchiveValueInput>,
         proof: Arc<crate::value_query::ArchiveValueProof>,
     ) -> Result<Self, Unsupported> {
-        proof.validate_for(input)?;
+        Self::from_archive_input_using(input,proof,&mut NoopValueWork)
+    }
+    pub fn from_archive_input_using<W:crate::policy_body_demand::WorkspaceWork>(input:&'a Arc<crate::value_query::ArchiveValueInput>,proof:Arc<crate::value_query::ArchiveValueProof>,work:&mut W)->Result<Self,W::Error>{
+        work.checkpoint()?;proof.validate_for(input)?;
         let archive = input.archive();
         let resolver = archive.tree();
-        let mut index = Index::new(Origin::Archive(archive), resolver)?;
+        let mut index = Index::new_using(Origin::Archive(archive),resolver,work)?;
         let summary = proof.summary();
+        if W::CHECKED{let bytes=summary.config_writers.len().checked_mul(2048).ok_or_else(||work.overflow())?;work.retain(bytes)?;}
         index.config_writers = summary.config_writers.clone();
         Ok(Self {
             index,
@@ -1569,6 +1618,9 @@ impl<'a> Values<'a> {
         let proof = value_expressions::expression(expression, &host)?;
         Ok(proof.admissible && proof.requires.iter().all(|key| self.is_value(key)))
     }
+
+ pub(crate) fn archive_call_is_value_using<W:crate::policy_body_demand::WorkspaceWork>(&self,body:&ArchivedBody<'_>,expression:&Expr,exempt_types:&[String],work:&mut W)->Result<bool,W::Error>{work.checkpoint()?;self.validate_exempt_types(exempt_types)?;let current=self.archive_body_identity(body)?;let scope=untyped::archived_scope_using(body,self.resolver,exempt_types,work)?;let host=Host{index:&self.index,scope:&scope,resolver:self.resolver,current,local_values:false};let shared=std::cell::RefCell::new(work);let proof=controlled_expression(expression,&host,&mut||shared.borrow_mut().checkpoint(),&mut|n|shared.borrow_mut().retain(n))?;if !proof.admissible{return Ok(false)}for key in &proof.requires{shared.borrow_mut().checkpoint()?;if !self.is_value(key){return Ok(false)}}Ok(true)}
+ pub(crate) fn archive_local_holds_call_using<W:crate::policy_body_demand::WorkspaceWork>(&self,body:&ArchivedBody<'_>,name:&str,work:&mut W)->Result<bool,W::Error>{let id=self.archive_body_identity(body)?;work.checkpoint()?;if W::CHECKED{work.retain(256)?;}let mut todo=vec![SymbolId::of(name)];let mut visited=BTreeSet::new();while let Some(name)=todo.pop(){work.checkpoint()?;if W::CHECKED{work.retain(2048)?;}if !visited.insert(name){continue}if let Some(origin)=self.call_origins.get(&(id,name)){for proof in &origin.calls{work.checkpoint()?;if !proof.admissible{return Ok(true)}for key in &proof.requires{work.checkpoint()?;if !self.is_value(key){return Ok(true)}}}for alias in &origin.aliases{work.checkpoint()?;if W::CHECKED{work.retain(256)?;todo.try_reserve(1).map_err(|_|work.allocation_failed())?;}todo.push(*alias);}}}Ok(false)}
     pub fn is_value(&self, key: &Key) -> bool {
         self.solution.values.get(key).copied().unwrap_or(false)
     }

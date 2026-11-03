@@ -1,15 +1,22 @@
 //! Existing raw marker policy over one retained source view; no Decls model.
-pub fn strip_comments_keep_strings(text: &str) -> String {
+pub fn strip_comments_keep_strings(text:&str)->String{match strip_comments_keep_strings_using(text,&mut crate::key_policy_control::Compatibility){Ok(value)=>value,Err(never)=>match never{}}}
+/// The SAME original comment-mask algorithm with typed current operation work.
+/// Compatibility delegates this kernel; no alternate spelling scanner is added.
+pub fn strip_comments_keep_strings_using<C:crate::key_policy_control::Control>(text:&str,c:&mut C)->Result<String,C::Error>{
+    use crate::key_policy_control as kc;
+    c.checkpoint()?;kc::reserve(c,||text.len().checked_mul(2)?.checked_add(128))?;
     let b = text.as_bytes();
     let mut out = b.to_vec();
     let mut i = 0;
     let n = b.len();
     while i < n {
+        c.checkpoint()?;
         match b[i] {
             b'"' => {
                 // A string: skip to the closing quote ("\\" escapes; `[ ]` interpolation is left alone).
                 i += 1;
                 while i < n && b[i] != b'"' && b[i] != b'\n' {
+        c.checkpoint()?;
                     if b[i] == b'\\' && i + 1 < n {
                         i += 1;
                     }
@@ -20,12 +27,14 @@ pub fn strip_comments_keep_strings(text: &str) -> String {
             b'\'' => {
                 i += 1;
                 while i < n && b[i] != b'\'' && b[i] != b'\n' {
+        c.checkpoint()?;
                     i += 1;
                 }
                 i += 1;
             }
             b'/' if i + 1 < n && b[i + 1] == b'/' => {
                 while i < n && b[i] != b'\n' {
+        c.checkpoint()?;
                     out[i] = b' ';
                     i += 1;
                 }
@@ -33,6 +42,7 @@ pub fn strip_comments_keep_strings(text: &str) -> String {
             b'/' if i + 1 < n && b[i + 1] == b'*' => {
                 let mut depth = 0;
                 while i < n {
+        c.checkpoint()?;
                     if i + 1 < n && b[i] == b'/' && b[i + 1] == b'*' {
                         depth += 1;
                         out[i] = b' ';
@@ -57,21 +67,26 @@ pub fn strip_comments_keep_strings(text: &str) -> String {
             _ => i += 1,
         }
     }
-    String::from_utf8(out).unwrap_or_default()
+    c.checkpoint()?;Ok(String::from_utf8(out).unwrap_or_default())
 }
 
 /// Borrowed spelling slices from the SAME original argument grammar.
 pub struct Arguments<'a>{source:&'a str,chars:std::str::CharIndices<'a>,from:usize,depth:i32,in_str:bool,prev:char,emitted:bool,done:bool}
 pub fn argument_slices(source:&str)->Arguments<'_>{Arguments{source,chars:source.char_indices(),from:0,depth:0,in_str:false,prev:'\0',emitted:false,done:false}}
-impl<'a> Iterator for Arguments<'a>{type Item=&'a str;fn next(&mut self)->Option<Self::Item>{if self.done{return None}while let Some((i,c))=self.chars.next(){if self.in_str{if c=='"'&&self.prev!='\\'{self.in_str=false}self.prev=c;continue}match c{'"'=>self.in_str=true,'('| '['|'{' =>self.depth+=1,')'|']'|'}'=>self.depth-=1,',' if self.depth==0=>{let value=self.source[self.from..i].trim();self.from=i+1;self.prev=c;self.emitted=true;return Some(value)},_=>{}}self.prev=c;}self.done=true;let last=self.source[self.from..].trim();if !last.is_empty()||self.emitted{Some(last)}else{None}}}
-pub fn split_args(s:&str)->Vec<String>{argument_slices(s).map(str::to_owned).collect()}
+impl<'a> Arguments<'a>{fn next_using<C:crate::key_policy_control::Control>(&mut self,c:&mut C)->Result<Option<&'a str>,C::Error>{c.checkpoint()?;if self.done{return Ok(None)}while let Some((i,ch))=self.chars.next(){c.checkpoint()?;let token=ch;if self.in_str{if token=='"'&&self.prev!='\\'{self.in_str=false}self.prev=token;continue}match token{'"'=>self.in_str=true,'('| '['|'{' =>self.depth+=1,')'|']'|'}'=>self.depth-=1,',' if self.depth==0=>{let value=self.source[self.from..i].trim();self.from=i+1;self.prev=token;self.emitted=true;return Ok(Some(value))},_=>{}}self.prev=token;}self.done=true;let last=self.source[self.from..].trim();if !last.is_empty()||self.emitted{Ok(Some(last))}else{Ok(None)}}}
+impl<'a> Iterator for Arguments<'a>{type Item=&'a str;fn next(&mut self)->Option<Self::Item>{match self.next_using(&mut crate::key_policy_control::Compatibility){Ok(value)=>value,Err(never)=>match never{}}}}
+pub fn split_args(s:&str)->Vec<String>{match split_args_using(s,&mut crate::key_policy_control::Compatibility){Ok(rows)=>rows,Err(never)=>match never{}}}
+pub fn split_args_using<C:crate::key_policy_control::Control>(s:&str,c:&mut C)->Result<Vec<String>,C::Error>{let mut args=argument_slices(s);let mut rows=Vec::new();while let Some(value)=args.next_using(c)?{crate::key_policy_control::row(c,&mut rows)?;rows.push(crate::key_policy_control::own(c,value)?);}c.checkpoint()?;Ok(rows)}
 
-pub fn matching_paren(s: &str, open: usize) -> Option<usize> {
+pub fn matching_paren(s:&str,open:usize)->Option<usize>{match matching_paren_using(s,open,&mut crate::key_policy_control::Compatibility){Ok(value)=>value,Err(never)=>match never{}}}
+pub fn matching_paren_using<C:crate::key_policy_control::Control>(s:&str,open:usize,c:&mut C)->Result<Option<usize>,C::Error>{
+ c.checkpoint()?;
     let b = s.as_bytes();
     let mut depth = 0i32;
     let mut in_str = false;
     let mut i = open;
     while i < b.len() {
+        c.checkpoint()?;
         let c = b[i];
         if in_str {
             if c == b'\\' {
@@ -86,7 +101,7 @@ pub fn matching_paren(s: &str, open: usize) -> Option<usize> {
                 b')' => {
                     depth -= 1;
                     if depth == 0 {
-                        return Some(i);
+                        return Ok(Some(i));
                     }
                 }
                 _ => {}
@@ -94,7 +109,7 @@ pub fn matching_paren(s: &str, open: usize) -> Option<usize> {
         }
         i += 1;
     }
-    None
+    c.checkpoint()?;Ok(None)
 }
 
 pub(crate) struct StatementMarker<'a> {

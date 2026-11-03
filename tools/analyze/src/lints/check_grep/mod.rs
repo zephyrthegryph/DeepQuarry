@@ -126,6 +126,25 @@ impl CheckGrep {
 }
 
 impl CheckGrep{
+    fn update_baseline_data(&self, root: &Path, scope:&LintScope, run: &Run, mode: Mode) -> std::io::Result<String> {
+        let path = root.join("tools").join("ci").join("lint_scopes.toml");
+        let sites = first_hit_only(&self.groups, &run.sites);
+        let mut note = String::new();
+        for (rule, &ceiling) in scope.ceilings.iter() {
+            let count = sites.iter().filter(|s| s.rule == *rule).count() as i64;
+            let new = match mode {
+                Mode::Update => ceiling.min(count),
+                Mode::Seed => count,
+                Mode::Migrate => ceiling,
+            };
+            if new != ceiling {
+                crate::scopes::write_ceiling(&path, "check_grep", rule, new)?;
+                note.push_str(&format!(" ceiling {} {} -> {};", rule, ceiling, new));
+            }
+        }
+        Ok(format!("check_grep: ceilings in tools/ci/lint_scopes.toml;{}", note))
+    }
+
     fn finish_data(&self,scope:&LintScope,macros:i64,run:&Run,text:&mut impl std::fmt::Write,source_line:&mut dyn FnMut(&str,usize)->String)->bool{
         let sites = first_hit_only(&self.groups, &run.sites);
         let hints: BTreeMap<&str, &str> = self.meta.rules.iter().map(|r| (r.name, r.hint)).collect();
@@ -432,24 +451,7 @@ impl Lint for CheckGrep {
 
     fn finish(&self,cx:&Cx,run:&Run,text:&mut String)->bool{self.finish_data(cx.scope,macro_count(&cx.tree.root),run,text,&mut|relative,line|cx.tree.site_text(relative,line))}
 
-    fn update_baseline(&self, cx: &Cx, run: &Run, mode: Mode) -> std::io::Result<String> {
-        let path = cx.tree.root.join("tools").join("ci").join("lint_scopes.toml");
-        let sites = first_hit_only(&self.groups, &run.sites);
-        let mut note = String::new();
-        for (rule, &ceiling) in cx.scope.ceilings.iter() {
-            let count = sites.iter().filter(|s| s.rule == *rule).count() as i64;
-            let new = match mode {
-                Mode::Update => ceiling.min(count),
-                Mode::Seed => count,
-                Mode::Migrate => ceiling,
-            };
-            if new != ceiling {
-                crate::scopes::write_ceiling(&path, "check_grep", rule, new)?;
-                note.push_str(&format!(" ceiling {} {} -> {};", rule, ceiling, new));
-            }
-        }
-        Ok(format!("check_grep: ceilings in tools/ci/lint_scopes.toml;{}", note))
-    }
+    fn update_baseline(&self,cx:&Cx,run:&Run,mode:Mode)->std::io::Result<String>{self.update_baseline_data(&cx.tree.root,cx.scope,run,mode)}
 
     fn parity_normalize(&self, root: &Path, scope: &LintScope, findings: Vec<Finding>) -> Vec<Finding> {
         // the old `a || b || c`

@@ -46,6 +46,8 @@ mod reactive_read_policy;
 pub(crate) use reactive_read_policy::{Request as ReactiveRequest,Value as ReactiveValue};
 #[path="reactive_workspace_operation.rs"]
 mod reactive_workspace_operation;
+#[path="reactive_ui_actions.rs"]
+pub(super) mod reactive_ui_actions;
 #[path="reactive_workspace_policy.rs"]
 mod reactive_workspace_policy;
 pub(super) struct Admission {
@@ -88,8 +90,10 @@ impl Default for State {
         }
     }
 }
+enum LeaseOwner{Semantic(Weak<CapturedPolicyInputs>),UiRaw(Weak<crate::runner_host::workspace_capture::WorkspaceCapture>)}
+impl LeaseOwner{fn expires_without_owner(&self)->bool{match self{Self::Semantic(owner)=>owner.strong_count()==0,Self::UiRaw(owner)=>{let _resource_only_liveness=owner.strong_count();false}}}}
 struct Lease {
-    owner: Weak<CapturedPolicyInputs>,
+    owner: LeaseOwner,
     bytes: usize,
     touched: Instant,
 }
@@ -338,7 +342,7 @@ impl QueryDb {
             .lock()
             .unwrap_or_else(|e| e.into_inner());
         let mut storage = BTreeMap::new();
-        for key in leases.keys().filter(|key| key.kind == RAW_FILE) {
+        for key in leases.keys().filter(|key| key.kind == RAW_FILE && leases.get(key).is_some_and(|lease|matches!(&lease.owner,LeaseOwner::Semantic(_)))) {
             if let Some(source) = self.db.input::<FileData>(*key) {
                 source.file.visit_policy_storage(|id, bytes| {
                     storage
@@ -374,7 +378,7 @@ impl QueryDb {
             .lock()
             .unwrap_or_else(|e| e.into_inner());
         let mut storage = BTreeMap::new();
-        for key in leases.keys().filter(|key| key.kind == RAW_FILE) {
+        for key in leases.keys().filter(|key| key.kind == RAW_FILE && leases.get(key).is_some_and(|lease|matches!(&lease.owner,LeaseOwner::Semantic(_)))) {
             if let Some(source) = self.db.input::<FileData>(*key) {
                 source.file.visit_policy_storage(|id, bytes| {
                     storage
@@ -493,6 +497,10 @@ impl QueryDb {
         }))
     }
     fn raw_prune_locked(&self, now: Instant) {
+        // SAME family gate is held. Snapshot operation status before leases;
+        // no lease-map path then takes the operation-slot lock, so drop/bind
+        // cannot invert these locks. Outer entry prunes before UiRaw is bound.
+        let active_ui=self.raw_policy.admission.ui_operation_is_bound();
         let mut leases = self
             .raw_policy
             .admission.leases
@@ -500,8 +508,12 @@ impl QueryDb {
             .unwrap_or_else(|e| e.into_inner());
         self.workspace_prune_expired_locked(now);
         leases.retain(|key, lease| {
-            if lease.owner.strong_count() == 0
-                || now.saturating_duration_since(lease.touched) > MAX_AGE
+            // UI values are bounded metadata/offset DATA, never source loans. Keep
+            // their charged Db values until real TTL eviction; a dead weak owner
+            // grants nothing and current UI facts must be authenticated anew.
+            if lease.owner.expires_without_owner()
+                || (now.saturating_duration_since(lease.touched) > MAX_AGE
+                    && !(active_ui && matches!(&lease.owner,LeaseOwner::UiRaw(_))))
             {
                 let bytes = self.db.value_bytes_at(*key);
                 self.db.remove(*key);
@@ -615,7 +627,7 @@ impl QueryDb {
             leases.insert(
                 *key,
                 Lease {
-                    owner: Arc::downgrade(&cohort.capture),
+                    owner: LeaseOwner::Semantic(Arc::downgrade(&cohort.capture)),
                     bytes: *bytes,
                     touched: now,
                 },

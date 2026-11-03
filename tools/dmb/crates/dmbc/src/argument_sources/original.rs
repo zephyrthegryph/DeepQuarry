@@ -419,7 +419,7 @@ mod tests {
         );
         let parsed = arena.take_parsed(occurrence).unwrap();
         let header = parsed.share_header_expressions().unwrap();
-        let original = Arc::clone(header.storage());
+        let original = header.storage().clone();
         let metadata = frontend
             .snapshot
             .tree
@@ -467,7 +467,7 @@ mod tests {
         );
         assert_eq!(actual.procedure, expected.procedure);
         let warm = frontend.parse_body(occurrence).unwrap();
-        assert!(Arc::ptr_eq(&original, warm.parameter_storage()));
+        assert!(original.same_owner(warm.parameter_storage()));
         let mut wrong = frame.clone();
         wrong.parameter_defaults[0] = Some("99".into());
         assert!(validate_original_defaults(

@@ -123,6 +123,8 @@ pub fn build_for_checker_diagnostics<P: SourceProvider>(
     memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
     executor: &dm_exec::BuildExecutor,
 ) -> Result<DiagnosticFrontend, Vec<Diagnostic>> {
+    if provider.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(vec![Diagnostic{kind:DiagnosticKind::UnsupportedModel,stage:DiagnosticStage::Declaration,message:"Original diagnostic preparation is unissued without the actual checked native resource host".into(),location:None}])}
+
     let mut receipt = None;
     let frontend = build_with_executor_and_semantic_state_for_policy_mode(
         project,
@@ -153,6 +155,8 @@ pub fn build_for_checker_diagnostics_with_state<P: SourceProvider>(
     executor: &dm_exec::BuildExecutor,
     state: Option<&mut RetainedSemanticTree>,
 ) -> Result<DiagnosticFrontend, Vec<Diagnostic>> {
+    if provider.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(vec![Diagnostic{kind:DiagnosticKind::UnsupportedModel,stage:DiagnosticStage::Declaration,message:"Original diagnostic preparation is unissued without the actual checked native resource host".into(),location:None}])}
+
     let mut receipt = None;
     let frontend = build_with_executor_and_semantic_state_for_policy_mode(
         project,
@@ -188,7 +192,7 @@ pub fn build_for_checker_diagnostics_with_state_checked<P:SourceProvider>(projec
     let mut receipt=None;
     let result=(||{
         let frontend=build_with_executor_and_semantic_state_for_policy_demand(project,provider,defines,config,memo,executor,state,true,Some(&mut receipt),&demand)?;
-        DiagnosticFrontend::bind(frontend,receipt.ok_or_else(||vec![internal("diagnostic builder did not issue its original graph receipt")])?).map_err(FrontendBuildFailure::Diagnostics)
+        DiagnosticFrontend::bind(frontend,receipt.ok_or_else(||vec![internal("diagnostic builder did not issue its original graph receipt")])?).map_err(FrontendBuildFailure::from)
     })();
     demand.finish(result)
 }
@@ -206,10 +210,16 @@ fn build_with_executor_and_semantic_state_for_policy_mode<P: SourceProvider>(
     build_with_executor_and_semantic_state_for_policy_demand(project,provider,defines,config,memo,executor,semantic_state,require_primary_headers,diagnostic,&super::declaration_demand::Compatibility)
 }
 fn build_with_executor_and_semantic_state_for_policy_demand<P:SourceProvider,D:super::declaration_demand::Demand>(project:&Path,provider:&P,defines:&BTreeMap<String,String>,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,mut semantic_state:Option<&mut RetainedSemanticTree>,require_primary_headers:bool,diagnostic:Option<&mut Option<crate::diagnostic_declarations::DiagnosticDeclarationReceipt>>,demand:&D)->Result<ColdFrontend,D::Failure>{
+    build_with_executor_and_semantic_state_for_policy_demand_role(project,provider,defines,config,memo,executor,semantic_state,require_primary_headers,diagnostic,demand,None)
+}
+fn build_with_executor_and_semantic_state_for_policy_demand_role<P:SourceProvider,D:super::declaration_demand::Demand>(project:&Path,provider:&P,defines:&BTreeMap<String,String>,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,mut semantic_state:Option<&mut RetainedSemanticTree>,require_primary_headers:bool,diagnostic:Option<&mut Option<crate::diagnostic_declarations::DiagnosticDeclarationReceipt>>,demand:&D,original:Option<&mut Option<Arc<super::original_declaration_input::OriginalPrimaryRetention>>>)->Result<ColdFrontend,D::Failure>{
     demand.run(|permit|permit.checkpoint())?;
-    let declaration_request = semantic_state
+    let original_role=original.is_some();
+    let original_mode=diagnostic.is_some()&&provider.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290&&crate::checker_builtins::OriginalVariableDeclarations::for_seed(config.engine).is_some()&&demand.run(|permit|Ok(permit.original_primary_admitted()))?;
+    if original_role&&provider.initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err(vec![internal("Original Analyze role requires its actual Original source environment")].into())}
+    let declaration_request = if original_mode{None}else{semantic_state
         .as_ref()
-        .and_then(|state| state.declarations.compatibility_request());
+        .and_then(|state| state.declarations.compatibility_request())};
     let total_start = Instant::now();
     let mut timings = FrontendTimings::default();
     let captured = Captured {
@@ -228,9 +238,11 @@ fn build_with_executor_and_semantic_state_for_policy_demand<P:SourceProvider,D:s
     let profile_stage = dm_profile::stage("frontend.directive_planning");
     // The previous request's frontend, when this session built one for the same project and
     // defines: every unchanged include subtree of its plan is adopted, not interpreted again.
-    let previous = semantic_state
+    // SAME predecessor/engine/model cache, authenticated by its actual primary
+    // outcome. Ordinary complete recipes cannot fabricate Original outcomes.
+    let previous = if original_mode{semantic_state.as_ref().and_then(|state|state.previous_original_frontend(project,defines,original_role))}else{semantic_state
         .as_ref()
-        .and_then(|state| state.previous_frontend(project,defines,provider.initial_environment(),diagnostic.is_some()));
+        .and_then(|state| state.previous_frontend(project,defines,provider.initial_environment(),diagnostic.is_some()))};
     let (mut plan, mut plan_reuse) = dm_preprocess::regions::plan_regions_incremental(
         project,
         &captured,
@@ -527,13 +539,17 @@ fn build_with_executor_and_semantic_state_for_policy_demand<P:SourceProvider,D:s
                 // Return through the same private branch below, never parse or
                 // normalize an unchanged program a second time.
                 if let Some(slot) = diagnostic {
-                    let mut receipt=crate::diagnostic_declarations::DiagnosticDeclarationReceipt::reused_valid_tree(&frontend.snapshot.tree);
+                    let mut receipt=old.diagnostic_receipt(&frontend.snapshot.tree).ok_or_else(||vec![internal("unchanged diagnostic error owner no longer authenticates")])?;
                     receipt.retained_records=old.diagnostic_records();
+                    // Renew only the actual previous declaration loan after the
+                    // existing owner/engine/program reuse proof and current seed join.
+                    if frontend.plan.initial_environment==dm_preprocess::InitialEnvironment::OriginalChecker0290&&crate::checker_builtins::OriginalVariableDeclarations::for_seed(config.engine).is_some(){receipt.original_variables=old.original_variables();}
                     *slot=Some(receipt);
                 }
                 if let Some(request) = &declaration_request {
                     request.publish_successful();
                 }
+                if let Some(slot)=original{*slot=old.original_primary();}
                 return Ok(frontend);
             }
             Err(parts) => parts,
@@ -559,6 +575,10 @@ fn build_with_executor_and_semantic_state_for_policy_demand<P:SourceProvider,D:s
         0,
     );
     let profile_stage = dm_profile::stage("frontend.declaration_parsing");
+    let (parsed,original_primary)=if original_mode{
+        let prepared=demand.run(|permit|permit.original_analysis_declarations(&expanded,config.engine,previous.as_ref().map(|row|row.syntax.as_ref())))?;
+        (prepared.parsed,Some(prepared.retention))
+    }else{(declaration_parse::parse_declarations_with_demand_profile(&expanded,config,memo,executor,semantic_state.as_deref().map(|state|&state.declarations),demand,diagnostic.is_some())?,None)};
     let ParsedDeclarations {
         syntax,
         diagnostics: syntax_diagnostics,
@@ -566,15 +586,7 @@ fn build_with_executor_and_semantic_state_for_policy_demand<P:SourceProvider,D:s
         allocation_ledger,
         declaration_errors,
         reuse_stats,
-    } = declaration_parse::parse_declarations_with_demand_profile(
-        &expanded,
-        config,
-        memo,
-        executor,
-        semantic_state.as_deref().map(|state| &state.declarations),
-        demand,
-        diagnostic.is_some(),
-    )?;
+    } = parsed;
     timings.declaration_reuse = reuse_stats;
     diagnostics.extend(
         syntax_diagnostics
@@ -596,6 +608,7 @@ fn build_with_executor_and_semantic_state_for_policy_demand<P:SourceProvider,D:s
             }),
     );
     let syntax = Arc::new(syntax);
+    if original_mode&&!original_role{if let Some(primary)=&original_primary{if primary.frontier().is_some(){return Err(demand.run(|permit|permit.original_primary_failure(primary,&syntax,&mapping))?.into())}}}
     diagnostics.sort_by_key(|diagnostic| {
         diagnostic
             .location
@@ -610,13 +623,24 @@ fn build_with_executor_and_semantic_state_for_policy_demand<P:SourceProvider,D:s
     }
     if !declaration_errors.is_empty() {
         demand.run(|permit|permit.checkpoint())?;
+        let first_outer_block=if diagnostic.is_some()&&plan.initial_environment==dm_preprocess::InitialEnvironment::OriginalChecker0290{
+            demand.run(|permit|syntax.first_original_outer_block_using(&||permit.checkpoint()))?.map_err(|reason|vec![internal(reason)])?
+        }else{None};
+
         return Err(declaration_errors
             .into_iter()
             .map(|error| Diagnostic {
-                kind: syntax_kind(error.kind),
+                kind: if diagnostic.is_some()&&plan.initial_environment==dm_preprocess::InitialEnvironment::OriginalChecker0290{error.original_fatal.and_then(|receipt|{
+                    // SAME native original token/macro byte projection used by
+                    // retained checker bodies; never derive a column by slicing.
+                    let native=mapping.output(receipt.token_span().start)?;
+                    let original=source_export_mapping::original_note_point_in(&expanded.origins,receipt.token_span().start,|region|{let include=mapping.plan.regions.get(region).ok_or("fatal original region absent")?.occurrence;let acquired=mapping.plan.source_acquisitions.get(&include).ok_or("fatal original source acquisition absent")?;Ok((include,acquired))},|include|Ok(&mapping.plan.occurrences.get(include).ok_or("fatal original include absent")?.path)).ok()?;
+                    if native.path.as_path()!=original.path.as_path()||native.line!=original.line{return None}
+                    Some(DiagnosticKind::OriginalFatalParameter{reason:receipt,byte_column:original.byte_column,indentation:receipt.prior_outer_block()||first_outer_block.is_some_and(|at|at<receipt.token_span().start)})
+                }).unwrap_or_else(||syntax_kind(error.kind))}else{syntax_kind(error.kind)},
                 stage: DiagnosticStage::Declaration,
-                message: error.message,
-                location: mapping.output(error.span.start as usize),
+                message: if let Some(receipt)=error.original_fatal{receipt.message()}else{error.message},
+                location: mapping.output(if diagnostic.is_some()&&plan.initial_environment==dm_preprocess::InitialEnvironment::OriginalChecker0290{error.original_fatal.map_or(error.span.start as usize,|receipt|receipt.token_span().start)}else{error.span.start as usize}),
             })
             .collect::<Vec<_>>().into());
     }
@@ -677,14 +701,15 @@ fn build_with_executor_and_semantic_state_for_policy_demand<P:SourceProvider,D:s
                 config.engine.map_or(&[][..], |seed| &seed.intrinsics[..]),
             ));
         };
-    let diagnostic_records = diagnostic.as_ref().and_then(|_| {
+    let diagnostic_records = if original_primary.as_ref().is_some_and(|primary|primary.frontier().is_some()){None}else{diagnostic.as_ref().and_then(|_| {
         semantic_state.as_deref().and_then(|state| {
             super::DiagnosticRetainedRecords::capture(&adapted, config.engine, Some(state))
         })
-    });
+    })};
     let snapshot = if let Some(slot) = diagnostic {
-        let prepared = adapted
-            .finish_checker_diagnostic_observed(config.engine, on_error, executor)
+        let variables=if plan.initial_environment==dm_preprocess::InitialEnvironment::OriginalChecker0290{crate::checker_builtins::OriginalVariableDeclarations::for_seed(config.engine)}else{None};
+        if variables.is_some(){dm_profile::request_mark("frontend.original_builtin_variable_declarations");}
+        let prepared = if let Some(primary)=&original_primary{adapted.finish_original_diagnostic_with_variables(config.engine,on_error,executor,variables,Arc::clone(primary))}else{adapted.finish_checker_diagnostic_with_variables(config.engine,on_error,executor,variables)}
             .map_err(|_| {
                 resolution_diagnostic
                     .take()
@@ -843,8 +868,10 @@ fn build_with_executor_and_semantic_state_for_policy_demand<P:SourceProvider,D:s
         &snapshot.tree,
         declaration_cursors,
         declaration_qualifiers,
+        original_primary.clone(),
     ));
     let mut frontend = ColdFrontend {
+        original_primary:original_primary.clone(),
         body_queries: None,
         reused_body_queries: false,
         setting_expression_queries: None,
@@ -888,6 +915,7 @@ fn build_with_executor_and_semantic_state_for_policy_demand<P:SourceProvider,D:s
     let frontend=demand.attach(frontend)?;
     demand.run(|permit|permit.checkpoint())?;
     if let Some(request)=&declaration_request{request.publish_successful();}
+    if let Some(slot)=original{*slot=original_primary;}
     Ok(frontend)
 }
 
@@ -1060,4 +1088,15 @@ fn text_expression_diagnostics(
         ));
     }
     found
+}
+
+/// Explicit Original Analyze purpose selected before the one native frontend
+/// pass. Checker-fatal APIs and ordinary compiler admission remain unchanged.
+pub fn build_for_original_analysis_with_state_checked<P:SourceProvider>(project:&Path,provider:&P,defines:&BTreeMap<String,String>,config:FrontendConfig<'_>,memo:Option<&dyn dm_preprocess::regions::ExpansionMemo>,executor:&dm_exec::BuildExecutor,state:Option<&mut RetainedSemanticTree>,host:&Arc<dyn SettingExpressionQueries>)->Result<DiagnosticFrontend,FrontendBuildFailure>{
+ use super::declaration_demand::Demand;let demand=super::declaration_demand::Checked{host};let mut receipt=None;let mut primary=None;
+ let result=(||{
+  let frontend=build_with_executor_and_semantic_state_for_policy_demand_role(project,provider,defines,config,memo,executor,state,true,Some(&mut receipt),&demand,Some(&mut primary))?;
+  let diagnostic=DiagnosticFrontend::bind(frontend,receipt.ok_or_else(||vec![internal("original analysis builder lacks its actual native graph receipt")])?).map_err(FrontendBuildFailure::from)?;
+  diagnostic.bind_original_primary(primary.ok_or_else(||vec![internal("original analysis builder lacks its actual primary preparation owner")])?).map_err(FrontendBuildFailure::from)
+ })();demand.finish(result)
 }

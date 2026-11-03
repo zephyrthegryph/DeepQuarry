@@ -164,6 +164,10 @@ impl LocalVariableSyntax {
     }
     /// Project already-issued component spans; no lexing/splitting or inference.
     pub fn type_path(&self, source: &str) -> Result<Option<String>, &'static str> {
+        self.type_path_using(|span|source.get(span.range()).ok_or("native local component source unavailable"))
+    }
+    /// Same path algorithm; only the authenticated source coordinate view varies.
+    pub fn type_path_using<'s>(&self,mut source:impl FnMut(Span)->Result<&'s str,&'static str>)->Result<Option<String>,&'static str>{
         let mut path = if self.array_suffix {
             String::from("/list")
         } else {
@@ -172,9 +176,7 @@ impl LocalVariableSyntax {
         for component in &self.type_components {
             path.push('/');
             path.push_str(
-                source
-                    .get(component.range())
-                    .ok_or("native local component source unavailable")?,
+                source(*component)?,
             );
         }
         Ok((!path.is_empty()).then_some(path))

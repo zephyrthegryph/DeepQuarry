@@ -12,6 +12,15 @@ use dm_syntax::{
 };
 
 trait Observer {
+    fn after_variable(&mut self,_:&Statement) {}
+    fn root_expression(&mut self,_:ExpressionObservation<'_>,_:Span) {}
+    fn expression_chain(&mut self,e:&Expr,at:Span,_:bool){self.expression(e,at)}
+    fn projected_expression_chain(&mut self,view:dm_syntax::ProjectedExprView<'_>,at:Span,root:bool,_:bool)->Result<(),&'static str>{self.projected_expression(view,at,root)}
+    fn base_chain_requested(&self)->bool{false}
+    fn frame_capacity(&mut self,_:usize)->Result<(),&'static str>{Ok(())}
+    fn frame_overflow(&mut self)->&'static str{"original policy frame geometry overflow"}
+    fn frame_allocation_failed(&mut self)->&'static str{"original policy frame allocation refused"}
+
     fn projected_expression(&mut self, _: dm_syntax::ProjectedExprView<'_>, _: Span, _: bool) -> Result<(), &'static str> {
         Err("projected setting RHS requires an explicit current-coordinate observer")
     }
@@ -47,11 +56,18 @@ impl<F: FnMut(&Expr, &Expr, Span, Span)> Observer for CurrentAssignments<'_, F> 
         Ok(())
     }
 }
-pub(crate) fn assignments_current(
-    view: dm_syntax::StatementView<'_>,
-    emit: &mut impl FnMut(&Expr, &Expr, Span, Span),
-) -> Result<(), &'static str> {
-    observe(view, &mut CurrentAssignments(emit))
+pub(crate) fn assignments_current(view:dm_syntax::StatementView<'_>,emit:&mut impl FnMut(&Expr,&Expr,Span,Span))->Result<(),&'static str>{match try_assignments_current(view,&mut(),&mut|_|Ok::<(),&'static str>(()),&mut|_,lhs,rhs,at,current|{emit(lhs,rhs,at,current);Ok(())}){Ok(())=>Ok(()),Err(PolicyVisitFailure::Callback(message))|Err(PolicyVisitFailure::Unsupported(message))=>Err(message)}}
+/// Same all-assignment/current-coordinate callback order; no new traversal.
+pub(crate) fn try_assignments_current<C,E>(view:dm_syntax::StatementView<'_>,control:&mut C,checkpoint:&mut impl FnMut(&mut C)->Result<(),E>,emit:&mut impl FnMut(&mut C,&Expr,&Expr,Span,Span)->Result<(),E>)->Result<(),PolicyVisitFailure<E>>{
+ struct Controlled<'a,C,E,P,F>{control:&'a mut C,checkpoint:&'a mut P,emit:&'a mut F,error:Option<E>}
+ impl<C,E,P:FnMut(&mut C)->Result<(),E>,F:FnMut(&mut C,&Expr,&Expr,Span,Span)->Result<(),E>> Observer for Controlled<'_,C,E,P,F>{
+  fn stopped(&self)->bool{self.error.is_some()}
+  fn statement(&mut self,_:&Statement)->bool{if self.error.is_some(){return false}if let Err(actual)=(self.checkpoint)(self.control){self.error=Some(actual);false}else{true}}
+  fn expression(&mut self,_:&Expr,_:Span){if self.error.is_none(){if let Err(actual)=(self.checkpoint)(self.control){self.error=Some(actual)}}}
+  fn assignment(&mut self,lhs:&Expr,rhs:&Expr,at:Span){if self.error.is_none(){if let Err(actual)=(self.checkpoint)(self.control).and_then(|()|(self.emit)(self.control,lhs,rhs,at,lhs.span)){self.error=Some(actual)}}}
+  fn projected_expression(&mut self,view:dm_syntax::ProjectedExprView<'_>,at:Span,_:bool)->Result<(),&'static str>{if self.error.is_some(){return Ok(())}if let Err(actual)=(self.checkpoint)(self.control){self.error=Some(actual);return Ok(())}if let ExprKind::Binary{op,lhs,rhs}=&view.original().kind{if op=="="{let current=view.current_span_of(lhs).ok_or("projected assignment target has no current span")?;if let Err(actual)=(self.emit)(self.control,lhs,rhs,at,current){self.error=Some(actual)}}}Ok(())}
+ }
+ let mut visitor=Controlled{control,checkpoint,emit,error:None};let coverage=observe(view,&mut visitor);if let Some(actual)=visitor.error{return Err(PolicyVisitFailure::Callback(actual))}coverage.map_err(PolicyVisitFailure::Unsupported)
 }
 impl<F: FnMut(&Expr, &Expr, Span)> Observer for Assignments<'_, F> {
     fn assignment(&mut self, a: &Expr, b: &Expr, at: Span) {
@@ -117,27 +133,25 @@ impl<F: FnMut(&Expr, Span)> Observer for Expressions<'_, F> {
         self.0(node, at);
     }
 }
-struct CurrentStatementAssignments<'a, F>(&'a mut F);
-impl<F: FnMut(&Expr, &Expr, Span, Span)> Observer for CurrentStatementAssignments<'_, F> {
-    fn statement_assignment(&mut self, lhs: &Expr, rhs: &Expr, at: Span) { self.0(lhs, rhs, at, lhs.span); }
-    fn projected_expression(&mut self, view: dm_syntax::ProjectedExprView<'_>, at: Span, is_root: bool) -> Result<(), &'static str> {
-        // Same old statement-root condition as expression(), not every nested
-        // assignment seen by the all-assignment observer.
-        if is_root {
-            if let ExprKind::Binary { op, lhs, rhs } = &view.original().kind {
-                if op == "=" {
-                    let target = view.current_span_of(lhs).ok_or("projected statement target has no current span")?;
-                    self.0(lhs, rhs, at, target);
-                }
-            }
-        }
-        Ok(())
-    }
+/// The same original statement-root assignment observer, with fallible control.
+/// Traversal and projected-setting identity stay on the issued StatementView.
+pub(crate) fn try_statement_assignments_current<C,E>(view:dm_syntax::StatementView<'_>,control:&mut C,checkpoint:&mut impl FnMut(&mut C)->Result<(),E>,emit:&mut impl FnMut(&mut C,&Expr,&Expr,Span,Span)->Result<(),E>)->Result<(),PolicyVisitFailure<E>>{
+ struct Controlled<'a,C,E,P,F>{control:&'a mut C,checkpoint:&'a mut P,emit:&'a mut F,error:Option<E>}
+ impl<C,E,P:FnMut(&mut C)->Result<(),E>,F:FnMut(&mut C,&Expr,&Expr,Span,Span)->Result<(),E>> Observer for Controlled<'_,C,E,P,F>{
+  fn stopped(&self)->bool{self.error.is_some()}
+  fn statement(&mut self,_:&Statement)->bool{if self.error.is_some(){return false}match(self.checkpoint)(self.control){Ok(())=>true,Err(actual)=>{self.error=Some(actual);false}}}
+  fn expression(&mut self,_:&Expr,_:Span){if self.error.is_none(){if let Err(actual)=(self.checkpoint)(self.control){self.error=Some(actual)}}}
+  fn statement_assignment(&mut self,lhs:&Expr,rhs:&Expr,at:Span){if self.error.is_none(){if let Err(actual)=(self.checkpoint)(self.control).and_then(|()|(self.emit)(self.control,lhs,rhs,at,lhs.span)){self.error=Some(actual)}}}
+  fn projected_expression(&mut self,view:dm_syntax::ProjectedExprView<'_>,at:Span,is_root:bool)->Result<(),&'static str>{
+   if self.error.is_some(){return Ok(())}if let Err(actual)=(self.checkpoint)(self.control){self.error=Some(actual);return Ok(())}
+   if is_root{if let ExprKind::Binary{op,lhs,rhs}=&view.original().kind{if op=="="{let target=view.current_span_of(lhs).ok_or("projected statement target has no current span")?;if let Err(actual)=(self.emit)(self.control,lhs,rhs,at,target){self.error=Some(actual)}}}}Ok(())
+  }
+ }
+ let mut observer=Controlled{control,checkpoint,emit,error:None};let coverage=observe(view,&mut observer);if let Some(actual)=observer.error{return Err(PolicyVisitFailure::Callback(actual))}coverage.map_err(PolicyVisitFailure::Unsupported)
 }
-pub(crate) fn statement_assignments_current(
-    view: dm_syntax::StatementView<'_>,
-    emit: &mut impl FnMut(&Expr, &Expr, Span, Span),
-) -> Result<(), &'static str> { observe(view, &mut CurrentStatementAssignments(emit)) }
+pub(crate) fn statement_assignments_current(view:dm_syntax::StatementView<'_>,emit:&mut impl FnMut(&Expr,&Expr,Span,Span))->Result<(),&'static str>{
+ match try_statement_assignments_current(view,&mut(),&mut|_|Ok::<(),&'static str>(()),&mut|_,lhs,rhs,at,target|{emit(lhs,rhs,at,target);Ok(())}){Ok(())=>Ok(()),Err(PolicyVisitFailure::Unsupported(message))|Err(PolicyVisitFailure::Callback(message))=>Err(message)}
+}
 struct StatementAssignments<'a, F>(&'a mut F);
 impl<F: FnMut(&Expr, &Expr, Span)> Observer for StatementAssignments<'_, F> {
     fn statement_assignment(&mut self, a: &Expr, b: &Expr, at: Span) {
@@ -176,6 +190,18 @@ impl<E: FnMut(&Expr, Span), A: FnMut(&Expr, &str, &Expr, Span)> Observer
         (self.assignment)(a, op, b, at)
     }
 }
+/// No parser or new traversal: SAME original stored-events walk, typed callbacks.
+pub(crate) fn try_stored_events_current<C,E>(view:dm_syntax::StatementView<'_>,control:&mut C,checkpoint:&mut impl FnMut(&mut C)->Result<(),E>,expression:&mut impl FnMut(&mut C,ExpressionObservation<'_>,Span)->Result<(),E>,assignment:&mut impl FnMut(&mut C,&Expr,&str,&Expr,Span)->Result<(),E>)->Result<(),PolicyVisitFailure<E>>{
+ struct Checked<'a,C,E,P,X,A>{control:&'a mut C,poll:&'a mut P,expression:&'a mut X,assignment:&'a mut A,error:Option<E>}
+ impl<C,E,P:FnMut(&mut C)->Result<(),E>,X:FnMut(&mut C,ExpressionObservation<'_>,Span)->Result<(),E>,A:FnMut(&mut C,&Expr,&str,&Expr,Span)->Result<(),E>> Observer for Checked<'_,C,E,P,X,A>{
+ fn stopped(&self)->bool{self.error.is_some()}fn statement(&mut self,_:&Statement)->bool{if self.error.is_some(){return false}match(self.poll)(self.control){Ok(())=>true,Err(e)=>{self.error=Some(e);false}}}
+ fn expression(&mut self,e:&Expr,at:Span){if self.error.is_none(){if let Err(e)=(self.poll)(self.control).and_then(|()|(self.expression)(self.control,ExpressionObservation::Owned(e),at)){self.error=Some(e)}}}
+ fn list_write_assignment(&mut self,lhs:&Expr,op:&str,rhs:&Expr,at:Span){if self.error.is_none(){if let Err(e)=(self.poll)(self.control).and_then(|()|(self.assignment)(self.control,lhs,op,rhs,at)){self.error=Some(e)}}}
+ fn projected_expression(&mut self,v:dm_syntax::ProjectedExprView<'_>,at:Span,_:bool)->Result<(),&'static str>{if self.error.is_some(){return Ok(())}if let Err(e)=(self.poll)(self.control).and_then(|()|(self.expression)(self.control,ExpressionObservation::Projected(v),at)){self.error=Some(e);return Ok(())}if let ExprKind::Binary{op,lhs,rhs}=&v.original().kind{if matches!(op.as_str(),"="|"+="|"|="|"||="){self.list_write_assignment(lhs,op,rhs,at)}}Ok(())}
+ }
+ let mut checked=Checked{control,poll:checkpoint,expression,assignment,error:None};let result=observe(view,&mut checked);if let Some(actual)=checked.error{return Err(PolicyVisitFailure::Callback(actual))}result.map_err(PolicyVisitFailure::Unsupported)
+}
+
 struct CurrentStoredEvents<'a, E, A> { expression: &'a mut E, assignment: &'a mut A }
 impl<E: FnMut(ExpressionObservation<'_>, Span), A: FnMut(&Expr, &str, &Expr, Span)> Observer for CurrentStoredEvents<'_, E, A> {
     fn expression(&mut self, e: &Expr, at: Span) { (self.expression)(ExpressionObservation::Owned(e), at); }
@@ -258,6 +284,21 @@ pub(crate) fn visit_value_policy(
         },
     )
 }
+pub(crate) fn visit_base_policy(view:dm_syntax::StatementView<'_>,visitor:&mut impl crate::policy_body_observation::BaseChainVisitor)->Result<(),&'static str>{
+ struct Adapter<'a,V>{visitor:&'a mut V,stopped:bool,descend:bool}
+ impl<V:crate::policy_body_observation::BaseChainVisitor>Observer for Adapter<'_,V>{
+  fn base_chain_requested(&self)->bool{true}
+  fn frame_capacity(&mut self,n:usize)->Result<(),&'static str>{self.visitor.frame_capacity(n)}
+  fn frame_overflow(&mut self)->&'static str{self.visitor.frame_overflow()}
+  fn frame_allocation_failed(&mut self)->&'static str{self.visitor.frame_allocation_failed()}
+  fn statement(&mut self,s:&Statement)->bool{let d=self.visitor.statement(s);self.stopped|=d==dm_syntax::VisitDecision::Stop;d==dm_syntax::VisitDecision::Descend}
+  fn after_variable(&mut self,s:&Statement){if !self.stopped{let d=self.visitor.after_variable(s);self.stopped|=d==dm_syntax::VisitDecision::Stop;}}
+  fn expression_chain(&mut self,e:&Expr,_:Span,child:bool){let d=self.visitor.expression(e,child);self.stopped|=d==dm_syntax::VisitDecision::Stop;self.descend=d==dm_syntax::VisitDecision::Descend;}
+  fn projected_expression_chain(&mut self,e:dm_syntax::ProjectedExprView<'_>,_:Span,_:bool,child:bool)->Result<(),&'static str>{let d=self.visitor.projected_expression(e,child);self.stopped|=d==dm_syntax::VisitDecision::Stop;self.descend=d==dm_syntax::VisitDecision::Descend;Ok(())}
+  fn stopped(&self)->bool{self.stopped}fn descend_expression(&self)->bool{self.descend}
+ }observe(view,&mut Adapter{visitor,stopped:false,descend:true})
+}
+fn base_chain_child(node:&Expr)->Option<&Expr>{match &node.kind{ExprKind::Unary{op,value}if op!="new"=>Some(value),ExprKind::Member{object,..}|ExprKind::StaticMember{object,..}|ExprKind::SafeMember{object,..}|ExprKind::Index{object,..}|ExprKind::SafeIndex{object,..}=>Some(object),ExprKind::Call{callee,..}=>Some(callee),_=>None}}
 fn observe(
     view: dm_syntax::StatementView<'_>,
     emit: &mut impl Observer,
@@ -269,17 +310,20 @@ fn observe(
     let mut walk = PolicyWalk {
         ledger,
         error: None,
+        engine_order:false,
     };
     walk.walk(view.statements(), emit);
     walk.error.map_or(Ok(()), Err)
 }
 struct PolicyWalk<'a> {
+    engine_order:bool,
     ledger: &'a dm_syntax::LocalVariableLedger,
     error: Option<&'static str>,
 }
 impl PolicyWalk<'_> {
     fn projected(&mut self, root: &dm_syntax::SettingExpression, at: Span, emit: &mut impl Observer) {
-        let mut projected = ProjectedPolicy { emit, at, frames: Vec::new(), error: None };
+        let chains=emit.base_chain_requested().then(Vec::new);
+        let mut projected = ProjectedPolicy { emit, at, frames: Vec::new(),chains, error: None };
         dm_syntax::visit_projected_expression(root, &mut projected);
         if let Some(error) = projected.error { self.error = Some(error); }
     }
@@ -310,6 +354,7 @@ impl PolicyWalk<'_> {
             // Old stmt_exprs holds a synthetic New/list ROOT; dimensions are
             // nested arguments, never fabricated top-level assignments.
             for dimension in root.dimensions.iter() {
+                emit.root_expression(ExpressionObservation::Owned(dimension),at);
                 expression_tree(dimension, at, emit);
             }
         }
@@ -326,6 +371,7 @@ struct ProjectedPolicy<'a, O> {
     emit: &'a mut O,
     at: Span,
     frames: Vec<(ProjectedChildren, bool)>,
+    chains:Option<Vec<Option<usize>>>,
     error: Option<&'static str>,
 }
 impl<O: Observer> dm_syntax::TypedVisitor for ProjectedPolicy<'_, O> {
@@ -352,10 +398,23 @@ impl<O: Observer> dm_syntax::TypedVisitor for ProjectedPolicy<'_, O> {
             ExprKind::Call { callee, .. } if matches!(&callee.kind, ExprKind::StaticMember { .. }) => ProjectedChildren::ProcReference,
             _ => ProjectedChildren::Ordinary,
         });
+        let chain_child=self.chains.as_ref().and_then(|frames|frames.last()).copied().flatten().is_some_and(|parent_child|parent_child==view.original()as *const Expr as usize);
+        if let Some(chains)=&mut self.chains{
+         if self.frames.len()==self.frames.capacity()||chains.len()==chains.capacity(){
+          let target=self.frames.len().checked_mul(2).unwrap_or(usize::MAX).max(4);
+          let bytes=self.frames.capacity().checked_add(target).and_then(|n|n.checked_mul(std::mem::size_of::<(ProjectedChildren,bool)>())).and_then(|n|chains.capacity().checked_add(target)?.checked_mul(std::mem::size_of::<Option<usize>>())?.checked_add(n));
+          let Some(bytes)=bytes else{self.error=Some(self.emit.frame_overflow());return VisitDecision::Stop};
+          if let Err(error)=self.emit.frame_capacity(bytes){self.error=Some(error);return VisitDecision::Stop}
+          if self.frames.try_reserve_exact(target-self.frames.len()).is_err()||chains.try_reserve_exact(target-chains.len()).is_err(){self.error=Some(self.emit.frame_allocation_failed());return VisitDecision::Stop}
+          if self.frames.capacity()>target||chains.capacity()>target{self.error=Some(self.emit.frame_allocation_failed());return VisitDecision::Stop}
+         }
+         chains.push(base_chain_child(view.original()).map(|child|child as *const Expr as usize));
+        }
         self.frames.push((mode, emitted && !skip));
         if skip { return VisitDecision::Skip; }
         if emitted {
-            if let Err(error) = self.emit.projected_expression(view, self.at, self.frames.len() == 1) {
+            if self.frames.len()==1{self.emit.root_expression(ExpressionObservation::Projected(view),self.at);if self.emit.stopped(){return VisitDecision::Stop;}}
+            if let Err(error) = self.emit.projected_expression_chain(view, self.at, self.frames.len() == 1,chain_child) {
                 self.error = Some(error);
                 return VisitDecision::Stop;
             }
@@ -365,11 +424,13 @@ impl<O: Observer> dm_syntax::TypedVisitor for ProjectedPolicy<'_, O> {
         VisitDecision::Descend
     }
     fn leave_projected_expression(&mut self, view: dm_syntax::ProjectedExprView<'_>, _: &[dm_syntax::NodeStep]) {
+        if let Some(chains)=&mut self.chains{chains.pop();}
         if let Some((_, true)) = self.frames.pop() { self.emit.leave_projected_expression(view); }
     }
 }
 
 fn expression(node: &Expr, at: Span, emit: &mut impl Observer) {
+    emit.root_expression(ExpressionObservation::Owned(node),at);if emit.stopped(){return;}
     if let ExprKind::Binary { op, lhs, rhs } = &node.kind {
         if op == "=" {
             emit.statement_assignment(lhs, rhs, at);
@@ -377,11 +438,12 @@ fn expression(node: &Expr, at: Span, emit: &mut impl Observer) {
     }
     expression_tree(node, at, emit);
 }
-fn expression_tree(node: &Expr, at: Span, emit: &mut impl Observer) {
+fn expression_tree(node:&Expr,at:Span,emit:&mut impl Observer){expression_tree_in(node,at,false,emit)}
+fn expression_tree_in(node: &Expr, at: Span, chain_child:bool,emit: &mut impl Observer) {
     if emit.stopped() {
         return;
     }
-    emit.expression(node, at);
+    emit.expression_chain(node, at,chain_child);
     if emit.stopped() || !emit.descend_expression() {
         return;
     }
@@ -398,7 +460,7 @@ fn expression_tree(node: &Expr, at: Span, emit: &mut impl Observer) {
     if let ExprKind::Call { callee, .. } = &node.kind {
         if matches!(&callee.kind, ExprKind::StaticMember { .. }) {
             // Pinned Follow::ProcReference discards its parsed argument list.
-            expression_tree(callee, at, emit);
+            expression_tree_in(callee, at,true, emit);
             return;
         }
     }
@@ -413,7 +475,8 @@ fn expression_tree(node: &Expr, at: Span, emit: &mut impl Observer) {
             return;
         }
     }
-    for_each_expression_child(node, |_, child| expression_tree(child, at, emit));
+    let main=base_chain_child(node);
+    for_each_expression_child(node, |_, child| expression_tree_in(child,at,main.is_some_and(|main|std::ptr::eq(main,child)),emit));
 }
 
 /// `parse_if` retains the `else` prefix in the whole span, but advances the
@@ -515,6 +578,17 @@ impl PolicyWalk<'_> {
                         condition,
                         step,
                     } => {
+                        if self.engine_order {
+                            // Engine::Walker::block visits init then inc before stmt_exprs(test).
+                            // The primary init/step nodes and implicit-array ledger stay identical.
+                            match initializer {
+                                Some(ForInitializer::Declare{value:Some(value),..})|Some(ForInitializer::Expr(value))=>expression(value,at,emit),
+                                Some(ForInitializer::Declare{value:None,..})=>self.implicit(statement,at,emit),
+                                _=>{}
+                            }
+                            if let Some(step)=step{expression(step,at,emit);}
+                            if let Some(condition)=condition{expression(condition,at,emit);}
+                        }else{
                         // Legacy stmt_exprs(ForLoop) visits test; walk_block then
                         // visits init and inc, in that order, at the For's location.
                         if let Some(condition) = condition {
@@ -533,6 +607,7 @@ impl PolicyWalk<'_> {
                         if let Some(step) = step {
                             expression(step, at, emit);
                         }
+                        }
                     }
                 }
                 self.walk(body, emit);
@@ -540,7 +615,7 @@ impl PolicyWalk<'_> {
             StatementKind::Switch {
                 selector,
                 cases,
-                else_branch,
+                else_branch, ..
             } => {
                 expression(selector, at, emit);
                 for case in cases {
@@ -568,19 +643,17 @@ impl PolicyWalk<'_> {
             StatementKind::Throw(value)
             | StatementKind::Call(value)
             | StatementKind::Expression(value) => expression(value, at, emit),
-            StatementKind::Return(Some(value))
-            | StatementKind::Var {
-                value: Some(value), ..
-            } => {
-                expression(value, at, emit);
-            }
+            StatementKind::Return(Some(value))=>expression(value,at,emit),
+            StatementKind::Var{value:Some(value),..}=>{expression(value,at,emit);if !emit.stopped(){emit.after_variable(statement);}}
             StatementKind::Assign { target, op, value } => {
                 emit.list_write_assignment(target, op, value, at);
                 if op == "=" {
                     emit.statement_assignment(target, value, at);
                     emit.assignment(target, value, at);
                 }
+                emit.root_expression(ExpressionObservation::Owned(target),at);
                 expression_tree(target, at, emit);
+                emit.root_expression(ExpressionObservation::Owned(value),at);
                 expression_tree(value, at, emit);
             }
             StatementKind::Label { body, .. } => self.walk(body, emit),
@@ -951,4 +1024,21 @@ mod projected_event_parity_tests {
             }
         }
     }
+}
+
+/// Exact engine-layering ROOT observation, alongside the existing value-policy
+/// mode. Borrowed original statements/setting projections, no parser/AST clone.
+/// Callers project Term/follow chains themselves; nested structural callee nodes
+/// are deliberately not misrepresented as separate legacy Expression::Base roots.
+pub(crate) fn try_engine_roots<C,E>(view:dm_syntax::StatementView<'_>,control:&mut C,checkpoint:&mut impl FnMut(&mut C)->Result<(),E>,statement:&mut impl FnMut(&mut C,&Statement)->Result<(),E>,root:&mut impl FnMut(&mut C,ExpressionObservation<'_>,Span)->Result<(),E>)->Result<(),PolicyVisitFailure<E>>{
+ struct Engine<'a,C,E,P,S,F>{control:&'a mut C,poll:&'a mut P,statement:&'a mut S,root:&'a mut F,error:Option<E>}
+ impl<C,E,P:FnMut(&mut C)->Result<(),E>,S:FnMut(&mut C,&Statement)->Result<(),E>,F:FnMut(&mut C,ExpressionObservation<'_>,Span)->Result<(),E>> Observer for Engine<'_,C,E,P,S,F>{
+  fn stopped(&self)->bool{self.error.is_some()}
+  fn statement(&mut self,st:&Statement)->bool{if self.error.is_some(){return false}if let Err(e)=(self.poll)(self.control).and_then(|()|(self.statement)(self.control,st)){self.error=Some(e);false}else{true}}
+  fn root_expression(&mut self,view:ExpressionObservation<'_>,at:Span){if self.error.is_none(){if let Err(e)=(self.poll)(self.control).and_then(|()|(self.root)(self.control,view,at)){self.error=Some(e)}}}
+  fn expression(&mut self,_:&Expr,_:Span){if self.error.is_none(){if let Err(e)=(self.poll)(self.control){self.error=Some(e)}}}
+  fn projected_expression(&mut self,_:dm_syntax::ProjectedExprView<'_>,_:Span,_:bool)->Result<(),&'static str>{if self.error.is_none(){if let Err(e)=(self.poll)(self.control){self.error=Some(e)}}Ok(())}
+ }
+ let ledger=view.local_variables().ok_or(PolicyVisitFailure::Unsupported("engine observation requires original local ledger"))?;ledger.entries().map_err(|_|PolicyVisitFailure::Unsupported("engine original local ledger unavailable"))?;
+ let mut observer=Engine{control,poll:checkpoint,statement,root,error:None};let mut walk=PolicyWalk{ledger,error:None,engine_order:true};walk.walk(view.statements(),&mut observer);if let Some(e)=observer.error{return Err(PolicyVisitFailure::Callback(e))}walk.error.map_or(Ok(()),|s|Err(PolicyVisitFailure::Unsupported(s)))
 }

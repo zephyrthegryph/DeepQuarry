@@ -8,12 +8,16 @@ use std::{
     path::PathBuf,
 };
 
+pub(crate) fn canonical_analysis_project(project:&std::path::Path,context:Option<AnalysisContext>)->io::Result<PathBuf>{
+ if context==Some(AnalysisContext::OriginalAnalyze0290){if project.file_name()!=Some(std::ffi::OsStr::new("deepquarry.dme")){return Err(io::Error::new(io::ErrorKind::InvalidInput,"whole Analyze purpose requires fixed deepquarry project name"))}let root=project.parent().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"Analyze root absent"))?;return Ok(std::fs::canonicalize(root)?.join("deepquarry.dme"))}std::fs::canonicalize(project)
+}
+
 /// Explicit analysis preprocessing purpose. This is configuration; the actual
 /// native frontend and source mapping must issue its current context separately.
 #[derive(Clone,Copy,Debug,Eq,PartialEq,Ord,PartialOrd,Serialize,Deserialize)]
 #[serde(rename_all="snake_case")]
-pub enum AnalysisContext { OriginalChecker0290 }
-impl AnalysisContext { pub(crate) fn initial_environment(self)->dm_preprocess::InitialEnvironment { match self { Self::OriginalChecker0290=>dm_preprocess::InitialEnvironment::OriginalChecker0290 } } }
+pub enum AnalysisContext { OriginalChecker0290,OriginalAnalyze0290 }
+impl AnalysisContext { pub(crate) fn frontend_context(self)->Self{Self::OriginalChecker0290} pub(crate) fn initial_environment(self)->dm_preprocess::InitialEnvironment { match self { Self::OriginalChecker0290|Self::OriginalAnalyze0290=>dm_preprocess::InitialEnvironment::OriginalChecker0290 } } }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct PolicyInputRequest {
@@ -54,7 +58,8 @@ pub enum PolicyInputRole {
 /// Explicit fixed auxiliary questions, independent of generator/source roles.
 #[derive(Clone,Copy,Debug,Eq,PartialEq,Ord,PartialOrd,Serialize,Deserialize)]
 #[serde(rename_all="snake_case")]
-pub enum WorkspaceAuxiliaryQuestion{DeadlinePollingAllowlist,CheckGrep,Keys}
+pub enum WorkspaceAuxiliaryQuestion{DeadlinePollingAllowlist,CheckGrep,Keys,SemReads,UntrackedInputs,Tracked,TrackedTests,CheckGrepBaseline,Decl,Init,BaseVars,RequirementBool,PlayerLink,UntypedMember,WeakRawRead,RelWriteUndeclared,Untyped,DocSnippets,StoredRefs,Ownership,EngineLayering,UiActions,SetterPublishes,OpOrder,SysReactive,Lifeforms}
+impl WorkspaceAuxiliaryQuestion { pub(crate) fn is_semantic(self)->bool {matches!(self,Self::SemReads|Self::UntrackedInputs|Self::SetterPublishes|Self::SysReactive|Self::Lifeforms|Self::Tracked|Self::TrackedTests|Self::Decl|Self::Init|Self::BaseVars|Self::RequirementBool|Self::PlayerLink|Self::UntypedMember|Self::WeakRawRead|Self::RelWriteUndeclared|Self::Untyped|Self::StoredRefs|Self::EngineLayering)} }
 
 /// Private normalized authority. Deserialization validates, never bypasses admission.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -78,6 +83,7 @@ impl PolicyInputRequest {
             }
             Ok(canonical_path(&path))
         }
+        if self.analysis_context==Some(AnalysisContext::OriginalAnalyze0290)&&self.workspace.is_none(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"full Analyze subject requires actual workspace intent"))}
         if self.workspace.is_some() && (!self.files.is_empty() || !self.search_folders.is_empty()) {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
@@ -86,12 +92,22 @@ impl PolicyInputRequest {
         }
         if !self.workspace_generators.is_empty() && self.workspace.is_none(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"generator questions require an actual workspace intent"));}
         if self.workspace_generators.len()>13{return Err(io::Error::new(io::ErrorKind::InvalidInput,"generator questions exceed the registered set"));}
-        if self.analysis_context.is_some() && !self.workspace_generators.is_empty() {return Err(io::Error::new(io::ErrorKind::InvalidInput,"analysis context cannot request native generation roles"));}
+        if self.analysis_context.is_some() && !self.workspace_generators.is_empty() && (self.analysis_context!=Some(AnalysisContext::OriginalAnalyze0290)||!self.workspace_auxiliary.is_empty()) {return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original generation requires its actual full Analyze purpose without mixed auxiliary roles"));}
         let mut workspace_generators=self.workspace_generators;workspace_generators.sort_unstable();
         if workspace_generators.windows(2).any(|pair|pair[0]==pair[1]){return Err(io::Error::new(io::ErrorKind::InvalidInput,"duplicate generator question"));}
         if !self.workspace_auxiliary.is_empty() && self.workspace.is_none(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"auxiliary questions require actual workspace intent"))}
-        if self.workspace_auxiliary.len()>3{return Err(io::Error::new(io::ErrorKind::InvalidInput,"auxiliary questions exceed fixed registered set"))}
-        let mut workspace_auxiliary=self.workspace_auxiliary;workspace_auxiliary.sort_unstable();if workspace_auxiliary.windows(2).any(|pair|pair[0]==pair[1]){return Err(io::Error::new(io::ErrorKind::InvalidInput,"duplicate auxiliary question"))}
+        if self.workspace_auxiliary.len()>20{return Err(io::Error::new(io::ErrorKind::InvalidInput,"auxiliary questions exceed fixed registered set"))}
+        let mut workspace_auxiliary=self.workspace_auxiliary;workspace_auxiliary.sort_unstable();if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::CheckGrep)&&workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::CheckGrepBaseline){return Err(io::Error::new(io::ErrorKind::InvalidInput,"CheckGrep check and baseline purposes are mutually exclusive"))}if workspace_auxiliary.windows(2).any(|pair|pair[0]==pair[1]){return Err(io::Error::new(io::ErrorKind::InvalidInput,"duplicate auxiliary question"))}
+        if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::PlayerLink)&&self.analysis_context!=Some(AnalysisContext::OriginalAnalyze0290){return Err(io::Error::new(io::ErrorKind::InvalidInput,"player-link requires its actual full Original Analyze subject"))}
+        if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::UntypedMember)&&self.analysis_context!=Some(AnalysisContext::OriginalAnalyze0290){return Err(io::Error::new(io::ErrorKind::InvalidInput,"untyped-member requires its actual full Original Analyze subject"))}
+        if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::WeakRawRead)&&self.analysis_context!=Some(AnalysisContext::OriginalAnalyze0290){return Err(io::Error::new(io::ErrorKind::InvalidInput,"weak-raw-read requires its actual full Original Analyze subject"))}
+        if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::RelWriteUndeclared)&&self.analysis_context!=Some(AnalysisContext::OriginalAnalyze0290){return Err(io::Error::new(io::ErrorKind::InvalidInput,"rel-write requires its actual full Original Analyze subject"))}
+        if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::Untyped)&&self.analysis_context!=Some(AnalysisContext::OriginalAnalyze0290){return Err(io::Error::new(io::ErrorKind::InvalidInput,"untyped requires its actual full Original Analyze subject"))}
+        if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::StoredRefs)&&self.analysis_context!=Some(AnalysisContext::OriginalAnalyze0290){return Err(io::Error::new(io::ErrorKind::InvalidInput,"stored_refs requires its actual full Original Analyze subject"))}
+        if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::OpOrder)&&self.analysis_context!=Some(AnalysisContext::OriginalAnalyze0290){return Err(io::Error::new(io::ErrorKind::InvalidInput,"op_order requires its exact Original Analyze source purpose"))}
+        if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::UiActions)&&self.analysis_context!=Some(AnalysisContext::OriginalAnalyze0290){return Err(io::Error::new(io::ErrorKind::InvalidInput,"ui_actions requires its exact Original Analyze source purpose"))}
+        if workspace_auxiliary.contains(&WorkspaceAuxiliaryQuestion::EngineLayering)&&self.analysis_context!=Some(AnalysisContext::OriginalAnalyze0290){return Err(io::Error::new(io::ErrorKind::InvalidInput,"engine_layering requires its actual full Original Analyze subject"))}
+        if workspace_auxiliary.iter().any(|question|question.is_semantic()) && self.analysis_context.is_none() {return Err(io::Error::new(io::ErrorKind::InvalidInput,"semantic analysis questions require the explicit original context"))}
         let workspace = self
             .workspace
             .map(|wanted| -> io::Result<WorkspacePolicyRequest> {
@@ -297,7 +313,7 @@ mod generator_names{
 mod auxiliary_questions{
  use super::*;
  pub fn serialize<S:serde::Serializer>(values:&[WorkspaceAuxiliaryQuestion],serializer:S)->Result<S::Ok,S::Error>{values.serialize(serializer)}
- pub fn deserialize<'de,D:serde::Deserializer<'de>>(decoder:D)->Result<Vec<WorkspaceAuxiliaryQuestion>,D::Error>{struct Questions;impl<'de>serde::de::Visitor<'de>for Questions{type Value=Vec<WorkspaceAuxiliaryQuestion>;fn expecting(&self,f:&mut std::fmt::Formatter)->std::fmt::Result{f.write_str("at most three fixed workspace auxiliary questions")}fn visit_seq<A:serde::de::SeqAccess<'de>>(self,mut seq:A)->Result<Self::Value,A::Error>{if seq.size_hint().is_some_and(|n|n>3){return Err(serde::de::Error::custom("too many auxiliary questions"))}let mut values=Vec::new();values.try_reserve_exact(3).map_err(serde::de::Error::custom)?;while let Some(value)=seq.next_element()?{if values.len()==3{return Err(serde::de::Error::custom("too many auxiliary questions"))}values.push(value)}Ok(values)}}decoder.deserialize_seq(Questions)}
+ pub fn deserialize<'de,D:serde::Deserializer<'de>>(decoder:D)->Result<Vec<WorkspaceAuxiliaryQuestion>,D::Error>{struct Questions;impl<'de>serde::de::Visitor<'de>for Questions{type Value=Vec<WorkspaceAuxiliaryQuestion>;fn expecting(&self,f:&mut std::fmt::Formatter)->std::fmt::Result{f.write_str("at most twenty fixed workspace auxiliary questions")}fn visit_seq<A:serde::de::SeqAccess<'de>>(self,mut seq:A)->Result<Self::Value,A::Error>{if seq.size_hint().is_some_and(|n|n>20){return Err(serde::de::Error::custom("too many auxiliary questions"))}let mut values=Vec::new();values.try_reserve_exact(20).map_err(serde::de::Error::custom)?;while let Some(value)=seq.next_element()?{if values.len()==20{return Err(serde::de::Error::custom("too many auxiliary questions"))}values.push(value)}Ok(values)}}decoder.deserialize_seq(Questions)}
 }
 
 #[cfg(test)]mod analysis_context_tests{
@@ -307,5 +323,15 @@ mod auxiliary_questions{
   let mut actual=ordinary.clone();actual.analysis_context=Some(AnalysisContext::OriginalChecker0290);let admitted=actual.clone().admit().unwrap();assert_eq!(admitted.analysis_context(),actual.analysis_context);assert_eq!(PolicyInputRequest::from(admitted.clone()),actual);let mut native=Vec::new();append_identity(&mut native,Some(&ordinary.admit().unwrap())).unwrap();let mut original=Vec::new();append_identity(&mut original,Some(&admitted)).unwrap();assert_ne!(native,original);
   let mut impossible=actual;impossible.workspace_generators=vec![crate::GeneratorName::AutoTracked];assert!(impossible.admit().is_err());
   assert!(serde_json::from_str::<PolicyInputRequest>(r#"{"analysis_context":"unissued_checker","files":[],"search_folders":[]}"#).is_err());
+ }
+}
+
+#[cfg(test)]mod check_grep_purpose_tests{
+ use super::*;
+ #[test]fn check_and_baseline_auxiliary_questions_are_canonical_distinct_and_mutually_exclusive(){
+  let root=crate::test_scratch::dir("grep-purpose-request");let mut request=PolicyInputRequest::default();request.workspace=Some(WorkspacePolicyRequest{root:root.clone(),recursive_roots:vec![root.join("code")],configuration:root.join("tools/ci/lint_scopes.toml")});
+  request.workspace_auxiliary=vec![WorkspaceAuxiliaryQuestion::CheckGrepBaseline];let baseline=request.clone().admit().unwrap();assert_eq!(baseline.workspace_auxiliary(),[WorkspaceAuxiliaryQuestion::CheckGrepBaseline]);let json=serde_json::to_vec(&baseline).unwrap();let restored:AdmittedPolicyRequest=serde_json::from_slice(&json).unwrap();assert_eq!(restored,baseline);
+  request.workspace_auxiliary=vec![WorkspaceAuxiliaryQuestion::CheckGrep];let check=request.clone().admit().unwrap();assert_ne!(serde_json::to_vec(&check).unwrap(),json);
+  request.workspace_auxiliary=vec![WorkspaceAuxiliaryQuestion::CheckGrepBaseline,WorkspaceAuxiliaryQuestion::CheckGrep];assert!(request.clone().admit().is_err());assert!(serde_json::from_slice::<AdmittedPolicyRequest>(&serde_json::to_vec(&request).unwrap()).is_err());
  }
 }

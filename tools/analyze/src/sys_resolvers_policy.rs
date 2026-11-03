@@ -89,5 +89,5 @@ fn scan_files(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String,
 
 #[cfg(feature="legacy-sem")]
 pub fn register(reg: &mut Registry) {
-    register_module(reg, SysModule { name: "resolvers", rules: RULES, files_scan: Some(scan_files), ..SysModule::DEFAULT });
+    register_module(reg, SysModule { name: crate::allow_registry_fields::sys_resolvers::SCOPE_MODULE_NAME, rules: RULES, files_scan: Some(scan_files), ..SysModule::DEFAULT });
 }

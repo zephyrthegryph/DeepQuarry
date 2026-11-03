@@ -17,8 +17,8 @@ use crate::tree::{Select, SourceFile};
 use crate::util::py_strip;
 
 static META: Meta = Meta {
-    name: "organ_slots",
-    group: "",
+    name: crate::allow_registry_fields::organ_slots::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::organ_slots::SCOPE_META_0.group,
     label: "organ_slots",
     legacy: "tools/ci/organ_slots_lint.py",
     select: Select { roots: &[("code", "dm")], hidden: true },
@@ -29,7 +29,7 @@ static META: Meta = Meta {
         hint: "use organ_in(tag), INTERNAL_ORGANS(M) or limb.held_organs() (code/modules/body/parts/queries.dm)",
     }],
     allow: crate::allow_registry_fields::organ_slots::ALLOW_0,
-    lists: &[],
+    lists: crate::allow_registry_fields::organ_slots::SCOPE_META_0.lists,
 };
 
 struct OrganSlots;

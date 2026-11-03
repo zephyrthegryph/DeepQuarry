@@ -95,22 +95,24 @@ pub(crate) fn keeps_with<C:crate::key_policy_control::Control>(line:&str,lint:&s
 
 /// Whether 1-based line `number` of `file` is kept for `lint`: the annotation is on the line
 /// itself, or on a comment-only line directly above it.
-pub fn kept(file: &SourceFile, number: usize, lint: &str) -> Option<Kept> {
+pub fn kept(file:&SourceFile,number:usize,lint:&str)->Option<Kept>{kept_using(file,number,lint,&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{})}
+/// Same line/above query with actual existing operation allocation control.
+pub fn kept_using<C:crate::key_policy_control::Control>(file:&SourceFile,number:usize,lint:&str,control:&mut C)->Result<Option<Kept>,C::Error>{
     let raw = file.raw();
     if number >= 1 && number <= raw.num_lines() {
-        if let Some(code) = keeps(raw.line(number), lint) {
-            return Some(Kept { line: number, code });
+        if let Some(code) = keeps_with(raw.line(number),lint,control)? {
+            return Ok(Some(Kept { line:number,code }));
         }
     }
     if number >= 2 {
         let above = raw.line(number - 1);
         if util::py_lstrip(above).starts_with("//") {
-            if let Some(code) = keeps(above, lint) {
-                return Some(Kept { line: number - 1, code });
+            if let Some(code) = keeps_with(above,lint,control)? {
+                return Ok(Some(Kept { line:number-1,code }));
             }
         }
     }
-    None
+    Ok(None)
 }
 
 /// The annotation's line number only (`kept(..).map(|k| k.line)`).

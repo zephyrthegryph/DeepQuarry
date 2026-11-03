@@ -92,3 +92,15 @@ fn empty_interpolation_does_not_masquerade_as_a_plain_static_string() {
     assert_eq!(observe(r#""\ []""#).unwrap(), None);
     assert_eq!(observe(r#"@"[]""#).unwrap(), Some(ControlConstant::StaticTerm));
 }
+
+#[test]
+fn typed_original_scalar_controls_use_value_kind_bits_and_static_text_before_spelling(){
+ use dm_syntax::{LiteralText,OriginalTokenValue as V,SettingAdmission,Span};
+ use std::sync::{Arc,atomic::{AtomicUsize,Ordering}};
+ let counter=Arc::new(AtomicUsize::new(0));let poll=||Ok(());let a=SettingAdmission::new(&counter,1<<20,&poll);
+ for(raw,value,expected)in[("123bad",V::Int(0),Some(false)),("0",V::Float(f32::from_bits(0x80000000)),Some(false)),("0",V::Float(f32::NAN),Some(true)),("\"[missing.field]\"",V::String("[missing.field]"),Some(true)),("\"shown\"",V::String(""),Some(false))]{
+  let text=LiteralText::from_original_value_data(raw.into(),0,value,&a).unwrap();let root=dm_syntax::Expr{span:Span::new(0,raw.len()),kind:dm_syntax::ExprKind::Literal(text)};
+  assert_eq!(classify(&root).unwrap(),Some(ControlConstant::StaticTerm));assert_eq!(crate::checker_reachable::truthy(&root).unwrap(),expected);
+ }
+ let resource=dm_syntax::Expr{span:Span::new(0,3),kind:dm_syntax::ExprKind::Literal(LiteralText::from_original_value_data("123".into(),0,V::Resource("actual.dmi"),&a).unwrap())};assert_eq!(classify(&resource).unwrap(),None);assert_eq!(crate::checker_reachable::truthy(&resource).unwrap(),None);drop(resource);assert_eq!(counter.load(Ordering::Acquire),0);
+}

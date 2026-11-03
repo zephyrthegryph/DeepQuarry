@@ -1,0 +1,11 @@
+/datum/z
+    var/SpacemanDMM_final/value=0
+/datum/z/child
+    value=1
+/datum/a
+    var/SpacemanDMM_private/secret=0
+/datum/a/child
+    secret=1
+/proc/probe()
+    set mystery=1
+    return missing_variable

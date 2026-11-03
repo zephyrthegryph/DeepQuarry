@@ -6,7 +6,7 @@ fn actual_generator_requests_reassemble_final_original_output_without_second_fro
  let expected=f.queries.with_workspace_generator_guard(&f.workspace,&f._snapshot.workspace_native_read().unwrap(),&f.capture,generator_policy::GeneratorName::Deps,|artifact|serde_json::to_vec(&artifact.output_wire()).map_err(io::Error::other)).unwrap();
  let before_io=f.reads.load(Ordering::Relaxed);let before_body=f.queries.db().stats(dm_query::Kind(4)).computed;
  let mut request=query::QueryRequest{analysis_context:None,timeout_seconds:Some(300),project:f.root.join("deepquarry.dme"),defines:Default::default(),engine_template:None,bootstrap_catalog:false,expected_revision:Some(format!("{:032x}",tree.identity())),expected_source_revision:Some(format!("{:032x}",dm_analysis::tree_export::source_revision(&f._front))),expected_policy_revision:Some(format!("{:032x}",f.workspace.policy_revision())),queries:vec![],source_queries:vec![]};
- let state=QueryState{snapshot:Some(f._snapshot),last_request_outcome:"analyzed",publication_pair:None};
+ let state=QueryState{raw_snapshot:None,snapshot:Some(f._snapshot),last_request_outcome:"analyzed",publication_pair:None};
  let mut continuity=Continuity::new(64*1024*1024);let mut staged=Vec::new();let mut cursor=None;
  loop{
   request.source_queries=vec![SourceQuery::NativeGeneratorBytes{generator:generator_policy::GeneratorName::Deps,cursor,limit:97}];

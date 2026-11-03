@@ -14,8 +14,8 @@ use crate::tree::{SourceFile, CODE_DM};
 const HINT: &str = "move the periodic work onto an OM lane (world service or feature lane, code/datums/om/world_lanes.dm) or, for a kernel engine, add it to `core` in tools/ci/lint_scopes.toml; a temporary keep takes `// ALLOW(subsystem_fire): <reason>`";
 
 static META: Meta = Meta {
-    name: "subsystem_fire",
-    group: "",
+    name: crate::allow_registry_fields::subsystem_fire::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::subsystem_fire::SCOPE_META_0.group,
     label: "subsystem_fire",
     legacy: "tools/ci/subsystem_fire_lint.py",
     select: CODE_DM,
@@ -23,7 +23,7 @@ static META: Meta = Meta {
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "fire", hint: HINT }],
     allow: crate::allow_registry_fields::subsystem_fire::ALLOW_0,
-    lists: &["core"],
+    lists: crate::allow_registry_fields::subsystem_fire::SCOPE_META_0.lists,
 };
 
 struct SubsystemFire;

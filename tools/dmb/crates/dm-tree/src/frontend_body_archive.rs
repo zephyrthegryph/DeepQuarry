@@ -90,6 +90,7 @@ pub struct SourceLocalView<'a> {
     occurrence: &'a BodyOccurrence,
     syntax: &'a StatementBody,
     source: &'a str,
+    projection: Option<dm_syntax::SyntaxProjection>,
     scope_charge: usize,
 }
 impl<'a> SourceLocalView<'a> {
@@ -142,75 +143,49 @@ impl<'a> SourceLocalView<'a> {
     }
     pub fn name(&self, entry: &dm_syntax::LocalVariableSyntax) -> Result<&'a str, String> {
         self.require_entry(entry)?;
-        self.source
-            .get(entry.name.range())
-            .ok_or_else(|| "local name outside original source arena".into())
+        self.slice(entry.name).ok_or_else(|| "local name outside original source arena".into())
     }
-    pub fn type_path_width(&self, entry: &dm_syntax::LocalVariableSyntax) -> Result<usize, String> {
-        self.require_entry(entry)?;
-        let mut width = if entry.array_suffix { 5usize } else { 0 };
-        for span in &entry.type_components {
-            let text = self
-                .source
-                .get(span.range())
-                .ok_or("local type component outside original source arena")?;
-            width = width
-                .checked_add(text.len())
-                .and_then(|n| n.checked_add(1))
-                .ok_or("original local type width overflow")?;
-        }
-        Ok(width)
+    pub fn type_path_width(&self,entry:&dm_syntax::LocalVariableSyntax)->Result<usize,String>{self.type_path_width_using(entry,&||Ok(()),&|error|error)}
+    fn point(&self,span:dm_syntax::Span)->Option<dm_syntax::Span>{match self.projection{Some(projection)=>projection.span(span),None=>Some(span)}}
+    fn slice(&self,span:dm_syntax::Span)->Option<&'a str>{self.point(span).and_then(|span|self.source.get(span.range()))}
+    /// Existing in_span takes canonical syntax coordinates. This explicitly named
+    /// entry translates a genuine current source window before using that ledger.
+    pub fn in_current_span(&self,span:dm_syntax::Span)->Result<&'a[dm_syntax::LocalVariableSyntax],String>{let original=match self.projection{Some(projection)=>projection.inverse().span(span).ok_or("current local window escapes body binding")?,None=>span};self.in_span(original)}
+    fn type_path_width_using<E>(&self,entry:&dm_syntax::LocalVariableSyntax,checkpoint:&dyn Fn()->Result<(),E>,error:&dyn Fn(String)->E)->Result<usize,E>{
+      self.require_entry(entry).map_err(error)?;let mut width=if entry.array_suffix{5usize}else{0};
+      for span in &entry.type_components{checkpoint()?;let text=self.slice(*span).ok_or_else(||error("local type component outside original source arena".into()))?;width=width.checked_add(text.len()).and_then(|n|n.checked_add(1)).ok_or_else(||error("original local type width overflow".into()))?;}Ok(width)
     }
     /// Conservative transient type-map admission, computed without formatting
     /// or allocating. It is not retained model data or an RSS measurement.
     pub fn scope_admission(&self) -> Result<usize, String> {
         Ok(self.scope_charge)
     }
-    fn compute_scope_admission(&self) -> Result<usize, String> {
-        self.entries()?.iter().try_fold(4096usize, |sum, entry| {
-            self.name(entry)?
-                .len()
-                .checked_add(self.type_path_width(entry)?)
-                .and_then(|n| n.checked_mul(4))
-                .and_then(|n| n.checked_add(256))
-                .and_then(|n| sum.checked_add(n))
-                .ok_or_else(|| "original local scope admission overflow".into())
-        })
+    fn compute_scope_admission_using<E>(&self,checkpoint:&dyn Fn()->Result<(),E>,error:&dyn Fn(String)->E)->Result<usize,E>{
+      let mut sum=4096usize;for entry in self.entries().map_err(error)?{checkpoint()?;let width=self.type_path_width_using(entry,checkpoint,error)?;sum=self.name(entry).map_err(error)?.len().checked_add(width).and_then(|n|n.checked_mul(4)).and_then(|n|n.checked_add(256)).and_then(|n|sum.checked_add(n)).ok_or_else(||error("original local scope admission overflow".into()))?;}Ok(sum)
     }
     pub fn type_path(
         &self,
         entry: &dm_syntax::LocalVariableSyntax,
     ) -> Result<Option<String>, String> {
         self.require_entry(entry)?;
-        entry.type_path(self.source).map_err(str::to_owned)
+        entry.type_path_using(|span|self.slice(span).ok_or("native local component source unavailable")).map_err(str::to_owned)
     }
 }
-pub(super) fn checked_source_locals<'a>(
-    tree: &'a SemanticTree,
-    occurrence: &'a BodyOccurrence,
-    syntax: &'a StatementBody,
-    source: &'a str,
-) -> Result<SourceLocalView<'a>, String> {
-    if !syntax.syntax_complete() {
-        return Err("local source body has unissued syntax".into());
-    }
-    let mut view = SourceLocalView {
-        tree,
-        occurrence,
-        syntax,
-        source,
-        scope_charge: 0,
-    };
-    view.scope_charge = view.compute_scope_admission()?;
-    Ok(view)
+pub(super) fn checked_source_locals<'a>(tree:&'a SemanticTree,occurrence:&'a BodyOccurrence,syntax:&'a StatementBody,source:&'a str)->Result<SourceLocalView<'a>,String>{
+ checked_source_locals_projected(tree,occurrence,syntax,source,None,&||Ok(()),&|error|error)
 }
+pub(super) fn checked_source_locals_projected<'a,E>(tree:&'a SemanticTree,occurrence:&'a BodyOccurrence,syntax:&'a StatementBody,source:&'a str,projection:Option<dm_syntax::SyntaxProjection>,checkpoint:&dyn Fn()->Result<(),E>,error:&dyn Fn(String)->E)->Result<SourceLocalView<'a>,E>{
+ checkpoint()?;if !syntax.syntax_complete(){return Err(error("local source body has unissued syntax".into()))}
+ let mut view=SourceLocalView{tree,occurrence,syntax,source,projection,scope_charge:0};view.scope_charge=view.compute_scope_admission_using(checkpoint,error)?;checkpoint()?;Ok(view)
+}
+
 pub struct ArchivedBody<'a> {
     archive: &'a BodyArchive,
     occurrence: &'a BodyOccurrence,
     statements: Arc<StatementBody>,
     header: Item,
     opening_parenthesis: Option<dm_syntax::Span>,
-    parameters: Arc<dm_syntax::ParameterSignature>,
+    parameters: dm_syntax::SharedParameterSignature,
 }
 /// Opaque original source binding, not a table copied from runtime metadata.
 /// Only an exact original body owner can issue this stack-only borrowed view.
@@ -220,6 +195,7 @@ pub struct SourceParameterView<'a> {
     occurrence: &'a BodyOccurrence,
     signature: &'a dm_syntax::ParameterSignature,
     source: &'a str,
+    projection: Option<dm_syntax::SyntaxProjection>,
 }
 impl std::fmt::Debug for SourceParameterView<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -262,13 +238,17 @@ impl SourceParameterView<'_> {
     }
     pub fn name(&self, p: &dm_syntax::ParameterSyntax) -> Result<&str, String> {
         self.require_entry(p)?;
-        self.source
-            .get(p.name().range())
-            .ok_or_else(|| "parameter name outside exact original arena".into())
+        self.slice(p.name()).ok_or_else(|| "parameter name outside exact original arena".into())
     }
+    /// Borrow one actual source component without allocating a normalized path.
+    pub fn type_component(&self,p:&dm_syntax::ParameterSyntax,index:usize)->Result<Option<&str>,String>{self.require_entry(p)?;p.type_components().get(index).map(|span|self.slice(*span).ok_or_else(||"original parameter component outside exact source arena".into())).transpose()}
+    pub fn declaration_cursor(&self,p:&dm_syntax::ParameterSyntax)->Result<dm_syntax::Span,String>{self.require_entry(p)?;let at=self.point(p.declaration_cursor()).ok_or("parameter original declaration cursor is outside the actual source")?;if at.start>at.end||self.source.get(at.range()).is_none(){return Err("parameter original declaration cursor is outside the actual source".into())}Ok(at)}
+    fn point(&self,span:dm_syntax::Span)->Option<dm_syntax::Span>{match self.projection{Some(projection)=>projection.span(span),None=>Some(span)}}
+    fn slice(&self,span:dm_syntax::Span)->Option<&str>{self.point(span).and_then(|span|self.source.get(span.range()))}
+    pub fn header_span(&self)->Result<dm_syntax::Span,String>{self.point(self.signature.header()).ok_or_else(||"parameter header escapes current source binding".into())}
     pub fn type_path(&self, p: &dm_syntax::ParameterSyntax) -> Result<Option<String>, String> {
         self.require_entry(p)?;
-        p.type_path(self.source).map_err(str::to_owned)
+        p.type_path_using(|span|self.slice(span).ok_or("original parameter component outside arena")).map_err(str::to_owned)
     }
 }
 /// Request-local handle for the SAME existing parameter root allocation.
@@ -277,14 +257,14 @@ impl SourceParameterView<'_> {
 pub struct OriginalHeaderExpressionHandle<'frontend> {
     frontend: &'frontend ColdFrontend,
     occurrence: &'frontend BodyOccurrence,
-    parameters: Arc<dm_syntax::ParameterSignature>,
+    parameters: dm_syntax::SharedParameterSignature,
     metadata: &'frontend dm_ir::ProcedureMetadata,
     source: &'frontend str,
 }
 pub(super) fn capture_header_expression_handle<'frontend>(
     frontend: &'frontend ColdFrontend,
     occurrence: &'frontend BodyOccurrence,
-    parameters: Arc<dm_syntax::ParameterSignature>,
+    parameters: dm_syntax::SharedParameterSignature,
 ) -> Result<OriginalHeaderExpressionHandle<'frontend>, String> {
     // The sole caller first validates its exact ParsedBody/source-parameter
     // binding; this private constructor cannot accept a public copied receipt.
@@ -321,12 +301,13 @@ impl OriginalHeaderExpressionHandle<'_> {
             occurrence: self.occurrence,
             signature: &self.parameters,
             source: self.source,
+            projection: None,
         }
         .header_expressions()?;
         view.require_for(&self.frontend.snapshot.tree, self.occurrence, self.metadata)?;
         Ok(view)
     }
-    pub fn storage(&self) -> &Arc<dm_syntax::ParameterSignature> {
+    pub fn storage(&self) -> &dm_syntax::SharedParameterSignature {
         &self.parameters
     }
 }
@@ -487,65 +468,41 @@ pub(super) fn checked_source_parameters<'a>(
     parameters: &'a dm_syntax::ParameterSignature,
     source: &'a str,
 ) -> Result<SourceParameterView<'a>, String> {
-    if parameters.header() != header.header_span {
-        return Err("parameter receipt belongs to another original header".into());
-    }
-    let member = tree
-        .member(occurrence.member)
-        .ok_or("parameter callable member unavailable")?;
-    let metadata = member
-        .metadata
-        .procedure
-        .as_ref()
-        .ok_or("parameter callable signature unavailable")?;
-    for (ordinal, declaration) in parameters.absolute_declarations()?.iter().enumerate() {
-        if declaration.ordinal() != ordinal {
-            return Err("absolute header declaration ordinal mismatch".into());
-        }
-        let path = declaration.written_path(source)?;
-        let id = tree
-            .lookup_type(dm_ir::SymbolId::of(path))
-            .ok_or("original absolute header type declaration was not issued by native frontend")?;
-        let actual = tree
-            .type_node(id)
-            .ok_or("original absolute header type unavailable")?;
-        if tree.symbols().text(actual.path) != Some(path) {
-            return Err("original absolute header type spelling differs".into());
-        }
-    }
-    let mut native = metadata.signature.parameters.iter();
-    let mut variadic = false;
-    for (ordinal, entry) in parameters.entries()?.iter().enumerate() {
-        if entry.ordinal() != ordinal {
-            return Err("parameter original ordinal mismatch".into());
-        }
-        let name = source
-            .get(entry.name().range())
-            .ok_or("parameter name outside exact original arena")?;
-        if entry.variadic() {
-            if name != "..." || variadic {
-                return Err("parameter variadic receipt mismatch".into());
-            }
-            variadic = true;
-            continue;
-        }
-        let actual = native
-            .next()
-            .ok_or("parameter primary/runtime ordinal mismatch")?;
-        if tree.symbols().text(actual.name) != Some(name) {
-            return Err("parameter primary/runtime name mismatch".into());
-        }
-    }
-    if native.next().is_some() || metadata.signature.variadic != variadic {
-        return Err("parameter primary/runtime roster mismatch".into());
-    }
-    Ok(SourceParameterView {
-        tree,
-        occurrence,
-        signature: parameters,
-        source,
-    })
+    checked_source_parameters_projected(tree,occurrence,header.header_span,parameters,source,None,&||Ok(()),&|error|error)
 }
+/// SAME source-parameter validator for a real current archive/code binding.
+/// Private callers must authenticate the canonical signature and projection first.
+pub(super) fn checked_source_parameters_projected<'a,E>(
+    tree:&'a SemanticTree,occurrence:&'a BodyOccurrence,header:dm_syntax::Span,
+    parameters:&'a dm_syntax::ParameterSignature,source:&'a str,
+    projection:Option<dm_syntax::SyntaxProjection>,checkpoint:&dyn Fn()->Result<(),E>,error:&dyn Fn(String)->E,
+)->Result<SourceParameterView<'a>,E>{
+    checkpoint()?;
+    let view=SourceParameterView{tree,occurrence,signature:parameters,source,projection};
+    if view.header_span().map_err(error)?!=header{return Err(error("parameter receipt belongs to another original header".into()))}
+    let member=tree.member(occurrence.member).ok_or_else(||error("parameter callable member unavailable".into()))?;
+    let metadata=member.metadata.procedure.as_ref().ok_or_else(||error("parameter callable signature unavailable".into()))?;
+    for(ordinal,declaration)in parameters.absolute_declarations().map_err(|actual|error(actual.into()))?.iter().enumerate(){
+        checkpoint()?;
+        if declaration.ordinal()!=ordinal{return Err(error("absolute header declaration ordinal mismatch".into()))}
+        let path=view.slice(declaration.span()).ok_or_else(||error("absolute header declaration outside original source".into()))?;
+        let id=tree.lookup_type(dm_ir::SymbolId::of(path)).ok_or_else(||error("original absolute header type declaration was not issued by native frontend".into()))?;
+        let actual=tree.type_node(id).ok_or_else(||error("original absolute header type unavailable".into()))?;
+        if tree.symbols().text(actual.path)!=Some(path){return Err(error("original absolute header type spelling differs".into()))}
+    }
+    let mut native=metadata.signature.parameters.iter();let mut variadic=false;
+    for(ordinal,entry)in parameters.entries().map_err(|actual|error(actual.into()))?.iter().enumerate(){
+        checkpoint()?;
+        if entry.ordinal()!=ordinal{return Err(error("parameter original ordinal mismatch".into()))}
+        let name=view.name(entry).map_err(error)?;
+        if entry.variadic(){if name!="..."||variadic{return Err(error("parameter variadic receipt mismatch".into()))}variadic=true;continue}
+        let actual=native.next().ok_or_else(||error("parameter primary/runtime ordinal mismatch".into()))?;
+        if tree.symbols().text(actual.name)!=Some(name){return Err(error("parameter primary/runtime name mismatch".into()))}
+    }
+    if native.next().is_some()||metadata.signature.variadic!=variadic{return Err(error("parameter primary/runtime roster mismatch".into()))}
+    checkpoint()?;Ok(view)
+}
+
 impl ArchivedBody<'_> {
     /// Current original token coordinates, borrowed from the SAME parser-owned
     /// chunk. No source scan, new token array, expression parse or owner clone.
@@ -584,7 +541,7 @@ impl ArchivedBody<'_> {
             .map_err(|e| format!("parameter checker profile: {e:?}"))?;
         self.source_parameters()
     }
-    pub fn parameter_storage(&self) -> &Arc<dm_syntax::ParameterSignature> {
+    pub fn parameter_storage(&self) -> &dm_syntax::SharedParameterSignature {
         &self.parameters
     }
     pub fn signature_opening_parenthesis(&self) -> Option<dm_syntax::Span> {
@@ -742,6 +699,15 @@ impl BodyArchive {
         &self.tree
     }
     /// Issued body roster in compiler source order, without copying metadata.
+    /// Inspect original formals without parsing any statement BODY.
+    pub fn header_parameters_using(&self,ordinal:usize,checkpoint:&dyn Fn()->std::io::Result<()>)->Result<SourceParameterView<'_>,BodySyntaxFailure>{
+      checkpoint().map_err(BodySyntaxFailure::Operational)?;
+      let occurrence=self.bodies.get(ordinal).ok_or_else(||internal("header-only original body ordinal is unavailable"))?;
+      let code=self.body_codes.get(ordinal).ok_or_else(||internal("header-only original code owner is unavailable"))?;
+      let(parameters,projection)=self.syntax.original_header_parameters(occurrence.expanded_span,&code.identity).map_err(|error|internal(&error.message))?;
+      let header=projection.span(parameters.header()).ok_or_else(||internal("actual original header projection escaped source"))?;
+      checked_source_parameters_projected(&self.tree,occurrence,header,parameters,&self.source,Some(projection),&||checkpoint().map_err(BodySyntaxFailure::Operational),&|message|internal(&message).into())
+    }
     pub fn occurrences(&self) -> &[BodyOccurrence] {
         &self.bodies
     }
@@ -873,7 +839,7 @@ impl BodyArchive {
                 occurrence,
                 statements: Arc::clone(&shared.statements),
                 opening_parenthesis: shared.opening_parenthesis,
-                parameters: Arc::clone(&shared.parameters),
+                parameters: shared.parameters.clone(),
                 header,
             });
         }
@@ -903,7 +869,7 @@ impl BodyArchive {
             occurrence,
             statements,
             opening_parenthesis: issued.opening_parenthesis,
-            parameters: Arc::new(issued.parameters),
+            parameters: issued.parameters.into_shared(),
             header: item,
         })
     }
@@ -968,6 +934,11 @@ fn parse_statements_admitted(
         admission: &'a dm_syntax::SettingAdmission<'op>,
     }
     impl dm_syntax::SettingSyntaxProvider for Original<'_, '_> {
+        fn original_expression(&self,source:&str,offset:usize)->std::io::Result<Option<dm_syntax::ParsedExpr>>{self.syntax.original_body_expression(self.body,self.code,source,offset,self.admission)}
+        fn switch_case_cursor(&self,item:&Item)->Result<dm_syntax::OriginalCaseCursor,&'static str>{
+            let mut checkpoint=||{self.admission.checkpoint().map_err(|actual|{self.admission.record_operational_error(actual);"native case cursor operation stopped"})};
+            let tokens=self.syntax.original_body_tokens(self.body,self.code).map_err(|_|"original case body token owner unavailable")?;tokens.switch_case_cursor_using(item.header_span,item.span,&mut checkpoint)
+        }
         fn setting(
             &self,
             item: &Item,
@@ -1084,6 +1055,9 @@ impl BodyArchive {
     /// Original callable opening-token origin without demanding executable body
     /// grammar. Uses the SAME private current code/header recipe as BodySyntax.
     pub fn callable_header_policy_origin(&self,member:crate::MemberId)->Result<SourceNoteOrigin,String>{self.callable_header_source().reported_point(member).map(super::BorrowedSourceNoteOrigin::into_owned)}
+    /// Actual opening-token member/roster binding, with producer-certified policy
+    /// line only. This cannot authorize a byte column or diagnostic source span.
+    pub fn callable_header_policy_line(&self,member:crate::MemberId)->Result<SourcePolicyLineOrigin,String>{self.callable_header_source().reported_policy_line(member)}
     /// Borrow the SAME immutable current header owners. No body is demanded.
     pub fn callable_header_source(&self)->CallableHeaderSource<'_>{CallableHeaderSource{tree:&self.tree,callables:&self.callables,bodies:&self.bodies,codes:&self.body_codes,syntax:&self.syntax,mapping:&self.mapping}}
     pub fn callable_note_origin(
@@ -1230,6 +1204,9 @@ impl<'a> CallableHeaderSource<'a>{
   if occurrence.member!=member{return Err("callable header roster occurrence differs".into())}
   let code=self.codes.get(ordinal).ok_or("callable header original code absent")?;self.syntax.original_callable_opening(occurrence.expanded_span,&code.identity)
  }
+ /// Authenticated actual parser records; no Q4/body/default grammar is run.
+ pub fn formal_notices(&self,member:crate::MemberId)->Result<impl Iterator<Item=Result<(crate::OriginalFormalNotice,Option<&'a str>),String>>+'a,String>{self.cursor(member)?;let ordinal=self.callables.ordinal(member).ok_or("actual formal member absent")?;let occurrence=self.bodies.get(ordinal).ok_or("actual formal occurrence absent")?;let code=self.codes.get(ordinal).ok_or("actual formal code owner absent")?;self.syntax.original_formal_notice_rows(occurrence.expanded_span,&code.identity)}
+ pub fn reported_policy_line(&self,member:crate::MemberId)->Result<SourcePolicyLineOrigin,String>{self.mapping.original_policy_line(self.cursor(member)?)}
  pub fn reported_point(&self,member:crate::MemberId)->Result<super::BorrowedSourceNoteOrigin<'a>,String>{self.mapping.borrowed_source_note_point(self.cursor(member)?).map_err(str::to_owned)}
  pub fn reported_span(&self,member:crate::MemberId)->Result<dm_syntax::Span,String>{let at=self.cursor(member)?;Ok(dm_syntax::Span::new(at,at.checked_add(1).ok_or("callable header point extent overflow")?))}
 }
@@ -1251,3 +1228,32 @@ impl ArchivedBody<'_>{
   super::initializer_source::original_admission_using(self.archive.setting_queries.as_ref(),operation)
  }
 }
+
+#[derive(Debug)]
+pub enum OriginalParentSourceFailure{Unsupported(String),Operational(std::io::Error)}
+impl From<String> for OriginalParentSourceFailure{fn from(value:String)->Self{Self::Unsupported(value)}}
+impl From<&'static str> for OriginalParentSourceFailure{fn from(value:&'static str)->Self{Self::Unsupported(value.into())}}
+
+impl BodyArchive{
+ /// One traversal over the existing native declaration AST. Selectors receive
+ /// only observed type IDs; actual source assignments/cursors are borrowed
+ /// here. This emits DATA, never source/semantic admission or a new parser.
+ pub fn visit_original_parent_assignment_spans(&self,checkpoint:&dyn Fn()->std::io::Result<()>,mut select:impl FnMut(dm_ir::SymbolId)->Result<Option<dm_ir::SymbolId>,OriginalParentSourceFailure>,mut consume:impl FnMut(dm_ir::SymbolId,dm_ir::SymbolId,dm_syntax::Span)->Result<(),OriginalParentSourceFailure>)->Result<(),OriginalParentSourceFailure>{
+  checkpoint().map_err(OriginalParentSourceFailure::Operational)?;if self.source_mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290{return Err("parent outcome requires actual Original source".into())}
+  fn visit(item:super::ItemView<'_>,scope:&str,tree:&crate::SemanticTree,checkpoint:&dyn Fn()->std::io::Result<()>,select:&mut impl FnMut(dm_ir::SymbolId)->Result<Option<dm_ir::SymbolId>,OriginalParentSourceFailure>,consume:&mut impl FnMut(dm_ir::SymbolId,dm_ir::SymbolId,dm_syntax::Span)->Result<(),OriginalParentSourceFailure>)->Result<(),OriginalParentSourceFailure>{
+   checkpoint().map_err(OriginalParentSourceFailure::Operational)?;if item.kind()!=dm_syntax::ItemKind::Type{return Ok(())}let owner=crate::adapter::absolute(scope,item.header())?;let owner_id=dm_ir::SymbolId::of(&owner);
+   if let Some(parent)=select(owner_id)?{
+    let id=tree.lookup_type(owner_id).ok_or("parent outcome owner absent")?;if tree.parent(id).and_then(|id|tree.type_node(id)).is_none_or(|row|row.path!=dm_ir::SymbolId::of("/"))||tree.lookup_type(parent).is_some(){return Err("parent outcome does not describe current root fallback".into())}
+    let mut found=None;for child in item.children(){checkpoint().map_err(OriginalParentSourceFailure::Operational)?;if let Some((key,value))=child.header().split_once('='){if key.trim()=="parent_type"{if dm_ir::SymbolId::of(&crate::adapter::absolute("/",value.trim())?)!=parent||found.is_some(){return Err("parent outcome source assignment is ambiguous".into())}let at=child.declaration_cursor().ok_or("parent assignment lacks actual primary token cursor")?;let end=at.checked_add(1).ok_or("parent primary cursor overflow")?;found=Some(dm_syntax::Span::new(at,end));}}}if let Some(span)=found{consume(owner_id,parent,span)?;}
+   }
+   for child in item.children(){visit(child,&owner,tree,checkpoint,select,consume)?;}Ok(())
+  }
+  for item in self.syntax.items(){visit(item,"/",self.tree(),checkpoint,&mut select,&mut consume)?;}checkpoint().map_err(OriginalParentSourceFailure::Operational)
+ }
+ pub fn original_parent_assignment_span(&self,wanted:dm_ir::SymbolId,parent:dm_ir::SymbolId,checkpoint:&dyn Fn()->std::io::Result<()>)->Result<dm_syntax::Span,OriginalParentSourceFailure>{
+  let mut found=None;self.visit_original_parent_assignment_spans(checkpoint,|owner|Ok((owner==wanted).then_some(parent)),|_,_,span|{if found.replace(span).is_some(){return Err("parent outcome source assignment is ambiguous".into())}Ok(())})?;found.ok_or_else(||OriginalParentSourceFailure::from("parent outcome has no original native assignment"))
+ }
+}
+
+#[path="frontend_current_body_archive.rs"]mod current_body;
+pub use current_body::CurrentArchivedBody;

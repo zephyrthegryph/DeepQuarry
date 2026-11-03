@@ -65,9 +65,14 @@ fn findings(
     walk: checker_reachable::Walk<'_>,
     policies: &[(Family, Severity)],
 ) -> Result<Vec<Diagnostic>, String> {
-    let mut found = Vec::new();
-    for event in walk.events {
+    let mut found=Vec::new();visit_events(walk.events,policies,|row|{found.push(row);Ok::<(),String>(())})?;Ok(found)
+}
+pub(crate) fn visit_events<'a,E:From<String>+for<'e>From<&'e str>>(events:impl IntoIterator<Item=Event<'a>>,policies:&[(Family,Severity)],mut emit:impl FnMut(Diagnostic)->Result<(),E>)->Result<(),E>{
+    for event in events {
         let family = match event {
+            // Fixed flow errors have their source-bound companion producer;
+            // this function still selects only the requested tagged families.
+            Event::DoWhileUnreachable { .. } => continue,
             Event::ControlCondition { .. } => Family::Static,
             Event::Unreachable { .. } => Family::Unreachable,
             Event::LoopCondition { .. } => Family::LoopDeterminate,
@@ -94,10 +99,10 @@ fn findings(
             Family::SettingPlacement => crate::checks_set_no_effect::diagnostic(event, *severity)?,
         };
         if let Some(diagnostic) = diagnostic {
-            found.push(diagnostic);
+            emit(diagnostic)?;
         }
     }
-    Ok(found)
+    Ok(())
 }
 #[cfg(test)]
 #[path = "checks_control_policies_tests.rs"]

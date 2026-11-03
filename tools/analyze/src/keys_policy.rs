@@ -434,8 +434,8 @@ const H_DUP: &str = "declare each stat, source, stage and capability once";
 const H_ACC: &str = "name a var the system declares: SYSTEM_ACCESSOR(system, accessor, nameof(var))";
 
 static META: Meta = Meta {
-    name: "sem/keys",
-    group: "sem",
+    name: crate::allow_registry_fields::sem_keys::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::sem_keys::SCOPE_META_0.group,
     label: "keys",
     legacy: "",
     select: CODE_DM,
@@ -450,7 +450,7 @@ static META: Meta = Meta {
         RuleMeta { name: "accessor_var", hint: H_ACC },
     ],
     allow: crate::allow_registry_fields::sem_keys::ALLOW_SHARED_0,
-    lists: &[],
+    lists: crate::allow_registry_fields::sem_keys::SCOPE_META_0.lists,
 };
 pub fn metadata()->&'static Meta{&META}
 

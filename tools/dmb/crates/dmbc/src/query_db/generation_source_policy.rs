@@ -77,15 +77,19 @@ impl QueryDb{
    // Exactly ONE original-source reader owns all acquired bytes for this phase.
    // Every selected generator below reuses it; do not invoke this API per name.
    let reader=GenerationSourceReader::capture_frame(frame,inputs,discovery,&budget)?;
-   let manifest=frame.root_source().ok_or("generation root source absent")?;
-   let lease=frame.originals().find_map(|(path,lease)|(path==manifest).then_some(lease).flatten()).ok_or("generation manifest acquisition absent")?;
-   let bom=match lease.encoding(){dm_preprocess::SourceEncoding::Utf8=>false,dm_preprocess::SourceEncoding::Utf8Bom=>true,_=>return Err(Failure::from("generation manifest requires original strict UTF8"))};
-   budget.charge(lease.source_text().len().checked_mul(64).and_then(|n|n.checked_add(4096)).ok_or_else(||oom(&budget,"generation manifest metadata overflow"))?).map_err(|message|oom(&budget,message))?;
-   let order=dq_analyze::raw_marker_policy::dme_include_order_view(lease.source_text().as_str(),bom);
+   let scoped_order=if inputs.original_analysis_subject().is_some(){Some(inputs.with_generation_original_manifest(frame,reader.root(),&budget,|manifest|{let bytes=match manifest{dq_analyze::captured_untyped::ManifestRead::CompiledOriginalBytes(bytes)|dq_analyze::captured_untyped::ManifestRead::OriginalBytes(bytes)=>Some(bytes),dq_analyze::captured_untyped::ManifestRead::ProvenUnavailable=>None,dq_analyze::captured_untyped::ManifestRead::Compiled=>return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original generation fixed manifest bytes absent"))};dq_analyze::captured_reactive_reads::scoped_original_include_order_bytes(bytes,&budget,&||crate::daemon::control::checkpoint()).map_err(|failure|match failure{Failure::Operational(actual)=>actual,Failure::Unsupported(message)=>io::Error::new(io::ErrorKind::Unsupported,message)})})?)}else{None};
+   let native_order=if scoped_order.is_none(){
+    let manifest=frame.root_source().ok_or("generation root source absent")?;
+    let lease=frame.originals().find_map(|(path,lease)|(path==manifest).then_some(lease).flatten()).ok_or("generation manifest acquisition absent")?;
+    let bom=match lease.encoding(){dm_preprocess::SourceEncoding::Utf8=>false,dm_preprocess::SourceEncoding::Utf8Bom=>true,_=>return Err(Failure::from("generation manifest requires original strict UTF8"))};
+    budget.charge(lease.source_text().len().checked_mul(64).and_then(|n|n.checked_add(4096)).ok_or_else(||oom(&budget,"generation manifest metadata overflow"))?).map_err(|message|oom(&budget,message))?;
+    Some(dq_analyze::raw_marker_policy::dme_include_order_view(lease.source_text().as_str(),bom))
+   }else{None};
+   let order=scoped_order.as_deref().or(native_order.as_ref()).ok_or("generation original marker order unavailable")?;
    let mut collector=TestTypeCollector::default();let mut control=Check{budget:&budget};
    if !reader.for_each_tests(&mut|relative,views|{collector.observe(relative,views.raw()?,&mut control)?;Ok(true)})?{return Err("generation CLI test-source traversal stopped".into())}
    let tests=collector.finish();
-   operation(&reader,&budget,&order,&tests)?;
+   operation(&reader,&budget,order,&tests)?;
    reader.require_completed()?;Ok::<_,Failure>(())
   })();
   match run{Err(Failure::Operational(actual))=>Err(actual),other=>{

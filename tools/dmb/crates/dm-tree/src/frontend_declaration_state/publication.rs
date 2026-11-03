@@ -27,6 +27,9 @@ pub struct DeclarationRequest {
 }
 impl DeclarationRequest {
     pub fn publish_successful(&self) -> bool {
+        // Candidate borrows are request scratch, never published source/cache.
+        let retired=self.attempt.with_pending(|claims|claims.body_candidates.lock().unwrap_or_else(|error|error.into_inner()).take());
+        drop(retired); // outside pending/publication and candidate locks
         self.attempt.publish_successful()
     }
 }
@@ -54,6 +57,7 @@ impl DeclarationClaims {
             symbols: Mutex::new(symbols),
             keys: AtomicUsize::new(0),
             hits: AtomicUsize::new(0),
+            body_candidates:Mutex::new(None),
         }
     }
 }
@@ -168,8 +172,19 @@ impl RetainedDeclarations {
     pub(in crate::frontend) fn get_shared_checked(&self,key:&[u8],text:&str,offset:usize,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<CurrentContribution>>{
         self.access.with_pending(|claims|claims.get_shared_checked(key,text,offset,a)).unwrap_or_else(||Err(std::io::Error::new(std::io::ErrorKind::NotConnected,"checked declaration lookup has no pending request")))
     }
+    pub(in crate::frontend) fn get_shared_original_literals_checked(&self,key:&[u8],text:&str,offset:usize,headers:&crate::procedure::OriginalProcedureHeaders,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<CurrentContribution>>{
+        self.access.with_pending(|claims|claims.get_shared_original_literals_checked(key,text,offset,headers,a)).unwrap_or_else(||Err(std::io::Error::new(std::io::ErrorKind::NotConnected,"checked Original literal lookup has no pending request")))
+    }
     pub(in crate::frontend) fn capture_source_headers_checked(&self,key:&[u8],source:dm_preprocess::SourceText,offset:usize,items:Vec<Item>,facts:crate::AdaptedDeclarations,ledger:AllocationLedger,headers:Arc<crate::procedure::OriginalProcedureHeaders>,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<CurrentContribution>>{
-        self.access.with_pending(|claims|claims.capture_source_headers_checked(key,source,offset,items,facts,ledger,headers,a)).unwrap_or_else(||Err(std::io::Error::new(std::io::ErrorKind::NotConnected,"checked declaration capture has no pending request")))
+        self.access.with_pending(|claims|{
+            let mut candidates=claims.body_candidates.lock().unwrap_or_else(|error|error.into_inner());
+            if candidates.is_none(){
+                let mut index=super::super::relative_declarations::BodyCodeCandidates::new(a)?;
+                if let Some(result)=self.access.owner.published.with_published(|previous|previous.values.visit_claimed_body_candidates(&mut index,a)){result?;}
+                index.finish(a)?;*candidates=Some(index);
+            }
+            claims.capture_source_headers_converged_checked(key,source,offset,items,facts,ledger,headers,candidates.as_ref().expect("actual request candidate index"),a)
+        }).unwrap_or_else(||Err(std::io::Error::new(std::io::ErrorKind::NotConnected,"checked declaration capture has no pending request")))
     }
     pub(in crate::frontend) fn capture(
         &self,

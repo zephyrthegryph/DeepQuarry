@@ -439,47 +439,11 @@ pub fn requirement_returns(code: &Block, out: &mut Vec<Found>) {
 }
 
 fn non_reason(expression: &Expression) -> Option<&'static str> {
-    match strip_parens(expression) {
-        Expression::Base { term, follow } => {
-            if follow.iter().any(|item| matches!(item.elem, Follow::Unary(UnaryOp::Not))) {
-                return Some("a boolean");
-            }
-            match &term.elem {
-                Term::Int(_) | Term::Float(_) => Some("a number/boolean"),
-                Term::List(_) => Some("a list"),
-                Term::Prefab(prefab) => {
-                    let path = prefab.path.iter().map(|(_, name)| name.as_str()).collect::<Vec<_>>().join("/");
-                    if path == "datum/msg" || path.starts_with("datum/msg/") { None } else { Some("a non-refusal type path") }
-                }
-                _ => None,
-            }
-        }
-        Expression::BinaryOp { op: BinaryOp::Eq | BinaryOp::NotEq, .. } => Some("a boolean comparison"),
-        Expression::TernaryOp { if_, else_, .. } => non_reason(if_).or_else(|| non_reason(else_)),
-        _ => None,
-    }
+    match crate::sem_handlers_policy::invalid_return_using(expression,crate::sem_handlers_policy::ReturnProtocol::Requirement,&mut crate::key_policy_control::Compatibility){Ok(why)=>why,Err(never)=>match never{}}
 }
 
 fn non_boolean(e: &Expression) -> Option<&'static str> {
-    let e = strip_parens(e);
-    match e {
-        Expression::Base { term, follow } => {
-            if follow.iter().any(|f| matches!(f.elem, Follow::Unary(UnaryOp::Not))) {
-                return None;
-            }
-            match &term.elem {
-                Term::String(_) | Term::InterpString(..) => Some("text"),
-                Term::Null => Some("null"),
-                Term::Prefab(_) => Some("a type path"),
-                Term::List(_) => Some("a list"),
-                Term::Int(i) if *i != 0 && *i != 1 => Some("a number other than TRUE/FALSE"),
-                Term::Float(_) => Some("a number other than TRUE/FALSE"),
-                _ => None,
-            }
-        }
-        Expression::TernaryOp { if_, else_, .. } => non_boolean(if_).or_else(|| non_boolean(else_)),
-        _ => None,
-    }
+    match crate::sem_handlers_policy::invalid_return_using(e,crate::sem_handlers_policy::ReturnProtocol::Boolean,&mut crate::key_policy_control::Compatibility){Ok(why)=>why,Err(never)=>match never{}}
 }
 
 /// Locals and params of a proc that are act-typed, by declared type path.

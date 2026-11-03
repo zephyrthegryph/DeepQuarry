@@ -2,11 +2,17 @@
 //! replacement and definition origin once; snapshots retain only persistent roots.
 use super::DefinitionOrigin;
 use crate::{Macro, MacroLookup};
+use crate::macro_expansion::{OriginalMacroDefinition,OriginalMacroRows,OriginalMacroText,OriginalMacroValue,OriginalMacroTextValue,OriginalMacroDoc};
+use crate::macro_expansion::OriginalMacroToken;
+#[cfg(test)] use crate::macro_expansion::OriginalMacroOrigin;
+use dm_syntax::SettingAdmission;
+use std::io;
 use std::sync::Arc;
 
 #[derive(Clone, Debug)]
 pub(super) struct Binding {
     definition: Arc<Macro>,
+    original:Option<Arc<OriginalDefinitionProduct>>,
     origin: Option<DefinitionOrigin>,
     previous: Option<Arc<Binding>>,
     previous_digest:u128,
@@ -28,6 +34,105 @@ impl PartialEq for Binding {
     }
 }
 impl Eq for Binding {}
+
+
+/// Immutable actual definition-time parser DATA supplied by SAME native source
+/// owner. Not a source/EOF/model receipt. The only dictionary remains bindings.
+/// Arc/im global allocator geometry remains existing opaque native boundary;
+/// all product buffers and fixed coordination are admitted before allocation.
+pub(super) struct OriginalDefinitionProduct{name:Option<OriginalMacroToken<'static>>,definition:OriginalMacroDefinition<'static>,docs:OriginalMacroRows<OriginalMacroDoc<'static>>,digest:u128,_credit:dm_syntax::SettingRootLease}
+impl std::fmt::Debug for OriginalDefinitionProduct{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{f.debug_struct("OriginalDefinitionProduct").field("parameters",&self.definition.parameters.as_ref().map(|p|p.len())).field("tokens",&self.definition.replacement.len()).finish_non_exhaustive()}}
+fn original_poll(a:&SettingAdmission<'_>)->io::Result<()>{a.checkpoint().map_err(|e|a.take_operational_error().unwrap_or(e))}
+fn original_hash_text(hash:&mut xxhash_rust::xxh3::Xxh3,text:&str,a:&SettingAdmission<'_>)->io::Result<()>{hash.update(&(text.len()as u64).to_le_bytes());for chunk in text.as_bytes().chunks(1024){original_poll(a)?;hash.update(chunk);}Ok(())}
+fn original_value_text<'a,'s>(value:&'a OriginalMacroValue<'s>)->Option<&'a OriginalMacroTextValue<'s>>{match value{OriginalMacroValue::DocComment{text,..}=>Some(text),OriginalMacroValue::Ident{spelling,..}|OriginalMacroValue::String(spelling)|OriginalMacroValue::Resource(spelling)|OriginalMacroValue::InterpBegin(spelling)|OriginalMacroValue::InterpPart(spelling)|OriginalMacroValue::InterpEnd(spelling)=>Some(spelling),_=>None}}
+impl OriginalDefinitionProduct{
+ /// DATA constructor only. Caller MUST supply actual definition-time lexical
+ /// product, never a later String relex or private reconstructed dictionary.
+ pub(super) fn from_actual_product_using(definition:OriginalMacroDefinition<'static>,a:&SettingAdmission<'_>)->io::Result<Arc<Self>>{Self::from_actual_product_with_docs_using(definition,OriginalMacroRows::new(a)?,a)}
+ /// SAME Binding retains actual drained/following definition docs, in order.
+ /// Invocations borrow this product before raw argument demand can change state.
+ pub(super) fn from_actual_product_with_docs_using(definition:OriginalMacroDefinition<'static>,docs:OriginalMacroRows<OriginalMacroDoc<'static>>,a:&SettingAdmission<'_>)->io::Result<Arc<Self>>{
+  Self::from_product_with_name_using(None,definition,docs,a)
+ }
+ /// Move the SAME actual #define name token; bootstrap keeps None. This is
+ /// location DATA, never a source grant or replacement-based point inference.
+ pub(super) fn from_named_actual_product_using(name:OriginalMacroToken<'static>,definition:OriginalMacroDefinition<'static>,docs:OriginalMacroRows<OriginalMacroDoc<'static>>,a:&SettingAdmission<'_>)->io::Result<Arc<Self>>{
+  original_poll(a)?;if !matches!(name.value,OriginalMacroValue::Ident{..})||name.origin.byte_column.is_none()||name.origin.line==0{return Err(io::Error::new(io::ErrorKind::Unsupported,"actual Original definition-name point is unissued"))}
+  if name.lexical_frame.as_ref().is_some_and(|frame|!frame.admitted_by(a)){return Err(io::ErrorKind::InvalidInput.into())}
+  Self::from_product_with_name_using(Some(name),definition,docs,a)
+ }
+ fn from_product_with_name_using(name:Option<OriginalMacroToken<'static>>,definition:OriginalMacroDefinition<'static>,docs:OriginalMacroRows<OriginalMacroDoc<'static>>,a:&SettingAdmission<'_>)->io::Result<Arc<Self>>{
+  original_poll(a)?;let fixed=std::mem::size_of::<Self>().checked_add(2*std::mem::size_of::<usize>()).and_then(|n|n.checked_add(std::mem::align_of::<Self>())).ok_or(io::ErrorKind::OutOfMemory)?;let credit=a.reserve(fixed).map_err(|e|a.take_operational_error().unwrap_or(e))?;
+  let mut hash=xxhash_rust::xxh3::Xxh3::new();hash.update(b"actual-original-definition-token-data-v1");hash.update(&[u8::from(definition.variadic)]);match &definition.parameters{None=>hash.update(&[0]),Some(params)=>{hash.update(&[1]);hash.update(&(params.len()as u64).to_le_bytes());for name in params.as_slice(){original_hash_text(&mut hash,name.as_str(),a)?;}}}
+  hash.update(&(definition.replacement.len()as u64).to_le_bytes());for token in definition.replacement.as_slice(){original_poll(a)?;hash.update(&[u8::from(token.punctuation_close),token.string_mode as u8]);match &token.value{
+   OriginalMacroValue::DocComment{kind,text}=>{let kind=match kind{dm_syntax::OriginalCommentKind::None=>0,dm_syntax::OriginalCommentKind::LineFollowing=>1,dm_syntax::OriginalCommentKind::LineEnclosing=>2,dm_syntax::OriginalCommentKind::BlockFollowing=>3,dm_syntax::OriginalCommentKind::BlockEnclosing=>4};hash.update(&[10,kind]);original_hash_text(&mut hash,text.get(),a)?;},
+   OriginalMacroValue::Ident{spelling,whitespace}=>{hash.update(&[0,u8::from(*whitespace)]);original_hash_text(&mut hash,spelling.get(),a)?;},
+   OriginalMacroValue::Int(n)=>{hash.update(&[1]);hash.update(&n.to_le_bytes());},OriginalMacroValue::Float(n)=>{hash.update(&[2]);hash.update(&n.to_bits().to_le_bytes());},
+   OriginalMacroValue::String(text)=>{hash.update(&[3]);original_hash_text(&mut hash,text.get(),a)?;},OriginalMacroValue::Resource(text)=>{hash.update(&[4]);original_hash_text(&mut hash,text.get(),a)?;},
+   OriginalMacroValue::InterpBegin(text)=>{hash.update(&[5]);original_hash_text(&mut hash,text.get(),a)?;},OriginalMacroValue::InterpPart(text)=>{hash.update(&[6]);original_hash_text(&mut hash,text.get(),a)?;},OriginalMacroValue::InterpEnd(text)=>{hash.update(&[7]);original_hash_text(&mut hash,text.get(),a)?;},OriginalMacroValue::Punct(text)=>{hash.update(&[8]);original_hash_text(&mut hash,text,a)?;},OriginalMacroValue::Eof=>hash.update(&[9]),
+  }match token.raw_spelling(){None=>hash.update(&[0]),Some(text)=>{hash.update(&[1]);original_hash_text(&mut hash,text,a)?;}}match token.lexical_span{Some(span)=>{hash.update(&[1]);hash.update(&(span.start as u64).to_le_bytes());hash.update(&(span.end as u64).to_le_bytes());},None=>hash.update(&[0])};hash.update(&(token.origin.physical.start as u64).to_le_bytes());hash.update(&(token.origin.physical.end as u64).to_le_bytes());hash.update(&(token.origin.line as u64).to_le_bytes());hash.update(&(token.origin.occurrence as u64).to_le_bytes());hash.update(&[u8::from(token.origin.invocation)]);
+  // Actual frame identity is authenticated by current owner BEFORE use; it is
+  // never hashed as meaning or inferred from this semantic DATA digest.
+  }
+  hash.update(&(docs.len()as u64).to_le_bytes());for doc in docs.as_slice(){original_poll(a)?;let kind=match doc.kind{dm_syntax::OriginalCommentKind::None=>0,dm_syntax::OriginalCommentKind::LineFollowing=>1,dm_syntax::OriginalCommentKind::LineEnclosing=>2,dm_syntax::OriginalCommentKind::BlockFollowing=>3,dm_syntax::OriginalCommentKind::BlockEnclosing=>4};hash.update(&[kind]);original_hash_text(&mut hash,doc.text.get(),a)?;match doc.lexical_span{Some(span)=>{hash.update(&[1]);hash.update(&(span.start as u64).to_le_bytes());hash.update(&(span.end as u64).to_le_bytes());},None=>hash.update(&[0])};hash.update(&(doc.origin.physical.start as u64).to_le_bytes());hash.update(&(doc.origin.physical.end as u64).to_le_bytes());hash.update(&(doc.origin.line as u64).to_le_bytes());hash.update(&(doc.origin.occurrence as u64).to_le_bytes());hash.update(&[u8::from(doc.origin.invocation)]);}
+  let digest=hash.digest128();original_poll(a)?;Ok(Arc::new(Self{name,definition,docs,digest,_credit:credit}))
+ }
+ pub(super) fn definition_name(&self)->Option<&OriginalMacroToken<'static>>{self.name.as_ref()}
+ pub(super) fn docs(&self)->&[OriginalMacroDoc<'static>]{self.docs.as_slice()}
+ pub(super) fn cloned_docs_using(&self,a:&SettingAdmission<'_>)->io::Result<OriginalMacroRows<OriginalMacroDoc<'static>>>{original_poll(a)?;if !a.matches_lease_domain(&self._credit){return Err(io::Error::new(io::ErrorKind::InvalidInput,"original definition docs have another resource host"))}let mut out=OriginalMacroRows::new(a)?;for doc in self.docs.as_slice(){out.push(doc.duplicate(a)?,a)?;}Ok(out)}
+ pub(super) fn cloned_definition_using(&self,a:&SettingAdmission<'_>)->io::Result<OriginalMacroDefinition<'static>>{
+  original_poll(a)?;if !a.matches_lease_domain(&self._credit){return Err(io::Error::new(io::ErrorKind::InvalidInput,"original definition product has another native resource host"))}
+  let parameters=match &self.definition.parameters{None=>None,Some(params)=>{let mut out=OriginalMacroRows::new(a)?;for name in params.as_slice(){let mut text=OriginalMacroText::new(a)?;text.push_str(name.as_str(),a)?;out.push(text,a)?;}Some(out)}};
+  let mut replacement=OriginalMacroRows::new(a)?;for token in self.definition.replacement.as_slice(){original_poll(a)?;replacement.push(token.duplicate(a)?,a)?;}Ok(OriginalMacroDefinition{parameters,variadic:self.definition.variadic,replacement})
+ }
+ /// Resource-only inventory, addresses cannot prove source/frame authority.
+ /// Source views retain SAME acquisition-backed allocation and are visited as
+ /// views, never counted as newly owned text or reconstructed/reencoded bytes.
+ pub(super) fn visit_owned_storage(&self,mut visit:impl FnMut(usize,usize)){
+  self.docs.visit_allocation(&mut visit);for doc in self.docs.as_slice(){if let OriginalMacroTextValue::Owned(text)=&doc.text{text.visit_allocation(&mut visit);}}
+  if let Some(params)=&self.definition.parameters{params.visit_allocation(&mut visit);for name in params.as_slice(){name.visit_allocation(&mut visit);}}
+  self.definition.replacement.visit_allocation(&mut visit);for token in self.name.iter().chain(self.definition.replacement.as_slice()){for text in [original_value_text(&token.value),token.raw_spelling.as_ref()].into_iter().flatten(){if let OriginalMacroTextValue::Owned(text)=text{text.visit_allocation(&mut visit);}}}
+ }
+ pub(super) fn visit_source_views(&self,mut visit:impl FnMut(&crate::SourceText)){for doc in self.docs.as_slice(){if let OriginalMacroTextValue::Source(text)=&doc.text{visit(text);}}for token in self.name.iter().chain(self.definition.replacement.as_slice()){for text in [original_value_text(&token.value),token.raw_spelling.as_ref()].into_iter().flatten(){if let OriginalMacroTextValue::Source(text)=text{visit(text);}}}}
+ pub(super) fn visit_lexical_frames(&self,mut visit:impl FnMut(&crate::regions::OriginalLexicalFrameIdentity)){for doc in self.docs.as_slice(){if let Some(frame)=&doc.lexical_frame{visit(frame);}}for token in self.name.iter().chain(self.definition.replacement.as_slice()){if let Some(frame)=&token.lexical_frame{visit(frame);}}}
+ fn matches_name(&self,name:&str,a:&SettingAdmission<'_>)->io::Result<bool>{original_poll(a)?;Ok(match self.name.as_ref(){None=>true,Some(token)=>matches!(&token.value,OriginalMacroValue::Ident{spelling,..}if spelling.get()==name)})}
+ fn matches_definition(&self,definition:&Macro,a:&SettingAdmission<'_>)->io::Result<bool>{original_poll(a)?;if self.definition.variadic!=definition.variadic{return Ok(false)}Ok(match(&self.definition.parameters,&definition.parameters){(None,None)=>true,(Some(actual),Some(names))if actual.len()==names.len()=>{for(actual,name)in actual.as_slice().iter().zip(names){original_poll(a)?;if actual.as_str()!=name{return Ok(false)}}true},_=>false})}
+}
+impl MacroEnvironment{
+ /// Actual one-time initial product issuance on SAME Binding map. The current
+ /// final configuration table has already applied default/caller precedence.
+ /// A nonphysical factory uses genuine SAME token/value kernels once per entry;
+ /// there is no source-frame forgery, String lookup fallback, second dictionary,
+ /// or extra shadow definition epoch. Native initialization remains unchanged.
+ /// The owner funds existing Arc/im coordination (the same opaque boundary as
+ /// ordinary insert). This method admits every new product/buffer via a.
+ pub(super) fn install_original_initial_using(&mut self,environment:crate::InitialEnvironment,final_macros:&std::collections::BTreeMap<String,Macro>,caller_defines:&std::collections::BTreeMap<String,String>,a:&SettingAdmission<'_>,factory:&mut dyn FnMut(crate::initial_environment::OriginalInitialDefinition<'_>,&SettingAdmission<'_>)->io::Result<OriginalMacroDefinition<'static>>)->io::Result<()>{
+  original_poll(a)?;if !self.bindings.is_empty(){return Err(io::Error::new(io::ErrorKind::InvalidInput,"Original initial product issuance requires the actual empty environment"))}
+  let mut next=Self::default();
+  crate::initial_environment::visit_original_bootstrap_using(environment,final_macros,caller_defines,a,&mut|input|{
+   let name=input.name();let metadata=input.metadata();let definition=factory(input,a)?;
+   for token in definition.replacement.as_slice(){original_poll(a)?;if token.lexical_frame.is_some()||token.lexical_span.is_some()||token.origin.invocation{return Err(io::Error::new(io::ErrorKind::InvalidInput,"nonphysical initial definition contains a fabricated physical lexical event or invocation"))}}
+   let product=OriginalDefinitionProduct::from_actual_product_using(definition,a)?;
+   next.insert_original_stacked_using(name,metadata.clone(),None,product,a)
+  })?;
+  original_poll(a)?;*self=next;Ok(())
+ }
+ /// Original token data is installed atomically on SAME binding/map epoch as
+ /// ordinary metadata. Native insert/stack paths stay byte-equivalent without
+ /// an Original product. Caller funds existing persistent-map coordination.
+ /// Native stacked bindings keep their existing restoration semantics.
+ pub(super) fn insert_original_stacked_using(&mut self,name:&str,definition:Macro,origin:Option<DefinitionOrigin>,product:Arc<OriginalDefinitionProduct>,a:&SettingAdmission<'_>)->io::Result<()>{self.insert_original_using(name,definition,origin,product,a,true)}
+ /// Pinned Original #define is ordinary replacement, including FILE_DIR.
+ /// It never stores an older definition as an undef-restoration fallback.
+ pub(super) fn insert_original_replacing_using(&mut self,name:&str,definition:Macro,origin:Option<DefinitionOrigin>,product:Arc<OriginalDefinitionProduct>,a:&SettingAdmission<'_>)->io::Result<()>{self.insert_original_using(name,definition,origin,product,a,false)}
+ fn insert_original_using(&mut self,name:&str,definition:Macro,origin:Option<DefinitionOrigin>,product:Arc<OriginalDefinitionProduct>,a:&SettingAdmission<'_>,stacked:bool)->io::Result<()>{
+  original_poll(a)?;if !a.matches_lease_domain(&product._credit)||!product.matches_name(name,a)?||!product.matches_definition(&definition,a)?{return Err(io::Error::new(io::ErrorKind::InvalidInput,"actual Original product/metadata/resource host differs"))}
+  let old=self.bindings.get(name).cloned();let old_digest=old.as_ref().map_or(0,|old|binding_digest(name,old));let previous=if stacked{old}else{None};let previous_digest=if stacked{old_digest}else{0};let binding=Arc::new(Binding{definition:Arc::new(definition),original:Some(product),origin,previous,previous_digest});let next=binding_digest(name,&binding);original_poll(a)?;
+  self.bindings.insert(Arc::from(name),binding);self.fingerprint^=old_digest;self.fingerprint^=next;Ok(())
+ }
+ pub(super) fn actual_original_product(&self,name:&str)->io::Result<Option<&OriginalDefinitionProduct>>{match self.bindings.get(name){None=>Ok(None),Some(binding)=>binding.original.as_deref().map(Some).ok_or_else(||io::Error::new(io::ErrorKind::Unsupported,"actual current macro binding has no issued Original definition tokens"))}}
+ pub(super) fn visit_original_products_while(&self,mut visit:impl FnMut(&Arc<str>,usize,usize,&OriginalDefinitionProduct)->bool){for(name,binding)in &self.bindings{let mut current=Some(binding);while let Some(binding)=current{if let Some(product)=&binding.original{let fixed=std::mem::size_of::<OriginalDefinitionProduct>()+2*std::mem::size_of::<usize>()+std::mem::align_of::<OriginalDefinitionProduct>();if !visit(name,Arc::as_ptr(product)as usize,fixed,product){break}}current=binding.previous.as_ref();}}}
+}
 
 #[derive(Clone, Debug, Default)]
 pub struct MacroEnvironment {
@@ -70,6 +175,7 @@ fn binding_digest(name: &str, binding: &Binding) -> u128 {
             hash.update(&(origin.source_line as u64).to_le_bytes());
         }
     }
+    if let Some(original)=&binding.original{hash.update(b"original-definition-token-product-v1");hash.update(&original.digest.to_le_bytes());}
     if binding.previous.is_some(){hash.update(b"original-definition-stack-v1");hash.update(&binding.previous_digest.to_le_bytes());}
     hash.digest128()
 }
@@ -168,6 +274,7 @@ impl MacroEnvironment {
     ) {
         let binding = Arc::new(Binding {
             definition: Arc::new(definition),
+            original:None,
             origin,
             previous:None,previous_digest:0,
         });
@@ -179,7 +286,7 @@ impl MacroEnvironment {
     pub(super) fn insert_stacked(&mut self,name:&str,definition:Macro,origin:Option<DefinitionOrigin>){
         let previous=self.bindings.remove(name);
         let previous_digest=previous.as_ref().map_or(0,|old|binding_digest(name,old));self.fingerprint^=previous_digest;
-        let binding=Arc::new(Binding{definition:Arc::new(definition),origin,previous,previous_digest});
+        let binding=Arc::new(Binding{definition:Arc::new(definition),original:None,origin,previous,previous_digest});
         self.fingerprint^=binding_digest(name,&binding);self.bindings.insert(Arc::from(name),binding);
     }
     pub(super) fn remove_stacked(&mut self,name:&str){
@@ -355,3 +462,41 @@ mod tests {
         assert_eq!(seen.len(),128);assert!(calls<=256,"history pop revisited a whole counted chain: {calls}");assert!(environment.is_empty());
     }
 }
+
+#[cfg(test)]mod original_product_tests{
+ use super::*;use crate::macro_expansion::{OriginalMacroToken,OriginalMacroOrigin};use std::sync::atomic::{AtomicUsize,Ordering};
+ fn test_initial_shape(input:crate::initial_environment::OriginalInitialDefinition<'_>,a:&SettingAdmission<'_>)->io::Result<OriginalMacroDefinition<'static>>{let parameters=match &input.metadata().parameters{None=>None,Some(names)=>{let mut rows=OriginalMacroRows::new(a)?;for name in names{let mut text=OriginalMacroText::new(a)?;text.push_str(name,a)?;rows.push(text,a)?;}Some(rows)}};Ok(OriginalMacroDefinition{parameters,variadic:input.metadata().variadic,replacement:OriginalMacroRows::new(a)?})}
+ fn native(value:&str)->Macro{Macro{parameters:None,variadic:false,replacement:value.into()}}
+ fn product(n:i32,a:&SettingAdmission<'_>)->Arc<OriginalDefinitionProduct>{let mut replacement=OriginalMacroRows::new(a).unwrap();replacement.push(OriginalMacroToken{string_mode:dm_syntax::OriginalStringMode::Unknown,punctuation_close:false,lexical_frame:None,lexical_span:None,value:OriginalMacroValue::Int(n),raw_spelling:None,origin:OriginalMacroOrigin{physical:dm_syntax::Span::new(7,8),line:2,byte_column:None,occurrence:0,invocation:false}},a).unwrap();OriginalDefinitionProduct::from_actual_product_using(OriginalMacroDefinition{parameters:None,variadic:false,replacement},a).unwrap()}
+ #[test]fn same_binding_original_epochs_stack_and_undef_restore_exact_native_fingerprint_without_parallel_dictionary(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut env=MacroEnvironment::default();env.insert_stacked("A",native("1"),None);let native_hash=env.fingerprint();assert!(env.actual_original_product("missing").unwrap().is_none());assert_eq!(env.actual_original_product("A").unwrap_err().kind(),io::ErrorKind::Unsupported);env.insert_original_stacked_using("A",native("2"),None,product(2,&a),&a).unwrap();assert_ne!(env.fingerprint(),native_hash);let snapshot=env.clone();let address=snapshot.actual_original_product("A").unwrap().unwrap()as *const _ as usize;env.insert_original_stacked_using("A",native("3"),None,product(3,&a),&a).unwrap();env.remove_stacked("A");assert_eq!(env.fingerprint(),snapshot.fingerprint());assert_eq!(env.actual_original_product("A").unwrap().unwrap()as *const _ as usize,address);env.remove_stacked("A");assert_eq!(env.fingerprint(),native_hash);assert!(env.actual_original_product("A").is_err());assert!(snapshot.actual_original_product("A").unwrap().is_some());drop((env,snapshot));assert_eq!(used.load(Ordering::Acquire),0);}
+ #[test]fn actual_first_io_before_original_binding_install_keeps_previous_map_epoch_and_credit_recovers(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut env=MacroEnvironment::default();env.insert_stacked("A",native("1"),None);let snapshot=env.clone();let original=product(2,&a);let fault=||Err(io::Error::from_raw_os_error(1450));let failed=SettingAdmission::new(&used,1<<20,&fault);let error=env.insert_original_stacked_using("A",native("2"),None,original,&failed).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));assert!(env.shares_storage_with(&snapshot));assert_eq!(env.fingerprint(),snapshot.fingerprint());assert!(env.actual_original_product("A").is_err());assert_eq!(used.load(Ordering::Acquire),0);env.insert_original_stacked_using("A",native("2"),None,product(2,&a),&a).unwrap();drop((env,snapshot));assert_eq!(used.load(Ordering::Acquire),0);}
+ #[test]fn definition_copy_before_argument_demand_keeps_its_real_owned_credit_after_environment_drop(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut env=MacroEnvironment::default();env.insert_original_stacked_using("A",native("7"),None,product(7,&a),&a).unwrap();let copied=env.actual_original_product("A").unwrap().unwrap().cloned_definition_using(&a).unwrap();drop(env);assert!(used.load(Ordering::Acquire)>0);assert!(matches!(copied.replacement.as_slice()[0].value,OriginalMacroValue::Int(7)));drop(copied);assert_eq!(used.load(Ordering::Acquire),0);}
+ #[test]fn actual_definition_docs_share_same_binding_epoch_and_clones_retain_funded_values(){
+  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut docs=OriginalMacroRows::new(&a).unwrap();let mut text=OriginalMacroText::new(&a).unwrap();text.push_str("actual prior documentation",&a).unwrap();docs.push(OriginalMacroDoc{kind:dm_syntax::OriginalCommentKind::LineFollowing,text:OriginalMacroTextValue::Owned(text),origin:OriginalMacroOrigin{physical:dm_syntax::Span::new(2,9),line:1,byte_column:None,occurrence:4,invocation:false},lexical_frame:None,lexical_span:None},&a).unwrap();let definition=OriginalMacroDefinition{parameters:None,variadic:false,replacement:OriginalMacroRows::new(&a).unwrap()};let product=OriginalDefinitionProduct::from_actual_product_with_docs_using(definition,docs,&a).unwrap();let mut env=MacroEnvironment::default();env.insert_original_stacked_using("DOC",native(""),None,product,&a).unwrap();let snapshot=env.clone();let cloned=env.actual_original_product("DOC").unwrap().unwrap().cloned_docs_using(&a).unwrap();env.remove_stacked("DOC");assert!(env.actual_original_product("DOC").unwrap().is_none());assert_eq!(snapshot.actual_original_product("DOC").unwrap().unwrap().docs()[0].text.get(),"actual prior documentation");drop((env,snapshot));assert!(used.load(Ordering::Acquire)>0);assert_eq!(cloned.as_slice()[0].origin.occurrence,4);drop(cloned);assert_eq!(used.load(Ordering::Acquire),0);
+ }
+ #[test]fn actual_initial_table_walk_issues_each_final_default_and_caller_binding_once_with_no_hidden_shadow_epoch(){
+  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,4<<20,&||Ok(()));let mut finals=std::collections::BTreeMap::new();crate::initial_environment::install(crate::InitialEnvironment::OriginalChecker0290,&mut finals);finals.insert("TRUE".into(),native("7"));finals.insert("CALLER".into(),native("99"));let caller=std::collections::BTreeMap::from([("TRUE".to_owned(),"7".to_owned()),("CALLER".to_owned(),"99".to_owned())]);let mut seen=std::collections::BTreeMap::new();let mut env=MacroEnvironment::default();
+  env.install_original_initial_using(crate::InitialEnvironment::OriginalChecker0290,&finals,&caller,&a,&mut|input,a|{*seen.entry(input.name().to_owned()).or_insert(0usize)+=1;assert_eq!(input.replacement_text(),finals[input.name()].replacement);let parameters=match &input.metadata().parameters{None=>None,Some(names)=>{let mut rows=OriginalMacroRows::new(a)?;for name in names{let mut text=OriginalMacroText::new(a)?;text.push_str(name,a)?;rows.push(text,a)?;}Some(rows)}};Ok(OriginalMacroDefinition{parameters,variadic:input.metadata().variadic,replacement:OriginalMacroRows::new(a)?})}).unwrap();
+  assert_eq!(seen.len(),105);assert!(seen.values().all(|n|*n==1));assert_eq!(env.get("TRUE").unwrap().replacement,"7");assert!(env.actual_original_product("TRUE").unwrap().is_some());let mut count=0;env.visit_storage(|_,_,_,_,_|count+=1);assert_eq!(count,105);env.remove_stacked("TRUE");assert!(env.get("TRUE").is_none(),"bootstrap must not invent a second hidden default epoch");assert!(env.actual_original_product("missing").unwrap().is_none());drop(env);assert_eq!(used.load(Ordering::Acquire),0);
+ }
+ #[test]fn initial_factory_io_or_forged_physical_product_preserves_empty_environment_and_fresh_issuance_recovers(){
+  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let mut finals=std::collections::BTreeMap::new();crate::initial_environment::install(crate::InitialEnvironment::OriginalChecker0290,&mut finals);finals.insert("FIRST".into(),native("1"));finals.insert("SECOND".into(),native("2"));let caller=std::collections::BTreeMap::from([("FIRST".to_owned(),"1".to_owned()),("SECOND".to_owned(),"2".to_owned())]);let mut env=MacroEnvironment::default();let mut calls=0;
+  assert_eq!(env.install_original_initial_using(crate::InitialEnvironment::OriginalChecker0290,&finals,&caller,&a,&mut|_,a|{calls+=1;if calls==2{return Err(io::Error::from_raw_os_error(1450))}Ok(OriginalMacroDefinition{parameters:None,variadic:false,replacement:OriginalMacroRows::new(a)?})}).unwrap_err().raw_os_error(),Some(1450));assert!(env.is_empty());assert_eq!(used.load(Ordering::Acquire),0);
+  assert_eq!(env.install_original_initial_using(crate::InitialEnvironment::OriginalChecker0290,&finals,&caller,&a,&mut|_,a|{let mut replacement=OriginalMacroRows::new(a)?;replacement.push(OriginalMacroToken{string_mode:dm_syntax::OriginalStringMode::Unknown,punctuation_close:false,lexical_frame:None,lexical_span:Some(dm_syntax::Span::new(0,1)),value:OriginalMacroValue::Int(1),raw_spelling:None,origin:OriginalMacroOrigin{physical:dm_syntax::Span::default(),line:0,byte_column:None,occurrence:0,invocation:false}},a)?;Ok(OriginalMacroDefinition{parameters:None,variadic:false,replacement})}).unwrap_err().kind(),io::ErrorKind::InvalidInput);assert!(env.is_empty());assert_eq!(used.load(Ordering::Acquire),0);
+  env.install_original_initial_using(crate::InitialEnvironment::OriginalChecker0290,&finals,&caller,&a,&mut|input,a|test_initial_shape(input,a)).unwrap();assert!(env.actual_original_product("SECOND").unwrap().is_some());let before=env.fingerprint();assert_eq!(env.install_original_initial_using(crate::InitialEnvironment::OriginalChecker0290,&finals,&caller,&a,&mut|_,_|panic!("nonempty environment must not demand factory")).unwrap_err().kind(),io::ErrorKind::InvalidInput);assert_eq!(env.fingerprint(),before);drop(env);assert_eq!(used.load(Ordering::Acquire),0);
+ }
+}
+
+#[cfg(test)]mod original_name_point_data_tests{
+ use super::*;use std::sync::atomic::{AtomicUsize,Ordering};
+ #[test]fn named_product_location_data_is_independent_of_replacement_and_initial_absence(){
+  let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,1<<20,&||Ok(()));let make=||OriginalMacroDefinition{parameters:None,variadic:false,replacement:OriginalMacroRows::new(&a).unwrap()};
+  let initial=OriginalDefinitionProduct::from_actual_product_using(make(),&a).unwrap();assert!(initial.definition_name().is_none());
+  let origin=OriginalMacroOrigin{physical:dm_syntax::Span::new(31,35),line:7,byte_column:Some(9),occurrence:2,invocation:true};let name=OriginalMacroToken{string_mode:dm_syntax::OriginalStringMode::Unknown,punctuation_close:false,lexical_frame:None,lexical_span:None,raw_spelling:None,value:OriginalMacroValue::Ident{spelling:OriginalMacroTextValue::Borrowed("NAME"),whitespace:false},origin};
+  let product=OriginalDefinitionProduct::from_named_actual_product_using(name,make(),OriginalMacroRows::new(&a).unwrap(),&a).unwrap();assert_eq!(product.definition_name().unwrap().origin,origin);assert_eq!(product.definition.replacement.len(),0);let mut env=MacroEnvironment::default();let metadata=Macro{parameters:None,variadic:false,replacement:String::new()};assert_eq!(env.insert_original_stacked_using("OTHER",metadata,None,product.clone(),&a).unwrap_err().kind(),io::ErrorKind::InvalidInput);assert_eq!(env.len(),0);drop((env,product,initial));assert_eq!(used.load(Ordering::Acquire),0);
+ }
+}
+
+#[path="original_environment_allocation.rs"]
+mod original_allocation;
+pub(super) use original_allocation::OriginalEnvironment;

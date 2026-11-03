@@ -62,8 +62,10 @@ fn diagnostics(
     tree: &SemanticTree,
     walk: checker_expression_visit::Walk<'_>,
 ) -> Result<Vec<Diagnostic>, String> {
-    let mut out = Vec::new();
-    for event in walk.events {
+    let mut out=Vec::new();visit_events(tree,walk.events,|row|{out.push(row);Ok::<(),String>(())})?;Ok(out)
+}
+pub(crate) fn visit_events<'a,E:From<String>+for<'e>From<&'e str>>(tree:&SemanticTree,events:impl IntoIterator<Item=Event<'a>>,mut emit:impl FnMut(Diagnostic)->Result<(),E>)->Result<(),E>{
+    for event in events {
         let Event::MissingCall {
             expression,
             at,
@@ -80,7 +82,7 @@ fn diagnostics(
                 .text(receiver)
                 .ok_or("missing receiver source spelling")?
         };
-        out.push(Diagnostic {
+        emit(Diagnostic {
             family: "undefined_proc",
             severity: Severity::Error,
             span: at,
@@ -93,9 +95,9 @@ fn diagnostics(
                 format!("undefined proc: {name:?} on {owner}")
             },
             notes: Vec::new(),
-        });
+        })?;
     }
-    Ok(out)
+    Ok(())
 }
 #[cfg(test)]
 #[path = "checks_undefined_proc_tests.rs"]

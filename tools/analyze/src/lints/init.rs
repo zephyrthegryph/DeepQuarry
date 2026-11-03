@@ -40,8 +40,8 @@ use crate::util::{before_slashes, py_lstrip};
 const BASELINE: &str = "tools/ci/init_baseline.txt";
 
 static META: Meta = Meta {
-    name: "init",
-    group: "",
+    name: crate::allow_registry_fields::init::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::init::SCOPE_META_0.group,
     label: "init",
     legacy: "tools/ci/init_lint.py",
     // os.walk of code/ and maps/: dot-files and dot-directories included.
@@ -70,65 +70,11 @@ static META: Meta = Meta {
         RuleMeta { name: "table_init_overrides", hint: "set init_from_table = FALSE on a type that overrides Initialize()" },
     ],
     allow: crate::allow_registry_fields::init::ALLOW_0,
-    lists: &["init_roots"],
+    lists: crate::allow_registry_fields::init::SCOPE_META_0.lists,
 };
 
-/// One file's part of the table-init pass: its `init_from_table` flags `(type, on)` in file order,
-/// and its `Initialize()` / `LateInitialize()` headers `(line, type)` that no ALLOW(init) kept.
-#[derive(Serialize, Deserialize, Default, PartialEq)]
-struct TableFacts {
-    flags: Vec<(String, bool)>,
-    headers: Vec<(u32, String)>,
-}
-
-fn table_facts(f: &SourceFile) -> TableFacts {
-    let init_header = pat_match!(r"^(/[\w/]+)/Initialize\s*\(");
-    let late_header = pat_match!(r"^(/[\w/]+)/LateInitialize\s*\(");
-    let type_block = pat_match!(r"^(/[\w/]+)\s*(//.*)?$");
-    let table_flag = pat_match!(r"^\s+init_from_table\s*=\s*(TRUE|FALSE|1|0)\b");
-    let mut out = TableFacts::default();
-    let lines = py_splitlines(f.text());
-    let mut block: Option<String> = None;
-    for (i, line) in lines.iter().enumerate() {
-        let number = i + 1;
-        let line = *line;
-        if let Some(head) = type_block.captures(line) {
-            if !line.contains('(') {
-                block = Some(head.s(1).to_string());
-                continue;
-            }
-        }
-        if col0(line) {
-            block = None;
-        }
-        if let Some(flag) = table_flag.captures(line) {
-            if let Some(b) = &block {
-                out.flags.push((b.clone(), matches!(flag.s(1), "TRUE" | "1")));
-            }
-        }
-        let header = init_header.captures(line).or_else(|| late_header.captures(line));
-        if let Some(h) = header {
-            // Asked for every header, not only one that would count.
-            if !allowed_in_recorded(f, &lines, number, "init") {
-                out.headers.push((number as u32, h.s(1).to_string()));
-            }
-        }
-    }
-    out
-}
-
-/// The reason codes an `ALLOW(init/CODE)` keep may carry (also listed in `[lint.init] reason_codes`):
-/// INSTANCE_STATE (a value only this instance has: a map edit, a random roll, a copy of where it is built), CTOR_ARGS (it
-/// consumes extra constructor arguments), FRAMEWORK (a base of the init chain itself).
-pub const REASON_CODES: &[&str] = &["INSTANCE_STATE", "CTOR_ARGS", "FRAMEWORK"];
-
-/// The code of an `ALLOW(init/CODE): reason` on `line`, Some("") for a bare `ALLOW(init): reason`, None for no keep.
-fn init_code(line: &str) -> Option<String> {
-    match crate::allow::parse(line) {
-        Some(a) if !a.reason.is_empty() && a.names.contains("init") => Some(a.codes.get("init").cloned().unwrap_or_default()),
-        _ => None,
-    }
-}
+use crate::init_policy::{TableFacts,table_facts,init_code,text_owner,text_header,Def};
+pub use crate::init_policy::{REASON_CODES,init_line_target};
 
 struct Init;
 
@@ -230,57 +176,16 @@ impl Init {
         }
         for f in walk_order(&sel) {
             for (number, path) in &by_rel[f.rel.as_str()].headers {
-                let parts: Vec<&str> = path.split('/').collect();
-                for cut in (2..=parts.len()).rev() {
-                    let ancestor = parts[..cut].join("/");
-                    if let Some(&on) = flags.get(ancestor.as_str()) {
-                        // The type that turns the flag on keeps its Initialize() as the fallback
-                        // (a colour or extra New() args) and mirrors it in table_initialize().
-                        if on && cut != parts.len() {
-                            out.site_in("table_init_overrides", &f.rel, *number as usize);
-                        }
-                        break;
-                    }
-                }
+                if crate::init_policy::table_violation_using(path,&|ancestor|flags.get(ancestor).copied(),&mut crate::key_policy_control::Compatibility).unwrap_or_else(|never|match never{}){out.site_in("table_init_overrides",&f.rel,*number as usize); }
             }
         }
     }
 
     /// One definition's sites: the header (its ALLOW(init/CODE) keep) and, for an Initialize(), its body's world reads.
-    fn judge_def(&self, f: &SourceFile, lines: &[&str], number: usize, kind: Def, owner: &str, out: &mut Sink) {
-        match kind {
-            Def::TurfMaterialize => out.site("turf_on_materialize", number),
-            Def::Late => out.site("late_initialize", number),
-            Def::Init => {
-                let line = lines.get(number - 1).copied().unwrap_or("");
-                let above = if number > 1 { lines[number - 2] } else { "" };
-                let code = init_code(line).or_else(|| if py_lstrip(above).starts_with("//") { init_code(above) } else { None });
-                match code {
-                    Some(c) if REASON_CODES.contains(&c.as_str()) => {
-                        allowed_in(out, f, lines, number, "init"); // records the annotation as used
-                    }
-                    Some(c) => out.site_msg(
-                        "initialize",
-                        number,
-                        format!("ALLOW(init{}) needs a reason code: ALLOW(init/CODE), CODE one of {}", if c.is_empty() { String::new() } else { format!("/{c}") }, REASON_CODES.join(", ")),
-                    ),
-                    None => {}
-                }
-                let world_read = crate::pat!(r"(?<![\w.])(?:o?range|view)\s*\(|\bGetAbove\s*\(|\bGetBelow\s*\(|\bGLOB\.|\bSTART_PROCESSING\s*\(");
-                for n in crate::lifecycle_source::body_lines(lines, number as u32) {
-                    let code = before_slashes(lines[n - 1]);
-                    let stmt = code.trim();
-                    let super_call = matches!(stmt.replace(' ', "").as_str(), ".=..()" | "..()" | "return..()" | "return" | "return.");
-                    if !stmt.is_empty() && !super_call {
-                        // Identified by the type, the proc and the target the line writes or calls, not by its text: see [`init_line_target`].
-                        out.site_decl("init_lines", &f.rel, n, String::new(), format!("{}::Initialize::{}", owner, init_line_target(stmt)));
-                    }
-                    if world_read.is_match(code) && !allowed_in(out, f, lines, n, "init") {
-                        out.site("world_reads", n);
-                    }
-                }
-            }
-        }
+    fn judge_def(&self,f:&SourceFile,lines:&[&str],number:usize,kind:Def,owner:&str,out:&mut Sink){
+        struct Legacy<'a>{file:&'a SourceFile,sink:&'a mut Sink}
+        impl crate::init_policy::Output<std::convert::Infallible> for Legacy<'_>{fn site(&mut self,rule:&'static str,line:usize,message:String,identity:String)->Result<(),std::convert::Infallible>{self.sink.site_decl(rule,&self.file.rel,line,message,identity);Ok(())}fn allowed(&mut self,lines:&[&str],line:usize)->Result<bool,std::convert::Infallible>{Ok(allowed_in(self.sink,self.file,lines,line,"init"))}}
+        crate::init_policy::judge_definition_using(lines,number,kind,owner,&mut crate::key_policy_control::Compatibility,&mut Legacy{file:f,sink:out}).unwrap_or_else(|never|match never{})
     }
 
     /// The text rule, for a tree the model cannot parse: headers found by their `/type/Initialize(` text, a body every
@@ -303,93 +208,6 @@ impl Init {
 /// type is a design change (doc/rewrite/proposals/init_phase0.md, D1).
 fn init_roots<'a>(cx: &Cx<'a>) -> std::collections::HashSet<&'a str> {
     cx.list("init_roots").iter().filter_map(|e| e.split_once(" = ").map(|(t, _)| t.trim())).collect()
-}
-
-/// The owner a header line names (`/obj/x/Initialize(` is `/obj/x`); empty when the line writes none.
-fn text_owner(line: &str) -> String {
-    let init_header = pat_match!(r"^(/[\w/]+)/Initialize\s*\(");
-    init_header.captures(line).map(|c| c.s(1).to_string()).unwrap_or_default()
-}
-
-/// The atom built-ins `SETTER()`-registered in code/game/atom/atom_visual.dm.
-const VISUAL_SETTER_VARS: &[&str] = &["color", "alpha", "layer", "plane", "pixel_x", "pixel_y", "pixel_w", "pixel_z", "appearance_flags", "gender"];
-
-/// What an `init_lines` statement is about, for its identity (`owner::Initialize::target`):
-///
-/// * a write `x = v`, `src.x += v`, `var/T/x = v` or the call of its setter `set_x(v)`: the var `x` (so converting a write to its setter,
-///   which the `tracked` lint asks for, is the same site; `a.b = v` is `a.b`);
-/// * a call `proc(args)`, `src.proc(args)`, `obj.proc(args)`, `PROC_REF` macros included: the callee;
-/// * control flow (`if`, `else`, `for`, `while`, `switch`, ...): the keyword, so editing a condition keeps the site;
-/// * `return v`: `return`;
-/// * anything else (the argument lines of a multi-line call, a bare expression): `expr`.
-///
-/// Sites that share a target share an identity; the ratchet counts them per identity, so a fix still shrinks the count and a new
-/// line of the same target still fails once the count is exceeded.
-pub fn init_line_target(stmt: &str) -> String {
-    let t = stmt.trim();
-    let control = pat_match!(r"^(else\s+if|if|else|for|while|switch|do|try|catch|spawn)\b");
-    if let Some(c) = control.captures(t) {
-        return c.s(1).split_whitespace().collect::<Vec<_>>().join(" ");
-    }
-    if pat_match!(r"^return\b").is_match(t) {
-        return "return".to_string();
-    }
-    let t = t.strip_prefix("src.").unwrap_or(t);
-    // `var/list/x = ...` / `var/x`: the declared name.
-    let decl = pat_match!(r"^var/(?:[\w/]*/)?(\w+)\s*(?:=|$|\[)");
-    if let Some(c) = decl.captures(t) {
-        return c.s(1).to_string();
-    }
-    let assign = pat_match!(r"^(\.|[A-Za-z_][\w.\[\]]*)\s*(?:\|\||&&|<<|>>|[-+*/%|&^])?=(?:[^=]|$)");
-    if let Some(c) = assign.captures(t) {
-        return c.s(1).to_string();
-    }
-    let call = pat_match!(r"^([A-Za-z_][\w.:]*)\s*\(");
-    if let Some(c) = call.captures(t) {
-        let callee = c.s(1);
-        if let Some(var) = callee.strip_prefix("set_") {
-            if !var.is_empty() && !var.contains('.') {
-                return var.to_string();
-            }
-        }
-        // `obj.set_color(v)` is the write `obj.color = v` converted to its registered visual setter (code/game/atom/atom_visual.dm): the same
-        // site (`a.b`). Only those: `cell.set_charge(v)` is a call like any other.
-        if let Some((recv, last)) = callee.rsplit_once('.') {
-            if let Some(var) = last.strip_prefix("set_") {
-                if VISUAL_SETTER_VARS.contains(&var) && !recv.is_empty() {
-                    return format!("{recv}.{var}");
-                }
-            }
-        }
-        return callee.to_string();
-    }
-    "expr".to_string()
-}
-
-/// A definition header as the text rule reads one (`/type/Initialize(` at column 0; a commented-out line is not one).
-fn text_header(line: &str) -> Option<Def> {
-    let init_header = pat_match!(r"^(/[\w/]+)/Initialize\s*\(");
-    let late_header = pat_match!(r"^(/[\w/]+)/LateInitialize\s*\(");
-    let turf_materialize = pat_match!(r"^/turf(/[\w/]*)?/on_materialize\s*\(");
-    if line.starts_with("//") {
-        return None;
-    }
-    if turf_materialize.is_match(line) {
-        Some(Def::TurfMaterialize)
-    } else if late_header.is_match(line) {
-        Some(Def::Late)
-    } else if init_header.is_match(line) {
-        Some(Def::Init)
-    } else {
-        None
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Def {
-    Init,
-    Late,
-    TurfMaterialize,
 }
 
 pub fn register(reg: &mut Registry) {

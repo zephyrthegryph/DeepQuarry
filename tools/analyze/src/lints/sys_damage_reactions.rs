@@ -206,5 +206,5 @@ fn scan(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
 }
 
 pub fn register(reg: &mut Registry) {
-    register_module(reg, SysModule { name: "damage_reactions", rules: RULES, file_scan: Some(scan), ..SysModule::DEFAULT });
+    register_module(reg, SysModule { name: crate::allow_registry_fields::sys_damage_reactions::SCOPE_MODULE_NAME, rules: RULES, file_scan: Some(scan), ..SysModule::DEFAULT });
 }

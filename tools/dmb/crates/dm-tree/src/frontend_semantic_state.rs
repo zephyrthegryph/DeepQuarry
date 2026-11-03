@@ -38,7 +38,10 @@ impl std::ops::Deref for RememberedFrontend {
     fn deref(&self)->&Self::Target { match self { Self::Compiler(row)=>row,Self::Analysis(row)=>row.preparation_frontend() } }
 }
 impl RememberedFrontend {
+    pub(super) fn original_primary(&self)->Option<Arc<super::original_declaration_input::OriginalPrimaryRetention>>{match self{Self::Analysis(owner)=>owner.preparation_original_primary(),Self::Compiler(_)=>None}}
+    pub(super) fn diagnostic_receipt(&self,tree:&Arc<SemanticTree>)->Option<crate::diagnostic_declarations::DiagnosticDeclarationReceipt>{match self{Self::Analysis(row)=>row.preparation_receipt(tree),Self::Compiler(_)=>Some(crate::diagnostic_declarations::DiagnosticDeclarationReceipt::reused_valid_tree(tree))}}
     pub(super) fn diagnostic_records(&self)->Option<Arc<DiagnosticRetainedRecords>> { match self {Self::Analysis(row)=>row.preparation_records(),Self::Compiler(_)=>None} }
+    pub(super) fn original_variables(&self)->Option<crate::checker_builtins::OriginalVariableDeclarations>{match self{Self::Analysis(row)=>row.preparation_original_variables(),Self::Compiler(_)=>None}}
 }
 struct Entry {
     index: crate::declaration_contributions::KeyedDeclarations,
@@ -89,7 +92,14 @@ impl RetainedSemanticTree {
     ) -> Option<RememberedFrontend> {
         let (path, remembered, revision) = self.previous.as_ref()?;
         (path == project && remembered == defines && revision.plan.initial_environment==environment
+            && !matches!(revision,RememberedFrontend::Analysis(owner)if owner.preparation_purpose()==super::DiagnosticPreparationPurpose::OriginalAnalyzePrefix)
             && matches!(revision,RememberedFrontend::Analysis(_))==(diagnostic&&environment==dm_preprocess::InitialEnvironment::OriginalChecker0290)).then(|| revision.clone())
+    }
+    /// One predecessor cache/owner. A complete original recipe can lend both
+    /// diagnostic roles; a primary prefix can only be lent to Analyze.
+    pub(super) fn previous_original_frontend(&self,project:&std::path::Path,defines:&std::collections::BTreeMap<String,String>,allow_prefix:bool)->Option<RememberedFrontend>{
+      let(path,remembered,revision)=self.previous.as_ref()?;if path!=project||remembered!=defines{return None}
+      let original=revision.original_primary()?;if original.frontier().is_some()&&!allow_prefix{return None}Some(revision.clone())
     }
     /// Stage source-neutral declaration claims for this request, independently
     /// of the current semantic/query tree. Dropping the guard aborts claims.

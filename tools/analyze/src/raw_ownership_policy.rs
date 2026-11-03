@@ -153,15 +153,27 @@ pub fn visit_file_events(
     code: &View,
     mut emit: impl FnMut(IdxEv) -> Result<(), String>,
 ) -> Result<(), String> {
+    try_visit_file_events(rel,raw,code,&mut||Ok::<(),String>(()),emit)
+}
+/// SAME structural source events; failure/control do not become strings.
+pub fn try_visit_file_events<E>(rel:&str,raw:&View,code:&View,checkpoint:&mut impl FnMut()->Result<(),E>,emit:impl FnMut(IdxEv)->Result<(),E>)->Result<(),E>{
+    struct OriginalPoll<'a,E,F>{checkpoint:&'a mut F,error:std::marker::PhantomData<fn()->E>}
+    impl<E,F:FnMut()->Result<(),E>> crate::key_policy_control::Control for OriginalPoll<'_,E,F>{type Error=E;const CHECKED:bool=false;fn checkpoint(&mut self)->Result<(),E>{(self.checkpoint)()}fn reserve(&mut self,_:usize)->Result<(),E>{Ok(())}fn overflow(&mut self)->E{unreachable!("original path does not evaluate resource bounds")}fn allocation_failed(&mut self)->E{unreachable!("original allocation APIs unchanged")}}
+    try_visit_file_events_funded(rel,raw,code,&mut OriginalPoll{checkpoint,error:std::marker::PhantomData},emit)
+}
+/// Same original branches/order; only actual matched constructor temporaries are prefunded.
+pub fn try_visit_file_events_funded<C:crate::key_policy_control::Control>(rel:&str,raw:&View,code:&View,c:&mut C,mut emit:impl FnMut(IdxEv)->Result<(),C::Error>)->Result<(),C::Error>{
     let mut current: Option<String> = None;
     let mut declaring: Option<String> = None;
     for (no, line) in code.numbered() {
+        c.checkpoint()?;
         let first = line.chars().next();
         if matches!(first, Some('"') | Some('\'')) {
             continue; // the tail of a multi-line string, not a new top-level line
         }
         if declaring.is_some() && first.map(is_py_space).unwrap_or(false) {
             if let Some(m) = DECLARE_CALL.captures(raw.line(no)) {
+                crate::key_policy_control::temporary(c,0,||declaring.as_ref()?.len().checked_add(m.s(1).len())?.checked_add(m.s(2).len())?.checked_add(m.s(3).len())?.checked_add(rel.len())?.checked_mul(16)?.checked_add(1024))?;
                 let owner = declaring.clone().unwrap();
                 emit(decl_ev(&owner, m.s(1), m.s(2), m.s(3), rel, no))?;
             }
@@ -170,21 +182,25 @@ pub fn visit_file_events(
         declaring = None;
         if first.map(|c| !is_py_space(c)).unwrap_or(false) {
             if let Some(m) = DECLARE_HEAD.captures(line) {
+                crate::key_policy_control::temporary(c,0,||m.s(1).len().checked_mul(4)?.checked_add(128))?;
                 declaring = Some(m.s(1).to_string());
                 current = None;
                 continue;
             }
             if let Some(m) = REGISTRY.captures(py_strip(raw.line(no))) {
+                crate::key_policy_control::temporary(c,0,||m.s(1).len().checked_mul(4)?.checked_add(128))?;
                 emit(IdxEv::Registry(m.s(1).to_string()))?;
                 continue;
             }
             if let Some(m) = ABS_MEMBER.captures(line) {
+                crate::key_policy_control::temporary(c,0,||m.s(1).len().checked_add(m.s(2).len())?.checked_add(m.s(3).len())?.checked_mul(32)?.checked_add(1024))?;
                 emit(member_ev(m.s(1), m.s(2), m.s(3)))?;
                 current = None;
                 continue;
             }
             if let Some(m) = OM_FIELD_DECL.captures(line) {
                 // OM_FIELD(T, F, ...) / OM_FIELD_TYPED|_VIEW(T, VT, F, ...) declare T/var/F
+                crate::key_policy_control::temporary(c,0,||m.whole().len().checked_mul(32)?.checked_add(1024))?;
                 let vt = if m.matched(2) && !m.s(2).is_empty() {
                     format!("{}/", m.s(2).trim_matches('/'))
                 } else {
@@ -197,6 +213,7 @@ pub fn visit_file_events(
             }
             // GLOBAL_*(x, ...) declares a var of /datum/controller/global_vars through a macro.
             if let Some(m) = GLOBAL_DECL.captures(line) {
+                crate::key_policy_control::temporary(c,0,||m.whole().len().checked_mul(32)?.checked_add(1024))?;
                 let (kind, name) = (m.s(1), m.s(2));
                 let ty = if m.matched(3) {
                     m.s(3).trim_matches('/')
@@ -223,18 +240,22 @@ pub fn visit_file_events(
             }
             // SYSTEM_DEF(x) declares /datum/system/x through a macro: its indented body is that type's block.
             if let Some(m) = crate::pat!(r"^SYSTEM_DEF\((\w+)\)\s*$").captures(py_rstrip(line)) {
+                crate::key_policy_control::temporary(c,0,||m.s(1).len().checked_mul(4)?.checked_add(256))?;
                 current = Some(format!("/datum/system/{}", m.s(1)));
                 continue;
             }
             let m = TYPE_LINE.captures(py_rstrip(line));
+            if let Some(m)=&m{crate::key_policy_control::temporary(c,0,||m.s(1).len().checked_mul(4)?.checked_add(128))?;}
             current = match m {
                 Some(m) if !line.contains('(') => Some(m.s(1).to_string()),
                 _ => None,
             };
             continue;
         }
+        if let Some(cur)=current.as_ref(){crate::key_policy_control::temporary(c,0,||cur.len().checked_mul(4)?.checked_add(128))?;}
         if let Some(cur) = current.clone() {
             if let Some(m) = MEMBER.captures(line) {
+                crate::key_policy_control::temporary(c,0,||cur.len().checked_add(m.s(1).len())?.checked_add(m.s(2).len())?.checked_mul(32)?.checked_add(1024))?;
                 emit(member_ev(&cur, m.s(1), m.s(2)))?;
             }
         }
@@ -331,3 +352,17 @@ mod tests {
         assert_eq!(streamed, file_events(&f.rel, f.raw(), f.code()));
     }
 }
+
+// Same original accessor pattern, shared with the lexical schema consumer.
+pub const VAR_ARG: &str = r#"(?:"|nameof\((?:/[\w/]+::|\w+\.)?)(\w+)(?:"|\))"#;
+pub static ACCESSOR: LazyLock<Pat> = LazyLock::new(|| {
+    Pat::new(&format!(
+        r"\b(own_set|own_take|own_add|own_remove|own_put|own_take_member|own_clear|own_transfer|rel_set|rel_add|rel_remove|rel_clear|rel_link|rel_unlink|proto_set|proto_private|shared_set)\(\s*([\w.]+)\s*,\s*{}",
+        VAR_ARG
+    ))
+});
+
+/// Exact original inherited lookup order, borrowing source path slices instead
+/// of rebuilding a second parent roster. No semantic hierarchy is inferred.
+pub fn visit_parents_using<C:crate::key_policy_control::Control>(path:&str,c:&mut C,emit:&mut dyn FnMut(&str,&mut C)->Result<(),C::Error>)->Result<(),C::Error>{visit_parents_until_using(path,c,&mut|parent,c|{emit(parent,c)?;Ok(true)}).map(|_|())}
+pub fn visit_parents_until_using<C:crate::key_policy_control::Control>(path:&str,c:&mut C,emit:&mut dyn FnMut(&str,&mut C)->Result<bool,C::Error>)->Result<bool,C::Error>{let mut current=path;let mut slashes=path.bytes().filter(|byte|*byte==b'/').count();let mut root=None;while !current.is_empty()&&slashes>=1{c.checkpoint()?;if !emit(current,c)?{return Ok(false)}if slashes==1{root=Some(current);break}let cut=current.rfind('/').expect("actual counted slash");current=&current[..cut];slashes-=1;}let implicit:&[&str]=match root{Some("/obj"|"/mob")=>&["/atom/movable","/atom","/datum"],Some("/turf"|"/area")=>&["/atom","/datum"],Some("/atom")=>&["/datum"],_=>&[]};for parent in implicit{c.checkpoint()?;if !emit(parent,c)?{return Ok(false)}}Ok(true)}

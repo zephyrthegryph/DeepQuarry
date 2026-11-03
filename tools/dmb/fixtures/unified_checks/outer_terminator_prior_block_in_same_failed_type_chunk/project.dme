@@ -1,0 +1,5 @@
+/datum/host
+    proc/early()
+        return 1
+    proc/bad(x=)
+        return 2

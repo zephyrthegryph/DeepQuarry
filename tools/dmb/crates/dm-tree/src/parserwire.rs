@@ -11,7 +11,8 @@ use serde::{Deserialize, Serialize};
 // Revision 12 distinguishes safe dot and safe colon expression selectors.
 // Revision 13 stores the payload deflated: it is retained once per declaration chunk by the fragment memo and the
 // expansion record, and the encoded AST is highly repetitive.
-pub(super) const VERSION: u32 = 14;
+// Revision 15 preserves multiline constructor modifiers and body prefab scope.
+pub(super) const VERSION: u32 = 15;
 #[derive(Serialize, Deserialize)]
 struct Node {
     kind: u8,
@@ -122,6 +123,7 @@ fn decode_item(node: Node, source: &str, depth: usize) -> Option<Item> {
         // parse/private retained owner must mint authority; no silent fallback.
         declaration_cursor: None,
         checker_qualifiers: dm_syntax::UNKNOWN_HEADER_QUALIFIERS,
+            original_outer_terminator: None,
         indent: node.indent,
         children: node
             .children
@@ -250,6 +252,7 @@ mod tests {
         fn unissue(items: &mut [Item]) {
             for item in items {
                 item.declaration_cursor = None;
+                item.original_outer_terminator = None;
                 item.checker_qualifiers = dm_syntax::UNKNOWN_HEADER_QUALIFIERS;
                 unissue(&mut item.children);
             }
@@ -263,6 +266,7 @@ mod tests {
                     dm_syntax::UNKNOWN_HEADER_QUALIFIERS
                 );
                 assert!(item.declaration_cursor.is_none());
+                assert!(item.original_outer_terminator.is_none());
                 portable_is_unissued(&item.children);
             }
         }
@@ -294,4 +298,8 @@ mod tests {
             dm_preprocess::regions::FragmentRecord::lookup_key(VERSION, source),
         );
     }
+    #[test]fn previous_modifier_grammar_fragment_and_relabelled_payload_cannot_replay(){
+        const PREVIOUS:u32=14;let source="/proc/probe()\n    new /datum/plain{\n        value=1\n    }()\n";let ast=dm_syntax::parse_declaration_skeleton(source);let items=super::super::compact_declarations(ast.items,0);let current=encode_with_facts(&items,&[],0,None).unwrap();let raw=inflate(&current).unwrap();let mut old:Payload=dm_wire::decode(VERSION,&raw,raw.len()).unwrap();old.version=PREVIOUS;let previous=deflate(&dm_wire::encode(PREVIOUS,&old).unwrap()).unwrap();assert!(decode_with_facts(&previous,source).is_none());let relabelled=deflate(&dm_wire::encode(VERSION,&old).unwrap()).unwrap();assert!(decode_with_facts(&relabelled,source).is_none());assert_ne!(dm_preprocess::regions::FragmentRecord::lookup_key(PREVIOUS,source),dm_preprocess::regions::FragmentRecord::lookup_key(VERSION,source));
+    }
+
 }

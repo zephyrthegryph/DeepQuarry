@@ -159,11 +159,27 @@ mod initial_environment;
 pub use initial_environment::InitialEnvironment;
 
 pub trait SourceProvider {
+    /// Opt-in loan only from a concrete statically safe Original batch issuer.
+    /// Generic and single-thread providers remain unissued; no unsafe Sync cast.
+    fn original_batch_source(&self)->std::io::Result<Option<&(dyn SourceProvider+Sync)>> { Ok(None) }
     /// Exact initial macro dialect requested by this actual pipeline. This is
     /// configuration only; it cannot issue a current source or completed frame.
     fn initial_environment(&self)->InitialEnvironment{InitialEnvironment::Native5161687}
 
     fn read(&self, path: &Path) -> Result<String, String>;
+    /// Actual Original token demand bypasses native whole-line preparation.
+    /// The caller supplies its existing input-family headroom and predecode
+    /// admission. A max scalar alone is NOT an allocation/resource grant.
+    /// Unsupported issuer is NotConnected; None is actual recorded absence.
+    /// The Original driver must never fall back to Native preparation.
+    fn original_raw_source_checked(&self,_path:&Path,_max_bytes:usize,_before_decode:&mut dyn FnMut(usize,bool,bool)->std::io::Result<()>)->std::io::Result<Option<SourceAcquisitionLease>>{Err(std::io::Error::new(std::io::ErrorKind::NotConnected,"provider cannot issue actual Original raw source"))}
+    /// Both hooks belong to the actual raw issuer. Unknown providers must not
+    /// implement this by calling an unadmitted read and funding it afterward.
+    fn original_raw_source_admitted(&self,_path:&Path,_max_bytes:usize,_before_read:&mut dyn FnMut(usize)->std::io::Result<()>,_before_decode:&mut dyn FnMut(OriginalRawAllocationPlan<'_>)->std::io::Result<()>,_acquired:&mut dyn FnMut(&SourceAcquisitionLease)->std::io::Result<()>)->std::io::Result<Option<SourceAcquisitionLease>>{Err(std::io::Error::new(std::io::ErrorKind::NotConnected,"provider cannot issue pre-allocation admitted Original raw source"))}
+    /// Lend raw bytes from that SAME current acquisition. No reconstruction,
+    /// filesystem reopen, parser or PreparedSource is permitted at this seam.
+    fn original_source_bytes<'a>(&'a self,_lease:&'a SourceAcquisitionLease)->std::io::Result<Option<&'a[u8]>>{Ok(None)}
+
     /// Optional primary read with original-byte provenance. Unknown providers
     /// retain existing compiler behavior; they grant no semantic parity proof.
     fn acquired_source(&self, _path: &Path) -> Result<Option<AcquiredSource>, String> {
@@ -224,41 +240,9 @@ pub trait SourceProvider {
 
 /// DM sources may contain legacy Windows-1252 bytes alongside UTF-8 text.
 /// Preserve valid UTF-8 sequences and decode only invalid bytes as legacy text.
-pub fn decode_source_bytes(mut bytes: &[u8]) -> String {
-    if bytes.starts_with(&[0xef, 0xbb, 0xbf]) {
-        bytes = &bytes[3..];
-    }
-    let mut output = String::new();
-    const C1: [char; 32] = [
-        '\u{20ac}', '\u{81}', '\u{201a}', '\u{192}', '\u{201e}', '\u{2026}', '\u{2020}',
-        '\u{2021}', '\u{2c6}', '\u{2030}', '\u{160}', '\u{2039}', '\u{152}', '\u{8d}', '\u{17d}',
-        '\u{8f}', '\u{90}', '\u{2018}', '\u{2019}', '\u{201c}', '\u{201d}', '\u{2022}', '\u{2013}',
-        '\u{2014}', '\u{2dc}', '\u{2122}', '\u{161}', '\u{203a}', '\u{153}', '\u{9d}', '\u{17e}',
-        '\u{178}',
-    ];
-    while !bytes.is_empty() {
-        match std::str::from_utf8(bytes) {
-            Ok(text) => {
-                output.push_str(text);
-                break;
-            }
-            Err(error) => {
-                let valid = error.valid_up_to();
-                output.push_str(std::str::from_utf8(&bytes[..valid]).unwrap());
-                let invalid = error.error_len().unwrap_or(bytes.len() - valid);
-                for &byte in &bytes[valid..valid + invalid] {
-                    output.push(if (0x80..=0x9f).contains(&byte) {
-                        C1[(byte - 0x80) as usize]
-                    } else {
-                        char::from(byte)
-                    });
-                }
-                bytes = &bytes[valid + invalid..];
-            }
-        }
-    }
-    output
-}
+mod source_decode;
+pub mod source_arena_credit;
+pub use source_decode::{decode_source_bytes, decode_source_bytes_admitted, visit_decoded_source, DecodedSourcePiece};
 
 pub fn read_source_file(path: &Path) -> std::io::Result<String> {
     fs::read(path).map(|bytes| decode_source_bytes(&bytes))
@@ -372,4 +356,12 @@ mod logical_state_tests {
             ]
         );
     }
+}
+
+/// Provider-issued allocation geometry over the SAME actual read buffer.
+/// Readonly DATA: constructor bytes/byte slices grant no source/model role.
+#[derive(Clone,Copy)]pub struct OriginalRawAllocationPlan<'a>{original:&'a[u8],capacity:usize,constructor_bytes:usize,decoded_bytes:usize,exceptional:bool,needs_decode:bool}
+impl<'a>OriginalRawAllocationPlan<'a>{
+ pub fn new(original:&'a[u8],capacity:usize,constructor_bytes:usize,decoded_bytes:usize,exceptional:bool,needs_decode:bool)->Self{Self{original,capacity,constructor_bytes,decoded_bytes,exceptional,needs_decode}}
+ pub fn original(self)->&'a[u8]{self.original}pub fn capacity(self)->usize{self.capacity}pub fn constructor_bytes(self)->usize{self.constructor_bytes}pub fn decoded_bytes(self)->usize{self.decoded_bytes}pub fn exceptional(self)->bool{self.exceptional}pub fn needs_decode(self)->bool{self.needs_decode}
 }

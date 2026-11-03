@@ -77,6 +77,7 @@ impl ColdFrontend {
         }
         let issued_arena = expanded.text.clone();
         let mut current = Self {
+            original_primary:previous.original_primary.clone(),
             timings,
             engine: previous.engine.clone(),
             plan,

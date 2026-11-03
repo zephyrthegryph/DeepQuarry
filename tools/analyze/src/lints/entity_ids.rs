@@ -26,8 +26,8 @@ const H_REF_KEY: &str = "do not key a list by a REF() text: it outlives its enti
 doc/rewrite/proposals/relations.md D9";
 
 static META: Meta = Meta {
-    name: "entity_ids",
-    group: "",
+    name: crate::allow_registry_fields::entity_ids::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::entity_ids::SCOPE_META_0.group,
     label: "entity_ids",
     legacy: "",
     select: CODE_DM,
@@ -42,7 +42,7 @@ static META: Meta = Meta {
     },
     rules: &[RuleMeta { name: "counter_id", hint: H_COUNTER }, RuleMeta { name: "ref_key", hint: H_REF_KEY }],
     allow: crate::allow_registry_fields::entity_ids::ALLOW_0,
-    lists: &[],
+    lists: crate::allow_registry_fields::entity_ids::SCOPE_META_0.lists,
 };
 
 struct EntityIds {

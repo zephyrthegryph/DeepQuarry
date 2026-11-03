@@ -32,6 +32,7 @@ struct DeclarationClaims {
     keys: AtomicUsize,
     hits: AtomicUsize,
     symbols: std::sync::Mutex<Arc<ActiveSymbols>>,
+    body_candidates:std::sync::Mutex<Option<super::relative_declarations::BodyCodeCandidates>>,
 }
 impl Default for DeclarationClaims {
     fn default() -> Self {
@@ -43,6 +44,7 @@ impl Default for DeclarationClaims {
             keys: AtomicUsize::new(0),
             hits: AtomicUsize::new(0),
             symbols: std::sync::Mutex::new(Arc::new(ActiveSymbols::default())),
+            body_candidates:std::sync::Mutex::new(None),
         }
     }
 }
@@ -176,10 +178,29 @@ impl DeclarationClaims {
         let bound=self.values.get_checked(key,text,offset,a)?;
         if bound.is_some(){self.hits.fetch_add(1,Ordering::Relaxed);}Ok(bound)
     }
+    /// Original token-value path: only the SAME completed fresh primary facts
+    /// can validate a retained contribution. Hash/display equality is not enough.
+    pub(super) fn get_shared_original_literals_checked(&self,key:&[u8],text:&str,offset:usize,headers:&crate::procedure::OriginalProcedureHeaders,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<CurrentContribution>>{
+        if headers.original_literal_facts()?.is_none(){return Err(std::io::Error::new(std::io::ErrorKind::Unsupported,"actual Original literal fact production is unissued"))}
+        let bound=self.values.get_checked(key,text,offset,a)?;
+        if let Some(current)=bound.as_ref(){
+            if !current.value.syntax.original_literals_match_headers(headers,a)?{return Ok(None)}
+            self.hits.fetch_add(1,Ordering::Relaxed);
+        }
+        Ok(bound)
+    }
     pub(super) fn capture_source_headers_checked(&self,key:&[u8],source:dm_preprocess::SourceText,offset:usize,items:Vec<Item>,facts:crate::AdaptedDeclarations,ledger:AllocationLedger,headers:Arc<crate::procedure::OriginalProcedureHeaders>,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<CurrentContribution>>{
         let Some(mut current)=CurrentContribution::fresh_source_headers(source,offset,items,facts,ledger,Some(headers))else{return Ok(None)};
         if !current.value.syntax.initializer_admission_matches(a)?{return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"fresh checked contribution lacks original producer admission"));}
         if !self.values.is_shared() && self.values.publish_checked(key,&mut current,a)?.is_none(){return Ok(None);}
+        Ok(Some(current))
+    }
+    pub(super) fn capture_source_headers_converged_checked(&self,key:&[u8],source:dm_preprocess::SourceText,offset:usize,items:Vec<Item>,facts:crate::AdaptedDeclarations,ledger:AllocationLedger,headers:Arc<crate::procedure::OriginalProcedureHeaders>,previous:&super::relative_declarations::BodyCodeCandidates,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Option<CurrentContribution>>{
+        let Some(mut value)=Contribution::capture_source(source,offset,items,facts,ledger,Some(headers))else{return Ok(None)};
+        let syntax=Arc::get_mut(&mut value.syntax).ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidData,"fresh actual syntax escaped before code convergence"))?;
+        syntax.converge_body_codes(previous,a)?;
+        let text=value.source.clone();let Some(mut current)=CurrentContribution::bind(Arc::new(value),&text,offset)else{return Ok(None)};
+        if !self.values.is_shared()&&self.values.publish_checked(key,&mut current,a)?.is_none(){return Ok(None)}
         Ok(Some(current))
     }
     pub(super) fn capture(
@@ -1002,3 +1023,14 @@ impl ActiveSymbols {
 #[cfg(test)]
 #[path="frontend_declaration_state/initializer_checked_tests.rs"]
 mod initializer_checked_tests;
+
+impl CurrentContribution{
+ /// Only a genuinely fresh unshared current leaf is eligible. Reuse is the
+ /// existing exact body/header/profile producer, never a hash-based CodeID.
+ pub(in crate::frontend) fn converge_original_code(self,previous:&super::relative_declarations::BodyCodeCandidates,a:&dm_syntax::SettingAdmission<'_>)->std::io::Result<Self>{
+  let Self{mut value,syntax,offset,stored}=self;if stored{return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"published current contribution cannot be mutated for original code convergence"))}
+  drop(syntax);let actual=Arc::get_mut(&mut value).ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidInput,"original current contribution escaped before body-code convergence"))?;
+  let syntax=Arc::get_mut(&mut actual.syntax).ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidInput,"original current syntax escaped before body-code convergence"))?;syntax.converge_body_codes(previous,a)?;
+  let source=actual.source.clone();Self::bind(value,&source,offset).ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidData,"original current code could not rebind its actual native contribution"))
+ }
+}

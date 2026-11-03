@@ -45,3 +45,6 @@ fn oom(message:String)->Failure{Failure::Operational(std::io::Error::new(std::io
 
 /// Unsealed per-file validation DATA, never a source/execution completion.
 pub struct ValidationData{pub sites:Vec<crate::lint::Site>,pub source_text:Vec<String>}
+
+#[path="captured_allow_unused.rs"]
+pub mod full_unused;

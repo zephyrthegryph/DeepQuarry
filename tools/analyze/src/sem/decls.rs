@@ -477,14 +477,7 @@ fn scan_file(f: &SourceFile) -> FileDecls {
             }
             Ok::<(),std::convert::Infallible>(())
         }){Ok(())=>(),Err(never)=>match never{}}
-        if t.contains("PUBLISH_CHANGE(") {
-            for m in pat!(r"PUBLISH_CHANGE\(\s*[^,()]+,\s*([\w#]+)\s*\)").captures_iter(t) {
-                fd.publishers.push((
-                    m.s(1).trim_start_matches('#').to_string(),
-                    (f.rel.clone(), ln),
-                ));
-            }
-        }
+        match crate::raw_publishers_policy::visit_line(t,&mut crate::key_policy_control::Compatibility,|key|{fd.publishers.push((key.to_owned(),(f.rel.clone(),ln)));Ok(())}){Ok(())=>(),Err(never)=>match never{}}
     }
     scan_runtime_observers(f, &stripped, &starts, &mut fd);
     scan_calls(f, &stripped, &starts, &mut fd);

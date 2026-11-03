@@ -26,8 +26,8 @@ use crate::tree::{Select, SourceFile};
 use crate::util::{is_py_space, py_strip, starts_with_any};
 
 static META: Meta = Meta {
-    name: "silent_catch",
-    group: "",
+    name: crate::allow_registry_fields::silent_catch::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::silent_catch::SCOPE_META_0.group,
     label: "silent_catch",
     legacy: "tools/ci/silent_catch_lint.py",
     // os.walk over code/ and maps/: dot-files and dot-directories included.
@@ -39,7 +39,7 @@ static META: Meta = Meta {
         hint: "use dq_report_caught(e, \"context\") or annotate `// ALLOW(silent_catch): reason`",
     }],
     allow: crate::allow_registry_fields::silent_catch::ALLOW_0,
-    lists: &["strict_dirs"],
+    lists: crate::allow_registry_fields::silent_catch::SCOPE_META_0.lists,
 };
 
 const STRICT_OK: &str = r"\b(?:dq_)?report_caught\s*\(|\bthrow\b|\bstack_trace\s*\(|\bCRASH\s*\(|\bworld\.Error\s*\(";

@@ -20,24 +20,34 @@ pub fn variable(
     owner: SymbolId,
     name: SymbolId,
 ) -> Result<Option<VariableFact>, String> {
+    variable_using(tree,resolver,profile,owner,name,&mut||Ok::<(),String>(()))
+}
+/// SAME selector and exact query order with operation-local typed control.
+pub fn variable_using<E:From<String>>(tree:&SemanticTree,resolver:&(impl Resolver+?Sized),profile:PackedU128,owner:SymbolId,name:SymbolId,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<Option<VariableFact>,E>{
+    checkpoint()?;
     let ancestry = Q::Ancestry(owner);
+    checkpoint()?;
     let expected = Resolver::resolve(tree, ancestry);
+    checkpoint()?;
     if resolver.source_owner() != Resolver::source_owner(tree)
         || resolver.resolve(ancestry) != expected
     {
-        return Err("checker variable host lacks issued receiver/source provenance".into());
+        return Err(E::from("checker variable host lacks issued receiver/source provenance".to_owned()));
     }
     let M::Symbols(ancestors) = expected else {
-        return Err("checker variable ancestry unavailable".into());
+        return Err(E::from("checker variable ancestry unavailable".to_owned()));
     };
-    let source_candidate = |receiver| -> Result<Option<VariableFact>, String> {
+    let control=std::cell::RefCell::new(checkpoint);
+    let source_candidate = |receiver| -> Result<Option<VariableFact>, E> {
+        (control.borrow_mut())()?;
         let query = Q::SourceVarDeclaration {
             owner: receiver,
             name,
         };
         let answer = resolver.resolve(query);
+        (control.borrow_mut())()?;
         if answer != Resolver::resolve(tree, query) {
-            return Err("checker source-variable query differs from issued declaration".into());
+            return Err(E::from("checker source-variable query differs from issued declaration".to_owned()));
         }
         match answer {
             M::Member {
@@ -46,18 +56,19 @@ pub fn variable(
                 data,
                 ..
             } if actual == name && data.inherited_opaque.is_none() && data.procedure.is_none() => {
+                (control.borrow_mut())()?;
                 let formal = tree
                     .source_formal_variable_member(owner, name)
                     .map_err(str::to_owned)?
-                    .ok_or("issued source formal unavailable")?;
+                    .ok_or_else(||E::from("issued source formal unavailable".to_owned()))?;
                 if !Arc::ptr_eq(
                     &tree
                         .member(formal)
-                        .ok_or("issued source formal disappeared")?
+                        .ok_or_else(||E::from("issued source formal disappeared".to_owned()))?
                         .metadata,
                     &data,
                 ) {
-                    return Err("source formal does not borrow selected original metadata".into());
+                    return Err(E::from("source formal does not borrow selected original metadata".to_owned()));
                 }
                 Ok(Some(VariableFact {
                     formal: Some(formal),
@@ -67,10 +78,11 @@ pub fn variable(
                 }))
             }
             M::Missing => Ok(None),
-            _ => Err("checker source-variable declaration is unavailable or opaque".into()),
+            _ => Err(E::from("checker source-variable declaration is unavailable or opaque".to_owned())),
         }
     };
-    select(owner,|target|Ok(ancestors.iter().position(|&p|p==target)),source_candidate,||{
+    select_using(owner,|target|{(control.borrow_mut())()?;Ok(ancestors.iter().position(|&p|p==target))},source_candidate,||{
+    (control.borrow_mut())()?;
     let builtin = match resolver.resolve(Q::CheckerBuiltinVar {
         profile,
         owner,
@@ -90,7 +102,7 @@ pub fn variable(
             })
         }
         M::Missing => None,
-        _ => return Err("checker variable needs exact hash-qualified builtin facts".into()),
+        _ => return Err(E::from("checker variable needs exact hash-qualified builtin facts".to_owned())),
     };
     Ok(builtin)
     })
@@ -100,6 +112,9 @@ fn select(
     mut source_candidate:impl FnMut(SymbolId)->Result<Option<VariableFact>,String>,
     mut builtin_candidate:impl FnMut()->Result<Option<VariableFact>,String>,
 )->Result<Option<VariableFact>,String>{
+    select_using(owner,&mut rank,&mut source_candidate,&mut builtin_candidate)
+}
+fn select_using<E:From<String>>(owner:SymbolId,mut rank:impl FnMut(SymbolId)->Result<Option<usize>,E>,mut source_candidate:impl FnMut(SymbolId)->Result<Option<VariableFact>,E>,mut builtin_candidate:impl FnMut()->Result<Option<VariableFact>,E>)->Result<Option<VariableFact>,E>{
     let mut source = source_candidate(owner)?;
     if source.as_ref().is_some_and(|fact| fact.owner == owner) {
         return Ok(source);
@@ -111,9 +126,9 @@ fn select(
     match (source, builtin) {
         (Some(source), Some(builtin)) => {
             let a = rank(source.owner)?
-                .ok_or("source variable outside issued ancestry")?;
+                .ok_or_else(||E::from("source variable outside issued ancestry".to_owned()))?;
             let b = rank(builtin.owner)?
-                .ok_or("builtin variable outside issued ancestry")?;
+                .ok_or_else(||E::from("builtin variable outside issued ancestry".to_owned()))?;
             Ok(Some(if a <= b { source } else { builtin }))
         }
         (Some(fact), None) | (None, Some(fact)) => Ok(Some(fact)),

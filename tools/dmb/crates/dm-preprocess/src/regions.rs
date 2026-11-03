@@ -378,3 +378,52 @@ pub struct ExpandedOrigin {
 
 mod origin_byte_layout;
 pub use origin_byte_layout::OriginalByteCursor;
+
+// Resource-only transformed allocation owner; no source/model/EOF role.
+mod original_source_arena;
+
+mod original_lexical_frame;
+pub use original_lexical_frame::OriginalLexicalFrameIdentity;
+
+mod original_literal_source;
+pub use original_literal_source::{OriginalLiteralSourceBinding,OriginalLiteralSourceView};
+
+mod original_batch_execution;
+pub use original_batch_execution::{OriginalBatchSyntaxHost,OriginalBatchExecution};
+
+mod original_stream_consumer;
+pub use original_stream_consumer::{OriginalDemandDelivery,OriginalFormalTokenStream,OriginalPrimaryStreamConsumer};
+
+// The shared value judge consumes already-issued roots; it has no source producer.
+mod original_condition_value;
+
+mod original_raw_frame;
+
+mod original_token_factory;
+
+mod original_raw_points;
+
+mod original_raw_inputs;
+
+mod original_macro_source;
+
+mod original_output_queue;
+
+mod original_ordinary_output;
+
+mod original_token_pump;
+
+mod original_conditional;
+
+mod original_driver;
+mod original_raw_geometry;
+mod original_file_path;
+mod original_define_demand;
+mod original_directive_arguments;
+mod original_directive_dispatch;
+mod original_literal_owner;
+mod original_native_projection;
+mod original_trace_frames;
+mod original_conditional_pump;
+mod original_condition_tokens;
+mod origin_raw_rows;

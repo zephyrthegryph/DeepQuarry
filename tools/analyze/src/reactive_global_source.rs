@@ -45,6 +45,7 @@ pub(crate) trait Source{
  fn with_header_line(&self,member:dm_tree::MemberId,consume:&mut dyn FnMut(&str,usize,&str)->Result<(),Failure>)->Result<(),Failure>;
  fn visit_setter_definitions(&self,emit:&mut dyn FnMut(&str,&str)->Result<(),Failure>)->Result<(),Failure>{visit_setter_definitions_original(self,emit)}
  fn visit_own_declared_variables(&self,emit:&mut dyn FnMut(&str,&str)->Result<(),Failure>)->Result<(),Failure>{visit_own_declared_variables_original(self,emit)}
+ fn visit_all_own_declared_variables(&self,emit:&mut dyn FnMut(&str,&str)->Result<(),Failure>)->Result<(),Failure>{visit_declared_variables_original(self,false,emit)}
  fn visit_setter_call_files(&self,emit:&mut dyn FnMut(&str,&str,&str)->Result<(),Failure>)->Result<(),Failure>{if !self.with_policy_files(&mut|relative,views|{let raw=views.raw()?;if !crate::auto_setter_calls_policy::wants_file(relative,raw){return Ok(true)}emit(relative,raw,&views.code()?.text)?;Ok(true)})?{return Err("original setter-call traversal incomplete".into())}self.checkpoint()?;self.require()}
  fn complete_inputs(&self)->Option<&dm_analysis::policy_inputs::PolicyInputs>{None}
  fn plans_marker_rows(&self)->Result<crate::captured_marker_rows::Rows<'_>,Failure>;
@@ -81,9 +82,9 @@ impl Source for ReadSource<'_>{
  fn occurrences(&self)->&[dm_tree::frontend::BodyOccurrence]{self.inputs().archive().occurrences()}
  fn raw_body_text(&self,ordinal:usize)->Result<&str,Failure>{let body=self.inputs().archive().occurrences().get(ordinal).ok_or("original body occurrence absent")?;self.inputs().archive().expanded_source().get(body.expanded_span.range()).ok_or_else(||Failure::from("original body source outside original arena"))}
  fn variable(&self,owner:&str,name:&str)->Result<Option<crate::reactive_original_source::ReadVariable<'_>>,Failure>{self.variable(owner,name).map_err(Failure::from)}
- fn callable(&self,owner:&str,name:&str)->Result<SelectedCallable<'_>,Failure>{Ok(match self.callable(owner,name)?{crate::reactive_original_source::SelectedCallable::Source(call)=>SelectedCallable::Source(Callable{owner:call.owner,name:call.name,ordinal:call.ordinal,member:call.member,header:call.header}),crate::reactive_original_source::SelectedCallable::Builtin=>SelectedCallable::Builtin,crate::reactive_original_source::SelectedCallable::Missing=>SelectedCallable::Missing})}
- fn parent_callable(&self,ordinal:usize)->Result<Option<Callable<'_>>,Failure>{Ok(self.parent_callable(ordinal)?.map(|call|Callable{owner:call.owner,name:call.name,ordinal:call.ordinal,member:call.member,header:call.header}))}
- fn visit_overrides<'source>(&'source self,owner:&str,name:&str,poll:&mut dyn FnMut()->Result<(),Failure>,emit:&mut dyn FnMut(Callable<'source>)->Result<(),Failure>)->Result<(),Failure>{self.visit_overrides(owner,name,poll,|call|emit(Callable{owner:call.owner,name:call.name,ordinal:call.ordinal,member:call.member,header:call.header}))}
+ fn callable(&self,owner:&str,name:&str)->Result<SelectedCallable<'_>,Failure>{Ok(match self.callable_checked(owner,name)?{crate::reactive_original_source::SelectedCallable::Source(call)=>SelectedCallable::Source(Callable{owner:call.owner,name:call.name,ordinal:call.ordinal,member:call.member,header:call.header}),crate::reactive_original_source::SelectedCallable::Builtin=>SelectedCallable::Builtin,crate::reactive_original_source::SelectedCallable::Missing=>SelectedCallable::Missing})}
+ fn parent_callable(&self,ordinal:usize)->Result<Option<Callable<'_>>,Failure>{Ok(self.parent_callable_checked(ordinal)?.map(|call|Callable{owner:call.owner,name:call.name,ordinal:call.ordinal,member:call.member,header:call.header}))}
+ fn visit_overrides<'source>(&'source self,owner:&str,name:&str,poll:&mut dyn FnMut()->Result<(),Failure>,emit:&mut dyn FnMut(Callable<'source>)->Result<(),Failure>)->Result<(),Failure>{let pending=self.visit_overrides(owner,name,poll,|call|emit(Callable{owner:call.owner,name:call.name,ordinal:call.ordinal,member:call.member,header:call.header}));if matches!(&pending,Err(Failure::Operational(_))){return pending}if self.budget().denied(){return Err(Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"original override admission denied")))}pending}
  fn site(&self,ordinal:usize,offset:usize)->Result<(String,u32),Failure>{self.site(ordinal,offset).map_err(Failure::from)}
  fn site_line(&self,ordinal:usize,line:u32)->Result<(String,u32),Failure>{self.site_line(ordinal,line).map_err(Failure::from)}
  fn line_at(&self,offset:usize)->Result<u32,Failure>{self.line_at(offset).map_err(Failure::from)}
@@ -101,7 +102,7 @@ impl Source for ReadSource<'_>{
  fn variable_type(&self,owner:&str,name:&str)->Result<Option<String>,Failure>{self.variable_type(owner,name).map_err(Failure::from)}
  fn receiver_variable_type(&self,owner:&str,name:&str)->Result<Option<String>,Failure>{Ok(self.variable(owner,name)?.map(|value|value.declared))}
  fn declaring_owner<'a>(&'a self,owner:&str,name:&str)->Result<Option<&'a str>,Failure>{self.variable_declaring_owner(owner,name)}
- fn is_subtype(&self,child:&str,parent:&str)->Result<bool,Failure>{self.is_subtype(child,parent).map_err(Failure::from)}
+ fn is_subtype(&self,child:&str,parent:&str)->Result<bool,Failure>{self.is_subtype_checked(child,parent)}
  fn body_count(&self)->usize{self.inputs().archive().len()}
  fn visit_callables<'source>(&'source self,names:Option<&[&str]>,poll:&mut dyn FnMut()->Result<(),Failure>,emit:&mut dyn FnMut(Callable<'source>)->Result<(),Failure>)->Result<(),Failure>{match names{Some(names)=>self.visit_callables(names,poll,|call|emit(Callable{owner:call.owner,name:call.name,ordinal:call.ordinal,member:call.member,header:call.header})),None=>self.visit_all_callables(poll,|call|emit(Callable{owner:call.owner,name:call.name,ordinal:call.ordinal,member:call.member,header:call.header}))}}
  fn relative_body_file(&self,ordinal:usize)->Result<String,Failure>{Ok(self.site_line(ordinal,1)?.0)}
@@ -170,7 +171,8 @@ fn visit_setter_definitions_original<S:Source+?Sized>(source:&S,emit:&mut dyn Fn
     source.require()?;
     Ok(())
 }
-fn visit_own_declared_variables_original<S:Source+?Sized>(source:&S,emit:&mut dyn FnMut(&str,&str)->Result<(),Failure>)->Result<(),Failure>{
+fn visit_own_declared_variables_original<S:Source+?Sized>(source:&S,emit:&mut dyn FnMut(&str,&str)->Result<(),Failure>)->Result<(),Failure>{visit_declared_variables_original(source,true,emit)}
+fn visit_declared_variables_original<S:Source+?Sized>(source:&S,authored_owners_only:bool,emit:&mut dyn FnMut(&str,&str)->Result<(),Failure>)->Result<(),Failure>{
     use dm_tree::DefinitionMode;
     source.checkpoint()?;
     source.require()?;
@@ -182,7 +184,14 @@ fn visit_own_declared_variables_original<S:Source+?Sized>(source:&S,emit:&mut dy
         source.checkpoint()?;
         source.require()?;
         let owner = tree.symbols().text(ty.path).ok_or("auto variable owner spelling absent")?;
-        if !tree.checker_source_type_presence(profile, owner).map_err(|e| format!("auto variable source type: {e:?}"))? { continue; }
+        let authored=tree.checker_source_type_presence(profile, owner).map_err(|e| format!("auto variable source type: {e:?}"))?;
+        if authored_owners_only{if !authored{continue}}
+        else if !authored{
+            let proof=tree.validated_checker_profile(profile).map_err(|e|format!("reactive constant builtin profile: {e:?}"))?;
+            // SAME native catalog normalizes the real Original root empty path to slash.
+            let original_owner=if owner=="/"{""}else{owner};
+            if !tree.checker_builtin_type_presence_validated(profile,original_owner,&proof).map_err(|e|format!("reactive constant builtin owner: {e:?}"))?{continue}
+        }
         for &member in ty.members.iter() {
             source.checkpoint()?;
             let node = tree.member(member).ok_or("auto variable original member absent")?;

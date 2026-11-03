@@ -157,7 +157,7 @@ pub fn for_each_stable_source_chunk(
 pub struct ProcedureWithOrigins {
     pub item: Item,
     pub opening_parenthesis: Option<Span>,
-    pub parameters: crate::ParameterSignature,
+    pub parameters: crate::ProcedureParameters,
 }
 /// Compatibility wrapper retains the existing parser/runtime interface.
 pub fn parse_proc_at_span(source: &str, span: Span) -> Result<Item, Diagnostic> {
@@ -206,7 +206,7 @@ pub fn parse_proc_with_origins_at_span(
     Ok(ProcedureWithOrigins {
         item,
         opening_parenthesis,
-        parameters,
+        parameters: crate::ProcedureParameters::Owned(parameters),
     })
 }
 
@@ -218,7 +218,17 @@ pub fn parse_proc_with_origins_from_spans(
     span: Span,
     tokens: &[crate::SpanToken],
     base: usize,
-) -> Result<ProcedureWithOrigins, Diagnostic> {
+) -> Result<ProcedureWithOrigins, Diagnostic> {parse_proc_with_origins_and_default_roots_from_spans(source,span,tokens,base,None)}
+/// SAME actual procedure/token grammar. A supplied default owner is consumed
+/// before optional expression issuance; absent/mismatched data never reparses.
+pub fn parse_proc_with_origins_and_default_roots_from_spans(source:&str,span:Span,tokens:&[crate::SpanToken],base:usize,defaults:Option<&mut dyn crate::ParameterDefaultSyntaxProvider>)->Result<ProcedureWithOrigins,Diagnostic>{parse_proc_with_parameter_profile(source,span,tokens,base,defaults,false,None)}
+/// Original formal interpretation DATA. This API confers no current source or
+/// semantic profile grant; the authenticated existing Header owner selects it.
+pub fn parse_original_proc_with_origins_and_default_roots_from_spans(source:&str,span:Span,tokens:&[crate::SpanToken],base:usize,defaults:Option<&mut dyn crate::ParameterDefaultSyntaxProvider>)->Result<ProcedureWithOrigins,Diagnostic>{parse_proc_with_parameter_profile(source,span,tokens,base,defaults,true,None)}
+/// BODY grammar adopts this SAME preissued header allocation; no parameter
+/// grammar/default producer runs again. Caller authenticates its source owner.
+pub fn parse_original_proc_with_shared_parameters_from_spans(source:&str,span:Span,tokens:&[crate::SpanToken],base:usize,parameters:crate::SharedParameterSignature)->Result<ProcedureWithOrigins,Diagnostic>{parse_proc_with_parameter_profile(source,span,tokens,base,None,true,Some(parameters))}
+fn parse_proc_with_parameter_profile(source:&str,span:Span,tokens:&[crate::SpanToken],base:usize,mut defaults:Option<&mut dyn crate::ParameterDefaultSyntaxProvider>,original:bool,preissued:Option<crate::SharedParameterSignature>)->Result<ProcedureWithOrigins,Diagnostic>{
     let failure = |message: &str| Diagnostic {
         span,
         kind: DiagnosticKind::Unsupported,
@@ -260,7 +270,7 @@ pub fn parse_proc_with_origins_from_spans(
                 && t.text(source) == "("
         })
         .map(|t| Span::new(t.span.start + base, t.span.end + base));
-    let parameters = crate::parameter_syntax::issue_spans(source, tokens, item.header_span, base);
+    let parameters = match preissued{Some(parameters)=>{let header=Span::new(item.header_span.start.checked_add(base).ok_or_else(||failure("parameter header offset overflow"))?,item.header_span.end.checked_add(base).ok_or_else(||failure("parameter header offset overflow"))?);if parameters.header()!=header{return Err(failure("preissued parameter metadata belongs to another actual header"))}crate::ProcedureParameters::Shared(parameters)},None=>crate::ProcedureParameters::Owned(if original{crate::parameter_syntax::parameter_signature_original_with_default_roots(source,tokens,item.header_span,base,&mut defaults)}else{match defaults{Some(provider)=>crate::parameter_syntax::parameter_signature_with_default_roots(source,tokens,item.header_span,base,provider),None=>crate::parameter_syntax::issue_spans(source,tokens,item.header_span,base)}})};
     rebase_item(&mut item, base);
     Ok(ProcedureWithOrigins {
         item,
@@ -728,7 +738,8 @@ mod ascii_scan_tests {
             } else if !matches!(ch, ' ' | '\t' | '\r') {
                 // Expanded #include directives can leave spaces before the first
                 // absolute declaration path of an included file.
-                if at_line_start && delimiter_depth == 0 && (!indented || ch == '/') {
+                if at_line_start && delimiter_depth == 0 && (!indented || ch == '/')
+                    && !(indented&&ch=='/'&&crate::boundary_scan::indented_prefab_initializer(source,pos)) {
                     visit(pos);
                 }
                 at_line_start = false;

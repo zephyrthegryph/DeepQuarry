@@ -41,7 +41,10 @@ use std::{
     path::PathBuf,
     sync::{Arc, Mutex},
 };
+#[path="runner_query_raw_workspace.rs"]mod raw_workspace;
+pub(crate) use raw_workspace::RawWorkspaceSnapshot;
 pub(crate) struct QueryState {
+    pub(crate) raw_snapshot:Option<RawWorkspaceSnapshot>,
     pub(crate) snapshot: Option<SourceSnapshot>,
     pub(crate) last_request_outcome: &'static str,
     pub(crate) publication_pair: Option<String>,
@@ -49,14 +52,14 @@ pub(crate) struct QueryState {
 impl Default for QueryState {
     fn default() -> Self {
         Self {
-            snapshot: None,
+            snapshot: None,raw_snapshot:None,
             last_request_outcome: "never_started",
             publication_pair: None,
         }
     }
 }
 #[derive(Clone, Copy, PartialEq, Eq)]
-enum SnapshotPolicyRole { ExplicitSubset, WorkspaceGeneratorChild }
+enum SnapshotPolicyRole { ExplicitSubset, WorkspaceGeneratorChild, WorkspaceSemanticChild }
 #[derive(Clone, Copy)]
 enum WorkspaceSnapshotRole<'a> { RawPolicy, Generator(&'a crate::policy_request::AdmittedPolicyRequest) }
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -68,7 +71,19 @@ impl WorkspaceGeneratorSelection{
  }
  fn permits(&self,name:crate::GeneratorName)->bool{self.names.iter().flatten().any(|candidate|*candidate==name)}
 }
+#[derive(Clone,Copy,PartialEq,Eq)]
+struct WorkspaceSemanticSelection{names:[Option<crate::policy_request::WorkspaceAuxiliaryQuestion>;15]}
+impl WorkspaceSemanticSelection{
+ fn from_admitted(intent:&crate::policy_request::AdmittedPolicyRequest,workspace:&crate::runner_host::workspace_capture::WorkspaceCapture)->std::io::Result<Option<Self>>{
+  use crate::policy_request::AnalysisContext;
+  if intent.workspace().is_none_or(|request|!workspace.matches_request(request))||!workspace.matches_auxiliary_questions(intent.workspace_auxiliary()){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"semantic intent differs from actual workspace request"))}
+  let mut selected=Self{names:[None;15]};let mut count=0;for name in intent.workspace_auxiliary().iter().copied().filter(|name|name.is_semantic()){if intent.analysis_context().is_none()||count==selected.names.len(){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"semantic selection has no issued original context"))}selected.names[count]=Some(name);count+=1;}Ok((count!=0).then_some(selected))
+ }
+ fn permits(&self,name:crate::policy_request::WorkspaceAuxiliaryQuestion)->bool{name.is_semantic()&&self.names.iter().flatten().any(|candidate|*candidate==name)}
+}
 pub(crate) struct SourceSnapshot {
+    model_preparation:Option<dm_tree::frontend::DiagnosticPreparationPurpose>,
+    analysis_subject:Option<Arc<crate::input_snapshot::OriginalAnalysisSubject>>,
     diagnostic_declarations:
         Option<Arc<dm_tree::diagnostic_declarations::DiagnosticDeclarationReceipt>>,
     semantic_sources: Option<Arc<crate::input_snapshot::SemanticSourceEvidence>>,
@@ -83,6 +98,7 @@ pub(crate) struct SourceSnapshot {
     native_policy_inputs: Option<Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>>,
     policy_role: SnapshotPolicyRole,
     workspace_generator_selection: Option<WorkspaceGeneratorSelection>,
+    workspace_semantic_selection: Option<WorkspaceSemanticSelection>,
     native_workspace: Option<Arc<crate::runner_host::workspace_capture::WorkspaceCapture>>,
     generation_inputs: Option<crate::request_runner::runner_freshness::GenerationInputClosure>,
     source_mapping: Option<Arc<dm_tree::frontend::SourceExportMapping>>,
@@ -116,7 +132,13 @@ impl ReplayProof {
     }
 }
 impl SourceSnapshot {
+    pub(crate) fn matches_original_analysis_subject(&self,path:&std::path::Path)->bool{self.analysis_subject.as_ref().is_some_and(|subject|subject.matches_request_project(path))}
     pub(crate) fn require_analysis_context(&self,context:Option<crate::policy_request::AnalysisContext>)->std::io::Result<()> {
+        use dm_tree::frontend::DiagnosticPreparationPurpose as P;
+        let analyze=context==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290);
+        if analyze&&!matches!(self.model_preparation,Some(P::OriginalSharedComplete|P::OriginalAnalyzePrefix))||!analyze&&self.model_preparation==Some(P::OriginalAnalyzePrefix){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"query role differs from actual complete/prefix native preparation"))}
+
+        if context==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290){let subject=self.analysis_subject.as_ref().ok_or_else(||std::io::Error::new(std::io::ErrorKind::InvalidInput,"query lacks actual full Analyze subject receipt"))?;subject.require_bound_mapping(self.source_mapping.as_ref().ok_or_else(||std::io::Error::other("analysis subject mapping absent"))?)?;}
         let expected=context.map_or(dm_preprocess::InitialEnvironment::Native5161687,|context|context.initial_environment());
         if self.source_mapping.as_ref().map(|mapping|mapping.initial_environment()).is_some_and(|actual|actual!=expected) || (context.is_some()&&self.source_mapping.is_none()){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"query analysis context differs from its actual current source mapping"))}Ok(())
     }
@@ -127,7 +149,7 @@ impl SourceSnapshot {
     pub(crate) fn admits_original_analysis_workspace_question(&self,question:&crate::daemon::query::SourceQuery)->bool {
         self.native_workspace.is_some()
             && self.source_mapping.as_ref().is_some_and(|mapping|mapping.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290)
-            && matches!(question,crate::daemon::query::SourceQuery::NativeWorkspaceRawReportPage{..}|crate::daemon::query::SourceQuery::NativeWorkspaceHygieneReportPage{..}|crate::daemon::query::SourceQuery::NativeWorkspaceSysReportPage{..}|crate::daemon::query::SourceQuery::NativeWorkspaceKeysReportPage{..}|crate::daemon::query::SourceQuery::NativeDeadlinePollingEvidence{..})
+            && matches!(question,crate::daemon::query::SourceQuery::NativeWorkspaceRawReportPage{..}|crate::daemon::query::SourceQuery::NativeWorkspaceHygieneReportPage{..}|crate::daemon::query::SourceQuery::NativeWorkspaceSysReportPage{..}|crate::daemon::query::SourceQuery::NativeWorkspaceSemanticReportPage{..}|crate::daemon::query::SourceQuery::NativeWorkspaceRawTreeReportPage{..}|crate::daemon::query::SourceQuery::NativeWorkspacePolicyReportPage{..}|crate::daemon::query::SourceQuery::NativeWorkspaceKeysReportPage{..}|crate::daemon::query::SourceQuery::NativeDeadlinePollingEvidence{..}|crate::daemon::query::SourceQuery::NativeWorkspaceCheckGrepReportPage{..}|crate::daemon::query::SourceQuery::NativeWorkspaceCheckGrepBaselineReportPage{..})
     }
     /// Always run before semantic findings/proof/cache access. Source revisions
     /// and BodySyntax identities deliberately do not prove original decoding.
@@ -298,6 +320,7 @@ impl SourceSnapshot {
                 "{} nodes; input/params estimate {} bytes; derived estimate {} bytes; cache admission estimates only, private common source-view/config/result allocations not counted exactly",
                 stats.nodes,stats.input_and_param_estimate,stats.derived_estimate));
         }
+        if let Some(subject)=&self.analysis_subject{subject.census(census);}
         if let Some(policy) = &self.native_policy_inputs {
             census.policy_capture(policy);
         }
@@ -436,7 +459,9 @@ impl SourceSnapshot {
             dm_analysis::value_query::ArchiveValueInput::new(Arc::clone(archive), &[])
         });
         Self {
+            analysis_subject:None,
             diagnostic_declarations: None,
+            model_preparation:None,
             semantic_sources: policy
                 .as_ref()
                 .map(|policy| Arc::clone(policy.semantic_source_evidence())),
@@ -446,7 +471,7 @@ impl SourceSnapshot {
                 SnapshotPolicyRole::ExplicitSubset => policy.as_ref().and_then(|capture| capture.policy_revision()),
                 // Only admit_workspace_policy may install the published full
                 // workspace revision. The child keeps its own subset intent.
-                SnapshotPolicyRole::WorkspaceGeneratorChild => None,
+                SnapshotPolicyRole::WorkspaceGeneratorChild | SnapshotPolicyRole::WorkspaceSemanticChild => None,
             },
             outcome: "frontend_analyzed",
             source_mapping: frontend.source_export_mapping().cloned(),
@@ -465,6 +490,7 @@ impl SourceSnapshot {
             native_policy_inputs: policy,
             policy_role: role,
             workspace_generator_selection: None,
+            workspace_semantic_selection: None,
             native_workspace: None,
             generation_inputs: None,
             bodies: frontend
@@ -492,6 +518,16 @@ impl SourceSnapshot {
         { return Err(std::io::Error::other("workspace generator child belongs to another original frame")); }
         child.semantic_source_evidence().require_mapping(child.policy().mapping())?;
         Ok(child)
+    }
+    /// Exact semantic child selected during genuine diagnostic workspace preparation.
+    /// The caller still owes its own current reader scope and completed file domain.
+    pub(crate) fn workspace_semantic_inputs(&self,name:crate::policy_request::WorkspaceAuxiliaryQuestion)->std::io::Result<&Arc<crate::runner_host::policy_capture::CapturedPolicyInputs>>{
+        if self.policy_role!=SnapshotPolicyRole::WorkspaceSemanticChild || self.workspace_semantic_selection.as_ref().is_none_or(|selection|!selection.permits(name)){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"semantic question was not selected by actual workspace preparation"))}
+        self.require_analysis_context(Some(crate::policy_request::AnalysisContext::OriginalChecker0290))?;
+        let guard=self.workspace_native_read()?;let workspace=self.native_workspace.as_ref().ok_or_else(||std::io::Error::other("semantic workspace capture unavailable"))?;workspace.require_scope(&guard)?;
+        let child=self.native_policy_inputs.as_ref().ok_or_else(||std::io::Error::other("semantic original child unavailable"))?;
+        if child.policy_revision().is_none() || !self.body_archive.as_ref().is_some_and(|archive|Arc::ptr_eq(archive,child.policy().archive())) || !self.source_mapping.as_ref().is_some_and(|mapping|Arc::ptr_eq(mapping,child.policy().mapping())){return Err(std::io::Error::other("semantic child belongs to another original source owner"))}
+        child.semantic_source_evidence().check(child.policy().mapping())?;Ok(child)
     }
     pub(crate) fn write_selected(
         &self,
@@ -679,6 +715,7 @@ impl QueryAttempt {
             .lock()
             .unwrap_or_else(|e| e.into_inner())
             .snapshot = Some(snapshot);
+        self.state.lock().unwrap_or_else(|e|e.into_inner()).raw_snapshot=None;
         self.captured = true;
         self.pending_workspace = None;
         Ok(())
@@ -830,6 +867,7 @@ impl QueryAttempt {
             .lock()
             .unwrap_or_else(|e| e.into_inner())
             .snapshot = Some(snapshot);
+        self.state.lock().unwrap_or_else(|e|e.into_inner()).raw_snapshot=None;
         self.captured = true;
         Ok(())
     }
@@ -847,6 +885,7 @@ impl QueryAttempt {
             .lock()
             .unwrap_or_else(|error| error.into_inner())
             .snapshot = Some(snapshot);
+        self.state.lock().unwrap_or_else(|e|e.into_inner()).raw_snapshot=None;
         self.captured = true;
     }
     pub(crate) fn capture_resolved_host(
@@ -937,12 +976,8 @@ impl QueryAttempt {
         if self.pending_source.is_some() || self.pending_diagnostic.is_some() {
             return None;
         }
-        self.state
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .snapshot
-            .as_ref()
-            .and_then(|snapshot| snapshot.policy_revision)
+        let state=self.state.lock().unwrap_or_else(|e|e.into_inner());
+        state.snapshot.as_ref().and_then(|snapshot|snapshot.policy_revision).or_else(||state.raw_snapshot.as_ref().map(|raw|raw.policy_revision()))
     }
     pub(crate) fn configure(&mut self, configuration: crate::session::Configuration) {
         self.configuration = Some(configuration);
@@ -1030,7 +1065,7 @@ impl QueryAttempt {
         }
         if published && !self.captured {
             // Output-only replay does not issue a fresh source-query projection.
-            state.snapshot = None;
+            state.snapshot = None;state.raw_snapshot=None;
         }
         self.finished = true;
     }
@@ -1194,7 +1229,9 @@ impl SourceSnapshot {
         if !frontend.receipt().authenticates(frontend.tree()) || !archive.matches_tree(frontend.tree()) || !archive.uses_body_queries(queries.as_ref()) {return Err(std::io::Error::other("diagnostic source graph/archive/current Db differ"))}
         evidence.check(frontend.mapping())?;
         Ok(Self {
+            analysis_subject:None,
             diagnostic_declarations: Some(Arc::clone(frontend.receipt())),
+            model_preparation:Some(frontend.preparation_purpose()),
             semantic_sources: Some(evidence),
             tree: Arc::clone(frontend.tree()),
             source_revision: frontend.source_revision(),
@@ -1206,6 +1243,7 @@ impl SourceSnapshot {
             native_policy_inputs: policy,
             policy_role: SnapshotPolicyRole::ExplicitSubset,
             workspace_generator_selection: None,
+            workspace_semantic_selection: None,
             native_workspace: None,
             generation_inputs: None,
             source_mapping: Some(Arc::clone(frontend.mapping())),
@@ -1259,13 +1297,23 @@ impl QueryAttempt {
         queries:Arc<crate::query_db::QueryDb>,
         workspace:Arc<crate::runner_host::workspace_capture::WorkspaceCapture>,
         request:&crate::policy_request::WorkspacePolicyRequest,inputs:&crate::input_snapshot::RecordingInputs<P>,
+        intent:&crate::policy_request::AdmittedPolicyRequest,
     )->std::io::Result<()>{
         if !self.enabled || frontend.mapping().initial_environment()!=dm_preprocess::InitialEnvironment::OriginalChecker0290 {
             return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"analysis workspace needs its actual retained original context"));
         }
+        use dm_tree::frontend::DiagnosticPreparationPurpose as P;
+        let analyze=intent.analysis_context()==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290);
+        if analyze&&!matches!(frontend.preparation_purpose(),P::OriginalSharedComplete|P::OriginalAnalyzePrefix)||!analyze&&frontend.preparation_purpose()==P::OriginalAnalyzePrefix{return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"workspace role differs from actual complete/prefix native preparation"))}
         if !workspace.matches_source(frontend.mapping(),frontend.source_revision())||!workspace.matches_request(request)||!workspace.is_recorded_in(&inputs.snapshot()?){return Err(std::io::Error::other("analysis workspace capture differs from current actual source/request"))}
-        let evidence=inputs.diagnostic_source_evidence(frontend)?;
-        let snapshot=SourceSnapshot::capture_diagnostic_sources(frontend,Arc::clone(&queries),None,evidence)?;
+        let selected=WorkspaceSemanticSelection::from_admitted(intent,&workspace)?;
+        let generators=if intent.workspace_generators().is_empty(){None}else{if selected.is_some(){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"generation and semantic child purposes must be issued separately"))}Some(WorkspaceGeneratorSelection::from_admitted(intent,&workspace)?)};
+        let child=if generators.is_some(){Some(Arc::new(crate::runner_host::policy_capture::capture_analysis_generator(frontend,inputs,workspace.configuration().0)?))}else if selected.is_some(){Some(Arc::new(crate::runner_host::policy_capture::capture_analysis_semantic(frontend,inputs,workspace.configuration().0)?))}else{None};
+        let evidence=if let Some(child)=&child{Arc::clone(child.semantic_source_evidence())}else{inputs.diagnostic_source_evidence(frontend)?};
+        let mut snapshot=SourceSnapshot::capture_diagnostic_sources(frontend,Arc::clone(&queries),child,evidence)?;
+        if intent.analysis_context()==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290){let subject=inputs.original_analysis_subject().ok_or_else(||std::io::Error::other("full Analyze subject issuance absent"))?;subject.bind_frontend(frontend)?;subject.discovery().validate_recording(inputs)?;snapshot.analysis_subject=Some(Arc::clone(subject));}
+        if selected.is_some(){snapshot.policy_role=SnapshotPolicyRole::WorkspaceSemanticChild;snapshot.policy_revision=None;snapshot.workspace_semantic_selection=selected;}
+        if let Some(generators)=generators{snapshot.policy_role=SnapshotPolicyRole::WorkspaceGeneratorChild;snapshot.policy_revision=None;snapshot.workspace_generator_selection=Some(generators);}
         self.pending_diagnostic=None;self.pending_source=None;
         self.pending_workspace=Some((workspace,queries));
         self.stage_source_snapshot(snapshot,inputs.snapshot()?)
@@ -1281,6 +1329,7 @@ impl QueryAttempt {
                 "diagnostic queries require the existing query owner",
             ));
         }
+        if frontend.preparation_purpose()==dm_tree::frontend::DiagnosticPreparationPurpose::OriginalAnalyzePrefix{return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"Analyze model cannot stage the checker purpose"))}
         self.pending_source = None;
         self.pending_workspace = None;
         self.pending_diagnostic = Some(SourceSnapshot::capture_diagnostic(
@@ -1329,6 +1378,7 @@ impl QueryAttempt {
             .lock()
             .unwrap_or_else(|error| error.into_inner())
             .snapshot = Some(snapshot);
+        self.state.lock().unwrap_or_else(|e|e.into_inner()).raw_snapshot=None;
         self.captured = true;
         Ok(())
     }
@@ -1383,3 +1433,81 @@ pub(crate) use generation_stage::{ClosedGeneration,original_manifest_includes};
 
 #[cfg(test)]
 #[path="runner_query_analysis_context_tests.rs"]mod analysis_context_tests;
+
+impl SourceSnapshot{
+ pub(crate) fn with_original_semantic_policy<T>(&self,question:crate::policy_request::WorkspaceAuxiliaryQuestion,consume:impl FnOnce(&dq_analyze::captured_sem_reads::SemanticPolicyData)->std::io::Result<T>)->std::io::Result<T>{
+  use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;if !matches!(question,Q::SemReads|Q::UntrackedInputs|Q::SetterPublishes){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"semantic policy endpoint does not issue this role"))}
+  let capture=self.workspace_semantic_inputs(question)?;let guard=self.workspace_native_read()?;let workspace=self.native_workspace.as_ref().ok_or_else(||std::io::Error::other("original semantic workspace unavailable"))?;let queries=self.native_raw_queries.as_ref().ok_or_else(||std::io::Error::other("original semantic QueryDb unavailable"))?;
+  queries.with_original_workspace_semantic_guard(workspace,&guard,capture,question,consume)
+ }
+}
+
+impl SourceSnapshot{
+ pub(crate) fn with_original_semantic_policy_report<T>(&self,question:crate::policy_request::WorkspaceAuxiliaryQuestion,consume:impl FnOnce(&dq_analyze::captured_sem_reads::SemanticPolicyData,&dq_analyze::captured_raw_file::Config,&Arc<dq_analyze::captured_generator_budget::Budget>)->std::io::Result<T>)->std::io::Result<T>{use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;if !matches!(question,Q::SemReads|Q::UntrackedInputs|Q::SetterPublishes){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"semantic report does not issue this role"))}let capture=self.workspace_semantic_inputs(question)?;let guard=self.workspace_native_read()?;let workspace=self.native_workspace.as_ref().ok_or_else(||std::io::Error::other("actual semantic report workspace unavailable"))?;let queries=self.native_raw_queries.as_ref().ok_or_else(||std::io::Error::other("actual semantic report QueryDb unavailable"))?;queries.with_original_workspace_semantic_guard_report(workspace,&guard,capture,question,consume)}
+}
+
+impl SourceSnapshot{
+ /// Shared public report preflight. The complete registry is fixed by its
+ /// genuine factory; the caller supplies no metadata or configuration bytes.
+ pub(crate) fn require_public_report_configuration(&self,root:&std::path::Path,configuration:&std::path::Path,tree:&dm_tree::SemanticTree)->std::io::Result<()>{
+  if !self.matches_tree(tree){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"public report tree differs from current snapshot"))}
+  let capture=self.native_workspace.as_ref().ok_or_else(||std::io::Error::other("public report workspace absent"))?;
+  if root!=capture.root()||configuration!=capture.configuration().0||self.policy_revision!=Some(capture.policy_revision()){return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"public report configuration differs from actual capture"))}
+  let guard=self.workspace_native_read()?;capture.require_scope(&guard)?;
+  let queries=self.native_raw_queries.as_ref().ok_or_else(||std::io::Error::other("public report QueryDb absent"))?;
+  queries.require_workspace_report_configuration(capture,&guard).map_err(|failure|match failure{dq_analyze::captured_reactive_reads::Failure::Operational(actual)=>actual,dq_analyze::captured_reactive_reads::Failure::Unsupported(message)=>std::io::Error::new(std::io::ErrorKind::InvalidInput,message)})
+ }
+}
+
+impl SourceSnapshot{
+ /// Only the actually selected Original diagnostic semantic child enters this
+ /// producer. Its separate CODE_MAPS_DM EOF remains mandatory at the host.
+ pub(crate) fn with_original_tracked_policy<T>(&self,tests:bool,consume:impl FnOnce(&dq_analyze::captured_tracked_pages::TrackedData)->std::io::Result<T>)->std::io::Result<T>{use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;let question=if tests{Q::TrackedTests}else{Q::Tracked};let capture=self.workspace_semantic_inputs(question)?;let guard=self.workspace_native_read()?;let workspace=self.native_workspace.as_ref().ok_or_else(||std::io::Error::other("original tracked workspace unavailable"))?;let queries=self.native_raw_queries.as_ref().ok_or_else(||std::io::Error::other("original tracked QueryDb unavailable"))?;queries.with_original_workspace_tracked_guard(workspace,&guard,capture,tests,consume)}
+}
+
+impl SourceSnapshot{
+ pub(crate) fn with_native_api<T>(&self,tree:&dm_tree::SemanticTree,consume:impl FnOnce(&dq_analyze::captured_api_pages::ApiData,&dq_analyze::captured_raw_file::Config,&Arc<dq_analyze::captured_generator_budget::Budget>)->std::io::Result<T>)->Result<T,dq_analyze::captured_reactive_reads::Failure>{if !self.matches_tree(tree){return Err("API actual current tree differs".into())}let capture=self.native_workspace.as_ref().ok_or("API actual workspace capture absent")?;let guard=self.workspace_native_read()?;capture.require_scope(&guard)?;let queries=self.native_raw_queries.as_ref().ok_or("API actual QueryDb absent")?;queries.with_workspace_api(capture,&guard,consume)}
+}
+impl SourceSnapshot{
+ pub(crate) fn with_native_fields<T>(&self,tree:&dm_tree::SemanticTree,consume:impl FnOnce(&dq_analyze::captured_sys_fields_pages::FieldData,&dq_analyze::captured_raw_file::Config,&Arc<dq_analyze::captured_generator_budget::Budget>)->std::io::Result<T>)->Result<T,dq_analyze::captured_reactive_reads::Failure>{if !self.matches_tree(tree){return Err("Sys fields actual current tree differs".into())}let capture=self.native_workspace.as_ref().ok_or("Sys fields actual workspace capture absent")?;let guard=self.workspace_native_read()?;capture.require_scope(&guard)?;let queries=self.native_raw_queries.as_ref().ok_or("Sys fields actual QueryDb absent")?;queries.with_workspace_fields(capture,&guard,consume)}
+}
+impl SourceSnapshot{
+ pub(crate) fn with_native_appearance<T>(&self,tree:&dm_tree::SemanticTree,consume:impl FnOnce(&dq_analyze::captured_sys_appearance_pages::AppearanceData,&dq_analyze::captured_raw_file::Config,&Arc<dq_analyze::captured_generator_budget::Budget>)->std::io::Result<T>)->Result<T,dq_analyze::captured_reactive_reads::Failure>{if !self.matches_tree(tree){return Err("Appearance actual current tree differs".into())}let capture=self.native_workspace.as_ref().ok_or("Appearance actual workspace capture absent")?;let guard=self.workspace_native_read()?;capture.require_scope(&guard)?;let queries=self.native_raw_queries.as_ref().ok_or("Appearance actual QueryDb absent")?;queries.with_workspace_appearance(capture,&guard,consume)}
+}
+
+#[cfg(test)]#[path="runner_query_analysis_subject_tests.rs"]mod analysis_subject_tests;
+
+impl SourceSnapshot{pub(crate) fn with_native_raw_tree<T>(&self,tree:&dm_tree::SemanticTree,policy:dq_analyze::captured_raw_tree_pages::Policy,consume:impl FnOnce(&dq_analyze::captured_raw_tree_pages::Data,&dq_analyze::captured_raw_file::Config,&Arc<dq_analyze::captured_generator_budget::Budget>)->std::io::Result<T>)->Result<T,dq_analyze::captured_reactive_reads::Failure>{if !self.matches_tree(tree){return Err("raw tree actual current tree differs".into())}let capture=self.native_workspace.as_ref().ok_or("raw tree actual capture absent")?;let guard=self.workspace_native_read()?;capture.require_scope(&guard)?;let queries=self.native_raw_queries.as_ref().ok_or("raw tree actual QueryDb absent")?;queries.with_workspace_raw_tree(capture,&guard,policy,consume)}}
+
+impl SourceSnapshot{pub(crate) fn with_native_workspace_fold_report<R>(&self,tree:&dm_tree::SemanticTree,policy:dq_analyze::workspace_fold_policy::Policy,consume:impl FnOnce(dq_analyze::workspace_fold_policy::Data<'_>,&dq_analyze::captured_raw_file::Config,&Arc<dq_analyze::captured_generator_budget::Budget>)->std::io::Result<R>)->Result<R,dq_analyze::captured_reactive_reads::Failure>{use crate::policy_request::WorkspaceAuxiliaryQuestion as Q;if !self.matches_tree(tree){return Err("whole policy report actual tree differs".into())}let workspace=self.native_workspace.as_ref().ok_or("whole policy report actual workspace absent")?;let guard=self.workspace_native_read()?;workspace.require_scope(&guard)?;let queries=self.native_raw_queries.as_ref().ok_or("whole policy report actual QueryDb absent")?;if let Some(tests)=policy.tracked(){let question=if tests{Q::TrackedTests}else{Q::Tracked};let capture=self.workspace_semantic_inputs(question)?;return queries.with_original_workspace_tracked_guard_report(workspace,&guard,capture,tests,|data,config,budget|consume(dq_analyze::workspace_fold_policy::Data::Tracked(data),config,budget)).map_err(dq_analyze::captured_reactive_reads::Failure::Operational)}queries.with_workspace_fold_report(workspace,&guard,policy,consume)}}
+
+#[cfg(test)]#[path="runner_query_complete_policy_report_tests.rs"]mod complete_policy_reports;
+impl SourceSnapshot{
+ pub(crate) fn with_original_decl_policy<T>(&self,consume:impl FnOnce(&dq_analyze::captured_decl_pages::DeclData,&dq_analyze::captured_raw_file::Config,&Arc<dq_analyze::captured_generator_budget::Budget>)->std::io::Result<T>)->std::io::Result<T>{let question=crate::policy_request::WorkspaceAuxiliaryQuestion::Decl;let capture=self.workspace_semantic_inputs(question)?;let guard=self.workspace_native_read()?;let workspace=self.native_workspace.as_ref().ok_or_else(||std::io::Error::other("original decl workspace unavailable"))?;let queries=self.native_raw_queries.as_ref().ok_or_else(||std::io::Error::other("original decl QueryDb unavailable"))?;queries.with_original_workspace_decl_guard(workspace,&guard,capture,consume)}
+}
+
+impl SourceSnapshot{
+ pub(crate) fn with_original_init_policy<T>(&self,consume:impl FnOnce(&dq_analyze::captured_init_pages::InitData,&dq_analyze::captured_raw_file::Config,&Arc<dq_analyze::captured_generator_budget::Budget>)->std::io::Result<T>)->std::io::Result<T>{let question=crate::policy_request::WorkspaceAuxiliaryQuestion::Init;let capture=self.workspace_semantic_inputs(question)?;let guard=self.workspace_native_read()?;let workspace=self.native_workspace.as_ref().ok_or_else(||std::io::Error::other("original init workspace unavailable"))?;let queries=self.native_raw_queries.as_ref().ok_or_else(||std::io::Error::other("original init QueryDb unavailable"))?;queries.with_original_workspace_init_guard(workspace,&guard,capture,consume)}
+}
+
+impl SourceSnapshot{
+ pub(crate) fn with_original_base_vars_policy<T>(&self,consume:impl FnOnce(&dq_analyze::captured_base_vars_pages::BaseVarsData,&dq_analyze::captured_raw_file::Config,&Arc<dq_analyze::captured_generator_budget::Budget>)->std::io::Result<T>)->std::io::Result<T>{let question=crate::policy_request::WorkspaceAuxiliaryQuestion::BaseVars;let capture=self.workspace_semantic_inputs(question)?;let guard=self.workspace_native_read()?;let workspace=self.native_workspace.as_ref().ok_or_else(||std::io::Error::other("original base_vars workspace unavailable"))?;let queries=self.native_raw_queries.as_ref().ok_or_else(||std::io::Error::other("original base_vars QueryDb unavailable"))?;queries.with_original_workspace_base_vars_guard(workspace,&guard,capture,consume)}
+}
+
+impl SourceSnapshot{
+ pub(crate) fn with_original_requirement_bool_policy<T>(&self,consume:impl FnOnce(&dq_analyze::captured_requirement_bool_pages::RequirementData,&dq_analyze::captured_raw_file::Config,&Arc<dq_analyze::captured_generator_budget::Budget>)->std::io::Result<T>)->std::io::Result<T>{let question=crate::policy_request::WorkspaceAuxiliaryQuestion::RequirementBool;let capture=self.workspace_semantic_inputs(question)?;let guard=self.workspace_native_read()?;let workspace=self.native_workspace.as_ref().ok_or_else(||std::io::Error::other("original requirement_bool workspace unavailable"))?;let queries=self.native_raw_queries.as_ref().ok_or_else(||std::io::Error::other("original requirement_bool QueryDb unavailable"))?;queries.with_original_workspace_requirement_bool_guard(workspace,&guard,capture,consume)}
+}
+
+#[cfg(test)]#[path="runner_query_raw_workspace_tests.rs"]mod raw_workspace_tests;
+
+#[cfg(test)]#[path="runner_query_ownership_tests.rs"]mod ownership_complete_raw;
+
+#[cfg(test)]#[path="runner_query_original_model_purpose_tests.rs"]mod original_model_purpose_tests;
+
+#[cfg(test)]#[path="runner_query_engine_layering_tests.rs"]mod engine_layering_conditional_tests;
+
+#[cfg(test)]#[path="runner_query_original_model_convergence_tests.rs"]mod original_model_convergence_tests;
+
+#[cfg(test)]#[path="runner_query_ui_actions_tests.rs"]mod ui_actions_tests;
+
+#[cfg(test)]#[path="runner_query_op_order_tests.rs"]mod op_order_complete_raw;

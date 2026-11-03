@@ -1,0 +1,9 @@
+/datum/odd_atom
+    parent_type=/obj
+/obj/odd_nonatom
+    parent_type=/datum
+/proc/probe(datum/odd_atom/atomish,obj/odd_nonatom/plain)
+    for(var/a in atomish)
+        continue
+    for(var/b in plain)
+        continue

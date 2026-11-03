@@ -1,4 +1,21 @@
 use super::*;
+#[path="macro_storage.rs"]mod funded_storage;
+#[path="original_macro_substitution.rs"]mod original_substitution;
+#[path="original_macro_values.rs"]mod original_values;
+#[path="original_macro_demand.rs"]mod original_demand;
+#[path="original_macro_numbers.rs"]mod original_numbers;
+#[path="original_macro_define.rs"]mod original_define;
+#[path="original_macro_lexical_values.rs"]mod original_lexical_values;
+pub(crate) use funded_storage::FundedMacroOutput;
+pub(crate) use funded_storage::formatted as original_format_using;
+pub(crate) use original_numbers::IssuedNumber as OriginalMacroNumber;
+pub(crate) use original_lexical_values::{quoted_value_using as original_quoted_value_using,comment_value_using as original_comment_value_using,resource_value_using as original_resource_value_using,QuotedValue as OriginalMacroQuotedValue};
+pub(crate) use original_define::{Builder as OriginalDefineBuilder,Input as OriginalDefineInput,Progress as OriginalDefineProgress,Defined as OriginalDefinedMacro,Doc as OriginalMacroDoc};
+// Parser DATA facade only; actual current source/EOF/model grants remain with
+// SAME DirectivePass/QueryAttempt owner, never this transient macro state.
+pub(crate) use funded_storage::{MacroRows as OriginalMacroRows,MacroText as OriginalMacroText};
+pub(crate) use original_values::{Token as OriginalMacroToken,Value as OriginalMacroValue,Text as OriginalMacroTextValue,Origin as OriginalMacroOrigin};
+pub(crate) use original_demand::{Cursor as OriginalMacroCursor,Source as OriginalMacroSource,Definition as OriginalMacroDefinition,RawStep as OriginalMacroRawStep,Step as OriginalMacroStep,OuterStep as OriginalMacroOuterStep,Notice as OriginalMacroNotice,NoticeKind as OriginalMacroNoticeKind};
 
 pub(super) fn strip_macro_comments(replacement: &str) -> String {
     let lexed = lex_spans(replacement);
@@ -733,11 +750,8 @@ fn parse_arguments(
 }
 
 /// Exact pinned lexer::Quote transport, whose input escapes are unparsed.
-fn original_quote(output:&mut String,text:&str){
-    if text.contains("\"}"){output.push_str("@@");output.push_str(text);output.push('@');}
-    else if text.contains('"')||text.contains('\n'){output.push_str("{\"");output.push_str(text);output.push_str("\"}");}
-    else{output.push('"');output.push_str(text);output.push('"');}
-}
+pub(crate) fn original_quote_delimiters(text:&str)->(&'static str,&'static str){dm_syntax::original_token_value::original_quote_delimiters(text)}
+fn original_quote(output:&mut String,text:&str){let(open,close)=original_quote_delimiters(text);output.push_str(open);output.push_str(text);output.push_str(close);}
 
 #[cfg(test)]mod original_dynamic_transport_tests{
  use super::*;

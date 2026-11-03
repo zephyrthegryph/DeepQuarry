@@ -42,12 +42,7 @@ impl<'a> OriginalSettingSource<'a> {
             i.original_owner.settings.len(),
             admission,
             || {
-                dm_syntax::prepare_setting_expression(
-                    i.source,
-                    i.tokens,
-                    i.original_value,
-                    admission,
-                )
+                dm_syntax::prepare_setting_expression_with_original_literal_facts(i.source,i.tokens,i.original_value,admission,i.literal_owner.original_literal_facts().map_err(dm_syntax::SettingSyntaxFailure::Operational)?)
             },
         )?;
         root.project_current(i.offset, i.source.len())

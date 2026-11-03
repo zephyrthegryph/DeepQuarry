@@ -2,8 +2,8 @@
 //! absent; the same BuildHost then owns the final unchanged full frame.
 use super::*;
 use std::sync::Arc;
-fn all_names()->Vec<GeneratorName>{vec![GeneratorName::Actions,GeneratorName::AutoTracked,GeneratorName::Declare,GeneratorName::DeclareIds,GeneratorName::Deps,GeneratorName::DerivedReads,GeneratorName::Plans,GeneratorName::Reads,GeneratorName::SparseSlots,GeneratorName::Stats,GeneratorName::SystemAccessors,GeneratorName::TrackedLists,GeneratorName::UiTypes]}
-fn cold_fixture()->(BuildHost,BuildRequest,PathBuf,PathBuf){
+pub(super) fn all_names()->Vec<GeneratorName>{vec![GeneratorName::Actions,GeneratorName::AutoTracked,GeneratorName::Declare,GeneratorName::DeclareIds,GeneratorName::Deps,GeneratorName::DerivedReads,GeneratorName::Plans,GeneratorName::Reads,GeneratorName::SparseSlots,GeneratorName::Stats,GeneratorName::SystemAccessors,GeneratorName::TrackedLists,GeneratorName::UiTypes]}
+pub(super) fn cold_fixture()->(BuildHost,BuildRequest,PathBuf,PathBuf){
  let(host,mut request,cache,root)=crate::generation_test_fixture::fixture();
  std::fs::remove_file(root.join(GeneratorName::Deps.path())).unwrap();
  std::fs::remove_dir(root.join("code/engine/_generated")).unwrap();

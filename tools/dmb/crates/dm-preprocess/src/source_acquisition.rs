@@ -57,6 +57,31 @@ pub enum AcquisitionStorage<'a> {
     Source(&'a SourceText),
 }
 impl SourceAcquisitionLease {
+    /// Native raw acquisition: the SAME decoder and receipt binding without
+    /// preparing logical lines, directives, a parser or a semantic graph.
+    pub fn from_raw_original_bytes<T:Any+Send+Sync>(bytes:Vec<u8>,receipt:T)->Self{
+        let(text,encoding)=decode_original_bytes(bytes);
+        Self(Arc::new(Binding{original:Arc::new(Original{source:text.into(),encoding}),receipt:Arc::new(receipt)}))
+    }
+
+    /// Actual private constructor layout; resource geometry only, not a source
+    /// authorization. Receipt-owned path buffers are supplied by its issuer.
+    pub fn raw_constructor_storage_bytes<T>()->std::io::Result<usize>{
+        std::mem::size_of::<Binding>().checked_add(std::mem::size_of::<Original>()).and_then(|n|n.checked_add(std::mem::size_of::<T>())).and_then(|n|n.checked_add(6*std::mem::size_of::<usize>())).and_then(|n|SourceText::source_arena_control_bytes().ok().and_then(|m|n.checked_add(m))).ok_or_else(||std::io::ErrorKind::OutOfMemory.into())
+    }
+    /// SAME raw acquisition constructor after its one admitted decoder emitted
+    /// text; private receipt remains the sole native issuer authorization.
+    pub fn from_raw_original_decoded<T:Any+Send+Sync>(text:String,encoding:SourceEncoding,receipt:T)->Self{
+        Self(Arc::new(Binding{original:Arc::new(Original{source:text.into(),encoding}),receipt:Arc::new(receipt)}))
+    }
+    /// Issue resource-only weak views over the THREE actual constructor
+    /// allocations. Sharing/reissuance preserves real Original addresses and
+    /// never causes an aggregate Binding row to double-charge shared objects.
+    pub fn visit_weak_resource_objects(&self,mut emit:impl FnMut(WeakAcquisitionObject)){
+        emit(WeakAcquisitionObject(WeakObject::Binding(Arc::downgrade(&self.0))));
+        emit(WeakAcquisitionObject(WeakObject::Original(Arc::downgrade(&self.0.original))));
+        emit(WeakAcquisitionObject(WeakObject::Receipt{owner:Arc::downgrade(&self.0.receipt),bytes:std::mem::size_of_val(self.0.receipt.as_ref())}));
+    }
     pub fn visit_storage(&self, mut visit: impl FnMut(AcquisitionStorage<'_>)) {
         visit(AcquisitionStorage::Object {
             address: Arc::as_ptr(&self.0) as usize,
@@ -89,7 +114,7 @@ impl SourceAcquisitionLease {
     pub fn same_original_acquisition(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.0.original, &other.0.original)
     }
-    fn reissued<T: Any + Send + Sync>(&self, receipt: T) -> Self {
+    pub fn reissued<T: Any + Send + Sync>(&self, receipt: T) -> Self {
         Self(Arc::new(Binding {
             original: Arc::clone(&self.0.original),
             receipt: Arc::new(receipt),
@@ -98,16 +123,7 @@ impl SourceAcquisitionLease {
 }
 impl AcquiredSource {
     pub fn from_original_bytes<T: Any + Send + Sync>(bytes: Vec<u8>, receipt: T) -> Self {
-        let encoding = classify(&bytes);
-        let text = match String::from_utf8(bytes) {
-            Ok(mut text) => {
-                if text.starts_with('\u{feff}') {
-                    text.drain(..3);
-                }
-                text
-            }
-            Err(e) => crate::decode_source_bytes(&e.into_bytes()),
-        };
+        let (text,encoding)=decode_original_bytes(bytes);
         Self::issue(shared_prepared(text.into()), encoding, receipt)
     }
     pub fn from_original_slice<T: Any + Send + Sync>(bytes: &[u8], receipt: T) -> Self {
@@ -238,4 +254,47 @@ impl SourceAcquisitionLease {
     pub fn original_identity(&self) -> OriginalAcquisitionIdentity {
         OriginalAcquisitionIdentity(Arc::downgrade(&self.0.original))
     }
+}
+
+fn decode_original_bytes(bytes:Vec<u8>)->(String,SourceEncoding){
+    let encoding = classify(&bytes);
+    let text = match String::from_utf8(bytes) {
+            Ok(mut text) => {
+                if text.starts_with('\u{feff}') {
+                    text.drain(..3);
+                }
+                text
+            }
+            Err(e) => crate::decode_source_bytes(&e.into_bytes()),
+        };
+(text,encoding)
+}
+
+/// Opaque weak allocation observation. It never returns a lease/Original/model,
+/// and a live receipt loan is limited to metadata visitors on this call stack.
+#[derive(Clone)]pub struct WeakAcquisitionObject(WeakObject);
+#[derive(Clone)]enum WeakObject{Binding(std::sync::Weak<Binding>),Original(std::sync::Weak<Original>),Receipt{owner:std::sync::Weak<dyn Any+Send+Sync>,bytes:usize}}
+impl WeakAcquisitionObject{
+ pub fn resource_key(&self)->(u8,usize){match &self.0{WeakObject::Binding(w)=>(0,w.as_ptr()as usize),WeakObject::Original(w)=>(1,w.as_ptr()as usize),WeakObject::Receipt{owner,..}=>(2,owner.as_ptr()as*const()as usize)}}
+ pub fn is_alive(&self)->bool{match &self.0{WeakObject::Binding(w)=>w.strong_count()!=0,WeakObject::Original(w)=>w.strong_count()!=0,WeakObject::Receipt{owner,..}=>owner.strong_count()!=0}}
+ /// Fixed allocation remains reserved by this Weak even when payload is dead.
+ pub fn visit_control_storage(&self,visit:impl FnOnce(usize,usize,usize)){
+  let(_,ptr)=self.resource_key();let bytes=match &self.0{WeakObject::Binding(_)=>std::mem::size_of::<Binding>(),WeakObject::Original(_)=>std::mem::size_of::<Original>(),WeakObject::Receipt{bytes,..}=>*bytes}+2*std::mem::size_of::<usize>();visit(ptr,if self.is_alive(){bytes}else{0},bytes)
+ }
+ /// Temporary upgrade, no retained strong owner/content cache. Metadata-only
+ /// Object/Receipt facts cannot be used as a source/currentness/EOF proof.
+ pub fn visit_live_storage(&self,mut visit:impl FnMut(AcquisitionStorage<'_>))->bool{
+  match &self.0{
+   WeakObject::Binding(w)=>{let Some(owner)=w.upgrade()else{return false};visit(AcquisitionStorage::Object{address:Arc::as_ptr(&owner)as usize,bytes:std::mem::size_of::<Binding>()});true},
+   WeakObject::Original(w)=>{let Some(owner)=w.upgrade()else{return false};visit(AcquisitionStorage::Object{address:Arc::as_ptr(&owner)as usize,bytes:std::mem::size_of::<Original>()});true},
+   WeakObject::Receipt{owner,bytes}=>{let Some(owner)=owner.upgrade()else{return false};visit(AcquisitionStorage::Receipt{address:Arc::as_ptr(&owner)as*const()as usize,bytes:*bytes,value:owner.as_ref()});true},
+  }
+ }
+}
+
+#[cfg(test)]mod resource_object_tests{
+ use super::*;
+ #[test]fn actual_resource_views_dedup_only_shared_original_and_never_reissue_or_resurrect_a_source(){
+  let first=SourceAcquisitionLease::from_raw_original_bytes(b"source".to_vec(),1usize);let second=first.reissued(2usize);let mut a=Vec::new();let mut b=Vec::new();first.visit_weak_resource_objects(|w|a.push(w));second.visit_weak_resource_objects(|w|b.push(w));assert_eq!(a.len(),3);assert_eq!(b.len(),3);assert_ne!(a[0].resource_key(),b[0].resource_key());assert_eq!(a[1].resource_key(),b[1].resource_key());assert_ne!(a[2].resource_key(),b[2].resource_key());drop(first);assert!(!a[0].is_alive());assert!(a[1].is_alive());assert!(!a[2].is_alive());drop(second);for w in a.iter().chain(&b){assert!(!w.is_alive());let mut live=false;assert!(!w.visit_live_storage(|_|live=true));assert!(!live);let mut capacity=0;w.visit_control_storage(|_,logical,cap|{assert_eq!(logical,0);capacity=cap});assert!(capacity>0,"real weak control stays reserved until the observation drops");}
+ }
 }

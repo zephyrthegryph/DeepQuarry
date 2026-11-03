@@ -22,8 +22,8 @@ const WHY_DESC: &str = "description_info is gone; examine text is generated from
 const WHY_INPUT: &str = "input_stance() outside the input layer; take the stance from the interaction or a stance argument";
 
 static META: Meta = Meta {
-    name: "stance_examine",
-    group: "",
+    name: crate::allow_registry_fields::stance_examine::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::stance_examine::SCOPE_META_0.group,
     label: "stance_examine",
     legacy: "tools/ci/stance_examine_lint.py",
     select: Select { roots: &[("code", "dm"), ("maps", "dm")], hidden: true },
@@ -37,7 +37,7 @@ static META: Meta = Meta {
         RuleMeta { name: "input_stance", hint: WHY_INPUT },
     ],
     allow: crate::allow_registry_fields::stance_examine::ALLOW_0,
-    lists: &["input_stance_readers"],
+    lists: crate::allow_registry_fields::stance_examine::SCOPE_META_0.lists,
 };
 
 struct StanceExamine;

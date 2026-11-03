@@ -25,8 +25,8 @@ const DESTROY_HINT: &str = "Destroy() overrides are banned outside the core chai
 const QDEL_HINT: &str = "use consume()/replace_with()/expire()/slot_clear()/ledger_empty()/delete_on_death (code/datums/lifecycle/verbs.dm)";
 
 static META: Meta = Meta {
-    name: "lifecycle_counts",
-    group: "",
+    name: crate::allow_registry_fields::lifecycle_counts::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::lifecycle_counts::SCOPE_META_0.group,
     label: "lifecycle",
     legacy: "tools/ci/lifecycle_counts_lint.py",
     select: CODE_MAPS_DM,
@@ -43,7 +43,7 @@ static META: Meta = Meta {
     },
     rules: &[RuleMeta { name: "destroy", hint: DESTROY_HINT }, RuleMeta { name: "qdel", hint: QDEL_HINT }],
     allow: crate::allow_registry_fields::lifecycle_counts::ALLOW_0,
-    lists: &["exempt_prefixes", "exempt_files"],
+    lists: crate::allow_registry_fields::lifecycle_counts::SCOPE_META_0.lists,
 };
 
 /// The core `Destroy()` chain phase 7 calls after `on_destroy()`; nothing else may override it.

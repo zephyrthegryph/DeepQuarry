@@ -280,5 +280,5 @@ fn scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize
 
 #[cfg(feature="legacy-sem")]
 pub fn register(reg: &mut Registry) {
-    register_module(reg, SysModule { name: "hygiene", rules: RULES, files_scan: Some(scan), ..SysModule::DEFAULT });
+    register_module(reg, SysModule { name: crate::allow_registry_fields::sys_hygiene::SCOPE_MODULE_NAME, rules: RULES, files_scan: Some(scan), ..SysModule::DEFAULT });
 }

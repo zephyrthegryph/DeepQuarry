@@ -2,7 +2,7 @@
 use crate::{captured_generator_budget::Budget,captured_raw_file::{RawPolicyViews,Config},reactive_raw_policy_pages::RawPolicyPages,reactive_reads_native::Failure,lint::{AllowUse,Site,Sink}};
 use std::{io,sync::Arc};
 /// Same original descriptor builder, independent of the legacy scan callback.
-pub fn metadata()->&'static crate::lint::Meta{static META:std::sync::OnceLock<crate::lint::Meta>=std::sync::OnceLock::new();META.get_or_init(||crate::dm::sys::module_metadata(&crate::dm::sys::SysModule{name:"hygiene",rules:crate::sys_hygiene_policy::RULES,..crate::dm::sys::SysModule::DEFAULT},crate::lint::ScanKind::Tree))}
+pub fn metadata()->&'static crate::lint::Meta{static META:std::sync::OnceLock<crate::lint::Meta>=std::sync::OnceLock::new();META.get_or_init(||crate::dm::sys::module_metadata(&crate::dm::sys::SysModule{name:crate::allow_registry_fields::sys_hygiene::SCOPE_MODULE_NAME,rules:crate::sys_hygiene_policy::RULES,..crate::dm::sys::SysModule::DEFAULT},crate::lint::ScanKind::Tree))}
 pub fn selected_roots()->&'static[(&'static str,&'static str)]{crate::dm::sys::policy_selection().roots}
 pub fn selects_path(relative:&str)->bool{crate::dm::sys::policy_selection().matches_path(relative)}
 /// Owned finding/baseline text only; no provider completion or source receipt.

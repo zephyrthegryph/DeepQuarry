@@ -247,7 +247,7 @@ pub fn expand_regions_reusing(
         ExpandedRegions {
             input_keys: Arc::new(input_keys),
             text,
-            tokens: Vec::new(),
+            tokens: Vec::new().into(),
             origins,
             emission_regions: emission,
             diagnostics: Vec::new(),

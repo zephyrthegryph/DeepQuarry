@@ -8,6 +8,8 @@
 mod test_scratch;
 mod request_scope;
 mod weighted;
+mod worker_stack;
+pub use worker_stack::{with_current_compiler_worker_stack,CurrentCompilerWorkerStack};
 pub use request_scope::RequestError;
 pub use weighted::weighted_ranges;
 
@@ -115,7 +117,11 @@ impl BuildExecutor {
                 if let Some(size) = thread.stack_size() {
                     builder = builder.stack_size(size);
                 }
+                let configured_stack=thread.stack_size();
                 let handle = builder.spawn(move || {
+                    // Issued only for the exact explicit stack actually supplied
+                    // to this existing OS-worker builder, never a thread name.
+                    let _stack=worker_stack::Entry::enter(configured_stack);
                     let _request = request.as_ref().map(|request| {
                         request
                             .enter()

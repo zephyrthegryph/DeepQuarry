@@ -198,6 +198,41 @@ impl<'op> SettingAdmission<'op> {
         drop(additional);
         Ok(())
     }
+    /// Release storage only after its unique native owner has actually dropped
+    /// that allocation. This transfers no source/model/cache authority. A caller
+    /// cannot shrink another admission domain or credit more than it owns.
+    pub fn shrink(&self,lease:&mut SettingRootLease,bytes:usize)->std::io::Result<()>{
+        self.checkpoint()?;
+        if !self.matches_lease_domain(lease){let actual=std::io::Error::new(std::io::ErrorKind::InvalidInput,"setting release belongs to a foreign body budget");self.record_operational_error(actual);return Err(std::io::ErrorKind::InvalidInput.into())}
+        let Some(remaining)=lease.bytes.checked_sub(bytes)else{let actual=std::io::Error::new(std::io::ErrorKind::InvalidInput,"setting owner release exceeds owned storage");self.record_operational_error(actual);return Err(std::io::ErrorKind::InvalidInput.into())};
+        if lease.counter.fetch_update(Ordering::AcqRel,Ordering::Acquire,|used|used.checked_sub(bytes)).is_err(){let actual=std::io::Error::new(std::io::ErrorKind::InvalidData,"setting resource counter is below owned release");self.record_operational_error(actual);return Err(std::io::ErrorKind::InvalidData.into())}
+        lease.bytes=remaining;Ok(())
+    }
+    /// Transfer already-funded allocation ownership within this SAME native
+    /// resource root. No counter credit is created/released and no source,
+    /// syntax, completion or model authority is transferred. On every failure
+    /// both leases stay unchanged so both live payloads remain fully funded.
+    pub fn absorb(&self,target:&mut SettingRootLease,source:&mut SettingRootLease)->std::io::Result<()>{
+        if let Err(status)=self.checkpoint(){return Err(self.take_operational_error().unwrap_or(status))}
+        let refuse=|kind,text:&'static str|{let actual=std::io::Error::new(kind,text);self.record_operational_error(actual);self.take_operational_error().unwrap_or_else(||kind.into())};
+        if !self.matches_lease_domain(target)||!self.matches_lease_domain(source){return Err(refuse(std::io::ErrorKind::InvalidInput,"macro allocation credit belongs to a foreign native resource root"))}
+        let total=target.bytes.checked_add(source.bytes).ok_or_else(||refuse(std::io::ErrorKind::OutOfMemory,"macro allocation ownership transfer overflow"))?;
+        let held=self.counter.load(Ordering::Acquire);if held<total{return Err(refuse(std::io::ErrorKind::InvalidData,"native resource counter is below transferred allocation ownership"))}if held>self.limit{return Err(refuse(std::io::ErrorKind::OutOfMemory,"native allocation ownership exceeds this unchanged admission limit"))}
+        target.bytes=total;source.bytes=0;Ok(())
+    }
+    /// Split actual same-counter storage ownership, without reserving/refunding
+    /// any bytes or transferring syntax/source authority. Both the parent and
+    /// counter stay unchanged on first IO, foreign domain, size or limit failure.
+    pub fn split(&self,parent:&mut SettingRootLease,bytes:usize)->std::io::Result<SettingRootLease>{
+        if let Err(status)=self.checkpoint(){return Err(self.take_operational_error().unwrap_or(status))}
+        let refuse=|kind,message|{self.record_operational_error(std::io::Error::new(kind,message));self.take_operational_error().unwrap_or_else(||kind.into())};
+        if !self.matches_lease_domain(parent){return Err(refuse(std::io::ErrorKind::InvalidInput,"split allocation belongs to a foreign native resource root"))}
+        let remaining=parent.bytes.checked_sub(bytes).ok_or_else(||refuse(std::io::ErrorKind::InvalidInput,"split exceeds actual retained storage ownership"))?;
+        let held=self.counter.load(Ordering::Acquire);
+        if held<parent.bytes{return Err(refuse(std::io::ErrorKind::InvalidData,"native resource counter is below actual split ownership"))}
+        if held>self.limit{return Err(refuse(std::io::ErrorKind::OutOfMemory,"split ownership exceeds this unchanged admission limit"))}
+        let child=SettingRootLease{counter:Arc::clone(&parent.counter),bytes};parent.bytes=remaining;Ok(child)
+    }
     pub fn matches_lease_domain(&self, lease: &SettingRootLease) -> bool {
         Arc::ptr_eq(self.counter, &lease.counter)
     }
@@ -315,27 +350,32 @@ pub struct SettingExpression {
     root: Option<Arc<Root>>,
     // Source projection only. The canonical Expr remains in ORIGINAL chunk coordinates.
     current_offset: usize,
+    source_extent: usize,
 }
 impl SettingExpression {
     pub(crate) fn compatibility(expression: Expr) -> Self {
+        let source_extent=expression.span.end;
         Self {
             root: Some(Arc::new(Root {
                 expression,
                 retention: None,
             })),
             current_offset: 0,
+            source_extent,
         }
     }
     pub(crate) fn retained_with_anchor(
         expression: Expr,
         retention: SharedSettingRetention,
     ) -> Self {
+        let source_extent=expression.span.end;
         Self {
             root: Some(Arc::new(Root {
                 expression,
                 retention: Some(retention),
             })),
             current_offset: 0,
+            source_extent,
         }
     }
     #[cfg(test)]
@@ -352,6 +392,7 @@ impl SettingExpression {
     pub fn original_expression(&self) -> &Expr {
         &self.payload().expression
     }
+    pub fn current_projection(&self)->crate::SyntaxProjection{crate::SyntaxProjection::new(crate::Span::new(0,self.source_extent),crate::Span::new(self.current_offset,self.current_offset+self.source_extent)).expect("private checked root projection")}
     pub fn current_offset(&self) -> usize {
         self.current_offset
     }
@@ -371,13 +412,11 @@ impl SettingExpression {
             ));
         }
         self.current_offset = offset;
+        self.source_extent = source_extent;
         Ok(self)
     }
     pub fn current_span_of(&self, expression: &Expr) -> Option<crate::Span> {
-        Some(crate::Span::new(
-            expression.span.start.checked_add(self.current_offset)?,
-            expression.span.end.checked_add(self.current_offset)?,
-        ))
+        self.current_projection().span(expression.span)
     }
     pub fn current_span(&self) -> crate::Span {
         self.current_span_of(self.original_expression())
@@ -428,6 +467,7 @@ impl Clone for SettingExpression {
         Self {
             root: self.root.as_ref().map(Arc::clone),
             current_offset: self.current_offset,
+            source_extent: self.source_extent,
         }
     }
 }
@@ -581,4 +621,32 @@ mod evaluation_frame_tests {
         let counter=Arc::new(AtomicUsize::new(0));let poll=||Err(std::io::Error::from_raw_os_error(1450));
         let a=SettingAdmission::new(&counter,1024*1024,&poll);let actual=a.evaluation_frame().err().unwrap();assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(counter.load(Ordering::Acquire),0);
     }
+}
+
+#[cfg(test)]mod root_projection_storage_tests{use super::*;
+ #[test]fn current_projection_borrows_same_original_root_and_retention_without_reparse_or_copy(){let counter=Arc::new(AtomicUsize::new(0));let lease=SettingRootLease::reserve(&counter,8192,1024).unwrap();let expression=crate::parse_expression("list(1,2)").expr.unwrap();let extent=expression.span.end;let root=SettingExpression::retained(expression,lease);let current=root.clone().project_current(200,extent).unwrap();assert!(root.same_root(&current));assert!(std::ptr::eq(root.original_expression(),current.original_expression()));assert_eq!(current.current_projection().original(),crate::Span::new(0,extent));assert_eq!(current.current_projection().current(),crate::Span::new(200,200+extent));assert_eq!(current.current_span(),crate::Span::new(200,200+extent));assert_eq!(counter.load(Ordering::Acquire),1024);drop(root);assert_eq!(counter.load(Ordering::Acquire),1024);drop(current);assert_eq!(counter.load(Ordering::Acquire),0);}
+}
+
+#[cfg(test)]mod native_owner_storage_release_tests{
+ use super::*;
+ #[test]fn existing_admission_releases_only_the_unique_owners_real_storage(){
+  let counter=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&counter,4096,&||Ok(()));let mut first=a.reserve(100).unwrap();let second=a.reserve(250).unwrap();a.shrink(&mut first,75).unwrap();assert_eq!(first.bytes(),25);assert_eq!(counter.load(Ordering::Acquire),275);drop(second);assert_eq!(counter.load(Ordering::Acquire),25);drop(first);assert_eq!(counter.load(Ordering::Acquire),0);
+ }
+ #[test]fn owner_release_refuses_foreign_domain_underflow_and_first_operational_failure(){
+  let counter=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&counter,4096,&||Ok(()));let mut lease=a.reserve(100).unwrap();assert_eq!(a.shrink(&mut lease,101).err().unwrap().kind(),std::io::ErrorKind::InvalidInput);assert_eq!(lease.bytes(),100);assert_eq!(counter.load(Ordering::Acquire),100);a.take_operational_error().unwrap();
+  let foreign=Arc::new(AtomicUsize::new(0));let b=SettingAdmission::new(&foreign,4096,&||Ok(()));assert_eq!(b.shrink(&mut lease,10).err().unwrap().kind(),std::io::ErrorKind::InvalidInput);assert_eq!(lease.bytes(),100);assert_eq!(foreign.load(Ordering::Acquire),0);b.take_operational_error().unwrap();
+  let fault=||Err(std::io::Error::from_raw_os_error(1450));let c=SettingAdmission::new(&counter,4096,&fault);let status=c.shrink(&mut lease,10).err().unwrap();assert_eq!(status.kind(),std::io::Error::from_raw_os_error(1450).kind());let actual=c.take_operational_error().unwrap();assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(lease.bytes(),100);assert_eq!(counter.load(Ordering::Acquire),100);drop(lease);assert_eq!(counter.load(Ordering::Acquire),0);
+ }
+}
+
+#[cfg(test)]mod allocation_absorb_tests{
+ use super::*;
+ #[test]fn actual_same_root_absorb_preserves_counter_until_final_output_owner_drops(){let counter=Arc::new(AtomicUsize::new(0));let healthy=||Ok(());let a=SettingAdmission::new(&counter,4096,&healthy);let mut text=a.reserve(400).unwrap();let mut points=a.reserve(600).unwrap();a.absorb(&mut text,&mut points).unwrap();assert_eq!(text.bytes(),1000);assert_eq!(points.bytes(),0);assert_eq!(counter.load(Ordering::Acquire),1000);drop(points);assert_eq!(counter.load(Ordering::Acquire),1000);drop(a);assert_eq!(counter.load(Ordering::Acquire),1000,"actual output can outlive the temporary operation");drop(text);assert_eq!(counter.load(Ordering::Acquire),0);}
+ #[test]fn absorb_foreign_limit_and_first_real_io_leave_both_payload_credits_unchanged(){let counter=Arc::new(AtomicUsize::new(0));let other=Arc::new(AtomicUsize::new(0));let healthy=||Ok(());let a=SettingAdmission::new(&counter,4096,&healthy);let b=SettingAdmission::new(&other,4096,&healthy);let mut x=a.reserve(400).unwrap();let mut y=b.reserve(600).unwrap();assert_eq!(a.absorb(&mut x,&mut y).unwrap_err().kind(),std::io::ErrorKind::InvalidInput);assert_eq!((x.bytes(),y.bytes()),(400,600));assert_eq!((counter.load(Ordering::Acquire),other.load(Ordering::Acquire)),(400,600));let c=SettingAdmission::new(&counter,4096,&healthy);let mut z=c.reserve(300).unwrap();let low=SettingAdmission::new(&counter,500,&healthy);assert_eq!(low.absorb(&mut x,&mut z).unwrap_err().kind(),std::io::ErrorKind::OutOfMemory);assert_eq!((x.bytes(),z.bytes()),(400,300));let fault=||Err(std::io::Error::from_raw_os_error(1450));let failed=SettingAdmission::new(&counter,4096,&fault);let error=failed.absorb(&mut x,&mut z).unwrap_err();assert_eq!(error.raw_os_error(),Some(1450));assert_eq!((x.bytes(),z.bytes()),(400,300));drop((x,y,z));assert_eq!((counter.load(Ordering::Acquire),other.load(Ordering::Acquire)),(0,0));}
+}
+
+#[cfg(test)]mod actual_split_ownership_tests{
+ use super::*;
+ #[test]fn actual_split_and_absorb_transfer_without_changing_counter_and_drop_tracks_each_live_payload(){let used=Arc::new(AtomicUsize::new(0));let a=SettingAdmission::new(&used,4096,&||Ok(()));let mut parent=a.reserve(1000).unwrap();let mut child=a.split(&mut parent,400).unwrap();assert_eq!((parent.bytes(),child.bytes(),used.load(Ordering::Acquire)),(600,400,1000));a.absorb(&mut parent,&mut child).unwrap();assert_eq!((parent.bytes(),child.bytes(),used.load(Ordering::Acquire)),(1000,0,1000));let child=a.split(&mut parent,700).unwrap();drop(parent);assert_eq!(used.load(Ordering::Acquire),700);drop(child);assert_eq!(used.load(Ordering::Acquire),0);}
+ #[test]fn split_first_io_foreign_overdraw_and_lower_limit_leave_parent_and_counter_intact(){let used=Arc::new(AtomicUsize::new(0));let other=Arc::new(AtomicUsize::new(0));let good=SettingAdmission::new(&used,4096,&||Ok(()));let mut parent=good.reserve(1000).unwrap();let fault=||Err(std::io::Error::from_raw_os_error(1450));let fail=SettingAdmission::new(&used,4096,&fault);assert_eq!(fail.split(&mut parent,100).err().unwrap().raw_os_error(),Some(1450));assert_eq!((parent.bytes(),used.load(Ordering::Acquire)),(1000,1000));let foreign=SettingAdmission::new(&other,4096,&||Ok(()));assert_eq!(foreign.split(&mut parent,100).err().unwrap().kind(),std::io::ErrorKind::InvalidInput);assert_eq!(good.split(&mut parent,1001).err().unwrap().kind(),std::io::ErrorKind::InvalidInput);let low=SettingAdmission::new(&used,500,&||Ok(()));assert_eq!(low.split(&mut parent,100).err().unwrap().kind(),std::io::ErrorKind::OutOfMemory);assert_eq!((parent.bytes(),used.load(Ordering::Acquire),other.load(Ordering::Acquire)),(1000,1000,0));let fresh=SettingAdmission::new(&used,4096,&||Ok(()));drop(fresh.split(&mut parent,100).unwrap());assert_eq!((parent.bytes(),used.load(Ordering::Acquire)),(900,900));drop(parent);assert_eq!(used.load(Ordering::Acquire),0);}
 }

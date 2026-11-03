@@ -1,0 +1,3 @@
+[diagnostics]
+override_precedes_definition="info"
+redefined_proc="info"

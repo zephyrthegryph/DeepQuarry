@@ -47,6 +47,14 @@ pub enum PreparedSourceStorage<'a> {
     Macro(&'a crate::Macro),
 }
 impl PreparedSource {
+    /// Conservative retained backing for a generated literal-include-only header.
+    /// This is DATA geometry, not source/receipt authority or parser scratch.
+    pub fn include_header_retained_bound(bytes:usize,includes:usize)->Option<usize>{
+        let lines=includes.checked_add(1)?;
+        let rows=lines.checked_mul(std::mem::size_of::<PreparedLine>().max(std::mem::size_of::<prepared_lines::CompactLine>()).checked_add(std::mem::size_of::<usize>())?)?;
+        bytes.checked_add(rows)?.checked_add(directive_index::DirectiveIndex::include_header_storage_bound(lines)?)?.checked_add(std::mem::size_of::<Self>()+16*std::mem::size_of::<usize>())?.checked_mul(4)
+    }
+
     pub fn visit_storage(&self, mut visit: impl FnMut(PreparedSourceStorage<'_>)) {
         self.lines.visit_storage(&mut visit);
         self.directives.visit_storage(&mut visit);
@@ -368,6 +376,12 @@ impl<'a, P> PreparedSourceProvider<'a, P> {
 }
 impl<P: crate::SourceProvider> crate::SourceProvider for PreparedSourceProvider<'_, P> {
     fn initial_environment(&self)->crate::InitialEnvironment{self.fallback.initial_environment()}
+    // Original demand never promotes captured native line preparations. Only
+    // the actual fallback raw issuer may lend its acquisition and byte view.
+    fn original_raw_source_checked(&self,path:&Path,max_bytes:usize,before_decode:&mut dyn FnMut(usize,bool,bool)->std::io::Result<()>)->std::io::Result<Option<crate::SourceAcquisitionLease>>{self.fallback.original_raw_source_checked(path,max_bytes,before_decode)}
+    fn original_raw_source_admitted(&self,path:&Path,max_bytes:usize,before_read:&mut dyn FnMut(usize)->std::io::Result<()>,before_decode:&mut dyn FnMut(crate::OriginalRawAllocationPlan<'_>)->std::io::Result<()>,acquired:&mut dyn FnMut(&crate::SourceAcquisitionLease)->std::io::Result<()>)->std::io::Result<Option<crate::SourceAcquisitionLease>>{self.fallback.original_raw_source_admitted(path,max_bytes,before_read,before_decode,acquired)}
+    fn original_source_bytes<'a>(&'a self,lease:&'a crate::SourceAcquisitionLease)->std::io::Result<Option<&'a[u8]>>{self.fallback.original_source_bytes(lease)}
+
 
     fn acquired_source(&self, path: &Path) -> Result<Option<crate::AcquiredSource>, String> {
         if let Some(source) = self.captures.get(path) {
@@ -821,3 +835,20 @@ mod prepared_publish_tests {
         ));
     }
 }
+
+#[cfg(test)]
+mod generated_header_storage_tests{
+ use super::*;
+ #[test]fn generated_literal_include_header_bound_covers_actual_retained_rows(){
+  let text="#include \"a.dm\"\n".repeat(1024);
+  let bound=PreparedSource::include_header_retained_bound(text.len(),1024).unwrap();
+  let prepared=PreparedSource::from_text(text.into());
+  let mut actual=std::mem::size_of::<PreparedSource>()+prepared.original().len()+std::mem::size_of_val(prepared.line_starts().as_ref());
+  prepared.visit_storage(|view|match view{PreparedSourceStorage::Buffer{bytes,..}=>actual+=bytes,PreparedSourceStorage::String(value)=>actual+=value.capacity(),PreparedSourceStorage::Macro(_)=>panic!("literal include header cannot contain a define")});
+  assert!(actual<=bound);
+  assert!(PreparedSource::include_header_retained_bound(usize::MAX,1).is_none());
+  assert!(PreparedSource::include_header_retained_bound(0,usize::MAX).is_none());
+ }
+}
+
+#[cfg(test)]#[path="source_raw_adapter_tests.rs"]mod raw_adapter_tests;

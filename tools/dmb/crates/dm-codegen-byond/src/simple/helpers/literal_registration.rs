@@ -21,6 +21,10 @@ pub fn visit_native_constant_string_literals(
     visit_literal(raw, &mut visitor)
 }
 fn visit_literal(raw: &LiteralText, visitor: &mut dyn FnMut(&[u8])) -> Result<(), String> {
+    if raw.original_value().is_some(){
+        if let Some(bytes)=super::decode_native_constant_string_literal(raw)?{visitor(&bytes);}
+        return Ok(());
+    }
     let Some(parts) = raw.parts().map_err(str::to_owned)? else {
         return Ok(());
     };

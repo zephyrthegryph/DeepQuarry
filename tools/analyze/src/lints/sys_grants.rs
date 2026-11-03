@@ -32,6 +32,6 @@ fn scan_file(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
 pub fn register(reg: &mut Registry) {
     register_module(
         reg,
-        SysModule { name: "grants", rules: RULES, no_allow: &["verb_write"], file_scan: Some(scan_file), ..SysModule::DEFAULT },
+        SysModule { name: crate::allow_registry_fields::sys_grants::SCOPE_MODULE_NAME, rules: RULES, no_allow: &["verb_write"], file_scan: Some(scan_file), ..SysModule::DEFAULT },
     );
 }

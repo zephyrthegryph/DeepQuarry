@@ -9,6 +9,7 @@ pub(super) struct Node {
     header_span: [u32; 2],
     declaration_cursor: u32,
     checker_qualifiers: u8,
+    original_outer_terminator: Option<bool>,
     text: [u32; 2],
     children: [u32; 2],
 }
@@ -81,6 +82,7 @@ impl Arena {
                     header_span: [span.start as u32, span.end as u32],
                     declaration_cursor: item.declaration_cursor.map_or(u32::MAX, |at| at as u32),
                     checker_qualifiers: item.checker_qualifiers,
+                    original_outer_terminator: item.original_outer_terminator,
                     text,
                     children: [0, 0],
                 });
@@ -218,6 +220,7 @@ impl Ref<'_> {
             |n| Span::new(n.span[0] as usize, n.span[1] as usize),
         )
     }
+    pub(super) fn original_outer_terminator(self)->Option<bool>{self.node().map_or_else(||match self{Self::Wide(item)=>item.original_outer_terminator,_=>unreachable!()},|node|node.original_outer_terminator)}
     pub(super) fn checker_qualifiers(self) -> u8 {
         self.node().map_or_else(
             || match self {
@@ -417,6 +420,7 @@ mod tests {
             header_span: Span::new(0, 8),
             declaration_cursor: None,
             checker_qualifiers: dm_syntax::UNKNOWN_HEADER_QUALIFIERS,
+            original_outer_terminator: None,
             indent: 0,
             children: vec![],
         };

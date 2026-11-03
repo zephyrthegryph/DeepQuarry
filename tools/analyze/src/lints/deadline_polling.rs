@@ -25,8 +25,8 @@ const ALLOWLIST: &str = "tools/ci/deadline_polling_allowlist.txt";
 const HINT: &str = "Use om_after(src, deadline - world.time, PROC_REF(...)) instead (doc/rewrite/object_model_core.md sec 4.11), or allowlist with a reason.";
 
 static META: Meta = Meta {
-    name: "deadline_polling",
-    group: "",
+    name: crate::allow_registry_fields::deadline_polling::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::deadline_polling::SCOPE_META_0.group,
     label: "deadline_polling",
     legacy: "tools/ci/check_deadline_polling.py",
     select: CODE_DM,
@@ -34,7 +34,7 @@ static META: Meta = Meta {
     policy: Policy::Custom,
     rules: &[RuleMeta { name: "deadline_poll", hint: HINT }],
     allow: crate::allow_registry_fields::deadline_polling::ALLOW_0,
-    lists: &[],
+    lists: crate::allow_registry_fields::deadline_polling::SCOPE_META_0.lists,
 };
 
 struct DeadlinePolling;

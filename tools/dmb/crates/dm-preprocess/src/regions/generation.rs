@@ -52,6 +52,7 @@ impl GenerationDirectivePlan {
     pub fn original_sources(&self)->GenerationOriginalSources<'_>{GenerationOriginalSources{occurrences:self.plan.occurrences.iter().enumerate(),acquisitions:&self.plan.source_acquisitions,omitted:&self.omissions.paths}}
     pub fn root_source(&self)->Option<&Path>{self.plan.occurrences.first().map(|occurrence|occurrence.path.as_path())}
     /// Borrowed source geometry of this explicitly incomplete traversal.
+    pub fn initial_environment(&self)->crate::InitialEnvironment{self.plan.initial_environment}
     pub fn source_geometry(&self)->SourcePlanGeometry<'_>{self.plan.source_geometry()}
     pub fn diagnostics(&self)->&[Diagnostic] { &self.plan.diagnostics }
     pub fn omissions(&self)->impl Iterator<Item=&Path> { self.omissions.paths() }

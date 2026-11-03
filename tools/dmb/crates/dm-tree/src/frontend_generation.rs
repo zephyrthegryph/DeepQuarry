@@ -78,6 +78,9 @@ pub fn prepare_generation_declarations_from_plan(
     let result=(||{
         demand.run(|permit|permit.checkpoint()).map_err(GenerationPreparationFailure::Frontend)?;
         if !plan.diagnostics().is_empty(){return Err(GenerationPreparationFailure::Preprocess(plan.diagnostics().to_vec()))}
+        // Questions select the actual declaration-only owner BEFORE expansion
+        // and parse. Assembly independently checks it again if config changes.
+        if questions&&plan.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290&&crate::checker_builtins::OriginalVariableDeclarations::for_seed(config.engine).is_none(){return Err(GenerationPreparationFailure::Assembly(vec![internal("Original generation requires actual declaration-only catalog seed")]))}
         let expanded=plan.expand(executor);
         if !expanded.diagnostics.is_empty(){return Err(GenerationPreparationFailure::Preprocess(expanded.diagnostics.clone()))}
         let parsing_started=std::time::Instant::now();
@@ -151,6 +154,7 @@ impl GenerationDeclarationFrame {
             // This vector was transient in the common pipeline; generation now
             // retains it. Fund its actual bounded backing BEFORE projection.
             let span_capacity=adapted.origins.len().checked_mul(4).ok_or_else(||GenerationPreparationFailure::Frontend(FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"generation retained span capacity overflow"))))?;
+            let original_variables=if plan.initial_environment()==dm_preprocess::InitialEnvironment::OriginalChecker0290{Some(crate::checker_builtins::OriginalVariableDeclarations::for_seed(config.engine).ok_or_else(||GenerationPreparationFailure::Assembly(vec![internal("Original generation requires actual declaration-only catalog seed")]))?)}else{None};
             let metadata_bytes=span_capacity.checked_mul(std::mem::size_of::<Span>()).and_then(|n|n.checked_add(std::mem::size_of::<Vec<Span>>()+std::mem::size_of::<dm_syntax::SettingRootLease>()+4*std::mem::size_of::<usize>())).ok_or_else(||GenerationPreparationFailure::Frontend(FrontendBuildFailure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"generation retained metadata overflow"))))?;
             let retained_metadata=demand.run(|permit|permit.retain_generation_metadata(metadata_bytes)).map_err(GenerationPreparationFailure::Frontend)?;
             let (spans,_regions,origins)=super::pipeline::project_declaration_origins(&mapping,&adapted.origins).map_err(GenerationPreparationFailure::Assembly)?;
@@ -162,8 +166,15 @@ impl GenerationDeclarationFrame {
             observe(config,FrontendStage::TreeResolution,ProgressKind::Started,Duration::ZERO,0,adapted.skeletons.len());
             let resolution_start=Instant::now();
             let symbols=adapted.symbols.clone();
-            let snapshot=adapted.finish_with_engine_observed_on_executor(config.engine,|error,skeletons,origins|{failure=Some(duplicate_diagnostics::resolve(error,skeletons,origins,&mapping,config.engine.is_some(),&symbols,config.engine.map_or(&[][..],|seed|&seed.intrinsics[..])));},executor);
+            let mut original_declarations=None;
+            let on_error=|error:&crate::SnapshotError,skeletons:&[crate::Skeleton],origins:&[crate::Provenance]|{failure=Some(duplicate_diagnostics::resolve(error,skeletons,origins,&mapping,config.engine.is_some(),&symbols,config.engine.map_or(&[][..],|seed|&seed.intrinsics[..])));};
+            let snapshot=if let Some(variables)=original_variables{adapted.finish_checker_diagnostic_with_variables(config.engine,on_error,executor,Some(variables)).map(|diagnostic|{let(snapshot,receipt)=diagnostic.into_parts();original_declarations=Some(receipt);snapshot})}else{adapted.finish_with_engine_observed_on_executor(config.engine,on_error,executor)};
             let snapshot=snapshot.map_err(|_|GenerationPreparationFailure::Assembly(failure.expect("native resolver notifies original error observer")))?;
+            if let Some(receipt)=&original_declarations{if !receipt.errors().is_empty(){return Err(GenerationPreparationFailure::Assembly(vec![internal(&format!("Original generation source declarations are not clean: {:?}",receipt.errors()))]))}if !receipt.authenticates(snapshot.tree.as_ref())||!receipt.has_original_variable_declarations(){return Err(GenerationPreparationFailure::Assembly(vec![internal("Original generation declaration receipt differs")]))}}
+            // The temporary clean diagnostic receipt owns no error payload.
+            // Retire it before publishing the existing incomplete generation owner;
+            // no diagnostic/Cold/source-role conversion escapes.
+            drop(original_declarations);
             observe(config,FrontendStage::TreeResolution,ProgressKind::Completed,resolution_start.elapsed(),snapshot.tree.declarations().len(),snapshot.tree.declarations().len());
             let declarations=super::pipeline::resolved_callable_declarations(&spans,&snapshot.tree);
             let syntax=Arc::new(syntax);let mut bodies=Vec::new();let mut settings=Vec::new();let mut codes=Vec::new();

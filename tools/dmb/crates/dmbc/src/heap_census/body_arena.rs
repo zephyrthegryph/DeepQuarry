@@ -33,7 +33,9 @@ impl HeapCensus {
                     }
                 }
                 let parameters = parsed.parameter_storage();
-                if self.arc_object(owner, parameters) {
+                let mut fresh=false;let mut first=true;
+                parameters.visit_owner_storage(|pointer,bytes,capacity|{if first{first=false;fresh=!self.allocations.contains(&pointer);}self.buffer(owner,pointer,bytes,capacity);});
+                if fresh {
                     parameters.visit_storage(|pointer, bytes| {
                         self.buffer(owner, pointer, bytes, bytes);
                     });

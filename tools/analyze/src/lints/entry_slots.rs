@@ -26,8 +26,8 @@ const LIMITS: &[(&str, usize)] = &[
 ];
 
 static META: Meta = Meta {
-    name: "entry_slots",
-    group: "",
+    name: crate::allow_registry_fields::entry_slots::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::entry_slots::SCOPE_META_0.group,
     label: "entry_slots",
     legacy: "",
     select: CODE_DM,
@@ -35,7 +35,7 @@ static META: Meta = Meta {
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "positional_overflow", hint: HINT }],
     allow: crate::allow_registry_fields::entry_slots::ALLOW_0,
-    lists: &[],
+    lists: crate::allow_registry_fields::entry_slots::SCOPE_META_0.lists,
 };
 
 struct EntrySlots;

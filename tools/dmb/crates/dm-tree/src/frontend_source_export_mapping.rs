@@ -8,6 +8,8 @@ struct IncludeCoordinates {
     semantic_path: Arc<str>,
     original_entry: Option<Arc<PathBuf>>,
     parent: Option<usize>,
+    non_text_kind:Option<dm_preprocess::regions::NonTextKind>,
+    logical_eof:Option<(usize,usize)>,
 }
 #[derive(Clone, Copy)]
 pub(super) struct DeclarationCompatibility {
@@ -27,6 +29,7 @@ pub struct SourceDeclarationPolicyCursor {
     pub logical_boundary: bool,
 }
 pub struct SourceExportMapping {
+    original_primary:Option<Arc<super::original_declaration_input::OriginalPrimaryRetention>>,
     initial_environment:dm_preprocess::InitialEnvironment,
     acquisitions: Arc<[Option<dm_preprocess::SourceAcquisitionLease>]>,
     origins: dm_preprocess::regions::ExpandedOriginArena,
@@ -135,6 +138,7 @@ impl SourceExportMapping {
             &current.snapshot.tree,
             self.declaration_cursors.clone(),
             self.declaration_qualifiers.clone(),
+            current.original_primary.clone(),
         );
         if let Some(rows) = &self.declaration_compatibility {
             result.bind_declaration_compatibility(rows.clone());
@@ -150,6 +154,7 @@ impl SourceExportMapping {
         tree: &Arc<crate::SemanticTree>,
         declaration_cursors: Box<[u32]>,
         declaration_qualifiers: Box<[u8]>,
+        original_primary:Option<Arc<super::original_declaration_input::OriginalPrimaryRetention>>,
     ) -> Self {
         assert_eq!(declaration_cursors.len(), occurrences.source_order().len());
         assert_eq!(declaration_qualifiers.len(), declaration_cursors.len());
@@ -171,6 +176,8 @@ impl SourceExportMapping {
                 semantic_path: Arc::clone(&include.semantic_path),
                 original_entry: include.original_entry_path().cloned(),
                 parent: include.parent,
+                non_text_kind:include.non_text_kind(),
+                logical_eof:include.logical_eof_cursor().map(|cursor|(cursor.line(),cursor.encounter())),
             })
             .collect();
         let mut hash = xxhash_rust::xxh3::Xxh3::new();
@@ -185,6 +192,7 @@ impl SourceExportMapping {
             hash.update(&(encounter as u64).to_le_bytes());
         }
         for include in includes.iter() {
+            hash.update(b"include-completed-reader-facts-v1");hash.update(&[match include.non_text_kind{None=>0,Some(dm_preprocess::regions::NonTextKind::Map)=>1,Some(dm_preprocess::regions::NonTextKind::Skin)=>2}]);if let Some((line,encounter))=include.logical_eof{hash.update(&[1]);hash.update(&(line as u64).to_le_bytes());hash.update(&(encounter as u64).to_le_bytes());}else{hash.update(&[0]);}
             if let Some(entry)=&include.original_entry{let text=entry.to_string_lossy();hash.update(&(text.len() as u64).to_le_bytes());hash.update(text.as_bytes());}else{hash.update(&u64::MAX.to_le_bytes());}
             let path = include.path.to_string_lossy();
             for value in [path.as_bytes(), include.semantic_path.as_bytes()] {
@@ -200,6 +208,7 @@ impl SourceExportMapping {
             );
         }
         Self {
+            original_primary,
             initial_environment:plan.initial_environment,
             acquisitions: plan
                 .occurrences
@@ -261,6 +270,8 @@ impl SourceExportMapping {
                         && old.semantic_path == new.semantic_path
                         && old.parent == new.parent
                         && old.original_entry.as_ref() == new.original_entry_path()
+                        && old.non_text_kind==new.non_text_kind()
+                        && old.logical_eof==new.logical_eof_cursor().map(|cursor|(cursor.line(),cursor.encounter()))
                 })
     }
     /// Borrow only this authenticated mapping's per-occurrence binding. Missing
@@ -578,7 +589,7 @@ impl SourceExportMapping {
             let acquired=self.source_acquisition(include).ok_or("note original acquisition unavailable")?;
             Ok((include,acquired))
         },|include|Ok(&self.includes.get(include).ok_or("note include coordinates unavailable")?.path))?;
-        Ok(BorrowedSourceNoteOrigin{path:point.path,registration:self.registered_checker_path(point.include)?,line:point.line,byte_column:point.byte_column})
+        Ok(BorrowedSourceNoteOrigin{include:point.include,path:point.path,registration:self.registered_checker_path(point.include)?,line:point.line,byte_column:point.byte_column})
     }
 }
 
@@ -815,8 +826,11 @@ pub(super) fn full_source_admissions_for_test() -> usize {
 
 /// Same source-note projection borrowed before any path-owner clone. This is
 /// coordinate data, not a source/cache admission capability.
-#[derive(Clone,Copy)]pub struct BorrowedSourceNoteOrigin<'a>{path:&'a Arc<PathBuf>,registration:&'a Path,line:usize,byte_column:usize}
+#[derive(Clone,Copy)]pub struct BorrowedSourceNoteOrigin<'a>{include:usize,path:&'a Arc<PathBuf>,registration:&'a Path,line:usize,byte_column:usize}
 impl BorrowedSourceNoteOrigin<'_>{
+ /// Borrow actual physical source identity DATA. This is distinct from the
+ /// registered diagnostic filename and grants no acquisition/source role.
+ pub fn physical_path(&self)->&Path{self.path.as_path()}
  pub(super) fn physical_coordinates(&self)->(&Path,usize,usize){(self.path.as_path(),self.line,self.byte_column)}
  /// Exact original FileList registration key plus its reported source point.
  /// Physical acquisition identity alone is not reported-file identity.
@@ -912,4 +926,40 @@ pub(super) fn original_note_point_in<'a>(
     let cursor=origins.source_note_cursor(index,include,acquired,offset)?;
     let path=path(include)?;
     Ok(OriginalNotePoint{include,path,line:cursor.line,byte_column:cursor.byte_column})
+}
+
+impl SourceExportMapping{
+ /// Resolve a SAME-primary case block cursor, including the original final
+ /// reader's synthetic EOF. This is reported-coordinate DATA, never a byte.
+ pub fn borrowed_case_end_point_using<E:From<&'static str>>(&self,offset:usize,fallback:dm_syntax::Span,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<Option<BorrowedSourceNoteOrigin<'_>>,E>{
+  checkpoint()?;let last=self.origins.get(self.origins.len().checked_sub(1).ok_or("case source origins empty")?).ok_or("case final source origin absent")?;if offset>last.output_span.end{return Err("case cursor exceeds expanded source".into())}
+  let include=if offset==last.output_span.end{let mut terminal=None;for(index,row)in self.includes.iter().enumerate(){checkpoint()?;if row.non_text_kind.is_some(){continue}if let Some((_,completed_encounter))=row.logical_eof{if self.source_acquisition(index).is_none(){return Err("completed original reader has no acquisition".into())}match terminal{Some((encounter,_))if encounter==completed_encounter=>return Err("original EOF encounter is ambiguous".into()),Some((encounter,_))if encounter>completed_encounter=>(),_=>terminal=Some((completed_encounter,index))}}}terminal.ok_or("actual final original reader unavailable")?.1}else{if self.borrowed_source_note_point(fallback.start).is_ok(){return Ok(None)}let index=self.origins.partition_point(|origin|origin.output_span.end<offset);let origin=self.origins.get(index).ok_or("case source-end origin absent")?;if origin.output_span.end!=offset{return Err("case source-end differs from original origin boundary".into())}let(include,_)=*self.regions.get(origin.region).ok_or("case source-end region absent")?;let acquired=self.source_acquisition(include).ok_or("case source-end acquisition absent")?;if origin.source_span.end!=acquired.source_text().len(){return Err("case virtual newline is not actual original EOF".into())}include};
+  let occurrence=self.includes.get(include).ok_or("case source occurrence absent")?;if occurrence.logical_eof.is_none(){return Err("case source did not complete its actual reader".into())}let acquired=self.source_acquisition(include).ok_or("case original acquisition absent")?;if !matches!(acquired.encoding(),dm_preprocess::SourceEncoding::Utf8|dm_preprocess::SourceEncoding::SyntheticUtf8){return Err("case terminal column needs compatible original encoding".into())}let raw=acquired.source_text().as_str();let mut line=1usize;let mut byte_column=1usize;for(index,byte)in raw.bytes().enumerate(){if index%1024==0{checkpoint()?;}if byte==b'\n'{line=line.checked_add(1).ok_or("case terminal source line overflow")?;byte_column=1}else{byte_column=byte_column.checked_add(1).ok_or("case terminal source column overflow")?;}}checkpoint()?;Ok(Some(BorrowedSourceNoteOrigin{include,path:&occurrence.path,registration:self.registered_checker_path(include)?,line,byte_column}))
+ }
+ /// Borrow only the actual directive entry occurrence and its existing lease.
+ /// An included file with the same name cannot substitute for the root.
+ pub fn original_root_acquisition_using<E:From<&'static str>>(&self,checkpoint:&mut impl FnMut()->Result<(),E>)->Result<(usize,&Path,&Path,&dm_preprocess::SourceAcquisitionLease),E>{
+  let mut root=None;for(index,row)in self.includes.iter().enumerate(){checkpoint()?;if row.parent.is_none(){if root.replace((index,row)).is_some(){return Err("actual original root occurrence is ambiguous".into())}}}
+  let(index,row)=root.ok_or("actual original root occurrence absent")?;
+  let entry=row.original_entry.as_deref().ok_or("actual original root entry argument absent")?;
+  let acquired=self.acquisitions.get(index).and_then(Option::as_ref).ok_or("actual original root acquisition absent")?;
+  Ok((index,entry.as_path(),row.path.as_path(),acquired))
+ }
+}
+
+/// Scalar diagnostic DATA, issued only from an actual borrowed original point.
+/// It retains no mapping, source buffer, registry or path owner.
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]pub struct StoredOriginalReportedPoint{owner:usize,include:usize,line:usize,column:usize}
+impl StoredOriginalReportedPoint{pub fn coordinates(&self)->(usize,usize,usize){(self.include,self.line,self.column)}}
+impl SourceExportMapping{
+ pub fn store_original_reported_point(&self,point:BorrowedSourceNoteOrigin<'_>)->Result<StoredOriginalReportedPoint,&'static str>{let row=self.includes.get(point.include).ok_or("stored original point include absent")?;if !Arc::ptr_eq(&row.path,point.path)||self.registered_checker_path(point.include)?!=point.registration{return Err("stored original point belongs to another mapping")}Ok(StoredOriginalReportedPoint{owner:std::ptr::from_ref(self)as usize,include:point.include,line:point.line,column:point.byte_column})}
+ pub fn borrow_stored_original_reported_point(&self,point:StoredOriginalReportedPoint)->Result<BorrowedSourceNoteOrigin<'_>,&'static str>{if point.owner!=std::ptr::from_ref(self)as usize{return Err("stored original point belongs to another mapping")}let row=self.includes.get(point.include).ok_or("stored original include absent")?;Ok(BorrowedSourceNoteOrigin{include:point.include,path:&row.path,registration:self.registered_checker_path(point.include)?,line:point.line,byte_column:point.column})}
+}
+
+impl SourceExportMapping{
+ /// Keep actual primary/signature funding alive with every source/archive
+ /// alias. The independent owner has no mapping/frontend back-reference.
+ pub fn visit_original_input_retention(&self,mut visit:impl FnMut(usize,usize,usize)){
+  if let Some(owner)=&self.original_primary{visit(Arc::as_ptr(owner)as usize,std::mem::size_of_val(owner.as_ref()),std::mem::align_of_val(owner.as_ref()));owner.visit_resource_storage(&mut visit);}
+ }
 }

@@ -26,6 +26,7 @@ const MAX_SITES: usize = 10_000;
 /// Coordination/eviction metadata only. Reusable findings stay solely in Db.
 #[derive(Default)]
 pub(super) struct State {
+    raw_sources: Mutex<raw_input_credits::Ledger>,
     pages: Mutex<BTreeMap<Key, (Key, std::time::Instant)>>,
     roots: Mutex<BTreeMap<Key, (Key, std::time::Instant)>>,
 }
@@ -38,13 +39,16 @@ fn invalid(s: impl std::fmt::Display) -> io::Error {
 mod aggregate;
 #[path = "workspace_raw_code.rs"]
 mod code;
-pub(crate) use code::{WorkspaceCodeReader,WorkspaceCodeWitness,WorkspaceCodeTraversal,WorkspaceGeneratorTestWitness};
+pub(crate) use code::{UiInputProof,WorkspaceCodeReader,WorkspaceCodeWitness,WorkspaceCodeTraversal,WorkspaceGeneratorTestWitness,WorkspaceTrackedWitness,WorkspaceSysReactiveWitness};
 #[path = "workspace_check_grep.rs"]
 mod check_grep;
 #[path = "workspace_resource_inventory.rs"]
 mod resource_inventory;
 pub use aggregate::{WorkspaceCursor, WorkspacePageReader, WorkspacePageView};
 use resource_inventory::ResourceInventory;
+#[path="workspace_source_arena.rs"]mod source_arena;
+#[path="workspace_raw_input_credits.rs"]mod raw_input_credits;
+pub(crate) use raw_input_credits::RawInputCredits;
 /// Resource-only live allocation census. Addresses never authorize content or
 /// policy reuse. All payload owners remain in Db values; this stores numbers.
 #[derive(Default)]
@@ -613,7 +617,8 @@ impl QueryDb {
             }
         }
     }
-    pub(super) fn workspace_input_headroom_locked(&self, fixed: usize) -> io::Result<usize> {
+    pub(super) fn workspace_input_headroom_locked(&self,fixed:usize)->io::Result<usize>{let sources=self.raw_source_input_charge_locked()?;self.workspace_input_base_headroom_locked(fixed.checked_add(sources).ok_or_else(||io::Error::from(io::ErrorKind::OutOfMemory))?)}
+    pub(super) fn workspace_input_base_headroom_locked(&self, fixed: usize) -> io::Result<usize> {
         let raw_inputs = self
             .raw_policy
             .admission.leases

@@ -34,40 +34,7 @@ use crate::sem::handlers;
 use crate::sem::Sem;
 use crate::tree::CODE_DM;
 
-const H_UNRESOLVED: &str = "name a proc the type declares, or fix the declaration";
-const H_SIG: &str = "every handler is x(datum/act/A): one parameter of a datum/act type, A.holder always set";
-const H_FIELD: &str = "read only the fields the context type carries (doc/rewrite/final_api.html section 8): use a requirement for A.actor, an output for A.dt";
-const H_IMPURE: &str = "requirements, conditions, outputs and contributions are pure: move the write into an effect (then()) or a setter called from one";
-const H_RETURN: &str = "req callbacks return null to allow or text/a refusal datum to refuse; conditions and transitional req_bool callbacks return TRUE/FALSE";
-const H_PAIR: &str = "act_done(F) or act_cancel(F) on every path after ACT_ATTEMPT (a branch that tests ACT_REFUSED_BY(F), null or ACT_PASS needs neither)";
-const H_ESCAPE: &str = "a context is pooled and lives for one trigger: use A.snapshot() for anything that must outlive it";
-const H_OUTPUT: &str = "an override takes the base's parameters exactly, or it is a silent no-op";
-
-static META: Meta = Meta {
-    name: "sem/handlers",
-    group: "sem",
-    label: "handlers",
-    legacy: "",
-    select: CODE_DM,
-    scan: ScanKind::Tree,
-    policy: Policy::Hard,
-    rules: &[
-        RuleMeta { name: "handler_unresolved", hint: H_UNRESOLVED },
-        RuleMeta { name: "signature", hint: H_SIG },
-        RuleMeta { name: "context_field", hint: H_FIELD },
-        RuleMeta { name: "impure", hint: H_IMPURE },
-        RuleMeta { name: "requirement_return", hint: H_RETURN },
-        RuleMeta { name: "act_try_unpaired", hint: H_PAIR },
-        RuleMeta { name: "context_escape", hint: H_ESCAPE },
-        RuleMeta { name: "output_signature", hint: H_OUTPUT },
-    ],
-    allow: crate::allow_registry_fields::sem_handlers::ALLOW_0,
-    lists: &["try_calls"],
-};
-
-/// Standard outputs: base procs the engine calls by name.
-const STD_OUTPUTS: &[&str] = &["draw", "ui_data", "push_to_rust", "examine"];
-
+use crate::sem_handlers_policy::{metadata,STANDARD_OUTPUTS as STD_OUTPUTS};
 struct SemHandlers;
 
 fn candidate_re() -> &'static Pat {
@@ -80,7 +47,7 @@ fn engine_output_re() -> &'static Pat {
 
 impl Lint for SemHandlers {
     fn meta(&self) -> &Meta {
-        &META
+        metadata()
     }
 
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
@@ -188,29 +155,8 @@ impl Lint for SemHandlers {
         let Some(an) = handlers::analyzed(cx.tree) else { return };
         let (sites_before, allow_before) = (out.sites.len(), out.allow_used.len());
         for a in &an.handlers {
-            let h = &a.h;
-            let who = format!("{}::{} ({}())", a.on, h.proc, h.form);
-            if !a.proc_found {
-                let why = if a.type_found { format!("{} has no proc `{}`", a.on, h.proc) } else { format!("type {} does not exist", a.on) };
-                put(out, "handler_unresolved", &h.rel, h.line, format!("{} names a handler that does not resolve: {}", h.form, why));
-                continue;
-            }
-            let (drel, dline) = a.def.clone().unwrap_or((h.rel.clone(), h.line));
-            let is_act = |p: &Vec<String>| p.len() >= 2 && p[0] == "datum" && p[1] == "act";
-            // A UI or topic op's handler also takes the op's declared args, typed, after A.
-            let expected = 1 + h.ui_args.as_ref().map(|v| v.len()).unwrap_or(0);
-            if a.params.len() != expected || a.params.is_empty() || !is_act(&a.params[0]) {
-                put(out, "signature", &drel, dline, format!("{} takes {} parameter(s); a handler is x(datum/act/A){}", who, a.params.len(), if expected > 1 { " plus one parameter per declared arg()" } else { "" }));
-            }
-            for (field, rel, line) in &a.bad_ctx {
-                put(out, "context_field", rel, *line, format!("{} reads A.{}, which a {} context does not carry", who, field, h.ctx.type_path()));
-            }
-            for (what, rel, line) in &a.impure {
-                put(out, "impure", rel, *line, format!("{} is pure ({}) but {}", who, h.form, what));
-            }
-            for f in &a.returns {
-                put(out, f.rule, &drel, f.line, format!("{}: {}", who, f.msg));
-            }
+            let result=crate::sem_handlers_policy::declared_using(crate::sem_handlers_policy::Declared{hook:&a.h,on:&a.on,proc_found:a.proc_found,type_found:a.type_found,definition:a.def.as_ref().map(|(rel,line)|(rel.as_str(),*line)),parameters:&a.params,bad_context:&a.bad_ctx,impure:&a.impure,returns:&a.returns},&mut crate::key_policy_control::Compatibility,&mut|_,rule,rel,line,message|{put(out,rule,rel,line,message);Ok(())});
+            match result{Ok(())=>{},Err(never)=>match never{}}
         }
         if !engine_bases {
             let mut part = Sink::new();

@@ -52,7 +52,7 @@ impl<P:SnapshotProvider> RecordingInputs<P> {
         let mut run=||->Result<GenerationBootstrapPreparation,GenerationBootstrapFailure>{
             crate::daemon::control::checkpoint().map_err(GenerationBootstrapFailure::Operational)?;
             if !project.is_absolute(){return Err(GenerationBootstrapFailure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"generation manifest must be caller absolute")));}
-            let root=project.parent().ok_or_else(||GenerationBootstrapFailure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"generation manifest has no parent")))?;
+            let root=if let Some(subject)=self.original_analysis_subject(){let source=subject.source_for(project).ok_or_else(||GenerationBootstrapFailure::Operational(invalid("generation subject root unavailable")))?;subject.generation_root(project,source.lease()).map_err(GenerationBootstrapFailure::Operational)?}else{project.parent().ok_or_else(||GenerationBootstrapFailure::Operational(io::Error::new(io::ErrorKind::InvalidInput,"generation manifest has no parent")))?};
             // The iterator's owned PathBuf exists before probe receives it.
             // Precharge every actual join from known registry widths first.
             for relative in crate::query_db::QueryDb::generation_dm_outputs(){
@@ -69,6 +69,7 @@ impl<P:SnapshotProvider> RecordingInputs<P> {
             if omissions.paths().next().is_none(){return Ok(GenerationBootstrapPreparation::NotNeeded)}
             let read=|path:&Path|{
                 crate::daemon::control::checkpoint()?;
+                if let Some(source)=self.original_analysis_subject().and_then(|subject|subject.source_for(path)){return Ok(Some(std::sync::Arc::clone(source.prepared())))}
                 let parent=path.parent().ok_or_else(||io::Error::new(io::ErrorKind::InvalidInput,"generation source has no parent"))?;
                 self.record_search_folder(parent)?;
                 match self.read_recorded(path){
@@ -109,7 +110,11 @@ impl<P:SnapshotProvider> RecordingInputs<P> {
             // A missing unused registry output is not a missing source include.
             // Decide BEFORE any declaration expansion/parse, preserving the
             // ordinary retained frontend path without a second declaration parse.
-            if plan.encountered_omissions().next().is_none(){return Ok(GenerationBootstrapPreparation::NotNeeded)}
+            // The genuine full Analyze synthetic subject has no physical include
+            // references to absent generated outputs. Actual registered negative
+            // output probes still justify its restricted source phase; no complete
+            // source/body receipt is minted by this owner.
+            if plan.encountered_omissions().next().is_none()&&!self.original_analysis_subject().is_some_and(|subject|subject.synthetic()){return Ok(GenerationBootstrapPreparation::NotNeeded)}
             let declarations=dm_tree::frontend::prepare_generation_declarations_from_plan(plan,config,executor,host,questions).map_err(|failure|match failure {dm_tree::frontend::GenerationPreparationFailure::Frontend(dm_tree::frontend::FrontendBuildFailure::Operational(actual))=>GenerationBootstrapFailure::Operational(actual),other=>GenerationBootstrapFailure::Declarations(other)})?;
             let inputs=self.snapshot().map_err(GenerationBootstrapFailure::Operational)?;
             let result=GenerationBootstrap{declarations,inputs};
@@ -143,7 +148,7 @@ impl GenerationBootstrap {
 impl GenerationQuestionBootstrap {
     fn require_recording<P:SnapshotProvider>(&self,recording:&RecordingInputs<P>)->io::Result<()>{
         crate::daemon::control::checkpoint()?;
-        for(path,lease)in self.questions.original_sources(){let lease=lease.ok_or_else(||invalid("generation question original acquisition absent"))?;if !recording.validate_source_lease(path,lease){return Err(io::Error::new(io::ErrorKind::InvalidData,"generation question frame belongs to another original recorder"))}}
+        for(path,lease)in self.questions.original_sources(){let lease=lease.ok_or_else(||invalid("generation question original acquisition absent"))?;if !recording.validate_source_lease(path,lease)&&!recording.validate_analysis_subject_lease(path,lease){return Err(io::Error::new(io::ErrorKind::InvalidData,"generation question frame belongs to another original recorder"))}}
         if !self.inputs.restat(&recording.provider)?.unchanged(){return Err(io::Error::new(io::ErrorKind::InvalidData,"generation question inputs changed; reissue actual generation frame"))}
         crate::daemon::control::checkpoint()
     }
@@ -228,7 +233,7 @@ impl GenerationBootstrap{
   crate::daemon::control::checkpoint()?;
   for(path,lease)in self.declarations.original_sources(){
    let lease=lease.ok_or_else(||io::Error::new(io::ErrorKind::InvalidData,"generation original acquisition is absent"))?;
-   if !inputs.validate_source_lease(path,lease){return Err(io::Error::new(io::ErrorKind::InvalidData,"generation frame belongs to another original recorder"))}
+   if !inputs.validate_source_lease(path,lease)&&!inputs.validate_analysis_subject_lease(path,lease){return Err(io::Error::new(io::ErrorKind::InvalidData,"generation frame belongs to another original recorder"))}
   }
   self.require_current(&inputs.provider)?;crate::daemon::control::checkpoint()
  }

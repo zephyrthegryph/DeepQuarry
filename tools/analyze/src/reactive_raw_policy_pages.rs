@@ -4,6 +4,10 @@ use std::{collections::HashMap,sync::Arc};
 /// A provider may stop a requested search. This bool is DATA and cannot seal a
 /// complete dependency answer; only the actual host traversal receipt can.
 pub trait RawPolicyPages{
+ /// Exact fixed original manifest DATA for op_order only, authenticated by the
+ /// current concrete raw owner. This is not a semantic/Keys/CODE grant.
+ fn with_op_order_manifest(&self,_:&mut dyn FnMut(Option<&[u8]>)->Result<(),Failure>)->Result<(),Failure>{Err(Failure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"actual op_order fixed manifest observation unavailable")))}
+
  /// Purpose-specific native generation owner DATA, never a complete source role.
  #[cfg(feature="native-policy")]
  fn generation_questions(&self)->Option<&dm_tree::frontend::GenerationNativeQuestions>{None}
@@ -60,4 +64,24 @@ impl RawDependencyMarkers{
 /// receipt; actual selected hosts must still consume their own exhausted proof.
 pub(crate) fn collect_marker_rows(walk:impl FnOnce(&mut dyn FnMut(&str,RawPolicyViews<'_>)->Result<bool,Failure>)->Result<bool,Failure>,order:&HashMap<String,usize>,budget:&Arc<Budget>,names:&[&str],entries:bool,capabilities:bool,runtime:bool,checkpoint:&mut dyn FnMut()->std::io::Result<()>,check:&dyn Fn()->Result<(),Failure>)->Result<crate::captured_marker_rows::Rows<'static>,Failure>{
  let mut rows=Vec::new();let mut count=0;let completed=walk(&mut|relative,views|{let pending=(||{checkpoint()?;check()?;crate::captured_marker_rows::collect_file_admitted(relative,views.marker()?,budget,names,entries,capabilities,runtime,&mut rows,&mut count,&mut||{checkpoint()?;check()?;Ok::<_,Failure>(())})?;Ok(true)})();if matches!(&pending,Err(Failure::Operational(_))){return pending}if budget.denied(){let message=match pending{Err(Failure::Unsupported(message))=>message,Ok(_)=>"raw marker quota was denied".to_owned(),Err(Failure::Operational(_))=>unreachable!()};return Err(Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,message)))}pending})?;if !completed{return Err("original marker traversal incomplete".into())}check()?;RawDependencyMarkers::from_rows(rows,count).finish(order,budget,checkpoint)
+}
+
+impl RawDependencyMarkers{
+ /// Actual-growth variant over one authenticated file loan; no fixture ceiling
+ /// or provider bool becomes source completion. All ephemeral scanner storage
+ /// belongs to the existing FileScope and retained rows stay parent funded.
+ pub(crate) fn push_full(&mut self,relative:&str,views:RawPolicyViews<'_>,budget:&Arc<Budget>,poll:&dyn Fn()->std::io::Result<()>)->Result<(),Failure>{
+  let local=views.allocation_budget(budget);let pending=(||{budget.require()?;poll()?;crate::captured_marker_rows::collect_file_funded(relative,views.marker()?,budget,local,&["READS_AS","PROC_SUMMARY","READ_LOOKUP","CAPABILITY_TYPE","CAPABILITY_DEF","cap_keys","SYSTEM_ACCESSOR","READS_FROM","CAPABILITIES","STAT"],true,true,true,&mut self.rows,&mut self.count,&mut||{budget.require().map_err(|m|Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,m)))?;poll()?;Ok::<_,Failure>(())})?;Ok(())})();if matches!(&pending,Err(Failure::Operational(_))){return pending}if local.denied()||budget.denied(){return Err(Failure::Operational(std::io::Error::new(std::io::ErrorKind::OutOfMemory,"semantic-read original marker admission denied")))}pending
+ }
+}
+
+#[cfg(test)]mod full_semantic_marker_controls{
+ use super::*;use crate::captured_raw_file::File;use std::io;
+ #[test]fn full_semantic_marker_entry_preserves_real_io_known_quota_and_fresh_recovery(){
+  let root=std::env::current_dir().unwrap().join("semantic-marker-data-only");let file=File::capture(&root,&root.join("code/probe.dm"),"CAPABILITIES(/datum/probe, when(PROC_REF(check)))\n".into()).unwrap();let budget=Budget::new(4*1024*1024).unwrap();let mut fold=RawDependencyMarkers::new();let error=file.with_policy_views(&mut|relative,views|{fold.push_full(relative,views,&budget,&||Err(io::Error::from_raw_os_error(1450)))?;Ok(true)}).unwrap_err();assert!(matches!(error,Failure::Operational(error)if error.raw_os_error()==Some(1450)));assert!(fold.rows.is_empty());
+  let denied=Budget::new(256).unwrap();assert!(denied.charge(256).is_err());let polled=std::cell::Cell::new(false);let error=file.with_policy_views(&mut|relative,views|{fold.push_full(relative,views,&denied,&||{polled.set(true);Err(io::ErrorKind::Interrupted.into())})?;Ok(true)}).unwrap_err();assert!(matches!(error,Failure::Operational(error)if error.kind()==io::ErrorKind::OutOfMemory));assert!(!polled.get());let budget=Budget::new(4*1024*1024).unwrap();let mut recovered=RawDependencyMarkers::new();file.with_policy_views(&mut|relative,views|{recovered.push_full(relative,views,&budget,&||Ok(()))?;Ok(true)}).unwrap();let rows=recovered.finish(&HashMap::new(),&budget,&mut||Ok(())).unwrap();assert_eq!(rows.markers.len(),1);assert_eq!(rows.markers[0].name,"CAPABILITIES");
+ }
+ #[test]fn full_semantic_marker_rows_use_actual_growth_without_finite_count_promotion(){
+  let root=std::env::current_dir().unwrap().join("semantic-marker-growth-data");let text="CAPABILITIES(/d)\n".repeat(10_001);let budget=Budget::new(64*1024*1024).unwrap();let file=File::capture(&root,&root.join("code/probe.dm"),text.into()).unwrap();let mut fold=RawDependencyMarkers::new();file.with_policy_views(&mut|relative,views|{fold.push_full(relative,views,&budget,&||Ok(()))?;Ok(true)}).unwrap();assert_eq!(fold.count,10_001);let rows=fold.finish(&HashMap::new(),&budget,&mut||Ok(())).unwrap();assert_eq!(rows.markers.len(),10_001);assert!(rows.engine_sources.is_empty(),"unsealed marker DATA never retains source views or issues CODE completion");
+ }
 }

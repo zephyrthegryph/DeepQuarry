@@ -131,3 +131,6 @@ impl crate::reactive_dependency_fold::Candidates for crate::auto_tracking_native
  fn named_candidate(&self,owner:&str,name:&str)->Result<bool,Failure>{crate::auto_tracking_native::NativeCandidates::named_candidate(self,owner,name)}
  fn called_candidates(&self)->Result<crate::reactive_dependency_fold::CalledCandidates<'_>,Failure>{Ok(crate::reactive_dependency_fold::CalledCandidates::Tree(crate::auto_tracking_native::NativeCandidates::called_candidates(self)))}
 }
+
+/// SAME original variable classification for the semantic-read consumer.
+pub(crate) fn classify_original(source:&dyn OriginalSource,facts:&PolicyFacts,globals:&dyn GlobalFacts,owner:&str,name:&str,poll:&dyn Fn()->io::Result<()>)->Result<VarClass,Failure>{source.budget().require().map_err(|m|Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,m)))?;let pending=reactive_variable_policy::classify(&mut Native{source,facts,globals,poll},owner,name);if matches!(&pending,Err(Failure::Operational(_))){return pending}if source.budget().denied(){return Err(Failure::Operational(io::Error::new(io::ErrorKind::OutOfMemory,"semantic-read classification admission denied")))}pending}

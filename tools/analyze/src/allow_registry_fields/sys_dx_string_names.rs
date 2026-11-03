@@ -9,3 +9,11 @@ pub(crate) fn collect<C:crate::key_policy_control::Control>(names:&mut std::coll
  crate::allow_registry_fields::sys(RULES,&[],names,control)?;
  control.checkpoint()
 }
+
+// SAME actual registered name/group/required-list fields, no policy/source role.
+pub const SCOPE_MODULE_NAME:&str="dx_string_names";
+#[cfg(feature="native-policy")]
+pub(crate) fn visit_scopes<C:crate::key_policy_control::Control>(control:&mut C,visit:&mut dyn FnMut(crate::required_scope_policy::Requirement<'_>,&mut C)->Result<(),C::Error>)->Result<(),C::Error>{
+crate::required_scope_registry::visit_sys(SCOPE_MODULE_NAME,control,visit)?;
+control.checkpoint()
+}

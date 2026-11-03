@@ -4,7 +4,7 @@
 use super::*;
 use dm_tree::frontend::{
     BodySyntax, BodySyntaxFailure, BodySyntaxInput, BodySyntaxQueries, Diagnostic, DiagnosticKind,
-    DiagnosticStage,
+    DiagnosticStage,OriginalBodySyntaxProduct,BodyCodeIdentity,
 };
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
@@ -18,7 +18,30 @@ pub(super) const BUDGET: usize = 128 * 1024 * 1024;
 struct Params {
     input: Weak<BodySyntaxInput>,
     key: Key,
+    // Tiny code owner prevents pointer-locator ABA while graph metadata lives.
+    // No source/input/tree/model is retained strongly through Params.
+    code:Option<Arc<BodyCodeIdentity>>,
 }
+const CANONICAL_DOMAIN:u128=1u128<<127;
+fn code_key(input:&BodySyntaxInput)->Result<Key,BodySyntaxFailure>{
+ let code=input.original_code_owner().ok_or_else(||BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::NotConnected,"actual canonical BODY code owner absent")))?;
+ Ok(Key::new(BODY_SYNTAX,CANONICAL_DOMAIN|Arc::as_ptr(code)as usize as u128))
+}
+enum BodyQueryValue{
+ Issued(Result<Arc<BodySyntax>,Diagnostic>),
+ Canonical(Result<Arc<OriginalBodySyntaxProduct>,Diagnostic>),
+}
+impl BodyQueryValue{
+ fn issued(&self)->Result<Arc<BodySyntax>,Diagnostic>{match self{Self::Issued(result)=>result.clone(),Self::Canonical(_)=>Err(Diagnostic{kind:DiagnosticKind::Internal,stage:DiagnosticStage::Internal,message:"canonical BODY product cannot masquerade as an absolute parser issuance".into(),location:None})}}
+ fn consumed(&self)->bool{match self{
+  Self::Issued(result)=>result.as_ref().map_or(true,|syntax|Arc::strong_count(syntax)==1),
+  Self::Canonical(result)=>result.as_ref().map_or(true,|product|Arc::strong_count(product)==1&&product.parsed().map_or(true,|syntax|Arc::strong_count(syntax)==1)),
+ }}
+}
+#[derive(Debug)]struct CanonicalBodyContractDiagnostic(Diagnostic);
+impl std::fmt::Display for CanonicalBodyContractDiagnostic{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{write!(f,"native canonical BODY producer emitted a source-bound error without its raw native receipt: {:?}",self.0)}}
+impl std::error::Error for CanonicalBodyContractDiagnostic{}
+
 
 pub(super) fn register(db: &Db, charged: Arc<AtomicUsize>) {
     db.define(BODY_SYNTAX, "native-body-syntax", move |_, params| {
@@ -31,6 +54,24 @@ pub(super) fn register(db: &Db, charged: Arc<AtomicUsize>) {
             .ok_or(QueryError::Missing(params.key))?;
         #[cfg(test)]
         body_failure_test_checkpoint(params.key)?;
+        if let Some(code)=&params.code{
+            if !input.original_code_owner().is_some_and(|actual|Arc::ptr_eq(actual,code)){return Err(QueryError::operational(params.key,std::io::Error::new(std::io::ErrorKind::InvalidData,"actual canonical BODY Params code/input differ")))}
+            let parsed=setting_syntax::with_setting_admission(&charged,|a|input.parse_original_product_with_setting_admission(a));
+            let result=match parsed{
+                Ok(product)=>Ok(Arc::new(product)),
+                Err(BodySyntaxFailure::Operational(error))=>return Err(QueryError::operational(params.key,error)),
+                Err(BodySyntaxFailure::Syntax(error))=>{
+                    // All authored native grammar errors were retained BEFORE
+                    // location translation. An unlocated Internal contract fault
+                    // is invariant code DATA; a bound error without that actual
+                    // issuer is an infrastructure failure, never stale source.
+                    if error.location.is_some()||error.kind!=DiagnosticKind::Internal{return Err(QueryError::operational(params.key,std::io::Error::other(CanonicalBodyContractDiagnostic(error))))}
+                    Err(error)
+                }
+            };
+            let bytes=result.as_ref().map_or(1024,|product|product.budget_charge());charged.fetch_add(bytes,Ordering::Relaxed);
+            return Ok(Outcome::new(BodyQueryValue::Canonical(result),params.key.id,bytes))
+        }
         // Existing Kind4 owns the in-scope permit. Setting leaves never call
         // host.syntax/Db.get or reacquire/reset any family admission here.
         let parsed = setting_syntax::with_setting_admission(&charged, |admission| {
@@ -49,7 +90,7 @@ pub(super) fn register(db: &Db, charged: Arc<AtomicUsize>) {
         // Identity is valid only within this private parser issuance. A fresh
         // issuance has a different key even if all its bytes happen to match.
         charged.fetch_add(bytes, Ordering::Relaxed);
-        Ok(Outcome::new(result, params.key.id, bytes))
+        Ok(Outcome::new(BodyQueryValue::Issued(result), params.key.id, bytes))
     });
 }
 
@@ -61,6 +102,17 @@ impl std::fmt::Debug for QueryDb {
     }
 }
 impl BodySyntaxQueries for QueryDb {
+    fn prepare_syntax_product_input(&self,input:&Arc<BodySyntaxInput>)->Result<(),BodySyntaxFailure>{let key=code_key(input)?;self.prepare_body_input_key(input,key).map_err(checked_query_failure)}
+    fn begin_revision_inputs(&self,current:&[Arc<BodySyntaxInput>]){
+        {let mut inputs=self.body_inputs.lock().unwrap_or_else(|error|error.into_inner());for input in current{if let Ok(key)=code_key(input){if let Some(slot)=inputs.get_mut(&key){*slot=Arc::downgrade(input);}}}}
+        self.begin_revision();
+    }
+    fn syntax_product_checked(&self,input:&Arc<BodySyntaxInput>)->Result<Arc<OriginalBodySyntaxProduct>,BodySyntaxFailure>{
+        let key=code_key(input)?;self.prepare_body_input_key(input,key).map_err(checked_query_failure)?;
+        let code=Arc::clone(input.original_code_owner().expect("actual code locator checked"));
+        let value=self.db.get::<BodyQueryValue>(key,Arc::new(Params{input:Arc::downgrade(input),key,code:Some(code)})).map_err(checked_query_failure)?;
+        match value.as_ref(){BodyQueryValue::Canonical(result)=>result.clone().map_err(BodySyntaxFailure::Syntax),BodyQueryValue::Issued(_)=>Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"issued BODY parser result cannot masquerade as a canonical product")))}
+    }
     fn begin_revision(&self) {
         self.prune_value_proofs();
         self.prune_purity();
@@ -120,11 +172,13 @@ fn body_query_diagnostic(error: QueryError) -> Diagnostic {
 }
 impl QueryDb {
     fn prepare_body_input(&self,input:&Arc<BodySyntaxInput>)->Result<(),QueryError>{
-        let key=Key::new(BODY_SYNTAX,input.key().into());
+        self.prepare_body_input_key(input,Key::new(BODY_SYNTAX,input.key().into()))
+    }
+    fn prepare_body_input_key(&self,input:&Arc<BodySyntaxInput>,key:Key)->Result<(),QueryError>{
         #[cfg(test)]self.record_pressure_trace_for_test(0,0);
         crate::daemon::control::checkpoint().map_err(|actual|QueryError::operational(key,actual))?;
         let mut inputs=self.body_inputs.lock().unwrap_or_else(|e|e.into_inner());
-        inputs.entry(key).or_insert_with(||Arc::downgrade(input));
+        inputs.insert(key,Arc::downgrade(input));
         // Both actual retained setting/literal leases and the existing SOFT
         // syntax estimate share body_charge. Waiting for used>BUDGET is too
         // late: the next real parse needs its cleanup/parser work first.
@@ -152,8 +206,8 @@ impl QueryDb {
             // Keep this warm target and any actively loaned syntax. Only the
             // exact currently cached Result/BodySyntax owner may be retired.
             if candidate==key{continue}
-            let Some(value)=self.db.retained_value::<Result<Arc<BodySyntax>,Diagnostic>>(candidate)else{continue};
-            let consumed=Arc::strong_count(&value)==2&&value.as_ref().as_ref().map_or(true,|syntax|Arc::strong_count(syntax)==1);
+            let Some(value)=self.db.retained_value::<BodyQueryValue>(candidate)else{continue};
+            let consumed=Arc::strong_count(&value)==2&&value.consumed();
             if !consumed{continue}
             let freed=self.db.evict_value_if_current(candidate,&value);
             // Free the actual body/retention guards before crediting its soft
@@ -172,14 +226,14 @@ impl QueryDb {
     ) -> Result<Result<Arc<BodySyntax>, Diagnostic>, QueryError> {
         self.prepare_body_input(input)?;
         let key = Key::new(BODY_SYNTAX, input.key().into());
-        let result = self.db.get::<Result<Arc<BodySyntax>, Diagnostic>>(
+        let result = self.db.get::<BodyQueryValue>(
             key,
             Arc::new(Params {
                 input: Arc::downgrade(input),
-                key,
+                key,code:None,
             }),
         )?;
-        Ok(result.as_ref().clone())
+        Ok(result.issued())
     }
 }
 
@@ -192,8 +246,8 @@ pub(super) fn obtain(
  ctx:&mut dm_query::Ctx<'_>,input:&Arc<BodySyntaxInput>,
 )->Result<Arc<BodySyntax>,BodySyntaxFailure>{
  let key=Key::new(BODY_SYNTAX,input.key().into());
- let result=ctx.get::<Result<Arc<BodySyntax>,Diagnostic>>(key,Arc::new(Params{input:Arc::downgrade(input),key})).map_err(checked_query_failure)?;
- result.as_ref().clone().map_err(BodySyntaxFailure::Syntax)
+ let result=ctx.get::<BodyQueryValue>(key,Arc::new(Params{input:Arc::downgrade(input),key,code:None})).map_err(checked_query_failure)?;
+ result.issued().map_err(BodySyntaxFailure::Syntax)
 }
 
 /// Record a real syntax dependency of a derived policy query. The archive's
@@ -203,11 +257,11 @@ pub(super) fn observe(
     input: &Arc<BodySyntaxInput>,
 ) -> Result<(), QueryError> {
     let key = Key::new(BODY_SYNTAX, input.key().into());
-    ctx.get::<Result<Arc<BodySyntax>, Diagnostic>>(
+    ctx.get::<BodyQueryValue>(
         key,
         Arc::new(Params {
             input: Arc::downgrade(input),
-            key,
+            key,code:None,
         }),
     )?;
     Ok(())
@@ -286,4 +340,155 @@ impl QueryDb {
  fn record_pressure_trace_for_test(&self,event:u8,bytes:usize){let log=PRESSURE_TRACE.with(|slot|{let Some(mut trace)=slot.get()else{return false};let log=match event{0=>{trace.prepares=trace.prepares.saturating_add(1);trace.prepares%1024==0},1=>{trace.scanned=trace.scanned.saturating_add(1);trace.scanned>=1024&&trace.scanned.is_power_of_two()},_=>{trace.retired=trace.retired.saturating_add(1);trace.soft_freed=trace.soft_freed.saturating_add(bytes);false}};slot.set(Some(trace));log});if log{self.trace_effect_phase_for_test("body-pressure-progress",0,0);}}
  pub(crate) fn effect_pressure_trace_enabled_for_test(&self)->bool{PRESSURE_TRACE.with(|slot|slot.get().is_some())}
  pub(crate) fn trace_effect_phase_for_test(&self,label:&str,at:usize,total:usize){let trace=PRESSURE_TRACE.with(|slot|slot.get());if let Some(trace)=trace{eprintln!("effect-10001 phase={label} progress={at}/{total} elapsed_ms={} prepares={} scanned={} retired={} soft_freed={} body_charge={} k4={} k23={} k24={} k25={} k26={} k27={}",trace.started.elapsed().as_millis(),trace.prepares,trace.scanned,trace.retired,trace.soft_freed,self.body_charge.load(Ordering::Acquire),self.db.stats(Kind(4)).computed,self.db.stats(Kind(23)).computed,self.db.stats(Kind(24)).computed,self.db.stats(Kind(25)).computed,self.db.stats(Kind(26)).computed,self.db.stats(Kind(27)).computed);}}
+}
+
+#[cfg(test)]mod actual_canonical_product_tests{
+ #[test]fn actual_current_original_body_disposition_binds_only_same_product_and_preserves_unissued(){
+  use dm_tree::frontend::OriginalBodyDisposition as D;
+  for (body,kind)in[("return 1",0),("return argument.field",0),("return argument +",1),("return\targument +",1),("return   argument +",1),("return (1 +)",2)]{
+   let db=Arc::new(QueryDb::default());let mut state=RetainedSemanticTree::new();let front=original_frontend(&mut state,&db,&format!("/proc/p(argument)\n    {body}\n"));let archive=Arc::clone(front.source_view().unwrap().archive());
+   setting_syntax::with_setting_admission(&db.body_charge,|a|archive.with_current_body_checked(0,a,|current|{
+    match(kind,current.syntax().original_code_disposition()){(0,Ok(D::Available(grant)))|(1,Ok(D::Skipped(grant)))=>{assert!(grant.belongs_to(current.syntax()));assert!(grant.statement_span()?.is_some());},(2,Err(BodySyntaxFailure::Operational(error)))=>assert_eq!(error.kind(),std::io::ErrorKind::Unsupported),_=>panic!("actual current disposition differs for {body}")};Ok(())
+   })).unwrap();assert_eq!(db.db.stats(BODY_SYNTAX).computed,1);
+  }
+ }
+ #[test]fn actual_current_original_disposition_never_lends_a_foreign_grant_or_swallows_native_io(){
+  let db=Arc::new(QueryDb::default());let text="/proc/p(argument)\n    return argument.field\n";let own=original_frontend(&mut RetainedSemanticTree::new(),&db,text);let other=original_frontend(&mut RetainedSemanticTree::new(),&db,text);let original=original_input(&own,"p");let foreign=original_input(&other,"p");let product=db.syntax_product_checked(&original).unwrap();
+  setting_syntax::with_setting_admission(&db.body_charge,|a|{let bound=original.bind_original_product_checked(product.parsed().unwrap(),a)?;assert!(matches!(bound.original_code_disposition()?,dm_tree::frontend::OriginalBodyDisposition::Available(_)));assert!(foreign.bind_original_product_checked(product.parsed().unwrap(),a).is_err());Ok::<(),BodySyntaxFailure>(())}).unwrap();
+  let archive=Arc::clone(own.source_view().unwrap().archive());let called=std::cell::Cell::new(false);let fault=||Err(std::io::Error::from_raw_os_error(1450));let a=dm_syntax::SettingAdmission::new(&db.body_charge,BUDGET,&fault);let Err(BodySyntaxFailure::Operational(error))=archive.with_current_body_checked(0,&a,|_|{called.set(true);Ok(())})else{panic!("actual operational error must survive before disposition")};assert_eq!(error.raw_os_error(),Some(1450));assert!(!called.get());
+ }
+
+ use super::*;
+ use dm_tree::frontend::{RetainedSemanticTree,SettingExpressionQueries,FrontendConfig};
+ struct Source(dm_preprocess::AcquiredSource);
+ impl dm_preprocess::SourceProvider for Source{
+  fn read(&self,_:&std::path::Path)->Result<String,String>{Err("actual original acquisition required".into())}
+  fn acquired_source(&self,_:&std::path::Path)->Result<Option<dm_preprocess::AcquiredSource>,String>{Ok(Some(self.0.clone()))}
+  fn source_acquisition(&self,_:&std::path::Path,text:&dm_preprocess::SourceText)->Option<dm_preprocess::AcquiredSource>{self.0.lease().source_text().same_view(text).then(||self.0.clone())}
+ }
+ fn frontend(state:&mut RetainedSemanticTree,db:&Arc<QueryDb>,text:&str)->dm_tree::frontend::ColdFrontend{
+  let source=Source(dm_preprocess::AcquiredSource::from_original_bytes(text.as_bytes().to_vec(),()));let executor=dm_exec::BuildExecutor::new(1).unwrap();let host=Arc::clone(db)as Arc<dyn SettingExpressionQueries>;
+  dm_tree::frontend::build_with_executor_and_semantic_state_for_policy_checked(std::path::Path::new("canonical-body.dme"),&source,&Default::default(),FrontendConfig{workers:1,engine:None,observer:None},None,&executor,Some(state),true,&host).unwrap().with_body_queries(Arc::clone(db)as Arc<dyn BodySyntaxQueries>)
+ }
+ struct OriginalSource(Source);
+ impl dm_preprocess::SourceProvider for OriginalSource{
+  fn initial_environment(&self)->dm_preprocess::InitialEnvironment{dm_preprocess::InitialEnvironment::OriginalChecker0290}
+  fn read(&self,path:&std::path::Path)->Result<String,String>{dm_preprocess::SourceProvider::read(&self.0,path)}
+  fn acquired_source(&self,path:&std::path::Path)->Result<Option<dm_preprocess::AcquiredSource>,String>{dm_preprocess::SourceProvider::acquired_source(&self.0,path)}
+  fn source_acquisition(&self,path:&std::path::Path,text:&dm_preprocess::SourceText)->Option<dm_preprocess::AcquiredSource>{dm_preprocess::SourceProvider::source_acquisition(&self.0,path,text)}
+ }
+ fn original_frontend(state:&mut RetainedSemanticTree,db:&Arc<QueryDb>,text:&str)->dm_tree::frontend::DiagnosticFrontend{
+  let seed=dm_tree::checker_builtins::original_analysis_seed().expect("actual fixed Original declaration seed");let source=OriginalSource(Source(dm_preprocess::AcquiredSource::from_original_bytes(text.as_bytes().to_vec(),())));let executor=dm_exec::BuildExecutor::new(1).unwrap();let host=Arc::clone(db)as Arc<dyn SettingExpressionQueries>;
+  let frontend=dm_tree::frontend::build_for_original_analysis_with_state_checked(std::path::Path::new("canonical-original-body.dme"),&source,&Default::default(),FrontendConfig{workers:1,engine:Some(seed.frontend_seed()),observer:None},None,&executor,Some(state),&host).unwrap().with_body_queries(Arc::clone(db)as Arc<dyn BodySyntaxQueries>).unwrap();assert!(frontend.original_analysis_completeness().is_some());frontend
+ }
+ fn original_input(front:&dm_tree::frontend::DiagnosticFrontend,name:&str)->Arc<BodySyntaxInput>{let view=front.source_view().unwrap();let archive=view.archive();let ordinal=archive.occurrences().iter().enumerate().find(|(_,row)|view.tree().member(row.member).unwrap().name==dm_ir::SymbolId::of(name)).unwrap().0;Arc::clone(&archive.syntax_inputs().unwrap()[ordinal])}
+ fn input(front:&dm_tree::frontend::ColdFrontend,name:&str)->Arc<BodySyntaxInput>{
+  let archive=front.body_archive().unwrap();let ordinal=archive.occurrences().iter().enumerate().find(|(_,row)|front.snapshot.tree.member(row.member).unwrap().name==dm_ir::SymbolId::of(name)).unwrap().0;Arc::clone(&archive.syntax_inputs().unwrap()[ordinal])
+ }
+ #[test]fn actual_same_graph_kind4_reuses_one_canonical_product_after_same_chunk_length_change_and_current_offset_shift(){
+  let db=Arc::new(QueryDb::default());let mut state=RetainedSemanticTree::new();let p="/proc/p(value=list(1,2))\n    set name = \"p\"\n    var/local[2]=list(1,2)\n    return \"a[value]z\"\n";
+  let old=frontend(&mut state,&db,&format!("/proc/q()\n    return 22222222\n{p}"));let old_input=input(&old,"p");let before=db.db.stats(BODY_SYNTAX).computed;
+  let product=db.syntax_product_checked(&old_input).unwrap();let parsed=Arc::clone(product.parsed().unwrap());assert_eq!(db.db.stats(BODY_SYNTAX).computed,before+1);
+  let after=frontend(&mut state,&db,&format!("/proc/q()\n    return 1\n    // genuine added line before unchanged p\n{p}"));let current=input(&after,"p");assert_ne!(old_input.key(),current.key());assert_eq!(code_key(&old_input).unwrap(),code_key(&current).unwrap());
+  let warm=db.syntax_product_checked(&current).unwrap();assert!(Arc::ptr_eq(&product,&warm));assert!(Arc::ptr_eq(&parsed,warm.parsed().unwrap()));assert_eq!(db.db.stats(BODY_SYNTAX).computed,before+1,"actual Q4 provider did not reparse unchanged BODY");
+  setting_syntax::with_setting_admission(&db.body_charge,|a|{
+   let bound=current.bind_original_product_checked(&parsed,a)?;let parameter=bound.parameters()?.entries().unwrap().next().unwrap();assert_eq!(parameter.original().ordinal(),0);assert!(bound.current_diagnostics().next().is_none());Ok::<(),BodySyntaxFailure>(())
+  }).unwrap();
+  drop(old_input);drop(old);db.begin_revision();let again=db.syntax_product_checked(&current).unwrap();assert!(Arc::ptr_eq(&warm,&again));assert_eq!(db.db.stats(BODY_SYNTAX).computed,before+1,"latest weak current input refreshed before old issuance pruning");
+  let fresh=frontend(&mut RetainedSemanticTree::new(),&db,&format!("/proc/q()\n    return 1\n    // genuine added line before unchanged p\n{p}"));let unissued=input(&fresh,"p");assert_ne!(code_key(&current).unwrap(),code_key(&unissued).unwrap(),"equal bytes without predecessor capture do not create code authority");let fresh_product=db.syntax_product_checked(&unissued).unwrap();assert!(!Arc::ptr_eq(&product,&fresh_product));assert_eq!(db.db.stats(BODY_SYNTAX).computed,before+2);
+ }
+
+ #[test]fn actual_current_archive_entry_records_same_kind4_dependency_and_rebinds_after_changed_current_source_input(){
+  let db=Arc::new(QueryDb::default());let mut state=RetainedSemanticTree::new();let p="/proc/p(value=1)\n    return value\n";let old=frontend(&mut state,&db,&format!("/proc/q()\n    return 222222\n{p}"));let old_archive=old.body_archive().unwrap();let old_input=input(&old,"p");let old_key=code_key(&old_input).unwrap();let p_ordinal=old_archive.occurrences().iter().position(|row|old.snapshot.tree.member(row.member).unwrap().name==dm_ir::SymbolId::of("p")).unwrap();
+  let driver=Key::new(Kind(246),1);db.db.define_input(driver.kind,"actual current original archive");db.db.set_input(driver,Arc::clone(&old_archive),old_input.key().into());
+  let parent=Key::new(Kind(247),1);let charged=Arc::clone(&db.body_charge);
+  db.db.define(parent.kind,"actual current canonical body consumer",move|ctx,_|{
+   let archive=ctx.get::<Arc<dm_tree::frontend::BodyArchive>>(driver,Arc::new(()))?;
+   let line=setting_syntax::with_setting_admission(&charged,|a|archive.with_current_body_checked_in(p_ordinal,a,ctx,|ctx,input|obtain_product(ctx,input),|_,body|{
+    assert!(body.belongs_to(&archive));let parameter=body.syntax().parameters()?.entries().unwrap().next().unwrap();assert_eq!(body.current_source(parameter.name().unwrap())?,"value");
+    Ok(body.occurrence().source.line)
+   })).map_err(|failure|match failure{BodySyntaxFailure::Operational(actual)=>QueryError::operational(parent,actual),BodySyntaxFailure::Syntax(actual)=>QueryError::operational(parent,std::io::Error::other(format!("unexpected real source refusal in valid native control: {actual:?}")))})?;
+   Ok(Outcome::new(line,line as u128,std::mem::size_of::<usize>()))
+  });
+  let before=db.db.stats(BODY_SYNTAX).computed;let first=db.db.get::<usize>(parent,Arc::new(())).unwrap();assert!(db.db.dependants(&[old_key]).contains(&parent));assert_eq!(db.db.stats(BODY_SYNTAX).computed,before+1);
+  let new=frontend(&mut state,&db,&format!("/proc/q()\n    return 1\n    // actual added source line\n{p}"));let archive=new.body_archive().unwrap();let current=input(&new,"p");assert_eq!(code_key(&current).unwrap(),old_key);db.db.set_input(driver,archive,current.key().into());let second=db.db.get::<usize>(parent,Arc::new(())).unwrap();assert_eq!(*second,*first+1);assert_eq!(db.db.stats(BODY_SYNTAX).computed,before+1,"changed current-source parent reuses exact canonical syntax child");assert!(db.db.dependants(&[old_key]).contains(&parent));
+ }
+
+ #[test]fn actual_current_bitwise_producer_reuses_native_algorithm_and_code_product_after_same_chunk_source_edit(){
+  let db=Arc::new(QueryDb::default());let mut state=RetainedSemanticTree::new();let p="/proc/p(a,b)\n    return !a & b\n";let old=frontend(&mut state,&db,&format!("/proc/q()\n    return 222222\n{p}"));let archive=old.body_archive().unwrap();let p_ordinal=archive.occurrences().iter().position(|row|old.snapshot.tree.member(row.member).unwrap().name==dm_ir::SymbolId::of("p")).unwrap();
+  let before=db.db.stats(BODY_SYNTAX).computed;
+  let run=|archive:&dm_tree::frontend::BodyArchive|setting_syntax::with_setting_admission(&db.body_charge,|a|archive.with_current_body_checked(p_ordinal,a,|body|{
+   dm_analysis::checks::current_ambiguous_not_bitwise(&body,dm_analysis::checks::Severity::Warning,&||Ok(())).map_err(|failure|match failure{dm_analysis::policy_body_demand::PolicyFailure::Operational(actual)=>BodySyntaxFailure::Operational(actual),other=>BodySyntaxFailure::Operational(std::io::Error::other(other.to_string()))})
+  })).unwrap();
+  let first=run(&archive);assert_eq!(first.len(),1);assert_eq!(first[0].message,"Ambiguous `!` on left side of bitwise `&` operator");assert_eq!(first[0].notes.iter().map(|note|note.legacy_text()).collect::<Vec<_>>(),["Did you mean `!(x & y)`?","Did you mean `!x && y`?","Did you mean `~x & y`?"]);
+  let current=frontend(&mut state,&db,&format!("/proc/q()\n    return 1\n    // actual added source line\n{p}"));let archive=current.body_archive().unwrap();let next=run(&archive);assert_eq!(next.len(),1);assert_eq!(first[0].message,next[0].message);assert_eq!(first[0].notes,next[0].notes);
+  let first_archive=old.body_archive().unwrap();let old_line=first_archive.source_note_point(first[0].span.start).unwrap().line;let line=archive.source_note_point(next[0].span.start).unwrap().line;assert_eq!(line,old_line+1);assert_eq!(db.db.stats(BODY_SYNTAX).computed,before+1,"pure consumer uses SAME existing canonical Q4 product");
+  let fail=||Err(std::io::Error::from_raw_os_error(1450));setting_syntax::with_setting_admission(&db.body_charge,|a|archive.with_current_body_checked(p_ordinal,a,|body|{
+   let Err(dm_analysis::policy_body_demand::PolicyFailure::Operational(actual))=dm_analysis::checks::current_ambiguous_not_bitwise(&body,dm_analysis::checks::Severity::Warning,&fail)else{panic!("real current consumer failure must not publish partial rows")};assert_eq!(actual.raw_os_error(),Some(1450));Ok(())
+  })).unwrap();assert_eq!(db.db.stats(BODY_SYNTAX).computed,before+1);
+ }
+ #[test]fn actual_current_parameter_source_view_reuses_one_ledger_and_native_validator_after_source_shift(){
+  let db=Arc::new(QueryDb::default());let mut state=RetainedSemanticTree::new();let p="/proc/p(obj/value[]=list(1,2),other=3)\n    return value\n";
+  let old=frontend(&mut state,&db,&format!("/proc/q()\n    return 22222222\n{p}"));let old_input=input(&old,"p");let before=db.db.stats(BODY_SYNTAX).computed;let product=db.syntax_product_checked(&old_input).unwrap();let old_a=dm_syntax::SettingAdmission::new(&db.body_charge,BUDGET,&||Ok(()));let old_binding=old_input.bind_original_product_checked(product.parsed().unwrap(),&old_a).unwrap();let original_signature=old_binding.parameters().unwrap().original();
+  let new=frontend(&mut state,&db,&format!("/proc/q()\n    return 1\n    // actual current line before unchanged p\n{p}"));let archive=new.body_archive().unwrap();let ordinal=archive.occurrences().iter().position(|row|new.snapshot.tree.member(row.member).unwrap().name==dm_ir::SymbolId::of("p")).unwrap();
+  setting_syntax::with_setting_admission(&db.body_charge,|a|archive.with_current_body_checked(ordinal,a,|body|{
+   let view=body.source_parameters(a)?;view.require_for(body.tree(),body.occurrence()).unwrap();let entries=view.entries().unwrap();assert!(std::ptr::eq(entries,original_signature.entries().unwrap()),"same canonical ledger, no copied current signature");assert_eq!(view.header_span().unwrap(),body.syntax().header_span());assert_eq!(view.name(&entries[0]).unwrap(),"value");assert_eq!(view.type_path(&entries[0]).unwrap().as_deref(),Some("/list/obj"));assert_eq!(view.name(&entries[1]).unwrap(),"other");assert_eq!(view.type_path(&entries[1]).unwrap(),None);let cursor=view.declaration_cursor(&entries[0]).unwrap();assert_eq!(body.current_source(cursor)?,"[");
+   let calls=std::cell::Cell::new(0usize);let fail=||{let n=calls.get()+1;calls.set(n);if n==3{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(())}};let fault=dm_syntax::SettingAdmission::new(&db.body_charge,BUDGET,&fail);let Err(BodySyntaxFailure::Operational(actual))=body.source_parameters(&fault)else{panic!("real per-formal checkpoint must retain first typed failure")};assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(calls.get(),3);
+   let old_archive=old.body_archive().unwrap();assert!(view.require_for(old_archive.tree(),&old_archive.occurrences()[ordinal]).is_err(),"current source view never certifies the old semantic tree/occurrence");Ok(())
+  })).unwrap();assert_eq!(db.db.stats(BODY_SYNTAX).computed,before+1,"source/parameter consumers share unchanged canonical product");
+ }
+ #[test]fn actual_current_local_source_view_preserves_native_ledger_and_scope_after_earlier_shift(){
+  let db=Arc::new(QueryDb::default());let mut state=RetainedSemanticTree::new();let p="/proc/p()\n    var/obj/owned[2]\n    var/plain=1\n    return plain\n";let old=frontend(&mut state,&db,&format!("/proc/q()\n    return 22222222\n{p}"));let old_input=input(&old,"p");let before=db.db.stats(BODY_SYNTAX).computed;let product=db.syntax_product_checked(&old_input).unwrap();let parsed=product.parsed().unwrap();let original=parsed.statement_storage().parsed().local_variables.entries().unwrap();assert_eq!(original.len(),2);
+  let new=frontend(&mut state,&db,&format!("/proc/q()\n    return 1\n{p}"));let archive=new.body_archive().unwrap();let ordinal=archive.occurrences().iter().position(|row|new.snapshot.tree.member(row.member).unwrap().name==dm_ir::SymbolId::of("p")).unwrap();
+  setting_syntax::with_setting_admission(&db.body_charge,|a|archive.with_current_body_checked(ordinal,a,|body|{
+   let view=body.source_locals(a)?;view.require_for(body.tree(),body.occurrence(),body.syntax().canonical_statement_storage()).unwrap();let entries=view.entries().unwrap();assert!(std::ptr::eq(entries,original));assert_eq!(view.name(&entries[0]).unwrap(),"owned");assert_eq!(view.type_path(&entries[0]).unwrap().as_deref(),Some("/list/obj"));assert_eq!(view.type_path_width(&entries[0]).unwrap(),9);assert_eq!(view.name(&entries[1]).unwrap(),"plain");assert_eq!(view.type_path(&entries[1]).unwrap(),None);assert!(view.scope_admission().unwrap()>4096);assert!(std::ptr::eq(view.in_current_span(body.syntax().body_span()).unwrap(),entries));
+   let calls=std::cell::Cell::new(0usize);let fail=||{let n=calls.get()+1;calls.set(n);if n==3{Err(std::io::Error::from_raw_os_error(1450))}else{Ok(())}};let fault=dm_syntax::SettingAdmission::new(&db.body_charge,BUDGET,&fail);let Err(BodySyntaxFailure::Operational(actual))=body.source_locals(&fault)else{panic!("real local component traversal checkpoint must preserve typed fault")};assert_eq!(actual.raw_os_error(),Some(1450));assert_eq!(calls.get(),3);Ok(())
+  })).unwrap();assert_eq!(db.db.stats(BODY_SYNTAX).computed,before+1);
+ }
+ #[test]fn current_archive_entry_rejects_real_foreign_product_and_counter_before_consumer_without_fallback(){
+  let db=Arc::new(QueryDb::default());let mut state=RetainedSemanticTree::new();let text="/proc/p()\n    return 1\n";let front=frontend(&mut state,&db,text);let archive=front.body_archive().unwrap();let foreign=frontend(&mut RetainedSemanticTree::new(),&db,text);let foreign_input=input(&foreign,"p");let product=db.syntax_product_checked(&foreign_input).unwrap();let called=std::cell::Cell::new(false);
+  setting_syntax::with_setting_admission(&db.body_charge,|a|{
+   let result=archive.with_current_body_checked_in(0,a,&mut(),|_,_|Ok(Arc::clone(&product)),|_,_|{called.set(true);Ok(())});assert!(result.is_err());assert!(!called.get());Ok::<(),BodySyntaxFailure>(())
+  }).unwrap();
+  let foreign_counter=Arc::new(AtomicUsize::new(0));let a=dm_syntax::SettingAdmission::new(&foreign_counter,BUDGET,&||Ok(()));assert!(archive.with_current_body_checked(0,&a,|_|{called.set(true);Ok(())}).is_err());assert!(!called.get());
+  let provider=Source(dm_preprocess::AcquiredSource::from_original_bytes(text.as_bytes().to_vec(),()));let no_host=dm_tree::frontend::build(std::path::Path::new("no-current-host.dme"),&provider,&Default::default(),1).unwrap().body_archive().unwrap();let Err(BodySyntaxFailure::Operational(error))=no_host.with_current_body_checked(0,&a,|_|{called.set(true);Ok(())})else{panic!("missing real native current host")};assert_eq!(error.kind(),std::io::ErrorKind::NotConnected);assert!(!called.get(),"missing canonical host never invokes a standalone parser/consumer");
+ }
+ #[test]fn actual_canonical_kind4_retirement_uses_existing_family_budget_and_preserves_escaped_roots(){
+  let db=Arc::new(QueryDb::default());let mut state=RetainedSemanticTree::new();let front=frontend(&mut state,&db,"/proc/p()\n    return \"kept [1]\"\n");let current=input(&front,"p");let key=code_key(&current).unwrap();let product=db.syntax_product_checked(&current).unwrap();let root=Arc::clone(product.parsed().unwrap());let before=db.db.stats(BODY_SYNTAX).computed;
+  let value=db.db.retained_value::<BodyQueryValue>(key).unwrap();assert!(!value.consumed(),"active canonical product/root cannot be retired by consumed-value pressure");drop(value);
+  let weak=Arc::downgrade(&current);drop(current);drop(front);assert_eq!(weak.strong_count(),0,"graph Params retain only tiny code owner, never original input");
+  db.begin_revision();assert!(!db.body_inputs.lock().unwrap().contains_key(&key));assert_eq!(db.db.value_bytes_at(key),0);assert!(root.statement_storage().has_native_literal_syntax());assert_eq!(db.db.stats(BODY_SYNTAX).computed,before,"retirement does not reparse escaped original roots");
+ }
+ #[test]fn actual_canonical_kind4_preserves_first_typed_parser_operational_failure_and_retries_same_code(){
+  let db=Arc::new(QueryDb::default());let mut state=RetainedSemanticTree::new();let front=frontend(&mut state,&db,"/proc/p()\n    return \"[1]\"\n");let input=input(&front,"p");let before=db.db.stats(BODY_SYNTAX).computed;
+  let injected=db.fail_body_syntax_after_for_test(0,std::io::Error::from_raw_os_error(1450));let Err(BodySyntaxFailure::Operational(error))=db.syntax_product_checked(&input)else{panic!("actual native Kind4 injected operation must fail")};assert_eq!(error.raw_os_error(),Some(1450));assert_eq!(db.db.stats(BODY_SYNTAX).computed,before);drop(injected);
+  let result=db.syntax_product_checked(&input).unwrap();assert!(result.parsed().is_some());assert_eq!(db.db.stats(BODY_SYNTAX).computed,before+1);let again=db.syntax_product_checked(&input).unwrap();assert!(Arc::ptr_eq(&result,&again));assert_eq!(db.db.stats(BODY_SYNTAX).computed,before+1);
+ }
+ #[test]fn actual_compound_if_disposition_binds_same_primary_product_and_rejects_foreign_and_quota_io(){
+  for body in["    if(argument)\n        return 1\n    return 2\n","    if(argument)\n        return 1\n    else\n        return 2\n"]{
+   let text=format!("/proc/p(argument)\n{body}");let db=Arc::new(QueryDb::default());
+   let own=original_frontend(&mut RetainedSemanticTree::new(),&db,&text);let other=original_frontend(&mut RetainedSemanticTree::new(),&db,&text);
+   let input=original_input(&own,"p");let foreign=original_input(&other,"p");
+   let denied=db.fail_body_syntax_after_for_test(0,std::io::Error::new(std::io::ErrorKind::OutOfMemory,"actual canonical body operation denied"));
+   assert!(matches!(db.syntax_product_checked(&input),Err(BodySyntaxFailure::Operational(error))if error.kind()==std::io::ErrorKind::OutOfMemory));drop(denied);
+   let product=db.syntax_product_checked(&input).unwrap();
+   setting_syntax::with_setting_admission(&db.body_charge,|a|{
+    let bound=input.bind_original_product_checked(product.parsed().unwrap(),a)?;
+    let dm_tree::frontend::OriginalBodyDisposition::Available(grant)=bound.original_code_disposition()?else{panic!("genuine complete compound body must be available")};assert!(grant.belongs_to(&bound));assert_eq!(grant.statement_span()?,None);
+    assert!(foreign.bind_original_product_checked(product.parsed().unwrap(),a).is_err());Ok::<(),BodySyntaxFailure>(())
+   }).unwrap();
+   let archive=Arc::clone(own.source_view().unwrap().archive());let calls=std::cell::Cell::new(0);let fault=||Err(std::io::Error::from_raw_os_error(1450));let a=dm_syntax::SettingAdmission::new(&db.body_charge,BUDGET,&fault);
+   assert!(matches!(archive.with_current_body_checked(0,&a,|_|{calls.set(calls.get()+1);Ok(())}),Err(BodySyntaxFailure::Operational(error))if error.raw_os_error()==Some(1450)));assert_eq!(calls.get(),0);
+  }
+ }
+
+}
+
+/// Real canonical Kind4 dependency on this SAME active query context. The
+/// archive's checked-in entry performs host preparation, current input/code
+/// binding and real current source/error projection AFTER this one get.
+pub(super) fn obtain_product(ctx:&mut dm_query::Ctx<'_>,input:&Arc<BodySyntaxInput>)->Result<Arc<OriginalBodySyntaxProduct>,BodySyntaxFailure>{
+ let key=code_key(input)?;let code=Arc::clone(input.original_code_owner().expect("actual canonical code locator checked"));
+ let result=ctx.get::<BodyQueryValue>(key,Arc::new(Params{input:Arc::downgrade(input),key,code:Some(code)})).map_err(checked_query_failure)?;
+ match result.as_ref(){BodyQueryValue::Canonical(result)=>result.clone().map_err(BodySyntaxFailure::Syntax),BodyQueryValue::Issued(_)=>Err(BodySyntaxFailure::Operational(std::io::Error::new(std::io::ErrorKind::InvalidData,"active native context returned issued syntax for canonical key")))}
 }

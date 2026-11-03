@@ -12,14 +12,14 @@ pub(super) struct Params{
  pub(super) configuration_path:PathBuf,pub(super) files:Vec<Key>,pub(super) root:PathBuf,
  pub(super) result:Key,pub(super) request:Request,
 }
-pub(crate) enum Value{Globals(GlobalResult),Reads(ReadResult),Dependencies(DependencyResult),RawReads(super::reactive_workspace_policy::Read),RawDependencies(super::reactive_workspace_policy::Dependencies),PolicyFacts(super::reactive_workspace_policy::Policy),FullArtifact(super::reactive_workspace_policy::FullArtifact)}
+pub(crate) enum Value{SemanticPolicy(super::reactive_workspace_policy::SemanticPolicy),Globals(GlobalResult),Reads(ReadResult),Dependencies(DependencyResult),RawReads(super::reactive_workspace_policy::Read),RawDependencies(super::reactive_workspace_policy::Dependencies),PolicyFacts(super::reactive_workspace_policy::Policy),FullArtifact(super::reactive_workspace_policy::FullArtifact)}
 impl Value{
- pub(super) fn charge(&self)->Option<usize>{let payload=match self{Self::Globals(v)=>v.retained_charge()?,Self::Reads(v)=>v.retained_charge()?,Self::Dependencies(v)=>v.retained_charge()?,Self::RawReads(v)=>v.retained_charge()?,Self::RawDependencies(v)=>v.retained_charge()?,Self::PolicyFacts(v)=>v.retained_charge()?,Self::FullArtifact(v)=>v.retained_charge()?};payload.checked_add(std::mem::size_of::<Result<Self,String>>()+2*std::mem::size_of::<usize>())}
+ pub(super) fn charge(&self)->Option<usize>{let payload=match self{Self::SemanticPolicy(v)=>v.retained_charge()?,Self::Globals(v)=>v.retained_charge()?,Self::Reads(v)=>v.retained_charge()?,Self::Dependencies(v)=>v.retained_charge()?,Self::RawReads(v)=>v.retained_charge()?,Self::RawDependencies(v)=>v.retained_charge()?,Self::PolicyFacts(v)=>v.retained_charge()?,Self::FullArtifact(v)=>v.retained_charge()?};payload.checked_add(std::mem::size_of::<Result<Self,String>>()+2*std::mem::size_of::<usize>())}
  pub(super) fn fingerprint(&self,poll:&dyn Fn()->io::Result<()>)->io::Result<u128>{
   struct HashWriter<'a>{hash:xxhash_rust::xxh3::Xxh3,poll:&'a dyn Fn()->io::Result<()>,first:Option<io::Error>}
   impl io::Write for HashWriter<'_>{fn write(&mut self,s:&[u8])->io::Result<usize>{if self.first.is_some(){return Err(io::Error::other("reactive hash stopped"))}if let Err(actual)=(self.poll)(){self.first=Some(actual);return Err(io::Error::other("reactive hash stopped"))}self.hash.update(s);Ok(s.len())}fn flush(&mut self)->io::Result<()>{Ok(())}}
   let mut writer=HashWriter{hash:xxhash_rust::xxh3::Xxh3::new(),poll,first:None};writer.hash.update(b"native-reactive-result-v1\0");
-  let result=match self{Self::Globals(v)=>{writer.hash.update(b"globals");let mut serializer=serde_json::Serializer::new(&mut writer);v.serialize_dependency_facts(&mut serializer)},Self::Reads(v)=>{writer.hash.update(b"reads");serde_json::to_writer(&mut writer,v.facts())},Self::Dependencies(v)=>{writer.hash.update(b"dependencies");v.serialize_facts(&mut serde_json::Serializer::new(&mut writer))},Self::RawReads(v)=>{writer.hash.update(b"full-code-reads");serde_json::to_writer(&mut writer,v.facts())},Self::RawDependencies(v)=>{writer.hash.update(b"full-code-dependencies");v.serialize_facts(&mut serde_json::Serializer::new(&mut writer))},Self::FullArtifact(v)=>{writer.hash.update(b"full-workspace-generator");writer.hash.update(&v.fingerprint().to_le_bytes());Ok(())},Self::PolicyFacts(v)=>{writer.hash.update(b"shared-source-policy");writer.hash.update(&v.fingerprint(poll)?.to_le_bytes());Ok(())}};
+  let result=match self{Self::SemanticPolicy(v)=>{writer.hash.update(b"full-current-context-semantic-policy");v.serialize_data(&mut serde_json::Serializer::new(&mut writer))},Self::Globals(v)=>{writer.hash.update(b"globals");let mut serializer=serde_json::Serializer::new(&mut writer);v.serialize_dependency_facts(&mut serializer)},Self::Reads(v)=>{writer.hash.update(b"reads");serde_json::to_writer(&mut writer,v.facts())},Self::Dependencies(v)=>{writer.hash.update(b"dependencies");v.serialize_facts(&mut serde_json::Serializer::new(&mut writer))},Self::RawReads(v)=>{writer.hash.update(b"full-code-reads");serde_json::to_writer(&mut writer,v.facts())},Self::RawDependencies(v)=>{writer.hash.update(b"full-code-dependencies");v.serialize_facts(&mut serde_json::Serializer::new(&mut writer))},Self::FullArtifact(v)=>{writer.hash.update(b"full-workspace-generator");writer.hash.update(&v.fingerprint().to_le_bytes());Ok(())},Self::PolicyFacts(v)=>{writer.hash.update(b"shared-source-policy");writer.hash.update(&v.fingerprint(poll)?.to_le_bytes());Ok(())}};
   if let Some(actual)=writer.first.take(){return Err(actual)}result.map_err(io::Error::other)?;poll()?;Ok(writer.hash.digest128())
  }
 }
@@ -66,6 +66,9 @@ fn child_current(ctx:&mut dm_query::Ctx<'_>,capture:&Arc<CapturedPolicyInputs>,p
 }
 pub(super) fn register(db:&Db,charge:Arc<AtomicUsize>,admission:Arc<Admission>){
  db.define(REACTIVE_RESULT,"native-reactive-unique-policy",move|ctx,params|{
+  // SAME Kind12/Db dispatcher: a sealed UI request keeps its actual raw
+  // owner evaluator, never the semantic mapping-dependent parameter path.
+  if let Some(p)=params.downcast_ref::<super::reactive_ui_actions::Params>(){return super::reactive_ui_actions::compute(ctx,p,&charge,&admission)}
   if let Some(p)=params.downcast_ref::<super::reactive_workspace_policy::Params>(){return super::reactive_workspace_policy::compute(ctx,p,&charge,&admission)}
   let p=params.downcast_ref::<Params>().expect("reactive params");admission.abort.before_outcome(p.result)?;
   let capture=p.capture.upgrade().ok_or(QueryError::Missing(p.result))?;let config=ctx.input::<ConfigData>(p.configuration)?;
@@ -210,3 +213,8 @@ impl QueryDb{
 
 #[cfg(test)]
 #[path="reactive_read_tests.rs"]mod tests;
+
+#[cfg(test)]mod same_kind_dispatch_tests{
+ use super::*;
+ #[test]fn existing_legacy_kind12_payload_keeps_its_real_capture_refusal_without_borrowing_ui_control(){let db=QueryDb::default();let key=Key::new(REACTIVE_RESULT,0x1200_0001);let p=Params{locator:(false,0),capture:Weak::new(),evidence:0,configuration:Key::new(RAW_CONFIG,0),configuration_path:PathBuf::new(),files:Vec::new(),root:PathBuf::new(),result:key,request:Request::Globals};let error=match db.db.get::<Result<Value,String>>(key,Arc::new(p)){Err(error)=>error,Ok(_)=>panic!("missing actual semantic owner cannot become UI/raw success")};assert!(matches!(error,QueryError::Missing(actual)if actual==key));assert!(db.db.retained_value::<Result<Value,String>>(key).is_none());}
+}

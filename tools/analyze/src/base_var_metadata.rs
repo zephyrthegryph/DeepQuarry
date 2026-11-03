@@ -6,8 +6,8 @@ use crate::{
 pub(crate) const BASELINE: &str = "tools/ci/base_vars_baseline.txt";
 
 pub(crate) static META: Meta = Meta {
-    name: "base_vars",
-    group: "",
+    name: crate::allow_registry_fields::base_vars::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::base_vars::SCOPE_META_0.group,
     label: "base_vars",
     legacy: "tools/ci/base_vars_lint.py",
     // The vars are parsed from `glob.glob` files (non-hidden); the singleton scan is `os.walk`.
@@ -39,5 +39,5 @@ pub(crate) static META: Meta = Meta {
         },
     ],
     allow: crate::allow_registry_fields::base_vars::ALLOW_SHARED_0,
-    lists: &["list_init_exempt_prefixes", "list_init_exempt_files", "base_var_home_macros", "base_var_home_relations", "base_var_home_types", "record_accessor_prefixes", "hot_ceiling"],
+    lists: crate::allow_registry_fields::base_vars::SCOPE_META_0.lists,
 };

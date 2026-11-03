@@ -93,3 +93,17 @@ mod checker_original_group;
 mod checker_prefab_value;
 
 mod checker_static_reference;
+
+mod checker_switch_rand_range_policy;
+
+mod checker_return_expression;
+
+mod checker_return_binding;
+
+pub mod engine_layering_native;
+
+pub mod setter_publication_native;
+
+pub mod original_base_terms;
+
+pub mod original_callable_groups;

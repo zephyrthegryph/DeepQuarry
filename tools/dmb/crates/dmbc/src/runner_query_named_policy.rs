@@ -132,8 +132,8 @@ impl SourceSnapshot {
         let producer = match family {
             "redefined_proc"=>DiagnosticSeverity::Hint,
             "call_arguments"|"filter_call"=>DiagnosticSeverity::Error,
-            "catch_parameter_count"=>DiagnosticSeverity::Warning,
-            "static_reference"=>DiagnosticSeverity::Error,
+            "catch_parameter_count"|"switch_case"=>DiagnosticSeverity::Warning,
+            "static_reference"|"iteration_range"|"undefined_type"=>DiagnosticSeverity::Error,
             "incompatible_directive" | "private_proc" | "protected_proc" | "must_call_parent" | "must_not_override" => DiagnosticSeverity::Error,
             "ambiguous_not_bitwise"
             | "ambiguous_in_lhs"
@@ -169,6 +169,9 @@ impl SourceSnapshot {
         }
         if family=="call_arguments"{return self.write_original_call_arguments_using(ordinal,environment,tree,capture,&loaded,output)}
         if family=="filter_call"{return self.write_original_call_policy_using(ordinal,"filter_call",environment,tree,capture,&loaded,output)}
+        if family=="undefined_type"{return self.write_original_call_policy_using(ordinal,"undefined_type",environment,tree,capture,&loaded,output)}
+        if family=="switch_case"{return self.write_original_call_policy_using(ordinal,"switch_case",environment,tree,capture,&loaded,output)}
+        if family=="iteration_range"{return self.write_original_call_policy_using(ordinal,"iteration_range",environment,tree,capture,&loaded,output)}
         if family=="static_reference"{return self.write_original_call_policy_using(ordinal,"static_reference",environment,tree,capture,&loaded,output)}
         if family=="catch_parameter_count"{return self.write_original_call_policy_using(ordinal,"catch_parameter_count",environment,tree,capture,&loaded,output)}
         if matches!(family,"private_proc"|"protected_proc"|"must_call_parent"|"must_not_override"|"redefined_proc"){return self.write_original_procedure_visibility_using(ordinal,family,environment,tree,capture,&loaded,output)}
@@ -303,9 +306,9 @@ impl SourceSnapshot{
 
 impl SourceSnapshot{
  fn write_original_procedure_visibility_using(&self,ordinal:u32,family:&str,environment:&Path,tree:&dm_tree::SemanticTree,capture:&CapturedPolicyInputs,loaded:&config::Loaded,output:&mut impl io::Write)->io::Result<()>{
-  fn encoded(finding:dm_analysis::checks_proc_visibility::Finding<'_>,level:DiagnosticSeverity,definition:bool)->io::Result<serde_json::Value>{let row=finding.diagnostic();let point=finding.reported_point().map_err(io::Error::other)?;let(path,line,column)=point.coordinates();let synthetic=finding.is_parser_synthetic();let mut value=serde_json::json!({"family":row.family,"severity":severity(level),"file":path,"line":line,"column":column,"location_kind":if synthetic{"parser_synthetic"}else{"source"},"expanded_span":if synthetic{None}else{Some([row.span.start,row.span.end])},"expression_span":if synthetic{None}else{Some([row.expression_span.start,row.expression_span.end])},"message":row.message,"notes":row.notes.iter().map(|note|note.legacy_text()).collect::<Vec<_>>() });if definition{value.as_object_mut().unwrap().insert("registration_tag".into(),serde_json::json!(finding.registration_tag()));}Ok(value)}
+  fn encoded(finding:dm_analysis::checks_proc_visibility::Finding<'_>,level:DiagnosticSeverity,definition:bool)->io::Result<serde_json::Value>{let row=finding.diagnostic();let point=finding.reported_point().map_err(io::Error::other)?;let(path,line,column)=point.coordinates();let synthetic=finding.is_parser_synthetic();let builtin=finding.is_builtin_cursor();let mut value=serde_json::json!({"family":row.family,"severity":severity(level),"file":path,"line":line,"column":column,"location_kind":if builtin{"builtin"}else if synthetic{"parser_synthetic"}else{"source"},"expanded_span":if synthetic||builtin{None}else{Some([row.span.start,row.span.end])},"expression_span":if synthetic||builtin{None}else{Some([row.expression_span.start,row.expression_span.end])},"message":row.message,"notes":row.notes.iter().map(|note|note.legacy_text()).collect::<Vec<_>>() });if definition{value.as_object_mut().unwrap().insert("registration_tag".into(),serde_json::json!(finding.registration_tag()));}Ok(value)}
   let archive=capture.policy().archive();let definition=family=="redefined_proc";let mut rows=Vec::new();
-  if definition&&loaded.policy.register(None,DiagnosticSeverity::Error).is_some(){if let Some(receipt)=&self.diagnostic_declarations{let structural=dm_analysis::checks_proc_visibility::declaration_redeclaration_checked(archive,ordinal as usize,receipt,&crate::daemon::control::checkpoint).map_err(|failure|match failure{dm_analysis::policy_body_demand::PolicyFailure::Operational(actual)=>actual,dm_analysis::policy_body_demand::PolicyFailure::Unsupported(reason)=>io::Error::other(reason.0)})?;for finding in structural.iter(){rows.push(encoded(finding,DiagnosticSeverity::Error,true)?);}}}
+  if definition{if let Some(receipt)=&self.diagnostic_declarations{let structural=dm_analysis::checks_proc_visibility::declaration_redeclaration_checked(archive,ordinal as usize,receipt,&crate::daemon::control::checkpoint).map_err(|failure|match failure{dm_analysis::policy_body_demand::PolicyFailure::Operational(actual)=>actual,dm_analysis::policy_body_demand::PolicyFailure::Unsupported(reason)=>io::Error::other(reason.0)})?;for finding in structural.iter(){let default=finding.original_fixed_level().ok_or_else(||io::Error::other("original declaration producer default severity absent"))?;if let Some(level)=loaded.policy.register(finding.registration_tag(),default){rows.push(encoded(finding,level,true)?);}}}}
 // The shared syntax finding has only Disabled/Warning/Error; the actual
 // producer Hint and configured final level remain DiagnosticSeverity below.
 if let Some(level)=loaded.policy.register(Some(family),if definition{DiagnosticSeverity::Hint}else{DiagnosticSeverity::Error}){

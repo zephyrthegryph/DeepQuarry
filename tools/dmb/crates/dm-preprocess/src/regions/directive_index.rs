@@ -15,6 +15,8 @@ pub(super) struct DirectiveIndex {
     lines: usize,
 }
 impl DirectiveIndex {
+    pub(super) fn include_header_storage_bound(lines:usize)->Option<usize>{lines.checked_mul(std::mem::size_of::<DirectiveSyntax>())?.checked_add(lines.div_ceil(64).checked_mul(std::mem::size_of::<Block>())?)}
+
     pub(super) fn visit_storage(&self, visit: &mut impl FnMut(super::PreparedSourceStorage<'_>)) {
         for (address, bytes) in [
             (

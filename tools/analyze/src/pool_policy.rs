@@ -9,8 +9,8 @@ use crate::{
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 pub static META: Meta = Meta {
-    name: "pool",
-    group: "",
+    name: crate::allow_registry_fields::pool::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::pool::SCOPE_META_0.group,
     label: "pool",
     legacy: "tools/ci/pool_lint.py",
     select: CODE_DM,
@@ -27,7 +27,7 @@ pub static META: Meta = Meta {
         },
     ],
     allow: &[], // the Python never lists `pool` in allow_annotations.LINTS, so ALLOW(pool) stays unknown
-    lists: &["exempt_prefixes"],
+    lists: crate::allow_registry_fields::pool::SCOPE_META_0.lists,
 };
 
 pub const RULE_NAMES: [&str; 2] = ["new_pooled", "take_leak"];

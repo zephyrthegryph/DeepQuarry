@@ -1,0 +1,5 @@
+/datum/a
+    proc/work()
+        return 1
+/proc/bad(x=)
+    return 2

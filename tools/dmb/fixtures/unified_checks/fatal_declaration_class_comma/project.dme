@@ -1,0 +1,6 @@
+/datum/holder
+    var/datum/loose
+    var/list/items
+    var/datum/first, second
+/proc/later()
+    return

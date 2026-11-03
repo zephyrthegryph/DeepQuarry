@@ -13,6 +13,7 @@ pub struct AdapterError {
     pub kind: dm_syntax::DiagnosticKind,
     pub span: Span,
     pub message: String,
+    pub original_fatal: Option<crate::OriginalParameterFatal>,
 }
 #[derive(Clone, Debug)]
 pub struct AdaptedDeclarations {
@@ -115,6 +116,7 @@ pub(crate) fn from_ast_with_source_headers<'a>(
         crate::procedure::HeaderAllocationReceipt::from_rows(&ast.items, headers, offset, rows)
             .map_err(|message| {
                 vec![AdapterError {
+                    original_fatal: None,
                     kind: dm_syntax::DiagnosticKind::Unsupported,
                     span: Span {
                         file,
@@ -143,7 +145,8 @@ pub(crate) fn from_ast_with_source_headers_checked<'a>(ast:&'a AstFile,symbols:S
         Ok((facts,rows))=>match crate::procedure::HeaderAllocationReceipt::from_rows_checked(&ast.items,headers,offset,rows){
             Ok(receipt)=>Ok((facts,receipt)),
             Err(crate::procedure::header_input::OriginalHeaderFailure::Operational(actual))=>return Err(actual),
-            Err(crate::procedure::header_input::OriginalHeaderFailure::Source(message))=>Err(vec![AdapterError{kind:dm_syntax::DiagnosticKind::Unsupported,span:Span{file,start:offset as u32,end:offset as u32},message}]),
+            Err(crate::procedure::header_input::OriginalHeaderFailure::Source(message))=>Err(vec![AdapterError{
+                    original_fatal: None,kind:dm_syntax::DiagnosticKind::Unsupported,span:Span{file,start:offset as u32,end:offset as u32},message}]),
         },
     };
     demand.checkpoint()?;
@@ -152,7 +155,8 @@ pub(crate) fn from_ast_with_source_headers_checked<'a>(ast:&'a AstFile,symbols:S
         match headers.complete_initializer_admission(completed,admission){
             Ok(())=>(),
             Err(crate::procedure::header_input::OriginalHeaderFailure::Operational(actual))=>return Err(actual),
-            Err(crate::procedure::header_input::OriginalHeaderFailure::Source(message))=>return Ok(Err(vec![AdapterError{kind:dm_syntax::DiagnosticKind::Unsupported,span:Span{file,start:offset as u32,end:offset as u32},message}])),
+            Err(crate::procedure::header_input::OriginalHeaderFailure::Source(message))=>return Ok(Err(vec![AdapterError{
+                    original_fatal: None,kind:dm_syntax::DiagnosticKind::Unsupported,span:Span{file,start:offset as u32,end:offset as u32},message}])),
         }
     }
     Ok(result)
@@ -198,7 +202,7 @@ fn from_ast_with_cursor_issued(
 }
 fn from_ast_with_cursor_issued_using<D:AdapterDemand>(
     ast: &AstFile,
-    mut symbols: SymbolTable,
+    symbols: SymbolTable,
     file: FileId,
     include_occurrence: u32,
     region: u128,
@@ -213,6 +217,22 @@ fn from_ast_with_cursor_issued_using<D:AdapterDemand>(
     ),
     Vec<AdapterError>,
 >,D::Operational> {
+    let progress=from_ast_with_cursor_progress_using(ast,symbols,file,include_occurrence,region,owner,source,headers,demand,false,None)?;
+    if progress.errors.is_empty(){Ok(Ok((progress.facts,progress.header_rows)))}else{Ok(Err(progress.errors))}
+}
+fn from_ast_with_cursor_progress_using<D:AdapterDemand>(
+    ast: &AstFile,
+    mut symbols: SymbolTable,
+    file: FileId,
+    include_occurrence: u32,
+    region: u128,
+    owner: &str,
+    source: Option<&str>,
+    headers: Option<(&crate::procedure::OriginalProcedureHeaders, usize)>,
+    demand:&D,
+    skip_general_constants:bool,
+    prepared_signatures:Option<&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>,
+) -> Result<DeclarationAdapterProgress,D::Operational> {
     let mut header_rows = Vec::new();
     let mut result = AdaptedDeclarations {
         symbols: SymbolTable::default(),
@@ -222,6 +242,7 @@ fn from_ast_with_cursor_issued_using<D:AdapterDemand>(
     let mut errors = Vec::new();
     for diagnostic in &ast.diagnostics {
         errors.push(AdapterError {
+                    original_fatal: None,
             kind: diagnostic.kind,
             span: Span {
                 file,
@@ -236,6 +257,8 @@ fn from_ast_with_cursor_issued_using<D:AdapterDemand>(
         source,
         headers,
         demand,
+        skip_general_constants,
+        prepared_signatures,
         header_rows: &mut header_rows,
         file,
         include_occurrence,
@@ -250,16 +273,12 @@ fn from_ast_with_cursor_issued_using<D:AdapterDemand>(
     result.skeletons.shrink_to_fit();
     result.origins.shrink_to_fit();
     result.symbols = symbols;
-    if errors.is_empty() {
-        Ok(Ok((result, header_rows)))
-    } else {
-        Ok(Err(errors))
-    }
+    Ok(DeclarationAdapterProgress{facts:result,header_rows,errors})
 }
 fn symbol(table: &mut SymbolTable, text: &str) -> Result<SymbolId, String> {
     table.intern(text).map_err(|error| error.to_string())
 }
-fn absolute(owner: &str, path: &str) -> Result<String, String> {
+pub(crate) fn absolute(owner: &str, path: &str) -> Result<String, String> {
     let path = path.trim_end_matches('/');
     let full = if path.is_empty() {
         owner.into()
@@ -310,6 +329,8 @@ fn canonical(text: &str) -> Result<Arc<[u8]>, String> {
     Ok(bytes.into())
 }
 struct AdapterContext<'a,'op,D:AdapterDemand> {
+    skip_general_constants:bool,
+    prepared_signatures:Option<&'a mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures>,
     demand:&'op D,
     /// The one empty expansion stack every origin of this walk shares.
     no_expansion: Arc<[Span]>,
@@ -342,6 +363,7 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
         let mut original_settings_owner = None;
         let mut header_argument_offset = None;
         let mut source_argument_span = None;
+        let mut original_parameter_fatal = None;
         let adapted = (|| -> Result<Option<Skeleton>, WalkFailure<D::Operational>> {
             match item.kind {
                 ItemKind::Type => {
@@ -436,7 +458,7 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                         )?)
                     };
                     let symbolic_initializer=variable.symbolic(context.symbols)?;
-                    let resolved_constant=if flags&2!=0{context.demand.constant(&variable,symbolic_initializer.as_ref(),context.symbols)?}else{None};
+                    let resolved_constant=if flags&2!=0&&!context.skip_general_constants{context.demand.constant(&variable,symbolic_initializer.as_ref(),context.symbols)?}else{None};
                     let element_type = if type_parts.is_empty() {
                         None
                     } else {
@@ -549,7 +571,11 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                             }
                         }
                     }
-                    let parsed_signature = if let Some(parts) = issued.as_ref() {
+                    let parsed_signature = if let Some(prepared)=context.prepared_signatures.as_deref_mut(){
+                        let(headers,offset)=context.headers.ok_or("prepared primary signature has no actual original header owner")?;
+                        let(actual,argument_offset)=prepared.take(item.header_span,offset,headers)?;
+                        header_argument_offset=Some(argument_offset);actual
+                    }else{if let Some(parts) = issued.as_ref() {
                         parts.parse(context.symbols)
                     } else {
                         crate::procedure::parse_signature_declarations(
@@ -559,6 +585,7 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                         )
                     }
                     .map_err(|error| {
+                        original_parameter_fatal=error.original_fatal;
                         source_argument_span =
                             if error.after_header {
                                 // DreamMaker reports an empty formal at the next
@@ -596,7 +623,7 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                                 })
                             };
                         error.message
-                    })?;
+                    })?};
                     header_declarations = parsed_signature.declarations;
                     let typed_signature = parsed_signature.signature;
                     let procedure = Some(Arc::new(crate::ProcedureMetadata {
@@ -707,6 +734,7 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
                     if let Err(actual)=context.header_rows.try_reserve_exact(1) {
                         context.demand.allocation_failure(actual)?;
                         context.errors.push(AdapterError {
+                    original_fatal: None,
                             kind: dm_syntax::DiagnosticKind::Unsupported,
                             span,
                             message: "original header allocation receipt capacity refused".into(),
@@ -741,6 +769,7 @@ fn walk<D:AdapterDemand>(items: &[Item], owner: &str, context: &mut AdapterConte
             Ok(None) => {}
             Err(WalkFailure::Operational(actual))=>return Err(actual),
             Err(WalkFailure::Source(message)) => context.errors.push(AdapterError {
+                    original_fatal: original_parameter_fatal,
                 kind: if source_argument_span.is_some() {
                     dm_syntax::DiagnosticKind::Expression
                 } else {
@@ -879,6 +908,7 @@ impl AdaptedDeclarations {
             normalization,
             None,
             None,
+            None,
         )
     }
 }
@@ -889,7 +919,20 @@ impl SharedAdaptedDeclarations {
         on_error: impl FnMut(&SnapshotError, &[Skeleton], &[Provenance]),
         executor: &dm_exec::BuildExecutor,
     ) -> Result<crate::DiagnosticDeclarations, SnapshotError> {
+        self.finish_checker_diagnostic_with_variables(seed,on_error,executor,None)
+    }
+    pub(crate) fn finish_checker_diagnostic_with_variables(
+        self,seed:Option<&crate::frontend::EngineSeed>,
+        on_error:impl FnMut(&SnapshotError,&[Skeleton],&[Provenance]),
+        executor:&dm_exec::BuildExecutor,
+        variables:Option<crate::checker_builtins::OriginalVariableDeclarations>,
+    )->Result<crate::DiagnosticDeclarations,SnapshotError>{
+        self.finish_diagnostic_with_primary(seed,on_error,executor,variables,None)
+    }
+    pub(crate) fn finish_original_diagnostic_with_variables(self,seed:Option<&crate::frontend::EngineSeed>,on_error:impl FnMut(&SnapshotError,&[Skeleton],&[Provenance]),executor:&dm_exec::BuildExecutor,variables:Option<crate::checker_builtins::OriginalVariableDeclarations>,primary:Arc<crate::frontend::original_declaration_input::OriginalPrimaryRetention>)->Result<crate::DiagnosticDeclarations,SnapshotError>{self.finish_diagnostic_with_primary(seed,on_error,executor,variables,Some(primary))}
+    fn finish_diagnostic_with_primary(self,seed:Option<&crate::frontend::EngineSeed>,on_error:impl FnMut(&SnapshotError,&[Skeleton],&[Provenance]),executor:&dm_exec::BuildExecutor,variables:Option<crate::checker_builtins::OriginalVariableDeclarations>,primary:Option<Arc<crate::frontend::original_declaration_input::OriginalPrimaryRetention>>)->Result<crate::DiagnosticDeclarations,SnapshotError>{
         let mut receipt = crate::diagnostic_declarations::DiagnosticDeclarationReceipt::new();
+        receipt.original_variables=variables;
         let snapshot = self.finish_execution(
             seed,
             on_error,
@@ -897,6 +940,7 @@ impl SharedAdaptedDeclarations {
             None,
             None,
             Some(&mut receipt),
+            primary,
         )?;
         Ok(crate::DiagnosticDeclarations::bind(snapshot, receipt))
     }
@@ -907,7 +951,7 @@ impl SharedAdaptedDeclarations {
         on_error: impl FnMut(&SnapshotError, &[Skeleton], &[Provenance]),
         executor: &dm_exec::BuildExecutor,
     ) -> Result<TreeSnapshot, SnapshotError> {
-        self.finish_execution(seed, on_error, Some(executor), None, None, None)
+        self.finish_execution(seed, on_error, Some(executor), None, None, None, None)
     }
     pub(crate) fn finish_with_engine_normalization(
         self,
@@ -927,6 +971,7 @@ impl SharedAdaptedDeclarations {
             normalization,
             structural,
             None,
+            None,
         )
     }
     fn finish_execution(
@@ -940,6 +985,7 @@ impl SharedAdaptedDeclarations {
         )>,
         structural: Option<crate::metadata_update::StructuralMetadata<'_>>,
         diagnostics: Option<&mut crate::diagnostic_declarations::DiagnosticDeclarationReceipt>,
+        primary:Option<Arc<crate::frontend::original_declaration_input::OriginalPrimaryRetention>>,
     ) -> Result<TreeSnapshot, SnapshotError> {
         let origins = self.origins.into_owned();
         let mut skeletons = crate::skeleton_roster::SkeletonRoster::default();
@@ -1058,6 +1104,7 @@ impl SharedAdaptedDeclarations {
             },
         )?);
         drop(_occurrence_timer);
+        tree.original_input_retention=primary;
         let tree = Arc::new(tree);
         Ok(TreeSnapshot { tree, occurrences })
     }
@@ -1141,3 +1188,21 @@ pub(crate) fn signature_part_lexes() -> usize {
 #[cfg(test)]
 #[path="adapter_checked_tests.rs"]
 mod checked_tests;
+
+/// Genuine adapter products only. This is not a graph, source proof, semantic
+/// availability result, header-completion token or compiler admission.
+pub(crate) struct DeclarationAdapterProgress{facts:AdaptedDeclarations,header_rows:Vec<crate::procedure::header_input::HeaderAllocationRow>,errors:Vec<AdapterError>}
+impl DeclarationAdapterProgress{
+ pub(crate) fn facts(&self)->&AdaptedDeclarations{&self.facts}
+ pub(crate) fn errors(&self)->&[AdapterError]{&self.errors}
+ pub(crate) fn into_parts(self)->(AdaptedDeclarations,Vec<crate::procedure::header_input::HeaderAllocationRow>,Vec<AdapterError>){(self.facts,self.header_rows,self.errors)}
+}
+/// Caller must hold the current primary Original product (already truncated
+/// before type-child prescans) and its SAME header/admission owners. A blanket
+/// full AST plus a failure span is not accepted by the frontend input issuer.
+pub(crate) fn from_original_primary_progress_checked(ast:&AstFile,symbols:SymbolTable,file:FileId,include_occurrence:u32,region:u128,expanded:&str,headers:&crate::procedure::OriginalProcedureHeaders,offset:usize,admission:&dm_syntax::SettingAdmission<'_>,skip_general_constants:bool,prepared:&mut crate::procedure::original_primary_signatures::PreparedOriginalSignatures)->Result<DeclarationAdapterProgress,std::io::Error>{
+ let demand=initializer_demand::Checked{admission};demand.checkpoint()?;
+ let progress=from_ast_with_cursor_progress_using(ast,symbols,file,include_occurrence,region,"/",Some(expanded),Some((headers,offset)),&demand,skip_general_constants,Some(prepared))?;
+ if progress.errors.is_empty(){let completed=CompletedInitializerAdapter{facts:&progress.facts,header:headers};headers.complete_initializer_admission(completed,admission).map_err(|error|match error{crate::procedure::header_input::OriginalHeaderFailure::Operational(actual)=>actual,crate::procedure::header_input::OriginalHeaderFailure::Source(message)=>std::io::Error::new(std::io::ErrorKind::Unsupported,message)})?;}
+ demand.checkpoint()?;Ok(progress)
+}

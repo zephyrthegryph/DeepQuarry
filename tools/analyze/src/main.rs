@@ -4,7 +4,7 @@
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::ExitCode;
 use std::time::Instant;
 
@@ -42,66 +42,7 @@ USAGE
 
 A lint is selected by its name or its group (`sys` selects every sys/* lint).";
 
-struct Args {
-    cmd: String,
-    lints: Vec<String>,
-    flags: Vec<String>,
-    root: Option<PathBuf>,
-}
-
-fn parse(argv: Vec<String>) -> Args {
-    let mut it = argv.into_iter().skip(1);
-    let cmd = it.next().unwrap_or_else(|| "help".to_string());
-    let mut lints = Vec::new();
-    let mut flags = Vec::new();
-    let mut root = None;
-    let mut taking_lints = false;
-    let mut rest: Vec<String> = it.collect();
-    let mut i = 0;
-    while i < rest.len() {
-        let a = std::mem::take(&mut rest[i]);
-        i += 1;
-        match a.as_str() {
-            "--lint" => taking_lints = true,
-            "--root" => {
-                root = rest.get(i).map(PathBuf::from);
-                i += 1;
-                taking_lints = false;
-            }
-            s if s.starts_with("--") => {
-                flags.push(s.to_string());
-                taking_lints = false;
-            }
-            _ => {
-                if taking_lints || cmd == "parity" {
-                    for n in a.split(',') {
-                        if !n.is_empty() {
-                            lints.push(n.to_string());
-                        }
-                    }
-                } else {
-                    flags.push(a);
-                }
-            }
-        }
-    }
-    Args { cmd, lints, flags, root }
-}
-
-fn find_root(explicit: Option<PathBuf>) -> PathBuf {
-    if let Some(r) = explicit {
-        return r;
-    }
-    let mut dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-    loop {
-        if dir.join("deepquarry.dme").exists() {
-            return dir;
-        }
-        if !dir.pop() {
-            return std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-        }
-    }
-}
+use dq_analyze::cli_arguments::{Args,parse,find_root};
 
 /// An unused-ALLOW verdict that came out of warm caches is confirmed by one cold run (an empty private cache, no shared seed, no gen
 /// store): the verdict must depend on the tree alone, and a cached lint result that lost an annotation's use would otherwise fail a gate

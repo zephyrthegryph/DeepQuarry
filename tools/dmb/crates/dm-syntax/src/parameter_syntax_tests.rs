@@ -1,5 +1,5 @@
 use super::*;
-fn signature(source: &str) -> ParameterSignature {
+fn signature(source: &str) -> crate::ProcedureParameters {
     crate::parse_proc_with_origins_at_span(source, Span::new(0, source.len()))
         .unwrap()
         .parameters
@@ -180,3 +180,5 @@ fn absolute_type_components_are_not_parameter_modifiers_and_invalid_suffixes_sta
         }
     }
 }
+
+#[test]fn original_parameter_type_cursor_is_the_actual_following_primary_token(){let source="/proc/p(missing/a, missing/b[1], missing/c=0, missing/d as num, missing/e in list())\n    return 0\n";let ast=crate::parse_declaration_skeleton(source);assert!(ast.diagnostics.is_empty());let original=crate::parse_proc_with_origins_from_spans(source,ast.items[0].span,&ast.tokens,0).unwrap();let entries=original.parameters.entries().unwrap();let expected=[(",","/missing"),("[","/list/missing"),("=","/missing"),("as","/missing"),("in","/missing")];assert_eq!(entries.len(),expected.len());for(parameter,(expected,path))in entries.iter().zip(expected){assert_eq!(&source[parameter.declaration_cursor().range()],expected);assert_eq!(parameter.type_path(source).unwrap().as_deref(),Some(path));}let last="/proc/p(missing/a)\n    return 0\n";let ast=crate::parse_declaration_skeleton(last);let original=crate::parse_proc_with_origins_from_spans(last,ast.items[0].span,&ast.tokens,0).unwrap();let at=original.parameters.entries().unwrap()[0].declaration_cursor();assert_eq!(&last[at.range()],")");}

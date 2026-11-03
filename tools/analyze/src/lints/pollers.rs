@@ -17,35 +17,18 @@
 //! per line that would count, and the one answer covers both a process and a start on that line;
 //! the step-coverage check reads every file, exempt ones included, except the unit-test probes.
 
-use std::borrow::Cow;
 
 use serde::{Deserialize, Serialize};
 
 use crate::incr;
 
-use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
+use crate::lint::{Cx,Lint,Meta,Registry,Sink};
 use crate::parity::{ParseKind, Parity};
-use crate::pat;
-use crate::pat_match;
-use crate::tree::{SourceFile, CODE_MAPS_DM};
-use crate::util::{is_py_space, py_lstrip, starts_with_any};
+use crate::tree::SourceFile;
+use crate::util::starts_with_any;
 
-static META: Meta = Meta {
-    name: "pollers",
-    group: "",
-    label: "pollers",
-    legacy: "tools/ci/pollers_lint.py",
-    select: CODE_MAPS_DM,
-    scan: ScanKind::Both,
-    policy: Policy::Hard,
-    rules: &[
-        RuleMeta { name: "process", hint: "put the work on a pipeline (code/datums/om/periodic.dm)" },
-        RuleMeta { name: "start", hint: "use om_task_periodic() or a machine wake" },
-        RuleMeta { name: "step_coverage", hint: "" },
-    ],
-    allow: crate::allow_registry_fields::pollers::ALLOW_0,
-    lists: &["step_exempt_prefixes"],
-};
+use crate::raw_tree_pollers_policy as policy;
+use policy::META;
 
 #[derive(Serialize, Deserialize, Default, PartialEq)]
 struct Steps {
@@ -54,30 +37,6 @@ struct Steps {
 
 struct Pollers;
 
-/// `strip_comment`: drops a trailing `//` comment outside double quotes (a `"` after a backslash
-/// does not toggle).
-fn strip_comment(line: &str) -> Cow<'_, str> {
-    if !line.contains("//") {
-        return Cow::Borrowed(line); // nothing to cut: the loop below would copy the line
-    }
-    let chars: Vec<char> = line.chars().collect();
-    let mut out = String::new();
-    let mut in_str = false;
-    let mut i = 0;
-    while i < chars.len() {
-        let c = chars[i];
-        if c == '"' && (i == 0 || chars[i - 1] != '\\') {
-            in_str = !in_str;
-        }
-        if !in_str && c == '/' && chars.get(i + 1) == Some(&'/') {
-            break;
-        }
-        out.push(c);
-        i += 1;
-    }
-    Cow::Owned(out)
-}
-
 impl Lint for Pollers {
     fn meta(&self) -> &Meta {
         &META
@@ -85,62 +44,20 @@ impl Lint for Pollers {
 
     /// `count_file`: process() definitions and START_*PROCESSING calls not kept by ALLOW(pollers).
     fn scan_file(&self, _cx: &Cx, f: &SourceFile, out: &mut Sink) {
-        let mut in_type = false;
-        let mut in_block_comment = false;
-        for (number, raw) in f.raw().numbered() {
-            let line = raw.trim_end_matches('\r');
-            if in_block_comment {
-                if line.contains("*/") {
-                    in_block_comment = false;
-                }
-                continue;
-            }
-            if py_lstrip(line).starts_with("/*") && !line.contains("*/") {
-                in_block_comment = true;
-                continue;
-            }
-            let code = strip_comment(line);
-            let is_process = pat_match!(r"^/[\w/]+?/(?:proc/)?process\(").is_match(&code) || (in_type && pat_match!(r"^\t(?:proc/)?process\(").is_match(&code));
-            let is_start = !pat_match!(r"^\s*#\s*define\b").is_match(&code) && pat!(r"(?<![\w])START_(?:MACHINE_)?PROCESSING\(").is_match(&code);
-            // Asked only about a line that would otherwise count.
-            let kept = (is_process || is_start) && out.allowed(f, number, "pollers");
-            if is_process && !kept {
-                out.site_msg("process", number, "process() definition");
-            }
-            if pat_match!(r"^/[\w/]+\s*(?://.*)?$").is_match(&code) {
-                in_type = true;
-            } else if code.chars().next().map(|c| !is_py_space(c)).unwrap_or(false) {
-                in_type = false;
-            }
-            if is_start && !kept {
-                out.site_msg("start", number, "START_*PROCESSING call");
-            }
-        }
+        policy::scan_file(f,out);
     }
 
     /// `check_step_coverage`: no machine defines `machine_step()` (the machine pipeline was deleted; its work is
     /// `started_work()`). The heads of a file are cached by content.
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
         let all = cx.all_files();
-        let heads = incr::facts("pollers-steps", &all, |f| {
-            let mut steps = Vec::new();
-            if f.text().contains("machine_step(") {
-                for (n, line) in f.raw().numbered() {
-                    if let Some(m) = pat_match!(r"^(/obj/machinery[\w/]*?)/machine_step\(").captures(line) {
-                        steps.push((n as u32, m.s(1).to_string()));
-                    }
-                }
-            }
-            Steps { steps }
-        });
+        let heads=incr::facts("pollers-steps",&all,|f|Steps{steps:policy::steps(f)});
         for (f, fa) in all.iter().zip(&heads) {
             // Test probes join lazily through MACHINE_WAKE().
             if fa.steps.is_empty() || starts_with_any(&f.rel, cx.list("step_exempt_prefixes")) {
                 continue;
             }
-            for (n, t) in &fa.steps {
-                out.site_in_msg("step_coverage", &f.rel, *n as usize, format!("{} defines machine_step(): machine work is started_work()", t));
-            }
+            policy::report_steps(&f.rel,&fa.steps,out);
         }
     }
 

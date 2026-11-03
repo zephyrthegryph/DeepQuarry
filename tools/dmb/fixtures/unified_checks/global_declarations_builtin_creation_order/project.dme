@@ -1,0 +1,9 @@
+/atom/movable
+    var/SpacemanDMM_final/shared=0
+/mob
+    shared=2
+/obj
+    shared=1
+/proc/probe()
+    set mystery=1
+    missing_variable

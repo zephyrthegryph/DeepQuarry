@@ -87,6 +87,7 @@ mod tests {
             header_span: Default::default(),
             declaration_cursor: None,
             checker_qualifiers: dm_syntax::UNKNOWN_HEADER_QUALIFIERS,
+            original_outer_terminator: None,
             indent: 0,
             children: Vec::new(),
         };
@@ -146,6 +147,7 @@ mod tests {
             header_span: Default::default(),
             declaration_cursor: None,
             checker_qualifiers: dm_syntax::UNKNOWN_HEADER_QUALIFIERS,
+            original_outer_terminator: None,
             indent: 0,
             children: Vec::new(),
         };

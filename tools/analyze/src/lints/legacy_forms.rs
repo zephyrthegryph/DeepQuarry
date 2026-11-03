@@ -7,8 +7,8 @@ use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::tree::{SourceFile, CODE_DM};
 
 static META: Meta = Meta {
-    name: "legacy_forms",
-    group: "",
+    name: crate::allow_registry_fields::legacy_forms::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::legacy_forms::SCOPE_META_0.group,
     label: "legacy_forms",
     legacy: "",
     select: CODE_DM,
@@ -16,7 +16,7 @@ static META: Meta = Meta {
     policy: Policy::Hard,
     rules: &[RuleMeta { name: "banned_name", hint: "the form was deleted: use its replacement (the hint after the name, in [lint.legacy_forms.lists] banned of tools/ci/lint_scopes.toml)" }],
     allow: crate::allow_registry_fields::legacy_forms::ALLOW_0,
-    lists: &["banned", "banned_outside"],
+    lists: crate::allow_registry_fields::legacy_forms::SCOPE_META_0.lists,
 };
 
 struct LegacyForms;

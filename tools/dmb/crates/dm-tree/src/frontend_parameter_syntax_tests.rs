@@ -259,7 +259,7 @@ fn original_header_handle_survives_consumed_parsed_wrapper_without_copy_or_query
     .unwrap()
     .with_body_queries(Arc::new(Observe(Arc::clone(&parses))));
     let parsed = frontend.parse_body(&frontend.bodies[0]).unwrap();
-    let storage = Arc::clone(parsed.parameter_storage());
+    let storage = parsed.parameter_storage().clone();
     let root = storage.entries().unwrap()[0]
         .expressions()
         .unwrap()
@@ -267,7 +267,7 @@ fn original_header_handle_survives_consumed_parsed_wrapper_without_copy_or_query
         .default()
         .unwrap() as *const dm_syntax::Expr;
     let handle = parsed.share_header_expressions().unwrap();
-    assert!(Arc::ptr_eq(&storage, handle.storage()));
+    assert!(storage.same_owner(handle.storage()));
     let (item, statements) = parsed.into_parts();
     drop(item);
     drop(statements);

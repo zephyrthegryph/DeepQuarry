@@ -11,8 +11,8 @@ const H_LIST: &str = "a list of atoms/datums is a declared many (owns_many/ref_m
 pool keys by a handle or a type, never by the object. doc/rewrite/proposals/reference_storage.md";
 
 pub(crate) static META: Meta = Meta {
-    name: "stored_refs",
-    group: "",
+    name: crate::allow_registry_fields::stored_refs::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::stored_refs::SCOPE_META_0.group,
     label: "stored_refs",
     legacy: "",
     select: CODE_DM,
@@ -28,7 +28,7 @@ pub(crate) static META: Meta = Meta {
     },
     rules: &[RuleMeta { name: "var", hint: H_VAR }, RuleMeta { name: "list", hint: H_LIST }],
     allow: crate::allow_registry_fields::stored_refs::ALLOW_SHARED_0,
-    lists: &["exempt_types", "transient_types", "work_queues"],
+    lists: crate::allow_registry_fields::stored_refs::SCOPE_META_0.lists,
 };
 
 pub fn metadata() -> &'static Meta {
@@ -82,50 +82,9 @@ impl SourceFacts {
             .ok_or("stored header reserve admission exceeded")?;
         let mut schemas = crate::value_schema_policy::SchemaHints::default();
         let mut init_only = Vec::new();
-        let keep = crate::pat!(r"(?m)^LIFECYCLE_KEEP_(?:UNLESS_FORCED|ALWAYS)\((/[\w/]+)\)");
-        let head = crate::pat!(r"^CAPABILITIES\((/[\w/]+)\)");
-        let param = crate::pat!(r"\bparam\(\s*nameof\((\w+)\).*\bkeep\s*=\s*FALSE");
-        let successor = crate::pat!(r"\bsuccessor\s*=\s*nameof\((\w+)\)");
-        for f in files {
-            checkpoint()?;
-            schemas.read_bounded_observed(f, &mut remaining, &mut checkpoint)?;
-            let code = f.code();
-            for c in keep.captures_iter(&code.text) {
-                let ty = c.s(1);
-                let charge = ty
-                    .len()
-                    .checked_mul(4)
-                    .and_then(|n| n.checked_add(128))
-                    .ok_or("stored keep-type admission overflow")?;
-                remaining = remaining
-                    .checked_sub(charge)
-                    .ok_or("stored keep-type admission exceeded")?;
-                relations.registry.push(ty.to_owned());
-            }
-            let mut owner: Option<String> = None;
-            for line in code.lines() {
-                checkpoint()?;
-                if let Some(c) = head.captures(line) {
-                    let ty = c.s(1);
-                    if ty.len() > header_reserve {
-                        return Err("stored init-header temporary admission exceeded".into());
-                    }
-                    owner = Some(ty.to_owned());
-                    continue;
-                }
-                if !(line.starts_with('\t') || line.starts_with(' ')) && !line.trim().is_empty() {
-                    owner = None;
-                }
-                if let Some(ty) = owner.as_deref() {
-                    if let Some(c) = param.captures(line) {
-                        put_pair(&mut init_only, ty, c.s(1), &mut remaining)?;
-                    }
-                    for c in successor.captures_iter(line) {
-                        put_pair(&mut init_only, ty, c.s(1), &mut remaining)?;
-                    }
-                }
-            }
-        }
+        struct Legacy<'a,P>{remaining:&'a std::cell::RefCell<usize>,poll:&'a std::cell::RefCell<P>}
+        impl<P:FnMut()->Result<(),String>>crate::key_policy_control::Control for Legacy<'_,P>{type Error=String;const CHECKED:bool=false;fn checkpoint(&mut self)->Result<(),String>{(self.poll.borrow_mut())()}fn reserve(&mut self,n:usize)->Result<(),String>{self.checkpoint()?;let old=*self.remaining.borrow();*self.remaining.borrow_mut()=old.checked_sub(n).ok_or("stored raw fact admission exhausted")?;Ok(())}fn overflow(&mut self)->String{"stored raw fact geometry overflow".into()}fn allocation_failed(&mut self)->String{"stored raw fact allocation refused".into()}}
+        let charged=std::cell::RefCell::new(remaining);let poll=std::cell::RefCell::new(&mut checkpoint);let mut retained=Legacy{remaining:&charged,poll:&poll};let mut temporary=Legacy{remaining:&charged,poll:&poll};for f in files{read_extra_file_using(f,&mut schemas,&mut relations.registry,&mut init_only,&mut retained,&mut temporary)?;}drop(retained);drop(temporary);drop(poll);remaining=charged.into_inner();
         checkpoint()?;
         if let Some(e) = raw.tree.captured_violation() {
             return Err(e);
@@ -156,4 +115,10 @@ fn put_pair(
         .ok_or("stored policy pair admission exceeded before retention")?;
     rows.push((owner.to_owned(), name.to_owned()));
     Ok(())
+}
+
+/// SAME old raw keep/init-only/schema policy; private source loan stays with host.
+#[cfg(feature="native-policy")]
+pub(crate) fn read_extra_file_using<C:crate::key_policy_control::Control,T:crate::key_policy_control::Control<Error=C::Error>>(f:&crate::tree::SourceFile,schemas:&mut crate::value_schema_policy::SchemaHints,registry:&mut Vec<String>,init_only:&mut Vec<(String,String)>,retained:&mut C,temporary:&mut T)->Result<(),C::Error>where C::Error:From<String>{
+ use crate::key_policy_control as kc;kc::reserve(temporary,||f.raw().text.len().checked_mul(64)?.checked_add(8192))?;schemas.read_with_control(f,temporary)?;let keep=crate::pat!(r"(?m)^LIFECYCLE_KEEP_(?:UNLESS_FORCED|ALWAYS)\((/[\w/]+)\)");let head=crate::pat!(r"^CAPABILITIES\((/[\w/]+)\)");let param=crate::pat!(r"\bparam\(\s*nameof\((\w+)\).*\bkeep\s*=\s*FALSE");let successor=crate::pat!(r"\bsuccessor\s*=\s*nameof\((\w+)\)");let code=f.code();for cap in keep.captures_iter(&code.text){retained.checkpoint()?;kc::row(retained,registry)?;registry.push(kc::own(retained,cap.s(1))?);}let mut owner=None;for line in code.lines(){retained.checkpoint()?;if let Some(cap)=head.captures(line){owner=Some(kc::own(temporary,cap.s(1))?);continue}if !(line.starts_with('\t')||line.starts_with(' '))&&!line.trim().is_empty(){owner=None}if let Some(ty)=owner.as_deref(){if let Some(cap)=param.captures(line){kc::row(retained,init_only)?;init_only.push((kc::own(retained,ty)?,kc::own(retained,cap.s(1))?));}for cap in successor.captures_iter(line){retained.checkpoint()?;kc::row(retained,init_only)?;init_only.push((kc::own(retained,ty)?,kc::own(retained,cap.s(1))?));}}}retained.checkpoint()
 }

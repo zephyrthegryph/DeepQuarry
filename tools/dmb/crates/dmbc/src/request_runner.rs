@@ -161,14 +161,14 @@ fn run_build_attempt(
             return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"original analysis context requires retained PrepareQuery with default declarations and no compiler/trace/replay overrides").into());
         }
         if policy_inputs.as_ref().and_then(|intent|intent.workspace()).is_some_and(|workspace|
-            policy_inputs.as_ref().is_some_and(|intent|intent.workspace_auxiliary().contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrep))
+            policy_inputs.as_ref().is_some_and(|intent|intent.workspace_auxiliary().iter().any(|question|matches!(question,crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrep|crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrepBaseline)))
             && project!=workspace.root.join("deepquarry.dme")){
             return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"original Analyze workspace requires its actual fixed deepquarry.dme environment").into());
         }
     }
 
     let publishable_artifacts = command == BuildCommand::Compile;
-    let project = std::fs::canonicalize(project)?;
+    let project = crate::policy_request::canonical_analysis_project(&project,analysis_context)?;
     if record_inputs.is_some() && replay_inputs.is_some() {
         return Err("record and replay inputs are mutually exclusive".into());
     }
@@ -228,10 +228,34 @@ fn run_build_attempt(
         dmbc::input_snapshot::SnapshotProvider::generated_outputs(&generated_provider)
             .expect("explicit generated output policy");
     let prepared_sources = host.prepared_sources();
-    let inputs_capture = dmbc::input_snapshot::RecordingInputs::new(&generated_provider, now_ns())
+    let mut inputs_capture = dmbc::input_snapshot::RecordingInputs::new(&generated_provider, now_ns())
         .with_initial_environment(analysis_context.map_or(dm_preprocess::InitialEnvironment::Native5161687,|context|context.initial_environment()))
         .with_exact_reuse(exact_inputs)
         .with_prepared_sources(prepared_sources.clone());
+    // Engine selection is configuration+metadata first, exactly like the old
+    // lint's files().is_empty() branch. Never open a manifest or CODE payload
+    // merely to prove that no engine source survived the actual selection.
+    let mut engine_preflight=if command==BuildCommand::PrepareQuery&&policy_inputs.as_ref().is_some_and(|intent|intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::EngineLayering]){Some(crate::runner_host::workspace_discovery::discover_engine_preflight(&inputs_capture,policy_inputs.as_ref().expect("actual engine intent"))?)}else{None};
+    if engine_preflight.as_ref().is_some_and(|selection|selection.is_empty()){
+        let intent=policy_inputs.as_ref().expect("actual conditional Engine intent");let queries=Arc::clone(host.query_db());query_attempt.bind_current_variant(host.query_state())?;
+        let proof=engine_preflight.take().expect("actual empty Engine preflight").into_unselected()?;let(captured,owner)=crate::runner_host::workspace_capture::capture_engine_unselected(&inputs_capture,intent,&queries,proof)?;
+        let admission=runner_freshness::admit_workspace_captured(&inputs_capture,None,&input_provider,generated_paths,Arc::clone(&captured))?.1;
+        input_provider.finish()?;inputs_capture.finish_prepared()?;dmbc::daemon::control::checkpoint()?;
+        let(query,source,policy)=query_attempt.admit_raw_source(intent,captured,owner,queries,admission)?;query_attempt.finish_raw_source();
+        return Ok(BuildOutcome::RawQueryPrepared{query_revision:format!("{query:032x}"),source_revision:format!("{source:032x}"),policy_revision:format!("{policy:032x}"),retained:retains_query_owners});
+    }
+    // The old Doc producer is purely lexical: do not read/parse a DME merely
+    // to obtain a semantic guard. This exact raw role cannot compile or lower.
+    if command==BuildCommand::PrepareQuery&&policy_inputs.as_ref().is_some_and(|intent|intent.analysis_context()==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290)&&(intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::DocSnippets]||intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::Ownership]||intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::OpOrder]||intent.workspace_auxiliary()==[crate::policy_request::WorkspaceAuxiliaryQuestion::UiActions])){
+        let intent=policy_inputs.as_ref().expect("exact admitted raw Doc intent");let queries=Arc::clone(host.query_db());query_attempt.bind_current_variant(host.query_state())?;
+        let prior=query_attempt.current_raw_capture();let(captured,owner)=crate::runner_host::workspace_capture::capture_raw_only_with_prior(&inputs_capture,intent,&queries,prior.as_ref())?;
+        let admission=runner_freshness::admit_workspace_captured(&inputs_capture,None,&input_provider,generated_paths,Arc::clone(&captured))?.1;
+        input_provider.finish()?;inputs_capture.finish_prepared()?;dmbc::daemon::control::checkpoint()?;
+        let(query,source,policy)=query_attempt.admit_raw_source(intent,captured,owner,queries,admission)?;query_attempt.finish_raw_source();
+        return Ok(BuildOutcome::RawQueryPrepared{query_revision:format!("{query:032x}"),source_revision:format!("{source:032x}"),policy_revision:format!("{policy:032x}"),retained:retains_query_owners});
+    }
+    let analysis_subject=if analysis_context==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290){let intent=policy_inputs.as_ref().ok_or("Analyze subject intent absent")?;Some(match engine_preflight.take(){Some(selection)=>inputs_capture.issue_original_analysis_subject_engine(intent,selection)?,None=>inputs_capture.issue_original_analysis_subject(intent)?})}else{None};
+    let project=analysis_subject.as_ref().map_or_else(||project.clone(),|subject|subject.project().to_path_buf());
     drop(request_profile);
     dm_profile::detail_mark("request.prepare", total);
     let engine_input_profile = dm_profile::stage("engine_input");
@@ -612,6 +636,7 @@ fn run_build_attempt(
             configuration.push(u8::from(bootstrap_catalog));
             configuration.extend_from_slice(if diagnostic_declarations {b"checker-declaration-domain-v1".as_slice()}else{b"strict-declaration-domain-v1".as_slice()});
             if let Some(context)=analysis_context{configuration.extend_from_slice(b"original-analysis-context-v1");configuration.extend_from_slice(&context.initial_environment().profile().to_le_bytes());}
+            if analysis_context.is_some(){configuration.extend_from_slice(b"actual-original-primary-preparation");configuration.extend_from_slice(&dm_tree::frontend::ORIGINAL_ANALYZE_PREPARATION_VERSION.to_le_bytes());}
             crate::policy_request::append_identity(&mut configuration, policy_inputs.as_ref())?;
             match query_db.revise(inputs.sources(), dm_query::hash_bytes(&configuration)) {
                 Ok(revision) => dmbc::daemon_eprintln!("native query db: {revision:?}"),
@@ -641,15 +666,29 @@ fn run_build_attempt(
         if diagnostic_declarations || analysis_context.is_some() {
             // Select the original builder's diagnostic mode BEFORE construction.
             // Valid graphs transfer the SAME owner; no strict-failure retry.
-            let prepared=match dm_tree::frontend::build_for_checker_diagnostics_with_state_checked(&project,&provider,&defines,
+            let preparation=if analysis_context==Some(crate::policy_request::AnalysisContext::OriginalAnalyze0290){
+                dm_tree::frontend::build_for_original_analysis_with_state_checked(&project,&provider,&defines,
+                    dm_tree::frontend::FrontendConfig{workers,engine:seed,observer:progress_enabled.then_some(&progress)},
+                    frontend_memo.as_ref().map(|memo|memo as &dyn dm_preprocess::regions::ExpansionMemo),executor,Some(&mut *semantic_state),&settings_host)
+            }else{dm_tree::frontend::build_for_checker_diagnostics_with_state_checked(&project,&provider,&defines,
                 dm_tree::frontend::FrontendConfig{workers,engine:seed,observer:progress_enabled.then_some(&progress)},
-                frontend_memo.as_ref().map(|memo|memo as &dyn dm_preprocess::regions::ExpansionMemo),executor,Some(&mut *semantic_state),&settings_host){Ok(frontend)=>frontend,
+                frontend_memo.as_ref().map(|memo|memo as &dyn dm_preprocess::regions::ExpansionMemo),executor,Some(&mut *semantic_state),&settings_host)};
+            let prepared=match preparation{Ok(frontend)=>frontend,
                 Err(dm_tree::frontend::FrontendBuildFailure::Operational(actual))=>return Err(actual.into()),
                 Err(dm_tree::frontend::FrontendBuildFailure::Diagnostics(mut diagnostics))=>{
-                dmbc::diagnostics::refine(&mut diagnostics);
+                if let Some(legacy)=diagnostics.legacy_mut(){dmbc::diagnostics::refine(legacy);}
                 dmbc::diagnostics::write_diagnostics(&mut dmbc::daemon::stderr_writer(),&diagnostics)?;
                 let kind=dmbc::diagnostics::failure_kind(diagnostics.iter().map(|diagnostic|diagnostic.kind));
-                return Err(dmbc::request_failure::RequestFailure{kind,message:"diagnostic preparation did not produce an admitted original declaration graph".into()}.into());
+                // Return the SAME already-issued source message after printing it;
+                // a generic graph-admission message must not replace the actual
+                // primary syntax failure on the public/daemon error boundary.
+                if diagnostics.is_retained(){return Err(dmbc::diagnostics::retained_preparation_failure(diagnostics,kind,true,"diagnostic preparation did not produce an admitted original declaration graph",source_policy_queries.as_ref())?)}
+                let diagnostics=diagnostics.into_legacy().expect("legacy diagnostic representation has no retained output credit");
+                let message=if kind==dmbc::request_failure::FailureKind::Source{
+                    diagnostics.into_iter().find(|diagnostic|diagnostic.kind.is_source_error()).map(|diagnostic|diagnostic.message)
+                        .unwrap_or_else(||"diagnostic preparation did not produce an admitted original declaration graph".into())
+                }else{"diagnostic preparation did not produce an admitted original declaration graph".into()};
+                return Err(dmbc::request_failure::RequestFailure{kind,message}.into());
             }};
             if analysis_context.is_some(){
                 // A genuine analysis purpose stays diagnostic-only even when
@@ -659,8 +698,8 @@ fn run_build_attempt(
                 let view=prepared.source_view()?;
                 let intent=policy_inputs.as_ref().ok_or("analysis purpose requires its actual admitted request")?;
                 if let Some(workspace)=intent.workspace(){
-                    let check_grep=intent.workspace_auxiliary().contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrep);
-                    if check_grep{
+                    let check_grep=intent.workspace_auxiliary().iter().any(|question|matches!(question,crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrep|crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrepBaseline));
+                    if check_grep&&analysis_subject.is_none(){
                         let root=view.original_plan().occurrences.first().ok_or("analysis actual root occurrence absent")?;
                         let original=view.original_plan().source_texts.get(root.path.as_ref()).ok_or("analysis actual manifest original absent")?;
                         if root.path.file_name()!=Some(std::ffi::OsStr::new("deepquarry.dme")) || !original.as_str().contains("#include") {
@@ -668,10 +707,10 @@ fn run_build_attempt(
                         }
                     }
                     let contract=crate::runner_host::workspace_discovery::DiscoveryContract{root:workspace.root.clone(),recursive_roots:workspace.recursive_roots.clone()};
-                    let discovery=Arc::new(if check_grep{crate::runner_host::workspace_discovery::discover_check_grep(&inputs_capture,contract)?}else{crate::runner_host::workspace_discovery::discover(&inputs_capture,contract)?});
+                    let discovery=if let Some(subject)=&analysis_subject{subject.bind_frontend(&view)?;Arc::clone(subject.discovery())}else{Arc::new(if check_grep{crate::runner_host::workspace_discovery::discover_check_grep(&inputs_capture,contract)?}else{crate::runner_host::workspace_discovery::discover(&inputs_capture,contract)?})};
                     let captured=crate::runner_host::workspace_capture::capture_analysis_with_auxiliary(&view,&inputs_capture,discovery,&workspace.configuration,intent.workspace_auxiliary())?;
-                    query_attempt.stage_analysis_workspace(&view,Arc::clone(&source_policy_queries),Arc::clone(&captured),workspace,&inputs_capture)?;
-                    let admission=runner_freshness::admit_workspace_captured(&inputs_capture,None,&input_provider,generated_paths,Arc::clone(&captured))?.1;
+                    query_attempt.stage_analysis_workspace(&view,Arc::clone(&source_policy_queries),Arc::clone(&captured),workspace,&inputs_capture,intent)?;
+                    let admission=if intent.workspace_generators().is_empty(){runner_freshness::admit_workspace_captured(&inputs_capture,None,&input_provider,generated_paths,Arc::clone(&captured))?.1}else{runner_freshness::admit_generator_workspace_captured(&inputs_capture,None,&input_provider,generated_paths,Arc::clone(&captured),intent)?};
                     input_provider.finish()?;inputs_capture.finish_prepared()?;dmbc::daemon::control::checkpoint()?;
                     semantic_state.remember_analysis_frontend(&project,&defines,Arc::clone(&prepared))?;
                     query_attempt.admit_workspace_policy(admission)?;
@@ -723,7 +762,7 @@ fn run_build_attempt(
                 .map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
             executor,
             Some(&mut *semantic_state),
-            policy_inputs.as_ref().is_some_and(|request| request.workspace().is_none() || !request.workspace_generators().is_empty() || request.workspace_auxiliary().contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrep)) || std::env::var_os("DMB_UNIFIED_ANALYSIS").is_some(),
+            policy_inputs.as_ref().is_some_and(|request| request.workspace().is_none() || !request.workspace_generators().is_empty() || request.workspace_auxiliary().iter().any(|question|matches!(question,crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrep|crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrepBaseline))) || std::env::var_os("DMB_UNIFIED_ANALYSIS").is_some(),
             &settings_host,
         )
         }
@@ -735,7 +774,7 @@ fn run_build_attempt(
         Ok(frontend) => {
             // Migration opt-in until all checker/lint parity and memory gates
             // pass. Compile-only users keep the existing lazy body path.
-            if policy_inputs.as_ref().is_some_and(|request| request.workspace().is_none() || !request.workspace_generators().is_empty() || request.workspace_auxiliary().contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrep)) || std::env::var_os("DMB_UNIFIED_ANALYSIS").is_some() {
+            if policy_inputs.as_ref().is_some_and(|request| request.workspace().is_none() || !request.workspace_generators().is_empty() || request.workspace_auxiliary().iter().any(|question|matches!(question,crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrep|crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrepBaseline))) || std::env::var_os("DMB_UNIFIED_ANALYSIS").is_some() {
                 match query_db.as_ref() {
                     Some(db) => frontend.with_body_queries(Arc::clone(db) as Arc<dyn dm_tree::frontend::BodySyntaxQueries>),
                     None => frontend,
@@ -744,11 +783,12 @@ fn run_build_attempt(
         },
         Err(dm_tree::frontend::FrontendBuildFailure::Operational(actual)) => return Err(actual.into()),
         Err(dm_tree::frontend::FrontendBuildFailure::Diagnostics(mut diagnostics)) => {
-            dmbc::diagnostics::refine(&mut diagnostics);
+            if let Some(legacy)=diagnostics.legacy_mut(){dmbc::diagnostics::refine(legacy);}
             dmbc::diagnostics::write_diagnostics(&mut dmbc::daemon::stderr_writer(), &diagnostics)?;
             let kind = dmbc::diagnostics::failure_kind(diagnostics.iter().map(|diagnostic| diagnostic.kind));
             // Source errors are fully reported above and by the summary line.
             let message = if kind == dmbc::request_failure::FailureKind::Source { "" } else { "source analysis did not produce a complete declaration model" };
+            if diagnostics.is_retained(){return Err(dmbc::diagnostics::retained_preparation_failure(diagnostics,kind,false,message,source_policy_queries.as_ref())?)}
             let failure = dmbc::request_failure::RequestFailure {
                 kind,
                 message: message.into(),
@@ -774,7 +814,7 @@ fn run_build_attempt(
         if progress_enabled { dmbc::daemon_eprintln!("native stage workspace.discovery: started"); }
         dm_profile::request_mark("workspace.discovery.start");
         let contract=crate::runner_host::workspace_discovery::DiscoveryContract{root:workspace.root.clone(),recursive_roots:workspace.recursive_roots.clone()};
-        let check_grep=policy_inputs.as_ref().is_some_and(|request|request.workspace_auxiliary().contains(&crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrep));
+        let check_grep=policy_inputs.as_ref().is_some_and(|request|request.workspace_auxiliary().iter().any(|question|matches!(question,crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrep|crate::policy_request::WorkspaceAuxiliaryQuestion::CheckGrepBaseline)));
         let discovery=std::sync::Arc::new(if check_grep{crate::runner_host::workspace_discovery::discover_check_grep(&inputs_capture,contract)?}else{crate::runner_host::workspace_discovery::discover(&inputs_capture,contract)?});
         if progress_enabled { dmbc::daemon_eprintln!("native stage workspace.discovery: {:.3}s sources={} directories={}",discovery_started.elapsed().as_secs_f64(),discovery.files().len(),discovery.directory_paths().count()); }
         dm_profile::request_mark("workspace.discovery.done");

@@ -113,3 +113,8 @@ fn record_kind_and_admitted_rule_shape_are_checked() {
  assert_eq!(scope_projection("not JSON",reserve).unwrap_err().kind(),std::io::ErrorKind::OutOfMemory);scope_projection(valid,0).unwrap();assert_eq!(scope_projection("not JSON",0).unwrap_err().kind(),std::io::ErrorKind::InvalidData);
  let value=json!({"a":["quoted\"",{},[1,2]],"b":"other"});assert!(report_value_backing(&value).unwrap()>0);
 }
+
+#[test]fn existing_raw_policy_and_complete_raw_report_notes_remain_valid_after_check_grep_extension(){
+ let(mut reply,questions,mut row)=fixture();row["items"][0]=json!({"lint":"scheduler","kind":"note","text":"existing authenticated raw producer note"});reply.jsonl=format!("{row}\n");validate_requested(&reply,&questions).unwrap();
+ let SourceQuery::NativeWorkspaceRawPolicy{root,configuration,lints,cursor,limit}=&questions[0]else{unreachable!()};let complete=vec![SourceQuery::NativeWorkspaceRawReportPage{root:root.clone(),configuration:configuration.clone(),lints:lints.clone(),cursor:cursor.clone(),limit:*limit}];row["row"]="source_native_workspace_raw_report".into();row["admission"]="complete_selected_raw_policy_findings".into();reply.jsonl=format!("{row}\n");validate_requested(&reply,&complete).unwrap();
+}

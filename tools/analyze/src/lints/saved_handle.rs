@@ -9,8 +9,8 @@ use crate::pat::Pat;
 use crate::tree::{SourceFile, CODE_DM};
 
 static META: Meta = Meta {
-    name: "saved_handle",
-    group: "",
+    name: crate::allow_registry_fields::saved_handle::SCOPE_META_0.name,
+    group: crate::allow_registry_fields::saved_handle::SCOPE_META_0.group,
     label: "saved_handle",
     legacy: "",
     select: CODE_DM,
@@ -21,7 +21,7 @@ static META: Meta = Meta {
         hint: "a handle is per round and per connection: save an id, a ckey or a name, and re-link on load (relations.md D10)",
     }],
     allow: crate::allow_registry_fields::saved_handle::ALLOW_0,
-    lists: &[],
+    lists: crate::allow_registry_fields::saved_handle::SCOPE_META_0.lists,
 };
 
 struct SavedHandle {

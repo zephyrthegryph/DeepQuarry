@@ -6,11 +6,15 @@ impl BuildHost {
     fn query_snapshot_retention_census(&self) -> crate::heap_census::HeapCensusReport {
         let mut census = crate::heap_census::HeapCensus::new("retained.query_snapshot");
         census.arc_object("query_snapshot.state", &self.query_state);
+        // The actual host owns this SAME QueryDb even when no snapshot/model
+        // remains. Visit its existing raw input ledger once, outside state lock.
+        self.query_db.raw_source_input_census(&mut census);
         {
             let state = self
                 .query_state
                 .lock()
                 .unwrap_or_else(|error| error.into_inner());
+            if let Some(raw)=&state.raw_snapshot{raw.census(&mut census);}
             if let Some(snapshot) = &state.snapshot {
                 snapshot.census(&mut census);
             }
@@ -124,4 +128,13 @@ impl BuildHost {
             ));
         }
     }
+}
+
+#[cfg(test)]mod actual_native_arena_idle_census_tests{
+ use super::*;use dm_preprocess::source_arena_credit::SourceArenaWork;
+ #[test]fn actual_idle_census_visits_native_allocation_metadata_even_without_a_snapshot_and_never_counts_reservation_as_payload(){
+  let host=BuildHost::default();let reservation=SourceArenaWork::reserve(host.query_db.as_ref(),8192).unwrap();let mut actual_metadata=0;reservation.visit_storage(&mut|_,bytes|actual_metadata+=bytes);
+  let report=host.query_snapshot_retention_census();let row=report.owners.iter().find(|row|row.owner=="query_snapshot.raw_source_inputs.arena_credit").expect("existing real idle caller reached the actual input ledger");assert_eq!(row.unique_known_capacity_bytes,actual_metadata as u64);assert!(row.unique_known_capacity_bytes<8192);assert_eq!(reservation.reserved_bytes(),8192);
+  drop(reservation);let report=host.query_snapshot_retention_census();let row=report.owners.iter().find(|row|row.owner=="query_snapshot.raw_source_inputs.arena_credit").unwrap();assert_eq!(row.unique_payload_bytes,0,"dead weak owner is not dereferenced or treated as live");assert_eq!(row.unique_known_capacity_bytes,actual_metadata as u64,"real dead Arc control allocation remains until actual ledger pruning");
+ }
 }

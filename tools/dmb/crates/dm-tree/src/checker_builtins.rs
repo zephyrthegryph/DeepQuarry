@@ -355,11 +355,11 @@ fn import() -> Result<CheckerBuiltinCatalog, CheckerBuiltinError> {
         spellings,
     })
 }
-pub fn pinned_catalog() -> Result<Arc<CheckerBuiltinCatalog>, CheckerBuiltinError> {
-    static CATALOG: OnceLock<Result<Arc<CheckerBuiltinCatalog>, CheckerBuiltinError>> =
-        OnceLock::new();
-    CATALOG.get_or_init(|| import().map(Arc::new)).clone()
+fn pinned_catalog_storage()->&'static Result<Arc<CheckerBuiltinCatalog>,CheckerBuiltinError>{
+    static CATALOG: OnceLock<Result<Arc<CheckerBuiltinCatalog>, CheckerBuiltinError>> = OnceLock::new();
+    CATALOG.get_or_init(||import().map(Arc::new))
 }
+pub fn pinned_catalog() -> Result<Arc<CheckerBuiltinCatalog>, CheckerBuiltinError> {pinned_catalog_storage().clone()}
 impl CheckerBuiltinCatalog {
     /// Borrow fixed hash-verified spelling bytes only. This DATA projection does
     /// not validate a source tree or grant a builtin/source callable identity.
@@ -417,6 +417,15 @@ impl SemanticTree {
         profile: PackedU128,
         path: &str,
     ) -> Result<bool, CheckerBuiltinError> {self.checker_source_type_presence_using(path,||self.validate_checker_builtin_profile(profile))}
+    /// Exact Original0290 builtin-only type roster, including types without members.
+    /// An authored reopening does not change builtin identity; a runtime ABI or
+    /// authored-only type cannot enter the pinned DSL roster.
+    pub fn checker_builtin_type_presence_validated(&self,profile:PackedU128,path:&str,proof:&ValidatedCheckerProfile<'_>)->Result<bool,CheckerBuiltinError>{
+        proof.require(self,profile)?;
+        if self.symbols.text(SymbolId::of(path)).is_some_and(|actual|actual!=path){return Err(CheckerBuiltinError::Symbol("checker builtin type spelling collision".into()))}
+        // Original ObjectTree root.path is empty; the native catalog normalizes it to slash.
+        Ok(if path.is_empty(){true}else if path=="/"{false}else{data::PARENTS.iter().any(|(builtin,_)|*builtin==path)})
+    }
     pub fn checker_source_type_presence_validated(&self,profile:PackedU128,path:&str,proof:&ValidatedCheckerProfile<'_>)->Result<bool,CheckerBuiltinError>{self.checker_source_type_presence_using(path,||proof.require(self,profile))}
     fn checker_source_type_presence_using(&self,path:&str,validate:impl FnOnce()->Result<(),CheckerBuiltinError>)->Result<bool,CheckerBuiltinError>{
         validate()?;
@@ -477,7 +486,10 @@ impl SemanticTree {
         name: SymbolId,
         kind: MemberKind,
         presence: bool,
-    ) -> M {self.resolve_checker_builtin_using(query,profile,owner,name,kind,presence,||self.validate_checker_builtin_profile(profile))}
+    ) -> M {self.resolve_checker_builtin_using(query,profile,owner,name,kind,presence,||self.validate_checker_builtin_profile(profile),None).expect("ordinary native builtin declaration encoding failed")}
+    pub(crate) fn resolve_checker_builtin_admitted(&self,query:Q,profile:PackedU128,owner:SymbolId,name:SymbolId,kind:MemberKind,presence:bool,work:&mut dyn dm_ir::CanonicalWork)->std::io::Result<M>{
+        self.resolve_checker_builtin_using(query,profile,owner,name,kind,presence,||self.validate_checker_builtin_profile(profile),Some(work))
+    }
     fn resolve_checker_builtin_using(
         &self,
         query: Q,
@@ -487,31 +499,33 @@ impl SemanticTree {
         kind: MemberKind,
         presence: bool,
         validate:impl FnOnce()->Result<(),CheckerBuiltinError>,
-    ) -> M {
+        mut work:Option<&mut dyn dm_ir::CanonicalWork>,
+    ) -> std::io::Result<M> {
         if validate().is_err() {
-            return M::Unsupported(query);
+            return Ok(M::Unsupported(query));
         }
         let Ok(catalog) = pinned_catalog() else {
-            return M::Unsupported(query);
+            return Ok(M::Unsupported(query));
         };
         let Some(mut current) = self.lookup_type(owner) else {
-            return M::Unsupported(query);
+            return Ok(M::Unsupported(query));
         };
         loop {
+            if let Some(work)=&mut work{work.poll()?;}
             let declaring_owner = self.types[current.index()].path;
             if let Some(&index) = catalog.members.get(&(declaring_owner, name, kind)) {
                 if presence {
-                    return M::Presence(true);
+                    return Ok(M::Presence(true));
                 }
                 let data = Arc::clone(&catalog.declarations[index].metadata);
-                let mut bytes = data.canonical_bytes();
-                bytes.extend_from_slice(&profile.to_le_bytes());
-                return M::Member {
+                let bytes=match &mut work{Some(work)=>data.canonical_bytes_using(*work)?,None=>data.canonical_bytes()};
+                let mut fingerprint=xxhash_rust::xxh3::Xxh3::new();fingerprint.update(&bytes);fingerprint.update(&profile.to_le_bytes());
+                return Ok(M::Member {
                     owner: declaring_owner,
                     name,
                     data,
-                    fingerprint: xxhash_rust::xxh3::xxh3_128(&bytes).into(),
-                };
+                    fingerprint: fingerprint.digest128().into(),
+                });
             }
             let Some(parent) = self.parent(current) else {
                 break;
@@ -520,11 +534,7 @@ impl SemanticTree {
             // Runtime IntrinsicCallable keeps its separate namespace contract.
             current = parent;
         }
-        if presence {
-            M::Presence(false)
-        } else {
-            M::Missing
-        }
+        Ok(if presence { M::Presence(false) } else { M::Missing })
     }
 }
 #[cfg(test)]
@@ -649,4 +659,15 @@ pub fn original_analysis_seed()->Result<Arc<OriginalAnalysisSeed>,CheckerBuiltin
                 intrinsics:Arc::from([]),fields:Arc::from([])},
         }))
     }).clone()
+}
+
+/// Private declaration-only loan from the actual Original seed and pinned catalog.
+/// No runtime field, slot, ABI member, source occurrence or alternative index.
+#[derive(Clone,Copy)]
+pub(crate) struct OriginalVariableDeclarations{catalog:&'static CheckerBuiltinCatalog}
+impl OriginalVariableDeclarations{
+ pub(crate) fn for_seed(seed:Option<&crate::frontend::EngineSeed>)->Option<Self>{
+  let seed=seed?;let original=original_analysis_seed().ok()?;if !std::ptr::eq(seed,original.frontend_seed()){return None}let catalog=pinned_catalog_storage().as_ref().ok()?.as_ref();if catalog.profile!=original.profile(){return None}Some(Self{catalog})
+ }
+ pub(crate) fn variable(&self,tree:&SemanticTree,owner:SymbolId,name:SymbolId)->Option<&Arc<DeclarationMeaning>>{if self.catalog.spelling(owner)!=tree.symbols().text(owner)||self.catalog.spelling(name)!=tree.symbols().text(name){return None}let index=*self.catalog.members.get(&(owner,name,MemberKind::Var))?;let row=&self.catalog.declarations[index];(row.metadata.procedure.is_none()&&row.metadata.inherited_opaque.is_none()).then_some(&row.metadata)}
 }

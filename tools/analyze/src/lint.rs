@@ -194,7 +194,12 @@ impl Sink {
 
     /// Replay the unchanged policy's annotation trace through retained admission.
     /// Captured phases have exactly the fresh-Sink dedup scope of Engine::scan.
-    pub(crate) fn replay_allow(&mut self, u: AllowUse) {
+    #[cfg(not(feature = "unified-oracle"))]
+    pub(crate) fn replay_allow(&mut self, u: AllowUse) { self.replay_allow_inner(u); }
+    /// Frozen external oracle code only; this replays DATA, not source authority.
+    #[cfg(feature = "unified-oracle")]
+    pub fn replay_allow(&mut self, u: AllowUse) { self.replay_allow_inner(u); }
+    fn replay_allow_inner(&mut self, u: AllowUse) {
         let start = self.bound.as_ref().map_or(0, |b| b.allow_start);
         if !self.allow_used[start..].contains(&u) { self.push_allow(u); }
     }
@@ -256,6 +261,8 @@ pub struct Meta {
 }
 
 impl Meta {
+    /// The unique original required-list selection; DATA, not registry/source authority.
+    pub fn missing_scope_lists<'a>(&'a self,scope:&'a LintScope)->impl Iterator<Item=&'static str>+'a{self.lists.iter().copied().filter(move|key|!scope.lists.contains_key(*key))}
     pub fn rule(&self, name: &str) -> Option<&RuleMeta> {
         self.rules.iter().find(|r| r.name == name)
     }

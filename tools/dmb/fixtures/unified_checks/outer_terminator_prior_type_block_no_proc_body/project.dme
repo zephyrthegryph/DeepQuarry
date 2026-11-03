@@ -1,0 +1,4 @@
+/datum/a
+    var/x=1
+/proc/bad(x=)
+    return 2

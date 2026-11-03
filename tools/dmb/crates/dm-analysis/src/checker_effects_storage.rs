@@ -56,7 +56,8 @@ impl EffectInput {
             &self.order,
             self.order.len(),
             v,
-        )
+        );
+        if let Some(receipt)=&self.original_receipt{v(Storage::Buffer{owner:"checker.original_receipt_weak_backing",address:receipt.as_ptr()as usize,logical:0,capacity:std::mem::size_of::<dm_tree::diagnostic_declarations::DiagnosticDeclarationReceipt>()+2*std::mem::size_of::<usize>()});}
     }
 }
 impl BodyEffects {
@@ -67,6 +68,7 @@ impl BodyEffects {
         buf("purity.calls", &self.calls, self.calls.len(), v);
         buf("effects.blocking", &self.blocking, self.blocking.len(), v);
         buf("purity.immediate", &self.immediate, self.immediate.len(), v);
+        buf("checker.original_body_diagnostics",&self.original,self.original.len(),v);buf("checker.accepted_keyword_uses",&self.keywords,self.keywords.len(),v);for row in self.original.iter(){diagnostic(&row.diagnostic,v)}
         for d in self.immediate.iter() {
             diagnostic(d, v)
         }
@@ -165,6 +167,7 @@ mod capacity_tests {
         // Resource-container fixture only, not fabricated semantic judgment evidence.
         let path = Arc::new(std::path::PathBuf::from("fixture.dm"));
         let mut rows = vec![Produced {
+            phase: ProducedPhase::BodyImmediate,
             registration_tag: None,
             severity: DiagnosticSeverity::Error,
             diagnostic: Diagnostic {

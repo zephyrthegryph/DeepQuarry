@@ -118,7 +118,10 @@ fn prepare_measure_using(root:&Expr,a:&SettingAdmission<'_>,body_fresh:bool)->io
             ExprKind::Literal(l) => {
                 if body_fresh {l.require_fresh_body_owner(a)?;}
                 l.prepare_parts_admitted(a)?;
-                charge!(l.raw_storage().capacity());
+                // Neutral typed DATA is already independently owned/funded;
+                // sharing its immutable allocation does not create another raw
+                // buffer or pin this root through the header owner.
+                if l.original_data().is_none(){charge!(l.raw_storage().capacity());}
                 if let Some((_, n)) = l.shared_storage() {
                     charge!(n);
                 }
@@ -257,7 +260,12 @@ pub fn prepare_setting_expression(
     tokens: &[SpanToken],
     value_span: Span,
     a: &SettingAdmission<'_>,
-) -> Result<SettingExpression, SettingSyntaxFailure> {
+) -> Result<SettingExpression, SettingSyntaxFailure> {prepare_setting_expression_with_original_literal_facts(source,tokens,value_span,a,None)}
+/// SAME admitted primary parser with authentic scalar/static DATA loaned by the
+/// current header owner. Numeric spans alone do not grant source authority.
+pub fn prepare_setting_expression_with_original_literal_facts(
+ source:&str,tokens:&[SpanToken],value_span:Span,a:&SettingAdmission<'_>,facts:Option<crate::OriginalLiteralFactsView<'_>>,
+)->Result<SettingExpression,SettingSyntaxFailure>{
     let produce = || -> Result<SettingExpression, SettingSyntaxFailure> {
         a.checkpoint().map_err(SettingSyntaxFailure::Operational)?;
         for token in tokens {
@@ -291,8 +299,8 @@ pub fn prepare_setting_expression(
             _peak: peak,
             _admission: a,
         };
-        let mut parsed = crate::expression_parser::parse_expression_span_tokens_with_admission(
-            source, tokens, 0, a,
+        let mut parsed = crate::expression_parser::parse_expression_span_tokens_with_original_literals(
+            source,tokens,0,a,facts,
         );
         guard.expression = parsed.expr.take();
         a.checkpoint().map_err(SettingSyntaxFailure::Operational)?;
@@ -440,4 +448,21 @@ pub(crate) fn literal_parser_peak(raw:&str,a:&SettingAdmission<'_>)->io::Result<
  let node=size_of::<crate::Token>()*12+size_of::<Expr>()*16+size_of::<String>()*8+size_of::<usize>()*16+128;
  let fragments=if raw.as_bytes().contains(&b'['){add(a,raw.len(),overlap)?}else{0};let fragment_bytes=add(a,mul(a,fragments,4*(size_of::<crate::literal::LiteralFragment>()+size_of::<crate::SpanToken>()))?,size_of::<Vec<crate::literal::LiteralFragment>>())?;
  add(a,add(a,add(a,mul(a,token_work,node)?,mul(a,text_work,64)?)?,fragment_bytes)?,8192)
+}
+
+/// Move ONE genuine native demanded Pratt result into the existing sealed
+/// SettingExpression owner. No parser is invoked, and no source grant follows.
+/// The original demanded lease guards failure cleanup until final root commit.
+pub fn retain_demanded_expression(demanded:crate::DemandedExpression,a:&SettingAdmission<'_>)->Result<SettingExpression,SettingSyntaxFailure>{
+ let(mut parsed,tokens,peak)=demanded.into_parts();drop(tokens);
+ let mut guard=Unpublished{expression:parsed.expr.take(),anchor:None,_peak:peak,_admission:a};
+ if !a.matches_lease_domain(&guard._peak){return Err(SettingSyntaxFailure::Operational(fail(a,io::ErrorKind::InvalidInput,"demanded default root belongs to another actual native resource owner")))}
+ a.checkpoint().map_err(SettingSyntaxFailure::Operational)?;
+ if let Some(error)=parsed.diagnostics.into_iter().next(){return Err(SettingSyntaxFailure::Syntax(error))}
+ let expression=guard.expression.as_ref().ok_or_else(||SettingSyntaxFailure::Operational(fail(a,io::ErrorKind::InvalidData,"demanded default has no native root")))?;
+ let measured=prepare_measure(expression,a).map_err(SettingSyntaxFailure::Operational)?;
+ let cleanup=mul(a,measured.nodes,4*(size_of::<Expr>()+size_of::<SharedSettingRetention>())).map_err(SettingSyntaxFailure::Operational)?;
+ let final_bytes=add(a,add(a,measured.bytes,cleanup).map_err(SettingSyntaxFailure::Operational)?,crate::setting_expression::root_storage_envelope()).map_err(SettingSyntaxFailure::Operational)?;
+ let anchor=SharedSettingRetention::new(a.reserve(final_bytes).map_err(SettingSyntaxFailure::Operational)?);guard.anchor=Some(anchor.clone());attach(expression,&anchor,a).map_err(SettingSyntaxFailure::Operational)?;a.checkpoint().map_err(SettingSyntaxFailure::Operational)?;
+ Ok(SettingExpression::retained_with_anchor(guard.expression.take().expect("checked demanded root"),anchor))
 }
