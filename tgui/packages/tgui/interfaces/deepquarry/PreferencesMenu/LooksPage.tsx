@@ -720,23 +720,8 @@ const BodyTable = ({
             const value = values[row.styleKey];
             const item = withValue(row.styleKey);
             const count = isNoStyle(value) ? 0 : channelsOf(item, value);
-            if (isTail && taurNow) {
-              return (
-                <Box
-                  key={row.label}
-                  style={{ display: 'contents' }}
-                  data-dq-anchor={groupAnchor('appearance', row.group)}
-                >
-                  <Box style={cellStyle}>{row.label}</Box>
-                  <Box
-                    color="label"
-                    style={{ ...cellStyle, gridColumn: '2 / -1' }}
-                  >
-                    The taur body in Legs takes the place of a tail.
-                  </Box>
-                </Box>
-              );
-            }
+            // A taur body is the tail: the Tail row goes until the taur does.
+            if (isTail && taurNow) return null;
             const shownItem =
               isTail && item
                 ? {
