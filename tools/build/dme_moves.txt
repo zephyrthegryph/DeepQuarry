@@ -4158,3 +4158,41 @@ code/content/roundstats/_defines_local.dm	code/defines/content/roundstats.dm
 code/domains/ai/_defines.dm	code/defines/domains/ai.dm
 code/domains/ai/legacy_constants/_defines.dm	code/defines/domains/ai_legacy_constants.dm
 code/library/helpers/nameof.dm	code/defines/library/nameof.dm
+code/content/area/ss13_deprecated_areas.dm	code/content/area/deprecated_shuttle_areas.dm
+code/content/area/Space Station 13 areas.dm	code/content/area/station_areas.dm
+code/content/area/Away Mission areas.dm	code/content/area/away_mission_areas.dm
+code/content/items/weapons/id cards/CH_ids.dm	code/content/items/weapons/id cards/casino_ids.dm
+code/content/items/weapons/id cards/YW_ids.dm	code/content/items/weapons/id cards/blueshield_ids.dm
+code/content/library/hardcode_library/reference/virgo_pamphlet.dm	code/content/library/hardcode_library/reference/welcome_pamphlet.dm
+code/content/mob/language/station_YW.dm	code/content/mob/language/grey_language.dm
+code/content/mob/living/carbon/human/human_powers_YW.dm	code/content/mob/living/carbon/human/human_telepathy.dm
+code/content/mob/living/carbon/human/species/station/greyYW.dm	code/content/mob/living/carbon/human/species/station/grey.dm
+code/content/projectiles/projectile/energy_yw.dm	code/content/projectiles/projectile/gauss_projectiles.dm
+code/content/supplypacks/materials_yw.dm	code/content/supplypacks/carpet.dm
+code/content/tgs_commands/vorestation.dm	code/content/tgs_commands/chat_commands.dm
+code/content/turfs/simulated/water_yw.dm	code/content/turfs/simulated/hotspring.dm
+code/domains/atmos/dq_chomp_gas_types.dm	code/domains/atmos/methane_and_fuel_gases.dm
+code/world/configuration/entries/chompstation.dm	code/world/configuration/entries/discord_integration.dm
+code/world/configuration/entries/vorestation.dm	code/world/configuration/entries/playtime_limits_and_webhooks.dm
+code/content/atom/atoms_initializing_EXPENSIVE.dm	code/content/atom/atom_initialization.dm
+code/content/assembly/helpers.dm	code/content/assembly/assembly_checks.dm
+code/content/overmap/helpers.dm	code/content/overmap/sector_lookup.dm
+code/content/observation/helpers.dm	code/content/observation/qdel_self.dm
+code/content/tgui/helpers.dm	code/content/tgui/say_payloads.dm
+code/content/integrated_electronics/core/helpers.dm	code/content/integrated_electronics/core/pin_access.dm
+code/content/tickets/procs.dm	code/content/tickets/mentor_pm.dm
+code/content/economy/economy_misc.dm	code/content/economy/economy_setup.dm
+code/content/sparse_vars/movable_misc.dm	code/content/sparse_vars/movable_sparse_vars.dm
+code/content/crafting/recipes/misc.dm	code/content/crafting/recipes/toilet.dm
+code/content/effects/decals/misc.dm	code/content/effects/decals/spraystill.dm
+code/content/clothing/spacesuits/rig/other.dm	code/content/clothing/spacesuits/rig/ert_janitor.dm
+code/content/multiz/misc.dm	code/content/multiz/ceiling.dm
+code/content/client/client defines.dm	code/content/client/client_defines.dm
+code/content/client/client procs.dm	code/content/client/client_procs.dm
+code/content/admin/DB ban/ban_panle_ui.dm	code/content/admin/db_ban/ban_panel_ui.dm
+code/content/admin/DB ban/functions.dm	code/content/admin/db_ban/functions.dm
+code/content/lore_codex/lore_data_yw/important_locations.dm	code/content/lore_codex/borealis_lore/important_locations.dm
+code/content/lore_codex/lore_data_yw/main.dm	code/content/lore_codex/borealis_lore/main.dm
+code/content/lore_codex/lore_data_yw/orgs.dm	code/content/lore_codex/borealis_lore/orgs.dm
+code/content/lore_codex/lore_data_yw/political_parties.dm	code/content/lore_codex/borealis_lore/political_parties.dm
+code/content/lore_codex/lore_data_yw/species.dm	code/content/lore_codex/borealis_lore/species.dm
