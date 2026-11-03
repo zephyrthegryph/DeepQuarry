@@ -4559,3 +4559,14 @@ code/content/mob/living/simple_mob/simple_mob.dm	code/domains/world_model/mob/si
 code/content/reagents/reagents/_reagents.dm	code/domains/world_model/reagents/reagents.dm
 code/content/reagents/holder/holder.dm	code/domains/world_model/reagents/holder.dm
 code/content/_onclick/hud/screen_objects.dm	code/domains/world_model/screen/screen_objects.dm
+code/content/atom/damage_packet.dm	code/domains/damage/damage_packet.dm
+code/content/atom/impact_response.dm	code/domains/damage/impact_response.dm
+code/content/mob/living/life/air_watch.dm	code/domains/life/air_watch.dm
+code/content/mob/living/life/dizzy_shake.dm	code/domains/life/dizzy_shake.dm
+code/content/mob/living/life/jittery_shake.dm	code/domains/life/jittery_shake.dm
+code/content/mob/living/life/life_dispatch.dm	code/domains/life/life_dispatch.dm
+code/content/mob/living/life/life_om.dm	code/domains/life/life_om.dm
+code/content/mob/living/life/life_sequence.dm	code/domains/life/life_sequence.dm
+code/content/mob/living/life/life_steps.dm	code/domains/life/life_steps.dm
+code/content/mob/living/life/living_systems.dm	code/domains/life/living_systems.dm
+code/content/mob/living/life/statuses.dm	code/domains/life/statuses.dm
